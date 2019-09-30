@@ -249,6 +249,13 @@ class MediaContentDescription {
     receive_rids_ = rids;
   }
 
+  virtual const absl::optional<std::string>& alt_protocol() const {
+    return alt_protocol_;
+  }
+  virtual void set_alt_protocol(const absl::optional<std::string>& protocol) {
+    alt_protocol_ = protocol;
+  }
+
  protected:
   bool rtcp_mux_ = false;
   bool rtcp_reduced_size_ = false;
@@ -270,6 +277,8 @@ class MediaContentDescription {
 
   SimulcastDescription simulcast_;
   std::vector<RidDescription> receive_rids_;
+
+  absl::optional<std::string> alt_protocol_;
 };
 
 // TODO(bugs.webrtc.org/8620): Remove this alias once downstream projects have

@@ -3486,6 +3486,124 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   TestTransportInfo(/*offer=*/false, options, /*has_current_desc=*/false);
 }
 
+TEST_F(MediaSessionDescriptionFactoryTest, AltProtocolAddedToOffer) {
+  MediaSessionOptions options;
+  AddAudioVideoSections(RtpTransceiverDirection::kRecvOnly, &options);
+  AddDataSection(cricket::DCT_RTP, RtpTransceiverDirection::kRecvOnly,
+                 &options);
+
+  FindFirstMediaDescriptionByMid("audio", &options)->alt_protocol = "foo";
+  FindFirstMediaDescriptionByMid("video", &options)->alt_protocol = "bar";
+  FindFirstMediaDescriptionByMid("data", &options)->alt_protocol = "baz";
+
+  std::unique_ptr<SessionDescription> offer = f1_.CreateOffer(options, nullptr);
+
+  EXPECT_EQ(offer->GetContentDescriptionByName("audio")->alt_protocol(), "foo");
+  EXPECT_EQ(offer->GetContentDescriptionByName("video")->alt_protocol(), "bar");
+  EXPECT_EQ(offer->GetContentDescriptionByName("data")->alt_protocol(), "baz");
+}
+
+TEST_F(MediaSessionDescriptionFactoryTest, AltProtocolAddedToAnswer) {
+  MediaSessionOptions options;
+  AddAudioVideoSections(RtpTransceiverDirection::kRecvOnly, &options);
+  AddDataSection(cricket::DCT_SCTP, RtpTransceiverDirection::kRecvOnly,
+                 &options);
+
+  FindFirstMediaDescriptionByMid("audio", &options)->alt_protocol = "foo";
+  FindFirstMediaDescriptionByMid("video", &options)->alt_protocol = "bar";
+  FindFirstMediaDescriptionByMid("data", &options)->alt_protocol = "baz";
+
+  std::unique_ptr<SessionDescription> offer = f1_.CreateOffer(options, nullptr);
+  std::unique_ptr<SessionDescription> answer =
+      f1_.CreateAnswer(offer.get(), options, nullptr);
+
+  EXPECT_EQ(answer->GetContentDescriptionByName("audio")->alt_protocol(),
+            "foo");
+  EXPECT_EQ(answer->GetContentDescriptionByName("video")->alt_protocol(),
+            "bar");
+  EXPECT_EQ(answer->GetContentDescriptionByName("data")->alt_protocol(), "baz");
+}
+
+TEST_F(MediaSessionDescriptionFactoryTest, AltProtocolNotInOffer) {
+  MediaSessionOptions options;
+  AddAudioVideoSections(RtpTransceiverDirection::kRecvOnly, &options);
+  AddDataSection(cricket::DCT_SCTP, RtpTransceiverDirection::kRecvOnly,
+                 &options);
+
+  std::unique_ptr<SessionDescription> offer = f1_.CreateOffer(options, nullptr);
+
+  FindFirstMediaDescriptionByMid("audio", &options)->alt_protocol = "foo";
+  FindFirstMediaDescriptionByMid("video", &options)->alt_protocol = "bar";
+  FindFirstMediaDescriptionByMid("data", &options)->alt_protocol = "baz";
+
+  std::unique_ptr<SessionDescription> answer =
+      f1_.CreateAnswer(offer.get(), options, nullptr);
+
+  EXPECT_EQ(answer->GetContentDescriptionByName("audio")->alt_protocol(),
+            absl::nullopt);
+  EXPECT_EQ(answer->GetContentDescriptionByName("video")->alt_protocol(),
+            absl::nullopt);
+  EXPECT_EQ(answer->GetContentDescriptionByName("data")->alt_protocol(),
+            absl::nullopt);
+}
+
+TEST_F(MediaSessionDescriptionFactoryTest, AltProtocolDifferentInOffer) {
+  MediaSessionOptions options;
+  AddAudioVideoSections(RtpTransceiverDirection::kRecvOnly, &options);
+  AddDataSection(cricket::DCT_SCTP, RtpTransceiverDirection::kRecvOnly,
+                 &options);
+
+  FindFirstMediaDescriptionByMid("audio", &options)->alt_protocol = "not-foo";
+  FindFirstMediaDescriptionByMid("video", &options)->alt_protocol = "not-bar";
+  FindFirstMediaDescriptionByMid("data", &options)->alt_protocol = "not-baz";
+
+  std::unique_ptr<SessionDescription> offer = f1_.CreateOffer(options, nullptr);
+
+  FindFirstMediaDescriptionByMid("audio", &options)->alt_protocol = "foo";
+  FindFirstMediaDescriptionByMid("video", &options)->alt_protocol = "bar";
+  FindFirstMediaDescriptionByMid("data", &options)->alt_protocol = "baz";
+
+  std::unique_ptr<SessionDescription> answer =
+      f1_.CreateAnswer(offer.get(), options, nullptr);
+
+  EXPECT_EQ(answer->GetContentDescriptionByName("audio")->alt_protocol(),
+            absl::nullopt);
+  EXPECT_EQ(answer->GetContentDescriptionByName("video")->alt_protocol(),
+            absl::nullopt);
+  EXPECT_EQ(answer->GetContentDescriptionByName("data")->alt_protocol(),
+            absl::nullopt);
+}
+
+TEST_F(MediaSessionDescriptionFactoryTest, AltProtocolNotInAnswer) {
+  MediaSessionOptions options;
+  AddAudioVideoSections(RtpTransceiverDirection::kRecvOnly, &options);
+  AddDataSection(cricket::DCT_SCTP, RtpTransceiverDirection::kRecvOnly,
+                 &options);
+
+  FindFirstMediaDescriptionByMid("audio", &options)->alt_protocol = "foo";
+  FindFirstMediaDescriptionByMid("video", &options)->alt_protocol = "bar";
+  FindFirstMediaDescriptionByMid("data", &options)->alt_protocol = "baz";
+
+  std::unique_ptr<SessionDescription> offer = f1_.CreateOffer(options, nullptr);
+
+  FindFirstMediaDescriptionByMid("audio", &options)->alt_protocol =
+      absl::nullopt;
+  FindFirstMediaDescriptionByMid("video", &options)->alt_protocol =
+      absl::nullopt;
+  FindFirstMediaDescriptionByMid("data", &options)->alt_protocol =
+      absl::nullopt;
+
+  std::unique_ptr<SessionDescription> answer =
+      f1_.CreateAnswer(offer.get(), options, nullptr);
+
+  EXPECT_EQ(answer->GetContentDescriptionByName("audio")->alt_protocol(),
+            absl::nullopt);
+  EXPECT_EQ(answer->GetContentDescriptionByName("video")->alt_protocol(),
+            absl::nullopt);
+  EXPECT_EQ(answer->GetContentDescriptionByName("data")->alt_protocol(),
+            absl::nullopt);
+}
+
 // Create an offer with bundle enabled and verify the crypto parameters are
 // the common set of the available cryptos.
 TEST_F(MediaSessionDescriptionFactoryTest, TestCryptoWithOfferBundle) {

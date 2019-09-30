@@ -300,7 +300,6 @@ class MediaTransportPair {
     void Connect(LoopbackDatagramTransport* other);
 
     // Datagram transport overrides.
-    // TODO(mellem):  Implement these when tests actually need to use them.
     void Connect(rtc::PacketTransportInternal* packet_transport) override;
     CongestionControlInterface* congestion_control() override;
     void SetTransportStateCallback(
@@ -333,11 +332,23 @@ class MediaTransportPair {
     }
 
    private:
+    void DeliverDatagram(rtc::CopyOnWriteBuffer buffer);
+
+    rtc::Thread* thread_;
     LoopbackDataChannelTransport dc_transport_;
+
+    MediaTransportState state_ RTC_GUARDED_BY(thread_) =
+        MediaTransportState::kPending;
+    DatagramSinkInterface* sink_ RTC_GUARDED_BY(thread_) = nullptr;
+    MediaTransportStateCallback* state_callback_ RTC_GUARDED_BY(thread_) =
+        nullptr;
+    LoopbackDatagramTransport* other_;
 
     std::string transport_parameters_;
 
     absl::optional<MediaTransportState> state_after_connect_;
+
+    rtc::AsyncInvoker invoker_;
   };
 
   LoopbackMediaTransport first_;

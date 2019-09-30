@@ -55,7 +55,9 @@ struct JsepTransportDescription {
       const std::vector<CryptoParams>& cryptos,
       const std::vector<int>& encrypted_header_extension_ids,
       int rtp_abs_sendtime_extn_id,
-      const TransportDescription& transport_description);
+      const TransportDescription& transport_description,
+      absl::optional<std::string> media_alt_protocol,
+      absl::optional<std::string> data_alt_protocol);
   JsepTransportDescription(const JsepTransportDescription& from);
   ~JsepTransportDescription();
 
@@ -68,6 +70,14 @@ struct JsepTransportDescription {
   // TODO(zhihuang): Add the ICE and DTLS related variables and methods from
   // TransportDescription and remove this extra layer of abstraction.
   TransportDescription transport_desc;
+
+  // Alt-protocols that apply to this JsepTransport.  Presence indicates a
+  // request to use an alternative protocol for media and/or data.  The
+  // alt-protocol is handled by a datagram transport.  If one or both of these
+  // values are present, JsepTransport will attempt to negotiate use of the
+  // datagram transport for media and/or data.
+  absl::optional<std::string> media_alt_protocol;
+  absl::optional<std::string> data_alt_protocol;
 };
 
 // Helper class used by JsepTransportController that processes

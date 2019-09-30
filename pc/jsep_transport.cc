@@ -60,12 +60,16 @@ JsepTransportDescription::JsepTransportDescription(
     const std::vector<CryptoParams>& cryptos,
     const std::vector<int>& encrypted_header_extension_ids,
     int rtp_abs_sendtime_extn_id,
-    const TransportDescription& transport_desc)
+    const TransportDescription& transport_desc,
+    absl::optional<std::string> media_alt_protocol,
+    absl::optional<std::string> data_alt_protocol)
     : rtcp_mux_enabled(rtcp_mux_enabled),
       cryptos(cryptos),
       encrypted_header_extension_ids(encrypted_header_extension_ids),
       rtp_abs_sendtime_extn_id(rtp_abs_sendtime_extn_id),
-      transport_desc(transport_desc) {}
+      transport_desc(transport_desc),
+      media_alt_protocol(media_alt_protocol),
+      data_alt_protocol(data_alt_protocol) {}
 
 JsepTransportDescription::JsepTransportDescription(
     const JsepTransportDescription& from)
@@ -73,7 +77,9 @@ JsepTransportDescription::JsepTransportDescription(
       cryptos(from.cryptos),
       encrypted_header_extension_ids(from.encrypted_header_extension_ids),
       rtp_abs_sendtime_extn_id(from.rtp_abs_sendtime_extn_id),
-      transport_desc(from.transport_desc) {}
+      transport_desc(from.transport_desc),
+      media_alt_protocol(from.media_alt_protocol),
+      data_alt_protocol(from.data_alt_protocol) {}
 
 JsepTransportDescription::~JsepTransportDescription() = default;
 
@@ -87,6 +93,8 @@ JsepTransportDescription& JsepTransportDescription::operator=(
   encrypted_header_extension_ids = from.encrypted_header_extension_ids;
   rtp_abs_sendtime_extn_id = from.rtp_abs_sendtime_extn_id;
   transport_desc = from.transport_desc;
+  media_alt_protocol = from.media_alt_protocol;
+  data_alt_protocol = from.data_alt_protocol;
 
   return *this;
 }
@@ -794,34 +802,50 @@ void JsepTransport::NegotiateDatagramTransport(SdpType type) {
     return;  // No need to negotiate the use of datagram transport.
   }
 
-  bool use_datagram_transport =
+  bool compatible_datagram_transport =
       remote_description_->transport_desc.opaque_parameters &&
       remote_description_->transport_desc.opaque_parameters ==
           local_description_->transport_desc.opaque_parameters;
 
-  RTC_LOG(LS_INFO) << "Negotiating datagram transport, use_datagram_transport="
-                   << use_datagram_transport << " answer type="
-                   << (type == SdpType::kAnswer ? "answer" : "pr_answer");
+  bool use_datagram_transport_for_media =
+      compatible_datagram_transport &&
+      remote_description_->media_alt_protocol ==
+          remote_description_->transport_desc.opaque_parameters->protocol &&
+      remote_description_->media_alt_protocol ==
+          local_description_->media_alt_protocol;
+
+  bool use_datagram_transport_for_data =
+      compatible_datagram_transport &&
+      remote_description_->data_alt_protocol ==
+          remote_description_->transport_desc.opaque_parameters->protocol &&
+      remote_description_->data_alt_protocol ==
+          local_description_->data_alt_protocol;
+
+  RTC_LOG(LS_INFO)
+      << "Negotiating datagram transport, use_datagram_transport_for_media="
+      << use_datagram_transport_for_media
+      << ", use_datagram_transport_for_data=" << use_datagram_transport_for_data
+      << " answer type=" << (type == SdpType::kAnswer ? "answer" : "pr_answer");
 
   // A provisional or full or answer lets the peer start sending on one of the
   // transports.
   if (composite_rtp_transport_) {
     composite_rtp_transport_->SetSendTransport(
-        use_datagram_transport ? datagram_rtp_transport_.get()
-                               : default_rtp_transport());
+        use_datagram_transport_for_media ? datagram_rtp_transport_.get()
+                                         : default_rtp_transport());
   }
   if (composite_data_channel_transport_) {
     composite_data_channel_transport_->SetSendTransport(
-        use_datagram_transport ? data_channel_transport_
-                               : sctp_data_channel_transport_.get());
+        use_datagram_transport_for_data ? data_channel_transport_
+                                        : sctp_data_channel_transport_.get());
   }
 
   if (type != SdpType::kAnswer) {
     return;
   }
 
-  if (use_datagram_transport) {
-    if (composite_rtp_transport_) {
+  if (composite_rtp_transport_) {
+    if (use_datagram_transport_for_media) {
       // Negotiated use of datagram transport for RTP, so remove the
       // non-datagram RTP transport.
       composite_rtp_transport_->RemoveTransport(default_rtp_transport());
@@ -832,30 +856,34 @@ void JsepTransport::NegotiateDatagramTransport(SdpType type) {
       } else {
         dtls_srtp_transport_ = nullptr;
       }
+    } else {
+      composite_rtp_transport_->RemoveTransport(datagram_rtp_transport_.get());
+      datagram_rtp_transport_ = nullptr;
     }
-    if (composite_data_channel_transport_) {
+  }
+
+  if (composite_data_channel_transport_) {
+    if (use_datagram_transport_for_data) {
       // Negotiated use of datagram transport for data channels, so remove the
       // non-datagram data channel transport.
       composite_data_channel_transport_->RemoveTransport(
           sctp_data_channel_transport_.get());
       sctp_data_channel_transport_ = nullptr;
       sctp_transport_ = nullptr;
-    }
-  } else {
-    // Remove and delete the datagram transport.
-    if (composite_rtp_transport_) {
-      composite_rtp_transport_->RemoveTransport(datagram_rtp_transport_.get());
-    }
-    if (composite_data_channel_transport_) {
+    } else {
       composite_data_channel_transport_->RemoveTransport(
           data_channel_transport_);
-    } else {
-      // If there's no composite data channel transport, we need to signal that
-      // the data channel is about to be deleted.
-      SignalDataChannelTransportNegotiated(this, nullptr);
+      data_channel_transport_ = nullptr;
     }
-    datagram_rtp_transport_ = nullptr;
+  } else if (data_channel_transport_ && !use_datagram_transport_for_data) {
+    // The datagram transport has been rejected without a fallback.  We still
+    // need to inform the application and delete it.
+    SignalDataChannelTransportNegotiated(this, nullptr);
     data_channel_transport_ = nullptr;
+  }
+
+  if (!use_datagram_transport_for_media && !use_datagram_transport_for_data) {
+    // Datagram transport is not being used for anything, so clean it up.
     datagram_transport_ = nullptr;
   }
 }

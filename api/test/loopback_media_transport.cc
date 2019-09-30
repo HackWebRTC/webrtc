@@ -19,6 +19,8 @@ namespace webrtc {
 
 namespace {
 
+constexpr size_t kLoopbackMaxDatagramSize = 1200;
+
 // Wrapper used to hand out unique_ptrs to loopback media transports without
 // ownership changes.
 class WrapperMediaTransport : public MediaTransportInterface {
@@ -611,10 +613,11 @@ void MediaTransportPair::LoopbackMediaTransport::SetAllocatedBitrateLimits(
 
 MediaTransportPair::LoopbackDatagramTransport::LoopbackDatagramTransport(
     rtc::Thread* thread)
-    : dc_transport_(thread) {}
+    : thread_(thread), dc_transport_(thread) {}
 
 void MediaTransportPair::LoopbackDatagramTransport::Connect(
     LoopbackDatagramTransport* other) {
+  other_ = other;
   dc_transport_.Connect(&other->dc_transport_);
 }
 
@@ -631,21 +634,43 @@ MediaTransportPair::LoopbackDatagramTransport::congestion_control() {
 }
 
 void MediaTransportPair::LoopbackDatagramTransport::SetTransportStateCallback(
-    MediaTransportStateCallback* callback) {}
+    MediaTransportStateCallback* callback) {
+  RTC_DCHECK_RUN_ON(thread_);
+  state_callback_ = callback;
+  if (state_callback_) {
+    state_callback_->OnStateChanged(state_);
+  }
+}
 
 RTCError MediaTransportPair::LoopbackDatagramTransport::SendDatagram(
     rtc::ArrayView<const uint8_t> data,
     DatagramId datagram_id) {
+  rtc::CopyOnWriteBuffer buffer;
+  buffer.SetData(data.data(), data.size());
+  invoker_.AsyncInvoke<void>(
+      RTC_FROM_HERE, thread_, [this, datagram_id, buffer = std::move(buffer)] {
+        RTC_DCHECK_RUN_ON(thread_);
+        other_->DeliverDatagram(std::move(buffer));
+        if (sink_) {
+          DatagramAck ack;
+          ack.datagram_id = datagram_id;
+          ack.receive_timestamp = Timestamp::us(rtc::TimeMicros());
+          sink_->OnDatagramAcked(ack);
+        }
+      });
   return RTCError::OK();
 }
 
 size_t MediaTransportPair::LoopbackDatagramTransport::GetLargestDatagramSize()
     const {
-  return 0;
+  return kLoopbackMaxDatagramSize;
 }
 
 void MediaTransportPair::LoopbackDatagramTransport::SetDatagramSink(
-    DatagramSinkInterface* sink) {}
+    DatagramSinkInterface* sink) {
+  RTC_DCHECK_RUN_ON(thread_);
+  sink_ = sink;
+}
 
 std::string
 MediaTransportPair::LoopbackDatagramTransport::GetTransportParameters() const {
@@ -680,6 +705,13 @@ bool MediaTransportPair::LoopbackDatagramTransport::IsReadyToSend() const {
 
 void MediaTransportPair::LoopbackDatagramTransport::SetState(
     MediaTransportState state) {
+  invoker_.AsyncInvoke<void>(RTC_FROM_HERE, thread_, [this, state] {
+    RTC_DCHECK_RUN_ON(thread_);
+    state_ = state;
+    if (state_callback_) {
+      state_callback_->OnStateChanged(state_);
+    }
+  });
   dc_transport_.OnReadyToSend(state == MediaTransportState::kWritable);
 }
 
@@ -690,6 +722,14 @@ void MediaTransportPair::LoopbackDatagramTransport::SetStateAfterConnect(
 
 void MediaTransportPair::LoopbackDatagramTransport::FlushAsyncInvokes() {
   dc_transport_.FlushAsyncInvokes();
+}
+
+void MediaTransportPair::LoopbackDatagramTransport::DeliverDatagram(
+    rtc::CopyOnWriteBuffer buffer) {
+  RTC_DCHECK_RUN_ON(thread_);
+  if (sink_) {
+    sink_->OnDatagramReceived(buffer);
+  }
 }
 
 }  // namespace webrtc

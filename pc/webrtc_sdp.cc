@@ -239,6 +239,9 @@ static const char kMediaTransportSettingLine[] = "x-mt";
 // This is a non-standardized setting for plugin transports.
 static const char kOpaqueTransportParametersLine[] = "x-opaque";
 
+// This is a non-standardized setting for plugin transports.
+static const char kAltProtocolLine[] = "x-alt-protocol";
+
 // RTP payload type is in the 0-127 range. Use -1 to indicate "all" payload
 // types.
 const int kWildcardPayloadType = -1;
@@ -546,6 +549,14 @@ static void AddOpaqueTransportLine(
   InitAttrLine(kOpaqueTransportParametersLine, &os);
   os << kSdpDelimiterColon << params.protocol << kSdpDelimiterColon
      << rtc::Base64::Encode(params.parameters);
+  AddLine(os.str(), message);
+}
+
+static void AddAltProtocolLine(const std::string& protocol,
+                               std::string* message) {
+  rtc::StringBuilder os;
+  InitAttrLine(kAltProtocolLine, &os);
+  os << kSdpDelimiterColon << protocol;
   AddLine(os.str(), message);
 }
 
@@ -1540,6 +1551,10 @@ void BuildMediaDescription(const ContentInfo* content_info,
     }
   }
 
+  if (media_desc->alt_protocol()) {
+    AddAltProtocolLine(*media_desc->alt_protocol(), message);
+  }
+
   // RFC 3388
   // mid-attribute      = "a=mid:" identification-tag
   // identification-tag = token
@@ -2147,6 +2162,12 @@ bool ParseOpaqueTransportLine(const std::string& line,
     return ParseFailedGetValue(line, kOpaqueTransportParametersLine, error);
   }
   return true;
+}
+
+bool ParseAltProtocolLine(const std::string& line,
+                          std::string* protocol,
+                          SdpParseError* error) {
+  return GetValue(line, kAltProtocolLine, protocol, error);
 }
 
 bool ParseSessionDescription(const std::string& message,
@@ -3180,6 +3201,12 @@ bool ParseContent(const std::string& message,
               &transport->opaque_parameters->parameters, error)) {
         return false;
       }
+    } else if (HasAttribute(line, kAltProtocolLine)) {
+      std::string alt_protocol;
+      if (!ParseAltProtocolLine(line, &alt_protocol, error)) {
+        return false;
+      }
+      media_desc->set_alt_protocol(alt_protocol);
     } else if (HasAttribute(line, kAttributeFmtp)) {
       if (!ParseFmtpAttributes(line, media_type, media_desc, error)) {
         return false;

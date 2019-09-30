@@ -78,6 +78,7 @@ struct MediaDescriptionOptions {
   // stream information goes in the local descriptions.
   std::vector<SenderOptions> sender_options;
   std::vector<webrtc::RtpCodecCapability> codec_preferences;
+  absl::optional<std::string> alt_protocol;
 
  private:
   // Doesn't DCHECK on |type|.

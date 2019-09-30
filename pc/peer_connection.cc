@@ -4501,8 +4501,19 @@ void PeerConnection::GetOptionsForOffer(
   // If datagram transport is in use, add opaque transport parameters.
   if (use_datagram_transport_ || use_datagram_transport_for_data_channels_) {
     for (auto& options : session_options->media_description_options) {
-      options.transport_options.opaque_parameters =
+      absl::optional<cricket::OpaqueTransportParameters> params =
           transport_controller_->GetTransportParameters(options.mid);
+      if (!params) {
+        continue;
+      }
+      options.transport_options.opaque_parameters = params;
+      if ((use_datagram_transport_ &&
+           (options.type == cricket::MEDIA_TYPE_AUDIO ||
+            options.type == cricket::MEDIA_TYPE_VIDEO)) ||
+          (use_datagram_transport_for_data_channels_ &&
+           options.type == cricket::MEDIA_TYPE_DATA)) {
+        options.alt_protocol = params->protocol;
+      }
     }
   }
 
@@ -4807,8 +4818,19 @@ void PeerConnection::GetOptionsForAnswer(
   // If datagram transport is in use, add opaque transport parameters.
   if (use_datagram_transport_ || use_datagram_transport_for_data_channels_) {
     for (auto& options : session_options->media_description_options) {
-      options.transport_options.opaque_parameters =
+      absl::optional<cricket::OpaqueTransportParameters> params =
           transport_controller_->GetTransportParameters(options.mid);
+      if (!params) {
+        continue;
+      }
+      options.transport_options.opaque_parameters = params;
+      if ((use_datagram_transport_ &&
+           (options.type == cricket::MEDIA_TYPE_AUDIO ||
+            options.type == cricket::MEDIA_TYPE_VIDEO)) ||
+          (use_datagram_transport_for_data_channels_ &&
+           options.type == cricket::MEDIA_TYPE_DATA)) {
+        options.alt_protocol = params->protocol;
+      }
     }
   }
 }

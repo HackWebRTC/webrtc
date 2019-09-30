@@ -3647,6 +3647,310 @@ TEST_P(PeerConnectionIntegrationTest,
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
 }
 
+TEST_P(PeerConnectionIntegrationTest,
+       DatagramTransportDataChannelWithMediaOnCaller) {
+  // Configure the caller to attempt use of datagram transport for media and
+  // data channels.
+  PeerConnectionInterface::RTCConfiguration offerer_config;
+  offerer_config.rtcp_mux_policy =
+      PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  offerer_config.bundle_policy =
+      PeerConnectionInterface::kBundlePolicyMaxBundle;
+  offerer_config.use_datagram_transport_for_data_channels = true;
+  offerer_config.use_datagram_transport = true;
+
+  // Configure the callee to only use datagram transport for data channels.
+  PeerConnectionInterface::RTCConfiguration answerer_config;
+  answerer_config.rtcp_mux_policy =
+      PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  answerer_config.bundle_policy =
+      PeerConnectionInterface::kBundlePolicyMaxBundle;
+  answerer_config.use_datagram_transport_for_data_channels = true;
+
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfigAndMediaTransportFactory(
+      offerer_config, answerer_config,
+      loopback_media_transports()->first_factory(),
+      loopback_media_transports()->second_factory()));
+  ConnectFakeSignaling();
+
+  // Offer both media and data.
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+  caller()->CreateDataChannel();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Ensure that the data channel transport is ready.
+  loopback_media_transports()->SetState(webrtc::MediaTransportState::kWritable);
+  loopback_media_transports()->FlushAsyncInvokes();
+
+  ASSERT_NE(nullptr, caller()->data_channel());
+  ASSERT_TRUE_WAIT(callee()->data_channel() != nullptr, kDefaultTimeout);
+  EXPECT_TRUE_WAIT(caller()->data_observer()->IsOpen(), kDefaultTimeout);
+  EXPECT_TRUE_WAIT(callee()->data_observer()->IsOpen(), kDefaultTimeout);
+
+  // Both endpoints should agree to use datagram transport for data channels.
+  EXPECT_EQ(nullptr, caller()->pc()->GetSctpTransport());
+  EXPECT_EQ(nullptr, callee()->pc()->GetSctpTransport());
+
+  // Ensure data can be sent in both directions.
+  std::string data = "hello world";
+  caller()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, callee()->data_observer()->last_message(),
+                 kDefaultTimeout);
+  callee()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, caller()->data_observer()->last_message(),
+                 kDefaultTimeout);
+
+  // Media flow should not be impacted.
+  MediaExpectations media_expectations;
+  media_expectations.ExpectBidirectionalAudioAndVideo();
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+}
+
+TEST_P(PeerConnectionIntegrationTest,
+       DatagramTransportMediaWithDataChannelOnCaller) {
+  // Configure the caller to attempt use of datagram transport for media and
+  // data channels.
+  PeerConnectionInterface::RTCConfiguration offerer_config;
+  offerer_config.rtcp_mux_policy =
+      PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  offerer_config.bundle_policy =
+      PeerConnectionInterface::kBundlePolicyMaxBundle;
+  offerer_config.use_datagram_transport_for_data_channels = true;
+  offerer_config.use_datagram_transport = true;
+
+  // Configure the callee to only use datagram transport for media.
+  PeerConnectionInterface::RTCConfiguration answerer_config;
+  answerer_config.rtcp_mux_policy =
+      PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  answerer_config.bundle_policy =
+      PeerConnectionInterface::kBundlePolicyMaxBundle;
+  answerer_config.use_datagram_transport = true;
+
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfigAndMediaTransportFactory(
+      offerer_config, answerer_config,
+      loopback_media_transports()->first_factory(),
+      loopback_media_transports()->second_factory()));
+  ConnectFakeSignaling();
+
+  // Offer both media and data.
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+  caller()->CreateDataChannel();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Ensure that the data channel transport is ready.
+  loopback_media_transports()->SetState(webrtc::MediaTransportState::kWritable);
+  loopback_media_transports()->FlushAsyncInvokes();
+
+  ASSERT_NE(nullptr, caller()->data_channel());
+  ASSERT_TRUE_WAIT(callee()->data_channel() != nullptr, kDefaultTimeout);
+  EXPECT_TRUE_WAIT(caller()->data_observer()->IsOpen(), kDefaultTimeout);
+  EXPECT_TRUE_WAIT(callee()->data_observer()->IsOpen(), kDefaultTimeout);
+
+  // Both endpoints should agree to use SCTP for data channels.
+  EXPECT_NE(nullptr, caller()->pc()->GetSctpTransport());
+  EXPECT_NE(nullptr, callee()->pc()->GetSctpTransport());
+
+  // Ensure data can be sent in both directions.
+  std::string data = "hello world";
+  caller()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, callee()->data_observer()->last_message(),
+                 kDefaultTimeout);
+  callee()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, caller()->data_observer()->last_message(),
+                 kDefaultTimeout);
+
+  // Media flow should not be impacted.
+  MediaExpectations media_expectations;
+  media_expectations.ExpectBidirectionalAudioAndVideo();
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+}
+
+TEST_P(PeerConnectionIntegrationTest,
+       DatagramTransportDataChannelWithMediaOnCallee) {
+  // Configure the caller to attempt use of datagram transport for data
+  // channels.
+  PeerConnectionInterface::RTCConfiguration offerer_config;
+  offerer_config.rtcp_mux_policy =
+      PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  offerer_config.bundle_policy =
+      PeerConnectionInterface::kBundlePolicyMaxBundle;
+  offerer_config.use_datagram_transport_for_data_channels = true;
+
+  // Configure the callee to use datagram transport for data channels and media.
+  PeerConnectionInterface::RTCConfiguration answerer_config;
+  answerer_config.rtcp_mux_policy =
+      PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  answerer_config.bundle_policy =
+      PeerConnectionInterface::kBundlePolicyMaxBundle;
+  answerer_config.use_datagram_transport_for_data_channels = true;
+  answerer_config.use_datagram_transport = true;
+
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfigAndMediaTransportFactory(
+      offerer_config, answerer_config,
+      loopback_media_transports()->first_factory(),
+      loopback_media_transports()->second_factory()));
+  ConnectFakeSignaling();
+
+  // Offer both media and data.
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+  caller()->CreateDataChannel();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Ensure that the data channel transport is ready.
+  loopback_media_transports()->SetState(webrtc::MediaTransportState::kWritable);
+  loopback_media_transports()->FlushAsyncInvokes();
+
+  ASSERT_NE(nullptr, caller()->data_channel());
+  ASSERT_TRUE_WAIT(callee()->data_channel() != nullptr, kDefaultTimeout);
+  EXPECT_TRUE_WAIT(caller()->data_observer()->IsOpen(), kDefaultTimeout);
+  EXPECT_TRUE_WAIT(callee()->data_observer()->IsOpen(), kDefaultTimeout);
+
+  // Both endpoints should agree to use datagram transport for data channels.
+  EXPECT_EQ(nullptr, caller()->pc()->GetSctpTransport());
+  EXPECT_EQ(nullptr, callee()->pc()->GetSctpTransport());
+
+  // Ensure data can be sent in both directions.
+  std::string data = "hello world";
+  caller()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, callee()->data_observer()->last_message(),
+                 kDefaultTimeout);
+  callee()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, caller()->data_observer()->last_message(),
+                 kDefaultTimeout);
+
+  // Media flow should not be impacted.
+  MediaExpectations media_expectations;
+  media_expectations.ExpectBidirectionalAudioAndVideo();
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+}
+
+TEST_P(PeerConnectionIntegrationTest,
+       DatagramTransportMediaWithDataChannelOnCallee) {
+  // Configure the caller to attempt use of datagram transport for media.
+  PeerConnectionInterface::RTCConfiguration offerer_config;
+  offerer_config.rtcp_mux_policy =
+      PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  offerer_config.bundle_policy =
+      PeerConnectionInterface::kBundlePolicyMaxBundle;
+  offerer_config.use_datagram_transport = true;
+
+  // Configure the callee to only use datagram transport for media and data
+  // channels.
+  PeerConnectionInterface::RTCConfiguration answerer_config;
+  answerer_config.rtcp_mux_policy =
+      PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  answerer_config.bundle_policy =
+      PeerConnectionInterface::kBundlePolicyMaxBundle;
+  answerer_config.use_datagram_transport = true;
+  answerer_config.use_datagram_transport_for_data_channels = true;
+
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfigAndMediaTransportFactory(
+      offerer_config, answerer_config,
+      loopback_media_transports()->first_factory(),
+      loopback_media_transports()->second_factory()));
+  ConnectFakeSignaling();
+
+  // Offer both media and data.
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+  caller()->CreateDataChannel();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Ensure that the data channel transport is ready.
+  loopback_media_transports()->SetState(webrtc::MediaTransportState::kWritable);
+  loopback_media_transports()->FlushAsyncInvokes();
+
+  ASSERT_NE(nullptr, caller()->data_channel());
+  ASSERT_TRUE_WAIT(callee()->data_channel() != nullptr, kDefaultTimeout);
+  EXPECT_TRUE_WAIT(caller()->data_observer()->IsOpen(), kDefaultTimeout);
+  EXPECT_TRUE_WAIT(callee()->data_observer()->IsOpen(), kDefaultTimeout);
+
+  // Both endpoints should agree to use SCTP for data channels.
+  EXPECT_NE(nullptr, caller()->pc()->GetSctpTransport());
+  EXPECT_NE(nullptr, callee()->pc()->GetSctpTransport());
+
+  // Ensure data can be sent in both directions.
+  std::string data = "hello world";
+  caller()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, callee()->data_observer()->last_message(),
+                 kDefaultTimeout);
+  callee()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, caller()->data_observer()->last_message(),
+                 kDefaultTimeout);
+
+  // Media flow should not be impacted.
+  MediaExpectations media_expectations;
+  media_expectations.ExpectBidirectionalAudioAndVideo();
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+}
+
+TEST_P(PeerConnectionIntegrationTest, DatagramTransportDataChannelAndMedia) {
+  // Configure the caller to use datagram transport for data channels and media.
+  PeerConnectionInterface::RTCConfiguration offerer_config;
+  offerer_config.rtcp_mux_policy =
+      PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  offerer_config.bundle_policy =
+      PeerConnectionInterface::kBundlePolicyMaxBundle;
+  offerer_config.use_datagram_transport_for_data_channels = true;
+  offerer_config.use_datagram_transport = true;
+
+  // Configure the callee to use datagram transport for data channels and media.
+  PeerConnectionInterface::RTCConfiguration answerer_config;
+  answerer_config.rtcp_mux_policy =
+      PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  answerer_config.bundle_policy =
+      PeerConnectionInterface::kBundlePolicyMaxBundle;
+  answerer_config.use_datagram_transport_for_data_channels = true;
+  answerer_config.use_datagram_transport = true;
+
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfigAndMediaTransportFactory(
+      offerer_config, answerer_config,
+      loopback_media_transports()->first_factory(),
+      loopback_media_transports()->second_factory()));
+  ConnectFakeSignaling();
+
+  // Offer both media and data.
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+  caller()->CreateDataChannel();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Ensure that the data channel transport is ready.
+  loopback_media_transports()->SetState(webrtc::MediaTransportState::kWritable);
+  loopback_media_transports()->FlushAsyncInvokes();
+
+  ASSERT_NE(nullptr, caller()->data_channel());
+  ASSERT_TRUE_WAIT(callee()->data_channel() != nullptr, kDefaultTimeout);
+  EXPECT_TRUE_WAIT(caller()->data_observer()->IsOpen(), kDefaultTimeout);
+  EXPECT_TRUE_WAIT(callee()->data_observer()->IsOpen(), kDefaultTimeout);
+
+  // Both endpoints should agree to use datagram transport for data channels.
+  EXPECT_EQ(nullptr, caller()->pc()->GetSctpTransport());
+  EXPECT_EQ(nullptr, callee()->pc()->GetSctpTransport());
+
+  // Ensure data can be sent in both directions.
+  std::string data = "hello world";
+  caller()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, callee()->data_observer()->last_message(),
+                 kDefaultTimeout);
+  callee()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, caller()->data_observer()->last_message(),
+                 kDefaultTimeout);
+
+  // Media flow should not be impacted.
+  MediaExpectations media_expectations;
+  media_expectations.ExpectBidirectionalAudioAndVideo();
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+}
+
 // Tests that data channels use SCTP instead of datagram transport if datagram
 // transport is configured in receive-only mode on the caller.
 TEST_P(PeerConnectionIntegrationTest,

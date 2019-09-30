@@ -136,6 +136,21 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
     return description;
   }
 
+  std::unique_ptr<cricket::SessionDescription>
+  CreateSessionDescriptionWithBundledData() {
+    auto description = CreateSessionDescriptionWithoutBundle();
+    AddDataSection(description.get(), kDataMid1,
+                   cricket::MediaProtocolType::kSctp, kIceUfrag1, kIcePwd1,
+                   cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_ACTPASS,
+                   nullptr);
+    cricket::ContentGroup bundle_group(cricket::GROUP_TYPE_BUNDLE);
+    bundle_group.AddContentName(kAudioMid1);
+    bundle_group.AddContentName(kVideoMid1);
+    bundle_group.AddContentName(kDataMid1);
+    description->AddGroup(bundle_group);
+    return description;
+  }
+
   void AddAudioSection(cricket::SessionDescription* description,
                        const std::string& mid,
                        const std::string& ufrag,
@@ -474,12 +489,18 @@ TEST_F(JsepTransportControllerTest,
   config.use_datagram_transport_for_data_channels = true;
   CreateJsepTransportController(config);
 
-  auto description = CreateSessionDescriptionWithBundleGroup();
+  auto description = CreateSessionDescriptionWithBundledData();
   AddCryptoSettings(description.get());
+
   absl::optional<cricket::OpaqueTransportParameters> params =
       transport_controller_->GetTransportParameters(kAudioMid1);
   for (auto& info : description->transport_infos()) {
     info.description.opaque_parameters = params;
+  }
+  for (cricket::ContentInfo& content_info : description->contents()) {
+    if (content_info.media_description()->type() == cricket::MEDIA_TYPE_DATA) {
+      content_info.media_description()->set_alt_protocol(params->protocol);
+    }
   }
 
   EXPECT_TRUE(transport_controller_
@@ -511,6 +532,40 @@ TEST_F(JsepTransportControllerTest,
   datagram_transport->set_state(MediaTransportState::kWritable);
   EXPECT_FALSE(transport_controller_->GetRtpTransport(kAudioMid1)
                    ->IsWritable(/*rtcp=*/false));
+}
+
+// An offer that bundles different alt-protocols should be rejected.
+TEST_F(JsepTransportControllerTest, CannotBundleDifferentAltProtocols) {
+  FakeMediaTransportFactory fake_media_transport_factory("transport_params");
+  JsepTransportController::Config config;
+  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  config.bundle_policy = PeerConnectionInterface::kBundlePolicyMaxBundle;
+  config.media_transport_factory = &fake_media_transport_factory;
+  config.use_datagram_transport = true;
+  config.use_datagram_transport_for_data_channels = true;
+  CreateJsepTransportController(config);
+
+  auto description = CreateSessionDescriptionWithBundledData();
+  AddCryptoSettings(description.get());
+
+  absl::optional<cricket::OpaqueTransportParameters> params =
+      transport_controller_->GetTransportParameters(kAudioMid1);
+  for (auto& info : description->transport_infos()) {
+    info.description.opaque_parameters = params;
+  }
+
+  // Append a different alt-protocol to each of the sections.
+  for (cricket::ContentInfo& content_info : description->contents()) {
+    content_info.media_description()->set_alt_protocol(params->protocol + "-" +
+                                                       content_info.name);
+  }
+
+  EXPECT_FALSE(transport_controller_
+                   ->SetLocalDescription(SdpType::kOffer, description.get())
+                   .ok());
+  EXPECT_FALSE(transport_controller_
+                   ->SetRemoteDescription(SdpType::kAnswer, description.get())
+                   .ok());
 }
 
 TEST_F(JsepTransportControllerTest, GetMediaTransportInCaller) {
@@ -2213,6 +2268,12 @@ class JsepTransportControllerDatagramTest
 
     for (auto& info : description->transport_infos()) {
       info.description.opaque_parameters = transport_params;
+    }
+    if (transport_params) {
+      for (auto& content_info : description->contents()) {
+        content_info.media_description()->set_alt_protocol(
+            transport_params->protocol);
+      }
     }
     return description;
   }
