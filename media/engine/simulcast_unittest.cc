@@ -153,6 +153,18 @@ TEST(SimulcastTest, GetConfigWithLimitedMaxLayersForResolution) {
   EXPECT_EQ(600u, streams[1].height);
 }
 
+TEST(SimulcastTest, GetConfigWithLowResolutionScreenshare) {
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-LegacySimulcastLayerLimit/Enabled/");
+  const size_t kMaxLayers = 3;
+  std::vector<VideoStream> streams = cricket::GetSimulcastConfig(
+      kMaxLayers, 100, 100, kBitratePriority, kQpMax, kScreenshare);
+
+  // Simulcast streams number is never decreased for screenshare,
+  // even for very low resolution.
+  EXPECT_GT(streams.size(), 1u);
+}
+
 TEST(SimulcastTest, GetConfigWithNotLimitedMaxLayersForResolution) {
   test::ScopedFieldTrials field_trials(
       "WebRTC-LegacySimulcastLayerLimit/Disabled/");

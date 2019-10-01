@@ -233,15 +233,15 @@ std::vector<webrtc::VideoStream> GetSimulcastConfig(
     bool temporal_layers_supported) {
   RTC_DCHECK(max_layers > 1 || is_screenshare_with_conference_mode);
 
-  // Some applications rely on the old behavior limiting the simulcast layer
-  // count based on the resolution automatically, which they can get through
-  // the WebRTC-LegacySimulcastLayerLimit field trial until they update.
-  max_layers = LimitSimulcastLayerCount(width, height, max_layers);
-
   if (is_screenshare_with_conference_mode) {
     return GetScreenshareLayers(max_layers, width, height, bitrate_priority,
                                 max_qp, temporal_layers_supported);
   } else {
+    // Some applications rely on the old behavior limiting the simulcast layer
+    // count based on the resolution automatically, which they can get through
+    // the WebRTC-LegacySimulcastLayerLimit field trial until they update.
+    max_layers = LimitSimulcastLayerCount(width, height, max_layers);
+
     return GetNormalSimulcastLayers(max_layers, width, height, bitrate_priority,
                                     max_qp, temporal_layers_supported);
   }
