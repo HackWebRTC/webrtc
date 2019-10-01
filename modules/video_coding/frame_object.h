@@ -18,20 +18,8 @@
 namespace webrtc {
 namespace video_coding {
 
-class PacketBuffer;
-
 class RtpFrameObject : public EncodedFrame {
  public:
-  // TODO(philipel): Remove this ctor.
-  RtpFrameObject(PacketBuffer* packet_buffer,
-                 uint16_t first_seq_num,
-                 uint16_t last_seq_num,
-                 int times_nacked,
-                 int64_t first_packet_received_time,
-                 int64_t last_packet_received_time,
-                 RtpPacketInfos packet_infos,
-                 rtc::scoped_refptr<EncodedImageBuffer> image_buffer);
-
   RtpFrameObject(
       uint16_t first_seq_num,
       uint16_t last_seq_num,
