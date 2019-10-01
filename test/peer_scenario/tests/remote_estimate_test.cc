@@ -41,7 +41,7 @@ absl::optional<RTPHeaderExtension> GetRtpPacketExtensions(
 }  // namespace
 
 TEST(RemoteEstimateEndToEnd, OfferedCapabilityIsInAnswer) {
-  PeerScenario s;
+  PeerScenario s(*test_info_);
 
   auto* caller = s.CreateClient(PeerScenarioClient::Config());
   auto* callee = s.CreateClient(PeerScenarioClient::Config());
@@ -74,7 +74,7 @@ TEST(RemoteEstimateEndToEnd, AudioUsesAbsSendTimeExtension) {
   ScopedFieldTrials trials("WebRTC-KeepAbsSendTimeExtension/Enabled/");
   // Defined before PeerScenario so it gets destructed after, to avoid use after free.
   rtc::Event received_abs_send_time;
-  PeerScenario s;
+  PeerScenario s(*test_info_);
 
   auto* caller = s.CreateClient(PeerScenarioClient::Config());
   auto* callee = s.CreateClient(PeerScenarioClient::Config());

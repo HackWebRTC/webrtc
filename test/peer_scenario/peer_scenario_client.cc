@@ -113,11 +113,14 @@ class LambdaPeerConnectionObserver final : public PeerConnectionObserver {
 };
 }  // namespace
 
-PeerScenarioClient::PeerScenarioClient(NetworkEmulationManager* net,
-                                       rtc::Thread* signaling_thread,
-                                       PeerScenarioClient::Config config)
+PeerScenarioClient::PeerScenarioClient(
+    NetworkEmulationManager* net,
+    rtc::Thread* signaling_thread,
+    std::unique_ptr<LogWriterFactoryInterface> log_writer_factory,
+    PeerScenarioClient::Config config)
     : endpoints_(CreateEndpoints(net, config.endpoints)),
       signaling_thread_(signaling_thread),
+      log_writer_factory_(std::move(log_writer_factory)),
       worker_thread_(rtc::Thread::Create()),
       handlers_(config.handlers),
       observer_(new LambdaPeerConnectionObserver(&handlers_)) {
@@ -193,6 +196,10 @@ PeerScenarioClient::PeerScenarioClient(NetworkEmulationManager* net,
                                cricket::PORTALLOCATOR_DISABLE_TCP);
   peer_connection_ =
       pc_factory_->CreatePeerConnection(config.rtc_config, std::move(pc_deps));
+  if (log_writer_factory_) {
+    peer_connection_->StartRtcEventLog(log_writer_factory_->Create(".rtc.dat"),
+                                       /*output_period_ms=*/1000);
+  }
 }
 
 EmulatedEndpoint* PeerScenarioClient::endpoint(int index) {

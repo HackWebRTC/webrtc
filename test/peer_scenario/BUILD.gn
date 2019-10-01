@@ -24,6 +24,8 @@ if (rtc_include_tests) {
       "signaling_route.h",
     ]
     deps = [
+      "..:fileutils",
+      "..:test_support",
       "../:video_test_common",
       "../../api:libjingle_peerconnection_api",
       "../../api:network_emulation_manager_api",
@@ -41,8 +43,11 @@ if (rtc_include_tests) {
       "../../p2p:rtc_p2p",
       "../../pc:pc_test_utils",
       "../../pc:rtc_pc_base",
+      "../../rtc_base:stringutils",
       "..//network:emulated_network",
+      "../logging:log_writer",
       "../scenario",
+      "//third_party/abseil-cpp/absl/flags:flag",
       "//third_party/abseil-cpp/absl/memory",
     ]
   }

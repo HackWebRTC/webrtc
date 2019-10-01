@@ -18,7 +18,7 @@ TEST(PeerScenarioQualityTest, PsnrIsCollected) {
   VideoQualityAnalyzerConfig analyzer_config;
   analyzer_config.thread = rtc::Thread::Current();
   VideoQualityAnalyzer analyzer(analyzer_config);
-  PeerScenario s;
+  PeerScenario s(*test_info_);
   auto caller = s.CreateClient(PeerScenarioClient::Config());
   auto callee = s.CreateClient(PeerScenarioClient::Config());
   PeerScenarioClient::VideoSendTrackConfig video_conf;

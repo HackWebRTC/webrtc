@@ -9,16 +9,60 @@
  */
 #include "test/peer_scenario/peer_scenario.h"
 
+#include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
+#include "rtc_base/string_encode.h"
+#include "rtc_base/strings/string_builder.h"
+#include "test/logging/file_log_writer.h"
+#include "test/testsupport/file_utils.h"
+
+ABSL_FLAG(bool, peer_logs, false, "Save logs from peer scenario framework.");
+ABSL_FLAG(std::string,
+          peer_logs_root,
+          "",
+          "Output root path, based on project root if unset.");
 
 namespace webrtc {
 namespace test {
+namespace {
+std::unique_ptr<FileLogWriterFactory> GetPeerScenarioLogManager(
+    std::string file_name) {
+  if (absl::GetFlag(FLAGS_peer_logs) && !file_name.empty()) {
+    std::string output_root = absl::GetFlag(FLAGS_peer_logs_root);
+    if (output_root.empty())
+      output_root = OutputPath() + "output_data/";
 
-PeerScenario::PeerScenario() : signaling_thread_(rtc::Thread::Current()) {}
+    auto base_filename = output_root + file_name + ".";
+    RTC_LOG(LS_INFO) << "Saving peer scenario logs to: " << base_filename;
+    return std::make_unique<FileLogWriterFactory>(base_filename);
+  }
+  return nullptr;
+}
+}  // namespace
+
+PeerScenario::PeerScenario(const testing::TestInfo& test_info)
+    : PeerScenario(std::string(test_info.test_suite_name()) + "/" +
+                   test_info.name()) {}
+
+PeerScenario::PeerScenario(std::string file_name)
+    : PeerScenario(GetPeerScenarioLogManager(file_name)) {}
+
+PeerScenario::PeerScenario(
+    std::unique_ptr<LogWriterFactoryInterface> log_writer_manager)
+    : signaling_thread_(rtc::Thread::Current()),
+      log_writer_manager_(std::move(log_writer_manager)) {}
 
 PeerScenarioClient* PeerScenario::CreateClient(
     PeerScenarioClient::Config config) {
-  peer_clients_.emplace_back(net(), thread(), config);
+  return CreateClient(
+      std::string("client_") + rtc::ToString(peer_clients_.size() + 1), config);
+}
+
+PeerScenarioClient* PeerScenario::CreateClient(
+    std::string name,
+    PeerScenarioClient::Config config) {
+  peer_clients_.emplace_back(net(), thread(), GetLogWriterFactory(name),
+                             config);
   return &peer_clients_.back();
 }
 
@@ -69,6 +113,14 @@ bool PeerScenario::WaitAndProcess(rtc::Event* event, TimeDelta max_duration) {
 
 void PeerScenario::ProcessMessages(TimeDelta duration) {
   thread()->ProcessMessages(duration.ms());
+}
+
+std::unique_ptr<LogWriterFactoryInterface> PeerScenario::GetLogWriterFactory(
+    std::string name) {
+  if (!log_writer_manager_ || name.empty())
+    return nullptr;
+  return std::make_unique<LogWriterFactoryAddPrefix>(log_writer_manager_.get(),
+                                                     name);
 }
 
 }  // namespace test

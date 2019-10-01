@@ -21,6 +21,7 @@
 #include "api/peer_connection_interface.h"
 #include "api/test/network_emulation_manager.h"
 #include "pc/test/frame_generator_capturer_video_track_source.h"
+#include "test/logging/log_writer.h"
 
 namespace webrtc {
 namespace test {
@@ -75,7 +76,6 @@ class PeerScenarioClient {
       };
       absl::optional<PulsedNoise> pulsed_noise = PulsedNoise();
     } audio;
-    std::string client_name;
     // The created endpoints can be accessed using the map key as |index| in
     // PeerScenarioClient::endpoint(index).
     std::map<int, EmulatedEndpointConfig> endpoints = {
@@ -102,9 +102,11 @@ class PeerScenarioClient {
     RtpSenderInterface* sender;
   };
 
-  PeerScenarioClient(NetworkEmulationManager* net,
-                     rtc::Thread* signaling_thread,
-                     Config config);
+  PeerScenarioClient(
+      NetworkEmulationManager* net,
+      rtc::Thread* signaling_thread,
+      std::unique_ptr<LogWriterFactoryInterface> log_writer_factory,
+      Config config);
 
   PeerConnectionFactoryInterface* factory() { return pc_factory_.get(); }
   PeerConnectionInterface* pc() {
@@ -143,6 +145,7 @@ class PeerScenarioClient {
  private:
   const std::map<int, EmulatedEndpoint*> endpoints_;
   rtc::Thread* const signaling_thread_;
+  const std::unique_ptr<LogWriterFactoryInterface> log_writer_factory_;
   const std::unique_ptr<rtc::Thread> worker_thread_;
   CallbackHandlers handlers_ RTC_GUARDED_BY(signaling_thread_);
   const std::unique_ptr<PeerConnectionObserver> observer_;
