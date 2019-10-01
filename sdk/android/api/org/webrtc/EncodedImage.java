@@ -71,6 +71,7 @@ public class EncodedImage implements RefCounted {
 
   // A false return value means that the encoder expects that the buffer is no longer used after
   // VideoEncoder.Callback.onEncodedFrame returns.
+  @CalledByNative
   boolean maybeRetain() {
     if (supportsRetain) {
       retain();

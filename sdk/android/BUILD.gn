@@ -544,6 +544,7 @@ if (current_os == "linux" || is_android) {
       "src/jni/pc/audio.h",
       "src/jni/pc/logging.cc",
       "src/jni/pc/video.h",
+      "src/jni/scoped_java_ref_counted.cc",
       "src/jni/scoped_java_ref_counted.h",
     ]
 

@@ -31,14 +31,7 @@ class ScopedJavaRefCounted {
   ScopedJavaRefCounted(const ScopedJavaRefCounted& other) = delete;
   ScopedJavaRefCounted& operator=(const ScopedJavaRefCounted&) = delete;
 
-  ~ScopedJavaRefCounted() {
-    if (!j_object_.is_null()) {
-      JNIEnv* jni = AttachCurrentThreadIfNeeded();
-      Java_RefCounted_release(jni, j_object_);
-      CHECK_EXCEPTION(jni)
-          << "Unexpected java exception from ScopedJavaRefCounted.release()";
-    }
-  }
+  ~ScopedJavaRefCounted();
 
  private:
   // Adopts reference.
