@@ -90,7 +90,8 @@ VideoEncoder::EncoderInfo::EncoderInfo()
       has_internal_source(false),
       fps_allocation{absl::InlinedVector<uint8_t, kMaxTemporalStreams>(
           1,
-          kMaxFramerateFraction)} {}
+          kMaxFramerateFraction)},
+      supports_simulcast(false) {}
 
 VideoEncoder::EncoderInfo::EncoderInfo(const EncoderInfo&) = default;
 

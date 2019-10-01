@@ -623,6 +623,7 @@ VideoEncoder::EncoderInfo H264EncoderImpl::GetEncoderInfo() const {
       VideoEncoder::ScalingSettings(kLowH264QpThreshold, kHighH264QpThreshold);
   info.is_hardware_accelerated = false;
   info.has_internal_source = false;
+  info.supports_simulcast = true;
   return info;
 }
 

@@ -216,6 +216,13 @@ class RTC_EXPORT VideoEncoder {
 
     // Recommended bitrate limits for different resolutions.
     std::vector<ResolutionBitrateLimits> resolution_bitrate_limits;
+
+    // If true, this encoder has internal support for generating simulcast
+    // streams. Otherwise, an adapter class will be needed.
+    // Even if true, the config provided to InitEncode() might not be supported,
+    // in such case the encoder should return
+    // WEBRTC_VIDEO_CODEC_ERR_SIMULCAST_PARAMETERS_NOT_SUPPORTED.
+    bool supports_simulcast;
   };
 
   struct RateControlParameters {

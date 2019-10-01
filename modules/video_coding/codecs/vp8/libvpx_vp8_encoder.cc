@@ -1212,6 +1212,7 @@ VideoEncoder::EncoderInfo LibvpxVp8Encoder::GetEncoderInfo() const {
       rate_control_settings_.LibvpxVp8TrustedRateController();
   info.is_hardware_accelerated = false;
   info.has_internal_source = false;
+  info.supports_simulcast = true;
 
   const bool enable_scaling = encoders_.size() == 1 &&
                               vpx_configs_[0].rc_dropframe_thresh > 0 &&

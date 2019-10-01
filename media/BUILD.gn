@@ -169,6 +169,7 @@ rtc_static_library("rtc_simulcast_encoder_adapter") {
     "../api/video:video_frame",
     "../api/video:video_frame_i420",
     "../api/video:video_rtp_headers",
+    "../api/video_codecs:rtc_software_fallback_wrappers",
     "../api/video_codecs:video_codecs_api",
     "../modules/video_coding:video_codec_interface",
     "../modules/video_coding:video_coding_utility",
