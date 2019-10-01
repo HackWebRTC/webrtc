@@ -202,7 +202,7 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
                           num_capture_channels_),
       render_signal_analyzer_(config_),
       residual_echo_estimators_(num_capture_channels_),
-      aec_state_(config_),
+      aec_state_(config_, num_capture_channels_),
       e_old_(num_capture_channels_),
       y_old_(num_capture_channels_),
       e_heap_(NumChannelsOnHeap(num_capture_channels_)),
@@ -388,7 +388,7 @@ void EchoRemoverImpl::ProcessCapture(
   // TODO(bugs.webrtc.org/10913): Take all subtractors into account.
   aec_state_.Update(external_delay, subtractor_.FilterFrequencyResponse(),
                     subtractor_.FilterImpulseResponse(), *render_buffer, E2[0],
-                    Y2[0], subtractor_output[0], y0);
+                    Y2[0], subtractor_output);
 
   // Choose the linear output.
   const auto& Y_fft = aec_state_.UseLinearFilterOutput() ? E : Y;

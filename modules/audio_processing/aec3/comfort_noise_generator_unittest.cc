@@ -37,7 +37,7 @@ TEST(ComfortNoiseGenerator, NullLowerBandNoise) {
   FftData noise;
   EXPECT_DEATH(
       ComfortNoiseGenerator(DetectOptimization(), 42)
-          .Compute(AecState(EchoCanceller3Config{}), N2, nullptr, &noise),
+          .Compute(AecState(EchoCanceller3Config{}, 1), N2, nullptr, &noise),
       "");
 }
 
@@ -46,7 +46,7 @@ TEST(ComfortNoiseGenerator, NullUpperBandNoise) {
   FftData noise;
   EXPECT_DEATH(
       ComfortNoiseGenerator(DetectOptimization(), 42)
-          .Compute(AecState(EchoCanceller3Config{}), N2, &noise, nullptr),
+          .Compute(AecState(EchoCanceller3Config{}, 1), N2, &noise, nullptr),
       "");
 }
 
@@ -54,7 +54,7 @@ TEST(ComfortNoiseGenerator, NullUpperBandNoise) {
 
 TEST(ComfortNoiseGenerator, CorrectLevel) {
   ComfortNoiseGenerator cng(DetectOptimization(), 42);
-  AecState aec_state(EchoCanceller3Config{});
+  AecState aec_state(EchoCanceller3Config{}, 1);
 
   std::array<float, kFftLengthBy2Plus1> N2;
   N2.fill(1000.f * 1000.f);

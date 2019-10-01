@@ -55,7 +55,7 @@ float RunSubtractorTest(int num_blocks_to_process,
   std::array<float, kFftLengthBy2Plus1> Y2;
   std::array<float, kFftLengthBy2Plus1> E2_main;
   std::array<float, kFftLengthBy2Plus1> E2_shadow;
-  AecState aec_state(config);
+  AecState aec_state(config, kNumChannels);
   x_old.fill(0.f);
   Y2.fill(0.f);
   E2_main.fill(0.f);
@@ -93,7 +93,7 @@ float RunSubtractorTest(int num_blocks_to_process,
     aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse(),
                      subtractor.FilterImpulseResponse(),
                      *render_delay_buffer->GetRenderBuffer(), E2_main, Y2,
-                     output[0], y[0]);
+                     output);
   }
 
   const float output_power =
@@ -139,7 +139,7 @@ TEST(Subtractor, WrongCaptureSize) {
 
   EXPECT_DEATH(
       subtractor.Process(*render_delay_buffer->GetRenderBuffer(), y,
-                         render_signal_analyzer, AecState(config), output),
+                         render_signal_analyzer, AecState(config, 1), output),
       "");
 }
 

@@ -64,7 +64,6 @@ void RunFilterUpdateTest(int num_blocks_to_process,
       std::vector<std::vector<float>>(num_render_channels,
                                       std::vector<float>(kBlockSize, 0.f)));
   std::array<float, kBlockSize> y;
-  AecState aec_state(config);
   RenderSignalAnalyzer render_signal_analyzer(config);
   std::array<float, kFftLength> s;
   FftData S;

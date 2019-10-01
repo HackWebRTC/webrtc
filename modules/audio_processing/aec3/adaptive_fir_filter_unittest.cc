@@ -298,6 +298,7 @@ TEST(AdaptiveFirFilter, FilterSize) {
 // adapt its coefficients.
 TEST(AdaptiveFirFilter, FilterAndAdapt) {
   constexpr size_t kNumRenderChannels = 1;
+  constexpr size_t kNumCaptureChannels = 1;
   constexpr int kSampleRateHz = 48000;
   constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
 
@@ -325,12 +326,12 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
                      kNumRenderChannels, std::vector<float>(kBlockSize, 0.f)));
   std::vector<float> n(kBlockSize, 0.f);
   std::vector<float> y(kBlockSize, 0.f);
-  AecState aec_state(EchoCanceller3Config{});
+  AecState aec_state(EchoCanceller3Config{}, kNumCaptureChannels);
   RenderSignalAnalyzer render_signal_analyzer(config);
   absl::optional<DelayEstimate> delay_estimate;
   std::vector<float> e(kBlockSize, 0.f);
   std::array<float, kFftLength> s_scratch;
-  SubtractorOutput output;
+  std::vector<SubtractorOutput> output(kNumCaptureChannels);
   FftData S;
   FftData G;
   FftData E;
@@ -344,7 +345,9 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
   Y2.fill(0.f);
   E2_main.fill(0.f);
   E2_shadow.fill(0.f);
-  output.Reset();
+  for (auto& subtractor_output : output) {
+    subtractor_output.Reset();
+  }
 
   constexpr float kScale = 1.0f / kFftLengthBy2;
 
@@ -385,7 +388,7 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
                     [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
       fft.ZeroPaddedFft(e, Aec3Fft::Window::kRectangular, &E);
       for (size_t k = 0; k < kBlockSize; ++k) {
-        output.s_main[k] = kScale * s_scratch[k + kFftLengthBy2];
+        output[0].s_main[k] = kScale * s_scratch[k + kFftLengthBy2];
       }
 
       std::array<float, kFftLengthBy2Plus1> render_power;
@@ -398,7 +401,7 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
 
       filter.ComputeFrequencyResponse(&H2);
       aec_state.Update(delay_estimate, H2, h, *render_buffer, E2_main, Y2,
-                       output, y);
+                       output);
     }
     // Verify that the filter is able to perform well.
     EXPECT_LT(1000 * std::inner_product(e.begin(), e.end(), e.begin(), 0.f),

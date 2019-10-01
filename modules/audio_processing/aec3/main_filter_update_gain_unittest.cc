@@ -83,21 +83,23 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   config.delay.default_delay = 1;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, kSampleRateHz, kNumChannels));
-  AecState aec_state(config);
+  AecState aec_state(config, kNumChannels);
   RenderSignalAnalyzer render_signal_analyzer(config);
   absl::optional<DelayEstimate> delay_estimate;
   std::array<float, kFftLength> s_scratch;
   std::array<float, kBlockSize> s;
   FftData S;
   FftData G;
-  SubtractorOutput output;
-  output.Reset();
-  FftData& E_main = output.E_main;
+  std::vector<SubtractorOutput> output(kNumChannels);
+  for (auto& subtractor_output : output) {
+    subtractor_output.Reset();
+  }
+  FftData& E_main = output[0].E_main;
   FftData E_shadow;
   std::array<float, kFftLengthBy2Plus1> Y2;
-  std::array<float, kFftLengthBy2Plus1>& E2_main = output.E2_main;
-  std::array<float, kBlockSize>& e_main = output.e_main;
-  std::array<float, kBlockSize>& e_shadow = output.e_shadow;
+  std::array<float, kFftLengthBy2Plus1>& E2_main = output[0].E2_main;
+  std::array<float, kBlockSize>& e_main = output[0].e_main;
+  std::array<float, kBlockSize>& e_shadow = output[0].e_shadow;
   Y2.fill(0.f);
 
   constexpr float kScale = 1.0f / kFftLengthBy2;
@@ -165,8 +167,8 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     fft.ZeroPaddedFft(e_shadow, Aec3Fft::Window::kRectangular, &E_shadow);
 
     // Compute spectra for future use.
-    E_main.Spectrum(Aec3Optimization::kNone, output.E2_main);
-    E_shadow.Spectrum(Aec3Optimization::kNone, output.E2_shadow);
+    E_main.Spectrum(Aec3Optimization::kNone, output[0].E2_main);
+    E_shadow.Spectrum(Aec3Optimization::kNone, output[0].E2_shadow);
 
     // Adapt the shadow filter.
     std::array<float, kFftLengthBy2Plus1> render_power;
@@ -182,7 +184,7 @@ void RunFilterUpdateTest(int num_blocks_to_process,
 
     std::array<float, kFftLengthBy2Plus1> erl;
     ComputeErl(optimization, H2, erl);
-    main_gain.Compute(render_power, render_signal_analyzer, output, erl,
+    main_gain.Compute(render_power, render_signal_analyzer, output[0], erl,
                       main_filter.SizePartitions(), saturation, &G);
     main_filter.Adapt(*render_delay_buffer->GetRenderBuffer(), G, &h);
 
@@ -192,7 +194,7 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     main_filter.ComputeFrequencyResponse(&H2);
     aec_state.Update(delay_estimate, H2, h,
                      *render_delay_buffer->GetRenderBuffer(), E2_main, Y2,
-                     output, y);
+                     output);
   }
 
   std::copy(e_main.begin(), e_main.end(), e_last_block->begin());
