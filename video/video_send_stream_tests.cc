@@ -769,6 +769,21 @@ class FlexfecObserver : public test::EndToEndTest {
             std::make_unique<SimulatedNetwork>(config)));
   }
 
+  std::unique_ptr<test::PacketTransport> CreateReceiveTransport(
+      TaskQueueBase* task_queue) override {
+    // We need the RTT to be >200 ms to send FEC and the network delay for the
+    // send transport is 100 ms, so add 100 ms (but no loss) on the return link.
+    BuiltInNetworkBehaviorConfig config;
+    config.loss_percent = 0;
+    config.queue_delay_ms = 100;
+    return std::make_unique<test::PacketTransport>(
+        task_queue, nullptr, this, test::PacketTransport::kReceiver,
+        VideoSendStreamTest::payload_type_map_,
+        std::make_unique<FakeNetworkPipe>(
+            Clock::GetRealTimeClock(),
+            std::make_unique<SimulatedNetwork>(config)));
+  }
+
   void ModifyVideoConfigs(
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStream::Config>* receive_configs,
