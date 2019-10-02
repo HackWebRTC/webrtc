@@ -115,6 +115,8 @@ class AudioEncoderOpusImpl final : public AudioEncoder {
   void SetReceiverFrameLengthRange(int min_frame_length_ms,
                                    int max_frame_length_ms) override;
   ANAStats GetANAStats() const override;
+  absl::optional<std::pair<TimeDelta, TimeDelta> > GetFrameLengthRange()
+      const override;
   rtc::ArrayView<const int> supported_frame_lengths_ms() const {
     return config_.supported_frame_lengths_ms;
   }

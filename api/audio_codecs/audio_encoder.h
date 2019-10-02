@@ -13,11 +13,13 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/call/bitrate_allocation.h"
+#include "api/units/time_delta.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/deprecation.h"
 
@@ -240,6 +242,12 @@ class AudioEncoder {
 
   // Get statistics related to audio network adaptation.
   virtual ANAStats GetANAStats() const;
+
+  // The range of frame lengths that are supported or nullopt if there's no sch
+  // information. This is used to calculated the full bitrate range, including
+  // overhead.
+  virtual absl::optional<std::pair<TimeDelta, TimeDelta>> GetFrameLengthRange()
+      const;
 
  protected:
   // Subclasses implement this to perform the actual encoding. Called by

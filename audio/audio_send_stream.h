@@ -12,6 +12,7 @@
 #define AUDIO_AUDIO_SEND_STREAM_H_
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "audio/audio_level.h"
@@ -133,7 +134,8 @@ class AudioSendStream final : public webrtc::AudioSendStream,
 
   // Returns bitrate constraints, maybe including overhead when enabled by
   // field trial.
-  TargetAudioBitrateConstraints GetMinMaxBitrateConstraints() const;
+  TargetAudioBitrateConstraints GetMinMaxBitrateConstraints() const
+      RTC_RUN_ON(worker_queue_);
 
   // Sets per-packet overhead on encoded (for ANA) based on current known values
   // of transport and packetization overheads.
@@ -157,6 +159,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   const std::unique_ptr<voe::ChannelSendInterface> channel_send_;
   RtcEventLog* const event_log_;
+  const bool use_legacy_overhead_calculation_;
 
   int encoder_sample_rate_hz_ = 0;
   size_t encoder_num_channels_ = 0;
@@ -204,6 +207,8 @@ class AudioSendStream final : public webrtc::AudioSendStream,
 
   bool registered_with_allocator_ RTC_GUARDED_BY(worker_queue_) = false;
   size_t total_packet_overhead_bytes_ RTC_GUARDED_BY(worker_queue_) = 0;
+  absl::optional<std::pair<TimeDelta, TimeDelta>> frame_length_range_
+      RTC_GUARDED_BY(worker_queue_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioSendStream);
 };

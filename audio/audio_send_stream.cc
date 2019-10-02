@@ -133,6 +133,8 @@ AudioSendStream::AudioSendStream(
       audio_state_(audio_state),
       channel_send_(std::move(channel_send)),
       event_log_(event_log),
+      use_legacy_overhead_calculation_(
+          !field_trial::IsDisabled("WebRTC-Audio-LegacyOverhead")),
       bitrate_allocator_(bitrate_allocator),
       rtp_transport_(rtp_transport),
       packet_loss_tracker_(kPacketLossTrackerMaxWindowSizeMs,
@@ -481,6 +483,7 @@ void AudioSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
 }
 
 uint32_t AudioSendStream::OnBitrateUpdated(BitrateAllocationUpdate update) {
+  RTC_DCHECK_RUN_ON(worker_queue_);
   // Pick a target bitrate between the constraints. Overrules the allocator if
   // it 1) allocated a bitrate of zero to disable the stream or 2) allocated a
   // higher than max to allow for e.g. extra FEC.
@@ -666,6 +669,11 @@ bool AudioSendStream::SetupSendCodec(AudioSendStream* stream,
       encoder->OnReceivedOverhead(stream->GetPerPacketOverheadBytes());
     }
   }
+  stream->worker_queue_->PostTask(
+      [stream, length_range = encoder->GetFrameLengthRange()] {
+        RTC_DCHECK_RUN_ON(stream->worker_queue_);
+        stream->frame_length_range_ = length_range;
+      });
 
   stream->StoreEncoderProperties(encoder->SampleRateHz(),
                                  encoder->NumChannels());
@@ -872,20 +880,25 @@ AudioSendStream::GetMinMaxBitrateConstraints() const {
   if (allocation_settings_.MaxBitrate())
     constraints.max = *allocation_settings_.MaxBitrate();
 
-  RTC_DCHECK_GE(constraints.min.bps(), 0);
-  RTC_DCHECK_GE(constraints.max.bps(), 0);
-  RTC_DCHECK_GE(constraints.max.bps(), constraints.min.bps());
-
-  // TODO(srte,dklee): Replace these with proper overhead calculations.
+  RTC_DCHECK_GE(constraints.min, DataRate::Zero());
+  RTC_DCHECK_GE(constraints.max, DataRate::Zero());
+  RTC_DCHECK_GE(constraints.max, constraints.min);
   if (allocation_settings_.IncludeOverheadInAudioAllocation()) {
-    // OverheadPerPacket = Ipv4(20B) + UDP(8B) + SRTP(10B) + RTP(12)
-    const DataSize kOverheadPerPacket = DataSize::bytes(20 + 8 + 10 + 12);
-    const TimeDelta kMaxFrameLength = TimeDelta::ms(60);  // Based on Opus spec
-    const DataRate kMinOverhead = kOverheadPerPacket / kMaxFrameLength;
-    constraints.min += kMinOverhead;
-    // TODO(dklee): This is obviously overly conservative to avoid exceeding max
-    // bitrate. Carefully reconsider the logic when addressing todo above.
-    constraints.max += kMinOverhead;
+    if (use_legacy_overhead_calculation_) {
+      // OverheadPerPacket = Ipv4(20B) + UDP(8B) + SRTP(10B) + RTP(12)
+      const DataSize kOverheadPerPacket = DataSize::bytes(20 + 8 + 10 + 12);
+      const TimeDelta kMaxFrameLength =
+          TimeDelta::ms(60);  // Based on Opus spec
+      const DataRate kMinOverhead = kOverheadPerPacket / kMaxFrameLength;
+      constraints.min += kMinOverhead;
+      constraints.max += kMinOverhead;
+    } else {
+      RTC_DCHECK(frame_length_range_);
+      const DataSize kOverheadPerPacket =
+          DataSize::bytes(total_packet_overhead_bytes_);
+      constraints.min += kOverheadPerPacket / frame_length_range_->second;
+      constraints.max += kOverheadPerPacket / frame_length_range_->first;
+    }
   }
   return constraints;
 }
