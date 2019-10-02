@@ -73,6 +73,7 @@ const char kNoMid[] = "";
 
 using ::testing::_;
 using ::testing::AllOf;
+using ::testing::Contains;
 using ::testing::ElementsAreArray;
 using ::testing::Field;
 using ::testing::NiceMock;
@@ -153,7 +154,8 @@ class MockRtpPacketPacer : public RtpPacketSender {
   MockRtpPacketPacer() {}
   virtual ~MockRtpPacketPacer() {}
 
-  MOCK_METHOD1(EnqueuePacket, void(std::unique_ptr<RtpPacketToSend>));
+  MOCK_METHOD1(EnqueuePackets,
+               void(std::vector<std::unique_ptr<RtpPacketToSend>>));
 
   MOCK_METHOD2(CreateProbeCluster, void(int bitrate_bps, int cluster_id));
 
@@ -694,9 +696,9 @@ TEST_P(RtpSenderTest, SendsPacketsWithTransportSequenceNumber) {
 
   EXPECT_CALL(
       mock_paced_sender_,
-      EnqueuePacket(
-          AllOf(Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc)),
-                Pointee(Property(&RtpPacketToSend::SequenceNumber, kSeqNum)))));
+      EnqueuePackets(Contains(AllOf(
+          Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc)),
+          Pointee(Property(&RtpPacketToSend::SequenceNumber, kSeqNum))))));
   auto packet = SendGenericPacket();
   packet->set_packet_type(RtpPacketToSend::Type::kVideo);
   // Transport sequence number is set by PacketRouter, before TrySendPacket().
@@ -729,8 +731,8 @@ TEST_P(RtpSenderTest, WritesPacerExitToTimingExtension) {
   const int kStoredTimeInMs = 100;
   packet->set_packet_type(RtpPacketToSend::Type::kVideo);
   packet->set_allow_retransmission(true);
-  EXPECT_CALL(mock_paced_sender_,
-              EnqueuePacket(Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc))));
+  EXPECT_CALL(mock_paced_sender_, EnqueuePackets(Contains(Pointee(Property(
+                                      &RtpPacketToSend::Ssrc, kSsrc)))));
   EXPECT_TRUE(
       rtp_sender_->SendToNetwork(std::make_unique<RtpPacketToSend>(*packet)));
   fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
@@ -765,9 +767,8 @@ TEST_P(RtpSenderTest, WritesNetwork2ToTimingExtensionWithPacer) {
 
     packet->set_packet_type(RtpPacketToSend::Type::kVideo);
     packet->set_allow_retransmission(true);
-    EXPECT_CALL(
-        mock_paced_sender_,
-        EnqueuePacket(Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc))));
+    EXPECT_CALL(mock_paced_sender_, EnqueuePackets(Contains(Pointee(Property(
+                                        &RtpPacketToSend::Ssrc, kSsrc)))));
     EXPECT_TRUE(
         rtp_sender_->SendToNetwork(std::make_unique<RtpPacketToSend>(*packet)));
     fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
@@ -825,18 +826,18 @@ TEST_P(RtpSenderTest, TrafficSmoothingWithExtensions) {
   size_t packet_size = packet->size();
 
   const int kStoredTimeInMs = 100;
-    EXPECT_CALL(
-        mock_paced_sender_,
-        EnqueuePacket(AllOf(
-            Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc)),
-            Pointee(Property(&RtpPacketToSend::SequenceNumber, kSeqNum)))));
-    packet->set_packet_type(RtpPacketToSend::Type::kVideo);
-    packet->set_allow_retransmission(true);
-    EXPECT_TRUE(
-        rtp_sender_->SendToNetwork(std::make_unique<RtpPacketToSend>(*packet)));
-    EXPECT_EQ(0, transport_.packets_sent());
-    fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
-    rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
+  EXPECT_CALL(
+      mock_paced_sender_,
+      EnqueuePackets(Contains(AllOf(
+          Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc)),
+          Pointee(Property(&RtpPacketToSend::SequenceNumber, kSeqNum))))));
+  packet->set_packet_type(RtpPacketToSend::Type::kVideo);
+  packet->set_allow_retransmission(true);
+  EXPECT_TRUE(
+      rtp_sender_->SendToNetwork(std::make_unique<RtpPacketToSend>(*packet)));
+  EXPECT_EQ(0, transport_.packets_sent());
+  fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
+  rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
 
   // Process send bucket. Packet should now be sent.
   EXPECT_EQ(1, transport_.packets_sent());
@@ -869,17 +870,17 @@ TEST_P(RtpSenderTest, TrafficSmoothingRetransmits) {
   size_t packet_size = packet->size();
 
   // Packet should be stored in a send bucket.
-    EXPECT_CALL(
-        mock_paced_sender_,
-        EnqueuePacket(AllOf(
-            Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc)),
-            Pointee(Property(&RtpPacketToSend::SequenceNumber, kSeqNum)))));
-    packet->set_packet_type(RtpPacketToSend::Type::kVideo);
-    packet->set_allow_retransmission(true);
-    EXPECT_TRUE(
-        rtp_sender_->SendToNetwork(std::make_unique<RtpPacketToSend>(*packet)));
-    // Immediately process send bucket and send packet.
-    rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
+  EXPECT_CALL(
+      mock_paced_sender_,
+      EnqueuePackets(Contains(AllOf(
+          Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc)),
+          Pointee(Property(&RtpPacketToSend::SequenceNumber, kSeqNum))))));
+  packet->set_packet_type(RtpPacketToSend::Type::kVideo);
+  packet->set_allow_retransmission(true);
+  EXPECT_TRUE(
+      rtp_sender_->SendToNetwork(std::make_unique<RtpPacketToSend>(*packet)));
+  // Immediately process send bucket and send packet.
+  rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
 
   EXPECT_EQ(1, transport_.packets_sent());
 
@@ -893,9 +894,9 @@ TEST_P(RtpSenderTest, TrafficSmoothingRetransmits) {
     packet->set_retransmitted_sequence_number(kSeqNum);
     EXPECT_CALL(
         mock_paced_sender_,
-        EnqueuePacket(AllOf(
+        EnqueuePackets(Contains(AllOf(
             Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc)),
-            Pointee(Property(&RtpPacketToSend::SequenceNumber, kSeqNum)))));
+            Pointee(Property(&RtpPacketToSend::SequenceNumber, kSeqNum))))));
     EXPECT_EQ(static_cast<int>(packet_size),
               rtp_sender_->ReSendPacket(kSeqNum));
     EXPECT_EQ(1, transport_.packets_sent());
@@ -948,19 +949,19 @@ TEST_P(RtpSenderTest, SendPadding) {
   const int kStoredTimeInMs = 100;
 
   // Packet should be stored in a send bucket.
-    EXPECT_CALL(
-        mock_paced_sender_,
-        EnqueuePacket(AllOf(
-            Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc)),
-            Pointee(Property(&RtpPacketToSend::SequenceNumber, kSeqNum)))));
-    packet->set_packet_type(RtpPacketToSend::Type::kVideo);
-    packet->set_allow_retransmission(true);
-    EXPECT_TRUE(
-        rtp_sender_->SendToNetwork(std::make_unique<RtpPacketToSend>(*packet)));
-    EXPECT_EQ(total_packets_sent, transport_.packets_sent());
-    fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
-    rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
-    ++seq_num;
+  EXPECT_CALL(
+      mock_paced_sender_,
+      EnqueuePackets(Contains(AllOf(
+          Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc)),
+          Pointee(Property(&RtpPacketToSend::SequenceNumber, kSeqNum))))));
+  packet->set_packet_type(RtpPacketToSend::Type::kVideo);
+  packet->set_allow_retransmission(true);
+  EXPECT_TRUE(
+      rtp_sender_->SendToNetwork(std::make_unique<RtpPacketToSend>(*packet)));
+  EXPECT_EQ(total_packets_sent, transport_.packets_sent());
+  fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
+  rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
+  ++seq_num;
 
   // Packet should now be sent. This test doesn't verify the regular video
   // packet, since it is tested in another test.
@@ -1006,9 +1007,9 @@ TEST_P(RtpSenderTest, SendPadding) {
     packet->set_allow_retransmission(true);
     EXPECT_CALL(
         mock_paced_sender_,
-        EnqueuePacket(AllOf(
+        EnqueuePackets(Contains(AllOf(
             Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc)),
-            Pointee(Property(&RtpPacketToSend::SequenceNumber, seq_num)))));
+            Pointee(Property(&RtpPacketToSend::SequenceNumber, seq_num))))));
     EXPECT_TRUE(
         rtp_sender_->SendToNetwork(std::make_unique<RtpPacketToSend>(*packet)));
     rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
@@ -1038,15 +1039,15 @@ TEST_P(RtpSenderTest, OnSendPacketUpdated) {
               OnSendPacket(kTransportSequenceNumber, _, _))
       .Times(1);
 
-    EXPECT_CALL(
-        mock_paced_sender_,
-        EnqueuePacket(AllOf(
-            Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc)),
-            Pointee(Property(&RtpPacketToSend::SequenceNumber, kSeqNum)))));
-    auto packet = SendGenericPacket();
-    packet->set_packet_type(RtpPacketToSend::Type::kVideo);
-    packet->SetExtension<TransportSequenceNumber>(kTransportSequenceNumber);
-    rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
+  EXPECT_CALL(
+      mock_paced_sender_,
+      EnqueuePackets(Contains(AllOf(
+          Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc)),
+          Pointee(Property(&RtpPacketToSend::SequenceNumber, kSeqNum))))));
+  auto packet = SendGenericPacket();
+  packet->set_packet_type(RtpPacketToSend::Type::kVideo);
+  packet->SetExtension<TransportSequenceNumber>(kTransportSequenceNumber);
+  rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
 
   EXPECT_EQ(1, transport_.packets_sent());
 }
@@ -1059,15 +1060,15 @@ TEST_P(RtpSenderTest, OnSendPacketNotUpdatedForRetransmits) {
 
   EXPECT_CALL(send_packet_observer_, OnSendPacket(_, _, _)).Times(0);
 
-    EXPECT_CALL(
-        mock_paced_sender_,
-        EnqueuePacket(AllOf(
-            Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc)),
-            Pointee(Property(&RtpPacketToSend::SequenceNumber, kSeqNum)))));
-    auto packet = SendGenericPacket();
-    packet->set_packet_type(RtpPacketToSend::Type::kRetransmission);
-    packet->SetExtension<TransportSequenceNumber>(kTransportSequenceNumber);
-    rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
+  EXPECT_CALL(
+      mock_paced_sender_,
+      EnqueuePackets(Contains(AllOf(
+          Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc)),
+          Pointee(Property(&RtpPacketToSend::SequenceNumber, kSeqNum))))));
+  auto packet = SendGenericPacket();
+  packet->set_packet_type(RtpPacketToSend::Type::kRetransmission);
+  packet->SetExtension<TransportSequenceNumber>(kTransportSequenceNumber);
+  rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
 
   EXPECT_EQ(1, transport_.packets_sent());
   EXPECT_TRUE(transport_.last_options_.is_retransmit);
@@ -1176,20 +1177,23 @@ TEST_P(RtpSenderTest, SendFlexfecPackets) {
     std::unique_ptr<RtpPacketToSend> media_packet;
     std::unique_ptr<RtpPacketToSend> fec_packet;
 
-    EXPECT_CALL(mock_paced_sender_, EnqueuePacket)
+    EXPECT_CALL(mock_paced_sender_, EnqueuePackets)
         .Times(2)
-        .WillRepeatedly([&](std::unique_ptr<RtpPacketToSend> packet) {
-          if (packet->packet_type() == RtpPacketToSend::Type::kVideo) {
-            EXPECT_EQ(packet->Ssrc(), kSsrc);
-            EXPECT_EQ(packet->SequenceNumber(), kSeqNum);
-            media_packet = std::move(packet);
-          } else {
-            EXPECT_EQ(packet->packet_type(),
-                      RtpPacketToSend::Type::kForwardErrorCorrection);
-            EXPECT_EQ(packet->Ssrc(), kFlexFecSsrc);
-            fec_packet = std::move(packet);
-          }
-        });
+        .WillRepeatedly(
+            [&](std::vector<std::unique_ptr<RtpPacketToSend>> packets) {
+              for (auto& packet : packets) {
+                if (packet->packet_type() == RtpPacketToSend::Type::kVideo) {
+                  EXPECT_EQ(packet->Ssrc(), kSsrc);
+                  EXPECT_EQ(packet->SequenceNumber(), kSeqNum);
+                  media_packet = std::move(packet);
+                } else {
+                  EXPECT_EQ(packet->packet_type(),
+                            RtpPacketToSend::Type::kForwardErrorCorrection);
+                  EXPECT_EQ(packet->Ssrc(), kFlexFecSsrc);
+                  fec_packet = std::move(packet);
+                }
+              }
+            });
 
     EXPECT_TRUE(rtp_sender_video.SendVideo(
         VideoFrameType::kVideoFrameKey, kMediaPayloadType, kCodecType,
@@ -1268,16 +1272,18 @@ TEST_P(RtpSenderTest, NoFlexfecForTimingFrames) {
     std::unique_ptr<RtpPacketToSend> rtp_packet;
     EXPECT_CALL(
         mock_paced_sender_,
-        EnqueuePacket(AllOf(
+        EnqueuePackets(Contains(AllOf(
             Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc)),
-            Pointee(Property(&RtpPacketToSend::SequenceNumber, kSeqNum)))))
-        .WillOnce([&rtp_packet](std::unique_ptr<RtpPacketToSend> packet) {
-          rtp_packet = std::move(packet);
+            Pointee(Property(&RtpPacketToSend::SequenceNumber, kSeqNum))))))
+        .WillOnce([&rtp_packet](
+                      std::vector<std::unique_ptr<RtpPacketToSend>> packets) {
+          EXPECT_EQ(packets.size(), 1u);
+          rtp_packet = std::move(packets[0]);
         });
 
-    EXPECT_CALL(
-        mock_paced_sender_,
-        EnqueuePacket(Pointee(Property(&RtpPacketToSend::Ssrc, kFlexFecSsrc))))
+    EXPECT_CALL(mock_paced_sender_,
+                EnqueuePackets(Contains(
+                    Pointee(Property(&RtpPacketToSend::Ssrc, kFlexFecSsrc)))))
         .Times(0);  // Not called because packet should not be protected.
 
     EXPECT_TRUE(rtp_sender_video.SendVideo(
@@ -1303,20 +1309,23 @@ TEST_P(RtpSenderTest, NoFlexfecForTimingFrames) {
   std::unique_ptr<RtpPacketToSend> media_packet2;
   std::unique_ptr<RtpPacketToSend> fec_packet;
 
-  EXPECT_CALL(mock_paced_sender_, EnqueuePacket)
+  EXPECT_CALL(mock_paced_sender_, EnqueuePackets)
       .Times(2)
-      .WillRepeatedly([&](std::unique_ptr<RtpPacketToSend> packet) {
-        if (packet->packet_type() == RtpPacketToSend::Type::kVideo) {
-          EXPECT_EQ(packet->Ssrc(), kSsrc);
-          EXPECT_EQ(packet->SequenceNumber(), kSeqNum + 1);
-          media_packet2 = std::move(packet);
-        } else {
-          EXPECT_EQ(packet->packet_type(),
-                    RtpPacketToSend::Type::kForwardErrorCorrection);
-          EXPECT_EQ(packet->Ssrc(), kFlexFecSsrc);
-          fec_packet = std::move(packet);
-        }
-      });
+      .WillRepeatedly(
+          [&](std::vector<std::unique_ptr<RtpPacketToSend>> packets) {
+            for (auto& packet : packets) {
+              if (packet->packet_type() == RtpPacketToSend::Type::kVideo) {
+                EXPECT_EQ(packet->Ssrc(), kSsrc);
+                EXPECT_EQ(packet->SequenceNumber(), kSeqNum + 1);
+                media_packet2 = std::move(packet);
+              } else {
+                EXPECT_EQ(packet->packet_type(),
+                          RtpPacketToSend::Type::kForwardErrorCorrection);
+                EXPECT_EQ(packet->Ssrc(), kFlexFecSsrc);
+                fec_packet = std::move(packet);
+              }
+            }
+          });
 
   video_header.video_timing.flags = VideoSendTiming::kInvalid;
   EXPECT_TRUE(rtp_sender_video.SendVideo(
@@ -1647,8 +1656,8 @@ TEST_P(RtpSenderTest, FecOverheadRate) {
   constexpr size_t kNumMediaPackets = 10;
   constexpr size_t kNumFecPackets = kNumMediaPackets;
   constexpr int64_t kTimeBetweenPacketsMs = 10;
-    EXPECT_CALL(mock_paced_sender_, EnqueuePacket)
-        .Times(kNumMediaPackets + kNumFecPackets);
+  EXPECT_CALL(mock_paced_sender_, EnqueuePackets)
+      .Times(kNumMediaPackets + kNumFecPackets);
   for (size_t i = 0; i < kNumMediaPackets; ++i) {
     RTPVideoHeader video_header;
 
@@ -2441,10 +2450,11 @@ TEST_P(RtpSenderTest, SetsCaptureTimeAndPopulatesTransmissionOffset) {
     packet->AllocatePayload(sizeof(kPayloadData));
 
     std::unique_ptr<RtpPacketToSend> packet_to_pace;
-    EXPECT_CALL(mock_paced_sender_, EnqueuePacket)
-        .WillOnce([&](std::unique_ptr<RtpPacketToSend> packet) {
-          EXPECT_GT(packet->capture_time_ms(), 0);
-          packet_to_pace = std::move(packet);
+    EXPECT_CALL(mock_paced_sender_, EnqueuePackets)
+        .WillOnce([&](std::vector<std::unique_ptr<RtpPacketToSend>> packets) {
+          EXPECT_EQ(packets.size(), 1u);
+          EXPECT_GT(packets[0]->capture_time_ms(), 0);
+          packet_to_pace = std::move(packets[0]);
         });
 
     packet->set_allow_retransmission(true);
@@ -2465,10 +2475,10 @@ TEST_P(RtpSenderTest, SetsCaptureTimeAndPopulatesTransmissionOffset) {
   fake_clock_.AdvanceTimeMilliseconds(kOffsetMs);
 
     std::unique_ptr<RtpPacketToSend> rtx_packet_to_pace;
-    EXPECT_CALL(mock_paced_sender_, EnqueuePacket)
-        .WillOnce([&](std::unique_ptr<RtpPacketToSend> packet) {
-          EXPECT_GT(packet->capture_time_ms(), 0);
-          rtx_packet_to_pace = std::move(packet);
+    EXPECT_CALL(mock_paced_sender_, EnqueuePackets)
+        .WillOnce([&](std::vector<std::unique_ptr<RtpPacketToSend>> packets) {
+          EXPECT_GT(packets[0]->capture_time_ms(), 0);
+          rtx_packet_to_pace = std::move(packets[0]);
         });
 
     EXPECT_GT(rtp_sender_->ReSendPacket(kSeqNum), 0);
@@ -2548,9 +2558,9 @@ TEST_P(RtpSenderTest, IgnoresNackAfterDisablingMedia) {
 
   // Send a packet so it is in the packet history.
     std::unique_ptr<RtpPacketToSend> packet_to_pace;
-    EXPECT_CALL(mock_paced_sender_, EnqueuePacket)
-        .WillOnce([&](std::unique_ptr<RtpPacketToSend> packet) {
-          packet_to_pace = std::move(packet);
+    EXPECT_CALL(mock_paced_sender_, EnqueuePackets)
+        .WillOnce([&](std::vector<std::unique_ptr<RtpPacketToSend>> packets) {
+          packet_to_pace = std::move(packets[0]);
         });
 
     SendGenericPacket();

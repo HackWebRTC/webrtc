@@ -24,7 +24,8 @@ class MockPacedSender : public PacedSender {
  public:
   MockPacedSender()
       : PacedSender(Clock::GetRealTimeClock(), nullptr, nullptr) {}
-  MOCK_METHOD1(EnqueuePacket, void(std::unique_ptr<RtpPacketToSend> packet));
+  MOCK_METHOD1(EnqueuePackets,
+               void(std::vector<std::unique_ptr<RtpPacketToSend>> packet));
   MOCK_METHOD2(CreateProbeCluster, void(DataRate, int));
   MOCK_METHOD2(SetPacingRates, void(DataRate, DataRate));
   MOCK_CONST_METHOD0(OldestPacketWaitTime, TimeDelta());
