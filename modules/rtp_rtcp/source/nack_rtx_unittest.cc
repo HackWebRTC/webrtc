@@ -151,8 +151,6 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     // single rtp_rtcp module for both send and receive side.
     rtp_rtcp_module_->SetRemoteSSRC(kTestSsrc);
 
-    rtp_sender_video_->RegisterPayloadType(kPayloadType, "video",
-                                           /*raw_payload=*/false);
     rtp_rtcp_module_->SetRtxSendPayloadType(kRtxPayloadType, kPayloadType);
     transport_.SetSendModule(rtp_rtcp_module_.get());
     media_receiver_ = transport_.stream_receiver_controller_.CreateReceiver(
@@ -209,9 +207,9 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
       EXPECT_TRUE(rtp_rtcp_module_->OnSendingRtpFrame(timestamp, timestamp / 90,
                                                       kPayloadType, false));
       EXPECT_TRUE(rtp_sender_video_->SendVideo(
-          VideoFrameType::kVideoFrameDelta, kPayloadType, timestamp,
-          timestamp / 90, payload_data, payload_data_length, nullptr,
-          &video_header, 0));
+          VideoFrameType::kVideoFrameDelta, kPayloadType,
+          VideoCodecType::kVideoCodecGeneric, timestamp, timestamp / 90,
+          payload_data, payload_data_length, nullptr, &video_header, 0));
       // Min required delay until retransmit = 5 + RTT ms (RTT = 0).
       fake_clock.AdvanceTimeMilliseconds(5);
       int length = BuildNackList(nack_list);
@@ -261,9 +259,9 @@ TEST_F(RtpRtcpRtxNackTest, LongNackList) {
     EXPECT_TRUE(rtp_rtcp_module_->OnSendingRtpFrame(timestamp, timestamp / 90,
                                                     kPayloadType, false));
     EXPECT_TRUE(rtp_sender_video_->SendVideo(
-        VideoFrameType::kVideoFrameDelta, kPayloadType, timestamp,
-        timestamp / 90, payload_data, payload_data_length, nullptr,
-        &video_header, 0));
+        VideoFrameType::kVideoFrameDelta, kPayloadType,
+        VideoCodecType::kVideoCodecGeneric, timestamp, timestamp / 90,
+        payload_data, payload_data_length, nullptr, &video_header, 0));
     // Prepare next frame.
     timestamp += 3000;
     fake_clock.AdvanceTimeMilliseconds(33);

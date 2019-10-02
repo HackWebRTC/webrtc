@@ -259,12 +259,6 @@ void RTPSenderVideo::RegisterPayloadType(int8_t payload_type,
     rtc::CritScope cs(&payload_type_crit_);
     payload_type_map_[payload_type] = video_type;
   }
-
-  // Backward compatibility for older receivers without temporal layer logic
-  if (absl::EqualsIgnoreCase(payload_name, "H264")) {
-    rtc::CritScope cs(&crit_);
-    retransmission_settings_ = kRetransmitBaseLayer | kRetransmitHigherLayers;
-  }
 }
 
 void RTPSenderVideo::AppendAsRedMaybeWithUlpfec(
@@ -462,8 +456,36 @@ bool RTPSenderVideo::SendVideo(
     const RTPFragmentationHeader* fragmentation,
     const RTPVideoHeader* video_header,
     absl::optional<int64_t> expected_retransmission_time_ms) {
+  absl::optional<VideoCodecType> codec_type;
+  {
+    rtc::CritScope cs(&payload_type_crit_);
+    const auto it = payload_type_map_.find(payload_type);
+    if (it == payload_type_map_.end()) {
+      RTC_LOG(LS_ERROR) << "Payload type " << static_cast<int>(payload_type)
+                        << " not registered.";
+      return false;
+    }
+    codec_type = it->second;
+  }
+  return SendVideo(frame_type, payload_type, codec_type, rtp_timestamp,
+                   capture_time_ms, payload_data, payload_size, fragmentation,
+                   video_header, expected_retransmission_time_ms);
+}
+
+bool RTPSenderVideo::SendVideo(
+    VideoFrameType frame_type,
+    int8_t payload_type,
+    absl::optional<VideoCodecType> codec_type,
+    uint32_t rtp_timestamp,
+    int64_t capture_time_ms,
+    const uint8_t* payload_data,
+    size_t payload_size,
+    const RTPFragmentationHeader* fragmentation,
+    const RTPVideoHeader* video_header,
+    absl::optional<int64_t> expected_retransmission_time_ms) {
   TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", capture_time_ms, "Send", "type",
                           FrameTypeToString(frame_type));
+  RTC_CHECK_RUNS_SERIALIZED(&send_checker_);
 
   if (frame_type == VideoFrameType::kEmptyFrame)
     return true;
@@ -472,51 +494,55 @@ bool RTPSenderVideo::SendVideo(
     return false;
   RTC_CHECK(video_header);
 
-  size_t fec_packet_overhead;
-  bool red_enabled;
-  int32_t retransmission_settings;
-  bool set_video_rotation;
-  bool set_color_space = false;
+  int32_t retransmission_settings = retransmission_settings_;
+  if (codec_type == VideoCodecType::kVideoCodecH264) {
+    // Backward compatibility for older receivers without temporal layer logic.
+    retransmission_settings = kRetransmitBaseLayer | kRetransmitHigherLayers;
+  }
+
   bool set_frame_marking =
       video_header->codec == kVideoCodecH264 &&
       video_header->frame_marking.temporal_id != kNoTemporalIdx;
 
   const absl::optional<PlayoutDelay> playout_delay =
       playout_delay_oracle_->PlayoutDelayToSend(video_header->playout_delay);
+
+  // According to
+  // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/
+  // ts_126114v120700p.pdf Section 7.4.5:
+  // The MTSI client shall add the payload bytes as defined in this clause
+  // onto the last RTP packet in each group of packets which make up a key
+  // frame (I-frame or IDR frame in H.264 (AVC), or an IRAP picture in H.265
+  // (HEVC)). The MTSI client may also add the payload bytes onto the last RTP
+  // packet in each group of packets which make up another type of frame
+  // (e.g. a P-Frame) only if the current value is different from the previous
+  // value sent.
+  // Set rotation when key frame or when changed (to follow standard).
+  // Or when different from 0 (to follow current receiver implementation).
+  bool set_video_rotation = frame_type == VideoFrameType::kVideoFrameKey ||
+                            video_header->rotation != last_rotation_ ||
+                            video_header->rotation != kVideoRotation_0;
+  last_rotation_ = video_header->rotation;
+
+  // Send color space when changed or if the frame is a key frame. Keep
+  // sending color space information until the first base layer frame to
+  // guarantee that the information is retrieved by the receiver.
+  bool set_color_space;
+  if (video_header->color_space != last_color_space_) {
+    last_color_space_ = video_header->color_space;
+    set_color_space = true;
+    transmit_color_space_next_frame_ = !IsBaseLayer(*video_header);
+  } else {
+    set_color_space = frame_type == VideoFrameType::kVideoFrameKey ||
+                      transmit_color_space_next_frame_;
+    transmit_color_space_next_frame_ =
+        transmit_color_space_next_frame_ ? !IsBaseLayer(*video_header) : false;
+  }
+
+  size_t fec_packet_overhead;
+  bool red_enabled;
   {
     rtc::CritScope cs(&crit_);
-    // According to
-    // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/
-    // ts_126114v120700p.pdf Section 7.4.5:
-    // The MTSI client shall add the payload bytes as defined in this clause
-    // onto the last RTP packet in each group of packets which make up a key
-    // frame (I-frame or IDR frame in H.264 (AVC), or an IRAP picture in H.265
-    // (HEVC)). The MTSI client may also add the payload bytes onto the last RTP
-    // packet in each group of packets which make up another type of frame
-    // (e.g. a P-Frame) only if the current value is different from the previous
-    // value sent.
-    // Set rotation when key frame or when changed (to follow standard).
-    // Or when different from 0 (to follow current receiver implementation).
-    set_video_rotation = frame_type == VideoFrameType::kVideoFrameKey ||
-                         video_header->rotation != last_rotation_ ||
-                         video_header->rotation != kVideoRotation_0;
-    last_rotation_ = video_header->rotation;
-
-    // Send color space when changed or if the frame is a key frame. Keep
-    // sending color space information until the first base layer frame to
-    // guarantee that the information is retrieved by the receiver.
-    if (video_header->color_space != last_color_space_) {
-      last_color_space_ = video_header->color_space;
-      set_color_space = true;
-      transmit_color_space_next_frame_ = !IsBaseLayer(*video_header);
-    } else {
-      set_color_space = frame_type == VideoFrameType::kVideoFrameKey ||
-                        transmit_color_space_next_frame_;
-      transmit_color_space_next_frame_ = transmit_color_space_next_frame_
-                                             ? !IsBaseLayer(*video_header)
-                                             : false;
-    }
-
     // FEC settings.
     const FecProtectionParams& fec_params =
         frame_type == VideoFrameType::kVideoFrameKey ? key_fec_params_
@@ -528,7 +554,6 @@ bool RTPSenderVideo::SendVideo(
 
     fec_packet_overhead = CalculateFecPacketOverhead();
     red_enabled = this->red_enabled();
-    retransmission_settings = retransmission_settings_;
   }
 
   // Maximum size of packet including rtp headers.
@@ -638,19 +663,8 @@ bool RTPSenderVideo::SendVideo(
         << "one is required since require_frame_encryptor is set";
   }
 
-  absl::optional<VideoCodecType> type;
-  {
-    rtc::CritScope cs(&payload_type_crit_);
-    const auto it = payload_type_map_.find(payload_type);
-    if (it == payload_type_map_.end()) {
-      RTC_LOG(LS_ERROR) << "Payload type " << static_cast<int>(payload_type)
-                        << " not registered.";
-      return false;
-    }
-    type = it->second;
-  }
   std::unique_ptr<RtpPacketizer> packetizer = RtpPacketizer::Create(
-      type, rtc::MakeArrayView(payload_data, payload_size), limits,
+      codec_type, rtc::MakeArrayView(payload_data, payload_size), limits,
       *packetize_video_header, frame_type, fragmentation);
 
   const uint8_t temporal_id = GetTemporalId(*video_header);

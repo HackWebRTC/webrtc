@@ -186,8 +186,6 @@ class RtpRtcpImplTest : public ::testing::Test {
     codec_.plType = 100;
     codec_.width = 320;
     codec_.height = 180;
-    sender_video_->RegisterPayloadType(codec_.plType, "VP8",
-                                       /*raw_payload=*/false);
 
     // Receive module.
     EXPECT_EQ(0, receiver_.impl_->SetSendingStatus(false));
@@ -224,8 +222,9 @@ class RtpRtcpImplTest : public ::testing::Test {
     const uint8_t payload[100] = {0};
     EXPECT_TRUE(module->impl_->OnSendingRtpFrame(0, 0, codec_.plType, true));
     EXPECT_TRUE(sender->SendVideo(VideoFrameType::kVideoFrameKey, codec_.plType,
-                                  0, 0, payload, sizeof(payload), nullptr,
-                                  &rtp_video_header, 0));
+                                  VideoCodecType::kVideoCodecVP8, 0, 0, payload,
+                                  sizeof(payload), nullptr, &rtp_video_header,
+                                  0));
   }
 
   void IncomingRtcpNack(const RtpRtcpModule* module, uint16_t sequence_number) {

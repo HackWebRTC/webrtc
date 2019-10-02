@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "absl/algorithm/container.h"
+#include "absl/strings/match.h"
 #include "api/array_view.h"
 #include "api/transport/field_trial_based_config.h"
 #include "call/rtp_transport_controller_send_interface.h"
@@ -205,6 +206,22 @@ DataRate CalculateOverheadRate(DataRate data_rate,
   // rate here.
   return packet_rate.RoundUpTo(Frequency::hertz(1)) * overhead_per_packet;
 }
+
+absl::optional<VideoCodecType> GetVideoCodecType(const RtpConfig& config) {
+  absl::optional<VideoCodecType> video_type;
+  if (!config.raw_payload) {
+    if (absl::EqualsIgnoreCase(config.payload_name, "VP8")) {
+      video_type = kVideoCodecVP8;
+    } else if (absl::EqualsIgnoreCase(config.payload_name, "VP9")) {
+      video_type = kVideoCodecVP9;
+    } else if (absl::EqualsIgnoreCase(config.payload_name, "H264")) {
+      video_type = kVideoCodecH264;
+    } else {
+      video_type = kVideoCodecGeneric;
+    }
+  }
+  return video_type;
+}
 }  // namespace
 
 RtpVideoSender::RtpVideoSender(
@@ -255,6 +272,7 @@ RtpVideoSender::RtpVideoSender(
                                  frame_encryptor,
                                  crypto_options)),
       rtp_config_(rtp_config),
+      codec_type_(GetVideoCodecType(rtp_config)),
       transport_(transport),
       transport_overhead_bytes_per_packet_(0),
       overhead_bytes_per_packet_(0),
@@ -319,9 +337,6 @@ RtpVideoSender::RtpVideoSender(
     stream.rtp_rtcp->SetMaxRtpPacketSize(rtp_config_.max_packet_size);
     stream.rtp_rtcp->RegisterSendPayloadFrequency(rtp_config_.payload_type,
                                                   kVideoPayloadTypeFrequency);
-    stream.sender_video->RegisterPayloadType(rtp_config_.payload_type,
-                                             rtp_config_.payload_name,
-                                             rtp_config_.raw_payload);
   }
   // Currently, both ULPFEC and FlexFEC use the same FEC rate calculation logic,
   // so enable that logic if either of those FEC schemes are enabled.
@@ -432,8 +447,8 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
   }
 
   bool send_result = rtp_streams_[stream_index].sender_video->SendVideo(
-      encoded_image._frameType, rtp_config_.payload_type, rtp_timestamp,
-      encoded_image.capture_time_ms_, encoded_image.data(),
+      encoded_image._frameType, rtp_config_.payload_type, codec_type_,
+      rtp_timestamp, encoded_image.capture_time_ms_, encoded_image.data(),
       encoded_image.size(), fragmentation, &rtp_video_header,
       expected_retransmission_time_ms);
   if (frame_count_observer_) {
