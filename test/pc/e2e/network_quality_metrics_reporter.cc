@@ -43,18 +43,25 @@ void NetworkQualityMetricsReporter::OnStatsReports(
     const std::string& pc_label,
     const StatsReports& reports) {
   rtc::CritScope cs(&lock_);
-  PCStats& stats = pc_stats_[pc_label];
+  int64_t payload_bytes_received = 0;
+  int64_t payload_bytes_sent = 0;
   for (const StatsReport* report : reports) {
-    const auto* received =
-        report->FindValue(StatsReport::kStatsValueNameBytesReceived);
-    if (received) {
-      stats.payload_bytes_received = received->int64_val();
-    }
-    const auto* sent = report->FindValue(StatsReport::kStatsValueNameBytesSent);
-    if (sent) {
-      stats.payload_bytes_sent = sent->int64_val();
+    if (report->type() == StatsReport::kStatsReportTypeSsrc) {
+      const auto* received =
+          report->FindValue(StatsReport::kStatsValueNameBytesReceived);
+      if (received) {
+        payload_bytes_received += received->int64_val();
+      }
+      const auto* sent =
+          report->FindValue(StatsReport::kStatsValueNameBytesSent);
+      if (sent) {
+        payload_bytes_sent += sent->int64_val();
+      }
     }
   }
+  PCStats& stats = pc_stats_[pc_label];
+  stats.payload_bytes_received = payload_bytes_received;
+  stats.payload_bytes_sent = payload_bytes_sent;
 }
 
 void NetworkQualityMetricsReporter::StopAndReportResults() {
