@@ -1265,5 +1265,47 @@ TEST_F(PacingControllerTest, OwnedPacketPrioritizedOnType) {
   clock_.AdvanceTimeMilliseconds(200);
   pacer_->ProcessPackets();
 }
+
+TEST_F(PacingControllerTest, SmallFirstProbePacket) {
+  ScopedFieldTrials trial("WebRTC-Pacer-SmallFirstProbePacket/Enabled/");
+  MockPacketSender callback;
+  pacer_ =
+      std::make_unique<PacingController>(&clock_, &callback, nullptr, nullptr);
+  pacer_->CreateProbeCluster(kFirstClusterRate, /*cluster_id=*/0);
+  pacer_->SetPacingRates(kTargetRate * kPaceMultiplier, DataRate::Zero());
+
+  // Add high prio media.
+  pacer_->EnqueuePacket(BuildRtpPacket(RtpPacketToSend::Type::kAudio));
+
+  // Expect small padding packet to be requested.
+  EXPECT_CALL(callback, GeneratePadding(DataSize::bytes(1)))
+      .WillOnce([&](DataSize padding_size) {
+        std::vector<std::unique_ptr<RtpPacketToSend>> padding_packets;
+        padding_packets.emplace_back(
+            BuildPacket(RtpPacketToSend::Type::kPadding, kAudioSsrc, 1,
+                        clock_.TimeInMilliseconds(), 1));
+        return padding_packets;
+      });
+
+  size_t packets_sent = 0;
+  bool media_seen = false;
+  EXPECT_CALL(callback, SendRtpPacket)
+      .Times(::testing::AnyNumber())
+      .WillRepeatedly([&](std::unique_ptr<RtpPacketToSend> packet,
+                          const PacedPacketInfo& cluster_info) {
+        if (packets_sent == 0) {
+          EXPECT_EQ(packet->packet_type(), RtpPacketToSend::Type::kPadding);
+        } else {
+          if (packet->packet_type() == RtpPacketToSend::Type::kAudio) {
+            media_seen = true;
+          }
+        }
+        packets_sent++;
+      });
+  while (!media_seen) {
+    pacer_->ProcessPackets();
+    clock_.AdvanceTimeMilliseconds(5);
+  }
+}
 }  // namespace test
 }  // namespace webrtc

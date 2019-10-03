@@ -135,6 +135,8 @@ class PacingController {
   bool Congested() const;
 
  private:
+  void EnqueuePacketInternal(std::unique_ptr<RtpPacketToSend> packet,
+                             int priority);
   TimeDelta UpdateTimeAndGetElapsed(Timestamp now);
   bool ShouldSendKeepalive(Timestamp now) const;
 
@@ -160,6 +162,7 @@ class PacingController {
   const bool drain_large_queues_;
   const bool send_padding_if_silent_;
   const bool pace_audio_;
+  const bool small_first_probe_packet_;
   TimeDelta min_packet_limit_;
 
   // TODO(webrtc:9716): Remove this when we are certain clocks are monotonic.

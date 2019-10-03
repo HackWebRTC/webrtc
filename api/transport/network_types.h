@@ -98,6 +98,7 @@ struct PacedPacketInfo {
   int probe_cluster_id = kNotAProbe;
   int probe_cluster_min_probes = -1;
   int probe_cluster_min_bytes = -1;
+  int probe_cluster_bytes_sent = 0;
 };
 
 struct SentPacket {
