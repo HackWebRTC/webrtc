@@ -352,7 +352,7 @@ TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameWithoutQpQpSumWontExist) {
   EXPECT_EQ(absl::nullopt, statistics_proxy_->GetStats().qp_sum);
 }
 
-TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameWithoutQpDoesNotResetQpSum) {
+TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameWithoutQpResetsQpSum) {
   webrtc::VideoFrame frame = CreateFrame(kWidth, kHeight);
   EXPECT_EQ(absl::nullopt, statistics_proxy_->GetStats().qp_sum);
   statistics_proxy_->OnDecodedFrame(frame, 3u, 0,
@@ -360,7 +360,7 @@ TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameWithoutQpDoesNotResetQpSum) {
   EXPECT_EQ(3u, statistics_proxy_->GetStats().qp_sum);
   statistics_proxy_->OnDecodedFrame(frame, absl::nullopt, 0,
                                     VideoContentType::UNSPECIFIED);
-  EXPECT_EQ(3u, statistics_proxy_->GetStats().qp_sum);
+  EXPECT_EQ(absl::nullopt, statistics_proxy_->GetStats().qp_sum);
 }
 
 TEST_F(ReceiveStatisticsProxyTest, OnRenderedFrameIncreasesFramesRendered) {

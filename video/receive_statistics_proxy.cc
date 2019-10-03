@@ -692,6 +692,7 @@ void ReceiveStatisticsProxy::OnDecodedFrame(const VideoFrame& frame,
   } else if (stats_.qp_sum) {
     RTC_LOG(LS_WARNING)
         << "QP sum was already set and no QP was given for a frame.";
+    stats_.qp_sum.reset();
   }
   decode_time_counter_.Add(decode_time_ms);
   stats_.decode_ms = decode_time_ms;
