@@ -41,7 +41,6 @@
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
-namespace internal {
 namespace {
 // TODO(eladalon): Subsequent CL will make these values experiment-dependent.
 constexpr size_t kPacketLossTrackerMaxWindowSizeMs = 15000;
@@ -79,9 +78,28 @@ void UpdateEventLogStreamConfig(RtcEventLog* event_log,
   event_log->Log(std::make_unique<RtcEventAudioSendStreamConfig>(
       std::move(rtclog_config)));
 }
-
 }  // namespace
 
+constexpr char AudioAllocationConfig::kKey[];
+
+std::unique_ptr<StructParametersParser> AudioAllocationConfig::Parser() {
+  return StructParametersParser::Create(       //
+      "min", &min_bitrate,                     //
+      "max", &max_bitrate,                     //
+      "prio_rate", &priority_bitrate,          //
+      "prio_rate_raw", &priority_bitrate_raw,  //
+      "rate_prio", &bitrate_priority);
+}
+
+AudioAllocationConfig::AudioAllocationConfig() {
+  Parser()->Parse(field_trial::FindFullName(kKey));
+  if (priority_bitrate_raw && !priority_bitrate.IsZero()) {
+    RTC_LOG(LS_WARNING) << "'priority_bitrate' and '_raw' are mutually "
+                           "exclusive but both were configured.";
+  }
+}
+
+namespace internal {
 AudioSendStream::AudioSendStream(
     Clock* clock,
     const webrtc::AudioSendStream::Config& config,
@@ -129,6 +147,13 @@ AudioSendStream::AudioSendStream(
     std::unique_ptr<voe::ChannelSendInterface> channel_send)
     : clock_(clock),
       worker_queue_(rtp_transport->GetWorkerQueue()),
+      audio_send_side_bwe_(field_trial::IsEnabled("WebRTC-Audio-SendSideBwe")),
+      allocate_audio_without_feedback_(
+          field_trial::IsEnabled("WebRTC-Audio-ABWENoTWCC")),
+      enable_audio_alr_probing_(
+          !field_trial::IsDisabled("WebRTC-Audio-AlrProbing")),
+      send_side_bwe_with_overhead_(
+          field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
       config_(Config(/*send_transport=*/nullptr, MediaTransportConfig())),
       audio_state_(audio_state),
       channel_send_(std::move(channel_send)),
@@ -286,15 +311,16 @@ void AudioSendStream::ConfigureStream(
   bool transport_seq_num_id_changed =
       new_ids.transport_sequence_number != old_ids.transport_sequence_number;
   if (first_time || (transport_seq_num_id_changed &&
-                     !stream->allocation_settings_.ForceNoAudioFeedback())) {
+                     !stream->allocate_audio_without_feedback_)) {
     if (!first_time) {
       channel_send->ResetSenderCongestionControlObjects();
     }
 
     RtcpBandwidthObserver* bandwidth_observer = nullptr;
 
-    if (stream->allocation_settings_.ShouldSendTransportSequenceNumber(
-            new_ids.transport_sequence_number)) {
+    if (stream->audio_send_side_bwe_ &&
+        !stream->allocate_audio_without_feedback_ &&
+        new_ids.transport_sequence_number != 0) {
       channel_send->EnableSendTransportSequenceNumber(
           new_ids.transport_sequence_number);
       // Probing in application limited region is only used in combination with
@@ -303,7 +329,7 @@ void AudioSendStream::ConfigureStream(
       if (stream->rtp_transport_) {
         // Optionally request ALR probing but do not override any existing
         // request from other streams.
-        if (stream->allocation_settings_.RequestAlrProbing()) {
+        if (stream->enable_audio_alr_probing_) {
           stream->rtp_transport_->EnablePeriodicAlrProbing(true);
         }
         bandwidth_observer = stream->rtp_transport_->GetBandwidthObserver();
@@ -345,10 +371,12 @@ void AudioSendStream::Start() {
   if (sending_) {
     return;
   }
-
-  if (allocation_settings_.IncludeAudioInAllocationOnStart(
-          config_.min_bitrate_bps, config_.max_bitrate_bps, config_.has_dscp,
-          TransportSeqNumId(config_))) {
+  // TODO(srte): We should not add audio to allocation just because
+  // audio_send_side_bwe_ is false.
+  if (!config_.has_dscp && config_.min_bitrate_bps != -1 &&
+      config_.max_bitrate_bps != -1 &&
+      (allocate_audio_without_feedback_ || TransportSeqNumId(config_) != 0 ||
+       !audio_send_side_bwe_)) {
     rtp_transport_->AccountForAudioPacketsInPacedSender(true);
     rtp_rtcp_module_->SetAsPartOfAllocation(true);
     rtc::Event thread_sync_event;
@@ -812,13 +840,15 @@ void AudioSendStream::ReconfigureBitrateObserver(
       stream->config_.max_bitrate_bps == new_config.max_bitrate_bps &&
       stream->config_.bitrate_priority == new_config.bitrate_priority &&
       (TransportSeqNumId(stream->config_) == TransportSeqNumId(new_config) ||
-       stream->allocation_settings_.IgnoreSeqNumIdChange())) {
+       !stream->audio_send_side_bwe_)) {
     return;
   }
 
-  if (stream->allocation_settings_.IncludeAudioInAllocationOnReconfigure(
-          new_config.min_bitrate_bps, new_config.max_bitrate_bps,
-          new_config.has_dscp, TransportSeqNumId(new_config))) {
+  // TODO(srte): We should not add audio to allocation just because
+  // audio_send_side_bwe_ is false.
+  if (!new_config.has_dscp && new_config.min_bitrate_bps != -1 &&
+      new_config.max_bitrate_bps != -1 &&
+      (TransportSeqNumId(new_config) != 0 || !stream->audio_send_side_bwe_)) {
     stream->rtp_transport_->AccountForAudioPacketsInPacedSender(true);
     rtc::Event thread_sync_event;
     stream->worker_queue_->PostTask([&] {
@@ -847,12 +877,26 @@ void AudioSendStream::ConfigureBitrateObserver() {
   // TODO(srte): Add overhead compensation here.
   auto constraints = GetMinMaxBitrateConstraints();
 
+  DataRate max_overhead = DataRate::Zero();
+  if (send_side_bwe_with_overhead_) {
+    // TODO(srte): Respect |use_legacy_overhead_calculation_| here as well.
+    // OverheadPerPacket = Ipv4(20B) + UDP(8B) + SRTP(10B) + RTP(12)
+    constexpr int kOverheadPerPacket = 20 + 8 + 10 + 12;
+    const TimeDelta kMinPacketDuration = TimeDelta::ms(20);
+    max_overhead = DataSize::bytes(kOverheadPerPacket) / kMinPacketDuration;
+  }
+  DataRate priority_bitrate =
+      allocation_settings_.priority_bitrate + max_overhead;
+
+  if (allocation_settings_.priority_bitrate_raw)
+    priority_bitrate = *allocation_settings_.priority_bitrate_raw;
+
   bitrate_allocator_->AddObserver(
       this,
       MediaStreamAllocationConfig{
           constraints.min.bps<uint32_t>(), constraints.max.bps<uint32_t>(), 0,
-          allocation_settings_.DefaultPriorityBitrate().bps(), true,
-          allocation_settings_.BitratePriority().value_or(
+          priority_bitrate.bps(), true,
+          allocation_settings_.bitrate_priority.value_or(
               config_.bitrate_priority)});
 }
 
@@ -875,15 +919,15 @@ AudioSendStream::GetMinMaxBitrateConstraints() const {
       DataRate::bps(config_.max_bitrate_bps)};
 
   // If bitrates were explicitly overriden via field trial, use those values.
-  if (allocation_settings_.MinBitrate())
-    constraints.min = *allocation_settings_.MinBitrate();
-  if (allocation_settings_.MaxBitrate())
-    constraints.max = *allocation_settings_.MaxBitrate();
+  if (allocation_settings_.min_bitrate)
+    constraints.min = *allocation_settings_.min_bitrate;
+  if (allocation_settings_.max_bitrate)
+    constraints.max = *allocation_settings_.max_bitrate;
 
   RTC_DCHECK_GE(constraints.min, DataRate::Zero());
   RTC_DCHECK_GE(constraints.max, DataRate::Zero());
   RTC_DCHECK_GE(constraints.max, constraints.min);
-  if (allocation_settings_.IncludeOverheadInAudioAllocation()) {
+  if (send_side_bwe_with_overhead_) {
     if (use_legacy_overhead_calculation_) {
       // OverheadPerPacket = Ipv4(20B) + UDP(8B) + SRTP(10B) + RTP(12)
       const DataSize kOverheadPerPacket = DataSize::bytes(20 + 8 + 10 + 12);
