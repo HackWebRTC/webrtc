@@ -877,17 +877,23 @@ void AudioSendStream::ConfigureBitrateObserver() {
   // TODO(srte): Add overhead compensation here.
   auto constraints = GetMinMaxBitrateConstraints();
 
-  DataRate max_overhead = DataRate::Zero();
+  DataRate priority_bitrate = allocation_settings_.priority_bitrate;
   if (send_side_bwe_with_overhead_) {
-    // TODO(srte): Respect |use_legacy_overhead_calculation_| here as well.
-    // OverheadPerPacket = Ipv4(20B) + UDP(8B) + SRTP(10B) + RTP(12)
-    constexpr int kOverheadPerPacket = 20 + 8 + 10 + 12;
-    const TimeDelta kMinPacketDuration = TimeDelta::ms(20);
-    max_overhead = DataSize::bytes(kOverheadPerPacket) / kMinPacketDuration;
+    if (use_legacy_overhead_calculation_) {
+      // OverheadPerPacket = Ipv4(20B) + UDP(8B) + SRTP(10B) + RTP(12)
+      constexpr int kOverheadPerPacket = 20 + 8 + 10 + 12;
+      const TimeDelta kMinPacketDuration = TimeDelta::ms(20);
+      DataRate max_overhead =
+          DataSize::bytes(kOverheadPerPacket) / kMinPacketDuration;
+      priority_bitrate += max_overhead;
+    } else {
+      RTC_DCHECK(frame_length_range_);
+      const DataSize kOverheadPerPacket =
+          DataSize::bytes(total_packet_overhead_bytes_);
+      DataRate max_overhead = kOverheadPerPacket / frame_length_range_->first;
+      priority_bitrate += max_overhead;
+    }
   }
-  DataRate priority_bitrate =
-      allocation_settings_.priority_bitrate + max_overhead;
-
   if (allocation_settings_.priority_bitrate_raw)
     priority_bitrate = *allocation_settings_.priority_bitrate_raw;
 
