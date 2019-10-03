@@ -110,16 +110,6 @@ class VCMEncodedFrame : protected EncodedImage {
     _codecSpecificInfo = *codec_specific;
   }
 
-  /**
-   * Verifies that current allocated buffer size is larger than or equal to the
-   * input size.
-   * If the current buffer size is smaller, a new allocation is made and the old
-   * buffer data
-   * is copied to the new buffer.
-   * Buffer size is updated to minimumSize.
-   */
-  void VerifyAndAllocate(size_t minimumSize);
-
  protected:
   void Reset();
 

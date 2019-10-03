@@ -521,14 +521,13 @@ TEST(RtpVideoSenderTest, EarlyRetransmits) {
                                  kPayloadType, {});
   test.router()->SetActive(true);
 
-  constexpr uint8_t kPayload = 'a';
+  const uint8_t kPayload[1] = {'a'};
   EncodedImage encoded_image;
   encoded_image.SetTimestamp(1);
   encoded_image.capture_time_ms_ = 2;
   encoded_image._frameType = VideoFrameType::kVideoFrameKey;
-  encoded_image.Allocate(1);
-  encoded_image.data()[0] = kPayload;
-  encoded_image.set_size(1);
+  encoded_image.SetEncodedData(
+      EncodedImageBuffer::Create(kPayload, sizeof(kPayload)));
   encoded_image.SetSpatialIndex(0);
 
   CodecSpecificInfo codec_specific;

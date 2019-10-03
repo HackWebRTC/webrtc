@@ -171,8 +171,7 @@ class TestFrameBuffer2 : public ::testing::Test {
     frame->inter_layer_predicted = inter_layer_predicted;
     frame->is_last_spatial_layer = last_spatial_layer;
     // Add some data to buffer.
-    frame->VerifyAndAllocate(frame_size_bytes);
-    frame->set_size(frame_size_bytes);
+    frame->SetEncodedData(EncodedImageBuffer::Create(frame_size_bytes));
     for (size_t r = 0; r < references.size(); ++r)
       frame->references[r] = references[r];
     return frame;
@@ -585,8 +584,7 @@ TEST_F(TestFrameBuffer2, StatsCallback) {
 
   {
     std::unique_ptr<FrameObjectFake> frame(new FrameObjectFake());
-    frame->VerifyAndAllocate(kFrameSize);
-    frame->set_size(kFrameSize);
+    frame->SetEncodedData(EncodedImageBuffer::Create(kFrameSize));
     frame->id.picture_id = pid;
     frame->id.spatial_layer = 0;
     frame->SetTimestamp(ts);

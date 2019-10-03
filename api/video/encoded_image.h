@@ -28,6 +28,7 @@
 #include "api/video/video_timing.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/checks.h"
+#include "rtc_base/deprecation.h"
 #include "rtc_base/ref_count.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -55,6 +56,7 @@ class EncodedImageBufferInterface : public rtc::RefCountInterface {
 // Basic implementation of EncodedImageBufferInterface.
 class EncodedImageBuffer : public EncodedImageBufferInterface {
  public:
+  static rtc::scoped_refptr<EncodedImageBuffer> Create() { return Create(0); }
   static rtc::scoped_refptr<EncodedImageBuffer> Create(size_t size);
   static rtc::scoped_refptr<EncodedImageBuffer> Create(const uint8_t* data,
                                                        size_t size);
@@ -146,6 +148,7 @@ class RTC_EXPORT EncodedImage {
 
   // TODO(bugs.webrtc.org/9378): Delete; this method implies realloc, which
   // should not be generally supported by the EncodedImageBufferInterface.
+  RTC_DEPRECATED
   void Allocate(size_t capacity);
 
   void SetEncodedData(
