@@ -131,18 +131,12 @@ class AudioSendStream final : public webrtc::AudioSendStream,
 
   void StoreEncoderProperties(int sample_rate_hz, size_t num_channels);
 
-  // These are all static to make it less likely that (the old) config_ is
-  // accessed unintentionally.
-  static void ConfigureStream(AudioSendStream* stream,
-                              const Config& new_config,
-                              bool first_time);
-  static bool SetupSendCodec(AudioSendStream* stream, const Config& new_config);
-  static bool ReconfigureSendCodec(AudioSendStream* stream,
-                                   const Config& new_config);
-  static void ReconfigureANA(AudioSendStream* stream, const Config& new_config);
-  static void ReconfigureCNG(AudioSendStream* stream, const Config& new_config);
-  static void ReconfigureBitrateObserver(AudioSendStream* stream,
-                                         const Config& new_config);
+  void ConfigureStream(const Config& new_config, bool first_time);
+  bool SetupSendCodec(const Config& new_config);
+  bool ReconfigureSendCodec(const Config& new_config);
+  void ReconfigureANA(const Config& new_config);
+  void ReconfigureCNG(const Config& new_config);
+  void ReconfigureBitrateObserver(const Config& new_config);
 
   void ConfigureBitrateObserver() RTC_RUN_ON(worker_queue_);
   void RemoveBitrateObserver();
