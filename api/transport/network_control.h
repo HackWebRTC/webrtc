@@ -14,12 +14,11 @@
 
 #include <memory>
 
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "api/transport/network_types.h"
 #include "api/transport/webrtc_key_value_config.h"
 
 namespace webrtc {
-// TODO(srte): Remove this forward declaration when this is in api.
-class RtcEventLog;
 
 class TargetTransferRateObserver {
  public:

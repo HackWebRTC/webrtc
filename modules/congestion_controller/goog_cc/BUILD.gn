@@ -280,8 +280,4 @@ if (rtc_include_tests) {
       "//testing/gmock",
     ]
   }
-
-  # TODO(srte): Remove this target when dependency in root BUILD is gone.
-  rtc_source_set("goog_cc_slow_tests") {
-  }
 }

@@ -38,7 +38,7 @@ class AutoOpt : public absl::optional<T> {
 struct FrameGeneratorCapturerConfig {
   struct SquaresVideo {
     int framerate = 30;
-    FrameGenerator::OutputType pixel_format = FrameGenerator::OutputType::I420;
+    FrameGenerator::OutputType pixel_format = FrameGenerator::OutputType::kI420;
     int width = 320;
     int height = 180;
     int num_squares = 10;

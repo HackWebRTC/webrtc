@@ -60,8 +60,6 @@ class FrameGenerator {
 
   enum class OutputType {
     kI420,
-    // TODO(srte): Remove alias when downstream is updated.
-    I420 = kI420,
     kI420A,
     kI010
   };
