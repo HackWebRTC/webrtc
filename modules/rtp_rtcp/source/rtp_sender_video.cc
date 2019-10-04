@@ -205,34 +205,50 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock,
                                bool need_rtp_packet_infos,
                                bool enable_retransmit_all_layers,
                                const WebRtcKeyValueConfig& field_trials)
-    : rtp_sender_(rtp_sender),
-      clock_(clock),
+    : RTPSenderVideo([&] {
+        Config config;
+        config.clock = clock;
+        config.rtp_sender = rtp_sender;
+        config.flexfec_sender = flexfec_sender;
+        config.playout_delay_oracle = playout_delay_oracle;
+        config.frame_encryptor = frame_encryptor;
+        config.require_frame_encryption = require_frame_encryption;
+        config.need_rtp_packet_infos = need_rtp_packet_infos;
+        config.enable_retransmit_all_layers = enable_retransmit_all_layers;
+        config.field_trials = &field_trials;
+        return config;
+      }()) {}
+
+RTPSenderVideo::RTPSenderVideo(const Config& config)
+    : rtp_sender_(config.rtp_sender),
+      clock_(config.clock),
       retransmission_settings_(
-          enable_retransmit_all_layers
+          config.enable_retransmit_all_layers
               ? kRetransmitAllLayers
               : (kRetransmitBaseLayer | kConditionallyRetransmitHigherLayers)),
       last_rotation_(kVideoRotation_0),
       transmit_color_space_next_frame_(false),
-      playout_delay_oracle_(playout_delay_oracle),
-      rtp_sequence_number_map_(need_rtp_packet_infos
+      playout_delay_oracle_(config.playout_delay_oracle),
+      rtp_sequence_number_map_(config.need_rtp_packet_infos
                                    ? std::make_unique<RtpSequenceNumberMap>(
                                          kRtpSequenceNumberMapMaxEntries)
                                    : nullptr),
-      red_payload_type_(-1),
-      ulpfec_payload_type_(-1),
-      flexfec_sender_(flexfec_sender),
+      red_payload_type_(config.red_payload_type),
+      ulpfec_payload_type_(config.ulpfec_payload_type),
+      flexfec_sender_(config.flexfec_sender),
       delta_fec_params_{0, 1, kFecMaskRandom},
       key_fec_params_{0, 1, kFecMaskRandom},
       fec_bitrate_(1000, RateStatistics::kBpsScale),
       video_bitrate_(1000, RateStatistics::kBpsScale),
       packetization_overhead_bitrate_(1000, RateStatistics::kBpsScale),
-      frame_encryptor_(frame_encryptor),
-      require_frame_encryption_(require_frame_encryption),
+      frame_encryptor_(config.frame_encryptor),
+      require_frame_encryption_(config.require_frame_encryption),
       generic_descriptor_auth_experiment_(
-          field_trials.Lookup("WebRTC-GenericDescriptorAuth").find("Enabled") ==
-          0),
+          config.field_trials->Lookup("WebRTC-GenericDescriptorAuth")
+              .find("Enabled") == 0),
       exclude_transport_sequence_number_from_fec_experiment_(
-          field_trials.Lookup(kExcludeTransportSequenceNumberFromFecFieldTrial)
+          config.field_trials
+              ->Lookup(kExcludeTransportSequenceNumberFromFecFieldTrial)
               .find("Enabled") == 0) {
   RTC_DCHECK(playout_delay_oracle_);
 }
@@ -273,7 +289,7 @@ void RTPSenderVideo::AppendAsRedMaybeWithUlpfec(
   {
     // Only protect while creating RED and FEC packets, not when sending.
     rtc::CritScope cs(&crit_);
-    red_packet->SetPayloadType(red_payload_type_);
+    red_packet->SetPayloadType(*red_payload_type_);
     if (ulpfec_enabled()) {
       if (protect_media_packet) {
         if (exclude_transport_sequence_number_from_fec_experiment_) {
@@ -302,7 +318,8 @@ void RTPSenderVideo::AppendAsRedMaybeWithUlpfec(
         uint16_t first_fec_sequence_number =
             rtp_sender_->AllocateSequenceNumber(num_fec_packets);
         fec_packets = ulpfec_generator_.GetUlpfecPacketsAsRed(
-            red_payload_type_, ulpfec_payload_type_, first_fec_sequence_number);
+            *red_payload_type_, *ulpfec_payload_type_,
+            first_fec_sequence_number);
         RTC_DCHECK_EQ(num_fec_packets, fec_packets.size());
       }
     }
@@ -399,8 +416,12 @@ void RTPSenderVideo::SetUlpfecConfig(int red_payload_type,
   RTC_DCHECK_LE(ulpfec_payload_type, 127);
 
   rtc::CritScope cs(&crit_);
-  red_payload_type_ = red_payload_type;
-  ulpfec_payload_type_ = ulpfec_payload_type;
+  if (red_payload_type != -1) {
+    red_payload_type_ = red_payload_type;
+  }
+  if (ulpfec_payload_type != -1) {
+    ulpfec_payload_type_ = ulpfec_payload_type;
+  }
 
   // Must not enable ULPFEC without RED.
   RTC_DCHECK(!(red_enabled() ^ ulpfec_enabled()));

@@ -55,6 +55,68 @@ static const size_t kPathMTU = 1500;
 
 using webrtc_internal_rtp_video_sender::RtpStreamSender;
 
+bool PayloadTypeSupportsSkippingFecPackets(const std::string& payload_name) {
+  const VideoCodecType codecType = PayloadStringToCodecType(payload_name);
+  if (codecType == kVideoCodecVP8 || codecType == kVideoCodecVP9) {
+    return true;
+  }
+  if (codecType == kVideoCodecGeneric &&
+      field_trial::IsEnabled("WebRTC-GenericPictureId")) {
+    return true;
+  }
+  return false;
+}
+
+bool ShouldDisableRedAndUlpfec(bool flexfec_enabled,
+                               const RtpConfig& rtp_config) {
+  // Consistency of NACK and RED+ULPFEC parameters is checked in this function.
+  const bool nack_enabled = rtp_config.nack.rtp_history_ms > 0;
+
+  // Shorthands.
+  auto IsRedEnabled = [&]() { return rtp_config.ulpfec.red_payload_type >= 0; };
+  auto IsUlpfecEnabled = [&]() {
+    return rtp_config.ulpfec.ulpfec_payload_type >= 0;
+  };
+
+  bool should_disable_red_and_ulpfec = false;
+
+  if (webrtc::field_trial::IsEnabled("WebRTC-DisableUlpFecExperiment")) {
+    RTC_LOG(LS_INFO) << "Experiment to disable sending ULPFEC is enabled.";
+    should_disable_red_and_ulpfec = true;
+  }
+
+  // If enabled, FlexFEC takes priority over RED+ULPFEC.
+  if (flexfec_enabled) {
+    if (IsUlpfecEnabled()) {
+      RTC_LOG(LS_INFO)
+          << "Both FlexFEC and ULPFEC are configured. Disabling ULPFEC.";
+    }
+    should_disable_red_and_ulpfec = true;
+  }
+
+  // Payload types without picture ID cannot determine that a stream is complete
+  // without retransmitting FEC, so using ULPFEC + NACK for H.264 (for instance)
+  // is a waste of bandwidth since FEC packets still have to be transmitted.
+  // Note that this is not the case with FlexFEC.
+  if (nack_enabled && IsUlpfecEnabled() &&
+      !PayloadTypeSupportsSkippingFecPackets(rtp_config.payload_name)) {
+    RTC_LOG(LS_WARNING)
+        << "Transmitting payload type without picture ID using "
+           "NACK+ULPFEC is a waste of bandwidth since ULPFEC packets "
+           "also have to be retransmitted. Disabling ULPFEC.";
+    should_disable_red_and_ulpfec = true;
+  }
+
+  // Verify payload types.
+  if (IsUlpfecEnabled() ^ IsRedEnabled()) {
+    RTC_LOG(LS_WARNING)
+        << "Only RED or only ULPFEC enabled, but not both. Disabling both.";
+    should_disable_red_and_ulpfec = true;
+  }
+
+  return should_disable_red_and_ulpfec;
+}
+
 std::vector<RtpStreamSender> CreateRtpStreamSenders(
     Clock* clock,
     const RtpConfig& rtp_config,
@@ -129,29 +191,36 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
     rtp_rtcp->SetSendingStatus(false);
     rtp_rtcp->SetSendingMediaStatus(false);
     rtp_rtcp->SetRTCPStatus(RtcpMode::kCompound);
+    // Set NACK.
+    rtp_rtcp->SetStorePacketsStatus(true, kMinSendSidePacketHistorySize);
 
-    auto sender_video = std::make_unique<RTPSenderVideo>(
-        configuration.clock, rtp_rtcp->RtpSender(),
-        configuration.flexfec_sender, playout_delay_oracle.get(),
-        frame_encryptor, crypto_options.sframe.require_frame_encryption,
-        rtp_config.lntf.enabled, /*enable_retransmit_all_layers*/ false,
-        FieldTrialBasedConfig());
+    FieldTrialBasedConfig field_trial_config;
+    RTPSenderVideo::Config video_config;
+    video_config.clock = configuration.clock;
+    video_config.rtp_sender = rtp_rtcp->RtpSender();
+    video_config.flexfec_sender = configuration.flexfec_sender;
+    video_config.playout_delay_oracle = playout_delay_oracle.get();
+    video_config.frame_encryptor = frame_encryptor;
+    video_config.require_frame_encryption =
+        crypto_options.sframe.require_frame_encryption;
+    video_config.need_rtp_packet_infos = rtp_config.lntf.enabled;
+    video_config.enable_retransmit_all_layers = false;
+    video_config.field_trials = &field_trial_config;
+    const bool should_disable_red_and_ulpfec =
+        ShouldDisableRedAndUlpfec(enable_flexfec, rtp_config);
+    if (rtp_config.ulpfec.red_payload_type != -1 &&
+        !should_disable_red_and_ulpfec) {
+      video_config.red_payload_type = rtp_config.ulpfec.red_payload_type;
+    }
+    if (rtp_config.ulpfec.ulpfec_payload_type != -1 &&
+        !should_disable_red_and_ulpfec) {
+      video_config.ulpfec_payload_type = rtp_config.ulpfec.ulpfec_payload_type;
+    }
+    auto sender_video = std::make_unique<RTPSenderVideo>(video_config);
     rtp_streams.emplace_back(std::move(playout_delay_oracle),
                              std::move(rtp_rtcp), std::move(sender_video));
   }
   return rtp_streams;
-}
-
-bool PayloadTypeSupportsSkippingFecPackets(const std::string& payload_name) {
-  const VideoCodecType codecType = PayloadStringToCodecType(payload_name);
-  if (codecType == kVideoCodecVP8 || codecType == kVideoCodecVP9) {
-    return true;
-  }
-  if (codecType == kVideoCodecGeneric &&
-      field_trial::IsEnabled("WebRTC-GenericPictureId")) {
-    return true;
-  }
-  return false;
 }
 
 // TODO(brandtr): Update this function when we support multistream protection.
@@ -316,7 +385,6 @@ RtpVideoSender::RtpVideoSender(
     }
   }
 
-  ConfigureProtection();
   ConfigureSsrcs();
   ConfigureRids();
 
@@ -494,65 +562,6 @@ void RtpVideoSender::OnBitrateAllocationUpdated(
         }
       }
     }
-  }
-}
-
-void RtpVideoSender::ConfigureProtection() {
-  // Consistency of FlexFEC parameters is checked in MaybeCreateFlexfecSender.
-  const bool flexfec_enabled = (flexfec_sender_ != nullptr);
-
-  // Consistency of NACK and RED+ULPFEC parameters is checked in this function.
-  const bool nack_enabled = rtp_config_.nack.rtp_history_ms > 0;
-  int red_payload_type = rtp_config_.ulpfec.red_payload_type;
-  int ulpfec_payload_type = rtp_config_.ulpfec.ulpfec_payload_type;
-
-  // Shorthands.
-  auto IsRedEnabled = [&]() { return red_payload_type >= 0; };
-  auto IsUlpfecEnabled = [&]() { return ulpfec_payload_type >= 0; };
-  auto DisableRedAndUlpfec = [&]() {
-    red_payload_type = -1;
-    ulpfec_payload_type = -1;
-  };
-
-  if (webrtc::field_trial::IsEnabled("WebRTC-DisableUlpFecExperiment")) {
-    RTC_LOG(LS_INFO) << "Experiment to disable sending ULPFEC is enabled.";
-    DisableRedAndUlpfec();
-  }
-
-  // If enabled, FlexFEC takes priority over RED+ULPFEC.
-  if (flexfec_enabled) {
-    if (IsUlpfecEnabled()) {
-      RTC_LOG(LS_INFO)
-          << "Both FlexFEC and ULPFEC are configured. Disabling ULPFEC.";
-    }
-    DisableRedAndUlpfec();
-  }
-
-  // Payload types without picture ID cannot determine that a stream is complete
-  // without retransmitting FEC, so using ULPFEC + NACK for H.264 (for instance)
-  // is a waste of bandwidth since FEC packets still have to be transmitted.
-  // Note that this is not the case with FlexFEC.
-  if (nack_enabled && IsUlpfecEnabled() &&
-      !PayloadTypeSupportsSkippingFecPackets(rtp_config_.payload_name)) {
-    RTC_LOG(LS_WARNING)
-        << "Transmitting payload type without picture ID using "
-           "NACK+ULPFEC is a waste of bandwidth since ULPFEC packets "
-           "also have to be retransmitted. Disabling ULPFEC.";
-    DisableRedAndUlpfec();
-  }
-
-  // Verify payload types.
-  if (IsUlpfecEnabled() ^ IsRedEnabled()) {
-    RTC_LOG(LS_WARNING)
-        << "Only RED or only ULPFEC enabled, but not both. Disabling both.";
-    DisableRedAndUlpfec();
-  }
-
-  for (const RtpStreamSender& stream : rtp_streams_) {
-    // Set NACK.
-    stream.rtp_rtcp->SetStorePacketsStatus(true, kMinSendSidePacketHistorySize);
-    // Set RED/ULPFEC information.
-    stream.sender_video->SetUlpfecConfig(red_payload_type, ulpfec_payload_type);
   }
 }
 

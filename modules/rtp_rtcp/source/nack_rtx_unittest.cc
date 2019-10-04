@@ -136,10 +136,13 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     configuration.retransmission_rate_limiter = &retransmission_rate_limiter_;
     configuration.local_media_ssrc = kTestSsrc;
     rtp_rtcp_module_ = RtpRtcp::Create(configuration);
-    rtp_sender_video_ = std::make_unique<RTPSenderVideo>(
-        &fake_clock, rtp_rtcp_module_->RtpSender(), nullptr,
-        &playout_delay_oracle_, nullptr, false, false, false,
-        FieldTrialBasedConfig());
+    FieldTrialBasedConfig field_trials;
+    RTPSenderVideo::Config video_config;
+    video_config.clock = &fake_clock;
+    video_config.rtp_sender = rtp_rtcp_module_->RtpSender();
+    video_config.playout_delay_oracle = &playout_delay_oracle_;
+    video_config.field_trials = &field_trials;
+    rtp_sender_video_ = std::make_unique<RTPSenderVideo>(video_config);
     rtp_rtcp_module_->SetRTCPStatus(RtcpMode::kCompound);
     rtp_rtcp_module_->SetStorePacketsStatus(true, 600);
     EXPECT_EQ(0, rtp_rtcp_module_->SetSendingStatus(true));
