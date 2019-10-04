@@ -645,13 +645,15 @@ void DtlsTransport::OnDtlsEvent(rtc::StreamInterface* dtls, int sig, int err) {
         SignalReadPacket(this, buf, read, rtc::TimeMicros(), 0);
       } else if (ret == rtc::SR_EOS) {
         // Remote peer shut down the association with no error.
-        RTC_LOG(LS_INFO) << ToString() << ": DTLS transport closed";
+        RTC_LOG(LS_INFO) << ToString() << ": DTLS transport closed by remote";
         set_writable(false);
         set_dtls_state(DTLS_TRANSPORT_CLOSED);
       } else if (ret == rtc::SR_ERROR) {
         // Remote peer shut down the association with an error.
-        RTC_LOG(LS_INFO) << ToString()
-                         << ": DTLS transport error, code=" << read_error;
+        RTC_LOG(LS_INFO)
+            << ToString()
+            << ": Closed by remote with DTLS transport error, code="
+            << read_error;
         set_writable(false);
         set_dtls_state(DTLS_TRANSPORT_FAILED);
       }
