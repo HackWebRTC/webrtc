@@ -30,6 +30,7 @@ namespace {
 
 constexpr int kNetworkPacketWaitTimeoutMs = 100;
 constexpr int kStatsWaitTimeoutMs = 1000;
+constexpr int kOverheadIpv4Udp = 20 + 8;
 
 class SocketReader : public sigslot::has_slots<> {
  public:
@@ -235,7 +236,7 @@ TEST(NetworkEmulationManagerTest, Run) {
     delete s2;
   }
 
-  int64_t single_packet_size = data.size();
+  const int64_t single_packet_size = data.size() + kOverheadIpv4Udp;
   std::atomic<int> received_stats_count{0};
   nt1->GetStats([&](EmulatedNetworkStats st) {
     EXPECT_EQ(st.packets_sent, 2000l);
@@ -277,8 +278,9 @@ TEST(NetworkEmulationManagerTest, ThroughputStats) {
   EmulatedNetworkManagerInterface* nt2 =
       network_manager.CreateEmulatedNetworkManagerInterface({bob_endpoint});
 
-  int64_t single_packet_size = 100;
-  rtc::CopyOnWriteBuffer data(single_packet_size);
+  constexpr int64_t kUdpPayloadSize = 100;
+  constexpr int64_t kSinglePacketSize = kUdpPayloadSize + kOverheadIpv4Udp;
+  rtc::CopyOnWriteBuffer data(kUdpPayloadSize);
   auto* s1 = nt1->network_thread()->socketserver()->CreateAsyncSocket(
       AF_INET, SOCK_DGRAM);
   auto* s2 = nt2->network_thread()->socketserver()->CreateAsyncSocket(
@@ -311,7 +313,7 @@ TEST(NetworkEmulationManagerTest, ThroughputStats) {
   std::atomic<int> received_stats_count{0};
   nt1->GetStats([&](EmulatedNetworkStats st) {
     EXPECT_EQ(st.packets_sent, kNumPacketsSent);
-    EXPECT_EQ(st.bytes_sent.bytes(), single_packet_size * kNumPacketsSent);
+    EXPECT_EQ(st.bytes_sent.bytes(), kSinglePacketSize * kNumPacketsSent);
 
     const double tolerance = 0.99;  // Accept 1% tolerance for timing.
     EXPECT_GE(st.last_packet_sent_time - st.first_packet_sent_time,

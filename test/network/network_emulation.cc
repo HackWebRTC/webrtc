@@ -20,19 +20,31 @@
 
 namespace webrtc {
 
+namespace {
+constexpr size_t kIPv4HeaderSize = 20;
+constexpr size_t kIPv6HeaderSize = 40;
+}  // namespace
+
 EmulatedIpPacket::EmulatedIpPacket(const rtc::SocketAddress& from,
                                    const rtc::SocketAddress& to,
                                    rtc::CopyOnWriteBuffer data,
                                    Timestamp arrival_time)
-    : from(from), to(to), data(data), arrival_time(arrival_time) {}
+    : from(from),
+      to(to),
+      data(data),
+      ip_header_size((to.family() == AF_INET) ? kIPv4HeaderSize
+                                              : kIPv6HeaderSize),
+      arrival_time(arrival_time) {
+  RTC_DCHECK(to.family() == AF_INET || to.family() == AF_INET6);
+}
 
 void LinkEmulation::OnPacketReceived(EmulatedIpPacket packet) {
   task_queue_->PostTask([this, packet = std::move(packet)]() mutable {
     RTC_DCHECK_RUN_ON(task_queue_);
 
     uint64_t packet_id = next_packet_id_++;
-    bool sent = network_behavior_->EnqueuePacket(
-        PacketInFlightInfo(packet.size(), packet.arrival_time.us(), packet_id));
+    bool sent = network_behavior_->EnqueuePacket(PacketInFlightInfo(
+        packet.ip_packet_size(), packet.arrival_time.us(), packet_id));
     if (sent) {
       packets_.emplace_back(StoredPacket{packet_id, std::move(packet), false});
     }
@@ -206,11 +218,11 @@ void EmulatedEndpoint::SendPacket(const rtc::SocketAddress& from,
     Timestamp current_time = clock_->CurrentTime();
     if (stats_.first_packet_sent_time.IsInfinite()) {
       stats_.first_packet_sent_time = current_time;
-      stats_.first_sent_packet_size = DataSize::bytes(packet.size());
+      stats_.first_sent_packet_size = DataSize::bytes(packet.ip_packet_size());
     }
     stats_.last_packet_sent_time = current_time;
     stats_.packets_sent++;
-    stats_.bytes_sent += DataSize::bytes(packet.size());
+    stats_.bytes_sent += DataSize::bytes(packet.ip_packet_size());
 
     router_.OnPacketReceived(std::move(packet));
   });
@@ -282,7 +294,7 @@ void EmulatedEndpoint::OnPacketReceived(EmulatedIpPacket packet) {
     RTC_LOG(INFO) << "Drop packet: no receiver registered in " << id_
                   << " on port " << packet.to.port();
     stats_.packets_dropped++;
-    stats_.bytes_dropped += DataSize::bytes(packet.size());
+    stats_.bytes_dropped += DataSize::bytes(packet.ip_packet_size());
     return;
   }
   // Endpoint assumes frequent calls to bind and unbind methods, so it holds
@@ -318,11 +330,12 @@ void EmulatedEndpoint::UpdateReceiveStats(const EmulatedIpPacket& packet) {
   Timestamp current_time = clock_->CurrentTime();
   if (stats_.first_packet_received_time.IsInfinite()) {
     stats_.first_packet_received_time = current_time;
-    stats_.first_received_packet_size = DataSize::bytes(packet.size());
+    stats_.first_received_packet_size =
+        DataSize::bytes(packet.ip_packet_size());
   }
   stats_.last_packet_received_time = current_time;
   stats_.packets_received++;
-  stats_.bytes_received += DataSize::bytes(packet.size());
+  stats_.bytes_received += DataSize::bytes(packet.ip_packet_size());
 }
 
 EndpointsContainer::EndpointsContainer(

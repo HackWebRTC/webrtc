@@ -27,6 +27,8 @@ namespace webrtc {
 namespace test {
 namespace {
 
+constexpr uint32_t kTestIpAddress = 0xC0A80011;  // 192.168.0.17
+
 class CountingReceiver : public EmulatedNetworkReceiverInterface {
  public:
   void OnPacketReceived(EmulatedIpPacket packet) override {
@@ -41,8 +43,8 @@ struct TrafficCounterFixture {
   SimulatedClock clock{0};
   CountingReceiver counter;
   TaskQueueForTest task_queue_;
-  EmulatedEndpoint endpoint{/*id=*/1, rtc::IPAddress(), /*is_enabled=*/true,
-                            &task_queue_, &clock};
+  EmulatedEndpoint endpoint{/*id=*/1, rtc::IPAddress(kTestIpAddress),
+                            /*is_enabled=*/true, &task_queue_, &clock};
 };
 
 }  // namespace
