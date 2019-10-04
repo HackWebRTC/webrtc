@@ -185,7 +185,7 @@ public class AndroidVideoDecoderTest {
 
   private EncodedImage createTestEncodedImage() {
     return EncodedImage.builder()
-        .setBuffer(ByteBuffer.wrap(ENCODED_TEST_DATA))
+        .setBuffer(ByteBuffer.wrap(ENCODED_TEST_DATA), null)
         .setFrameType(FrameType.VideoFrameKey)
         .setCompleteFrame(true)
         .createEncodedImage();

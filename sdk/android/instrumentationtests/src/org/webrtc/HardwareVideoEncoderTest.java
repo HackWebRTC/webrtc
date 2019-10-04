@@ -95,7 +95,7 @@ public class HardwareVideoEncoderTest {
       bufferCopy.rewind();
 
       frameQueue.offer(EncodedImage.builder()
-                           .setBuffer(bufferCopy)
+                           .setBuffer(bufferCopy, null)
                            .setEncodedWidth(frame.encodedWidth)
                            .setEncodedHeight(frame.encodedHeight)
                            .setCaptureTimeNs(frame.captureTimeNs)

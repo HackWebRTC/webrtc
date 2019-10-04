@@ -20,11 +20,14 @@ namespace jni {
 class ScopedJavaRefCounted {
  public:
   // Takes over the caller's reference.
-  static ScopedJavaRefCounted Adopt(JNIEnv* env,
+  static ScopedJavaRefCounted Adopt(JNIEnv* jni,
                                     const JavaRef<jobject>& j_object) {
-    return ScopedJavaRefCounted(env, j_object);
+    return ScopedJavaRefCounted(jni, j_object);
   }
 
+  // Retains the java object for the live time of this object.
+  static ScopedJavaRefCounted Retain(JNIEnv* jni,
+                                     const JavaRef<jobject>& j_object);
   ScopedJavaRefCounted(ScopedJavaRefCounted&& other) = default;
 
   // TODO(nisse): Implement move assignment and copy operations when needed.
@@ -35,8 +38,8 @@ class ScopedJavaRefCounted {
 
  private:
   // Adopts reference.
-  ScopedJavaRefCounted(JNIEnv* env, const JavaRef<jobject>& j_object)
-      : j_object_(env, j_object) {}
+  ScopedJavaRefCounted(JNIEnv* jni, const JavaRef<jobject>& j_object)
+      : j_object_(jni, j_object) {}
 
   ScopedJavaGlobalRef<jobject> j_object_;
 };

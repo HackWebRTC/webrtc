@@ -29,7 +29,7 @@ class JavaEncodedImageBuffer : public EncodedImageBufferInterface {
                          const JavaRef<jobject>& j_encoded_image,
                          const uint8_t* payload,
                          size_t size)
-      : j_encoded_image_(ScopedJavaRefCounted::Adopt(env, j_encoded_image)),
+      : j_encoded_image_(ScopedJavaRefCounted::Retain(env, j_encoded_image)),
         data_(const_cast<uint8_t*>(payload)),
         size_(size) {}
 
@@ -65,7 +65,7 @@ ScopedJavaLocalRef<jobject> NativeToJavaEncodedImage(
   // TODO(bugs.webrtc.org/9378): Keep a reference to the C++ EncodedImage data,
   // and use the releaseCallback to manage lifetime.
   return Java_EncodedImage_Constructor(
-      jni, buffer, /*supportsRetain=*/true,
+      jni, buffer,
       /*releaseCallback=*/ScopedJavaGlobalRef<jobject>(nullptr),
       static_cast<int>(image._encodedWidth),
       static_cast<int>(image._encodedHeight),
@@ -90,13 +90,8 @@ EncodedImage JavaToNativeEncodedImage(JNIEnv* env,
   const size_t buffer_size = env->GetDirectBufferCapacity(j_buffer.obj());
 
   EncodedImage frame;
-  if (Java_EncodedImage_maybeRetain(env, j_encoded_image)) {
-    frame.SetEncodedData(new rtc::RefCountedObject<JavaEncodedImageBuffer>(
-        env, j_encoded_image, buffer, buffer_size));
-  } else {
-    // Encoder doesn't support retain/release, so make a copy.
-    frame.SetEncodedData(EncodedImageBuffer::Create(buffer, buffer_size));
-  }
+  frame.SetEncodedData(new rtc::RefCountedObject<JavaEncodedImageBuffer>(
+      env, j_encoded_image, buffer, buffer_size));
 
   frame._encodedWidth = Java_EncodedImage_getEncodedWidth(env, j_encoded_image);
   frame._encodedHeight =

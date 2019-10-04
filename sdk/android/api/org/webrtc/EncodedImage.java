@@ -47,7 +47,6 @@ public class EncodedImage implements RefCounted {
   }
 
   private final RefCountDelegate refCountDelegate;
-  private final boolean supportsRetain;
   public final ByteBuffer buffer;
   public final int encodedWidth;
   public final int encodedHeight;
@@ -69,22 +68,10 @@ public class EncodedImage implements RefCounted {
     refCountDelegate.release();
   }
 
-  // A false return value means that the encoder expects that the buffer is no longer used after
-  // VideoEncoder.Callback.onEncodedFrame returns.
   @CalledByNative
-  boolean maybeRetain() {
-    if (supportsRetain) {
-      retain();
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  @CalledByNative
-  private EncodedImage(ByteBuffer buffer, boolean supportsRetain,
-      @Nullable Runnable releaseCallback, int encodedWidth, int encodedHeight, long captureTimeNs,
-      FrameType frameType, int rotation, boolean completeFrame, @Nullable Integer qp) {
+  private EncodedImage(ByteBuffer buffer, @Nullable Runnable releaseCallback, int encodedWidth,
+      int encodedHeight, long captureTimeNs, FrameType frameType, int rotation,
+      boolean completeFrame, @Nullable Integer qp) {
     this.buffer = buffer;
     this.encodedWidth = encodedWidth;
     this.encodedHeight = encodedHeight;
@@ -94,7 +81,6 @@ public class EncodedImage implements RefCounted {
     this.rotation = rotation;
     this.completeFrame = completeFrame;
     this.qp = qp;
-    this.supportsRetain = supportsRetain;
     this.refCountDelegate = new RefCountDelegate(releaseCallback);
   }
 
@@ -144,7 +130,6 @@ public class EncodedImage implements RefCounted {
 
   public static class Builder {
     private ByteBuffer buffer;
-    private boolean supportsRetain;
     private @Nullable Runnable releaseCallback;
     private int encodedWidth;
     private int encodedHeight;
@@ -156,18 +141,9 @@ public class EncodedImage implements RefCounted {
 
     private Builder() {}
 
-    @Deprecated
-    public Builder setBuffer(ByteBuffer buffer) {
-      this.buffer = buffer;
-      this.releaseCallback = null;
-      this.supportsRetain = false;
-      return this;
-    }
-
     public Builder setBuffer(ByteBuffer buffer, @Nullable Runnable releaseCallback) {
       this.buffer = buffer;
       this.releaseCallback = releaseCallback;
-      this.supportsRetain = true;
       return this;
     }
 
@@ -213,8 +189,8 @@ public class EncodedImage implements RefCounted {
     }
 
     public EncodedImage createEncodedImage() {
-      return new EncodedImage(buffer, supportsRetain, releaseCallback, encodedWidth, encodedHeight,
-          captureTimeNs, frameType, rotation, completeFrame, qp);
+      return new EncodedImage(buffer, releaseCallback, encodedWidth, encodedHeight, captureTimeNs,
+          frameType, rotation, completeFrame, qp);
     }
   }
 }

@@ -15,12 +15,22 @@
 namespace webrtc {
 namespace jni {
 
+// static
+ScopedJavaRefCounted ScopedJavaRefCounted::Retain(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_object) {
+  Java_RefCounted_retain(jni, j_object);
+  CHECK_EXCEPTION(jni)
+      << "Unexpected java exception from java JavaRefCounted.retain()";
+  return Adopt(jni, j_object);
+}
+
 ScopedJavaRefCounted::~ScopedJavaRefCounted() {
   if (!j_object_.is_null()) {
     JNIEnv* jni = AttachCurrentThreadIfNeeded();
     Java_RefCounted_release(jni, j_object_);
     CHECK_EXCEPTION(jni)
-        << "Unexpected java exception from ScopedJavaRefCounted.release()";
+        << "Unexpected java exception from java RefCounted.release()";
   }
 }
 
