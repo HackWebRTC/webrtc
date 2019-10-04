@@ -195,21 +195,16 @@ AudioSendStream::AudioSendStream(
   ConfigureStream(config, true);
 
   pacer_thread_checker_.Detach();
-  if (rtp_transport_) {
-    // Signal congestion controller this object is ready for OnPacket*
-    // callbacks.
-    rtp_transport_->RegisterPacketFeedbackObserver(this);
-  }
+  // Signal congestion controller this object is ready for OnPacket* callbacks.
+  rtp_transport_->RegisterPacketFeedbackObserver(this);
 }
 
 AudioSendStream::~AudioSendStream() {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
   RTC_LOG(LS_INFO) << "~AudioSendStream: " << config_.rtp.ssrc;
   RTC_DCHECK(!sending_);
-  if (rtp_transport_) {
-    rtp_transport_->DeRegisterPacketFeedbackObserver(this);
-    channel_send_->ResetSenderCongestionControlObjects();
-  }
+  rtp_transport_->DeRegisterPacketFeedbackObserver(this);
+  channel_send_->ResetSenderCongestionControlObjects();
   // Blocking call to synchronize state with worker queue to ensure that there
   // are no pending tasks left that keeps references to audio.
   rtc::Event thread_sync_event;
@@ -323,19 +318,15 @@ void AudioSendStream::ConfigureStream(
       // Probing in application limited region is only used in combination with
       // send side congestion control, wich depends on feedback packets which
       // requires transport sequence numbers to be enabled.
-      if (rtp_transport_) {
-        // Optionally request ALR probing but do not override any existing
-        // request from other streams.
-        if (enable_audio_alr_probing_) {
-          rtp_transport_->EnablePeriodicAlrProbing(true);
-        }
-        bandwidth_observer = rtp_transport_->GetBandwidthObserver();
+      // Optionally request ALR probing but do not override any existing
+      // request from other streams.
+      if (enable_audio_alr_probing_) {
+        rtp_transport_->EnablePeriodicAlrProbing(true);
       }
+      bandwidth_observer = rtp_transport_->GetBandwidthObserver();
     }
-    if (rtp_transport_) {
-      channel_send_->RegisterSenderCongestionControlObjects(rtp_transport_,
-                                                            bandwidth_observer);
-    }
+    channel_send_->RegisterSenderCongestionControlObjects(rtp_transport_,
+                                                          bandwidth_observer);
   }
   config_cs_.Enter();
   // MID RTP header extension.
