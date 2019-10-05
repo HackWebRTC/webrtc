@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <numeric>
 
+#include "modules/audio_processing/aec3/aec_state.h"
 #include "rtc_base/random.h"
 #include "rtc_base/system/arch.h"
 #include "system_wrappers/include/cpu_features_wrapper.h"

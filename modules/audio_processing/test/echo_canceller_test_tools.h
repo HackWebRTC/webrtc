@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "api/array_view.h"
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/random.h"
 
 namespace webrtc {
@@ -41,7 +40,6 @@ class DelayBuffer {
  private:
   std::vector<T> buffer_;
   size_t next_insert_index_ = 0;
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(DelayBuffer);
 };
 
 }  // namespace webrtc

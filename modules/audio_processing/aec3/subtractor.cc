@@ -89,13 +89,13 @@ Subtractor::Subtractor(const EchoCanceller3Config& config,
         config_.filter.main.length_blocks,
         config_.filter.main_initial.length_blocks,
         config.filter.config_change_duration_blocks, num_render_channels,
-        num_capture_channels, optimization, data_dumper_);
+        optimization, data_dumper_);
 
     shadow_filter_[ch] = std::make_unique<AdaptiveFirFilter>(
         config_.filter.shadow.length_blocks,
         config_.filter.shadow_initial.length_blocks,
         config.filter.config_change_duration_blocks, num_render_channels,
-        num_capture_channels, optimization, data_dumper_);
+        optimization, data_dumper_);
     G_main_[ch] = std::make_unique<MainFilterUpdateGain>(
         config_.filter.main_initial,
         config_.filter.config_change_duration_blocks);
@@ -162,14 +162,12 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   RTC_DCHECK_EQ(num_capture_channels_, capture.size());
 
   // Compute the render powers.
+  const bool same_filter_sizes =
+      main_filter_[0]->SizePartitions() == shadow_filter_[0]->SizePartitions();
   std::array<float, kFftLengthBy2Plus1> X2_main;
   std::array<float, kFftLengthBy2Plus1> X2_shadow_data;
-  std::array<float, kFftLengthBy2Plus1>& X2_shadow =
-      main_filter_[0]->SizePartitions() == shadow_filter_[0]->SizePartitions()
-          ? X2_main
-          : X2_shadow_data;
-  if (main_filter_[0]->SizePartitions() ==
-      shadow_filter_[0]->SizePartitions()) {
+  auto& X2_shadow = same_filter_sizes ? X2_main : X2_shadow_data;
+  if (same_filter_sizes) {
     render_buffer.SpectralSum(main_filter_[0]->SizePartitions(), &X2_main);
   } else if (main_filter_[0]->SizePartitions() >
              shadow_filter_[0]->SizePartitions()) {
@@ -256,7 +254,8 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
                              aec_state.SaturatedCapture(), &G);
     } else {
       poor_shadow_filter_counter_[ch] = 0;
-      shadow_filter_[ch]->SetFilter(main_filter_[ch]->GetFilter());
+      shadow_filter_[ch]->SetFilter(main_filter_[ch]->SizePartitions(),
+                                    main_filter_[ch]->GetFilter());
       G_shadow_[ch]->Compute(X2_shadow, render_signal_analyzer, E_main,
                              shadow_filter_[ch]->SizePartitions(),
                              aec_state.SaturatedCapture(), &G);

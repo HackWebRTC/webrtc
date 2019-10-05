@@ -54,11 +54,11 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   AdaptiveFirFilter main_filter(config.filter.main.length_blocks,
                                 config.filter.main.length_blocks,
                                 config.filter.config_change_duration_blocks, 1,
-                                1, optimization, &data_dumper);
+                                optimization, &data_dumper);
   AdaptiveFirFilter shadow_filter(config.filter.shadow.length_blocks,
                                   config.filter.shadow.length_blocks,
                                   config.filter.config_change_duration_blocks,
-                                  1, 1, optimization, &data_dumper);
+                                  1, optimization, &data_dumper);
   std::vector<std::array<float, kFftLengthBy2Plus1>> H2(
       main_filter.max_filter_size_partitions(),
       std::array<float, kFftLengthBy2Plus1>());
