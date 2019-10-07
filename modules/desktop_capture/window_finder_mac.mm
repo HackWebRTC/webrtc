@@ -38,6 +38,7 @@ WindowId WindowFinderMac::GetWindowUnderPoint(DesktopVector point) {
         }
         return true;
       },
+      true,
       true);
   return id;
 }

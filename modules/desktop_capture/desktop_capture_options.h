@@ -19,8 +19,9 @@
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 #include "modules/desktop_capture/mac/desktop_configuration_monitor.h"
-#include "modules/desktop_capture/mac/full_screen_chrome_window_detector.h"
 #endif
+
+#include "modules/desktop_capture/full_screen_window_detector.h"
 
 namespace webrtc {
 
@@ -62,20 +63,17 @@ class RTC_EXPORT DesktopCaptureOptions {
     configuration_monitor_ = m;
   }
 
-  // TODO(zijiehe): Instead of FullScreenChromeWindowDetector, provide a
-  // FullScreenWindowDetector for external consumers to detect the target
-  // fullscreen window.
-  FullScreenChromeWindowDetector* full_screen_chrome_window_detector() const {
-    return full_screen_window_detector_;
-  }
-  void set_full_screen_chrome_window_detector(
-      rtc::scoped_refptr<FullScreenChromeWindowDetector> detector) {
-    full_screen_window_detector_ = detector;
-  }
-
   bool allow_iosurface() const { return allow_iosurface_; }
   void set_allow_iosurface(bool allow) { allow_iosurface_ = allow; }
 #endif
+
+  FullScreenWindowDetector* full_screen_window_detector() const {
+    return full_screen_window_detector_;
+  }
+  void set_full_screen_window_detector(
+      rtc::scoped_refptr<FullScreenWindowDetector> detector) {
+    full_screen_window_detector_ = detector;
+  }
 
   // Flag indicating that the capturer should use screen change notifications.
   // Enables/disables use of XDAMAGE in the X11 capturer.
@@ -142,10 +140,10 @@ class RTC_EXPORT DesktopCaptureOptions {
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
   rtc::scoped_refptr<DesktopConfigurationMonitor> configuration_monitor_;
-  rtc::scoped_refptr<FullScreenChromeWindowDetector>
-      full_screen_window_detector_;
   bool allow_iosurface_ = false;
 #endif
+
+  rtc::scoped_refptr<FullScreenWindowDetector> full_screen_window_detector_;
 
 #if defined(WEBRTC_WIN)
   bool allow_use_magnification_api_ = false;

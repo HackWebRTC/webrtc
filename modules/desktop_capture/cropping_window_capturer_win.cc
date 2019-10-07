@@ -98,26 +98,53 @@ BOOL CALLBACK TopWindowVerifier(HWND hwnd, LPARAM param) {
 
 class CroppingWindowCapturerWin : public CroppingWindowCapturer {
  public:
-  CroppingWindowCapturerWin(const DesktopCaptureOptions& options)
-      : CroppingWindowCapturer(options) {}
+  explicit CroppingWindowCapturerWin(const DesktopCaptureOptions& options)
+      : CroppingWindowCapturer(options),
+        full_screen_window_detector_(options.full_screen_window_detector()) {}
+
+  void CaptureFrame() override;
 
  private:
   bool ShouldUseScreenCapturer() override;
   DesktopRect GetWindowRectInVirtualScreen() override;
+
+  // Returns either selected by user sourceId or sourceId provided by
+  // FullScreenWindowDetector
+  WindowId GetWindowToCapture() const;
 
   // The region from GetWindowRgn in the desktop coordinate if the region is
   // rectangular, or the rect from GetWindowRect if the region is not set.
   DesktopRect window_region_rect_;
 
   WindowCaptureHelperWin window_capture_helper_;
+
+  rtc::scoped_refptr<FullScreenWindowDetector> full_screen_window_detector_;
 };
+
+void CroppingWindowCapturerWin::CaptureFrame() {
+  DesktopCapturer* win_capturer = window_capturer();
+  if (win_capturer) {
+    // Update the list of available sources and override source to capture if
+    // FullScreenWindowDetector returns not zero
+    if (full_screen_window_detector_) {
+      full_screen_window_detector_->UpdateWindowListIfNeeded(
+          selected_window(),
+          [win_capturer](DesktopCapturer::SourceList* sources) {
+            return win_capturer->GetSourceList(sources);
+          });
+    }
+    win_capturer->SelectSource(GetWindowToCapture());
+  }
+
+  CroppingWindowCapturer::CaptureFrame();
+}
 
 bool CroppingWindowCapturerWin::ShouldUseScreenCapturer() {
   if (!rtc::IsWindows8OrLater() && window_capture_helper_.IsAeroEnabled()) {
     return false;
   }
 
-  const HWND selected = reinterpret_cast<HWND>(selected_window());
+  const HWND selected = reinterpret_cast<HWND>(GetWindowToCapture());
   // Check if the window is visible on current desktop.
   if (!window_capture_helper_.IsWindowVisibleOnCurrentDesktop(selected)) {
     return false;
@@ -207,7 +234,7 @@ DesktopRect CroppingWindowCapturerWin::GetWindowRectInVirtualScreen() {
   TRACE_EVENT0("webrtc",
                "CroppingWindowCapturerWin::GetWindowRectInVirtualScreen");
   DesktopRect window_rect;
-  HWND hwnd = reinterpret_cast<HWND>(selected_window());
+  HWND hwnd = reinterpret_cast<HWND>(GetWindowToCapture());
   if (!GetCroppedWindowRect(hwnd, /*avoid_cropping_border*/ false, &window_rect,
                             /*original_rect*/ nullptr)) {
     RTC_LOG(LS_WARNING) << "Failed to get window info: " << GetLastError();
@@ -220,6 +247,15 @@ DesktopRect CroppingWindowCapturerWin::GetWindowRectInVirtualScreen() {
   window_rect.IntersectWith(screen_rect);
   window_rect.Translate(-screen_rect.left(), -screen_rect.top());
   return window_rect;
+}
+
+WindowId CroppingWindowCapturerWin::GetWindowToCapture() const {
+  const auto selected_source = selected_window();
+  const auto full_screen_source =
+      full_screen_window_detector_
+          ? full_screen_window_detector_->FindFullScreenWindow(selected_source)
+          : 0;
+  return full_screen_source ? full_screen_source : selected_source;
 }
 
 }  // namespace
