@@ -81,15 +81,6 @@ void EncodedImage::Retain() {
   }
 }
 
-void EncodedImage::Allocate(size_t capacity) {
-  if (encoded_data_ && encoded_data_->HasOneRef()) {
-    encoded_data_->Realloc(capacity);
-  } else {
-    encoded_data_ = EncodedImageBuffer::Create(capacity);
-  }
-  buffer_ = nullptr;
-}
-
 void EncodedImage::SetEncodeTime(int64_t encode_start_ms,
                                  int64_t encode_finish_ms) {
   timing_.encode_start_ms = encode_start_ms;

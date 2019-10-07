@@ -44,13 +44,6 @@ class EncodedImageBufferInterface : public rtc::RefCountInterface {
   // this non-const data method.
   virtual uint8_t* data() = 0;
   virtual size_t size() const = 0;
-  // TODO(bugs.webrtc.org/9378): Delete from this interface, together with
-  // EncodedImage::Allocate. Implemented properly only by the below concrete
-  // class
-  virtual void Realloc(size_t size) { RTC_NOTREACHED(); }
-  // Will be implemented by RefCountedObject, which also implements
-  // |rtc::RefCountInterface|.
-  virtual bool HasOneRef() const = 0;
 };
 
 // Basic implementation of EncodedImageBufferInterface.
@@ -64,7 +57,7 @@ class EncodedImageBuffer : public EncodedImageBufferInterface {
   const uint8_t* data() const override;
   uint8_t* data() override;
   size_t size() const override;
-  void Realloc(size_t t) override;
+  void Realloc(size_t t);
 
  protected:
   explicit EncodedImageBuffer(size_t size);
@@ -145,11 +138,6 @@ class RTC_EXPORT EncodedImage {
     buffer_ = buffer;
     capacity_ = capacity;
   }
-
-  // TODO(bugs.webrtc.org/9378): Delete; this method implies realloc, which
-  // should not be generally supported by the EncodedImageBufferInterface.
-  RTC_DEPRECATED
-  void Allocate(size_t capacity);
 
   void SetEncodedData(
       rtc::scoped_refptr<EncodedImageBufferInterface> encoded_data) {
