@@ -284,16 +284,6 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
   // the input one.
   RTC_DCHECK_EQ(av_frame_->reordered_opaque, frame_timestamp_us);
 
-  // Obtain the |video_frame| containing the decoded image.
-  VideoFrame* input_frame =
-      static_cast<VideoFrame*>(av_buffer_get_opaque(av_frame_->buf[0]));
-  RTC_DCHECK(input_frame);
-  const webrtc::I420BufferInterface* i420_buffer =
-      input_frame->video_frame_buffer()->GetI420();
-  RTC_CHECK_EQ(av_frame_->data[kYPlaneIndex], i420_buffer->DataY());
-  RTC_CHECK_EQ(av_frame_->data[kUPlaneIndex], i420_buffer->DataU());
-  RTC_CHECK_EQ(av_frame_->data[kVPlaneIndex], i420_buffer->DataV());
-
   absl::optional<uint8_t> qp;
   // TODO(sakal): Maybe it is possible to get QP directly from FFmpeg.
   h264_bitstream_parser_.ParseBitstream(input_image.data(), input_image.size());
@@ -302,7 +292,39 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
     qp.emplace(qp_int);
   }
 
-  rtc::scoped_refptr<VideoFrameBuffer> decoded_buffer;
+  // Obtain the |video_frame| containing the decoded image.
+  VideoFrame* input_frame =
+      static_cast<VideoFrame*>(av_buffer_get_opaque(av_frame_->buf[0]));
+  RTC_DCHECK(input_frame);
+  const webrtc::I420BufferInterface* i420_buffer =
+      input_frame->video_frame_buffer()->GetI420();
+
+  // When needed, FFmpeg applies cropping by moving plane pointers and adjusting
+  // frame width/height. Ensure that cropped buffers lie within the allocated
+  // memory.
+  RTC_DCHECK_LE(av_frame_->width, i420_buffer->width());
+  RTC_DCHECK_LE(av_frame_->height, i420_buffer->height());
+  RTC_DCHECK_GE(av_frame_->data[kYPlaneIndex], i420_buffer->DataY());
+  RTC_DCHECK_LE(
+      av_frame_->data[kYPlaneIndex] +
+          av_frame_->linesize[kYPlaneIndex] * av_frame_->height,
+      i420_buffer->DataY() + i420_buffer->StrideY() * i420_buffer->height());
+  RTC_DCHECK_GE(av_frame_->data[kUPlaneIndex], i420_buffer->DataU());
+  RTC_DCHECK_LE(av_frame_->data[kUPlaneIndex] +
+                    av_frame_->linesize[kUPlaneIndex] * av_frame_->height / 2,
+                i420_buffer->DataU() +
+                    i420_buffer->StrideU() * i420_buffer->height() / 2);
+  RTC_DCHECK_GE(av_frame_->data[kVPlaneIndex], i420_buffer->DataV());
+  RTC_DCHECK_LE(av_frame_->data[kVPlaneIndex] +
+                    av_frame_->linesize[kVPlaneIndex] * av_frame_->height / 2,
+                i420_buffer->DataV() +
+                    i420_buffer->StrideV() * i420_buffer->height() / 2);
+
+  auto cropped_buffer = WrapI420Buffer(
+      av_frame_->width, av_frame_->height, av_frame_->data[kYPlaneIndex],
+      av_frame_->linesize[kYPlaneIndex], av_frame_->data[kUPlaneIndex],
+      av_frame_->linesize[kUPlaneIndex], av_frame_->data[kVPlaneIndex],
+      av_frame_->linesize[kVPlaneIndex], rtc::KeepRefUntilDone(i420_buffer));
 
   // Pass on color space from input frame if explicitly specified.
   const ColorSpace& color_space =
@@ -316,26 +338,12 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
   // TODO(chromium:956468): Remove this code and fix the underlying problem.
   bool hdr_color_space =
       color_space.transfer() == ColorSpace::TransferID::kSMPTEST2084;
+
+  rtc::scoped_refptr<VideoFrameBuffer> decoded_buffer;
   if (kEnable8bitHdrFix_ && hdr_color_space) {
-    auto i010_buffer = I010Buffer::Copy(*i420_buffer);
-    // Crop image, see comment below.
-    decoded_buffer = WrapI010Buffer(
-        av_frame_->width, av_frame_->height, i010_buffer->DataY(),
-        i010_buffer->StrideY(), i010_buffer->DataU(), i010_buffer->StrideU(),
-        i010_buffer->DataV(), i010_buffer->StrideV(),
-        rtc::KeepRefUntilDone(i010_buffer));
-  } else if (av_frame_->width != i420_buffer->width() ||
-             av_frame_->height != i420_buffer->height()) {
-    // The decoded image may be larger than what is supposed to be visible, see
-    // |AVGetBuffer2|'s use of |avcodec_align_dimensions|. This crops the image
-    // without copying the underlying buffer.
-    decoded_buffer = WrapI420Buffer(
-        av_frame_->width, av_frame_->height, i420_buffer->DataY(),
-        i420_buffer->StrideY(), i420_buffer->DataU(), i420_buffer->StrideU(),
-        i420_buffer->DataV(), i420_buffer->StrideV(),
-        rtc::KeepRefUntilDone(i420_buffer));
+    decoded_buffer = I010Buffer::Copy(*cropped_buffer);
   } else {
-    decoded_buffer = input_frame->video_frame_buffer();
+    decoded_buffer = cropped_buffer;
   }
 
   VideoFrame decoded_frame = VideoFrame::Builder()
