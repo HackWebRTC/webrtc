@@ -26,6 +26,7 @@
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/audio_coding/neteq/tools/audio_sink.h"
 #include "modules/audio_coding/neteq/tools/fake_decode_from_file.h"
+#include "modules/audio_coding/neteq/tools/initial_packet_inserter_neteq_input.h"
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "modules/audio_coding/neteq/tools/neteq_delay_analyzer.h"
 #include "modules/audio_coding/neteq/tools/neteq_event_log_input.h"
@@ -156,6 +157,35 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
     return nullptr;
   }
 
+  if (!config.field_trial_string.empty()) {
+    field_trials_ =
+        std::make_unique<ScopedFieldTrials>(config.field_trial_string);
+  }
+
+  // Skip some initial events/packets if requested.
+  if (config.skip_get_audio_events > 0) {
+    std::cout << "Skipping " << config.skip_get_audio_events
+              << " get_audio events" << std::endl;
+    if (!input->NextPacketTime() || !input->NextOutputEventTime()) {
+      std::cerr << "No events found" << std::endl;
+      return nullptr;
+    }
+    for (int i = 0; i < config.skip_get_audio_events; i++) {
+      input->AdvanceOutputEvent();
+      if (!input->NextOutputEventTime()) {
+        std::cerr << "Not enough get_audio events found" << std::endl;
+        return nullptr;
+      }
+    }
+    while (*input->NextPacketTime() < *input->NextOutputEventTime()) {
+      input->PopPacket();
+      if (!input->NextPacketTime()) {
+        std::cerr << "Not enough incoming packets found" << std::endl;
+        return nullptr;
+      }
+    }
+  }
+
   // Check the sample rate.
   absl::optional<int> sample_rate_hz;
   std::set<std::pair<int, uint32_t>> discarded_pt_and_ssrc;
@@ -167,6 +197,12 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
                 << static_cast<int>(first_rtp_header->payloadType)
                 << " and SSRC 0x" << std::hex << first_rtp_header->ssrc
                 << std::dec << std::endl;
+      if (config.initial_dummy_packets > 0) {
+        std::cout << "Nr of initial dummy packets: "
+                  << config.initial_dummy_packets << std::endl;
+        input = std::make_unique<InitialPacketInserterNetEqInput>(
+            std::move(input), config.initial_dummy_packets, *sample_rate_hz);
+      }
       break;
     }
     // Discard this packet and move to the next. Keep track of discarded payload

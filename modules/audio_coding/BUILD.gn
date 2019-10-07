@@ -1070,6 +1070,8 @@ rtc_source_set("neteq_test_tools") {
     "neteq/tools/audio_loop.h",
     "neteq/tools/constant_pcm_packet_source.cc",
     "neteq/tools/constant_pcm_packet_source.h",
+    "neteq/tools/initial_packet_inserter_neteq_input.cc",
+    "neteq/tools/initial_packet_inserter_neteq_input.h",
     "neteq/tools/neteq_packet_source_input.cc",
     "neteq/tools/neteq_packet_source_input.h",
     "neteq/tools/output_audio_file.h",
@@ -1466,6 +1468,7 @@ if (rtc_include_tests) {
         "../../api/audio_codecs:builtin_audio_decoder_factory",
         "../../rtc_base:rtc_base_approved",
         "../../test:audio_codec_mocks",
+        "../../test:field_trial",
         "../../test:test_support",
       ]
     }
