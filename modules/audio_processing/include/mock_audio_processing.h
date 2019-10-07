@@ -91,26 +91,12 @@ class MockEchoControl : public EchoControl {
   MOCK_METHOD1(SetAudioBufferDelay, void(size_t delay_ms));
 };
 
-class MockVoiceDetection : public VoiceDetection {
- public:
-  virtual ~MockVoiceDetection() {}
-  MOCK_METHOD1(Enable, int(bool enable));
-  MOCK_CONST_METHOD0(is_enabled, bool());
-  MOCK_CONST_METHOD0(stream_has_voice, bool());
-  MOCK_METHOD1(set_stream_has_voice, int(bool has_voice));
-  MOCK_METHOD1(set_likelihood, int(Likelihood likelihood));
-  MOCK_CONST_METHOD0(likelihood, Likelihood());
-  MOCK_METHOD1(set_frame_size_ms, int(int size));
-  MOCK_CONST_METHOD0(frame_size_ms, int());
-};
-
 class MockAudioProcessing : public ::testing::NiceMock<AudioProcessing> {
  public:
   MockAudioProcessing()
       : gain_control_(new ::testing::NiceMock<MockGainControl>()),
         level_estimator_(new ::testing::NiceMock<MockLevelEstimator>()),
-        noise_suppression_(new ::testing::NiceMock<MockNoiseSuppression>()),
-        voice_detection_(new ::testing::NiceMock<MockVoiceDetection>()) {}
+        noise_suppression_(new ::testing::NiceMock<MockNoiseSuppression>()) {}
 
   virtual ~MockAudioProcessing() {}
 
@@ -183,9 +169,6 @@ class MockAudioProcessing : public ::testing::NiceMock<AudioProcessing> {
   virtual MockNoiseSuppression* noise_suppression() const {
     return noise_suppression_.get();
   }
-  virtual MockVoiceDetection* voice_detection() const {
-    return voice_detection_.get();
-  }
 
   MOCK_CONST_METHOD0(GetConfig, AudioProcessing::Config());
 
@@ -193,7 +176,6 @@ class MockAudioProcessing : public ::testing::NiceMock<AudioProcessing> {
   std::unique_ptr<MockGainControl> gain_control_;
   std::unique_ptr<MockLevelEstimator> level_estimator_;
   std::unique_ptr<MockNoiseSuppression> noise_suppression_;
-  std::unique_ptr<MockVoiceDetection> voice_detection_;
 };
 
 }  // namespace test

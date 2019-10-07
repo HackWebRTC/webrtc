@@ -122,7 +122,6 @@ class AudioProcessingImpl : public AudioProcessing {
   GainControl* gain_control() const override;
   LevelEstimator* level_estimator() const override;
   NoiseSuppression* noise_suppression() const override;
-  VoiceDetection* voice_detection() const override;
 
   // TODO(peah): Remove MutateConfig once the new API allows that.
   void MutateConfig(rtc::FunctionView<void(AudioProcessing::Config*)> mutator);
@@ -182,8 +181,7 @@ class AudioProcessingImpl : public AudioProcessing {
                 bool gain_controller2_enabled,
                 bool pre_amplifier_enabled,
                 bool echo_controller_enabled,
-                bool voice_activity_detector_enabled,
-                bool private_voice_detector_enabled,
+                bool voice_detector_enabled,
                 bool level_estimator_enabled,
                 bool transient_suppressor_enabled);
     bool CaptureMultiBandSubModulesActive() const;
@@ -209,8 +207,7 @@ class AudioProcessingImpl : public AudioProcessing {
     bool pre_amplifier_enabled_ = false;
     bool echo_controller_enabled_ = false;
     bool level_estimator_enabled_ = false;
-    bool voice_activity_detector_enabled_ = false;
-    bool private_voice_detector_enabled_ = false;
+    bool voice_detector_enabled_ = false;
     bool transient_suppressor_enabled_ = false;
     bool first_update_ = true;
   };
@@ -239,6 +236,7 @@ class AudioProcessingImpl : public AudioProcessing {
   void InitializeResidualEchoDetector()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void InitializeHighPassFilter() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void InitializeVoiceDetector() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializeEchoController()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void InitializeGainController2() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
@@ -405,7 +403,6 @@ class AudioProcessingImpl : public AudioProcessing {
       size_t num_keyboard_frames = 0;
       const float* keyboard_data = nullptr;
     } keyboard_info;
-    AudioFrame::VADActivity vad_activity = AudioFrame::kVadUnknown;
   } capture_ RTC_GUARDED_BY(crit_capture_);
 
   struct ApmCaptureNonLockedState {

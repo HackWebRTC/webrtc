@@ -186,10 +186,6 @@ ABSL_FLAG(float,
           kParameterNotSpecifiedValue,
           "Pre-amplifier gain factor (linear) to apply");
 ABSL_FLAG(int,
-          vad_likelihood,
-          kParameterNotSpecifiedValue,
-          "Specify the VAD likelihood (0-3)");
-ABSL_FLAG(int,
           ns_level,
           kParameterNotSpecifiedValue,
           "Specify the NS level (0-3)");
@@ -423,8 +419,6 @@ SimulationSettings CreateSettings() {
       absl::GetFlag(FLAGS_agc2_adaptive_level_estimator));
   SetSettingIfSpecified(absl::GetFlag(FLAGS_pre_amplifier_gain_factor),
                         &settings.pre_amplifier_gain_factor);
-  SetSettingIfSpecified(absl::GetFlag(FLAGS_vad_likelihood),
-                        &settings.vad_likelihood);
   SetSettingIfSpecified(absl::GetFlag(FLAGS_ns_level), &settings.ns_level);
   SetSettingIfSpecified(absl::GetFlag(FLAGS_maximum_internal_processing_rate),
                         &settings.maximum_internal_processing_rate);
@@ -554,11 +548,6 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
       settings.agc2_fixed_gain_db && ((*settings.agc2_fixed_gain_db) < 0 ||
                                       (*settings.agc2_fixed_gain_db) > 90),
       "Error: --agc2_fixed_gain_db must be specified between 0 and 90.\n");
-
-  ReportConditionalErrorAndExit(
-      settings.vad_likelihood &&
-          ((*settings.vad_likelihood) < 0 || (*settings.vad_likelihood) > 3),
-      "Error: --vad_likelihood must be specified between 0 and 3.\n");
 
   ReportConditionalErrorAndExit(
       settings.ns_level &&

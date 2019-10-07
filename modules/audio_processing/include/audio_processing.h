@@ -53,7 +53,6 @@ class LevelEstimator;
 class NoiseSuppression;
 class CustomAudioAnalyzer;
 class CustomProcessing;
-class VoiceDetection;
 
 // Use to enable the extended filter mode in the AEC, along with robustness
 // measures around the reported system delays. It comes with a significant
@@ -287,7 +286,10 @@ class AudioProcessing : public rtc::RefCountInterface {
       Level level = kModerate;
     } noise_suppression;
 
-    // Enables reporting of |has_voice| in webrtc::AudioProcessingStats.
+    // Enables reporting of |voice_detected| in webrtc::AudioProcessingStats.
+    // In addition to |voice_detected|, VAD decision is provided through the
+    // |AudioFrame| passed to |ProcessStream()|. The |vad_activity_| member will
+    // be modified to reflect the current decision.
     struct VoiceDetection {
       bool enabled = false;
     } voice_detection;
@@ -685,7 +687,6 @@ class AudioProcessing : public rtc::RefCountInterface {
   virtual GainControl* gain_control() const = 0;
   virtual LevelEstimator* level_estimator() const = 0;
   virtual NoiseSuppression* noise_suppression() const = 0;
-  virtual VoiceDetection* voice_detection() const = 0;
 
   // Returns the last applied configuration.
   virtual AudioProcessing::Config GetConfig() const = 0;
@@ -979,56 +980,6 @@ class EchoDetector : public rtc::RefCountInterface {
 
   // Collect current metrics from the echo detector.
   virtual Metrics GetMetrics() const = 0;
-};
-
-// The voice activity detection (VAD) component analyzes the stream to
-// determine if voice is present. A facility is also provided to pass in an
-// external VAD decision.
-//
-// In addition to |stream_has_voice()| the VAD decision is provided through the
-// |AudioFrame| passed to |ProcessStream()|. The |vad_activity_| member will be
-// modified to reflect the current decision.
-class VoiceDetection {
- public:
-  virtual int Enable(bool enable) = 0;
-  virtual bool is_enabled() const = 0;
-
-  // Returns true if voice is detected in the current frame. Should be called
-  // after |ProcessStream()|.
-  virtual bool stream_has_voice() const = 0;
-
-  // Some of the APM functionality requires a VAD decision. In the case that
-  // a decision is externally available for the current frame, it can be passed
-  // in here, before |ProcessStream()| is called.
-  //
-  // VoiceDetection does _not_ need to be enabled to use this. If it happens to
-  // be enabled, detection will be skipped for any frame in which an external
-  // VAD decision is provided.
-  virtual int set_stream_has_voice(bool has_voice) = 0;
-
-  // Specifies the likelihood that a frame will be declared to contain voice.
-  // A higher value makes it more likely that speech will not be clipped, at
-  // the expense of more noise being detected as voice.
-  enum Likelihood {
-    kVeryLowLikelihood,
-    kLowLikelihood,
-    kModerateLikelihood,
-    kHighLikelihood
-  };
-
-  virtual int set_likelihood(Likelihood likelihood) = 0;
-  virtual Likelihood likelihood() const = 0;
-
-  // Sets the |size| of the frames in ms on which the VAD will operate. Larger
-  // frames will improve detection accuracy, but reduce the frequency of
-  // updates.
-  //
-  // This does not impact the size of frames passed to |ProcessStream()|.
-  virtual int set_frame_size_ms(int size) = 0;
-  virtual int frame_size_ms() const = 0;
-
- protected:
-  virtual ~VoiceDetection() {}
 };
 
 }  // namespace webrtc

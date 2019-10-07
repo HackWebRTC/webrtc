@@ -156,8 +156,8 @@ rtc_static_library("audio_processing") {
     "transient/wpd_tree.h",
     "typing_detection.cc",
     "typing_detection.h",
-    "voice_detection_impl.cc",
-    "voice_detection_impl.h",
+    "voice_detection.cc",
+    "voice_detection.h",
   ]
 
   defines = []

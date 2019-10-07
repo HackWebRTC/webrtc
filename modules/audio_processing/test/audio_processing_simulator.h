@@ -79,7 +79,6 @@ struct SimulationSettings {
   AudioProcessing::Config::GainController2::LevelEstimator
       agc2_adaptive_level_estimator;
   absl::optional<float> pre_amplifier_gain_factor;
-  absl::optional<int> vad_likelihood;
   absl::optional<int> ns_level;
   absl::optional<int> maximum_internal_processing_rate;
   absl::optional<bool> use_refined_adaptive_filter;

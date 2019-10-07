@@ -455,6 +455,10 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
     apm_config.high_pass_filter.enabled = *settings_.use_hpf;
   }
 
+  if (settings_.use_vad) {
+    apm_config.voice_detection.enabled = *settings_.use_vad;
+  }
+
   if (settings_.use_refined_adaptive_filter) {
     config.Set<RefinedAdaptiveFilter>(
         new RefinedAdaptiveFilter(*settings_.use_refined_adaptive_filter));
@@ -502,10 +506,6 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
     RTC_CHECK_EQ(AudioProcessing::kNoError,
                  ap_->level_estimator()->Enable(*settings_.use_le));
   }
-  if (settings_.use_vad) {
-    RTC_CHECK_EQ(AudioProcessing::kNoError,
-                 ap_->voice_detection()->Enable(*settings_.use_vad));
-  }
   if (settings_.use_agc_limiter) {
     RTC_CHECK_EQ(AudioProcessing::kNoError, ap_->gain_control()->enable_limiter(
                                                 *settings_.use_agc_limiter));
@@ -525,13 +525,6 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
         AudioProcessing::kNoError,
         ap_->gain_control()->set_mode(
             static_cast<webrtc::GainControl::Mode>(*settings_.agc_mode)));
-  }
-
-  if (settings_.vad_likelihood) {
-    RTC_CHECK_EQ(AudioProcessing::kNoError,
-                 ap_->voice_detection()->set_likelihood(
-                     static_cast<webrtc::VoiceDetection::Likelihood>(
-                         *settings_.vad_likelihood)));
   }
   if (settings_.ns_level) {
     RTC_CHECK_EQ(

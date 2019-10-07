@@ -145,7 +145,6 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
   apm->ApplyConfig(apm_config);
 
   apm->level_estimator()->Enable(use_le);
-  apm->voice_detection()->Enable(use_vad);
 
   return apm;
 }
