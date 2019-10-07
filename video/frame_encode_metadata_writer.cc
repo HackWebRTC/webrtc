@@ -35,8 +35,6 @@ class EncodedImageBufferWrapper : public EncodedImageBufferInterface {
   uint8_t* data() override { return buffer_.data(); }
   size_t size() const override { return buffer_.size(); }
 
-  void Realloc(size_t t) override { RTC_NOTREACHED(); }
-
  private:
   rtc::Buffer buffer_;
 };
