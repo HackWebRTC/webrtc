@@ -23,6 +23,7 @@ rtc_static_library("encoded_frame") {
     "../../api/video:video_rtp_headers",
     "../../modules:module_api",
     "../../modules:module_api_public",
+    "../../modules/rtp_rtcp:rtp_video_header",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base/experiments:alr_experiment",
@@ -182,6 +183,7 @@ rtc_source_set("video_codec_interface") {
     "video_coding_defines.cc",
   ]
   deps = [
+    ":codec_globals_headers",
     "..:module_api",
     "../../api/video:video_frame",
     "../../api/video:video_rtp_headers",

@@ -13,6 +13,7 @@
 #include "api/test/simulated_network.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
+#include "modules/include/module_common_types_public.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "test/call_test.h"
 #include "test/gtest.h"

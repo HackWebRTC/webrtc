@@ -14,6 +14,7 @@
 #include "call/call.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
+#include "modules/include/module_common_types_public.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "test/call_test.h"
 #include "test/field_trial.h"

@@ -21,6 +21,7 @@
 #include "api/video/video_stream_encoder_observer.h"
 #include "api/video_codecs/video_encoder_config.h"
 #include "call/video_send_stream.h"
+#include "modules/include/module_common_types_public.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_coding_defines.h"
