@@ -33,6 +33,9 @@ class FilterAnalyzer {
   explicit FilterAnalyzer(const EchoCanceller3Config& config);
   ~FilterAnalyzer();
 
+  FilterAnalyzer(const FilterAnalyzer&) = delete;
+  FilterAnalyzer& operator=(const FilterAnalyzer&) = delete;
+
   // Resets the analysis.
   void Reset();
 
@@ -82,7 +85,7 @@ class FilterAnalyzer {
     void Reset();
     bool Detect(rtc::ArrayView<const float> filter_to_analyze,
                 const FilterRegion& region,
-                rtc::ArrayView<const float> x_block,
+                rtc::ArrayView<const std::vector<float>> x_block,
                 size_t peak_index,
                 int delay_blocks);
 
@@ -110,8 +113,6 @@ class FilterAnalyzer {
   int filter_length_blocks_;
   FilterRegion region_;
   ConsistentFilterDetector consistent_filter_detector_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(FilterAnalyzer);
 };
 
 }  // namespace webrtc

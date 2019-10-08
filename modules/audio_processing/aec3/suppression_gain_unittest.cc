@@ -97,14 +97,14 @@ TEST(SuppressionGain, BasicGainComputation) {
 
   // Ensure that the gain is no longer forced to zero.
   for (int k = 0; k <= kNumBlocksPerSecond / 5 + 1; ++k) {
-    aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse()[0],
-                     subtractor.FilterImpulseResponse()[0],
+    aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse(),
+                     subtractor.FilterImpulseResponse(),
                      *render_delay_buffer->GetRenderBuffer(), E2, Y2, output);
   }
 
   for (int k = 0; k < 100; ++k) {
-    aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse()[0],
-                     subtractor.FilterImpulseResponse()[0],
+    aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse(),
+                     subtractor.FilterImpulseResponse(),
                      *render_delay_buffer->GetRenderBuffer(), E2, Y2, output);
     suppression_gain.GetGain(E2, S2, R2, N2, analyzer, aec_state, x,
                              &high_bands_gain, &g);
@@ -120,8 +120,8 @@ TEST(SuppressionGain, BasicGainComputation) {
   N2.fill(0.f);
 
   for (int k = 0; k < 100; ++k) {
-    aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse()[0],
-                     subtractor.FilterImpulseResponse()[0],
+    aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse(),
+                     subtractor.FilterImpulseResponse(),
                      *render_delay_buffer->GetRenderBuffer(), E2, Y2, output);
     suppression_gain.GetGain(E2, S2, R2, N2, analyzer, aec_state, x,
                              &high_bands_gain, &g);

@@ -145,8 +145,8 @@ std::vector<float> RunSubtractorTest(
 
     aec_state.HandleEchoPathChange(EchoPathVariability(
         false, EchoPathVariability::DelayAdjustment::kNone, false));
-    aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse()[0],
-                     subtractor.FilterImpulseResponse()[0],
+    aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse(),
+                     subtractor.FilterImpulseResponse(),
                      *render_delay_buffer->GetRenderBuffer(), E2_main, Y2,
                      output);
   }

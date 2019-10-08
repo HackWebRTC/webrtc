@@ -59,14 +59,19 @@ void RunFilterUpdateTest(int num_blocks_to_process,
                                   config.filter.shadow.length_blocks,
                                   config.filter.config_change_duration_blocks,
                                   1, optimization, &data_dumper);
-  std::vector<std::array<float, kFftLengthBy2Plus1>> H2(
-      main_filter.max_filter_size_partitions(),
-      std::array<float, kFftLengthBy2Plus1>());
-  for (auto& H2_k : H2) {
-    H2_k.fill(0.f);
+  std::vector<std::vector<std::array<float, kFftLengthBy2Plus1>>> H2(
+      kNumChannels, std::vector<std::array<float, kFftLengthBy2Plus1>>(
+                        main_filter.max_filter_size_partitions(),
+                        std::array<float, kFftLengthBy2Plus1>()));
+  for (auto& H2_ch : H2) {
+    for (auto& H2_k : H2_ch) {
+      H2_k.fill(0.f);
+    }
   }
-  std::vector<float> h(
-      GetTimeDomainLength(main_filter.max_filter_size_partitions()), 0.f);
+  std::vector<std::vector<float>> h(
+      kNumChannels,
+      std::vector<float>(
+          GetTimeDomainLength(main_filter.max_filter_size_partitions()), 0.f));
 
   Aec3Fft fft;
   std::array<float, kBlockSize> x_old;
@@ -183,15 +188,15 @@ void RunFilterUpdateTest(int num_blocks_to_process,
         main_filter.SizePartitions(), &render_power);
 
     std::array<float, kFftLengthBy2Plus1> erl;
-    ComputeErl(optimization, H2, erl);
+    ComputeErl(optimization, H2[0], erl);
     main_gain.Compute(render_power, render_signal_analyzer, output[0], erl,
                       main_filter.SizePartitions(), saturation, &G);
-    main_filter.Adapt(*render_delay_buffer->GetRenderBuffer(), G, &h);
+    main_filter.Adapt(*render_delay_buffer->GetRenderBuffer(), G, &h[0]);
 
     // Update the delay.
     aec_state.HandleEchoPathChange(EchoPathVariability(
         false, EchoPathVariability::DelayAdjustment::kNone, false));
-    main_filter.ComputeFrequencyResponse(&H2);
+    main_filter.ComputeFrequencyResponse(&H2[0]);
     aec_state.Update(delay_estimate, H2, h,
                      *render_delay_buffer->GetRenderBuffer(), E2_main, Y2,
                      output);

@@ -57,7 +57,7 @@ class AecState {
   }
 
   // Returns the estimated echo path gain.
-  float EchoPathGain() const { return filter_analyzer_.Gain(); }
+  float EchoPathGain() const { return max_echo_path_gain_; }
 
   // Returns whether the render signal is currently active.
   bool ActiveRender() const { return blocks_with_active_render_ > 200; }
@@ -131,18 +131,20 @@ class AecState {
   // Updates the aec state.
   // TODO(bugs.webrtc.org/10913): Handle multi-channel adaptive filter response.
   // TODO(bugs.webrtc.org/10913): Compute multi-channel ERL, ERLE, and reverb.
-  void Update(const absl::optional<DelayEstimate>& external_delay,
-              const std::vector<std::array<float, kFftLengthBy2Plus1>>&
-                  adaptive_filter_frequency_response,
-              const std::vector<float>& adaptive_filter_impulse_response,
-              const RenderBuffer& render_buffer,
-              const std::array<float, kFftLengthBy2Plus1>& E2_main,
-              const std::array<float, kFftLengthBy2Plus1>& Y2,
-              rtc::ArrayView<const SubtractorOutput> subtractor_output);
+  void Update(
+      const absl::optional<DelayEstimate>& external_delay,
+      rtc::ArrayView<const std::vector<std::array<float, kFftLengthBy2Plus1>>>
+          adaptive_filter_frequency_response,
+      rtc::ArrayView<const std::vector<float>> adaptive_filter_impulse_response,
+      const RenderBuffer& render_buffer,
+      const std::array<float, kFftLengthBy2Plus1>& E2_main,
+      const std::array<float, kFftLengthBy2Plus1>& Y2,
+      rtc::ArrayView<const SubtractorOutput> subtractor_output);
 
   // Returns filter length in blocks.
   int FilterLengthBlocks() const {
-    return filter_analyzer_.FilterLengthBlocks();
+    // All filters have the same length, so arbitrarily return channel 0 length.
+    return filter_analyzers_[/*channel=*/0]->FilterLengthBlocks();
   }
 
  private:
@@ -191,9 +193,10 @@ class AecState {
     int DirectPathFilterDelay() const { return filter_delay_blocks_; }
 
     // Updates the delay estimates based on new data.
-    void Update(const FilterAnalyzer& filter_analyzer,
-                const absl::optional<DelayEstimate>& external_delay,
-                size_t blocks_with_proper_filter_adaptation);
+    void Update(
+        const std::vector<std::unique_ptr<FilterAnalyzer>>& filter_analyzer,
+        const absl::optional<DelayEstimate>& external_delay,
+        size_t blocks_with_proper_filter_adaptation);
 
    private:
     const int delay_headroom_samples_;
@@ -216,9 +219,9 @@ class AecState {
 
     // Updates the detection deciscion based on new data.
     void Update(int filter_delay_blocks,
-                bool consistent_filter,
-                bool converged_filter,
-                bool diverged_filter,
+                bool any_filter_consistent,
+                bool any_filter_converged,
+                bool all_filters_diverged,
                 bool active_render,
                 bool saturated_capture);
 
@@ -257,9 +260,8 @@ class AecState {
     void Update(bool active_render,
                 bool transparent_mode,
                 bool saturated_capture,
-                bool consistent_estimate_,
                 const absl::optional<DelayEstimate>& external_delay,
-                bool converged_filter);
+                bool any_filter_converged);
 
    private:
     bool usable_linear_estimate_ = false;
@@ -290,8 +292,9 @@ class AecState {
   ErleEstimator erle_estimator_;
   size_t strong_not_saturated_render_blocks_ = 0;
   size_t blocks_with_active_render_ = 0;
+  float max_echo_path_gain_;
   bool capture_signal_saturation_ = false;
-  FilterAnalyzer filter_analyzer_;
+  std::vector<std::unique_ptr<FilterAnalyzer>> filter_analyzers_;
   absl::optional<DelayEstimate> external_delay_;
   EchoAudibility echo_audibility_;
   ReverbModelEstimator reverb_model_estimator_;

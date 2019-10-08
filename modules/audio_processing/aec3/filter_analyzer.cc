@@ -96,8 +96,8 @@ void FilterAnalyzer::AnalyzeRegion(
   filter_length_blocks_ = filter_time_domain.size() * (1.f / kBlockSize);
 
   consistent_estimate_ = consistent_filter_detector_.Detect(
-      h_highpass_, region_, render_buffer.Block(-delay_blocks_)[0][0],
-      peak_index_, delay_blocks_);
+      h_highpass_, region_, render_buffer.Block(-delay_blocks_)[0], peak_index_,
+      delay_blocks_);
 }
 
 void FilterAnalyzer::UpdateFilterGain(
@@ -176,7 +176,7 @@ void FilterAnalyzer::ConsistentFilterDetector::Reset() {
 bool FilterAnalyzer::ConsistentFilterDetector::Detect(
     rtc::ArrayView<const float> filter_to_analyze,
     const FilterRegion& region,
-    rtc::ArrayView<const float> x_block,
+    rtc::ArrayView<const std::vector<float>> x_block,
     size_t peak_index,
     int delay_blocks) {
   if (region.start_sample_ == 0) {
@@ -212,9 +212,15 @@ bool FilterAnalyzer::ConsistentFilterDetector::Detect(
   }
 
   if (significant_peak_) {
-    const float x_energy = std::inner_product(x_block.begin(), x_block.end(),
-                                              x_block.begin(), 0.f);
-    const bool active_render_block = x_energy > active_render_threshold_;
+    bool active_render_block = false;
+    for (auto& x_channel : x_block) {
+      const float x_energy = std::inner_product(
+          x_channel.begin(), x_channel.end(), x_channel.begin(), 0.f);
+      if (x_energy > active_render_threshold_) {
+        active_render_block = true;
+        break;
+      }
+    }
 
     if (consistent_delay_reference_ == delay_blocks) {
       if (active_render_block) {

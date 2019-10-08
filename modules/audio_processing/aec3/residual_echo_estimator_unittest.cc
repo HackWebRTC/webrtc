@@ -28,7 +28,7 @@ TEST(ResidualEchoEstimator, BasicTest) {
 
       EchoCanceller3Config config;
       ResidualEchoEstimator estimator(config, num_render_channels);
-      AecState aec_state(config, num_render_channels);
+      AecState aec_state(config, num_capture_channels);
       std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
           RenderDelayBuffer::Create(config, kSampleRateHz,
                                     num_render_channels));
@@ -44,20 +44,26 @@ TEST(ResidualEchoEstimator, BasicTest) {
           kNumBands,
           std::vector<std::vector<float>>(num_render_channels,
                                           std::vector<float>(kBlockSize, 0.f)));
-      std::vector<std::array<float, kFftLengthBy2Plus1>> H2(10);
+      std::vector<std::vector<std::array<float, kFftLengthBy2Plus1>>> H2(
+          num_capture_channels,
+          std::vector<std::array<float, kFftLengthBy2Plus1>>(10));
       Random random_generator(42U);
-      std::vector<SubtractorOutput> output(num_render_channels);
+      std::vector<SubtractorOutput> output(num_capture_channels);
       std::array<float, kBlockSize> y;
       absl::optional<DelayEstimate> delay_estimate;
 
-      for (auto& H2_k : H2) {
-        H2_k.fill(0.01f);
+      for (auto& H2_ch : H2) {
+        for (auto& H2_k : H2_ch) {
+          H2_k.fill(0.01f);
+        }
+        H2_ch[2].fill(10.f);
+        H2_ch[2][0] = 0.1f;
       }
-      H2[2].fill(10.f);
-      H2[2][0] = 0.1f;
 
-      std::vector<float> h(
-          GetTimeDomainLength(config.filter.main.length_blocks), 0.f);
+      std::vector<std::vector<float>> h(
+          num_capture_channels,
+          std::vector<float>(
+              GetTimeDomainLength(config.filter.main.length_blocks), 0.f));
 
       for (auto& subtractor_output : output) {
         subtractor_output.Reset();

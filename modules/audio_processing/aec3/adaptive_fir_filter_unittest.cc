@@ -346,11 +346,14 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
         config.filter.main.length_blocks, config.filter.main.length_blocks,
         config.filter.config_change_duration_blocks, num_render_channels,
         DetectOptimization(), &data_dumper);
-    std::vector<std::array<float, kFftLengthBy2Plus1>> H2(
-        filter.max_filter_size_partitions(),
-        std::array<float, kFftLengthBy2Plus1>());
-    std::vector<float> h(
-        GetTimeDomainLength(filter.max_filter_size_partitions()), 0.f);
+    std::vector<std::vector<std::array<float, kFftLengthBy2Plus1>>> H2(
+        kNumCaptureChannels, std::vector<std::array<float, kFftLengthBy2Plus1>>(
+                                 filter.max_filter_size_partitions(),
+                                 std::array<float, kFftLengthBy2Plus1>()));
+    std::vector<std::vector<float>> h(
+        kNumCaptureChannels,
+        std::vector<float>(
+            GetTimeDomainLength(filter.max_filter_size_partitions()), 0.f));
     Aec3Fft fft;
     config.delay.default_delay = 1;
     std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
@@ -454,11 +457,11 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
         render_buffer->SpectralSum(filter.SizePartitions(), &render_power);
         gain.Compute(render_power, render_signal_analyzer, E,
                      filter.SizePartitions(), false, &G);
-        filter.Adapt(*render_buffer, G, &h);
+        filter.Adapt(*render_buffer, G, &h[0]);
         aec_state.HandleEchoPathChange(EchoPathVariability(
             false, EchoPathVariability::DelayAdjustment::kNone, false));
 
-        filter.ComputeFrequencyResponse(&H2);
+        filter.ComputeFrequencyResponse(&H2[0]);
         aec_state.Update(delay_estimate, H2, h, *render_buffer, E2_main, Y2,
                          output);
       }

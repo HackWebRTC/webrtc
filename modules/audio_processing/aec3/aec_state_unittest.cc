@@ -55,17 +55,23 @@ void RunNormalUsageTest(size_t num_render_channels,
     y[ch].fill(1000.f);
   }
   Aec3Fft fft;
-  std::vector<std::array<float, kFftLengthBy2Plus1>>
-      converged_filter_frequency_response(10);
-  for (auto& v : converged_filter_frequency_response) {
-    v.fill(0.01f);
+  std::vector<std::vector<std::array<float, kFftLengthBy2Plus1>>>
+  converged_filter_frequency_response(
+      num_capture_channels,
+      std::vector<std::array<float, kFftLengthBy2Plus1>>(10));
+  for (auto& v_ch : converged_filter_frequency_response) {
+    for (auto& v : v_ch) {
+      v.fill(0.01f);
+    }
   }
-  std::vector<std::array<float, kFftLengthBy2Plus1>>
+  std::vector<std::vector<std::array<float, kFftLengthBy2Plus1>>>
       diverged_filter_frequency_response = converged_filter_frequency_response;
-  converged_filter_frequency_response[2].fill(100.f);
-  converged_filter_frequency_response[2][0] = 1.f;
-  std::vector<float> impulse_response(
-      GetTimeDomainLength(config.filter.main.length_blocks), 0.f);
+  converged_filter_frequency_response[0][2].fill(100.f);
+  converged_filter_frequency_response[0][2][0] = 1.f;
+  std::vector<std::vector<float>> impulse_response(
+      num_capture_channels,
+      std::vector<float>(GetTimeDomainLength(config.filter.main.length_blocks),
+                         0.f));
 
   // Verify that linear AEC usability is true when the filter is converged
   for (size_t band = 0; band < kNumBands; ++band) {
@@ -243,20 +249,28 @@ TEST(AecState, ConvergedFilterDelay) {
   x.fill(0.f);
   y.fill(0.f);
 
-  std::vector<std::array<float, kFftLengthBy2Plus1>> frequency_response(
-      kFilterLengthBlocks);
-  for (auto& v : frequency_response) {
-    v.fill(0.01f);
+  std::vector<std::vector<std::array<float, kFftLengthBy2Plus1>>>
+  frequency_response(
+      kNumCaptureChannels,
+      std::vector<std::array<float, kFftLengthBy2Plus1>>(kFilterLengthBlocks));
+  for (auto& v_ch : frequency_response) {
+    for (auto& v : v_ch) {
+      v.fill(0.01f);
+    }
   }
 
-  std::vector<float> impulse_response(
-      GetTimeDomainLength(config.filter.main.length_blocks), 0.f);
+  std::vector<std::vector<float>> impulse_response(
+      kNumCaptureChannels,
+      std::vector<float>(GetTimeDomainLength(config.filter.main.length_blocks),
+                         0.f));
 
   // Verify that the filter delay for a converged filter is properly
   // identified.
   for (int k = 0; k < kFilterLengthBlocks; ++k) {
-    std::fill(impulse_response.begin(), impulse_response.end(), 0.f);
-    impulse_response[k * kBlockSize + 1] = 1.f;
+    for (auto& ir : impulse_response) {
+      std::fill(ir.begin(), ir.end(), 0.f);
+      ir[k * kBlockSize + 1] = 1.f;
+    }
 
     state.HandleEchoPathChange(echo_path_variability);
     subtractor_output[0].ComputeMetrics(y);
