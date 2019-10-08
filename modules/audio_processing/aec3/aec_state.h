@@ -68,12 +68,12 @@ class AecState {
 
   // Returns whether the stationary properties of the signals are used in the
   // aec.
-  bool UseStationaryProperties() const {
+  bool UseStationarityProperties() const {
     return config_.echo_audibility.use_stationarity_properties;
   }
 
   // Returns the ERLE.
-  const std::array<float, kFftLengthBy2Plus1>& Erle() const {
+  rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Erle() const {
     return erle_estimator_.Erle();
   }
 

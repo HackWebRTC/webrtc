@@ -152,7 +152,7 @@ class EchoRemoverImpl final : public EchoRemover {
   std::vector<std::unique_ptr<ComfortNoiseGenerator>> cngs_;
   SuppressionFilter suppression_filter_;
   RenderSignalAnalyzer render_signal_analyzer_;
-  std::vector<std::unique_ptr<ResidualEchoEstimator>> residual_echo_estimators_;
+  ResidualEchoEstimator residual_echo_estimator_;
   bool echo_leakage_detected_ = false;
   AecState aec_state_;
   EchoRemoverMetrics metrics_;
@@ -201,7 +201,7 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
                           sample_rate_hz_,
                           num_capture_channels_),
       render_signal_analyzer_(config_),
-      residual_echo_estimators_(num_capture_channels_),
+      residual_echo_estimator_(config_, num_render_channels),
       aec_state_(config_, num_capture_channels_),
       e_old_(num_capture_channels_),
       y_old_(num_capture_channels_),
@@ -222,8 +222,6 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
 
   uint32_t cng_seed = 42;
   for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
-    residual_echo_estimators_[ch] =
-        std::make_unique<ResidualEchoEstimator>(config_);
     suppression_gains_[ch] = std::make_unique<SuppressionGain>(
         config_, optimization_, sample_rate_hz);
     cngs_[ch] =
@@ -400,11 +398,11 @@ void EchoRemoverImpl::ProcessCapture(
   std::array<float, kFftLengthBy2Plus1> G;
   G.fill(1.f);
 
-  for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
-    // Estimate the residual echo power.
-    residual_echo_estimators_[ch]->Estimate(aec_state_, *render_buffer,
-                                            S2_linear[ch], Y2[ch], &R2[ch]);
+  // Estimate the residual echo power.
+  residual_echo_estimator_.Estimate(aec_state_, *render_buffer, S2_linear, Y2,
+                                    R2);
 
+  for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
     // Estimate the comfort noise.
     cngs_[ch]->Compute(aec_state_, Y2[ch], &comfort_noise[ch],
                        &high_band_comfort_noise[ch]);
@@ -462,8 +460,6 @@ void EchoRemoverImpl::ProcessCapture(
       "aec3_X2",
       render_buffer->Spectrum(aec_state_.FilterDelayBlocks(), /*channel=*/0));
   data_dumper_->DumpRaw("aec3_R2", R2[0]);
-  data_dumper_->DumpRaw("aec3_R2_reverb",
-                        residual_echo_estimators_[0]->GetReverbPowerSpectrum());
   data_dumper_->DumpRaw("aec3_filter_delay", aec_state_.FilterDelayBlocks());
   data_dumper_->DumpRaw("aec3_capture_saturation",
                         aec_state_.SaturatedCapture() ? 1 : 0);

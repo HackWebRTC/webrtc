@@ -40,17 +40,21 @@ bool EnableMinErleDuringOnsets() {
 
 }  // namespace
 
-SubbandErleEstimator::SubbandErleEstimator(const EchoCanceller3Config& config)
+SubbandErleEstimator::SubbandErleEstimator(const EchoCanceller3Config& config,
+                                           size_t num_capture_channels)
     : min_erle_(config.erle.min),
       max_erle_(SetMaxErleBands(config.erle.max_l, config.erle.max_h)),
-      use_min_erle_during_onsets_(EnableMinErleDuringOnsets()) {
+      use_min_erle_during_onsets_(EnableMinErleDuringOnsets()),
+      erle_(num_capture_channels) {
   Reset();
 }
 
 SubbandErleEstimator::~SubbandErleEstimator() = default;
 
 void SubbandErleEstimator::Reset() {
-  erle_.fill(min_erle_);
+  for (auto& erle : erle_) {
+    erle.fill(min_erle_);
+  }
   erle_onsets_.fill(min_erle_);
   coming_onset_.fill(true);
   hold_counters_.fill(0);
@@ -74,8 +78,10 @@ void SubbandErleEstimator::Update(rtc::ArrayView<const float> X2,
     DecreaseErlePerBandForLowRenderSignals();
   }
 
-  erle_[0] = erle_[1];
-  erle_[kFftLengthBy2] = erle_[kFftLengthBy2 - 1];
+  for (auto& erle : erle_) {
+    erle[0] = erle[1];
+    erle[kFftLengthBy2] = erle[kFftLengthBy2 - 1];
+  }
 }
 
 void SubbandErleEstimator::Dump(
@@ -116,11 +122,12 @@ void SubbandErleEstimator::UpdateBands(bool onset_detection) {
   for (size_t k = 1; k < kFftLengthBy2; ++k) {
     if (is_erle_updated[k]) {
       float alpha = 0.05f;
-      if (new_erle[k] < erle_[k]) {
+      if (new_erle[k] < erle_[0][k]) {
         alpha = accum_spectra_.low_render_energy_[k] ? 0.f : 0.1f;
       }
-      erle_[k] = rtc::SafeClamp(erle_[k] + alpha * (new_erle[k] - erle_[k]),
-                                min_erle_, max_erle_[k]);
+      erle_[0][k] =
+          rtc::SafeClamp(erle_[0][k] + alpha * (new_erle[k] - erle_[0][k]),
+                         min_erle_, max_erle_[k]);
     }
   }
 }
@@ -129,9 +136,9 @@ void SubbandErleEstimator::DecreaseErlePerBandForLowRenderSignals() {
   for (size_t k = 1; k < kFftLengthBy2; ++k) {
     hold_counters_[k]--;
     if (hold_counters_[k] <= (kBlocksForOnsetDetection - kBlocksToHoldErle)) {
-      if (erle_[k] > erle_onsets_[k]) {
-        erle_[k] = std::max(erle_onsets_[k], 0.97f * erle_[k]);
-        RTC_DCHECK_LE(min_erle_, erle_[k]);
+      if (erle_[0][k] > erle_onsets_[k]) {
+        erle_[0][k] = std::max(erle_onsets_[k], 0.97f * erle_[0][k]);
+        RTC_DCHECK_LE(min_erle_, erle_[0][k]);
       }
       if (hold_counters_[k] <= 0) {
         coming_onset_[k] = true;

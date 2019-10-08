@@ -33,7 +33,8 @@ namespace webrtc {
 class ErleEstimator {
  public:
   ErleEstimator(size_t startup_phase_length_blocks_,
-                const EchoCanceller3Config& config);
+                const EchoCanceller3Config& config,
+                size_t num_capture_channels);
   ~ErleEstimator();
 
   // Resets the fullband ERLE estimator and the subbands ERLE estimators.
@@ -50,10 +51,11 @@ class ErleEstimator {
               bool onset_detection);
 
   // Returns the most recent subband ERLE estimates.
-  const std::array<float, kFftLengthBy2Plus1>& Erle() const {
+  rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Erle() const {
     return use_signal_dependent_erle_ ? signal_dependent_erle_estimator_.Erle()
                                       : subband_erle_estimator_.Erle();
   }
+
   // Returns the subband ERLE that are estimated during onsets. Used
   // for logging/testing.
   rtc::ArrayView<const float> ErleOnsets() const {

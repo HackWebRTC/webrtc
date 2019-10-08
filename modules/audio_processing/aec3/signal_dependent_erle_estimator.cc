@@ -118,7 +118,8 @@ SetMaxErleSubbands(float max_erle_l, float max_erle_h, size_t limit_subband_l) {
 }  // namespace
 
 SignalDependentErleEstimator::SignalDependentErleEstimator(
-    const EchoCanceller3Config& config)
+    const EchoCanceller3Config& config,
+    size_t num_capture_channels)
     : min_erle_(config.erle.min),
       num_sections_(config.erle.num_sections),
       num_blocks_(config.filter.main.length_blocks),
@@ -130,6 +131,7 @@ SignalDependentErleEstimator::SignalDependentErleEstimator(
       section_boundaries_blocks_(SetSectionsBoundaries(delay_headroom_blocks_,
                                                        num_blocks_,
                                                        num_sections_)),
+      erle_(num_capture_channels),
       S2_section_accum_(num_sections_),
       erle_estimators_(num_sections_),
       correction_factors_(num_sections_) {
@@ -142,9 +144,11 @@ SignalDependentErleEstimator::SignalDependentErleEstimator(
 SignalDependentErleEstimator::~SignalDependentErleEstimator() = default;
 
 void SignalDependentErleEstimator::Reset() {
-  erle_.fill(min_erle_);
-  for (auto& erle : erle_estimators_) {
+  for (auto& erle : erle_) {
     erle.fill(min_erle_);
+  }
+  for (auto& erle_estimator : erle_estimators_) {
+    erle_estimator.fill(min_erle_);
   }
   erle_ref_.fill(min_erle_);
   for (auto& factor : correction_factors_) {
@@ -166,7 +170,7 @@ void SignalDependentErleEstimator::Update(
     rtc::ArrayView<const float> X2,
     rtc::ArrayView<const float> Y2,
     rtc::ArrayView<const float> E2,
-    rtc::ArrayView<const float> average_erle,
+    rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> average_erle,
     bool converged_filter) {
   RTC_DCHECK_GT(num_sections_, 1);
 
@@ -187,8 +191,8 @@ void SignalDependentErleEstimator::Update(
   for (size_t k = 0; k < kFftLengthBy2; ++k) {
     float correction_factor =
         correction_factors_[n_active_sections[k]][band_to_subband_[k]];
-    erle_[k] = rtc::SafeClamp(average_erle[k] * correction_factor, min_erle_,
-                              max_erle_[band_to_subband_[k]]);
+    erle_[0][k] = rtc::SafeClamp(average_erle[0][k] * correction_factor,
+                                 min_erle_, max_erle_[band_to_subband_[k]]);
   }
 }
 

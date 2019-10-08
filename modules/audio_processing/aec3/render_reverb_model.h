@@ -37,7 +37,7 @@ class RenderReverbModel {
   // Gets the reverberation spectrum that was added to the render spectrum for
   // computing the reverberation render spectrum.
   rtc::ArrayView<const float> GetReverbContributionPowerSpectrum() const {
-    return render_reverb_.GetPowerSpectrum();
+    return render_reverb_.reverb();
   }
 
  private:

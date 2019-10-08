@@ -27,7 +27,8 @@ namespace webrtc {
 // Estimates the echo return loss enhancement for each frequency subband.
 class SubbandErleEstimator {
  public:
-  explicit SubbandErleEstimator(const EchoCanceller3Config& config);
+  SubbandErleEstimator(const EchoCanceller3Config& config,
+                       size_t num_capture_channels);
   ~SubbandErleEstimator();
 
   // Resets the ERLE estimator.
@@ -41,7 +42,9 @@ class SubbandErleEstimator {
               bool onset_detection);
 
   // Returns the ERLE estimate.
-  const std::array<float, kFftLengthBy2Plus1>& Erle() const { return erle_; }
+  rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Erle() const {
+    return erle_;
+  }
 
   // Returns the ERLE estimate at onsets.
   rtc::ArrayView<const float> ErleOnsets() const { return erle_onsets_; }
@@ -69,7 +72,7 @@ class SubbandErleEstimator {
   const std::array<float, kFftLengthBy2Plus1> max_erle_;
   const bool use_min_erle_during_onsets_;
   AccumulatedSpectra accum_spectra_;
-  std::array<float, kFftLengthBy2Plus1> erle_;
+  std::vector<std::array<float, kFftLengthBy2Plus1>> erle_;
   std::array<float, kFftLengthBy2Plus1> erle_onsets_;
   std::array<bool, kFftLengthBy2Plus1> coming_onset_;
   std::array<int, kFftLengthBy2Plus1> hold_counters_;

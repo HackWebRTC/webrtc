@@ -113,22 +113,23 @@ TEST(ErleEstimator, VerifyErleIncreaseAndHold) {
   std::array<float, kFftLengthBy2Plus1> X2;
   std::array<float, kFftLengthBy2Plus1> E2;
   std::array<float, kFftLengthBy2Plus1> Y2;
-  constexpr size_t kNumChannels = 1;
+  constexpr size_t kNumRenderChannels = 1;
+  constexpr size_t kNumCaptureChannels = 1;
   constexpr int kSampleRateHz = 48000;
   constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
 
   EchoCanceller3Config config;
   std::vector<std::vector<std::vector<float>>> x(
       kNumBands, std::vector<std::vector<float>>(
-                     kNumChannels, std::vector<float>(kBlockSize, 0.f)));
+                     kNumRenderChannels, std::vector<float>(kBlockSize, 0.f)));
   std::vector<std::array<float, kFftLengthBy2Plus1>> filter_frequency_response(
       config.filter.main.length_blocks);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, kSampleRateHz, kNumChannels));
+      RenderDelayBuffer::Create(config, kSampleRateHz, kNumRenderChannels));
 
   GetFilterFreq(filter_frequency_response, config.delay.delay_headroom_samples);
 
-  ErleEstimator estimator(0, config);
+  ErleEstimator estimator(0, config, kNumCaptureChannels);
 
   FormFarendTimeFrame(&x);
   render_delay_buffer->Insert(x);
@@ -142,7 +143,7 @@ TEST(ErleEstimator, VerifyErleIncreaseAndHold) {
     estimator.Update(*render_delay_buffer->GetRenderBuffer(),
                      filter_frequency_response, X2, Y2, E2, true, true);
   }
-  VerifyErle(estimator.Erle(), std::pow(2.f, estimator.FullbandErleLog2()),
+  VerifyErle(estimator.Erle()[0], std::pow(2.f, estimator.FullbandErleLog2()),
              config.erle.max_l, config.erle.max_h);
 
   FormNearendFrame(&x, &X2, &E2, &Y2);
@@ -154,12 +155,13 @@ TEST(ErleEstimator, VerifyErleIncreaseAndHold) {
     estimator.Update(*render_delay_buffer->GetRenderBuffer(),
                      filter_frequency_response, X2, Y2, E2, true, true);
   }
-  VerifyErle(estimator.Erle(), std::pow(2.f, estimator.FullbandErleLog2()),
+  VerifyErle(estimator.Erle()[0], std::pow(2.f, estimator.FullbandErleLog2()),
              config.erle.max_l, config.erle.max_h);
 }
 
 TEST(ErleEstimator, VerifyErleTrackingOnOnsets) {
-  constexpr size_t kNumChannels = 1;
+  constexpr size_t kNumRenderChannels = 1;
+  constexpr size_t kNumCaptureChannels = 1;
   constexpr int kSampleRateHz = 48000;
   constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
   std::array<float, kFftLengthBy2Plus1> X2;
@@ -168,16 +170,16 @@ TEST(ErleEstimator, VerifyErleTrackingOnOnsets) {
   EchoCanceller3Config config;
   std::vector<std::vector<std::vector<float>>> x(
       kNumBands, std::vector<std::vector<float>>(
-                     kNumChannels, std::vector<float>(kBlockSize, 0.f)));
+                     kNumRenderChannels, std::vector<float>(kBlockSize, 0.f)));
   std::vector<std::array<float, kFftLengthBy2Plus1>> filter_frequency_response(
       config.filter.main.length_blocks);
 
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, kSampleRateHz, kNumChannels));
+      RenderDelayBuffer::Create(config, kSampleRateHz, kNumRenderChannels));
 
   GetFilterFreq(filter_frequency_response, config.delay.delay_headroom_samples);
 
-  ErleEstimator estimator(0, config);
+  ErleEstimator estimator(0, config, kNumCaptureChannels);
 
   FormFarendTimeFrame(&x);
   render_delay_buffer->Insert(x);
@@ -215,7 +217,7 @@ TEST(ErleEstimator, VerifyErleTrackingOnOnsets) {
                      filter_frequency_response, X2, Y2, E2, true, true);
   }
   // Verifies that during ne activity, Erle converges to the Erle for onsets.
-  VerifyErle(estimator.Erle(), std::pow(2.f, estimator.FullbandErleLog2()),
+  VerifyErle(estimator.Erle()[0], std::pow(2.f, estimator.FullbandErleLog2()),
              config.erle.min, config.erle.min);
 }
 

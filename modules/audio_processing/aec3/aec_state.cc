@@ -65,7 +65,7 @@ AecState::AecState(const EchoCanceller3Config& config,
       transparent_state_(config_),
       filter_quality_state_(config_),
       erl_estimator_(2 * kNumBlocksPerSecond),
-      erle_estimator_(2 * kNumBlocksPerSecond, config_),
+      erle_estimator_(2 * kNumBlocksPerSecond, config_, num_capture_channels),
       filter_analyzer_(config_),
       echo_audibility_(
           config_.echo_audibility.use_stationarity_properties_at_init),
@@ -214,7 +214,7 @@ void AecState::Update(
   reverb_model_estimator_.Dump(data_dumper_.get());
   data_dumper_->DumpRaw("aec3_erl", Erl());
   data_dumper_->DumpRaw("aec3_erl_time_domain", ErlTimeDomain());
-  data_dumper_->DumpRaw("aec3_erle", Erle());
+  data_dumper_->DumpRaw("aec3_erle", Erle()[0]);
   data_dumper_->DumpRaw("aec3_usable_linear_estimate", UsableLinearEstimate());
   data_dumper_->DumpRaw("aec3_transparent_mode", TransparentMode());
   data_dumper_->DumpRaw("aec3_filter_delay", filter_analyzer_.DelayBlocks());

@@ -112,6 +112,7 @@ void TestInputs::UpdateCurrentPowerSpectra() {
 }  // namespace
 
 TEST(SignalDependentErleEstimator, SweepSettings) {
+  const size_t kNumCaptureChannels = 1;
   EchoCanceller3Config cfg;
   size_t max_length_blocks = 50;
   for (size_t blocks = 0; blocks < max_length_blocks; blocks = blocks + 10) {
@@ -124,9 +125,12 @@ TEST(SignalDependentErleEstimator, SweepSettings) {
         cfg.delay.delay_headroom_samples = delay_headroom * kBlockSize;
         cfg.erle.num_sections = num_sections;
         if (EchoCanceller3Config::Validate(&cfg)) {
-          SignalDependentErleEstimator s(cfg);
-          std::array<float, kFftLengthBy2Plus1> average_erle;
-          average_erle.fill(cfg.erle.max_l);
+          SignalDependentErleEstimator s(cfg, kNumCaptureChannels);
+          std::array<std::array<float, kFftLengthBy2Plus1>, kNumCaptureChannels>
+              average_erle;
+          for (auto& e : average_erle) {
+            e.fill(cfg.erle.max_l);
+          }
           TestInputs inputs(cfg);
           for (size_t n = 0; n < 10; ++n) {
             inputs.Update();
@@ -140,6 +144,7 @@ TEST(SignalDependentErleEstimator, SweepSettings) {
 }
 
 TEST(SignalDependentErleEstimator, LongerRun) {
+  const size_t kNumCaptureChannels = 1;
   EchoCanceller3Config cfg;
   cfg.filter.main.length_blocks = 2;
   cfg.filter.main_initial.length_blocks = 1;
@@ -147,9 +152,12 @@ TEST(SignalDependentErleEstimator, LongerRun) {
   cfg.delay.hysteresis_limit_blocks = 0;
   cfg.erle.num_sections = 2;
   EXPECT_EQ(EchoCanceller3Config::Validate(&cfg), true);
-  std::array<float, kFftLengthBy2Plus1> average_erle;
-  average_erle.fill(cfg.erle.max_l);
-  SignalDependentErleEstimator s(cfg);
+  std::array<std::array<float, kFftLengthBy2Plus1>, kNumCaptureChannels>
+      average_erle;
+  for (auto& e : average_erle) {
+    e.fill(cfg.erle.max_l);
+  }
+  SignalDependentErleEstimator s(cfg, kNumCaptureChannels);
   TestInputs inputs(cfg);
   for (size_t n = 0; n < 200; ++n) {
     inputs.Update();

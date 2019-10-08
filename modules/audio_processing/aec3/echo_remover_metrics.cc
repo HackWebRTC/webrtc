@@ -70,7 +70,7 @@ void EchoRemoverMetrics::Update(
   if (++block_counter_ <= kMetricsCollectionBlocks) {
     aec3::UpdateDbMetric(aec_state.Erl(), &erl_);
     erl_time_domain_.UpdateInstant(aec_state.ErlTimeDomain());
-    aec3::UpdateDbMetric(aec_state.Erle(), &erle_);
+    aec3::UpdateDbMetric(aec_state.Erle()[0], &erle_);
     erle_time_domain_.UpdateInstant(aec_state.FullBandErleLog2());
     aec3::UpdateDbMetric(comfort_noise_spectrum, &comfort_noise_);
     aec3::UpdateDbMetric(suppressor_gain, &suppressor_gain_);
