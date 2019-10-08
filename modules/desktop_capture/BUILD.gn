@@ -389,6 +389,7 @@ rtc_library("desktop_capture_generic") {
       "Xext",
       "Xfixes",
       "Xrender",
+      "Xrandr",
     ]
   }
 
