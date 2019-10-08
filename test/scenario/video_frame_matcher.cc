@@ -112,7 +112,9 @@ void VideoFrameMatcher::HandleMatch(VideoFrameMatcher::CapturedFrame captured,
     frame_pair.decode_id = captured.best_decode->id;
     frame_pair.decoded = captured.best_decode->frame;
     frame_pair.decoded_time = captured.best_decode->decoded_time;
-    frame_pair.render_time = captured.best_decode->render_time;
+    // We can't render frames before they have been decoded.
+    frame_pair.render_time = std::max(captured.best_decode->render_time,
+                                      captured.best_decode->decoded_time);
     frame_pair.repeated = captured.best_decode->repeat_count++;
   }
   for (auto& handler : frame_pair_handlers_)
