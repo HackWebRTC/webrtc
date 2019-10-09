@@ -40,6 +40,13 @@ double EventRateCounter::Rate() const {
   return (event_count_ - 1) / (last_time_ - first_time_).seconds<double>();
 }
 
+TimeDelta EventRateCounter::TotalDuration() const {
+  if (first_time_.IsInfinite()) {
+    return TimeDelta::Zero();
+  }
+  return last_time_ - first_time_;
+}
+
 double SampleStats<double>::Max() {
   if (IsEmpty())
     return INFINITY;

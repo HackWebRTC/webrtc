@@ -99,6 +99,7 @@ class EventRateCounter {
   bool IsEmpty() const;
   double Rate() const;
   SampleStats<TimeDelta>& interval() { return interval_; }
+  TimeDelta TotalDuration() const;
   int Count() const { return event_count_; }
 
  private:
