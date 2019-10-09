@@ -111,6 +111,8 @@ class EchoCanceller3 : public EchoControl {
   // Provides an optional external estimate of the audio buffer delay.
   void SetAudioBufferDelay(size_t delay_ms) override;
 
+  bool ActiveProcessing() const override;
+
   // Signals whether an external detector has detected echo leakage from the
   // echo canceller.
   // Note that in the case echo leakage has been flagged, it should be unflagged

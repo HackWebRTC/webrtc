@@ -26,6 +26,7 @@ class MockEchoControl : public EchoControl {
                void(AudioBuffer* capture, bool echo_path_change));
   MOCK_CONST_METHOD0(GetMetrics, EchoControl::Metrics());
   MOCK_METHOD1(SetAudioBufferDelay, void(size_t delay_ms));
+  MOCK_CONST_METHOD0(ActiveProcessing, bool());
 };
 
 }  // namespace webrtc

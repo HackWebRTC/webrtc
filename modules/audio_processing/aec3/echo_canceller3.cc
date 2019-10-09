@@ -371,6 +371,10 @@ void EchoCanceller3::SetAudioBufferDelay(size_t delay_ms) {
   block_processor_->SetAudioBufferDelay(delay_ms);
 }
 
+bool EchoCanceller3::ActiveProcessing() const {
+  return true;
+}
+
 void EchoCanceller3::EmptyRenderQueue() {
   RTC_DCHECK_RUNS_SERIALIZED(&capture_race_checker_);
   bool frame_to_buffer =
