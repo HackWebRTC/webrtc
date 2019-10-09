@@ -43,8 +43,6 @@ rtc_source_set("control_handler") {
 rtc_static_library("transport_feedback") {
   visibility = [ "*" ]
   sources = [
-    "send_time_history.cc",
-    "send_time_history.h",
     "transport_feedback_adapter.cc",
     "transport_feedback_adapter.h",
   ]
@@ -71,7 +69,6 @@ if (rtc_include_tests) {
     sources = [
       "congestion_controller_unittests_helper.cc",
       "congestion_controller_unittests_helper.h",
-      "send_time_history_unittest.cc",
       "transport_feedback_adapter_unittest.cc",
     ]
     deps = [

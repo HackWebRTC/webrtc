@@ -12,10 +12,13 @@
 #define MODULES_CONGESTION_CONTROLLER_RTP_TRANSPORT_FEEDBACK_ADAPTER_H_
 
 #include <deque>
+#include <map>
+#include <utility>
 #include <vector>
 
 #include "api/transport/network_types.h"
-#include "modules/congestion_controller/rtp/send_time_history.h"
+#include "modules/include/module_common_types_public.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/thread_annotations.h"
@@ -55,16 +58,40 @@ class TransportFeedbackAdapter {
   DataSize GetOutstandingData() const;
 
  private:
+  using RemoteAndLocalNetworkId = std::pair<uint16_t, uint16_t>;
+
+  enum class SendTimeHistoryStatus { kNotAdded, kOk, kDuplicate };
+
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback);
 
   std::vector<PacketFeedback> GetPacketFeedbackVector(
       const rtcp::TransportFeedback& feedback,
       Timestamp feedback_time);
 
-  const bool allow_duplicates_;
+  // Look up PacketFeedback for a sent packet, based on the sequence number, and
+  // populate all fields except for arrival_time. The packet parameter must
+  // thus be non-null and have the sequence_number field set.
+  bool GetFeedback(PacketFeedback* packet_feedback, bool remove)
+      RTC_RUN_ON(&lock_);
+  void AddInFlightPacketBytes(const PacketFeedback& packet) RTC_RUN_ON(&lock_);
+  void RemoveInFlightPacketBytes(const PacketFeedback& packet)
+      RTC_RUN_ON(&lock_);
 
   rtc::CriticalSection lock_;
-  SendTimeHistory send_time_history_ RTC_GUARDED_BY(&lock_);
+
+  const int64_t packet_age_limit_ms_;
+  size_t pending_untracked_size_ RTC_GUARDED_BY(&lock_) = 0;
+  int64_t last_send_time_ms_ RTC_GUARDED_BY(&lock_) = -1;
+  int64_t last_untracked_send_time_ms_ RTC_GUARDED_BY(&lock_) = -1;
+  SequenceNumberUnwrapper seq_num_unwrapper_ RTC_GUARDED_BY(&lock_);
+  std::map<int64_t, PacketFeedback> history_ RTC_GUARDED_BY(&lock_);
+
+  // Sequence numbers are never negative, using -1 as it always < a real
+  // sequence number.
+  int64_t last_ack_seq_num_ RTC_GUARDED_BY(&lock_) = -1;
+  std::map<RemoteAndLocalNetworkId, size_t> in_flight_bytes_
+      RTC_GUARDED_BY(&lock_);
+
   int64_t current_offset_ms_;
   int64_t last_timestamp_us_;
   std::vector<PacketFeedback> last_packet_feedback_vector_;
