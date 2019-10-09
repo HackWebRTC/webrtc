@@ -56,9 +56,6 @@ class AecState {
            config_.filter.use_linear_filter;
   }
 
-  // Returns the estimated echo path gain.
-  float EchoPathGain() const { return max_echo_path_gain_; }
-
   // Returns whether the render signal is currently active.
   bool ActiveRender() const { return blocks_with_active_render_ > 200; }
 
@@ -292,7 +289,6 @@ class AecState {
   ErleEstimator erle_estimator_;
   size_t strong_not_saturated_render_blocks_ = 0;
   size_t blocks_with_active_render_ = 0;
-  float max_echo_path_gain_;
   bool capture_signal_saturation_ = false;
   std::vector<std::unique_ptr<FilterAnalyzer>> filter_analyzers_;
   absl::optional<DelayEstimate> external_delay_;

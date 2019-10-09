@@ -66,7 +66,6 @@ AecState::AecState(const EchoCanceller3Config& config,
       filter_quality_state_(config_),
       erl_estimator_(2 * kNumBlocksPerSecond),
       erle_estimator_(2 * kNumBlocksPerSecond, config_, num_capture_channels),
-      max_echo_path_gain_(config_.ep_strength.default_gain),
       filter_analyzers_(num_capture_channels),
       echo_audibility_(
           config_.echo_audibility.use_stationarity_properties_at_init),
@@ -85,7 +84,6 @@ void AecState::HandleEchoPathChange(
     for (auto& filter_analyzer : filter_analyzers_) {
       filter_analyzer->Reset();
     }
-    max_echo_path_gain_ = config_.ep_strength.default_gain;
     capture_signal_saturation_ = false;
     strong_not_saturated_render_blocks_ = 0;
     blocks_with_active_render_ = 0;
@@ -130,7 +128,7 @@ void AecState::Update(
   bool any_filter_converged = false;
   bool all_filters_diverged = true;
   bool any_filter_consistent = false;
-  max_echo_path_gain_ = 0.f;
+  float max_echo_path_gain = 0.f;
   for (size_t ch = 0; ch < subtractor_output.size(); ++ch) {
     subtractor_output_analyzers_[ch].Update(subtractor_output[ch]);
     any_filter_converged = any_filter_converged ||
@@ -142,8 +140,8 @@ void AecState::Update(
                                   render_buffer);
     any_filter_consistent =
         any_filter_consistent || filter_analyzers_[ch]->Consistent();
-    max_echo_path_gain_ =
-        std::max(max_echo_path_gain_, filter_analyzers_[ch]->Gain());
+    max_echo_path_gain =
+        std::max(max_echo_path_gain, filter_analyzers_[ch]->Gain());
   }
 
   // Estimate the direct path delay of the filter.
@@ -206,7 +204,7 @@ void AecState::Update(
   // Detect and flag echo saturation.
   saturation_detector_.Update(aligned_render_block, SaturatedCapture(),
                               UsableLinearEstimate(), subtractor_output,
-                              EchoPathGain());
+                              max_echo_path_gain);
 
   // Update the decision on whether to use the initial state parameter set.
   initial_state_.Update(active_render, SaturatedCapture());
