@@ -121,7 +121,7 @@ void RtpPacket::CopyHeaderFrom(const RtpPacket& packet) {
   extensions_ = packet.extensions_;
   extension_entries_ = packet.extension_entries_;
   extensions_size_ = packet.extensions_size_;
-  buffer_.SetData(packet.data(), packet.headers_size());
+  buffer_ = packet.buffer_.Slice(0, packet.headers_size());
   // Reset payload and padding.
   payload_size_ = 0;
   padding_size_ = 0;
