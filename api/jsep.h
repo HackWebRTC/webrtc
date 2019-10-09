@@ -103,8 +103,11 @@ enum class SdpType {
   kOffer,     // Description must be treated as an SDP offer.
   kPrAnswer,  // Description must be treated as an SDP answer, but not a final
               // answer.
-  kAnswer  // Description must be treated as an SDP final answer, and the offer-
-           // answer exchange must be considered complete after receiving this.
+  kAnswer,    // Description must be treated as an SDP final answer, and the
+              // offer-answer exchange must be considered complete after
+              // receiving this.
+  kRollback   // Resets any pending offers and sets signaling state back to
+              // stable.
 };
 
 // Returns the string form of the given SDP type. String forms are defined in
@@ -128,6 +131,7 @@ class RTC_EXPORT SessionDescriptionInterface {
   static const char kOffer[];
   static const char kPrAnswer[];
   static const char kAnswer[];
+  static const char kRollback[];
 
   virtual ~SessionDescriptionInterface() {}
 
