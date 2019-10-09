@@ -36,7 +36,7 @@ class ExtendedReports : public RtcpPacket {
   // Parse assumes header is already parsed and validated.
   bool Parse(const CommonHeader& packet);
 
-  void SetSenderSsrc(uint32_t ssrc) { sender_ssrc_ = ssrc; }
+  void SetSenderSsrc(uint32_t ssrc) override { sender_ssrc_ = ssrc; }
 
   void SetRrtr(const Rrtr& rrtr);
   bool AddDlrrItem(const ReceiveTimeInfo& time_info);

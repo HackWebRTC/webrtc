@@ -128,7 +128,7 @@ const RemoteEstimateSerializer* GetRemoteEstimateSerializer() {
 RemoteEstimate::RemoteEstimate() : serializer_(GetRemoteEstimateSerializer()) {
   SetSubType(kSubType);
   SetName(kName);
-  SetSsrc(0);
+  SetSenderSsrc(0);
 }
 
 RemoteEstimate::RemoteEstimate(App&& app)

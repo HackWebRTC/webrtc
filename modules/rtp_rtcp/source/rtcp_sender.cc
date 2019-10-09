@@ -595,7 +595,7 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildTMMBN(
 
 std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildAPP(const RtcpContext& ctx) {
   rtcp::App* app = new rtcp::App();
-  app->SetSsrc(ssrc_);
+  app->SetSenderSsrc(ssrc_);
   app->SetSubType(app_sub_type_);
   app->SetName(app_name_);
   app->SetData(app_data_.get(), app_length_);

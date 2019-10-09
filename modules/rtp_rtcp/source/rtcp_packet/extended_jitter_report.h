@@ -43,6 +43,8 @@ class ExtendedJitterReport : public RtcpPacket {
               size_t max_length,
               PacketReadyCallback callback) const override;
 
+  void SetSenderSsrc(uint32_t /*ssrc*/) override {}
+
  private:
   static constexpr size_t kJitterSizeBytes = 4;
 

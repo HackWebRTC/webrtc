@@ -31,7 +31,7 @@ class Bye : public RtcpPacket {
   // Parse assumes header is already parsed and validated.
   bool Parse(const CommonHeader& packet);
 
-  void SetSenderSsrc(uint32_t ssrc) { sender_ssrc_ = ssrc; }
+  void SetSenderSsrc(uint32_t ssrc) override { sender_ssrc_ = ssrc; }
   bool SetCsrcs(std::vector<uint32_t> csrcs);
   void SetReason(std::string reason);
 

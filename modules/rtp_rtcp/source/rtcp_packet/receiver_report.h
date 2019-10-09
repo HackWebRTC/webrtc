@@ -35,7 +35,7 @@ class ReceiverReport : public RtcpPacket {
   // Parse assumes header is already parsed and validated.
   bool Parse(const CommonHeader& packet);
 
-  void SetSenderSsrc(uint32_t ssrc) { sender_ssrc_ = ssrc; }
+  void SetSenderSsrc(uint32_t ssrc) override { sender_ssrc_ = ssrc; }
   bool AddReportBlock(const ReportBlock& block);
   bool SetReportBlocks(std::vector<ReportBlock> blocks);
 

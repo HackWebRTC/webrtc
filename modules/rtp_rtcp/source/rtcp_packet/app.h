@@ -31,7 +31,7 @@ class App : public RtcpPacket {
   // Parse assumes header is already parsed and validated.
   bool Parse(const CommonHeader& packet);
 
-  void SetSsrc(uint32_t ssrc) { ssrc_ = ssrc; }
+  void SetSenderSsrc(uint32_t ssrc) override { ssrc_ = ssrc; }
   void SetSubType(uint8_t subtype);
   void SetName(uint32_t name) { name_ = name; }
   void SetData(const uint8_t* data, size_t data_length);

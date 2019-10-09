@@ -76,6 +76,8 @@ class RtcpPacket {
                       size_t max_length,
                       PacketReadyCallback callback) const = 0;
 
+  virtual void SetSenderSsrc(uint32_t ssrc) = 0;
+
  protected:
   // Size of the rtcp common header.
   static constexpr size_t kHeaderLength = 4;

@@ -53,7 +53,7 @@ constexpr uint8_t kPacketWithUnalignedPayload[] = {
 
 TEST(RtcpPacketAppTest, CreateWithoutData) {
   App app;
-  app.SetSsrc(kSenderSsrc);
+  app.SetSenderSsrc(kSenderSsrc);
   app.SetSubType(kSubtype);
   app.SetName(kName);
 
@@ -75,7 +75,7 @@ TEST(RtcpPacketAppTest, ParseWithoutData) {
 
 TEST(RtcpPacketAppTest, CreateWithData) {
   App app;
-  app.SetSsrc(kSenderSsrc);
+  app.SetSenderSsrc(kSenderSsrc);
   app.SetSubType(kSubtype);
   app.SetName(kName);
   app.SetData(kData, sizeof(kData));

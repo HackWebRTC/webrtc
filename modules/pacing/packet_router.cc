@@ -296,7 +296,7 @@ void PacketRouter::SendNetworkStateEstimatePacket(
     rtcp::RemoteEstimate* packet) {
   rtc::CritScope cs(&modules_crit_);
   for (auto* rtcp_sender : rtcp_feedback_senders_) {
-    packet->SetSsrc(rtcp_sender->SSRC());
+    packet->SetSenderSsrc(rtcp_sender->SSRC());
     if (rtcp_sender->SendNetworkStateEstimatePacket(*packet)) {
       break;
     }
