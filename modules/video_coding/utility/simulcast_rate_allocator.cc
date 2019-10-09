@@ -166,6 +166,7 @@ void SimulcastRateAllocator::DistributeAllocationToSimulcastLayers(
       min_bitrate = std::min(hysteresis_factor * min_bitrate, target_bitrate);
     }
     if (left_in_stable_allocation < min_bitrate) {
+      allocated_bitrates->set_bw_limited(true);
       break;
     }
 

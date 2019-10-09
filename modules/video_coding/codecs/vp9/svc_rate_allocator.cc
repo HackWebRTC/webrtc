@@ -211,7 +211,8 @@ VideoBitrateAllocation SvcRateAllocator::Allocate(
   }
 
   const size_t first_active_layer = GetFirstActiveLayer(codec_);
-  size_t num_spatial_layers = GetNumActiveSpatialLayers(codec_);
+  const size_t num_active_layers = GetNumActiveSpatialLayers(codec_);
+  size_t num_spatial_layers = num_active_layers;
 
   if (num_spatial_layers == 0) {
     return VideoBitrateAllocation();  // All layers are deactivated.
@@ -244,13 +245,16 @@ VideoBitrateAllocation SvcRateAllocator::Allocate(
   }
   last_active_layer_count_ = num_spatial_layers;
 
+  VideoBitrateAllocation allocation;
   if (codec_.mode == VideoCodecMode::kRealtimeVideo) {
-    return GetAllocationNormalVideo(total_bitrate, first_active_layer,
-                                    num_spatial_layers);
+    allocation = GetAllocationNormalVideo(total_bitrate, first_active_layer,
+                                          num_spatial_layers);
   } else {
-    return GetAllocationScreenSharing(total_bitrate, first_active_layer,
-                                      num_spatial_layers);
+    allocation = GetAllocationScreenSharing(total_bitrate, first_active_layer,
+                                            num_spatial_layers);
   }
+  allocation.set_bw_limited(num_spatial_layers < num_active_layers);
+  return allocation;
 }
 
 VideoBitrateAllocation SvcRateAllocator::GetAllocationNormalVideo(

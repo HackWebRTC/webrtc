@@ -223,9 +223,7 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
 
   void SetAdaptTimer(const AdaptationSteps& counts, StatsTimer* timer)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
-  void UpdateAdaptationStats(const AdaptationSteps& cpu_counts,
-                             const AdaptationSteps& quality_counts)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void UpdateAdaptationStats() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void TryUpdateInitialQualityResolutionAdaptUp(
       const AdaptationSteps& quality_counts)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
@@ -263,6 +261,11 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
   int last_num_simulcast_streams_ RTC_GUARDED_BY(crit_);
   std::array<bool, kMaxSpatialLayers> last_spatial_layer_use_
       RTC_GUARDED_BY(crit_);
+  // Indicates if the latest bitrate allocation had layers disabled by low
+  // available bandwidth.
+  bool bw_limited_layers_ RTC_GUARDED_BY(crit_);
+  AdaptationSteps cpu_counts_ RTC_GUARDED_BY(crit_);
+  AdaptationSteps quality_counts_ RTC_GUARDED_BY(crit_);
 
   struct EncoderChangeEvent {
     std::string previous_encoder_implementation;

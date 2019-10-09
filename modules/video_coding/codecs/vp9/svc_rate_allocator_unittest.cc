@@ -224,6 +224,24 @@ TEST(SvcRateAllocatorTest, DeactivateLowerLayers) {
   }
 }
 
+TEST(SvcRateAllocatorTest, SignalsBwLimited) {
+  VideoCodec codec = Configure(1280, 720, 3, 1, false);
+  SvcRateAllocator allocator = SvcRateAllocator(codec);
+
+  // Rough estimate calculated by hand.
+  uint32_t min_to_enable_all = 900000;
+
+  EXPECT_TRUE(
+      allocator
+          .Allocate(VideoBitrateAllocationParameters(min_to_enable_all / 2, 30))
+          .is_bw_limited());
+
+  EXPECT_FALSE(
+      allocator
+          .Allocate(VideoBitrateAllocationParameters(min_to_enable_all, 30))
+          .is_bw_limited());
+}
+
 TEST(SvcRateAllocatorTest, NoPaddingIfAllLayersAreDeactivated) {
   VideoCodec codec = Configure(1280, 720, 3, 1, false);
   EXPECT_EQ(codec.VP9()->numberOfSpatialLayers, 3U);

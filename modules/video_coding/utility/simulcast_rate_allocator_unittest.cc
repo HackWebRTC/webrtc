@@ -221,6 +221,27 @@ TEST_F(SimulcastRateAllocatorTest, SingleSimulcastBelowMin) {
   ExpectEqual(expected, GetAllocation(0));
 }
 
+TEST_F(SimulcastRateAllocatorTest, SignalsBwLimited) {
+  // Enough to enable all layers.
+  const int kVeryBigBitrate = 100000;
+  // With simulcast, use the min bitrate from the ss spec instead of the global.
+  SetupCodec3SL3TL({true, true, true});
+  CreateAllocator();
+
+  EXPECT_TRUE(
+      GetAllocation(codec_.simulcastStream[0].minBitrate - 10).is_bw_limited());
+  EXPECT_TRUE(
+      GetAllocation(codec_.simulcastStream[0].targetBitrate).is_bw_limited());
+  EXPECT_TRUE(GetAllocation(codec_.simulcastStream[0].targetBitrate +
+                            codec_.simulcastStream[1].minBitrate)
+                  .is_bw_limited());
+  EXPECT_FALSE(GetAllocation(codec_.simulcastStream[0].targetBitrate +
+                             codec_.simulcastStream[1].targetBitrate +
+                             codec_.simulcastStream[2].minBitrate)
+                   .is_bw_limited());
+  EXPECT_FALSE(GetAllocation(kVeryBigBitrate).is_bw_limited());
+}
+
 TEST_F(SimulcastRateAllocatorTest, SingleSimulcastAboveMax) {
   codec_.numberOfSimulcastStreams = 1;
   codec_.simulcastStream[0].minBitrate = kMinBitrateKbps;
@@ -655,6 +676,7 @@ TEST_P(ScreenshareRateAllocationTest, BitrateBelowTl0) {
   EXPECT_EQ(kLegacyScreenshareTargetBitrateKbps, allocation.get_sum_kbps());
   EXPECT_EQ(kLegacyScreenshareTargetBitrateKbps,
             allocation.GetBitrate(0, 0) / 1000);
+  EXPECT_EQ(allocation.is_bw_limited(), GetParam());
 }
 
 TEST_P(ScreenshareRateAllocationTest, BitrateAboveTl0) {
@@ -674,6 +696,7 @@ TEST_P(ScreenshareRateAllocationTest, BitrateAboveTl0) {
             allocation.GetBitrate(0, 0) / 1000);
   EXPECT_EQ(target_bitrate_kbps - kLegacyScreenshareTargetBitrateKbps,
             allocation.GetBitrate(0, 1) / 1000);
+  EXPECT_EQ(allocation.is_bw_limited(), GetParam());
 }
 
 TEST_F(ScreenshareRateAllocationTest, BitrateAboveTl1) {
@@ -692,6 +715,7 @@ TEST_F(ScreenshareRateAllocationTest, BitrateAboveTl1) {
   EXPECT_EQ(
       kLegacyScreenshareMaxBitrateKbps - kLegacyScreenshareTargetBitrateKbps,
       allocation.GetBitrate(0, 1) / 1000);
+  EXPECT_FALSE(allocation.is_bw_limited());
 }
 
 // This tests when the screenshare is inactive it should be allocated 0 bitrate
