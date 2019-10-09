@@ -1937,10 +1937,6 @@ TEST_F(VoiceChannelDoubleThreadTest, SendRtpToRtp) {
   Base::SendRtpToRtp();
 }
 
-TEST_F(VoiceChannelDoubleThreadTest, SendRtcpToRtcp) {
-  Base::SendRtcpToRtcp();
-}
-
 TEST_F(VoiceChannelDoubleThreadTest, SendDtlsSrtpToDtlsSrtp) {
   Base::SendDtlsSrtpToDtlsSrtp(0, 0);
 }
@@ -2377,10 +2373,6 @@ TEST_F(VideoChannelDoubleThreadTest, SendRtpToRtp) {
   Base::SendRtpToRtp();
 }
 
-TEST_F(VideoChannelDoubleThreadTest, SendRtcpToRtcp) {
-  Base::SendRtcpToRtcp();
-}
-
 TEST_F(VideoChannelDoubleThreadTest, SendDtlsSrtpToDtlsSrtp) {
   Base::SendDtlsSrtpToDtlsSrtp(0, 0);
 }
@@ -2647,10 +2639,6 @@ TEST_F(RtpDataChannelDoubleThreadTest, TestOnTransportReadyToSend) {
 
 TEST_F(RtpDataChannelDoubleThreadTest, SendRtpToRtp) {
   Base::SendRtpToRtp();
-}
-
-TEST_F(RtpDataChannelDoubleThreadTest, SendRtcpToRtcp) {
-  Base::SendRtcpToRtcp();
 }
 
 TEST_F(RtpDataChannelDoubleThreadTest, SendRtpToRtpOnThread) {
