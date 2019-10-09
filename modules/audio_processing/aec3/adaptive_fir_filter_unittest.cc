@@ -376,15 +376,20 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
     FftData S;
     FftData G;
     FftData E;
-    std::array<float, kFftLengthBy2Plus1> Y2;
-    std::array<float, kFftLengthBy2Plus1> E2_main;
+    std::vector<std::array<float, kFftLengthBy2Plus1>> Y2(kNumCaptureChannels);
+    std::vector<std::array<float, kFftLengthBy2Plus1>> E2_main(
+        kNumCaptureChannels);
     std::array<float, kFftLengthBy2Plus1> E2_shadow;
     // [B,A] = butter(2,100/8000,'high')
     constexpr CascadedBiQuadFilter::BiQuadCoefficients
         kHighPassFilterCoefficients = {{0.97261f, -1.94523f, 0.97261f},
                                        {-1.94448f, 0.94598f}};
-    Y2.fill(0.f);
-    E2_main.fill(0.f);
+    for (auto& Y2_ch : Y2) {
+      Y2_ch.fill(0.f);
+    }
+    for (auto& E2_main_ch : E2_main) {
+      E2_main_ch.fill(0.f);
+    }
     E2_shadow.fill(0.f);
     for (auto& subtractor_output : output) {
       subtractor_output.Reset();

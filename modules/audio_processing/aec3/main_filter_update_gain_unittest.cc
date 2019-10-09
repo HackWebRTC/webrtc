@@ -44,7 +44,8 @@ void RunFilterUpdateTest(int num_blocks_to_process,
                          FftData* G_last_block) {
   ApmDataDumper data_dumper(42);
   Aec3Optimization optimization = DetectOptimization();
-  constexpr size_t kNumChannels = 1;
+  constexpr size_t kNumRenderChannels = 1;
+  constexpr size_t kNumCaptureChannels = 1;
   constexpr int kSampleRateHz = 48000;
   constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
 
@@ -60,16 +61,16 @@ void RunFilterUpdateTest(int num_blocks_to_process,
                                   config.filter.config_change_duration_blocks,
                                   1, optimization, &data_dumper);
   std::vector<std::vector<std::array<float, kFftLengthBy2Plus1>>> H2(
-      kNumChannels, std::vector<std::array<float, kFftLengthBy2Plus1>>(
-                        main_filter.max_filter_size_partitions(),
-                        std::array<float, kFftLengthBy2Plus1>()));
+      kNumCaptureChannels, std::vector<std::array<float, kFftLengthBy2Plus1>>(
+                               main_filter.max_filter_size_partitions(),
+                               std::array<float, kFftLengthBy2Plus1>()));
   for (auto& H2_ch : H2) {
     for (auto& H2_k : H2_ch) {
       H2_k.fill(0.f);
     }
   }
   std::vector<std::vector<float>> h(
-      kNumChannels,
+      kNumCaptureChannels,
       std::vector<float>(
           GetTimeDomainLength(main_filter.max_filter_size_partitions()), 0.f));
 
@@ -83,29 +84,32 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   Random random_generator(42U);
   std::vector<std::vector<std::vector<float>>> x(
       kNumBands, std::vector<std::vector<float>>(
-                     kNumChannels, std::vector<float>(kBlockSize, 0.f)));
+                     kNumRenderChannels, std::vector<float>(kBlockSize, 0.f)));
   std::vector<float> y(kBlockSize, 0.f);
   config.delay.default_delay = 1;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, kSampleRateHz, kNumChannels));
-  AecState aec_state(config, kNumChannels);
+      RenderDelayBuffer::Create(config, kSampleRateHz, kNumRenderChannels));
+  AecState aec_state(config, kNumCaptureChannels);
   RenderSignalAnalyzer render_signal_analyzer(config);
   absl::optional<DelayEstimate> delay_estimate;
   std::array<float, kFftLength> s_scratch;
   std::array<float, kBlockSize> s;
   FftData S;
   FftData G;
-  std::vector<SubtractorOutput> output(kNumChannels);
+  std::vector<SubtractorOutput> output(kNumCaptureChannels);
   for (auto& subtractor_output : output) {
     subtractor_output.Reset();
   }
   FftData& E_main = output[0].E_main;
   FftData E_shadow;
-  std::array<float, kFftLengthBy2Plus1> Y2;
-  std::array<float, kFftLengthBy2Plus1>& E2_main = output[0].E2_main;
+  std::vector<std::array<float, kFftLengthBy2Plus1>> Y2(kNumCaptureChannels);
+  std::vector<std::array<float, kFftLengthBy2Plus1>> E2_main(
+      kNumCaptureChannels);
   std::array<float, kBlockSize>& e_main = output[0].e_main;
   std::array<float, kBlockSize>& e_shadow = output[0].e_shadow;
-  Y2.fill(0.f);
+  for (auto& Y2_ch : Y2) {
+    Y2_ch.fill(0.f);
+  }
 
   constexpr float kScale = 1.0f / kFftLengthBy2;
 
@@ -197,6 +201,8 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     aec_state.HandleEchoPathChange(EchoPathVariability(
         false, EchoPathVariability::DelayAdjustment::kNone, false));
     main_filter.ComputeFrequencyResponse(&H2[0]);
+    std::copy(output[0].E2_main.begin(), output[0].E2_main.end(),
+              E2_main[0].begin());
     aec_state.Update(delay_estimate, H2, h,
                      *render_delay_buffer->GetRenderBuffer(), E2_main, Y2,
                      output);

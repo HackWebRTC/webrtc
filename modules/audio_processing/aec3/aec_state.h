@@ -133,8 +133,8 @@ class AecState {
           adaptive_filter_frequency_response,
       rtc::ArrayView<const std::vector<float>> adaptive_filter_impulse_response,
       const RenderBuffer& render_buffer,
-      const std::array<float, kFftLengthBy2Plus1>& E2_main,
-      const std::array<float, kFftLengthBy2Plus1>& Y2,
+      rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> E2_main,
+      rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Y2,
       rtc::ArrayView<const SubtractorOutput> subtractor_output);
 
   // Returns filter length in blocks.

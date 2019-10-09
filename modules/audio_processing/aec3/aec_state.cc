@@ -164,10 +164,12 @@ void AecState::Update(
         adaptive_filter_frequency_response,
     rtc::ArrayView<const std::vector<float>> adaptive_filter_impulse_response,
     const RenderBuffer& render_buffer,
-    const std::array<float, kFftLengthBy2Plus1>& E2_main,
-    const std::array<float, kFftLengthBy2Plus1>& Y2,
+    rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> E2_main,
+    rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Y2,
     rtc::ArrayView<const SubtractorOutput> subtractor_output) {
   const size_t num_capture_channels = filter_analyzers_.size();
+  RTC_DCHECK_EQ(num_capture_channels, E2_main.size());
+  RTC_DCHECK_EQ(num_capture_channels, Y2.size());
   RTC_DCHECK_EQ(num_capture_channels, subtractor_output.size());
   RTC_DCHECK_EQ(num_capture_channels, subtractor_output_analyzers_.size());
   RTC_DCHECK_EQ(num_capture_channels,
@@ -244,12 +246,12 @@ void AecState::Update(
   const auto& X2_input_erle = X2_reverb;
 
   erle_estimator_.Update(render_buffer, adaptive_filter_frequency_response[0],
-                         X2_input_erle, Y2, E2_main,
+                         X2_input_erle, Y2[0], E2_main[0],
                          subtractor_output_analyzers_[0].ConvergedFilter(),
                          config_.erle.onset_detection);
 
   erl_estimator_.Update(subtractor_output_analyzers_[0].ConvergedFilter(), X2,
-                        Y2);
+                        Y2[0]);
 
   // Detect and flag echo saturation.
   saturation_detector_.Update(aligned_render_block, SaturatedCapture(),

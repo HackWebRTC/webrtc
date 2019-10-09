@@ -39,8 +39,9 @@ void RunNormalUsageTest(size_t num_render_channels,
       DelayEstimate(DelayEstimate::Quality::kRefined, 10);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, kSampleRateHz, num_render_channels));
-  std::array<float, kFftLengthBy2Plus1> E2_main = {};
-  std::array<float, kFftLengthBy2Plus1> Y2 = {};
+  std::vector<std::array<float, kFftLengthBy2Plus1>> E2_main(
+      num_capture_channels);
+  std::vector<std::array<float, kFftLengthBy2Plus1>> Y2(num_capture_channels);
   std::vector<std::vector<std::vector<float>>> x(
       kNumBands, std::vector<std::vector<float>>(
                      num_render_channels, std::vector<float>(kBlockSize, 0.f)));
@@ -53,6 +54,8 @@ void RunNormalUsageTest(size_t num_render_channels,
     subtractor_output[ch].s_main.fill(100.f);
     subtractor_output[ch].e_main.fill(100.f);
     y[ch].fill(1000.f);
+    E2_main[ch].fill(0.f);
+    Y2[ch].fill(0.f);
   }
   Aec3Fft fft;
   std::vector<std::vector<std::array<float, kFftLengthBy2Plus1>>>
@@ -143,7 +146,9 @@ void RunNormalUsageTest(size_t num_render_channels,
     render_delay_buffer->PrepareCaptureProcessing();
   }
 
-  Y2.fill(10.f * 10000.f * 10000.f);
+  for (auto& Y2_ch : Y2) {
+    Y2_ch.fill(10.f * 10000.f * 10000.f);
+  }
   for (size_t k = 0; k < 1000; ++k) {
     for (size_t ch = 0; ch < num_capture_channels; ++ch) {
       subtractor_output[ch].ComputeMetrics(y[ch]);
@@ -162,8 +167,12 @@ void RunNormalUsageTest(size_t num_render_channels,
   EXPECT_EQ(erl[erl.size() - 2], erl[erl.size() - 1]);
 
   // Verify that the ERLE is properly estimated
-  E2_main.fill(1.f * 10000.f * 10000.f);
-  Y2.fill(10.f * E2_main[0]);
+  for (auto& E2_main_ch : E2_main) {
+    E2_main_ch.fill(1.f * 10000.f * 10000.f);
+  }
+  for (auto& Y2_ch : Y2) {
+    Y2_ch.fill(10.f * E2_main[0][0]);
+  }
   for (size_t k = 0; k < 1000; ++k) {
     for (size_t ch = 0; ch < num_capture_channels; ++ch) {
       subtractor_output[ch].ComputeMetrics(y[ch]);
@@ -187,9 +196,12 @@ void RunNormalUsageTest(size_t num_render_channels,
     }
     EXPECT_EQ(erle[erle.size() - 2], erle[erle.size() - 1]);
   }
-
-  E2_main.fill(1.f * 10000.f * 10000.f);
-  Y2.fill(5.f * E2_main[0]);
+  for (auto& E2_main_ch : E2_main) {
+    E2_main_ch.fill(1.f * 10000.f * 10000.f);
+  }
+  for (auto& Y2_ch : Y2) {
+    Y2_ch.fill(5.f * E2_main[0][0]);
+  }
   for (size_t k = 0; k < 1000; ++k) {
     for (size_t ch = 0; ch < num_capture_channels; ++ch) {
       subtractor_output[ch].ComputeMetrics(y[ch]);
@@ -235,8 +247,9 @@ TEST(AecState, ConvergedFilterDelay) {
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, 48000, 1));
   absl::optional<DelayEstimate> delay_estimate;
-  std::array<float, kFftLengthBy2Plus1> E2_main;
-  std::array<float, kFftLengthBy2Plus1> Y2;
+  std::vector<std::array<float, kFftLengthBy2Plus1>> E2_main(
+      kNumCaptureChannels);
+  std::vector<std::array<float, kFftLengthBy2Plus1>> Y2(kNumCaptureChannels);
   std::array<float, kBlockSize> x;
   EchoPathVariability echo_path_variability(
       false, EchoPathVariability::DelayAdjustment::kNone, false);

@@ -385,8 +385,8 @@ void EchoRemoverImpl::ProcessCapture(
   // Update the AEC state information.
   // TODO(bugs.webrtc.org/10913): Take all subtractors into account.
   aec_state_.Update(external_delay, subtractor_.FilterFrequencyResponse(),
-                    subtractor_.FilterImpulseResponse(), *render_buffer, E2[0],
-                    Y2[0], subtractor_output);
+                    subtractor_.FilterImpulseResponse(), *render_buffer, E2, Y2,
+                    subtractor_output);
 
   // Choose the linear output.
   const auto& Y_fft = aec_state_.UseLinearFilterOutput() ? E : Y;

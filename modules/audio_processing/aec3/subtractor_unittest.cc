@@ -58,13 +58,18 @@ std::vector<float> RunSubtractorTest(
   RenderSignalAnalyzer render_signal_analyzer(config);
   Random random_generator(42U);
   Aec3Fft fft;
-  std::array<float, kFftLengthBy2Plus1> Y2;
-  std::array<float, kFftLengthBy2Plus1> E2_main;
+  std::vector<std::array<float, kFftLengthBy2Plus1>> Y2(num_capture_channels);
+  std::vector<std::array<float, kFftLengthBy2Plus1>> E2_main(
+      num_capture_channels);
   std::array<float, kFftLengthBy2Plus1> E2_shadow;
   AecState aec_state(config, num_capture_channels);
   x_old.fill(0.f);
-  Y2.fill(0.f);
-  E2_main.fill(0.f);
+  for (auto& Y2_ch : Y2) {
+    Y2_ch.fill(0.f);
+  }
+  for (auto& E2_main_ch : E2_main) {
+    E2_main_ch.fill(0.f);
+  }
   E2_shadow.fill(0.f);
 
   std::vector<std::vector<std::unique_ptr<DelayBuffer<float>>>> delay_buffer(

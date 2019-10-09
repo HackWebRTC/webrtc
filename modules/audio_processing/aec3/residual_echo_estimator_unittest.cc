@@ -33,7 +33,8 @@ TEST(ResidualEchoEstimator, BasicTest) {
           RenderDelayBuffer::Create(config, kSampleRateHz,
                                     num_render_channels));
 
-      std::array<float, kFftLengthBy2Plus1> E2_main;
+      std::vector<std::array<float, kFftLengthBy2Plus1>> E2_main(
+          num_capture_channels);
       std::vector<std::array<float, kFftLengthBy2Plus1>> S2_linear(
           num_capture_channels);
       std::vector<std::array<float, kFftLengthBy2Plus1>> Y2(
@@ -72,9 +73,13 @@ TEST(ResidualEchoEstimator, BasicTest) {
       y.fill(0.f);
 
       constexpr float kLevel = 10.f;
-      E2_main.fill(kLevel);
+      for (auto& E2_main_ch : E2_main) {
+        E2_main_ch.fill(kLevel);
+      }
       S2_linear[0].fill(kLevel);
-      Y2[0].fill(kLevel);
+      for (auto& Y2_ch : Y2) {
+        Y2_ch.fill(kLevel);
+      }
 
       for (int k = 0; k < 1993; ++k) {
         RandomizeSampleVector(&random_generator, x[0][0]);
@@ -85,8 +90,8 @@ TEST(ResidualEchoEstimator, BasicTest) {
         render_delay_buffer->PrepareCaptureProcessing();
 
         aec_state.Update(delay_estimate, H2, h,
-                         *render_delay_buffer->GetRenderBuffer(), E2_main,
-                         Y2[0], output);
+                         *render_delay_buffer->GetRenderBuffer(), E2_main, Y2,
+                         output);
 
         estimator.Estimate(aec_state, *render_delay_buffer->GetRenderBuffer(),
                            S2_linear, Y2, R2);
