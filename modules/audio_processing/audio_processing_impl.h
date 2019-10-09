@@ -245,6 +245,10 @@ class AudioProcessingImpl : public AudioProcessing {
   void InitializeAnalyzer() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializePreProcessor() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
+  // Sample rate used for the fullband processing.
+  int proc_fullband_sample_rate_hz() const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+
   // Empties and handles the respective RuntimeSetting queues.
   void HandleCaptureRuntimeSettings()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
@@ -387,6 +391,7 @@ class AudioProcessingImpl : public AudioProcessing {
     bool key_pressed;
     bool transient_suppressor_enabled;
     std::unique_ptr<AudioBuffer> capture_audio;
+    std::unique_ptr<AudioBuffer> capture_fullband_audio;
     // Only the rate and samples fields of capture_processing_format_ are used
     // because the capture processing number of channels is mutable and is
     // tracked by the capture_audio_.

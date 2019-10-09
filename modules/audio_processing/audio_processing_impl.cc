@@ -525,6 +525,20 @@ int AudioProcessingImpl::InitializeLocked() {
       formats_.api_format.output_stream().sample_rate_hz(),
       formats_.api_format.output_stream().num_channels()));
 
+  if (capture_nonlocked_.capture_processing_format.sample_rate_hz() <
+          formats_.api_format.output_stream().sample_rate_hz() &&
+      formats_.api_format.output_stream().sample_rate_hz() == 48000) {
+    capture_.capture_fullband_audio.reset(
+        new AudioBuffer(formats_.api_format.input_stream().sample_rate_hz(),
+                        formats_.api_format.input_stream().num_channels(),
+                        formats_.api_format.output_stream().sample_rate_hz(),
+                        formats_.api_format.output_stream().num_channels(),
+                        formats_.api_format.output_stream().sample_rate_hz(),
+                        formats_.api_format.output_stream().num_channels()));
+  } else {
+    capture_.capture_fullband_audio.reset();
+  }
+
   AllocateRenderQueue();
 
   public_submodules_->gain_control->Initialize(num_proc_channels(),
@@ -803,6 +817,12 @@ int AudioProcessingImpl::proc_sample_rate_hz() const {
   return capture_nonlocked_.capture_processing_format.sample_rate_hz();
 }
 
+int AudioProcessingImpl::proc_fullband_sample_rate_hz() const {
+  return capture_.capture_fullband_audio
+             ? capture_.capture_fullband_audio->num_frames() * 100
+             : capture_nonlocked_.capture_processing_format.sample_rate_hz();
+}
+
 int AudioProcessingImpl::proc_split_sample_rate_hz() const {
   // Used as callback from submodules, hence locking is not allowed.
   return capture_nonlocked_.split_rate;
@@ -968,7 +988,12 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
   capture_.keyboard_info.Extract(src, formats_.api_format.input_stream());
   capture_.capture_audio->CopyFrom(src, formats_.api_format.input_stream());
   RETURN_ON_ERR(ProcessCaptureStreamLocked());
-  capture_.capture_audio->CopyTo(formats_.api_format.output_stream(), dest);
+  if (capture_.capture_fullband_audio) {
+    capture_.capture_fullband_audio->CopyTo(formats_.api_format.output_stream(),
+                                            dest);
+  } else {
+    capture_.capture_audio->CopyTo(formats_.api_format.output_stream(), dest);
+  }
 
   if (aec_dump_) {
     RecordProcessedCaptureStream(dest);
@@ -1264,7 +1289,11 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   RETURN_ON_ERR(ProcessCaptureStreamLocked());
   if (submodule_states_.CaptureMultiBandProcessingActive() ||
       submodule_states_.CaptureFullBandProcessingActive()) {
-    capture_.capture_audio->CopyTo(frame);
+    if (capture_.capture_fullband_audio) {
+      capture_.capture_fullband_audio->CopyTo(frame);
+    } else {
+      capture_.capture_audio->CopyTo(frame);
+    }
   }
   if (capture_.stats.voice_detected) {
     frame->vad_activity_ = *capture_.stats.voice_detected
@@ -1444,6 +1473,11 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
       SampleRateSupportsMultiBand(
           capture_nonlocked_.capture_processing_format.sample_rate_hz())) {
     capture_buffer->MergeFrequencyBands();
+  }
+
+  if (capture_.capture_fullband_audio) {
+    capture_buffer->CopyTo(capture_.capture_fullband_audio.get());
+    capture_buffer = capture_.capture_fullband_audio.get();
   }
 
   if (config_.residual_echo_detector.enabled) {
@@ -1830,8 +1864,8 @@ void AudioProcessingImpl::InitializeTransient() {
       public_submodules_->transient_suppressor.reset(new TransientSuppressor());
     }
     public_submodules_->transient_suppressor->Initialize(
-        capture_nonlocked_.capture_processing_format.sample_rate_hz(),
-        capture_nonlocked_.split_rate, num_proc_channels());
+        proc_fullband_sample_rate_hz(), capture_nonlocked_.split_rate,
+        num_proc_channels());
   }
 }
 
@@ -1956,7 +1990,8 @@ void AudioProcessingImpl::InitializeEchoController() {
 
 void AudioProcessingImpl::InitializeGainController2() {
   if (config_.gain_controller2.enabled) {
-    private_submodules_->gain_controller2->Initialize(proc_sample_rate_hz());
+    private_submodules_->gain_controller2->Initialize(
+        proc_fullband_sample_rate_hz());
   }
 }
 
@@ -1972,21 +2007,21 @@ void AudioProcessingImpl::InitializePreAmplifier() {
 void AudioProcessingImpl::InitializeResidualEchoDetector() {
   RTC_DCHECK(private_submodules_->echo_detector);
   private_submodules_->echo_detector->Initialize(
-      proc_sample_rate_hz(), 1,
+      proc_fullband_sample_rate_hz(), 1,
       formats_.render_processing_format.sample_rate_hz(), 1);
 }
 
 void AudioProcessingImpl::InitializeAnalyzer() {
   if (private_submodules_->capture_analyzer) {
-    private_submodules_->capture_analyzer->Initialize(proc_sample_rate_hz(),
-                                                      num_proc_channels());
+    private_submodules_->capture_analyzer->Initialize(
+        proc_fullband_sample_rate_hz(), num_proc_channels());
   }
 }
 
 void AudioProcessingImpl::InitializePostProcessor() {
   if (private_submodules_->capture_post_processor) {
     private_submodules_->capture_post_processor->Initialize(
-        proc_sample_rate_hz(), num_proc_channels());
+        proc_fullband_sample_rate_hz(), num_proc_channels());
   }
 }
 
