@@ -29,6 +29,56 @@ namespace {
 constexpr size_t kBlocksSinceConvergencedFilterInit = 10000;
 constexpr size_t kBlocksSinceConsistentEstimateInit = 10000;
 
+void UpdateAndComputeReverb(
+    const SpectrumBuffer& spectrum_buffer,
+    int delay_blocks,
+    float reverb_decay,
+    ReverbModel* reverb_model,
+    rtc::ArrayView<float, kFftLengthBy2Plus1> reverb_power_spectrum) {
+  RTC_DCHECK(reverb_model);
+  const size_t num_render_channels = spectrum_buffer.buffer[0].size();
+  int idx_at_delay =
+      spectrum_buffer.OffsetIndex(spectrum_buffer.read, delay_blocks);
+  int idx_past = spectrum_buffer.IncIndex(idx_at_delay);
+
+  std::array<float, kFftLengthBy2Plus1> X2_data;
+  rtc::ArrayView<const float> X2;
+  if (num_render_channels > 1) {
+    auto sum_channels =
+        [](size_t num_render_channels,
+           const std::vector<std::vector<float>>& spectrum_band_0,
+           rtc::ArrayView<float, kFftLengthBy2Plus1> render_power) {
+          std::fill(render_power.begin(), render_power.end(), 0.f);
+          for (size_t ch = 0; ch < num_render_channels; ++ch) {
+            RTC_DCHECK_EQ(spectrum_band_0[ch].size(), kFftLengthBy2Plus1);
+            for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
+              render_power[k] += spectrum_band_0[ch][k];
+            }
+          }
+        };
+    sum_channels(num_render_channels, spectrum_buffer.buffer[idx_past],
+                 X2_data);
+    reverb_model->UpdateReverbNoFreqShaping(
+        X2_data, /*power_spectrum_scaling=*/1.0f, reverb_decay);
+
+    sum_channels(num_render_channels, spectrum_buffer.buffer[idx_at_delay],
+                 X2_data);
+    X2 = X2_data;
+  } else {
+    reverb_model->UpdateReverbNoFreqShaping(
+        spectrum_buffer.buffer[idx_past][/*channel=*/0],
+        /*power_spectrum_scaling=*/1.0f, reverb_decay);
+
+    X2 = spectrum_buffer.buffer[idx_at_delay][/*channel=*/0];
+  }
+
+  rtc::ArrayView<const float, kFftLengthBy2Plus1> reverb_power =
+      reverb_model->reverb();
+  for (size_t k = 0; k < X2.size(); ++k) {
+    reverb_power_spectrum[k] = X2[k] + reverb_power[k];
+  }
+}
+
 }  // namespace
 
 int AecState::instance_count_ = 0;
@@ -171,14 +221,14 @@ void AecState::Update(
       active_render && !SaturatedCapture() ? 1 : 0;
 
   std::array<float, kFftLengthBy2Plus1> X2_reverb;
-  render_reverb_.Apply(render_buffer.GetSpectrumBuffer(),
-                       delay_state_.DirectPathFilterDelay(), ReverbDecay(),
-                       X2_reverb);
+
+  UpdateAndComputeReverb(render_buffer.GetSpectrumBuffer(),
+                         delay_state_.DirectPathFilterDelay(), ReverbDecay(),
+                         &reverb_model_, X2_reverb);
 
   if (config_.echo_audibility.use_stationarity_properties) {
     // Update the echo audibility evaluator.
-    echo_audibility_.Update(render_buffer,
-                            render_reverb_.GetReverbContributionPowerSpectrum(),
+    echo_audibility_.Update(render_buffer, reverb_model_.reverb(),
                             delay_state_.DirectPathFilterDelay(),
                             delay_state_.ExternalDelayReported());
   }

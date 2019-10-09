@@ -28,7 +28,6 @@
 #include "modules/audio_processing/aec3/erle_estimator.h"
 #include "modules/audio_processing/aec3/filter_analyzer.h"
 #include "modules/audio_processing/aec3/render_buffer.h"
-#include "modules/audio_processing/aec3/render_reverb_model.h"
 #include "modules/audio_processing/aec3/reverb_model_estimator.h"
 #include "modules/audio_processing/aec3/subtractor_output.h"
 #include "modules/audio_processing/aec3/subtractor_output_analyzer.h"
@@ -294,7 +293,7 @@ class AecState {
   absl::optional<DelayEstimate> external_delay_;
   EchoAudibility echo_audibility_;
   ReverbModelEstimator reverb_model_estimator_;
-  RenderReverbModel render_reverb_;
+  ReverbModel reverb_model_;
   std::vector<SubtractorOutputAnalyzer> subtractor_output_analyzers_;
 };
 

@@ -84,8 +84,6 @@ rtc_static_library("aec3") {
     "render_delay_controller.h",
     "render_delay_controller_metrics.cc",
     "render_delay_controller_metrics.h",
-    "render_reverb_model.cc",
-    "render_reverb_model.h",
     "render_signal_analyzer.cc",
     "render_signal_analyzer.h",
     "residual_echo_estimator.cc",
