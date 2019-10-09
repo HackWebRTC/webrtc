@@ -188,7 +188,11 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
     return stats;
   }
 
-  stats.bytes_rcvd = call_stats.bytesReceived;
+  stats.payload_bytes_rcvd = call_stats.payload_bytes_rcvd;
+  stats.header_and_padding_bytes_rcvd =
+      call_stats.header_and_padding_bytes_rcvd;
+  stats.bytes_rcvd =
+      stats.payload_bytes_rcvd + stats.header_and_padding_bytes_rcvd;
   stats.packets_rcvd = call_stats.packetsReceived;
   stats.packets_lost = call_stats.cumulativeLost;
   stats.capture_start_ntp_time_ms = call_stats.capture_start_ntp_time_ms_;

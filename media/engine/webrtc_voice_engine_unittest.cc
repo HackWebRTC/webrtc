@@ -566,7 +566,8 @@ class WebRtcVoiceEngineTestFake : public ::testing::Test {
   webrtc::AudioSendStream::Stats GetAudioSendStreamStats() const {
     webrtc::AudioSendStream::Stats stats;
     stats.local_ssrc = 12;
-    stats.bytes_sent = 345;
+    stats.payload_bytes_sent = 345;
+    stats.header_and_padding_bytes_sent = 56;
     stats.packets_sent = 678;
     stats.packets_lost = 9012;
     stats.fraction_lost = 34.56f;
@@ -600,7 +601,9 @@ class WebRtcVoiceEngineTestFake : public ::testing::Test {
                              bool is_sending) {
     const auto stats = GetAudioSendStreamStats();
     EXPECT_EQ(info.ssrc(), stats.local_ssrc);
-    EXPECT_EQ(info.bytes_sent, stats.bytes_sent);
+    EXPECT_EQ(info.payload_bytes_sent, stats.payload_bytes_sent);
+    EXPECT_EQ(info.header_and_padding_bytes_sent,
+              stats.header_and_padding_bytes_sent);
     EXPECT_EQ(info.packets_sent, stats.packets_sent);
     EXPECT_EQ(info.packets_lost, stats.packets_lost);
     EXPECT_EQ(info.fraction_lost, stats.fraction_lost);
@@ -642,7 +645,8 @@ class WebRtcVoiceEngineTestFake : public ::testing::Test {
   webrtc::AudioReceiveStream::Stats GetAudioReceiveStreamStats() const {
     webrtc::AudioReceiveStream::Stats stats;
     stats.remote_ssrc = 123;
-    stats.bytes_rcvd = 456;
+    stats.payload_bytes_rcvd = 456;
+    stats.header_and_padding_bytes_rcvd = 67;
     stats.packets_rcvd = 768;
     stats.packets_lost = 101;
     stats.codec_name = "codec_name_recv";
@@ -682,7 +686,9 @@ class WebRtcVoiceEngineTestFake : public ::testing::Test {
   void VerifyVoiceReceiverInfo(const cricket::VoiceReceiverInfo& info) {
     const auto stats = GetAudioReceiveStreamStats();
     EXPECT_EQ(info.ssrc(), stats.remote_ssrc);
-    EXPECT_EQ(info.bytes_rcvd, stats.bytes_rcvd);
+    EXPECT_EQ(info.payload_bytes_rcvd, stats.payload_bytes_rcvd);
+    EXPECT_EQ(info.header_and_padding_bytes_rcvd,
+              stats.header_and_padding_bytes_rcvd);
     EXPECT_EQ(rtc::checked_cast<unsigned int>(info.packets_rcvd),
               stats.packets_rcvd);
     EXPECT_EQ(rtc::checked_cast<unsigned int>(info.packets_lost),

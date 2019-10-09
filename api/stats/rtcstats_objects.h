@@ -413,6 +413,7 @@ class RTC_EXPORT RTCInboundRTPStreamStats final : public RTCRTPStreamStats {
   RTCStatsMember<uint64_t> fec_packets_received;
   RTCStatsMember<uint64_t> fec_packets_discarded;
   RTCStatsMember<uint64_t> bytes_received;
+  RTCStatsMember<uint64_t> header_bytes_received;
   RTCStatsMember<int32_t> packets_lost;  // Signed per RFC 3550
   RTCStatsMember<double> last_packet_received_timestamp;
   // TODO(hbos): Collect and populate this value for both "audio" and "video",
@@ -466,6 +467,7 @@ class RTC_EXPORT RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
   RTCStatsMember<uint32_t> packets_sent;
   RTCStatsMember<uint64_t> retransmitted_packets_sent;
   RTCStatsMember<uint64_t> bytes_sent;
+  RTCStatsMember<uint64_t> header_bytes_sent;
   RTCStatsMember<uint64_t> retransmitted_bytes_sent;
   // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7066
   RTCStatsMember<double> target_bitrate;

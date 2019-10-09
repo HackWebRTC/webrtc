@@ -256,7 +256,9 @@ void SetInboundRTPStreamStatsFromMediaReceiverInfo(
   inbound_stats->packets_received =
       static_cast<uint32_t>(media_receiver_info.packets_rcvd);
   inbound_stats->bytes_received =
-      static_cast<uint64_t>(media_receiver_info.bytes_rcvd);
+      static_cast<uint64_t>(media_receiver_info.payload_bytes_rcvd);
+  inbound_stats->header_bytes_received =
+      static_cast<uint64_t>(media_receiver_info.header_and_padding_bytes_rcvd);
   inbound_stats->packets_lost =
       static_cast<int32_t>(media_receiver_info.packets_lost);
 }
@@ -343,7 +345,9 @@ void SetOutboundRTPStreamStatsFromMediaSenderInfo(
   outbound_stats->retransmitted_packets_sent =
       media_sender_info.retransmitted_packets_sent;
   outbound_stats->bytes_sent =
-      static_cast<uint64_t>(media_sender_info.bytes_sent);
+      static_cast<uint64_t>(media_sender_info.payload_bytes_sent);
+  outbound_stats->header_bytes_sent =
+      static_cast<uint64_t>(media_sender_info.header_and_padding_bytes_sent);
   outbound_stats->retransmitted_bytes_sent =
       media_sender_info.retransmitted_bytes_sent;
 }
