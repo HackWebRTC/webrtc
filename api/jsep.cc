@@ -41,6 +41,7 @@ void SetSessionDescriptionObserver::OnFailure(const std::string& error) {
 const char SessionDescriptionInterface::kOffer[] = "offer";
 const char SessionDescriptionInterface::kPrAnswer[] = "pranswer";
 const char SessionDescriptionInterface::kAnswer[] = "answer";
+const char SessionDescriptionInterface::kRollback[] = "rollback";
 
 const char* SdpTypeToString(SdpType type) {
   switch (type) {
@@ -50,6 +51,8 @@ const char* SdpTypeToString(SdpType type) {
       return SessionDescriptionInterface::kPrAnswer;
     case SdpType::kAnswer:
       return SessionDescriptionInterface::kAnswer;
+    case SdpType::kRollback:
+      return SessionDescriptionInterface::kRollback;
   }
   return "";
 }
@@ -61,6 +64,8 @@ absl::optional<SdpType> SdpTypeFromString(const std::string& type_str) {
     return SdpType::kPrAnswer;
   } else if (type_str == SessionDescriptionInterface::kAnswer) {
     return SdpType::kAnswer;
+  } else if (type_str == SessionDescriptionInterface::kRollback) {
+    return SdpType::kRollback;
   } else {
     return absl::nullopt;
   }
