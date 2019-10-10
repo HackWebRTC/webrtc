@@ -975,6 +975,7 @@ if (current_os == "linux" || is_android) {
       "../../rtc_base:criticalsection",
       "../../rtc_base:logging",
       "../../rtc_base:stringutils",
+      "//third_party/abseil-cpp/absl/base:core_headers",
     ]
   }
 

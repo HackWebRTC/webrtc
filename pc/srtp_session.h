@@ -118,7 +118,7 @@ class SrtpSession {
   int rtp_auth_tag_len_ = 0;
   int rtcp_auth_tag_len_ = 0;
   bool inited_ = false;
-  static rtc::GlobalLockPod lock_;
+  static rtc::GlobalLock lock_;
   int last_send_seq_num_ = -1;
   bool external_auth_active_ = false;
   bool external_auth_enabled_ = false;

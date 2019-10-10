@@ -386,6 +386,7 @@ rtc_static_library("rtc_data") {
     "../rtc_base/third_party/sigslot",
     "../system_wrappers",
     "//third_party/abseil-cpp/absl/algorithm:container",
+    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 

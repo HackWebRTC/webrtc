@@ -15,9 +15,11 @@
 
 #include <memory>
 #include <set>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
@@ -279,6 +281,13 @@ TEST(AtomicOpsTest, CompareAndSwap) {
   // Release the hounds!
   EXPECT_TRUE(runner.Run());
   EXPECT_EQ(1, runner.shared_value());
+}
+
+TEST(GlobalLockTest, CanHaveStaticStorageDuration) {
+  static_assert(std::is_trivially_destructible<GlobalLock>::value, "");
+  ABSL_CONST_INIT static GlobalLock global_lock;
+  global_lock.Lock();
+  global_lock.Unlock();
 }
 
 TEST(GlobalLockTest, Basic) {

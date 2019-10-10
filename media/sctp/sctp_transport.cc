@@ -24,6 +24,7 @@ enum PreservedErrno {
 #include <memory>
 
 #include "absl/algorithm/container.h"
+#include "absl/base/attributes.h"
 #include "absl/types/optional.h"
 #include "media/base/codec.h"
 #include "media/base/media_channel.h"
@@ -49,8 +50,8 @@ namespace {
 static constexpr size_t kSctpMtu = 1200;
 
 // Set the initial value of the static SCTP Data Engines reference count.
-int g_usrsctp_usage_count = 0;
-rtc::GlobalLockPod g_usrsctp_lock_;
+ABSL_CONST_INIT int g_usrsctp_usage_count = 0;
+ABSL_CONST_INIT rtc::GlobalLock g_usrsctp_lock_;
 
 // DataMessageType is used for the SCTP "Payload Protocol Identifier", as
 // defined in http://tools.ietf.org/html/rfc4960#section-14.4
