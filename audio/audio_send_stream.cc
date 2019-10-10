@@ -360,12 +360,9 @@ void AudioSendStream::Start() {
   if (sending_) {
     return;
   }
-  // TODO(srte): We should not add audio to allocation just because
-  // audio_send_side_bwe_ is false.
   if (!config_.has_dscp && config_.min_bitrate_bps != -1 &&
       config_.max_bitrate_bps != -1 &&
-      (allocate_audio_without_feedback_ || TransportSeqNumId(config_) != 0 ||
-       !audio_send_side_bwe_)) {
+      (allocate_audio_without_feedback_ || TransportSeqNumId(config_) != 0)) {
     rtp_transport_->AccountForAudioPacketsInPacedSender(true);
     rtp_rtcp_module_->SetAsPartOfAllocation(true);
     rtc::Event thread_sync_event;
@@ -824,11 +821,8 @@ void AudioSendStream::ReconfigureBitrateObserver(
     return;
   }
 
-  // TODO(srte): We should not add audio to allocation just because
-  // audio_send_side_bwe_ is false.
   if (!new_config.has_dscp && new_config.min_bitrate_bps != -1 &&
-      new_config.max_bitrate_bps != -1 &&
-      (TransportSeqNumId(new_config) != 0 || !audio_send_side_bwe_)) {
+      new_config.max_bitrate_bps != -1 && TransportSeqNumId(new_config) != 0) {
     rtp_transport_->AccountForAudioPacketsInPacedSender(true);
     rtc::Event thread_sync_event;
     worker_queue_->PostTask([&] {
