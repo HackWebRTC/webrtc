@@ -89,9 +89,10 @@ TEST_F(PacketRouterTest, Sanity_NoModuleRegistered_SendRemb) {
 }
 
 TEST_F(PacketRouterTest, Sanity_NoModuleRegistered_SendTransportFeedback) {
-  rtcp::TransportFeedback feedback;
+  std::vector<std::unique_ptr<rtcp::RtcpPacket>> feedback;
+  feedback.push_back(std::make_unique<rtcp::TransportFeedback>());
 
-  EXPECT_FALSE(packet_router_.SendTransportFeedback(&feedback));
+  EXPECT_FALSE(packet_router_.SendCombinedRtcpPacket(std::move(feedback)));
 }
 
 TEST_F(PacketRouterTest, GeneratePaddingPicksCorrectModule) {
@@ -242,15 +243,21 @@ TEST_F(PacketRouterTest, SendTransportFeedback) {
   NiceMock<MockRtpRtcp> rtp_1;
   NiceMock<MockRtpRtcp> rtp_2;
 
+  ON_CALL(rtp_1, RTCP()).WillByDefault(Return(RtcpMode::kCompound));
+  ON_CALL(rtp_2, RTCP()).WillByDefault(Return(RtcpMode::kCompound));
+
   packet_router_.AddSendRtpModule(&rtp_1, false);
   packet_router_.AddReceiveRtpModule(&rtp_2, false);
 
-  rtcp::TransportFeedback feedback;
-  EXPECT_CALL(rtp_1, SendFeedbackPacket(_)).Times(1).WillOnce(Return(true));
-  packet_router_.SendTransportFeedback(&feedback);
+  std::vector<std::unique_ptr<rtcp::RtcpPacket>> feedback;
+  feedback.push_back(std::make_unique<rtcp::TransportFeedback>());
+  EXPECT_CALL(rtp_1, SendCombinedRtcpPacket).Times(1);
+  packet_router_.SendCombinedRtcpPacket(std::move(feedback));
   packet_router_.RemoveSendRtpModule(&rtp_1);
-  EXPECT_CALL(rtp_2, SendFeedbackPacket(_)).Times(1).WillOnce(Return(true));
-  packet_router_.SendTransportFeedback(&feedback);
+  EXPECT_CALL(rtp_2, SendCombinedRtcpPacket).Times(1);
+  std::vector<std::unique_ptr<rtcp::RtcpPacket>> new_feedback;
+  new_feedback.push_back(std::make_unique<rtcp::TransportFeedback>());
+  packet_router_.SendCombinedRtcpPacket(std::move(new_feedback));
   packet_router_.RemoveReceiveRtpModule(&rtp_2);
 }
 

@@ -115,6 +115,7 @@ if (rtc_include_tests) {
       "../..:webrtc_common",
       "../../api/transport:field_trial_based_config",
       "../../api/transport:mock_network_control",
+      "../../api/transport:network_control",
       "../../rtc_base",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",

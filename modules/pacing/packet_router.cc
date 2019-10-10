@@ -13,11 +13,13 @@
 #include <algorithm>
 #include <cstdint>
 #include <limits>
+#include <memory>
 #include <utility>
 
 #include "absl/types/optional.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/rtcp_packet.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
@@ -274,33 +276,25 @@ bool PacketRouter::SendRemb(int64_t bitrate_bps,
   return true;
 }
 
-bool PacketRouter::SendTransportFeedback(rtcp::TransportFeedback* packet) {
+bool PacketRouter::SendCombinedRtcpPacket(
+    std::vector<std::unique_ptr<rtcp::RtcpPacket>> packets) {
   rtc::CritScope cs(&modules_crit_);
+
   // Prefer send modules.
   for (auto* rtp_module : rtp_send_modules_) {
-    packet->SetSenderSsrc(rtp_module->SSRC());
-    if (rtp_module->SendFeedbackPacket(*packet)) {
-      return true;
+    if (rtp_module->RTCP() == RtcpMode::kOff) {
+      continue;
     }
+    rtp_module->SendCombinedRtcpPacket(std::move(packets));
+    return true;
   }
-  for (auto* rtcp_sender : rtcp_feedback_senders_) {
-    packet->SetSenderSsrc(rtcp_sender->SSRC());
-    if (rtcp_sender->SendFeedbackPacket(*packet)) {
-      return true;
-    }
-  }
-  return false;
-}
 
-void PacketRouter::SendNetworkStateEstimatePacket(
-    rtcp::RemoteEstimate* packet) {
-  rtc::CritScope cs(&modules_crit_);
-  for (auto* rtcp_sender : rtcp_feedback_senders_) {
-    packet->SetSenderSsrc(rtcp_sender->SSRC());
-    if (rtcp_sender->SendNetworkStateEstimatePacket(*packet)) {
-      break;
-    }
+  if (rtcp_feedback_senders_.empty()) {
+    return false;
   }
+  auto* rtcp_sender = rtcp_feedback_senders_[0];
+  rtcp_sender->SendCombinedRtcpPacket(std::move(packets));
+  return true;
 }
 
 void PacketRouter::AddRembModuleCandidate(

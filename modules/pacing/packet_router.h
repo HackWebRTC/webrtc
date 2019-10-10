@@ -22,6 +22,7 @@
 #include "api/transport/network_types.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/rtcp_packet.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"
@@ -30,9 +31,6 @@
 namespace webrtc {
 
 class RtpRtcp;
-namespace rtcp {
-class TransportFeedback;
-}  // namespace rtcp
 
 // PacketRouter keeps track of rtp send modules to support the pacer.
 // In addition, it handles feedback messages, which are sent on a send
@@ -76,10 +74,9 @@ class PacketRouter : public RemoteBitrateObserver,
   // Send REMB feedback.
   bool SendRemb(int64_t bitrate_bps, const std::vector<uint32_t>& ssrcs);
 
-  // Send transport feedback packet to send-side.
-  bool SendTransportFeedback(rtcp::TransportFeedback* packet) override;
-  // Send RemoteEstimate packet to send-side.
-  void SendNetworkStateEstimatePacket(rtcp::RemoteEstimate* packet) override;
+  // Sends |packets| in one or more IP packets.
+  bool SendCombinedRtcpPacket(
+      std::vector<std::unique_ptr<rtcp::RtcpPacket>> packets) override;
 
  private:
   RtpRtcp* FindRtpModule(uint32_t ssrc)
