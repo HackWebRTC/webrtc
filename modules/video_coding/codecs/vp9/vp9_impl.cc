@@ -1625,10 +1625,20 @@ int VP9DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
   vpx_codec_dec_cfg_t cfg;
   memset(&cfg, 0, sizeof(cfg));
 
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+  // We focus on webrtc fuzzing here, not libvpx itself. Use single thread for
+  // fuzzing, because:
+  //  - libvpx's VP9 single thread decoder is more fuzzer friendly. It detects
+  //    errors earlier than the multi-threads version.
+  //  - Make peak CPU usage under control (not depending on input)
+  cfg.threads = 1;
+  (void)kMaxNumTiles4kVideo;  // unused
+#else
   // We want to use multithreading when decoding high resolution videos. But,
   // since we don't know resolution of input stream at this stage, we always
   // enable it.
   cfg.threads = std::min(number_of_cores, kMaxNumTiles4kVideo);
+#endif
 
   vpx_codec_flags_t flags = 0;
   if (vpx_codec_dec_init(decoder_, vpx_codec_vp9_dx(), &cfg, flags)) {
