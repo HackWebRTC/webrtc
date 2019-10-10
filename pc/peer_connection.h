@@ -391,34 +391,6 @@ class PeerConnection : public PeerConnectionInternal,
     FieldTrialFlag receive_only;
   };
 
-  // Captures partial state to be used for rollback. Applicable only in
-  // Unified Plan.
-  class TransceiverStableState {
-   public:
-    TransceiverStableState() {}
-    TransceiverStableState(RtpTransceiverDirection direction,
-                           absl::optional<std::string> mid,
-                           absl::optional<size_t> mline_index,
-                           bool newly_created)
-        : direction_(direction),
-          mid_(mid),
-          mline_index_(mline_index),
-          newly_created_(newly_created) {}
-    RtpTransceiverDirection direction() const { return direction_; }
-    absl::optional<std::string> mid() const { return mid_; }
-    absl::optional<size_t> mline_index() const { return mline_index_; }
-    bool newly_created() const { return newly_created_; }
-
-   private:
-    RtpTransceiverDirection direction_ = RtpTransceiverDirection::kRecvOnly;
-    absl::optional<std::string> mid_;
-    absl::optional<size_t> mline_index_;
-    // Indicates that the transceiver was created as part of applying a
-    // description to track potential need for removing transceiver during
-    // rollback.
-    bool newly_created_ = false;
-  };
-
   // Implements MessageHandler.
   void OnMessage(rtc::Message* msg) override;
 
@@ -1193,7 +1165,6 @@ class PeerConnection : public PeerConnectionInternal,
 
   void UpdateNegotiationNeeded();
   bool CheckIfNegotiationIsNeeded();
-  RTCError Rollback();
 
   sigslot::signal1<DataChannel*> SignalDataChannelCreated_
       RTC_GUARDED_BY(signaling_thread());
@@ -1315,11 +1286,7 @@ class PeerConnection : public PeerConnectionInternal,
       RTC_GUARDED_BY(signaling_thread());  // A pointer is passed to senders_
   rtc::scoped_refptr<RTCStatsCollector> stats_collector_
       RTC_GUARDED_BY(signaling_thread());
-  // Holds changes made to transceivers during applying descriptors for
-  // potential rollback. Gets cleared once signaling state goes to stable.
-  std::map<rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>,
-           TransceiverStableState>
-      transceiver_stable_states_by_transceivers_;
+
   std::vector<
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
       transceivers_;  // TODO(bugs.webrtc.org/9987): Accessed on both signaling

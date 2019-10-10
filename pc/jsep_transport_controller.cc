@@ -471,16 +471,6 @@ void JsepTransportController::SetMediaTransportSettings(
       use_datagram_transport_for_data_channels_receive_only;
 }
 
-void JsepTransportController::RollbackTransportForMid(const std::string& mid) {
-  if (!network_thread_->IsCurrent()) {
-    network_thread_->Invoke<void>(RTC_FROM_HERE,
-                                  [=] { RollbackTransportForMid(mid); });
-    return;
-  }
-  RemoveTransportForMid(mid);
-  MaybeDestroyJsepTransport(mid);
-}
-
 std::unique_ptr<cricket::IceTransportInternal>
 JsepTransportController::CreateIceTransport(const std::string transport_name,
                                             bool rtcp) {

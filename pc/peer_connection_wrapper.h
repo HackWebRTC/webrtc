@@ -87,7 +87,6 @@ class PeerConnectionWrapper {
       const PeerConnectionInterface::RTCOfferAnswerOptions& options);
   // Calls CreateAnswerAndSetAsLocal with default options.
   std::unique_ptr<SessionDescriptionInterface> CreateAnswerAndSetAsLocal();
-  std::unique_ptr<SessionDescriptionInterface> CreateRollback();
 
   // Calls the underlying PeerConnection's SetLocalDescription method with the
   // given session description and waits for the success/failure response.

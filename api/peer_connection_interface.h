@@ -659,9 +659,6 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     // logs with TURN server logs. It will not be added if it's an empty string.
     std::string turn_logging_id;
 
-    // Added to be able to control rollout of this feature.
-    bool enable_implicit_rollback = false;
-
     //
     // Don't forget to update operator== if adding something.
     //
