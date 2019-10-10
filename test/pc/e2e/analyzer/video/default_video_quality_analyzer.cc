@@ -159,7 +159,8 @@ void DefaultVideoQualityAnalyzer::OnFramePreEncode(
     const webrtc::VideoFrame& frame) {
   rtc::CritScope crit(&lock_);
   auto it = frame_stats_.find(frame.id());
-  RTC_DCHECK(it != frame_stats_.end());
+  RTC_DCHECK(it != frame_stats_.end())
+      << "Frame id=" << frame.id() << " not found";
   frame_counters_.pre_encoded++;
   stream_frame_counters_[it->second.stream_label].pre_encoded++;
   it->second.pre_encode_time = Now();

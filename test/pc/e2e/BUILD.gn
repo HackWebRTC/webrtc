@@ -275,6 +275,8 @@ if (rtc_include_tests) {
       ":test_peer",
       ":video_quality_analyzer_injection_helper",
       "../..:field_trial",
+      "../..:platform_video_capturer",
+      "../..:video_test_common",
       "../../../api:audio_quality_analyzer_api",
       "../../../api:libjingle_peerconnection_api",
       "../../../api:media_stream_interface",

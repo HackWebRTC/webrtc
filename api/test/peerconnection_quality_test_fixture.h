@@ -167,16 +167,22 @@ class PeerConnectionE2EQualityTestFixture {
     // Have to be unique among all specified configs for all peers in the call.
     // Will be auto generated if omitted.
     absl::optional<std::string> stream_label;
-    // Only 1 from |generator|, |input_file_name| and |screen_share_config| can
-    // be specified. If none of them are specified, then |generator| will be set
-    // to VideoGeneratorType::kDefault.
-    // If specified generator of this type will be used to produce input video.
+    // Only 1 from |generator|, |input_file_name|, |screen_share_config| and
+    // |capturing_device_index| can be specified. If none of them are specified,
+    // then |generator| will be set to VideoGeneratorType::kDefault. If
+    // specified generator of this type will be used to produce input video.
     absl::optional<VideoGeneratorType> generator;
     // If specified this file will be used as input. Input video will be played
     // in a circle.
     absl::optional<std::string> input_file_name;
     // If specified screen share video stream will be created as input.
     absl::optional<ScreenShareConfig> screen_share_config;
+    // If specified this capturing device will be used to get input video. The
+    // |capturing_device_index| is the index of required capturing device in OS
+    // provided list of video devices. On Linux and Windows the list will be
+    // obtained via webrtc::VideoCaptureModule::DeviceInfo, on Mac OS via
+    // [RTCCameraVideoCapturer captureDevices].
+    absl::optional<size_t> capturing_device_index;
     // If presented video will be transfered in simulcast/SVC mode depending on
     // which encoder is used.
     //

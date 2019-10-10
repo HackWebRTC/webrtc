@@ -19,14 +19,15 @@
 
 namespace webrtc {
 namespace test {
-TestVideoCapturer::TestVideoCapturer() = default;
 TestVideoCapturer::~TestVideoCapturer() = default;
 
-void TestVideoCapturer::OnFrame(const VideoFrame& frame) {
+void TestVideoCapturer::OnFrame(const VideoFrame& original_frame) {
   int cropped_width = 0;
   int cropped_height = 0;
   int out_width = 0;
   int out_height = 0;
+
+  VideoFrame frame = MaybePreprocess(original_frame);
 
   if (!video_adapter_.AdaptFrameResolution(
           frame.width(), frame.height(), frame.timestamp_us() * 1000,
@@ -73,6 +74,15 @@ void TestVideoCapturer::UpdateVideoAdapter() {
   rtc::VideoSinkWants wants = broadcaster_.wants();
   video_adapter_.OnResolutionFramerateRequest(
       wants.target_pixel_count, wants.max_pixel_count, wants.max_framerate_fps);
+}
+
+VideoFrame TestVideoCapturer::MaybePreprocess(const VideoFrame& frame) {
+  rtc::CritScope crit(&lock_);
+  if (preprocessor_ != nullptr) {
+    return preprocessor_->Preprocess(frame);
+  } else {
+    return frame;
+  }
 }
 
 }  // namespace test
