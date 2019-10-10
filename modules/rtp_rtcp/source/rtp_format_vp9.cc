@@ -12,6 +12,7 @@
 
 #include <string.h>
 
+#include "api/video/video_codec_constants.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "modules/video_coding/codecs/interface/common_constants.h"
 #include "rtc_base/bit_buffer.h"
@@ -316,6 +317,8 @@ bool ParseLayerInfoCommon(rtc::BitBuffer* parser, RTPVideoHeaderVP9* vp9) {
   RETURN_FALSE_ON_ERROR(parser->ReadBits(&d_bit, 1));
   vp9->temporal_idx = t;
   vp9->temporal_up_switch = u_bit ? true : false;
+  if (s >= kMaxSpatialLayers)
+    return false;
   vp9->spatial_idx = s;
   vp9->inter_layer_predicted = d_bit ? true : false;
   return true;
