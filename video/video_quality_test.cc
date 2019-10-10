@@ -1342,7 +1342,6 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
     if (graph_data_output_file)
       fclose(graph_data_output_file);
 
-    video_sources_.clear();
     send_transport.reset();
     recv_transport.reset();
 
@@ -1569,7 +1568,6 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     Stop();
     DestroyStreams();
 
-    video_sources_.clear();
     send_transport.reset();
     recv_transport.reset();
 

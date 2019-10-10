@@ -203,7 +203,6 @@ void CallTest::RunBaseTest(BaseTest* test) {
     receive_transport_.reset();
 
     frame_generator_capturer_ = nullptr;
-    video_sources_.clear();
     DestroyCalls();
 
     fake_send_audio_device_ = nullptr;
@@ -666,6 +665,7 @@ void CallTest::DestroyStreams() {
     receiver_call_->DestroyFlexfecReceiveStream(flexfec_recv_stream);
 
   video_receive_streams_.clear();
+  video_sources_.clear();
 }
 
 void CallTest::DestroyVideoSendStreams() {
