@@ -114,9 +114,7 @@ int AcmReceiver::InsertPacket(const RTPHeader& rtp_header,
     }
   }  // |crit_sect_| is released.
 
-  uint32_t receive_timestamp = NowInTimestamp(format->clockrate_hz);
-  if (neteq_->InsertPacket(rtp_header, incoming_payload, receive_timestamp) <
-      0) {
+  if (neteq_->InsertPacket(rtp_header, incoming_payload) < 0) {
     RTC_LOG(LERROR) << "AcmReceiver::InsertPacket "
                     << static_cast<int>(rtp_header.payloadType)
                     << " Failed to insert packet";

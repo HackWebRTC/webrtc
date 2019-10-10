@@ -234,8 +234,7 @@ class NetEqNetworkStatsTest {
             kPayloadType, frame_size_samples_, &rtp_header_);
         if (!Lost(next_send_time)) {
           static const uint8_t payload[kPayloadSizeByte] = {0};
-          ASSERT_EQ(NetEq::kOK,
-                    neteq_->InsertPacket(rtp_header_, payload, next_send_time));
+          ASSERT_EQ(NetEq::kOK, neteq_->InsertPacket(rtp_header_, payload));
         }
       }
       bool muted = true;

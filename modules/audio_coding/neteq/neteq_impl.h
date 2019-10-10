@@ -129,13 +129,9 @@ class NetEqImpl : public webrtc::NetEq {
 
   ~NetEqImpl() override;
 
-  // Inserts a new packet into NetEq. The |receive_timestamp| is an indication
-  // of the time when the packet was received, and should be measured with
-  // the same tick rate as the RTP timestamp of the current payload.
-  // Returns 0 on success, -1 on failure.
+  // Inserts a new packet into NetEq. Returns 0 on success, -1 on failure.
   int InsertPacket(const RTPHeader& rtp_header,
-                   rtc::ArrayView<const uint8_t> payload,
-                   uint32_t receive_timestamp) override;
+                   rtc::ArrayView<const uint8_t> payload) override;
 
   void InsertEmptyPacket(const RTPHeader& rtp_header) override;
 
@@ -218,8 +214,7 @@ class NetEqImpl : public webrtc::NetEq {
   // above. Returns 0 on success, otherwise an error code.
   // TODO(hlundin): Merge this with InsertPacket above?
   int InsertPacketInternal(const RTPHeader& rtp_header,
-                           rtc::ArrayView<const uint8_t> payload,
-                           uint32_t receive_timestamp)
+                           rtc::ArrayView<const uint8_t> payload)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Delivers 10 ms of audio data. The data is written to |audio_frame|.
