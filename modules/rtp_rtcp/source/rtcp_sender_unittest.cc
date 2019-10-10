@@ -11,6 +11,7 @@
 #include "modules/rtp_rtcp/source/rtcp_sender.h"
 
 #include <memory>
+#include <utility>
 
 #include "absl/base/macros.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -847,6 +848,23 @@ TEST_F(RtcpSenderTest, SchedulesReportOnSsrcChange) {
   rtcp_sender_->SetSSRC(kSenderSsrc + 1);
   clock_.AdvanceTimeMilliseconds(100);
   EXPECT_TRUE(rtcp_sender_->TimeToSendRTCPReport(false));
+}
+
+TEST_F(RtcpSenderTest, SendsCombinedRtcpPacket) {
+  rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
+
+  std::vector<std::unique_ptr<rtcp::RtcpPacket>> packets;
+  auto transport_feedback = std::make_unique<rtcp::TransportFeedback>();
+  transport_feedback->AddReceivedPacket(321, 10000);
+  packets.push_back(std::move(transport_feedback));
+  auto remote_estimate = std::make_unique<rtcp::RemoteEstimate>();
+  packets.push_back(std::move(remote_estimate));
+  rtcp_sender_->SendCombinedRtcpPacket(std::move(packets));
+
+  EXPECT_EQ(parser()->transport_feedback()->num_packets(), 1);
+  EXPECT_EQ(parser()->transport_feedback()->sender_ssrc(), kSenderSsrc);
+  EXPECT_EQ(parser()->app()->num_packets(), 1);
+  EXPECT_EQ(parser()->app()->sender_ssrc(), kSenderSsrc);
 }
 
 }  // namespace webrtc

@@ -14,6 +14,7 @@
 #include <stddef.h>
 
 #include <list>
+#include <memory>
 #include <vector>
 
 #include "absl/strings/string_view.h"
@@ -317,6 +318,8 @@ class RtcpFeedbackSenderInterface {
   virtual bool SendFeedbackPacket(const rtcp::TransportFeedback& feedback) = 0;
   virtual bool SendNetworkStateEstimatePacket(
       const rtcp::RemoteEstimate& packet) = 0;
+  virtual void SendCombinedRtcpPacket(
+      std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets) = 0;
   virtual void SetRemb(int64_t bitrate_bps, std::vector<uint32_t> ssrcs) = 0;
   virtual void UnsetRemb() = 0;
 };

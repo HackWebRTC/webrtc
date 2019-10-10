@@ -50,22 +50,6 @@ const uint32_t kRtcpAnyExtendedReports = kRtcpXrReceiverReferenceTime |
                                          kRtcpXrTargetBitrate;
 constexpr int32_t kDefaultVideoReportInterval = 1000;
 constexpr int32_t kDefaultAudioReportInterval = 5000;
-}  // namespace
-
-RTCPSender::FeedbackState::FeedbackState()
-    : packets_sent(0),
-      media_bytes_sent(0),
-      send_bitrate(0),
-      last_rr_ntp_secs(0),
-      last_rr_ntp_frac(0),
-      remote_sr(0),
-      module(nullptr) {}
-
-RTCPSender::FeedbackState::FeedbackState(const FeedbackState&) = default;
-
-RTCPSender::FeedbackState::FeedbackState(FeedbackState&&) = default;
-
-RTCPSender::FeedbackState::~FeedbackState() = default;
 
 class PacketContainer : public rtcp::CompoundPacket {
  public:
@@ -95,6 +79,57 @@ class PacketContainer : public rtcp::CompoundPacket {
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(PacketContainer);
 };
+
+// Helper to put several RTCP packets into lower layer datagram RTCP packet.
+// Prefer to use this class instead of PacketContainer.
+class PacketSender {
+ public:
+  PacketSender(rtcp::RtcpPacket::PacketReadyCallback callback,
+               size_t max_packet_size)
+      : callback_(callback), max_packet_size_(max_packet_size) {
+    RTC_CHECK_LE(max_packet_size, IP_PACKET_SIZE);
+  }
+  ~PacketSender() { RTC_DCHECK_EQ(index_, 0) << "Unsent rtcp packet."; }
+
+  // Appends a packet to pending compound packet.
+  // Sends rtcp packet if buffer is full and resets the buffer.
+  void AppendPacket(const rtcp::RtcpPacket& packet) {
+    packet.Create(buffer_, &index_, max_packet_size_, callback_);
+  }
+
+  // Sends pending rtcp packet.
+  void Send() {
+    if (index_ > 0) {
+      callback_(rtc::ArrayView<const uint8_t>(buffer_, index_));
+      index_ = 0;
+    }
+  }
+
+  bool IsEmpty() const { return index_ == 0; }
+
+ private:
+  const rtcp::RtcpPacket::PacketReadyCallback callback_;
+  const size_t max_packet_size_;
+  size_t index_ = 0;
+  uint8_t buffer_[IP_PACKET_SIZE];
+};
+
+}  // namespace
+
+RTCPSender::FeedbackState::FeedbackState()
+    : packets_sent(0),
+      media_bytes_sent(0),
+      send_bitrate(0),
+      last_rr_ntp_secs(0),
+      last_rr_ntp_frac(0),
+      remote_sr(0),
+      module(nullptr) {}
+
+RTCPSender::FeedbackState::FeedbackState(const FeedbackState&) = default;
+
+RTCPSender::FeedbackState::FeedbackState(FeedbackState&&) = default;
+
+RTCPSender::FeedbackState::~FeedbackState() = default;
 
 class RTCPSender::RtcpContext {
  public:
@@ -1012,6 +1047,35 @@ bool RTCPSender::SendNetworkStateEstimatePacket(
     send_success = transport_->SendRtcp(packet.data(), packet.size());
   };
   return packet.Build(max_packet_size, callback) && send_success;
+}
+
+void RTCPSender::SendCombinedRtcpPacket(
+    std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets) {
+  size_t max_packet_size;
+  uint32_t ssrc;
+  {
+    rtc::CritScope lock(&critical_section_rtcp_sender_);
+    if (method_ == RtcpMode::kOff) {
+      RTC_LOG(LS_WARNING) << "Can't send rtcp if it is disabled.";
+      return;
+    }
+
+    max_packet_size = max_packet_size_;
+    ssrc = ssrc_;
+  }
+  RTC_DCHECK_LE(max_packet_size, IP_PACKET_SIZE);
+  auto callback = [&](rtc::ArrayView<const uint8_t> packet) {
+    if (transport_->SendRtcp(packet.data(), packet.size())) {
+      if (event_log_)
+        event_log_->Log(std::make_unique<RtcEventRtcpPacketOutgoing>(packet));
+    }
+  };
+  PacketSender sender(callback, max_packet_size);
+  for (auto& rtcp_packet : rtcp_packets) {
+    rtcp_packet->SetSenderSsrc(ssrc);
+    sender.AppendPacket(*rtcp_packet);
+  }
+  sender.Send();
 }
 
 }  // namespace webrtc

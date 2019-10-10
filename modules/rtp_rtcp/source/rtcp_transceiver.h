@@ -82,6 +82,12 @@ class RtcpTransceiver : public RtcpFeedbackSenderInterface {
   bool SendNetworkStateEstimatePacket(
       const rtcp::RemoteEstimate& packet) override;
 
+  // TODO(bugs.webrtc.org/8239): Remove SendCombinedRtcpPacket
+  // and move generating of the TransportFeedback message inside
+  // RtcpTransceiverImpl when there is one RtcpTransceiver per rtp transport.
+  void SendCombinedRtcpPacket(
+      std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets) override;
+
   // Reports missing packets, https://tools.ietf.org/html/rfc4585#section-6.2.1
   void SendNack(uint32_t ssrc, std::vector<uint16_t> sequence_numbers);
 

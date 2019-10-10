@@ -11,7 +11,9 @@
 #include "modules/rtp_rtcp/source/rtcp_transceiver.h"
 
 #include <memory>
+#include <utility>
 
+#include "modules/rtp_rtcp/source/rtcp_packet/remote_estimate.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "rtc_base/event.h"
@@ -19,6 +21,7 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/mock_transport.h"
+#include "test/rtcp_packet_parser.h"
 
 namespace {
 
@@ -32,7 +35,10 @@ using ::webrtc::MockTransport;
 using ::webrtc::RtcpTransceiver;
 using ::webrtc::RtcpTransceiverConfig;
 using ::webrtc::TaskQueueForTest;
+using ::webrtc::rtcp::RemoteEstimate;
+using ::webrtc::rtcp::RtcpPacket;
 using ::webrtc::rtcp::TransportFeedback;
+using ::webrtc::test::RtcpPacketParser;
 
 class MockMediaReceiverRtcpObserver : public webrtc::MediaReceiverRtcpObserver {
  public:
@@ -280,6 +286,43 @@ TEST(RtcpTransceiverTest, SendsTransportFeedbackOnTaskQueue) {
 
   EXPECT_TRUE(rtcp_transceiver.SendFeedbackPacket(transport_feedback));
 
+  WaitPostedTasks(&queue);
+}
+
+TEST(RtcpTransceiverTest, SendsCombinedRtcpPacketOnTaskQueue) {
+  static constexpr uint32_t kSenderSsrc = 12345;
+
+  MockTransport outgoing_transport;
+  TaskQueueForTest queue("rtcp");
+  RtcpTransceiverConfig config;
+  config.feedback_ssrc = kSenderSsrc;
+  config.outgoing_transport = &outgoing_transport;
+  config.task_queue = &queue;
+  config.schedule_periodic_compound_packets = false;
+  RtcpTransceiver rtcp_transceiver(config);
+
+  EXPECT_CALL(outgoing_transport, SendRtcp)
+      .WillOnce([&](const uint8_t* buffer, size_t size) {
+        EXPECT_TRUE(queue.IsCurrent());
+        RtcpPacketParser rtcp_parser;
+        rtcp_parser.Parse(buffer, size);
+        EXPECT_EQ(rtcp_parser.transport_feedback()->num_packets(), 1);
+        EXPECT_EQ(rtcp_parser.transport_feedback()->sender_ssrc(), kSenderSsrc);
+        EXPECT_EQ(rtcp_parser.app()->num_packets(), 1);
+        EXPECT_EQ(rtcp_parser.app()->sender_ssrc(), kSenderSsrc);
+        return true;
+      });
+
+  // Create minimalistic transport feedback packet.
+  std::vector<std::unique_ptr<RtcpPacket>> packets;
+  auto transport_feedback = std::make_unique<TransportFeedback>();
+  transport_feedback->AddReceivedPacket(321, 10000);
+  packets.push_back(std::move(transport_feedback));
+
+  auto remote_estimate = std::make_unique<RemoteEstimate>();
+  packets.push_back(std::move(remote_estimate));
+
+  rtcp_transceiver.SendCombinedRtcpPacket(std::move(packets));
   WaitPostedTasks(&queue);
 }
 

@@ -657,6 +657,11 @@ bool ModuleRtpRtcpImpl::SendNetworkStateEstimatePacket(
   return rtcp_sender_.SendNetworkStateEstimatePacket(packet);
 }
 
+void ModuleRtpRtcpImpl::SendCombinedRtcpPacket(
+    std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets) {
+  rtcp_sender_.SendCombinedRtcpPacket(std::move(rtcp_packets));
+}
+
 int32_t ModuleRtpRtcpImpl::SendLossNotification(uint16_t last_decoded_seq_num,
                                                 uint16_t last_received_seq_num,
                                                 bool decodability_flag,

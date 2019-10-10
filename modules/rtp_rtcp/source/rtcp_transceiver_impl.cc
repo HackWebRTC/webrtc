@@ -380,6 +380,20 @@ void RtcpTransceiverImpl::SendPeriodicCompoundPacket() {
   sender.Send();
 }
 
+void RtcpTransceiverImpl::SendCombinedRtcpPacket(
+    std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets) {
+  auto send_packet = [this](rtc::ArrayView<const uint8_t> packet) {
+    config_.outgoing_transport->SendRtcp(packet.data(), packet.size());
+  };
+  PacketSender sender(send_packet, config_.max_packet_size);
+
+  for (auto& rtcp_packet : rtcp_packets) {
+    rtcp_packet->SetSenderSsrc(config_.feedback_ssrc);
+    sender.AppendPacket(*rtcp_packet);
+  }
+  sender.Send();
+}
+
 void RtcpTransceiverImpl::SendImmediateFeedback(
     const rtcp::RtcpPacket& rtcp_packet) {
   auto send_packet = [this](rtc::ArrayView<const uint8_t> packet) {

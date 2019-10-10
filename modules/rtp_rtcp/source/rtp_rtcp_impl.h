@@ -237,6 +237,9 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   bool SendFeedbackPacket(const rtcp::TransportFeedback& packet) override;
   bool SendNetworkStateEstimatePacket(
       const rtcp::RemoteEstimate& packet) override;
+  void SendCombinedRtcpPacket(
+      std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets) override;
+
   // (APP) Application specific data.
   int32_t SetRTCPApplicationSpecificData(uint8_t sub_type,
                                          uint32_t name,

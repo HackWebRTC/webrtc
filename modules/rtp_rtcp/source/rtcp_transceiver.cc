@@ -12,6 +12,7 @@
 
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "rtc_base/checks.h"
@@ -129,6 +130,16 @@ bool RtcpTransceiver::SendNetworkStateEstimatePacket(
     ptr->SendRawPacket(raw_packet);
   });
   return true;
+}
+
+void RtcpTransceiver::SendCombinedRtcpPacket(
+    std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets) {
+  RTC_CHECK(rtcp_transceiver_);
+  RtcpTransceiverImpl* ptr = rtcp_transceiver_.get();
+  task_queue_->PostTask(
+      [ptr, rtcp_packets = std::move(rtcp_packets)]() mutable {
+        ptr->SendCombinedRtcpPacket(std::move(rtcp_packets));
+      });
 }
 
 void RtcpTransceiver::SendNack(uint32_t ssrc,
