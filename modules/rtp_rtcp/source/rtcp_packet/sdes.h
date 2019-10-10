@@ -46,8 +46,6 @@ class Sdes : public RtcpPacket {
               size_t max_length,
               PacketReadyCallback callback) const override;
 
-  void SetSenderSsrc(uint32_t /*ssrc*/) override {}
-
  private:
   std::vector<Chunk> chunks_;
   size_t block_length_;

@@ -56,7 +56,10 @@ class RtcpPacket {
   using PacketReadyCallback =
       rtc::FunctionView<void(rtc::ArrayView<const uint8_t> packet)>;
 
-  virtual ~RtcpPacket() {}
+  virtual ~RtcpPacket() = default;
+
+  void SetSenderSsrc(uint32_t ssrc) { sender_ssrc_ = ssrc; }
+  uint32_t sender_ssrc() const { return sender_ssrc_; }
 
   // Convenience method mostly used for test. Creates packet without
   // fragmentation using BlockLength() to allocate big enough buffer.
@@ -75,8 +78,6 @@ class RtcpPacket {
                       size_t* index,
                       size_t max_length,
                       PacketReadyCallback callback) const = 0;
-
-  virtual void SetSenderSsrc(uint32_t ssrc) = 0;
 
  protected:
   // Size of the rtcp common header.
@@ -101,6 +102,9 @@ class RtcpPacket {
                     PacketReadyCallback callback) const;
   // Size of the rtcp packet as written in header.
   size_t HeaderLength() const;
+
+ private:
+  uint32_t sender_ssrc_ = 0;
 };
 }  // namespace rtcp
 }  // namespace webrtc

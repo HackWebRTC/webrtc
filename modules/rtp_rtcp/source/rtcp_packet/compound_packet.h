@@ -35,8 +35,6 @@ class CompoundPacket : public RtcpPacket {
               size_t max_length,
               PacketReadyCallback callback) const override;
 
-  void SetSenderSsrc(uint32_t /*ssrc*/) override { RTC_NOTREACHED(); }
-
  protected:
   std::vector<RtcpPacket*> appended_packets_;
 
