@@ -23,6 +23,7 @@
 #include "api/video_codecs/video_decoder.h"
 #include "call/call.h"
 #include "media/engine/internal_decoder_factory.h"
+#include "rtc_base/fake_clock.h"
 #include "rtc_base/time_utils.h"
 #include "test/null_transport.h"
 #include "test/rtp_file_reader.h"
@@ -78,7 +79,9 @@ class RtpReplayer final {
       size_t rtp_dump_size);
 
   // Replays each packet to from the RtpDump.
-  static void ReplayPackets(Call* call, test::RtpFileReader* rtp_reader);
+  static void ReplayPackets(rtc::FakeClock* clock,
+                            Call* call,
+                            test::RtpFileReader* rtp_reader);
 };  // class RtpReplayer
 
 }  // namespace test
