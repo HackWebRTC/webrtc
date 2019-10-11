@@ -95,7 +95,6 @@ class PulsedPeaksCrossTraffic {
 struct FakeTcpConfig {
   DataSize packet_size = DataSize::bytes(1200);
   DataSize send_limit = DataSize::PlusInfinity();
-  int packet_window;
   TimeDelta process_interval = TimeDelta::ms(200);
   TimeDelta packet_timeout = TimeDelta::seconds(1);
 };
@@ -103,9 +102,12 @@ struct FakeTcpConfig {
 class FakeTcpCrossTraffic
     : public TwoWayFakeTrafficRoute<int, int>::TrafficHandlerInterface {
  public:
-  FakeTcpCrossTraffic(FakeTcpConfig config,
+  FakeTcpCrossTraffic(Clock* clock,
+                      FakeTcpConfig config,
                       EmulatedRoute* send_route,
                       EmulatedRoute* ret_route);
+  void Start(TaskQueueBase* task_queue);
+  void Stop();
   void Process(Timestamp at_time);
   void OnRequest(int sequence_number, Timestamp at_time) override;
   void OnResponse(int sequence_number, Timestamp at_time) override;
@@ -115,6 +117,7 @@ class FakeTcpCrossTraffic
   void SendPackets(Timestamp at_time);
 
  private:
+  Clock* const clock_;
   const FakeTcpConfig conf_;
   TwoWayFakeTrafficRoute<int, int> route_;
 
@@ -127,6 +130,7 @@ class FakeTcpCrossTraffic
   Timestamp last_reduction_time_ = Timestamp::MinusInfinity();
   TimeDelta last_rtt_ = TimeDelta::Zero();
   DataSize total_sent_ = DataSize::Zero();
+  RepeatingTaskHandle repeating_task_handle_;
 };
 
 }  // namespace test

@@ -803,9 +803,7 @@ TEST_F(GoogCcNetworkControllerTest, IsFairToTCP) {
   auto* route = s.CreateRoutes(
       client, send_net, s.CreateClient("return", CallClientConfig()), ret_net);
   s.CreateVideoStream(route->forward(), VideoStreamConfig());
-  s.net()->StartFakeTcpCrossTraffic(s.net()->CreateRoute(send_net),
-                                    s.net()->CreateRoute(ret_net),
-                                    FakeTcpConfig());
+  s.net()->StartFakeTcpCrossTraffic(send_net, ret_net, FakeTcpConfig());
   s.RunFor(TimeDelta::seconds(10));
 
   // Currently only testing for the upper limit as we in practice back out

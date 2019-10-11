@@ -107,9 +107,7 @@ TEST(ReceiveSideCongestionControllerTest, IsFairToTCP) {
   VideoStreamConfig video;
   video.stream.packet_feedback = false;
   s.CreateVideoStream(route->forward(), video);
-  s.net()->StartFakeTcpCrossTraffic(s.net()->CreateRoute(send_net),
-                                    s.net()->CreateRoute(ret_net),
-                                    FakeTcpConfig());
+  s.net()->StartFakeTcpCrossTraffic(send_net, ret_net, FakeTcpConfig());
   s.RunFor(TimeDelta::seconds(30));
   // For some reason we get outcompeted by TCP here, this should probably be
   // fixed and a lower bound should be added to the test.

@@ -115,10 +115,22 @@ ColumnPrinter PulsedPeaksCrossTraffic::StatsPrinter() {
       32);
 }
 
-FakeTcpCrossTraffic::FakeTcpCrossTraffic(FakeTcpConfig config,
+FakeTcpCrossTraffic::FakeTcpCrossTraffic(Clock* clock,
+                                         FakeTcpConfig config,
                                          EmulatedRoute* send_route,
                                          EmulatedRoute* ret_route)
-    : conf_(config), route_(this, send_route, ret_route) {}
+    : clock_(clock), conf_(config), route_(this, send_route, ret_route) {}
+
+void FakeTcpCrossTraffic::Start(TaskQueueBase* task_queue) {
+  repeating_task_handle_ = RepeatingTaskHandle::Start(task_queue, [this] {
+    Process(clock_->CurrentTime());
+    return conf_.process_interval;
+  });
+}
+
+void FakeTcpCrossTraffic::Stop() {
+  repeating_task_handle_.Stop();
+}
 
 void FakeTcpCrossTraffic::Process(Timestamp at_time) {
   SendPackets(at_time);

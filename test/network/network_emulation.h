@@ -268,6 +268,8 @@ class FakePacketRoute : public EmulatedNetworkReceiverInterface {
         recv_addr_(route_->to->GetPeerLocalAddress(),
                    *route_->to->BindReceiver(0, this)) {}
 
+  ~FakePacketRoute() { route_->to->UnbindReceiver(recv_addr_.port()); }
+
   void SendPacket(size_t size, FakePacketType packet) {
     RTC_CHECK_GE(size, sizeof(int));
     sent_.emplace(next_packet_id_, packet);
