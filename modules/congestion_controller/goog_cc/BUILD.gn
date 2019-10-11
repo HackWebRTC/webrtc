@@ -41,6 +41,7 @@ rtc_static_library("goog_cc") {
     "../../../api/units:data_size",
     "../../../api/units:time_delta",
     "../../../api/units:timestamp",
+    "../../../logging:rtc_event_bwe",
     "../../../logging:rtc_event_pacing",
     "../../../rtc_base:checks",
     "../../../rtc_base:logging",
