@@ -247,6 +247,7 @@ rtc_source_set("logging") {
     ":platform_thread_types",
     ":stringutils",
     ":timeutils",
+    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/meta:type_traits",
     "//third_party/abseil-cpp/absl/strings",
   ]
