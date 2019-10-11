@@ -17,12 +17,15 @@
 
 #include "absl/types/optional.h"
 #include "api/scoped_refptr.h"
+#include "api/units/data_rate.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video_codecs/video_encoder.h"
 #include "modules/video_coding/codecs/vp9/svc_config.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/experiments/min_video_bitrate_experiment.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/safe_conversions.h"
 
 namespace webrtc {
 
@@ -239,6 +242,18 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
       RTC_DCHECK(!config.encoder_specific_settings)
           << "Encoder-specific settings for codec type not wired up.";
       break;
+  }
+
+  const absl::optional<DataRate> experimental_min_bitrate =
+      GetExperimentalMinVideoBitrate(video_codec.codecType);
+  if (experimental_min_bitrate) {
+    const int experimental_min_bitrate_kbps =
+        rtc::saturated_cast<int>(experimental_min_bitrate->kbps());
+    video_codec.minBitrate = experimental_min_bitrate_kbps;
+    video_codec.simulcastStream[0].minBitrate = experimental_min_bitrate_kbps;
+    if (video_codec.codecType == kVideoCodecVP9) {
+      video_codec.spatialLayers[0].minBitrate = experimental_min_bitrate_kbps;
+    }
   }
 
   return video_codec;

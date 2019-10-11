@@ -159,6 +159,7 @@ rtc_static_library("video_coding") {
     "../../rtc_base/experiments:alr_experiment",
     "../../rtc_base/experiments:field_trial_parser",
     "../../rtc_base/experiments:jitter_upper_bound_experiment",
+    "../../rtc_base/experiments:min_video_bitrate_experiment",
     "../../rtc_base/experiments:rtt_mult_experiment",
     "../../rtc_base/synchronization:sequence_checker",
     "../../rtc_base/system:fallthrough",
