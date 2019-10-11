@@ -1297,6 +1297,9 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   }
 
   capture_.capture_audio->CopyFrom(frame);
+  if (capture_.capture_fullband_audio) {
+    capture_.capture_fullband_audio->CopyFrom(frame);
+  }
   RETURN_ON_ERR(ProcessCaptureStreamLocked());
   if (submodule_states_.CaptureMultiBandProcessingPresent() ||
       submodule_states_.CaptureFullBandProcessingActive()) {
