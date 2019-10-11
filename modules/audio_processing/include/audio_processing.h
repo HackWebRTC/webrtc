@@ -49,7 +49,6 @@ class ProcessingConfig;
 
 class EchoDetector;
 class GainControl;
-class LevelEstimator;
 class NoiseSuppression;
 class CustomAudioAnalyzer;
 class CustomProcessing;
@@ -685,7 +684,6 @@ class AudioProcessing : public rtc::RefCountInterface {
   // NULL. The pointers will be valid for the lifetime of the APM instance.
   // The memory for these objects is entirely managed internally.
   virtual GainControl* gain_control() const = 0;
-  virtual LevelEstimator* level_estimator() const = 0;
   virtual NoiseSuppression* noise_suppression() const = 0;
 
   // Returns the last applied configuration.
@@ -872,28 +870,6 @@ class ProcessingConfig {
   }
 
   StreamConfig streams[StreamName::kNumStreamNames];
-};
-
-// An estimation component used to retrieve level metrics.
-class LevelEstimator {
- public:
-  virtual int Enable(bool enable) = 0;
-  virtual bool is_enabled() const = 0;
-
-  // Returns the root mean square (RMS) level in dBFs (decibels from digital
-  // full-scale), or alternately dBov. It is computed over all primary stream
-  // frames since the last call to RMS(). The returned value is positive but
-  // should be interpreted as negative. It is constrained to [0, 127].
-  //
-  // The computation follows: https://tools.ietf.org/html/rfc6465
-  // with the intent that it can provide the RTP audio level indication.
-  //
-  // Frames passed to ProcessStream() with an |_energy| of zero are considered
-  // to have been muted. The RMS of the frame will be interpreted as -127.
-  virtual int RMS() = 0;
-
- protected:
-  virtual ~LevelEstimator() {}
 };
 
 // The noise suppression (NS) component attempts to remove noise while

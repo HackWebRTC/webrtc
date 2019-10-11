@@ -142,9 +142,8 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
       use_agc2_adaptive_digital_saturation_protector;
   apm_config.noise_suppression.enabled = use_ns;
   apm_config.voice_detection.enabled = use_vad;
+  apm_config.level_estimation.enabled = use_le;
   apm->ApplyConfig(apm_config);
-
-  apm->level_estimator()->Enable(use_le);
 
   return apm;
 }

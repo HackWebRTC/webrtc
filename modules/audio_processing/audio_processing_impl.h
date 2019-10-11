@@ -120,7 +120,6 @@ class AudioProcessingImpl : public AudioProcessing {
   // created only once in a single-treaded manner
   // during APM creation).
   GainControl* gain_control() const override;
-  LevelEstimator* level_estimator() const override;
   NoiseSuppression* noise_suppression() const override;
 
   // TODO(peah): Remove MutateConfig once the new API allows that.
@@ -182,7 +181,6 @@ class AudioProcessingImpl : public AudioProcessing {
                 bool pre_amplifier_enabled,
                 bool echo_controller_enabled,
                 bool voice_detector_enabled,
-                bool level_estimator_enabled,
                 bool transient_suppressor_enabled);
     bool CaptureMultiBandSubModulesActive() const;
     bool CaptureMultiBandProcessingPresent() const;
@@ -207,7 +205,6 @@ class AudioProcessingImpl : public AudioProcessing {
     bool gain_controller2_enabled_ = false;
     bool pre_amplifier_enabled_ = false;
     bool echo_controller_enabled_ = false;
-    bool level_estimator_enabled_ = false;
     bool voice_detector_enabled_ = false;
     bool transient_suppressor_enabled_ = false;
     bool first_update_ = true;

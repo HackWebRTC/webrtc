@@ -446,7 +446,6 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
   void SetUp() override {
     // Lambda function for setting the default APM runtime settings for desktop.
     auto set_default_desktop_apm_runtime_settings = [](AudioProcessing* apm) {
-      ASSERT_EQ(apm->kNoError, apm->level_estimator()->Enable(true));
       ASSERT_EQ(apm->kNoError, apm->gain_control()->Enable(true));
       ASSERT_EQ(apm->kNoError,
                 apm->gain_control()->set_mode(GainControl::kAdaptiveDigital));
@@ -455,13 +454,13 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
       AudioProcessing::Config apm_config = apm->GetConfig();
       apm_config.echo_canceller.enabled = true;
       apm_config.echo_canceller.mobile_mode = false;
+      apm_config.level_estimation.enabled = true;
       apm_config.voice_detection.enabled = true;
       apm->ApplyConfig(apm_config);
     };
 
     // Lambda function for setting the default APM runtime settings for mobile.
     auto set_default_mobile_apm_runtime_settings = [](AudioProcessing* apm) {
-      ASSERT_EQ(apm->kNoError, apm->level_estimator()->Enable(true));
       ASSERT_EQ(apm->kNoError, apm->gain_control()->Enable(true));
       ASSERT_EQ(apm->kNoError,
                 apm->gain_control()->set_mode(GainControl::kAdaptiveDigital));
@@ -470,6 +469,7 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
       AudioProcessing::Config apm_config = apm->GetConfig();
       apm_config.echo_canceller.enabled = true;
       apm_config.echo_canceller.mobile_mode = true;
+      apm_config.level_estimation.enabled = true;
       apm_config.voice_detection.enabled = true;
       apm->ApplyConfig(apm_config);
     };
@@ -477,7 +477,6 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
     // Lambda function for turning off all of the APM runtime settings
     // submodules.
     auto turn_off_default_apm_runtime_settings = [](AudioProcessing* apm) {
-      ASSERT_EQ(apm->kNoError, apm->level_estimator()->Enable(false));
       ASSERT_EQ(apm->kNoError, apm->gain_control()->Enable(false));
       ASSERT_EQ(apm->kNoError,
                 apm->gain_control()->set_mode(GainControl::kAdaptiveDigital));
@@ -485,6 +484,7 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
       ASSERT_EQ(apm->kNoError, apm->noise_suppression()->Enable(false));
       AudioProcessing::Config apm_config = apm->GetConfig();
       apm_config.echo_canceller.enabled = false;
+      apm_config.level_estimation.enabled = false;
       apm_config.voice_detection.enabled = false;
       apm->ApplyConfig(apm_config);
     };

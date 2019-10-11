@@ -455,6 +455,10 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
     apm_config.high_pass_filter.enabled = *settings_.use_hpf;
   }
 
+  if (settings_.use_le) {
+    apm_config.level_estimation.enabled = *settings_.use_le;
+  }
+
   if (settings_.use_vad) {
     apm_config.voice_detection.enabled = *settings_.use_vad;
   }
@@ -501,10 +505,6 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
   if (settings_.use_ns) {
     RTC_CHECK_EQ(AudioProcessing::kNoError,
                  ap_->noise_suppression()->Enable(*settings_.use_ns));
-  }
-  if (settings_.use_le) {
-    RTC_CHECK_EQ(AudioProcessing::kNoError,
-                 ap_->level_estimator()->Enable(*settings_.use_le));
   }
   if (settings_.use_agc_limiter) {
     RTC_CHECK_EQ(AudioProcessing::kNoError, ap_->gain_control()->enable_limiter(

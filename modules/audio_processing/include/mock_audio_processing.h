@@ -43,14 +43,6 @@ class MockGainControl : public GainControl {
   MOCK_CONST_METHOD0(stream_is_saturated, bool());
 };
 
-class MockLevelEstimator : public LevelEstimator {
- public:
-  virtual ~MockLevelEstimator() {}
-  MOCK_METHOD1(Enable, int(bool enable));
-  MOCK_CONST_METHOD0(is_enabled, bool());
-  MOCK_METHOD0(RMS, int());
-};
-
 class MockNoiseSuppression : public NoiseSuppression {
  public:
   virtual ~MockNoiseSuppression() {}
@@ -96,7 +88,6 @@ class MockAudioProcessing : public ::testing::NiceMock<AudioProcessing> {
  public:
   MockAudioProcessing()
       : gain_control_(new ::testing::NiceMock<MockGainControl>()),
-        level_estimator_(new ::testing::NiceMock<MockLevelEstimator>()),
         noise_suppression_(new ::testing::NiceMock<MockNoiseSuppression>()) {}
 
   virtual ~MockAudioProcessing() {}
@@ -164,9 +155,6 @@ class MockAudioProcessing : public ::testing::NiceMock<AudioProcessing> {
   MOCK_METHOD0(UpdateHistogramsOnCallEnd, void());
   MOCK_CONST_METHOD1(GetStatistics, AudioProcessingStats(bool));
   virtual MockGainControl* gain_control() const { return gain_control_.get(); }
-  virtual MockLevelEstimator* level_estimator() const {
-    return level_estimator_.get();
-  }
   virtual MockNoiseSuppression* noise_suppression() const {
     return noise_suppression_.get();
   }
@@ -175,7 +163,6 @@ class MockAudioProcessing : public ::testing::NiceMock<AudioProcessing> {
 
  private:
   std::unique_ptr<MockGainControl> gain_control_;
-  std::unique_ptr<MockLevelEstimator> level_estimator_;
   std::unique_ptr<MockNoiseSuppression> noise_suppression_;
 };
 

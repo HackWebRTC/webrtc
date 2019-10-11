@@ -34,7 +34,7 @@
 #include "modules/audio_processing/gain_controller2.h"
 #include "modules/audio_processing/high_pass_filter.h"
 #include "modules/audio_processing/include/audio_frame_view.h"
-#include "modules/audio_processing/level_estimator_impl.h"
+#include "modules/audio_processing/level_estimator.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "modules/audio_processing/noise_suppression_impl.h"
 #include "modules/audio_processing/noise_suppression_proxy.h"
@@ -166,7 +166,6 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
     bool pre_amplifier_enabled,
     bool echo_controller_enabled,
     bool voice_detector_enabled,
-    bool level_estimator_enabled,
     bool transient_suppressor_enabled) {
   bool changed = false;
   changed |= (high_pass_filter_enabled != high_pass_filter_enabled_);
@@ -181,7 +180,6 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
   changed |= (gain_controller2_enabled != gain_controller2_enabled_);
   changed |= (pre_amplifier_enabled_ != pre_amplifier_enabled);
   changed |= (echo_controller_enabled != echo_controller_enabled_);
-  changed |= (level_estimator_enabled != level_estimator_enabled_);
   changed |= (voice_detector_enabled != voice_detector_enabled_);
   changed |= (transient_suppressor_enabled != transient_suppressor_enabled_);
   if (changed) {
@@ -194,7 +192,6 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
     gain_controller2_enabled_ = gain_controller2_enabled;
     pre_amplifier_enabled_ = pre_amplifier_enabled;
     echo_controller_enabled_ = echo_controller_enabled;
-    level_estimator_enabled_ = level_estimator_enabled;
     voice_detector_enabled_ = voice_detector_enabled;
     transient_suppressor_enabled_ = transient_suppressor_enabled;
   }
@@ -261,7 +258,6 @@ struct AudioProcessingImpl::ApmPublicSubmodules {
   // Accessed externally of APM without any lock acquired.
   // TODO(bugs.webrtc.org/9947): Move these submodules into private_submodules_
   // when their pointer-to-submodule API functions are gone.
-  std::unique_ptr<LevelEstimatorImpl> level_estimator;
   std::unique_ptr<NoiseSuppressionImpl> noise_suppression;
   std::unique_ptr<NoiseSuppressionProxy> noise_suppression_proxy;
   std::unique_ptr<GainControlImpl> gain_control;
@@ -294,7 +290,7 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
   std::unique_ptr<CustomProcessing> render_pre_processor;
   std::unique_ptr<GainApplier> pre_amplifier;
   std::unique_ptr<CustomAudioAnalyzer> capture_analyzer;
-  std::unique_ptr<LevelEstimatorImpl> output_level_estimator;
+  std::unique_ptr<LevelEstimator> output_level_estimator;
   std::unique_ptr<VoiceDetection> voice_detector;
 };
 
@@ -409,8 +405,6 @@ AudioProcessingImpl::AudioProcessingImpl(
       static_cast<bool>(echo_control_factory_);
 
   public_submodules_->gain_control.reset(new GainControlImpl());
-  public_submodules_->level_estimator.reset(
-      new LevelEstimatorImpl(&crit_capture_));
   public_submodules_->noise_suppression.reset(
       new NoiseSuppressionImpl(&crit_capture_));
   public_submodules_->noise_suppression_proxy.reset(new NoiseSuppressionProxy(
@@ -569,7 +563,6 @@ int AudioProcessingImpl::InitializeLocked() {
   public_submodules_->noise_suppression->Initialize(num_proc_channels(),
                                                     proc_sample_rate_hz());
   InitializeVoiceDetector();
-  public_submodules_->level_estimator->Initialize();
   InitializeResidualEchoDetector();
   InitializeEchoController();
   InitializeGainController2();
@@ -751,9 +744,8 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
 
   if (config_.level_estimation.enabled &&
       !private_submodules_->output_level_estimator) {
-    private_submodules_->output_level_estimator.reset(
-        new LevelEstimatorImpl(&crit_capture_));
-    private_submodules_->output_level_estimator->Enable(true);
+    private_submodules_->output_level_estimator =
+        std::make_unique<LevelEstimator>();
   }
 
   if (voice_detection_config_changed) {
@@ -1541,7 +1533,6 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   }
 
   // The level estimator operates on the recombined data.
-  public_submodules_->level_estimator->ProcessStream(*capture_buffer);
   if (config_.level_estimation.enabled) {
     private_submodules_->output_level_estimator->ProcessStream(*capture_buffer);
     capture_.stats.output_rms_dbfs =
@@ -1841,10 +1832,6 @@ GainControl* AudioProcessingImpl::gain_control() const {
   return public_submodules_->gain_control_config_proxy.get();
 }
 
-LevelEstimator* AudioProcessingImpl::level_estimator() const {
-  return public_submodules_->level_estimator.get();
-}
-
 NoiseSuppression* AudioProcessingImpl::noise_suppression() const {
   return public_submodules_->noise_suppression_proxy.get();
 }
@@ -1874,7 +1861,6 @@ bool AudioProcessingImpl::UpdateActiveSubmoduleStates() {
       config_.gain_controller2.enabled, config_.pre_amplifier.enabled,
       capture_nonlocked_.echo_controller_enabled,
       config_.voice_detection.enabled,
-      public_submodules_->level_estimator->is_enabled(),
       capture_.transient_suppressor_enabled);
 }
 
