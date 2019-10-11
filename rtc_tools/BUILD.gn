@@ -305,6 +305,7 @@ if (!build_with_chromium) {
         "../rtc_base:rtc_base_approved",
         "../rtc_base:rtc_numerics",
         "../rtc_base:stringutils",
+        "//third_party/abseil-cpp/absl/algorithm:container",
         "//third_party/abseil-cpp/absl/strings",
       ]
     }
