@@ -182,7 +182,7 @@ class NetEqImpl : public webrtc::NetEq {
 
   int last_output_sample_rate_hz() const override;
 
-  absl::optional<SdpAudioFormat> GetDecoderFormat(
+  absl::optional<DecoderFormat> GetDecoderFormat(
       int payload_type) const override;
 
   // Flushes both the packet buffer and the sync buffer.

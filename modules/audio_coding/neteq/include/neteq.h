@@ -143,6 +143,13 @@ class NetEq {
 
   enum ReturnCodes { kOK = 0, kFail = -1 };
 
+  // Return type for GetDecoderFormat.
+  struct DecoderFormat {
+    int sample_rate_hz;
+    int num_channels;
+    SdpAudioFormat sdp_format;
+  };
+
   // Creates a new NetEq object, with parameters set in |config|. The |config|
   // object will only have to be valid for the duration of the call to this
   // method.
@@ -265,7 +272,7 @@ class NetEq {
 
   // Returns the decoder info for the given payload type. Returns empty if no
   // such payload type was registered.
-  virtual absl::optional<SdpAudioFormat> GetDecoderFormat(
+  virtual absl::optional<DecoderFormat> GetDecoderFormat(
       int payload_type) const = 0;
 
   // Flushes both the packet buffer and the sync buffer.

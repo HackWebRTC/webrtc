@@ -888,6 +888,9 @@ int ChannelReceive::GetRtpTimestampRateHz() const {
   // TODO(ossu): Zero clockrate can only happen if we've added an external
   // decoder for a format we don't support internally. Remove once that way of
   // adding decoders is gone!
+  // TODO(kwiberg): `decoder->second.clockrate_hz` is an RTP clockrate as it
+  // should, but `acm_receiver_.last_output_sample_rate_hz()` is a codec sample
+  // rate, which is not always the same thing.
   return (decoder && decoder->second.clockrate_hz != 0)
              ? decoder->second.clockrate_hz
              : acm_receiver_.last_output_sample_rate_hz();

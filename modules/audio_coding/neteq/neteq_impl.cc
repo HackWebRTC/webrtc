@@ -392,21 +392,23 @@ int NetEqImpl::last_output_sample_rate_hz() const {
   return last_output_sample_rate_hz_;
 }
 
-absl::optional<SdpAudioFormat> NetEqImpl::GetDecoderFormat(
+absl::optional<NetEq::DecoderFormat> NetEqImpl::GetDecoderFormat(
     int payload_type) const {
   rtc::CritScope lock(&crit_sect_);
   const DecoderDatabase::DecoderInfo* const di =
       decoder_database_->GetDecoderInfo(payload_type);
-  if (!di) {
-    return absl::nullopt;  // Payload type not registered.
+  if (di) {
+    const AudioDecoder* const decoder = di->GetDecoder();
+    // TODO(kwiberg): Why the special case for RED?
+    return DecoderFormat{
+        /*sample_rate_hz=*/di->IsRed() ? 8000 : di->SampleRateHz(),
+        /*num_channels=*/
+        decoder ? rtc::dchecked_cast<int>(decoder->Channels()) : 1,
+        /*sdp_format=*/di->GetFormat()};
+  } else {
+    // Payload type not registered.
+    return absl::nullopt;
   }
-
-  SdpAudioFormat format = di->GetFormat();
-  // TODO(solenberg): This is legacy but messed up - mixing RTP rate and SR.
-  format.clockrate_hz = di->IsRed() ? 8000 : di->SampleRateHz();
-  const AudioDecoder* const decoder = di->GetDecoder();
-  format.num_channels = decoder ? decoder->Channels() : 1;
-  return format;
 }
 
 void NetEqImpl::FlushBuffers() {
