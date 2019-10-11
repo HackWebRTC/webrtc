@@ -38,8 +38,7 @@ class RtpPacketizerGeneric : public RtpPacketizer {
   // Packets returned by |NextPacket| will contain the generic payload header.
   RtpPacketizerGeneric(rtc::ArrayView<const uint8_t> payload,
                        PayloadSizeLimits limits,
-                       const RTPVideoHeader& rtp_video_header,
-                       VideoFrameType frametype);
+                       const RTPVideoHeader& rtp_video_header);
   // Initialize with payload from encoder.
   // The payload_data must be exactly one encoded generic frame.
   // Packets returned by |NextPacket| will contain raw payload without the
@@ -58,8 +57,7 @@ class RtpPacketizerGeneric : public RtpPacketizer {
 
  private:
   // Fills header_ and header_size_ members.
-  void BuildHeader(const RTPVideoHeader& rtp_video_header,
-                   VideoFrameType frame_type);
+  void BuildHeader(const RTPVideoHeader& rtp_video_header);
 
   uint8_t header_[3];
   size_t header_size_;

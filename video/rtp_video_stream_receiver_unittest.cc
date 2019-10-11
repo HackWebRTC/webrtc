@@ -17,6 +17,7 @@
 #include "common_video/h264/h264_common.h"
 #include "media/base/media_constants.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
+#include "modules/rtp_rtcp/source/rtp_format_vp9.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor_extension.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
@@ -233,15 +234,12 @@ TEST_F(RtpVideoStreamReceiverTest, CacheColorSpaceFromLastPacketOfKeyframe) {
       // Reduce max payload length to make sure the key frame generates two
       // packets.
       pay_load_size_limits.max_payload_len = 8;
-      RTPVideoHeader rtp_video_header;
       RTPVideoHeaderVP9 rtp_video_header_vp9;
       rtp_video_header_vp9.InitRTPVideoHeaderVP9();
       rtp_video_header_vp9.inter_pic_predicted =
           (video_frame_type == VideoFrameType::kVideoFrameDelta);
-      rtp_video_header.video_type_header = rtp_video_header_vp9;
-      rtp_packetizer_ = RtpPacketizer::Create(
-          kVideoCodecVP9, rtc::MakeArrayView(payload.data(), payload.size()),
-          pay_load_size_limits, rtp_video_header, video_frame_type, nullptr);
+      rtp_packetizer_ = std::make_unique<RtpPacketizerVp9>(
+          payload, pay_load_size_limits, rtp_video_header_vp9);
     }
 
     size_t NumPackets() { return rtp_packetizer_->NumPackets(); }

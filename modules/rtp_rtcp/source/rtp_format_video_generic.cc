@@ -26,10 +26,9 @@ static const size_t kExtendedHeaderLength = 2;
 RtpPacketizerGeneric::RtpPacketizerGeneric(
     rtc::ArrayView<const uint8_t> payload,
     PayloadSizeLimits limits,
-    const RTPVideoHeader& rtp_video_header,
-    VideoFrameType frame_type)
+    const RTPVideoHeader& rtp_video_header)
     : remaining_payload_(payload) {
-  BuildHeader(rtp_video_header, frame_type);
+  BuildHeader(rtp_video_header);
 
   limits.max_payload_len -= header_size_;
   payload_sizes_ = SplitAboutEqually(payload.size(), limits);
@@ -82,11 +81,10 @@ bool RtpPacketizerGeneric::NextPacket(RtpPacketToSend* packet) {
   return true;
 }
 
-void RtpPacketizerGeneric::BuildHeader(const RTPVideoHeader& rtp_video_header,
-                                       VideoFrameType frame_type) {
+void RtpPacketizerGeneric::BuildHeader(const RTPVideoHeader& rtp_video_header) {
   header_size_ = kGenericHeaderLength;
   header_[0] = RtpFormatVideoGeneric::kFirstPacketBit;
-  if (frame_type == VideoFrameType::kVideoFrameKey) {
+  if (rtp_video_header.frame_type == VideoFrameType::kVideoFrameKey) {
     header_[0] |= RtpFormatVideoGeneric::kKeyFrameBit;
   }
   if (rtp_video_header.generic.has_value()) {

@@ -489,8 +489,6 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
     stream_index = encoded_image.SpatialIndex().value_or(0);
   }
   RTC_DCHECK_LT(stream_index, rtp_streams_.size());
-  RTPVideoHeader rtp_video_header = params_[stream_index].GetRtpVideoHeader(
-      encoded_image, codec_specific_info, shared_frame_id_);
 
   uint32_t rtp_timestamp =
       encoded_image.Timestamp() +
@@ -515,9 +513,10 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
   }
 
   bool send_result = rtp_streams_[stream_index].sender_video->SendVideo(
-      encoded_image._frameType, rtp_config_.payload_type, codec_type_,
-      rtp_timestamp, encoded_image.capture_time_ms_, encoded_image.data(),
-      encoded_image.size(), fragmentation, &rtp_video_header,
+      rtp_config_.payload_type, codec_type_, rtp_timestamp,
+      encoded_image.capture_time_ms_, encoded_image, fragmentation,
+      params_[stream_index].GetRtpVideoHeader(
+          encoded_image, codec_specific_info, shared_frame_id_),
       expected_retransmission_time_ms);
   if (frame_count_observer_) {
     FrameCounts& counts = frame_counts_[stream_index];

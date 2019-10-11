@@ -121,7 +121,6 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
       : rtp_rtcp_module_(nullptr),
         transport_(kTestRtxSsrc),
         rtx_stream_(&media_stream_, rtx_associated_payload_types_, kTestSsrc),
-        payload_data_length(sizeof(payload_data)),
         fake_clock(123456),
         retransmission_rate_limiter_(&fake_clock, kMaxRttMs) {}
   ~RtpRtcpRtxNackTest() override {}
@@ -159,7 +158,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     media_receiver_ = transport_.stream_receiver_controller_.CreateReceiver(
         kTestSsrc, &media_stream_);
 
-    for (size_t n = 0; n < payload_data_length; n++) {
+    for (size_t n = 0; n < sizeof(payload_data); n++) {
       payload_data[n] = n % 10;
     }
   }
@@ -209,10 +208,10 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
       RTPVideoHeader video_header;
       EXPECT_TRUE(rtp_rtcp_module_->OnSendingRtpFrame(timestamp, timestamp / 90,
                                                       kPayloadType, false));
+      video_header.frame_type = VideoFrameType::kVideoFrameDelta;
       EXPECT_TRUE(rtp_sender_video_->SendVideo(
-          VideoFrameType::kVideoFrameDelta, kPayloadType,
-          VideoCodecType::kVideoCodecGeneric, timestamp, timestamp / 90,
-          payload_data, payload_data_length, nullptr, &video_header, 0));
+          kPayloadType, VideoCodecType::kVideoCodecGeneric, timestamp,
+          timestamp / 90, payload_data, nullptr, video_header, 0));
       // Min required delay until retransmit = 5 + RTT ms (RTT = 0).
       fake_clock.AdvanceTimeMilliseconds(5);
       int length = BuildNackList(nack_list);
@@ -236,7 +235,6 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
   VerifyingMediaStream media_stream_;
   RtxReceiveStream rtx_stream_;
   uint8_t payload_data[65000];
-  size_t payload_data_length;
   SimulatedClock fake_clock;
   RateLimiter retransmission_rate_limiter_;
   std::unique_ptr<RtpStreamReceiverInterface> media_receiver_;
@@ -261,10 +259,10 @@ TEST_F(RtpRtcpRtxNackTest, LongNackList) {
     RTPVideoHeader video_header;
     EXPECT_TRUE(rtp_rtcp_module_->OnSendingRtpFrame(timestamp, timestamp / 90,
                                                     kPayloadType, false));
+    video_header.frame_type = VideoFrameType::kVideoFrameDelta;
     EXPECT_TRUE(rtp_sender_video_->SendVideo(
-        VideoFrameType::kVideoFrameDelta, kPayloadType,
-        VideoCodecType::kVideoCodecGeneric, timestamp, timestamp / 90,
-        payload_data, payload_data_length, nullptr, &video_header, 0));
+        kPayloadType, VideoCodecType::kVideoCodecGeneric, timestamp,
+        timestamp / 90, payload_data, nullptr, video_header, 0));
     // Prepare next frame.
     timestamp += 3000;
     fake_clock.AdvanceTimeMilliseconds(33);

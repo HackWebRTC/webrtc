@@ -48,8 +48,7 @@ TEST(RtpPacketizerVideoGeneric, RespectsMaxPayloadSize) {
 
   RtpPacketizer::PayloadSizeLimits limits;
   limits.max_payload_len = 6;
-  RtpPacketizerGeneric packetizer(kPayload, limits, RTPVideoHeader(),
-                                  VideoFrameType::kVideoFrameKey);
+  RtpPacketizerGeneric packetizer(kPayload, limits, RTPVideoHeader());
 
   std::vector<int> payload_sizes = NextPacketFillPayloadSizes(&packetizer);
 
@@ -62,8 +61,7 @@ TEST(RtpPacketizerVideoGeneric, UsesMaxPayloadSize) {
 
   RtpPacketizer::PayloadSizeLimits limits;
   limits.max_payload_len = 6;
-  RtpPacketizerGeneric packetizer(kPayload, limits, RTPVideoHeader(),
-                                  VideoFrameType::kVideoFrameKey);
+  RtpPacketizerGeneric packetizer(kPayload, limits, RTPVideoHeader());
 
   std::vector<int> payload_sizes = NextPacketFillPayloadSizes(&packetizer);
 
@@ -78,8 +76,8 @@ TEST(RtpPacketizerVideoGeneric, WritesExtendedHeaderWhenPictureIdIsSet) {
 
   RTPVideoHeader rtp_video_header;
   rtp_video_header.generic.emplace().frame_id = 37;
-  RtpPacketizerGeneric packetizer(kPayload, kNoSizeLimits, rtp_video_header,
-                                  VideoFrameType::kVideoFrameKey);
+  rtp_video_header.frame_type = VideoFrameType::kVideoFrameKey;
+  RtpPacketizerGeneric packetizer(kPayload, kNoSizeLimits, rtp_video_header);
 
   RtpPacketToSend packet(nullptr);
   ASSERT_TRUE(packetizer.NextPacket(&packet));
@@ -100,8 +98,7 @@ TEST(RtpPacketizerVideoGeneric, RespectsMaxPayloadSizeWithExtendedHeader) {
   limits.max_payload_len = 6;
   RTPVideoHeader rtp_video_header;
   rtp_video_header.generic.emplace().frame_id = 37;
-  RtpPacketizerGeneric packetizer(kPayload, limits, rtp_video_header,
-                                  VideoFrameType::kVideoFrameKey);
+  RtpPacketizerGeneric packetizer(kPayload, limits, rtp_video_header);
 
   std::vector<int> payload_sizes = NextPacketFillPayloadSizes(&packetizer);
 
@@ -116,8 +113,7 @@ TEST(RtpPacketizerVideoGeneric, UsesMaxPayloadSizeWithExtendedHeader) {
   limits.max_payload_len = 6;
   RTPVideoHeader rtp_video_header;
   rtp_video_header.generic.emplace().frame_id = 37;
-  RtpPacketizerGeneric packetizer(kPayload, limits, rtp_video_header,
-                                  VideoFrameType::kVideoFrameKey);
+  RtpPacketizerGeneric packetizer(kPayload, limits, rtp_video_header);
   std::vector<int> payload_sizes = NextPacketFillPayloadSizes(&packetizer);
 
   // With kPayloadSize > max_payload_len^2, there should be packets that use
@@ -131,8 +127,8 @@ TEST(RtpPacketizerVideoGeneric, FrameIdOver15bitsWrapsAround) {
 
   RTPVideoHeader rtp_video_header;
   rtp_video_header.generic.emplace().frame_id = 0x8137;
-  RtpPacketizerGeneric packetizer(kPayload, kNoSizeLimits, rtp_video_header,
-                                  VideoFrameType::kVideoFrameKey);
+  rtp_video_header.frame_type = VideoFrameType::kVideoFrameKey;
+  RtpPacketizerGeneric packetizer(kPayload, kNoSizeLimits, rtp_video_header);
 
   RtpPacketToSend packet(nullptr);
   ASSERT_TRUE(packetizer.NextPacket(&packet));
@@ -148,8 +144,7 @@ TEST(RtpPacketizerVideoGeneric, NoFrameIdDoesNotWriteExtendedHeader) {
   const int kPayloadSize = 13;
   const uint8_t kPayload[kPayloadSize] = {};
 
-  RtpPacketizerGeneric packetizer(kPayload, kNoSizeLimits, RTPVideoHeader(),
-                                  VideoFrameType::kVideoFrameKey);
+  RtpPacketizerGeneric packetizer(kPayload, kNoSizeLimits, RTPVideoHeader());
 
   RtpPacketToSend packet(nullptr);
   ASSERT_TRUE(packetizer.NextPacket(&packet));

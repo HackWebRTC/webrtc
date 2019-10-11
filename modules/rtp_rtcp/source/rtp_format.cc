@@ -30,7 +30,6 @@ std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
     PayloadSizeLimits limits,
     // Codec-specific details.
     const RTPVideoHeader& rtp_video_header,
-    VideoFrameType frame_type,
     const RTPFragmentationHeader* fragmentation) {
   if (!type) {
     // Use raw packetizer.
@@ -56,8 +55,8 @@ std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
       return std::make_unique<RtpPacketizerVp9>(payload, limits, vp9);
     }
     default: {
-      return std::make_unique<RtpPacketizerGeneric>(
-          payload, limits, rtp_video_header, frame_type);
+      return std::make_unique<RtpPacketizerGeneric>(payload, limits,
+                                                    rtp_video_header);
     }
   }
 }
