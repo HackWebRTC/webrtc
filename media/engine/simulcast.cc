@@ -19,11 +19,11 @@
 #include "absl/types/optional.h"
 #include "api/video/video_codec_constants.h"
 #include "media/base/media_constants.h"
-#include "media/engine/constants.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/experimental_screenshare_settings.h"
+#include "rtc_base/experiments/min_video_bitrate_experiment.h"
 #include "rtc_base/experiments/normalize_simulcast_size_experiment.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/field_trial.h"
@@ -335,7 +335,7 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
   layers[0].height = height;
   layers[0].max_qp = max_qp;
   layers[0].max_framerate = 5;
-  layers[0].min_bitrate_bps = kMinVideoBitrateBps;
+  layers[0].min_bitrate_bps = webrtc::kDefaultMinVideoBitrateBps;
   layers[0].target_bitrate_bps = kScreenshareDefaultTl0BitrateKbps * 1000;
   layers[0].max_bitrate_bps = kScreenshareDefaultTl1BitrateKbps * 1000;
   layers[0].num_temporal_layers = temporal_layers_supported ? 2 : 0;

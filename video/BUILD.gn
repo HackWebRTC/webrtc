@@ -106,6 +106,7 @@ rtc_static_library("video") {
     "../rtc_base/experiments:alr_experiment",
     "../rtc_base/experiments:field_trial_parser",
     "../rtc_base/experiments:keyframe_interval_settings_experiment",
+    "../rtc_base/experiments:min_video_bitrate_experiment",
     "../rtc_base/experiments:quality_scaling_experiment",
     "../rtc_base/experiments:rate_control_settings",
     "../rtc_base/synchronization:sequence_checker",

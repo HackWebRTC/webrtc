@@ -52,6 +52,7 @@
 #include "media/engine/simulcast.h"
 #include "media/engine/webrtc_voice_engine.h"
 #include "rtc_base/arraysize.h"
+#include "rtc_base/experiments/min_video_bitrate_experiment.h"
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -3489,7 +3490,7 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_F(WebRtcVideoChannelTest, VerifyMinBitrate) {
   std::vector<webrtc::VideoStream> streams = AddSendStream()->GetVideoStreams();
   ASSERT_EQ(1u, streams.size());
-  EXPECT_EQ(cricket::kMinVideoBitrateBps, streams[0].min_bitrate_bps);
+  EXPECT_EQ(webrtc::kDefaultMinVideoBitrateBps, streams[0].min_bitrate_bps);
 }
 
 TEST_F(WebRtcVideoChannelTest, VerifyMinBitrateWithForcedFallbackFieldTrial) {
@@ -5862,12 +5863,13 @@ TEST_F(WebRtcVideoChannelTest,
   // we are just testing the behavior of
   // EncoderStreamFactory::CreateEncoderStreams.
   ASSERT_EQ(1UL, stream->GetVideoStreams().size());
-  EXPECT_EQ(kMinVideoBitrateBps, stream->GetVideoStreams()[0].min_bitrate_bps);
+  EXPECT_EQ(webrtc::kDefaultMinVideoBitrateBps,
+            stream->GetVideoStreams()[0].min_bitrate_bps);
 
   // Set a low max bitrate & check that VideoStream.min_bitrate_bps is limited
   // by this amount.
   parameters = channel_->GetRtpSendParameters(last_ssrc_);
-  int low_max_bitrate_bps = kMinVideoBitrateBps - 1000;
+  int low_max_bitrate_bps = webrtc::kDefaultMinVideoBitrateBps - 1000;
   parameters.encodings[0].max_bitrate_bps = low_max_bitrate_bps;
   EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
 
@@ -5905,7 +5907,8 @@ TEST_F(WebRtcVideoChannelTest,
   ExpectSetMaxBitrate(send_parameters_.max_bandwidth_bps);
   ASSERT_TRUE(channel_->SetSendParameters(send_parameters_));
   ASSERT_EQ(1UL, stream->GetVideoStreams().size());
-  EXPECT_EQ(kMinVideoBitrateBps, stream->GetVideoStreams()[0].min_bitrate_bps);
+  EXPECT_EQ(webrtc::kDefaultMinVideoBitrateBps,
+            stream->GetVideoStreams()[0].min_bitrate_bps);
   EXPECT_EQ(send_parameters_.max_bandwidth_bps,
             stream->GetVideoStreams()[0].max_bitrate_bps);
 
@@ -7070,7 +7073,7 @@ TEST_F(WebRtcVideoChannelTest, DefaultMinAndMaxBitratePropagatedToEncoder) {
   // FakeVideoSendStream calls CreateEncoderStreams, test that the vector of
   // VideoStreams are created appropriately.
   EXPECT_EQ(1u, stream->GetVideoStreams().size());
-  EXPECT_EQ(cricket::kMinVideoBitrateBps,
+  EXPECT_EQ(webrtc::kDefaultMinVideoBitrateBps,
             stream->GetVideoStreams()[0].min_bitrate_bps);
   EXPECT_GT(stream->GetVideoStreams()[0].max_bitrate_bps,
             stream->GetVideoStreams()[0].min_bitrate_bps);
@@ -7565,7 +7568,7 @@ class WebRtcVideoChannelSimulcastTest : public ::testing::Test {
       stream.width = capture_width;
       stream.height = capture_height;
       stream.max_framerate = kDefaultVideoMaxFramerate;
-      stream.min_bitrate_bps = cricket::kMinVideoBitrateBps;
+      stream.min_bitrate_bps = webrtc::kDefaultMinVideoBitrateBps;
       stream.target_bitrate_bps = stream.max_bitrate_bps =
           GetMaxDefaultBitrateBps(capture_width, capture_height);
       stream.max_qp = kDefaultQpMax;
