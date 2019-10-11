@@ -75,6 +75,10 @@ class RemoteCandidate : public Candidate {
   PortInterface* origin_port_;
 };
 
+struct IceFieldTrials {
+  bool skip_relay_to_non_relay_connections = false;
+};
+
 // P2PTransportChannel manages the candidates and connection process to keep
 // two P2P clients connected to each other.
 class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
@@ -500,6 +504,8 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
 
   // Number of times the selected_connection_ has been modified.
   uint32_t selected_candidate_pair_changes_ = 0;
+
+  IceFieldTrials field_trials_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
 };

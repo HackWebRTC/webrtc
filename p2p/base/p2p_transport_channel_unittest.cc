@@ -4705,6 +4705,26 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   VerifyNextPingableConnection(RELAY_PORT_TYPE, RELAY_PORT_TYPE);
 }
 
+// Test skip_relay_to_non_relay_connections field-trial.
+// I.e that we never create connection between relay and non-relay.
+TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
+       TestSkipRelayToNonRelayConnectionsFieldTrial) {
+  webrtc::test::ScopedFieldTrials field_trials(
+      "WebRTC-IceFieldTrials/skip_relay_to_non_relay_connections:true/");
+  P2PTransportChannel& ch = StartTransportChannel(true, 500);
+  EXPECT_TRUE_WAIT(ch.ports().size() == 2, kDefaultTimeout);
+  EXPECT_EQ(ch.ports()[0]->Type(), LOCAL_PORT_TYPE);
+  EXPECT_EQ(ch.ports()[1]->Type(), RELAY_PORT_TYPE);
+
+  // Remote Relay candidate arrives.
+  ch.AddRemoteCandidate(CreateUdpCandidate(RELAY_PORT_TYPE, "1.1.1.1", 1, 1));
+  EXPECT_TRUE_WAIT(ch.connections().size() == 1, kDefaultTimeout);
+
+  // Remote Local candidate arrives.
+  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 2));
+  EXPECT_TRUE_WAIT(ch.connections().size() == 2, kDefaultTimeout);
+}
+
 // Test the ping sequence is UDP Relay/Relay followed by TCP Relay/Relay,
 // followed by the rest.
 TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest, TestTcpTurn) {
