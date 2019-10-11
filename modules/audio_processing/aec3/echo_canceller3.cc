@@ -42,6 +42,14 @@ EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
     adjusted_cfg.delay.delay_headroom_samples = kBlockSize * 2;
   }
 
+  if (field_trial::IsEnabled("WebRTC-Aec3ClampInstQualityToZeroKillSwitch")) {
+    adjusted_cfg.erle.clamp_quality_estimate_to_zero = false;
+  }
+
+  if (field_trial::IsEnabled("WebRTC-Aec3ClampInstQualityToOneKillSwitch")) {
+    adjusted_cfg.erle.clamp_quality_estimate_to_one = false;
+  }
+
   return adjusted_cfg;
 }
 

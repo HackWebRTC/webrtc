@@ -20,7 +20,7 @@ ErleEstimator::ErleEstimator(size_t startup_phase_length_blocks_,
                              size_t num_capture_channels)
     : startup_phase_length_blocks__(startup_phase_length_blocks_),
       use_signal_dependent_erle_(config.erle.num_sections > 1),
-      fullband_erle_estimator_(config.erle.min, config.erle.max_l),
+      fullband_erle_estimator_(config.erle, num_capture_channels),
       subband_erle_estimator_(config, num_capture_channels),
       signal_dependent_erle_estimator_(config, num_capture_channels) {
   Reset(true);

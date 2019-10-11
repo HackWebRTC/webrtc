@@ -30,7 +30,8 @@ class RenderBuffer;
 // Class for analyzing the properties of an adaptive filter.
 class FilterAnalyzer {
  public:
-  explicit FilterAnalyzer(const EchoCanceller3Config& config);
+  FilterAnalyzer(const EchoCanceller3Config& config,
+                 size_t num_capture_channels);
   ~FilterAnalyzer();
 
   FilterAnalyzer(const FilterAnalyzer&) = delete;
@@ -40,35 +41,43 @@ class FilterAnalyzer {
   void Reset();
 
   // Updates the estimates with new input data.
-  void Update(rtc::ArrayView<const float> filter_time_domain,
-              const RenderBuffer& render_buffer);
+  void Update(rtc::ArrayView<const std::vector<float>> filters_time_domain,
+              const RenderBuffer& render_buffer,
+              bool* any_filter_consistent,
+              float* max_echo_path_gain);
 
-  // Returns the delay of the filter in terms of blocks.
-  int DelayBlocks() const { return delay_blocks_; }
+  // Returns the delay in blocks for each filter.
+  rtc::ArrayView<const int> FilterDelaysBlocks() const {
+    return filter_delays_blocks_;
+  }
 
-  // Returns whether the filter is consistent in the sense that it does not
-  // change much over time.
-  bool Consistent() const { return consistent_estimate_; }
-
-  // Returns the estimated filter gain.
-  float Gain() const { return gain_; }
+  // Returns the minimum delay of all filters in terms of blocks.
+  int MinFilterDelayBlocks() const { return min_filter_delay_blocks_; }
 
   // Returns the number of blocks for the current used filter.
-  int FilterLengthBlocks() const { return filter_length_blocks_; }
+  int FilterLengthBlocks() const {
+    return filter_analysis_states_[0].filter_length_blocks;
+  }
 
   // Returns the preprocessed filter.
-  rtc::ArrayView<const float> GetAdjustedFilter() const { return h_highpass_; }
+  rtc::ArrayView<const std::vector<float>> GetAdjustedFilters() const {
+    return h_highpass_;
+  }
 
   // Public for testing purposes only.
-  void SetRegionToAnalyze(rtc::ArrayView<const float> filter_time_domain);
+  void SetRegionToAnalyze(size_t filter_size);
 
  private:
-  void AnalyzeRegion(rtc::ArrayView<const float> filter_time_domain,
-                     const RenderBuffer& render_buffer);
+  struct FilterAnalysisState;
 
-  void UpdateFilterGain(rtc::ArrayView<const float> filter_time_domain,
-                        size_t max_index);
-  void PreProcessFilter(rtc::ArrayView<const float> filter_time_domain);
+  void AnalyzeRegion(
+      rtc::ArrayView<const std::vector<float>> filters_time_domain,
+      const RenderBuffer& render_buffer);
+
+  void UpdateFilterGain(rtc::ArrayView<const float> filters_time_domain,
+                        FilterAnalysisState* st);
+  void PreProcessFilters(
+      rtc::ArrayView<const std::vector<float>> filters_time_domain);
 
   void ResetRegion();
 
@@ -100,19 +109,30 @@ class FilterAnalyzer {
     int consistent_delay_reference_ = -10;
   };
 
+  struct FilterAnalysisState {
+    explicit FilterAnalysisState(const EchoCanceller3Config& config)
+        : filter_length_blocks(config.filter.main_initial.length_blocks),
+          consistent_filter_detector(config) {}
+    float gain;
+    size_t peak_index;
+    int filter_length_blocks;
+    bool consistent_estimate = false;
+    ConsistentFilterDetector consistent_filter_detector;
+  };
+
   static int instance_count_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
   const bool bounded_erl_;
   const float default_gain_;
-  std::vector<float> h_highpass_;
-  int delay_blocks_ = 0;
+  std::vector<std::vector<float>> h_highpass_;
+
   size_t blocks_since_reset_ = 0;
-  bool consistent_estimate_ = false;
-  float gain_;
-  size_t peak_index_;
-  int filter_length_blocks_;
   FilterRegion region_;
-  ConsistentFilterDetector consistent_filter_detector_;
+
+  std::vector<FilterAnalysisState> filter_analysis_states_;
+  std::vector<int> filter_delays_blocks_;
+
+  int min_filter_delay_blocks_ = 0;
 };
 
 }  // namespace webrtc

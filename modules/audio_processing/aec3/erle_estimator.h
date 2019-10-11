@@ -69,10 +69,12 @@ class ErleEstimator {
 
   // Returns an estimation of the current linear filter quality based on the
   // current and past fullband ERLE estimates. The returned value is a float
-  // between 0 and 1 where 1 indicates that, at this current time instant, the
-  // linear filter is reaching its maximum subtraction performance.
-  absl::optional<float> GetInstLinearQualityEstimate() const {
-    return fullband_erle_estimator_.GetInstLinearQualityEstimate();
+  // vector with content between 0 and 1 where 1 indicates that, at this current
+  // time instant, the linear filter is reaching its maximum subtraction
+  // performance.
+  rtc::ArrayView<const absl::optional<float>> GetInstLinearQualityEstimates()
+      const {
+    return fullband_erle_estimator_.GetInstLinearQualityEstimates();
   }
 
   void Dump(const std::unique_ptr<ApmDataDumper>& data_dumper) const;

@@ -12,9 +12,11 @@
 #define MODULES_AUDIO_PROCESSING_AEC3_FULLBAND_ERLE_ESTIMATOR_H_
 
 #include <memory>
+#include <vector>
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
+#include "api/audio/echo_canceller3_config.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 
 namespace webrtc {
@@ -23,7 +25,8 @@ namespace webrtc {
 // freuquency bands.
 class FullBandErleEstimator {
  public:
-  FullBandErleEstimator(float min_erle, float max_erle_lf);
+  FullBandErleEstimator(const EchoCanceller3Config::Erle& config,
+                        size_t num_capture_channels);
   ~FullBandErleEstimator();
   // Resets the ERLE estimator.
   void Reset();
@@ -39,16 +42,19 @@ class FullBandErleEstimator {
 
   // Returns an estimation of the current linear filter quality. It returns a
   // float number between 0 and 1 mapping 1 to the highest possible quality.
-  absl::optional<float> GetInstLinearQualityEstimate() const {
-    return instantaneous_erle_.GetQualityEstimate();
+  rtc::ArrayView<const absl::optional<float>> GetInstLinearQualityEstimates()
+      const {
+    return linear_filters_qualities_;
   }
 
   void Dump(const std::unique_ptr<ApmDataDumper>& data_dumper) const;
 
  private:
+  void UpdateQualityEstimates();
+
   class ErleInstantaneous {
    public:
-    ErleInstantaneous();
+    explicit ErleInstantaneous(const EchoCanceller3Config::Erle& config);
     ~ErleInstantaneous();
 
     // Updates the estimator with a new point, returns true
@@ -64,14 +70,25 @@ class FullBandErleEstimator {
     // Gets an indication between 0 and 1 of the performance of the linear
     // filter for the current time instant.
     absl::optional<float> GetQualityEstimate() const {
-      return erle_log2_ ? absl::optional<float>(inst_quality_estimate_)
-                        : absl::nullopt;
+      if (erle_log2_) {
+        float value = inst_quality_estimate_;
+        if (clamp_inst_quality_to_zero_) {
+          value = std::max(0.f, value);
+        }
+        if (clamp_inst_quality_to_one_) {
+          value = std::min(1.f, value);
+        }
+        return absl::optional<float>(value);
+      }
+      return absl::nullopt;
     }
     void Dump(const std::unique_ptr<ApmDataDumper>& data_dumper) const;
 
    private:
     void UpdateMaxMin();
     void UpdateQualityEstimate();
+    const bool clamp_inst_quality_to_zero_;
+    const bool clamp_inst_quality_to_one_;
     absl::optional<float> erle_log2_;
     float inst_quality_estimate_;
     float max_erle_log2_;
@@ -86,6 +103,7 @@ class FullBandErleEstimator {
   const float min_erle_log2_;
   const float max_erle_lf_log2;
   ErleInstantaneous instantaneous_erle_;
+  std::vector<absl::optional<float>> linear_filters_qualities_;
 };
 
 }  // namespace webrtc

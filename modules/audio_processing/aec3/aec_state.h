@@ -91,7 +91,9 @@ class AecState {
   float ErlTimeDomain() const { return erl_estimator_.ErlTimeDomain(); }
 
   // Returns the delay estimate based on the linear filter.
-  int FilterDelayBlocks() const { return delay_state_.DirectPathFilterDelay(); }
+  int FilterDelayBlocks() const {
+    return delay_state_.DirectPathFilterDelays()[0];
+  }
 
   // Returns whether the capture signal is saturated.
   bool SaturatedCapture() const { return capture_signal_saturation_; }
@@ -130,8 +132,9 @@ class AecState {
   void Update(
       const absl::optional<DelayEstimate>& external_delay,
       rtc::ArrayView<const std::vector<std::array<float, kFftLengthBy2Plus1>>>
-          adaptive_filter_frequency_response,
-      rtc::ArrayView<const std::vector<float>> adaptive_filter_impulse_response,
+          adaptive_filter_frequency_responses,
+      rtc::ArrayView<const std::vector<float>>
+          adaptive_filter_impulse_responses,
       const RenderBuffer& render_buffer,
       rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> E2_main,
       rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Y2,
@@ -140,7 +143,7 @@ class AecState {
   // Returns filter length in blocks.
   int FilterLengthBlocks() const {
     // All filters have the same length, so arbitrarily return channel 0 length.
-    return filter_analyzers_[/*channel=*/0]->FilterLengthBlocks();
+    return filter_analyzer_.FilterLengthBlocks();
   }
 
  private:
@@ -178,7 +181,8 @@ class AecState {
   // AecState.
   class FilterDelay {
    public:
-    explicit FilterDelay(const EchoCanceller3Config& config);
+    FilterDelay(const EchoCanceller3Config& config,
+                size_t num_capture_channels);
 
     // Returns whether an external delay has been reported to the AecState (from
     // the delay estimator).
@@ -186,18 +190,20 @@ class AecState {
 
     // Returns the delay in blocks relative to the beginning of the filter that
     // corresponds to the direct path of the echo.
-    int DirectPathFilterDelay() const { return filter_delay_blocks_; }
+    rtc::ArrayView<const int> DirectPathFilterDelays() const {
+      return filter_delays_blocks_;
+    }
 
     // Updates the delay estimates based on new data.
     void Update(
-        const std::vector<std::unique_ptr<FilterAnalyzer>>& filter_analyzer,
+        rtc::ArrayView<const int> analyzer_filter_delay_estimates_blocks,
         const absl::optional<DelayEstimate>& external_delay,
         size_t blocks_with_proper_filter_adaptation);
 
    private:
     const int delay_headroom_samples_;
     bool external_delay_reported_ = false;
-    int filter_delay_blocks_ = 0;
+    std::vector<int> filter_delays_blocks_;
     absl::optional<DelayEstimate> external_delay_;
   } delay_state_;
 
@@ -243,11 +249,18 @@ class AecState {
   // suppressor.
   class FilteringQualityAnalyzer {
    public:
-    FilteringQualityAnalyzer(const EchoCanceller3Config& config);
+    FilteringQualityAnalyzer(const EchoCanceller3Config& config,
+                             size_t num_capture_channels);
 
-    // Returns whether the the linear filter can be used for the echo
+    // Returns whether the linear filter can be used for the echo
     // canceller output.
-    bool LinearFilterUsable() const { return usable_linear_estimate_; }
+    bool LinearFilterUsable() const { return overall_usable_linear_estimates_; }
+
+    // Returns whether an individual filter output can be used for the echo
+    // canceller output.
+    const std::vector<bool>& UsableLinearFilterOutputs() const {
+      return usable_linear_filter_estimates_;
+    }
 
     // Resets the state of the analyzer.
     void Reset();
@@ -260,10 +273,12 @@ class AecState {
                 bool any_filter_converged);
 
    private:
-    bool usable_linear_estimate_ = false;
+    const bool use_linear_filter_;
+    bool overall_usable_linear_estimates_ = false;
     size_t filter_update_blocks_since_reset_ = 0;
     size_t filter_update_blocks_since_start_ = 0;
     bool convergence_seen_ = false;
+    std::vector<bool> usable_linear_filter_estimates_;
   } filter_quality_state_;
 
   // Class for detecting whether the echo is to be considered to be
@@ -289,7 +304,7 @@ class AecState {
   size_t strong_not_saturated_render_blocks_ = 0;
   size_t blocks_with_active_render_ = 0;
   bool capture_signal_saturation_ = false;
-  std::vector<std::unique_ptr<FilterAnalyzer>> filter_analyzers_;
+  FilterAnalyzer filter_analyzer_;
   absl::optional<DelayEstimate> external_delay_;
   EchoAudibility echo_audibility_;
   ReverbModelEstimator reverb_model_estimator_;

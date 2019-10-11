@@ -111,29 +111,23 @@ AecState::AecState(const EchoCanceller3Config& config,
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       config_(config),
       initial_state_(config_),
-      delay_state_(config_),
+      delay_state_(config_, num_capture_channels),
       transparent_state_(config_),
-      filter_quality_state_(config_),
+      filter_quality_state_(config_, num_capture_channels),
       erl_estimator_(2 * kNumBlocksPerSecond),
       erle_estimator_(2 * kNumBlocksPerSecond, config_, num_capture_channels),
-      filter_analyzers_(num_capture_channels),
+      filter_analyzer_(config_, num_capture_channels),
       echo_audibility_(
           config_.echo_audibility.use_stationarity_properties_at_init),
-      reverb_model_estimator_(config_),
-      subtractor_output_analyzers_(num_capture_channels) {
-  for (size_t ch = 0; ch < num_capture_channels; ++ch) {
-    filter_analyzers_[ch] = std::make_unique<FilterAnalyzer>(config_);
-  }
-}
+      reverb_model_estimator_(config_, num_capture_channels),
+      subtractor_output_analyzers_(num_capture_channels) {}
 
 AecState::~AecState() = default;
 
 void AecState::HandleEchoPathChange(
     const EchoPathVariability& echo_path_variability) {
   const auto full_reset = [&]() {
-    for (auto& filter_analyzer : filter_analyzers_) {
-      filter_analyzer->Reset();
-    }
+    filter_analyzer_.Reset();
     capture_signal_saturation_ = false;
     strong_not_saturated_render_blocks_ = 0;
     blocks_with_active_render_ = 0;
@@ -161,49 +155,44 @@ void AecState::HandleEchoPathChange(
 void AecState::Update(
     const absl::optional<DelayEstimate>& external_delay,
     rtc::ArrayView<const std::vector<std::array<float, kFftLengthBy2Plus1>>>
-        adaptive_filter_frequency_response,
-    rtc::ArrayView<const std::vector<float>> adaptive_filter_impulse_response,
+        adaptive_filter_frequency_responses,
+    rtc::ArrayView<const std::vector<float>> adaptive_filter_impulse_responses,
     const RenderBuffer& render_buffer,
     rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> E2_main,
     rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Y2,
     rtc::ArrayView<const SubtractorOutput> subtractor_output) {
-  const size_t num_capture_channels = filter_analyzers_.size();
+  const size_t num_capture_channels = subtractor_output_analyzers_.size();
   RTC_DCHECK_EQ(num_capture_channels, E2_main.size());
   RTC_DCHECK_EQ(num_capture_channels, Y2.size());
   RTC_DCHECK_EQ(num_capture_channels, subtractor_output.size());
   RTC_DCHECK_EQ(num_capture_channels, subtractor_output_analyzers_.size());
   RTC_DCHECK_EQ(num_capture_channels,
-                adaptive_filter_frequency_response.size());
-  RTC_DCHECK_EQ(num_capture_channels, adaptive_filter_impulse_response.size());
+                adaptive_filter_frequency_responses.size());
+  RTC_DCHECK_EQ(num_capture_channels, adaptive_filter_impulse_responses.size());
 
   // Analyze the filter outputs and filters.
   bool any_filter_converged = false;
   bool all_filters_diverged = true;
-  bool any_filter_consistent = false;
-  float max_echo_path_gain = 0.f;
   for (size_t ch = 0; ch < subtractor_output.size(); ++ch) {
     subtractor_output_analyzers_[ch].Update(subtractor_output[ch]);
     any_filter_converged = any_filter_converged ||
                            subtractor_output_analyzers_[ch].ConvergedFilter();
     all_filters_diverged = all_filters_diverged &&
                            subtractor_output_analyzers_[ch].DivergedFilter();
-
-    filter_analyzers_[ch]->Update(adaptive_filter_impulse_response[ch],
-                                  render_buffer);
-    any_filter_consistent =
-        any_filter_consistent || filter_analyzers_[ch]->Consistent();
-    max_echo_path_gain =
-        std::max(max_echo_path_gain, filter_analyzers_[ch]->Gain());
   }
+  bool any_filter_consistent;
+  float max_echo_path_gain;
+  filter_analyzer_.Update(adaptive_filter_impulse_responses, render_buffer,
+                          &any_filter_consistent, &max_echo_path_gain);
 
   // Estimate the direct path delay of the filter.
   if (config_.filter.use_linear_filter) {
-    delay_state_.Update(filter_analyzers_, external_delay,
+    delay_state_.Update(filter_analyzer_.FilterDelaysBlocks(), external_delay,
                         strong_not_saturated_render_blocks_);
   }
 
   const std::vector<std::vector<float>>& aligned_render_block =
-      render_buffer.Block(-delay_state_.DirectPathFilterDelay())[0];
+      render_buffer.Block(-delay_state_.DirectPathFilterDelays()[0])[0];
 
   // Update render counters.
   bool active_render = false;
@@ -225,13 +214,13 @@ void AecState::Update(
   std::array<float, kFftLengthBy2Plus1> X2_reverb;
 
   UpdateAndComputeReverb(render_buffer.GetSpectrumBuffer(),
-                         delay_state_.DirectPathFilterDelay(), ReverbDecay(),
-                         &reverb_model_, X2_reverb);
+                         delay_state_.DirectPathFilterDelays()[0],
+                         ReverbDecay(), &reverb_model_, X2_reverb);
 
   if (config_.echo_audibility.use_stationarity_properties) {
     // Update the echo audibility evaluator.
     echo_audibility_.Update(render_buffer, reverb_model_.reverb(),
-                            delay_state_.DirectPathFilterDelay(),
+                            delay_state_.DirectPathFilterDelays()[0],
                             delay_state_.ExternalDelayReported());
   }
 
@@ -241,11 +230,12 @@ void AecState::Update(
   }
 
   // TODO(bugs.webrtc.org/10913): Take all channels into account.
-  const auto& X2 = render_buffer.Spectrum(delay_state_.DirectPathFilterDelay(),
-                                          /*channel=*/0);
+  const auto& X2 =
+      render_buffer.Spectrum(delay_state_.DirectPathFilterDelays()[0],
+                             /*channel=*/0);
   const auto& X2_input_erle = X2_reverb;
 
-  erle_estimator_.Update(render_buffer, adaptive_filter_frequency_response[0],
+  erle_estimator_.Update(render_buffer, adaptive_filter_frequency_responses[0],
                          X2_input_erle, Y2[0], E2_main[0],
                          subtractor_output_analyzers_[0].ConvergedFilter(),
                          config_.erle.onset_detection);
@@ -262,7 +252,7 @@ void AecState::Update(
   initial_state_.Update(active_render, SaturatedCapture());
 
   // Detect whether the transparent mode should be activated.
-  transparent_state_.Update(delay_state_.DirectPathFilterDelay(),
+  transparent_state_.Update(delay_state_.DirectPathFilterDelays()[0],
                             any_filter_consistent, any_filter_converged,
                             all_filters_diverged, active_render,
                             SaturatedCapture());
@@ -277,11 +267,12 @@ void AecState::Update(
       config_.echo_audibility.use_stationarity_properties &&
       echo_audibility_.IsBlockStationary();
 
-  reverb_model_estimator_.Update(filter_analyzers_[0]->GetAdjustedFilter(),
-                                 adaptive_filter_frequency_response[0],
-                                 erle_estimator_.GetInstLinearQualityEstimate(),
-                                 delay_state_.DirectPathFilterDelay(),
-                                 UsableLinearEstimate(), stationary_block);
+  reverb_model_estimator_.Update(
+      filter_analyzer_.GetAdjustedFilters(),
+      adaptive_filter_frequency_responses,
+      erle_estimator_.GetInstLinearQualityEstimates(),
+      delay_state_.DirectPathFilterDelays(),
+      filter_quality_state_.UsableLinearFilterOutputs(), stationary_block);
 
   erle_estimator_.Dump(data_dumper_);
   reverb_model_estimator_.Dump(data_dumper_.get());
@@ -291,7 +282,7 @@ void AecState::Update(
   data_dumper_->DumpRaw("aec3_usable_linear_estimate", UsableLinearEstimate());
   data_dumper_->DumpRaw("aec3_transparent_mode", TransparentMode());
   data_dumper_->DumpRaw("aec3_filter_delay",
-                        filter_analyzers_[0]->DelayBlocks());
+                        filter_analyzer_.MinFilterDelayBlocks());
 
   data_dumper_->DumpRaw("aec3_any_filter_consistent", any_filter_consistent);
   data_dumper_->DumpRaw("aec3_initial_state",
@@ -335,11 +326,13 @@ void AecState::InitialState::InitialState::Update(bool active_render,
   transition_triggered_ = !initial_state_ && prev_initial_state;
 }
 
-AecState::FilterDelay::FilterDelay(const EchoCanceller3Config& config)
-    : delay_headroom_samples_(config.delay.delay_headroom_samples) {}
+AecState::FilterDelay::FilterDelay(const EchoCanceller3Config& config,
+                                   size_t num_capture_channels)
+    : delay_headroom_samples_(config.delay.delay_headroom_samples),
+      filter_delays_blocks_(num_capture_channels, 0) {}
 
 void AecState::FilterDelay::Update(
-    const std::vector<std::unique_ptr<FilterAnalyzer>>& filter_analyzers,
+    rtc::ArrayView<const int> analyzer_filter_delay_estimates_blocks,
     const absl::optional<DelayEstimate>& external_delay,
     size_t blocks_with_proper_filter_adaptation) {
   // Update the delay based on the external delay.
@@ -354,14 +347,15 @@ void AecState::FilterDelay::Update(
   const bool delay_estimator_may_not_have_converged =
       blocks_with_proper_filter_adaptation < 2 * kNumBlocksPerSecond;
   if (delay_estimator_may_not_have_converged && external_delay_) {
-    filter_delay_blocks_ = delay_headroom_samples_ / kBlockSize;
+    int delay_guess = delay_headroom_samples_ / kBlockSize;
+    std::fill(filter_delays_blocks_.begin(), filter_delays_blocks_.end(),
+              delay_guess);
   } else {
-    // Conservatively use the min delay among the filters.
-    filter_delay_blocks_ = filter_analyzers[0]->DelayBlocks();
-    for (size_t ch = 1; ch < filter_analyzers.size(); ++ch) {
-      filter_delay_blocks_ =
-          std::min(filter_delay_blocks_, filter_analyzers[ch]->DelayBlocks());
-    }
+    RTC_DCHECK_EQ(filter_delays_blocks_.size(),
+                  analyzer_filter_delay_estimates_blocks.size());
+    std::copy(analyzer_filter_delay_estimates_blocks.begin(),
+              analyzer_filter_delay_estimates_blocks.end(),
+              filter_delays_blocks_.begin());
   }
 }
 
@@ -452,10 +446,15 @@ void AecState::TransparentMode::Update(int filter_delay_blocks,
 }
 
 AecState::FilteringQualityAnalyzer::FilteringQualityAnalyzer(
-    const EchoCanceller3Config& config) {}
+    const EchoCanceller3Config& config,
+    size_t num_capture_channels)
+    : use_linear_filter_(config.filter.use_linear_filter),
+      usable_linear_filter_estimates_(num_capture_channels, false) {}
 
 void AecState::FilteringQualityAnalyzer::Reset() {
-  usable_linear_estimate_ = false;
+  std::fill(usable_linear_filter_estimates_.begin(),
+            usable_linear_filter_estimates_.end(), false);
+  overall_usable_linear_estimates_ = false;
   filter_update_blocks_since_reset_ = 0;
 }
 
@@ -482,17 +481,24 @@ void AecState::FilteringQualityAnalyzer::Update(
       sufficient_data_to_converge_at_startup &&
       filter_update_blocks_since_reset_ > kNumBlocksPerSecond * 0.2f;
 
-  // The linear filter can only be used it has had time to converge.
-  usable_linear_estimate_ = sufficient_data_to_converge_at_startup &&
-                            sufficient_data_to_converge_at_reset;
+  // The linear filter can only be used if it has had time to converge.
+  overall_usable_linear_estimates_ = sufficient_data_to_converge_at_startup &&
+                                     sufficient_data_to_converge_at_reset;
 
   // The linear filter can only be used if an external delay or convergence have
   // been identified
-  usable_linear_estimate_ =
-      usable_linear_estimate_ && (external_delay || convergence_seen_);
+  overall_usable_linear_estimates_ =
+      overall_usable_linear_estimates_ && (external_delay || convergence_seen_);
 
   // If transparent mode is on, deactivate usign the linear filter.
-  usable_linear_estimate_ = usable_linear_estimate_ && !transparent_mode;
+  overall_usable_linear_estimates_ =
+      overall_usable_linear_estimates_ && !transparent_mode;
+
+  if (use_linear_filter_) {
+    std::fill(usable_linear_filter_estimates_.begin(),
+              usable_linear_filter_estimates_.end(),
+              overall_usable_linear_estimates_);
+  }
 }
 
 void AecState::SaturationDetector::Update(
