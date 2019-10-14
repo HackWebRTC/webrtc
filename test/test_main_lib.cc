@@ -28,6 +28,7 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
+#include "test/testsupport/file_utils_override.h"
 #include "test/testsupport/perf_test.h"
 
 #if defined(WEBRTC_WIN)
@@ -80,6 +81,14 @@ ABSL_FLAG(std::vector<std::string>,
 
 #endif
 
+ABSL_FLAG(std::string,
+          resources_dir,
+          "",
+          "Where to look for the runtime dependencies. If not specified, we "
+          "will use a reasonable default depending on where we are running. "
+          "This flag is useful if we copy over test resources to a phone and "
+          "need to tell the tests where their resources are.");
+
 ABSL_FLAG(bool, logs, true, "print logs to stderr");
 ABSL_FLAG(bool, verbose, false, "verbose logs to stderr");
 
@@ -105,6 +114,10 @@ class TestMainImpl : public TestMain {
   int Init(int* argc, char* argv[]) override {
     ::testing::InitGoogleMock(argc, argv);
     absl::ParseCommandLine(*argc, argv);
+
+    std::string resources_dir = absl::GetFlag(FLAGS_resources_dir);
+    if (!resources_dir.empty())
+      test::internal::OverrideResourcesDir(resources_dir);
 
     // Default to LS_INFO, even for release builds to provide better test
     // logging.

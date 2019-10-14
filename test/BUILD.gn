@@ -253,6 +253,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":field_trial",
+      ":fileutils_override_api",
       ":perf_test",
       ":test_support",
       "../rtc_base",

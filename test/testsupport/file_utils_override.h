@@ -38,8 +38,7 @@ std::string OutputPath();
 // directory.
 std::string WorkingDir();
 
-// Returns a path to a resource file in [project-root]/resources/ dir.
-// Returns an absolute path
+// Returns a full path to a resource file in the resources_dir dir.
 //
 // Arguments:
 //    name - Name of the resource file. If a plain filename (no directory path)
@@ -48,6 +47,15 @@ std::string WorkingDir();
 //           hierarchy reflecting that path is assumed to be present.
 //    extension - File extension, without the dot, i.e. "bmp" or "yuv".
 std::string ResourcePath(const std::string& name, const std::string& extension);
+
+// Overrides the root resource dir. See ResourcePath for more information.
+//
+// This is not necessary in most cases, but it can be if we're running on
+// phones and copy over resources to some custom location.
+//
+// Arguments:
+//    resources_dir - Where resources are located.
+void OverrideResourcesDir(const std::string& resources_dir);
 
 }  // namespace internal
 }  // namespace test
