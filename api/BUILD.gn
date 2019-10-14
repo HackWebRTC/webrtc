@@ -181,6 +181,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     "task_queue",
     "transport:bitrate_settings",
     "transport:datagram_transport_interface",
+    "transport:enums",
     "transport:network_control",
     "transport/media:audio_interfaces",
     "transport/media:media_transport_interface",

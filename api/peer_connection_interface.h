@@ -99,6 +99,7 @@
 #include "api/stats_types.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "api/transport/bitrate_settings.h"
+#include "api/transport/enums.h"
 #include "api/transport/media/media_transport_interface.h"
 #include "api/transport/network_control.h"
 #include "api/turn_customizer.h"
@@ -394,7 +395,7 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     int max_ipv6_networks = cricket::kDefaultMaxIPv6Networks;
 
     // Exclude link-local network interfaces
-    // from considertaion for gathering ICE candidates.
+    // from consideration for gathering ICE candidates.
     bool disable_link_local_networks = false;
 
     // If set to true, use RTP data channels instead of SCTP.
@@ -479,7 +480,17 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     // If set to true, only one preferred TURN allocation will be used per
     // network interface. UDP is preferred over TCP and IPv6 over IPv4. This
     // can be used to cut down on the number of candidate pairings.
+    // Deprecated. TODO(webrtc:11026) Remove this flag once the downstream
+    // dependency is removed.
     bool prune_turn_ports = false;
+
+    // The policy used to prune turn port.
+    PortPrunePolicy turn_port_prune_policy = NO_PRUNE;
+
+    PortPrunePolicy GetTurnPortPrunePolicy() const {
+      return prune_turn_ports ? PRUNE_BASED_ON_PRIORITY
+                              : turn_port_prune_policy;
+    }
 
     // If set to true, this means the ICE transport should presume TURN-to-TURN
     // candidate pairs will succeed, even before a binding response is received.

@@ -407,6 +407,13 @@ public class PeerConnection {
   /** Java version of PeerConnectionInterface.ContinualGatheringPolicy */
   public enum ContinualGatheringPolicy { GATHER_ONCE, GATHER_CONTINUALLY }
 
+  /** Java version of webrtc::PortPrunePolicy */
+  public enum PortPrunePolicy {
+    NO_PRUNE, // Do not prune turn port.
+    PRUNE_BASED_ON_PRIORITY, // Prune turn port based the priority on the same network
+    KEEP_FIRST_READY // Keep the first ready port and prune the rest on the same network.
+  }
+
   /** Java version of rtc::IntervalRange */
   public static class IntervalRange {
     private final int min;
@@ -472,7 +479,9 @@ public class PeerConnection {
     public KeyType keyType;
     public ContinualGatheringPolicy continualGatheringPolicy;
     public int iceCandidatePoolSize;
+    @Deprecated // by the turnPortPrunePolicy. See bugs.webrtc.org/11026
     public boolean pruneTurnPorts;
+    public PortPrunePolicy turnPortPrunePolicy;
     public boolean presumeWritableWhenFullyRelayed;
     public boolean surfaceIceCandidatesOnIceTransportTypeChanged;
     // The following fields define intervals in milliseconds at which ICE
@@ -583,6 +592,7 @@ public class PeerConnection {
       continualGatheringPolicy = ContinualGatheringPolicy.GATHER_ONCE;
       iceCandidatePoolSize = 0;
       pruneTurnPorts = false;
+      turnPortPrunePolicy = PortPrunePolicy.NO_PRUNE;
       presumeWritableWhenFullyRelayed = false;
       surfaceIceCandidatesOnIceTransportTypeChanged = false;
       iceCheckIntervalStrongConnectivityMs = null;
@@ -624,6 +634,11 @@ public class PeerConnection {
     @CalledByNative("RTCConfiguration")
     BundlePolicy getBundlePolicy() {
       return bundlePolicy;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    PortPrunePolicy getTurnPortPrunePolicy() {
+      return turnPortPrunePolicy;
     }
 
     @Nullable

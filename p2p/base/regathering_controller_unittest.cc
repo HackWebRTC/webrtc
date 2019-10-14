@@ -70,7 +70,7 @@ class RegatheringControllerTest : public ::testing::Test,
     std::vector<cricket::RelayServerConfig> turn_servers(1, turn_server);
     allocator_->set_flags(kOnlyLocalPorts);
     allocator_->SetConfiguration(stun_servers, turn_servers, 0 /* pool size */,
-                                 false /* prune turn ports */);
+                                 webrtc::NO_PRUNE);
     allocator_session_ = allocator_->CreateSession(
         "test", cricket::ICE_CANDIDATE_COMPONENT_RTP, kIceUfrag, kIcePwd);
     // The gathering will take place on the current thread and the following

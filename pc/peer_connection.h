@@ -907,7 +907,7 @@ class PeerConnection : public PeerConnectionInternal,
       const std::vector<cricket::RelayServerConfig>& turn_servers,
       IceTransportsType type,
       int candidate_pool_size,
-      bool prune_turn_ports,
+      PortPrunePolicy turn_port_prune_policy,
       webrtc::TurnCustomizer* turn_customizer,
       absl::optional<int> stun_candidate_keepalive_interval,
       bool have_local_description);

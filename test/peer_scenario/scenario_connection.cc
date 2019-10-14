@@ -109,7 +109,8 @@ ScenarioIceConnectionImpl::ScenarioIceConnectionImpl(
     port_allocator_->set_flags(port_allocator_->flags() | flags);
     port_allocator_->Initialize();
     RTC_CHECK(port_allocator_->SetConfiguration(/*stun_servers*/ {},
-                                                /*turn_servers*/ {}, 0, false));
+                                                /*turn_servers*/ {}, 0,
+                                                webrtc::NO_PRUNE));
     jsep_controller_->SetLocalCertificate(certificate_);
   });
 }

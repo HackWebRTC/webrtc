@@ -1395,7 +1395,8 @@ TEST_P(PeerConnectionInterfaceTest,
   EXPECT_TRUE(raw_port_allocator->flags() & cricket::PORTALLOCATOR_DISABLE_TCP);
   EXPECT_TRUE(raw_port_allocator->flags() &
               cricket::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS);
-  EXPECT_TRUE(raw_port_allocator->prune_turn_ports());
+  EXPECT_EQ(webrtc::PRUNE_BASED_ON_PRIORITY,
+            raw_port_allocator->turn_port_prune_policy());
 }
 
 // Check that GetConfiguration returns the configuration the PeerConnection was
@@ -2448,11 +2449,12 @@ TEST_P(PeerConnectionInterfaceTest, SetConfigurationChangesPruneTurnPortsFlag) {
   config.prune_turn_ports = false;
   CreatePeerConnection(config);
   config = pc_->GetConfiguration();
-  EXPECT_FALSE(port_allocator_->prune_turn_ports());
+  EXPECT_EQ(webrtc::NO_PRUNE, port_allocator_->turn_port_prune_policy());
 
   config.prune_turn_ports = true;
   EXPECT_TRUE(pc_->SetConfiguration(config).ok());
-  EXPECT_TRUE(port_allocator_->prune_turn_ports());
+  EXPECT_EQ(webrtc::PRUNE_BASED_ON_PRIORITY,
+            port_allocator_->turn_port_prune_policy());
 }
 
 // Test that the ice check interval can be changed. This does not verify that

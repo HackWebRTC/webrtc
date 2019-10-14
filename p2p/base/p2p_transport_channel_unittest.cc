@@ -171,7 +171,7 @@ cricket::BasicPortAllocator* CreateBasicPortAllocator(
   cricket::BasicPortAllocator* allocator =
       new cricket::BasicPortAllocator(network_manager);
   allocator->Initialize();
-  allocator->SetConfiguration(stun_servers, turn_servers, 0, false);
+  allocator->SetConfiguration(stun_servers, turn_servers, 0, webrtc::NO_PRUNE);
   return allocator;
 }
 }  // namespace
@@ -2036,9 +2036,11 @@ TEST_F(P2PTransportChannelTest, TestUsingPooledSessionBeforeDoneGathering) {
   auto& allocator_2 = GetEndpoint(1)->allocator_;
   int pool_size = 1;
   allocator_1->SetConfiguration(allocator_1->stun_servers(),
-                                allocator_1->turn_servers(), pool_size, false);
+                                allocator_1->turn_servers(), pool_size,
+                                webrtc::NO_PRUNE);
   allocator_2->SetConfiguration(allocator_2->stun_servers(),
-                                allocator_2->turn_servers(), pool_size, false);
+                                allocator_2->turn_servers(), pool_size,
+                                webrtc::NO_PRUNE);
   const PortAllocatorSession* pooled_session_1 =
       allocator_1->GetPooledSession();
   const PortAllocatorSession* pooled_session_2 =
@@ -2079,9 +2081,11 @@ TEST_F(P2PTransportChannelTest, TestUsingPooledSessionAfterDoneGathering) {
   auto& allocator_2 = GetEndpoint(1)->allocator_;
   int pool_size = 1;
   allocator_1->SetConfiguration(allocator_1->stun_servers(),
-                                allocator_1->turn_servers(), pool_size, false);
+                                allocator_1->turn_servers(), pool_size,
+                                webrtc::NO_PRUNE);
   allocator_2->SetConfiguration(allocator_2->stun_servers(),
-                                allocator_2->turn_servers(), pool_size, false);
+                                allocator_2->turn_servers(), pool_size,
+                                webrtc::NO_PRUNE);
   const PortAllocatorSession* pooled_session_1 =
       allocator_1->GetPooledSession();
   const PortAllocatorSession* pooled_session_2 =
