@@ -150,6 +150,7 @@ class RTCPSender::RtcpContext {
 
 RTCPSender::RTCPSender(const RtpRtcp::Configuration& config)
     : audio_(config.audio),
+      ssrc_(config.local_media_ssrc),
       clock_(config.clock),
       random_(clock_->TimeInMicroseconds()),
       method_(RtcpMode::kOff),
@@ -164,7 +165,6 @@ RTCPSender::RTCPSender(const RtpRtcp::Configuration& config)
       timestamp_offset_(0),
       last_rtp_timestamp_(0),
       last_frame_capture_time_ms_(-1),
-      ssrc_(config.local_media_ssrc.value_or(0)),
       remote_ssrc_(0),
       receive_statistics_(config.receive_statistics),
 
@@ -329,23 +329,6 @@ void RTCPSender::SetLastRtpTime(uint32_t rtp_timestamp,
 void RTCPSender::SetRtpClockRate(int8_t payload_type, int rtp_clock_rate_hz) {
   rtc::CritScope lock(&critical_section_rtcp_sender_);
   rtp_clock_rates_khz_[payload_type] = rtp_clock_rate_hz / 1000;
-}
-
-uint32_t RTCPSender::SSRC() const {
-  rtc::CritScope lock(&critical_section_rtcp_sender_);
-  return ssrc_;
-}
-
-void RTCPSender::SetSSRC(uint32_t ssrc) {
-  rtc::CritScope lock(&critical_section_rtcp_sender_);
-
-  if (ssrc_ != 0 && ssrc != ssrc_) {
-    // not first SetSSRC, probably due to a collision
-    // schedule a new RTCP report
-    // make sure that we send a RTP packet
-    next_time_to_send_rtcp_ = clock_->TimeInMilliseconds() + 100;
-  }
-  ssrc_ = ssrc;
 }
 
 void RTCPSender::SetRemoteSSRC(uint32_t ssrc) {

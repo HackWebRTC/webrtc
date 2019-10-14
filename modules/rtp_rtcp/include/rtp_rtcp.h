@@ -122,7 +122,7 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
 
     // SSRCs for media and retransmission, respectively.
     // FlexFec SSRC is fetched from |flexfec_sender|.
-    absl::optional<uint32_t> local_media_ssrc;
+    uint32_t local_media_ssrc;
     absl::optional<uint32_t> rtx_send_ssrc;
 
    private:
@@ -200,10 +200,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   // Returns SSRC.
   uint32_t SSRC() const override = 0;
 
-  // Sets SSRC, default is a random number.
-  // TODO(bugs.webrtc.org/10774): Remove.
-  virtual void SetSSRC(uint32_t ssrc) = 0;
-
   // Sets the value for sending in the RID (and Repaired) RTP header extension.
   // RIDs are used to identify an RTP stream if SSRCs are not negotiated.
   // If the RID and Repaired RID extensions are not registered, the RID will
@@ -226,11 +222,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   // Returns status of sending RTX (RFC 4588). The returned value can be
   // a combination of values of the enumerator RtxMode.
   virtual int RtxSendStatus() const = 0;
-
-  // Sets the SSRC to use when sending RTX packets. This doesn't enable RTX,
-  // only the SSRC is set.
-  // TODO(bugs.webrtc.org/10774): Remove.
-  virtual void SetRtxSsrc(uint32_t ssrc) = 0;
 
   // Sets the payload type to use when sending RTX packets. Note that this
   // doesn't enable RTX, only the payload type is set.

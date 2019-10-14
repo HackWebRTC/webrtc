@@ -825,31 +825,6 @@ TEST_F(RtcpSenderTest, DoesntSchedulesInitialReportWhenSsrcSetOnConstruction) {
   EXPECT_FALSE(rtcp_sender_->TimeToSendRTCPReport(false));
 }
 
-TEST_F(RtcpSenderTest, DoesntSchedulesInitialReportOnFirstSetSsrc) {
-  // Set up without first SSRC not set at construction.
-  RtpRtcp::Configuration configuration = GetDefaultConfig();
-  configuration.local_media_ssrc = absl::nullopt;
-
-  rtcp_sender_.reset(new RTCPSender(configuration));
-  rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
-  rtcp_sender_->SetTimestampOffset(kStartRtpTimestamp);
-  rtcp_sender_->SetLastRtpTime(kRtpTimestamp, clock_.TimeInMilliseconds(),
-                               /*payload_type=*/0);
-  rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
-
-  // Set SSRC for the first time. New report should not be scheduled.
-  rtcp_sender_->SetSSRC(kSenderSsrc);
-  clock_.AdvanceTimeMilliseconds(100);
-  EXPECT_FALSE(rtcp_sender_->TimeToSendRTCPReport(false));
-}
-
-TEST_F(RtcpSenderTest, SchedulesReportOnSsrcChange) {
-  rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
-  rtcp_sender_->SetSSRC(kSenderSsrc + 1);
-  clock_.AdvanceTimeMilliseconds(100);
-  EXPECT_TRUE(rtcp_sender_->TimeToSendRTCPReport(false));
-}
-
 TEST_F(RtcpSenderTest, SendsCombinedRtcpPacket) {
   rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
 

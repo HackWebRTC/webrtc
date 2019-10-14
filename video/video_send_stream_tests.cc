@@ -933,6 +933,7 @@ void VideoSendStreamTest::TestNackRetransmission(
         config.clock = Clock::GetRealTimeClock();
         config.outgoing_transport = transport_adapter_.get();
         config.rtcp_report_interval_ms = kRtcpIntervalMs;
+        config.local_media_ssrc = kReceiverLocalVideoSsrc;
         RTCPSender rtcp_sender(config);
 
         rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
@@ -1149,6 +1150,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
         config.receive_statistics = &lossy_receive_stats;
         config.outgoing_transport = transport_adapter_.get();
         config.rtcp_report_interval_ms = kRtcpIntervalMs;
+        config.local_media_ssrc = kVideoSendSsrcs[0];
         RTCPSender rtcp_sender(config);
 
         rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
@@ -1400,6 +1402,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
       config.receive_statistics = &receive_stats;
       config.outgoing_transport = transport_adapter_.get();
       config.rtcp_report_interval_ms = kRtcpIntervalMs;
+      config.local_media_ssrc = kVideoSendSsrcs[0];
       RTCPSender rtcp_sender(config);
 
       rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);

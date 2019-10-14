@@ -67,9 +67,6 @@ class RTPSender {
   uint32_t TimestampOffset() const;
   void SetTimestampOffset(uint32_t timestamp);
 
-  // TODO(bugs.webrtc.org/10774): Remove.
-  void SetSSRC(uint32_t ssrc);
-
   void SetRid(const std::string& rid);
 
   void SetMid(const std::string& mid);
@@ -116,10 +113,10 @@ class RTPSender {
   // RTX.
   void SetRtxStatus(int mode);
   int RtxStatus() const;
-  uint32_t RtxSsrc() const;
-
-  // TODO(bugs.webrtc.org/10774): Remove.
-  void SetRtxSsrc(uint32_t ssrc);
+  uint32_t RtxSsrc() const {
+    RTC_DCHECK(rtx_ssrc_);
+    return *rtx_ssrc_;
+  }
 
   void SetRtxPayloadType(int payload_type, int associated_payload_type);
 
@@ -143,9 +140,9 @@ class RTPSender {
   // Including RTP headers.
   size_t MaxRtpPacketSize() const;
 
-  uint32_t SSRC() const;
+  uint32_t SSRC() const { return ssrc_; }
 
-  absl::optional<uint32_t> FlexfecSsrc() const;
+  absl::optional<uint32_t> FlexfecSsrc() const { return flexfec_ssrc_; }
 
   // Sends packet to |transport_| or to the pacer, depending on configuration.
   // TODO(bugs.webrtc.org/XXX): Remove in favor of EnqueuePackets().
@@ -225,6 +222,8 @@ class RTPSender {
 
   const bool audio_configured_;
 
+  const uint32_t ssrc_;
+  const absl::optional<uint32_t> rtx_ssrc_;
   const absl::optional<uint32_t> flexfec_ssrc_;
 
   const std::unique_ptr<NonPacedPacketSender> non_paced_packet_sender_;
@@ -268,9 +267,6 @@ class RTPSender {
   bool sequence_number_forced_ RTC_GUARDED_BY(send_critsect_);
   uint16_t sequence_number_ RTC_GUARDED_BY(send_critsect_);
   uint16_t sequence_number_rtx_ RTC_GUARDED_BY(send_critsect_);
-  // Must be explicitly set by the application, use of absl::optional
-  // only to keep track of correct use.
-  absl::optional<uint32_t> ssrc_ RTC_GUARDED_BY(send_critsect_);
   // RID value to send in the RID or RepairedRID header extension.
   std::string rid_ RTC_GUARDED_BY(send_critsect_);
   // MID value to send in the MID header extension.
@@ -286,7 +282,6 @@ class RTPSender {
   bool last_packet_marker_bit_ RTC_GUARDED_BY(send_critsect_);
   std::vector<uint32_t> csrcs_ RTC_GUARDED_BY(send_critsect_);
   int rtx_ RTC_GUARDED_BY(send_critsect_);
-  absl::optional<uint32_t> ssrc_rtx_ RTC_GUARDED_BY(send_critsect_);
   // Mapping rtx_payload_type_map_[associated] = rtx.
   std::map<int8_t, int8_t> rtx_payload_type_map_ RTC_GUARDED_BY(send_critsect_);
   size_t rtp_overhead_bytes_per_packet_ RTC_GUARDED_BY(send_critsect_);
