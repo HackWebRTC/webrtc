@@ -175,10 +175,6 @@ int ModuleRtpRtcpImpl::RtxSendStatus() const {
   return rtp_sender_ ? rtp_sender_->RtxStatus() : kRtxOff;
 }
 
-void ModuleRtpRtcpImpl::SetRtxSsrc(uint32_t ssrc) {
-  rtp_sender_->SetRtxSsrc(ssrc);
-}
-
 void ModuleRtpRtcpImpl::SetRtxSendPayloadType(int payload_type,
                                               int associated_payload_type) {
   rtp_sender_->SetRtxPayloadType(payload_type, associated_payload_type);
@@ -240,18 +236,6 @@ RtpState ModuleRtpRtcpImpl::GetRtxState() const {
   return rtp_sender_->GetRtxRtpState();
 }
 
-uint32_t ModuleRtpRtcpImpl::SSRC() const {
-  return rtcp_sender_.SSRC();
-}
-
-void ModuleRtpRtcpImpl::SetSSRC(const uint32_t ssrc) {
-  if (rtp_sender_) {
-    rtp_sender_->SetSSRC(ssrc);
-  }
-  rtcp_sender_.SetSSRC(ssrc);
-  SetRtcpReceiverSsrcs(ssrc);
-}
-
 void ModuleRtpRtcpImpl::SetRid(const std::string& rid) {
   if (rtp_sender_) {
     rtp_sender_->SetRid(rid);
@@ -305,11 +289,6 @@ int32_t ModuleRtpRtcpImpl::SetSendingStatus(const bool sending) {
     // Sends RTCP BYE when going from true to false
     if (rtcp_sender_.SetSendingStatus(GetFeedbackState(), sending) != 0) {
       RTC_LOG(LS_WARNING) << "Failed to send RTCP BYE";
-    }
-    if (sending && rtp_sender_) {
-      // Update Rtcp receiver config, to track Rtx config changes from
-      // the SetRtxStatus and SetRtxSsrc methods.
-      SetRtcpReceiverSsrcs(rtp_sender_->SSRC());
     }
   }
   return 0;
@@ -753,17 +732,6 @@ bool ModuleRtpRtcpImpl::LastReceivedNTP(
 // Called from RTCPsender.
 std::vector<rtcp::TmmbItem> ModuleRtpRtcpImpl::BoundingSet(bool* tmmbr_owner) {
   return rtcp_receiver_.BoundingSet(tmmbr_owner);
-}
-
-void ModuleRtpRtcpImpl::SetRtcpReceiverSsrcs(uint32_t main_ssrc) {
-  std::set<uint32_t> ssrcs;
-  ssrcs.insert(main_ssrc);
-  if (RtxSendStatus() != kRtxOff)
-    ssrcs.insert(rtp_sender_->RtxSsrc());
-  absl::optional<uint32_t> flexfec_ssrc = FlexfecSsrc();
-  if (flexfec_ssrc)
-    ssrcs.insert(*flexfec_ssrc);
-  rtcp_receiver_.SetSsrcs(main_ssrc, ssrcs);
 }
 
 void ModuleRtpRtcpImpl::set_rtt_ms(int64_t rtt_ms) {

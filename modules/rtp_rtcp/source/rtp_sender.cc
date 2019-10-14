@@ -124,6 +124,8 @@ RTPSender::RTPSender(const RtpRtcp::Configuration& config)
     : clock_(config.clock),
       random_(clock_->TimeInMicroseconds()),
       audio_configured_(config.audio),
+      ssrc_(config.local_media_ssrc),
+      rtx_ssrc_(config.rtx_send_ssrc),
       flexfec_ssrc_(config.flexfec_sender
                         ? absl::make_optional(config.flexfec_sender->ssrc())
                         : absl::nullopt),
@@ -154,7 +156,6 @@ RTPSender::RTPSender(const RtpRtcp::Configuration& config)
       bitrate_callback_(config.send_bitrate_observer),
       // RTP variables
       sequence_number_forced_(false),
-      ssrc_(config.local_media_ssrc),
       ssrc_has_acked_(false),
       rtx_ssrc_has_acked_(false),
       last_rtp_timestamp_(0),
@@ -164,7 +165,6 @@ RTPSender::RTPSender(const RtpRtcp::Configuration& config)
       last_packet_marker_bit_(false),
       csrcs_(),
       rtx_(kRtxOff),
-      ssrc_rtx_(config.rtx_send_ssrc),
       rtp_overhead_bytes_per_packet_(0),
       supports_bwe_extension_(false),
       retransmission_rate_limiter_(config.retransmission_rate_limiter),
@@ -265,17 +265,6 @@ void RTPSender::SetRtxStatus(int mode) {
 int RTPSender::RtxStatus() const {
   rtc::CritScope lock(&send_critsect_);
   return rtx_;
-}
-
-void RTPSender::SetRtxSsrc(uint32_t ssrc) {
-  rtc::CritScope lock(&send_critsect_);
-  ssrc_rtx_.emplace(ssrc);
-}
-
-uint32_t RTPSender::RtxSsrc() const {
-  rtc::CritScope lock(&send_critsect_);
-  RTC_DCHECK(ssrc_rtx_);
-  return *ssrc_rtx_;
 }
 
 void RTPSender::SetRtxPayloadType(int payload_type,
@@ -428,7 +417,7 @@ bool RTPSender::TrySendPacket(RtpPacketToSend* packet,
       case RtpPacketToSend::Type::kPadding:
         // Both padding and retransmission must be on either the media or the
         // RTX stream.
-        if (packet_ssrc == ssrc_rtx_) {
+        if (packet_ssrc == rtx_ssrc_) {
           is_rtx = true;
         } else if (packet_ssrc != ssrc_) {
           return false;
@@ -621,7 +610,7 @@ std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
       }
 
       RTC_DCHECK(ssrc_);
-      padding_packet->SetSsrc(*ssrc_);
+      padding_packet->SetSsrc(ssrc_);
       padding_packet->SetPayloadType(last_payload_type_);
       padding_packet->SetSequenceNumber(sequence_number_++);
     } else {
@@ -645,8 +634,8 @@ std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
         padding_packet->set_capture_time_ms(padding_packet->capture_time_ms() +
                                             (now_ms - last_timestamp_time_ms_));
       }
-      RTC_DCHECK(ssrc_rtx_);
-      padding_packet->SetSsrc(*ssrc_rtx_);
+      RTC_DCHECK(rtx_ssrc_);
+      padding_packet->SetSsrc(*rtx_ssrc_);
       padding_packet->SetSequenceNumber(sequence_number_rtx_++);
       padding_packet->SetPayloadType(rtx_payload_type_map_.begin()->second);
     }
@@ -802,17 +791,10 @@ void RTPSender::ProcessBitrate() {
   if (!bitrate_callback_)
     return;
   int64_t now_ms = clock_->TimeInMilliseconds();
-  uint32_t ssrc;
-  {
-    rtc::CritScope lock(&send_critsect_);
-    if (!ssrc_)
-      return;
-    ssrc = *ssrc_;
-  }
 
   rtc::CritScope lock(&statistics_crit_);
   bitrate_callback_->Notify(total_bitrate_sent_.Rate(now_ms).value_or(0),
-                            nack_bitrate_sent_.Rate(now_ms).value_or(0), ssrc);
+                            nack_bitrate_sent_.Rate(now_ms).value_or(0), ssrc_);
 }
 
 size_t RTPSender::RtpHeaderLength() const {
@@ -850,7 +832,7 @@ std::unique_ptr<RtpPacketToSend> RTPSender::AllocatePacket() const {
   auto packet = std::make_unique<RtpPacketToSend>(
       &rtp_header_extension_map_, max_packet_size_ + kExtraCapacity);
   RTC_DCHECK(ssrc_);
-  packet->SetSsrc(*ssrc_);
+  packet->SetSsrc(ssrc_);
   packet->SetCsrcs(csrcs_);
   // Reserve extensions, if registered, RtpSender set in SendToNetwork.
   packet->ReserveExtension<AbsoluteSendTime>();
@@ -923,30 +905,6 @@ uint32_t RTPSender::TimestampOffset() const {
   return timestamp_offset_;
 }
 
-void RTPSender::SetSSRC(uint32_t ssrc) {
-  {
-    rtc::CritScope lock(&send_critsect_);
-    if (ssrc_ == ssrc) {
-      return;  // Since it's the same SSRC, don't reset anything.
-    }
-
-    ssrc_.emplace(ssrc);
-    if (!sequence_number_forced_) {
-      sequence_number_ = random_.Rand(1, kMaxInitRtpSeqNumber);
-    }
-  }
-
-  // Clear RTP packet history, since any packets there belong to the old SSRC
-  // and they may conflict with packets from the new one.
-  packet_history_.Clear();
-}
-
-uint32_t RTPSender::SSRC() const {
-  rtc::CritScope lock(&send_critsect_);
-  RTC_DCHECK(ssrc_);
-  return *ssrc_;
-}
-
 void RTPSender::SetRid(const std::string& rid) {
   // RID is used in simulcast scenario when multiple layers share the same mid.
   rtc::CritScope lock(&send_critsect_);
@@ -959,10 +917,6 @@ void RTPSender::SetMid(const std::string& mid) {
   rtc::CritScope lock(&send_critsect_);
   RTC_DCHECK_LE(mid.length(), RtpMid::kMaxValueSizeBytes);
   mid_ = mid;
-}
-
-absl::optional<uint32_t> RTPSender::FlexfecSsrc() const {
-  return flexfec_ssrc_;
 }
 
 void RTPSender::SetCsrcs(const std::vector<uint32_t>& csrcs) {
@@ -1052,7 +1006,7 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
     if (!sending_media_)
       return nullptr;
 
-    RTC_DCHECK(ssrc_rtx_);
+    RTC_DCHECK(rtx_ssrc_);
 
     // Replace payload type.
     auto kv = rtx_payload_type_map_.find(packet.PayloadType());
@@ -1068,7 +1022,7 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
     rtx_packet->SetSequenceNumber(sequence_number_rtx_++);
 
     // Replace SSRC.
-    rtx_packet->SetSsrc(*ssrc_rtx_);
+    rtx_packet->SetSsrc(*rtx_ssrc_);
 
     CopyHeaderAndExtensionsToRtxPacket(packet, rtx_packet.get());
 
