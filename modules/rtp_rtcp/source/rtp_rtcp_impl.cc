@@ -538,14 +538,19 @@ int32_t ModuleRtpRtcpImpl::RegisterSendRtpHeaderExtension(
   return rtp_sender_->RegisterRtpHeaderExtension(type, id);
 }
 
-bool ModuleRtpRtcpImpl::RegisterRtpHeaderExtension(const std::string& uri,
+void ModuleRtpRtcpImpl::RegisterRtpHeaderExtension(absl::string_view uri,
                                                    int id) {
-  return rtp_sender_->RegisterRtpHeaderExtension(uri, id);
+  bool registered = rtp_sender_->RegisterRtpHeaderExtension(uri, id);
+  RTC_CHECK(registered);
 }
 
 int32_t ModuleRtpRtcpImpl::DeregisterSendRtpHeaderExtension(
     const RTPExtensionType type) {
   return rtp_sender_->DeregisterRtpHeaderExtension(type);
+}
+void ModuleRtpRtcpImpl::DeregisterSendRtpHeaderExtension(
+    absl::string_view uri) {
+  rtp_sender_->DeregisterRtpHeaderExtension(uri);
 }
 
 // (TMMBR) Temporary Max Media Bit Rate.

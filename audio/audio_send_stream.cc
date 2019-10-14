@@ -296,8 +296,8 @@ void AudioSendStream::ConfigureStream(
     channel_send_->GetRtpRtcp()->DeregisterSendRtpHeaderExtension(
         kRtpExtensionAbsoluteSendTime);
     if (new_ids.abs_send_time) {
-      channel_send_->GetRtpRtcp()->RegisterSendRtpHeaderExtension(
-          kRtpExtensionAbsoluteSendTime, new_ids.abs_send_time);
+      rtp_rtcp_module_->RegisterRtpHeaderExtension(AbsoluteSendTime::kUri,
+                                                   new_ids.abs_send_time);
     }
   }
 

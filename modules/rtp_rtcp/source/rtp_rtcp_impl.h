@@ -71,9 +71,9 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   // Register RTP header extension.
   int32_t RegisterSendRtpHeaderExtension(RTPExtensionType type,
                                          uint8_t id) override;
-  bool RegisterRtpHeaderExtension(const std::string& uri, int id) override;
-
+  void RegisterRtpHeaderExtension(absl::string_view uri, int id) override;
   int32_t DeregisterSendRtpHeaderExtension(RTPExtensionType type) override;
+  void DeregisterSendRtpHeaderExtension(absl::string_view uri) override;
 
   bool SupportsPadding() const override;
   bool SupportsRtxPayloadPadding() const override;

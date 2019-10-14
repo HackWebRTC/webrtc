@@ -227,7 +227,7 @@ int32_t RTPSender::RegisterRtpHeaderExtension(RTPExtensionType type,
   return registered ? 0 : -1;
 }
 
-bool RTPSender::RegisterRtpHeaderExtension(const std::string& uri, int id) {
+bool RTPSender::RegisterRtpHeaderExtension(absl::string_view uri, int id) {
   rtc::CritScope lock(&send_critsect_);
   bool registered = rtp_header_extension_map_.RegisterByUri(id, uri);
   supports_bwe_extension_ = HasBweExtension(rtp_header_extension_map_);
@@ -244,6 +244,12 @@ int32_t RTPSender::DeregisterRtpHeaderExtension(RTPExtensionType type) {
   int32_t deregistered = rtp_header_extension_map_.Deregister(type);
   supports_bwe_extension_ = HasBweExtension(rtp_header_extension_map_);
   return deregistered;
+}
+
+void RTPSender::DeregisterRtpHeaderExtension(absl::string_view uri) {
+  rtc::CritScope lock(&send_critsect_);
+  rtp_header_extension_map_.Deregister(uri);
+  supports_bwe_extension_ = HasBweExtension(rtp_header_extension_map_);
 }
 
 void RTPSender::SetMaxRtpPacketSize(size_t max_packet_size) {

@@ -189,7 +189,7 @@ class ChannelSend : public ChannelSendInterface,
   void OnUplinkPacketLossRate(float packet_loss_rate);
   bool InputMute() const;
 
-  int SetSendRtpHeaderExtension(bool enable, RTPExtensionType type, int id);
+  void SetSendRtpHeaderExtension(bool enable, absl::string_view uri, int id);
 
   int32_t SendRtpAudio(AudioFrameType frameType,
                        uint8_t payloadType,
@@ -894,22 +894,18 @@ void ChannelSend::SetRid(const std::string& rid,
                          int repaired_extension_id) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   if (extension_id != 0) {
-    int ret = SetSendRtpHeaderExtension(!rid.empty(), kRtpExtensionRtpStreamId,
-                                        extension_id);
-    RTC_DCHECK_EQ(0, ret);
+    SetSendRtpHeaderExtension(!rid.empty(), RtpStreamId::kUri, extension_id);
   }
   if (repaired_extension_id != 0) {
-    int ret = SetSendRtpHeaderExtension(!rid.empty(), kRtpExtensionRtpStreamId,
-                                        repaired_extension_id);
-    RTC_DCHECK_EQ(0, ret);
+    SetSendRtpHeaderExtension(!rid.empty(), RtpStreamId::kUri,
+                              repaired_extension_id);
   }
   _rtpRtcpModule->SetRid(rid);
 }
 
 void ChannelSend::SetMid(const std::string& mid, int extension_id) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  int ret = SetSendRtpHeaderExtension(true, kRtpExtensionMid, extension_id);
-  RTC_DCHECK_EQ(0, ret);
+  SetSendRtpHeaderExtension(true, RtpMid::kUri, extension_id);
   _rtpRtcpModule->SetMid(mid);
 }
 
@@ -921,15 +917,12 @@ void ChannelSend::SetExtmapAllowMixed(bool extmap_allow_mixed) {
 void ChannelSend::SetSendAudioLevelIndicationStatus(bool enable, int id) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   _includeAudioLevelIndication = enable;
-  int ret = SetSendRtpHeaderExtension(enable, kRtpExtensionAudioLevel, id);
-  RTC_DCHECK_EQ(0, ret);
+  SetSendRtpHeaderExtension(enable, AudioLevel::kUri, id);
 }
 
 void ChannelSend::EnableSendTransportSequenceNumber(int id) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  int ret =
-      SetSendRtpHeaderExtension(true, kRtpExtensionTransportSequenceNumber, id);
-  RTC_DCHECK_EQ(0, ret);
+  SetSendRtpHeaderExtension(true, TransportSequenceNumber::kUri, id);
 }
 
 void ChannelSend::RegisterSenderCongestionControlObjects(
@@ -1093,18 +1086,13 @@ RtpRtcp* ChannelSend::GetRtpRtcp() const {
   return _rtpRtcpModule.get();
 }
 
-int ChannelSend::SetSendRtpHeaderExtension(bool enable,
-                                           RTPExtensionType type,
-                                           int id) {
-  int error = 0;
-  _rtpRtcpModule->DeregisterSendRtpHeaderExtension(type);
+void ChannelSend::SetSendRtpHeaderExtension(bool enable,
+                                            absl::string_view uri,
+                                            int id) {
+  _rtpRtcpModule->DeregisterSendRtpHeaderExtension(uri);
   if (enable) {
-    // TODO(nisse): RtpRtcp::RegisterSendRtpHeaderExtension to take an int
-    // argument. Currently it wants an uint8_t.
-    error = _rtpRtcpModule->RegisterSendRtpHeaderExtension(
-        type, rtc::dchecked_cast<uint8_t>(id));
+    _rtpRtcpModule->RegisterRtpHeaderExtension(uri, id);
   }
-  return error;
 }
 
 int64_t ChannelSend::GetRTT() const {

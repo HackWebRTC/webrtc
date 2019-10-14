@@ -85,9 +85,10 @@ class RTPSender {
 
   // RTP header extension
   int32_t RegisterRtpHeaderExtension(RTPExtensionType type, uint8_t id);
-  bool RegisterRtpHeaderExtension(const std::string& uri, int id);
+  bool RegisterRtpHeaderExtension(absl::string_view uri, int id);
   bool IsRtpHeaderExtensionRegistered(RTPExtensionType type) const;
   int32_t DeregisterRtpHeaderExtension(RTPExtensionType type);
+  void DeregisterRtpHeaderExtension(absl::string_view uri);
 
   // Tries to send packet to transport. Also updates any timing extensions,
   // calls observers waiting for packet send events, and updates stats.

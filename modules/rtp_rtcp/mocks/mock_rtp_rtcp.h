@@ -45,10 +45,10 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(SetExtmapAllowMixed, void(bool extmap_allow_mixed));
   MOCK_METHOD2(RegisterSendRtpHeaderExtension,
                int32_t(RTPExtensionType type, uint8_t id));
-  MOCK_METHOD2(RegisterRtpHeaderExtension,
-               bool(const std::string& uri, int id));
+  MOCK_METHOD2(RegisterRtpHeaderExtension, void(absl::string_view uri, int id));
   MOCK_METHOD1(DeregisterSendRtpHeaderExtension,
                int32_t(RTPExtensionType type));
+  MOCK_METHOD1(DeregisterSendRtpHeaderExtension, void(absl::string_view uri));
   MOCK_CONST_METHOD0(SupportsPadding, bool());
   MOCK_CONST_METHOD0(SupportsRtxPayloadPadding, bool());
   MOCK_CONST_METHOD0(StartTimestamp, uint32_t());

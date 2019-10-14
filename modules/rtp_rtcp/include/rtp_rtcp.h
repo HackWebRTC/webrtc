@@ -164,12 +164,14 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
 
   // (De)registers RTP header extension type and id.
   // Returns -1 on failure else 0.
-  virtual int32_t RegisterSendRtpHeaderExtension(RTPExtensionType type,
-                                                 uint8_t id) = 0;
-  // Register extension by uri, returns false on failure.
-  virtual bool RegisterRtpHeaderExtension(const std::string& uri, int id) = 0;
+  RTC_DEPRECATED virtual int32_t RegisterSendRtpHeaderExtension(
+      RTPExtensionType type,
+      uint8_t id) = 0;
+  // Register extension by uri, triggers CHECK on falure.
+  virtual void RegisterRtpHeaderExtension(absl::string_view uri, int id) = 0;
 
   virtual int32_t DeregisterSendRtpHeaderExtension(RTPExtensionType type) = 0;
+  virtual void DeregisterSendRtpHeaderExtension(absl::string_view uri) = 0;
 
   // Returns true if RTP module is send media, and any of the extensions
   // required for bandwidth estimation is registered.

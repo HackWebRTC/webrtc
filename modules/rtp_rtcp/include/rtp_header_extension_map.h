@@ -37,7 +37,7 @@ class RtpHeaderExtensionMap {
     return Register(id, Extension::kId, Extension::kUri);
   }
   bool RegisterByType(int id, RTPExtensionType type);
-  bool RegisterByUri(int id, const std::string& uri);
+  bool RegisterByUri(int id, absl::string_view uri);
 
   bool IsRegistered(RTPExtensionType type) const {
     return GetId(type) != kInvalidId;
@@ -56,6 +56,7 @@ class RtpHeaderExtensionMap {
     return RegisterByType(id, type) ? 0 : -1;
   }
   int32_t Deregister(RTPExtensionType type);
+  void Deregister(absl::string_view uri);
 
   // Corresponds to the SDP attribute extmap-allow-mixed, see RFC8285.
   // Set to true if it's allowed to mix one- and two-byte RTP header extensions

@@ -381,7 +381,7 @@ RtpVideoSender::RtpVideoSender(
     int id = rtp_config_.extensions[i].id;
     RTC_DCHECK(RtpExtension::IsSupportedForVideo(extension));
     for (const RtpStreamSender& stream : rtp_streams_) {
-      RTC_CHECK(stream.rtp_rtcp->RegisterRtpHeaderExtension(extension, id));
+      stream.rtp_rtcp->RegisterRtpHeaderExtension(extension, id);
     }
   }
 
