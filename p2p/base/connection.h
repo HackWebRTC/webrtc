@@ -294,6 +294,9 @@ class Connection : public CandidatePairInterface,
 
   bool stable(int64_t now) const;
 
+  // Check if we sent |val| pings without receving a response.
+  bool TooManyOutstandingPings(const absl::optional<int>& val) const;
+
  protected:
   enum { MSG_DELETE = 0, MSG_FIRST_AVAILABLE };
 

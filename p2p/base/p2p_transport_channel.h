@@ -77,6 +77,7 @@ class RemoteCandidate : public Candidate {
 
 struct IceFieldTrials {
   bool skip_relay_to_non_relay_connections = false;
+  absl::optional<int> max_outstanding_pings;
 };
 
 // P2PTransportChannel manages the candidates and connection process to keep
