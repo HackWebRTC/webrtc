@@ -320,6 +320,16 @@ class VideoStreamEncoder::VideoSourceProxy {
     return RestrictFramerate(framerate_wanted) ? framerate_wanted : -1;
   }
 
+  int GetHigherResolutionThan(int pixel_count) const {
+    // On step down we request at most 3/5 the pixel count of the previous
+    // resolution, so in order to take "one step up" we request a resolution
+    // as close as possible to 5/3 of the current resolution. The actual pixel
+    // count selected depends on the capabilities of the source. In order to
+    // not take a too large step up, we cap the requested pixel count to be at
+    // most four time the current number of pixels.
+    return (pixel_count * 5) / 3;
+  }
+
   bool RequestHigherResolutionThan(int pixel_count) {
     // Called on the encoder task queue.
     rtc::CritScope lock(&crit_);
@@ -340,13 +350,7 @@ class VideoStreamEncoder::VideoSourceProxy {
       // Remove any constraints.
       sink_wants_.target_pixel_count.reset();
     } else {
-      // On step down we request at most 3/5 the pixel count of the previous
-      // resolution, so in order to take "one step up" we request a resolution
-      // as close as possible to 5/3 of the current resolution. The actual pixel
-      // count selected depends on the capabilities of the source. In order to
-      // not take a too large step up, we cap the requested pixel count to be at
-      // most four time the current number of pixels.
-      sink_wants_.target_pixel_count = (pixel_count * 5) / 3;
+      sink_wants_.target_pixel_count = GetHigherResolutionThan(pixel_count);
     }
     RTC_LOG(LS_INFO) << "Scaling up resolution, max pixels: "
                      << max_pixels_wanted;
@@ -1861,13 +1865,24 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
 }
 
 bool VideoStreamEncoder::DropDueToSize(uint32_t pixel_count) const {
-  if (initial_framedrop_ < kMaxInitialFramedrop &&
-      encoder_start_bitrate_bps_ > 0) {
-    if (encoder_start_bitrate_bps_ < 300000 /* qvga */) {
-      return pixel_count > 320 * 240;
-    } else if (encoder_start_bitrate_bps_ < 500000 /* vga */) {
-      return pixel_count > 640 * 480;
-    }
+  if (initial_framedrop_ >= kMaxInitialFramedrop ||
+      encoder_start_bitrate_bps_ == 0) {
+    return false;
+  }
+
+  absl::optional<VideoEncoder::ResolutionBitrateLimits> encoder_bitrate_limits =
+      GetEncoderBitrateLimits(encoder_->GetEncoderInfo(), pixel_count);
+
+  if (encoder_bitrate_limits.has_value()) {
+    // Use bitrate limits provided by encoder.
+    return encoder_start_bitrate_bps_ <
+           static_cast<uint32_t>(encoder_bitrate_limits->min_start_bitrate_bps);
+  }
+
+  if (encoder_start_bitrate_bps_ < 300000 /* qvga */) {
+    return pixel_count > 320 * 240;
+  } else if (encoder_start_bitrate_bps_ < 500000 /* vga */) {
+    return pixel_count > 640 * 480;
   }
   return false;
 }
@@ -2032,6 +2047,14 @@ void VideoStreamEncoder::AdaptUp(AdaptReason reason) {
       RTC_FALLTHROUGH();
     }
     case DegradationPreference::MAINTAIN_FRAMERATE: {
+      // Check if resolution should be increased based on bitrate and
+      // limits specified by encoder capabilities.
+      if (reason == kQuality &&
+          !CanAdaptUpResolution(last_frame_info_->pixel_count(),
+                                encoder_start_bitrate_bps_)) {
+        return;
+      }
+
       // Scale up resolution.
       int pixel_count = adaptation_request.input_pixel_count_;
       if (adapt_counter.ResolutionCount() == 1) {
@@ -2071,6 +2094,19 @@ void VideoStreamEncoder::AdaptUp(AdaptReason reason) {
   UpdateAdaptationStats(reason);
 
   RTC_LOG(LS_INFO) << adapt_counter.ToString();
+}
+
+bool VideoStreamEncoder::CanAdaptUpResolution(int pixels,
+                                              uint32_t bitrate_bps) const {
+  absl::optional<VideoEncoder::ResolutionBitrateLimits> bitrate_limits =
+      GetEncoderBitrateLimits(encoder_info_,
+                              source_proxy_->GetHigherResolutionThan(pixels));
+  if (!bitrate_limits.has_value() || bitrate_bps == 0) {
+    return true;  // No limit configured or bitrate provided.
+  }
+  RTC_DCHECK_GE(bitrate_limits->frame_size_pixels, pixels);
+  return bitrate_bps >=
+         static_cast<uint32_t>(bitrate_limits->min_start_bitrate_bps);
 }
 
 // TODO(nisse): Delete, once AdaptReason and AdaptationReason are merged.

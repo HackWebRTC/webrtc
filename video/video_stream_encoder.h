@@ -223,6 +223,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   void UpdateAdaptationStats(AdaptReason reason) RTC_RUN_ON(&encoder_queue_);
   VideoStreamEncoderObserver::AdaptationSteps GetActiveCounts(
       AdaptReason reason) RTC_RUN_ON(&encoder_queue_);
+  bool CanAdaptUpResolution(int pixels, uint32_t bitrate_bps) const
+      RTC_RUN_ON(&encoder_queue_);
   void RunPostEncode(EncodedImage encoded_image,
                      int64_t time_sent_us,
                      int temporal_index);

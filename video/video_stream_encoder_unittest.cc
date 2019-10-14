@@ -67,6 +67,10 @@ const int kMaxInitialFramedrop = 4;
 const int kDefaultFramerate = 30;
 const int64_t kFrameIntervalMs = rtc::kNumMillisecsPerSec / kDefaultFramerate;
 const int64_t kProcessIntervalMs = 1000;
+const VideoEncoder::ResolutionBitrateLimits
+    kEncoderBitrateLimits540p(960 * 540, 100 * 1000, 100 * 1000, 2000 * 1000);
+const VideoEncoder::ResolutionBitrateLimits
+    kEncoderBitrateLimits720p(1280 * 720, 200 * 1000, 200 * 1000, 4000 * 1000);
 
 uint8_t optimal_sps[] = {0,    0,    0,    1,    H264::NaluType::kSps,
                          0x00, 0x00, 0x03, 0x03, 0xF4,
@@ -2664,6 +2668,87 @@ TEST_F(VideoStreamEncoderTest,
   VerifyFpsMaxResolutionMax(source.sink_wants());
   EXPECT_FALSE(stats_proxy_->GetStats().bw_limited_resolution);
   EXPECT_EQ(4, stats_proxy_->GetStats().number_of_quality_adapt_changes);
+
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, AdaptUpIfBwEstimateIsHigherThanMinBitrate) {
+  fake_encoder_.SetResolutionBitrateLimits(
+      {kEncoderBitrateLimits540p, kEncoderBitrateLimits720p});
+
+  video_stream_encoder_->OnBitrateUpdated(
+      DataRate::bps(kEncoderBitrateLimits720p.min_start_bitrate_bps),
+      DataRate::bps(kEncoderBitrateLimits720p.min_start_bitrate_bps),
+      DataRate::bps(kEncoderBitrateLimits720p.min_start_bitrate_bps), 0, 0);
+
+  // Enable MAINTAIN_FRAMERATE preference, no initial limitation.
+  AdaptingFrameForwarder source;
+  source.set_adaptation_enabled(true);
+  video_stream_encoder_->SetSource(
+      &source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
+
+  // Insert 720p frame.
+  int64_t timestamp_ms = kFrameIntervalMs;
+  source.IncomingCapturedFrame(CreateFrame(timestamp_ms, 1280, 720));
+  WaitForEncodedFrame(1280, 720);
+
+  // Reduce bitrate and trigger adapt down.
+  video_stream_encoder_->OnBitrateUpdated(
+      DataRate::bps(kEncoderBitrateLimits540p.min_start_bitrate_bps),
+      DataRate::bps(kEncoderBitrateLimits540p.min_start_bitrate_bps),
+      DataRate::bps(kEncoderBitrateLimits540p.min_start_bitrate_bps), 0, 0);
+  video_stream_encoder_->TriggerQualityLow();
+
+  // Insert 720p frame. It should be downscaled and encoded.
+  timestamp_ms += kFrameIntervalMs;
+  source.IncomingCapturedFrame(CreateFrame(timestamp_ms, 1280, 720));
+  WaitForEncodedFrame(960, 540);
+
+  // Trigger adapt up. Higher resolution should not be requested duo to lack
+  // of bitrate.
+  video_stream_encoder_->TriggerQualityHigh();
+  VerifyFpsMaxResolutionLt(source.sink_wants(), 1280 * 720);
+
+  // Increase bitrate.
+  video_stream_encoder_->OnBitrateUpdated(
+      DataRate::bps(kEncoderBitrateLimits720p.min_start_bitrate_bps),
+      DataRate::bps(kEncoderBitrateLimits720p.min_start_bitrate_bps),
+      DataRate::bps(kEncoderBitrateLimits720p.min_start_bitrate_bps), 0, 0);
+
+  // Trigger adapt up. Higher resolution should be requested.
+  video_stream_encoder_->TriggerQualityHigh();
+  VerifyFpsMaxResolutionMax(source.sink_wants());
+
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, DropFirstFramesIfBwEstimateIsTooLow) {
+  fake_encoder_.SetResolutionBitrateLimits(
+      {kEncoderBitrateLimits540p, kEncoderBitrateLimits720p});
+
+  // Set bitrate equal to min bitrate of 540p.
+  video_stream_encoder_->OnBitrateUpdated(
+      DataRate::bps(kEncoderBitrateLimits540p.min_start_bitrate_bps),
+      DataRate::bps(kEncoderBitrateLimits540p.min_start_bitrate_bps),
+      DataRate::bps(kEncoderBitrateLimits540p.min_start_bitrate_bps), 0, 0);
+
+  // Enable MAINTAIN_FRAMERATE preference, no initial limitation.
+  AdaptingFrameForwarder source;
+  source.set_adaptation_enabled(true);
+  video_stream_encoder_->SetSource(
+      &source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
+
+  // Insert 720p frame. It should be dropped and lower resolution should be
+  // requested.
+  int64_t timestamp_ms = kFrameIntervalMs;
+  source.IncomingCapturedFrame(CreateFrame(timestamp_ms, 1280, 720));
+  ExpectDroppedFrame();
+  VerifyFpsMaxResolutionLt(source.sink_wants(), 1280 * 720);
+
+  // Insert 720p frame. It should be downscaled and encoded.
+  timestamp_ms += kFrameIntervalMs;
+  source.IncomingCapturedFrame(CreateFrame(timestamp_ms, 1280, 720));
+  WaitForEncodedFrame(960, 540);
 
   video_stream_encoder_->Stop();
 }
