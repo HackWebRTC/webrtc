@@ -47,16 +47,6 @@ class RtpPacketizerH264 : public RtpPacketizer {
   bool NextPacket(RtpPacketToSend* rtp_packet) override;
 
  private:
-  // Input fragments (NAL units), with an optionally owned temporary buffer,
-  // used in case the fragment gets modified.
-  struct Fragment {
-    Fragment(const uint8_t* buffer, size_t length);
-    explicit Fragment(const Fragment& fragment);
-    ~Fragment();
-    const uint8_t* buffer = nullptr;
-    size_t length = 0;
-  };
-
   // A packet unit (H264 packet), to be put into an RTP packet:
   // If a NAL unit is too large for an RTP packet, this packet unit will
   // represent a FU-A packet of a single fragment of the NAL unit.
@@ -64,7 +54,7 @@ class RtpPacketizerH264 : public RtpPacketizer {
   // packet unit may represent a single NAL unit or a STAP-A packet, of which
   // there may be multiple in a single RTP packet (if so, aggregated = true).
   struct PacketUnit {
-    PacketUnit(const Fragment& source_fragment,
+    PacketUnit(rtc::ArrayView<const uint8_t> source_fragment,
                bool first_fragment,
                bool last_fragment,
                bool aggregated,
@@ -75,7 +65,7 @@ class RtpPacketizerH264 : public RtpPacketizer {
           aggregated(aggregated),
           header(header) {}
 
-    const Fragment source_fragment;
+    rtc::ArrayView<const uint8_t> source_fragment;
     bool first_fragment;
     bool last_fragment;
     bool aggregated;
@@ -92,7 +82,7 @@ class RtpPacketizerH264 : public RtpPacketizer {
 
   const PayloadSizeLimits limits_;
   size_t num_packets_left_;
-  std::deque<Fragment> input_fragments_;
+  std::deque<rtc::ArrayView<const uint8_t>> input_fragments_;
   std::queue<PacketUnit> packets_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpPacketizerH264);
