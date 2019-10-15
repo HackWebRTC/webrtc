@@ -36,8 +36,7 @@ class RtpTransportControllerSendInterface;
 
 struct CallSendStatistics {
   int64_t rttMs;
-  int64_t payload_bytes_sent;
-  int64_t header_and_padding_bytes_sent;
+  size_t bytesSent;
   // https://w3c.github.io/webrtc-stats/#dom-rtcoutboundrtpstreamstats-retransmittedbytessent
   uint64_t retransmitted_bytes_sent;
   int packetsSent;

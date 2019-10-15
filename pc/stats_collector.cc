@@ -19,15 +19,9 @@
 #include "pc/peer_connection.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/third_party/base64/base64.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace {
-
-// Field trial which controls whether to report standard-compliant bytes
-// sent/received per stream.  If enabled, padding and headers are not included
-// in bytes sent or received.
-constexpr char kUseStandardBytesStats[] = "WebRTC-UseStandardBytesStats";
 
 // The following is the enum RTCStatsIceCandidateType from
 // http://w3c.github.io/webrtc-stats/#rtcstatsicecandidatetype-enum such that
@@ -88,14 +82,9 @@ void CreateTrackReports(const TrackVector& tracks,
 }
 
 void ExtractCommonSendProperties(const cricket::MediaSenderInfo& info,
-                                 StatsReport* report,
-                                 bool use_standard_bytes_stats) {
+                                 StatsReport* report) {
   report->AddString(StatsReport::kStatsValueNameCodecName, info.codec_name);
-  int64_t bytes_sent = info.payload_bytes_sent;
-  if (!use_standard_bytes_stats) {
-    bytes_sent += info.header_and_padding_bytes_sent;
-  }
-  report->AddInt64(StatsReport::kStatsValueNameBytesSent, bytes_sent);
+  report->AddInt64(StatsReport::kStatsValueNameBytesSent, info.bytes_sent);
   if (info.rtt_ms >= 0) {
     report->AddInt64(StatsReport::kStatsValueNameRtt, info.rtt_ms);
   }
@@ -142,9 +131,7 @@ void SetAudioProcessingStats(StatsReport* report,
   }
 }
 
-void ExtractStats(const cricket::VoiceReceiverInfo& info,
-                  StatsReport* report,
-                  bool use_standard_bytes_stats) {
+void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
   ExtractCommonReceiveProperties(info, report);
   const FloatForAdd floats[] = {
       {StatsReport::kStatsValueNameExpandRate, info.expand_rate},
@@ -192,11 +179,7 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info,
     report->AddInt(StatsReport::kStatsValueNameDecodingCodecPLC,
                    info.decoding_codec_plc);
 
-  int64_t bytes_rcvd = info.payload_bytes_rcvd;
-  if (!use_standard_bytes_stats) {
-    bytes_rcvd += info.header_and_padding_bytes_rcvd;
-  }
-  report->AddInt64(StatsReport::kStatsValueNameBytesReceived, bytes_rcvd);
+  report->AddInt64(StatsReport::kStatsValueNameBytesReceived, info.bytes_rcvd);
   if (info.capture_start_ntp_time_ms >= 0) {
     report->AddInt64(StatsReport::kStatsValueNameCaptureStartNtpTimeMs,
                      info.capture_start_ntp_time_ms);
@@ -204,10 +187,8 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info,
   report->AddString(StatsReport::kStatsValueNameMediaType, "audio");
 }
 
-void ExtractStats(const cricket::VoiceSenderInfo& info,
-                  StatsReport* report,
-                  bool use_standard_bytes_stats) {
-  ExtractCommonSendProperties(info, report, use_standard_bytes_stats);
+void ExtractStats(const cricket::VoiceSenderInfo& info, StatsReport* report) {
+  ExtractCommonSendProperties(info, report);
 
   SetAudioProcessingStats(report, info.typing_noise_detected,
                           info.apm_statistics);
@@ -265,17 +246,11 @@ void ExtractStats(const cricket::VoiceSenderInfo& info,
   }
 }
 
-void ExtractStats(const cricket::VideoReceiverInfo& info,
-                  StatsReport* report,
-                  bool use_standard_bytes_stats) {
+void ExtractStats(const cricket::VideoReceiverInfo& info, StatsReport* report) {
   ExtractCommonReceiveProperties(info, report);
   report->AddString(StatsReport::kStatsValueNameCodecImplementationName,
                     info.decoder_implementation_name);
-  int64_t bytes_rcvd = info.payload_bytes_rcvd;
-  if (!use_standard_bytes_stats) {
-    bytes_rcvd += info.header_and_padding_bytes_rcvd;
-  }
-  report->AddInt64(StatsReport::kStatsValueNameBytesReceived, bytes_rcvd);
+  report->AddInt64(StatsReport::kStatsValueNameBytesReceived, info.bytes_rcvd);
   if (info.capture_start_ntp_time_ms >= 0) {
     report->AddInt64(StatsReport::kStatsValueNameCaptureStartNtpTimeMs,
                      info.capture_start_ntp_time_ms);
@@ -326,10 +301,8 @@ void ExtractStats(const cricket::VideoReceiverInfo& info,
       webrtc::videocontenttypehelpers::ToString(info.content_type));
 }
 
-void ExtractStats(const cricket::VideoSenderInfo& info,
-                  StatsReport* report,
-                  bool use_standard_bytes_stats) {
-  ExtractCommonSendProperties(info, report, use_standard_bytes_stats);
+void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
+  ExtractCommonSendProperties(info, report);
 
   report->AddString(StatsReport::kStatsValueNameCodecImplementationName,
                     info.encoder_implementation_name);
@@ -444,7 +417,7 @@ void ExtractStatsFromList(
     StatsReport* report =
         collector->PrepareReport(true, ssrc, track_id, transport_id, direction);
     if (report)
-      ExtractStats(d, report, collector->UseStandardBytesStats());
+      ExtractStats(d, report);
 
     if (!d.remote_stats.empty()) {
       report = collector->PrepareReport(false, ssrc, track_id, transport_id,
@@ -497,10 +470,7 @@ const char* AdapterTypeToStatsType(rtc::AdapterType type) {
 }
 
 StatsCollector::StatsCollector(PeerConnectionInternal* pc)
-    : pc_(pc),
-      stats_gathering_started_(0),
-      use_standard_bytes_stats_(
-          webrtc::field_trial::IsEnabled(kUseStandardBytesStats)) {
+    : pc_(pc), stats_gathering_started_(0) {
   RTC_DCHECK(pc_);
 }
 

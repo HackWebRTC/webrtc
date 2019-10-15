@@ -64,7 +64,7 @@ const double kEchoReturnLoss = -65;
 const double kEchoReturnLossEnhancement = 101;
 const double kResidualEchoLikelihood = -1.0f;
 const double kResidualEchoLikelihoodMax = 23.0f;
-const CallSendStatistics kCallStats = {112, 12, 13456, 17890};
+const CallSendStatistics kCallStats = {112, 13456, 17890};
 const ReportBlock kReportBlock = {456, 780, 123, 567, 890, 132, 143, 13354};
 const int kTelephoneEventPayloadType = 123;
 const int kTelephoneEventPayloadFrequency = 65432;
@@ -414,9 +414,7 @@ TEST(AudioSendStreamTest, GetStats) {
   helper.SetupMockForGetStats();
   AudioSendStream::Stats stats = send_stream->GetStats(true);
   EXPECT_EQ(kSsrc, stats.local_ssrc);
-  EXPECT_EQ(kCallStats.payload_bytes_sent, stats.payload_bytes_sent);
-  EXPECT_EQ(kCallStats.header_and_padding_bytes_sent,
-            stats.header_and_padding_bytes_sent);
+  EXPECT_EQ(static_cast<int64_t>(kCallStats.bytesSent), stats.bytes_sent);
   EXPECT_EQ(kCallStats.packetsSent, stats.packets_sent);
   EXPECT_EQ(kReportBlock.cumulative_num_packets_lost, stats.packets_lost);
   EXPECT_EQ(Q8ToFloat(kReportBlock.fraction_lost), stats.fraction_lost);

@@ -2158,10 +2158,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
         stream.second->GetStats(recv_streams_.size() > 0);
     VoiceSenderInfo sinfo;
     sinfo.add_ssrc(stats.local_ssrc);
-    sinfo.payload_bytes_sent = stats.payload_bytes_sent;
-    sinfo.header_and_padding_bytes_sent = stats.header_and_padding_bytes_sent;
-    sinfo.bytes_sent =
-        sinfo.payload_bytes_sent + sinfo.header_and_padding_bytes_sent;
+    sinfo.bytes_sent = stats.bytes_sent;
     sinfo.retransmitted_bytes_sent = stats.retransmitted_bytes_sent;
     sinfo.packets_sent = stats.packets_sent;
     sinfo.retransmitted_packets_sent = stats.retransmitted_packets_sent;
@@ -2204,10 +2201,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     webrtc::AudioReceiveStream::Stats stats = stream.second->GetStats();
     VoiceReceiverInfo rinfo;
     rinfo.add_ssrc(stats.remote_ssrc);
-    rinfo.payload_bytes_rcvd = stats.payload_bytes_rcvd;
-    rinfo.header_and_padding_bytes_rcvd = stats.header_and_padding_bytes_rcvd;
-    rinfo.bytes_rcvd =
-        rinfo.payload_bytes_rcvd + rinfo.header_and_padding_bytes_rcvd;
+    rinfo.bytes_rcvd = stats.bytes_rcvd;
     rinfo.packets_rcvd = stats.packets_rcvd;
     rinfo.fec_packets_received = stats.fec_packets_received;
     rinfo.fec_packets_discarded = stats.fec_packets_discarded;

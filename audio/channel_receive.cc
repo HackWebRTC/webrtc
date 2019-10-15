@@ -43,6 +43,7 @@
 #include "rtc_base/race_checker.h"
 #include "rtc_base/thread_checker.h"
 #include "rtc_base/time_utils.h"
+#include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -55,6 +56,11 @@ constexpr double kAudioSampleDurationSeconds = 0.01;
 // Video Sync.
 constexpr int kVoiceEngineMinMinPlayoutDelayMs = 0;
 constexpr int kVoiceEngineMaxMinPlayoutDelayMs = 10000;
+
+// Field trial which controls whether to report standard-compliant bytes
+// sent/received per stream.  If enabled, padding and headers are not included
+// in bytes sent or received.
+constexpr char kUseStandardBytesStats[] = "WebRTC-UseStandardBytesStats";
 
 RTPHeader CreateRTPHeaderForMediaTransportFrame(
     const MediaTransportEncodedAudioFrame& frame,
@@ -272,6 +278,8 @@ class ChannelReceive : public ChannelReceiveInterface,
   // E2EE Audio Frame Decryption
   rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor_;
   webrtc::CryptoOptions crypto_options_;
+
+  const bool use_standard_bytes_stats_;
 };
 
 void ChannelReceive::OnReceivedPayloadData(
@@ -476,7 +484,9 @@ ChannelReceive::ChannelReceive(
       associated_send_channel_(nullptr),
       media_transport_config_(media_transport_config),
       frame_decryptor_(frame_decryptor),
-      crypto_options_(crypto_options) {
+      crypto_options_(crypto_options),
+      use_standard_bytes_stats_(
+          webrtc::field_trial::IsEnabled(kUseStandardBytesStats)) {
   // TODO(nisse): Use _moduleProcessThreadPtr instead?
   module_process_thread_checker_.Detach();
 
@@ -724,17 +734,16 @@ CallReceiveStatistics ChannelReceive::GetRTCPStatistics() const {
 
   // --- Data counters
   if (statistician) {
-    stats.payload_bytes_rcvd = rtp_stats.packet_counter.payload_bytes;
-
-    stats.header_and_padding_bytes_rcvd =
-        rtp_stats.packet_counter.header_bytes +
-        rtp_stats.packet_counter.padding_bytes;
+    if (use_standard_bytes_stats_) {
+      stats.bytesReceived = rtp_stats.packet_counter.payload_bytes;
+    } else {
+      stats.bytesReceived = rtp_stats.packet_counter.TotalBytes();
+    }
     stats.packetsReceived = rtp_stats.packet_counter.packets;
     stats.last_packet_received_timestamp_ms =
         rtp_stats.last_packet_received_timestamp_ms;
   } else {
-    stats.payload_bytes_rcvd = 0;
-    stats.header_and_padding_bytes_rcvd = 0;
+    stats.bytesReceived = 0;
     stats.packetsReceived = 0;
     stats.last_packet_received_timestamp_ms = absl::nullopt;
   }

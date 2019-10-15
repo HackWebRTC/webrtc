@@ -54,8 +54,7 @@ struct CallReceiveStatistics {
   unsigned int cumulativeLost;
   unsigned int jitterSamples;
   int64_t rttMs;
-  int64_t payload_bytes_rcvd = 0;
-  int64_t header_and_padding_bytes_rcvd = 0;
+  size_t bytesReceived;
   int packetsReceived;
   // The capture ntp time (in local timebase) of the first played out audio
   // frame.
