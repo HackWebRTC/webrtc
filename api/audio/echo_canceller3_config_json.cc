@@ -173,6 +173,8 @@ void Aec3ConfigFromJsonString(absl::string_view json_string,
               &cfg.delay.use_external_delay_estimator);
     ReadParam(section, "downmix_before_delay_estimation",
               &cfg.delay.downmix_before_delay_estimation);
+    ReadParam(section, "log_warning_on_delay_changes",
+              &cfg.delay.log_warning_on_delay_changes);
   }
 
   if (rtc::GetValueFromJsonObject(aec3_root, "filter", &section)) {
@@ -361,7 +363,10 @@ std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config) {
   ost << "\"use_external_delay_estimator\": "
       << (config.delay.use_external_delay_estimator ? "true" : "false") << ",";
   ost << "\"downmix_before_delay_estimation\": "
-      << (config.delay.downmix_before_delay_estimation ? "true" : "false");
+      << (config.delay.downmix_before_delay_estimation ? "true" : "false")
+      << ",";
+  ost << "\"log_warning_on_delay_changes\": "
+      << (config.delay.log_warning_on_delay_changes ? "true" : "false");
   ost << "},";
 
   ost << "\"filter\": {";

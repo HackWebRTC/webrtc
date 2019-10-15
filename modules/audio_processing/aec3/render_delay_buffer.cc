@@ -70,6 +70,7 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   std::unique_ptr<ApmDataDumper> data_dumper_;
   const Aec3Optimization optimization_;
   const EchoCanceller3Config config_;
+  const rtc::LoggingSeverity delay_log_level_;
   size_t down_sampling_factor_;
   const int sub_block_size_;
   BlockBuffer blocks_;
@@ -117,6 +118,9 @@ RenderDelayBufferImpl::RenderDelayBufferImpl(const EchoCanceller3Config& config,
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       optimization_(DetectOptimization()),
       config_(config),
+      delay_log_level_(config_.delay.log_warning_on_delay_changes
+                           ? rtc::LS_WARNING
+                           : rtc::LS_INFO),
       down_sampling_factor_(config.delay.down_sampling_factor),
       sub_block_size_(static_cast<int>(down_sampling_factor_ > 0
                                            ? kBlockSize / down_sampling_factor_
@@ -199,7 +203,7 @@ RenderDelayBuffer::BufferingEvent RenderDelayBufferImpl::Insert(
     } else {
       if (++num_api_calls_in_a_row_ > max_observed_jitter_) {
         max_observed_jitter_ = num_api_calls_in_a_row_;
-        RTC_LOG(LS_INFO)
+        RTC_LOG_V(delay_log_level_)
             << "New max number api jitter observed at render block "
             << render_call_counter_ << ":  " << num_api_calls_in_a_row_
             << " blocks";
@@ -245,7 +249,7 @@ RenderDelayBufferImpl::PrepareCaptureProcessing() {
     } else {
       if (++num_api_calls_in_a_row_ > max_observed_jitter_) {
         max_observed_jitter_ = num_api_calls_in_a_row_;
-        RTC_LOG(LS_INFO)
+        RTC_LOG_V(delay_log_level_)
             << "New max number api jitter observed at capture block "
             << capture_call_counter_ << ":  " << num_api_calls_in_a_row_
             << " blocks";
@@ -256,15 +260,15 @@ RenderDelayBufferImpl::PrepareCaptureProcessing() {
   if (DetectExcessRenderBlocks()) {
     // Too many render blocks compared to capture blocks. Risk of delay ending
     // up before the filter used by the delay estimator.
-    RTC_LOG(LS_INFO) << "Excess render blocks detected at block "
-                     << capture_call_counter_;
+    RTC_LOG_V(delay_log_level_)
+        << "Excess render blocks detected at block " << capture_call_counter_;
     Reset();
     event = BufferingEvent::kRenderOverrun;
   } else if (RenderUnderrun()) {
     // Don't increment the read indices of the low rate buffer if there is a
     // render underrun.
-    RTC_LOG(LS_INFO) << "Render buffer underrun detected at block "
-                     << capture_call_counter_;
+    RTC_LOG_V(delay_log_level_)
+        << "Render buffer underrun detected at block " << capture_call_counter_;
     IncrementReadIndices();
     // Incrementing the buffer index without increasing the low rate buffer
     // index means that the delay is reduced by one.
@@ -293,9 +297,10 @@ bool RenderDelayBufferImpl::AlignFromDelay(size_t delay) {
   if (!external_audio_buffer_delay_verified_after_reset_ &&
       external_audio_buffer_delay_ && delay_) {
     int difference = static_cast<int>(delay) - static_cast<int>(*delay_);
-    RTC_LOG(LS_INFO) << "Mismatch between first estimated delay after reset "
-                        "and externally reported audio buffer delay: "
-                     << difference << " blocks";
+    RTC_LOG_V(delay_log_level_)
+        << "Mismatch between first estimated delay after reset "
+           "and externally reported audio buffer delay: "
+        << difference << " blocks";
     external_audio_buffer_delay_verified_after_reset_ = true;
   }
   if (delay_ && *delay_ == delay) {
@@ -315,7 +320,7 @@ bool RenderDelayBufferImpl::AlignFromDelay(size_t delay) {
 
 void RenderDelayBufferImpl::SetAudioBufferDelay(size_t delay_ms) {
   if (!external_audio_buffer_delay_) {
-    RTC_LOG(LS_INFO)
+    RTC_LOG_V(delay_log_level_)
         << "Receiving a first externally reported audio buffer delay of "
         << delay_ms << " ms.";
   }
@@ -347,7 +352,8 @@ int RenderDelayBufferImpl::ComputeDelay() const {
 
 // Set the read indices according to the delay.
 void RenderDelayBufferImpl::ApplyTotalDelay(int delay) {
-  RTC_LOG(LS_INFO) << "Applying total delay of " << delay << " blocks.";
+  RTC_LOG_V(delay_log_level_)
+      << "Applying total delay of " << delay << " blocks.";
   blocks_.read = blocks_.OffsetIndex(blocks_.write, -delay);
   spectra_.read = spectra_.OffsetIndex(spectra_.write, delay);
   ffts_.read = ffts_.OffsetIndex(ffts_.write, delay);

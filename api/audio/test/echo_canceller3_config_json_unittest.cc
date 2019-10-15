@@ -18,6 +18,7 @@ namespace webrtc {
 TEST(EchoCanceller3JsonHelpers, ToStringAndParseJson) {
   EchoCanceller3Config cfg;
   cfg.delay.down_sampling_factor = 1u;
+  cfg.delay.log_warning_on_delay_changes = true;
   cfg.filter.shadow_initial.length_blocks = 7u;
   cfg.suppressor.normal_tuning.mask_hf.enr_suppress = .5f;
   std::string json_string = Aec3ConfigToJsonString(cfg);
@@ -34,6 +35,8 @@ TEST(EchoCanceller3JsonHelpers, ToStringAndParseJson) {
   // Expect changed values to carry through the transformation.
   EXPECT_EQ(cfg.delay.down_sampling_factor,
             cfg_transformed.delay.down_sampling_factor);
+  EXPECT_EQ(cfg.delay.log_warning_on_delay_changes,
+            cfg_transformed.delay.log_warning_on_delay_changes);
   EXPECT_EQ(cfg.filter.shadow_initial.length_blocks,
             cfg_transformed.filter.shadow_initial.length_blocks);
   EXPECT_EQ(cfg.suppressor.normal_tuning.mask_hf.enr_suppress,

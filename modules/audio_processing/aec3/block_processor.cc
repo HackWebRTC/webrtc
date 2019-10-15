@@ -171,8 +171,11 @@ void BlockProcessorImpl::ProcessCapture(
       bool delay_change =
           render_buffer_->AlignFromDelay(estimated_delay_->delay);
       if (delay_change) {
-        RTC_LOG(LS_INFO) << "Delay changed to " << estimated_delay_->delay
-                         << " at block " << capture_call_counter_;
+        rtc::LoggingSeverity log_level =
+            config_.delay.log_warning_on_delay_changes ? rtc::LS_WARNING
+                                                       : rtc::LS_INFO;
+        RTC_LOG_V(log_level) << "Delay changed to " << estimated_delay_->delay
+                             << " at block " << capture_call_counter_;
         echo_path_variability.delay_change =
             EchoPathVariability::DelayAdjustment::kNewDetectedDelay;
       }

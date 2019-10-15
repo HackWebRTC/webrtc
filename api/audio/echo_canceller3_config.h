@@ -48,6 +48,7 @@ struct RTC_EXPORT EchoCanceller3Config {
     } delay_selection_thresholds = {5, 20};
     bool use_external_delay_estimator = false;
     bool downmix_before_delay_estimation = true;
+    bool log_warning_on_delay_changes = false;
   } delay;
 
   struct Filter {
