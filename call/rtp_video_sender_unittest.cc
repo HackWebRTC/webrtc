@@ -629,19 +629,22 @@ TEST(RtpVideoSenderTest, EarlyRetransmits) {
 TEST(RtpVideoSenderTest, CanSetZeroBitrateWithOverhead) {
   test::ScopedFieldTrials trials("WebRTC-SendSideBwe-WithOverhead/Enabled/");
   RtpVideoSenderTestFixture test({kSsrc1}, {kRtxSsrc1}, kPayloadType, {});
+  BitrateAllocationUpdate update;
+  update.target_bitrate = DataRate::Zero();
+  update.packet_loss_ratio = 0;
+  update.round_trip_time = TimeDelta::Zero();
 
-  test.router()->OnBitrateUpdated(/*bitrate_bps*/ 0,
-                                  /*fraction_loss*/ 0,
-                                  /*rtt*/ 0,
-                                  /*framerate*/ 0);
+  test.router()->OnBitrateUpdated(update, /*framerate*/ 0);
 }
 
 TEST(RtpVideoSenderTest, CanSetZeroBitrateWithoutOverhead) {
   RtpVideoSenderTestFixture test({kSsrc1}, {kRtxSsrc1}, kPayloadType, {});
 
-  test.router()->OnBitrateUpdated(/*bitrate_bps*/ 0,
-                                  /*fraction_loss*/ 0,
-                                  /*rtt*/ 0,
-                                  /*framerate*/ 0);
+  BitrateAllocationUpdate update;
+  update.target_bitrate = DataRate::Zero();
+  update.packet_loss_ratio = 0;
+  update.round_trip_time = TimeDelta::Zero();
+
+  test.router()->OnBitrateUpdated(update, /*framerate*/ 0);
 }
 }  // namespace webrtc

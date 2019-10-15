@@ -647,10 +647,7 @@ uint32_t VideoSendStreamImpl::OnBitrateUpdated(BitrateAllocationUpdate update) {
     update.stable_target_bitrate = update.target_bitrate;
   }
 
-  rtp_video_sender_->OnBitrateUpdated(
-      update.target_bitrate.bps(),
-      rtc::dchecked_cast<uint8_t>(update.packet_loss_ratio * 256),
-      update.round_trip_time.ms(), stats_proxy_->GetSendFrameRate());
+  rtp_video_sender_->OnBitrateUpdated(update, stats_proxy_->GetSendFrameRate());
   encoder_target_rate_bps_ = rtp_video_sender_->GetPayloadBitrateBps();
   const uint32_t protection_bitrate_bps =
       rtp_video_sender_->GetProtectionBitrateBps();
