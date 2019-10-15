@@ -204,7 +204,7 @@ template <class T>
 std::unique_ptr<T> NewObjectCreatedOnTaskQueue() {
   std::unique_ptr<T> obj;
   webrtc::TaskQueueForTest queue("NewObjectCreatedOnTaskQueue");
-  queue.SendTask([&] { obj = std::make_unique<T>(); });
+  queue.SendTask([&] { obj = std::make_unique<T>(); }, RTC_FROM_HERE);
   return obj;
 }
 
@@ -226,11 +226,13 @@ TEST(WeakPtrTest, WeakPtrInitiateAndUseOnDifferentThreads) {
   // Create weak ptr on main thread
   WeakPtr<Target> weak_ptr = target->factory.GetWeakPtr();
   webrtc::TaskQueueForTest queue("queue");
-  queue.SendTask([&] {
-    // Dereference and invalide weak_ptr on another thread.
-    EXPECT_EQ(weak_ptr.get(), target.get());
-    target.reset();
-  });
+  queue.SendTask(
+      [&] {
+        // Dereference and invalide weak_ptr on another thread.
+        EXPECT_EQ(weak_ptr.get(), target.get());
+        target.reset();
+      },
+      RTC_FROM_HERE);
 }
 
 }  // namespace rtc

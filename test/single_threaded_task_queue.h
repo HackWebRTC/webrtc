@@ -13,12 +13,14 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <utility>
 
 #include "api/task_queue/task_queue_base.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/event.h"
 #include "rtc_base/platform_thread.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/thread_checker.h"
 
@@ -61,7 +63,12 @@ class DEPRECATED_SingleThreadedTaskQueueForTesting : public TaskQueueBase {
 
   // Send one task to the queue. The function does not return until the task
   // has finished executing. No support for canceling the task.
-  void SendTask(Task task);
+  // TODO(bugs.webrtc.org/10933): Remove this function in favor of free SendTask
+  // to reduce direct mentioning of the SingleThreadedTaskQueueForTesting class.
+  template <typename Closure>
+  void SendTask(Closure&& task) {
+    ::webrtc::SendTask(this, std::forward<Closure>(task), RTC_FROM_HERE);
+  }
 
   // Given an identifier to the task, attempts to eject it from the queue.
   // Returns true if the task was found and cancelled. Failure possible

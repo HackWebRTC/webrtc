@@ -320,7 +320,7 @@ void CallClient::AddExtensions(std::vector<RtpExtension> extensions) {
 
 void CallClient::SendTask(std::function<void()> task) {
   time_controller_->InvokeWithControlledYield(
-      [&] { task_queue_.SendTask(std::move(task)); });
+      [&] { task_queue_.SendTask(std::move(task), RTC_FROM_HERE); });
 }
 
 CallClientPair::~CallClientPair() = default;

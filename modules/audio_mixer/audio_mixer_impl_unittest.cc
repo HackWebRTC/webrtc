@@ -374,7 +374,8 @@ TEST(AudioMixer, RampedOutSourcesShouldNotBeMarkedMixed) {
 TEST(AudioMixer, ConstructFromOtherThread) {
   TaskQueueForTest init_queue("init");
   rtc::scoped_refptr<AudioMixer> mixer;
-  init_queue.SendTask([&mixer]() { mixer = AudioMixerImpl::Create(); });
+  init_queue.SendTask([&mixer]() { mixer = AudioMixerImpl::Create(); },
+                      RTC_FROM_HERE);
 
   MockMixerAudioSource participant;
   EXPECT_CALL(participant, PreferredSampleRate())
@@ -384,7 +385,8 @@ TEST(AudioMixer, ConstructFromOtherThread) {
 
   TaskQueueForTest participant_queue("participant");
   participant_queue.SendTask(
-      [&mixer, &participant]() { mixer->AddSource(&participant); });
+      [&mixer, &participant]() { mixer->AddSource(&participant); },
+      RTC_FROM_HERE);
 
   EXPECT_CALL(participant, GetAudioFrameWithInfo(kDefaultSampleRateHz, _))
       .Times(Exactly(1));

@@ -552,7 +552,8 @@ TEST(AudioSendStreamTest, DoesNotPassHigherBitrateThanMaxBitrate) {
   update.packet_loss_ratio = 0;
   update.round_trip_time = TimeDelta::ms(50);
   update.bwe_period = TimeDelta::ms(6000);
-  helper.worker()->SendTask([&] { send_stream->OnBitrateUpdated(update); });
+  helper.worker()->SendTask([&] { send_stream->OnBitrateUpdated(update); },
+                            RTC_FROM_HERE);
 }
 
 TEST(AudioSendStreamTest, SSBweTargetInRangeRespected) {
@@ -565,7 +566,8 @@ TEST(AudioSendStreamTest, SSBweTargetInRangeRespected) {
                   Eq(DataRate::bps(helper.config().max_bitrate_bps - 5000)))));
   BitrateAllocationUpdate update;
   update.target_bitrate = DataRate::bps(helper.config().max_bitrate_bps - 5000);
-  helper.worker()->SendTask([&] { send_stream->OnBitrateUpdated(update); });
+  helper.worker()->SendTask([&] { send_stream->OnBitrateUpdated(update); },
+                            RTC_FROM_HERE);
 }
 
 TEST(AudioSendStreamTest, SSBweFieldTrialMinRespected) {
@@ -580,7 +582,8 @@ TEST(AudioSendStreamTest, SSBweFieldTrialMinRespected) {
                                 Eq(DataRate::kbps(6)))));
   BitrateAllocationUpdate update;
   update.target_bitrate = DataRate::kbps(1);
-  helper.worker()->SendTask([&] { send_stream->OnBitrateUpdated(update); });
+  helper.worker()->SendTask([&] { send_stream->OnBitrateUpdated(update); },
+                            RTC_FROM_HERE);
 }
 
 TEST(AudioSendStreamTest, SSBweFieldTrialMaxRespected) {
@@ -595,7 +598,8 @@ TEST(AudioSendStreamTest, SSBweFieldTrialMaxRespected) {
                                 Eq(DataRate::kbps(64)))));
   BitrateAllocationUpdate update;
   update.target_bitrate = DataRate::kbps(128);
-  helper.worker()->SendTask([&] { send_stream->OnBitrateUpdated(update); });
+  helper.worker()->SendTask([&] { send_stream->OnBitrateUpdated(update); },
+                            RTC_FROM_HERE);
 }
 
 TEST(AudioSendStreamTest, SSBweWithOverhead) {
@@ -614,7 +618,8 @@ TEST(AudioSendStreamTest, SSBweWithOverhead) {
                   &BitrateAllocationUpdate::target_bitrate, Eq(bitrate))));
   BitrateAllocationUpdate update;
   update.target_bitrate = bitrate;
-  helper.worker()->SendTask([&] { send_stream->OnBitrateUpdated(update); });
+  helper.worker()->SendTask([&] { send_stream->OnBitrateUpdated(update); },
+                            RTC_FROM_HERE);
 }
 
 TEST(AudioSendStreamTest, SSBweWithOverheadMinRespected) {
@@ -633,7 +638,8 @@ TEST(AudioSendStreamTest, SSBweWithOverheadMinRespected) {
                   &BitrateAllocationUpdate::target_bitrate, Eq(bitrate))));
   BitrateAllocationUpdate update;
   update.target_bitrate = DataRate::kbps(1);
-  helper.worker()->SendTask([&] { send_stream->OnBitrateUpdated(update); });
+  helper.worker()->SendTask([&] { send_stream->OnBitrateUpdated(update); },
+                            RTC_FROM_HERE);
 }
 
 TEST(AudioSendStreamTest, SSBweWithOverheadMaxRespected) {
@@ -652,7 +658,8 @@ TEST(AudioSendStreamTest, SSBweWithOverheadMaxRespected) {
                   &BitrateAllocationUpdate::target_bitrate, Eq(bitrate))));
   BitrateAllocationUpdate update;
   update.target_bitrate = DataRate::kbps(128);
-  helper.worker()->SendTask([&] { send_stream->OnBitrateUpdated(update); });
+  helper.worker()->SendTask([&] { send_stream->OnBitrateUpdated(update); },
+                            RTC_FROM_HERE);
 }
 
 TEST(AudioSendStreamTest, ProbingIntervalOnBitrateUpdated) {
@@ -667,7 +674,8 @@ TEST(AudioSendStreamTest, ProbingIntervalOnBitrateUpdated) {
   update.packet_loss_ratio = 0;
   update.round_trip_time = TimeDelta::ms(50);
   update.bwe_period = TimeDelta::ms(5000);
-  helper.worker()->SendTask([&] { send_stream->OnBitrateUpdated(update); });
+  helper.worker()->SendTask([&] { send_stream->OnBitrateUpdated(update); },
+                            RTC_FROM_HERE);
 }
 
 // Test that AudioSendStream doesn't recreate the encoder unnecessarily.

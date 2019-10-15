@@ -138,16 +138,18 @@ EmulatedRoute* NetworkEmulationManagerImpl::CreateRoute(
 
 void NetworkEmulationManagerImpl::ClearRoute(EmulatedRoute* route) {
   RTC_CHECK(route->active) << "Route already cleared";
-  task_queue_.SendTask([route]() {
-    // Remove receiver from intermediate nodes.
-    for (auto* node : route->via_nodes) {
-      node->router()->RemoveReceiver(route->to->GetPeerLocalAddress());
-    }
-    // Remove destination endpoint from source endpoint's router.
-    route->from->router()->RemoveReceiver(route->to->GetPeerLocalAddress());
+  task_queue_.SendTask(
+      [route]() {
+        // Remove receiver from intermediate nodes.
+        for (auto* node : route->via_nodes) {
+          node->router()->RemoveReceiver(route->to->GetPeerLocalAddress());
+        }
+        // Remove destination endpoint from source endpoint's router.
+        route->from->router()->RemoveReceiver(route->to->GetPeerLocalAddress());
 
-    route->active = false;
-  });
+        route->active = false;
+      },
+      RTC_FROM_HERE);
 }
 
 TrafficRoute* NetworkEmulationManagerImpl::CreateTrafficRoute(

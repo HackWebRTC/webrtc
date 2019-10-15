@@ -379,12 +379,14 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
 
   RTC_LOG(INFO) << "Test is done, initiating disconnect sequence.";
 
-  task_queue_->SendTask([&stats_poller, this]() {
-    RTC_DCHECK_RUN_ON(task_queue_.get());
-    stats_polling_task_.Stop();
-    // Get final end-of-call stats.
-    stats_poller.PollStatsAndNotifyObservers();
-  });
+  task_queue_->SendTask(
+      [&stats_poller, this]() {
+        RTC_DCHECK_RUN_ON(task_queue_.get());
+        stats_polling_task_.Stop();
+        // Get final end-of-call stats.
+        stats_poller.PollStatsAndNotifyObservers();
+      },
+      RTC_FROM_HERE);
 
   // We need to detach AEC dumping from peers, because dump uses |task_queue_|
   // inside.
@@ -393,12 +395,14 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   // Stop all client started tasks on task queue to prevent their access to any
   // call related objects after these objects will be destroyed during call tear
   // down.
-  task_queue_->SendTask([this]() {
-    rtc::CritScope crit(&lock_);
-    for (auto& handle : repeating_task_handles_) {
-      handle.Stop();
-    }
-  });
+  task_queue_->SendTask(
+      [this]() {
+        rtc::CritScope crit(&lock_);
+        for (auto& handle : repeating_task_handles_) {
+          handle.Stop();
+        }
+      },
+      RTC_FROM_HERE);
   // Tear down the call.
   signaling_thread->Invoke<void>(
       RTC_FROM_HERE,

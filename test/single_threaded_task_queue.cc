@@ -67,19 +67,6 @@ DEPRECATED_SingleThreadedTaskQueueForTesting::PostDelayed(
   return id;
 }
 
-void DEPRECATED_SingleThreadedTaskQueueForTesting::SendTask(Task task) {
-  RTC_DCHECK(!IsCurrent());
-  rtc::Event done;
-  if (PostTask([&task, &done]() {
-        task();
-        done.Set();
-      }) == kInvalidTaskId) {
-    return;
-  }
-  // Give up after 30 seconds, warn after 10.
-  RTC_CHECK(done.Wait(30000, 10000));
-}
-
 bool DEPRECATED_SingleThreadedTaskQueueForTesting::CancelTask(TaskId task_id) {
   rtc::CritScope lock(&cs_);
   for (auto it = tasks_.begin(); it != tasks_.end(); it++) {

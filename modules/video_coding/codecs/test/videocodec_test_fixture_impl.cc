@@ -447,7 +447,7 @@ void VideoCodecTestFixtureImpl::ProcessAllFrames(
   }
 
   // Wait until we know that the last frame has been sent for encode.
-  task_queue->SendTask([] {});
+  task_queue->SendTask([] {}, RTC_FROM_HERE);
 
   // Give the VideoProcessor pipeline some time to process the last frame,
   // and then release the codecs.
@@ -686,22 +686,26 @@ void VideoCodecTestFixtureImpl::SetUpAndInitObjects(
 
   cpu_process_time_.reset(new CpuProcessTime(config_));
 
-  task_queue->SendTask([this]() {
-    CreateEncoderAndDecoder();
-    processor_ = std::make_unique<VideoProcessor>(
-        encoder_.get(), &decoders_, source_frame_reader_.get(), config_,
-        &stats_, &encoded_frame_writers_,
-        decoded_frame_writers_.empty() ? nullptr : &decoded_frame_writers_);
-  });
+  task_queue->SendTask(
+      [this]() {
+        CreateEncoderAndDecoder();
+        processor_ = std::make_unique<VideoProcessor>(
+            encoder_.get(), &decoders_, source_frame_reader_.get(), config_,
+            &stats_, &encoded_frame_writers_,
+            decoded_frame_writers_.empty() ? nullptr : &decoded_frame_writers_);
+      },
+      RTC_FROM_HERE);
 }
 
 void VideoCodecTestFixtureImpl::ReleaseAndCloseObjects(
     TaskQueueForTest* task_queue) {
-  task_queue->SendTask([this]() {
-    processor_.reset();
-    // The VideoProcessor must be destroyed before the codecs.
-    DestroyEncoderAndDecoder();
-  });
+  task_queue->SendTask(
+      [this]() {
+        processor_.reset();
+        // The VideoProcessor must be destroyed before the codecs.
+        DestroyEncoderAndDecoder();
+      },
+      RTC_FROM_HERE);
 
   source_frame_reader_->Close();
 
@@ -724,10 +728,12 @@ void VideoCodecTestFixtureImpl::PrintSettings(
   RTC_LOG(LS_INFO) << "==> Codec names";
   std::string encoder_name;
   std::string decoder_name;
-  task_queue->SendTask([this, &encoder_name, &decoder_name] {
-    encoder_name = encoder_->GetEncoderInfo().implementation_name;
-    decoder_name = decoders_.at(0)->ImplementationName();
-  });
+  task_queue->SendTask(
+      [this, &encoder_name, &decoder_name] {
+        encoder_name = encoder_->GetEncoderInfo().implementation_name;
+        decoder_name = decoders_.at(0)->ImplementationName();
+      },
+      RTC_FROM_HERE);
   RTC_LOG(LS_INFO) << "enc_impl_name: " << encoder_name;
   RTC_LOG(LS_INFO) << "dec_impl_name: " << decoder_name;
 }
