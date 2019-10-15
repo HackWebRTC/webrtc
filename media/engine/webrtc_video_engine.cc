@@ -2405,9 +2405,6 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
       info.report_block_datas.push_back(stream_stats.report_block_data.value());
     }
   }
-  info.bytes_sent =
-      info.payload_bytes_sent + info.header_and_padding_bytes_sent;
-
   if (!stats.substreams.empty()) {
     // TODO(pbos): Report fraction lost per SSRC.
     webrtc::VideoSendStream::StreamStats first_stream_stats =
@@ -2799,8 +2796,6 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
   info.header_and_padding_bytes_rcvd =
       stats.rtp_stats.packet_counter.header_bytes +
       stats.rtp_stats.packet_counter.padding_bytes;
-  info.bytes_rcvd =
-      info.payload_bytes_rcvd + info.header_and_padding_bytes_rcvd;
   info.packets_rcvd = stats.rtp_stats.packet_counter.packets;
   info.packets_lost = stats.rtp_stats.packets_lost;
 

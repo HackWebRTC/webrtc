@@ -43,9 +43,6 @@ class AudioSendStream {
 
     // TODO(solenberg): Harmonize naming and defaults with receive stream stats.
     uint32_t local_ssrc = 0;
-    // TODO(nisse): Sum of below two values. Deprecated, delete as soon as
-    // downstream applications are updated.
-    int64_t bytes_sent;
     int64_t payload_bytes_sent = 0;
     int64_t header_and_padding_bytes_sent = 0;
     // https://w3c.github.io/webrtc-stats/#dom-rtcoutboundrtpstreamstats-retransmittedbytessent

@@ -36,9 +36,6 @@ class AudioReceiveStream {
     Stats();
     ~Stats();
     uint32_t remote_ssrc = 0;
-    // TODO(nisse): Sum of below two values. Deprecated, delete as soon as
-    // downstream applications are updated.
-    int64_t bytes_rcvd;
     int64_t payload_bytes_rcvd = 0;
     int64_t header_and_padding_bytes_rcvd = 0;
     uint32_t packets_rcvd = 0;

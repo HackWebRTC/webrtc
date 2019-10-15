@@ -443,8 +443,6 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
   stats.payload_bytes_sent = call_stats.payload_bytes_sent;
   stats.header_and_padding_bytes_sent =
       call_stats.header_and_padding_bytes_sent;
-  stats.bytes_sent =
-      stats.payload_bytes_sent + stats.header_and_padding_bytes_sent;
   stats.retransmitted_bytes_sent = call_stats.retransmitted_bytes_sent;
   stats.packets_sent = call_stats.packetsSent;
   stats.retransmitted_packets_sent = call_stats.retransmitted_packets_sent;
