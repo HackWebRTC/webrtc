@@ -203,7 +203,7 @@ void ResidualEchoEstimator::Estimate(
       std::array<float, kFftLengthBy2Plus1> X2;
       EchoGeneratingPower(num_render_channels_,
                           render_buffer.GetSpectrumBuffer(), config_.echo_model,
-                          aec_state.FilterDelayBlocks(), X2);
+                          aec_state.MinDirectPathFilterDelay(), X2);
       if (!aec_state.UseStationarityProperties()) {
         ApplyNoiseGate(config_.echo_model, X2);
       }
@@ -288,9 +288,10 @@ void ResidualEchoEstimator::AddReverb(
   const size_t num_capture_channels = R2.size();
 
   // Choose reverb partition based on what type of echo power model is used.
-  const size_t first_reverb_partition = reverb_type == ReverbType::kLinear
-                                            ? aec_state.FilterLengthBlocks() + 1
-                                            : aec_state.FilterDelayBlocks() + 1;
+  const size_t first_reverb_partition =
+      reverb_type == ReverbType::kLinear
+          ? aec_state.FilterLengthBlocks() + 1
+          : aec_state.MinDirectPathFilterDelay() + 1;
 
   // Compute render power for the reverb.
   std::array<float, kFftLengthBy2Plus1> render_power_data;

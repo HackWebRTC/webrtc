@@ -135,7 +135,7 @@ std::vector<float> RunSubtractorTest(
     }
     render_delay_buffer->PrepareCaptureProcessing();
     render_signal_analyzer.Update(*render_delay_buffer->GetRenderBuffer(),
-                                  aec_state.FilterDelayBlocks());
+                                  aec_state.MinDirectPathFilterDelay());
 
     // Handle echo path changes.
     if (std::find(blocks_with_echo_path_changes.begin(),

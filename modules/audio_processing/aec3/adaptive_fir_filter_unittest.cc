@@ -441,7 +441,7 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
         auto* const render_buffer = render_delay_buffer->GetRenderBuffer();
 
         render_signal_analyzer.Update(*render_buffer,
-                                      aec_state.FilterDelayBlocks());
+                                      aec_state.MinDirectPathFilterDelay());
 
         filter.Filter(*render_buffer, &S);
         fft.Ifft(S, &s_scratch);

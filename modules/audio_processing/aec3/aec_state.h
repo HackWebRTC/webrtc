@@ -91,8 +91,8 @@ class AecState {
   float ErlTimeDomain() const { return erl_estimator_.ErlTimeDomain(); }
 
   // Returns the delay estimate based on the linear filter.
-  int FilterDelayBlocks() const {
-    return delay_state_.DirectPathFilterDelays()[0];
+  int MinDirectPathFilterDelay() const {
+    return delay_state_.MinDirectPathFilterDelay();
   }
 
   // Returns whether the capture signal is saturated.
@@ -194,6 +194,10 @@ class AecState {
       return filter_delays_blocks_;
     }
 
+    // Returns the minimum delay among the direct path delays relative to the
+    // beginning of the filter
+    int MinDirectPathFilterDelay() const { return min_filter_delay_; }
+
     // Updates the delay estimates based on new data.
     void Update(
         rtc::ArrayView<const int> analyzer_filter_delay_estimates_blocks,
@@ -204,6 +208,7 @@ class AecState {
     const int delay_headroom_samples_;
     bool external_delay_reported_ = false;
     std::vector<int> filter_delays_blocks_;
+    int min_filter_delay_ = 0;
     absl::optional<DelayEstimate> external_delay_;
   } delay_state_;
 
@@ -308,7 +313,7 @@ class AecState {
   absl::optional<DelayEstimate> external_delay_;
   EchoAudibility echo_audibility_;
   ReverbModelEstimator reverb_model_estimator_;
-  ReverbModel reverb_model_;
+  ReverbModel avg_render_reverb_;
   std::vector<SubtractorOutputAnalyzer> subtractor_output_analyzers_;
 };
 
