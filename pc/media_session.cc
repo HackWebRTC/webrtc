@@ -1357,30 +1357,25 @@ void MediaSessionDescriptionFactory::set_audio_codecs(
   ComputeAudioCodecsIntersectionAndUnion();
 }
 
-static void AddUnifiedPlanExtensions(RtpHeaderExtensions* extensions) {
+static void RemoveUnifiedPlanExtensions(RtpHeaderExtensions* extensions) {
   RTC_DCHECK(extensions);
 
-  rtc::UniqueNumberGenerator<int> unique_id_generator;
-  unique_id_generator.AddKnownId(0);  // The first valid RTP extension ID is 1.
-  for (const webrtc::RtpExtension& extension : *extensions) {
-    const bool collision_free = unique_id_generator.AddKnownId(extension.id);
-    RTC_DCHECK(collision_free);
-  }
-
-  // Unified Plan also offers the MID and RID header extensions.
-  extensions->push_back(webrtc::RtpExtension(webrtc::RtpExtension::kMidUri,
-                                             unique_id_generator()));
-  extensions->push_back(webrtc::RtpExtension(webrtc::RtpExtension::kRidUri,
-                                             unique_id_generator()));
-  extensions->push_back(webrtc::RtpExtension(
-      webrtc::RtpExtension::kRepairedRidUri, unique_id_generator()));
+  extensions->erase(
+      std::remove_if(extensions->begin(), extensions->end(),
+                     [](auto extension) {
+                       return extension.uri == webrtc::RtpExtension::kMidUri ||
+                              extension.uri == webrtc::RtpExtension::kRidUri ||
+                              extension.uri ==
+                                  webrtc::RtpExtension::kRepairedRidUri;
+                     }),
+      extensions->end());
 }
 
 RtpHeaderExtensions
 MediaSessionDescriptionFactory::audio_rtp_header_extensions() const {
   RtpHeaderExtensions extensions = audio_rtp_extensions_;
-  if (is_unified_plan_) {
-    AddUnifiedPlanExtensions(&extensions);
+  if (!is_unified_plan_) {
+    RemoveUnifiedPlanExtensions(&extensions);
   }
 
   return extensions;
@@ -1389,8 +1384,8 @@ MediaSessionDescriptionFactory::audio_rtp_header_extensions() const {
 RtpHeaderExtensions
 MediaSessionDescriptionFactory::video_rtp_header_extensions() const {
   RtpHeaderExtensions extensions = video_rtp_extensions_;
-  if (is_unified_plan_) {
-    AddUnifiedPlanExtensions(&extensions);
+  if (!is_unified_plan_) {
+    RemoveUnifiedPlanExtensions(&extensions);
   }
 
   return extensions;

@@ -531,6 +531,12 @@ RtpCapabilities WebRtcVoiceEngine::GetCapabilities() const {
       webrtc::RtpExtension(webrtc::RtpExtension::kAbsSendTimeUri, id++));
   capabilities.header_extensions.push_back(webrtc::RtpExtension(
       webrtc::RtpExtension::kTransportSequenceNumberUri, id++));
+  capabilities.header_extensions.push_back(
+      webrtc::RtpExtension(webrtc::RtpExtension::kMidUri, id++));
+  capabilities.header_extensions.push_back(
+      webrtc::RtpExtension(webrtc::RtpExtension::kRidUri, id++));
+  capabilities.header_extensions.push_back(
+      webrtc::RtpExtension(webrtc::RtpExtension::kRepairedRidUri, id++));
   return capabilities;
 }
 

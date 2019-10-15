@@ -4441,50 +4441,6 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestSetAudioCodecs) {
   EXPECT_EQ(no_codecs, sf.audio_sendrecv_codecs());
 }
 
-// Checks that the RID extensions are added to the video RTP header extensions.
-// Note: This test somewhat shows that |set_video_rtp_header_extensions()| is
-// not very well defined, as calling set() and immediately get() will yield
-// an object that is not semantically equivalent to the set object.
-TEST_F(MediaSessionDescriptionFactoryTest, VideoHasRidExtensionsInUnifiedPlan) {
-  TransportDescriptionFactory tdf;
-  UniqueRandomIdGenerator ssrc_generator;
-  MediaSessionDescriptionFactory sf(&tdf, &ssrc_generator);
-  sf.set_is_unified_plan(true);
-  cricket::RtpHeaderExtensions extensions;
-  sf.set_video_rtp_header_extensions(extensions);
-  cricket::RtpHeaderExtensions result = sf.video_rtp_header_extensions();
-  // Check to see that RID extensions were added to the extension list
-  EXPECT_GE(result.size(), 2u);
-  EXPECT_THAT(result, Contains(Field("uri", &RtpExtension::uri,
-                                     RtpExtension::kMidUri)));
-  EXPECT_THAT(result, Contains(Field("uri", &RtpExtension::uri,
-                                     RtpExtension::kRidUri)));
-  EXPECT_THAT(result, Contains(Field("uri", &RtpExtension::uri,
-                                     RtpExtension::kRepairedRidUri)));
-}
-
-// Checks that the RID extensions are added to the audio RTP header extensions.
-// Note: This test somewhat shows that |set_audio_rtp_header_extensions()| is
-// not very well defined, as calling set() and immediately get() will yield
-// an object that is not semantically equivalent to the set object.
-TEST_F(MediaSessionDescriptionFactoryTest, AudioHasRidExtensionsInUnifiedPlan) {
-  TransportDescriptionFactory tdf;
-  UniqueRandomIdGenerator ssrc_generator;
-  MediaSessionDescriptionFactory sf(&tdf, &ssrc_generator);
-  sf.set_is_unified_plan(true);
-  cricket::RtpHeaderExtensions extensions;
-  sf.set_audio_rtp_header_extensions(extensions);
-  cricket::RtpHeaderExtensions result = sf.audio_rtp_header_extensions();
-  // Check to see that RID extensions were added to the extension list
-  EXPECT_GE(result.size(), 2u);
-  EXPECT_THAT(result, Contains(Field("uri", &RtpExtension::uri,
-                                     RtpExtension::kMidUri)));
-  EXPECT_THAT(result, Contains(Field("uri", &RtpExtension::uri,
-                                     RtpExtension::kRidUri)));
-  EXPECT_THAT(result, Contains(Field("uri", &RtpExtension::uri,
-                                     RtpExtension::kRepairedRidUri)));
-}
-
 namespace {
 // Compare the two vectors of codecs ignoring the payload type.
 template <class Codec>
