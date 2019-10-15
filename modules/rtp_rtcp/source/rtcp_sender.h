@@ -85,7 +85,9 @@ class RTCPSender {
 
   void SetRtpClockRate(int8_t payload_type, int rtp_clock_rate_hz);
 
-  uint32_t SSRC() const { return ssrc_; }
+  uint32_t SSRC() const;
+
+  void SetSSRC(uint32_t ssrc);
 
   void SetRemoteSSRC(uint32_t ssrc);
 
@@ -185,7 +187,6 @@ class RTCPSender {
 
  private:
   const bool audio_;
-  const uint32_t ssrc_;
   Clock* const clock_;
   Random random_ RTC_GUARDED_BY(critical_section_rtcp_sender_);
   RtcpMode method_ RTC_GUARDED_BY(critical_section_rtcp_sender_);
@@ -204,6 +205,7 @@ class RTCPSender {
   uint32_t last_rtp_timestamp_ RTC_GUARDED_BY(critical_section_rtcp_sender_);
   int64_t last_frame_capture_time_ms_
       RTC_GUARDED_BY(critical_section_rtcp_sender_);
+  uint32_t ssrc_ RTC_GUARDED_BY(critical_section_rtcp_sender_);
   // SSRC that we receive on our RTP channel
   uint32_t remote_ssrc_ RTC_GUARDED_BY(critical_section_rtcp_sender_);
   std::string cname_ RTC_GUARDED_BY(critical_section_rtcp_sender_);
