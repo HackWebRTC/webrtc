@@ -338,7 +338,6 @@ SimulationSettings CreateSettings() {
   if (absl::GetFlag(FLAGS_all_default)) {
     settings.use_le = true;
     settings.use_vad = true;
-    settings.use_ie = false;
     settings.use_ts = true;
     settings.use_ns = true;
     settings.use_hpf = true;

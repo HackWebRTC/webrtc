@@ -30,7 +30,6 @@
 #include "modules/audio_processing/include/audio_generator.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "modules/audio_processing/include/config.h"
-#include "modules/audio_processing/include/gain_control.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/ref_count.h"
@@ -48,7 +47,6 @@ class StreamConfig;
 class ProcessingConfig;
 
 class EchoDetector;
-class GainControl;
 class NoiseSuppression;
 class CustomAudioAnalyzer;
 class CustomProcessing;
@@ -190,18 +188,23 @@ struct ExperimentalNs {
 // AudioProcessing::Config config;
 // config.echo_canceller.enabled = true;
 // config.echo_canceller.mobile_mode = false;
-// config.high_pass_filter.enabled = true;
+//
+// config.gain_controller1.enabled = true;
+// config.gain_controller1.mode =
+// AudioProcessing::Config::GainController1::kAdaptiveAnalog;
+// config.gain_controller1.analog_level_minimum = 0;
+// config.gain_controller1.analog_level_maximum = 255;
+//
 // config.gain_controller2.enabled = true;
+//
+// config.high_pass_filter.enabled = true;
+//
+// config.voice_detection.enabled = true;
+//
 // apm->ApplyConfig(config)
 //
 // apm->noise_reduction()->set_level(kHighSuppression);
 // apm->noise_reduction()->Enable(true);
-//
-// apm->gain_control()->set_analog_level_limits(0, 255);
-// apm->gain_control()->set_mode(kAdaptiveAnalog);
-// apm->gain_control()->Enable(true);
-//
-// apm->voice_detection()->Enable(true);
 //
 // // Start a voice call...
 //
@@ -211,12 +214,12 @@ struct ExperimentalNs {
 // // ... Capture frame arrives from the audio HAL ...
 // // Call required set_stream_ functions.
 // apm->set_stream_delay_ms(delay_ms);
-// apm->gain_control()->set_stream_analog_level(analog_level);
+// apm->set_stream_analog_level(analog_level);
 //
 // apm->ProcessStream(capture_frame);
 //
 // // Call required stream_ functions.
-// analog_level = apm->gain_control()->stream_analog_level();
+// analog_level = apm->recommended_stream_analog_level();
 // has_voice = apm->stream_has_voice();
 //
 // // Repeate render and capture processing for the duration of the call...
@@ -683,7 +686,6 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
   // These provide access to the component interfaces and should never return
   // NULL. The pointers will be valid for the lifetime of the APM instance.
   // The memory for these objects is entirely managed internally.
-  virtual GainControl* gain_control() const = 0;
   virtual NoiseSuppression* noise_suppression() const = 0;
 
   // Returns the last applied configuration.

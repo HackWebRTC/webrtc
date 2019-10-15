@@ -28,7 +28,6 @@
 #include "modules/audio_processing/common.h"
 #include "modules/audio_processing/echo_cancellation_impl.h"
 #include "modules/audio_processing/echo_control_mobile_impl.h"
-#include "modules/audio_processing/gain_control_config_proxy.h"
 #include "modules/audio_processing/gain_control_for_experimental_agc.h"
 #include "modules/audio_processing/gain_control_impl.h"
 #include "modules/audio_processing/gain_controller2.h"
@@ -263,7 +262,6 @@ struct AudioProcessingImpl::ApmPublicSubmodules {
   std::unique_ptr<GainControlImpl> gain_control;
   std::unique_ptr<GainControlForExperimentalAgc>
       gain_control_for_experimental_agc;
-  std::unique_ptr<GainControlConfigProxy> gain_control_config_proxy;
 
   // Accessed internally from both render and capture.
   std::unique_ptr<TransientSuppressor> transient_suppressor;
@@ -412,8 +410,6 @@ AudioProcessingImpl::AudioProcessingImpl(
   public_submodules_->gain_control_for_experimental_agc.reset(
       new GainControlForExperimentalAgc(
           public_submodules_->gain_control.get()));
-  public_submodules_->gain_control_config_proxy.reset(
-      new GainControlConfigProxy(&crit_capture_, this, agc1()));
 
   // If no echo detector is injected, use the ResidualEchoDetector.
   if (!private_submodules_->echo_detector) {
@@ -1826,10 +1822,6 @@ AudioProcessingStats AudioProcessingImpl::GetStatistics(
         ed_metrics.echo_likelihood_recent_max;
   }
   return stats;
-}
-
-GainControl* AudioProcessingImpl::gain_control() const {
-  return public_submodules_->gain_control_config_proxy.get();
 }
 
 NoiseSuppression* AudioProcessingImpl::noise_suppression() const {

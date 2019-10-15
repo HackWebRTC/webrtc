@@ -12,7 +12,7 @@
 #define MODULES_AUDIO_PROCESSING_GAIN_CONTROL_FOR_EXPERIMENTAL_AGC_H_
 
 #include "modules/audio_processing/agc/agc_manager_direct.h"
-#include "modules/audio_processing/include/audio_processing.h"
+#include "modules/audio_processing/agc/gain_control.h"
 #include "rtc_base/thread_checker.h"
 
 namespace webrtc {

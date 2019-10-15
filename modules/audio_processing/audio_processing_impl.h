@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "api/function_view.h"
+#include "modules/audio_processing/agc/gain_control.h"
 #include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/include/aec_dump.h"
 #include "modules/audio_processing/include/audio_processing.h"
@@ -119,7 +120,6 @@ class AudioProcessingImpl : public AudioProcessing {
   // would offer no protection (the submodules are
   // created only once in a single-treaded manner
   // during APM creation).
-  GainControl* gain_control() const override;
   NoiseSuppression* noise_suppression() const override;
 
   // TODO(peah): Remove MutateConfig once the new API allows that.

@@ -119,8 +119,7 @@ void DebugDumpReplayer::OnStreamEvent(const audioproc::Stream& msg) {
   // APM should have been created.
   RTC_CHECK(apm_.get());
 
-  RTC_CHECK_EQ(AudioProcessing::kNoError,
-               apm_->gain_control()->set_stream_analog_level(msg.level()));
+  apm_->set_stream_analog_level(msg.level());
   RTC_CHECK_EQ(AudioProcessing::kNoError,
                apm_->set_stream_delay_ms(msg.delay()));
 
@@ -237,21 +236,17 @@ void DebugDumpReplayer::ConfigureApm(const audioproc::Config& msg) {
       static_cast<AudioProcessing::Config::NoiseSuppression::Level>(
           msg.ns_level());
 
-  apm_->ApplyConfig(apm_config);
-
   // AGC configs.
   RTC_CHECK(msg.has_agc_enabled());
-  RTC_CHECK_EQ(AudioProcessing::kNoError,
-               apm_->gain_control()->Enable(msg.agc_enabled()));
-
   RTC_CHECK(msg.has_agc_mode());
-  RTC_CHECK_EQ(AudioProcessing::kNoError,
-               apm_->gain_control()->set_mode(
-                   static_cast<GainControl::Mode>(msg.agc_mode())));
-
   RTC_CHECK(msg.has_agc_limiter_enabled());
-  RTC_CHECK_EQ(AudioProcessing::kNoError,
-               apm_->gain_control()->enable_limiter(msg.agc_limiter_enabled()));
+  apm_config.gain_controller1.enabled = msg.agc_enabled();
+  apm_config.gain_controller1.mode =
+      static_cast<AudioProcessing::Config::GainController1::Mode>(
+          msg.agc_mode());
+  apm_config.gain_controller1.enable_limiter = msg.agc_limiter_enabled();
+
+  apm_->ApplyConfig(apm_config);
 }
 
 void DebugDumpReplayer::LoadNextMessage() {

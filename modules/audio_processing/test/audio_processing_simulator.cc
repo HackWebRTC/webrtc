@@ -188,15 +188,12 @@ void AudioProcessingSimulator::ProcessStream(bool fixed_interface) {
     }
 
     // Notify the current mic level to AGC.
-    RTC_CHECK_EQ(AudioProcessing::kNoError,
-                 ap_->gain_control()->set_stream_analog_level(
-                     fake_recording_device_.MicLevel()));
+    ap_->set_stream_analog_level(fake_recording_device_.MicLevel());
   } else {
     // Notify the current mic level to AGC.
-    RTC_CHECK_EQ(AudioProcessing::kNoError,
-                 ap_->gain_control()->set_stream_analog_level(
-                     settings_.aec_dump_input_filename ? aec_dump_mic_level_
-                                                       : analog_mic_level_));
+    ap_->set_stream_analog_level(settings_.aec_dump_input_filename
+                                     ? aec_dump_mic_level_
+                                     : analog_mic_level_);
   }
 
   // Process the current audio frame.
@@ -218,7 +215,7 @@ void AudioProcessingSimulator::ProcessStream(bool fixed_interface) {
   // Store the mic level suggested by AGC.
   // Note that when the analog gain is simulated and an AEC dump is used as
   // input, |analog_mic_level_| will not be used with set_stream_analog_level().
-  analog_mic_level_ = ap_->gain_control()->stream_analog_level();
+  analog_mic_level_ = ap_->recommended_stream_analog_level();
   if (settings_.simulate_mic_gain) {
     fake_recording_device_.SetMicLevel(analog_mic_level_);
   }
@@ -463,6 +460,25 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
     apm_config.voice_detection.enabled = *settings_.use_vad;
   }
 
+  if (settings_.use_agc) {
+    apm_config.gain_controller1.enabled = *settings_.use_agc;
+  }
+  if (settings_.agc_mode) {
+    apm_config.gain_controller1.mode =
+        static_cast<webrtc::AudioProcessing::Config::GainController1::Mode>(
+            *settings_.agc_mode);
+  }
+  if (settings_.use_agc_limiter) {
+    apm_config.gain_controller1.enable_limiter = *settings_.use_agc_limiter;
+  }
+  if (settings_.agc_target_level) {
+    apm_config.gain_controller1.target_level_dbfs = *settings_.agc_target_level;
+  }
+  if (settings_.agc_compression_gain) {
+    apm_config.gain_controller1.compression_gain_db =
+        *settings_.agc_compression_gain;
+  }
+
   if (settings_.use_refined_adaptive_filter) {
     config.Set<RefinedAdaptiveFilter>(
         new RefinedAdaptiveFilter(*settings_.use_refined_adaptive_filter));
@@ -498,33 +514,9 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
 
   ap_->ApplyConfig(apm_config);
 
-  if (settings_.use_agc) {
-    RTC_CHECK_EQ(AudioProcessing::kNoError,
-                 ap_->gain_control()->Enable(*settings_.use_agc));
-  }
   if (settings_.use_ns) {
     RTC_CHECK_EQ(AudioProcessing::kNoError,
                  ap_->noise_suppression()->Enable(*settings_.use_ns));
-  }
-  if (settings_.use_agc_limiter) {
-    RTC_CHECK_EQ(AudioProcessing::kNoError, ap_->gain_control()->enable_limiter(
-                                                *settings_.use_agc_limiter));
-  }
-  if (settings_.agc_target_level) {
-    RTC_CHECK_EQ(AudioProcessing::kNoError,
-                 ap_->gain_control()->set_target_level_dbfs(
-                     *settings_.agc_target_level));
-  }
-  if (settings_.agc_compression_gain) {
-    RTC_CHECK_EQ(AudioProcessing::kNoError,
-                 ap_->gain_control()->set_compression_gain_db(
-                     *settings_.agc_compression_gain));
-  }
-  if (settings_.agc_mode) {
-    RTC_CHECK_EQ(
-        AudioProcessing::kNoError,
-        ap_->gain_control()->set_mode(
-            static_cast<webrtc::GainControl::Mode>(*settings_.agc_mode)));
   }
   if (settings_.ns_level) {
     RTC_CHECK_EQ(

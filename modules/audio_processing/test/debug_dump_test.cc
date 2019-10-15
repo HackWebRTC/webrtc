@@ -529,8 +529,9 @@ TEST_F(DebugDumpTest, MAYBE_ToggleAgc) {
   generator.StartRecording();
   generator.Process(100);
 
-  GainControl* agc = generator.apm()->gain_control();
-  EXPECT_EQ(AudioProcessing::kNoError, agc->Enable(!agc->is_enabled()));
+  AudioProcessing::Config apm_config = generator.apm()->GetConfig();
+  apm_config.gain_controller1.enabled = !apm_config.gain_controller1.enabled;
+  generator.apm()->ApplyConfig(apm_config);
 
   generator.Process(100);
   generator.StopRecording();

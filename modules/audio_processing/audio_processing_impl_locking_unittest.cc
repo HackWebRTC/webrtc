@@ -535,17 +535,14 @@ bool AudioProcessingImplLockTest::MaybeEndTest() {
 void AudioProcessingImplLockTest::SetUp() {
   test_config_ = static_cast<TestConfig>(GetParam());
 
-  ASSERT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
-
-  ASSERT_EQ(apm_->kNoError,
-            apm_->gain_control()->set_mode(GainControl::kAdaptiveDigital));
-  ASSERT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
-
   AudioProcessing::Config apm_config = apm_->GetConfig();
   apm_config.echo_canceller.enabled =
       (test_config_.aec_type != AecType::AecTurnedOff);
   apm_config.echo_canceller.mobile_mode =
       (test_config_.aec_type == AecType::BasicWebRtcAecSettingsWithAecMobile);
+  apm_config.gain_controller1.enabled = true;
+  apm_config.gain_controller1.mode =
+      AudioProcessing::Config::GainController1::kAdaptiveDigital;
   apm_config.noise_suppression.enabled = true;
   apm_config.voice_detection.enabled = true;
   apm_config.level_estimation.enabled = true;
@@ -590,7 +587,7 @@ void StatsProcessor::Process() {
   } else {
     EXPECT_FALSE(apm_config.echo_canceller.enabled);
   }
-  EXPECT_TRUE(apm_->gain_control()->is_enabled());
+  EXPECT_TRUE(apm_config.gain_controller1.enabled);
   EXPECT_TRUE(apm_config.noise_suppression.enabled);
 
   // The below return values are not testable.
@@ -697,7 +694,7 @@ void CaptureProcessor::CallApmCaptureSide() {
   apm_->set_stream_delay_ms(30);
 
   // Set the analog level.
-  apm_->gain_control()->set_stream_analog_level(80);
+  apm_->set_stream_analog_level(80);
 
   // Call the specified capture side API processing method.
   int result = AudioProcessing::kNoError;
@@ -722,7 +719,7 @@ void CaptureProcessor::CallApmCaptureSide() {
   }
 
   // Retrieve the new analog level.
-  apm_->gain_control()->stream_analog_level();
+  apm_->recommended_stream_analog_level();
 
   // Check the return code for error.
   ASSERT_EQ(AudioProcessing::kNoError, result);

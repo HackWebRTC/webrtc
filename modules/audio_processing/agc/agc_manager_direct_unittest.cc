@@ -10,6 +10,7 @@
 
 #include "modules/audio_processing/agc/agc_manager_direct.h"
 
+#include "modules/audio_processing/agc/gain_control.h"
 #include "modules/audio_processing/agc/mock_agc.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
 #include "test/gmock.h"
@@ -30,6 +31,27 @@ const int kSamplesPerChannel = kSampleRateHz / 100;
 const int kInitialVolume = 128;
 constexpr int kClippedMin = 165;  // Arbitrary, but different from the default.
 const float kAboveClippedThreshold = 0.2f;
+
+class MockGainControl : public GainControl {
+ public:
+  virtual ~MockGainControl() {}
+  MOCK_METHOD1(Enable, int(bool enable));
+  MOCK_CONST_METHOD0(is_enabled, bool());
+  MOCK_METHOD1(set_stream_analog_level, int(int level));
+  MOCK_CONST_METHOD0(stream_analog_level, int());
+  MOCK_METHOD1(set_mode, int(Mode mode));
+  MOCK_CONST_METHOD0(mode, Mode());
+  MOCK_METHOD1(set_target_level_dbfs, int(int level));
+  MOCK_CONST_METHOD0(target_level_dbfs, int());
+  MOCK_METHOD1(set_compression_gain_db, int(int gain));
+  MOCK_CONST_METHOD0(compression_gain_db, int());
+  MOCK_METHOD1(enable_limiter, int(bool enable));
+  MOCK_CONST_METHOD0(is_limiter_enabled, bool());
+  MOCK_METHOD2(set_analog_level_limits, int(int minimum, int maximum));
+  MOCK_CONST_METHOD0(analog_level_minimum, int());
+  MOCK_CONST_METHOD0(analog_level_maximum, int());
+  MOCK_CONST_METHOD0(stream_is_saturated, bool());
+};
 
 class TestVolumeCallbacks : public VolumeCallbacks {
  public:
@@ -89,7 +111,7 @@ class AgcManagerDirectTest : public ::testing::Test {
   }
 
   MockAgc* agc_;
-  test::MockGainControl gctrl_;
+  MockGainControl gctrl_;
   TestVolumeCallbacks volume_;
   AgcManagerDirect manager_;
 };
@@ -684,7 +706,7 @@ TEST_F(AgcManagerDirectTest, TakesNoActionOnZeroMicVolume) {
 
 TEST(AgcManagerDirectStandaloneTest, DisableDigitalDisablesDigital) {
   auto agc = std::unique_ptr<Agc>(new ::testing::NiceMock<MockAgc>());
-  test::MockGainControl gctrl;
+  MockGainControl gctrl;
   TestVolumeCallbacks volume;
 
   AgcManagerDirect manager(agc.release(), &gctrl, &volume, kInitialVolume,

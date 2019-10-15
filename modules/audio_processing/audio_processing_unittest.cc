@@ -560,7 +560,7 @@ void ApmTest::ReadFrameWithRewind(FILE* file, AudioFrame* frame) {
 
 void ApmTest::ProcessWithDefaultStreamParameters(AudioFrame* frame) {
   EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(0));
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->set_stream_analog_level(127));
+  apm_->set_stream_analog_level(127);
   EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame));
 }
 
@@ -678,22 +678,24 @@ void ApmTest::StreamParametersTest(Format format) {
   EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(format));
 
   // -- Missing AGC level --
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
+  AudioProcessing::Config apm_config = apm_->GetConfig();
+  apm_config.gain_controller1.enabled = true;
+  apm_->ApplyConfig(apm_config);
   EXPECT_EQ(apm_->kStreamParameterNotSetError, ProcessStreamChooser(format));
 
   // Resets after successful ProcessStream().
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->set_stream_analog_level(127));
+  apm_->set_stream_analog_level(127);
   EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(format));
   EXPECT_EQ(apm_->kStreamParameterNotSetError, ProcessStreamChooser(format));
 
   // Other stream parameters set correctly.
-  AudioProcessing::Config apm_config = apm_->GetConfig();
   apm_config.echo_canceller.enabled = true;
   apm_config.echo_canceller.mobile_mode = false;
   apm_->ApplyConfig(apm_config);
   EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
   EXPECT_EQ(apm_->kStreamParameterNotSetError, ProcessStreamChooser(format));
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(false));
+  apm_config.gain_controller1.enabled = false;
+  apm_->ApplyConfig(apm_config);
 
   // -- Missing delay --
   EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(format));
@@ -705,10 +707,12 @@ void ApmTest::StreamParametersTest(Format format) {
   EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(format));
 
   // Other stream parameters set correctly.
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->set_stream_analog_level(127));
+  apm_config.gain_controller1.enabled = true;
+  apm_->ApplyConfig(apm_config);
+  apm_->set_stream_analog_level(127);
   EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(format));
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(false));
+  apm_config.gain_controller1.enabled = false;
+  apm_->ApplyConfig(apm_config);
 
   // -- No stream parameters --
   EXPECT_EQ(apm_->kNoError, AnalyzeReverseStreamChooser(format));
@@ -716,7 +720,7 @@ void ApmTest::StreamParametersTest(Format format) {
 
   // -- All there --
   EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->set_stream_analog_level(127));
+  apm_->set_stream_analog_level(127);
   EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(format));
 }
 
@@ -839,117 +843,129 @@ TEST_F(ApmTest, SampleRatesInt) {
 }
 
 TEST_F(ApmTest, GainControl) {
+  AudioProcessing::Config config = apm_->GetConfig();
+  config.gain_controller1.enabled = false;
+  apm_->ApplyConfig(config);
+  config.gain_controller1.enabled = true;
+  apm_->ApplyConfig(config);
+
   // Testing gain modes
-  EXPECT_EQ(apm_->kNoError,
-            apm_->gain_control()->set_mode(apm_->gain_control()->mode()));
-
-  GainControl::Mode mode[] = {GainControl::kAdaptiveAnalog,
-                              GainControl::kAdaptiveDigital,
-                              GainControl::kFixedDigital};
-  for (size_t i = 0; i < arraysize(mode); i++) {
-    EXPECT_EQ(apm_->kNoError, apm_->gain_control()->set_mode(mode[i]));
-    EXPECT_EQ(mode[i], apm_->gain_control()->mode());
+  for (auto mode :
+       {AudioProcessing::Config::GainController1::kAdaptiveDigital,
+        AudioProcessing::Config::GainController1::kFixedDigital,
+        AudioProcessing::Config::GainController1::kAdaptiveAnalog}) {
+    config.gain_controller1.mode = mode;
+    apm_->ApplyConfig(config);
+    apm_->set_stream_analog_level(100);
+    EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(kFloatFormat));
   }
-  // Testing target levels
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->set_target_level_dbfs(
-                                apm_->gain_control()->target_level_dbfs()));
 
-  int level_dbfs[] = {0, 6, 31};
-  for (size_t i = 0; i < arraysize(level_dbfs); i++) {
-    EXPECT_EQ(apm_->kNoError,
-              apm_->gain_control()->set_target_level_dbfs(level_dbfs[i]));
-    EXPECT_EQ(level_dbfs[i], apm_->gain_control()->target_level_dbfs());
+  // Testing target levels
+  for (int target_level_dbfs : {0, 15, 31}) {
+    config.gain_controller1.target_level_dbfs = target_level_dbfs;
+    apm_->ApplyConfig(config);
+    apm_->set_stream_analog_level(100);
+    EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(kFloatFormat));
   }
 
   // Testing compression gains
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->set_compression_gain_db(
-                                apm_->gain_control()->compression_gain_db()));
-
-  int gain_db[] = {0, 10, 90};
-  for (size_t i = 0; i < arraysize(gain_db); i++) {
-    EXPECT_EQ(apm_->kNoError,
-              apm_->gain_control()->set_compression_gain_db(gain_db[i]));
-    ProcessStreamChooser(kFloatFormat);
-    EXPECT_EQ(gain_db[i], apm_->gain_control()->compression_gain_db());
+  for (int compression_gain_db : {0, 10, 90}) {
+    config.gain_controller1.compression_gain_db = compression_gain_db;
+    apm_->ApplyConfig(config);
+    apm_->set_stream_analog_level(100);
+    EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(kFloatFormat));
   }
 
   // Testing limiter off/on
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->enable_limiter(false));
-  EXPECT_FALSE(apm_->gain_control()->is_limiter_enabled());
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->enable_limiter(true));
-  EXPECT_TRUE(apm_->gain_control()->is_limiter_enabled());
+  for (bool enable : {false, true}) {
+    config.gain_controller1.enable_limiter = enable;
+    apm_->ApplyConfig(config);
+    apm_->set_stream_analog_level(100);
+    EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(kFloatFormat));
+  }
 
   // Testing level limits
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->set_analog_level_limits(
-                                apm_->gain_control()->analog_level_minimum(),
-                                apm_->gain_control()->analog_level_maximum()));
-
-  int min_level[] = {0, 255, 1024};
-  for (size_t i = 0; i < arraysize(min_level); i++) {
-    EXPECT_EQ(apm_->kNoError, apm_->gain_control()->set_analog_level_limits(
-                                  min_level[i], 1024));
-    EXPECT_EQ(min_level[i], apm_->gain_control()->analog_level_minimum());
+  std::array<int, 4> kMinLevels = {0, 0, 255, 65000};
+  std::array<int, 4> kMaxLevels = {255, 1024, 65535, 65535};
+  for (size_t i = 0; i < kMinLevels.size(); ++i) {
+    int min_level = kMinLevels[i];
+    int max_level = kMaxLevels[i];
+    config.gain_controller1.analog_level_minimum = min_level;
+    config.gain_controller1.analog_level_maximum = max_level;
+    apm_->ApplyConfig(config);
+    apm_->set_stream_analog_level((min_level + max_level) / 2);
+    EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(kFloatFormat));
   }
-
-  int max_level[] = {0, 1024, 65535};
-  for (size_t i = 0; i < arraysize(min_level); i++) {
-    EXPECT_EQ(apm_->kNoError,
-              apm_->gain_control()->set_analog_level_limits(0, max_level[i]));
-    EXPECT_EQ(max_level[i], apm_->gain_control()->analog_level_maximum());
-  }
-
-  // TODO(ajm): stream_is_saturated() and stream_analog_level()
-
-  // Turn AGC off
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(false));
-  EXPECT_FALSE(apm_->gain_control()->is_enabled());
 }
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 TEST_F(ApmTest, GainControlDiesOnTooLowTargetLevelDbfs) {
-  EXPECT_DEATH(apm_->gain_control()->set_target_level_dbfs(-1), "");
+  auto config = apm_->GetConfig();
+  config.gain_controller1.target_level_dbfs = -1;
+  EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
 TEST_F(ApmTest, GainControlDiesOnTooHighTargetLevelDbfs) {
-  EXPECT_DEATH(apm_->gain_control()->set_target_level_dbfs(32), "");
+  auto config = apm_->GetConfig();
+  config.gain_controller1.target_level_dbfs = 32;
+  EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
 TEST_F(ApmTest, GainControlDiesOnTooLowCompressionGainDb) {
-  EXPECT_DEATH(apm_->gain_control()->set_compression_gain_db(-1), "");
+  auto config = apm_->GetConfig();
+  config.gain_controller1.compression_gain_db = -1;
+  EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
 TEST_F(ApmTest, GainControlDiesOnTooHighCompressionGainDb) {
-  EXPECT_DEATH(apm_->gain_control()->set_compression_gain_db(91), "");
+  auto config = apm_->GetConfig();
+  config.gain_controller1.compression_gain_db = 91;
+  EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
 TEST_F(ApmTest, GainControlDiesOnTooLowAnalogLevelLowerLimit) {
-  EXPECT_DEATH(apm_->gain_control()->set_analog_level_limits(-1, 512), "");
+  auto config = apm_->GetConfig();
+  config.gain_controller1.analog_level_minimum = -1;
+  EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
 TEST_F(ApmTest, GainControlDiesOnTooHighAnalogLevelUpperLimit) {
-  EXPECT_DEATH(apm_->gain_control()->set_analog_level_limits(512, 65536), "");
+  auto config = apm_->GetConfig();
+  config.gain_controller1.analog_level_maximum = 65536;
+  EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
 TEST_F(ApmTest, GainControlDiesOnInvertedAnalogLevelLimits) {
-  EXPECT_DEATH(apm_->gain_control()->set_analog_level_limits(512, 255), "");
+  auto config = apm_->GetConfig();
+  config.gain_controller1.analog_level_minimum = 512;
+  config.gain_controller1.analog_level_maximum = 255;
+  EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
 TEST_F(ApmTest, ApmDiesOnTooLowAnalogLevel) {
-  apm_->gain_control()->set_analog_level_limits(255, 512);
+  auto config = apm_->GetConfig();
+  config.gain_controller1.analog_level_minimum = 255;
+  config.gain_controller1.analog_level_maximum = 512;
+  apm_->ApplyConfig(config);
   EXPECT_DEATH(apm_->set_stream_analog_level(254), "");
 }
 
 TEST_F(ApmTest, ApmDiesOnTooHighAnalogLevel) {
-  apm_->gain_control()->set_analog_level_limits(255, 512);
+  auto config = apm_->GetConfig();
+  config.gain_controller1.analog_level_minimum = 255;
+  config.gain_controller1.analog_level_maximum = 512;
+  apm_->ApplyConfig(config);
   EXPECT_DEATH(apm_->set_stream_analog_level(513), "");
 }
 #endif
 
 void ApmTest::RunQuantizedVolumeDoesNotGetStuckTest(int sample_rate) {
   Init(sample_rate, sample_rate, sample_rate, 2, 2, 2, false);
-  EXPECT_EQ(apm_->kNoError,
-            apm_->gain_control()->set_mode(GainControl::kAdaptiveAnalog));
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
+  auto config = apm_->GetConfig();
+  config.gain_controller1.enabled = true;
+  config.gain_controller1.mode =
+      AudioProcessing::Config::GainController1::kAdaptiveAnalog;
+  apm_->ApplyConfig(config);
 
   int out_analog_level = 0;
   for (int i = 0; i < 2000; ++i) {
@@ -958,10 +974,9 @@ void ApmTest::RunQuantizedVolumeDoesNotGetStuckTest(int sample_rate) {
     ScaleFrame(frame_, 0.25);
 
     // Always pass in the same volume.
-    EXPECT_EQ(apm_->kNoError,
-              apm_->gain_control()->set_stream_analog_level(100));
+    apm_->set_stream_analog_level(100);
     EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
-    out_analog_level = apm_->gain_control()->stream_analog_level();
+    out_analog_level = apm_->recommended_stream_analog_level();
   }
 
   // Ensure the AGC is still able to reach the maximum.
@@ -978,9 +993,11 @@ TEST_F(ApmTest, QuantizedVolumeDoesNotGetStuck) {
 
 void ApmTest::RunManualVolumeChangeIsPossibleTest(int sample_rate) {
   Init(sample_rate, sample_rate, sample_rate, 2, 2, 2, false);
-  EXPECT_EQ(apm_->kNoError,
-            apm_->gain_control()->set_mode(GainControl::kAdaptiveAnalog));
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
+  auto config = apm_->GetConfig();
+  config.gain_controller1.enabled = true;
+  config.gain_controller1.mode =
+      AudioProcessing::Config::GainController1::kAdaptiveAnalog;
+  apm_->ApplyConfig(config);
 
   int out_analog_level = 100;
   for (int i = 0; i < 1000; ++i) {
@@ -988,10 +1005,9 @@ void ApmTest::RunManualVolumeChangeIsPossibleTest(int sample_rate) {
     // Ensure the audio is at a low level, so the AGC will try to increase it.
     ScaleFrame(frame_, 0.25);
 
-    EXPECT_EQ(apm_->kNoError,
-              apm_->gain_control()->set_stream_analog_level(out_analog_level));
+    apm_->set_stream_analog_level(out_analog_level);
     EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
-    out_analog_level = apm_->gain_control()->stream_analog_level();
+    out_analog_level = apm_->recommended_stream_analog_level();
   }
 
   // Ensure the volume was raised.
@@ -1004,10 +1020,9 @@ void ApmTest::RunManualVolumeChangeIsPossibleTest(int sample_rate) {
     ReadFrameWithRewind(near_file_, frame_);
     ScaleFrame(frame_, 0.25);
 
-    EXPECT_EQ(apm_->kNoError,
-              apm_->gain_control()->set_stream_analog_level(out_analog_level));
+    apm_->set_stream_analog_level(out_analog_level);
     EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
-    out_analog_level = apm_->gain_control()->stream_analog_level();
+    out_analog_level = apm_->recommended_stream_analog_level();
     // Check that AGC respected the manually adjusted volume.
     EXPECT_LT(out_analog_level, highest_level_reached);
   }
@@ -1051,9 +1066,9 @@ TEST_F(ApmTest, AllProcessingDisabledByDefault) {
   AudioProcessing::Config config = apm_->GetConfig();
   EXPECT_FALSE(config.echo_canceller.enabled);
   EXPECT_FALSE(config.high_pass_filter.enabled);
+  EXPECT_FALSE(config.gain_controller1.enabled);
   EXPECT_FALSE(config.level_estimation.enabled);
   EXPECT_FALSE(config.voice_detection.enabled);
-  EXPECT_FALSE(apm_->gain_control()->is_enabled());
   EXPECT_FALSE(apm_->noise_suppression()->is_enabled());
 }
 
@@ -1125,10 +1140,9 @@ TEST_F(ApmTest, IdenticalInputChannelsResultInIdenticalOutputChannels) {
       frame_->vad_activity_ = AudioFrame::kVadUnknown;
 
       ASSERT_EQ(kNoErr, apm_->set_stream_delay_ms(0));
-      ASSERT_EQ(kNoErr,
-                apm_->gain_control()->set_stream_analog_level(analog_level));
+      apm_->set_stream_analog_level(analog_level);
       ASSERT_EQ(kNoErr, apm_->ProcessStream(frame_));
-      analog_level = apm_->gain_control()->stream_analog_level();
+      analog_level = apm_->recommended_stream_analog_level();
 
       VerifyChannelsAreEqual(frame_->data(), frame_->samples_per_channel_);
     }
@@ -1258,7 +1272,7 @@ void ApmTest::ProcessDebugDump(const std::string& in_filename,
       // ProcessStream could have changed this for the output frame.
       frame_->num_channels_ = apm_->num_input_channels();
 
-      EXPECT_NOERR(apm_->gain_control()->set_stream_analog_level(msg.level()));
+      apm_->set_stream_analog_level(msg.level());
       EXPECT_NOERR(apm_->set_stream_delay_ms(msg.delay()));
       if (msg.has_keypress()) {
         apm_->set_stream_key_pressed(msg.keypress());
@@ -1485,7 +1499,6 @@ TEST_F(ApmTest, Process) {
 
     int frame_count = 0;
     int has_voice_count = 0;
-    int is_saturated_count = 0;
     int analog_level = 127;
     int analog_level_average = 0;
     int max_output_average = 0;
@@ -1501,8 +1514,7 @@ TEST_F(ApmTest, Process) {
       frame_->vad_activity_ = AudioFrame::kVadUnknown;
 
       EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(0));
-      EXPECT_EQ(apm_->kNoError,
-                apm_->gain_control()->set_stream_analog_level(analog_level));
+      apm_->set_stream_analog_level(analog_level);
 
       EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
 
@@ -1512,11 +1524,8 @@ TEST_F(ApmTest, Process) {
 
       max_output_average += MaxAudioFrame(*frame_);
 
-      analog_level = apm_->gain_control()->stream_analog_level();
+      analog_level = apm_->recommended_stream_analog_level();
       analog_level_average += analog_level;
-      if (apm_->gain_control()->stream_is_saturated()) {
-        is_saturated_count++;
-      }
       AudioProcessingStats stats =
           apm_->GetStatistics(/*has_remote_tracks=*/false);
       EXPECT_TRUE(stats.voice_detected);
@@ -1602,7 +1611,6 @@ TEST_F(ApmTest, Process) {
 #endif
       EXPECT_NEAR(test->has_voice_count(),
                   has_voice_count - kHasVoiceCountOffset, kHasVoiceCountNear);
-      EXPECT_NEAR(test->is_saturated_count(), is_saturated_count, kIntNear);
 
       EXPECT_NEAR(test->analog_level_average(), analog_level_average, kIntNear);
       EXPECT_NEAR(test->max_output_average(),
@@ -1616,7 +1624,6 @@ TEST_F(ApmTest, Process) {
 #endif
     } else {
       test->set_has_voice_count(has_voice_count);
-      test->set_is_saturated_count(is_saturated_count);
 
       test->set_analog_level_average(analog_level_average);
       test->set_max_output_average(max_output_average);
@@ -1828,7 +1835,7 @@ class AudioProcessingTest
           processing_config.reverse_output_stream(), rev_out_cb.channels()));
 
       EXPECT_NOERR(ap->set_stream_delay_ms(0));
-      EXPECT_NOERR(ap->gain_control()->set_stream_analog_level(analog_level));
+      ap->set_stream_analog_level(analog_level);
 
       EXPECT_NOERR(ap->ProcessStream(
           fwd_cb.channels(), fwd_cb.num_frames(), input_rate,
@@ -1852,7 +1859,7 @@ class AudioProcessingTest
       ASSERT_EQ(rev_out_length, fwrite(float_data.get(), sizeof(float_data[0]),
                                        rev_out_length, rev_out_file));
 
-      analog_level = ap->gain_control()->stream_analog_level();
+      analog_level = ap->recommended_stream_analog_level();
     }
     fclose(far_file);
     fclose(near_file);
@@ -2421,11 +2428,11 @@ std::unique_ptr<AudioProcessing> CreateApm(bool mobile_aec) {
   AudioProcessing::Config apm_config;
   apm_config.residual_echo_detector.enabled = true;
   apm_config.high_pass_filter.enabled = false;
+  apm_config.gain_controller1.enabled = false;
   apm_config.gain_controller2.enabled = false;
   apm_config.echo_canceller.enabled = true;
   apm_config.echo_canceller.mobile_mode = mobile_aec;
   apm->ApplyConfig(apm_config);
-  EXPECT_EQ(apm->gain_control()->Enable(false), 0);
   EXPECT_EQ(apm->noise_suppression()->Enable(false), 0);
   return apm;
 }

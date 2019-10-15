@@ -376,8 +376,7 @@ void AecDumpBasedSimulator::HandleMessage(
 
     if (msg.has_agc_enabled() || settings_.use_agc) {
       bool enable = settings_.use_agc ? *settings_.use_agc : msg.agc_enabled();
-      RTC_CHECK_EQ(AudioProcessing::kNoError,
-                   ap_->gain_control()->Enable(enable));
+      apm_config.gain_controller1.enabled = enable;
       if (settings_.use_verbose_logging) {
         std::cout << " agc_enabled: " << (enable ? "true" : "false")
                   << std::endl;
@@ -386,9 +385,9 @@ void AecDumpBasedSimulator::HandleMessage(
 
     if (msg.has_agc_mode() || settings_.agc_mode) {
       int mode = settings_.agc_mode ? *settings_.agc_mode : msg.agc_mode();
-      RTC_CHECK_EQ(AudioProcessing::kNoError,
-                   ap_->gain_control()->set_mode(
-                       static_cast<webrtc::GainControl::Mode>(mode)));
+      apm_config.gain_controller1.mode =
+          static_cast<webrtc::AudioProcessing::Config::GainController1::Mode>(
+              mode);
       if (settings_.use_verbose_logging) {
         std::cout << " agc_mode: " << mode << std::endl;
       }
@@ -397,8 +396,7 @@ void AecDumpBasedSimulator::HandleMessage(
     if (msg.has_agc_limiter_enabled() || settings_.use_agc_limiter) {
       bool enable = settings_.use_agc_limiter ? *settings_.use_agc_limiter
                                               : msg.agc_limiter_enabled();
-      RTC_CHECK_EQ(AudioProcessing::kNoError,
-                   ap_->gain_control()->enable_limiter(enable));
+      apm_config.gain_controller1.enable_limiter = enable;
       if (settings_.use_verbose_logging) {
         std::cout << " agc_limiter_enabled: " << (enable ? "true" : "false")
                   << std::endl;

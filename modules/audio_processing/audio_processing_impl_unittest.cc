@@ -221,9 +221,9 @@ TEST(AudioProcessingImplTest,
       AudioProcessingBuilder()
           .SetEchoControlFactory(std::move(echo_control_factory))
           .Create());
-  apm->gain_control()->Enable(false);  // Disable AGC.
-  apm->gain_control()->set_mode(GainControl::Mode::kFixedDigital);
+  // Disable AGC.
   webrtc::AudioProcessing::Config apm_config;
+  apm_config.gain_controller1.enabled = false;
   apm_config.gain_controller2.enabled = false;
   apm_config.pre_amplifier.enabled = true;
   apm_config.pre_amplifier.fixed_gain_factor = 1.f;
@@ -264,9 +264,11 @@ TEST(AudioProcessingImplTest,
       AudioProcessingBuilder()
           .SetEchoControlFactory(std::move(echo_control_factory))
           .Create());
-  apm->gain_control()->Enable(true);  // Enable AGC.
-  apm->gain_control()->set_mode(GainControl::Mode::kAdaptiveAnalog);
   webrtc::AudioProcessing::Config apm_config;
+  // Enable AGC1.
+  apm_config.gain_controller1.enabled = true;
+  apm_config.gain_controller1.mode =
+      AudioProcessing::Config::GainController1::kAdaptiveAnalog;
   apm_config.gain_controller2.enabled = false;
   apm_config.pre_amplifier.enabled = false;
   apm->ApplyConfig(apm_config);
@@ -280,14 +282,14 @@ TEST(AudioProcessingImplTest,
 
   MockEchoControl* echo_control_mock = echo_control_factory_ptr->GetNext();
 
-  const int initial_analog_gain = apm->gain_control()->stream_analog_level();
+  const int initial_analog_gain = apm->recommended_stream_analog_level();
   EXPECT_CALL(*echo_control_mock, AnalyzeCapture(testing::_)).Times(1);
   EXPECT_CALL(*echo_control_mock, ProcessCapture(NotNull(), false)).Times(1);
   apm->ProcessStream(&frame);
 
   // Force an analog gain change if it did not happen.
-  if (initial_analog_gain == apm->gain_control()->stream_analog_level()) {
-    apm->gain_control()->set_stream_analog_level(initial_analog_gain + 1);
+  if (initial_analog_gain == apm->recommended_stream_analog_level()) {
+    apm->set_stream_analog_level(initial_analog_gain + 1);
   }
 
   EXPECT_CALL(*echo_control_mock, AnalyzeCapture(testing::_)).Times(1);
@@ -305,8 +307,11 @@ TEST(AudioProcessingImplTest, EchoControllerObservesPlayoutVolumeChange) {
       AudioProcessingBuilder()
           .SetEchoControlFactory(std::move(echo_control_factory))
           .Create());
-  apm->gain_control()->Enable(false);  // Disable AGC.
-  apm->gain_control()->set_mode(GainControl::Mode::kFixedDigital);
+  // Disable AGC.
+  webrtc::AudioProcessing::Config apm_config;
+  apm_config.gain_controller1.enabled = false;
+  apm_config.gain_controller2.enabled = false;
+  apm->ApplyConfig(apm_config);
 
   AudioFrame frame;
   constexpr int16_t kAudioLevel = 10000;

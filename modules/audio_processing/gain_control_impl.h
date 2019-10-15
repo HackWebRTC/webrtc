@@ -19,7 +19,7 @@
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
-#include "modules/audio_processing/include/gain_control.h"
+#include "modules/audio_processing/agc/gain_control.h"
 #include "rtc_base/constructor_magic.h"
 
 namespace webrtc {

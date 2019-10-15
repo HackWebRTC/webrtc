@@ -49,7 +49,6 @@ rtc_source_set("api") {
     ":audio_generator_interface",
     ":audio_processing_statistics",
     ":config",
-    ":gain_control_interface",
     "../../api:scoped_refptr",
     "../../api/audio:aec3_config",
     "../../api/audio:echo_control",
@@ -58,6 +57,7 @@ rtc_source_set("api") {
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base/system:arch",
     "../../rtc_base/system:rtc_export",
+    "agc:gain_control_interface",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -170,8 +170,6 @@ rtc_static_library("audio_processing") {
     ":audio_processing_c",
     ":audio_processing_statistics",
     ":config",
-    ":gain_control_config_proxy",
-    ":gain_control_interface",
     ":high_pass_filter",
     ":noise_suppression_proxy",
     "../../api:array_view",
@@ -197,6 +195,7 @@ rtc_static_library("audio_processing") {
     "aecm:aecm_core",
     "agc",
     "agc:agc_legacy_c",
+    "agc:gain_control_interface",
     "agc2:adaptive_digital",
     "agc2:fixed_digital",
     "agc2:gain_applier",
@@ -220,25 +219,6 @@ rtc_static_library("audio_processing") {
     "../../common_audio:fir_filter_factory",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
-  ]
-}
-
-rtc_source_set("gain_control_interface") {
-  sources = [
-    "include/gain_control.h",
-  ]
-}
-
-rtc_source_set("gain_control_config_proxy") {
-  sources = [
-    "gain_control_config_proxy.cc",
-    "gain_control_config_proxy.h",
-  ]
-  deps = [
-    ":api",
-    ":gain_control_interface",
-    "../../rtc_base:criticalsection",
-    "../../rtc_base:macromagic",
   ]
 }
 
@@ -434,7 +414,6 @@ if (rtc_include_tests) {
       "config_unittest.cc",
       "echo_cancellation_impl_unittest.cc",
       "echo_control_mobile_unittest.cc",
-      "gain_control_config_proxy_unittest.cc",
       "gain_controller2_unittest.cc",
       "splitting_filter_unittest.cc",
       "test/fake_recording_device_unittest.cc",
@@ -459,7 +438,6 @@ if (rtc_include_tests) {
       ":audioproc_test_utils",
       ":config",
       ":file_audio_generator_unittests",
-      ":gain_control_config_proxy",
       ":high_pass_filter",
       ":mocks",
       "../../api:array_view",

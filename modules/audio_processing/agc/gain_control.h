@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_INCLUDE_GAIN_CONTROL_H_
-#define MODULES_AUDIO_PROCESSING_INCLUDE_GAIN_CONTROL_H_
+#ifndef MODULES_AUDIO_PROCESSING_AGC_GAIN_CONTROL_H_
+#define MODULES_AUDIO_PROCESSING_AGC_GAIN_CONTROL_H_
 
 namespace webrtc {
 
@@ -105,4 +105,4 @@ class GainControl {
 };
 }  // namespace webrtc
 
-#endif  // MODULES_AUDIO_PROCESSING_INCLUDE_GAIN_CONTROL_H_
+#endif  // MODULES_AUDIO_PROCESSING_AGC_GAIN_CONTROL_H_
