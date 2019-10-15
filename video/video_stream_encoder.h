@@ -389,10 +389,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   std::array<std::array<int64_t, kMaxEncoderBuffers>, kMaxSimulcastStreams>
       encoder_buffer_state_ RTC_GUARDED_BY(encoded_image_lock_);
 
-  // All public methods are proxied to |encoder_queue_|. It must must be
-  // destroyed first to make sure no tasks are run that use other members.
-  rtc::TaskQueue encoder_queue_;
-
   struct EncoderSwitchExperiment {
     struct Thresholds {
       absl::optional<DataRate> bitrate;
@@ -428,6 +424,10 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // An encoder switch is only requested once, this variable is used to keep
   // track of whether a request has been made or not.
   bool encoder_switch_requested_ RTC_GUARDED_BY(&encoder_queue_);
+
+  // All public methods are proxied to |encoder_queue_|. It must must be
+  // destroyed first to make sure no tasks are run that use other members.
+  rtc::TaskQueue encoder_queue_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(VideoStreamEncoder);
 };

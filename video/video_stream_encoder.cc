@@ -525,11 +525,11 @@ VideoStreamEncoder::VideoStreamEncoder(
       frame_encode_metadata_writer_(this),
       experiment_groups_(GetExperimentGroups()),
       next_frame_id_(0),
+      encoder_switch_experiment_(ParseEncoderSwitchFieldTrial()),
+      encoder_switch_requested_(false),
       encoder_queue_(task_queue_factory->CreateTaskQueue(
           "EncoderQueue",
-          TaskQueueFactory::Priority::NORMAL)),
-      encoder_switch_experiment_(ParseEncoderSwitchFieldTrial()),
-      encoder_switch_requested_(false) {
+          TaskQueueFactory::Priority::NORMAL)) {
   RTC_DCHECK(encoder_stats_observer);
   RTC_DCHECK(overuse_detector_);
   RTC_DCHECK_GE(number_of_cores, 1);
