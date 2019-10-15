@@ -255,6 +255,7 @@ if (rtc_include_tests) {
       ":field_trial",
       ":fileutils_override_api",
       ":perf_test",
+      ":resources_dir_flag",
       ":test_support",
       "../rtc_base",
       "../rtc_base:checks",
@@ -498,6 +499,18 @@ rtc_source_set("fileutils") {
   if (is_win) {
     deps += [ "../rtc_base" ]
   }
+}
+
+rtc_source_set("resources_dir_flag") {
+  testonly = true
+  visibility = [ "*" ]
+  sources = [
+    "testsupport/resources_dir_flag.cc",
+    "testsupport/resources_dir_flag.h",
+  ]
+  deps = [
+    "//third_party/abseil-cpp/absl/flags:flag",
+  ]
 }
 
 # We separate header into own target to make it possible for downstream

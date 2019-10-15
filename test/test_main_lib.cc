@@ -30,6 +30,7 @@
 #include "test/testsupport/file_utils.h"
 #include "test/testsupport/file_utils_override.h"
 #include "test/testsupport/perf_test.h"
+#include "test/testsupport/resources_dir_flag.h"
 
 #if defined(WEBRTC_WIN)
 #include "rtc_base/win32_socket_init.h"
@@ -80,14 +81,6 @@ ABSL_FLAG(std::vector<std::string>,
           " metrics pass 'all' as flag value");
 
 #endif
-
-ABSL_FLAG(std::string,
-          resources_dir,
-          "",
-          "Where to look for the runtime dependencies. If not specified, we "
-          "will use a reasonable default depending on where we are running. "
-          "This flag is useful if we copy over test resources to a phone and "
-          "need to tell the tests where their resources are.");
 
 ABSL_FLAG(bool, logs, true, "print logs to stderr");
 ABSL_FLAG(bool, verbose, false, "verbose logs to stderr");
