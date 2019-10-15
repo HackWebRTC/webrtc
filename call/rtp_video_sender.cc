@@ -177,7 +177,7 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
     bool enable_flexfec = flexfec_sender != nullptr &&
                           std::find(flexfec_protected_ssrcs.begin(),
                                     flexfec_protected_ssrcs.end(),
-                                    *configuration.local_media_ssrc) !=
+                                    configuration.local_media_ssrc) !=
                               flexfec_protected_ssrcs.end();
     configuration.flexfec_sender = enable_flexfec ? flexfec_sender : nullptr;
     auto playout_delay_oracle = std::make_unique<PlayoutDelayOracle>();

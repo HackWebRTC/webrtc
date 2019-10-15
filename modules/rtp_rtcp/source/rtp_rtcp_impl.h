@@ -94,10 +94,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   RtpState GetRtpState() const override;
   RtpState GetRtxState() const override;
 
-  uint32_t SSRC() const override;
-
-  // Configure SSRC, default is a random number.
-  void SetSSRC(uint32_t ssrc) override;
+  uint32_t SSRC() const override { return rtcp_sender_.SSRC(); }
 
   void SetRid(const std::string& rid) override;
 
@@ -109,8 +106,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   void SetRtxSendStatus(int mode) override;
   int RtxSendStatus() const override;
-
-  void SetRtxSsrc(uint32_t ssrc) override;
 
   void SetRtxSendPayloadType(int payload_type,
                              int associated_payload_type) override;
@@ -302,7 +297,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
  private:
   FRIEND_TEST_ALL_PREFIXES(RtpRtcpImplTest, Rtt);
   FRIEND_TEST_ALL_PREFIXES(RtpRtcpImplTest, RttForReceiverOnly);
-  void SetRtcpReceiverSsrcs(uint32_t main_ssrc);
 
   void set_rtt_ms(int64_t rtt_ms);
   int64_t rtt_ms() const;

@@ -2562,34 +2562,6 @@ TEST_P(RtpSenderTest, SetsCaptureTimeAndPopulatesTransmissionOffset) {
   EXPECT_EQ(*transmission_time_extension, 2 * kOffsetMs * kTimestampTicksPerMs);
 }
 
-TEST_P(RtpSenderTestWithoutPacer, ClearHistoryOnSsrcChange) {
-  const int64_t kRtt = 10;
-
-  rtp_sender_->SetSendingMediaStatus(true);
-  rtp_sender_->SetRtxStatus(kRtxRetransmitted | kRtxRedundantPayloads);
-  rtp_sender_->SetRtxPayloadType(kRtxPayload, kPayload);
-  rtp_sender_->SetStorePacketsStatus(true, 10);
-  rtp_sender_->SetRtt(kRtt);
-
-  // Send a packet and record its sequence numbers.
-  SendGenericPacket();
-  ASSERT_EQ(1u, transport_.sent_packets_.size());
-  const uint16_t packet_seqence_number =
-      transport_.sent_packets_.back().SequenceNumber();
-
-  // Advance time and make sure it can be retransmitted, even if we try to set
-  // the ssrc the what it already is.
-  rtp_sender_->SetSSRC(kSsrc);
-  fake_clock_.AdvanceTimeMilliseconds(kRtt);
-  EXPECT_GT(rtp_sender_->ReSendPacket(packet_seqence_number), 0);
-
-  // Change the SSRC, then move the time and try to retransmit again. The old
-  // packet should now be gone.
-  rtp_sender_->SetSSRC(kSsrc + 1);
-  fake_clock_.AdvanceTimeMilliseconds(kRtt);
-  EXPECT_EQ(rtp_sender_->ReSendPacket(packet_seqence_number), 0);
-}
-
 TEST_P(RtpSenderTestWithoutPacer, ClearHistoryOnSequenceNumberCange) {
   const int64_t kRtt = 10;
 

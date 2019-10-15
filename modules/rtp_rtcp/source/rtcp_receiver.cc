@@ -65,6 +65,18 @@ const size_t kMaxNumberOfStoredRrtrs = 200;
 
 constexpr int32_t kDefaultVideoReportInterval = 1000;
 constexpr int32_t kDefaultAudioReportInterval = 5000;
+
+std::set<uint32_t> GetRegisteredSsrcs(const RtpRtcp::Configuration& config) {
+  std::set<uint32_t> ssrcs;
+  ssrcs.insert(config.local_media_ssrc);
+  if (config.rtx_send_ssrc) {
+    ssrcs.insert(*config.rtx_send_ssrc);
+  }
+  if (config.flexfec_sender) {
+    ssrcs.insert(config.flexfec_sender->ssrc());
+  }
+  return ssrcs;
+}
 }  // namespace
 
 struct RTCPReceiver::PacketInformation {
@@ -126,6 +138,8 @@ RTCPReceiver::RTCPReceiver(const RtpRtcp::Configuration& config,
     : clock_(config.clock),
       receiver_only_(config.receiver_only),
       rtp_rtcp_(owner),
+      main_ssrc_(config.local_media_ssrc),
+      registered_ssrcs_(GetRegisteredSsrcs(config)),
       rtcp_bandwidth_observer_(config.bandwidth_callback),
       rtcp_intra_frame_observer_(config.intra_frame_callback),
       rtcp_loss_notification_observer_(config.rtcp_loss_notification_observer),
@@ -137,7 +151,6 @@ RTCPReceiver::RTCPReceiver(const RtpRtcp::Configuration& config,
                               : (config.audio ? kDefaultAudioReportInterval
                                               : kDefaultVideoReportInterval)),
       // TODO(bugs.webrtc.org/10774): Remove fallback.
-      main_ssrc_(config.local_media_ssrc.value_or(0)),
       remote_ssrc_(0),
       remote_sender_rtp_time_(0),
       xr_rrtr_status_(false),
@@ -152,15 +165,6 @@ RTCPReceiver::RTCPReceiver(const RtpRtcp::Configuration& config,
       num_skipped_packets_(0),
       last_skipped_packets_warning_ms_(clock_->TimeInMilliseconds()) {
   RTC_DCHECK(owner);
-  if (config.local_media_ssrc) {
-    registered_ssrcs_.insert(*config.local_media_ssrc);
-  }
-  if (config.rtx_send_ssrc) {
-    registered_ssrcs_.insert(*config.rtx_send_ssrc);
-  }
-  if (config.flexfec_sender) {
-    registered_ssrcs_.insert(config.flexfec_sender->ssrc());
-  }
 }
 
 RTCPReceiver::~RTCPReceiver() {}
@@ -192,13 +196,6 @@ void RTCPReceiver::SetRemoteSSRC(uint32_t ssrc) {
 uint32_t RTCPReceiver::RemoteSSRC() const {
   rtc::CritScope lock(&rtcp_receiver_lock_);
   return remote_ssrc_;
-}
-
-void RTCPReceiver::SetSsrcs(uint32_t main_ssrc,
-                            const std::set<uint32_t>& registered_ssrcs) {
-  rtc::CritScope lock(&rtcp_receiver_lock_);
-  main_ssrc_ = main_ssrc;
-  registered_ssrcs_ = registered_ssrcs;
 }
 
 int32_t RTCPReceiver::RTT(uint32_t remote_ssrc,
