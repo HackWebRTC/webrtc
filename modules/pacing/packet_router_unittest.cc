@@ -226,17 +226,27 @@ TEST_F(PacketRouterTest, PadsOnLastActiveMediaStream) {
   packet_router_.RemoveSendRtpModule(&rtp_3);
 }
 
-TEST_F(PacketRouterTest, AllocateSequenceNumbers) {
+TEST_F(PacketRouterTest, AllocatesTransportSequenceNumbers) {
   const uint16_t kStartSeq = 0xFFF0;
   const size_t kNumPackets = 32;
+  const uint16_t kSsrc1 = 1234;
 
-  packet_router_.SetTransportWideSequenceNumber(kStartSeq - 1);
+  PacketRouter packet_router(kStartSeq - 1);
+  NiceMock<MockRtpRtcp> rtp_1;
+  EXPECT_CALL(rtp_1, SSRC()).WillRepeatedly(Return(kSsrc1));
+  EXPECT_CALL(rtp_1, TrySendPacket).WillRepeatedly(Return(true));
+  packet_router.AddSendRtpModule(&rtp_1, false);
 
   for (size_t i = 0; i < kNumPackets; ++i) {
-    uint16_t seq = packet_router_.AllocateSequenceNumber();
+    auto packet = BuildRtpPacket(kSsrc1);
+    EXPECT_TRUE(packet->ReserveExtension<TransportSequenceNumber>());
+    packet_router.SendPacket(std::move(packet), PacedPacketInfo());
     uint32_t expected_unwrapped_seq = static_cast<uint32_t>(kStartSeq) + i;
-    EXPECT_EQ(static_cast<uint16_t>(expected_unwrapped_seq & 0xFFFF), seq);
+    EXPECT_EQ(static_cast<uint16_t>(expected_unwrapped_seq & 0xFFFF),
+              packet_router.CurrentTransportSequenceNumber());
   }
+
+  packet_router.RemoveSendRtpModule(&rtp_1);
 }
 
 TEST_F(PacketRouterTest, SendTransportFeedback) {
