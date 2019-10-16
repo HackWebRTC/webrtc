@@ -100,7 +100,6 @@ class PacedSender : public Module,
   // Returns the time since the oldest queued packet was enqueued.
   TimeDelta OldestPacketWaitTime() const override;
 
-  size_t QueueSizePackets() const override;
   DataSize QueueSizeData() const override;
 
   // Returns the time when the first packet was sent;

@@ -26,7 +26,6 @@
 #include "call/audio_state.h"
 #include "modules/audio_device/include/mock_audio_device.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
-#include "modules/pacing/mock/mock_paced_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "test/fake_encoder.h"
 #include "test/gtest.h"

@@ -399,7 +399,6 @@ if (rtc_include_tests) {
       "../modules/audio_processing:mocks",
       "../modules/congestion_controller",
       "../modules/pacing",
-      "../modules/pacing:mock_paced_sender",
       "../modules/rtp_rtcp",
       "../modules/rtp_rtcp:mock_rtp_rtcp",
       "../modules/rtp_rtcp:rtp_rtcp_format",

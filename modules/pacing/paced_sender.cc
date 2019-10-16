@@ -109,11 +109,6 @@ TimeDelta PacedSender::ExpectedQueueTime() const {
   return pacing_controller_.ExpectedQueueTime();
 }
 
-size_t PacedSender::QueueSizePackets() const {
-  rtc::CritScope cs(&critsect_);
-  return pacing_controller_.QueueSizePackets();
-}
-
 DataSize PacedSender::QueueSizeData() const {
   rtc::CritScope cs(&critsect_);
   return pacing_controller_.QueueSizeData();

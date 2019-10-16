@@ -84,7 +84,6 @@ if (rtc_include_tests) {
       "../../../test:field_trial",
       "../../../test:test_support",
       "../../pacing",
-      "../../pacing:mock_paced_sender",
       "../../remote_bitrate_estimator",
       "../../rtp_rtcp:rtp_rtcp_format",
       "//testing/gmock",

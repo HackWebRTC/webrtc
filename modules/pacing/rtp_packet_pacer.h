@@ -43,9 +43,6 @@ class RtpPacketPacer {
   // Time since the oldest packet currently in the queue was added.
   virtual TimeDelta OldestPacketWaitTime() const = 0;
 
-  // Current number of packets curently in the pacer queue.
-  virtual size_t QueueSizePackets() const = 0;
-
   // Sum of payload + padding bytes of all packets currently in the pacer queue.
   virtual DataSize QueueSizeData() const = 0;
 
