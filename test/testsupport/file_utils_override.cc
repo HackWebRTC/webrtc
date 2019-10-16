@@ -150,12 +150,6 @@ std::string ResourcePath(const std::string& name,
 #endif
 }
 
-void OverrideResourcesDir(const std::string& resources_dir) {
-  RTC_CHECK(false)
-      << "Setting the resource dir is not supported in open-source "
-         "tests.";
-}
-
 }  // namespace internal
 }  // namespace test
 }  // namespace webrtc
