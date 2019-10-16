@@ -200,7 +200,7 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   virtual RtpState GetRtxState() const = 0;
 
   // Returns SSRC.
-  uint32_t SSRC() const override = 0;
+  virtual uint32_t SSRC() const = 0;
 
   // Sets the value for sending in the RID (and Repaired) RTP header extension.
   // RIDs are used to identify an RTP stream if SSRCs are not negotiated.
@@ -415,9 +415,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   // construction, remove this setter.
   virtual void SetReportBlockDataObserver(
       ReportBlockDataObserver* observer) = 0;
-  // BWE feedback packets.
-  bool SendFeedbackPacket(const rtcp::TransportFeedback& packet) override = 0;
-
   virtual void SetVideoBitrateAllocation(
       const VideoBitrateAllocation& bitrate) = 0;
 

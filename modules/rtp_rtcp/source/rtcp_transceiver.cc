@@ -106,32 +106,6 @@ void RtcpTransceiver::UnsetRemb() {
   task_queue_->PostTask([ptr] { ptr->UnsetRemb(); });
 }
 
-uint32_t RtcpTransceiver::SSRC() const {
-  return rtcp_transceiver_->sender_ssrc();
-}
-
-bool RtcpTransceiver::SendFeedbackPacket(
-    const rtcp::TransportFeedback& packet) {
-  RTC_CHECK(rtcp_transceiver_);
-  RtcpTransceiverImpl* ptr = rtcp_transceiver_.get();
-  rtc::Buffer raw_packet = packet.Build();
-  task_queue_->PostTask([ptr, raw_packet = std::move(raw_packet)] {
-    ptr->SendRawPacket(raw_packet);
-  });
-  return true;
-}
-
-bool RtcpTransceiver::SendNetworkStateEstimatePacket(
-    const rtcp::RemoteEstimate& packet) {
-  RTC_CHECK(rtcp_transceiver_);
-  RtcpTransceiverImpl* ptr = rtcp_transceiver_.get();
-  rtc::Buffer raw_packet = packet.Build();
-  task_queue_->PostTask([ptr, raw_packet = std::move(raw_packet)] {
-    ptr->SendRawPacket(raw_packet);
-  });
-  return true;
-}
-
 void RtcpTransceiver::SendCombinedRtcpPacket(
     std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets) {
   RTC_CHECK(rtcp_transceiver_);

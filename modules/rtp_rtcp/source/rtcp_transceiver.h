@@ -72,16 +72,6 @@ class RtcpTransceiver : public RtcpFeedbackSenderInterface {
   // Stops sending REMB in following compound packets.
   void UnsetRemb() override;
 
-  // TODO(bugs.webrtc.org/8239): Remove SendFeedbackPacket and SSRC functions
-  // and move generating of the TransportFeedback message inside
-  // RtcpTransceiverImpl when there is one RtcpTransceiver per rtp transport.
-
-  // Returns ssrc to put as sender ssrc into rtcp::TransportFeedback.
-  uint32_t SSRC() const override;
-  bool SendFeedbackPacket(const rtcp::TransportFeedback& packet) override;
-  bool SendNetworkStateEstimatePacket(
-      const rtcp::RemoteEstimate& packet) override;
-
   // TODO(bugs.webrtc.org/8239): Remove SendCombinedRtcpPacket
   // and move generating of the TransportFeedback message inside
   // RtcpTransceiverImpl when there is one RtcpTransceiver per rtp transport.

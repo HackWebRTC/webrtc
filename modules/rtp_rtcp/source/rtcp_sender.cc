@@ -992,46 +992,6 @@ absl::optional<VideoBitrateAllocation> RTCPSender::CheckAndUpdateLayerStructure(
   return updated_bitrate;
 }
 
-bool RTCPSender::SendFeedbackPacket(const rtcp::TransportFeedback& packet) {
-  size_t max_packet_size;
-  {
-    rtc::CritScope lock(&critical_section_rtcp_sender_);
-    if (method_ == RtcpMode::kOff)
-      return false;
-    max_packet_size = max_packet_size_;
-  }
-
-  RTC_DCHECK_LE(max_packet_size, IP_PACKET_SIZE);
-  bool send_failure = false;
-  auto callback = [&](rtc::ArrayView<const uint8_t> packet) {
-    if (transport_->SendRtcp(packet.data(), packet.size())) {
-      if (event_log_)
-        event_log_->Log(std::make_unique<RtcEventRtcpPacketOutgoing>(packet));
-    } else {
-      send_failure = true;
-    }
-  };
-  return packet.Build(max_packet_size, callback) && !send_failure;
-}
-
-bool RTCPSender::SendNetworkStateEstimatePacket(
-    const rtcp::RemoteEstimate& packet) {
-  size_t max_packet_size;
-  {
-    rtc::CritScope lock(&critical_section_rtcp_sender_);
-    if (method_ == RtcpMode::kOff)
-      return false;
-    max_packet_size = max_packet_size_;
-  }
-
-  RTC_DCHECK_LE(max_packet_size, IP_PACKET_SIZE);
-  bool send_success = false;
-  auto callback = [&](rtc::ArrayView<const uint8_t> packet) {
-    send_success = transport_->SendRtcp(packet.data(), packet.size());
-  };
-  return packet.Build(max_packet_size, callback) && send_success;
-}
-
 void RTCPSender::SendCombinedRtcpPacket(
     std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets) {
   size_t max_packet_size;

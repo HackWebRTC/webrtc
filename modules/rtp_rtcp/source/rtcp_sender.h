@@ -138,8 +138,6 @@ class RTCPSender {
 
   void SetTargetBitrate(unsigned int target_bitrate);
   void SetVideoBitrateAllocation(const VideoBitrateAllocation& bitrate);
-  bool SendFeedbackPacket(const rtcp::TransportFeedback& packet);
-  bool SendNetworkStateEstimatePacket(const rtcp::RemoteEstimate& packet);
   void SendCombinedRtcpPacket(
       std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets);
 

@@ -314,10 +314,6 @@ class TransportFeedbackObserver {
 class RtcpFeedbackSenderInterface {
  public:
   virtual ~RtcpFeedbackSenderInterface() = default;
-  virtual uint32_t SSRC() const = 0;
-  virtual bool SendFeedbackPacket(const rtcp::TransportFeedback& feedback) = 0;
-  virtual bool SendNetworkStateEstimatePacket(
-      const rtcp::RemoteEstimate& packet) = 0;
   virtual void SendCombinedRtcpPacket(
       std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets) = 0;
   virtual void SetRemb(int64_t bitrate_bps, std::vector<uint32_t> ssrcs) = 0;
