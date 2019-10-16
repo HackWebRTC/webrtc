@@ -31,7 +31,8 @@ void SendTask(TaskQueueBase* task_queue, Closure&& task, rtc::Location loc) {
   rtc::Event event;
   task_queue->PostTask(
       ToQueuedTask(std::forward<Closure>(task), [&event] { event.Set(); }));
-  RTC_CHECK(event.Wait(/*give_up_after_ms=*/120'000, /*warn_after_ms=*/10'000))
+  RTC_CHECK(event.Wait(/*give_up_after_ms=*/rtc::Event::kForever,
+                       /*warn_after_ms=*/10'000))
       << "Waited too long at " << loc.ToString();
 }
 
