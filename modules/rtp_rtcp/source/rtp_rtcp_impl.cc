@@ -741,16 +741,6 @@ int64_t ModuleRtpRtcpImpl::rtt_ms() const {
   return rtt_ms_;
 }
 
-void ModuleRtpRtcpImpl::RegisterSendChannelRtpStatisticsCallback(
-    StreamDataCountersCallback* callback) {
-  rtp_sender_->RegisterRtpStatisticsCallback(callback);
-}
-
-StreamDataCountersCallback*
-ModuleRtpRtcpImpl::GetSendChannelRtpStatisticsCallback() const {
-  return rtp_sender_->GetRtpStatisticsCallback();
-}
-
 void ModuleRtpRtcpImpl::SetVideoBitrateAllocation(
     const VideoBitrateAllocation& bitrate) {
   rtcp_sender_.SetVideoBitrateAllocation(bitrate);

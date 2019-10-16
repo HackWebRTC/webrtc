@@ -120,18 +120,12 @@ bool ShouldDisableRedAndUlpfec(bool flexfec_enabled,
 std::vector<RtpStreamSender> CreateRtpStreamSenders(
     Clock* clock,
     const RtpConfig& rtp_config,
+    const RtpSenderObservers& observers,
     int rtcp_report_interval_ms,
     Transport* send_transport,
-    RtcpIntraFrameObserver* intra_frame_callback,
-    RtcpLossNotificationObserver* rtcp_loss_notification_observer,
     RtcpBandwidthObserver* bandwidth_callback,
     RtpTransportControllerSendInterface* transport,
-    RtcpRttStats* rtt_stats,
     FlexfecSender* flexfec_sender,
-    BitrateStatisticsObserver* bitrate_observer,
-    RtcpPacketTypeCounterObserver* rtcp_type_observer,
-    SendSideDelayObserver* send_delay_observer,
-    SendPacketObserver* send_packet_observer,
     RtcEventLog* event_log,
     RateLimiter* retransmission_rate_limiter,
     OverheadObserver* overhead_observer,
@@ -144,23 +138,25 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
   configuration.audio = false;
   configuration.receiver_only = false;
   configuration.outgoing_transport = send_transport;
-  configuration.intra_frame_callback = intra_frame_callback;
+  configuration.intra_frame_callback = observers.intra_frame_callback;
   configuration.rtcp_loss_notification_observer =
-      rtcp_loss_notification_observer;
+      observers.rtcp_loss_notification_observer;
   configuration.bandwidth_callback = bandwidth_callback;
   configuration.network_state_estimate_observer =
       transport->network_state_estimate_observer();
   configuration.transport_feedback_callback =
       transport->transport_feedback_observer();
-  configuration.rtt_stats = rtt_stats;
-  configuration.rtcp_packet_type_counter_observer = rtcp_type_observer;
+  configuration.rtt_stats = observers.rtcp_rtt_stats;
+  configuration.rtcp_packet_type_counter_observer =
+      observers.rtcp_type_observer;
   configuration.paced_sender = transport->packet_sender();
-  configuration.send_bitrate_observer = bitrate_observer;
-  configuration.send_side_delay_observer = send_delay_observer;
-  configuration.send_packet_observer = send_packet_observer;
+  configuration.send_bitrate_observer = observers.bitrate_observer;
+  configuration.send_side_delay_observer = observers.send_delay_observer;
+  configuration.send_packet_observer = observers.send_packet_observer;
   configuration.event_log = event_log;
   configuration.retransmission_rate_limiter = retransmission_rate_limiter;
   configuration.overhead_observer = overhead_observer;
+  configuration.rtp_stats_callback = observers.rtp_stats;
   configuration.frame_encryptor = frame_encryptor;
   configuration.require_frame_encryption =
       crypto_options.sframe.require_frame_encryption;
@@ -320,26 +316,19 @@ RtpVideoSender::RtpVideoSender(
           MaybeCreateFlexfecSender(clock, rtp_config, suspended_ssrcs_)),
       fec_controller_(std::move(fec_controller)),
       fec_allowed_(true),
-      rtp_streams_(
-          CreateRtpStreamSenders(clock,
-                                 rtp_config,
-                                 rtcp_report_interval_ms,
-                                 send_transport,
-                                 observers.intra_frame_callback,
-                                 observers.rtcp_loss_notification_observer,
-                                 transport->GetBandwidthObserver(),
-                                 transport,
-                                 observers.rtcp_rtt_stats,
-                                 flexfec_sender_.get(),
-                                 observers.bitrate_observer,
-                                 observers.rtcp_type_observer,
-                                 observers.send_delay_observer,
-                                 observers.send_packet_observer,
-                                 event_log,
-                                 retransmission_limiter,
-                                 this,
-                                 frame_encryptor,
-                                 crypto_options)),
+      rtp_streams_(CreateRtpStreamSenders(clock,
+                                          rtp_config,
+                                          observers,
+                                          rtcp_report_interval_ms,
+                                          send_transport,
+                                          transport->GetBandwidthObserver(),
+                                          transport,
+                                          flexfec_sender_.get(),
+                                          event_log,
+                                          retransmission_limiter,
+                                          this,
+                                          frame_encryptor,
+                                          crypto_options)),
       rtp_config_(rtp_config),
       codec_type_(GetVideoCodecType(rtp_config)),
       transport_(transport),
@@ -400,8 +389,6 @@ RtpVideoSender::RtpVideoSender(
     stream.rtp_rtcp->RegisterRtcpStatisticsCallback(observers.rtcp_stats);
     stream.rtp_rtcp->SetReportBlockDataObserver(
         observers.report_block_data_observer);
-    stream.rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(
-        observers.rtp_stats);
     stream.rtp_rtcp->SetMaxRtpPacketSize(rtp_config_.max_packet_size);
     stream.rtp_rtcp->RegisterSendPayloadFrequency(rtp_config_.payload_type,
                                                   kVideoPayloadTypeFrequency);

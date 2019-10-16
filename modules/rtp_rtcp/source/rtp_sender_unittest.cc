@@ -189,6 +189,37 @@ class MockOverheadObserver : public OverheadObserver {
   MOCK_METHOD1(OnOverheadChanged, void(size_t overhead_bytes_per_packet));
 };
 
+class StreamDataTestCallback : public StreamDataCountersCallback {
+ public:
+  StreamDataTestCallback()
+      : StreamDataCountersCallback(), ssrc_(0), counters_() {}
+  ~StreamDataTestCallback() override = default;
+
+  void DataCountersUpdated(const StreamDataCounters& counters,
+                           uint32_t ssrc) override {
+    ssrc_ = ssrc;
+    counters_ = counters;
+  }
+
+  uint32_t ssrc_;
+  StreamDataCounters counters_;
+
+  void MatchPacketCounter(const RtpPacketCounter& expected,
+                          const RtpPacketCounter& actual) {
+    EXPECT_EQ(expected.payload_bytes, actual.payload_bytes);
+    EXPECT_EQ(expected.header_bytes, actual.header_bytes);
+    EXPECT_EQ(expected.padding_bytes, actual.padding_bytes);
+    EXPECT_EQ(expected.packets, actual.packets);
+  }
+
+  void Matches(uint32_t ssrc, const StreamDataCounters& counters) {
+    EXPECT_EQ(ssrc, ssrc_);
+    MatchPacketCounter(counters.transmitted, counters_.transmitted);
+    MatchPacketCounter(counters.retransmitted, counters_.retransmitted);
+    EXPECT_EQ(counters.fec.packets, counters_.fec.packets);
+  }
+};
+
 class RtpSenderTest : public ::testing::TestWithParam<TestConfig> {
  protected:
   RtpSenderTest()
@@ -223,6 +254,7 @@ class RtpSenderTest : public ::testing::TestWithParam<TestConfig> {
     config.retransmission_rate_limiter = &retransmission_rate_limiter_;
     config.paced_sender = pacer ? &mock_paced_sender_ : nullptr;
     config.populate_network2_timestamp = populate_network2;
+    config.rtp_stats_callback = &rtp_stats_callback_;
     rtp_sender_.reset(new RTPSender(config));
     rtp_sender_->SetSequenceNumber(kSeqNum);
     rtp_sender_->SetTimestampOffset(0);
@@ -239,6 +271,7 @@ class RtpSenderTest : public ::testing::TestWithParam<TestConfig> {
   LoopbackTransportTest transport_;
   const bool kMarkerBit;
   test::ScopedFieldTrials field_trials_;
+  StreamDataTestCallback rtp_stats_callback_;
 
   std::unique_ptr<RtpPacketToSend> BuildRtpPacket(int payload_type,
                                                   bool marker_bit,
@@ -1804,40 +1837,7 @@ TEST_P(RtpSenderTest, BitrateCallbacks) {
   rtp_sender_.reset();
 }
 
-class StreamDataTestCallback : public StreamDataCountersCallback {
- public:
-  StreamDataTestCallback()
-      : StreamDataCountersCallback(), ssrc_(0), counters_() {}
-  ~StreamDataTestCallback() override = default;
-
-  void DataCountersUpdated(const StreamDataCounters& counters,
-                           uint32_t ssrc) override {
-    ssrc_ = ssrc;
-    counters_ = counters;
-  }
-
-  uint32_t ssrc_;
-  StreamDataCounters counters_;
-
-  void MatchPacketCounter(const RtpPacketCounter& expected,
-                          const RtpPacketCounter& actual) {
-    EXPECT_EQ(expected.payload_bytes, actual.payload_bytes);
-    EXPECT_EQ(expected.header_bytes, actual.header_bytes);
-    EXPECT_EQ(expected.padding_bytes, actual.padding_bytes);
-    EXPECT_EQ(expected.packets, actual.packets);
-  }
-
-  void Matches(uint32_t ssrc, const StreamDataCounters& counters) {
-    EXPECT_EQ(ssrc, ssrc_);
-    MatchPacketCounter(counters.transmitted, counters_.transmitted);
-    MatchPacketCounter(counters.retransmitted, counters_.retransmitted);
-    EXPECT_EQ(counters.fec.packets, counters_.fec.packets);
-  }
-};
-
 TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
-  StreamDataTestCallback callback;
-
   const uint8_t kPayloadType = 127;
   const VideoCodecType kCodecType = VideoCodecType::kVideoCodecGeneric;
   PlayoutDelayOracle playout_delay_oracle;
@@ -1851,8 +1851,6 @@ TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
   uint8_t payload[] = {47, 11, 32, 93, 89};
   rtp_sender_->SetStorePacketsStatus(true, 1);
   uint32_t ssrc = rtp_sender_->SSRC();
-
-  rtp_sender_->RegisterRtpStatisticsCallback(&callback);
 
   // Send a frame.
   RTPVideoHeader video_header;
@@ -1870,7 +1868,7 @@ TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
   expected.retransmitted.padding_bytes = 0;
   expected.retransmitted.packets = 0;
   expected.fec.packets = 0;
-  callback.Matches(ssrc, expected);
+  rtp_stats_callback_.Matches(ssrc, expected);
 
   // Retransmit a frame.
   uint16_t seqno = rtp_sender_->SequenceNumber() - 1;
@@ -1882,7 +1880,7 @@ TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
   expected.retransmitted.header_bytes = 12;
   expected.retransmitted.padding_bytes = 0;
   expected.retransmitted.packets = 1;
-  callback.Matches(ssrc, expected);
+  rtp_stats_callback_.Matches(ssrc, expected);
 
   // Send padding.
   GenerateAndSendPadding(kMaxPaddingSize);
@@ -1890,14 +1888,10 @@ TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
   expected.transmitted.header_bytes = 36;
   expected.transmitted.padding_bytes = kMaxPaddingSize;
   expected.transmitted.packets = 3;
-  callback.Matches(ssrc, expected);
-
-  rtp_sender_->RegisterRtpStatisticsCallback(nullptr);
+  rtp_stats_callback_.Matches(ssrc, expected);
 }
 
 TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacksUlpfec) {
-  StreamDataTestCallback callback;
-
   const uint8_t kRedPayloadType = 96;
   const uint8_t kUlpfecPayloadType = 97;
   const uint8_t kPayloadType = 127;
@@ -1916,8 +1910,6 @@ TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacksUlpfec) {
   rtp_sender_->SetStorePacketsStatus(true, 1);
   uint32_t ssrc = rtp_sender_->SSRC();
 
-  rtp_sender_->RegisterRtpStatisticsCallback(&callback);
-
   RTPVideoHeader video_header;
   StreamDataCounters expected;
 
@@ -1935,9 +1927,7 @@ TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacksUlpfec) {
   expected.transmitted.header_bytes = 24;
   expected.transmitted.packets = 2;
   expected.fec.packets = 1;
-  callback.Matches(ssrc, expected);
-
-  rtp_sender_->RegisterRtpStatisticsCallback(nullptr);
+  rtp_stats_callback_.Matches(ssrc, expected);
 }
 
 TEST_P(RtpSenderTestWithoutPacer, BytesReportedCorrectly) {

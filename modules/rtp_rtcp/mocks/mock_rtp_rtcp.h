@@ -160,10 +160,6 @@ class MockRtpRtcp : public RtpRtcp {
                        bool decodability_flag,
                        bool buffering_allowed));
   MOCK_METHOD0(Process, void());
-  MOCK_METHOD1(RegisterSendChannelRtpStatisticsCallback,
-               void(StreamDataCountersCallback*));
-  MOCK_CONST_METHOD0(GetSendChannelRtpStatisticsCallback,
-                     StreamDataCountersCallback*());
   MOCK_METHOD1(SetVideoBitrateAllocation, void(const VideoBitrateAllocation&));
   MOCK_METHOD0(RtpSender, RTPSender*());
   MOCK_CONST_METHOD0(RtpSender, const RTPSender*());

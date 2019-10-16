@@ -153,10 +153,6 @@ class RTPSender {
   // sending to the network.
   void EnqueuePackets(std::vector<std::unique_ptr<RtpPacketToSend>> packets);
 
-  // Called on update of RTP statistics.
-  void RegisterRtpStatisticsCallback(StreamDataCountersCallback* callback);
-  StreamDataCountersCallback* GetRtpStatisticsCallback() const;
-
   uint32_t BitrateSent() const;
 
   void SetRtpState(const RtpState& rtp_state);
@@ -254,8 +250,7 @@ class RTPSender {
   uint64_t total_packet_send_delay_ms_ RTC_GUARDED_BY(statistics_crit_);
   StreamDataCounters rtp_stats_ RTC_GUARDED_BY(statistics_crit_);
   StreamDataCounters rtx_rtp_stats_ RTC_GUARDED_BY(statistics_crit_);
-  StreamDataCountersCallback* rtp_stats_callback_
-      RTC_GUARDED_BY(statistics_crit_);
+  StreamDataCountersCallback* const rtp_stats_callback_;
   RateStatistics total_bitrate_sent_ RTC_GUARDED_BY(statistics_crit_);
   RateStatistics nack_bitrate_sent_ RTC_GUARDED_BY(statistics_crit_);
   SendSideDelayObserver* const send_side_delay_observer_;

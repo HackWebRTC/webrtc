@@ -146,7 +146,7 @@ RTPSender::RTPSender(const RtpRtcp::Configuration& config)
       max_delay_it_(send_delays_.end()),
       sum_delays_ms_(0),
       total_packet_send_delay_ms_(0),
-      rtp_stats_callback_(nullptr),
+      rtp_stats_callback_(config.rtp_stats_callback),
       total_bitrate_sent_(kBitrateStatisticsWindowMs,
                           RateStatistics::kBpsScale),
       nack_bitrate_sent_(kBitrateStatisticsWindowMs, RateStatistics::kBpsScale),
@@ -1069,17 +1069,6 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
   rtx_packet->set_capture_time_ms(packet.capture_time_ms());
 
   return rtx_packet;
-}
-
-void RTPSender::RegisterRtpStatisticsCallback(
-    StreamDataCountersCallback* callback) {
-  rtc::CritScope cs(&statistics_crit_);
-  rtp_stats_callback_ = callback;
-}
-
-StreamDataCountersCallback* RTPSender::GetRtpStatisticsCallback() const {
-  rtc::CritScope cs(&statistics_crit_);
-  return rtp_stats_callback_;
 }
 
 uint32_t RTPSender::BitrateSent() const {

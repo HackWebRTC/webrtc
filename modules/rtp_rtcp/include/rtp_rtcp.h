@@ -102,6 +102,7 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
     RateLimiter* retransmission_rate_limiter = nullptr;
     OverheadObserver* overhead_observer = nullptr;
     RtcpAckObserver* ack_observer = nullptr;
+    StreamDataCountersCallback* rtp_stats_callback = nullptr;
 
     int rtcp_report_interval_ms = 0;
 
@@ -274,12 +275,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
 
   virtual std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
       size_t target_size_bytes) = 0;
-
-  // Called on generation of new statistics after an RTP send.
-  virtual void RegisterSendChannelRtpStatisticsCallback(
-      StreamDataCountersCallback* callback) = 0;
-  virtual StreamDataCountersCallback* GetSendChannelRtpStatisticsCallback()
-      const = 0;
 
   // **************************************************************************
   // RTCP
