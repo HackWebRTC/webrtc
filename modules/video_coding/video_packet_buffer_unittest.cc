@@ -547,13 +547,15 @@ class TestPacketBufferH264 : public TestPacketBuffer {
                              : ""),
         sps_pps_idr_is_keyframe_(sps_pps_idr_is_keyframe) {}
 
-  bool InsertH264(uint16_t seq_num,           // packet sequence number
-                  IsKeyFrame keyframe,        // is keyframe
-                  IsFirst first,              // is first packet of frame
-                  IsLast last,                // is last packet of frame
-                  uint32_t timestamp,         // rtp timestamp
-                  int data_size = 0,          // size of data
-                  uint8_t* data = nullptr) {  // data pointer
+  bool InsertH264(uint16_t seq_num,         // packet sequence number
+                  IsKeyFrame keyframe,      // is keyframe
+                  IsFirst first,            // is first packet of frame
+                  IsLast last,              // is last packet of frame
+                  uint32_t timestamp,       // rtp timestamp
+                  int data_size = 0,        // size of data
+                  uint8_t* data = nullptr,  // data pointer
+                  uint32_t width = 0,       // width of frame (SPS/IDR)
+                  uint32_t height = 0) {    // height of frame (SPS/IDR)
     VCMPacket packet;
     packet.video_header.codec = kVideoCodecH264;
     auto& h264_header =
@@ -571,12 +573,51 @@ class TestPacketBufferH264 : public TestPacketBuffer {
         h264_header.nalus_length = 1;
       }
     }
+    packet.video_header.width = width;
+    packet.video_header.height = height;
     packet.video_header.is_first_packet_in_frame = first == kFirst;
     packet.video_header.is_last_packet_in_frame = last == kLast;
     packet.sizeBytes = data_size;
     packet.dataPtr = data;
 
     return packet_buffer_.InsertPacket(&packet);
+  }
+
+  bool InsertH264KeyFrameWithAud(
+      uint16_t seq_num,         // packet sequence number
+      IsKeyFrame keyframe,      // is keyframe
+      IsFirst first,            // is first packet of frame
+      IsLast last,              // is last packet of frame
+      uint32_t timestamp,       // rtp timestamp
+      int data_size = 0,        // size of data
+      uint8_t* data = nullptr,  // data pointer
+      uint32_t width = 0,       // width of frame (SPS/IDR)
+      uint32_t height = 0) {    // height of frame (SPS/IDR)
+    VCMPacket packet;
+    packet.video_header.codec = kVideoCodecH264;
+    auto& h264_header =
+        packet.video_header.video_type_header.emplace<RTPVideoHeaderH264>();
+    packet.seqNum = seq_num;
+    packet.timestamp = timestamp;
+
+    // this should be the start of frame
+    if (kFirst != first) {
+      return false;
+    }
+
+    // Insert a AUD NALU / packet without width/height.
+    h264_header.nalus[0].type = H264::NaluType::kAud;
+    h264_header.nalus_length = 1;
+    packet.video_header.is_first_packet_in_frame = true;
+    packet.video_header.is_last_packet_in_frame = false;
+    packet.sizeBytes = 0;
+    packet.dataPtr = nullptr;
+    if (packet_buffer_.InsertPacket(&packet)) {
+      // insert IDR
+      return InsertH264(seq_num + 1, keyframe, kNotFirst, last, timestamp,
+                        data_size, data, width, height);
+    }
+    return false;
   }
 
   const bool sps_pps_idr_is_keyframe_;
@@ -655,6 +696,61 @@ TEST_P(TestPacketBufferH264Parameterized, GetBitstreamBufferPadding) {
             sizeof(data_data));
   EXPECT_EQ(frames_from_callback_[seq_num]->EncodedImage().capacity(),
             sizeof(data_data));
+  EXPECT_EQ(memcmp(frames_from_callback_[seq_num]->data(), data_data,
+                   sizeof(data_data)),
+            0);
+}
+
+TEST_P(TestPacketBufferH264Parameterized, FrameResolution) {
+  uint16_t seq_num = 100;
+  uint8_t data_data[] = "some plain old data";
+  uint8_t* data = new uint8_t[sizeof(data_data)];
+  memcpy(data, data_data, sizeof(data_data));
+  uint32_t width = 640;
+  uint32_t height = 360;
+  uint32_t timestamp = 1000;
+
+  EXPECT_TRUE(InsertH264(seq_num, kKeyFrame, kFirst, kLast, timestamp,
+                         sizeof(data_data), data, width, height));
+
+  ASSERT_EQ(1UL, frames_from_callback_.size());
+  EXPECT_EQ(frames_from_callback_[seq_num]->EncodedImage().size(),
+            sizeof(data_data));
+  EXPECT_EQ(frames_from_callback_[seq_num]->EncodedImage().capacity(),
+            sizeof(data_data));
+  EXPECT_EQ(width,
+            frames_from_callback_[seq_num]->EncodedImage()._encodedWidth);
+  EXPECT_EQ(height,
+            frames_from_callback_[seq_num]->EncodedImage()._encodedHeight);
+  EXPECT_EQ(memcmp(frames_from_callback_[seq_num]->data(), data_data,
+                   sizeof(data_data)),
+            0);
+}
+
+TEST_P(TestPacketBufferH264Parameterized, FrameResolutionNaluBeforeSPS) {
+  uint16_t seq_num = 100;
+  uint8_t data_data[] = "some plain old data";
+  uint8_t* data = new uint8_t[sizeof(data_data)];
+  memcpy(data, data_data, sizeof(data_data));
+  uint32_t width = 640;
+  uint32_t height = 360;
+  uint32_t timestamp = 1000;
+
+  EXPECT_TRUE(InsertH264KeyFrameWithAud(seq_num, kKeyFrame, kFirst, kLast,
+                                        timestamp, sizeof(data_data), data,
+                                        width, height));
+
+  CheckFrame(seq_num);
+  ASSERT_EQ(1UL, frames_from_callback_.size());
+  EXPECT_EQ(frames_from_callback_[seq_num]->EncodedImage().size(),
+            sizeof(data_data));
+  EXPECT_EQ(frames_from_callback_[seq_num]->EncodedImage().capacity(),
+            sizeof(data_data));
+  EXPECT_EQ(width,
+            frames_from_callback_[seq_num]->EncodedImage()._encodedWidth);
+  EXPECT_EQ(height,
+            frames_from_callback_[seq_num]->EncodedImage()._encodedHeight);
+
   EXPECT_EQ(memcmp(frames_from_callback_[seq_num]->data(), data_data,
                    sizeof(data_data)),
             0);

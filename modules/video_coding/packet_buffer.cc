@@ -313,7 +313,8 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
       bool has_h264_pps = false;
       bool has_h264_idr = false;
       bool is_h264_keyframe = false;
-
+      int idr_width = -1;
+      int idr_height = -1;
       while (true) {
         ++tested_packets;
         frame_size += data_buffer_[start_index].sizeBytes;
@@ -355,6 +356,15 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
                has_h264_pps) ||
               (!sps_pps_idr_is_h264_keyframe_ && has_h264_idr)) {
             is_h264_keyframe = true;
+            // Store the resolution of key frame which is the packet with
+            // smallest index and valid resolution; typically its IDR or SPS
+            // packet; there may be packet preceeding this packet, IDR's
+            // resolution will be applied to them.
+            if (data_buffer_[start_index].width() > 0 &&
+                data_buffer_[start_index].height() > 0) {
+              idr_width = data_buffer_[start_index].width();
+              idr_height = data_buffer_[start_index].height();
+            }
           }
         }
 
@@ -401,6 +411,12 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
         if (is_h264_keyframe) {
           data_buffer_[first_packet_index].video_header.frame_type =
               VideoFrameType::kVideoFrameKey;
+          if (idr_width > 0 && idr_height > 0) {
+            // IDR frame was finalized and we have the correct resolution for
+            // IDR; update first packet to have same resolution as IDR.
+            data_buffer_[first_packet_index].video_header.width = idr_width;
+            data_buffer_[first_packet_index].video_header.height = idr_height;
+          }
         } else {
           data_buffer_[first_packet_index].video_header.frame_type =
               VideoFrameType::kVideoFrameDelta;
