@@ -191,12 +191,12 @@ void EnableAllAPComponents(AudioProcessing* ap) {
   apm_config.gain_controller1.analog_level_maximum = 255;
 #endif
 
+  apm_config.noise_suppression.enabled = true;
+
   apm_config.high_pass_filter.enabled = true;
   apm_config.level_estimation.enabled = true;
   apm_config.voice_detection.enabled = true;
   ap->ApplyConfig(apm_config);
-
-  EXPECT_NOERR(ap->noise_suppression()->Enable(true));
 }
 
 // These functions are only used by ApmTest.Process.
@@ -1036,23 +1036,6 @@ TEST_F(ApmTest, ManualVolumeChangeIsPossible) {
   }
 }
 
-TEST_F(ApmTest, NoiseSuppression) {
-  // Test valid suppression levels.
-  NoiseSuppression::Level level[] = {
-      NoiseSuppression::kLow, NoiseSuppression::kModerate,
-      NoiseSuppression::kHigh, NoiseSuppression::kVeryHigh};
-  for (size_t i = 0; i < arraysize(level); i++) {
-    EXPECT_EQ(apm_->kNoError, apm_->noise_suppression()->set_level(level[i]));
-    EXPECT_EQ(level[i], apm_->noise_suppression()->level());
-  }
-
-  // Turn NS on/off
-  EXPECT_EQ(apm_->kNoError, apm_->noise_suppression()->Enable(true));
-  EXPECT_TRUE(apm_->noise_suppression()->is_enabled());
-  EXPECT_EQ(apm_->kNoError, apm_->noise_suppression()->Enable(false));
-  EXPECT_FALSE(apm_->noise_suppression()->is_enabled());
-}
-
 TEST_F(ApmTest, HighPassFilter) {
   // Turn HP filter on/off
   AudioProcessing::Config apm_config;
@@ -1068,8 +1051,8 @@ TEST_F(ApmTest, AllProcessingDisabledByDefault) {
   EXPECT_FALSE(config.high_pass_filter.enabled);
   EXPECT_FALSE(config.gain_controller1.enabled);
   EXPECT_FALSE(config.level_estimation.enabled);
+  EXPECT_FALSE(config.noise_suppression.enabled);
   EXPECT_FALSE(config.voice_detection.enabled);
-  EXPECT_FALSE(apm_->noise_suppression()->is_enabled());
 }
 
 TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabled) {
@@ -1502,7 +1485,6 @@ TEST_F(ApmTest, Process) {
     int analog_level = 127;
     int analog_level_average = 0;
     int max_output_average = 0;
-    float ns_speech_prob_average = 0.0f;
     float rms_dbfs_average = 0.0f;
 #if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
     int stats_index = 0;
@@ -1532,8 +1514,6 @@ TEST_F(ApmTest, Process) {
       EXPECT_TRUE(stats.output_rms_dbfs);
       has_voice_count += *stats.voice_detected ? 1 : 0;
       rms_dbfs_average += *stats.output_rms_dbfs;
-
-      ns_speech_prob_average += apm_->noise_suppression()->speech_probability();
 
       size_t frame_size = frame_->samples_per_channel_ * frame_->num_channels_;
       size_t write_count =
@@ -1587,7 +1567,6 @@ TEST_F(ApmTest, Process) {
     }
     max_output_average /= frame_count;
     analog_level_average /= frame_count;
-    ns_speech_prob_average /= frame_count;
     rms_dbfs_average /= frame_count;
 
     if (!absl::GetFlag(FLAGS_write_apm_ref_data)) {
@@ -1618,8 +1597,6 @@ TEST_F(ApmTest, Process) {
                   kMaxOutputAverageNear);
 #if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
       const double kFloatNear = 0.0005;
-      EXPECT_NEAR(test->ns_speech_probability_average(), ns_speech_prob_average,
-                  kFloatNear);
       EXPECT_NEAR(test->rms_dbfs_average(), rms_dbfs_average, kFloatNear);
 #endif
     } else {
@@ -1629,9 +1606,6 @@ TEST_F(ApmTest, Process) {
       test->set_max_output_average(max_output_average);
 
 #if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
-      EXPECT_LE(0.0f, ns_speech_prob_average);
-      EXPECT_GE(1.0f, ns_speech_prob_average);
-      test->set_ns_speech_probability_average(ns_speech_prob_average);
       test->set_rms_dbfs_average(rms_dbfs_average);
 #endif
     }
@@ -1658,7 +1632,9 @@ TEST_F(ApmTest, NoErrorsWithKeyboardChannel) {
 
   std::unique_ptr<AudioProcessing> ap(AudioProcessingBuilder().Create());
   // Enable one component just to ensure some processing takes place.
-  ap->noise_suppression()->Enable(true);
+  AudioProcessing::Config config;
+  config.noise_suppression.enabled = true;
+  ap->ApplyConfig(config);
   for (size_t i = 0; i < arraysize(cf); ++i) {
     const int in_rate = 44100;
     const int out_rate = 48000;
@@ -2432,8 +2408,10 @@ std::unique_ptr<AudioProcessing> CreateApm(bool mobile_aec) {
   apm_config.gain_controller2.enabled = false;
   apm_config.echo_canceller.enabled = true;
   apm_config.echo_canceller.mobile_mode = mobile_aec;
+  apm_config.noise_suppression.enabled = false;
+  apm_config.level_estimation.enabled = false;
+  apm_config.voice_detection.enabled = false;
   apm->ApplyConfig(apm_config);
-  EXPECT_EQ(apm->noise_suppression()->Enable(false), 0);
   return apm;
 }
 

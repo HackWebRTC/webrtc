@@ -115,13 +115,6 @@ class AudioProcessingImpl : public AudioProcessing {
 
   AudioProcessingStats GetStatistics(bool has_remote_tracks) const override;
 
-  // Methods returning pointers to APM submodules.
-  // No locks are aquired in those, as those locks
-  // would offer no protection (the submodules are
-  // created only once in a single-treaded manner
-  // during APM creation).
-  NoiseSuppression* noise_suppression() const override;
-
   // TODO(peah): Remove MutateConfig once the new API allows that.
   void MutateConfig(rtc::FunctionView<void(AudioProcessing::Config*)> mutator);
   AudioProcessing::Config GetConfig() const override;
@@ -238,6 +231,7 @@ class AudioProcessingImpl : public AudioProcessing {
   void InitializeEchoController()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void InitializeGainController2() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void InitializeNoiseSuppressor() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializePreAmplifier() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializePostProcessor() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializeAnalyzer() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);

@@ -430,7 +430,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
             << "Disabling NS since built-in NS will be used instead";
       }
     }
-    webrtc::apm_helpers::SetNsStatus(apm(), *options.noise_suppression);
   }
 
   if (options.stereo_swapping) {
@@ -498,6 +497,14 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
   if (options.residual_echo_detector) {
     apm_config.residual_echo_detector.enabled = *options.residual_echo_detector;
+  }
+
+  if (options.noise_suppression) {
+    const bool enabled = *options.noise_suppression;
+    apm_config.noise_suppression.enabled = enabled;
+    apm_config.noise_suppression.level =
+        webrtc::AudioProcessing::Config::NoiseSuppression::Level::kHigh;
+    RTC_LOG(LS_INFO) << "NS set to " << enabled;
   }
 
   if (options.typing_detection) {

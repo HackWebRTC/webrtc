@@ -35,8 +35,7 @@
 #include "modules/audio_processing/include/audio_frame_view.h"
 #include "modules/audio_processing/level_estimator.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
-#include "modules/audio_processing/noise_suppression_impl.h"
-#include "modules/audio_processing/noise_suppression_proxy.h"
+#include "modules/audio_processing/noise_suppression.h"
 #include "modules/audio_processing/residual_echo_detector.h"
 #include "modules/audio_processing/transient/transient_suppressor.h"
 #include "modules/audio_processing/voice_detection.h"
@@ -107,13 +106,13 @@ NoiseSuppression::Level NsConfigLevelToInterfaceLevel(
   using NsConfig = AudioProcessing::Config::NoiseSuppression;
   switch (level) {
     case NsConfig::kLow:
-      return NoiseSuppression::kLow;
+      return NoiseSuppression::Level::kLow;
     case NsConfig::kModerate:
-      return NoiseSuppression::kModerate;
+      return NoiseSuppression::Level::kModerate;
     case NsConfig::kHigh:
-      return NoiseSuppression::kHigh;
+      return NoiseSuppression::Level::kHigh;
     case NsConfig::kVeryHigh:
-      return NoiseSuppression::kVeryHigh;
+      return NoiseSuppression::Level::kVeryHigh;
     default:
       RTC_NOTREACHED();
   }
@@ -254,11 +253,8 @@ bool AudioProcessingImpl::ApmSubmoduleStates::HighPassFilteringRequired()
 
 struct AudioProcessingImpl::ApmPublicSubmodules {
   ApmPublicSubmodules() {}
-  // Accessed externally of APM without any lock acquired.
-  // TODO(bugs.webrtc.org/9947): Move these submodules into private_submodules_
-  // when their pointer-to-submodule API functions are gone.
-  std::unique_ptr<NoiseSuppressionImpl> noise_suppression;
-  std::unique_ptr<NoiseSuppressionProxy> noise_suppression_proxy;
+  // Historically accessed externally of APM without any lock acquired.
+  // TODO(bugs.webrtc.org/9947): Move these submodules into private_submodules_.
   std::unique_ptr<GainControlImpl> gain_control;
   std::unique_ptr<GainControlForExperimentalAgc>
       gain_control_for_experimental_agc;
@@ -284,6 +280,7 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
   std::unique_ptr<EchoCancellationImpl> echo_cancellation;
   std::unique_ptr<EchoControl> echo_controller;
   std::unique_ptr<EchoControlMobileImpl> echo_control_mobile;
+  std::unique_ptr<NoiseSuppression> noise_suppressor;
   std::unique_ptr<CustomProcessing> capture_post_processor;
   std::unique_ptr<CustomProcessing> render_pre_processor;
   std::unique_ptr<GainApplier> pre_amplifier;
@@ -403,10 +400,6 @@ AudioProcessingImpl::AudioProcessingImpl(
       static_cast<bool>(echo_control_factory_);
 
   public_submodules_->gain_control.reset(new GainControlImpl());
-  public_submodules_->noise_suppression.reset(
-      new NoiseSuppressionImpl(&crit_capture_));
-  public_submodules_->noise_suppression_proxy.reset(new NoiseSuppressionProxy(
-      this, public_submodules_->noise_suppression.get()));
   public_submodules_->gain_control_for_experimental_agc.reset(
       new GainControlForExperimentalAgc(
           public_submodules_->gain_control.get()));
@@ -556,12 +549,11 @@ int AudioProcessingImpl::InitializeLocked() {
   }
   InitializeTransient();
   InitializeHighPassFilter();
-  public_submodules_->noise_suppression->Initialize(num_proc_channels(),
-                                                    proc_sample_rate_hz());
   InitializeVoiceDetector();
   InitializeResidualEchoDetector();
   InitializeEchoController();
   InitializeGainController2();
+  InitializeNoiseSuppressor();
   InitializeAnalyzer();
   InitializePostProcessor();
   InitializePreProcessor();
@@ -702,16 +694,19 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
   const bool voice_detection_config_changed =
       config_.voice_detection.enabled != config.voice_detection.enabled;
 
+  const bool ns_config_changed =
+      config_.noise_suppression.enabled != config.noise_suppression.enabled ||
+      config_.noise_suppression.level != config.noise_suppression.level;
+
   config_ = config;
 
   if (aec_config_changed) {
     InitializeEchoController();
   }
 
-  public_submodules_->noise_suppression->Enable(
-      config.noise_suppression.enabled);
-  public_submodules_->noise_suppression->set_level(
-      NsConfigLevelToInterfaceLevel(config.noise_suppression.level));
+  if (ns_config_changed) {
+    InitializeNoiseSuppressor();
+  }
 
   InitializeHighPassFilter();
 
@@ -1407,7 +1402,9 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   }
   RETURN_ON_ERR(
       public_submodules_->gain_control->AnalyzeCaptureAudio(capture_buffer));
-  public_submodules_->noise_suppression->AnalyzeCaptureAudio(capture_buffer);
+  if (private_submodules_->noise_suppressor) {
+    private_submodules_->noise_suppressor->AnalyzeCaptureAudio(capture_buffer);
+  }
 
   if (private_submodules_->echo_control_mobile) {
     // Ensure that the stream delay was set before the call to the
@@ -1416,12 +1413,12 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
       return AudioProcessing::kStreamParameterNotSetError;
     }
 
-    if (public_submodules_->noise_suppression->is_enabled()) {
+    if (private_submodules_->noise_suppressor) {
       private_submodules_->echo_control_mobile->CopyLowPassReference(
           capture_buffer);
+      private_submodules_->noise_suppressor->ProcessCaptureAudio(
+          capture_buffer);
     }
-
-    public_submodules_->noise_suppression->ProcessCaptureAudio(capture_buffer);
 
     RETURN_ON_ERR(private_submodules_->echo_control_mobile->ProcessCaptureAudio(
         capture_buffer, stream_delay_ms()));
@@ -1447,7 +1444,10 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
           capture_buffer, stream_delay_ms()));
     }
 
-    public_submodules_->noise_suppression->ProcessCaptureAudio(capture_buffer);
+    if (private_submodules_->noise_suppressor) {
+      private_submodules_->noise_suppressor->ProcessCaptureAudio(
+          capture_buffer);
+    }
   }
 
   if (config_.voice_detection.enabled) {
@@ -1824,10 +1824,6 @@ AudioProcessingStats AudioProcessingImpl::GetStatistics(
   return stats;
 }
 
-NoiseSuppression* AudioProcessingImpl::noise_suppression() const {
-  return public_submodules_->noise_suppression_proxy.get();
-}
-
 void AudioProcessingImpl::MutateConfig(
     rtc::FunctionView<void(AudioProcessing::Config*)> mutator) {
   rtc::CritScope cs_render(&crit_render_);
@@ -1848,12 +1844,11 @@ bool AudioProcessingImpl::UpdateActiveSubmoduleStates() {
       !!private_submodules_->echo_cancellation,
       !!private_submodules_->echo_control_mobile,
       config_.residual_echo_detector.enabled,
-      public_submodules_->noise_suppression->is_enabled(),
+      !!private_submodules_->noise_suppressor,
       public_submodules_->gain_control->is_enabled(),
       config_.gain_controller2.enabled, config_.pre_amplifier.enabled,
       capture_nonlocked_.echo_controller_enabled,
-      config_.voice_detection.enabled,
-      capture_.transient_suppressor_enabled);
+      config_.voice_detection.enabled, capture_.transient_suppressor_enabled);
 }
 
 void AudioProcessingImpl::InitializeTransient() {
@@ -1993,6 +1988,17 @@ void AudioProcessingImpl::InitializeGainController2() {
   }
 }
 
+void AudioProcessingImpl::InitializeNoiseSuppressor() {
+  if (config_.noise_suppression.enabled) {
+    auto ns_level =
+        NsConfigLevelToInterfaceLevel(config_.noise_suppression.level);
+    private_submodules_->noise_suppressor = std::make_unique<NoiseSuppression>(
+        num_proc_channels(), proc_sample_rate_hz(), ns_level);
+  } else {
+    private_submodules_->noise_suppressor.reset();
+  }
+}
+
 void AudioProcessingImpl::InitializePreAmplifier() {
   if (config_.pre_amplifier.enabled) {
     private_submodules_->pre_amplifier.reset(
@@ -2092,9 +2098,8 @@ void AudioProcessingImpl::WriteAecDumpConfigMessage(bool forced) {
 
   apm_config.hpf_enabled = config_.high_pass_filter.enabled;
 
-  apm_config.ns_enabled = public_submodules_->noise_suppression->is_enabled();
-  apm_config.ns_level =
-      static_cast<int>(public_submodules_->noise_suppression->level());
+  apm_config.ns_enabled = config_.noise_suppression.enabled;
+  apm_config.ns_level = static_cast<int>(config_.noise_suppression.level);
 
   apm_config.transient_suppression_enabled =
       capture_.transient_suppressor_enabled;

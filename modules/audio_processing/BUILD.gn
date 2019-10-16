@@ -134,8 +134,8 @@ rtc_static_library("audio_processing") {
     "include/aec_dump.h",
     "level_estimator.cc",
     "level_estimator.h",
-    "noise_suppression_impl.cc",
-    "noise_suppression_impl.h",
+    "noise_suppression.cc",
+    "noise_suppression.h",
     "render_queue_item_verifier.h",
     "residual_echo_detector.cc",
     "residual_echo_detector.h",
@@ -171,7 +171,6 @@ rtc_static_library("audio_processing") {
     ":audio_processing_statistics",
     ":config",
     ":high_pass_filter",
-    ":noise_suppression_proxy",
     "../../api:array_view",
     "../../api:function_view",
     "../../api/audio:aec3_config",
@@ -219,17 +218,6 @@ rtc_static_library("audio_processing") {
     "../../common_audio:fir_filter_factory",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
-  ]
-}
-
-rtc_source_set("noise_suppression_proxy") {
-  sources = [
-    "noise_suppression_proxy.cc",
-    "noise_suppression_proxy.h",
-  ]
-  deps = [
-    ":api",
-    "../../rtc_base:macromagic",
   ]
 }
 

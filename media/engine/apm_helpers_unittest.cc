@@ -70,22 +70,4 @@ TEST(ApmHelpersTest, EcStatus_EnableDisable) {
   EXPECT_TRUE(config.echo_canceller.enabled);
   EXPECT_TRUE(config.echo_canceller.mobile_mode);
 }
-
-TEST(ApmHelpersTest, NsStatus_DefaultMode) {
-  TestHelper helper;
-  NoiseSuppression* ns = helper.apm()->noise_suppression();
-  EXPECT_EQ(NoiseSuppression::kModerate, ns->level());
-  EXPECT_FALSE(ns->is_enabled());
-}
-
-TEST(ApmHelpersTest, NsStatus_EnableDisable) {
-  TestHelper helper;
-  NoiseSuppression* ns = helper.apm()->noise_suppression();
-  apm_helpers::SetNsStatus(helper.apm(), true);
-  EXPECT_EQ(NoiseSuppression::kHigh, ns->level());
-  EXPECT_TRUE(ns->is_enabled());
-  apm_helpers::SetNsStatus(helper.apm(), false);
-  EXPECT_EQ(NoiseSuppression::kHigh, ns->level());
-  EXPECT_FALSE(ns->is_enabled());
-}
 }  // namespace webrtc

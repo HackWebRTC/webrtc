@@ -47,19 +47,5 @@ void SetEcStatus(AudioProcessing* apm, bool enable, EcModes mode) {
   apm->ApplyConfig(apm_config);
   RTC_LOG(LS_INFO) << "Echo control set to " << enable << " with mode " << mode;
 }
-
-void SetNsStatus(AudioProcessing* apm, bool enable) {
-  RTC_DCHECK(apm);
-  NoiseSuppression* ns = apm->noise_suppression();
-  if (ns->set_level(NoiseSuppression::kHigh) != 0) {
-    RTC_LOG(LS_ERROR) << "Failed to set high NS level.";
-    return;
-  }
-  if (ns->Enable(enable) != 0) {
-    RTC_LOG(LS_ERROR) << "Failed to enable/disable NS: " << enable;
-    return;
-  }
-  RTC_LOG(LS_INFO) << "NS set to " << enable;
-}
 }  // namespace apm_helpers
 }  // namespace webrtc

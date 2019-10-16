@@ -11,7 +11,7 @@
 
 #include "api/array_view.h"
 #include "modules/audio_processing/audio_buffer.h"
-#include "modules/audio_processing/noise_suppression_impl.h"
+#include "modules/audio_processing/noise_suppression.h"
 #include "modules/audio_processing/test/audio_buffer_tools.h"
 #include "modules/audio_processing/test/bitexactness_tools.h"
 #include "test/gtest.h"
@@ -24,7 +24,7 @@ const int kNumFramesToProcess = 1000;
 // Process one frame of data and produce the output.
 void ProcessOneFrame(int sample_rate_hz,
                      AudioBuffer* capture_buffer,
-                     NoiseSuppressionImpl* noise_suppressor) {
+                     NoiseSuppression* noise_suppressor) {
   if (sample_rate_hz > AudioProcessing::kSampleRate16kHz) {
     capture_buffer->SplitIntoFrequencyBands();
   }
@@ -41,15 +41,11 @@ void ProcessOneFrame(int sample_rate_hz,
 // any errors.
 void RunBitexactnessTest(int sample_rate_hz,
                          size_t num_channels,
-                         NoiseSuppressionImpl::Level level,
+                         NoiseSuppression::Level level,
                          float speech_probability_reference,
                          rtc::ArrayView<const float> noise_estimate_reference,
                          rtc::ArrayView<const float> output_reference) {
-  rtc::CriticalSection crit_capture;
-  NoiseSuppressionImpl noise_suppressor(&crit_capture);
-  noise_suppressor.Initialize(num_channels, sample_rate_hz);
-  noise_suppressor.Enable(true);
-  noise_suppressor.set_level(level);
+  NoiseSuppression noise_suppressor(num_channels, sample_rate_hz, level);
 
   int samples_per_channel = rtc::CheckedDivExact(sample_rate_hz, 100);
   const StreamConfig capture_config(sample_rate_hz, num_channels, false);
@@ -280,5 +276,4 @@ TEST(NoiseSuppresionBitExactnessTest, Mono16kHzVeryHigh) {
                       kSpeechProbabilityReference, kNoiseEstimateReference,
                       kOutputReference);
 }
-
 }  // namespace webrtc

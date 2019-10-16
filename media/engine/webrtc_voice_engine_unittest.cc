@@ -88,8 +88,9 @@ constexpr webrtc::AudioProcessing::Config::GainController1::Mode
         webrtc::AudioProcessing::Config::GainController1::kAdaptiveAnalog;
 #endif
 
-constexpr webrtc::NoiseSuppression::Level kDefaultNsLevel =
-    webrtc::NoiseSuppression::kHigh;
+constexpr webrtc::AudioProcessing::Config::NoiseSuppression::Level
+    kDefaultNsLevel =
+        webrtc::AudioProcessing::Config::NoiseSuppression::Level::kHigh;
 
 void AdmSetupExpectations(webrtc::test::MockAudioDeviceModule* adm) {
   RTC_DCHECK(adm);
@@ -180,7 +181,6 @@ class WebRtcVoiceEngineTestFake : public ::testing::Test {
       : task_queue_factory_(webrtc::CreateDefaultTaskQueueFactory()),
         apm_(new rtc::RefCountedObject<
              StrictMock<webrtc::test::MockAudioProcessing>>()),
-        apm_ns_(*apm_->noise_suppression()),
         call_(),
         override_field_trials_(field_trials) {
     // AudioDeviceModule.
@@ -191,8 +191,6 @@ class WebRtcVoiceEngineTestFake : public ::testing::Test {
     EXPECT_CALL(*apm_, SetExtraOptions(::testing::_));
     EXPECT_CALL(*apm_, DetachAecDump());
     // Default Options.
-    EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
-    EXPECT_CALL(apm_ns_, Enable(true)).WillOnce(Return(0));
     // TODO(kwiberg): We should use mock factories here, but a bunch of
     // the tests here probe the specific set of codecs provided by the builtin
     // factories. Those tests should probably be moved elsewhere.
@@ -209,6 +207,8 @@ class WebRtcVoiceEngineTestFake : public ::testing::Test {
     EXPECT_TRUE(IsEchoCancellationEnabled());
     EXPECT_TRUE(IsHighPassFilterEnabled());
     EXPECT_TRUE(IsTypingDetectionEnabled());
+    EXPECT_TRUE(apm_config_.noise_suppression.enabled);
+    EXPECT_EQ(apm_config_.noise_suppression.level, kDefaultNsLevel);
     VerifyGainControlEnabledCorrectly();
     VerifyGainControlDefaultSettings();
   }
@@ -771,7 +771,6 @@ class WebRtcVoiceEngineTestFake : public ::testing::Test {
   std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory_;
   StrictMock<webrtc::test::MockAudioDeviceModule> adm_;
   rtc::scoped_refptr<StrictMock<webrtc::test::MockAudioProcessing>> apm_;
-  webrtc::test::MockNoiseSuppression& apm_ns_;
   cricket::FakeCall call_;
   std::unique_ptr<cricket::WebRtcVoiceEngine> engine_;
   cricket::VoiceMediaChannel* channel_ = nullptr;
@@ -2887,8 +2886,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_TRUE(apm_config_.gain_controller1.enabled);
 
   // Turn off other options.
-  EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
-  EXPECT_CALL(apm_ns_, Enable(false)).WillOnce(Return(0));
   send_parameters_.options.noise_suppression = false;
   send_parameters_.options.highpass_filter = false;
   send_parameters_.options.stereo_swapping = true;
@@ -2896,13 +2893,15 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_TRUE(IsEchoCancellationEnabled());
   EXPECT_FALSE(IsHighPassFilterEnabled());
   EXPECT_TRUE(apm_config_.gain_controller1.enabled);
+  EXPECT_FALSE(apm_config_.noise_suppression.enabled);
+  EXPECT_EQ(apm_config_.noise_suppression.level, kDefaultNsLevel);
 
   // Set options again to ensure it has no impact.
-  EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
-  EXPECT_CALL(apm_ns_, Enable(false)).WillOnce(Return(0));
   SetSendParameters(send_parameters_);
   EXPECT_TRUE(IsEchoCancellationEnabled());
   EXPECT_TRUE(apm_config_.gain_controller1.enabled);
+  EXPECT_FALSE(apm_config_.noise_suppression.enabled);
+  EXPECT_EQ(apm_config_.noise_suppression.level, kDefaultNsLevel);
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
@@ -2947,11 +2946,11 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   parameters_options_all.options.echo_cancellation = true;
   parameters_options_all.options.auto_gain_control = true;
   parameters_options_all.options.noise_suppression = true;
-  EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).Times(2).WillOnce(Return(0));
-  EXPECT_CALL(apm_ns_, Enable(true)).Times(2).WillRepeatedly(Return(0));
   EXPECT_TRUE(channel1->SetSendParameters(parameters_options_all));
   EXPECT_TRUE(IsEchoCancellationEnabled());
   VerifyGainControlEnabledCorrectly();
+  EXPECT_TRUE(apm_config_.noise_suppression.enabled);
+  EXPECT_EQ(apm_config_.noise_suppression.level, kDefaultNsLevel);
   EXPECT_EQ(parameters_options_all.options, channel1->options());
   EXPECT_TRUE(channel2->SetSendParameters(parameters_options_all));
   EXPECT_TRUE(IsEchoCancellationEnabled());
@@ -2961,10 +2960,10 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   // unset NS
   cricket::AudioSendParameters parameters_options_no_ns = send_parameters_;
   parameters_options_no_ns.options.noise_suppression = false;
-  EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
-  EXPECT_CALL(apm_ns_, Enable(false)).WillOnce(Return(0));
   EXPECT_TRUE(channel1->SetSendParameters(parameters_options_no_ns));
   EXPECT_TRUE(IsEchoCancellationEnabled());
+  EXPECT_FALSE(apm_config_.noise_suppression.enabled);
+  EXPECT_EQ(apm_config_.noise_suppression.level, kDefaultNsLevel);
   VerifyGainControlEnabledCorrectly();
   cricket::AudioOptions expected_options = parameters_options_all.options;
   expected_options.echo_cancellation = true;
@@ -2975,44 +2974,44 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
   // unset AGC
   cricket::AudioSendParameters parameters_options_no_agc = send_parameters_;
   parameters_options_no_agc.options.auto_gain_control = false;
-  EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
-  EXPECT_CALL(apm_ns_, Enable(true)).WillOnce(Return(0));
   EXPECT_TRUE(channel2->SetSendParameters(parameters_options_no_agc));
   EXPECT_TRUE(IsEchoCancellationEnabled());
   EXPECT_FALSE(apm_config_.gain_controller1.enabled);
+  EXPECT_TRUE(apm_config_.noise_suppression.enabled);
+  EXPECT_EQ(apm_config_.noise_suppression.level, kDefaultNsLevel);
   expected_options.echo_cancellation = true;
   expected_options.auto_gain_control = false;
   expected_options.noise_suppression = true;
   EXPECT_EQ(expected_options, channel2->options());
 
-  EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
-  EXPECT_CALL(apm_ns_, Enable(true)).WillOnce(Return(0));
   EXPECT_TRUE(channel_->SetSendParameters(parameters_options_all));
   EXPECT_TRUE(IsEchoCancellationEnabled());
   VerifyGainControlEnabledCorrectly();
+  EXPECT_TRUE(apm_config_.noise_suppression.enabled);
+  EXPECT_EQ(apm_config_.noise_suppression.level, kDefaultNsLevel);
 
-  EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
-  EXPECT_CALL(apm_ns_, Enable(false)).WillOnce(Return(0));
   channel1->SetSend(true);
   EXPECT_TRUE(IsEchoCancellationEnabled());
   VerifyGainControlEnabledCorrectly();
+  EXPECT_FALSE(apm_config_.noise_suppression.enabled);
+  EXPECT_EQ(apm_config_.noise_suppression.level, kDefaultNsLevel);
 
-  EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
-  EXPECT_CALL(apm_ns_, Enable(true)).WillOnce(Return(0));
   channel2->SetSend(true);
   EXPECT_TRUE(IsEchoCancellationEnabled());
   EXPECT_FALSE(apm_config_.gain_controller1.enabled);
+  EXPECT_TRUE(apm_config_.noise_suppression.enabled);
+  EXPECT_EQ(apm_config_.noise_suppression.level, kDefaultNsLevel);
 
   // Make sure settings take effect while we are sending.
   cricket::AudioSendParameters parameters_options_no_agc_nor_ns =
       send_parameters_;
   parameters_options_no_agc_nor_ns.options.auto_gain_control = false;
   parameters_options_no_agc_nor_ns.options.noise_suppression = false;
-  EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
-  EXPECT_CALL(apm_ns_, Enable(false)).WillOnce(Return(0));
   EXPECT_TRUE(channel2->SetSendParameters(parameters_options_no_agc_nor_ns));
   EXPECT_TRUE(IsEchoCancellationEnabled());
   EXPECT_FALSE(apm_config_.gain_controller1.enabled);
+  EXPECT_FALSE(apm_config_.noise_suppression.enabled);
+  EXPECT_EQ(apm_config_.noise_suppression.level, kDefaultNsLevel);
   expected_options.echo_cancellation = true;
   expected_options.auto_gain_control = false;
   expected_options.noise_suppression = false;

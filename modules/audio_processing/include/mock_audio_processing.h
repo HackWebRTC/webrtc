@@ -22,17 +22,6 @@
 namespace webrtc {
 
 namespace test {
-class MockNoiseSuppression : public NoiseSuppression {
- public:
-  virtual ~MockNoiseSuppression() {}
-  MOCK_METHOD1(Enable, int(bool enable));
-  MOCK_CONST_METHOD0(is_enabled, bool());
-  MOCK_METHOD1(set_level, int(Level level));
-  MOCK_CONST_METHOD0(level, Level());
-  MOCK_CONST_METHOD0(speech_probability, float());
-  MOCK_METHOD0(NoiseEstimate, std::vector<float>());
-};
-
 class MockCustomProcessing : public CustomProcessing {
  public:
   virtual ~MockCustomProcessing() {}
@@ -65,8 +54,7 @@ class MockEchoControl : public EchoControl {
 
 class MockAudioProcessing : public ::testing::NiceMock<AudioProcessing> {
  public:
-  MockAudioProcessing()
-      : noise_suppression_(new ::testing::NiceMock<MockNoiseSuppression>()) {}
+  MockAudioProcessing() {}
 
   virtual ~MockAudioProcessing() {}
 
@@ -132,14 +120,8 @@ class MockAudioProcessing : public ::testing::NiceMock<AudioProcessing> {
 
   MOCK_METHOD0(UpdateHistogramsOnCallEnd, void());
   MOCK_CONST_METHOD1(GetStatistics, AudioProcessingStats(bool));
-  virtual MockNoiseSuppression* noise_suppression() const {
-    return noise_suppression_.get();
-  }
 
   MOCK_CONST_METHOD0(GetConfig, AudioProcessing::Config());
-
- private:
-  std::unique_ptr<MockNoiseSuppression> noise_suppression_;
 };
 
 }  // namespace test

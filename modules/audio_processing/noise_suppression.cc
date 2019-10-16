@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2019 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,11 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/noise_suppression_impl.h"
+#include "modules/audio_processing/noise_suppression.h"
 
 #include "modules/audio_processing/audio_buffer.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/constructor_magic.h"
 #if defined(WEBRTC_NS_FLOAT)
 #include "modules/audio_processing/ns/noise_suppression.h"
 
@@ -32,7 +31,25 @@ typedef NsxHandle NsState;
 #endif
 
 namespace webrtc {
-class NoiseSuppressionImpl::Suppressor {
+namespace {
+int NoiseSuppressionLevelToPolicy(NoiseSuppression::Level level) {
+  switch (level) {
+    case NoiseSuppression::Level::kLow:
+      return 0;
+    case NoiseSuppression::Level::kModerate:
+      return 1;
+    case NoiseSuppression::Level::kHigh:
+      return 2;
+    case NoiseSuppression::Level::kVeryHigh:
+      return 3;
+    default:
+      RTC_NOTREACHED();
+  }
+  return 1;
+}
+}  // namespace
+
+class NoiseSuppression::Suppressor {
  public:
   explicit Suppressor(int sample_rate_hz) {
     state_ = NS_CREATE();
@@ -41,43 +58,32 @@ class NoiseSuppressionImpl::Suppressor {
     RTC_DCHECK_EQ(0, error);
   }
   ~Suppressor() { NS_FREE(state_); }
+
+  Suppressor(Suppressor&) = delete;
+  Suppressor& operator=(Suppressor&) = delete;
+
   NsState* state() { return state_; }
 
  private:
   NsState* state_ = nullptr;
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Suppressor);
 };
 
-NoiseSuppressionImpl::NoiseSuppressionImpl(rtc::CriticalSection* crit)
-    : crit_(crit) {
-  RTC_DCHECK(crit);
-}
-
-NoiseSuppressionImpl::~NoiseSuppressionImpl() {}
-
-void NoiseSuppressionImpl::Initialize(size_t channels, int sample_rate_hz) {
-  rtc::CritScope cs(crit_);
-  channels_ = channels;
-  sample_rate_hz_ = sample_rate_hz;
-  std::vector<std::unique_ptr<Suppressor>> new_suppressors;
-  if (enabled_) {
-    new_suppressors.resize(channels);
-    for (size_t i = 0; i < channels; i++) {
-      new_suppressors[i].reset(new Suppressor(sample_rate_hz));
-    }
+NoiseSuppression::NoiseSuppression(size_t channels,
+                                   int sample_rate_hz,
+                                   Level level) {
+  const int policy = NoiseSuppressionLevelToPolicy(level);
+  for (size_t i = 0; i < channels; ++i) {
+    suppressors_.push_back(std::make_unique<Suppressor>(sample_rate_hz));
+    int error = NS_SET_POLICY(suppressors_[i]->state(), policy);
+    RTC_DCHECK_EQ(0, error);
   }
-  suppressors_.swap(new_suppressors);
-  set_level(level_);
 }
 
-void NoiseSuppressionImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
+NoiseSuppression::~NoiseSuppression() {}
+
+void NoiseSuppression::AnalyzeCaptureAudio(AudioBuffer* audio) {
   RTC_DCHECK(audio);
 #if defined(WEBRTC_NS_FLOAT)
-  rtc::CritScope cs(crit_);
-  if (!enabled_) {
-    return;
-  }
-
   RTC_DCHECK_GE(160, audio->num_frames_per_band());
   RTC_DCHECK_EQ(suppressors_.size(), audio->num_channels());
   for (size_t i = 0; i < suppressors_.size(); i++) {
@@ -87,13 +93,8 @@ void NoiseSuppressionImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
 #endif
 }
 
-void NoiseSuppressionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
+void NoiseSuppression::ProcessCaptureAudio(AudioBuffer* audio) {
   RTC_DCHECK(audio);
-  rtc::CritScope cs(crit_);
-  if (!enabled_) {
-    return;
-  }
-
   RTC_DCHECK_GE(160, audio->num_frames_per_band());
   RTC_DCHECK_EQ(suppressors_.size(), audio->num_channels());
   for (size_t i = 0; i < suppressors_.size(); i++) {
@@ -115,54 +116,7 @@ void NoiseSuppressionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   }
 }
 
-int NoiseSuppressionImpl::Enable(bool enable) {
-  rtc::CritScope cs(crit_);
-  if (enabled_ != enable) {
-    enabled_ = enable;
-    Initialize(channels_, sample_rate_hz_);
-  }
-  return AudioProcessing::kNoError;
-}
-
-bool NoiseSuppressionImpl::is_enabled() const {
-  rtc::CritScope cs(crit_);
-  return enabled_;
-}
-
-int NoiseSuppressionImpl::set_level(Level level) {
-  int policy = 1;
-  switch (level) {
-    case NoiseSuppression::kLow:
-      policy = 0;
-      break;
-    case NoiseSuppression::kModerate:
-      policy = 1;
-      break;
-    case NoiseSuppression::kHigh:
-      policy = 2;
-      break;
-    case NoiseSuppression::kVeryHigh:
-      policy = 3;
-      break;
-    default:
-      RTC_NOTREACHED();
-  }
-  rtc::CritScope cs(crit_);
-  level_ = level;
-  for (auto& suppressor : suppressors_) {
-    int error = NS_SET_POLICY(suppressor->state(), policy);
-    RTC_DCHECK_EQ(0, error);
-  }
-  return AudioProcessing::kNoError;
-}
-
-NoiseSuppression::Level NoiseSuppressionImpl::level() const {
-  rtc::CritScope cs(crit_);
-  return level_;
-}
-
-float NoiseSuppressionImpl::speech_probability() const {
-  rtc::CritScope cs(crit_);
+float NoiseSuppression::speech_probability() const {
 #if defined(WEBRTC_NS_FLOAT)
   float probability_average = 0.0f;
   for (auto& suppressor : suppressors_) {
@@ -180,8 +134,7 @@ float NoiseSuppressionImpl::speech_probability() const {
 #endif
 }
 
-std::vector<float> NoiseSuppressionImpl::NoiseEstimate() {
-  rtc::CritScope cs(crit_);
+std::vector<float> NoiseSuppression::NoiseEstimate() {
   std::vector<float> noise_estimate;
 #if defined(WEBRTC_NS_FLOAT)
   const float kNumChannelsFraction = 1.f / suppressors_.size();
@@ -208,7 +161,7 @@ std::vector<float> NoiseSuppressionImpl::NoiseEstimate() {
   return noise_estimate;
 }
 
-size_t NoiseSuppressionImpl::num_noise_bins() {
+size_t NoiseSuppression::num_noise_bins() {
 #if defined(WEBRTC_NS_FLOAT)
   return WebRtcNs_num_freq();
 #elif defined(WEBRTC_NS_FIXED)

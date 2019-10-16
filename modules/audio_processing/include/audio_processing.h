@@ -47,7 +47,6 @@ class StreamConfig;
 class ProcessingConfig;
 
 class EchoDetector;
-class NoiseSuppression;
 class CustomAudioAnalyzer;
 class CustomProcessing;
 
@@ -677,17 +676,6 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
   // remote track.
   virtual AudioProcessingStats GetStatistics(bool has_remote_tracks) const = 0;
 
-  // DEPRECATED.
-  // TODO(https://crbug.com/webrtc/9878): Remove.
-  // Configure via AudioProcessing::ApplyConfig during setup.
-  // Set runtime settings via AudioProcessing::SetRuntimeSetting.
-  // Get stats via AudioProcessing::GetStatistics.
-  //
-  // These provide access to the component interfaces and should never return
-  // NULL. The pointers will be valid for the lifetime of the APM instance.
-  // The memory for these objects is entirely managed internally.
-  virtual NoiseSuppression* noise_suppression() const = 0;
-
   // Returns the last applied configuration.
   virtual AudioProcessing::Config GetConfig() const = 0;
 
@@ -872,34 +860,6 @@ class ProcessingConfig {
   }
 
   StreamConfig streams[StreamName::kNumStreamNames];
-};
-
-// The noise suppression (NS) component attempts to remove noise while
-// retaining speech. Recommended to be enabled on the client-side.
-//
-// Recommended to be enabled on the client-side.
-class NoiseSuppression {
- public:
-  virtual int Enable(bool enable) = 0;
-  virtual bool is_enabled() const = 0;
-
-  // Determines the aggressiveness of the suppression. Increasing the level
-  // will reduce the noise level at the expense of a higher speech distortion.
-  enum Level { kLow, kModerate, kHigh, kVeryHigh };
-
-  virtual int set_level(Level level) = 0;
-  virtual Level level() const = 0;
-
-  // Returns the internally computed prior speech probability of current frame
-  // averaged over output channels. This is not supported in fixed point, for
-  // which |kUnsupportedFunctionError| is returned.
-  virtual float speech_probability() const = 0;
-
-  // Returns the noise estimate per frequency bin averaged over all channels.
-  virtual std::vector<float> NoiseEstimate() = 0;
-
- protected:
-  virtual ~NoiseSuppression() {}
 };
 
 // Experimental interface for a custom analysis submodule.

@@ -590,9 +590,7 @@ void StatsProcessor::Process() {
   EXPECT_TRUE(apm_config.gain_controller1.enabled);
   EXPECT_TRUE(apm_config.noise_suppression.enabled);
 
-  // The below return values are not testable.
-  apm_->noise_suppression()->speech_probability();
-
+  // The below return value is not testable.
   apm_->GetStatistics(/*has_remote_tracks=*/true);
 }
 

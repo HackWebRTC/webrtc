@@ -504,6 +504,17 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
         *settings_.maximum_internal_processing_rate;
   }
 
+  if (settings_.use_ns) {
+    apm_config.noise_suppression.enabled = *settings_.use_ns;
+  }
+  if (settings_.ns_level) {
+    const int level = *settings_.ns_level;
+    RTC_CHECK_GE(level, 0);
+    RTC_CHECK_LE(level, 3);
+    apm_config.noise_suppression.level =
+        static_cast<AudioProcessing::Config::NoiseSuppression::Level>(level);
+  }
+
   RTC_CHECK(ap_builder_);
   if (echo_control_factory) {
     ap_builder_->SetEchoControlFactory(std::move(echo_control_factory));
@@ -513,17 +524,6 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
   RTC_CHECK(ap_);
 
   ap_->ApplyConfig(apm_config);
-
-  if (settings_.use_ns) {
-    RTC_CHECK_EQ(AudioProcessing::kNoError,
-                 ap_->noise_suppression()->Enable(*settings_.use_ns));
-  }
-  if (settings_.ns_level) {
-    RTC_CHECK_EQ(
-        AudioProcessing::kNoError,
-        ap_->noise_suppression()->set_level(
-            static_cast<NoiseSuppression::Level>(*settings_.ns_level)));
-  }
 
   if (settings_.use_ts) {
     ap_->set_stream_key_pressed(*settings_.use_ts);
