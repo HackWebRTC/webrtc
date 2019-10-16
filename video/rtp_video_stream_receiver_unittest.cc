@@ -330,10 +330,10 @@ TEST_F(RtpVideoStreamReceiverTest, CacheColorSpaceFromLastPacketOfKeyframe) {
 }
 
 TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrame) {
-  RTPHeader rtp_header;
+  RtpPacketReceived rtp_packet;
   RTPVideoHeader video_header;
   const std::vector<uint8_t> data({1, 2, 3, 4});
-  rtp_header.sequenceNumber = 1;
+  rtp_packet.SetSequenceNumber(1);
   video_header.is_first_packet_in_frame = true;
   video_header.is_last_packet_in_frame = true;
   video_header.codec = kVideoCodecGeneric;
@@ -341,8 +341,8 @@ TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrame) {
   mock_on_complete_frame_callback_.AppendExpectedBitstream(data.data(),
                                                            data.size());
   EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame(_));
-  rtp_video_stream_receiver_->OnReceivedPayloadData(
-      data.data(), data.size(), rtp_header, video_header, absl::nullopt, false);
+  rtp_video_stream_receiver_->OnReceivedPayloadData(data, rtp_packet,
+                                                    video_header);
 }
 
 TEST_F(RtpVideoStreamReceiverTest, NoInfiniteRecursionOnEncapsulatedRedPacket) {
@@ -388,10 +388,10 @@ TEST_F(RtpVideoStreamReceiverTest,
 }
 
 TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrameBitstreamError) {
-  RTPHeader rtp_header;
+  RtpPacketReceived rtp_packet;
   RTPVideoHeader video_header;
   const std::vector<uint8_t> data({1, 2, 3, 4});
-  rtp_header.sequenceNumber = 1;
+  rtp_packet.SetSequenceNumber(1);
   video_header.is_first_packet_in_frame = true;
   video_header.is_last_packet_in_frame = true;
   video_header.codec = kVideoCodecGeneric;
@@ -401,8 +401,8 @@ TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrameBitstreamError) {
       expected_bitsteam, sizeof(expected_bitsteam));
   EXPECT_CALL(mock_on_complete_frame_callback_,
               DoOnCompleteFrameFailBitstream(_));
-  rtp_video_stream_receiver_->OnReceivedPayloadData(
-      data.data(), data.size(), rtp_header, video_header, absl::nullopt, false);
+  rtp_video_stream_receiver_->OnReceivedPayloadData(data, rtp_packet,
+                                                    video_header);
 }
 
 class RtpVideoStreamReceiverTestH264
@@ -418,38 +418,36 @@ INSTANTIATE_TEST_SUITE_P(SpsPpsIdrIsKeyframe,
 
 TEST_P(RtpVideoStreamReceiverTestH264, InBandSpsPps) {
   std::vector<uint8_t> sps_data;
-  RTPHeader rtp_header;
+  RtpPacketReceived rtp_packet;
   RTPVideoHeader sps_video_header = GetDefaultH264VideoHeader();
   AddSps(&sps_video_header, 0, &sps_data);
-  rtp_header.sequenceNumber = 0;
+  rtp_packet.SetSequenceNumber(0);
   sps_video_header.is_first_packet_in_frame = true;
   sps_video_header.frame_type = VideoFrameType::kEmptyFrame;
   mock_on_complete_frame_callback_.AppendExpectedBitstream(
       kH264StartCode, sizeof(kH264StartCode));
   mock_on_complete_frame_callback_.AppendExpectedBitstream(sps_data.data(),
                                                            sps_data.size());
-  rtp_video_stream_receiver_->OnReceivedPayloadData(
-      sps_data.data(), sps_data.size(), rtp_header, sps_video_header,
-      absl::nullopt, false);
+  rtp_video_stream_receiver_->OnReceivedPayloadData(sps_data, rtp_packet,
+                                                    sps_video_header);
 
   std::vector<uint8_t> pps_data;
   RTPVideoHeader pps_video_header = GetDefaultH264VideoHeader();
   AddPps(&pps_video_header, 0, 1, &pps_data);
-  rtp_header.sequenceNumber = 1;
+  rtp_packet.SetSequenceNumber(1);
   pps_video_header.is_first_packet_in_frame = true;
   pps_video_header.frame_type = VideoFrameType::kEmptyFrame;
   mock_on_complete_frame_callback_.AppendExpectedBitstream(
       kH264StartCode, sizeof(kH264StartCode));
   mock_on_complete_frame_callback_.AppendExpectedBitstream(pps_data.data(),
                                                            pps_data.size());
-  rtp_video_stream_receiver_->OnReceivedPayloadData(
-      pps_data.data(), pps_data.size(), rtp_header, pps_video_header,
-      absl::nullopt, false);
+  rtp_video_stream_receiver_->OnReceivedPayloadData(pps_data, rtp_packet,
+                                                    pps_video_header);
 
   std::vector<uint8_t> idr_data;
   RTPVideoHeader idr_video_header = GetDefaultH264VideoHeader();
   AddIdr(&idr_video_header, 1);
-  rtp_header.sequenceNumber = 2;
+  rtp_packet.SetSequenceNumber(2);
   idr_video_header.is_first_packet_in_frame = true;
   idr_video_header.is_last_packet_in_frame = true;
   idr_video_header.frame_type = VideoFrameType::kVideoFrameKey;
@@ -459,9 +457,8 @@ TEST_P(RtpVideoStreamReceiverTestH264, InBandSpsPps) {
   mock_on_complete_frame_callback_.AppendExpectedBitstream(idr_data.data(),
                                                            idr_data.size());
   EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame(_));
-  rtp_video_stream_receiver_->OnReceivedPayloadData(
-      idr_data.data(), idr_data.size(), rtp_header, idr_video_header,
-      absl::nullopt, false);
+  rtp_video_stream_receiver_->OnReceivedPayloadData(idr_data, rtp_packet,
+                                                    idr_video_header);
 }
 
 TEST_P(RtpVideoStreamReceiverTestH264, OutOfBandFmtpSpsPps) {
@@ -488,11 +485,11 @@ TEST_P(RtpVideoStreamReceiverTestH264, OutOfBandFmtpSpsPps) {
                                                            sizeof(binary_pps));
 
   std::vector<uint8_t> data;
-  RTPHeader rtp_header;
+  RtpPacketReceived rtp_packet;
   RTPVideoHeader video_header = GetDefaultH264VideoHeader();
   AddIdr(&video_header, 0);
-  rtp_header.payloadType = kPayloadType;
-  rtp_header.sequenceNumber = 2;
+  rtp_packet.SetPayloadType(kPayloadType);
+  rtp_packet.SetSequenceNumber(2);
   video_header.is_first_packet_in_frame = true;
   video_header.is_last_packet_in_frame = true;
   video_header.codec = kVideoCodecH264;
@@ -503,17 +500,17 @@ TEST_P(RtpVideoStreamReceiverTestH264, OutOfBandFmtpSpsPps) {
   mock_on_complete_frame_callback_.AppendExpectedBitstream(data.data(),
                                                            data.size());
   EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame(_));
-  rtp_video_stream_receiver_->OnReceivedPayloadData(
-      data.data(), data.size(), rtp_header, video_header, absl::nullopt, false);
+  rtp_video_stream_receiver_->OnReceivedPayloadData(data, rtp_packet,
+                                                    video_header);
 }
 
 TEST_F(RtpVideoStreamReceiverTest, PaddingInMediaStream) {
-  RTPHeader rtp_header;
+  RtpPacketReceived rtp_packet;
   RTPVideoHeader video_header = GetDefaultH264VideoHeader();
   std::vector<uint8_t> data;
   data.insert(data.end(), {1, 2, 3});
-  rtp_header.payloadType = 99;
-  rtp_header.sequenceNumber = 2;
+  rtp_packet.SetPayloadType(99);
+  rtp_packet.SetSequenceNumber(2);
   video_header.is_first_packet_in_frame = true;
   video_header.is_last_packet_in_frame = true;
   video_header.codec = kVideoCodecGeneric;
@@ -522,47 +519,47 @@ TEST_F(RtpVideoStreamReceiverTest, PaddingInMediaStream) {
                                                            data.size());
 
   EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame(_));
-  rtp_video_stream_receiver_->OnReceivedPayloadData(
-      data.data(), data.size(), rtp_header, video_header, absl::nullopt, false);
+  rtp_video_stream_receiver_->OnReceivedPayloadData(data, rtp_packet,
+                                                    video_header);
 
-  rtp_header.sequenceNumber = 3;
-  rtp_video_stream_receiver_->OnReceivedPayloadData(
-      nullptr, 0, rtp_header, video_header, absl::nullopt, false);
+  rtp_packet.SetSequenceNumber(3);
+  rtp_video_stream_receiver_->OnReceivedPayloadData({}, rtp_packet,
+                                                    video_header);
 
-  rtp_header.sequenceNumber = 4;
+  rtp_packet.SetSequenceNumber(4);
   EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame(_));
   video_header.frame_type = VideoFrameType::kVideoFrameDelta;
-  rtp_video_stream_receiver_->OnReceivedPayloadData(
-      data.data(), data.size(), rtp_header, video_header, absl::nullopt, false);
+  rtp_video_stream_receiver_->OnReceivedPayloadData(data, rtp_packet,
+                                                    video_header);
 
-  rtp_header.sequenceNumber = 6;
-  rtp_video_stream_receiver_->OnReceivedPayloadData(
-      data.data(), data.size(), rtp_header, video_header, absl::nullopt, false);
+  rtp_packet.SetSequenceNumber(6);
+  rtp_video_stream_receiver_->OnReceivedPayloadData(data, rtp_packet,
+                                                    video_header);
 
   EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame(_));
-  rtp_header.sequenceNumber = 5;
-  rtp_video_stream_receiver_->OnReceivedPayloadData(
-      nullptr, 0, rtp_header, video_header, absl::nullopt, false);
+  rtp_packet.SetSequenceNumber(5);
+  rtp_video_stream_receiver_->OnReceivedPayloadData({}, rtp_packet,
+                                                    video_header);
 }
 
 TEST_F(RtpVideoStreamReceiverTest, RequestKeyframeIfFirstFrameIsDelta) {
-  RTPHeader rtp_header;
+  RtpPacketReceived rtp_packet;
   RTPVideoHeader video_header;
   const std::vector<uint8_t> data({1, 2, 3, 4});
-  rtp_header.sequenceNumber = 1;
+  rtp_packet.SetSequenceNumber(1);
   video_header.is_first_packet_in_frame = true;
   video_header.is_last_packet_in_frame = true;
   video_header.codec = kVideoCodecGeneric;
   video_header.frame_type = VideoFrameType::kVideoFrameDelta;
   EXPECT_CALL(mock_key_frame_request_sender_, RequestKeyFrame());
-  rtp_video_stream_receiver_->OnReceivedPayloadData(
-      data.data(), data.size(), rtp_header, video_header, absl::nullopt, false);
+  rtp_video_stream_receiver_->OnReceivedPayloadData(data, rtp_packet,
+                                                    video_header);
 }
 
 TEST_F(RtpVideoStreamReceiverTest, RequestKeyframeWhenPacketBufferGetsFull) {
   constexpr int kPacketBufferMaxSize = 2048;
 
-  RTPHeader rtp_header;
+  RtpPacketReceived rtp_packet;
   RTPVideoHeader video_header;
   const std::vector<uint8_t> data({1, 2, 3, 4});
   video_header.is_first_packet_in_frame = true;
@@ -571,18 +568,17 @@ TEST_F(RtpVideoStreamReceiverTest, RequestKeyframeWhenPacketBufferGetsFull) {
   video_header.codec = kVideoCodecGeneric;
   video_header.frame_type = VideoFrameType::kVideoFrameDelta;
   uint16_t start_sequence_number = 1234;
-  rtp_header.sequenceNumber = start_sequence_number;
-  while (rtp_header.sequenceNumber - start_sequence_number <
+  rtp_packet.SetSequenceNumber(start_sequence_number);
+  while (rtp_packet.SequenceNumber() - start_sequence_number <
          kPacketBufferMaxSize) {
-    rtp_video_stream_receiver_->OnReceivedPayloadData(data.data(), data.size(),
-                                                      rtp_header, video_header,
-                                                      absl::nullopt, false);
-    rtp_header.sequenceNumber += 2;
+    rtp_video_stream_receiver_->OnReceivedPayloadData(data, rtp_packet,
+                                                      video_header);
+    rtp_packet.SetSequenceNumber(rtp_packet.SequenceNumber() + 2);
   }
 
   EXPECT_CALL(mock_key_frame_request_sender_, RequestKeyFrame());
-  rtp_video_stream_receiver_->OnReceivedPayloadData(
-      data.data(), data.size(), rtp_header, video_header, absl::nullopt, false);
+  rtp_video_stream_receiver_->OnReceivedPayloadData(data, rtp_packet,
+                                                    video_header);
 }
 
 TEST_F(RtpVideoStreamReceiverTest, SecondarySinksGetRtpNotifications) {

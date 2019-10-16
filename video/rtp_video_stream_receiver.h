@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/array_view.h"
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/video/color_space.h"
 #include "api/video_codecs/video_codec.h"
@@ -30,6 +31,8 @@
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "modules/video_coding/h264_sps_pps_tracker.h"
 #include "modules/video_coding/loss_notification_controller.h"
 #include "modules/video_coding/packet_buffer.h"
@@ -109,13 +112,9 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
 
   // TODO(philipel): Stop using VCMPacket in the new jitter buffer and then
   //                 remove this function. Public only for tests.
-  int32_t OnReceivedPayloadData(
-      const uint8_t* payload_data,
-      size_t payload_size,
-      const RTPHeader& rtp_header,
-      const RTPVideoHeader& video_header,
-      const absl::optional<RtpGenericFrameDescriptor>& generic_descriptor,
-      bool is_recovered);
+  void OnReceivedPayloadData(rtc::ArrayView<const uint8_t> codec_payload,
+                             const RtpPacketReceived& rtp_packet,
+                             const RTPVideoHeader& video);
 
   // Implements RecoveredPacketReceiver.
   void OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override;
