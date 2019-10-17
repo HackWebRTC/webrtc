@@ -524,6 +524,19 @@ webrtc_fuzzer_test("agc_fuzzer") {
   seed_corpus = "corpora/agc-corpus"
 }
 
+webrtc_fuzzer_test("aec3_config_json_fuzzer") {
+  sources = [
+    "aec3_config_json_fuzzer.cc",
+  ]
+  deps = [
+    ":fuzz_data_helper",
+    "../../api/audio:aec3_config",
+    "../../api/audio:aec3_config_json",
+  ]
+  dict = "//testing/libfuzzer/fuzzers/dicts/json.dict"
+  seed_corpus = "corpora/aec3-config-json-corpus"
+}
+
 webrtc_fuzzer_test("comfort_noise_decoder_fuzzer") {
   sources = [
     "comfort_noise_decoder_fuzzer.cc",
