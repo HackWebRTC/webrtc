@@ -180,6 +180,10 @@ void ModuleRtpRtcpImpl::SetRtxSendPayloadType(int payload_type,
   rtp_sender_->SetRtxPayloadType(payload_type, associated_payload_type);
 }
 
+absl::optional<uint32_t> ModuleRtpRtcpImpl::RtxSsrc() const {
+  return rtp_sender_ ? rtp_sender_->RtxSsrc() : absl::nullopt;
+}
+
 absl::optional<uint32_t> ModuleRtpRtcpImpl::FlexfecSsrc() const {
   if (rtp_sender_)
     return rtp_sender_->FlexfecSsrc();

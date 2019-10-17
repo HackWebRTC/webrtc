@@ -17,6 +17,7 @@
 #include <list>
 #include <memory>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "api/transport/network_types.h"
@@ -84,9 +85,6 @@ class PacketRouter : public RemoteBitrateObserver,
       std::vector<std::unique_ptr<rtcp::RtcpPacket>> packets) override;
 
  private:
-  RtpRtcp* FindRtpModule(uint32_t ssrc)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
-
   void AddRembModuleCandidate(RtcpFeedbackSenderInterface* candidate_module,
                               bool media_sender)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
@@ -95,17 +93,17 @@ class PacketRouter : public RemoteBitrateObserver,
       bool media_sender) RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
   void UnsetActiveRembModule() RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
   void DetermineActiveRembModule() RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
-  bool TrySendPacket(RtpPacketToSend* packet,
-                     const PacedPacketInfo& cluster_info,
-                     RtpRtcp* rtp_module)
+  void AddSendRtpModuleToMap(RtpRtcp* rtp_module, uint32_t ssrc)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
+  void RemoveSendRtpModuleFromMap(uint32_t ssrc)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
 
   rtc::CriticalSection modules_crit_;
-  // Rtp and Rtcp modules of the rtp senders.
-  std::list<RtpRtcp*> rtp_send_modules_ RTC_GUARDED_BY(modules_crit_);
-  // Ssrc to RtpRtcp module cache.
-  std::unordered_map<uint32_t, RtpRtcp*> rtp_module_cache_map_
-      RTC_GUARDED_BY(modules_crit_);
+  // Ssrc to RtpRtcp module and iterator into |send_modules_list_|;
+  std::unordered_map<uint32_t,
+                     std::pair<RtpRtcp*, std::list<RtpRtcp*>::iterator>>
+      send_modules_map_ RTC_GUARDED_BY(modules_crit_);
+  std::list<RtpRtcp*> send_modules_list_ RTC_GUARDED_BY(modules_crit_);
   // The last module used to send media.
   RtpRtcp* last_send_module_ RTC_GUARDED_BY(modules_crit_);
   // Rtcp modules of the rtp receivers.
