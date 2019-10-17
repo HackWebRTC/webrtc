@@ -9,7 +9,7 @@
 import("../../webrtc.gni")
 
 if (rtc_include_tests) {
-  rtc_source_set("time_controller") {
+  rtc_library("time_controller") {
     testonly = true
     sources = [
       "real_time_controller.cc",
@@ -36,7 +36,7 @@ if (rtc_include_tests) {
       "//third_party/abseil-cpp/absl/strings",
     ]
   }
-  rtc_source_set("time_controller_unittests") {
+  rtc_library("time_controller_unittests") {
     testonly = true
     sources = [
       "simulated_time_controller_unittest.cc",

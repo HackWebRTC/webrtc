@@ -36,7 +36,7 @@ rtc_source_set("rtc_event_log_api") {
   ]
 }
 
-rtc_source_set("rtc_stream_config") {
+rtc_library("rtc_stream_config") {
   sources = [
     "rtc_event_log/rtc_stream_config.cc",
     "rtc_event_log/rtc_stream_config.h",
@@ -48,7 +48,7 @@ rtc_source_set("rtc_stream_config") {
   ]
 }
 
-rtc_source_set("rtc_event_pacing") {
+rtc_library("rtc_event_pacing") {
   sources = [
     "rtc_event_log/events/rtc_event_alr_state.cc",
     "rtc_event_log/events/rtc_event_alr_state.h",
@@ -61,7 +61,7 @@ rtc_source_set("rtc_event_pacing") {
   ]
 }
 
-rtc_source_set("rtc_event_audio") {
+rtc_library("rtc_event_audio") {
   sources = [
     "rtc_event_log/events/rtc_event_audio_network_adaptation.cc",
     "rtc_event_log/events/rtc_event_audio_network_adaptation.h",
@@ -83,7 +83,7 @@ rtc_source_set("rtc_event_audio") {
   ]
 }
 
-rtc_source_set("rtc_event_bwe") {
+rtc_library("rtc_event_bwe") {
   sources = [
     "rtc_event_log/events/rtc_event_bwe_update_delay_based.cc",
     "rtc_event_log/events/rtc_event_bwe_update_delay_based.h",
@@ -110,7 +110,7 @@ rtc_source_set("rtc_event_bwe") {
   ]
 }
 
-rtc_source_set("rtc_event_generic_packet_events") {
+rtc_library("rtc_event_generic_packet_events") {
   visibility = [ "*" ]
   sources = [
     "rtc_event_log/events/rtc_event_generic_ack_received.cc",
@@ -128,7 +128,7 @@ rtc_source_set("rtc_event_generic_packet_events") {
   ]
 }
 
-rtc_source_set("rtc_event_rtp_rtcp") {
+rtc_library("rtc_event_rtp_rtcp") {
   sources = [
     "rtc_event_log/events/rtc_event_rtcp_packet_incoming.cc",
     "rtc_event_log/events/rtc_event_rtcp_packet_incoming.h",
@@ -151,7 +151,7 @@ rtc_source_set("rtc_event_rtp_rtcp") {
   ]
 }
 
-rtc_source_set("rtc_event_video") {
+rtc_library("rtc_event_video") {
   sources = [
     "rtc_event_log/events/rtc_event_video_receive_stream_config.cc",
     "rtc_event_log/events/rtc_event_video_receive_stream_config.h",
@@ -170,7 +170,7 @@ rtc_source_set("rtc_event_video") {
 
 # TODO(eladalon): Break down into (1) encoder and (2) decoder; we don't need
 # the decoder code in the WebRTC library, only in unit tests and tools.
-rtc_static_library("rtc_event_log_impl_encoder") {
+rtc_library("rtc_event_log_impl_encoder") {
   sources = [
     "rtc_event_log/encoder/blob_encoding.cc",
     "rtc_event_log/encoder/blob_encoding.h",
@@ -235,7 +235,7 @@ rtc_source_set("rtc_event_log_impl_output") {
 }
 
 if (rtc_enable_protobuf) {
-  rtc_source_set("rtc_event_log_impl") {
+  rtc_library("rtc_event_log_impl") {
     visibility = [ "../api/rtc_event_log:rtc_event_log_factory" ]
     sources = [
       "rtc_event_log/rtc_event_log_impl.cc",
@@ -258,7 +258,7 @@ if (rtc_enable_protobuf) {
   }
 }
 
-rtc_source_set("fake_rtc_event_log") {
+rtc_library("fake_rtc_event_log") {
   testonly = true
   sources = [
     "rtc_event_log/fake_rtc_event_log.cc",
@@ -292,7 +292,7 @@ if (rtc_enable_protobuf) {
     proto_out_dir = "logging/rtc_event_log"
   }
 
-  rtc_static_library("rtc_event_log_parser") {
+  rtc_library("rtc_event_log_parser") {
     visibility = [ "*" ]
     sources = [
       "rtc_event_log/logged_events.cc",
@@ -335,7 +335,7 @@ if (rtc_enable_protobuf) {
   }
 
   if (rtc_include_tests) {
-    rtc_source_set("rtc_event_log_tests") {
+    rtc_library("rtc_event_log_tests") {
       testonly = true
       assert(rtc_enable_protobuf)
       defines = [ "ENABLE_RTC_EVENT_LOG" ]
@@ -412,7 +412,7 @@ if (rtc_enable_protobuf) {
   }
 }
 
-rtc_source_set("ice_log") {
+rtc_library("ice_log") {
   sources = [
     "rtc_event_log/events/rtc_event_dtls_transport_state.cc",
     "rtc_event_log/events/rtc_event_dtls_transport_state.h",
@@ -436,7 +436,7 @@ rtc_source_set("ice_log") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("mocks") {
+  rtc_library("mocks") {
     testonly = true
     sources = [
       "rtc_event_log/mock/mock_rtc_event_log.cc",

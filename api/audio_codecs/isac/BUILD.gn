@@ -68,7 +68,7 @@ config("isac_config") {
   }
 }
 
-rtc_static_library("audio_encoder_isac_fix") {
+rtc_library("audio_encoder_isac_fix") {
   visibility = [ "*" ]
   poisonous = [ "audio_codecs" ]
   sources = [
@@ -84,7 +84,7 @@ rtc_static_library("audio_encoder_isac_fix") {
   ]
 }
 
-rtc_static_library("audio_decoder_isac_fix") {
+rtc_library("audio_decoder_isac_fix") {
   visibility = [ "*" ]
   poisonous = [ "audio_codecs" ]
   sources = [
@@ -100,7 +100,7 @@ rtc_static_library("audio_decoder_isac_fix") {
   ]
 }
 
-rtc_static_library("audio_encoder_isac_float") {
+rtc_library("audio_encoder_isac_float") {
   visibility = [ "*" ]
   poisonous = [ "audio_codecs" ]
   sources = [
@@ -117,7 +117,7 @@ rtc_static_library("audio_encoder_isac_float") {
   ]
 }
 
-rtc_static_library("audio_decoder_isac_float") {
+rtc_library("audio_decoder_isac_float") {
   visibility = [ "*" ]
   poisonous = [ "audio_codecs" ]
   sources = [

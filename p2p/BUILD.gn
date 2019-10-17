@@ -15,7 +15,7 @@ group("p2p") {
   ]
 }
 
-rtc_source_set("stun_types") {
+rtc_library("stun_types") {
   sources = [
     "base/stun.cc",
     "base/stun.h",
@@ -27,7 +27,7 @@ rtc_source_set("stun_types") {
   ]
 }
 
-rtc_static_library("rtc_p2p") {
+rtc_library("rtc_p2p") {
   visibility = [ "*" ]
   sources = [
     "base/async_stun_tcp_socket.cc",
@@ -126,7 +126,7 @@ rtc_static_library("rtc_p2p") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("fake_ice_transport") {
+  rtc_library("fake_ice_transport") {
     testonly = true
     visibility = [ "*" ]
     sources = [
@@ -141,7 +141,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("fake_port_allocator") {
+  rtc_library("fake_port_allocator") {
     testonly = true
     visibility = [ "*" ]
     sources = [
@@ -153,7 +153,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("p2p_test_utils") {
+  rtc_library("p2p_test_utils") {
     testonly = true
     sources = [
       "base/fake_dtls_transport.h",
@@ -186,7 +186,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("rtc_p2p_unittests") {
+  rtc_library("rtc_p2p_unittests") {
     testonly = true
 
     sources = [
@@ -241,7 +241,7 @@ if (rtc_include_tests) {
   }
 }
 
-rtc_source_set("p2p_server_utils") {
+rtc_library("p2p_server_utils") {
   testonly = true
   sources = [
     "base/relay_server.cc",
@@ -263,7 +263,7 @@ rtc_source_set("p2p_server_utils") {
   ]
 }
 
-rtc_static_library("libstunprober") {
+rtc_library("libstunprober") {
   visibility = [ "*" ]
   sources = [
     "stunprober/stun_prober.cc",
@@ -281,7 +281,7 @@ rtc_static_library("libstunprober") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("libstunprober_unittests") {
+  rtc_library("libstunprober_unittests") {
     testonly = true
 
     sources = [

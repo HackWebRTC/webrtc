@@ -8,7 +8,7 @@
 
 import("../../webrtc.gni")
 
-rtc_source_set("rtp_rtcp_format") {
+rtc_library("rtp_rtcp_format") {
   visibility = [ "*" ]
   public = [
     "include/report_block_data.h",
@@ -124,7 +124,7 @@ rtc_source_set("rtp_rtcp_format") {
   ]
 }
 
-rtc_static_library("rtp_rtcp") {
+rtc_library("rtp_rtcp") {
   visibility = [ "*" ]
   sources = [
     "include/flexfec_receiver.h",
@@ -272,7 +272,7 @@ rtc_static_library("rtp_rtcp") {
   ]
 }
 
-rtc_source_set("rtcp_transceiver") {
+rtc_library("rtcp_transceiver") {
   visibility = [ "*" ]
   public = [
     "source/rtcp_transceiver.h",
@@ -304,7 +304,7 @@ rtc_source_set("rtcp_transceiver") {
   ]
 }
 
-rtc_source_set("rtp_video_header") {
+rtc_library("rtp_video_header") {
   visibility = [ "*" ]
   sources = [
     "source/rtp_video_header.cc",
@@ -322,7 +322,7 @@ rtc_source_set("rtp_video_header") {
   ]
 }
 
-rtc_source_set("fec_test_helper") {
+rtc_library("fec_test_helper") {
   testonly = true
   sources = [
     "source/fec_test_helper.cc",
@@ -337,7 +337,7 @@ rtc_source_set("fec_test_helper") {
   ]
 }
 
-rtc_source_set("mock_rtp_rtcp") {
+rtc_library("mock_rtp_rtcp") {
   testonly = true
   sources = [
     "mocks/mock_recovered_packet_receiver.cc",
@@ -381,7 +381,7 @@ if (rtc_include_tests) {
     ]
   }  # test_packet_masks_metrics
 
-  rtc_source_set("rtp_rtcp_modules_tests") {
+  rtc_library("rtp_rtcp_modules_tests") {
     testonly = true
 
     sources = [
@@ -396,7 +396,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("rtp_rtcp_unittests") {
+  rtc_library("rtp_rtcp_unittests") {
     testonly = true
 
     sources = [

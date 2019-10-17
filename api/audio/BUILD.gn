@@ -8,7 +8,7 @@
 
 import("../../webrtc.gni")
 
-rtc_source_set("audio_frame_api") {
+rtc_library("audio_frame_api") {
   visibility = [ "*" ]
   sources = [
     "audio_frame.cc",
@@ -36,7 +36,7 @@ rtc_source_set("audio_mixer_api") {
   ]
 }
 
-rtc_source_set("aec3_config") {
+rtc_library("aec3_config") {
   visibility = [ "*" ]
   sources = [
     "echo_canceller3_config.cc",
@@ -50,7 +50,7 @@ rtc_source_set("aec3_config") {
   ]
 }
 
-rtc_source_set("aec3_config_json") {
+rtc_library("aec3_config_json") {
   visibility = [ "*" ]
   sources = [
     "echo_canceller3_config_json.cc",
@@ -66,7 +66,7 @@ rtc_source_set("aec3_config_json") {
   ]
 }
 
-rtc_source_set("aec3_factory") {
+rtc_library("aec3_factory") {
   visibility = [ "*" ]
   configs += [ "../../modules/audio_processing:apm_debug_dump" ]
   sources = [

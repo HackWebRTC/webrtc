@@ -8,7 +8,7 @@
 
 import("../../../webrtc.gni")
 
-rtc_source_set("media_transport_interface") {
+rtc_library("media_transport_interface") {
   visibility = [ "*" ]
   sources = [
     "media_transport_config.cc",
@@ -33,7 +33,7 @@ rtc_source_set("media_transport_interface") {
   ]
 }
 
-rtc_source_set("audio_interfaces") {
+rtc_library("audio_interfaces") {
   visibility = [ "*" ]
   sources = [
     "audio_transport.cc",
@@ -44,7 +44,7 @@ rtc_source_set("audio_interfaces") {
   ]
 }
 
-rtc_source_set("video_interfaces") {
+rtc_library("video_interfaces") {
   visibility = [ "*" ]
   sources = [
     "video_transport.cc",

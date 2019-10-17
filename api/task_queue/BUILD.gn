@@ -8,7 +8,7 @@
 
 import("../../webrtc.gni")
 
-rtc_source_set("task_queue") {
+rtc_library("task_queue") {
   visibility = [ "*" ]
   public = [
     "queued_task.h",
@@ -28,7 +28,7 @@ rtc_source_set("task_queue") {
   ]
 }
 
-rtc_source_set("task_queue_test") {
+rtc_library("task_queue_test") {
   visibility = [ "*" ]
   testonly = true
   sources = [
@@ -47,7 +47,7 @@ rtc_source_set("task_queue_test") {
   ]
 }
 
-rtc_source_set("default_task_queue_factory") {
+rtc_library("default_task_queue_factory") {
   visibility = [ "*" ]
   if (!is_ios && !is_android) {
     poisonous = [ "default_task_queue" ]
@@ -75,7 +75,7 @@ rtc_source_set("default_task_queue_factory") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("task_queue_default_factory_unittests") {
+  rtc_library("task_queue_default_factory_unittests") {
     testonly = true
     sources = [
       "default_task_queue_factory_unittest.cc",

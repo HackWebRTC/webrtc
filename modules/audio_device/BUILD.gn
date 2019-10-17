@@ -61,7 +61,7 @@ rtc_source_set("audio_device_api") {
   ]
 }
 
-rtc_source_set("audio_device_buffer") {
+rtc_library("audio_device_buffer") {
   sources = [
     "audio_device_buffer.cc",
     "audio_device_buffer.h",
@@ -82,7 +82,7 @@ rtc_source_set("audio_device_buffer") {
   ]
 }
 
-rtc_source_set("audio_device_generic") {
+rtc_library("audio_device_generic") {
   sources = [
     "audio_device_generic.cc",
     "audio_device_generic.h",
@@ -94,7 +94,7 @@ rtc_source_set("audio_device_generic") {
   ]
 }
 
-rtc_source_set("audio_device_name") {
+rtc_library("audio_device_name") {
   sources = [
     "audio_device_name.cc",
     "audio_device_name.h",
@@ -155,7 +155,7 @@ rtc_source_set("audio_device_module_from_input_and_output") {
 
 # Contains default implementations of webrtc::AudioDeviceModule for Windows,
 # Linux, Mac, iOS and Android.
-rtc_source_set("audio_device_impl") {
+rtc_library("audio_device_impl") {
   visibility = [ "*" ]
   deps = [
     ":audio_device_api",
@@ -364,7 +364,7 @@ rtc_source_set("mock_audio_device") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("audio_device_unittests") {
+  rtc_library("audio_device_unittests") {
     testonly = true
 
     sources = [

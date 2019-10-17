@@ -8,7 +8,7 @@
 
 import("../webrtc.gni")
 
-rtc_static_library("common_video") {
+rtc_library("common_video") {
   visibility = [ "*" ]
 
   sources = [

@@ -8,7 +8,7 @@
 
 import("../../webrtc.gni")
 
-rtc_source_set("rtc_event_log") {
+rtc_library("rtc_event_log") {
   visibility = [ "*" ]
   sources = [
     "rtc_event.cc",
@@ -26,7 +26,7 @@ rtc_source_set("rtc_event_log") {
   ]
 }
 
-rtc_source_set("rtc_event_log_factory") {
+rtc_library("rtc_event_log_factory") {
   visibility = [ "*" ]
   sources = [
     "rtc_event_log_factory.cc",

@@ -10,7 +10,7 @@ import("../webrtc.gni")
 
 visibility = [ ":*" ]
 
-rtc_static_library("common_audio") {
+rtc_library("common_audio") {
   visibility += [ "*" ]
   sources = [
     "audio_converter.cc",
@@ -101,7 +101,7 @@ rtc_source_set("common_audio_c_arm_asm") {
   }
 }
 
-rtc_source_set("common_audio_c") {
+rtc_library("common_audio_c") {
   visibility += webrtc_default_visibility
   sources = [
     "ring_buffer.c",
@@ -193,7 +193,7 @@ rtc_source_set("common_audio_c") {
   ]
 }
 
-rtc_source_set("common_audio_cc") {
+rtc_library("common_audio_cc") {
   sources = [
     "signal_processing/dot_product_with_scale.cc",
     "signal_processing/dot_product_with_scale.h",
@@ -225,7 +225,7 @@ rtc_source_set("fir_filter") {
   ]
 }
 
-rtc_source_set("fir_filter_factory") {
+rtc_library("fir_filter_factory") {
   visibility += webrtc_default_visibility
   sources = [
     "fir_filter_c.cc",
@@ -249,7 +249,7 @@ rtc_source_set("fir_filter_factory") {
 }
 
 if (current_cpu == "x86" || current_cpu == "x64") {
-  rtc_static_library("common_audio_sse2") {
+  rtc_library("common_audio_sse2") {
     sources = [
       "fir_filter_sse.cc",
       "fir_filter_sse.h",
@@ -271,7 +271,7 @@ if (current_cpu == "x86" || current_cpu == "x64") {
 }
 
 if (rtc_build_with_neon) {
-  rtc_static_library("common_audio_neon") {
+  rtc_library("common_audio_neon") {
     sources = [
       "fir_filter_neon.cc",
       "fir_filter_neon.h",
@@ -294,7 +294,7 @@ if (rtc_build_with_neon) {
     ]
   }
 
-  rtc_source_set("common_audio_neon_c") {
+  rtc_library("common_audio_neon_c") {
     visibility += webrtc_default_visibility
     sources = [
       "signal_processing/cross_correlation_neon.c",

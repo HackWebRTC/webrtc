@@ -23,7 +23,7 @@ config("rtc_media_defines_config") {
   defines = [ "HAVE_WEBRTC_VIDEO" ]
 }
 
-rtc_source_set("rtc_h264_profile_id") {
+rtc_library("rtc_h264_profile_id") {
   visibility = [ "*" ]
   sources = [
     "base/h264_profile_level_id.cc",
@@ -47,7 +47,7 @@ rtc_source_set("rtc_media_config") {
   ]
 }
 
-rtc_source_set("rtc_vp9_profile") {
+rtc_library("rtc_vp9_profile") {
   visibility = [ "*" ]
   sources = [
     "base/vp9_profile.cc",
@@ -63,7 +63,7 @@ rtc_source_set("rtc_vp9_profile") {
   ]
 }
 
-rtc_static_library("rtc_media_base") {
+rtc_library("rtc_media_base") {
   visibility = [ "*" ]
   defines = []
   libs = []
@@ -144,7 +144,7 @@ rtc_static_library("rtc_media_base") {
   ]
 }
 
-rtc_static_library("rtc_constants") {
+rtc_library("rtc_constants") {
   defines = []
   libs = []
   deps = []
@@ -154,7 +154,7 @@ rtc_static_library("rtc_constants") {
   ]
 }
 
-rtc_static_library("rtc_simulcast_encoder_adapter") {
+rtc_library("rtc_simulcast_encoder_adapter") {
   visibility = [ "*" ]
   defines = []
   libs = []
@@ -185,7 +185,7 @@ rtc_static_library("rtc_simulcast_encoder_adapter") {
   ]
 }
 
-rtc_static_library("rtc_encoder_simulcast_proxy") {
+rtc_library("rtc_encoder_simulcast_proxy") {
   visibility = [ "*" ]
   defines = []
   libs = []
@@ -204,7 +204,7 @@ rtc_static_library("rtc_encoder_simulcast_proxy") {
   ]
 }
 
-rtc_static_library("rtc_internal_video_codecs") {
+rtc_library("rtc_internal_video_codecs") {
   visibility = [ "*" ]
   allow_poison = [ "software_video_codecs" ]
   defines = []
@@ -253,7 +253,7 @@ rtc_static_library("rtc_internal_video_codecs") {
   ]
 }
 
-rtc_static_library("rtc_audio_video") {
+rtc_library("rtc_audio_video") {
   visibility = [ "*" ]
   allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
   defines = []
@@ -349,7 +349,7 @@ rtc_static_library("rtc_audio_video") {
 
 # Heavy but optional helper for unittests and webrtc users who prefer to use
 # defaults factories or do not worry about extra dependencies and binary size.
-rtc_source_set("rtc_media_engine_defaults") {
+rtc_library("rtc_media_engine_defaults") {
   visibility = [ "*" ]
   allow_poison = [
     "audio_codecs",
@@ -373,7 +373,7 @@ rtc_source_set("rtc_media_engine_defaults") {
   ]
 }
 
-rtc_static_library("rtc_data") {
+rtc_library("rtc_data") {
   defines = [
     # "SCTP_DEBUG" # Uncomment for SCTP debugging.
   ]
@@ -425,7 +425,7 @@ rtc_source_set("rtc_media") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("rtc_media_tests_utils") {
+  rtc_library("rtc_media_tests_utils") {
     testonly = true
 
     defines = []

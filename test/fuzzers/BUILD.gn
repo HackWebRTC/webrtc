@@ -10,7 +10,7 @@ import("//build/config/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("../../webrtc.gni")
 
-rtc_static_library("webrtc_fuzzer_main") {
+rtc_library("webrtc_fuzzer_main") {
   sources = [
     "webrtc_fuzzer_main.cc",
   ]
@@ -29,7 +29,7 @@ rtc_static_library("webrtc_fuzzer_main") {
   }
 }
 
-rtc_static_library("fuzz_data_helper") {
+rtc_library("fuzz_data_helper") {
   sources = [
     "fuzz_data_helper.cc",
     "fuzz_data_helper.h",
@@ -262,7 +262,7 @@ webrtc_fuzzer_test("congestion_controller_feedback_fuzzer") {
   ]
 }
 
-rtc_static_library("audio_decoder_fuzzer") {
+rtc_library("audio_decoder_fuzzer") {
   sources = [
     "audio_decoder_fuzzer.cc",
     "audio_decoder_fuzzer.h",
@@ -468,7 +468,7 @@ webrtc_fuzzer_test("transport_feedback_packet_loss_tracker_fuzzer") {
     "../../rtc_base:rtc_base_approved",
   ]
 }
-rtc_static_library("audio_processing_fuzzer_helper") {
+rtc_library("audio_processing_fuzzer_helper") {
   sources = [
     "audio_processing_fuzzer_helper.cc",
     "audio_processing_fuzzer_helper.h",

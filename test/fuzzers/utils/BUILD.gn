@@ -8,7 +8,7 @@
 
 import("../../../webrtc.gni")
 
-rtc_source_set("rtp_replayer") {
+rtc_library("rtp_replayer") {
   testonly = true
   sources = [
     "rtp_replayer.cc",

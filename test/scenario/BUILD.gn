@@ -8,7 +8,7 @@
 
 import("../../webrtc.gni")
 
-rtc_source_set("column_printer") {
+rtc_library("column_printer") {
   testonly = true
   sources = [
     "column_printer.cc",
@@ -48,7 +48,7 @@ if (is_ios) {
   }
 }
 if (rtc_include_tests) {
-  rtc_source_set("scenario") {
+  rtc_library("scenario") {
     testonly = true
     sources = [
       "audio_stream.cc",
@@ -159,7 +159,7 @@ if (rtc_include_tests) {
       deps += [ ":scenario_resources_bundle_data" ]
     }
   }
-  rtc_source_set("scenario_unittests") {
+  rtc_library("scenario_unittests") {
     testonly = true
     sources = [
       "performance_stats_unittest.cc",

@@ -8,7 +8,7 @@
 
 import("../../../webrtc.gni")
 
-rtc_static_library("aec3") {
+rtc_library("aec3") {
   visibility = [ "*" ]
   configs += [ "..:apm_debug_dump" ]
   sources = [
@@ -147,7 +147,7 @@ rtc_static_library("aec3") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("aec3_unittests") {
+  rtc_library("aec3_unittests") {
     testonly = true
 
     configs += [ "..:apm_debug_dump" ]

@@ -8,7 +8,7 @@
 
 import("../webrtc.gni")
 
-rtc_static_library("video") {
+rtc_library("video") {
   sources = [
     "buffered_frame_decryptor.cc",
     "buffered_frame_decryptor.h",
@@ -128,7 +128,7 @@ rtc_static_library("video") {
   }
 }
 
-rtc_source_set("video_stream_decoder_impl") {
+rtc_library("video_stream_decoder_impl") {
   visibility = [ "*" ]
 
   sources = [
@@ -151,7 +151,7 @@ rtc_source_set("video_stream_decoder_impl") {
   ]
 }
 
-rtc_source_set("frame_dumping_decoder") {
+rtc_library("frame_dumping_decoder") {
   visibility = [ "*" ]
 
   sources = [
@@ -171,7 +171,7 @@ rtc_source_set("frame_dumping_decoder") {
   ]
 }
 
-rtc_source_set("video_stream_encoder_impl") {
+rtc_library("video_stream_encoder_impl") {
   visibility = [ "*" ]
 
   # visibility = [ "../api/video:video_stream_encoder_create" ]
@@ -232,7 +232,7 @@ rtc_source_set("video_stream_encoder_impl") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("video_mocks") {
+  rtc_library("video_mocks") {
     testonly = true
     sources = [
       "test/mock_video_stream_encoder.h",
@@ -242,7 +242,7 @@ if (rtc_include_tests) {
       "../test:test_support",
     ]
   }
-  rtc_source_set("video_quality_test") {
+  rtc_library("video_quality_test") {
     testonly = true
 
     # Only targets in this file and api/ can depend on this.
@@ -314,7 +314,7 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("video_full_stack_tests") {
+  rtc_library("video_full_stack_tests") {
     testonly = true
 
     sources = [
@@ -341,7 +341,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("video_pc_full_stack_tests") {
+  rtc_library("video_pc_full_stack_tests") {
     testonly = true
 
     sources = [
@@ -364,7 +364,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_static_library("video_loopback_lib") {
+  rtc_library("video_loopback_lib") {
     testonly = true
     sources = [
       "video_loopback.cc",
@@ -508,7 +508,7 @@ if (rtc_include_tests) {
   }
 
   # TODO(pbos): Rename test suite.
-  rtc_source_set("video_tests") {
+  rtc_library("video_tests") {
     testonly = true
 
     defines = []

@@ -16,7 +16,7 @@ config("bwe_test_logging") {
   }
 }
 
-rtc_static_library("congestion_controller") {
+rtc_library("congestion_controller") {
   visibility = [ "*" ]
   configs += [ ":bwe_test_logging" ]
   sources = [
@@ -39,7 +39,7 @@ rtc_static_library("congestion_controller") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("congestion_controller_unittests") {
+  rtc_library("congestion_controller_unittests") {
     testonly = true
 
     sources = [

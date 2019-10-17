@@ -300,17 +300,22 @@ set_defaults("rtc_test") {
   suppressed_configs = []
 }
 
+set_defaults("rtc_library") {
+  configs = rtc_add_configs
+  suppressed_configs = []
+}
+
 set_defaults("rtc_source_set") {
   configs = rtc_add_configs
   suppressed_configs = []
 }
 
-set_defaults("rtc_executable") {
+set_defaults("rtc_static_library") {
   configs = rtc_add_configs
   suppressed_configs = []
 }
 
-set_defaults("rtc_static_library") {
+set_defaults("rtc_executable") {
   configs = rtc_add_configs
   suppressed_configs = []
 }
@@ -485,46 +490,6 @@ template("rtc_source_set") {
   }
 }
 
-template("rtc_executable") {
-  executable(target_name) {
-    forward_variables_from(invoker,
-                           "*",
-                           [
-                             "deps",
-                             "configs",
-                             "public_configs",
-                             "suppressed_configs",
-                             "visibility",
-                           ])
-    forward_variables_from(invoker, [ "visibility" ])
-    if (!defined(visibility)) {
-      visibility = webrtc_default_visibility
-    }
-    configs += invoker.configs
-    configs -= rtc_remove_configs
-    configs -= invoker.suppressed_configs
-    deps = invoker.deps
-
-    public_configs = [
-      rtc_common_inherited_config,
-      absl_include_config,
-      absl_define_config,
-    ]
-    if (defined(testonly) && testonly) {
-      public_configs += [ absl_flags_config ]
-    }
-    if (defined(invoker.public_configs)) {
-      public_configs += invoker.public_configs
-    }
-    if (is_win) {
-      deps += [
-        # Give executables the default manifest on Windows (a no-op elsewhere).
-        "//build/win:default_exe_manifest",
-      ]
-    }
-  }
-}
-
 template("rtc_static_library") {
   static_library(target_name) {
     forward_variables_from(invoker,
@@ -596,6 +561,143 @@ template("rtc_static_library") {
     }
     if (defined(invoker.public_configs)) {
       public_configs += invoker.public_configs
+    }
+  }
+}
+
+# This template automatically switches the target type between source_set
+# and static_library.
+#
+# This should be the default target type for all the WebRTC targets with
+# one exception. Do not use this template for header only targets, in that case
+# rtc_source_set must be used in order to avoid build errors (e.g. libtool
+# complains if the output .a file is empty).
+#
+# How does it work:
+# Since all files in a source_set are linked into a final binary, while files
+# in a static library are only linked in if at least one symbol in them is
+# referenced, in component builds source_sets are easy to deal with because
+# all their object files are passed to the linker to create a shared library.
+# In release builds instead, static_libraries are preferred since they allow
+# the linker to discard dead code.
+# For the same reason, testonly targets will always be expanded to
+# source_set in order to be sure that tests are present in the test binary.
+template("rtc_library") {
+  if (is_component_build || (defined(invoker.testonly) && invoker.testonly)) {
+    target_type = "source_set"
+  } else {
+    target_type = "static_library"
+  }
+  target(target_type, target_name) {
+    forward_variables_from(invoker,
+                           "*",
+                           [
+                             "configs",
+                             "public_configs",
+                             "suppressed_configs",
+                             "visibility",
+                           ])
+    forward_variables_from(invoker, [ "visibility" ])
+    if (!defined(visibility)) {
+      visibility = webrtc_default_visibility
+    }
+
+    # What's your poison?
+    if (defined(testonly) && testonly) {
+      assert(!defined(poisonous))
+      assert(!defined(allow_poison))
+    } else {
+      if (!defined(poisonous)) {
+        poisonous = []
+      }
+      if (!defined(allow_poison)) {
+        allow_poison = []
+      }
+      if (!defined(assert_no_deps)) {
+        assert_no_deps = []
+      }
+      if (!defined(deps)) {
+        deps = []
+      }
+      foreach(p, poisonous) {
+        deps += [ webrtc_root + ":poison_" + p ]
+      }
+      foreach(poison_type, all_poison_types) {
+        allow_dep = true
+        foreach(v, visibility) {
+          if (v == "*") {
+            allow_dep = false
+          }
+        }
+        foreach(p, allow_poison + poisonous) {
+          if (p == poison_type) {
+            allow_dep = true
+          }
+        }
+        if (!allow_dep) {
+          assert_no_deps += [ webrtc_root + ":poison_" + poison_type ]
+        }
+      }
+    }
+
+    if (!defined(testonly) || !testonly) {
+      configs += rtc_prod_configs
+    }
+
+    configs += invoker.configs
+    configs += rtc_library_impl_config
+    configs -= rtc_remove_configs
+    configs -= invoker.suppressed_configs
+    public_configs = [
+      rtc_common_inherited_config,
+      absl_include_config,
+      absl_define_config,
+    ]
+    if (defined(testonly) && testonly) {
+      public_configs += [ absl_flags_config ]
+    }
+    if (defined(invoker.public_configs)) {
+      public_configs += invoker.public_configs
+    }
+  }
+}
+
+template("rtc_executable") {
+  executable(target_name) {
+    forward_variables_from(invoker,
+                           "*",
+                           [
+                             "deps",
+                             "configs",
+                             "public_configs",
+                             "suppressed_configs",
+                             "visibility",
+                           ])
+    forward_variables_from(invoker, [ "visibility" ])
+    if (!defined(visibility)) {
+      visibility = webrtc_default_visibility
+    }
+    configs += invoker.configs
+    configs -= rtc_remove_configs
+    configs -= invoker.suppressed_configs
+    deps = invoker.deps
+
+    public_configs = [
+      rtc_common_inherited_config,
+      absl_include_config,
+      absl_define_config,
+    ]
+    if (defined(testonly) && testonly) {
+      public_configs += [ absl_flags_config ]
+    }
+    if (defined(invoker.public_configs)) {
+      public_configs += invoker.public_configs
+    }
+    if (is_win) {
+      deps += [
+        # Give executables the default manifest on Windows (a no-op elsewhere).
+        "//build/win:default_exe_manifest",
+      ]
     }
   }
 }

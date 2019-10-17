@@ -34,7 +34,7 @@ group("test") {
   }
 }
 
-rtc_source_set("video_test_common") {
+rtc_library("video_test_common") {
   visibility = [ "*" ]
   testonly = true
   sources = [
@@ -74,7 +74,7 @@ rtc_source_set("video_test_common") {
 
 if (!build_with_chromium) {
   if (is_mac || is_ios) {
-    rtc_source_set("video_test_mac") {
+    rtc_library("video_test_mac") {
       testonly = true
       sources = [
         "mac_capturer.h",
@@ -95,7 +95,7 @@ if (!build_with_chromium) {
     }
   }
 
-  rtc_source_set("platform_video_capturer") {
+  rtc_library("platform_video_capturer") {
     testonly = true
     sources = [
       "platform_video_capturer.cc",
@@ -122,7 +122,7 @@ if (!build_with_chromium) {
   }
 }
 
-rtc_source_set("rtp_test_utils") {
+rtc_library("rtp_test_utils") {
   testonly = true
   sources = [
     "rtcp_packet_parser.cc",
@@ -146,7 +146,7 @@ rtc_source_set("rtp_test_utils") {
   ]
 }
 
-rtc_source_set("field_trial") {
+rtc_library("field_trial") {
   visibility = [ "*" ]
   testonly = true
   sources = [
@@ -159,7 +159,7 @@ rtc_source_set("field_trial") {
   ]
 }
 
-rtc_source_set("perf_test") {
+rtc_library("perf_test") {
   visibility = [ "*" ]
   sources = [
     "testsupport/perf_test.cc",
@@ -174,7 +174,7 @@ rtc_source_set("perf_test") {
 }
 
 if (is_ios) {
-  rtc_source_set("test_support_objc") {
+  rtc_library("test_support_objc") {
     testonly = true
     visibility = [ ":test_support" ]
     sources = [
@@ -243,7 +243,7 @@ rtc_source_set("test_support") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("test_main_lib") {
+  rtc_library("test_main_lib") {
     visibility = [ "*" ]
     testonly = true
     sources = [
@@ -267,7 +267,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("test_main") {
+  rtc_library("test_main") {
     visibility = [ "*" ]
     testonly = true
     sources = [
@@ -281,7 +281,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("video_test_support") {
+  rtc_library("video_test_support") {
     testonly = true
 
     sources = [
@@ -323,7 +323,7 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("test_support_test_artifacts") {
+  rtc_library("test_support_test_artifacts") {
     testonly = true
     sources = [
       "testsupport/test_artifacts.cc",
@@ -436,7 +436,7 @@ if (rtc_include_tests) {
 }
 
 if (is_ios) {
-  rtc_source_set("fileutils_ios_objc") {
+  rtc_library("fileutils_ios_objc") {
     visibility = [
       ":fileutils",
       ":fileutils_override_impl",
@@ -454,7 +454,7 @@ if (is_ios) {
 }
 
 if (is_mac) {
-  rtc_source_set("fileutils_mac_objc") {
+  rtc_library("fileutils_mac_objc") {
     visibility = [
       ":fileutils",
       ":fileutils_override_impl",
@@ -469,7 +469,7 @@ if (is_mac) {
   }
 }
 
-rtc_source_set("fileutils") {
+rtc_library("fileutils") {
   testonly = true
   visibility = [ "*" ]
   sources = [
@@ -495,7 +495,7 @@ rtc_source_set("fileutils") {
   }
 }
 
-rtc_source_set("resources_dir_flag") {
+rtc_library("resources_dir_flag") {
   testonly = true
   visibility = [ "*" ]
   sources = [
@@ -516,7 +516,7 @@ rtc_source_set("fileutils_override_api") {
   ]
 }
 
-rtc_source_set("fileutils_override_impl") {
+rtc_library("fileutils_override_impl") {
   testonly = true
   visibility = [ ":fileutils" ]
   sources = [
@@ -560,7 +560,7 @@ rtc_source_set("run_test_interface") {
 }
 
 if (is_mac) {
-  rtc_source_set("run_test_objc") {
+  rtc_library("run_test_objc") {
     testonly = true
     visibility = [ ":run_test" ]
     sources = [
@@ -572,7 +572,7 @@ if (is_mac) {
   }
 }
 
-rtc_source_set("run_test_generic") {
+rtc_library("run_test_generic") {
   testonly = true
   visibility = [ ":run_test" ]
   sources = [
@@ -583,7 +583,7 @@ rtc_source_set("run_test_generic") {
   ]
 }
 
-rtc_source_set("fileutils_unittests") {
+rtc_library("fileutils_unittests") {
   testonly = true
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
   sources = [
@@ -599,7 +599,7 @@ rtc_source_set("fileutils_unittests") {
   ]
 }
 
-rtc_source_set("direct_transport") {
+rtc_library("direct_transport") {
   visibility = [ "*" ]
   testonly = true
   sources = [
@@ -627,7 +627,7 @@ rtc_source_set("direct_transport") {
   ]
 }
 
-rtc_source_set("single_threaded_task_queue") {
+rtc_library("single_threaded_task_queue") {
   testonly = true
   sources = [
     "single_threaded_task_queue.cc",
@@ -643,7 +643,7 @@ rtc_source_set("single_threaded_task_queue") {
   ]
 }
 
-rtc_source_set("fake_video_codecs") {
+rtc_library("fake_video_codecs") {
   allow_poison = [ "software_video_codecs" ]
   visibility = [ "*" ]
   sources = [
@@ -685,7 +685,7 @@ rtc_source_set("fake_video_codecs") {
   ]
 }
 
-rtc_source_set("null_transport") {
+rtc_library("null_transport") {
   testonly = true
   sources = [
     "null_transport.cc",
@@ -696,7 +696,7 @@ rtc_source_set("null_transport") {
   ]
 }
 
-rtc_source_set("encoder_settings") {
+rtc_library("encoder_settings") {
   testonly = true
   sources = [
     "encoder_settings.cc",
@@ -712,7 +712,7 @@ rtc_source_set("encoder_settings") {
   ]
 }
 
-rtc_source_set("test_common") {
+rtc_library("test_common") {
   testonly = true
   sources = [
     "call_test.cc",
@@ -816,7 +816,7 @@ rtc_source_set("test_renderer") {
 }
 
 if (is_mac) {
-  rtc_source_set("test_renderer_objc") {
+  rtc_library("test_renderer_objc") {
     testonly = true
     visibility = [ ":test_renderer" ]
     sources = [
@@ -835,7 +835,7 @@ if (is_mac) {
   }
 }
 
-rtc_source_set("test_renderer_generic") {
+rtc_library("test_renderer_generic") {
   testonly = true
   visibility = [
     ":test_renderer",
@@ -889,7 +889,7 @@ rtc_source_set("test_renderer_generic") {
   }
 }
 
-rtc_source_set("audio_codec_mocks") {
+rtc_library("audio_codec_mocks") {
   testonly = true
   sources = [
     # TODO(nisse): Move these factories to their own target, to avoid
@@ -916,7 +916,7 @@ rtc_source_set("audio_codec_mocks") {
   ]
 }
 
-rtc_source_set("copy_to_file_audio_capturer") {
+rtc_library("copy_to_file_audio_capturer") {
   testonly = true
   sources = [
     "testsupport/copy_to_file_audio_capturer.cc",
@@ -931,7 +931,7 @@ rtc_source_set("copy_to_file_audio_capturer") {
   ]
 }
 
-rtc_source_set("copy_to_file_audio_capturer_unittest") {
+rtc_library("copy_to_file_audio_capturer_unittest") {
   testonly = true
   sources = [
     "testsupport/copy_to_file_audio_capturer_unittest.cc",
@@ -958,7 +958,7 @@ if (!build_with_chromium && is_android) {
   }
 }
 
-rtc_source_set("call_config_utils") {
+rtc_library("call_config_utils") {
   # TODO(bugs.webrtc.org/10814): Remove rtc_json_suppressions as soon as it
   # gets removed upstream.
   public_configs = [ "../rtc_base:rtc_json_suppressions" ]

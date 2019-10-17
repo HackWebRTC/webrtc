@@ -8,7 +8,7 @@
 
 import("../../webrtc.gni")
 
-rtc_static_library("encoded_frame") {
+rtc_library("encoded_frame") {
   visibility = [ "*" ]
   sources = [
     "encoded_frame.cc",
@@ -34,7 +34,7 @@ rtc_static_library("encoded_frame") {
   ]
 }
 
-rtc_static_library("nack_module") {
+rtc_library("nack_module") {
   visibility = [ "*" ]
   sources = [
     "histogram.cc",
@@ -55,7 +55,7 @@ rtc_static_library("nack_module") {
   ]
 }
 
-rtc_static_library("packet") {
+rtc_library("packet") {
   visibility = [ "*" ]
   sources = [
     "packet.cc",
@@ -73,7 +73,7 @@ rtc_static_library("packet") {
   ]
 }
 
-rtc_static_library("video_coding") {
+rtc_library("video_coding") {
   visibility = [ "*" ]
   deps = [
     "..:module_fec_api",
@@ -174,7 +174,7 @@ rtc_static_library("video_coding") {
   ]
 }
 
-rtc_source_set("video_codec_interface") {
+rtc_library("video_codec_interface") {
   visibility = [ "*" ]
   sources = [
     "include/video_codec_interface.cc",
@@ -196,7 +196,7 @@ rtc_source_set("video_codec_interface") {
   ]
 }
 
-rtc_source_set("video_coding_legacy") {
+rtc_library("video_coding_legacy") {
   visibility = [ ":video_coding_unittests" ]
   sources = [
     "decoding_state.cc",
@@ -257,7 +257,7 @@ rtc_source_set("codec_globals_headers") {
   ]
 }
 
-rtc_source_set("video_coding_utility") {
+rtc_library("video_coding_utility") {
   visibility = [ "*" ]
   sources = [
     "utility/decoded_frames_history.cc",
@@ -311,7 +311,7 @@ rtc_source_set("video_coding_utility") {
   ]
 }
 
-rtc_static_library("webrtc_h264") {
+rtc_library("webrtc_h264") {
   visibility = [ "*" ]
   sources = [
     "codecs/h264/h264.cc",
@@ -357,7 +357,7 @@ rtc_static_library("webrtc_h264") {
   }
 }
 
-rtc_static_library("webrtc_multiplex") {
+rtc_library("webrtc_multiplex") {
   sources = [
     "codecs/multiplex/augmented_video_frame_buffer.cc",
     "codecs/multiplex/include/augmented_video_frame_buffer.h",
@@ -388,7 +388,7 @@ rtc_static_library("webrtc_multiplex") {
 }
 
 # This target includes the internal SW codec.
-rtc_static_library("webrtc_vp8") {
+rtc_library("webrtc_vp8") {
   visibility = [ "*" ]
   poisonous = [ "software_video_codecs" ]
   sources = [
@@ -434,7 +434,7 @@ rtc_static_library("webrtc_vp8") {
   }
 }
 
-rtc_static_library("webrtc_vp8_temporal_layers") {
+rtc_library("webrtc_vp8_temporal_layers") {
   visibility = [ "*" ]
   sources = [
     "codecs/vp8/default_temporal_layers.cc",
@@ -464,7 +464,7 @@ rtc_static_library("webrtc_vp8_temporal_layers") {
 }
 
 # This target includes VP9 files that may be used for any VP9 codec, internal SW or external HW.
-rtc_static_library("webrtc_vp9_helpers") {
+rtc_library("webrtc_vp9_helpers") {
   sources = [
     "codecs/vp9/svc_config.cc",
     "codecs/vp9/svc_config.h",
@@ -487,7 +487,7 @@ rtc_static_library("webrtc_vp9_helpers") {
   ]
 }
 
-rtc_static_library("webrtc_vp9") {
+rtc_library("webrtc_vp9") {
   visibility = [ "*" ]
   poisonous = [ "software_video_codecs" ]
   sources = [
@@ -528,7 +528,7 @@ rtc_static_library("webrtc_vp9") {
 
 if (rtc_include_tests) {
   if (is_android) {
-    rtc_static_library("android_codec_factory_helper") {
+    rtc_library("android_codec_factory_helper") {
       sources = [
         "codecs/test/android_codec_factory_helper.cc",
         "codecs/test/android_codec_factory_helper.h",
@@ -547,7 +547,7 @@ if (rtc_include_tests) {
   }
 
   if (is_ios || is_mac) {
-    rtc_static_library("objc_codec_factory_helper") {
+    rtc_library("objc_codec_factory_helper") {
       sources = [
         "codecs/test/objc_codec_factory_helper.h",
         "codecs/test/objc_codec_factory_helper.mm",
@@ -570,7 +570,7 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("simulcast_test_fixture_impl") {
+  rtc_library("simulcast_test_fixture_impl") {
     testonly = true
     sources = [
       "utility/simulcast_test_fixture_impl.cc",
@@ -597,7 +597,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("video_codecs_test_framework") {
+  rtc_library("video_codecs_test_framework") {
     testonly = true
     sources = [
       "codecs/test/video_codec_unittest.cc",
@@ -676,7 +676,7 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("videocodec_test_impl") {
+  rtc_library("videocodec_test_impl") {
     testonly = true
     sources = [
       "codecs/test/videocodec_test_fixture_impl.cc",
@@ -715,7 +715,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("videocodec_test_stats_impl") {
+  rtc_library("videocodec_test_stats_impl") {
     testonly = true
     sources = [
       "codecs/test/videocodec_test_stats_impl.cc",
@@ -731,7 +731,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("video_coding_modules_tests") {
+  rtc_library("video_coding_modules_tests") {
     testonly = true
     defines = []
 
@@ -812,7 +812,7 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("video_coding_unittests") {
+  rtc_library("video_coding_unittests") {
     testonly = true
 
     sources = [

@@ -8,7 +8,7 @@
 
 import("../../../../webrtc.gni")
 
-rtc_source_set("rnn_vad") {
+rtc_library("rnn_vad") {
   visibility = [ "../*" ]
   sources = [
     "auto_correlation.cc",
@@ -44,7 +44,7 @@ rtc_source_set("rnn_vad") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("test_utils") {
+  rtc_library("test_utils") {
     testonly = true
     sources = [
       "test_utils.cc",
@@ -79,7 +79,7 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("unittests") {
+  rtc_library("unittests") {
     testonly = true
     sources = [
       "auto_correlation_unittest.cc",

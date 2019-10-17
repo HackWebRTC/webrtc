@@ -15,7 +15,7 @@ group("audio_mixer") {
   ]
 }
 
-rtc_static_library("audio_mixer_impl") {
+rtc_library("audio_mixer_impl") {
   visibility = [ "*" ]
   sources = [
     "audio_mixer_impl.cc",
@@ -55,7 +55,7 @@ rtc_static_library("audio_mixer_impl") {
   ]
 }
 
-rtc_static_library("audio_frame_manipulator") {
+rtc_library("audio_frame_manipulator") {
   visibility = [
     ":*",
     "../../modules:*",
@@ -75,7 +75,7 @@ rtc_static_library("audio_frame_manipulator") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("audio_mixer_test_utils") {
+  rtc_library("audio_mixer_test_utils") {
     testonly = true
 
     sources = [
@@ -95,7 +95,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("audio_mixer_unittests") {
+  rtc_library("audio_mixer_unittests") {
     testonly = true
 
     sources = [

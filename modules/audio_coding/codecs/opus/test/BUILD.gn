@@ -14,7 +14,7 @@ visibility = [
 ]
 
 if (rtc_include_tests) {
-  rtc_static_library("test") {
+  rtc_library("test") {
     testonly = true
 
     sources = [
@@ -34,7 +34,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("test_unittest") {
+  rtc_library("test_unittest") {
     testonly = true
 
     sources = [

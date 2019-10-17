@@ -39,7 +39,7 @@ rtc_source_set("callfactory_api") {
 }
 
 if (!build_with_chromium) {
-  rtc_source_set("create_peerconnection_factory") {
+  rtc_library("create_peerconnection_factory") {
     visibility = [ "*" ]
     allow_poison = [ "default_task_queue" ]
     sources = [
@@ -66,7 +66,7 @@ if (!build_with_chromium) {
   }
 }
 
-rtc_source_set("rtp_headers") {
+rtc_library("rtp_headers") {
   visibility = [ "*" ]
   sources = [
     "rtp_headers.cc",
@@ -81,7 +81,7 @@ rtc_source_set("rtp_headers") {
   ]
 }
 
-rtc_source_set("rtp_packet_info") {
+rtc_library("rtp_packet_info") {
   visibility = [ "*" ]
   sources = [
     "rtp_packet_info.cc",
@@ -100,7 +100,7 @@ rtc_source_set("rtp_packet_info") {
   ]
 }
 
-rtc_source_set("media_stream_interface") {
+rtc_library("media_stream_interface") {
   visibility = [ "*" ]
   sources = [
     "media_stream_interface.cc",
@@ -120,7 +120,7 @@ rtc_source_set("media_stream_interface") {
   ]
 }
 
-rtc_static_library("libjingle_peerconnection_api") {
+rtc_library("libjingle_peerconnection_api") {
   visibility = [ "*" ]
   cflags = []
   sources = [
@@ -215,7 +215,7 @@ rtc_static_library("libjingle_peerconnection_api") {
   ]
 }
 
-rtc_source_set("rtc_error") {
+rtc_library("rtc_error") {
   visibility = [ "*" ]
   sources = [
     "rtc_error.cc",
@@ -295,7 +295,7 @@ rtc_source_set("track_id_stream_label_map") {
   ]
 }
 
-rtc_source_set("rtp_parameters") {
+rtc_library("rtp_parameters") {
   visibility = [ "*" ]
   sources = [
     "media_types.cc",
@@ -370,7 +370,7 @@ rtc_source_set("peer_connection_quality_test_fixture_api") {
   ]
 }
 
-rtc_source_set("test_dependency_factory") {
+rtc_library("test_dependency_factory") {
   visibility = [ "*" ]
   testonly = true
   sources = [
@@ -385,7 +385,7 @@ rtc_source_set("test_dependency_factory") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("create_video_quality_test_fixture_api") {
+  rtc_library("create_video_quality_test_fixture_api") {
     visibility = [ "*" ]
     testonly = true
     sources = [
@@ -401,7 +401,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("create_network_emulation_manager") {
+  rtc_library("create_network_emulation_manager") {
     visibility = [ "*" ]
     testonly = true
     sources = [
@@ -414,7 +414,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("create_peerconnection_quality_test_fixture") {
+  rtc_library("create_peerconnection_quality_test_fixture") {
     visibility = [ "*" ]
     testonly = true
     sources = [
@@ -438,7 +438,7 @@ rtc_source_set("libjingle_logging_api") {
   ]
 }
 
-rtc_source_set("rtc_event_log_output_file") {
+rtc_library("rtc_event_log_output_file") {
   visibility = [ "*" ]
   sources = [
     "rtc_event_log_output_file.cc",
@@ -472,7 +472,7 @@ rtc_source_set("rtc_stats_api") {
   ]
 }
 
-rtc_source_set("audio_options_api") {
+rtc_library("audio_options_api") {
   visibility = [ "*" ]
   sources = [
     "audio_options.cc",
@@ -486,7 +486,7 @@ rtc_source_set("audio_options_api") {
   ]
 }
 
-rtc_source_set("transport_api") {
+rtc_library("transport_api") {
   visibility = [ "*" ]
   sources = [
     "call/transport.cc",
@@ -572,7 +572,7 @@ rtc_source_set("refcountedbase") {
   ]
 }
 
-rtc_source_set("ice_transport_factory") {
+rtc_library("ice_transport_factory") {
   visibility = [ "*" ]
   sources = [
     "ice_transport_factory.cc",
@@ -589,7 +589,7 @@ rtc_source_set("ice_transport_factory") {
   ]
 }
 
-rtc_source_set("neteq_simulator_api") {
+rtc_library("neteq_simulator_api") {
   visibility = [ "*" ]
   sources = [
     "test/neteq_simulator.cc",
@@ -609,7 +609,7 @@ rtc_source_set("function_view") {
 
 if (rtc_include_tests) {
   if (rtc_enable_protobuf) {
-    rtc_source_set("audioproc_f_api") {
+    rtc_library("audioproc_f_api") {
       visibility = [ "*" ]
       testonly = true
       sources = [
@@ -624,7 +624,7 @@ if (rtc_include_tests) {
       ]
     }
 
-    rtc_source_set("neteq_simulator_factory") {
+    rtc_library("neteq_simulator_factory") {
       visibility = [ "*" ]
       testonly = true
       sources = [
@@ -650,7 +650,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("create_simulcast_test_fixture_api") {
+  rtc_library("create_simulcast_test_fixture_api") {
     visibility = [ "*" ]
     testonly = true
     sources = [
@@ -665,7 +665,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("videocodec_test_fixture_api") {
+  rtc_library("videocodec_test_fixture_api") {
     visibility = [ "*" ]
     testonly = true
     sources = [
@@ -682,7 +682,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("create_videocodec_test_fixture_api") {
+  rtc_library("create_videocodec_test_fixture_api") {
     visibility = [ "*" ]
     testonly = true
     sources = [
@@ -721,7 +721,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("mock_frame_encryptor") {
+  rtc_library("mock_frame_encryptor") {
     testonly = true
     sources = [
       "test/mock_frame_encryptor.cc",
@@ -735,7 +735,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("mock_frame_decryptor") {
+  rtc_library("mock_frame_decryptor") {
     testonly = true
     sources = [
       "test/mock_frame_decryptor.cc",
@@ -748,7 +748,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("fake_frame_encryptor") {
+  rtc_library("fake_frame_encryptor") {
     testonly = true
     sources = [
       "test/fake_frame_encryptor.cc",
@@ -765,7 +765,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("fake_frame_decryptor") {
+  rtc_library("fake_frame_decryptor") {
     testonly = true
     sources = [
       "test/fake_frame_decryptor.cc",
@@ -859,7 +859,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("mock_video_decoder") {
+  rtc_library("mock_video_decoder") {
     visibility = [ "*" ]
 
     testonly = true
@@ -874,7 +874,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("mock_video_encoder") {
+  rtc_library("mock_video_encoder") {
     visibility = [ "*" ]
 
     testonly = true
@@ -905,7 +905,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("loopback_media_transport") {
+  rtc_library("loopback_media_transport") {
     testonly = true
 
     sources = [
@@ -922,7 +922,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("rtc_api_unittests") {
+  rtc_library("rtc_api_unittests") {
     testonly = true
 
     sources = [
@@ -956,7 +956,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("compile_all_headers") {
+  rtc_library("compile_all_headers") {
     testonly = true
 
     sources = [

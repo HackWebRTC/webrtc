@@ -26,7 +26,7 @@ if (rtc_enable_protobuf) {
     proto_out_dir = "rtc_tools/network_tester"
   }
 
-  rtc_static_library("network_tester") {
+  rtc_library("network_tester") {
     sources = [
       "config_reader.cc",
       "config_reader.h",
@@ -72,7 +72,7 @@ if (rtc_enable_protobuf) {
     }
   }
 
-  rtc_source_set("network_tester_unittests") {
+  rtc_library("network_tester_unittests") {
     testonly = true
 
     sources = [

@@ -8,7 +8,7 @@
 
 import("../../../webrtc.gni")
 
-rtc_source_set("aec") {
+rtc_library("aec") {
   configs += [ "..:apm_debug_dump" ]
   sources = [
     "aec_resampler.cc",
@@ -25,7 +25,7 @@ rtc_source_set("aec") {
   ]
 }
 
-rtc_source_set("aec_core") {
+rtc_library("aec_core") {
   configs += [ "..:apm_debug_dump" ]
   sources = [
     "aec_common.h",
@@ -72,7 +72,7 @@ rtc_source_set("aec_core") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("aec_unittests") {
+  rtc_library("aec_unittests") {
     testonly = true
 
     sources = [

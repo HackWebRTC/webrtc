@@ -16,7 +16,7 @@ config("bwe_test_logging") {
   }
 }
 
-rtc_source_set("control_handler") {
+rtc_library("control_handler") {
   visibility = [ "*" ]
   sources = [
     "control_handler.cc",
@@ -40,7 +40,7 @@ rtc_source_set("control_handler") {
     deps += [ "../../../rtc_base" ]
   }
 }
-rtc_static_library("transport_feedback") {
+rtc_library("transport_feedback") {
   visibility = [ "*" ]
   sources = [
     "transport_feedback_adapter.cc",
@@ -63,7 +63,7 @@ rtc_static_library("transport_feedback") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("congestion_controller_unittests") {
+  rtc_library("congestion_controller_unittests") {
     testonly = true
 
     sources = [

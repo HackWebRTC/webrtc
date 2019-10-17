@@ -12,7 +12,7 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
-rtc_source_set("timestamp_extrapolator") {
+rtc_library("timestamp_extrapolator") {
   sources = [
     "timestamp_extrapolator.cc",
     "timestamp_extrapolator.h",

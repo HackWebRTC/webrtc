@@ -48,7 +48,7 @@ rtc_source_set("compile_assert_c") {
 # The subset of rtc_base approved for use outside of libjingle.
 # TODO(bugs.webrtc.org/9838): Create small and focused build targets and remove
 # the old concept of rtc_base and rtc_base_approved.
-rtc_source_set("rtc_base_approved") {
+rtc_library("rtc_base_approved") {
   visibility = [ "*" ]
   deps = [
     ":checks",
@@ -156,7 +156,7 @@ rtc_source_set("macromagic") {
   ]
 }
 
-rtc_source_set("platform_thread_types") {
+rtc_library("platform_thread_types") {
   sources = [
     "platform_thread_types.cc",
     "platform_thread_types.h",
@@ -176,7 +176,7 @@ rtc_source_set("refcount") {
   ]
 }
 
-rtc_source_set("criticalsection") {
+rtc_library("criticalsection") {
   sources = [
     "critical_section.cc",
     "critical_section.h",
@@ -190,7 +190,7 @@ rtc_source_set("criticalsection") {
   ]
 }
 
-rtc_source_set("platform_thread") {
+rtc_library("platform_thread") {
   visibility = [
     ":rtc_base_approved",
     ":rtc_task_queue_libevent",
@@ -214,7 +214,7 @@ rtc_source_set("platform_thread") {
   ]
 }
 
-rtc_source_set("rtc_event") {
+rtc_library("rtc_event") {
   if (build_with_chromium) {
     sources = [
       "../../webrtc_overrides/rtc_base/event.cc",
@@ -238,7 +238,7 @@ rtc_source_set("rtc_event") {
   }
 }
 
-rtc_source_set("logging") {
+rtc_library("logging") {
   visibility = [ "*" ]
   libs = []
   deps = [
@@ -301,7 +301,7 @@ rtc_source_set("atomicops") {
   ]
 }
 
-rtc_source_set("checks") {
+rtc_library("checks") {
   # TODO(bugs.webrtc.org/9607): This should not be public.
   visibility = [ "*" ]
   libs = []
@@ -321,7 +321,7 @@ rtc_source_set("checks") {
   }
 }
 
-rtc_source_set("rate_limiter") {
+rtc_library("rate_limiter") {
   sources = [
     "rate_limiter.cc",
     "rate_limiter.h",
@@ -382,7 +382,7 @@ rtc_source_set("safe_conversions") {
   ]
 }
 
-rtc_source_set("timeutils") {
+rtc_library("timeutils") {
   visibility = [ "*" ]
   sources = [
     "time_utils.cc",
@@ -400,7 +400,7 @@ rtc_source_set("timeutils") {
   }
 }
 
-rtc_source_set("stringutils") {
+rtc_library("stringutils") {
   sources = [
     "string_encode.cc",
     "string_encode.h",
@@ -421,7 +421,7 @@ rtc_source_set("stringutils") {
   ]
 }
 
-rtc_source_set("audio_format_to_string") {
+rtc_library("audio_format_to_string") {
   sources = [
     "strings/audio_format_to_string.cc",
     "strings/audio_format_to_string.h",
@@ -444,7 +444,7 @@ rtc_source_set("deprecation") {
   ]
 }
 
-rtc_source_set("rtc_task_queue") {
+rtc_library("rtc_task_queue") {
   visibility = [ "*" ]
   sources = [
     "task_queue.cc",
@@ -460,7 +460,7 @@ rtc_source_set("rtc_task_queue") {
 }
 
 if (rtc_enable_libevent) {
-  rtc_source_set("rtc_task_queue_libevent") {
+  rtc_library("rtc_task_queue_libevent") {
     visibility = [ "../api/task_queue:default_task_queue_factory" ]
     sources = [
       "task_queue_libevent.cc",
@@ -485,7 +485,7 @@ if (rtc_enable_libevent) {
 }
 
 if (is_mac || is_ios) {
-  rtc_source_set("rtc_task_queue_gcd") {
+  rtc_library("rtc_task_queue_gcd") {
     visibility = [ "../api/task_queue:default_task_queue_factory" ]
     sources = [
       "task_queue_gcd.cc",
@@ -501,7 +501,7 @@ if (is_mac || is_ios) {
 }
 
 if (is_win) {
-  rtc_source_set("rtc_task_queue_win") {
+  rtc_library("rtc_task_queue_win") {
     visibility = [ "../api/task_queue:default_task_queue_factory" ]
     sources = [
       "task_queue_win.cc",
@@ -522,7 +522,7 @@ if (is_win) {
   }
 }
 
-rtc_source_set("rtc_task_queue_stdlib") {
+rtc_library("rtc_task_queue_stdlib") {
   sources = [
     "task_queue_stdlib.cc",
     "task_queue_stdlib.h",
@@ -541,7 +541,7 @@ rtc_source_set("rtc_task_queue_stdlib") {
   ]
 }
 
-rtc_static_library("weak_ptr") {
+rtc_library("weak_ptr") {
   sources = [
     "weak_ptr.cc",
     "weak_ptr.h",
@@ -553,7 +553,7 @@ rtc_static_library("weak_ptr") {
   ]
 }
 
-rtc_static_library("rtc_numerics") {
+rtc_library("rtc_numerics") {
   sources = [
     "numerics/exp_filter.cc",
     "numerics/exp_filter.h",
@@ -592,7 +592,7 @@ config("rtc_json_suppressions") {
   }
 }
 
-rtc_source_set("rtc_json") {
+rtc_library("rtc_json") {
   public_configs = [ ":rtc_json_suppressions" ]
   defines = []
   sources = [
@@ -752,7 +752,7 @@ if (is_win) {
   }
 }
 
-rtc_static_library("rtc_base") {
+rtc_library("rtc_base") {
   visibility = [ "*" ]
   cflags = []
   cflags_cc = []
@@ -984,7 +984,7 @@ rtc_source_set("gtest_prod") {
   ]
 }
 
-rtc_source_set("gunit_helpers") {
+rtc_library("gunit_helpers") {
   testonly = true
   sources = [
     "gunit.cc",
@@ -1000,7 +1000,7 @@ rtc_source_set("gunit_helpers") {
   ]
 }
 
-rtc_source_set("testclient") {
+rtc_library("testclient") {
   testonly = true
   sources = [
     "test_client.cc",
@@ -1016,7 +1016,7 @@ rtc_source_set("testclient") {
   ]
 }
 
-rtc_source_set("rtc_base_tests_utils") {
+rtc_library("rtc_base_tests_utils") {
   testonly = true
   sources = [
     "cpu_time.cc",
@@ -1067,7 +1067,7 @@ rtc_source_set("rtc_base_tests_utils") {
   ]
 }
 
-rtc_source_set("task_queue_for_test") {
+rtc_library("task_queue_for_test") {
   testonly = true
 
   sources = [
@@ -1088,7 +1088,7 @@ rtc_source_set("task_queue_for_test") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("sigslot_unittest") {
+  rtc_library("sigslot_unittest") {
     testonly = true
     sources = [
       "sigslot_unittest.cc",
@@ -1102,7 +1102,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("rtc_base_nonparallel_tests") {
+  rtc_library("rtc_base_nonparallel_tests") {
     testonly = true
 
     sources = [
@@ -1133,7 +1133,7 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("rtc_base_approved_unittests") {
+  rtc_library("rtc_base_approved_unittests") {
     testonly = true
     sources = [
       "atomic_ops_unittest.cc",
@@ -1209,7 +1209,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("rtc_task_queue_unittests") {
+  rtc_library("rtc_task_queue_unittests") {
     testonly = true
 
     sources = [
@@ -1227,7 +1227,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("weak_ptr_unittests") {
+  rtc_library("weak_ptr_unittests") {
     testonly = true
 
     sources = [
@@ -1245,7 +1245,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("rtc_numerics_unittests") {
+  rtc_library("rtc_numerics_unittests") {
     testonly = true
 
     sources = [
@@ -1266,7 +1266,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("rtc_json_unittests") {
+  rtc_library("rtc_json_unittests") {
     testonly = true
 
     sources = [
@@ -1281,7 +1281,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("rtc_base_unittests") {
+  rtc_library("rtc_base_unittests") {
     testonly = true
     defines = []
 

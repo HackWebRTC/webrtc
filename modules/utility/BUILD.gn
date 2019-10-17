@@ -8,7 +8,7 @@
 
 import("../../webrtc.gni")
 
-rtc_static_library("utility") {
+rtc_library("utility") {
   visibility = [ "*" ]
   sources = [
     "include/helpers_android.h",
@@ -35,7 +35,7 @@ rtc_static_library("utility") {
   ]
 }
 
-rtc_source_set("mock_process_thread") {
+rtc_library("mock_process_thread") {
   testonly = true
   visibility = [ "*" ]
   sources = [
@@ -49,7 +49,7 @@ rtc_source_set("mock_process_thread") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("utility_unittests") {
+  rtc_library("utility_unittests") {
     testonly = true
 
     sources = [

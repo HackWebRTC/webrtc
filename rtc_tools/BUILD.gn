@@ -44,7 +44,7 @@ group("rtc_tools") {
   }
 }
 
-rtc_static_library("video_file_reader") {
+rtc_library("video_file_reader") {
   sources = [
     "video_file_reader.cc",
     "video_file_reader.h",
@@ -61,7 +61,7 @@ rtc_static_library("video_file_reader") {
   ]
 }
 
-rtc_static_library("video_file_writer") {
+rtc_library("video_file_writer") {
   sources = [
     "video_file_writer.cc",
     "video_file_writer.h",
@@ -78,7 +78,7 @@ rtc_static_library("video_file_writer") {
   ]
 }
 
-rtc_static_library("video_quality_analysis") {
+rtc_library("video_quality_analysis") {
   sources = [
     "frame_analyzer/linear_least_squares.cc",
     "frame_analyzer/linear_least_squares.h",
@@ -204,7 +204,7 @@ if (!build_with_chromium) {
     ]
   }
 
-  rtc_static_library("reference_less_video_analysis_lib") {
+  rtc_library("reference_less_video_analysis_lib") {
     sources = [
       "frame_analyzer/reference_less_video_analysis_lib.cc",
       "frame_analyzer/reference_less_video_analysis_lib.h",
@@ -261,7 +261,7 @@ if (!build_with_chromium) {
       proto_out_dir = "rtc_tools/rtc_event_log_visualizer/proto"
     }
 
-    rtc_static_library("event_log_visualizer_utils") {
+    rtc_library("event_log_visualizer_utils") {
       visibility = [ "*" ]
       sources = [
         "rtc_event_log_visualizer/analyzer.cc",

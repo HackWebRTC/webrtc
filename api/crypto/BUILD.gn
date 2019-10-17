@@ -16,7 +16,7 @@ group("crypto") {
   ]
 }
 
-rtc_source_set("options") {
+rtc_library("options") {
   visibility = [ "*" ]
   sources = [
     "crypto_options.cc",

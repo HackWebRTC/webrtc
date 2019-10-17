@@ -19,7 +19,7 @@ rtc_source_set("audio_encoder_g722_config") {
   ]
 }
 
-rtc_static_library("audio_encoder_g722") {
+rtc_library("audio_encoder_g722") {
   visibility = [ "*" ]
   poisonous = [ "audio_codecs" ]
   sources = [
@@ -38,7 +38,7 @@ rtc_static_library("audio_encoder_g722") {
   ]
 }
 
-rtc_static_library("audio_decoder_g722") {
+rtc_library("audio_decoder_g722") {
   visibility = [ "*" ]
   poisonous = [ "audio_codecs" ]
   sources = [

@@ -24,7 +24,7 @@ rtc_source_set("audio_coding_module_typedefs") {
   ]
 }
 
-rtc_static_library("audio_coding") {
+rtc_library("audio_coding") {
   visibility += [ "*" ]
   sources = [
     "acm2/acm_receiver.cc",
@@ -61,7 +61,7 @@ rtc_static_library("audio_coding") {
   ]
 }
 
-rtc_static_library("legacy_encoded_audio_frame") {
+rtc_library("legacy_encoded_audio_frame") {
   sources = [
     "codecs/legacy_encoded_audio_frame.cc",
     "codecs/legacy_encoded_audio_frame.h",
@@ -75,7 +75,7 @@ rtc_static_library("legacy_encoded_audio_frame") {
   ]
 }
 
-rtc_static_library("webrtc_cng") {
+rtc_library("webrtc_cng") {
   visibility += webrtc_default_visibility
   sources = [
     "codecs/cng/webrtc_cng.cc",
@@ -91,7 +91,7 @@ rtc_static_library("webrtc_cng") {
   ]
 }
 
-rtc_static_library("audio_encoder_cng") {
+rtc_library("audio_encoder_cng") {
   visibility += [ "*" ]
   sources = [
     "codecs/cng/audio_encoder_cng.cc",
@@ -106,7 +106,7 @@ rtc_static_library("audio_encoder_cng") {
   ]
 }
 
-rtc_static_library("red") {
+rtc_library("red") {
   visibility += [ "*" ]
   sources = [
     "codecs/red/audio_encoder_copy_red.cc",
@@ -123,7 +123,7 @@ rtc_static_library("red") {
   ]
 }
 
-rtc_static_library("g711") {
+rtc_library("g711") {
   visibility += [ "*" ]
   poisonous = [ "audio_codecs" ]
   sources = [
@@ -145,7 +145,7 @@ rtc_static_library("g711") {
   ]
 }
 
-rtc_source_set("g711_c") {
+rtc_library("g711_c") {
   poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/g711/g711_interface.c",
@@ -156,7 +156,7 @@ rtc_source_set("g711_c") {
   ]
 }
 
-rtc_static_library("g722") {
+rtc_library("g722") {
   visibility += [ "*" ]
   poisonous = [ "audio_codecs" ]
   sources = [
@@ -179,7 +179,7 @@ rtc_static_library("g722") {
   ]
 }
 
-rtc_source_set("g722_c") {
+rtc_library("g722_c") {
   poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/g722/g722_interface.c",
@@ -190,7 +190,7 @@ rtc_source_set("g722_c") {
   ]
 }
 
-rtc_static_library("ilbc") {
+rtc_library("ilbc") {
   visibility += webrtc_default_visibility
   poisonous = [ "audio_codecs" ]
   sources = [
@@ -214,7 +214,7 @@ rtc_static_library("ilbc") {
   ]
 }
 
-rtc_source_set("ilbc_c") {
+rtc_library("ilbc_c") {
   poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/ilbc/abs_quant.c",
@@ -388,7 +388,7 @@ rtc_source_set("isac_common") {
   ]
 }
 
-rtc_static_library("isac") {
+rtc_library("isac") {
   visibility += [ "*" ]
   poisonous = [ "audio_codecs" ]
   sources = [
@@ -414,7 +414,7 @@ rtc_source_set("isac_bwinfo") {
   deps = []
 }
 
-rtc_source_set("isac_vad") {
+rtc_library("isac_vad") {
   visibility += webrtc_default_visibility
   sources = [
     "codecs/isac/main/source/filter_functions.c",
@@ -438,7 +438,7 @@ rtc_source_set("isac_vad") {
   ]
 }
 
-rtc_static_library("isac_c") {
+rtc_library("isac_c") {
   poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/isac/main/include/isac.h",
@@ -499,7 +499,7 @@ rtc_static_library("isac_c") {
   ]
 }
 
-rtc_static_library("isac_fix") {
+rtc_library("isac_fix") {
   visibility += [ "*" ]
   poisonous = [ "audio_codecs" ]
   sources = [
@@ -522,7 +522,7 @@ rtc_static_library("isac_fix") {
   }
 }
 
-rtc_source_set("isac_fix_common") {
+rtc_library("isac_fix_common") {
   poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/isac/fix/source/codec.h",
@@ -556,7 +556,7 @@ rtc_source_set("isac_fix_c_arm_asm") {
   }
 }
 
-rtc_source_set("isac_fix_c") {
+rtc_library("isac_fix_c") {
   poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/isac/fix/include/audio_decoder_isacfix.h",
@@ -663,7 +663,7 @@ rtc_source_set("isac_fix_c") {
 }
 
 if (rtc_build_with_neon) {
-  rtc_static_library("isac_neon") {
+  rtc_library("isac_neon") {
     poisonous = [ "audio_codecs" ]
     sources = [
       "codecs/isac/fix/source/entropy_coding_neon.c",
@@ -689,7 +689,7 @@ if (rtc_build_with_neon) {
   }
 }
 
-rtc_static_library("pcm16b") {
+rtc_library("pcm16b") {
   visibility += [ "*" ]
   poisonous = [ "audio_codecs" ]
   sources = [
@@ -714,7 +714,7 @@ rtc_static_library("pcm16b") {
   ]
 }
 
-rtc_source_set("pcm16b_c") {
+rtc_library("pcm16b_c") {
   poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/pcm16b/pcm16b.c",
@@ -722,7 +722,7 @@ rtc_source_set("pcm16b_c") {
   ]
 }
 
-rtc_static_library("audio_coding_opus_common") {
+rtc_library("audio_coding_opus_common") {
   sources = [
     "codecs/opus/audio_coder_opus_common.cc",
     "codecs/opus/audio_coder_opus_common.h",
@@ -738,7 +738,7 @@ rtc_static_library("audio_coding_opus_common") {
   ]
 }
 
-rtc_static_library("webrtc_opus") {
+rtc_library("webrtc_opus") {
   visibility += webrtc_default_visibility
   poisonous = [ "audio_codecs" ]
   sources = [
@@ -777,7 +777,7 @@ rtc_static_library("webrtc_opus") {
   }
 }
 
-rtc_static_library("webrtc_multiopus") {
+rtc_library("webrtc_multiopus") {
   visibility += webrtc_default_visibility
   poisonous = [ "audio_codecs" ]
   sources = [
@@ -815,7 +815,7 @@ rtc_static_library("webrtc_multiopus") {
   }
 }
 
-rtc_source_set("webrtc_opus_c") {
+rtc_library("webrtc_opus_c") {
   poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/opus/opus_inst.h",
@@ -857,7 +857,7 @@ if (rtc_enable_protobuf) {
   }
 }
 
-rtc_static_library("audio_network_adaptor_config") {
+rtc_library("audio_network_adaptor_config") {
   visibility += webrtc_default_visibility
   sources = [
     "audio_network_adaptor/audio_network_adaptor_config.cc",
@@ -868,7 +868,7 @@ rtc_static_library("audio_network_adaptor_config") {
   ]
 }
 
-rtc_static_library("audio_network_adaptor") {
+rtc_library("audio_network_adaptor") {
   visibility += webrtc_default_visibility
   sources = [
     "audio_network_adaptor/audio_network_adaptor_impl.cc",
@@ -923,7 +923,7 @@ rtc_static_library("audio_network_adaptor") {
   }
 }
 
-rtc_static_library("neteq") {
+rtc_library("neteq") {
   visibility += webrtc_default_visibility
   sources = [
     "neteq/accelerate.cc",
@@ -1028,7 +1028,7 @@ rtc_static_library("neteq") {
 # rtc_include_tests conditional. The reason is that it supports fuzzer tests
 # that ultimately are built and run as a part of the Chromium ecosystem, which
 # does not set the rtc_include_tests flag.
-rtc_source_set("neteq_tools_minimal") {
+rtc_library("neteq_tools_minimal") {
   visibility += webrtc_default_visibility
   sources = [
     "neteq/tools/audio_sink.cc",
@@ -1061,7 +1061,7 @@ rtc_source_set("neteq_tools_minimal") {
   defines = audio_codec_defines
 }
 
-rtc_source_set("neteq_test_tools") {
+rtc_library("neteq_test_tools") {
   visibility += webrtc_default_visibility
   testonly = true
   sources = [
@@ -1111,7 +1111,7 @@ rtc_source_set("neteq_test_tools") {
   }
 }
 
-rtc_source_set("neteq_tools") {
+rtc_library("neteq_tools") {
   visibility += webrtc_default_visibility
   sources = [
     "neteq/tools/fake_decode_from_file.cc",
@@ -1144,7 +1144,7 @@ rtc_source_set("neteq_tools") {
   ]
 }
 
-rtc_source_set("neteq_input_audio_tools") {
+rtc_library("neteq_input_audio_tools") {
   visibility += webrtc_default_visibility
   sources = [
     "neteq/tools/input_audio_file.cc",
@@ -1161,7 +1161,7 @@ rtc_source_set("neteq_input_audio_tools") {
 }
 
 if (rtc_enable_protobuf) {
-  rtc_static_library("rtc_event_log_source") {
+  rtc_library("rtc_event_log_source") {
     testonly = true
 
     sources = [
@@ -1255,7 +1255,7 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("audio_coding_modules_tests") {
+  rtc_library("audio_coding_modules_tests") {
     testonly = true
     visibility += webrtc_default_visibility
 
@@ -1325,7 +1325,7 @@ if (rtc_include_tests) {
     defines = audio_coding_defines
   }
 
-  rtc_source_set("audio_coding_perf_tests") {
+  rtc_library("audio_coding_perf_tests") {
     testonly = true
     visibility += webrtc_default_visibility
 
@@ -1346,7 +1346,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("acm_receive_test") {
+  rtc_library("acm_receive_test") {
     testonly = true
     sources = [
       "acm2/acm_receive_test.cc",
@@ -1369,7 +1369,7 @@ if (rtc_include_tests) {
            ]
   }
 
-  rtc_source_set("acm_send_test") {
+  rtc_library("acm_send_test") {
     testonly = true
     sources = [
       "acm2/acm_send_test.cc",
@@ -1448,7 +1448,7 @@ if (rtc_include_tests) {
       proto_out_dir = "modules/audio_coding/neteq"
     }
 
-    rtc_source_set("neteq_test_factory") {
+    rtc_library("neteq_test_factory") {
       testonly = true
       visibility += webrtc_default_visibility
       defines = audio_codec_defines
@@ -1546,7 +1546,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("neteq_test_support") {
+  rtc_library("neteq_test_support") {
     testonly = true
     sources = [
       "neteq/tools/neteq_performance_test.cc",
@@ -1569,7 +1569,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("neteq_quality_test_support") {
+  rtc_library("neteq_quality_test_support") {
     testonly = true
     sources = [
       "neteq/tools/neteq_quality_test.cc",
@@ -1797,7 +1797,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("isac_test_util") {
+  rtc_library("isac_test_util") {
     testonly = true
     sources = [
       "codecs/isac/main/util/utility.c",
@@ -1902,7 +1902,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("audio_coding_unittests") {
+  rtc_library("audio_coding_unittests") {
     testonly = true
     visibility += webrtc_default_visibility
 

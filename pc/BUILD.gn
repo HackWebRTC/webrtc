@@ -25,7 +25,7 @@ config("rtc_pc_config") {
   }
 }
 
-rtc_static_library("rtc_pc_base") {
+rtc_library("rtc_pc_base") {
   visibility = [ "*" ]
   defines = []
   sources = [
@@ -147,14 +147,14 @@ rtc_source_set("rtc_pc") {
   ]
 }
 
-rtc_source_set("media_protocol_names") {
+rtc_library("media_protocol_names") {
   sources = [
     "media_protocol_names.cc",
     "media_protocol_names.h",
   ]
 }
 
-rtc_static_library("peerconnection") {
+rtc_library("peerconnection") {
   visibility = [ "*" ]
   cflags = []
   sources = [
@@ -360,7 +360,7 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("peerconnection_perf_tests") {
+  rtc_library("peerconnection_perf_tests") {
     testonly = true
     sources = [
       "peer_connection_rampup_tests.cc",
@@ -398,7 +398,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("peerconnection_wrapper") {
+  rtc_library("peerconnection_wrapper") {
     testonly = true
     sources = [
       "peer_connection_wrapper.cc",
@@ -421,7 +421,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("pc_test_utils") {
+  rtc_library("pc_test_utils") {
     testonly = true
     sources = [
       "test/fake_audio_capture_module.cc",
@@ -644,7 +644,7 @@ if (rtc_include_tests) {
   }
 
   if (is_android) {
-    rtc_source_set("android_black_magic") {
+    rtc_library("android_black_magic") {
       # The android code uses hacky includes to chromium-base and the ssl code;
       # having this in a separate target enables us to keep the peerconnection
       # unit tests clean.

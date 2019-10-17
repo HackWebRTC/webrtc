@@ -8,7 +8,7 @@
 
 import("../../webrtc.gni")
 
-rtc_static_library("pacing") {
+rtc_library("pacing") {
   # Client code SHOULD NOT USE THIS TARGET, but for now it needs to be public
   # because there exists client code that uses it.
   # TODO(bugs.webrtc.org/9808): Move to private visibility as soon as that
@@ -56,7 +56,7 @@ rtc_static_library("pacing") {
   ]
 }
 
-rtc_source_set("interval_budget") {
+rtc_library("interval_budget") {
   sources = [
     "interval_budget.cc",
     "interval_budget.h",
@@ -69,7 +69,7 @@ rtc_source_set("interval_budget") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("pacing_unittests") {
+  rtc_library("pacing_unittests") {
     testonly = true
 
     sources = [

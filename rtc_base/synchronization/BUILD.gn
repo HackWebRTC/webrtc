@@ -12,7 +12,7 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
-rtc_source_set("rw_lock_wrapper") {
+rtc_library("rw_lock_wrapper") {
   public = [
     "rw_lock_wrapper.h",
   ]
@@ -36,7 +36,7 @@ rtc_source_set("rw_lock_wrapper") {
   }
 }
 
-rtc_source_set("sequence_checker") {
+rtc_library("sequence_checker") {
   sources = [
     "sequence_checker.cc",
     "sequence_checker.h",
@@ -51,7 +51,7 @@ rtc_source_set("sequence_checker") {
   ]
 }
 
-rtc_source_set("yield_policy") {
+rtc_library("yield_policy") {
   sources = [
     "yield_policy.cc",
     "yield_policy.h",
@@ -64,7 +64,7 @@ rtc_source_set("yield_policy") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("synchronization_unittests") {
+  rtc_library("synchronization_unittests") {
     testonly = true
     sources = [
       "yield_policy_unittest.cc",
@@ -76,7 +76,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("sequence_checker_unittests") {
+  rtc_library("sequence_checker_unittests") {
     testonly = true
 
     sources = [

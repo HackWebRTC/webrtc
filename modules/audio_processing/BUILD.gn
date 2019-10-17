@@ -26,7 +26,7 @@ config("apm_debug_dump") {
   }
 }
 
-rtc_static_library("config") {
+rtc_library("config") {
   visibility = [ ":*" ]
   sources = [
     "include/config.cc",
@@ -38,7 +38,7 @@ rtc_static_library("config") {
   ]
 }
 
-rtc_source_set("api") {
+rtc_library("api") {
   visibility = [ "*" ]
   sources = [
     "include/audio_processing.cc",
@@ -62,7 +62,7 @@ rtc_source_set("api") {
   ]
 }
 
-rtc_static_library("audio_buffer") {
+rtc_library("audio_buffer") {
   visibility = [ "*" ]
 
   configs += [ ":apm_debug_dump" ]
@@ -87,7 +87,7 @@ rtc_static_library("audio_buffer") {
   ]
 }
 
-rtc_static_library("high_pass_filter") {
+rtc_library("high_pass_filter") {
   visibility = [ "*" ]
 
   sources = [
@@ -105,7 +105,7 @@ rtc_static_library("high_pass_filter") {
   ]
 }
 
-rtc_static_library("audio_processing") {
+rtc_library("audio_processing") {
   visibility = [ "*" ]
   configs += [ ":apm_debug_dump" ]
   sources = [
@@ -221,7 +221,7 @@ rtc_static_library("audio_processing") {
   ]
 }
 
-rtc_source_set("audio_processing_statistics") {
+rtc_library("audio_processing_statistics") {
   visibility = [ "*" ]
   sources = [
     "include/audio_processing_statistics.cc",
@@ -254,7 +254,7 @@ rtc_source_set("audio_generator_interface") {
   ]
 }
 
-rtc_source_set("audio_generator_factory") {
+rtc_library("audio_generator_factory") {
   visibility = [ "*" ]
   testonly = true
   sources = [
@@ -270,7 +270,7 @@ rtc_source_set("audio_generator_factory") {
   ]
 }
 
-rtc_source_set("file_audio_generator") {
+rtc_library("file_audio_generator") {
   sources = [
     "audio_generator/file_audio_generator.cc",
     "audio_generator/file_audio_generator.h",
@@ -343,7 +343,7 @@ if (rtc_enable_protobuf) {
   }
 }
 
-rtc_source_set("apm_logging") {
+rtc_library("apm_logging") {
   configs += [ ":apm_debug_dump" ]
   sources = [
     "logging/apm_data_dumper.cc",
@@ -392,7 +392,7 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("audio_processing_unittests") {
+  rtc_library("audio_processing_unittests") {
     testonly = true
 
     configs += [ ":apm_debug_dump" ]
@@ -522,7 +522,7 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("audio_processing_perf_tests") {
+  rtc_library("audio_processing_perf_tests") {
     testonly = true
 
     sources = [
@@ -540,7 +540,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("file_audio_generator_unittests") {
+  rtc_library("file_audio_generator_unittests") {
     testonly = true
 
     sources = [
@@ -558,7 +558,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("analog_mic_simulation") {
+  rtc_library("analog_mic_simulation") {
     sources = [
       "test/fake_recording_device.cc",
       "test/fake_recording_device.h",
@@ -576,7 +576,7 @@ if (rtc_include_tests) {
   }
 
   if (rtc_enable_protobuf) {
-    rtc_source_set("audioproc_f_impl") {
+    rtc_library("audioproc_f_impl") {
       testonly = true
       configs += [ ":apm_debug_dump" ]
       sources = [
@@ -634,7 +634,7 @@ if (rtc_include_tests) {
     }  # audioproc_f
   }
 
-  rtc_source_set("audioproc_test_utils") {
+  rtc_library("audioproc_test_utils") {
     visibility = [ "*" ]
     testonly = true
     sources = [
@@ -713,7 +713,7 @@ if (rtc_include_tests) {
       proto_out_dir = "modules/audio_processing/test"
     }
 
-    rtc_static_library("audioproc_protobuf_utils") {
+    rtc_library("audioproc_protobuf_utils") {
       sources = [
         "test/protobuf_utils.cc",
         "test/protobuf_utils.h",
@@ -728,7 +728,7 @@ if (rtc_include_tests) {
       ]
     }
 
-    rtc_static_library("runtime_settings_protobuf_utils") {
+    rtc_library("runtime_settings_protobuf_utils") {
       testonly = true
       sources = [
         "test/runtime_setting_util.cc",
