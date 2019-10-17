@@ -2043,15 +2043,12 @@ TEST_P(RtpSenderTest, TrySendPacketMatchesVideo) {
       BuildRtpPacket(kPayload, true, 0, fake_clock_.TimeInMilliseconds());
   packet->set_packet_type(RtpPacketToSend::Type::kVideo);
 
-  // Verify not sent with wrong SSRC.
-  packet->SetSsrc(kSsrc + 1);
-  EXPECT_FALSE(rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo()));
-
   // Verify sent with correct SSRC.
   packet = BuildRtpPacket(kPayload, true, 0, fake_clock_.TimeInMilliseconds());
   packet->SetSsrc(kSsrc);
   packet->set_packet_type(RtpPacketToSend::Type::kVideo);
-  EXPECT_TRUE(rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo()));
+  rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
+  EXPECT_EQ(transport_.packets_sent(), 1);
 }
 
 TEST_P(RtpSenderTest, TrySendPacketMatchesAudio) {
@@ -2059,15 +2056,12 @@ TEST_P(RtpSenderTest, TrySendPacketMatchesAudio) {
       BuildRtpPacket(kPayload, true, 0, fake_clock_.TimeInMilliseconds());
   packet->set_packet_type(RtpPacketToSend::Type::kAudio);
 
-  // Verify not sent with wrong SSRC.
-  packet->SetSsrc(kSsrc + 1);
-  EXPECT_FALSE(rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo()));
-
   // Verify sent with correct SSRC.
   packet = BuildRtpPacket(kPayload, true, 0, fake_clock_.TimeInMilliseconds());
   packet->SetSsrc(kSsrc);
   packet->set_packet_type(RtpPacketToSend::Type::kAudio);
-  EXPECT_TRUE(rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo()));
+  rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
+  EXPECT_EQ(transport_.packets_sent(), 1);
 }
 
 TEST_P(RtpSenderTest, TrySendPacketMatchesRetransmissions) {
@@ -2075,21 +2069,19 @@ TEST_P(RtpSenderTest, TrySendPacketMatchesRetransmissions) {
       BuildRtpPacket(kPayload, true, 0, fake_clock_.TimeInMilliseconds());
   packet->set_packet_type(RtpPacketToSend::Type::kRetransmission);
 
-  // Verify not sent with wrong SSRC.
-  packet->SetSsrc(kSsrc + 1);
-  EXPECT_FALSE(rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo()));
-
   // Verify sent with correct SSRC (non-RTX).
   packet = BuildRtpPacket(kPayload, true, 0, fake_clock_.TimeInMilliseconds());
   packet->SetSsrc(kSsrc);
   packet->set_packet_type(RtpPacketToSend::Type::kRetransmission);
-  EXPECT_TRUE(rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo()));
+  rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
+  EXPECT_EQ(transport_.packets_sent(), 1);
 
   // RTX retransmission.
   packet = BuildRtpPacket(kPayload, true, 0, fake_clock_.TimeInMilliseconds());
   packet->SetSsrc(kRtxSsrc);
   packet->set_packet_type(RtpPacketToSend::Type::kRetransmission);
-  EXPECT_TRUE(rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo()));
+  rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
+  EXPECT_EQ(transport_.packets_sent(), 2);
 }
 
 TEST_P(RtpSenderTest, TrySendPacketMatchesPadding) {
@@ -2097,21 +2089,19 @@ TEST_P(RtpSenderTest, TrySendPacketMatchesPadding) {
       BuildRtpPacket(kPayload, true, 0, fake_clock_.TimeInMilliseconds());
   packet->set_packet_type(RtpPacketToSend::Type::kPadding);
 
-  // Verify not sent with wrong SSRC.
-  packet->SetSsrc(kSsrc + 1);
-  EXPECT_FALSE(rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo()));
-
   // Verify sent with correct SSRC (non-RTX).
   packet = BuildRtpPacket(kPayload, true, 0, fake_clock_.TimeInMilliseconds());
   packet->SetSsrc(kSsrc);
   packet->set_packet_type(RtpPacketToSend::Type::kPadding);
-  EXPECT_TRUE(rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo()));
+  rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
+  EXPECT_EQ(transport_.packets_sent(), 1);
 
   // RTX padding.
   packet = BuildRtpPacket(kPayload, true, 0, fake_clock_.TimeInMilliseconds());
   packet->SetSsrc(kRtxSsrc);
   packet->set_packet_type(RtpPacketToSend::Type::kPadding);
-  EXPECT_TRUE(rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo()));
+  rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
+  EXPECT_EQ(transport_.packets_sent(), 2);
 }
 
 TEST_P(RtpSenderTest, TrySendPacketMatchesFlexfec) {
@@ -2119,15 +2109,12 @@ TEST_P(RtpSenderTest, TrySendPacketMatchesFlexfec) {
       BuildRtpPacket(kPayload, true, 0, fake_clock_.TimeInMilliseconds());
   packet->set_packet_type(RtpPacketToSend::Type::kForwardErrorCorrection);
 
-  // Verify not sent with wrong SSRC.
-  packet->SetSsrc(kSsrc + 1);
-  EXPECT_FALSE(rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo()));
-
   // Verify sent with correct SSRC.
   packet = BuildRtpPacket(kPayload, true, 0, fake_clock_.TimeInMilliseconds());
   packet->SetSsrc(kFlexFecSsrc);
   packet->set_packet_type(RtpPacketToSend::Type::kForwardErrorCorrection);
-  EXPECT_TRUE(rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo()));
+  rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
+  EXPECT_EQ(transport_.packets_sent(), 1);
 }
 
 TEST_P(RtpSenderTest, TrySendPacketMatchesUlpfec) {
@@ -2135,15 +2122,12 @@ TEST_P(RtpSenderTest, TrySendPacketMatchesUlpfec) {
       BuildRtpPacket(kPayload, true, 0, fake_clock_.TimeInMilliseconds());
   packet->set_packet_type(RtpPacketToSend::Type::kForwardErrorCorrection);
 
-  // Verify not sent with wrong SSRC.
-  packet->SetSsrc(kSsrc + 1);
-  EXPECT_FALSE(rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo()));
-
   // Verify sent with correct SSRC.
   packet = BuildRtpPacket(kPayload, true, 0, fake_clock_.TimeInMilliseconds());
   packet->SetSsrc(kSsrc);
   packet->set_packet_type(RtpPacketToSend::Type::kForwardErrorCorrection);
-  EXPECT_TRUE(rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo()));
+  rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
+  EXPECT_EQ(transport_.packets_sent(), 1);
 }
 
 TEST_P(RtpSenderTest, TrySendPacketHandlesRetransmissionHistory) {
