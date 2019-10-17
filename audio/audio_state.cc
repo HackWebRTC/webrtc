@@ -63,6 +63,7 @@ void AudioState::AddReceivingStream(webrtc::AudioReceiveStream* stream) {
   }
 
   // Make sure playback is initialized; start playing if enabled.
+  UpdateNullAudioPollerState();
   auto* adm = config_.audio_device_module.get();
   if (!adm->Playing()) {
     if (adm->InitPlayout() == 0) {
@@ -81,6 +82,7 @@ void AudioState::RemoveReceivingStream(webrtc::AudioReceiveStream* stream) {
   RTC_DCHECK_EQ(1, count);
   config_.audio_mixer->RemoveSource(
       static_cast<internal::AudioReceiveStream*>(stream));
+  UpdateNullAudioPollerState();
   if (receiving_streams_.empty()) {
     config_.audio_device_module->StopPlayout();
   }
@@ -124,13 +126,13 @@ void AudioState::SetPlayout(bool enabled) {
   if (playout_enabled_ != enabled) {
     playout_enabled_ = enabled;
     if (enabled) {
-      null_audio_poller_.reset();
+      UpdateNullAudioPollerState();
       if (!receiving_streams_.empty()) {
         config_.audio_device_module->StartPlayout();
       }
     } else {
       config_.audio_device_module->StopPlayout();
-      null_audio_poller_ = std::make_unique<NullAudioPoller>(&audio_transport_);
+      UpdateNullAudioPollerState();
     }
   }
 }
@@ -167,6 +169,17 @@ void AudioState::UpdateAudioTransportWithSendingStreams() {
   }
   audio_transport_.UpdateSendingStreams(std::move(sending_streams),
                                         max_sample_rate_hz, max_num_channels);
+}
+
+void AudioState::UpdateNullAudioPollerState() {
+  // Run NullAudioPoller when there are receiving streams and playout is
+  // disabled.
+  if (!receiving_streams_.empty() && !playout_enabled_) {
+    if (!null_audio_poller_)
+      null_audio_poller_ = std::make_unique<NullAudioPoller>(&audio_transport_);
+  } else {
+    null_audio_poller_.reset();
+  }
 }
 }  // namespace internal
 
