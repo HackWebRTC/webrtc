@@ -1572,7 +1572,7 @@ TEST_F(VideoSendStreamTest, PaddingIsPrimarilyRetransmissions) {
         VideoEncoderConfig* encoder_config) override {
       // Turn on RTX.
       send_config->rtp.rtx.payload_type = kFakeVideoSendPayloadType;
-      send_config->rtp.rtx.ssrcs.push_back(kVideoSendSsrcs[0]);
+      send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[0]);
     }
 
     void PerformTest() override {

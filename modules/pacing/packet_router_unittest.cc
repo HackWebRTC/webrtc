@@ -179,8 +179,10 @@ TEST_F(PacketRouterTest, PadsOnLastActiveMediaStream) {
   // and supports rtx.
   EXPECT_CALL(rtp_2, GeneratePadding(kPaddingBytes))
       .Times(1)
-      .WillOnce([](size_t target_size_bytes) {
-        return std::vector<std::unique_ptr<RtpPacketToSend>>();
+      .WillOnce([&](size_t target_size_bytes) {
+        std::vector<std::unique_ptr<RtpPacketToSend>> packets;
+        packets.push_back(BuildRtpPacket(kSsrc2));
+        return packets;
       });
   packet_router_.GeneratePadding(kPaddingBytes);
 
@@ -189,41 +191,45 @@ TEST_F(PacketRouterTest, PadsOnLastActiveMediaStream) {
 
   EXPECT_CALL(rtp_1, GeneratePadding(kPaddingBytes))
       .Times(1)
-      .WillOnce([](size_t target_size_bytes) {
-        return std::vector<std::unique_ptr<RtpPacketToSend>>();
+      .WillOnce([&](size_t target_size_bytes) {
+        std::vector<std::unique_ptr<RtpPacketToSend>> packets;
+        packets.push_back(BuildRtpPacket(kSsrc1));
+        return packets;
       });
   packet_router_.GeneratePadding(kPaddingBytes);
 
   // Send media on second module. Padding should be sent there.
   packet_router_.SendPacket(BuildRtpPacket(kSsrc2), PacedPacketInfo());
 
-  EXPECT_CALL(rtp_2, GeneratePadding(kPaddingBytes))
-      .Times(1)
-      .WillOnce([](size_t target_size_bytes) {
-        return std::vector<std::unique_ptr<RtpPacketToSend>>();
-      });
-  packet_router_.GeneratePadding(kPaddingBytes);
-
-  // Remove second module, padding should now fall back to first module.
+  // If the last active module is removed, and no module sends media before
+  // the next padding request, and arbitrary module will be selected.
   packet_router_.RemoveSendRtpModule(&rtp_2);
+
+  // Send on and then remove all remaining modules.
+  RtpRtcp* last_send_module;
   EXPECT_CALL(rtp_1, GeneratePadding(kPaddingBytes))
       .Times(1)
-      .WillOnce([](size_t target_size_bytes) {
-        return std::vector<std::unique_ptr<RtpPacketToSend>>();
+      .WillOnce([&](size_t target_size_bytes) {
+        last_send_module = &rtp_1;
+        std::vector<std::unique_ptr<RtpPacketToSend>> packets;
+        packets.push_back(BuildRtpPacket(kSsrc1));
+        return packets;
       });
-  packet_router_.GeneratePadding(kPaddingBytes);
-
-  // Remove first module too, leaving only the one without rtx.
-  packet_router_.RemoveSendRtpModule(&rtp_1);
-
   EXPECT_CALL(rtp_3, GeneratePadding(kPaddingBytes))
       .Times(1)
-      .WillOnce([](size_t target_size_bytes) {
-        return std::vector<std::unique_ptr<RtpPacketToSend>>();
+      .WillOnce([&](size_t target_size_bytes) {
+        last_send_module = &rtp_3;
+        std::vector<std::unique_ptr<RtpPacketToSend>> packets;
+        packets.push_back(BuildRtpPacket(kSsrc3));
+        return packets;
       });
-  packet_router_.GeneratePadding(kPaddingBytes);
 
-  packet_router_.RemoveSendRtpModule(&rtp_3);
+  for (int i = 0; i < 2; ++i) {
+    last_send_module = nullptr;
+    packet_router_.GeneratePadding(kPaddingBytes);
+    EXPECT_NE(last_send_module, nullptr);
+    packet_router_.RemoveSendRtpModule(last_send_module);
+  }
 }
 
 TEST_F(PacketRouterTest, AllocatesTransportSequenceNumbers) {
@@ -272,12 +278,11 @@ TEST_F(PacketRouterTest, SendTransportFeedback) {
 }
 
 TEST_F(PacketRouterTest, SendPacketWithoutTransportSequenceNumbers) {
-  NiceMock<MockRtpRtcp> rtp_1;
-  packet_router_.AddSendRtpModule(&rtp_1, false);
-
   const uint16_t kSsrc1 = 1234;
+  NiceMock<MockRtpRtcp> rtp_1;
   ON_CALL(rtp_1, SendingMedia).WillByDefault(Return(true));
   ON_CALL(rtp_1, SSRC).WillByDefault(Return(kSsrc1));
+  packet_router_.AddSendRtpModule(&rtp_1, false);
 
   // Send a packet without TransportSequenceNumber extension registered,
   // packets sent should not have the extension set.
@@ -300,14 +305,14 @@ TEST_F(PacketRouterTest, SendPacketAssignsTransportSequenceNumbers) {
   NiceMock<MockRtpRtcp> rtp_1;
   NiceMock<MockRtpRtcp> rtp_2;
 
-  packet_router_.AddSendRtpModule(&rtp_1, false);
-  packet_router_.AddSendRtpModule(&rtp_2, false);
-
   const uint16_t kSsrc1 = 1234;
   const uint16_t kSsrc2 = 2345;
 
   ON_CALL(rtp_1, SSRC).WillByDefault(Return(kSsrc1));
   ON_CALL(rtp_2, SSRC).WillByDefault(Return(kSsrc2));
+
+  packet_router_.AddSendRtpModule(&rtp_1, false);
+  packet_router_.AddSendRtpModule(&rtp_2, false);
 
   // Transport sequence numbers start at 1, for historical reasons.
   uint16_t transport_sequence_number = 1;
@@ -327,9 +332,6 @@ TEST_F(PacketRouterTest, SendPacketAssignsTransportSequenceNumbers) {
   packet = BuildRtpPacket(kSsrc2);
   EXPECT_TRUE(packet->ReserveExtension<TransportSequenceNumber>());
 
-  // There will be a failed attempt to send on kSsrc1 before trying
-  // the correct RTP module.
-  EXPECT_CALL(rtp_1, TrySendPacket).WillOnce(Return(false));
   EXPECT_CALL(
       rtp_2,
       TrySendPacket(

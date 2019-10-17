@@ -226,6 +226,9 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   // a combination of values of the enumerator RtxMode.
   virtual int RtxSendStatus() const = 0;
 
+  // Returns the SSRC used for RTX if set, otherwise a nullopt.
+  virtual absl::optional<uint32_t> RtxSsrc() const = 0;
+
   // Sets the payload type to use when sending RTX packets. Note that this
   // doesn't enable RTX, only the payload type is set.
   virtual void SetRtxSendPayloadType(int payload_type,
