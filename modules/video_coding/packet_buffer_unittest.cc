@@ -7,15 +7,17 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "modules/video_coding/packet_buffer.h"
 
 #include <cstring>
+#include <limits>
 #include <map>
 #include <set>
+#include <string>
 #include <utility>
 
 #include "common_video/h264/h264_common.h"
 #include "modules/video_coding/frame_object.h"
-#include "modules/video_coding/packet_buffer.h"
 #include "rtc_base/random.h"
 #include "system_wrappers/include/clock.h"
 #include "test/field_trial.h"
@@ -24,11 +26,10 @@
 namespace webrtc {
 namespace video_coding {
 
-class TestPacketBuffer : public ::testing::Test,
+class PacketBufferTest : public ::testing::Test,
                          public OnAssembledFrameCallback {
  protected:
-  TestPacketBuffer() : TestPacketBuffer("") {}
-  explicit TestPacketBuffer(std::string field_trials)
+  explicit PacketBufferTest(std::string field_trials = "")
       : scoped_field_trials_(field_trials),
         rand_(0x7732213),
         clock_(new SimulatedClock(0)),
@@ -101,12 +102,12 @@ class TestPacketBuffer : public ::testing::Test,
   std::map<uint16_t, std::unique_ptr<RtpFrameObject>> frames_from_callback_;
 };
 
-TEST_F(TestPacketBuffer, InsertOnePacket) {
+TEST_F(PacketBufferTest, InsertOnePacket) {
   const uint16_t seq_num = Rand();
   EXPECT_TRUE(Insert(seq_num, kKeyFrame, kFirst, kLast));
 }
 
-TEST_F(TestPacketBuffer, InsertMultiplePackets) {
+TEST_F(PacketBufferTest, InsertMultiplePackets) {
   const uint16_t seq_num = Rand();
   EXPECT_TRUE(Insert(seq_num, kKeyFrame, kFirst, kLast));
   EXPECT_TRUE(Insert(seq_num + 1, kKeyFrame, kFirst, kLast));
@@ -114,21 +115,21 @@ TEST_F(TestPacketBuffer, InsertMultiplePackets) {
   EXPECT_TRUE(Insert(seq_num + 3, kKeyFrame, kFirst, kLast));
 }
 
-TEST_F(TestPacketBuffer, InsertDuplicatePacket) {
+TEST_F(PacketBufferTest, InsertDuplicatePacket) {
   const uint16_t seq_num = Rand();
   EXPECT_TRUE(Insert(seq_num, kKeyFrame, kFirst, kNotLast));
   EXPECT_TRUE(Insert(seq_num, kKeyFrame, kFirst, kNotLast));
   EXPECT_TRUE(Insert(seq_num + 1, kKeyFrame, kNotFirst, kLast));
 }
 
-TEST_F(TestPacketBuffer, SeqNumWrapOneFrame) {
+TEST_F(PacketBufferTest, SeqNumWrapOneFrame) {
   EXPECT_TRUE(Insert(0xFFFF, kKeyFrame, kFirst, kNotLast));
   EXPECT_TRUE(Insert(0x0, kKeyFrame, kNotFirst, kLast));
 
   CheckFrame(0xFFFF);
 }
 
-TEST_F(TestPacketBuffer, SeqNumWrapTwoFrames) {
+TEST_F(PacketBufferTest, SeqNumWrapTwoFrames) {
   EXPECT_TRUE(Insert(0xFFFF, kKeyFrame, kFirst, kLast));
   EXPECT_TRUE(Insert(0x0, kKeyFrame, kFirst, kLast));
 
@@ -136,7 +137,7 @@ TEST_F(TestPacketBuffer, SeqNumWrapTwoFrames) {
   CheckFrame(0x0);
 }
 
-TEST_F(TestPacketBuffer, InsertOldPackets) {
+TEST_F(PacketBufferTest, InsertOldPackets) {
   const uint16_t seq_num = Rand();
 
   EXPECT_TRUE(Insert(seq_num, kKeyFrame, kFirst, kNotLast));
@@ -158,7 +159,7 @@ TEST_F(TestPacketBuffer, InsertOldPackets) {
   ASSERT_EQ(2UL, frames_from_callback_.size());
 }
 
-TEST_F(TestPacketBuffer, NackCount) {
+TEST_F(PacketBufferTest, NackCount) {
   const uint16_t seq_num = Rand();
 
   VCMPacket packet;
@@ -190,7 +191,7 @@ TEST_F(TestPacketBuffer, NackCount) {
   EXPECT_EQ(3, frame->times_nacked());
 }
 
-TEST_F(TestPacketBuffer, FrameSize) {
+TEST_F(PacketBufferTest, FrameSize) {
   const uint16_t seq_num = Rand();
   uint8_t* data1 = new uint8_t[5]();
   uint8_t* data2 = new uint8_t[5]();
@@ -206,7 +207,7 @@ TEST_F(TestPacketBuffer, FrameSize) {
   EXPECT_EQ(20UL, frames_from_callback_.begin()->second->size());
 }
 
-TEST_F(TestPacketBuffer, CountsUniqueFrames) {
+TEST_F(PacketBufferTest, CountsUniqueFrames) {
   const uint16_t seq_num = Rand();
 
   ASSERT_EQ(0, packet_buffer_.GetUniqueFramesSeen());
@@ -239,7 +240,7 @@ TEST_F(TestPacketBuffer, CountsUniqueFrames) {
   ASSERT_EQ(3, packet_buffer_.GetUniqueFramesSeen());
 }
 
-TEST_F(TestPacketBuffer, HasHistoryOfUniqueFrames) {
+TEST_F(PacketBufferTest, HasHistoryOfUniqueFrames) {
   const int kNumFrames = 1500;
   const int kRequiredHistoryLength = 1000;
   const uint16_t seq_num = Rand();
@@ -263,7 +264,7 @@ TEST_F(TestPacketBuffer, HasHistoryOfUniqueFrames) {
   ASSERT_EQ(kNumFrames + 1, packet_buffer_.GetUniqueFramesSeen());
 }
 
-TEST_F(TestPacketBuffer, ExpandBuffer) {
+TEST_F(PacketBufferTest, ExpandBuffer) {
   const uint16_t seq_num = Rand();
 
   EXPECT_TRUE(Insert(seq_num, kKeyFrame, kFirst, kNotLast));
@@ -275,7 +276,7 @@ TEST_F(TestPacketBuffer, ExpandBuffer) {
   EXPECT_TRUE(Insert(seq_num + kStartSize, kKeyFrame, kNotFirst, kLast));
 }
 
-TEST_F(TestPacketBuffer, SingleFrameExpandsBuffer) {
+TEST_F(PacketBufferTest, SingleFrameExpandsBuffer) {
   const uint16_t seq_num = Rand();
 
   EXPECT_TRUE(Insert(seq_num, kKeyFrame, kFirst, kNotLast));
@@ -287,7 +288,7 @@ TEST_F(TestPacketBuffer, SingleFrameExpandsBuffer) {
   CheckFrame(seq_num);
 }
 
-TEST_F(TestPacketBuffer, ExpandBufferOverflow) {
+TEST_F(PacketBufferTest, ExpandBufferOverflow) {
   const uint16_t seq_num = Rand();
 
   EXPECT_TRUE(Insert(seq_num, kKeyFrame, kFirst, kNotLast));
@@ -299,14 +300,14 @@ TEST_F(TestPacketBuffer, ExpandBufferOverflow) {
   EXPECT_FALSE(Insert(seq_num + kMaxSize, kKeyFrame, kNotFirst, kLast));
 }
 
-TEST_F(TestPacketBuffer, OnePacketOneFrame) {
+TEST_F(PacketBufferTest, OnePacketOneFrame) {
   const uint16_t seq_num = Rand();
   EXPECT_TRUE(Insert(seq_num, kKeyFrame, kFirst, kLast));
   ASSERT_EQ(1UL, frames_from_callback_.size());
   CheckFrame(seq_num);
 }
 
-TEST_F(TestPacketBuffer, TwoPacketsTwoFrames) {
+TEST_F(PacketBufferTest, TwoPacketsTwoFrames) {
   const uint16_t seq_num = Rand();
 
   EXPECT_TRUE(Insert(seq_num, kKeyFrame, kFirst, kLast));
@@ -317,7 +318,7 @@ TEST_F(TestPacketBuffer, TwoPacketsTwoFrames) {
   CheckFrame(seq_num + 1);
 }
 
-TEST_F(TestPacketBuffer, TwoPacketsOneFrames) {
+TEST_F(PacketBufferTest, TwoPacketsOneFrames) {
   const uint16_t seq_num = Rand();
 
   EXPECT_TRUE(Insert(seq_num, kKeyFrame, kFirst, kNotLast));
@@ -327,7 +328,7 @@ TEST_F(TestPacketBuffer, TwoPacketsOneFrames) {
   CheckFrame(seq_num);
 }
 
-TEST_F(TestPacketBuffer, ThreePacketReorderingOneFrame) {
+TEST_F(PacketBufferTest, ThreePacketReorderingOneFrame) {
   const uint16_t seq_num = Rand();
 
   EXPECT_TRUE(Insert(seq_num, kKeyFrame, kFirst, kNotLast));
@@ -338,7 +339,7 @@ TEST_F(TestPacketBuffer, ThreePacketReorderingOneFrame) {
   CheckFrame(seq_num);
 }
 
-TEST_F(TestPacketBuffer, Frames) {
+TEST_F(PacketBufferTest, Frames) {
   const uint16_t seq_num = Rand();
 
   EXPECT_TRUE(Insert(seq_num, kKeyFrame, kFirst, kLast));
@@ -353,7 +354,7 @@ TEST_F(TestPacketBuffer, Frames) {
   CheckFrame(seq_num + 3);
 }
 
-TEST_F(TestPacketBuffer, ClearSinglePacket) {
+TEST_F(PacketBufferTest, ClearSinglePacket) {
   const uint16_t seq_num = Rand();
 
   for (int i = 0; i < kMaxSize; ++i)
@@ -363,7 +364,7 @@ TEST_F(TestPacketBuffer, ClearSinglePacket) {
   EXPECT_TRUE(Insert(seq_num + kMaxSize, kDeltaFrame, kFirst, kLast));
 }
 
-TEST_F(TestPacketBuffer, ClearFullBuffer) {
+TEST_F(PacketBufferTest, ClearFullBuffer) {
   for (int i = 0; i < kMaxSize; ++i)
     EXPECT_TRUE(Insert(i, kDeltaFrame, kFirst, kLast));
 
@@ -373,7 +374,7 @@ TEST_F(TestPacketBuffer, ClearFullBuffer) {
     EXPECT_TRUE(Insert(i, kDeltaFrame, kFirst, kLast));
 }
 
-TEST_F(TestPacketBuffer, DontClearNewerPacket) {
+TEST_F(PacketBufferTest, DontClearNewerPacket) {
   EXPECT_TRUE(Insert(0, kKeyFrame, kFirst, kLast));
   packet_buffer_.ClearTo(0);
   EXPECT_TRUE(Insert(2 * kStartSize, kKeyFrame, kFirst, kLast));
@@ -387,7 +388,7 @@ TEST_F(TestPacketBuffer, DontClearNewerPacket) {
   CheckFrame(3 * kStartSize + 1);
 }
 
-TEST_F(TestPacketBuffer, OneIncompleteFrame) {
+TEST_F(PacketBufferTest, OneIncompleteFrame) {
   const uint16_t seq_num = Rand();
 
   EXPECT_TRUE(Insert(seq_num, kDeltaFrame, kFirst, kNotLast));
@@ -398,7 +399,7 @@ TEST_F(TestPacketBuffer, OneIncompleteFrame) {
   CheckFrame(seq_num);
 }
 
-TEST_F(TestPacketBuffer, TwoIncompleteFramesFullBuffer) {
+TEST_F(PacketBufferTest, TwoIncompleteFramesFullBuffer) {
   const uint16_t seq_num = Rand();
 
   for (int i = 1; i < kMaxSize - 1; ++i)
@@ -409,7 +410,7 @@ TEST_F(TestPacketBuffer, TwoIncompleteFramesFullBuffer) {
   ASSERT_EQ(0UL, frames_from_callback_.size());
 }
 
-TEST_F(TestPacketBuffer, FramesReordered) {
+TEST_F(PacketBufferTest, FramesReordered) {
   const uint16_t seq_num = Rand();
 
   EXPECT_TRUE(Insert(seq_num + 1, kDeltaFrame, kFirst, kLast));
@@ -424,7 +425,7 @@ TEST_F(TestPacketBuffer, FramesReordered) {
   CheckFrame(seq_num + 3);
 }
 
-TEST_F(TestPacketBuffer, GetBitstream) {
+TEST_F(PacketBufferTest, GetBitstream) {
   // "many bitstream, such data" with null termination.
   uint8_t many_data[] = {0x6d, 0x61, 0x6e, 0x79, 0x20};
   uint8_t bitstream_data[] = {0x62, 0x69, 0x74, 0x73, 0x74, 0x72,
@@ -464,7 +465,7 @@ TEST_F(TestPacketBuffer, GetBitstream) {
             0);
 }
 
-TEST_F(TestPacketBuffer, GetBitstreamOneFrameOnePacket) {
+TEST_F(PacketBufferTest, GetBitstreamOneFrameOnePacket) {
   uint8_t bitstream_data[] = "All the bitstream data for this frame!";
   uint8_t* data = new uint8_t[sizeof(bitstream_data)];
   memcpy(data, bitstream_data, sizeof(bitstream_data));
@@ -480,7 +481,7 @@ TEST_F(TestPacketBuffer, GetBitstreamOneFrameOnePacket) {
             0);
 }
 
-TEST_F(TestPacketBuffer, GetBitstreamOneFrameFullBuffer) {
+TEST_F(PacketBufferTest, GetBitstreamOneFrameFullBuffer) {
   uint8_t* data_arr[kStartSize];
   uint8_t expected[kStartSize];
 
@@ -502,7 +503,7 @@ TEST_F(TestPacketBuffer, GetBitstreamOneFrameFullBuffer) {
   EXPECT_EQ(memcmp(frames_from_callback_[0]->data(), expected, kStartSize), 0);
 }
 
-TEST_F(TestPacketBuffer, InsertPacketAfterOldFrameObjectIsRemoved) {
+TEST_F(PacketBufferTest, InsertPacketAfterOldFrameObjectIsRemoved) {
   uint16_t kFirstSeqNum = 0;
   uint32_t kTimestampDelta = 100;
   uint32_t timestamp = 10000;
@@ -539,10 +540,10 @@ TEST_F(TestPacketBuffer, InsertPacketAfterOldFrameObjectIsRemoved) {
 // SPS/PPS/IDR and the keyframes we create as part of the test do contain
 // SPS/PPS/IDR. If |sps_pps_idr_is_keyframe| is false, we only require and
 // create keyframes containing only IDR.
-class TestPacketBufferH264 : public TestPacketBuffer {
+class PacketBufferH264Test : public PacketBufferTest {
  protected:
-  explicit TestPacketBufferH264(bool sps_pps_idr_is_keyframe)
-      : TestPacketBuffer(sps_pps_idr_is_keyframe
+  explicit PacketBufferH264Test(bool sps_pps_idr_is_keyframe)
+      : PacketBufferTest(sps_pps_idr_is_keyframe
                              ? "WebRTC-SpsPpsIdrIsH264Keyframe/Enabled/"
                              : ""),
         sps_pps_idr_is_keyframe_(sps_pps_idr_is_keyframe) {}
@@ -625,18 +626,18 @@ class TestPacketBufferH264 : public TestPacketBuffer {
 
 // This fixture is used to test the general behaviour of the packet buffer
 // in both configurations.
-class TestPacketBufferH264Parameterized
+class PacketBufferH264ParameterizedTest
     : public ::testing::WithParamInterface<bool>,
-      public TestPacketBufferH264 {
+      public PacketBufferH264Test {
  protected:
-  TestPacketBufferH264Parameterized() : TestPacketBufferH264(GetParam()) {}
+  PacketBufferH264ParameterizedTest() : PacketBufferH264Test(GetParam()) {}
 };
 
 INSTANTIATE_TEST_SUITE_P(SpsPpsIdrIsKeyframe,
-                         TestPacketBufferH264Parameterized,
-                         ::testing::Values(false, true));
+                         PacketBufferH264ParameterizedTest,
+                         ::testing::Bool());
 
-TEST_P(TestPacketBufferH264Parameterized, DontRemoveMissingPacketOnClearTo) {
+TEST_P(PacketBufferH264ParameterizedTest, DontRemoveMissingPacketOnClearTo) {
   EXPECT_TRUE(InsertH264(0, kKeyFrame, kFirst, kLast, 0));
   EXPECT_TRUE(InsertH264(2, kDeltaFrame, kFirst, kNotLast, 2));
   packet_buffer_.ClearTo(0);
@@ -646,7 +647,7 @@ TEST_P(TestPacketBufferH264Parameterized, DontRemoveMissingPacketOnClearTo) {
   CheckFrame(0);
 }
 
-TEST_P(TestPacketBufferH264Parameterized, GetBitstreamOneFrameFullBuffer) {
+TEST_P(PacketBufferH264ParameterizedTest, GetBitstreamOneFrameFullBuffer) {
   uint8_t* data_arr[kStartSize];
   uint8_t expected[kStartSize];
 
@@ -670,7 +671,7 @@ TEST_P(TestPacketBufferH264Parameterized, GetBitstreamOneFrameFullBuffer) {
   EXPECT_EQ(memcmp(frames_from_callback_[0]->data(), expected, kStartSize), 0);
 }
 
-TEST_P(TestPacketBufferH264Parameterized, GetBitstreamBufferPadding) {
+TEST_P(PacketBufferH264ParameterizedTest, GetBitstreamBufferPadding) {
   uint16_t seq_num = Rand();
   uint8_t data_data[] = "some plain old data";
   uint8_t* data = new uint8_t[sizeof(data_data)];
@@ -701,7 +702,7 @@ TEST_P(TestPacketBufferH264Parameterized, GetBitstreamBufferPadding) {
             0);
 }
 
-TEST_P(TestPacketBufferH264Parameterized, FrameResolution) {
+TEST_P(PacketBufferH264ParameterizedTest, FrameResolution) {
   uint16_t seq_num = 100;
   uint8_t data_data[] = "some plain old data";
   uint8_t* data = new uint8_t[sizeof(data_data)];
@@ -727,7 +728,7 @@ TEST_P(TestPacketBufferH264Parameterized, FrameResolution) {
             0);
 }
 
-TEST_P(TestPacketBufferH264Parameterized, FrameResolutionNaluBeforeSPS) {
+TEST_P(PacketBufferH264ParameterizedTest, FrameResolutionNaluBeforeSPS) {
   uint16_t seq_num = 100;
   uint8_t data_data[] = "some plain old data";
   uint8_t* data = new uint8_t[sizeof(data_data)];
@@ -756,7 +757,7 @@ TEST_P(TestPacketBufferH264Parameterized, FrameResolutionNaluBeforeSPS) {
             0);
 }
 
-TEST_F(TestPacketBuffer, FreeSlotsOnFrameCreation) {
+TEST_F(PacketBufferTest, FreeSlotsOnFrameCreation) {
   const uint16_t seq_num = Rand();
 
   EXPECT_TRUE(Insert(seq_num, kKeyFrame, kFirst, kNotLast));
@@ -776,7 +777,7 @@ TEST_F(TestPacketBuffer, FreeSlotsOnFrameCreation) {
   frames_from_callback_.clear();
 }
 
-TEST_F(TestPacketBuffer, Clear) {
+TEST_F(PacketBufferTest, Clear) {
   const uint16_t seq_num = Rand();
 
   EXPECT_TRUE(Insert(seq_num, kKeyFrame, kFirst, kNotLast));
@@ -795,7 +796,7 @@ TEST_F(TestPacketBuffer, Clear) {
   CheckFrame(seq_num + kStartSize);
 }
 
-TEST_F(TestPacketBuffer, FramesAfterClear) {
+TEST_F(PacketBufferTest, FramesAfterClear) {
   Insert(9025, kDeltaFrame, kFirst, kLast);
   Insert(9024, kKeyFrame, kFirst, kLast);
   packet_buffer_.ClearTo(9025);
@@ -808,14 +809,14 @@ TEST_F(TestPacketBuffer, FramesAfterClear) {
   CheckFrame(9057);
 }
 
-TEST_F(TestPacketBuffer, SameFrameDifferentTimestamps) {
+TEST_F(PacketBufferTest, SameFrameDifferentTimestamps) {
   Insert(0, kKeyFrame, kFirst, kNotLast, 0, nullptr, 1000);
   Insert(1, kKeyFrame, kNotFirst, kLast, 0, nullptr, 1001);
 
   ASSERT_EQ(0UL, frames_from_callback_.size());
 }
 
-TEST_F(TestPacketBuffer, DontLeakPayloadData) {
+TEST_F(PacketBufferTest, DontLeakPayloadData) {
   // NOTE! Any eventual leak is suppose to be detected by valgrind
   //       or any other similar tool.
   uint8_t* data1 = new uint8_t[5];
@@ -837,7 +838,7 @@ TEST_F(TestPacketBuffer, DontLeakPayloadData) {
   EXPECT_FALSE(Insert(2 + kMaxSize, kKeyFrame, kFirst, kNotLast, 5, data4));
 }
 
-TEST_F(TestPacketBuffer, ContinuousSeqNumDoubleMarkerBit) {
+TEST_F(PacketBufferTest, ContinuousSeqNumDoubleMarkerBit) {
   Insert(2, kKeyFrame, kNotFirst, kNotLast);
   Insert(1, kKeyFrame, kFirst, kLast);
   frames_from_callback_.clear();
@@ -846,7 +847,7 @@ TEST_F(TestPacketBuffer, ContinuousSeqNumDoubleMarkerBit) {
   EXPECT_EQ(0UL, frames_from_callback_.size());
 }
 
-TEST_F(TestPacketBuffer, PacketTimestamps) {
+TEST_F(PacketBufferTest, PacketTimestamps) {
   absl::optional<int64_t> packet_ms;
   absl::optional<int64_t> packet_keyframe_ms;
 
@@ -881,7 +882,7 @@ TEST_F(TestPacketBuffer, PacketTimestamps) {
   EXPECT_FALSE(packet_keyframe_ms);
 }
 
-TEST_F(TestPacketBuffer, IncomingCodecChange) {
+TEST_F(PacketBufferTest, IncomingCodecChange) {
   VCMPacket packet;
   packet.video_header.is_first_packet_in_frame = true;
   packet.video_header.is_last_packet_in_frame = true;
@@ -914,7 +915,7 @@ TEST_F(TestPacketBuffer, IncomingCodecChange) {
   EXPECT_EQ(3UL, frames_from_callback_.size());
 }
 
-TEST_F(TestPacketBuffer, TooManyNalusInPacket) {
+TEST_F(PacketBufferTest, TooManyNalusInPacket) {
   VCMPacket packet;
   packet.video_header.codec = kVideoCodecH264;
   packet.timestamp = 1;
@@ -932,7 +933,7 @@ TEST_F(TestPacketBuffer, TooManyNalusInPacket) {
   EXPECT_EQ(0UL, frames_from_callback_.size());
 }
 
-TEST_P(TestPacketBufferH264Parameterized, OneFrameFillBuffer) {
+TEST_P(PacketBufferH264ParameterizedTest, OneFrameFillBuffer) {
   InsertH264(0, kKeyFrame, kFirst, kNotLast, 1000);
   for (int i = 1; i < kStartSize - 1; ++i)
     InsertH264(i, kKeyFrame, kNotFirst, kNotLast, 1000);
@@ -942,7 +943,7 @@ TEST_P(TestPacketBufferH264Parameterized, OneFrameFillBuffer) {
   CheckFrame(0);
 }
 
-TEST_P(TestPacketBufferH264Parameterized, CreateFramesAfterFilledBuffer) {
+TEST_P(PacketBufferH264ParameterizedTest, CreateFramesAfterFilledBuffer) {
   InsertH264(kStartSize - 2, kKeyFrame, kFirst, kLast, 0);
   ASSERT_EQ(1UL, frames_from_callback_.size());
   frames_from_callback_.clear();
@@ -959,7 +960,7 @@ TEST_P(TestPacketBufferH264Parameterized, CreateFramesAfterFilledBuffer) {
   CheckFrame(kStartSize);
 }
 
-TEST_P(TestPacketBufferH264Parameterized, OneFrameMaxSeqNum) {
+TEST_P(PacketBufferH264ParameterizedTest, OneFrameMaxSeqNum) {
   InsertH264(65534, kKeyFrame, kFirst, kNotLast, 1000);
   InsertH264(65535, kKeyFrame, kNotFirst, kLast, 1000);
 
@@ -967,7 +968,7 @@ TEST_P(TestPacketBufferH264Parameterized, OneFrameMaxSeqNum) {
   CheckFrame(65534);
 }
 
-TEST_P(TestPacketBufferH264Parameterized, ClearMissingPacketsOnKeyframe) {
+TEST_P(PacketBufferH264ParameterizedTest, ClearMissingPacketsOnKeyframe) {
   InsertH264(0, kKeyFrame, kFirst, kLast, 1000);
   InsertH264(2, kKeyFrame, kFirst, kLast, 3000);
   InsertH264(3, kDeltaFrame, kFirst, kNotLast, 4000);
@@ -984,7 +985,7 @@ TEST_P(TestPacketBufferH264Parameterized, ClearMissingPacketsOnKeyframe) {
   CheckFrame(kStartSize + 1);
 }
 
-TEST_P(TestPacketBufferH264Parameterized, FindFramesOnPadding) {
+TEST_P(PacketBufferH264ParameterizedTest, FindFramesOnPadding) {
   InsertH264(0, kKeyFrame, kFirst, kLast, 1000);
   InsertH264(2, kDeltaFrame, kFirst, kLast, 1000);
 
@@ -995,12 +996,12 @@ TEST_P(TestPacketBufferH264Parameterized, FindFramesOnPadding) {
   CheckFrame(2);
 }
 
-class TestPacketBufferH264XIsKeyframe : public TestPacketBufferH264 {
+class PacketBufferH264XIsKeyframeTest : public PacketBufferH264Test {
  protected:
   const uint16_t kSeqNum = 5;
 
-  explicit TestPacketBufferH264XIsKeyframe(bool sps_pps_idr_is_keyframe)
-      : TestPacketBufferH264(sps_pps_idr_is_keyframe) {
+  explicit PacketBufferH264XIsKeyframeTest(bool sps_pps_idr_is_keyframe)
+      : PacketBufferH264Test(sps_pps_idr_is_keyframe) {
     packet_.video_header.codec = kVideoCodecH264;
     packet_.seqNum = kSeqNum;
 
@@ -1011,14 +1012,14 @@ class TestPacketBufferH264XIsKeyframe : public TestPacketBufferH264 {
   VCMPacket packet_;
 };
 
-class TestPacketBufferH264IdrIsKeyframe
-    : public TestPacketBufferH264XIsKeyframe {
+class PacketBufferH264IdrIsKeyframeTest
+    : public PacketBufferH264XIsKeyframeTest {
  protected:
-  TestPacketBufferH264IdrIsKeyframe()
-      : TestPacketBufferH264XIsKeyframe(false) {}
+  PacketBufferH264IdrIsKeyframeTest()
+      : PacketBufferH264XIsKeyframeTest(false) {}
 };
 
-TEST_F(TestPacketBufferH264IdrIsKeyframe, IdrIsKeyframe) {
+TEST_F(PacketBufferH264IdrIsKeyframeTest, IdrIsKeyframe) {
   auto& h264_header =
       packet_.video_header.video_type_header.emplace<RTPVideoHeaderH264>();
   h264_header.nalus[0].type = H264::NaluType::kIdr;
@@ -1030,7 +1031,7 @@ TEST_F(TestPacketBufferH264IdrIsKeyframe, IdrIsKeyframe) {
             frames_from_callback_[kSeqNum]->frame_type());
 }
 
-TEST_F(TestPacketBufferH264IdrIsKeyframe, SpsPpsIdrIsKeyframe) {
+TEST_F(PacketBufferH264IdrIsKeyframeTest, SpsPpsIdrIsKeyframe) {
   auto& h264_header =
       packet_.video_header.video_type_header.emplace<RTPVideoHeaderH264>();
   h264_header.nalus[0].type = H264::NaluType::kSps;
@@ -1045,14 +1046,14 @@ TEST_F(TestPacketBufferH264IdrIsKeyframe, SpsPpsIdrIsKeyframe) {
             frames_from_callback_[kSeqNum]->frame_type());
 }
 
-class TestPacketBufferH264SpsPpsIdrIsKeyframe
-    : public TestPacketBufferH264XIsKeyframe {
+class PacketBufferH264SpsPpsIdrIsKeyframeTest
+    : public PacketBufferH264XIsKeyframeTest {
  protected:
-  TestPacketBufferH264SpsPpsIdrIsKeyframe()
-      : TestPacketBufferH264XIsKeyframe(true) {}
+  PacketBufferH264SpsPpsIdrIsKeyframeTest()
+      : PacketBufferH264XIsKeyframeTest(true) {}
 };
 
-TEST_F(TestPacketBufferH264SpsPpsIdrIsKeyframe, IdrIsNotKeyframe) {
+TEST_F(PacketBufferH264SpsPpsIdrIsKeyframeTest, IdrIsNotKeyframe) {
   auto& h264_header =
       packet_.video_header.video_type_header.emplace<RTPVideoHeaderH264>();
   h264_header.nalus[0].type = H264::NaluType::kIdr;
@@ -1065,7 +1066,7 @@ TEST_F(TestPacketBufferH264SpsPpsIdrIsKeyframe, IdrIsNotKeyframe) {
             frames_from_callback_[5]->frame_type());
 }
 
-TEST_F(TestPacketBufferH264SpsPpsIdrIsKeyframe, SpsPpsIsNotKeyframe) {
+TEST_F(PacketBufferH264SpsPpsIdrIsKeyframeTest, SpsPpsIsNotKeyframe) {
   auto& h264_header =
       packet_.video_header.video_type_header.emplace<RTPVideoHeaderH264>();
   h264_header.nalus[0].type = H264::NaluType::kSps;
@@ -1079,7 +1080,7 @@ TEST_F(TestPacketBufferH264SpsPpsIdrIsKeyframe, SpsPpsIsNotKeyframe) {
             frames_from_callback_[kSeqNum]->frame_type());
 }
 
-TEST_F(TestPacketBufferH264SpsPpsIdrIsKeyframe, SpsPpsIdrIsKeyframe) {
+TEST_F(PacketBufferH264SpsPpsIdrIsKeyframeTest, SpsPpsIdrIsKeyframe) {
   auto& h264_header =
       packet_.video_header.video_type_header.emplace<RTPVideoHeaderH264>();
   h264_header.nalus[0].type = H264::NaluType::kSps;

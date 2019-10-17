@@ -836,6 +836,7 @@ if (rtc_include_tests) {
       "jitter_estimator_tests.cc",
       "loss_notification_controller_unittest.cc",
       "nack_module_unittest.cc",
+      "packet_buffer_unittest.cc",
       "receiver_unittest.cc",
       "rtp_frame_reference_finder_unittest.cc",
       "session_info_unittest.cc",
@@ -850,7 +851,6 @@ if (rtc_include_tests) {
       "utility/quality_scaler_unittest.cc",
       "utility/simulcast_rate_allocator_unittest.cc",
       "video_codec_initializer_unittest.cc",
-      "video_packet_buffer_unittest.cc",
       "video_receiver_unittest.cc",
     ]
     if (rtc_use_h264) {
