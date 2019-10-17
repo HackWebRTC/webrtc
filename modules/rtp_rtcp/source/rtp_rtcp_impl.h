@@ -106,7 +106,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   void SetRtxSendStatus(int mode) override;
   int RtxSendStatus() const override;
-  absl::optional<uint32_t> RtxSsrc() const override;
 
   void SetRtxSendPayloadType(int payload_type,
                              int associated_payload_type) override;

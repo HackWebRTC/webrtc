@@ -114,7 +114,10 @@ class RTPSender {
   // RTX.
   void SetRtxStatus(int mode);
   int RtxStatus() const;
-  absl::optional<uint32_t> RtxSsrc() const { return rtx_ssrc_; }
+  uint32_t RtxSsrc() const {
+    RTC_DCHECK(rtx_ssrc_);
+    return *rtx_ssrc_;
+  }
 
   void SetRtxPayloadType(int payload_type, int associated_payload_type);
 
