@@ -15,6 +15,7 @@
 
 #include <array>
 #include <memory>
+#include <vector>
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
@@ -32,7 +33,7 @@ namespace webrtc {
 // and another one is done using the aggreation of energy over all the subbands.
 class ErleEstimator {
  public:
-  ErleEstimator(size_t startup_phase_length_blocks_,
+  ErleEstimator(size_t startup_phase_length_blocks,
                 const EchoCanceller3Config& config,
                 size_t num_capture_channels);
   ~ErleEstimator();
@@ -41,24 +42,29 @@ class ErleEstimator {
   void Reset(bool delay_change);
 
   // Updates the ERLE estimates.
-  void Update(const RenderBuffer& render_buffer,
-              const std::vector<std::array<float, kFftLengthBy2Plus1>>&
-                  filter_frequency_response,
-              rtc::ArrayView<const float> reverb_render_spectrum,
-              rtc::ArrayView<const float> capture_spectrum,
-              rtc::ArrayView<const float> subtractor_spectrum,
-              bool converged_filter,
-              bool onset_detection);
+  void Update(
+      const RenderBuffer& render_buffer,
+      rtc::ArrayView<const std::vector<std::array<float, kFftLengthBy2Plus1>>>
+          filter_frequency_responses,
+      rtc::ArrayView<const float, kFftLengthBy2Plus1>
+          avg_render_spectrum_with_reverb,
+      rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>>
+          capture_spectra,
+      rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>>
+          subtractor_spectra,
+      const std::vector<bool>& converged_filters);
 
   // Returns the most recent subband ERLE estimates.
   rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Erle() const {
-    return use_signal_dependent_erle_ ? signal_dependent_erle_estimator_.Erle()
-                                      : subband_erle_estimator_.Erle();
+    return signal_dependent_erle_estimator_
+               ? signal_dependent_erle_estimator_->Erle()
+               : subband_erle_estimator_.Erle();
   }
 
-  // Returns the subband ERLE that are estimated during onsets. Used
-  // for logging/testing.
-  rtc::ArrayView<const float> ErleOnsets() const {
+  // Returns the subband ERLE that are estimated during onsets (only used for
+  // testing).
+  rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> ErleOnsets()
+      const {
     return subband_erle_estimator_.ErleOnsets();
   }
 
@@ -80,11 +86,11 @@ class ErleEstimator {
   void Dump(const std::unique_ptr<ApmDataDumper>& data_dumper) const;
 
  private:
-  const size_t startup_phase_length_blocks__;
-  const bool use_signal_dependent_erle_;
+  const size_t startup_phase_length_blocks_;
   FullBandErleEstimator fullband_erle_estimator_;
   SubbandErleEstimator subband_erle_estimator_;
-  SignalDependentErleEstimator signal_dependent_erle_estimator_;
+  std::unique_ptr<SignalDependentErleEstimator>
+      signal_dependent_erle_estimator_;
   size_t blocks_since_reset_ = 0;
 };
 

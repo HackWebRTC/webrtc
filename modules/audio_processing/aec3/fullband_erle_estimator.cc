@@ -35,7 +35,9 @@ FullBandErleEstimator::FullBandErleEstimator(
     size_t num_capture_channels)
     : min_erle_log2_(FastApproxLog2f(config.min + kEpsilon)),
       max_erle_lf_log2(FastApproxLog2f(config.max_l + kEpsilon)),
-      instantaneous_erle_(config),
+      hold_counters_time_domain_(num_capture_channels, 0),
+      erle_time_domain_log2_(num_capture_channels, min_erle_log2_),
+      instantaneous_erle_(num_capture_channels, ErleInstantaneous(config)),
       linear_filters_qualities_(num_capture_channels) {
   Reset();
 }
@@ -43,39 +45,49 @@ FullBandErleEstimator::FullBandErleEstimator(
 FullBandErleEstimator::~FullBandErleEstimator() = default;
 
 void FullBandErleEstimator::Reset() {
-  instantaneous_erle_.Reset();
+  for (auto& instantaneous_erle_ch : instantaneous_erle_) {
+    instantaneous_erle_ch.Reset();
+  }
+
   UpdateQualityEstimates();
-  erle_time_domain_log2_ = min_erle_log2_;
-  hold_counter_time_domain_ = 0;
+  std::fill(erle_time_domain_log2_.begin(), erle_time_domain_log2_.end(),
+            min_erle_log2_);
+  std::fill(hold_counters_time_domain_.begin(),
+            hold_counters_time_domain_.end(), 0);
 }
 
-void FullBandErleEstimator::Update(rtc::ArrayView<const float> X2,
-                                   rtc::ArrayView<const float> Y2,
-                                   rtc::ArrayView<const float> E2,
-                                   bool converged_filter) {
-  if (converged_filter) {
-    // Computes the fullband ERLE.
-    const float X2_sum = std::accumulate(X2.begin(), X2.end(), 0.0f);
-    if (X2_sum > kX2BandEnergyThreshold * X2.size()) {
-      const float Y2_sum = std::accumulate(Y2.begin(), Y2.end(), 0.0f);
-      const float E2_sum = std::accumulate(E2.begin(), E2.end(), 0.0f);
-      if (instantaneous_erle_.Update(Y2_sum, E2_sum)) {
-        hold_counter_time_domain_ = kBlocksToHoldErle;
-        erle_time_domain_log2_ +=
-            0.1f * ((instantaneous_erle_.GetInstErleLog2().value()) -
-                    erle_time_domain_log2_);
-        erle_time_domain_log2_ = rtc::SafeClamp(
-            erle_time_domain_log2_, min_erle_log2_, max_erle_lf_log2);
+void FullBandErleEstimator::Update(
+    rtc::ArrayView<const float> X2,
+    rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Y2,
+    rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> E2,
+    const std::vector<bool>& converged_filters) {
+  for (size_t ch = 0; ch < Y2.size(); ++ch) {
+    if (converged_filters[ch]) {
+      // Computes the fullband ERLE.
+      const float X2_sum = std::accumulate(X2.begin(), X2.end(), 0.0f);
+      if (X2_sum > kX2BandEnergyThreshold * X2.size()) {
+        const float Y2_sum =
+            std::accumulate(Y2[ch].begin(), Y2[ch].end(), 0.0f);
+        const float E2_sum =
+            std::accumulate(E2[ch].begin(), E2[ch].end(), 0.0f);
+        if (instantaneous_erle_[ch].Update(Y2_sum, E2_sum)) {
+          hold_counters_time_domain_[ch] = kBlocksToHoldErle;
+          erle_time_domain_log2_[ch] +=
+              0.1f * ((instantaneous_erle_[ch].GetInstErleLog2().value()) -
+                      erle_time_domain_log2_[ch]);
+          erle_time_domain_log2_[ch] = rtc::SafeClamp(
+              erle_time_domain_log2_[ch], min_erle_log2_, max_erle_lf_log2);
+        }
       }
     }
-  }
-  --hold_counter_time_domain_;
-  if (hold_counter_time_domain_ <= 0) {
-    erle_time_domain_log2_ =
-        std::max(min_erle_log2_, erle_time_domain_log2_ - 0.044f);
-  }
-  if (hold_counter_time_domain_ == 0) {
-    instantaneous_erle_.ResetAccumulators();
+    --hold_counters_time_domain_[ch];
+    if (hold_counters_time_domain_[ch] <= 0) {
+      erle_time_domain_log2_[ch] =
+          std::max(min_erle_log2_, erle_time_domain_log2_[ch] - 0.044f);
+    }
+    if (hold_counters_time_domain_[ch] == 0) {
+      instantaneous_erle_[ch].ResetAccumulators();
+    }
   }
 
   UpdateQualityEstimates();
@@ -84,12 +96,14 @@ void FullBandErleEstimator::Update(rtc::ArrayView<const float> X2,
 void FullBandErleEstimator::Dump(
     const std::unique_ptr<ApmDataDumper>& data_dumper) const {
   data_dumper->DumpRaw("aec3_fullband_erle_log2", FullbandErleLog2());
-  instantaneous_erle_.Dump(data_dumper);
+  instantaneous_erle_[0].Dump(data_dumper);
 }
 
 void FullBandErleEstimator::UpdateQualityEstimates() {
-  std::fill(linear_filters_qualities_.begin(), linear_filters_qualities_.end(),
-            instantaneous_erle_.GetQualityEstimate());
+  for (size_t ch = 0; ch < instantaneous_erle_.size(); ++ch) {
+    linear_filters_qualities_[ch] =
+        instantaneous_erle_[ch].GetQualityEstimate();
+  }
 }
 
 FullBandErleEstimator::ErleInstantaneous::ErleInstantaneous(

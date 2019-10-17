@@ -17,6 +17,7 @@
 #include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/audio/echo_canceller3_config.h"
+#include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 
 namespace webrtc {
@@ -33,12 +34,18 @@ class FullBandErleEstimator {
 
   // Updates the ERLE estimator.
   void Update(rtc::ArrayView<const float> X2,
-              rtc::ArrayView<const float> Y2,
-              rtc::ArrayView<const float> E2,
-              bool converged_filter);
+              rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Y2,
+              rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> E2,
+              const std::vector<bool>& converged_filters);
 
   // Returns the fullband ERLE estimates in log2 units.
-  float FullbandErleLog2() const { return erle_time_domain_log2_; }
+  float FullbandErleLog2() const {
+    float min_erle = erle_time_domain_log2_[0];
+    for (size_t ch = 1; ch < erle_time_domain_log2_.size(); ++ch) {
+      min_erle = std::min(min_erle, erle_time_domain_log2_[ch]);
+    }
+    return min_erle;
+  }
 
   // Returns an estimation of the current linear filter quality. It returns a
   // float number between 0 and 1 mapping 1 to the highest possible quality.
@@ -98,11 +105,11 @@ class FullBandErleEstimator {
     int num_points_;
   };
 
-  int hold_counter_time_domain_;
-  float erle_time_domain_log2_;
   const float min_erle_log2_;
   const float max_erle_lf_log2;
-  ErleInstantaneous instantaneous_erle_;
+  std::vector<int> hold_counters_time_domain_;
+  std::vector<float> erle_time_domain_log2_;
+  std::vector<ErleInstantaneous> instantaneous_erle_;
   std::vector<absl::optional<float>> linear_filters_qualities_;
 };
 
