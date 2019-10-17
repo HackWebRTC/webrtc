@@ -73,6 +73,9 @@ if (!build_with_chromium) {
       } else {
         deps += [ "modules/video_capture:video_capture_tests" ]
       }
+      if (!is_android && !is_ios) {
+        deps += [ ":webrtc_lib_link_test" ]
+      }
       if (rtc_enable_protobuf) {
         deps += [
           "audio:low_bandwidth_audio_test",
@@ -389,8 +392,11 @@ config("common_objc") {
 if (!build_with_chromium) {
   # Target to build all the WebRTC production code.
   rtc_static_library("webrtc") {
-    # Only the root target should depend on this.
-    visibility = [ "//:default" ]
+    # Only the root target and the test should depend on this.
+    visibility = [
+      "//:default",
+      "//:webrtc_lib_link_test",
+    ]
 
     sources = []
     complete_static_lib = true
@@ -457,6 +463,23 @@ if (!build_with_chromium) {
     if (rtc_enable_protobuf) {
       defines += [ "ENABLE_RTC_EVENT_LOG" ]
       deps += [ "logging:rtc_event_log_proto" ]
+    }
+  }
+
+  if (rtc_include_tests && !is_android && !is_ios) {
+    # Note: This test can't work on mobile because the test runner machinery
+    # on those platforms depend on abseil, which will link-clash with libwebrtc.
+    rtc_test("webrtc_lib_link_test") {
+      testonly = true
+
+      sources = [
+        "webrtc_lib_link_test.cc",
+      ]
+      deps = [
+        ":webrtc",
+        "//test:test_main",
+        "//testing/gtest",
+      ]
     }
   }
 }

@@ -2280,3 +2280,11 @@ include_rules = [
   # Abseil flags are allowed in tests and tools.
   "+absl/flags",
 ]
+
+specific_include_rules = {
+  "webrtc_lib_link_test\.cc": [
+    "+media/engine",
+    "+modules/audio_device",
+    "+modules/audio_processing",
+  ]
+}
