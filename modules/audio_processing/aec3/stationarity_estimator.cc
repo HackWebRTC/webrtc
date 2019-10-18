@@ -12,7 +12,6 @@
 
 #include <algorithm>
 #include <array>
-#include <vector>
 
 #include "api/array_view.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
@@ -45,7 +44,7 @@ void StationarityEstimator::Reset() {
 
 // Update just the noise estimator. Usefull until the delay is known
 void StationarityEstimator::UpdateNoiseEstimator(
-    rtc::ArrayView<const std::vector<float>> spectrum) {
+    rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> spectrum) {
   noise_.Update(spectrum);
   data_dumper_->DumpRaw("aec3_stationarity_noise_spectrum", noise_.Spectrum());
   data_dumper_->DumpRaw("aec3_stationarity_is_block_stationary",
@@ -168,13 +167,12 @@ void StationarityEstimator::NoiseSpectrum::Reset() {
 }
 
 void StationarityEstimator::NoiseSpectrum::Update(
-    rtc::ArrayView<const std::vector<float>> spectrum) {
+    rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> spectrum) {
   RTC_DCHECK_LE(1, spectrum[0].size());
   const int num_render_channels = static_cast<int>(spectrum.size());
 
   std::array<float, kFftLengthBy2Plus1> avg_spectrum_data;
   rtc::ArrayView<const float> avg_spectrum;
-  RTC_DCHECK_EQ(kFftLengthBy2Plus1, spectrum[0].size());
   if (num_render_channels == 1) {
     avg_spectrum = spectrum[0];
   } else {
@@ -184,7 +182,6 @@ void StationarityEstimator::NoiseSpectrum::Update(
     std::copy(spectrum[0].begin(), spectrum[0].end(),
               avg_spectrum_data.begin());
     for (int ch = 1; ch < num_render_channels; ++ch) {
-      RTC_DCHECK_EQ(kFftLengthBy2Plus1, spectrum[ch].size());
       for (size_t k = 1; k < kFftLengthBy2Plus1; ++k) {
         avg_spectrum_data[k] += spectrum[ch][k];
       }

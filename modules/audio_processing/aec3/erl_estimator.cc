@@ -38,11 +38,10 @@ void ErlEstimator::Reset() {
   blocks_since_reset_ = 0;
 }
 
-void ErlEstimator::Update(bool converged_filter,
-                          rtc::ArrayView<const float> render_spectrum,
-                          rtc::ArrayView<const float> capture_spectrum) {
-  RTC_DCHECK_EQ(kFftLengthBy2Plus1, render_spectrum.size());
-  RTC_DCHECK_EQ(kFftLengthBy2Plus1, capture_spectrum.size());
+void ErlEstimator::Update(
+    bool converged_filter,
+    rtc::ArrayView<const float, kFftLengthBy2Plus1> render_spectrum,
+    rtc::ArrayView<const float, kFftLengthBy2Plus1> capture_spectrum) {
   const auto& X2 = render_spectrum;
   const auto& Y2 = capture_spectrum;
 

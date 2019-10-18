@@ -244,21 +244,20 @@ void ResidualEchoEstimator::Reset() {
 void ResidualEchoEstimator::UpdateRenderNoisePower(
     const RenderBuffer& render_buffer) {
   std::array<float, kFftLengthBy2Plus1> render_power_data;
-  rtc::ArrayView<const float> render_power;
-  if (num_render_channels_ == 1) {
-    render_power = render_buffer.Spectrum(0, /*channel=*/0);
-  } else {
+  rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> X2 =
+      render_buffer.Spectrum(0);
+  rtc::ArrayView<const float, kFftLengthBy2Plus1> render_power =
+      X2[/*channel=*/0];
+  if (num_render_channels_ > 1) {
     render_power_data.fill(0.f);
     for (size_t ch = 0; ch < num_render_channels_; ++ch) {
-      const auto& channel_power = render_buffer.Spectrum(0, ch);
-      RTC_DCHECK_EQ(channel_power.size(), kFftLengthBy2Plus1);
+      const auto& channel_power = X2[ch];
       for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
         render_power_data[k] += channel_power[k];
       }
     }
     render_power = render_power_data;
   }
-  RTC_DCHECK_EQ(render_power.size(), kFftLengthBy2Plus1);
 
   // Estimate the stationary noise power in a minimum statistics manner.
   for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
@@ -295,23 +294,20 @@ void ResidualEchoEstimator::AddReverb(
 
   // Compute render power for the reverb.
   std::array<float, kFftLengthBy2Plus1> render_power_data;
-  rtc::ArrayView<const float> render_power;
-  if (num_render_channels_ == 1) {
-    render_power =
-        render_buffer.Spectrum(first_reverb_partition, /*channel=*/0);
-  } else {
+  rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> X2 =
+      render_buffer.Spectrum(first_reverb_partition);
+  rtc::ArrayView<const float, kFftLengthBy2Plus1> render_power =
+      X2[/*channel=*/0];
+  if (num_render_channels_ > 1) {
     render_power_data.fill(0.f);
     for (size_t ch = 0; ch < num_render_channels_; ++ch) {
-      const auto& channel_power =
-          render_buffer.Spectrum(first_reverb_partition, ch);
-      RTC_DCHECK_EQ(channel_power.size(), kFftLengthBy2Plus1);
+      const auto& channel_power = X2[ch];
       for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
         render_power_data[k] += channel_power[k];
       }
     }
     render_power = render_power_data;
   }
-  RTC_DCHECK_EQ(render_power.size(), kFftLengthBy2Plus1);
 
   // Update the reverb estimate.
   if (reverb_type == ReverbType::kLinear) {

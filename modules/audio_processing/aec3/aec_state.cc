@@ -46,11 +46,11 @@ void ComputeAvgRenderReverb(
   if (num_render_channels > 1) {
     auto average_channels =
         [](size_t num_render_channels,
-           const std::vector<std::vector<float>>& spectrum_band_0,
+           rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>>
+               spectrum_band_0,
            rtc::ArrayView<float, kFftLengthBy2Plus1> render_power) {
           std::fill(render_power.begin(), render_power.end(), 0.f);
           for (size_t ch = 0; ch < num_render_channels; ++ch) {
-            RTC_DCHECK_EQ(spectrum_band_0[ch].size(), kFftLengthBy2Plus1);
             for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
               render_power[k] += spectrum_band_0[ch][k];
             }
@@ -231,9 +231,8 @@ void AecState::Update(
                          subtractor_output_analyzer_.ConvergedFilters());
 
   // TODO(bugs.webrtc.org/10913): Take all channels into account.
-  const auto& X2 =
-      render_buffer.Spectrum(delay_state_.MinDirectPathFilterDelay(),
-                             /*channel=*/0);
+  const auto& X2 = render_buffer.Spectrum(
+      delay_state_.MinDirectPathFilterDelay())[/*channel=*/0];
   erl_estimator_.Update(subtractor_output_analyzer_.ConvergedFilters()[0], X2,
                         Y2[0]);
 

@@ -32,8 +32,8 @@ class ErlEstimator {
 
   // Updates the ERL estimate.
   void Update(bool converged_filter,
-              rtc::ArrayView<const float> render_spectrum,
-              rtc::ArrayView<const float> capture_spectrum);
+              rtc::ArrayView<const float, kFftLengthBy2Plus1> render_spectrum,
+              rtc::ArrayView<const float, kFftLengthBy2Plus1> capture_spectrum);
 
   // Returns the most recent ERL estimate.
   const std::array<float, kFftLengthBy2Plus1>& Erl() const { return erl_; }

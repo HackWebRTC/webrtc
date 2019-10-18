@@ -461,8 +461,8 @@ void EchoRemoverImpl::ProcessCapture(
   data_dumper_->DumpRaw("aec3_S2_linear", S2_linear[0]);
   data_dumper_->DumpRaw("aec3_Y2", Y2[0]);
   data_dumper_->DumpRaw(
-      "aec3_X2", render_buffer->Spectrum(aec_state_.MinDirectPathFilterDelay(),
-                                         /*channel=*/0));
+      "aec3_X2", render_buffer->Spectrum(
+                     aec_state_.MinDirectPathFilterDelay())[/*channel=*/0]);
   data_dumper_->DumpRaw("aec3_R2", R2[0]);
   data_dumper_->DumpRaw("aec3_filter_delay",
                         aec_state_.MinDirectPathFilterDelay());

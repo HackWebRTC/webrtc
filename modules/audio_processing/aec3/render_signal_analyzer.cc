@@ -38,13 +38,11 @@ void IdentifySmallNarrowBandRegions(
 
   std::array<size_t, kFftLengthBy2 - 1> channel_counters;
   channel_counters.fill(0);
-  for (size_t channel = 0; channel < render_buffer.Block(0)[0].size();
-       ++channel) {
-    rtc::ArrayView<const float> X2 =
-        render_buffer.Spectrum(*delay_partitions, channel);
-    RTC_DCHECK_EQ(kFftLengthBy2Plus1, X2.size());
+  rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> X2 =
+      render_buffer.Spectrum(*delay_partitions);
+  for (size_t ch = 0; ch < X2.size(); ++ch) {
     for (size_t k = 1; k < kFftLengthBy2; ++k) {
-      if (X2[k] > 3 * std::max(X2[k - 1], X2[k + 1])) {
+      if (X2[ch][k] > 3 * std::max(X2[ch][k - 1], X2[ch][k + 1])) {
         ++channel_counters[k - 1];
       }
     }
@@ -72,7 +70,8 @@ void IdentifyStrongNarrowBandComponent(const RenderBuffer& render_buffer,
       render_buffer.Block(0);
   float max_peak_level = 0.f;
   for (size_t channel = 0; channel < x_latest[0].size(); ++channel) {
-    const auto X2_latest = render_buffer.Spectrum(0, channel);
+    rtc::ArrayView<const float, kFftLengthBy2Plus1> X2_latest =
+        render_buffer.Spectrum(0)[channel];
 
     // Identify the spectral peak.
     const int peak_bin =

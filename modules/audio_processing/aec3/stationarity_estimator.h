@@ -15,7 +15,6 @@
 
 #include <array>
 #include <memory>
-#include <vector>
 
 #include "api/array_view.h"
 #include "modules/audio_processing/aec3/aec3_common.h"  // kFftLengthBy2Plus1...
@@ -36,7 +35,8 @@ class StationarityEstimator {
   void Reset();
 
   // Update just the noise estimator. Usefull until the delay is known
-  void UpdateNoiseEstimator(rtc::ArrayView<const std::vector<float>> spectrum);
+  void UpdateNoiseEstimator(
+      rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> spectrum);
 
   // Update the flag indicating whether this current frame is stationary. For
   // getting a more robust estimation, it looks at future and/or past frames.
@@ -86,7 +86,8 @@ class StationarityEstimator {
     void Reset();
 
     // Update the noise power spectrum with a new frame.
-    void Update(rtc::ArrayView<const std::vector<float>> spectrum);
+    void Update(
+        rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> spectrum);
 
     // Get the noise estimation power spectrum.
     rtc::ArrayView<const float> Spectrum() const { return noise_spectrum_; }
