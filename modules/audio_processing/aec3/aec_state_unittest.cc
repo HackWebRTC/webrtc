@@ -106,7 +106,9 @@ void RunNormalUsageTest(size_t num_render_channels,
   EXPECT_FALSE(state.UsableLinearEstimate());
 
   // Verify that the active render detection works as intended.
-  std::fill(x[0][0].begin(), x[0][0].end(), 101.f);
+  for (size_t ch = 0; ch < num_render_channels; ++ch) {
+    std::fill(x[0][ch].begin(), x[0][ch].end(), 101.f);
+  }
   render_delay_buffer->Insert(x);
   for (size_t ch = 0; ch < num_capture_channels; ++ch) {
     subtractor_output[ch].ComputeMetrics(y[ch]);
@@ -136,7 +138,9 @@ void RunNormalUsageTest(size_t num_render_channels,
     }
   }
 
-  x[0][0][0] = 5000.f;
+  for (size_t ch = 0; ch < num_render_channels; ++ch) {
+    x[0][ch][0] = 5000.f;
+  }
   for (size_t k = 0;
        k < render_delay_buffer->GetRenderBuffer()->GetFftBuffer().size(); ++k) {
     render_delay_buffer->Insert(x);

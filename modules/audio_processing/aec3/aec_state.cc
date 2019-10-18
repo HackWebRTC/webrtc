@@ -230,11 +230,9 @@ void AecState::Update(
                          avg_render_spectrum_with_reverb, Y2, E2_main,
                          subtractor_output_analyzer_.ConvergedFilters());
 
-  // TODO(bugs.webrtc.org/10913): Take all channels into account.
-  const auto& X2 = render_buffer.Spectrum(
-      delay_state_.MinDirectPathFilterDelay())[/*channel=*/0];
-  erl_estimator_.Update(subtractor_output_analyzer_.ConvergedFilters()[0], X2,
-                        Y2[0]);
+  erl_estimator_.Update(
+      subtractor_output_analyzer_.ConvergedFilters(),
+      render_buffer.Spectrum(delay_state_.MinDirectPathFilterDelay()), Y2);
 
   // Detect and flag echo saturation.
   saturation_detector_.Update(aligned_render_block, SaturatedCapture(),
