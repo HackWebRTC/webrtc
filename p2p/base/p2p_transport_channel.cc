@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "absl/algorithm/container.h"
+#include "absl/strings/match.h"
 #include "api/candidate.h"
 #include "logging/rtc_event_log/ice_logger.h"
 #include "p2p/base/candidate_pair_interface.h"
@@ -2700,10 +2701,9 @@ Candidate P2PTransportChannel::SanitizeLocalCandidate(
 Candidate P2PTransportChannel::SanitizeRemoteCandidate(
     const Candidate& c) const {
   RTC_DCHECK_RUN_ON(network_thread_);
-  // If the remote endpoint signaled us a hostname host candidate, we assume it
+  // If the remote endpoint signaled us an mDNS candidate, we assume it
   // is supposed to be sanitized.
-  bool use_hostname_address =
-      c.type() == LOCAL_PORT_TYPE && !c.address().hostname().empty();
+  bool use_hostname_address = absl::EndsWith(c.address().hostname(), LOCAL_TLD);
   // Remove the address for prflx remote candidates. See
   // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatestats.
   use_hostname_address |= c.type() == PRFLX_PORT_TYPE;

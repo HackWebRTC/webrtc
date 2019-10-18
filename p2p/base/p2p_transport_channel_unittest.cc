@@ -5247,6 +5247,59 @@ TEST_F(P2PTransportChannelTest,
   DestroyChannels();
 }
 
+TEST_F(P2PTransportChannelTest,
+       NoPairOfLocalRelayCandidateWithRemoteMdnsCandidate) {
+  const int kOnlyRelayPorts = cricket::PORTALLOCATOR_DISABLE_UDP |
+                              cricket::PORTALLOCATOR_DISABLE_STUN |
+                              cricket::PORTALLOCATOR_DISABLE_TCP;
+  // We use one endpoint to test the behavior of adding remote candidates, and
+  // this endpoint only gathers relay candidates.
+  ConfigureEndpoints(OPEN, OPEN, kOnlyRelayPorts, kDefaultPortAllocatorFlags);
+  GetEndpoint(0)->cd1_.ch_.reset(CreateChannel(
+      0, ICE_CANDIDATE_COMPONENT_DEFAULT, kIceParams[0], kIceParams[1]));
+  IceConfig config;
+  // Start gathering and we should have only a single relay port.
+  ep1_ch1()->SetIceConfig(config);
+  ep1_ch1()->MaybeStartGathering();
+  EXPECT_EQ_WAIT(IceGatheringState::kIceGatheringComplete,
+                 ep1_ch1()->gathering_state(), kDefaultTimeout);
+  EXPECT_EQ(1u, ep1_ch1()->ports().size());
+  // Add a plain remote host candidate and three remote mDNS candidates with the
+  // host, srflx and relay types. Note that the candidates differ in their
+  // ports.
+  cricket::Candidate host_candidate = CreateUdpCandidate(
+      LOCAL_PORT_TYPE, "1.1.1.1", 1 /* port */, 0 /* priority */);
+  ep1_ch1()->AddRemoteCandidate(host_candidate);
+
+  std::vector<cricket::Candidate> mdns_candidates;
+  mdns_candidates.push_back(CreateUdpCandidate(LOCAL_PORT_TYPE, "example.local",
+                                               2 /* port */, 0 /* priority */));
+  mdns_candidates.push_back(CreateUdpCandidate(STUN_PORT_TYPE, "example.local",
+                                               3 /* port */, 0 /* priority */));
+  mdns_candidates.push_back(CreateUdpCandidate(RELAY_PORT_TYPE, "example.local",
+                                               4 /* port */, 0 /* priority */));
+  // We just resolve the hostname to 1.1.1.1, and add the candidates with this
+  // address directly to simulate the process of adding remote candidates with
+  // the name resolution.
+  for (auto& mdns_candidate : mdns_candidates) {
+    rtc::SocketAddress resolved_address(mdns_candidate.address());
+    resolved_address.SetResolvedIP(0x1111);  // 1.1.1.1
+    mdns_candidate.set_address(resolved_address);
+    EXPECT_FALSE(mdns_candidate.address().IsUnresolvedIP());
+    ep1_ch1()->AddRemoteCandidate(mdns_candidate);
+  }
+
+  // All remote candidates should have been successfully added.
+  EXPECT_EQ(4u, ep1_ch1()->remote_candidates().size());
+
+  // Expect that there is no connection paired with any mDNS candidate.
+  ASSERT_EQ(1u, ep1_ch1()->connections().size());
+  ASSERT_NE(nullptr, ep1_ch1()->connections()[0]);
+  EXPECT_EQ(
+      "1.1.1.1:1",
+      ep1_ch1()->connections()[0]->remote_candidate().address().ToString());
+}
+
 class MockMdnsResponder : public webrtc::MdnsResponderInterface {
  public:
   MOCK_METHOD2(CreateNameForAddress,
