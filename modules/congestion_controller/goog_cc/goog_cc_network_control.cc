@@ -325,9 +325,10 @@ void GoogCcNetworkController::ClampConstraints() {
   // and that we don't try to set the min bitrate to 0 from any applications.
   // The congestion controller should allow a min bitrate of 0.
   min_data_rate_ =
-      std::max(min_data_rate_, congestion_controller::GetMinBitrate());
-  if (use_min_allocatable_as_lower_bound_)
+      std::max(min_target_rate_, congestion_controller::GetMinBitrate());
+  if (use_min_allocatable_as_lower_bound_) {
     min_data_rate_ = std::max(min_data_rate_, min_total_allocated_bitrate_);
+  }
   if (max_data_rate_ < min_data_rate_) {
     RTC_LOG(LS_WARNING) << "max bitrate smaller than min bitrate";
     max_data_rate_ = min_data_rate_;
@@ -340,7 +341,7 @@ void GoogCcNetworkController::ClampConstraints() {
 
 std::vector<ProbeClusterConfig> GoogCcNetworkController::ResetConstraints(
     TargetRateConstraints new_constraints) {
-  min_data_rate_ = new_constraints.min_data_rate.value_or(DataRate::Zero());
+  min_target_rate_ = new_constraints.min_data_rate.value_or(DataRate::Zero());
   max_data_rate_ =
       new_constraints.max_data_rate.value_or(DataRate::PlusInfinity());
   starting_rate_ = new_constraints.starting_rate;

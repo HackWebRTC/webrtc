@@ -104,6 +104,7 @@ class GoogCcNetworkController : public NetworkControllerInterface {
 
   absl::optional<NetworkControllerConfig> initial_config_;
 
+  DataRate min_target_rate_ = DataRate::Zero();
   DataRate min_data_rate_ = DataRate::Zero();
   DataRate max_data_rate_ = DataRate::PlusInfinity();
   absl::optional<DataRate> starting_rate_;
