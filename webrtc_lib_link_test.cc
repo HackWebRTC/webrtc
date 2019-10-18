@@ -24,8 +24,6 @@
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
 
-#include "test/gtest.h"
-
 namespace webrtc {
 
 cricket::MediaEngineDependencies CreateSomeMediaDeps(
@@ -44,8 +42,6 @@ cricket::MediaEngineDependencies CreateSomeMediaDeps(
   return media_deps;
 }
 
-// This test should pull in as much of WebRTC as possible to make sure most
-// commonly used symbols are actually in libwebrtc.a.
 webrtc::PeerConnectionFactoryDependencies CreateSomePcfDeps() {
   webrtc::PeerConnectionFactoryDependencies pcf_deps;
   pcf_deps.task_queue_factory = CreateDefaultTaskQueueFactory();
@@ -60,18 +56,21 @@ webrtc::PeerConnectionFactoryDependencies CreateSomePcfDeps() {
   return pcf_deps;
 }
 
-TEST(WebRTCLinkTest, TestCreatingAPeerConnectionViaModularFactory) {
+// NOTE: These "test cases" should pull in as much of WebRTC as possible to make
+// sure most commonly used symbols are actually in libwebrtc.a. It's entirely
+// possible these tests won't work at all times (maybe crash even), but that's
+// fine.
+void TestCase1ModularFactory() {
   auto pcf_deps = CreateSomePcfDeps();
   auto peer_connection_factory =
       webrtc::CreateModularPeerConnectionFactory(std::move(pcf_deps));
   webrtc::PeerConnectionInterface::RTCConfiguration rtc_config;
   auto peer_connection = peer_connection_factory->CreatePeerConnection(
       rtc_config, nullptr, nullptr, nullptr);
-  ASSERT_EQ(peer_connection.get(), nullptr)
-      << "Should fail, we're not setting things up right";
+  printf("peer_connection=%s\n", peer_connection == nullptr ? "nullptr" : "ok");
 }
 
-TEST(WebRTCLinkTest, TestCreatingViaPCFactory) {
+void TestCase2RegularFactory() {
   auto task_queue_factory = CreateDefaultTaskQueueFactory();
   auto media_deps = CreateSomeMediaDeps(task_queue_factory.get());
 
@@ -81,7 +80,16 @@ TEST(WebRTCLinkTest, TestCreatingViaPCFactory) {
       std::move(media_deps.audio_decoder_factory),
       std::move(media_deps.video_encoder_factory),
       std::move(media_deps.video_decoder_factory), nullptr, nullptr);
-  ASSERT_NE(peer_connection_factory.get(), nullptr);
+  webrtc::PeerConnectionInterface::RTCConfiguration rtc_config;
+  auto peer_connection = peer_connection_factory->CreatePeerConnection(
+      rtc_config, nullptr, nullptr, nullptr);
+  printf("peer_connection=%s\n", peer_connection == nullptr ? "nullptr" : "ok");
 }
 
 }  // namespace webrtc
+
+int main(int argc, char** argv) {
+  webrtc::TestCase1ModularFactory();
+  webrtc::TestCase2RegularFactory();
+  return 0;
+}
