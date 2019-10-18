@@ -16,13 +16,26 @@
 #include <vector>
 
 #include "api/function_view.h"
+#include "modules/audio_processing/aec3/echo_canceller3.h"
+#include "modules/audio_processing/agc/agc_manager_direct.h"
 #include "modules/audio_processing/agc/gain_control.h"
 #include "modules/audio_processing/audio_buffer.h"
+#include "modules/audio_processing/echo_cancellation_impl.h"
+#include "modules/audio_processing/echo_control_mobile_impl.h"
+#include "modules/audio_processing/gain_control_for_experimental_agc.h"
+#include "modules/audio_processing/gain_control_impl.h"
+#include "modules/audio_processing/gain_controller2.h"
+#include "modules/audio_processing/high_pass_filter.h"
 #include "modules/audio_processing/include/aec_dump.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
+#include "modules/audio_processing/level_estimator.h"
+#include "modules/audio_processing/noise_suppression.h"
 #include "modules/audio_processing/render_queue_item_verifier.h"
+#include "modules/audio_processing/residual_echo_detector.h"
 #include "modules/audio_processing/rms_level.h"
+#include "modules/audio_processing/transient/transient_suppressor.h"
+#include "modules/audio_processing/voice_detection.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/gtest_prod_util.h"
 #include "rtc_base/ignore_wundef.h"
@@ -143,8 +156,6 @@ class AudioProcessingImpl : public AudioProcessing {
    private:
     SwapQueue<RuntimeSetting>& runtime_settings_;
   };
-  struct ApmPublicSubmodules;
-  struct ApmPrivateSubmodules;
 
   std::unique_ptr<ApmDataDumper> data_dumper_;
   static int instance_count_;
@@ -158,11 +169,11 @@ class AudioProcessingImpl : public AudioProcessing {
   // EchoControl factory.
   std::unique_ptr<EchoControlFactory> echo_control_factory_;
 
-  class ApmSubmoduleStates {
+  class SubmoduleStates {
    public:
-    ApmSubmoduleStates(bool capture_post_processor_enabled,
-                       bool render_pre_processor_enabled,
-                       bool capture_analyzer_enabled);
+    SubmoduleStates(bool capture_post_processor_enabled,
+                    bool render_pre_processor_enabled,
+                    bool capture_analyzer_enabled);
     // Updates the submodule state and returns true if it has changed.
     bool Update(bool high_pass_filter_enabled,
                 bool echo_canceller_enabled,
@@ -318,11 +329,38 @@ class AudioProcessingImpl : public AudioProcessing {
   AudioProcessing::Config config_;
 
   // Class containing information about what submodules are active.
-  ApmSubmoduleStates submodule_states_;
+  SubmoduleStates submodule_states_;
 
-  // Structs containing the pointers to the submodules.
-  std::unique_ptr<ApmPublicSubmodules> public_submodules_;
-  std::unique_ptr<ApmPrivateSubmodules> private_submodules_;
+  // Struct containing the pointers to the submodules.
+  struct Submodules {
+    Submodules(std::unique_ptr<CustomProcessing> capture_post_processor,
+               std::unique_ptr<CustomProcessing> render_pre_processor,
+               rtc::scoped_refptr<EchoDetector> echo_detector,
+               std::unique_ptr<CustomAudioAnalyzer> capture_analyzer)
+        : echo_detector(std::move(echo_detector)),
+          capture_post_processor(std::move(capture_post_processor)),
+          render_pre_processor(std::move(render_pre_processor)),
+          capture_analyzer(std::move(capture_analyzer)) {}
+    // Accessed internally from capture or during initialization.
+    std::unique_ptr<AgcManagerDirect> agc_manager;
+    std::unique_ptr<GainControlImpl> gain_control;
+    std::unique_ptr<GainControlForExperimentalAgc>
+        gain_control_for_experimental_agc;
+    std::unique_ptr<GainController2> gain_controller2;
+    std::unique_ptr<HighPassFilter> high_pass_filter;
+    rtc::scoped_refptr<EchoDetector> echo_detector;
+    std::unique_ptr<EchoCancellationImpl> echo_cancellation;
+    std::unique_ptr<EchoControl> echo_controller;
+    std::unique_ptr<EchoControlMobileImpl> echo_control_mobile;
+    std::unique_ptr<NoiseSuppression> noise_suppressor;
+    std::unique_ptr<TransientSuppressor> transient_suppressor;
+    std::unique_ptr<CustomProcessing> capture_post_processor;
+    std::unique_ptr<CustomProcessing> render_pre_processor;
+    std::unique_ptr<GainApplier> pre_amplifier;
+    std::unique_ptr<CustomAudioAnalyzer> capture_analyzer;
+    std::unique_ptr<LevelEstimator> output_level_estimator;
+    std::unique_ptr<VoiceDetection> voice_detector;
+  } submodules_;
 
   // State that is written to while holding both the render and capture locks
   // but can be read without any lock being held.
