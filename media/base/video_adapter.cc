@@ -21,11 +21,30 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/time_utils.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace {
+int Gcd(int a, int b) {
+  RTC_DCHECK_GE(a, 0);
+  RTC_DCHECK_GT(b, 0);
+  int c = a % b;
+  while (c != 0) {
+    a = b;
+    b = c;
+    c = a % b;
+  }
+  return b;
+}
+
 struct Fraction {
   int numerator;
   int denominator;
+
+  void DivideByGcd() {
+    int g = Gcd(numerator, denominator);
+    numerator /= g;
+    denominator /= g;
+  }
 
   // Determines number of output pixels if both width and height of an input of
   // |input_pixels| pixels is scaled with the fraction numerator / denominator.
@@ -45,11 +64,17 @@ int roundUp(int value_to_round, int multiple, int max_value) {
 
 // Generates a scale factor that makes |input_pixels| close to |target_pixels|,
 // but no higher than |max_pixels|.
-Fraction FindScale(int input_pixels, int target_pixels, int max_pixels) {
+Fraction FindScale(int input_width,
+                   int input_height,
+                   int target_pixels,
+                   int max_pixels,
+                   bool variable_start_scale_factor) {
   // This function only makes sense for a positive target.
   RTC_DCHECK_GT(target_pixels, 0);
   RTC_DCHECK_GT(max_pixels, 0);
   RTC_DCHECK_GE(max_pixels, target_pixels);
+
+  const int input_pixels = input_width * input_height;
 
   // Don't scale up original.
   if (target_pixels >= input_pixels)
@@ -57,6 +82,19 @@ Fraction FindScale(int input_pixels, int target_pixels, int max_pixels) {
 
   Fraction current_scale = Fraction{1, 1};
   Fraction best_scale = Fraction{1, 1};
+
+  if (variable_start_scale_factor) {
+    // Start scaling down by 2/3 depending on |input_width| and |input_height|.
+    if (input_width % 3 == 0 && input_height % 3 == 0) {
+      // 2/3 (then alternates 3/4, 2/3, 3/4,...).
+      current_scale = Fraction{6, 6};
+    }
+    if (input_width % 9 == 0 && input_height % 9 == 0) {
+      // 2/3, 2/3 (then alternates 3/4, 2/3, 3/4,...).
+      current_scale = Fraction{36, 36};
+    }
+  }
+
   // The minimum (absolute) difference between the number of output pixels and
   // the target pixel count.
   int min_pixel_diff = std::numeric_limits<int>::max();
@@ -65,7 +103,7 @@ Fraction FindScale(int input_pixels, int target_pixels, int max_pixels) {
     min_pixel_diff = std::abs(input_pixels - target_pixels);
   }
 
-  // Alternately scale down by 2/3 and 3/4. This results in fractions which are
+  // Alternately scale down by 3/4 and 2/3. This results in fractions which are
   // effectively scalable. For instance, starting at 1280x720 will result in
   // the series (3/4) => 960x540, (1/2) => 640x360, (3/8) => 480x270,
   // (1/4) => 320x180, (3/16) => 240x125, (1/8) => 160x90.
@@ -90,6 +128,7 @@ Fraction FindScale(int input_pixels, int target_pixels, int max_pixels) {
       }
     }
   }
+  best_scale.DivideByGcd();
 
   return best_scale;
 }
@@ -104,6 +143,8 @@ VideoAdapter::VideoAdapter(int required_resolution_alignment)
       adaption_changes_(0),
       previous_width_(0),
       previous_height_(0),
+      variable_start_scale_factor_(webrtc::field_trial::IsEnabled(
+          "WebRTC-Video-VariableStartScaleFactor")),
       required_resolution_alignment_(required_resolution_alignment),
       resolution_request_target_pixel_count_(std::numeric_limits<int>::max()),
       resolution_request_max_pixel_count_(std::numeric_limits<int>::max()),
@@ -217,8 +258,9 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
     *cropped_height =
         std::min(in_height, static_cast<int>(in_width / requested_aspect));
   }
-  const Fraction scale = FindScale((*cropped_width) * (*cropped_height),
-                                   target_pixel_count, max_pixel_count);
+  const Fraction scale =
+      FindScale(*cropped_width, *cropped_height, target_pixel_count,
+                max_pixel_count, variable_start_scale_factor_);
   // Adjust cropping slightly to get even integer output size and a perfect
   // scale factor. Make sure the resulting dimensions are aligned correctly
   // to be nice to hardware encoders.

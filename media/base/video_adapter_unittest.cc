@@ -12,11 +12,14 @@
 
 #include <limits>
 #include <memory>
+#include <string>
 #include <utility>
 
 #include "api/video/video_frame.h"
 #include "media/base/fake_frame_source.h"
+#include "rtc_base/arraysize.h"
 #include "rtc_base/time_utils.h"
+#include "test/field_trial.h"
 #include "test/gtest.h"
 
 namespace cricket {
@@ -29,8 +32,10 @@ const int kDefaultFps = 30;
 class VideoAdapterTest : public ::testing::Test,
                          public ::testing::WithParamInterface<bool> {
  public:
-  VideoAdapterTest()
-      : frame_source_(std::make_unique<FakeFrameSource>(
+  VideoAdapterTest() : VideoAdapterTest("") {}
+  explicit VideoAdapterTest(const std::string& field_trials)
+      : override_field_trials_(field_trials),
+        frame_source_(std::make_unique<FakeFrameSource>(
             kWidth,
             kHeight,
             VideoFormat::FpsToInterval(kDefaultFps) /
@@ -115,6 +120,7 @@ class VideoAdapterTest : public ::testing::Test,
                     cricket::FOURCC_I420));
   }
 
+  webrtc::test::ScopedFieldTrials override_field_trials_;
   const std::unique_ptr<FakeFrameSource> frame_source_;
   VideoAdapter adapter_;
   int cropped_width_;
@@ -125,8 +131,18 @@ class VideoAdapterTest : public ::testing::Test,
   const bool use_new_format_request_;
 };
 
+class VideoAdapterTestVariableStartScale : public VideoAdapterTest {
+ public:
+  VideoAdapterTestVariableStartScale()
+      : VideoAdapterTest("WebRTC-Video-VariableStartScaleFactor/Enabled/") {}
+};
+
 INSTANTIATE_TEST_SUITE_P(OnOutputFormatRequests,
                          VideoAdapterTest,
+                         ::testing::Values(true, false));
+
+INSTANTIATE_TEST_SUITE_P(OnOutputFormatRequests,
+                         VideoAdapterTestVariableStartScale,
                          ::testing::Values(true, false));
 
 // Do not adapt the frame rate or the resolution. Expect no frame drop, no
@@ -1157,6 +1173,123 @@ TEST(VideoAdapterTestMultipleOrientation, TestForcePortrait) {
   EXPECT_EQ(640, cropped_height);
   EXPECT_EQ(360, out_width);
   EXPECT_EQ(640, out_height);
+}
+
+TEST_P(VideoAdapterTest, AdaptResolutionInSteps) {
+  const int kWidth = 1280;
+  const int kHeight = 720;
+  OnOutputFormatRequest(kWidth, kHeight, absl::nullopt);  // 16:9 aspect.
+
+  // Scale factors: 3/4, 2/3, 3/4, 2/3, ...
+  // Scale        : 3/4, 1/2, 3/8, 1/4, 3/16, 1/8.
+  const int kExpectedWidths[] = {960, 640, 480, 320, 240, 160};
+  const int kExpectedHeights[] = {540, 360, 270, 180, 135, 90};
+
+  int request_width = kWidth;
+  int request_height = kHeight;
+
+  for (size_t i = 0; i < arraysize(kExpectedWidths); ++i) {
+    // Adapt down one step.
+    adapter_.OnResolutionFramerateRequest(absl::nullopt,
+                                          request_width * request_height - 1,
+                                          std::numeric_limits<int>::max());
+    EXPECT_TRUE(adapter_.AdaptFrameResolution(kWidth, kHeight, 0,
+                                              &cropped_width_, &cropped_height_,
+                                              &out_width_, &out_height_));
+    EXPECT_EQ(kExpectedWidths[i], out_width_);
+    EXPECT_EQ(kExpectedHeights[i], out_height_);
+    request_width = out_width_;
+    request_height = out_height_;
+  }
+}
+
+// Scale factors are 3/4, 2/3, 3/4, 2/3, ... (see test above).
+// In VideoAdapterTestVariableStartScale, first scale factor depends on
+// resolution. May start with:
+// - 2/3 (if width/height multiple of 3) or
+// - 2/3, 2/3 (if width/height multiple of 9).
+TEST_P(VideoAdapterTestVariableStartScale, AdaptResolutionInStepsFirst3_4) {
+  const int kWidth = 1280;
+  const int kHeight = 720;
+  OnOutputFormatRequest(kWidth, kHeight, absl::nullopt);  // 16:9 aspect.
+
+  // Scale factors: 3/4, 2/3, 3/4, 2/3, ...
+  // Scale        : 3/4, 1/2, 3/8, 1/4, 3/16, 1/8.
+  const int kExpectedWidths[] = {960, 640, 480, 320, 240, 160};
+  const int kExpectedHeights[] = {540, 360, 270, 180, 135, 90};
+
+  int request_width = kWidth;
+  int request_height = kHeight;
+
+  for (size_t i = 0; i < arraysize(kExpectedWidths); ++i) {
+    // Adapt down one step.
+    adapter_.OnResolutionFramerateRequest(absl::nullopt,
+                                          request_width * request_height - 1,
+                                          std::numeric_limits<int>::max());
+    EXPECT_TRUE(adapter_.AdaptFrameResolution(kWidth, kHeight, 0,
+                                              &cropped_width_, &cropped_height_,
+                                              &out_width_, &out_height_));
+    EXPECT_EQ(kExpectedWidths[i], out_width_);
+    EXPECT_EQ(kExpectedHeights[i], out_height_);
+    request_width = out_width_;
+    request_height = out_height_;
+  }
+}
+
+TEST_P(VideoAdapterTestVariableStartScale, AdaptResolutionInStepsFirst2_3) {
+  const int kWidth = 1920;
+  const int kHeight = 1080;
+  OnOutputFormatRequest(kWidth, kHeight, absl::nullopt);  // 16:9 aspect.
+
+  // Scale factors: 2/3, 3/4, 2/3, 3/4, ...
+  // Scale:         2/3, 1/2, 1/3, 1/4, 1/6, 1/8, 1/12.
+  const int kExpectedWidths[] = {1280, 960, 640, 480, 320, 240, 160};
+  const int kExpectedHeights[] = {720, 540, 360, 270, 180, 135, 90};
+
+  int request_width = kWidth;
+  int request_height = kHeight;
+
+  for (size_t i = 0; i < arraysize(kExpectedWidths); ++i) {
+    // Adapt down one step.
+    adapter_.OnResolutionFramerateRequest(absl::nullopt,
+                                          request_width * request_height - 1,
+                                          std::numeric_limits<int>::max());
+    EXPECT_TRUE(adapter_.AdaptFrameResolution(kWidth, kHeight, 0,
+                                              &cropped_width_, &cropped_height_,
+                                              &out_width_, &out_height_));
+    EXPECT_EQ(kExpectedWidths[i], out_width_);
+    EXPECT_EQ(kExpectedHeights[i], out_height_);
+    request_width = out_width_;
+    request_height = out_height_;
+  }
+}
+
+TEST_P(VideoAdapterTestVariableStartScale, AdaptResolutionInStepsFirst2x2_3) {
+  const int kWidth = 1440;
+  const int kHeight = 1080;
+  OnOutputFormatRequest(kWidth, kHeight, absl::nullopt);  // 4:3 aspect.
+
+  // Scale factors: 2/3, 2/3, 3/4, 2/3, 3/4, ...
+  // Scale        : 2/3, 4/9, 1/3, 2/9, 1/6, 1/9, 1/12, 1/18, 1/24, 1/36.
+  const int kExpectedWidths[] = {960, 640, 480, 320, 240, 160, 120, 80, 60, 40};
+  const int kExpectedHeights[] = {720, 480, 360, 240, 180, 120, 90, 60, 45, 30};
+
+  int request_width = kWidth;
+  int request_height = kHeight;
+
+  for (size_t i = 0; i < arraysize(kExpectedWidths); ++i) {
+    // Adapt down one step.
+    adapter_.OnResolutionFramerateRequest(absl::nullopt,
+                                          request_width * request_height - 1,
+                                          std::numeric_limits<int>::max());
+    EXPECT_TRUE(adapter_.AdaptFrameResolution(kWidth, kHeight, 0,
+                                              &cropped_width_, &cropped_height_,
+                                              &out_width_, &out_height_));
+    EXPECT_EQ(kExpectedWidths[i], out_width_);
+    EXPECT_EQ(kExpectedHeights[i], out_height_);
+    request_width = out_width_;
+    request_height = out_height_;
+  }
 }
 
 }  // namespace cricket
