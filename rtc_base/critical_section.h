@@ -14,6 +14,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/platform_thread_types.h"
+#include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread_annotations.h"
 
 #if defined(WEBRTC_WIN)
@@ -45,7 +46,7 @@ namespace rtc {
 // Locking methods (Enter, TryEnter, Leave)are const to permit protecting
 // members inside a const context without requiring mutable CriticalSections
 // everywhere. CriticalSection is reentrant lock.
-class RTC_LOCKABLE CriticalSection {
+class RTC_LOCKABLE RTC_EXPORT CriticalSection {
  public:
   CriticalSection();
   ~CriticalSection();

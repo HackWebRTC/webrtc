@@ -54,7 +54,7 @@ class EncodedImageBufferInterface : public rtc::RefCountInterface {
 };
 
 // Basic implementation of EncodedImageBufferInterface.
-class EncodedImageBuffer : public EncodedImageBufferInterface {
+class RTC_EXPORT EncodedImageBuffer : public EncodedImageBufferInterface {
  public:
   static rtc::scoped_refptr<EncodedImageBuffer> Create() { return Create(0); }
   static rtc::scoped_refptr<EncodedImageBuffer> Create(size_t size);

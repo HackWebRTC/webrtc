@@ -186,6 +186,7 @@ rtc_library("criticalsection") {
     ":checks",
     ":macromagic",
     ":platform_thread_types",
+    "system:rtc_export",
     "system:unused",
   ]
 }
