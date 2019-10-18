@@ -123,7 +123,7 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
 
     // SSRCs for media and retransmission, respectively.
     // FlexFec SSRC is fetched from |flexfec_sender|.
-    uint32_t local_media_ssrc;
+    uint32_t local_media_ssrc = 0;
     absl::optional<uint32_t> rtx_send_ssrc;
 
    private:

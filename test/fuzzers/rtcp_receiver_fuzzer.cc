@@ -43,6 +43,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   RtpRtcp::Configuration config;
   config.clock = &clock;
   config.rtcp_report_interval_ms = kRtcpIntervalMs;
+  config.local_media_ssrc = 1;
 
   RTCPReceiver receiver(config, &rtp_rtcp_module);
 
