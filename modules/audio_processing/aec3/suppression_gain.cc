@@ -114,6 +114,7 @@ float SuppressionGain::UpperBandsGain(
   if (render.size() == 1) {
     return 1.f;
   }
+  const size_t num_render_channels = render[0].size();
 
   if (narrow_peak_band &&
       (*narrow_peak_band > static_cast<int>(kFftLengthBy2Plus1 - 10))) {
@@ -131,13 +132,19 @@ float SuppressionGain::UpperBandsGain(
 
   // Compute the upper and lower band energies.
   const auto sum_of_squares = [](float a, float b) { return a + b * b; };
-  const float low_band_energy = std::accumulate(
-      render[0][0].begin(), render[0][0].end(), 0.f, sum_of_squares);
+  float low_band_energy = 0.f;
+  for (size_t ch = 0; ch < num_render_channels; ++ch) {
+    const float channel_energy = std::accumulate(
+        render[0][0].begin(), render[0][0].end(), 0.f, sum_of_squares);
+    low_band_energy = std::max(low_band_energy, channel_energy);
+  }
   float high_band_energy = 0.f;
   for (size_t k = 1; k < render.size(); ++k) {
-    const float energy = std::accumulate(
-        render[k][0].begin(), render[k][0].end(), 0.f, sum_of_squares);
-    high_band_energy = std::max(high_band_energy, energy);
+    for (size_t ch = 0; ch < num_render_channels; ++ch) {
+      const float energy = std::accumulate(
+          render[k][ch].begin(), render[k][ch].end(), 0.f, sum_of_squares);
+      high_band_energy = std::max(high_band_energy, energy);
+    }
   }
 
   // If there is more power in the lower frequencies than the upper frequencies,
@@ -369,11 +376,16 @@ bool SuppressionGain::LowNoiseRenderDetector::Detect(
     const std::vector<std::vector<std::vector<float>>>& render) {
   float x2_sum = 0.f;
   float x2_max = 0.f;
-  for (auto x_k : render[0][0]) {
-    const float x2 = x_k * x_k;
-    x2_sum += x2;
-    x2_max = std::max(x2_max, x2);
+  for (auto x_ch : render[0]) {
+    for (auto x_k : x_ch) {
+      const float x2 = x_k * x_k;
+      x2_sum += x2;
+      x2_max = std::max(x2_max, x2);
+    }
   }
+  const size_t num_render_channels = render[0].size();
+  x2_sum = x2_sum / num_render_channels;
+  ;
 
   constexpr float kThreshold = 50.f * 50.f * 64.f;
   const bool low_noise_render =

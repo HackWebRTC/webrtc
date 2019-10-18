@@ -54,12 +54,12 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   config.filter.shadow.length_blocks = filter_length_blocks;
   AdaptiveFirFilter main_filter(config.filter.main.length_blocks,
                                 config.filter.main.length_blocks,
-                                config.filter.config_change_duration_blocks, 1,
-                                optimization, &data_dumper);
-  AdaptiveFirFilter shadow_filter(config.filter.shadow.length_blocks,
-                                  config.filter.shadow.length_blocks,
-                                  config.filter.config_change_duration_blocks,
-                                  1, optimization, &data_dumper);
+                                config.filter.config_change_duration_blocks,
+                                kNumRenderChannels, optimization, &data_dumper);
+  AdaptiveFirFilter shadow_filter(
+      config.filter.shadow.length_blocks, config.filter.shadow.length_blocks,
+      config.filter.config_change_duration_blocks, kNumRenderChannels,
+      optimization, &data_dumper);
   std::vector<std::vector<std::array<float, kFftLengthBy2Plus1>>> H2(
       kNumCaptureChannels, std::vector<std::array<float, kFftLengthBy2Plus1>>(
                                main_filter.max_filter_size_partitions(),

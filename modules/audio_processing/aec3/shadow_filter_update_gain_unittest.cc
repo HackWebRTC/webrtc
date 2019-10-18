@@ -41,14 +41,14 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   ApmDataDumper data_dumper(42);
   EchoCanceller3Config config;
   config.filter.main.length_blocks = filter_length_blocks;
-  AdaptiveFirFilter main_filter(config.filter.main.length_blocks,
-                                config.filter.main.length_blocks,
-                                config.filter.config_change_duration_blocks, 1,
-                                DetectOptimization(), &data_dumper);
-  AdaptiveFirFilter shadow_filter(config.filter.shadow.length_blocks,
-                                  config.filter.shadow.length_blocks,
-                                  config.filter.config_change_duration_blocks,
-                                  1, DetectOptimization(), &data_dumper);
+  AdaptiveFirFilter main_filter(
+      config.filter.main.length_blocks, config.filter.main.length_blocks,
+      config.filter.config_change_duration_blocks, num_render_channels,
+      DetectOptimization(), &data_dumper);
+  AdaptiveFirFilter shadow_filter(
+      config.filter.shadow.length_blocks, config.filter.shadow.length_blocks,
+      config.filter.config_change_duration_blocks, num_render_channels,
+      DetectOptimization(), &data_dumper);
   Aec3Fft fft;
 
   constexpr int kSampleRateHz = 48000;
@@ -158,8 +158,7 @@ TEST(ShadowFilterUpdateGain, GainCausesFilterToConverge) {
   std::vector<int> blocks_with_echo_path_changes;
   std::vector<int> blocks_with_saturation;
 
-  // TODO(http://bugs.webrtc.org/10913): Test multiple render channel counts.
-  for (size_t num_render_channels : {1}) {
+  for (size_t num_render_channels : {1, 2, 8}) {
     for (size_t filter_length_blocks : {12, 20, 30}) {
       for (size_t delay_samples : {0, 64, 150, 200, 301}) {
         SCOPED_TRACE(ProduceDebugText(delay_samples, filter_length_blocks));
@@ -168,7 +167,7 @@ TEST(ShadowFilterUpdateGain, GainCausesFilterToConverge) {
         std::array<float, kBlockSize> y;
         FftData G;
 
-        RunFilterUpdateTest(1000, delay_samples, num_render_channels,
+        RunFilterUpdateTest(5000, delay_samples, num_render_channels,
                             filter_length_blocks, blocks_with_saturation, &e,
                             &y, &G);
 
@@ -190,8 +189,7 @@ TEST(ShadowFilterUpdateGain, GainCausesFilterToConverge) {
 // Verifies that the magnitude of the gain on average decreases for a
 // persistently exciting signal.
 TEST(ShadowFilterUpdateGain, DecreasingGain) {
-  // TODO(http://bugs.webrtc.org/10913): Test multiple render channel counts.
-  for (size_t num_render_channels : {1}) {
+  for (size_t num_render_channels : {1, 2, 4}) {
     for (size_t filter_length_blocks : {12, 20, 30}) {
       SCOPED_TRACE(ProduceDebugText(filter_length_blocks));
       std::vector<int> blocks_with_echo_path_changes;
@@ -233,8 +231,7 @@ TEST(ShadowFilterUpdateGain, SaturationBehavior) {
   for (int k = 99; k < 200; ++k) {
     blocks_with_saturation.push_back(k);
   }
-  // TODO(http://bugs.webrtc.org/10913): Test multiple render channel counts.
-  for (size_t num_render_channels : {1}) {
+  for (size_t num_render_channels : {1, 2, 8}) {
     for (size_t filter_length_blocks : {12, 20, 30}) {
       SCOPED_TRACE(ProduceDebugText(filter_length_blocks));
 

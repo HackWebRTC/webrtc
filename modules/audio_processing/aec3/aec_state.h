@@ -127,8 +127,7 @@ class AecState {
   }
 
   // Updates the aec state.
-  // TODO(bugs.webrtc.org/10913): Handle multi-channel adaptive filter response.
-  // TODO(bugs.webrtc.org/10913): Compute multi-channel ERL, ERLE, and reverb.
+  // TODO(bugs.webrtc.org/10913): Compute multi-channel ERL.
   void Update(
       const absl::optional<DelayEstimate>& external_delay,
       rtc::ArrayView<const std::vector<std::array<float, kFftLengthBy2Plus1>>>

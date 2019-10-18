@@ -316,15 +316,12 @@ void EchoRemoverImpl::ProcessCapture(
         subtractor_output_heap_.data(), num_capture_channels_);
   }
 
-  const std::vector<float>& x0 = x[0][0];
-  std::vector<float>& y0 = (*y)[0][0];
-
-  data_dumper_->DumpWav("aec3_echo_remover_capture_input", kBlockSize, &y0[0],
-                        16000, 1);
-  data_dumper_->DumpWav("aec3_echo_remover_render_input", kBlockSize, &x0[0],
-                        16000, 1);
-  data_dumper_->DumpRaw("aec3_echo_remover_capture_input", y0);
-  data_dumper_->DumpRaw("aec3_echo_remover_render_input", x0);
+  data_dumper_->DumpWav("aec3_echo_remover_capture_input", kBlockSize,
+                        &(*y)[0][0][0], 16000, 1);
+  data_dumper_->DumpWav("aec3_echo_remover_render_input", kBlockSize,
+                        &x[0][0][0], 16000, 1);
+  data_dumper_->DumpRaw("aec3_echo_remover_capture_input", (*y)[0][0]);
+  data_dumper_->DumpRaw("aec3_echo_remover_render_input", x[0][0]);
 
   aec_state_.UpdateCaptureSaturation(capture_signal_saturation);
 
@@ -374,12 +371,10 @@ void EchoRemoverImpl::ProcessCapture(
   subtractor_.Process(*render_buffer, (*y)[0], render_signal_analyzer_,
                       aec_state_, subtractor_output);
 
+  // Compute spectra.
   for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
-    auto& y_low = (*y)[0][ch];
-
-    // Compute spectra.
     FormLinearFilterOutput(subtractor_output[ch], e[ch]);
-    WindowedPaddedFft(fft_, y_low, y_old_[ch], &Y[ch]);
+    WindowedPaddedFft(fft_, (*y)[0][ch], y_old_[ch], &Y[ch]);
     WindowedPaddedFft(fft_, e[ch], e_old_[ch], &E[ch]);
     LinearEchoPower(E[ch], Y[ch], &S2_linear[ch]);
     Y[ch].Spectrum(optimization_, Y2[ch]);
@@ -387,15 +382,15 @@ void EchoRemoverImpl::ProcessCapture(
   }
 
   // Update the AEC state information.
-  // TODO(bugs.webrtc.org/10913): Take all subtractors into account.
-  aec_state_.Update(external_delay, subtractor_.FilterFrequencyResponse(),
-                    subtractor_.FilterImpulseResponse(), *render_buffer, E2, Y2,
-                    subtractor_output);
+  aec_state_.Update(external_delay, subtractor_.FilterFrequencyResponses(),
+                    subtractor_.FilterImpulseResponses(), *render_buffer, E2,
+                    Y2, subtractor_output);
 
   // Choose the linear output.
   const auto& Y_fft = aec_state_.UseLinearFilterOutput() ? E : Y;
 
-  data_dumper_->DumpWav("aec3_output_linear", kBlockSize, &y0[0], 16000, 1);
+  data_dumper_->DumpWav("aec3_output_linear", kBlockSize, &(*y)[0][0][0], 16000,
+                        1);
   data_dumper_->DumpWav("aec3_output_linear2", kBlockSize, &e[0][0], 16000, 1);
 
   float high_bands_gain = 1.f;
@@ -408,8 +403,8 @@ void EchoRemoverImpl::ProcessCapture(
 
   for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
     // Estimate the comfort noise.
-    cngs_[ch]->Compute(aec_state_, Y2[ch], &comfort_noise[ch],
-                       &high_band_comfort_noise[ch]);
+    cngs_[ch]->Compute(aec_state_.SaturatedCapture(), Y2[ch],
+                       &comfort_noise[ch], &high_band_comfort_noise[ch]);
 
     // Suppressor echo estimate.
     const auto& echo_spectrum =
@@ -448,13 +443,14 @@ void EchoRemoverImpl::ProcessCapture(
   // Debug outputs for the purpose of development and analysis.
   data_dumper_->DumpWav("aec3_echo_estimate", kBlockSize,
                         &subtractor_output[0].s_main[0], 16000, 1);
-  data_dumper_->DumpRaw("aec3_output", y0);
+  data_dumper_->DumpRaw("aec3_output", (*y)[0][0]);
   data_dumper_->DumpRaw("aec3_narrow_render",
                         render_signal_analyzer_.NarrowPeakBand() ? 1 : 0);
   data_dumper_->DumpRaw("aec3_N2", cngs_[0]->NoiseSpectrum());
   data_dumper_->DumpRaw("aec3_suppressor_gain", G);
-  data_dumper_->DumpWav(
-      "aec3_output", rtc::ArrayView<const float>(&y0[0], kBlockSize), 16000, 1);
+  data_dumper_->DumpWav("aec3_output",
+                        rtc::ArrayView<const float>(&(*y)[0][0][0], kBlockSize),
+                        16000, 1);
   data_dumper_->DumpRaw("aec3_using_subtractor_output[0]",
                         aec_state_.UseLinearFilterOutput() ? 1 : 0);
   data_dumper_->DumpRaw("aec3_E2", E2[0]);

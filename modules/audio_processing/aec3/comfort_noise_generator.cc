@@ -105,7 +105,7 @@ ComfortNoiseGenerator::ComfortNoiseGenerator(Aec3Optimization optimization,
 ComfortNoiseGenerator::~ComfortNoiseGenerator() = default;
 
 void ComfortNoiseGenerator::Compute(
-    const AecState& aec_state,
+    bool saturated_capture,
     const std::array<float, kFftLengthBy2Plus1>& capture_spectrum,
     FftData* lower_band_noise,
     FftData* upper_band_noise) {
@@ -113,7 +113,7 @@ void ComfortNoiseGenerator::Compute(
   RTC_DCHECK(upper_band_noise);
   const auto& Y2 = capture_spectrum;
 
-  if (!aec_state.SaturatedCapture()) {
+  if (!saturated_capture) {
     // Smooth Y2.
     std::transform(Y2_smoothed_.begin(), Y2_smoothed_.end(), Y2.begin(),
                    Y2_smoothed_.begin(),

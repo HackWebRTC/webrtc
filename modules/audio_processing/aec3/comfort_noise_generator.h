@@ -45,7 +45,7 @@ class ComfortNoiseGenerator {
   ~ComfortNoiseGenerator();
 
   // Computes the comfort noise.
-  void Compute(const AecState& aec_state,
+  void Compute(bool saturated_capture,
                const std::array<float, kFftLengthBy2Plus1>& capture_spectrum,
                FftData* lower_band_noise,
                FftData* upper_band_noise);
