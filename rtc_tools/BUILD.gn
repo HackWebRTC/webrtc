@@ -280,6 +280,7 @@ if (!build_with_chromium) {
       deps = [
         ":chart_proto",
         "../api:function_view",
+        "../rtc_base:ignore_wundef",
 
         # TODO(kwiberg): Remove this dependency.
         "../api/audio_codecs:audio_codecs_api",
@@ -442,6 +443,7 @@ if (rtc_include_tests) {
         "../modules/audio_processing:audioproc_debug_proto",
         "../modules/audio_processing:audioproc_protobuf_utils",
         "../modules/audio_processing:audioproc_test_utils",
+        "../rtc_base:ignore_wundef",
         "../rtc_base:protobuf_utils",
         "../rtc_base:rtc_base_approved",
         "//third_party/abseil-cpp/absl/flags:flag",

@@ -45,6 +45,12 @@ rtc_source_set("compile_assert_c") {
   ]
 }
 
+rtc_source_set("ignore_wundef") {
+  sources = [
+    "ignore_wundef.h",
+  ]
+}
+
 # The subset of rtc_base approved for use outside of libjingle.
 # TODO(bugs.webrtc.org/9838): Create small and focused build targets and remove
 # the old concept of rtc_base and rtc_base_approved.
@@ -79,7 +85,6 @@ rtc_library("rtc_base_approved") {
     "copy_on_write_buffer.h",
     "event_tracer.cc",
     "event_tracer.h",
-    "ignore_wundef.h",
     "location.cc",
     "location.h",
     "message_buffer_reader.h",

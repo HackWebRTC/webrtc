@@ -835,6 +835,7 @@ rtc_library("webrtc_opus_c") {
 
   deps = [
     "../../rtc_base:checks",
+    "../../rtc_base:ignore_wundef",
     "../../rtc_base:rtc_base_approved",
   ]
 }
@@ -907,6 +908,7 @@ rtc_library("audio_network_adaptor") {
     "../../common_audio",
     "../../logging:rtc_event_audio",
     "../../rtc_base:checks",
+    "../../rtc_base:ignore_wundef",
     "../../rtc_base:protobuf_utils",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base/system:file_wrapper",
@@ -2025,6 +2027,7 @@ if (rtc_include_tests) {
       "../../modules/rtp_rtcp:rtp_rtcp_format",
       "../../rtc_base",
       "../../rtc_base:checks",
+      "../../rtc_base:ignore_wundef",
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_base_tests_utils",
       "../../rtc_base:sanitizer",
