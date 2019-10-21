@@ -46,7 +46,6 @@
 
 #include <errno.h>
 
-#include <list>
 #include <sstream>  // no-presubmit-check TODO(webrtc:8982)
 #include <string>
 #include <utility>
@@ -99,6 +98,7 @@ enum LogErrorContext {
   ERRCTX_HR = ERRCTX_HRESULT,  // LOG_E(sev, HR, x)
 };
 
+class LogMessage;
 // Virtual sink interface that can receive log messages.
 class LogSink {
  public:
@@ -110,6 +110,12 @@ class LogSink {
   virtual void OnLogMessage(const std::string& message,
                             LoggingSeverity severity);
   virtual void OnLogMessage(const std::string& message) = 0;
+
+ private:
+  friend class ::rtc::LogMessage;
+  // Members for LogMessage class to keep linked list of the registered sinks.
+  LogSink* next_ = nullptr;
+  LoggingSeverity min_severity_;
 };
 
 namespace webrtc_logging_impl {
@@ -437,16 +443,15 @@ class LogMessage {
   // Sets whether logs will be directed to stderr in debug mode.
   static void SetLogToStderr(bool log_to_stderr);
 
-  //  Stream: Any non-blocking stream interface.  LogMessage takes ownership of
-  //   the stream. Multiple streams may be specified by using AddLogToStream.
-  //   LogToStream is retained for backwards compatibility; when invoked, it
-  //   will discard any previously set streams and install the specified stream.
-  //   GetLogToStream gets the severity for the specified stream, of if none
-  //   is specified, the minimum stream severity.
-  //   RemoveLogToStream removes the specified stream, without destroying it.
-  static int GetLogToStream(LogSink* stream = nullptr);
+  // Stream: Any non-blocking stream interface.
+  // Installs the |stream| to collect logs with severtiy |min_sev| or higher.
+  // |stream| must live until deinstalled by RemoveLogToStream
   static void AddLogToStream(LogSink* stream, LoggingSeverity min_sev);
+  // Removes the specified stream, without destroying it.
   static void RemoveLogToStream(LogSink* stream);
+  // Returns the severity for the specified stream, of if none is specified,
+  // the minimum stream severity.
+  static int GetLogToStream(LogSink* stream = nullptr);
 
   // Testing against MinLogSeverity allows code to avoid potentially expensive
   // logging operations by pre-checking the logging level.
@@ -464,8 +469,6 @@ class LogMessage {
 
  private:
   friend class LogMessageForTesting;
-  typedef std::pair<LogSink*, LoggingSeverity> StreamAndSeverity;
-  typedef std::list<StreamAndSeverity> StreamList;
 
   // Updates min_sev_ appropriately when debug sinks change.
   static void UpdateMinLogSeverity();
@@ -499,7 +502,7 @@ class LogMessage {
   std::string extra_;
 
   // The output streams and their associated severities
-  static StreamList streams_;
+  static LogSink* streams_;
 
   // Flags for formatting options
   static bool thread_, timestamp_;
