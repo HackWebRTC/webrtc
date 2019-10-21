@@ -2264,7 +2264,7 @@ void PeerConnection::SetLocalDescription(
   // For SLD we support only explicit rollback.
   if (desc->GetType() == SdpType::kRollback) {
     if (IsUnifiedPlan()) {
-      RTCError error = Rollback();
+      RTCError error = Rollback(desc->GetType());
       if (error.ok()) {
         PostSetSessionDescriptionSuccess(observer);
       } else {
@@ -2654,12 +2654,12 @@ void PeerConnection::SetRemoteDescription(
     if (configuration_.enable_implicit_rollback) {
       if (desc->GetType() == SdpType::kOffer &&
           signaling_state() == kHaveLocalOffer) {
-        Rollback();
+        Rollback(desc->GetType());
       }
     }
     // Explicit rollback.
     if (desc->GetType() == SdpType::kRollback) {
-      observer->OnSetRemoteDescriptionComplete(Rollback());
+      observer->OnSetRemoteDescriptionComplete(Rollback(desc->GetType()));
       return;
     }
   } else if (desc->GetType() == SdpType::kRollback) {
@@ -7610,7 +7610,7 @@ bool PeerConnection::CheckIfNegotiationIsNeeded() {
   return false;
 }
 
-RTCError PeerConnection::Rollback() {
+RTCError PeerConnection::Rollback(SdpType sdp_type) {
   auto state = signaling_state();
   if (state != PeerConnectionInterface::kHaveLocalOffer &&
       state != PeerConnectionInterface::kHaveRemoteOffer) {
@@ -7630,6 +7630,10 @@ RTCError PeerConnection::Rollback() {
     transport_controller_->RollbackTransportForMid(mid);
     DestroyTransceiverChannel(transceiver);
 
+    if (signaling_state() == PeerConnectionInterface::kHaveRemoteOffer &&
+        transceiver->receiver()) {
+      Observer()->OnRemoveTrack(transceiver->receiver());
+    }
     if (state.newly_created()) {
       // Remove added transceivers with no added track.
       if (transceiver->internal()->sender()->track()) {
@@ -7654,6 +7658,15 @@ RTCError PeerConnection::Rollback() {
   pending_local_description_.reset();
   pending_remote_description_.reset();
   ChangeSignalingState(PeerConnectionInterface::kStable);
+
+  // The assumption is that in case of implicit rollback UpdateNegotiationNeeded
+  // gets called in SetRemoteDescription.
+  if (sdp_type == SdpType::kRollback) {
+    UpdateNegotiationNeeded();
+    if (is_negotiation_needed_) {
+      Observer()->OnRenegotiationNeeded();
+    }
+  }
   return RTCError::OK();
 }
 

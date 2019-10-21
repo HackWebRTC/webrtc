@@ -1193,7 +1193,9 @@ class PeerConnection : public PeerConnectionInternal,
 
   void UpdateNegotiationNeeded();
   bool CheckIfNegotiationIsNeeded();
-  RTCError Rollback();
+
+  // | sdp_type | is the type of the SDP that caused the rollback.
+  RTCError Rollback(SdpType sdp_type);
 
   sigslot::signal1<DataChannel*> SignalDataChannelCreated_
       RTC_GUARDED_BY(signaling_thread());
