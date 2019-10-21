@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "api/task_queue/task_queue_base.h"
 #include "api/video/video_source_interface.h"
 #include "rtc_base/numerics/running_statistics.h"
 #include "rtc_base/time_utils.h"
@@ -46,7 +47,7 @@ class VideoAnalyzer : public PacketReceiver,
                 bool is_quick_test_enabled,
                 Clock* clock,
                 std::string rtp_dump_name,
-                test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue);
+                TaskQueueBase* task_queue);
   ~VideoAnalyzer();
 
   virtual void SetReceiver(PacketReceiver* receiver);
@@ -292,14 +293,11 @@ class VideoAnalyzer : public PacketReceiver,
   std::deque<FrameComparison> comparisons_ RTC_GUARDED_BY(comparison_lock_);
   bool quit_ RTC_GUARDED_BY(comparison_lock_);
   rtc::Event done_;
-  test::DEPRECATED_SingleThreadedTaskQueueForTesting::TaskId
-      stats_polling_task_id_ RTC_GUARDED_BY(comparison_lock_);
-  bool stop_stats_poller_ RTC_GUARDED_BY(comparison_lock_);
 
   std::unique_ptr<test::RtpFileWriter> rtp_file_writer_;
   Clock* const clock_;
   const int64_t start_ms_;
-  test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue_;
+  TaskQueueBase* task_queue_;
 };
 
 }  // namespace webrtc

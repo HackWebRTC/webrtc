@@ -21,6 +21,8 @@
 #include "rtc_base/cpu_time.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/memory_usage.h"
+#include "rtc_base/task_queue_for_test.h"
+#include "rtc_base/task_utils/repeating_task.h"
 #include "system_wrappers/include/cpu_info.h"
 #include "test/call_test.h"
 #include "test/testsupport/file_utils.h"
@@ -36,7 +38,7 @@ ABSL_FLAG(bool,
 
 namespace webrtc {
 namespace {
-constexpr int kSendStatsPollingIntervalMs = 1000;
+constexpr TimeDelta kSendStatsPollingInterval = TimeDelta::Seconds<1>();
 constexpr size_t kMaxComparisons = 10;
 // How often is keep alive message printed.
 constexpr int kKeepAliveIntervalSeconds = 30;
@@ -50,23 +52,22 @@ bool IsFlexfec(int payload_type) {
 }
 }  // namespace
 
-VideoAnalyzer::VideoAnalyzer(
-    test::LayerFilteringTransport* transport,
-    const std::string& test_label,
-    double avg_psnr_threshold,
-    double avg_ssim_threshold,
-    int duration_frames,
-    FILE* graph_data_output_file,
-    const std::string& graph_title,
-    uint32_t ssrc_to_analyze,
-    uint32_t rtx_ssrc_to_analyze,
-    size_t selected_stream,
-    int selected_sl,
-    int selected_tl,
-    bool is_quick_test_enabled,
-    Clock* clock,
-    std::string rtp_dump_name,
-    test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+VideoAnalyzer::VideoAnalyzer(test::LayerFilteringTransport* transport,
+                             const std::string& test_label,
+                             double avg_psnr_threshold,
+                             double avg_ssim_threshold,
+                             int duration_frames,
+                             FILE* graph_data_output_file,
+                             const std::string& graph_title,
+                             uint32_t ssrc_to_analyze,
+                             uint32_t rtx_ssrc_to_analyze,
+                             size_t selected_stream,
+                             int selected_sl,
+                             int selected_tl,
+                             bool is_quick_test_enabled,
+                             Clock* clock,
+                             std::string rtp_dump_name,
+                             TaskQueueBase* task_queue)
     : transport_(transport),
       receiver_(nullptr),
       call_(nullptr),
@@ -343,12 +344,11 @@ void VideoAnalyzer::Wait() {
   // at time-out check if frames_processed is going up. If so, give it more
   // time, otherwise fail. Hopefully this will reduce test flakiness.
 
-  {
-    rtc::CritScope lock(&comparison_lock_);
-    stop_stats_poller_ = false;
-    stats_polling_task_id_ = task_queue_->PostDelayedTask(
-        [this]() { PollStats(); }, kSendStatsPollingIntervalMs);
-  }
+  RepeatingTaskHandle stats_polling_task = RepeatingTaskHandle::DelayedStart(
+      task_queue_, kSendStatsPollingInterval, [this] {
+        PollStats();
+        return kSendStatsPollingInterval;
+      });
 
   int last_frames_processed = -1;
   int last_frames_captured = -1;
@@ -393,11 +393,7 @@ void VideoAnalyzer::Wait() {
   if (iteration > 0)
     printf("- Farewell, sweet Concorde!\n");
 
-  {
-    rtc::CritScope lock(&comparison_lock_);
-    stop_stats_poller_ = true;
-    task_queue_->CancelTask(stats_polling_task_id_);
-  }
+  SendTask(RTC_FROM_HERE, task_queue_, [&] { stats_polling_task.Stop(); });
 
   PrintResults();
   if (graph_data_output_file_)
@@ -474,9 +470,6 @@ bool VideoAnalyzer::IsInSelectedSpatialAndTemporalLayer(
 
 void VideoAnalyzer::PollStats() {
   rtc::CritScope crit(&comparison_lock_);
-  if (stop_stats_poller_) {
-    return;
-  }
 
   Call::Stats call_stats = call_->GetStats();
   send_bandwidth_bps_.AddSample(call_stats.send_bandwidth_bps);
@@ -543,9 +536,6 @@ void VideoAnalyzer::PollStats() {
   }
 
   memory_usage_.AddSample(rtc::GetProcessResidentSizeBytes());
-
-  stats_polling_task_id_ = task_queue_->PostDelayedTask(
-      [this]() { PollStats(); }, kSendStatsPollingIntervalMs);
 }
 
 void VideoAnalyzer::FrameComparisonThread(void* obj) {
