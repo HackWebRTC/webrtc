@@ -341,6 +341,15 @@ AudioProcessingImpl::AudioProcessingImpl(
       capture_(config.Get<ExperimentalNs>().enabled),
 #endif
       capture_nonlocked_() {
+  RTC_LOG(LS_INFO) << "Injected APM submodules:"
+                   << "\nEcho control factory: " << !!echo_control_factory_
+                   << "\nEcho detector: " << !!submodules_.echo_detector
+                   << "\nCapture analyzer: " << !!submodules_.capture_analyzer
+                   << "\nCapture post processor: "
+                   << !!submodules_.capture_post_processor
+                   << "\nRender pre processor: "
+                   << !!submodules_.render_pre_processor;
+
   // Mark Echo Controller enabled if a factory is injected.
   capture_nonlocked_.echo_controller_enabled =
       static_cast<bool>(echo_control_factory_);
@@ -358,13 +367,6 @@ AudioProcessingImpl::AudioProcessingImpl(
   // TODO(alessiob): Move the injected gain controller once injection is
   // implemented.
   submodules_.gain_controller2.reset(new GainController2());
-
-  RTC_LOG(LS_INFO) << "Capture analyzer activated: "
-                   << !!submodules_.capture_analyzer
-                   << "\nCapture post processor activated: "
-                   << !!submodules_.capture_post_processor
-                   << "\nRender pre processor activated: "
-                   << !!submodules_.render_pre_processor;
 
   SetExtraOptions(config);
 }
@@ -604,6 +606,8 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
 }
 
 void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
+  RTC_LOG(LS_INFO) << "AudioProcessing::ApplyConfig: " << config.ToString();
+
   // Run in a single-threaded manner when applying the settings.
   rtc::CritScope cs_render(&crit_render_);
   rtc::CritScope cs_capture(&crit_capture_);
@@ -654,9 +658,6 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
 
   InitializeHighPassFilter();
 
-  RTC_LOG(LS_INFO) << "Highpass filter activated: "
-                   << config_.high_pass_filter.enabled;
-
   if (agc1_config_changed) {
     ApplyAgc1Config(config_.gain_controller1);
   }
@@ -672,10 +673,6 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
   InitializeGainController2();
   InitializePreAmplifier();
   submodules_.gain_controller2->ApplyConfig(config_.gain_controller2);
-  RTC_LOG(LS_INFO) << "Gain Controller 2 activated: "
-                   << config_.gain_controller2.enabled;
-  RTC_LOG(LS_INFO) << "Pre-amplifier activated: "
-                   << config_.pre_amplifier.enabled;
 
   if (config_.level_estimation.enabled && !submodules_.output_level_estimator) {
     submodules_.output_level_estimator = std::make_unique<LevelEstimator>();
