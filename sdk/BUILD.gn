@@ -1305,6 +1305,7 @@ if (is_ios || is_mac) {
           "objc/api/peerconnection/RTCDtmfSender.h",
           "objc/api/peerconnection/RTCSSLAdapter.h",
           "objc/api/peerconnection/RTCSessionDescription.h",
+          "objc/api/peerconnection/RTCStatisticsReport.h",
           "objc/api/peerconnection/RTCTracing.h",
           "objc/api/peerconnection/RTCCertificate.h",
           "objc/api/peerconnection/RTCCryptoOptions.h",
