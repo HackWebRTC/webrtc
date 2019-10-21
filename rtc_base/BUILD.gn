@@ -465,6 +465,21 @@ rtc_library("rtc_task_queue") {
   ]
 }
 
+rtc_source_set("rtc_operations_chain") {
+  visibility = [ "*" ]
+  sources = [
+    "operations_chain.cc",
+    "operations_chain.h",
+  ]
+  deps = [
+    ":checks",
+    ":macromagic",
+    ":refcount",
+    "../api:scoped_refptr",
+    "synchronization:sequence_checker",
+  ]
+}
+
 if (rtc_enable_libevent) {
   rtc_library("rtc_task_queue_libevent") {
     visibility = [ "../api/task_queue:default_task_queue_factory" ]
@@ -1230,6 +1245,21 @@ if (rtc_include_tests) {
       "../test:test_main",
       "../test:test_support",
       "//third_party/abseil-cpp/absl/memory",
+    ]
+  }
+
+  rtc_library("rtc_operations_chain_unittests") {
+    testonly = true
+
+    sources = [
+      "operations_chain_unittest.cc",
+    ]
+    deps = [
+      ":rtc_base",
+      ":rtc_base_approved",
+      ":rtc_event",
+      ":rtc_operations_chain",
+      "../test:test_support",
     ]
   }
 
