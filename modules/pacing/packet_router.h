@@ -58,11 +58,6 @@ class PacketRouter : public RemoteBitrateObserver,
   virtual std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
       size_t target_size_bytes);
 
-  // TODO(bugs.webrtc.org/11036): Remove when downstream usage is gone.
-  void SetTransportWideSequenceNumber(uint16_t sequence_number);
-  // TODO(bugs.webrtc.org/11036): Make private when downstream usage is gone.
-  uint16_t AllocateSequenceNumber();
-
   uint16_t CurrentTransportSequenceNumber() const;
 
   // Called every time there is a new bitrate estimate for a receive channel
@@ -129,7 +124,7 @@ class PacketRouter : public RemoteBitrateObserver,
   RtcpFeedbackSenderInterface* active_remb_module_
       RTC_GUARDED_BY(modules_crit_);
 
-  int transport_seq_ RTC_GUARDED_BY(modules_crit_);
+  uint64_t transport_seq_ RTC_GUARDED_BY(modules_crit_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(PacketRouter);
 };

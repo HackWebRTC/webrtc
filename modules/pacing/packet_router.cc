@@ -133,7 +133,7 @@ void PacketRouter::SendPacket(std::unique_ptr<RtpPacketToSend> packet,
   // With the new pacer code path, transport sequence numbers are only set here,
   // on the pacer thread. Therefore we don't need atomics/synchronization.
   if (packet->IsExtensionReserved<TransportSequenceNumber>()) {
-    packet->SetExtension<TransportSequenceNumber>(AllocateSequenceNumber());
+    packet->SetExtension<TransportSequenceNumber>((++transport_seq_) & 0xFFFF);
   }
 
   uint32_t ssrc = packet->Ssrc();
@@ -190,20 +190,9 @@ std::vector<std::unique_ptr<RtpPacketToSend>> PacketRouter::GeneratePadding(
   return padding_packets;
 }
 
-void PacketRouter::SetTransportWideSequenceNumber(uint16_t sequence_number) {
-  rtc::CritScope lock(&modules_crit_);
-  transport_seq_ = sequence_number;
-}
-
-uint16_t PacketRouter::AllocateSequenceNumber() {
-  rtc::CritScope lock(&modules_crit_);
-  transport_seq_ = (transport_seq_ + 1) & 0xFFFF;
-  return transport_seq_;
-}
-
 uint16_t PacketRouter::CurrentTransportSequenceNumber() const {
   rtc::CritScope lock(&modules_crit_);
-  return transport_seq_;
+  return transport_seq_ & 0xFFFF;
 }
 
 void PacketRouter::OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
