@@ -23,6 +23,7 @@
 #include "call/call.h"
 #include "call/simulated_network.h"
 #include "rtc_base/event.h"
+#include "rtc_base/task_utils/repeating_task.h"
 #include "test/call_test.h"
 
 namespace webrtc {
@@ -45,7 +46,7 @@ class RampUpTester : public test::EndToEndTest {
                bool rtx,
                bool red,
                bool report_perf_stats,
-               test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue);
+               TaskQueueBase* task_queue);
   ~RampUpTester() override;
 
   size_t GetNumVideoStreams() const override;
@@ -114,38 +115,23 @@ class RampUpTester : public test::EndToEndTest {
   std::vector<uint32_t> video_rtx_ssrcs_;
   std::vector<uint32_t> audio_ssrcs_;
 
-  // Initially zero, then set to the target time in milliseconds for when
-  // PollStats() will next be called.
-  int64_t next_scheduled_poll_time_ms_ = 0;
-
  protected:
-  // Call from within PollStats to ensure that initial PollStats() timestamp
-  // is captured.
-  void EnsurePollTimeSet();
-
-  // Calculates the interval from now and until when PollStats() next should be
-  // called. Internally updates a timestamp, so each call will yield the
-  // subsequent timestamp (in milliseconds).
-  // Must be called from the |task_queue_|.
-  int64_t GetIntervalForNextPoll();
-
-  test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
-  test::DEPRECATED_SingleThreadedTaskQueueForTesting::TaskId pending_task_ = -1;
+  TaskQueueBase* const task_queue_;
+  RepeatingTaskHandle pending_task_;
 };
 
 class RampUpDownUpTester : public RampUpTester {
  public:
-  RampUpDownUpTester(
-      size_t num_video_streams,
-      size_t num_audio_streams,
-      size_t num_flexfec_streams,
-      unsigned int start_bitrate_bps,
-      const std::string& extension_type,
-      bool rtx,
-      bool red,
-      const std::vector<int>& loss_rates,
-      bool report_perf_stats,
-      test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue);
+  RampUpDownUpTester(size_t num_video_streams,
+                     size_t num_audio_streams,
+                     size_t num_flexfec_streams,
+                     unsigned int start_bitrate_bps,
+                     const std::string& extension_type,
+                     bool rtx,
+                     bool red,
+                     const std::vector<int>& loss_rates,
+                     bool report_perf_stats,
+                     TaskQueueBase* task_queue);
   ~RampUpDownUpTester() override;
 
  protected:
