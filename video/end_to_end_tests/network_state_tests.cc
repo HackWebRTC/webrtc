@@ -161,8 +161,7 @@ TEST_F(NetworkStateEndToEndTest, RespectsNetworkState) {
   static const int kNumAcceptedDowntimeRtcp = 1;
   class NetworkStateTest : public test::EndToEndTest, public test::FakeEncoder {
    public:
-    explicit NetworkStateTest(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+    explicit NetworkStateTest(TaskQueueBase* task_queue)
         : EndToEndTest(kDefaultTimeoutMs),
           FakeEncoder(Clock::GetRealTimeClock()),
           task_queue_(task_queue),
@@ -339,7 +338,7 @@ TEST_F(NetworkStateEndToEndTest, RespectsNetworkState) {
       }
     }
 
-    test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
+    TaskQueueBase* const task_queue_;
     rtc::CriticalSection test_crit_;
     rtc::Event encoded_frames_;
     rtc::Event packet_event_;

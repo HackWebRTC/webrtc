@@ -69,9 +69,7 @@ TEST_F(ProbingEndToEndTest, InitialProbing) {
 
   class InitialProbingTest : public ProbingTest {
    public:
-    explicit InitialProbingTest(
-        bool* success,
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+    explicit InitialProbingTest(bool* success, TaskQueueBase* task_queue)
         : ProbingTest(300000), success_(success), task_queue_(task_queue) {
       *success_ = false;
     }
@@ -97,7 +95,7 @@ TEST_F(ProbingEndToEndTest, InitialProbing) {
    private:
     const int kTimeoutMs = 1000;
     bool* const success_;
-    test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
+    TaskQueueBase* const task_queue_;
   };
 
   bool success = false;
@@ -124,9 +122,7 @@ TEST_F(ProbingEndToEndTest, TriggerMidCallProbing) {
 
   class TriggerMidCallProbingTest : public ProbingTest {
    public:
-    TriggerMidCallProbingTest(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
-        bool* success)
+    TriggerMidCallProbingTest(TaskQueueBase* task_queue, bool* success)
         : ProbingTest(300000), success_(success), task_queue_(task_queue) {}
 
     void PerformTest() override {
@@ -179,7 +175,7 @@ TEST_F(ProbingEndToEndTest, TriggerMidCallProbing) {
    private:
     const int kTimeoutMs = 5000;
     bool* const success_;
-    test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
+    TaskQueueBase* const task_queue_;
   };
 
   bool success = false;
@@ -204,9 +200,7 @@ TEST_F(ProbingEndToEndTest, ProbeOnVideoEncoderReconfiguration) {
 
   class ReconfigureTest : public ProbingTest {
    public:
-    ReconfigureTest(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
-        bool* success)
+    ReconfigureTest(TaskQueueBase* task_queue, bool* success)
         : ProbingTest(50000), task_queue_(task_queue), success_(success) {}
 
     void ModifyVideoConfigs(
@@ -309,7 +303,7 @@ TEST_F(ProbingEndToEndTest, ProbeOnVideoEncoderReconfiguration) {
     const int kTimeoutMs = 10000;
     const int kRampUpMaxDurationMs = 500;
 
-    test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
+    TaskQueueBase* const task_queue_;
     bool* const success_;
     SimulatedNetwork* send_simulated_network_;
     VideoSendStream* send_stream_;

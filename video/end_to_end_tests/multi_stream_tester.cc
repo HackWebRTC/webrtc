@@ -31,8 +31,7 @@
 
 namespace webrtc {
 
-MultiStreamTester::MultiStreamTester(
-    test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+MultiStreamTester::MultiStreamTester(TaskQueueBase* task_queue)
     : task_queue_(task_queue) {
   // TODO(sprang): Cleanup when msvc supports explicit initializers for array.
   codec_settings[0] = {1, 640, 480};

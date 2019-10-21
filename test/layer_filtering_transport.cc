@@ -30,7 +30,7 @@ namespace webrtc {
 namespace test {
 
 LayerFilteringTransport::LayerFilteringTransport(
-    DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
+    TaskQueueBase* task_queue,
     std::unique_ptr<SimulatedPacketReceiverInterface> pipe,
     Call* send_call,
     uint8_t vp8_video_payload_type,
@@ -50,7 +50,7 @@ LayerFilteringTransport::LayerFilteringTransport(
       ssrc_to_filter_max_(ssrc_to_filter_max) {}
 
 LayerFilteringTransport::LayerFilteringTransport(
-    DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
+    TaskQueueBase* task_queue,
     std::unique_ptr<SimulatedPacketReceiverInterface> pipe,
     Call* send_call,
     uint8_t vp8_video_payload_type,

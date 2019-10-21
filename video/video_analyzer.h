@@ -18,7 +18,9 @@
 
 #include "api/task_queue/task_queue_base.h"
 #include "api/video/video_source_interface.h"
+#include "rtc_base/event.h"
 #include "rtc_base/numerics/running_statistics.h"
+#include "rtc_base/platform_thread.h"
 #include "rtc_base/time_utils.h"
 #include "test/layer_filtering_transport.h"
 #include "test/rtp_file_writer.h"

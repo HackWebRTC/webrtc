@@ -20,7 +20,6 @@
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread_annotations.h"
-#include "test/single_threaded_task_queue.h"
 
 namespace webrtc {
 

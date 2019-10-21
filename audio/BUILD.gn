@@ -273,7 +273,6 @@ if (rtc_include_tests) {
       "../system_wrappers",
       "../test:field_trial",
       "../test:fileutils",
-      "../test:single_threaded_task_queue",
       "../test:test_common",
       "../test:test_main",
       "../test:test_support",

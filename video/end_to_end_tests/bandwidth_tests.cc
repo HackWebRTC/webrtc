@@ -19,6 +19,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "rtc_base/rate_limiter.h"
 #include "rtc_base/task_queue_for_test.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/call_test.h"
 #include "test/fake_encoder.h"
@@ -81,9 +82,7 @@ TEST_F(BandwidthEndToEndTest, ReceiveStreamSendsRemb) {
 
 class BandwidthStatsTest : public test::EndToEndTest {
  public:
-  BandwidthStatsTest(
-      bool send_side_bwe,
-      test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+  BandwidthStatsTest(bool send_side_bwe, TaskQueueBase* task_queue)
       : EndToEndTest(test::CallTest::kDefaultTimeoutMs),
         sender_call_(nullptr),
         receiver_call_(nullptr),
@@ -107,7 +106,7 @@ class BandwidthStatsTest : public test::EndToEndTest {
   Action OnSendRtp(const uint8_t* packet, size_t length) override {
     // Stats need to be fetched on the thread where the caller objects were
     // constructed.
-    task_queue_->PostTask([this]() {
+    task_queue_->PostTask(ToQueuedTask([this]() {
       Call::Stats sender_stats = sender_call_->GetStats();
       if (!has_seen_pacer_delay_)
         has_seen_pacer_delay_ = sender_stats.pacer_delay_ms > 0;
@@ -117,7 +116,7 @@ class BandwidthStatsTest : public test::EndToEndTest {
         if (send_side_bwe_ || receiver_stats.recv_bandwidth_bps > 0)
           observation_complete_.Set();
       }
-    });
+    }));
 
     return SEND_PACKET;
   }
@@ -137,7 +136,7 @@ class BandwidthStatsTest : public test::EndToEndTest {
   Call* receiver_call_;
   bool has_seen_pacer_delay_;
   const bool send_side_bwe_;
-  test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
+  TaskQueueBase* const task_queue_;
 };
 
 TEST_F(BandwidthEndToEndTest, VerifySendSideBweStats) {
@@ -158,8 +157,7 @@ TEST_F(BandwidthEndToEndTest, VerifyRecvSideBweStats) {
 TEST_F(BandwidthEndToEndTest, RembWithSendSideBwe) {
   class BweObserver : public test::EndToEndTest {
    public:
-    explicit BweObserver(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+    explicit BweObserver(TaskQueueBase* task_queue)
         : EndToEndTest(kDefaultTimeoutMs),
           sender_call_(nullptr),
           clock_(Clock::GetRealTimeClock()),
@@ -214,11 +212,10 @@ TEST_F(BandwidthEndToEndTest, RembWithSendSideBwe) {
     void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
       RTC_DCHECK(sender_call);
       sender_call_ = sender_call;
-      pending_task_ = task_queue_->PostTask([this]() { PollStats(); });
+      task_queue_->PostTask(ToQueuedTask([this]() { PollStats(); }));
     }
 
     void PollStats() {
-      pending_task_ = ~0;  // for debugging purposes indicate no pending task.
       Call::Stats stats = sender_call_->GetStats();
       switch (state_) {
         case kWaitForFirstRampUp:
@@ -251,8 +248,7 @@ TEST_F(BandwidthEndToEndTest, RembWithSendSideBwe) {
           break;
       }
 
-      pending_task_ =
-          task_queue_->PostDelayedTask([this]() { PollStats(); }, 1000);
+      task_queue_->PostDelayedTask(ToQueuedTask([this] { PollStats(); }), 1000);
     }
 
     void PerformTest() override {
@@ -271,9 +267,7 @@ TEST_F(BandwidthEndToEndTest, RembWithSendSideBwe) {
     test::PacketTransport* receive_transport_;
     TestState state_;
     RateLimiter retransmission_rate_limiter_;
-    test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
-    test::DEPRECATED_SingleThreadedTaskQueueForTesting::TaskId pending_task_ =
-        ~0;
+    TaskQueueBase* const task_queue_;
   } test(&task_queue_);
 
   RunBaseTest(&test);
@@ -289,8 +283,7 @@ TEST_F(BandwidthEndToEndTest, ReportsSetEncoderRates) {
   class EncoderRateStatsTest : public test::EndToEndTest,
                                public test::FakeEncoder {
    public:
-    explicit EncoderRateStatsTest(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+    explicit EncoderRateStatsTest(TaskQueueBase* task_queue)
         : EndToEndTest(kDefaultTimeoutMs),
           FakeEncoder(Clock::GetRealTimeClock()),
           task_queue_(task_queue),
@@ -365,7 +358,7 @@ TEST_F(BandwidthEndToEndTest, ReportsSetEncoderRates) {
     }
 
    private:
-    test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
+    TaskQueueBase* const task_queue_;
     rtc::CriticalSection crit_;
     VideoSendStream* send_stream_;
     test::VideoEncoderProxyFactory encoder_factory_;

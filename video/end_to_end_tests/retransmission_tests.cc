@@ -203,8 +203,7 @@ TEST_F(RetransmissionEndToEndTest,
        StopSendingKeyframeRequestsForInactiveStream) {
   class KeyframeRequestObserver : public test::EndToEndTest {
    public:
-    explicit KeyframeRequestObserver(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+    explicit KeyframeRequestObserver(TaskQueueBase* task_queue)
         : clock_(Clock::GetRealTimeClock()), task_queue_(task_queue) {}
 
     void OnVideoStreamsCreated(
@@ -236,7 +235,7 @@ TEST_F(RetransmissionEndToEndTest,
     Clock* clock_;
     VideoSendStream* send_stream_;
     VideoReceiveStream* receive_stream_;
-    test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
+    TaskQueueBase* const task_queue_;
   } test(&task_queue_);
 
   RunBaseTest(&test);

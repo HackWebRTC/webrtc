@@ -17,7 +17,6 @@
 #include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/time_utils.h"
 #include "test/rtp_header_parser.h"
-#include "test/single_threaded_task_queue.h"
 
 namespace webrtc {
 namespace test {

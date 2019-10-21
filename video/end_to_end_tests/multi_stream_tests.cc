@@ -24,7 +24,6 @@
 #include "test/call_test.h"
 #include "test/frame_generator_capturer.h"
 #include "test/gtest.h"
-#include "test/single_threaded_task_queue.h"
 #include "video/end_to_end_tests/multi_stream_tester.h"
 
 namespace webrtc {
@@ -63,8 +62,7 @@ TEST_F(MultiStreamEndToEndTest, SendsAndReceivesMultipleStreams) {
 
   class Tester : public MultiStreamTester {
    public:
-    explicit Tester(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+    explicit Tester(TaskQueueBase* task_queue)
         : MultiStreamTester(task_queue) {}
     virtual ~Tester() {}
 

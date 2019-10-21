@@ -40,7 +40,6 @@
 #include "test/gtest.h"
 #include "test/rtcp_packet_parser.h"
 #include "test/rtp_rtcp_observer.h"
-#include "test/single_threaded_task_queue.h"
 
 namespace webrtc {
 namespace {

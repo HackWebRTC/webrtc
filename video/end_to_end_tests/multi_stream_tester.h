@@ -35,8 +35,7 @@ class MultiStreamTester {
     int height;
   } codec_settings[kNumStreams];
 
-  explicit MultiStreamTester(
-      test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue);
+  explicit MultiStreamTester(TaskQueueBase* task_queue);
 
   virtual ~MultiStreamTester();
 
@@ -60,7 +59,7 @@ class MultiStreamTester {
       TaskQueueBase* task_queue,
       Call* receiver_call);
 
-  test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
+  TaskQueueBase* const task_queue_;
 };
 }  // namespace webrtc
 #endif  // VIDEO_END_TO_END_TESTS_MULTI_STREAM_TESTER_H_

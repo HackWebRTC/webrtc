@@ -166,8 +166,7 @@ TEST_F(TransportFeedbackEndToEndTest, AssignsTransportSequenceNumbers) {
 
   class TransportSequenceNumberTester : public MultiStreamTester {
    public:
-    explicit TransportSequenceNumberTester(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+    explicit TransportSequenceNumberTester(TaskQueueBase* task_queue)
         : MultiStreamTester(task_queue),
           first_media_ssrc_(0),
           observer_(nullptr) {}

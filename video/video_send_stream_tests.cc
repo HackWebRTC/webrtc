@@ -38,6 +38,7 @@
 #include "rtc_base/rate_limiter.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_queue_for_test.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/unique_id_generator.h"
 #include "system_wrappers/include/sleep.h"
@@ -1692,8 +1693,7 @@ TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
   static const uint8_t kExtensionId = kTransportSequenceNumberExtensionId;
   class ChangingNetworkRouteTest : public test::EndToEndTest {
    public:
-    explicit ChangingNetworkRouteTest(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+    explicit ChangingNetworkRouteTest(TaskQueueBase* task_queue)
         : EndToEndTest(test::CallTest::kDefaultTimeoutMs),
           task_queue_(task_queue),
           call_(nullptr) {
@@ -1735,14 +1735,14 @@ TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
 
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       RTC_DCHECK_RUN_ON(&module_process_thread_);
-      task_queue_->PostTask([this]() {
+      task_queue_->PostTask(ToQueuedTask([this]() {
         RTC_DCHECK_RUN_ON(&task_queue_thread_);
         if (!call_)
           return;
         Call::Stats stats = call_->GetStats();
         if (stats.send_bandwidth_bps > kStartBitrateBps)
           observation_complete_.Set();
-      });
+      }));
       return SEND_PACKET;
     }
 
@@ -1791,7 +1791,7 @@ TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
    private:
     webrtc::SequenceChecker module_process_thread_;
     webrtc::SequenceChecker task_queue_thread_;
-    test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
+    TaskQueueBase* const task_queue_;
     Call* call_ RTC_GUARDED_BY(task_queue_thread_);
   } test(&task_queue_);
 
@@ -1801,8 +1801,7 @@ TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
 TEST_F(VideoSendStreamTest, ChangingTransportOverhead) {
   class ChangingTransportOverheadTest : public test::EndToEndTest {
    public:
-    explicit ChangingTransportOverheadTest(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+    explicit ChangingTransportOverheadTest(TaskQueueBase* task_queue)
         : EndToEndTest(test::CallTest::kDefaultTimeoutMs),
           task_queue_(task_queue),
           call_(nullptr),
@@ -1853,7 +1852,7 @@ TEST_F(VideoSendStreamTest, ChangingTransportOverhead) {
     }
 
    private:
-    test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
+    TaskQueueBase* const task_queue_;
     Call* call_;
     rtc::CriticalSection lock_;
     int packets_sent_ RTC_GUARDED_BY(lock_);
@@ -1876,10 +1875,9 @@ class MaxPaddingSetTest : public test::SendTest {
   static const uint32_t kActualEncodeBitrateBps = 40000;
   static const uint32_t kMinPacketsToSend = 50;
 
-  MaxPaddingSetTest(
-      bool test_switch_content_type,
-      T* stream_reset_fun,
-      test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+  MaxPaddingSetTest(bool test_switch_content_type,
+                    T* stream_reset_fun,
+                    TaskQueueBase* task_queue)
       : SendTest(test::CallTest::kDefaultTimeoutMs),
         running_without_padding_(test_switch_content_type),
         stream_resetter_(stream_reset_fun),
@@ -1922,7 +1920,7 @@ class MaxPaddingSetTest : public test::SendTest {
     // Check the stats on the correct thread and signal the 'complete' flag
     // once we detect that we're done.
 
-    task_queue_->PostTask([this]() {
+    task_queue_->PostTask(ToQueuedTask([this]() {
       RTC_DCHECK_RUN_ON(&task_queue_thread_);
       // In case we get a callback during teardown.
       // When this happens, OnStreamsStopped() has been called already,
@@ -1957,7 +1955,7 @@ class MaxPaddingSetTest : public test::SendTest {
           observation_complete_.Set();
         }
       }
-    });
+    }));
 
     return SEND_PACKET;
   }
@@ -1982,7 +1980,7 @@ class MaxPaddingSetTest : public test::SendTest {
   uint32_t packets_sent_ RTC_GUARDED_BY(task_queue_thread_) = 0;
   bool running_without_padding_ RTC_GUARDED_BY(task_queue_thread_);
   T* const stream_resetter_;
-  test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
+  TaskQueueBase* const task_queue_;
 };
 
 TEST_F(VideoSendStreamTest, RespectsMinTransmitBitrate) {
@@ -2353,8 +2351,7 @@ VideoFrame CreateVideoFrame(int width, int height, uint8_t data) {
 TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
   class EncoderStateObserver : public test::SendTest, public VideoEncoder {
    public:
-    explicit EncoderStateObserver(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+    explicit EncoderStateObserver(TaskQueueBase* task_queue)
         : SendTest(kDefaultTimeoutMs),
           task_queue_(task_queue),
           stream_(nullptr),
@@ -2458,7 +2455,7 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
       EXPECT_TRUE(Wait()) << "Timed out while waiting for Encode.";
     }
 
-    test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
+    TaskQueueBase* const task_queue_;
     rtc::CriticalSection crit_;
     VideoSendStream* stream_;
     bool initialized_ RTC_GUARDED_BY(crit_);
@@ -2814,8 +2811,7 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
                                           public VideoBitrateAllocatorFactory,
                                           public test::FakeEncoder {
    public:
-    explicit EncoderBitrateThresholdObserver(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+    explicit EncoderBitrateThresholdObserver(TaskQueueBase* task_queue)
         : SendTest(kDefaultTimeoutMs),
           FakeEncoder(Clock::GetRealTimeClock()),
           task_queue_(task_queue),
@@ -2979,7 +2975,7 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
       EXPECT_EQ(1, num_encoder_initializations_);
     }
 
-    test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
+    TaskQueueBase* const task_queue_;
     rtc::Event create_rate_allocator_event_;
     rtc::Event init_encode_event_;
     rtc::Event bitrate_changed_event_;
@@ -3655,8 +3651,7 @@ TEST_F(VideoSendStreamTest, RemoveOverheadFromBandwidth) {
   class RemoveOverheadFromBandwidthTest : public test::EndToEndTest,
                                           public test::FakeEncoder {
    public:
-    explicit RemoveOverheadFromBandwidthTest(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+    explicit RemoveOverheadFromBandwidthTest(TaskQueueBase* task_queue)
         : EndToEndTest(test::CallTest::kDefaultTimeoutMs),
           FakeEncoder(Clock::GetRealTimeClock()),
           task_queue_(task_queue),
@@ -3721,7 +3716,7 @@ TEST_F(VideoSendStreamTest, RemoveOverheadFromBandwidth) {
     }
 
    private:
-    test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
+    TaskQueueBase* const task_queue_;
     test::VideoEncoderProxyFactory encoder_factory_;
     Call* call_;
     rtc::CriticalSection crit_;

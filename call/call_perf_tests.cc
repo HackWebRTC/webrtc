@@ -44,7 +44,6 @@
 #include "test/null_transport.h"
 #include "test/rtp_header_parser.h"
 #include "test/rtp_rtcp_observer.h"
-#include "test/single_threaded_task_queue.h"
 #include "test/testsupport/file_utils.h"
 #include "test/testsupport/perf_test.h"
 #include "test/video_encoder_proxy_factory.h"
@@ -862,14 +861,13 @@ void CallPerfTest::TestMinAudioVideoBitrate(int test_bitrate_from,
 
   class MinVideoAndAudioBitrateTester : public test::EndToEndTest {
    public:
-    MinVideoAndAudioBitrateTester(
-        int test_bitrate_from,
-        int test_bitrate_to,
-        int test_bitrate_step,
-        int min_bwe,
-        int start_bwe,
-        int max_bwe,
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+    MinVideoAndAudioBitrateTester(int test_bitrate_from,
+                                  int test_bitrate_to,
+                                  int test_bitrate_step,
+                                  int min_bwe,
+                                  int start_bwe,
+                                  int max_bwe,
+                                  TaskQueueBase* task_queue)
         : EndToEndTest(),
           test_bitrate_from_(test_bitrate_from),
           test_bitrate_to_(test_bitrate_to),
@@ -984,7 +982,7 @@ void CallPerfTest::TestMinAudioVideoBitrate(int test_bitrate_from,
     SimulatedNetwork* send_simulated_network_;
     SimulatedNetwork* receive_simulated_network_;
     Call* sender_call_;
-    test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
+    TaskQueueBase* const task_queue_;
   } test(test_bitrate_from, test_bitrate_to, test_bitrate_step, min_bwe,
          start_bwe, max_bwe, &task_queue_);
 

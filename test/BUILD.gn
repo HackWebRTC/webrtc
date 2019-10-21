@@ -623,7 +623,6 @@ rtc_library("direct_transport") {
     "//third_party/abseil-cpp/absl/memory",
   ]
   public_deps = [  # no-presubmit-check TODO(webrtc:8603)
-    ":single_threaded_task_queue",
     "../call:fake_network",
   ]
 }
@@ -749,6 +748,7 @@ rtc_library("test_common") {
     ":fake_video_codecs",
     ":fileutils",
     ":rtp_test_utils",
+    ":single_threaded_task_queue",
     ":test_support",
     ":video_test_common",
     "../api:rtp_headers",
