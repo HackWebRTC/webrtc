@@ -25,7 +25,7 @@
 namespace webrtc {
 
 template <typename Closure>
-void SendTask(TaskQueueBase* task_queue, Closure&& task, rtc::Location loc) {
+void SendTask(rtc::Location loc, TaskQueueBase* task_queue, Closure&& task) {
   RTC_CHECK(!task_queue->IsCurrent())
       << "Called SendTask to a queue from the same queue at " << loc.ToString();
   rtc::Event event;
@@ -64,7 +64,7 @@ class RTC_LOCKABLE TaskQueueForTest : public rtc::TaskQueue {
   // a task executes on the task queue.
   template <class Closure>
   void SendTask(Closure&& task, rtc::Location loc) {
-    ::webrtc::SendTask(Get(), std::forward<Closure>(task), loc);
+    ::webrtc::SendTask(loc, Get(), std::forward<Closure>(task));
   }
 };
 

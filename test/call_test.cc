@@ -24,6 +24,7 @@
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "test/fake_encoder.h"
 #include "test/testsupport/file_utils.h"
 
@@ -63,7 +64,7 @@ CallTest::~CallTest() {
   // cleanup). However, there are some tests that don't use the class that way
   // hence we need this special handling for cleaning up.
   if (task_queue_.IsRunning()) {
-    task_queue_.SendTask([this]() {
+    SendTask(RTC_FROM_HERE, &task_queue_, [this]() {
       fake_send_audio_device_ = nullptr;
       fake_recv_audio_device_ = nullptr;
       video_sources_.clear();
@@ -95,7 +96,7 @@ void CallTest::RegisterRtpExtension(const RtpExtension& extension) {
 }
 
 void CallTest::RunBaseTest(BaseTest* test) {
-  task_queue_.SendTask([this, test]() {
+  SendTask(RTC_FROM_HERE, &task_queue_, [this, test]() {
     num_video_streams_ = test->GetNumVideoStreams();
     num_audio_streams_ = test->GetNumAudioStreams();
     num_flexfec_streams_ = test->GetNumFlexfecStreams();
@@ -195,7 +196,7 @@ void CallTest::RunBaseTest(BaseTest* test) {
 
   test->PerformTest();
 
-  task_queue_.SendTask([this, test]() {
+  SendTask(RTC_FROM_HERE, &task_queue_, [this, test]() {
     Stop();
     test->OnStreamsStopped();
     DestroyStreams();

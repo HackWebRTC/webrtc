@@ -12,6 +12,7 @@
 #include "api/test/simulated_network.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/call_test.h"
 #include "test/field_trial.h"
@@ -93,54 +94,57 @@ TEST_F(CallOperationEndToEndTest, RendersSingleDelayedFrame) {
   std::unique_ptr<test::DirectTransport> sender_transport;
   std::unique_ptr<test::DirectTransport> receiver_transport;
 
-  task_queue_.SendTask([this, &renderer, &frame_forwarder, &sender_transport,
-                        &receiver_transport]() {
-    CreateCalls();
+  SendTask(
+      RTC_FROM_HERE, &task_queue_,
+      [this, &renderer, &frame_forwarder, &sender_transport,
+       &receiver_transport]() {
+        CreateCalls();
 
-    sender_transport = std::make_unique<test::DirectTransport>(
-        &task_queue_,
-        std::make_unique<FakeNetworkPipe>(
-            Clock::GetRealTimeClock(),
-            std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())),
-        sender_call_.get(), payload_type_map_);
-    receiver_transport = std::make_unique<test::DirectTransport>(
-        &task_queue_,
-        std::make_unique<FakeNetworkPipe>(
-            Clock::GetRealTimeClock(),
-            std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())),
-        receiver_call_.get(), payload_type_map_);
-    sender_transport->SetReceiver(receiver_call_->Receiver());
-    receiver_transport->SetReceiver(sender_call_->Receiver());
+        sender_transport = std::make_unique<test::DirectTransport>(
+            &task_queue_,
+            std::make_unique<FakeNetworkPipe>(
+                Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
+                                               BuiltInNetworkBehaviorConfig())),
+            sender_call_.get(), payload_type_map_);
+        receiver_transport = std::make_unique<test::DirectTransport>(
+            &task_queue_,
+            std::make_unique<FakeNetworkPipe>(
+                Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
+                                               BuiltInNetworkBehaviorConfig())),
+            receiver_call_.get(), payload_type_map_);
+        sender_transport->SetReceiver(receiver_call_->Receiver());
+        receiver_transport->SetReceiver(sender_call_->Receiver());
 
-    CreateSendConfig(1, 0, 0, sender_transport.get());
-    CreateMatchingReceiveConfigs(receiver_transport.get());
+        CreateSendConfig(1, 0, 0, sender_transport.get());
+        CreateMatchingReceiveConfigs(receiver_transport.get());
 
-    video_receive_configs_[0].renderer = &renderer;
+        video_receive_configs_[0].renderer = &renderer;
 
-    CreateVideoStreams();
-    Start();
+        CreateVideoStreams();
+        Start();
 
-    // Create frames that are smaller than the send width/height, this is done
-    // to check that the callbacks are done after processing video.
-    std::unique_ptr<test::FrameGenerator> frame_generator(
-        test::FrameGenerator::CreateSquareGenerator(
-            kWidth, kHeight, absl::nullopt, absl::nullopt));
-    GetVideoSendStream()->SetSource(&frame_forwarder,
-                                    DegradationPreference::MAINTAIN_FRAMERATE);
+        // Create frames that are smaller than the send width/height, this is
+        // done to check that the callbacks are done after processing video.
+        std::unique_ptr<test::FrameGenerator> frame_generator(
+            test::FrameGenerator::CreateSquareGenerator(
+                kWidth, kHeight, absl::nullopt, absl::nullopt));
+        GetVideoSendStream()->SetSource(
+            &frame_forwarder, DegradationPreference::MAINTAIN_FRAMERATE);
 
-    frame_forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
-  });
+        frame_forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
+      });
 
   EXPECT_TRUE(renderer.Wait())
       << "Timed out while waiting for the frame to render.";
 
-  task_queue_.SendTask([this, &sender_transport, &receiver_transport]() {
-    Stop();
-    DestroyStreams();
-    sender_transport.reset();
-    receiver_transport.reset();
-    DestroyCalls();
-  });
+  SendTask(RTC_FROM_HERE, &task_queue_,
+           [this, &sender_transport, &receiver_transport]() {
+             Stop();
+             DestroyStreams();
+             sender_transport.reset();
+             receiver_transport.reset();
+             DestroyCalls();
+           });
 }
 
 TEST_F(CallOperationEndToEndTest, TransmitsFirstFrame) {
@@ -159,49 +163,52 @@ TEST_F(CallOperationEndToEndTest, TransmitsFirstFrame) {
   std::unique_ptr<test::DirectTransport> sender_transport;
   std::unique_ptr<test::DirectTransport> receiver_transport;
 
-  task_queue_.SendTask([this, &renderer, &frame_generator, &frame_forwarder,
-                        &sender_transport, &receiver_transport]() {
-    CreateCalls();
+  SendTask(
+      RTC_FROM_HERE, &task_queue_,
+      [this, &renderer, &frame_generator, &frame_forwarder, &sender_transport,
+       &receiver_transport]() {
+        CreateCalls();
 
-    sender_transport = std::make_unique<test::DirectTransport>(
-        &task_queue_,
-        std::make_unique<FakeNetworkPipe>(
-            Clock::GetRealTimeClock(),
-            std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())),
-        sender_call_.get(), payload_type_map_);
-    receiver_transport = std::make_unique<test::DirectTransport>(
-        &task_queue_,
-        std::make_unique<FakeNetworkPipe>(
-            Clock::GetRealTimeClock(),
-            std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())),
-        receiver_call_.get(), payload_type_map_);
-    sender_transport->SetReceiver(receiver_call_->Receiver());
-    receiver_transport->SetReceiver(sender_call_->Receiver());
+        sender_transport = std::make_unique<test::DirectTransport>(
+            &task_queue_,
+            std::make_unique<FakeNetworkPipe>(
+                Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
+                                               BuiltInNetworkBehaviorConfig())),
+            sender_call_.get(), payload_type_map_);
+        receiver_transport = std::make_unique<test::DirectTransport>(
+            &task_queue_,
+            std::make_unique<FakeNetworkPipe>(
+                Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
+                                               BuiltInNetworkBehaviorConfig())),
+            receiver_call_.get(), payload_type_map_);
+        sender_transport->SetReceiver(receiver_call_->Receiver());
+        receiver_transport->SetReceiver(sender_call_->Receiver());
 
-    CreateSendConfig(1, 0, 0, sender_transport.get());
-    CreateMatchingReceiveConfigs(receiver_transport.get());
-    video_receive_configs_[0].renderer = &renderer;
+        CreateSendConfig(1, 0, 0, sender_transport.get());
+        CreateMatchingReceiveConfigs(receiver_transport.get());
+        video_receive_configs_[0].renderer = &renderer;
 
-    CreateVideoStreams();
-    Start();
+        CreateVideoStreams();
+        Start();
 
-    frame_generator = test::FrameGenerator::CreateSquareGenerator(
-        kDefaultWidth, kDefaultHeight, absl::nullopt, absl::nullopt);
-    GetVideoSendStream()->SetSource(&frame_forwarder,
-                                    DegradationPreference::MAINTAIN_FRAMERATE);
-    frame_forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
-  });
+        frame_generator = test::FrameGenerator::CreateSquareGenerator(
+            kDefaultWidth, kDefaultHeight, absl::nullopt, absl::nullopt);
+        GetVideoSendStream()->SetSource(
+            &frame_forwarder, DegradationPreference::MAINTAIN_FRAMERATE);
+        frame_forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
+      });
 
   EXPECT_TRUE(renderer.Wait())
       << "Timed out while waiting for the frame to render.";
 
-  task_queue_.SendTask([this, &sender_transport, &receiver_transport]() {
-    Stop();
-    DestroyStreams();
-    sender_transport.reset();
-    receiver_transport.reset();
-    DestroyCalls();
-  });
+  SendTask(RTC_FROM_HERE, &task_queue_,
+           [this, &sender_transport, &receiver_transport]() {
+             Stop();
+             DestroyStreams();
+             sender_transport.reset();
+             receiver_transport.reset();
+             DestroyCalls();
+           });
 }
 
 }  // namespace webrtc

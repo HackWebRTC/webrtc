@@ -18,6 +18,7 @@
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "test/call_test.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -127,7 +128,7 @@ class FrameObserver : public test::RtpRtcpObserver,
 class MultiCodecReceiveTest : public test::CallTest {
  public:
   MultiCodecReceiveTest() {
-    task_queue_.SendTask([this]() {
+    SendTask(RTC_FROM_HERE, &task_queue_, [this]() {
       CreateCalls();
 
       send_transport_.reset(new test::PacketTransport(
@@ -149,7 +150,7 @@ class MultiCodecReceiveTest : public test::CallTest {
   }
 
   virtual ~MultiCodecReceiveTest() {
-    task_queue_.SendTask([this]() {
+    SendTask(RTC_FROM_HERE, &task_queue_, [this]() {
       send_transport_.reset();
       receive_transport_.reset();
       DestroyCalls();
@@ -208,7 +209,7 @@ void MultiCodecReceiveTest::RunTestWithCodecs(
   EXPECT_TRUE(!configs.empty());
 
   // Create and start call.
-  task_queue_.SendTask([this, &configs]() {
+  SendTask(RTC_FROM_HERE, &task_queue_, [this, &configs]() {
     CreateSendConfig(1, 0, 0, send_transport_.get());
     ConfigureEncoder(configs[0]);
     CreateMatchingReceiveConfigs(receive_transport_.get());
@@ -224,7 +225,7 @@ void MultiCodecReceiveTest::RunTestWithCodecs(
 
   for (size_t i = 1; i < configs.size(); ++i) {
     // Recreate VideoSendStream with new config (codec, temporal layers).
-    task_queue_.SendTask([this, i, &configs]() {
+    SendTask(RTC_FROM_HERE, &task_queue_, [this, i, &configs]() {
       DestroyVideoSendStreams();
       observer_.Reset(PayloadNameToPayloadType(configs[i].payload_name));
 
@@ -237,7 +238,7 @@ void MultiCodecReceiveTest::RunTestWithCodecs(
     EXPECT_TRUE(observer_.Wait()) << "Timed out waiting for frames.";
   }
 
-  task_queue_.SendTask([this]() {
+  SendTask(RTC_FROM_HERE, &task_queue_, [this]() {
     Stop();
     DestroyStreams();
   });

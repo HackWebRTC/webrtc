@@ -23,6 +23,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/string_encode.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/time_utils.h"
 #include "test/encoder_settings.h"
 #include "test/field_trial.h"
@@ -93,7 +94,7 @@ RampUpTester::RampUpTester(
 
 RampUpTester::~RampUpTester() {
   // Special case for WebRTC-QuickPerfTest/Enabled/
-  task_queue_->SendTask([this]() {
+  SendTask(RTC_FROM_HERE, task_queue_, [this]() {
     if (pending_task_ !=
         static_cast<test::DEPRECATED_SingleThreadedTaskQueueForTesting::TaskId>(
             -1)) {
@@ -380,7 +381,7 @@ void RampUpTester::TriggerTestDone() {
 
   // Stop polling stats.
   // Corner case for field_trials=WebRTC-QuickPerfTest/Enabled/
-  task_queue_->SendTask([this]() {
+  SendTask(RTC_FROM_HERE, task_queue_, [this]() {
     if (pending_task_ !=
         static_cast<test::DEPRECATED_SingleThreadedTaskQueueForTesting::TaskId>(
             -1)) {

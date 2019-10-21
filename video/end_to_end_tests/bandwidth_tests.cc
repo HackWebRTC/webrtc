@@ -18,6 +18,7 @@
 #include "call/simulated_network.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "rtc_base/rate_limiter.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/call_test.h"
 #include "test/fake_encoder.h"
@@ -328,7 +329,7 @@ TEST_F(BandwidthEndToEndTest, ReportsSetEncoderRates) {
       ASSERT_TRUE(Wait())
           << "Timed out while waiting for encoder SetRates() call.";
 
-      task_queue_->SendTask([this]() {
+      SendTask(RTC_FROM_HERE, task_queue_, [this]() {
         WaitForEncoderTargetBitrateMatchStats();
         send_stream_->Stop();
         WaitForStatsReportZeroTargetBitrate();

@@ -17,6 +17,7 @@
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/call_test.h"
 #include "test/field_trial.h"
@@ -225,7 +226,7 @@ TEST_F(RetransmissionEndToEndTest,
         SleepMs(100);
       }
       ASSERT_TRUE(frame_decoded);
-      task_queue_->SendTask([this]() { send_stream_->Stop(); });
+      SendTask(RTC_FROM_HERE, task_queue_, [this]() { send_stream_->Stop(); });
       SleepMs(10000);
       ASSERT_EQ(
           1U, receive_stream_->GetStats().rtcp_packet_type_counts.pli_packets);

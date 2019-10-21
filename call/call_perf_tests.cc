@@ -28,6 +28,7 @@
 #include "modules/audio_device/include/test_audio_device.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/metrics.h"
@@ -182,7 +183,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   AudioReceiveStream* audio_receive_stream;
   std::unique_ptr<DriftingClock> drifting_clock;
 
-  task_queue_.SendTask([&]() {
+  SendTask(RTC_FROM_HERE, &task_queue_, [&]() {
     metrics::Reset();
     rtc::scoped_refptr<TestAudioDeviceModule> fake_audio_device =
         TestAudioDeviceModule::Create(
@@ -297,7 +298,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   EXPECT_TRUE(observer.Wait())
       << "Timed out while waiting for audio and video to be synchronized.";
 
-  task_queue_.SendTask([&]() {
+  SendTask(RTC_FROM_HERE, &task_queue_, [&]() {
     audio_send_stream->Stop();
     audio_receive_stream->Stop();
 
@@ -932,8 +933,9 @@ void CallPerfTest::TestMinAudioVideoBitrate(int test_bitrate_from,
         int64_t avg_rtt = 0;
         for (int i = 0; i < kBitrateMeasurements; i++) {
           Call::Stats call_stats;
-          task_queue_->SendTask(
-              [this, &call_stats]() { call_stats = sender_call_->GetStats(); });
+          SendTask(RTC_FROM_HERE, task_queue_, [this, &call_stats]() {
+            call_stats = sender_call_->GetStats();
+          });
           avg_rtt += call_stats.rtt_ms;
           rtc::Thread::SleepMs(quick_perf_test ? kShortDelayMs
                                                : kBitrateMeasurementMs);

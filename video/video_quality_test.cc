@@ -41,6 +41,7 @@
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "test/platform_video_capturer.h"
 #include "test/run_loop.h"
 #include "test/testsupport/file_utils.h"
@@ -1254,19 +1255,20 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
     recv_event_log_ = std::make_unique<RtcEventLogNull>();
   }
 
-  task_queue_.SendTask([this, &params, &send_transport, &recv_transport]() {
-    Call::Config send_call_config(send_event_log_.get());
-    Call::Config recv_call_config(recv_event_log_.get());
-    send_call_config.bitrate_config = params.call.call_bitrate_config;
-    recv_call_config.bitrate_config = params.call.call_bitrate_config;
-    if (params_.audio.enabled)
-      InitializeAudioDevice(&send_call_config, &recv_call_config,
-                            params_.audio.use_real_adm);
+  SendTask(RTC_FROM_HERE, &task_queue_,
+           [this, &params, &send_transport, &recv_transport]() {
+             Call::Config send_call_config(send_event_log_.get());
+             Call::Config recv_call_config(recv_event_log_.get());
+             send_call_config.bitrate_config = params.call.call_bitrate_config;
+             recv_call_config.bitrate_config = params.call.call_bitrate_config;
+             if (params_.audio.enabled)
+               InitializeAudioDevice(&send_call_config, &recv_call_config,
+                                     params_.audio.use_real_adm);
 
-    CreateCalls(send_call_config, recv_call_config);
-    send_transport = CreateSendTransport();
-    recv_transport = CreateReceiveTransport();
-  });
+             CreateCalls(send_call_config, recv_call_config);
+             send_transport = CreateSendTransport();
+             recv_transport = CreateReceiveTransport();
+           });
 
   std::string graph_title = params_.analyzer.graph_title;
   if (graph_title.empty())
@@ -1286,7 +1288,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
       is_quick_test_enabled, clock_, params_.logging.rtp_dump_name,
       &task_queue_);
 
-  task_queue_.SendTask([&]() {
+  SendTask(RTC_FROM_HERE, &task_queue_, [&]() {
     analyzer_->SetCall(sender_call_.get());
     analyzer_->SetReceiver(receiver_call_->Receiver());
     send_transport->SetReceiver(analyzer_.get());
@@ -1332,7 +1334,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
 
   analyzer_->Wait();
 
-  task_queue_.SendTask([&]() {
+  SendTask(RTC_FROM_HERE, &task_queue_, [&]() {
     StopThumbnails();
     Stop();
 
@@ -1475,7 +1477,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     recv_event_log_ = std::make_unique<RtcEventLogNull>();
   }
 
-  task_queue_.SendTask([&]() {
+  SendTask(RTC_FROM_HERE, &task_queue_, [&]() {
     params_ = params;
     CheckParamsAndInjectionComponents();
 
@@ -1564,7 +1566,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
   test::PressEnterToContinue(task_queue_);
 
-  task_queue_.SendTask([&]() {
+  SendTask(RTC_FROM_HERE, &task_queue_, [&]() {
     Stop();
     DestroyStreams();
 

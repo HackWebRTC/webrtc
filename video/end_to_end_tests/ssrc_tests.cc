@@ -13,6 +13,7 @@
 #include "api/test/simulated_network.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "test/call_test.h"
 #include "test/gtest.h"
 #include "test/rtcp_packet_parser.h"
@@ -78,7 +79,8 @@ TEST_F(SsrcEndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
   std::unique_ptr<test::DirectTransport> receive_transport;
   std::unique_ptr<PacketInputObserver> input_observer;
 
-  task_queue_.SendTask(
+  SendTask(
+      RTC_FROM_HERE, &task_queue_,
       [this, &send_transport, &receive_transport, &input_observer]() {
         CreateCalls();
 
@@ -114,13 +116,14 @@ TEST_F(SsrcEndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
   // Wait() waits for a received packet.
   EXPECT_TRUE(input_observer->Wait());
 
-  task_queue_.SendTask([this, &send_transport, &receive_transport]() {
-    Stop();
-    DestroyStreams();
-    send_transport.reset();
-    receive_transport.reset();
-    DestroyCalls();
-  });
+  SendTask(RTC_FROM_HERE, &task_queue_,
+           [this, &send_transport, &receive_transport]() {
+             Stop();
+             DestroyStreams();
+             send_transport.reset();
+             receive_transport.reset();
+             DestroyCalls();
+           });
 }
 
 void SsrcEndToEndTest::TestSendsSetSsrcs(size_t num_ssrcs,

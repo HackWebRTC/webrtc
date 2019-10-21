@@ -25,6 +25,7 @@
 #include "call/simulated_network.h"
 #include "media/engine/internal_decoder_factory.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "test/call_test.h"
 #include "test/encoder_settings.h"
 
@@ -64,7 +65,7 @@ void MultiStreamTester::RunTest() {
       CreateBuiltinVideoBitrateAllocatorFactory();
   InternalDecoderFactory decoder_factory;
 
-  task_queue_->SendTask([&]() {
+  SendTask(RTC_FROM_HERE, task_queue_, [&]() {
     sender_call = absl::WrapUnique(Call::Create(config));
     receiver_call = absl::WrapUnique(Call::Create(config));
     sender_transport = CreateSendTransport(task_queue_, sender_call.get());
@@ -125,7 +126,7 @@ void MultiStreamTester::RunTest() {
 
   Wait();
 
-  task_queue_->SendTask([&]() {
+  SendTask(RTC_FROM_HERE, task_queue_, [&]() {
     for (size_t i = 0; i < kNumStreams; ++i) {
       frame_generators[i]->Stop();
       sender_call->DestroyVideoSendStream(send_streams[i]);

@@ -14,6 +14,7 @@
 #include "api/test/simulated_network.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "test/call_test.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
@@ -82,8 +83,8 @@ TEST_F(ProbingEndToEndTest, InitialProbing) {
           break;
 
         Call::Stats stats;
-        task_queue_->SendTask(
-            [this, &stats]() { stats = sender_call_->GetStats(); });
+        SendTask(RTC_FROM_HERE, task_queue_,
+                 [this, &stats]() { stats = sender_call_->GetStats(); });
         // Initial probing is done with a x3 and x6 multiplier of the start
         // bitrate, so a x4 multiplier is a high enough threshold.
         if (stats.send_bandwidth_bps > 4 * 300000) {
@@ -136,15 +137,15 @@ TEST_F(ProbingEndToEndTest, TriggerMidCallProbing) {
           break;
 
         Call::Stats stats;
-        task_queue_->SendTask(
-            [this, &stats]() { stats = sender_call_->GetStats(); });
+        SendTask(RTC_FROM_HERE, task_queue_,
+                 [this, &stats]() { stats = sender_call_->GetStats(); });
 
         switch (state_) {
           case 0:
             if (stats.send_bandwidth_bps > 5 * 300000) {
               BitrateConstraints bitrate_config;
               bitrate_config.max_bitrate_bps = 100000;
-              task_queue_->SendTask([this, &bitrate_config]() {
+              SendTask(RTC_FROM_HERE, task_queue_, [this, &bitrate_config]() {
                 sender_call_->GetTransportControllerSend()
                     ->SetSdpBitrateParameters(bitrate_config);
               });
@@ -155,7 +156,7 @@ TEST_F(ProbingEndToEndTest, TriggerMidCallProbing) {
             if (stats.send_bandwidth_bps < 110000) {
               BitrateConstraints bitrate_config;
               bitrate_config.max_bitrate_bps = 2500000;
-              task_queue_->SendTask([this, &bitrate_config]() {
+              SendTask(RTC_FROM_HERE, task_queue_, [this, &bitrate_config]() {
                 sender_call_->GetTransportControllerSend()
                     ->SetSdpBitrateParameters(bitrate_config);
               });
@@ -243,8 +244,8 @@ TEST_F(ProbingEndToEndTest, ProbeOnVideoEncoderReconfiguration) {
           break;
 
         Call::Stats stats;
-        task_queue_->SendTask(
-            [this, &stats]() { stats = sender_call_->GetStats(); });
+        SendTask(RTC_FROM_HERE, task_queue_,
+                 [this, &stats]() { stats = sender_call_->GetStats(); });
 
         switch (state_) {
           case 0:
@@ -284,7 +285,7 @@ TEST_F(ProbingEndToEndTest, ProbeOnVideoEncoderReconfiguration) {
               // should trigger an allocation probe and fast ramp-up.
               encoder_config_->max_bitrate_bps = 2000000;
               encoder_config_->simulcast_layers[0].max_bitrate_bps = 1200000;
-              task_queue_->SendTask([this]() {
+              SendTask(RTC_FROM_HERE, task_queue_, [this]() {
                 send_stream_->ReconfigureVideoEncoder(encoder_config_->Copy());
               });
               max_allocation_change_time_ms = clock_->TimeInMilliseconds();

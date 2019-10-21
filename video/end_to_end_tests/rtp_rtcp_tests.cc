@@ -15,6 +15,7 @@
 #include "call/simulated_network.h"
 #include "modules/include/module_common_types_public.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "test/call_test.h"
 #include "test/gtest.h"
 #include "test/rtcp_packet_parser.h"
@@ -281,48 +282,52 @@ void RtpRtcpEndToEndTest::TestRtpStatePreservation(
 
   VideoEncoderConfig one_stream;
 
-  task_queue_.SendTask([this, &observer, &send_transport, &receive_transport,
-                        &one_stream, use_rtx]() {
-    CreateCalls();
+  SendTask(
+      RTC_FROM_HERE, &task_queue_,
+      [this, &observer, &send_transport, &receive_transport, &one_stream,
+       use_rtx]() {
+        CreateCalls();
 
-    send_transport = std::make_unique<test::PacketTransport>(
-        &task_queue_, sender_call_.get(), &observer,
-        test::PacketTransport::kSender, payload_type_map_,
-        std::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
-                                          std::make_unique<SimulatedNetwork>(
-                                              BuiltInNetworkBehaviorConfig())));
-    receive_transport = std::make_unique<test::PacketTransport>(
-        &task_queue_, nullptr, &observer, test::PacketTransport::kReceiver,
-        payload_type_map_,
-        std::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
-                                          std::make_unique<SimulatedNetwork>(
-                                              BuiltInNetworkBehaviorConfig())));
-    send_transport->SetReceiver(receiver_call_->Receiver());
-    receive_transport->SetReceiver(sender_call_->Receiver());
+        send_transport = std::make_unique<test::PacketTransport>(
+            &task_queue_, sender_call_.get(), &observer,
+            test::PacketTransport::kSender, payload_type_map_,
+            std::make_unique<FakeNetworkPipe>(
+                Clock::GetRealTimeClock(),
+                std::make_unique<SimulatedNetwork>(
+                    BuiltInNetworkBehaviorConfig())));
+        receive_transport = std::make_unique<test::PacketTransport>(
+            &task_queue_, nullptr, &observer, test::PacketTransport::kReceiver,
+            payload_type_map_,
+            std::make_unique<FakeNetworkPipe>(
+                Clock::GetRealTimeClock(),
+                std::make_unique<SimulatedNetwork>(
+                    BuiltInNetworkBehaviorConfig())));
+        send_transport->SetReceiver(receiver_call_->Receiver());
+        receive_transport->SetReceiver(sender_call_->Receiver());
 
-    CreateSendConfig(kNumSimulcastStreams, 0, 0, send_transport.get());
+        CreateSendConfig(kNumSimulcastStreams, 0, 0, send_transport.get());
 
-    if (use_rtx) {
-      for (size_t i = 0; i < kNumSimulcastStreams; ++i) {
-        GetVideoSendConfig()->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[i]);
-      }
-      GetVideoSendConfig()->rtp.rtx.payload_type = kSendRtxPayloadType;
-    }
+        if (use_rtx) {
+          for (size_t i = 0; i < kNumSimulcastStreams; ++i) {
+            GetVideoSendConfig()->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[i]);
+          }
+          GetVideoSendConfig()->rtp.rtx.payload_type = kSendRtxPayloadType;
+        }
 
-    GetVideoEncoderConfig()->video_stream_factory =
-        new rtc::RefCountedObject<VideoStreamFactory>();
-    // Use the same total bitrates when sending a single stream to avoid
-    // lowering the bitrate estimate and requiring a subsequent rampup.
-    one_stream = GetVideoEncoderConfig()->Copy();
-    // one_stream.streams.resize(1);
-    one_stream.number_of_streams = 1;
-    CreateMatchingReceiveConfigs(receive_transport.get());
+        GetVideoEncoderConfig()->video_stream_factory =
+            new rtc::RefCountedObject<VideoStreamFactory>();
+        // Use the same total bitrates when sending a single stream to avoid
+        // lowering the bitrate estimate and requiring a subsequent rampup.
+        one_stream = GetVideoEncoderConfig()->Copy();
+        // one_stream.streams.resize(1);
+        one_stream.number_of_streams = 1;
+        CreateMatchingReceiveConfigs(receive_transport.get());
 
-    CreateVideoStreams();
-    CreateFrameGeneratorCapturer(30, 1280, 720);
+        CreateVideoStreams();
+        CreateFrameGeneratorCapturer(30, 1280, 720);
 
-    Start();
-  });
+        Start();
+      });
 
   EXPECT_TRUE(observer.Wait())
       << "Timed out waiting for all SSRCs to send packets.";
@@ -330,7 +335,7 @@ void RtpRtcpEndToEndTest::TestRtpStatePreservation(
   // Test stream resetting more than once to make sure that the state doesn't
   // get set once (this could be due to using std::map::insert for instance).
   for (size_t i = 0; i < 3; ++i) {
-    task_queue_.SendTask([&]() {
+    SendTask(RTC_FROM_HERE, &task_queue_, [&]() {
       DestroyVideoSendStreams();
 
       // Re-create VideoSendStream with only one stream.
@@ -352,7 +357,7 @@ void RtpRtcpEndToEndTest::TestRtpStatePreservation(
     EXPECT_TRUE(observer.Wait()) << "Timed out waiting for single RTP packet.";
 
     // Reconfigure back to use all streams.
-    task_queue_.SendTask([this]() {
+    SendTask(RTC_FROM_HERE, &task_queue_, [this]() {
       GetVideoSendStream()->ReconfigureVideoEncoder(
           GetVideoEncoderConfig()->Copy());
     });
@@ -361,14 +366,14 @@ void RtpRtcpEndToEndTest::TestRtpStatePreservation(
         << "Timed out waiting for all SSRCs to send packets.";
 
     // Reconfigure down to one stream.
-    task_queue_.SendTask([this, &one_stream]() {
+    SendTask(RTC_FROM_HERE, &task_queue_, [this, &one_stream]() {
       GetVideoSendStream()->ReconfigureVideoEncoder(one_stream.Copy());
     });
     observer.ResetExpectedSsrcs(1);
     EXPECT_TRUE(observer.Wait()) << "Timed out waiting for single RTP packet.";
 
     // Reconfigure back to use all streams.
-    task_queue_.SendTask([this]() {
+    SendTask(RTC_FROM_HERE, &task_queue_, [this]() {
       GetVideoSendStream()->ReconfigureVideoEncoder(
           GetVideoEncoderConfig()->Copy());
     });
@@ -377,13 +382,14 @@ void RtpRtcpEndToEndTest::TestRtpStatePreservation(
         << "Timed out waiting for all SSRCs to send packets.";
   }
 
-  task_queue_.SendTask([this, &send_transport, &receive_transport]() {
-    Stop();
-    DestroyStreams();
-    send_transport.reset();
-    receive_transport.reset();
-    DestroyCalls();
-  });
+  SendTask(RTC_FROM_HERE, &task_queue_,
+           [this, &send_transport, &receive_transport]() {
+             Stop();
+             DestroyStreams();
+             send_transport.reset();
+             receive_transport.reset();
+             DestroyCalls();
+           });
 }
 
 TEST_F(RtpRtcpEndToEndTest, RestartingSendStreamPreservesRtpState) {
@@ -477,7 +483,7 @@ TEST_F(RtpRtcpEndToEndTest, DISABLED_TestFlexfecRtpStatePreservation) {
   test::FunctionVideoEncoderFactory encoder_factory(
       []() { return VP8Encoder::Create(); });
 
-  task_queue_.SendTask([&]() {
+  SendTask(RTC_FROM_HERE, &task_queue_, [&]() {
     CreateCalls();
 
     BuiltInNetworkBehaviorConfig lossy_delayed_link;
@@ -555,7 +561,7 @@ TEST_F(RtpRtcpEndToEndTest, DISABLED_TestFlexfecRtpStatePreservation) {
   // Initial test.
   EXPECT_TRUE(observer.Wait()) << "Timed out waiting for packets.";
 
-  task_queue_.SendTask([this, &observer]() {
+  SendTask(RTC_FROM_HERE, &task_queue_, [this, &observer]() {
     // Ensure monotonicity when the VideoSendStream is restarted.
     Stop();
     observer.ResetPacketCount();
@@ -564,7 +570,7 @@ TEST_F(RtpRtcpEndToEndTest, DISABLED_TestFlexfecRtpStatePreservation) {
 
   EXPECT_TRUE(observer.Wait()) << "Timed out waiting for packets.";
 
-  task_queue_.SendTask([this, &observer]() {
+  SendTask(RTC_FROM_HERE, &task_queue_, [this, &observer]() {
     // Ensure monotonicity when the VideoSendStream is recreated.
     DestroyVideoSendStreams();
     observer.ResetPacketCount();
@@ -576,12 +582,13 @@ TEST_F(RtpRtcpEndToEndTest, DISABLED_TestFlexfecRtpStatePreservation) {
   EXPECT_TRUE(observer.Wait()) << "Timed out waiting for packets.";
 
   // Cleanup.
-  task_queue_.SendTask([this, &send_transport, &receive_transport]() {
-    Stop();
-    DestroyStreams();
-    send_transport.reset();
-    receive_transport.reset();
-    DestroyCalls();
-  });
+  SendTask(RTC_FROM_HERE, &task_queue_,
+           [this, &send_transport, &receive_transport]() {
+             Stop();
+             DestroyStreams();
+             send_transport.reset();
+             receive_transport.reset();
+             DestroyCalls();
+           });
 }
 }  // namespace webrtc

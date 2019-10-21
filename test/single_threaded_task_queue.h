@@ -61,15 +61,6 @@ class DEPRECATED_SingleThreadedTaskQueueForTesting : public TaskQueueBase {
     return PostDelayed(ToQueuedTask(std::move(task)), delay_ms);
   }
 
-  // Send one task to the queue. The function does not return until the task
-  // has finished executing. No support for canceling the task.
-  // TODO(bugs.webrtc.org/10933): Remove this function in favor of free SendTask
-  // to reduce direct mentioning of the SingleThreadedTaskQueueForTesting class.
-  template <typename Closure>
-  void SendTask(Closure&& task) {
-    ::webrtc::SendTask(this, std::forward<Closure>(task), RTC_FROM_HERE);
-  }
-
   // Given an identifier to the task, attempts to eject it from the queue.
   // Returns true if the task was found and cancelled. Failure possible
   // only for invalid task IDs, or for tasks which have already been executed.

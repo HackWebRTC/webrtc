@@ -14,6 +14,7 @@
 #include "api/video_codecs/video_encoder.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/call_test.h"
 #include "test/fake_encoder.h"
@@ -87,23 +88,25 @@ void NetworkStateEndToEndTest::VerifyNewVideoSendStreamsRespectNetworkState(
     Transport* transport) {
   test::VideoEncoderProxyFactory encoder_factory(encoder);
 
-  task_queue_.SendTask([this, network_to_bring_up, &encoder_factory,
-                        transport]() {
-    CreateSenderCall(Call::Config(send_event_log_.get()));
-    sender_call_->SignalChannelNetworkState(network_to_bring_up, kNetworkUp);
+  SendTask(RTC_FROM_HERE, &task_queue_,
+           [this, network_to_bring_up, &encoder_factory, transport]() {
+             CreateSenderCall(Call::Config(send_event_log_.get()));
+             sender_call_->SignalChannelNetworkState(network_to_bring_up,
+                                                     kNetworkUp);
 
-    CreateSendConfig(1, 0, 0, transport);
-    GetVideoSendConfig()->encoder_settings.encoder_factory = &encoder_factory;
-    CreateVideoStreams();
-    CreateFrameGeneratorCapturer(kDefaultFramerate, kDefaultWidth,
-                                 kDefaultHeight);
+             CreateSendConfig(1, 0, 0, transport);
+             GetVideoSendConfig()->encoder_settings.encoder_factory =
+                 &encoder_factory;
+             CreateVideoStreams();
+             CreateFrameGeneratorCapturer(kDefaultFramerate, kDefaultWidth,
+                                          kDefaultHeight);
 
-    Start();
-  });
+             Start();
+           });
 
   SleepMs(kSilenceTimeoutMs);
 
-  task_queue_.SendTask([this]() {
+  SendTask(RTC_FROM_HERE, &task_queue_, [this]() {
     Stop();
     DestroyStreams();
     DestroyCalls();
@@ -115,28 +118,30 @@ void NetworkStateEndToEndTest::VerifyNewVideoReceiveStreamsRespectNetworkState(
     Transport* transport) {
   std::unique_ptr<test::DirectTransport> sender_transport;
 
-  task_queue_.SendTask([this, &sender_transport, network_to_bring_up,
-                        transport]() {
-    CreateCalls();
-    receiver_call_->SignalChannelNetworkState(network_to_bring_up, kNetworkUp);
-    sender_transport = std::make_unique<test::DirectTransport>(
-        &task_queue_,
-        std::make_unique<FakeNetworkPipe>(
-            Clock::GetRealTimeClock(),
-            std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())),
-        sender_call_.get(), payload_type_map_);
-    sender_transport->SetReceiver(receiver_call_->Receiver());
-    CreateSendConfig(1, 0, 0, sender_transport.get());
-    CreateMatchingReceiveConfigs(transport);
-    CreateVideoStreams();
-    CreateFrameGeneratorCapturer(kDefaultFramerate, kDefaultWidth,
-                                 kDefaultHeight);
-    Start();
-  });
+  SendTask(
+      RTC_FROM_HERE, &task_queue_,
+      [this, &sender_transport, network_to_bring_up, transport]() {
+        CreateCalls();
+        receiver_call_->SignalChannelNetworkState(network_to_bring_up,
+                                                  kNetworkUp);
+        sender_transport = std::make_unique<test::DirectTransport>(
+            &task_queue_,
+            std::make_unique<FakeNetworkPipe>(
+                Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
+                                               BuiltInNetworkBehaviorConfig())),
+            sender_call_.get(), payload_type_map_);
+        sender_transport->SetReceiver(receiver_call_->Receiver());
+        CreateSendConfig(1, 0, 0, sender_transport.get());
+        CreateMatchingReceiveConfigs(transport);
+        CreateVideoStreams();
+        CreateFrameGeneratorCapturer(kDefaultFramerate, kDefaultWidth,
+                                     kDefaultHeight);
+        Start();
+      });
 
   SleepMs(kSilenceTimeoutMs);
 
-  task_queue_.SendTask([this, &sender_transport]() {
+  SendTask(RTC_FROM_HERE, &task_queue_, [this, &sender_transport]() {
     Stop();
     DestroyStreams();
     sender_transport.reset();
@@ -217,7 +222,7 @@ TEST_F(NetworkStateEndToEndTest, RespectsNetworkState) {
       EXPECT_TRUE(encoded_frames_.Wait(kDefaultTimeoutMs))
           << "No frames received by the encoder.";
 
-      task_queue_->SendTask([this]() {
+      SendTask(RTC_FROM_HERE, task_queue_, [this]() {
         // Wait for packets from both sender/receiver.
         WaitForPacketsOrSilence(false, false);
 
