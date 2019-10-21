@@ -146,7 +146,7 @@ class GoogCcNetworkControllerTest : public ::testing::Test {
   // prescribing on which iterations it must change (like a mock would).
   void TargetBitrateTrackingSetup() {
     controller_ = factory_.Create(InitialConfig());
-    controller_->OnProcessInterval(DefaultInterval());
+    OnUpdate(controller_->OnProcessInterval(DefaultInterval()));
   }
 
   NetworkControllerConfig InitialConfig(
@@ -216,7 +216,7 @@ class GoogCcNetworkControllerTest : public ::testing::Test {
           CreateResult(current_time_.ms() + delay_buildup, current_time_.ms(),
                        kPayloadSize, PacedPacketInfo());
       delay_buildup += delay;
-      controller_->OnSentPacket(packet.sent_packet);
+      OnUpdate(controller_->OnSentPacket(packet.sent_packet));
       TransportPacketsFeedback feedback;
       feedback.feedback_time = packet.receive_time;
       feedback.packet_feedbacks.push_back(packet);
@@ -235,17 +235,19 @@ class GoogCcNetworkControllerTest : public ::testing::Test {
 TEST_F(GoogCcNetworkControllerTest, ReactsToChangedNetworkConditions) {
   // Test no change.
   AdvanceTimeMilliseconds(25);
-  controller_->OnProcessInterval(DefaultInterval());
+  OnUpdate(controller_->OnProcessInterval(DefaultInterval()));
 
   NetworkControlUpdate update;
-  controller_->OnRemoteBitrateReport(CreateBitrateReport(kInitialBitrate * 2));
+  OnUpdate(controller_->OnRemoteBitrateReport(
+      CreateBitrateReport(kInitialBitrate * 2)));
   AdvanceTimeMilliseconds(25);
   update = controller_->OnProcessInterval(DefaultInterval());
   EXPECT_EQ(update.target_rate->target_rate, kInitialBitrate * 2);
   EXPECT_EQ(update.pacer_config->data_rate(),
             kInitialBitrate * 2 * kDefaultPacingRate);
 
-  controller_->OnRemoteBitrateReport(CreateBitrateReport(kInitialBitrate));
+  OnUpdate(
+      controller_->OnRemoteBitrateReport(CreateBitrateReport(kInitialBitrate)));
   AdvanceTimeMilliseconds(25);
   update = controller_->OnProcessInterval(DefaultInterval());
   EXPECT_EQ(update.target_rate->target_rate, kInitialBitrate);

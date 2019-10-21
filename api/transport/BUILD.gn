@@ -43,6 +43,7 @@ rtc_library("network_control") {
     "../units:data_size",
     "../units:time_delta",
     "../units:timestamp",
+    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }

@@ -480,7 +480,7 @@ void RtpTransportControllerSend::OnRemoteNetworkEstimate(
   task_queue_.PostTask([this, estimate] {
     RTC_DCHECK_RUN_ON(&task_queue_);
     if (controller_)
-      controller_->OnNetworkStateEstimate(estimate);
+      PostUpdates(controller_->OnNetworkStateEstimate(estimate));
   });
 }
 
