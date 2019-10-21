@@ -319,8 +319,6 @@ rtc_library("rtc_audio_video") {
   sources = [
     "engine/adm_helpers.cc",
     "engine/adm_helpers.h",
-    "engine/apm_helpers.cc",
-    "engine/apm_helpers.h",
     "engine/null_webrtc_video_engine.h",
     "engine/payload_type_mapper.cc",
     "engine/payload_type_mapper.h",
@@ -590,7 +588,6 @@ if (rtc_include_tests) {
       "base/video_adapter_unittest.cc",
       "base/video_broadcaster_unittest.cc",
       "base/video_common_unittest.cc",
-      "engine/apm_helpers_unittest.cc",
       "engine/encoder_simulcast_proxy_unittest.cc",
       "engine/internal_decoder_factory_unittest.cc",
       "engine/multiplex_codec_factory_unittest.cc",

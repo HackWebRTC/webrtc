@@ -26,7 +26,6 @@
 #include "media/base/media_constants.h"
 #include "media/base/stream_params.h"
 #include "media/engine/adm_helpers.h"
-#include "media/engine/apm_helpers.h"
 #include "media/engine/payload_type_mapper.h"
 #include "media/engine/webrtc_media_engine.h"
 #include "modules/audio_device/audio_device_impl.h"
@@ -256,7 +255,6 @@ void WebRtcVoiceEngine::Init() {
 #endif  // WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE
   RTC_CHECK(adm());
   webrtc::adm_helpers::Init(adm());
-  webrtc::apm_helpers::Init(apm());
 
   // Set up AudioState.
   {
@@ -320,8 +318,8 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   AudioOptions options = options_in;  // The options are modified below.
 
   // Set and adjust echo canceller options.
-  // kEcConference is AEC with high suppression.
-  webrtc::EcModes ec_mode = webrtc::kEcConference;
+  // Use desktop AEC by default, when not using hardware AEC.
+  bool use_mobile_software_aec = false;
 
 #if defined(WEBRTC_IOS)
   if (options.ios_force_software_aec_HACK &&
@@ -337,7 +335,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     RTC_LOG(LS_INFO) << "Always disable AEC on iOS. Use built-in instead.";
   }
 #elif defined(WEBRTC_ANDROID)
-  ec_mode = webrtc::kEcAecm;
+  use_mobile_software_aec = true;
 #endif
 
 // Set and adjust noise suppressor options.
@@ -401,8 +399,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
             << "Disabling EC since built-in EC will be used instead";
       }
     }
-    webrtc::apm_helpers::SetEcStatus(apm(), *options.echo_cancellation,
-                                     ec_mode);
   }
 
   if (options.auto_gain_control) {
@@ -475,10 +471,26 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
   webrtc::AudioProcessing::Config apm_config = apm()->GetConfig();
 
+  if (options.echo_cancellation) {
+    apm_config.echo_canceller.enabled = *options.echo_cancellation;
+    apm_config.echo_canceller.mobile_mode = use_mobile_software_aec;
+    apm_config.echo_canceller.legacy_moderate_suppression_level = false;
+  }
+
   if (options.auto_gain_control) {
     const bool enabled = *options.auto_gain_control;
     apm_config.gain_controller1.enabled = enabled;
-    RTC_LOG(LS_INFO) << "Setting AGC to " << enabled;
+#if defined(WEBRTC_IOS) || defined(WEBRTC_ANDROID)
+    apm_config.gain_controller1.mode =
+        apm_config.gain_controller1.kFixedDigital;
+#else
+    apm_config.gain_controller1.mode =
+        apm_config.gain_controller1.kAdaptiveAnalog;
+#endif
+    constexpr int kMinVolumeLevel = 0;
+    constexpr int kMaxVolumeLevel = 255;
+    apm_config.gain_controller1.analog_level_minimum = kMinVolumeLevel;
+    apm_config.gain_controller1.analog_level_maximum = kMaxVolumeLevel;
   }
   if (options.tx_agc_target_dbov) {
     apm_config.gain_controller1.target_level_dbfs = *options.tx_agc_target_dbov;

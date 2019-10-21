@@ -24,7 +24,6 @@
 #include "call/call.h"
 #include "media/base/media_engine.h"
 #include "media/base/rtp_utils.h"
-#include "media/engine/apm_helpers.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/network_route.h"
