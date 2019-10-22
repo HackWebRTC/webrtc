@@ -21,23 +21,47 @@
 #include "rtc_base/random.h"
 #include "system_wrappers/include/clock.h"
 #include "test/field_trial.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 
 namespace webrtc {
 namespace video_coding {
+namespace {
 
-class PacketBufferTest : public ::testing::Test,
-                         public OnAssembledFrameCallback {
+using ::testing::ElementsAre;
+using ::testing::IsEmpty;
+using ::testing::SizeIs;
+
+void IgnoreResult(PacketBuffer::InsertResult /*result*/) {}
+
+std::vector<uint16_t> FirstSeqNums(
+    rtc::ArrayView<const std::unique_ptr<RtpFrameObject>> frames) {
+  std::vector<uint16_t> result;
+  for (const auto& frame : frames) {
+    result.push_back(frame->first_seq_num());
+  }
+  return result;
+}
+
+MATCHER(KeyFrame, "") {
+  return arg->frame_type() == VideoFrameType::kVideoFrameKey;
+}
+
+MATCHER(DeltaFrame, "") {
+  return arg->frame_type() == VideoFrameType::kVideoFrameDelta;
+}
+
+class PacketBufferTest : public ::testing::Test {
  protected:
   explicit PacketBufferTest(std::string field_trials = "")
       : scoped_field_trials_(field_trials),
         rand_(0x7732213),
         clock_(new SimulatedClock(0)),
-        packet_buffer_(clock_.get(), kStartSize, kMaxSize, this) {}
+        packet_buffer_(clock_.get(), kStartSize, kMaxSize) {}
 
   uint16_t Rand() { return rand_.Rand<uint16_t>(); }
 
-  void OnAssembledFrame(std::unique_ptr<RtpFrameObject> frame) override {
+  void OnAssembledFrame(std::unique_ptr<RtpFrameObject> frame) {
     uint16_t first_seq_num = frame->first_seq_num();
     if (frames_from_callback_.find(first_seq_num) !=
         frames_from_callback_.end()) {
@@ -73,7 +97,17 @@ class PacketBufferTest : public ::testing::Test,
     packet.sizeBytes = data_size;
     packet.dataPtr = data;
 
-    return packet_buffer_.InsertPacket(&packet);
+    return HandleResult(packet_buffer_.InsertPacket(&packet));
+  }
+
+  // TODO(danilchap): Instead of using this helper, update all tests to validate
+  // result of the InsertPacket/InsertPadding directly for cleaner expectations
+  // and error messages when test fail.
+  bool HandleResult(PacketBuffer::InsertResult result) {
+    for (auto& frame : result.frames) {
+      OnAssembledFrame(std::move(frame));
+    }
+    return !result.buffer_cleared;
   }
 
   void CheckFrame(uint16_t first_seq_num) {
@@ -170,25 +204,24 @@ TEST_F(PacketBufferTest, NackCount) {
   packet.video_header.is_last_packet_in_frame = false;
   packet.timesNacked = 0;
 
-  packet_buffer_.InsertPacket(&packet);
+  IgnoreResult(packet_buffer_.InsertPacket(&packet));
 
   packet.seqNum++;
   packet.video_header.is_first_packet_in_frame = false;
   packet.timesNacked = 1;
-  packet_buffer_.InsertPacket(&packet);
+  IgnoreResult(packet_buffer_.InsertPacket(&packet));
 
   packet.seqNum++;
   packet.timesNacked = 3;
-  packet_buffer_.InsertPacket(&packet);
+  IgnoreResult(packet_buffer_.InsertPacket(&packet));
 
   packet.seqNum++;
   packet.video_header.is_last_packet_in_frame = true;
   packet.timesNacked = 1;
-  packet_buffer_.InsertPacket(&packet);
+  auto frames = packet_buffer_.InsertPacket(&packet).frames;
 
-  ASSERT_EQ(1UL, frames_from_callback_.size());
-  RtpFrameObject* frame = frames_from_callback_.begin()->second.get();
-  EXPECT_EQ(3, frame->times_nacked());
+  ASSERT_THAT(frames, SizeIs(1));
+  EXPECT_EQ(frames.front()->times_nacked(), 3);
 }
 
 TEST_F(PacketBufferTest, FrameSize) {
@@ -581,7 +614,7 @@ class PacketBufferH264Test : public PacketBufferTest {
     packet.sizeBytes = data_size;
     packet.dataPtr = data;
 
-    return packet_buffer_.InsertPacket(&packet);
+    return HandleResult(packet_buffer_.InsertPacket(&packet));
   }
 
   bool InsertH264KeyFrameWithAud(
@@ -613,7 +646,7 @@ class PacketBufferH264Test : public PacketBufferTest {
     packet.video_header.is_last_packet_in_frame = false;
     packet.sizeBytes = 0;
     packet.dataPtr = nullptr;
-    if (packet_buffer_.InsertPacket(&packet)) {
+    if (HandleResult(packet_buffer_.InsertPacket(&packet))) {
       // insert IDR
       return InsertH264(seq_num + 1, keyframe, kNotFirst, last, timestamp,
                         data_size, data, width, height);
@@ -690,16 +723,13 @@ TEST_P(PacketBufferH264ParameterizedTest, GetBitstreamBufferPadding) {
   packet.sizeBytes = sizeof(data_data);
   packet.video_header.is_first_packet_in_frame = true;
   packet.video_header.is_last_packet_in_frame = true;
-  packet_buffer_.InsertPacket(&packet);
+  auto frames = packet_buffer_.InsertPacket(&packet).frames;
 
-  ASSERT_EQ(1UL, frames_from_callback_.size());
-  EXPECT_EQ(frames_from_callback_[seq_num]->EncodedImage().size(),
-            sizeof(data_data));
-  EXPECT_EQ(frames_from_callback_[seq_num]->EncodedImage().capacity(),
-            sizeof(data_data));
-  EXPECT_EQ(memcmp(frames_from_callback_[seq_num]->data(), data_data,
-                   sizeof(data_data)),
-            0);
+  ASSERT_THAT(frames, SizeIs(1));
+  EXPECT_EQ(frames[0]->first_seq_num(), seq_num);
+  EXPECT_EQ(frames[0]->EncodedImage().size(), sizeof(data_data));
+  EXPECT_EQ(frames[0]->EncodedImage().capacity(), sizeof(data_data));
+  EXPECT_EQ(memcmp(frames[0]->data(), data_data, sizeof(data_data)), 0);
 }
 
 TEST_P(PacketBufferH264ParameterizedTest, FrameResolution) {
@@ -894,7 +924,7 @@ TEST_F(PacketBufferTest, IncomingCodecChange) {
   packet.timestamp = 1;
   packet.seqNum = 1;
   packet.video_header.frame_type = VideoFrameType::kVideoFrameKey;
-  EXPECT_TRUE(packet_buffer_.InsertPacket(&packet));
+  EXPECT_THAT(packet_buffer_.InsertPacket(&packet).frames, SizeIs(1));
 
   packet.video_header.codec = kVideoCodecH264;
   auto& h264_header =
@@ -902,17 +932,14 @@ TEST_F(PacketBufferTest, IncomingCodecChange) {
   h264_header.nalus_length = 1;
   packet.timestamp = 3;
   packet.seqNum = 3;
-  EXPECT_TRUE(packet_buffer_.InsertPacket(&packet));
+  EXPECT_THAT(packet_buffer_.InsertPacket(&packet).frames, IsEmpty());
 
   packet.video_header.codec = kVideoCodecVP8;
   packet.video_header.video_type_header.emplace<RTPVideoHeaderVP8>();
   packet.timestamp = 2;
   packet.seqNum = 2;
   packet.video_header.frame_type = VideoFrameType::kVideoFrameDelta;
-
-  EXPECT_TRUE(packet_buffer_.InsertPacket(&packet));
-
-  EXPECT_EQ(3UL, frames_from_callback_.size());
+  EXPECT_THAT(packet_buffer_.InsertPacket(&packet).frames, SizeIs(2));
 }
 
 TEST_F(PacketBufferTest, TooManyNalusInPacket) {
@@ -928,9 +955,7 @@ TEST_F(PacketBufferTest, TooManyNalusInPacket) {
   h264_header.nalus_length = kMaxNalusPerPacket;
   packet.sizeBytes = 0;
   packet.dataPtr = nullptr;
-  EXPECT_TRUE(packet_buffer_.InsertPacket(&packet));
-
-  EXPECT_EQ(0UL, frames_from_callback_.size());
+  EXPECT_THAT(packet_buffer_.InsertPacket(&packet).frames, IsEmpty());
 }
 
 TEST_P(PacketBufferH264ParameterizedTest, OneFrameFillBuffer) {
@@ -990,10 +1015,10 @@ TEST_P(PacketBufferH264ParameterizedTest, FindFramesOnPadding) {
   InsertH264(2, kDeltaFrame, kFirst, kLast, 1000);
 
   ASSERT_EQ(1UL, frames_from_callback_.size());
-  packet_buffer_.PaddingReceived(1);
-  ASSERT_EQ(2UL, frames_from_callback_.size());
   CheckFrame(0);
-  CheckFrame(2);
+
+  EXPECT_THAT(FirstSeqNums(packet_buffer_.InsertPadding(1).frames),
+              ElementsAre(2));
 }
 
 class PacketBufferH264XIsKeyframeTest : public PacketBufferH264Test {
@@ -1024,11 +1049,8 @@ TEST_F(PacketBufferH264IdrIsKeyframeTest, IdrIsKeyframe) {
       packet_.video_header.video_type_header.emplace<RTPVideoHeaderH264>();
   h264_header.nalus[0].type = H264::NaluType::kIdr;
   h264_header.nalus_length = 1;
-  packet_buffer_.InsertPacket(&packet_);
-
-  ASSERT_EQ(1u, frames_from_callback_.size());
-  EXPECT_EQ(VideoFrameType::kVideoFrameKey,
-            frames_from_callback_[kSeqNum]->frame_type());
+  EXPECT_THAT(packet_buffer_.InsertPacket(&packet_).frames,
+              ElementsAre(KeyFrame()));
 }
 
 TEST_F(PacketBufferH264IdrIsKeyframeTest, SpsPpsIdrIsKeyframe) {
@@ -1039,11 +1061,8 @@ TEST_F(PacketBufferH264IdrIsKeyframeTest, SpsPpsIdrIsKeyframe) {
   h264_header.nalus[2].type = H264::NaluType::kIdr;
   h264_header.nalus_length = 3;
 
-  packet_buffer_.InsertPacket(&packet_);
-
-  ASSERT_EQ(1u, frames_from_callback_.size());
-  EXPECT_EQ(VideoFrameType::kVideoFrameKey,
-            frames_from_callback_[kSeqNum]->frame_type());
+  EXPECT_THAT(packet_buffer_.InsertPacket(&packet_).frames,
+              ElementsAre(KeyFrame()));
 }
 
 class PacketBufferH264SpsPpsIdrIsKeyframeTest
@@ -1059,11 +1078,8 @@ TEST_F(PacketBufferH264SpsPpsIdrIsKeyframeTest, IdrIsNotKeyframe) {
   h264_header.nalus[0].type = H264::NaluType::kIdr;
   h264_header.nalus_length = 1;
 
-  packet_buffer_.InsertPacket(&packet_);
-
-  ASSERT_EQ(1u, frames_from_callback_.size());
-  EXPECT_EQ(VideoFrameType::kVideoFrameDelta,
-            frames_from_callback_[5]->frame_type());
+  EXPECT_THAT(packet_buffer_.InsertPacket(&packet_).frames,
+              ElementsAre(DeltaFrame()));
 }
 
 TEST_F(PacketBufferH264SpsPpsIdrIsKeyframeTest, SpsPpsIsNotKeyframe) {
@@ -1073,11 +1089,8 @@ TEST_F(PacketBufferH264SpsPpsIdrIsKeyframeTest, SpsPpsIsNotKeyframe) {
   h264_header.nalus[1].type = H264::NaluType::kPps;
   h264_header.nalus_length = 2;
 
-  packet_buffer_.InsertPacket(&packet_);
-
-  ASSERT_EQ(1u, frames_from_callback_.size());
-  EXPECT_EQ(VideoFrameType::kVideoFrameDelta,
-            frames_from_callback_[kSeqNum]->frame_type());
+  EXPECT_THAT(packet_buffer_.InsertPacket(&packet_).frames,
+              ElementsAre(DeltaFrame()));
 }
 
 TEST_F(PacketBufferH264SpsPpsIdrIsKeyframeTest, SpsPpsIdrIsKeyframe) {
@@ -1088,12 +1101,10 @@ TEST_F(PacketBufferH264SpsPpsIdrIsKeyframeTest, SpsPpsIdrIsKeyframe) {
   h264_header.nalus[2].type = H264::NaluType::kIdr;
   h264_header.nalus_length = 3;
 
-  packet_buffer_.InsertPacket(&packet_);
-
-  ASSERT_EQ(1u, frames_from_callback_.size());
-  EXPECT_EQ(VideoFrameType::kVideoFrameKey,
-            frames_from_callback_[kSeqNum]->frame_type());
+  EXPECT_THAT(packet_buffer_.InsertPacket(&packet_).frames,
+              ElementsAre(KeyFrame()));
 }
 
+}  // namespace
 }  // namespace video_coding
 }  // namespace webrtc

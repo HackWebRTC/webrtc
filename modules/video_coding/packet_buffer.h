@@ -16,43 +16,37 @@
 #include <set>
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "api/video/encoded_image.h"
+#include "modules/video_coding/frame_object.h"
 #include "modules/video_coding/packet.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/thread_annotations.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
-
-class Clock;
-
 namespace video_coding {
-
-class RtpFrameObject;
-
-// A frame is assembled when all of its packets have been received.
-class OnAssembledFrameCallback {
- public:
-  virtual ~OnAssembledFrameCallback() {}
-  virtual void OnAssembledFrame(std::unique_ptr<RtpFrameObject> frame) = 0;
-};
 
 class PacketBuffer {
  public:
+  struct InsertResult {
+    std::vector<std::unique_ptr<RtpFrameObject>> frames;
+    // Indicates if the packet buffer was cleared, which means that a key
+    // frame request should be sent.
+    bool buffer_cleared = false;
+  };
+
   // Both |start_buffer_size| and |max_buffer_size| must be a power of 2.
-  PacketBuffer(Clock* clock,
-               size_t start_buffer_size,
-               size_t max_buffer_size,
-               OnAssembledFrameCallback* frame_callback);
+  PacketBuffer(Clock* clock, size_t start_buffer_size, size_t max_buffer_size);
   ~PacketBuffer();
 
-  // Returns true unless the packet buffer is cleared, which means that a key
-  // frame request should be sent. The PacketBuffer will always take ownership
-  // of the |packet.dataPtr| when this function is called.
-  bool InsertPacket(VCMPacket* packet);
+  // The PacketBuffer will always take ownership of the |packet.dataPtr| when
+  // this function is called.
+  InsertResult InsertPacket(VCMPacket* packet) ABSL_MUST_USE_RESULT;
+  InsertResult InsertPadding(uint16_t seq_num) ABSL_MUST_USE_RESULT;
   void ClearTo(uint16_t seq_num);
   void Clear();
-  void PaddingReceived(uint16_t seq_num);
 
   // Timestamp (not RTP timestamp) of the last received packet/keyframe packet.
   absl::optional<int64_t> LastReceivedPacketMs() const;
@@ -131,10 +125,6 @@ class PacketBuffer {
   // Buffer that holds the the inserted packets and information needed to
   // determine continuity between them.
   std::vector<StoredPacket> buffer_ RTC_GUARDED_BY(crit_);
-
-  // Called when all packets in a frame are received, allowing the frame
-  // to be assembled.
-  OnAssembledFrameCallback* const assembled_frame_callback_;
 
   // Timestamp (not RTP timestamp) of the last received packet/keyframe packet.
   absl::optional<int64_t> last_received_packet_ms_ RTC_GUARDED_BY(crit_);

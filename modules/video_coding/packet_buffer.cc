@@ -33,15 +33,13 @@ namespace video_coding {
 
 PacketBuffer::PacketBuffer(Clock* clock,
                            size_t start_buffer_size,
-                           size_t max_buffer_size,
-                           OnAssembledFrameCallback* assembled_frame_callback)
+                           size_t max_buffer_size)
     : clock_(clock),
       max_size_(max_buffer_size),
       first_seq_num_(0),
       first_packet_received_(false),
       is_cleared_to_first_seq_num_(false),
       buffer_(start_buffer_size),
-      assembled_frame_callback_(assembled_frame_callback),
       unique_frames_seen_(0),
       sps_pps_idr_is_h264_keyframe_(
           field_trial::IsEnabled("WebRTC-SpsPpsIdrIsH264Keyframe")) {
@@ -55,76 +53,70 @@ PacketBuffer::~PacketBuffer() {
   Clear();
 }
 
-bool PacketBuffer::InsertPacket(VCMPacket* packet) {
-  std::vector<std::unique_ptr<RtpFrameObject>> found_frames;
-  {
-    rtc::CritScope lock(&crit_);
+PacketBuffer::InsertResult PacketBuffer::InsertPacket(VCMPacket* packet) {
+  PacketBuffer::InsertResult result;
+  rtc::CritScope lock(&crit_);
+  OnTimestampReceived(packet->timestamp);
 
-    OnTimestampReceived(packet->timestamp);
+  uint16_t seq_num = packet->seqNum;
+  size_t index = seq_num % buffer_.size();
 
-    uint16_t seq_num = packet->seqNum;
-    size_t index = seq_num % buffer_.size();
-
-    if (!first_packet_received_) {
-      first_seq_num_ = seq_num;
-      first_packet_received_ = true;
-    } else if (AheadOf(first_seq_num_, seq_num)) {
-      // If we have explicitly cleared past this packet then it's old,
-      // don't insert it, just silently ignore it.
-      if (is_cleared_to_first_seq_num_) {
-        delete[] packet->dataPtr;
-        packet->dataPtr = nullptr;
-        return true;
-      }
-
-      first_seq_num_ = seq_num;
+  if (!first_packet_received_) {
+    first_seq_num_ = seq_num;
+    first_packet_received_ = true;
+  } else if (AheadOf(first_seq_num_, seq_num)) {
+    // If we have explicitly cleared past this packet then it's old,
+    // don't insert it, just silently ignore it.
+    if (is_cleared_to_first_seq_num_) {
+      delete[] packet->dataPtr;
+      packet->dataPtr = nullptr;
+      return result;
     }
 
-    if (buffer_[index].used) {
-      // Duplicate packet, just delete the payload.
-      if (buffer_[index].seq_num() == packet->seqNum) {
-        delete[] packet->dataPtr;
-        packet->dataPtr = nullptr;
-        return true;
-      }
-
-      // The packet buffer is full, try to expand the buffer.
-      while (ExpandBufferSize() && buffer_[seq_num % buffer_.size()].used) {
-      }
-      index = seq_num % buffer_.size();
-
-      // Packet buffer is still full since we were unable to expand the buffer.
-      if (buffer_[index].used) {
-        // Clear the buffer, delete payload, and return false to signal that a
-        // new keyframe is needed.
-        RTC_LOG(LS_WARNING) << "Clear PacketBuffer and request key frame.";
-        Clear();
-        delete[] packet->dataPtr;
-        packet->dataPtr = nullptr;
-        return false;
-      }
-    }
-
-    StoredPacket& new_entry = buffer_[index];
-    new_entry.continuous = false;
-    new_entry.used = true;
-    new_entry.data = *packet;
-    packet->dataPtr = nullptr;
-
-    UpdateMissingPackets(packet->seqNum);
-
-    int64_t now_ms = clock_->TimeInMilliseconds();
-    last_received_packet_ms_ = now_ms;
-    if (packet->video_header.frame_type == VideoFrameType::kVideoFrameKey)
-      last_received_keyframe_packet_ms_ = now_ms;
-
-    found_frames = FindFrames(seq_num);
+    first_seq_num_ = seq_num;
   }
 
-  for (std::unique_ptr<RtpFrameObject>& frame : found_frames)
-    assembled_frame_callback_->OnAssembledFrame(std::move(frame));
+  if (buffer_[index].used) {
+    // Duplicate packet, just delete the payload.
+    if (buffer_[index].seq_num() == packet->seqNum) {
+      delete[] packet->dataPtr;
+      packet->dataPtr = nullptr;
+      return result;
+    }
 
-  return true;
+    // The packet buffer is full, try to expand the buffer.
+    while (ExpandBufferSize() && buffer_[seq_num % buffer_.size()].used) {
+    }
+    index = seq_num % buffer_.size();
+
+    // Packet buffer is still full since we were unable to expand the buffer.
+    if (buffer_[index].used) {
+      // Clear the buffer, delete payload, and return false to signal that a
+      // new keyframe is needed.
+      RTC_LOG(LS_WARNING) << "Clear PacketBuffer and request key frame.";
+      Clear();
+      delete[] packet->dataPtr;
+      packet->dataPtr = nullptr;
+      result.buffer_cleared = true;
+      return result;
+    }
+  }
+
+  StoredPacket& new_entry = buffer_[index];
+  new_entry.continuous = false;
+  new_entry.used = true;
+  new_entry.data = *packet;
+  packet->dataPtr = nullptr;
+
+  UpdateMissingPackets(packet->seqNum);
+
+  int64_t now_ms = clock_->TimeInMilliseconds();
+  last_received_packet_ms_ = now_ms;
+  if (packet->video_header.frame_type == VideoFrameType::kVideoFrameKey)
+    last_received_keyframe_packet_ms_ = now_ms;
+
+  result.frames = FindFrames(seq_num);
+  return result;
 }
 
 void PacketBuffer::ClearTo(uint16_t seq_num) {
@@ -198,16 +190,12 @@ void PacketBuffer::Clear() {
   missing_packets_.clear();
 }
 
-void PacketBuffer::PaddingReceived(uint16_t seq_num) {
-  std::vector<std::unique_ptr<RtpFrameObject>> found_frames;
-  {
-    rtc::CritScope lock(&crit_);
-    UpdateMissingPackets(seq_num);
-    found_frames = FindFrames(static_cast<uint16_t>(seq_num + 1));
-  }
-
-  for (std::unique_ptr<RtpFrameObject>& frame : found_frames)
-    assembled_frame_callback_->OnAssembledFrame(std::move(frame));
+PacketBuffer::InsertResult PacketBuffer::InsertPadding(uint16_t seq_num) {
+  PacketBuffer::InsertResult result;
+  rtc::CritScope lock(&crit_);
+  UpdateMissingPackets(seq_num);
+  result.frames = FindFrames(static_cast<uint16_t>(seq_num + 1));
+  return result;
 }
 
 absl::optional<int64_t> PacketBuffer::LastReceivedPacketMs() const {

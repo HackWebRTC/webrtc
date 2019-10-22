@@ -14,20 +14,16 @@
 #include "test/fuzzers/fuzz_data_helper.h"
 
 namespace webrtc {
-namespace {
-class NullCallback : public video_coding::OnAssembledFrameCallback {
-  void OnAssembledFrame(std::unique_ptr<video_coding::RtpFrameObject> frame) {}
-};
-}  // namespace
+
+void IgnoreResult(video_coding::PacketBuffer::InsertResult result) {}
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
   if (size > 200000) {
     return;
   }
   VCMPacket packet;
-  NullCallback callback;
   SimulatedClock clock(0);
-  video_coding::PacketBuffer packet_buffer(&clock, 8, 1024, &callback);
+  video_coding::PacketBuffer packet_buffer(&clock, 8, 1024);
   test::FuzzDataHelper helper(rtc::ArrayView<const uint8_t>(data, size));
 
   while (helper.BytesLeft()) {
@@ -59,7 +55,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     packet.sizeBytes = payload_size;
     packet.dataPtr = new uint8_t[payload_size];
 
-    packet_buffer.InsertPacket(&packet);
+    IgnoreResult(packet_buffer.InsertPacket(&packet));
   }
 }
 

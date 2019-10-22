@@ -212,10 +212,7 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
       // TODO(bugs.webrtc.org/10336): Let |rtcp_feedback_buffer_| communicate
       // directly with |rtp_rtcp_|.
       rtcp_feedback_buffer_(this, nack_sender, this),
-      packet_buffer_(clock_,
-                     kPacketBufferStartSize,
-                     PacketBufferMaxSize(),
-                     this),
+      packet_buffer_(clock_, kPacketBufferStartSize, PacketBufferMaxSize()),
       has_received_frame_(false),
       frames_decryptable_(false) {
   constexpr bool remb_candidate = true;
@@ -464,9 +461,7 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
   }
 
   rtcp_feedback_buffer_.SendBufferedRtcpFeedback();
-  if (!packet_buffer_.InsertPacket(&packet)) {
-    RequestKeyFrame();
-  }
+  OnInsertedPacket(packet_buffer_.InsertPacket(&packet));
 }
 
 void RtpVideoStreamReceiver::OnRecoveredPacket(const uint8_t* rtp_packet,
@@ -578,6 +573,16 @@ void RtpVideoStreamReceiver::RequestPacketRetransmit(
 
 bool RtpVideoStreamReceiver::IsDecryptable() const {
   return frames_decryptable_.load();
+}
+
+void RtpVideoStreamReceiver::OnInsertedPacket(
+    video_coding::PacketBuffer::InsertResult result) {
+  for (std::unique_ptr<video_coding::RtpFrameObject>& frame : result.frames) {
+    OnAssembledFrame(std::move(frame));
+  }
+  if (result.buffer_cleared) {
+    RequestKeyFrame();
+  }
 }
 
 void RtpVideoStreamReceiver::OnAssembledFrame(
@@ -780,7 +785,7 @@ void RtpVideoStreamReceiver::NotifyReceiverOfEmptyPacket(uint16_t seq_num) {
     rtc::CritScope lock(&reference_finder_lock_);
     reference_finder_->PaddingReceived(seq_num);
   }
-  packet_buffer_.PaddingReceived(seq_num);
+  OnInsertedPacket(packet_buffer_.InsertPadding(seq_num));
   if (nack_module_) {
     nack_module_->OnReceivedPacket(seq_num, /* is_keyframe = */ false,
                                    /* is _recovered = */ false);

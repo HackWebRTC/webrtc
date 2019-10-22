@@ -61,7 +61,6 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
                                public RecoveredPacketReceiver,
                                public RtpPacketSinkInterface,
                                public KeyFrameRequestSender,
-                               public video_coding::OnAssembledFrameCallback,
                                public video_coding::OnCompleteFrameCallback,
                                public OnDecryptedFrameCallback,
                                public OnDecryptionStatusChangeCallback {
@@ -138,10 +137,6 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
 
   // Don't use, still experimental.
   void RequestPacketRetransmit(const std::vector<uint16_t>& sequence_numbers);
-
-  // Implements OnAssembledFrameCallback.
-  void OnAssembledFrame(
-      std::unique_ptr<video_coding::RtpFrameObject> frame) override;
 
   // Implements OnCompleteFrameCallback.
   void OnCompleteFrame(
@@ -246,6 +241,8 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   void UpdateHistograms();
   bool IsRedEnabled() const;
   void InsertSpsPpsIntoTracker(uint8_t payload_type);
+  void OnInsertedPacket(video_coding::PacketBuffer::InsertResult result);
+  void OnAssembledFrame(std::unique_ptr<video_coding::RtpFrameObject> frame);
 
   Clock* const clock_;
   // Ownership of this object lies with VideoReceiveStream, which owns |this|.

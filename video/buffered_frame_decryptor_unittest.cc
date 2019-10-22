@@ -38,11 +38,9 @@ FrameDecryptorInterface::Result DecryptFail() {
 
 }  // namespace
 
-class BufferedFrameDecryptorTest
-    : public ::testing::Test,
-      public OnDecryptedFrameCallback,
-      public OnDecryptionStatusChangeCallback,
-      public video_coding::OnAssembledFrameCallback {
+class BufferedFrameDecryptorTest : public ::testing::Test,
+                                   public OnDecryptedFrameCallback,
+                                   public OnDecryptionStatusChangeCallback {
  public:
   // Implements the OnDecryptedFrameCallbackInterface
   void OnDecryptedFrame(
@@ -53,10 +51,6 @@ class BufferedFrameDecryptorTest
   void OnDecryptionStatusChange(FrameDecryptorInterface::Status status) {
     ++decryption_status_change_count_;
   }
-
-  // Implements the OnAssembledFrameCallback interface.
-  void OnAssembledFrame(
-      std::unique_ptr<video_coding::RtpFrameObject> frame) override {}
 
   // Returns a new fake RtpFrameObject it abstracts the difficult construction
   // of the RtpFrameObject to simplify testing.
