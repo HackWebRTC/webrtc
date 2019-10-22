@@ -1493,6 +1493,14 @@ int AudioProcessingImpl::AnalyzeReverseStream(const float* const* data,
   return AnalyzeReverseStreamLocked(data, reverse_config, reverse_config);
 }
 
+int AudioProcessingImpl::AnalyzeReverseStream(
+    const float* const* data,
+    const StreamConfig& reverse_config) {
+  TRACE_EVENT0("webrtc", "AudioProcessing::AnalyzeReverseStream_StreamConfig");
+  rtc::CritScope cs(&crit_render_);
+  return AnalyzeReverseStreamLocked(data, reverse_config, reverse_config);
+}
+
 int AudioProcessingImpl::ProcessReverseStream(const float* const* src,
                                               const StreamConfig& input_config,
                                               const StreamConfig& output_config,

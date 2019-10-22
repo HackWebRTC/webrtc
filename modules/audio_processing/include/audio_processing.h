@@ -593,6 +593,12 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
                                    int sample_rate_hz,
                                    ChannelLayout layout) = 0;
 
+  // Accepts deinterleaved float audio with the range [-1, 1]. Each element
+  // of |data| points to a channel buffer, arranged according to
+  // |reverse_config|.
+  virtual int AnalyzeReverseStream(const float* const* data,
+                                   const StreamConfig& reverse_config) = 0;
+
   // Accepts deinterleaved float audio with the range [-1, 1]. Each element of
   // |data| points to a channel buffer, arranged according to |reverse_config|.
   virtual int ProcessReverseStream(const float* const* src,

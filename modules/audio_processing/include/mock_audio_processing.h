@@ -97,6 +97,9 @@ class MockAudioProcessing : public ::testing::NiceMock<AudioProcessing> {
                    size_t samples_per_channel,
                    int sample_rate_hz,
                    ChannelLayout layout));
+  MOCK_METHOD2(AnalyzeReverseStream,
+               int(const float* const* data,
+                   const StreamConfig& reverse_config));
   MOCK_METHOD4(ProcessReverseStream,
                int(const float* const* src,
                    const StreamConfig& input_config,

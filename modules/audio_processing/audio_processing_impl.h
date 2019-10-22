@@ -108,6 +108,8 @@ class AudioProcessingImpl : public AudioProcessing {
                            size_t samples_per_channel,
                            int sample_rate_hz,
                            ChannelLayout layout) override;
+  int AnalyzeReverseStream(const float* const* data,
+                           const StreamConfig& reverse_config) override;
   int ProcessReverseStream(const float* const* src,
                            const StreamConfig& input_config,
                            const StreamConfig& output_config,
