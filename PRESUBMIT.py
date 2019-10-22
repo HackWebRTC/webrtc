@@ -539,18 +539,21 @@ def CheckPublicDepsIsNotUsed(gn_files, input_api, output_api):
   return result
 
 
-def CheckCheckIncludesIsNotUsed(gn_files, output_api):
+def CheckCheckIncludesIsNotUsed(gn_files, input_api, output_api):
   result = []
   error_msg = ('check_includes overrides are not allowed since it can cause '
                'incorrect dependencies to form. It effectively means that your '
                'module can include any .h file without depending on its '
                'corresponding target. There are some exceptional cases when '
-               'this is allowed: if so, get approval from a .gn owner in the'
+               'this is allowed: if so, get approval from a .gn owner in the '
                'root OWNERS file.\n'
                'Used in: %s (line %d).')
+  no_presubmit_re = input_api.re.compile(
+      r'# no-presubmit-check TODO\(bugs\.webrtc\.org/\d+\)')
   for affected_file in gn_files:
     for (line_number, affected_line) in affected_file.ChangedContents():
-      if 'check_includes' in affected_line:
+      if ('check_includes' in affected_line
+          and not no_presubmit_re.search(affected_line)):
         result.append(
             output_api.PresubmitError(error_msg % (affected_file.LocalPath(),
                                                    line_number)))
@@ -573,7 +576,7 @@ def CheckGnChanges(input_api, output_api):
     result.extend(CheckNoPackageBoundaryViolations(input_api, gn_files,
                                                    output_api))
     result.extend(CheckPublicDepsIsNotUsed(gn_files, input_api, output_api))
-    result.extend(CheckCheckIncludesIsNotUsed(gn_files, output_api))
+    result.extend(CheckCheckIncludesIsNotUsed(gn_files, input_api, output_api))
     result.extend(CheckNoWarningSuppressionFlagsAreAdded(gn_files, input_api,
                                                           output_api))
   return result
