@@ -1746,7 +1746,8 @@ int VP9DecoderImpl::ReturnFrame(
           img->stride[VPX_PLANE_V] / 2, rtc::KeepRefUntilDone(img_buffer));
       break;
     default:
-      RTC_NOTREACHED();
+      RTC_LOG(LS_ERROR) << "Unsupported bit depth produced by the decoder: "
+                        << img->bit_depth;
       return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
   }
 
