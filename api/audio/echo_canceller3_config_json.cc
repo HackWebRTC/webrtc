@@ -32,8 +32,7 @@ void ReadParam(const Json::Value& root, std::string param_name, bool* param) {
 void ReadParam(const Json::Value& root, std::string param_name, size_t* param) {
   RTC_DCHECK(param);
   int v;
-  if (rtc::GetIntFromJsonObject(root, param_name, &v)) {
-    RTC_DCHECK_GE(v, 0);
+  if (rtc::GetIntFromJsonObject(root, param_name, &v) && v >= 0) {
     *param = v;
   }
 }
