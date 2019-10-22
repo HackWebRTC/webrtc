@@ -137,6 +137,11 @@
   return YES;
 }
 
+- (void)setMultipleTouchEnabled:(BOOL)multipleTouchEnabled {
+    [super setMultipleTouchEnabled:multipleTouchEnabled];
+    _glkView.multipleTouchEnabled = multipleTouchEnabled;
+}
+
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   UIApplicationState appState =
