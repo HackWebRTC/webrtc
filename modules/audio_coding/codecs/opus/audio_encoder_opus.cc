@@ -745,7 +745,7 @@ bool AudioEncoderOpusImpl::RecreateEncoderInstance(
                       config.sample_rate_hz));
   const int bitrate = GetBitrateBps(config);
   RTC_CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, bitrate));
-  RTC_LOG(LS_INFO) << "Set Opus bitrate to " << bitrate << " bps.";
+  RTC_LOG(LS_VERBOSE) << "Set Opus bitrate to " << bitrate << " bps.";
   if (config.fec_enabled) {
     RTC_CHECK_EQ(0, WebRtcOpus_EnableFec(inst_));
   } else {
