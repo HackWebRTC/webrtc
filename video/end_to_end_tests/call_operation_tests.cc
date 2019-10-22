@@ -95,19 +95,19 @@ TEST_F(CallOperationEndToEndTest, RendersSingleDelayedFrame) {
   std::unique_ptr<test::DirectTransport> receiver_transport;
 
   SendTask(
-      RTC_FROM_HERE, &task_queue_,
+      RTC_FROM_HERE, task_queue(),
       [this, &renderer, &frame_forwarder, &sender_transport,
        &receiver_transport]() {
         CreateCalls();
 
         sender_transport = std::make_unique<test::DirectTransport>(
-            &task_queue_,
+            task_queue(),
             std::make_unique<FakeNetworkPipe>(
                 Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
                                                BuiltInNetworkBehaviorConfig())),
             sender_call_.get(), payload_type_map_);
         receiver_transport = std::make_unique<test::DirectTransport>(
-            &task_queue_,
+            task_queue(),
             std::make_unique<FakeNetworkPipe>(
                 Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
                                                BuiltInNetworkBehaviorConfig())),
@@ -137,7 +137,7 @@ TEST_F(CallOperationEndToEndTest, RendersSingleDelayedFrame) {
   EXPECT_TRUE(renderer.Wait())
       << "Timed out while waiting for the frame to render.";
 
-  SendTask(RTC_FROM_HERE, &task_queue_,
+  SendTask(RTC_FROM_HERE, task_queue(),
            [this, &sender_transport, &receiver_transport]() {
              Stop();
              DestroyStreams();
@@ -164,19 +164,19 @@ TEST_F(CallOperationEndToEndTest, TransmitsFirstFrame) {
   std::unique_ptr<test::DirectTransport> receiver_transport;
 
   SendTask(
-      RTC_FROM_HERE, &task_queue_,
+      RTC_FROM_HERE, task_queue(),
       [this, &renderer, &frame_generator, &frame_forwarder, &sender_transport,
        &receiver_transport]() {
         CreateCalls();
 
         sender_transport = std::make_unique<test::DirectTransport>(
-            &task_queue_,
+            task_queue(),
             std::make_unique<FakeNetworkPipe>(
                 Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
                                                BuiltInNetworkBehaviorConfig())),
             sender_call_.get(), payload_type_map_);
         receiver_transport = std::make_unique<test::DirectTransport>(
-            &task_queue_,
+            task_queue(),
             std::make_unique<FakeNetworkPipe>(
                 Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
                                                BuiltInNetworkBehaviorConfig())),
@@ -201,7 +201,7 @@ TEST_F(CallOperationEndToEndTest, TransmitsFirstFrame) {
   EXPECT_TRUE(renderer.Wait())
       << "Timed out while waiting for the frame to render.";
 
-  SendTask(RTC_FROM_HERE, &task_queue_,
+  SendTask(RTC_FROM_HERE, task_queue(),
            [this, &sender_transport, &receiver_transport]() {
              Stop();
              DestroyStreams();

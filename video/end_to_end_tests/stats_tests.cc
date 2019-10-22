@@ -528,15 +528,15 @@ TEST_F(StatsEndToEndTest, MAYBE_ContentTypeSwitches) {
   VideoEncoderConfig encoder_config_with_screenshare;
 
   SendTask(
-      RTC_FROM_HERE, &task_queue_,
+      RTC_FROM_HERE, task_queue(),
       [this, &test, &send_config, &recv_config,
        &encoder_config_with_screenshare]() {
         CreateSenderCall(send_config);
         CreateReceiverCall(recv_config);
 
-        receive_transport_ = test.CreateReceiveTransport(&task_queue_);
+        receive_transport_ = test.CreateReceiveTransport(task_queue());
         send_transport_ =
-            test.CreateSendTransport(&task_queue_, sender_call_.get());
+            test.CreateSendTransport(task_queue(), sender_call_.get());
         send_transport_->SetReceiver(receiver_call_->Receiver());
         receive_transport_->SetReceiver(sender_call_->Receiver());
 
@@ -569,7 +569,7 @@ TEST_F(StatsEndToEndTest, MAYBE_ContentTypeSwitches) {
   test.PerformTest();
 
   // Replace old send stream.
-  SendTask(RTC_FROM_HERE, &task_queue_,
+  SendTask(RTC_FROM_HERE, task_queue(),
            [this, &encoder_config_with_screenshare]() {
              DestroyVideoSendStreams();
              CreateVideoSendStream(encoder_config_with_screenshare);
@@ -580,7 +580,7 @@ TEST_F(StatsEndToEndTest, MAYBE_ContentTypeSwitches) {
   // Continue to run test but now with screenshare.
   test.PerformTest();
 
-  SendTask(RTC_FROM_HERE, &task_queue_, [this]() {
+  SendTask(RTC_FROM_HERE, task_queue(), [this]() {
     Stop();
     DestroyStreams();
     send_transport_.reset();
@@ -723,20 +723,20 @@ TEST_F(StatsEndToEndTest, CallReportsRttForSender) {
   std::unique_ptr<test::DirectTransport> sender_transport;
   std::unique_ptr<test::DirectTransport> receiver_transport;
 
-  SendTask(RTC_FROM_HERE, &task_queue_,
+  SendTask(RTC_FROM_HERE, task_queue(),
            [this, &sender_transport, &receiver_transport]() {
              BuiltInNetworkBehaviorConfig config;
              config.queue_delay_ms = kSendDelayMs;
              CreateCalls();
              sender_transport = std::make_unique<test::DirectTransport>(
-                 &task_queue_,
+                 task_queue(),
                  std::make_unique<FakeNetworkPipe>(
                      Clock::GetRealTimeClock(),
                      std::make_unique<SimulatedNetwork>(config)),
                  sender_call_.get(), payload_type_map_);
              config.queue_delay_ms = kReceiveDelayMs;
              receiver_transport = std::make_unique<test::DirectTransport>(
-                 &task_queue_,
+                 task_queue(),
                  std::make_unique<FakeNetworkPipe>(
                      Clock::GetRealTimeClock(),
                      std::make_unique<SimulatedNetwork>(config)),
@@ -756,7 +756,7 @@ TEST_F(StatsEndToEndTest, CallReportsRttForSender) {
   int64_t start_time_ms = clock_->TimeInMilliseconds();
   while (true) {
     Call::Stats stats;
-    SendTask(RTC_FROM_HERE, &task_queue_,
+    SendTask(RTC_FROM_HERE, task_queue(),
              [this, &stats]() { stats = sender_call_->GetStats(); });
     ASSERT_GE(start_time_ms + kDefaultTimeoutMs, clock_->TimeInMilliseconds())
         << "No RTT stats before timeout!";
@@ -770,7 +770,7 @@ TEST_F(StatsEndToEndTest, CallReportsRttForSender) {
     SleepMs(10);
   }
 
-  SendTask(RTC_FROM_HERE, &task_queue_,
+  SendTask(RTC_FROM_HERE, task_queue(),
            [this, &sender_transport, &receiver_transport]() {
              Stop();
              DestroyStreams();

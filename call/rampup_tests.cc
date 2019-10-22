@@ -625,7 +625,7 @@ TEST_F(RampUpTest, UpDownUpAbsSendTimeSimulcastRedRtx) {
   std::vector<int> loss_rates = {0, 0, 0, 0};
   RampUpDownUpTester test(3, 0, 0, kStartBitrateBps,
                           RtpExtension::kAbsSendTimeUri, true, true, loss_rates,
-                          true, &task_queue_);
+                          true, task_queue());
   RunBaseTest(&test);
 }
 
@@ -641,7 +641,7 @@ TEST_F(RampUpTest, MAYBE_UpDownUpTransportSequenceNumberRtx) {
   std::vector<int> loss_rates = {0, 0, 0, 0};
   RampUpDownUpTester test(3, 0, 0, kStartBitrateBps,
                           RtpExtension::kTransportSequenceNumberUri, true,
-                          false, loss_rates, true, &task_queue_);
+                          false, loss_rates, true, task_queue());
   RunBaseTest(&test);
 }
 
@@ -653,7 +653,7 @@ TEST_F(RampUpTest, DISABLED_UpDownUpTransportSequenceNumberPacketLoss) {
   std::vector<int> loss_rates = {20, 0, 0, 0};
   RampUpDownUpTester test(1, 0, 1, kStartBitrateBps,
                           RtpExtension::kTransportSequenceNumberUri, true,
-                          false, loss_rates, false, &task_queue_);
+                          false, loss_rates, false, task_queue());
   RunBaseTest(&test);
 }
 
@@ -670,7 +670,7 @@ TEST_F(RampUpTest, MAYBE_UpDownUpAudioVideoTransportSequenceNumberRtx) {
   std::vector<int> loss_rates = {0, 0, 0, 0};
   RampUpDownUpTester test(3, 1, 0, kStartBitrateBps,
                           RtpExtension::kTransportSequenceNumberUri, true,
-                          false, loss_rates, false, &task_queue_);
+                          false, loss_rates, false, task_queue());
   RunBaseTest(&test);
 }
 
@@ -679,50 +679,50 @@ TEST_F(RampUpTest, UpDownUpAudioTransportSequenceNumberRtx) {
   std::vector<int> loss_rates = {0, 0, 0, 0};
   RampUpDownUpTester test(0, 1, 0, kStartBitrateBps,
                           RtpExtension::kTransportSequenceNumberUri, true,
-                          false, loss_rates, false, &task_queue_);
+                          false, loss_rates, false, task_queue());
   RunBaseTest(&test);
 }
 
 TEST_F(RampUpTest, TOffsetSimulcastRedRtx) {
   RampUpTester test(3, 0, 0, 0, 0, RtpExtension::kTimestampOffsetUri, true,
-                    true, true, &task_queue_);
+                    true, true, task_queue());
   RunBaseTest(&test);
 }
 
 TEST_F(RampUpTest, AbsSendTime) {
   RampUpTester test(1, 0, 0, 0, 0, RtpExtension::kAbsSendTimeUri, false, false,
-                    false, &task_queue_);
+                    false, task_queue());
   RunBaseTest(&test);
 }
 
 TEST_F(RampUpTest, AbsSendTimeSimulcastRedRtx) {
   RampUpTester test(3, 0, 0, 0, 0, RtpExtension::kAbsSendTimeUri, true, true,
-                    true, &task_queue_);
+                    true, task_queue());
   RunBaseTest(&test);
 }
 
 TEST_F(RampUpTest, TransportSequenceNumber) {
   RampUpTester test(1, 0, 0, 0, 0, RtpExtension::kTransportSequenceNumberUri,
-                    false, false, false, &task_queue_);
+                    false, false, false, task_queue());
   RunBaseTest(&test);
 }
 
 TEST_F(RampUpTest, TransportSequenceNumberSimulcast) {
   RampUpTester test(3, 0, 0, 0, 0, RtpExtension::kTransportSequenceNumberUri,
-                    false, false, false, &task_queue_);
+                    false, false, false, task_queue());
   RunBaseTest(&test);
 }
 
 TEST_F(RampUpTest, TransportSequenceNumberSimulcastRedRtx) {
   RampUpTester test(3, 0, 0, 0, 0, RtpExtension::kTransportSequenceNumberUri,
-                    true, true, true, &task_queue_);
+                    true, true, true, task_queue());
   RunBaseTest(&test);
 }
 
 TEST_F(RampUpTest, AudioTransportSequenceNumber) {
   RampUpTester test(0, 1, 0, 300000, 10000,
                     RtpExtension::kTransportSequenceNumberUri, false, false,
-                    false, &task_queue_);
+                    false, task_queue());
   RunBaseTest(&test);
 }
 }  // namespace webrtc

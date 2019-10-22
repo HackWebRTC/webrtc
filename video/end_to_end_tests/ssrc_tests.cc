@@ -80,18 +80,18 @@ TEST_F(SsrcEndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
   std::unique_ptr<PacketInputObserver> input_observer;
 
   SendTask(
-      RTC_FROM_HERE, &task_queue_,
+      RTC_FROM_HERE, task_queue(),
       [this, &send_transport, &receive_transport, &input_observer]() {
         CreateCalls();
 
         send_transport = std::make_unique<test::DirectTransport>(
-            &task_queue_,
+            task_queue(),
             std::make_unique<FakeNetworkPipe>(
                 Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
                                                BuiltInNetworkBehaviorConfig())),
             sender_call_.get(), payload_type_map_);
         receive_transport = std::make_unique<test::DirectTransport>(
-            &task_queue_,
+            task_queue(),
             std::make_unique<FakeNetworkPipe>(
                 Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
                                                BuiltInNetworkBehaviorConfig())),
@@ -116,7 +116,7 @@ TEST_F(SsrcEndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
   // Wait() waits for a received packet.
   EXPECT_TRUE(input_observer->Wait());
 
-  SendTask(RTC_FROM_HERE, &task_queue_,
+  SendTask(RTC_FROM_HERE, task_queue(),
            [this, &send_transport, &receive_transport]() {
              Stop();
              DestroyStreams();

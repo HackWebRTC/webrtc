@@ -140,12 +140,12 @@ class BandwidthStatsTest : public test::EndToEndTest {
 };
 
 TEST_F(BandwidthEndToEndTest, VerifySendSideBweStats) {
-  BandwidthStatsTest test(true, &task_queue_);
+  BandwidthStatsTest test(true, task_queue());
   RunBaseTest(&test);
 }
 
 TEST_F(BandwidthEndToEndTest, VerifyRecvSideBweStats) {
-  BandwidthStatsTest test(false, &task_queue_);
+  BandwidthStatsTest test(false, task_queue());
   RunBaseTest(&test);
 }
 
@@ -268,7 +268,7 @@ TEST_F(BandwidthEndToEndTest, RembWithSendSideBwe) {
     TestState state_;
     RateLimiter retransmission_rate_limiter_;
     TaskQueueBase* const task_queue_;
-  } test(&task_queue_);
+  } test(task_queue());
 
   RunBaseTest(&test);
 }
@@ -364,7 +364,7 @@ TEST_F(BandwidthEndToEndTest, ReportsSetEncoderRates) {
     test::VideoEncoderProxyFactory encoder_factory_;
     std::unique_ptr<VideoBitrateAllocatorFactory> bitrate_allocator_factory_;
     uint32_t bitrate_kbps_ RTC_GUARDED_BY(crit_);
-  } test(&task_queue_);
+  } test(task_queue());
 
   RunBaseTest(&test);
 }

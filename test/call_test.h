@@ -174,6 +174,7 @@ class CallTest : public ::testing::Test {
   void SetVideoEncoderConfig(const VideoEncoderConfig& config);
   VideoSendStream* GetVideoSendStream();
   FlexfecReceiveStream::Config* GetFlexFecConfig();
+  TaskQueueBase* task_queue() { return &task_queue_; }
 
   Clock* const clock_;
 
@@ -221,7 +222,6 @@ class CallTest : public ::testing::Test {
   rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory_;
   test::FakeVideoRenderer fake_renderer_;
 
-  DEPRECATED_SingleThreadedTaskQueueForTesting task_queue_;
 
  private:
   absl::optional<RtpExtension> GetRtpExtensionByUri(
@@ -230,6 +230,7 @@ class CallTest : public ::testing::Test {
   void AddRtpExtensionByUri(const std::string& uri,
                             std::vector<RtpExtension>* extensions) const;
 
+  DEPRECATED_SingleThreadedTaskQueueForTesting task_queue_;
   std::vector<RtpExtension> rtp_extensions_;
   rtc::scoped_refptr<AudioProcessing> apm_send_;
   rtc::scoped_refptr<AudioProcessing> apm_recv_;

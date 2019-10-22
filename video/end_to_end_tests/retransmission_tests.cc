@@ -236,7 +236,7 @@ TEST_F(RetransmissionEndToEndTest,
     VideoSendStream* send_stream_;
     VideoReceiveStream* receive_stream_;
     TaskQueueBase* const task_queue_;
-  } test(&task_queue_);
+  } test(task_queue());
 
   RunBaseTest(&test);
 }
