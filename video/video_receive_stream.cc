@@ -502,6 +502,7 @@ int VideoReceiveStream::GetBaseMinimumPlayoutDelayMs() const {
 
 // TODO(tommi): This method grabs a lock 6 times.
 void VideoReceiveStream::OnFrame(const VideoFrame& video_frame) {
+  int64_t video_playout_ntp_ms;
   int64_t sync_offset_ms;
   double estimated_freq_khz;
   // TODO(tommi): GetStreamSyncOffsetInMs grabs three locks.  One inside the
@@ -510,9 +511,10 @@ void VideoReceiveStream::OnFrame(const VideoFrame& video_frame) {
   // succeeds most of the time, which leads to grabbing a fourth lock.
   if (rtp_stream_sync_.GetStreamSyncOffsetInMs(
           video_frame.timestamp(), video_frame.render_time_ms(),
-          &sync_offset_ms, &estimated_freq_khz)) {
+          &video_playout_ntp_ms, &sync_offset_ms, &estimated_freq_khz)) {
     // TODO(tommi): OnSyncOffsetUpdated grabs a lock.
-    stats_proxy_.OnSyncOffsetUpdated(sync_offset_ms, estimated_freq_khz);
+    stats_proxy_.OnSyncOffsetUpdated(video_playout_ntp_ms, sync_offset_ms,
+                                     estimated_freq_khz);
   }
   source_tracker_.OnFrameDelivered(video_frame.packet_infos());
 
@@ -603,9 +605,16 @@ absl::optional<Syncable::Info> VideoReceiveStream::GetInfo() const {
   return info;
 }
 
-uint32_t VideoReceiveStream::GetPlayoutTimestamp() const {
+bool VideoReceiveStream::GetPlayoutRtpTimestamp(uint32_t* rtp_timestamp,
+                                                int64_t* time_ms) const {
   RTC_NOTREACHED();
   return 0;
+}
+
+void VideoReceiveStream::SetEstimatedPlayoutNtpTimestampMs(
+    int64_t ntp_timestamp_ms,
+    int64_t time_ms) {
+  RTC_NOTREACHED();
 }
 
 void VideoReceiveStream::SetMinimumPlayoutDelay(int delay_ms) {

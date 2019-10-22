@@ -62,6 +62,7 @@ const int kPlayoutBufferDelay = 302;
 const unsigned int kSpeechOutputLevel = 99;
 const double kTotalOutputEnergy = 0.25;
 const double kTotalOutputDuration = 0.5;
+const int64_t kPlayoutNtpTimestampMs = 5678;
 
 const CallReceiveStatistics kCallStats = {678, 234, -12, 567, 78, 890, 123};
 const std::pair<int, SdpAudioFormat> kReceiveCodec = {
@@ -145,6 +146,8 @@ struct ConfigHelper {
         .WillOnce(Return(kAudioDecodeStats));
     EXPECT_CALL(*channel_receive_, GetReceiveCodec())
         .WillOnce(Return(kReceiveCodec));
+    EXPECT_CALL(*channel_receive_, GetCurrentEstimatedPlayoutNtpTimestampMs(_))
+        .WillOnce(Return(kPlayoutNtpTimestampMs));
   }
 
  private:
@@ -315,6 +318,7 @@ TEST(AudioReceiveStreamTest, GetStats) {
             stats.decoding_muted_output);
   EXPECT_EQ(kCallStats.capture_start_ntp_time_ms_,
             stats.capture_start_ntp_time_ms);
+  EXPECT_EQ(kPlayoutNtpTimestampMs, stats.estimated_playout_ntp_timestamp_ms);
 }
 
 TEST(AudioReceiveStreamTest, SetGain) {

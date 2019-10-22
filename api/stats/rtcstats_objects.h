@@ -446,6 +446,8 @@ class RTC_EXPORT RTCInboundRTPStreamStats final : public RTCRTPStreamStats {
   RTCStatsMember<double> total_decode_time;
   // https://henbos.github.io/webrtc-provisional-stats/#dom-rtcinboundrtpstreamstats-contenttype
   RTCStatsMember<std::string> content_type;
+  // TODO(asapersson): Currently only populated if audio/video sync is enabled.
+  RTCStatsMember<double> estimated_playout_timestamp;
   // TODO(hbos): This is only implemented for video; implement it for audio as
   // well.
   RTCStatsMember<std::string> decoder_implementation;

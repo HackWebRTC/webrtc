@@ -617,6 +617,7 @@ WEBRTC_RTCSTATS_IMPL(
     &key_frames_decoded,
     &total_decode_time,
     &content_type,
+    &estimated_playout_timestamp,
     &decoder_implementation)
 // clang-format on
 
@@ -650,6 +651,7 @@ RTCInboundRTPStreamStats::RTCInboundRTPStreamStats(std::string&& id,
       key_frames_decoded("keyFramesDecoded"),
       total_decode_time("totalDecodeTime"),
       content_type("contentType"),
+      estimated_playout_timestamp("estimatedPlayoutTimestamp"),
       decoder_implementation("decoderImplementation") {}
 
 RTCInboundRTPStreamStats::RTCInboundRTPStreamStats(
@@ -678,6 +680,7 @@ RTCInboundRTPStreamStats::RTCInboundRTPStreamStats(
       key_frames_decoded(other.key_frames_decoded),
       total_decode_time(other.total_decode_time),
       content_type(other.content_type),
+      estimated_playout_timestamp(other.estimated_playout_timestamp),
       decoder_implementation(other.decoder_implementation) {}
 
 RTCInboundRTPStreamStats::~RTCInboundRTPStreamStats() {}

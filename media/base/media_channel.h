@@ -460,6 +460,8 @@ struct MediaReceiverInfo {
   // local clock when it was received - not the RTP timestamp of that packet.
   // https://w3c.github.io/webrtc-stats/#dom-rtcinboundrtpstreamstats-lastpacketreceivedtimestamp
   absl::optional<int64_t> last_packet_received_timestamp_ms;
+  // https://w3c.github.io/webrtc-stats/#dom-rtcinboundrtpstreamstats-estimatedplayouttimestamp
+  absl::optional<int64_t> estimated_playout_ntp_timestamp_ms;
   std::string codec_name;
   absl::optional<int> codec_payload_type;
   std::vector<SsrcReceiverInfo> local_stats;

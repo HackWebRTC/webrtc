@@ -36,12 +36,14 @@ class RtpStreamsSynchronizer : public Module {
   int64_t TimeUntilNextProcess() override;
   void Process() override;
 
-  // Gets the sync offset between the current played out audio frame and the
-  // video |frame|. Returns true on success, false otherwise.
-  // The estimated frequency is the frequency used in the RTP to NTP timestamp
+  // Gets the estimated playout NTP timestamp for the video frame with
+  // |rtp_timestamp| and the sync offset between the current played out audio
+  // frame and the video frame. Returns true on success, false otherwise.
+  // The |estimated_freq_khz| is the frequency used in the RTP to NTP timestamp
   // conversion.
-  bool GetStreamSyncOffsetInMs(uint32_t timestamp,
+  bool GetStreamSyncOffsetInMs(uint32_t rtp_timestamp,
                                int64_t render_time_ms,
+                               int64_t* video_playout_ntp_ms,
                                int64_t* stream_offset_ms,
                                double* estimated_freq_khz) const;
 

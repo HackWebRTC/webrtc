@@ -2829,6 +2829,8 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
   info.total_decode_time_ms = stats.total_decode_time_ms;
   info.last_packet_received_timestamp_ms =
       stats.rtp_stats.last_packet_received_timestamp_ms;
+  info.estimated_playout_ntp_timestamp_ms =
+      stats.estimated_playout_ntp_timestamp_ms;
   info.first_frame_received_to_decoded_ms =
       stats.first_frame_received_to_decoded_ms;
   info.interframe_delay_max_ms = stats.interframe_delay_max_ms;

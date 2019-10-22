@@ -598,20 +598,40 @@ TEST_F(ReceiveStatisticsProxyTest, PacketLossHistogramIsUpdated) {
       1, metrics::NumEvents("WebRTC.Video.ReceivedPacketsLostInPercent", 10));
 }
 
+TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsPlayoutTimestamp) {
+  const int64_t kVideoNtpMs = 21;
+  const int64_t kSyncOffsetMs = 22;
+  const double kFreqKhz = 90.0;
+  EXPECT_EQ(absl::nullopt,
+            statistics_proxy_->GetStats().estimated_playout_ntp_timestamp_ms);
+  statistics_proxy_->OnSyncOffsetUpdated(kVideoNtpMs, kSyncOffsetMs, kFreqKhz);
+  EXPECT_EQ(kVideoNtpMs,
+            statistics_proxy_->GetStats().estimated_playout_ntp_timestamp_ms);
+  fake_clock_.AdvanceTimeMilliseconds(13);
+  EXPECT_EQ(kVideoNtpMs + 13,
+            statistics_proxy_->GetStats().estimated_playout_ntp_timestamp_ms);
+  fake_clock_.AdvanceTimeMilliseconds(5);
+  EXPECT_EQ(kVideoNtpMs + 13 + 5,
+            statistics_proxy_->GetStats().estimated_playout_ntp_timestamp_ms);
+}
+
 TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsAvSyncOffset) {
+  const int64_t kVideoNtpMs = 21;
   const int64_t kSyncOffsetMs = 22;
   const double kFreqKhz = 90.0;
   EXPECT_EQ(std::numeric_limits<int>::max(),
             statistics_proxy_->GetStats().sync_offset_ms);
-  statistics_proxy_->OnSyncOffsetUpdated(kSyncOffsetMs, kFreqKhz);
+  statistics_proxy_->OnSyncOffsetUpdated(kVideoNtpMs, kSyncOffsetMs, kFreqKhz);
   EXPECT_EQ(kSyncOffsetMs, statistics_proxy_->GetStats().sync_offset_ms);
 }
 
 TEST_F(ReceiveStatisticsProxyTest, AvSyncOffsetHistogramIsUpdated) {
+  const int64_t kVideoNtpMs = 21;
   const int64_t kSyncOffsetMs = 22;
   const double kFreqKhz = 90.0;
   for (int i = 0; i < kMinRequiredSamples; ++i)
-    statistics_proxy_->OnSyncOffsetUpdated(kSyncOffsetMs, kFreqKhz);
+    statistics_proxy_->OnSyncOffsetUpdated(kVideoNtpMs, kSyncOffsetMs,
+                                           kFreqKhz);
   statistics_proxy_->UpdateHistograms(absl::nullopt, StreamDataCounters(),
                                       nullptr);
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.AVSyncOffsetInMs"));
@@ -620,18 +640,23 @@ TEST_F(ReceiveStatisticsProxyTest, AvSyncOffsetHistogramIsUpdated) {
 }
 
 TEST_F(ReceiveStatisticsProxyTest, RtpToNtpFrequencyOffsetHistogramIsUpdated) {
+  const int64_t kVideoNtpMs = 21;
   const int64_t kSyncOffsetMs = 22;
   const double kFreqKhz = 90.0;
-  statistics_proxy_->OnSyncOffsetUpdated(kSyncOffsetMs, kFreqKhz);
-  statistics_proxy_->OnSyncOffsetUpdated(kSyncOffsetMs, kFreqKhz + 2.2);
+  statistics_proxy_->OnSyncOffsetUpdated(kVideoNtpMs, kSyncOffsetMs, kFreqKhz);
+  statistics_proxy_->OnSyncOffsetUpdated(kVideoNtpMs, kSyncOffsetMs,
+                                         kFreqKhz + 2.2);
   fake_clock_.AdvanceTimeMilliseconds(kFreqOffsetProcessIntervalInMs);
   // Process interval passed, max diff: 2.
-  statistics_proxy_->OnSyncOffsetUpdated(kSyncOffsetMs, kFreqKhz + 1.1);
-  statistics_proxy_->OnSyncOffsetUpdated(kSyncOffsetMs, kFreqKhz - 4.2);
-  statistics_proxy_->OnSyncOffsetUpdated(kSyncOffsetMs, kFreqKhz - 0.9);
+  statistics_proxy_->OnSyncOffsetUpdated(kVideoNtpMs, kSyncOffsetMs,
+                                         kFreqKhz + 1.1);
+  statistics_proxy_->OnSyncOffsetUpdated(kVideoNtpMs, kSyncOffsetMs,
+                                         kFreqKhz - 4.2);
+  statistics_proxy_->OnSyncOffsetUpdated(kVideoNtpMs, kSyncOffsetMs,
+                                         kFreqKhz - 0.9);
   fake_clock_.AdvanceTimeMilliseconds(kFreqOffsetProcessIntervalInMs);
   // Process interval passed, max diff: 4.
-  statistics_proxy_->OnSyncOffsetUpdated(kSyncOffsetMs, kFreqKhz);
+  statistics_proxy_->OnSyncOffsetUpdated(kVideoNtpMs, kSyncOffsetMs, kFreqKhz);
   statistics_proxy_->UpdateHistograms(absl::nullopt, StreamDataCounters(),
                                       nullptr);
   // Average reported: (2 + 4) / 2 = 3.

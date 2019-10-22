@@ -206,6 +206,9 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   stats.audio_level = channel_receive_->GetSpeechOutputLevelFullRange();
   stats.total_output_energy = channel_receive_->GetTotalOutputEnergy();
   stats.total_output_duration = channel_receive_->GetTotalOutputDuration();
+  stats.estimated_playout_ntp_timestamp_ms =
+      channel_receive_->GetCurrentEstimatedPlayoutNtpTimestampMs(
+          rtc::TimeMillis());
 
   // Get jitter buffer and total delay (alg + jitter + playout) stats.
   auto ns = channel_receive_->GetNetworkStatistics();
@@ -310,9 +313,18 @@ absl::optional<Syncable::Info> AudioReceiveStream::GetInfo() const {
   return info;
 }
 
-uint32_t AudioReceiveStream::GetPlayoutTimestamp() const {
+bool AudioReceiveStream::GetPlayoutRtpTimestamp(uint32_t* rtp_timestamp,
+                                                int64_t* time_ms) const {
   // Called on video capture thread.
-  return channel_receive_->GetPlayoutTimestamp();
+  return channel_receive_->GetPlayoutRtpTimestamp(rtp_timestamp, time_ms);
+}
+
+void AudioReceiveStream::SetEstimatedPlayoutNtpTimestampMs(
+    int64_t ntp_timestamp_ms,
+    int64_t time_ms) {
+  // Called on video capture thread.
+  channel_receive_->SetEstimatedPlayoutNtpTimestampMs(ntp_timestamp_ms,
+                                                      time_ms);
 }
 
 void AudioReceiveStream::SetMinimumPlayoutDelay(int delay_ms) {

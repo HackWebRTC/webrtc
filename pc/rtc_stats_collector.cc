@@ -285,6 +285,10 @@ void SetInboundRTPStreamStatsFromVoiceReceiverInfo(
             *voice_receiver_info.last_packet_received_timestamp_ms) /
         rtc::kNumMillisecsPerSec;
   }
+  if (voice_receiver_info.estimated_playout_ntp_timestamp_ms) {
+    inbound_audio->estimated_playout_timestamp = static_cast<double>(
+        *voice_receiver_info.estimated_playout_ntp_timestamp_ms);
+  }
   inbound_audio->fec_packets_received =
       voice_receiver_info.fec_packets_received;
   inbound_audio->fec_packets_discarded =
@@ -321,6 +325,10 @@ void SetInboundRTPStreamStatsFromVideoReceiverInfo(
         static_cast<double>(
             *video_receiver_info.last_packet_received_timestamp_ms) /
         rtc::kNumMillisecsPerSec;
+  }
+  if (video_receiver_info.estimated_playout_ntp_timestamp_ms) {
+    inbound_video->estimated_playout_timestamp = static_cast<double>(
+        *video_receiver_info.estimated_playout_ntp_timestamp_ms);
   }
   // TODO(https://crbug.com/webrtc/10529): When info's |content_info| is
   // optional, support the "unspecified" value.

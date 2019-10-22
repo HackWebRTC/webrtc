@@ -611,6 +611,17 @@ void ReceiveStatisticsProxy::UpdateDecodeTimeHistograms(
   }
 }
 
+absl::optional<int64_t>
+ReceiveStatisticsProxy::GetCurrentEstimatedPlayoutNtpTimestampMs(
+    int64_t now_ms) const {
+  if (!last_estimated_playout_ntp_timestamp_ms_ ||
+      !last_estimated_playout_time_ms_) {
+    return absl::nullopt;
+  }
+  int64_t elapsed_ms = now_ms - *last_estimated_playout_time_ms_;
+  return *last_estimated_playout_ntp_timestamp_ms_ + elapsed_ms;
+}
+
 VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
   rtc::CritScope lock(&crit_);
   // Get current frame rates here, as only updating them on new frames prevents
@@ -637,6 +648,8 @@ VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
       static_cast<double>(current_delay_counter_.Sum(1).value_or(0)) /
       rtc::kNumMillisecsPerSec;
   stats_.jitter_buffer_emitted_count = current_delay_counter_.NumSamples();
+  stats_.estimated_playout_ntp_timestamp_ms =
+      GetCurrentEstimatedPlayoutNtpTimestampMs(now_ms);
   return stats_;
 }
 
@@ -813,11 +826,14 @@ void ReceiveStatisticsProxy::OnRenderedFrame(const VideoFrame& frame) {
   QualitySample();
 }
 
-void ReceiveStatisticsProxy::OnSyncOffsetUpdated(int64_t sync_offset_ms,
+void ReceiveStatisticsProxy::OnSyncOffsetUpdated(int64_t video_playout_ntp_ms,
+                                                 int64_t sync_offset_ms,
                                                  double estimated_freq_khz) {
   rtc::CritScope lock(&crit_);
   sync_offset_counter_.Add(std::abs(sync_offset_ms));
   stats_.sync_offset_ms = sync_offset_ms;
+  last_estimated_playout_ntp_timestamp_ms_ = video_playout_ntp_ms;
+  last_estimated_playout_time_ms_ = clock_->TimeInMilliseconds();
 
   const double kMaxFreqKhz = 10000.0;
   int offset_khz = kMaxFreqKhz;

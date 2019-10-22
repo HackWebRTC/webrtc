@@ -110,6 +110,8 @@ class VideoReceiveStream {
 
     VideoContentType content_type = VideoContentType::UNSPECIFIED;
 
+    // https://w3c.github.io/webrtc-stats/#dom-rtcinboundrtpstreamstats-estimatedplayouttimestamp
+    absl::optional<int64_t> estimated_playout_ntp_timestamp_ms;
     int sync_offset_ms = std::numeric_limits<int>::max();
 
     uint32_t ssrc = 0;

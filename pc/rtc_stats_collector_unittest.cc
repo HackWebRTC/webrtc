@@ -1789,6 +1789,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
   // Set previously undefined values and "GetStats" again.
   voice_media_info.receivers[0].last_packet_received_timestamp_ms = 3000;
   expected_audio.last_packet_received_timestamp = 3.0;
+  voice_media_info.receivers[0].estimated_playout_ntp_timestamp_ms = 4567;
+  expected_audio.estimated_playout_timestamp = 4567;
   voice_media_channel->SetStats(voice_media_info);
 
   report = stats_->GetFreshStatsReport();
@@ -1824,6 +1826,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   video_media_info.receivers[0].last_packet_received_timestamp_ms =
       absl::nullopt;
   video_media_info.receivers[0].content_type = VideoContentType::UNSPECIFIED;
+  video_media_info.receivers[0].estimated_playout_ntp_timestamp_ms =
+      absl::nullopt;
   video_media_info.receivers[0].decoder_implementation_name = "";
 
   RtpCodecParameters codec_parameters;
@@ -1872,11 +1876,13 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
 
   // Set previously undefined values and "GetStats" again.
   video_media_info.receivers[0].qp_sum = 9;
-  video_media_info.receivers[0].last_packet_received_timestamp_ms = 1000;
   expected_video.qp_sum = 9;
+  video_media_info.receivers[0].last_packet_received_timestamp_ms = 1000;
   expected_video.last_packet_received_timestamp = 1.0;
   video_media_info.receivers[0].content_type = VideoContentType::SCREENSHARE;
   expected_video.content_type = "screenshare";
+  video_media_info.receivers[0].estimated_playout_ntp_timestamp_ms = 1234;
+  expected_video.estimated_playout_timestamp = 1234;
   video_media_info.receivers[0].decoder_implementation_name = "libfoodecoder";
   expected_video.decoder_implementation = "libfoodecoder";
   video_media_channel->SetStats(video_media_info);
