@@ -35,16 +35,29 @@ rtc_library("task_queue_test") {
     "task_queue_test.cc",
     "task_queue_test.h",
   ]
-  deps = [
-    ":task_queue",
-    "../../rtc_base:refcount",
-    "../../rtc_base:rtc_event",
-    "../../rtc_base:timeutils",
-    "../../rtc_base/task_utils:to_queued_task",
-    "../../test:test_support",
-    "//third_party/abseil-cpp/absl/memory",
-    "//third_party/abseil-cpp/absl/strings",
-  ]
+
+  check_includes = false  # no-presubmit-check TODO(bugs.webrtc.org/9419)
+  if (build_with_chromium) {
+    # Don't depend on WebRTC code outside of webrtc_overrides:webrtc_component
+    # because this will break the WebRTC component build in Chromium.
+    deps = [
+      "../../../webrtc_overrides:webrtc_component",
+      "../../test:test_support",
+      "//third_party/abseil-cpp/absl/memory",
+      "//third_party/abseil-cpp/absl/strings",
+    ]
+  } else {
+    deps = [
+      ":task_queue",
+      "../../rtc_base:refcount",
+      "../../rtc_base:rtc_event",
+      "../../rtc_base:timeutils",
+      "../../rtc_base/task_utils:to_queued_task",
+      "../../test:test_support",
+      "//third_party/abseil-cpp/absl/memory",
+      "//third_party/abseil-cpp/absl/strings",
+    ]
+  }
 }
 
 rtc_library("default_task_queue_factory") {
