@@ -944,6 +944,7 @@ void AudioProcessingImpl::HandleCaptureRuntimeSettings() {
         if (config_.pre_amplifier.enabled) {
           float value;
           setting.GetFloat(&value);
+          config_.pre_amplifier.fixed_gain_factor = value;
           submodules_.pre_amplifier->SetGainFactor(value);
         }
         // TODO(bugs.chromium.org/9138): Log setting handling by Aec Dump.
