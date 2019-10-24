@@ -34,8 +34,10 @@
 #include "pc/stream_collection.h"
 #include "pc/webrtc_session_description_factory.h"
 #include "rtc_base/experiments/field_trial_parser.h"
+#include "rtc_base/operations_chain.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/unique_id_generator.h"
+#include "rtc_base/weak_ptr.h"
 
 namespace webrtc {
 
@@ -442,6 +444,22 @@ class PeerConnection : public PeerConnectionInternal,
 
   rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
   GetFirstAudioTransceiver() const RTC_RUN_ON(signaling_thread());
+
+  // Implementation of the offer/answer exchange operations. These are chained
+  // onto the |operations_chain_| when the public CreateOffer(), CreateAnswer(),
+  // SetLocalDescription() and SetRemoteDescription() methods are invoked.
+  void DoCreateOffer(
+      const RTCOfferAnswerOptions& options,
+      rtc::scoped_refptr<CreateSessionDescriptionObserver> observer);
+  void DoCreateAnswer(
+      const RTCOfferAnswerOptions& options,
+      rtc::scoped_refptr<CreateSessionDescriptionObserver> observer);
+  void DoSetLocalDescription(
+      std::unique_ptr<SessionDescriptionInterface> desc,
+      rtc::scoped_refptr<SetSessionDescriptionObserver> observer);
+  void DoSetRemoteDescription(
+      std::unique_ptr<SessionDescriptionInterface> desc,
+      rtc::scoped_refptr<SetRemoteDescriptionObserverInterface> observer);
 
   void CreateAudioReceiver(MediaStreamInterface* stream,
                            const RtpSenderInfo& remote_sender_info)
@@ -1217,6 +1235,14 @@ class PeerConnection : public PeerConnectionInternal,
   // pointer (but not touch the object) from any thread.
   RtcEventLog* const event_log_ptr_ RTC_PT_GUARDED_BY(worker_thread());
 
+  // The operations chain is used by the offer/answer exchange methods to ensure
+  // they are executed in the right order. For example, if
+  // SetRemoteDescription() is invoked while CreateOffer() is still pending, the
+  // SRD operation will not start until CreateOffer() has completed. See
+  // https://w3c.github.io/webrtc-pc/#dfn-operations-chain.
+  rtc::scoped_refptr<rtc::OperationsChain> operations_chain_
+      RTC_GUARDED_BY(signaling_thread());
+
   SignalingState signaling_state_ RTC_GUARDED_BY(signaling_thread()) = kStable;
   IceConnectionState ice_connection_state_ RTC_GUARDED_BY(signaling_thread()) =
       kIceConnectionNew;
@@ -1446,6 +1472,9 @@ class PeerConnection : public PeerConnectionInternal,
   std::unique_ptr<LocalIceCredentialsToReplace>
       local_ice_credentials_to_replace_ RTC_GUARDED_BY(signaling_thread());
   bool is_negotiation_needed_ RTC_GUARDED_BY(signaling_thread()) = false;
+
+  rtc::WeakPtrFactory<PeerConnection> weak_ptr_factory_
+      RTC_GUARDED_BY(signaling_thread());
 };
 
 }  // namespace webrtc

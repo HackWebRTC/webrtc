@@ -41,6 +41,10 @@ using ::testing::Bool;
 using ::testing::Combine;
 using ::testing::Values;
 
+namespace {
+const int64_t kWaitTimeout = 10000;
+}  // namespace
+
 class PeerConnectionWrapperForSignalingTest : public PeerConnectionWrapper {
  public:
   using PeerConnectionWrapper::PeerConnectionWrapper;
@@ -520,6 +524,63 @@ TEST_P(PeerConnectionSignalingTest, CreateOffersAndShutdown) {
     // must have received a notification.
     EXPECT_TRUE(observer->called());
   }
+}
+
+// Similar to the above test, but by closing the PC first the CreateOffer() will
+// fail "early", which triggers a codepath where the PeerConnection is
+// reponsible for invoking the observer, instead of the normal codepath where
+// the WebRtcSessionDescriptionFactory is responsible for it.
+TEST_P(PeerConnectionSignalingTest, CloseCreateOfferAndShutdown) {
+  auto caller = CreatePeerConnection();
+  rtc::scoped_refptr<MockCreateSessionDescriptionObserver> observer =
+      new rtc::RefCountedObject<MockCreateSessionDescriptionObserver>();
+  caller->pc()->Close();
+  caller->pc()->CreateOffer(observer, RTCOfferAnswerOptions());
+  caller.reset(nullptr);
+  EXPECT_TRUE(observer->called());
+}
+
+TEST_P(PeerConnectionSignalingTest, SetRemoteDescriptionExecutesImmediately) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnection();
+
+  // This offer will cause receivers to be created.
+  auto offer = caller->CreateOffer(RTCOfferAnswerOptions());
+
+  // By not waiting for the observer's callback we can verify that the operation
+  // executed immediately.
+  callee->pc()->SetRemoteDescription(std::move(offer),
+                                     new MockSetRemoteDescriptionObserver());
+  EXPECT_EQ(2u, callee->pc()->GetReceivers().size());
+}
+
+TEST_P(PeerConnectionSignalingTest, CreateOfferBlocksSetRemoteDescription) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnection();
+
+  // This offer will cause receivers to be created.
+  auto offer = caller->CreateOffer(RTCOfferAnswerOptions());
+
+  EXPECT_EQ(0u, callee->pc()->GetReceivers().size());
+  rtc::scoped_refptr<MockCreateSessionDescriptionObserver> offer_observer(
+      new rtc::RefCountedObject<MockCreateSessionDescriptionObserver>());
+  // Synchronously invoke CreateOffer() and SetRemoteDescription(). The
+  // SetRemoteDescription() operation should be chained to be executed
+  // asynchronously, when CreateOffer() completes.
+  callee->pc()->CreateOffer(offer_observer, RTCOfferAnswerOptions());
+  callee->pc()->SetRemoteDescription(std::move(offer),
+                                     new MockSetRemoteDescriptionObserver());
+  // CreateOffer() is asynchronous; without message processing this operation
+  // should not have completed.
+  EXPECT_FALSE(offer_observer->called());
+  // Due to chaining, the receivers should not have been created by the offer
+  // yet.
+  EXPECT_EQ(0u, callee->pc()->GetReceivers().size());
+  // EXPECT_EQ_WAIT causes messages to be processed...
+  EXPECT_EQ_WAIT(true, offer_observer->called(), kWaitTimeout);
+  // Now that the offer has been completed, SetRemoteDescription() will have
+  // been executed next in the chain.
+  EXPECT_EQ(2u, callee->pc()->GetReceivers().size());
 }
 
 INSTANTIATE_TEST_SUITE_P(PeerConnectionSignalingTest,
