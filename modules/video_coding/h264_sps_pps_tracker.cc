@@ -27,22 +27,6 @@ namespace video_coding {
 
 namespace {
 const uint8_t start_code_h264[] = {0, 0, 0, 1};
-
-bool HasVclData(const VCMPacket& packet) {
-  const auto* h264_header =
-      absl::get_if<RTPVideoHeaderH264>(&packet.video_header.video_type_header);
-  if (h264_header->nalus_length == 0) {
-    return h264_header->nalu_type == H264::NaluType::kIdr ||
-           h264_header->nalu_type == H264::NaluType::kSlice;
-  }
-  for (size_t i = 0; i < h264_header->nalus_length; ++i) {
-    if (h264_header->nalus[i].type == H264::NaluType::kIdr ||
-        h264_header->nalus[i].type == H264::NaluType::kSlice) {
-      return true;
-    }
-  }
-  return false;
-}
 }  // namespace
 
 H264SpsPpsTracker::H264SpsPpsTracker() = default;
@@ -228,13 +212,6 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
 
   packet->dataPtr = buffer;
   packet->sizeBytes = required_size;
-
-  // If this packet does not contain any VCL NAL units then reset end-of-frame
-  // flag to prevent it from being interpreted as a frame by the packet buffer.
-  if (packet->is_last_packet_in_frame() && !HasVclData(*packet)) {
-    packet->video_header.is_last_packet_in_frame = false;
-  }
-
   return kInsert;
 }
 

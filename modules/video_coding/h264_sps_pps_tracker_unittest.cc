@@ -388,49 +388,5 @@ TEST_F(TestH264SpsPpsTracker, SaveRestoreWidthHeight) {
   delete[] idr_packet.dataPtr;
 }
 
-TEST_F(TestH264SpsPpsTracker, ResetEndOfFrameFlagInNonVclPacket) {
-  // Insert SPS/PPS packet with end-of-frame flag set to true. The tracker
-  // should reset the flag since this packet doesn't contain VCL NALUs.
-  std::vector<uint8_t> data;
-  H264VcmPacket packet;
-  packet.video_header.is_last_packet_in_frame = true;
-
-  AddSps(&packet, 0, &data);
-  AddPps(&packet, 0, 1, &data);
-  packet.dataPtr = data.data();
-  packet.sizeBytes = data.size();
-
-  EXPECT_EQ(H264SpsPpsTracker::kInsert, tracker_.CopyAndFixBitstream(&packet));
-  EXPECT_FALSE(packet.is_last_packet_in_frame());
-  delete[] packet.dataPtr;
-  data.clear();
-}
-
-TEST_F(TestH264SpsPpsTracker, KeepEndOfFrameFlagInVclPacket) {
-  // Insert SPS/PPS/IDR packet with end-of-frame flag set to true. The tracker
-  // should keep the flag since this packet contains VCL NALUs.
-  std::vector<uint8_t> data;
-  H264VcmPacket packet;
-  packet.h264().packetization_type = kH264StapA;
-  packet.video_header.is_first_packet_in_frame =
-      true;  // Always true for STAP-A.
-  packet.video_header.is_last_packet_in_frame = true;
-
-  data.insert(data.end(), {0});     // First byte is ignored
-  data.insert(data.end(), {0, 2});  // Length of segment
-  AddSps(&packet, 13, &data);
-  data.insert(data.end(), {0, 2});  // Length of segment
-  AddPps(&packet, 13, 27, &data);
-  data.insert(data.end(), {0, 5});  // Length of segment
-  AddIdr(&packet, 27);
-  data.insert(data.end(), {1, 2, 3, 2, 1});
-  packet.dataPtr = data.data();
-  packet.sizeBytes = data.size();
-
-  EXPECT_EQ(H264SpsPpsTracker::kInsert, tracker_.CopyAndFixBitstream(&packet));
-  EXPECT_TRUE(packet.is_last_packet_in_frame());
-  delete[] packet.dataPtr;
-}
-
 }  // namespace video_coding
 }  // namespace webrtc
