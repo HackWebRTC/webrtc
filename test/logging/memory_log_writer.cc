@@ -30,8 +30,9 @@ class MemoryLogWriter final : public RtcEventLogOutput {
   bool Write(const std::string& value) override {
     size_t written;
     int error;
-    return buffer_.Write(value.data(), value.size(), &written, &error) ==
+    return buffer_.WriteAll(value.data(), value.size(), &written, &error) ==
            rtc::SR_SUCCESS;
+    RTC_DCHECK_EQ(value.size(), written);
   }
   void Flush() override {}
 
