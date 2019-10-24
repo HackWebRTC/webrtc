@@ -70,8 +70,6 @@ GoogCcNetworkController::GoogCcNetworkController(NetworkControllerConfig config,
       use_downlink_delay_for_congestion_window_(
           IsEnabled(key_value_config_,
                     "WebRTC-Bwe-CongestionWindowDownlinkDelay")),
-      fall_back_to_probe_rate_(
-          IsEnabled(key_value_config_, "WebRTC-Bwe-ProbeRateFallback")),
       use_min_allocatable_as_lower_bound_(
           IsNotDisabled(key_value_config_, "WebRTC-Bwe-MinAllocAsLowerBound")),
       rate_control_settings_(
@@ -481,6 +479,9 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
   acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(
       report.SortedByReceiveTime());
   auto acknowledged_bitrate = acknowledged_bitrate_estimator_->bitrate();
+  bandwidth_estimation_->SetAcknowledgedRate(acknowledged_bitrate,
+                                             report.feedback_time);
+  bandwidth_estimation_->IncomingPacketFeedbackVector(report);
   for (const auto& feedback : report.SortedByReceiveTime()) {
     if (feedback.sent_packet.pacing_info.probe_cluster_id !=
         PacedPacketInfo::kNotAProbe) {
@@ -490,12 +491,6 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
 
   absl::optional<DataRate> probe_bitrate =
       probe_bitrate_estimator_->FetchAndResetLastEstimatedBitrate();
-  if (fall_back_to_probe_rate_ && !acknowledged_bitrate)
-    acknowledged_bitrate = probe_bitrate_estimator_->last_estimate();
-  bandwidth_estimation_->SetAcknowledgedRate(acknowledged_bitrate,
-                                             report.feedback_time);
-  bandwidth_estimation_->IncomingPacketFeedbackVector(report);
-
   if (network_estimator_) {
     network_estimator_->OnTransportPacketsFeedback(report);
     auto prev_estimate = estimate_;

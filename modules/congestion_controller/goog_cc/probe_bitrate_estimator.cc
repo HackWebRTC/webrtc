@@ -171,9 +171,8 @@ absl::optional<DataRate> ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
     event_log_->Log(
         std::make_unique<RtcEventProbeResultSuccess>(cluster_id, res.bps()));
   }
-  last_estimate_ = res;
   estimated_data_rate_ = res;
-  return res;
+  return *estimated_data_rate_;
 }
 
 absl::optional<DataRate>
@@ -181,10 +180,6 @@ ProbeBitrateEstimator::FetchAndResetLastEstimatedBitrate() {
   absl::optional<DataRate> estimated_data_rate = estimated_data_rate_;
   estimated_data_rate_.reset();
   return estimated_data_rate;
-}
-
-absl::optional<DataRate> ProbeBitrateEstimator::last_estimate() const {
-  return last_estimate_;
 }
 
 void ProbeBitrateEstimator::EraseOldClusters(Timestamp timestamp) {

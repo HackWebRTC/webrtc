@@ -698,7 +698,6 @@ TEST_F(GoogCcNetworkControllerTest, CutsHighRateInSafeResetTrial) {
 TEST_F(GoogCcNetworkControllerTest, DetectsHighRateInSafeResetTrial) {
   ScopedFieldTrials trial(
       "WebRTC-Bwe-SafeResetOnRouteChange/Enabled,ack/"
-      "WebRTC-Bwe-ProbeRateFallback/Enabled/"
       "WebRTC-SendSideBwe-WithOverhead/Enabled/");
   const DataRate kInitialLinkCapacity = DataRate::kbps(200);
   const DataRate kNewLinkCapacity = DataRate::kbps(800);
