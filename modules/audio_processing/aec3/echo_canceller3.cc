@@ -374,7 +374,7 @@ EchoControl::Metrics EchoCanceller3::GetMetrics() const {
   return metrics;
 }
 
-void EchoCanceller3::SetAudioBufferDelay(size_t delay_ms) {
+void EchoCanceller3::SetAudioBufferDelay(int delay_ms) {
   RTC_DCHECK_RUNS_SERIALIZED(&capture_race_checker_);
   block_processor_->SetAudioBufferDelay(delay_ms);
 }

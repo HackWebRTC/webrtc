@@ -39,7 +39,11 @@ class EchoControl {
   virtual Metrics GetMetrics() const = 0;
 
   // Provides an optional external estimate of the audio buffer delay.
-  virtual void SetAudioBufferDelay(size_t delay_ms) = 0;
+  virtual void SetAudioBufferDelay(size_t delay_ms) {}
+  virtual void SetAudioBufferDelay(int delay_ms) {
+    // Default to old implementation.
+    SetAudioBufferDelay(static_cast<size_t>(delay_ms));
+  }
 
   // Returns wheter the signal is altered.
   virtual bool ActiveProcessing() const = 0;

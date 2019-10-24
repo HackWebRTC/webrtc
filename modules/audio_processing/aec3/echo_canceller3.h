@@ -109,7 +109,7 @@ class EchoCanceller3 : public EchoControl {
   // Collect current metrics from the echo canceller.
   Metrics GetMetrics() const override;
   // Provides an optional external estimate of the audio buffer delay.
-  void SetAudioBufferDelay(size_t delay_ms) override;
+  void SetAudioBufferDelay(int delay_ms) override;
 
   bool ActiveProcessing() const override;
 

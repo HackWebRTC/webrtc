@@ -121,7 +121,7 @@ class CaptureTransportVerificationProcessor : public BlockProcessor {
 
   void GetMetrics(EchoControl::Metrics* metrics) const override {}
 
-  void SetAudioBufferDelay(size_t delay_ms) override {}
+  void SetAudioBufferDelay(int delay_ms) override {}
 
  private:
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(CaptureTransportVerificationProcessor);
@@ -153,7 +153,7 @@ class RenderTransportVerificationProcessor : public BlockProcessor {
 
   void GetMetrics(EchoControl::Metrics* metrics) const override {}
 
-  void SetAudioBufferDelay(size_t delay_ms) override {}
+  void SetAudioBufferDelay(int delay_ms) override {}
 
  private:
   std::deque<std::vector<std::vector<std::vector<float>>>>

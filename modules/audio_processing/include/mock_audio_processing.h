@@ -48,7 +48,7 @@ class MockEchoControl : public EchoControl {
   MOCK_METHOD2(ProcessCapture,
                void(AudioBuffer* capture, bool echo_path_change));
   MOCK_CONST_METHOD0(GetMetrics, Metrics());
-  MOCK_METHOD1(SetAudioBufferDelay, void(size_t delay_ms));
+  MOCK_METHOD1(SetAudioBufferDelay, void(int delay_ms));
   MOCK_CONST_METHOD0(ActiveProcessing, bool());
 };
 

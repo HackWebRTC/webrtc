@@ -61,7 +61,7 @@ class BlockProcessorImpl final : public BlockProcessor {
 
   void GetMetrics(EchoControl::Metrics* metrics) const override;
 
-  void SetAudioBufferDelay(size_t delay_ms) override;
+  void SetAudioBufferDelay(int delay_ms) override;
 
  private:
   static int instance_count_;
@@ -230,7 +230,7 @@ void BlockProcessorImpl::GetMetrics(EchoControl::Metrics* metrics) const {
   metrics->delay_ms = delay ? static_cast<int>(*delay) * block_size_ms : 0;
 }
 
-void BlockProcessorImpl::SetAudioBufferDelay(size_t delay_ms) {
+void BlockProcessorImpl::SetAudioBufferDelay(int delay_ms) {
   render_buffer_->SetAudioBufferDelay(delay_ms);
 }
 

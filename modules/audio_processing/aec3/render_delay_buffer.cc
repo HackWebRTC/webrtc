@@ -62,7 +62,7 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   }
 
   int BufferLatency() const;
-  void SetAudioBufferDelay(size_t delay_ms) override;
+  void SetAudioBufferDelay(int delay_ms) override;
   bool HasReceivedBufferDelay() override;
 
  private:
@@ -90,7 +90,7 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   int64_t render_call_counter_ = 0;
   bool render_activity_ = false;
   size_t render_activity_counter_ = 0;
-  absl::optional<size_t> external_audio_buffer_delay_;
+  absl::optional<int> external_audio_buffer_delay_;
   bool external_audio_buffer_delay_verified_after_reset_ = false;
   size_t min_latency_blocks_ = 0;
   size_t excess_render_detection_counter_ = 0;
@@ -165,7 +165,7 @@ void RenderDelayBufferImpl::Reset() {
 
   // Check for any external audio buffer delay and whether it is feasible.
   if (external_audio_buffer_delay_) {
-    const size_t headroom = 2;
+    const int headroom = 2;
     size_t audio_buffer_delay_to_set;
     // Minimum delay is 1 (like the low-rate render buffer).
     if (*external_audio_buffer_delay_ <= headroom) {
@@ -318,7 +318,7 @@ bool RenderDelayBufferImpl::AlignFromDelay(size_t delay) {
   return true;
 }
 
-void RenderDelayBufferImpl::SetAudioBufferDelay(size_t delay_ms) {
+void RenderDelayBufferImpl::SetAudioBufferDelay(int delay_ms) {
   if (!external_audio_buffer_delay_) {
     RTC_LOG_V(delay_log_level_)
         << "Receiving a first externally reported audio buffer delay of "
@@ -326,7 +326,7 @@ void RenderDelayBufferImpl::SetAudioBufferDelay(size_t delay_ms) {
   }
 
   // Convert delay from milliseconds to blocks (rounded down).
-  external_audio_buffer_delay_ = delay_ms >> 2;
+  external_audio_buffer_delay_ = delay_ms / 4;
 }
 
 bool RenderDelayBufferImpl::HasReceivedBufferDelay() {
