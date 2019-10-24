@@ -276,6 +276,9 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   virtual bool TrySendPacket(RtpPacketToSend* packet,
                              const PacedPacketInfo& pacing_info) = 0;
 
+  virtual void OnPacketsAcknowledged(
+      rtc::ArrayView<const uint16_t> sequence_numbers) = 0;
+
   virtual std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
       size_t target_size_bytes) = 0;
 

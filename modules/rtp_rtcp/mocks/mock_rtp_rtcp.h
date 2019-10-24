@@ -89,6 +89,7 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD2(TrySendPacket,
                bool(RtpPacketToSend* packet,
                     const PacedPacketInfo& pacing_info));
+  MOCK_METHOD1(OnPacketsAcknowledged, void(rtc::ArrayView<const uint16_t>));
   MOCK_METHOD1(
       GeneratePadding,
       std::vector<std::unique_ptr<RtpPacketToSend>>(size_t target_size_bytes));

@@ -342,6 +342,12 @@ bool ModuleRtpRtcpImpl::TrySendPacket(RtpPacketToSend* packet,
   return rtp_sender_->TrySendPacket(packet, pacing_info);
 }
 
+void ModuleRtpRtcpImpl::OnPacketsAcknowledged(
+    rtc::ArrayView<const uint16_t> sequence_numbers) {
+  RTC_DCHECK(rtp_sender_);
+  rtp_sender_->OnPacketsAcknowledged(sequence_numbers);
+}
+
 bool ModuleRtpRtcpImpl::SupportsPadding() const {
   return rtp_sender_->SupportsPadding();
 }

@@ -583,7 +583,7 @@ void RtpVideoSender::DeliverRtcp(const uint8_t* packet, size_t length) {
 
 void RtpVideoSender::ConfigureSsrcs() {
   // Configure regular SSRCs.
-  RTC_CHECK(ssrc_to_rtp_sender_.empty());
+  RTC_CHECK(ssrc_to_rtp_module_.empty());
   for (size_t i = 0; i < rtp_config_.ssrcs.size(); ++i) {
     uint32_t ssrc = rtp_config_.ssrcs[i];
     RtpRtcp* const rtp_rtcp = rtp_streams_[i].rtp_rtcp.get();
@@ -593,9 +593,7 @@ void RtpVideoSender::ConfigureSsrcs() {
     if (it != suspended_ssrcs_.end())
       rtp_rtcp->SetRtpState(it->second);
 
-    RTPSender* rtp_sender = rtp_rtcp->RtpSender();
-    RTC_DCHECK(rtp_sender != nullptr);
-    ssrc_to_rtp_sender_[ssrc] = rtp_sender;
+    ssrc_to_rtp_module_[ssrc] = rtp_rtcp;
   }
 
   // Set up RTX if available.
@@ -868,9 +866,9 @@ void RtpVideoSender::OnPacketFeedbackVector(
 
     for (const auto& kv : early_loss_detected_per_ssrc) {
       const uint32_t ssrc = kv.first;
-      auto it = ssrc_to_rtp_sender_.find(ssrc);
-      RTC_DCHECK(it != ssrc_to_rtp_sender_.end());
-      RTPSender* rtp_sender = it->second;
+      auto it = ssrc_to_rtp_module_.find(ssrc);
+      RTC_DCHECK(it != ssrc_to_rtp_module_.end());
+      RTPSender* rtp_sender = it->second->RtpSender();
       for (uint16_t sequence_number : kv.second) {
         rtp_sender->ReSendPacket(sequence_number);
       }
@@ -879,8 +877,8 @@ void RtpVideoSender::OnPacketFeedbackVector(
 
   for (const auto& kv : acked_packets_per_ssrc) {
     const uint32_t ssrc = kv.first;
-    auto it = ssrc_to_rtp_sender_.find(ssrc);
-    if (it == ssrc_to_rtp_sender_.end()) {
+    auto it = ssrc_to_rtp_module_.find(ssrc);
+    if (it == ssrc_to_rtp_module_.end()) {
       // Packets not for a media SSRC, so likely RTX or FEC. If so, ignore
       // since there's no RTP history to clean up anyway.
       continue;
