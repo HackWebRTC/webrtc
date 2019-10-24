@@ -21,7 +21,6 @@
 
 #include "modules/audio_coding/neteq/delay_peak_detector.h"
 #include "modules/audio_coding/neteq/histogram.h"
-#include "modules/audio_coding/neteq/statistics_calculator.h"
 #include "modules/include/module_common_types_public.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -108,7 +107,6 @@ DelayManager::DelayManager(size_t max_packets_in_buffer,
                            bool enable_rtx_handling,
                            DelayPeakDetector* peak_detector,
                            const TickTimer* tick_timer,
-                           StatisticsCalculator* statistics,
                            std::unique_ptr<Histogram> histogram)
     : first_packet_received_(false),
       max_packets_in_buffer_(max_packets_in_buffer),
@@ -116,7 +114,6 @@ DelayManager::DelayManager(size_t max_packets_in_buffer,
       histogram_quantile_(histogram_quantile),
       histogram_mode_(histogram_mode),
       tick_timer_(tick_timer),
-      statistics_(statistics),
       base_minimum_delay_ms_(base_minimum_delay_ms),
       effective_minimum_delay_ms_(base_minimum_delay_ms),
       base_target_level_(4),                   // In Q0 domain.
@@ -144,8 +141,7 @@ std::unique_ptr<DelayManager> DelayManager::Create(
     int base_minimum_delay_ms,
     bool enable_rtx_handling,
     DelayPeakDetector* peak_detector,
-    const TickTimer* tick_timer,
-    StatisticsCalculator* statistics) {
+    const TickTimer* tick_timer) {
   const HistogramMode mode = RELATIVE_ARRIVAL_DELAY;
   DelayHistogramConfig config = GetDelayHistogramConfig();
   const int quantile = config.quantile;
@@ -153,17 +149,16 @@ std::unique_ptr<DelayManager> DelayManager::Create(
       kDelayBuckets, config.forget_factor, config.start_forget_weight);
   return std::make_unique<DelayManager>(
       max_packets_in_buffer, base_minimum_delay_ms, quantile, mode,
-      enable_rtx_handling, peak_detector, tick_timer, statistics,
-      std::move(histogram));
+      enable_rtx_handling, peak_detector, tick_timer, std::move(histogram));
 }
 
 DelayManager::~DelayManager() {}
 
-int DelayManager::Update(uint16_t sequence_number,
-                         uint32_t timestamp,
-                         int sample_rate_hz) {
+absl::optional<int> DelayManager::Update(uint16_t sequence_number,
+                                         uint32_t timestamp,
+                                         int sample_rate_hz) {
   if (sample_rate_hz <= 0) {
-    return -1;
+    return absl::nullopt;
   }
 
   if (!first_packet_received_) {
@@ -172,7 +167,7 @@ int DelayManager::Update(uint16_t sequence_number,
     last_seq_no_ = sequence_number;
     last_timestamp_ = timestamp;
     first_packet_received_ = true;
-    return 0;
+    return absl::nullopt;
   }
 
   // Try calculating packet length from current and previous timestamps.
@@ -191,6 +186,7 @@ int DelayManager::Update(uint16_t sequence_number,
   }
 
   bool reordered = false;
+  absl::optional<int> relative_delay;
   if (packet_len_ms > 0) {
     // Cannot update statistics unless |packet_len_ms| is valid.
 
@@ -215,18 +211,16 @@ int DelayManager::Update(uint16_t sequence_number,
     }
 
     int iat_delay = iat_ms - packet_len_ms;
-    int relative_delay;
     if (reordered) {
       relative_delay = std::max(iat_delay, 0);
     } else {
       UpdateDelayHistory(iat_delay, timestamp, sample_rate_hz);
       relative_delay = CalculateRelativePacketArrivalDelay();
     }
-    statistics_->RelativePacketArrivalDelay(relative_delay);
 
     switch (histogram_mode_) {
       case RELATIVE_ARRIVAL_DELAY: {
-        const int index = relative_delay / kBucketSizeMs;
+        const int index = relative_delay.value() / kBucketSizeMs;
         if (index < histogram_->NumBuckets()) {
           // Maximum delay to register is 2000 ms.
           histogram_->Add(index);
@@ -250,14 +244,14 @@ int DelayManager::Update(uint16_t sequence_number,
   if (enable_rtx_handling_ && reordered &&
       num_reordered_packets_ < kMaxReorderedPackets) {
     ++num_reordered_packets_;
-    return 0;
+    return relative_delay;
   }
   num_reordered_packets_ = 0;
   // Prepare for next packet arrival.
   packet_iat_stopwatch_ = tick_timer_->GetNewStopwatch();
   last_seq_no_ = sequence_number;
   last_timestamp_ = timestamp;
-  return 0;
+  return relative_delay;
 }
 
 void DelayManager::UpdateDelayHistory(int iat_delay_ms,

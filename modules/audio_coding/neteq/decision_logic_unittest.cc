@@ -16,6 +16,7 @@
 #include "modules/audio_coding/neteq/decoder_database.h"
 #include "modules/audio_coding/neteq/delay_manager.h"
 #include "modules/audio_coding/neteq/delay_peak_detector.h"
+#include "modules/audio_coding/neteq/neteq_controller.h"
 #include "modules/audio_coding/neteq/packet_buffer.h"
 #include "modules/audio_coding/neteq/statistics_calculator.h"
 #include "modules/audio_coding/neteq/tick_timer.h"
@@ -32,14 +33,15 @@ TEST(DecisionLogic, CreateAndDestroy) {
   TickTimer tick_timer;
   StatisticsCalculator stats;
   PacketBuffer packet_buffer(10, &tick_timer);
-  DelayPeakDetector delay_peak_detector(&tick_timer, false);
-  auto delay_manager = DelayManager::Create(240, 0, false, &delay_peak_detector,
-                                            &tick_timer, &stats);
   BufferLevelFilter buffer_level_filter;
-  DecisionLogic* logic = DecisionLogic::Create(
-      fs_hz, output_size_samples, false, &decoder_database, packet_buffer,
-      delay_manager.get(), &buffer_level_filter, &tick_timer);
-  delete logic;
+  NetEqController::Config config;
+  config.tick_timer = &tick_timer;
+  config.base_min_delay_ms = 0;
+  config.max_packets_in_buffer = 240;
+  config.enable_rtx_handling = false;
+  config.allow_time_stretching = true;
+  auto logic = std::make_unique<DecisionLogic>(std::move(config));
+  logic->SetSampleRate(fs_hz, output_size_samples);
 }
 
 // TODO(hlundin): Write more tests.

@@ -33,4 +33,5 @@ class MockDelayPeakDetector : public DelayPeakDetector {
 };
 
 }  // namespace webrtc
+
 #endif  // MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_DELAY_PEAK_DETECTOR_H_

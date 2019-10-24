@@ -382,16 +382,6 @@ void StatisticsCalculator::GetNetworkStatistics(int fs_hz,
   Reset();
 }
 
-void StatisticsCalculator::PopulateDelayManagerStats(
-    int ms_per_packet,
-    const DelayManager& delay_manager,
-    NetEqNetworkStatistics* stats) {
-  RTC_DCHECK(stats);
-  stats->preferred_buffer_size_ms =
-      (delay_manager.TargetLevel() >> 8) * ms_per_packet;
-  stats->jitter_peaks_found = delay_manager.PeakFound();
-}
-
 NetEqLifetimeStatistics StatisticsCalculator::GetLifetimeStatistics() const {
   return lifetime_stats_;
 }

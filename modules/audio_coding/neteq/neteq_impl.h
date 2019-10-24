@@ -24,6 +24,7 @@
 #include "modules/audio_coding/neteq/defines.h"  // Modes, Operations
 #include "modules/audio_coding/neteq/expand_uma_logger.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
+#include "modules/audio_coding/neteq/neteq_controller.h"
 #include "modules/audio_coding/neteq/packet.h"
 #include "modules/audio_coding/neteq/random_vector.h"
 #include "modules/audio_coding/neteq/statistics_calculator.h"
@@ -37,13 +38,9 @@ namespace webrtc {
 // Forward declarations.
 class Accelerate;
 class BackgroundNoise;
-class BufferLevelFilter;
 class Clock;
 class ComfortNoise;
-class DecisionLogic;
 class DecoderDatabase;
-class DelayManager;
-class DelayPeakDetector;
 class DtmfBuffer;
 class DtmfToneGenerator;
 class Expand;
@@ -108,13 +105,11 @@ class NetEqImpl : public webrtc::NetEq {
     Clock* const clock;
     std::unique_ptr<TickTimer> tick_timer;
     std::unique_ptr<StatisticsCalculator> stats;
-    std::unique_ptr<BufferLevelFilter> buffer_level_filter;
     std::unique_ptr<DecoderDatabase> decoder_database;
-    std::unique_ptr<DelayPeakDetector> delay_peak_detector;
-    std::unique_ptr<DelayManager> delay_manager;
     std::unique_ptr<DtmfBuffer> dtmf_buffer;
     std::unique_ptr<DtmfToneGenerator> dtmf_tone_generator;
     std::unique_ptr<PacketBuffer> packet_buffer;
+    std::unique_ptr<NetEqController> neteq_controller;
     std::unique_ptr<RedPayloadSplitter> red_payload_splitter;
     std::unique_ptr<TimestampScaler> timestamp_scaler;
     std::unique_ptr<AccelerateFactory> accelerate_factory;
@@ -338,19 +333,11 @@ class NetEqImpl : public webrtc::NetEq {
   virtual void UpdatePlcComponents(int fs_hz, size_t channels)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
-  // Creates DecisionLogic object with the mode given by |playout_mode_|.
-  virtual void CreateDecisionLogic() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-
   Clock* const clock_;
 
   rtc::CriticalSection crit_sect_;
   const std::unique_ptr<TickTimer> tick_timer_ RTC_GUARDED_BY(crit_sect_);
-  const std::unique_ptr<BufferLevelFilter> buffer_level_filter_
-      RTC_GUARDED_BY(crit_sect_);
   const std::unique_ptr<DecoderDatabase> decoder_database_
-      RTC_GUARDED_BY(crit_sect_);
-  const std::unique_ptr<DelayManager> delay_manager_ RTC_GUARDED_BY(crit_sect_);
-  const std::unique_ptr<DelayPeakDetector> delay_peak_detector_
       RTC_GUARDED_BY(crit_sect_);
   const std::unique_ptr<DtmfBuffer> dtmf_buffer_ RTC_GUARDED_BY(crit_sect_);
   const std::unique_ptr<DtmfToneGenerator> dtmf_tone_generator_
@@ -370,7 +357,7 @@ class NetEqImpl : public webrtc::NetEq {
   const std::unique_ptr<StatisticsCalculator> stats_ RTC_GUARDED_BY(crit_sect_);
 
   std::unique_ptr<BackgroundNoise> background_noise_ RTC_GUARDED_BY(crit_sect_);
-  std::unique_ptr<DecisionLogic> decision_logic_ RTC_GUARDED_BY(crit_sect_);
+  std::unique_ptr<NetEqController> controller_ RTC_GUARDED_BY(crit_sect_);
   std::unique_ptr<AudioMultiVector> algorithm_buffer_
       RTC_GUARDED_BY(crit_sect_);
   std::unique_ptr<SyncBuffer> sync_buffer_ RTC_GUARDED_BY(crit_sect_);
