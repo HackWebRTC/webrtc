@@ -372,10 +372,7 @@ void RTPSenderVideo::LogAndSendToNetwork(
         clock_->TimeInMilliseconds());
   }
 
-  // TODO(sprang): Replace with bulk send method.
-  for (auto& packet : packets) {
-    rtp_sender_->SendToNetwork(std::move(packet));
-  }
+  rtp_sender_->EnqueuePackets(std::move(packets));
 }
 
 size_t RTPSenderVideo::FecPacketOverhead() const {
