@@ -2142,7 +2142,7 @@ TEST_F(P2PTransportChannelTest, TurnToTurnPresumedWritable) {
       CreateUdpCandidate(RELAY_PORT_TYPE, "2.2.2.2", 2, 0));
   // Expect that the TURN-TURN candidate pair will be prioritized since it's
   // "probably writable".
-  EXPECT_TRUE(ep1_ch1()->selected_connection() != nullptr);
+  EXPECT_TRUE_WAIT(ep1_ch1()->selected_connection() != nullptr, kShortTimeout);
   EXPECT_EQ(RELAY_PORT_TYPE, LocalCandidate(ep1_ch1())->type());
   EXPECT_EQ(RELAY_PORT_TYPE, RemoteCandidate(ep1_ch1())->type());
   // Also expect that the channel instantly indicates that it's writable since
@@ -2265,7 +2265,7 @@ TEST_F(P2PTransportChannelTest, SignalReadyToSendWithPresumedWritable) {
   ep1_ch1()->AddRemoteCandidate(
       CreateUdpCandidate(RELAY_PORT_TYPE, "1.1.1.1", 1, 0));
   // Sanity checking the type of the connection.
-  EXPECT_TRUE(ep1_ch1()->selected_connection() != nullptr);
+  EXPECT_TRUE_WAIT(ep1_ch1()->selected_connection() != nullptr, kShortTimeout);
   EXPECT_EQ(RELAY_PORT_TYPE, LocalCandidate(ep1_ch1())->type());
   EXPECT_EQ(RELAY_PORT_TYPE, RemoteCandidate(ep1_ch1())->type());
 
@@ -5573,6 +5573,107 @@ TEST_F(P2PTransportChannelTest,
   ep1->allocator_->SetCandidateFilter(CF_NONE);
   SIMULATED_WAIT(false, kDefaultTimeout, clock);
   test_invariants();
+}
+
+TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampening0) {
+  webrtc::test::ScopedFieldTrials field_trials(
+      "WebRTC-IceFieldTrials/initial_select_dampening:0/");
+
+  constexpr int kMargin = 10;
+  rtc::ScopedFakeClock clock;
+  clock.AdvanceTime(webrtc::TimeDelta::seconds(1));
+
+  FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  P2PTransportChannel ch("test channel", 1, &pa);
+  PrepareChannel(&ch);
+  ch.SetIceConfig(ch.config());
+  ch.MaybeStartGathering();
+
+  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 100));
+  Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
+  ASSERT_TRUE(conn1 != nullptr);
+  EXPECT_EQ(nullptr, ch.selected_connection());
+  conn1->ReceivedPingResponse(LOW_RTT, "id");  // Becomes writable and receiving
+  // It shall not be selected until 0ms has passed....i.e it should be connected
+  // directly.
+  EXPECT_EQ_SIMULATED_WAIT(conn1, ch.selected_connection(), kMargin, clock);
+}
+
+TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampening) {
+  webrtc::test::ScopedFieldTrials field_trials(
+      "WebRTC-IceFieldTrials/initial_select_dampening:100/");
+
+  constexpr int kMargin = 10;
+  rtc::ScopedFakeClock clock;
+  clock.AdvanceTime(webrtc::TimeDelta::seconds(1));
+
+  FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  P2PTransportChannel ch("test channel", 1, &pa);
+  PrepareChannel(&ch);
+  ch.SetIceConfig(ch.config());
+  ch.MaybeStartGathering();
+
+  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 100));
+  Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
+  ASSERT_TRUE(conn1 != nullptr);
+  EXPECT_EQ(nullptr, ch.selected_connection());
+  conn1->ReceivedPingResponse(LOW_RTT, "id");  // Becomes writable and receiving
+  // It shall not be selected until 100ms has passed.
+  SIMULATED_WAIT(conn1 == ch.selected_connection(), 100 - kMargin, clock);
+  EXPECT_EQ_SIMULATED_WAIT(conn1, ch.selected_connection(), 2 * kMargin, clock);
+}
+
+TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampeningPingReceived) {
+  webrtc::test::ScopedFieldTrials field_trials(
+      "WebRTC-IceFieldTrials/initial_select_dampening_ping_received:100/");
+
+  constexpr int kMargin = 10;
+  rtc::ScopedFakeClock clock;
+  clock.AdvanceTime(webrtc::TimeDelta::seconds(1));
+
+  FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  P2PTransportChannel ch("test channel", 1, &pa);
+  PrepareChannel(&ch);
+  ch.SetIceConfig(ch.config());
+  ch.MaybeStartGathering();
+
+  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 100));
+  Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
+  ASSERT_TRUE(conn1 != nullptr);
+  EXPECT_EQ(nullptr, ch.selected_connection());
+  conn1->ReceivedPingResponse(LOW_RTT, "id");  // Becomes writable and receiving
+  conn1->ReceivedPing("id1");                  //
+  // It shall not be selected until 100ms has passed.
+  SIMULATED_WAIT(conn1 == ch.selected_connection(), 100 - kMargin, clock);
+  EXPECT_EQ_SIMULATED_WAIT(conn1, ch.selected_connection(), 2 * kMargin, clock);
+}
+
+TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampeningBoth) {
+  webrtc::test::ScopedFieldTrials field_trials(
+      "WebRTC-IceFieldTrials/"
+      "initial_select_dampening:100,initial_select_dampening_ping_received:"
+      "50/");
+
+  constexpr int kMargin = 10;
+  rtc::ScopedFakeClock clock;
+  clock.AdvanceTime(webrtc::TimeDelta::seconds(1));
+
+  FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  P2PTransportChannel ch("test channel", 1, &pa);
+  PrepareChannel(&ch);
+  ch.SetIceConfig(ch.config());
+  ch.MaybeStartGathering();
+
+  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 100));
+  Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
+  ASSERT_TRUE(conn1 != nullptr);
+  EXPECT_EQ(nullptr, ch.selected_connection());
+  conn1->ReceivedPingResponse(LOW_RTT, "id");  // Becomes writable and receiving
+  // It shall not be selected until 100ms has passed....but only wait ~50 now.
+  SIMULATED_WAIT(conn1 == ch.selected_connection(), 50 - kMargin, clock);
+  // Now receiving ping and new timeout should kick in.
+  conn1->ReceivedPing("id1");  //
+  EXPECT_EQ_SIMULATED_WAIT(conn1, ch.selected_connection(), 2 * kMargin, clock);
 }
 
 }  // namespace cricket

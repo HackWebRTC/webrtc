@@ -78,6 +78,16 @@ class RemoteCandidate : public Candidate {
 struct IceFieldTrials {
   bool skip_relay_to_non_relay_connections = false;
   absl::optional<int> max_outstanding_pings;
+
+  // Wait X ms before selecting a connection when having none.
+  // This will make media slower, but will give us chance to find
+  // a better connection before starting.
+  absl::optional<int> initial_select_dampening;
+
+  // If the connection has recevied a ping-request, delay by
+  // maximum this delay. This will make media slower, but will
+  // give us chance to find a better connection before starting.
+  absl::optional<int> initial_select_dampening_ping_received;
 };
 
 // P2PTransportChannel manages the candidates and connection process to keep
@@ -418,6 +428,9 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   // 2. Peer-reflexive remote candidates.
   Candidate SanitizeRemoteCandidate(const Candidate& c) const;
 
+  bool HandleInitialSelectDampening(Connection* new_connection,
+                                    const std::string& reason);
+
   std::string transport_name_ RTC_GUARDED_BY(network_thread_);
   int component_ RTC_GUARDED_BY(network_thread_);
   PortAllocator* allocator_ RTC_GUARDED_BY(network_thread_);
@@ -507,6 +520,9 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   uint32_t selected_candidate_pair_changes_ = 0;
 
   IceFieldTrials field_trials_;
+
+  // Timestamp for when we got the first selectable connection.
+  int64_t initial_select_timestamp_ms_ = 0;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
 };

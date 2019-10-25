@@ -278,10 +278,80 @@ bool P2PTransportChannel::ShouldSwitchSelectedConnection(
   return new_connection->rtt() <= selected_connection_->rtt() - kMinImprovement;
 }
 
+bool P2PTransportChannel::HandleInitialSelectDampening(
+    Connection* new_connection,
+    const std::string& reason) {
+  RTC_DCHECK_RUN_ON(network_thread_);
+  if (!field_trials_.initial_select_dampening.has_value() &&
+      !field_trials_.initial_select_dampening_ping_received.has_value()) {
+    // experiment not enabled.
+    return true;
+  }
+
+  int64_t now = rtc::TimeMillis();
+  int64_t max_delay = 0;
+  if (new_connection->last_ping_received() > 0 &&
+      field_trials_.initial_select_dampening_ping_received.has_value()) {
+    max_delay = *field_trials_.initial_select_dampening_ping_received;
+  } else if (field_trials_.initial_select_dampening.has_value()) {
+    max_delay = *field_trials_.initial_select_dampening;
+  }
+
+  int64_t start_wait =
+      initial_select_timestamp_ms_ == 0 ? now : initial_select_timestamp_ms_;
+  int64_t max_wait_until = start_wait + max_delay;
+
+  if (now >= max_wait_until) {
+    RTC_LOG(LS_INFO) << "reset initial_select_timestamp_ = "
+                     << initial_select_timestamp_ms_
+                     << " selection delayed by: " << (now - start_wait) << "ms";
+    initial_select_timestamp_ms_ = 0;
+    return true;
+  }
+
+  // We are not yet ready to select first connection...
+  if (initial_select_timestamp_ms_ == 0) {
+    // Set timestamp on first time...
+    // but run the delayed invokation everytime to
+    // avoid possibility that we miss it.
+    initial_select_timestamp_ms_ = now;
+    RTC_LOG(LS_INFO) << "set initial_select_timestamp_ms_ = "
+                     << initial_select_timestamp_ms_;
+  }
+
+  int min_delay = max_delay;
+  if (field_trials_.initial_select_dampening.has_value()) {
+    min_delay = std::min(min_delay, *field_trials_.initial_select_dampening);
+  }
+  if (field_trials_.initial_select_dampening_ping_received.has_value()) {
+    min_delay = std::min(min_delay,
+                         *field_trials_.initial_select_dampening_ping_received);
+  }
+
+  const std::string reason_to_sort =
+      reason + " (after initial select dampening interval: " +
+      std::to_string(max_delay) + ")";
+  invoker_.AsyncInvokeDelayed<void>(
+      RTC_FROM_HERE, thread(),
+      rtc::Bind(&P2PTransportChannel::SortConnectionsAndUpdateState, this,
+                reason_to_sort),
+      min_delay);
+  RTC_LOG(LS_INFO) << "delay initial selection up to " << min_delay << "ms";
+  return false;
+}
+
 bool P2PTransportChannel::MaybeSwitchSelectedConnection(
     Connection* new_connection,
     const std::string& reason) {
   RTC_DCHECK_RUN_ON(network_thread_);
+
+  if (selected_connection_ == nullptr && ReadyToSend(new_connection)) {
+    if (!HandleInitialSelectDampening(new_connection, reason)) {
+      // Delay the initial selection a while waiting for a better connection.
+      return false;
+    }
+  }
+
   bool missed_receiving_unchanged_threshold = false;
   if (ShouldSwitchSelectedConnection(new_connection,
                                      &missed_receiving_unchanged_threshold)) {
@@ -699,7 +769,10 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
   webrtc::StructParametersParser::Create(
       "skip_relay_to_non_relay_connections",
       &field_trials_.skip_relay_to_non_relay_connections,
-      "max_outstanding_pings", &field_trials_.max_outstanding_pings)
+      "max_outstanding_pings", &field_trials_.max_outstanding_pings,
+      "initial_select_dampening", &field_trials_.initial_select_dampening,
+      "initial_select_dampening_ping_received",
+      &field_trials_.initial_select_dampening_ping_received)
       ->Parse(webrtc::field_trial::FindFullName("WebRTC-IceFieldTrials"));
 
   if (field_trials_.skip_relay_to_non_relay_connections) {
@@ -709,6 +782,16 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
   if (field_trials_.max_outstanding_pings.has_value()) {
     RTC_LOG(LS_INFO) << "Set max_outstanding_pings: "
                      << *field_trials_.max_outstanding_pings;
+  }
+
+  if (field_trials_.initial_select_dampening.has_value()) {
+    RTC_LOG(LS_INFO) << "Set initial_select_dampening: "
+                     << *field_trials_.initial_select_dampening;
+  }
+
+  if (field_trials_.initial_select_dampening_ping_received.has_value()) {
+    RTC_LOG(LS_INFO) << "Set initial_select_dampening_ping_received: "
+                     << *field_trials_.initial_select_dampening_ping_received;
   }
 
   webrtc::BasicRegatheringController::Config regathering_config(
