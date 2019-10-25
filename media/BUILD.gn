@@ -607,7 +607,10 @@ if (rtc_include_tests) {
     }
 
     if (rtc_enable_sctp) {
-      sources += [ "sctp/sctp_transport_unittest.cc" ]
+      sources += [
+        "sctp/sctp_transport_reliability_unittest.cc",
+        "sctp/sctp_transport_unittest.cc",
+      ]
     }
 
     if (rtc_opus_support_120ms_ptime) {

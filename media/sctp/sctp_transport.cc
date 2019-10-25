@@ -433,6 +433,19 @@ SctpTransport::SctpTransport(rtc::Thread* network_thread,
 SctpTransport::~SctpTransport() {
   // Close abruptly; no reset procedure.
   CloseSctpSocket();
+  // It's not strictly necessary to reset these fields to nullptr,
+  // but having these fields set to nullptr is a clear indication that
+  // object was destructed. There was a bug in usrsctp when it
+  // invoked OnSctpOutboundPacket callback for destructed SctpTransport,
+  // which caused obscure SIGSEGV on access to these fields,
+  // having this fields set to nullptr will make it easier to understand
+  // that SctpTransport was destructed and "use-after-free" bug happen.
+  // SIGSEGV error triggered on dereference these pointers will also
+  // be easier to understand due to 0x0 address. All of this assumes
+  // that ASAN is not enabled to detect "use-after-free", which is
+  // currently default configuration.
+  network_thread_ = nullptr;
+  transport_ = nullptr;
 }
 
 void SctpTransport::SetDtlsTransport(rtc::PacketTransportInternal* transport) {
@@ -1096,9 +1109,18 @@ void SctpTransport::OnNotificationFromSctp(
     case SCTP_NOTIFICATIONS_STOPPED_EVENT:
       RTC_LOG(LS_INFO) << "SCTP_NOTIFICATIONS_STOPPED_EVENT";
       break;
-    case SCTP_SEND_FAILED_EVENT:
-      RTC_LOG(LS_INFO) << "SCTP_SEND_FAILED_EVENT";
+    case SCTP_SEND_FAILED_EVENT: {
+      const struct sctp_send_failed_event& ssfe =
+          notification.sn_send_failed_event;
+      RTC_LOG(LS_WARNING) << "SCTP_SEND_FAILED_EVENT: message with"
+                          << " PPID = "
+                          << rtc::NetworkToHost32(ssfe.ssfe_info.snd_ppid)
+                          << " SID = " << ssfe.ssfe_info.snd_sid
+                          << " flags = " << rtc::ToHex(ssfe.ssfe_info.snd_flags)
+                          << " failed to sent due to error = "
+                          << rtc::ToHex(ssfe.ssfe_error);
       break;
+    }
     case SCTP_STREAM_RESET_EVENT:
       OnStreamResetEvent(&notification.sn_strreset_event);
       break;
@@ -1112,6 +1134,9 @@ void SctpTransport::OnNotificationFromSctp(
       // keep around the last-transmitted set of SSIDs we wanted to close for
       // error recovery.  It doesn't seem likely to occur, and if so, likely
       // harmless within the lifetime of a single SCTP association.
+      break;
+    case SCTP_PEER_ADDR_CHANGE:
+      RTC_LOG(LS_INFO) << "SCTP_PEER_ADDR_CHANGE";
       break;
     default:
       RTC_LOG(LS_WARNING) << "Unknown SCTP event: "
