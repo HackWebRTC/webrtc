@@ -16,6 +16,7 @@
 #include <cmath>
 #include <limits>
 #include <memory>
+#include <numeric>
 #include <queue>
 
 #include "absl/flags/flag.h"
@@ -170,6 +171,18 @@ bool FrameDataAreEqual(const AudioFrame& frame1, const AudioFrame& frame2) {
     return false;
   }
   return true;
+}
+
+rtc::ArrayView<int16_t> GetMutableFrameData(AudioFrame* frame) {
+  int16_t* ptr = frame->mutable_data();
+  const size_t len = frame->samples_per_channel() * frame->num_channels();
+  return rtc::ArrayView<int16_t>(ptr, len);
+}
+
+rtc::ArrayView<const int16_t> GetFrameData(const AudioFrame& frame) {
+  const int16_t* ptr = frame.data();
+  const size_t len = frame.samples_per_channel() * frame.num_channels();
+  return rtc::ArrayView<const int16_t>(ptr, len);
 }
 
 void EnableAllAPComponents(AudioProcessing* ap) {
@@ -840,6 +853,75 @@ TEST_F(ApmTest, SampleRatesInt) {
     SetContainerFormat(fs[i], 2, frame_, &float_cb_);
     EXPECT_NOERR(ProcessStreamChooser(kIntFormat));
   }
+}
+
+// This test repeatedly reconfigures the pre-amplifier in APM, processes a
+// number of frames, and checks that output signal has the right level.
+TEST_F(ApmTest, PreAmplifier) {
+  // Fill the audio frame with a sawtooth pattern.
+  rtc::ArrayView<int16_t> frame_data = GetMutableFrameData(frame_);
+  const size_t samples_per_channel = frame_->samples_per_channel();
+  for (size_t i = 0; i < samples_per_channel; i++) {
+    for (size_t ch = 0; ch < frame_->num_channels(); ++ch) {
+      frame_data[i + ch * samples_per_channel] = 10000 * ((i % 3) - 1);
+    }
+  }
+  // Cache the frame in tmp_frame.
+  AudioFrame tmp_frame;
+  tmp_frame.CopyFrom(*frame_);
+
+  auto compute_power = [](const AudioFrame& frame) {
+    rtc::ArrayView<const int16_t> data = GetFrameData(frame);
+    return std::accumulate(data.begin(), data.end(), 0.0f,
+                           [](float a, float b) { return a + b * b; }) /
+           data.size() / 32768 / 32768;
+  };
+
+  const float input_power = compute_power(tmp_frame);
+  // Double-check that the input data is large compared to the error kEpsilon.
+  constexpr float kEpsilon = 1e-4f;
+  RTC_DCHECK_GE(input_power, 10 * kEpsilon);
+
+  // 1. Enable pre-amp with 0 dB gain.
+  AudioProcessing::Config config = apm_->GetConfig();
+  config.pre_amplifier.enabled = true;
+  config.pre_amplifier.fixed_gain_factor = 1.0f;
+  apm_->ApplyConfig(config);
+
+  for (int i = 0; i < 20; ++i) {
+    frame_->CopyFrom(tmp_frame);
+    EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(kIntFormat));
+  }
+  float output_power = compute_power(*frame_);
+  EXPECT_NEAR(output_power, input_power, kEpsilon);
+  config = apm_->GetConfig();
+  EXPECT_EQ(config.pre_amplifier.fixed_gain_factor, 1.0f);
+
+  // 2. Change pre-amp gain via ApplyConfig.
+  config.pre_amplifier.fixed_gain_factor = 2.0f;
+  apm_->ApplyConfig(config);
+
+  for (int i = 0; i < 20; ++i) {
+    frame_->CopyFrom(tmp_frame);
+    EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(kIntFormat));
+  }
+  output_power = compute_power(*frame_);
+  EXPECT_NEAR(output_power, 4 * input_power, kEpsilon);
+  config = apm_->GetConfig();
+  EXPECT_EQ(config.pre_amplifier.fixed_gain_factor, 2.0f);
+
+  // 3. Change pre-amp gain via a RuntimeSetting.
+  apm_->SetRuntimeSetting(
+      AudioProcessing::RuntimeSetting::CreateCapturePreGain(1.5f));
+
+  for (int i = 0; i < 20; ++i) {
+    frame_->CopyFrom(tmp_frame);
+    EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(kIntFormat));
+  }
+  output_power = compute_power(*frame_);
+  EXPECT_NEAR(output_power, 2.25 * input_power, kEpsilon);
+  config = apm_->GetConfig();
+  EXPECT_EQ(config.pre_amplifier.fixed_gain_factor, 1.5f);
 }
 
 TEST_F(ApmTest, GainControl) {
