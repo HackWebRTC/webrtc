@@ -366,11 +366,14 @@ all_poison_types = [
   # Encoders and decoders for specific audio codecs such as Opus and iSAC.
   "audio_codecs",
 
-  # Software video codecs (VP8 and VP9 through libvpx).
-  "software_video_codecs",
-
   # Default task queue implementation.
   "default_task_queue",
+
+  # JSON parsing should not be needed in the "slim and modular" WebRTC.
+  "rtc_json",
+
+  # Software video codecs (VP8 and VP9 through libvpx).
+  "software_video_codecs",
 ]
 
 absl_include_config = "//third_party/abseil-cpp:absl_include_config"

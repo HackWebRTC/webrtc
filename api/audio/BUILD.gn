@@ -52,6 +52,7 @@ rtc_library("aec3_config") {
 
 rtc_library("aec3_config_json") {
   visibility = [ "*" ]
+  allow_poison = [ "rtc_json" ]
   sources = [
     "echo_canceller3_config_json.cc",
     "echo_canceller3_config_json.h",
