@@ -21,7 +21,6 @@
 #include "test/call_config_utils.h"
 #include "test/encoder_settings.h"
 #include "test/fake_decoder.h"
-#include "test/fake_videorenderer.h"
 #include "test/rtp_file_reader.h"
 #include "test/rtp_header_parser.h"
 
@@ -112,7 +111,9 @@ void RtpReplayer::SetupVideoStreams(
       decoder.decoder_factory = stream_state->decoder_factory.get();
     }
 
-    stream_state->sinks.emplace_back(new test::FakeVideoRenderer());
+    // Create the window to display the rendered video.
+    stream_state->sinks.emplace_back(
+        test::VideoRenderer::Create("Fuzzing WebRTC Video Config", 640, 480));
     // Create a receive stream for this config.
     receive_config.renderer = stream_state->sinks.back().get();
     stream_state->receive_streams.emplace_back(

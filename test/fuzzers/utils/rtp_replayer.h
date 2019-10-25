@@ -28,6 +28,7 @@
 #include "test/null_transport.h"
 #include "test/rtp_file_reader.h"
 #include "test/test_video_capturer.h"
+#include "test/video_renderer.h"
 
 namespace webrtc {
 namespace test {
