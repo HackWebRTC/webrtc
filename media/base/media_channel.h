@@ -243,6 +243,9 @@ class MediaChannel : public sigslot::has_slots<> {
       uint32_t ssrc,
       rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor);
 
+  // Enable network condition based codec switching.
+  virtual void SetVideoCodecSwitchingEnabled(bool enabled);
+
   // Base method to send packet using NetworkInterface.
   bool SendPacket(rtc::CopyOnWriteBuffer* packet,
                   const rtc::PacketOptions& options) {

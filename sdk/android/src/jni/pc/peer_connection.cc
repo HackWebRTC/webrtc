@@ -279,6 +279,9 @@ void JavaToNativeRTCConfiguration(
   rtc_config->crypto_options =
       JavaToNativeOptionalCryptoOptions(jni, j_crypto_options);
 
+  rtc_config->allow_codec_switching = JavaToNativeOptionalBool(
+      jni, Java_RTCConfiguration_getAllowCodecSwitching(jni, j_rtc_config));
+
   ScopedJavaLocalRef<jstring> j_turn_logging_id =
       Java_RTCConfiguration_getTurnLoggingId(jni, j_rtc_config);
   if (!IsNull(jni, j_turn_logging_id)) {

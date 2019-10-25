@@ -548,6 +548,11 @@ public class PeerConnection {
     // every offer/answer negotiation.This is only intended to be a workaround for crbug.com/835958
     public boolean activeResetSrtpParams;
 
+    // Whether this client is allowed to switch encoding codec mid-stream. This is a workaround for
+    // a WebRTC bug where the receiver could get confussed if a codec switch happened mid-call.
+    // Null indicates no change to currently configured value.
+    @Nullable public Boolean allowCodecSwitching;
+
     /*
      * Experimental flag that enables a use of media transport. If this is true, the media transport
      * factory MUST be provided to the PeerConnectionFactory.
@@ -619,6 +624,7 @@ public class PeerConnection {
       useMediaTransportForDataChannels = false;
       cryptoOptions = null;
       turnLoggingId = null;
+      allowCodecSwitching = null;
     }
 
     @CalledByNative("RTCConfiguration")
@@ -826,6 +832,12 @@ public class PeerConnection {
     @CalledByNative("RTCConfiguration")
     boolean getActiveResetSrtpParams() {
       return activeResetSrtpParams;
+    }
+
+    @Nullable
+    @CalledByNative("RTCConfiguration")
+    Boolean getAllowCodecSwitching() {
+      return allowCodecSwitching;
     }
 
     @CalledByNative("RTCConfiguration")

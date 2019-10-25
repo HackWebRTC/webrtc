@@ -673,6 +673,9 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     // Added to be able to control rollout of this feature.
     bool enable_implicit_rollback = false;
 
+    // Whether network condition based codec switching is allowed.
+    absl::optional<bool> allow_codec_switching;
+
     //
     // Don't forget to update operator== if adding something.
     //

@@ -172,6 +172,8 @@ class WebRtcVideoChannel : public VideoMediaChannel,
                          rtc::scoped_refptr<webrtc::FrameEncryptorInterface>
                              frame_encryptor) override;
 
+  void SetVideoCodecSwitchingEnabled(bool enabled) override;
+
   bool SetBaseMinimumPlayoutDelayMs(uint32_t ssrc, int delay_ms) override;
 
   absl::optional<int> GetBaseMinimumPlayoutDelayMs(
@@ -568,6 +570,8 @@ class WebRtcVideoChannel : public VideoMediaChannel,
   // Buffer for unhandled packets.
   std::unique_ptr<UnhandledPacketsBuffer> unknown_ssrc_packet_buffer_
       RTC_GUARDED_BY(thread_checker_);
+
+  bool allow_codec_switching_ = false;
 
   // In order for the |invoker_| to protect other members from being destructed
   // as they are used in asynchronous tasks it has to be destructed first.

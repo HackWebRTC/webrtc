@@ -47,6 +47,8 @@ void MediaChannel::SetFrameDecryptor(
   // Placeholder should be pure virtual once internal supports it.
 }
 
+void MediaChannel::SetVideoCodecSwitchingEnabled(bool enabled) {}
+
 MediaSenderInfo::MediaSenderInfo() = default;
 MediaSenderInfo::~MediaSenderInfo() = default;
 

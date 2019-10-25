@@ -739,6 +739,12 @@ void WebRtcVideoChannel::RequestEncoderSwitch(
   invoker_.AsyncInvoke<void>(RTC_FROM_HERE, worker_thread_, [this, conf] {
     RTC_DCHECK_RUN_ON(&thread_checker_);
 
+    if (!allow_codec_switching_) {
+      RTC_LOG(LS_INFO) << "Encoder switch requested but codec switching has"
+                       << " not been enabled.";
+      return;
+    }
+
     for (VideoCodecSettings codec_setting : negotiated_codecs_) {
       if (codec_setting.codec.name == conf.codec_name) {
         if (conf.param) {
@@ -1676,6 +1682,13 @@ void WebRtcVideoChannel::SetFrameEncryptor(
   } else {
     RTC_LOG(LS_ERROR) << "No stream found to attach frame encryptor";
   }
+}
+
+void WebRtcVideoChannel::SetVideoCodecSwitchingEnabled(bool enabled) {
+  invoker_.AsyncInvoke<void>(RTC_FROM_HERE, worker_thread_, [this, enabled] {
+    RTC_DCHECK_RUN_ON(&thread_checker_);
+    allow_codec_switching_ = enabled;
+  });
 }
 
 bool WebRtcVideoChannel::SetBaseMinimumPlayoutDelayMs(uint32_t ssrc,

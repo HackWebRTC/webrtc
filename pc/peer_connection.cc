@@ -784,6 +784,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     bool offer_extmap_allow_mixed;
     std::string turn_logging_id;
     bool enable_implicit_rollback;
+    absl::optional<bool> allow_codec_switching;
   };
   static_assert(sizeof(stuff_being_tested_for_equality) == sizeof(*this),
                 "Did you add something to RTCConfiguration and forget to "
@@ -851,7 +852,8 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          crypto_options == o.crypto_options &&
          offer_extmap_allow_mixed == o.offer_extmap_allow_mixed &&
          turn_logging_id == o.turn_logging_id &&
-         enable_implicit_rollback == o.enable_implicit_rollback;
+         enable_implicit_rollback == o.enable_implicit_rollback &&
+         allow_codec_switching == o.allow_codec_switching;
 }
 
 bool PeerConnectionInterface::RTCConfiguration::operator!=(
@@ -3704,6 +3706,7 @@ RTCError PeerConnection::SetConfiguration(
   modified_config.use_datagram_transport_for_data_channels_receive_only =
       configuration.use_datagram_transport_for_data_channels_receive_only;
   modified_config.turn_logging_id = configuration.turn_logging_id;
+  modified_config.allow_codec_switching = configuration.allow_codec_switching;
   if (configuration != modified_config) {
     LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
                          "Modifying the configuration in an unsupported way.");
@@ -3789,6 +3792,11 @@ RTCError PeerConnection::SetConfiguration(
       modified_config.active_reset_srtp_params) {
     transport_controller_->SetActiveResetSrtpParams(
         modified_config.active_reset_srtp_params);
+  }
+
+  if (modified_config.allow_codec_switching.has_value()) {
+    video_media_channel()->SetVideoCodecSwitchingEnabled(
+        *modified_config.allow_codec_switching);
   }
 
   configuration_ = modified_config;
