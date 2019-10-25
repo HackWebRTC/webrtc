@@ -17,7 +17,6 @@
 
 #include "absl/strings/match.h"
 #include "api/audio_codecs/audio_format.h"
-#include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
@@ -258,7 +257,7 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
                          packet->SequenceNumber());
   packet->set_packet_type(RtpPacketToSend::Type::kAudio);
   packet->set_allow_retransmission(true);
-  bool send_result = LogAndSendToNetwork(std::move(packet));
+  bool send_result = rtp_sender_->SendToNetwork(std::move(packet));
   if (first_packet_sent_()) {
     RTC_LOG(LS_INFO) << "First audio RTP packet sent to pacer";
   }
@@ -343,25 +342,10 @@ bool RTPSenderAudio::SendTelephoneEventPacket(bool ended,
 
     packet->set_packet_type(RtpPacketToSend::Type::kAudio);
     packet->set_allow_retransmission(true);
-    result = LogAndSendToNetwork(std::move(packet));
+    result = rtp_sender_->SendToNetwork(std::move(packet));
     send_count--;
   } while (send_count > 0 && result);
 
   return result;
 }
-
-bool RTPSenderAudio::LogAndSendToNetwork(
-    std::unique_ptr<RtpPacketToSend> packet) {
-#if BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
-  int64_t now_ms = clock_->TimeInMilliseconds();
-  BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "AudioTotBitrate_kbps", now_ms,
-                                  rtp_sender_->ActualSendBitrateKbit(),
-                                  packet->Ssrc());
-  BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "AudioNackBitrate_kbps", now_ms,
-                                  rtp_sender_->NackOverheadRate() / 1000,
-                                  packet->Ssrc());
-#endif
-  return rtp_sender_->SendToNetwork(std::move(packet));
-}
-
 }  // namespace webrtc

@@ -17,6 +17,7 @@
 #include "absl/strings/match.h"
 #include "api/transport/field_trial_based_config.h"
 #include "logging/rtc_event_log/events/rtc_event_rtp_packet_outgoing.h"
+#include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {
@@ -33,9 +34,26 @@ bool IsEnabled(absl::string_view name,
 }
 }  // namespace
 
+RtpSenderEgress::NonPacedPacketSender::NonPacedPacketSender(
+    RtpSenderEgress* sender)
+    : transport_sequence_number_(0), sender_(sender) {}
+RtpSenderEgress::NonPacedPacketSender::~NonPacedPacketSender() = default;
+
+void RtpSenderEgress::NonPacedPacketSender::EnqueuePackets(
+    std::vector<std::unique_ptr<RtpPacketToSend>> packets) {
+  for (auto& packet : packets) {
+    if (!packet->SetExtension<TransportSequenceNumber>(
+            ++transport_sequence_number_)) {
+      --transport_sequence_number_;
+    }
+    packet->ReserveExtension<TransmissionOffset>();
+    packet->ReserveExtension<AbsoluteSendTime>();
+    sender_->SendPacket(packet.get(), PacedPacketInfo());
+  }
+}
+
 RtpSenderEgress::RtpSenderEgress(const RtpRtcp::Configuration& config,
-                                 RtpPacketHistory* packet_history,
-                                 Clock* clock)
+                                 RtpPacketHistory* packet_history)
     : ssrc_(config.local_media_ssrc),
       rtx_ssrc_(config.rtx_send_ssrc),
       flexfec_ssrc_(config.flexfec_sender
@@ -44,10 +62,11 @@ RtpSenderEgress::RtpSenderEgress(const RtpRtcp::Configuration& config,
       populate_network2_timestamp_(config.populate_network2_timestamp),
       send_side_bwe_with_overhead_(
           IsEnabled("WebRTC-SendSideBwe-WithOverhead", config.field_trials)),
-      clock_(clock),
+      clock_(config.clock),
       packet_history_(packet_history),
       transport_(config.outgoing_transport),
       event_log_(config.event_log),
+      is_audio_(config.audio),
       transport_feedback_observer_(config.transport_feedback_callback),
       send_side_delay_observer_(config.send_side_delay_observer),
       send_packet_observer_(config.send_packet_observer),
@@ -72,6 +91,23 @@ void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
   const uint32_t packet_ssrc = packet->Ssrc();
   RTC_DCHECK(packet->packet_type().has_value());
   RTC_DCHECK(HasCorrectSsrc(*packet));
+  int64_t now_ms = clock_->TimeInMilliseconds();
+
+  if (is_audio_) {
+#if BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
+    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "AudioTotBitrate_kbps", now_ms,
+                                    SendBitrate().kbps(), packet_ssrc);
+    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "AudioNackBitrate_kbps", now_ms,
+                                    NackOverheadRate().kbps(), packet_ssrc);
+#endif
+  } else {
+#if BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
+    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoTotBitrate_kbps", now_ms,
+                                    SendBitrate().kbps(), packet_ssrc);
+    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoNackBitrate_kbps", now_ms,
+                                    NackOverheadRate().kbps(), packet_ssrc);
+#endif
+  }
 
   PacketOptions options;
   {
@@ -87,7 +123,6 @@ void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
   // In case of VideoTimingExtension, since it's present not in every packet,
   // data after rtp header may be corrupted if these packets are protected by
   // the FEC.
-  int64_t now_ms = clock_->TimeInMilliseconds();
   int64_t diff_ms = now_ms - packet->capture_time_ms();
   if (packet->IsExtensionReserved<TransmissionOffset>()) {
     packet->SetExtension<TransmissionOffset>(kTimestampTicksPerMs * diff_ms);

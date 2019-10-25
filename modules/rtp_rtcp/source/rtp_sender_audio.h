@@ -63,8 +63,6 @@ class RTPSenderAudio {
   bool MarkerBit(AudioFrameType frame_type, int8_t payload_type);
 
  private:
-  bool LogAndSendToNetwork(std::unique_ptr<RtpPacketToSend> packet);
-
   Clock* const clock_ = nullptr;
   RTPSender* const rtp_sender_ = nullptr;
 

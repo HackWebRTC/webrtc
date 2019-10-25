@@ -12,6 +12,8 @@
 #define MODULES_RTP_RTCP_SOURCE_RTP_SENDER_EGRESS_H_
 
 #include <map>
+#include <memory>
+#include <vector>
 
 #include "absl/types/optional.h"
 #include "api/call/transport.h"
@@ -29,9 +31,23 @@ namespace webrtc {
 
 class RtpSenderEgress {
  public:
-  explicit RtpSenderEgress(const RtpRtcp::Configuration& config,
-                           RtpPacketHistory* packet_history,
-                           Clock* clock);
+  // Helper class that redirects packets directly to the send part of this class
+  // without passing through an actual paced sender.
+  class NonPacedPacketSender : public RtpPacketSender {
+   public:
+    explicit NonPacedPacketSender(RtpSenderEgress* sender);
+    virtual ~NonPacedPacketSender();
+
+    void EnqueuePackets(
+        std::vector<std::unique_ptr<RtpPacketToSend>> packets) override;
+
+   private:
+    uint16_t transport_sequence_number_;
+    RtpSenderEgress* const sender_;
+  };
+
+  RtpSenderEgress(const RtpRtcp::Configuration& config,
+                  RtpPacketHistory* packet_history);
   ~RtpSenderEgress() = default;
 
   void SendPacket(RtpPacketToSend* packet, const PacedPacketInfo& pacing_info);
@@ -83,6 +99,7 @@ class RtpSenderEgress {
   RtpPacketHistory* const packet_history_;
   Transport* const transport_;
   RtcEventLog* const event_log_;
+  const bool is_audio_;
 
   TransportFeedbackObserver* const transport_feedback_observer_;
   SendSideDelayObserver* const send_side_delay_observer_;

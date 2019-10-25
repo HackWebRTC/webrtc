@@ -339,14 +339,12 @@ void RTPSenderVideo::LogAndSendToNetwork(
   int64_t now_ms = clock_->TimeInMilliseconds();
 #if BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
   for (const auto& packet : packets) {
-    const uint32_t ssrc = packet->Ssrc();
-    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoTotBitrate_kbps", now_ms,
-                                    rtp_sender_->ActualSendBitrateKbit(), ssrc);
-    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoFecBitrate_kbps", now_ms,
-                                    FecOverheadRate() / 1000, ssrc);
-    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoNackBitrate_kbps", now_ms,
-                                    rtp_sender_->NackOverheadRate() / 1000,
-                                    ssrc);
+    if (packet->packet_type() ==
+        RtpPacketToSend::Type::kForwardErrorCorrection) {
+      const uint32_t ssrc = packet->Ssrc();
+      BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoFecBitrate_kbps", now_ms,
+                                      FecOverheadRate() / 1000, ssrc);
+    }
   }
 #endif
 
