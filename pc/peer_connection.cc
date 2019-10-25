@@ -647,49 +647,6 @@ const ContentInfo* FindTransceiverMSection(
              : nullptr;
 }
 
-// Wraps a CreateSessionDescriptionObserver and an OperationsChain operation
-// complete callback. When the observer is invoked, the wrapped observer is
-// invoked followed by invoking the completion callback.
-class CreateSessionDescriptionObserverOperationWrapper
-    : public CreateSessionDescriptionObserver {
- public:
-  CreateSessionDescriptionObserverOperationWrapper(
-      rtc::scoped_refptr<CreateSessionDescriptionObserver> observer,
-      std::function<void()> operation_complete_callback)
-      : observer_(std::move(observer)),
-        operation_complete_callback_(std::move(operation_complete_callback)) {
-    RTC_DCHECK(observer_);
-  }
-  ~CreateSessionDescriptionObserverOperationWrapper() override {
-    RTC_DCHECK(was_called_);
-  }
-
-  void OnSuccess(SessionDescriptionInterface* desc) override {
-    RTC_DCHECK(!was_called_);
-#ifdef RTC_DCHECK_IS_ON
-    was_called_ = true;
-#endif  // RTC_DCHECK_IS_ON
-    observer_->OnSuccess(desc);
-    operation_complete_callback_();
-  }
-
-  void OnFailure(RTCError error) override {
-    RTC_DCHECK(!was_called_);
-#ifdef RTC_DCHECK_IS_ON
-    was_called_ = true;
-#endif  // RTC_DCHECK_IS_ON
-    observer_->OnFailure(std::move(error));
-    operation_complete_callback_();
-  }
-
- private:
-#ifdef RTC_DCHECK_IS_ON
-  bool was_called_ = false;
-#endif  // RTC_DCHECK_IS_ON
-  rtc::scoped_refptr<CreateSessionDescriptionObserver> observer_;
-  std::function<void()> operation_complete_callback_;
-};
-
 }  // namespace
 
 class PeerConnection::LocalIceCredentialsToReplace {
@@ -935,7 +892,6 @@ PeerConnection::PeerConnection(PeerConnectionFactory* factory,
     : factory_(factory),
       event_log_(std::move(event_log)),
       event_log_ptr_(event_log_.get()),
-      operations_chain_(rtc::OperationsChain::Create()),
       datagram_transport_config_(
           field_trial::FindFullName(kDatagramTransportFieldTrial)),
       datagram_transport_data_channel_config_(
@@ -946,14 +902,11 @@ PeerConnection::PeerConnection(PeerConnectionFactory* factory,
       call_(std::move(call)),
       call_ptr_(call_.get()),
       data_channel_transport_(nullptr),
-      local_ice_credentials_to_replace_(new LocalIceCredentialsToReplace()),
-      weak_ptr_factory_(this) {}
+      local_ice_credentials_to_replace_(new LocalIceCredentialsToReplace()) {}
 
 PeerConnection::~PeerConnection() {
   TRACE_EVENT0("webrtc", "PeerConnection::~PeerConnection");
   RTC_DCHECK_RUN_ON(signaling_thread());
-
-  weak_ptr_factory_.InvalidateWeakPtrs();
 
   // Need to stop transceivers before destroying the stats collector because
   // AudioRtpSender has a reference to the StatsCollector it will update when
@@ -991,23 +944,6 @@ PeerConnection::~PeerConnection() {
     // The event log must outlive call (and any other object that uses it).
     event_log_.reset();
   });
-
-  // Process all pending notifications in the message queue. If we don't do
-  // this, requests will linger and not know they succeeded or failed.
-  rtc::MessageList list;
-  signaling_thread()->Clear(this, rtc::MQID_ANY, &list);
-  for (auto& msg : list) {
-    if (msg.message_id == MSG_CREATE_SESSIONDESCRIPTION_FAILED) {
-      // Processing CreateOffer() and CreateAnswer() messages ensures their
-      // observers are invoked even if the PeerConnection is destroyed early.
-      OnMessage(&msg);
-    } else {
-      // TODO(hbos): Consider processing all pending messages. This would mean
-      // that SetLocalDescription() and SetRemoteDescription() observers are
-      // informed of successes and failures; this is currently NOT the case.
-      delete msg.pdata;
-    }
-  }
 }
 
 void PeerConnection::DestroyAllChannels() {
@@ -2114,37 +2050,7 @@ void PeerConnection::RestartIce() {
 void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
                                  const RTCOfferAnswerOptions& options) {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  // Chain this operation. If asynchronous operations are pending on the chain,
-  // this operation will be queued to be invoked, otherwise the contents of the
-  // lambda will execute immediately.
-  operations_chain_->ChainOperation(
-      [this_weak_ptr = weak_ptr_factory_.GetWeakPtr(),
-       observer_refptr =
-           rtc::scoped_refptr<CreateSessionDescriptionObserver>(observer),
-       options](std::function<void()> operations_chain_callback) {
-        // Abort early if |this_weak_ptr| is no longer valid.
-        if (!this_weak_ptr) {
-          observer_refptr->OnFailure(
-              RTCError(RTCErrorType::INTERNAL_ERROR,
-                       "CreateOffer failed because the session was shut down"));
-          operations_chain_callback();
-          return;
-        }
-        // The operation completes asynchronously when the wrapper is invoked.
-        rtc::scoped_refptr<CreateSessionDescriptionObserverOperationWrapper>
-            observer_wrapper(new rtc::RefCountedObject<
-                             CreateSessionDescriptionObserverOperationWrapper>(
-                std::move(observer_refptr),
-                std::move(operations_chain_callback)));
-        this_weak_ptr->DoCreateOffer(options, observer_wrapper);
-      });
-}
-
-void PeerConnection::DoCreateOffer(
-    const RTCOfferAnswerOptions& options,
-    rtc::scoped_refptr<CreateSessionDescriptionObserver> observer) {
-  RTC_DCHECK_RUN_ON(signaling_thread());
-  TRACE_EVENT0("webrtc", "PeerConnection::DoCreateOffer");
+  TRACE_EVENT0("webrtc", "PeerConnection::CreateOffer");
 
   if (!observer) {
     RTC_LOG(LS_ERROR) << "CreateOffer - observer is NULL.";
@@ -2270,37 +2176,7 @@ PeerConnection::GetReceivingTransceiversOfType(cricket::MediaType media_type) {
 void PeerConnection::CreateAnswer(CreateSessionDescriptionObserver* observer,
                                   const RTCOfferAnswerOptions& options) {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  // Chain this operation. If asynchronous operations are pending on the chain,
-  // this operation will be queued to be invoked, otherwise the contents of the
-  // lambda will execute immediately.
-  operations_chain_->ChainOperation(
-      [this_weak_ptr = weak_ptr_factory_.GetWeakPtr(),
-       observer_refptr =
-           rtc::scoped_refptr<CreateSessionDescriptionObserver>(observer),
-       options](std::function<void()> operations_chain_callback) {
-        // Abort early if |this_weak_ptr| is no longer valid.
-        if (!this_weak_ptr) {
-          observer_refptr->OnFailure(RTCError(
-              RTCErrorType::INTERNAL_ERROR,
-              "CreateAnswer failed because the session was shut down"));
-          operations_chain_callback();
-          return;
-        }
-        // The operation completes asynchronously when the wrapper is invoked.
-        rtc::scoped_refptr<CreateSessionDescriptionObserverOperationWrapper>
-            observer_wrapper(new rtc::RefCountedObject<
-                             CreateSessionDescriptionObserverOperationWrapper>(
-                std::move(observer_refptr),
-                std::move(operations_chain_callback)));
-        this_weak_ptr->DoCreateAnswer(options, observer_wrapper);
-      });
-}
-
-void PeerConnection::DoCreateAnswer(
-    const RTCOfferAnswerOptions& options,
-    rtc::scoped_refptr<CreateSessionDescriptionObserver> observer) {
-  RTC_DCHECK_RUN_ON(signaling_thread());
-  TRACE_EVENT0("webrtc", "PeerConnection::DoCreateAnswer");
+  TRACE_EVENT0("webrtc", "PeerConnection::CreateAnswer");
   if (!observer) {
     RTC_LOG(LS_ERROR) << "CreateAnswer - observer is NULL.";
     return;
@@ -2354,44 +2230,13 @@ void PeerConnection::SetLocalDescription(
     SetSessionDescriptionObserver* observer,
     SessionDescriptionInterface* desc_ptr) {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  // Chain this operation. If asynchronous operations are pending on the chain,
-  // this operation will be queued to be invoked, otherwise the contents of the
-  // lambda will execute immediately.
-  operations_chain_->ChainOperation(
-      [this_weak_ptr = weak_ptr_factory_.GetWeakPtr(),
-       observer_refptr =
-           rtc::scoped_refptr<SetSessionDescriptionObserver>(observer),
-       desc = std::unique_ptr<SessionDescriptionInterface>(desc_ptr)](
-          std::function<void()> operations_chain_callback) mutable {
-        // Abort early if |this_weak_ptr| is no longer valid.
-        if (!this_weak_ptr) {
-          // For consistency with DoSetLocalDescription(), we DO NOT inform the
-          // |observer_refptr| that the operation failed in this case.
-          // TODO(hbos): If/when we process SLD messages in ~PeerConnection,
-          // the consistent thing would be to inform the observer here.
-          operations_chain_callback();
-          return;
-        }
-        this_weak_ptr->DoSetLocalDescription(std::move(desc),
-                                             std::move(observer_refptr));
-        // DoSetLocalDescription() is currently implemented as a synchronous
-        // operation but where the |observer|'s callbacks are invoked
-        // asynchronously in a post to OnMessage().
-        // For backwards-compatability reasons, we declare the operation as
-        // completed here (rather than in OnMessage()). This ensures that:
-        // - This operation is not keeping the PeerConnection alive past this
-        //   point.
-        // - Subsequent offer/answer operations can start immediately (without
-        //   waiting for OnMessage()).
-        operations_chain_callback();
-      });
-}
+  TRACE_EVENT0("webrtc", "PeerConnection::SetLocalDescription");
 
-void PeerConnection::DoSetLocalDescription(
-    std::unique_ptr<SessionDescriptionInterface> desc,
-    rtc::scoped_refptr<SetSessionDescriptionObserver> observer) {
-  RTC_DCHECK_RUN_ON(signaling_thread());
-  TRACE_EVENT0("webrtc", "PeerConnection::DoSetLocalDescription");
+  // The SetLocalDescription contract is that we take ownership of the session
+  // description regardless of the outcome, so wrap it in a unique_ptr right
+  // away. Ideally, SetLocalDescription's signature will be changed to take the
+  // description as a unique_ptr argument to formalize this agreement.
+  std::unique_ptr<SessionDescriptionInterface> desc(desc_ptr);
 
   if (!observer) {
     RTC_LOG(LS_ERROR) << "SetLocalDescription - observer is NULL.";
@@ -2772,83 +2617,18 @@ void PeerConnection::FillInMissingRemoteMids(
 
 void PeerConnection::SetRemoteDescription(
     SetSessionDescriptionObserver* observer,
-    SessionDescriptionInterface* desc_ptr) {
-  RTC_DCHECK_RUN_ON(signaling_thread());
-  // Chain this operation. If asynchronous operations are pending on the chain,
-  // this operation will be queued to be invoked, otherwise the contents of the
-  // lambda will execute immediately.
-  operations_chain_->ChainOperation(
-      [this_weak_ptr = weak_ptr_factory_.GetWeakPtr(),
-       observer_refptr =
-           rtc::scoped_refptr<SetSessionDescriptionObserver>(observer),
-       desc = std::unique_ptr<SessionDescriptionInterface>(desc_ptr)](
-          std::function<void()> operations_chain_callback) mutable {
-        // Abort early if |this_weak_ptr| is no longer valid.
-        if (!this_weak_ptr) {
-          // For consistency with SetRemoteDescriptionObserverAdapter, we DO NOT
-          // inform the |observer_refptr| that the operation failed in this
-          // case.
-          // TODO(hbos): If/when we process SRD messages in ~PeerConnection,
-          // the consistent thing would be to inform the observer here.
-          operations_chain_callback();
-          return;
-        }
-        this_weak_ptr->DoSetRemoteDescription(
-            std::move(desc),
-            rtc::scoped_refptr<SetRemoteDescriptionObserverInterface>(
-                new SetRemoteDescriptionObserverAdapter(
-                    this_weak_ptr.get(), std::move(observer_refptr))));
-        // DoSetRemoteDescription() is currently implemented as a synchronous
-        // operation but where SetRemoteDescriptionObserverAdapter ensures that
-        // the |observer|'s callbacks are invoked asynchronously in a post to
-        // OnMessage().
-        // For backwards-compatability reasons, we declare the operation as
-        // completed here (rather than in OnMessage()). This ensures that:
-        // - This operation is not keeping the PeerConnection alive past this
-        //   point.
-        // - Subsequent offer/answer operations can start immediately (without
-        //   waiting for OnMessage()).
-        operations_chain_callback();
-      });
+    SessionDescriptionInterface* desc) {
+  SetRemoteDescription(
+      std::unique_ptr<SessionDescriptionInterface>(desc),
+      rtc::scoped_refptr<SetRemoteDescriptionObserverInterface>(
+          new SetRemoteDescriptionObserverAdapter(this, observer)));
 }
 
 void PeerConnection::SetRemoteDescription(
     std::unique_ptr<SessionDescriptionInterface> desc,
     rtc::scoped_refptr<SetRemoteDescriptionObserverInterface> observer) {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  // Chain this operation. If asynchronous operations are pending on the chain,
-  // this operation will be queued to be invoked, otherwise the contents of the
-  // lambda will execute immediately.
-  operations_chain_->ChainOperation(
-      [this_weak_ptr = weak_ptr_factory_.GetWeakPtr(), observer,
-       desc = std::move(desc)](
-          std::function<void()> operations_chain_callback) mutable {
-        // Abort early if |this_weak_ptr| is no longer valid.
-        if (!this_weak_ptr) {
-          // For consistency with DoSetRemoteDescription(), we DO inform the
-          // |observer| that the operation failed in this case.
-          observer->OnSetRemoteDescriptionComplete(RTCError(
-              RTCErrorType::INVALID_STATE,
-              "Failed to set remote offer sdp: failed because the session was "
-              "shut down"));
-          operations_chain_callback();
-          return;
-        }
-        this_weak_ptr->DoSetRemoteDescription(std::move(desc),
-                                              std::move(observer));
-        // DoSetRemoteDescription() is currently implemented as a synchronous
-        // operation. The |observer| will already have been informed that it
-        // completed, and we can mark this operation as complete without any
-        // loose ends.
-        operations_chain_callback();
-      });
-}
-
-void PeerConnection::DoSetRemoteDescription(
-    std::unique_ptr<SessionDescriptionInterface> desc,
-    rtc::scoped_refptr<SetRemoteDescriptionObserverInterface> observer) {
-  RTC_DCHECK_RUN_ON(signaling_thread());
-  TRACE_EVENT0("webrtc", "PeerConnection::DoSetRemoteDescription");
+  TRACE_EVENT0("webrtc", "PeerConnection::SetRemoteDescription");
 
   if (!observer) {
     RTC_LOG(LS_ERROR) << "SetRemoteDescription - observer is NULL.";
