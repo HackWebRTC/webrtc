@@ -46,9 +46,12 @@ rtc_library("nack_module") {
   deps = [
     ":packet",
     "..:module_api",
+    "../../api/units:time_delta",
+    "../../api/units:timestamp",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_numerics",
+    "../../rtc_base/experiments:field_trial_parser",
     "../../system_wrappers",
     "../../system_wrappers:field_trial",
     "../utility",
