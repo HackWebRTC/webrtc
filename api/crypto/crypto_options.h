@@ -49,6 +49,10 @@ struct RTC_EXPORT CryptoOptions {
     // other ciphers get preferred.
     bool enable_aes128_sha1_32_crypto_cipher = false;
 
+    // The most commonly used cipher. Can be disabled, mostly for testing
+    // purposes.
+    bool enable_aes128_sha1_80_crypto_cipher = true;
+
     // If set to true, encrypted RTP header extensions as defined in RFC 6904
     // will be negotiated. They will only be used if both peers support them.
     bool enable_encrypted_rtp_header_extensions = false;

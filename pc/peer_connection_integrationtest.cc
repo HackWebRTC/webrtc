@@ -1635,13 +1635,18 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
 
   void TestGcmNegotiationUsesCipherSuite(bool local_gcm_enabled,
                                          bool remote_gcm_enabled,
+                                         bool aes_ctr_enabled,
                                          int expected_cipher_suite) {
     PeerConnectionFactory::Options caller_options;
     caller_options.crypto_options.srtp.enable_gcm_crypto_suites =
         local_gcm_enabled;
+    caller_options.crypto_options.srtp.enable_aes128_sha1_80_crypto_cipher =
+        aes_ctr_enabled;
     PeerConnectionFactory::Options callee_options;
     callee_options.crypto_options.srtp.enable_gcm_crypto_suites =
         remote_gcm_enabled;
+    callee_options.crypto_options.srtp.enable_aes128_sha1_80_crypto_cipher =
+        aes_ctr_enabled;
     TestNegotiatedCipherSuite(caller_options, callee_options,
                               expected_cipher_suite);
   }
@@ -3110,38 +3115,21 @@ TEST_P(PeerConnectionIntegrationTest, Aes128Sha1_32_CipherUsedWhenSupported) {
 TEST_P(PeerConnectionIntegrationTest, NonGcmCipherUsedWhenGcmNotSupported) {
   bool local_gcm_enabled = false;
   bool remote_gcm_enabled = false;
+  bool aes_ctr_enabled = true;
   int expected_cipher_suite = kDefaultSrtpCryptoSuite;
   TestGcmNegotiationUsesCipherSuite(local_gcm_enabled, remote_gcm_enabled,
-                                    expected_cipher_suite);
+                                    aes_ctr_enabled, expected_cipher_suite);
 }
 
-// Test that a GCM cipher is used if both ends support it.
-TEST_P(PeerConnectionIntegrationTest, GcmCipherUsedWhenGcmSupported) {
+// Test that a GCM cipher is used if both ends support it and non-GCM is
+// disabled.
+TEST_P(PeerConnectionIntegrationTest, GcmCipherUsedWhenOnlyGcmSupported) {
   bool local_gcm_enabled = true;
   bool remote_gcm_enabled = true;
+  bool aes_ctr_enabled = false;
   int expected_cipher_suite = kDefaultSrtpCryptoSuiteGcm;
   TestGcmNegotiationUsesCipherSuite(local_gcm_enabled, remote_gcm_enabled,
-                                    expected_cipher_suite);
-}
-
-// Test that GCM isn't used if only the offerer supports it.
-TEST_P(PeerConnectionIntegrationTest,
-       NonGcmCipherUsedWhenOnlyCallerSupportsGcm) {
-  bool local_gcm_enabled = true;
-  bool remote_gcm_enabled = false;
-  int expected_cipher_suite = kDefaultSrtpCryptoSuite;
-  TestGcmNegotiationUsesCipherSuite(local_gcm_enabled, remote_gcm_enabled,
-                                    expected_cipher_suite);
-}
-
-// Test that GCM isn't used if only the answerer supports it.
-TEST_P(PeerConnectionIntegrationTest,
-       NonGcmCipherUsedWhenOnlyCalleeSupportsGcm) {
-  bool local_gcm_enabled = false;
-  bool remote_gcm_enabled = true;
-  int expected_cipher_suite = kDefaultSrtpCryptoSuite;
-  TestGcmNegotiationUsesCipherSuite(local_gcm_enabled, remote_gcm_enabled,
-                                    expected_cipher_suite);
+                                    aes_ctr_enabled, expected_cipher_suite);
 }
 
 // Verify that media can be transmitted end-to-end when GCM crypto suites are
@@ -3151,6 +3139,7 @@ TEST_P(PeerConnectionIntegrationTest,
 TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithGcmCipher) {
   PeerConnectionFactory::Options gcm_options;
   gcm_options.crypto_options.srtp.enable_gcm_crypto_suites = true;
+  gcm_options.crypto_options.srtp.enable_aes128_sha1_80_crypto_cipher = false;
   ASSERT_TRUE(
       CreatePeerConnectionWrappersWithOptions(gcm_options, gcm_options));
   ConnectFakeSignaling();
