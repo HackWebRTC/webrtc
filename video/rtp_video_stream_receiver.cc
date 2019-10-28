@@ -443,7 +443,10 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
       InsertSpsPpsIntoTracker(packet.payloadType);
     }
 
-    switch (tracker_.CopyAndFixBitstream(&packet)) {
+    video_coding::H264SpsPpsTracker::FixedBitstream fixed =
+        tracker_.CopyAndFixBitstream(codec_payload, &packet.video_header);
+
+    switch (fixed.action) {
       case video_coding::H264SpsPpsTracker::kRequestKeyframe:
         rtcp_feedback_buffer_.RequestKeyFrame();
         rtcp_feedback_buffer_.SendBufferedRtcpFeedback();
@@ -451,6 +454,8 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
       case video_coding::H264SpsPpsTracker::kDrop:
         return;
       case video_coding::H264SpsPpsTracker::kInsert:
+        packet.dataPtr = fixed.data.release();
+        packet.sizeBytes = fixed.size;
         break;
     }
 
