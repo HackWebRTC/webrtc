@@ -49,10 +49,11 @@ class SimulatedPacketTransport final : public rtc::PacketTransportInternal {
     RTC_DCHECK_RUN_ON(transport_thread_);
   }
 
-  ~SimulatedPacketTransport() {
+  ~SimulatedPacketTransport() override {
     RTC_DCHECK_RUN_ON(transport_thread_);
-    if (destination_ != nullptr) {
-      invoker_.Flush(destination_->transport_thread_);
+    auto destination = destination_.load();
+    if (destination != nullptr) {
+      invoker_.Flush(destination->transport_thread_);
     }
     invoker_.Flush(transport_thread_);
     destination_ = nullptr;
@@ -70,7 +71,8 @@ class SimulatedPacketTransport final : public rtc::PacketTransportInternal {
                  const rtc::PacketOptions& options,
                  int flags = 0) {
     RTC_DCHECK_RUN_ON(transport_thread_);
-    if (destination_ == nullptr) {
+    auto destination = destination_.load();
+    if (destination == nullptr) {
       return -1;
     }
     if (random_.Rand(100) < packet_loss_percents_) {
@@ -79,11 +81,12 @@ class SimulatedPacketTransport final : public rtc::PacketTransportInternal {
     }
     rtc::CopyOnWriteBuffer buffer(data, len);
     auto send_job = [this, flags, buffer = std::move(buffer)] {
-      if (destination_ == nullptr) {
+      auto destination = destination_.load();
+      if (destination == nullptr) {
         return;
       }
-      destination_->SignalReadPacket(
-          destination_, reinterpret_cast<const char*>(buffer.data()),
+      destination->SignalReadPacket(
+          destination, reinterpret_cast<const char*>(buffer.data()),
           buffer.size(), rtc::Time(), flags);
     };
     // Introduce random send delay in range [0 .. 2 * avg_send_delay_millis_]
@@ -96,10 +99,10 @@ class SimulatedPacketTransport final : public rtc::PacketTransportInternal {
 
     if (actual_send_delay > 0) {
       invoker_.AsyncInvokeDelayed<void>(RTC_FROM_HERE,
-                                        destination_->transport_thread_,
+                                        destination->transport_thread_,
                                         std::move(send_job), actual_send_delay);
     } else {
-      invoker_.AsyncInvoke<void>(RTC_FROM_HERE, destination_->transport_thread_,
+      invoker_.AsyncInvoke<void>(RTC_FROM_HERE, destination->transport_thread_,
                                  std::move(send_job));
     }
     return 0;
@@ -129,7 +132,7 @@ class SimulatedPacketTransport final : public rtc::PacketTransportInternal {
   rtc::Thread* const transport_thread_;
   const uint8_t packet_loss_percents_;
   const uint16_t avg_send_delay_millis_;
-  SimulatedPacketTransport* destination_;
+  std::atomic<SimulatedPacketTransport*> destination_ ATOMIC_VAR_INIT(nullptr);
   rtc::AsyncInvoker invoker_;
   webrtc::Random random_;
   RTC_DISALLOW_COPY_AND_ASSIGN(SimulatedPacketTransport);
@@ -601,8 +604,6 @@ namespace cricket {
  * usrsctp might misbehave in concurrent environment
  * under load on lossy networks: deadlocks and memory corruption
  * issues might happen in non-basic usage scenarios.
- * The test set is disabled by default because it takes
- * long time to run.
  * It's recommended to run this test whenever usrsctp version
  * used is updated to verify it properly works in stress
  * conditions under higher than usual load.
@@ -610,16 +611,19 @@ namespace cricket {
  * are executed, so whenever memory bug is happen inside usrsctp,
  * it will be easier to understand what went wrong with ASAN
  * provided diagnostics information.
+ * The tests cases currently disabled by default due to
+ * long execution time and due to unresolved issue inside
+ * `usrsctp` library detected by try-bots with ThreadSanitizer.
  */
-class DISABLED_UsrSctpReliabilityTest : public ::testing::Test {};
+class UsrSctpReliabilityTest : public ::testing::Test {};
 
 /**
  * A simple test which send multiple messages over reliable
  * connection, usefull to verify test infrastructure works.
  * Execution time is less than 1 second.
  */
-TEST_F(DISABLED_UsrSctpReliabilityTest,
-       AllMessagesAreDeliveredOverReliableConnection) {
+TEST_F(UsrSctpReliabilityTest,
+       DISABLED_AllMessagesAreDeliveredOverReliableConnection) {
   auto thread1 = rtc::Thread::Create();
   auto thread2 = rtc::Thread::Create();
   thread1->Start();
@@ -649,10 +653,12 @@ TEST_F(DISABLED_UsrSctpReliabilityTest,
  * A test to verify that multiple messages can be reliably delivered
  * over lossy network when usrsctp configured to guarantee reliably
  * and in order delivery.
+ * The test case is disabled by default because it takes
+ * long time to run.
  * Execution time is about 2.5 minutes.
  */
-TEST_F(DISABLED_UsrSctpReliabilityTest,
-       AllMessagesAreDeliveredOverLossyConnectionReliableAndInOrder) {
+TEST_F(UsrSctpReliabilityTest,
+       DISABLED_AllMessagesAreDeliveredOverLossyConnectionReliableAndInOrder) {
   auto thread1 = rtc::Thread::Create();
   auto thread2 = rtc::Thread::Create();
   thread1->Start();
@@ -682,10 +688,12 @@ TEST_F(DISABLED_UsrSctpReliabilityTest,
  * A test to verify that multiple messages can be reliably delivered
  * over lossy network when usrsctp configured to retransmit lost
  * packets.
+ * The test case is disabled by default because it takes
+ * long time to run.
  * Execution time is about 2.5 minutes.
  */
-TEST_F(DISABLED_UsrSctpReliabilityTest,
-       AllMessagesAreDeliveredOverLossyConnectionWithRetries) {
+TEST_F(UsrSctpReliabilityTest,
+       DISABLED_AllMessagesAreDeliveredOverLossyConnectionWithRetries) {
   auto thread1 = rtc::Thread::Create();
   auto thread2 = rtc::Thread::Create();
   thread1->Start();
@@ -723,10 +731,12 @@ TEST_F(DISABLED_UsrSctpReliabilityTest,
  * It is recoomended to run this test whenever usrsctp version
  * used by WebRTC is updated.
  *
+ * The test case is disabled by default because it takes
+ * long time to run.
  * Execution time of this test is about 1-2 hours.
  */
-TEST_F(DISABLED_UsrSctpReliabilityTest,
-       AllMessagesAreDeliveredOverLossyConnectionConcurrentTests) {
+TEST_F(UsrSctpReliabilityTest,
+       DISABLED_AllMessagesAreDeliveredOverLossyConnectionConcurrentTests) {
   ThreadPool pool(16);
 
   cricket::SendDataParams send_params;
