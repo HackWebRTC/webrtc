@@ -27,6 +27,7 @@
 #include "rtc_base/numerics/exp_filter.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/numerics/safe_minmax.h"
+#include "rtc_base/string_encode.h"
 #include "rtc_base/string_to_number.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/field_trial.h"
@@ -255,6 +256,46 @@ GetNewPacketLossRateOptimizer() {
   return nullptr;
 }
 
+std::vector<float> GetBitrateMultipliers() {
+  constexpr char kBitrateMultipliersName[] =
+      "WebRTC-Audio-OpusBitrateMultipliers";
+  const bool use_bitrate_multipliers =
+      webrtc::field_trial::IsEnabled(kBitrateMultipliersName);
+  if (use_bitrate_multipliers) {
+    const std::string field_trial_string =
+        webrtc::field_trial::FindFullName(kBitrateMultipliersName);
+    std::vector<std::string> pieces;
+    rtc::tokenize(field_trial_string, '-', &pieces);
+    if (pieces.size() < 2 || pieces[0] != "Enabled") {
+      RTC_LOG(LS_WARNING) << "Invalid parameters for "
+                          << kBitrateMultipliersName
+                          << ", not using custom values.";
+      return std::vector<float>();
+    }
+    std::vector<float> multipliers(pieces.size() - 1);
+    for (size_t i = 1; i < pieces.size(); i++) {
+      if (!rtc::FromString(pieces[i], &multipliers[i - 1])) {
+        RTC_LOG(LS_WARNING)
+            << "Invalid parameters for " << kBitrateMultipliersName
+            << ", not using custom values.";
+        return std::vector<float>();
+      }
+    }
+    RTC_LOG(LS_INFO) << "Using custom bitrate multipliers: "
+                     << field_trial_string;
+    return multipliers;
+  }
+  return std::vector<float>();
+}
+
+int GetMultipliedBitrate(int bitrate, const std::vector<float>& multipliers) {
+  // The multipliers are valid from 5 kbps.
+  const size_t bitrate_kbps = static_cast<size_t>(bitrate / 1000);
+  if (bitrate_kbps < 5 || bitrate_kbps >= multipliers.size() + 5) {
+    return bitrate;
+  }
+  return static_cast<int>(multipliers[bitrate_kbps - 5] * bitrate);
+}
 }  // namespace
 
 AudioEncoderOpusImpl::NewPacketLossRateOptimizer::NewPacketLossRateOptimizer(
@@ -430,6 +471,7 @@ AudioEncoderOpusImpl::AudioEncoderOpusImpl(
       adjust_bandwidth_(
           webrtc::field_trial::IsEnabled("WebRTC-AdjustOpusBandwidth")),
       bitrate_changed_(true),
+      bitrate_multipliers_(GetBitrateMultipliers()),
       packet_loss_rate_(0.0),
       min_packet_loss_rate_(GetMinPacketLossRate()),
       new_packet_loss_optimizer_(GetNewPacketLossRateOptimizer()),
@@ -815,7 +857,9 @@ void AudioEncoderOpusImpl::SetTargetBitrate(int bits_per_second) {
     config_.bitrate_bps = new_bitrate;
     RTC_DCHECK(config_.IsOk());
     const int bitrate = GetBitrateBps(config_);
-    RTC_CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, bitrate));
+    RTC_CHECK_EQ(
+        0, WebRtcOpus_SetBitRate(
+               inst_, GetMultipliedBitrate(bitrate, bitrate_multipliers_)));
     RTC_LOG(LS_INFO) << "Set Opus bitrate to " << bitrate << " bps.";
     bitrate_changed_ = true;
   }
