@@ -10,6 +10,7 @@
 
 #include "modules/rtp_rtcp/source/rtp_sender_audio.h"
 
+#include <memory>
 #include <vector>
 
 #include "api/transport/field_trial_based_config.h"
@@ -17,7 +18,6 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
-#include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -63,21 +63,21 @@ class RtpSenderAudioTest : public ::testing::Test {
  public:
   RtpSenderAudioTest()
       : fake_clock_(kStartTime),
-        rtp_sender_([&] {
+        rtp_module_(RtpRtcp::Create([&] {
           RtpRtcp::Configuration config;
           config.audio = true;
           config.clock = &fake_clock_;
           config.outgoing_transport = &transport_;
           config.local_media_ssrc = kSsrc;
           return config;
-        }()),
-        rtp_sender_audio_(&fake_clock_, &rtp_sender_) {
-    rtp_sender_.SetSequenceNumber(kSeqNum);
+        }())),
+        rtp_sender_audio_(&fake_clock_, rtp_module_->RtpSender()) {
+    rtp_module_->SetSequenceNumber(kSeqNum);
   }
 
   SimulatedClock fake_clock_;
   LoopbackTransportTest transport_;
-  RTPSender rtp_sender_;
+  std::unique_ptr<RtpRtcp> rtp_module_;
   RTPSenderAudio rtp_sender_audio_;
 };
 
@@ -98,8 +98,8 @@ TEST_F(RtpSenderAudioTest, SendAudio) {
 
 TEST_F(RtpSenderAudioTest, SendAudioWithAudioLevelExtension) {
   EXPECT_EQ(0, rtp_sender_audio_.SetAudioLevel(kAudioLevel));
-  EXPECT_EQ(0, rtp_sender_.RegisterRtpHeaderExtension(kRtpExtensionAudioLevel,
-                                                      kAudioLevelExtensionId));
+  rtp_module_->RegisterRtpHeaderExtension(AudioLevel::kUri,
+                                          kAudioLevelExtensionId);
 
   const char payload_name[] = "PAYLOAD_NAME";
   const uint8_t payload_type = 127;
