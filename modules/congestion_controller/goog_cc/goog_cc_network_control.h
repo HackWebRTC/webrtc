@@ -87,6 +87,7 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   FieldTrialFlag safe_reset_acknowledged_rate_;
   const bool use_downlink_delay_for_congestion_window_;
   const bool use_min_allocatable_as_lower_bound_;
+  const bool ignore_probes_lower_than_network_estimate_;
   const RateControlSettings rate_control_settings_;
 
   const std::unique_ptr<ProbeController> probe_controller_;

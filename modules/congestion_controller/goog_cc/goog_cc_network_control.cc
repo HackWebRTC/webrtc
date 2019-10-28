@@ -72,6 +72,9 @@ GoogCcNetworkController::GoogCcNetworkController(NetworkControllerConfig config,
                     "WebRTC-Bwe-CongestionWindowDownlinkDelay")),
       use_min_allocatable_as_lower_bound_(
           IsNotDisabled(key_value_config_, "WebRTC-Bwe-MinAllocAsLowerBound")),
+      ignore_probes_lower_than_network_estimate_(
+          IsEnabled(key_value_config_,
+                    "WebRTC-Bwe-IgnoreProbesLowerThanNetworkStateEstimate")),
       rate_control_settings_(
           RateControlSettings::ParseFromKeyValueConfig(key_value_config_)),
       probe_controller_(
@@ -489,8 +492,6 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
     }
   }
 
-  absl::optional<DataRate> probe_bitrate =
-      probe_bitrate_estimator_->FetchAndResetLastEstimatedBitrate();
   if (network_estimator_) {
     network_estimator_->OnTransportPacketsFeedback(report);
     auto prev_estimate = estimate_;
@@ -502,6 +503,13 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
       event_log_->Log(std::make_unique<RtcEventRemoteEstimate>(
           estimate_->link_capacity_lower, estimate_->link_capacity_upper));
     }
+  }
+  absl::optional<DataRate> probe_bitrate =
+      probe_bitrate_estimator_->FetchAndResetLastEstimatedBitrate();
+  if (ignore_probes_lower_than_network_estimate_ && probe_bitrate &&
+      estimate_ && *probe_bitrate < delay_based_bwe_->last_estimate() &&
+      *probe_bitrate < estimate_->link_capacity_lower) {
+    probe_bitrate.reset();
   }
 
   NetworkControlUpdate update;

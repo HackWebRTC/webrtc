@@ -62,9 +62,9 @@ class DelayBasedBwe {
   void SetMinBitrate(DataRate min_bitrate);
   TimeDelta GetExpectedBwePeriod() const;
   void SetAlrLimitedBackoffExperiment(bool enabled);
-
   DataRate TriggerOveruse(Timestamp at_time,
                           absl::optional<DataRate> link_capacity);
+  DataRate last_estimate() const { return prev_bitrate_; }
 
  private:
   friend class GoogCcStatePrinter;
