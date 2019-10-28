@@ -29,8 +29,10 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
 #include "modules/rtp_rtcp/source/rtcp_receiver.h"
 #include "modules/rtp_rtcp/source/rtcp_sender.h"
+#include "modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
+#include "modules/rtp_rtcp/source/rtp_sender_egress.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/gtest_prod_util.h"
 
@@ -278,8 +280,12 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
  protected:
   bool UpdateRTCPReceiveInformationTimers();
 
-  RTPSender* rtp_sender() { return rtp_sender_.get(); }
-  const RTPSender* rtp_sender() const { return rtp_sender_.get(); }
+  RTPSender* rtp_sender() {
+    return rtp_sender_ ? &rtp_sender_->packet_generator_ : nullptr;
+  }
+  const RTPSender* rtp_sender() const {
+    return rtp_sender_ ? &rtp_sender_->packet_generator_ : nullptr;
+  }
 
   RTCPSender* rtcp_sender() { return &rtcp_sender_; }
   const RTCPSender* rtcp_sender() const { return &rtcp_sender_; }
@@ -293,12 +299,26 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   FRIEND_TEST_ALL_PREFIXES(RtpRtcpImplTest, Rtt);
   FRIEND_TEST_ALL_PREFIXES(RtpRtcpImplTest, RttForReceiverOnly);
 
+  struct RtpSenderContext {
+    explicit RtpSenderContext(const RtpRtcp::Configuration& config);
+    // Storage of packets, for retransmissions and padding, if applicable.
+    RtpPacketHistory packet_history_;
+    // Handles final time timestamping/stats/etc and handover to Transport.
+    RtpSenderEgress packet_sender_;
+    // If no paced sender configured, this class will be used to pass packets
+    // from |packet_generator_| to |packet_sender_|.
+    RtpSenderEgress::NonPacedPacketSender non_paced_sender_;
+    // Handles creation of RTP packets to be sent.
+    RTPSender packet_generator_;
+  };
+
   void set_rtt_ms(int64_t rtt_ms);
   int64_t rtt_ms() const;
 
   bool TimeToSendFullNackList(int64_t now) const;
 
-  std::unique_ptr<RTPSender> rtp_sender_;
+  std::unique_ptr<RtpSenderContext> rtp_sender_;
+
   RTCPSender rtcp_sender_;
   RTCPReceiver rtcp_receiver_;
 

@@ -17,13 +17,13 @@
 #include "api/video/video_timing.h"
 #include "modules/rtp_rtcp/include/rtp_cvo.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor_extension.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
-#include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/rate_limiter.h"
 #include "test/gmock.h"
@@ -142,7 +142,7 @@ class RtpSenderVideoTest : public ::testing::TestWithParam<bool> {
       : field_trials_(GetParam()),
         fake_clock_(kStartTime),
         retransmission_rate_limiter_(&fake_clock_, 1000),
-        rtp_sender_([&] {
+        rtp_module_(RtpRtcp::Create([&] {
           RtpRtcp::Configuration config;
           config.clock = &fake_clock_;
           config.outgoing_transport = &transport_;
@@ -150,10 +150,13 @@ class RtpSenderVideoTest : public ::testing::TestWithParam<bool> {
           config.field_trials = &field_trials_;
           config.local_media_ssrc = kSsrc;
           return config;
-        }()),
-        rtp_sender_video_(&fake_clock_, &rtp_sender_, nullptr, field_trials_) {
-    rtp_sender_.SetSequenceNumber(kSeqNum);
-    rtp_sender_.SetTimestampOffset(0);
+        }())),
+        rtp_sender_video_(&fake_clock_,
+                          rtp_module_->RtpSender(),
+                          nullptr,
+                          field_trials_) {
+    rtp_module_->SetSequenceNumber(kSeqNum);
+    rtp_module_->SetStartTimestamp(0);
   }
 
   void PopulateGenericFrameDescriptor(int version);
@@ -162,19 +165,19 @@ class RtpSenderVideoTest : public ::testing::TestWithParam<bool> {
       int version);
 
  protected:
+  const RtpRtcp::Configuration config_;
   FieldTrials field_trials_;
   SimulatedClock fake_clock_;
   LoopbackTransportTest transport_;
   RateLimiter retransmission_rate_limiter_;
-
-  RTPSender rtp_sender_;
+  std::unique_ptr<RtpRtcp> rtp_module_;
   TestRtpSenderVideo rtp_sender_video_;
 };
 
 TEST_P(RtpSenderVideoTest, KeyFrameHasCVO) {
   uint8_t kFrame[kMaxPacketLength];
-  EXPECT_EQ(0, rtp_sender_.RegisterRtpHeaderExtension(
-                   kRtpExtensionVideoRotation, kVideoRotationExtensionId));
+  rtp_module_->RegisterRtpHeaderExtension(VideoOrientation::kUri,
+                                          kVideoRotationExtensionId);
 
   RTPVideoHeader hdr;
   hdr.rotation = kVideoRotation_0;
@@ -193,8 +196,8 @@ TEST_P(RtpSenderVideoTest, TimingFrameHasPacketizationTimstampSet) {
   const int64_t kPacketizationTimeMs = 100;
   const int64_t kEncodeStartDeltaMs = 10;
   const int64_t kEncodeFinishDeltaMs = 50;
-  EXPECT_EQ(0, rtp_sender_.RegisterRtpHeaderExtension(kRtpExtensionVideoTiming,
-                                                      kVideoTimingExtensionId));
+  rtp_module_->RegisterRtpHeaderExtension(VideoTimingExtension::kUri,
+                                          kVideoTimingExtensionId);
 
   const int64_t kCaptureTimestamp = fake_clock_.TimeInMilliseconds();
 
@@ -218,8 +221,8 @@ TEST_P(RtpSenderVideoTest, TimingFrameHasPacketizationTimstampSet) {
 
 TEST_P(RtpSenderVideoTest, DeltaFrameHasCVOWhenChanged) {
   uint8_t kFrame[kMaxPacketLength];
-  EXPECT_EQ(0, rtp_sender_.RegisterRtpHeaderExtension(
-                   kRtpExtensionVideoRotation, kVideoRotationExtensionId));
+  rtp_module_->RegisterRtpHeaderExtension(VideoOrientation::kUri,
+                                          kVideoRotationExtensionId);
 
   RTPVideoHeader hdr;
   hdr.rotation = kVideoRotation_90;
@@ -242,8 +245,8 @@ TEST_P(RtpSenderVideoTest, DeltaFrameHasCVOWhenChanged) {
 
 TEST_P(RtpSenderVideoTest, DeltaFrameHasCVOWhenNonZero) {
   uint8_t kFrame[kMaxPacketLength];
-  EXPECT_EQ(0, rtp_sender_.RegisterRtpHeaderExtension(
-                   kRtpExtensionVideoRotation, kVideoRotationExtensionId));
+  rtp_module_->RegisterRtpHeaderExtension(VideoOrientation::kUri,
+                                          kVideoRotationExtensionId);
 
   RTPVideoHeader hdr;
   hdr.rotation = kVideoRotation_90;
@@ -265,8 +268,8 @@ TEST_P(RtpSenderVideoTest, DeltaFrameHasCVOWhenNonZero) {
 
 TEST_P(RtpSenderVideoTest, CheckH264FrameMarking) {
   uint8_t kFrame[kMaxPacketLength];
-  EXPECT_EQ(0, rtp_sender_.RegisterRtpHeaderExtension(
-                   kRtpExtensionFrameMarking, kFrameMarkingExtensionId));
+  rtp_module_->RegisterRtpHeaderExtension(FrameMarkingExtension::kUri,
+                                          kFrameMarkingExtensionId);
 
   RTPFragmentationHeader frag;
   frag.VerifyAndAllocateFragmentationHeader(1);
@@ -513,15 +516,15 @@ TEST_P(RtpSenderVideoTest, ConditionalRetransmitLimit) {
 }
 
 void RtpSenderVideoTest::PopulateGenericFrameDescriptor(int version) {
-  const RTPExtensionType ext_type =
-      (version == 0) ? RTPExtensionType::kRtpExtensionGenericFrameDescriptor00
-                     : RTPExtensionType::kRtpExtensionGenericFrameDescriptor01;
+  const absl::string_view ext_uri =
+      (version == 0) ? RtpGenericFrameDescriptorExtension00::kUri
+                     : RtpGenericFrameDescriptorExtension01::kUri;
   const int ext_id =
       (version == 0) ? kGenericDescriptorId00 : kGenericDescriptorId01;
 
   const int64_t kFrameId = 100000;
   uint8_t kFrame[100];
-  EXPECT_EQ(0, rtp_sender_.RegisterRtpHeaderExtension(ext_type, ext_id));
+  rtp_module_->RegisterRtpHeaderExtension(ext_uri, ext_id);
 
   RTPVideoHeader hdr;
   RTPVideoHeader::GenericDescriptorInfo& generic = hdr.generic.emplace();
@@ -569,11 +572,11 @@ void RtpSenderVideoTest::
   uint8_t kFrame[kFrameSize];
 
   if (version == 0) {
-    ASSERT_TRUE(rtp_sender_.RegisterRtpHeaderExtension(
-        RtpGenericFrameDescriptorExtension00::kUri, kGenericDescriptorId00));
+    rtp_module_->RegisterRtpHeaderExtension(
+        RtpGenericFrameDescriptorExtension00::kUri, kGenericDescriptorId00);
   } else {
-    ASSERT_TRUE(rtp_sender_.RegisterRtpHeaderExtension(
-        RtpGenericFrameDescriptorExtension01::kUri, kGenericDescriptorId01));
+    rtp_module_->RegisterRtpHeaderExtension(
+        RtpGenericFrameDescriptorExtension01::kUri, kGenericDescriptorId01);
   }
 
   RTPVideoHeader hdr;
