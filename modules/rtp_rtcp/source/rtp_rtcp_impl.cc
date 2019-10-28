@@ -764,4 +764,12 @@ const RTPSender* ModuleRtpRtcpImpl::RtpSender() const {
   return rtp_sender_.get();
 }
 
+DataRate ModuleRtpRtcpImpl::SendRate() const {
+  return DataRate::bps(rtp_sender_->BitrateSent());
+}
+
+DataRate ModuleRtpRtcpImpl::NackOverheadRate() const {
+  return DataRate::bps(rtp_sender_->NackOverheadRate());
+}
+
 }  // namespace webrtc
