@@ -281,10 +281,10 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   bool UpdateRTCPReceiveInformationTimers();
 
   RTPSender* rtp_sender() {
-    return rtp_sender_ ? &rtp_sender_->packet_generator_ : nullptr;
+    return rtp_sender_ ? &rtp_sender_->packet_generator : nullptr;
   }
   const RTPSender* rtp_sender() const {
-    return rtp_sender_ ? &rtp_sender_->packet_generator_ : nullptr;
+    return rtp_sender_ ? &rtp_sender_->packet_generator : nullptr;
   }
 
   RTCPSender* rtcp_sender() { return &rtcp_sender_; }
@@ -305,14 +305,14 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   struct RtpSenderContext {
     explicit RtpSenderContext(const RtpRtcp::Configuration& config);
     // Storage of packets, for retransmissions and padding, if applicable.
-    RtpPacketHistory packet_history_;
+    RtpPacketHistory packet_history;
     // Handles final time timestamping/stats/etc and handover to Transport.
-    RtpSenderEgress packet_sender_;
+    RtpSenderEgress packet_sender;
     // If no paced sender configured, this class will be used to pass packets
     // from |packet_generator_| to |packet_sender_|.
-    RtpSenderEgress::NonPacedPacketSender non_paced_sender_;
+    RtpSenderEgress::NonPacedPacketSender non_paced_sender;
     // Handles creation of RTP packets to be sent.
-    RTPSender packet_generator_;
+    RTPSender packet_generator;
   };
 
   void set_rtt_ms(int64_t rtt_ms);

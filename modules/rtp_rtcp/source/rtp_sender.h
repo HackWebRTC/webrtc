@@ -29,7 +29,6 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
-#include "modules/rtp_rtcp/source/rtp_sender_egress.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/deprecation.h"
@@ -50,22 +49,11 @@ class RTPSender {
   RTPSender(const RtpRtcp::Configuration& config,
             RtpPacketHistory* packet_history,
             RtpPacketSender* packet_sender);
-  explicit RTPSender(const RtpRtcp::Configuration& config);
 
   ~RTPSender();
 
-  // TODO(bugs.webrtc.org/11036): Remove.
-  void ProcessBitrate();
-  uint16_t ActualSendBitrateKbit() const;
-  uint32_t NackOverheadRate() const;
-
   void SetSendingMediaStatus(bool enabled);
   bool SendingMedia() const;
-
-  // TODO(bugs.webrtc.org/11036): Remove.
-  void SetAsPartOfAllocation(bool part_of_allocation);
-  void GetDataCounters(StreamDataCounters* rtp_stats,
-                       StreamDataCounters* rtx_stats) const;
 
   uint32_t TimestampOffset() const;
   void SetTimestampOffset(uint32_t timestamp);
@@ -90,19 +78,8 @@ class RTPSender {
   int32_t DeregisterRtpHeaderExtension(RTPExtensionType type);
   void DeregisterRtpHeaderExtension(absl::string_view uri);
 
-  // Tries to send packet to transport. Also updates any timing extensions,
-  // calls observers waiting for packet send events, and updates stats.
-  // Returns true if packet belongs to this RTP module, false otherwise.
-  // TODO(bugs.webrtc.org/11036): Remove.
-  bool TrySendPacket(RtpPacketToSend* packet,
-                     const PacedPacketInfo& pacing_info);
-
   bool SupportsPadding() const;
   bool SupportsRtxPayloadPadding() const;
-
-  // TODO(bugs.webrtc.org/11036): Remove.
-  std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
-      size_t target_size_bytes);
 
   std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
       size_t target_size_bytes,
@@ -111,10 +88,6 @@ class RTPSender {
   // NACK.
   void OnReceivedNack(const std::vector<uint16_t>& nack_sequence_numbers,
                       int64_t avg_rtt);
-
-  void SetStorePacketsStatus(bool enable, uint16_t number_to_store);
-
-  bool StorePackets() const;
 
   int32_t ReSendPacket(uint16_t packet_id);
 
@@ -161,19 +134,12 @@ class RTPSender {
   // sending to the network.
   void EnqueuePackets(std::vector<std::unique_ptr<RtpPacketToSend>> packets);
 
-  // TODO(bugs.webrtc.org/11036): Remove.
-  uint32_t BitrateSent() const;
-
   void SetRtpState(const RtpState& rtp_state);
   RtpState GetRtpState() const;
   void SetRtxRtpState(const RtpState& rtp_state);
   RtpState GetRtxRtpState() const;
 
   int64_t LastTimestampTimeMs() const;
-
-  // TODO(bugs.webrtc.org/11036): Remove.
-  void SetRtt(int64_t rtt_ms);
-  void OnPacketsAcknowledged(rtc::ArrayView<const uint16_t> sequence_numbers);
 
  private:
   std::unique_ptr<RtpPacketToSend> BuildRtxPacket(
@@ -190,17 +156,8 @@ class RTPSender {
   const absl::optional<uint32_t> rtx_ssrc_;
   const absl::optional<uint32_t> flexfec_ssrc_;
 
-  // TODO(bugs.webrtc.org/11036): Remove |owned_history_|, make
-  // |packet_history_| ptr const.
-  std::unique_ptr<RtpPacketHistory> owned_history_;
-  RtpPacketHistory* packet_history_;
-
-  // TODO(bugs.webrtc.org/11036): Remove |egress_| and |non_paced_sender_|,
-  // make |paced_sender_| ptr const.
-  std::unique_ptr<RtpSenderEgress> egress_;
-  std::unique_ptr<RtpSenderEgress::NonPacedPacketSender>
-      non_paced_packet_sender_;
-  RtpPacketSender* paced_sender_;
+  RtpPacketHistory* const packet_history_;
+  RtpPacketSender* const paced_sender_;
 
   rtc::CriticalSection send_critsect_;
 

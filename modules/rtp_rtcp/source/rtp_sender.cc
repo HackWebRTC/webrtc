@@ -93,8 +93,6 @@ bool HasBweExtension(const RtpHeaderExtensionMap& extensions_map) {
 
 }  // namespace
 
-RTPSender::RTPSender(const RtpRtcp::Configuration& config)
-    : RTPSender(config, nullptr, config.paced_sender) {}
 RTPSender::RTPSender(const RtpRtcp::Configuration& config,
                      RtpPacketHistory* packet_history,
                      RtpPacketSender* packet_sender)
@@ -106,6 +104,8 @@ RTPSender::RTPSender(const RtpRtcp::Configuration& config,
       flexfec_ssrc_(config.flexfec_sender
                         ? absl::make_optional(config.flexfec_sender->ssrc())
                         : absl::nullopt),
+      packet_history_(packet_history),
+      paced_sender_(packet_sender),
       sending_media_(true),                   // Default to sending media.
       max_packet_size_(IP_PACKET_SIZE - 28),  // Default is IP-v4/UDP.
       last_payload_type_(-1),
@@ -127,27 +127,6 @@ RTPSender::RTPSender(const RtpRtcp::Configuration& config,
   // Random start, 16 bits. Can't be 0.
   sequence_number_rtx_ = random_.Rand(1, kMaxInitRtpSeqNumber);
   sequence_number_ = random_.Rand(1, kMaxInitRtpSeqNumber);
-
-  if (packet_history == nullptr) {
-    // Packet history must be provided if using the new split sender, so if it
-    // is nullptr it means we are in backwards compatibility mode where
-    // RTPSender owns the history, RtpSenderEgress and non-paced sender adapter.
-    // TODO(bugs.webrtc.org/11036): Remove.
-    owned_history_ = std::make_unique<RtpPacketHistory>(clock_);
-    packet_history_ = owned_history_.get();
-    egress_ = std::make_unique<RtpSenderEgress>(config, packet_history_);
-    if (packet_sender) {
-      paced_sender_ = packet_sender;
-    } else {
-      non_paced_packet_sender_ =
-          std::make_unique<RtpSenderEgress::NonPacedPacketSender>(
-              egress_.get());
-      paced_sender_ = non_paced_packet_sender_.get();
-    }
-  } else {
-    packet_history_ = packet_history;
-    paced_sender_ = packet_sender;
-  }
 
   RTC_DCHECK(paced_sender_);
   RTC_DCHECK(packet_history_);
@@ -173,16 +152,6 @@ rtc::ArrayView<const RtpExtensionSize> RTPSender::FecExtensionSizes() {
 rtc::ArrayView<const RtpExtensionSize> RTPSender::VideoExtensionSizes() {
   return rtc::MakeArrayView(kVideoExtensionSizes,
                             arraysize(kVideoExtensionSizes));
-}
-
-uint16_t RTPSender::ActualSendBitrateKbit() const {
-  RTC_DCHECK(egress_);
-  return egress_->SendBitrate().kbps<uint16_t>();
-}
-
-uint32_t RTPSender::NackOverheadRate() const {
-  RTC_DCHECK(egress_);
-  return egress_->NackOverheadRate().bps<uint32_t>();
 }
 
 void RTPSender::SetExtmapAllowMixed(bool extmap_allow_mixed) {
@@ -255,18 +224,6 @@ void RTPSender::SetRtxPayloadType(int payload_type,
   }
 
   rtx_payload_type_map_[associated_payload_type] = payload_type;
-}
-
-void RTPSender::SetStorePacketsStatus(bool enable, uint16_t number_to_store) {
-  packet_history_->SetStorePacketsStatus(
-      enable ? RtpPacketHistory::StorageMode::kStoreAndCull
-             : RtpPacketHistory::StorageMode::kDisabled,
-      number_to_store);
-}
-
-bool RTPSender::StorePackets() const {
-  return packet_history_->GetStorageMode() !=
-         RtpPacketHistory::StorageMode::kDisabled;
 }
 
 int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
@@ -342,23 +299,6 @@ void RTPSender::OnReceivedNack(
   }
 }
 
-// Called from pacer when we can send the packet.
-bool RTPSender::TrySendPacket(RtpPacketToSend* packet,
-                              const PacedPacketInfo& pacing_info) {
-  RTC_DCHECK(packet);
-
-  {
-    rtc::CritScope lock(&send_critsect_);
-    if (!sending_media_) {
-      return false;
-    }
-  }
-
-  RTC_DCHECK(egress_);
-  egress_->SendPacket(packet, pacing_info);
-  return true;
-}
-
 bool RTPSender::SupportsPadding() const {
   rtc::CritScope lock(&send_critsect_);
   return sending_media_ && supports_bwe_extension_;
@@ -368,12 +308,6 @@ bool RTPSender::SupportsRtxPayloadPadding() const {
   rtc::CritScope lock(&send_critsect_);
   return sending_media_ && supports_bwe_extension_ &&
          (rtx_ & kRtxRedundantPayloads);
-}
-
-std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
-    size_t target_size_bytes) {
-  RTC_DCHECK(egress_);
-  return GeneratePadding(target_size_bytes, egress_->MediaHasBeenSent());
 }
 
 std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
@@ -525,11 +459,6 @@ void RTPSender::EnqueuePackets(
   paced_sender_->EnqueuePackets(std::move(packets));
 }
 
-void RTPSender::ProcessBitrate() {
-  RTC_DCHECK(egress_);
-  egress_->ProcessBitrateAndNotifyObservers();
-}
-
 size_t RTPSender::RtpHeaderLength() const {
   rtc::CritScope lock(&send_critsect_);
   size_t rtp_header_length = kRtpHeaderLength;
@@ -544,12 +473,6 @@ uint16_t RTPSender::AllocateSequenceNumber(uint16_t packets_to_send) {
   uint16_t first_allocated_sequence_number = sequence_number_;
   sequence_number_ += packets_to_send;
   return first_allocated_sequence_number;
-}
-
-void RTPSender::GetDataCounters(StreamDataCounters* rtp_stats,
-                                StreamDataCounters* rtx_stats) const {
-  RTC_DCHECK(egress_);
-  egress_->GetDataCounters(rtp_stats, rtx_stats);
 }
 
 std::unique_ptr<RtpPacketToSend> RTPSender::AllocatePacket() const {
@@ -619,11 +542,6 @@ void RTPSender::SetSendingMediaStatus(bool enabled) {
 bool RTPSender::SendingMedia() const {
   rtc::CritScope lock(&send_critsect_);
   return sending_media_;
-}
-
-void RTPSender::SetAsPartOfAllocation(bool part_of_allocation) {
-  RTC_DCHECK(egress_);
-  egress_->ForceIncludeSendPacketsInAllocation(part_of_allocation);
 }
 
 void RTPSender::SetTimestampOffset(uint32_t timestamp) {
@@ -798,11 +716,6 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
   return rtx_packet;
 }
 
-uint32_t RTPSender::BitrateSent() const {
-  RTC_DCHECK(egress_);
-  return egress_->SendBitrate().bps<uint32_t>();
-}
-
 void RTPSender::SetRtpState(const RtpState& rtp_state) {
   rtc::CritScope lock(&send_critsect_);
   sequence_number_ = rtp_state.sequence_number;
@@ -812,9 +725,6 @@ void RTPSender::SetRtpState(const RtpState& rtp_state) {
   capture_time_ms_ = rtp_state.capture_time_ms;
   last_timestamp_time_ms_ = rtp_state.last_timestamp_time_ms;
   ssrc_has_acked_ = rtp_state.ssrc_has_acked;
-  if (egress_) {
-    egress_->SetMediaHasBeenSent(rtp_state.media_has_been_sent);
-  }
 }
 
 RtpState RTPSender::GetRtpState() const {
@@ -827,10 +737,6 @@ RtpState RTPSender::GetRtpState() const {
   state.capture_time_ms = capture_time_ms_;
   state.last_timestamp_time_ms = last_timestamp_time_ms_;
   state.ssrc_has_acked = ssrc_has_acked_;
-  if (egress_) {
-    state.media_has_been_sent = egress_->MediaHasBeenSent();
-  }
-
   return state;
 }
 
@@ -854,14 +760,5 @@ RtpState RTPSender::GetRtxRtpState() const {
 int64_t RTPSender::LastTimestampTimeMs() const {
   rtc::CritScope lock(&send_critsect_);
   return last_timestamp_time_ms_;
-}
-
-void RTPSender::SetRtt(int64_t rtt_ms) {
-  packet_history_->SetRtt(rtt_ms);
-}
-
-void RTPSender::OnPacketsAcknowledged(
-    rtc::ArrayView<const uint16_t> sequence_numbers) {
-  packet_history_->CullAcknowledgedPackets(sequence_numbers);
 }
 }  // namespace webrtc
