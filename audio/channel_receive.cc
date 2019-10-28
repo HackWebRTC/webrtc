@@ -10,6 +10,8 @@
 
 #include "audio/channel_receive.h"
 
+#include <assert.h>
+
 #include <algorithm>
 #include <map>
 #include <memory>
