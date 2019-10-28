@@ -168,6 +168,13 @@ class FakeDtlsTransport : public DtlsTransportInternal {
     remote_cert_ = cert;
   }
   bool IsDtlsActive() const override { return do_dtls_; }
+  bool GetSslVersionBytes(int* version) const override {
+    if (!do_dtls_) {
+      return false;
+    }
+    *version = 0x0102;
+    return true;
+  }
   bool GetSrtpCryptoSuite(int* crypto_suite) override {
     if (!do_dtls_) {
       return false;

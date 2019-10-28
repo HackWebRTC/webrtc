@@ -64,6 +64,7 @@ class NoOpDtlsTransport : public DtlsTransportInternal {
   bool IsDtlsActive() const override;
   bool GetDtlsRole(rtc::SSLRole* role) const override;
   bool SetDtlsRole(rtc::SSLRole role) override;
+  bool GetSslVersionBytes(int* version) const override;
   bool GetSrtpCryptoSuite(int* cipher) override;
   bool GetSslCipherSuite(int* cipher) override;
   rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const override;

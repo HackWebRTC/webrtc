@@ -96,8 +96,8 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
 
   bool GetSslCipherSuite(int* cipher) override;
 
-  int GetSslVersion() const override;
-
+  SSLProtocolVersion GetSslVersion() const override;
+  bool GetSslVersionBytes(int* version) const override;
   // Key Extractor interface
   bool ExportKeyingMaterial(const std::string& label,
                             const uint8_t* context,

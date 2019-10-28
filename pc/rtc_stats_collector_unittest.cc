@@ -2202,6 +2202,68 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
       report->Get(expected_rtcp_transport.id())->cast_to<RTCTransportStats>());
 }
 
+TEST_F(RTCStatsCollectorTest, CollectRTCTransportStatsWithCrypto) {
+  const char kTransportName[] = "transport";
+
+  pc_->AddVoiceChannel("audio", kTransportName);
+
+  std::unique_ptr<cricket::Candidate> rtp_local_candidate =
+      CreateFakeCandidate("42.42.42.42", 42, "protocol", rtc::ADAPTER_TYPE_WIFI,
+                          cricket::LOCAL_PORT_TYPE, 42);
+  std::unique_ptr<cricket::Candidate> rtp_remote_candidate =
+      CreateFakeCandidate("42.42.42.42", 42, "protocol",
+                          rtc::ADAPTER_TYPE_UNKNOWN, cricket::LOCAL_PORT_TYPE,
+                          42);
+  std::unique_ptr<cricket::Candidate> rtcp_local_candidate =
+      CreateFakeCandidate("42.42.42.42", 42, "protocol", rtc::ADAPTER_TYPE_WIFI,
+                          cricket::LOCAL_PORT_TYPE, 42);
+  std::unique_ptr<cricket::Candidate> rtcp_remote_candidate =
+      CreateFakeCandidate("42.42.42.42", 42, "protocol",
+                          rtc::ADAPTER_TYPE_UNKNOWN, cricket::LOCAL_PORT_TYPE,
+                          42);
+
+  cricket::ConnectionInfo rtp_connection_info;
+  rtp_connection_info.best_connection = false;
+  rtp_connection_info.local_candidate = *rtp_local_candidate.get();
+  rtp_connection_info.remote_candidate = *rtp_remote_candidate.get();
+  rtp_connection_info.sent_total_bytes = 42;
+  rtp_connection_info.recv_total_bytes = 1337;
+  cricket::TransportChannelStats rtp_transport_channel_stats;
+  rtp_transport_channel_stats.component = cricket::ICE_CANDIDATE_COMPONENT_RTP;
+  rtp_transport_channel_stats.ice_transport_stats.connection_infos.push_back(
+      rtp_connection_info);
+  // The state must be connected in order for crypto parameters to show up.
+  rtp_transport_channel_stats.dtls_state = cricket::DTLS_TRANSPORT_CONNECTED;
+  rtp_transport_channel_stats.ice_transport_stats
+      .selected_candidate_pair_changes = 1;
+  rtp_transport_channel_stats.ssl_version_bytes = 0x0203;
+  // 0x2F is TLS_RSA_WITH_AES_128_CBC_SHA according to IANA
+  rtp_transport_channel_stats.ssl_cipher_suite = 0x2F;
+  rtp_transport_channel_stats.srtp_crypto_suite = rtc::SRTP_AES128_CM_SHA1_80;
+  pc_->SetTransportStats(kTransportName, {rtp_transport_channel_stats});
+
+  // Get stats
+  rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
+
+  RTCTransportStats expected_rtp_transport(
+      "RTCTransport_transport_" +
+          rtc::ToString(cricket::ICE_CANDIDATE_COMPONENT_RTP),
+      report->timestamp_us());
+  expected_rtp_transport.bytes_sent = 42;
+  expected_rtp_transport.bytes_received = 1337;
+  expected_rtp_transport.dtls_state = RTCDtlsTransportState::kConnected;
+  expected_rtp_transport.selected_candidate_pair_changes = 1;
+  // Crypto parameters
+  expected_rtp_transport.tls_version = "0203";
+  expected_rtp_transport.dtls_cipher = "TLS_RSA_WITH_AES_128_CBC_SHA";
+  expected_rtp_transport.srtp_cipher = "AES_CM_128_HMAC_SHA1_80";
+
+  ASSERT_TRUE(report->Get(expected_rtp_transport.id()));
+  EXPECT_EQ(
+      expected_rtp_transport,
+      report->Get(expected_rtp_transport.id())->cast_to<RTCTransportStats>());
+}
+
 TEST_F(RTCStatsCollectorTest, CollectNoStreamRTCOutboundRTPStreamStats_Audio) {
   cricket::VoiceMediaInfo voice_media_info;
 

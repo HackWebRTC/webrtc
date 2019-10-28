@@ -772,6 +772,7 @@ bool JsepTransport::GetTransportStats(DtlsTransportInternal* dtls_transport,
   } else {
     substats.component = ICE_CANDIDATE_COMPONENT_RTP;
   }
+  dtls_transport->GetSslVersionBytes(&substats.ssl_version_bytes);
   dtls_transport->GetSrtpCryptoSuite(&substats.srtp_crypto_suite);
   dtls_transport->GetSslCipherSuite(&substats.ssl_cipher_suite);
   substats.dtls_state = dtls_transport->dtls_state();

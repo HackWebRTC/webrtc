@@ -373,9 +373,9 @@ bool OpenSSLStreamAdapter::GetSslCipherSuite(int* cipher_suite) {
   return true;
 }
 
-int OpenSSLStreamAdapter::GetSslVersion() const {
+SSLProtocolVersion OpenSSLStreamAdapter::GetSslVersion() const {
   if (state_ != SSL_CONNECTED) {
-    return -1;
+    return SSL_PROTOCOL_NOT_GIVEN;
   }
 
   int ssl_version = SSL_version(ssl_);
@@ -395,7 +395,15 @@ int OpenSSLStreamAdapter::GetSslVersion() const {
     }
   }
 
-  return -1;
+  return SSL_PROTOCOL_NOT_GIVEN;
+}
+
+bool OpenSSLStreamAdapter::GetSslVersionBytes(int* version) const {
+  if (state_ != SSL_CONNECTED) {
+    return false;
+  }
+  *version = SSL_version(ssl_);
+  return true;
 }
 
 // Key Extractor interface

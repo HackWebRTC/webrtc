@@ -66,6 +66,9 @@ bool NoOpDtlsTransport::GetDtlsRole(rtc::SSLRole* role) const {
 bool NoOpDtlsTransport::SetDtlsRole(rtc::SSLRole role) {
   return false;
 }
+bool NoOpDtlsTransport::GetSslVersionBytes(int* version) const {
+  return false;
+}
 bool NoOpDtlsTransport::GetSrtpCryptoSuite(int* cipher) {
   return false;
 }
