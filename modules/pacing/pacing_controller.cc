@@ -233,8 +233,6 @@ TimeDelta PacingController::OldestPacketWaitTime() const {
 void PacingController::EnqueuePacketInternal(
     std::unique_ptr<RtpPacketToSend> packet,
     int priority) {
-  prober_.OnIncomingPacket(packet->payload_size());
-
   Timestamp now = CurrentTime();
   prober_.OnIncomingPacket(packet->payload_size());
 
