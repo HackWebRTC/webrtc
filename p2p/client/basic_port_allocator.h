@@ -290,6 +290,7 @@ struct RTC_EXPORT PortConfiguration : public rtc::MessageData {
   ServerAddresses stun_servers;
   std::string username;
   std::string password;
+  bool use_turn_server_as_stun_server_disabled = false;
 
   typedef std::vector<RelayServerConfig> RelayList;
   RelayList relays;

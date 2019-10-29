@@ -28,6 +28,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
+#include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 
 using rtc::CreateRandomId;
@@ -1699,6 +1700,9 @@ PortConfiguration::PortConfiguration(const ServerAddresses& stun_servers,
     : stun_servers(stun_servers), username(username), password(password) {
   if (!stun_servers.empty())
     stun_address = *(stun_servers.begin());
+  // Note that this won't change once the config is initialized.
+  use_turn_server_as_stun_server_disabled =
+      webrtc::field_trial::IsDisabled("WebRTC-UseTurnServerAsStunServer");
 }
 
 PortConfiguration::~PortConfiguration() = default;
@@ -1708,7 +1712,14 @@ ServerAddresses PortConfiguration::StunServers() {
       stun_servers.find(stun_address) == stun_servers.end()) {
     stun_servers.insert(stun_address);
   }
-  // Every UDP TURN server should also be used as a STUN server.
+
+  if (!stun_servers.empty() && use_turn_server_as_stun_server_disabled) {
+    return stun_servers;
+  }
+
+  // Every UDP TURN server should also be used as a STUN server if
+  // use_turn_server_as_stun_server is not disabled or the stun servers are
+  // empty.
   ServerAddresses turn_servers = GetRelayServerAddresses(RELAY_TURN, PROTO_UDP);
   for (const rtc::SocketAddress& turn_server : turn_servers) {
     if (stun_servers.find(turn_server) == stun_servers.end()) {
