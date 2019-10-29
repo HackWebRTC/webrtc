@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_NS_NOISE_SUPPRESSION_X_H_
-#define MODULES_AUDIO_PROCESSING_NS_NOISE_SUPPRESSION_X_H_
+#ifndef MODULES_AUDIO_PROCESSING_LEGACY_NS_NOISE_SUPPRESSION_X_H_
+#define MODULES_AUDIO_PROCESSING_LEGACY_NS_NOISE_SUPPRESSION_X_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -78,9 +78,9 @@ int WebRtcNsx_set_policy(NsxHandle* nsxInst, int mode);
  *      - outFrame      : Pointer to output frame for each band
  */
 void WebRtcNsx_Process(NsxHandle* nsxInst,
-                       const short* const* speechFrame,
+                       const int16_t* const* speechFrame,
                        int num_bands,
-                       short* const* outFrame);
+                       int16_t* const* outFrame);
 
 /* Returns a pointer to the noise estimate per frequency bin. The number of
  * frequency bins can be provided using WebRtcNsx_num_freq().
@@ -109,4 +109,4 @@ size_t WebRtcNsx_num_freq(void);
 }
 #endif
 
-#endif  // MODULES_AUDIO_PROCESSING_NS_NOISE_SUPPRESSION_X_H_
+#endif  // MODULES_AUDIO_PROCESSING_LEGACY_NS_NOISE_SUPPRESSION_X_H_

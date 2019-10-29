@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/ns/noise_suppression.h"
+#include "modules/audio_processing/legacy_ns/noise_suppression.h"
 
 #include <stdlib.h>
 #include <string.h>
 
 #include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "modules/audio_processing/ns/defines.h"
-#include "modules/audio_processing/ns/ns_core.h"
+#include "modules/audio_processing/legacy_ns/defines.h"
+#include "modules/audio_processing/legacy_ns/ns_core.h"
 
 NsHandle* WebRtcNs_Create() {
   NoiseSuppressionC* self = malloc(sizeof(NoiseSuppressionC));
