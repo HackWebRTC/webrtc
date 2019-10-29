@@ -42,7 +42,6 @@ namespace test {
 
 class MockPacketFeedbackObserver : public webrtc::PacketFeedbackObserver {
  public:
-  MOCK_METHOD2(OnPacketAdded, void(uint32_t ssrc, uint16_t seq_num));
   MOCK_METHOD1(OnPacketFeedbackVector,
                void(const std::vector<PacketFeedback>& packet_feedback_vector));
 };
@@ -99,7 +98,6 @@ TEST_F(TransportFeedbackAdapterTest, ObserverSanity) {
                    packets[0].arrival_time_ms * 1000);
 
   for (const PacketFeedback& packet : packets) {
-    EXPECT_CALL(mock, OnPacketAdded(kSsrc, packet.sequence_number)).Times(1);
     OnSentPacket(packet);
     EXPECT_TRUE(feedback.AddReceivedPacket(packet.sequence_number,
                                            packet.arrival_time_ms * 1000));
@@ -111,8 +109,6 @@ TEST_F(TransportFeedbackAdapterTest, ObserverSanity) {
 
   adapter_->DeRegisterPacketFeedbackObserver(&mock);
 
-  // After deregistration, the observer no longers gets indications.
-  EXPECT_CALL(mock, OnPacketAdded(_, _)).Times(0);
   const PacketFeedback new_packet(130, 230, 3, 4000, kPacingInfo0);
   OnSentPacket(new_packet);
 

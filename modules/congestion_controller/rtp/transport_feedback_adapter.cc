@@ -100,14 +100,6 @@ void TransportFeedbackAdapter::AddPacket(const RtpPacketSendInfo& packet_info,
     }
     history_.insert(std::make_pair(packet.long_sequence_number, packet));
   }
-
-  {
-    rtc::CritScope cs(&observers_lock_);
-    for (auto* observer : observers_) {
-      observer->OnPacketAdded(packet_info.ssrc,
-                              packet_info.transport_sequence_number);
-    }
-  }
 }
 absl::optional<SentPacket> TransportFeedbackAdapter::ProcessSentPacket(
     const rtc::SentPacket& sent_packet) {

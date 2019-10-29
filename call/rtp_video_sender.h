@@ -148,7 +148,6 @@ class RtpVideoSender : public RtpVideoSenderInterface,
       rtc::ArrayView<const uint16_t> sequence_numbers) const override;
 
   // From PacketFeedbackObserver.
-  void OnPacketAdded(uint32_t ssrc, uint16_t seq_num) override {}
   void OnPacketFeedbackVector(
       const std::vector<PacketFeedback>& packet_feedback_vector) override;
 

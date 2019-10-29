@@ -324,7 +324,9 @@ class PacketFeedbackObserver {
  public:
   virtual ~PacketFeedbackObserver() = default;
 
-  virtual void OnPacketAdded(uint32_t ssrc, uint16_t seq_num) = 0;
+  // DEPRECATED: OnPacketAdded will not actually be called.
+  // TODO(srte): Remove when all overrides have been removed.
+  virtual void OnPacketAdded(uint32_t ssrc, uint16_t seq_num) {}
   virtual void OnPacketFeedbackVector(
       const std::vector<PacketFeedback>& packet_feedback_vector) = 0;
 };
