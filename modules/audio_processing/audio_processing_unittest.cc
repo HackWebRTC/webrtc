@@ -567,9 +567,9 @@ int ApmTest::ProcessStreamChooser(Format format) {
     return apm_->ProcessStream(&frame_);
   }
   return apm_->ProcessStream(
-      float_cb_->channels(), frame_.samples_per_channel_,
-      frame_.sample_rate_hz_, LayoutFromChannels(frame_.num_channels_),
-      output_sample_rate_hz_, LayoutFromChannels(num_output_channels_),
+      float_cb_->channels(),
+      StreamConfig(frame_.sample_rate_hz_, frame_.num_channels_),
+      StreamConfig(output_sample_rate_hz_, num_output_channels_),
       float_cb_->channels());
 }
 
@@ -578,8 +578,8 @@ int ApmTest::AnalyzeReverseStreamChooser(Format format) {
     return apm_->ProcessReverseStream(&revframe_);
   }
   return apm_->AnalyzeReverseStream(
-      revfloat_cb_->channels(), revframe_.samples_per_channel_,
-      revframe_.sample_rate_hz_, LayoutFromChannels(revframe_.num_channels_));
+      revfloat_cb_->channels(),
+      StreamConfig(revframe_.sample_rate_hz_, revframe_.num_channels_));
 }
 
 void ApmTest::ProcessDelayVerificationTest(int delay_ms,
@@ -1148,9 +1148,9 @@ TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabledFloat) {
   auto dest_channels = &dest[0];
 
   apm_.reset(AudioProcessingBuilder().Create());
-  EXPECT_NOERR(apm_->ProcessStream(&src_channels, kSamples, sample_rate,
-                                   LayoutFromChannels(1), sample_rate,
-                                   LayoutFromChannels(1), &dest_channels));
+  EXPECT_NOERR(apm_->ProcessStream(&src_channels, StreamConfig(sample_rate, 1),
+                                   StreamConfig(sample_rate, 1),
+                                   &dest_channels));
 
   for (size_t i = 0; i < kSamples; ++i) {
     EXPECT_EQ(src[i], dest[i]);
@@ -1709,12 +1709,16 @@ TEST_F(ApmTest, NoErrorsWithKeyboardChannel) {
                                TotalChannelsFromLayout(cf[i].in_layout));
     ChannelBuffer<float> out_cb(SamplesFromRate(out_rate),
                                 ChannelsFromLayout(cf[i].out_layout));
+    bool has_keyboard = cf[i].in_layout == AudioProcessing::kMonoAndKeyboard ||
+                        cf[i].in_layout == AudioProcessing::kStereoAndKeyboard;
+    StreamConfig in_sc(in_rate, ChannelsFromLayout(cf[i].in_layout),
+                       has_keyboard);
+    StreamConfig out_sc(out_rate, ChannelsFromLayout(cf[i].out_layout));
 
     // Run over a few chunks.
     for (int j = 0; j < 10; ++j) {
-      EXPECT_NOERR(ap->ProcessStream(in_cb.channels(), in_cb.num_frames(),
-                                     in_rate, cf[i].in_layout, out_rate,
-                                     cf[i].out_layout, out_cb.channels()));
+      EXPECT_NOERR(ap->ProcessStream(in_cb.channels(), in_sc, out_sc,
+                                     out_cb.channels()));
     }
   }
 }
@@ -1881,9 +1885,8 @@ class AudioProcessingTest
       ap->set_stream_analog_level(analog_level);
 
       EXPECT_NOERR(ap->ProcessStream(
-          fwd_cb.channels(), fwd_cb.num_frames(), input_rate,
-          LayoutFromChannels(num_input_channels), output_rate,
-          LayoutFromChannels(num_output_channels), out_cb.channels()));
+          fwd_cb.channels(), StreamConfig(input_rate, num_input_channels),
+          StreamConfig(output_rate, num_output_channels), out_cb.channels()));
 
       // Dump forward output to file.
       Interleave(out_cb.channels(), out_cb.num_frames(), out_cb.num_channels(),

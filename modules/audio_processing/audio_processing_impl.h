@@ -83,13 +83,6 @@ class AudioProcessingImpl : public AudioProcessing {
   // multi-threaded manner. Acquire the capture lock.
   int ProcessStream(AudioFrame* frame) override;
   int ProcessStream(const float* const* src,
-                    size_t samples_per_channel,
-                    int input_sample_rate_hz,
-                    ChannelLayout input_layout,
-                    int output_sample_rate_hz,
-                    ChannelLayout output_layout,
-                    float* const* dest) override;
-  int ProcessStream(const float* const* src,
                     const StreamConfig& input_config,
                     const StreamConfig& output_config,
                     float* const* dest) override;
@@ -104,10 +97,6 @@ class AudioProcessingImpl : public AudioProcessing {
   // Render-side exclusive methods possibly running APM in a
   // multi-threaded manner. Acquire the render lock.
   int ProcessReverseStream(AudioFrame* frame) override;
-  int AnalyzeReverseStream(const float* const* data,
-                           size_t samples_per_channel,
-                           int sample_rate_hz,
-                           ChannelLayout layout) override;
   int AnalyzeReverseStream(const float* const* data,
                            const StreamConfig& reverse_config) override;
   int ProcessReverseStream(const float* const* src,

@@ -835,38 +835,6 @@ void AudioProcessingImpl::RuntimeSettingEnqueuer::Enqueue(
 }
 
 int AudioProcessingImpl::ProcessStream(const float* const* src,
-                                       size_t samples_per_channel,
-                                       int input_sample_rate_hz,
-                                       ChannelLayout input_layout,
-                                       int output_sample_rate_hz,
-                                       ChannelLayout output_layout,
-                                       float* const* dest) {
-  TRACE_EVENT0("webrtc", "AudioProcessing::ProcessStream_ChannelLayout");
-  StreamConfig input_stream;
-  StreamConfig output_stream;
-  {
-    // Access the formats_.api_format.input_stream beneath the capture lock.
-    // The lock must be released as it is later required in the call
-    // to ProcessStream(,,,);
-    rtc::CritScope cs(&crit_capture_);
-    input_stream = formats_.api_format.input_stream();
-    output_stream = formats_.api_format.output_stream();
-  }
-
-  input_stream.set_sample_rate_hz(input_sample_rate_hz);
-  input_stream.set_num_channels(ChannelsFromLayout(input_layout));
-  input_stream.set_has_keyboard(LayoutHasKeyboard(input_layout));
-  output_stream.set_sample_rate_hz(output_sample_rate_hz);
-  output_stream.set_num_channels(ChannelsFromLayout(output_layout));
-  output_stream.set_has_keyboard(LayoutHasKeyboard(output_layout));
-
-  if (samples_per_channel != input_stream.num_frames()) {
-    return kBadDataLengthError;
-  }
-  return ProcessStream(src, input_stream, output_stream, dest);
-}
-
-int AudioProcessingImpl::ProcessStream(const float* const* src,
                                        const StreamConfig& input_config,
                                        const StreamConfig& output_config,
                                        float* const* dest) {
@@ -1475,23 +1443,6 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
 
   capture_.was_stream_delay_set = false;
   return kNoError;
-}
-
-int AudioProcessingImpl::AnalyzeReverseStream(const float* const* data,
-                                              size_t samples_per_channel,
-                                              int sample_rate_hz,
-                                              ChannelLayout layout) {
-  TRACE_EVENT0("webrtc", "AudioProcessing::AnalyzeReverseStream_ChannelLayout");
-  rtc::CritScope cs(&crit_render_);
-  const StreamConfig reverse_config = {
-      sample_rate_hz,
-      ChannelsFromLayout(layout),
-      LayoutHasKeyboard(layout),
-  };
-  if (samples_per_channel != reverse_config.num_frames()) {
-    return kBadDataLengthError;
-  }
-  return AnalyzeReverseStreamLocked(data, reverse_config, reverse_config);
 }
 
 int AudioProcessingImpl::AnalyzeReverseStream(

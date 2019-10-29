@@ -542,23 +542,6 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
   // method, it will trigger an initialization.
   virtual int ProcessStream(AudioFrame* frame) = 0;
 
-  // Accepts deinterleaved float audio with the range [-1, 1]. Each element
-  // of |src| points to a channel buffer, arranged according to
-  // |input_layout|. At output, the channels will be arranged according to
-  // |output_layout| at |output_sample_rate_hz| in |dest|.
-  //
-  // The output layout must have one channel or as many channels as the input.
-  // |src| and |dest| may use the same memory, if desired.
-  //
-  // TODO(mgraczyk): Remove once clients are updated to use the new interface.
-  virtual int ProcessStream(const float* const* src,
-                            size_t samples_per_channel,
-                            int input_sample_rate_hz,
-                            ChannelLayout input_layout,
-                            int output_sample_rate_hz,
-                            ChannelLayout output_layout,
-                            float* const* dest) = 0;
-
   // Accepts deinterleaved float audio with the range [-1, 1]. Each element of
   // |src| points to a channel buffer, arranged according to |input_stream|. At
   // output, the channels will be arranged according to |output_stream| in
@@ -585,26 +568,18 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
   // members of |frame| must be valid.
   virtual int ProcessReverseStream(AudioFrame* frame) = 0;
 
-  // Accepts deinterleaved float audio with the range [-1, 1]. Each element
-  // of |data| points to a channel buffer, arranged according to |layout|.
-  // TODO(mgraczyk): Remove once clients are updated to use the new interface.
-  virtual int AnalyzeReverseStream(const float* const* data,
-                                   size_t samples_per_channel,
-                                   int sample_rate_hz,
-                                   ChannelLayout layout) = 0;
-
-  // Accepts deinterleaved float audio with the range [-1, 1]. Each element
-  // of |data| points to a channel buffer, arranged according to
-  // |reverse_config|.
-  virtual int AnalyzeReverseStream(const float* const* data,
-                                   const StreamConfig& reverse_config) = 0;
-
   // Accepts deinterleaved float audio with the range [-1, 1]. Each element of
   // |data| points to a channel buffer, arranged according to |reverse_config|.
   virtual int ProcessReverseStream(const float* const* src,
                                    const StreamConfig& input_config,
                                    const StreamConfig& output_config,
                                    float* const* dest) = 0;
+
+  // Accepts deinterleaved float audio with the range [-1, 1]. Each element
+  // of |data| points to a channel buffer, arranged according to
+  // |reverse_config|.
+  virtual int AnalyzeReverseStream(const float* const* data,
+                                   const StreamConfig& reverse_config) = 0;
 
   // This must be called prior to ProcessStream() if and only if adaptive analog
   // gain control is enabled, to pass the current analog level from the audio
