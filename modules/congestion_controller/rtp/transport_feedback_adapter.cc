@@ -16,6 +16,7 @@
 #include <cmath>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "api/units/timestamp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
@@ -57,20 +58,23 @@ TransportFeedbackAdapter::~TransportFeedbackAdapter() {
   RTC_DCHECK(observers_.empty());
 }
 
-void TransportFeedbackAdapter::RegisterPacketFeedbackObserver(
-    PacketFeedbackObserver* observer) {
+void TransportFeedbackAdapter::RegisterStreamFeedbackObserver(
+    std::vector<uint32_t> ssrcs,
+    StreamFeedbackObserver* observer) {
   rtc::CritScope cs(&observers_lock_);
   RTC_DCHECK(observer);
-  RTC_DCHECK(std::find(observers_.begin(), observers_.end(), observer) ==
-             observers_.end());
-  observers_.push_back(observer);
+  RTC_DCHECK(absl::c_find_if(observers_, [=](const auto& pair) {
+               return pair.second == observer;
+             }) == observers_.end());
+  observers_.push_back({ssrcs, observer});
 }
 
-void TransportFeedbackAdapter::DeRegisterPacketFeedbackObserver(
-    PacketFeedbackObserver* observer) {
+void TransportFeedbackAdapter::DeRegisterStreamFeedbackObserver(
+    StreamFeedbackObserver* observer) {
   rtc::CritScope cs(&observers_lock_);
   RTC_DCHECK(observer);
-  const auto it = std::find(observers_.begin(), observers_.end(), observer);
+  const auto it = absl::c_find_if(
+      observers_, [=](const auto& pair) { return pair.second == observer; });
   RTC_DCHECK(it != observers_.end());
   observers_.erase(it);
 }
@@ -157,8 +161,35 @@ TransportFeedbackAdapter::ProcessTransportFeedback(
       GetPacketFeedbackVector(feedback, feedback_receive_time);
   {
     rtc::CritScope cs(&observers_lock_);
-    for (auto* observer : observers_) {
-      observer->OnPacketFeedbackVector(last_packet_feedback_vector_);
+    for (auto& observer : observers_) {
+      std::vector<StreamFeedbackObserver::StreamPacketInfo> selected_feedback;
+      for (const auto& packet : last_packet_feedback_vector_) {
+        if (packet.ssrc && absl::c_count(observer.first, *packet.ssrc) > 0) {
+          // If we found the ssrc, it means the the packet was in the
+          // history and we expect the the send time has been set. A reason why
+          // this would be false would be if ProcessTransportFeedback covering a
+          // packet would be called before ProcessSentPacket for the same
+          // packet. This should not happen if we handle ordering of events
+          // correctly.
+          // TODO(srte): Fix the tests that makes this happen and make this a
+          // DCHECK.
+          if (packet.send_time_ms == PacketFeedback::kNoSendTime) {
+            RTC_LOG(LS_ERROR)
+                << "Received feedback before packet was indicated as sent";
+            continue;
+          }
+
+          StreamFeedbackObserver::StreamPacketInfo feedback_info;
+          feedback_info.ssrc = *packet.ssrc;
+          feedback_info.rtp_sequence_number = packet.rtp_sequence_number;
+          feedback_info.received =
+              packet.arrival_time_ms != PacketFeedback::kNotReceived;
+          selected_feedback.push_back(feedback_info);
+        }
+      }
+      if (!selected_feedback.empty()) {
+        observer.second->OnPacketFeedbackVector(std::move(selected_feedback));
+      }
     }
   }
 

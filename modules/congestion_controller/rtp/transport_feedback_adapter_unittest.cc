@@ -40,10 +40,10 @@ const PacedPacketInfo kPacingInfo4(4, 22, 10000);
 
 namespace test {
 
-class MockPacketFeedbackObserver : public webrtc::PacketFeedbackObserver {
+class MockStreamFeedbackObserver : public webrtc::StreamFeedbackObserver {
  public:
   MOCK_METHOD1(OnPacketFeedbackVector,
-               void(const std::vector<PacketFeedback>& packet_feedback_vector));
+               void(std::vector<StreamPacketInfo> packet_feedback_vector));
 };
 
 class TransportFeedbackAdapterTest : public ::testing::Test {
@@ -85,14 +85,25 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
 };
 
 TEST_F(TransportFeedbackAdapterTest, ObserverSanity) {
-  MockPacketFeedbackObserver mock;
-  adapter_->RegisterPacketFeedbackObserver(&mock);
+  const uint32_t kSsrc = 8832;
+  MockStreamFeedbackObserver mock;
+  adapter_->RegisterStreamFeedbackObserver({kSsrc}, &mock);
 
   const std::vector<PacketFeedback> packets = {
       PacketFeedback(100, 200, 0, 1000, kPacingInfo0),
       PacketFeedback(110, 210, 1, 2000, kPacingInfo0),
       PacketFeedback(120, 220, 2, 3000, kPacingInfo0)};
-
+  for (auto& packet : packets) {
+    const size_t kOverhead = 40;
+    RtpPacketSendInfo send_info;
+    send_info.ssrc = kSsrc;
+    send_info.pacing_info = packet.pacing_info;
+    send_info.has_rtp_sequence_number = true;
+    send_info.length = packet.payload_size;
+    send_info.rtp_sequence_number = packet.rtp_sequence_number;
+    send_info.rtp_sequence_number = packet.sequence_number;
+    adapter_->AddPacket(send_info, kOverhead, clock_.CurrentTime());
+  }
   rtcp::TransportFeedback feedback;
   feedback.SetBase(packets[0].sequence_number,
                    packets[0].arrival_time_ms * 1000);
@@ -107,7 +118,7 @@ TEST_F(TransportFeedbackAdapterTest, ObserverSanity) {
   adapter_->ProcessTransportFeedback(
       feedback, Timestamp::ms(clock_.TimeInMilliseconds()));
 
-  adapter_->DeRegisterPacketFeedbackObserver(&mock);
+  adapter_->DeRegisterStreamFeedbackObserver(&mock);
 
   const PacketFeedback new_packet(130, 230, 3, 4000, kPacingInfo0);
   OnSentPacket(new_packet);
@@ -124,17 +135,17 @@ TEST_F(TransportFeedbackAdapterTest, ObserverSanity) {
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 TEST_F(TransportFeedbackAdapterTest, ObserverDoubleRegistrationDeathTest) {
-  MockPacketFeedbackObserver mock;
-  adapter_->RegisterPacketFeedbackObserver(&mock);
-  EXPECT_DEATH(adapter_->RegisterPacketFeedbackObserver(&mock), "");
-  adapter_->DeRegisterPacketFeedbackObserver(&mock);
+  MockStreamFeedbackObserver mock;
+  adapter_->RegisterStreamFeedbackObserver({0}, &mock);
+  EXPECT_DEATH(adapter_->RegisterStreamFeedbackObserver({0}, &mock), "");
+  adapter_->DeRegisterStreamFeedbackObserver(&mock);
 }
 
 TEST_F(TransportFeedbackAdapterTest, ObserverMissingDeRegistrationDeathTest) {
-  MockPacketFeedbackObserver mock;
-  adapter_->RegisterPacketFeedbackObserver(&mock);
+  MockStreamFeedbackObserver mock;
+  adapter_->RegisterStreamFeedbackObserver({0}, &mock);
   EXPECT_DEATH(adapter_.reset(), "");
-  adapter_->DeRegisterPacketFeedbackObserver(&mock);
+  adapter_->DeRegisterStreamFeedbackObserver(&mock);
 }
 #endif
 

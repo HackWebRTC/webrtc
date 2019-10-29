@@ -71,7 +71,7 @@ struct RtpStreamSender {
 class RtpVideoSender : public RtpVideoSenderInterface,
                        public OverheadObserver,
                        public VCMProtectionCallback,
-                       public PacketFeedbackObserver {
+                       public StreamFeedbackObserver {
  public:
   // Rtp modules are assumed to be sorted in simulcast index order.
   RtpVideoSender(
@@ -147,9 +147,9 @@ class RtpVideoSender : public RtpVideoSenderInterface,
       uint32_t ssrc,
       rtc::ArrayView<const uint16_t> sequence_numbers) const override;
 
-  // From PacketFeedbackObserver.
+  // From StreamFeedbackObserver.
   void OnPacketFeedbackVector(
-      const std::vector<PacketFeedback>& packet_feedback_vector) override;
+      std::vector<StreamPacketInfo> packet_feedback_vector) override;
 
  private:
   void UpdateModuleSendingState() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);

@@ -44,7 +44,6 @@ class TargetTransferRateObserver;
 class Transport;
 class Module;
 class PacedSender;
-class PacketFeedbackObserver;
 class PacketRouter;
 class RtpVideoSenderInterface;
 class RateLimiter;
@@ -52,7 +51,6 @@ class RtcpBandwidthObserver;
 class RtpPacketSender;
 class SendDelayStats;
 class SendStatisticsProxy;
-class TransportFeedbackObserver;
 
 struct RtpSenderObservers {
   RtcpRttStats* rtcp_rtt_stats;
@@ -129,10 +127,12 @@ class RtpTransportControllerSendInterface {
   virtual void SetPacingFactor(float pacing_factor) = 0;
   virtual void SetQueueTimeLimit(int limit_ms) = 0;
 
+  virtual StreamFeedbackProvider* GetStreamFeedbackProvider() = 0;
+  // DEPRECATED, use GetStreamFeedbackProvider instead.
   virtual void RegisterPacketFeedbackObserver(
-      PacketFeedbackObserver* observer) = 0;
+      PacketFeedbackObserver* observer) {}
   virtual void DeRegisterPacketFeedbackObserver(
-      PacketFeedbackObserver* observer) = 0;
+      PacketFeedbackObserver* observer) {}
   virtual void RegisterTargetTransferRateObserver(
       TargetTransferRateObserver* observer) = 0;
   virtual void OnNetworkRouteChanged(

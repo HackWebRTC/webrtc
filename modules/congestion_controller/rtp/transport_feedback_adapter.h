@@ -26,20 +26,16 @@
 
 namespace webrtc {
 
-class PacketFeedbackObserver;
-struct RtpPacketSendInfo;
-
-namespace rtcp {
-class TransportFeedback;
-}  // namespace rtcp
-
-class TransportFeedbackAdapter {
+class TransportFeedbackAdapter : public StreamFeedbackProvider {
  public:
   TransportFeedbackAdapter();
   virtual ~TransportFeedbackAdapter();
 
-  void RegisterPacketFeedbackObserver(PacketFeedbackObserver* observer);
-  void DeRegisterPacketFeedbackObserver(PacketFeedbackObserver* observer);
+  void RegisterStreamFeedbackObserver(
+      std::vector<uint32_t> ssrcs,
+      StreamFeedbackObserver* observer) override;
+  void DeRegisterStreamFeedbackObserver(
+      StreamFeedbackObserver* observer) override;
 
   void AddPacket(const RtpPacketSendInfo& packet_info,
                  size_t overhead_bytes,
@@ -99,8 +95,11 @@ class TransportFeedbackAdapter {
   uint16_t remote_net_id_ RTC_GUARDED_BY(&lock_);
 
   rtc::CriticalSection observers_lock_;
-  std::vector<PacketFeedbackObserver*> observers_
-      RTC_GUARDED_BY(&observers_lock_);
+  // Maps a set of ssrcs to corresponding observer. Vectors are used rather than
+  // set/map to ensure that the processing order is consistent independently of
+  // the randomized ssrcs.
+  std::vector<std::pair<std::vector<uint32_t>, StreamFeedbackObserver*>>
+      observers_ RTC_GUARDED_BY(&observers_lock_);
 };
 
 }  // namespace webrtc

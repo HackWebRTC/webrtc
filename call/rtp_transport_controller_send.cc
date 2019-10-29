@@ -199,13 +199,9 @@ void RtpTransportControllerSend::SetPacingFactor(float pacing_factor) {
 void RtpTransportControllerSend::SetQueueTimeLimit(int limit_ms) {
   pacer()->SetQueueTimeLimit(TimeDelta::ms(limit_ms));
 }
-void RtpTransportControllerSend::RegisterPacketFeedbackObserver(
-    PacketFeedbackObserver* observer) {
-  transport_feedback_adapter_.RegisterPacketFeedbackObserver(observer);
-}
-void RtpTransportControllerSend::DeRegisterPacketFeedbackObserver(
-    PacketFeedbackObserver* observer) {
-  transport_feedback_adapter_.DeRegisterPacketFeedbackObserver(observer);
+StreamFeedbackProvider*
+RtpTransportControllerSend::GetStreamFeedbackProvider() {
+  return &transport_feedback_adapter_;
 }
 
 void RtpTransportControllerSend::RegisterTargetTransferRateObserver(

@@ -399,14 +399,16 @@ RtpVideoSender::RtpVideoSender(
 
   fec_controller_->SetProtectionCallback(this);
   // Signal congestion controller this object is ready for OnPacket* callbacks.
-  transport_->RegisterPacketFeedbackObserver(this);
+  transport_->GetStreamFeedbackProvider()->RegisterStreamFeedbackObserver(
+      rtp_config_.ssrcs, this);
 }
 
 RtpVideoSender::~RtpVideoSender() {
   for (const RtpStreamSender& stream : rtp_streams_) {
     transport_->packet_router()->RemoveSendRtpModule(stream.rtp_rtcp.get());
   }
-  transport_->DeRegisterPacketFeedbackObserver(this);
+  transport_->GetStreamFeedbackProvider()->DeRegisterStreamFeedbackObserver(
+      this);
 }
 
 void RtpVideoSender::RegisterProcessThread(
@@ -810,30 +812,19 @@ void RtpVideoSender::SetFecAllowed(bool fec_allowed) {
 }
 
 void RtpVideoSender::OnPacketFeedbackVector(
-    const std::vector<PacketFeedback>& packet_feedback_vector) {
+    std::vector<StreamPacketInfo> packet_feedback_vector) {
   if (fec_controller_->UseLossVectorMask()) {
     rtc::CritScope cs(&crit_);
-    for (const PacketFeedback& packet : packet_feedback_vector) {
-      if (packet.send_time_ms == PacketFeedback::kNoSendTime || !packet.ssrc ||
-          absl::c_find(rtp_config_.ssrcs, *packet.ssrc) ==
-              rtp_config_.ssrcs.end()) {
-        // If packet send time is missing, the feedback for this packet has
-        // probably already been processed, so ignore it.
-        // If packet does not belong to a registered media ssrc, we are also
-        // not interested in it.
-        continue;
-      }
-      loss_mask_vector_.push_back(packet.arrival_time_ms ==
-                                  PacketFeedback::kNotReceived);
+    for (const StreamPacketInfo& packet : packet_feedback_vector) {
+      loss_mask_vector_.push_back(!packet.received);
     }
   }
 
   // Map from SSRC to all acked packets for that RTP module.
   std::map<uint32_t, std::vector<uint16_t>> acked_packets_per_ssrc;
-  for (const PacketFeedback& packet : packet_feedback_vector) {
-    if (packet.ssrc && packet.arrival_time_ms != PacketFeedback::kNotReceived) {
-      acked_packets_per_ssrc[*packet.ssrc].push_back(
-          packet.rtp_sequence_number);
+  for (const StreamPacketInfo& packet : packet_feedback_vector) {
+    if (packet.received) {
+      acked_packets_per_ssrc[packet.ssrc].push_back(packet.rtp_sequence_number);
     }
   }
 
@@ -842,25 +833,15 @@ void RtpVideoSender::OnPacketFeedbackVector(
     // lost by feedback, without being trailed by any received packets.
     std::map<uint32_t, std::vector<uint16_t>> early_loss_detected_per_ssrc;
 
-    for (const PacketFeedback& packet : packet_feedback_vector) {
-      if (packet.send_time_ms == PacketFeedback::kNoSendTime || !packet.ssrc ||
-          absl::c_find(rtp_config_.ssrcs, *packet.ssrc) ==
-              rtp_config_.ssrcs.end()) {
-        // If packet send time is missing, the feedback for this packet has
-        // probably already been processed, so ignore it.
-        // If packet does not belong to a registered media ssrc, we are also
-        // not interested in it.
-        continue;
-      }
-
-      if (packet.arrival_time_ms == PacketFeedback::kNotReceived) {
+    for (const StreamPacketInfo& packet : packet_feedback_vector) {
+      if (!packet.received) {
         // Last known lost packet, might not be detectable as lost by remote
         // jitter buffer.
-        early_loss_detected_per_ssrc[*packet.ssrc].push_back(
+        early_loss_detected_per_ssrc[packet.ssrc].push_back(
             packet.rtp_sequence_number);
       } else {
         // Packet received, so any loss prior to this is already detectable.
-        early_loss_detected_per_ssrc.erase(*packet.ssrc);
+        early_loss_detected_per_ssrc.erase(packet.ssrc);
       }
     }
 

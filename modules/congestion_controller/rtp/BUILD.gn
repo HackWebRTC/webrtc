@@ -58,6 +58,7 @@ rtc_library("transport_feedback") {
     "../../../system_wrappers",
     "../../../system_wrappers:field_trial",
     "../../rtp_rtcp:rtp_rtcp_format",
+    "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }

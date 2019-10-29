@@ -320,6 +320,7 @@ class RtcpFeedbackSenderInterface {
   virtual void UnsetRemb() = 0;
 };
 
+// DEPRECATED: To be removed when usages have been removed.
 class PacketFeedbackObserver {
  public:
   virtual ~PacketFeedbackObserver() = default;
@@ -329,6 +330,29 @@ class PacketFeedbackObserver {
   virtual void OnPacketAdded(uint32_t ssrc, uint16_t seq_num) {}
   virtual void OnPacketFeedbackVector(
       const std::vector<PacketFeedback>& packet_feedback_vector) = 0;
+};
+
+class StreamFeedbackObserver {
+ public:
+  struct StreamPacketInfo {
+    uint32_t ssrc;
+    uint16_t rtp_sequence_number;
+    bool received;
+  };
+  virtual ~StreamFeedbackObserver() = default;
+
+  virtual void OnPacketFeedbackVector(
+      std::vector<StreamPacketInfo> packet_feedback_vector) = 0;
+};
+
+class StreamFeedbackProvider {
+ public:
+  virtual void RegisterStreamFeedbackObserver(
+      std::vector<uint32_t> ssrcs,
+      StreamFeedbackObserver* observer) = 0;
+  virtual void DeRegisterStreamFeedbackObserver(
+      StreamFeedbackObserver* observer) = 0;
+  virtual ~StreamFeedbackProvider() = default;
 };
 
 class RtcpRttStats {

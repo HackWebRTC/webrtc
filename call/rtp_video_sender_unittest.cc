@@ -434,7 +434,6 @@ TEST(RtpVideoSenderTest, DoesNotRetrasmitAckedPackets) {
   EXPECT_EQ(
       EncodedImageCallback::Result::OK,
       test.router()->OnEncodedImage(encoded_image, nullptr, nullptr).error);
-  const int64_t send_time_ms = test.clock().TimeInMilliseconds();
 
   test.clock().AdvanceTimeMilliseconds(33);
 
@@ -472,21 +471,18 @@ TEST(RtpVideoSenderTest, DoesNotRetrasmitAckedPackets) {
 
   // Simulate transport feedback indicating fist packet received, next packet
   // lost.
-  PacketFeedback received_packet_feedback(test.clock().TimeInMilliseconds(),
-                                          transport_sequence_numbers[0]);
+  StreamFeedbackObserver::StreamPacketInfo received_packet_feedback;
   received_packet_feedback.rtp_sequence_number = rtp_sequence_numbers[0];
   received_packet_feedback.ssrc = kSsrc1;
-  received_packet_feedback.send_time_ms = send_time_ms;
+  received_packet_feedback.received = true;
 
-  PacketFeedback lost_packet_feedback(PacketFeedback::kNotReceived,
-                                      transport_sequence_numbers[1]);
+  StreamFeedbackObserver::StreamPacketInfo lost_packet_feedback;
   lost_packet_feedback.rtp_sequence_number = rtp_sequence_numbers[1];
   lost_packet_feedback.ssrc = kSsrc1;
-  lost_packet_feedback.send_time_ms = send_time_ms;
-  std::vector<PacketFeedback> feedback_vector = {received_packet_feedback,
-                                                 lost_packet_feedback};
+  lost_packet_feedback.received = false;
 
-  test.router()->OnPacketFeedbackVector(feedback_vector);
+  test.router()->OnPacketFeedbackVector(
+      {received_packet_feedback, lost_packet_feedback});
 
   // Advance time to make sure retransmission would be allowed and try again.
   // This time the retransmission should not happen for the first packet since
@@ -555,7 +551,6 @@ TEST(RtpVideoSenderTest, EarlyRetransmits) {
                 ->OnEncodedImage(encoded_image, &codec_specific, nullptr)
                 .error,
             EncodedImageCallback::Result::OK);
-  const int64_t send_time_ms = test.clock().TimeInMilliseconds();
 
   test.clock().AdvanceTimeMilliseconds(33);
   ASSERT_TRUE(event.Wait(kTimeoutMs));
@@ -593,7 +588,7 @@ TEST(RtpVideoSenderTest, EarlyRetransmits) {
                     const PacketOptions& options) {
         RtpPacket rtp_packet;
         EXPECT_TRUE(rtp_packet.Parse(packet, length));
-        EXPECT_EQ(rtp_packet.Ssrc(), kRtxSsrc2);
+        EXPECT_EQ(rtp_packet.Ssrc(), kRtxSsrc1);
 
         // Retransmitted sequence number from the RTX header should match
         // the lost packet.
@@ -604,22 +599,18 @@ TEST(RtpVideoSenderTest, EarlyRetransmits) {
         return true;
       });
 
-  PacketFeedback first_packet_feedback(PacketFeedback::kNotReceived,
-                                       frame1_transport_sequence_number);
+  StreamFeedbackObserver::StreamPacketInfo first_packet_feedback;
   first_packet_feedback.rtp_sequence_number = frame1_rtp_sequence_number;
   first_packet_feedback.ssrc = kSsrc1;
-  first_packet_feedback.send_time_ms = send_time_ms;
+  first_packet_feedback.received = false;
 
-  PacketFeedback second_packet_feedback(test.clock().TimeInMilliseconds(),
-                                        frame2_transport_sequence_number);
-  first_packet_feedback.rtp_sequence_number = frame2_rtp_sequence_number;
-  first_packet_feedback.ssrc = kSsrc2;
-  first_packet_feedback.send_time_ms = send_time_ms + 33;
+  StreamFeedbackObserver::StreamPacketInfo second_packet_feedback;
+  second_packet_feedback.rtp_sequence_number = frame2_rtp_sequence_number;
+  second_packet_feedback.ssrc = kSsrc2;
+  second_packet_feedback.received = true;
 
-  std::vector<PacketFeedback> feedback_vector = {first_packet_feedback,
-                                                 second_packet_feedback};
-
-  test.router()->OnPacketFeedbackVector(feedback_vector);
+  test.router()->OnPacketFeedbackVector(
+      {first_packet_feedback, second_packet_feedback});
 
   // Wait for pacer to run and send the RTX packet.
   test.clock().AdvanceTimeMilliseconds(33);
