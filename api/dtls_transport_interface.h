@@ -44,7 +44,9 @@ class RTC_EXPORT DtlsTransportInformation {
   explicit DtlsTransportInformation(DtlsTransportState state);
   DtlsTransportInformation(
       DtlsTransportState state,
+      absl::optional<int> tls_version,
       absl::optional<int> ssl_cipher_suite,
+      absl::optional<int> srtp_cipher_suite,
       std::unique_ptr<rtc::SSLCertChain> remote_ssl_certificates);
   // Copy and assign
   DtlsTransportInformation(const DtlsTransportInformation& c);
@@ -55,7 +57,9 @@ class RTC_EXPORT DtlsTransportInformation {
       default;
 
   DtlsTransportState state() const { return state_; }
+  absl::optional<int> tls_version() const { return tls_version_; }
   absl::optional<int> ssl_cipher_suite() const { return ssl_cipher_suite_; }
+  absl::optional<int> srtp_cipher_suite() const { return srtp_cipher_suite_; }
   // The accessor returns a temporary pointer, it does not release ownership.
   const rtc::SSLCertChain* remote_ssl_certificates() const {
     return remote_ssl_certificates_.get();
@@ -63,7 +67,9 @@ class RTC_EXPORT DtlsTransportInformation {
 
  private:
   DtlsTransportState state_;
+  absl::optional<int> tls_version_;
   absl::optional<int> ssl_cipher_suite_;
+  absl::optional<int> srtp_cipher_suite_;
   std::unique_ptr<rtc::SSLCertChain> remote_ssl_certificates_;
 };
 
