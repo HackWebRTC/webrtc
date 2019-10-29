@@ -299,8 +299,9 @@ void OpusTest::Run(TestPackStereo* channel,
                 opus_mono_decoder_, bitstream, bitstream_len_byte,
                 &out_audio[decoded_samples * channels], &audio_type);
           } else {
-            decoded_samples += WebRtcOpus_DecodePlc(
-                opus_mono_decoder_, &out_audio[decoded_samples * channels], 1);
+            decoded_samples += WebRtcOpus_Decode(
+                opus_mono_decoder_, NULL, 0,
+                &out_audio[decoded_samples * channels], &audio_type);
           }
         } else {
           if (!lost_packet) {
@@ -308,9 +309,9 @@ void OpusTest::Run(TestPackStereo* channel,
                 opus_stereo_decoder_, bitstream, bitstream_len_byte,
                 &out_audio[decoded_samples * channels], &audio_type);
           } else {
-            decoded_samples +=
-                WebRtcOpus_DecodePlc(opus_stereo_decoder_,
-                                     &out_audio[decoded_samples * channels], 1);
+            decoded_samples += WebRtcOpus_Decode(
+                opus_stereo_decoder_, NULL, 0,
+                &out_audio[decoded_samples * channels], &audio_type);
           }
         }
 

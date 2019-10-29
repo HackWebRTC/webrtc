@@ -810,7 +810,7 @@ TEST_P(OpusTest, OpusDecodePlc) {
   // Call decoder PLC.
   int16_t* plc_buffer = new int16_t[decode_samples_per_channel * channels_];
   EXPECT_EQ(decode_samples_per_channel,
-            WebRtcOpus_DecodePlc(opus_decoder_, plc_buffer, 1));
+            WebRtcOpus_Decode(opus_decoder_, NULL, 0, plc_buffer, &audio_type));
 
   // Free memory.
   delete[] plc_buffer;

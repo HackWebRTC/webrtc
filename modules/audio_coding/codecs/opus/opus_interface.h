@@ -407,24 +407,6 @@ int WebRtcOpus_Decode(OpusDecInst* inst,
                       int16_t* audio_type);
 
 /****************************************************************************
- * WebRtcOpus_DecodePlc(...)
- *
- * This function processes PLC for opus frame(s).
- * Input:
- *        - inst                  : Decoder context
- *        - number_of_lost_frames : Number of PLC frames to produce
- *
- * Output:
- *        - decoded               : The decoded vector
- *
- * Return value                   : >0 - number of samples in decoded PLC vector
- *                                  -1 - Error
- */
-int WebRtcOpus_DecodePlc(OpusDecInst* inst,
-                         int16_t* decoded,
-                         int number_of_lost_frames);
-
-/****************************************************************************
  * WebRtcOpus_DecodeFec(...)
  *
  * This function decodes the FEC data from an Opus packet into one or more audio

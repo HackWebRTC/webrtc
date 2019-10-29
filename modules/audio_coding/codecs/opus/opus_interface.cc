@@ -514,6 +514,29 @@ static int DecodeNative(OpusDecInst* inst,
   return res;
 }
 
+static int DecodePlc(OpusDecInst* inst, int16_t* decoded) {
+  int16_t audio_type = 0;
+  int decoded_samples;
+  int plc_samples;
+
+  /* The number of samples we ask for is |number_of_lost_frames| times
+   * |prev_decoded_samples_|. Limit the number of samples to maximum
+   * |MaxFrameSizePerChannel()|. */
+  plc_samples = inst->prev_decoded_samples;
+  const int max_samples_per_channel =
+      MaxFrameSizePerChannel(inst->sample_rate_hz);
+  plc_samples = plc_samples <= max_samples_per_channel
+                    ? plc_samples
+                    : max_samples_per_channel;
+  decoded_samples =
+      DecodeNative(inst, NULL, 0, plc_samples, decoded, &audio_type, 0);
+  if (decoded_samples < 0) {
+    return -1;
+  }
+
+  return decoded_samples;
+}
+
 int WebRtcOpus_Decode(OpusDecInst* inst,
                       const uint8_t* encoded,
                       size_t encoded_bytes,
@@ -523,7 +546,7 @@ int WebRtcOpus_Decode(OpusDecInst* inst,
 
   if (encoded_bytes == 0) {
     *audio_type = DetermineAudioType(inst, encoded_bytes);
-    decoded_samples = WebRtcOpus_DecodePlc(inst, decoded, 1);
+    decoded_samples = DecodePlc(inst, decoded);
   } else {
     decoded_samples = DecodeNative(inst, encoded, encoded_bytes,
                                    MaxFrameSizePerChannel(inst->sample_rate_hz),
@@ -535,31 +558,6 @@ int WebRtcOpus_Decode(OpusDecInst* inst,
 
   /* Update decoded sample memory, to be used by the PLC in case of losses. */
   inst->prev_decoded_samples = decoded_samples;
-
-  return decoded_samples;
-}
-
-int WebRtcOpus_DecodePlc(OpusDecInst* inst,
-                         int16_t* decoded,
-                         int number_of_lost_frames) {
-  int16_t audio_type = 0;
-  int decoded_samples;
-  int plc_samples;
-
-  /* The number of samples we ask for is |number_of_lost_frames| times
-   * |prev_decoded_samples_|. Limit the number of samples to maximum
-   * |MaxFrameSizePerChannel()|. */
-  plc_samples = number_of_lost_frames * inst->prev_decoded_samples;
-  const int max_samples_per_channel =
-      MaxFrameSizePerChannel(inst->sample_rate_hz);
-  plc_samples = plc_samples <= max_samples_per_channel
-                    ? plc_samples
-                    : max_samples_per_channel;
-  decoded_samples =
-      DecodeNative(inst, NULL, 0, plc_samples, decoded, &audio_type, 0);
-  if (decoded_samples < 0) {
-    return -1;
-  }
 
   return decoded_samples;
 }
