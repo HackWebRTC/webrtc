@@ -11,7 +11,7 @@
 
 #include "api/array_view.h"
 #include "modules/audio_processing/audio_buffer.h"
-#include "modules/audio_processing/noise_suppression.h"
+#include "modules/audio_processing/legacy_noise_suppression.h"
 #include "modules/audio_processing/test/audio_buffer_tools.h"
 #include "modules/audio_processing/test/bitexactness_tools.h"
 #include "test/gtest.h"
@@ -90,7 +90,7 @@ void RunBitexactnessTest(int sample_rate_hz,
 
 }  // namespace
 
-TEST(NoiseSuppresionBitExactnessTest, Mono8kHzLow) {
+TEST(LegacyNoiseSuppresionBitExactnessTest, Mono8kHzLow) {
 #if defined(WEBRTC_ARCH_ARM64)
   const float kSpeechProbabilityReference = -4.0f;
   const float kNoiseEstimateReference[] = {1432.341431f, 3321.919922f,
@@ -113,7 +113,7 @@ TEST(NoiseSuppresionBitExactnessTest, Mono8kHzLow) {
                       kOutputReference);
 }
 
-TEST(NoiseSuppresionBitExactnessTest, Mono16kHzLow) {
+TEST(LegacyNoiseSuppresionBitExactnessTest, Mono16kHzLow) {
 #if defined(WEBRTC_ARCH_ARM64)
   const float kSpeechProbabilityReference = -4.0f;
   const float kNoiseEstimateReference[] = {2534.461914f, 6277.638672f,
@@ -136,7 +136,7 @@ TEST(NoiseSuppresionBitExactnessTest, Mono16kHzLow) {
                       kOutputReference);
 }
 
-TEST(NoiseSuppresionBitExactnessTest, Mono32kHzLow) {
+TEST(LegacyNoiseSuppresionBitExactnessTest, Mono32kHzLow) {
 #if defined(WEBRTC_ARCH_ARM64)
   const float kSpeechProbabilityReference = -4.0f;
   const float kNoiseEstimateReference[] = {2540.059082f, 6317.822754f,
@@ -159,7 +159,7 @@ TEST(NoiseSuppresionBitExactnessTest, Mono32kHzLow) {
                       kOutputReference);
 }
 
-TEST(NoiseSuppresionBitExactnessTest, Mono48kHzLow) {
+TEST(LegacyNoiseSuppresionBitExactnessTest, Mono48kHzLow) {
 #if defined(WEBRTC_ARCH_ARM64)
   const float kSpeechProbabilityReference = -4.0f;
   const float kNoiseEstimateReference[] = {2135.292480f, 6692.695801f,
@@ -182,7 +182,7 @@ TEST(NoiseSuppresionBitExactnessTest, Mono48kHzLow) {
                       kOutputReference);
 }
 
-TEST(NoiseSuppresionBitExactnessTest, Stereo16kHzLow) {
+TEST(LegacyNoiseSuppresionBitExactnessTest, Stereo16kHzLow) {
 #if defined(WEBRTC_ARCH_ARM64)
   const float kSpeechProbabilityReference = -4.0f;
   const float kNoiseEstimateReference[] = {9992.127930f, 12689.569336f,
@@ -208,7 +208,7 @@ TEST(NoiseSuppresionBitExactnessTest, Stereo16kHzLow) {
                       kOutputReference);
 }
 
-TEST(NoiseSuppresionBitExactnessTest, Mono16kHzModerate) {
+TEST(LegacyNoiseSuppresionBitExactnessTest, Mono16kHzModerate) {
 #if defined(WEBRTC_ARCH_ARM64)
   const float kSpeechProbabilityReference = -4.0f;
   const float kNoiseEstimateReference[] = {2057.085938f, 7601.055176f,
@@ -231,7 +231,7 @@ TEST(NoiseSuppresionBitExactnessTest, Mono16kHzModerate) {
                       kOutputReference);
 }
 
-TEST(NoiseSuppresionBitExactnessTest, Mono16kHzHigh) {
+TEST(LegacyNoiseSuppresionBitExactnessTest, Mono16kHzHigh) {
 #if defined(WEBRTC_ARCH_ARM64)
   const float kSpeechProbabilityReference = -4.0f;
   const float kNoiseEstimateReference[] = {2095.148193f, 7698.553711f,
@@ -254,7 +254,7 @@ TEST(NoiseSuppresionBitExactnessTest, Mono16kHzHigh) {
                       kOutputReference);
 }
 
-TEST(NoiseSuppresionBitExactnessTest, Mono16kHzVeryHigh) {
+TEST(LegacyNoiseSuppresionBitExactnessTest, Mono16kHzVeryHigh) {
 #if defined(WEBRTC_ARCH_ARM64)
   const float kSpeechProbabilityReference = -4.0f;
   const float kNoiseEstimateReference[] = {2677.733398f, 6186.987305f,

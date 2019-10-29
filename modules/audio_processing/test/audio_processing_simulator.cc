@@ -504,6 +504,12 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
         *settings_.maximum_internal_processing_rate;
   }
 
+  const bool use_legacy_ns =
+      settings_.use_legacy_ns && *settings_.use_legacy_ns;
+  if (use_legacy_ns) {
+    apm_config.noise_suppression.use_legacy_ns = use_legacy_ns;
+  }
+
   if (settings_.use_ns) {
     apm_config.noise_suppression.enabled = *settings_.use_ns;
   }

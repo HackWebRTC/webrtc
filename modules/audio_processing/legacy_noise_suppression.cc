@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/noise_suppression.h"
+#include "modules/audio_processing/legacy_noise_suppression.h"
 
 #include "modules/audio_processing/audio_buffer.h"
 #include "rtc_base/checks.h"
 #if defined(WEBRTC_NS_FLOAT)
-#include "modules/audio_processing/ns/noise_suppression.h"
+#include "modules/audio_processing/legacy_ns/noise_suppression.h"
 
 #define NS_CREATE WebRtcNs_Create
 #define NS_FREE WebRtcNs_Free
@@ -21,7 +21,7 @@
 #define NS_SET_POLICY WebRtcNs_set_policy
 typedef NsHandle NsState;
 #elif defined(WEBRTC_NS_FIXED)
-#include "modules/audio_processing/ns/noise_suppression_x.h"
+#include "modules/audio_processing/legacy_ns/noise_suppression_x.h"
 
 #define NS_CREATE WebRtcNsx_Create
 #define NS_FREE WebRtcNsx_Free

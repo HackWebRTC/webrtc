@@ -65,6 +65,7 @@ struct SimulationSettings {
   absl::optional<bool> use_extended_filter;
   absl::optional<bool> use_drift_compensation;
   absl::optional<bool> use_legacy_aec;
+  absl::optional<bool> use_legacy_ns;
   absl::optional<bool> use_experimental_agc;
   absl::optional<bool> use_experimental_agc_agc2_level_estimator;
   absl::optional<bool> experimental_agc_disable_digital_adaptive;

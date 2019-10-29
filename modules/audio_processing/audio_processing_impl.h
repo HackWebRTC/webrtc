@@ -29,8 +29,9 @@
 #include "modules/audio_processing/include/aec_dump.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
+#include "modules/audio_processing/legacy_noise_suppression.h"
 #include "modules/audio_processing/level_estimator.h"
-#include "modules/audio_processing/noise_suppression.h"
+#include "modules/audio_processing/ns/noise_suppressor.h"
 #include "modules/audio_processing/render_queue_item_verifier.h"
 #include "modules/audio_processing/residual_echo_detector.h"
 #include "modules/audio_processing/rms_level.h"
@@ -150,6 +151,7 @@ class AudioProcessingImpl : public AudioProcessing {
 
   std::unique_ptr<ApmDataDumper> data_dumper_;
   static int instance_count_;
+  const bool enforced_usage_of_legacy_ns_;
 
   SwapQueue<RuntimeSetting> capture_runtime_settings_;
   SwapQueue<RuntimeSetting> render_runtime_settings_;
@@ -343,7 +345,8 @@ class AudioProcessingImpl : public AudioProcessing {
     std::unique_ptr<EchoCancellationImpl> echo_cancellation;
     std::unique_ptr<EchoControl> echo_controller;
     std::unique_ptr<EchoControlMobileImpl> echo_control_mobile;
-    std::unique_ptr<NoiseSuppression> noise_suppressor;
+    std::unique_ptr<NoiseSuppression> legacy_noise_suppressor;
+    std::unique_ptr<NoiseSuppressor> noise_suppressor;
     std::unique_ptr<TransientSuppressor> transient_suppressor;
     std::unique_ptr<CustomProcessing> capture_post_processor;
     std::unique_ptr<CustomProcessing> render_pre_processor;
