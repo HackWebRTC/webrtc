@@ -11,14 +11,19 @@ import("../../webrtc.gni")
 rtc_library("utility") {
   visibility = [ "*" ]
   sources = [
-    "include/helpers_android.h",
-    "include/jvm_android.h",
     "include/process_thread.h",
-    "source/helpers_android.cc",
-    "source/jvm_android.cc",
     "source/process_thread_impl.cc",
     "source/process_thread_impl.h",
   ]
+
+  if (is_android) {
+    sources += [
+      "include/helpers_android.h",
+      "include/jvm_android.h",
+      "source/helpers_android.cc",
+      "source/jvm_android.cc",
+    ]
+  }
 
   if (is_ios) {
     libs = [ "AVFoundation.framework" ]

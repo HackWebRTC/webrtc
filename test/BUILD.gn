@@ -847,8 +847,6 @@ rtc_library("test_renderer_generic") {
   sources = [
     "video_renderer.cc",
     "video_renderer.h",
-    "win/d3d_renderer.cc",
-    "win/d3d_renderer.h",
   ]
   deps = [
     ":test_support",
@@ -861,6 +859,12 @@ rtc_library("test_renderer_generic") {
     "../rtc_base:rtc_base_approved",
     "//testing/gtest",
   ]
+  if (is_win) {
+    sources += [
+      "win/d3d_renderer.cc",
+      "win/d3d_renderer.h",
+    ]
+  }
   if (!(is_linux && rtc_use_x11) && !is_mac && !is_win) {
     sources += [ "null_platform_renderer.cc" ]
   }
