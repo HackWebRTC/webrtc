@@ -1448,8 +1448,6 @@ void EventLogAnalyzer::CreateReceiveSideBweSimulationGraph(Plot* plot) {
 }
 
 void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
-  TimeSeries late_feedback_series("Late feedback results.", LineStyle::kNone,
-                                  PointStyle::kHighlight);
   TimeSeries time_series("Network delay", LineStyle::kLine,
                          PointStyle::kHighlight);
   int64_t min_send_receive_diff_ms = std::numeric_limits<int64_t>::max();
@@ -1463,13 +1461,9 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
     return a.feedback_arrival_time_ms < b.feedback_arrival_time_ms;
   });
   for (const auto& packet : matched_rtp_rtcp) {
-    if (packet.arrival_time_ms == PacketFeedback::kNotReceived)
+    if (packet.arrival_time_ms == MatchedSendArrivalTimes::kNotReceived)
       continue;
     float x = config_.GetCallTimeSec(1000 * packet.feedback_arrival_time_ms);
-    if (packet.send_time_ms == PacketFeedback::kNoSendTime) {
-      late_feedback_series.points.emplace_back(x, prev_y);
-      continue;
-    }
     int64_t y = packet.arrival_time_ms - packet.send_time_ms;
     prev_y = y;
     int64_t rtt_ms = packet.feedback_arrival_time_ms - packet.send_time_ms;
@@ -1485,12 +1479,9 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
       min_send_receive_diff_ms - min_rtt_ms / 2;
   for (TimeSeriesPoint& point : time_series.points)
     point.y -= estimated_clock_offset_ms;
-  for (TimeSeriesPoint& point : late_feedback_series.points)
-    point.y -= estimated_clock_offset_ms;
 
   // Add the data set to the plot.
   plot->AppendTimeSeriesIfNotEmpty(std::move(time_series));
-  plot->AppendTimeSeriesIfNotEmpty(std::move(late_feedback_series));
 
   plot->SetXAxis(config_.CallBeginTimeSec(), config_.CallEndTimeSec(),
                  "Time (s)", kLeftMargin, kRightMargin);

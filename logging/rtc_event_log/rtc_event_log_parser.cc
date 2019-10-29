@@ -2123,9 +2123,11 @@ const std::vector<MatchedSendArrivalTimes> GetNetworkTrace(
   for (auto& packet :
        parsed_log.GetPacketInfos(PacketDirection::kOutgoingPacket)) {
     if (packet.log_feedback_time.IsFinite()) {
-      rtp_rtcp_matched.emplace_back(
-          packet.log_feedback_time.ms(), packet.log_packet_time.ms(),
-          packet.reported_recv_time.ms_or(-1), packet.size);
+      rtp_rtcp_matched.emplace_back(packet.log_feedback_time.ms(),
+                                    packet.log_packet_time.ms(),
+                                    packet.reported_recv_time.ms_or(
+                                        MatchedSendArrivalTimes::kNotReceived),
+                                    packet.size);
     }
   }
   return rtp_rtcp_matched;

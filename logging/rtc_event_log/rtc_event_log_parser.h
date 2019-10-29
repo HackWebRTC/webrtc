@@ -795,6 +795,8 @@ class ParsedRtcEventLog {
 };
 
 struct MatchedSendArrivalTimes {
+  static constexpr int64_t kNotReceived = -1;
+
   MatchedSendArrivalTimes(int64_t fb, int64_t tx, int64_t rx, int64_t ps)
       : feedback_arrival_time_ms(fb),
         send_time_ms(tx),
@@ -802,8 +804,8 @@ struct MatchedSendArrivalTimes {
         payload_size(ps) {}
 
   int64_t feedback_arrival_time_ms;
-  int64_t send_time_ms;     // PacketFeedback::kNoSendTime for late feedback.
-  int64_t arrival_time_ms;  // PacketFeedback::kNotReceived for lost packets.
+  int64_t send_time_ms;
+  int64_t arrival_time_ms;  // kNotReceived for lost packets.
   int64_t payload_size;
 };
 const std::vector<MatchedSendArrivalTimes> GetNetworkTrace(
