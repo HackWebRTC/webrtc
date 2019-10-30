@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_LEGACY_NS_NSX_CORE_H_
-#define MODULES_AUDIO_PROCESSING_LEGACY_NS_NSX_CORE_H_
+#ifndef MODULES_AUDIO_PROCESSING_NS_MAIN_SOURCE_NSX_CORE_H_
+#define MODULES_AUDIO_PROCESSING_NS_MAIN_SOURCE_NSX_CORE_H_
 
 #ifdef NS_FILEDEBUG
 #include <stdio.h>
 #endif
 
 #include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "modules/audio_processing/legacy_ns/nsx_defines.h"
+#include "modules/audio_processing/ns/nsx_defines.h"
 
 typedef struct NoiseSuppressionFixedC_ {
   uint32_t fs;
@@ -161,9 +161,9 @@ int WebRtcNsx_set_policy_core(NoiseSuppressionFixedC* inst, int mode);
  *      - outFrame      : Output speech frame for each band
  */
 void WebRtcNsx_ProcessCore(NoiseSuppressionFixedC* inst,
-                           const int16_t* const* inFrame,
+                           const short* const* inFrame,
                            int num_bands,
-                           int16_t* const* outFrame);
+                           short* const* outFrame);
 
 /****************************************************************************
  * Some function pointers, for internal functions shared by ARM NEON and
@@ -258,4 +258,4 @@ void WebRtcNsx_Denormalize_mips(NoiseSuppressionFixedC* inst,
 }
 #endif
 
-#endif  // MODULES_AUDIO_PROCESSING_LEGACY_NS_NSX_CORE_H_
+#endif  // MODULES_AUDIO_PROCESSING_NS_MAIN_SOURCE_NSX_CORE_H_

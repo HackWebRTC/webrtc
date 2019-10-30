@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_LEGACY_NS_NSX_DEFINES_H_
-#define MODULES_AUDIO_PROCESSING_LEGACY_NS_NSX_DEFINES_H_
+#ifndef MODULES_AUDIO_PROCESSING_NS_MAIN_SOURCE_NSX_DEFINES_H_
+#define MODULES_AUDIO_PROCESSING_NS_MAIN_SOURCE_NSX_DEFINES_H_
 
 #define ANAL_BLOCKL_MAX 256  /* Max analysis block length */
 #define HALF_ANAL_BLOCKL 129 /* Half max analysis block length + 1 */
@@ -71,4 +71,4 @@
 #define GAMMA_NOISE_TRANS_AND_SPEECH_Q8 \
   3 /* ~= Q8(0.01) Update for transition and noise region */
 
-#endif /* MODULES_AUDIO_PROCESSING_LEGACY_NS_NSX_DEFINES_H_ */
+#endif /* MODULES_AUDIO_PROCESSING_NS_MAIN_SOURCE_NSX_DEFINES_H_ */

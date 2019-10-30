@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/legacy_ns/noise_suppression_x.h"
+#include "modules/audio_processing/ns/noise_suppression_x.h"
 
 #include <stdlib.h>
 
 #include "common_audio/signal_processing/include/real_fft.h"
-#include "modules/audio_processing/legacy_ns/nsx_core.h"
-#include "modules/audio_processing/legacy_ns/nsx_defines.h"
+#include "modules/audio_processing/ns/nsx_core.h"
+#include "modules/audio_processing/ns/nsx_defines.h"
 
 NsxHandle* WebRtcNsx_Create() {
   NoiseSuppressionFixedC* self = malloc(sizeof(NoiseSuppressionFixedC));
@@ -37,9 +37,9 @@ int WebRtcNsx_set_policy(NsxHandle* nsxInst, int mode) {
 }
 
 void WebRtcNsx_Process(NsxHandle* nsxInst,
-                      const int16_t* const* speechFrame,
+                      const short* const* speechFrame,
                       int num_bands,
-                      int16_t* const* outFrame) {
+                      short* const* outFrame) {
   WebRtcNsx_ProcessCore((NoiseSuppressionFixedC*)nsxInst, speechFrame,
                         num_bands, outFrame);
 }

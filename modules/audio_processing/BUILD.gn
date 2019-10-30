@@ -132,10 +132,10 @@ rtc_library("audio_processing") {
     "gain_controller2.h",
     "include/aec_dump.cc",
     "include/aec_dump.h",
-    "legacy_noise_suppression.cc",
-    "legacy_noise_suppression.h",
     "level_estimator.cc",
     "level_estimator.h",
+    "noise_suppression.cc",
+    "noise_suppression.h",
     "render_queue_item_verifier.h",
     "residual_echo_detector.cc",
     "residual_echo_detector.h",
@@ -199,7 +199,6 @@ rtc_library("audio_processing") {
     "agc2:adaptive_digital",
     "agc2:fixed_digital",
     "agc2:gain_applier",
-    "ns",
     "vad",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -288,29 +287,29 @@ rtc_library("file_audio_generator") {
 rtc_source_set("audio_processing_c") {
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
   sources = [
-    "legacy_ns/windows_private.h",
+    "ns/windows_private.h",
   ]
 
   if (rtc_prefer_fixed_point) {
     sources += [
-      "legacy_ns/noise_suppression_x.c",
-      "legacy_ns/noise_suppression_x.h",
-      "legacy_ns/nsx_core.c",
-      "legacy_ns/nsx_core.h",
-      "legacy_ns/nsx_defines.h",
+      "ns/noise_suppression_x.c",
+      "ns/noise_suppression_x.h",
+      "ns/nsx_core.c",
+      "ns/nsx_core.h",
+      "ns/nsx_defines.h",
     ]
     if (current_cpu == "mipsel") {
-      sources += [ "legacy_ns/nsx_core_mips.c" ]
+      sources += [ "ns/nsx_core_mips.c" ]
     } else {
-      sources += [ "legacy_ns/nsx_core_c.c" ]
+      sources += [ "ns/nsx_core_c.c" ]
     }
   } else {
     sources += [
-      "legacy_ns/defines.h",
-      "legacy_ns/noise_suppression.c",
-      "legacy_ns/noise_suppression.h",
-      "legacy_ns/ns_core.c",
-      "legacy_ns/ns_core.h",
+      "ns/defines.h",
+      "ns/noise_suppression.c",
+      "ns/noise_suppression.h",
+      "ns/ns_core.c",
+      "ns/ns_core.h",
     ]
   }
 
@@ -325,7 +324,7 @@ rtc_source_set("audio_processing_c") {
   ]
 
   if (rtc_build_with_neon) {
-    sources += [ "legacy_ns/nsx_core_neon.c" ]
+    sources += [ "ns/nsx_core_neon.c" ]
 
     if (current_cpu != "arm64") {
       # Enable compilation for the NEON instruction set.
@@ -508,8 +507,8 @@ if (rtc_include_tests) {
         "echo_detector/normalized_covariance_estimator_unittest.cc",
         "gain_control_unittest.cc",
         "high_pass_filter_unittest.cc",
-        "legacy_noise_suppression_unittest.cc",
         "level_estimator_unittest.cc",
+        "noise_suppression_unittest.cc",
         "residual_echo_detector_unittest.cc",
         "rms_level_unittest.cc",
         "test/debug_dump_replayer.cc",

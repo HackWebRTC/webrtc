@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_LEGACY_NS_NOISE_SUPPRESSION_H_
-#define MODULES_AUDIO_PROCESSING_LEGACY_NS_NOISE_SUPPRESSION_H_
+#ifndef MODULES_AUDIO_PROCESSING_NS_NOISE_SUPPRESSION_H_
+#define MODULES_AUDIO_PROCESSING_NS_NOISE_SUPPRESSION_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -131,4 +131,4 @@ size_t WebRtcNs_num_freq(void);
 }
 #endif
 
-#endif  // MODULES_AUDIO_PROCESSING_LEGACY_NS_NOISE_SUPPRESSION_H_
+#endif  // MODULES_AUDIO_PROCESSING_NS_NOISE_SUPPRESSION_H_

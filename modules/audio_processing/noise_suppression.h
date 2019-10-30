@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_LEGACY_NOISE_SUPPRESSION_H_
-#define MODULES_AUDIO_PROCESSING_LEGACY_NOISE_SUPPRESSION_H_
+#ifndef MODULES_AUDIO_PROCESSING_NOISE_SUPPRESSION_H_
+#define MODULES_AUDIO_PROCESSING_NOISE_SUPPRESSION_H_
 
 #include <memory>
 #include <vector>
@@ -54,4 +54,4 @@ class NoiseSuppression {
 };
 }  // namespace webrtc
 
-#endif  // MODULES_AUDIO_PROCESSING_LEGACY_NOISE_SUPPRESSION_H_
+#endif  // MODULES_AUDIO_PROCESSING_NOISE_SUPPRESSION_H_

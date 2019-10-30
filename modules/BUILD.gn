@@ -229,7 +229,6 @@ if (rtc_include_tests) {
       "audio_mixer:audio_mixer_unittests",
       "audio_processing:audio_processing_unittests",
       "audio_processing/aec3:aec3_unittests",
-      "audio_processing/ns:ns_unittests",
       "congestion_controller:congestion_controller_unittests",
       "pacing:pacing_unittests",
       "remote_bitrate_estimator:remote_bitrate_estimator_unittests",

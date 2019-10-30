@@ -11,8 +11,8 @@
 #include <string.h>
 
 #include "rtc_base/checks.h"
-#include "modules/audio_processing/legacy_ns/noise_suppression_x.h"
-#include "modules/audio_processing/legacy_ns/nsx_core.h"
+#include "modules/audio_processing/ns/noise_suppression_x.h"
+#include "modules/audio_processing/ns/nsx_core.h"
 
 static const int16_t kIndicatorTable[17] = {
   0, 2017, 3809, 5227, 6258, 6963, 7424, 7718,
@@ -999,3 +999,4 @@ void WebRtcNsx_NormalizeRealBuffer_mips(NoiseSuppressionFixedC* inst,
     : "memory"
   );
 }
+

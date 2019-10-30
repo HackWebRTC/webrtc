@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_LEGACY_NS_NS_CORE_H_
-#define MODULES_AUDIO_PROCESSING_LEGACY_NS_NS_CORE_H_
+#ifndef MODULES_AUDIO_PROCESSING_NS_NS_CORE_H_
+#define MODULES_AUDIO_PROCESSING_NS_NS_CORE_H_
 
-#include "modules/audio_processing/legacy_ns/defines.h"
+#include "modules/audio_processing/ns/defines.h"
 
 typedef struct NSParaExtract_ {
   // Bin size of histogram.
@@ -46,6 +46,7 @@ typedef struct NSParaExtract_ {
   // Criteria of weight of histogram peak to accept/reject feature.
   int thresWeightSpecFlat;
   int thresWeightSpecDiff;
+
 } NSParaExtract;
 
 typedef struct NoiseSuppressionC_ {
@@ -185,4 +186,4 @@ void WebRtcNs_ProcessCore(NoiseSuppressionC* self,
 #ifdef __cplusplus
 }
 #endif
-#endif  // MODULES_AUDIO_PROCESSING_LEGACY_NS_NS_CORE_H_
+#endif  // MODULES_AUDIO_PROCESSING_NS_NS_CORE_H_

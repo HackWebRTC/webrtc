@@ -130,10 +130,6 @@ ABSL_FLAG(int,
           kParameterNotSpecifiedValue,
           "Activate (1) or deactivate(0) the legacy AEC");
 ABSL_FLAG(int,
-          use_legacy_ns,
-          kParameterNotSpecifiedValue,
-          "Activate (1) or deactivate(0) the legacy AEC");
-ABSL_FLAG(int,
           experimental_agc,
           kParameterNotSpecifiedValue,
           "Activate (1) or deactivate(0) the experimental AGC");
@@ -397,8 +393,6 @@ SimulationSettings CreateSettings() {
 
   SetSettingIfFlagSet(absl::GetFlag(FLAGS_use_legacy_aec),
                       &settings.use_legacy_aec);
-  SetSettingIfFlagSet(absl::GetFlag(FLAGS_use_legacy_ns),
-                      &settings.use_legacy_ns);
   SetSettingIfFlagSet(absl::GetFlag(FLAGS_experimental_agc),
                       &settings.use_experimental_agc);
   SetSettingIfFlagSet(

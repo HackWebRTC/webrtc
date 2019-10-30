@@ -285,8 +285,6 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
       bool enabled = false;
       enum Level { kLow, kModerate, kHigh, kVeryHigh };
       Level level = kModerate;
-      // Recommended not to use. Will be removed in the future.
-      bool use_legacy_ns = false;
     } noise_suppression;
 
     // Enables reporting of |voice_detected| in webrtc::AudioProcessingStats.
