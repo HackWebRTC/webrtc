@@ -627,6 +627,11 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
   return result;
 }
 
+void VideoSendStreamImpl::OnDroppedFrame(
+    EncodedImageCallback::DropReason reason) {
+  activity_ = true;
+}
+
 std::map<uint32_t, RtpState> VideoSendStreamImpl::GetRtpStates() const {
   return rtp_video_sender_->GetRtpStates();
 }

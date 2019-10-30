@@ -128,6 +128,9 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
       const CodecSpecificInfo* codec_specific_info,
       const RTPFragmentationHeader* fragmentation) override;
 
+  // Implements EncodedImageCallback.
+  void OnDroppedFrame(EncodedImageCallback::DropReason reason) override;
+
   // Implements VideoBitrateAllocationObserver.
   void OnBitrateAllocationUpdated(
       const VideoBitrateAllocation& allocation) override;

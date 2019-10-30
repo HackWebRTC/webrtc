@@ -1776,6 +1776,7 @@ void VideoStreamEncoder::OnDroppedFrame(DropReason reason) {
       });
       break;
   }
+  sink_->OnDroppedFrame(reason);
 }
 
 void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
