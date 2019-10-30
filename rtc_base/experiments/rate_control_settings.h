@@ -42,6 +42,7 @@ struct VideoRateControlConfig {
   bool bitrate_adjuster = false;
   bool adjuster_use_headroom = false;
   bool vp8_s0_boost = true;
+  bool vp8_base_heavy_tl3_alloc = false;
   bool vp8_dynamic_rate = false;
   bool vp9_dynamic_rate = false;
 
@@ -81,6 +82,8 @@ class RateControlSettings final {
   double GetSimulcastHysteresisFactor(VideoCodecMode mode) const;
   double GetSimulcastHysteresisFactor(
       VideoEncoderConfig::ContentType content_type) const;
+
+  bool Vp8BaseHeavyTl3RateAllocation() const;
 
   bool TriggerProbeOnMaxAllocatedBitrateChange() const;
   bool UseEncoderBitrateAdjuster() const;

@@ -3302,10 +3302,12 @@ TEST_F(VideoStreamEncoderTest, TemporalLayersNotDisabledIfSupported) {
   // Bitrate allocated across temporal layers.
   const int kTl0Bps = kTargetBitrateBps *
                       webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(
-                          kNumTemporalLayers, /*temporal_id*/ 0);
+                          kNumTemporalLayers, /*temporal_id*/ 0,
+                          /*base_heavy_tl3_alloc*/ false);
   const int kTl1Bps = kTargetBitrateBps *
                       webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(
-                          kNumTemporalLayers, /*temporal_id*/ 1);
+                          kNumTemporalLayers, /*temporal_id*/ 1,
+                          /*base_heavy_tl3_alloc*/ false);
   VideoBitrateAllocation expected_bitrate;
   expected_bitrate.SetBitrate(/*si*/ 0, /*ti*/ 0, kTl0Bps);
   expected_bitrate.SetBitrate(/*si*/ 0, /*ti*/ 1, kTl1Bps - kTl0Bps);
@@ -3336,11 +3338,13 @@ TEST_F(VideoStreamEncoderTest, VerifyBitrateAllocationForTwoStreams) {
 
   const int kS0Bps = 150000;
   const int kS0Tl0Bps =
-      kS0Bps * webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(
-                   /*num_layers*/ 2, /*temporal_id*/ 0);
+      kS0Bps *
+      webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(
+          /*num_layers*/ 2, /*temporal_id*/ 0, /*base_heavy_tl3_alloc*/ false);
   const int kS0Tl1Bps =
-      kS0Bps * webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(
-                   /*num_layers*/ 2, /*temporal_id*/ 1);
+      kS0Bps *
+      webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(
+          /*num_layers*/ 2, /*temporal_id*/ 1, /*base_heavy_tl3_alloc*/ false);
   const int kS1Bps = kTargetBitrateBps - kS0Tl1Bps;
   // Temporal layers not supported by si:1.
   VideoBitrateAllocation expected_bitrate;

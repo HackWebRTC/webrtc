@@ -25,15 +25,13 @@
 #include "rtc_base/experiments/experimental_screenshare_settings.h"
 #include "rtc_base/experiments/min_video_bitrate_experiment.h"
 #include "rtc_base/experiments/normalize_simulcast_size_experiment.h"
+#include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace cricket {
 
 namespace {
-
-constexpr char kUseBaseHeavyVP8TL3RateAllocationFieldTrial[] =
-    "WebRTC-UseBaseHeavyVP8TL3RateAllocation";
 
 constexpr char kUseLegacySimulcastLayerLimitFieldTrial[] =
     "WebRTC-LegacySimulcastLayerLimit";
@@ -233,9 +231,13 @@ std::vector<webrtc::VideoStream> GetSimulcastConfig(
     bool temporal_layers_supported) {
   RTC_DCHECK(max_layers > 1 || is_screenshare_with_conference_mode);
 
+  const bool base_heavy_tl3_rate_alloc =
+      webrtc::RateControlSettings::ParseFromFieldTrials()
+          .Vp8BaseHeavyTl3RateAllocation();
   if (is_screenshare_with_conference_mode) {
     return GetScreenshareLayers(max_layers, width, height, bitrate_priority,
-                                max_qp, temporal_layers_supported);
+                                max_qp, temporal_layers_supported,
+                                base_heavy_tl3_rate_alloc);
   } else {
     // Some applications rely on the old behavior limiting the simulcast layer
     // count based on the resolution automatically, which they can get through
@@ -243,7 +245,8 @@ std::vector<webrtc::VideoStream> GetSimulcastConfig(
     max_layers = LimitSimulcastLayerCount(width, height, max_layers);
 
     return GetNormalSimulcastLayers(max_layers, width, height, bitrate_priority,
-                                    max_qp, temporal_layers_supported);
+                                    max_qp, temporal_layers_supported,
+                                    base_heavy_tl3_rate_alloc);
   }
 }
 
@@ -253,7 +256,8 @@ std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
     int height,
     double bitrate_priority,
     int max_qp,
-    bool temporal_layers_supported) {
+    bool temporal_layers_supported,
+    bool base_heavy_tl3_rate_alloc) {
   std::vector<webrtc::VideoStream> layers(layer_count);
 
   // Format width and height has to be divisible by |2 ^ num_simulcast_layers -
@@ -280,16 +284,16 @@ std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
       // higher threshold for receiving a feed at all.
       float rate_factor = 1.0;
       if (num_temporal_layers == 3) {
-        if (webrtc::field_trial::IsEnabled(
-                kUseBaseHeavyVP8TL3RateAllocationFieldTrial)) {
+        if (base_heavy_tl3_rate_alloc) {
           // Base heavy allocation increases TL0 bitrate from 40% to 60%.
           rate_factor = 0.4 / 0.6;
         }
       } else {
         rate_factor =
-            webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(3, 0) /
             webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(
-                num_temporal_layers, 0);
+                3, 0, /*base_heavy_tl3_rate_alloc=*/false) /
+            webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(
+                num_temporal_layers, 0, /*base_heavy_tl3_rate_alloc=*/false);
       }
 
       layers[s].max_bitrate_bps =
@@ -322,7 +326,8 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
     int height,
     double bitrate_priority,
     int max_qp,
-    bool temporal_layers_supported) {
+    bool temporal_layers_supported,
+    bool base_heavy_tl3_rate_alloc) {
   auto max_screenshare_layers = kMaxScreenshareSimulcastLayers;
   size_t num_simulcast_layers =
       std::min<int>(max_layers, max_screenshare_layers);
@@ -361,10 +366,9 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
       max_bitrate_bps = static_cast<int>(
           kScreenshareHighStreamMaxBitrateBps *
           webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(
-              num_temporal_layers, 0));
+              num_temporal_layers, 0, base_heavy_tl3_rate_alloc));
     } else if (DefaultNumberOfTemporalLayers(1, true) != 3 ||
-               webrtc::field_trial::IsEnabled(
-                   kUseBaseHeavyVP8TL3RateAllocationFieldTrial)) {
+               base_heavy_tl3_rate_alloc) {
       // Experimental temporal layer mode used, use increased max bitrate.
       max_bitrate_bps = experimental_settings.TopLayerMaxBitrate().value_or(
           kScreenshareHighStreamMaxBitrateBps);
