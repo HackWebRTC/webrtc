@@ -991,6 +991,11 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
   // that this method always takes ownership of it.
   virtual void SetLocalDescription(SetSessionDescriptionObserver* observer,
                                    SessionDescriptionInterface* desc) = 0;
+  // Implicitly creates an offer or answer (depending on the current signaling
+  // state) and performs SetLocalDescription() with the newly generated session
+  // description.
+  // TODO(hbos): Make pure virtual when implemented by downstream projects.
+  virtual void SetLocalDescription(SetSessionDescriptionObserver* observer) {}
   // Sets the remote session description.
   // The PeerConnection takes the ownership of |desc| even if it fails.
   // The |observer| callback will be called when done.

@@ -565,6 +565,32 @@ TEST_P(PeerConnectionSignalingTest, CloseCreateOfferAndShutdown) {
   EXPECT_TRUE(observer->called());
 }
 
+TEST_P(PeerConnectionSignalingTest, ImplicitCreateOfferAndShutdown) {
+  auto caller = CreatePeerConnection();
+  auto observer = MockSetSessionDescriptionObserver::Create();
+  caller->pc()->SetLocalDescription(observer);
+  caller.reset(nullptr);
+  EXPECT_FALSE(observer->called());
+}
+
+TEST_P(PeerConnectionSignalingTest, CloseBeforeImplicitCreateOfferAndShutdown) {
+  auto caller = CreatePeerConnection();
+  auto observer = MockSetSessionDescriptionObserver::Create();
+  caller->pc()->Close();
+  caller->pc()->SetLocalDescription(observer);
+  caller.reset(nullptr);
+  EXPECT_FALSE(observer->called());
+}
+
+TEST_P(PeerConnectionSignalingTest, CloseAfterImplicitCreateOfferAndShutdown) {
+  auto caller = CreatePeerConnection();
+  auto observer = MockSetSessionDescriptionObserver::Create();
+  caller->pc()->SetLocalDescription(observer);
+  caller->pc()->Close();
+  caller.reset(nullptr);
+  EXPECT_FALSE(observer->called());
+}
+
 TEST_P(PeerConnectionSignalingTest, SetRemoteDescriptionExecutesImmediately) {
   auto caller = CreatePeerConnectionWithAudioVideo();
   auto callee = CreatePeerConnection();
@@ -606,6 +632,143 @@ TEST_P(PeerConnectionSignalingTest, CreateOfferBlocksSetRemoteDescription) {
   // Now that the offer has been completed, SetRemoteDescription() will have
   // been executed next in the chain.
   EXPECT_EQ(2u, callee->pc()->GetReceivers().size());
+}
+
+TEST_P(PeerConnectionSignalingTest,
+       ParameterlessSetLocalDescriptionCreatesOffer) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+
+  auto observer = MockSetSessionDescriptionObserver::Create();
+  caller->pc()->SetLocalDescription(observer);
+
+  // The offer is created asynchronously; message processing is needed for it to
+  // complete.
+  EXPECT_FALSE(observer->called());
+  EXPECT_FALSE(caller->pc()->pending_local_description());
+  EXPECT_EQ(PeerConnection::kStable, caller->signaling_state());
+
+  // Wait for messages to be processed.
+  EXPECT_TRUE_WAIT(observer->called(), kWaitTimeout);
+  EXPECT_TRUE(observer->result());
+  EXPECT_TRUE(caller->pc()->pending_local_description());
+  EXPECT_EQ(SdpType::kOffer,
+            caller->pc()->pending_local_description()->GetType());
+  EXPECT_EQ(PeerConnection::kHaveLocalOffer, caller->signaling_state());
+}
+
+TEST_P(PeerConnectionSignalingTest,
+       ParameterlessSetLocalDescriptionCreatesAnswer) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  callee->SetRemoteDescription(caller->CreateOffer());
+  EXPECT_EQ(PeerConnection::kHaveRemoteOffer, callee->signaling_state());
+
+  auto observer = MockSetSessionDescriptionObserver::Create();
+  callee->pc()->SetLocalDescription(observer);
+
+  // The answer is created asynchronously; message processing is needed for it
+  // to complete.
+  EXPECT_FALSE(observer->called());
+  EXPECT_FALSE(callee->pc()->current_local_description());
+
+  // Wait for messages to be processed.
+  EXPECT_TRUE_WAIT(observer->called(), kWaitTimeout);
+  EXPECT_TRUE(observer->result());
+  EXPECT_TRUE(callee->pc()->current_local_description());
+  EXPECT_EQ(SdpType::kAnswer,
+            callee->pc()->current_local_description()->GetType());
+  EXPECT_EQ(PeerConnection::kStable, callee->signaling_state());
+}
+
+TEST_P(PeerConnectionSignalingTest,
+       ParameterlessSetLocalDescriptionFullExchange) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  // SetLocalDescription(), implicitly creating an offer.
+  rtc::scoped_refptr<MockSetSessionDescriptionObserver>
+      caller_set_local_description_observer(
+          new rtc::RefCountedObject<MockSetSessionDescriptionObserver>());
+  caller->pc()->SetLocalDescription(caller_set_local_description_observer);
+  EXPECT_TRUE_WAIT(caller_set_local_description_observer->called(),
+                   kWaitTimeout);
+  ASSERT_TRUE(caller->pc()->pending_local_description());
+
+  // SetRemoteDescription(offer)
+  rtc::scoped_refptr<MockSetSessionDescriptionObserver>
+      callee_set_remote_description_observer(
+          new rtc::RefCountedObject<MockSetSessionDescriptionObserver>());
+  callee->pc()->SetRemoteDescription(
+      callee_set_remote_description_observer.get(),
+      CloneSessionDescription(caller->pc()->pending_local_description())
+          .release());
+
+  // SetLocalDescription(), implicitly creating an answer.
+  rtc::scoped_refptr<MockSetSessionDescriptionObserver>
+      callee_set_local_description_observer(
+          new rtc::RefCountedObject<MockSetSessionDescriptionObserver>());
+  callee->pc()->SetLocalDescription(callee_set_local_description_observer);
+  EXPECT_TRUE_WAIT(callee_set_local_description_observer->called(),
+                   kWaitTimeout);
+  // Chaining guarantees SetRemoteDescription() happened before
+  // SetLocalDescription().
+  EXPECT_TRUE(callee_set_remote_description_observer->called());
+  EXPECT_TRUE(callee->pc()->current_local_description());
+
+  // SetRemoteDescription(answer)
+  rtc::scoped_refptr<MockSetSessionDescriptionObserver>
+      caller_set_remote_description_observer(
+          new rtc::RefCountedObject<MockSetSessionDescriptionObserver>());
+  caller->pc()->SetRemoteDescription(
+      caller_set_remote_description_observer,
+      CloneSessionDescription(callee->pc()->current_local_description())
+          .release());
+  EXPECT_TRUE_WAIT(caller_set_remote_description_observer->called(),
+                   kWaitTimeout);
+
+  EXPECT_EQ(PeerConnection::kStable, caller->signaling_state());
+  EXPECT_EQ(PeerConnection::kStable, callee->signaling_state());
+}
+
+TEST_P(PeerConnectionSignalingTest,
+       ParameterlessSetLocalDescriptionCloseBeforeCreatingOffer) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+
+  auto observer = MockSetSessionDescriptionObserver::Create();
+  caller->pc()->Close();
+  caller->pc()->SetLocalDescription(observer);
+
+  // The operation should fail asynchronously.
+  EXPECT_FALSE(observer->called());
+  EXPECT_TRUE_WAIT(observer->called(), kWaitTimeout);
+  EXPECT_FALSE(observer->result());
+  // This did not affect the signaling state.
+  EXPECT_EQ(PeerConnection::kClosed, caller->pc()->signaling_state());
+  EXPECT_EQ(
+      "SetLocalDescription failed to create session description - "
+      "SetLocalDescription called when PeerConnection is closed.",
+      observer->error());
+}
+
+TEST_P(PeerConnectionSignalingTest,
+       ParameterlessSetLocalDescriptionCloseWhileCreatingOffer) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+
+  auto observer = MockSetSessionDescriptionObserver::Create();
+  caller->pc()->SetLocalDescription(observer);
+  caller->pc()->Close();
+
+  // The operation should fail asynchronously.
+  EXPECT_FALSE(observer->called());
+  EXPECT_TRUE_WAIT(observer->called(), kWaitTimeout);
+  EXPECT_FALSE(observer->result());
+  // This did not affect the signaling state.
+  EXPECT_EQ(PeerConnection::kClosed, caller->pc()->signaling_state());
+  EXPECT_EQ(
+      "SetLocalDescription failed to create session description - "
+      "CreateOffer failed because the session was shut down",
+      observer->error());
 }
 
 INSTANTIATE_TEST_SUITE_P(PeerConnectionSignalingTest,

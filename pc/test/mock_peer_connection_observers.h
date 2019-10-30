@@ -271,6 +271,10 @@ class MockCreateSessionDescriptionObserver
 class MockSetSessionDescriptionObserver
     : public webrtc::SetSessionDescriptionObserver {
  public:
+  static rtc::scoped_refptr<MockSetSessionDescriptionObserver> Create() {
+    return new rtc::RefCountedObject<MockSetSessionDescriptionObserver>();
+  }
+
   MockSetSessionDescriptionObserver()
       : called_(false),
         error_("MockSetSessionDescriptionObserver not called") {}

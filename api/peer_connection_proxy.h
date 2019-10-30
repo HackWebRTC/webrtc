@@ -100,6 +100,7 @@ PROXY_METHOD2(void,
               SetLocalDescription,
               SetSessionDescriptionObserver*,
               SessionDescriptionInterface*)
+PROXY_METHOD1(void, SetLocalDescription, SetSessionDescriptionObserver*)
 PROXY_METHOD2(void,
               SetRemoteDescription,
               SetSessionDescriptionObserver*,

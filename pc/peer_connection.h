@@ -210,6 +210,7 @@ class PeerConnection : public PeerConnectionInternal,
                     const RTCOfferAnswerOptions& options) override;
   void SetLocalDescription(SetSessionDescriptionObserver* observer,
                            SessionDescriptionInterface* desc) override;
+  void SetLocalDescription(SetSessionDescriptionObserver* observer) override;
   void SetRemoteDescription(SetSessionDescriptionObserver* observer,
                             SessionDescriptionInterface* desc) override;
   void SetRemoteDescription(
@@ -314,6 +315,8 @@ class PeerConnection : public PeerConnectionInternal,
   ~PeerConnection() override;
 
  private:
+  class ImplicitCreateSessionDescriptionObserver;
+  friend class ImplicitCreateSessionDescriptionObserver;
   class SetRemoteDescriptionObserverAdapter;
   friend class SetRemoteDescriptionObserverAdapter;
   // Represents the [[LocalIceCredentialsToReplace]] internal slot in the spec.
