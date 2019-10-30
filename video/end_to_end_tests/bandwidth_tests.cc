@@ -33,6 +33,7 @@ namespace webrtc {
 namespace {
 enum : int {  // The first valid value is 1.
   kAbsSendTimeExtensionId = 1,
+  kTransportSequenceNumberId,
 };
 }  // namespace
 
@@ -94,12 +95,28 @@ class BandwidthStatsTest : public test::EndToEndTest {
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStream::Config>* receive_configs,
       VideoEncoderConfig* encoder_config) override {
+    send_config->rtp.extensions.clear();
     if (!send_side_bwe_) {
-      send_config->rtp.extensions.clear();
       send_config->rtp.extensions.push_back(
           RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeExtensionId));
       (*receive_configs)[0].rtp.transport_cc = false;
+    } else {
+      send_config->rtp.extensions.push_back(
+          RtpExtension(RtpExtension::kTransportSequenceNumberUri,
+                       kTransportSequenceNumberId));
+      (*receive_configs)[0].rtp.transport_cc = true;
     }
+
+    // Force a too high encoder bitrate to make sure we get pacer delay.
+    encoder_config->number_of_streams = 1;
+    encoder_config->max_bitrate_bps = kMaxBitrateBps * 2;
+    encoder_config->simulcast_layers[0].min_bitrate_bps = kMaxBitrateBps * 2;
+    encoder_config->simulcast_layers[0].target_bitrate_bps = kMaxBitrateBps * 2;
+    encoder_config->simulcast_layers[0].max_bitrate_bps = kMaxBitrateBps * 2;
+  }
+
+  void ModifySenderBitrateConfig(BitrateConstraints* bitrate_config) override {
+    bitrate_config->max_bitrate_bps = kMaxBitrateBps;
   }
 
   // Called on the pacer thread.
@@ -107,14 +124,20 @@ class BandwidthStatsTest : public test::EndToEndTest {
     // Stats need to be fetched on the thread where the caller objects were
     // constructed.
     task_queue_->PostTask(ToQueuedTask([this]() {
+      if (!sender_call_ || !receiver_call_) {
+        return;
+      }
+
       Call::Stats sender_stats = sender_call_->GetStats();
-      if (!has_seen_pacer_delay_)
+      if (!has_seen_pacer_delay_) {
         has_seen_pacer_delay_ = sender_stats.pacer_delay_ms > 0;
+      }
 
       if (sender_stats.send_bandwidth_bps > 0 && has_seen_pacer_delay_) {
         Call::Stats receiver_stats = receiver_call_->GetStats();
-        if (send_side_bwe_ || receiver_stats.recv_bandwidth_bps > 0)
+        if (send_side_bwe_ || receiver_stats.recv_bandwidth_bps > 0) {
           observation_complete_.Set();
+        }
       }
     }));
 
@@ -126,12 +149,18 @@ class BandwidthStatsTest : public test::EndToEndTest {
     receiver_call_ = receiver_call;
   }
 
+  void OnStreamsStopped() override {
+    sender_call_ = nullptr;
+    receiver_call_ = nullptr;
+  }
+
   void PerformTest() override {
     EXPECT_TRUE(Wait()) << "Timed out while waiting for "
                            "non-zero bandwidth stats.";
   }
 
  private:
+  static const int kMaxBitrateBps = 3000000;
   Call* sender_call_;
   Call* receiver_call_;
   bool has_seen_pacer_delay_;
