@@ -79,11 +79,11 @@ void VideoBroadcaster::OnFrame(const webrtc::VideoFrame& frame) {
               .set_id(frame.id())
               .build();
       sink_pair.sink->OnFrame(black_frame);
-    } else if (!previous_frame_sent_to_all_sinks_) {
-      // Since last frame was not sent to some sinks, full update is needed.
+    } else if (!previous_frame_sent_to_all_sinks_ && frame.has_update_rect()) {
+      // Since last frame was not sent to some sinks, no reliable update
+      // information is available, so we need to clear the update rect.
       webrtc::VideoFrame copy = frame;
-      copy.set_update_rect(
-          webrtc::VideoFrame::UpdateRect{0, 0, frame.width(), frame.height()});
+      copy.clear_update_rect();
       sink_pair.sink->OnFrame(copy);
     } else {
       sink_pair.sink->OnFrame(frame);

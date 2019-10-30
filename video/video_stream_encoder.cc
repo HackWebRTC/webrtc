@@ -516,6 +516,7 @@ VideoStreamEncoder::VideoStreamEncoder(
       dropped_frame_count_(0),
       pending_frame_post_time_us_(0),
       accumulated_update_rect_{0, 0, 0, 0},
+      accumulated_update_rect_is_valid_(true),
       bitrate_observer_(nullptr),
       fec_controller_override_(nullptr),
       force_disable_frame_dropper_(false),
@@ -1085,6 +1086,7 @@ void VideoStreamEncoder::OnFrame(const VideoFrame& video_frame) {
     encoder_queue_.PostTask([this, incoming_frame]() {
       RTC_DCHECK_RUN_ON(&encoder_queue_);
       accumulated_update_rect_.Union(incoming_frame.update_rect());
+      accumulated_update_rect_is_valid_ &= incoming_frame.has_update_rect();
     });
     return;
   }
@@ -1119,6 +1121,7 @@ void VideoStreamEncoder::OnFrame(const VideoFrame& video_frame) {
           encoder_stats_observer_->OnFrameDropped(
               VideoStreamEncoderObserver::DropReason::kEncoderQueue);
           accumulated_update_rect_.Union(incoming_frame.update_rect());
+          accumulated_update_rect_is_valid_ &= incoming_frame.has_update_rect();
         }
         if (log_stats) {
           RTC_LOG(LS_INFO) << "Number of frames: captured "
@@ -1324,6 +1327,7 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
     encoder_stats_observer_->OnFrameDropped(
         VideoStreamEncoderObserver::DropReason::kEncoderQueue);
     accumulated_update_rect_.Union(pending_frame_->update_rect());
+    accumulated_update_rect_is_valid_ &= pending_frame_->has_update_rect();
   }
 
   if (DropDueToSize(video_frame.size())) {
@@ -1349,6 +1353,7 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
       // Ensure that any previously stored frame is dropped.
       pending_frame_.reset();
       accumulated_update_rect_.Union(video_frame.update_rect());
+      accumulated_update_rect_is_valid_ &= video_frame.has_update_rect();
     }
     return;
   }
@@ -1367,6 +1372,7 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
       pending_frame_.reset();
       TraceFrameDropStart();
       accumulated_update_rect_.Union(video_frame.update_rect());
+      accumulated_update_rect_is_valid_ &= video_frame.has_update_rect();
     }
     return;
   }
@@ -1391,6 +1397,7 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
     OnDroppedFrame(
         EncodedImageCallback::DropReason::kDroppedByMediaOptimizations);
     accumulated_update_rect_.Union(video_frame.update_rect());
+    accumulated_update_rect_is_valid_ &= video_frame.has_update_rect();
     return;
   }
 
@@ -1508,16 +1515,21 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
     if (!accumulated_update_rect_.IsEmpty()) {
       accumulated_update_rect_ =
           VideoFrame::UpdateRect{0, 0, out_frame.width(), out_frame.height()};
+      accumulated_update_rect_is_valid_ = false;
     }
   }
 
-  if (!accumulated_update_rect_.IsEmpty()) {
+  if (!accumulated_update_rect_is_valid_) {
+    out_frame.clear_update_rect();
+  } else if (!accumulated_update_rect_.IsEmpty() &&
+             out_frame.has_update_rect()) {
     accumulated_update_rect_.Union(out_frame.update_rect());
     accumulated_update_rect_.Intersect(
         VideoFrame::UpdateRect{0, 0, out_frame.width(), out_frame.height()});
     out_frame.set_update_rect(accumulated_update_rect_);
     accumulated_update_rect_.MakeEmptyUpdate();
   }
+  accumulated_update_rect_is_valid_ = true;
 
   TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", video_frame.render_time_ms(),
                           "Encode");

@@ -336,6 +336,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   VideoFrame::UpdateRect accumulated_update_rect_
       RTC_GUARDED_BY(&encoder_queue_);
+  bool accumulated_update_rect_is_valid_ RTC_GUARDED_BY(&encoder_queue_);
 
   VideoBitrateAllocationObserver* bitrate_observer_
       RTC_GUARDED_BY(&encoder_queue_);

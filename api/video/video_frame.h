@@ -172,9 +172,14 @@ class RTC_EXPORT VideoFrame {
     return video_frame_buffer()->type() == VideoFrameBuffer::Type::kNative;
   }
 
-  // Always initialized to whole frame update, can be set by Builder or manually
-  // by |set_update_rect|.
-  UpdateRect update_rect() const { return update_rect_; }
+  bool has_update_rect() const { return update_rect_.has_value(); }
+
+  // Returns update_rect set by the builder or set_update_rect() or whole frame
+  // rect if no update rect is available.
+  UpdateRect update_rect() const {
+    return update_rect_.value_or(UpdateRect{0, 0, width(), height()});
+  }
+
   // Rectangle must be within the frame dimensions.
   void set_update_rect(const VideoFrame::UpdateRect& update_rect) {
     RTC_DCHECK_GE(update_rect.offset_x, 0);
@@ -183,6 +188,8 @@ class RTC_EXPORT VideoFrame {
     RTC_DCHECK_LE(update_rect.offset_y + update_rect.height, height());
     update_rect_ = update_rect;
   }
+
+  void clear_update_rect() { update_rect_ = absl::nullopt; }
 
   // Get information about packets used to assemble this video frame. Might be
   // empty if the information isn't available.
@@ -210,9 +217,11 @@ class RTC_EXPORT VideoFrame {
   int64_t timestamp_us_;
   VideoRotation rotation_;
   absl::optional<ColorSpace> color_space_;
-  // Updated since the last frame area. Unless set explicitly, will always be
-  // a full frame rectangle.
-  UpdateRect update_rect_;
+  // Updated since the last frame area. If present it means that the bounding
+  // box of all the changes is within the rectangular area and is close to it.
+  // If absent, it means that there's no information about the change at all and
+  // update_rect() will return a rectangle corresponding to the entire frame.
+  absl::optional<UpdateRect> update_rect_;
   // Information about packets used to assemble this video frame. This is needed
   // by |SourceTracker| when the frame is delivered to the RTCRtpReceiver's
   // MediaStreamTrack, in order to implement getContributingSources(). See:
