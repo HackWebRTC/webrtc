@@ -167,15 +167,13 @@ class PeerConnectionWrapperForUsageHistogramTest
     return static_cast<ObserverForUsageHistogramTest*>(observer())
         ->HaveDataChannel();
   }
-  void AddOrBufferIceCandidate(const webrtc::IceCandidateInterface* candidate) {
-    if (!pc()->AddIceCandidate(candidate)) {
-      std::string sdp;
-      EXPECT_TRUE(candidate->ToString(&sdp));
-      std::unique_ptr<webrtc::IceCandidateInterface> candidate_copy(
-          CreateIceCandidate(candidate->sdp_mid(), candidate->sdp_mline_index(),
-                             sdp, nullptr));
-      buffered_candidates_.push_back(std::move(candidate_copy));
-    }
+  void BufferIceCandidate(const webrtc::IceCandidateInterface* candidate) {
+    std::string sdp;
+    EXPECT_TRUE(candidate->ToString(&sdp));
+    std::unique_ptr<webrtc::IceCandidateInterface> candidate_copy(
+        CreateIceCandidate(candidate->sdp_mid(), candidate->sdp_mline_index(),
+                           sdp, nullptr));
+    buffered_candidates_.push_back(std::move(candidate_copy));
   }
 
   void AddBufferedIceCandidates() {
@@ -185,11 +183,24 @@ class PeerConnectionWrapperForUsageHistogramTest
     buffered_candidates_.clear();
   }
 
+  // This method performs the following actions in sequence:
+  // 1. Exchange Offer and Answer.
+  // 2. Exchange ICE candidates after both caller and callee complete
+  // gathering.
+  // 3. Wait for ICE to connect.
+  //
+  // This guarantees a deterministic sequence of events and also rules out the
+  // occurrence of prflx candidates if the offer/answer signaling and the
+  // candidate trickling race in order. In case prflx candidates need to be
+  // simulated, see the approach used by tests below for that.
   bool ConnectTo(PeerConnectionWrapperForUsageHistogramTest* callee) {
     PrepareToExchangeCandidates(callee);
     if (!ExchangeOfferAnswerWith(callee)) {
       return false;
     }
+    // Wait until the gathering completes before we signal the candidate.
+    WAIT(observer()->ice_gathering_complete_, kDefaultTimeout);
+    WAIT(callee->observer()->ice_gathering_complete_, kDefaultTimeout);
     AddBufferedIceCandidates();
     callee->AddBufferedIceCandidates();
     WAIT(IsConnected(), kDefaultTimeout);
@@ -222,11 +233,12 @@ class PeerConnectionWrapperForUsageHistogramTest
       buffered_candidates_;
 };
 
+// Buffers candidates until we add them via AddBufferedIceCandidates.
 void ObserverForUsageHistogramTest::OnIceCandidate(
     const webrtc::IceCandidateInterface* candidate) {
   // If target is not set, ignore. This happens in one-ended unit tests.
   if (candidate_target_) {
-    this->candidate_target_->AddOrBufferIceCandidate(candidate);
+    this->candidate_target_->BufferIceCandidate(candidate);
   }
   candidate_gathered_ = true;
 }
