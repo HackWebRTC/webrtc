@@ -37,6 +37,7 @@
 #include "modules/video_coding/loss_notification_controller.h"
 #include "modules/video_coding/packet_buffer.h"
 #include "modules/video_coding/rtp_frame_reference_finder.h"
+#include "modules/video_coding/unique_timestamp_counter.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/numerics/sequence_number_util.h"
@@ -103,8 +104,11 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
 
   void SignalNetworkState(NetworkState state);
 
-  // Returns number of different frames seen in the packet buffer.
-  int GetUniqueFramesSeen() const;
+  // Returns number of different frames seen.
+  int GetUniqueFramesSeen() const {
+    RTC_DCHECK_RUN_ON(&worker_task_checker_);
+    return frame_counter_.GetUniqueSeen();
+  }
 
   // Implements RtpPacketSinkInterface.
   void OnRtpPacket(const RtpPacketReceived& packet) override;
@@ -270,6 +274,7 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   std::unique_ptr<LossNotificationController> loss_notification_controller_;
 
   video_coding::PacketBuffer packet_buffer_;
+  UniqueTimestampCounter frame_counter_ RTC_GUARDED_BY(worker_task_checker_);
 
   rtc::CriticalSection reference_finder_lock_;
   std::unique_ptr<video_coding::RtpFrameReferenceFinder> reference_finder_

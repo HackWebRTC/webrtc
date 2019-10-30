@@ -326,6 +326,7 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
     rtc::ArrayView<const uint8_t> codec_payload,
     const RtpPacketReceived& rtp_packet,
     const RTPVideoHeader& video) {
+  RTC_DCHECK_RUN_ON(&worker_task_checker_);
   RTPHeader rtp_header;
   rtp_packet.GetHeader(&rtp_header);
   VCMPacket packet(codec_payload.data(), codec_payload.size(), rtp_header,
@@ -466,6 +467,7 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
   }
 
   rtcp_feedback_buffer_.SendBufferedRtcpFeedback();
+  frame_counter_.Add(packet.timestamp);
   OnInsertedPacket(packet_buffer_.InsertPacket(&packet));
 }
 
@@ -875,10 +877,6 @@ void RtpVideoStreamReceiver::FrameDecoded(int64_t picture_id) {
 void RtpVideoStreamReceiver::SignalNetworkState(NetworkState state) {
   rtp_rtcp_->SetRTCPStatus(state == kNetworkUp ? config_.rtp.rtcp_mode
                                                : RtcpMode::kOff);
-}
-
-int RtpVideoStreamReceiver::GetUniqueFramesSeen() const {
-  return packet_buffer_.GetUniqueFramesSeen();
 }
 
 void RtpVideoStreamReceiver::StartReceive() {

@@ -225,57 +225,6 @@ TEST_F(PacketBufferTest, FrameSize) {
               ElementsAre(Pointee(SizeIs(20))));
 }
 
-TEST_F(PacketBufferTest, CountsUniqueFrames) {
-  const uint16_t seq_num = Rand();
-
-  ASSERT_EQ(packet_buffer_.GetUniqueFramesSeen(), 0);
-
-  Insert(seq_num, kKeyFrame, kFirst, kNotLast, 0, nullptr, 100);
-  ASSERT_EQ(packet_buffer_.GetUniqueFramesSeen(), 1);
-  // Still the same frame.
-  Insert(seq_num + 1, kKeyFrame, kNotFirst, kLast, 0, nullptr, 100);
-  ASSERT_EQ(packet_buffer_.GetUniqueFramesSeen(), 1);
-
-  // Second frame.
-  Insert(seq_num + 2, kKeyFrame, kFirst, kNotLast, 0, nullptr, 200);
-  ASSERT_EQ(packet_buffer_.GetUniqueFramesSeen(), 2);
-  Insert(seq_num + 3, kKeyFrame, kNotFirst, kLast, 0, nullptr, 200);
-  ASSERT_EQ(packet_buffer_.GetUniqueFramesSeen(), 2);
-
-  // Old packet.
-  Insert(seq_num + 1, kKeyFrame, kNotFirst, kLast, 0, nullptr, 100);
-  ASSERT_EQ(packet_buffer_.GetUniqueFramesSeen(), 2);
-
-  // Missing middle packet.
-  Insert(seq_num + 4, kKeyFrame, kFirst, kNotLast, 0, nullptr, 300);
-  Insert(seq_num + 6, kKeyFrame, kNotFirst, kLast, 0, nullptr, 300);
-  ASSERT_EQ(packet_buffer_.GetUniqueFramesSeen(), 3);
-}
-
-TEST_F(PacketBufferTest, HasHistoryOfUniqueFrames) {
-  const int kNumFrames = 1500;
-  const int kRequiredHistoryLength = 1000;
-  const uint16_t seq_num = Rand();
-  const uint32_t timestamp = 0xFFFFFFF0;  // Large enough to cause wrap-around.
-
-  for (int i = 0; i < kNumFrames; ++i) {
-    Insert(seq_num + i, kKeyFrame, kFirst, kNotLast, 0, nullptr,
-           timestamp + 10 * i);
-  }
-  EXPECT_EQ(packet_buffer_.GetUniqueFramesSeen(), kNumFrames);
-
-  // Old packets within history should not affect number of seen unique frames.
-  for (int i = kNumFrames - kRequiredHistoryLength; i < kNumFrames; ++i) {
-    Insert(seq_num + i, kKeyFrame, kFirst, kNotLast, 0, nullptr,
-           timestamp + 10 * i);
-  }
-  EXPECT_EQ(packet_buffer_.GetUniqueFramesSeen(), kNumFrames);
-
-  // Very old packets should be treated as unique.
-  Insert(seq_num, kKeyFrame, kFirst, kNotLast, 0, nullptr, timestamp);
-  EXPECT_EQ(packet_buffer_.GetUniqueFramesSeen(), kNumFrames + 1);
-}
-
 TEST_F(PacketBufferTest, ExpandBuffer) {
   const uint16_t seq_num = Rand();
 
