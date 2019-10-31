@@ -149,7 +149,7 @@ class EchoRemoverImpl final : public EchoRemover {
   const bool use_shadow_filter_output_;
   Subtractor subtractor_;
   std::vector<std::unique_ptr<SuppressionGain>> suppression_gains_;
-  std::vector<std::unique_ptr<ComfortNoiseGenerator>> cngs_;
+  ComfortNoiseGenerator cng_;
   SuppressionFilter suppression_filter_;
   RenderSignalAnalyzer render_signal_analyzer_;
   ResidualEchoEstimator residual_echo_estimator_;
@@ -196,7 +196,7 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
                   data_dumper_.get(),
                   optimization_),
       suppression_gains_(num_capture_channels_),
-      cngs_(num_capture_channels_),
+      cng_(optimization_, num_capture_channels_),
       suppression_filter_(optimization_,
                           sample_rate_hz_,
                           num_capture_channels_),
@@ -220,12 +220,9 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
     e_k.fill(0.f);
   }
 
-  uint32_t cng_seed = 42;
   for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
     suppression_gains_[ch] = std::make_unique<SuppressionGain>(
         config_, optimization_, sample_rate_hz);
-    cngs_[ch] =
-        std::make_unique<ComfortNoiseGenerator>(optimization_, cng_seed++);
     e_old_[ch].fill(0.f);
     y_old_[ch].fill(0.f);
   }
@@ -401,11 +398,11 @@ void EchoRemoverImpl::ProcessCapture(
   residual_echo_estimator_.Estimate(aec_state_, *render_buffer, S2_linear, Y2,
                                     R2);
 
-  for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
-    // Estimate the comfort noise.
-    cngs_[ch]->Compute(aec_state_.SaturatedCapture(), Y2[ch],
-                       &comfort_noise[ch], &high_band_comfort_noise[ch]);
+  // Estimate the comfort noise.
+  cng_.Compute(aec_state_.SaturatedCapture(), Y2, comfort_noise,
+               high_band_comfort_noise);
 
+  for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
     // Suppressor echo estimate.
     const auto& echo_spectrum =
         aec_state_.UsableLinearEstimate() ? S2_linear[ch] : R2[ch];
@@ -425,7 +422,7 @@ void EchoRemoverImpl::ProcessCapture(
     float high_bands_gain_channel;
     std::array<float, kFftLengthBy2Plus1> G_channel;
     suppression_gains_[ch]->GetGain(nearend_spectrum, echo_spectrum, R2[ch],
-                                    cngs_[ch]->NoiseSpectrum(),
+                                    cng_.NoiseSpectrum()[ch],
                                     render_signal_analyzer_, aec_state_, x,
                                     &high_bands_gain_channel, &G_channel);
 
@@ -438,7 +435,7 @@ void EchoRemoverImpl::ProcessCapture(
                                 high_bands_gain, Y_fft, y);
 
   // Update the metrics.
-  metrics_.Update(aec_state_, cngs_[0]->NoiseSpectrum(), G);
+  metrics_.Update(aec_state_, cng_.NoiseSpectrum()[0], G);
 
   // Debug outputs for the purpose of development and analysis.
   data_dumper_->DumpWav("aec3_echo_estimate", kBlockSize,
@@ -446,7 +443,7 @@ void EchoRemoverImpl::ProcessCapture(
   data_dumper_->DumpRaw("aec3_output", (*y)[0][0]);
   data_dumper_->DumpRaw("aec3_narrow_render",
                         render_signal_analyzer_.NarrowPeakBand() ? 1 : 0);
-  data_dumper_->DumpRaw("aec3_N2", cngs_[0]->NoiseSpectrum());
+  data_dumper_->DumpRaw("aec3_N2", cng_.NoiseSpectrum()[0]);
   data_dumper_->DumpRaw("aec3_suppressor_gain", G);
   data_dumper_->DumpWav("aec3_output",
                         rtc::ArrayView<const float>(&(*y)[0][0][0], kBlockSize),
