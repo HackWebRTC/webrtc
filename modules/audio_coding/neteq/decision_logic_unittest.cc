@@ -12,14 +12,14 @@
 
 #include "modules/audio_coding/neteq/decision_logic.h"
 
+#include "api/neteq/neteq_controller.h"
+#include "api/neteq/tick_timer.h"
 #include "modules/audio_coding/neteq/buffer_level_filter.h"
 #include "modules/audio_coding/neteq/decoder_database.h"
 #include "modules/audio_coding/neteq/delay_manager.h"
 #include "modules/audio_coding/neteq/delay_peak_detector.h"
-#include "modules/audio_coding/neteq/neteq_controller.h"
 #include "modules/audio_coding/neteq/packet_buffer.h"
 #include "modules/audio_coding/neteq/statistics_calculator.h"
-#include "modules/audio_coding/neteq/tick_timer.h"
 #include "test/gtest.h"
 #include "test/mock_audio_decoder_factory.h"
 

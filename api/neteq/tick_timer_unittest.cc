@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_coding/neteq/tick_timer.h"
+#include "api/neteq/tick_timer.h"
 
 #include <memory>
 

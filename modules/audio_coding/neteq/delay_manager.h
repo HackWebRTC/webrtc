@@ -17,8 +17,8 @@
 #include <memory>
 
 #include "absl/types/optional.h"
+#include "api/neteq/tick_timer.h"
 #include "modules/audio_coding/neteq/histogram.h"
-#include "modules/audio_coding/neteq/tick_timer.h"
 #include "rtc_base/constructor_magic.h"
 
 namespace webrtc {

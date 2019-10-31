@@ -597,6 +597,26 @@ rtc_library("neteq_simulator_api") {
   ]
 }
 
+rtc_source_set("neteq_factory_with_codecs") {
+  visibility = [ "*" ]
+  testonly = true
+  sources = [
+    "test/neteq_factory_with_codecs.cc",
+    "test/neteq_factory_with_codecs.h",
+  ]
+
+  deps = [
+    ":scoped_refptr",
+    "../modules/audio_coding:neteq",
+    "../system_wrappers:system_wrappers",
+    "audio_codecs:audio_codecs_api",
+    "audio_codecs:builtin_audio_decoder_factory",
+    "neteq:default_neteq_controller_factory",
+    "neteq:neteq_api",
+    "neteq:neteq_controller_api",
+  ]
+}
+
 rtc_source_set("function_view") {
   visibility = [ "*" ]
   sources = [

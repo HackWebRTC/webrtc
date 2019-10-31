@@ -15,18 +15,20 @@
 #include <vector>
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/neteq/default_neteq_controller_factory.h"
+#include "api/neteq/neteq.h"
+#include "api/neteq/neteq_controller.h"
+#include "api/test/neteq_factory_with_codecs.h"
 #include "modules/audio_coding/neteq/accelerate.h"
 #include "modules/audio_coding/neteq/decision_logic.h"
 #include "modules/audio_coding/neteq/expand.h"
 #include "modules/audio_coding/neteq/histogram.h"
-#include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/audio_coding/neteq/mock/mock_decoder_database.h"
 #include "modules/audio_coding/neteq/mock/mock_dtmf_buffer.h"
 #include "modules/audio_coding/neteq/mock/mock_dtmf_tone_generator.h"
 #include "modules/audio_coding/neteq/mock/mock_neteq_controller.h"
 #include "modules/audio_coding/neteq/mock/mock_packet_buffer.h"
 #include "modules/audio_coding/neteq/mock/mock_red_payload_splitter.h"
-#include "modules/audio_coding/neteq/neteq_controller.h"
 #include "modules/audio_coding/neteq/preemptive_expand.h"
 #include "modules/audio_coding/neteq/statistics_calculator.h"
 #include "modules/audio_coding/neteq/sync_buffer.h"
@@ -73,7 +75,8 @@ class NetEqImplTest : public ::testing::Test {
   void CreateInstance(
       const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
     ASSERT_TRUE(decoder_factory);
-    NetEqImpl::Dependencies deps(config_, &clock_, decoder_factory);
+    NetEqImpl::Dependencies deps(config_, &clock_, decoder_factory,
+                                 DefaultNetEqControllerFactory());
 
     // Get a local pointer to NetEq's TickTimer object.
     tick_timer_ = deps.tick_timer.get();
@@ -249,9 +252,8 @@ class NetEqImplTest : public ::testing::Test {
 TEST(NetEq, CreateAndDestroy) {
   NetEq::Config config;
   SimulatedClock clock(0);
-  NetEq* neteq =
-      NetEq::Create(config, &clock, CreateBuiltinAudioDecoderFactory());
-  delete neteq;
+  std::unique_ptr<NetEqFactory> neteq_factory = CreateNetEqFactoryWithCodecs();
+  std::unique_ptr<NetEq> neteq = neteq_factory->CreateNetEq(config, &clock);
 }
 
 TEST_F(NetEqImplTest, RegisterPayloadType) {
@@ -1378,7 +1380,7 @@ TEST_F(NetEqImplTest, EnableRtxHandling) {
   CreateInstance();
   EXPECT_CALL(*mock_neteq_controller_, GetDecision(_, _))
       .Times(1)
-      .WillOnce(Return(kNormal));
+      .WillOnce(Return(NetEq::Operation::kNormal));
 
   const int kPayloadLengthSamples = 80;
   const size_t kPayloadLengthBytes = 2 * kPayloadLengthSamples;  // PCM 16-bit.
@@ -1518,7 +1520,8 @@ TEST_F(NetEqImplTest120ms, CodecInternalCng) {
 
   bool muted;
   EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
-  EXPECT_EQ(kCodecInternalCng, neteq_->last_operation_for_test());
+  EXPECT_EQ(NetEq::Operation::kCodecInternalCng,
+            neteq_->last_operation_for_test());
 }
 
 TEST_F(NetEqImplTest120ms, Normal) {
@@ -1528,7 +1531,7 @@ TEST_F(NetEqImplTest120ms, Normal) {
   InsertPacket(first_timestamp());
   GetFirstPacket();
 
-  EXPECT_EQ(kNormal, neteq_->last_operation_for_test());
+  EXPECT_EQ(NetEq::Operation::kNormal, neteq_->last_operation_for_test());
 }
 
 TEST_F(NetEqImplTest120ms, Merge) {
@@ -1541,16 +1544,16 @@ TEST_F(NetEqImplTest120ms, Merge) {
   GetFirstPacket();
   bool muted;
   EXPECT_CALL(*mock_neteq_controller_, GetDecision(_, _))
-      .WillOnce(Return(kExpand));
+      .WillOnce(Return(NetEq::Operation::kExpand));
   EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
 
   InsertPacket(first_timestamp() + 2 * timestamp_diff_between_packets());
 
   EXPECT_CALL(*mock_neteq_controller_, GetDecision(_, _))
-      .WillOnce(Return(kMerge));
+      .WillOnce(Return(NetEq::Operation::kMerge));
 
   EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
-  EXPECT_EQ(kMerge, neteq_->last_operation_for_test());
+  EXPECT_EQ(NetEq::Operation::kMerge, neteq_->last_operation_for_test());
 }
 
 TEST_F(NetEqImplTest120ms, Expand) {
@@ -1562,7 +1565,7 @@ TEST_F(NetEqImplTest120ms, Expand) {
 
   bool muted;
   EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
-  EXPECT_EQ(kExpand, neteq_->last_operation_for_test());
+  EXPECT_EQ(NetEq::Operation::kExpand, neteq_->last_operation_for_test());
 }
 
 TEST_F(NetEqImplTest120ms, FastAccelerate) {
@@ -1575,11 +1578,12 @@ TEST_F(NetEqImplTest120ms, FastAccelerate) {
 
   EXPECT_CALL(*mock_neteq_controller_, GetDecision(_, _))
       .Times(1)
-      .WillOnce(Return(kFastAccelerate));
+      .WillOnce(Return(NetEq::Operation::kFastAccelerate));
 
   bool muted;
   EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
-  EXPECT_EQ(kFastAccelerate, neteq_->last_operation_for_test());
+  EXPECT_EQ(NetEq::Operation::kFastAccelerate,
+            neteq_->last_operation_for_test());
 }
 
 TEST_F(NetEqImplTest120ms, PreemptiveExpand) {
@@ -1593,11 +1597,12 @@ TEST_F(NetEqImplTest120ms, PreemptiveExpand) {
 
   EXPECT_CALL(*mock_neteq_controller_, GetDecision(_, _))
       .Times(1)
-      .WillOnce(Return(kPreemptiveExpand));
+      .WillOnce(Return(NetEq::Operation::kPreemptiveExpand));
 
   bool muted;
   EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
-  EXPECT_EQ(kPreemptiveExpand, neteq_->last_operation_for_test());
+  EXPECT_EQ(NetEq::Operation::kPreemptiveExpand,
+            neteq_->last_operation_for_test());
 }
 
 TEST_F(NetEqImplTest120ms, Accelerate) {
@@ -1611,11 +1616,11 @@ TEST_F(NetEqImplTest120ms, Accelerate) {
 
   EXPECT_CALL(*mock_neteq_controller_, GetDecision(_, _))
       .Times(1)
-      .WillOnce(Return(kAccelerate));
+      .WillOnce(Return(NetEq::Operation::kAccelerate));
 
   bool muted;
   EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
-  EXPECT_EQ(kAccelerate, neteq_->last_operation_for_test());
+  EXPECT_EQ(NetEq::Operation::kAccelerate, neteq_->last_operation_for_test());
 }
 
 }  // namespace webrtc

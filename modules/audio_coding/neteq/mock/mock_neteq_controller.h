@@ -11,7 +11,7 @@
 #ifndef MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_NETEQ_CONTROLLER_H_
 #define MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_NETEQ_CONTROLLER_H_
 
-#include "modules/audio_coding/neteq/neteq_controller.h"
+#include "api/neteq/neteq_controller.h"
 #include "test/gmock.h"
 
 namespace webrtc {
@@ -24,8 +24,8 @@ class MockNetEqController : public NetEqController {
   MOCK_METHOD0(Reset, void());
   MOCK_METHOD0(SoftReset, void());
   MOCK_METHOD2(GetDecision,
-               Operations(const NetEqStatus& neteq_status,
-                          bool* reset_decoder));
+               NetEq::Operation(const NetEqStatus& neteq_status,
+                                bool* reset_decoder));
   MOCK_METHOD6(Update,
                void(uint16_t sequence_number,
                     uint32_t timestamp,
@@ -42,7 +42,7 @@ class MockNetEqController : public NetEqController {
   MOCK_CONST_METHOD0(CngRfc3389On, bool());
   MOCK_CONST_METHOD0(CngOff, bool());
   MOCK_METHOD0(SetCngOff, void());
-  MOCK_METHOD1(ExpandDecision, void(Operations operation));
+  MOCK_METHOD1(ExpandDecision, void(NetEq::Operation operation));
   MOCK_METHOD1(AddSampleMemory, void(int32_t value));
   MOCK_METHOD0(TargetLevelMs, int());
   MOCK_METHOD6(PacketArrived,

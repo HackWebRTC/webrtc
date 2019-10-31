@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_INCLUDE_NETEQ_H_
-#define MODULES_AUDIO_CODING_NETEQ_INCLUDE_NETEQ_H_
+#ifndef API_NETEQ_NETEQ_H_
+#define API_NETEQ_NETEQ_H_
 
-#include <string.h>  // Provide access to size_t.
+#include <stddef.h>  // Provide access to size_t.
 
 #include <map>
 #include <string>
@@ -23,8 +23,6 @@
 #include "api/audio_codecs/audio_format.h"
 #include "api/rtp_headers.h"
 #include "api/scoped_refptr.h"
-#include "modules/audio_coding/neteq/defines.h"
-#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 
@@ -143,6 +141,38 @@ class NetEq {
 
   enum ReturnCodes { kOK = 0, kFail = -1 };
 
+  enum class Operation {
+    kNormal,
+    kMerge,
+    kExpand,
+    kAccelerate,
+    kFastAccelerate,
+    kPreemptiveExpand,
+    kRfc3389Cng,
+    kRfc3389CngNoPacket,
+    kCodecInternalCng,
+    kDtmf,
+    kUndefined,
+  };
+
+  enum class Mode {
+    kNormal,
+    kExpand,
+    kMerge,
+    kAccelerateSuccess,
+    kAccelerateLowEnergy,
+    kAccelerateFail,
+    kPreemptiveExpandSuccess,
+    kPreemptiveExpandLowEnergy,
+    kPreemptiveExpandFail,
+    kRfc3389Cng,
+    kCodecInternalCng,
+    kCodecPlc,
+    kDtmf,
+    kError,
+    kUndefined,
+  };
+
   // Return type for GetDecoderFormat.
   struct DecoderFormat {
     int sample_rate_hz;
@@ -193,7 +223,7 @@ class NetEq {
   virtual int GetAudio(
       AudioFrame* audio_frame,
       bool* muted,
-      absl::optional<Operations> action_override = absl::nullopt) = 0;
+      absl::optional<Operation> action_override = absl::nullopt) = 0;
 
   // Replaces the current set of decoders with the given one.
   virtual void SetCodecs(const std::map<int, SdpAudioFormat>& codecs) = 0;
@@ -299,13 +329,7 @@ class NetEq {
   // Returns the length of the audio yet to play in the sync buffer.
   // Mainly intended for testing.
   virtual int SyncBufferSizeMs() const = 0;
-
- protected:
-  NetEq() {}
-
- private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(NetEq);
 };
 
 }  // namespace webrtc
-#endif  // MODULES_AUDIO_CODING_NETEQ_INCLUDE_NETEQ_H_
+#endif  // API_NETEQ_NETEQ_H_

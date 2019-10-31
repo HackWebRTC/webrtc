@@ -19,9 +19,11 @@
 #include "absl/strings/match.h"
 #include "api/audio/audio_frame.h"
 #include "api/audio_codecs/audio_decoder.h"
+#include "api/neteq/custom_neteq_factory.h"
+#include "api/neteq/default_neteq_controller_factory.h"
+#include "api/neteq/neteq.h"
 #include "modules/audio_coding/acm2/acm_resampler.h"
 #include "modules/audio_coding/acm2/call_statistics.h"
-#include "modules/audio_coding/neteq/include/neteq.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -32,11 +34,24 @@ namespace webrtc {
 
 namespace acm2 {
 
+namespace {
+
+std::unique_ptr<NetEq> CreateNetEq(
+    const NetEq::Config& config,
+    Clock* clock,
+    const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
+  CustomNetEqFactory neteq_factory(
+      decoder_factory, std::make_unique<DefaultNetEqControllerFactory>());
+  return neteq_factory.CreateNetEq(config, clock);
+}
+
+}  // namespace
+
 AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
     : last_audio_buffer_(new int16_t[AudioFrame::kMaxDataSizeSamples]),
-      neteq_(NetEq::Create(config.neteq_config,
-                           config.clock,
-                           config.decoder_factory)),
+      neteq_(CreateNetEq(config.neteq_config,
+                         config.clock,
+                         config.decoder_factory)),
       clock_(config.clock),
       resampled_last_output_frame_(true) {
   RTC_DCHECK(clock_);

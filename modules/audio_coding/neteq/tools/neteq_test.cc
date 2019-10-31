@@ -13,6 +13,8 @@
 #include <iomanip>
 #include <iostream>
 
+#include "api/neteq/custom_neteq_factory.h"
+#include "api/neteq/default_neteq_controller_factory.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "system_wrappers/include/clock.h"
 
@@ -20,21 +22,30 @@ namespace webrtc {
 namespace test {
 namespace {
 
-absl::optional<Operations> ActionToOperations(
+absl::optional<NetEq::Operation> ActionToOperations(
     absl::optional<NetEqSimulator::Action> a) {
   if (!a) {
     return absl::nullopt;
   }
   switch (*a) {
     case NetEqSimulator::Action::kAccelerate:
-      return absl::make_optional(kAccelerate);
+      return absl::make_optional(NetEq::Operation::kAccelerate);
     case NetEqSimulator::Action::kExpand:
-      return absl::make_optional(kExpand);
+      return absl::make_optional(NetEq::Operation::kExpand);
     case NetEqSimulator::Action::kNormal:
-      return absl::make_optional(kNormal);
+      return absl::make_optional(NetEq::Operation::kNormal);
     case NetEqSimulator::Action::kPreemptiveExpand:
-      return absl::make_optional(kPreemptiveExpand);
+      return absl::make_optional(NetEq::Operation::kPreemptiveExpand);
   }
+}
+
+std::unique_ptr<NetEq> CreateNetEq(
+    const NetEq::Config& config,
+    Clock* clock,
+    const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
+  CustomNetEqFactory neteq_factory(
+      decoder_factory, std::make_unique<DefaultNetEqControllerFactory>());
+  return neteq_factory.CreateNetEq(config, clock);
 }
 
 }  // namespace
@@ -59,7 +70,7 @@ NetEqTest::NetEqTest(const NetEq::Config& config,
                      std::unique_ptr<AudioSink> output,
                      Callbacks callbacks)
     : clock_(0),
-      neteq_(NetEq::Create(config, &clock_, decoder_factory)),
+      neteq_(CreateNetEq(config, &clock_, decoder_factory)),
       input_(std::move(input)),
       output_(std::move(output)),
       callbacks_(callbacks),

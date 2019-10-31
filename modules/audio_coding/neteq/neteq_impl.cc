@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "api/audio_codecs/audio_decoder.h"
+#include "api/neteq/tick_timer.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "modules/audio_coding/neteq/accelerate.h"
@@ -28,7 +29,6 @@
 #include "modules/audio_coding/neteq/comfort_noise.h"
 #include "modules/audio_coding/neteq/decision_logic.h"
 #include "modules/audio_coding/neteq/decoder_database.h"
-#include "modules/audio_coding/neteq/defines.h"
 #include "modules/audio_coding/neteq/dtmf_buffer.h"
 #include "modules/audio_coding/neteq/dtmf_tone_generator.h"
 #include "modules/audio_coding/neteq/expand.h"
@@ -42,7 +42,6 @@
 #include "modules/audio_coding/neteq/red_payload_splitter.h"
 #include "modules/audio_coding/neteq/statistics_calculator.h"
 #include "modules/audio_coding/neteq/sync_buffer.h"
-#include "modules/audio_coding/neteq/tick_timer.h"
 #include "modules/audio_coding/neteq/time_stretch.h"
 #include "modules/audio_coding/neteq/timestamp_scaler.h"
 #include "rtc_base/checks.h"
@@ -57,6 +56,7 @@ namespace webrtc {
 namespace {
 
 std::unique_ptr<NetEqController> CreateNetEqController(
+    const NetEqControllerFactory& controller_factory,
     int base_min_delay,
     int max_packets_in_buffer,
     bool enable_rtx_handling,
@@ -68,7 +68,7 @@ std::unique_ptr<NetEqController> CreateNetEqController(
   config.enable_rtx_handling = enable_rtx_handling;
   config.allow_time_stretching = allow_time_stretching;
   config.tick_timer = tick_timer;
-  return std::make_unique<DecisionLogic>(std::move(config));
+  return controller_factory.CreateNetEqController(config);
 }
 
 }  // namespace
@@ -76,7 +76,8 @@ std::unique_ptr<NetEqController> CreateNetEqController(
 NetEqImpl::Dependencies::Dependencies(
     const NetEq::Config& config,
     Clock* clock,
-    const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory)
+    const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory,
+    const NetEqControllerFactory& controller_factory)
     : clock(clock),
       tick_timer(new TickTimer),
       stats(new StatisticsCalculator),
@@ -87,7 +88,8 @@ NetEqImpl::Dependencies::Dependencies(
       packet_buffer(
           new PacketBuffer(config.max_packets_in_buffer, tick_timer.get())),
       neteq_controller(
-          CreateNetEqController(config.min_delay_ms,
+          CreateNetEqController(controller_factory,
+                                config.min_delay_ms,
                                 config.max_packets_in_buffer,
                                 config.enable_rtx_handling,
                                 !config.for_test_no_time_stretching,
@@ -117,7 +119,7 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
       preemptive_expand_factory_(std::move(deps.preemptive_expand_factory)),
       stats_(std::move(deps.stats)),
       controller_(std::move(deps.neteq_controller)),
-      last_mode_(kModeNormal),
+      last_mode_(Mode::kNormal),
       decoded_buffer_length_(kMaxFrameSize),
       decoded_buffer_(new int16_t[decoded_buffer_length_]),
       playout_timestamp_(0),
@@ -230,7 +232,7 @@ void SetAudioFrameActivityAndType(bool vad_enabled,
 
 int NetEqImpl::GetAudio(AudioFrame* audio_frame,
                         bool* muted,
-                        absl::optional<Operations> action_override) {
+                        absl::optional<Operation> action_override) {
   TRACE_EVENT0("webrtc", "NetEqImpl::GetAudio");
   rtc::CritScope lock(&crit_sect_);
   if (GetAudioInternal(audio_frame, muted, action_override) != 0) {
@@ -381,8 +383,8 @@ void NetEqImpl::DisableVad() {
 
 absl::optional<uint32_t> NetEqImpl::GetPlayoutTimestamp() const {
   rtc::CritScope lock(&crit_sect_);
-  if (first_packet_ || last_mode_ == kModeRfc3389Cng ||
-      last_mode_ == kModeCodecInternalCng) {
+  if (first_packet_ || last_mode_ == Mode::kRfc3389Cng ||
+      last_mode_ == Mode::kCodecInternalCng) {
     // We don't have a valid RTP timestamp until we have decoded our first
     // RTP packet. Also, the RTP timestamp is not accurate while playing CNG,
     // which is indicated by returning an empty value.
@@ -470,7 +472,7 @@ const SyncBuffer* NetEqImpl::sync_buffer_for_test() const {
   return sync_buffer_.get();
 }
 
-Operations NetEqImpl::last_operation_for_test() const {
+NetEq::Operation NetEqImpl::last_operation_for_test() const {
   rtc::CritScope lock(&crit_sect_);
   return last_operation_;
 }
@@ -743,10 +745,10 @@ int NetEqImpl::InsertPacketInternal(const RTPHeader& rtp_header,
 
 int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
                                 bool* muted,
-                                absl::optional<Operations> action_override) {
+                                absl::optional<Operation> action_override) {
   PacketList packet_list;
   DtmfEvent dtmf_event;
-  Operations operation;
+  Operation operation;
   bool play_dtmf;
   *muted = false;
   last_decoded_timestamps_.clear();
@@ -763,7 +765,7 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
 
   // Check for muted state.
   if (enable_muted_state_ && expand_->Muted() && packet_buffer_->Empty()) {
-    RTC_DCHECK_EQ(last_mode_, kModeExpand);
+    RTC_DCHECK_EQ(last_mode_, Mode::kExpand);
     audio_frame->Reset();
     RTC_DCHECK(audio_frame->muted());  // Reset() should mute the frame.
     playout_timestamp_ += static_cast<uint32_t>(output_size_samples_);
@@ -782,7 +784,7 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
   int return_value = GetDecision(&operation, &packet_list, &dtmf_event,
                                  &play_dtmf, action_override);
   if (return_value != 0) {
-    last_mode_ = kModeError;
+    last_mode_ = Mode::kError;
     return return_value;
   }
 
@@ -793,7 +795,8 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
       Decode(&packet_list, &operation, &length, &speech_type);
 
   assert(vad_.get());
-  bool sid_frame_available = (operation == kRfc3389Cng && !packet_list.empty());
+  bool sid_frame_available =
+      (operation == Operation::kRfc3389Cng && !packet_list.empty());
   vad_->Update(decoded_buffer_.get(), static_cast<size_t>(length), speech_type,
                sid_frame_available, fs_hz_);
 
@@ -810,18 +813,18 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
 
   algorithm_buffer_->Clear();
   switch (operation) {
-    case kNormal: {
+    case Operation::kNormal: {
       DoNormal(decoded_buffer_.get(), length, speech_type, play_dtmf);
       if (length > 0) {
         stats_->DecodedOutputPlayed();
       }
       break;
     }
-    case kMerge: {
+    case Operation::kMerge: {
       DoMerge(decoded_buffer_.get(), length, speech_type, play_dtmf);
       break;
     }
-    case kExpand: {
+    case Operation::kExpand: {
       RTC_DCHECK_EQ(return_value, 0);
       if (!current_rtp_payload_type_ || !DoCodecPlc()) {
         return_value = DoExpand(play_dtmf);
@@ -830,40 +833,40 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
                     output_size_samples_);
       break;
     }
-    case kAccelerate:
-    case kFastAccelerate: {
+    case Operation::kAccelerate:
+    case Operation::kFastAccelerate: {
       const bool fast_accelerate =
-          enable_fast_accelerate_ && (operation == kFastAccelerate);
+          enable_fast_accelerate_ && (operation == Operation::kFastAccelerate);
       return_value = DoAccelerate(decoded_buffer_.get(), length, speech_type,
                                   play_dtmf, fast_accelerate);
       break;
     }
-    case kPreemptiveExpand: {
+    case Operation::kPreemptiveExpand: {
       return_value = DoPreemptiveExpand(decoded_buffer_.get(), length,
                                         speech_type, play_dtmf);
       break;
     }
-    case kRfc3389Cng:
-    case kRfc3389CngNoPacket: {
+    case Operation::kRfc3389Cng:
+    case Operation::kRfc3389CngNoPacket: {
       return_value = DoRfc3389Cng(&packet_list, play_dtmf);
       break;
     }
-    case kCodecInternalCng: {
+    case Operation::kCodecInternalCng: {
       // This handles the case when there is no transmission and the decoder
       // should produce internal comfort noise.
       // TODO(hlundin): Write test for codec-internal CNG.
       DoCodecInternalCng(decoded_buffer_.get(), length);
       break;
     }
-    case kDtmf: {
+    case Operation::kDtmf: {
       // TODO(hlundin): Write test for this.
       return_value = DoDtmf(dtmf_event, &play_dtmf);
       break;
     }
-    case kUndefined: {
+    case Operation::kUndefined: {
       RTC_LOG(LS_ERROR) << "Invalid operation kUndefined.";
       assert(false);  // This should not happen.
-      last_mode_ = kModeError;
+      last_mode_ = Mode::kError;
       return kInvalidOperation;
     }
   }  // End of switch.
@@ -872,7 +875,7 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
     return return_value;
   }
 
-  if (last_mode_ != kModeRfc3389Cng) {
+  if (last_mode_ != Mode::kRfc3389Cng) {
     comfort_noise_->Reset();
   }
 
@@ -941,20 +944,20 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
   // Update the background noise parameters if last operation wrote data
   // straight from the decoder to the |sync_buffer_|. That is, none of the
   // operations that modify the signal can be followed by a parameter update.
-  if ((last_mode_ == kModeNormal) || (last_mode_ == kModeAccelerateFail) ||
-      (last_mode_ == kModePreemptiveExpandFail) ||
-      (last_mode_ == kModeRfc3389Cng) ||
-      (last_mode_ == kModeCodecInternalCng)) {
+  if ((last_mode_ == Mode::kNormal) || (last_mode_ == Mode::kAccelerateFail) ||
+      (last_mode_ == Mode::kPreemptiveExpandFail) ||
+      (last_mode_ == Mode::kRfc3389Cng) ||
+      (last_mode_ == Mode::kCodecInternalCng)) {
     background_noise_->Update(*sync_buffer_, *vad_.get());
   }
 
-  if (operation == kDtmf) {
+  if (operation == Operation::kDtmf) {
     // DTMF data was written the end of |sync_buffer_|.
     // Update index to end of DTMF data in |sync_buffer_|.
     sync_buffer_->set_dtmf_index(sync_buffer_->Size());
   }
 
-  if (last_mode_ != kModeExpand && last_mode_ != kModeCodecPlc) {
+  if (last_mode_ != Mode::kExpand && last_mode_ != Mode::kCodecPlc) {
     // If last operation was not expand, calculate the |playout_timestamp_| from
     // the |sync_buffer_|. However, do not update the |playout_timestamp_| if it
     // would be moved "backwards".
@@ -978,8 +981,9 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
           : timestamp_scaler_->ToExternal(playout_timestamp_) -
                 static_cast<uint32_t>(audio_frame->samples_per_channel_);
 
-  if (!(last_mode_ == kModeRfc3389Cng || last_mode_ == kModeCodecInternalCng ||
-        last_mode_ == kModeExpand || last_mode_ == kModeCodecPlc)) {
+  if (!(last_mode_ == Mode::kRfc3389Cng ||
+        last_mode_ == Mode::kCodecInternalCng || last_mode_ == Mode::kExpand ||
+        last_mode_ == Mode::kCodecPlc)) {
     generated_noise_stopwatch_.reset();
   }
 
@@ -988,14 +992,14 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
   return return_value;
 }
 
-int NetEqImpl::GetDecision(Operations* operation,
+int NetEqImpl::GetDecision(Operation* operation,
                            PacketList* packet_list,
                            DtmfEvent* dtmf_event,
                            bool* play_dtmf,
-                           absl::optional<Operations> action_override) {
+                           absl::optional<Operation> action_override) {
   // Initialize output variables.
   *play_dtmf = false;
-  *operation = kUndefined;
+  *operation = Operation::kUndefined;
 
   assert(sync_buffer_.get());
   uint32_t end_timestamp = sync_buffer_->end_timestamp();
@@ -1014,7 +1018,7 @@ int NetEqImpl::GetDecision(Operations* operation,
                                        controller_->noise_fast_forward()
                                  : 0;
 
-  if (controller_->CngRfc3389On() || last_mode_ == kModeRfc3389Cng) {
+  if (controller_->CngRfc3389On() || last_mode_ == Mode::kRfc3389Cng) {
     // Because of timestamp peculiarities, we have to "manually" disallow using
     // a CNG packet with the same timestamp as the one that was last played.
     // This can happen when using redundancy and will cause the timing to shift.
@@ -1038,10 +1042,10 @@ int NetEqImpl::GetDecision(Operations* operation,
   assert(expand_.get());
   const int samples_left = static_cast<int>(sync_buffer_->FutureLength() -
                                             expand_->overlap_length());
-  if (last_mode_ == kModeAccelerateSuccess ||
-      last_mode_ == kModeAccelerateLowEnergy ||
-      last_mode_ == kModePreemptiveExpandSuccess ||
-      last_mode_ == kModePreemptiveExpandLowEnergy) {
+  if (last_mode_ == Mode::kAccelerateSuccess ||
+      last_mode_ == Mode::kAccelerateLowEnergy ||
+      last_mode_ == Mode::kPreemptiveExpandSuccess ||
+      last_mode_ == Mode::kPreemptiveExpandLowEnergy) {
     // Subtract (samples_left + output_size_samples_) from sampleMemory.
     controller_->AddSampleMemory(
         -(samples_left + rtc::dchecked_cast<int>(output_size_samples_)));
@@ -1091,9 +1095,11 @@ int NetEqImpl::GetDecision(Operations* operation,
   // during DTX. When we have a better way to update buffer level during DTX,
   // this can be discarded.
   if (packet && packet->frame && packet->frame->IsDtxPacket() &&
-      (*operation == kMerge || *operation == kAccelerate ||
-       *operation == kFastAccelerate || *operation == kPreemptiveExpand)) {
-    *operation = kNormal;
+      (*operation == Operation::kMerge ||
+       *operation == Operation::kAccelerate ||
+       *operation == Operation::kFastAccelerate ||
+       *operation == Operation::kPreemptiveExpand)) {
+    *operation = Operation::kNormal;
   }
 
   if (action_override) {
@@ -1104,16 +1110,17 @@ int NetEqImpl::GetDecision(Operations* operation,
   // change decision to normal, unless the decision was merge, accelerate, or
   // preemptive expand.
   if (samples_left >= rtc::dchecked_cast<int>(output_size_samples_) &&
-      *operation != kMerge && *operation != kAccelerate &&
-      *operation != kFastAccelerate && *operation != kPreemptiveExpand) {
-    *operation = kNormal;
+      *operation != Operation::kMerge && *operation != Operation::kAccelerate &&
+      *operation != Operation::kFastAccelerate &&
+      *operation != Operation::kPreemptiveExpand) {
+    *operation = Operation::kNormal;
     return 0;
   }
 
   controller_->ExpandDecision(*operation);
 
   // Check conditions for reset.
-  if (new_codec_ || *operation == kUndefined) {
+  if (new_codec_ || *operation == Operation::kUndefined) {
     // The only valid reason to get kUndefined is that new_codec_ is set.
     assert(new_codec_);
     if (*play_dtmf && !packet) {
@@ -1124,13 +1131,13 @@ int NetEqImpl::GetDecision(Operations* operation,
         return -1;
       }
       timestamp_ = packet->timestamp;
-      if (*operation == kRfc3389CngNoPacket &&
+      if (*operation == Operation::kRfc3389CngNoPacket &&
           decoder_database_->IsComfortNoise(packet->payload_type)) {
         // Change decision to CNG packet, since we do have a CNG packet, but it
         // was considered too early to use. Now, use it anyway.
-        *operation = kRfc3389Cng;
-      } else if (*operation != kRfc3389Cng) {
-        *operation = kNormal;
+        *operation = Operation::kRfc3389Cng;
+      } else if (*operation != Operation::kRfc3389Cng) {
+        *operation = Operation::kNormal;
       }
     }
     // Adjust |sync_buffer_| timestamp before setting |end_timestamp| to the
@@ -1148,15 +1155,15 @@ int NetEqImpl::GetDecision(Operations* operation,
   const size_t samples_30_ms = 3 * samples_10_ms;
 
   switch (*operation) {
-    case kExpand: {
+    case Operation::kExpand: {
       timestamp_ = end_timestamp;
       return 0;
     }
-    case kRfc3389CngNoPacket:
-    case kCodecInternalCng: {
+    case Operation::kRfc3389CngNoPacket:
+    case Operation::kCodecInternalCng: {
       return 0;
     }
-    case kDtmf: {
+    case Operation::kDtmf: {
       // TODO(hlundin): Write test for this.
       // Update timestamp.
       timestamp_ = end_timestamp;
@@ -1166,7 +1173,7 @@ int NetEqImpl::GetDecision(Operations* operation,
                         output_size_samples_ +
                     controller_->noise_fast_forward()
               : 0;
-      if (generated_noise_samples > 0 && last_mode_ != kModeDtmf) {
+      if (generated_noise_samples > 0 && last_mode_ != Mode::kDtmf) {
         // Make a jump in timestamp due to the recently played comfort noise.
         uint32_t timestamp_jump =
             static_cast<uint32_t>(generated_noise_samples);
@@ -1175,8 +1182,8 @@ int NetEqImpl::GetDecision(Operations* operation,
       }
       return 0;
     }
-    case kAccelerate:
-    case kFastAccelerate: {
+    case Operation::kAccelerate:
+    case Operation::kFastAccelerate: {
       // In order to do an accelerate we need at least 30 ms of audio data.
       if (samples_left >= static_cast<int>(samples_30_ms)) {
         // Already have enough data, so we do not need to extract any more.
@@ -1186,7 +1193,7 @@ int NetEqImpl::GetDecision(Operations* operation,
       } else if (samples_left >= static_cast<int>(samples_10_ms) &&
                  decoder_frame_length_ >= samples_30_ms) {
         // Avoid decoding more data as it might overflow the playout buffer.
-        *operation = kNormal;
+        *operation = Operation::kNormal;
         return 0;
       } else if (samples_left < static_cast<int>(samples_20_ms) &&
                  decoder_frame_length_ < samples_30_ms) {
@@ -1194,7 +1201,7 @@ int NetEqImpl::GetDecision(Operations* operation,
         // not perform accelerate yet, but wait until we only need to do one
         // decoding.
         required_samples = 2 * output_size_samples_;
-        *operation = kNormal;
+        *operation = Operation::kNormal;
       }
       // If none of the above is true, we have one of two possible situations:
       // (1) 20 ms <= samples_left < 30 ms and decoder_frame_length_ < 30 ms; or
@@ -1203,7 +1210,7 @@ int NetEqImpl::GetDecision(Operations* operation,
       // frame now.
       break;
     }
-    case kPreemptiveExpand: {
+    case Operation::kPreemptiveExpand: {
       // In order to do a preemptive expand we need at least 30 ms of decoded
       // audio data.
       if ((samples_left >= static_cast<int>(samples_30_ms)) ||
@@ -1225,7 +1232,7 @@ int NetEqImpl::GetDecision(Operations* operation,
       // Move on with the preemptive expand decision.
       break;
     }
-    case kMerge: {
+    case Operation::kMerge: {
       required_samples =
           std::max(merge_->RequiredFutureSamples(), required_samples);
       break;
@@ -1247,7 +1254,7 @@ int NetEqImpl::GetDecision(Operations* operation,
       stats_->LostSamples(packet->timestamp - end_timestamp);
     }
 
-    if (*operation != kRfc3389Cng) {
+    if (*operation != Operation::kRfc3389Cng) {
       // We are about to decode and use a non-CNG packet.
       controller_->SetCngOff();
     }
@@ -1258,18 +1265,20 @@ int NetEqImpl::GetDecision(Operations* operation,
     }
   }
 
-  if (*operation == kAccelerate || *operation == kFastAccelerate ||
-      *operation == kPreemptiveExpand) {
+  if (*operation == Operation::kAccelerate ||
+      *operation == Operation::kFastAccelerate ||
+      *operation == Operation::kPreemptiveExpand) {
     controller_->set_sample_memory(samples_left + extracted_samples);
     controller_->set_prev_time_scale(true);
   }
 
-  if (*operation == kAccelerate || *operation == kFastAccelerate) {
+  if (*operation == Operation::kAccelerate ||
+      *operation == Operation::kFastAccelerate) {
     // Check that we have enough data (30ms) to do accelerate.
     if (extracted_samples + samples_left < static_cast<int>(samples_30_ms)) {
       // TODO(hlundin): Write test for this.
       // Not enough, do normal operation instead.
-      *operation = kNormal;
+      *operation = Operation::kNormal;
     }
   }
 
@@ -1278,7 +1287,7 @@ int NetEqImpl::GetDecision(Operations* operation,
 }
 
 int NetEqImpl::Decode(PacketList* packet_list,
-                      Operations* operation,
+                      Operation* operation,
                       int* decoded_length,
                       AudioDecoder::SpeechType* speech_type) {
   *speech_type = AudioDecoder::kSpeech;
@@ -1341,12 +1350,12 @@ int NetEqImpl::Decode(PacketList* packet_list,
 
   *decoded_length = 0;
   // Update codec-internal PLC state.
-  if ((*operation == kMerge) && decoder && decoder->HasDecodePlc()) {
+  if ((*operation == Operation::kMerge) && decoder && decoder->HasDecodePlc()) {
     decoder->DecodePlc(1, &decoded_buffer_[*decoded_length]);
   }
 
   int return_value;
-  if (*operation == kCodecInternalCng) {
+  if (*operation == Operation::kCodecInternalCng) {
     RTC_DCHECK(packet_list->empty());
     return_value = DecodeCng(decoder, decoded_length, speech_type);
   } else {
@@ -1371,7 +1380,7 @@ int NetEqImpl::Decode(PacketList* packet_list,
       return_value = kOtherDecoderError;
       RTC_LOG(LS_WARNING) << "Decoder error (no error code)";
     }
-    *operation = kExpand;  // Do expansion to get data instead.
+    *operation = Operation::kExpand;  // Do expansion to get data instead.
   }
   if (*speech_type != AudioDecoder::kComfortNoise) {
     // Don't increment timestamp if codec returned CNG speech type
@@ -1417,7 +1426,7 @@ int NetEqImpl::DecodeCng(AudioDecoder* decoder,
 }
 
 int NetEqImpl::DecodeLoop(PacketList* packet_list,
-                          const Operations& operation,
+                          const Operation& operation,
                           AudioDecoder* decoder,
                           int* decoded_length,
                           AudioDecoder::SpeechType* speech_type) {
@@ -1432,9 +1441,11 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list,
     // number decoder channels.
     assert(sync_buffer_->Channels() == decoder->Channels());
     assert(decoded_buffer_length_ >= kMaxFrameSize * decoder->Channels());
-    assert(operation == kNormal || operation == kAccelerate ||
-           operation == kFastAccelerate || operation == kMerge ||
-           operation == kPreemptiveExpand);
+    assert(operation == Operation::kNormal ||
+           operation == Operation::kAccelerate ||
+           operation == Operation::kFastAccelerate ||
+           operation == Operation::kMerge ||
+           operation == Operation::kPreemptiveExpand);
 
     auto opt_result = packet_list->front().frame->Decode(
         rtc::ArrayView<int16_t>(&decoded_buffer_[*decoded_length],
@@ -1485,14 +1496,14 @@ void NetEqImpl::DoNormal(const int16_t* decoded_buffer,
   normal_->Process(decoded_buffer, decoded_length, last_mode_,
                    algorithm_buffer_.get());
   if (decoded_length != 0) {
-    last_mode_ = kModeNormal;
+    last_mode_ = Mode::kNormal;
   }
 
   // If last packet was decoded as an inband CNG, set mode to CNG instead.
   if ((speech_type == AudioDecoder::kComfortNoise) ||
-      ((last_mode_ == kModeCodecInternalCng) && (decoded_length == 0))) {
+      ((last_mode_ == Mode::kCodecInternalCng) && (decoded_length == 0))) {
     // TODO(hlundin): Remove second part of || statement above.
-    last_mode_ = kModeCodecInternalCng;
+    last_mode_ = Mode::kCodecInternalCng;
   }
 
   if (!play_dtmf) {
@@ -1521,10 +1532,10 @@ void NetEqImpl::DoMerge(int16_t* decoded_buffer,
     stats_->ExpandedVoiceSamplesCorrection(expand_length_correction);
   }
 
-  last_mode_ = kModeMerge;
+  last_mode_ = Mode::kMerge;
   // If last packet was decoded as an inband CNG, set mode to CNG instead.
   if (speech_type == AudioDecoder::kComfortNoise) {
-    last_mode_ = kModeCodecInternalCng;
+    last_mode_ = Mode::kCodecInternalCng;
   }
   expand_->Reset();
   if (!play_dtmf) {
@@ -1555,7 +1566,7 @@ bool NetEqImpl::DoCodecPlc() {
       concealment_audio_.size() / channels;
 
   // Update in-call and post-call statistics.
-  const bool is_new_concealment_event = (last_mode_ != kModeCodecPlc);
+  const bool is_new_concealment_event = (last_mode_ != Mode::kCodecPlc);
   if (std::all_of(concealment_audio_.cbegin(), concealment_audio_.cend(),
                   [](int16_t i) { return i == 0; })) {
     // Expand operation generates only noise.
@@ -1566,7 +1577,7 @@ bool NetEqImpl::DoCodecPlc() {
     stats_->ExpandedVoiceSamples(concealed_samples_per_channel,
                                  is_new_concealment_event);
   }
-  last_mode_ = kModeCodecPlc;
+  last_mode_ = Mode::kCodecPlc;
   if (!generated_noise_stopwatch_) {
     // Start a new stopwatch since we may be covering for a lost CNG packet.
     generated_noise_stopwatch_ = tick_timer_->GetNewStopwatch();
@@ -1580,7 +1591,7 @@ int NetEqImpl::DoExpand(bool play_dtmf) {
     algorithm_buffer_->Clear();
     int return_value = expand_->Process(algorithm_buffer_.get());
     size_t length = algorithm_buffer_->Size();
-    bool is_new_concealment_event = (last_mode_ != kModeExpand);
+    bool is_new_concealment_event = (last_mode_ != Mode::kExpand);
 
     // Update in-call and post-call statistics.
     if (expand_->MuteFactor(0) == 0) {
@@ -1591,7 +1602,7 @@ int NetEqImpl::DoExpand(bool play_dtmf) {
       stats_->ExpandedVoiceSamples(length, is_new_concealment_event);
     }
 
-    last_mode_ = kModeExpand;
+    last_mode_ = Mode::kExpand;
 
     if (return_value < 0) {
       return return_value;
@@ -1640,17 +1651,17 @@ int NetEqImpl::DoAccelerate(int16_t* decoded_buffer,
   stats_->AcceleratedSamples(samples_removed);
   switch (return_code) {
     case Accelerate::kSuccess:
-      last_mode_ = kModeAccelerateSuccess;
+      last_mode_ = Mode::kAccelerateSuccess;
       break;
     case Accelerate::kSuccessLowEnergy:
-      last_mode_ = kModeAccelerateLowEnergy;
+      last_mode_ = Mode::kAccelerateLowEnergy;
       break;
     case Accelerate::kNoStretch:
-      last_mode_ = kModeAccelerateFail;
+      last_mode_ = Mode::kAccelerateFail;
       break;
     case Accelerate::kError:
-      // TODO(hlundin): Map to kModeError instead?
-      last_mode_ = kModeAccelerateFail;
+      // TODO(hlundin): Map to Modes::kError instead?
+      last_mode_ = Mode::kAccelerateFail;
       return kAccelerateError;
   }
 
@@ -1676,7 +1687,7 @@ int NetEqImpl::DoAccelerate(int16_t* decoded_buffer,
 
   // If last packet was decoded as an inband CNG, set mode to CNG instead.
   if (speech_type == AudioDecoder::kComfortNoise) {
-    last_mode_ = kModeCodecInternalCng;
+    last_mode_ = Mode::kCodecInternalCng;
   }
   if (!play_dtmf) {
     dtmf_tone_generator_->Reset();
@@ -1718,17 +1729,17 @@ int NetEqImpl::DoPreemptiveExpand(int16_t* decoded_buffer,
   stats_->PreemptiveExpandedSamples(samples_added);
   switch (return_code) {
     case PreemptiveExpand::kSuccess:
-      last_mode_ = kModePreemptiveExpandSuccess;
+      last_mode_ = Mode::kPreemptiveExpandSuccess;
       break;
     case PreemptiveExpand::kSuccessLowEnergy:
-      last_mode_ = kModePreemptiveExpandLowEnergy;
+      last_mode_ = Mode::kPreemptiveExpandLowEnergy;
       break;
     case PreemptiveExpand::kNoStretch:
-      last_mode_ = kModePreemptiveExpandFail;
+      last_mode_ = Mode::kPreemptiveExpandFail;
       break;
     case PreemptiveExpand::kError:
-      // TODO(hlundin): Map to kModeError instead?
-      last_mode_ = kModePreemptiveExpandFail;
+      // TODO(hlundin): Map to Modes::kError instead?
+      last_mode_ = Mode::kPreemptiveExpandFail;
       return kPreemptiveExpandError;
   }
 
@@ -1742,7 +1753,7 @@ int NetEqImpl::DoPreemptiveExpand(int16_t* decoded_buffer,
 
   // If last packet was decoded as an inband CNG, set mode to CNG instead.
   if (speech_type == AudioDecoder::kComfortNoise) {
-    last_mode_ = kModeCodecInternalCng;
+    last_mode_ = Mode::kCodecInternalCng;
   }
   if (!play_dtmf) {
     dtmf_tone_generator_->Reset();
@@ -1769,7 +1780,7 @@ int NetEqImpl::DoRfc3389Cng(PacketList* packet_list, bool play_dtmf) {
   int cn_return =
       comfort_noise_->Generate(output_size_samples_, algorithm_buffer_.get());
   expand_->Reset();
-  last_mode_ = kModeRfc3389Cng;
+  last_mode_ = Mode::kRfc3389Cng;
   if (!play_dtmf) {
     dtmf_tone_generator_->Reset();
   }
@@ -1788,7 +1799,7 @@ void NetEqImpl::DoCodecInternalCng(const int16_t* decoded_buffer,
   RTC_DCHECK(normal_.get());
   normal_->Process(decoded_buffer, decoded_length, last_mode_,
                    algorithm_buffer_.get());
-  last_mode_ = kModeCodecInternalCng;
+  last_mode_ = Mode::kCodecInternalCng;
   expand_->Reset();
 }
 
@@ -1803,7 +1814,8 @@ int NetEqImpl::DoDtmf(const DtmfEvent& dtmf_event, bool* play_dtmf) {
   // switch from audio to DTMF. Issue 1545 is filed to track this.
   //
   //  bool dtmf_switch = false;
-  //  if ((last_mode_ != kModeDtmf) && dtmf_tone_generator_->initialized()) {
+  //  if ((last_mode_ != Modes::kDtmf) &&
+  //      dtmf_tone_generator_->initialized()) {
   //    // Special case; see below.
   //    // We must catch this before calling Generate, since |initialized| is
   //    // modified in that call.
@@ -1865,7 +1877,7 @@ int NetEqImpl::DoDtmf(const DtmfEvent& dtmf_event, bool* play_dtmf) {
   sync_buffer_->IncreaseEndTimestamp(
       static_cast<uint32_t>(output_size_samples_));
   expand_->Reset();
-  last_mode_ = kModeDtmf;
+  last_mode_ = Mode::kDtmf;
 
   // Set to false because the DTMF is already in the algorithm buffer.
   *play_dtmf = false;
@@ -2024,7 +2036,7 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   output_size_samples_ = static_cast<size_t>(kOutputSizeMs * 8 * fs_mult_);
   decoder_frame_length_ = 3 * output_size_samples_;  // Initialize to 30ms.
 
-  last_mode_ = kModeNormal;
+  last_mode_ = Mode::kNormal;
 
   ComfortNoiseDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
   if (cng_decoder)
@@ -2076,16 +2088,17 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
 NetEqImpl::OutputType NetEqImpl::LastOutputType() {
   assert(vad_.get());
   assert(expand_.get());
-  if (last_mode_ == kModeCodecInternalCng || last_mode_ == kModeRfc3389Cng) {
+  if (last_mode_ == Mode::kCodecInternalCng ||
+      last_mode_ == Mode::kRfc3389Cng) {
     return OutputType::kCNG;
-  } else if (last_mode_ == kModeExpand && expand_->MuteFactor(0) == 0) {
+  } else if (last_mode_ == Mode::kExpand && expand_->MuteFactor(0) == 0) {
     // Expand mode has faded down to background noise only (very long expand).
     return OutputType::kPLCCNG;
-  } else if (last_mode_ == kModeExpand) {
+  } else if (last_mode_ == Mode::kExpand) {
     return OutputType::kPLC;
   } else if (vad_->running() && !vad_->active_speech()) {
     return OutputType::kVadPassive;
-  } else if (last_mode_ == kModeCodecPlc) {
+  } else if (last_mode_ == Mode::kCodecPlc) {
     return OutputType::kCodecPLC;
   } else {
     return OutputType::kNormalSpeech;

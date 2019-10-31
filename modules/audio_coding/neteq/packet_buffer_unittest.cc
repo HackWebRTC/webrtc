@@ -15,10 +15,10 @@
 #include <memory>
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/neteq/tick_timer.h"
 #include "modules/audio_coding/neteq/mock/mock_decoder_database.h"
 #include "modules/audio_coding/neteq/mock/mock_statistics_calculator.h"
 #include "modules/audio_coding/neteq/packet.h"
-#include "modules/audio_coding/neteq/tick_timer.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 

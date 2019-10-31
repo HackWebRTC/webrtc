@@ -324,6 +324,7 @@ if (rtc_include_tests) {
       defines = [ "ENABLE_RTC_EVENT_LOG" ]
       deps = [
         ":event_log_visualizer_utils",
+        "../api/neteq:neteq_api",
         "../api/rtc_event_log",
         "../logging:rtc_event_log_parser",
         "../modules/audio_coding:neteq",

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_CODING_NETEQ_NETEQ_CONTROLLER_H_
-#define MODULES_AUDIO_CODING_NETEQ_NETEQ_CONTROLLER_H_
+#ifndef API_NETEQ_NETEQ_CONTROLLER_H_
+#define API_NETEQ_NETEQ_CONTROLLER_H_
 
 #include <cstddef>
 #include <cstdint>
@@ -18,8 +18,8 @@
 #include <memory>
 
 #include "absl/types/optional.h"
-#include "modules/audio_coding/neteq/defines.h"
-#include "modules/audio_coding/neteq/tick_timer.h"
+#include "api/neteq/neteq.h"
+#include "api/neteq/tick_timer.h"
 
 namespace webrtc {
 
@@ -88,7 +88,7 @@ class NetEqController {
     int16_t expand_mutefactor;
     size_t last_packet_samples;
     absl::optional<PacketInfo> next_packet;
-    Modes last_mode;
+    NetEq::Mode last_mode;
     bool play_dtmf;
     size_t generated_noise_samples;
     PacketBufferInfo packet_buffer_info;
@@ -111,8 +111,8 @@ class NetEqController {
   // play, |play_dtmf| should be set to true. The output variable
   // |reset_decoder| will be set to true if a reset is required; otherwise it is
   // left unchanged (i.e., it can remain true if it was true before the call).
-  virtual Operations GetDecision(const NetEqStatus& status,
-                                 bool* reset_decoder) = 0;
+  virtual NetEq::Operation GetDecision(const NetEqStatus& status,
+                                       bool* reset_decoder) = 0;
 
   // Inform NetEqController that an empty packet has arrived.
   virtual void RegisterEmptyPacket() = 0;
@@ -143,7 +143,7 @@ class NetEqController {
   // not. Note that this is necessary, since an expand decision can be changed
   // to kNormal in NetEqImpl::GetDecision if there is still enough data in the
   // sync buffer.
-  virtual void ExpandDecision(Operations operation) = 0;
+  virtual void ExpandDecision(NetEq::Operation operation) = 0;
 
   // Adds |value| to |sample_memory_|.
   virtual void AddSampleMemory(int32_t value) = 0;
@@ -175,4 +175,4 @@ class NetEqController {
 };
 
 }  // namespace webrtc
-#endif  // MODULES_AUDIO_CODING_NETEQ_NETEQ_CONTROLLER_H_
+#endif  // API_NETEQ_NETEQ_CONTROLLER_H_

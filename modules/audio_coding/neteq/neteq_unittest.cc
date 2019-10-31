@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_coding/neteq/include/neteq.h"
+#include "api/neteq/neteq.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -23,6 +23,7 @@
 #include "absl/flags/flag.h"
 #include "api/audio/audio_frame.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/test/neteq_factory_with_codecs.h"
 #include "modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "modules/audio_coding/neteq/tools/audio_loop.h"
 #include "modules/audio_coding/neteq/tools/neteq_packet_source_input.h"
@@ -287,7 +288,7 @@ class NetEqDecodingTest : public ::testing::Test {
   void DuplicateCng();
 
   SimulatedClock clock_;
-  NetEq* neteq_;
+  std::unique_ptr<NetEq> neteq_;
   NetEq::Config config_;
   std::unique_ptr<test::RtpFileSource> rtp_source_;
   std::unique_ptr<test::Packet> packet_;
@@ -305,7 +306,6 @@ const int NetEqDecodingTest::kInitSampleRateHz;
 
 NetEqDecodingTest::NetEqDecodingTest()
     : clock_(0),
-      neteq_(NULL),
       config_(),
       output_sample_rate_(kInitSampleRateHz),
       algorithmic_delay_ms_(0) {
@@ -313,17 +313,16 @@ NetEqDecodingTest::NetEqDecodingTest()
 }
 
 void NetEqDecodingTest::SetUp() {
-  neteq_ = NetEq::Create(config_, &clock_, CreateBuiltinAudioDecoderFactory());
+  std::unique_ptr<NetEqFactory> neteq_factory = CreateNetEqFactoryWithCodecs();
+  neteq_ = neteq_factory->CreateNetEq(config_, &clock_);
   NetEqNetworkStatistics stat;
   ASSERT_EQ(0, neteq_->NetworkStatistics(&stat));
   algorithmic_delay_ms_ = stat.current_buffer_size_ms;
   ASSERT_TRUE(neteq_);
-  LoadDecoders(neteq_);
+  LoadDecoders(neteq_.get());
 }
 
-void NetEqDecodingTest::TearDown() {
-  delete neteq_;
-}
+void NetEqDecodingTest::TearDown() {}
 
 void NetEqDecodingTest::OpenInputFile(const std::string& rtp_file) {
   rtp_source_.reset(test::RtpFileSource::Create(rtp_file));
@@ -1366,8 +1365,9 @@ class NetEqDecodingTestTwoInstances : public NetEqDecodingTest {
   }
 
   void CreateSecondInstance() {
-    neteq2_.reset(
-        NetEq::Create(config2_, &clock_, CreateBuiltinAudioDecoderFactory()));
+    std::unique_ptr<NetEqFactory> neteq_factory =
+        CreateNetEqFactoryWithCodecs();
+    neteq2_ = neteq_factory->CreateNetEq(config2_, &clock_);
     ASSERT_TRUE(neteq2_);
     LoadDecoders(neteq2_.get());
   }
@@ -1658,7 +1658,7 @@ TEST_F(NetEqDecodingTestFaxMode, TestJitterBufferDelayWithAcceleration) {
 
   // We have two packets in the buffer and kAccelerate operation will
   // extract 20 ms of data.
-  neteq_->GetAudio(&out_frame_, &muted, Operations::kAccelerate);
+  neteq_->GetAudio(&out_frame_, &muted, NetEq::Operation::kAccelerate);
 
   // Check jitter buffer delay.
   NetEqLifetimeStatistics stats = neteq_->GetLifetimeStatistics();

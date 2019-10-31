@@ -1,0 +1,8 @@
+specific_include_rules = {
+  "neteq_factory\.h": [
+    "+system_wrappers/include/clock.h",
+  ],
+  "custom_neteq_factory\.h": [
+    "+system_wrappers/include/clock.h",
+  ],
+}

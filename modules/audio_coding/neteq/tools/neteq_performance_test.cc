@@ -11,9 +11,9 @@
 #include "modules/audio_coding/neteq/tools/neteq_performance_test.h"
 
 #include "api/audio/audio_frame.h"
-#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/neteq/neteq.h"
+#include "api/test/neteq_factory_with_codecs.h"
 #include "modules/audio_coding/codecs/pcm16b/pcm16b.h"
-#include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/audio_coding/neteq/tools/audio_loop.h"
 #include "modules/audio_coding/neteq/tools/rtp_generator.h"
 #include "rtc_base/checks.h"
@@ -40,8 +40,8 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
   NetEq::Config config;
   config.sample_rate_hz = kSampRateHz;
   webrtc::Clock* clock = webrtc::Clock::GetRealTimeClock();
-  NetEq* neteq =
-      NetEq::Create(config, clock, CreateBuiltinAudioDecoderFactory());
+  std::unique_ptr<NetEqFactory> neteq_factory = CreateNetEqFactoryWithCodecs();
+  auto neteq = neteq_factory->CreateNetEq(config, clock);
   // Register decoder in |neteq|.
   if (!neteq->RegisterPayloadType(kPayloadType,
                                   SdpAudioFormat("l16", kSampRateHz, 1)))
@@ -119,7 +119,6 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
     }
   }
   int64_t end_time_ms = clock->TimeInMilliseconds();
-  delete neteq;
   return end_time_ms - start_time_ms;
 }
 

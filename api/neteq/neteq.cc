@@ -8,9 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_coding/neteq/include/neteq.h"
+#include "api/neteq/neteq.h"
 
-#include "modules/audio_coding/neteq/neteq_impl.h"
 #include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
@@ -33,16 +32,6 @@ std::string NetEq::Config::ToString() const {
      << ", enable_muted_state=" << (enable_muted_state ? "true" : "false")
      << ", enable_rtx_handling=" << (enable_rtx_handling ? "true" : "false");
   return ss.str();
-}
-
-// Creates all classes needed and inject them into a new NetEqImpl object.
-// Return the new object.
-NetEq* NetEq::Create(
-    const NetEq::Config& config,
-    Clock* clock,
-    const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
-  return new NetEqImpl(config,
-                       NetEqImpl::Dependencies(config, clock, decoder_factory));
 }
 
 }  // namespace webrtc

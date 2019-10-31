@@ -19,8 +19,8 @@
 
 #include "absl/types/optional.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
+#include "api/neteq/neteq.h"
 #include "api/test/neteq_simulator.h"
-#include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/audio_coding/neteq/tools/audio_sink.h"
 #include "modules/audio_coding/neteq/tools/neteq_input.h"
 #include "system_wrappers/include/clock.h"
