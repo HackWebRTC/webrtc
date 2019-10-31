@@ -14,7 +14,6 @@
 #include <memory>
 #include <vector>
 
-#include "modules/congestion_controller/rtp/congestion_controller_unittests_helper.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "rtc_base/checks.h"
@@ -36,6 +35,47 @@ const PacedPacketInfo kPacingInfo1(1, 8, 4000);
 const PacedPacketInfo kPacingInfo2(2, 14, 7000);
 const PacedPacketInfo kPacingInfo3(3, 20, 10000);
 const PacedPacketInfo kPacingInfo4(4, 22, 10000);
+
+void ComparePacketFeedbackVectors(const std::vector<PacketFeedback>& truth,
+                                  const std::vector<PacketFeedback>& input) {
+  ASSERT_EQ(truth.size(), input.size());
+  size_t len = truth.size();
+  // truth contains the input data for the test, and input is what will be
+  // sent to the bandwidth estimator. truth.arrival_tims_ms is used to
+  // populate the transport feedback messages. As these times may be changed
+  // (because of resolution limits in the packets, and because of the time
+  // base adjustment performed by the TransportFeedbackAdapter at the first
+  // packet, the truth[x].arrival_time and input[x].arrival_time may not be
+  // equal. However, the difference must be the same for all x.
+  int64_t arrival_time_delta =
+      truth[0].arrival_time_ms - input[0].arrival_time_ms;
+  for (size_t i = 0; i < len; ++i) {
+    RTC_CHECK(truth[i].arrival_time_ms != PacketFeedback::kNotReceived);
+    if (input[i].arrival_time_ms != PacketFeedback::kNotReceived) {
+      EXPECT_EQ(truth[i].arrival_time_ms,
+                input[i].arrival_time_ms + arrival_time_delta);
+    }
+    EXPECT_EQ(truth[i].send_time_ms, input[i].send_time_ms);
+    EXPECT_EQ(truth[i].sequence_number, input[i].sequence_number);
+    EXPECT_EQ(truth[i].payload_size, input[i].payload_size);
+    EXPECT_EQ(truth[i].pacing_info, input[i].pacing_info);
+  }
+}
+
+PacketFeedback CreatePacketFeedback(int64_t arrival_time_ms,
+                                    int64_t send_time_ms,
+                                    int64_t sequence_number,
+                                    size_t payload_size,
+                                    const PacedPacketInfo& pacing_info) {
+  PacketFeedback res;
+  res.arrival_time_ms = arrival_time_ms;
+  res.send_time_ms = send_time_ms;
+  res.sequence_number = sequence_number;
+  res.payload_size = payload_size;
+  res.pacing_info = pacing_info;
+  return res;
+}
+
 }  // namespace
 
 namespace test {
@@ -85,25 +125,14 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
 };
 
 TEST_F(TransportFeedbackAdapterTest, ObserverSanity) {
-  const uint32_t kSsrc = 8832;
   MockStreamFeedbackObserver mock;
   adapter_->RegisterStreamFeedbackObserver({kSsrc}, &mock);
 
   const std::vector<PacketFeedback> packets = {
-      PacketFeedback(100, 200, 0, 1000, kPacingInfo0),
-      PacketFeedback(110, 210, 1, 2000, kPacingInfo0),
-      PacketFeedback(120, 220, 2, 3000, kPacingInfo0)};
-  for (auto& packet : packets) {
-    const size_t kOverhead = 40;
-    RtpPacketSendInfo send_info;
-    send_info.ssrc = kSsrc;
-    send_info.pacing_info = packet.pacing_info;
-    send_info.has_rtp_sequence_number = true;
-    send_info.length = packet.payload_size;
-    send_info.rtp_sequence_number = packet.rtp_sequence_number;
-    send_info.rtp_sequence_number = packet.sequence_number;
-    adapter_->AddPacket(send_info, kOverhead, clock_.CurrentTime());
-  }
+      CreatePacketFeedback(100, 200, 0, 1000, kPacingInfo0),
+      CreatePacketFeedback(110, 210, 1, 2000, kPacingInfo0),
+      CreatePacketFeedback(120, 220, 2, 3000, kPacingInfo0)};
+
   rtcp::TransportFeedback feedback;
   feedback.SetBase(packets[0].sequence_number,
                    packets[0].arrival_time_ms * 1000);
@@ -120,14 +149,15 @@ TEST_F(TransportFeedbackAdapterTest, ObserverSanity) {
 
   adapter_->DeRegisterStreamFeedbackObserver(&mock);
 
-  const PacketFeedback new_packet(130, 230, 3, 4000, kPacingInfo0);
+  const PacketFeedback new_packet =
+      CreatePacketFeedback(130, 230, 3, 4000, kPacingInfo0);
   OnSentPacket(new_packet);
 
   rtcp::TransportFeedback second_feedback;
   second_feedback.SetBase(new_packet.sequence_number,
                           new_packet.arrival_time_ms * 1000);
-  EXPECT_TRUE(feedback.AddReceivedPacket(new_packet.sequence_number,
-                                         new_packet.arrival_time_ms * 1000));
+  EXPECT_TRUE(second_feedback.AddReceivedPacket(
+      new_packet.sequence_number, new_packet.arrival_time_ms * 1000));
   EXPECT_CALL(mock, OnPacketFeedbackVector(_)).Times(0);
   adapter_->ProcessTransportFeedback(
       second_feedback, Timestamp::ms(clock_.TimeInMilliseconds()));
@@ -151,11 +181,11 @@ TEST_F(TransportFeedbackAdapterTest, ObserverMissingDeRegistrationDeathTest) {
 
 TEST_F(TransportFeedbackAdapterTest, AdaptsFeedbackAndPopulatesSendTimes) {
   std::vector<PacketFeedback> packets;
-  packets.push_back(PacketFeedback(100, 200, 0, 1500, kPacingInfo0));
-  packets.push_back(PacketFeedback(110, 210, 1, 1500, kPacingInfo0));
-  packets.push_back(PacketFeedback(120, 220, 2, 1500, kPacingInfo0));
-  packets.push_back(PacketFeedback(130, 230, 3, 1500, kPacingInfo1));
-  packets.push_back(PacketFeedback(140, 240, 4, 1500, kPacingInfo1));
+  packets.push_back(CreatePacketFeedback(100, 200, 0, 1500, kPacingInfo0));
+  packets.push_back(CreatePacketFeedback(110, 210, 1, 1500, kPacingInfo0));
+  packets.push_back(CreatePacketFeedback(120, 220, 2, 1500, kPacingInfo0));
+  packets.push_back(CreatePacketFeedback(130, 230, 3, 1500, kPacingInfo1));
+  packets.push_back(CreatePacketFeedback(140, 240, 4, 1500, kPacingInfo1));
 
   for (const PacketFeedback& packet : packets)
     OnSentPacket(packet);
@@ -178,13 +208,13 @@ TEST_F(TransportFeedbackAdapterTest, AdaptsFeedbackAndPopulatesSendTimes) {
 
 TEST_F(TransportFeedbackAdapterTest, FeedbackVectorReportsUnreceived) {
   std::vector<PacketFeedback> sent_packets = {
-      PacketFeedback(100, 220, 0, 1500, kPacingInfo0),
-      PacketFeedback(110, 210, 1, 1500, kPacingInfo0),
-      PacketFeedback(120, 220, 2, 1500, kPacingInfo0),
-      PacketFeedback(130, 230, 3, 1500, kPacingInfo0),
-      PacketFeedback(140, 240, 4, 1500, kPacingInfo0),
-      PacketFeedback(150, 250, 5, 1500, kPacingInfo0),
-      PacketFeedback(160, 260, 6, 1500, kPacingInfo0)};
+      CreatePacketFeedback(100, 220, 0, 1500, kPacingInfo0),
+      CreatePacketFeedback(110, 210, 1, 1500, kPacingInfo0),
+      CreatePacketFeedback(120, 220, 2, 1500, kPacingInfo0),
+      CreatePacketFeedback(130, 230, 3, 1500, kPacingInfo0),
+      CreatePacketFeedback(140, 240, 4, 1500, kPacingInfo0),
+      CreatePacketFeedback(150, 250, 5, 1500, kPacingInfo0),
+      CreatePacketFeedback(160, 260, 6, 1500, kPacingInfo0)};
 
   for (const PacketFeedback& packet : sent_packets)
     OnSentPacket(packet);
@@ -213,11 +243,11 @@ TEST_F(TransportFeedbackAdapterTest, FeedbackVectorReportsUnreceived) {
 
 TEST_F(TransportFeedbackAdapterTest, HandlesDroppedPackets) {
   std::vector<PacketFeedback> packets;
-  packets.push_back(PacketFeedback(100, 200, 0, 1500, kPacingInfo0));
-  packets.push_back(PacketFeedback(110, 210, 1, 1500, kPacingInfo1));
-  packets.push_back(PacketFeedback(120, 220, 2, 1500, kPacingInfo2));
-  packets.push_back(PacketFeedback(130, 230, 3, 1500, kPacingInfo3));
-  packets.push_back(PacketFeedback(140, 240, 4, 1500, kPacingInfo4));
+  packets.push_back(CreatePacketFeedback(100, 200, 0, 1500, kPacingInfo0));
+  packets.push_back(CreatePacketFeedback(110, 210, 1, 1500, kPacingInfo1));
+  packets.push_back(CreatePacketFeedback(120, 220, 2, 1500, kPacingInfo2));
+  packets.push_back(CreatePacketFeedback(130, 230, 3, 1500, kPacingInfo3));
+  packets.push_back(CreatePacketFeedback(140, 240, 4, 1500, kPacingInfo4));
 
   const uint16_t kSendSideDropBefore = 1;
   const uint16_t kReceiveSideDropAfter = 3;
@@ -241,14 +271,11 @@ TEST_F(TransportFeedbackAdapterTest, HandlesDroppedPackets) {
   feedback.Build();
 
   std::vector<PacketFeedback> expected_packets(
-      packets.begin(), packets.begin() + kReceiveSideDropAfter + 1);
+      packets.begin() + kSendSideDropBefore,
+      packets.begin() + kReceiveSideDropAfter + 1);
   // Packets that have timed out on the send-side have lost the
-  // information stored on the send-side.
-  for (size_t i = 0; i < kSendSideDropBefore; ++i) {
-    expected_packets[i].send_time_ms = -1;
-    expected_packets[i].payload_size = 0;
-    expected_packets[i].pacing_info = PacedPacketInfo();
-  }
+  // information stored on the send-side. And they will not be reported to
+  // observers since we won't know that they come from the same networks.
 
   adapter_->ProcessTransportFeedback(
       feedback, Timestamp::ms(clock_.TimeInMilliseconds()));
@@ -261,12 +288,12 @@ TEST_F(TransportFeedbackAdapterTest, SendTimeWrapsBothWays) {
                                static_cast<int64_t>(1 << 8) *
                                static_cast<int64_t>((1 << 23) - 1) / 1000;
   std::vector<PacketFeedback> packets;
-  packets.push_back(
-      PacketFeedback(kHighArrivalTimeMs - 64, 200, 0, 1500, PacedPacketInfo()));
-  packets.push_back(
-      PacketFeedback(kHighArrivalTimeMs + 64, 210, 1, 1500, PacedPacketInfo()));
-  packets.push_back(
-      PacketFeedback(kHighArrivalTimeMs, 220, 2, 1500, PacedPacketInfo()));
+  packets.push_back(CreatePacketFeedback(kHighArrivalTimeMs - 64, 200, 0, 1500,
+                                         PacedPacketInfo()));
+  packets.push_back(CreatePacketFeedback(kHighArrivalTimeMs + 64, 210, 1, 1500,
+                                         PacedPacketInfo()));
+  packets.push_back(CreatePacketFeedback(kHighArrivalTimeMs, 220, 2, 1500,
+                                         PacedPacketInfo()));
 
   for (const PacketFeedback& packet : packets)
     OnSentPacket(packet);
@@ -296,9 +323,9 @@ TEST_F(TransportFeedbackAdapterTest, SendTimeWrapsBothWays) {
 
 TEST_F(TransportFeedbackAdapterTest, HandlesArrivalReordering) {
   std::vector<PacketFeedback> packets;
-  packets.push_back(PacketFeedback(120, 200, 0, 1500, kPacingInfo0));
-  packets.push_back(PacketFeedback(110, 210, 1, 1500, kPacingInfo0));
-  packets.push_back(PacketFeedback(100, 220, 2, 1500, kPacingInfo0));
+  packets.push_back(CreatePacketFeedback(120, 200, 0, 1500, kPacingInfo0));
+  packets.push_back(CreatePacketFeedback(110, 210, 1, 1500, kPacingInfo0));
+  packets.push_back(CreatePacketFeedback(100, 220, 2, 1500, kPacingInfo0));
 
   for (const PacketFeedback& packet : packets)
     OnSentPacket(packet);
@@ -333,8 +360,11 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
       rtcp::TransportFeedback::kDeltaScaleFactor *
       std::numeric_limits<int16_t>::min();
 
-  PacketFeedback packet_feedback(100, 200, 0, 1500, true, 0, 0,
-                                 PacedPacketInfo());
+  PacketFeedback packet_feedback;
+  packet_feedback.sequence_number = 1;
+  packet_feedback.send_time_ms = 100;
+  packet_feedback.arrival_time_ms = 200;
+  packet_feedback.payload_size = 1500;
   sent_packets.push_back(packet_feedback);
 
   packet_feedback.send_time_ms += kSmallDeltaUs / 1000;
@@ -409,7 +439,8 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
 }
 
 TEST_F(TransportFeedbackAdapterTest, IgnoreDuplicatePacketSentCalls) {
-  const PacketFeedback packet(100, 200, 0, 1500, kPacingInfo0);
+  const PacketFeedback packet =
+      CreatePacketFeedback(100, 200, 0, 1500, kPacingInfo0);
 
   // Add a packet and then mark it as sent.
   RtpPacketSendInfo packet_info;

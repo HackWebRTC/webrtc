@@ -68,8 +68,6 @@ if (rtc_include_tests) {
     testonly = true
 
     sources = [
-      "congestion_controller_unittests_helper.cc",
-      "congestion_controller_unittests_helper.h",
       "transport_feedback_adapter_unittest.cc",
     ]
     deps = [

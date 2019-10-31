@@ -180,7 +180,6 @@ class MockTransportFeedbackObserver : public TransportFeedbackObserver {
  public:
   MOCK_METHOD1(OnAddPacket, void(const RtpPacketSendInfo&));
   MOCK_METHOD1(OnTransportFeedback, void(const rtcp::TransportFeedback&));
-  MOCK_CONST_METHOD0(GetTransportFeedbackVector, std::vector<PacketFeedback>());
 };
 
 class MockOverheadObserver : public OverheadObserver {

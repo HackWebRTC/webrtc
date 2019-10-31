@@ -128,11 +128,6 @@ class RtpTransportControllerSendInterface {
   virtual void SetQueueTimeLimit(int limit_ms) = 0;
 
   virtual StreamFeedbackProvider* GetStreamFeedbackProvider() = 0;
-  // DEPRECATED, use GetStreamFeedbackProvider instead.
-  virtual void RegisterPacketFeedbackObserver(
-      PacketFeedbackObserver* observer) {}
-  virtual void DeRegisterPacketFeedbackObserver(
-      PacketFeedbackObserver* observer) {}
   virtual void RegisterTargetTransferRateObserver(
       TargetTransferRateObserver* observer) = 0;
   virtual void OnNetworkRouteChanged(
