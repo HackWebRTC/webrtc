@@ -42,10 +42,6 @@
 
 namespace webrtc {
 namespace {
-// TODO(eladalon): Subsequent CL will make these values experiment-dependent.
-constexpr size_t kPacketLossTrackerMaxWindowSizeMs = 15000;
-constexpr size_t kPacketLossRateMinNumAckedPackets = 50;
-constexpr size_t kRecoverablePacketLossRateMinNumAckedPairs = 40;
 
 void UpdateEventLogStreamConfig(RtcEventLog* event_log,
                                 const AudioSendStream::Config& config,
@@ -162,9 +158,6 @@ AudioSendStream::AudioSendStream(
           !field_trial::IsDisabled("WebRTC-Audio-LegacyOverhead")),
       bitrate_allocator_(bitrate_allocator),
       rtp_transport_(rtp_transport),
-      packet_loss_tracker_(kPacketLossTrackerMaxWindowSizeMs,
-                           kPacketLossRateMinNumAckedPackets,
-                           kRecoverablePacketLossRateMinNumAckedPairs),
       rtp_rtcp_module_(nullptr),
       suspended_rtp_state_(suspended_rtp_state) {
   RTC_LOG(LS_INFO) << "AudioSendStream: " << config.rtp.ssrc;
@@ -195,15 +188,12 @@ AudioSendStream::AudioSendStream(
   ConfigureStream(config, true);
 
   pacer_thread_checker_.Detach();
-  // Signal congestion controller this object is ready for OnPacket* callbacks.
-  rtp_transport_->RegisterPacketFeedbackObserver(this);
 }
 
 AudioSendStream::~AudioSendStream() {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
   RTC_LOG(LS_INFO) << "~AudioSendStream: " << config_.rtp.ssrc;
   RTC_DCHECK(!sending_);
-  rtp_transport_->DeRegisterPacketFeedbackObserver(this);
   channel_send_->ResetSenderCongestionControlObjects();
   // Blocking call to synchronize state with worker queue to ensure that there
   // are no pending tasks left that keeps references to audio.
@@ -258,8 +248,6 @@ void AudioSendStream::ConfigureStream(
 
   const auto& old_config = config_;
 
-  config_cs_.Enter();
-
   // Configuration parameters which cannot be changed.
   RTC_DCHECK(first_time ||
              old_config.send_transport == new_config.send_transport);
@@ -283,8 +271,6 @@ void AudioSendStream::ConfigureStream(
 
   const ExtensionIds old_ids = FindExtensionIds(old_config.rtp.extensions);
   const ExtensionIds new_ids = FindExtensionIds(new_config.rtp.extensions);
-
-  config_cs_.Leave();
 
   // Audio level indication
   if (first_time || new_ids.audio_level != old_ids.audio_level) {
@@ -328,7 +314,6 @@ void AudioSendStream::ConfigureStream(
     channel_send_->RegisterSenderCongestionControlObjects(rtp_transport_,
                                                           bandwidth_observer);
   }
-  config_cs_.Enter();
   // MID RTP header extension.
   if ((first_time || new_ids.mid != old_ids.mid ||
        new_config.rtp.mid != old_config.rtp.mid) &&
@@ -352,7 +337,6 @@ void AudioSendStream::ConfigureStream(
     ReconfigureBitrateObserver(new_config);
   }
   config_ = new_config;
-  config_cs_.Leave();
 }
 
 void AudioSendStream::Start() {
@@ -511,45 +495,6 @@ uint32_t AudioSendStream::OnBitrateUpdated(BitrateAllocationUpdate update) {
   // The amount of audio protection is not exposed by the encoder, hence
   // always returning 0.
   return 0;
-}
-
-void AudioSendStream::OnPacketAdded(uint32_t ssrc, uint16_t seq_num) {
-  RTC_DCHECK(pacer_thread_checker_.IsCurrent());
-  // Only packets that belong to this stream are of interest.
-  bool same_ssrc;
-  {
-    rtc::CritScope lock(&config_cs_);
-    same_ssrc = ssrc == config_.rtp.ssrc;
-  }
-  if (same_ssrc) {
-    rtc::CritScope lock(&packet_loss_tracker_cs_);
-    // TODO(eladalon): This function call could potentially reset the window,
-    // setting both PLR and RPLR to unknown. Consider (during upcoming
-    // refactoring) passing an indication of such an event.
-    packet_loss_tracker_.OnPacketAdded(seq_num, clock_->TimeInMilliseconds());
-  }
-}
-
-void AudioSendStream::OnPacketFeedbackVector(
-    const std::vector<PacketFeedback>& packet_feedback_vector) {
-  RTC_DCHECK(worker_thread_checker_.IsCurrent());
-  absl::optional<float> plr;
-  absl::optional<float> rplr;
-  {
-    rtc::CritScope lock(&packet_loss_tracker_cs_);
-    packet_loss_tracker_.OnPacketFeedbackVector(packet_feedback_vector);
-    plr = packet_loss_tracker_.GetPacketLossRate();
-    rplr = packet_loss_tracker_.GetRecoverablePacketLossRate();
-  }
-  // TODO(eladalon): If R/PLR go back to unknown, no indication is given that
-  // the previously sent value is no longer relevant. This will be taken care
-  // of with some refactoring which is now being done.
-  if (plr) {
-    channel_send_->OnTwccBasedUplinkPacketLossRate(*plr);
-  }
-  if (rplr) {
-    channel_send_->OnRecoverableUplinkPacketLossRate(*rplr);
-  }
 }
 
 void AudioSendStream::SetTransportOverhead(

@@ -457,17 +457,6 @@ webrtc_fuzzer_test("pseudotcp_parser_fuzzer") {
   ]
 }
 
-webrtc_fuzzer_test("transport_feedback_packet_loss_tracker_fuzzer") {
-  sources = [
-    "transport_feedback_packet_loss_tracker_fuzzer.cc",
-  ]
-  deps = [
-    "../../api:array_view",
-    "../../audio",
-    "../../modules/rtp_rtcp:rtp_rtcp_format",
-    "../../rtc_base:rtc_base_approved",
-  ]
-}
 rtc_library("audio_processing_fuzzer_helper") {
   sources = [
     "audio_processing_fuzzer_helper.cc",

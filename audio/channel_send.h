@@ -106,9 +106,6 @@ class ChannelSendInterface {
       std::unique_ptr<AudioFrame> audio_frame) = 0;
   virtual RtpRtcp* GetRtpRtcp() const = 0;
 
-  virtual void OnTwccBasedUplinkPacketLossRate(float packet_loss_rate) = 0;
-  virtual void OnRecoverableUplinkPacketLossRate(
-      float recoverable_packet_loss_rate) = 0;
   // In RTP we currently rely on RTCP packets (|ReceivedRTCPPacket|) to inform
   // about RTT.
   // In media transport we rely on the TargetTransferRateObserver instead.

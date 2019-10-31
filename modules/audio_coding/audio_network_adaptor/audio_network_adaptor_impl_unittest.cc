@@ -41,10 +41,7 @@ MATCHER_P(NetworkMetricsIs, metric, "") {
          arg.target_audio_bitrate_bps == metric.target_audio_bitrate_bps &&
          arg.rtt_ms == metric.rtt_ms &&
          arg.overhead_bytes_per_packet == metric.overhead_bytes_per_packet &&
-         arg.uplink_packet_loss_fraction ==
-             metric.uplink_packet_loss_fraction &&
-         arg.uplink_recoverable_packet_loss_fraction ==
-             metric.uplink_recoverable_packet_loss_fraction;
+         arg.uplink_packet_loss_fraction == metric.uplink_packet_loss_fraction;
 }
 
 MATCHER_P(IsRtcEventAnaConfigEqualTo, config, "") {
@@ -139,17 +136,6 @@ TEST(AudioNetworkAdaptorImplTest,
   states.audio_network_adaptor->SetUplinkPacketLossFraction(kPacketLoss);
 }
 
-TEST(AudioNetworkAdaptorImplTest,
-     UpdateNetworkMetricsIsCalledOnSetUplinkRecoverablePacketLossFraction) {
-  auto states = CreateAudioNetworkAdaptor();
-  constexpr float kRecoverablePacketLoss = 0.1f;
-  Controller::NetworkMetrics check;
-  check.uplink_recoverable_packet_loss_fraction = kRecoverablePacketLoss;
-  SetExpectCallToUpdateNetworkMetrics(states.mock_controllers, check);
-  states.audio_network_adaptor->SetUplinkRecoverablePacketLossFraction(
-      kRecoverablePacketLoss);
-}
-
 TEST(AudioNetworkAdaptorImplTest, UpdateNetworkMetricsIsCalledOnSetRtt) {
   auto states = CreateAudioNetworkAdaptor();
   constexpr int kRtt = 100;
@@ -216,7 +202,6 @@ TEST(AudioNetworkAdaptorImplTest,
 
   constexpr int kBandwidth = 16000;
   constexpr float kPacketLoss = 0.7f;
-  const auto kRecoverablePacketLoss = 0.2f;
   constexpr int kRtt = 100;
   constexpr int kTargetAudioBitrate = 15000;
   constexpr size_t kOverhead = 64;
@@ -238,11 +223,6 @@ TEST(AudioNetworkAdaptorImplTest,
 
   fake_clock.AdvanceTime(TimeDelta::ms(50));
   timestamp_check += 50;
-  check.uplink_recoverable_packet_loss_fraction = kRecoverablePacketLoss;
-  EXPECT_CALL(*states.mock_debug_dump_writer,
-              DumpNetworkMetrics(NetworkMetricsIs(check), timestamp_check));
-  states.audio_network_adaptor->SetUplinkRecoverablePacketLossFraction(
-      kRecoverablePacketLoss);
 
   fake_clock.AdvanceTime(TimeDelta::ms(200));
   timestamp_check += 200;

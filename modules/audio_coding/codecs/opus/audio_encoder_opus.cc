@@ -593,15 +593,6 @@ void AudioEncoderOpusImpl::OnReceivedUplinkPacketLossFraction(
   ApplyAudioNetworkAdaptor();
 }
 
-void AudioEncoderOpusImpl::OnReceivedUplinkRecoverablePacketLossFraction(
-    float uplink_recoverable_packet_loss_fraction) {
-  if (!audio_network_adaptor_)
-    return;
-  audio_network_adaptor_->SetUplinkRecoverablePacketLossFraction(
-      uplink_recoverable_packet_loss_fraction);
-  ApplyAudioNetworkAdaptor();
-}
-
 void AudioEncoderOpusImpl::OnReceivedUplinkBandwidth(
     int target_audio_bitrate_bps,
     absl::optional<int64_t> bwe_period_ms,

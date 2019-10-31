@@ -700,29 +700,6 @@ TEST(AudioSendStreamTest, DontRecreateEncoder) {
   send_stream->Reconfigure(helper.config());
 }
 
-// Allow to check for race conditions under tsan.
-// This mimicks the situation where 'ModuleProcessThread' (pacer thread) is
-// launched by webrtc::RtpTransportControllerSend::RtpTransportControllerSend().
-TEST(AudioSendStreamTest, RaceFree) {
-  ConfigHelper helper(false, false);
-  // Sanity checks: copy-pasted from DontRecreateEncoder test.
-  EXPECT_CALL(*helper.channel_send(), SetEncoderForMock(_, _))
-      .WillOnce(Return());
-
-  EXPECT_CALL(*helper.channel_send(), RegisterCngPayloadType(105, 8000));
-
-  helper.config().send_codec_spec =
-      AudioSendStream::Config::SendCodecSpec(9, kG722Format);
-  helper.config().send_codec_spec->cng_payload_type = 105;
-  auto send_stream = helper.CreateAudioSendStream();
-  std::thread pacer([&]() {
-    send_stream->OnPacketAdded(/*ssrc*/ 0xcafe,
-                               /*seq_num*/ 0xf00d);
-  });
-  send_stream->Reconfigure(helper.config());
-  pacer.join();
-}
-
 TEST(AudioSendStreamTest, ReconfigureTransportCcResetsFirst) {
   ScopedFieldTrials field_trials("WebRTC-Audio-SendSideBwe/Enabled/");
   ConfigHelper helper(false, true);

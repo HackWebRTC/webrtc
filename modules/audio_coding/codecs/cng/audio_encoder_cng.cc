@@ -52,8 +52,6 @@ class AudioEncoderCng final : public AudioEncoder {
       override;
   void OnReceivedUplinkPacketLossFraction(
       float uplink_packet_loss_fraction) override;
-  void OnReceivedUplinkRecoverablePacketLossFraction(
-      float uplink_recoverable_packet_loss_fraction) override;
   void OnReceivedUplinkBandwidth(
       int target_audio_bitrate_bps,
       absl::optional<int64_t> bwe_period_ms) override;
@@ -218,12 +216,6 @@ void AudioEncoderCng::OnReceivedUplinkPacketLossFraction(
     float uplink_packet_loss_fraction) {
   speech_encoder_->OnReceivedUplinkPacketLossFraction(
       uplink_packet_loss_fraction);
-}
-
-void AudioEncoderCng::OnReceivedUplinkRecoverablePacketLossFraction(
-    float uplink_recoverable_packet_loss_fraction) {
-  speech_encoder_->OnReceivedUplinkRecoverablePacketLossFraction(
-      uplink_recoverable_packet_loss_fraction);
 }
 
 void AudioEncoderCng::OnReceivedUplinkBandwidth(
