@@ -143,16 +143,24 @@ bool AbsoluteCaptureTimeExtension::Write(rtc::ArrayView<uint8_t> data,
 
 // An RTP Header Extension for Client-to-Mixer Audio Level Indication
 //
-// https://datatracker.ietf.org/doc/draft-lennox-avt-rtp-audio-level-exthdr/
+// https://tools.ietf.org/html/rfc6464
 //
 // The form of the audio level extension block:
 //
-//    0                   1
-//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |  ID   | len=0 |V|   level     |
-//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  0                   1
+//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// |  ID   | len=0 |V| level       |
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// Sample Audio Level Encoding Using the One-Byte Header Format
 //
+//  0                   1                   2
+//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// |      ID       |     len=1     |V|    level    |
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// Sample Audio Level Encoding Using the Two-Byte Header Format
+
 constexpr RTPExtensionType AudioLevel::kId;
 constexpr uint8_t AudioLevel::kValueSizeBytes;
 constexpr const char AudioLevel::kUri[];
@@ -160,6 +168,7 @@ constexpr const char AudioLevel::kUri[];
 bool AudioLevel::Parse(rtc::ArrayView<const uint8_t> data,
                        bool* voice_activity,
                        uint8_t* audio_level) {
+  // One-byte and two-byte format share the same data definition.
   if (data.size() != 1)
     return false;
   *voice_activity = (data[0] & 0x80) != 0;
@@ -170,6 +179,7 @@ bool AudioLevel::Parse(rtc::ArrayView<const uint8_t> data,
 bool AudioLevel::Write(rtc::ArrayView<uint8_t> data,
                        bool voice_activity,
                        uint8_t audio_level) {
+  // One-byte and two-byte format share the same data definition.
   RTC_DCHECK_EQ(data.size(), 1);
   RTC_CHECK_LE(audio_level, 0x7f);
   data[0] = (voice_activity ? 0x80 : 0x00) | audio_level;
