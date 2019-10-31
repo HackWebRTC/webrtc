@@ -58,19 +58,7 @@ CallTest::CallTest()
       audio_encoder_factory_(CreateBuiltinAudioEncoderFactory()),
       task_queue_("CallTestTaskQueue") {}
 
-CallTest::~CallTest() {
-  // In most cases the task_queue_ should have been stopped by now, assuming
-  // the regular path of using CallTest to call PerformTest (followed by
-  // cleanup). However, there are some tests that don't use the class that way
-  // hence we need this special handling for cleaning up.
-  if (task_queue_.IsRunning()) {
-    SendTask(RTC_FROM_HERE, &task_queue_, [this]() {
-      fake_send_audio_device_ = nullptr;
-      fake_recv_audio_device_ = nullptr;
-      video_sources_.clear();
-    });
-  }
-}
+CallTest::~CallTest() = default;
 
 void CallTest::RegisterRtpExtension(const RtpExtension& extension) {
   for (const RtpExtension& registered_extension : rtp_extensions_) {
@@ -209,15 +197,6 @@ void CallTest::RunBaseTest(BaseTest* test) {
     fake_send_audio_device_ = nullptr;
     fake_recv_audio_device_ = nullptr;
   });
-
-  // To avoid a race condition during destruction, which can happen while
-  // a derived class is being destructed but pending tasks might still run
-  // because the |task_queue_| is still in scope, we stop the TQ here.
-  // Note that tests should not be posting more tasks during teardown but
-  // as is, that's hard to control with the current test harness. E.g. transport
-  // classes continue to issue callbacks (e.g. OnSendRtp) during teardown, which
-  // can have a ripple effect.
-  task_queue_.Stop();
 }
 
 void CallTest::CreateCalls() {

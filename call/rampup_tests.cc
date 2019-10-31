@@ -91,10 +91,7 @@ RampUpTester::RampUpTester(size_t num_video_streams,
   EXPECT_LE(num_audio_streams_, 1u);
 }
 
-RampUpTester::~RampUpTester() {
-  // Special case for WebRTC-QuickPerfTest/Enabled/
-  SendTask(RTC_FROM_HERE, task_queue_, [this] { pending_task_.Stop(); });
-}
+RampUpTester::~RampUpTester() = default;
 
 void RampUpTester::ModifySenderBitrateConfig(
     BitrateConstraints* bitrate_config) {
