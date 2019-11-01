@@ -79,8 +79,8 @@ PeerConnectionFactory::PeerConnectionFactory(
           std::move(dependencies.network_state_predictor_factory)),
       injected_network_controller_factory_(
           std::move(dependencies.network_controller_factory)),
-      media_transport_factory_(
-          std::move(dependencies.media_transport_factory)) {
+      media_transport_factory_(std::move(dependencies.media_transport_factory)),
+      neteq_factory_(std::move(dependencies.neteq_factory)) {
   if (!network_thread_) {
     owned_network_thread_ = rtc::Thread::CreateWithSocketServer();
     owned_network_thread_->SetName("pc_network_thread", nullptr);
@@ -371,6 +371,7 @@ std::unique_ptr<Call> PeerConnectionFactory::CreateCall_w(
   call_config.task_queue_factory = task_queue_factory_.get();
   call_config.network_state_predictor_factory =
       network_state_predictor_factory_.get();
+  call_config.neteq_factory = neteq_factory_.get();
 
   if (field_trial::IsEnabled("WebRTC-Bwe-InjectedCongestionController")) {
     RTC_LOG(LS_INFO) << "Using injected network controller factory";

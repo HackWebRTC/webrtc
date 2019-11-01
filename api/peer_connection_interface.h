@@ -85,6 +85,7 @@
 #include "api/fec_controller.h"
 #include "api/jsep.h"
 #include "api/media_stream_interface.h"
+#include "api/neteq/neteq_factory.h"
 #include "api/network_state_predictor.h"
 #include "api/packet_socket_factory.h"
 #include "api/rtc_error.h"
@@ -1318,6 +1319,7 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
       network_state_predictor_factory;
   std::unique_ptr<NetworkControllerFactoryInterface> network_controller_factory;
   std::unique_ptr<MediaTransportFactory> media_transport_factory;
+  std::unique_ptr<NetEqFactory> neteq_factory;
 };
 
 // PeerConnectionFactoryInterface is the factory interface used for creating

@@ -42,6 +42,7 @@ rtc_library("call_interfaces") {
     "../api/crypto:frame_decryptor_interface",
     "../api/crypto:frame_encryptor_interface",
     "../api/crypto:options",
+    "../api/neteq:neteq_api",
     "../api/task_queue",
     "../api/transport:bitrate_settings",
     "../api/transport:network_control",

@@ -684,7 +684,8 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
       CreateRtcLogStreamConfig(config)));
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
       clock_, &audio_receiver_controller_, transport_send_ptr_->packet_router(),
-      module_process_thread_.get(), config, config_.audio_state, event_log_);
+      module_process_thread_.get(), config_.neteq_factory, config,
+      config_.audio_state, event_log_);
   {
     WriteLockScoped write_lock(*receive_crit_);
     receive_rtp_config_.emplace(config.rtp.remote_ssrc,

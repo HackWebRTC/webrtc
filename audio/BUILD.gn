@@ -50,6 +50,7 @@ rtc_library("audio") {
     "../api/crypto:frame_decryptor_interface",
     "../api/crypto:frame_encryptor_interface",
     "../api/crypto:options",
+    "../api/neteq:neteq_api",
     "../api/rtc_event_log",
     "../api/task_queue",
     "../api/transport/media:media_transport_interface",

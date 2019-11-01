@@ -72,11 +72,13 @@ RTPHeader CreateRTPHeaderForMediaTransportFrame(
 }
 
 AudioCodingModule::Config AcmConfig(
+    NetEqFactory* neteq_factory,
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
     absl::optional<AudioCodecPairId> codec_pair_id,
     size_t jitter_buffer_max_packets,
     bool jitter_buffer_fast_playout) {
   AudioCodingModule::Config acm_config;
+  acm_config.neteq_factory = neteq_factory;
   acm_config.decoder_factory = decoder_factory;
   acm_config.neteq_config.codec_pair_id = codec_pair_id;
   acm_config.neteq_config.max_packets_in_buffer = jitter_buffer_max_packets;
@@ -92,6 +94,7 @@ class ChannelReceive : public ChannelReceiveInterface,
   // Used for receive streams.
   ChannelReceive(Clock* clock,
                  ProcessThread* module_process_thread,
+                 NetEqFactory* neteq_factory,
                  AudioDeviceModule* audio_device_module,
                  const MediaTransportConfig& media_transport_config,
                  Transport* rtcp_send_transport,
@@ -453,6 +456,7 @@ int ChannelReceive::PreferredSampleRate() const {
 ChannelReceive::ChannelReceive(
     Clock* clock,
     ProcessThread* module_process_thread,
+    NetEqFactory* neteq_factory,
     AudioDeviceModule* audio_device_module,
     const MediaTransportConfig& media_transport_config,
     Transport* rtcp_send_transport,
@@ -470,7 +474,8 @@ ChannelReceive::ChannelReceive(
     : event_log_(rtc_event_log),
       rtp_receive_statistics_(ReceiveStatistics::Create(clock)),
       remote_ssrc_(remote_ssrc),
-      acm_receiver_(AcmConfig(decoder_factory,
+      acm_receiver_(AcmConfig(neteq_factory,
+                              decoder_factory,
                               codec_pair_id,
                               jitter_buffer_max_packets,
                               jitter_buffer_fast_playout)),
@@ -964,6 +969,7 @@ int64_t ChannelReceive::GetRTT() const {
 std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
     Clock* clock,
     ProcessThread* module_process_thread,
+    NetEqFactory* neteq_factory,
     AudioDeviceModule* audio_device_module,
     const MediaTransportConfig& media_transport_config,
     Transport* rtcp_send_transport,
@@ -979,9 +985,9 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
     const webrtc::CryptoOptions& crypto_options) {
   return std::make_unique<ChannelReceive>(
-      clock, module_process_thread, audio_device_module, media_transport_config,
-      rtcp_send_transport, rtc_event_log, local_ssrc, remote_ssrc,
-      jitter_buffer_max_packets, jitter_buffer_fast_playout,
+      clock, module_process_thread, neteq_factory, audio_device_module,
+      media_transport_config, rtcp_send_transport, rtc_event_log, local_ssrc,
+      remote_ssrc, jitter_buffer_max_packets, jitter_buffer_fast_playout,
       jitter_buffer_min_delay_ms, jitter_buffer_enable_rtx_handling,
       decoder_factory, codec_pair_id, frame_decryptor, crypto_options);
 }

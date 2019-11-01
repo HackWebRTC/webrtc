@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "api/audio/audio_mixer.h"
+#include "api/neteq/neteq_factory.h"
 #include "api/rtp_headers.h"
 #include "audio/audio_state.h"
 #include "call/audio_receive_stream.h"
@@ -47,6 +48,7 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
                      RtpStreamReceiverControllerInterface* receiver_controller,
                      PacketRouter* packet_router,
                      ProcessThread* module_process_thread,
+                     NetEqFactory* neteq_factory,
                      const webrtc::AudioReceiveStream::Config& config,
                      const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
                      webrtc::RtcEventLog* event_log);

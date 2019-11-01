@@ -11,6 +11,7 @@
 #define CALL_CALL_CONFIG_H_
 
 #include "api/fec_controller.h"
+#include "api/neteq/neteq_factory.h"
 #include "api/network_state_predictor.h"
 #include "api/rtc_error.h"
 #include "api/task_queue/task_queue_factory.h"
@@ -56,6 +57,9 @@ struct CallConfig {
 
   // Network controller factory to use for this call.
   NetworkControllerFactoryInterface* network_controller_factory = nullptr;
+
+  // NetEq factory to use for this call.
+  NetEqFactory* neteq_factory = nullptr;
 };
 
 }  // namespace webrtc

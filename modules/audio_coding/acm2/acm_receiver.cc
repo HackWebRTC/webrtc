@@ -37,19 +37,28 @@ namespace acm2 {
 namespace {
 
 std::unique_ptr<NetEq> CreateNetEq(
+    NetEqFactory* neteq_factory,
     const NetEq::Config& config,
     Clock* clock,
     const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
-  CustomNetEqFactory neteq_factory(
+  RTC_CHECK((neteq_factory == nullptr) || (decoder_factory.get() == nullptr))
+      << "Either a NetEqFactory or a AudioDecoderFactory should be injected, "
+         "supplying both is not supported. Please wrap the AudioDecoderFactory "
+         "inside the NetEqFactory when using both.";
+  if (neteq_factory) {
+    return neteq_factory->CreateNetEq(config, clock);
+  }
+  CustomNetEqFactory custom_factory(
       decoder_factory, std::make_unique<DefaultNetEqControllerFactory>());
-  return neteq_factory.CreateNetEq(config, clock);
+  return custom_factory.CreateNetEq(config, clock);
 }
 
 }  // namespace
 
 AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
     : last_audio_buffer_(new int16_t[AudioFrame::kMaxDataSizeSamples]),
-      neteq_(CreateNetEq(config.neteq_config,
+      neteq_(CreateNetEq(config.neteq_factory,
+                         config.neteq_config,
                          config.clock,
                          config.decoder_factory)),
       clock_(config.clock),

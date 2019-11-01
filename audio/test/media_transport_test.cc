@@ -117,8 +117,8 @@ TEST(AudioWithMediaTransport, DeliversAudio) {
   webrtc::internal::AudioReceiveStream receive_stream(
       Clock::GetRealTimeClock(),
       /*receiver_controller=*/nullptr,
-      /*packet_router=*/nullptr, receive_process_thread.get(), receive_config,
-      audio_state, &null_event_log);
+      /*packet_router=*/nullptr, receive_process_thread.get(),
+      /*neteq_factory=*/nullptr, receive_config, audio_state, &null_event_log);
 
   // TODO(nisse): Update AudioSendStream to not require send_transport when a
   // MediaTransport is provided.

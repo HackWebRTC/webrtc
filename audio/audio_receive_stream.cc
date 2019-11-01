@@ -70,13 +70,15 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
     Clock* clock,
     webrtc::AudioState* audio_state,
     ProcessThread* module_process_thread,
+    NetEqFactory* neteq_factory,
     const webrtc::AudioReceiveStream::Config& config,
     RtcEventLog* event_log) {
   RTC_DCHECK(audio_state);
   internal::AudioState* internal_audio_state =
       static_cast<internal::AudioState*>(audio_state);
   return voe::CreateChannelReceive(
-      clock, module_process_thread, internal_audio_state->audio_device_module(),
+      clock, module_process_thread, neteq_factory,
+      internal_audio_state->audio_device_module(),
       config.media_transport_config, config.rtcp_send_transport, event_log,
       config.rtp.local_ssrc, config.rtp.remote_ssrc,
       config.jitter_buffer_max_packets, config.jitter_buffer_fast_accelerate,
@@ -91,6 +93,7 @@ AudioReceiveStream::AudioReceiveStream(
     RtpStreamReceiverControllerInterface* receiver_controller,
     PacketRouter* packet_router,
     ProcessThread* module_process_thread,
+    NetEqFactory* neteq_factory,
     const webrtc::AudioReceiveStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
     webrtc::RtcEventLog* event_log)
@@ -103,6 +106,7 @@ AudioReceiveStream::AudioReceiveStream(
                          CreateChannelReceive(clock,
                                               audio_state.get(),
                                               module_process_thread,
+                                              neteq_factory,
                                               config,
                                               event_log)) {}
 
