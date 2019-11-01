@@ -90,9 +90,6 @@ class GatedRecurrentLayer {
   void ComputeOutput(rtc::ArrayView<const float> input);
 
  private:
-  // No SIMD optimizations.
-  void ComputeOutput_NONE(rtc::ArrayView<const float> input);
-
   const size_t input_size_;
   const size_t output_size_;
   const std::vector<float> bias_;
