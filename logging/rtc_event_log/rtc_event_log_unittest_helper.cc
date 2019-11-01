@@ -319,6 +319,7 @@ rtcp::TransportFeedback EventGenerator::NewTransportFeedback() {
   uint16_t base_seq_no = prng_.Rand<uint16_t>();
   int64_t base_time_us = prng_.Rand<uint32_t>();
   transport_feedback.SetBase(base_seq_no, base_time_us);
+  transport_feedback.AddReceivedPacket(base_seq_no, base_time_us);
   int64_t time_us = base_time_us;
   for (uint16_t i = 1u; i < 10u; i++) {
     time_us += prng_.Rand(0, 100000);

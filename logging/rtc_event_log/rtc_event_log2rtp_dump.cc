@@ -186,8 +186,10 @@ int main(int argc, char* argv[]) {
   }
 
   webrtc::ParsedRtcEventLog parsed_stream;
-  if (!parsed_stream.ParseFile(input_file)) {
-    std::cerr << "Error while parsing input file: " << input_file << std::endl;
+  auto status = parsed_stream.ParseFile(input_file);
+  if (!status.ok()) {
+    std::cerr << "Failed to parse event log " << input_file << ": "
+              << status.message() << std::endl;
     return -1;
   }
 

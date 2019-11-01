@@ -258,7 +258,7 @@ void RtcEventLogSession::WriteVideoRecvConfigs(size_t video_recv_streams,
 
   clock_.AdvanceTime(TimeDelta::ms(prng_.Rand(20)));
   uint32_t ssrc = prng_.Rand<uint32_t>();
-  incoming_extensions_.emplace_back(prng_.Rand<uint32_t>(), all_extensions);
+  incoming_extensions_.emplace_back(ssrc, all_extensions);
   auto event = gen_.NewVideoReceiveStreamConfig(ssrc, all_extensions);
   event_log->Log(event->Copy());
   video_recv_config_list_.push_back(std::move(event));
@@ -287,7 +287,7 @@ void RtcEventLogSession::WriteVideoSendConfigs(size_t video_send_streams,
 
   clock_.AdvanceTime(TimeDelta::ms(prng_.Rand(20)));
   uint32_t ssrc = prng_.Rand<uint32_t>();
-  outgoing_extensions_.emplace_back(prng_.Rand<uint32_t>(), all_extensions);
+  outgoing_extensions_.emplace_back(ssrc, all_extensions);
   auto event = gen_.NewVideoSendStreamConfig(ssrc, all_extensions);
   event_log->Log(event->Copy());
   video_send_config_list_.push_back(std::move(event));
@@ -545,7 +545,7 @@ void RtcEventLogSession::WriteLog(EventCounts count,
 void RtcEventLogSession::ReadAndVerifyLog() {
   // Read the generated file from disk.
   ParsedRtcEventLog parsed_log;
-  ASSERT_TRUE(parsed_log.ParseFile(temp_filename_));
+  ASSERT_TRUE(parsed_log.ParseFile(temp_filename_).ok());
 
   // Start and stop events.
   auto& parsed_start_log_events = parsed_log.start_log_events();
@@ -875,7 +875,7 @@ TEST_P(RtcEventLogCircularBufferTest, KeepsMostRecentEvents) {
 
   // Read the generated file from disk.
   ParsedRtcEventLog parsed_log;
-  ASSERT_TRUE(parsed_log.ParseFile(temp_filename));
+  ASSERT_TRUE(parsed_log.ParseFile(temp_filename).ok());
 
   const auto& start_log_events = parsed_log.start_log_events();
   ASSERT_EQ(start_log_events.size(), 1u);

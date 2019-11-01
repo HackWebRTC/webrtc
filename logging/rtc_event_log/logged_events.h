@@ -251,7 +251,7 @@ struct LoggedRemoteEstimateEvent {
 };
 
 struct LoggedRtpPacket {
-  LoggedRtpPacket(uint64_t timestamp_us,
+  LoggedRtpPacket(int64_t timestamp_us,
                   RTPHeader header,
                   size_t header_length,
                   size_t total_length)
@@ -271,7 +271,7 @@ struct LoggedRtpPacket {
 };
 
 struct LoggedRtpPacketIncoming {
-  LoggedRtpPacketIncoming(uint64_t timestamp_us,
+  LoggedRtpPacketIncoming(int64_t timestamp_us,
                           RTPHeader header,
                           size_t header_length,
                           size_t total_length)
@@ -283,7 +283,7 @@ struct LoggedRtpPacketIncoming {
 };
 
 struct LoggedRtpPacketOutgoing {
-  LoggedRtpPacketOutgoing(uint64_t timestamp_us,
+  LoggedRtpPacketOutgoing(int64_t timestamp_us,
                           RTPHeader header,
                           size_t header_length,
                           size_t total_length)
@@ -295,10 +295,10 @@ struct LoggedRtpPacketOutgoing {
 };
 
 struct LoggedRtcpPacket {
-  LoggedRtcpPacket(uint64_t timestamp_us,
+  LoggedRtcpPacket(int64_t timestamp_us,
                    const uint8_t* packet,
                    size_t total_length);
-  LoggedRtcpPacket(uint64_t timestamp_us, const std::string& packet);
+  LoggedRtcpPacket(int64_t timestamp_us, const std::string& packet);
   LoggedRtcpPacket(const LoggedRtcpPacket&);
   ~LoggedRtcpPacket();
 
@@ -310,7 +310,7 @@ struct LoggedRtcpPacket {
 };
 
 struct LoggedRtcpPacketIncoming {
-  LoggedRtcpPacketIncoming(uint64_t timestamp_us,
+  LoggedRtcpPacketIncoming(int64_t timestamp_us,
                            const uint8_t* packet,
                            size_t total_length)
       : rtcp(timestamp_us, packet, total_length) {}
@@ -324,7 +324,7 @@ struct LoggedRtcpPacketIncoming {
 };
 
 struct LoggedRtcpPacketOutgoing {
-  LoggedRtcpPacketOutgoing(uint64_t timestamp_us,
+  LoggedRtcpPacketOutgoing(int64_t timestamp_us,
                            const uint8_t* packet,
                            size_t total_length)
       : rtcp(timestamp_us, packet, total_length) {}

@@ -29,6 +29,7 @@
 #include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 #include "rtc_tools/rtc_event_log_visualizer/analyzer.h"
 #include "rtc_tools/rtc_event_log_visualizer/plot_base.h"
 #include "rtc_tools/rtc_event_log_visualizer/plot_protobuf.h"
@@ -198,6 +199,12 @@ int main(int argc, char* argv[]) {
   absl::SetFlagsUsageConfig(config);
   std::vector<char*> args = absl::ParseCommandLine(argc, argv);
 
+  // Print RTC_LOG warnings and errors even in release builds.
+  if (rtc::LogMessage::GetLogToDebug() > rtc::LS_WARNING) {
+    rtc::LogMessage::LogToDebug(rtc::LS_WARNING);
+  }
+  rtc::LogMessage::SetLogToStderr(true);
+
   // Flag replacements
   std::map<std::string, std::vector<std::string>> flag_aliases = {
       {"default",
@@ -241,13 +248,16 @@ int main(int argc, char* argv[]) {
     header_extensions = webrtc::ParsedRtcEventLog::
         UnconfiguredHeaderExtensions::kAttemptWebrtcDefaultConfig;
   }
-  webrtc::ParsedRtcEventLog parsed_log(header_extensions);
+  webrtc::ParsedRtcEventLog parsed_log(header_extensions,
+                                       /*allow_incomplete_logs*/ true);
 
   if (args.size() == 2) {
     std::string filename = args[1];
-    if (!parsed_log.ParseFile(filename)) {
-      std::cerr << "Could not parse the entire log file." << std::endl;
-      std::cerr << "Only the parsable events will be analyzed." << std::endl;
+    auto status = parsed_log.ParseFile(filename);
+    if (!status.ok()) {
+      std::cerr << "Failed to parse " << filename << ": " << status.message()
+                << std::endl;
+      return -1;
     }
   }
 
