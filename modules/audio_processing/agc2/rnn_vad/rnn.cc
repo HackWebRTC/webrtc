@@ -44,9 +44,25 @@ using rnnoise::kOutputLayerOutputSize;
 static_assert(kOutputLayerOutputSize <= kFullyConnectedLayersMaxUnits,
               "Increase kFullyConnectedLayersMaxUnits.");
 
-using rnnoise::RectifiedLinearUnit;
 using rnnoise::SigmoidApproximated;
 using rnnoise::TansigApproximated;
+
+namespace {
+
+inline float RectifiedLinearUnit(float x) {
+  return x < 0.f ? 0.f : x;
+}
+
+std::vector<float> GetScaledParams(rtc::ArrayView<const int8_t> params) {
+  std::vector<float> scaled_params(params.size());
+  std::transform(params.begin(), params.end(), scaled_params.begin(),
+                 [](int8_t x) -> float {
+                   return rnnoise::kWeightsScale * static_cast<float>(x);
+                 });
+  return scaled_params;
+}
+
+}  // namespace
 
 FullyConnectedLayer::FullyConnectedLayer(
     const size_t input_size,
@@ -56,8 +72,8 @@ FullyConnectedLayer::FullyConnectedLayer(
     float (*const activation_function)(float))
     : input_size_(input_size),
       output_size_(output_size),
-      bias_(bias),
-      weights_(weights),
+      bias_(GetScaledParams(bias)),
+      weights_(GetScaledParams(weights)),
       activation_function_(activation_function) {
   RTC_DCHECK_LE(output_size_, kFullyConnectedLayersMaxUnits)
       << "Static over-allocation of fully-connected layers output vectors is "
@@ -84,7 +100,7 @@ void FullyConnectedLayer::ComputeOutput(rtc::ArrayView<const float> input) {
     for (size_t i = 0; i < input_size_; ++i) {
       output_[o] += input[i] * weights_[i * output_size_ + o];
     }
-    output_[o] = (*activation_function_)(kWeightsScale * output_[o]);
+    output_[o] = (*activation_function_)(output_[o]);
   }
 }
 
@@ -93,14 +109,12 @@ GatedRecurrentLayer::GatedRecurrentLayer(
     const size_t output_size,
     const rtc::ArrayView<const int8_t> bias,
     const rtc::ArrayView<const int8_t> weights,
-    const rtc::ArrayView<const int8_t> recurrent_weights,
-    float (*const activation_function)(float))
+    const rtc::ArrayView<const int8_t> recurrent_weights)
     : input_size_(input_size),
       output_size_(output_size),
-      bias_(bias),
-      weights_(weights),
-      recurrent_weights_(recurrent_weights),
-      activation_function_(activation_function) {
+      bias_(GetScaledParams(bias)),
+      weights_(GetScaledParams(weights)),
+      recurrent_weights_(GetScaledParams(recurrent_weights)) {
   RTC_DCHECK_LE(output_size_, kRecurrentLayersMaxUnits)
       << "Static over-allocation of recurrent layers state vectors is not "
       << "sufficient.";
@@ -144,7 +158,7 @@ void GatedRecurrentLayer::ComputeOutput(rtc::ArrayView<const float> input) {
     for (size_t s = 0; s < output_size_; ++s) {
       update[o] += state_[s] * recurrent_weights_[s * stride + o];
     }  // Add state.
-    update[o] = SigmoidApproximated(kWeightsScale * update[o]);
+    update[o] = SigmoidApproximated(update[o]);
   }
 
   // Compute reset gates.
@@ -158,7 +172,7 @@ void GatedRecurrentLayer::ComputeOutput(rtc::ArrayView<const float> input) {
     for (size_t s = 0; s < output_size_; ++s) {  // Add state.
       reset[o] += state_[s] * recurrent_weights_[offset + s * stride + o];
     }
-    reset[o] = SigmoidApproximated(kWeightsScale * reset[o]);
+    reset[o] = SigmoidApproximated(reset[o]);
   }
 
   // Compute output.
@@ -174,7 +188,7 @@ void GatedRecurrentLayer::ComputeOutput(rtc::ArrayView<const float> input) {
       output[o] +=
           state_[s] * recurrent_weights_[offset + s * stride + o] * reset[s];
     }
-    output[o] = (*activation_function_)(kWeightsScale * output[o]);
+    output[o] = RectifiedLinearUnit(output[o]);
     // Update output through the update gates.
     output[o] = update[o] * state_[o] + (1.f - update[o]) * output[o];
   }
@@ -194,8 +208,7 @@ RnnBasedVad::RnnBasedVad()
                     kHiddenLayerOutputSize,
                     kHiddenGruBias,
                     kHiddenGruWeights,
-                    kHiddenGruRecurrentWeights,
-                    RectifiedLinearUnit),
+                    kHiddenGruRecurrentWeights),
       output_layer_(kHiddenLayerOutputSize,
                     kOutputLayerOutputSize,
                     kOutputDenseBias,

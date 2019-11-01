@@ -123,8 +123,7 @@ TEST(RnnVadTest, CheckGatedRecurrentLayer) {
       64,  -62, 117, 85,  -51,  -43, 54,  -105, 120, 56,  -128, -107,
       39,  50,  -17, -47, -117, 14,  108, 12,   -7,  -72, 103,  -87,
       -66, 82,  84,  100, -98,  102, -49, 44,   122, 106, -20,  -69};
-  GatedRecurrentLayer gru(5, 4, bias, weights, recurrent_weights,
-                          RectifiedLinearUnit);
+  GatedRecurrentLayer gru(5, 4, bias, weights, recurrent_weights);
   // Test on different inputs.
   {
     const std::array<float, 20> input_sequence = {
