@@ -44,6 +44,7 @@ rtc_library("rnn_vad") {
   deps = [
     "..:biquad_filter",
     "../../../../api:array_view",
+    "../../../../api:function_view",
     "../../../../rtc_base:checks",
     "../../../../rtc_base:rtc_base_approved",
     "../../../../rtc_base/system:arch",
@@ -65,6 +66,8 @@ if (rtc_include_tests) {
       "../../../../api:array_view",
       "../../../../api:scoped_refptr",
       "../../../../rtc_base:checks",
+      "../../../../rtc_base/system:arch",
+      "../../../../system_wrappers:cpu_features_api",
       "../../../../test:fileutils",
       "../../../../test:test_support",
     ]
@@ -113,8 +116,10 @@ if (rtc_include_tests) {
       "../../../../common_audio/",
       "../../../../rtc_base:checks",
       "../../../../rtc_base:logging",
+      "../../../../rtc_base/system:arch",
       "../../../../test:test_support",
       "../../utility:pffft_wrapper",
+      "//third_party/abseil-cpp/absl/memory",
       "//third_party/rnnoise:rnn_vad",
     ]
     data = unittest_resources

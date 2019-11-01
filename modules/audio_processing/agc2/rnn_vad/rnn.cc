@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <numeric>
 
 #include "rtc_base/checks.h"
 #include "third_party/rnnoise/src/rnn_activations.h"
@@ -29,6 +30,7 @@
 
 namespace webrtc {
 namespace rnn_vad {
+namespace {
 
 using rnnoise::kWeightsScale;
 
@@ -56,8 +58,6 @@ static_assert(kOutputLayerOutputSize <= kFullyConnectedLayersMaxUnits,
 using rnnoise::SigmoidApproximated;
 using rnnoise::TansigApproximated;
 
-namespace {
-
 inline float RectifiedLinearUnit(float x) {
   return x < 0.f ? 0.f : x;
 }
@@ -71,6 +71,83 @@ std::vector<float> GetScaledParams(rtc::ArrayView<const int8_t> params) {
   return scaled_params;
 }
 
+// Casts and scales |weights| and re-arranges the layout.
+std::vector<float> GetPreprocessedWeights(rtc::ArrayView<const int8_t> weights,
+                                          const size_t output_size) {
+  if (output_size == 1) {
+    return GetScaledParams(weights);
+  }
+  // Transpose, scale and cast.
+  const size_t input_size = rtc::CheckedDivExact(weights.size(), output_size);
+  std::vector<float> w(weights.size());
+  for (size_t o = 0; o < output_size; ++o) {
+    for (size_t i = 0; i < input_size; ++i) {
+      w[o * input_size + i] = rnnoise::kWeightsScale *
+                              static_cast<float>(weights[i * output_size + o]);
+    }
+  }
+  return w;
+}
+
+// Fully connected layer un-optimized implementation.
+void ComputeFullyConnectedLayerOutput(
+    size_t input_size,
+    size_t output_size,
+    rtc::ArrayView<const float> input,
+    rtc::ArrayView<const float> bias,
+    rtc::ArrayView<const float> weights,
+    rtc::FunctionView<float(float)> activation_function,
+    rtc::ArrayView<float> output) {
+  RTC_DCHECK_EQ(input.size(), input_size);
+  RTC_DCHECK_EQ(bias.size(), output_size);
+  RTC_DCHECK_EQ(weights.size(), input_size * output_size);
+  for (size_t o = 0; o < output_size; ++o) {
+    output[o] = bias[o];
+    // TODO(bugs.chromium.org/9076): Benchmark how different layouts for
+    // |weights_| change the performance across different platforms.
+    for (size_t i = 0; i < input_size; ++i) {
+      output[o] += input[i] * weights[o * input_size + i];
+    }
+    output[o] = activation_function(output[o]);
+  }
+}
+
+#if defined(WEBRTC_ARCH_X86_FAMILY)
+// Fully connected layer SSE2 implementation.
+void ComputeFullyConnectedLayerOutputSse2(
+    size_t input_size,
+    size_t output_size,
+    rtc::ArrayView<const float> input,
+    rtc::ArrayView<const float> bias,
+    rtc::ArrayView<const float> weights,
+    rtc::FunctionView<float(float)> activation_function,
+    rtc::ArrayView<float> output) {
+  RTC_DCHECK_EQ(input.size(), input_size);
+  RTC_DCHECK_EQ(bias.size(), output_size);
+  RTC_DCHECK_EQ(weights.size(), input_size * output_size);
+  const size_t input_size_by_4 = input_size >> 2;
+  const size_t offset = input_size & ~3;
+  __m128 sum_wx_128;
+  const float* v = reinterpret_cast<const float*>(&sum_wx_128);
+  for (size_t o = 0; o < output_size; ++o) {
+    // Perform 128 bit vector operations.
+    sum_wx_128 = _mm_set1_ps(0);
+    const float* x_p = input.data();
+    const float* w_p = weights.data() + o * input_size;
+    for (size_t i = 0; i < input_size_by_4; ++i, x_p += 4, w_p += 4) {
+      sum_wx_128 = _mm_add_ps(sum_wx_128,
+                              _mm_mul_ps(_mm_loadu_ps(x_p), _mm_loadu_ps(w_p)));
+    }
+    // Perform non-vector operations for any remaining items, sum up bias term
+    // and results from the vectorized code, and apply the activation function.
+    output[o] = activation_function(
+        std::inner_product(input.begin() + offset, input.end(),
+                           weights.begin() + o * input_size + offset,
+                           bias[o] + v[0] + v[1] + v[2] + v[3]));
+  }
+}
+#endif
+
 }  // namespace
 
 FullyConnectedLayer::FullyConnectedLayer(
@@ -78,12 +155,12 @@ FullyConnectedLayer::FullyConnectedLayer(
     const size_t output_size,
     const rtc::ArrayView<const int8_t> bias,
     const rtc::ArrayView<const int8_t> weights,
-    float (*const activation_function)(float),
+    rtc::FunctionView<float(float)> activation_function,
     Optimization optimization)
     : input_size_(input_size),
       output_size_(output_size),
       bias_(GetScaledParams(bias)),
-      weights_(GetScaledParams(weights)),
+      weights_(GetPreprocessedWeights(weights, output_size)),
       activation_function_(activation_function),
       optimization_(optimization) {
   RTC_DCHECK_LE(output_size_, kFullyConnectedLayersMaxUnits)
@@ -105,31 +182,21 @@ void FullyConnectedLayer::ComputeOutput(rtc::ArrayView<const float> input) {
   switch (optimization_) {
 #if defined(WEBRTC_ARCH_X86_FAMILY)
     case Optimization::kSse2:
-      // TODO(bugs.chromium.org/10480): Handle Optimization::kSse2.
-      ComputeOutput_NONE(input);
+      ComputeFullyConnectedLayerOutputSse2(input_size_, output_size_, input,
+                                           bias_, weights_,
+                                           activation_function_, output_);
       break;
 #endif
 #if defined(WEBRTC_HAS_NEON)
     case Optimization::kNeon:
       // TODO(bugs.chromium.org/10480): Handle Optimization::kNeon.
-      ComputeOutput_NONE(input);
+      ComputeFullyConnectedLayerOutput(input_size_, output_size_, input, bias_,
+                                       weights_, activation_function_, output_);
       break;
 #endif
     default:
-      ComputeOutput_NONE(input);
-  }
-}
-
-void FullyConnectedLayer::ComputeOutput_NONE(
-    rtc::ArrayView<const float> input) {
-  for (size_t o = 0; o < output_size_; ++o) {
-    output_[o] = bias_[o];
-    // TODO(bugs.chromium.org/9076): Benchmark how different layouts for
-    // |weights_| change the performance across different platforms.
-    for (size_t i = 0; i < input_size_; ++i) {
-      output_[o] += input[i] * weights_[i * output_size_ + o];
-    }
-    output_[o] = (*activation_function_)(output_[o]);
+      ComputeFullyConnectedLayerOutput(input_size_, output_size_, input, bias_,
+                                       weights_, activation_function_, output_);
   }
 }
 

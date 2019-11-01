@@ -18,7 +18,9 @@
 #include <vector>
 
 #include "api/array_view.h"
+#include "api/function_view.h"
 #include "modules/audio_processing/agc2/rnn_vad/common.h"
+#include "rtc_base/system/arch.h"
 
 namespace webrtc {
 namespace rnn_vad {
@@ -42,30 +44,28 @@ class FullyConnectedLayer {
                       size_t output_size,
                       rtc::ArrayView<const int8_t> bias,
                       rtc::ArrayView<const int8_t> weights,
-                      float (*const activation_function)(float),
+                      rtc::FunctionView<float(float)> activation_function,
                       Optimization optimization);
   FullyConnectedLayer(const FullyConnectedLayer&) = delete;
   FullyConnectedLayer& operator=(const FullyConnectedLayer&) = delete;
   ~FullyConnectedLayer();
   size_t input_size() const { return input_size_; }
   size_t output_size() const { return output_size_; }
+  Optimization optimization() const { return optimization_; }
   rtc::ArrayView<const float> GetOutput() const;
   // Computes the fully-connected layer output.
   void ComputeOutput(rtc::ArrayView<const float> input);
 
  private:
-  // No SIMD optimizations.
-  void ComputeOutput_NONE(rtc::ArrayView<const float> input);
-
   const size_t input_size_;
   const size_t output_size_;
   const std::vector<float> bias_;
   const std::vector<float> weights_;
-  float (*const activation_function_)(float);
-  const Optimization optimization_;
+  rtc::FunctionView<float(float)> activation_function_;
   // The output vector of a recurrent layer has length equal to |output_size_|.
   // However, for efficiency, over-allocation is used.
   std::array<float, kFullyConnectedLayersMaxUnits> output_;
+  const Optimization optimization_;
 };
 
 // Recurrent layer with gated recurrent units (GRUs) with sigmoid and ReLU as
@@ -83,6 +83,7 @@ class GatedRecurrentLayer {
   ~GatedRecurrentLayer();
   size_t input_size() const { return input_size_; }
   size_t output_size() const { return output_size_; }
+  Optimization optimization() const { return optimization_; }
   rtc::ArrayView<const float> GetOutput() const;
   void Reset();
   // Computes the recurrent layer output and updates the status.
