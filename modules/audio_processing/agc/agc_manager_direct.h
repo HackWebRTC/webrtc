@@ -74,6 +74,8 @@ class AgcManagerDirect final {
 
   FRIEND_TEST_ALL_PREFIXES(AgcManagerDirectStandaloneTest,
                            DisableDigitalDisablesDigital);
+  FRIEND_TEST_ALL_PREFIXES(AgcManagerDirectStandaloneTest,
+                           AgcMinMicLevelExperiment);
 
   // Dependency injection for testing. Don't delete |agc| as the memory is owned
   // by the manager.
@@ -91,6 +93,9 @@ class AgcManagerDirect final {
                    int clipped_level_min,
                    bool use_agc2_level_estimation,
                    bool disable_digital_adaptive);
+
+  int min_mic_level() const { return min_mic_level_; }
+  int startup_min_level() const { return startup_min_level_; }
 
   // Sets a new microphone level, after first checking that it hasn't been
   // updated by the user, in which case no action is taken.
@@ -122,6 +127,7 @@ class AgcManagerDirect final {
   bool capture_muted_;
   bool check_volume_on_next_process_;
   bool startup_;
+  const int min_mic_level_;
   const bool use_agc2_level_estimation_;
   const bool disable_digital_adaptive_;
   int startup_min_level_;

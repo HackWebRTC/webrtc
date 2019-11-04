@@ -24,6 +24,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_minmax.h"
+#include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -64,17 +65,42 @@ const int kSurplusCompressionGain = 6;
 constexpr size_t kMaxNumSamplesPerChannel = 1920;
 constexpr size_t kMaxNumChannels = 4;
 
-int ClampLevel(int mic_level) {
-  return rtc::SafeClamp(mic_level, kMinMicLevel, kMaxMicLevel);
+// Returns kMinMicLevel if no field trial exists or if it has been disabled.
+// Returns a value between 0 and 255 depending on the field-trial string.
+// Example: 'WebRTC-Audio-AgcMinMicLevelExperiment/Enabled-80' => returns 80.
+int GetMinMicLevel() {
+  RTC_LOG(LS_INFO) << "[agc] GetMinMicLevel";
+  constexpr char kMinMicLevelFieldTrial[] =
+      "WebRTC-Audio-AgcMinMicLevelExperiment";
+  if (!webrtc::field_trial::IsEnabled(kMinMicLevelFieldTrial)) {
+    RTC_LOG(LS_INFO) << "[agc] Using default min mic level: " << kMinMicLevel;
+    return kMinMicLevel;
+  }
+  const auto field_trial_string =
+      webrtc::field_trial::FindFullName(kMinMicLevelFieldTrial);
+  int min_mic_level = -1;
+  sscanf(field_trial_string.c_str(), "Enabled-%d", &min_mic_level);
+  if (min_mic_level >= 0 && min_mic_level <= 255) {
+    RTC_LOG(LS_INFO) << "[agc] Experimental min mic level: " << min_mic_level;
+    return min_mic_level;
+  } else {
+    RTC_LOG(LS_WARNING) << "[agc] Invalid parameter for "
+                        << kMinMicLevelFieldTrial << ", ignored.";
+    return kMinMicLevel;
+  }
 }
 
-int LevelFromGainError(int gain_error, int level) {
+int ClampLevel(int mic_level, int min_mic_level) {
+  return rtc::SafeClamp(mic_level, min_mic_level, kMaxMicLevel);
+}
+
+int LevelFromGainError(int gain_error, int level, int min_mic_level) {
   RTC_DCHECK_GE(level, 0);
   RTC_DCHECK_LE(level, kMaxMicLevel);
   if (gain_error == 0) {
     return level;
   }
-  // TODO(ajm): Could be made more efficient with a binary search.
+
   int new_level = level;
   if (gain_error > 0) {
     while (kGainMap[new_level] - kGainMap[level] < gain_error &&
@@ -83,7 +109,7 @@ int LevelFromGainError(int gain_error, int level) {
     }
   } else {
     while (kGainMap[new_level] - kGainMap[level] > gain_error &&
-           new_level > kMinMicLevel) {
+           new_level > min_mic_level) {
       --new_level;
     }
   }
@@ -192,9 +218,10 @@ AgcManagerDirect::AgcManagerDirect(Agc* agc,
       capture_muted_(false),
       check_volume_on_next_process_(true),  // Check at startup.
       startup_(true),
+      min_mic_level_(GetMinMicLevel()),
       use_agc2_level_estimation_(use_agc2_level_estimation),
       disable_digital_adaptive_(disable_digital_adaptive),
-      startup_min_level_(ClampLevel(startup_min_level)),
+      startup_min_level_(ClampLevel(startup_min_level, min_mic_level_)),
       clipped_level_min_(clipped_level_min),
       file_preproc_(new DebugFile("agc_preproc.pcm")),
       file_postproc_(new DebugFile("agc_postproc.pcm")) {
@@ -210,6 +237,7 @@ AgcManagerDirect::AgcManagerDirect(Agc* agc,
 AgcManagerDirect::~AgcManagerDirect() {}
 
 int AgcManagerDirect::Initialize() {
+  RTC_DLOG(LS_INFO) << "AgcManagerDirect::Initialize";
   max_level_ = kMaxMicLevel;
   max_compression_gain_ = kMaxCompressionGain;
   target_compression_ = disable_digital_adaptive_ ? 0 : kDefaultCompressionGain;
@@ -415,7 +443,7 @@ int AgcManagerDirect::CheckVolumeAndReset() {
   }
   RTC_DLOG(LS_INFO) << "[agc] Initial GetMicVolume()=" << level;
 
-  int minLevel = startup_ ? startup_min_level_ : kMinMicLevel;
+  int minLevel = startup_ ? startup_min_level_ : min_mic_level_;
   if (level < minLevel) {
     level = minLevel;
     RTC_DLOG(LS_INFO) << "[agc] Initial volume too low, raising to " << level;
@@ -477,7 +505,7 @@ void AgcManagerDirect::UpdateGain() {
     return;
 
   int old_level = level_;
-  SetLevel(LevelFromGainError(residual_gain, level_));
+  SetLevel(LevelFromGainError(residual_gain, level_, min_mic_level_));
   if (old_level != level_) {
     // level_ was updated by SetLevel; log the new value.
     RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.Audio.AgcSetLevel", level_, 1,
