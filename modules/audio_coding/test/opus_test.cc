@@ -299,9 +299,19 @@ void OpusTest::Run(TestPackStereo* channel,
                 opus_mono_decoder_, bitstream, bitstream_len_byte,
                 &out_audio[decoded_samples * channels], &audio_type);
           } else {
-            decoded_samples += WebRtcOpus_Decode(
-                opus_mono_decoder_, NULL, 0,
-                &out_audio[decoded_samples * channels], &audio_type);
+            // Call decoder PLC.
+            constexpr int kPlcDurationMs = 10;
+            constexpr int kPlcSamples = 48 * kPlcDurationMs;
+            size_t total_plc_samples = 0;
+            while (total_plc_samples < frame_length) {
+              int ret = WebRtcOpus_Decode(
+                  opus_mono_decoder_, NULL, 0,
+                  &out_audio[decoded_samples * channels], &audio_type);
+              EXPECT_EQ(ret, kPlcSamples);
+              decoded_samples += ret;
+              total_plc_samples += ret;
+            }
+            EXPECT_EQ(total_plc_samples, frame_length);
           }
         } else {
           if (!lost_packet) {
@@ -309,9 +319,19 @@ void OpusTest::Run(TestPackStereo* channel,
                 opus_stereo_decoder_, bitstream, bitstream_len_byte,
                 &out_audio[decoded_samples * channels], &audio_type);
           } else {
-            decoded_samples += WebRtcOpus_Decode(
-                opus_stereo_decoder_, NULL, 0,
-                &out_audio[decoded_samples * channels], &audio_type);
+            // Call decoder PLC.
+            constexpr int kPlcDurationMs = 10;
+            constexpr int kPlcSamples = 48 * kPlcDurationMs;
+            size_t total_plc_samples = 0;
+            while (total_plc_samples < frame_length) {
+              int ret = WebRtcOpus_Decode(
+                  opus_stereo_decoder_, NULL, 0,
+                  &out_audio[decoded_samples * channels], &audio_type);
+              EXPECT_EQ(ret, kPlcSamples);
+              decoded_samples += ret;
+              total_plc_samples += ret;
+            }
+            EXPECT_EQ(total_plc_samples, frame_length);
           }
         }
 

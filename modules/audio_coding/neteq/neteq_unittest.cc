@@ -508,11 +508,11 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusDtxBitExactness) {
       webrtc::test::ResourcePath("audio_coding/neteq_opus_dtx", "rtp");
 
   const std::string maybe_sse =
-      "713af6c92881f5aab1285765ee6680da9d1c06ce|"
-      "2ac10c4e79aeedd0df2863b079da5848b40f00b5";
+      "0bdeb4ccf95a2577e38274360903ad099fc46787|"
+      "f7bbf5d92a0595a2a3445ffbaddfb20e98b6e94e";
   const std::string output_checksum = PlatformChecksum(
-      maybe_sse, "3ec991b96872123f1554c03c543ca5d518431e46",
-      "da9f9a2d94e0c2d67342fad4965d7b91cda50b25", maybe_sse, maybe_sse);
+      maybe_sse, "6d200cc51a001b6137abf67db2bb8eeb0375cdee",
+      "36d43761de86b12520cf2e63f97372a2b7c6f939", maybe_sse, maybe_sse);
 
   const std::string network_stats_checksum =
       "8caf49765f35b6862066d3f17531ce44d8e25f60";

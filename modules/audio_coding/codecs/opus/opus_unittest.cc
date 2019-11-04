@@ -213,17 +213,34 @@ int OpusTest::EncodeDecode(WebRtcOpusEncInst* encoder,
                            WebRtcOpusDecInst* decoder,
                            int16_t* output_audio,
                            int16_t* audio_type) {
+  const int input_samples_per_channel =
+      rtc::CheckedDivExact(input_audio.size(), channels_);
   int encoded_bytes_int =
-      WebRtcOpus_Encode(encoder, input_audio.data(),
-                        rtc::CheckedDivExact(input_audio.size(), channels_),
+      WebRtcOpus_Encode(encoder, input_audio.data(), input_samples_per_channel,
                         kMaxBytes, bitstream_);
   EXPECT_GE(encoded_bytes_int, 0);
   encoded_bytes_ = static_cast<size_t>(encoded_bytes_int);
-  int est_len = WebRtcOpus_DurationEst(decoder, bitstream_, encoded_bytes_);
-  int act_len = WebRtcOpus_Decode(decoder, bitstream_, encoded_bytes_,
-                                  output_audio, audio_type);
-  EXPECT_EQ(est_len, act_len);
-  return act_len;
+  if (encoded_bytes_ != 0) {
+    int est_len = WebRtcOpus_DurationEst(decoder, bitstream_, encoded_bytes_);
+    int act_len = WebRtcOpus_Decode(decoder, bitstream_, encoded_bytes_,
+                                    output_audio, audio_type);
+    EXPECT_EQ(est_len, act_len);
+    return act_len;
+  } else {
+    int total_dtx_len = 0;
+    const int output_samples_per_channel = input_samples_per_channel *
+                                           decoder_sample_rate_hz_ /
+                                           encoder_sample_rate_hz_;
+    while (total_dtx_len < output_samples_per_channel) {
+      int est_len = WebRtcOpus_DurationEst(decoder, NULL, 0);
+      int act_len = WebRtcOpus_Decode(decoder, NULL, 0,
+                                      &output_audio[total_dtx_len * channels_],
+                                      audio_type);
+      EXPECT_EQ(est_len, act_len);
+      total_dtx_len += act_len;
+    }
+    return total_dtx_len;
+  }
 }
 
 // Test if encoder/decoder can enter DTX mode properly and do not enter DTX when
@@ -808,8 +825,10 @@ TEST_P(OpusTest, OpusDecodePlc) {
                          opus_decoder_, output_data_decode, &audio_type));
 
   // Call decoder PLC.
-  int16_t* plc_buffer = new int16_t[decode_samples_per_channel * channels_];
-  EXPECT_EQ(decode_samples_per_channel,
+  constexpr int kPlcDurationMs = 10;
+  const int plc_samples = decoder_sample_rate_hz_ * kPlcDurationMs / 1000;
+  int16_t* plc_buffer = new int16_t[plc_samples * channels_];
+  EXPECT_EQ(plc_samples,
             WebRtcOpus_Decode(opus_decoder_, NULL, 0, plc_buffer, &audio_type));
 
   // Free memory.

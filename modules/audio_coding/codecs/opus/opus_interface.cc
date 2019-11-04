@@ -11,6 +11,7 @@
 #include "modules/audio_coding/codecs/opus/opus_interface.h"
 
 #include "rtc_base/checks.h"
+#include "system_wrappers/include/field_trial.h"
 
 enum {
 #if WEBRTC_OPUS_SUPPORT_120MS_PTIME
@@ -25,7 +26,13 @@ enum {
    * side, we must allow for packets of that size. NetEq is currently limited
    * to 60 ms on the receive side. */
   kWebRtcOpusMaxDecodeFrameSizeMs = 120,
+
+  // Duration of audio that each call to packet loss concealment covers.
+  kWebRtcOpusPlcFrameSizeMs = 10,
 };
+
+constexpr char kPlcUsePrevDecodedSamplesFieldTrial[] =
+    "WebRTC-Audio-OpusPlcUsePrevDecodedSamples";
 
 static int FrameSizePerChannel(int frame_size_ms, int sample_rate_hz) {
   RTC_DCHECK_GT(frame_size_ms, 0);
@@ -381,9 +388,14 @@ int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst,
     if (error == OPUS_OK && state->decoder) {
       // Creation of memory all ok.
       state->channels = channels;
-      state->prev_decoded_samples = DefaultFrameSizePerChannel(sample_rate_hz);
-      state->in_dtx_mode = 0;
       state->sample_rate_hz = sample_rate_hz;
+      state->plc_use_prev_decoded_samples =
+          webrtc::field_trial::IsEnabled(kPlcUsePrevDecodedSamplesFieldTrial);
+      if (state->plc_use_prev_decoded_samples) {
+        state->prev_decoded_samples =
+            DefaultFrameSizePerChannel(state->sample_rate_hz);
+      }
+      state->in_dtx_mode = 0;
       *inst = state;
       return 0;
     }
@@ -420,9 +432,14 @@ int16_t WebRtcOpus_MultistreamDecoderCreate(
     if (error == OPUS_OK && state->multistream_decoder) {
       // Creation of memory all ok.
       state->channels = channels;
-      state->prev_decoded_samples = DefaultFrameSizePerChannel(48000);
-      state->in_dtx_mode = 0;
       state->sample_rate_hz = 48000;
+      state->plc_use_prev_decoded_samples =
+          webrtc::field_trial::IsEnabled(kPlcUsePrevDecodedSamplesFieldTrial);
+      if (state->plc_use_prev_decoded_samples) {
+        state->prev_decoded_samples =
+            DefaultFrameSizePerChannel(state->sample_rate_hz);
+      }
+      state->in_dtx_mode = 0;
       *inst = state;
       return 0;
     }
@@ -517,17 +534,20 @@ static int DecodeNative(OpusDecInst* inst,
 static int DecodePlc(OpusDecInst* inst, int16_t* decoded) {
   int16_t audio_type = 0;
   int decoded_samples;
-  int plc_samples;
+  int plc_samples =
+      FrameSizePerChannel(kWebRtcOpusPlcFrameSizeMs, inst->sample_rate_hz);
 
-  /* The number of samples we ask for is |number_of_lost_frames| times
-   * |prev_decoded_samples_|. Limit the number of samples to maximum
-   * |MaxFrameSizePerChannel()|. */
-  plc_samples = inst->prev_decoded_samples;
-  const int max_samples_per_channel =
-      MaxFrameSizePerChannel(inst->sample_rate_hz);
-  plc_samples = plc_samples <= max_samples_per_channel
-                    ? plc_samples
-                    : max_samples_per_channel;
+  if (inst->plc_use_prev_decoded_samples) {
+    /* The number of samples we ask for is |number_of_lost_frames| times
+     * |prev_decoded_samples_|. Limit the number of samples to maximum
+     * |MaxFrameSizePerChannel()|. */
+    plc_samples = inst->prev_decoded_samples;
+    const int max_samples_per_channel =
+        MaxFrameSizePerChannel(inst->sample_rate_hz);
+    plc_samples = plc_samples <= max_samples_per_channel
+                      ? plc_samples
+                      : max_samples_per_channel;
+  }
   decoded_samples =
       DecodeNative(inst, NULL, 0, plc_samples, decoded, &audio_type, 0);
   if (decoded_samples < 0) {
@@ -556,8 +576,10 @@ int WebRtcOpus_Decode(OpusDecInst* inst,
     return -1;
   }
 
-  /* Update decoded sample memory, to be used by the PLC in case of losses. */
-  inst->prev_decoded_samples = decoded_samples;
+  if (inst->plc_use_prev_decoded_samples) {
+    /* Update decoded sample memory, to be used by the PLC in case of losses. */
+    inst->prev_decoded_samples = decoded_samples;
+  }
 
   return decoded_samples;
 }
@@ -612,14 +634,17 @@ int WebRtcOpus_DurationEst(OpusDecInst* inst,
 }
 
 int WebRtcOpus_PlcDuration(OpusDecInst* inst) {
-  /* The number of samples we ask for is |number_of_lost_frames| times
-   * |prev_decoded_samples_|. Limit the number of samples to maximum
-   * |MaxFrameSizePerChannel()|. */
-  const int plc_samples = inst->prev_decoded_samples;
-  const int max_samples_per_channel =
-      MaxFrameSizePerChannel(inst->sample_rate_hz);
-  return plc_samples <= max_samples_per_channel ? plc_samples
-                                                : max_samples_per_channel;
+  if (inst->plc_use_prev_decoded_samples) {
+    /* The number of samples we ask for is |number_of_lost_frames| times
+     * |prev_decoded_samples_|. Limit the number of samples to maximum
+     * |MaxFrameSizePerChannel()|. */
+    const int plc_samples = inst->prev_decoded_samples;
+    const int max_samples_per_channel =
+        MaxFrameSizePerChannel(inst->sample_rate_hz);
+    return plc_samples <= max_samples_per_channel ? plc_samples
+                                                  : max_samples_per_channel;
+  }
+  return FrameSizePerChannel(kWebRtcOpusPlcFrameSizeMs, inst->sample_rate_hz);
 }
 
 int WebRtcOpus_FecDurationEst(const uint8_t* payload,
