@@ -57,11 +57,6 @@ extern const char TCPTYPE_ACTIVE_STR[];
 extern const char TCPTYPE_PASSIVE_STR[];
 extern const char TCPTYPE_SIMOPEN_STR[];
 
-enum RelayType {
-  RELAY_GTURN,  // Legacy google relay service.
-  RELAY_TURN    // Standard (TURN) relay service.
-};
-
 enum IcePriorityValue {
   ICE_TYPE_PREFERENCE_RELAY_TLS = 0,
   ICE_TYPE_PREFERENCE_RELAY_TCP = 1,

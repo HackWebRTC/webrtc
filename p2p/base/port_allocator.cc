@@ -20,13 +20,13 @@
 
 namespace cricket {
 
-RelayServerConfig::RelayServerConfig(RelayType type) : type(type) {}
+RelayServerConfig::RelayServerConfig() {}
 
 RelayServerConfig::RelayServerConfig(const rtc::SocketAddress& address,
                                      const std::string& username,
                                      const std::string& password,
                                      ProtocolType proto)
-    : type(RELAY_TURN), credentials(username, password) {
+    : credentials(username, password) {
   ports.push_back(ProtocolAddress(address, proto));
 }
 

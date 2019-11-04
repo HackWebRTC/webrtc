@@ -63,7 +63,7 @@ class RegatheringControllerTest : public ::testing::Test,
   void InitializeAndGatherOnce() {
     cricket::ServerAddresses stun_servers;
     stun_servers.insert(kStunAddr);
-    cricket::RelayServerConfig turn_server(cricket::RELAY_TURN);
+    cricket::RelayServerConfig turn_server;
     turn_server.credentials = kRelayCredentials;
     turn_server.ports.push_back(
         cricket::ProtocolAddress(kTurnUdpIntAddr, cricket::PROTO_UDP));

@@ -47,7 +47,6 @@ group("examples") {
   if (is_linux || is_win) {
     deps += [
       ":peerconnection_server",
-      ":relayserver",
       ":stunserver",
       ":turnserver",
     ]
@@ -738,19 +737,6 @@ if (is_linux || is_win) {
       "//third_party/abseil-cpp/absl/flags:flag",
       "//third_party/abseil-cpp/absl/flags:parse",
       "//third_party/abseil-cpp/absl/flags:usage",
-    ]
-  }
-  rtc_executable("relayserver") {
-    testonly = true
-    sources = [
-      "relayserver/relayserver_main.cc",
-    ]
-    deps = [
-      "../p2p:p2p_server_utils",
-      "../p2p:rtc_p2p",
-      "../pc:rtc_pc",
-      "../rtc_base",
-      "../rtc_base:rtc_base_approved",
     ]
   }
   rtc_executable("turnserver") {
