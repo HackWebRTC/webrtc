@@ -13,8 +13,6 @@
 
 #include <memory>
 
-#include "rtc_base/checks.h"
-
 namespace webrtc {
 
 class AudioBuffer;
@@ -53,14 +51,6 @@ class EchoControl {
 class EchoControlFactory {
  public:
   virtual std::unique_ptr<EchoControl> Create(int sample_rate_hz) = 0;
-  // TODO(peah): Make pure virtual.
-  virtual std::unique_ptr<EchoControl> Create(int sample_rate_hz,
-                                              int num_render_channels,
-                                              int num_capture_channels) {
-    RTC_NOTREACHED();
-    return nullptr;
-  }
-
   virtual ~EchoControlFactory() = default;
 };
 }  // namespace webrtc

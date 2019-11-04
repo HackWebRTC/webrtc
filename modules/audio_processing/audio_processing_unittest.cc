@@ -2430,8 +2430,8 @@ class MyEchoControlFactory : public EchoControlFactory {
   }
 
   std::unique_ptr<EchoControl> Create(int sample_rate_hz,
-                                      int num_render_channels,
-                                      int num_capture_channels) {
+                                      size_t num_render_channels,
+                                      size_t num_capture_channels) {
     return Create(sample_rate_hz);
   }
 };
