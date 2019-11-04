@@ -61,12 +61,11 @@ class BitrateProber {
 
   // Create a cluster used to probe for |bitrate_bps| with |num_probes| number
   // of probes.
-  void CreateProbeCluster(DataRate bitrate, Timestamp now, int cluster_id);
+  void CreateProbeCluster(int bitrate_bps, int64_t now_ms, int cluster_id);
 
-  // Returns the at which the next probe should be sent to get accurate probing.
-  // If probing is not desired at this time, Timestamp::PlusInfinity() will be
-  // returned.
-  Timestamp NextProbeTime(Timestamp now) const;
+  // Returns the number of milliseconds until the next probe should be sent to
+  // get accurate probing.
+  int TimeUntilNextProbe(int64_t now_ms);
 
   // Information about the current probing cluster.
   PacedPacketInfo CurrentCluster() const;
@@ -79,7 +78,7 @@ class BitrateProber {
   // multiple packets per probe, this call would be made at the end of sending
   // the last packet in probe. |probe_size| is the total size of all packets
   // in probe.
-  void ProbeSent(Timestamp now, size_t probe_size);
+  void ProbeSent(int64_t now_ms, size_t probe_size);
 
  private:
   enum class ProbingState {
@@ -102,12 +101,12 @@ class BitrateProber {
 
     int sent_probes = 0;
     int sent_bytes = 0;
-    Timestamp created_at = Timestamp::MinusInfinity();
-    Timestamp started_at = Timestamp::MinusInfinity();
+    int64_t time_created_ms = -1;
+    int64_t time_started_ms = -1;
     int retries = 0;
   };
 
-  Timestamp CalculateNextProbeTime(const ProbeCluster& cluster) const;
+  int64_t GetNextProbeTime(const ProbeCluster& cluster);
 
   ProbingState probing_state_;
 
@@ -117,7 +116,7 @@ class BitrateProber {
   std::queue<ProbeCluster> clusters_;
 
   // Time the next probe should be sent when in kActive state.
-  Timestamp next_probe_time_;
+  int64_t next_probe_time_ms_;
 
   int total_probe_count_;
   int total_failed_probe_count_;

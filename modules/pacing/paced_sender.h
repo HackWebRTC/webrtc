@@ -165,7 +165,6 @@ class PacedSender : public Module,
   rtc::CriticalSection critsect_;
   PacingController pacing_controller_ RTC_GUARDED_BY(critsect_);
 
-  Clock* const clock_;
   PacketRouter* const packet_router_;
   ProcessThread* const process_thread_;
 };

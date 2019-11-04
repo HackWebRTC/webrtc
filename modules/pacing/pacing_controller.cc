@@ -123,7 +123,7 @@ PacingController::PacingController(Clock* clock,
 PacingController::~PacingController() = default;
 
 void PacingController::CreateProbeCluster(DataRate bitrate, int cluster_id) {
-  prober_.CreateProbeCluster(bitrate, CurrentTime(), cluster_id);
+  prober_.CreateProbeCluster(bitrate.bps(), CurrentTime().ms(), cluster_id);
 }
 
 void PacingController::Pause() {
@@ -233,10 +233,10 @@ TimeDelta PacingController::OldestPacketWaitTime() const {
 void PacingController::EnqueuePacketInternal(
     std::unique_ptr<RtpPacketToSend> packet,
     int priority) {
+  Timestamp now = CurrentTime();
   prober_.OnIncomingPacket(packet->payload_size());
 
   // TODO(sprang): Make sure tests respect this, replace with DCHECK.
-  Timestamp now = CurrentTime();
   if (packet->capture_time_ms() < 0) {
     packet->set_capture_time_ms(now.ms());
   }
@@ -272,26 +272,19 @@ bool PacingController::ShouldSendKeepalive(Timestamp now) const {
   return false;
 }
 
-Timestamp PacingController::NextProbeTime() {
+absl::optional<TimeDelta> PacingController::TimeUntilNextProbe() {
   if (!prober_.IsProbing()) {
-    return Timestamp::PlusInfinity();
+    return absl::nullopt;
   }
 
-  Timestamp now = CurrentTime();
-  Timestamp probe_time = prober_.NextProbeTime(now);
-  if (probe_time.IsInfinite()) {
-    return probe_time;
+  TimeDelta time_delta =
+      TimeDelta::ms(prober_.TimeUntilNextProbe(CurrentTime().ms()));
+  if (time_delta > TimeDelta::Zero() ||
+      (time_delta == TimeDelta::Zero() && !probing_send_failure_)) {
+    return time_delta;
   }
 
-  if (probe_time > now) {
-    return probe_time;
-  }
-
-  if (probing_send_failure_ || now - probe_time > TimeDelta::Zero()) {
-    return Timestamp::PlusInfinity();
-  }
-
-  return probe_time;
+  return absl::nullopt;
 }
 
 TimeDelta PacingController::TimeElapsedSinceLastProcess() const {
@@ -407,7 +400,7 @@ void PacingController::ProcessPackets() {
   if (is_probing) {
     probing_send_failure_ = data_sent == DataSize::Zero();
     if (!probing_send_failure_) {
-      prober_.ProbeSent(CurrentTime(), data_sent.bytes());
+      prober_.ProbeSent(CurrentTime().ms(), data_sent.bytes());
     }
   }
 }

@@ -28,7 +28,7 @@ namespace {
 // we have a min probe packet size of 200 bytes.
 constexpr size_t kMinProbePacketSize = 200;
 
-constexpr TimeDelta kProbeClusterTimeout = TimeDelta::Seconds<5>();
+constexpr int64_t kProbeClusterTimeoutMs = 5000;
 
 }  // namespace
 
@@ -55,7 +55,7 @@ BitrateProber::~BitrateProber() {
 
 BitrateProber::BitrateProber(const WebRtcKeyValueConfig& field_trials)
     : probing_state_(ProbingState::kDisabled),
-      next_probe_time_(Timestamp::PlusInfinity()),
+      next_probe_time_ms_(-1),
       total_probe_count_(0),
       total_failed_probe_count_(0),
       config_(&field_trials) {
@@ -85,31 +85,32 @@ void BitrateProber::OnIncomingPacket(size_t packet_size) {
       packet_size >=
           std::min<size_t>(RecommendedMinProbeSize(), kMinProbePacketSize)) {
     // Send next probe right away.
-    next_probe_time_ = Timestamp::MinusInfinity();
+    next_probe_time_ms_ = -1;
     probing_state_ = ProbingState::kActive;
   }
 }
 
-void BitrateProber::CreateProbeCluster(DataRate bitrate,
-                                       Timestamp now,
+void BitrateProber::CreateProbeCluster(int bitrate_bps,
+                                       int64_t now_ms,
                                        int cluster_id) {
   RTC_DCHECK(probing_state_ != ProbingState::kDisabled);
-  RTC_DCHECK_GT(bitrate, DataRate::Zero());
+  RTC_DCHECK_GT(bitrate_bps, 0);
 
   total_probe_count_++;
   while (!clusters_.empty() &&
-         now - clusters_.front().created_at > kProbeClusterTimeout) {
+         now_ms - clusters_.front().time_created_ms > kProbeClusterTimeoutMs) {
     clusters_.pop();
     total_failed_probe_count_++;
   }
 
   ProbeCluster cluster;
-  cluster.created_at = now;
+  cluster.time_created_ms = now_ms;
   cluster.pace_info.probe_cluster_min_probes = config_.min_probe_packets_sent;
   cluster.pace_info.probe_cluster_min_bytes =
-      (bitrate * config_.min_probe_duration.Get()).bytes();
+      static_cast<int32_t>(static_cast<int64_t>(bitrate_bps) *
+                           config_.min_probe_duration->ms() / 8000);
   RTC_DCHECK_GE(cluster.pace_info.probe_cluster_min_bytes, 0);
-  cluster.pace_info.send_bitrate_bps = bitrate.bps();
+  cluster.pace_info.send_bitrate_bps = bitrate_bps;
   cluster.pace_info.probe_cluster_id = cluster_id;
   clusters_.push(cluster);
 
@@ -123,21 +124,23 @@ void BitrateProber::CreateProbeCluster(DataRate bitrate,
     probing_state_ = ProbingState::kInactive;
 }
 
-Timestamp BitrateProber::NextProbeTime(Timestamp now) const {
+int BitrateProber::TimeUntilNextProbe(int64_t now_ms) {
   // Probing is not active or probing is already complete.
-  if (probing_state_ != ProbingState::kActive || clusters_.empty()) {
-    return Timestamp::PlusInfinity();
+  if (probing_state_ != ProbingState::kActive || clusters_.empty())
+    return -1;
+
+  int time_until_probe_ms = 0;
+  if (next_probe_time_ms_ >= 0) {
+    time_until_probe_ms = next_probe_time_ms_ - now_ms;
+    if (time_until_probe_ms < -config_.max_probe_delay->ms()) {
+      RTC_DLOG(LS_WARNING) << "Probe delay too high"
+                           << " (next_ms:" << next_probe_time_ms_
+                           << ", now_ms: " << now_ms << ")";
+      return -1;
+    }
   }
 
-  if (next_probe_time_.IsFinite() &&
-      now - next_probe_time_ > config_.max_probe_delay.Get()) {
-    RTC_DLOG(LS_WARNING) << "Probe delay too high"
-                         << " (next_ms:" << next_probe_time_.ms()
-                         << ", now_ms: " << now.ms() << ")";
-    return Timestamp::PlusInfinity();
-  }
-
-  return next_probe_time_;
+  return std::max(time_until_probe_ms, 0);
 }
 
 PacedPacketInfo BitrateProber::CurrentCluster() const {
@@ -157,19 +160,19 @@ size_t BitrateProber::RecommendedMinProbeSize() const {
          config_.min_probe_delta->ms() / (8 * 1000);
 }
 
-void BitrateProber::ProbeSent(Timestamp now, size_t bytes) {
+void BitrateProber::ProbeSent(int64_t now_ms, size_t bytes) {
   RTC_DCHECK(probing_state_ == ProbingState::kActive);
   RTC_DCHECK_GT(bytes, 0);
 
   if (!clusters_.empty()) {
     ProbeCluster* cluster = &clusters_.front();
     if (cluster->sent_probes == 0) {
-      RTC_DCHECK(cluster->started_at.IsInfinite());
-      cluster->started_at = now;
+      RTC_DCHECK_EQ(cluster->time_started_ms, -1);
+      cluster->time_started_ms = now_ms;
     }
     cluster->sent_bytes += static_cast<int>(bytes);
     cluster->sent_probes += 1;
-    next_probe_time_ = CalculateNextProbeTime(*cluster);
+    next_probe_time_ms_ = GetNextProbeTime(*cluster);
     if (cluster->sent_bytes >= cluster->pace_info.probe_cluster_min_bytes &&
         cluster->sent_probes >= cluster->pace_info.probe_cluster_min_probes) {
       RTC_HISTOGRAM_COUNTS_100000("WebRTC.BWE.Probing.ProbeClusterSizeInBytes",
@@ -177,7 +180,7 @@ void BitrateProber::ProbeSent(Timestamp now, size_t bytes) {
       RTC_HISTOGRAM_COUNTS_100("WebRTC.BWE.Probing.ProbesPerCluster",
                                cluster->sent_probes);
       RTC_HISTOGRAM_COUNTS_10000("WebRTC.BWE.Probing.TimePerProbeCluster",
-                                 (now - cluster->started_at).ms());
+                                 now_ms - cluster->time_started_ms);
 
       clusters_.pop();
     }
@@ -186,17 +189,16 @@ void BitrateProber::ProbeSent(Timestamp now, size_t bytes) {
   }
 }
 
-Timestamp BitrateProber::CalculateNextProbeTime(
-    const ProbeCluster& cluster) const {
+int64_t BitrateProber::GetNextProbeTime(const ProbeCluster& cluster) {
   RTC_CHECK_GT(cluster.pace_info.send_bitrate_bps, 0);
-  RTC_CHECK(cluster.started_at.IsFinite());
+  RTC_CHECK_GE(cluster.time_started_ms, 0);
 
   // Compute the time delta from the cluster start to ensure probe bitrate stays
   // close to the target bitrate. Result is in milliseconds.
-  DataSize sent_bytes = DataSize::bytes(cluster.sent_bytes);
-  DataRate send_bitrate = DataRate::bps(cluster.pace_info.send_bitrate_bps);
-  TimeDelta delta = sent_bytes / send_bitrate;
-  return cluster.started_at + delta;
+  int64_t delta_ms =
+      (8000ll * cluster.sent_bytes + cluster.pace_info.send_bitrate_bps / 2) /
+      cluster.pace_info.send_bitrate_bps;
+  return cluster.time_started_ms + delta_ms;
 }
 
 }  // namespace webrtc

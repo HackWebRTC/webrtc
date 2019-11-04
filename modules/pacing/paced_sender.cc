@@ -36,7 +36,6 @@ PacedSender::PacedSender(Clock* clock,
                          static_cast<PacingController::PacketSender*>(this),
                          event_log,
                          field_trials),
-      clock_(clock),
       packet_router_(packet_router),
       process_thread_(process_thread) {
   if (process_thread_)
@@ -137,9 +136,9 @@ int64_t PacedSender::TimeUntilNextProcess() {
         .ms();
   }
 
-  Timestamp next_probe = pacing_controller_.NextProbeTime();
-  if (next_probe != Timestamp::PlusInfinity()) {
-    return std::max(TimeDelta::Zero(), next_probe - clock_->CurrentTime()).ms();
+  auto next_probe = pacing_controller_.TimeUntilNextProbe();
+  if (next_probe) {
+    return next_probe->ms();
   }
 
   const TimeDelta min_packet_limit = TimeDelta::ms(5);

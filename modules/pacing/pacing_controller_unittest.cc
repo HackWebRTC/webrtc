@@ -246,9 +246,9 @@ class PacingControllerTest : public ::testing::Test {
                       TimeDelta::Zero());
     }
 
-    Timestamp next_probe = pacer_->NextProbeTime();
-    if (next_probe != Timestamp::PlusInfinity()) {
-      return std::max(TimeDelta::Zero(), next_probe - clock_.CurrentTime());
+    auto next_probe = pacer_->TimeUntilNextProbe();
+    if (next_probe) {
+      return *next_probe;
     }
 
     const TimeDelta min_packet_limit = TimeDelta::ms(5);
