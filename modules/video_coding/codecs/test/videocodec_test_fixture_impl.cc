@@ -648,37 +648,42 @@ void VideoCodecTestFixtureImpl::SetUpAndInitObjects(
 
   RTC_DCHECK(encoded_frame_writers_.empty());
   RTC_DCHECK(decoded_frame_writers_.empty());
-  const size_t num_simulcast_or_spatial_layers = std::max(
-      config_.NumberOfSimulcastStreams(), config_.NumberOfSpatialLayers());
-  const size_t num_temporal_layers = config_.NumberOfTemporalLayers();
-  for (size_t simulcast_svc_idx = 0;
-       simulcast_svc_idx < num_simulcast_or_spatial_layers;
-       ++simulcast_svc_idx) {
-    const std::string output_filename_base =
-        OutputPath() + FilenameWithParams(config_) + "_sl" +
-        std::to_string(simulcast_svc_idx);
 
-    if (config_.visualization_params.save_encoded_ivf) {
-      for (size_t temporal_idx = 0; temporal_idx < num_temporal_layers;
-           ++temporal_idx) {
-        const std::string output_file_path =
-            output_filename_base + "tl" + std::to_string(temporal_idx) + ".ivf";
-        FileWrapper ivf_file = FileWrapper::OpenWriteOnly(output_file_path);
+  if (config_.visualization_params.save_encoded_ivf ||
+      config_.visualization_params.save_decoded_y4m) {
+    const size_t num_simulcast_or_spatial_layers = std::max(
+        config_.NumberOfSimulcastStreams(), config_.NumberOfSpatialLayers());
+    const size_t num_temporal_layers = config_.NumberOfTemporalLayers();
+    for (size_t simulcast_svc_idx = 0;
+         simulcast_svc_idx < num_simulcast_or_spatial_layers;
+         ++simulcast_svc_idx) {
+      const std::string output_filename_base = JoinFilename(
+          config_.output_path, FilenameWithParams(config_) + "_sl" +
+                                   std::to_string(simulcast_svc_idx));
 
-        const VideoProcessor::LayerKey layer_key(simulcast_svc_idx,
-                                                 temporal_idx);
-        encoded_frame_writers_[layer_key] =
-            IvfFileWriter::Wrap(std::move(ivf_file), /*byte_limit=*/0);
+      if (config_.visualization_params.save_encoded_ivf) {
+        for (size_t temporal_idx = 0; temporal_idx < num_temporal_layers;
+             ++temporal_idx) {
+          const std::string output_file_path = output_filename_base + "tl" +
+                                               std::to_string(temporal_idx) +
+                                               ".ivf";
+          FileWrapper ivf_file = FileWrapper::OpenWriteOnly(output_file_path);
+
+          const VideoProcessor::LayerKey layer_key(simulcast_svc_idx,
+                                                   temporal_idx);
+          encoded_frame_writers_[layer_key] =
+              IvfFileWriter::Wrap(std::move(ivf_file), /*byte_limit=*/0);
+        }
       }
-    }
 
-    if (config_.visualization_params.save_decoded_y4m) {
-      FrameWriter* decoded_frame_writer = new Y4mFrameWriterImpl(
-          output_filename_base + ".y4m", config_.codec_settings.width,
-          config_.codec_settings.height, config_.codec_settings.maxFramerate);
-      EXPECT_TRUE(decoded_frame_writer->Init());
-      decoded_frame_writers_.push_back(
-          std::unique_ptr<FrameWriter>(decoded_frame_writer));
+      if (config_.visualization_params.save_decoded_y4m) {
+        FrameWriter* decoded_frame_writer = new Y4mFrameWriterImpl(
+            output_filename_base + ".y4m", config_.codec_settings.width,
+            config_.codec_settings.height, config_.codec_settings.maxFramerate);
+        EXPECT_TRUE(decoded_frame_writer->Init());
+        decoded_frame_writers_.push_back(
+            std::unique_ptr<FrameWriter>(decoded_frame_writer));
+      }
     }
   }
 
