@@ -41,6 +41,8 @@ rtc_library("aec3") {
     "decimator.cc",
     "decimator.h",
     "delay_estimate.h",
+    "dominant_nearend_detector.cc",
+    "dominant_nearend_detector.h",
     "downsampled_render_buffer.cc",
     "downsampled_render_buffer.h",
     "echo_audibility.cc",

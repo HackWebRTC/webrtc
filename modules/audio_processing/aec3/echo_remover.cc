@@ -148,7 +148,7 @@ class EchoRemoverImpl final : public EchoRemover {
   const size_t num_capture_channels_;
   const bool use_shadow_filter_output_;
   Subtractor subtractor_;
-  std::vector<std::unique_ptr<SuppressionGain>> suppression_gains_;
+  SuppressionGain suppression_gain_;
   ComfortNoiseGenerator cng_;
   SuppressionFilter suppression_filter_;
   RenderSignalAnalyzer render_signal_analyzer_;
@@ -195,7 +195,10 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
                   num_capture_channels_,
                   data_dumper_.get(),
                   optimization_),
-      suppression_gains_(num_capture_channels_),
+      suppression_gain_(config_,
+                        optimization_,
+                        sample_rate_hz,
+                        num_capture_channels),
       cng_(optimization_, num_capture_channels_),
       suppression_filter_(optimization_,
                           sample_rate_hz_,
@@ -203,9 +206,9 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
       render_signal_analyzer_(config_),
       residual_echo_estimator_(config_, num_render_channels),
       aec_state_(config_, num_capture_channels_),
-      e_old_(num_capture_channels_),
-      y_old_(num_capture_channels_),
-      e_heap_(NumChannelsOnHeap(num_capture_channels_)),
+      e_old_(num_capture_channels_, {0.f}),
+      y_old_(num_capture_channels_, {0.f}),
+      e_heap_(NumChannelsOnHeap(num_capture_channels_), {0.f}),
       Y2_heap_(NumChannelsOnHeap(num_capture_channels_)),
       E2_heap_(NumChannelsOnHeap(num_capture_channels_)),
       R2_heap_(NumChannelsOnHeap(num_capture_channels_)),
@@ -216,16 +219,6 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
       high_band_comfort_noise_heap_(NumChannelsOnHeap(num_capture_channels_)),
       subtractor_output_heap_(NumChannelsOnHeap(num_capture_channels_)) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz));
-  for (auto& e_k : e_heap_) {
-    e_k.fill(0.f);
-  }
-
-  for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
-    suppression_gains_[ch] = std::make_unique<SuppressionGain>(
-        config_, optimization_, sample_rate_hz);
-    e_old_[ch].fill(0.f);
-    y_old_[ch].fill(0.f);
-  }
 }
 
 EchoRemoverImpl::~EchoRemoverImpl() = default;
@@ -343,9 +336,7 @@ void EchoRemoverImpl::ProcessCapture(
 
     if (echo_path_variability.delay_change !=
         EchoPathVariability::DelayAdjustment::kNone) {
-      for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
-        suppression_gains_[ch]->SetInitialState(true);
-      }
+      suppression_gain_.SetInitialState(true);
     }
   }
   if (gain_change_hangover_ > 0) {
@@ -359,9 +350,7 @@ void EchoRemoverImpl::ProcessCapture(
   // State transition.
   if (aec_state_.TransitionTriggered()) {
     subtractor_.ExitInitialState();
-    for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
-      suppression_gains_[ch]->SetInitialState(false);
-    }
+    suppression_gain_.SetInitialState(false);
   }
 
   // Perform linear echo cancellation.
@@ -390,10 +379,6 @@ void EchoRemoverImpl::ProcessCapture(
                         1);
   data_dumper_->DumpWav("aec3_output_linear2", kBlockSize, &e[0][0], 16000, 1);
 
-  float high_bands_gain = 1.f;
-  std::array<float, kFftLengthBy2Plus1> G;
-  G.fill(1.f);
-
   // Estimate the residual echo power.
   residual_echo_estimator_.Estimate(aec_state_, *render_buffer, S2_linear, Y2,
                                     R2);
@@ -402,34 +387,27 @@ void EchoRemoverImpl::ProcessCapture(
   cng_.Compute(aec_state_.SaturatedCapture(), Y2, comfort_noise,
                high_band_comfort_noise);
 
-  for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
-    // Suppressor echo estimate.
-    const auto& echo_spectrum =
-        aec_state_.UsableLinearEstimate() ? S2_linear[ch] : R2[ch];
-
-    // Suppressor nearend estimate.
-    std::array<float, kFftLengthBy2Plus1> nearend_spectrum_bounded;
-    if (aec_state_.UsableLinearEstimate()) {
+  // Suppressor nearend estimate.
+  if (aec_state_.UsableLinearEstimate()) {
+    // E2 is bound by Y2.
+    for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
       std::transform(E2[ch].begin(), E2[ch].end(), Y2[ch].begin(),
-                     nearend_spectrum_bounded.begin(),
+                     E2[ch].begin(),
                      [](float a, float b) { return std::min(a, b); });
     }
-    const auto& nearend_spectrum =
-        aec_state_.UsableLinearEstimate() ? nearend_spectrum_bounded : Y2[ch];
-
-    // Compute preferred gains for each channel. The minimum gain determines the
-    // final gain.
-    float high_bands_gain_channel;
-    std::array<float, kFftLengthBy2Plus1> G_channel;
-    suppression_gains_[ch]->GetGain(nearend_spectrum, echo_spectrum, R2[ch],
-                                    cng_.NoiseSpectrum()[ch],
-                                    render_signal_analyzer_, aec_state_, x,
-                                    &high_bands_gain_channel, &G_channel);
-
-    high_bands_gain = std::min(high_bands_gain, high_bands_gain_channel);
-    std::transform(G.begin(), G.end(), G_channel.begin(), G.begin(),
-                   [](float a, float b) { return std::min(a, b); });
   }
+  const auto& nearend_spectrum = aec_state_.UsableLinearEstimate() ? E2 : Y2;
+
+  // Suppressor echo estimate.
+  const auto& echo_spectrum =
+      aec_state_.UsableLinearEstimate() ? S2_linear : R2;
+
+  // Compute preferred gains.
+  float high_bands_gain;
+  std::array<float, kFftLengthBy2Plus1> G;
+  suppression_gain_.GetGain(nearend_spectrum, echo_spectrum, R2,
+                            cng_.NoiseSpectrum(), render_signal_analyzer_,
+                            aec_state_, x, &high_bands_gain, &G);
 
   suppression_filter_.ApplyGain(comfort_noise, high_band_comfort_noise, G,
                                 high_bands_gain, Y_fft, y);
