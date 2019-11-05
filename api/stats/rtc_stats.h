@@ -284,7 +284,7 @@ class RTCStatsMemberInterface {
 // The supported types are the ones described by
 // |RTCStatsMemberInterface::Type|.
 template <typename T>
-class RTC_EXPORT RTCStatsMember : public RTCStatsMemberInterface {
+class RTCStatsMember : public RTCStatsMemberInterface {
  public:
   explicit RTCStatsMember(const char* name)
       : RTCStatsMemberInterface(name, /*is_defined=*/false), value_() {}
