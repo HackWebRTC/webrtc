@@ -152,11 +152,19 @@ class PacingControllerProbing : public PacingController::PacketSender {
 
   std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
       DataSize target_size) override {
+    // From RTPSender:
+    // Max in the RFC 3550 is 255 bytes, we limit it to be modulus 32 for SRTP.
+    const DataSize kMaxPadding = DataSize::bytes(224);
+
     std::vector<std::unique_ptr<RtpPacketToSend>> packets;
-    packets.emplace_back(std::make_unique<RtpPacketToSend>(nullptr));
-    packets.back()->SetPadding(target_size.bytes());
-    packets.back()->set_packet_type(RtpPacketToSend::Type::kPadding);
-    padding_sent_ += target_size.bytes();
+    while (target_size > DataSize::Zero()) {
+      DataSize padding_size = std::min(kMaxPadding, target_size);
+      packets.emplace_back(std::make_unique<RtpPacketToSend>(nullptr));
+      packets.back()->SetPadding(padding_size.bytes());
+      packets.back()->set_packet_type(RtpPacketToSend::Type::kPadding);
+      padding_sent_ += padding_size.bytes();
+      target_size -= padding_size;
+    }
     return packets;
   }
 
@@ -246,9 +254,9 @@ class PacingControllerTest : public ::testing::Test {
                       TimeDelta::Zero());
     }
 
-    auto next_probe = pacer_->TimeUntilNextProbe();
-    if (next_probe) {
-      return *next_probe;
+    Timestamp next_probe = pacer_->NextProbeTime();
+    if (next_probe != Timestamp::PlusInfinity()) {
+      return std::max(TimeDelta::Zero(), next_probe - clock_.CurrentTime());
     }
 
     const TimeDelta min_packet_limit = TimeDelta::ms(5);
@@ -1103,6 +1111,65 @@ TEST_F(PacingControllerTest, ProbingWithInsertedPackets) {
   EXPECT_NEAR((packets_sent - 1) * kPacketSize * 8000 /
                   (clock_.TimeInMilliseconds() - start),
               kSecondClusterRate.bps(), kProbingErrorMargin.bps());
+}
+
+TEST_F(PacingControllerTest, SkipsProbesWhenProcessIntervalTooLarge) {
+  const size_t kPacketSize = 1200;
+  const int kInitialBitrateBps = 300000;
+  uint32_t ssrc = 12346;
+  uint16_t sequence_number = 1234;
+
+  PacingControllerProbing packet_sender;
+  pacer_ = std::make_unique<PacingController>(&clock_, &packet_sender, nullptr,
+                                              nullptr);
+  pacer_->SetPacingRates(DataRate::bps(kInitialBitrateBps * kPaceMultiplier),
+                         DataRate::Zero());
+
+  for (int i = 0; i < 10; ++i) {
+    Send(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+         clock_.TimeInMilliseconds(), kPacketSize);
+  }
+  while (pacer_->QueueSizePackets() > 0) {
+    clock_.AdvanceTime(TimeUntilNextProcess());
+    pacer_->ProcessPackets();
+  }
+
+  // Probe at a very high rate.
+  pacer_->CreateProbeCluster(DataRate::kbps(10000),  // 10 Mbps.
+                             /*cluster_id=*/3);
+  // We need one packet to start the probe.
+  Send(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+       clock_.TimeInMilliseconds(), kPacketSize);
+  const int packets_sent_before_probe = packet_sender.packets_sent();
+  clock_.AdvanceTime(TimeUntilNextProcess());
+  pacer_->ProcessPackets();
+  EXPECT_EQ(packet_sender.packets_sent(), packets_sent_before_probe + 1);
+
+  // Figure out how long between probe packets.
+  Timestamp start_time = clock_.CurrentTime();
+  clock_.AdvanceTime(TimeUntilNextProcess());
+  TimeDelta time_between_probes = clock_.CurrentTime() - start_time;
+  // Advance that distance again + 1ms.
+  clock_.AdvanceTime(time_between_probes);
+
+  // Send second probe packet.
+  Send(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+       clock_.TimeInMilliseconds(), kPacketSize);
+  pacer_->ProcessPackets();
+  EXPECT_EQ(packet_sender.packets_sent(), packets_sent_before_probe + 2);
+
+  // We're exactly where we should be for the next probe.
+  EXPECT_TRUE(pacer_->NextProbeTime().IsFinite());
+
+  // Advance to within one millisecond past where the next probe should be sent,
+  // will still indicate "process immediately".
+  clock_.AdvanceTime(TimeDelta::us(500));
+  EXPECT_TRUE(pacer_->NextProbeTime().IsFinite());
+
+  // We've gone more than one millisecond past the time for the next probe
+  // packet, it will dropped.
+  clock_.AdvanceTime(TimeDelta::ms(1));
+  EXPECT_EQ(pacer_->NextProbeTime(), Timestamp::PlusInfinity());
 }
 
 TEST_F(PacingControllerTest, ProbingWithPaddingSupport) {

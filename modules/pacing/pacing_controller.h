@@ -118,10 +118,11 @@ class PacingController {
   // effect.
   void SetProbingEnabled(bool enabled);
 
-  // Time until next probe should be sent. If this value is set, it should be
+  // Time at which next probe should be sent. If this value is set, it should be
   // respected - i.e. don't call ProcessPackets() before this specified time as
   // that can have unintended side effects.
-  absl::optional<TimeDelta> TimeUntilNextProbe();
+  // If no scheduled probe, Timestamp::PlusInifinity() is returned.
+  Timestamp NextProbeTime();
 
   // Time since ProcessPackets() was last executed.
   TimeDelta TimeElapsedSinceLastProcess() const;
