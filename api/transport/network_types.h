@@ -103,7 +103,9 @@ struct PacedPacketInfo {
 
 struct SentPacket {
   Timestamp send_time = Timestamp::PlusInfinity();
+  // Size of packet with overhead up to IP layer.
   DataSize size = DataSize::Zero();
+  // Size of preceeding packets that are not part of feedback.
   DataSize prior_unacked_data = DataSize::Zero();
   PacedPacketInfo pacing_info;
   // Transport independent sequence number, any tracked packet should have a

@@ -106,6 +106,7 @@ rtc_library("rtp_rtcp_format") {
     "../../api:rtp_parameters",
     "../../api/audio_codecs:audio_codecs_api",
     "../../api/transport:network_control",
+    "../../api/units:time_delta",
     "../../api/video:video_frame",
     "../../api/video:video_rtp_headers",
     "../../common_video",

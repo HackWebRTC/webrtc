@@ -376,6 +376,10 @@ int64_t TransportFeedback::GetBaseTimeUs() const {
   return static_cast<int64_t>(base_time_ticks_) * kBaseScaleFactor;
 }
 
+TimeDelta TransportFeedback::GetBaseTime() const {
+  return TimeDelta::us(GetBaseTimeUs());
+}
+
 int64_t TransportFeedback::GetBaseDeltaUs(int64_t prev_timestamp_us) const {
   int64_t delta = GetBaseTimeUs() - prev_timestamp_us;
 
@@ -386,6 +390,10 @@ int64_t TransportFeedback::GetBaseDeltaUs(int64_t prev_timestamp_us) const {
     delta += kTimeWrapPeriodUs;  // Wrap forwards.
   }
   return delta;
+}
+
+TimeDelta TransportFeedback::GetBaseDelta(TimeDelta prev_timestamp) const {
+  return TimeDelta::us(GetBaseDeltaUs(prev_timestamp.us()));
 }
 
 // De-serialize packet.
