@@ -680,6 +680,7 @@ if (rtc_include_tests) {
         "sdk/android/tests/src/org/webrtc/FakeMediaCodecWrapper.java",
         "sdk/android/tests/src/org/webrtc/GlGenericDrawerTest.java",
         "sdk/android/tests/src/org/webrtc/HardwareVideoEncoderTest.java",
+        "sdk/android/tests/src/org/webrtc/IceCandidateTest.java",
         "sdk/android/tests/src/org/webrtc/ScalingSettingsTest.java",
         "sdk/android/tests/src/org/webrtc/CryptoOptionsTest.java",
       ]
