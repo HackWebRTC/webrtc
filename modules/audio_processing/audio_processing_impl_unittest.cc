@@ -54,12 +54,6 @@ class MockEchoControlFactory : public EchoControlFactory {
   // Returns a pointer to the next MockEchoControl that this factory creates.
   MockEchoControl* GetNext() const { return next_mock_.get(); }
   std::unique_ptr<EchoControl> Create(int sample_rate_hz) override {
-    RTC_NOTREACHED();
-    return nullptr;
-  }
-  std::unique_ptr<EchoControl> Create(int sample_rate_hz,
-                                      int num_render_channels,
-                                      int num_capture_channels) override {
     std::unique_ptr<EchoControl> mock = std::move(next_mock_);
     next_mock_ = std::make_unique<MockEchoControl>();
     return mock;
