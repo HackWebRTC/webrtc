@@ -17,7 +17,7 @@ android {
                         "-DWEBRTC_REPO=${rootProject.property("webrtc_repo")}",
                         "-DWEBRTC_BUILD_DIR=${rootProject.property("webrtc_build_dir")}"
                 cppFlags '-std=c++14'
-                abiFilters 'arm64-v8a' //, 'armeabi', 'armeabi-v7a', 'arm64-v8a', 'x86'
+                abiFilters 'arm64-v8a' //, 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
                 //targets "protobuf_lite", "absl_base", "absl_optional", "absl_variant", "yuv", "ssl", "crypto", "event", "json", "srtp", "vpx", "opus", "rnnoise", "usrsctp"
             }
         }
@@ -100,10 +100,12 @@ task genWebrtcSrc(type: Exec) {
                     "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
                     "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_base_jni/NetworkMonitor_jni.h " +
                     "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_base_jni/NetworkMonitorAutoDetect_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_base_jni/RefCounted_jni.h " +
                     "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_base_jni/Histogram_jni.h " +
                     "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_base_jni/JniCommon_jni.h " +
                     "--input_file sdk/android/api/org/webrtc/NetworkMonitor.java " +
                     "--input_file sdk/android/api/org/webrtc/NetworkMonitorAutoDetect.java " +
+                    "--input_file sdk/android/api/org/webrtc/RefCounted.java " +
                     "--input_file sdk/android/src/java/org/webrtc/Histogram.java " +
                     "--input_file sdk/android/src/java/org/webrtc/JniCommon.java" +
                     " && " +
@@ -196,6 +198,7 @@ task genWebrtcSrc(type: Exec) {
                     "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
                     "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/AudioTrack_jni.h " +
                     "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/CallSessionFileRotatingLogSink_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/CandidatePairChangeEvent_jni.h " +
                     "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/CryptoOptions_jni.h " +
                     "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/DataChannel_jni.h " +
                     "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/DtmfSender_jni.h " +
@@ -222,6 +225,7 @@ task genWebrtcSrc(type: Exec) {
                     "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/TurnCustomizer_jni.h " +
                     "--input_file sdk/android/api/org/webrtc/AudioTrack.java " +
                     "--input_file sdk/android/api/org/webrtc/CallSessionFileRotatingLogSink.java " +
+                    "--input_file sdk/android/api/org/webrtc/CandidatePairChangeEvent.java " +
                     "--input_file sdk/android/api/org/webrtc/CryptoOptions.java " +
                     "--input_file sdk/android/api/org/webrtc/DataChannel.java " +
                     "--input_file sdk/android/api/org/webrtc/DtmfSender.java " +

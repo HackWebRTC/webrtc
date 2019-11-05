@@ -121,11 +121,7 @@ set(src_vpx_arm64
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/arm/neon/vp9_error_neon.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/arm/neon/vp9_frame_scale_neon.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/arm/neon/vp9_quantize_neon.c
-    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_alt_ref_aq.c
-    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_aq_360.c
-    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_aq_complexity.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_aq_cyclicrefresh.c
-    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_aq_variance.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_bitstream.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_context_tree.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_cost.c
