@@ -1783,8 +1783,8 @@ void AudioProcessingImpl::InitializeEchoController() {
   if (use_echo_controller) {
     // Create and activate the echo controller.
     if (echo_control_factory_) {
-      submodules_.echo_controller =
-          echo_control_factory_->Create(proc_sample_rate_hz());
+      submodules_.echo_controller = echo_control_factory_->Create(
+          proc_sample_rate_hz(), num_reverse_channels(), num_proc_channels());
     } else {
       submodules_.echo_controller = std::make_unique<EchoCanceller3>(
           EchoCanceller3Config(), proc_sample_rate_hz(), num_reverse_channels(),
