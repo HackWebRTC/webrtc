@@ -557,6 +557,7 @@ if (current_os == "linux" || is_android) {
       "../../rtc_base",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
+      "../../system_wrappers:field_trial",
       "../../system_wrappers:metrics",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
@@ -1453,6 +1454,7 @@ if (is_android) {
     testonly = true
 
     sources = [
+      "native_unittests/android_network_monitor_unittest.cc",
       "native_unittests/application_context_provider.cc",
       "native_unittests/application_context_provider.h",
       "native_unittests/audio_device/audio_device_unittest.cc",
@@ -1498,9 +1500,11 @@ if (is_android) {
       "../../modules/utility",
       "../../pc:libjingle_peerconnection",
       "../../rtc_base:checks",
-      "../../rtc_base:rtc_base_approved",
+      "../../rtc_base:rtc_base",
       "../../rtc_base/system:inline",
       "../../system_wrappers",
+      "../../system_wrappers:field_trial",
+      "../../test:field_trial",
       "../../test:fileutils",
       "../../test:test_support",
       "../../testing/gtest",
