@@ -14,6 +14,7 @@
 
 #include "modules/audio_processing/agc2/rnn_vad/test_utils.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 #include "test/gtest.h"
 #include "third_party/rnnoise/src/rnn_activations.h"
 #include "third_party/rnnoise/src/rnn_vad_weights.h"
@@ -60,85 +61,103 @@ void TestGatedRecurrentLayer(
   }
 }
 
+// Fully connected layer test data.
+constexpr size_t kFullyConnectedInputSize = 24;
+constexpr size_t kFullyConnectedOutputSize = 1;
+constexpr std::array<int8_t, 1> kFullyConnectedBias = {-50};
+constexpr std::array<int8_t, 24> kFullyConnectedWeights = {
+    127,  127,  127, 127,  127,  20,  127,  -126, -126, -54, 14,  125,
+    -126, -126, 127, -125, -126, 127, -127, -127, -57,  -30, 127, 80};
+constexpr std::array<float, 24 * 3> kFullyConnectedInputVectors = {
+    // Input 1.
+    0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.215833917f, 0.290601075f, 0.238759011f,
+    0.244751841f, 0.f, 0.0461241305f, 0.106401242f, 0.223070428f, 0.630603909f,
+    0.690453172f, 0.f, 0.387645692f, 0.166913897f, 0.f, 0.0327451192f, 0.f,
+    0.136149868f, 0.446351469f,
+    // Input 2.
+    0.592162728f, 0.529089332f, 1.18205106f, 1.21736848f, 0.f, 0.470851123f,
+    0.130675942f, 0.320903003f, 0.305496395f, 0.0571633279f, 1.57001138f,
+    0.0182026215f, 0.0977443159f, 0.347477973f, 0.493206412f, 0.9688586f,
+    0.0320267938f, 0.244722098f, 0.312745273f, 0.f, 0.00650715502f,
+    0.312553257f, 1.62619662f, 0.782880902f,
+    // Input 3.
+    0.395022154f, 0.333681047f, 0.76302278f, 0.965480626f, 0.f, 0.941198349f,
+    0.0892967582f, 0.745046318f, 0.635769248f, 0.238564298f, 0.970656633f,
+    0.014159563f, 0.094203949f, 0.446816623f, 0.640755892f, 1.20532358f,
+    0.0254284926f, 0.283327013f, 0.726210058f, 0.0550272502f, 0.000344108557f,
+    0.369803518f, 1.56680179f, 0.997883797f};
+constexpr std::array<float, 3> kFullyConnectedExpectedOutputs = {
+    0.436567038f, 0.874741316f, 0.672785878f};
+
+// Gated recurrent units layer test data.
+constexpr size_t kGruInputSize = 5;
+constexpr size_t kGruOutputSize = 4;
+constexpr std::array<int8_t, 12> kGruBias = {96,   -99, -81, -114, 49,  119,
+                                             -118, 68,  -76, 91,   121, 125};
+constexpr std::array<int8_t, 60> kGruWeights = {
+    124, 9,    1,    116, -66, -21, -118, -110, 104,  75,  -23,  -51,
+    -72, -111, 47,   93,  77,  -98, 41,   -8,   40,   -23, -43,  -107,
+    9,   -73,  30,   -32, -2,  64,  -26,  91,   -48,  -24, -28,  -104,
+    74,  -46,  116,  15,  32,  52,  -126, -38,  -121, 12,  -16,  110,
+    -95, 66,   -103, -35, -38, 3,   -126, -61,  28,   98,  -117, -43};
+constexpr std::array<int8_t, 60> kGruRecurrentWeights = {
+    -3,  87,  50,  51,  -22,  27,  -39, 62,   31,  -83, -52,  -48,
+    -6,  83,  -19, 104, 105,  48,  23,  68,   23,  40,  7,    -120,
+    64,  -62, 117, 85,  -51,  -43, 54,  -105, 120, 56,  -128, -107,
+    39,  50,  -17, -47, -117, 14,  108, 12,   -7,  -72, 103,  -87,
+    -66, 82,  84,  100, -98,  102, -49, 44,   122, 106, -20,  -69};
+constexpr std::array<float, 20> kGruInputSequence = {
+    0.89395463f, 0.93224651f, 0.55788344f, 0.32341808f, 0.93355054f,
+    0.13475326f, 0.97370994f, 0.14253306f, 0.93710381f, 0.76093364f,
+    0.65780413f, 0.41657975f, 0.49403164f, 0.46843281f, 0.75138855f,
+    0.24517593f, 0.47657707f, 0.57064998f, 0.435184f,   0.19319285f};
+constexpr std::array<float, 16> kGruExpectedOutputSequence = {
+    0.0239123f,  0.5773077f,  0.f,         0.f,
+    0.01282811f, 0.64330572f, 0.f,         0.04863098f,
+    0.00781069f, 0.75267816f, 0.f,         0.02579715f,
+    0.00471378f, 0.59162533f, 0.11087593f, 0.01334511f};
+
 }  // namespace
+
+class OptimizationTest : public ::testing::Test,
+                         public ::testing::WithParamInterface<Optimization> {};
 
 // Checks that the output of a fully connected layer is within tolerance given
 // test input data.
-TEST(RnnVadTest, CheckFullyConnectedLayerOutput) {
-  const std::array<int8_t, 1> bias = {-50};
-  const std::array<int8_t, 24> weights = {
-      127,  127,  127, 127,  127,  20,  127,  -126, -126, -54, 14,  125,
-      -126, -126, 127, -125, -126, 127, -127, -127, -57,  -30, 127, 80};
-  FullyConnectedLayer fc(24, 1, bias, weights, SigmoidApproximated);
+TEST_P(OptimizationTest, CheckFullyConnectedLayerOutput) {
+  const Optimization optimization = GetParam();
+  RTC_LOG(LS_VERBOSE) << optimization;
+  FullyConnectedLayer fc(kFullyConnectedInputSize, kFullyConnectedOutputSize,
+                         kFullyConnectedBias, kFullyConnectedWeights,
+                         SigmoidApproximated, optimization);
   // Test on different inputs.
-  {
-    const std::array<float, 24> input_vector = {
-        0.f,           0.f,           0.f,          0.f,          0.f,
-        0.f,           0.215833917f,  0.290601075f, 0.238759011f, 0.244751841f,
-        0.f,           0.0461241305f, 0.106401242f, 0.223070428f, 0.630603909f,
-        0.690453172f,  0.f,           0.387645692f, 0.166913897f, 0.f,
-        0.0327451192f, 0.f,           0.136149868f, 0.446351469f};
-    TestFullyConnectedLayer(&fc, input_vector, 0.436567038f);
-  }
-  {
-    const std::array<float, 24> input_vector = {
-        0.592162728f,  0.529089332f,  1.18205106f,
-        1.21736848f,   0.f,           0.470851123f,
-        0.130675942f,  0.320903003f,  0.305496395f,
-        0.0571633279f, 1.57001138f,   0.0182026215f,
-        0.0977443159f, 0.347477973f,  0.493206412f,
-        0.9688586f,    0.0320267938f, 0.244722098f,
-        0.312745273f,  0.f,           0.00650715502f,
-        0.312553257f,  1.62619662f,   0.782880902f};
-    TestFullyConnectedLayer(&fc, input_vector, 0.874741316f);
-  }
-  {
-    const std::array<float, 24> input_vector = {
-        0.395022154f,  0.333681047f,  0.76302278f,
-        0.965480626f,  0.f,           0.941198349f,
-        0.0892967582f, 0.745046318f,  0.635769248f,
-        0.238564298f,  0.970656633f,  0.014159563f,
-        0.094203949f,  0.446816623f,  0.640755892f,
-        1.20532358f,   0.0254284926f, 0.283327013f,
-        0.726210058f,  0.0550272502f, 0.000344108557f,
-        0.369803518f,  1.56680179f,   0.997883797f};
-    TestFullyConnectedLayer(&fc, input_vector, 0.672785878f);
+  static_assert(
+      kFullyConnectedInputVectors.size() % kFullyConnectedInputSize == 0, "");
+  constexpr size_t kNumInputVectors =
+      kFullyConnectedInputVectors.size() / kFullyConnectedInputSize;
+  static_assert(kFullyConnectedExpectedOutputs.size() == kNumInputVectors, "");
+  for (size_t i = 0; i < kNumInputVectors; ++i) {
+    rtc::ArrayView<const float> input(
+        kFullyConnectedInputVectors.data() + kFullyConnectedInputSize * i,
+        kFullyConnectedInputSize);
+    TestFullyConnectedLayer(&fc, input, kFullyConnectedExpectedOutputs[i]);
   }
 }
 
 // Checks that the output of a GRU layer is within tolerance given test input
 // data.
-TEST(RnnVadTest, CheckGatedRecurrentLayer) {
-  const std::array<int8_t, 12> bias = {96,   -99, -81, -114, 49,  119,
-                                       -118, 68,  -76, 91,   121, 125};
-  const std::array<int8_t, 60> weights = {
-      124, 9,    1,    116, -66, -21, -118, -110, 104,  75,  -23,  -51,
-      -72, -111, 47,   93,  77,  -98, 41,   -8,   40,   -23, -43,  -107,
-      9,   -73,  30,   -32, -2,  64,  -26,  91,   -48,  -24, -28,  -104,
-      74,  -46,  116,  15,  32,  52,  -126, -38,  -121, 12,  -16,  110,
-      -95, 66,   -103, -35, -38, 3,   -126, -61,  28,   98,  -117, -43};
-  const std::array<int8_t, 60> recurrent_weights = {
-      -3,  87,  50,  51,  -22,  27,  -39, 62,   31,  -83, -52,  -48,
-      -6,  83,  -19, 104, 105,  48,  23,  68,   23,  40,  7,    -120,
-      64,  -62, 117, 85,  -51,  -43, 54,  -105, 120, 56,  -128, -107,
-      39,  50,  -17, -47, -117, 14,  108, 12,   -7,  -72, 103,  -87,
-      -66, 82,  84,  100, -98,  102, -49, 44,   122, 106, -20,  -69};
-  GatedRecurrentLayer gru(5, 4, bias, weights, recurrent_weights);
-  // Test on different inputs.
-  {
-    const std::array<float, 20> input_sequence = {
-        0.89395463f, 0.93224651f, 0.55788344f, 0.32341808f, 0.93355054f,
-        0.13475326f, 0.97370994f, 0.14253306f, 0.93710381f, 0.76093364f,
-        0.65780413f, 0.41657975f, 0.49403164f, 0.46843281f, 0.75138855f,
-        0.24517593f, 0.47657707f, 0.57064998f, 0.435184f,   0.19319285f};
-    const std::array<float, 16> expected_output_sequence = {
-        0.0239123f,  0.5773077f,  0.f,         0.f,
-        0.01282811f, 0.64330572f, 0.f,         0.04863098f,
-        0.00781069f, 0.75267816f, 0.f,         0.02579715f,
-        0.00471378f, 0.59162533f, 0.11087593f, 0.01334511f};
-    TestGatedRecurrentLayer(&gru, input_sequence, expected_output_sequence);
-  }
+TEST_P(OptimizationTest, CheckGatedRecurrentLayer) {
+  const Optimization optimization = GetParam();
+  RTC_LOG(LS_VERBOSE) << optimization;
+  GatedRecurrentLayer gru(kGruInputSize, kGruOutputSize, kGruBias, kGruWeights,
+                          kGruRecurrentWeights, optimization);
+  TestGatedRecurrentLayer(&gru, kGruInputSequence, kGruExpectedOutputSequence);
 }
+
+INSTANTIATE_TEST_SUITE_P(RnnVadTest,
+                         OptimizationTest,
+                         ::testing::Values(Optimization::kNone,
+                                           DetectOptimization()));
 
 }  // namespace test
 }  // namespace rnn_vad
