@@ -1188,6 +1188,40 @@ if (rtc_enable_protobuf) {
   }
 }
 
+# Allow to re-use some test classes from chromium.
+rtc_library("audio_coding_modules_tests_shared") {
+  testonly = true
+  visibility = []
+  visibility = [ "*" ]
+
+  sources = [
+    "test/PCMFile.cc",
+    "test/PCMFile.h",
+    "test/TestStereo.cc",
+    "test/TestStereo.h",
+    "test/opus_test.cc",
+    "test/opus_test.h",
+  ]
+
+  deps = [
+    ":audio_coding",
+    ":audio_coding_module_typedefs",
+    ":webrtc_opus_wrapper",
+    "..:module_api",
+    "../../api/audio:audio_frame_api",
+    "../../api/audio_codecs:builtin_audio_decoder_factory",
+    "../../api/audio_codecs:builtin_audio_encoder_factory",
+    "../../rtc_base:checks",
+    "../../rtc_base:stringutils",
+    "../../test:fileutils",
+    "../../test:test_support",
+    "//third_party/abseil-cpp/absl/strings",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+
+  defines = audio_coding_defines
+}
+
 if (rtc_include_tests) {
   audio_coding_deps = [
     "../../common_audio",
@@ -1268,8 +1302,6 @@ if (rtc_include_tests) {
       "test/Channel.h",
       "test/EncodeDecodeTest.cc",
       "test/EncodeDecodeTest.h",
-      "test/PCMFile.cc",
-      "test/PCMFile.h",
       "test/PacketLossTest.cc",
       "test/PacketLossTest.h",
       "test/RTPFile.cc",
@@ -1278,8 +1310,6 @@ if (rtc_include_tests) {
       "test/TestAllCodecs.h",
       "test/TestRedFec.cc",
       "test/TestRedFec.h",
-      "test/TestStereo.cc",
-      "test/TestStereo.h",
       "test/TestVADDTX.cc",
       "test/TestVADDTX.h",
       "test/Tester.cc",
@@ -1287,13 +1317,12 @@ if (rtc_include_tests) {
       "test/TwoWayCommunication.h",
       "test/iSACTest.cc",
       "test/iSACTest.h",
-      "test/opus_test.cc",
-      "test/opus_test.h",
       "test/target_delay_unittest.cc",
     ]
     deps = [
       ":audio_coding",
       ":audio_coding_module_typedefs",
+      ":audio_coding_modules_tests_shared",
       ":audio_encoder_cng",
       ":pcm16b_c",
       ":red",
