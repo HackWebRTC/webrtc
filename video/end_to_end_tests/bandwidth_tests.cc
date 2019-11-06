@@ -91,6 +91,12 @@ class BandwidthStatsTest : public test::EndToEndTest {
         send_side_bwe_(send_side_bwe),
         task_queue_(task_queue) {}
 
+  ~BandwidthStatsTest() override {
+    // Block until all already posted tasks run to avoid races when such task
+    // accesses |this|.
+    SendTask(RTC_FROM_HERE, task_queue_, [] {});
+  }
+
   void ModifyVideoConfigs(
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStream::Config>* receive_configs,
@@ -197,7 +203,11 @@ TEST_F(BandwidthEndToEndTest, RembWithSendSideBwe) {
           retransmission_rate_limiter_(clock_, 1000),
           task_queue_(task_queue) {}
 
-    ~BweObserver() {}
+    ~BweObserver() override {
+      // Block until all already posted tasks run to avoid races when such task
+      // accesses |this|.
+      SendTask(RTC_FROM_HERE, task_queue_, [] {});
+    }
 
     std::unique_ptr<test::PacketTransport> CreateReceiveTransport(
         TaskQueueBase* task_queue) override {
