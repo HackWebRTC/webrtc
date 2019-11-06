@@ -144,7 +144,7 @@ class RTC_EXPORT VideoEncoder {
   };
 
   // Struct containing metadata about the encoder implementing this interface.
-  struct EncoderInfo {
+  struct RTC_EXPORT EncoderInfo {
     static constexpr uint8_t kMaxFramerateFraction =
         std::numeric_limits<uint8_t>::max();
 
