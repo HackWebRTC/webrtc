@@ -1278,7 +1278,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   if (constants_.use_experimental_agc &&
       submodules_.gain_control->is_enabled()) {
     submodules_.agc_manager->AnalyzePreProcess(
-        capture_buffer->channels_f()[0], capture_buffer->num_channels(),
+        capture_buffer->channels_const(), capture_buffer->num_channels(),
         capture_nonlocked_.capture_processing_format.num_frames());
 
     if (constants_.use_experimental_agc_process_before_aec) {

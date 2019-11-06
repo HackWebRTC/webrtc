@@ -56,7 +56,7 @@ class AgcManagerDirect final {
   ~AgcManagerDirect();
 
   int Initialize();
-  void AnalyzePreProcess(float* audio,
+  void AnalyzePreProcess(const float* const* audio,
                          int num_channels,
                          size_t samples_per_channel);
   void Process(const float* audio, size_t length, int sample_rate_hz);

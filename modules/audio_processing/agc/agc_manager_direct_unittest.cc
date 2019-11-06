@@ -71,9 +71,14 @@ class AgcManagerDirectTest : public ::testing::Test {
  protected:
   AgcManagerDirectTest()
       : agc_(new MockAgc),
-        manager_(agc_, &gctrl_, &volume_, kInitialVolume, kClippedMin) {
+        manager_(agc_, &gctrl_, &volume_, kInitialVolume, kClippedMin),
+        audio(kNumChannels),
+        audio_data(kNumChannels * kSamplesPerChannel, 0.f) {
     ExpectInitialize();
     manager_.Initialize();
+    for (size_t ch = 0; ch < kNumChannels; ++ch) {
+      audio[ch] = &audio_data[ch * kSamplesPerChannel];
+    }
   }
 
   void FirstProcess() {
@@ -106,9 +111,14 @@ class AgcManagerDirectTest : public ::testing::Test {
     }
   }
 
-  void CallPreProc(int num_calls) {
+  void CallPreProc(int num_calls, float clipped_ratio) {
+    RTC_DCHECK_GE(1.f, clipped_ratio);
+    int num_clipped = kNumChannels * kSamplesPerChannel * clipped_ratio;
+    std::fill(audio_data.begin(), audio_data.begin() + num_clipped, 32767.f);
+
     for (int i = 0; i < num_calls; ++i) {
-      manager_.AnalyzePreProcess(nullptr, kNumChannels, kSamplesPerChannel);
+      manager_.AnalyzePreProcess(audio.data(), kNumChannels,
+                                 kSamplesPerChannel);
     }
   }
 
@@ -116,6 +126,8 @@ class AgcManagerDirectTest : public ::testing::Test {
   MockGainControl gctrl_;
   TestVolumeCallbacks volume_;
   AgcManagerDirect manager_;
+  std::vector<float*> audio;
+  std::vector<float> audio_data;
 };
 
 TEST_F(AgcManagerDirectTest, StartupMinVolumeConfigurationIsRespected) {
@@ -477,73 +489,58 @@ TEST_F(AgcManagerDirectTest, RecoveryAfterManualLevelChangeBelowMin) {
 TEST_F(AgcManagerDirectTest, NoClippingHasNoImpact) {
   FirstProcess();
 
-  EXPECT_CALL(*agc_, AnalyzePreproc(_, _)).WillRepeatedly(Return(0));
-  CallPreProc(100);
+  CallPreProc(100, 0);
   EXPECT_EQ(128, volume_.GetMicVolume());
 }
 
 TEST_F(AgcManagerDirectTest, ClippingUnderThresholdHasNoImpact) {
   FirstProcess();
 
-  EXPECT_CALL(*agc_, AnalyzePreproc(_, _)).WillOnce(Return(0.099));
-  CallPreProc(1);
+  CallPreProc(1, 0.099);
   EXPECT_EQ(128, volume_.GetMicVolume());
 }
 
 TEST_F(AgcManagerDirectTest, ClippingLowersVolume) {
   SetVolumeAndProcess(255);
 
-  EXPECT_CALL(*agc_, AnalyzePreproc(_, _)).WillOnce(Return(0.101));
   EXPECT_CALL(*agc_, Reset()).Times(AtLeast(1));
-  CallPreProc(1);
+  CallPreProc(1, 0.2);
   EXPECT_EQ(240, volume_.GetMicVolume());
 }
 
 TEST_F(AgcManagerDirectTest, WaitingPeriodBetweenClippingChecks) {
   SetVolumeAndProcess(255);
 
-  EXPECT_CALL(*agc_, AnalyzePreproc(_, _))
-      .WillOnce(Return(kAboveClippedThreshold));
   EXPECT_CALL(*agc_, Reset()).Times(AtLeast(1));
-  CallPreProc(1);
+  CallPreProc(1, kAboveClippedThreshold);
   EXPECT_EQ(240, volume_.GetMicVolume());
 
-  EXPECT_CALL(*agc_, AnalyzePreproc(_, _))
-      .WillRepeatedly(Return(kAboveClippedThreshold));
   EXPECT_CALL(*agc_, Reset()).Times(0);
-  CallPreProc(300);
+  CallPreProc(300, kAboveClippedThreshold);
   EXPECT_EQ(240, volume_.GetMicVolume());
 
-  EXPECT_CALL(*agc_, AnalyzePreproc(_, _))
-      .WillOnce(Return(kAboveClippedThreshold));
   EXPECT_CALL(*agc_, Reset()).Times(AtLeast(1));
-  CallPreProc(1);
+  CallPreProc(1, kAboveClippedThreshold);
   EXPECT_EQ(225, volume_.GetMicVolume());
 }
 
 TEST_F(AgcManagerDirectTest, ClippingLoweringIsLimited) {
   SetVolumeAndProcess(180);
 
-  EXPECT_CALL(*agc_, AnalyzePreproc(_, _))
-      .WillOnce(Return(kAboveClippedThreshold));
   EXPECT_CALL(*agc_, Reset()).Times(AtLeast(1));
-  CallPreProc(1);
+  CallPreProc(1, kAboveClippedThreshold);
   EXPECT_EQ(kClippedMin, volume_.GetMicVolume());
 
-  EXPECT_CALL(*agc_, AnalyzePreproc(_, _))
-      .WillRepeatedly(Return(kAboveClippedThreshold));
   EXPECT_CALL(*agc_, Reset()).Times(0);
-  CallPreProc(1000);
+  CallPreProc(1000, kAboveClippedThreshold);
   EXPECT_EQ(kClippedMin, volume_.GetMicVolume());
 }
 
 TEST_F(AgcManagerDirectTest, ClippingMaxIsRespectedWhenEqualToLevel) {
   SetVolumeAndProcess(255);
 
-  EXPECT_CALL(*agc_, AnalyzePreproc(_, _))
-      .WillOnce(Return(kAboveClippedThreshold));
   EXPECT_CALL(*agc_, Reset()).Times(AtLeast(1));
-  CallPreProc(1);
+  CallPreProc(1, kAboveClippedThreshold);
   EXPECT_EQ(240, volume_.GetMicVolume());
 
   EXPECT_CALL(*agc_, GetRmsErrorDb(_))
@@ -555,10 +552,8 @@ TEST_F(AgcManagerDirectTest, ClippingMaxIsRespectedWhenEqualToLevel) {
 TEST_F(AgcManagerDirectTest, ClippingMaxIsRespectedWhenHigherThanLevel) {
   SetVolumeAndProcess(200);
 
-  EXPECT_CALL(*agc_, AnalyzePreproc(_, _))
-      .WillOnce(Return(kAboveClippedThreshold));
   EXPECT_CALL(*agc_, Reset()).Times(AtLeast(1));
-  CallPreProc(1);
+  CallPreProc(1, kAboveClippedThreshold);
   EXPECT_EQ(185, volume_.GetMicVolume());
 
   EXPECT_CALL(*agc_, GetRmsErrorDb(_))
@@ -572,10 +567,8 @@ TEST_F(AgcManagerDirectTest, ClippingMaxIsRespectedWhenHigherThanLevel) {
 TEST_F(AgcManagerDirectTest, MaxCompressionIsIncreasedAfterClipping) {
   SetVolumeAndProcess(210);
 
-  EXPECT_CALL(*agc_, AnalyzePreproc(_, _))
-      .WillOnce(Return(kAboveClippedThreshold));
   EXPECT_CALL(*agc_, Reset()).Times(AtLeast(1));
-  CallPreProc(1);
+  CallPreProc(1, kAboveClippedThreshold);
   EXPECT_EQ(195, volume_.GetMicVolume());
 
   EXPECT_CALL(*agc_, GetRmsErrorDb(_))
@@ -600,36 +593,26 @@ TEST_F(AgcManagerDirectTest, MaxCompressionIsIncreasedAfterClipping) {
   CallProcess(1);
 
   // Continue clipping until we hit the maximum surplus compression.
-  CallPreProc(300);
-  EXPECT_CALL(*agc_, AnalyzePreproc(_, _))
-      .WillOnce(Return(kAboveClippedThreshold));
+  CallPreProc(300, kAboveClippedThreshold);
   EXPECT_CALL(*agc_, Reset()).Times(AtLeast(1));
-  CallPreProc(1);
+  CallPreProc(1, kAboveClippedThreshold);
   EXPECT_EQ(180, volume_.GetMicVolume());
 
-  CallPreProc(300);
-  EXPECT_CALL(*agc_, AnalyzePreproc(_, _))
-      .WillOnce(Return(kAboveClippedThreshold));
+  CallPreProc(300, kAboveClippedThreshold);
   EXPECT_CALL(*agc_, Reset()).Times(AtLeast(1));
-  CallPreProc(1);
+  CallPreProc(1, kAboveClippedThreshold);
   EXPECT_EQ(kClippedMin, volume_.GetMicVolume());
 
   // Current level is now at the minimum, but the maximum allowed level still
   // has more to decrease.
-  CallPreProc(300);
-  EXPECT_CALL(*agc_, AnalyzePreproc(_, _))
-      .WillOnce(Return(kAboveClippedThreshold));
-  CallPreProc(1);
+  CallPreProc(300, kAboveClippedThreshold);
+  CallPreProc(1, kAboveClippedThreshold);
 
-  CallPreProc(300);
-  EXPECT_CALL(*agc_, AnalyzePreproc(_, _))
-      .WillOnce(Return(kAboveClippedThreshold));
-  CallPreProc(1);
+  CallPreProc(300, kAboveClippedThreshold);
+  CallPreProc(1, kAboveClippedThreshold);
 
-  CallPreProc(300);
-  EXPECT_CALL(*agc_, AnalyzePreproc(_, _))
-      .WillOnce(Return(kAboveClippedThreshold));
-  CallPreProc(1);
+  CallPreProc(300, kAboveClippedThreshold);
+  CallPreProc(1, kAboveClippedThreshold);
 
   EXPECT_CALL(*agc_, GetRmsErrorDb(_))
       .WillOnce(DoAll(SetArgPointee<0>(16), Return(true)))
@@ -653,10 +636,8 @@ TEST_F(AgcManagerDirectTest, MaxCompressionIsIncreasedAfterClipping) {
 TEST_F(AgcManagerDirectTest, UserCanRaiseVolumeAfterClipping) {
   SetVolumeAndProcess(225);
 
-  EXPECT_CALL(*agc_, AnalyzePreproc(_, _))
-      .WillOnce(Return(kAboveClippedThreshold));
   EXPECT_CALL(*agc_, Reset()).Times(AtLeast(1));
-  CallPreProc(1);
+  CallPreProc(1, kAboveClippedThreshold);
   EXPECT_EQ(210, volume_.GetMicVolume());
 
   // High enough error to trigger a volume check.
@@ -688,11 +669,9 @@ TEST_F(AgcManagerDirectTest, UserCanRaiseVolumeAfterClipping) {
 TEST_F(AgcManagerDirectTest, ClippingDoesNotPullLowVolumeBackUp) {
   SetVolumeAndProcess(80);
 
-  EXPECT_CALL(*agc_, AnalyzePreproc(_, _))
-      .WillOnce(Return(kAboveClippedThreshold));
   EXPECT_CALL(*agc_, Reset()).Times(0);
   int initial_volume = volume_.GetMicVolume();
-  CallPreProc(1);
+  CallPreProc(1, kAboveClippedThreshold);
   EXPECT_EQ(initial_volume, volume_.GetMicVolume());
 }
 

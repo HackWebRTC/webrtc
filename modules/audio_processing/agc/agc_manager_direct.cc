@@ -141,6 +141,24 @@ int InitializeGainControl(GainControl* gain_control,
   return 0;
 }
 
+// Returns the proportion of samples in the buffer which are at full-scale
+// (and presumably clipped).
+float ComputeClippedRatio(const float* const* audio,
+                          size_t num_channels,
+                          size_t samples_per_channel) {
+  RTC_DCHECK_GT(num_channels * samples_per_channel, 0);
+  int num_clipped = 0;
+  for (size_t ch = 0; ch < num_channels; ++ch) {
+    for (size_t i = 0; i < samples_per_channel; ++i) {
+      RTC_DCHECK(audio[ch]);
+      if (audio[ch][i] >= 32767.f || audio[ch][i] <= -32768.f) {
+        ++num_clipped;
+      }
+    }
+  }
+  return static_cast<float>(num_clipped) / (num_channels * samples_per_channel);
+}
+
 }  // namespace
 
 // Facility for dumping debug audio files. All methods are no-ops in the
@@ -253,27 +271,13 @@ int AgcManagerDirect::Initialize() {
   return InitializeGainControl(gctrl_, disable_digital_adaptive_);
 }
 
-void AgcManagerDirect::AnalyzePreProcess(float* audio,
+void AgcManagerDirect::AnalyzePreProcess(const float* const* audio,
                                          int num_channels,
                                          size_t samples_per_channel) {
-  size_t length = num_channels * samples_per_channel;
+  RTC_DCHECK(audio);
   if (capture_muted_) {
     return;
   }
-
-  std::array<int16_t, kMaxNumSamplesPerChannel * kMaxNumChannels> audio_data;
-  int16_t* audio_fix;
-  size_t safe_length;
-  if (audio) {
-    audio_fix = audio_data.data();
-    safe_length = std::min(audio_data.size(), length);
-    FloatS16ToS16(audio, length, audio_fix);
-  } else {
-    audio_fix = nullptr;
-    safe_length = length;
-  }
-
-  file_preproc_->Write(audio_fix, safe_length);
 
   if (frames_since_clipped_ < kClippedWaitFrames) {
     ++frames_since_clipped_;
@@ -289,7 +293,8 @@ void AgcManagerDirect::AnalyzePreProcess(float* audio,
   // maximum. This harsh treatment is an effort to avoid repeated clipped echo
   // events. As compensation for this restriction, the maximum compression
   // gain is increased, through SetMaxLevel().
-  float clipped_ratio = agc_->AnalyzePreproc(audio_fix, safe_length);
+  float clipped_ratio =
+      ComputeClippedRatio(audio, num_channels, samples_per_channel);
   if (clipped_ratio > kClippedRatioThreshold) {
     RTC_DLOG(LS_INFO) << "[agc] Clipping detected. clipped_ratio="
                       << clipped_ratio;
@@ -307,10 +312,6 @@ void AgcManagerDirect::AnalyzePreProcess(float* audio,
       agc_->Reset();
     }
     frames_since_clipped_ = 0;
-  }
-
-  if (audio) {
-    S16ToFloatS16(audio_fix, safe_length, audio);
   }
 }
 
