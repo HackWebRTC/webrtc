@@ -662,13 +662,6 @@ bool RTPSenderVideo::SendVideo(
     // Put packetization finish timestamp into extension.
     if (packet->HasExtension<VideoTimingExtension>()) {
       packet->set_packetization_finish_time_ms(clock_->TimeInMilliseconds());
-      // TODO(webrtc:10750): wait a couple of months and remove the statement
-      // below. For now we can't use packets with VideoTimingFrame extensions in
-      // Fec because the extension is modified after FEC is calculated by pacer
-      // and network. This may cause corruptions in video payload and header.
-      // The fix in receive code is implemented, but until all the receivers
-      // are updated, senders can't send potentially breaking packets.
-      protect_packet = false;
     }
 
     if (red_enabled()) {
