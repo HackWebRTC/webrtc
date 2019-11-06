@@ -851,7 +851,7 @@ void AudioEncoderOpusImpl::SetTargetBitrate(int bits_per_second) {
     RTC_CHECK_EQ(
         0, WebRtcOpus_SetBitRate(
                inst_, GetMultipliedBitrate(bitrate, bitrate_multipliers_)));
-    RTC_LOG(LS_INFO) << "Set Opus bitrate to " << bitrate << " bps.";
+    RTC_LOG(LS_VERBOSE) << "Set Opus bitrate to " << bitrate << " bps.";
     bitrate_changed_ = true;
   }
 
