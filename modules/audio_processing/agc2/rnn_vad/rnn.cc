@@ -10,6 +10,15 @@
 
 #include "modules/audio_processing/agc2/rnn_vad/rnn.h"
 
+// Defines WEBRTC_ARCH_X86_FAMILY, used below.
+#include "rtc_base/system/arch.h"
+
+#if defined(WEBRTC_HAS_NEON)
+#include <arm_neon.h>
+#endif
+#if defined(WEBRTC_ARCH_X86_FAMILY)
+#include <emmintrin.h>
+#endif
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -69,12 +78,14 @@ FullyConnectedLayer::FullyConnectedLayer(
     const size_t output_size,
     const rtc::ArrayView<const int8_t> bias,
     const rtc::ArrayView<const int8_t> weights,
-    float (*const activation_function)(float))
+    float (*const activation_function)(float),
+    Optimization optimization)
     : input_size_(input_size),
       output_size_(output_size),
       bias_(GetScaledParams(bias)),
       weights_(GetScaledParams(weights)),
-      activation_function_(activation_function) {
+      activation_function_(activation_function),
+      optimization_(optimization) {
   RTC_DCHECK_LE(output_size_, kFullyConnectedLayersMaxUnits)
       << "Static over-allocation of fully-connected layers output vectors is "
          "not sufficient.";
@@ -91,8 +102,26 @@ rtc::ArrayView<const float> FullyConnectedLayer::GetOutput() const {
 }
 
 void FullyConnectedLayer::ComputeOutput(rtc::ArrayView<const float> input) {
-  // TODO(bugs.chromium.org/9076): Optimize using SSE/AVX fused multiply-add
-  // operations.
+  switch (optimization_) {
+#if defined(WEBRTC_ARCH_X86_FAMILY)
+    case Optimization::kSse2:
+      // TODO(bugs.chromium.org/10480): Handle Optimization::kSse2.
+      ComputeOutput_NONE(input);
+      break;
+#endif
+#if defined(WEBRTC_HAS_NEON)
+    case Optimization::kNeon:
+      // TODO(bugs.chromium.org/10480): Handle Optimization::kNeon.
+      ComputeOutput_NONE(input);
+      break;
+#endif
+    default:
+      ComputeOutput_NONE(input);
+  }
+}
+
+void FullyConnectedLayer::ComputeOutput_NONE(
+    rtc::ArrayView<const float> input) {
   for (size_t o = 0; o < output_size_; ++o) {
     output_[o] = bias_[o];
     // TODO(bugs.chromium.org/9076): Benchmark how different layouts for
@@ -109,12 +138,14 @@ GatedRecurrentLayer::GatedRecurrentLayer(
     const size_t output_size,
     const rtc::ArrayView<const int8_t> bias,
     const rtc::ArrayView<const int8_t> weights,
-    const rtc::ArrayView<const int8_t> recurrent_weights)
+    const rtc::ArrayView<const int8_t> recurrent_weights,
+    Optimization optimization)
     : input_size_(input_size),
       output_size_(output_size),
       bias_(GetScaledParams(bias)),
       weights_(GetScaledParams(weights)),
-      recurrent_weights_(GetScaledParams(recurrent_weights)) {
+      recurrent_weights_(GetScaledParams(recurrent_weights)),
+      optimization_(optimization) {
   RTC_DCHECK_LE(output_size_, kRecurrentLayersMaxUnits)
       << "Static over-allocation of recurrent layers state vectors is not "
       << "sufficient.";
@@ -139,6 +170,26 @@ void GatedRecurrentLayer::Reset() {
 }
 
 void GatedRecurrentLayer::ComputeOutput(rtc::ArrayView<const float> input) {
+  switch (optimization_) {
+#if defined(WEBRTC_ARCH_X86_FAMILY)
+    case Optimization::kSse2:
+      // TODO(bugs.chromium.org/10480): Handle Optimization::kSse2.
+      ComputeOutput_NONE(input);
+      break;
+#endif
+#if defined(WEBRTC_HAS_NEON)
+    case Optimization::kNeon:
+      // TODO(bugs.chromium.org/10480): Handle Optimization::kNeon.
+      ComputeOutput_NONE(input);
+      break;
+#endif
+    default:
+      ComputeOutput_NONE(input);
+  }
+}
+
+void GatedRecurrentLayer::ComputeOutput_NONE(
+    rtc::ArrayView<const float> input) {
   // TODO(bugs.chromium.org/9076): Optimize using SSE/AVX fused multiply-add
   // operations.
   // Stride and offset used to read parameter arrays.
@@ -203,17 +254,20 @@ RnnBasedVad::RnnBasedVad()
                    kInputLayerOutputSize,
                    kInputDenseBias,
                    kInputDenseWeights,
-                   TansigApproximated),
+                   TansigApproximated,
+                   DetectOptimization()),
       hidden_layer_(kInputLayerOutputSize,
                     kHiddenLayerOutputSize,
                     kHiddenGruBias,
                     kHiddenGruWeights,
-                    kHiddenGruRecurrentWeights),
+                    kHiddenGruRecurrentWeights,
+                    DetectOptimization()),
       output_layer_(kHiddenLayerOutputSize,
                     kOutputLayerOutputSize,
                     kOutputDenseBias,
                     kOutputDenseWeights,
-                    SigmoidApproximated) {
+                    SigmoidApproximated,
+                    DetectOptimization()) {
   // Input-output chaining size checks.
   RTC_DCHECK_EQ(input_layer_.output_size(), hidden_layer_.input_size())
       << "The input and the hidden layers sizes do not match.";
