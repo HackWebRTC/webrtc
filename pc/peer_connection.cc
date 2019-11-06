@@ -4209,6 +4209,37 @@ bool PeerConnection::AddIceCandidate(
   }
 }
 
+void PeerConnection::AddIceCandidate(
+    std::unique_ptr<IceCandidateInterface> candidate,
+    std::function<void(RTCError)> callback) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  // Chain this operation. If asynchronous operations are pending on the chain,
+  // this operation will be queued to be invoked, otherwise the contents of the
+  // lambda will execute immediately.
+  operations_chain_->ChainOperation(
+      [this_weak_ptr = weak_ptr_factory_.GetWeakPtr(),
+       candidate = std::move(candidate), callback = std::move(callback)](
+          std::function<void()> operations_chain_callback) {
+        if (!this_weak_ptr) {
+          operations_chain_callback();
+          callback(RTCError(
+              RTCErrorType::INVALID_STATE,
+              "AddIceCandidate failed because the session was shut down"));
+          return;
+        }
+        if (!this_weak_ptr->AddIceCandidate(candidate.get())) {
+          operations_chain_callback();
+          // Fail with an error type and message consistent with Chromium.
+          // TODO(hbos): Fail with error types according to spec.
+          callback(RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
+                            "Error processing ICE candidate"));
+          return;
+        }
+        operations_chain_callback();
+        callback(RTCError::OK());
+      });
+}
+
 bool PeerConnection::RemoveIceCandidates(
     const std::vector<cricket::Candidate>& candidates) {
   TRACE_EVENT0("webrtc", "PeerConnection::RemoveIceCandidates");

@@ -221,6 +221,8 @@ class PeerConnection : public PeerConnectionInternal,
   RTCError SetConfiguration(
       const PeerConnectionInterface::RTCConfiguration& configuration) override;
   bool AddIceCandidate(const IceCandidateInterface* candidate) override;
+  void AddIceCandidate(std::unique_ptr<IceCandidateInterface> candidate,
+                       std::function<void(RTCError)> callback) override;
   bool RemoveIceCandidates(
       const std::vector<cricket::Candidate>& candidates) override;
 

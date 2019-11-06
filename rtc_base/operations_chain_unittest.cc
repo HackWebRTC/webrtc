@@ -172,6 +172,38 @@ class OperationTrackerProxy {
   scoped_refptr<OperationsChain> operations_chain_;
 };
 
+// On destruction, sets a boolean flag to true.
+class SignalOnDestruction final {
+ public:
+  SignalOnDestruction(bool* destructor_called)
+      : destructor_called_(destructor_called) {
+    RTC_DCHECK(destructor_called_);
+  }
+  ~SignalOnDestruction() {
+    // Moved objects will have |destructor_called_| set to null. Destroying a
+    // moved SignalOnDestruction should not signal.
+    if (destructor_called_) {
+      *destructor_called_ = true;
+    }
+  }
+
+  // Move operators.
+  SignalOnDestruction(SignalOnDestruction&& other)
+      : SignalOnDestruction(other.destructor_called_) {
+    other.destructor_called_ = nullptr;
+  }
+  SignalOnDestruction& operator=(SignalOnDestruction&& other) {
+    destructor_called_ = other.destructor_called_;
+    other.destructor_called_ = nullptr;
+    return *this;
+  }
+
+ private:
+  bool* destructor_called_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(SignalOnDestruction);
+};
+
 TEST(OperationsChainTest, SynchronousOperation) {
   OperationTrackerProxy operation_tracker_proxy;
   operation_tracker_proxy.Initialize()->Wait(Event::kForever);
@@ -310,6 +342,29 @@ TEST(OperationsChainTest,
 
   unblock_async_operation_event.Set();
   async_operation_completed_event->Wait(Event::kForever);
+}
+
+TEST(OperationsChainTest, FunctorIsNotDestroyedWhileExecuting) {
+  scoped_refptr<OperationsChain> operations_chain = OperationsChain::Create();
+
+  bool destructor_called = false;
+  SignalOnDestruction signal_on_destruction(&destructor_called);
+
+  operations_chain->ChainOperation(
+      [signal_on_destruction = std::move(signal_on_destruction),
+       &destructor_called](std::function<void()> callback) {
+        EXPECT_FALSE(destructor_called);
+        // Invoking the callback marks the operation as complete, popping the
+        // Operation object from the OperationsChain internal queue.
+        callback();
+        // Even though the internal Operation object has been destroyed,
+        // variables captured by this lambda expression must still be valid (the
+        // associated functor must not be deleted while executing).
+        EXPECT_FALSE(destructor_called);
+      });
+  // The lambda having executed synchronously and completed, its captured
+  // variables should now have been deleted.
+  EXPECT_TRUE(destructor_called);
 }
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)

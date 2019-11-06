@@ -56,7 +56,14 @@ class OperationWithFunctor final : public Operation {
 #ifdef RTC_DCHECK_IS_ON
     has_run_ = true;
 #endif  // RTC_DCHECK_IS_ON
-    functor_(std::move(callback_));
+    // The functor being executed may invoke the callback synchronously,
+    // marking the operation as complete. As such, |this| OperationWithFunctor
+    // object may get deleted here, including destroying |functor_|. To
+    // protect the functor from self-destruction while running, it is moved to
+    // a local variable.
+    auto functor = std::move(functor_);
+    functor(std::move(callback_));
+    // |this| may now be deleted; don't touch any member variables.
   }
 
  private:
