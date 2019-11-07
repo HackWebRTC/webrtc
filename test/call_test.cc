@@ -56,9 +56,7 @@ CallTest::CallTest()
       num_flexfec_streams_(0),
       audio_decoder_factory_(CreateBuiltinAudioDecoderFactory()),
       audio_encoder_factory_(CreateBuiltinAudioEncoderFactory()),
-      task_queue_(task_queue_factory_->CreateTaskQueue(
-          "CallTestTaskQueue",
-          TaskQueueFactory::Priority::NORMAL)) {}
+      task_queue_("CallTestTaskQueue") {}
 
 CallTest::~CallTest() = default;
 
@@ -86,7 +84,7 @@ void CallTest::RegisterRtpExtension(const RtpExtension& extension) {
 }
 
 void CallTest::RunBaseTest(BaseTest* test) {
-  SendTask(RTC_FROM_HERE, task_queue(), [this, test]() {
+  SendTask(RTC_FROM_HERE, &task_queue_, [this, test]() {
     num_video_streams_ = test->GetNumVideoStreams();
     num_audio_streams_ = test->GetNumAudioStreams();
     num_flexfec_streams_ = test->GetNumFlexfecStreams();
@@ -125,9 +123,9 @@ void CallTest::RunBaseTest(BaseTest* test) {
       CreateReceiverCall(recv_config);
     }
     test->OnCallsCreated(sender_call_.get(), receiver_call_.get());
-    receive_transport_ = test->CreateReceiveTransport(task_queue());
+    receive_transport_ = test->CreateReceiveTransport(&task_queue_);
     send_transport_ =
-        test->CreateSendTransport(task_queue(), sender_call_.get());
+        test->CreateSendTransport(&task_queue_, sender_call_.get());
 
     if (test->ShouldCreateReceivers()) {
       send_transport_->SetReceiver(receiver_call_->Receiver());
@@ -186,7 +184,7 @@ void CallTest::RunBaseTest(BaseTest* test) {
 
   test->PerformTest();
 
-  SendTask(RTC_FROM_HERE, task_queue(), [this, test]() {
+  SendTask(RTC_FROM_HERE, &task_queue_, [this, test]() {
     Stop();
     test->OnStreamsStopped();
     DestroyStreams();

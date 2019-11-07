@@ -30,6 +30,7 @@
 #include "test/fake_vp8_encoder.h"
 #include "test/frame_generator_capturer.h"
 #include "test/rtp_rtcp_observer.h"
+#include "test/single_threaded_task_queue.h"
 
 namespace webrtc {
 namespace test {
@@ -173,7 +174,7 @@ class CallTest : public ::testing::Test {
   void SetVideoEncoderConfig(const VideoEncoderConfig& config);
   VideoSendStream* GetVideoSendStream();
   FlexfecReceiveStream::Config* GetFlexFecConfig();
-  TaskQueueBase* task_queue() { return task_queue_.get(); }
+  TaskQueueBase* task_queue() { return &task_queue_; }
 
   Clock* const clock_;
 
@@ -229,7 +230,7 @@ class CallTest : public ::testing::Test {
   void AddRtpExtensionByUri(const std::string& uri,
                             std::vector<RtpExtension>* extensions) const;
 
-  std::unique_ptr<TaskQueueBase, TaskQueueDeleter> task_queue_;
+  DEPRECATED_SingleThreadedTaskQueueForTesting task_queue_;
   std::vector<RtpExtension> rtp_extensions_;
   rtc::scoped_refptr<AudioProcessing> apm_send_;
   rtc::scoped_refptr<AudioProcessing> apm_recv_;
