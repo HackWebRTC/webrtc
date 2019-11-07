@@ -80,8 +80,13 @@ bool RtpDependencyDescriptorWriter::Write() {
 int RtpDependencyDescriptorWriter::ValueSizeBits() const {
   static constexpr int kMandatoryFields = 1 + 1 + 6 + 16;
   int value_size_bits = kMandatoryFields + best_template_.extra_size_bits;
-  if (descriptor_.attached_structure)
-    value_size_bits += 10 + StructureSizeBits();
+  if (HasExtendedFields()) {
+    value_size_bits += 11;
+    if (descriptor_.attached_structure)
+      value_size_bits += StructureSizeBits();
+    if (ShouldWriteActiveDecodeTargetsBitmask())
+      value_size_bits += structure_.num_decode_targets;
+  }
   return value_size_bits;
 }
 
@@ -124,15 +129,7 @@ RtpDependencyDescriptorWriter::CalculateMatch(
   result.need_custom_chains =
       descriptor_.frame_dependencies.chain_diffs != frame_template->chain_diffs;
 
-  if (!result.need_custom_fdiffs && !result.need_custom_dtis &&
-      !result.need_custom_chains) {
-    // Perfect match.
-    result.extra_size_bits = 0;
-    return result;
-  }
-  // If structure should be attached, then there will be ExtendedFields anyway,
-  // so do not count 10 bits for them as extra.
-  result.extra_size_bits = descriptor_.attached_structure ? 0 : 10;
+  result.extra_size_bits = 0;
   if (result.need_custom_fdiffs) {
     result.extra_size_bits +=
         2 * (1 + descriptor_.frame_dependencies.frame_diffs.size());
@@ -176,8 +173,21 @@ void RtpDependencyDescriptorWriter::FindBestTemplate() {
   }
 }
 
+bool RtpDependencyDescriptorWriter::ShouldWriteActiveDecodeTargetsBitmask()
+    const {
+  if (!descriptor_.active_decode_targets_bitmask)
+    return false;
+  const uint64_t all_decode_targets_bitmask =
+      (uint64_t{1} << structure_.num_decode_targets) - 1;
+  if (descriptor_.attached_structure &&
+      descriptor_.active_decode_targets_bitmask == all_decode_targets_bitmask)
+    return false;
+  return true;
+}
+
 bool RtpDependencyDescriptorWriter::HasExtendedFields() const {
-  return best_template_.extra_size_bits > 0 || descriptor_.attached_structure;
+  return best_template_.extra_size_bits > 0 || descriptor_.attached_structure ||
+         descriptor_.active_decode_targets_bitmask;
 }
 
 uint64_t RtpDependencyDescriptorWriter::TemplateId() const {
@@ -306,11 +316,17 @@ void RtpDependencyDescriptorWriter::WriteExtendedFields() {
   uint64_t template_dependency_structure_present_flag =
       descriptor_.attached_structure ? 1u : 0u;
   WriteBits(template_dependency_structure_present_flag, 1);
+  uint64_t active_decode_targets_present_flag =
+      ShouldWriteActiveDecodeTargetsBitmask() ? 1u : 0u;
+  WriteBits(active_decode_targets_present_flag, 1);
   WriteBits(best_template_.need_custom_dtis, 1);
   WriteBits(best_template_.need_custom_fdiffs, 1);
   WriteBits(best_template_.need_custom_chains, 1);
-  if (descriptor_.attached_structure)
+  if (template_dependency_structure_present_flag)
     WriteTemplateDependencyStructure();
+  if (active_decode_targets_present_flag)
+    WriteBits(*descriptor_.active_decode_targets_bitmask,
+              structure_.num_decode_targets);
 }
 
 void RtpDependencyDescriptorWriter::WriteFrameDependencyDefinition() {

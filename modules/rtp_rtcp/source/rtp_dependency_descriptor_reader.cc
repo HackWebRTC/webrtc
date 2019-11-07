@@ -41,10 +41,15 @@ RtpDependencyDescriptorReader::RtpDependencyDescriptorReader(
   structure_ = descriptor->attached_structure
                    ? descriptor->attached_structure.get()
                    : structure;
-  if (structure_ == nullptr) {
+  if (structure_ == nullptr || parsing_failed_) {
     parsing_failed_ = true;
     return;
   }
+  if (active_decode_targets_present_flag_) {
+    descriptor->active_decode_targets_bitmask =
+        ReadBits(structure_->num_decode_targets);
+  }
+
   ReadFrameDependencyDefinition();
 }
 
@@ -190,12 +195,16 @@ void RtpDependencyDescriptorReader::ReadExtendedFields() {
     return;
   }
   bool template_dependency_structure_present_flag = ReadBits(1);
+  active_decode_targets_present_flag_ = ReadBits(1);
   custom_dtis_flag_ = ReadBits(1);
   custom_fdiffs_flag_ = ReadBits(1);
   custom_chains_flag_ = ReadBits(1);
   if (template_dependency_structure_present_flag) {
     ReadTemplateDependencyStructure();
     RTC_DCHECK(descriptor_->attached_structure);
+    descriptor_->active_decode_targets_bitmask =
+        (uint64_t{1} << descriptor_->attached_structure->num_decode_targets) -
+        1;
   }
 }
 

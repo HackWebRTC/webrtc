@@ -97,6 +97,7 @@ struct DependencyDescriptor {
   int frame_number = 0;
   FrameDependencyTemplate frame_dependencies;
   absl::optional<RenderResolution> resolution;
+  absl::optional<uint32_t> active_decode_targets_bitmask;
   std::unique_ptr<FrameDependencyStructure> attached_structure;
 };
 

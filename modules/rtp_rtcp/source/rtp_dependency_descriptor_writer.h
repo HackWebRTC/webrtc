@@ -50,6 +50,7 @@ class RtpDependencyDescriptorWriter {
   int StructureSizeBits() const;
   TemplateMatch CalculateMatch(TemplateIterator frame_template) const;
   void FindBestTemplate();
+  bool ShouldWriteActiveDecodeTargetsBitmask() const;
   bool HasExtendedFields() const;
   uint64_t TemplateId() const;
 

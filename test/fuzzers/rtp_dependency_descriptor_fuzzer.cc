@@ -21,19 +21,6 @@
 #include "test/fuzzers/fuzz_data_helper.h"
 
 namespace webrtc {
-namespace {
-
-bool AreSame(const DependencyDescriptor& lhs, const DependencyDescriptor& rhs) {
-  return lhs.first_packet_in_frame == rhs.first_packet_in_frame &&
-         lhs.last_packet_in_frame == rhs.last_packet_in_frame &&
-         (lhs.attached_structure != nullptr) ==
-             (rhs.attached_structure != nullptr) &&
-         lhs.frame_number == rhs.frame_number &&
-         lhs.resolution == rhs.resolution &&
-         lhs.frame_dependencies == rhs.frame_dependencies;
-}
-
-}  // namespace
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
   FrameDependencyStructure structure1;
@@ -80,7 +67,23 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     DependencyDescriptor descriptor2;
     RTC_CHECK(RtpDependencyDescriptorExtension::Parse(
         write_buffer, structure2.get(), &descriptor2));
-    RTC_CHECK(AreSame(descriptor1, descriptor2));
+    // Check descriptor1 and descriptor2 have same values.
+    RTC_CHECK_EQ(descriptor1.first_packet_in_frame,
+                 descriptor2.first_packet_in_frame);
+    RTC_CHECK_EQ(descriptor1.last_packet_in_frame,
+                 descriptor2.last_packet_in_frame);
+    RTC_CHECK_EQ(descriptor1.attached_structure != nullptr,
+                 descriptor2.attached_structure != nullptr);
+    // Using value_or would miss invalid corner case when one value is nullopt
+    // while another one is 0, but for other errors would produce much nicer
+    // error message than using RTC_CHECK(optional1 == optional2);
+    // If logger would support pretty printing optional values, value_or can be
+    // removed.
+    RTC_CHECK_EQ(descriptor1.active_decode_targets_bitmask.value_or(0),
+                 descriptor2.active_decode_targets_bitmask.value_or(0));
+    RTC_CHECK_EQ(descriptor1.frame_number, descriptor2.frame_number);
+    RTC_CHECK(descriptor1.resolution == descriptor2.resolution);
+    RTC_CHECK(descriptor1.frame_dependencies == descriptor2.frame_dependencies);
 
     if (descriptor2.attached_structure) {
       structure2 = std::move(descriptor2.attached_structure);
