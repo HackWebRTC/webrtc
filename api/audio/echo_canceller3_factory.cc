@@ -20,11 +20,6 @@ EchoCanceller3Factory::EchoCanceller3Factory() {}
 EchoCanceller3Factory::EchoCanceller3Factory(const EchoCanceller3Config& config)
     : config_(config) {}
 
-std::unique_ptr<EchoControl> EchoCanceller3Factory::Create(int sample_rate_hz) {
-  return Create(sample_rate_hz, /*num_render_channels=*/1,
-                /*num_capture_channels=*/1);
-}
-
 std::unique_ptr<EchoControl> EchoCanceller3Factory::Create(
     int sample_rate_hz,
     int num_render_channels,

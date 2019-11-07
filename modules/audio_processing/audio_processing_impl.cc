@@ -1783,6 +1783,7 @@ void AudioProcessingImpl::InitializeEchoController() {
     if (echo_control_factory_) {
       submodules_.echo_controller = echo_control_factory_->Create(
           proc_sample_rate_hz(), num_reverse_channels(), num_proc_channels());
+      RTC_DCHECK(submodules_.echo_controller);
     } else {
       submodules_.echo_controller = std::make_unique<EchoCanceller3>(
           EchoCanceller3Config(), proc_sample_rate_hz(), num_reverse_channels(),
