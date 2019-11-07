@@ -146,17 +146,19 @@ int InitializeGainControl(GainControl* gain_control,
 float ComputeClippedRatio(const float* const* audio,
                           size_t num_channels,
                           size_t samples_per_channel) {
-  RTC_DCHECK_GT(num_channels * samples_per_channel, 0);
+  RTC_DCHECK_GT(samples_per_channel, 0);
   int num_clipped = 0;
   for (size_t ch = 0; ch < num_channels; ++ch) {
+    int num_clipped_in_ch = 0;
     for (size_t i = 0; i < samples_per_channel; ++i) {
       RTC_DCHECK(audio[ch]);
       if (audio[ch][i] >= 32767.f || audio[ch][i] <= -32768.f) {
-        ++num_clipped;
+        ++num_clipped_in_ch;
       }
     }
+    num_clipped = std::max(num_clipped, num_clipped_in_ch);
   }
-  return static_cast<float>(num_clipped) / (num_channels * samples_per_channel);
+  return static_cast<float>(num_clipped) / (samples_per_channel);
 }
 
 }  // namespace

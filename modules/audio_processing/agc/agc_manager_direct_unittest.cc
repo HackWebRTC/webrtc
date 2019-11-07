@@ -113,8 +113,13 @@ class AgcManagerDirectTest : public ::testing::Test {
 
   void CallPreProc(int num_calls, float clipped_ratio) {
     RTC_DCHECK_GE(1.f, clipped_ratio);
-    int num_clipped = kNumChannels * kSamplesPerChannel * clipped_ratio;
-    std::fill(audio_data.begin(), audio_data.begin() + num_clipped, 32767.f);
+    const int num_clipped = kSamplesPerChannel * clipped_ratio;
+    std::fill(audio_data.begin(), audio_data.end(), 0.f);
+    for (size_t ch = 0; ch < kNumChannels; ++ch) {
+      for (int k = 0; k < num_clipped; ++k) {
+        audio[ch][k] = 32767.f;
+      }
+    }
 
     for (int i = 0; i < num_calls; ++i) {
       manager_.AnalyzePreProcess(audio.data(), kNumChannels,
