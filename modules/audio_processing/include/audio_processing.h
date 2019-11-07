@@ -114,13 +114,18 @@ struct ExperimentalAgc {
   explicit ExperimentalAgc(bool enabled) : enabled(enabled) {}
   ExperimentalAgc(bool enabled,
                   bool enabled_agc2_level_estimator,
+                  bool digital_adaptive_disabled)
+      : enabled(enabled),
+        enabled_agc2_level_estimator(enabled_agc2_level_estimator),
+        digital_adaptive_disabled(digital_adaptive_disabled) {}
+  // Deprecated constructor: will be removed.
+  ExperimentalAgc(bool enabled,
+                  bool enabled_agc2_level_estimator,
                   bool digital_adaptive_disabled,
                   bool analyze_before_aec)
       : enabled(enabled),
         enabled_agc2_level_estimator(enabled_agc2_level_estimator),
-        digital_adaptive_disabled(digital_adaptive_disabled),
-        analyze_before_aec(analyze_before_aec) {}
-
+        digital_adaptive_disabled(digital_adaptive_disabled) {}
   ExperimentalAgc(bool enabled, int startup_min_volume)
       : enabled(enabled), startup_min_volume(startup_min_volume) {}
   ExperimentalAgc(bool enabled, int startup_min_volume, int clipped_level_min)
@@ -134,9 +139,6 @@ struct ExperimentalAgc {
   int clipped_level_min = kClippedLevelMin;
   bool enabled_agc2_level_estimator = false;
   bool digital_adaptive_disabled = false;
-  // 'analyze_before_aec' is an experimental flag. It is intended to be removed
-  // at some point.
-  bool analyze_before_aec = false;
 };
 
 // Use to enable experimental noise suppression. It can be set in the

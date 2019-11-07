@@ -695,8 +695,7 @@ TEST(AgcManagerDirectStandaloneTest, DisableDigitalDisablesDigital) {
   MockGainControl gctrl;
   TestVolumeCallbacks volume;
 
-  AgcManagerDirect manager(agc.release(), &gctrl, &volume, kInitialVolume,
-                           kClippedMin,
+  AgcManagerDirect manager(&gctrl, &volume, kInitialVolume, kClippedMin,
                            /* use agc2 level estimation */ false,
                            /* disable digital adaptive */ true);
 
@@ -710,14 +709,14 @@ TEST(AgcManagerDirectStandaloneTest, DisableDigitalDisablesDigital) {
 
 TEST(AgcManagerDirectStandaloneTest, AgcMinMicLevelExperiment) {
   auto agc_man = std::unique_ptr<AgcManagerDirect>(new AgcManagerDirect(
-      nullptr, nullptr, nullptr, kInitialVolume, kClippedMin, true, true));
+      nullptr, nullptr, kInitialVolume, kClippedMin, true, true));
   EXPECT_EQ(agc_man->min_mic_level(), kMinMicLevel);
   EXPECT_EQ(agc_man->startup_min_level(), kInitialVolume);
   {
     test::ScopedFieldTrials field_trial(
         "WebRTC-Audio-AgcMinMicLevelExperiment/Disabled/");
-    agc_man.reset(new AgcManagerDirect(
-        nullptr, nullptr, nullptr, kInitialVolume, kClippedMin, true, true));
+    agc_man.reset(new AgcManagerDirect(nullptr, nullptr, kInitialVolume,
+                                       kClippedMin, true, true));
     EXPECT_EQ(agc_man->min_mic_level(), kMinMicLevel);
     EXPECT_EQ(agc_man->startup_min_level(), kInitialVolume);
   }
@@ -725,16 +724,16 @@ TEST(AgcManagerDirectStandaloneTest, AgcMinMicLevelExperiment) {
     // Valid range of field-trial parameter is [0,255].
     test::ScopedFieldTrials field_trial(
         "WebRTC-Audio-AgcMinMicLevelExperiment/Enabled-256/");
-    agc_man.reset(new AgcManagerDirect(
-        nullptr, nullptr, nullptr, kInitialVolume, kClippedMin, true, true));
+    agc_man.reset(new AgcManagerDirect(nullptr, nullptr, kInitialVolume,
+                                       kClippedMin, true, true));
     EXPECT_EQ(agc_man->min_mic_level(), kMinMicLevel);
     EXPECT_EQ(agc_man->startup_min_level(), kInitialVolume);
   }
   {
     test::ScopedFieldTrials field_trial(
         "WebRTC-Audio-AgcMinMicLevelExperiment/Enabled--1/");
-    agc_man.reset(new AgcManagerDirect(
-        nullptr, nullptr, nullptr, kInitialVolume, kClippedMin, true, true));
+    agc_man.reset(new AgcManagerDirect(nullptr, nullptr, kInitialVolume,
+                                       kClippedMin, true, true));
     EXPECT_EQ(agc_man->min_mic_level(), kMinMicLevel);
     EXPECT_EQ(agc_man->startup_min_level(), kInitialVolume);
   }
@@ -744,8 +743,8 @@ TEST(AgcManagerDirectStandaloneTest, AgcMinMicLevelExperiment) {
     // be changed.
     test::ScopedFieldTrials field_trial(
         "WebRTC-Audio-AgcMinMicLevelExperiment/Enabled-50/");
-    agc_man.reset(new AgcManagerDirect(
-        nullptr, nullptr, nullptr, kInitialVolume, kClippedMin, true, true));
+    agc_man.reset(new AgcManagerDirect(nullptr, nullptr, kInitialVolume,
+                                       kClippedMin, true, true));
     EXPECT_EQ(agc_man->min_mic_level(), 50);
     EXPECT_EQ(agc_man->startup_min_level(), kInitialVolume);
   }
@@ -755,8 +754,8 @@ TEST(AgcManagerDirectStandaloneTest, AgcMinMicLevelExperiment) {
     // level set by the experiment.
     test::ScopedFieldTrials field_trial(
         "WebRTC-Audio-AgcMinMicLevelExperiment/Enabled-50/");
-    agc_man.reset(new AgcManagerDirect(nullptr, nullptr, nullptr, 30,
-                                       kClippedMin, true, true));
+    agc_man.reset(
+        new AgcManagerDirect(nullptr, nullptr, 30, kClippedMin, true, true));
     EXPECT_EQ(agc_man->min_mic_level(), 50);
     EXPECT_EQ(agc_man->startup_min_level(), 50);
   }

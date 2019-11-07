@@ -330,12 +330,10 @@ AudioProcessingImpl::AudioProcessingImpl(
                  /* enabled= */ false,
                  /* enabled_agc2_level_estimator= */ false,
                  /* digital_adaptive_disabled= */ false,
-                 /* analyze_before_aec= */ false,
 #else
                  config.Get<ExperimentalAgc>().enabled,
                  config.Get<ExperimentalAgc>().enabled_agc2_level_estimator,
                  config.Get<ExperimentalAgc>().digital_adaptive_disabled,
-                 config.Get<ExperimentalAgc>().analyze_before_aec,
 #endif
                  !field_trial::IsEnabled(
                      "WebRTC-ApmExperimentalMultiChannelRenderKillSwitch"),
@@ -1288,13 +1286,6 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     submodules_.agc_manager->AnalyzePreProcess(
         capture_buffer->channels_const(), capture_buffer->num_channels(),
         capture_nonlocked_.capture_processing_format.num_frames());
-
-    if (constants_.use_experimental_agc_process_before_aec) {
-      submodules_.agc_manager->Process(
-          capture_buffer->channels_const()[0],
-          capture_nonlocked_.capture_processing_format.num_frames(),
-          capture_nonlocked_.capture_processing_format.sample_rate_hz());
-    }
   }
 
   if (submodule_states_.CaptureMultiBandSubModulesActive() &&
@@ -1379,8 +1370,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   }
 
   if (constants_.use_experimental_agc &&
-      submodules_.gain_control->is_enabled() &&
-      !constants_.use_experimental_agc_process_before_aec) {
+      submodules_.gain_control->is_enabled()) {
     submodules_.agc_manager->Process(
         capture_buffer->split_bands_const_f(0)[kBand0To8kHz],
         capture_buffer->num_frames_per_band(), capture_nonlocked_.split_rate);

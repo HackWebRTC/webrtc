@@ -84,15 +84,6 @@ class AgcManagerDirect final {
                    int startup_min_level,
                    int clipped_level_min);
 
-  // Most general c-tor.
-  AgcManagerDirect(Agc* agc,
-                   GainControl* gctrl,
-                   VolumeCallbacks* volume_callbacks,
-                   int startup_min_level,
-                   int clipped_level_min,
-                   bool use_agc2_level_estimation,
-                   bool disable_digital_adaptive);
-
   int min_mic_level() const { return min_mic_level_; }
   int startup_min_level() const { return startup_min_level_; }
 
@@ -127,7 +118,6 @@ class AgcManagerDirect final {
   bool check_volume_on_next_process_;
   bool startup_;
   const int min_mic_level_;
-  const bool use_agc2_level_estimation_;
   const bool disable_digital_adaptive_;
   int startup_min_level_;
   const int clipped_level_min_;

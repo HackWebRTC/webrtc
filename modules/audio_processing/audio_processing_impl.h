@@ -380,7 +380,6 @@ class AudioProcessingImpl : public AudioProcessing {
                  bool use_experimental_agc,
                  bool use_experimental_agc_agc2_level_estimation,
                  bool use_experimental_agc_agc2_digital_adaptive,
-                 bool use_experimental_agc_process_before_aec,
                  bool experimental_multi_channel_render_support,
                  bool experimental_multi_channel_capture_support)
         : agc_startup_min_volume(agc_startup_min_volume),
@@ -390,8 +389,6 @@ class AudioProcessingImpl : public AudioProcessing {
               use_experimental_agc_agc2_level_estimation),
           use_experimental_agc_agc2_digital_adaptive(
               use_experimental_agc_agc2_digital_adaptive),
-          use_experimental_agc_process_before_aec(
-              use_experimental_agc_process_before_aec),
           experimental_multi_channel_render_support(
               experimental_multi_channel_render_support),
           experimental_multi_channel_capture_support(
@@ -401,7 +398,6 @@ class AudioProcessingImpl : public AudioProcessing {
     bool use_experimental_agc;
     bool use_experimental_agc_agc2_level_estimation;
     bool use_experimental_agc_agc2_digital_adaptive;
-    bool use_experimental_agc_process_before_aec;
     bool experimental_multi_channel_render_support;
     bool experimental_multi_channel_capture_support;
   } constants_;
