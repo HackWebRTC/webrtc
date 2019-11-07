@@ -1161,14 +1161,16 @@ TEST_F(PacingControllerTest, SkipsProbesWhenProcessIntervalTooLarge) {
   // We're exactly where we should be for the next probe.
   EXPECT_TRUE(pacer_->NextProbeTime().IsFinite());
 
-  // Advance to within one millisecond past where the next probe should be sent,
-  // will still indicate "process immediately".
-  clock_.AdvanceTime(TimeDelta::us(500));
+  FieldTrialBasedConfig field_trial_config;
+  BitrateProberConfig probing_config(&field_trial_config);
+  EXPECT_GT(probing_config.max_probe_delay.Get(), TimeDelta::Zero());
+
+  // Advance to within max probe delay.
+  clock_.AdvanceTime(probing_config.max_probe_delay.Get());
   EXPECT_TRUE(pacer_->NextProbeTime().IsFinite());
 
-  // We've gone more than one millisecond past the time for the next probe
-  // packet, it will dropped.
-  clock_.AdvanceTime(TimeDelta::ms(1));
+  // Too high probe delay, drop it!
+  clock_.AdvanceTime(TimeDelta::us(1));
   EXPECT_EQ(pacer_->NextProbeTime(), Timestamp::PlusInfinity());
 }
 

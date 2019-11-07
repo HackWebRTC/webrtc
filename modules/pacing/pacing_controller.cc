@@ -283,11 +283,7 @@ Timestamp PacingController::NextProbeTime() {
     return probe_time;
   }
 
-  if (probe_time > now) {
-    return probe_time;
-  }
-
-  if (probing_send_failure_ || now - probe_time > TimeDelta::ms(1)) {
+  if (probe_time <= now && probing_send_failure_) {
     return Timestamp::PlusInfinity();
   }
 
