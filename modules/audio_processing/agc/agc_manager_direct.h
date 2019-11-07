@@ -21,7 +21,6 @@
 namespace webrtc {
 
 class AudioFrame;
-class DebugFile;
 class GainControl;
 
 // Callbacks that need to be injected into AgcManagerDirect to read and control
@@ -133,9 +132,6 @@ class AgcManagerDirect final {
   int startup_min_level_;
   const int clipped_level_min_;
   int calls_since_last_gain_log_ = 0;
-
-  std::unique_ptr<DebugFile> file_preproc_;
-  std::unique_ptr<DebugFile> file_postproc_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AgcManagerDirect);
 };

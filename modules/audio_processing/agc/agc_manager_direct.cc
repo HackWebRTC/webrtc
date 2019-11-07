@@ -161,29 +161,6 @@ float ComputeClippedRatio(const float* const* audio,
 
 }  // namespace
 
-// Facility for dumping debug audio files. All methods are no-ops in the
-// default case where WEBRTC_AGC_DEBUG_DUMP is undefined.
-class DebugFile {
-#ifdef WEBRTC_AGC_DEBUG_DUMP
- public:
-  explicit DebugFile(const char* filename) : file_(fopen(filename, "wb")) {
-    RTC_DCHECK(file_);
-  }
-  ~DebugFile() { fclose(file_); }
-  void Write(const int16_t* data, size_t length_samples) {
-    fwrite(data, 1, length_samples * sizeof(int16_t), file_);
-  }
-
- private:
-  FILE* file_;
-#else
- public:
-  explicit DebugFile(const char* filename) {}
-  ~DebugFile() {}
-  void Write(const int16_t* data, size_t length_samples) {}
-#endif  // WEBRTC_AGC_DEBUG_DUMP
-};
-
 AgcManagerDirect::AgcManagerDirect(GainControl* gctrl,
                                    VolumeCallbacks* volume_callbacks,
                                    int startup_min_level,
@@ -240,9 +217,7 @@ AgcManagerDirect::AgcManagerDirect(Agc* agc,
       use_agc2_level_estimation_(use_agc2_level_estimation),
       disable_digital_adaptive_(disable_digital_adaptive),
       startup_min_level_(ClampLevel(startup_min_level, min_mic_level_)),
-      clipped_level_min_(clipped_level_min),
-      file_preproc_(new DebugFile("agc_preproc.pcm")),
-      file_postproc_(new DebugFile("agc_postproc.pcm")) {
+      clipped_level_min_(clipped_level_min) {
   instance_counter_++;
   if (use_agc2_level_estimation_) {
     RTC_DCHECK(!agc);
@@ -347,8 +322,6 @@ void AgcManagerDirect::Process(const float* audio,
   if (!disable_digital_adaptive_) {
     UpdateCompressor();
   }
-
-  file_postproc_->Write(audio_fix, safe_length);
 
   data_dumper_->DumpRaw("experimental_gain_control_compression_gain_db", 1,
                         &compression_);
