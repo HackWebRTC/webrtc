@@ -801,16 +801,20 @@ void AudioProcessingImpl::set_output_will_be_muted(bool muted) {
 void AudioProcessingImpl::SetRuntimeSetting(RuntimeSetting setting) {
   switch (setting.type()) {
     case RuntimeSetting::Type::kCustomRenderProcessingRuntimeSetting:
+    case RuntimeSetting::Type::kPlayoutAudioDeviceChange:
       render_runtime_settings_enqueuer_.Enqueue(setting);
-      return;
-    case RuntimeSetting::Type::kNotSpecified:
-      RTC_NOTREACHED();
       return;
     case RuntimeSetting::Type::kCapturePreGain:
     case RuntimeSetting::Type::kCaptureCompressionGain:
     case RuntimeSetting::Type::kCaptureFixedPostGain:
+      capture_runtime_settings_enqueuer_.Enqueue(setting);
+      return;
     case RuntimeSetting::Type::kPlayoutVolumeChange:
       capture_runtime_settings_enqueuer_.Enqueue(setting);
+      render_runtime_settings_enqueuer_.Enqueue(setting);
+      return;
+    case RuntimeSetting::Type::kNotSpecified:
+      RTC_NOTREACHED();
       return;
   }
   // The language allows the enum to have a non-enumerator
@@ -947,6 +951,9 @@ void AudioProcessingImpl::HandleCaptureRuntimeSettings() {
         capture_.playout_volume = value;
         break;
       }
+      case RuntimeSetting::Type::kPlayoutAudioDeviceChange:
+        RTC_NOTREACHED();
+        break;
       case RuntimeSetting::Type::kCustomRenderProcessingRuntimeSetting:
         RTC_NOTREACHED();
         break;
@@ -964,6 +971,7 @@ void AudioProcessingImpl::HandleRenderRuntimeSettings() {
       aec_dump_->WriteRuntimeSetting(setting);
     }
     switch (setting.type()) {
+      case RuntimeSetting::Type::kPlayoutAudioDeviceChange:  // fall-through
       case RuntimeSetting::Type::kCustomRenderProcessingRuntimeSetting:
         if (submodules_.render_pre_processor) {
           submodules_.render_pre_processor->SetRuntimeSetting(setting);
