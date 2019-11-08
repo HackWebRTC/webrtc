@@ -315,7 +315,7 @@ TEST(NetworkEmulationManagerTest, ThroughputStats) {
     EXPECT_EQ(st.packets_sent, kNumPacketsSent);
     EXPECT_EQ(st.bytes_sent.bytes(), kSinglePacketSize * kNumPacketsSent);
 
-    const double tolerance = 0.99;  // Accept 1% tolerance for timing.
+    const double tolerance = 0.95;  // Accept 5% tolerance for timing.
     EXPECT_GE(st.last_packet_sent_time - st.first_packet_sent_time,
               TimeDelta::ms((kNumPacketsSent - 1) * kDelayMs * tolerance));
     EXPECT_GT(st.AverageSendRate().bps(), 0);
