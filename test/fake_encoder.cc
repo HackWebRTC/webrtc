@@ -72,6 +72,11 @@ void FakeEncoder::SetMaxBitrate(int max_kbps) {
   SetRates(current_rate_settings_);
 }
 
+void FakeEncoder::SetQp(int qp) {
+  rtc::CritScope cs(&crit_sect_);
+  qp_ = qp;
+}
+
 int32_t FakeEncoder::InitEncode(const VideoCodec* config,
                                 const Settings& settings) {
   rtc::CritScope cs(&crit_sect_);
@@ -93,6 +98,7 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
   VideoCodecMode mode;
   bool keyframe;
   uint32_t counter;
+  absl::optional<int> qp;
   {
     rtc::CritScope cs(&crit_sect_);
     max_framerate = config_.maxFramerate;
@@ -109,6 +115,7 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     keyframe = pending_keyframe_;
     pending_keyframe_ = false;
     counter = counter_++;
+    qp = qp_;
   }
 
   FrameInfo frame_info =
@@ -134,6 +141,8 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
                                              : VideoFrameType::kVideoFrameDelta;
     encoded._encodedWidth = simulcast_streams[i].width;
     encoded._encodedHeight = simulcast_streams[i].height;
+    if (qp)
+      encoded.qp_ = *qp;
     encoded.SetSpatialIndex(i);
     CodecSpecificInfo codec_specific;
     std::unique_ptr<RTPFragmentationHeader> fragmentation =

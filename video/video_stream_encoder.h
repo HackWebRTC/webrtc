@@ -31,6 +31,7 @@
 #include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "rtc_base/experiments/balanced_degradation_settings.h"
+#include "rtc_base/experiments/quality_rampup_experiment.h"
 #include "rtc_base/experiments/quality_scaler_settings.h"
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/numerics/exp_filter.h"
@@ -158,6 +159,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // Indicates wether frame should be dropped because the pixel count is too
   // large for the current bitrate configuration.
   bool DropDueToSize(uint32_t pixel_count) const RTC_RUN_ON(&encoder_queue_);
+  bool TryQualityRampup(int64_t now_ms) RTC_RUN_ON(&encoder_queue_);
 
   // Implements EncodedImageCallback.
   EncodedImageCallback::Result OnEncodedImage(
@@ -238,6 +240,9 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   int initial_framedrop_;
   const bool initial_framedrop_on_bwe_enabled_;
   bool has_seen_first_significant_bwe_change_ = false;
+  bool quality_rampup_done_ RTC_GUARDED_BY(&encoder_queue_);
+  QualityRampupExperiment quality_rampup_experiment_
+      RTC_GUARDED_BY(&encoder_queue_);
 
   const bool quality_scaling_experiment_enabled_;
 

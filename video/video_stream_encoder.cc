@@ -483,6 +483,8 @@ VideoStreamEncoder::VideoStreamEncoder(
       initial_framedrop_(0),
       initial_framedrop_on_bwe_enabled_(
           webrtc::field_trial::IsEnabled(kInitialFramedropFieldTrial)),
+      quality_rampup_done_(false),
+      quality_rampup_experiment_(QualityRampupExperiment::ParseSettings()),
       quality_scaling_experiment_enabled_(QualityScalingExperiment::Enabled()),
       source_proxy_(new VideoSourceProxy(this)),
       sink_(nullptr),
@@ -879,6 +881,8 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   send_codec_ = codec;
 
   encoder_switch_experiment_.SetCodec(send_codec_.codecType);
+  quality_rampup_experiment_.SetMaxBitrate(
+      last_frame_info_->width * last_frame_info_->height, codec.maxBitrate);
 
   // Keep the same encoder, as long as the video_format is unchanged.
   // Encoder creation block is split in two since EncoderInfo needed to start
@@ -1358,6 +1362,16 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
     return;
   }
   initial_framedrop_ = kMaxInitialFramedrop;
+
+  if (!quality_rampup_done_ && TryQualityRampup(now_ms) &&
+      GetConstAdaptCounter().ResolutionCount(kQuality) > 0 &&
+      GetConstAdaptCounter().TotalCount(kCpu) == 0) {
+    RTC_LOG(LS_INFO) << "Reset quality limitations.";
+    last_adaptation_request_.reset();
+    source_proxy_->ResetPixelFpsCount();
+    adapt_counters_.clear();
+    quality_rampup_done_ = true;
+  }
 
   if (EncoderPaused()) {
     // Storing references to a native buffer risks blocking frame capture.
@@ -1896,6 +1910,25 @@ bool VideoStreamEncoder::DropDueToSize(uint32_t pixel_count) const {
     return pixel_count > 320 * 240;
   } else if (encoder_start_bitrate_bps_ < 500000 /* vga */) {
     return pixel_count > 640 * 480;
+  }
+  return false;
+}
+
+bool VideoStreamEncoder::TryQualityRampup(int64_t now_ms) {
+  if (!quality_scaler_)
+    return false;
+
+  uint32_t bw_kbps = last_encoder_rate_settings_
+                         ? last_encoder_rate_settings_->rate_control
+                               .bandwidth_allocation.kbps()
+                         : 0;
+
+  if (quality_rampup_experiment_.BwHigh(now_ms, bw_kbps)) {
+    // Verify that encoder is at max bitrate and the QP is low.
+    if (encoder_start_bitrate_bps_ == send_codec_.maxBitrate * 1000 &&
+        quality_scaler_->QpFastFilterLow()) {
+      return true;
+    }
   }
   return false;
 }
