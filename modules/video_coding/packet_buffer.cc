@@ -14,9 +14,12 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <limits>
 #include <utility>
+#include <vector>
 
 #include "absl/types/variant.h"
+#include "api/array_view.h"
 #include "api/video/encoded_frame.h"
 #include "common_video/h264/h264_common.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
@@ -259,12 +262,7 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
     // If all packets of the frame is continuous, find the first packet of the
     // frame and create an RtpFrameObject.
     if (buffer_[index].frame_end()) {
-      size_t frame_size = 0;
-      int max_nack_count = -1;
       uint16_t start_seq_num = seq_num;
-      int64_t min_recv_time = buffer_[index].data.packet_info.receive_time_ms();
-      int64_t max_recv_time = buffer_[index].data.packet_info.receive_time_ms();
-      RtpPacketInfos::vector_type packet_infos;
 
       // Find the start index by searching backward until the packet with
       // the |frame_begin| flag is set.
@@ -282,21 +280,6 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
       int idr_height = -1;
       while (true) {
         ++tested_packets;
-        frame_size += buffer_[start_index].data.sizeBytes;
-        max_nack_count =
-            std::max(max_nack_count, buffer_[start_index].data.timesNacked);
-
-        min_recv_time =
-            std::min(min_recv_time,
-                     buffer_[start_index].data.packet_info.receive_time_ms());
-        max_recv_time =
-            std::max(max_recv_time,
-                     buffer_[start_index].data.packet_info.receive_time_ms());
-
-        // Should use |push_front()| since the loop traverses backwards. But
-        // it's too inefficient to do so on a vector so we'll instead fix the
-        // order afterwards.
-        packet_infos.push_back(buffer_[start_index].data.packet_info);
 
         if (!is_h264 && buffer_[start_index].frame_begin())
           break;
@@ -352,9 +335,6 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
         --start_seq_num;
       }
 
-      // Fix the order since the packet-finding loop traverses backwards.
-      std::reverse(packet_infos.begin(), packet_infos.end());
-
       if (is_h264) {
         // Warn if this is an unsafe frame.
         if (has_h264_idr && (!has_h264_sps || !has_h264_pps)) {
@@ -396,25 +376,10 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
         }
       }
 
+      found_frames.push_back(AssembleFrame(start_seq_num, seq_num));
+
       missing_packets_.erase(missing_packets_.begin(),
                              missing_packets_.upper_bound(seq_num));
-
-      const VCMPacket* first_packet = GetPacket(start_seq_num);
-      const VCMPacket* last_packet = GetPacket(seq_num);
-      auto frame = std::make_unique<RtpFrameObject>(
-          start_seq_num, seq_num, last_packet->markerBit, max_nack_count,
-          min_recv_time, max_recv_time, first_packet->timestamp,
-          first_packet->ntp_time_ms_, last_packet->video_header.video_timing,
-          first_packet->payloadType, first_packet->codec(),
-          last_packet->video_header.rotation,
-          last_packet->video_header.content_type, first_packet->video_header,
-          last_packet->video_header.color_space,
-          first_packet->generic_descriptor,
-          RtpPacketInfos(std::move(packet_infos)),
-          GetEncodedImageBuffer(frame_size, start_seq_num, seq_num));
-
-      found_frames.emplace_back(std::move(frame));
-
       ClearInterval(start_seq_num, seq_num);
     }
     ++seq_num;
@@ -422,36 +387,71 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
   return found_frames;
 }
 
-rtc::scoped_refptr<EncodedImageBuffer> PacketBuffer::GetEncodedImageBuffer(
-    size_t frame_size,
+std::unique_ptr<RtpFrameObject> PacketBuffer::AssembleFrame(
     uint16_t first_seq_num,
     uint16_t last_seq_num) {
-  size_t index = first_seq_num % buffer_.size();
-  size_t end = (last_seq_num + 1) % buffer_.size();
+  const uint16_t end_seq_num = last_seq_num + 1;
+  const uint16_t num_packets = end_seq_num - first_seq_num;
+  int max_nack_count = -1;
+  int64_t min_recv_time = std::numeric_limits<int64_t>::max();
+  int64_t max_recv_time = std::numeric_limits<int64_t>::min();
+  size_t frame_size = 0;
 
-  auto buffer = EncodedImageBuffer::Create(frame_size);
-  size_t offset = 0;
+  std::vector<rtc::ArrayView<const uint8_t>> payloads;
+  RtpPacketInfos::vector_type packet_infos;
+  payloads.reserve(num_packets);
+  packet_infos.reserve(num_packets);
 
-  do {
-    RTC_DCHECK(buffer_[index].used);
+  for (uint16_t seq_num = first_seq_num; seq_num != end_seq_num; ++seq_num) {
+    const VCMPacket& packet = GetPacket(seq_num);
 
-    size_t length = buffer_[index].data.sizeBytes;
-    RTC_CHECK_LE(offset + length, buffer->size());
-    memcpy(buffer->data() + offset, buffer_[index].data.dataPtr, length);
-    offset += length;
+    max_nack_count = std::max(max_nack_count, packet.timesNacked);
+    min_recv_time =
+        std::min(min_recv_time, packet.packet_info.receive_time_ms());
+    max_recv_time =
+        std::max(max_recv_time, packet.packet_info.receive_time_ms());
+    frame_size += packet.sizeBytes;
+    payloads.emplace_back(packet.dataPtr, packet.sizeBytes);
+    packet_infos.push_back(packet.packet_info);
+  }
 
-    index = (index + 1) % buffer_.size();
-  } while (index != end);
+  auto bitstream = EncodedImageBuffer::Create(frame_size);
 
-  return buffer;
+  uint8_t* write_at = bitstream->data();
+  for (rtc::ArrayView<const uint8_t> payload : payloads) {
+    memcpy(write_at, payload.data(), payload.size());
+    write_at += payload.size();
+  }
+  RTC_DCHECK_EQ(write_at - bitstream->data(), bitstream->size());
+
+  const VCMPacket& first_packet = GetPacket(first_seq_num);
+  const VCMPacket& last_packet = GetPacket(last_seq_num);
+  return std::make_unique<RtpFrameObject>(
+      first_seq_num,                            //
+      last_seq_num,                             //
+      last_packet.markerBit,                    //
+      max_nack_count,                           //
+      min_recv_time,                            //
+      max_recv_time,                            //
+      first_packet.timestamp,                   //
+      first_packet.ntp_time_ms_,                //
+      last_packet.video_header.video_timing,    //
+      first_packet.payloadType,                 //
+      first_packet.codec(),                     //
+      last_packet.video_header.rotation,        //
+      last_packet.video_header.content_type,    //
+      first_packet.video_header,                //
+      last_packet.video_header.color_space,     //
+      first_packet.generic_descriptor,          //
+      RtpPacketInfos(std::move(packet_infos)),  //
+      std::move(bitstream));
 }
 
-VCMPacket* PacketBuffer::GetPacket(uint16_t seq_num) {
-  StoredPacket& entry = buffer_[seq_num % buffer_.size()];
-  if (!entry.used || seq_num != entry.seq_num()) {
-    return nullptr;
-  }
-  return &entry.data;
+const VCMPacket& PacketBuffer::GetPacket(uint16_t seq_num) const {
+  const StoredPacket& entry = buffer_[seq_num % buffer_.size()];
+  RTC_DCHECK(entry.used);
+  RTC_DCHECK_EQ(seq_num, entry.seq_num());
+  return entry.data;
 }
 
 void PacketBuffer::UpdateMissingPackets(uint16_t seq_num) {
