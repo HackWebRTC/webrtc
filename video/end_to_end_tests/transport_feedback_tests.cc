@@ -29,13 +29,15 @@ enum : int {  // The first valid value is 1.
 };
 }  // namespace
 
-TEST(TransportFeedbackMultiStreamTest, AssignsTransportSequenceNumbers) {
-  static constexpr int kSendRtxPayloadType = 98;
-  static constexpr int kDefaultTimeoutMs = 30 * 1000;
-  static constexpr int kNackRtpHistoryMs = 1000;
-  static constexpr uint32_t kSendRtxSsrcs[MultiStreamTester::kNumStreams] = {
-      0xBADCAFD, 0xBADCAFE, 0xBADCAFF};
+class TransportFeedbackEndToEndTest : public test::CallTest {
+ public:
+  TransportFeedbackEndToEndTest() {
+    RegisterRtpExtension(RtpExtension(RtpExtension::kTransportSequenceNumberUri,
+                                      kTransportSequenceNumberExtensionId));
+  }
+};
 
+TEST_F(TransportFeedbackEndToEndTest, AssignsTransportSequenceNumbers) {
   class RtpExtensionHeaderObserver : public test::DirectTransport {
    public:
     RtpExtensionHeaderObserver(
@@ -54,6 +56,7 @@ TEST(TransportFeedbackMultiStreamTest, AssignsTransportSequenceNumbers) {
           parser_(RtpHeaderParser::CreateForTest()),
           first_media_ssrc_(first_media_ssrc),
           rtx_to_media_ssrcs_(ssrc_map),
+          padding_observed_(false),
           rtx_padding_observed_(false),
           retransmit_observed_(false),
           started_(false) {
@@ -146,7 +149,6 @@ TEST(TransportFeedbackMultiStreamTest, AssignsTransportSequenceNumbers) {
       return done_.Wait(kDefaultTimeoutMs);
     }
 
-   private:
     rtc::CriticalSection lock_;
     rtc::Event done_;
     std::unique_ptr<RtpHeaderParser> parser_;
@@ -156,6 +158,7 @@ TEST(TransportFeedbackMultiStreamTest, AssignsTransportSequenceNumbers) {
     std::map<uint32_t, std::set<uint16_t>> dropped_seq_;
     const uint32_t& first_media_ssrc_;
     const std::map<uint32_t, uint32_t>& rtx_to_media_ssrcs_;
+    bool padding_observed_;
     bool rtx_padding_observed_;
     bool retransmit_observed_;
     bool started_;
@@ -163,9 +166,11 @@ TEST(TransportFeedbackMultiStreamTest, AssignsTransportSequenceNumbers) {
 
   class TransportSequenceNumberTester : public MultiStreamTester {
    public:
-    TransportSequenceNumberTester()
-        : first_media_ssrc_(0), observer_(nullptr) {}
-    ~TransportSequenceNumberTester() override = default;
+    explicit TransportSequenceNumberTester(TaskQueueBase* task_queue)
+        : MultiStreamTester(task_queue),
+          first_media_ssrc_(0),
+          observer_(nullptr) {}
+    virtual ~TransportSequenceNumberTester() {}
 
    protected:
     void Wait() override {
@@ -233,18 +238,10 @@ TEST(TransportFeedbackMultiStreamTest, AssignsTransportSequenceNumbers) {
     uint32_t first_media_ssrc_;
     std::map<uint32_t, uint32_t> rtx_to_media_ssrcs_;
     RtpExtensionHeaderObserver* observer_;
-  } tester;
+  } tester(task_queue());
 
   tester.RunTest();
 }
-
-class TransportFeedbackEndToEndTest : public test::CallTest {
- public:
-  TransportFeedbackEndToEndTest() {
-    RegisterRtpExtension(RtpExtension(RtpExtension::kTransportSequenceNumberUri,
-                                      kTransportSequenceNumberExtensionId));
-  }
-};
 
 class TransportFeedbackTester : public test::EndToEndTest {
  public:
