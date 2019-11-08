@@ -159,10 +159,9 @@ class EncodedFrameForMediaTransport : public video_coding::EncodedFrame {
   int64_t RenderTime() const override { return 0; }
 };
 
-// TODO(https://bugs.webrtc.org/9974): Consider removing this workaround.
 // Maximum time between frames before resetting the FrameBuffer to avoid RTP
-// timestamps wraparound to affect FrameBuffer.
-constexpr int kInactiveStreamThresholdMs = 600000;  //  10 minutes.
+// timestamps and picture IDs wraparounds to affect FrameBuffer.
+constexpr int kInactiveStreamThresholdMs = 5000;  //  5 seconds.
 
 }  // namespace
 
@@ -546,7 +545,9 @@ void VideoReceiveStream::RequestKeyFrame() {
 void VideoReceiveStream::OnCompleteFrame(
     std::unique_ptr<video_coding::EncodedFrame> frame) {
   RTC_DCHECK_RUN_ON(&network_sequence_checker_);
-  // TODO(https://bugs.webrtc.org/9974): Consider removing this workaround.
+
+  // Resetting of stream state if there was long enough pause in the stream.
+  // This is done to avoid undetected wraparounds in RTP fields.
   int64_t time_now_ms = rtc::TimeMillis();
   if (last_complete_frame_time_ms_ > 0 &&
       time_now_ms - last_complete_frame_time_ms_ > kInactiveStreamThresholdMs) {

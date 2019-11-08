@@ -40,6 +40,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/system/fallthrough.h"
+#include "rtc_base/time_utils.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 #include "video/receive_statistics_proxy.h"
@@ -51,6 +52,10 @@ namespace {
 //                 crbug.com/752886
 constexpr int kPacketBufferStartSize = 512;
 constexpr int kPacketBufferMaxSize = 2048;
+
+// Maximum time between frames before resetting reference_finder to avoid RTP
+// fields wraparounds to affect FrameBuffer.
+constexpr TimeDelta kInactiveStreamThreshold = TimeDelta::Seconds<5>();
 
 int PacketBufferMaxSize() {
   // The group here must be a positive power of 2, in which case that is used as
@@ -214,7 +219,9 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
       rtcp_feedback_buffer_(this, nack_sender, this),
       packet_buffer_(clock_, kPacketBufferStartSize, PacketBufferMaxSize()),
       has_received_frame_(false),
-      frames_decryptable_(false) {
+      frames_decryptable_(false),
+      last_completed_picture_id_(0),
+      last_assembled_frame_time_(Timestamp::MinusInfinity()) {
   constexpr bool remb_candidate = true;
   if (packet_router_)
     packet_router_->AddReceiveRtpModule(rtp_rtcp_.get(), remb_candidate);
@@ -597,6 +604,15 @@ void RtpVideoStreamReceiver::OnAssembledFrame(
   RTC_DCHECK_RUN_ON(&network_tc_);
   RTC_DCHECK(frame);
 
+  bool recreate_reference_finder_requested = false;
+
+  Timestamp now = clock_->CurrentTime();
+  if (last_assembled_frame_time_.IsFinite() &&
+      now - last_assembled_frame_time_ > kInactiveStreamThreshold) {
+    recreate_reference_finder_requested = true;
+  }
+  last_assembled_frame_time_ = now;
+
   absl::optional<RtpGenericFrameDescriptor> descriptor =
       frame->GetGenericFrameDescriptor();
 
@@ -629,14 +645,7 @@ void RtpVideoStreamReceiver::OnAssembledFrame(
 
     if (frame->codec_type() != current_codec_) {
       if (frame_is_newer) {
-        // When we reset the |reference_finder_| we don't want new picture ids
-        // to overlap with old picture ids. To ensure that doesn't happen we
-        // start from the |last_completed_picture_id_| and add an offset in case
-        // of reordering.
-        reference_finder_ =
-            std::make_unique<video_coding::RtpFrameReferenceFinder>(
-                this, last_completed_picture_id_ +
-                          std::numeric_limits<uint16_t>::max());
+        recreate_reference_finder_requested = true;
         current_codec_ = frame->codec_type();
       } else {
         // Old frame from before the codec switch, discard it.
@@ -650,6 +659,16 @@ void RtpVideoStreamReceiver::OnAssembledFrame(
   } else {
     current_codec_ = frame->codec_type();
     last_assembled_frame_rtp_timestamp_ = frame->Timestamp();
+  }
+
+  if (recreate_reference_finder_requested) {
+    // When we reset the |reference_finder_| we don't want new picture ids
+    // to overlap with old picture ids. To ensure that doesn't happen we
+    // start from the |last_completed_picture_id_| and add an offset in case
+    // of reordering.
+    reference_finder_ = std::make_unique<video_coding::RtpFrameReferenceFinder>(
+        this,
+        last_completed_picture_id_ + std::numeric_limits<uint16_t>::max());
   }
 
   if (buffered_frame_decryptor_ == nullptr) {
