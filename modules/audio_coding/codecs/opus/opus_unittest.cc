@@ -98,8 +98,6 @@ int SamplesPerChannel(int sample_rate_hz, int duration_ms) {
   return samples_per_ms * duration_ms;
 }
 
-}  // namespace
-
 using test::AudioLoop;
 using ::testing::Combine;
 using ::testing::TestWithParam;
@@ -149,6 +147,8 @@ class OpusTest
   const int encoder_sample_rate_hz_{std::get<3>(GetParam())};
   const int decoder_sample_rate_hz_{std::get<4>(GetParam())};
 };
+
+}  // namespace
 
 // Singlestream: Try all combinations.
 INSTANTIATE_TEST_SUITE_P(Singlestream,

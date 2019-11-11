@@ -1187,6 +1187,17 @@ if (rtc_enable_protobuf) {
       "../../logging:rtc_event_log_proto",
     ]
   }
+
+  # Only used for test purpose. Since we want to use it from chromium
+  # (see audio_coding_modules_tests_shared below), we cannot guard it
+  # under rtc_include_tests.
+  proto_library("neteq_unittest_proto") {
+    testonly = true
+    sources = [
+      "neteq/neteq_unittest.proto",
+    ]
+    proto_out_dir = "modules/audio_coding/neteq"
+  }
 }
 
 # Allow to re-use some test classes from chromium.
@@ -1196,6 +1207,10 @@ rtc_library("audio_coding_modules_tests_shared") {
   visibility = [ "*" ]
 
   sources = [
+    "neteq/test/neteq_decoding_test.cc",
+    "neteq/test/neteq_decoding_test.h",
+    "neteq/test/result_sink.cc",
+    "neteq/test/result_sink.h",
     "test/PCMFile.cc",
     "test/PCMFile.h",
     "test/TestStereo.cc",
@@ -1207,20 +1222,36 @@ rtc_library("audio_coding_modules_tests_shared") {
   deps = [
     ":audio_coding",
     ":audio_coding_module_typedefs",
+    ":neteq_test_tools",
+    ":neteq_tools_minimal",
     ":webrtc_opus_wrapper",
     "..:module_api",
+    "../../api:neteq_factory_with_codecs",
+    "../../api:rtp_headers",
     "../../api/audio:audio_frame_api",
     "../../api/audio_codecs:builtin_audio_decoder_factory",
     "../../api/audio_codecs:builtin_audio_encoder_factory",
+    "../../api/neteq:neteq_api",
+    "../../rtc_base",
     "../../rtc_base:checks",
+    "../../rtc_base:ignore_wundef",
+    "../../rtc_base:rtc_base_approved",
     "../../rtc_base:stringutils",
+    "../../system_wrappers",
     "../../test:fileutils",
     "../../test:test_support",
+    "../rtp_rtcp:rtp_rtcp_format",
+    "//testing/gtest",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 
   defines = audio_coding_defines
+
+  if (rtc_enable_protobuf) {
+    defines += [ "WEBRTC_NETEQ_UNITTEST_BITEXACT" ]
+    deps += [ ":neteq_unittest_proto" ]
+  }
 }
 
 if (rtc_include_tests) {
@@ -1475,13 +1506,6 @@ if (rtc_include_tests) {
   }
 
   if (rtc_enable_protobuf) {
-    proto_library("neteq_unittest_proto") {
-      sources = [
-        "neteq/neteq_unittest.proto",
-      ]
-      proto_out_dir = "modules/audio_coding/neteq"
-    }
-
     rtc_library("neteq_test_factory") {
       testonly = true
       visibility += webrtc_default_visibility
@@ -2026,6 +2050,7 @@ if (rtc_include_tests) {
       ":acm_send_test",
       ":audio_coding",
       ":audio_coding_module_typedefs",
+      ":audio_coding_modules_tests_shared",
       ":audio_coding_opus_common",
       ":audio_encoder_cng",
       ":audio_network_adaptor",
