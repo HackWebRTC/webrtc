@@ -970,6 +970,7 @@ void AudioProcessingImpl::HandleRenderRuntimeSettings() {
     }
     switch (setting.type()) {
       case RuntimeSetting::Type::kPlayoutAudioDeviceChange:  // fall-through
+      case RuntimeSetting::Type::kPlayoutVolumeChange:       // fall-through
       case RuntimeSetting::Type::kCustomRenderProcessingRuntimeSetting:
         if (submodules_.render_pre_processor) {
           submodules_.render_pre_processor->SetRuntimeSetting(setting);
@@ -978,7 +979,6 @@ void AudioProcessingImpl::HandleRenderRuntimeSettings() {
       case RuntimeSetting::Type::kCapturePreGain:          // fall-through
       case RuntimeSetting::Type::kCaptureCompressionGain:  // fall-through
       case RuntimeSetting::Type::kCaptureFixedPostGain:    // fall-through
-      case RuntimeSetting::Type::kPlayoutVolumeChange:     // fall-through
       case RuntimeSetting::Type::kNotSpecified:
         RTC_NOTREACHED();
         break;
