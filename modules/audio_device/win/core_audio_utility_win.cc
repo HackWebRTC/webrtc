@@ -476,6 +476,10 @@ bool GetDeviceNamesInternal(EDataFlow data_flow,
   for (size_t i = 0; i < arraysize(role); ++i) {
     default_device = CreateDeviceInternal(AudioDeviceName::kDefaultDeviceId,
                                           data_flow, role[i]);
+    if (!default_device.Get()) {
+      return false;
+    }
+
     std::string device_name;
     device_name += (role[i] == eConsole ? "Default - " : "Communication - ");
     device_name += GetDeviceFriendlyNameInternal(default_device.Get());
