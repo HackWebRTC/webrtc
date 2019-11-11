@@ -52,6 +52,7 @@
 @synthesize sdpSemantics = _sdpSemantics;
 @synthesize turnCustomizer = _turnCustomizer;
 @synthesize activeResetSrtpParams = _activeResetSrtpParams;
+@synthesize allowCodecSwitching = _allowCodecSwitching;
 @synthesize useMediaTransport = _useMediaTransport;
 @synthesize useMediaTransportForDataChannels = _useMediaTransportForDataChannels;
 @synthesize cryptoOptions = _cryptoOptions;
@@ -138,6 +139,7 @@
     }
     _rtcpAudioReportIntervalMs = config.audio_rtcp_report_interval_ms();
     _rtcpVideoReportIntervalMs = config.video_rtcp_report_interval_ms();
+    _allowCodecSwitching = config.allow_codec_switching.value_or(false);
   }
   return self;
 }
@@ -274,6 +276,7 @@
   }
   nativeConfig->set_audio_rtcp_report_interval_ms(_rtcpAudioReportIntervalMs);
   nativeConfig->set_video_rtcp_report_interval_ms(_rtcpVideoReportIntervalMs);
+  nativeConfig->allow_codec_switching = _allowCodecSwitching;
   return nativeConfig.release();
 }
 

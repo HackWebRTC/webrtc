@@ -194,6 +194,12 @@ RTC_OBJC_EXPORT
  */
 @property(nonatomic, assign) BOOL activeResetSrtpParams;
 
+/** If the remote side support mid-stream codec switches then allow encoder
+ *  switching to be performed.
+ */
+
+@property(nonatomic, assign) BOOL allowCodecSwitching;
+
 /**
  * If MediaTransportFactory is provided in PeerConnectionFactory, this flag informs PeerConnection
  * that it should use the MediaTransportInterface.
