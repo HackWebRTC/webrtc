@@ -48,7 +48,7 @@ class RTC_EXPORT VideoFrame {
   };
 
   // Preferred way of building VideoFrame objects.
-  class Builder {
+  class RTC_EXPORT Builder {
    public:
     Builder();
     ~Builder();

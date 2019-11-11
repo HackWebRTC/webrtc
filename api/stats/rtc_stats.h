@@ -355,18 +355,18 @@ class RTCStatsMember : public RTCStatsMemberInterface {
   T value_;
 };
 
-#define WEBRTC_DECLARE_RTCSTATSMEMBER(T)                         \
-  template <>                                                    \
-  RTCStatsMemberInterface::Type RTCStatsMember<T>::StaticType(); \
-  template <>                                                    \
-  bool RTCStatsMember<T>::is_sequence() const;                   \
-  template <>                                                    \
-  bool RTCStatsMember<T>::is_string() const;                     \
-  template <>                                                    \
-  std::string RTCStatsMember<T>::ValueToString() const;          \
-  template <>                                                    \
-  std::string RTCStatsMember<T>::ValueToJson() const;            \
-  extern template class RTC_EXPORT_TEMPLATE_DECLARE(RTC_EXPORT)  \
+#define WEBRTC_DECLARE_RTCSTATSMEMBER(T)                                    \
+  template <>                                                               \
+  RTC_EXPORT RTCStatsMemberInterface::Type RTCStatsMember<T>::StaticType(); \
+  template <>                                                               \
+  bool RTCStatsMember<T>::is_sequence() const;                              \
+  template <>                                                               \
+  bool RTCStatsMember<T>::is_string() const;                                \
+  template <>                                                               \
+  std::string RTCStatsMember<T>::ValueToString() const;                     \
+  template <>                                                               \
+  std::string RTCStatsMember<T>::ValueToJson() const;                       \
+  extern template class RTC_EXPORT_TEMPLATE_DECLARE(RTC_EXPORT)             \
       RTCStatsMember<T>
 
 WEBRTC_DECLARE_RTCSTATSMEMBER(bool);
