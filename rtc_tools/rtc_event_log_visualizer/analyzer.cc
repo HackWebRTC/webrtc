@@ -1269,14 +1269,14 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
   FieldTrialBasedConfig field_trial_config_;
   // The event_log_visualizer should normally not be compiled with
   // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE since the normal plots won't work.
-  // However, compiling with BWE_TEST_LOGGING, running with --plot_sendside_bwe
+  // However, compiling with BWE_TEST_LOGGING, running with --plot=sendside_bwe
   // and piping the output to plot_dynamics.py can be used as a hack to get the
   // internal state of various BWE components. In this case, it is important
   // we don't instantiate the AcknowledgedBitrateEstimator both here and in
   // GoogCcNetworkController since that would lead to duplicate outputs.
-  AcknowledgedBitrateEstimator acknowledged_bitrate_estimator(
-      &field_trial_config_,
-      std::make_unique<BitrateEstimator>(&field_trial_config_));
+  std::unique_ptr<AcknowledgedBitrateEstimatorInterface>
+      acknowledged_bitrate_estimator(
+          AcknowledgedBitrateEstimatorInterface::Create(&field_trial_config_));
 #endif  // !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
   int64_t time_us =
       std::min({NextRtpTime(), NextRtcpTime(), NextProcessTime()});
@@ -1321,7 +1321,8 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
             feedback_msg->SortedByReceiveTime();
         if (!feedback.empty()) {
 #if !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
-          acknowledged_bitrate_estimator.IncomingPacketFeedbackVector(feedback);
+          acknowledged_bitrate_estimator->IncomingPacketFeedbackVector(
+              feedback);
 #endif  // !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
           for (const PacketResult& packet : feedback)
             acked_bitrate.Update(packet.sent_packet.size.bytes(),
@@ -1334,7 +1335,7 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
       float y = bitrate_bps.value_or(0) / 1000;
       acked_time_series.points.emplace_back(x, y);
 #if !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
-      y = acknowledged_bitrate_estimator.bitrate()
+      y = acknowledged_bitrate_estimator->bitrate()
               .value_or(DataRate::Zero())
               .kbps();
       acked_estimate_time_series.points.emplace_back(x, y);

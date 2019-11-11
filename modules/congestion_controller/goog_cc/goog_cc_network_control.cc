@@ -23,7 +23,6 @@
 
 #include "api/units/time_delta.h"
 #include "logging/rtc_event_log/events/rtc_event_remote_estimate.h"
-#include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
 #include "modules/congestion_controller/goog_cc/alr_detector.h"
 #include "modules/congestion_controller/goog_cc/probe_controller.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
@@ -32,6 +31,7 @@
 #include "rtc_base/logging.h"
 
 namespace webrtc {
+
 namespace {
 // From RTCPSender video report interval.
 constexpr TimeDelta kLossUpdateInterval = TimeDelta::Millis<1000>();
@@ -96,7 +96,7 @@ GoogCcNetworkController::GoogCcNetworkController(NetworkControllerConfig config,
                                          event_log_,
                                          network_state_predictor_.get())),
       acknowledged_bitrate_estimator_(
-          std::make_unique<AcknowledgedBitrateEstimator>(key_value_config_)),
+          AcknowledgedBitrateEstimatorInterface::Create(key_value_config_)),
       initial_config_(config),
       last_loss_based_target_rate_(*config.constraints.starting_rate),
       last_pushback_target_rate_(last_loss_based_target_rate_),
@@ -146,8 +146,8 @@ NetworkControlUpdate GoogCcNetworkController::OnNetworkRouteChange(
     }
   }
 
-  acknowledged_bitrate_estimator_.reset(
-      new AcknowledgedBitrateEstimator(key_value_config_));
+  acknowledged_bitrate_estimator_ =
+      AcknowledgedBitrateEstimatorInterface::Create(key_value_config_);
   probe_bitrate_estimator_.reset(new ProbeBitrateEstimator(event_log_));
   if (network_estimator_)
     network_estimator_->OnRouteChange(msg);

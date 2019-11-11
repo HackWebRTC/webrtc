@@ -106,6 +106,8 @@ rtc_library("estimators") {
   sources = [
     "acknowledged_bitrate_estimator.cc",
     "acknowledged_bitrate_estimator.h",
+    "acknowledged_bitrate_estimator_interface.cc",
+    "acknowledged_bitrate_estimator_interface.h",
     "bitrate_estimator.cc",
     "bitrate_estimator.h",
     "delay_increase_detector_interface.h",
@@ -113,6 +115,8 @@ rtc_library("estimators") {
     "median_slope_estimator.h",
     "probe_bitrate_estimator.cc",
     "probe_bitrate_estimator.h",
+    "robust_throughput_estimator.cc",
+    "robust_throughput_estimator.h",
     "trendline_estimator.cc",
     "trendline_estimator.h",
   ]
@@ -249,6 +253,7 @@ if (rtc_include_tests) {
       "median_slope_estimator_unittest.cc",
       "probe_bitrate_estimator_unittest.cc",
       "probe_controller_unittest.cc",
+      "robust_throughput_estimator_unittest.cc",
       "send_side_bandwidth_estimation_unittest.cc",
       "trendline_estimator_unittest.cc",
     ]

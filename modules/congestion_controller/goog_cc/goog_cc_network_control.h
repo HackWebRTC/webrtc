@@ -27,7 +27,7 @@
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
 #include "api/units/timestamp.h"
-#include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
+#include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator_interface.h"
 #include "modules/congestion_controller/goog_cc/alr_detector.h"
 #include "modules/congestion_controller/goog_cc/congestion_window_pushback_controller.h"
 #include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
@@ -100,7 +100,8 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   std::unique_ptr<NetworkStateEstimator> network_estimator_;
   std::unique_ptr<NetworkStatePredictor> network_state_predictor_;
   std::unique_ptr<DelayBasedBwe> delay_based_bwe_;
-  std::unique_ptr<AcknowledgedBitrateEstimator> acknowledged_bitrate_estimator_;
+  std::unique_ptr<AcknowledgedBitrateEstimatorInterface>
+      acknowledged_bitrate_estimator_;
 
   absl::optional<NetworkControllerConfig> initial_config_;
 

@@ -149,7 +149,7 @@ DelayBasedBweTest::DelayBasedBweTest()
     : field_trial(),
       clock_(100000000),
       acknowledged_bitrate_estimator_(
-          std::make_unique<AcknowledgedBitrateEstimator>(&field_trial_config_)),
+          AcknowledgedBitrateEstimatorInterface::Create(&field_trial_config_)),
       probe_bitrate_estimator_(new ProbeBitrateEstimator(nullptr)),
       bitrate_estimator_(
           new DelayBasedBwe(&field_trial_config_, nullptr, nullptr)),
@@ -163,7 +163,7 @@ DelayBasedBweTest::DelayBasedBweTest(const std::string& field_trial_string)
           std::make_unique<test::ScopedFieldTrials>(field_trial_string)),
       clock_(100000000),
       acknowledged_bitrate_estimator_(
-          std::make_unique<AcknowledgedBitrateEstimator>(&field_trial_config_)),
+          AcknowledgedBitrateEstimatorInterface::Create(&field_trial_config_)),
       probe_bitrate_estimator_(new ProbeBitrateEstimator(nullptr)),
       bitrate_estimator_(
           new DelayBasedBwe(&field_trial_config_, nullptr, nullptr)),
