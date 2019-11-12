@@ -1175,7 +1175,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
     }
     void ModifySenderBitrateConfig(
         BitrateConstraints* bitrate_config) override {
-      const int kMinBitrateBps = 30000;
+      const int kMinBitrateBps = 300000;
       bitrate_config->min_bitrate_bps = kMinBitrateBps;
     }
 
@@ -3500,6 +3500,13 @@ void VideoSendStreamTest::TestVp9NonFlexMode(uint8_t num_temporal_layers,
     const uint8_t num_temporal_layers_;
     const uint8_t num_spatial_layers_;
     const bool l_field_;
+
+   private:
+    void ModifySenderBitrateConfig(
+        BitrateConstraints* bitrate_config) override {
+      const int kMinBitrateBps = 300000;
+      bitrate_config->min_bitrate_bps = kMinBitrateBps;
+    }
   } test(num_temporal_layers, num_spatial_layers);
 
   RunBaseTest(&test);

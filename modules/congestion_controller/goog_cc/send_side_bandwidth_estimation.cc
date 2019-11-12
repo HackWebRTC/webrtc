@@ -153,9 +153,9 @@ DataRate LinkCapacityTracker::estimate() const {
 }
 
 RttBasedBackoff::RttBasedBackoff()
-    : rtt_limit_("limit", TimeDelta::PlusInfinity()),
-      drop_fraction_("fraction", 0.5),
-      drop_interval_("interval", TimeDelta::ms(300)),
+    : rtt_limit_("limit", TimeDelta::seconds(3)),
+      drop_fraction_("fraction", 0.8),
+      drop_interval_("interval", TimeDelta::seconds(1)),
       bandwidth_floor_("floor", DataRate::kbps(5)),
       // By initializing this to plus infinity, we make sure that we never
       // trigger rtt backoff unless packet feedback is enabled.
