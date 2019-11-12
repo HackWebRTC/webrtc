@@ -954,6 +954,7 @@ if (rtc_include_tests) {
       "rtp_packet_info_unittest.cc",
       "rtp_packet_infos_unittest.cc",
       "rtp_parameters_unittest.cc",
+      "scoped_refptr_unittest.cc",
       "test/loopback_media_transport_unittest.cc",
     ]
 
@@ -966,6 +967,7 @@ if (rtc_include_tests) {
       ":rtc_event_log_output_file",
       ":rtp_packet_info",
       ":rtp_parameters",
+      ":scoped_refptr",
       "../rtc_base:checks",
       "../rtc_base:gunit_helpers",
       "../rtc_base:rtc_base_approved",
