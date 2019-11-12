@@ -387,7 +387,7 @@ WEBRTC_DECLARE_RTCSTATSMEMBER(std::vector<std::string>);
 // Using inheritance just so that it's obvious from the member's declaration
 // whether it's standardized or not.
 template <typename T>
-class RTCNonStandardStatsMember : public RTCStatsMember<T> {
+class RTC_EXPORT RTCNonStandardStatsMember : public RTCStatsMember<T> {
  public:
   explicit RTCNonStandardStatsMember(const char* name)
       : RTCStatsMember<T>(name) {}
