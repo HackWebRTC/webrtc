@@ -201,7 +201,7 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     kTlsCertPolicyInsecureNoCheck,
   };
 
-  struct IceServer {
+  struct RTC_EXPORT IceServer {
     IceServer();
     IceServer(const IceServer&);
     ~IceServer();
