@@ -92,6 +92,68 @@ class PulsedPeaksCrossTraffic {
   bool sending_ RTC_GUARDED_BY(sequence_checker_) = false;
 };
 
+// Simulates a TCP connection, this roughly implements the Reno algorithm. In
+// difference from TCP this only support sending messages with a fixed length,
+// no streaming. This is useful to simulate signaling and cross traffic using
+// message based protocols such as HTTP. It differs from UDP messages in that
+// they are guranteed to be delivered eventually, even on lossy networks.
+class TcpMessageRoute {
+ public:
+  TcpMessageRoute(Clock* clock,
+                  TaskQueueBase* task_queue,
+                  EmulatedRoute* send_route,
+                  EmulatedRoute* ret_route);
+
+  // Sends a TCP message of the given |size| over the route, |on_received| is
+  // called when the message has been delivered. Note that the connection
+  // parameters are reset iff there's no currently pending message on the route.
+  void SendMessage(size_t size, std::function<void()> on_received);
+
+ private:
+  // Represents a message sent over the route. When all fragments has been
+  // delivered, the message is considered delivered and the handler is
+  // triggered. This only happen once.
+  struct Message {
+    std::function<void()> handler;
+    std::set<int> pending_fragment_ids;
+  };
+  // Represents a piece of a message that fit into a TCP packet.
+  struct MessageFragment {
+    int fragment_id;
+    size_t size;
+  };
+  // Represents a packet sent on the wire.
+  struct TcpPacket {
+    int sequence_number;
+    Timestamp send_time = Timestamp::MinusInfinity();
+    MessageFragment fragment;
+  };
+
+  void OnRequest(TcpPacket packet_info);
+  void OnResponse(TcpPacket packet_info, Timestamp at_time);
+  void HandleLoss(Timestamp at_time);
+  void SendPackets(Timestamp at_time);
+  void HandlePacketTimeout(int seq_num, Timestamp at_time);
+
+  Clock* const clock_;
+  TaskQueueBase* const task_queue_;
+  FakePacketRoute<TcpPacket> request_route_;
+  FakePacketRoute<TcpPacket> response_route_;
+
+  std::deque<MessageFragment> pending_;
+  std::map<int, TcpPacket> in_flight_;
+  std::list<Message> messages_;
+
+  double cwnd_;
+  double ssthresh_;
+
+  int last_acked_seq_num_ = 0;
+  int next_sequence_number_ = 0;
+  int next_fragment_id_ = 0;
+  Timestamp last_reduction_time_ = Timestamp::MinusInfinity();
+  TimeDelta last_rtt_ = TimeDelta::Zero();
+};
+
 struct FakeTcpConfig {
   DataSize packet_size = DataSize::bytes(1200);
   DataSize send_limit = DataSize::PlusInfinity();

@@ -16,6 +16,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
+#include "cross_traffic.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_minmax.h"
 
@@ -113,6 +114,127 @@ ColumnPrinter PulsedPeaksCrossTraffic::StatsPrinter() {
         sb.AppendFormat("%.0lf", TrafficRate().bps() / 8.0);
       },
       32);
+}
+
+TcpMessageRoute::TcpMessageRoute(Clock* clock,
+                                 TaskQueueBase* task_queue,
+                                 EmulatedRoute* send_route,
+                                 EmulatedRoute* ret_route)
+    : clock_(clock),
+      task_queue_(task_queue),
+      request_route_(send_route,
+                     [this](TcpPacket packet, Timestamp) {
+                       OnRequest(std::move(packet));
+                     }),
+      response_route_(ret_route,
+                      [this](TcpPacket packet, Timestamp arrival_time) {
+                        OnResponse(std::move(packet), arrival_time);
+                      }) {}
+
+void TcpMessageRoute::SendMessage(size_t size,
+                                  std::function<void()> on_received) {
+  task_queue_->PostTask(
+      ToQueuedTask([this, size, handler = std::move(on_received)] {
+        // If we are currently sending a message we won't reset the connection,
+        // we'll act as if the messages are sent in the same TCP stream. This is
+        // intended to simulate recreation of a TCP session for each message
+        // in the typical case while avoiding the complexity overhead of
+        // maintaining multiple virtual TCP sessions in parallel.
+        if (pending_.empty() && in_flight_.empty()) {
+          cwnd_ = 10;
+          ssthresh_ = INFINITY;
+        }
+        size_t data_left = size;
+        size_t kMaxPacketSize = 1200;
+        Message message{std::move(handler)};
+        while (data_left > 0) {
+          size_t packet_size = std::min(data_left, kMaxPacketSize);
+          int fragment_id = next_fragment_id_++;
+          pending_.push_back(MessageFragment{fragment_id, packet_size});
+          message.pending_fragment_ids.insert(fragment_id);
+          data_left -= packet_size;
+        }
+        messages_.emplace_back(message);
+        SendPackets(clock_->CurrentTime());
+      }));
+}
+
+void TcpMessageRoute::OnRequest(TcpPacket packet_info) {
+  for (auto it = messages_.begin(); it != messages_.end(); ++it) {
+    if (it->pending_fragment_ids.count(packet_info.fragment.fragment_id) != 0) {
+      it->pending_fragment_ids.erase(packet_info.fragment.fragment_id);
+      if (it->pending_fragment_ids.empty()) {
+        it->handler();
+        messages_.erase(it);
+      }
+      break;
+    }
+  }
+  const size_t kAckPacketSize = 20;
+  response_route_.SendPacket(kAckPacketSize, packet_info);
+}
+
+void TcpMessageRoute::OnResponse(TcpPacket packet_info, Timestamp at_time) {
+  auto it = in_flight_.find(packet_info.sequence_number);
+  if (it != in_flight_.end()) {
+    last_rtt_ = at_time - packet_info.send_time;
+    in_flight_.erase(it);
+  }
+  auto lost_end = in_flight_.lower_bound(packet_info.sequence_number);
+  for (auto lost_it = in_flight_.begin(); lost_it != lost_end;
+       lost_it = in_flight_.erase(lost_it)) {
+    pending_.push_front(lost_it->second.fragment);
+  }
+
+  if (packet_info.sequence_number - last_acked_seq_num_ > 1) {
+    HandleLoss(at_time);
+  } else if (cwnd_ <= ssthresh_) {
+    cwnd_ += 1;
+  } else {
+    cwnd_ += 1.0f / cwnd_;
+  }
+  last_acked_seq_num_ =
+      std::max(packet_info.sequence_number, last_acked_seq_num_);
+  SendPackets(at_time);
+}
+
+void TcpMessageRoute::HandleLoss(Timestamp at_time) {
+  if (at_time - last_reduction_time_ < last_rtt_)
+    return;
+  last_reduction_time_ = at_time;
+  ssthresh_ = std::max(static_cast<int>(in_flight_.size() / 2), 2);
+  cwnd_ = ssthresh_;
+}
+
+void TcpMessageRoute::SendPackets(Timestamp at_time) {
+  const TimeDelta kPacketTimeout = TimeDelta::seconds(1);
+  int cwnd = std::ceil(cwnd_);
+  int packets_to_send = std::max(cwnd - static_cast<int>(in_flight_.size()), 0);
+  while (packets_to_send-- > 0 && !pending_.empty()) {
+    auto seq_num = next_sequence_number_++;
+    TcpPacket send;
+    send.sequence_number = seq_num;
+    send.send_time = at_time;
+    send.fragment = pending_.front();
+    pending_.pop_front();
+    request_route_.SendPacket(send.fragment.size, send);
+    in_flight_.insert({seq_num, send});
+    task_queue_->PostDelayedTask(ToQueuedTask([this, seq_num] {
+                                   HandlePacketTimeout(seq_num,
+                                                       clock_->CurrentTime());
+                                 }),
+                                 kPacketTimeout.ms());
+  }
+}
+
+void TcpMessageRoute::HandlePacketTimeout(int seq_num, Timestamp at_time) {
+  auto lost = in_flight_.find(seq_num);
+  if (lost != in_flight_.end()) {
+    pending_.push_front(lost->second.fragment);
+    in_flight_.erase(lost);
+    HandleLoss(at_time);
+    SendPackets(at_time);
+  }
 }
 
 FakeTcpCrossTraffic::FakeTcpCrossTraffic(Clock* clock,

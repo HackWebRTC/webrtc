@@ -228,6 +228,18 @@ FakeTcpCrossTraffic* NetworkEmulationManagerImpl::StartFakeTcpCrossTraffic(
   return traffic_ptr;
 }
 
+TcpMessageRoute* NetworkEmulationManagerImpl::CreateTcpRoute(
+    std::vector<EmulatedNetworkNode*> send_link,
+    std::vector<EmulatedNetworkNode*> ret_link) {
+  auto tcp_route = std::make_unique<TcpMessageRoute>(
+      clock_, task_queue_.Get(), CreateRoute(send_link), CreateRoute(ret_link));
+  auto* route_ptr = tcp_route.get();
+  task_queue_.PostTask([this, tcp_route = std::move(tcp_route)]() mutable {
+    tcp_message_routes_.push_back(std::move(tcp_route));
+  });
+  return route_ptr;
+}
+
 void NetworkEmulationManagerImpl::StopCrossTraffic(
     FakeTcpCrossTraffic* traffic) {
   task_queue_.PostTask([=]() {
