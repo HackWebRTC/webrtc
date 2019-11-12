@@ -86,6 +86,11 @@ bool AndroidVideoTrackSource::remote() const {
   return false;
 }
 
+void AndroidVideoTrackSource::SetIsScreencast(JNIEnv* env,
+                                              jboolean j_is_screencast) {
+  is_screencast_ = j_is_screencast;
+}
+
 ScopedJavaLocalRef<jobject> AndroidVideoTrackSource::AdaptFrame(
     JNIEnv* env,
     jint j_width,

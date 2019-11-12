@@ -114,6 +114,10 @@ public class VideoSource extends MediaSource {
         maxLandscapePixelCount, targetPortraitAspectRatio, maxPortraitPixelCount, maxFps);
   }
 
+  public void setIsScreencast(boolean isScreencast) {
+    nativeAndroidVideoTrackSource.setIsScreencast(isScreencast);
+  }
+
   /**
    * Hook for injecting a custom video processor before frames are passed onto WebRTC. The frames
    * will be cropped and scaled depending on CPU and network conditions before they are passed to
