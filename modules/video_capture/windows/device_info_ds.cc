@@ -274,8 +274,8 @@ IBaseFilter* DeviceInfoDS::GetDeviceFilter(const char* deviceUniqueIdUTF8,
       }
       VariantClear(&varName);
       pBag->Release();
-      pM->Release();
     }
+    pM->Release();
   }
   return captureFilter;
 }
