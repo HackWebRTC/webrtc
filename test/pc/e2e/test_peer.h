@@ -62,6 +62,8 @@ class TestPeer final : public PeerConnectionWrapper {
   static std::unique_ptr<TestPeer> CreateTestPeer(
       std::unique_ptr<InjectableComponents> components,
       std::unique_ptr<Params> params,
+      std::vector<std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>>
+          video_sources,
       std::unique_ptr<MockPeerConnectionObserver> observer,
       VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
       rtc::Thread* signaling_thread,
@@ -71,6 +73,11 @@ class TestPeer final : public PeerConnectionWrapper {
       rtc::TaskQueue* task_queue);
 
   Params* params() const { return params_.get(); }
+  std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>> ReleaseVideoSource(
+      size_t i) {
+    return std::move(video_sources_[i]);
+  }
+
   void DetachAecDump() { audio_processing_->DetachAecDump(); }
 
   // Adds provided |candidates| to the owned peer connection.
@@ -82,9 +89,13 @@ class TestPeer final : public PeerConnectionWrapper {
            rtc::scoped_refptr<PeerConnectionInterface> pc,
            std::unique_ptr<MockPeerConnectionObserver> observer,
            std::unique_ptr<Params> params,
+           std::vector<std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>>
+               video_sources,
            rtc::scoped_refptr<AudioProcessing> audio_processing);
 
   std::unique_ptr<Params> params_;
+  std::vector<std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>>
+      video_sources_;
   rtc::scoped_refptr<AudioProcessing> audio_processing_;
 
   std::vector<std::unique_ptr<IceCandidateInterface>> remote_ice_candidates_;
