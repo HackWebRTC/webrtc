@@ -225,7 +225,7 @@ class RTC_EXPORT VideoEncoder {
     bool supports_simulcast;
   };
 
-  struct RateControlParameters {
+  struct RTC_EXPORT RateControlParameters {
     RateControlParameters();
     RateControlParameters(const VideoBitrateAllocation& bitrate,
                           double framerate_fps);
