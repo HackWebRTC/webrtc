@@ -29,7 +29,7 @@ namespace webrtc {
 
 class RTC_EXPORT VideoFrame {
  public:
-  struct UpdateRect {
+  struct RTC_EXPORT UpdateRect {
     int offset_x;
     int offset_y;
     int width;

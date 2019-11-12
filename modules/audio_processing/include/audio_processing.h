@@ -246,9 +246,9 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
   // top-level processing effects. Use during processing may cause undesired
   // submodule resets, affecting the audio quality. Use the RuntimeSetting
   // construct for runtime configuration.
-  struct Config {
+  struct RTC_EXPORT Config {
     // Sets the properties of the audio processing pipeline.
-    struct Pipeline {
+    struct RTC_EXPORT Pipeline {
       Pipeline();
 
       // Maximum allowed processing rate used internally. May only be set to
