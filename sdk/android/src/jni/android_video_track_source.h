@@ -89,7 +89,7 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
  private:
   rtc::Thread* signaling_thread_;
   std::atomic<SourceState> state_;
-  bool is_screencast_;
+  std::atomic<bool> is_screencast_;
   rtc::TimestampAligner timestamp_aligner_;
   const bool align_timestamps_;
 };
