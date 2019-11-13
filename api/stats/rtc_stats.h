@@ -387,7 +387,7 @@ WEBRTC_DECLARE_RTCSTATSMEMBER(std::vector<std::string>);
 // Using inheritance just so that it's obvious from the member's declaration
 // whether it's standardized or not.
 template <typename T>
-class RTC_EXPORT RTCNonStandardStatsMember : public RTCStatsMember<T> {
+class RTCNonStandardStatsMember : public RTCStatsMember<T> {
  public:
   explicit RTCNonStandardStatsMember(const char* name)
       : RTCStatsMember<T>(name) {}
@@ -401,8 +401,8 @@ class RTC_EXPORT RTCNonStandardStatsMember : public RTCStatsMember<T> {
   explicit RTCNonStandardStatsMember(const RTCNonStandardStatsMember<T>& other)
       : RTCStatsMember<T>(other), group_ids_(other.group_ids_) {}
   explicit RTCNonStandardStatsMember(RTCNonStandardStatsMember<T>&& other)
-      : group_ids_(std::move(other.group_ids_)),
-        RTCStatsMember<T>(std::move(other)) {}
+      : RTCStatsMember<T>(std::move(other)),
+        group_ids_(std::move(other.group_ids_)) {}
 
   bool is_standardized() const override { return false; }
 
@@ -418,6 +418,36 @@ class RTC_EXPORT RTCNonStandardStatsMember : public RTCStatsMember<T> {
  private:
   std::vector<NonStandardGroupId> group_ids_;
 };
+
+extern template class RTC_EXPORT_TEMPLATE_DECLARE(RTC_EXPORT)
+    RTCNonStandardStatsMember<bool>;
+extern template class RTC_EXPORT_TEMPLATE_DECLARE(RTC_EXPORT)
+    RTCNonStandardStatsMember<int32_t>;
+extern template class RTC_EXPORT_TEMPLATE_DECLARE(RTC_EXPORT)
+    RTCNonStandardStatsMember<uint32_t>;
+extern template class RTC_EXPORT_TEMPLATE_DECLARE(RTC_EXPORT)
+    RTCNonStandardStatsMember<int64_t>;
+extern template class RTC_EXPORT_TEMPLATE_DECLARE(RTC_EXPORT)
+    RTCNonStandardStatsMember<uint64_t>;
+extern template class RTC_EXPORT_TEMPLATE_DECLARE(RTC_EXPORT)
+    RTCNonStandardStatsMember<double>;
+extern template class RTC_EXPORT_TEMPLATE_DECLARE(RTC_EXPORT)
+    RTCNonStandardStatsMember<std::string>;
+extern template class RTC_EXPORT_TEMPLATE_DECLARE(RTC_EXPORT)
+    RTCNonStandardStatsMember<std::vector<bool>>;
+extern template class RTC_EXPORT_TEMPLATE_DECLARE(RTC_EXPORT)
+    RTCNonStandardStatsMember<std::vector<int32_t>>;
+extern template class RTC_EXPORT_TEMPLATE_DECLARE(RTC_EXPORT)
+    RTCNonStandardStatsMember<std::vector<uint32_t>>;
+extern template class RTC_EXPORT_TEMPLATE_DECLARE(RTC_EXPORT)
+    RTCNonStandardStatsMember<std::vector<int64_t>>;
+extern template class RTC_EXPORT_TEMPLATE_DECLARE(RTC_EXPORT)
+    RTCNonStandardStatsMember<std::vector<uint64_t>>;
+extern template class RTC_EXPORT_TEMPLATE_DECLARE(RTC_EXPORT)
+    RTCNonStandardStatsMember<std::vector<double>>;
+extern template class RTC_EXPORT_TEMPLATE_DECLARE(RTC_EXPORT)
+    RTCNonStandardStatsMember<std::vector<std::string>>;
+
 }  // namespace webrtc
 
 #endif  // API_STATS_RTC_STATS_H_
