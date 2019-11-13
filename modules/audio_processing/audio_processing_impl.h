@@ -87,6 +87,8 @@ class AudioProcessingImpl : public AudioProcessing {
                     const StreamConfig& input_config,
                     const StreamConfig& output_config,
                     float* const* dest) override;
+  bool GetLinearAecOutput(
+      rtc::ArrayView<std::array<float, 160>> linear_output) const override;
   void set_output_will_be_muted(bool muted) override;
   int set_stream_delay_ms(int delay) override;
   void set_delay_offset_ms(int offset) override;
@@ -412,6 +414,7 @@ class AudioProcessingImpl : public AudioProcessing {
     bool transient_suppressor_enabled;
     std::unique_ptr<AudioBuffer> capture_audio;
     std::unique_ptr<AudioBuffer> capture_fullband_audio;
+    std::unique_ptr<AudioBuffer> linear_aec_output;
     // Only the rate and samples fields of capture_processing_format_ are used
     // because the capture processing number of channels is mutable and is
     // tracked by the capture_audio_.

@@ -190,6 +190,8 @@ void Aec3ConfigFromJsonString(absl::string_view json_string,
     ReadParam(section, "enable_shadow_filter_output_usage",
               &cfg.filter.enable_shadow_filter_output_usage);
     ReadParam(section, "use_linear_filter", &cfg.filter.use_linear_filter);
+    ReadParam(section, "export_linear_aec_output",
+              &cfg.filter.export_linear_aec_output);
   }
 
   if (rtc::GetValueFromJsonObject(aec3_root, "erle", &section)) {
@@ -314,10 +316,6 @@ void Aec3ConfigFromJsonString(absl::string_view json_string,
 
     ReadParam(section, "floor_first_increase",
               &cfg.suppressor.floor_first_increase);
-    ReadParam(section, "enforce_transparent",
-              &cfg.suppressor.enforce_transparent);
-    ReadParam(section, "enforce_empty_higher_bands",
-              &cfg.suppressor.enforce_empty_higher_bands);
   }
 }
 
@@ -408,7 +406,12 @@ std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config) {
   ost << "\"conservative_initial_phase\": "
       << (config.filter.conservative_initial_phase ? "true" : "false") << ",";
   ost << "\"enable_shadow_filter_output_usage\": "
-      << (config.filter.enable_shadow_filter_output_usage ? "true" : "false");
+      << (config.filter.enable_shadow_filter_output_usage ? "true" : "false")
+      << ",";
+  ost << "\"use_linear_filter\": "
+      << (config.filter.use_linear_filter ? "true" : "false") << ",";
+  ost << "\"export_linear_aec_output\": "
+      << (config.filter.export_linear_aec_output ? "true" : "false");
 
   ost << "},";
 
@@ -545,12 +548,7 @@ std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config) {
   ost << "\"max_gain_during_echo\": "
       << config.suppressor.high_bands_suppression.max_gain_during_echo;
   ost << "},";
-  ost << "\"floor_first_increase\": " << config.suppressor.floor_first_increase
-      << ",";
-  ost << "\"enforce_transparent\": "
-      << (config.suppressor.enforce_transparent ? "true" : "false") << ",";
-  ost << "\"enforce_empty_higher_bands\": "
-      << (config.suppressor.enforce_empty_higher_bands ? "true" : "false");
+  ost << "\"floor_first_increase\": " << config.suppressor.floor_first_increase;
   ost << "}";
   ost << "}";
   ost << "}";

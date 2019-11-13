@@ -24,10 +24,11 @@ class MockBlockProcessor : public BlockProcessor {
   MockBlockProcessor();
   virtual ~MockBlockProcessor();
 
-  MOCK_METHOD3(
+  MOCK_METHOD4(
       ProcessCapture,
       void(bool level_change,
            bool saturated_microphone_signal,
+           std::vector<std::vector<std::vector<float>>>* linear_output,
            std::vector<std::vector<std::vector<float>>>* capture_block));
   MOCK_METHOD1(BufferRender,
                void(const std::vector<std::vector<std::vector<float>>>& block));

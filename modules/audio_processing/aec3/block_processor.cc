@@ -52,6 +52,7 @@ class BlockProcessorImpl final : public BlockProcessor {
   void ProcessCapture(
       bool echo_path_gain_change,
       bool capture_signal_saturation,
+      std::vector<std::vector<std::vector<float>>>* linear_output,
       std::vector<std::vector<std::vector<float>>>* capture_block) override;
 
   void BufferRender(
@@ -105,6 +106,7 @@ BlockProcessorImpl::~BlockProcessorImpl() = default;
 void BlockProcessorImpl::ProcessCapture(
     bool echo_path_gain_change,
     bool capture_signal_saturation,
+    std::vector<std::vector<std::vector<float>>>* linear_output,
     std::vector<std::vector<std::vector<float>>>* capture_block) {
   RTC_DCHECK(capture_block);
   RTC_DCHECK_EQ(NumBandsForRate(sample_rate_hz_), capture_block->size());
@@ -191,7 +193,7 @@ void BlockProcessorImpl::ProcessCapture(
   if (has_delay_estimator || render_buffer_->HasReceivedBufferDelay()) {
     echo_remover_->ProcessCapture(
         echo_path_variability, capture_signal_saturation, estimated_delay_,
-        render_buffer_->GetRenderBuffer(), capture_block);
+        render_buffer_->GetRenderBuffer(), linear_output, capture_block);
   }
 
   // Update the metrics.

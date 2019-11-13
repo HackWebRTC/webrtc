@@ -79,6 +79,7 @@ struct RTC_EXPORT EchoCanceller3Config {
     bool conservative_initial_phase = false;
     bool enable_shadow_filter_output_usage = true;
     bool use_linear_filter = true;
+    bool export_linear_aec_output = false;
   } filter;
 
   struct Erle {
@@ -185,8 +186,6 @@ struct RTC_EXPORT EchoCanceller3Config {
     } high_bands_suppression;
 
     float floor_first_increase = 0.00001f;
-    bool enforce_transparent = false;
-    bool enforce_empty_higher_bands = false;
   } suppressor;
 };
 }  // namespace webrtc

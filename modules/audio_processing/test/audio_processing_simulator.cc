@@ -227,6 +227,20 @@ void AudioProcessingSimulator::ProcessStream(bool fixed_interface) {
     buffer_file_writer_->Write(*out_buf_);
   }
 
+  if (linear_aec_output_file_writer_) {
+    bool output_available = ap_->GetLinearAecOutput(linear_aec_output_buf_);
+    RTC_CHECK(output_available);
+    RTC_CHECK_GT(linear_aec_output_buf_.size(), 0);
+    RTC_CHECK_EQ(linear_aec_output_buf_[0].size(), 160);
+    for (size_t k = 0; k < linear_aec_output_buf_[0].size(); ++k) {
+      for (size_t ch = 0; ch < linear_aec_output_buf_.size(); ++ch) {
+        RTC_CHECK_EQ(linear_aec_output_buf_[ch].size(), 160);
+        linear_aec_output_file_writer_->WriteSamples(
+            &linear_aec_output_buf_[ch][k], 1);
+      }
+    }
+  }
+
   if (residual_echo_likelihood_graph_writer_.is_open()) {
     auto stats = ap_->GetStatistics(true /*has_remote_tracks*/);
     residual_echo_likelihood_graph_writer_
@@ -342,6 +356,21 @@ void AudioProcessingSimulator::SetupOutput() {
         settings_.processed_capture_samples);
   }
 
+  if (settings_.linear_aec_output_filename) {
+    std::string filename;
+    if (settings_.store_intermediate_output) {
+      filename = GetIndexedOutputWavFilename(
+          *settings_.linear_aec_output_filename, output_reset_counter_);
+    } else {
+      filename = *settings_.linear_aec_output_filename;
+    }
+
+    linear_aec_output_file_writer_.reset(
+        new WavWriter(filename, 16000, out_config_.num_channels()));
+
+    linear_aec_output_buf_.resize(out_config_.num_channels());
+  }
+
   if (settings_.reverse_output_filename) {
     std::string filename;
     if (settings_.store_intermediate_output) {
@@ -410,6 +439,8 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
     apm_config.echo_canceller.mobile_mode = use_aecm;
     apm_config.echo_canceller.use_legacy_aec = use_legacy_aec;
   }
+  apm_config.echo_canceller.export_linear_aec_output =
+      !!settings_.linear_aec_output_filename;
 
   RTC_CHECK(!(use_legacy_aec && settings_.aec_settings_filename))
       << "The legacy AEC cannot be configured using settings";
@@ -421,8 +452,13 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
         std::cout << "Reading AEC Parameters from JSON input." << std::endl;
       }
       cfg = ReadAec3ConfigFromJsonFile(*settings_.aec_settings_filename);
-      echo_control_factory.reset(new EchoCanceller3Factory(cfg));
     }
+
+    if (settings_.linear_aec_output_filename) {
+      cfg.filter.export_linear_aec_output = true;
+    }
+
+    echo_control_factory.reset(new EchoCanceller3Factory(cfg));
 
     if (settings_.print_aec_parameter_values) {
       if (!settings_.use_quiet_output) {

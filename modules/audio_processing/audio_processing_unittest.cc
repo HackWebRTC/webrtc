@@ -2425,7 +2425,8 @@ class MyEchoControlFactory : public EchoControlFactory {
     auto ec = new test::MockEchoControl();
     EXPECT_CALL(*ec, AnalyzeRender(::testing::_)).Times(1);
     EXPECT_CALL(*ec, AnalyzeCapture(::testing::_)).Times(2);
-    EXPECT_CALL(*ec, ProcessCapture(::testing::_, ::testing::_)).Times(2);
+    EXPECT_CALL(*ec, ProcessCapture(::testing::_, ::testing::_, ::testing::_))
+        .Times(2);
     return std::unique_ptr<EchoControl>(ec);
   }
 

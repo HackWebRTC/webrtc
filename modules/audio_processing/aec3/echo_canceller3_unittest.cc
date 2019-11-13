@@ -112,6 +112,7 @@ class CaptureTransportVerificationProcessor : public BlockProcessor {
   void ProcessCapture(
       bool level_change,
       bool saturated_microphone_signal,
+      std::vector<std::vector<std::vector<float>>>* linear_output,
       std::vector<std::vector<std::vector<float>>>* capture_block) override {}
 
   void BufferRender(
@@ -137,6 +138,7 @@ class RenderTransportVerificationProcessor : public BlockProcessor {
   void ProcessCapture(
       bool level_change,
       bool saturated_microphone_signal,
+      std::vector<std::vector<std::vector<float>>>* linear_output,
       std::vector<std::vector<std::vector<float>>>* capture_block) override {
     std::vector<std::vector<std::vector<float>>> render_block =
         received_render_blocks_.front();
@@ -267,17 +269,17 @@ class EchoCanceller3Tester {
 
     switch (echo_path_change_test_variant) {
       case EchoPathChangeTestVariant::kNone:
-        EXPECT_CALL(*block_processor_mock, ProcessCapture(false, _, _))
+        EXPECT_CALL(*block_processor_mock, ProcessCapture(false, _, _, _))
             .Times(kExpectedNumBlocksToProcess);
         break;
       case EchoPathChangeTestVariant::kOneSticky:
-        EXPECT_CALL(*block_processor_mock, ProcessCapture(true, _, _))
+        EXPECT_CALL(*block_processor_mock, ProcessCapture(true, _, _, _))
             .Times(kExpectedNumBlocksToProcess);
         break;
       case EchoPathChangeTestVariant::kOneNonSticky:
-        EXPECT_CALL(*block_processor_mock, ProcessCapture(true, _, _))
+        EXPECT_CALL(*block_processor_mock, ProcessCapture(true, _, _, _))
             .Times(kNumFullBlocksPerFrame);
-        EXPECT_CALL(*block_processor_mock, ProcessCapture(false, _, _))
+        EXPECT_CALL(*block_processor_mock, ProcessCapture(false, _, _, _))
             .Times(kExpectedNumBlocksToProcess - kNumFullBlocksPerFrame);
         break;
     }
@@ -338,7 +340,7 @@ class EchoCanceller3Tester {
             new StrictMock<webrtc::test::MockBlockProcessor>());
     EXPECT_CALL(*block_processor_mock, BufferRender(_))
         .Times(kExpectedNumBlocksToProcess);
-    EXPECT_CALL(*block_processor_mock, ProcessCapture(_, _, _))
+    EXPECT_CALL(*block_processor_mock, ProcessCapture(_, _, _, _))
         .Times(kExpectedNumBlocksToProcess);
 
     switch (leakage_report_variant) {
@@ -429,21 +431,21 @@ class EchoCanceller3Tester {
 
     switch (saturation_variant) {
       case SaturationTestVariant::kNone:
-        EXPECT_CALL(*block_processor_mock, ProcessCapture(_, false, _))
+        EXPECT_CALL(*block_processor_mock, ProcessCapture(_, false, _, _))
             .Times(kExpectedNumBlocksToProcess);
         break;
       case SaturationTestVariant::kOneNegative: {
         ::testing::InSequence s;
-        EXPECT_CALL(*block_processor_mock, ProcessCapture(_, true, _))
+        EXPECT_CALL(*block_processor_mock, ProcessCapture(_, true, _, _))
             .Times(kNumFullBlocksPerFrame);
-        EXPECT_CALL(*block_processor_mock, ProcessCapture(_, false, _))
+        EXPECT_CALL(*block_processor_mock, ProcessCapture(_, false, _, _))
             .Times(kExpectedNumBlocksToProcess - kNumFullBlocksPerFrame);
       } break;
       case SaturationTestVariant::kOnePositive: {
         ::testing::InSequence s;
-        EXPECT_CALL(*block_processor_mock, ProcessCapture(_, true, _))
+        EXPECT_CALL(*block_processor_mock, ProcessCapture(_, true, _, _))
             .Times(kNumFullBlocksPerFrame);
-        EXPECT_CALL(*block_processor_mock, ProcessCapture(_, false, _))
+        EXPECT_CALL(*block_processor_mock, ProcessCapture(_, false, _, _))
             .Times(kExpectedNumBlocksToProcess - kNumFullBlocksPerFrame);
       } break;
     }

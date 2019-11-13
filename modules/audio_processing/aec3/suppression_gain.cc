@@ -343,13 +343,6 @@ void SuppressionGain::GetGain(
     std::array<float, kFftLengthBy2Plus1>* low_band_gain) {
   RTC_DCHECK(high_bands_gain);
   RTC_DCHECK(low_band_gain);
-  const auto& cfg = config_.suppressor;
-
-  if (cfg.enforce_transparent) {
-    low_band_gain->fill(1.f);
-    *high_bands_gain = cfg.enforce_empty_higher_bands ? 0.f : 1.f;
-    return;
-  }
 
   // Update the nearend state selection.
   dominant_nearend_detector_.Update(nearend_spectrum, residual_echo_spectrum,
@@ -359,11 +352,6 @@ void SuppressionGain::GetGain(
   bool low_noise_render = low_render_detector_.Detect(render);
   LowerBandGain(low_noise_render, aec_state, nearend_spectrum,
                 residual_echo_spectrum, comfort_noise_spectrum, low_band_gain);
-
-  if (cfg.enforce_empty_higher_bands) {
-    *high_bands_gain = 0.f;
-    return;
-  }
 
   // Compute the gain for the upper bands.
   const absl::optional<int> narrow_peak_band =

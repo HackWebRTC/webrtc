@@ -16,6 +16,7 @@
 #include "modules/audio_processing/high_pass_filter.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomic_ops.h"
+#include "rtc_base/logging.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
@@ -87,28 +88,52 @@ void FillSubFrameView(
 }
 
 void ProcessCaptureFrameContent(
+    AudioBuffer* linear_output,
     AudioBuffer* capture,
     bool level_change,
     bool saturated_microphone_signal,
     size_t sub_frame_index,
     FrameBlocker* capture_blocker,
+    BlockFramer* linear_output_framer,
     BlockFramer* output_framer,
     BlockProcessor* block_processor,
-    std::vector<std::vector<std::vector<float>>>* block,
-    std::vector<std::vector<rtc::ArrayView<float>>>* sub_frame_view) {
-  FillSubFrameView(capture, sub_frame_index, sub_frame_view);
-  capture_blocker->InsertSubFrameAndExtractBlock(*sub_frame_view, block);
+    std::vector<std::vector<std::vector<float>>>* linear_output_block,
+    std::vector<std::vector<rtc::ArrayView<float>>>*
+        linear_output_sub_frame_view,
+    std::vector<std::vector<std::vector<float>>>* capture_block,
+    std::vector<std::vector<rtc::ArrayView<float>>>* capture_sub_frame_view) {
+  FillSubFrameView(capture, sub_frame_index, capture_sub_frame_view);
+
+  if (linear_output) {
+    RTC_DCHECK(linear_output_framer);
+    RTC_DCHECK(linear_output_block);
+    RTC_DCHECK(linear_output_sub_frame_view);
+    FillSubFrameView(linear_output, sub_frame_index,
+                     linear_output_sub_frame_view);
+  }
+
+  capture_blocker->InsertSubFrameAndExtractBlock(*capture_sub_frame_view,
+                                                 capture_block);
   block_processor->ProcessCapture(level_change, saturated_microphone_signal,
-                                  block);
-  output_framer->InsertBlockAndExtractSubFrame(*block, sub_frame_view);
+                                  linear_output_block, capture_block);
+  output_framer->InsertBlockAndExtractSubFrame(*capture_block,
+                                               capture_sub_frame_view);
+
+  if (linear_output) {
+    RTC_DCHECK(linear_output_framer);
+    linear_output_framer->InsertBlockAndExtractSubFrame(
+        *linear_output_block, linear_output_sub_frame_view);
+  }
 }
 
 void ProcessRemainingCaptureFrameContent(
     bool level_change,
     bool saturated_microphone_signal,
     FrameBlocker* capture_blocker,
+    BlockFramer* linear_output_framer,
     BlockFramer* output_framer,
     BlockProcessor* block_processor,
+    std::vector<std::vector<std::vector<float>>>* linear_output_block,
     std::vector<std::vector<std::vector<float>>>* block) {
   if (!capture_blocker->IsBlockAvailable()) {
     return;
@@ -116,8 +141,13 @@ void ProcessRemainingCaptureFrameContent(
 
   capture_blocker->ExtractBlock(block);
   block_processor->ProcessCapture(level_change, saturated_microphone_signal,
-                                  block);
+                                  linear_output_block, block);
   output_framer->InsertBlock(*block);
+
+  if (linear_output_framer) {
+    RTC_DCHECK(linear_output_block);
+    linear_output_framer->InsertBlock(*linear_output_block);
+  }
 }
 
 void BufferRenderFrameContent(
@@ -295,12 +325,24 @@ EchoCanceller3::EchoCanceller3(const EchoCanceller3Config& config,
 
   RTC_DCHECK_EQ(num_bands_, std::max(sample_rate_hz_, 16000) / 16000);
   RTC_DCHECK_GE(kMaxNumBands, num_bands_);
+
+  if (config_.filter.export_linear_aec_output) {
+    linear_output_framer_.reset(new BlockFramer(1, num_capture_channels_));
+    linear_output_block_ =
+        std::make_unique<std::vector<std::vector<std::vector<float>>>>(
+            1, std::vector<std::vector<float>>(
+                   num_capture_channels_, std::vector<float>(kBlockSize, 0.f)));
+    linear_output_sub_frame_view_ =
+        std::vector<std::vector<rtc::ArrayView<float>>>(
+            1, std::vector<rtc::ArrayView<float>>(num_capture_channels_));
+  }
 }
 
 EchoCanceller3::~EchoCanceller3() = default;
 
 void EchoCanceller3::AnalyzeRender(const AudioBuffer& render) {
   RTC_DCHECK_RUNS_SERIALIZED(&render_race_checker_);
+
   RTC_DCHECK_EQ(render.num_channels(), num_render_channels_);
   data_dumper_->DumpRaw("aec3_call_order",
                         static_cast<int>(EchoCanceller3ApiCall::kRender));
@@ -312,7 +354,6 @@ void EchoCanceller3::AnalyzeCapture(const AudioBuffer& capture) {
   RTC_DCHECK_RUNS_SERIALIZED(&capture_race_checker_);
   data_dumper_->DumpWav("aec3_capture_analyze_input", capture.num_frames(),
                         capture.channels_const()[0], sample_rate_hz_, 1);
-
   saturated_microphone_signal_ = false;
   for (size_t channel = 0; channel < capture.num_channels(); ++channel) {
     saturated_microphone_signal_ |=
@@ -325,6 +366,12 @@ void EchoCanceller3::AnalyzeCapture(const AudioBuffer& capture) {
 }
 
 void EchoCanceller3::ProcessCapture(AudioBuffer* capture, bool level_change) {
+  ProcessCapture(capture, nullptr, level_change);
+}
+
+void EchoCanceller3::ProcessCapture(AudioBuffer* capture,
+                                    AudioBuffer* linear_output,
+                                    bool level_change) {
   RTC_DCHECK_RUNS_SERIALIZED(&capture_race_checker_);
   RTC_DCHECK(capture);
   RTC_DCHECK_EQ(num_bands_, capture->num_bands());
@@ -332,6 +379,12 @@ void EchoCanceller3::ProcessCapture(AudioBuffer* capture, bool level_change) {
   RTC_DCHECK_EQ(capture->num_channels(), num_capture_channels_);
   data_dumper_->DumpRaw("aec3_call_order",
                         static_cast<int>(EchoCanceller3ApiCall::kCapture));
+
+  if (linear_output && !linear_output_framer_) {
+    RTC_LOG(LS_ERROR) << "Trying to retrieve the linear AEC output without "
+                         "properly configuring AEC3.";
+    RTC_NOTREACHED();
+  }
 
   // Report capture call in the metrics and periodically update API call
   // metrics.
@@ -349,19 +402,24 @@ void EchoCanceller3::ProcessCapture(AudioBuffer* capture, bool level_change) {
 
   EmptyRenderQueue();
 
-  ProcessCaptureFrameContent(capture, level_change,
+  ProcessCaptureFrameContent(linear_output, capture, level_change,
                              saturated_microphone_signal_, 0, &capture_blocker_,
-                             &output_framer_, block_processor_.get(),
-                             &capture_block_, &capture_sub_frame_view_);
+                             linear_output_framer_.get(), &output_framer_,
+                             block_processor_.get(), linear_output_block_.get(),
+                             &linear_output_sub_frame_view_, &capture_block_,
+                             &capture_sub_frame_view_);
 
-  ProcessCaptureFrameContent(capture, level_change,
+  ProcessCaptureFrameContent(linear_output, capture, level_change,
                              saturated_microphone_signal_, 1, &capture_blocker_,
-                             &output_framer_, block_processor_.get(),
-                             &capture_block_, &capture_sub_frame_view_);
+                             linear_output_framer_.get(), &output_framer_,
+                             block_processor_.get(), linear_output_block_.get(),
+                             &linear_output_sub_frame_view_, &capture_block_,
+                             &capture_sub_frame_view_);
 
   ProcessRemainingCaptureFrameContent(
       level_change, saturated_microphone_signal_, &capture_blocker_,
-      &output_framer_, block_processor_.get(), &capture_block_);
+      linear_output_framer_.get(), &output_framer_, block_processor_.get(),
+      linear_output_block_.get(), &capture_block_);
 
   data_dumper_->DumpWav("aec3_capture_output", AudioBuffer::kSplitBandSize,
                         &capture->split_bands(0)[0][0], 16000, 1);

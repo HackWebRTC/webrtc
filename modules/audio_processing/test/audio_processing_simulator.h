@@ -47,6 +47,7 @@ struct SimulationSettings {
   absl::optional<std::string> input_filename;
   absl::optional<std::string> reverse_input_filename;
   absl::optional<std::string> artificial_nearend_filename;
+  absl::optional<std::string> linear_aec_output_filename;
   absl::optional<bool> use_aec;
   absl::optional<bool> use_aecm;
   absl::optional<bool> use_ed;  // Residual Echo Detector.
@@ -156,6 +157,7 @@ class AudioProcessingSimulator {
   std::unique_ptr<ChannelBuffer<float>> out_buf_;
   std::unique_ptr<ChannelBuffer<float>> reverse_in_buf_;
   std::unique_ptr<ChannelBuffer<float>> reverse_out_buf_;
+  std::vector<std::array<float, 160>> linear_aec_output_buf_;
   StreamConfig in_config_;
   StreamConfig out_config_;
   StreamConfig reverse_in_config_;
@@ -178,6 +180,7 @@ class AudioProcessingSimulator {
   std::unique_ptr<ChannelBufferWavWriter> buffer_file_writer_;
   std::unique_ptr<ChannelBufferWavWriter> reverse_buffer_file_writer_;
   std::unique_ptr<ChannelBufferVectorWriter> buffer_memory_writer_;
+  std::unique_ptr<WavWriter> linear_aec_output_file_writer_;
   ApiCallStatistics api_call_statistics_;
   std::ofstream residual_echo_likelihood_graph_writer_;
   int analog_mic_level_;

@@ -1342,8 +1342,9 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
         submodules_.echo_controller->SetAudioBufferDelay(stream_delay_ms());
       }
 
+      AudioBuffer* linear_aec_buffer = capture_.linear_aec_output.get();
       submodules_.echo_controller->ProcessCapture(
-          capture_buffer, capture_.echo_path_gain_change);
+          capture_buffer, linear_aec_buffer, capture_.echo_path_gain_change);
     } else if (submodules_.echo_cancellation) {
       // Ensure that the stream delay was set before the call to the
       // AEC ProcessCaptureAudio function.
@@ -1625,6 +1626,31 @@ int AudioProcessingImpl::set_stream_delay_ms(int delay) {
   return retval;
 }
 
+bool AudioProcessingImpl::GetLinearAecOutput(
+    rtc::ArrayView<std::array<float, 160>> linear_output) const {
+  rtc::CritScope cs(&crit_capture_);
+  AudioBuffer* linear_aec_buffer = capture_.linear_aec_output.get();
+
+  RTC_DCHECK(linear_aec_buffer);
+  if (linear_aec_buffer) {
+    RTC_DCHECK_EQ(1, linear_aec_buffer->num_bands());
+    RTC_DCHECK_EQ(linear_output.size(), linear_aec_buffer->num_channels());
+
+    for (size_t ch = 0; ch < linear_aec_buffer->num_channels(); ++ch) {
+      RTC_DCHECK_EQ(linear_output[ch].size(), linear_aec_buffer->num_frames());
+      rtc::ArrayView<const float> channel_view =
+          rtc::ArrayView<const float>(linear_aec_buffer->channels_const()[ch],
+                                      linear_aec_buffer->num_frames());
+      std::copy(channel_view.begin(), channel_view.end(),
+                linear_output[ch].begin());
+    }
+    return true;
+  }
+  RTC_LOG(LS_ERROR) << "No linear AEC output available";
+  RTC_NOTREACHED();
+  return false;
+}
+
 int AudioProcessingImpl::stream_delay_ms() const {
   // Used as callback from submodules, hence locking is not allowed.
   return capture_nonlocked_.stream_delay_ms;
@@ -1790,6 +1816,16 @@ void AudioProcessingImpl::InitializeEchoController() {
           num_proc_channels());
     }
 
+    // Setup the storage for returning the linear AEC output.
+    if (config_.echo_canceller.export_linear_aec_output) {
+      constexpr int kLinearOutputRateHz = 16000;
+      capture_.linear_aec_output = std::make_unique<AudioBuffer>(
+          kLinearOutputRateHz, num_proc_channels(), kLinearOutputRateHz,
+          num_proc_channels(), kLinearOutputRateHz, num_proc_channels());
+    } else {
+      capture_.linear_aec_output.reset();
+    }
+
     capture_nonlocked_.echo_controller_enabled = true;
 
     submodules_.echo_cancellation.reset();
@@ -1801,6 +1837,7 @@ void AudioProcessingImpl::InitializeEchoController() {
 
   submodules_.echo_controller.reset();
   capture_nonlocked_.echo_controller_enabled = false;
+  capture_.linear_aec_output.reset();
 
   if (!config_.echo_canceller.enabled) {
     submodules_.echo_cancellation.reset();

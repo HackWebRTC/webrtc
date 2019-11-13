@@ -59,6 +59,7 @@ class BlockProcessor {
   virtual void ProcessCapture(
       bool echo_path_gain_change,
       bool capture_signal_saturation,
+      std::vector<std::vector<std::vector<float>>>* linear_output,
       std::vector<std::vector<std::vector<float>>>* capture_block) = 0;
 
   // Buffers a block of render data supplied by a FrameBlocker object.

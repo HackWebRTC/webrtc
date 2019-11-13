@@ -73,9 +73,9 @@ TEST(EchoRemover, BasicApiCalls) {
           render_buffer->Insert(render);
           render_buffer->PrepareCaptureProcessing();
 
-          remover->ProcessCapture(echo_path_variability,
-                                  k % 2 == 0 ? true : false, delay_estimate,
-                                  render_buffer->GetRenderBuffer(), &capture);
+          remover->ProcessCapture(
+              echo_path_variability, k % 2 == 0 ? true : false, delay_estimate,
+              render_buffer->GetRenderBuffer(), nullptr, &capture);
         }
       }
     }
@@ -107,10 +107,10 @@ TEST(EchoRemover, WrongCaptureBlockSize) {
                                    1, std::vector<float>(kBlockSize - 1, 0.f)));
     EchoPathVariability echo_path_variability(
         false, EchoPathVariability::DelayAdjustment::kNone, false);
-    EXPECT_DEATH(
-        remover->ProcessCapture(echo_path_variability, false, delay_estimate,
-                                render_buffer->GetRenderBuffer(), &capture),
-        "");
+    EXPECT_DEATH(remover->ProcessCapture(
+                     echo_path_variability, false, delay_estimate,
+                     render_buffer->GetRenderBuffer(), nullptr, &capture),
+                 "");
   }
 }
 
@@ -131,10 +131,10 @@ TEST(EchoRemover, DISABLED_WrongCaptureNumBands) {
                                         std::vector<float>(kBlockSize, 0.f)));
     EchoPathVariability echo_path_variability(
         false, EchoPathVariability::DelayAdjustment::kNone, false);
-    EXPECT_DEATH(
-        remover->ProcessCapture(echo_path_variability, false, delay_estimate,
-                                render_buffer->GetRenderBuffer(), &capture),
-        "");
+    EXPECT_DEATH(remover->ProcessCapture(
+                     echo_path_variability, false, delay_estimate,
+                     render_buffer->GetRenderBuffer(), nullptr, &capture),
+                 "");
   }
 }
 
@@ -147,10 +147,10 @@ TEST(EchoRemover, NullCapture) {
       RenderDelayBuffer::Create(EchoCanceller3Config(), 16000, 1));
   EchoPathVariability echo_path_variability(
       false, EchoPathVariability::DelayAdjustment::kNone, false);
-  EXPECT_DEATH(
-      remover->ProcessCapture(echo_path_variability, false, delay_estimate,
-                              render_buffer->GetRenderBuffer(), nullptr),
-      "");
+  EXPECT_DEATH(remover->ProcessCapture(
+                   echo_path_variability, false, delay_estimate,
+                   render_buffer->GetRenderBuffer(), nullptr, nullptr),
+               "");
 }
 
 #endif
@@ -222,7 +222,8 @@ TEST(EchoRemover, BasicEchoRemoval) {
           render_buffer->PrepareCaptureProcessing();
 
           remover->ProcessCapture(echo_path_variability, false, delay_estimate,
-                                  render_buffer->GetRenderBuffer(), &y);
+                                  render_buffer->GetRenderBuffer(), nullptr,
+                                  &y);
 
           if (k > kNumBlocksToProcess / 2) {
             output_energy = std::inner_product(y[0][0].begin(), y[0][0].end(),
