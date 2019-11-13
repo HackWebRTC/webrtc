@@ -126,8 +126,9 @@ TEST(TcpMessageRouteTest, DeliveredOnLossyNetwork) {
   auto ret = send;
   ret.loss_percent = 10;
 
-  auto* tcp_route = net.CreateTcpRoute({net.CreateEmulatedNode(send)},
-                                       {net.CreateEmulatedNode(ret)});
+  auto* tcp_route =
+      net.CreateTcpRoute(net.CreateRoute({net.CreateEmulatedNode(send)}),
+                         net.CreateRoute({net.CreateEmulatedNode(ret)}));
   int deliver_count = 0;
   // 100 kB is more than what fits into a single packet.
   constexpr size_t kMessageSize = 100000;

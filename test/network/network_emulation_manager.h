@@ -77,8 +77,8 @@ class NetworkEmulationManagerImpl : public NetworkEmulationManager {
       std::vector<EmulatedNetworkNode*> ret_link,
       FakeTcpConfig config);
 
-  TcpMessageRoute* CreateTcpRoute(std::vector<EmulatedNetworkNode*> send_link,
-                                  std::vector<EmulatedNetworkNode*> ret_link);
+  TcpMessageRoute* CreateTcpRoute(EmulatedRoute* send_route,
+                                  EmulatedRoute* ret_route);
 
   void StopCrossTraffic(FakeTcpCrossTraffic* traffic);
 
