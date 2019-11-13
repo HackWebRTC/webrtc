@@ -68,8 +68,10 @@ RtcEventLogImpl::RtcEventLogImpl(RtcEventLog::EncodingType encoding_type,
 
 RtcEventLogImpl::~RtcEventLogImpl() {
   // If we're logging to the output, this will stop that. Blocking function.
-  if (logging_state_started_)
+  if (logging_state_started_) {
+    logging_state_checker_.Detach();
     StopLogging();
+  }
 
   // We want to block on any executing task by invoking ~TaskQueue() before
   // we set unique_ptr's internal pointer to null.
