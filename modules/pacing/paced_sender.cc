@@ -32,11 +32,16 @@ PacedSender::PacedSender(Clock* clock,
                          RtcEventLog* event_log,
                          const WebRtcKeyValueConfig* field_trials,
                          ProcessThread* process_thread)
-    : pacing_controller_(clock,
+    : process_mode_((field_trials != nullptr &&
+                     field_trials->Lookup("WebRTC-Pacer-DynamicProcess")
+                             .find("Enabled") == 0)
+                        ? PacingController::ProcessMode::kDynamic
+                        : PacingController::ProcessMode::kPeriodic),
+      pacing_controller_(clock,
                          static_cast<PacingController::PacketSender*>(this),
                          event_log,
                          field_trials,
-                         PacingController::ProcessMode::kPeriodic),
+                         process_mode_),
       clock_(clock),
       packet_router_(packet_router),
       process_thread_(process_thread) {
@@ -45,8 +50,9 @@ PacedSender::PacedSender(Clock* clock,
 }
 
 PacedSender::~PacedSender() {
-  if (process_thread_)
+  if (process_thread_) {
     process_thread_->DeRegisterModule(&module_proxy_);
+  }
 }
 
 void PacedSender::CreateProbeCluster(DataRate bitrate, int cluster_id) {
@@ -62,8 +68,9 @@ void PacedSender::Pause() {
 
   // Tell the process thread to call our TimeUntilNextProcess() method to get
   // a new (longer) estimate for when to call Process().
-  if (process_thread_)
+  if (process_thread_) {
     process_thread_->WakeUp(&module_proxy_);
+  }
 }
 
 void PacedSender::Resume() {
@@ -74,31 +81,44 @@ void PacedSender::Resume() {
 
   // Tell the process thread to call our TimeUntilNextProcess() method to
   // refresh the estimate for when to call Process().
-  if (process_thread_)
+  if (process_thread_) {
     process_thread_->WakeUp(&module_proxy_);
+  }
 }
 
 void PacedSender::SetCongestionWindow(DataSize congestion_window_size) {
-  rtc::CritScope cs(&critsect_);
-  pacing_controller_.SetCongestionWindow(congestion_window_size);
+  {
+    rtc::CritScope cs(&critsect_);
+    pacing_controller_.SetCongestionWindow(congestion_window_size);
+  }
+  MaybeWakupProcessThread();
 }
 
 void PacedSender::UpdateOutstandingData(DataSize outstanding_data) {
-  rtc::CritScope cs(&critsect_);
-  pacing_controller_.UpdateOutstandingData(outstanding_data);
+  {
+    rtc::CritScope cs(&critsect_);
+    pacing_controller_.UpdateOutstandingData(outstanding_data);
+  }
+  MaybeWakupProcessThread();
 }
 
 void PacedSender::SetPacingRates(DataRate pacing_rate, DataRate padding_rate) {
-  rtc::CritScope cs(&critsect_);
-  pacing_controller_.SetPacingRates(pacing_rate, padding_rate);
+  {
+    rtc::CritScope cs(&critsect_);
+    pacing_controller_.SetPacingRates(pacing_rate, padding_rate);
+  }
+  MaybeWakupProcessThread();
 }
 
 void PacedSender::EnqueuePackets(
     std::vector<std::unique_ptr<RtpPacketToSend>> packets) {
-  rtc::CritScope cs(&critsect_);
-  for (auto& packet : packets) {
-    pacing_controller_.EnqueuePacket(std::move(packet));
+  {
+    rtc::CritScope cs(&critsect_);
+    for (auto& packet : packets) {
+      pacing_controller_.EnqueuePacket(std::move(packet));
+    }
   }
+  MaybeWakupProcessThread();
 }
 
 void PacedSender::SetAccountForAudioPackets(bool account_for_audio) {
@@ -144,9 +164,21 @@ void PacedSender::ProcessThreadAttached(ProcessThread* process_thread) {
   RTC_DCHECK(!process_thread || process_thread == process_thread_);
 }
 
+void PacedSender::MaybeWakupProcessThread() {
+  // Tell the process thread to call our TimeUntilNextProcess() method to get
+  // a new time for when to call Process().
+  if (process_thread_ &&
+      process_mode_ == PacingController::ProcessMode::kDynamic) {
+    process_thread_->WakeUp(&module_proxy_);
+  }
+}
+
 void PacedSender::SetQueueTimeLimit(TimeDelta limit) {
-  rtc::CritScope cs(&critsect_);
-  pacing_controller_.SetQueueTimeLimit(limit);
+  {
+    rtc::CritScope cs(&critsect_);
+    pacing_controller_.SetQueueTimeLimit(limit);
+  }
+  MaybeWakupProcessThread();
 }
 
 void PacedSender::SendRtpPacket(std::unique_ptr<RtpPacketToSend> packet,

@@ -39,7 +39,6 @@ constexpr size_t kDefaultPacketSize = 234;
 namespace webrtc {
 namespace test {
 
-
 // Mock callback implementing the raw api.
 class MockCallback : public PacketRouter {
  public:
@@ -51,69 +50,88 @@ class MockCallback : public PacketRouter {
       std::vector<std::unique_ptr<RtpPacketToSend>>(size_t target_size_bytes));
 };
 
-std::unique_ptr<RtpPacketToSend> BuildRtpPacket(RtpPacketToSend::Type type) {
-  auto packet = std::make_unique<RtpPacketToSend>(nullptr);
-  packet->set_packet_type(type);
-  switch (type) {
-    case RtpPacketToSend::Type::kAudio:
-      packet->SetSsrc(kAudioSsrc);
-      break;
-    case RtpPacketToSend::Type::kVideo:
-      packet->SetSsrc(kVideoSsrc);
-      break;
-    case RtpPacketToSend::Type::kRetransmission:
-    case RtpPacketToSend::Type::kPadding:
-      packet->SetSsrc(kVideoRtxSsrc);
-      break;
-    case RtpPacketToSend::Type::kForwardErrorCorrection:
-      packet->SetSsrc(kFlexFecSsrc);
-      break;
+class PacedSenderTest
+    : public ::testing::TestWithParam<PacingController::ProcessMode> {
+ public:
+  PacedSenderTest() : clock_(0), paced_module_(nullptr) {}
+
+  void SetUp() override {
+    EXPECT_CALL(process_thread_, RegisterModule)
+        .WillOnce(SaveArg<0>(&paced_module_));
+
+    pacer_ = std::make_unique<PacedSender>(&clock_, &callback_, nullptr,
+                                           nullptr, &process_thread_);
+    EXPECT_CALL(process_thread_, DeRegisterModule(paced_module_)).Times(1);
   }
 
-  packet->SetPayloadSize(kDefaultPacketSize);
-  return packet;
-}
+ protected:
+  std::unique_ptr<RtpPacketToSend> BuildRtpPacket(RtpPacketToSend::Type type) {
+    auto packet = std::make_unique<RtpPacketToSend>(nullptr);
+    packet->set_packet_type(type);
+    switch (type) {
+      case RtpPacketToSend::Type::kAudio:
+        packet->SetSsrc(kAudioSsrc);
+        break;
+      case RtpPacketToSend::Type::kVideo:
+        packet->SetSsrc(kVideoSsrc);
+        break;
+      case RtpPacketToSend::Type::kRetransmission:
+      case RtpPacketToSend::Type::kPadding:
+        packet->SetSsrc(kVideoRtxSsrc);
+        break;
+      case RtpPacketToSend::Type::kForwardErrorCorrection:
+        packet->SetSsrc(kFlexFecSsrc);
+        break;
+    }
 
-TEST(PacedSenderTest, PacesPackets) {
-  SimulatedClock clock(0);
-  MockCallback callback;
-  MockProcessThread process_thread;
-  Module* paced_module = nullptr;
-  EXPECT_CALL(process_thread, RegisterModule(_, _))
-      .WillOnce(SaveArg<0>(&paced_module));
-  PacedSender pacer(&clock, &callback, nullptr, nullptr, &process_thread);
-  EXPECT_CALL(process_thread, DeRegisterModule(paced_module)).Times(1);
+    packet->SetPayloadSize(kDefaultPacketSize);
+    return packet;
+  }
 
+  SimulatedClock clock_;
+  MockCallback callback_;
+  MockProcessThread process_thread_;
+  Module* paced_module_;
+  std::unique_ptr<PacedSender> pacer_;
+};
+
+TEST_P(PacedSenderTest, PacesPackets) {
   // Insert a number of packets, covering one second.
   static constexpr size_t kPacketsToSend = 42;
-  pacer.SetPacingRates(DataRate::bps(kDefaultPacketSize * 8 * kPacketsToSend),
-                       DataRate::Zero());
+  pacer_->SetPacingRates(DataRate::bps(kDefaultPacketSize * 8 * kPacketsToSend),
+                         DataRate::Zero());
   std::vector<std::unique_ptr<RtpPacketToSend>> packets;
   for (size_t i = 0; i < kPacketsToSend; ++i) {
     packets.emplace_back(BuildRtpPacket(RtpPacketToSend::Type::kVideo));
   }
-  pacer.EnqueuePackets(std::move(packets));
+  pacer_->EnqueuePackets(std::move(packets));
 
   // Expect all of them to be sent.
   size_t packets_sent = 0;
-  clock.AdvanceTimeMilliseconds(paced_module->TimeUntilNextProcess());
-  EXPECT_CALL(callback, SendPacket)
+  clock_.AdvanceTimeMilliseconds(paced_module_->TimeUntilNextProcess());
+  EXPECT_CALL(callback_, SendPacket)
       .WillRepeatedly(
           [&](std::unique_ptr<RtpPacketToSend> packet,
               const PacedPacketInfo& cluster_info) { ++packets_sent; });
 
-  const Timestamp start_time = clock.CurrentTime();
+  const Timestamp start_time = clock_.CurrentTime();
 
   while (packets_sent < kPacketsToSend) {
-    clock.AdvanceTimeMilliseconds(paced_module->TimeUntilNextProcess());
-    paced_module->Process();
+    clock_.AdvanceTimeMilliseconds(paced_module_->TimeUntilNextProcess());
+    paced_module_->Process();
   }
 
   // Packets should be sent over a period of close to 1s. Expect a little lower
   // than this since initial probing is a bit quicker.
-  TimeDelta duration = clock.CurrentTime() - start_time;
+  TimeDelta duration = clock_.CurrentTime() - start_time;
   EXPECT_GT(duration, TimeDelta::ms(900));
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    WithAndWithoutDynamicProcess,
+    PacedSenderTest,
+    ::testing::Values(PacingController::ProcessMode::kPeriodic,
+                      PacingController::ProcessMode::kDynamic));
 
 }  // namespace test
 }  // namespace webrtc

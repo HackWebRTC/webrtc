@@ -134,9 +134,10 @@ class PacedSender : public Module,
   // Called when the prober is associated with a process thread.
   void ProcessThreadAttached(ProcessThread* process_thread) override;
 
- private:
-  // Methods implementing PacedSenderController:PacketSender.
+  // In dynamic process mode, refreshes the next process time.
+  void MaybeWakupProcessThread();
 
+  // Methods implementing PacedSenderController:PacketSender.
   void SendRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
                      const PacedPacketInfo& cluster_info) override
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
@@ -163,6 +164,7 @@ class PacedSender : public Module,
   } module_proxy_{this};
 
   rtc::CriticalSection critsect_;
+  const PacingController::ProcessMode process_mode_;
   PacingController pacing_controller_ RTC_GUARDED_BY(critsect_);
 
   Clock* const clock_;
