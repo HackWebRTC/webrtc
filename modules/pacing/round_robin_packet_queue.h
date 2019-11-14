@@ -115,6 +115,7 @@ class RoundRobinPacketQueue {
   bool Empty() const;
   size_t SizeInPackets() const;
   DataSize Size() const;
+  bool NextPacketIsAudio() const;
 
   Timestamp OldestEnqueueTime() const;
   TimeDelta AverageQueueTime() const;

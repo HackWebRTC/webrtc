@@ -216,6 +216,17 @@ DataSize RoundRobinPacketQueue::Size() const {
   return size_;
 }
 
+bool RoundRobinPacketQueue::NextPacketIsAudio() const {
+  if (stream_priorities_.empty()) {
+    return false;
+  }
+  uint32_t ssrc = stream_priorities_.begin()->second;
+
+  auto stream_info_it = streams_.find(ssrc);
+  return stream_info_it->second.packet_queue.top().type() ==
+         RtpPacketToSend::Type::kAudio;
+}
+
 Timestamp RoundRobinPacketQueue::OldestEnqueueTime() const {
   if (Empty())
     return Timestamp::MinusInfinity();

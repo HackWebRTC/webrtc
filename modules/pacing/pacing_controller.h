@@ -44,6 +44,13 @@ namespace webrtc {
 //
 class PacingController {
  public:
+  // Periodic mode uses the IntervalBudget class for tracking bitrate
+  // budgets, and expected ProcessPackets() to be called a fixed rate,
+  // e.g. every 5ms as implemented by PacedSender.
+  // Dynamic mode allows for arbitrary time delta between calls to
+  // ProcessPackets.
+  enum class ProcessMode { kPeriodic, kDynamic };
+
   class PacketSender {
    public:
     virtual ~PacketSender() = default;
@@ -69,10 +76,13 @@ class PacingController {
   // to lack of feedback.
   static const TimeDelta kPausedProcessInterval;
 
+  static const TimeDelta kMinSleepTime;
+
   PacingController(Clock* clock,
                    PacketSender* packet_sender,
                    RtcEventLog* event_log,
-                   const WebRtcKeyValueConfig* field_trials);
+                   const WebRtcKeyValueConfig* field_trials,
+                   ProcessMode mode);
 
   ~PacingController();
 
@@ -118,16 +128,8 @@ class PacingController {
   // effect.
   void SetProbingEnabled(bool enabled);
 
-  // Time at which next probe should be sent. If this value is set, it should be
-  // respected - i.e. don't call ProcessPackets() before this specified time as
-  // that can have unintended side effects.
-  // If no scheduled probe, Timestamp::PlusInifinity() is returned.
-  Timestamp NextProbeTime();
-
-  // Time since ProcessPackets() was last executed.
-  TimeDelta TimeElapsedSinceLastProcess() const;
-
-  TimeDelta TimeUntilAvailableBudget() const;
+  // Returns the next time we expect ProcessPackets() to be called.
+  Timestamp NextSendTime() const;
 
   // Check queue of pending packets and send them or padding packets, if budget
   // is available.
@@ -146,15 +148,19 @@ class PacingController {
   void UpdateBudgetWithSentData(DataSize size);
 
   DataSize PaddingToAdd(absl::optional<DataSize> recommended_probe_size,
-                        DataSize data_sent);
+                        DataSize data_sent) const;
 
   RoundRobinPacketQueue::QueuedPacket* GetPendingPacket(
-      const PacedPacketInfo& pacing_info);
-  void OnPacketSent(RoundRobinPacketQueue::QueuedPacket* packet);
+      const PacedPacketInfo& pacing_info,
+      Timestamp target_send_time,
+      Timestamp now);
+  void OnPacketSent(RoundRobinPacketQueue::QueuedPacket* packet,
+                    Timestamp send_time);
   void OnPaddingSent(DataSize padding_sent);
 
   Timestamp CurrentTime() const;
 
+  const ProcessMode mode_;
   Clock* const clock_;
   PacketSender* const packet_sender_;
   const std::unique_ptr<FieldTrialBasedConfig> fallback_field_trials_;
@@ -164,12 +170,18 @@ class PacingController {
   const bool send_padding_if_silent_;
   const bool pace_audio_;
   const bool small_first_probe_packet_;
+
   TimeDelta min_packet_limit_;
 
   // TODO(webrtc:9716): Remove this when we are certain clocks are monotonic.
   // The last millisecond timestamp returned by |clock_|.
   mutable Timestamp last_timestamp_;
   bool paused_;
+
+  // If |use_interval_budget_| is true, |media_budget_| and |padding_budget_|
+  // will be used to track when packets can be sent. Otherwise the media and
+  // padding debt counters will be used together with the target rates.
+
   // This is the media budget, keeping track of how many bits of media
   // we can pace out during the current interval.
   IntervalBudget media_budget_;
@@ -178,13 +190,17 @@ class PacingController {
   // utilized when there's no media to send.
   IntervalBudget padding_budget_;
 
+  DataSize media_debt_;
+  DataSize padding_debt_;
+  DataRate media_rate_;
+  DataRate padding_rate_;
+
   BitrateProber prober_;
   bool probing_send_failure_;
-  bool padding_failure_state_;
 
   DataRate pacing_bitrate_;
 
-  Timestamp time_last_process_;
+  Timestamp last_process_time_;
   Timestamp last_send_time_;
   absl::optional<Timestamp> first_sent_packet_time_;
 

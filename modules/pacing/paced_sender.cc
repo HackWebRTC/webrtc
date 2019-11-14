@@ -35,7 +35,8 @@ PacedSender::PacedSender(Clock* clock,
     : pacing_controller_(clock,
                          static_cast<PacingController::PacketSender*>(this),
                          event_log,
-                         field_trials),
+                         field_trials,
+                         PacingController::ProcessMode::kPeriodic),
       clock_(clock),
       packet_router_(packet_router),
       process_thread_(process_thread) {
@@ -128,22 +129,9 @@ TimeDelta PacedSender::OldestPacketWaitTime() const {
 int64_t PacedSender::TimeUntilNextProcess() {
   rtc::CritScope cs(&critsect_);
 
-  // When paused we wake up every 500 ms to send a padding packet to ensure
-  // we won't get stuck in the paused state due to no feedback being received.
-  TimeDelta elapsed_time = pacing_controller_.TimeElapsedSinceLastProcess();
-  if (pacing_controller_.IsPaused()) {
-    return std::max(PacingController::kPausedProcessInterval - elapsed_time,
-                    TimeDelta::Zero())
-        .ms();
-  }
-
-  Timestamp next_probe = pacing_controller_.NextProbeTime();
-  if (next_probe != Timestamp::PlusInfinity()) {
-    return std::max(TimeDelta::Zero(), next_probe - clock_->CurrentTime()).ms();
-  }
-
-  const TimeDelta min_packet_limit = TimeDelta::ms(5);
-  return std::max(min_packet_limit - elapsed_time, TimeDelta::Zero()).ms();
+  Timestamp next_send_time = pacing_controller_.NextSendTime();
+  return std::max(TimeDelta::Zero(), next_send_time - clock_->CurrentTime())
+      .ms();
 }
 
 void PacedSender::Process() {
