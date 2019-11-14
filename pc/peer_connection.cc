@@ -4147,8 +4147,11 @@ RTCError PeerConnection::SetConfiguration(
   }
 
   if (modified_config.allow_codec_switching.has_value()) {
-    video_media_channel()->SetVideoCodecSwitchingEnabled(
-        *modified_config.allow_codec_switching);
+    cricket::VideoMediaChannel* video_channel = video_media_channel();
+    if (video_channel) {
+      video_channel->SetVideoCodecSwitchingEnabled(
+          *modified_config.allow_codec_switching);
+    }
   }
 
   configuration_ = modified_config;
