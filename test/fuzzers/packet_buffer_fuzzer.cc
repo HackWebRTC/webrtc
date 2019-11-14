@@ -21,7 +21,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   if (size > 200000) {
     return;
   }
-  VCMPacket packet;
+  video_coding::PacketBuffer::Packet packet;
   SimulatedClock clock(0);
   video_coding::PacketBuffer packet_buffer(&clock, 8, 1024);
   test::FuzzDataHelper helper(rtc::ArrayView<const uint8_t>(data, size));
@@ -52,8 +52,8 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     // The packet buffer owns the payload of the packet.
     uint8_t payload_size;
     helper.CopyTo(&payload_size);
-    packet.sizeBytes = payload_size;
-    packet.dataPtr = new uint8_t[payload_size];
+    packet.size_bytes = payload_size;
+    packet.data = new uint8_t[payload_size];
 
     IgnoreResult(packet_buffer.InsertPacket(&packet));
   }

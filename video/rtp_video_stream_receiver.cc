@@ -327,11 +327,9 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
     const RtpPacketReceived& rtp_packet,
     const RTPVideoHeader& video) {
   RTC_DCHECK_RUN_ON(&worker_task_checker_);
-  RTPHeader rtp_header;
-  rtp_packet.GetHeader(&rtp_header);
-  VCMPacket packet(codec_payload.data(), codec_payload.size(), rtp_header,
-                   video, ntp_estimator_.Estimate(rtp_packet.Timestamp()),
-                   clock_->TimeInMilliseconds());
+  video_coding::PacketBuffer::Packet packet(
+      rtp_packet, video, ntp_estimator_.Estimate(rtp_packet.Timestamp()),
+      clock_->TimeInMilliseconds());
 
   RTPVideoHeader& video_header = packet.video_header;
   video_header.rotation = kVideoRotation_0;
@@ -423,14 +421,14 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
         video_header.is_first_packet_in_frame &&
         video_header.frame_type == VideoFrameType::kVideoFrameKey;
 
-    packet.timesNacked = nack_module_->OnReceivedPacket(
+    packet.times_nacked = nack_module_->OnReceivedPacket(
         rtp_packet.SequenceNumber(), is_keyframe, rtp_packet.recovered());
   } else {
-    packet.timesNacked = -1;
+    packet.times_nacked = -1;
   }
 
-  if (packet.sizeBytes == 0) {
-    NotifyReceiverOfEmptyPacket(packet.seqNum);
+  if (codec_payload.empty()) {
+    NotifyReceiverOfEmptyPacket(packet.seq_num);
     rtcp_feedback_buffer_.SendBufferedRtcpFeedback();
     return;
   }
@@ -439,9 +437,9 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
     // Only when we start to receive packets will we know what payload type
     // that will be used. When we know the payload type insert the correct
     // sps/pps into the tracker.
-    if (packet.payloadType != last_payload_type_) {
-      last_payload_type_ = packet.payloadType;
-      InsertSpsPpsIntoTracker(packet.payloadType);
+    if (packet.payload_type != last_payload_type_) {
+      last_payload_type_ = packet.payload_type;
+      InsertSpsPpsIntoTracker(packet.payload_type);
     }
 
     video_coding::H264SpsPpsTracker::FixedBitstream fixed =
@@ -455,15 +453,16 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
       case video_coding::H264SpsPpsTracker::kDrop:
         return;
       case video_coding::H264SpsPpsTracker::kInsert:
-        packet.dataPtr = fixed.data.release();
-        packet.sizeBytes = fixed.size;
+        packet.data = fixed.data.release();
+        packet.size_bytes = fixed.size;
         break;
     }
 
   } else {
-    uint8_t* data = new uint8_t[packet.sizeBytes];
-    memcpy(data, packet.dataPtr, packet.sizeBytes);
-    packet.dataPtr = data;
+    packet.size_bytes = codec_payload.size();
+    uint8_t* data = new uint8_t[packet.size_bytes];
+    memcpy(data, codec_payload.data(), codec_payload.size());
+    packet.data = data;
   }
 
   rtcp_feedback_buffer_.SendBufferedRtcpFeedback();
