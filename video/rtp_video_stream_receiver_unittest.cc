@@ -72,8 +72,6 @@ class MockKeyFrameRequestSender : public KeyFrameRequestSender {
 class MockOnCompleteFrameCallback
     : public video_coding::OnCompleteFrameCallback {
  public:
-  MockOnCompleteFrameCallback() : buffer_(rtc::ByteBuffer::ORDER_NETWORK) {}
-
   MOCK_METHOD1(DoOnCompleteFrame, void(video_coding::EncodedFrame* frame));
   MOCK_METHOD1(DoOnCompleteFrameFailNullptr,
                void(video_coding::EncodedFrame* frame));

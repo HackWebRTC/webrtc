@@ -169,8 +169,7 @@ bool WriteDataChannelOpenMessage(const std::string& label,
   }
 
   rtc::ByteBufferWriter buffer(NULL,
-                               20 + label.length() + config.protocol.length(),
-                               rtc::ByteBuffer::ORDER_NETWORK);
+                               20 + label.length() + config.protocol.length());
   // TODO(tommi): Add error handling and check resulting length.
   buffer.WriteUInt8(DATA_CHANNEL_OPEN_MESSAGE_TYPE);
   buffer.WriteUInt8(channel_type);
