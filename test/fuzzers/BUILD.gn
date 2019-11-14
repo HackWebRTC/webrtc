@@ -537,6 +537,15 @@ webrtc_fuzzer_test("comfort_noise_decoder_fuzzer") {
   ]
 }
 
+webrtc_fuzzer_test("rtp_depacketizer_av1_parse_fuzzer") {
+  sources = [
+    "rtp_depacketizer_av1_parse_fuzzer.cc",
+  ]
+  deps = [
+    "../../modules/rtp_rtcp",
+  ]
+}
+
 webrtc_fuzzer_test("rtp_dependency_descriptor_fuzzer") {
   sources = [
     "rtp_dependency_descriptor_fuzzer.cc",
