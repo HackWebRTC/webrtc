@@ -296,7 +296,8 @@ ComPtr<IMMDevice> CreateDeviceInternal(const std::string& device_id,
     return audio_endpoint_device;
 
   _com_error error(S_FALSE);
-  if (device_id == AudioDeviceName::kDefaultDeviceId) {
+  if (device_id == AudioDeviceName::kDefaultDeviceId ||
+      device_id == AudioDeviceName::kDefaultCommunicationsDeviceId) {
     error = device_enum->GetDefaultAudioEndpoint(
         data_flow, role, audio_endpoint_device.GetAddressOf());
     if (FAILED(error.Error())) {
