@@ -471,6 +471,21 @@ template("rtc_source_set") {
       }
     }
 
+    # Chromium should only depend on the WebRTC component in order to
+    # avoid to statically link WebRTC in a component build.
+    if (build_with_chromium) {
+      publicly_visible = false
+      foreach(v, visibility) {
+        if (v == "*") {
+          publicly_visible = true
+        }
+      }
+      if (publicly_visible) {
+        visibility = []
+        visibility = webrtc_default_visibility
+      }
+    }
+
     if (!defined(testonly) || !testonly) {
       configs += rtc_prod_configs
     }
@@ -640,6 +655,21 @@ template("rtc_library") {
         if (!allow_dep) {
           assert_no_deps += [ webrtc_root + ":poison_" + poison_type ]
         }
+      }
+    }
+
+    # Chromium should only depend on the WebRTC component in order to
+    # avoid to statically link WebRTC in a component build.
+    if (build_with_chromium) {
+      publicly_visible = false
+      foreach(v, visibility) {
+        if (v == "*") {
+          publicly_visible = true
+        }
+      }
+      if (publicly_visible) {
+        visibility = []
+        visibility = webrtc_default_visibility
       }
     }
 
