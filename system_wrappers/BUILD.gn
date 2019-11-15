@@ -98,14 +98,6 @@ rtc_library("field_trial") {
     "../rtc_base:logging",
     "//third_party/abseil-cpp/absl/strings",
   ]
-  if (build_with_chromium) {
-    # When WebRTC is built as part of Chromium it should exclude the default
-    # implementation of field_trial unless it is building for NACL or
-    # Chromecast.
-    if (!is_nacl && !is_chromecast) {
-      deps += [ "../../webrtc_overrides:field_trial" ]
-    }
-  }
 }
 
 rtc_library("event_wrapper") {
@@ -137,9 +129,6 @@ rtc_library("metrics") {
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
   ]
-  if (build_with_chromium) {
-    deps += [ "../../webrtc_overrides:metrics" ]
-  }
 }
 
 if (is_android && !build_with_mozilla) {
