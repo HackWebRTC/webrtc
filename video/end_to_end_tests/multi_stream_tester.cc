@@ -28,7 +28,6 @@
 #include "rtc_base/task_queue_for_test.h"
 #include "test/call_test.h"
 #include "test/encoder_settings.h"
-#include "test/single_threaded_task_queue.h"
 
 namespace webrtc {
 
@@ -44,10 +43,11 @@ MultiStreamTester::~MultiStreamTester() = default;
 void MultiStreamTester::RunTest() {
   webrtc::RtcEventLogNull event_log;
   auto task_queue_factory = CreateDefaultTaskQueueFactory();
-  // TODO(bugs.webrtc.org/10933): Use production task queue implementation.
-  auto task_queue =
-      std::make_unique<test::DEPRECATED_SingleThreadedTaskQueueForTesting>(
-          "TaskQueue");
+  // Use high prioirity since this task_queue used for fake network delivering
+  // at correct time. Those test tasks should be prefered over code under test
+  // to make test more stable.
+  auto task_queue = task_queue_factory->CreateTaskQueue(
+      "TaskQueue", TaskQueueFactory::Priority::HIGH);
   Call::Config config(&event_log);
   config.task_queue_factory = task_queue_factory.get();
   std::unique_ptr<Call> sender_call;
