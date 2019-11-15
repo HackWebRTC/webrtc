@@ -243,11 +243,27 @@ void ReMix(const AudioFrame& input,
   }
 
   const int16_t* input_data = input.data();
-  size_t in_index = 0;
   size_t out_index = 0;
 
-  // When upmixing is needed, copy the available channels directly, and set the
-  // remaining channels to zero.
+  // When upmixing is needed and the input is mono copy the left channel
+  // into the left and right channels, and set any remaining channels to zero.
+  if (input.num_channels_ == 1 && input.num_channels_ < num_output_channels) {
+    for (size_t k = 0; k < input.samples_per_channel_; ++k) {
+      (*output)[out_index++] = input_data[k];
+      (*output)[out_index++] = input_data[k];
+      for (size_t j = 2; j < num_output_channels; ++j) {
+        (*output)[out_index++] = 0;
+      }
+      RTC_DCHECK_EQ(out_index, (k + 1) * num_output_channels);
+    }
+    RTC_DCHECK_EQ(out_index, input.samples_per_channel_ * num_output_channels);
+    return;
+  }
+
+  size_t in_index = 0;
+
+  // When upmixing is needed and the output is surround, copy the available
+  // channels directly, and set the remaining channels to zero.
   if (input.num_channels_ < num_output_channels) {
     for (size_t k = 0; k < input.samples_per_channel_; ++k) {
       for (size_t j = 0; j < input.num_channels_; ++j) {
