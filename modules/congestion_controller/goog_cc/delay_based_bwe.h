@@ -27,10 +27,26 @@
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/remote_bitrate_estimator/inter_arrival.h"
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/experiments/struct_parameters_parser.h"
 #include "rtc_base/race_checker.h"
 
 namespace webrtc {
 class RtcEventLog;
+
+struct BweIgnoreSmallPacketsSettings {
+  static constexpr char kKey[] = "WebRTC-BweIgnoreSmallPacketsFix";
+
+  BweIgnoreSmallPacketsSettings() = default;
+  explicit BweIgnoreSmallPacketsSettings(
+      const WebRtcKeyValueConfig* key_value_config);
+
+  double smoothing_factor = 0.1;
+  double fraction_large = 1.0;
+  DataSize large_threshold = DataSize::Zero();
+  DataSize small_threshold = DataSize::Zero();
+
+  std::unique_ptr<StructParametersParser> Parser();
+};
 
 class DelayBasedBwe {
  public:
@@ -86,6 +102,12 @@ class DelayBasedBwe {
   rtc::RaceChecker network_race_;
   RtcEventLog* const event_log_;
   const WebRtcKeyValueConfig* const key_value_config_;
+
+  // Filtering out small packets. Intention is to base the detection only
+  // on video packets even if we have TWCC sequence numbers for audio.
+  BweIgnoreSmallPacketsSettings ignore_small_;
+  double fraction_large_packets_;
+
   NetworkStatePredictor* network_state_predictor_;
   std::unique_ptr<InterArrival> inter_arrival_;
   std::unique_ptr<DelayIncreaseDetectorInterface> delay_detector_;
@@ -96,7 +118,6 @@ class DelayBasedBwe {
   bool has_once_detected_overuse_;
   BandwidthUsage prev_state_;
   bool alr_limited_backoff_enabled_;
-
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(DelayBasedBwe);
 };
 

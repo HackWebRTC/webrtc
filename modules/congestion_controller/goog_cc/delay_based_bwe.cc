@@ -42,6 +42,22 @@ constexpr uint32_t kFixedSsrc = 0;
 
 }  // namespace
 
+constexpr char BweIgnoreSmallPacketsSettings::kKey[];
+
+BweIgnoreSmallPacketsSettings::BweIgnoreSmallPacketsSettings(
+    const WebRtcKeyValueConfig* key_value_config) {
+  Parser()->Parse(
+      key_value_config->Lookup(BweIgnoreSmallPacketsSettings::kKey));
+}
+
+std::unique_ptr<StructParametersParser>
+BweIgnoreSmallPacketsSettings::Parser() {
+  return StructParametersParser::Create("smoothing", &smoothing_factor,     //
+                                        "fraction_large", &fraction_large,  //
+                                        "large", &large_threshold,          //
+                                        "small", &small_threshold);
+}
+
 DelayBasedBwe::Result::Result()
     : updated(false),
       probe(false),
@@ -63,6 +79,8 @@ DelayBasedBwe::DelayBasedBwe(const WebRtcKeyValueConfig* key_value_config,
                              NetworkStatePredictor* network_state_predictor)
     : event_log_(event_log),
       key_value_config_(key_value_config),
+      ignore_small_(key_value_config),
+      fraction_large_packets_(0.5),
       network_state_predictor_(network_state_predictor),
       inter_arrival_(),
       delay_detector_(
@@ -75,7 +93,12 @@ DelayBasedBwe::DelayBasedBwe(const WebRtcKeyValueConfig* key_value_config,
       prev_state_(BandwidthUsage::kBwNormal),
       alr_limited_backoff_enabled_(
           key_value_config->Lookup("WebRTC-Bwe-AlrLimitedBackoff")
-              .find("Enabled") == 0) {}
+              .find("Enabled") == 0) {
+  RTC_LOG(LS_INFO) << "Initialized DelayBasedBwe with field trial "
+                   << ignore_small_.Parser()->Encode()
+                   << " and alr limited backoff "
+                   << (alr_limited_backoff_enabled_ ? "enabled" : "disabled");
+}
 
 DelayBasedBwe::~DelayBasedBwe() {}
 
@@ -151,18 +174,33 @@ void DelayBasedBwe::IncomingPacketFeedback(const PacketResult& packet_feedback,
   // so wrapping works properly.
   uint32_t timestamp = send_time_24bits << kAbsSendTimeInterArrivalUpshift;
 
+  // Ignore "small" packets if many/most packets in the call are "large". The
+  // packet size may have a significant effect on the propagation delay,
+  // especially at low bandwidths. Variations in packet size will then show up
+  // as noise in the delay measurement. By default, we include all packets.
+  DataSize packet_size = packet_feedback.sent_packet.size;
+  if (!ignore_small_.small_threshold.IsZero()) {
+    double is_large =
+        static_cast<double>(packet_size >= ignore_small_.large_threshold);
+    fraction_large_packets_ +=
+        ignore_small_.smoothing_factor * (is_large - fraction_large_packets_);
+    if (packet_size <= ignore_small_.small_threshold &&
+        fraction_large_packets_ >= ignore_small_.fraction_large) {
+      return;
+    }
+  }
+
   uint32_t ts_delta = 0;
   int64_t t_delta = 0;
   int size_delta = 0;
   bool calculated_deltas = inter_arrival_->ComputeDeltas(
       timestamp, packet_feedback.receive_time.ms(), at_time.ms(),
-      packet_feedback.sent_packet.size.bytes(), &ts_delta, &t_delta,
-      &size_delta);
+      packet_size.bytes(), &ts_delta, &t_delta, &size_delta);
   double ts_delta_ms = (1000.0 * ts_delta) / (1 << kInterArrivalShift);
-  delay_detector_->Update(
-      t_delta, ts_delta_ms, packet_feedback.sent_packet.send_time.ms(),
-      packet_feedback.receive_time.ms(),
-      packet_feedback.sent_packet.size.bytes(), calculated_deltas);
+  delay_detector_->Update(t_delta, ts_delta_ms,
+                          packet_feedback.sent_packet.send_time.ms(),
+                          packet_feedback.receive_time.ms(),
+                          packet_size.bytes(), calculated_deltas);
 }
 
 DataRate DelayBasedBwe::TriggerOveruse(Timestamp at_time,

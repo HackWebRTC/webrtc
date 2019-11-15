@@ -22,24 +22,8 @@
 #include "modules/congestion_controller/goog_cc/delay_increase_detector_interface.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/experiments/struct_parameters_parser.h"
 
 namespace webrtc {
-
-struct BweIgnoreSmallPacketsSettings {
-  static constexpr char kKey[] = "WebRTC-BweIgnoreSmallPackets";
-
-  BweIgnoreSmallPacketsSettings() = default;
-  explicit BweIgnoreSmallPacketsSettings(
-      const WebRtcKeyValueConfig* key_value_config);
-
-  double smoothing_factor = 0.1;
-  double min_fraction_large_packets = 1.0;
-  unsigned large_packet_size = 0;
-  unsigned ignored_size = 0;
-
-  std::unique_ptr<StructParametersParser> Parser();
-};
 
 class TrendlineEstimator : public DelayIncreaseDetectorInterface {
  public:
@@ -71,11 +55,6 @@ class TrendlineEstimator : public DelayIncreaseDetectorInterface {
   void Detect(double trend, double ts_delta, int64_t now_ms);
 
   void UpdateThreshold(double modified_offset, int64_t now_ms);
-
-  // Filtering out small packets. (Intention is to base the detection only
-  // on video packets even if we have TWCC sequence number for audio.)
-  BweIgnoreSmallPacketsSettings ignore_small_packets_;
-  double fraction_large_packets_;
 
   // Parameters.
   const size_t window_size_;

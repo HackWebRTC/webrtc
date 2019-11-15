@@ -25,23 +25,6 @@
 
 namespace webrtc {
 
-constexpr char BweIgnoreSmallPacketsSettings::kKey[];
-
-BweIgnoreSmallPacketsSettings::BweIgnoreSmallPacketsSettings(
-    const WebRtcKeyValueConfig* key_value_config) {
-  Parser()->Parse(
-      key_value_config->Lookup(BweIgnoreSmallPacketsSettings::kKey));
-}
-
-std::unique_ptr<StructParametersParser>
-BweIgnoreSmallPacketsSettings::Parser() {
-  return StructParametersParser::Create(
-      "smoothing_factor", &smoothing_factor,                      //
-      "min_fraction_large_packets", &min_fraction_large_packets,  //
-      "large_packet_size", &large_packet_size,                    //
-      "ignored_size", &ignored_size);
-}
-
 namespace {
 
 // Parameters for linear least squares fit of regression line to noisy data.
@@ -102,9 +85,7 @@ constexpr int kDeltaCounterMax = 1000;
 TrendlineEstimator::TrendlineEstimator(
     const WebRtcKeyValueConfig* key_value_config,
     NetworkStatePredictor* network_state_predictor)
-    : ignore_small_packets_(key_value_config),
-      fraction_large_packets_(0.5),
-      window_size_(key_value_config->Lookup(kBweWindowSizeInPacketsExperiment)
+    : window_size_(key_value_config->Lookup(kBweWindowSizeInPacketsExperiment)
                                .find("Enabled") == 0
                        ? ReadTrendlineFilterWindowSize(key_value_config)
                        : kDefaultTrendlineWindowSize),
@@ -129,8 +110,7 @@ TrendlineEstimator::TrendlineEstimator(
       network_state_predictor_(network_state_predictor) {
   RTC_LOG(LS_INFO)
       << "Using Trendline filter for delay change estimation with window size "
-      << window_size_ << ", field trial "
-      << ignore_small_packets_.Parser()->Encode() << " and "
+      << window_size_ << " and "
       << (network_state_predictor_ ? "injected" : "no")
       << " network state predictor";
 }
@@ -142,23 +122,6 @@ void TrendlineEstimator::UpdateTrendline(double recv_delta_ms,
                                          int64_t send_time_ms,
                                          int64_t arrival_time_ms,
                                          size_t packet_size) {
-  if (ignore_small_packets_.ignored_size > 0) {
-    // Process the packet if it is "large" or if all packets in the call are
-    // "small". The packet size may have a significant effect on the propagation
-    // delay, especially at low bandwidths. Variations in packet size will then
-    // show up as noise in the delay measurement.
-    // By default, we include all packets.
-    fraction_large_packets_ =
-        (1 - ignore_small_packets_.smoothing_factor) * fraction_large_packets_ +
-        ignore_small_packets_.smoothing_factor *
-            (packet_size >= ignore_small_packets_.large_packet_size);
-    if (packet_size <= ignore_small_packets_.ignored_size &&
-        fraction_large_packets_ >=
-            ignore_small_packets_.min_fraction_large_packets) {
-      return;
-    }
-  }
-
   const double delta_ms = recv_delta_ms - send_delta_ms;
   ++num_of_deltas_;
   num_of_deltas_ = std::min(num_of_deltas_, kDeltaCounterMax);
