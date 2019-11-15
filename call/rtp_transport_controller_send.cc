@@ -25,7 +25,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/rate_limiter.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace {
@@ -55,6 +54,11 @@ TargetRateConstraints ConvertConstraints(const BitrateConstraints& contraints,
                             contraints.max_bitrate_bps,
                             contraints.start_bitrate_bps, clock);
 }
+
+bool IsEnabled(const WebRtcKeyValueConfig* trials, absl::string_view key) {
+  return trials && trials->Lookup(key).find("Enabled") == 0;
+}
+
 }  // namespace
 
 RtpTransportControllerSend::RtpTransportControllerSend(
@@ -64,12 +68,13 @@ RtpTransportControllerSend::RtpTransportControllerSend(
     NetworkControllerFactoryInterface* controller_factory,
     const BitrateConstraints& bitrate_config,
     std::unique_ptr<ProcessThread> process_thread,
-    TaskQueueFactory* task_queue_factory)
+    TaskQueueFactory* task_queue_factory,
+    const WebRtcKeyValueConfig* trials)
     : clock_(clock),
       event_log_(event_log),
       bitrate_configurator_(bitrate_config),
       process_thread_(std::move(process_thread)),
-      pacer_(clock, &packet_router_, event_log, nullptr, process_thread_.get()),
+      pacer_(clock, &packet_router_, event_log, trials, process_thread_.get()),
       observer_(nullptr),
       controller_factory_override_(controller_factory),
       controller_factory_fallback_(
@@ -77,11 +82,11 @@ RtpTransportControllerSend::RtpTransportControllerSend(
       process_interval_(controller_factory_fallback_->GetProcessInterval()),
       last_report_block_time_(Timestamp::ms(clock_->TimeInMilliseconds())),
       reset_feedback_on_route_change_(
-          !field_trial::IsEnabled("WebRTC-Bwe-NoFeedbackReset")),
+          !IsEnabled(trials, "WebRTC-Bwe-NoFeedbackReset")),
       send_side_bwe_with_overhead_(
-          webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
+          IsEnabled(trials, "WebRTC-SendSideBwe-WithOverhead")),
       add_pacing_to_cwin_(
-          field_trial::IsEnabled("WebRTC-AddPacingToCongestionWindowPushback")),
+          IsEnabled(trials, "WebRTC-AddPacingToCongestionWindowPushback")),
       transport_overhead_bytes_per_packet_(0),
       network_available_(false),
       retransmission_rate_limiter_(clock, kRetransmitWindowSizeMs),

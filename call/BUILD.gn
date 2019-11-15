@@ -46,6 +46,7 @@ rtc_library("call_interfaces") {
     "../api/task_queue",
     "../api/transport:bitrate_settings",
     "../api/transport:network_control",
+    "../api/transport:webrtc_key_value_config",
     "../api/transport/media:media_transport_interface",
     "../api/transport/rtp:rtp_source",
     "../modules/audio_device",

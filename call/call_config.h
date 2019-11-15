@@ -17,6 +17,7 @@
 #include "api/task_queue/task_queue_factory.h"
 #include "api/transport/bitrate_settings.h"
 #include "api/transport/network_control.h"
+#include "api/transport/webrtc_key_value_config.h"
 #include "call/audio_state.h"
 
 namespace webrtc {
@@ -60,6 +61,10 @@ struct CallConfig {
 
   // NetEq factory to use for this call.
   NetEqFactory* neteq_factory = nullptr;
+
+  // Key-value mapping of internal configurations to apply,
+  // e.g. field trials.
+  const WebRtcKeyValueConfig* trials = nullptr;
 };
 
 }  // namespace webrtc

@@ -54,7 +54,8 @@ class RtpTransportControllerSend final
       NetworkControllerFactoryInterface* controller_factory,
       const BitrateConstraints& bitrate_config,
       std::unique_ptr<ProcessThread> process_thread,
-      TaskQueueFactory* task_queue_factory);
+      TaskQueueFactory* task_queue_factory,
+      const WebRtcKeyValueConfig* trials);
   ~RtpTransportControllerSend() override;
 
   RtpVideoSenderInterface* CreateRtpVideoSender(

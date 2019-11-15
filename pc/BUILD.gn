@@ -241,6 +241,7 @@ rtc_library("peerconnection") {
     "../api/rtc_event_log",
     "../api/task_queue",
     "../api/transport:datagram_transport_interface",
+    "../api/transport:field_trial_based_config",
     "../api/transport/media:media_transport_interface",
     "../api/units:data_rate",
     "../api/video:builtin_video_bitrate_allocator_factory",

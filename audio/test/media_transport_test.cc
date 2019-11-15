@@ -129,10 +129,11 @@ TEST(AudioWithMediaTransport, DeliversAudio) {
   send_config.encoder_factory = CreateAudioEncoderFactory<AudioEncoderOpus>();
   std::unique_ptr<ProcessThread> send_process_thread =
       ProcessThread::Create("audio send thread");
+  FieldTrialBasedConfig field_trials;
   RtpTransportControllerSend rtp_transport(
       Clock::GetRealTimeClock(), &null_event_log, nullptr, nullptr,
       BitrateConstraints(), ProcessThread::Create("Pacer"),
-      task_queue_factory.get());
+      task_queue_factory.get(), &field_trials);
   webrtc::internal::AudioSendStream send_stream(
       Clock::GetRealTimeClock(), send_config, audio_state,
       task_queue_factory.get(), send_process_thread.get(), &rtp_transport,

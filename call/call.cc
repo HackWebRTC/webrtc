@@ -415,7 +415,7 @@ Call* Call::Create(const Call::Config& config,
       std::make_unique<RtpTransportControllerSend>(
           clock, config.event_log, config.network_state_predictor_factory,
           config.network_controller_factory, config.bitrate_config,
-          std::move(pacer_thread), config.task_queue_factory),
+          std::move(pacer_thread), config.task_queue_factory, config.trials),
       std::move(call_thread), config.task_queue_factory);
 }
 

@@ -128,7 +128,8 @@ class RtpVideoSenderTestFixture {
                               nullptr,
                               bitrate_config_,
                               ProcessThread::Create("PacerThread"),
-                              task_queue_factory_.get()),
+                              task_queue_factory_.get(),
+                              &field_trials_),
         process_thread_(ProcessThread::Create("test_thread")),
         call_stats_(&clock_, process_thread_.get()),
         stats_proxy_(&clock_,
@@ -171,6 +172,7 @@ class RtpVideoSenderTestFixture {
   SendDelayStats send_delay_stats_;
   BitrateConstraints bitrate_config_;
   const std::unique_ptr<TaskQueueFactory> task_queue_factory_;
+  const FieldTrialBasedConfig field_trials_;
   RtpTransportControllerSend transport_controller_;
   std::unique_ptr<ProcessThread> process_thread_;
   CallStats call_stats_;
