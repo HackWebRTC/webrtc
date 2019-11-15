@@ -327,6 +327,8 @@ RTPFragmentationHeader VideoEncoderWrapper::ParseFragmentationHeader(
     || codec_settings_.codecType == kVideoCodecH265) {
     if (codec_settings_.codecType == kVideoCodecH264) {
       h264_bitstream_parser_.ParseBitstream(buffer.data(), buffer.size());
+    } else if (codec_settings_.codecType == kVideoCodecH265) {
+      h265_bitstream_parser_.ParseBitstream(buffer.data(), buffer.size());
     }
 #else
   if (codec_settings_.codecType == kVideoCodecH264) {
@@ -369,6 +371,11 @@ int VideoEncoderWrapper::ParseQp(rtc::ArrayView<const uint8_t> buffer) {
     case kVideoCodecH264:
       success = h264_bitstream_parser_.GetLastSliceQp(&qp);
       break;
+#ifndef DISABLE_H265
+    case kVideoCodecH265:
+      success = h265_bitstream_parser_.GetLastSliceQp(&qp);
+      break;
+#endif
     default:  // Default is to not provide QP.
       success = false;
       break;

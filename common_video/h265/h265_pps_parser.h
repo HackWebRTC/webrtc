@@ -27,12 +27,16 @@ class H265PpsParser {
   struct PpsState {
     PpsState() = default;
 
-    bool bottom_field_pic_order_in_frame_present_flag = false;
-    bool weighted_pred_flag = false;
-    bool entropy_coding_mode_flag = false;
-    uint32_t weighted_bipred_idc = false;
-    uint32_t redundant_pic_cnt_present_flag = 0;
-    int pic_init_qp_minus26 = 0;
+    uint32_t dependent_slice_segments_enabled_flag = 0;
+    uint32_t cabac_init_present_flag = 0;
+    uint32_t output_flag_present_flag = 0;
+    uint32_t num_extra_slice_header_bits = 0;
+    uint32_t num_ref_idx_l0_default_active_minus1 = 0;
+    uint32_t num_ref_idx_l1_default_active_minus1 = 0;
+    int32_t pic_init_qp_minus26 = 0;
+    uint32_t weighted_pred_flag = 0;
+    uint32_t weighted_bipred_flag = 0;
+    uint32_t lists_modification_present_flag = 0;
     uint32_t id = 0;
     uint32_t sps_id = 0;
   };

@@ -43,6 +43,8 @@ rtc_library("common_video") {
 
   if (rtc_use_h265) {
     sources += [
+      "h265/h265_bitstream_parser.cc",
+      "h265/h265_bitstream_parser.h",
       "h265/h265_common.cc",
       "h265/h265_common.h",
       "h265/h265_pps_parser.cc",

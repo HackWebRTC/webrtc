@@ -27,6 +27,7 @@
 #endif
 
 #include "common_video/h264/profile_level_id.h"
+#include "common_video/h265/h265_bitstream_parser.h"
 #include "common_video/include/bitrate_adjuster.h"
 #include "libyuv/convert_from.h"
 #include "modules/include/module_common_types.h"
@@ -176,6 +177,7 @@ void compressionOutputCallback(void* encoder,
   RTCVideoCodecMode _mode;
   int framesLeft;
 
+  webrtc::H265BitstreamParser _h265BitstreamParser;
   std::vector<uint8_t> _nv12ScaleBuffer;
 }
 
@@ -589,7 +591,10 @@ void compressionOutputCallback(void* encoder,
                           : RTCVideoContentTypeUnspecified;
   frame.flags = webrtc::VideoSendTiming::kInvalid;
 
-  // TODO: QP is ignored because of there is no H.265 bitstream parser.
+  int qp;
+  _h265BitstreamParser.ParseBitstream(buffer->data(), buffer->size());
+  _h265BitstreamParser.GetLastSliceQp(&qp);
+  frame.qp = @(qp);
 
   BOOL res = _callback(frame, [[RTCCodecSpecificInfoH265 alloc] init], header);
   if (!res) {

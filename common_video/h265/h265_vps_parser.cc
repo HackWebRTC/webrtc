@@ -29,7 +29,7 @@ namespace webrtc {
 
 H265VpsParser::VpsState::VpsState() = default;
 
-// General note: this is based off the 02/2018 version of the H.265 standard.
+// General note: this is based off the 06/2019 version of the H.265 standard.
 // You can find it on this page:
 // http://www.itu.int/rec/T-REC-H.265
 
@@ -51,11 +51,9 @@ absl::optional<H265VpsParser::VpsState> H265VpsParser::ParseInternal(
   VpsState vps;
 
   // vps_video_parameter_set_id: u(4)
-  uint32_t vps_video_parameter_set_id = 0;
-  RETURN_EMPTY_ON_FAIL(buffer->ReadBits(&vps_video_parameter_set_id, 4));
-
-  vps.id = vps_video_parameter_set_id;
   vps.id = 0;
+  RETURN_EMPTY_ON_FAIL(buffer->ReadBits(&vps.id, 4));
+
   return OptionalVps(vps);
 }
 
