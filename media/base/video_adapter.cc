@@ -351,15 +351,13 @@ void VideoAdapter::OnOutputFormatRequest(
   next_frame_timestamp_ns_ = absl::nullopt;
 }
 
-void VideoAdapter::OnResolutionFramerateRequest(
-    const absl::optional<int>& target_pixel_count,
-    int max_pixel_count,
-    int max_framerate_fps) {
+void VideoAdapter::OnSinkWants(const rtc::VideoSinkWants& sink_wants) {
   rtc::CritScope cs(&critical_section_);
-  resolution_request_max_pixel_count_ = max_pixel_count;
+  resolution_request_max_pixel_count_ = sink_wants.max_pixel_count;
   resolution_request_target_pixel_count_ =
-      target_pixel_count.value_or(resolution_request_max_pixel_count_);
-  max_framerate_request_ = max_framerate_fps;
+      sink_wants.target_pixel_count.value_or(
+          resolution_request_max_pixel_count_);
+  max_framerate_request_ = sink_wants.max_framerate_fps;
 }
 
 }  // namespace cricket

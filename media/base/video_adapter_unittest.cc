@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "api/video/video_frame.h"
+#include "api/video/video_source_interface.h"
 #include "media/base/fake_frame_source.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/time_utils.h"
@@ -27,6 +28,17 @@ namespace {
 const int kWidth = 1280;
 const int kHeight = 720;
 const int kDefaultFps = 30;
+
+rtc::VideoSinkWants BuildSinkWants(absl::optional<int> target_pixel_count,
+                                   int max_pixel_count,
+                                   int max_framerate_fps) {
+  rtc::VideoSinkWants wants;
+  wants.target_pixel_count = target_pixel_count;
+  wants.max_pixel_count = max_pixel_count;
+  wants.max_framerate_fps = max_framerate_fps;
+  return wants;
+}
+
 }  // namespace
 
 class VideoAdapterTest : public ::testing::Test,
@@ -393,9 +405,9 @@ TEST_P(VideoAdapterTest, AdaptFramerateOntheFly) {
 // Do not adapt the frame rate or the resolution. Expect no frame drop, no
 // cropping, and no resolution change.
 TEST_P(VideoAdapterTest, AdaptFramerateRequestMax) {
-  adapter_.OnResolutionFramerateRequest(absl::nullopt,
-                                        std::numeric_limits<int>::max(),
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(BuildSinkWants(absl::nullopt,
+                                      std::numeric_limits<int>::max(),
+                                      std::numeric_limits<int>::max()));
 
   for (int i = 0; i < 10; ++i)
     adapter_wrapper_->AdaptFrame(frame_source_->GetFrame());
@@ -409,8 +421,8 @@ TEST_P(VideoAdapterTest, AdaptFramerateRequestMax) {
 }
 
 TEST_P(VideoAdapterTest, AdaptFramerateRequestZero) {
-  adapter_.OnResolutionFramerateRequest(absl::nullopt,
-                                        std::numeric_limits<int>::max(), 0);
+  adapter_.OnSinkWants(
+      BuildSinkWants(absl::nullopt, std::numeric_limits<int>::max(), 0));
   for (int i = 0; i < 10; ++i)
     adapter_wrapper_->AdaptFrame(frame_source_->GetFrame());
 
@@ -423,8 +435,8 @@ TEST_P(VideoAdapterTest, AdaptFramerateRequestZero) {
 // Adapt the frame rate to be half of the capture rate at the beginning. Expect
 // the number of dropped frames to be half of the number the captured frames.
 TEST_P(VideoAdapterTest, AdaptFramerateRequestHalf) {
-  adapter_.OnResolutionFramerateRequest(
-      absl::nullopt, std::numeric_limits<int>::max(), kDefaultFps / 2);
+  adapter_.OnSinkWants(BuildSinkWants(
+      absl::nullopt, std::numeric_limits<int>::max(), kDefaultFps / 2));
   for (int i = 0; i < 10; ++i)
     adapter_wrapper_->AdaptFrame(frame_source_->GetFrame());
 
@@ -701,8 +713,8 @@ TEST_P(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
   EXPECT_EQ(720, out_height_);
 
   // Adapt down one step.
-  adapter_.OnResolutionFramerateRequest(absl::nullopt, 1280 * 720 - 1,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(BuildSinkWants(absl::nullopt, 1280 * 720 - 1,
+                                      std::numeric_limits<int>::max()));
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,
                                             &out_height_));
@@ -712,8 +724,8 @@ TEST_P(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
   EXPECT_EQ(540, out_height_);
 
   // Adapt down one step more.
-  adapter_.OnResolutionFramerateRequest(absl::nullopt, 960 * 540 - 1,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(BuildSinkWants(absl::nullopt, 960 * 540 - 1,
+                                      std::numeric_limits<int>::max()));
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,
                                             &out_height_));
@@ -723,8 +735,8 @@ TEST_P(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
   EXPECT_EQ(360, out_height_);
 
   // Adapt down one step more.
-  adapter_.OnResolutionFramerateRequest(absl::nullopt, 640 * 360 - 1,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(BuildSinkWants(absl::nullopt, 640 * 360 - 1,
+                                      std::numeric_limits<int>::max()));
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,
                                             &out_height_));
@@ -734,8 +746,8 @@ TEST_P(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
   EXPECT_EQ(270, out_height_);
 
   // Adapt up one step.
-  adapter_.OnResolutionFramerateRequest(640 * 360, 960 * 540,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(
+      BuildSinkWants(640 * 360, 960 * 540, std::numeric_limits<int>::max()));
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,
                                             &out_height_));
@@ -745,8 +757,8 @@ TEST_P(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
   EXPECT_EQ(360, out_height_);
 
   // Adapt up one step more.
-  adapter_.OnResolutionFramerateRequest(960 * 540, 1280 * 720,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(
+      BuildSinkWants(960 * 540, 1280 * 720, std::numeric_limits<int>::max()));
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,
                                             &out_height_));
@@ -756,8 +768,8 @@ TEST_P(VideoAdapterTest, TestOnResolutionRequestInSmallSteps) {
   EXPECT_EQ(540, out_height_);
 
   // Adapt up one step more.
-  adapter_.OnResolutionFramerateRequest(1280 * 720, 1920 * 1080,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(
+      BuildSinkWants(1280 * 720, 1920 * 1080, std::numeric_limits<int>::max()));
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,
                                             &out_height_));
@@ -776,8 +788,8 @@ TEST_P(VideoAdapterTest, TestOnResolutionRequestMaxZero) {
   EXPECT_EQ(1280, out_width_);
   EXPECT_EQ(720, out_height_);
 
-  adapter_.OnResolutionFramerateRequest(absl::nullopt, 0,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(
+      BuildSinkWants(absl::nullopt, 0, std::numeric_limits<int>::max()));
   EXPECT_FALSE(adapter_.AdaptFrameResolution(1280, 720, 0, &cropped_width_,
                                              &cropped_height_, &out_width_,
                                              &out_height_));
@@ -785,8 +797,8 @@ TEST_P(VideoAdapterTest, TestOnResolutionRequestMaxZero) {
 
 TEST_P(VideoAdapterTest, TestOnResolutionRequestInLargeSteps) {
   // Large step down.
-  adapter_.OnResolutionFramerateRequest(absl::nullopt, 640 * 360 - 1,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(BuildSinkWants(absl::nullopt, 640 * 360 - 1,
+                                      std::numeric_limits<int>::max()));
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,
                                             &out_height_));
@@ -796,8 +808,8 @@ TEST_P(VideoAdapterTest, TestOnResolutionRequestInLargeSteps) {
   EXPECT_EQ(270, out_height_);
 
   // Large step up.
-  adapter_.OnResolutionFramerateRequest(1280 * 720, 1920 * 1080,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(
+      BuildSinkWants(1280 * 720, 1920 * 1080, std::numeric_limits<int>::max()));
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,
                                             &out_height_));
@@ -808,8 +820,8 @@ TEST_P(VideoAdapterTest, TestOnResolutionRequestInLargeSteps) {
 }
 
 TEST_P(VideoAdapterTest, TestOnOutputFormatRequestCapsMaxResolution) {
-  adapter_.OnResolutionFramerateRequest(absl::nullopt, 640 * 360 - 1,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(BuildSinkWants(absl::nullopt, 640 * 360 - 1,
+                                      std::numeric_limits<int>::max()));
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,
                                             &out_height_));
@@ -827,8 +839,8 @@ TEST_P(VideoAdapterTest, TestOnOutputFormatRequestCapsMaxResolution) {
   EXPECT_EQ(480, out_width_);
   EXPECT_EQ(270, out_height_);
 
-  adapter_.OnResolutionFramerateRequest(absl::nullopt, 960 * 720,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(BuildSinkWants(absl::nullopt, 960 * 720,
+                                      std::numeric_limits<int>::max()));
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,
                                             &out_height_));
@@ -847,8 +859,8 @@ TEST_P(VideoAdapterTest, TestOnResolutionRequestReset) {
   EXPECT_EQ(1280, out_width_);
   EXPECT_EQ(720, out_height_);
 
-  adapter_.OnResolutionFramerateRequest(absl::nullopt, 640 * 360 - 1,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(BuildSinkWants(absl::nullopt, 640 * 360 - 1,
+                                      std::numeric_limits<int>::max()));
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,
                                             &out_height_));
@@ -857,9 +869,9 @@ TEST_P(VideoAdapterTest, TestOnResolutionRequestReset) {
   EXPECT_EQ(480, out_width_);
   EXPECT_EQ(270, out_height_);
 
-  adapter_.OnResolutionFramerateRequest(absl::nullopt,
-                                        std::numeric_limits<int>::max(),
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(BuildSinkWants(absl::nullopt,
+                                      std::numeric_limits<int>::max(),
+                                      std::numeric_limits<int>::max()));
   EXPECT_TRUE(adapter_.AdaptFrameResolution(1280, 720, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,
                                             &out_height_));
@@ -969,8 +981,8 @@ TEST_P(VideoAdapterTest, TestCroppingWithResolutionRequest) {
   EXPECT_EQ(360, out_height_);
 
   // Adapt down one step.
-  adapter_.OnResolutionFramerateRequest(absl::nullopt, 640 * 360 - 1,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(BuildSinkWants(absl::nullopt, 640 * 360 - 1,
+                                      std::numeric_limits<int>::max()));
   // Expect cropping to 16:9 format and 3/4 scaling.
   EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,
@@ -981,8 +993,8 @@ TEST_P(VideoAdapterTest, TestCroppingWithResolutionRequest) {
   EXPECT_EQ(270, out_height_);
 
   // Adapt down one step more.
-  adapter_.OnResolutionFramerateRequest(absl::nullopt, 480 * 270 - 1,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(BuildSinkWants(absl::nullopt, 480 * 270 - 1,
+                                      std::numeric_limits<int>::max()));
   // Expect cropping to 16:9 format and 1/2 scaling.
   EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,
@@ -993,8 +1005,8 @@ TEST_P(VideoAdapterTest, TestCroppingWithResolutionRequest) {
   EXPECT_EQ(180, out_height_);
 
   // Adapt up one step.
-  adapter_.OnResolutionFramerateRequest(480 * 270, 640 * 360,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(
+      BuildSinkWants(480 * 270, 640 * 360, std::numeric_limits<int>::max()));
   // Expect cropping to 16:9 format and 3/4 scaling.
   EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,
@@ -1005,8 +1017,8 @@ TEST_P(VideoAdapterTest, TestCroppingWithResolutionRequest) {
   EXPECT_EQ(270, out_height_);
 
   // Adapt up one step more.
-  adapter_.OnResolutionFramerateRequest(640 * 360, 960 * 540,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(
+      BuildSinkWants(640 * 360, 960 * 540, std::numeric_limits<int>::max()));
   // Expect cropping to 16:9 format and no scaling.
   EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,
@@ -1017,8 +1029,8 @@ TEST_P(VideoAdapterTest, TestCroppingWithResolutionRequest) {
   EXPECT_EQ(360, out_height_);
 
   // Try to adapt up one step more.
-  adapter_.OnResolutionFramerateRequest(960 * 540, 1280 * 720,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(
+      BuildSinkWants(960 * 540, 1280 * 720, std::numeric_limits<int>::max()));
   // Expect cropping to 16:9 format and no scaling.
   EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,
@@ -1032,9 +1044,9 @@ TEST_P(VideoAdapterTest, TestCroppingWithResolutionRequest) {
 TEST_P(VideoAdapterTest, TestCroppingOddResolution) {
   // Ask for 640x360 (16:9 aspect), with 3/16 scaling.
   OnOutputFormatRequest(640, 360, absl::nullopt);
-  adapter_.OnResolutionFramerateRequest(absl::nullopt,
-                                        640 * 360 * 3 / 16 * 3 / 16,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(BuildSinkWants(absl::nullopt,
+                                      640 * 360 * 3 / 16 * 3 / 16,
+                                      std::numeric_limits<int>::max()));
 
   // Send 640x480 (4:3 aspect).
   EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0, &cropped_width_,
@@ -1054,8 +1066,8 @@ TEST_P(VideoAdapterTest, TestAdaptToVerySmallResolution) {
   const int w = 1920;
   const int h = 1080;
   OnOutputFormatRequest(w, h, absl::nullopt);
-  adapter_.OnResolutionFramerateRequest(absl::nullopt, w * h * 1 / 16 * 1 / 16,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(BuildSinkWants(absl::nullopt, w * h * 1 / 16 * 1 / 16,
+                                      std::numeric_limits<int>::max()));
 
   // Send 1920x1080 (16:9 aspect).
   EXPECT_TRUE(adapter_.AdaptFrameResolution(
@@ -1069,9 +1081,9 @@ TEST_P(VideoAdapterTest, TestAdaptToVerySmallResolution) {
   EXPECT_EQ(67, out_height_);
 
   // Adapt back up one step to 3/32.
-  adapter_.OnResolutionFramerateRequest(w * h * 3 / 32 * 3 / 32,
-                                        w * h * 1 / 8 * 1 / 8,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(BuildSinkWants(w * h * 3 / 32 * 3 / 32,
+                                      w * h * 1 / 8 * 1 / 8,
+                                      std::numeric_limits<int>::max()));
 
   // Send 1920x1080 (16:9 aspect).
   EXPECT_TRUE(adapter_.AdaptFrameResolution(
@@ -1087,17 +1099,17 @@ TEST_P(VideoAdapterTest, AdaptFrameResolutionDropWithResolutionRequest) {
                                              &cropped_width_, &cropped_height_,
                                              &out_width_, &out_height_));
 
-  adapter_.OnResolutionFramerateRequest(960 * 540,
-                                        std::numeric_limits<int>::max(),
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(BuildSinkWants(960 * 540,
+                                      std::numeric_limits<int>::max(),
+                                      std::numeric_limits<int>::max()));
 
   // Still expect all frames to be dropped
   EXPECT_FALSE(adapter_.AdaptFrameResolution(kWidth, kHeight, 0,
                                              &cropped_width_, &cropped_height_,
                                              &out_width_, &out_height_));
 
-  adapter_.OnResolutionFramerateRequest(absl::nullopt, 640 * 480 - 1,
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(BuildSinkWants(absl::nullopt, 640 * 480 - 1,
+                                      std::numeric_limits<int>::max()));
 
   // Still expect all frames to be dropped
   EXPECT_FALSE(adapter_.AdaptFrameResolution(kWidth, kHeight, 0,
@@ -1108,9 +1120,9 @@ TEST_P(VideoAdapterTest, AdaptFrameResolutionDropWithResolutionRequest) {
 // Test that we will adapt to max given a target pixel count close to max.
 TEST_P(VideoAdapterTest, TestAdaptToMax) {
   OnOutputFormatRequest(640, 360, kDefaultFps);
-  adapter_.OnResolutionFramerateRequest(640 * 360 - 1 /* target */,
-                                        std::numeric_limits<int>::max(),
-                                        std::numeric_limits<int>::max());
+  adapter_.OnSinkWants(BuildSinkWants(640 * 360 - 1 /* target */,
+                                      std::numeric_limits<int>::max(),
+                                      std::numeric_limits<int>::max()));
 
   EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 360, 0, &cropped_width_,
                                             &cropped_height_, &out_width_,
@@ -1190,9 +1202,9 @@ TEST_P(VideoAdapterTest, AdaptResolutionInSteps) {
 
   for (size_t i = 0; i < arraysize(kExpectedWidths); ++i) {
     // Adapt down one step.
-    adapter_.OnResolutionFramerateRequest(absl::nullopt,
-                                          request_width * request_height - 1,
-                                          std::numeric_limits<int>::max());
+    adapter_.OnSinkWants(BuildSinkWants(absl::nullopt,
+                                        request_width * request_height - 1,
+                                        std::numeric_limits<int>::max()));
     EXPECT_TRUE(adapter_.AdaptFrameResolution(kWidth, kHeight, 0,
                                               &cropped_width_, &cropped_height_,
                                               &out_width_, &out_height_));
@@ -1223,9 +1235,9 @@ TEST_P(VideoAdapterTestVariableStartScale, AdaptResolutionInStepsFirst3_4) {
 
   for (size_t i = 0; i < arraysize(kExpectedWidths); ++i) {
     // Adapt down one step.
-    adapter_.OnResolutionFramerateRequest(absl::nullopt,
-                                          request_width * request_height - 1,
-                                          std::numeric_limits<int>::max());
+    adapter_.OnSinkWants(BuildSinkWants(absl::nullopt,
+                                        request_width * request_height - 1,
+                                        std::numeric_limits<int>::max()));
     EXPECT_TRUE(adapter_.AdaptFrameResolution(kWidth, kHeight, 0,
                                               &cropped_width_, &cropped_height_,
                                               &out_width_, &out_height_));
@@ -1251,9 +1263,9 @@ TEST_P(VideoAdapterTestVariableStartScale, AdaptResolutionInStepsFirst2_3) {
 
   for (size_t i = 0; i < arraysize(kExpectedWidths); ++i) {
     // Adapt down one step.
-    adapter_.OnResolutionFramerateRequest(absl::nullopt,
-                                          request_width * request_height - 1,
-                                          std::numeric_limits<int>::max());
+    adapter_.OnSinkWants(BuildSinkWants(absl::nullopt,
+                                        request_width * request_height - 1,
+                                        std::numeric_limits<int>::max()));
     EXPECT_TRUE(adapter_.AdaptFrameResolution(kWidth, kHeight, 0,
                                               &cropped_width_, &cropped_height_,
                                               &out_width_, &out_height_));
@@ -1279,9 +1291,9 @@ TEST_P(VideoAdapterTestVariableStartScale, AdaptResolutionInStepsFirst2x2_3) {
 
   for (size_t i = 0; i < arraysize(kExpectedWidths); ++i) {
     // Adapt down one step.
-    adapter_.OnResolutionFramerateRequest(absl::nullopt,
-                                          request_width * request_height - 1,
-                                          std::numeric_limits<int>::max());
+    adapter_.OnSinkWants(BuildSinkWants(absl::nullopt,
+                                        request_width * request_height - 1,
+                                        std::numeric_limits<int>::max()));
     EXPECT_TRUE(adapter_.AdaptFrameResolution(kWidth, kHeight, 0,
                                               &cropped_width_, &cropped_height_,
                                               &out_width_, &out_height_));

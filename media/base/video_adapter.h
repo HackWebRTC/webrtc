@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "absl/types/optional.h"
+#include "api/video/video_source_interface.h"
 #include "media/base/video_common.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"
@@ -83,17 +84,14 @@ class VideoAdapter {
       const absl::optional<int>& max_fps);
 
   // Requests the output frame size from |AdaptFrameResolution| to have as close
-  // as possible to |target_pixel_count| pixels (if set) but no more than
-  // |max_pixel_count|.
-  // |max_framerate_fps| is essentially analogous to |max_pixel_count|, but for
-  // framerate rather than resolution.
-  // Set |max_pixel_count| and/or |max_framerate_fps| to
+  // as possible to |sink_wants.target_pixel_count| pixels (if set)
+  // but no more than |sink_wants.max_pixel_count|.
+  // |sink_wants.max_framerate_fps| is essentially analogous to
+  // |sink_wants.max_pixel_count|, but for framerate rather than resolution.
+  // Set |sink_wants.max_pixel_count| and/or |sink_wants.max_framerate_fps| to
   // std::numeric_limit<int>::max() if no upper limit is desired.
   // Note: Should be called from the sink only.
-  void OnResolutionFramerateRequest(
-      const absl::optional<int>& target_pixel_count,
-      int max_pixel_count,
-      int max_framerate_fps);
+  void OnSinkWants(const rtc::VideoSinkWants& sink_wants);
 
  private:
   // Determine if frame should be dropped based on input fps and requested fps.

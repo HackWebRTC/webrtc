@@ -319,9 +319,7 @@ class AdaptingFrameForwarder : public test::FrameForwarder {
                        const rtc::VideoSinkWants& wants) override {
     rtc::CritScope cs(&crit_);
     last_wants_ = sink_wants();
-    adapter_.OnResolutionFramerateRequest(wants.target_pixel_count,
-                                          wants.max_pixel_count,
-                                          wants.max_framerate_fps);
+    adapter_.OnSinkWants(wants);
     test::FrameForwarder::AddOrUpdateSink(sink, wants);
   }
   cricket::VideoAdapter adapter_;
