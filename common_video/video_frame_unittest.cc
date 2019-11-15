@@ -362,6 +362,39 @@ TEST(TestVideoFrame, TextureInitialValues) {
   EXPECT_EQ(20, frame.timestamp_us());
 }
 
+class TestEncodedFrame : public VideoFrame::EncodedVideoFrameBuffer {
+ public:
+  rtc::ArrayView<const uint8_t> data() const override {
+    return rtc::ArrayView<const uint8_t>();
+  }
+  webrtc::ColorSpace* color_space() const override { return nullptr; }
+  VideoCodecType codec() const override { return kVideoCodecGeneric; }
+  bool is_key_frame() const { return false; }
+};
+
+TEST(TestVideoFrame, AcceptsEncodedFrameSource) {
+  VideoFrame frame =
+      VideoFrame::Builder()
+          .set_video_frame_buffer(I420Buffer::Create(10, 10, 10, 14, 90))
+          .build();
+  EXPECT_EQ(frame.encoded_video_frame_buffer(), nullptr);
+  auto encoded_frame = new rtc::RefCountedObject<TestEncodedFrame>();
+  frame.set_encoded_video_frame_buffer(encoded_frame);
+  EXPECT_EQ(frame.encoded_video_frame_buffer(), encoded_frame);
+}
+
+TEST(TestVideoFrame, CopiesWithSameEncodedFrameSource) {
+  VideoFrame frame =
+      VideoFrame::Builder()
+          .set_video_frame_buffer(I420Buffer::Create(10, 10, 10, 14, 90))
+          .set_encoded_video_frame_buffer(
+              new rtc::RefCountedObject<TestEncodedFrame>())
+          .build();
+  VideoFrame frame2 = frame;
+  EXPECT_EQ(frame.encoded_video_frame_buffer().get(),
+            frame2.encoded_video_frame_buffer().get());
+}
+
 class TestPlanarYuvBuffer
     : public ::testing::TestWithParam<VideoFrameBuffer::Type> {};
 

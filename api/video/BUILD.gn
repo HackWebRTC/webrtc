@@ -47,6 +47,7 @@ rtc_library("video_frame") {
   deps = [
     ":video_rtp_headers",
     "..:array_view",
+    "..:refcountedbase",
     "..:rtp_packet_info",
     "..:scoped_refptr",
     "../../rtc_base:checks",

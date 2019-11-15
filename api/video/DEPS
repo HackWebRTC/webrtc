@@ -19,6 +19,7 @@ specific_include_rules = {
   ],
 
   "video_frame\.h": [
+    "+rtc_base/ref_count.h",
   ],
 
   "video_frame_buffer\.h": [

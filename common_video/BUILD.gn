@@ -99,6 +99,7 @@ if (rtc_include_tests) {
       "../:webrtc_common",
       "../api:scoped_refptr",
       "../api/units:time_delta",
+      "../api/video:encoded_frame",
       "../api/video:video_frame",
       "../api/video:video_frame_i010",
       "../api/video:video_frame_i420",
