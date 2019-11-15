@@ -36,6 +36,7 @@
 #include "media/engine/fake_webrtc_video_engine.h"
 #include "media/engine/webrtc_media_engine.h"
 #include "media/engine/webrtc_media_engine_defaults.h"
+#include "p2p/base/fake_ice_transport.h"
 #include "p2p/base/mock_async_resolver.h"
 #include "p2p/base/p2p_constants.h"
 #include "p2p/base/port_interface.h"
@@ -1164,6 +1165,34 @@ class MediaExpectations {
   int caller_video_frames_expected_ = 0;
   int callee_audio_frames_expected_ = 0;
   int callee_video_frames_expected_ = 0;
+};
+
+class MockIceTransport : public webrtc::IceTransportInterface {
+ public:
+  MockIceTransport(const std::string& name, int component)
+      : internal_(std::make_unique<cricket::FakeIceTransport>(
+            name,
+            component,
+            nullptr /* network_thread */)) {}
+  ~MockIceTransport() = default;
+  cricket::IceTransportInternal* internal() { return internal_.get(); }
+
+ private:
+  std::unique_ptr<cricket::FakeIceTransport> internal_;
+};
+
+class MockIceTransportFactory : public IceTransportFactory {
+ public:
+  ~MockIceTransportFactory() override = default;
+  rtc::scoped_refptr<IceTransportInterface> CreateIceTransport(
+      const std::string& transport_name,
+      int component,
+      IceTransportInit init) {
+    RecordIceTransportCreated();
+    return new rtc::RefCountedObject<MockIceTransport>(transport_name,
+                                                       component);
+  }
+  MOCK_METHOD0(RecordIceTransportCreated, void());
 };
 
 // Tests two PeerConnections connecting to each other end-to-end, using a
@@ -5527,6 +5556,25 @@ TEST_P(PeerConnectionIntegrationTest,
 
   EXPECT_GT(client_1_cert_verifier->call_count_, 0u);
   EXPECT_GT(client_2_cert_verifier->call_count_, 0u);
+}
+
+// Test that the injected ICE transport factory is used to create ICE transports
+// for WebRTC connections.
+TEST_P(PeerConnectionIntegrationTest, IceTransportFactoryUsedForConnections) {
+  PeerConnectionInterface::RTCConfiguration default_config;
+  PeerConnectionDependencies dependencies(nullptr);
+  auto ice_transport_factory = std::make_unique<MockIceTransportFactory>();
+  EXPECT_CALL(*ice_transport_factory, RecordIceTransportCreated()).Times(1);
+  dependencies.ice_transport_factory = std::move(ice_transport_factory);
+  auto wrapper =
+      CreatePeerConnectionWrapper("Caller", nullptr, &default_config,
+                                  std::move(dependencies), nullptr, nullptr);
+  ASSERT_TRUE(wrapper);
+  wrapper->CreateDataChannel();
+  rtc::scoped_refptr<MockSetSessionDescriptionObserver> observer(
+      new rtc::RefCountedObject<MockSetSessionDescriptionObserver>());
+  wrapper->pc()->SetLocalDescription(observer,
+                                     wrapper->CreateOfferAndWait().release());
 }
 
 // Test that audio and video flow end-to-end when codec names don't use the

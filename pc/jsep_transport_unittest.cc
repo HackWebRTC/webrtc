@@ -14,12 +14,14 @@
 #include <tuple>
 #include <utility>
 
+#include "api/ice_transport_factory.h"
 #include "media/base/fake_rtp.h"
 #include "p2p/base/fake_dtls_transport.h"
 #include "p2p/base/fake_ice_transport.h"
 #include "rtc_base/gunit.h"
 
 namespace cricket {
+namespace {
 using webrtc::SdpType;
 
 static const char kIceUfrag1[] = "U001";
@@ -39,6 +41,16 @@ struct NegotiateRoleParams {
   SdpType local_type;
   SdpType remote_type;
 };
+
+rtc::scoped_refptr<webrtc::IceTransportInterface> CreateIceTransport(
+    std::unique_ptr<FakeIceTransport> internal) {
+  if (!internal) {
+    return nullptr;
+  }
+
+  return new rtc::RefCountedObject<FakeIceTransportWrapper>(
+      std::move(internal));
+}
 
 class JsepTransport2Test : public ::testing::Test, public sigslot::has_slots<> {
  protected:
@@ -69,17 +81,21 @@ class JsepTransport2Test : public ::testing::Test, public sigslot::has_slots<> {
   // FakeIceTransport.
   std::unique_ptr<JsepTransport> CreateJsepTransport2(bool rtcp_mux_enabled,
                                                       SrtpMode srtp_mode) {
-    auto ice = std::make_unique<FakeIceTransport>(kTransportName,
-                                                  ICE_CANDIDATE_COMPONENT_RTP);
-    auto rtp_dtls_transport = std::make_unique<FakeDtlsTransport>(ice.get());
+    auto ice_internal = std::make_unique<FakeIceTransport>(
+        kTransportName, ICE_CANDIDATE_COMPONENT_RTP);
+    auto rtp_dtls_transport =
+        std::make_unique<FakeDtlsTransport>(ice_internal.get());
+    auto ice = CreateIceTransport(std::move(ice_internal));
 
-    std::unique_ptr<FakeIceTransport> rtcp_ice;
+    std::unique_ptr<FakeIceTransport> rtcp_ice_internal;
     std::unique_ptr<FakeDtlsTransport> rtcp_dtls_transport;
     if (!rtcp_mux_enabled) {
-      rtcp_ice = std::make_unique<FakeIceTransport>(
+      rtcp_ice_internal = std::make_unique<FakeIceTransport>(
           kTransportName, ICE_CANDIDATE_COMPONENT_RTCP);
-      rtcp_dtls_transport = std::make_unique<FakeDtlsTransport>(rtcp_ice.get());
+      rtcp_dtls_transport =
+          std::make_unique<FakeDtlsTransport>(rtcp_ice_internal.get());
     }
+    auto rtcp_ice = CreateIceTransport(std::move(rtcp_ice_internal));
 
     std::unique_ptr<webrtc::RtpTransport> unencrypted_rtp_transport;
     std::unique_ptr<webrtc::SrtpTransport> sdes_transport;
@@ -1246,5 +1262,5 @@ INSTANTIATE_TEST_SUITE_P(
         std::make_tuple(Scenario::kDtlsBeforeCallerSendOffer, false),
         std::make_tuple(Scenario::kDtlsBeforeCallerSetAnswer, false),
         std::make_tuple(Scenario::kDtlsAfterCallerSetAnswer, false)));
-
+}  // namespace
 }  // namespace cricket

@@ -16,10 +16,10 @@
 #include "api/test/fake_media_transport.h"
 #include "api/test/loopback_media_transport.h"
 #include "api/transport/media/media_transport_interface.h"
+#include "p2p/base/dtls_transport_factory.h"
 #include "p2p/base/fake_dtls_transport.h"
 #include "p2p/base/fake_ice_transport.h"
 #include "p2p/base/no_op_dtls_transport.h"
-#include "p2p/base/transport_factory_interface.h"
 #include "p2p/base/transport_info.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/thread.h"
@@ -59,15 +59,20 @@ void AddCryptoSettings(cricket::SessionDescription* description) {
 
 }  // namespace
 
-class FakeTransportFactory : public cricket::TransportFactoryInterface {
+class FakeIceTransportFactory : public webrtc::IceTransportFactory {
  public:
-  std::unique_ptr<cricket::IceTransportInternal> CreateIceTransport(
+  ~FakeIceTransportFactory() override = default;
+  rtc::scoped_refptr<IceTransportInterface> CreateIceTransport(
       const std::string& transport_name,
-      int component) override {
-    return std::make_unique<cricket::FakeIceTransport>(transport_name,
-                                                       component);
+      int component,
+      IceTransportInit init) override {
+    return new rtc::RefCountedObject<cricket::FakeIceTransportWrapper>(
+        std::make_unique<cricket::FakeIceTransport>(transport_name, component));
   }
+};
 
+class FakeDtlsTransportFactory : public cricket::DtlsTransportFactory {
+ public:
   std::unique_ptr<cricket::DtlsTransportInternal> CreateDtlsTransport(
       cricket::IceTransportInternal* ice,
       const webrtc::CryptoOptions& crypto_options) override {
@@ -81,7 +86,8 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
                                     public sigslot::has_slots<> {
  public:
   JsepTransportControllerTest() : signaling_thread_(rtc::Thread::Current()) {
-    fake_transport_factory_ = std::make_unique<FakeTransportFactory>();
+    fake_ice_transport_factory_ = std::make_unique<FakeIceTransportFactory>();
+    fake_dtls_transport_factory_ = std::make_unique<FakeDtlsTransportFactory>();
   }
 
   void CreateJsepTransportController(
@@ -92,8 +98,8 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
     config.transport_observer = this;
     config.rtcp_handler = [](const rtc::CopyOnWriteBuffer& packet,
                              int64_t packet_time_us) { RTC_NOTREACHED(); };
-    // The tests only works with |fake_transport_factory|;
-    config.external_transport_factory = fake_transport_factory_.get();
+    config.ice_transport_factory = fake_ice_transport_factory_.get();
+    config.dtls_transport_factory = fake_dtls_transport_factory_.get();
     // TODO(zstein): Provide an AsyncResolverFactory once it is required.
     transport_controller_ = std::make_unique<JsepTransportController>(
         signaling_thread, network_thread, port_allocator, nullptr, config);
@@ -358,7 +364,8 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
 
   // |network_thread_| should be destroyed after |transport_controller_|
   std::unique_ptr<rtc::Thread> network_thread_;
-  std::unique_ptr<FakeTransportFactory> fake_transport_factory_;
+  std::unique_ptr<FakeIceTransportFactory> fake_ice_transport_factory_;
+  std::unique_ptr<FakeDtlsTransportFactory> fake_dtls_transport_factory_;
   rtc::Thread* const signaling_thread_ = nullptr;
   bool signaled_on_non_signaling_thread_ = false;
   // Used to verify the SignalRtpTransportChanged/SignalDtlsTransportChanged are

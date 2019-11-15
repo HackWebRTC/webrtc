@@ -83,6 +83,7 @@
 #include "api/data_channel_interface.h"
 #include "api/dtls_transport_interface.h"
 #include "api/fec_controller.h"
+#include "api/ice_transport_interface.h"
 #include "api/jsep.h"
 #include "api/media_stream_interface.h"
 #include "api/neteq/neteq_factory.h"
@@ -1288,6 +1289,7 @@ struct RTC_EXPORT PeerConnectionDependencies final {
   std::unique_ptr<cricket::PortAllocator> allocator;
   std::unique_ptr<rtc::PacketSocketFactory> packet_socket_factory;
   std::unique_ptr<webrtc::AsyncResolverFactory> async_resolver_factory;
+  std::unique_ptr<webrtc::IceTransportFactory> ice_transport_factory;
   std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator;
   std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier;
   std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>

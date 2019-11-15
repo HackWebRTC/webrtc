@@ -102,8 +102,8 @@ JsepTransportDescription& JsepTransportDescription::operator=(
 JsepTransport::JsepTransport(
     const std::string& mid,
     const rtc::scoped_refptr<rtc::RTCCertificate>& local_certificate,
-    std::unique_ptr<cricket::IceTransportInternal> ice_transport,
-    std::unique_ptr<cricket::IceTransportInternal> rtcp_ice_transport,
+    rtc::scoped_refptr<webrtc::IceTransportInterface> ice_transport,
+    rtc::scoped_refptr<webrtc::IceTransportInterface> rtcp_ice_transport,
     std::unique_ptr<webrtc::RtpTransport> unencrypted_rtp_transport,
     std::unique_ptr<webrtc::SrtpTransport> sdes_transport,
     std::unique_ptr<webrtc::DtlsSrtpTransport> dtls_srtp_transport,

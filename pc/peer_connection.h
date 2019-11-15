@@ -1295,6 +1295,12 @@ class PeerConnection : public PeerConnectionInternal,
   std::unique_ptr<cricket::PortAllocator>
       port_allocator_;  // TODO(bugs.webrtc.org/9987): Accessed on both
                         // signaling and network thread.
+  std::unique_ptr<webrtc::IceTransportFactory>
+      ice_transport_factory_;  // TODO(bugs.webrtc.org/9987): Accessed on the
+                               // signaling thread but the underlying raw
+                               // pointer is given to
+                               // |jsep_transport_controller_| and used on the
+                               // network thread.
   std::unique_ptr<rtc::SSLCertificateVerifier>
       tls_cert_verifier_;  // TODO(bugs.webrtc.org/9987): Accessed on both
                            // signaling and network thread.

@@ -41,8 +41,11 @@ rtc_library("rtc_p2p") {
     "base/connection.h",
     "base/connection_info.cc",
     "base/connection_info.h",
+    "base/default_ice_transport_factory.cc",
+    "base/default_ice_transport_factory.h",
     "base/dtls_transport.cc",
     "base/dtls_transport.h",
+    "base/dtls_transport_factory.h",
     "base/dtls_transport_internal.cc",
     "base/dtls_transport_internal.h",
     "base/ice_credentials_iterator.cc",
@@ -80,7 +83,6 @@ rtc_library("rtc_p2p") {
     "base/transport_description.h",
     "base/transport_description_factory.cc",
     "base/transport_description_factory.h",
-    "base/transport_factory_interface.h",
     "base/transport_info.h",
     "base/turn_port.cc",
     "base/turn_port.h",
@@ -132,6 +134,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":rtc_p2p",
+      "../api:libjingle_peerconnection_api",
       "../rtc_base",
       "../rtc_base:rtc_base_approved",
       "//third_party/abseil-cpp/absl/algorithm:container",

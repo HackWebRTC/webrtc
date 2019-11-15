@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_TRANSPORT_FACTORY_INTERFACE_H_
-#define P2P_BASE_TRANSPORT_FACTORY_INTERFACE_H_
+#ifndef P2P_BASE_DTLS_TRANSPORT_FACTORY_H_
+#define P2P_BASE_DTLS_TRANSPORT_FACTORY_H_
 
 #include <memory>
 #include <string>
@@ -19,18 +19,15 @@
 
 namespace cricket {
 
-// This interface is used to create DTLS/ICE transports. The external transports
-// can be injected into the JsepTransportController through it. For example, the
-// FakeIceTransport/FakeDtlsTransport can be injected by setting a
-// FakeTransportFactory which implements this interface to the
-// JsepTransportController.
-class TransportFactoryInterface {
+// This interface is used to create DTLS transports. The external transports
+// can be injected into the JsepTransportController through it.
+//
+// TODO(qingsi): Remove this factory in favor of one that produces
+// DtlsTransportInterface given by the public API if this is going to be
+// injectable.
+class DtlsTransportFactory {
  public:
-  virtual ~TransportFactoryInterface() {}
-
-  virtual std::unique_ptr<IceTransportInternal> CreateIceTransport(
-      const std::string& transport_name,
-      int component) = 0;
+  virtual ~DtlsTransportFactory() = default;
 
   virtual std::unique_ptr<DtlsTransportInternal> CreateDtlsTransport(
       IceTransportInternal* ice,
@@ -39,4 +36,4 @@ class TransportFactoryInterface {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_TRANSPORT_FACTORY_INTERFACE_H_
+#endif  // P2P_BASE_DTLS_TRANSPORT_FACTORY_H_

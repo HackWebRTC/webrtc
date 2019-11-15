@@ -1139,6 +1139,7 @@ bool PeerConnection::Initialize(
   observer_ = dependencies.observer;
   async_resolver_factory_ = std::move(dependencies.async_resolver_factory);
   port_allocator_ = std::move(dependencies.allocator);
+  ice_transport_factory_ = std::move(dependencies.ice_transport_factory);
   tls_cert_verifier_ = std::move(dependencies.tls_cert_verifier);
 
   cricket::ServerAddresses stun_servers;
@@ -1333,6 +1334,8 @@ bool PeerConnection::Initialize(
       config.sctp_factory = sctp_factory_.get();
     }
   }
+
+  config.ice_transport_factory = ice_transport_factory_.get();
 
   transport_controller_.reset(new JsepTransportController(
       signaling_thread(), network_thread(), port_allocator_.get(),

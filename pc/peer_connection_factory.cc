@@ -28,6 +28,7 @@
 #include "media/base/rtp_data_engine.h"
 #include "media/sctp/sctp_transport.h"
 #include "p2p/base/basic_packet_socket_factory.h"
+#include "p2p/base/default_ice_transport_factory.h"
 #include "p2p/client/basic_port_allocator.h"
 #include "pc/audio_track.h"
 #include "pc/local_audio_source.h"
@@ -265,6 +266,11 @@ PeerConnectionFactory::CreatePeerConnection(
           default_network_manager_.get(), packet_socket_factory,
           configuration.turn_customizer);
     });
+  }
+
+  if (!dependencies.ice_transport_factory) {
+    dependencies.ice_transport_factory =
+        std::make_unique<DefaultIceTransportFactory>();
   }
 
   // TODO(zstein): Once chromium injects its own AsyncResolverFactory, set
