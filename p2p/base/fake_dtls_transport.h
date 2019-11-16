@@ -83,7 +83,10 @@ class FakeDtlsTransport : public DtlsTransportInternal {
     ice_transport_->SetReceiving(receiving);
     set_receiving(receiving);
   }
-  void SetDtlsState(DtlsTransportState state) { dtls_state_ = state; }
+  void SetDtlsState(DtlsTransportState state) {
+    dtls_state_ = state;
+    SignalDtlsState(this, dtls_state_);
+  }
 
   // Simulates the two DTLS transports connecting to each other.
   // If |asymmetric| is true this method only affects this FakeDtlsTransport.
@@ -108,12 +111,11 @@ class FakeDtlsTransport : public DtlsTransportInternal {
       if (!asymmetric) {
         dest->SetDestination(this, true);
       }
-      dtls_state_ = DTLS_TRANSPORT_CONNECTED;
       // If the |dtls_role_| is unset, set it to SSL_CLIENT by default.
       if (!dtls_role_) {
         dtls_role_ = std::move(rtc::SSL_CLIENT);
       }
-      SignalDtlsState(this, dtls_state_);
+      SetDtlsState(DTLS_TRANSPORT_CONNECTED);
       ice_transport_->SetDestination(
           static_cast<FakeIceTransport*>(dest->ice_transport()), asymmetric);
     } else {

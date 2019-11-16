@@ -359,9 +359,10 @@ void DataChannel::OnTransportChannelCreated() {
   }
 }
 
-void DataChannel::OnTransportChannelDestroyed() {
-  // The SctpTransport is going away (for example, because the SCTP m= section
-  // was rejected), so we need to close abruptly.
+void DataChannel::OnTransportChannelClosed() {
+  // The SctpTransport is unusable (for example, because the SCTP m= section
+  // was rejected, or because the DTLS transport closed), so we need to close
+  // abruptly.
   CloseAbruptly();
 }
 

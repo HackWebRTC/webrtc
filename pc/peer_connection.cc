@@ -1106,7 +1106,7 @@ void PeerConnection::DestroyAllChannels() {
       DestroyTransceiverChannel(transceiver);
     }
   }
-  DestroyDataChannel();
+  DestroyDataChannelTransport();
 }
 
 bool PeerConnection::Initialize(
@@ -3597,7 +3597,7 @@ RTCError PeerConnection::UpdateDataChannel(
   }
   if (content.rejected) {
     RTC_LOG(LS_INFO) << "Rejected data channel, mid=" << content.mid();
-    DestroyDataChannel();
+    DestroyDataChannelTransport();
   } else {
     if (!rtp_data_channel_ && !data_channel_transport_) {
       RTC_LOG(LS_INFO) << "Creating data channel, mid=" << content.mid();
@@ -5907,19 +5907,19 @@ void PeerConnection::OnSctpDataChannelClosed(DataChannel* channel) {
   }
 }
 
-void PeerConnection::OnDataChannelDestroyed() {
+void PeerConnection::OnTransportChannelClosed() {
   // Use a temporary copy of the RTP/SCTP DataChannel list because the
   // DataChannel may callback to us and try to modify the list.
   std::map<std::string, rtc::scoped_refptr<DataChannel>> temp_rtp_dcs;
   temp_rtp_dcs.swap(rtp_data_channels_);
   for (const auto& kv : temp_rtp_dcs) {
-    kv.second->OnTransportChannelDestroyed();
+    kv.second->OnTransportChannelClosed();
   }
 
   std::vector<rtc::scoped_refptr<DataChannel>> temp_sctp_dcs;
   temp_sctp_dcs.swap(sctp_data_channels_);
   for (const auto& channel : temp_sctp_dcs) {
-    channel->OnTransportChannelDestroyed();
+    channel->OnTransportChannelClosed();
   }
 }
 
@@ -6978,7 +6978,7 @@ void PeerConnection::RemoveUnusedChannels(const SessionDescription* desc) {
 
   const cricket::ContentInfo* data_info = cricket::GetFirstDataContent(desc);
   if (!data_info || data_info->rejected) {
-    DestroyDataChannel();
+    DestroyDataChannelTransport();
   }
 }
 
@@ -7709,9 +7709,9 @@ void PeerConnection::DestroyTransceiverChannel(
   }
 }
 
-void PeerConnection::DestroyDataChannel() {
+void PeerConnection::DestroyDataChannelTransport() {
   if (rtp_data_channel_) {
-    OnDataChannelDestroyed();
+    OnTransportChannelClosed();
     DestroyChannelInterface(rtp_data_channel_);
     rtp_data_channel_ = nullptr;
   }
@@ -7723,7 +7723,7 @@ void PeerConnection::DestroyDataChannel() {
   // rtc::Bind will cause "Pure virtual function called" error to appear.
 
   if (sctp_mid_) {
-    OnDataChannelDestroyed();
+    OnTransportChannelClosed();
     network_thread()->Invoke<void>(RTC_FROM_HERE, [this] {
       RTC_DCHECK_RUN_ON(network_thread());
       TeardownDataChannelTransport_n();

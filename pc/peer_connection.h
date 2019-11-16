@@ -854,7 +854,8 @@ class PeerConnection : public PeerConnectionInternal,
   void OnSctpDataChannelClosed(DataChannel* channel)
       RTC_RUN_ON(signaling_thread());
 
-  void OnDataChannelDestroyed() RTC_RUN_ON(signaling_thread());
+  // Called when the transport for the data channels is closed or destroyed.
+  void OnTransportChannelClosed() RTC_RUN_ON(signaling_thread());
   // Called when a valid data channel OPEN message is received.
   void OnDataChannelOpenMessage(const std::string& label,
                                 const InternalDataChannelInit& config)
@@ -1169,14 +1170,19 @@ class PeerConnection : public PeerConnectionInternal,
   const std::string GetTransportName(const std::string& content_name)
       RTC_RUN_ON(signaling_thread());
 
+  // Functions for dealing with transports.
+  // Note that cricket code uses the term "channel" for what other code
+  // refers to as "transport".
+
   // Destroys and clears the BaseChannel associated with the given transceiver,
   // if such channel is set.
   void DestroyTransceiverChannel(
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
           transceiver);
 
-  // Destroys the RTP data channel and/or the SCTP data channel and clears it.
-  void DestroyDataChannel() RTC_RUN_ON(signaling_thread());
+  // Destroys the RTP data channel transport and/or the SCTP data channel
+  // transport and clears it.
+  void DestroyDataChannelTransport() RTC_RUN_ON(signaling_thread());
 
   // Destroys the given ChannelInterface.
   // The channel cannot be accessed after this method is called.

@@ -195,4 +195,17 @@ TEST_F(SctpTransportTest, MaxChannelsSignalled) {
             *(observer_.LastReceivedInformation().MaxChannels()));
 }
 
+TEST_F(SctpTransportTest, CloseWhenTransportCloses) {
+  CreateTransport();
+  transport()->RegisterObserver(observer());
+  AddDtlsTransport();
+  CompleteSctpHandshake();
+  ASSERT_EQ_WAIT(SctpTransportState::kConnected, observer_.State(),
+                 kDefaultTimeout);
+  static_cast<cricket::FakeDtlsTransport*>(dtls_transport_->internal())
+      ->SetDtlsState(cricket::DTLS_TRANSPORT_CLOSED);
+  ASSERT_EQ_WAIT(SctpTransportState::kClosed, observer_.State(),
+                 kDefaultTimeout);
+}
+
 }  // namespace webrtc

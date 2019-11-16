@@ -185,10 +185,10 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   // Called when the transport channel is created.
   // Only needs to be called for SCTP data channels.
   void OnTransportChannelCreated();
-  // Called when the transport channel is destroyed.
+  // Called when the transport channel is unusable.
   // This method makes sure the DataChannel is disconnected and changes state
   // to kClosed.
-  void OnTransportChannelDestroyed();
+  void OnTransportChannelClosed();
 
   /*******************************************
    * The following methods are for RTP only. *

@@ -610,10 +610,10 @@ TEST_F(SctpDataChannelTest, TransportDestroyedWhileDataBuffered) {
   provider_->set_send_blocked(true);
   EXPECT_TRUE(webrtc_data_channel_->Send(packet));
 
-  // Tell the data channel that its tranpsort is being destroyed.
+  // Tell the data channel that its transport is being destroyed.
   // It should then stop using the transport (allowing us to delete it) and
   // transition to the "closed" state.
-  webrtc_data_channel_->OnTransportChannelDestroyed();
+  webrtc_data_channel_->OnTransportChannelClosed();
   provider_.reset(nullptr);
   EXPECT_EQ_WAIT(webrtc::DataChannelInterface::kClosed,
                  webrtc_data_channel_->state(), kDefaultTimeout);
