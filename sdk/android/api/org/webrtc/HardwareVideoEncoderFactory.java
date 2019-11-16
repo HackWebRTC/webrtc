@@ -139,7 +139,7 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
     // Generate a list of supported codecs in order of preference:
     // VP8, VP9, H264 (high profile), and H264 (baseline profile).
     for (VideoCodecMimeType type : new VideoCodecMimeType[] {
-             VideoCodecMimeType.VP8, VideoCodecMimeType.VP9, VideoCodecMimeType.H264}) {
+             VideoCodecMimeType.VP8, VideoCodecMimeType.VP9, VideoCodecMimeType.H264, VideoCodecMimeType.H265}) {
       MediaCodecInfo codec = findCodecForType(type);
       if (codec != null) {
         String name = type.name();
@@ -202,6 +202,8 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
         return isHardwareSupportedInCurrentSdkVp9(info);
       case H264:
         return isHardwareSupportedInCurrentSdkH264(info);
+      case H265:
+        return isHardwareSupportedInCurrentSdkH265(info);
     }
     return false;
   }
@@ -237,6 +239,15 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
   }
 
+  private boolean isHardwareSupportedInCurrentSdkH265(MediaCodecInfo info) {
+    String name = info.getName();
+    // QCOM H265 encoder is supported in KITKAT or later.
+    return (name.startsWith(QCOM_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+           // Exynos H265 encoder is supported in LOLLIPOP or later.
+           || (name.startsWith(EXYNOS_PREFIX)
+               && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
+  }
+
   private boolean isMediaCodecAllowed(MediaCodecInfo info) {
     if (codecAllowedPredicate == null) {
       return true;
@@ -250,6 +261,7 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
       case VP9:
         return 100;
       case H264:
+      case H265:
         return 20;
     }
     throw new IllegalArgumentException("Unsupported VideoCodecMimeType " + type);

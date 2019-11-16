@@ -322,8 +322,16 @@ int32_t VideoEncoderWrapper::HandleReturnCode(JNIEnv* jni,
 RTPFragmentationHeader VideoEncoderWrapper::ParseFragmentationHeader(
     rtc::ArrayView<const uint8_t> buffer) {
   RTPFragmentationHeader header;
+#ifndef DISABLE_H265
+  if (codec_settings_.codecType == kVideoCodecH264
+    || codec_settings_.codecType == kVideoCodecH265) {
+    if (codec_settings_.codecType == kVideoCodecH264) {
+      h264_bitstream_parser_.ParseBitstream(buffer.data(), buffer.size());
+    }
+#else
   if (codec_settings_.codecType == kVideoCodecH264) {
     h264_bitstream_parser_.ParseBitstream(buffer.data(), buffer.size());
+#endif
 
     // For H.264 search for start codes.
     const std::vector<H264::NaluIndex> nalu_idxs =
