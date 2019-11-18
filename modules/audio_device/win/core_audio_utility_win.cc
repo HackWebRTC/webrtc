@@ -157,50 +157,20 @@ std::string ChannelMaskToString(DWORD channel_mask) {
 #define AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM 0x80000000
 #endif
 
-// Converts from channel mask to DirectSound speaker configuration.
-// The values below are copied from ksmedia.h.
-// Example: KSAUDIO_SPEAKER_STEREO = (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT).
-const char* DirectSoundConfigToString(DWORD channel_mask) {
-  switch (channel_mask) {
-    case KSAUDIO_SPEAKER_DIRECTOUT:
-      return "KSAUDIO_DIRECTOUT";
-    case KSAUDIO_SPEAKER_MONO:
-      // Front center (C)
-      return "KSAUDIO_MONO";
-    case KSAUDIO_SPEAKER_1POINT1:
-      return "KSAUDIO_1POINT1";
-    case KSAUDIO_SPEAKER_STEREO:
-      // Front left (L), front right (R).
-      return "KSAUDIO_STEREO";
-    case KSAUDIO_SPEAKER_2POINT1:
-      return "KSAUDIO_2POINT1";
-    case KSAUDIO_SPEAKER_3POINT0:
-      return "KSAUDIO_3POINT0";
-    case KSAUDIO_SPEAKER_3POINT1:
-      return "KSAUDIO_3POINT1";
-    case KSAUDIO_SPEAKER_QUAD:
-      // L, R, back left (Lb), back right (Rb).
-      return "KSAUDIO_QUAD";
-    case KSAUDIO_SPEAKER_SURROUND:
-      // L, R, front center (C), back center (Cb).
-      return "KSAUDIO_SURROUND";
-    case KSAUDIO_SPEAKER_5POINT0:
-      return "KSAUDIO_5POINT0";
-    case KSAUDIO_SPEAKER_5POINT1:
-      return "KSAUDIO_5POINT1";
-    case KSAUDIO_SPEAKER_7POINT0:
-      return "KSAUDIO_7POINT0";
-    case KSAUDIO_SPEAKER_7POINT1:
-      // L, R, C, Lb, Rb, front left-of-center, front right-of-center, LFE.
-      return "KSAUDIO_7POINT1";
-    case KSAUDIO_SPEAKER_5POINT1_SURROUND:
-      // L, R, C, side left (Ls), side right (Rs), LFE.
-      return "KSAUDIO_5POINT1_SURROUND";
-    case KSAUDIO_SPEAKER_7POINT1_SURROUND:
-      // L, R, C, Lb, Rb, Ls, Rs, LFE.
-      return "KSAUDIO_7POINT1_SURROUND";
+// Converts the most common format tags defined in mmreg.h into string
+// equivalents. Mainly intended for log messages.
+const char* WaveFormatTagToString(WORD format_tag) {
+  switch (format_tag) {
+    case WAVE_FORMAT_UNKNOWN:
+      return "WAVE_FORMAT_UNKNOWN";
+    case WAVE_FORMAT_PCM:
+      return "WAVE_FORMAT_PCM";
+    case WAVE_FORMAT_IEEE_FLOAT:
+      return "WAVE_FORMAT_IEEE_FLOAT";
+    case WAVE_FORMAT_EXTENSIBLE:
+      return "WAVE_FORMAT_EXTENSIBLE";
     default:
-      return "KSAUDIO_INVALID";
+      return "UNKNOWN";
   }
 }
 
@@ -589,6 +559,31 @@ HRESULT GetPreferredAudioParametersInternal(IAudioClient* client,
 
 namespace core_audio_utility {
 
+// core_audio_utility::WaveFormatWrapper implementation.
+WAVEFORMATEXTENSIBLE* WaveFormatWrapper::GetExtensible() const {
+  RTC_CHECK(IsExtensible());
+  return reinterpret_cast<WAVEFORMATEXTENSIBLE*>(ptr_);
+}
+
+bool WaveFormatWrapper::IsExtensible() const {
+  return ptr_->wFormatTag == WAVE_FORMAT_EXTENSIBLE && ptr_->cbSize >= 22;
+}
+
+bool WaveFormatWrapper::IsPcm() const {
+  return IsExtensible() ? GetExtensible()->SubFormat == KSDATAFORMAT_SUBTYPE_PCM
+                        : ptr_->wFormatTag == WAVE_FORMAT_PCM;
+}
+
+bool WaveFormatWrapper::IsFloat() const {
+  return IsExtensible()
+             ? GetExtensible()->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT
+             : ptr_->wFormatTag == WAVE_FORMAT_IEEE_FLOAT;
+}
+
+size_t WaveFormatWrapper::size() const {
+  return sizeof(*ptr_) + ptr_->cbSize;
+}
+
 bool IsSupported() {
   RTC_DLOG(INFO) << "IsSupported";
   static bool g_is_supported = IsSupportedInternal();
@@ -904,19 +899,52 @@ HRESULT GetSharedModeMixFormat(IAudioClient* client,
                                WAVEFORMATEXTENSIBLE* format) {
   RTC_DLOG(INFO) << "GetSharedModeMixFormat";
   RTC_DCHECK(client);
-  ScopedCoMem<WAVEFORMATEXTENSIBLE> format_ex;
+
+  // The GetMixFormat method retrieves the stream format that the audio engine
+  // uses for its internal processing of shared-mode streams. The method
+  // allocates the storage for the structure and this memory will be released
+  // when |mix_format| goes out of scope. The GetMixFormat method retrieves a
+  // format descriptor that is in the form of a WAVEFORMATEXTENSIBLE structure
+  // instead of a standalone WAVEFORMATEX structure. The method outputs a
+  // pointer to the WAVEFORMATEX structure that is embedded at the start of
+  // this WAVEFORMATEXTENSIBLE structure.
+  // Note that, crbug/803056 indicates that some devices can return a format
+  // where only the WAVEFORMATEX parts is initialized and we must be able to
+  // account for that.
+  ScopedCoMem<WAVEFORMATEXTENSIBLE> mix_format;
   _com_error error =
-      client->GetMixFormat(reinterpret_cast<WAVEFORMATEX**>(&format_ex));
+      client->GetMixFormat(reinterpret_cast<WAVEFORMATEX**>(&mix_format));
   if (FAILED(error.Error())) {
     RTC_LOG(LS_ERROR) << "IAudioClient::GetMixFormat failed: "
                       << ErrorToString(error);
     return error.Error();
   }
 
-  size_t bytes = sizeof(WAVEFORMATEX) + format_ex->Format.cbSize;
-  RTC_DCHECK_EQ(bytes, sizeof(WAVEFORMATEXTENSIBLE));
-  memcpy(format, format_ex, bytes);
-  RTC_DLOG(INFO) << WaveFormatExToString(format);
+  // Use a wave format wrapper to make things simpler.
+  WaveFormatWrapper wrapped_format(mix_format.Get());
+
+  // Verify that the reported format can be mixed by the audio engine in
+  // shared mode.
+  if (!wrapped_format.IsPcm() && !wrapped_format.IsFloat()) {
+    RTC_DLOG(LS_ERROR)
+        << "Only pure PCM or float audio streams can be mixed in shared mode";
+    return AUDCLNT_E_UNSUPPORTED_FORMAT;
+  }
+
+  // Log a warning for the rare case where |mix_format| only contains a
+  // stand-alone WAVEFORMATEX structure but don't return.
+  if (!wrapped_format.IsExtensible()) {
+    RTC_DLOG(WARNING)
+        << "The returned format contains no extended information. "
+           "The size is "
+        << wrapped_format.size() << " bytes.";
+  }
+
+  // Copy the correct number of bytes into |*format| taking into account if
+  // the returned structure is correctly extended or not.
+  RTC_CHECK_LE(wrapped_format.size(), sizeof(WAVEFORMATEXTENSIBLE));
+  memcpy(format, wrapped_format.get(), wrapped_format.size());
+  RTC_DLOG(INFO) << WaveFormatToString(format);
 
   return error.Error();
 }
@@ -926,7 +954,7 @@ bool IsFormatSupported(IAudioClient* client,
                        const WAVEFORMATEXTENSIBLE* format) {
   RTC_DLOG(INFO) << "IsFormatSupported";
   RTC_DCHECK(client);
-  ScopedCoMem<WAVEFORMATEXTENSIBLE> closest_match;
+  ScopedCoMem<WAVEFORMATEX> closest_match;
   // This method provides a way for a client to determine, before calling
   // IAudioClient::Initialize, whether the audio engine supports a particular
   // stream format or not. In shared mode, the audio engine always supports
@@ -934,7 +962,9 @@ bool IsFormatSupported(IAudioClient* client,
   // TODO(henrika): verify support for exclusive mode as well?
   _com_error error = client->IsFormatSupported(
       share_mode, reinterpret_cast<const WAVEFORMATEX*>(format),
-      reinterpret_cast<WAVEFORMATEX**>(&closest_match));
+      &closest_match);
+  RTC_LOG(INFO) << WaveFormatToString(
+      const_cast<WAVEFORMATEXTENSIBLE*>(format));
   if ((error.Error() == S_OK) && (closest_match == nullptr)) {
     RTC_DLOG(INFO)
         << "The audio endpoint device supports the specified stream format";
@@ -943,7 +973,7 @@ bool IsFormatSupported(IAudioClient* client,
     // only be triggered for shared mode.
     RTC_LOG(LS_WARNING)
         << "Exact format is not supported, but a closest match exists";
-    RTC_LOG(INFO) << WaveFormatExToString(closest_match);
+    RTC_LOG(INFO) << WaveFormatToString(closest_match.Get());
   } else if ((error.Error() == AUDCLNT_E_UNSUPPORTED_FORMAT) &&
              (closest_match == nullptr)) {
     // The audio engine does not support the caller-specified format or any
@@ -1381,31 +1411,34 @@ bool FillRenderEndpointBufferWithSilence(IAudioClient* client,
   return true;
 }
 
-std::string WaveFormatExToString(const WAVEFORMATEXTENSIBLE* format) {
-  RTC_DCHECK_EQ(format->Format.wFormatTag, WAVE_FORMAT_EXTENSIBLE);
+std::string WaveFormatToString(const WaveFormatWrapper format) {
   char ss_buf[1024];
   rtc::SimpleStringBuilder ss(ss_buf);
-  ss.AppendFormat("wFormatTag: WAVE_FORMAT_EXTENSIBLE");
-  ss.AppendFormat(", nChannels: %d", format->Format.nChannels);
-  ss.AppendFormat(", nSamplesPerSec: %d", format->Format.nSamplesPerSec);
-  ss.AppendFormat(", nAvgBytesPerSec: %d", format->Format.nAvgBytesPerSec);
-  ss.AppendFormat(", nBlockAlign: %d", format->Format.nBlockAlign);
-  ss.AppendFormat(", wBitsPerSample: %d", format->Format.wBitsPerSample);
-  ss.AppendFormat(", cbSize: %d", format->Format.cbSize);
-  ss.AppendFormat(", wValidBitsPerSample: %d",
-                  format->Samples.wValidBitsPerSample);
-  ss.AppendFormat(", dwChannelMask: 0x%X", format->dwChannelMask);
-  if (format->SubFormat == KSDATAFORMAT_SUBTYPE_PCM) {
-    ss << ", SubFormat: KSDATAFORMAT_SUBTYPE_PCM";
-  } else if (format->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT) {
-    ss << ", SubFormat: KSDATAFORMAT_SUBTYPE_IEEE_FLOAT";
+  // Start with the WAVEFORMATEX part (which always exists).
+  ss.AppendFormat("wFormatTag: %s (0x%X)",
+                  WaveFormatTagToString(format->wFormatTag),
+                  format->wFormatTag);
+  ss.AppendFormat(", nChannels: %d", format->nChannels);
+  ss.AppendFormat(", nSamplesPerSec: %d", format->nSamplesPerSec);
+  ss.AppendFormat(", nAvgBytesPerSec: %d", format->nAvgBytesPerSec);
+  ss.AppendFormat(", nBlockAlign: %d", format->nBlockAlign);
+  ss.AppendFormat(", wBitsPerSample: %d", format->wBitsPerSample);
+  ss.AppendFormat(", cbSize: %d", format->cbSize);
+  if (!format.IsExtensible())
+    return ss.str();
+
+  // Append the WAVEFORMATEXTENSIBLE part (which we know exists).
+  ss.AppendFormat(
+      " [+] wValidBitsPerSample: %d, dwChannelMask: %s",
+      format.GetExtensible()->Samples.wValidBitsPerSample,
+      ChannelMaskToString(format.GetExtensible()->dwChannelMask).c_str());
+  if (format.IsPcm()) {
+    ss.AppendFormat("%s", ", SubFormat: KSDATAFORMAT_SUBTYPE_PCM");
+  } else if (format.IsFloat()) {
+    ss.AppendFormat("%s", ", SubFormat: KSDATAFORMAT_SUBTYPE_IEEE_FLOAT");
   } else {
-    ss << ", SubFormat: NOT_SUPPORTED";
+    ss.AppendFormat("%s", ", SubFormat: NOT_SUPPORTED");
   }
-  ss.AppendFormat("\nChannel configuration: %s",
-                  ChannelMaskToString(format->dwChannelMask).c_str());
-  ss.AppendFormat("\nDirectSound configuration : %s",
-                  DirectSoundConfigToString(format->dwChannelMask));
   return ss.str();
 }
 

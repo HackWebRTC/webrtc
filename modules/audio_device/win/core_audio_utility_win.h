@@ -327,6 +327,32 @@ class ScopedHandle {
 // These methods are based on media::CoreAudioUtil in Chrome.
 namespace core_audio_utility {
 
+// Helper class which automates casting between WAVEFORMATEX and
+// WAVEFORMATEXTENSIBLE raw pointers using implicit constructors and
+// operator overloading. Note that, no memory is allocated by this utility
+// structure. It only serves as a handle (or a wrapper) of the structure
+// provided to it at construction.
+class WaveFormatWrapper {
+ public:
+  WaveFormatWrapper(WAVEFORMATEXTENSIBLE* p)
+      : ptr_(reinterpret_cast<WAVEFORMATEX*>(p)) {}
+  WaveFormatWrapper(WAVEFORMATEX* p) : ptr_(p) {}
+  ~WaveFormatWrapper() = default;
+
+  operator WAVEFORMATEX*() const { return ptr_; }
+  WAVEFORMATEX* operator->() const { return ptr_; }
+  WAVEFORMATEX* get() const { return ptr_; }
+  WAVEFORMATEXTENSIBLE* GetExtensible() const;
+
+  bool IsExtensible() const;
+  bool IsPcm() const;
+  bool IsFloat() const;
+  size_t size() const;
+
+ private:
+  WAVEFORMATEX* ptr_;
+};
+
 // Returns true if Windows Core Audio is supported.
 // Always verify that this method returns true before using any of the
 // other methods in this class.
@@ -576,8 +602,10 @@ Microsoft::WRL::ComPtr<ISimpleAudioVolume> CreateSimpleAudioVolume(
 // given by |render_client|.
 bool FillRenderEndpointBufferWithSilence(IAudioClient* client,
                                          IAudioRenderClient* render_client);
-// Transforms a WAVEFORMATEXTENSIBLE struct to a human-readable string.
-std::string WaveFormatExToString(const WAVEFORMATEXTENSIBLE* format);
+
+// Prints/logs all fields of the format structure in |format|.
+// Also supports extended versions (WAVEFORMATEXTENSIBLE).
+std::string WaveFormatToString(const WaveFormatWrapper format);
 
 // Converts Windows internal REFERENCE_TIME (100 nanosecond units) into
 // generic webrtc::TimeDelta which then can be converted to any time unit.

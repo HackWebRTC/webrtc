@@ -391,7 +391,7 @@ bool CoreAudioBase::Init() {
   format_.dwChannelMask =
       format->nChannels == 1 ? KSAUDIO_SPEAKER_MONO : KSAUDIO_SPEAKER_STEREO;
   format_.SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
-  RTC_DLOG(INFO) << core_audio_utility::WaveFormatExToString(&format_);
+  RTC_DLOG(INFO) << core_audio_utility::WaveFormatToString(&format_);
 
   // Verify that the format is supported but exclude the test if the default
   // sample rate has been overridden. If so, the WASAPI audio engine will do
