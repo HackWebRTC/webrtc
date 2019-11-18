@@ -1459,7 +1459,9 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
       GetNetworkTrace(parsed_log_);
   absl::c_stable_sort(matched_rtp_rtcp, [](const MatchedSendArrivalTimes& a,
                                            const MatchedSendArrivalTimes& b) {
-    return a.feedback_arrival_time_ms < b.feedback_arrival_time_ms;
+    return a.feedback_arrival_time_ms < b.feedback_arrival_time_ms ||
+           (a.feedback_arrival_time_ms == b.feedback_arrival_time_ms &&
+            a.arrival_time_ms < b.arrival_time_ms);
   });
   for (const auto& packet : matched_rtp_rtcp) {
     if (packet.arrival_time_ms == MatchedSendArrivalTimes::kNotReceived)
