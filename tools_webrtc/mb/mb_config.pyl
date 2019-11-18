@@ -383,7 +383,7 @@
       'android', 'debug_static_bot', 'x64'
     ],
     'android_release_bot_x64': [
-      'android', 'release_bot', 'x86'
+      'android', 'release_bot', 'x64'
     ],
     'android_asan_shared_release_bot_arm': [
       'android', 'asan', 'clang', 'release_bot', 'arm'
