@@ -150,11 +150,12 @@ class PacingController {
   DataSize PaddingToAdd(absl::optional<DataSize> recommended_probe_size,
                         DataSize data_sent) const;
 
-  RoundRobinPacketQueue::QueuedPacket* GetPendingPacket(
+  std::unique_ptr<RtpPacketToSend> GetPendingPacket(
       const PacedPacketInfo& pacing_info,
       Timestamp target_send_time,
       Timestamp now);
-  void OnPacketSent(RoundRobinPacketQueue::QueuedPacket* packet,
+  void OnPacketSent(RtpPacketToSend::Type packet_type,
+                    DataSize packet_size,
                     Timestamp send_time);
   void OnPaddingSent(DataSize padding_sent);
 
@@ -170,6 +171,7 @@ class PacingController {
   const bool send_padding_if_silent_;
   const bool pace_audio_;
   const bool small_first_probe_packet_;
+  const bool send_side_bwe_with_overhead_;
 
   TimeDelta min_packet_limit_;
 
