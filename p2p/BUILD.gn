@@ -15,12 +15,14 @@ group("p2p") {
   ]
 }
 
+# TODO(bugs.webrtc.org/11091): Remove this target when downstream is updated.
 rtc_library("stun_types") {
   sources = [
-    "base/stun.cc",
+    "base/empty.cc",
     "base/stun.h",
   ]
   deps = [
+    "../api/transport:stun_types",
     "../rtc_base:checks",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
@@ -103,6 +105,7 @@ rtc_library("rtc_p2p") {
     "../api/crypto:options",
     "../api/rtc_event_log",
     "../api/transport:enums",
+    "../api/transport:stun_types",
     "../logging:ice_log",
     "../rtc_base",
     "../rtc_base:checks",
@@ -175,6 +178,7 @@ if (rtc_include_tests) {
       "../api:libjingle_peerconnection_api",
       "../api:packet_socket_factory",
       "../api/crypto:options",
+      "../api/transport:stun_types",
       "../rtc_base",
       "../rtc_base:gunit_helpers",
       "../rtc_base:rtc_base_approved",
@@ -203,7 +207,6 @@ if (rtc_include_tests) {
       "base/stun_port_unittest.cc",
       "base/stun_request_unittest.cc",
       "base/stun_server_unittest.cc",
-      "base/stun_unittest.cc",
       "base/tcp_port_unittest.cc",
       "base/transport_description_factory_unittest.cc",
       "base/turn_port_unittest.cc",
@@ -220,6 +223,7 @@ if (rtc_include_tests) {
       "../api:libjingle_peerconnection_api",
       "../api:packet_socket_factory",
       "../api:scoped_refptr",
+      "../api/transport:stun_types",
       "../api/units:time_delta",
       "../rtc_base",
       "../rtc_base:checks",
@@ -251,6 +255,7 @@ rtc_library("p2p_server_utils") {
     ":rtc_p2p",
     ":stun_types",
     "../api:packet_socket_factory",
+    "../api/transport:stun_types",
     "../rtc_base",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_tests_utils",
@@ -270,6 +275,7 @@ rtc_library("libstunprober") {
     ":rtc_p2p",
     ":stun_types",
     "../api:packet_socket_factory",
+    "../api/transport:stun_types",
     "../rtc_base",
     "../rtc_base:checks",
     "../rtc_base/system:rtc_export",

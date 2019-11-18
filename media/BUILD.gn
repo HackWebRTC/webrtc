@@ -82,6 +82,7 @@ rtc_library("rtc_media_base") {
     "../api/crypto:frame_decryptor_interface",
     "../api/crypto:frame_encryptor_interface",
     "../api/crypto:options",
+    "../api/transport:stun_types",
     "../api/transport/media:media_transport_interface",
     "../api/transport/rtp:rtp_source",
     "../api/video:video_bitrate_allocation",

@@ -16,8 +16,8 @@
 
 #include "absl/algorithm/container.h"
 #include "api/packet_socket_factory.h"
+#include "api/transport/stun.h"
 #include "p2p/base/async_stun_tcp_socket.h"
-#include "p2p/base/stun.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/byte_buffer.h"
 #include "rtc_base/checks.h"

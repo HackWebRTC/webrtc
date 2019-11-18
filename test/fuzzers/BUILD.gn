@@ -417,8 +417,8 @@ webrtc_fuzzer_test("stun_parser_fuzzer") {
     "stun_parser_fuzzer.cc",
   ]
   deps = [
+    "../../api/transport:stun_types",
     "../../p2p:rtc_p2p",
-    "../../p2p:stun_types",
   ]
   seed_corpus = "corpora/stun-corpus"
   dict = "corpora/stun.tokens"
@@ -429,8 +429,8 @@ webrtc_fuzzer_test("stun_validator_fuzzer") {
     "stun_validator_fuzzer.cc",
   ]
   deps = [
+    "../../api/transport:stun_types",
     "../../p2p:rtc_p2p",
-    "../../p2p:stun_types",
   ]
   seed_corpus = "corpora/stun-corpus"
   dict = "corpora/stun.tokens"
