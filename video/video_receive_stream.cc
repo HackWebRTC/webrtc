@@ -535,12 +535,13 @@ void VideoReceiveStream::SendNack(const std::vector<uint16_t>& sequence_numbers,
   rtp_video_stream_receiver_.RequestPacketRetransmit(sequence_numbers);
 }
 
-void VideoReceiveStream::RequestKeyFrame() {
+void VideoReceiveStream::RequestKeyFrame(int64_t timestamp_ms) {
   if (config_.media_transport()) {
     config_.media_transport()->RequestKeyFrame(config_.rtp.remote_ssrc);
   } else {
     rtp_video_stream_receiver_.RequestKeyFrame();
   }
+  last_keyframe_request_ms_ = timestamp_ms;
 }
 
 void VideoReceiveStream::OnCompleteFrame(
@@ -672,14 +673,13 @@ void VideoReceiveStream::HandleEncodedFrame(
     rtp_video_stream_receiver_.FrameDecoded(frame->id.picture_id);
 
     if (decode_result == WEBRTC_VIDEO_CODEC_OK_REQUEST_KEYFRAME)
-      RequestKeyFrame();
+      RequestKeyFrame(now_ms);
   } else if (!frame_decoded_ || !keyframe_required_ ||
              (last_keyframe_request_ms_ + max_wait_for_keyframe_ms_ < now_ms)) {
     keyframe_required_ = true;
     // TODO(philipel): Remove this keyframe request when downstream project
     //                 has been fixed.
-    RequestKeyFrame();
-    last_keyframe_request_ms_ = now_ms;
+    RequestKeyFrame(now_ms);
   }
 }
 
@@ -707,7 +707,7 @@ void VideoReceiveStream::HandleFrameBufferTimeout() {
        rtp_video_stream_receiver_.IsDecryptable())) {
     RTC_LOG(LS_WARNING) << "No decodable frame in " << GetWaitMs()
                         << " ms, requesting keyframe.";
-    RequestKeyFrame();
+    RequestKeyFrame(now_ms);
   }
 }
 

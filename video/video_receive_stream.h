@@ -142,7 +142,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   void UpdatePlayoutDelays() const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(playout_delay_lock_);
-  void RequestKeyFrame();
+  void RequestKeyFrame(int64_t timestamp_ms);
 
   void UpdateHistograms();
 
