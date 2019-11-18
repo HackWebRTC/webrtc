@@ -49,21 +49,20 @@ class GainControlImpl : public GainControl {
   int stream_analog_level() const override;
   bool is_limiter_enabled() const override;
   Mode mode() const override;
-
+  int Enable(bool enable) override;
+  int set_mode(Mode mode) override;
   int compression_gain_db() const override;
+  int set_analog_level_limits(int minimum, int maximum) override;
+  int set_compression_gain_db(int gain) override;
+  int set_target_level_dbfs(int level) override;
+  int enable_limiter(bool enable) override;
+  int set_stream_analog_level(int level) override;
 
  private:
   class GainController;
 
   // GainControl implementation.
-  int Enable(bool enable) override;
-  int set_stream_analog_level(int level) override;
-  int set_mode(Mode mode) override;
-  int set_target_level_dbfs(int level) override;
   int target_level_dbfs() const override;
-  int set_compression_gain_db(int gain) override;
-  int enable_limiter(bool enable) override;
-  int set_analog_level_limits(int minimum, int maximum) override;
   int analog_level_minimum() const override;
   int analog_level_maximum() const override;
   bool stream_is_saturated() const override;

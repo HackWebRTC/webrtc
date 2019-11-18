@@ -22,7 +22,6 @@
 #include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/echo_cancellation_impl.h"
 #include "modules/audio_processing/echo_control_mobile_impl.h"
-#include "modules/audio_processing/gain_control_for_experimental_agc.h"
 #include "modules/audio_processing/gain_control_impl.h"
 #include "modules/audio_processing/gain_controller2.h"
 #include "modules/audio_processing/high_pass_filter.h"
@@ -254,11 +253,6 @@ class AudioProcessingImpl : public AudioProcessing {
   void ApplyAgc1Config(const Config::GainController1& agc_config)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
-  // Returns a direct pointer to the AGC1 submodule: either a GainControlImpl
-  // or GainControlForExperimentalAgc instance.
-  GainControl* agc1();
-  const GainControl* agc1() const;
-
   void EmptyQueuedRenderAudio();
   void AllocateRenderQueue()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
@@ -331,16 +325,26 @@ class AudioProcessingImpl : public AudioProcessing {
     Submodules(std::unique_ptr<CustomProcessing> capture_post_processor,
                std::unique_ptr<CustomProcessing> render_pre_processor,
                rtc::scoped_refptr<EchoDetector> echo_detector,
-               std::unique_ptr<CustomAudioAnalyzer> capture_analyzer)
+               std::unique_ptr<CustomAudioAnalyzer> capture_analyzer,
+               int agc_startup_min_volume,
+               int agc_clipped_level_min,
+               bool use_experimental_agc,
+               bool use_experimental_agc_agc2_level_estimation,
+               bool use_experimental_agc_agc2_digital_adaptive)
         : echo_detector(std::move(echo_detector)),
           capture_post_processor(std::move(capture_post_processor)),
           render_pre_processor(std::move(render_pre_processor)),
-          capture_analyzer(std::move(capture_analyzer)) {}
+          capture_analyzer(std::move(capture_analyzer)) {
+      if (use_experimental_agc) {
+        agc_manager = std::make_unique<AgcManagerDirect>(
+            agc_startup_min_volume, agc_clipped_level_min,
+            use_experimental_agc_agc2_level_estimation,
+            use_experimental_agc_agc2_digital_adaptive);
+      }
+    }
     // Accessed internally from capture or during initialization.
     std::unique_ptr<AgcManagerDirect> agc_manager;
     std::unique_ptr<GainControlImpl> gain_control;
-    std::unique_ptr<GainControlForExperimentalAgc>
-        gain_control_for_experimental_agc;
     std::unique_ptr<GainController2> gain_controller2;
     std::unique_ptr<HighPassFilter> high_pass_filter;
     rtc::scoped_refptr<EchoDetector> echo_detector;
@@ -377,29 +381,15 @@ class AudioProcessingImpl : public AudioProcessing {
 
   // APM constants.
   const struct ApmConstants {
-    ApmConstants(int agc_startup_min_volume,
-                 int agc_clipped_level_min,
-                 bool use_experimental_agc,
-                 bool use_experimental_agc_agc2_level_estimation,
-                 bool use_experimental_agc_agc2_digital_adaptive,
+    ApmConstants(int agc_clipped_level_min,
                  bool experimental_multi_channel_render_support,
                  bool experimental_multi_channel_capture_support)
-        : agc_startup_min_volume(agc_startup_min_volume),
-          agc_clipped_level_min(agc_clipped_level_min),
-          use_experimental_agc(use_experimental_agc),
-          use_experimental_agc_agc2_level_estimation(
-              use_experimental_agc_agc2_level_estimation),
-          use_experimental_agc_agc2_digital_adaptive(
-              use_experimental_agc_agc2_digital_adaptive),
+        : agc_clipped_level_min(agc_clipped_level_min),
           experimental_multi_channel_render_support(
               experimental_multi_channel_render_support),
           experimental_multi_channel_capture_support(
               experimental_multi_channel_capture_support) {}
-    int agc_startup_min_volume;
     int agc_clipped_level_min;
-    bool use_experimental_agc;
-    bool use_experimental_agc_agc2_level_estimation;
-    bool use_experimental_agc_agc2_digital_adaptive;
     bool experimental_multi_channel_render_support;
     bool experimental_multi_channel_capture_support;
   } constants_;

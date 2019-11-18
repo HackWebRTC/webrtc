@@ -124,8 +124,6 @@ rtc_library("audio_processing") {
     "echo_detector/moving_max.h",
     "echo_detector/normalized_covariance_estimator.cc",
     "echo_detector/normalized_covariance_estimator.h",
-    "gain_control_for_experimental_agc.cc",
-    "gain_control_for_experimental_agc.h",
     "gain_control_impl.cc",
     "gain_control_impl.h",
     "gain_controller2.cc",

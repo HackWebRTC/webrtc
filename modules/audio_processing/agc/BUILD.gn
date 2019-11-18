@@ -36,6 +36,7 @@ rtc_library("agc") {
     "../../../system_wrappers:metrics",
     "../agc2:level_estimation_agc",
     "../vad",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
