@@ -23,7 +23,7 @@
 namespace webrtc {
 namespace {
 
-constexpr int kMaxTemplates = 63;
+constexpr int kMaxTemplates = 64;
 
 enum class NextLayerIdc : uint64_t {
   kSameLayer = 0,
@@ -81,7 +81,7 @@ int RtpDependencyDescriptorWriter::ValueSizeBits() const {
   static constexpr int kMandatoryFields = 1 + 1 + 6 + 16;
   int value_size_bits = kMandatoryFields + best_template_.extra_size_bits;
   if (HasExtendedFields()) {
-    value_size_bits += 11;
+    value_size_bits += 5;
     if (descriptor_.attached_structure)
       value_size_bits += StructureSizeBits();
     if (ShouldWriteActiveDecodeTargetsBitmask())
@@ -304,15 +304,13 @@ void RtpDependencyDescriptorWriter::WriteResolutions() {
 }
 
 void RtpDependencyDescriptorWriter::WriteMandatoryFields() {
-  static constexpr uint64_t kExtendedFieldsIndicator = 0b111111;
   WriteBits(descriptor_.first_packet_in_frame, 1);
   WriteBits(descriptor_.last_packet_in_frame, 1);
-  WriteBits(HasExtendedFields() ? kExtendedFieldsIndicator : TemplateId(), 6);
+  WriteBits(TemplateId(), 6);
   WriteBits(descriptor_.frame_number, 16);
 }
 
 void RtpDependencyDescriptorWriter::WriteExtendedFields() {
-  WriteBits(TemplateId(), 6);
   uint64_t template_dependency_structure_present_flag =
       descriptor_.attached_structure ? 1u : 0u;
   WriteBits(template_dependency_structure_present_flag, 1);
