@@ -2031,6 +2031,8 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   assert(fs_hz == 8000 || fs_hz == 16000 || fs_hz == 32000 || fs_hz == 48000);
   assert(channels > 0);
 
+  // Before changing the sample rate, end and report any ongoing expand event.
+  stats_->EndExpandEvent(fs_hz_);
   fs_hz_ = fs_hz;
   fs_mult_ = fs_hz / 8000;
   output_size_samples_ = static_cast<size_t>(kOutputSizeMs * 8 * fs_mult_);

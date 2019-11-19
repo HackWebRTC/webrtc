@@ -707,14 +707,40 @@ TEST_F(NetEqImplTest, FirstPacketUnknown) {
 // This test verifies that audio interruption is not logged for the initial
 // PLC period before the first packet is deocoded.
 // TODO(henrik.lundin) Maybe move this test to neteq_network_stats_unittest.cc.
-TEST_F(NetEqImplTest, NoAudioInterruptionLoggedBeforeFirstDecode) {
+// Make the test parametrized, so that we can test with different initial
+// sample rates in NetEq.
+class NetEqImplTestSampleRateParameter
+    : public NetEqImplTest,
+      public testing::WithParamInterface<int> {
+ protected:
+  NetEqImplTestSampleRateParameter()
+      : NetEqImplTest(), initial_sample_rate_hz_(GetParam()) {
+    config_.sample_rate_hz = initial_sample_rate_hz_;
+  }
+
+  const int initial_sample_rate_hz_;
+};
+
+// This test does the following:
+// 0. Set up NetEq with initial sample rate given by test parameter, and a codec
+//    sample rate of 16000.
+// 1. Start calling GetAudio before inserting any encoded audio. The audio
+//    produced will be PLC.
+// 2. Insert a number of encoded audio packets.
+// 3. Keep calling GetAudio and verify that no audio interruption was logged.
+//    Call GetAudio until NetEq runs out of data again; PLC starts.
+// 4. Insert one more packet.
+// 5. Call GetAudio until that packet is decoded and the PLC ends.
+
+TEST_P(NetEqImplTestSampleRateParameter,
+       NoAudioInterruptionLoggedBeforeFirstDecode) {
   UseNoMocks();
   CreateInstance();
 
   const uint8_t kPayloadType = 17;   // Just an arbitrary number.
-  const int kSampleRateHz = 8000;
+  const int kPayloadSampleRateHz = 16000;
   const size_t kPayloadLengthSamples =
-      static_cast<size_t>(10 * kSampleRateHz / 1000);  // 10 ms.
+      static_cast<size_t>(10 * kPayloadSampleRateHz / 1000);  // 10 ms.
   const size_t kPayloadLengthBytes = kPayloadLengthSamples * 2;
   uint8_t payload[kPayloadLengthBytes] = {0};
   RTPHeader rtp_header;
@@ -724,44 +750,155 @@ TEST_F(NetEqImplTest, NoAudioInterruptionLoggedBeforeFirstDecode) {
   rtp_header.ssrc = 0x87654321;
 
   // Register the payload type.
-  EXPECT_TRUE(neteq_->RegisterPayloadType(kPayloadType,
-                                          SdpAudioFormat("l16", 8000, 1)));
+  EXPECT_TRUE(neteq_->RegisterPayloadType(
+      kPayloadType, SdpAudioFormat("l16", kPayloadSampleRateHz, 1)));
 
   // Pull audio several times. No packets have been inserted yet.
-  const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
+  const size_t initial_output_size =
+      static_cast<size_t>(10 * initial_sample_rate_hz_ / 1000);  // 10 ms
   AudioFrame output;
   bool muted;
   for (int i = 0; i < 100; ++i) {
     EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
-    ASSERT_LE(output.samples_per_channel_, kMaxOutputSize);
-    EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
+    EXPECT_EQ(initial_output_size, output.samples_per_channel_);
     EXPECT_EQ(1u, output.num_channels_);
     EXPECT_NE(AudioFrame::kNormalSpeech, output.speech_type_);
     EXPECT_THAT(output.packet_infos_, IsEmpty());
   }
 
-  // Insert 10 packets.
-  for (size_t i = 0; i < 10; ++i) {
+  // Lambda for inserting packets.
+  auto insert_packet = [&]() {
     rtp_header.sequenceNumber++;
     rtp_header.timestamp += kPayloadLengthSamples;
     EXPECT_EQ(NetEq::kOK, neteq_->InsertPacket(rtp_header, payload));
+  };
+  // Insert 10 packets.
+  for (size_t i = 0; i < 10; ++i) {
+    insert_packet();
     EXPECT_EQ(i + 1, packet_buffer_->NumPacketsInBuffer());
   }
 
   // Pull audio repeatedly and make sure we get normal output, that is not PLC.
+  constexpr size_t kOutputSize =
+      static_cast<size_t>(10 * kPayloadSampleRateHz / 1000);  // 10 ms
   for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
-    ASSERT_LE(output.samples_per_channel_, kMaxOutputSize);
-    EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
+    EXPECT_EQ(kOutputSize, output.samples_per_channel_);
     EXPECT_EQ(1u, output.num_channels_);
     EXPECT_EQ(AudioFrame::kNormalSpeech, output.speech_type_)
         << "NetEq did not decode the packets as expected.";
     EXPECT_THAT(output.packet_infos_, SizeIs(1));
   }
 
+  // Verify that no interruption was logged.
   auto lifetime_stats = neteq_->GetLifetimeStatistics();
   EXPECT_EQ(0, lifetime_stats.interruption_count);
+
+  // Keep pulling audio data until a new PLC period is started.
+  size_t count_loops = 0;
+  while (output.speech_type_ == AudioFrame::kNormalSpeech) {
+    // Make sure we don't hang the test if we never go to PLC.
+    ASSERT_LT(++count_loops, 100u);
+    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
+  }
+
+  // Insert one more packet.
+  insert_packet();
+
+  // Pull audio until the newly inserted packet is decoded and the PLC ends.
+  while (output.speech_type_ != AudioFrame::kNormalSpeech) {
+    // Make sure we don't hang the test if we never go to PLC.
+    ASSERT_LT(++count_loops, 100u);
+    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
+  }
+
+  // Verify that no interruption was logged.
+  lifetime_stats = neteq_->GetLifetimeStatistics();
+  EXPECT_EQ(0, lifetime_stats.interruption_count);
 }
+
+// This test does the following:
+// 0. Set up NetEq with initial sample rate given by test parameter, and a codec
+//    sample rate of 16000.
+// 1. Insert a number of encoded audio packets.
+// 2. Call GetAudio and verify that decoded audio is produced.
+// 3. Keep calling GetAudio until NetEq runs out of data; PLC starts.
+// 4. Keep calling GetAudio until PLC has been produced for at least 150 ms.
+// 5. Insert one more packet.
+// 6. Call GetAudio until that packet is decoded and the PLC ends.
+// 7. Verify that an interruption was logged.
+
+TEST_P(NetEqImplTestSampleRateParameter, AudioInterruptionLogged) {
+  UseNoMocks();
+  CreateInstance();
+
+  const uint8_t kPayloadType = 17;  // Just an arbitrary number.
+  const int kPayloadSampleRateHz = 16000;
+  const size_t kPayloadLengthSamples =
+      static_cast<size_t>(10 * kPayloadSampleRateHz / 1000);  // 10 ms.
+  const size_t kPayloadLengthBytes = kPayloadLengthSamples * 2;
+  uint8_t payload[kPayloadLengthBytes] = {0};
+  RTPHeader rtp_header;
+  rtp_header.payloadType = kPayloadType;
+  rtp_header.sequenceNumber = 0x1234;
+  rtp_header.timestamp = 0x12345678;
+  rtp_header.ssrc = 0x87654321;
+
+  // Register the payload type.
+  EXPECT_TRUE(neteq_->RegisterPayloadType(
+      kPayloadType, SdpAudioFormat("l16", kPayloadSampleRateHz, 1)));
+
+  // Lambda for inserting packets.
+  auto insert_packet = [&]() {
+    rtp_header.sequenceNumber++;
+    rtp_header.timestamp += kPayloadLengthSamples;
+    EXPECT_EQ(NetEq::kOK, neteq_->InsertPacket(rtp_header, payload));
+  };
+  // Insert 10 packets.
+  for (size_t i = 0; i < 10; ++i) {
+    insert_packet();
+    EXPECT_EQ(i + 1, packet_buffer_->NumPacketsInBuffer());
+  }
+
+  AudioFrame output;
+  bool muted;
+  // Keep pulling audio data until a new PLC period is started.
+  size_t count_loops = 0;
+  do {
+    // Make sure we don't hang the test if we never go to PLC.
+    ASSERT_LT(++count_loops, 100u);
+    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
+  } while (output.speech_type_ == AudioFrame::kNormalSpeech);
+
+  // Pull audio 15 times, which produces 150 ms of output audio. This should
+  // all be produced as PLC. The total length of the gap will then be 150 ms
+  // plus an initial fraction of 10 ms at the start and the end of the PLC
+  // period. In total, less than 170 ms.
+  for (size_t i = 0; i < 15; ++i) {
+    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
+    EXPECT_NE(AudioFrame::kNormalSpeech, output.speech_type_);
+  }
+
+  // Insert one more packet.
+  insert_packet();
+
+  // Pull audio until the newly inserted packet is decoded and the PLC ends.
+  while (output.speech_type_ != AudioFrame::kNormalSpeech) {
+    // Make sure we don't hang the test if we never go to PLC.
+    ASSERT_LT(++count_loops, 100u);
+    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
+  }
+
+  // Verify that the interruption was logged.
+  auto lifetime_stats = neteq_->GetLifetimeStatistics();
+  EXPECT_EQ(1, lifetime_stats.interruption_count);
+  EXPECT_GT(lifetime_stats.total_interruption_duration_ms, 150);
+  EXPECT_LT(lifetime_stats.total_interruption_duration_ms, 170);
+}
+
+INSTANTIATE_TEST_SUITE_P(SampleRates,
+                         NetEqImplTestSampleRateParameter,
+                         testing::Values(8000, 16000, 32000, 48000));
 
 // This test verifies that NetEq can handle comfort noise and enters/quits codec
 // internal CNG mode properly.
