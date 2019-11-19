@@ -395,6 +395,7 @@ public class PeerConnection {
       }
     }
 
+    @Nullable
     @CalledByNative("AdapterType")
     static AdapterType fromNativeIndex(int nativeIndex) {
       return BY_BITMASK.get(nativeIndex);
