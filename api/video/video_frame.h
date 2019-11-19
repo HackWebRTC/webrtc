@@ -49,6 +49,31 @@ class RTC_EXPORT VideoFrame {
     void MakeEmptyUpdate();
 
     bool IsEmpty() const;
+
+    // Per-member equality check. Empty rectangles with different offsets would
+    // be considered different.
+    bool operator==(const UpdateRect& other) const {
+      return other.offset_x == offset_x && other.offset_y == offset_y &&
+             other.width == width && other.height == height;
+    }
+
+    bool operator!=(const UpdateRect& other) const { return !(*this == other); }
+
+    // Scales update_rect given original frame dimensions.
+    // Cropping is applied first, then rect is scaled down.
+    // Update rect is snapped to 2x2 grid due to possible UV subsampling and
+    // then expanded by additional 2 pixels in each direction to accommodate any
+    // possible scaling artifacts.
+    // Note, close but not equal update_rects on original frame may result in
+    // the same scaled update rects.
+    UpdateRect ScaleWithFrame(int frame_width,
+                              int frame_height,
+                              int crop_x,
+                              int crop_y,
+                              int crop_width,
+                              int crop_height,
+                              int scaled_width,
+                              int scaled_height) const;
   };
 
   // Interface for accessing elements of the encoded frame that was the base for

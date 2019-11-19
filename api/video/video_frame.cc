@@ -60,6 +60,103 @@ bool VideoFrame::UpdateRect::IsEmpty() const {
   return width == 0 && height == 0;
 }
 
+VideoFrame::UpdateRect VideoFrame::UpdateRect::ScaleWithFrame(
+    int frame_width,
+    int frame_height,
+    int crop_x,
+    int crop_y,
+    int crop_width,
+    int crop_height,
+    int scaled_width,
+    int scaled_height) const {
+  RTC_DCHECK_GT(frame_width, 0);
+  RTC_DCHECK_GT(frame_height, 0);
+
+  RTC_DCHECK_GT(crop_width, 0);
+  RTC_DCHECK_GT(crop_height, 0);
+
+  RTC_DCHECK_LE(crop_width + crop_x, frame_width);
+  RTC_DCHECK_LE(crop_height + crop_y, frame_height);
+
+  RTC_DCHECK_GT(scaled_width, 0);
+  RTC_DCHECK_GT(scaled_height, 0);
+
+  // Check if update rect is out of the cropped area.
+  if (offset_x + width < crop_x || offset_x > crop_x + crop_width ||
+      offset_y + height < crop_y || offset_y > crop_y + crop_width) {
+    return {0, 0, 0, 0};
+  }
+
+  int x = offset_x - crop_x;
+  int w = width;
+  if (x < 0) {
+    w += x;
+    x = 0;
+  }
+  int y = offset_y - crop_y;
+  int h = height;
+  if (y < 0) {
+    h += y;
+    y = 0;
+  }
+
+  // Lower corner is rounded down.
+  x = x * scaled_width / crop_width;
+  y = y * scaled_height / crop_height;
+  // Upper corner is rounded up.
+  w = (w * scaled_width + crop_width - 1) / crop_width;
+  h = (h * scaled_height + crop_height - 1) / crop_height;
+
+  // Round to full 2x2 blocks due to possible subsampling in the pixel data.
+  if (x % 2) {
+    --x;
+    ++w;
+  }
+  if (y % 2) {
+    --y;
+    ++h;
+  }
+  if (w % 2) {
+    ++w;
+  }
+  if (h % 2) {
+    ++h;
+  }
+
+  // Expand the update rect by 2 pixels in each direction to include any
+  // possible scaling artifacts.
+  if (scaled_width != crop_width || scaled_height != crop_height) {
+    if (x > 0) {
+      x -= 2;
+      w += 2;
+    }
+    if (y > 0) {
+      y -= 2;
+      h += 2;
+    }
+    w += 2;
+    h += 2;
+  }
+
+  // Ensure update rect is inside frame dimensions.
+  if (x + w > scaled_width) {
+    w = scaled_width - x;
+  }
+  if (y + h > scaled_height) {
+    h = scaled_height - y;
+  }
+  RTC_DCHECK_GE(w, 0);
+  RTC_DCHECK_GE(h, 0);
+  if (w == 0 || h == 0) {
+    w = 0;
+    h = 0;
+    x = 0;
+    y = 0;
+  }
+
+  return {x, y, w, h};
+}
+
 VideoFrame::Builder::Builder() = default;
 
 VideoFrame::Builder::~Builder() = default;
