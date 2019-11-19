@@ -99,8 +99,6 @@ PacingController::PacingController(Clock* clock,
       pace_audio_(!IsDisabled(*field_trials_, "WebRTC-Pacer-BlockAudio")),
       small_first_probe_packet_(
           IsEnabled(*field_trials_, "WebRTC-Pacer-SmallFirstProbePacket")),
-      send_side_bwe_with_overhead_(
-          IsEnabled(*field_trials_, "WebRTC-SendSideBwe-WithOverhead")),
       min_packet_limit_(kDefaultMinPacketLimit),
       last_timestamp_(clock_->CurrentTime()),
       paused_(false),
@@ -465,10 +463,8 @@ void PacingController::ProcessPackets() {
 
     // Fetch the next packet, so long as queue is not empty or budget is not
     // exhausted.
-    std::unique_ptr<RtpPacketToSend> rtp_packet =
-        GetPendingPacket(pacing_info, target_send_time, now);
-
-    if (rtp_packet == nullptr) {
+    auto* packet = GetPendingPacket(pacing_info, target_send_time, now);
+    if (packet == nullptr) {
       // No packet available to send, check if we should send padding.
       DataSize padding_to_add = PaddingToAdd(recommended_probe_size, data_sent);
       if (padding_to_add > DataSize::Zero()) {
@@ -489,19 +485,14 @@ void PacingController::ProcessPackets() {
       break;
     }
 
+    std::unique_ptr<RtpPacketToSend> rtp_packet = packet->ReleasePacket();
     RTC_DCHECK(rtp_packet);
-    RTC_DCHECK(rtp_packet->packet_type().has_value());
-    const RtpPacketToSend::Type packet_type = *rtp_packet->packet_type();
-    const DataSize packet_size = DataSize::bytes(
-        send_side_bwe_with_overhead_
-            ? rtp_packet->size()
-            : rtp_packet->payload_size() + rtp_packet->padding_size());
     packet_sender_->SendRtpPacket(std::move(rtp_packet), pacing_info);
 
-    data_sent += packet_size;
-
-    // Send done, update send/process time to the target send time.
-    OnPacketSent(packet_type, packet_size, target_send_time);
+    data_sent += packet->size();
+    // Send succeeded, remove it from the queue and update send/process time to
+    // the target send time.
+    OnPacketSent(packet, target_send_time);
     if (recommended_probe_size && data_sent > *recommended_probe_size)
       break;
 
@@ -560,7 +551,7 @@ DataSize PacingController::PaddingToAdd(
   return DataSize::Zero();
 }
 
-std::unique_ptr<RtpPacketToSend> PacingController::GetPendingPacket(
+RoundRobinPacketQueue::QueuedPacket* PacingController::GetPendingPacket(
     const PacedPacketInfo& pacing_info,
     Timestamp target_send_time,
     Timestamp now) {
@@ -601,28 +592,23 @@ std::unique_ptr<RtpPacketToSend> PacingController::GetPendingPacket(
     }
   }
 
-  auto* queued_packet = packet_queue_.BeginPop();
-  std::unique_ptr<RtpPacketToSend> rtp_packet;
-  if (queued_packet != nullptr) {
-    rtp_packet = queued_packet->ReleasePacket();
-    packet_queue_.FinalizePop();
-  }
-  return rtp_packet;
+  return packet_queue_.BeginPop();
 }
 
-void PacingController::OnPacketSent(RtpPacketToSend::Type packet_type,
-                                    DataSize packet_size,
+void PacingController::OnPacketSent(RoundRobinPacketQueue::QueuedPacket* packet,
                                     Timestamp send_time) {
   if (!first_sent_packet_time_) {
     first_sent_packet_time_ = send_time;
   }
-  bool audio_packet = packet_type == RtpPacketToSend::Type::kAudio;
+  bool audio_packet = packet->type() == RtpPacketToSend::Type::kAudio;
   if (!audio_packet || account_for_audio_) {
     // Update media bytes sent.
-    UpdateBudgetWithSentData(packet_size);
+    UpdateBudgetWithSentData(packet->size());
   }
   last_send_time_ = send_time;
   last_process_time_ = send_time;
+  // Send succeeded, remove it from the queue.
+  packet_queue_.FinalizePop();
 }
 
 void PacingController::OnPaddingSent(DataSize data_sent) {
