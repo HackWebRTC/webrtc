@@ -1638,7 +1638,7 @@ TEST_F(AcmSetBitRateNewApi, OpusFromFormat_48khz_20ms_50kbps) {
 // send surround audio.
 TEST_F(AudioCodingModuleTestOldApi, SendingMultiChannelForMonoInput) {
   constexpr int kSampleRateHz = 48000;
-  constexpr int kSamplesPerChannel = (kSampleRateHz * 10) / 1000;
+  constexpr int kSamplesPerChannel = kSampleRateHz * 10 / 1000;
 
   audio_format_ = SdpAudioFormat({"multiopus",
                                   kSampleRateHz,
@@ -1692,7 +1692,7 @@ TEST_F(AudioCodingModuleTestOldApi, SendingStereoForMonoInput) {
   constexpr int kSampleRateHz = 48000;
   constexpr int kSamplesPerChannel = (kSampleRateHz * 10) / 1000;
 
-  audio_format_ = SdpAudioFormat("opus", kSampleRateHz, 2);
+  audio_format_ = SdpAudioFormat("L16", kSampleRateHz, 2);
 
   RegisterCodec();
 

@@ -29,6 +29,8 @@ rtc_library("audio_coding") {
   sources = [
     "acm2/acm_receiver.cc",
     "acm2/acm_receiver.h",
+    "acm2/acm_remixing.cc",
+    "acm2/acm_remixing.h",
     "acm2/acm_resampler.cc",
     "acm2/acm_resampler.h",
     "acm2/audio_coding_module.cc",
@@ -1972,6 +1974,7 @@ if (rtc_include_tests) {
 
     sources = [
       "acm2/acm_receiver_unittest.cc",
+      "acm2/acm_remixing_unittest.cc",
       "acm2/audio_coding_module_unittest.cc",
       "acm2/call_statistics_unittest.cc",
       "audio_network_adaptor/audio_network_adaptor_impl_unittest.cc",
