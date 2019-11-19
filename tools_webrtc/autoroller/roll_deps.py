@@ -683,8 +683,9 @@ def main():
   removed_generated_android_deps, other_deps = FindRemovedDeps(webrtc_deps,
                                                                new_cr_deps)
   if other_deps:
-    raise RollError('WebRTC DEPS entries are missing from Chromium: %s. '
-          'Remove them or add them to DONT_AUTOROLL_THESE.' % other_deps)
+    raise RollError('WebRTC DEPS entries are missing from Chromium: %s.\n'
+          'Remove them or add them to either '
+          'WEBRTC_ONLY_DEPS or DONT_AUTOROLL_THESE.' % other_deps)
   clang_change = CalculateChangedClang(rev_update.new_chromium_rev)
   commit_msg = GenerateCommitMessage(
       rev_update, current_commit_pos, new_commit_pos, changed_deps,

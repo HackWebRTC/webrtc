@@ -5,7 +5,7 @@ vars = {
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
-  'chromium_revision': '0717a4dc313ba6715d096c33a9c5e1365f9b1284',
+  'chromium_revision': 'c2481863282a401926e0ee479334c68ec362d302',
 }
 
 deps = {
@@ -14,7 +14,7 @@ deps = {
   'src/base':
     'https://chromium.googlesource.com/chromium/src/base@c2926851da547ceda14235cfd6dc8a72dbabaa7f',
   'src/build':
-    'https://chromium.googlesource.com/chromium/src/build@7e97a0cab37370205309957c0139b3b7449f6801',
+    'https://chromium.googlesource.com/chromium/src/build@da9baf4669eb13e5432220ff5030af3cfacfd33d',
   'src/buildtools':
     'https://chromium.googlesource.com/chromium/src/buildtools@140e4d7c45ffb55ce5dc4d11a0c3938363cd8257',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
@@ -378,12 +378,12 @@ deps = {
   'src/third_party/android_sdk/public': {
       'packages': [
           {
-              'package': 'chromium/third_party/android_sdk/public/build-tools',
-              'version': '5DL7LQQjVMLClXLzLgmGysccPGsGcjJdvH9z5-uetiIC',
+              'package': 'chromium/third_party/android_sdk/public/build-tools/29.0.2',
+              'version': 'n-b1Qd7iFb8qzHlr1C_jIeu070UDgO_BwePtH42UqGcC',
           },
           {
               'package': 'chromium/third_party/android_sdk/public/emulator',
-              'version': 'xhyuoquVvBTcJelgRjMKZeoBVSQRjB7pLVJPt5C9saIC',
+              'version': 'f4WdgkPvDdVCE8zBWPzcSIj4N9WFhKp3CSKDWylXuLEC',
           },
           {
               'package': 'chromium/third_party/android_sdk/public/extras',
@@ -395,15 +395,15 @@ deps = {
           },
           {
               'package': 'chromium/third_party/android_sdk/public/platform-tools',
-              'version': 'MSnxgXN7IurL-MQs1RrTkSFSb8Xd1UtZjLArI8Ty1FgC',
+              'version': 'n5NRtk1IRM87UHkSNPKGfMf6VL_BfjEOBXhD9uqynhIC',
           },
           {
-              'package': 'chromium/third_party/android_sdk/public/platforms',
-              'version': 'Kg2t9p0YnQk8bldUv4VA3o156uPXLUfIFAmVZ-Gm5ewC',
+              'package': 'chromium/third_party/android_sdk/public/platforms/android-29',
+              'version': 'yb33klKQV9UzzB-lDSsq36vzhTXOUZ2aRONBvPGwvdcC',
           },
           {
-              'package': 'chromium/third_party/android_sdk/public/sources',
-              'version': 'K9uEn3JvNELEVjjVK_GQD3ZQD3rqAnJSxCWxjmUmRkgC',
+              'package': 'chromium/third_party/android_sdk/public/sources/android-29',
+              'version': '4gxhM8E62bvZpQs7Q3d0DinQaW0RLCIefhXrQBFkNy8C',
           },
           {
               'package': 'chromium/third_party/android_sdk/public/tools',
