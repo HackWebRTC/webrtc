@@ -52,23 +52,25 @@ size_t ReadTrendlineFilterWindowSize(
 }
 
 absl::optional<double> LinearFitSlope(
-    const std::deque<std::pair<double, double>>& points) {
-  RTC_DCHECK(points.size() >= 2);
+    const std::deque<TrendlineEstimator::PacketTiming>& packets) {
+  RTC_DCHECK(packets.size() >= 2);
   // Compute the "center of mass".
   double sum_x = 0;
   double sum_y = 0;
-  for (const auto& point : points) {
-    sum_x += point.first;
-    sum_y += point.second;
+  for (const auto& packet : packets) {
+    sum_x += packet.arrival_time_ms;
+    sum_y += packet.smoothed_delay_ms;
   }
-  double x_avg = sum_x / points.size();
-  double y_avg = sum_y / points.size();
+  double x_avg = sum_x / packets.size();
+  double y_avg = sum_y / packets.size();
   // Compute the slope k = \sum (x_i-x_avg)(y_i-y_avg) / \sum (x_i-x_avg)^2
   double numerator = 0;
   double denominator = 0;
-  for (const auto& point : points) {
-    numerator += (point.first - x_avg) * (point.second - y_avg);
-    denominator += (point.first - x_avg) * (point.first - x_avg);
+  for (const auto& packet : packets) {
+    double x = packet.arrival_time_ms;
+    double y = packet.smoothed_delay_ms;
+    numerator += (x - x_avg) * (y - y_avg);
+    denominator += (x - x_avg) * (x - x_avg);
   }
   if (denominator == 0)
     return absl::nullopt;
@@ -138,9 +140,9 @@ void TrendlineEstimator::UpdateTrendline(double recv_delta_ms,
                         smoothed_delay_);
 
   // Simple linear regression.
-  delay_hist_.push_back(std::make_pair(
+  delay_hist_.emplace_back(
       static_cast<double>(arrival_time_ms - first_arrival_time_ms_),
-      smoothed_delay_));
+      smoothed_delay_);
   if (delay_hist_.size() > window_size_)
     delay_hist_.pop_front();
   double trend = prev_trend_;
