@@ -150,8 +150,12 @@ int64_t PacedSender::TimeUntilNextProcess() {
   rtc::CritScope cs(&critsect_);
 
   Timestamp next_send_time = pacing_controller_.NextSendTime();
-  return std::max(TimeDelta::Zero(), next_send_time - clock_->CurrentTime())
-      .ms();
+  TimeDelta sleep_time =
+      std::max(TimeDelta::Zero(), next_send_time - clock_->CurrentTime());
+  if (process_mode_ == PacingController::ProcessMode::kDynamic) {
+    return sleep_time.RoundTo(TimeDelta::ms(1)).ms();
+  }
+  return sleep_time.ms();
 }
 
 void PacedSender::Process() {

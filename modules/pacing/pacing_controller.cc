@@ -586,8 +586,9 @@ RoundRobinPacketQueue::QueuedPacket* PacingController::GetPendingPacket(
         }
       } else {
         // In dynamic mode we should never try get a non-probe packet until
-        // the media debt is actually zero.
-        RTC_DCHECK(media_debt_.IsZero());
+        // the media debt is actually zero. Since there can be rounding errors,
+        // allow some discrepancy.
+        RTC_DCHECK_LE(media_debt_, media_rate_ * kMinSleepTime);
       }
     }
   }
