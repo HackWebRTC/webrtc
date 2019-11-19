@@ -282,7 +282,7 @@ int CoreAudioBase::DeviceName(int index,
   AudioDeviceNames device_names;
   bool ok = IsInput() ? core_audio_utility::GetInputDeviceNames(&device_names)
                       : core_audio_utility::GetOutputDeviceNames(&device_names);
-  if (!ok) {
+  if (!ok || static_cast<int>(device_names.size()) <= index) {
     RTC_LOG(LS_ERROR) << "Failed to get the device name";
     return -1;
   }
