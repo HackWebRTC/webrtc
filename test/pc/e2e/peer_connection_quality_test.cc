@@ -1032,15 +1032,15 @@ void PeerConnectionE2EQualityTest::TearDownCall() {
   alice_->pc()->Close();
   bob_->pc()->Close();
 
+  alice_video_sources_.clear();
+  bob_video_sources_.clear();
+  alice_.reset();
+  bob_.reset();
+
   for (const auto& video_writer : video_writers_) {
     video_writer->Close();
   }
-
-  alice_video_sources_.clear();
-  bob_video_sources_.clear();
   video_writers_.clear();
-  alice_.reset();
-  bob_.reset();
 }
 
 test::VideoFrameWriter* PeerConnectionE2EQualityTest::MaybeCreateVideoWriter(
