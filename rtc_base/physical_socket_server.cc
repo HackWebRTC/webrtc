@@ -148,7 +148,7 @@ bool PhysicalSocket::Create(int family, int type) {
 }
 
 SocketAddress PhysicalSocket::GetLocalAddress() const {
-  sockaddr_storage addr_storage = {0};
+  sockaddr_storage addr_storage = {};
   socklen_t addrlen = sizeof(addr_storage);
   sockaddr* addr = reinterpret_cast<sockaddr*>(&addr_storage);
   int result = ::getsockname(s_, addr, &addrlen);
@@ -163,7 +163,7 @@ SocketAddress PhysicalSocket::GetLocalAddress() const {
 }
 
 SocketAddress PhysicalSocket::GetRemoteAddress() const {
-  sockaddr_storage addr_storage = {0};
+  sockaddr_storage addr_storage = {};
   socklen_t addrlen = sizeof(addr_storage);
   sockaddr* addr = reinterpret_cast<sockaddr*>(&addr_storage);
   int result = ::getpeername(s_, addr, &addrlen);

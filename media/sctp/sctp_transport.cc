@@ -717,7 +717,7 @@ bool SctpTransport::Connect() {
   }
   // Set the MTU and disable MTU discovery.
   // We can only do this after usrsctp_connect or it has no effect.
-  sctp_paddrparams params = {{0}};
+  sctp_paddrparams params = {};
   memcpy(&params.spp_address, &remote_sconn, sizeof(remote_sconn));
   params.spp_flags = SPP_PMTUD_DISABLE;
   // The MTU value provided specifies the space available for chunks in the
