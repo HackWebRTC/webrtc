@@ -359,13 +359,13 @@ class RTCStatsMember : public RTCStatsMemberInterface {
   template <>                                                               \
   RTC_EXPORT RTCStatsMemberInterface::Type RTCStatsMember<T>::StaticType(); \
   template <>                                                               \
-  bool RTCStatsMember<T>::is_sequence() const;                              \
+  RTC_EXPORT bool RTCStatsMember<T>::is_sequence() const;                   \
   template <>                                                               \
-  bool RTCStatsMember<T>::is_string() const;                                \
+  RTC_EXPORT bool RTCStatsMember<T>::is_string() const;                     \
   template <>                                                               \
-  std::string RTCStatsMember<T>::ValueToString() const;                     \
+  RTC_EXPORT std::string RTCStatsMember<T>::ValueToString() const;          \
   template <>                                                               \
-  std::string RTCStatsMember<T>::ValueToJson() const;                       \
+  RTC_EXPORT std::string RTCStatsMember<T>::ValueToJson() const;            \
   extern template class RTC_EXPORT_TEMPLATE_DECLARE(RTC_EXPORT)             \
       RTCStatsMember<T>
 
