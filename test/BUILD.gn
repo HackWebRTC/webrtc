@@ -389,7 +389,6 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_approved",
       "../rtc_base:task_queue_for_test",
       "../rtc_base/system:file_wrapper",
-      "../test:single_threaded_task_queue",
       "pc/e2e:e2e_unittests",
       "peer_scenario/tests",
       "scenario:scenario_unittests",
@@ -408,7 +407,6 @@ if (rtc_include_tests) {
       "frame_generator_unittest.cc",
       "rtp_file_reader_unittest.cc",
       "rtp_file_writer_unittest.cc",
-      "single_threaded_task_queue_unittest.cc",
       "testsupport/perf_test_unittest.cc",
       "testsupport/test_artifacts_unittest.cc",
       "testsupport/video_frame_writer_unittest.cc",
@@ -624,22 +622,6 @@ rtc_library("direct_transport") {
   ]
   public_deps = [  # no-presubmit-check TODO(webrtc:8603)
     "../call:fake_network",
-  ]
-}
-
-rtc_library("single_threaded_task_queue") {
-  testonly = true
-  sources = [
-    "single_threaded_task_queue.cc",
-    "single_threaded_task_queue.h",
-  ]
-  deps = [
-    "../api/task_queue",
-    "../rtc_base:checks",
-    "../rtc_base:deprecation",
-    "../rtc_base:rtc_base_approved",
-    "../rtc_base:task_queue_for_test",
-    "../rtc_base/task_utils:to_queued_task",
   ]
 }
 
