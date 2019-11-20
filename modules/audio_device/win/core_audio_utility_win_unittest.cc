@@ -546,8 +546,8 @@ TEST_F(CoreAudioUtilityWinTest, GetDevicePeriod) {
 
   // Verify that the device periods are valid for the default render and
   // capture devices.
+  ComPtr<IAudioClient> client;
   for (size_t i = 0; i < arraysize(data_flow); ++i) {
-    ComPtr<IAudioClient> client;
     REFERENCE_TIME shared_time_period = 0;
     REFERENCE_TIME exclusive_time_period = 0;
     client = core_audio_utility::CreateClient(AudioDeviceName::kDefaultDeviceId,
@@ -566,25 +566,24 @@ TEST_F(CoreAudioUtilityWinTest, GetDevicePeriod) {
 TEST_F(CoreAudioUtilityWinTest, GetPreferredAudioParameters) {
   ABORT_TEST_IF_NOT(DevicesAvailable());
 
-  EDataFlow data_flow[] = {eRender, eCapture};
+  struct {
+    EDataFlow flow;
+    ERole role;
+  } data[] = {{eRender, eConsole},
+              {eRender, eCommunications},
+              {eCapture, eConsole},
+              {eCapture, eCommunications}};
 
-  // Verify that the preferred audio parameters are OK for the default render
-  // and capture devices.
-  for (size_t i = 0; i < arraysize(data_flow); ++i) {
-    webrtc::AudioParameters params;
+  // Verify that the preferred audio parameters are OK for all flow/role
+  // combinations above.
+  ComPtr<IAudioClient> client;
+  webrtc::AudioParameters params;
+  for (size_t i = 0; i < arraysize(data); ++i) {
+    client = core_audio_utility::CreateClient(AudioDeviceName::kDefaultDeviceId,
+                                              data[i].flow, data[i].role);
+    EXPECT_TRUE(client.Get());
     EXPECT_TRUE(SUCCEEDED(core_audio_utility::GetPreferredAudioParameters(
-        AudioDeviceName::kDefaultDeviceId, data_flow[i] == eRender, &params)));
-    EXPECT_TRUE(params.is_valid());
-    EXPECT_TRUE(params.is_complete());
-  }
-
-  // Verify that the preferred audio parameters are OK for the default
-  // communication devices.
-  for (size_t i = 0; i < arraysize(data_flow); ++i) {
-    webrtc::AudioParameters params;
-    EXPECT_TRUE(SUCCEEDED(core_audio_utility::GetPreferredAudioParameters(
-        AudioDeviceName::kDefaultCommunicationsDeviceId,
-        data_flow[i] == eRender, &params)));
+        client.Get(), &params)));
     EXPECT_TRUE(params.is_valid());
     EXPECT_TRUE(params.is_complete());
   }

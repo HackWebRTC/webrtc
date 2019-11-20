@@ -508,14 +508,11 @@ HRESULT GetSharedModeEnginePeriod(IAudioClient3* client3,
                                   uint32_t* min_period_in_frames,
                                   uint32_t* max_period_in_frames);
 
-// Get the preferred audio parameters for the given |device_id| or |client|
-// corresponding to the stream format that the audio engine uses for its
-// internal processing of shared-mode streams. The acquired values should only
-// be utilized for shared mode streamed since there are no preferred settings
-// for an exclusive mode stream.
-HRESULT GetPreferredAudioParameters(const std::string& device_id,
-                                    bool is_output_device,
-                                    webrtc::AudioParameters* params);
+// Get the preferred audio parameters for the given |client| corresponding to
+// the stream format that the audio engine uses for its internal processing of
+// shared-mode streams. The acquired values should only be utilized for shared
+// mode streamed since there are no preferred settings for an exclusive mode
+// stream.
 HRESULT GetPreferredAudioParameters(IAudioClient* client,
                                     webrtc::AudioParameters* params);
 // As above but override the preferred sample rate and use |sample_rate|

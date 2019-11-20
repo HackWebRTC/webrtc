@@ -17,11 +17,12 @@
 namespace webrtc {
 
 struct AudioDeviceName {
-  // Unique ID of the generic default device.
+  // Represents a default device. Note that, on Windows there are two different
+  // types of default devices (Default and Default Communication). They can
+  // either be two different physical devices or be two different roles for one
+  // single device. Hence, this id must be combined with a "role parameter" on
+  // Windows to uniquely identify a default device.
   static const char kDefaultDeviceId[];
-
-  // Unique ID of the generic default communications device.
-  static const char kDefaultCommunicationsDeviceId[];
 
   AudioDeviceName() = default;
   AudioDeviceName(std::string device_name, std::string unique_id);

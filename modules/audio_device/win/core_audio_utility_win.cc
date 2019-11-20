@@ -174,6 +174,32 @@ const char* WaveFormatTagToString(WORD format_tag) {
   }
 }
 
+const char* RoleToString(const ERole role) {
+  switch (role) {
+    case eConsole:
+      return "Console";
+    case eMultimedia:
+      return "Multimedia";
+    case eCommunications:
+      return "Communications";
+    default:
+      return "Unsupported";
+  }
+}
+
+const char* FlowToString(const EDataFlow flow) {
+  switch (flow) {
+    case eRender:
+      return "Render";
+    case eCapture:
+      return "Capture";
+    case eAll:
+      return "Render or Capture";
+    default:
+      return "Unsupported";
+  }
+}
+
 bool LoadAudiosesDll() {
   static const wchar_t* const kAudiosesDLL =
       L"%WINDIR%\\system32\\audioses.dll";
@@ -257,7 +283,9 @@ bool IsDeviceActive(IMMDevice* device) {
 ComPtr<IMMDevice> CreateDeviceInternal(const std::string& device_id,
                                        EDataFlow data_flow,
                                        ERole role) {
-  RTC_DLOG(INFO) << "CreateDeviceInternal: " << role;
+  RTC_DLOG(INFO) << "CreateDeviceInternal: "
+                 << "id=" << device_id << ", flow=" << FlowToString(data_flow)
+                 << ", role=" << RoleToString(role);
   ComPtr<IMMDevice> audio_endpoint_device;
 
   // Create the IMMDeviceEnumerator interface.
@@ -266,8 +294,7 @@ ComPtr<IMMDevice> CreateDeviceInternal(const std::string& device_id,
     return audio_endpoint_device;
 
   _com_error error(S_FALSE);
-  if (device_id == AudioDeviceName::kDefaultDeviceId ||
-      device_id == AudioDeviceName::kDefaultCommunicationsDeviceId) {
+  if (device_id == AudioDeviceName::kDefaultDeviceId) {
     error = device_enum->GetDefaultAudioEndpoint(
         data_flow, role, audio_endpoint_device.GetAddressOf());
     if (FAILED(error.Error())) {
@@ -1053,31 +1080,6 @@ HRESULT GetSharedModeEnginePeriod(IAudioClient3* client3,
   *min_period_in_frames = min_period;
   *max_period_in_frames = max_period;
   return error.Error();
-}
-
-HRESULT GetPreferredAudioParameters(const std::string& device_id,
-                                    bool is_output_device,
-                                    AudioParameters* params) {
-  RTC_DLOG(INFO) << "GetPreferredAudioParameters: " << is_output_device;
-  EDataFlow data_flow = is_output_device ? eRender : eCapture;
-  ComPtr<IMMDevice> device;
-  if (device_id == AudioDeviceName::kDefaultCommunicationsDeviceId) {
-    device = CreateDeviceInternal(AudioDeviceName::kDefaultDeviceId, data_flow,
-                                  eCommunications);
-  } else {
-    // If |device_id| equals AudioDeviceName::kDefaultDeviceId, a default
-    // device will be created.
-    device = CreateDeviceInternal(device_id, data_flow, eConsole);
-  }
-  if (!device.Get()) {
-    return E_FAIL;
-  }
-
-  ComPtr<IAudioClient> client(CreateClientInternal(device.Get()));
-  if (!client.Get())
-    return E_FAIL;
-
-  return GetPreferredAudioParametersInternal(client.Get(), params, -1);
 }
 
 HRESULT GetPreferredAudioParameters(IAudioClient* client,

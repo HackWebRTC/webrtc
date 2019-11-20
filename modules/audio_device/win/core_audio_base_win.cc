@@ -291,7 +291,7 @@ int CoreAudioBase::DeviceName(int index,
   RTC_DLOG(INFO) << "name: " << *name;
   if (guid != nullptr) {
     *guid = device_names[index].unique_id;
-    RTC_DLOG(INFO) << "guid: " << guid;
+    RTC_DLOG(INFO) << "guid: " << *guid;
   }
   return 0;
 }
@@ -306,13 +306,16 @@ bool CoreAudioBase::Init() {
 
   // Use an existing |device_id_| and set parameters which are required to
   // create an audio client. It is up to the parent class to set |device_id_|.
+  // TODO(henrika): add unique information about device role since |device_id_|
+  // does not uniquely identify the device and role if there is only one
+  // physical device.
   std::string device_id = device_id_;
   ERole role = eConsole;
   if (IsDefaultDevice(device_id)) {
     device_id = AudioDeviceName::kDefaultDeviceId;
     role = eConsole;
   } else if (IsDefaultCommunicationsDevice(device_id)) {
-    device_id = AudioDeviceName::kDefaultCommunicationsDeviceId;
+    device_id = AudioDeviceName::kDefaultDeviceId;
     role = eCommunications;
   } else {
     RTC_DLOG(LS_WARNING) << "Not using a default device";
