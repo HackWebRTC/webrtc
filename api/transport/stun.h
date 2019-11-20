@@ -159,6 +159,7 @@ class StunMessage {
   const StunUInt32Attribute* GetUInt32(int type) const;
   const StunUInt64Attribute* GetUInt64(int type) const;
   const StunByteStringAttribute* GetByteString(int type) const;
+  const StunUInt16ListAttribute* GetUInt16List(int type) const;
 
   // Gets these specific attribute values.
   const StunErrorCodeAttribute* GetErrorCode() const;
@@ -256,6 +257,8 @@ class StunAttribute {
   static std::unique_ptr<StunUInt32Attribute> CreateUInt32(uint16_t type);
   static std::unique_ptr<StunUInt64Attribute> CreateUInt64(uint16_t type);
   static std::unique_ptr<StunByteStringAttribute> CreateByteString(
+      uint16_t type);
+  static std::unique_ptr<StunUInt16ListAttribute> CreateUInt16ListAttribute(
       uint16_t type);
   static std::unique_ptr<StunErrorCodeAttribute> CreateErrorCode();
   static std::unique_ptr<StunUInt16ListAttribute> CreateUnknownAttributes();
@@ -615,7 +618,17 @@ enum IceAttributeType {
   STUN_ATTR_NETWORK_INFO = 0xC057,
   // Experimental: Transaction ID of the last connectivity check received.
   STUN_ATTR_LAST_ICE_CHECK_RECEIVED = 0xC058,
+  // Uint16List. Miscellaneous attributes for future extension.
+  STUN_ATTR_GOOG_MISC_INFO = 0xC059,
 };
+
+// When adding new attributes to STUN_ATTR_GOOG_MISC_INFO
+// (which is a list of uint16_t), append the indices of these attributes below
+// and do NOT change the exisiting indices. The indices of attributes must be
+// consistent with those used in ConnectionRequest::Prepare when forming a STUN
+// message for the ICE connectivity check, and they are used when parsing a
+// received STUN message.
+enum class IceGoogMiscInfoAttributeIndex {};
 
 // RFC 5245-defined errors.
 enum IceErrorCode {

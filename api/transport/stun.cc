@@ -161,6 +161,10 @@ const StunByteStringAttribute* StunMessage::GetByteString(int type) const {
   return static_cast<const StunByteStringAttribute*>(GetAttribute(type));
 }
 
+const StunUInt16ListAttribute* StunMessage::GetUInt16List(int type) const {
+  return static_cast<const StunUInt16ListAttribute*>(GetAttribute(type));
+}
+
 const StunErrorCodeAttribute* StunMessage::GetErrorCode() const {
   return static_cast<const StunErrorCodeAttribute*>(
       GetAttribute(STUN_ATTR_ERROR_CODE));
@@ -343,8 +347,9 @@ bool StunMessage::AddFingerprint() {
 }
 
 bool StunMessage::Read(ByteBufferReader* buf) {
-  if (!buf->ReadUInt16(&type_))
+  if (!buf->ReadUInt16(&type_)) {
     return false;
+  }
 
   if (type_ & 0x8000) {
     // RTP and RTCP set the MSB of first byte, since first two bits are version,
@@ -352,16 +357,19 @@ bool StunMessage::Read(ByteBufferReader* buf) {
     return false;
   }
 
-  if (!buf->ReadUInt16(&length_))
+  if (!buf->ReadUInt16(&length_)) {
     return false;
+  }
 
   std::string magic_cookie;
-  if (!buf->ReadString(&magic_cookie, kStunMagicCookieLength))
+  if (!buf->ReadString(&magic_cookie, kStunMagicCookieLength)) {
     return false;
+  }
 
   std::string transaction_id;
-  if (!buf->ReadString(&transaction_id, kStunTransactionIdLength))
+  if (!buf->ReadString(&transaction_id, kStunTransactionIdLength)) {
     return false;
+  }
 
   uint32_t magic_cookie_int;
   static_assert(sizeof(magic_cookie_int) == kStunMagicCookieLength,
@@ -376,8 +384,9 @@ bool StunMessage::Read(ByteBufferReader* buf) {
   transaction_id_ = transaction_id;
   reduced_transaction_id_ = ReduceTransactionId(transaction_id_);
 
-  if (length_ != buf->Length())
+  if (length_ != buf->Length()) {
     return false;
+  }
 
   attrs_.resize(0);
 
@@ -396,11 +405,13 @@ bool StunMessage::Read(ByteBufferReader* buf) {
       if ((attr_length % 4) != 0) {
         attr_length += (4 - (attr_length % 4));
       }
-      if (!buf->Consume(attr_length))
+      if (!buf->Consume(attr_length)) {
         return false;
+      }
     } else {
-      if (!attr->Read(buf))
+      if (!attr->Read(buf)) {
         return false;
+      }
       attrs_.push_back(std::move(attr));
     }
   }
@@ -465,6 +476,8 @@ StunAttributeValueType StunMessage::GetAttributeValueType(int type) const {
       return STUN_VALUE_UINT32;
     case STUN_ATTR_LAST_ICE_CHECK_RECEIVED:
       return STUN_VALUE_BYTE_STRING;
+    case STUN_ATTR_GOOG_MISC_INFO:
+      return STUN_VALUE_UINT16_LIST;
     default:
       return STUN_VALUE_UNKNOWN;
   }
@@ -570,6 +583,11 @@ std::unique_ptr<StunByteStringAttribute> StunAttribute::CreateByteString(
 std::unique_ptr<StunErrorCodeAttribute> StunAttribute::CreateErrorCode() {
   return std::make_unique<StunErrorCodeAttribute>(
       STUN_ATTR_ERROR_CODE, StunErrorCodeAttribute::MIN_SIZE);
+}
+
+std::unique_ptr<StunUInt16ListAttribute>
+StunAttribute::CreateUInt16ListAttribute(uint16_t type) {
+  return std::make_unique<StunUInt16ListAttribute>(type, 0);
 }
 
 std::unique_ptr<StunUInt16ListAttribute>
@@ -956,8 +974,9 @@ void StunUInt16ListAttribute::AddType(uint16_t value) {
 }
 
 bool StunUInt16ListAttribute::Read(ByteBufferReader* buf) {
-  if (length() % 2)
+  if (length() % 2) {
     return false;
+  }
 
   for (size_t i = 0; i < length() / 2; i++) {
     uint16_t attr;

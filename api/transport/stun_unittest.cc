@@ -1571,4 +1571,37 @@ TEST_F(StunTest, ReduceTransactionIdIsHostOrderIndependent) {
   EXPECT_EQ(reduced_transaction_id, 1835954016u);
 }
 
+TEST_F(StunTest, GoogMiscInfo) {
+  StunMessage msg;
+  const size_t size =
+      /* msg header */ 20 +
+      /* attr header */ 4 +
+      /* 3 * 2 rounded to multiple of 4 */ 8;
+  msg.SetType(STUN_BINDING_REQUEST);
+  msg.SetTransactionID("ABCDEFGH");
+  auto list =
+      StunAttribute::CreateUInt16ListAttribute(STUN_ATTR_GOOG_MISC_INFO);
+  list->AddType(0x1U);
+  list->AddType(0x1000U);
+  list->AddType(0xAB0CU);
+  msg.AddAttribute(std::move(list));
+  CheckStunHeader(msg, STUN_BINDING_REQUEST, (size - 20));
+
+  rtc::ByteBufferWriter out;
+  EXPECT_TRUE(msg.Write(&out));
+  ASSERT_EQ(size, out.Length());
+
+  size_t read_size = ReadStunMessageTestCase(
+      &msg, reinterpret_cast<const unsigned char*>(out.Data()), out.Length());
+  ASSERT_EQ(read_size + 20, size);
+  CheckStunHeader(msg, STUN_BINDING_REQUEST, read_size);
+  const StunUInt16ListAttribute* types =
+      msg.GetUInt16List(STUN_ATTR_GOOG_MISC_INFO);
+  ASSERT_TRUE(types != NULL);
+  EXPECT_EQ(3U, types->Size());
+  EXPECT_EQ(0x1U, types->GetType(0));
+  EXPECT_EQ(0x1000U, types->GetType(1));
+  EXPECT_EQ(0xAB0CU, types->GetType(2));
+}
+
 }  // namespace cricket
