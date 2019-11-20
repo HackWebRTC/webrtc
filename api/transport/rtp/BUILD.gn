@@ -14,6 +14,7 @@ rtc_source_set("rtp_source") {
     "rtp_source.h",
   ]
   deps = [
+    "../../../api:rtp_headers",
     "../../../rtc_base:checks",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
