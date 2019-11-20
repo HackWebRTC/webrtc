@@ -66,16 +66,6 @@ BOOL CALLBACK WindowsEnumerationHandler(HWND hwnd, LPARAM param) {
   if (wcscmp(class_name, L"Progman") == 0 || wcscmp(class_name, L"Button") == 0)
     return TRUE;
 
-  // Windows 8 introduced a "Modern App" identified by their class name being
-  // either ApplicationFrameWindow or windows.UI.Core.coreWindow. The
-  // associated windows cannot be captured, so we skip them.
-  // http://crbug.com/526883.
-  if (rtc::IsWindows8OrLater() &&
-      (wcscmp(class_name, L"ApplicationFrameWindow") == 0 ||
-       wcscmp(class_name, L"Windows.UI.Core.CoreWindow") == 0)) {
-    return TRUE;
-  }
-
   DesktopCapturer::Source window;
   window.id = reinterpret_cast<WindowId>(hwnd);
 
@@ -208,7 +198,7 @@ bool WindowCapturerWin::GetSourceList(SourceList* sources) {
     return false;
 
   for (auto it = result.begin(); it != result.end();) {
-    if (!window_capture_helper_.IsWindowOnCurrentDesktop(
+    if (!window_capture_helper_.IsWindowVisibleOnCurrentDesktop(
             reinterpret_cast<HWND>(it->id))) {
       it = result.erase(it);
     } else {
