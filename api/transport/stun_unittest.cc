@@ -332,6 +332,33 @@ static const unsigned char kRfc5769SampleRequest[] = {
   0xe5, 0x7a, 0x3b, 0xcf    //    CRC32 fingerprint
 };
 
+// 2.1.  Sample Request
+static const unsigned char kSampleRequestMI32[] = {
+  0x00, 0x01, 0x00, 0x48,   //    Request type and message length
+  0x21, 0x12, 0xa4, 0x42,   //    Magic cookie
+  0xb7, 0xe7, 0xa7, 0x01,   // }
+  0xbc, 0x34, 0xd6, 0x86,   // }  Transaction ID
+  0xfa, 0x87, 0xdf, 0xae,   // }
+  0x80, 0x22, 0x00, 0x10,   //    SOFTWARE attribute header
+  0x53, 0x54, 0x55, 0x4e,   // }
+  0x20, 0x74, 0x65, 0x73,   // }  User-agent...
+  0x74, 0x20, 0x63, 0x6c,   // }  ...name
+  0x69, 0x65, 0x6e, 0x74,   // }
+  0x00, 0x24, 0x00, 0x04,   //    PRIORITY attribute header
+  0x6e, 0x00, 0x01, 0xff,   //    ICE priority value
+  0x80, 0x29, 0x00, 0x08,   //    ICE-CONTROLLED attribute header
+  0x93, 0x2f, 0xf9, 0xb1,   // }  Pseudo-random tie breaker...
+  0x51, 0x26, 0x3b, 0x36,   // }   ...for ICE control
+  0x00, 0x06, 0x00, 0x09,   //    USERNAME attribute header
+  0x65, 0x76, 0x74, 0x6a,   // }
+  0x3a, 0x68, 0x36, 0x76,   // }  Username (9 bytes) and padding (3 bytes)
+  0x59, 0x20, 0x20, 0x20,   // }
+  0xC0, 0x60, 0x00, 0x04,   //    MESSAGE-INTEGRITY-32 attribute header
+  0x45, 0x45, 0xce, 0x7c,   // }  HMAC-SHA1 fingerprint (first 32 bit)
+  0x80, 0x28, 0x00, 0x04,   //    FINGERPRINT attribute header
+  0xe5, 0x7a, 0x3b, 0xcf    //    CRC32 fingerprint
+};
+
 // 2.2.  Sample IPv4 Response
 static const unsigned char kRfc5769SampleResponse[] = {
   0x01, 0x01, 0x00, 0x3c,  //     Response type and message length
@@ -451,6 +478,14 @@ static const unsigned char kCalculatedHmac1[] = {
   0x74, 0x2a, 0xf9, 0xe3   // }
 };
 
+// This truncated HMAC differs from kCalculatedHmac1
+// above since the sum is computed including header
+// and the header is different since the message is shorter
+// than when MESSAGE-INTEGRITY is used.
+static const unsigned char kCalculatedHmac1_32[] = {
+  0xda, 0x39, 0xde, 0x5d,  // }
+};
+
 // Length parameter is changed to 0x1c from 0x3c.
 // AddMessageIntegrity will add MI information and update the length param
 // accordingly.
@@ -477,6 +512,14 @@ static const unsigned char kCalculatedHmac2[] = {
   0xef, 0x0d, 0xfc, 0x12,  // }  HMAC-SHA1 fingerprint
   0x82, 0xa2, 0xbd, 0x08,  // }
   0x43, 0x14, 0x10, 0x28   // }
+};
+
+// This truncated HMAC differs from kCalculatedHmac2
+// above since the sum is computed including header
+// and the header is different since the message is shorter
+// than when MESSAGE-INTEGRITY is used.
+static const unsigned char kCalculatedHmac2_32[] = {
+  0xe7, 0x5c, 0xd3, 0x16,  // }
 };
 
 // clang-format on
@@ -1272,6 +1315,123 @@ TEST_F(StunTest, AddMessageIntegrity) {
 }
 
 // Check our STUN message validation code against the RFC5769 test messages.
+TEST_F(StunTest, ValidateMessageIntegrity32) {
+  // Try the messages from RFC 5769.
+  EXPECT_TRUE(StunMessage::ValidateMessageIntegrity32(
+      reinterpret_cast<const char*>(kSampleRequestMI32),
+      sizeof(kSampleRequestMI32), kRfc5769SampleMsgPassword));
+  EXPECT_FALSE(StunMessage::ValidateMessageIntegrity32(
+      reinterpret_cast<const char*>(kSampleRequestMI32),
+      sizeof(kSampleRequestMI32), "InvalidPassword"));
+
+  // Try some edge cases.
+  EXPECT_FALSE(StunMessage::ValidateMessageIntegrity32(
+      reinterpret_cast<const char*>(kStunMessageWithZeroLength),
+      sizeof(kStunMessageWithZeroLength), kRfc5769SampleMsgPassword));
+  EXPECT_FALSE(StunMessage::ValidateMessageIntegrity32(
+      reinterpret_cast<const char*>(kStunMessageWithExcessLength),
+      sizeof(kStunMessageWithExcessLength), kRfc5769SampleMsgPassword));
+  EXPECT_FALSE(StunMessage::ValidateMessageIntegrity32(
+      reinterpret_cast<const char*>(kStunMessageWithSmallLength),
+      sizeof(kStunMessageWithSmallLength), kRfc5769SampleMsgPassword));
+
+  // Again, but with the lengths matching what is claimed in the headers.
+  EXPECT_FALSE(StunMessage::ValidateMessageIntegrity32(
+      reinterpret_cast<const char*>(kStunMessageWithZeroLength),
+      kStunHeaderSize + rtc::GetBE16(&kStunMessageWithZeroLength[2]),
+      kRfc5769SampleMsgPassword));
+  EXPECT_FALSE(StunMessage::ValidateMessageIntegrity32(
+      reinterpret_cast<const char*>(kStunMessageWithExcessLength),
+      kStunHeaderSize + rtc::GetBE16(&kStunMessageWithExcessLength[2]),
+      kRfc5769SampleMsgPassword));
+  EXPECT_FALSE(StunMessage::ValidateMessageIntegrity32(
+      reinterpret_cast<const char*>(kStunMessageWithSmallLength),
+      kStunHeaderSize + rtc::GetBE16(&kStunMessageWithSmallLength[2]),
+      kRfc5769SampleMsgPassword));
+
+  // Check that a too-short HMAC doesn't cause buffer overflow.
+  EXPECT_FALSE(StunMessage::ValidateMessageIntegrity32(
+      reinterpret_cast<const char*>(kStunMessageWithBadHmacAtEnd),
+      sizeof(kStunMessageWithBadHmacAtEnd), kRfc5769SampleMsgPassword));
+
+  // Test that munging a single bit anywhere in the message causes the
+  // message-integrity check to fail, unless it is after the M-I attribute.
+  char buf[sizeof(kSampleRequestMI32)];
+  memcpy(buf, kSampleRequestMI32, sizeof(kSampleRequestMI32));
+  for (size_t i = 0; i < sizeof(buf); ++i) {
+    buf[i] ^= 0x01;
+    if (i > 0)
+      buf[i - 1] ^= 0x01;
+    EXPECT_EQ(i >= sizeof(buf) - 8,
+              StunMessage::ValidateMessageIntegrity32(
+                  buf, sizeof(buf), kRfc5769SampleMsgPassword));
+  }
+}
+
+// Validate that we generate correct MESSAGE-INTEGRITY-32 attributes.
+TEST_F(StunTest, AddMessageIntegrity32) {
+  IceMessage msg;
+  rtc::ByteBufferReader buf(
+      reinterpret_cast<const char*>(kRfc5769SampleRequestWithoutMI),
+      sizeof(kRfc5769SampleRequestWithoutMI));
+  EXPECT_TRUE(msg.Read(&buf));
+  EXPECT_TRUE(msg.AddMessageIntegrity32(kRfc5769SampleMsgPassword));
+  const StunByteStringAttribute* mi_attr =
+      msg.GetByteString(STUN_ATTR_GOOG_MESSAGE_INTEGRITY_32);
+  EXPECT_EQ(4U, mi_attr->length());
+  EXPECT_EQ(0, memcmp(mi_attr->bytes(), kCalculatedHmac1_32,
+                      sizeof(kCalculatedHmac1_32)));
+
+  rtc::ByteBufferWriter buf1;
+  EXPECT_TRUE(msg.Write(&buf1));
+  EXPECT_TRUE(StunMessage::ValidateMessageIntegrity32(
+      reinterpret_cast<const char*>(buf1.Data()), buf1.Length(),
+      kRfc5769SampleMsgPassword));
+
+  IceMessage msg2;
+  rtc::ByteBufferReader buf2(
+      reinterpret_cast<const char*>(kRfc5769SampleResponseWithoutMI),
+      sizeof(kRfc5769SampleResponseWithoutMI));
+  EXPECT_TRUE(msg2.Read(&buf2));
+  EXPECT_TRUE(msg2.AddMessageIntegrity32(kRfc5769SampleMsgPassword));
+  const StunByteStringAttribute* mi_attr2 =
+      msg2.GetByteString(STUN_ATTR_GOOG_MESSAGE_INTEGRITY_32);
+  EXPECT_EQ(4U, mi_attr2->length());
+  EXPECT_EQ(0, memcmp(mi_attr2->bytes(), kCalculatedHmac2_32,
+                      sizeof(kCalculatedHmac2_32)));
+
+  rtc::ByteBufferWriter buf3;
+  EXPECT_TRUE(msg2.Write(&buf3));
+  EXPECT_TRUE(StunMessage::ValidateMessageIntegrity32(
+      reinterpret_cast<const char*>(buf3.Data()), buf3.Length(),
+      kRfc5769SampleMsgPassword));
+}
+
+// Validate that the message validates if both MESSAGE-INTEGRITY-32 and
+// MESSAGE-INTEGRITY are present in the message.
+// This is not expected to be used, but is not forbidden.
+TEST_F(StunTest, AddMessageIntegrity32AndMessageIntegrity) {
+  IceMessage msg;
+  auto attr = StunAttribute::CreateByteString(STUN_ATTR_USERNAME);
+  attr->CopyBytes("keso", sizeof("keso"));
+  msg.AddAttribute(std::move(attr));
+  msg.AddMessageIntegrity32("password1");
+  msg.AddMessageIntegrity("password2");
+
+  rtc::ByteBufferWriter buf1;
+  EXPECT_TRUE(msg.Write(&buf1));
+  EXPECT_TRUE(StunMessage::ValidateMessageIntegrity32(
+      reinterpret_cast<const char*>(buf1.Data()), buf1.Length(), "password1"));
+  EXPECT_TRUE(StunMessage::ValidateMessageIntegrity(
+      reinterpret_cast<const char*>(buf1.Data()), buf1.Length(), "password2"));
+
+  EXPECT_FALSE(StunMessage::ValidateMessageIntegrity32(
+      reinterpret_cast<const char*>(buf1.Data()), buf1.Length(), "password2"));
+  EXPECT_FALSE(StunMessage::ValidateMessageIntegrity(
+      reinterpret_cast<const char*>(buf1.Data()), buf1.Length(), "password1"));
+}
+
+// Check our STUN message validation code against the RFC5769 test messages.
 TEST_F(StunTest, ValidateFingerprint) {
   EXPECT_TRUE(StunMessage::ValidateFingerprint(
       reinterpret_cast<const char*>(kRfc5769SampleRequest),
@@ -1531,6 +1691,20 @@ TEST_F(StunTest, RemoveAttribute) {
   EXPECT_EQ(msg.RemoveAttribute(STUN_ATTR_USERNAME), nullptr);
 }
 
+// Test that we can remove attribute from a message.
+TEST_F(StunTest, ClearAttributes) {
+  StunMessage msg;
+
+  auto attr = StunAttribute::CreateByteString(STUN_ATTR_USERNAME);
+  attr->CopyBytes("kes", sizeof("kes"));
+  msg.AddAttribute(std::move(attr));
+  size_t len = msg.length();
+
+  msg.ClearAttributes();
+  EXPECT_EQ(msg.length(), len - /* 3 + 1 byte padding + header */ 8);
+  EXPECT_EQ(nullptr, msg.GetByteString(STUN_ATTR_USERNAME));
+}
+
 // Test CopyStunAttribute
 TEST_F(StunTest, CopyAttribute) {
   rtc::ByteBufferWriter buf;
@@ -1550,6 +1724,20 @@ TEST_F(StunTest, CopyAttribute) {
     {  // Test StunAddressAttribute.
       rtc::IPAddress test_ip(kIPv6TestAddress2);
       auto addr = StunAttribute::CreateAddress(STUN_ATTR_MAPPED_ADDRESS);
+      rtc::SocketAddress test_addr(test_ip, kTestMessagePort2);
+      addr->SetAddress(test_addr);
+      CheckStunAddressAttribute(addr.get(), STUN_ADDRESS_IPV6,
+                                kTestMessagePort2, test_ip);
+
+      auto copy = CopyStunAttribute(*addr.get(), buffer_ptr);
+      ASSERT_EQ(copy->value_type(), STUN_VALUE_ADDRESS);
+      CheckStunAddressAttribute(static_cast<StunAddressAttribute*>(copy.get()),
+                                STUN_ADDRESS_IPV6, kTestMessagePort2, test_ip);
+    }
+
+    {  // Test StunAddressAttribute.
+      rtc::IPAddress test_ip(kIPv6TestAddress2);
+      auto addr = StunAttribute::CreateAddress(STUN_ATTR_XOR_MAPPED_ADDRESS);
       rtc::SocketAddress test_addr(test_ip, kTestMessagePort2);
       addr->SetAddress(test_addr);
       CheckStunAddressAttribute(addr.get(), STUN_ADDRESS_IPV6,
@@ -1581,9 +1769,9 @@ TEST_F(StunTest, GoogMiscInfo) {
   msg.SetTransactionID("ABCDEFGH");
   auto list =
       StunAttribute::CreateUInt16ListAttribute(STUN_ATTR_GOOG_MISC_INFO);
-  list->AddType(0x1U);
-  list->AddType(0x1000U);
-  list->AddType(0xAB0CU);
+  list->AddTypeAtIndex(0, 0x1U);
+  list->AddTypeAtIndex(3, 0x1000U);
+  list->AddTypeAtIndex(2, 0xAB0CU);
   msg.AddAttribute(std::move(list));
   CheckStunHeader(msg, STUN_BINDING_REQUEST, (size - 20));
 
@@ -1598,9 +1786,10 @@ TEST_F(StunTest, GoogMiscInfo) {
   const StunUInt16ListAttribute* types =
       msg.GetUInt16List(STUN_ATTR_GOOG_MISC_INFO);
   ASSERT_TRUE(types != NULL);
-  EXPECT_EQ(3U, types->Size());
+  EXPECT_EQ(4U, types->Size());
   EXPECT_EQ(0x1U, types->GetType(0));
-  EXPECT_EQ(0x1000U, types->GetType(1));
+  EXPECT_EQ(0x0U, types->GetType(1));
+  EXPECT_EQ(0x1000U, types->GetType(3));
   EXPECT_EQ(0xAB0CU, types->GetType(2));
 }
 

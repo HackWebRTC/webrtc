@@ -132,6 +132,14 @@ std::unique_ptr<StunAttribute> StunMessage::RemoveAttribute(int type) {
   return attribute;
 }
 
+void StunMessage::ClearAttributes() {
+  for (auto it = attrs_.rbegin(); it != attrs_.rend(); ++it) {
+    (*it)->SetOwner(nullptr);
+  }
+  attrs_.clear();
+  length_ = 0;
+}
+
 const StunAddressAttribute* StunMessage::GetAddress(int type) const {
   switch (type) {
     case STUN_ATTR_MAPPED_ADDRESS: {
@@ -180,11 +188,31 @@ const StunUInt16ListAttribute* StunMessage::GetUnknownAttributes() const {
       GetAttribute(STUN_ATTR_UNKNOWN_ATTRIBUTES));
 }
 
-// Verifies a STUN message has a valid MESSAGE-INTEGRITY attribute, using the
-// procedure outlined in RFC 5389, section 15.4.
 bool StunMessage::ValidateMessageIntegrity(const char* data,
                                            size_t size,
                                            const std::string& password) {
+  return ValidateMessageIntegrityOfType(STUN_ATTR_MESSAGE_INTEGRITY,
+                                        kStunMessageIntegritySize, data, size,
+                                        password);
+}
+
+bool StunMessage::ValidateMessageIntegrity32(const char* data,
+                                             size_t size,
+                                             const std::string& password) {
+  return ValidateMessageIntegrityOfType(STUN_ATTR_GOOG_MESSAGE_INTEGRITY_32,
+                                        kStunMessageIntegrity32Size, data, size,
+                                        password);
+}
+
+// Verifies a STUN message has a valid MESSAGE-INTEGRITY attribute, using the
+// procedure outlined in RFC 5389, section 15.4.
+bool StunMessage::ValidateMessageIntegrityOfType(int mi_attr_type,
+                                                 size_t mi_attr_size,
+                                                 const char* data,
+                                                 size_t size,
+                                                 const std::string& password) {
+  RTC_DCHECK(mi_attr_size <= kStunMessageIntegritySize);
+
   // Verifying the size of the message.
   if ((size % 4) != 0 || size < kStunHeaderSize) {
     return false;
@@ -206,8 +234,8 @@ bool StunMessage::ValidateMessageIntegrity(const char* data,
     attr_length = rtc::GetBE16(&data[current_pos + sizeof(attr_type)]);
 
     // If M-I, sanity check it, and break out.
-    if (attr_type == STUN_ATTR_MESSAGE_INTEGRITY) {
-      if (attr_length != kStunMessageIntegritySize ||
+    if (attr_type == mi_attr_type) {
+      if (attr_length != mi_attr_size ||
           current_pos + sizeof(attr_type) + sizeof(attr_length) + attr_length >
               size) {
         return false;
@@ -231,11 +259,11 @@ bool StunMessage::ValidateMessageIntegrity(const char* data,
   size_t mi_pos = current_pos;
   std::unique_ptr<char[]> temp_data(new char[current_pos]);
   memcpy(temp_data.get(), data, current_pos);
-  if (size > mi_pos + kStunAttributeHeaderSize + kStunMessageIntegritySize) {
+  if (size > mi_pos + kStunAttributeHeaderSize + mi_attr_size) {
     // Stun message has other attributes after message integrity.
     // Adjust the length parameter in stun message to calculate HMAC.
     size_t extra_offset =
-        size - (mi_pos + kStunAttributeHeaderSize + kStunMessageIntegritySize);
+        size - (mi_pos + kStunAttributeHeaderSize + mi_attr_size);
     size_t new_adjusted_len = size - extra_offset - kStunHeaderSize;
 
     // Writing new length of the STUN message @ Message Length in temp buffer.
@@ -252,23 +280,41 @@ bool StunMessage::ValidateMessageIntegrity(const char* data,
       rtc::ComputeHmac(rtc::DIGEST_SHA_1, password.c_str(), password.size(),
                        temp_data.get(), mi_pos, hmac, sizeof(hmac));
   RTC_DCHECK(ret == sizeof(hmac));
-  if (ret != sizeof(hmac))
+  if (ret != sizeof(hmac)) {
     return false;
+  }
 
   // Comparing the calculated HMAC with the one present in the message.
   return memcmp(data + current_pos + kStunAttributeHeaderSize, hmac,
-                sizeof(hmac)) == 0;
+                mi_attr_size) == 0;
 }
 
 bool StunMessage::AddMessageIntegrity(const std::string& password) {
-  return AddMessageIntegrity(password.c_str(), password.size());
+  return AddMessageIntegrityOfType(STUN_ATTR_MESSAGE_INTEGRITY,
+                                   kStunMessageIntegritySize, password.c_str(),
+                                   password.size());
 }
 
 bool StunMessage::AddMessageIntegrity(const char* key, size_t keylen) {
+  return AddMessageIntegrityOfType(STUN_ATTR_MESSAGE_INTEGRITY,
+                                   kStunMessageIntegritySize, key, keylen);
+}
+
+bool StunMessage::AddMessageIntegrity32(absl::string_view password) {
+  return AddMessageIntegrityOfType(STUN_ATTR_GOOG_MESSAGE_INTEGRITY_32,
+                                   kStunMessageIntegrity32Size, password.data(),
+                                   password.length());
+}
+
+bool StunMessage::AddMessageIntegrityOfType(int attr_type,
+                                            size_t attr_size,
+                                            const char* key,
+                                            size_t keylen) {
   // Add the attribute with a dummy value. Since this is a known attribute, it
   // can't fail.
+  RTC_DCHECK(attr_size <= kStunMessageIntegritySize);
   auto msg_integrity_attr_ptr = std::make_unique<StunByteStringAttribute>(
-      STUN_ATTR_MESSAGE_INTEGRITY, std::string(kStunMessageIntegritySize, '0'));
+      attr_type, std::string(attr_size, '0'));
   auto* msg_integrity_attr = msg_integrity_attr_ptr.get();
   AddAttribute(std::move(msg_integrity_attr_ptr));
 
@@ -290,7 +336,7 @@ bool StunMessage::AddMessageIntegrity(const char* key, size_t keylen) {
   }
 
   // Insert correct HMAC into the attribute.
-  msg_integrity_attr->CopyBytes(hmac, sizeof(hmac));
+  msg_integrity_attr->CopyBytes(hmac, attr_size);
   return true;
 }
 
@@ -970,6 +1016,14 @@ void StunUInt16ListAttribute::SetType(int index, uint16_t value) {
 
 void StunUInt16ListAttribute::AddType(uint16_t value) {
   attr_types_->push_back(value);
+  SetLength(static_cast<uint16_t>(attr_types_->size() * 2));
+}
+
+void StunUInt16ListAttribute::AddTypeAtIndex(uint16_t index, uint16_t value) {
+  if (attr_types_->size() < static_cast<size_t>(index + 1)) {
+    attr_types_->resize(index + 1);
+  }
+  (*attr_types_)[index] = value;
   SetLength(static_cast<uint16_t>(attr_types_->size() * 2));
 }
 
