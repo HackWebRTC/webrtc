@@ -15,20 +15,6 @@ group("p2p") {
   ]
 }
 
-# TODO(bugs.webrtc.org/11091): Remove this target when downstream is updated.
-rtc_library("stun_types") {
-  sources = [
-    "base/empty.cc",
-    "base/stun.h",
-  ]
-  deps = [
-    "../api/transport:stun_types",
-    "../rtc_base:checks",
-    "../rtc_base:rtc_base",
-    "../rtc_base:rtc_base_approved",
-  ]
-}
-
 rtc_library("rtc_p2p") {
   visibility = [ "*" ]
   sources = [
@@ -101,7 +87,6 @@ rtc_library("rtc_p2p") {
   ]
 
   deps = [
-    ":stun_types",
     "../api:libjingle_peerconnection_api",
     "../api:packet_socket_factory",
     "../api:rtc_error",
@@ -178,7 +163,6 @@ if (rtc_include_tests) {
       ":fake_port_allocator",
       ":p2p_server_utils",
       ":rtc_p2p",
-      ":stun_types",
       "../api:libjingle_peerconnection_api",
       "../api:packet_socket_factory",
       "../api/crypto:options",
@@ -223,7 +207,6 @@ if (rtc_include_tests) {
       ":p2p_server_utils",
       ":p2p_test_utils",
       ":rtc_p2p",
-      ":stun_types",
       "../api:libjingle_peerconnection_api",
       "../api:packet_socket_factory",
       "../api:scoped_refptr",
@@ -257,7 +240,6 @@ rtc_library("p2p_server_utils") {
   ]
   deps = [
     ":rtc_p2p",
-    ":stun_types",
     "../api:packet_socket_factory",
     "../api/transport:stun_types",
     "../rtc_base",
@@ -277,7 +259,6 @@ rtc_library("libstunprober") {
 
   deps = [
     ":rtc_p2p",
-    ":stun_types",
     "../api:packet_socket_factory",
     "../api/transport:stun_types",
     "../rtc_base",
