@@ -1339,26 +1339,6 @@ TEST_F(RtpSenderReceiverTest, SetVideoBitratePriority) {
   DestroyVideoRtpSender();
 }
 
-TEST_F(RtpSenderReceiverTest, AudioReceiverCanSetParameters) {
-  CreateAudioRtpReceiver();
-
-  RtpParameters params = audio_rtp_receiver_->GetParameters();
-  EXPECT_EQ(1u, params.encodings.size());
-  EXPECT_TRUE(audio_rtp_receiver_->SetParameters(params));
-
-  DestroyAudioRtpReceiver();
-}
-
-TEST_F(RtpSenderReceiverTest, VideoReceiverCanSetParameters) {
-  CreateVideoRtpReceiver();
-
-  RtpParameters params = video_rtp_receiver_->GetParameters();
-  EXPECT_EQ(1u, params.encodings.size());
-  EXPECT_TRUE(video_rtp_receiver_->SetParameters(params));
-
-  DestroyVideoRtpReceiver();
-}
-
 TEST_F(RtpSenderReceiverTest, VideoReceiverCanGetParametersWithSimulcast) {
   CreateVideoRtpReceiverWithSimulcast({}, 2);
 

@@ -117,17 +117,6 @@ RtpParameters AudioRtpReceiver::GetParameters() const {
   });
 }
 
-bool AudioRtpReceiver::SetParameters(const RtpParameters& parameters) {
-  TRACE_EVENT0("webrtc", "AudioRtpReceiver::SetParameters");
-  if (!media_channel_ || stopped_) {
-    return false;
-  }
-  return worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
-    return media_channel_->SetRtpReceiveParameters(ssrc_.value_or(0),
-                                                   parameters);
-  });
-}
-
 void AudioRtpReceiver::SetFrameDecryptor(
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) {
   frame_decryptor_ = std::move(frame_decryptor);

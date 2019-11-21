@@ -1373,9 +1373,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAndGetRtpReceiveParameters) {
   webrtc::RtpParameters initial_params =
       channel_->GetRtpReceiveParameters(kSsrcX);
 
-  // We should be able to set the params we just got.
-  EXPECT_TRUE(channel_->SetRtpReceiveParameters(kSsrcX, initial_params));
-
   // ... And this shouldn't change the params returned by
   // GetRtpReceiveParameters.
   webrtc::RtpParameters new_params = channel_->GetRtpReceiveParameters(kSsrcX);

@@ -7328,9 +7328,6 @@ TEST_F(WebRtcVideoChannelTest, SetAndGetRtpReceiveParameters) {
   webrtc::RtpParameters initial_params =
       channel_->GetRtpReceiveParameters(last_ssrc_);
 
-  // We should be able to set the params we just got.
-  EXPECT_TRUE(channel_->SetRtpReceiveParameters(last_ssrc_, initial_params));
-
   // ... And this shouldn't change the params returned by
   // GetRtpReceiveParameters.
   EXPECT_EQ(initial_params, channel_->GetRtpReceiveParameters(last_ssrc_));

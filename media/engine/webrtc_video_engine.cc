@@ -952,40 +952,6 @@ webrtc::RtpParameters WebRtcVideoChannel::GetRtpReceiveParameters(
   return rtp_params;
 }
 
-bool WebRtcVideoChannel::SetRtpReceiveParameters(
-    uint32_t ssrc,
-    const webrtc::RtpParameters& parameters) {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  TRACE_EVENT0("webrtc", "WebRtcVideoChannel::SetRtpReceiveParameters");
-
-  // SSRC of 0 represents an unsignaled receive stream.
-  if (ssrc == 0) {
-    if (!default_unsignalled_ssrc_handler_.GetDefaultSink()) {
-      RTC_LOG(LS_WARNING)
-          << "Attempting to set RTP parameters for the default, "
-             "unsignaled video receive stream, but not yet "
-             "configured to receive such a stream.";
-      return false;
-    }
-  } else {
-    auto it = receive_streams_.find(ssrc);
-    if (it == receive_streams_.end()) {
-      RTC_LOG(LS_WARNING)
-          << "Attempting to set RTP receive parameters for stream "
-          << "with SSRC " << ssrc << " which doesn't exist.";
-      return false;
-    }
-  }
-
-  webrtc::RtpParameters current_parameters = GetRtpReceiveParameters(ssrc);
-  if (current_parameters != parameters) {
-    RTC_DLOG(LS_ERROR) << "Changing the RTP receive parameters is currently "
-                       << "unsupported.";
-    return false;
-  }
-  return true;
-}
-
 bool WebRtcVideoChannel::GetChangedRecvParameters(
     const VideoRecvParameters& params,
     ChangedRecvParameters* changed_params) const {

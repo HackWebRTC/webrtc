@@ -1450,38 +1450,6 @@ webrtc::RtpParameters WebRtcVoiceMediaChannel::GetRtpReceiveParameters(
   return rtp_params;
 }
 
-bool WebRtcVoiceMediaChannel::SetRtpReceiveParameters(
-    uint32_t ssrc,
-    const webrtc::RtpParameters& parameters) {
-  RTC_DCHECK(worker_thread_checker_.IsCurrent());
-  // SSRC of 0 represents the default receive stream.
-  if (ssrc == 0) {
-    if (!default_sink_) {
-      RTC_LOG(LS_WARNING)
-          << "Attempting to set RTP parameters for the default, "
-             "unsignaled audio receive stream, but not yet "
-             "configured to receive such a stream.";
-      return false;
-    }
-  } else {
-    auto it = recv_streams_.find(ssrc);
-    if (it == recv_streams_.end()) {
-      RTC_LOG(LS_WARNING)
-          << "Attempting to set RTP receive parameters for stream "
-          << "with ssrc " << ssrc << " which doesn't exist.";
-      return false;
-    }
-  }
-
-  webrtc::RtpParameters current_parameters = GetRtpReceiveParameters(ssrc);
-  if (current_parameters != parameters) {
-    RTC_DLOG(LS_ERROR) << "Changing the RTP receive parameters is currently "
-                       << "unsupported.";
-    return false;
-  }
-  return true;
-}
-
 bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
   RTC_LOG(LS_INFO) << "Setting voice channel options: " << options.ToString();

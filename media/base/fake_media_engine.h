@@ -168,18 +168,6 @@ class RtpHelper : public Base {
     }
     return webrtc::RtpParameters();
   }
-  virtual bool SetRtpReceiveParameters(
-      uint32_t ssrc,
-      const webrtc::RtpParameters& parameters) {
-    auto parameters_iterator = rtp_receive_parameters_.find(ssrc);
-    if (parameters_iterator != rtp_receive_parameters_.end()) {
-      parameters_iterator->second = parameters;
-      return true;
-    }
-    // Replicate the behavior of the real media channel: return false
-    // when setting parameters for unknown SSRCs.
-    return false;
-  }
 
   bool IsStreamMuted(uint32_t ssrc) const {
     bool ret = muted_streams_.find(ssrc) != muted_streams_.end();

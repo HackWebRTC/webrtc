@@ -76,8 +76,9 @@ class RTC_EXPORT RtpReceiverInterface : public rtc::RefCountInterface {
   // but this API also applies them to receivers, similar to ORTC:
   // http://ortc.org/wp-content/uploads/2016/03/ortc.html#rtcrtpparameters*.
   virtual RtpParameters GetParameters() const = 0;
-  // Currently, doesn't support changing any parameters, but may in the future.
-  virtual bool SetParameters(const RtpParameters& parameters) = 0;
+  // TODO(dinosaurav): Delete SetParameters entirely after rolling to Chromium.
+  // Currently, doesn't support changing any parameters.
+  virtual bool SetParameters(const RtpParameters& parameters) { return false; }
 
   // Does not take ownership of observer.
   // Must call SetObserver(nullptr) before the observer is destroyed.
@@ -123,7 +124,6 @@ PROXY_CONSTMETHOD0(std::vector<rtc::scoped_refptr<MediaStreamInterface>>,
 PROXY_CONSTMETHOD0(cricket::MediaType, media_type)
 PROXY_CONSTMETHOD0(std::string, id)
 PROXY_CONSTMETHOD0(RtpParameters, GetParameters)
-PROXY_METHOD1(bool, SetParameters, const RtpParameters&)
 PROXY_METHOD1(void, SetObserver, RtpReceiverObserverInterface*)
 PROXY_METHOD1(void, SetJitterBufferMinimumDelay, absl::optional<double>)
 PROXY_CONSTMETHOD0(std::vector<RtpSource>, GetSources)

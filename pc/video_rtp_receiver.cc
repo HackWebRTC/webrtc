@@ -97,18 +97,6 @@ RtpParameters VideoRtpReceiver::GetParameters() const {
   });
 }
 
-bool VideoRtpReceiver::SetParameters(const RtpParameters& parameters) {
-  TRACE_EVENT0("webrtc", "VideoRtpReceiver::SetParameters");
-  if (!media_channel_ || stopped_) {
-    return false;
-  }
-  return worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
-    // TODO(bugs.webrtc.org/8694): Stop using 0 to mean unsignalled SSRC
-    return media_channel_->SetRtpReceiveParameters(ssrc_.value_or(0),
-                                                   parameters);
-  });
-}
-
 void VideoRtpReceiver::SetFrameDecryptor(
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) {
   frame_decryptor_ = std::move(frame_decryptor);

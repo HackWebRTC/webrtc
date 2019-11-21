@@ -75,7 +75,6 @@ class AudioRtpReceiver : public ObserverInterface,
   std::string id() const override { return id_; }
 
   RtpParameters GetParameters() const override;
-  bool SetParameters(const RtpParameters& parameters) override;
 
   void SetFrameDecryptor(
       rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) override;

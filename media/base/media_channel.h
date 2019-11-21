@@ -806,9 +806,6 @@ class VoiceMediaChannel : public MediaChannel, public Delayable {
   // member.
   virtual webrtc::RtpParameters GetRtpReceiveParameters(
       uint32_t ssrc) const = 0;
-  virtual bool SetRtpReceiveParameters(
-      uint32_t ssrc,
-      const webrtc::RtpParameters& parameters) = 0;
   // Starts or stops playout of received audio.
   virtual void SetPlayout(bool playout) = 0;
   // Starts or stops sending (and potentially capture) of local audio.
@@ -875,9 +872,6 @@ class VideoMediaChannel : public MediaChannel, public Delayable {
   // member.
   virtual webrtc::RtpParameters GetRtpReceiveParameters(
       uint32_t ssrc) const = 0;
-  virtual bool SetRtpReceiveParameters(
-      uint32_t ssrc,
-      const webrtc::RtpParameters& parameters) = 0;
   // Gets the currently set codecs/payload types to be used for outgoing media.
   virtual bool GetSendCodec(VideoCodec* send_codec) = 0;
   // Starts or stops transmission (and potentially capture) of local video.
