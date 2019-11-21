@@ -14,6 +14,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "api/array_view.h"
+#include "api/scoped_refptr.h"
+#include "api/video/encoded_image.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
 
 namespace webrtc {
@@ -24,6 +27,9 @@ class RtpDepacketizerAv1 : public RtpDepacketizer {
   RtpDepacketizerAv1(const RtpDepacketizerAv1&) = delete;
   RtpDepacketizerAv1& operator=(const RtpDepacketizerAv1&) = delete;
   ~RtpDepacketizerAv1() override = default;
+
+  static rtc::scoped_refptr<EncodedImageBuffer> AssembleFrame(
+      rtc::ArrayView<const rtc::ArrayView<const uint8_t>> rtp_payloads);
 
   bool Parse(ParsedPayload* parsed_payload,
              const uint8_t* payload_data,
