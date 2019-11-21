@@ -39,6 +39,10 @@ void RealTimeController::InvokeWithControlledYield(
   closure();
 }
 
+rtc::YieldInterface* RealTimeController::YieldInterface() {
+  return nullptr;
+}
+
 RealTimeController* GlobalRealTimeController() {
   static RealTimeController* time_controller = new RealTimeController();
   return time_controller;

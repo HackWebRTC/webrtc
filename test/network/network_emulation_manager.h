@@ -19,6 +19,7 @@
 
 #include "api/test/network_emulation_manager.h"
 #include "api/test/simulated_network.h"
+#include "api/test/time_controller.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/logging.h"
@@ -33,7 +34,6 @@
 #include "test/network/network_emulation.h"
 #include "test/network/simulated_network_node.h"
 #include "test/network/traffic_route.h"
-#include "test/time_controller/time_controller.h"
 
 namespace webrtc {
 namespace test {

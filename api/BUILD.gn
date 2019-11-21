@@ -946,6 +946,45 @@ if (rtc_include_tests) {
     ]
   }
 
+  rtc_library("time_controller") {
+    visibility = [ "*" ]
+    testonly = true
+    sources = [
+      "test/time_controller.h",
+    ]
+
+    deps = [
+      "../modules:module_api",
+      "../modules/utility:utility",
+      "../rtc_base",
+      "../rtc_base:rtc_base_tests_utils",
+      "../rtc_base:rtc_event",
+      "../rtc_base/synchronization:sequence_checker",
+      "../rtc_base/synchronization:yield_policy",
+      "../rtc_base/task_utils:to_queued_task",
+      "../system_wrappers",
+      "task_queue",
+      "task_queue:default_task_queue_factory",
+      "units:time_delta",
+      "units:timestamp",
+      "//third_party/abseil-cpp/absl/strings",
+    ]
+  }
+
+  rtc_library("create_time_controller") {
+    visibility = [ "*" ]
+    testonly = true
+    sources = [
+      "test/create_time_controller.cc",
+      "test/create_time_controller.h",
+    ]
+
+    deps = [
+      ":time_controller",
+      "../test/time_controller",
+    ]
+  }
+
   rtc_library("rtc_api_unittests") {
     testonly = true
 
@@ -958,11 +997,13 @@ if (rtc_include_tests) {
       "rtp_packet_infos_unittest.cc",
       "rtp_parameters_unittest.cc",
       "scoped_refptr_unittest.cc",
+      "test/create_time_controller_unittest.cc",
       "test/loopback_media_transport_unittest.cc",
     ]
 
     deps = [
       ":array_view",
+      ":create_time_controller",
       ":function_view",
       ":libjingle_peerconnection_api",
       ":loopback_media_transport",
@@ -971,12 +1012,17 @@ if (rtc_include_tests) {
       ":rtp_packet_info",
       ":rtp_parameters",
       ":scoped_refptr",
+      ":time_controller",
       "../rtc_base:checks",
       "../rtc_base:gunit_helpers",
       "../rtc_base:rtc_base_approved",
+      "../rtc_base:rtc_task_queue",
+      "../rtc_base/task_utils:repeating_task",
       "../test:fileutils",
       "../test:test_support",
       "task_queue:task_queue_default_factory_unittests",
+      "units:time_delta",
+      "units:timestamp",
       "units:units_unittests",
       "video:video_unittests",
     ]

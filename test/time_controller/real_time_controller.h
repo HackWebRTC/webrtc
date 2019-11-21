@@ -14,10 +14,10 @@
 #include <memory>
 
 #include "api/task_queue/task_queue_factory.h"
+#include "api/test/time_controller.h"
 #include "api/units/time_delta.h"
 #include "modules/utility/include/process_thread.h"
 #include "system_wrappers/include/clock.h"
-#include "test/time_controller/time_controller.h"
 
 namespace webrtc {
 class RealTimeController : public TimeController {
@@ -30,6 +30,7 @@ class RealTimeController : public TimeController {
       const char* thread_name) override;
   void Sleep(TimeDelta duration) override;
   void InvokeWithControlledYield(std::function<void()> closure) override;
+  rtc::YieldInterface* YieldInterface() override;
 
  private:
   std::unique_ptr<TaskQueueFactory> task_queue_factory_;

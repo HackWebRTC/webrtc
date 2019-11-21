@@ -7,15 +7,17 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef TEST_TIME_CONTROLLER_TIME_CONTROLLER_H_
-#define TEST_TIME_CONTROLLER_TIME_CONTROLLER_H_
+#ifndef API_TEST_TIME_CONTROLLER_H_
+#define API_TEST_TIME_CONTROLLER_H_
 
 #include <functional>
 #include <memory>
 
 #include "api/task_queue/task_queue_factory.h"
 #include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "modules/utility/include/process_thread.h"
+#include "rtc_base/synchronization/yield_policy.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -42,6 +44,32 @@ class TimeController {
   // might yield to execute other tasks. This allows doing blocking waits on
   // tasks on other task queues froma a task queue without deadlocking.
   virtual void InvokeWithControlledYield(std::function<void()> closure) = 0;
+  // Returns a YieldInterface which can be installed as a ScopedYieldPolicy.
+  virtual rtc::YieldInterface* YieldInterface() = 0;
 };
+
+// Interface for telling time, scheduling an event to fire at a particular time,
+// and waiting for time to pass.
+class ControlledAlarmClock {
+ public:
+  virtual ~ControlledAlarmClock() = default;
+
+  // Gets a clock that tells the alarm clock's notion of time.
+  virtual Clock* GetClock() = 0;
+
+  // Schedules the alarm to fire at |deadline|.
+  // An alarm clock only supports one deadline. Calls to |ScheduleAlarmAt| with
+  // an earlier deadline will reset the alarm to fire earlier.Calls to
+  // |ScheduleAlarmAt| with a later deadline are ignored. Returns true if the
+  // deadline changed, false otherwise.
+  virtual bool ScheduleAlarmAt(Timestamp deadline) = 0;
+
+  // Sets the callback that should be run when the alarm fires.
+  virtual void SetCallback(std::function<void()> callback) = 0;
+
+  // Waits for |duration| to pass, according to the alarm clock.
+  virtual void Sleep(TimeDelta duration) = 0;
+};
+
 }  // namespace webrtc
-#endif  // TEST_TIME_CONTROLLER_TIME_CONTROLLER_H_
+#endif  // API_TEST_TIME_CONTROLLER_H_

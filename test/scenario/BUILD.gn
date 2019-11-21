@@ -84,6 +84,8 @@ if (rtc_include_tests) {
       "../../api:libjingle_peerconnection_api",
       "../../api:rtc_event_log_output_file",
       "../../api:rtp_parameters",
+      "../../api:time_controller",
+      "../../api:time_controller",
       "../../api:transport_api",
       "../../api/audio_codecs:builtin_audio_decoder_factory",
       "../../api/audio_codecs:builtin_audio_encoder_factory",

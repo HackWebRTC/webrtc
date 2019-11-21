@@ -41,6 +41,7 @@ rtc_library("emulated_network") {
   deps = [
     "../../api:network_emulation_manager_api",
     "../../api:simulated_network_api",
+    "../../api:time_controller",
     "../../api/units:data_rate",
     "../../api/units:data_size",
     "../../api/units:time_delta",

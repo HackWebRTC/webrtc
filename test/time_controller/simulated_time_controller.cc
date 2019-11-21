@@ -440,6 +440,10 @@ void GlobalSimulatedTimeController::InvokeWithControlledYield(
   closure();
 }
 
+rtc::YieldInterface* GlobalSimulatedTimeController::YieldInterface() {
+  return &impl_;
+}
+
 // namespace sim_time_impl
 
 }  // namespace webrtc
