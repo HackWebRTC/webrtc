@@ -43,6 +43,7 @@ const int kColorV = 33;
 const int kMaxBitrates[kNumberOfSimulcastStreams] = {150, 600, 1200};
 const int kMinBitrates[kNumberOfSimulcastStreams] = {50, 150, 600};
 const int kTargetBitrates[kNumberOfSimulcastStreams] = {100, 450, 1000};
+const float kMaxFramerates[kNumberOfSimulcastStreams] = {30, 30, 30};
 const int kDefaultTemporalLayerProfile[3] = {3, 3, 3};
 const int kNoTemporalLayerProfile[3] = {0, 0, 0};
 
@@ -195,6 +196,7 @@ void ConfigureStream(int width,
                      int max_bitrate,
                      int min_bitrate,
                      int target_bitrate,
+                     float max_framerate,
                      SimulcastStream* stream,
                      int num_temporal_layers) {
   assert(stream);
@@ -203,6 +205,7 @@ void ConfigureStream(int width,
   stream->maxBitrate = max_bitrate;
   stream->minBitrate = min_bitrate;
   stream->targetBitrate = target_bitrate;
+  stream->maxFramerate = max_framerate;
   if (num_temporal_layers >= 0) {
     stream->numberOfTemporalLayers = num_temporal_layers;
   }
@@ -239,15 +242,15 @@ void SimulcastTestFixtureImpl::DefaultSettings(
   settings->timing_frame_thresholds = {kDefaultTimingFramesDelayMs,
                                        kDefaultOutlierFrameSizePercent};
   ConfigureStream(kDefaultWidth / 4, kDefaultHeight / 4, kMaxBitrates[0],
-                  kMinBitrates[0], kTargetBitrates[0],
+                  kMinBitrates[0], kTargetBitrates[0], kMaxFramerates[0],
                   &settings->simulcastStream[layer_order[0]],
                   temporal_layer_profile[0]);
   ConfigureStream(kDefaultWidth / 2, kDefaultHeight / 2, kMaxBitrates[1],
-                  kMinBitrates[1], kTargetBitrates[1],
+                  kMinBitrates[1], kTargetBitrates[1], kMaxFramerates[1],
                   &settings->simulcastStream[layer_order[1]],
                   temporal_layer_profile[1]);
   ConfigureStream(kDefaultWidth, kDefaultHeight, kMaxBitrates[2],
-                  kMinBitrates[2], kTargetBitrates[2],
+                  kMinBitrates[2], kTargetBitrates[2], kMaxFramerates[2],
                   &settings->simulcastStream[layer_order[2]],
                   temporal_layer_profile[2]);
   if (codec_type == kVideoCodecVP8) {

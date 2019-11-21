@@ -447,10 +447,7 @@ struct RTC_EXPORT RtpEncodingParameters {
   absl::optional<int> min_bitrate_bps;
 
   // Specifies the maximum framerate in fps for video.
-  // TODO(asapersson): Different framerates are not supported per simulcast
-  // layer. If set, the maximum |max_framerate| is currently used.
-  // Not supported for screencast.
-  absl::optional<int> max_framerate;
+  absl::optional<double> max_framerate;
 
   // Specifies the number of temporal layers for video (if the feature is
   // supported by the codec implementation).

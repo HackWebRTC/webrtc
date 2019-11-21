@@ -48,6 +48,7 @@ bool VideoCodecH264::operator==(const VideoCodecH264& other) const {
 
 bool SpatialLayer::operator==(const SpatialLayer& other) const {
   return (width == other.width && height == other.height &&
+          maxFramerate == other.maxFramerate &&
           numberOfTemporalLayers == other.numberOfTemporalLayers &&
           maxBitrate == other.maxBitrate &&
           targetBitrate == other.targetBitrate &&
