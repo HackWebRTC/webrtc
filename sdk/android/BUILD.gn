@@ -239,6 +239,8 @@ if (is_android) {
       "api/org/webrtc/YuvConverter.java",
       "api/org/webrtc/YuvHelper.java",
       "api/org/webrtc/TimestampAligner.java",
+      "api/org/webrtc/WrappedNativeVideoDecoder.java",
+      "api/org/webrtc/WrappedNativeVideoEncoder.java",
       "src/java/org/webrtc/EglBase10Impl.java",
       "src/java/org/webrtc/EglBase14Impl.java",
       "src/java/org/webrtc/GlGenericDrawer.java",
@@ -247,8 +249,6 @@ if (is_android) {
       "src/java/org/webrtc/VideoDecoderWrapper.java",
       "src/java/org/webrtc/VideoEncoderWrapper.java",
       "src/java/org/webrtc/WrappedNativeI420Buffer.java",
-      "src/java/org/webrtc/WrappedNativeVideoDecoder.java",
-      "src/java/org/webrtc/WrappedNativeVideoEncoder.java",
     ]
 
     deps = [

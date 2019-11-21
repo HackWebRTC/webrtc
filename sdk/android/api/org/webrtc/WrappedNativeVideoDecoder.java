@@ -11,39 +11,33 @@
 package org.webrtc;
 
 /**
- * Wraps a native webrtc::VideoEncoder.
+ * Wraps a native webrtc::VideoDecoder.
  */
-abstract class WrappedNativeVideoEncoder implements VideoEncoder {
-  @Override public abstract long createNativeVideoEncoder();
-  @Override public abstract boolean isHardwareEncoder();
+public abstract class WrappedNativeVideoDecoder implements VideoDecoder {
+  @Override public abstract long createNativeVideoDecoder();
 
   @Override
-  public VideoCodecStatus initEncode(Settings settings, Callback encodeCallback) {
+  public final VideoCodecStatus initDecode(Settings settings, Callback decodeCallback) {
     throw new UnsupportedOperationException("Not implemented.");
   }
 
   @Override
-  public VideoCodecStatus release() {
+  public final VideoCodecStatus release() {
     throw new UnsupportedOperationException("Not implemented.");
   }
 
   @Override
-  public VideoCodecStatus encode(VideoFrame frame, EncodeInfo info) {
+  public final VideoCodecStatus decode(EncodedImage frame, DecodeInfo info) {
     throw new UnsupportedOperationException("Not implemented.");
   }
 
   @Override
-  public VideoCodecStatus setRateAllocation(BitrateAllocation allocation, int framerate) {
+  public final boolean getPrefersLateDecoding() {
     throw new UnsupportedOperationException("Not implemented.");
   }
 
   @Override
-  public ScalingSettings getScalingSettings() {
-    throw new UnsupportedOperationException("Not implemented.");
-  }
-
-  @Override
-  public String getImplementationName() {
+  public final String getImplementationName() {
     throw new UnsupportedOperationException("Not implemented.");
   }
 }
