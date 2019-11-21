@@ -602,13 +602,7 @@ std::unique_ptr<RtpPacketToSend> PacingController::GetPendingPacket(
     }
   }
 
-  auto* queued_packet = packet_queue_.BeginPop();
-  std::unique_ptr<RtpPacketToSend> rtp_packet;
-  if (queued_packet != nullptr) {
-    rtp_packet = queued_packet->ReleasePacket();
-    packet_queue_.FinalizePop();
-  }
-  return rtp_packet;
+  return packet_queue_.Pop();
 }
 
 void PacingController::OnPacketSent(RtpPacketToSend::Type packet_type,
