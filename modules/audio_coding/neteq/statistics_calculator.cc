@@ -193,6 +193,8 @@ void StatisticsCalculator::EndExpandEvent(int fs_hz) {
   if (event_duration_ms >= kInterruptionLenMs && decoded_output_played_) {
     lifetime_stats_.interruption_count++;
     lifetime_stats_.total_interruption_duration_ms += event_duration_ms;
+    RTC_HISTOGRAM_COUNTS("WebRTC.Audio.AudioInterruptionMs", event_duration_ms,
+                         /*min=*/150, /*max=*/5000, /*bucket_count=*/50);
   }
   concealed_samples_at_event_end_ = lifetime_stats_.concealed_samples;
 }
