@@ -57,6 +57,23 @@ rtc_library("video_frame") {
   ]
 }
 
+rtc_source_set("recordable_encoded_frame") {
+  visibility = [ "*" ]
+  sources = [
+    "recordable_encoded_frame.h",
+  ]
+
+  deps = [
+    ":encoded_image",
+    ":video_frame",
+    ":video_rtp_headers",
+    "..:array_view",
+    "..:scoped_refptr",
+    "../../rtc_base:refcount",
+    "../units:timestamp",
+  ]
+}
+
 rtc_source_set("video_frame_type") {
   visibility = [ "*" ]
   sources = [
