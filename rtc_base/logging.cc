@@ -68,7 +68,7 @@ const char* FilenameFromPath(const char* file) {
 }
 
 // Global lock for log subsystem, only needed to serialize access to streams_.
-ABSL_CONST_INIT GlobalLock g_log_crit;
+CriticalSection g_log_crit;
 }  // namespace
 
 // Inefficient default implementation, override is recommended.
@@ -201,7 +201,7 @@ LogMessage::~LogMessage() {
 #endif
   }
 
-  GlobalLockScope cs(&g_log_crit);
+  CritScope cs(&g_log_crit);
   for (LogSink* entry = streams_; entry != nullptr; entry = entry->next_) {
     if (severity_ >= entry->min_severity_) {
 #if defined(WEBRTC_ANDROID)
@@ -250,7 +250,7 @@ void LogMessage::LogTimestamps(bool on) {
 
 void LogMessage::LogToDebug(LoggingSeverity min_sev) {
   g_dbg_sev = min_sev;
-  GlobalLockScope cs(&g_log_crit);
+  CritScope cs(&g_log_crit);
   UpdateMinLogSeverity();
 }
 
@@ -259,7 +259,7 @@ void LogMessage::SetLogToStderr(bool log_to_stderr) {
 }
 
 int LogMessage::GetLogToStream(LogSink* stream) {
-  GlobalLockScope cs(&g_log_crit);
+  CritScope cs(&g_log_crit);
   LoggingSeverity sev = LS_NONE;
   for (LogSink* entry = streams_; entry != nullptr; entry = entry->next_) {
     if (stream == nullptr || stream == entry) {
@@ -270,7 +270,7 @@ int LogMessage::GetLogToStream(LogSink* stream) {
 }
 
 void LogMessage::AddLogToStream(LogSink* stream, LoggingSeverity min_sev) {
-  GlobalLockScope cs(&g_log_crit);
+  CritScope cs(&g_log_crit);
   stream->min_severity_ = min_sev;
   stream->next_ = streams_;
   streams_ = stream;
@@ -278,7 +278,7 @@ void LogMessage::AddLogToStream(LogSink* stream, LoggingSeverity min_sev) {
 }
 
 void LogMessage::RemoveLogToStream(LogSink* stream) {
-  GlobalLockScope cs(&g_log_crit);
+  CritScope cs(&g_log_crit);
   for (LogSink** entry = &streams_; *entry != nullptr;
        entry = &(*entry)->next_) {
     if (*entry == stream) {
@@ -447,7 +447,7 @@ bool LogMessage::IsNoop(LoggingSeverity severity) {
   // TODO(tommi): We're grabbing this lock for every LogMessage instance that
   // is going to be logged. This introduces unnecessary synchronization for
   // a feature that's mostly used for testing.
-  GlobalLockScope cs(&g_log_crit);
+  CritScope cs(&g_log_crit);
   return streams_ == nullptr;
 }
 
