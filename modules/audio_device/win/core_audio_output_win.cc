@@ -61,12 +61,16 @@ int CoreAudioOutput::NumDevices() const {
 
 int CoreAudioOutput::SetDevice(int index) {
   RTC_DLOG(INFO) << __FUNCTION__ << ": " << index;
+  RTC_DCHECK_GE(index, 0);
   RTC_DCHECK_RUN_ON(&thread_checker_);
   return CoreAudioBase::SetDevice(index);
 }
 
 int CoreAudioOutput::SetDevice(AudioDeviceModule::WindowsDeviceType device) {
-  RTC_DLOG(INFO) << __FUNCTION__ << ": " << device;
+  RTC_DLOG(INFO) << __FUNCTION__ << ": "
+                 << ((device == AudioDeviceModule::kDefaultDevice)
+                         ? "Default"
+                         : "DefaultCommunication");
   RTC_DCHECK_RUN_ON(&thread_checker_);
   return SetDevice((device == AudioDeviceModule::kDefaultDevice) ? 0 : 1);
 }

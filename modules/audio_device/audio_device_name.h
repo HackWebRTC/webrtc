@@ -11,8 +11,8 @@
 #ifndef MODULES_AUDIO_DEVICE_AUDIO_DEVICE_NAME_H_
 #define MODULES_AUDIO_DEVICE_AUDIO_DEVICE_NAME_H_
 
+#include <deque>
 #include <string>
-#include <vector>
 
 namespace webrtc {
 
@@ -41,7 +41,7 @@ struct AudioDeviceName {
   std::string unique_id;    // Unique identifier for the device.
 };
 
-typedef std::vector<AudioDeviceName> AudioDeviceNames;
+typedef std::deque<AudioDeviceName> AudioDeviceNames;
 
 }  // namespace webrtc
 
