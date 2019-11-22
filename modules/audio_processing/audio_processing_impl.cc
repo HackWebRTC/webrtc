@@ -323,20 +323,18 @@ AudioProcessingImpl::AudioProcessingImpl(
       submodules_(std::move(capture_post_processor),
                   std::move(render_pre_processor),
                   std::move(echo_detector),
-                  std::move(capture_analyzer),
-                  config.Get<ExperimentalAgc>().startup_min_volume,
-                  config.Get<ExperimentalAgc>().clipped_level_min,
+                  std::move(capture_analyzer)),
+      constants_(config.Get<ExperimentalAgc>().startup_min_volume,
+                 config.Get<ExperimentalAgc>().clipped_level_min,
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
-                  /* enabled= */ false,
-                  /* enabled_agc2_level_estimator= */ false,
-                  /* digital_adaptive_disabled= */ false
+                 /* enabled= */ false,
+                 /* enabled_agc2_level_estimator= */ false,
+                 /* digital_adaptive_disabled= */ false,
 #else
-                  config.Get<ExperimentalAgc>().enabled,
-                  config.Get<ExperimentalAgc>().enabled_agc2_level_estimator,
-                  config.Get<ExperimentalAgc>().digital_adaptive_disabled
+                 config.Get<ExperimentalAgc>().enabled,
+                 config.Get<ExperimentalAgc>().enabled_agc2_level_estimator,
+                 config.Get<ExperimentalAgc>().digital_adaptive_disabled,
 #endif
-                  ),
-      constants_(config.Get<ExperimentalAgc>().clipped_level_min,
                  !field_trial::IsEnabled(
                      "WebRTC-ApmExperimentalMultiChannelRenderKillSwitch"),
                  !field_trial::IsEnabled(
@@ -478,9 +476,21 @@ int AudioProcessingImpl::InitializeLocked() {
 
   submodules_.gain_control->Initialize(num_proc_channels(),
                                        proc_sample_rate_hz());
-  if (submodules_.agc_manager) {
+  if (constants_.use_experimental_agc) {
+    if (!submodules_.agc_manager.get() ||
+        submodules_.agc_manager->num_channels() !=
+            static_cast<int>(num_proc_channels()) ||
+        submodules_.agc_manager->sample_rate_hz() !=
+            capture_nonlocked_.split_rate) {
+      submodules_.agc_manager.reset(new AgcManagerDirect(
+          num_proc_channels(), constants_.agc_startup_min_volume,
+          constants_.agc_clipped_level_min,
+          constants_.use_experimental_agc_agc2_level_estimation,
+          constants_.use_experimental_agc_agc2_digital_adaptive,
+          capture_nonlocked_.split_rate));
+    }
     submodules_.agc_manager->Initialize();
-    submodules_.agc_manager->ConfigureGainControl(
+    submodules_.agc_manager->SetupDigitalGainControl(
         submodules_.gain_control.get());
     submodules_.agc_manager->SetCaptureMuted(capture_.output_will_be_muted);
   }
@@ -1262,10 +1272,9 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     submodules_.echo_controller->AnalyzeCapture(capture_buffer);
   }
 
-  if (submodules_.agc_manager && submodules_.gain_control->is_enabled()) {
-    submodules_.agc_manager->AnalyzePreProcess(
-        capture_buffer->channels_const(), capture_buffer->num_channels(),
-        capture_nonlocked_.capture_processing_format.num_frames());
+  if (constants_.use_experimental_agc &&
+      submodules_.gain_control->is_enabled()) {
+    submodules_.agc_manager->AnalyzePreProcess(capture_buffer);
   }
 
   if (submodule_states_.CaptureMultiBandSubModulesActive() &&
@@ -1350,11 +1359,15 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     capture_.stats.voice_detected = absl::nullopt;
   }
 
-  if (submodules_.agc_manager && submodules_.gain_control->is_enabled()) {
-    submodules_.agc_manager->Process(
-        capture_buffer->split_bands_const_f(0)[kBand0To8kHz],
-        capture_buffer->num_frames_per_band(), capture_nonlocked_.split_rate,
-        submodules_.gain_control.get());
+  if (constants_.use_experimental_agc &&
+      submodules_.gain_control->is_enabled()) {
+    submodules_.agc_manager->Process(capture_buffer);
+
+    absl::optional<int> new_digital_gain =
+        submodules_.agc_manager->GetDigitalComressionGain();
+    if (new_digital_gain) {
+      submodules_.gain_control->set_compression_gain_db(*new_digital_gain);
+    }
   }
   // TODO(peah): Add reporting from AEC3 whether there is echo.
   RETURN_ON_ERR(submodules_.gain_control->ProcessCaptureAudio(

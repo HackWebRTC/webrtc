@@ -325,23 +325,11 @@ class AudioProcessingImpl : public AudioProcessing {
     Submodules(std::unique_ptr<CustomProcessing> capture_post_processor,
                std::unique_ptr<CustomProcessing> render_pre_processor,
                rtc::scoped_refptr<EchoDetector> echo_detector,
-               std::unique_ptr<CustomAudioAnalyzer> capture_analyzer,
-               int agc_startup_min_volume,
-               int agc_clipped_level_min,
-               bool use_experimental_agc,
-               bool use_experimental_agc_agc2_level_estimation,
-               bool use_experimental_agc_agc2_digital_adaptive)
+               std::unique_ptr<CustomAudioAnalyzer> capture_analyzer)
         : echo_detector(std::move(echo_detector)),
           capture_post_processor(std::move(capture_post_processor)),
           render_pre_processor(std::move(render_pre_processor)),
-          capture_analyzer(std::move(capture_analyzer)) {
-      if (use_experimental_agc) {
-        agc_manager = std::make_unique<AgcManagerDirect>(
-            agc_startup_min_volume, agc_clipped_level_min,
-            use_experimental_agc_agc2_level_estimation,
-            use_experimental_agc_agc2_digital_adaptive);
-      }
-    }
+          capture_analyzer(std::move(capture_analyzer)) {}
     // Accessed internally from capture or during initialization.
     std::unique_ptr<AgcManagerDirect> agc_manager;
     std::unique_ptr<GainControlImpl> gain_control;
@@ -381,15 +369,29 @@ class AudioProcessingImpl : public AudioProcessing {
 
   // APM constants.
   const struct ApmConstants {
-    ApmConstants(int agc_clipped_level_min,
+    ApmConstants(int agc_startup_min_volume,
+                 int agc_clipped_level_min,
+                 bool use_experimental_agc,
+                 bool use_experimental_agc_agc2_level_estimation,
+                 bool use_experimental_agc_agc2_digital_adaptive,
                  bool experimental_multi_channel_render_support,
                  bool experimental_multi_channel_capture_support)
-        : agc_clipped_level_min(agc_clipped_level_min),
+        : agc_startup_min_volume(agc_startup_min_volume),
+          agc_clipped_level_min(agc_clipped_level_min),
+          use_experimental_agc(use_experimental_agc),
+          use_experimental_agc_agc2_level_estimation(
+              use_experimental_agc_agc2_level_estimation),
+          use_experimental_agc_agc2_digital_adaptive(
+              use_experimental_agc_agc2_digital_adaptive),
           experimental_multi_channel_render_support(
               experimental_multi_channel_render_support),
           experimental_multi_channel_capture_support(
               experimental_multi_channel_capture_support) {}
+    int agc_startup_min_volume;
     int agc_clipped_level_min;
+    bool use_experimental_agc;
+    bool use_experimental_agc_agc2_level_estimation;
+    bool use_experimental_agc_agc2_digital_adaptive;
     bool experimental_multi_channel_render_support;
     bool experimental_multi_channel_capture_support;
   } constants_;

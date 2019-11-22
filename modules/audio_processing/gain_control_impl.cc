@@ -19,6 +19,7 @@
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 
@@ -380,6 +381,7 @@ int GainControlImpl::target_level_dbfs() const {
 
 int GainControlImpl::set_compression_gain_db(int gain) {
   if (gain < 0 || gain > 90) {
+    RTC_LOG(LS_ERROR) << "set_compression_gain_db(" << gain << ") failed.";
     return AudioProcessing::kBadParameterError;
   }
   compression_gain_db_ = gain;
