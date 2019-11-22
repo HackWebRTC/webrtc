@@ -28,7 +28,6 @@ namespace webrtc {
 namespace {
 
 // Parameters for linear least squares fit of regression line to noisy data.
-constexpr size_t kDefaultTrendlineWindowSize = 20;
 constexpr double kDefaultTrendlineSmoothingCoeff = 0.9;
 constexpr double kDefaultTrendlineThresholdGain = 4.0;
 const char kBweWindowSizeInPacketsExperiment[] =
@@ -48,7 +47,7 @@ size_t ReadTrendlineFilterWindowSize(
   }
   RTC_LOG(LS_WARNING) << "Failed to parse parameters for BweWindowSizeInPackets"
                          " experiment from field trial string. Using default.";
-  return kDefaultTrendlineWindowSize;
+  return TrendlineEstimatorSettings::kDefaultTrendlineWindowSize;
 }
 
 absl::optional<double> LinearFitSlope(
@@ -77,6 +76,34 @@ absl::optional<double> LinearFitSlope(
   return numerator / denominator;
 }
 
+absl::optional<double> ComputeSlopeCap(
+    const std::deque<TrendlineEstimator::PacketTiming>& packets,
+    const TrendlineEstimatorSettings& settings) {
+  RTC_DCHECK(1 <= settings.beginning_packets &&
+             settings.beginning_packets < packets.size());
+  RTC_DCHECK(1 <= settings.end_packets &&
+             settings.end_packets < packets.size());
+  RTC_DCHECK(settings.beginning_packets + settings.end_packets <=
+             packets.size());
+  TrendlineEstimator::PacketTiming early = packets[0];
+  for (size_t i = 1; i < settings.beginning_packets; ++i) {
+    if (packets[i].raw_delay_ms < early.raw_delay_ms)
+      early = packets[i];
+  }
+  size_t late_start = packets.size() - settings.end_packets;
+  TrendlineEstimator::PacketTiming late = packets[late_start];
+  for (size_t i = late_start + 1; i < packets.size(); ++i) {
+    if (packets[i].raw_delay_ms < late.raw_delay_ms)
+      late = packets[i];
+  }
+  if (late.arrival_time_ms - early.arrival_time_ms < 1) {
+    return absl::nullopt;
+  }
+  return (late.raw_delay_ms - early.raw_delay_ms) /
+             (late.arrival_time_ms - early.arrival_time_ms) +
+         settings.cap_uncertainty;
+}
+
 constexpr double kMaxAdaptOffsetMs = 15.0;
 constexpr double kOverUsingTimeThreshold = 10;
 constexpr int kMinNumDeltas = 60;
@@ -84,13 +111,56 @@ constexpr int kDeltaCounterMax = 1000;
 
 }  // namespace
 
+constexpr char TrendlineEstimatorSettings::kKey[];
+
+TrendlineEstimatorSettings::TrendlineEstimatorSettings(
+    const WebRtcKeyValueConfig* key_value_config) {
+  if (key_value_config->Lookup(kBweWindowSizeInPacketsExperiment)
+          .find("Enabled") == 0) {
+    window_size = ReadTrendlineFilterWindowSize(key_value_config);
+  }
+  Parser()->Parse(key_value_config->Lookup(TrendlineEstimatorSettings::kKey));
+  if (window_size < 10 || 200 < window_size) {
+    RTC_LOG(LS_WARNING) << "Window size must be between 10 and 200 packets";
+    window_size = kDefaultTrendlineWindowSize;
+  }
+  if (enable_cap) {
+    if (beginning_packets < 1 || end_packets < 1 ||
+        beginning_packets > window_size || end_packets > window_size) {
+      RTC_LOG(LS_WARNING) << "Size of beginning and end must be between 1 and "
+                          << window_size;
+      enable_cap = false;
+      beginning_packets = end_packets = 0;
+      cap_uncertainty = 0.0;
+    }
+    if (beginning_packets + end_packets > window_size) {
+      RTC_LOG(LS_WARNING)
+          << "Size of beginning plus end can't exceed the window size";
+      enable_cap = false;
+      beginning_packets = end_packets = 0;
+      cap_uncertainty = 0.0;
+    }
+    if (cap_uncertainty < 0.0 || 0.025 < cap_uncertainty) {
+      RTC_LOG(LS_WARNING) << "Cap uncertainty must be between 0 and 0.025";
+      cap_uncertainty = 0.0;
+    }
+  }
+}
+
+std::unique_ptr<StructParametersParser> TrendlineEstimatorSettings::Parser() {
+  return StructParametersParser::Create("sort", &enable_sort,  //
+                                        "cap", &enable_cap,    //
+                                        "beginning_packets",
+                                        &beginning_packets,                   //
+                                        "end_packets", &end_packets,          //
+                                        "cap_uncertainty", &cap_uncertainty,  //
+                                        "window_size", &window_size);
+}
+
 TrendlineEstimator::TrendlineEstimator(
     const WebRtcKeyValueConfig* key_value_config,
     NetworkStatePredictor* network_state_predictor)
-    : window_size_(key_value_config->Lookup(kBweWindowSizeInPacketsExperiment)
-                               .find("Enabled") == 0
-                       ? ReadTrendlineFilterWindowSize(key_value_config)
-                       : kDefaultTrendlineWindowSize),
+    : settings_(key_value_config),
       smoothing_coef_(kDefaultTrendlineSmoothingCoeff),
       threshold_gain_(kDefaultTrendlineThresholdGain),
       num_of_deltas_(0),
@@ -111,8 +181,8 @@ TrendlineEstimator::TrendlineEstimator(
       hypothesis_predicted_(BandwidthUsage::kBwNormal),
       network_state_predictor_(network_state_predictor) {
   RTC_LOG(LS_INFO)
-      << "Using Trendline filter for delay change estimation with window size "
-      << window_size_ << " and "
+      << "Using Trendline filter for delay change estimation with settings "
+      << settings_.Parser()->Encode() << " and "
       << (network_state_predictor_ ? "injected" : "no")
       << " network state predictor";
 }
@@ -139,20 +209,38 @@ void TrendlineEstimator::UpdateTrendline(double recv_delta_ms,
   BWE_TEST_LOGGING_PLOT(1, "smoothed_delay_ms", arrival_time_ms,
                         smoothed_delay_);
 
-  // Simple linear regression.
+  // Maintain packet window
   delay_hist_.emplace_back(
       static_cast<double>(arrival_time_ms - first_arrival_time_ms_),
-      smoothed_delay_);
-  if (delay_hist_.size() > window_size_)
+      smoothed_delay_, accumulated_delay_);
+  if (settings_.enable_sort) {
+    for (size_t i = delay_hist_.size() - 1;
+         i > 0 &&
+         delay_hist_[i].arrival_time_ms < delay_hist_[i - 1].arrival_time_ms;
+         --i) {
+      std::swap(delay_hist_[i], delay_hist_[i - 1]);
+    }
+  }
+  if (delay_hist_.size() > settings_.window_size)
     delay_hist_.pop_front();
+
+  // Simple linear regression.
   double trend = prev_trend_;
-  if (delay_hist_.size() == window_size_) {
+  if (delay_hist_.size() == settings_.window_size) {
     // Update trend_ if it is possible to fit a line to the data. The delay
     // trend can be seen as an estimate of (send_rate - capacity)/capacity.
     // 0 < trend < 1   ->  the delay increases, queues are filling up
     //   trend == 0    ->  the delay does not change
     //   trend < 0     ->  the delay decreases, queues are being emptied
     trend = LinearFitSlope(delay_hist_).value_or(trend);
+    if (settings_.enable_cap) {
+      absl::optional<double> cap = ComputeSlopeCap(delay_hist_, settings_);
+      // We only use the cap to filter out overuse detections, not
+      // to detect additional underuses.
+      if (trend >= 0 && cap.has_value() && trend > cap.value()) {
+        trend = cap.value();
+      }
+    }
   }
   BWE_TEST_LOGGING_PLOT(1, "trendline_slope", arrival_time_ms, trend);
 
