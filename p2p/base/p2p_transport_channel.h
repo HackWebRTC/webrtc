@@ -33,6 +33,7 @@
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair_config.h"
 #include "logging/rtc_event_log/ice_logger.h"
 #include "p2p/base/candidate_pair_interface.h"
+#include "p2p/base/ice_controller_factory_interface.h"
 #include "p2p/base/ice_controller_interface.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/p2p_constants.h"
@@ -86,11 +87,13 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   P2PTransportChannel(const std::string& transport_name,
                       int component,
                       PortAllocator* allocator);
-  P2PTransportChannel(const std::string& transport_name,
-                      int component,
-                      PortAllocator* allocator,
-                      webrtc::AsyncResolverFactory* async_resolver_factory,
-                      webrtc::RtcEventLog* event_log = nullptr);
+  P2PTransportChannel(
+      const std::string& transport_name,
+      int component,
+      PortAllocator* allocator,
+      webrtc::AsyncResolverFactory* async_resolver_factory,
+      webrtc::RtcEventLog* event_log = nullptr,
+      IceControllerFactoryInterface* ice_controller_factory = nullptr);
   ~P2PTransportChannel() override;
 
   // From TransportChannelImpl:

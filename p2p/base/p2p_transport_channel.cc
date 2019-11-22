@@ -78,14 +78,19 @@ bool IceCredentialsChanged(const std::string& old_ufrag,
 P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
                                          int component,
                                          PortAllocator* allocator)
-    : P2PTransportChannel(transport_name, component, allocator, nullptr) {}
+    : P2PTransportChannel(transport_name,
+                          component,
+                          allocator,
+                          nullptr,
+                          nullptr) {}
 
 P2PTransportChannel::P2PTransportChannel(
     const std::string& transport_name,
     int component,
     PortAllocator* allocator,
     webrtc::AsyncResolverFactory* async_resolver_factory,
-    webrtc::RtcEventLog* event_log)
+    webrtc::RtcEventLog* event_log,
+    IceControllerFactoryInterface* ice_controller_factory)
     : transport_name_(transport_name),
       component_(component),
       allocator_(allocator),
@@ -123,13 +128,20 @@ P2PTransportChannel::P2PTransportChannel(
       this, &P2PTransportChannel::OnCandidateFilterChanged);
   ice_event_log_.set_event_log(event_log);
 
-  ice_controller_ = std::make_unique<BasicIceController>(
-      [this] { return GetState(); }, [this] { return GetIceRole(); },
+  IceControllerFactoryArgs args{
+      [this] { return GetState(); },
+      [this] { return GetIceRole(); },
       [this](const Connection* connection) {
         return IsPortPruned(connection->port()) ||
                IsRemoteCandidatePruned(connection->remote_candidate());
       },
-      &field_trials_);
+      &field_trials_,
+  };
+  if (ice_controller_factory != nullptr) {
+    ice_controller_ = ice_controller_factory->Create(args);
+  } else {
+    ice_controller_ = std::make_unique<BasicIceController>(args);
+  }
 }
 
 P2PTransportChannel::~P2PTransportChannel() {

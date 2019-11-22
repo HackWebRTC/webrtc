@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "p2p/base/ice_controller_factory_interface.h"
 #include "p2p/base/ice_controller_interface.h"
 #include "p2p/base/p2p_transport_channel.h"
 
@@ -24,11 +25,7 @@ namespace cricket {
 
 class BasicIceController : public IceControllerInterface {
  public:
-  BasicIceController(
-      std::function<IceTransportState()> ice_transport_state_func,
-      std::function<IceRole()> ice_role_func,
-      std::function<bool(const Connection*)> is_candidated_pruned_func,
-      const IceFieldTrials*);
+  explicit BasicIceController(const IceControllerFactoryArgs& args);
   virtual ~BasicIceController();
 
   void SetIceConfig(const IceConfig& config) override;

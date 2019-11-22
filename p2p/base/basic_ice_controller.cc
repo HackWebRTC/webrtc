@@ -57,15 +57,11 @@ int CompareCandidatePairsByNetworkPreference(
 
 namespace cricket {
 
-BasicIceController::BasicIceController(
-    std::function<IceTransportState()> ice_transport_state_func,
-    std::function<IceRole()> ice_role_func,
-    std::function<bool(const Connection*)> is_connection_pruned_func,
-    const IceFieldTrials* field_trials)
-    : ice_transport_state_func_(ice_transport_state_func),
-      ice_role_func_(ice_role_func),
-      is_connection_pruned_func_(is_connection_pruned_func),
-      field_trials_(field_trials) {}
+BasicIceController::BasicIceController(const IceControllerFactoryArgs& args)
+    : ice_transport_state_func_(args.ice_transport_state_func),
+      ice_role_func_(args.ice_role_func),
+      is_connection_pruned_func_(args.is_connection_pruned_func),
+      field_trials_(args.ice_field_trials) {}
 
 BasicIceController::~BasicIceController() {}
 

@@ -12,6 +12,22 @@
 
 #include <utility>
 
+#include "p2p/base/basic_ice_controller.h"
+#include "p2p/base/ice_controller_factory_interface.h"
+
+namespace {
+
+class BasicIceControllerFactory
+    : public cricket::IceControllerFactoryInterface {
+ public:
+  std::unique_ptr<cricket::IceControllerInterface> Create(
+      const cricket::IceControllerFactoryArgs& args) override {
+    return std::make_unique<cricket::BasicIceController>(args);
+  }
+};
+
+}  // namespace
+
 namespace webrtc {
 
 DefaultIceTransport::DefaultIceTransport(
@@ -27,10 +43,11 @@ DefaultIceTransportFactory::CreateIceTransport(
     const std::string& transport_name,
     int component,
     IceTransportInit init) {
+  BasicIceControllerFactory factory;
   return new rtc::RefCountedObject<DefaultIceTransport>(
       std::make_unique<cricket::P2PTransportChannel>(
           transport_name, component, init.port_allocator(),
-          init.async_resolver_factory(), init.event_log()));
+          init.async_resolver_factory(), init.event_log(), &factory));
 }
 
 }  // namespace webrtc

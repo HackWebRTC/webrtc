@@ -14,6 +14,7 @@
 #include <memory>
 #include <utility>
 
+#include "p2p/base/basic_ice_controller.h"
 #include "p2p/base/connection.h"
 #include "p2p/base/fake_port_allocator.h"
 #include "p2p/base/ice_transport_internal.h"
@@ -173,6 +174,19 @@ cricket::BasicPortAllocator* CreateBasicPortAllocator(
   allocator->SetConfiguration(stun_servers, turn_servers, 0, webrtc::NO_PRUNE);
   return allocator;
 }
+
+class MockIceControllerFactory : public cricket::IceControllerFactoryInterface {
+ public:
+  ~MockIceControllerFactory() = default;
+  std::unique_ptr<cricket::IceControllerInterface> Create(
+      const cricket::IceControllerFactoryArgs& args) {
+    RecordIceControllerCreated();
+    return std::make_unique<cricket::BasicIceController>(args);
+  }
+
+  MOCK_METHOD0(RecordIceControllerCreated, void());
+};
+
 }  // namespace
 
 namespace cricket {
@@ -5588,6 +5602,17 @@ TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampeningBoth) {
   // Now receiving ping and new timeout should kick in.
   conn1->ReceivedPing("id1");  //
   EXPECT_EQ_SIMULATED_WAIT(conn1, ch.selected_connection(), 2 * kMargin, clock);
+}
+
+TEST(P2PTransportChannel, InjectIceController) {
+  MockIceControllerFactory factory;
+  FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  EXPECT_CALL(factory, RecordIceControllerCreated()).Times(1);
+  std::make_unique<cricket::P2PTransportChannel>(
+      "transport_name",
+      /* component= */ 77, &pa,
+      /* async_resolver_factory = */ nullptr,
+      /* event_log = */ nullptr, &factory);
 }
 
 }  // namespace cricket
