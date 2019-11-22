@@ -36,6 +36,7 @@
 #include "p2p/base/ice_controller_interface.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/p2p_constants.h"
+#include "p2p/base/p2p_transport_channel_ice_field_trials.h"
 #include "p2p/base/port_allocator.h"
 #include "p2p/base/port_interface.h"
 #include "p2p/base/regathering_controller.h"
@@ -74,21 +75,6 @@ class RemoteCandidate : public Candidate {
 
  private:
   PortInterface* origin_port_;
-};
-
-struct IceFieldTrials {
-  bool skip_relay_to_non_relay_connections = false;
-  absl::optional<int> max_outstanding_pings;
-
-  // Wait X ms before selecting a connection when having none.
-  // This will make media slower, but will give us chance to find
-  // a better connection before starting.
-  absl::optional<int> initial_select_dampening;
-
-  // If the connection has recevied a ping-request, delay by
-  // maximum this delay. This will make media slower, but will
-  // give us chance to find a better connection before starting.
-  absl::optional<int> initial_select_dampening_ping_received;
 };
 
 // P2PTransportChannel manages the candidates and connection process to keep

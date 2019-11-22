@@ -52,6 +52,7 @@ rtc_library("rtc_p2p") {
     "base/p2p_constants.h",
     "base/p2p_transport_channel.cc",
     "base/p2p_transport_channel.h",
+    "base/p2p_transport_channel_ice_field_trials.h",
     "base/packet_transport_interface.h",
     "base/packet_transport_internal.cc",
     "base/packet_transport_internal.h",
