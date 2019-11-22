@@ -335,6 +335,7 @@ void* Thread::PreRun(void* pv) {
   Thread* thread = static_cast<Thread*>(pv);
   ThreadManager::Instance()->SetCurrentThread(thread);
   rtc::SetCurrentThreadName(thread->name_.c_str());
+  CurrentTaskQueueSetter set_current_task_queue(thread);
 #if defined(WEBRTC_MAC)
   ScopedAutoReleasePool pool;
 #endif
@@ -473,6 +474,41 @@ void Thread::InvokeInternal(const Location& posted_from,
                posted_from.file_and_line(), "src_func",
                posted_from.function_name());
   Send(posted_from, handler);
+}
+
+void Thread::QueuedTaskHandler::OnMessage(Message* msg) {
+  RTC_DCHECK(msg);
+  auto* data = static_cast<ScopedMessageData<webrtc::QueuedTask>*>(msg->pdata);
+  std::unique_ptr<webrtc::QueuedTask> task = std::move(data->data());
+  // MessageQueue expects handler to own Message::pdata when OnMessage is called
+  // Since MessageData is no longer needed, delete it.
+  delete data;
+
+  // QueuedTask interface uses Run return value to communicate who owns the
+  // task. false means QueuedTask took the ownership.
+  if (!task->Run())
+    task.release();
+}
+
+void Thread::PostTask(std::unique_ptr<webrtc::QueuedTask> task) {
+  // Though Post takes MessageData by raw pointer (last parameter), it still
+  // takes it with ownership.
+  Post(RTC_FROM_HERE, &queued_task_handler_,
+       /*id=*/0, new ScopedMessageData<webrtc::QueuedTask>(std::move(task)));
+}
+
+void Thread::PostDelayedTask(std::unique_ptr<webrtc::QueuedTask> task,
+                             uint32_t milliseconds) {
+  // Though PostDelayed takes MessageData by raw pointer (last parameter),
+  // it still takes it with ownership.
+  PostDelayed(RTC_FROM_HERE, milliseconds, &queued_task_handler_,
+              /*id=*/0,
+              new ScopedMessageData<webrtc::QueuedTask>(std::move(task)));
+}
+
+void Thread::Delete() {
+  Stop();
+  delete this;
 }
 
 bool Thread::IsProcessingMessagesForTesting() {

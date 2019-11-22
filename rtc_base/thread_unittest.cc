@@ -12,6 +12,8 @@
 
 #include <memory>
 
+#include "api/task_queue/task_queue_factory.h"
+#include "api/task_queue/task_queue_test.h"
 #include "rtc_base/async_invoker.h"
 #include "rtc_base/async_udp_socket.h"
 #include "rtc_base/event.h"
@@ -899,6 +901,24 @@ TEST(ThreadPostTaskTest, InvokesInPostedOrder) {
   // Only if the chain is invoked in posted order will the last event be set.
   fourth.Wait(Event::kForever);
 }
+
+class ThreadFactory : public webrtc::TaskQueueFactory {
+ public:
+  std::unique_ptr<webrtc::TaskQueueBase, webrtc::TaskQueueDeleter>
+  CreateTaskQueue(absl::string_view /* name */,
+                  Priority /*priority*/) const override {
+    std::unique_ptr<Thread> thread = Thread::Create();
+    thread->Start();
+    return std::unique_ptr<webrtc::TaskQueueBase, webrtc::TaskQueueDeleter>(
+        thread.release());
+  }
+};
+
+using ::webrtc::TaskQueueTest;
+
+INSTANTIATE_TEST_SUITE_P(RtcThread,
+                         TaskQueueTest,
+                         ::testing::Values(std::make_unique<ThreadFactory>));
 
 }  // namespace
 }  // namespace rtc

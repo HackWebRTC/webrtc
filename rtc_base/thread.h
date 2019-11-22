@@ -21,6 +21,8 @@
 #if defined(WEBRTC_POSIX)
 #include <pthread.h>
 #endif
+#include "api/task_queue/queued_task.h"
+#include "api/task_queue/task_queue_base.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/location.h"
 #include "rtc_base/message_handler.h"
@@ -133,7 +135,8 @@ struct _SendMessage {
 
 // WARNING! SUBCLASSES MUST CALL Stop() IN THEIR DESTRUCTORS!  See ~Thread().
 
-class RTC_LOCKABLE RTC_EXPORT Thread : public MessageQueue {
+class RTC_LOCKABLE RTC_EXPORT Thread : public MessageQueue,
+                                       public webrtc::TaskQueueBase {
  public:
   explicit Thread(SocketServer* ss);
   explicit Thread(std::unique_ptr<SocketServer> ss);
@@ -263,6 +266,12 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public MessageQueue {
              std::forward<FunctorT>(functor)));
   }
 
+  // From TaskQueueBase
+  void PostTask(std::unique_ptr<webrtc::QueuedTask> task) override;
+  void PostDelayedTask(std::unique_ptr<webrtc::QueuedTask> task,
+                       uint32_t milliseconds) override;
+  void Delete() override;
+
   // From MessageQueue
   bool IsProcessingMessagesForTesting() override;
   void Clear(MessageHandler* phandler,
@@ -325,6 +334,10 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public MessageQueue {
   friend class ScopedDisallowBlockingCalls;
 
  private:
+  class QueuedTaskHandler final : public MessageHandler {
+   public:
+    void OnMessage(Message* msg) override;
+  };
   // Sets the per-thread allow-blocking-calls flag and returns the previous
   // value. Must be called on this thread.
   bool SetAllowBlockingCalls(bool allow);
@@ -380,6 +393,9 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public MessageQueue {
 
   // Only touched from the worker thread itself.
   bool blocking_calls_allowed_ = true;
+
+  // Runs webrtc::QueuedTask posted to the Thread.
+  QueuedTaskHandler queued_task_handler_;
 
   friend class ThreadManager;
 
