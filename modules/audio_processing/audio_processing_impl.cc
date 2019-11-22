@@ -1015,7 +1015,7 @@ void AudioProcessingImpl::QueueBandedRenderAudio(AudioBuffer* audio) {
   }
 
   if (!submodules_.agc_manager) {
-    GainControlImpl::PackRenderAudioBuffer(audio, &agc_render_queue_buffer_);
+    GainControlImpl::PackRenderAudioBuffer(*audio, &agc_render_queue_buffer_);
     // Insert the samples into the queue.
     if (!agc_render_signal_queue_->Insert(&agc_render_queue_buffer_)) {
       // The data queue is full and needs to be emptied.
@@ -1298,7 +1298,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     submodules_.high_pass_filter->Process(capture_buffer);
   }
 
-  RETURN_ON_ERR(submodules_.gain_control->AnalyzeCaptureAudio(capture_buffer));
+  RETURN_ON_ERR(submodules_.gain_control->AnalyzeCaptureAudio(*capture_buffer));
   RTC_DCHECK(
       !(submodules_.legacy_noise_suppressor && submodules_.noise_suppressor));
   if (submodules_.noise_suppressor) {

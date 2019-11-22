@@ -117,23 +117,22 @@ void GainControlImpl::ProcessRenderAudio(
 }
 
 void GainControlImpl::PackRenderAudioBuffer(
-    AudioBuffer* audio,
+    const AudioBuffer& audio,
     std::vector<int16_t>* packed_buffer) {
-  RTC_DCHECK_GE(AudioBuffer::kMaxSplitFrameLength,
-                audio->num_frames_per_band());
+  RTC_DCHECK_GE(AudioBuffer::kMaxSplitFrameLength, audio.num_frames_per_band());
   std::array<int16_t, AudioBuffer::kMaxSplitFrameLength> mixed_low_pass_data;
   rtc::ArrayView<const int16_t> mixed_low_pass(mixed_low_pass_data.data(),
-                                               audio->num_frames_per_band());
-  if (audio->num_channels() == 1) {
-    FloatS16ToS16(audio->split_bands_const(0)[kBand0To8kHz],
-                  audio->num_frames_per_band(), mixed_low_pass_data.data());
+                                               audio.num_frames_per_band());
+  if (audio.num_channels() == 1) {
+    FloatS16ToS16(audio.split_bands_const(0)[kBand0To8kHz],
+                  audio.num_frames_per_band(), mixed_low_pass_data.data());
   } else {
-    const int num_channels = static_cast<int>(audio->num_channels());
-    for (size_t i = 0; i < audio->num_frames_per_band(); ++i) {
+    const int num_channels = static_cast<int>(audio.num_channels());
+    for (size_t i = 0; i < audio.num_frames_per_band(); ++i) {
       int32_t value =
-          FloatS16ToS16(audio->split_channels_const(kBand0To8kHz)[0][i]);
+          FloatS16ToS16(audio.split_channels_const(kBand0To8kHz)[0][i]);
       for (int j = 1; j < num_channels; ++j) {
-        value += FloatS16ToS16(audio->split_channels_const(kBand0To8kHz)[j][i]);
+        value += FloatS16ToS16(audio.split_channels_const(kBand0To8kHz)[j][i]);
       }
       mixed_low_pass_data[i] = value / num_channels;
     }
@@ -141,18 +140,17 @@ void GainControlImpl::PackRenderAudioBuffer(
 
   packed_buffer->clear();
   packed_buffer->insert(packed_buffer->end(), mixed_low_pass.data(),
-                        (mixed_low_pass.data() + audio->num_frames_per_band()));
+                        (mixed_low_pass.data() + audio.num_frames_per_band()));
 }
 
-int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
+int GainControlImpl::AnalyzeCaptureAudio(const AudioBuffer& audio) {
   if (!enabled_) {
     return AudioProcessing::kNoError;
   }
 
   RTC_DCHECK(num_proc_channels_);
-  RTC_DCHECK_GE(AudioBuffer::kMaxSplitFrameLength,
-                audio->num_frames_per_band());
-  RTC_DCHECK_EQ(audio->num_channels(), *num_proc_channels_);
+  RTC_DCHECK_GE(AudioBuffer::kMaxSplitFrameLength, audio.num_frames_per_band());
+  RTC_DCHECK_EQ(audio.num_channels(), *num_proc_channels_);
   RTC_DCHECK_LE(*num_proc_channels_, gain_controllers_.size());
 
   int16_t split_band_data[AudioBuffer::kMaxNumBands]
@@ -165,13 +163,11 @@ int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
     for (auto& gain_controller : gain_controllers_) {
       gain_controller->set_capture_level(analog_capture_level_);
 
-      audio->ExportSplitChannelData(capture_channel, split_bands);
+      audio.ExportSplitChannelData(capture_channel, split_bands);
 
       int err =
           WebRtcAgc_AddMic(gain_controller->state(), split_bands,
-                           audio->num_bands(), audio->num_frames_per_band());
-
-      audio->ImportSplitChannelData(capture_channel, split_bands);
+                           audio.num_bands(), audio.num_frames_per_band());
 
       if (err != AudioProcessing::kNoError) {
         return AudioProcessing::kUnspecifiedError;
@@ -183,14 +179,12 @@ int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
     for (auto& gain_controller : gain_controllers_) {
       int32_t capture_level_out = 0;
 
-      audio->ExportSplitChannelData(capture_channel, split_bands);
+      audio.ExportSplitChannelData(capture_channel, split_bands);
 
       int err =
           WebRtcAgc_VirtualMic(gain_controller->state(), split_bands,
-                               audio->num_bands(), audio->num_frames_per_band(),
+                               audio.num_bands(), audio.num_frames_per_band(),
                                analog_capture_level_, &capture_level_out);
-
-      audio->ImportSplitChannelData(capture_channel, split_bands);
 
       gain_controller->set_capture_level(capture_level_out);
 

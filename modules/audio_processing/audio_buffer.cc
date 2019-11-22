@@ -369,10 +369,11 @@ void AudioBuffer::MergeFrequencyBands() {
   splitting_filter_->Synthesis(split_data_.get(), data_.get());
 }
 
-void AudioBuffer::ExportSplitChannelData(size_t channel,
-                                         int16_t* const* split_band_data) {
+void AudioBuffer::ExportSplitChannelData(
+    size_t channel,
+    int16_t* const* split_band_data) const {
   for (size_t k = 0; k < num_bands(); ++k) {
-    const float* band_data = split_bands(channel)[k];
+    const float* band_data = split_bands_const(channel)[k];
 
     RTC_DCHECK(split_band_data[k]);
     RTC_DCHECK(band_data);

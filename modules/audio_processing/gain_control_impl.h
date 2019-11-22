@@ -36,12 +36,12 @@ class GainControlImpl : public GainControl {
   ~GainControlImpl() override;
 
   void ProcessRenderAudio(rtc::ArrayView<const int16_t> packed_render_audio);
-  int AnalyzeCaptureAudio(AudioBuffer* audio);
+  int AnalyzeCaptureAudio(const AudioBuffer& audio);
   int ProcessCaptureAudio(AudioBuffer* audio, bool stream_has_echo);
 
   void Initialize(size_t num_proc_channels, int sample_rate_hz);
 
-  static void PackRenderAudioBuffer(AudioBuffer* audio,
+  static void PackRenderAudioBuffer(const AudioBuffer& audio,
                                     std::vector<int16_t>* packed_buffer);
 
   // GainControl implementation.

@@ -31,9 +31,9 @@ void ProcessOneFrame(int sample_rate_hz,
   }
 
   std::vector<int16_t> render_audio;
-  GainControlImpl::PackRenderAudioBuffer(render_audio_buffer, &render_audio);
+  GainControlImpl::PackRenderAudioBuffer(*render_audio_buffer, &render_audio);
   gain_controller->ProcessRenderAudio(render_audio);
-  gain_controller->AnalyzeCaptureAudio(capture_audio_buffer);
+  gain_controller->AnalyzeCaptureAudio(*capture_audio_buffer);
   gain_controller->ProcessCaptureAudio(capture_audio_buffer, false);
 
   if (sample_rate_hz > AudioProcessing::kSampleRate16kHz) {

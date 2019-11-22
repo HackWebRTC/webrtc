@@ -97,12 +97,12 @@ void FuzzGainController(test::FuzzDataHelper* fuzz_data, GainControlImpl* gci) {
     FillAudioBuffer(fuzz_data, &audio);
 
     const bool stream_has_echo = fuzz_data->ReadOrDefaultValue(true);
-    gci->AnalyzeCaptureAudio(&audio);
+    gci->AnalyzeCaptureAudio(audio);
     gci->ProcessCaptureAudio(&audio, stream_has_echo);
 
     FillAudioBuffer(fuzz_data, &audio);
 
-    gci->PackRenderAudioBuffer(&audio, &packed_render_audio);
+    gci->PackRenderAudioBuffer(audio, &packed_render_audio);
     gci->ProcessRenderAudio(packed_render_audio);
   }
 }
