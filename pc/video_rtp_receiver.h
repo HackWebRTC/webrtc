@@ -27,10 +27,9 @@
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
 #include "media/base/media_channel.h"
-#include "media/base/video_broadcaster.h"
 #include "pc/jitter_buffer_delay_interface.h"
 #include "pc/rtp_receiver.h"
-#include "pc/video_track_source.h"
+#include "pc/video_rtp_track_source.h"
 #include "rtc_base/ref_counted_object.h"
 #include "rtc_base/thread.h"
 
@@ -110,22 +109,6 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
   std::vector<RtpSource> GetSources() const override;
 
  private:
-  class VideoRtpTrackSource : public VideoTrackSource {
-   public:
-    VideoRtpTrackSource() : VideoTrackSource(true /* remote */) {}
-
-    rtc::VideoSourceInterface<VideoFrame>* source() override {
-      return &broadcaster_;
-    }
-    rtc::VideoSinkInterface<VideoFrame>* sink() { return &broadcaster_; }
-
-   private:
-    // |broadcaster_| is needed since the decoder can only handle one sink.
-    // It might be better if the decoder can handle multiple sinks and consider
-    // the VideoSinkWants.
-    rtc::VideoBroadcaster broadcaster_;
-  };
-
   void RestartMediaChannel(absl::optional<uint32_t> ssrc);
   bool SetSink(rtc::VideoSinkInterface<VideoFrame>* sink);
 
