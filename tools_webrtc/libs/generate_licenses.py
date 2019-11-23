@@ -69,10 +69,6 @@ LIB_TO_LICENSES_DICT = {
     'fft4g': ['common_audio/third_party/fft4g/LICENSE'],
     'spl_sqrt_floor': ['common_audio/third_party/spl_sqrt_floor/LICENSE'],
 
-    # TODO(bugs.webrtc.org/1110): Remove this hack. This is not a lib.
-    # For some reason it is listed as so in _GetThirdPartyLibraries.
-    'android_deps': [],
-
     # Compile time dependencies, no license needed:
     'yasm': [],
     'ow2_asm': [],
