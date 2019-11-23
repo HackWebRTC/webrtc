@@ -19,6 +19,7 @@
 
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/system/rtc_export.h"
 
 // Macros for allowing WebRTC clients (e.g. Chrome) to gather and aggregate
 // statistics.
@@ -253,29 +254,30 @@ class Histogram;
 // histogram).
 
 // Get histogram for counters.
-Histogram* HistogramFactoryGetCounts(const std::string& name,
-                                     int min,
-                                     int max,
-                                     int bucket_count);
+RTC_EXPORT Histogram* HistogramFactoryGetCounts(const std::string& name,
+                                                int min,
+                                                int max,
+                                                int bucket_count);
 
 // Get histogram for counters with linear bucket spacing.
-Histogram* HistogramFactoryGetCountsLinear(const std::string& name,
-                                           int min,
-                                           int max,
-                                           int bucket_count);
+RTC_EXPORT Histogram* HistogramFactoryGetCountsLinear(const std::string& name,
+                                                      int min,
+                                                      int max,
+                                                      int bucket_count);
 
 // Get histogram for enumerators.
 // |boundary| should be above the max enumerator sample.
-Histogram* HistogramFactoryGetEnumeration(const std::string& name,
-                                          int boundary);
+RTC_EXPORT Histogram* HistogramFactoryGetEnumeration(const std::string& name,
+                                                     int boundary);
 
 // Get sparse histogram for enumerators.
 // |boundary| should be above the max enumerator sample.
-Histogram* SparseHistogramFactoryGetEnumeration(const std::string& name,
-                                                int boundary);
+RTC_EXPORT Histogram* SparseHistogramFactoryGetEnumeration(
+    const std::string& name,
+    int boundary);
 
 // Function for adding a |sample| to a histogram.
-void HistogramAdd(Histogram* histogram_pointer, int sample);
+RTC_EXPORT void HistogramAdd(Histogram* histogram_pointer, int sample);
 
 struct SampleInfo {
   SampleInfo(const std::string& name, int min, int max, size_t bucket_count);
