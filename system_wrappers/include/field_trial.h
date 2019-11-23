@@ -13,8 +13,6 @@
 
 #include <string>
 
-#include "rtc_base/system/rtc_export.h"
-
 // Field trials allow webrtc clients (such as Chrome) to turn on feature code
 // in binaries out in the field and gather information with that.
 //
@@ -63,7 +61,7 @@ namespace field_trial {
 // if the trial does not exists.
 //
 // Note: To keep things tidy append all the trial names with WebRTC.
-RTC_EXPORT std::string FindFullName(const std::string& name);
+std::string FindFullName(const std::string& name);
 
 // Convenience method, returns true iff FindFullName(name) return a string that
 // starts with "Enabled".
@@ -82,7 +80,7 @@ inline bool IsDisabled(const char* name) {
 // This method can be called at most once before any other call into webrtc.
 // E.g. before the peer connection factory is constructed.
 // Note: trials_string must never be destroyed.
-RTC_EXPORT void InitFieldTrialsFromString(const char* trials_string);
+void InitFieldTrialsFromString(const char* trials_string);
 
 const char* GetFieldTrialString();
 
