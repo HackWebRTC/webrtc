@@ -153,7 +153,7 @@ int64_t PacedSender::TimeUntilNextProcess() {
   TimeDelta sleep_time =
       std::max(TimeDelta::Zero(), next_send_time - clock_->CurrentTime());
   if (process_mode_ == PacingController::ProcessMode::kDynamic) {
-    return sleep_time.RoundTo(TimeDelta::ms(1)).ms();
+    return std::max(sleep_time, PacingController::kMinSleepTime).ms();
   }
   return sleep_time.ms();
 }
