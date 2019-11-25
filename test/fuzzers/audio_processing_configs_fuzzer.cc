@@ -122,6 +122,7 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
 #endif
 
   webrtc::AudioProcessing::Config apm_config;
+  apm_config.pipeline.experimental_multi_channel = true;
   apm_config.echo_canceller.enabled = use_aec || use_aecm;
   apm_config.echo_canceller.mobile_mode = use_aecm;
   apm_config.residual_echo_detector.enabled = red;
