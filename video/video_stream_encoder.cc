@@ -1737,7 +1737,8 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
   // We are only interested in propagating the meta-data about the image, not
   // encoded data itself, to the post encode function. Since we cannot be sure
   // the pointer will still be valid when run on the task queue, set it to null.
-  image_copy.set_buffer(nullptr, 0);
+  DataSize frame_size = DataSize::bytes(image_copy.size());
+  image_copy.ClearEncodedData();
 
   int temporal_index = 0;
   if (codec_specific_info) {
@@ -1751,7 +1752,7 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
     temporal_index = 0;
   }
 
-  RunPostEncode(image_copy, rtc::TimeMicros(), temporal_index);
+  RunPostEncode(image_copy, rtc::TimeMicros(), temporal_index, frame_size);
 
   if (result.error == Result::OK) {
     // In case of an internal encoder running on a separate thread, the
@@ -2207,12 +2208,13 @@ VideoStreamEncoder::GetConstAdaptCounter() {
 
 void VideoStreamEncoder::RunPostEncode(EncodedImage encoded_image,
                                        int64_t time_sent_us,
-                                       int temporal_index) {
+                                       int temporal_index,
+                                       DataSize frame_size) {
   if (!encoder_queue_.IsCurrent()) {
-    encoder_queue_.PostTask(
-        [this, encoded_image, time_sent_us, temporal_index] {
-          RunPostEncode(encoded_image, time_sent_us, temporal_index);
-        });
+    encoder_queue_.PostTask([this, encoded_image, time_sent_us, temporal_index,
+                             frame_size] {
+      RunPostEncode(encoded_image, time_sent_us, temporal_index, frame_size);
+    });
     return;
   }
 
@@ -2229,12 +2231,11 @@ void VideoStreamEncoder::RunPostEncode(EncodedImage encoded_image,
 
   // Run post encode tasks, such as overuse detection and frame rate/drop
   // stats for internal encoders.
-  const size_t frame_size = encoded_image.size();
   const bool keyframe =
       encoded_image._frameType == VideoFrameType::kVideoFrameKey;
 
-  if (frame_size > 0) {
-    frame_dropper_.Fill(frame_size, !keyframe);
+  if (!frame_size.IsZero()) {
+    frame_dropper_.Fill(frame_size.bytes(), !keyframe);
   }
 
   if (HasInternalSource()) {

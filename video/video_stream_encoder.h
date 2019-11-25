@@ -229,7 +229,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
       RTC_RUN_ON(&encoder_queue_);
   void RunPostEncode(EncodedImage encoded_image,
                      int64_t time_sent_us,
-                     int temporal_index);
+                     int temporal_index,
+                     DataSize frame_size);
   bool HasInternalSource() const RTC_RUN_ON(&encoder_queue_);
   void ReleaseEncoder() RTC_RUN_ON(&encoder_queue_);
 

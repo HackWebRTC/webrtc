@@ -146,6 +146,13 @@ class RTC_EXPORT EncodedImage {
     buffer_ = nullptr;
   }
 
+  void ClearEncodedData() {
+    encoded_data_ = nullptr;
+    size_ = 0;
+    buffer_ = nullptr;
+    capacity_ = 0;
+  }
+
   // TODO(nisse): Delete, provide only read-only access to the buffer.
   uint8_t* data() {
     return buffer_ ? buffer_
