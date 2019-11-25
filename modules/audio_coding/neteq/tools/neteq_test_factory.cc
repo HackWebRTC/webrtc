@@ -305,10 +305,15 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
     }
   }
 
-  // Create a text log file if needed.
+  // Create a text log output stream if needed.
   std::unique_ptr<std::ofstream> text_log;
-  if (config.textlog_filename.has_value()) {
+  if (config.textlog && config.textlog_filename.has_value()) {
+    // Write to file.
     text_log = std::make_unique<std::ofstream>(*config.textlog_filename);
+  } else if (config.textlog) {
+    // Print to stdout.
+    text_log = std::make_unique<std::ofstream>();
+    text_log->basic_ios<char>::rdbuf(std::cout.rdbuf());
   }
 
   NetEqTest::Callbacks callbacks;
