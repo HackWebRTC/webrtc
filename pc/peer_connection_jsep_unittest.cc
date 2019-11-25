@@ -1879,6 +1879,27 @@ TEST_F(PeerConnectionJsepTest, RollbackKeepsTransceiverAndClearsMid) {
   EXPECT_EQ(callee->observer()->remove_track_events_.size(), 1u);
 }
 
+TEST_F(PeerConnectionJsepTest,
+       RollbackKeepsTransceiverAfterAddTrackEvenWhenTrackIsNulled) {
+  auto caller = CreatePeerConnection();
+  caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
+  auto callee = CreatePeerConnection();
+  EXPECT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
+  callee->AddAudioTrack("a");
+  callee->pc()->GetTransceivers()[0]->sender()->SetTrack(nullptr);
+  EXPECT_EQ(callee->pc()->GetTransceivers()[0]->sender()->track(), nullptr);
+  EXPECT_EQ(callee->pc()->GetTransceivers().size(), 1u);
+  EXPECT_TRUE(callee->SetRemoteDescription(caller->CreateRollback()));
+  // Transceiver can't be removed as track was added to it.
+  EXPECT_EQ(callee->pc()->GetTransceivers().size(), 1u);
+  // Mid got cleared to make it reusable.
+  EXPECT_EQ(callee->pc()->GetTransceivers()[0]->mid(), absl::nullopt);
+  // Transceiver should be counted as addTrack-created after rollback.
+  EXPECT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
+  EXPECT_EQ(callee->pc()->GetTransceivers().size(), 1u);
+  EXPECT_EQ(callee->observer()->remove_track_events_.size(), 1u);
+}
+
 TEST_F(PeerConnectionJsepTest, RollbackRestoresMid) {
   auto caller = CreatePeerConnection();
   caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
@@ -1986,6 +2007,30 @@ TEST_F(PeerConnectionJsepTest, RollbackToNegotiatedStableState) {
             audio_transport);  // Audio transport is still the same.
 }
 
+TEST_F(PeerConnectionJsepTest, RollbackHasToDestroyTransport) {
+  RTCConfiguration config;
+  config.sdp_semantics = SdpSemantics::kUnifiedPlan;
+  config.bundle_policy = PeerConnectionInterface::kBundlePolicyMaxBundle;
+  auto pc = CreatePeerConnection(config);
+  pc->AddAudioTrack("a");
+  pc->AddVideoTrack("b");
+  EXPECT_TRUE(pc->CreateOfferAndSetAsLocal());
+  auto offer = pc->CreateOffer();
+  EXPECT_EQ(pc->pc()->GetTransceivers().size(), 2u);
+  auto audio_transport =
+      pc->pc()->GetTransceivers()[0]->sender()->dtls_transport();
+  EXPECT_EQ(pc->pc()->GetTransceivers()[0]->sender()->dtls_transport(),
+            pc->pc()->GetTransceivers()[1]->sender()->dtls_transport());
+  EXPECT_NE(pc->pc()->GetTransceivers()[1]->sender()->dtls_transport(),
+            nullptr);
+  EXPECT_TRUE(pc->SetRemoteDescription(pc->CreateRollback()));
+  EXPECT_TRUE(pc->SetLocalDescription(std::move(offer)));
+  EXPECT_NE(pc->pc()->GetTransceivers()[0]->sender()->dtls_transport(),
+            nullptr);
+  EXPECT_NE(pc->pc()->GetTransceivers()[0]->sender()->dtls_transport(),
+            audio_transport);
+}
+
 TEST_F(PeerConnectionJsepTest, RollbackLocalDirectionChange) {
   auto caller = CreatePeerConnection();
   caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
@@ -2061,6 +2106,27 @@ TEST_F(PeerConnectionJsepTest, NoRollbackNeeded) {
   EXPECT_TRUE(caller->CreateOfferAndSetAsLocal());
   EXPECT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
   EXPECT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
+}
+
+TEST_F(PeerConnectionJsepTest, RollbackMultipleStreamChanges) {
+  auto callee = CreatePeerConnection();
+  auto caller = CreatePeerConnection();
+  caller->AddAudioTrack("a_1", {"id_1"});
+  caller->AddVideoTrack("v_0", {"id_0"});  // Provide an extra stream id.
+  EXPECT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+  EXPECT_TRUE(
+      caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal()));
+  caller->pc()->GetTransceivers()[0]->sender()->SetStreams({"id_2"});
+  EXPECT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+  caller->pc()->GetTransceivers()[0]->sender()->SetStreams({"id_3"});
+  EXPECT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+  EXPECT_EQ(callee->pc()->GetTransceivers()[0]->receiver()->stream_ids()[0],
+            "id_3");
+  EXPECT_TRUE(callee->SetRemoteDescription(callee->CreateRollback()));
+  EXPECT_EQ(callee->pc()->GetTransceivers()[0]->receiver()->stream_ids().size(),
+            1u);
+  EXPECT_EQ(callee->pc()->GetTransceivers()[0]->receiver()->stream_ids()[0],
+            "id_1");
 }
 
 }  // namespace webrtc

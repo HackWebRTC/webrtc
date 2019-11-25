@@ -403,23 +403,26 @@ class PeerConnection : public PeerConnectionInternal,
   class TransceiverStableState {
    public:
     TransceiverStableState() {}
-    TransceiverStableState(RtpTransceiverDirection direction,
-                           absl::optional<std::string> mid,
-                           absl::optional<size_t> mline_index,
-                           bool newly_created)
-        : direction_(direction),
-          mid_(mid),
-          mline_index_(mline_index),
-          newly_created_(newly_created) {}
-    RtpTransceiverDirection direction() const { return direction_; }
+    void set_newly_created();
+    void SetMSectionIfUnset(absl::optional<std::string> mid,
+                            absl::optional<size_t> mline_index);
+    void SetRemoteStreamIdsIfUnset(const std::vector<std::string>& ids);
     absl::optional<std::string> mid() const { return mid_; }
     absl::optional<size_t> mline_index() const { return mline_index_; }
+    absl::optional<std::vector<std::string>> remote_stream_ids() const {
+      return remote_stream_ids_;
+    }
+    bool has_m_section() const { return has_m_section_; }
     bool newly_created() const { return newly_created_; }
 
    private:
-    RtpTransceiverDirection direction_ = RtpTransceiverDirection::kRecvOnly;
     absl::optional<std::string> mid_;
     absl::optional<size_t> mline_index_;
+    absl::optional<std::vector<std::string>> remote_stream_ids_;
+    // Indicates that mid value from stable state has been captured and
+    // that rollback has to restore the transceiver. Also protects against
+    // subsequent overwrites.
+    bool has_m_section_ = false;
     // Indicates that the transceiver was created as part of applying a
     // description to track potential need for removing transceiver during
     // rollback.
@@ -1365,6 +1368,10 @@ class PeerConnection : public PeerConnectionInternal,
   std::map<rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>,
            TransceiverStableState>
       transceiver_stable_states_by_transceivers_;
+  // Holds remote stream ids for transceivers from stable state.
+  std::map<rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>,
+           std::vector<std::string>>
+      remote_stream_ids_by_transceivers_;
   std::vector<
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
       transceivers_;  // TODO(bugs.webrtc.org/9987): Accessed on both signaling

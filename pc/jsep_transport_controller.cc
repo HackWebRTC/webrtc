@@ -473,14 +473,19 @@ void JsepTransportController::SetMediaTransportSettings(
       use_datagram_transport_for_data_channels_receive_only;
 }
 
-void JsepTransportController::RollbackTransportForMid(const std::string& mid) {
+void JsepTransportController::RollbackTransportForMids(
+    const std::vector<std::string>& mids) {
   if (!network_thread_->IsCurrent()) {
     network_thread_->Invoke<void>(RTC_FROM_HERE,
-                                  [=] { RollbackTransportForMid(mid); });
+                                  [=] { RollbackTransportForMids(mids); });
     return;
   }
-  RemoveTransportForMid(mid);
-  MaybeDestroyJsepTransport(mid);
+  for (auto&& mid : mids) {
+    RemoveTransportForMid(mid);
+  }
+  for (auto&& mid : mids) {
+    MaybeDestroyJsepTransport(mid);
+  }
 }
 
 rtc::scoped_refptr<webrtc::IceTransportInterface>

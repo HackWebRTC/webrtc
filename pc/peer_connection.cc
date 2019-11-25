@@ -985,6 +985,28 @@ bool PeerConnectionInterface::RTCConfiguration::operator!=(
   return !(*this == o);
 }
 
+void PeerConnection::TransceiverStableState::set_newly_created() {
+  RTC_DCHECK(!has_m_section_);
+  newly_created_ = true;
+}
+
+void PeerConnection::TransceiverStableState::SetMSectionIfUnset(
+    absl::optional<std::string> mid,
+    absl::optional<size_t> mline_index) {
+  if (!has_m_section_) {
+    mid_ = mid;
+    mline_index_ = mline_index;
+    has_m_section_ = true;
+  }
+}
+
+void PeerConnection::TransceiverStableState::SetRemoteStreamIdsIfUnset(
+    const std::vector<std::string>& ids) {
+  if (!remote_stream_ids_.has_value()) {
+    remote_stream_ids_ = ids;
+  }
+}
+
 // Generate a RTCP CNAME when a PeerConnection is created.
 std::string GenerateRtcpCname() {
   std::string cname;
@@ -1619,6 +1641,7 @@ PeerConnection::AddTrackUnifiedPlan(
     }
     transceiver->sender()->SetTrack(track);
     transceiver->internal()->sender_internal()->set_stream_ids(stream_ids);
+    transceiver->internal()->set_reused_for_addtrack(true);
   } else {
     cricket::MediaType media_type =
         (track->kind() == MediaStreamTrackInterface::kAudioKind
@@ -3242,6 +3265,9 @@ RTCError PeerConnection::ApplyRemoteDescription(
           // The remote description has signaled the stream IDs.
           stream_ids = media_desc->streams()[0].stream_ids();
         }
+        transceiver_stable_states_by_transceivers_[transceiver]
+            .SetRemoteStreamIdsIfUnset(transceiver->receiver()->stream_ids());
+
         RTC_LOG(LS_INFO) << "Processing the MSIDs for MID=" << content->name
                          << " (" << GetStreamIdsString(stream_ids) << ").";
         SetAssociatedRemoteStreams(transceiver->internal()->receiver_internal(),
@@ -3778,9 +3804,8 @@ PeerConnection::AssociateTransceiver(cricket::ContentSource source,
       transceiver->internal()->set_direction(
           RtpTransceiverDirection::kRecvOnly);
       if (type == SdpType::kOffer) {
-        transceiver_stable_states_by_transceivers_[transceiver] =
-            TransceiverStableState(RtpTransceiverDirection::kRecvOnly,
-                                   absl::nullopt, absl::nullopt, true);
+        transceiver_stable_states_by_transceivers_[transceiver]
+            .set_newly_created();
       }
     }
     // Check if the offer indicated simulcast but the answer rejected it.
@@ -3816,19 +3841,14 @@ PeerConnection::AssociateTransceiver(cricket::ContentSource source,
     }
   }
   if (type == SdpType::kOffer) {
-    // Make sure we don't overwrite existing stable states and that the
-    // state is really going to change when adding new record to the map.
-    auto it = transceiver_stable_states_by_transceivers_.find(transceiver);
-    if (it == transceiver_stable_states_by_transceivers_.end() &&
-        (transceiver->internal()->mid() != content.name ||
-         transceiver->internal()->mline_index() != mline_index)) {
-      transceiver_stable_states_by_transceivers_[transceiver] =
-          TransceiverStableState(transceiver->internal()->direction(),
-                                 transceiver->internal()->mid(),
-                                 transceiver->internal()->mline_index(), false);
+    bool state_changes = transceiver->internal()->mid() != content.name ||
+                         transceiver->internal()->mline_index() != mline_index;
+    if (state_changes) {
+      transceiver_stable_states_by_transceivers_[transceiver]
+          .SetMSectionIfUnset(transceiver->internal()->mid(),
+                              transceiver->internal()->mline_index());
     }
   }
-
   // Associate the found or created RtpTransceiver with the m= section by
   // setting the value of the RtpTransceiver's mid property to the MID of the m=
   // section, and establish a mapping between the transceiver and the index of
@@ -8017,23 +8037,43 @@ RTCError PeerConnection::Rollback(SdpType sdp_type) {
   }
   RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(IsUnifiedPlan());
+  std::vector<std::string> mids;
+  std::vector<rtc::scoped_refptr<MediaStreamInterface>> all_added_streams;
+  std::vector<rtc::scoped_refptr<MediaStreamInterface>> all_removed_streams;
+  std::vector<rtc::scoped_refptr<RtpReceiverInterface>> removed_receivers;
 
   for (auto&& transceivers_stable_state_pair :
        transceiver_stable_states_by_transceivers_) {
     auto transceiver = transceivers_stable_state_pair.first;
     auto state = transceivers_stable_state_pair.second;
+
+    if (state.remote_stream_ids()) {
+      std::vector<rtc::scoped_refptr<MediaStreamInterface>> added_streams;
+      std::vector<rtc::scoped_refptr<MediaStreamInterface>> removed_streams;
+      SetAssociatedRemoteStreams(transceiver->internal()->receiver_internal(),
+                                 state.remote_stream_ids().value(),
+                                 &added_streams, &removed_streams);
+      all_added_streams.insert(all_added_streams.end(), added_streams.begin(),
+                               added_streams.end());
+      all_removed_streams.insert(all_removed_streams.end(),
+                                 removed_streams.begin(),
+                                 removed_streams.end());
+      if (!state.has_m_section() && !state.newly_created()) {
+        continue;
+      }
+    }
+
     RTC_DCHECK(transceiver->internal()->mid().has_value());
     std::string mid = transceiver->internal()->mid().value();
-    transport_controller_->RollbackTransportForMid(mid);
+    mids.push_back(mid);
     DestroyTransceiverChannel(transceiver);
 
     if (signaling_state() == PeerConnectionInterface::kHaveRemoteOffer &&
         transceiver->receiver()) {
-      Observer()->OnRemoveTrack(transceiver->receiver());
+      removed_receivers.push_back(transceiver->receiver());
     }
     if (state.newly_created()) {
-      // Remove added transceivers with no added track.
-      if (transceiver->internal()->sender()->track()) {
+      if (transceiver->internal()->reused_for_addtrack()) {
         transceiver->internal()->set_created_by_addtrack(true);
       } else {
         int remaining_transceiver_count = 0;
@@ -8047,14 +8087,25 @@ RTCError PeerConnection::Rollback(SdpType sdp_type) {
     }
     transceiver->internal()->sender_internal()->set_transport(nullptr);
     transceiver->internal()->receiver_internal()->set_transport(nullptr);
-    transceiver->internal()->set_direction(state.direction());
     transceiver->internal()->set_mid(state.mid());
     transceiver->internal()->set_mline_index(state.mline_index());
   }
+  transport_controller_->RollbackTransportForMids(mids);
   transceiver_stable_states_by_transceivers_.clear();
   pending_local_description_.reset();
   pending_remote_description_.reset();
   ChangeSignalingState(PeerConnectionInterface::kStable);
+
+  // Once all processing has finished, fire off callbacks.
+  for (const auto& receiver : removed_receivers) {
+    Observer()->OnRemoveTrack(receiver);
+  }
+  for (const auto& stream : all_added_streams) {
+    Observer()->OnAddStream(stream);
+  }
+  for (const auto& stream : all_removed_streams) {
+    Observer()->OnRemoveStream(stream);
+  }
 
   // The assumption is that in case of implicit rollback UpdateNegotiationNeeded
   // gets called in SetRemoteDescription.

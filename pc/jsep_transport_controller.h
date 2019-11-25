@@ -241,9 +241,9 @@ class JsepTransportController : public sigslot::has_slots<> {
       bool use_datagram_transport_for_data_channels,
       bool use_datagram_transport_for_data_channels_receive_only);
 
-  // TODO(elrello): For now the rollback only removes mid to transport mapping
-  // and deletes unused transport, but doesn't consider anything more complex.
-  void RollbackTransportForMid(const std::string& mid);
+  // TODO(elrello): For now the rollback only removes mid to transport mappings
+  // and deletes unused transports, but doesn't consider anything more complex.
+  void RollbackTransportForMids(const std::vector<std::string>& mids);
 
   // If media transport is present enabled and supported,
   // when this method is called, it creates a media transport and generates its
