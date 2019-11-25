@@ -732,33 +732,48 @@ TEST_P(PacingControllerTest, Padding) {
     EXPECT_LE((actual_pace_time - expected_pace_time).Abs(),
               PacingController::kMinSleepTime);
 
-    // Pacing media happens 2.5x factor, but padding was configured with 1.0x
+    // Pacing media happens at 2.5x, but padding was configured with 1.0x
     // factor. We have to wait until the padding debt is gone before we start
     // sending padding.
     const TimeDelta time_to_padding_debt_free =
         (expected_pace_time * kPaceMultiplier) - actual_pace_time;
-    TimeDelta time_to_next = pacer_->NextSendTime() - clock_.CurrentTime();
-    EXPECT_EQ(time_to_next, time_to_padding_debt_free);
-    clock_.AdvanceTime(time_to_next);
+    clock_.AdvanceTime(time_to_padding_debt_free -
+                       PacingController::kMinSleepTime);
+    pacer_->ProcessPackets();
 
     // Send 10 padding packets.
     const size_t kPaddingPacketsToSend = 10;
     DataSize padding_sent = DataSize::Zero();
+    size_t packets_sent = 0;
+    Timestamp first_send_time = Timestamp::MinusInfinity();
+    Timestamp last_send_time = Timestamp::MinusInfinity();
+
     EXPECT_CALL(callback_, SendPadding)
         .Times(kPaddingPacketsToSend)
         .WillRepeatedly([&](size_t target_size) {
-          padding_sent += DataSize::bytes(target_size);
+          ++packets_sent;
+          if (packets_sent < kPaddingPacketsToSend) {
+            // Don't count bytes of last packet, instead just
+            // use this as the time the last packet finished
+            // sending.
+            padding_sent += DataSize::bytes(target_size);
+          }
+          if (first_send_time.IsInfinite()) {
+            first_send_time = clock_.CurrentTime();
+          } else {
+            last_send_time = clock_.CurrentTime();
+          }
           return target_size;
         });
     EXPECT_CALL(callback_, SendPacket(_, _, _, false, true))
         .Times(kPaddingPacketsToSend);
-    const Timestamp padding_start_time = clock_.CurrentTime();
-    for (size_t i = 0; i < kPaddingPacketsToSend; ++i) {
+
+    while (packets_sent < kPaddingPacketsToSend) {
       AdvanceTimeAndProcess();
     }
 
     // Verify rate of sent padding.
-    TimeDelta padding_duration = pacer_->NextSendTime() - padding_start_time;
+    TimeDelta padding_duration = last_send_time - first_send_time;
     DataRate padding_rate = padding_sent / padding_duration;
     EXPECT_EQ(padding_rate, kTargetRate);
   }
@@ -781,15 +796,18 @@ TEST_P(PacingControllerTest, NoPaddingBeforeNormalPacket) {
 
   SendAndExpectPacket(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
                       capture_time_ms, 250);
-  EXPECT_CALL(callback_, SendPadding).WillOnce([](size_t padding) {
+  bool padding_sent = false;
+  EXPECT_CALL(callback_, SendPadding).WillOnce([&](size_t padding) {
+    padding_sent = true;
     return padding;
   });
   EXPECT_CALL(callback_, SendPacket(_, _, _, _, true)).Times(1);
   if (PeriodicProcess()) {
     pacer_->ProcessPackets();
   } else {
-    AdvanceTimeAndProcess();  // Media.
-    AdvanceTimeAndProcess();  // Padding.
+    while (!padding_sent) {
+      AdvanceTimeAndProcess();
+    }
   }
 }
 
@@ -1675,47 +1693,6 @@ TEST_P(PacingControllerTest, SmallFirstProbePacket) {
     pacer_->ProcessPackets();
     clock_.AdvanceTimeMilliseconds(5);
   }
-}
-
-TEST_P(PacingControllerTest, TaskEarly) {
-  if (PeriodicProcess()) {
-    // This test applies only when NOT using interval budget.
-    return;
-  }
-
-  // Set a low send rate to more easily test timing issues.
-  DataRate kSendRate = DataRate::kbps(30);
-  pacer_->SetPacingRates(kSendRate, DataRate::Zero());
-
-  // Add two packets.
-  pacer_->EnqueuePacket(BuildRtpPacket(RtpPacketToSend::Type::kVideo));
-  pacer_->EnqueuePacket(BuildRtpPacket(RtpPacketToSend::Type::kVideo));
-
-  // Process packets, only first should be sent.
-  EXPECT_CALL(callback_, SendPacket).Times(1);
-  pacer_->ProcessPackets();
-
-  Timestamp next_send_time = pacer_->NextSendTime();
-
-  // Packets won't be sent if we try process more than one sleep time early.
-  ASSERT_GT(next_send_time - clock_.CurrentTime(),
-            PacingController::kMinSleepTime);
-  clock_.AdvanceTime(next_send_time - clock_.CurrentTime() -
-                     (PacingController::kMinSleepTime + TimeDelta::ms(1)));
-
-  EXPECT_CALL(callback_, SendPacket).Times(0);
-  pacer_->ProcessPackets();
-
-  // Assume timing is accurate within +-100us due to rounding.
-  const TimeDelta kErrorMargin = TimeDelta::us(100);
-
-  // Check that next scheduled send time is still the same (within margin).
-  EXPECT_LT((pacer_->NextSendTime() - next_send_time).Abs(), kErrorMargin);
-
-  // Advance to within error margin for execution.
-  clock_.AdvanceTime(TimeDelta::ms(1) + kErrorMargin);
-  EXPECT_CALL(callback_, SendPacket).Times(1);
-  pacer_->ProcessPackets();
 }
 
 TEST_P(PacingControllerTest, TaskLate) {
