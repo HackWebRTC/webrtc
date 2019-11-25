@@ -577,6 +577,8 @@ rtc_library("weak_ptr") {
 
 rtc_library("rtc_numerics") {
   sources = [
+    "numerics/event_based_exponential_moving_average.cc",
+    "numerics/event_based_exponential_moving_average.h",
     "numerics/exp_filter.cc",
     "numerics/exp_filter.h",
     "numerics/math_utils.h",
@@ -1288,6 +1290,7 @@ if (rtc_include_tests) {
     testonly = true
 
     sources = [
+      "numerics/event_based_exponential_moving_average_unittest.cc",
       "numerics/exp_filter_unittest.cc",
       "numerics/moving_average_unittest.cc",
       "numerics/moving_median_filter_unittest.cc",
