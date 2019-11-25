@@ -12,8 +12,6 @@
 
 #include <memory>
 #include <string>
-
-#include "api/task_queue/default_task_queue_factory.h"
 #include "call/rtp_transport_controller_send.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
@@ -27,6 +25,7 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/mock_transport.h"
+#include "test/time_controller/simulated_time_controller.h"
 #include "video/call_stats.h"
 #include "video/send_delay_stats.h"
 #include "video/send_statistics_proxy.h"
@@ -114,39 +113,39 @@ class RtpVideoSenderTestFixture {
       int payload_type,
       const std::map<uint32_t, RtpPayloadState>& suspended_payload_states,
       FrameCountObserver* frame_count_observer)
-      : clock_(1000000),
+      : time_controller_(Timestamp::ms(1000000)),
         config_(CreateVideoSendStreamConfig(&transport_,
                                             ssrcs,
                                             rtx_ssrcs,
                                             payload_type)),
-        send_delay_stats_(&clock_),
+        send_delay_stats_(time_controller_.GetClock()),
         bitrate_config_(GetBitrateConfig()),
-        task_queue_factory_(CreateDefaultTaskQueueFactory()),
-        transport_controller_(&clock_,
+        transport_controller_(time_controller_.GetClock(),
                               &event_log_,
                               nullptr,
                               nullptr,
                               bitrate_config_,
                               ProcessThread::Create("PacerThread"),
-                              task_queue_factory_.get(),
+                              time_controller_.GetTaskQueueFactory(),
                               &field_trials_),
         process_thread_(ProcessThread::Create("test_thread")),
-        call_stats_(&clock_, process_thread_.get()),
-        stats_proxy_(&clock_,
+        call_stats_(time_controller_.GetClock(), process_thread_.get()),
+        stats_proxy_(time_controller_.GetClock(),
                      config_,
                      VideoEncoderConfig::ContentType::kRealtimeVideo),
-        retransmission_rate_limiter_(&clock_, kRetransmitWindowSizeMs) {
+        retransmission_rate_limiter_(time_controller_.GetClock(),
+                                     kRetransmitWindowSizeMs) {
     std::map<uint32_t, RtpState> suspended_ssrcs;
     router_ = std::make_unique<RtpVideoSender>(
-        &clock_, suspended_ssrcs, suspended_payload_states, config_.rtp,
-        config_.rtcp_report_interval_ms, &transport_,
+        time_controller_.GetClock(), suspended_ssrcs, suspended_payload_states,
+        config_.rtp, config_.rtcp_report_interval_ms, &transport_,
         CreateObservers(&call_stats_, &encoder_feedback_, &stats_proxy_,
                         &stats_proxy_, &stats_proxy_, &stats_proxy_,
                         frame_count_observer, &stats_proxy_, &stats_proxy_,
                         &send_delay_stats_),
         &transport_controller_, &event_log_, &retransmission_rate_limiter_,
-        std::make_unique<FecControllerDefault>(&clock_), nullptr,
-        CryptoOptions{});
+        std::make_unique<FecControllerDefault>(time_controller_.GetClock()),
+        nullptr, CryptoOptions{});
   }
   RtpVideoSenderTestFixture(
       const std::vector<uint32_t>& ssrcs,
@@ -161,17 +160,16 @@ class RtpVideoSenderTestFixture {
 
   RtpVideoSender* router() { return router_.get(); }
   MockTransport& transport() { return transport_; }
-  SimulatedClock& clock() { return clock_; }
+  void AdvanceTime(TimeDelta delta) { time_controller_.Sleep(delta); }
 
  private:
   NiceMock<MockTransport> transport_;
   NiceMock<MockRtcpIntraFrameObserver> encoder_feedback_;
-  SimulatedClock clock_;
+  GlobalSimulatedTimeController time_controller_;
   RtcEventLogNull event_log_;
   VideoSendStream::Config config_;
   SendDelayStats send_delay_stats_;
   BitrateConstraints bitrate_config_;
-  const std::unique_ptr<TaskQueueFactory> task_queue_factory_;
   const FieldTrialBasedConfig field_trials_;
   RtpTransportControllerSend transport_controller_;
   std::unique_ptr<ProcessThread> process_thread_;
@@ -390,12 +388,7 @@ TEST(RtpVideoSenderTest, FrameCountCallbacks) {
 // Integration test verifying that ack of packet via TransportFeedback means
 // that the packet is removed from RtpPacketHistory and won't be retransmitted
 // again.
-// TODO(crbug.com/webrtc/10873): Re-enable on iOS
-#if defined(WEBRTC_IOS)
-TEST(RtpVideoSenderTest, DISABLED_DoesNotRetrasmitAckedPackets) {
-#else
 TEST(RtpVideoSenderTest, DoesNotRetrasmitAckedPackets) {
-#endif
   const int64_t kTimeoutMs = 500;
 
   RtpVideoSenderTestFixture test({kSsrc1, kSsrc2}, {kRtxSsrc1, kRtxSsrc2},
@@ -437,7 +430,7 @@ TEST(RtpVideoSenderTest, DoesNotRetrasmitAckedPackets) {
       EncodedImageCallback::Result::OK,
       test.router()->OnEncodedImage(encoded_image, nullptr, nullptr).error);
 
-  test.clock().AdvanceTimeMilliseconds(33);
+  test.AdvanceTime(TimeDelta::ms(33));
 
   ASSERT_TRUE(event.Wait(kTimeoutMs));
 
@@ -466,32 +459,33 @@ TEST(RtpVideoSenderTest, DoesNotRetrasmitAckedPackets) {
         return true;
       });
   test.router()->DeliverRtcp(nack_buffer.data(), nack_buffer.size());
+  test.AdvanceTime(TimeDelta::ms(33));
   ASSERT_TRUE(event.Wait(kTimeoutMs));
 
   // Verify that both packets were retransmitted.
   EXPECT_EQ(retransmitted_rtp_sequence_numbers, rtp_sequence_numbers);
 
   // Simulate transport feedback indicating fist packet received, next packet
-  // lost.
-  StreamFeedbackObserver::StreamPacketInfo received_packet_feedback;
-  received_packet_feedback.rtp_sequence_number = rtp_sequence_numbers[0];
-  received_packet_feedback.ssrc = kSsrc1;
-  received_packet_feedback.received = true;
-
+  // lost (not other way around as that would trigger early retransmit).
   StreamFeedbackObserver::StreamPacketInfo lost_packet_feedback;
-  lost_packet_feedback.rtp_sequence_number = rtp_sequence_numbers[1];
+  lost_packet_feedback.rtp_sequence_number = rtp_sequence_numbers[0];
   lost_packet_feedback.ssrc = kSsrc1;
   lost_packet_feedback.received = false;
 
+  StreamFeedbackObserver::StreamPacketInfo received_packet_feedback;
+  received_packet_feedback.rtp_sequence_number = rtp_sequence_numbers[1];
+  received_packet_feedback.ssrc = kSsrc1;
+  received_packet_feedback.received = true;
+
   test.router()->OnPacketFeedbackVector(
-      {received_packet_feedback, lost_packet_feedback});
+      {lost_packet_feedback, received_packet_feedback});
 
   // Advance time to make sure retransmission would be allowed and try again.
   // This time the retransmission should not happen for the first packet since
   // the history has been notified of the ack and removed the packet. The
   // second packet, included in the feedback but not marked as received, should
   // still be retransmitted.
-  test.clock().AdvanceTimeMilliseconds(33);
+  test.AdvanceTime(TimeDelta::ms(33));
   EXPECT_CALL(test.transport(), SendRtp)
       .WillOnce([&event, &lost_packet_feedback](const uint8_t* packet,
                                                 size_t length,
@@ -507,6 +501,7 @@ TEST(RtpVideoSenderTest, DoesNotRetrasmitAckedPackets) {
         return true;
       });
   test.router()->DeliverRtcp(nack_buffer.data(), nack_buffer.size());
+  test.AdvanceTime(TimeDelta::ms(33));
   ASSERT_TRUE(event.Wait(kTimeoutMs));
 }
 
@@ -554,7 +549,7 @@ TEST(RtpVideoSenderTest, EarlyRetransmits) {
                 .error,
             EncodedImageCallback::Result::OK);
 
-  test.clock().AdvanceTimeMilliseconds(33);
+  test.AdvanceTime(TimeDelta::ms(33));
   ASSERT_TRUE(event.Wait(kTimeoutMs));
 
   uint16_t frame2_rtp_sequence_number = 0;
@@ -577,7 +572,7 @@ TEST(RtpVideoSenderTest, EarlyRetransmits) {
                 ->OnEncodedImage(encoded_image, &codec_specific, nullptr)
                 .error,
             EncodedImageCallback::Result::OK);
-  test.clock().AdvanceTimeMilliseconds(33);
+  test.AdvanceTime(TimeDelta::ms(33));
   ASSERT_TRUE(event.Wait(kTimeoutMs));
 
   EXPECT_NE(frame1_transport_sequence_number, frame2_transport_sequence_number);
@@ -615,7 +610,7 @@ TEST(RtpVideoSenderTest, EarlyRetransmits) {
       {first_packet_feedback, second_packet_feedback});
 
   // Wait for pacer to run and send the RTX packet.
-  test.clock().AdvanceTimeMilliseconds(33);
+  test.AdvanceTime(TimeDelta::ms(33));
   ASSERT_TRUE(event.Wait(kTimeoutMs));
 }
 
