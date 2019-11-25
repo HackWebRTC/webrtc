@@ -777,6 +777,10 @@ void ReceiveStatisticsProxy::OnDecodedFrame(const VideoFrame& frame,
   if (last_decoded_frame_time_ms_) {
     int64_t interframe_delay_ms = now_ms - *last_decoded_frame_time_ms_;
     RTC_DCHECK_GE(interframe_delay_ms, 0);
+    double interframe_delay = interframe_delay_ms / 1000.0;
+    stats_.total_inter_frame_delay += interframe_delay;
+    stats_.total_squared_inter_frame_delay +=
+        interframe_delay * interframe_delay;
     interframe_delay_max_moving_.Add(interframe_delay_ms, now_ms);
     content_specific_stats->interframe_delay_counter.Add(interframe_delay_ms);
     content_specific_stats->interframe_delay_percentiles.Add(

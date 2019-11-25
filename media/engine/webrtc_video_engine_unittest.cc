@@ -5279,6 +5279,22 @@ TEST_F(WebRtcVideoChannelTest, GetStatsTranslatesDecodeStatsCorrectly) {
   EXPECT_EQ(stats.total_decode_time_ms, info.receivers[0].total_decode_time_ms);
 }
 
+TEST_F(WebRtcVideoChannelTest,
+       GetStatsTranslatesInterFrameDelayStatsCorrectly) {
+  FakeVideoReceiveStream* stream = AddRecvStream();
+  webrtc::VideoReceiveStream::Stats stats;
+  stats.total_inter_frame_delay = 0.123;
+  stats.total_squared_inter_frame_delay = 0.00456;
+  stream->SetStats(stats);
+
+  cricket::VideoMediaInfo info;
+  ASSERT_TRUE(channel_->GetStats(&info));
+  EXPECT_EQ(stats.total_inter_frame_delay,
+            info.receivers[0].total_inter_frame_delay);
+  EXPECT_EQ(stats.total_squared_inter_frame_delay,
+            info.receivers[0].total_squared_inter_frame_delay);
+}
+
 TEST_F(WebRtcVideoChannelTest, GetStatsTranslatesReceivePacketStatsCorrectly) {
   FakeVideoReceiveStream* stream = AddRecvStream();
   webrtc::VideoReceiveStream::Stats stats;

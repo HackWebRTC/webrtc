@@ -830,6 +830,10 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsDefined(inbound_stream.key_frames_decoded);
       verifier.TestMemberIsNonNegative<double>(
           inbound_stream.total_decode_time);
+      verifier.TestMemberIsNonNegative<double>(
+          inbound_stream.total_inter_frame_delay);
+      verifier.TestMemberIsNonNegative<double>(
+          inbound_stream.total_squared_inter_frame_delay);
       // The integration test is not set up to test screen share; don't require
       // this to be present.
       verifier.MarkMemberTested(inbound_stream.content_type, true);
@@ -837,6 +841,9 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsUndefined(inbound_stream.frames_decoded);
       verifier.TestMemberIsUndefined(inbound_stream.key_frames_decoded);
       verifier.TestMemberIsUndefined(inbound_stream.total_decode_time);
+      verifier.TestMemberIsUndefined(inbound_stream.total_inter_frame_delay);
+      verifier.TestMemberIsUndefined(
+          inbound_stream.total_squared_inter_frame_delay);
       verifier.TestMemberIsUndefined(inbound_stream.content_type);
     }
     return verifier.ExpectAllMembersSuccessfullyTested();

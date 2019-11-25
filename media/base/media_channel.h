@@ -613,6 +613,8 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   absl::optional<uint64_t> qp_sum;
   // https://w3c.github.io/webrtc-stats/#dom-rtcinboundrtpstreamstats-totaldecodetime
   uint64_t total_decode_time_ms = 0;
+  double total_inter_frame_delay = 0;
+  double total_squared_inter_frame_delay = 0;
   int64_t interframe_delay_max_ms = -1;
   uint32_t freeze_count = 0;
   uint32_t pause_count = 0;

@@ -320,6 +320,10 @@ void SetInboundRTPStreamStatsFromVideoReceiverInfo(
   inbound_video->total_decode_time =
       static_cast<double>(video_receiver_info.total_decode_time_ms) /
       rtc::kNumMillisecsPerSec;
+  inbound_video->total_inter_frame_delay =
+      video_receiver_info.total_inter_frame_delay;
+  inbound_video->total_squared_inter_frame_delay =
+      video_receiver_info.total_squared_inter_frame_delay;
   if (video_receiver_info.last_packet_received_timestamp_ms) {
     inbound_video->last_packet_received_timestamp =
         static_cast<double>(
