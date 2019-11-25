@@ -285,6 +285,7 @@ if (is_android) {
       "api/org/webrtc/MediaStreamTrack.java",
       "api/org/webrtc/NativeLibraryLoader.java",
       "api/org/webrtc/NativePeerConnectionFactory.java",
+      "api/org/webrtc/NetEqFactoryFactory.java",
       "api/org/webrtc/NetworkMonitor.java",  # TODO(sakal): Break dependencies and move to base_java.
       "api/org/webrtc/NetworkMonitorAutoDetect.java",  # TODO(sakal): Break dependencies and move to base_java.
       "api/org/webrtc/PeerConnection.java",
