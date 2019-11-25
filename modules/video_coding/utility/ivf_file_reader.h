@@ -40,9 +40,6 @@ class IvfFileReader {
   bool HasMoreFrames() const { return num_read_frames_ < num_frames_; }
   bool HasError() const { return has_error_; }
 
-  uint16_t GetFrameWidth() const { return width_; }
-  uint16_t GetFrameHeight() const { return height_; }
-
   bool Close();
 
  private:

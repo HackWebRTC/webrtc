@@ -122,8 +122,6 @@ absl::optional<EncodedImage> IvfFileReader::NextFrame() {
   // is missing it means there is a bug in error handling.
   RTC_DCHECK(next_frame_header_);
   int64_t current_timestamp = next_frame_header_->timestamp;
-  // The first frame from the file should be marked as Key frame.
-  bool is_first_frame = num_read_frames_ == 0;
   while (next_frame_header_ &&
          current_timestamp == next_frame_header_->timestamp) {
     // Resize payload to fit next spatial layer.
@@ -167,10 +165,6 @@ absl::optional<EncodedImage> IvfFileReader::NextFrame() {
   for (size_t i = 0; i < layer_sizes.size(); ++i) {
     image.SetSpatialLayerFrameSize(static_cast<int>(i), layer_sizes[i]);
   }
-  if (is_first_frame) {
-    image._frameType = VideoFrameType::kVideoFrameKey;
-  }
-  image._completeFrame = true;
 
   return image;
 }
