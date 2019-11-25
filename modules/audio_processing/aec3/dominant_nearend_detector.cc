@@ -10,12 +10,11 @@
 
 #include "modules/audio_processing/aec3/dominant_nearend_detector.h"
 
-#include <algorithm>
 #include <numeric>
 
 namespace webrtc {
 DominantNearendDetector::DominantNearendDetector(
-    const EchoCanceller3Config::Suppressor::DominantNearendDetection config,
+    const EchoCanceller3Config::Suppressor::DominantNearendDetection& config,
     size_t num_capture_channels)
     : enr_threshold_(config.enr_threshold),
       enr_exit_threshold_(config.enr_exit_threshold),

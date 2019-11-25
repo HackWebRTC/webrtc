@@ -180,6 +180,20 @@ struct RTC_EXPORT EchoCanceller3Config {
       bool use_during_initial_phase = true;
     } dominant_nearend_detection;
 
+    struct SubbandNearendDetection {
+      size_t nearend_average_blocks = 1;
+      struct SubbandRegion {
+        size_t low;
+        size_t high;
+      };
+      SubbandRegion subband1 = {1, 1};
+      SubbandRegion subband2 = {1, 1};
+      float nearend_threshold = 1.f;
+      float snr_threshold = 1.f;
+    } subband_nearend_detection;
+
+    bool use_subband_nearend_detection = false;
+
     struct HighBandsSuppression {
       float enr_threshold = 1.f;
       float max_gain_during_echo = 1.f;

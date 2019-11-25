@@ -214,6 +214,22 @@ bool EchoCanceller3Config::Validate(EchoCanceller3Config* config) {
   res = res & Limit(&c->suppressor.dominant_nearend_detection.trigger_threshold,
                     0, 10000);
 
+  res = res &
+        Limit(&c->suppressor.subband_nearend_detection.nearend_average_blocks,
+              1, 1024);
+  res =
+      res & Limit(&c->suppressor.subband_nearend_detection.subband1.low, 0, 65);
+  res = res & Limit(&c->suppressor.subband_nearend_detection.subband1.high,
+                    c->suppressor.subband_nearend_detection.subband1.low, 65);
+  res =
+      res & Limit(&c->suppressor.subband_nearend_detection.subband2.low, 0, 65);
+  res = res & Limit(&c->suppressor.subband_nearend_detection.subband2.high,
+                    c->suppressor.subband_nearend_detection.subband2.low, 65);
+  res = res & Limit(&c->suppressor.subband_nearend_detection.nearend_threshold,
+                    0.f, 1.e24f);
+  res = res & Limit(&c->suppressor.subband_nearend_detection.snr_threshold, 0.f,
+                    1.e24f);
+
   res = res & Limit(&c->suppressor.high_bands_suppression.enr_threshold, 0.f,
                     1000000.f);
   res = res & Limit(&c->suppressor.high_bands_suppression.max_gain_during_echo,

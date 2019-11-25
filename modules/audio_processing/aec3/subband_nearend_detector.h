@@ -8,21 +8,22 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_DOMINANT_NEAREND_DETECTOR_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_DOMINANT_NEAREND_DETECTOR_H_
+#ifndef MODULES_AUDIO_PROCESSING_AEC3_SUBBAND_NEAREND_DETECTOR_H_
+#define MODULES_AUDIO_PROCESSING_AEC3_SUBBAND_NEAREND_DETECTOR_H_
 
 #include <vector>
 
 #include "api/array_view.h"
 #include "api/audio/echo_canceller3_config.h"
+#include "modules/audio_processing/aec3/moving_average.h"
 #include "modules/audio_processing/aec3/nearend_detector.h"
 
 namespace webrtc {
 // Class for selecting whether the suppressor is in the nearend or echo state.
-class DominantNearendDetector : public NearendDetector {
+class SubbandNearendDetector : public NearendDetector {
  public:
-  DominantNearendDetector(
-      const EchoCanceller3Config::Suppressor::DominantNearendDetection& config,
+  SubbandNearendDetector(
+      const EchoCanceller3Config::Suppressor::SubbandNearendDetection& config,
       size_t num_capture_channels);
 
   // Returns whether the current state is the nearend state.
@@ -38,19 +39,14 @@ class DominantNearendDetector : public NearendDetector {
               bool initial_state) override;
 
  private:
-  const float enr_threshold_;
-  const float enr_exit_threshold_;
-  const float snr_threshold_;
-  const int hold_duration_;
-  const int trigger_threshold_;
-  const bool use_during_initial_phase_;
+  const EchoCanceller3Config::Suppressor::SubbandNearendDetection config_;
   const size_t num_capture_channels_;
-
+  std::vector<aec3::MovingAverage> nearend_smoothers_;
+  const float one_over_subband_length1_;
+  const float one_over_subband_length2_;
   bool nearend_state_ = false;
-  std::vector<int> trigger_counters_;
-  std::vector<int> hold_counters_;
 };
 
 }  // namespace webrtc
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_DOMINANT_NEAREND_DETECTOR_H_
+#endif  // MODULES_AUDIO_PROCESSING_AEC3_SUBBAND_NEAREND_DETECTOR_H_

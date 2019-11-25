@@ -16,7 +16,9 @@
 #include <algorithm>
 #include <numeric>
 
+#include "modules/audio_processing/aec3/dominant_nearend_detector.h"
 #include "modules/audio_processing/aec3/moving_average.h"
+#include "modules/audio_processing/aec3/subband_nearend_detector.h"
 #include "modules/audio_processing/aec3/vector_math.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomic_ops.h"
@@ -160,7 +162,7 @@ float SuppressionGain::UpperBandsGain(
   }
 
   float gain_bound = 1.f;
-  if (!dominant_nearend_detector_.IsNearendState()) {
+  if (!dominant_nearend_detector_->IsNearendState()) {
     // Bound the upper gain during significant echo activity.
     const auto& cfg = config_.suppressor.high_bands_suppression;
     auto low_frequency_energy = [](rtc::ArrayView<const float> spectrum) {
@@ -187,8 +189,8 @@ void SuppressionGain::GainToNoAudibleEcho(
     const std::array<float, kFftLengthBy2Plus1>& echo,
     const std::array<float, kFftLengthBy2Plus1>& masker,
     std::array<float, kFftLengthBy2Plus1>* gain) const {
-  const auto& p = dominant_nearend_detector_.IsNearendState() ? nearend_params_
-                                                              : normal_params_;
+  const auto& p = dominant_nearend_detector_->IsNearendState() ? nearend_params_
+                                                               : normal_params_;
   for (size_t k = 0; k < gain->size(); ++k) {
     float enr = echo[k] / (nearend[k] + 1.f);  // Echo-to-nearend ratio.
     float emr = echo[k] / (masker[k] + 1.f);   // Echo-to-masker (noise) ratio.
@@ -222,10 +224,11 @@ void SuppressionGain::GetMinGain(
                         : 1.f;
       min_gain[k] = std::min(min_gain[k], 1.f);
     }
+
+    const bool is_nearend_state = dominant_nearend_detector_->IsNearendState();
     for (size_t k = 0; k < 6; ++k) {
-      const auto& dec = dominant_nearend_detector_.IsNearendState()
-                            ? nearend_params_.max_dec_factor_lf
-                            : normal_params_.max_dec_factor_lf;
+      const auto& dec = is_nearend_state ? nearend_params_.max_dec_factor_lf
+                                         : normal_params_.max_dec_factor_lf;
 
       // Make sure the gains of the low frequencies do not decrease too
       // quickly after strong nearend.
@@ -242,7 +245,7 @@ void SuppressionGain::GetMinGain(
 // Compute the maximum gain by limiting the gain increase from the previous
 // gain.
 void SuppressionGain::GetMaxGain(rtc::ArrayView<float> max_gain) const {
-  const auto& inc = dominant_nearend_detector_.IsNearendState()
+  const auto& inc = dominant_nearend_detector_->IsNearendState()
                         ? nearend_params_.max_inc_factor
                         : normal_params_.max_inc_factor;
   const auto& floor = config_.suppressor.floor_first_increase;
@@ -319,11 +322,17 @@ SuppressionGain::SuppressionGain(const EchoCanceller3Config& config,
           aec3::MovingAverage(kFftLengthBy2Plus1,
                               config.suppressor.nearend_average_blocks)),
       nearend_params_(config_.suppressor.nearend_tuning),
-      normal_params_(config_.suppressor.normal_tuning),
-      dominant_nearend_detector_(config_.suppressor.dominant_nearend_detection,
-                                 num_capture_channels_) {
+      normal_params_(config_.suppressor.normal_tuning) {
   RTC_DCHECK_LT(0, state_change_duration_blocks_);
   last_gain_.fill(1.f);
+  if (config_.suppressor.use_subband_nearend_detection) {
+    dominant_nearend_detector_ = std::make_unique<SubbandNearendDetector>(
+        config_.suppressor.subband_nearend_detection, num_capture_channels_);
+  } else {
+    dominant_nearend_detector_ = std::make_unique<DominantNearendDetector>(
+        config_.suppressor.dominant_nearend_detection, num_capture_channels_);
+  }
+  RTC_DCHECK(dominant_nearend_detector_);
 }
 
 SuppressionGain::~SuppressionGain() = default;
@@ -345,8 +354,8 @@ void SuppressionGain::GetGain(
   RTC_DCHECK(low_band_gain);
 
   // Update the nearend state selection.
-  dominant_nearend_detector_.Update(nearend_spectrum, residual_echo_spectrum,
-                                    comfort_noise_spectrum, initial_state_);
+  dominant_nearend_detector_->Update(nearend_spectrum, residual_echo_spectrum,
+                                     comfort_noise_spectrum, initial_state_);
 
   // Compute gain for the lower band.
   bool low_noise_render = low_render_detector_.Detect(render);

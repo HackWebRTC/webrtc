@@ -92,6 +92,25 @@ void ReadParam(const Json::Value& root,
   }
 }
 
+void ReadParam(
+    const Json::Value& root,
+    std::string param_name,
+    EchoCanceller3Config::Suppressor::SubbandNearendDetection::SubbandRegion*
+        param) {
+  RTC_DCHECK(param);
+  Json::Value json_array;
+  if (rtc::GetValueFromJsonObject(root, param_name, &json_array)) {
+    std::vector<int> v;
+    rtc::JsonArrayToIntVector(json_array, &v);
+    if (v.size() != 2) {
+      RTC_LOG(LS_ERROR) << "Incorrect array size for " << param_name;
+      return;
+    }
+    param->low = static_cast<size_t>(v[0]);
+    param->high = static_cast<size_t>(v[1]);
+  }
+}
+
 void ReadParam(const Json::Value& root,
                std::string param_name,
                EchoCanceller3Config::Suppressor::MaskingThresholds* param) {
@@ -305,6 +324,24 @@ void Aec3ConfigFromJsonString(absl::string_view json_string,
           subsection, "use_during_initial_phase",
           &cfg.suppressor.dominant_nearend_detection.use_during_initial_phase);
     }
+
+    if (rtc::GetValueFromJsonObject(section, "subband_nearend_detection",
+                                    &subsection)) {
+      ReadParam(
+          subsection, "nearend_average_blocks",
+          &cfg.suppressor.subband_nearend_detection.nearend_average_blocks);
+      ReadParam(subsection, "subband1",
+                &cfg.suppressor.subband_nearend_detection.subband1);
+      ReadParam(subsection, "subband2",
+                &cfg.suppressor.subband_nearend_detection.subband2);
+      ReadParam(subsection, "nearend_threshold",
+                &cfg.suppressor.subband_nearend_detection.nearend_threshold);
+      ReadParam(subsection, "snr_threshold",
+                &cfg.suppressor.subband_nearend_detection.snr_threshold);
+    }
+
+    ReadParam(section, "use_subband_nearend_detection",
+              &cfg.suppressor.use_subband_nearend_detection);
 
     if (rtc::GetValueFromJsonObject(section, "high_bands_suppression",
                                     &subsection)) {
@@ -542,6 +579,25 @@ std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config) {
   ost << "\"use_during_initial_phase\": "
       << config.suppressor.dominant_nearend_detection.use_during_initial_phase;
   ost << "},";
+  ost << "\"subband_nearend_detection\": {";
+  ost << "\"nearend_average_blocks\": "
+      << config.suppressor.subband_nearend_detection.nearend_average_blocks
+      << ",";
+  ost << "\"subband1\": [";
+  ost << config.suppressor.subband_nearend_detection.subband1.low << ",";
+  ost << config.suppressor.subband_nearend_detection.subband1.high;
+  ost << "],";
+  ost << "\"subband2\": [";
+  ost << config.suppressor.subband_nearend_detection.subband2.low << ",";
+  ost << config.suppressor.subband_nearend_detection.subband2.high;
+  ost << "],";
+  ost << "\"nearend_threshold\": "
+      << config.suppressor.subband_nearend_detection.nearend_threshold << ",";
+  ost << "\"snr_threshold\": "
+      << config.suppressor.subband_nearend_detection.snr_threshold;
+  ost << "},";
+  ost << "\"use_subband_nearend_detection\": "
+      << config.suppressor.use_subband_nearend_detection << ",";
   ost << "\"high_bands_suppression\": {";
   ost << "\"enr_threshold\": "
       << config.suppressor.high_bands_suppression.enr_threshold << ",";

@@ -20,9 +20,9 @@
 #include "api/audio/echo_canceller3_config.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/aec_state.h"
-#include "modules/audio_processing/aec3/dominant_nearend_detector.h"
 #include "modules/audio_processing/aec3/fft_data.h"
 #include "modules/audio_processing/aec3/moving_average.h"
+#include "modules/audio_processing/aec3/nearend_detector.h"
 #include "modules/audio_processing/aec3/render_signal_analyzer.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/constructor_magic.h"
@@ -120,7 +120,7 @@ class SuppressionGain {
   std::vector<aec3::MovingAverage> nearend_smoothers_;
   const GainParameters nearend_params_;
   const GainParameters normal_params_;
-  DominantNearendDetector dominant_nearend_detector_;
+  std::unique_ptr<NearendDetector> dominant_nearend_detector_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(SuppressionGain);
 };
