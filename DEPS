@@ -5,16 +5,16 @@ vars = {
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
-  'chromium_revision': 'e0dd604cfde29bf688efe665bf7068ef867cea1e',
+  'chromium_revision': 'bdce34606404d9bcac210bb435937fead9540368',
 }
 
 deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    'https://chromium.googlesource.com/chromium/src/base@6bc5fcf3a91063461399d9836cabc343b26721b4',
+    'https://chromium.googlesource.com/chromium/src/base@37d11e4a04a1e1dae4be5c8f15cfc3e99e84165b',
   'src/build':
-    'https://chromium.googlesource.com/chromium/src/build@0ca62e351e48582efe4d23b3731e075e0d530a57',
+    'https://chromium.googlesource.com/chromium/src/build@52927f5a119615413126d8bbacb53057103f3191',
   'src/buildtools':
     'https://chromium.googlesource.com/chromium/src/buildtools@6b3e658d6fe8cd9c2588796d296f07312b776054',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
@@ -23,13 +23,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': 'https://chromium.googlesource.com/chromium/src/ios@946b9d24bb271de0445b3750de007ee9cddf6c2e',
+    'url': 'https://chromium.googlesource.com/chromium/src/ios@16af6cb6503445688c9e2eeb1f29eb9e7d4dcbdb',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    'https://chromium.googlesource.com/chromium/src/testing@077d1acbe376cf20f85f130ee40442b47489c8f4',
+    'https://chromium.googlesource.com/chromium/src/testing@adf8e569d7e931f5daedd53e157f7fc20c717d47',
   'src/third_party':
-    'https://chromium.googlesource.com/chromium/src/third_party@b2aa7c13f502ee02577a0c4969a6b1e8c14122f8',
+    'https://chromium.googlesource.com/chromium/src/third_party@3bf3ce1c9094f384ef889042709e75c8ee6e6a7e',
 
   'src/buildtools/linux64': {
     'packages': [
@@ -107,7 +107,7 @@ deps = {
   'src/third_party/boringssl/src':
     'https://boringssl.googlesource.com/boringssl.git@6ba98ff60144f60aba589b4d6121689528fbae76',
   'src/third_party/catapult':
-    'https://chromium.googlesource.com/catapult.git@56b1f53bcd83d9163cd56f968c43630c33e59052',
+    'https://chromium.googlesource.com/catapult.git@731aba0ef8897570198ffd19c60e9a2a40acdd98',
   'src/third_party/ced/src': {
     'url': 'https://chromium.googlesource.com/external/github.com/google/compact_enc_det.git@ba412eaaacd3186085babcd901679a48863c7dd5',
     'condition': 'checkout_android',
@@ -123,7 +123,7 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/third_party/freetype/src':
-    'https://chromium.googlesource.com/chromium/src/third_party/freetype2.git@3aaae716b25bd2d3232e279bc05af65cff446dd9',
+    'https://chromium.googlesource.com/chromium/src/third_party/freetype2.git@d4f9c249893a146b0c94a152f7674e288d181f95',
   'src/third_party/harfbuzz-ng/src':
     'https://chromium.googlesource.com/external/github.com/harfbuzz/harfbuzz.git@64a45be5198f6e22c91454bda7bd9a9294552dff',
   # WebRTC-only dependency (not present in Chromium).
@@ -237,7 +237,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     'https://chromium.googlesource.com/chromium/deps/yasm/patched-yasm.git@720b70524a4424b15fc57e82263568c8ba0496ad',
   'src/tools':
-    'https://chromium.googlesource.com/chromium/src/tools@6f634b9fc1ff9dea89cd6925a356943ffc674815',
+    'https://chromium.googlesource.com/chromium/src/tools@c056626c3484e351607d5e718d4dfe5a246104d4',
   'src/tools/swarming_client':
     'https://chromium.googlesource.com/infra/luci/client-py.git@885b3febcc170a60f25795304e60927b77d1e92d',
 
@@ -1953,7 +1953,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/android_deps/libs/com_google_errorprone_error_prone_annotation',
-              'version': 'version:2.3.1-cr0',
+              'version': 'version:2.3.3-cr0',
           },
       ],
       'condition': 'checkout_android',
@@ -1964,7 +1964,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/android_deps/libs/com_google_errorprone_error_prone_annotations',
-              'version': 'version:2.3.1-cr0',
+              'version': 'version:2.3.3-cr0',
           },
       ],
       'condition': 'checkout_android',
@@ -1975,7 +1975,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/android_deps/libs/com_google_errorprone_error_prone_check_api',
-              'version': 'version:2.3.1-cr0',
+              'version': 'version:2.3.3-cr0',
           },
       ],
       'condition': 'checkout_android',
@@ -1986,7 +1986,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/android_deps/libs/com_google_errorprone_error_prone_core',
-              'version': 'version:2.3.1-cr0',
+              'version': 'version:2.3.3-cr0',
           },
       ],
       'condition': 'checkout_android',
@@ -1997,7 +1997,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/android_deps/libs/com_google_errorprone_error_prone_type_annotations',
-              'version': 'version:2.3.1-cr0',
+              'version': 'version:2.3.3-cr0',
           },
       ],
       'condition': 'checkout_android',
@@ -2075,6 +2075,17 @@ deps = {
           {
               'package': 'chromium/third_party/android_deps/libs/com_google_j2objc_j2objc_annotations',
               'version': 'version:1.1-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/android_deps/libs/com_google_protobuf_protobuf_java': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/android_deps/libs/com_google_protobuf_protobuf_java',
+              'version': 'version:3.4.0-cr0',
           },
       ],
       'condition': 'checkout_android',
@@ -2162,7 +2173,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/android_deps/libs/org_checkerframework_checker_qual',
-              'version': 'version:2.5.2-cr0',
+              'version': 'version:2.5.3-cr0',
           },
       ],
       'condition': 'checkout_android',
@@ -2173,7 +2184,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/android_deps/libs/org_checkerframework_dataflow',
-              'version': 'version:2.5.0-cr0',
+              'version': 'version:2.5.3-cr0',
           },
       ],
       'condition': 'checkout_android',
@@ -2184,7 +2195,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/android_deps/libs/org_checkerframework_javacutil',
-              'version': 'version:2.5.0-cr0',
+              'version': 'version:2.5.3-cr0',
           },
       ],
       'condition': 'checkout_android',
