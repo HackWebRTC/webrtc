@@ -683,10 +683,9 @@ GetEncoderBitrateLimits(const VideoEncoder::EncoderInfo& encoder_info,
 
   for (size_t i = 0; i < bitrate_limits.size(); ++i) {
     RTC_DCHECK_GT(bitrate_limits[i].min_bitrate_bps, 0);
-    RTC_DCHECK_GE(bitrate_limits[i].min_start_bitrate_bps,
+    RTC_DCHECK_GT(bitrate_limits[i].min_start_bitrate_bps, 0);
+    RTC_DCHECK_GE(bitrate_limits[i].max_bitrate_bps,
                   bitrate_limits[i].min_bitrate_bps);
-    RTC_DCHECK_GT(bitrate_limits[i].max_bitrate_bps,
-                  bitrate_limits[i].min_start_bitrate_bps);
     if (i > 0) {
       // The bitrate limits aren't expected to decrease with resolution.
       RTC_DCHECK_GE(bitrate_limits[i].min_bitrate_bps,
