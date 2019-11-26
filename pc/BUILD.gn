@@ -613,6 +613,8 @@ if (rtc_include_tests) {
       "../api/audio_codecs:audio_codecs_api",
       "../api/audio_codecs:builtin_audio_decoder_factory",
       "../api/audio_codecs:builtin_audio_encoder_factory",
+      "../api/audio_codecs:opus_audio_decoder_factory",
+      "../api/audio_codecs:opus_audio_encoder_factory",
       "../api/audio_codecs/L16:audio_decoder_L16",
       "../api/audio_codecs/L16:audio_encoder_L16",
       "../api/video_codecs:builtin_video_decoder_factory",

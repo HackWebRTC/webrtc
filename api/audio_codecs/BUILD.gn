@@ -110,3 +110,35 @@ rtc_library("builtin_audio_encoder_factory") {
     defines += [ "WEBRTC_USE_BUILTIN_OPUS=0" ]
   }
 }
+
+rtc_library("opus_audio_decoder_factory") {
+  visibility = [ "*" ]
+  allow_poison = [ "audio_codecs" ]
+  sources = [
+    "opus_audio_decoder_factory.cc",
+    "opus_audio_decoder_factory.h",
+  ]
+  deps = [
+    ":audio_codecs_api",
+    "..:scoped_refptr",
+    "../../rtc_base:rtc_base_approved",
+    "opus:audio_decoder_multiopus",
+    "opus:audio_decoder_opus",
+  ]
+}
+
+rtc_library("opus_audio_encoder_factory") {
+  visibility = [ "*" ]
+  allow_poison = [ "audio_codecs" ]
+  sources = [
+    "opus_audio_encoder_factory.cc",
+    "opus_audio_encoder_factory.h",
+  ]
+  deps = [
+    ":audio_codecs_api",
+    "..:scoped_refptr",
+    "../../rtc_base:rtc_base_approved",
+    "opus:audio_encoder_multiopus",
+    "opus:audio_encoder_opus",
+  ]
+}
