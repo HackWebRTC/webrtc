@@ -20,13 +20,19 @@
 namespace webrtc {
 namespace {
 
-void FillAudioBuffer(test::FuzzDataHelper* fuzz_data, AudioBuffer* buffer) {
+void FillAudioBuffer(size_t sample_rate_hz,
+                     test::FuzzDataHelper* fuzz_data,
+                     AudioBuffer* buffer) {
   float* const* channels = buffer->channels_f();
   for (size_t i = 0; i < buffer->num_channels(); ++i) {
     for (size_t j = 0; j < buffer->num_frames(); ++j) {
       channels[i][j] =
           static_cast<float>(fuzz_data->ReadOrDefaultValue<int16_t>(0));
     }
+  }
+
+  if (sample_rate_hz != 16000) {
+    buffer->SplitIntoFrequencyBands();
   }
 }
 
@@ -76,8 +82,8 @@ void FuzzGainControllerConfig(test::FuzzDataHelper* fuzz_data,
 
 void FuzzGainController(test::FuzzDataHelper* fuzz_data, GainControlImpl* gci) {
   using Rate = ::webrtc::AudioProcessing::NativeRate;
-  const Rate rate_kinds[] = {Rate::kSampleRate8kHz, Rate::kSampleRate16kHz,
-                             Rate::kSampleRate32kHz, Rate::kSampleRate48kHz};
+  const Rate rate_kinds[] = {Rate::kSampleRate16kHz, Rate::kSampleRate32kHz,
+                             Rate::kSampleRate48kHz};
 
   const auto sample_rate_hz =
       static_cast<size_t>(fuzz_data->SelectOneOf(rate_kinds));
@@ -94,13 +100,13 @@ void FuzzGainController(test::FuzzDataHelper* fuzz_data, GainControlImpl* gci) {
   std::vector<int16_t> packed_render_audio(samples_per_frame);
 
   while (fuzz_data->CanReadBytes(1)) {
-    FillAudioBuffer(fuzz_data, &audio);
+    FillAudioBuffer(sample_rate_hz, fuzz_data, &audio);
 
     const bool stream_has_echo = fuzz_data->ReadOrDefaultValue(true);
     gci->AnalyzeCaptureAudio(audio);
     gci->ProcessCaptureAudio(&audio, stream_has_echo);
 
-    FillAudioBuffer(fuzz_data, &audio);
+    FillAudioBuffer(sample_rate_hz, fuzz_data, &audio);
 
     gci->PackRenderAudioBuffer(audio, &packed_render_audio);
     gci->ProcessRenderAudio(packed_render_audio);
