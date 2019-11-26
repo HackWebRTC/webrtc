@@ -550,6 +550,7 @@ webrtc_fuzzer_test("rtp_depacketizer_av1_assemble_frame_fuzzer") {
   sources = [
     "rtp_depacketizer_av1_assemble_frame_fuzzer.cc",
   ]
+  seed_corpus = "corpora/rtp-depacketizer-av1-assemble-frame-corpus"
   deps = [
     ":fuzz_data_helper",
     "../../api:array_view",

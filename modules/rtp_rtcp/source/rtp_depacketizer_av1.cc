@@ -311,7 +311,8 @@ bool CalculateObuSizes(ObuInfo* obu_info) {
         return false;
       }
       leb128_byte = *it;
-      obu_size_bytes |= (leb128_byte & 0x7F) << (size_of_obu_size_bytes * 7);
+      obu_size_bytes |= uint64_t{leb128_byte & 0x7Fu}
+                        << (size_of_obu_size_bytes * 7);
       ++size_of_obu_size_bytes;
       ++it;
     } while ((leb128_byte & 0x80) != 0);
