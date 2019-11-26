@@ -28,13 +28,16 @@ using ::testing::_;
 using ::testing::Return;
 using ::testing::SaveArg;
 
-namespace webrtc {
 namespace {
 constexpr uint32_t kAudioSsrc = 12345;
 constexpr uint32_t kVideoSsrc = 234565;
 constexpr uint32_t kVideoRtxSsrc = 34567;
 constexpr uint32_t kFlexFecSsrc = 45678;
 constexpr size_t kDefaultPacketSize = 234;
+}  // namespace
+
+namespace webrtc {
+namespace test {
 
 // Mock callback implementing the raw api.
 class MockCallback : public PacketRouter {
@@ -47,41 +50,17 @@ class MockCallback : public PacketRouter {
       std::vector<std::unique_ptr<RtpPacketToSend>>(size_t target_size_bytes));
 };
 
-class ProcessModeTrials : public WebRtcKeyValueConfig {
- public:
-  explicit ProcessModeTrials(bool dynamic_process) : mode_(dynamic_process) {}
-
-  std::string Lookup(absl::string_view key) const override {
-    if (key == "WebRTC-Pacer-DynamicProcess") {
-      return mode_ ? "Enabled" : "Disabled";
-    }
-    return "";
-  }
-
- private:
-  const bool mode_;
-};
-}  // namespace
-
-namespace test {
-
 class PacedSenderTest
     : public ::testing::TestWithParam<PacingController::ProcessMode> {
  public:
-  PacedSenderTest()
-      : clock_(0),
-        paced_module_(nullptr),
-        trials_(GetParam() == PacingController::ProcessMode::kDynamic) {}
+  PacedSenderTest() : clock_(0), paced_module_(nullptr) {}
 
   void SetUp() override {
     EXPECT_CALL(process_thread_, RegisterModule)
         .WillOnce(SaveArg<0>(&paced_module_));
 
     pacer_ = std::make_unique<PacedSender>(&clock_, &callback_, nullptr,
-                                           &trials_, &process_thread_);
-    EXPECT_CALL(process_thread_, WakeUp).WillRepeatedly([&](Module* module) {
-      clock_.AdvanceTimeMilliseconds(module->TimeUntilNextProcess());
-    });
+                                           nullptr, &process_thread_);
     EXPECT_CALL(process_thread_, DeRegisterModule(paced_module_)).Times(1);
   }
 
@@ -113,7 +92,6 @@ class PacedSenderTest
   MockCallback callback_;
   MockProcessThread process_thread_;
   Module* paced_module_;
-  ProcessModeTrials trials_;
   std::unique_ptr<PacedSender> pacer_;
 };
 
@@ -130,6 +108,7 @@ TEST_P(PacedSenderTest, PacesPackets) {
 
   // Expect all of them to be sent.
   size_t packets_sent = 0;
+  clock_.AdvanceTimeMilliseconds(paced_module_->TimeUntilNextProcess());
   EXPECT_CALL(callback_, SendPacket)
       .WillRepeatedly(
           [&](std::unique_ptr<RtpPacketToSend> packet,
