@@ -242,6 +242,9 @@ declare_args() {
   # Set this to false to skip building code that also requires X11 extensions
   # such as Xdamage, Xfixes.
   rtc_use_x11_extensions = rtc_use_x11
+
+  # Set this to true to fully remove logging from WebRTC.
+  rtc_disable_logging = false
 }
 
 # Make it possible to provide custom locations for some libraries (move these

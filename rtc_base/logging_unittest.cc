@@ -10,6 +10,8 @@
 
 #include "rtc_base/logging.h"
 
+#if RTC_LOG_ENABLED()
+
 #include <string.h>
 
 #include <algorithm>
@@ -384,3 +386,4 @@ TEST(LogTest, EnumsAreSupported) {
 }
 
 }  // namespace rtc
+#endif
