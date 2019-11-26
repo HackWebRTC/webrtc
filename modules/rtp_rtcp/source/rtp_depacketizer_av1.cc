@@ -382,8 +382,7 @@ bool RtpDepacketizerAv1::Parse(ParsedPayload* parsed_payload,
   uint8_t aggregation_header;
   RTC_CHECK(payload.ReadUInt8(&aggregation_header));
 
-  // TODO(danilchap): Set AV1 codec when there is such enum value
-  parsed_payload->video.codec = VideoCodecType::kVideoCodecGeneric;
+  parsed_payload->video.codec = VideoCodecType::kVideoCodecAV1;
   // These are not accurate since frame may consist of several packet aligned
   // chunks of obus, but should be good enough for most cases. It might produce
   // frame that do not map to any real frame, but av1 decoder should be able to

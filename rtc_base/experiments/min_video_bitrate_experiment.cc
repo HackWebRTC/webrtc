@@ -74,15 +74,17 @@ absl::optional<DataRate> GetExperimentalMinVideoBitrate(VideoCodecType type) {
     // New experiment - per-codec minimum bitrate.
     webrtc::FieldTrialOptional<webrtc::DataRate> min_bitrate_vp8("vp8_br");
     webrtc::FieldTrialOptional<webrtc::DataRate> min_bitrate_vp9("vp9_br");
+    webrtc::FieldTrialOptional<webrtc::DataRate> min_bitrate_av1("av1_br");
     webrtc::FieldTrialOptional<webrtc::DataRate> min_bitrate_h264("h264_br");
 
     webrtc::ParseFieldTrial(
         {&enabled, &min_video_bitrate, &min_bitrate_vp8, &min_bitrate_vp9,
-         &min_bitrate_h264},
+         &min_bitrate_av1, &min_bitrate_h264},
         webrtc::field_trial::FindFullName(kMinVideoBitrateExperiment));
 
     if (min_video_bitrate) {
-      if (min_bitrate_vp8 || min_bitrate_vp9 || min_bitrate_h264) {
+      if (min_bitrate_vp8 || min_bitrate_vp9 || min_bitrate_av1 ||
+          min_bitrate_h264) {
         // "br" is mutually-exclusive with the other configuration possibilites.
         RTC_LOG(LS_WARNING) << "Self-contradictory experiment config.";
       }
@@ -94,6 +96,8 @@ absl::optional<DataRate> GetExperimentalMinVideoBitrate(VideoCodecType type) {
         return min_bitrate_vp8.GetOptional();
       case kVideoCodecVP9:
         return min_bitrate_vp9.GetOptional();
+      case kVideoCodecAV1:
+        return min_bitrate_av1.GetOptional();
       case kVideoCodecH264:
         return min_bitrate_h264.GetOptional();
       case kVideoCodecGeneric:
