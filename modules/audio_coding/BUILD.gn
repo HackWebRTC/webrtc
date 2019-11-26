@@ -43,6 +43,7 @@ rtc_library("audio_coding") {
 
   deps = [
     ":audio_coding_module_typedefs",
+    ":default_neteq_factory",
     ":neteq",
     "..:module_api",
     "..:module_api_public",
@@ -50,8 +51,6 @@ rtc_library("audio_coding") {
     "../../api:function_view",
     "../../api/audio:audio_frame_api",
     "../../api/audio_codecs:audio_codecs_api",
-    "../../api/neteq:custom_neteq_factory",
-    "../../api/neteq:default_neteq_controller_factory",
     "../../api/neteq:neteq_api",
     "../../common_audio",
     "../../common_audio:common_audio_c",
@@ -1025,6 +1024,22 @@ rtc_library("neteq") {
     "../../system_wrappers:metrics",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
+rtc_source_set("default_neteq_factory") {
+  visibility += webrtc_default_visibility
+  sources = [
+    "neteq/default_neteq_factory.cc",
+    "neteq/default_neteq_factory.h",
+  ]
+  deps = [
+    ":neteq",
+    "../../api:scoped_refptr",
+    "../../api/audio_codecs:audio_codecs_api",
+    "../../api/neteq:default_neteq_controller_factory",
+    "../../api/neteq:neteq_api",
+    "../../system_wrappers:system_wrappers",
   ]
 }
 

@@ -19,11 +19,10 @@
 #include "absl/strings/match.h"
 #include "api/audio/audio_frame.h"
 #include "api/audio_codecs/audio_decoder.h"
-#include "api/neteq/custom_neteq_factory.h"
-#include "api/neteq/default_neteq_controller_factory.h"
 #include "api/neteq/neteq.h"
 #include "modules/audio_coding/acm2/acm_resampler.h"
 #include "modules/audio_coding/acm2/call_statistics.h"
+#include "modules/audio_coding/neteq/default_neteq_factory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -41,16 +40,10 @@ std::unique_ptr<NetEq> CreateNetEq(
     const NetEq::Config& config,
     Clock* clock,
     const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
-  RTC_CHECK((neteq_factory == nullptr) || (decoder_factory.get() == nullptr))
-      << "Either a NetEqFactory or a AudioDecoderFactory should be injected, "
-         "supplying both is not supported. Please wrap the AudioDecoderFactory "
-         "inside the NetEqFactory when using both.";
   if (neteq_factory) {
-    return neteq_factory->CreateNetEq(config, clock);
+    return neteq_factory->CreateNetEq(config, decoder_factory, clock);
   }
-  CustomNetEqFactory custom_factory(
-      decoder_factory, std::make_unique<DefaultNetEqControllerFactory>());
-  return custom_factory.CreateNetEq(config, clock);
+  return DefaultNetEqFactory().CreateNetEq(config, decoder_factory, clock);
 }
 
 }  // namespace

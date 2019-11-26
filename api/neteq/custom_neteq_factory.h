@@ -22,9 +22,13 @@
 namespace webrtc {
 
 // This factory can be used to generate NetEq instances that make use of a
-// custom AudioDecoderFactory and/or NetEqControllerFactory.
+// custom AudioDecoderFactory and/or NetEqControllerFactory. Using a custom
+// AudioDecoderFactory is deprecated and the functionality will be removed soon.
 class CustomNetEqFactory : public NetEqFactory {
  public:
+  explicit CustomNetEqFactory(
+      std::unique_ptr<NetEqControllerFactory> controller_factory);
+  // This constructor is deprecated and will be removed soon.
   CustomNetEqFactory(
       rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
       std::unique_ptr<NetEqControllerFactory> controller_factory);
@@ -34,6 +38,11 @@ class CustomNetEqFactory : public NetEqFactory {
 
   std::unique_ptr<NetEq> CreateNetEq(const NetEq::Config& config,
                                      Clock* clock) const override;
+
+  std::unique_ptr<NetEq> CreateNetEq(
+      const NetEq::Config& config,
+      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory,
+      Clock* clock) const override;
 
  private:
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;

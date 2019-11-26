@@ -30,6 +30,14 @@ class NetEqFactoryWithCodecs final : public NetEqFactory {
         config, NetEqImpl::Dependencies(config, clock, decoder_factory_,
                                         *controller_factory_));
   }
+  std::unique_ptr<NetEq> CreateNetEq(
+      const NetEq::Config& config,
+      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory,
+      Clock* clock) const override {
+    return std::make_unique<NetEqImpl>(
+        config, NetEqImpl::Dependencies(config, clock, decoder_factory,
+                                        *controller_factory_));
+  }
 
  private:
   const rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_ =

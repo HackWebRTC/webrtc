@@ -167,7 +167,6 @@ public class PeerConnectionFactory {
     @Nullable private AudioDeviceModule audioDeviceModule;
     private AudioEncoderFactoryFactory audioEncoderFactoryFactory =
         new BuiltinAudioEncoderFactoryFactory();
-    @Nullable
     private AudioDecoderFactoryFactory audioDecoderFactoryFactory =
         new BuiltinAudioDecoderFactoryFactory();
     @Nullable private VideoEncoderFactory videoEncoderFactory;
@@ -201,7 +200,6 @@ public class PeerConnectionFactory {
       return this;
     }
 
-    @Deprecated
     public Builder setAudioDecoderFactoryFactory(
         AudioDecoderFactoryFactory audioDecoderFactoryFactory) {
       if (audioDecoderFactoryFactory == null) {
@@ -263,7 +261,6 @@ public class PeerConnectionFactory {
      * NetEqFactoryFactory.
      */
     public Builder setNetEqFactoryFactory(NetEqFactoryFactory neteqFactoryFactory) {
-      this.audioDecoderFactoryFactory = null;
       this.neteqFactoryFactory = neteqFactoryFactory;
       return this;
     }
@@ -274,18 +271,11 @@ public class PeerConnectionFactory {
         audioDeviceModule = JavaAudioDeviceModule.builder(ContextUtils.getApplicationContext())
                                 .createAudioDeviceModule();
       }
-      if (neteqFactoryFactory == null && audioDecoderFactoryFactory == null) {
-        throw new IllegalStateException(
-            "Setting both audioDecoderFactoryFactory and neteqFactoryFactory "
-            + "to null is not allowed.");
-      }
       return nativeCreatePeerConnectionFactory(ContextUtils.getApplicationContext(), options,
           audioDeviceModule.getNativeAudioDeviceModulePointer(),
           audioEncoderFactoryFactory.createNativeAudioEncoderFactory(),
-          audioDecoderFactoryFactory == null
-              ? 0
-              : audioDecoderFactoryFactory.createNativeAudioDecoderFactory(),
-          videoEncoderFactory, videoDecoderFactory,
+          audioDecoderFactoryFactory.createNativeAudioDecoderFactory(), videoEncoderFactory,
+          videoDecoderFactory,
           audioProcessingFactory == null ? 0 : audioProcessingFactory.createNative(),
           fecControllerFactoryFactory == null ? 0 : fecControllerFactoryFactory.createNative(),
           networkControllerFactoryFactory == null
