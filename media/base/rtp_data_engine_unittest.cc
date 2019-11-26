@@ -15,7 +15,6 @@
 #include <memory>
 #include <string>
 
-#include "api/transport/media/media_transport_config.h"
 #include "media/base/fake_network_interface.h"
 #include "media/base/media_constants.h"
 #include "media/base/rtp_utils.h"

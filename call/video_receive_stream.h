@@ -22,8 +22,6 @@
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
-#include "api/transport/media/media_transport_config.h"
-#include "api/transport/media/media_transport_interface.h"
 #include "api/transport/rtp/rtp_source.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_frame.h"
@@ -139,8 +137,6 @@ class VideoReceiveStream {
    public:
     Config() = delete;
     Config(Config&&);
-    Config(Transport* rtcp_send_transport,
-           MediaTransportConfig media_transport_config);
     explicit Config(Transport* rtcp_send_transport);
     Config& operator=(Config&&);
     Config& operator=(const Config&) = delete;
@@ -150,10 +146,6 @@ class VideoReceiveStream {
     Config Copy() const { return Config(*this); }
 
     std::string ToString() const;
-
-    MediaTransportInterface* media_transport() const {
-      return media_transport_config.media_transport;
-    }
 
     // Decoders for every payload that we can receive.
     std::vector<Decoder> decoders;
@@ -216,8 +208,6 @@ class VideoReceiveStream {
 
     // Transport for outgoing packets (RTCP).
     Transport* rtcp_send_transport = nullptr;
-
-    MediaTransportConfig media_transport_config;
 
     // Must always be set.
     rtc::VideoSinkInterface<VideoFrame>* renderer = nullptr;

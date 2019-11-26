@@ -23,8 +23,6 @@
 #include "api/call/transport.h"
 #include "api/crypto/crypto_options.h"
 #include "api/neteq/neteq_factory.h"
-#include "api/transport/media/media_transport_config.h"
-#include "api/transport/media/media_transport_interface.h"
 #include "api/transport/rtp/rtp_source.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "call/syncable.h"
@@ -146,7 +144,6 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
     ProcessThread* module_process_thread,
     NetEqFactory* neteq_factory,
     AudioDeviceModule* audio_device_module,
-    const MediaTransportConfig& media_transport_config,
     Transport* rtcp_send_transport,
     RtcEventLog* rtc_event_log,
     uint32_t local_ssrc,

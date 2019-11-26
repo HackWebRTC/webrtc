@@ -20,7 +20,6 @@
 #include "api/call/call_factory_interface.h"
 #include "api/rtc_event_log/rtc_event_log_factory.h"
 #include "api/task_queue/default_task_queue_factory.h"
-#include "api/test/fake_media_transport.h"
 #include "media/base/fake_media_engine.h"
 #include "p2p/base/fake_port_allocator.h"
 #include "pc/media_session.h"
@@ -85,8 +84,6 @@ class PeerConnectionMediaBaseTest : public ::testing::Test {
   }
 
   // Creates PeerConnectionFactory and PeerConnection for given configuration.
-  // Note that PeerConnectionFactory is created with MediaTransportFactory,
-  // because some tests pass config.use_media_transport = true.
   WrapperPtr CreatePeerConnection(
       const RTCConfiguration& config,
       std::unique_ptr<FakeMediaEngine> media_engine) {
@@ -103,8 +100,6 @@ class PeerConnectionMediaBaseTest : public ::testing::Test {
     factory_dependencies.event_log_factory =
         std::make_unique<RtcEventLogFactory>(
             factory_dependencies.task_queue_factory.get());
-    factory_dependencies.media_transport_factory =
-        std::make_unique<FakeMediaTransportFactory>();
 
     auto pc_factory =
         CreateModularPeerConnectionFactory(std::move(factory_dependencies));
@@ -1242,128 +1237,6 @@ TEST_P(PeerConnectionMediaTest,
   const cricket::AudioOptions& audio_options = caller_voice->options();
   EXPECT_EQ(config.combined_audio_video_bwe,
             audio_options.combined_audio_video_bwe);
-}
-
-TEST_P(PeerConnectionMediaTest, MediaTransportPropagatedToVoiceEngine) {
-  RTCConfiguration config;
-
-  // Setup PeerConnection to use media transport.
-  config.use_media_transport = true;
-
-  // Force SDES.
-  config.enable_dtls_srtp = false;
-
-  auto caller = CreatePeerConnectionWithAudio(config);
-  auto callee = CreatePeerConnectionWithAudio(config);
-
-  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
-  auto answer = callee->CreateAnswer();
-  ASSERT_TRUE(callee->SetLocalDescription(std::move(answer)));
-
-  auto caller_voice = caller->media_engine()->GetVoiceChannel(0);
-  auto callee_voice = callee->media_engine()->GetVoiceChannel(0);
-  ASSERT_TRUE(caller_voice);
-  ASSERT_TRUE(callee_voice);
-
-  // Make sure media transport is propagated to voice channel.
-  FakeMediaTransport* caller_voice_media_transport =
-      static_cast<FakeMediaTransport*>(caller_voice->media_transport());
-  FakeMediaTransport* callee_voice_media_transport =
-      static_cast<FakeMediaTransport*>(callee_voice->media_transport());
-  ASSERT_NE(nullptr, caller_voice_media_transport);
-  ASSERT_NE(nullptr, callee_voice_media_transport);
-
-  // Make sure media transport is created with correct is_caller.
-  EXPECT_TRUE(caller_voice_media_transport->is_caller());
-  EXPECT_FALSE(callee_voice_media_transport->is_caller());
-
-  // TODO(sukhanov): Propagate media transport to video channel.
-  // This test does NOT set up video channels, because currently it causes
-  // us to create two media transports.
-}
-
-TEST_P(PeerConnectionMediaTest, MediaTransportOnlyForDataChannels) {
-  RTCConfiguration config;
-
-  // Setup PeerConnection to use media transport for data channels.
-  config.use_media_transport_for_data_channels = true;
-
-  // Force SDES.
-  config.enable_dtls_srtp = false;
-
-  auto caller = CreatePeerConnectionWithAudio(config);
-  auto callee = CreatePeerConnectionWithAudio(config);
-
-  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
-  ASSERT_TRUE(callee->SetLocalDescription(callee->CreateAnswer()));
-
-  auto caller_voice = caller->media_engine()->GetVoiceChannel(0);
-  auto callee_voice = callee->media_engine()->GetVoiceChannel(0);
-  ASSERT_TRUE(caller_voice);
-  ASSERT_TRUE(callee_voice);
-
-  // Make sure media transport is not propagated to voice channel.
-  EXPECT_EQ(nullptr, caller_voice->media_transport());
-  EXPECT_EQ(nullptr, callee_voice->media_transport());
-}
-
-TEST_P(PeerConnectionMediaTest, MediaTransportForMediaAndDataChannels) {
-  RTCConfiguration config;
-
-  // Setup PeerConnection to use media transport for both media and data
-  // channels.
-  config.use_media_transport = true;
-  config.use_media_transport_for_data_channels = true;
-
-  // Force SDES.
-  config.enable_dtls_srtp = false;
-
-  auto caller = CreatePeerConnectionWithAudio(config);
-  auto callee = CreatePeerConnectionWithAudio(config);
-
-  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
-  ASSERT_TRUE(callee->SetLocalDescription(callee->CreateAnswer()));
-
-  auto caller_voice = caller->media_engine()->GetVoiceChannel(0);
-  auto callee_voice = callee->media_engine()->GetVoiceChannel(0);
-  ASSERT_TRUE(caller_voice);
-  ASSERT_TRUE(callee_voice);
-
-  // Make sure media transport is propagated to voice channel.
-  FakeMediaTransport* caller_voice_media_transport =
-      static_cast<FakeMediaTransport*>(caller_voice->media_transport());
-  FakeMediaTransport* callee_voice_media_transport =
-      static_cast<FakeMediaTransport*>(callee_voice->media_transport());
-  ASSERT_NE(nullptr, caller_voice_media_transport);
-  ASSERT_NE(nullptr, callee_voice_media_transport);
-
-  // Make sure media transport is created with correct is_caller.
-  EXPECT_TRUE(caller_voice_media_transport->is_caller());
-  EXPECT_FALSE(callee_voice_media_transport->is_caller());
-}
-
-TEST_P(PeerConnectionMediaTest, MediaTransportNotPropagatedToVoiceEngine) {
-  auto caller = CreatePeerConnectionWithAudioVideo();
-  auto callee = CreatePeerConnectionWithAudioVideo();
-
-  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
-  auto answer = callee->CreateAnswer();
-  ASSERT_TRUE(callee->SetLocalDescription(std::move(answer)));
-
-  auto caller_voice = caller->media_engine()->GetVoiceChannel(0);
-  auto callee_voice = callee->media_engine()->GetVoiceChannel(0);
-  ASSERT_TRUE(caller_voice);
-  ASSERT_TRUE(callee_voice);
-
-  // Since we did not setup PeerConnection to use media transport, media
-  // transport should not be created / propagated to the voice engine.
-  ASSERT_EQ(nullptr, caller_voice->media_transport());
-  ASSERT_EQ(nullptr, callee_voice->media_transport());
-
-  auto caller_video = caller->media_engine()->GetVideoChannel(0);
-  auto callee_video = callee->media_engine()->GetVideoChannel(0);
-  ASSERT_EQ(nullptr, caller_video->media_transport());
-  ASSERT_EQ(nullptr, callee_video->media_transport());
 }
 
 template <typename C>

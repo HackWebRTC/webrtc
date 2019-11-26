@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "api/task_queue/task_queue_factory.h"
-#include "api/transport/media/media_transport_interface.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "call/syncable.h"
 #include "call/video_receive_stream.h"
@@ -49,9 +48,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public NackSender,
                            public video_coding::OnCompleteFrameCallback,
                            public Syncable,
-                           public CallStatsObserver,
-                           public MediaTransportVideoSinkInterface,
-                           public MediaTransportRttObserver {
+                           public CallStatsObserver {
  public:
   VideoReceiveStream(TaskQueueFactory* task_queue_factory,
                      RtpStreamReceiverControllerInterface* receiver_controller,
@@ -110,16 +107,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   void OnCompleteFrame(
       std::unique_ptr<video_coding::EncodedFrame> frame) override;
 
-  // Implements MediaTransportVideoSinkInterface, converts the received frame to
-  // OnCompleteFrameCallback
-  void OnData(uint64_t channel_id,
-              MediaTransportEncodedVideoFrame frame) override;
-
   // Implements CallStatsObserver::OnRttUpdate
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
-
-  // Implements MediaTransportRttObserver::OnRttUpdated
-  void OnRttUpdated(int64_t rtt_ms) override;
 
   // Implements Syncable.
   int id() const override;

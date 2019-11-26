@@ -1523,12 +1523,6 @@ std::unique_ptr<SessionDescription> MediaSessionDescriptionFactory::CreateOffer(
 
   offer->set_extmap_allow_mixed(session_options.offer_extmap_allow_mixed);
 
-  if (session_options.media_transport_settings.has_value()) {
-    offer->AddMediaTransportSetting(
-        session_options.media_transport_settings->transport_name,
-        session_options.media_transport_settings->transport_setting);
-  }
-
   return offer;
 }
 

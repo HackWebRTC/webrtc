@@ -21,7 +21,6 @@
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
 #include "api/task_queue/default_task_queue_factory.h"
-#include "api/transport/media/media_transport_config.h"
 #include "call/call.h"
 #include "media/base/fake_media_engine.h"
 #include "media/base/fake_network_interface.h"

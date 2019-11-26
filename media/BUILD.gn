@@ -523,7 +523,6 @@ if (rtc_include_tests) {
       ":rtc_vp9_profile",
       "../:webrtc_common",
       "../api:create_simulcast_test_fixture_api",
-      "../api:fake_media_transport",
       "../api:libjingle_peerconnection_api",
       "../api:mock_video_bitrate_allocator",
       "../api:mock_video_bitrate_allocator_factory",

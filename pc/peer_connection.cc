@@ -1135,7 +1135,6 @@ bool PeerConnection::Initialize(
     const PeerConnectionInterface::RTCConfiguration& configuration,
     PeerConnectionDependencies dependencies) {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  RTC_DCHECK_RUNS_SERIALIZED(&use_media_transport_race_checker_);
   TRACE_EVENT0("webrtc", "PeerConnection::Initialize");
 
   RTCError config_error = ValidateConfiguration(configuration);
@@ -1260,37 +1259,15 @@ bool PeerConnection::Initialize(
   use_datagram_transport_for_data_channels_receive_only_ =
       configuration.use_datagram_transport_for_data_channels_receive_only
           .value_or(datagram_transport_data_channel_config_.receive_only);
-  if (use_datagram_transport_ || use_datagram_transport_for_data_channels_ ||
-      configuration.use_media_transport ||
-      configuration.use_media_transport_for_data_channels) {
+  if (use_datagram_transport_ || use_datagram_transport_for_data_channels_) {
     if (!factory_->media_transport_factory()) {
       RTC_DCHECK(false)
-          << "PeerConnecton is initialized with use_media_transport = true or "
-          << "use_media_transport_for_data_channels = true "
+          << "PeerConnecton is initialized with use_datagram_transport = true "
+             "or use_datagram_transport_for_data_channels = true "
           << "but media transport factory is not set in PeerConnectionFactory";
       return false;
     }
 
-    if (configuration.use_media_transport ||
-        configuration.use_media_transport_for_data_channels) {
-      // TODO(bugs.webrtc.org/9719): This check will eventually go away, when
-      // RTP media transport is introduced. But until then, we require SDES to
-      // be enabled.
-      if (configuration.enable_dtls_srtp.has_value() &&
-          configuration.enable_dtls_srtp.value()) {
-        RTC_LOG(LS_WARNING)
-            << "When media transport is used, SDES must be enabled. Set "
-               "configuration.enable_dtls_srtp to false. use_media_transport="
-            << configuration.use_media_transport
-            << ", use_media_transport_for_data_channels="
-            << configuration.use_media_transport_for_data_channels;
-        return false;
-      }
-    }
-
-    config.use_media_transport_for_media = configuration.use_media_transport;
-    config.use_media_transport_for_data_channels =
-        configuration.use_media_transport_for_data_channels;
     config.use_datagram_transport = use_datagram_transport_;
     config.use_datagram_transport_for_data_channels =
         use_datagram_transport_for_data_channels_;
@@ -1336,14 +1313,6 @@ bool PeerConnection::Initialize(
       data_channel_type_ = cricket::DCT_DATA_CHANNEL_TRANSPORT_SCTP;
       config.sctp_factory = sctp_factory_.get();
     }
-  } else if (configuration.use_media_transport_for_data_channels) {
-    if (configuration.enable_rtp_data_channel) {
-      RTC_LOG(LS_ERROR) << "enable_rtp_data_channel and "
-                           "use_media_transport_for_data_channels are "
-                           "incompatible and cannot both be set to true";
-      return false;
-    }
-    data_channel_type_ = cricket::DCT_MEDIA_TRANSPORT;
   } else if (configuration.enable_rtp_data_channel) {
     // Enable creation of RTP data channels if the kEnableRtpDataChannels is
     // set. It takes precendence over the disable_sctp_data_channels
@@ -1385,7 +1354,6 @@ bool PeerConnection::Initialize(
   stats_collector_ = RTCStatsCollector::Create(this);
 
   configuration_ = configuration;
-  use_media_transport_ = configuration.use_media_transport;
 
   transport_controller_->SetIceConfig(ParseIceConfig(configuration));
 
@@ -3928,7 +3896,6 @@ PeerConnectionInterface::RTCConfiguration PeerConnection::GetConfiguration() {
 RTCError PeerConnection::SetConfiguration(
     const RTCConfiguration& configuration) {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  RTC_DCHECK_RUNS_SERIALIZED(&use_media_transport_race_checker_);
   TRACE_EVENT0("webrtc", "PeerConnection::SetConfiguration");
   if (IsClosed()) {
     LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_STATE,
@@ -3943,36 +3910,6 @@ RTCError PeerConnection::SetConfiguration(
     LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
                          "Can't change candidate pool size after calling "
                          "SetLocalDescription.");
-  }
-
-  if (local_description() &&
-      configuration.use_media_transport != configuration_.use_media_transport) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
-                         "Can't change media_transport after calling "
-                         "SetLocalDescription.");
-  }
-
-  if (remote_description() &&
-      configuration.use_media_transport != configuration_.use_media_transport) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
-                         "Can't change media_transport after calling "
-                         "SetRemoteDescription.");
-  }
-
-  if (local_description() &&
-      configuration.use_media_transport_for_data_channels !=
-          configuration_.use_media_transport_for_data_channels) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
-                         "Can't change media_transport_for_data_channels "
-                         "after calling SetLocalDescription.");
-  }
-
-  if (remote_description() &&
-      configuration.use_media_transport_for_data_channels !=
-          configuration_.use_media_transport_for_data_channels) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
-                         "Can't change media_transport_for_data_channels "
-                         "after calling SetRemoteDescription.");
   }
 
   if (local_description() &&
@@ -4034,9 +3971,7 @@ RTCError PeerConnection::SetConfiguration(
         "after calling SetRemoteDescription.");
   }
 
-  if (configuration.use_media_transport_for_data_channels ||
-      configuration.use_media_transport ||
-      (configuration.use_datagram_transport &&
+  if ((configuration.use_datagram_transport &&
        *configuration.use_datagram_transport) ||
       (configuration.use_datagram_transport_for_data_channels &&
        *configuration.use_datagram_transport_for_data_channels)) {
@@ -4072,9 +4007,6 @@ RTCError PeerConnection::SetConfiguration(
   modified_config.network_preference = configuration.network_preference;
   modified_config.active_reset_srtp_params =
       configuration.active_reset_srtp_params;
-  modified_config.use_media_transport = configuration.use_media_transport;
-  modified_config.use_media_transport_for_data_channels =
-      configuration.use_media_transport_for_data_channels;
   modified_config.use_datagram_transport = configuration.use_datagram_transport;
   modified_config.use_datagram_transport_for_data_channels =
       configuration.use_datagram_transport_for_data_channels;
@@ -4158,8 +4090,6 @@ RTCError PeerConnection::SetConfiguration(
       modified_config.use_datagram_transport_for_data_channels_receive_only
           .value_or(datagram_transport_data_channel_config_.receive_only);
   transport_controller_->SetMediaTransportSettings(
-      modified_config.use_media_transport,
-      modified_config.use_media_transport_for_data_channels,
       use_datagram_transport_, use_datagram_transport_for_data_channels_,
       use_datagram_transport_for_data_channels_receive_only_);
 
@@ -4178,7 +4108,6 @@ RTCError PeerConnection::SetConfiguration(
   }
 
   configuration_ = modified_config;
-  use_media_transport_ = configuration.use_media_transport;
   return RTCError::OK();
 }
 
@@ -4967,12 +4896,6 @@ void PeerConnection::GetOptionsForOffer(
   session_options->offer_extmap_allow_mixed =
       configuration_.offer_extmap_allow_mixed;
 
-  if (configuration_.use_media_transport ||
-      configuration_.use_media_transport_for_data_channels) {
-    session_options->media_transport_settings =
-        transport_controller_->GenerateOrGetLastMediaTransportOffer();
-  }
-
   // If datagram transport is in use, add opaque transport parameters.
   if (use_datagram_transport_ || use_datagram_transport_for_data_channels_) {
     for (auto& options : session_options->media_description_options) {
@@ -5476,7 +5399,6 @@ absl::optional<std::string> PeerConnection::GetDataMid() const {
       }
       return rtp_data_channel_->content_name();
     case cricket::DCT_SCTP:
-    case cricket::DCT_MEDIA_TRANSPORT:
     case cricket::DCT_DATA_CHANNEL_TRANSPORT:
     case cricket::DCT_DATA_CHANNEL_TRANSPORT_SCTP:
       return sctp_mid_;
@@ -7106,7 +7028,6 @@ bool PeerConnection::CreateDataChannel(const std::string& mid) {
     case cricket::DCT_SCTP:
     case cricket::DCT_DATA_CHANNEL_TRANSPORT_SCTP:
     case cricket::DCT_DATA_CHANNEL_TRANSPORT:
-    case cricket::DCT_MEDIA_TRANSPORT:
       if (!network_thread()->Invoke<bool>(
               RTC_FROM_HERE,
               rtc::Bind(&PeerConnection::SetupDataChannelTransport_n, this,
@@ -7777,18 +7698,12 @@ bool PeerConnection::OnTransportChanged(
     const std::string& mid,
     RtpTransportInternal* rtp_transport,
     rtc::scoped_refptr<DtlsTransport> dtls_transport,
-    MediaTransportInterface* media_transport,
     DataChannelTransportInterface* data_channel_transport) {
   RTC_DCHECK_RUN_ON(network_thread());
-  RTC_DCHECK_RUNS_SERIALIZED(&use_media_transport_race_checker_);
   bool ret = true;
   auto base_channel = GetChannel(mid);
   if (base_channel) {
     ret = base_channel->SetRtpTransport(rtp_transport);
-  }
-
-  if (use_media_transport_) {
-    RTC_LOG(LS_ERROR) << "Media transport isn't supported.";
   }
 
   if (data_channel_transport_ && mid == sctp_mid_ &&

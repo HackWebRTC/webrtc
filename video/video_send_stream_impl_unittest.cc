@@ -137,8 +137,7 @@ class VideoSendStreamImplTest : public ::testing::Test {
         &video_stream_encoder_, &event_log_, &config_,
         initial_encoder_max_bitrate, initial_encoder_bitrate_priority,
         suspended_ssrcs, suspended_payload_states, content_type,
-        std::make_unique<FecControllerDefault>(&clock_),
-        /*media_transport=*/nullptr);
+        std::make_unique<FecControllerDefault>(&clock_));
   }
 
  protected:

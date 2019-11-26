@@ -42,8 +42,7 @@ namespace webrtc {
 // CreateMediaTransport();
 class WrapperMediaTransportFactory : public MediaTransportFactory {
  public:
-  WrapperMediaTransportFactory(
-      MediaTransportInterface* wrapped_media_transport,
+  explicit WrapperMediaTransportFactory(
       DatagramTransportInterface* wrapped_datagram_transport);
   explicit WrapperMediaTransportFactory(MediaTransportFactory* wrapped);
 
@@ -65,7 +64,6 @@ class WrapperMediaTransportFactory : public MediaTransportFactory {
   int created_transport_count() const;
 
  private:
-  MediaTransportInterface* wrapped_media_transport_ = nullptr;
   DatagramTransportInterface* wrapped_datagram_transport_ = nullptr;
   MediaTransportFactory* wrapped_factory_ = nullptr;
   int created_transport_count_ = 0;
@@ -85,10 +83,6 @@ class MediaTransportPair {
   explicit MediaTransportPair(rtc::Thread* thread);
   ~MediaTransportPair();
 
-  // Ownership stays with MediaTransportPair
-  MediaTransportInterface* first() { return &first_; }
-  MediaTransportInterface* second() { return &second_; }
-
   DatagramTransportInterface* first_datagram_transport() {
     return &first_datagram_transport_;
   }
@@ -105,19 +99,15 @@ class MediaTransportPair {
   }
 
   void SetState(MediaTransportState state) {
-    first_.SetState(state);
-    second_.SetState(state);
     first_datagram_transport_.SetState(state);
     second_datagram_transport_.SetState(state);
   }
 
   void SetFirstState(MediaTransportState state) {
-    first_.SetState(state);
     first_datagram_transport_.SetState(state);
   }
 
   void SetSecondStateAfterConnect(MediaTransportState state) {
-    second_.SetState(state);
     second_datagram_transport_.SetState(state);
   }
 
@@ -126,12 +116,9 @@ class MediaTransportPair {
   }
 
   void FlushAsyncInvokes() {
-    first_.FlushAsyncInvokes();
-    second_.FlushAsyncInvokes();
+    first_datagram_transport_.FlushAsyncInvokes();
+    second_datagram_transport_.FlushAsyncInvokes();
   }
-
-  Stats FirstStats() { return first_.GetStats(); }
-  Stats SecondStats() { return second_.GetStats(); }
 
   int first_factory_transport_count() const {
     return first_factory_.created_transport_count();
@@ -179,116 +166,6 @@ class MediaTransportPair {
     bool ready_to_send_ RTC_GUARDED_BY(sink_lock_) = false;
 
     LoopbackDataChannelTransport* other_;
-
-    rtc::AsyncInvoker invoker_;
-  };
-
-  class LoopbackMediaTransport : public MediaTransportInterface {
-   public:
-    explicit LoopbackMediaTransport(rtc::Thread* thread);
-
-    ~LoopbackMediaTransport() override;
-
-    // Connects this loopback transport to another loopback transport.
-    void Connect(LoopbackMediaTransport* other);
-
-    void Connect(rtc::PacketTransportInternal* transport) override;
-
-    RTCError SendAudioFrame(uint64_t channel_id,
-                            MediaTransportEncodedAudioFrame frame) override;
-
-    RTCError SendVideoFrame(
-        uint64_t channel_id,
-        const MediaTransportEncodedVideoFrame& frame) override;
-
-    void SetKeyFrameRequestCallback(
-        MediaTransportKeyFrameRequestCallback* callback) override;
-
-    RTCError RequestKeyFrame(uint64_t channel_id) override;
-
-    void SetReceiveAudioSink(MediaTransportAudioSinkInterface* sink) override;
-
-    void SetReceiveVideoSink(MediaTransportVideoSinkInterface* sink) override;
-
-    void AddTargetTransferRateObserver(
-        TargetTransferRateObserver* observer) override;
-
-    void RemoveTargetTransferRateObserver(
-        TargetTransferRateObserver* observer) override;
-
-    void AddRttObserver(MediaTransportRttObserver* observer) override;
-    void RemoveRttObserver(MediaTransportRttObserver* observer) override;
-
-    void SetMediaTransportStateCallback(
-        MediaTransportStateCallback* callback) override;
-
-    void SetState(MediaTransportState state);
-
-    // When Connect() is called, the media transport will enter this state.
-    // This is useful for mimicking zero-RTT connectivity, for example.
-    void SetStateAfterConnect(MediaTransportState state);
-
-    RTCError OpenChannel(int channel_id) override;
-
-    RTCError SendData(int channel_id,
-                      const SendDataParams& params,
-                      const rtc::CopyOnWriteBuffer& buffer) override;
-
-    RTCError CloseChannel(int channel_id) override;
-
-    void SetDataSink(DataChannelSink* sink) override;
-
-    bool IsReadyToSend() const override;
-
-    void FlushAsyncInvokes();
-
-    Stats GetStats();
-
-    void SetAllocatedBitrateLimits(
-        const MediaTransportAllocatedBitrateLimits& limits) override;
-
-    absl::optional<std::string> GetTransportParametersOffer() const override;
-
-   private:
-    void OnData(uint64_t channel_id, MediaTransportEncodedAudioFrame frame);
-
-    void OnData(uint64_t channel_id, MediaTransportEncodedVideoFrame frame);
-
-    void OnKeyFrameRequested(int channel_id);
-
-    void OnStateChanged() RTC_RUN_ON(thread_);
-
-    // Implementation of the data channel transport.
-    LoopbackDataChannelTransport dc_transport_;
-
-    rtc::Thread* const thread_;
-    rtc::CriticalSection sink_lock_;
-    rtc::CriticalSection stats_lock_;
-
-    MediaTransportAudioSinkInterface* audio_sink_ RTC_GUARDED_BY(sink_lock_) =
-        nullptr;
-    MediaTransportVideoSinkInterface* video_sink_ RTC_GUARDED_BY(sink_lock_) =
-        nullptr;
-
-    MediaTransportKeyFrameRequestCallback* key_frame_callback_
-        RTC_GUARDED_BY(sink_lock_) = nullptr;
-
-    MediaTransportStateCallback* state_callback_ RTC_GUARDED_BY(sink_lock_) =
-        nullptr;
-
-    std::vector<TargetTransferRateObserver*> target_transfer_rate_observers_
-        RTC_GUARDED_BY(sink_lock_);
-    std::vector<MediaTransportRttObserver*> rtt_observers_
-        RTC_GUARDED_BY(sink_lock_);
-
-    MediaTransportState state_ RTC_GUARDED_BY(thread_) =
-        MediaTransportState::kPending;
-
-    absl::optional<MediaTransportState> state_after_connect_;
-
-    LoopbackMediaTransport* other_;
-
-    Stats stats_ RTC_GUARDED_BY(stats_lock_);
 
     rtc::AsyncInvoker invoker_;
   };
@@ -351,8 +228,6 @@ class MediaTransportPair {
     rtc::AsyncInvoker invoker_;
   };
 
-  LoopbackMediaTransport first_;
-  LoopbackMediaTransport second_;
   LoopbackDatagramTransport first_datagram_transport_;
   LoopbackDatagramTransport second_datagram_transport_;
   WrapperMediaTransportFactory first_factory_;

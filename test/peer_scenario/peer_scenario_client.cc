@@ -185,7 +185,6 @@ PeerScenarioClient::PeerScenarioClient(
   pcf_deps.fec_controller_factory = nullptr;
   pcf_deps.network_controller_factory = nullptr;
   pcf_deps.network_state_predictor_factory = nullptr;
-  pcf_deps.media_transport_factory = nullptr;
 
   pc_factory_ = CreateModularPeerConnectionFactory(std::move(pcf_deps));
 

@@ -15,23 +15,14 @@
 
 namespace webrtc {
 
-MediaTransportConfig::MediaTransportConfig(
-    MediaTransportInterface* media_transport)
-    : media_transport(media_transport) {
-  RTC_DCHECK(media_transport != nullptr);
-}
-
 MediaTransportConfig::MediaTransportConfig(size_t rtp_max_packet_size)
     : rtp_max_packet_size(rtp_max_packet_size) {
   RTC_DCHECK_GT(rtp_max_packet_size, 0);
 }
 
-std::string MediaTransportConfig::DebugString()
-    const {  // TODO(sukhanov): Add rtp_max_packet_size (requires fixing
-             // audio_send/receive_stream_unittest.cc).
+std::string MediaTransportConfig::DebugString() const {
   rtc::StringBuilder result;
-  result << "{media_transport: "
-         << (media_transport != nullptr ? "(Transport)" : "null") << "}";
+  result << "{rtp_max_packet_size: " << rtp_max_packet_size.value_or(0) << "}";
   return result.Release();
 }
 

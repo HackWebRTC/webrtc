@@ -22,7 +22,6 @@
 #include "api/rtc_event_log_output_file.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/task_queue/task_queue_base.h"
-#include "api/transport/media/media_transport_config.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video_codecs/video_encoder.h"
 #include "call/fake_network_pipe.h"
@@ -1410,8 +1409,7 @@ void VideoQualityTest::InitializeAudioDevice(Call::Config* send_call_config,
 }
 
 void VideoQualityTest::SetupAudio(Transport* transport) {
-  AudioSendStream::Config audio_send_config(transport,
-                                            webrtc::MediaTransportConfig());
+  AudioSendStream::Config audio_send_config(transport);
   audio_send_config.rtp.ssrc = kAudioSendSsrc;
 
   // Add extension to enable audio send side BWE, and allow audio bit rate

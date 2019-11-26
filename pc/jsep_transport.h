@@ -21,7 +21,6 @@
 #include "api/ice_transport_interface.h"
 #include "api/jsep.h"
 #include "api/transport/datagram_transport_interface.h"
-#include "api/transport/media/media_transport_interface.h"
 #include "media/sctp/sctp_transport_internal.h"
 #include "p2p/base/dtls_transport.h"
 #include "p2p/base/p2p_constants.h"
@@ -89,16 +88,11 @@ struct JsepTransportDescription {
 //
 // On Threading: JsepTransport performs work solely on the network thread, and
 // so its methods should only be called on the network thread.
-class JsepTransport : public sigslot::has_slots<>,
-                      public webrtc::MediaTransportStateCallback {
+class JsepTransport : public sigslot::has_slots<> {
  public:
   // |mid| is just used for log statements in order to identify the Transport.
   // Note that |local_certificate| is allowed to be null since a remote
   // description may be set before a local certificate is generated.
-  //
-  // |media_trasport| is optional (experimental). If available it will be used
-  // to send / receive encoded audio and video frames instead of RTP.
-  // Currently |media_transport| can co-exist with RTP / RTCP transports.
   JsepTransport(
       const std::string& mid,
       const rtc::scoped_refptr<rtc::RTCCertificate>& local_certificate,
@@ -111,7 +105,6 @@ class JsepTransport : public sigslot::has_slots<>,
       std::unique_ptr<DtlsTransportInternal> rtp_dtls_transport,
       std::unique_ptr<DtlsTransportInternal> rtcp_dtls_transport,
       std::unique_ptr<SctpTransportInternal> sctp_transport,
-      std::unique_ptr<webrtc::MediaTransportInterface> media_transport,
       std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport,
       webrtc::DataChannelTransportInterface* data_channel_transport);
 
@@ -246,33 +239,16 @@ class JsepTransport : public sigslot::has_slots<>,
     return data_channel_transport_;
   }
 
-  // Returns media transport, if available.
-  // Note that media transport is owned by jseptransport and the pointer
-  // to media transport will becomes invalid after destruction of jseptransport.
-  webrtc::MediaTransportInterface* media_transport() const {
-    rtc::CritScope scope(&accessor_lock_);
-    return media_transport_.get();
-  }
-
   // Returns datagram transport, if available.
   webrtc::DatagramTransportInterface* datagram_transport() const {
     rtc::CritScope scope(&accessor_lock_);
     return datagram_transport_.get();
   }
 
-  // Returns the latest media transport state.
-  webrtc::MediaTransportState media_transport_state() const {
-    rtc::CritScope scope(&accessor_lock_);
-    return media_transport_state_;
-  }
-
   // This is signaled when RTCP-mux becomes active and
   // |rtcp_dtls_transport_| is destroyed. The JsepTransportController will
   // handle the signal and update the aggregate transport states.
   sigslot::signal<> SignalRtcpMuxActive;
-
-  // This is signaled for changes in |media_transport_| state.
-  sigslot::signal<> SignalMediaTransportStateChanged;
 
   // Signals that a data channel transport was negotiated and may be used to
   // send data.  The first parameter is |this|.  The second parameter is the
@@ -337,9 +313,6 @@ class JsepTransport : public sigslot::has_slots<>,
 
   bool GetTransportStats(DtlsTransportInternal* dtls_transport,
                          TransportStats* stats);
-
-  // Invoked whenever the state of the media transport changes.
-  void OnStateChanged(webrtc::MediaTransportState state) override;
 
   // Deactivates, signals removal, and deletes |composite_rtp_transport_| if the
   // current state of negotiation is sufficient to determine which rtp_transport
@@ -418,10 +391,6 @@ class JsepTransport : public sigslot::has_slots<>,
   absl::optional<std::vector<int>> recv_extension_ids_
       RTC_GUARDED_BY(network_thread_);
 
-  // Optional media transport (experimental).
-  std::unique_ptr<webrtc::MediaTransportInterface> media_transport_
-      RTC_GUARDED_BY(accessor_lock_);
-
   // Optional datagram transport (experimental).
   std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport_
       RTC_GUARDED_BY(accessor_lock_);
@@ -429,24 +398,14 @@ class JsepTransport : public sigslot::has_slots<>,
   std::unique_ptr<webrtc::RtpTransportInternal> datagram_rtp_transport_
       RTC_GUARDED_BY(accessor_lock_);
 
-  // Non-SCTP data channel transport.  Set to one of |media_transport_| or
-  // |datagram_transport_| if that transport should be used for data chanels.
-  // Unset if neither should be used for data channels.
+  // Non-SCTP data channel transport.  Set to |datagram_transport_| if that
+  // transport should be used for data chanels.  Unset otherwise.
   webrtc::DataChannelTransportInterface* data_channel_transport_
       RTC_GUARDED_BY(accessor_lock_) = nullptr;
 
   // Composite data channel transport, used during negotiation.
   std::unique_ptr<webrtc::CompositeDataChannelTransport>
       composite_data_channel_transport_ RTC_GUARDED_BY(accessor_lock_);
-
-  // If |media_transport_| is provided, this variable represents the state of
-  // media transport.
-  //
-  // NOTE: datagram transport state is handled by DatagramDtlsAdaptor, because
-  // DatagramDtlsAdaptor owns DatagramTransport. This state only represents
-  // media transport.
-  webrtc::MediaTransportState media_transport_state_
-      RTC_GUARDED_BY(accessor_lock_) = webrtc::MediaTransportState::kPending;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(JsepTransport);
 };

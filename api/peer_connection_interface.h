@@ -619,19 +619,12 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     // correctly. This flag will be deprecated soon. Do not rely on it.
     bool active_reset_srtp_params = false;
 
-    // If MediaTransportFactory is provided in PeerConnectionFactory, this flag
-    // informs PeerConnection that it should use the MediaTransportInterface for
-    // media (audio/video). It's invalid to set it to |true| if the
-    // MediaTransportFactory wasn't provided.
+    // DEPRECATED.  Do not use.  This option is ignored by peer connection.
+    // TODO(webrtc:9719):  Delete this option.
     bool use_media_transport = false;
 
-    // If MediaTransportFactory is provided in PeerConnectionFactory, this flag
-    // informs PeerConnection that it should use the MediaTransportInterface for
-    // data channels.  It's invalid to set it to |true| if the
-    // MediaTransportFactory wasn't provided.  Data channels over media
-    // transport are not compatible with RTP or SCTP data channels.  Setting
-    // both |use_media_transport_for_data_channels| and
-    // |enable_rtp_data_channel| is invalid.
+    // DEPRECATED.  Do not use.  This option is ignored by peer connection.
+    // TODO(webrtc:9719):  Delete this option.
     bool use_media_transport_for_data_channels = false;
 
     // If MediaTransportFactory is provided in PeerConnectionFactory, this flag

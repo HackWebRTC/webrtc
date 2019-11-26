@@ -1421,15 +1421,15 @@ TEST_P(PeerConnectionInterfaceTest, GetConfigurationAfterSetConfiguration) {
 
   PeerConnectionInterface::RTCConfiguration config = pc_->GetConfiguration();
   config.type = PeerConnectionInterface::kRelay;
-  config.use_media_transport = true;
-  config.use_media_transport_for_data_channels = true;
+  config.use_datagram_transport = true;
+  config.use_datagram_transport_for_data_channels = true;
   EXPECT_TRUE(pc_->SetConfiguration(config).ok());
 
   PeerConnectionInterface::RTCConfiguration returned_config =
       pc_->GetConfiguration();
   EXPECT_EQ(PeerConnectionInterface::kRelay, returned_config.type);
-  EXPECT_TRUE(returned_config.use_media_transport);
-  EXPECT_TRUE(returned_config.use_media_transport_for_data_channels);
+  EXPECT_TRUE(returned_config.use_datagram_transport);
+  EXPECT_TRUE(returned_config.use_datagram_transport_for_data_channels);
 }
 
 TEST_P(PeerConnectionInterfaceTest, SetConfigurationFailsAfterClose) {

@@ -271,10 +271,6 @@ class MediaChannel : public sigslot::has_slots<> {
     return media_transport_config_;
   }
 
-  webrtc::MediaTransportInterface* media_transport() {
-    return media_transport_config_.media_transport;
-  }
-
   // Corresponds to the SDP attribute extmap-allow-mixed, see RFC8285.
   // Set to true if it's allowed to mix one- and two-byte RTP header extensions
   // in the same stream. The setter and getter must only be called from

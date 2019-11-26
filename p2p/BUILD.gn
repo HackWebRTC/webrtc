@@ -47,8 +47,6 @@ rtc_library("rtc_p2p") {
     "base/ice_transport_internal.h",
     "base/mdns_message.cc",
     "base/mdns_message.h",
-    "base/no_op_dtls_transport.cc",
-    "base/no_op_dtls_transport.h",
     "base/p2p_constants.cc",
     "base/p2p_constants.h",
     "base/p2p_transport_channel.cc",

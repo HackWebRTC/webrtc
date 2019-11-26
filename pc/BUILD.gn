@@ -606,7 +606,6 @@ if (rtc_include_tests) {
       ":libjingle_peerconnection",
       ":pc_test_utils",
       "../api:callfactory_api",
-      "../api:fake_media_transport",
       "../api:rtc_event_log_output_file",
       "../api:rtc_stats_api",
       "../api:rtp_parameters",

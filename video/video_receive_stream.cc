@@ -125,40 +125,6 @@ class NullVideoDecoder : public webrtc::VideoDecoder {
   const char* ImplementationName() const override { return "NullVideoDecoder"; }
 };
 
-// Inherit video_coding::EncodedFrame, which is the class used by
-// video_coding::FrameBuffer and other components in the receive pipeline. It's
-// a subclass of EncodedImage, and it always owns the buffer.
-class EncodedFrameForMediaTransport : public video_coding::EncodedFrame {
- public:
-  explicit EncodedFrameForMediaTransport(
-      MediaTransportEncodedVideoFrame frame) {
-    // TODO(nisse): This is ugly. We copy the EncodedImage (a base class of
-    // ours, in several steps), to get all the meta data. We should be using
-    // std::move in some way. Then we also need to handle the case of an unowned
-    // buffer, in which case we need to make an owned copy.
-    *static_cast<class EncodedImage*>(this) = frame.encoded_image();
-
-    // If we don't already own the buffer, make a copy.
-    Retain();
-
-    _payloadType = static_cast<uint8_t>(frame.payload_type());
-
-    // TODO(nisse): frame_id and picture_id are probably not the same thing. For
-    // a single layer, this should be good enough.
-    id.picture_id = frame.frame_id();
-    id.spatial_layer = frame.encoded_image().SpatialIndex().value_or(0);
-    num_references = std::min(static_cast<size_t>(kMaxFrameReferences),
-                              frame.referenced_frame_ids().size());
-    for (size_t i = 0; i < num_references; i++) {
-      references[i] = frame.referenced_frame_ids()[i];
-    }
-  }
-
-  // TODO(nisse): Implement. Not sure how they are used.
-  int64_t ReceivedTime() const override { return 0; }
-  int64_t RenderTime() const override { return 0; }
-};
-
 // TODO(https://bugs.webrtc.org/9974): Consider removing this workaround.
 // Maximum time between frames before resetting the FrameBuffer to avoid RTP
 // timestamps wraparound to affect FrameBuffer.
@@ -238,23 +204,18 @@ VideoReceiveStream::VideoReceiveStream(
       new video_coding::FrameBuffer(clock_, timing_.get(), &stats_proxy_));
 
   process_thread_->RegisterModule(&rtp_stream_sync_, RTC_FROM_HERE);
-  if (config_.media_transport()) {
-    config_.media_transport()->SetReceiveVideoSink(this);
-    config_.media_transport()->AddRttObserver(this);
+  // Register with RtpStreamReceiverController.
+  media_receiver_ = receiver_controller->CreateReceiver(
+      config_.rtp.remote_ssrc, &rtp_video_stream_receiver_);
+  if (config_.rtp.rtx_ssrc) {
+    rtx_receive_stream_ = std::make_unique<RtxReceiveStream>(
+        &rtp_video_stream_receiver_, config.rtp.rtx_associated_payload_types,
+        config_.rtp.remote_ssrc, rtp_receive_statistics_.get());
+    rtx_receiver_ = receiver_controller->CreateReceiver(
+        config_.rtp.rtx_ssrc, rtx_receive_stream_.get());
   } else {
-    // Register with RtpStreamReceiverController.
-    media_receiver_ = receiver_controller->CreateReceiver(
-        config_.rtp.remote_ssrc, &rtp_video_stream_receiver_);
-    if (config_.rtp.rtx_ssrc) {
-      rtx_receive_stream_ = std::make_unique<RtxReceiveStream>(
-          &rtp_video_stream_receiver_, config.rtp.rtx_associated_payload_types,
-          config_.rtp.remote_ssrc, rtp_receive_statistics_.get());
-      rtx_receiver_ = receiver_controller->CreateReceiver(
-          config_.rtp.rtx_ssrc, rtx_receive_stream_.get());
-    } else {
-      rtp_receive_statistics_->EnableRetransmitDetection(config.rtp.remote_ssrc,
-                                                         true);
-    }
+    rtp_receive_statistics_->EnableRetransmitDetection(config.rtp.remote_ssrc,
+                                                       true);
   }
 }
 
@@ -281,10 +242,6 @@ VideoReceiveStream::~VideoReceiveStream() {
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
   RTC_LOG(LS_INFO) << "~VideoReceiveStream: " << config_.ToString();
   Stop();
-  if (config_.media_transport()) {
-    config_.media_transport()->SetReceiveVideoSink(nullptr);
-    config_.media_transport()->RemoveRttObserver(this);
-  }
   process_thread_->DeRegisterModule(&rtp_stream_sync_);
 }
 
@@ -536,11 +493,7 @@ void VideoReceiveStream::SendNack(const std::vector<uint16_t>& sequence_numbers,
 }
 
 void VideoReceiveStream::RequestKeyFrame(int64_t timestamp_ms) {
-  if (config_.media_transport()) {
-    config_.media_transport()->RequestKeyFrame(config_.rtp.remote_ssrc);
-  } else {
-    rtp_video_stream_receiver_.RequestKeyFrame();
-  }
+  rtp_video_stream_receiver_.RequestKeyFrame();
   last_keyframe_request_ms_ = timestamp_ms;
 }
 
@@ -573,20 +526,10 @@ void VideoReceiveStream::OnCompleteFrame(
     rtp_video_stream_receiver_.FrameContinuous(last_continuous_pid);
 }
 
-void VideoReceiveStream::OnData(uint64_t channel_id,
-                                MediaTransportEncodedVideoFrame frame) {
-  OnCompleteFrame(
-      std::make_unique<EncodedFrameForMediaTransport>(std::move(frame)));
-}
-
 void VideoReceiveStream::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
   RTC_DCHECK_RUN_ON(&module_process_sequence_checker_);
   frame_buffer_->UpdateRtt(max_rtt_ms);
   rtp_video_stream_receiver_.UpdateRtt(max_rtt_ms);
-}
-
-void VideoReceiveStream::OnRttUpdated(int64_t rtt_ms) {
-  frame_buffer_->UpdateRtt(rtt_ms);
 }
 
 int VideoReceiveStream::id() const {

@@ -69,12 +69,8 @@ std::string VideoReceiveStream::Stats::ToString(int64_t time_ms) const {
 
 VideoReceiveStream::Config::Config(const Config&) = default;
 VideoReceiveStream::Config::Config(Config&&) = default;
-VideoReceiveStream::Config::Config(Transport* rtcp_send_transport,
-                                   MediaTransportConfig media_transport_config)
-    : rtcp_send_transport(rtcp_send_transport),
-      media_transport_config(media_transport_config) {}
 VideoReceiveStream::Config::Config(Transport* rtcp_send_transport)
-    : Config(rtcp_send_transport, MediaTransportConfig()) {}
+    : rtcp_send_transport(rtcp_send_transport) {}
 
 VideoReceiveStream::Config& VideoReceiveStream::Config::operator=(Config&&) =
     default;

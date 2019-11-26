@@ -74,8 +74,7 @@ class BaseChannel : public ChannelInterface,
                     public rtc::MessageHandler,
                     public sigslot::has_slots<>,
                     public MediaChannel::NetworkInterface,
-                    public webrtc::RtpPacketSinkInterface,
-                    public webrtc::MediaTransportNetworkChangeCallback {
+                    public webrtc::RtpPacketSinkInterface {
  public:
   // If |srtp_required| is true, the channel will not send or receive any
   // RTP/RTCP packets without using SRTP (either using SDES or DTLS-SRTP).
@@ -155,11 +154,6 @@ class BaseChannel : public ChannelInterface,
   // be destroyed.
   // Fired on the network thread.
   sigslot::signal1<const std::string&> SignalRtcpMuxFullyActive;
-
-  // Returns media transport, can be null if media transport is not available.
-  webrtc::MediaTransportInterface* media_transport() {
-    return media_transport_config_.media_transport;
-  }
 
   // From RtpTransport - public for testing only
   void OnTransportReadyToSend(bool ready);
@@ -287,9 +281,6 @@ class BaseChannel : public ChannelInterface,
   void SignalSentPacket_n(const rtc::SentPacket& sent_packet);
   bool IsReadyToSendMedia_n() const;
 
-  // MediaTransportNetworkChangeCallback override.
-  void OnNetworkRouteChanged(const rtc::NetworkRoute& network_route) override;
-
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
   rtc::Thread* const signaling_thread_;
@@ -337,8 +328,7 @@ class BaseChannel : public ChannelInterface,
 
 // VoiceChannel is a specialization that adds support for early media, DTMF,
 // and input/output level monitoring.
-class VoiceChannel : public BaseChannel,
-                     public webrtc::AudioPacketReceivedObserver {
+class VoiceChannel : public BaseChannel {
  public:
   VoiceChannel(rtc::Thread* worker_thread,
                rtc::Thread* network_thread,
@@ -371,8 +361,6 @@ class VoiceChannel : public BaseChannel,
   bool SetRemoteContent_w(const MediaContentDescription* content,
                           webrtc::SdpType type,
                           std::string* error_desc) override;
-
-  void OnFirstAudioPacketReceived(int64_t channel_id) override;
 
   // Last AudioSendParameters sent down to the media_channel() via
   // SetSendParameters.

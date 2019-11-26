@@ -114,11 +114,6 @@ class JsepTransport2Test : public ::testing::Test, public sigslot::has_slots<> {
         RTC_NOTREACHED();
     }
 
-    // TODO(sukhanov): Currently there is no media_transport specific
-    // logic in jseptransport, so jseptransport unittests are created with
-    // media_transport = nullptr. In the future we will probably add
-    // more logic that require unit tests. Note that creation of media_transport
-    // is covered in jseptransportcontroller_unittest.
     auto jsep_transport = std::make_unique<JsepTransport>(
         kTransportName, /*local_certificate=*/nullptr, std::move(ice),
         std::move(rtcp_ice), std::move(unencrypted_rtp_transport),
@@ -126,7 +121,6 @@ class JsepTransport2Test : public ::testing::Test, public sigslot::has_slots<> {
         /*datagram_rtp_transport=*/nullptr, std::move(rtp_dtls_transport),
         std::move(rtcp_dtls_transport),
         /*sctp_transport=*/nullptr,
-        /*media_transport=*/nullptr,
         /*datagram_transport=*/nullptr,
         /*data_channel_transport=*/nullptr);
 

@@ -14,7 +14,6 @@
 #include <utility>
 
 #include "absl/types/optional.h"
-#include "api/transport/media/media_transport_interface.h"
 
 namespace webrtc {
 
@@ -25,17 +24,10 @@ struct MediaTransportConfig {
   // Default constructor for no-media transport scenarios.
   MediaTransportConfig() = default;
 
-  // Constructor for media transport scenarios.
-  // Note that |media_transport| may not be nullptr.
-  explicit MediaTransportConfig(MediaTransportInterface* media_transport);
-
   // Constructor for datagram transport scenarios.
   explicit MediaTransportConfig(size_t rtp_max_packet_size);
 
   std::string DebugString() const;
-
-  // If provided, all media is sent through media_transport.
-  MediaTransportInterface* media_transport = nullptr;
 
   // If provided, limits RTP packet size (excludes ICE, IP or network overhead).
   absl::optional<size_t> rtp_max_packet_size;

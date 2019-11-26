@@ -826,25 +826,8 @@ bool WebRtcVideoChannel::ApplyChangedParams(
                                             : send_params_.max_bandwidth_bps;
     }
 
-    if (media_transport()) {
-      webrtc::MediaTransportTargetRateConstraints constraints;
-      if (bitrate_config_.start_bitrate_bps >= 0) {
-        constraints.starting_bitrate =
-            webrtc::DataRate::bps(bitrate_config_.start_bitrate_bps);
-      }
-      if (bitrate_config_.max_bitrate_bps > 0) {
-        constraints.max_bitrate =
-            webrtc::DataRate::bps(bitrate_config_.max_bitrate_bps);
-      }
-      if (bitrate_config_.min_bitrate_bps >= 0) {
-        constraints.min_bitrate =
-            webrtc::DataRate::bps(bitrate_config_.min_bitrate_bps);
-      }
-      media_transport()->SetTargetBitrateLimits(constraints);
-    } else {
-      call_->GetTransportControllerSend()->SetSdpBitrateParameters(
-          bitrate_config_);
-    }
+    call_->GetTransportControllerSend()->SetSdpBitrateParameters(
+        bitrate_config_);
   }
 
   for (auto& kv : send_streams_) {
@@ -1175,7 +1158,7 @@ bool WebRtcVideoChannel::AddSendStream(const StreamParams& sp) {
   for (uint32_t used_ssrc : sp.ssrcs)
     send_ssrcs_.insert(used_ssrc);
 
-  webrtc::VideoSendStream::Config config(this, media_transport());
+  webrtc::VideoSendStream::Config config(this);
 
   for (const RidDescription& rid : sp.rids()) {
     config.rtp.rids.push_back(rid.rid);
@@ -1308,7 +1291,7 @@ bool WebRtcVideoChannel::AddRecvStream(const StreamParams& sp,
   for (uint32_t used_ssrc : sp.ssrcs)
     receive_ssrcs_.insert(used_ssrc);
 
-  webrtc::VideoReceiveStream::Config config(this, media_transport_config());
+  webrtc::VideoReceiveStream::Config config(this);
   webrtc::FlexfecReceiveStream::Config flexfec_config(this);
   ConfigureReceiverRtp(&config, &flexfec_config, sp);
 

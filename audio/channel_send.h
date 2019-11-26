@@ -20,8 +20,6 @@
 #include "api/crypto/crypto_options.h"
 #include "api/function_view.h"
 #include "api/task_queue/task_queue_factory.h"
-#include "api/transport/media/media_transport_config.h"
-#include "api/transport/media/media_transport_interface.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/rtp_sender_audio.h"
@@ -129,7 +127,6 @@ std::unique_ptr<ChannelSendInterface> CreateChannelSend(
     Clock* clock,
     TaskQueueFactory* task_queue_factory,
     ProcessThread* module_process_thread,
-    const MediaTransportConfig& media_transport_config,
     OverheadObserver* overhead_observer,
     Transport* rtp_transport,
     RtcpRttStats* rtcp_rtt_stats,

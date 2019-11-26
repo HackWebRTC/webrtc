@@ -23,7 +23,6 @@
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
-#include "api/transport/media/media_transport_config.h"
 #include "api/transport/rtp/rtp_source.h"
 #include "call/rtp_config.h"
 
@@ -124,8 +123,6 @@ class AudioReceiveStream {
     } rtp;
 
     Transport* rtcp_send_transport = nullptr;
-
-    MediaTransportConfig media_transport_config;
 
     // NetEq settings.
     size_t jitter_buffer_max_packets = 200;

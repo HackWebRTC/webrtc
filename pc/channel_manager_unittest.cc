@@ -13,7 +13,6 @@
 #include <memory>
 
 #include "api/rtc_error.h"
-#include "api/test/fake_media_transport.h"
 #include "api/transport/media/media_transport_config.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "media/base/fake_media_engine.h"
@@ -74,18 +73,6 @@ class ChannelManagerTest : public ::testing::Test {
     return dtls_srtp_transport;
   }
 
-  std::unique_ptr<webrtc::MediaTransportInterface> CreateMediaTransport(
-      rtc::PacketTransportInternal* packet_transport) {
-    webrtc::MediaTransportSettings settings;
-    settings.is_caller = true;
-    auto media_transport_result =
-        fake_media_transport_factory_.CreateMediaTransport(
-            packet_transport, network_.get(),
-            /*is_caller=*/settings);
-    RTC_CHECK(media_transport_result.ok());
-    return media_transport_result.MoveValue();
-  }
-
   void TestCreateDestroyChannels(
       webrtc::RtpTransportInternal* rtp_transport,
       webrtc::MediaTransportConfig media_transport_config) {
@@ -122,7 +109,6 @@ class ChannelManagerTest : public ::testing::Test {
   cricket::FakeDataEngine* fdme_;
   std::unique_ptr<cricket::ChannelManager> cm_;
   cricket::FakeCall fake_call_;
-  webrtc::FakeMediaTransportFactory fake_media_transport_factory_;
   rtc::UniqueRandomIdGenerator ssrc_generator_;
 };
 
@@ -190,14 +176,6 @@ TEST_F(ChannelManagerTest, CreateDestroyChannels) {
   auto rtp_transport = CreateDtlsSrtpTransport();
   TestCreateDestroyChannels(rtp_transport.get(),
                             webrtc::MediaTransportConfig());
-}
-
-TEST_F(ChannelManagerTest, CreateDestroyChannelsWithMediaTransport) {
-  EXPECT_TRUE(cm_->Init());
-  auto rtp_transport = CreateDtlsSrtpTransport();
-  auto media_transport = CreateMediaTransport(rtp_dtls_transport_.get());
-  TestCreateDestroyChannels(
-      rtp_transport.get(), webrtc::MediaTransportConfig(media_transport.get()));
 }
 
 TEST_F(ChannelManagerTest, CreateDestroyChannelsOnThread) {

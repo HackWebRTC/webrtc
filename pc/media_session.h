@@ -115,11 +115,6 @@ struct MediaSessionOptions {
   std::vector<MediaDescriptionOptions> media_description_options;
   std::vector<IceParameters> pooled_ice_credentials;
 
-  // An optional media transport settings.
-  // In the future we may consider using a vector here, to indicate multiple
-  // supported transports.
-  absl::optional<cricket::SessionDescription::MediaTransportSetting>
-      media_transport_settings;
   // Use the draft-ietf-mmusic-sctp-sdp-03 obsolete syntax for SCTP
   // datachannels.
   // Default is true for backwards compatibility with clients that use

@@ -20,7 +20,6 @@
 
 #include "api/peer_connection_interface.h"
 #include "api/transport/data_channel_transport_interface.h"
-#include "api/transport/media/media_transport_interface.h"
 #include "api/turn_customizer.h"
 #include "pc/ice_server_parsing.h"
 #include "pc/jsep_transport_controller.h"
@@ -1201,7 +1200,6 @@ class PeerConnection : public PeerConnectionInternal,
       const std::string& mid,
       RtpTransportInternal* rtp_transport,
       rtc::scoped_refptr<DtlsTransport> dtls_transport,
-      MediaTransportInterface* media_transport,
       DataChannelTransportInterface* data_channel_transport) override;
 
   // RtpSenderBase::SetStreamsObserver override.
@@ -1288,14 +1286,6 @@ class PeerConnection : public PeerConnectionInternal,
   // Resolved value of whether to use data channels only for incoming calls.
   bool use_datagram_transport_for_data_channels_receive_only_
       RTC_GUARDED_BY(signaling_thread()) = false;
-
-  // Cache configuration_.use_media_transport so that we can access it from
-  // other threads.
-  // TODO(bugs.webrtc.org/9987): Caching just this bool and allowing the data
-  // it's derived from to change is not necessarily sound. Stop doing it.
-  rtc::RaceChecker use_media_transport_race_checker_;
-  bool use_media_transport_ RTC_GUARDED_BY(use_media_transport_race_checker_) =
-      configuration_.use_media_transport;
 
   // TODO(zstein): |async_resolver_factory_| can currently be nullptr if it
   // is not injected. It should be required once chromium supplies it.

@@ -25,8 +25,6 @@
 #include "api/crypto/frame_encryptor_interface.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
-#include "api/transport/media/media_transport_config.h"
-#include "api/transport/media/media_transport_interface.h"
 #include "call/rtp_config.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
@@ -76,8 +74,6 @@ class AudioSendStream {
 
   struct Config {
     Config() = delete;
-    Config(Transport* send_transport,
-           const MediaTransportConfig& media_transport_config);
     explicit Config(Transport* send_transport);
     ~Config();
     std::string ToString() const;
@@ -115,8 +111,6 @@ class AudioSendStream {
     // Transport for outgoing packets. The transport is expected to exist for
     // the entire life of the AudioSendStream and is owned by the API client.
     Transport* send_transport = nullptr;
-
-    MediaTransportConfig media_transport_config;
 
     // Bitrate limits used for variable audio bitrate streams. Set both to -1 to
     // disable audio bitrate adaptation.
