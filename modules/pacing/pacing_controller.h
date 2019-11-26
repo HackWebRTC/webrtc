@@ -111,8 +111,13 @@ class PacingController {
   // Returns the time since the oldest queued packet was enqueued.
   TimeDelta OldestPacketWaitTime() const;
 
+  // Number of packets in the pacer queue.
   size_t QueueSizePackets() const;
+  // Totals size of packets in the pacer queue.
   DataSize QueueSizeData() const;
+
+  // Current buffer level, i.e. max of media and padding debt.
+  DataSize CurrentBufferLevel() const;
 
   // Returns the time when the first packet was sent;
   absl::optional<Timestamp> FirstSentPacketTime() const;

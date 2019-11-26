@@ -241,6 +241,10 @@ DataSize PacingController::QueueSizeData() const {
   return packet_queue_.Size();
 }
 
+DataSize PacingController::CurrentBufferLevel() const {
+  return std::max(media_debt_, padding_debt_);
+}
+
 absl::optional<Timestamp> PacingController::FirstSentPacketTime() const {
   return first_sent_packet_time_;
 }
