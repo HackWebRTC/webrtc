@@ -176,7 +176,6 @@ rtc_source_set("refcount") {
     "ref_counter.h",
   ]
   deps = [
-    ":atomicops",
     ":macromagic",
   ]
 }
