@@ -526,6 +526,24 @@ webrtc_fuzzer_test("aec3_config_json_fuzzer") {
   seed_corpus = "corpora/aec3-config-json-corpus"
 }
 
+webrtc_fuzzer_test("aec3_fuzzer") {
+  defines = []
+  if (apm_debug_dump) {
+    defines += [ "WEBRTC_APM_DEBUG_DUMP=1" ]
+  } else {
+    defines += [ "WEBRTC_APM_DEBUG_DUMP=0" ]
+  }
+  sources = [
+    "aec3_fuzzer.cc",
+  ]
+  deps = [
+    ":fuzz_data_helper",
+    "../../modules/audio_processing:audio_buffer",
+    "../../modules/audio_processing/aec3",
+    "//modules/audio_processing:api",
+  ]
+}
+
 webrtc_fuzzer_test("comfort_noise_decoder_fuzzer") {
   sources = [
     "comfort_noise_decoder_fuzzer.cc",
