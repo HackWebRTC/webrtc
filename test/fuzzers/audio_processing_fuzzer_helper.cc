@@ -122,8 +122,8 @@ void FuzzAudioProcessing(test::FuzzDataHelper* fuzz_data,
             StreamConfig(output_rate, num_channels), ptr_to_float_frames);
       } else {
         apm_return_code = apm->ProcessReverseStream(
-            ptr_to_float_frames, StreamConfig(input_rate, 1),
-            StreamConfig(output_rate, 1), ptr_to_float_frames);
+            ptr_to_float_frames, StreamConfig(input_rate, num_channels),
+            StreamConfig(output_rate, num_channels), ptr_to_float_frames);
       }
     } else {
       const int num_channels = fuzz_data->ReadOrDefaultValue(true) ? 2 : 1;
