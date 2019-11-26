@@ -35,7 +35,8 @@
 
 namespace webrtc {
 
-class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
+class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal>,
+                         public VideoRtpTrackSource::Callback {
  public:
   // An SSRC of 0 will create a receiver that will match the first SSRC it
   // sees. Must be called on signaling thread.
@@ -112,7 +113,12 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
   void RestartMediaChannel(absl::optional<uint32_t> ssrc);
   bool SetSink(rtc::VideoSinkInterface<VideoFrame>* sink);
 
+  // VideoRtpTrackSource::Callback
+  void OnGenerateKeyFrame() override;
+  void OnEncodedSinkEnabled(bool enable) override;
+
   rtc::Thread* const worker_thread_;
+
   const std::string id_;
   cricket::VideoMediaChannel* media_channel_ = nullptr;
   absl::optional<uint32_t> ssrc_;
