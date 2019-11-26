@@ -2064,50 +2064,10 @@ TEST_F(SendStatisticsProxyTest, GetStatsReportsBandwidthLimitedResolution) {
   stream2.height = kHeight;
   statistics_proxy_->OnEncoderReconfigured(config, {stream1, stream2});
 
-  const int64_t kMaxEncodedFrameWindowMs = 800;
-  const int kFps = 20;
-  const int kMinSamples =  // Sample added when removed from EncodedFrameMap.
-      kFps * kMaxEncodedFrameWindowMs / 1000;
-
   // One stream encoded.
   EncodedImage encoded_image;
   encoded_image._encodedWidth = kWidth / 2;
   encoded_image._encodedHeight = kHeight / 2;
-  for (int i = 0; i < kMinSamples; ++i) {
-    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
-    encoded_image.SetTimestamp(encoded_image.Timestamp() +
-                               (kRtpClockRateHz / kFps));
-    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
-    EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
-  }
-
-  // First frame removed from EncodedFrameMap, stats updated.
-  fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
-  encoded_image.SetTimestamp(encoded_image.Timestamp() + 1);
-  statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
-  EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
-
-  // Two streams encoded.
-  for (int i = 0; i < kMinSamples; ++i) {
-    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
-    encoded_image.SetTimestamp(encoded_image.Timestamp() +
-                               (kRtpClockRateHz / kFps));
-    encoded_image._encodedWidth = kWidth;
-    encoded_image._encodedHeight = kHeight;
-    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
-    EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
-    encoded_image._encodedWidth = kWidth / 2;
-    encoded_image._encodedHeight = kHeight / 2;
-    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
-    EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
-  }
-
-  // First frame with two streams removed, expect no resolution limit.
-  fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
-  encoded_image.SetTimestamp(encoded_image.Timestamp() +
-                             (kRtpClockRateHz / kFps));
-  statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
-  EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
 
   // Resolution scaled due to quality.
   SendStatisticsProxy::AdaptationSteps cpu_counts;

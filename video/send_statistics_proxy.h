@@ -290,9 +290,8 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
     void InitializeBitrateCounters(const VideoSendStream::Stats& stats);
 
     bool InsertEncodedFrame(const EncodedImage& encoded_frame,
-                            int simulcast_idx,
-                            bool* is_limited_in_resolution);
-    void RemoveOld(int64_t now_ms, bool* is_limited_in_resolution);
+                            int simulcast_idx);
+    void RemoveOld(int64_t now_ms);
 
     const std::string uma_prefix_;
     Clock* const clock_;

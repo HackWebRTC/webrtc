@@ -215,9 +215,7 @@ void SendStatisticsProxy::UmaSamplesContainer::InitializeBitrateCounters(
   }
 }
 
-void SendStatisticsProxy::UmaSamplesContainer::RemoveOld(
-    int64_t now_ms,
-    bool* is_limited_in_resolution) {
+void SendStatisticsProxy::UmaSamplesContainer::RemoveOld(int64_t now_ms) {
   while (!encoded_frames_.empty()) {
     auto it = encoded_frames_.begin();
     if (now_ms - it->second.send_ms < kMaxEncodedFrameWindowMs)
@@ -229,7 +227,6 @@ void SendStatisticsProxy::UmaSamplesContainer::RemoveOld(
 
     // Check number of encoded streams per timestamp.
     if (num_streams_ > static_cast<size_t>(it->second.max_simulcast_idx)) {
-      *is_limited_in_resolution = false;
       if (num_streams_ > 1) {
         int disabled_streams =
             static_cast<int>(num_streams_ - 1 - it->second.max_simulcast_idx);
@@ -240,7 +237,6 @@ void SendStatisticsProxy::UmaSamplesContainer::RemoveOld(
         bw_limited_frame_counter_.Add(bw_limited_resolution);
         if (bw_limited_resolution) {
           bw_resolutions_disabled_counter_.Add(disabled_streams);
-          *is_limited_in_resolution = true;
         }
       }
     }
@@ -250,10 +246,9 @@ void SendStatisticsProxy::UmaSamplesContainer::RemoveOld(
 
 bool SendStatisticsProxy::UmaSamplesContainer::InsertEncodedFrame(
     const EncodedImage& encoded_frame,
-    int simulcast_idx,
-    bool* is_limited_in_resolution) {
+    int simulcast_idx) {
   int64_t now_ms = clock_->TimeInMilliseconds();
-  RemoveOld(now_ms, is_limited_in_resolution);
+  RemoveOld(now_ms);
   if (encoded_frames_.size() > kMaxEncodedFrameMapSize) {
     encoded_frames_.clear();
   }
@@ -984,16 +979,11 @@ void SendStatisticsProxy::OnSendEncodedImage(
 
   media_byte_rate_tracker_.AddSamples(encoded_image.size());
 
-  // Initialize to current since |is_limited_in_resolution| is only updated
-  // when an encoded frame is removed from the EncodedFrameMap.
-  bool is_limited_in_resolution = stats_.bw_limited_resolution;
-  if (uma_container_->InsertEncodedFrame(encoded_image, simulcast_idx,
-                                         &is_limited_in_resolution)) {
+  if (uma_container_->InsertEncodedFrame(encoded_image, simulcast_idx)) {
     encoded_frame_rate_tracker_.AddSamples(1);
   }
 
-  stats_.bw_limited_resolution =
-      is_limited_in_resolution || quality_downscales_ > 0;
+  stats_.bw_limited_resolution |= quality_downscales_ > 0;
 
   if (quality_downscales_ != -1) {
     uma_container_->quality_limited_frame_counter_.Add(quality_downscales_ > 0);
