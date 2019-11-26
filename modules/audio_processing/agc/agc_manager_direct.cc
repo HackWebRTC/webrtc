@@ -56,6 +56,12 @@ const int kMaxResidualGainChange = 15;
 // restrictions from clipping events.
 const int kSurplusCompressionGain = 6;
 
+// Returns whether a fall-back solution to choose the maximum level should be
+// chosen.
+bool UseMaxAnalogChannelLevel() {
+  return field_trial::IsEnabled("WebRTC-UseMaxAnalogAgcChannelLevel");
+}
+
 // Returns kMinMicLevel if no field trial exists or if it has been disabled.
 // Returns a value between 0 and 255 depending on the field-trial string.
 // Example: 'WebRTC-Audio-AgcMinMicLevelExperiment/Enabled-80' => returns 80.
@@ -426,6 +432,7 @@ AgcManagerDirect::AgcManagerDirect(int num_capture_channels,
                                    int sample_rate_hz)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_counter_))),
+      use_min_channel_level_(!UseMaxAnalogChannelLevel()),
       sample_rate_hz_(sample_rate_hz),
       num_capture_channels_(num_capture_channels),
       disable_digital_adaptive_(disable_digital_adaptive),
@@ -579,11 +586,21 @@ void AgcManagerDirect::set_stream_analog_level(int level) {
 void AgcManagerDirect::AggregateChannelLevels() {
   stream_analog_level_ = channel_agcs_[0]->stream_analog_level();
   channel_controlling_gain_ = 0;
-  for (size_t ch = 1; ch < channel_agcs_.size(); ++ch) {
-    int level = channel_agcs_[0]->stream_analog_level();
-    if (level < stream_analog_level_) {
-      stream_analog_level_ = level;
-      channel_controlling_gain_ = static_cast<int>(ch);
+  if (use_min_channel_level_) {
+    for (size_t ch = 1; ch < channel_agcs_.size(); ++ch) {
+      int level = channel_agcs_[ch]->stream_analog_level();
+      if (level < stream_analog_level_) {
+        stream_analog_level_ = level;
+        channel_controlling_gain_ = static_cast<int>(ch);
+      }
+    }
+  } else {
+    for (size_t ch = 1; ch < channel_agcs_.size(); ++ch) {
+      int level = channel_agcs_[ch]->stream_analog_level();
+      if (level > stream_analog_level_) {
+        stream_analog_level_ = level;
+        channel_controlling_gain_ = static_cast<int>(ch);
+      }
     }
   }
 }
