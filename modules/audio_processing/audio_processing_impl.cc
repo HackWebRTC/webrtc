@@ -482,12 +482,20 @@ int AudioProcessingImpl::InitializeLocked() {
             static_cast<int>(num_proc_channels()) ||
         submodules_.agc_manager->sample_rate_hz() !=
             capture_nonlocked_.split_rate) {
+      int stream_analog_level = -1;
+      const bool re_creation = !!submodules_.agc_manager;
+      if (re_creation) {
+        stream_analog_level = submodules_.agc_manager->stream_analog_level();
+      }
       submodules_.agc_manager.reset(new AgcManagerDirect(
           num_proc_channels(), constants_.agc_startup_min_volume,
           constants_.agc_clipped_level_min,
           constants_.use_experimental_agc_agc2_level_estimation,
           constants_.use_experimental_agc_agc2_digital_adaptive,
           capture_nonlocked_.split_rate));
+      if (re_creation) {
+        submodules_.agc_manager->set_stream_analog_level(stream_analog_level);
+      }
     }
     submodules_.agc_manager->Initialize();
     submodules_.agc_manager->SetupDigitalGainControl(
