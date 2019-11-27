@@ -261,10 +261,6 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
       // Allow multi-channel processing of capture audio when AEC3 is active
       // or a custom AEC is injected..
       bool multi_channel_capture = false;
-
-      // Deprecated.
-      // TODO(peah): Remove.
-      bool experimental_multi_channel = false;
     } pipeline;
 
     // Enabled the pre-amplifier. It amplifies the capture signal
