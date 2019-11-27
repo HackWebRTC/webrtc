@@ -433,7 +433,7 @@ int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
                                          // undefined for voice for now.
                                          -1, payloadType,
                                          /*force_sender_report=*/false)) {
-    return false;
+    return -1;
   }
 
   // RTCPSender has it's own copy of the timestamp offset, added in
@@ -491,9 +491,8 @@ ChannelSend::ChannelSend(Clock* clock,
   configuration.overhead_observer = overhead_observer;
   configuration.bandwidth_callback = rtcp_observer_.get();
   configuration.transport_feedback_callback = feedback_observer_proxy_.get();
-  configuration.clock = clock;
+  configuration.clock = (clock ? clock : Clock::GetRealTimeClock());
   configuration.audio = true;
-  configuration.clock = Clock::GetRealTimeClock();
   configuration.outgoing_transport = rtp_transport;
 
   configuration.paced_sender = rtp_packet_pacer_proxy_.get();
