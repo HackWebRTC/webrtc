@@ -403,9 +403,13 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
   if (settings_.use_ts) {
     config.Set<ExperimentalNs>(new ExperimentalNs(*settings_.use_ts));
   }
-  if (settings_.experimental_multi_channel) {
-    apm_config.pipeline.experimental_multi_channel =
-        *settings_.experimental_multi_channel;
+  if (settings_.multi_channel_render) {
+    apm_config.pipeline.multi_channel_render = *settings_.multi_channel_render;
+  }
+
+  if (settings_.multi_channel_capture) {
+    apm_config.pipeline.multi_channel_capture =
+        *settings_.multi_channel_capture;
   }
 
   if (settings_.use_agc2) {

@@ -256,8 +256,14 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
       // default rate is currently selected based on the CPU architecture, but
       // that logic may change.
       int maximum_internal_processing_rate;
-      // Force multi-channel processing on playout and capture audio. This is an
-      // experimental feature, and is likely to change without warning.
+      // Allow multi-channel processing of render audio.
+      bool multi_channel_render = false;
+      // Allow multi-channel processing of capture audio when AEC3 is active
+      // or a custom AEC is injected..
+      bool multi_channel_capture = false;
+
+      // Deprecated.
+      // TODO(peah): Remove.
       bool experimental_multi_channel = false;
     } pipeline;
 

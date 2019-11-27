@@ -586,11 +586,10 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
   if (submodule_states_.RenderMultiBandSubModulesActive()) {
     // By default, downmix the render stream to mono for analysis. This has been
     // demonstrated to work well for AEC in most practical scenarios.
-    const bool experimental_multi_channel_render =
-        config_.pipeline.experimental_multi_channel &&
-        constants_.experimental_multi_channel_render_support;
+    const bool multi_channel_render = config_.pipeline.multi_channel_render &&
+                                      constants_.multi_channel_render_support;
     int render_processing_num_channels =
-        experimental_multi_channel_render
+        multi_channel_render
             ? formats_.api_format.reverse_input_stream().num_channels()
             : 1;
     formats_.render_processing_format =
@@ -622,8 +621,10 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
   rtc::CritScope cs_capture(&crit_capture_);
 
   const bool pipeline_config_changed =
-      config_.pipeline.experimental_multi_channel !=
-      config.pipeline.experimental_multi_channel;
+      config_.pipeline.multi_channel_render !=
+          config.pipeline.multi_channel_render ||
+      config_.pipeline.multi_channel_capture !=
+          config.pipeline.multi_channel_capture;
 
   const bool aec_config_changed =
       config_.echo_canceller.enabled != config.echo_canceller.enabled ||
@@ -769,11 +770,9 @@ size_t AudioProcessingImpl::num_input_channels() const {
 
 size_t AudioProcessingImpl::num_proc_channels() const {
   // Used as callback from submodules, hence locking is not allowed.
-  const bool experimental_multi_channel_capture =
-      config_.pipeline.experimental_multi_channel &&
-      constants_.experimental_multi_channel_capture_support;
-  if (capture_nonlocked_.echo_controller_enabled &&
-      !experimental_multi_channel_capture) {
+  const bool multi_channel_capture = config_.pipeline.multi_channel_capture &&
+                                     constants_.multi_channel_capture_support;
+  if (capture_nonlocked_.echo_controller_enabled && !multi_channel_capture) {
     return 1;
   }
   return num_output_channels();
@@ -1291,10 +1290,9 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     capture_buffer->SplitIntoFrequencyBands();
   }
 
-  const bool experimental_multi_channel_capture =
-      config_.pipeline.experimental_multi_channel &&
-      constants_.experimental_multi_channel_capture_support;
-  if (submodules_.echo_controller && !experimental_multi_channel_capture) {
+  const bool multi_channel_capture = config_.pipeline.multi_channel_capture &&
+                                     constants_.multi_channel_capture_support;
+  if (submodules_.echo_controller && !multi_channel_capture) {
     // Force down-mixing of the number of channels after the detection of
     // capture signal saturation.
     // TODO(peah): Look into ensuring that this kind of tampering with the

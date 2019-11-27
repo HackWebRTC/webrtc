@@ -75,8 +75,9 @@ std::string AudioProcessing::Config::ToString() const {
           << "pipeline: {"
           << "maximum_internal_processing_rate: "
           << pipeline.maximum_internal_processing_rate
-          << ", experimental_multi_channel: "
-          << pipeline.experimental_multi_channel << "}, "
+          << ", multi_channel_render: " << pipeline.multi_channel_render << ", "
+          << ", multi_channel_capture: " << pipeline.multi_channel_capture
+          << "}, "
           << "pre_amplifier: { enabled: " << pre_amplifier.enabled
           << ", fixed_gain_factor: " << pre_amplifier.fixed_gain_factor
           << " }, high_pass_filter: { enabled: " << high_pass_filter.enabled
