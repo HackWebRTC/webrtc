@@ -151,14 +151,18 @@ float SuppressionGain::UpperBandsGain(
   // or if the power in upper frequencies is low, do not bound the gain in the
   // upper bands.
   float anti_howling_gain;
-  constexpr float kThreshold = kBlockSize * 10.f * 10.f / 4.f;
-  if (high_band_energy < std::max(low_band_energy, kThreshold)) {
+  const float activation_threshold =
+      kBlockSize * config_.suppressor.high_bands_suppression
+                       .anti_howling_activation_threshold;
+  if (high_band_energy < std::max(low_band_energy, activation_threshold)) {
     anti_howling_gain = 1.f;
   } else {
     // In all other cases, bound the gain for upper frequencies.
     RTC_DCHECK_LE(low_band_energy, high_band_energy);
     RTC_DCHECK_NE(0.f, high_band_energy);
-    anti_howling_gain = 0.01f * sqrtf(low_band_energy / high_band_energy);
+    anti_howling_gain =
+        config_.suppressor.high_bands_suppression.anti_howling_gain *
+        sqrtf(low_band_energy / high_band_energy);
   }
 
   float gain_bound = 1.f;

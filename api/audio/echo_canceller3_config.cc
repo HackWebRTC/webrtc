@@ -234,6 +234,11 @@ bool EchoCanceller3Config::Validate(EchoCanceller3Config* config) {
                     1000000.f);
   res = res & Limit(&c->suppressor.high_bands_suppression.max_gain_during_echo,
                     0.f, 1.f);
+  res = res & Limit(&c->suppressor.high_bands_suppression
+                         .anti_howling_activation_threshold,
+                    0.f, 32768.f * 32768.f);
+  res = res & Limit(&c->suppressor.high_bands_suppression.anti_howling_gain,
+                    0.f, 1.f);
 
   res = res & Limit(&c->suppressor.floor_first_increase, 0.f, 1000000.f);
 

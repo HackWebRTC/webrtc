@@ -349,6 +349,11 @@ void Aec3ConfigFromJsonString(absl::string_view json_string,
                 &cfg.suppressor.high_bands_suppression.enr_threshold);
       ReadParam(subsection, "max_gain_during_echo",
                 &cfg.suppressor.high_bands_suppression.max_gain_during_echo);
+      ReadParam(subsection, "anti_howling_activation_threshold",
+                &cfg.suppressor.high_bands_suppression
+                     .anti_howling_activation_threshold);
+      ReadParam(subsection, "anti_howling_gain",
+                &cfg.suppressor.high_bands_suppression.anti_howling_gain);
     }
 
     ReadParam(section, "floor_first_increase",
@@ -602,7 +607,13 @@ std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config) {
   ost << "\"enr_threshold\": "
       << config.suppressor.high_bands_suppression.enr_threshold << ",";
   ost << "\"max_gain_during_echo\": "
-      << config.suppressor.high_bands_suppression.max_gain_during_echo;
+      << config.suppressor.high_bands_suppression.max_gain_during_echo << ",";
+  ost << "\"anti_howling_activation_threshold\": "
+      << config.suppressor.high_bands_suppression
+             .anti_howling_activation_threshold
+      << ",";
+  ost << "\"anti_howling_gain\": "
+      << config.suppressor.high_bands_suppression.anti_howling_gain;
   ost << "},";
   ost << "\"floor_first_increase\": " << config.suppressor.floor_first_increase;
   ost << "}";

@@ -197,6 +197,8 @@ struct RTC_EXPORT EchoCanceller3Config {
     struct HighBandsSuppression {
       float enr_threshold = 1.f;
       float max_gain_during_echo = 1.f;
+      float anti_howling_activation_threshold = 25.f;
+      float anti_howling_gain = 0.01f;
     } high_bands_suppression;
 
     float floor_first_increase = 0.00001f;
