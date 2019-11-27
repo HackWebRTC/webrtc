@@ -286,6 +286,14 @@ const Candidate& Connection::remote_candidate() const {
   return remote_candidate_;
 }
 
+const rtc::Network* Connection::network() const {
+  return port()->Network();
+}
+
+int Connection::generation() const {
+  return port()->generation();
+}
+
 uint64_t Connection::priority() const {
   uint64_t priority = 0;
   // RFC 5245 - 5.7.2.  Computing Pair Priority and Ordering Pairs

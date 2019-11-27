@@ -24,8 +24,8 @@
 #include "p2p/base/transport_description.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/message_handler.h"
+#include "rtc_base/network.h"
 #include "rtc_base/rate_tracker.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace cricket {
 
@@ -81,18 +81,19 @@ class Connection : public CandidatePairInterface,
   // A unique ID assigned when the connection is created.
   uint32_t id() { return id_; }
 
-  // The local port where this connection sends and receives packets.
-  Port* port() { return port_; }
-  const Port* port() const { return port_; }
-
   // Implementation of virtual methods in CandidatePairInterface.
   // Returns the description of the local port
   const Candidate& local_candidate() const override;
   // Returns the description of the remote port to which we communicate.
   const Candidate& remote_candidate() const override;
 
+  // Return local network for this connection.
+  virtual const rtc::Network* network() const;
+  // Return generation for this connection.
+  virtual int generation() const;
+
   // Returns the pair priority.
-  uint64_t priority() const;
+  virtual uint64_t priority() const;
 
   enum WriteState {
     STATE_WRITABLE = 0,          // we have received ping responses recently
@@ -297,6 +298,10 @@ class Connection : public CandidatePairInterface,
   // Check if we sent |val| pings without receving a response.
   bool TooManyOutstandingPings(const absl::optional<int>& val) const;
 
+  // An accessor for unit tests.
+  Port* PortForTest() { return port_; }
+  const Port* PortForTest() const { return port_; }
+
  protected:
   enum { MSG_DELETE = 0, MSG_FIRST_AVAILABLE };
 
@@ -329,6 +334,10 @@ class Connection : public CandidatePairInterface,
   uint32_t nomination() const { return nomination_; }
 
   void OnMessage(rtc::Message* pmsg) override;
+
+  // The local port where this connection sends and receives packets.
+  Port* port() { return port_; }
+  const Port* port() const { return port_; }
 
   uint32_t id_;
   Port* port_;
@@ -407,6 +416,7 @@ class Connection : public CandidatePairInterface,
 
   friend class Port;
   friend class ConnectionRequest;
+  friend class P2PTransportChannel;
 };
 
 // ProxyConnection defers all the interesting work to the port.

@@ -132,6 +132,8 @@ P2PTransportChannel::P2PTransportChannel(
       [this] { return GetState(); },
       [this] { return GetIceRole(); },
       [this](const Connection* connection) {
+        // TODO(webrtc:10647/jonaso): Figure out a way to remove friendship
+        // between P2PTransportChannel and Connection.
         return IsPortPruned(connection->port()) ||
                IsRemoteCandidatePruned(connection->remote_candidate());
       },
@@ -355,9 +357,9 @@ IceTransportState P2PTransportChannel::ComputeState() const {
     return IceTransportState::STATE_FAILED;
   }
 
-  std::set<rtc::Network*> networks;
+  std::set<const rtc::Network*> networks;
   for (Connection* connection : active_connections) {
-    rtc::Network* network = connection->port()->Network();
+    const rtc::Network* network = connection->network();
     if (networks.find(network) == networks.end()) {
       networks.insert(network);
     } else {

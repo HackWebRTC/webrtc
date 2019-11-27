@@ -2067,9 +2067,9 @@ TEST_F(P2PTransportChannelTest, TestUsingPooledSessionBeforeDoneGathering) {
   auto pooled_ports_1 = pooled_session_1->ReadyPorts();
   auto pooled_ports_2 = pooled_session_2->ReadyPorts();
   EXPECT_THAT(pooled_ports_1,
-              Contains(ep1_ch1()->selected_connection()->port()));
+              Contains(ep1_ch1()->selected_connection()->PortForTest()));
   EXPECT_THAT(pooled_ports_2,
-              Contains(ep2_ch1()->selected_connection()->port()));
+              Contains(ep2_ch1()->selected_connection()->PortForTest()));
 }
 
 // Test that a connection succeeds when the P2PTransportChannel uses a pooled
@@ -2109,9 +2109,9 @@ TEST_F(P2PTransportChannelTest, TestUsingPooledSessionAfterDoneGathering) {
   auto pooled_ports_1 = pooled_session_1->ReadyPorts();
   auto pooled_ports_2 = pooled_session_2->ReadyPorts();
   EXPECT_THAT(pooled_ports_1,
-              Contains(ep1_ch1()->selected_connection()->port()));
+              Contains(ep1_ch1()->selected_connection()->PortForTest()));
   EXPECT_THAT(pooled_ports_2,
-              Contains(ep2_ch1()->selected_connection()->port()));
+              Contains(ep2_ch1()->selected_connection()->PortForTest()));
 }
 
 // Test that when the "presume_writable_when_fully_relayed" flag is set to
@@ -4389,10 +4389,10 @@ TEST_F(P2PTransportChannelPingTest, TestIceRoleUpdatedOnRemovedPort) {
 
   // Make a fake signal to remove the ports in the p2ptransportchannel. then
   // change the ICE role and expect it to be updated.
-  std::vector<PortInterface*> ports(1, conn->port());
+  std::vector<PortInterface*> ports(1, conn->PortForTest());
   ch.allocator_session()->SignalPortsPruned(ch.allocator_session(), ports);
   ch.SetIceRole(ICEROLE_CONTROLLED);
-  EXPECT_EQ(ICEROLE_CONTROLLED, conn->port()->GetIceRole());
+  EXPECT_EQ(ICEROLE_CONTROLLED, conn->PortForTest()->GetIceRole());
 }
 
 // Test that the ICE role is updated even on ports with inactive networks.
@@ -4415,7 +4415,7 @@ TEST_F(P2PTransportChannelPingTest, TestIceRoleUpdatedOnPortAfterIceRestart) {
   ch.SetIceParameters(kIceParams[1]);
   ch.MaybeStartGathering();
   ch.SetIceRole(ICEROLE_CONTROLLED);
-  EXPECT_EQ(ICEROLE_CONTROLLED, conn->port()->GetIceRole());
+  EXPECT_EQ(ICEROLE_CONTROLLED, conn->PortForTest()->GetIceRole());
 }
 
 // Test that after some amount of time without receiving data, the connection

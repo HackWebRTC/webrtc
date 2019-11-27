@@ -33,7 +33,7 @@ static constexpr int a_and_b_equal = 0;
 bool LocalCandidateUsesPreferredNetwork(
     const cricket::Connection* conn,
     absl::optional<rtc::AdapterType> network_preference) {
-  rtc::AdapterType network_type = conn->port()->Network()->type();
+  rtc::AdapterType network_type = conn->network()->type();
   return network_preference.has_value() && (network_type == network_preference);
 }
 
@@ -380,19 +380,19 @@ const Connection* BasicIceController::LeastRecentlyPinged(
   return nullptr;
 }
 
-std::map<rtc::Network*, const Connection*>
+std::map<const rtc::Network*, const Connection*>
 BasicIceController::GetBestConnectionByNetwork() const {
   // |connections_| has been sorted, so the first one in the list on a given
   // network is the best connection on the network, except that the selected
   // connection is always the best connection on the network.
-  std::map<rtc::Network*, const Connection*> best_connection_by_network;
+  std::map<const rtc::Network*, const Connection*> best_connection_by_network;
   if (selected_connection_) {
-    best_connection_by_network[selected_connection_->port()->Network()] =
+    best_connection_by_network[selected_connection_->network()] =
         selected_connection_;
   }
   // TODO(honghaiz): Need to update this if |connections_| are not sorted.
   for (const Connection* conn : connections_) {
-    rtc::Network* network = conn->port()->Network();
+    const rtc::Network* network = conn->network();
     // This only inserts when the network does not exist in the map.
     best_connection_by_network.insert(std::make_pair(network, conn));
   }
@@ -660,8 +660,8 @@ int BasicIceController::CompareConnectionCandidates(const Connection* a,
 
   // If we're still tied at this point, prefer a younger generation.
   // (Younger generation means a larger generation number).
-  int cmp = (a->remote_candidate().generation() + a->port()->generation()) -
-            (b->remote_candidate().generation() + b->port()->generation());
+  int cmp = (a->remote_candidate().generation() + a->generation()) -
+            (b->remote_candidate().generation() + b->generation());
   if (cmp != 0) {
     return cmp;
   }
@@ -766,13 +766,13 @@ std::vector<const Connection*> BasicIceController::PruneConnections() {
   auto best_connection_by_network = GetBestConnectionByNetwork();
   for (const Connection* conn : connections_) {
     const Connection* best_conn = selected_connection_;
-    if (!rtc::IPIsAny(conn->port()->Network()->ip())) {
+    if (!rtc::IPIsAny(conn->network()->ip())) {
       // If the connection is bound to a specific network interface (not an
       // "any address" network), compare it against the best connection for
       // that network interface rather than the best connection overall. This
       // ensures that at least one connection per network will be left
       // unpruned.
-      best_conn = best_connection_by_network[conn->port()->Network()];
+      best_conn = best_connection_by_network[conn->network()];
     }
     // Do not prune connections if the connection being compared against is
     // weak. Otherwise, it may delete connections prematurely.
