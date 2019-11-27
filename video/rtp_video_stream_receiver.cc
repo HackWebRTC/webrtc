@@ -214,7 +214,8 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
       rtcp_feedback_buffer_(this, nack_sender, this),
       packet_buffer_(clock_, kPacketBufferStartSize, PacketBufferMaxSize()),
       has_received_frame_(false),
-      frames_decryptable_(false) {
+      frames_decryptable_(false),
+      absolute_capture_time_receiver_(clock) {
   constexpr bool remb_candidate = true;
   if (packet_router_)
     packet_router_->AddReceiveRtpModule(rtp_rtcp_.get(), remb_candidate);
@@ -330,6 +331,18 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
   video_coding::PacketBuffer::Packet packet(
       rtp_packet, video, ntp_estimator_.Estimate(rtp_packet.Timestamp()),
       clock_->TimeInMilliseconds());
+
+  // Try to extrapolate absolute capture time if it is missing.
+  // TODO(bugs.webrtc.org/10739): Add support for estimated capture clock
+  // offset.
+  packet.packet_info.set_absolute_capture_time(
+      absolute_capture_time_receiver_.OnReceivePacket(
+          AbsoluteCaptureTimeReceiver::GetSource(packet.packet_info.ssrc(),
+                                                 packet.packet_info.csrcs()),
+          packet.packet_info.rtp_timestamp(),
+          // Assume frequency is the same one for all video frames.
+          kVideoPayloadTypeFrequency,
+          packet.packet_info.absolute_capture_time()));
 
   RTPVideoHeader& video_header = packet.video_header;
   video_header.rotation = kVideoRotation_0;
