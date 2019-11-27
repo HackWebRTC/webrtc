@@ -32,10 +32,9 @@ class EchoControl {
   virtual void ProcessCapture(AudioBuffer* capture, bool echo_path_change) = 0;
 
   // As above, but also returns the linear filter output.
-  // TODO(peah): Make pure virtual.
   virtual void ProcessCapture(AudioBuffer* capture,
                               AudioBuffer* linear_output,
-                              bool level_change) {}
+                              bool level_change) = 0;
 
   struct Metrics {
     double echo_return_loss;
