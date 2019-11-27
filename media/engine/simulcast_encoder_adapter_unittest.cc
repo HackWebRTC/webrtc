@@ -871,6 +871,26 @@ TEST_F(TestSimulcastEncoderAdapterFake, SupportsImplementationName) {
   EXPECT_EQ("codec1", adapter_->GetEncoderInfo().implementation_name);
 }
 
+TEST_F(TestSimulcastEncoderAdapterFake, RuntimeEncoderInfoUpdate) {
+  SimulcastTestFixtureImpl::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile),
+      kVideoCodecVP8);
+  std::vector<const char*> encoder_names;
+  encoder_names.push_back("codec1");
+  encoder_names.push_back("codec2");
+  encoder_names.push_back("codec3");
+  helper_->factory()->SetEncoderNames(encoder_names);
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, kSettings));
+  EXPECT_EQ("SimulcastEncoderAdapter (codec1, codec2, codec3)",
+            adapter_->GetEncoderInfo().implementation_name);
+
+  // Change name of first encoder to indicate it has done a fallback to another
+  // implementation.
+  helper_->factory()->encoders().front()->set_implementation_name("fallback1");
+  EXPECT_EQ("SimulcastEncoderAdapter (fallback1, codec2, codec3)",
+            adapter_->GetEncoderInfo().implementation_name);
+}
+
 TEST_F(TestSimulcastEncoderAdapterFake,
        SupportsNativeHandleForMultipleStreams) {
   SimulcastTestFixtureImpl::DefaultSettings(

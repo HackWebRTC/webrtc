@@ -47,7 +47,7 @@ class RTC_EXPORT SimulcastEncoderAdapter : public VideoEncoder {
   SimulcastEncoderAdapter(VideoEncoderFactory* primary_factory,
                           VideoEncoderFactory* fallback_factory,
                           const SdpVideoFormat& format);
-  virtual ~SimulcastEncoderAdapter();
+  ~SimulcastEncoderAdapter() override;
 
   // Implements VideoEncoder.
   void SetFecControllerOverride(
@@ -119,7 +119,6 @@ class RTC_EXPORT SimulcastEncoderAdapter : public VideoEncoder {
   VideoCodec codec_;
   std::vector<StreamInfo> streaminfos_;
   EncodedImageCallback* encoded_complete_callback_;
-  EncoderInfo encoder_info_;
 
   // Used for checking the single-threaded access of the encoder interface.
   SequenceChecker encoder_queue_;

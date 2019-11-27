@@ -151,7 +151,6 @@ SimulcastEncoderAdapter::SimulcastEncoderAdapter(
       boost_base_layer_quality_(RateControlSettings::ParseFromFieldTrials()
                                     .Vp8BoostBaseLayerQuality()) {
   RTC_DCHECK(primary_factory);
-  encoder_info_.implementation_name = "SimulcastEncoderAdapter";
 
   // The adapter is typically created on the worker thread, but operated on
   // the encoder task queue.
@@ -229,10 +228,7 @@ int SimulcastEncoderAdapter::InitEncode(
     start_bitrates.push_back(stream_bitrate);
   }
 
-  encoder_info_.supports_native_handle = true;
-  encoder_info_.scaling_settings.thresholds = absl::nullopt;
   // Create |number_of_streams| of encoder instances and init them.
-
   const auto minmax = std::minmax_element(
       std::begin(codec_.simulcastStream),
       std::begin(codec_.simulcastStream) + number_of_streams,
@@ -321,7 +317,6 @@ int SimulcastEncoderAdapter::InitEncode(
     if (!doing_simulcast_using_adapter) {
       // Without simulcast, just pass through the encoder info from the one
       // active encoder.
-      encoder_info_ = encoder->GetEncoderInfo();
       encoder->RegisterEncodeCompleteCallback(encoded_complete_callback_);
       streaminfos_.emplace_back(std::move(encoder), nullptr, stream_codec.width,
                                 stream_codec.height, send_stream);
@@ -332,57 +327,7 @@ int SimulcastEncoderAdapter::InitEncode(
       streaminfos_.emplace_back(std::move(encoder), std::move(callback),
                                 stream_codec.width, stream_codec.height,
                                 send_stream);
-
-      const EncoderInfo encoder_impl_info =
-          streaminfos_[i].encoder->GetEncoderInfo();
-
-      if (i == 0) {
-        // Quality scaling not enabled for simulcast.
-        encoder_info_.scaling_settings = VideoEncoder::ScalingSettings::kOff;
-
-        // Encoder name indicates names of all sub-encoders.
-        encoder_info_.implementation_name = "SimulcastEncoderAdapter (";
-        encoder_info_.implementation_name +=
-            encoder_impl_info.implementation_name;
-
-        encoder_info_.supports_native_handle =
-            encoder_impl_info.supports_native_handle;
-        encoder_info_.has_trusted_rate_controller =
-            encoder_impl_info.has_trusted_rate_controller;
-        encoder_info_.is_hardware_accelerated =
-            encoder_impl_info.is_hardware_accelerated;
-        encoder_info_.has_internal_source =
-            encoder_impl_info.has_internal_source;
-      } else {
-        encoder_info_.implementation_name += ", ";
-        encoder_info_.implementation_name +=
-            encoder_impl_info.implementation_name;
-
-        // Native handle supported only if all encoders supports it.
-        encoder_info_.supports_native_handle &=
-            encoder_impl_info.supports_native_handle;
-
-        // Trusted rate controller only if all encoders have it.
-        encoder_info_.has_trusted_rate_controller &=
-            encoder_impl_info.has_trusted_rate_controller;
-
-        // Uses hardware support if any of the encoders uses it.
-        // For example, if we are having issues with down-scaling due to
-        // pipelining delay in HW encoders we need higher encoder usage
-        // thresholds in CPU adaptation.
-        encoder_info_.is_hardware_accelerated |=
-            encoder_impl_info.is_hardware_accelerated;
-
-        // Has internal source only if all encoders have it.
-        encoder_info_.has_internal_source &=
-            encoder_impl_info.has_internal_source;
-      }
-      encoder_info_.fps_allocation[i] = encoder_impl_info.fps_allocation[0];
     }
-  }
-
-  if (doing_simulcast_using_adapter) {
-    encoder_info_.implementation_name += ")";
   }
 
   // To save memory, don't store encoders that we don't use.
@@ -658,7 +603,65 @@ void SimulcastEncoderAdapter::DestroyStoredEncoders() {
 }
 
 VideoEncoder::EncoderInfo SimulcastEncoderAdapter::GetEncoderInfo() const {
-  return encoder_info_;
+  if (streaminfos_.size() == 1) {
+    // Not using simulcast adapting functionality, just pass through.
+    return streaminfos_[0].encoder->GetEncoderInfo();
+  }
+
+  VideoEncoder::EncoderInfo encoder_info;
+  encoder_info.implementation_name = "SimulcastEncoderAdapter";
+  encoder_info.supports_native_handle = true;
+  encoder_info.scaling_settings.thresholds = absl::nullopt;
+  if (streaminfos_.empty()) {
+    return encoder_info;
+  }
+
+  for (size_t i = 0; i < streaminfos_.size(); ++i) {
+    VideoEncoder::EncoderInfo encoder_impl_info =
+        streaminfos_[i].encoder->GetEncoderInfo();
+
+    if (i == 0) {
+      // Quality scaling not enabled for simulcast.
+      encoder_info.scaling_settings = VideoEncoder::ScalingSettings::kOff;
+
+      // Encoder name indicates names of all sub-encoders.
+      encoder_info.implementation_name += " (";
+      encoder_info.implementation_name += encoder_impl_info.implementation_name;
+
+      encoder_info.supports_native_handle =
+          encoder_impl_info.supports_native_handle;
+      encoder_info.has_trusted_rate_controller =
+          encoder_impl_info.has_trusted_rate_controller;
+      encoder_info.is_hardware_accelerated =
+          encoder_impl_info.is_hardware_accelerated;
+      encoder_info.has_internal_source = encoder_impl_info.has_internal_source;
+    } else {
+      encoder_info.implementation_name += ", ";
+      encoder_info.implementation_name += encoder_impl_info.implementation_name;
+
+      // Native handle supported only if all encoders supports it.
+      encoder_info.supports_native_handle &=
+          encoder_impl_info.supports_native_handle;
+
+      // Trusted rate controller only if all encoders have it.
+      encoder_info.has_trusted_rate_controller &=
+          encoder_impl_info.has_trusted_rate_controller;
+
+      // Uses hardware support if any of the encoders uses it.
+      // For example, if we are having issues with down-scaling due to
+      // pipelining delay in HW encoders we need higher encoder usage
+      // thresholds in CPU adaptation.
+      encoder_info.is_hardware_accelerated |=
+          encoder_impl_info.is_hardware_accelerated;
+
+      // Has internal source only if all encoders have it.
+      encoder_info.has_internal_source &= encoder_impl_info.has_internal_source;
+    }
+    encoder_info.fps_allocation[i] = encoder_impl_info.fps_allocation[0];
+  }
+  encoder_info.implementation_name += ")";
+
+  return encoder_info;
 }
 
 }  // namespace webrtc

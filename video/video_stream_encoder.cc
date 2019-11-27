@@ -1440,6 +1440,11 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
     }
   }
 
+  if (encoder_info_ != info) {
+    RTC_LOG(LS_INFO) << "Encoder settings changed from "
+                     << encoder_info_.ToString() << " to " << info.ToString();
+  }
+
   if (bitrate_adjuster_) {
     for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
       if (info.fps_allocation[si] != encoder_info_.fps_allocation[si]) {

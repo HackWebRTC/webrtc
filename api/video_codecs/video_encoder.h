@@ -141,6 +141,11 @@ class RTC_EXPORT VideoEncoder {
     int min_bitrate_bps = 0;
     // Recommended maximum bitrate.
     int max_bitrate_bps = 0;
+
+    bool operator==(const ResolutionBitrateLimits& rhs) const;
+    bool operator!=(const ResolutionBitrateLimits& rhs) const {
+      return !(*this == rhs);
+    }
   };
 
   // Struct containing metadata about the encoder implementing this interface.
@@ -152,6 +157,10 @@ class RTC_EXPORT VideoEncoder {
     EncoderInfo(const EncoderInfo&);
 
     ~EncoderInfo();
+
+    std::string ToString() const;
+    bool operator==(const EncoderInfo& rhs) const;
+    bool operator!=(const EncoderInfo& rhs) const { return !(*this == rhs); }
 
     // Any encoder implementation wishing to use the WebRTC provided
     // quality scaler must populate this field.
