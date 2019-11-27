@@ -29,7 +29,7 @@ class EchoControl {
   virtual void AnalyzeCapture(AudioBuffer* capture) = 0;
 
   // Processes the capture signal in order to remove the echo.
-  virtual void ProcessCapture(AudioBuffer* capture, bool echo_path_change) = 0;
+  virtual void ProcessCapture(AudioBuffer* capture, bool level_change) = 0;
 
   // As above, but also returns the linear filter output.
   virtual void ProcessCapture(AudioBuffer* capture,
