@@ -18,6 +18,16 @@
 #include "rtc_base/checks.h"
 
 namespace webrtc {
+namespace {
+constexpr char kPayloadNameVp8[] = "VP8";
+constexpr char kPayloadNameVp9[] = "VP9";
+// TODO(bugs.webrtc.org/11042): Rename to AV1 when rtp payload format for av1 is
+// frozen.
+constexpr char kPayloadNameAv1[] = "AV1X";
+constexpr char kPayloadNameH264[] = "H264";
+constexpr char kPayloadNameGeneric[] = "Generic";
+constexpr char kPayloadNameMultiplex[] = "Multiplex";
+}  // namespace
 
 bool VideoCodecVP8::operator==(const VideoCodecVP8& other) const {
   return (complexity == other.complexity &&
@@ -104,22 +114,19 @@ const VideoCodecH264& VideoCodec::H264() const {
   return codec_specific_.H264;
 }
 
-static const char* kPayloadNameVp8 = "VP8";
-static const char* kPayloadNameVp9 = "VP9";
-static const char* kPayloadNameH264 = "H264";
-static const char* kPayloadNameGeneric = "Generic";
-static const char* kPayloadNameMultiplex = "Multiplex";
-
 const char* CodecTypeToPayloadString(VideoCodecType type) {
   switch (type) {
     case kVideoCodecVP8:
       return kPayloadNameVp8;
     case kVideoCodecVP9:
       return kPayloadNameVp9;
+    case kVideoCodecAV1:
+      return kPayloadNameAv1;
     case kVideoCodecH264:
       return kPayloadNameH264;
-    // Other codecs default to generic.
-    default:
+    case kVideoCodecMultiplex:
+      return kPayloadNameMultiplex;
+    case kVideoCodecGeneric:
       return kPayloadNameGeneric;
   }
 }
@@ -129,6 +136,8 @@ VideoCodecType PayloadStringToCodecType(const std::string& name) {
     return kVideoCodecVP8;
   if (absl::EqualsIgnoreCase(name, kPayloadNameVp9))
     return kVideoCodecVP9;
+  if (absl::EqualsIgnoreCase(name, kPayloadNameAv1))
+    return kVideoCodecAV1;
   if (absl::EqualsIgnoreCase(name, kPayloadNameH264))
     return kVideoCodecH264;
   if (absl::EqualsIgnoreCase(name, kPayloadNameMultiplex))

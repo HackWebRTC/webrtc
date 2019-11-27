@@ -19,6 +19,7 @@
 #include "absl/strings/match.h"
 #include "api/array_view.h"
 #include "api/transport/field_trial_based_config.h"
+#include "api/video_codecs/video_codec.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
@@ -273,19 +274,10 @@ DataRate CalculateOverheadRate(DataRate data_rate,
 }
 
 absl::optional<VideoCodecType> GetVideoCodecType(const RtpConfig& config) {
-  absl::optional<VideoCodecType> video_type;
-  if (!config.raw_payload) {
-    if (absl::EqualsIgnoreCase(config.payload_name, "VP8")) {
-      video_type = kVideoCodecVP8;
-    } else if (absl::EqualsIgnoreCase(config.payload_name, "VP9")) {
-      video_type = kVideoCodecVP9;
-    } else if (absl::EqualsIgnoreCase(config.payload_name, "H264")) {
-      video_type = kVideoCodecH264;
-    } else {
-      video_type = kVideoCodecGeneric;
-    }
+  if (config.raw_payload) {
+    return absl::nullopt;
   }
-  return video_type;
+  return PayloadStringToCodecType(config.payload_name);
 }
 }  // namespace
 
