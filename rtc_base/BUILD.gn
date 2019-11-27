@@ -104,7 +104,6 @@ rtc_library("rtc_base_approved") {
     "rate_tracker.cc",
     "rate_tracker.h",
     "swap_queue.h",
-    "template_util.h",
     "timestamp_aligner.cc",
     "timestamp_aligner.h",
     "trace_event.h",
