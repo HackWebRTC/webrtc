@@ -21,14 +21,10 @@ import android.content.pm.PackageManager;
 import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
 import android.media.AudioManager;
-import android.media.AudioRecordingConfiguration;
 import android.media.MediaRecorder.AudioSource;
 import android.os.Build;
-import android.os.Process;
 import java.lang.Thread;
 import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
 import org.webrtc.Logging;
 
 final class WebRtcAudioUtils {

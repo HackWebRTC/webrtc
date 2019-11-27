@@ -15,8 +15,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.annotation.TargetApi;
-import android.opengl.GLES11Ext;
-import android.opengl.GLES20;
 import android.os.Build;
 import android.support.test.filters.SmallTest;
 import android.util.Log;

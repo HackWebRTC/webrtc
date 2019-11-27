@@ -19,7 +19,6 @@ import android.media.MediaCodecList;
 import android.os.Build;
 import android.support.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /** Factory for decoders backed by Android MediaCodec API. */

@@ -13,7 +13,6 @@ package org.webrtc;
 import android.support.annotation.Nullable;
 import java.lang.Double;
 import java.lang.String;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.webrtc.MediaStreamTrack;
