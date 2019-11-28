@@ -51,6 +51,10 @@ EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
     adjusted_cfg.erle.clamp_quality_estimate_to_one = false;
   }
 
+  if (field_trial::IsEnabled("WebRTC-Aec3AlignmentOnLeftChannelKillSwitch")) {
+    adjusted_cfg.delay.downmix_before_delay_estimation = true;
+  }
+
   return adjusted_cfg;
 }
 
