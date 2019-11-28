@@ -998,7 +998,10 @@ TEST_F(RTCStatsIntegrationTest, GetStatsFromCaller) {
 
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsFromCaller();
   RTCStatsReportVerifier(report.get()).VerifyReport({});
+
+  #if RTC_TRACE_EVENTS_ENABLED
   EXPECT_EQ(report->ToJson(), RTCStatsReportTraceListener::last_trace());
+  #endif
 }
 
 TEST_F(RTCStatsIntegrationTest, GetStatsFromCallee) {
@@ -1006,7 +1009,10 @@ TEST_F(RTCStatsIntegrationTest, GetStatsFromCallee) {
 
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsFromCallee();
   RTCStatsReportVerifier(report.get()).VerifyReport({});
+
+  #if RTC_TRACE_EVENTS_ENABLED
   EXPECT_EQ(report->ToJson(), RTCStatsReportTraceListener::last_trace());
+  #endif
 }
 
 // These tests exercise the integration of the stats selection algorithm inside
@@ -1086,8 +1092,10 @@ TEST_F(RTCStatsIntegrationTest,
   // Any pending stats requests should have completed in the act of destroying
   // the peer connection.
   ASSERT_TRUE(stats_obtainer->report());
+  #if RTC_TRACE_EVENTS_ENABLED
   EXPECT_EQ(stats_obtainer->report()->ToJson(),
             RTCStatsReportTraceListener::last_trace());
+  #endif
 }
 
 TEST_F(RTCStatsIntegrationTest, GetsStatsWhileClosingPeerConnection) {
@@ -1099,8 +1107,10 @@ TEST_F(RTCStatsIntegrationTest, GetsStatsWhileClosingPeerConnection) {
   caller_->pc()->Close();
 
   ASSERT_TRUE(stats_obtainer->report());
+  #if RTC_TRACE_EVENTS_ENABLED
   EXPECT_EQ(stats_obtainer->report()->ToJson(),
             RTCStatsReportTraceListener::last_trace());
+  #endif
 }
 
 // GetStatsReferencedIds() is optimized to recognize what is or isn't a

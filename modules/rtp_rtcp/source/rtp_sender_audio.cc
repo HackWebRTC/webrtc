@@ -30,6 +30,7 @@ namespace webrtc {
 
 namespace {
 
+#if RTC_TRACE_EVENTS_ENABLED
 const char* FrameTypeToString(AudioFrameType frame_type) {
   switch (frame_type) {
     case AudioFrameType::kEmptyFrame:
@@ -40,6 +41,7 @@ const char* FrameTypeToString(AudioFrameType frame_type) {
       return "audio_cn";
   }
 }
+#endif
 
 }  // namespace
 
@@ -133,8 +135,10 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
                                uint32_t rtp_timestamp,
                                const uint8_t* payload_data,
                                size_t payload_size) {
+  #if RTC_TRACE_EVENTS_ENABLED
   TRACE_EVENT_ASYNC_STEP1("webrtc", "Audio", rtp_timestamp, "Send", "type",
                           FrameTypeToString(frame_type));
+  #endif
 
   // From RFC 4733:
   // A source has wide latitude as to how often it sends event updates. A

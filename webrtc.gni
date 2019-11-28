@@ -245,6 +245,9 @@ declare_args() {
 
   # Set this to true to fully remove logging from WebRTC.
   rtc_disable_logging = false
+
+  # Set this to true to disable trace events.
+  rtc_disable_trace_events = false
 }
 
 # Make it possible to provide custom locations for some libraries (move these

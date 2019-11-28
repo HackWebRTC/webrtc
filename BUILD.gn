@@ -263,6 +263,10 @@ config("common_config") {
     defines += [ "RTC_DISABLE_LOGGING" ]
   }
 
+  if (rtc_disable_trace_events) {
+    defines += [ "RTC_DISABLE_TRACE_EVENTS" ]
+  }
+
   if (build_with_chromium) {
     defines += [
       # NOTICE: Since common_inherited_config is used in public_configs for our
