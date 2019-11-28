@@ -173,6 +173,7 @@ if (rtc_include_tests) {
       ":system_wrappers",
       "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
+      "../test:rtc_expect_death",
       "../test:test_main",
       "../test:test_support",
       "//testing/gtest",

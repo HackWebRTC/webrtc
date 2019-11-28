@@ -1168,6 +1168,7 @@ if (rtc_include_tests) {
       "buffer_unittest.cc",
       "byte_buffer_unittest.cc",
       "byte_order_unittest.cc",
+      "checks_unittest.cc",
       "copy_on_write_buffer_unittest.cc",
       "critical_section_unittest.cc",
       "event_tracer_unittest.cc",

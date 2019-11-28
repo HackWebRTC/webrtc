@@ -385,6 +385,7 @@ if (rtc_include_tests) {
       ":fileutils",
       ":fileutils_unittests",
       ":perf_test",
+      ":rtc_expect_death",
       ":rtp_test_utils",
       ":test_main",
       ":test_support",
@@ -711,6 +712,16 @@ rtc_library("encoder_settings") {
     "../call:video_stream_api",
     "../rtc_base:checks",
     "../rtc_base:refcount",
+  ]
+}
+
+rtc_library("rtc_expect_death") {
+  testonly = true
+  sources = [
+    "testsupport/rtc_expect_death.h",
+  ]
+  deps = [
+    ":test_support",
   ]
 }
 

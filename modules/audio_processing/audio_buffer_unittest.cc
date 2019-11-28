@@ -11,7 +11,9 @@
 #include "modules/audio_processing/audio_buffer.h"
 
 #include <cmath>
+
 #include "test/gtest.h"
+#include "test/testsupport/rtc_expect_death.h"
 
 namespace webrtc {
 
@@ -41,7 +43,7 @@ TEST(AudioBufferTest, SetNumChannelsSetsChannelBuffersNumChannels) {
 TEST(AudioBufferTest, SetNumChannelsDeathTest) {
   AudioBuffer ab(kSampleRateHz, kMono, kSampleRateHz, kMono, kSampleRateHz,
                  kMono);
-  EXPECT_DEATH(ab.set_num_channels(kStereo), "num_channels");
+  RTC_EXPECT_DEATH(ab.set_num_channels(kStereo), "num_channels");
 }
 #endif
 

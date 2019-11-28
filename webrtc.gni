@@ -248,6 +248,10 @@ declare_args() {
 
   # Set this to true to disable trace events.
   rtc_disable_trace_events = false
+
+  # Set this to true to disable detailed error message and logging for
+  # RTC_CHECKs.
+  rtc_disable_check_msg = false
 }
 
 # Make it possible to provide custom locations for some libraries (move these

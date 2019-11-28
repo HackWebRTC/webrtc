@@ -366,6 +366,7 @@ if (rtc_include_tests) {
       "../rtc_base/system:arch",
       "../system_wrappers:cpu_features_api",
       "../test:fileutils",
+      "../test:rtc_expect_death",
       "../test:test_main",
       "../test:test_support",
       "//testing/gtest",

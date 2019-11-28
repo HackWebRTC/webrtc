@@ -11,6 +11,7 @@
 
 #include "rtc_base/checks.h"
 #include "test/gtest.h"
+#include "test/testsupport/rtc_expect_death.h"
 
 namespace webrtc {
 namespace field_trial {
@@ -28,23 +29,24 @@ TEST(FieldTrialValidationTest, AcceptsValidInputs) {
 
 TEST(FieldTrialValidationTest, RejectsBadInputs) {
   // Bad delimiters
-  EXPECT_DEATH(InitFieldTrialsFromString("Audio/EnabledVideo/Disabled/"),
-               "Invalid field trials string:");
-  EXPECT_DEATH(InitFieldTrialsFromString("Audio/Enabled//Video/Disabled/"),
-               "Invalid field trials string:");
-  EXPECT_DEATH(InitFieldTrialsFromString("/Audio/Enabled/Video/Disabled/"),
-               "Invalid field trials string:");
-  EXPECT_DEATH(InitFieldTrialsFromString("Audio/Enabled/Video/Disabled"),
-               "Invalid field trials string:");
-  EXPECT_DEATH(
+  RTC_EXPECT_DEATH(InitFieldTrialsFromString("Audio/EnabledVideo/Disabled/"),
+                   "Invalid field trials string:");
+  RTC_EXPECT_DEATH(InitFieldTrialsFromString("Audio/Enabled//Video/Disabled/"),
+                   "Invalid field trials string:");
+  RTC_EXPECT_DEATH(InitFieldTrialsFromString("/Audio/Enabled/Video/Disabled/"),
+                   "Invalid field trials string:");
+  RTC_EXPECT_DEATH(InitFieldTrialsFromString("Audio/Enabled/Video/Disabled"),
+                   "Invalid field trials string:");
+  RTC_EXPECT_DEATH(
       InitFieldTrialsFromString("Audio/Enabled/Video/Disabled/garbage"),
       "Invalid field trials string:");
 
   // Duplicate trials with different values is not fine
-  EXPECT_DEATH(InitFieldTrialsFromString("Audio/Enabled/Audio/Disabled/"),
-               "Invalid field trials string:");
-  EXPECT_DEATH(InitFieldTrialsFromString("Audio/Enabled/B/C/Audio/Disabled/"),
-               "Invalid field trials string:");
+  RTC_EXPECT_DEATH(InitFieldTrialsFromString("Audio/Enabled/Audio/Disabled/"),
+                   "Invalid field trials string:");
+  RTC_EXPECT_DEATH(
+      InitFieldTrialsFromString("Audio/Enabled/B/C/Audio/Disabled/"),
+      "Invalid field trials string:");
 }
 #endif  // GTEST_HAS_DEATH_TEST && RTC_DCHECK_IS_ON && !defined(WEBRTC_ANDROID)
         // && !defined(WEBRTC_EXCLUDE_FIELD_TRIAL_DEFAULT)
