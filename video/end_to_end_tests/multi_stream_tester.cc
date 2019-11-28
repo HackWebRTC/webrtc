@@ -49,6 +49,8 @@ void MultiStreamTester::RunTest() {
   auto task_queue = task_queue_factory->CreateTaskQueue(
       "TaskQueue", TaskQueueFactory::Priority::HIGH);
   Call::Config config(&event_log);
+  FieldTrialBasedConfig field_trials;
+  config.trials = &field_trials;
   config.task_queue_factory = task_queue_factory.get();
   std::unique_ptr<Call> sender_call;
   std::unique_ptr<Call> receiver_call;

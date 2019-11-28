@@ -222,12 +222,14 @@ void CallTest::CreateSenderCall(const Call::Config& config) {
   sender_config.network_state_predictor_factory =
       network_state_predictor_factory_.get();
   sender_config.network_controller_factory = network_controller_factory_.get();
+  sender_config.trials = &field_trials_;
   sender_call_.reset(Call::Create(sender_config));
 }
 
 void CallTest::CreateReceiverCall(const Call::Config& config) {
   auto receiver_config = config;
   receiver_config.task_queue_factory = task_queue_factory_.get();
+  receiver_config.trials = &field_trials_;
   receiver_call_.reset(Call::Create(receiver_config));
 }
 

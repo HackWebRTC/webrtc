@@ -65,6 +65,7 @@ Call* CreateCall(TimeController* time_controller,
   call_config.task_queue_factory = time_controller->GetTaskQueueFactory();
   call_config.network_controller_factory = network_controller_factory;
   call_config.audio_state = audio_state;
+  call_config.trials = config.field_trials;
   return Call::Create(call_config, time_controller->GetClock(),
                       time_controller->CreateProcessThread("CallModules"),
                       time_controller->CreateProcessThread("Pacer"));
@@ -207,6 +208,7 @@ CallClient::CallClient(
       task_queue_(time_controller->GetTaskQueueFactory()->CreateTaskQueue(
           "CallClient",
           TaskQueueFactory::Priority::NORMAL)) {
+  config.field_trials = &field_trials_;
   SendTask([this, config] {
     event_log_ = CreateEventLog(time_controller_->GetTaskQueueFactory(),
                                 log_writer_factory_.get());

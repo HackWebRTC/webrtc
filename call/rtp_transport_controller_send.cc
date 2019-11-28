@@ -56,7 +56,8 @@ TargetRateConstraints ConvertConstraints(const BitrateConstraints& contraints,
 }
 
 bool IsEnabled(const WebRtcKeyValueConfig* trials, absl::string_view key) {
-  return trials && trials->Lookup(key).find("Enabled") == 0;
+  RTC_DCHECK(trials != nullptr);
+  return trials->Lookup(key).find("Enabled") == 0;
 }
 
 }  // namespace
@@ -72,22 +73,21 @@ RtpTransportControllerSend::RtpTransportControllerSend(
     const WebRtcKeyValueConfig* trials)
     : clock_(clock),
       event_log_(event_log),
-      field_trials_(trials ? trials : &fallback_field_trials_),
       bitrate_configurator_(bitrate_config),
       process_thread_(std::move(process_thread)),
-      use_task_queue_pacer_(IsEnabled(field_trials_, "WebRTC-TaskQueuePacer")),
+      use_task_queue_pacer_(IsEnabled(trials, "WebRTC-TaskQueuePacer")),
       process_thread_pacer_(use_task_queue_pacer_
                                 ? nullptr
                                 : new PacedSender(clock,
                                                   &packet_router_,
                                                   event_log,
-                                                  field_trials_,
+                                                  trials,
                                                   process_thread_.get())),
       task_queue_pacer_(use_task_queue_pacer_
                             ? new TaskQueuePacedSender(clock,
                                                        &packet_router_,
                                                        event_log,
-                                                       field_trials_,
+                                                       trials,
                                                        task_queue_factory)
                             : nullptr),
       observer_(nullptr),
@@ -97,12 +97,11 @@ RtpTransportControllerSend::RtpTransportControllerSend(
       process_interval_(controller_factory_fallback_->GetProcessInterval()),
       last_report_block_time_(Timestamp::ms(clock_->TimeInMilliseconds())),
       reset_feedback_on_route_change_(
-          !IsEnabled(field_trials_, "WebRTC-Bwe-NoFeedbackReset")),
+          !IsEnabled(trials, "WebRTC-Bwe-NoFeedbackReset")),
       send_side_bwe_with_overhead_(
-          IsEnabled(field_trials_, "WebRTC-SendSideBwe-WithOverhead")),
+          IsEnabled(trials, "WebRTC-SendSideBwe-WithOverhead")),
       add_pacing_to_cwin_(
-          IsEnabled(field_trials_,
-                    "WebRTC-AddPacingToCongestionWindowPushback")),
+          IsEnabled(trials, "WebRTC-AddPacingToCongestionWindowPushback")),
       transport_overhead_bytes_per_packet_(0),
       network_available_(false),
       retransmission_rate_limiter_(clock, kRetransmitWindowSizeMs),
@@ -111,7 +110,7 @@ RtpTransportControllerSend::RtpTransportControllerSend(
           TaskQueueFactory::Priority::NORMAL)) {
   initial_config_.constraints = ConvertConstraints(bitrate_config, clock_);
   initial_config_.event_log = event_log;
-  initial_config_.key_value_config = field_trials_;
+  initial_config_.key_value_config = trials;
   RTC_DCHECK(bitrate_config.start_bitrate_bps > 0);
 
   pacer()->SetPacingRates(DataRate::bps(bitrate_config.start_bitrate_bps),

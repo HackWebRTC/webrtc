@@ -139,9 +139,6 @@ class RtpTransportControllerSend final
 
   Clock* const clock_;
   RtcEventLog* const event_log_;
-  // TODO(sprang): Remove fallback field-trials.
-  const FieldTrialBasedConfig fallback_field_trials_;
-  const WebRtcKeyValueConfig* field_trials_;
   PacketRouter packet_router_;
   std::vector<std::unique_ptr<RtpVideoSenderInterface>> video_rtp_senders_;
   RtpBitrateConfigurator bitrate_configurator_;

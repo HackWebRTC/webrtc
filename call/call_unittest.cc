@@ -20,6 +20,7 @@
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/mock_audio_mixer.h"
+#include "api/transport/field_trial_based_config.h"
 #include "audio/audio_receive_stream.h"
 #include "audio/audio_send_stream.h"
 #include "call/audio_state.h"
@@ -46,6 +47,7 @@ struct CallHelper {
     webrtc::Call::Config config(&event_log_);
     config.audio_state = webrtc::AudioState::Create(audio_state_config);
     config.task_queue_factory = task_queue_factory_.get();
+    config.trials = &field_trials_;
     call_.reset(webrtc::Call::Create(config));
   }
 
@@ -53,6 +55,7 @@ struct CallHelper {
 
  private:
   webrtc::RtcEventLogNull event_log_;
+  webrtc::FieldTrialBasedConfig field_trials_;
   std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory_;
   std::unique_ptr<webrtc::Call> call_;
 };

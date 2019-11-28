@@ -152,6 +152,8 @@ class CallClient : public EmulatedNetworkReceiverInterface {
   std::map<uint32_t, MediaType> ssrc_media_types_;
   // Defined last so it's destroyed first.
   TaskQueueForTest task_queue_;
+
+  const FieldTrialBasedConfig field_trials_;
 };
 
 class CallClientPair {
