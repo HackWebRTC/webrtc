@@ -38,20 +38,6 @@ int GenerateUniqueId() {
   return ++g_unique_id;
 }
 
-// Returns an true if any RtpEncodingParameters member that isn't implemented
-// contains a value.
-bool UnimplementedRtpEncodingParameterHasValue(
-    const RtpEncodingParameters& encoding_params) {
-  if (encoding_params.codec_payload_type.has_value() ||
-      encoding_params.fec.has_value() || encoding_params.rtx.has_value() ||
-      encoding_params.dtx.has_value() || encoding_params.ptime.has_value() ||
-      encoding_params.scale_framerate_down_by.has_value() ||
-      !encoding_params.dependency_rids.empty()) {
-    return true;
-  }
-  return false;
-}
-
 // Returns true if a "per-sender" encoding parameter contains a value that isn't
 // its default. Currently max_bitrate_bps and bitrate_priority both are
 // implemented "per-sender," meaning that these encoding parameters
@@ -109,9 +95,6 @@ bool UnimplementedRtpParameterHasValue(const RtpParameters& parameters) {
     return true;
   }
   for (size_t i = 0; i < parameters.encodings.size(); ++i) {
-    if (UnimplementedRtpEncodingParameterHasValue(parameters.encodings[i])) {
-      return true;
-    }
     // Encoding parameters that are per-sender should only contain value at
     // index 0.
     if (i != 0 &&

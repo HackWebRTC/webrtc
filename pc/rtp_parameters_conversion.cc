@@ -234,17 +234,9 @@ RTCErrorOr<cricket::StreamParamsVec> ToCricketStreamParamsVec(
   }
   cricket::StreamParamsVec cricket_streams;
   const RtpEncodingParameters& encoding = encodings[0];
-  if (encoding.rtx && encoding.rtx->ssrc && !encoding.ssrc) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::UNSUPPORTED_PARAMETER,
-                         "Setting an RTX SSRC explicitly while leaving the "
-                         "primary SSRC unset is not currently supported.");
-  }
   if (encoding.ssrc) {
     cricket::StreamParams stream_params;
     stream_params.add_ssrc(*encoding.ssrc);
-    if (encoding.rtx && encoding.rtx->ssrc) {
-      stream_params.AddFidSsrc(*encoding.ssrc, *encoding.rtx->ssrc);
-    }
     cricket_streams.push_back(std::move(stream_params));
   }
   return std::move(cricket_streams);
@@ -308,11 +300,6 @@ std::vector<RtpEncodingParameters> ToRtpEncodings(
   for (const cricket::StreamParams& stream_param : stream_params) {
     RtpEncodingParameters rtp_encoding;
     rtp_encoding.ssrc.emplace(stream_param.first_ssrc());
-    uint32_t rtx_ssrc = 0;
-    if (stream_param.GetFidSsrc(stream_param.first_ssrc(), &rtx_ssrc)) {
-      RtpRtxParameters rtx_param(rtx_ssrc);
-      rtp_encoding.rtx.emplace(rtx_param);
-    }
     rtp_encodings.push_back(std::move(rtp_encoding));
   }
   return rtp_encodings;

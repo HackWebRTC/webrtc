@@ -380,30 +380,6 @@ struct RTC_EXPORT RtpEncodingParameters {
   // unset SSRC acts as a "wildcard" SSRC.
   absl::optional<uint32_t> ssrc;
 
-  // Can be used to reference a codec in the |codecs| member of the
-  // RtpParameters that contains this RtpEncodingParameters. If unset, the
-  // implementation will choose the first possible codec (if a sender), or
-  // prepare to receive any codec (for a receiver).
-  // TODO(deadbeef): Not implemented. Implementation of RtpSender will always
-  // choose the first codec from the list.
-  absl::optional<int> codec_payload_type;
-
-  // Specifies the FEC mechanism, if set.
-  // TODO(deadbeef): Not implemented. Current implementation will use whatever
-  // FEC codecs are available, including red+ulpfec.
-  absl::optional<RtpFecParameters> fec;
-
-  // Specifies the RTX parameters, if set.
-  // TODO(deadbeef): Not implemented with PeerConnection senders/receivers.
-  absl::optional<RtpRtxParameters> rtx;
-
-  // Only used for audio. If set, determines whether or not discontinuous
-  // transmission will be used, if an available codec supports it. If not
-  // set, the implementation default setting will be used.
-  // TODO(deadbeef): Not implemented. Current implementation will use a CN
-  // codec as long as it's present.
-  absl::optional<DtxStatus> dtx;
-
   // The relative bitrate priority of this encoding. Currently this is
   // implemented for the entire rtp sender by using the value of the first
   // encoding parameter.
@@ -421,14 +397,6 @@ struct RTC_EXPORT RtpEncodingParameters {
   // TODO(http://crbug.com/webrtc/8630): Implement this per encoding parameter.
   double network_priority = kDefaultBitratePriority;
 
-  // Indicates the preferred duration of media represented by a packet in
-  // milliseconds for this encoding. If set, this will take precedence over the
-  // ptime set in the RtpCodecParameters. This could happen if SDP negotiation
-  // creates a ptime for a specific codec, which is later changed in the
-  // RtpEncodingParameters by the application.
-  // TODO(bugs.webrtc.org/8819): Not implemented.
-  absl::optional<int> ptime;
-
   // If set, this represents the Transport Independent Application Specific
   // maximum bandwidth defined in RFC3890. If unset, there is no maximum
   // bitrate. Currently this is implemented for the entire rtp sender by using
@@ -443,7 +411,6 @@ struct RTC_EXPORT RtpEncodingParameters {
   absl::optional<int> max_bitrate_bps;
 
   // Specifies the minimum bitrate in bps for video.
-  // TODO(asapersson): Not implemented for ORTC API.
   absl::optional<int> min_bitrate_bps;
 
   // Specifies the maximum framerate in fps for video.
@@ -462,10 +429,6 @@ struct RTC_EXPORT RtpEncodingParameters {
   // For video, scale the resolution down by this factor.
   absl::optional<double> scale_resolution_down_by;
 
-  // Scale the framerate down by this factor.
-  // TODO(deadbeef): Not implemented.
-  absl::optional<double> scale_framerate_down_by;
-
   // For an RtpSender, set to true to cause this encoding to be encoded and
   // sent, and false for it not to be encoded and sent. This allows control
   // across multiple encodings of a sender for turning simulcast layers on and
@@ -478,24 +441,15 @@ struct RTC_EXPORT RtpEncodingParameters {
   // Called "encodingId" in ORTC.
   std::string rid;
 
-  // RIDs of encodings on which this layer depends.
-  // Called "dependencyEncodingIds" in ORTC spec.
-  // TODO(deadbeef): Not implemented.
-  std::vector<std::string> dependency_rids;
-
   bool operator==(const RtpEncodingParameters& o) const {
-    return ssrc == o.ssrc && codec_payload_type == o.codec_payload_type &&
-           fec == o.fec && rtx == o.rtx && dtx == o.dtx &&
-           bitrate_priority == o.bitrate_priority &&
-           network_priority == o.network_priority && ptime == o.ptime &&
+    return ssrc == o.ssrc && bitrate_priority == o.bitrate_priority &&
+           network_priority == o.network_priority &&
            max_bitrate_bps == o.max_bitrate_bps &&
            min_bitrate_bps == o.min_bitrate_bps &&
            max_framerate == o.max_framerate &&
            num_temporal_layers == o.num_temporal_layers &&
            scale_resolution_down_by == o.scale_resolution_down_by &&
-           scale_framerate_down_by == o.scale_framerate_down_by &&
-           active == o.active && rid == o.rid &&
-           dependency_rids == o.dependency_rids;
+           active == o.active && rid == o.rid;
   }
   bool operator!=(const RtpEncodingParameters& o) const {
     return !(*this == o);
