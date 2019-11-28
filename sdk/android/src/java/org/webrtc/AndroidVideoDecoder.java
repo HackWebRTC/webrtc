@@ -463,7 +463,10 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
   private void deliverByteFrame(
       int result, MediaCodec.BufferInfo info, int rotation, Integer decodeTimeMs) {
     // Load dimensions from shared memory under the dimension lock.
-    int width, height, stride, sliceHeight;
+    int width;
+    int height;
+    int stride;
+    int sliceHeight;
     synchronized (dimensionLock) {
       width = this.width;
       height = this.height;
