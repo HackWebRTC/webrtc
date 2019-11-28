@@ -31,9 +31,6 @@ class NetEqFactory {
       const NetEq::Config& config,
       const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory,
       Clock* clock) const = 0;
-  // This method is deprecated and will be removed.
-  virtual std::unique_ptr<NetEq> CreateNetEq(const NetEq::Config& config,
-                                             Clock* clock) const = 0;
 };
 
 }  // namespace webrtc

@@ -10,8 +10,9 @@
 
 #include "modules/audio_coding/neteq/test/neteq_decoding_test.h"
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/rtp_headers.h"
-#include "api/test/neteq_factory_with_codecs.h"
+#include "modules/audio_coding/neteq/default_neteq_factory.h"
 #include "modules/audio_coding/neteq/test/result_sink.h"
 #include "rtc_base/strings/string_builder.h"
 #include "test/testsupport/file_utils.h"
@@ -81,8 +82,8 @@ NetEqDecodingTest::NetEqDecodingTest()
 }
 
 void NetEqDecodingTest::SetUp() {
-  std::unique_ptr<NetEqFactory> neteq_factory = CreateNetEqFactoryWithCodecs();
-  neteq_ = neteq_factory->CreateNetEq(config_, &clock_);
+  auto decoder_factory = CreateBuiltinAudioDecoderFactory();
+  neteq_ = DefaultNetEqFactory().CreateNetEq(config_, decoder_factory, &clock_);
   NetEqNetworkStatistics stat;
   ASSERT_EQ(0, neteq_->NetworkStatistics(&stat));
   algorithmic_delay_ms_ = stat.current_buffer_size_ms;
@@ -421,8 +422,9 @@ void NetEqDecodingTestTwoInstances::SetUp() {
 }
 
 void NetEqDecodingTestTwoInstances::CreateSecondInstance() {
-  std::unique_ptr<NetEqFactory> neteq_factory = CreateNetEqFactoryWithCodecs();
-  neteq2_ = neteq_factory->CreateNetEq(config2_, &clock_);
+  auto decoder_factory = CreateBuiltinAudioDecoderFactory();
+  neteq2_ =
+      DefaultNetEqFactory().CreateNetEq(config2_, decoder_factory, &clock_);
   ASSERT_TRUE(neteq2_);
   LoadDecoders(neteq2_.get());
 }

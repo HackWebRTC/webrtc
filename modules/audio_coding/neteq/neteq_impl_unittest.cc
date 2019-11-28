@@ -18,9 +18,9 @@
 #include "api/neteq/default_neteq_controller_factory.h"
 #include "api/neteq/neteq.h"
 #include "api/neteq/neteq_controller.h"
-#include "api/test/neteq_factory_with_codecs.h"
 #include "modules/audio_coding/neteq/accelerate.h"
 #include "modules/audio_coding/neteq/decision_logic.h"
+#include "modules/audio_coding/neteq/default_neteq_factory.h"
 #include "modules/audio_coding/neteq/expand.h"
 #include "modules/audio_coding/neteq/histogram.h"
 #include "modules/audio_coding/neteq/mock/mock_decoder_database.h"
@@ -252,8 +252,9 @@ class NetEqImplTest : public ::testing::Test {
 TEST(NetEq, CreateAndDestroy) {
   NetEq::Config config;
   SimulatedClock clock(0);
-  std::unique_ptr<NetEqFactory> neteq_factory = CreateNetEqFactoryWithCodecs();
-  std::unique_ptr<NetEq> neteq = neteq_factory->CreateNetEq(config, &clock);
+  auto decoder_factory = CreateBuiltinAudioDecoderFactory();
+  std::unique_ptr<NetEq> neteq =
+      DefaultNetEqFactory().CreateNetEq(config, decoder_factory, &clock);
 }
 
 TEST_F(NetEqImplTest, RegisterPayloadType) {

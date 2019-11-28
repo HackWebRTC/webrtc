@@ -32,8 +32,6 @@ class DefaultNetEqFactory : public NetEqFactory {
       const NetEq::Config& config,
       const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory,
       Clock* clock) const override;
-  std::unique_ptr<NetEq> CreateNetEq(const NetEq::Config& config,
-                                     Clock* clock) const override;
 
  private:
   const DefaultNetEqControllerFactory controller_factory_;

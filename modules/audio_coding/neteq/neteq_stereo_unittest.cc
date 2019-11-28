@@ -18,8 +18,8 @@
 #include "api/audio/audio_frame.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/neteq/neteq.h"
-#include "api/test/neteq_factory_with_codecs.h"
 #include "modules/audio_coding/codecs/pcm16b/pcm16b.h"
+#include "modules/audio_coding/neteq/default_neteq_factory.h"
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "modules/audio_coding/neteq/tools/rtp_generator.h"
 #include "rtc_base/strings/string_builder.h"
@@ -68,10 +68,10 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
         last_arrival_time_(0) {
     NetEq::Config config;
     config.sample_rate_hz = sample_rate_hz_;
-    std::unique_ptr<NetEqFactory> neteq_factory =
-        CreateNetEqFactoryWithCodecs();
-    neteq_mono_ = neteq_factory->CreateNetEq(config, &clock_);
-    neteq_ = neteq_factory->CreateNetEq(config, &clock_);
+    DefaultNetEqFactory neteq_factory;
+    auto decoder_factory = CreateBuiltinAudioDecoderFactory();
+    neteq_mono_ = neteq_factory.CreateNetEq(config, decoder_factory, &clock_);
+    neteq_ = neteq_factory.CreateNetEq(config, decoder_factory, &clock_);
     input_ = new int16_t[frame_size_samples_];
     encoded_ = new uint8_t[2 * frame_size_samples_];
     input_multi_channel_ = new int16_t[frame_size_samples_ * num_channels_];

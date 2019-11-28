@@ -20,20 +20,7 @@ CustomNetEqFactory::CustomNetEqFactory(
     std::unique_ptr<NetEqControllerFactory> controller_factory)
     : controller_factory_(std::move(controller_factory)) {}
 
-CustomNetEqFactory::CustomNetEqFactory(
-    rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
-    std::unique_ptr<NetEqControllerFactory> controller_factory)
-    : decoder_factory_(decoder_factory),
-      controller_factory_(std::move(controller_factory)) {}
 CustomNetEqFactory::~CustomNetEqFactory() = default;
-
-std::unique_ptr<NetEq> CustomNetEqFactory::CreateNetEq(
-    const NetEq::Config& config,
-    Clock* clock) const {
-  return std::make_unique<NetEqImpl>(
-      config, NetEqImpl::Dependencies(config, clock, decoder_factory_,
-                                      *controller_factory_));
-}
 
 std::unique_ptr<NetEq> CustomNetEqFactory::CreateNetEq(
     const NetEq::Config& config,

@@ -28,12 +28,4 @@ std::unique_ptr<NetEq> DefaultNetEqFactory::CreateNetEq(
                                       controller_factory_));
 }
 
-std::unique_ptr<NetEq> DefaultNetEqFactory::CreateNetEq(
-    const NetEq::Config& /*config*/,
-    Clock* /*clock*/) const {
-  RTC_NOTREACHED() << "Calling CreateNetEq without an AudioDecoderFactory on "
-                      "DefaultNetEqFactory is not supported.";
-  return nullptr;
-}
-
 }  // namespace webrtc
