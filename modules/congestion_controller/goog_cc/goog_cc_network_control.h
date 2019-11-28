@@ -76,7 +76,7 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   void ClampConstraints();
   void MaybeTriggerOnNetworkChanged(NetworkControlUpdate* update,
                                     Timestamp at_time);
-  void UpdateCongestionWindowSize(TimeDelta time_since_last_packet);
+  void UpdateCongestionWindowSize();
   PacerConfig GetPacingRates(Timestamp at_time) const;
   const FieldTrialBasedConfig trial_based_config_;
 
@@ -85,7 +85,6 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   const bool packet_feedback_only_;
   FieldTrialFlag safe_reset_on_route_change_;
   FieldTrialFlag safe_reset_acknowledged_rate_;
-  const bool use_downlink_delay_for_congestion_window_;
   const bool use_min_allocatable_as_lower_bound_;
   const bool ignore_probes_lower_than_network_estimate_;
   const RateControlSettings rate_control_settings_;
