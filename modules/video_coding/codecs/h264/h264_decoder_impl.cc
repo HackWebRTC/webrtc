@@ -151,9 +151,7 @@ void H264DecoderImpl::AVFreeBuffer2(void* opaque, uint8_t* data) {
 }
 
 H264DecoderImpl::H264DecoderImpl()
-    : kEnable8bitHdrFix_(
-          !field_trial::IsEnabled("WebRTC-8bitH264HdrKillSwitch")),
-      pool_(true),
+    : pool_(true),
       decoded_image_callback_(nullptr),
       has_reported_init_(false),
       has_reported_error_(false) {}
@@ -330,24 +328,9 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
   const ColorSpace& color_space =
       input_image.ColorSpace() ? *input_image.ColorSpace()
                                : ExtractH264ColorSpace(av_context_.get());
-  // 8-bit HDR is currently not being rendered correctly in Chrome on Windows.
-  // If the ColorSpace transfer function is set to ST2084, convert the 8-bit
-  // buffer to a 10-bit buffer. This way 8-bit HDR content is rendered correctly
-  // in Chrome. This is a temporary fix until the root cause has been fixed in
-  // Chrome/WebRTC.
-  // TODO(chromium:956468): Remove this code and fix the underlying problem.
-  bool hdr_color_space =
-      color_space.transfer() == ColorSpace::TransferID::kSMPTEST2084;
-
-  rtc::scoped_refptr<VideoFrameBuffer> decoded_buffer;
-  if (kEnable8bitHdrFix_ && hdr_color_space) {
-    decoded_buffer = I010Buffer::Copy(*cropped_buffer);
-  } else {
-    decoded_buffer = cropped_buffer;
-  }
 
   VideoFrame decoded_frame = VideoFrame::Builder()
-                                 .set_video_frame_buffer(decoded_buffer)
+                                 .set_video_frame_buffer(cropped_buffer)
                                  .set_timestamp_rtp(input_image.Timestamp())
                                  .set_color_space(color_space)
                                  .build();
