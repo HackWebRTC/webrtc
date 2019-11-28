@@ -1751,6 +1751,109 @@ TEST_F(StunTest, CopyAttribute) {
   }
 }
 
+// Test Clone
+TEST_F(StunTest, Clone) {
+  IceMessage msg;
+  {
+    auto errorcode = StunAttribute::CreateErrorCode();
+    errorcode->SetCode(kTestErrorCode);
+    errorcode->SetReason(kTestErrorReason);
+    msg.AddAttribute(std::move(errorcode));
+  }
+  {
+    auto bytes2 = StunAttribute::CreateByteString(STUN_ATTR_USERNAME);
+    bytes2->CopyBytes("abcdefghijkl");
+    msg.AddAttribute(std::move(bytes2));
+  }
+  {
+    auto uval2 = StunAttribute::CreateUInt32(STUN_ATTR_RETRANSMIT_COUNT);
+    uval2->SetValue(11);
+    msg.AddAttribute(std::move(uval2));
+  }
+  {
+    auto addr = StunAttribute::CreateAddress(STUN_ATTR_MAPPED_ADDRESS);
+    addr->SetIP(rtc::IPAddress(kIPv6TestAddress1));
+    addr->SetPort(kTestMessagePort1);
+    msg.AddAttribute(std::move(addr));
+  }
+  auto copy = msg.Clone();
+  ASSERT_NE(nullptr, copy.get());
+
+  msg.SetTransactionID("0123456789ab");
+  copy->SetTransactionID("0123456789ab");
+
+  rtc::ByteBufferWriter out1;
+  EXPECT_TRUE(msg.Write(&out1));
+  rtc::ByteBufferWriter out2;
+  EXPECT_TRUE(copy->Write(&out2));
+
+  ASSERT_EQ(out1.Length(), out2.Length());
+  EXPECT_EQ(0, memcmp(out1.Data(), out2.Data(), out1.Length()));
+}
+
+// Test EqualAttributes
+TEST_F(StunTest, EqualAttributes) {
+  IceMessage msg;
+  {
+    auto errorcode = StunAttribute::CreateErrorCode();
+    errorcode->SetCode(kTestErrorCode);
+    errorcode->SetReason(kTestErrorReason);
+    msg.AddAttribute(std::move(errorcode));
+  }
+  {
+    auto bytes2 = StunAttribute::CreateByteString(STUN_ATTR_USERNAME);
+    bytes2->CopyBytes("abcdefghijkl");
+    msg.AddAttribute(std::move(bytes2));
+  }
+  {
+    auto uval2 = StunAttribute::CreateUInt32(STUN_ATTR_RETRANSMIT_COUNT);
+    uval2->SetValue(11);
+    msg.AddAttribute(std::move(uval2));
+  }
+  {
+    auto addr = StunAttribute::CreateAddress(STUN_ATTR_MAPPED_ADDRESS);
+    addr->SetIP(rtc::IPAddress(kIPv6TestAddress1));
+    addr->SetPort(kTestMessagePort1);
+    msg.AddAttribute(std::move(addr));
+  }
+  auto copy = msg.Clone();
+  ASSERT_NE(nullptr, copy.get());
+
+  EXPECT_TRUE(copy->EqualAttributes(&msg, [](int type) { return true; }));
+
+  {
+    auto attr = StunAttribute::CreateByteString(STUN_ATTR_NONCE);
+    attr->CopyBytes("keso");
+    msg.AddAttribute(std::move(attr));
+    EXPECT_FALSE(copy->EqualAttributes(&msg, [](int type) { return true; }));
+    EXPECT_TRUE(copy->EqualAttributes(
+        &msg, [](int type) { return type != STUN_ATTR_NONCE; }));
+  }
+
+  {
+    auto attr = StunAttribute::CreateByteString(STUN_ATTR_NONCE);
+    attr->CopyBytes("keso");
+    copy->AddAttribute(std::move(attr));
+    EXPECT_TRUE(copy->EqualAttributes(&msg, [](int type) { return true; }));
+  }
+  {
+    copy->RemoveAttribute(STUN_ATTR_NONCE);
+    auto attr = StunAttribute::CreateByteString(STUN_ATTR_NONCE);
+    attr->CopyBytes("kent");
+    copy->AddAttribute(std::move(attr));
+    EXPECT_FALSE(copy->EqualAttributes(&msg, [](int type) { return true; }));
+    EXPECT_TRUE(copy->EqualAttributes(
+        &msg, [](int type) { return type != STUN_ATTR_NONCE; }));
+  }
+
+  {
+    msg.RemoveAttribute(STUN_ATTR_NONCE);
+    EXPECT_FALSE(copy->EqualAttributes(&msg, [](int type) { return true; }));
+    EXPECT_TRUE(copy->EqualAttributes(
+        &msg, [](int type) { return type != STUN_ATTR_NONCE; }));
+  }
+}
+
 TEST_F(StunTest, ReduceTransactionIdIsHostOrderIndependent) {
   std::string transaction_id = "abcdefghijkl";
   StunMessage message;
@@ -1791,6 +1894,13 @@ TEST_F(StunTest, GoogMiscInfo) {
   EXPECT_EQ(0x0U, types->GetType(1));
   EXPECT_EQ(0x1000U, types->GetType(3));
   EXPECT_EQ(0xAB0CU, types->GetType(2));
+}
+
+TEST_F(StunTest, IsStunMethod) {
+  int methods[] = {STUN_BINDING_REQUEST};
+  EXPECT_TRUE(StunMessage::IsStunMethod(
+      methods, reinterpret_cast<const char*>(kRfc5769SampleRequest),
+      sizeof(kRfc5769SampleRequest)));
 }
 
 }  // namespace cricket

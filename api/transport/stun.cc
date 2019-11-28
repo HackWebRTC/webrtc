@@ -370,6 +370,28 @@ bool StunMessage::ValidateFingerprint(const char* data, size_t size) {
           rtc::ComputeCrc32(data, size - fingerprint_attr_size));
 }
 
+bool StunMessage::IsStunMethod(rtc::ArrayView<int> methods,
+                               const char* data,
+                               size_t size) {
+  // Check the message length.
+  if (size % 4 != 0 || size < kStunHeaderSize)
+    return false;
+
+  // Skip the rest if the magic cookie isn't present.
+  const char* magic_cookie =
+      data + kStunTransactionIdOffset - kStunMagicCookieLength;
+  if (rtc::GetBE32(magic_cookie) != kStunMagicCookie)
+    return false;
+
+  int method = rtc::GetBE16(data);
+  for (int m : methods) {
+    if (m == method) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool StunMessage::AddFingerprint() {
   // Add the attribute with a dummy value. Since this is a known attribute,
   // it can't fail.
@@ -555,6 +577,44 @@ const StunAttribute* StunMessage::GetAttribute(int type) const {
 bool StunMessage::IsValidTransactionId(const std::string& transaction_id) {
   return transaction_id.size() == kStunTransactionIdLength ||
          transaction_id.size() == kStunLegacyTransactionIdLength;
+}
+
+bool StunMessage::EqualAttributes(
+    const StunMessage* other,
+    std::function<bool(int type)> attribute_type_mask) const {
+  RTC_DCHECK(other != nullptr);
+  rtc::ByteBufferWriter tmp_buffer_ptr1;
+  rtc::ByteBufferWriter tmp_buffer_ptr2;
+  for (const auto& attr : attrs_) {
+    if (attribute_type_mask(attr->type())) {
+      const StunAttribute* other_attr = other->GetAttribute(attr->type());
+      if (other_attr == nullptr) {
+        return false;
+      }
+      tmp_buffer_ptr1.Clear();
+      tmp_buffer_ptr2.Clear();
+      attr->Write(&tmp_buffer_ptr1);
+      other_attr->Write(&tmp_buffer_ptr2);
+      if (tmp_buffer_ptr1.Length() != tmp_buffer_ptr2.Length()) {
+        return false;
+      }
+      if (memcmp(tmp_buffer_ptr1.Data(), tmp_buffer_ptr2.Data(),
+                 tmp_buffer_ptr1.Length()) != 0) {
+        return false;
+      }
+    }
+  }
+
+  for (const auto& attr : other->attrs_) {
+    if (attribute_type_mask(attr->type())) {
+      const StunAttribute* own_attr = GetAttribute(attr->type());
+      if (own_attr == nullptr) {
+        return false;
+      }
+      // we have already compared all values...
+    }
+  }
+  return true;
 }
 
 // StunAttribute
@@ -1203,6 +1263,22 @@ StunAttributeValueType IceMessage::GetAttributeValueType(int type) const {
 
 StunMessage* IceMessage::CreateNew() const {
   return new IceMessage();
+}
+
+std::unique_ptr<StunMessage> StunMessage::Clone() const {
+  std::unique_ptr<StunMessage> copy(CreateNew());
+  if (!copy) {
+    return nullptr;
+  }
+  rtc::ByteBufferWriter buf;
+  if (!Write(&buf)) {
+    return nullptr;
+  }
+  rtc::ByteBufferReader reader(buf);
+  if (!copy->Read(&reader)) {
+    return nullptr;
+  }
+  return copy;
 }
 
 }  // namespace cricket

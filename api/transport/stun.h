@@ -202,6 +202,12 @@ class StunMessage {
   // current message.
   bool AddMessageIntegrity32(absl::string_view password);
 
+  // Verify that a buffer has stun magic cookie and one of the specified
+  // methods. Note that it does not check for the existance of FINGERPRINT.
+  static bool IsStunMethod(rtc::ArrayView<int> methods,
+                           const char* data,
+                           size_t size);
+
   // Verifies that a given buffer is STUN by checking for a correct FINGERPRINT.
   static bool ValidateFingerprint(const char* data, size_t size);
 
@@ -223,9 +229,19 @@ class StunMessage {
   // This is used for testing.
   void SetStunMagicCookie(uint32_t val);
 
+  // Contruct a copy of |this|.
+  std::unique_ptr<StunMessage> Clone() const;
+
+  // Check if the attributes of this StunMessage equals those of |other|
+  // for all attributes that |attribute_type_mask| return true
+  bool EqualAttributes(const StunMessage* other,
+                       std::function<bool(int type)> attribute_type_mask) const;
+
  protected:
   // Verifies that the given attribute is allowed for this message.
   virtual StunAttributeValueType GetAttributeValueType(int type) const;
+
+  std::vector<std::unique_ptr<StunAttribute>> attrs_;
 
  private:
   StunAttribute* CreateAttribute(int type, size_t length) /* const*/;
@@ -245,7 +261,6 @@ class StunMessage {
   uint16_t length_;
   std::string transaction_id_;
   uint32_t reduced_transaction_id_;
-  std::vector<std::unique_ptr<StunAttribute>> attrs_;
   uint32_t stun_magic_cookie_;
 };
 
