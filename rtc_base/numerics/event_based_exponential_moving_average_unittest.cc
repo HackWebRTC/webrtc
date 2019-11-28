@@ -92,7 +92,7 @@ TEST(EventBasedExponentialMovingAverageTest, Almost100) {
 
 // Test that getting a value at X and another at X+1
 // is almost the same as getting another at X and a value at X+1.
-TEST(EventBasedExponentialMovingAverageTest, SameTime) {
+TEST(EventBasedExponentialMovingAverageTest, AlmostSameTime) {
   int64_t time = 23;
   constexpr int value = 100;
 
@@ -163,6 +163,65 @@ TEST(EventBasedExponentialMovingAverageTest, NonUniformSamplesHalftime100) {
     EXPECT_NEAR(0.05, average.GetAverage(), kError);
     EXPECT_NEAR(4.9, average.GetConfidenceInterval(), kError);  // 0 +/- 5
   }
+}
+
+TEST(EventBasedExponentialMovingAverageTest, Reset) {
+  constexpr int64_t time = 23;
+  constexpr int value = 100;
+
+  EventBasedExponentialMovingAverage average(100);
+  EXPECT_TRUE(std::isnan(average.GetAverage()));
+  EXPECT_EQ(std::numeric_limits<double>::infinity(), average.GetVariance());
+  EXPECT_EQ(std::numeric_limits<double>::infinity(),
+            average.GetConfidenceInterval());
+
+  average.AddSample(time + 0, value);
+  average.AddSample(time + 100, value);
+  average.AddSample(time + 101, 0);
+  EXPECT_FALSE(std::isnan(average.GetAverage()));
+
+  average.Reset();
+  EXPECT_TRUE(std::isnan(average.GetAverage()));
+  EXPECT_EQ(std::numeric_limits<double>::infinity(), average.GetVariance());
+  EXPECT_EQ(std::numeric_limits<double>::infinity(),
+            average.GetConfidenceInterval());
+}
+
+// Test that SetHalfTime modifies behavior and resets average.
+TEST(EventBasedExponentialMovingAverageTest, SetHalfTime) {
+  constexpr int64_t time = 23;
+  constexpr int value = 100;
+
+  EventBasedExponentialMovingAverage average(100);
+
+  average.AddSample(time + 0, value);
+  average.AddSample(time + 100, 0);
+  EXPECT_NEAR(66.7, average.GetAverage(), kError);
+
+  average.SetHalfTime(1000);
+  EXPECT_TRUE(std::isnan(average.GetAverage()));
+  EXPECT_EQ(std::numeric_limits<double>::infinity(), average.GetVariance());
+  EXPECT_EQ(std::numeric_limits<double>::infinity(),
+            average.GetConfidenceInterval());
+
+  average.AddSample(time + 0, value);
+  average.AddSample(time + 100, 0);
+  EXPECT_NEAR(51.7, average.GetAverage(), kError);
+}
+
+TEST(EventBasedExponentialMovingAverageTest, SimultaneousSamples) {
+  constexpr int64_t time = 23;
+  constexpr int value = 100;
+
+  EventBasedExponentialMovingAverage average(100);
+
+  average.AddSample(time, value);
+  // This should really NOT be supported,
+  // i.e 2 samples with same timestamp.
+  // But there are tests running with simulated clock
+  // that produce this.
+  // TODO(webrtc:11140) : Fix those tests and remove this!
+  average.AddSample(time, value);
 }
 
 }  // namespace rtc

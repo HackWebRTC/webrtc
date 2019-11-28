@@ -20,11 +20,13 @@
 #include "logging/rtc_event_log/ice_logger.h"
 #include "p2p/base/candidate_pair_interface.h"
 #include "p2p/base/connection_info.h"
+#include "p2p/base/p2p_transport_channel_ice_field_trials.h"
 #include "p2p/base/stun_request.h"
 #include "p2p/base/transport_description.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/message_handler.h"
 #include "rtc_base/network.h"
+#include "rtc_base/numerics/event_based_exponential_moving_average.h"
 #include "rtc_base/rate_tracker.h"
 
 namespace cricket {
@@ -302,6 +304,11 @@ class Connection : public CandidatePairInterface,
   Port* PortForTest() { return port_; }
   const Port* PortForTest() const { return port_; }
 
+  void SetIceFieldTrials(const IceFieldTrials* field_trials);
+  const rtc::EventBasedExponentialMovingAverage& GetRttEstimate() const {
+    return rtt_estimate_;
+  }
+
  protected:
   enum { MSG_DELETE = 0, MSG_FIRST_AVAILABLE };
 
@@ -413,6 +420,9 @@ class Connection : public CandidatePairInterface,
 
   absl::optional<webrtc::IceCandidatePairDescription> log_description_;
   webrtc::IceEventLog* ice_event_log_ = nullptr;
+
+  const IceFieldTrials* field_trials_;
+  rtc::EventBasedExponentialMovingAverage rtt_estimate_;
 
   friend class Port;
   friend class ConnectionRequest;

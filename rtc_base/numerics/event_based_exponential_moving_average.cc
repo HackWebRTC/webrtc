@@ -28,14 +28,30 @@ namespace rtc {
 // a sample gets exponentially less weight so that it's 50%
 // after |half_time| time units has passed.
 EventBasedExponentialMovingAverage::EventBasedExponentialMovingAverage(
-    int half_time)
-    : tau_(static_cast<double>(half_time) / log(2)) {}
+    int half_time) {
+  SetHalfTime(half_time);
+}
+
+void EventBasedExponentialMovingAverage::SetHalfTime(int half_time) {
+  tau_ = static_cast<double>(half_time) / log(2);
+  Reset();
+}
+
+void EventBasedExponentialMovingAverage::Reset() {
+  value_ = std::nan("uninit");
+  sample_variance_ = std::numeric_limits<double>::infinity();
+  estimator_variance_ = 1;
+  last_observation_timestamp_.reset();
+}
 
 void EventBasedExponentialMovingAverage::AddSample(int64_t now, int sample) {
   if (!last_observation_timestamp_.has_value()) {
     value_ = sample;
   } else {
-    RTC_DCHECK(now > *last_observation_timestamp_);
+    // TODO(webrtc:11140): This should really be > (e.g not >=)
+    // but some pesky tests run with simulated clock and let
+    // samples arrive simultaneously!
+    RTC_DCHECK(now >= *last_observation_timestamp_);
     // Variance gets computed after second sample.
     int64_t age = now - *last_observation_timestamp_;
     double e = exp(-age / tau_);

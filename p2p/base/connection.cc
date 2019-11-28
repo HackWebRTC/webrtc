@@ -128,6 +128,8 @@ const int DEFAULT_RTT = 3000;  // 3 seconds
 const int MINIMUM_RTT = 100;    // 0.1 seconds
 const int MAXIMUM_RTT = 60000;  // 60 seconds
 
+const int DEFAULT_RTT_ESTIMATE_HALF_TIME_MS = 500;
+
 // Computes our estimate of the RTT given the current estimate.
 inline int ConservativeRTTEstimate(int rtt) {
   return rtc::SafeClamp(2 * rtt, MINIMUM_RTT, MAXIMUM_RTT);
@@ -137,6 +139,9 @@ inline int ConservativeRTTEstimate(int rtt) {
 const int RTT_RATIO = 3;  // 3 : 1
 
 constexpr int64_t kMinExtraPingDelayMs = 100;
+
+// Default field trials.
+const cricket::IceFieldTrials kDefaultFieldTrials;
 
 }  // namespace
 
@@ -267,7 +272,9 @@ Connection::Connection(Port* port,
       last_ping_response_received_(0),
       reported_(false),
       state_(IceCandidatePairState::WAITING),
-      time_created_ms_(rtc::TimeMillis()) {
+      time_created_ms_(rtc::TimeMillis()),
+      field_trials_(&kDefaultFieldTrials),
+      rtt_estimate_(DEFAULT_RTT_ESTIMATE_HALF_TIME_MS) {
   // All of our connections start in WAITING state.
   // TODO(mallinath) - Start connections from STATE_FROZEN.
   // Wire up to send stun packets
@@ -389,6 +396,11 @@ int Connection::inactive_timeout() const {
 
 int Connection::receiving_timeout() const {
   return receiving_timeout_.value_or(WEAK_CONNECTION_RECEIVE_TIMEOUT);
+}
+
+void Connection::SetIceFieldTrials(const IceFieldTrials* field_trials) {
+  field_trials_ = field_trials;
+  rtt_estimate_.SetHalfTime(field_trials->rtt_estimate_halftime_ms);
 }
 
 void Connection::OnSendStunPacket(const void* data,
@@ -741,11 +753,13 @@ void Connection::ReceivedPingResponse(
     acked_nomination_ = nomination.value();
   }
 
+  int64_t now = rtc::TimeMillis();
   total_round_trip_time_ms_ += rtt;
   current_round_trip_time_ms_ = static_cast<uint32_t>(rtt);
+  rtt_estimate_.AddSample(now, rtt);
 
   pings_since_last_response_.clear();
-  last_ping_response_received_ = rtc::TimeMillis();
+  last_ping_response_received_ = now;
   UpdateReceiving(last_ping_response_received_);
   set_write_state(STATE_WRITABLE);
   set_state(IceCandidatePairState::SUCCEEDED);

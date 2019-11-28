@@ -207,6 +207,7 @@ void P2PTransportChannel::AddConnection(Connection* connection) {
   had_connection_ = true;
 
   connection->set_ice_event_log(&ice_event_log_);
+  connection->SetIceFieldTrials(&field_trials_);
   LogCandidatePairConfig(connection,
                          webrtc::IceCandidatePairConfigType::kAdded);
 
@@ -646,7 +647,8 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
       "max_outstanding_pings", &field_trials_.max_outstanding_pings,
       "initial_select_dampening", &field_trials_.initial_select_dampening,
       "initial_select_dampening_ping_received",
-      &field_trials_.initial_select_dampening_ping_received)
+      &field_trials_.initial_select_dampening_ping_received,
+      "rtt_estimate_halftime_ms", &field_trials_.rtt_estimate_halftime_ms)
       ->Parse(webrtc::field_trial::FindFullName("WebRTC-IceFieldTrials"));
 
   if (field_trials_.skip_relay_to_non_relay_connections) {

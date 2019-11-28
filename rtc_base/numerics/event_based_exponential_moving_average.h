@@ -49,8 +49,15 @@ class EventBasedExponentialMovingAverage {
   // [ X +/- m ].
   double GetConfidenceInterval() const;
 
+  // Reset
+  void Reset();
+
+  // Update the half_time.
+  // NOTE: resets estimate too.
+  void SetHalfTime(int half_time);
+
  private:
-  const double tau_;
+  double tau_;
   double value_ = std::nan("uninit");
   double sample_variance_ = std::numeric_limits<double>::infinity();
   // This is the ratio between variance of the estimate and variance of samples.
