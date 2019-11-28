@@ -26,7 +26,7 @@ namespace {
 // RTP payload syntax:
 //     0 1 2 3 4 5 6 7
 //    +-+-+-+-+-+-+-+-+
-//    |Z|Y| W |-|-|-|-| (REQUIRED)
+//    |Z|Y| W |N|-|-|-| (REQUIRED)
 //    +=+=+=+=+=+=+=+=+ (REPEATED W-1 times, or any times if W = 0)
 //    |1|             |
 //    +-+ OBU fragment|
@@ -154,7 +154,6 @@ struct ObuInfo {
 // also has Sequence Header OBU.
 using VectorObuInfo = absl::InlinedVector<ObuInfo, 4>;
 
-constexpr int kObuTypeSequenceHeader = 1;
 constexpr uint8_t kObuSizePresentBit = 0b0'0000'010;
 
 bool ObuHasExtension(uint8_t obu_header) {
@@ -165,10 +164,6 @@ bool ObuHasSize(uint8_t obu_header) {
   return obu_header & kObuSizePresentBit;
 }
 
-int ObuType(uint8_t obu_header) {
-  return (obu_header & 0b0'1111'000u) >> 3;
-}
-
 bool RtpStartsWithFragment(uint8_t aggregation_header) {
   return aggregation_header & 0b1000'0000u;
 }
@@ -177,6 +172,9 @@ bool RtpEndsWithFragment(uint8_t aggregation_header) {
 }
 int RtpNumObus(uint8_t aggregation_header) {  // 0 for any number of obus.
   return (aggregation_header & 0b0011'0000u) >> 4;
+}
+int RtpStartsNewCodedVideoSequence(uint8_t aggregation_header) {
+  return aggregation_header & 0b0000'1000u;
 }
 
 // Reorgonizes array of rtp payloads into array of obus:
@@ -373,15 +371,17 @@ bool RtpDepacketizerAv1::Parse(ParsedPayload* parsed_payload,
     RTC_DLOG(LS_ERROR) << "Empty rtp payload.";
     return false;
   }
+  uint8_t aggregation_header = payload_data[0];
+  if (RtpStartsNewCodedVideoSequence(aggregation_header) &&
+      RtpStartsWithFragment(aggregation_header)) {
+    // new coded video sequence can't start from an OBU fragment.
+    return false;
+  }
+
   // To assemble frame, all of the rtp payload is required, including
   // aggregation header.
   parsed_payload->payload = payload_data;
   parsed_payload->payload_length = payload_data_length;
-
-  rtc::ByteBufferReader payload(reinterpret_cast<const char*>(payload_data),
-                                payload_data_length);
-  uint8_t aggregation_header;
-  RTC_CHECK(payload.ReadUInt8(&aggregation_header));
 
   parsed_payload->video.codec = VideoCodecType::kVideoCodecAV1;
   // These are not accurate since frame may consist of several packet aligned
@@ -393,57 +393,11 @@ bool RtpDepacketizerAv1::Parse(ParsedPayload* parsed_payload,
       !RtpStartsWithFragment(aggregation_header);
   parsed_payload->video.is_last_packet_in_frame =
       !RtpEndsWithFragment(aggregation_header);
-  parsed_payload->video.frame_type = VideoFrameType::kVideoFrameDelta;
-  // If packet starts a frame, check if it contains Sequence Header OBU.
-  // In that case treat it as key frame packet.
-  if (parsed_payload->video.is_first_packet_in_frame) {
-    int num_expected_obus = RtpNumObus(aggregation_header);
 
-    // The only OBU that can preceed SequenceHeader is a TemporalDelimiter OBU,
-    // so check no more than two OBUs while searching for SH.
-    for (int obu_index = 1; payload.Length() > 0 && obu_index <= 2;
-         ++obu_index) {
-      uint64_t fragment_size;
-      // When num_expected_obus > 0, last OBU (fragment) is not preceeded by
-      // the size field. See W field in
-      // https://aomediacodec.github.io/av1-rtp-spec/#43-av1-aggregation-header
-      bool has_fragment_size = (obu_index != num_expected_obus);
-      if (has_fragment_size) {
-        if (!payload.ReadUVarint(&fragment_size)) {
-          RTC_DLOG(LS_WARNING)
-              << "Failed to read OBU fragment size for OBU#" << obu_index;
-          return false;
-        }
-        if (fragment_size > payload.Length()) {
-          RTC_DLOG(LS_WARNING) << "OBU fragment size " << fragment_size
-                               << " exceeds remaining payload size "
-                               << payload.Length() << " for OBU#" << obu_index;
-          // Malformed input: written size is larger than remaining buffer.
-          return false;
-        }
-      } else {
-        fragment_size = payload.Length();
-      }
-      // Though it is inpractical to pass empty fragments, it is allowed.
-      if (fragment_size == 0) {
-        RTC_LOG(LS_WARNING)
-            << "Weird obu of size 0 at offset "
-            << (payload_data_length - payload.Length()) << ", skipping.";
-        continue;
-      }
-      uint8_t obu_header = *reinterpret_cast<const uint8_t*>(payload.Data());
-      if (ObuType(obu_header) == kObuTypeSequenceHeader) {
-        // TODO(bugs.webrtc.org/11042): Check frame_header OBU and/or frame OBU
-        // too for other conditions of the start of a new coded video sequence.
-        // For proper checks checking single packet might not be enough. See
-        // https://aomediacodec.github.io/av1-spec/av1-spec.pdf section 7.5
-        parsed_payload->video.frame_type = VideoFrameType::kVideoFrameKey;
-        break;
-      }
-      payload.Consume(fragment_size);
-    }
-  }
-
+  parsed_payload->video.frame_type =
+      RtpStartsNewCodedVideoSequence(aggregation_header)
+          ? VideoFrameType::kVideoFrameKey
+          : VideoFrameType::kVideoFrameDelta;
   return true;
 }
 

@@ -19,12 +19,9 @@ namespace {
 using ::testing::ElementsAre;
 
 // Signals number of the OBU (fragments) in the packet.
-constexpr uint8_t kObuCountAny = 0b0000'0000;
-constexpr uint8_t kObuCountOne = 0b0001'0000;
-constexpr uint8_t kObuCountTwo = 0b0010'0000;
+constexpr uint8_t kObuCountOne = 0b00'01'0000;
 
 constexpr uint8_t kObuHeaderSequenceHeader = 0b0'0001'000;
-constexpr uint8_t kObuHeaderTemporalDelimiter = 0b0'0010'000;
 constexpr uint8_t kObuHeaderFrame = 0b0'0110'000;
 
 constexpr uint8_t kObuHeaderHasSize = 0b0'0000'010;
@@ -73,129 +70,35 @@ TEST(RtpDepacketizerAv1Test, ParseTreatsNoWillContinueFlagAsEndOfFrame) {
   EXPECT_TRUE(parsed.video.is_last_packet_in_frame);
 }
 
-TEST(RtpDepacketizerAv1Test, ParseTreatsStartOfSequenceHeaderAsKeyFrame) {
-  const uint8_t packet[] = {kObuCountOne, kObuHeaderSequenceHeader};
-  RtpDepacketizerAv1 depacketizer;
-  RtpDepacketizer::ParsedPayload parsed;
-  ASSERT_TRUE(depacketizer.Parse(&parsed, packet, sizeof(packet)));
-  EXPECT_TRUE(parsed.video.is_first_packet_in_frame);
-  EXPECT_TRUE(parsed.video.frame_type == VideoFrameType::kVideoFrameKey);
-}
-
-TEST(RtpDepacketizerAv1Test, ParseTreatsNotStartOfFrameAsDeltaFrame) {
-  const uint8_t packet[] = {
-      (uint8_t{1} << 7) | kObuCountOne,
-      // Byte that look like start of sequence header, but since it is not start
-      // of an OBU, it is actually not a start of sequence header.
-      kObuHeaderSequenceHeader};
-  RtpDepacketizerAv1 depacketizer;
-  RtpDepacketizer::ParsedPayload parsed;
-  ASSERT_TRUE(depacketizer.Parse(&parsed, packet, sizeof(packet)));
-  EXPECT_FALSE(parsed.video.is_first_packet_in_frame);
-  EXPECT_TRUE(parsed.video.frame_type == VideoFrameType::kVideoFrameDelta);
-}
-
 TEST(RtpDepacketizerAv1Test,
-     ParseTreatsStartOfFrameWithoutSequenceHeaderAsDeltaFrame) {
-  const uint8_t packet[] = {kObuCountOne, kObuHeaderFrame};
-  RtpDepacketizerAv1 depacketizer;
-  RtpDepacketizer::ParsedPayload parsed;
-  ASSERT_TRUE(depacketizer.Parse(&parsed, packet, sizeof(packet)));
-  EXPECT_TRUE(parsed.video.is_first_packet_in_frame);
-  EXPECT_TRUE(parsed.video.frame_type == VideoFrameType::kVideoFrameDelta);
-}
-
-TEST(RtpDepacketizerAv1Test, ParseFindsSequenceHeaderBehindFragmentSize1) {
-  const uint8_t packet[] = {kObuCountAny,
-                            1,  // size of the next fragment
+     ParseUsesNewCodedVideoSequenceBitAsKeyFrameIndidcator) {
+  const uint8_t packet[] = {(uint8_t{1} << 3) | kObuCountOne,
                             kObuHeaderSequenceHeader};
   RtpDepacketizerAv1 depacketizer;
   RtpDepacketizer::ParsedPayload parsed;
   ASSERT_TRUE(depacketizer.Parse(&parsed, packet, sizeof(packet)));
-  EXPECT_TRUE(parsed.video.frame_type == VideoFrameType::kVideoFrameKey);
-}
-
-TEST(RtpDepacketizerAv1Test, ParseFindsSequenceHeaderBehindFragmentSize2) {
-  const uint8_t packet[] = {kObuCountTwo,
-                            2,  // size of the next fragment
-                            kObuHeaderSequenceHeader,
-                            42,  // SH payload.
-                            kObuHeaderFrame};
-  RtpDepacketizerAv1 depacketizer;
-  RtpDepacketizer::ParsedPayload parsed;
-  ASSERT_TRUE(depacketizer.Parse(&parsed, packet, sizeof(packet)));
+  EXPECT_TRUE(parsed.video.is_first_packet_in_frame);
   EXPECT_TRUE(parsed.video.frame_type == VideoFrameType::kVideoFrameKey);
 }
 
 TEST(RtpDepacketizerAv1Test,
-     ParseFindsSequenceHeaderBehindMultiByteFragmentSize) {
-  const uint8_t packet[] = {kObuCountTwo,
-                            0b1000'0101,  // leb128 encoded value of 5
-                            0b1000'0000,  // using 3 bytes
-                            0b0000'0000,  // to encode the value.
-                            kObuHeaderSequenceHeader,
-                            8,  // 4 bytes of SH payload.
-                            0,
-                            0,
-                            0,
-                            kObuHeaderFrame};
+     ParseUsesUnsetNewCodedVideoSequenceBitAsDeltaFrameIndidcator) {
+  const uint8_t packet[] = {(uint8_t{0} << 3) | kObuCountOne,
+                            kObuHeaderSequenceHeader};
   RtpDepacketizerAv1 depacketizer;
   RtpDepacketizer::ParsedPayload parsed;
   ASSERT_TRUE(depacketizer.Parse(&parsed, packet, sizeof(packet)));
-  EXPECT_TRUE(parsed.video.frame_type == VideoFrameType::kVideoFrameKey);
-}
-
-TEST(RtpDepacketizerAv1Test, ParseFindsSequenceHeaderBehindTemporalDelimiter) {
-  const uint8_t packet[] = {kObuCountTwo,
-                            1,  // size of the next fragment
-                            kObuHeaderTemporalDelimiter,
-                            kObuHeaderSequenceHeader,
-                            8,  // 4 bytes of SH payload.
-                            0,
-                            0,
-                            0};
-  RtpDepacketizerAv1 depacketizer;
-  RtpDepacketizer::ParsedPayload parsed;
-  ASSERT_TRUE(depacketizer.Parse(&parsed, packet, sizeof(packet)));
-  EXPECT_TRUE(parsed.video.frame_type == VideoFrameType::kVideoFrameKey);
-}
-
-TEST(RtpDepacketizerAv1Test,
-     ParseFindsSequenceHeaderBehindTemporalDelimiterAndSize) {
-  const uint8_t packet[] = {kObuCountAny,
-                            1,  // size of the next fragment
-                            kObuHeaderTemporalDelimiter,
-                            5,  // size of the next fragment
-                            kObuHeaderSequenceHeader,
-                            8,  // 4 bytes of SH payload.
-                            0,
-                            0,
-                            0,
-                            1,  // size of the next fragment
-                            kObuHeaderFrame};
-  RtpDepacketizerAv1 depacketizer;
-  RtpDepacketizer::ParsedPayload parsed;
-  ASSERT_TRUE(depacketizer.Parse(&parsed, packet, sizeof(packet)));
-  EXPECT_TRUE(parsed.video.frame_type == VideoFrameType::kVideoFrameKey);
-}
-
-TEST(RtpDepacketizerAv1Test, ParseSkipsEmptyFragments) {
-  static_assert(kObuHeaderSequenceHeader == 8, "");
-  const uint8_t packet[] = {kObuCountAny,
-                            0,  // size of the next fragment
-                            8,  // size of the next fragment that look like SH
-                            kObuHeaderFrame,
-                            1,
-                            2,
-                            3,
-                            4,
-                            5,
-                            6,
-                            7};
-  RtpDepacketizerAv1 depacketizer;
-  RtpDepacketizer::ParsedPayload parsed;
-  ASSERT_TRUE(depacketizer.Parse(&parsed, packet, sizeof(packet)));
+  EXPECT_TRUE(parsed.video.is_first_packet_in_frame);
   EXPECT_TRUE(parsed.video.frame_type == VideoFrameType::kVideoFrameDelta);
+}
+
+TEST(RtpDepacketizerAv1Test,
+     ParseRejectsPacketWithNewCVSAndContinuationFlagsBothSet) {
+  const uint8_t packet[] = {0b10'00'1000 | kObuCountOne,
+                            kObuHeaderSequenceHeader};
+  RtpDepacketizerAv1 depacketizer;
+  RtpDepacketizer::ParsedPayload parsed;
+  EXPECT_FALSE(depacketizer.Parse(&parsed, packet, sizeof(packet)));
 }
 
 TEST(RtpDepacketizerAv1Test, AssembleFrameSetsOBUPayloadSizeWhenAbsent) {
