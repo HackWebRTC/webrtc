@@ -276,7 +276,6 @@ if (!build_with_chromium) {
         "rtc_event_log_visualizer/plot_python.h",
         "rtc_event_log_visualizer/triage_notifications.h",
       ]
-      defines = [ "ENABLE_RTC_EVENT_LOG" ]
       deps = [
         ":chart_proto",
         "../api:function_view",
@@ -321,7 +320,6 @@ if (rtc_include_tests) {
         "rtc_event_log_visualizer/main.cc",
       ]
 
-      defines = [ "ENABLE_RTC_EVENT_LOG" ]
       deps = [
         ":event_log_visualizer_utils",
         "../api/neteq:neteq_api",

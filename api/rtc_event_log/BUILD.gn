@@ -41,7 +41,7 @@ rtc_library("rtc_event_log_factory") {
   ]
 
   if (rtc_enable_protobuf) {
-    defines = [ "ENABLE_RTC_EVENT_LOG" ]
+    defines = [ "WEBRTC_ENABLE_RTC_EVENT_LOG" ]
     deps += [ "../../logging:rtc_event_log_impl" ]
   }
 }

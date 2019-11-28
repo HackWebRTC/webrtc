@@ -15,7 +15,7 @@
 
 #include "rtc_base/checks.h"
 
-#ifdef ENABLE_RTC_EVENT_LOG
+#ifdef WEBRTC_ENABLE_RTC_EVENT_LOG
 #include "logging/rtc_event_log/rtc_event_log_impl.h"
 #endif
 
@@ -28,7 +28,7 @@ RtcEventLogFactory::RtcEventLogFactory(TaskQueueFactory* task_queue_factory)
 
 std::unique_ptr<RtcEventLog> RtcEventLogFactory::CreateRtcEventLog(
     RtcEventLog::EncodingType encoding_type) {
-#ifdef ENABLE_RTC_EVENT_LOG
+#ifdef WEBRTC_ENABLE_RTC_EVENT_LOG
   return std::make_unique<RtcEventLogImpl>(encoding_type, task_queue_factory_);
 #else
   return std::make_unique<RtcEventLogNull>();
