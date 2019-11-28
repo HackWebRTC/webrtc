@@ -366,10 +366,12 @@ void RTPSenderVideo::LogAndSendToNetwork(
           continue;
       }
     }
-    RTC_DCHECK_GE(packetized_payload_size, unpacketized_payload_size);
-    packetization_overhead_bitrate_.Update(
-        packetized_payload_size - unpacketized_payload_size,
-        clock_->TimeInMilliseconds());
+    // AV1 packetizer may produce less packetized bytes than unpacketized.
+    if (packetized_payload_size >= unpacketized_payload_size) {
+      packetization_overhead_bitrate_.Update(
+          packetized_payload_size - unpacketized_payload_size,
+          clock_->TimeInMilliseconds());
+    }
   }
 
   rtp_sender_->EnqueuePackets(std::move(packets));

@@ -444,6 +444,74 @@ TEST_F(PacketBufferTest, GetBitstreamOneFrameFullBuffer) {
               ElementsAreArray(expected));
 }
 
+TEST_F(PacketBufferTest, GetBitstreamAv1) {
+  const uint8_t data1[] = {0b01'01'0000, 0b0'0100'000, 'm', 'a', 'n', 'y', ' '};
+  const uint8_t data2[] = {0b10'01'0000, 'b', 'i', 't', 's', 0};
+
+  uint8_t* new_data1 = new uint8_t[sizeof(data1)];
+  memcpy(new_data1, data1, sizeof(data1));
+  uint8_t* new_data2 = new uint8_t[sizeof(data2)];
+  memcpy(new_data2, data2, sizeof(data2));
+
+  PacketBuffer::Packet packet1;
+  packet1.video_header.codec = kVideoCodecAV1;
+  packet1.seq_num = 13;
+  packet1.video_header.is_first_packet_in_frame = true;
+  packet1.video_header.is_last_packet_in_frame = false;
+  packet1.size_bytes = sizeof(data1);
+  packet1.data = new_data1;
+  auto frames = packet_buffer_.InsertPacket(&packet1).frames;
+  EXPECT_THAT(frames, IsEmpty());
+
+  PacketBuffer::Packet packet2;
+  packet2.video_header.codec = kVideoCodecAV1;
+  packet2.seq_num = 14;
+  packet2.video_header.is_first_packet_in_frame = false;
+  packet2.video_header.is_last_packet_in_frame = true;
+  packet2.size_bytes = sizeof(data2);
+  packet2.data = new_data2;
+  frames = packet_buffer_.InsertPacket(&packet2).frames;
+
+  ASSERT_THAT(frames, SizeIs(1));
+  EXPECT_EQ(frames[0]->first_seq_num(), 13);
+  EXPECT_THAT(rtc::MakeArrayView(frames[0]->data(), 2),
+              ElementsAre(0b0'0100'010, 10));  // obu_header and obu_size.
+  EXPECT_THAT(rtc::MakeArrayView(frames[0]->data() + 2, frames[0]->size() - 2),
+              ElementsAreArray("many bits"));
+}
+
+TEST_F(PacketBufferTest, GetBitstreamInvalidAv1) {
+  // Two av1 payloads that can't be combined into proper frame.
+  const uint8_t data1[] = {0b01'01'0000, 0b0'0100'000, 'm', 'a', 'n', 'y', ' '};
+  const uint8_t data2[] = {0b00'01'0000, 'b', 'i', 't', 's', 0};
+
+  uint8_t* new_data1 = new uint8_t[sizeof(data1)];
+  memcpy(new_data1, data1, sizeof(data1));
+  uint8_t* new_data2 = new uint8_t[sizeof(data2)];
+  memcpy(new_data2, data2, sizeof(data2));
+
+  PacketBuffer::Packet packet1;
+  packet1.video_header.codec = kVideoCodecAV1;
+  packet1.seq_num = 13;
+  packet1.video_header.is_first_packet_in_frame = true;
+  packet1.video_header.is_last_packet_in_frame = false;
+  packet1.size_bytes = sizeof(data1);
+  packet1.data = new_data1;
+  auto frames = packet_buffer_.InsertPacket(&packet1).frames;
+  EXPECT_THAT(frames, IsEmpty());
+
+  PacketBuffer::Packet packet2;
+  packet2.video_header.codec = kVideoCodecAV1;
+  packet2.seq_num = 14;
+  packet2.video_header.is_first_packet_in_frame = false;
+  packet2.video_header.is_last_packet_in_frame = true;
+  packet2.size_bytes = sizeof(data2);
+  packet2.data = new_data2;
+  frames = packet_buffer_.InsertPacket(&packet2).frames;
+
+  EXPECT_THAT(frames, IsEmpty());
+}
+
 TEST_F(PacketBufferTest, InsertPacketAfterSequenceNumberWrapAround) {
   uint16_t kFirstSeqNum = 0;
   uint32_t kTimestampDelta = 100;
