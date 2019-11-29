@@ -3808,11 +3808,10 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
                              &request, kIceUfrag[1], false);
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
-  EXPECT_TRUE(port->sent_binding_response());
+  EXPECT_EQ(conn1->stats().sent_ping_responses, 1u);
   EXPECT_NE(conn1, ch.selected_connection());
   conn1->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_EQ_WAIT(conn1, ch.selected_connection(), kDefaultTimeout);
-  port->set_sent_binding_response(false);
 
   // Another connection is nominated via use_candidate.
   ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 1));
@@ -3833,10 +3832,9 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
                              &request, kIceUfrag[1], false);
   Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
   ASSERT_TRUE(conn3 != nullptr);
-  EXPECT_TRUE(port->sent_binding_response());
+  EXPECT_EQ(conn3->stats().sent_ping_responses, 1u);
   conn3->ReceivedPingResponse(LOW_RTT, "id");  // Become writable.
   EXPECT_EQ(conn2, ch.selected_connection());
-  port->set_sent_binding_response(false);
 
   // However if the request contains use_candidate attribute, it will be
   // selected as the selected connection.
@@ -3846,7 +3844,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
                              &request, kIceUfrag[1], false);
   Connection* conn4 = WaitForConnectionTo(&ch, "4.4.4.4", 4);
   ASSERT_TRUE(conn4 != nullptr);
-  EXPECT_TRUE(port->sent_binding_response());
+  EXPECT_EQ(conn4->stats().sent_ping_responses, 1u);
   // conn4 is not the selected connection yet because it is not writable.
   EXPECT_EQ(conn2, ch.selected_connection());
   conn4->ReceivedPingResponse(LOW_RTT, "id");  // Become writable.
@@ -3854,14 +3852,14 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
 
   // Test that the request from an unknown address contains a ufrag from an old
   // generation.
-  port->set_sent_binding_response(false);
+  // port->set_sent_binding_response(false);
   ch.SetRemoteIceParameters(kIceParams[2]);
   ch.SetRemoteIceParameters(kIceParams[3]);
   port->SignalUnknownAddress(port, rtc::SocketAddress("5.5.5.5", 5), PROTO_UDP,
                              &request, kIceUfrag[2], false);
   Connection* conn5 = WaitForConnectionTo(&ch, "5.5.5.5", 5);
   ASSERT_TRUE(conn5 != nullptr);
-  EXPECT_TRUE(port->sent_binding_response());
+  EXPECT_EQ(conn5->stats().sent_ping_responses, 1u);
   EXPECT_EQ(kIcePwd[2], conn5->remote_candidate().password());
 }
 

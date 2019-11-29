@@ -184,13 +184,6 @@ class Connection : public CandidatePairInterface,
   // a nomination value. The controlling agent gets its |acked_nomination_| set
   // when receiving a response to a nominating ping.
   bool nominated() const { return acked_nomination_ || remote_nomination_; }
-  // Public for unit tests.
-  void set_remote_nomination(uint32_t remote_nomination) {
-    remote_nomination_ = remote_nomination;
-  }
-  // Public for unit tests.
-  uint32_t acked_nomination() const { return acked_nomination_; }
-
   void set_remote_ice_mode(IceMode mode) { remote_ice_mode_ = mode; }
 
   int receiving_timeout() const;
@@ -300,13 +293,23 @@ class Connection : public CandidatePairInterface,
   // Check if we sent |val| pings without receving a response.
   bool TooManyOutstandingPings(const absl::optional<int>& val) const;
 
+  void SetIceFieldTrials(const IceFieldTrials* field_trials);
+  const rtc::EventBasedExponentialMovingAverage& GetRttEstimate() const {
+    return rtt_estimate_;
+  }
+
+  void SendBindingResponse(const StunMessage* request);
+
   // An accessor for unit tests.
   Port* PortForTest() { return port_; }
   const Port* PortForTest() const { return port_; }
 
-  void SetIceFieldTrials(const IceFieldTrials* field_trials);
-  const rtc::EventBasedExponentialMovingAverage& GetRttEstimate() const {
-    return rtt_estimate_;
+  // Public for unit tests.
+  uint32_t acked_nomination() const { return acked_nomination_; }
+
+  // Public for unit tests.
+  void set_remote_nomination(uint32_t remote_nomination) {
+    remote_nomination_ = remote_nomination;
   }
 
  protected:

@@ -287,11 +287,7 @@ class Port : public PortInterface,
   virtual bool CanHandleIncomingPacketsFrom(
       const rtc::SocketAddress& remote_addr) const;
 
-  // Sends a response message (normal or error) to the given request.  One of
-  // these methods should be called as a response to SignalUnknownAddress.
-  // NOTE: You MUST call CreateConnection BEFORE SendBindingResponse.
-  void SendBindingResponse(StunMessage* request,
-                           const rtc::SocketAddress& addr) override;
+  // Sends a response error to the given request.
   void SendBindingErrorResponse(StunMessage* request,
                                 const rtc::SocketAddress& addr,
                                 int error_code,

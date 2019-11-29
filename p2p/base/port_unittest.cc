@@ -302,7 +302,7 @@ class TestChannel : public sigslot::has_slots<> {
     c.set_address(remote_address_);
     conn_ = port_->CreateConnection(c, Port::ORIGIN_MESSAGE);
     conn_->SignalDestroyed.connect(this, &TestChannel::OnDestroyed);
-    port_->SendBindingResponse(remote_request_.get(), remote_address_);
+    conn_->SendBindingResponse(remote_request_.get());
     remote_request_.reset();
   }
   void Ping() { Ping(0); }
@@ -2618,11 +2618,10 @@ TEST_F(PortTest, TestIceLiteConnectivity) {
   // NOTE: Ideally we should't create connection at this stage from lite
   // port, as it should be done only after receiving ping with USE_CANDIDATE.
   // But we need a connection to send a response message.
-  ice_lite_port->CreateConnection(ice_full_port_ptr->Candidates()[0],
-                                  cricket::Port::ORIGIN_MESSAGE);
+  auto* con = ice_lite_port->CreateConnection(
+      ice_full_port_ptr->Candidates()[0], cricket::Port::ORIGIN_MESSAGE);
   std::unique_ptr<IceMessage> request = CopyStunMessage(*msg);
-  ice_lite_port->SendBindingResponse(
-      request.get(), ice_full_port_ptr->Candidates()[0].address());
+  con->SendBindingResponse(request.get());
 
   // Feeding the respone message from litemode to the full mode connection.
   ch1.conn()->OnReadPacket(ice_lite_port->last_stun_buf()->data<char>(),

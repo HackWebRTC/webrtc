@@ -536,7 +536,7 @@ void Connection::HandleBindingRequest(IceMessage* msg) {
                         msg->reduced_transaction_id());
 
   // This is a validated stun request from remote peer.
-  port_->SendBindingResponse(msg, remote_addr);
+  SendBindingResponse(msg);
 
   // If it timed out on writing check, start up again
   if (!pruned_ && write_state_ == STATE_WRITE_TIMEOUT) {
@@ -584,6 +584,72 @@ void Connection::HandleBindingRequest(IceMessage* msg) {
   if (webrtc::field_trial::IsEnabled(
           "WebRTC-PiggybackIceCheckAcknowledgement")) {
     HandlePiggybackCheckAcknowledgementIfAny(msg);
+  }
+}
+
+void Connection::SendBindingResponse(const StunMessage* request) {
+  RTC_DCHECK(request->type() == STUN_BINDING_REQUEST);
+
+  // Where I send the response.
+  const rtc::SocketAddress& addr = remote_candidate_.address();
+
+  // Retrieve the username from the request.
+  const StunByteStringAttribute* username_attr =
+      request->GetByteString(STUN_ATTR_USERNAME);
+  RTC_DCHECK(username_attr != NULL);
+  if (username_attr == NULL) {
+    // No valid username, skip the response.
+    return;
+  }
+
+  // Fill in the response message.
+  StunMessage response;
+  response.SetType(STUN_BINDING_RESPONSE);
+  response.SetTransactionID(request->transaction_id());
+  const StunUInt32Attribute* retransmit_attr =
+      request->GetUInt32(STUN_ATTR_RETRANSMIT_COUNT);
+  if (retransmit_attr) {
+    // Inherit the incoming retransmit value in the response so the other side
+    // can see our view of lost pings.
+    response.AddAttribute(std::make_unique<StunUInt32Attribute>(
+        STUN_ATTR_RETRANSMIT_COUNT, retransmit_attr->value()));
+
+    if (retransmit_attr->value() > CONNECTION_WRITE_CONNECT_FAILURES) {
+      RTC_LOG(LS_INFO)
+          << ToString()
+          << ": Received a remote ping with high retransmit count: "
+          << retransmit_attr->value();
+    }
+  }
+
+  response.AddAttribute(std::make_unique<StunXorAddressAttribute>(
+      STUN_ATTR_XOR_MAPPED_ADDRESS, addr));
+  response.AddMessageIntegrity(local_candidate().password());
+  response.AddFingerprint();
+
+  // Send the response message.
+  rtc::ByteBufferWriter buf;
+  response.Write(&buf);
+  rtc::PacketOptions options(port_->StunDscpValue());
+  options.info_signaled_after_sent.packet_type =
+      rtc::PacketType::kIceConnectivityCheckResponse;
+  auto err = port_->SendTo(buf.Data(), buf.Length(), addr, options, false);
+  if (err < 0) {
+    RTC_LOG(LS_ERROR) << ToString()
+                      << ": Failed to send STUN ping response, to="
+                      << addr.ToSensitiveString() << ", err=" << err
+                      << ", id=" << rtc::hex_encode(response.transaction_id());
+  } else {
+    // Log at LS_INFO if we send a stun ping response on an unwritable
+    // connection.
+    rtc::LoggingSeverity sev = (!writable()) ? rtc::LS_INFO : rtc::LS_VERBOSE;
+    RTC_LOG_V(sev) << ToString() << ": Sent STUN ping response, to="
+                   << addr.ToSensitiveString()
+                   << ", id=" << rtc::hex_encode(response.transaction_id());
+
+    stats_.sent_ping_responses++;
+    LogCandidatePairEvent(webrtc::IceCandidatePairEventType::kCheckResponseSent,
+                          request->reduced_transaction_id());
   }
 }
 
