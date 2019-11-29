@@ -20,11 +20,14 @@
 #include "rtc_base/null_socket_server.h"
 #include "rtc_base/ref_count.h"
 #include "rtc_base/ref_counted_object.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
 
 namespace rtc {
 namespace {
+
+using ::webrtc::ToQueuedTask;
 
 class MessageQueueTest : public ::testing::Test, public MessageQueue {
  public:
@@ -132,26 +135,25 @@ TEST(MessageQueueManager, ProcessAllMessageQueues) {
   b->Start();
 
   volatile int messages_processed = 0;
-  FunctorMessageHandler<void, std::function<void()>> incrementer(
-      [&messages_processed, &entered_process_all_message_queues] {
-        // Wait for event as a means to ensure Increment doesn't occur outside
-        // of ProcessAllMessageQueues. The event is set by a message posted to
-        // the main thread, which is guaranteed to be handled inside
-        // ProcessAllMessageQueues.
-        entered_process_all_message_queues.Wait(Event::kForever);
-        AtomicOps::Increment(&messages_processed);
-      });
-  FunctorMessageHandler<void, std::function<void()>> event_signaler(
-      [&entered_process_all_message_queues] {
-        entered_process_all_message_queues.Set();
-      });
+  auto incrementer = [&messages_processed,
+                      &entered_process_all_message_queues] {
+    // Wait for event as a means to ensure Increment doesn't occur outside
+    // of ProcessAllMessageQueues. The event is set by a message posted to
+    // the main thread, which is guaranteed to be handled inside
+    // ProcessAllMessageQueues.
+    entered_process_all_message_queues.Wait(Event::kForever);
+    AtomicOps::Increment(&messages_processed);
+  };
+  auto event_signaler = [&entered_process_all_message_queues] {
+    entered_process_all_message_queues.Set();
+  };
 
   // Post messages (both delayed and non delayed) to both threads.
-  a->Post(RTC_FROM_HERE, &incrementer);
-  b->Post(RTC_FROM_HERE, &incrementer);
-  a->PostDelayed(RTC_FROM_HERE, 0, &incrementer);
-  b->PostDelayed(RTC_FROM_HERE, 0, &incrementer);
-  rtc::Thread::Current()->Post(RTC_FROM_HERE, &event_signaler);
+  a->PostTask(ToQueuedTask(incrementer));
+  b->PostTask(ToQueuedTask(incrementer));
+  a->PostDelayedTask(ToQueuedTask(incrementer), 0);
+  b->PostDelayedTask(ToQueuedTask(incrementer), 0);
+  rtc::Thread::Current()->PostTask(ToQueuedTask(event_signaler));
 
   MessageQueueManager::ProcessAllMessageQueuesForTesting();
   EXPECT_EQ(4, AtomicOps::AcquireLoad(&messages_processed));
@@ -172,23 +174,21 @@ TEST(MessageQueueManager, ProcessAllMessageQueuesWithClearedQueue) {
   auto t = Thread::CreateWithSocketServer();
   t->Start();
 
-  FunctorMessageHandler<void, std::function<void()>> clearer(
-      [&entered_process_all_message_queues] {
-        // Wait for event as a means to ensure Clear doesn't occur outside of
-        // ProcessAllMessageQueues. The event is set by a message posted to the
-        // main thread, which is guaranteed to be handled inside
-        // ProcessAllMessageQueues.
-        entered_process_all_message_queues.Wait(Event::kForever);
-        rtc::Thread::Current()->Clear(nullptr);
-      });
-  FunctorMessageHandler<void, std::function<void()>> event_signaler(
-      [&entered_process_all_message_queues] {
-        entered_process_all_message_queues.Set();
-      });
+  auto clearer = [&entered_process_all_message_queues] {
+    // Wait for event as a means to ensure Clear doesn't occur outside of
+    // ProcessAllMessageQueues. The event is set by a message posted to the
+    // main thread, which is guaranteed to be handled inside
+    // ProcessAllMessageQueues.
+    entered_process_all_message_queues.Wait(Event::kForever);
+    rtc::Thread::Current()->Clear(nullptr);
+  };
+  auto event_signaler = [&entered_process_all_message_queues] {
+    entered_process_all_message_queues.Set();
+  };
 
   // Post messages (both delayed and non delayed) to both threads.
-  t->Post(RTC_FROM_HERE, &clearer);
-  rtc::Thread::Current()->Post(RTC_FROM_HERE, &event_signaler);
+  t->PostTask(RTC_FROM_HERE, clearer);
+  rtc::Thread::Current()->PostTask(RTC_FROM_HERE, event_signaler);
   MessageQueueManager::ProcessAllMessageQueuesForTesting();
 }
 

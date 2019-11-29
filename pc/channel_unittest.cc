@@ -476,11 +476,9 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
    public:
     template <class FunctorT>
     explicit ScopedCallThread(FunctorT&& functor)
-        : thread_(rtc::Thread::Create()),
-          task_(new rtc::FunctorMessageHandler<void, FunctorT>(
-              std::forward<FunctorT>(functor))) {
+        : thread_(rtc::Thread::Create()) {
       thread_->Start();
-      thread_->Post(RTC_FROM_HERE, task_.get());
+      thread_->PostTask(RTC_FROM_HERE, std::forward<FunctorT>(functor));
     }
 
     ~ScopedCallThread() { thread_->Stop(); }
@@ -489,7 +487,6 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
 
    private:
     std::unique_ptr<rtc::Thread> thread_;
-    std::unique_ptr<rtc::MessageHandler> task_;
   };
 
   bool CodecMatches(const typename T::Codec& c1, const typename T::Codec& c2) {
