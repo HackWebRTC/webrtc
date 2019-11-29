@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "api/call/audio_sink.h"
+#include "api/function_view.h"
 #include "api/jsep.h"
 #include "api/rtp_receiver_interface.h"
 #include "api/transport/media/media_transport_config.h"
@@ -259,8 +260,9 @@ class BaseChannel : public ChannelInterface,
   void OnMessage(rtc::Message* pmsg) override;
 
   // Helper function template for invoking methods on the worker thread.
-  template <class T, class FunctorT>
-  T InvokeOnWorker(const rtc::Location& posted_from, const FunctorT& functor) {
+  template <class T>
+  T InvokeOnWorker(const rtc::Location& posted_from,
+                   rtc::FunctionView<T()> functor) {
     return worker_thread_->Invoke<T>(posted_from, functor);
   }
 

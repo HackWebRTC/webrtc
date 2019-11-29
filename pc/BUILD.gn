@@ -87,6 +87,7 @@ rtc_library("rtc_pc_base") {
     "../api:array_view",
     "../api:audio_options_api",
     "../api:call_api",
+    "../api:function_view",
     "../api:ice_transport_factory",
     "../api:libjingle_peerconnection_api",
     "../api:rtc_error",

@@ -21,6 +21,7 @@
 #if defined(WEBRTC_POSIX)
 #include <pthread.h>
 #endif
+#include "api/function_view.h"
 #include "api/task_queue/queued_task.h"
 #include "api/task_queue/task_queue_base.h"
 #include "rtc_base/constructor_magic.h"
@@ -214,12 +215,20 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public MessageQueue,
   // See ScopedDisallowBlockingCalls for details.
   // NOTE: Blocking invokes are DISCOURAGED, consider if what you're doing can
   // be achieved with PostTask() and callbacks instead.
-  template <class ReturnT, class FunctorT>
-  ReturnT Invoke(const Location& posted_from, FunctorT&& functor) {
-    FunctorMessageHandler<ReturnT, FunctorT> handler(
-        std::forward<FunctorT>(functor));
-    InvokeInternal(posted_from, &handler);
-    return handler.MoveResult();
+  template <
+      class ReturnT,
+      typename = typename std::enable_if<!std::is_void<ReturnT>::value>::type>
+  ReturnT Invoke(const Location& posted_from, FunctionView<ReturnT()> functor) {
+    ReturnT result;
+    InvokeInternal(posted_from, [functor, &result] { result = functor(); });
+    return result;
+  }
+
+  template <
+      class ReturnT,
+      typename = typename std::enable_if<std::is_void<ReturnT>::value>::type>
+  void Invoke(const Location& posted_from, FunctionView<void()> functor) {
+    InvokeInternal(posted_from, functor);
   }
 
   // Posts a task to invoke the functor on |this| thread asynchronously, i.e.
@@ -369,7 +378,8 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public MessageQueue,
   // Returns true if there is such a message.
   bool PopSendMessageFromThread(const Thread* source, _SendMessage* msg);
 
-  void InvokeInternal(const Location& posted_from, MessageHandler* handler);
+  void InvokeInternal(const Location& posted_from,
+                      rtc::FunctionView<void()> functor);
 
   std::list<_SendMessage> sendlist_;
   std::string name_;

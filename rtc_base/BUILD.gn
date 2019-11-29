@@ -785,6 +785,7 @@ rtc_library("rtc_base") {
     ":checks",
     ":stringutils",
     "../api:array_view",
+    "../api:function_view",
     "../api:scoped_refptr",
     "../api/task_queue",
     "network:sent_packet",

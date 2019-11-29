@@ -469,11 +469,22 @@ bool Thread::PopSendMessageFromThread(const Thread* source, _SendMessage* msg) {
 }
 
 void Thread::InvokeInternal(const Location& posted_from,
-                            MessageHandler* handler) {
+                            rtc::FunctionView<void()> functor) {
   TRACE_EVENT2("webrtc", "Thread::Invoke", "src_file_and_line",
                posted_from.file_and_line(), "src_func",
                posted_from.function_name());
-  Send(posted_from, handler);
+
+  class FunctorMessageHandler : public MessageHandler {
+   public:
+    explicit FunctorMessageHandler(rtc::FunctionView<void()> functor)
+        : functor_(functor) {}
+    void OnMessage(Message* msg) override { functor_(); }
+
+   private:
+    rtc::FunctionView<void()> functor_;
+  } handler(functor);
+
+  Send(posted_from, &handler);
 }
 
 void Thread::QueuedTaskHandler::OnMessage(Message* msg) {
