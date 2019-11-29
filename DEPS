@@ -5,7 +5,7 @@ vars = {
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
-  'chromium_revision': 'a9c1e4afb977fa0b27c7f7ee4a75266fab833f09',
+  'chromium_revision': '3f97848513e97d4dab18292167a2852e07babb59',
 }
 
 deps = {
@@ -23,13 +23,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': 'https://chromium.googlesource.com/chromium/src/ios@0c6f3cc26c91e02d2fdaaee12e60a6cfc52b0c98',
+    'url': 'https://chromium.googlesource.com/chromium/src/ios@a31907ccb810c2718851a3f672b919de47a9fc53',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    'https://chromium.googlesource.com/chromium/src/testing@7fc8295e7d2603e8460eff703119f97a360fbdb0',
+    'https://chromium.googlesource.com/chromium/src/testing@c011aaeb88b043c653e7ba4df7fa3cf4911c5677',
   'src/third_party':
-    'https://chromium.googlesource.com/chromium/src/third_party@d4ae047bf65c465f623a63fdfd7163b4d0e8415d',
+    'https://chromium.googlesource.com/chromium/src/third_party@245344e1cbc75f2ddbab9ccb55dd920413319b1d',
 
   'src/buildtools/linux64': {
     'packages': [
@@ -115,7 +115,7 @@ deps = {
   'src/third_party/colorama/src':
     'https://chromium.googlesource.com/external/colorama.git@799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
   'src/third_party/depot_tools':
-    'https://chromium.googlesource.com/chromium/tools/depot_tools.git@7c62ed63ace59cbdfda4a26c6a24ca0c668e9ef3',
+    'https://chromium.googlesource.com/chromium/tools/depot_tools.git@5ae4817ada0bd02f8c0d9f141d0f3c65701068a5',
   'src/third_party/ffmpeg':
     'https://chromium.googlesource.com/chromium/third_party/ffmpeg.git@fa04e15e1ad61052e85f42413d4b841d2a496ec0',
   'src/third_party/findbugs': {
@@ -123,7 +123,7 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/third_party/freetype/src':
-    'https://chromium.googlesource.com/chromium/src/third_party/freetype2.git@d4f9c249893a146b0c94a152f7674e288d181f95',
+    'https://chromium.googlesource.com/chromium/src/third_party/freetype2.git@4270e9f3243079bb90b6af618ed4d4fd31266412',
   'src/third_party/harfbuzz-ng/src':
     'https://chromium.googlesource.com/external/github.com/harfbuzz/harfbuzz.git@64a45be5198f6e22c91454bda7bd9a9294552dff',
   # WebRTC-only dependency (not present in Chromium).
@@ -237,7 +237,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     'https://chromium.googlesource.com/chromium/deps/yasm/patched-yasm.git@720b70524a4424b15fc57e82263568c8ba0496ad',
   'src/tools':
-    'https://chromium.googlesource.com/chromium/src/tools@0f56390d565124bff02617190d81f46ce30c475d',
+    'https://chromium.googlesource.com/chromium/src/tools@cc179a49325fd16a07309fdfc9b14e1962a73106',
   'src/tools/swarming_client':
     'https://chromium.googlesource.com/infra/luci/client-py.git@885b3febcc170a60f25795304e60927b77d1e92d',
 
