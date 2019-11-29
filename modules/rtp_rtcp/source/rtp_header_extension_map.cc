@@ -49,6 +49,7 @@ constexpr ExtensionInfo kExtensions[] = {
     CreateExtensionInfo<RtpGenericFrameDescriptorExtension01>(),
     CreateExtensionInfo<RtpDependencyDescriptorExtension>(),
     CreateExtensionInfo<ColorSpaceExtension>(),
+    CreateExtensionInfo<InbandComfortNoiseExtension>(),
 };
 
 // Because of kRtpExtensionNone, NumberOfExtension is 1 bigger than the actual

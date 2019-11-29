@@ -297,5 +297,23 @@ class RtpMid : public BaseRtpStringExtension {
   static constexpr const char kUri[] = "urn:ietf:params:rtp-hdrext:sdes:mid";
 };
 
+class InbandComfortNoiseExtension {
+ public:
+  using value_type = absl::optional<uint8_t>;
+
+  static constexpr RTPExtensionType kId = kRtpExtensionInbandComfortNoise;
+  static constexpr uint8_t kValueSizeBytes = 1;
+  static constexpr const char kUri[] =
+      "http://www.webrtc.org/experiments/rtp-hdrext/inband-cn";
+
+  static bool Parse(rtc::ArrayView<const uint8_t> data,
+                    absl::optional<uint8_t>* level);
+  static size_t ValueSize(absl::optional<uint8_t> level) {
+    return kValueSizeBytes;
+  }
+  static bool Write(rtc::ArrayView<uint8_t> data,
+                    absl::optional<uint8_t> level);
+};
+
 }  // namespace webrtc
 #endif  // MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSIONS_H_

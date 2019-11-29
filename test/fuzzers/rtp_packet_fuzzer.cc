@@ -145,6 +145,11 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
         packet.GetExtension<ColorSpaceExtension>(&color_space);
         break;
       }
+      case kRtpExtensionInbandComfortNoise: {
+        absl::optional<uint8_t> noise_level;
+        packet.GetExtension<InbandComfortNoiseExtension>(&noise_level);
+        break;
+      }
       case kRtpExtensionGenericFrameDescriptor02:
         // This extension requires state to read and so complicated that
         // deserves own fuzzer.
