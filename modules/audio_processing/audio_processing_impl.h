@@ -153,6 +153,7 @@ class AudioProcessingImpl : public AudioProcessing {
   std::unique_ptr<ApmDataDumper> data_dumper_;
   static int instance_count_;
   const bool enforced_usage_of_legacy_ns_;
+  const bool use_setup_specific_default_aec3_config_;
 
   SwapQueue<RuntimeSetting> capture_runtime_settings_;
   SwapQueue<RuntimeSetting> render_runtime_settings_;

@@ -445,6 +445,25 @@ bool EchoCanceller3::ActiveProcessing() const {
   return true;
 }
 
+EchoCanceller3Config EchoCanceller3::CreateDefaultConfig(
+    size_t num_render_channels,
+    size_t num_capture_channels) {
+  EchoCanceller3Config cfg;
+  if (num_render_channels > 1) {
+    // Use shorter and more rapidly adapting shadow filter to compensate for
+    // thge increased number of total filter parameters to adapt.
+    cfg.filter.shadow.length_blocks = 11;
+    cfg.filter.shadow.rate = 0.95f;
+    cfg.filter.shadow_initial.length_blocks = 11;
+    cfg.filter.shadow_initial.rate = 0.95f;
+
+    // Use more concervative suppressor behavior for non-nearend speech.
+    cfg.suppressor.normal_tuning.max_dec_factor_lf = 0.35f;
+    cfg.suppressor.normal_tuning.max_inc_factor = 1.5f;
+  }
+  return cfg;
+}
+
 void EchoCanceller3::EmptyRenderQueue() {
   RTC_DCHECK_RUNS_SERIALIZED(&capture_race_checker_);
   bool frame_to_buffer =

@@ -124,6 +124,11 @@ class EchoCanceller3 : public EchoControl {
     block_processor_->UpdateEchoLeakageStatus(leakage_detected);
   }
 
+  // Produces a default configuration that is suitable for a certain combination
+  // of render and capture channels.
+  static EchoCanceller3Config CreateDefaultConfig(size_t num_render_channels,
+                                                  size_t num_capture_channels);
+
  private:
   class RenderWriter;
 

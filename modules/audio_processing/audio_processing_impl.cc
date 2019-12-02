@@ -75,6 +75,14 @@ bool DetectLegacyNsEnforcement() {
   return field_trial::IsEnabled("WebRTC-NewNoiseSuppressionKillSwitch");
 }
 
+// Checks whether AEC3 should be allowed to decide what the default
+// configuration should be based on the render and capture channel configuration
+// at hand.
+bool UseSetupSpecificDefaultAec3Congfig() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3SetupSpecificDefaultConfigDefaultsKillSwitch");
+}
+
 // Identify the native processing rate that best handles a sample rate.
 int SuitableProcessRate(int minimum_rate,
                         int max_splitting_rate,
@@ -312,6 +320,8 @@ AudioProcessingImpl::AudioProcessingImpl(
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       enforced_usage_of_legacy_ns_(DetectLegacyNsEnforcement()),
+      use_setup_specific_default_aec3_config_(
+          UseSetupSpecificDefaultAec3Congfig()),
       capture_runtime_settings_(kRuntimeSettingQueueSize),
       render_runtime_settings_(kRuntimeSettingQueueSize),
       capture_runtime_settings_enqueuer_(&capture_runtime_settings_),
@@ -1826,8 +1836,13 @@ void AudioProcessingImpl::InitializeEchoController() {
           proc_sample_rate_hz(), num_reverse_channels(), num_proc_channels());
       RTC_DCHECK(submodules_.echo_controller);
     } else {
+      EchoCanceller3Config config =
+          use_setup_specific_default_aec3_config_
+              ? EchoCanceller3::CreateDefaultConfig(num_reverse_channels(),
+                                                    num_proc_channels())
+              : EchoCanceller3Config();
       submodules_.echo_controller = std::make_unique<EchoCanceller3>(
-          EchoCanceller3Config(), proc_sample_rate_hz(), num_reverse_channels(),
+          config, proc_sample_rate_hz(), num_reverse_channels(),
           num_proc_channels());
     }
 
