@@ -88,7 +88,7 @@ void EchoAudibility::UpdateRenderNoiseEstimator(
 
 bool EchoAudibility::IsRenderTooLow(const BlockBuffer& block_buffer) {
   const int num_render_channels =
-      static_cast<int>(block_buffer.buffer[0].size());
+      static_cast<int>(block_buffer.buffer[0][0].size());
   bool too_low = false;
   const int render_block_write_current = block_buffer.write;
   if (render_block_write_current == render_block_write_prev_) {
