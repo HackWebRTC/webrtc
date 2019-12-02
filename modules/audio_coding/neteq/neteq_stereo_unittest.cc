@@ -111,8 +111,7 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
     }
     int next_send_time = rtp_generator_mono_.GetRtpHeader(
         kPayloadTypeMono, frame_size_samples_, &rtp_header_mono_);
-    test::InputAudioFile::DuplicateInterleaved(
-        input_, frame_size_samples_, num_channels_, input_multi_channel_);
+    MakeMultiChannelInput();
     multi_payload_size_bytes_ = WebRtcPcm16b_Encode(
         input_multi_channel_, frame_size_samples_ * num_channels_,
         encoded_multi_channel_);
@@ -122,6 +121,11 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
     rtp_generator_.GetRtpHeader(kPayloadTypeMulti, frame_size_samples_,
                                 &rtp_header_);
     return next_send_time;
+  }
+
+  virtual void MakeMultiChannelInput() {
+    test::InputAudioFile::DuplicateInterleaved(
+        input_, frame_size_samples_, num_channels_, input_multi_channel_);
   }
 
   virtual void VerifyOutput(size_t num_samples) {
@@ -330,6 +334,36 @@ TEST_P(NetEqStereoTestLosses, RunTest) {
   RunTest(100);
 }
 
+class NetEqStereoTestSingleActiveChannelPlc : public NetEqStereoTestLosses {
+ protected:
+  NetEqStereoTestSingleActiveChannelPlc() : NetEqStereoTestLosses() {}
+
+  virtual void MakeMultiChannelInput() override {
+    // Create a multi-channel input by copying the mono channel from file to the
+    // first channel, and setting the others to zero.
+    memset(input_multi_channel_, 0,
+           frame_size_samples_ * num_channels_ * sizeof(int16_t));
+    for (size_t i = 0; i < frame_size_samples_; ++i) {
+      input_multi_channel_[i * num_channels_] = input_[i];
+    }
+  }
+
+  virtual void VerifyOutput(size_t num_samples) override {
+    // Simply verify that all samples in channels other than the first are zero.
+    const int16_t* output_multi_channel_data = output_multi_channel_.data();
+    for (size_t i = 0; i < num_samples; ++i) {
+      for (size_t j = 1; j < num_channels_; ++j) {
+        EXPECT_EQ(0, output_multi_channel_data[i * num_channels_ + j])
+            << "Sample " << i << ", channel " << j << " is non-zero.";
+      }
+    }
+  }
+};
+
+TEST_P(NetEqStereoTestSingleActiveChannelPlc, RunTest) {
+  RunTest(100);
+}
+
 // Creates a list of parameter sets.
 std::list<TestParameters> GetTestParameters() {
   std::list<TestParameters> l;
@@ -384,4 +418,7 @@ INSTANTIATE_TEST_SUITE_P(MultiChannel,
                          NetEqStereoTestLosses,
                          ::testing::ValuesIn(GetTestParameters()));
 
+INSTANTIATE_TEST_SUITE_P(MultiChannel,
+                         NetEqStereoTestSingleActiveChannelPlc,
+                         ::testing::ValuesIn(GetTestParameters()));
 }  // namespace webrtc
