@@ -52,7 +52,7 @@ public class RtpParameters {
     public Long ssrc;
 
     // This constructor is useful for creating simulcast layers.
-    Encoding(String rid, boolean active, Double scaleResolutionDownBy) {
+    public Encoding(String rid, boolean active, Double scaleResolutionDownBy) {
       this.rid = rid;
       this.active = active;
       this.scaleResolutionDownBy = scaleResolutionDownBy;
