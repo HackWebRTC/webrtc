@@ -102,6 +102,13 @@ class IvfVideoFrameGeneratorTest : public ::testing::Test {
   }
   void TearDown() override { webrtc::test::RemoveFile(file_name_); }
 
+  VideoFrame BuildFrame(FrameGenerator::VideoFrameData frame_data) {
+    return VideoFrame::Builder()
+        .set_video_frame_buffer(frame_data.buffer)
+        .set_update_rect(frame_data.update_rect)
+        .build();
+  }
+
   void CreateTestVideoFile(VideoCodecType video_codec_type,
                            std::unique_ptr<VideoEncoder> video_encoder) {
     std::unique_ptr<test::FrameGenerator> frame_generator =
@@ -133,16 +140,16 @@ class IvfVideoFrameGeneratorTest : public ::testing::Test {
     uint32_t last_frame_timestamp = 0;
 
     for (int i = 0; i < kVideoFramesCount; ++i) {
-      VideoFrame* frame = frame_generator->NextFrame();
+      VideoFrame frame = BuildFrame(frame_generator->NextFrame());
       const uint32_t timestamp =
           last_frame_timestamp +
           kVideoPayloadTypeFrequency / codec_settings.maxFramerate;
-      frame->set_timestamp(timestamp);
+      frame.set_timestamp(timestamp);
 
       last_frame_timestamp = timestamp;
 
-      ASSERT_EQ(WEBRTC_VIDEO_CODEC_OK, video_encoder->Encode(*frame, nullptr));
-      video_frames_.push_back(*frame);
+      ASSERT_EQ(WEBRTC_VIDEO_CODEC_OK, video_encoder->Encode(frame, nullptr));
+      video_frames_.push_back(frame);
     }
 
     ASSERT_TRUE(ivf_writer_callback.WaitForExpectedFramesReceived(
@@ -160,9 +167,8 @@ TEST_F(IvfVideoFrameGeneratorTest, Vp8) {
   IvfVideoFrameGenerator generator(file_name_);
   for (size_t i = 0; i < video_frames_.size(); ++i) {
     auto& expected_frame = video_frames_[i];
-    VideoFrame* actual_frame = generator.NextFrame();
-    EXPECT_TRUE(actual_frame);
-    EXPECT_GT(I420PSNR(&expected_frame, actual_frame), kExpectedMinPsnr);
+    VideoFrame actual_frame = BuildFrame(generator.NextFrame());
+    EXPECT_GT(I420PSNR(&expected_frame, &actual_frame), kExpectedMinPsnr);
   }
 }
 
@@ -171,9 +177,8 @@ TEST_F(IvfVideoFrameGeneratorTest, Vp8DoubleRead) {
   IvfVideoFrameGenerator generator(file_name_);
   for (size_t i = 0; i < video_frames_.size() * 2; ++i) {
     auto& expected_frame = video_frames_[i % video_frames_.size()];
-    VideoFrame* actual_frame = generator.NextFrame();
-    EXPECT_TRUE(actual_frame);
-    EXPECT_GT(I420PSNR(&expected_frame, actual_frame), kExpectedMinPsnr);
+    VideoFrame actual_frame = BuildFrame(generator.NextFrame());
+    EXPECT_GT(I420PSNR(&expected_frame, &actual_frame), kExpectedMinPsnr);
   }
 }
 
@@ -182,9 +187,8 @@ TEST_F(IvfVideoFrameGeneratorTest, Vp9) {
   IvfVideoFrameGenerator generator(file_name_);
   for (size_t i = 0; i < video_frames_.size(); ++i) {
     auto& expected_frame = video_frames_[i];
-    VideoFrame* actual_frame = generator.NextFrame();
-    EXPECT_TRUE(actual_frame);
-    EXPECT_GT(I420PSNR(&expected_frame, actual_frame), kExpectedMinPsnr);
+    VideoFrame actual_frame = BuildFrame(generator.NextFrame());
+    EXPECT_GT(I420PSNR(&expected_frame, &actual_frame), kExpectedMinPsnr);
   }
 }
 
@@ -196,9 +200,8 @@ TEST_F(IvfVideoFrameGeneratorTest, H264) {
   IvfVideoFrameGenerator generator(file_name_);
   for (size_t i = 0; i < video_frames_.size(); ++i) {
     auto& expected_frame = video_frames_[i];
-    VideoFrame* actual_frame = generator.NextFrame();
-    EXPECT_TRUE(actual_frame);
-    EXPECT_GT(I420PSNR(&expected_frame, actual_frame), kExpectedMinPsnr);
+    VideoFrame actual_frame = BuildFrame(generator.NextFrame());
+    EXPECT_GT(I420PSNR(&expected_frame, &actual_frame), kExpectedMinPsnr);
   }
 }
 #endif

@@ -70,45 +70,6 @@ class AnalyzingFramePreprocessor
       sinks_;
 };
 
-// Intercepts generated frames and passes them also to video quality analyzer
-// and to provided sinks.
-class AnalyzingFrameGenerator final : public test::FrameGenerator {
- public:
-  AnalyzingFrameGenerator(
-      std::string stream_label,
-      std::unique_ptr<test::FrameGenerator> delegate,
-      VideoQualityAnalyzerInterface* analyzer,
-      std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>> sinks)
-      : stream_label_(std::move(stream_label)),
-        delegate_(std::move(delegate)),
-        analyzer_(analyzer),
-        sinks_(std::move(sinks)) {}
-  ~AnalyzingFrameGenerator() override = default;
-
-  VideoFrame* NextFrame() override {
-    VideoFrame* frame = delegate_->NextFrame();
-
-    uint16_t frame_id = analyzer_->OnFrameCaptured(stream_label_, *frame);
-    frame->set_id(frame_id);
-
-    for (auto& sink : sinks_) {
-      sink->OnFrame(*frame);
-    }
-    return frame;
-  }
-
-  void ChangeResolution(size_t width, size_t height) override {
-    delegate_->ChangeResolution(width, height);
-  }
-
- private:
-  const std::string stream_label_;
-  std::unique_ptr<test::FrameGenerator> delegate_;
-  VideoQualityAnalyzerInterface* const analyzer_;
-  const std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>
-      sinks_;
-};
-
 // Implements the video sink, that forwards rendered frames to the video quality
 // analyzer and provided sinks.
 class AnalyzingVideoSink final : public rtc::VideoSinkInterface<VideoFrame> {

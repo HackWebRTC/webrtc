@@ -47,13 +47,20 @@ class FrameForwarder : public rtc::VideoSourceInterface<VideoFrame> {
 
 class FrameGenerator {
  public:
+  struct VideoFrameData {
+    VideoFrameData(rtc::scoped_refptr<VideoFrameBuffer> buffer,
+                   absl::optional<VideoFrame::UpdateRect> update_rect)
+        : buffer(std::move(buffer)), update_rect(update_rect) {}
+
+    rtc::scoped_refptr<VideoFrameBuffer> buffer;
+    absl::optional<VideoFrame::UpdateRect> update_rect;
+  };
+
   virtual ~FrameGenerator() = default;
 
-  // Returns video frame that remains valid until next call.
-  // TODO(kron): Return rtc::scoped_refptr<VideoFrameBuffer> instead of
-  // VideoFrame* and populate the VideoFrame struct in FrameGeneratorCapturer
-  // using VideoFrame::Builder.
-  virtual VideoFrame* NextFrame() = 0;
+  // Returns VideoFrameBuffer and area where most of update was done to set them
+  // on the VideoFrame object. Returned frames can share same buffer.
+  virtual VideoFrameData NextFrame() = 0;
 
   // Change the capture resolution.
   virtual void ChangeResolution(size_t width, size_t height);

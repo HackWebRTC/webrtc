@@ -176,24 +176,27 @@ bool FrameGeneratorCapturer::Init() {
 void FrameGeneratorCapturer::InsertFrame() {
   rtc::CritScope cs(&lock_);
   if (sending_) {
-    VideoFrame* frame = frame_generator_->NextFrame();
+    FrameGenerator::VideoFrameData frame_data = frame_generator_->NextFrame();
     // TODO(srte): Use more advanced frame rate control to allow arbritrary
     // fractions.
     int decimation =
         std::round(static_cast<double>(source_fps_) / target_capture_fps_);
     for (int i = 1; i < decimation; ++i)
-      frame = frame_generator_->NextFrame();
-    frame->set_timestamp_us(clock_->TimeInMicroseconds());
-    frame->set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
-    frame->set_rotation(fake_rotation_);
-    if (fake_color_space_) {
-      frame->set_color_space(fake_color_space_);
-    }
+      frame_data = frame_generator_->NextFrame();
+
+    VideoFrame frame = VideoFrame::Builder()
+                           .set_video_frame_buffer(frame_data.buffer)
+                           .set_rotation(fake_rotation_)
+                           .set_timestamp_us(clock_->TimeInMicroseconds())
+                           .set_ntp_time_ms(clock_->CurrentNtpInMilliseconds())
+                           .set_update_rect(frame_data.update_rect)
+                           .set_color_space(fake_color_space_)
+                           .build();
     if (first_frame_capture_time_ == -1) {
-      first_frame_capture_time_ = frame->ntp_time_ms();
+      first_frame_capture_time_ = frame.ntp_time_ms();
     }
 
-    TestVideoCapturer::OnFrame(*frame);
+    TestVideoCapturer::OnFrame(frame);
   }
 }
 

@@ -68,7 +68,7 @@ class SquareGenerator : public FrameGenerator {
     return buffer;
   }
 
-  VideoFrame* NextFrame() override {
+  VideoFrameData NextFrame() override {
     rtc::CritScope lock(&crit_);
 
     rtc::scoped_refptr<VideoFrameBuffer> buffer = nullptr;
@@ -102,13 +102,7 @@ class SquareGenerator : public FrameGenerator {
       buffer = I010Buffer::Copy(*buffer->ToI420());
     }
 
-    frame_ =
-        std::make_unique<VideoFrame>(VideoFrame::Builder()
-                                         .set_video_frame_buffer(buffer)
-                                         .set_rotation(webrtc::kVideoRotation_0)
-                                         .set_timestamp_us(0)
-                                         .build());
-    return frame_.get();
+    return VideoFrameData(buffer, absl::nullopt);
   }
 
  private:
@@ -174,7 +168,6 @@ class SquareGenerator : public FrameGenerator {
   int width_ RTC_GUARDED_BY(&crit_);
   int height_ RTC_GUARDED_BY(&crit_);
   std::vector<std::unique_ptr<Square>> squares_ RTC_GUARDED_BY(&crit_);
-  std::unique_ptr<VideoFrame> frame_ RTC_GUARDED_BY(&crit_);
 };
 
 class YuvFileGenerator : public FrameGenerator {
@@ -204,7 +197,7 @@ class YuvFileGenerator : public FrameGenerator {
       fclose(file);
   }
 
-  VideoFrame* NextFrame() override {
+  VideoFrameData NextFrame() override {
     // Empty update by default.
     VideoFrame::UpdateRect update_rect{0, 0, 0, 0};
     if (current_display_count_ == 0) {
@@ -218,14 +211,7 @@ class YuvFileGenerator : public FrameGenerator {
     if (++current_display_count_ >= frame_display_count_)
       current_display_count_ = 0;
 
-    temp_frame_ = std::make_unique<VideoFrame>(
-        VideoFrame::Builder()
-            .set_video_frame_buffer(last_read_buffer_)
-            .set_rotation(webrtc::kVideoRotation_0)
-            .set_timestamp_us(0)
-            .set_update_rect(update_rect)
-            .build());
-    return temp_frame_.get();
+    return VideoFrameData(last_read_buffer_, update_rect);
   }
 
   // Returns true if the new frame was loaded.
@@ -262,7 +248,6 @@ class YuvFileGenerator : public FrameGenerator {
   const int frame_display_count_;
   int current_display_count_;
   rtc::scoped_refptr<I420Buffer> last_read_buffer_;
-  std::unique_ptr<VideoFrame> temp_frame_;
 };
 
 // SlideGenerator works similarly to YuvFileGenerator but it fills the frames
@@ -281,19 +266,13 @@ class SlideGenerator : public FrameGenerator {
     RTC_DCHECK_GT(frame_repeat_count, 0);
   }
 
-  VideoFrame* NextFrame() override {
+  VideoFrameData NextFrame() override {
     if (current_display_count_ == 0)
       GenerateNewFrame();
     if (++current_display_count_ >= frame_display_count_)
       current_display_count_ = 0;
 
-    frame_ =
-        std::make_unique<VideoFrame>(VideoFrame::Builder()
-                                         .set_video_frame_buffer(buffer_)
-                                         .set_rotation(webrtc::kVideoRotation_0)
-                                         .set_timestamp_us(0)
-                                         .build());
-    return frame_.get();
+    return VideoFrameData(buffer_, absl::nullopt);
   }
 
   // Generates some randomly sized and colored squares scattered
@@ -345,7 +324,6 @@ class SlideGenerator : public FrameGenerator {
   int current_display_count_;
   Random random_generator_;
   rtc::scoped_refptr<I420Buffer> buffer_;
-  std::unique_ptr<VideoFrame> frame_;
 };
 
 class ScrollingImageFrameGenerator : public FrameGenerator {
@@ -367,7 +345,8 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
         target_height_(static_cast<int>(target_height)),
         current_frame_num_(num_frames_ - 1),
         prev_frame_not_scrolled_(false),
-        current_source_frame_(nullptr),
+        current_source_frame_(nullptr, absl::nullopt),
+        current_frame_(nullptr, absl::nullopt),
         file_generator_(files, source_width, source_height, 1) {
     RTC_DCHECK(clock_ != nullptr);
     RTC_DCHECK_GT(num_frames_, 0);
@@ -380,7 +359,7 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
 
   ~ScrollingImageFrameGenerator() override {}
 
-  VideoFrame* NextFrame() override {
+  VideoFrameData NextFrame() override {
     const int64_t kFrameDisplayTime = scroll_time_ + pause_time_;
     const int64_t now = clock_->TimeInMilliseconds();
     int64_t ms_since_start = now - start_time_;
@@ -403,39 +382,39 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
 
     bool same_scroll_position =
         prev_frame_not_scrolled_ && cur_frame_not_scrolled;
-    if (!same_scroll_position && current_frame_) {
+    if (!same_scroll_position) {
       // If scrolling is not finished yet, force full frame update.
-      current_frame_->set_update_rect(
-          VideoFrame::UpdateRect{0, 0, target_width_, target_height_});
+      current_frame_.update_rect =
+          VideoFrame::UpdateRect{0, 0, target_width_, target_height_};
     }
     prev_frame_not_scrolled_ = cur_frame_not_scrolled;
 
-    return current_frame_ ? &*current_frame_ : nullptr;
+    return current_frame_;
   }
 
   void UpdateSourceFrame(size_t frame_num) {
     VideoFrame::UpdateRect acc_update{0, 0, 0, 0};
-    while (current_frame_num_ != frame_num ||
-           current_source_frame_ == nullptr) {
+    while (current_frame_num_ != frame_num) {
       current_source_frame_ = file_generator_.NextFrame();
-      if (current_source_frame_)
-        acc_update.Union(current_source_frame_->update_rect());
+      if (current_source_frame_.update_rect) {
+        acc_update.Union(*current_source_frame_.update_rect);
+      }
       current_frame_num_ = (current_frame_num_ + 1) % num_frames_;
     }
-    RTC_DCHECK(current_source_frame_ != nullptr);
-    current_source_frame_->set_update_rect(acc_update);
+    current_source_frame_.update_rect = acc_update;
   }
 
   void CropSourceToScrolledImage(double scroll_factor) {
-    int scroll_margin_x = current_source_frame_->width() - target_width_;
+    int scroll_margin_x = current_source_frame_.buffer->width() - target_width_;
     int pixels_scrolled_x =
         static_cast<int>(scroll_margin_x * scroll_factor + 0.5);
-    int scroll_margin_y = current_source_frame_->height() - target_height_;
+    int scroll_margin_y =
+        current_source_frame_.buffer->height() - target_height_;
     int pixels_scrolled_y =
         static_cast<int>(scroll_margin_y * scroll_factor + 0.5);
 
     rtc::scoped_refptr<I420BufferInterface> i420_buffer =
-        current_source_frame_->video_frame_buffer()->ToI420();
+        current_source_frame_.buffer->ToI420();
     int offset_y =
         (i420_buffer->StrideY() * pixels_scrolled_y) + pixels_scrolled_x;
     int offset_u = (i420_buffer->StrideU() * (pixels_scrolled_y / 2)) +
@@ -444,20 +423,16 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
                    (pixels_scrolled_x / 2);
 
     VideoFrame::UpdateRect update_rect =
-        current_source_frame_->update_rect().IsEmpty()
+        current_source_frame_.update_rect->IsEmpty()
             ? VideoFrame::UpdateRect{0, 0, 0, 0}
             : VideoFrame::UpdateRect{0, 0, target_width_, target_height_};
-    current_frame_ =
-        VideoFrame::Builder()
-            .set_video_frame_buffer(WrapI420Buffer(
-                target_width_, target_height_, &i420_buffer->DataY()[offset_y],
-                i420_buffer->StrideY(), &i420_buffer->DataU()[offset_u],
-                i420_buffer->StrideU(), &i420_buffer->DataV()[offset_v],
-                i420_buffer->StrideV(), KeepRefUntilDone(i420_buffer)))
-            .set_rotation(kVideoRotation_0)
-            .set_timestamp_us(0)
-            .set_update_rect(update_rect)
-            .build();
+    current_frame_ = VideoFrameData(
+        WrapI420Buffer(target_width_, target_height_,
+                       &i420_buffer->DataY()[offset_y], i420_buffer->StrideY(),
+                       &i420_buffer->DataU()[offset_u], i420_buffer->StrideU(),
+                       &i420_buffer->DataV()[offset_v], i420_buffer->StrideV(),
+                       KeepRefUntilDone(i420_buffer)),
+        update_rect);
   }
 
   Clock* const clock_;
@@ -470,8 +445,8 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
 
   size_t current_frame_num_;
   bool prev_frame_not_scrolled_;
-  VideoFrame* current_source_frame_;
-  absl::optional<VideoFrame> current_frame_;
+  VideoFrameData current_source_frame_;
+  VideoFrameData current_frame_;
   YuvFileGenerator file_generator_;
 };
 

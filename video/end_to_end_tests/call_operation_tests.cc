@@ -131,7 +131,13 @@ TEST_F(CallOperationEndToEndTest, RendersSingleDelayedFrame) {
         GetVideoSendStream()->SetSource(
             &frame_forwarder, DegradationPreference::MAINTAIN_FRAMERATE);
 
-        frame_forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
+        test::FrameGenerator::VideoFrameData frame_data =
+            frame_generator->NextFrame();
+        VideoFrame frame = VideoFrame::Builder()
+                               .set_video_frame_buffer(frame_data.buffer)
+                               .set_update_rect(frame_data.update_rect)
+                               .build();
+        frame_forwarder.IncomingCapturedFrame(frame);
       });
 
   EXPECT_TRUE(renderer.Wait())
@@ -195,7 +201,13 @@ TEST_F(CallOperationEndToEndTest, TransmitsFirstFrame) {
             kDefaultWidth, kDefaultHeight, absl::nullopt, absl::nullopt);
         GetVideoSendStream()->SetSource(
             &frame_forwarder, DegradationPreference::MAINTAIN_FRAMERATE);
-        frame_forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
+        test::FrameGenerator::VideoFrameData frame_data =
+            frame_generator->NextFrame();
+        VideoFrame frame = VideoFrame::Builder()
+                               .set_video_frame_buffer(frame_data.buffer)
+                               .set_update_rect(frame_data.update_rect)
+                               .build();
+        frame_forwarder.IncomingCapturedFrame(frame);
       });
 
   EXPECT_TRUE(renderer.Wait())

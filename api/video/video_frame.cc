@@ -221,7 +221,7 @@ VideoFrame::Builder& VideoFrame::Builder::set_id(uint16_t id) {
 }
 
 VideoFrame::Builder& VideoFrame::Builder::set_update_rect(
-    const VideoFrame::UpdateRect& update_rect) {
+    const absl::optional<VideoFrame::UpdateRect>& update_rect) {
   update_rect_ = update_rect;
   return *this;
 }

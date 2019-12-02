@@ -77,7 +77,7 @@ class VideoCodecUnitTest : public ::testing::Test {
 
   virtual void ModifyCodecSettings(VideoCodec* codec_settings);
 
-  VideoFrame* NextInputFrame();
+  VideoFrame NextInputFrame();
 
   // Helper method for waiting a single encoded frame.
   bool WaitForEncodedFrame(EncodedImage* frame,

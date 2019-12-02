@@ -89,7 +89,7 @@ class RTC_EXPORT VideoFrame {
     Builder& set_color_space(const absl::optional<ColorSpace>& color_space);
     Builder& set_color_space(const ColorSpace* color_space);
     Builder& set_id(uint16_t id);
-    Builder& set_update_rect(const UpdateRect& update_rect);
+    Builder& set_update_rect(const absl::optional<UpdateRect>& update_rect);
     Builder& set_packet_infos(RtpPacketInfos packet_infos);
 
    private:

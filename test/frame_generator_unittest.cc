@@ -62,11 +62,13 @@ class FrameGeneratorTest : public ::testing::Test {
     fwrite(plane_buffer.get(), 1, uv_size, file);
   }
 
-  void CheckFrameAndMutate(VideoFrame* frame, uint8_t y, uint8_t u, uint8_t v) {
+  void CheckFrameAndMutate(const FrameGenerator::VideoFrameData& frame,
+                           uint8_t y,
+                           uint8_t u,
+                           uint8_t v) {
     // Check that frame is valid, has the correct color and timestamp are clean.
-    ASSERT_NE(nullptr, frame);
     rtc::scoped_refptr<I420BufferInterface> i420_buffer =
-        frame->video_frame_buffer()->ToI420();
+        frame.buffer->ToI420();
     const uint8_t* buffer;
     buffer = i420_buffer->DataY();
     for (int i = 0; i < y_size; ++i)
@@ -77,21 +79,13 @@ class FrameGeneratorTest : public ::testing::Test {
     buffer = i420_buffer->DataV();
     for (int i = 0; i < uv_size; ++i)
       ASSERT_EQ(v, buffer[i]);
-    EXPECT_EQ(0, frame->ntp_time_ms());
-    EXPECT_EQ(0, frame->render_time_ms());
-    EXPECT_EQ(0u, frame->timestamp());
-
-    // Mutate to something arbitrary non-zero.
-    frame->set_ntp_time_ms(11);
-    frame->set_timestamp_us(12);
-    frame->set_timestamp(13);
   }
 
-  uint64_t Hash(VideoFrame* frame) {
+  uint64_t Hash(const FrameGenerator::VideoFrameData& frame) {
     // Generate a 64-bit hash from the frame's buffer.
     uint64_t hash = 19;
     rtc::scoped_refptr<I420BufferInterface> i420_buffer =
-        frame->video_frame_buffer()->ToI420();
+        frame.buffer->ToI420();
     const uint8_t* buffer = i420_buffer->DataY();
     for (int i = 0; i < y_size; ++i) {
       hash = (37 * hash) + buffer[i];

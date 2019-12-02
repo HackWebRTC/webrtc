@@ -482,7 +482,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
             .set_timestamp_rtp(99)
             .set_timestamp_ms(99)
             .set_rotation(kVideoRotation_0)
-            .set_update_rect({offset_x, 0, 1, 1})
+            .set_update_rect(VideoFrame::UpdateRect{offset_x, 0, 1, 1})
             .build();
     frame.set_ntp_time_ms(ntp_time_ms);
     return frame;

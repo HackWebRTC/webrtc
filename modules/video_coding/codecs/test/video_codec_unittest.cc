@@ -93,13 +93,18 @@ void VideoCodecUnitTest::SetUp() {
 
 void VideoCodecUnitTest::ModifyCodecSettings(VideoCodec* codec_settings) {}
 
-VideoFrame* VideoCodecUnitTest::NextInputFrame() {
-  VideoFrame* input_frame = input_frame_generator_->NextFrame();
+VideoFrame VideoCodecUnitTest::NextInputFrame() {
+  test::FrameGenerator::VideoFrameData frame_data =
+      input_frame_generator_->NextFrame();
+  VideoFrame input_frame = VideoFrame::Builder()
+                               .set_video_frame_buffer(frame_data.buffer)
+                               .set_update_rect(frame_data.update_rect)
+                               .build();
 
   const uint32_t timestamp =
       last_input_frame_timestamp_ +
       kVideoPayloadTypeFrequency / codec_settings_.maxFramerate;
-  input_frame->set_timestamp(timestamp);
+  input_frame.set_timestamp(timestamp);
 
   last_input_frame_timestamp_ = timestamp;
   return input_frame;

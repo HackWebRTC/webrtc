@@ -64,20 +64,15 @@ IvfVideoFrameGenerator::~IvfVideoFrameGenerator() {
   }
 }
 
-VideoFrame* IvfVideoFrameGenerator::NextFrame() {
+FrameGenerator::VideoFrameData IvfVideoFrameGenerator::NextFrame() {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   next_frame_decoded_.Reset();
-  if (!file_reader_) {
-    return nullptr;
-  }
+  RTC_CHECK(file_reader_);
   if (!file_reader_->HasMoreFrames()) {
     file_reader_->Reset();
   }
   absl::optional<EncodedImage> image = file_reader_->NextFrame();
-  if (!image) {
-    return nullptr;
-  }
-  RTC_DCHECK(image);
+  RTC_CHECK(image);
   // Last parameter is undocumented and there is no usage of it found.
   RTC_DCHECK_EQ(WEBRTC_VIDEO_CODEC_OK,
                 video_decoder_->Decode(*image, /*missing_frames=*/false,
@@ -87,21 +82,18 @@ VideoFrame* IvfVideoFrameGenerator::NextFrame() {
                      << kMaxNextFrameWaitTemeoutMs << "ms. Can't continue";
 
   rtc::CritScope crit(&lock_);
-  if (width_ != static_cast<size_t>(next_frame_->width()) ||
-      height_ != static_cast<size_t>(next_frame_->height())) {
+  rtc::scoped_refptr<VideoFrameBuffer> buffer =
+      next_frame_->video_frame_buffer();
+  if (width_ != static_cast<size_t>(buffer->width()) ||
+      height_ != static_cast<size_t>(buffer->height())) {
     // Video adapter has requested a down-scale. Allocate a new buffer and
     // return scaled version.
     rtc::scoped_refptr<I420Buffer> scaled_buffer =
         I420Buffer::Create(width_, height_);
-    scaled_buffer->ScaleFrom(*next_frame_->video_frame_buffer()->ToI420());
-    next_frame_ = VideoFrame::Builder()
-                      .set_video_frame_buffer(scaled_buffer)
-                      .set_rotation(kVideoRotation_0)
-                      .set_timestamp_us(next_frame_->timestamp_us())
-                      .set_id(next_frame_->id())
-                      .build();
+    scaled_buffer->ScaleFrom(*buffer->ToI420());
+    buffer = scaled_buffer;
   }
-  return &next_frame_.value();
+  return VideoFrameData(buffer, next_frame_->update_rect());
 }
 
 void IvfVideoFrameGenerator::ChangeResolution(size_t width, size_t height) {
