@@ -93,8 +93,6 @@ PacketBuffer::InsertResult PacketBuffer::InsertPacket(
     // If we have explicitly cleared past this packet then it's old,
     // don't insert it, just silently ignore it.
     if (is_cleared_to_first_seq_num_) {
-      delete[] packet->data;
-      packet->data = nullptr;
       return result;
     }
 
@@ -104,8 +102,6 @@ PacketBuffer::InsertResult PacketBuffer::InsertPacket(
   if (buffer_[index].used) {
     // Duplicate packet, just delete the payload.
     if (buffer_[index].seq_num() == packet->seq_num) {
-      delete[] packet->data;
-      packet->data = nullptr;
       return result;
     }
 
@@ -120,8 +116,6 @@ PacketBuffer::InsertResult PacketBuffer::InsertPacket(
       // new keyframe is needed.
       RTC_LOG(LS_WARNING) << "Clear PacketBuffer and request key frame.";
       Clear();
-      delete[] packet->data;
-      packet->data = nullptr;
       result.buffer_cleared = true;
       return result;
     }
@@ -136,7 +130,6 @@ PacketBuffer::InsertResult PacketBuffer::InsertPacket(
   new_entry.continuous = false;
   new_entry.used = true;
   new_entry.data = std::move(*packet);
-  packet->data = nullptr;
 
   UpdateMissingPackets(seq_num);
 
@@ -164,8 +157,7 @@ void PacketBuffer::ClearTo(uint16_t seq_num) {
   for (size_t i = 0; i < iterations; ++i) {
     size_t index = first_seq_num_ % buffer_.size();
     if (AheadOf<uint16_t>(seq_num, buffer_[index].seq_num())) {
-      delete[] buffer_[index].data.data;
-      buffer_[index].data.data = nullptr;
+      buffer_[index].data.video_payload = {};
       buffer_[index].used = false;
     }
     ++first_seq_num_;
@@ -191,8 +183,7 @@ void PacketBuffer::ClearInterval(uint16_t start_seq_num,
   for (size_t i = 0; i < iterations; ++i) {
     size_t index = seq_num % buffer_.size();
     RTC_DCHECK_EQ(buffer_[index].seq_num(), seq_num);
-    delete[] buffer_[index].data.data;
-    buffer_[index].data.data = nullptr;
+    buffer_[index].data.video_payload = {};
     buffer_[index].used = false;
 
     ++seq_num;
@@ -202,8 +193,7 @@ void PacketBuffer::ClearInterval(uint16_t start_seq_num,
 void PacketBuffer::Clear() {
   rtc::CritScope lock(&crit_);
   for (StoredPacket& entry : buffer_) {
-    delete[] entry.data.data;
-    entry.data.data = nullptr;
+    entry.data.video_payload = {};
     entry.used = false;
   }
 
@@ -439,8 +429,8 @@ std::unique_ptr<RtpFrameObject> PacketBuffer::AssembleFrame(
         std::min(min_recv_time, packet.packet_info.receive_time_ms());
     max_recv_time =
         std::max(max_recv_time, packet.packet_info.receive_time_ms());
-    frame_size += packet.size_bytes;
-    payloads.emplace_back(packet.data, packet.size_bytes);
+    frame_size += packet.video_payload.size();
+    payloads.emplace_back(packet.video_payload);
     packet_infos.push_back(packet.packet_info);
   }
 

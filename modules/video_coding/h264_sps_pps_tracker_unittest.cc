@@ -32,7 +32,7 @@ const uint8_t start_code[] = {0, 0, 0, 1};
 
 rtc::ArrayView<const uint8_t> Bitstream(
     const H264SpsPpsTracker::FixedBitstream& fixed) {
-  return rtc::MakeArrayView(fixed.data.get(), fixed.size);
+  return fixed.bitstream;
 }
 
 void ExpectSpsPpsIdr(const RTPVideoHeaderH264& codec_header,

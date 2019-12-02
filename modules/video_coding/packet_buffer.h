@@ -23,6 +23,7 @@
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "modules/video_coding/frame_object.h"
+#include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/thread_annotations.h"
@@ -64,9 +65,7 @@ class PacketBuffer {
     int64_t ntp_time_ms = -1;
     int times_nacked = -1;
 
-    const uint8_t* data = nullptr;
-    size_t size_bytes = 0;
-
+    rtc::CopyOnWriteBuffer video_payload;
     RTPVideoHeader video_header;
     absl::optional<RtpGenericFrameDescriptor> generic_descriptor;
 

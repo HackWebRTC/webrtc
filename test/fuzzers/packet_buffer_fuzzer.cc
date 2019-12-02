@@ -21,39 +21,23 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   if (size > 200000) {
     return;
   }
-  video_coding::PacketBuffer::Packet packet;
   SimulatedClock clock(0);
   video_coding::PacketBuffer packet_buffer(&clock, 8, 1024);
   test::FuzzDataHelper helper(rtc::ArrayView<const uint8_t>(data, size));
 
   while (helper.BytesLeft()) {
-    // Complex types (e.g. non-POD-like types) can't be bit-wise fuzzed with
-    // random data or it will put them in an invalid state. We therefore backup
-    // their byte-patterns before the fuzzing and restore them after.
-    uint8_t video_header_backup[sizeof(packet.video_header)];
-    memcpy(&video_header_backup, &packet.video_header,
-           sizeof(packet.video_header));
-    uint8_t generic_descriptor_backup[sizeof(packet.generic_descriptor)];
-    memcpy(&generic_descriptor_backup, &packet.generic_descriptor,
-           sizeof(packet.generic_descriptor));
-    uint8_t packet_info_backup[sizeof(packet.packet_info)];
-    memcpy(&packet_info_backup, &packet.packet_info,
-           sizeof(packet.packet_info));
+    video_coding::PacketBuffer::Packet packet;
+    // Fuzz POD members of the packet.
+    helper.CopyTo(&packet.marker_bit);
+    helper.CopyTo(&packet.payload_type);
+    helper.CopyTo(&packet.seq_num);
+    helper.CopyTo(&packet.timestamp);
+    helper.CopyTo(&packet.ntp_time_ms);
+    helper.CopyTo(&packet.times_nacked);
 
-    helper.CopyTo(&packet);
-
-    memcpy(&packet.video_header, &video_header_backup,
-           sizeof(packet.video_header));
-    memcpy(&packet.generic_descriptor, &generic_descriptor_backup,
-           sizeof(packet.generic_descriptor));
-    memcpy(&packet.packet_info, &packet_info_backup,
-           sizeof(packet.packet_info));
-
-    // The packet buffer owns the payload of the packet.
-    uint8_t payload_size;
-    helper.CopyTo(&payload_size);
-    packet.size_bytes = payload_size;
-    packet.data = new uint8_t[payload_size];
+    // Fuzz non-POD member of the packet.
+    packet.video_payload.SetSize(helper.ReadOrDefaultValue<uint8_t>(0));
+    // TODO(danilchap): Fuzz other non-POD members of the |packet|.
 
     IgnoreResult(packet_buffer.InsertPacket(&packet));
   }

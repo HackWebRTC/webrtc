@@ -148,22 +148,16 @@ H264SpsPpsTracker::FixedBitstream H264SpsPpsTracker::CopyAndFixBitstream(
 
   // Then we copy to the new buffer.
   H264SpsPpsTracker::FixedBitstream fixed;
-  fixed.data = std::make_unique<uint8_t[]>(required_size);
-  fixed.size = required_size;
-  uint8_t* insert_at = fixed.data.get();
+  fixed.bitstream.EnsureCapacity(required_size);
 
   if (append_sps_pps) {
     // Insert SPS.
-    memcpy(insert_at, start_code_h264, sizeof(start_code_h264));
-    insert_at += sizeof(start_code_h264);
-    memcpy(insert_at, sps->second.data.get(), sps->second.size);
-    insert_at += sps->second.size;
+    fixed.bitstream.AppendData(start_code_h264);
+    fixed.bitstream.AppendData(sps->second.data.get(), sps->second.size);
 
     // Insert PPS.
-    memcpy(insert_at, start_code_h264, sizeof(start_code_h264));
-    insert_at += sizeof(start_code_h264);
-    memcpy(insert_at, pps->second.data.get(), pps->second.size);
-    insert_at += pps->second.size;
+    fixed.bitstream.AppendData(start_code_h264);
+    fixed.bitstream.AppendData(pps->second.data.get(), pps->second.size);
 
     // Update codec header to reflect the newly added SPS and PPS.
     NaluInfo sps_info;
@@ -187,8 +181,7 @@ H264SpsPpsTracker::FixedBitstream H264SpsPpsTracker::CopyAndFixBitstream(
   if (h264_header.packetization_type == kH264StapA) {
     const uint8_t* nalu_ptr = bitstream.data() + 1;
     while (nalu_ptr < bitstream.data() + bitstream.size()) {
-      memcpy(insert_at, start_code_h264, sizeof(start_code_h264));
-      insert_at += sizeof(start_code_h264);
+      fixed.bitstream.AppendData(start_code_h264);
 
       // The first two bytes describe the length of a segment.
       uint16_t segment_length = nalu_ptr[0] << 8 | nalu_ptr[1];
@@ -199,16 +192,14 @@ H264SpsPpsTracker::FixedBitstream H264SpsPpsTracker::CopyAndFixBitstream(
         return {kDrop};
       }
 
-      memcpy(insert_at, nalu_ptr, segment_length);
-      insert_at += segment_length;
+      fixed.bitstream.AppendData(nalu_ptr, segment_length);
       nalu_ptr += segment_length;
     }
   } else {
     if (h264_header.nalus_length > 0) {
-      memcpy(insert_at, start_code_h264, sizeof(start_code_h264));
-      insert_at += sizeof(start_code_h264);
+      fixed.bitstream.AppendData(start_code_h264);
     }
-    memcpy(insert_at, bitstream.data(), bitstream.size());
+    fixed.bitstream.AppendData(bitstream.data(), bitstream.size());
   }
 
   fixed.action = kInsert;

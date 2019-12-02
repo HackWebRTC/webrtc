@@ -19,6 +19,7 @@
 
 #include "api/array_view.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
+#include "rtc_base/copy_on_write_buffer.h"
 
 namespace webrtc {
 namespace video_coding {
@@ -28,8 +29,7 @@ class H264SpsPpsTracker {
   enum PacketAction { kInsert, kDrop, kRequestKeyframe };
   struct FixedBitstream {
     PacketAction action;
-    std::unique_ptr<uint8_t[]> data;
-    size_t size;
+    rtc::CopyOnWriteBuffer bitstream;
   };
 
   H264SpsPpsTracker();

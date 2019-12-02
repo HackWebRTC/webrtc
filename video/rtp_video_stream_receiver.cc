@@ -466,16 +466,12 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
       case video_coding::H264SpsPpsTracker::kDrop:
         return;
       case video_coding::H264SpsPpsTracker::kInsert:
-        packet.data = fixed.data.release();
-        packet.size_bytes = fixed.size;
+        packet.video_payload = std::move(fixed.bitstream);
         break;
     }
 
   } else {
-    packet.size_bytes = codec_payload.size();
-    uint8_t* data = new uint8_t[packet.size_bytes];
-    memcpy(data, codec_payload.data(), codec_payload.size());
-    packet.data = data;
+    packet.video_payload.SetData(codec_payload.data(), codec_payload.size());
   }
 
   rtcp_feedback_buffer_.SendBufferedRtcpFeedback();
