@@ -370,6 +370,7 @@ rtc_library("rtc_media_engine_defaults") {
     "../api/video_codecs:builtin_video_encoder_factory",
     "../modules/audio_processing:api",
     "../rtc_base:checks",
+    "../rtc_base/system:rtc_export",
   ]
 }
 

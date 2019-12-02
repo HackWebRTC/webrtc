@@ -1339,7 +1339,8 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
 // of networking classes, it should use the alternate
 // CreatePeerConnectionFactory method which accepts threads as input, and use
 // the CreatePeerConnection version that takes a PortAllocator as an argument.
-class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
+class RTC_EXPORT PeerConnectionFactoryInterface
+    : public rtc::RefCountInterface {
  public:
   class Options {
    public:
