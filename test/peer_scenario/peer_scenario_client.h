@@ -48,8 +48,11 @@ class PeerScenarioClient {
         on_ice_gathering_change;
     std::vector<std::function<void(const IceCandidateInterface*)>>
         on_ice_candidate;
-    std::vector<std::function<
-        void(const std::string&, const std::string&, int, const std::string&)>>
+    std::vector<std::function<void(const std::string&,
+                                   int,
+                                   const std::string&,
+                                   int,
+                                   const std::string&)>>
         on_ice_candidate_error;
     std::vector<std::function<void(const std::vector<cricket::Candidate>&)>>
         on_ice_candidates_removed;

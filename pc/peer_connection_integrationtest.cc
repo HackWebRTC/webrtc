@@ -977,11 +977,12 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     SendIceMessage(candidate->sdp_mid(), candidate->sdp_mline_index(), ice_sdp);
     last_candidate_gathered_ = candidate->candidate();
   }
-  void OnIceCandidateError(const std::string& host_candidate,
+  void OnIceCandidateError(const std::string& address,
+                           int port,
                            const std::string& url,
                            int error_code,
                            const std::string& error_text) override {
-    error_event_ = cricket::IceCandidateErrorEvent(host_candidate, url,
+    error_event_ = cricket::IceCandidateErrorEvent(address, port, url,
                                                    error_code, error_text);
   }
   void OnDataChannel(
@@ -5708,8 +5709,7 @@ TEST_P(PeerConnectionIntegrationTest, OnIceCandidateError) {
   EXPECT_EQ_WAIT(401, caller()->error_event().error_code, kDefaultTimeout);
   EXPECT_EQ("Unauthorized", caller()->error_event().error_text);
   EXPECT_EQ("turn:88.88.88.0:3478?transport=udp", caller()->error_event().url);
-  EXPECT_NE(std::string::npos,
-            caller()->error_event().host_candidate.find(":"));
+  EXPECT_NE(caller()->error_event().address, "");
 }
 
 TEST_F(PeerConnectionIntegrationTestUnifiedPlan,

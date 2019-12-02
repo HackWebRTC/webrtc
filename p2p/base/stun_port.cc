@@ -544,8 +544,9 @@ void UDPPort::OnStunBindingOrResolveRequestFailed(
   rtc::StringBuilder url;
   url << "stun:" << stun_server_addr.ToString();
   SignalCandidateError(
-      this, IceCandidateErrorEvent(GetLocalAddress().ToSensitiveString(),
-                                   url.str(), error_code, reason));
+      this, IceCandidateErrorEvent(GetLocalAddress().HostAsSensitiveURIString(),
+                                   GetLocalAddress().port(), url.str(),
+                                   error_code, reason));
   if (bind_request_failed_servers_.find(stun_server_addr) !=
       bind_request_failed_servers_.end()) {
     return;

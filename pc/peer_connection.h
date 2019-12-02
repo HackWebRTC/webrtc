@@ -569,7 +569,8 @@ class PeerConnection : public PeerConnectionInternal,
   void OnIceCandidate(std::unique_ptr<IceCandidateInterface> candidate)
       RTC_RUN_ON(signaling_thread());
   // Gathering of an ICE candidate failed.
-  void OnIceCandidateError(const std::string& host_candidate,
+  void OnIceCandidateError(const std::string& address,
+                           int port,
                            const std::string& url,
                            int error_code,
                            const std::string& error_text)

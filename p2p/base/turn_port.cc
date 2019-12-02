@@ -885,7 +885,8 @@ void TurnPort::OnAllocateError(int error_code, const std::string& reason) {
   thread()->Post(RTC_FROM_HERE, this, MSG_ALLOCATE_ERROR);
   SignalCandidateError(
       this,
-      IceCandidateErrorEvent(GetLocalAddress().ToSensitiveString(),
+      IceCandidateErrorEvent(GetLocalAddress().HostAsSensitiveURIString(),
+                             GetLocalAddress().port(),
                              ReconstructedServerUrl(true /* use_hostname */),
                              error_code, reason));
 }

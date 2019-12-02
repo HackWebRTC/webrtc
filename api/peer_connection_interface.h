@@ -1203,6 +1203,14 @@ class PeerConnectionObserver {
                                    int error_code,
                                    const std::string& error_text) {}
 
+  // Gathering of an ICE candidate failed.
+  // See https://w3c.github.io/webrtc-pc/#event-icecandidateerror
+  virtual void OnIceCandidateError(const std::string& address,
+                                   int port,
+                                   const std::string& url,
+                                   int error_code,
+                                   const std::string& error_text) {}
+
   // Ice candidates have been removed.
   // TODO(honghaiz): Make this a pure virtual method when all its subclasses
   // implement it.

@@ -128,16 +128,19 @@ struct ProtocolAddress {
 
 struct IceCandidateErrorEvent {
   IceCandidateErrorEvent() = default;
-  IceCandidateErrorEvent(std::string host_candidate,
+  IceCandidateErrorEvent(std::string address,
+                         int port,
                          std::string url,
                          int error_code,
                          std::string error_text)
-      : host_candidate(std::move(host_candidate)),
+      : address(std::move(address)),
+        port(port),
         url(std::move(url)),
         error_code(error_code),
         error_text(std::move(error_text)) {}
 
-  std::string host_candidate;
+  std::string address;
+  int port = 0;
   std::string url;
   int error_code = 0;
   std::string error_text;

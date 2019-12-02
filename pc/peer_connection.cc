@@ -4736,14 +4736,17 @@ void PeerConnection::OnIceCandidate(
   Observer()->OnIceCandidate(candidate.get());
 }
 
-void PeerConnection::OnIceCandidateError(const std::string& host_candidate,
+void PeerConnection::OnIceCandidateError(const std::string& address,
+                                         int port,
                                          const std::string& url,
                                          int error_code,
                                          const std::string& error_text) {
   if (IsClosed()) {
     return;
   }
-  Observer()->OnIceCandidateError(host_candidate, url, error_code, error_text);
+  Observer()->OnIceCandidateError(address, port, url, error_code, error_text);
+  // Leftover not to break wpt test during migration to the new API.
+  Observer()->OnIceCandidateError(address + ":", url, error_code, error_text);
 }
 
 void PeerConnection::OnIceCandidatesRemoved(
@@ -6348,7 +6351,7 @@ void PeerConnection::OnTransportControllerCandidatesGathered(
 
 void PeerConnection::OnTransportControllerCandidateError(
     const cricket::IceCandidateErrorEvent& event) {
-  OnIceCandidateError(event.host_candidate, event.url, event.error_code,
+  OnIceCandidateError(event.address, event.port, event.url, event.error_code,
                       event.error_text);
 }
 
