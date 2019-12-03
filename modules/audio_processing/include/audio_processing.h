@@ -283,6 +283,7 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
       // Recommended not to use. Will be removed in the future.
       bool use_legacy_aec = false;
       bool export_linear_aec_output = false;
+      bool enforce_high_pass_filtering = true;
     } echo_canceller;
 
     // Enables background noise suppression.
