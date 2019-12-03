@@ -15,6 +15,8 @@
 #include <vector>
 
 #include "api/task_queue/task_queue_factory.h"
+#include "api/transport/media/media_transport_interface.h"
+#include "api/video/recordable_encoded_frame.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "call/syncable.h"
 #include "call/video_receive_stream.h"
@@ -50,6 +52,10 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public Syncable,
                            public CallStatsObserver {
  public:
+  // The default number of milliseconds to pass before re-requesting a key frame
+  // to be sent.
+  static constexpr int kMaxWaitForKeyFrameMs = 200;
+
   VideoReceiveStream(TaskQueueFactory* task_queue_factory,
                      RtpStreamReceiverControllerInterface* receiver_controller,
                      int num_cpu_cores,
@@ -123,15 +129,23 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   std::vector<webrtc::RtpSource> GetSources() const override;
 
+  RecordingState SetAndGetRecordingState(RecordingState state,
+                                         bool generate_key_frame) override;
+  void GenerateKeyFrame() override;
+
  private:
   int64_t GetWaitMs() const;
   void StartNextDecode() RTC_RUN_ON(decode_queue_);
-  void HandleEncodedFrame(std::unique_ptr<video_coding::EncodedFrame> frame);
-  void HandleFrameBufferTimeout();
-
+  void HandleEncodedFrame(std::unique_ptr<video_coding::EncodedFrame> frame)
+      RTC_RUN_ON(decode_queue_);
+  void HandleFrameBufferTimeout() RTC_RUN_ON(decode_queue_);
   void UpdatePlayoutDelays() const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(playout_delay_lock_);
-  void RequestKeyFrame(int64_t timestamp_ms);
+  void RequestKeyFrame(int64_t timestamp_ms) RTC_RUN_ON(decode_queue_);
+  void HandleKeyFrameGeneration(bool received_frame_is_keyframe, int64_t now_ms)
+      RTC_RUN_ON(decode_queue_);
+  bool IsReceivingKeyFrame(int64_t timestamp_ms) const
+      RTC_RUN_ON(decode_queue_);
 
   void UpdateHistograms();
 
@@ -206,6 +220,12 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   // Maximum delay as decided by the RTP playout delay extension.
   int frame_maximum_playout_delay_ms_ RTC_GUARDED_BY(playout_delay_lock_) = -1;
+
+  // Function that is triggered with encoded frames, if not empty.
+  std::function<void(const RecordableEncodedFrame&)>
+      encoded_frame_buffer_function_ RTC_GUARDED_BY(decode_queue_);
+  // Set to true while we're requesting keyframes but not yet received one.
+  bool keyframe_generation_requested_ RTC_GUARDED_BY(decode_queue_) = false;
 
   // Defined last so they are destroyed before all other members.
   rtc::TaskQueue decode_queue_;
