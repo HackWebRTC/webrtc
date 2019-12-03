@@ -418,7 +418,7 @@ GlobalSimulatedTimeController::CreateProcessThread(const char* thread_name) {
   return impl_.CreateProcessThread(thread_name);
 }
 
-void GlobalSimulatedTimeController::Sleep(TimeDelta duration) {
+void GlobalSimulatedTimeController::AdvanceTime(TimeDelta duration) {
   rtc::ScopedYieldPolicy yield_policy(&impl_);
   Timestamp current_time = impl_.CurrentTime();
   Timestamp target_time = current_time + duration;

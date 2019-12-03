@@ -46,7 +46,7 @@ TEST(SimulatedTimeControllerTest, TaskIsStoppedOnStop) {
     return kShortInterval;
   });
   // Sleep long enough to go through the initial phase.
-  time_simulation.Sleep(kShortInterval * (kShortIntervalCount + kMargin));
+  time_simulation.AdvanceTime(kShortInterval * (kShortIntervalCount + kMargin));
   EXPECT_EQ(counter.load(), kShortIntervalCount);
 
   task_queue.PostTask(
@@ -54,7 +54,7 @@ TEST(SimulatedTimeControllerTest, TaskIsStoppedOnStop) {
 
   // Sleep long enough that the task would run at least once more if not
   // stopped.
-  time_simulation.Sleep(kLongInterval * 2);
+  time_simulation.AdvanceTime(kLongInterval * 2);
   EXPECT_EQ(counter.load(), kShortIntervalCount);
 }
 
@@ -73,7 +73,7 @@ TEST(SimulatedTimeControllerTest, TaskCanStopItself) {
       return TimeDelta::ms(2);
     });
   });
-  time_simulation.Sleep(TimeDelta::ms(10));
+  time_simulation.AdvanceTime(TimeDelta::ms(10));
   EXPECT_EQ(counter.load(), 1);
 }
 TEST(SimulatedTimeControllerTest, Example) {

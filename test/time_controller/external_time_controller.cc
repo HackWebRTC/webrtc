@@ -178,7 +178,7 @@ std::unique_ptr<ProcessThread> ExternalTimeController::CreateProcessThread(
       this, impl_.CreateProcessThread(thread_name));
 }
 
-void ExternalTimeController::Sleep(TimeDelta duration) {
+void ExternalTimeController::AdvanceTime(TimeDelta duration) {
   alarm_->Sleep(duration);
 }
 

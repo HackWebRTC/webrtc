@@ -37,7 +37,7 @@ class ExternalTimeController : public TimeController, public TaskQueueFactory {
   TaskQueueFactory* GetTaskQueueFactory() override;
   std::unique_ptr<ProcessThread> CreateProcessThread(
       const char* thread_name) override;
-  void Sleep(TimeDelta duration) override;
+  void AdvanceTime(TimeDelta duration) override;
   void InvokeWithControlledYield(std::function<void()> closure) override;
   rtc::YieldInterface* YieldInterface() override;
 

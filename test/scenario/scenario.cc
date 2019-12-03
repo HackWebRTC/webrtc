@@ -272,7 +272,7 @@ void Scenario::At(TimeDelta offset, std::function<void()> function) {
 void Scenario::RunFor(TimeDelta duration) {
   if (start_time_.IsInfinite())
     Start();
-  time_controller_->Sleep(duration);
+  time_controller_->AdvanceTime(duration);
 }
 
 void Scenario::RunUntil(TimeDelta target_time_since_start) {
@@ -285,11 +285,11 @@ void Scenario::RunUntil(TimeDelta target_time_since_start,
   if (start_time_.IsInfinite())
     Start();
   while (check_interval >= TimeUntilTarget(target_time_since_start)) {
-    time_controller_->Sleep(check_interval);
+    time_controller_->AdvanceTime(check_interval);
     if (exit_function())
       return;
   }
-  time_controller_->Sleep(TimeUntilTarget(target_time_since_start));
+  time_controller_->AdvanceTime(TimeUntilTarget(target_time_since_start));
 }
 
 void Scenario::Start() {

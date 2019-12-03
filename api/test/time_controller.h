@@ -39,7 +39,7 @@ class TimeController {
       const char* thread_name) = 0;
   // Allow task queues and process threads created by this instance to execute
   // for the given |duration|.
-  virtual void Sleep(TimeDelta duration) = 0;
+  virtual void AdvanceTime(TimeDelta duration) = 0;
   // Execute closure in an implementation defined scope where rtc::Event::Wait
   // might yield to execute other tasks. This allows doing blocking waits on
   // tasks on other task queues froma a task queue without deadlocking.

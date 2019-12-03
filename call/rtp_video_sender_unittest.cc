@@ -160,7 +160,7 @@ class RtpVideoSenderTestFixture {
 
   RtpVideoSender* router() { return router_.get(); }
   MockTransport& transport() { return transport_; }
-  void AdvanceTime(TimeDelta delta) { time_controller_.Sleep(delta); }
+  void AdvanceTime(TimeDelta delta) { time_controller_.AdvanceTime(delta); }
 
  private:
   NiceMock<MockTransport> transport_;

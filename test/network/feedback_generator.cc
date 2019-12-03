@@ -32,7 +32,7 @@ Timestamp FeedbackGeneratorImpl::Now() {
 }
 
 void FeedbackGeneratorImpl::Sleep(TimeDelta duration) {
-  time_controller_.Sleep(duration);
+  time_controller_.AdvanceTime(duration);
 }
 
 void FeedbackGeneratorImpl::SendPacket(size_t size) {

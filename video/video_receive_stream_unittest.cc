@@ -536,13 +536,13 @@ TEST_F(VideoReceiveStreamTestWithSimulatedClock,
   EXPECT_CALL(mock_transport_, SendRtcp).Times(1);
   video_receive_stream_.GenerateKeyFrame();
   PassEncodedFrameAndWait(MakeFrame(VideoFrameType::kVideoFrameDelta, 0));
-  time_controller_.Sleep(tick);
+  time_controller_.AdvanceTime(tick);
   PassEncodedFrameAndWait(MakeFrame(VideoFrameType::kVideoFrameDelta, 1));
   testing::Mock::VerifyAndClearExpectations(&mock_transport_);
 
   // T+200ms: still no key frame received, expect key frame request sent again.
   EXPECT_CALL(mock_transport_, SendRtcp).Times(1);
-  time_controller_.Sleep(tick);
+  time_controller_.AdvanceTime(tick);
   PassEncodedFrameAndWait(MakeFrame(VideoFrameType::kVideoFrameDelta, 2));
   testing::Mock::VerifyAndClearExpectations(&mock_transport_);
 
@@ -550,7 +550,7 @@ TEST_F(VideoReceiveStreamTestWithSimulatedClock,
   // requests after this.
   EXPECT_CALL(mock_transport_, SendRtcp).Times(0);
   PassEncodedFrameAndWait(MakeFrame(VideoFrameType::kVideoFrameKey, 3));
-  time_controller_.Sleep(2 * tick);
+  time_controller_.AdvanceTime(2 * tick);
   PassEncodedFrameAndWait(MakeFrame(VideoFrameType::kVideoFrameDelta, 4));
 }
 

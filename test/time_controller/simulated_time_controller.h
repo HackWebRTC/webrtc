@@ -78,9 +78,9 @@ class SimulatedTimeControllerImpl : public TaskQueueFactory,
 
 // TimeController implementation using completely simulated time. Task queues
 // and process threads created by this controller will run delayed activities
-// when Sleep() is called. Overrides the global clock backing rtc::TimeMillis()
-// and rtc::TimeMicros(). Note that this is not thread safe since it modifies
-// global state.
+// when AdvanceTime() is called. Overrides the global clock backing
+// rtc::TimeMillis() and rtc::TimeMicros(). Note that this is not thread safe
+// since it modifies global state.
 class GlobalSimulatedTimeController : public TimeController {
  public:
   explicit GlobalSimulatedTimeController(Timestamp start_time);
@@ -90,7 +90,7 @@ class GlobalSimulatedTimeController : public TimeController {
   TaskQueueFactory* GetTaskQueueFactory() override;
   std::unique_ptr<ProcessThread> CreateProcessThread(
       const char* thread_name) override;
-  void Sleep(TimeDelta duration) override;
+  void AdvanceTime(TimeDelta duration) override;
   void InvokeWithControlledYield(std::function<void()> closure) override;
   rtc::YieldInterface* YieldInterface() override;
 

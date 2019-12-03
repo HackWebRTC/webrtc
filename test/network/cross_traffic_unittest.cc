@@ -141,10 +141,10 @@ TEST(TcpMessageRouteTest, DeliveredOnLossyNetwork) {
 
   // If there was no loss, we would have delivered the message in ca 1 second,
   // with 50% it should take much longer.
-  time.Sleep(TimeDelta::seconds(5));
+  time.AdvanceTime(TimeDelta::seconds(5));
   ASSERT_EQ(deliver_count, 0);
   // But given enough time the messsage will be delivered, but only once.
-  time.Sleep(TimeDelta::seconds(60));
+  time.AdvanceTime(TimeDelta::seconds(60));
   EXPECT_EQ(deliver_count, 1);
 }
 

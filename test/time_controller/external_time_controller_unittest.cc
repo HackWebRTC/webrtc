@@ -98,7 +98,7 @@ TEST(ExternalTimeControllerTest, TaskIsStoppedOnStop) {
     return kShortInterval;
   });
   // Sleep long enough to go through the initial phase.
-  time_simulation.Sleep(kShortInterval * (kShortIntervalCount + kMargin));
+  time_simulation.AdvanceTime(kShortInterval * (kShortIntervalCount + kMargin));
   EXPECT_EQ(counter.load(), kShortIntervalCount);
 
   task_queue.PostTask(
@@ -106,7 +106,7 @@ TEST(ExternalTimeControllerTest, TaskIsStoppedOnStop) {
 
   // Sleep long enough that the task would run at least once more if not
   // stopped.
-  time_simulation.Sleep(kLongInterval * 2);
+  time_simulation.AdvanceTime(kLongInterval * 2);
   EXPECT_EQ(counter.load(), kShortIntervalCount);
 }
 
@@ -126,7 +126,7 @@ TEST(ExternalTimeControllerTest, TaskCanStopItself) {
       return TimeDelta::ms(2);
     });
   });
-  time_simulation.Sleep(TimeDelta::ms(10));
+  time_simulation.AdvanceTime(TimeDelta::ms(10));
   EXPECT_EQ(counter.load(), 1);
 }
 
@@ -162,7 +162,7 @@ TEST(ExternalTimeControllerTest, TasksYieldToEachOther) {
     EXPECT_TRUE(event.Wait(200));
   });
 
-  time_simulation.Sleep(TimeDelta::ms(300));
+  time_simulation.AdvanceTime(TimeDelta::ms(300));
 }
 
 TEST(ExternalTimeControllerTest, CurrentTaskQueue) {
@@ -175,7 +175,7 @@ TEST(ExternalTimeControllerTest, CurrentTaskQueue) {
 
   task_queue.PostTask([&] { EXPECT_TRUE(task_queue.IsCurrent()); });
 
-  time_simulation.Sleep(TimeDelta::ms(10));
+  time_simulation.AdvanceTime(TimeDelta::ms(10));
 }
 
 }  // namespace webrtc
