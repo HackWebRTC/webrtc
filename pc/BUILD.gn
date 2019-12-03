@@ -167,6 +167,7 @@ rtc_library("peerconnection") {
     "data_channel.cc",
     "data_channel.h",
     "data_channel_controller.cc",
+    "data_channel_controller.h",
     "dtmf_sender.cc",
     "dtmf_sender.h",
     "ice_server_parsing.cc",

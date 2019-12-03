@@ -21,6 +21,7 @@
 #include "api/peer_connection_interface.h"
 #include "api/transport/data_channel_transport_interface.h"
 #include "api/turn_customizer.h"
+#include "pc/data_channel_controller.h"
 #include "pc/ice_server_parsing.h"
 #include "pc/jsep_transport_controller.h"
 #include "pc/peer_connection_factory.h"
@@ -269,7 +270,7 @@ class PeerConnection : public PeerConnectionInternal,
   }
 
   sigslot::signal1<DataChannel*>& SignalDataChannelCreated() override {
-    return SignalDataChannelCreated_;
+    return data_channel_controller_.SignalDataChannelCreated();
   }
 
   cricket::RtpDataChannel* rtp_data_channel() const override {
@@ -279,7 +280,7 @@ class PeerConnection : public PeerConnectionInternal,
   std::vector<rtc::scoped_refptr<DataChannel>> sctp_data_channels()
       const override {
     RTC_DCHECK_RUN_ON(signaling_thread());
-    return sctp_data_channels_;
+    return *data_channel_controller_.sctp_data_channels();
   }
 
   absl::optional<std::string> sctp_content_name() const override {
@@ -304,6 +305,22 @@ class PeerConnection : public PeerConnectionInternal,
   bool NeedsIceRestart(const std::string& content_name) const override;
   bool GetSslRole(const std::string& content_name, rtc::SSLRole* role) override;
 
+  // Functions needed by DataChannelController
+  void NoteDataAddedEvent() { NoteUsageEvent(UsageEvent::DATA_ADDED); }
+  // Returns the observer. Will crash on CHECK if the observer is removed.
+  PeerConnectionObserver* Observer() const;
+  bool IsClosed() const {
+    RTC_DCHECK_RUN_ON(signaling_thread());
+    return signaling_state_ == PeerConnectionInterface::kClosed;
+  }
+  // Get current SSL role used by SCTP's underlying transport.
+  bool GetSctpSslRole(rtc::SSLRole* role);
+  // Handler for the "channel closed" signal
+  void OnSctpDataChannelClosed(DataChannel* channel);
+  // Sends the MSG_FREE_DATACHANNELS signal
+  void SignalFreeDataChannels();
+
+  // Functions made public for testing.
   void ReturnHistogramVeryQuicklyForTesting() {
     RTC_DCHECK_RUN_ON(signaling_thread());
     return_histogram_very_quickly_ = true;
@@ -318,6 +335,7 @@ class PeerConnection : public PeerConnectionInternal,
   friend class ImplicitCreateSessionDescriptionObserver;
   class SetRemoteDescriptionObserverAdapter;
   friend class SetRemoteDescriptionObserverAdapter;
+
   // Represents the [[LocalIceCredentialsToReplace]] internal slot in the spec.
   // It makes the next CreateOffer() produce new ICE credentials even if
   // RTCOfferAnswerOptions::ice_restart is false.
@@ -393,120 +411,6 @@ class PeerConnection : public PeerConnectionInternal,
     // and if the datagram transport is enabled, it will only be used when
     // receiving incoming calls, not when placing outgoing calls.
     FieldTrialFlag receive_only;
-  };
-
-  // Controller for datachannels. Intended to be separated out; placed here as a
-  // first stage in refactoring.
-  class DataChannelController : public DataChannelProviderInterface,
-                                public DataChannelSink {
-   public:
-    explicit DataChannelController(PeerConnection* pc) : pc_(pc) {}
-    ~DataChannelController() { data_channel_transport_invoker_.reset(); }
-
-    // Implements DataChannelProviderInterface.
-    bool SendData(const cricket::SendDataParams& params,
-                  const rtc::CopyOnWriteBuffer& payload,
-                  cricket::SendDataResult* result) override;
-    bool ConnectDataChannel(DataChannel* webrtc_data_channel) override;
-    void DisconnectDataChannel(DataChannel* webrtc_data_channel) override;
-    void AddSctpDataStream(int sid) override;
-    void RemoveSctpDataStream(int sid) override;
-    bool ReadyToSendData() const override;
-
-    // Implements DataChannelSink.
-    void OnDataReceived(int channel_id,
-                        DataMessageType type,
-                        const rtc::CopyOnWriteBuffer& buffer) override;
-    void OnChannelClosing(int channel_id) override;
-    void OnChannelClosed(int channel_id) override;
-    void OnReadyToSend() override;
-
-    // Called from PeerConnection::SetupDataChannelTransport_n
-    void SetupDataChannelTransport_n();
-    // Called from PeerConnection::TeardownDataChannelTransport_n
-    void TeardownDataChannelTransport_n();
-
-    // Called from PeerConnection::OnTransportChanged
-    // to make required changes to datachannels' transports.
-    void OnTransportChanged(
-        DataChannelTransportInterface* data_channel_transport);
-
-    // Parses and handles open messages.  Returns true if the message is an open
-    // message, false otherwise.
-    bool HandleOpenMessage_s(const cricket::ReceiveDataParams& params,
-                             const rtc::CopyOnWriteBuffer& buffer)
-        RTC_RUN_ON(signaling_thread());
-    // Called when a valid data channel OPEN message is received.
-    void OnDataChannelOpenMessage(const std::string& label,
-                                  const InternalDataChannelInit& config)
-        RTC_RUN_ON(signaling_thread());
-
-    // Creates channel and adds it to the collection of DataChannels that will
-    // be offered in a SessionDescription.
-    rtc::scoped_refptr<DataChannel> InternalCreateDataChannel(
-        const std::string& label,
-        const InternalDataChannelInit*
-            config) /* RTC_RUN_ON(signaling_thread()) */;
-    void AllocateSctpSids(
-        rtc::SSLRole role) /* RTC_RUN_ON(signaling_thread()) */;
-    void OnSctpDataChannelClosed(DataChannel* channel);
-    /* RTC_RUN_ON(signaling_thread() */
-
-    // Accessors
-    cricket::RtpDataChannel* rtp_data_channel() const {
-      return rtp_data_channel_;
-    }
-    void set_rtp_data_channel(cricket::RtpDataChannel* channel) {
-      rtp_data_channel_ = channel;
-    }
-    DataChannelTransportInterface* data_channel_transport() const {
-      return data_channel_transport_;
-    }
-    void set_data_channel_transport(DataChannelTransportInterface* transport) {
-      data_channel_transport_ = transport;
-    }
-
-   private:
-    rtc::Thread* network_thread() const { return pc_->network_thread(); }
-    rtc::Thread* signaling_thread() const { return pc_->signaling_thread(); }
-    // Plugin transport used for data channels.  Pointer may be accessed and
-    // checked from any thread, but the object may only be touched on the
-    // network thread.
-    // TODO(bugs.webrtc.org/9987): Accessed on both signaling and network
-    // thread.
-    DataChannelTransportInterface* data_channel_transport_ = nullptr;
-
-    // Cached value of whether the data channel transport is ready to send.
-    bool data_channel_transport_ready_to_send_
-        RTC_GUARDED_BY(signaling_thread()) = false;
-
-    // |rtp_data_channel_| is used if in RTP data channel mode,
-    // |data_channel_transport_| when using SCTP.
-    cricket::RtpDataChannel* rtp_data_channel_ = nullptr;
-    // TODO(bugs.webrtc.org/9987): Accessed on both
-    // signaling and some other thread.
-
-    SctpSidAllocator sid_allocator_ /* RTC_GUARDED_BY(signaling_thread()) */;
-
-    // Signals from |data_channel_transport_|.  These are invoked on the
-    // signaling thread.
-    sigslot::signal1<bool> SignalDataChannelTransportWritable_s
-        RTC_GUARDED_BY(signaling_thread());
-    sigslot::signal2<const cricket::ReceiveDataParams&,
-                     const rtc::CopyOnWriteBuffer&>
-        SignalDataChannelTransportReceivedData_s
-            RTC_GUARDED_BY(signaling_thread());
-    sigslot::signal1<int> SignalDataChannelTransportChannelClosing_s
-        RTC_GUARDED_BY(signaling_thread());
-    sigslot::signal1<int> SignalDataChannelTransportChannelClosed_s
-        RTC_GUARDED_BY(signaling_thread());
-
-    // Used to invoke data channel transport signals on the signaling thread.
-    std::unique_ptr<rtc::AsyncInvoker> data_channel_transport_invoker_
-        RTC_GUARDED_BY(network_thread());
-
-    // Owning PeerConnection.
-    PeerConnection* pc_;
   };
 
   // Captures partial state to be used for rollback. Applicable only in
@@ -807,11 +711,6 @@ class PeerConnection : public PeerConnectionInternal,
 
   void OnNegotiationNeeded();
 
-  bool IsClosed() const {
-    RTC_DCHECK_RUN_ON(signaling_thread());
-    return signaling_state_ == PeerConnectionInterface::kClosed;
-  }
-
   // Returns a MediaSessionOptions struct with options decided by |options|,
   // the local MediaStreams and DataChannels.
   void GetOptionsForOffer(const PeerConnectionInterface::RTCOfferAnswerOptions&
@@ -944,27 +843,6 @@ class PeerConnection : public PeerConnectionInternal,
                             cricket::MediaType media_type)
       RTC_RUN_ON(signaling_thread());
 
-  void UpdateLocalRtpDataChannels(const cricket::StreamParamsVec& streams)
-      RTC_RUN_ON(signaling_thread());
-  void UpdateRemoteRtpDataChannels(const cricket::StreamParamsVec& streams)
-      RTC_RUN_ON(signaling_thread());
-  void UpdateClosingRtpDataChannels(
-      const std::vector<std::string>& active_channels,
-      bool is_local_update) RTC_RUN_ON(signaling_thread());
-  void CreateRemoteRtpDataChannel(const std::string& label,
-                                  uint32_t remote_ssrc)
-      RTC_RUN_ON(signaling_thread());
-
-  // Checks if any data channel has been added.
-  bool HasDataChannels() const RTC_RUN_ON(signaling_thread());
-  // Handler for the "channel closed" signal
-  void OnSctpDataChannelClosed(DataChannel* channel);
-  // Sends the MSG_FREE_DATACHANNELS signal
-  void SignalFreeDataChannels();
-
-  // Called when the transport for the data channels is closed or destroyed.
-  void OnTransportChannelClosed() RTC_RUN_ON(signaling_thread());
-
   // Returns true if the PeerConnection is configured to use Unified Plan
   // semantics for creating offers/answers and setting local/remote
   // descriptions. If this is true the RtpTransceiver API will also be available
@@ -1064,9 +942,6 @@ class PeerConnection : public PeerConnectionInternal,
   const std::string& session_error_desc() const { return session_error_desc_; }
 
   cricket::ChannelInterface* GetChannel(const std::string& content_name);
-
-  // Get current SSL role used by SCTP's underlying transport.
-  bool GetSctpSslRole(rtc::SSLRole* role);
 
   cricket::IceConfig ParseIceConfig(
       const PeerConnectionInterface::RTCConfiguration& config) const;
@@ -1283,9 +1158,6 @@ class PeerConnection : public PeerConnectionInternal,
   // RtpSenderBase::SetStreamsObserver override.
   void OnSetStreams() override;
 
-  // Returns the observer. Will crash on CHECK if the observer is removed.
-  PeerConnectionObserver* Observer() const RTC_RUN_ON(signaling_thread());
-
   // Returns the CryptoOptions for this PeerConnection. This will always
   // return the RTCConfiguration.crypto_options if set and will only default
   // back to the PeerConnectionFactory settings if nothing was set.
@@ -1304,9 +1176,6 @@ class PeerConnection : public PeerConnectionInternal,
 
   // | sdp_type | is the type of the SDP that caused the rollback.
   RTCError Rollback(SdpType sdp_type);
-
-  sigslot::signal1<DataChannel*> SignalDataChannelCreated_
-      RTC_GUARDED_BY(signaling_thread());
 
   // Storing the factory as a scoped reference pointer ensures that the memory
   // in the PeerConnectionFactoryImpl remains available as long as the
@@ -1406,14 +1275,6 @@ class PeerConnection : public PeerConnectionInternal,
   std::vector<RtpSenderInfo> local_video_sender_infos_
       RTC_GUARDED_BY(signaling_thread());
 
-  // label -> DataChannel
-  std::map<std::string, rtc::scoped_refptr<DataChannel>> rtp_data_channels_
-      RTC_GUARDED_BY(signaling_thread());
-  std::vector<rtc::scoped_refptr<DataChannel>> sctp_data_channels_
-      RTC_GUARDED_BY(signaling_thread());
-  std::vector<rtc::scoped_refptr<DataChannel>> sctp_data_channels_to_free_
-      RTC_GUARDED_BY(signaling_thread());
-
   bool remote_peer_supports_msid_ RTC_GUARDED_BY(signaling_thread()) = false;
 
   // The unique_ptr belongs to the worker thread, but the Call object manages
@@ -1489,16 +1350,6 @@ class PeerConnection : public PeerConnectionInternal,
   std::unique_ptr<SessionDescriptionInterface> pending_remote_description_
       RTC_GUARDED_BY(signaling_thread());
   bool dtls_enabled_ RTC_GUARDED_BY(signaling_thread()) = false;
-  // Specifies which kind of data channel is allowed. This is controlled
-  // by the chrome command-line flag and constraints:
-  // 1. If chrome command-line switch 'enable-sctp-data-channels' is enabled,
-  // constraint kEnableDtlsSrtp is true, and constaint kEnableRtpDataChannels is
-  // not set or false, SCTP is allowed (DCT_SCTP);
-  // 2. If constraint kEnableRtpDataChannels is true, RTP is allowed (DCT_RTP);
-  // 3. If both 1&2 are false, data channel is not allowed (DCT_NONE).
-  cricket::DataChannelType data_channel_type_ =
-      cricket::DCT_NONE;  // TODO(bugs.webrtc.org/9987): Accessed on both
-                          // signaling and network thread.
 
   // List of content names for which the remote side triggered an ICE restart.
   std::set<std::string> pending_ice_restarts_
