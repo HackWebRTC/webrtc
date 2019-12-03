@@ -188,7 +188,7 @@ TEST(MatchedFilter, LagEstimation) {
         std::array<float, kBlockSize> downsampled_capture_data;
         rtc::ArrayView<float> downsampled_capture(
             downsampled_capture_data.data(), sub_block_size);
-        capture_decimator.Decimate(capture, true, downsampled_capture);
+        capture_decimator.Decimate(capture[0], downsampled_capture);
         filter.Update(render_delay_buffer->GetDownsampledRenderBuffer(),
                       downsampled_capture);
       }
@@ -336,7 +336,7 @@ TEST(MatchedFilter, LagNotUpdatedForLowLevelRender) {
       std::array<float, kBlockSize> downsampled_capture_data;
       rtc::ArrayView<float> downsampled_capture(downsampled_capture_data.data(),
                                                 sub_block_size);
-      capture_decimator.Decimate(capture, true, downsampled_capture);
+      capture_decimator.Decimate(capture[0], downsampled_capture);
       filter.Update(render_delay_buffer->GetDownsampledRenderBuffer(),
                     downsampled_capture);
     }

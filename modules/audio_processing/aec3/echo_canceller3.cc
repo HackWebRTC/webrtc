@@ -51,8 +51,29 @@ EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
     adjusted_cfg.erle.clamp_quality_estimate_to_one = false;
   }
 
-  if (field_trial::IsEnabled("WebRTC-Aec3AlignmentOnLeftChannelKillSwitch")) {
-    adjusted_cfg.delay.downmix_before_delay_estimation = true;
+  if (field_trial::IsEnabled(
+          "WebRTC-Aec3EnforceRenderDelayEstimationDownmixing")) {
+    adjusted_cfg.delay.render_alignment_mixing.downmix = true;
+    adjusted_cfg.delay.render_alignment_mixing.adaptive_selection = false;
+  }
+
+  if (field_trial::IsEnabled(
+          "WebRTC-Aec3EnforceCaptureDelayEstimationDownmixing")) {
+    adjusted_cfg.delay.capture_alignment_mixing.downmix = true;
+    adjusted_cfg.delay.capture_alignment_mixing.adaptive_selection = false;
+  }
+
+  if (field_trial::IsEnabled(
+          "WebRTC-Aec3EnforceCaptureDelayEstimationLeftRightPrioritization")) {
+    adjusted_cfg.delay.capture_alignment_mixing.prefer_first_two_channels =
+        true;
+  }
+
+  if (field_trial::IsEnabled(
+          "WebRTC-"
+          "Aec3RenderDelayEstimationLeftRightPrioritizationKillSwitch")) {
+    adjusted_cfg.delay.capture_alignment_mixing.prefer_first_two_channels =
+        false;
   }
 
   return adjusted_cfg;

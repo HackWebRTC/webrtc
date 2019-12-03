@@ -45,7 +45,8 @@ TEST(EchoPathDelayEstimator, BasicApiCalls) {
       std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
           RenderDelayBuffer::Create(config, kSampleRateHz,
                                     num_render_channels));
-      EchoPathDelayEstimator estimator(&data_dumper, config);
+      EchoPathDelayEstimator estimator(&data_dumper, config,
+                                       num_capture_channels);
       std::vector<std::vector<std::vector<float>>> render(
           kNumBands, std::vector<std::vector<float>>(
                          num_render_channels, std::vector<float>(kBlockSize)));
@@ -85,7 +86,8 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
       std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
           RenderDelayBuffer::Create(config, kSampleRateHz, kNumRenderChannels));
       DelayBuffer<float> signal_delay_buffer(delay_samples);
-      EchoPathDelayEstimator estimator(&data_dumper, config);
+      EchoPathDelayEstimator estimator(&data_dumper, config,
+                                       kNumCaptureChannels);
 
       absl::optional<DelayEstimate> estimated_delay_samples;
       for (size_t k = 0; k < (500 + (delay_samples) / kBlockSize); ++k) {
@@ -136,7 +138,7 @@ TEST(EchoPathDelayEstimator, NoDelayEstimatesForLowLevelRenderSignals) {
   std::vector<std::vector<float>> capture(kNumCaptureChannels,
                                           std::vector<float>(kBlockSize));
   ApmDataDumper data_dumper(0);
-  EchoPathDelayEstimator estimator(&data_dumper, config);
+  EchoPathDelayEstimator estimator(&data_dumper, config, kNumCaptureChannels);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(EchoCanceller3Config(), kSampleRateHz,
                                 kNumRenderChannels));
@@ -161,7 +163,7 @@ TEST(EchoPathDelayEstimator, NoDelayEstimatesForLowLevelRenderSignals) {
 TEST(EchoPathDelayEstimator, DISABLED_WrongRenderBlockSize) {
   ApmDataDumper data_dumper(0);
   EchoCanceller3Config config;
-  EchoPathDelayEstimator estimator(&data_dumper, config);
+  EchoPathDelayEstimator estimator(&data_dumper, config, 1);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, 48000, 1));
   std::vector<std::vector<float>> capture(1, std::vector<float>(kBlockSize));
@@ -176,7 +178,7 @@ TEST(EchoPathDelayEstimator, DISABLED_WrongRenderBlockSize) {
 TEST(EchoPathDelayEstimator, WrongCaptureBlockSize) {
   ApmDataDumper data_dumper(0);
   EchoCanceller3Config config;
-  EchoPathDelayEstimator estimator(&data_dumper, config);
+  EchoPathDelayEstimator estimator(&data_dumper, config, 1);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, 48000, 1));
   std::vector<std::vector<float>> capture(1,
@@ -188,7 +190,7 @@ TEST(EchoPathDelayEstimator, WrongCaptureBlockSize) {
 
 // Verifies the check for non-null data dumper.
 TEST(EchoPathDelayEstimator, NullDataDumper) {
-  EXPECT_DEATH(EchoPathDelayEstimator(nullptr, EchoCanceller3Config()), "");
+  EXPECT_DEATH(EchoPathDelayEstimator(nullptr, EchoCanceller3Config(), 1), "");
 }
 
 #endif

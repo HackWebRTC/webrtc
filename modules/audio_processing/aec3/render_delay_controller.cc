@@ -34,7 +34,8 @@ namespace {
 class RenderDelayControllerImpl final : public RenderDelayController {
  public:
   RenderDelayControllerImpl(const EchoCanceller3Config& config,
-                            int sample_rate_hz);
+                            int sample_rate_hz,
+                            size_t num_capture_channels);
   ~RenderDelayControllerImpl() override;
   void Reset(bool reset_delay_confidence) override;
   void LogRenderCall() override;
@@ -89,13 +90,14 @@ int RenderDelayControllerImpl::instance_count_ = 0;
 
 RenderDelayControllerImpl::RenderDelayControllerImpl(
     const EchoCanceller3Config& config,
-    int sample_rate_hz)
+    int sample_rate_hz,
+    size_t num_capture_channels)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       hysteresis_limit_blocks_(
           static_cast<int>(config.delay.hysteresis_limit_blocks)),
       delay_headroom_samples_(config.delay.delay_headroom_samples),
-      delay_estimator_(data_dumper_.get(), config),
+      delay_estimator_(data_dumper_.get(), config, num_capture_channels),
       last_delay_estimate_quality_(DelayEstimate::Quality::kCoarse) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz));
   delay_estimator_.LogDelayEstimationProperties(sample_rate_hz, 0);
@@ -181,8 +183,10 @@ bool RenderDelayControllerImpl::HasClockdrift() const {
 
 RenderDelayController* RenderDelayController::Create(
     const EchoCanceller3Config& config,
-    int sample_rate_hz) {
-  return new RenderDelayControllerImpl(config, sample_rate_hz);
+    int sample_rate_hz,
+    size_t num_capture_channels) {
+  return new RenderDelayControllerImpl(config, sample_rate_hz,
+                                       num_capture_channels);
 }
 
 }  // namespace webrtc

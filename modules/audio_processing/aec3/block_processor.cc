@@ -246,8 +246,8 @@ BlockProcessor* BlockProcessor::Create(const EchoCanceller3Config& config,
       RenderDelayBuffer::Create(config, sample_rate_hz, num_render_channels));
   std::unique_ptr<RenderDelayController> delay_controller;
   if (!config.delay.use_external_delay_estimator) {
-    delay_controller.reset(
-        RenderDelayController::Create(config, sample_rate_hz));
+    delay_controller.reset(RenderDelayController::Create(config, sample_rate_hz,
+                                                         num_capture_channels));
   }
   std::unique_ptr<EchoRemover> echo_remover(EchoRemover::Create(
       config, sample_rate_hz, num_render_channels, num_capture_channels));
@@ -264,8 +264,8 @@ BlockProcessor* BlockProcessor::Create(
     std::unique_ptr<RenderDelayBuffer> render_buffer) {
   std::unique_ptr<RenderDelayController> delay_controller;
   if (!config.delay.use_external_delay_estimator) {
-    delay_controller.reset(
-        RenderDelayController::Create(config, sample_rate_hz));
+    delay_controller.reset(RenderDelayController::Create(config, sample_rate_hz,
+                                                         num_capture_channels));
   }
   std::unique_ptr<EchoRemover> echo_remover(EchoRemover::Create(
       config, sample_rate_hz, num_render_channels, num_capture_channels));

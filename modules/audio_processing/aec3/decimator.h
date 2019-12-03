@@ -27,9 +27,7 @@ class Decimator {
   explicit Decimator(size_t down_sampling_factor);
 
   // Downsamples the signal.
-  void Decimate(const std::vector<std::vector<float>>& in,
-                bool downmix,
-                rtc::ArrayView<float> out);
+  void Decimate(rtc::ArrayView<const float> in, rtc::ArrayView<float> out);
 
  private:
   const size_t down_sampling_factor_;

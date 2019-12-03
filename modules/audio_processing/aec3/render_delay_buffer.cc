@@ -23,6 +23,7 @@
 #include "api/audio/echo_canceller3_config.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/aec3_fft.h"
+#include "modules/audio_processing/aec3/alignment_mixer.h"
 #include "modules/audio_processing/aec3/block_buffer.h"
 #include "modules/audio_processing/aec3/decimator.h"
 #include "modules/audio_processing/aec3/downsampled_render_buffer.h"
@@ -81,6 +82,7 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   absl::optional<size_t> delay_;
   RenderBuffer echo_remover_buffer_;
   DownsampledRenderBuffer low_rate_;
+  AlignmentMixer render_mixer_;
   Decimator render_decimator_;
   const Aec3Fft fft_;
   std::vector<float> render_ds_;
@@ -141,6 +143,7 @@ RenderDelayBufferImpl::RenderDelayBufferImpl(const EchoCanceller3Config& config,
       echo_remover_buffer_(&blocks_, &spectra_, &ffts_),
       low_rate_(GetDownSampledBufferSize(down_sampling_factor_,
                                          config.delay.num_filters)),
+      render_mixer_(num_render_channels, config.delay.render_alignment_mixing),
       render_decimator_(down_sampling_factor_),
       fft_(),
       render_ds_(sub_block_size_, 0.f),
@@ -404,8 +407,9 @@ void RenderDelayBufferImpl::InsertBlock(
     }
   }
 
-  render_decimator_.Decimate(b.buffer[b.write][0],
-                             config_.delay.downmix_before_delay_estimation, ds);
+  std::array<float, kBlockSize> downmixed_render;
+  render_mixer_.ProduceOutput(b.buffer[b.write][0], downmixed_render);
+  render_decimator_.Decimate(downmixed_render, ds);
   data_dumper_->DumpWav("aec3_render_decimator_output", ds.size(), ds.data(),
                         16000 / down_sampling_factor_, 1);
   std::copy(ds.rbegin(), ds.rend(), lr.buffer.begin() + lr.write);

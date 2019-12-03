@@ -47,8 +47,15 @@ struct RTC_EXPORT EchoCanceller3Config {
       int converged;
     } delay_selection_thresholds = {5, 20};
     bool use_external_delay_estimator = false;
-    bool downmix_before_delay_estimation = false;
     bool log_warning_on_delay_changes = false;
+    struct AlignmentMixing {
+      bool downmix;
+      bool adaptive_selection;
+      float activity_power_threshold;
+      bool prefer_first_two_channels;
+    };
+    AlignmentMixing render_alignment_mixing = {false, true, 10000.f, true};
+    AlignmentMixing capture_alignment_mixing = {false, true, 10000.f, false};
   } delay;
 
   struct Filter {
