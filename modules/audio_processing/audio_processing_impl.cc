@@ -247,7 +247,8 @@ bool AudioProcessingImpl::SubmoduleStates::RenderMultiBandProcessingActive()
 
 bool AudioProcessingImpl::SubmoduleStates::HighPassFilteringRequired() const {
   return high_pass_filter_enabled_ || echo_canceller_enabled_ ||
-         mobile_echo_controller_enabled_ || noise_suppressor_enabled_;
+         mobile_echo_controller_enabled_ || noise_suppressor_enabled_ ||
+         echo_controller_enabled_;
 }
 
 AudioProcessingBuilder::AudioProcessingBuilder() = default;
@@ -513,7 +514,7 @@ int AudioProcessingImpl::InitializeLocked() {
     submodules_.agc_manager->SetCaptureMuted(capture_.output_will_be_muted);
   }
   InitializeTransient();
-  InitializeHighPassFilter();
+  InitializeHighPassFilter(false);
   InitializeVoiceDetector();
   InitializeResidualEchoDetector();
   InitializeEchoController();
@@ -676,7 +677,8 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
     InitializeNoiseSuppressor();
   }
 
-  InitializeHighPassFilter();
+  InitializeHighPassFilter(config_.echo_canceller.enabled &&
+                           !config.echo_canceller.mobile_mode);
 
   if (agc1_config_changed) {
     ApplyAgc1Config(config_.gain_controller1);
@@ -1788,7 +1790,7 @@ AudioProcessing::Config AudioProcessingImpl::GetConfig() const {
 
 bool AudioProcessingImpl::UpdateActiveSubmoduleStates() {
   return submodule_states_.Update(
-      config_.high_pass_filter.enabled, !!submodules_.echo_cancellation,
+      config_.high_pass_filter.enabled, config_.echo_canceller.enabled,
       !!submodules_.echo_control_mobile, config_.residual_echo_detector.enabled,
       !!submodules_.legacy_noise_suppressor || !!submodules_.noise_suppressor,
       submodules_.gain_control->is_enabled(), config_.gain_controller2.enabled,
@@ -1807,8 +1809,8 @@ void AudioProcessingImpl::InitializeTransient() {
   }
 }
 
-void AudioProcessingImpl::InitializeHighPassFilter() {
-  if (submodule_states_.HighPassFilteringRequired()) {
+void AudioProcessingImpl::InitializeHighPassFilter(bool force_activation) {
+  if (force_activation || submodule_states_.HighPassFilteringRequired()) {
     submodules_.high_pass_filter.reset(new HighPassFilter(num_proc_channels()));
   } else {
     submodules_.high_pass_filter.reset();
