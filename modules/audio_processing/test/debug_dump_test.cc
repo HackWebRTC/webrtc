@@ -51,8 +51,8 @@ class DebugDumpGenerator {
                      bool enable_pre_amplifier);
 
   // Constructor that uses default input files.
-  DebugDumpGenerator(const Config& config,
-                     const AudioProcessing::Config& apm_config);
+  explicit DebugDumpGenerator(const Config& config,
+                              const AudioProcessing::Config& apm_config);
 
   ~DebugDumpGenerator();
 
@@ -346,7 +346,7 @@ TEST_F(DebugDumpTest, ToggleAec) {
   generator.StartRecording();
   generator.Process(100);
 
-  apm_config.echo_canceller.enabled = false;
+  apm_config.echo_canceller.enabled = true;
   generator.apm()->ApplyConfig(apm_config);
 
   generator.Process(100);
