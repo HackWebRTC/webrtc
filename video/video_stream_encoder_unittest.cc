@@ -301,6 +301,13 @@ class AdaptingFrameForwarder : public test::FrameForwarder {
                 .set_rotation(kVideoRotation_0)
                 .build();
         adapted_frame.set_ntp_time_ms(video_frame.ntp_time_ms());
+        if (video_frame.has_update_rect()) {
+          adapted_frame.set_update_rect(
+              video_frame.update_rect().ScaleWithFrame(
+                  video_frame.width(), video_frame.height(), 0, 0,
+                  video_frame.width(), video_frame.height(), out_width,
+                  out_height));
+        }
         test::FrameForwarder::IncomingCapturedFrame(adapted_frame);
         last_width_.emplace(adapted_frame.width());
         last_height_.emplace(adapted_frame.height());
@@ -5198,6 +5205,63 @@ TEST_F(VideoStreamEncoderTest,
       /*rtt_ms=*/0);
   video_stream_encoder_->WaitUntilTaskQueueIsIdle();
   EXPECT_EQ(1, fake_encoder_.GetNumSetRates());
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, AutomaticAnimationDetection) {
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-AutomaticAnimationDetectionScreenshare/"
+      "enabled:true,min_fps:20,min_duration_ms:1000,min_area_ratio:0.8/");
+  const int kFramerateFps = 30;
+  const int kWidth = 1920;
+  const int kHeight = 1080;
+  const int kNumFrames = 2 * kFramerateFps;  // >1 seconds of frames.
+  // Works on screenshare mode.
+  ResetEncoder("VP8", 1, 1, 1, /*screenshare*/ true);
+  // We rely on the automatic resolution adaptation, but we handle framerate
+  // adaptation manually by mocking the stats proxy.
+  video_source_.set_adaptation_enabled(true);
+
+  // BALANCED degradation preference is required for this feature.
+  video_stream_encoder_->OnBitrateUpdated(
+      DataRate::bps(kTargetBitrateBps), DataRate::bps(kTargetBitrateBps),
+      DataRate::bps(kTargetBitrateBps), 0, 0);
+  video_stream_encoder_->SetSource(&video_source_,
+                                   webrtc::DegradationPreference::BALANCED);
+  VerifyNoLimitation(video_source_.sink_wants());
+
+  VideoFrame frame = CreateFrame(1, kWidth, kHeight);
+  frame.set_update_rect(VideoFrame::UpdateRect{0, 0, kWidth, kHeight});
+
+  // Pass enough frames with the full update to trigger animation detection.
+  for (int i = 0; i < kNumFrames; ++i) {
+    int64_t timestamp_ms =
+        fake_clock_.TimeNanos() / rtc::kNumNanosecsPerMillisec;
+    frame.set_ntp_time_ms(timestamp_ms);
+    frame.set_timestamp_us(timestamp_ms * 1000);
+    video_source_.IncomingCapturedFrame(frame);
+    WaitForEncodedFrame(timestamp_ms);
+  }
+
+  // Resolution should be limited.
+  rtc::VideoSinkWants expected;
+  expected.max_framerate_fps = kFramerateFps;
+  expected.max_pixel_count = 1280 * 720 + 1;
+  VerifyFpsEqResolutionLt(video_source_.sink_wants(), expected);
+
+  // Pass one frame with no known update.
+  //  Resolution cap should be removed immediately.
+  int64_t timestamp_ms = fake_clock_.TimeNanos() / rtc::kNumNanosecsPerMillisec;
+  frame.set_ntp_time_ms(timestamp_ms);
+  frame.set_timestamp_us(timestamp_ms * 1000);
+  frame.clear_update_rect();
+
+  video_source_.IncomingCapturedFrame(frame);
+  WaitForEncodedFrame(timestamp_ms);
+
+  // Resolution should be unlimited now.
+  VerifyFpsEqResolutionMax(video_source_.sink_wants(), kFramerateFps);
+
   video_stream_encoder_->Stop();
 }
 

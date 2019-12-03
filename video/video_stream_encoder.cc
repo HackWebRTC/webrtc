@@ -68,6 +68,9 @@ const size_t kDefaultPayloadSize = 1440;
 
 const int64_t kParameterUpdateIntervalMs = 1000;
 
+// Animation is capped to 720p.
+constexpr int kMaxAnimationPixels = 1280 * 720;
+
 uint32_t abs_diff(uint32_t a, uint32_t b) {
   return (a < b) ? b - a : a - b;
 }
@@ -219,7 +222,8 @@ class VideoStreamEncoder::VideoSourceProxy {
       : video_stream_encoder_(video_stream_encoder),
         degradation_preference_(DegradationPreference::DISABLED),
         source_(nullptr),
-        max_framerate_(std::numeric_limits<int>::max()) {}
+        max_framerate_(std::numeric_limits<int>::max()),
+        max_pixels_(std::numeric_limits<int>::max()) {}
 
   void SetSource(rtc::VideoSourceInterface<VideoFrame>* source,
                  const DegradationPreference& degradation_preference) {
@@ -407,6 +411,22 @@ class VideoStreamEncoder::VideoSourceProxy {
     return true;
   }
 
+  // Used in automatic animation detection for screenshare.
+  bool RestrictPixels(int max_pixels) {
+    // Called on the encoder task queue.
+    rtc::CritScope lock(&crit_);
+    if (!source_ || !IsResolutionScalingEnabled(degradation_preference_)) {
+      // This can happen since |degradation_preference_| is set on libjingle's
+      // worker thread but the adaptation is done on the encoder task queue.
+      return false;
+    }
+    max_pixels_ = max_pixels;
+    RTC_LOG(LS_INFO) << "Applying max pixel restriction: " << max_pixels;
+    source_->AddOrUpdateSink(video_stream_encoder_,
+                             GetActiveSinkWantsInternal());
+    return true;
+  }
+
  private:
   rtc::VideoSinkWants GetActiveSinkWantsInternal()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(&crit_) {
@@ -430,6 +450,9 @@ class VideoStreamEncoder::VideoSourceProxy {
     }
     // Limit to configured max framerate.
     wants.max_framerate_fps = std::min(max_framerate_, wants.max_framerate_fps);
+    // Limit resolution due to automatic animation detection for screenshare.
+    wants.max_pixel_count = std::min(max_pixels_, wants.max_pixel_count);
+
     return wants;
   }
 
@@ -440,6 +463,7 @@ class VideoStreamEncoder::VideoSourceProxy {
   DegradationPreference degradation_preference_ RTC_GUARDED_BY(&crit_);
   rtc::VideoSourceInterface<VideoFrame>* source_ RTC_GUARDED_BY(&crit_);
   int max_framerate_ RTC_GUARDED_BY(&crit_);
+  int max_pixels_ RTC_GUARDED_BY(&crit_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(VideoSourceProxy);
 };
@@ -519,6 +543,9 @@ VideoStreamEncoder::VideoStreamEncoder(
       pending_frame_post_time_us_(0),
       accumulated_update_rect_{0, 0, 0, 0},
       accumulated_update_rect_is_valid_(true),
+      animation_start_time_(Timestamp::PlusInfinity()),
+      cap_resolution_due_to_video_content_(false),
+      expect_resize_state_(ExpectResizeState::kNoResize),
       bitrate_observer_(nullptr),
       fec_controller_override_(nullptr),
       force_disable_frame_dropper_(false),
@@ -529,6 +556,8 @@ VideoStreamEncoder::VideoStreamEncoder(
       experiment_groups_(GetExperimentGroups()),
       next_frame_id_(0),
       encoder_switch_experiment_(ParseEncoderSwitchFieldTrial()),
+      automatic_animation_detection_experiment_(
+          ParseAutomatincAnimationDetectionFieldTrial()),
       encoder_switch_requested_(false),
       encoder_queue_(task_queue_factory->CreateTaskQueue(
           "EncoderQueue",
@@ -1114,6 +1143,7 @@ void VideoStreamEncoder::OnFrame(const VideoFrame& video_frame) {
         const int posted_frames_waiting_for_encode =
             posted_frames_waiting_for_encode_.fetch_sub(1);
         RTC_DCHECK_GT(posted_frames_waiting_for_encode, 0);
+        CheckForAnimatedContent(incoming_frame, post_time_us);
         if (posted_frames_waiting_for_encode == 1) {
           MaybeEncodeVideoFrame(incoming_frame, post_time_us);
         } else {
@@ -1951,7 +1981,7 @@ bool VideoStreamEncoder::AdaptDown(AdaptReason reason) {
 
   bool did_adapt = true;
 
-  switch (degradation_preference_) {
+  switch (EffectiveDegradataionPreference()) {
     case DegradationPreference::BALANCED:
       break;
     case DegradationPreference::MAINTAIN_FRAMERATE:
@@ -1980,7 +2010,7 @@ bool VideoStreamEncoder::AdaptDown(AdaptReason reason) {
       return true;
   }
 
-  switch (degradation_preference_) {
+  switch (EffectiveDegradataionPreference()) {
     case DegradationPreference::BALANCED: {
       // Try scale down framerate, if lower.
       int fps = balanced_settings_.MinFps(encoder_config_.codec_type,
@@ -2057,7 +2087,8 @@ void VideoStreamEncoder::AdaptUp(AdaptReason reason) {
       last_adaptation_request_ &&
       last_adaptation_request_->mode_ == AdaptationRequest::Mode::kAdaptUp;
 
-  if (degradation_preference_ == DegradationPreference::MAINTAIN_FRAMERATE) {
+  if (EffectiveDegradataionPreference() ==
+      DegradationPreference::MAINTAIN_FRAMERATE) {
     if (adapt_up_requested &&
         adaptation_request.input_pixel_count_ <=
             last_adaptation_request_->input_pixel_count_) {
@@ -2067,7 +2098,7 @@ void VideoStreamEncoder::AdaptUp(AdaptReason reason) {
     }
   }
 
-  switch (degradation_preference_) {
+  switch (EffectiveDegradataionPreference()) {
     case DegradationPreference::BALANCED: {
       // Check if quality should be increased based on bitrate.
       if (reason == kQuality &&
@@ -2492,6 +2523,108 @@ VideoStreamEncoder::ParseEncoderSwitchFieldTrial() const {
   RTC_LOG(LS_INFO) << ss.str();
 
   return result;
+}
+
+VideoStreamEncoder::AutomaticAnimationDetectionExperiment
+VideoStreamEncoder::ParseAutomatincAnimationDetectionFieldTrial() const {
+  AutomaticAnimationDetectionExperiment result;
+
+  result.Parser()->Parse(webrtc::field_trial::FindFullName(
+      "WebRTC-AutomaticAnimationDetectionScreenshare"));
+
+  if (!result.enabled) {
+    RTC_LOG(LS_INFO) << "Automatic animation detection experiment is disabled.";
+    return result;
+  }
+
+  RTC_LOG(LS_INFO) << "Automatic animation detection experiment settings:"
+                   << " min_duration_ms=" << result.min_duration_ms
+                   << " min_area_ration=" << result.min_area_ratio
+                   << " min_fps=" << result.min_fps;
+
+  return result;
+}
+
+void VideoStreamEncoder::CheckForAnimatedContent(
+    const VideoFrame& frame,
+    int64_t time_when_posted_in_us) {
+  if (!automatic_animation_detection_experiment_.enabled ||
+      encoder_config_.content_type !=
+          VideoEncoderConfig::ContentType::kScreen ||
+      degradation_preference_ != DegradationPreference::BALANCED) {
+    return;
+  }
+
+  if (expect_resize_state_ == ExpectResizeState::kResize && last_frame_info_ &&
+      last_frame_info_->width != frame.width() &&
+      last_frame_info_->height != frame.height()) {
+    // On applying resolution cap there will be one frame with no/different
+    // update, which should be skipped.
+    // It can be delayed by several frames.
+    expect_resize_state_ = ExpectResizeState::kFirstFrameAfterResize;
+    return;
+  }
+
+  if (expect_resize_state_ == ExpectResizeState::kFirstFrameAfterResize) {
+    // The first frame after resize should have new, scaled update_rect.
+    if (frame.has_update_rect()) {
+      last_update_rect_ = frame.update_rect();
+    } else {
+      last_update_rect_ = absl::nullopt;
+    }
+    expect_resize_state_ = ExpectResizeState::kNoResize;
+  }
+
+  bool should_cap_resolution = false;
+  if (!frame.has_update_rect()) {
+    last_update_rect_ = absl::nullopt;
+    animation_start_time_ = Timestamp::PlusInfinity();
+  } else if ((!last_update_rect_ ||
+              frame.update_rect() != *last_update_rect_)) {
+    last_update_rect_ = frame.update_rect();
+    animation_start_time_ = Timestamp::us(time_when_posted_in_us);
+  } else {
+    TimeDelta animation_duration =
+        Timestamp::us(time_when_posted_in_us) - animation_start_time_;
+    float area_ratio = static_cast<float>(last_update_rect_->width *
+                                          last_update_rect_->height) /
+                       (frame.width() * frame.height());
+    if (animation_duration.ms() >=
+            automatic_animation_detection_experiment_.min_duration_ms &&
+        area_ratio >=
+            automatic_animation_detection_experiment_.min_area_ratio &&
+        encoder_stats_observer_->GetInputFrameRate() >=
+            automatic_animation_detection_experiment_.min_fps) {
+      should_cap_resolution = true;
+    }
+  }
+  if (cap_resolution_due_to_video_content_ != should_cap_resolution) {
+    expect_resize_state_ = should_cap_resolution ? ExpectResizeState::kResize
+                                                 : ExpectResizeState::kNoResize;
+    cap_resolution_due_to_video_content_ = should_cap_resolution;
+    if (should_cap_resolution) {
+      RTC_LOG(LS_INFO) << "Applying resolution cap due to animation detection.";
+    } else {
+      RTC_LOG(LS_INFO) << "Removing resolution cap due to no consistent "
+                          "animation detection.";
+    }
+    source_proxy_->RestrictPixels(should_cap_resolution
+                                      ? kMaxAnimationPixels
+                                      : std::numeric_limits<int>::max());
+  }
+}
+
+DegradationPreference VideoStreamEncoder::EffectiveDegradataionPreference()
+    const {
+  // Balanced mode for screenshare works via automatic animation detection:
+  // Resolution is capped for fullscreen animated content.
+  // Adapatation is done only via framerate downgrade.
+  // Thus effective degradation preference is MAINTAIN_RESOLUTION.
+  return (encoder_config_.content_type ==
+              VideoEncoderConfig::ContentType::kScreen &&
+          degradation_preference_ == DegradationPreference::BALANCED)
+             ? DegradationPreference::MAINTAIN_RESOLUTION
+             : degradation_preference_;
 }
 
 }  // namespace webrtc

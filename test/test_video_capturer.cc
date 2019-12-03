@@ -39,15 +39,24 @@ void TestVideoCapturer::OnFrame(const VideoFrame& original_frame) {
   if (out_height != frame.height() || out_width != frame.width()) {
     // Video adapter has requested a down-scale. Allocate a new buffer and
     // return scaled version.
+    // For simplicity, only scale here without cropping.
     rtc::scoped_refptr<I420Buffer> scaled_buffer =
         I420Buffer::Create(out_width, out_height);
     scaled_buffer->ScaleFrom(*frame.video_frame_buffer()->ToI420());
-    broadcaster_.OnFrame(VideoFrame::Builder()
-                             .set_video_frame_buffer(scaled_buffer)
-                             .set_rotation(kVideoRotation_0)
-                             .set_timestamp_us(frame.timestamp_us())
-                             .set_id(frame.id())
-                             .build());
+    VideoFrame::Builder new_frame_builder =
+        VideoFrame::Builder()
+            .set_video_frame_buffer(scaled_buffer)
+            .set_rotation(kVideoRotation_0)
+            .set_timestamp_us(frame.timestamp_us())
+            .set_id(frame.id());
+    if (frame.has_update_rect()) {
+      VideoFrame::UpdateRect new_rect = frame.update_rect().ScaleWithFrame(
+          frame.width(), frame.height(), 0, 0, frame.width(), frame.height(),
+          out_width, out_height);
+      new_frame_builder.set_update_rect(new_rect);
+    }
+    broadcaster_.OnFrame(new_frame_builder.build());
+
   } else {
     // No adaptations needed, just return the frame as is.
     broadcaster_.OnFrame(frame);
