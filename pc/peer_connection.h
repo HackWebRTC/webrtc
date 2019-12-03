@@ -317,8 +317,6 @@ class PeerConnection : public PeerConnectionInternal,
   bool GetSctpSslRole(rtc::SSLRole* role);
   // Handler for the "channel closed" signal
   void OnSctpDataChannelClosed(DataChannel* channel);
-  // Sends the MSG_FREE_DATACHANNELS signal
-  void SignalFreeDataChannels();
 
   // Functions made public for testing.
   void ReturnHistogramVeryQuicklyForTesting() {

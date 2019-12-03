@@ -348,7 +348,13 @@ void DataChannelController::OnSctpDataChannelClosed(DataChannel* channel) {
       // we can't free it directly here; we need to free it asynchronously.
       sctp_data_channels_to_free_.push_back(*it);
       sctp_data_channels_.erase(it);
-      pc_->SignalFreeDataChannels();
+      signaling_thread()->PostTask(
+          RTC_FROM_HERE, [self = weak_factory_.GetWeakPtr()] {
+            if (self) {
+              RTC_DCHECK_RUN_ON(self->signaling_thread());
+              self->sctp_data_channels_to_free_.clear();
+            }
+          });
       return;
     }
   }

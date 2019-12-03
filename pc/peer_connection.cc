@@ -136,7 +136,6 @@ enum {
   MSG_SET_SESSIONDESCRIPTION_FAILED,
   MSG_CREATE_SESSIONDESCRIPTION_FAILED,
   MSG_GETSTATS,
-  MSG_FREE_DATACHANNELS,
   MSG_REPORT_USAGE_PATTERN,
 };
 
@@ -4496,10 +4495,6 @@ void PeerConnection::OnMessage(rtc::Message* msg) {
       delete param;
       break;
     }
-    case MSG_FREE_DATACHANNELS: {
-      data_channel_controller_.FreeDataChannels();
-      break;
-    }
     case MSG_REPORT_USAGE_PATTERN: {
       ReportUsagePattern();
       break;
@@ -5674,10 +5669,6 @@ void PeerConnection::OnSctpDataChannelClosed(DataChannel* channel) {
   // Since data_channel_controller doesn't do signals, this
   // signal is relayed here.
   data_channel_controller_.OnSctpDataChannelClosed(channel);
-}
-
-void PeerConnection::SignalFreeDataChannels() {
-  signaling_thread()->Post(RTC_FROM_HERE, this, MSG_FREE_DATACHANNELS, nullptr);
 }
 
 rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>

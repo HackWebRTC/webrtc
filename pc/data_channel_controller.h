@@ -18,6 +18,7 @@
 
 #include "pc/channel.h"
 #include "pc/data_channel.h"
+#include "rtc_base/weak_ptr.h"
 
 namespace webrtc {
 
@@ -75,12 +76,6 @@ class DataChannelController : public DataChannelProviderInterface,
   bool HasRtpDataChannels() const {
     RTC_DCHECK_RUN_ON(signaling_thread());
     return !rtp_data_channels_.empty();
-  }
-
-  // Called when it's appropriate to delete released datachannels.
-  void FreeDataChannels() {
-    RTC_DCHECK_RUN_ON(signaling_thread());
-    sctp_data_channels_to_free_.clear();
   }
 
   void UpdateLocalRtpDataChannels(const cricket::StreamParamsVec& streams);
@@ -207,6 +202,7 @@ class DataChannelController : public DataChannelProviderInterface,
 
   // Owning PeerConnection.
   PeerConnection* const pc_;
+  rtc::WeakPtrFactory<DataChannelController> weak_factory_{this};
 };
 
 }  // namespace webrtc
