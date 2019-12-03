@@ -470,9 +470,8 @@ bool Thread::PopSendMessageFromThread(const Thread* source, _SendMessage* msg) {
 
 void Thread::InvokeInternal(const Location& posted_from,
                             rtc::FunctionView<void()> functor) {
-  TRACE_EVENT2("webrtc", "Thread::Invoke", "src_file_and_line",
-               posted_from.file_and_line(), "src_func",
-               posted_from.function_name());
+  TRACE_EVENT2("webrtc", "Thread::Invoke", "src_file", posted_from.file_name(),
+               "src_func", posted_from.function_name());
 
   class FunctorMessageHandler : public MessageHandler {
    public:
