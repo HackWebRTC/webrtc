@@ -192,7 +192,8 @@ TEST(RenderDelayController, DISABLED_Alignment) {
 
 // Verifies that the RenderDelayController is able to properly handle noncausal
 // delays.
-TEST(RenderDelayController, NonCausalAlignment) {
+// TODO(bugs.webrtc.org/11161): Re-enable tests.
+TEST(RenderDelayController, DISABLED_NonCausalAlignment) {
   Random random_generator(42U);
   for (size_t num_capture_channels : {1, 2, 4}) {
     for (size_t num_render_channels : {1, 2, 8}) {
