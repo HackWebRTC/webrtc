@@ -32,7 +32,11 @@ struct IceControllerEvent {
     NOMINATION_ON_CONTROLLED_SIDE,
     DATA_RECEIVED,
     CONNECT_STATE_CHANGE,
-    SELECTED_CONNECTION_DESTROYED
+    SELECTED_CONNECTION_DESTROYED,
+    // The ICE_CONTROLLER_RECHECK enum value lets an IceController request
+    // P2PTransportChannel to recheck a switch periodically without an event
+    // taking place.
+    ICE_CONTROLLER_RECHECK,
   };
 
   IceControllerEvent(const Type& _type)  // NOLINT: runtime/explicit
@@ -40,7 +44,7 @@ struct IceControllerEvent {
   std::string ToString() const;
 
   Type type;
-  int dampening_delay = 0;
+  int recheck_delay_ms = 0;
 };
 
 // Defines the interface for a module that control
@@ -65,8 +69,8 @@ class IceControllerInterface {
     // Connection that we should (optionally) switch to.
     absl::optional<const Connection*> connection;
 
-    // Delay in milliseconds when we should resort and try switching again.
-    absl::optional<int> recheck_delay_ms;
+    // An optional recheck event for when a Switch() should be attempted again.
+    absl::optional<IceControllerEvent> recheck_event;
   };
 
   virtual ~IceControllerInterface() = default;

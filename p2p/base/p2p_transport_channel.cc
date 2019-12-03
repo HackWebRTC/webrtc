@@ -234,17 +234,16 @@ bool P2PTransportChannel::MaybeSwitchSelectedConnection(
                              reason);
   }
 
-  if (result.recheck_delay_ms.has_value()) {
+  if (result.recheck_event.has_value()) {
     // If we do not switch to the connection because it missed the receiving
     // threshold, the new connection is in a better receiving state than the
     // currently selected connection. So we need to re-check whether it needs
     // to be switched at a later time.
-    reason.dampening_delay = *result.recheck_delay_ms;
     invoker_.AsyncInvokeDelayed<void>(
         RTC_FROM_HERE, thread(),
         rtc::Bind(&P2PTransportChannel::SortConnectionsAndUpdateState, this,
-                  reason),
-        reason.dampening_delay);
+                  *result.recheck_event),
+        result.recheck_event->recheck_delay_ms);
   }
 
   return result.connection.has_value();

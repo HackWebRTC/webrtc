@@ -44,10 +44,12 @@ std::string IceControllerEvent::ToString() const {
     case SELECTED_CONNECTION_DESTROYED:
       reason = "selected candidate pair destroyed";
       break;
+    case ICE_CONTROLLER_RECHECK:
+      reason = "ice-controller-request-recheck";
+      break;
   }
-  if (dampening_delay) {
-    reason += " (after switching dampening interval: " +
-              std::to_string(dampening_delay) + ")";
+  if (recheck_delay_ms) {
+    reason += " (after delay: " + std::to_string(recheck_delay_ms) + ")";
   }
   return reason;
 }
