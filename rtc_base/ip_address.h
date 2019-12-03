@@ -137,6 +137,7 @@ class RTC_EXPORT InterfaceAddress : public IPAddress {
   InterfaceAddress(const in6_addr& ip6, int ipv6_flags)
       : IPAddress(ip6), ipv6_flags_(ipv6_flags) {}
 
+  InterfaceAddress(const InterfaceAddress& other) = default;
   const InterfaceAddress& operator=(const InterfaceAddress& other);
 
   bool operator==(const InterfaceAddress& other) const;

@@ -43,17 +43,25 @@ bool Limit(int* value, int min, int max) {
 EchoCanceller3Config::EchoCanceller3Config() = default;
 EchoCanceller3Config::EchoCanceller3Config(const EchoCanceller3Config& e) =
     default;
+EchoCanceller3Config& EchoCanceller3Config::operator=(
+    const EchoCanceller3Config& e) = default;
 EchoCanceller3Config::Delay::Delay() = default;
 EchoCanceller3Config::Delay::Delay(const EchoCanceller3Config::Delay& e) =
     default;
+EchoCanceller3Config::Delay& EchoCanceller3Config::Delay::operator=(
+    const Delay& e) = default;
 
 EchoCanceller3Config::EchoModel::EchoModel() = default;
 EchoCanceller3Config::EchoModel::EchoModel(
     const EchoCanceller3Config::EchoModel& e) = default;
+EchoCanceller3Config::EchoModel& EchoCanceller3Config::EchoModel::operator=(
+    const EchoModel& e) = default;
 
 EchoCanceller3Config::Suppressor::Suppressor() = default;
 EchoCanceller3Config::Suppressor::Suppressor(
     const EchoCanceller3Config::Suppressor& e) = default;
+EchoCanceller3Config::Suppressor& EchoCanceller3Config::Suppressor::operator=(
+    const Suppressor& e) = default;
 
 EchoCanceller3Config::Suppressor::MaskingThresholds::MaskingThresholds(
     float enr_transparent,
@@ -62,9 +70,11 @@ EchoCanceller3Config::Suppressor::MaskingThresholds::MaskingThresholds(
     : enr_transparent(enr_transparent),
       enr_suppress(enr_suppress),
       emr_transparent(emr_transparent) {}
-EchoCanceller3Config::Suppressor::Suppressor::MaskingThresholds::
-    MaskingThresholds(
-        const EchoCanceller3Config::Suppressor::MaskingThresholds& e) = default;
+EchoCanceller3Config::Suppressor::MaskingThresholds::MaskingThresholds(
+    const EchoCanceller3Config::Suppressor::MaskingThresholds& e) = default;
+EchoCanceller3Config::Suppressor::MaskingThresholds&
+EchoCanceller3Config::Suppressor::MaskingThresholds::operator=(
+    const MaskingThresholds& e) = default;
 
 EchoCanceller3Config::Suppressor::Tuning::Tuning(MaskingThresholds mask_lf,
                                                  MaskingThresholds mask_hf,
@@ -76,6 +86,8 @@ EchoCanceller3Config::Suppressor::Tuning::Tuning(MaskingThresholds mask_lf,
       max_dec_factor_lf(max_dec_factor_lf) {}
 EchoCanceller3Config::Suppressor::Tuning::Tuning(
     const EchoCanceller3Config::Suppressor::Tuning& e) = default;
+EchoCanceller3Config::Suppressor::Tuning&
+EchoCanceller3Config::Suppressor::Tuning::operator=(const Tuning& e) = default;
 
 bool EchoCanceller3Config::Validate(EchoCanceller3Config* config) {
   RTC_DCHECK(config);
