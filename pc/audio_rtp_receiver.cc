@@ -76,8 +76,8 @@ bool AudioRtpReceiver::SetOutputVolume(double volume) {
   RTC_DCHECK(media_channel_);
   RTC_DCHECK(!stopped_);
   return worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
-    // TODO(bugs.webrtc.org/8694): Stop using 0 to mean unsignalled SSRC value.
-    return media_channel_->SetOutputVolume(ssrc_.value_or(0), volume);
+    return ssrc_ ? media_channel_->SetOutputVolume(*ssrc_, volume)
+                 : media_channel_->SetDefaultOutputVolume(volume);
   });
 }
 
@@ -112,8 +112,8 @@ RtpParameters AudioRtpReceiver::GetParameters() const {
     return RtpParameters();
   }
   return worker_thread_->Invoke<RtpParameters>(RTC_FROM_HERE, [&] {
-    // TODO(bugs.webrtc.org/8694): Stop using 0 to mean unsignalled SSRC value.
-    return media_channel_->GetRtpReceiveParameters(ssrc_.value_or(0));
+    return ssrc_ ? media_channel_->GetRtpReceiveParameters(*ssrc_)
+                 : media_channel_->GetDefaultRtpReceiveParameters();
   });
 }
 
@@ -153,12 +153,12 @@ void AudioRtpReceiver::RestartMediaChannel(absl::optional<uint32_t> ssrc) {
   }
 
   if (!stopped_) {
-    source_->Stop(media_channel_, ssrc_.value_or(0));
+    source_->Stop(media_channel_, ssrc_);
     delay_->OnStop();
   }
   ssrc_ = ssrc;
   stopped_ = false;
-  source_->Start(media_channel_, ssrc.value_or(0));
+  source_->Start(media_channel_, ssrc);
   delay_->OnStart(media_channel_, ssrc.value_or(0));
   Reconfigure();
 }

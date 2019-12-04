@@ -802,12 +802,11 @@ class VoiceMediaChannel : public MediaChannel, public Delayable {
   virtual bool SetSendParameters(const AudioSendParameters& params) = 0;
   virtual bool SetRecvParameters(const AudioRecvParameters& params) = 0;
   // Get the receive parameters for the incoming stream identified by |ssrc|.
-  // If |ssrc| is 0, retrieve the receive parameters for the default receive
-  // stream, which is used when SSRCs are not signaled. Note that calling with
-  // an |ssrc| of 0 will return encoding parameters with an unset |ssrc|
-  // member.
   virtual webrtc::RtpParameters GetRtpReceiveParameters(
       uint32_t ssrc) const = 0;
+  // Retrieve the receive parameters for the default receive
+  // stream, which is used when SSRCs are not signaled.
+  virtual webrtc::RtpParameters GetDefaultRtpReceiveParameters() const = 0;
   // Starts or stops playout of received audio.
   virtual void SetPlayout(bool playout) = 0;
   // Starts or stops sending (and potentially capture) of local audio.
@@ -819,6 +818,8 @@ class VoiceMediaChannel : public MediaChannel, public Delayable {
                             AudioSource* source) = 0;
   // Set speaker output volume of the specified ssrc.
   virtual bool SetOutputVolume(uint32_t ssrc, double volume) = 0;
+  // Set speaker output volume for future unsignaled streams.
+  virtual bool SetDefaultOutputVolume(double volume) = 0;
   // Returns if the telephone-event has been negotiated.
   virtual bool CanInsertDtmf() = 0;
   // Send a DTMF |event|. The DTMF out-of-band signal will be used.
@@ -831,6 +832,8 @@ class VoiceMediaChannel : public MediaChannel, public Delayable {
 
   virtual void SetRawAudioSink(
       uint32_t ssrc,
+      std::unique_ptr<webrtc::AudioSinkInterface> sink) = 0;
+  virtual void SetDefaultRawAudioSink(
       std::unique_ptr<webrtc::AudioSinkInterface> sink) = 0;
 
   virtual std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const = 0;
@@ -868,12 +871,11 @@ class VideoMediaChannel : public MediaChannel, public Delayable {
   virtual bool SetSendParameters(const VideoSendParameters& params) = 0;
   virtual bool SetRecvParameters(const VideoRecvParameters& params) = 0;
   // Get the receive parameters for the incoming stream identified by |ssrc|.
-  // If |ssrc| is 0, retrieve the receive parameters for the default receive
-  // stream, which is used when SSRCs are not signaled. Note that calling with
-  // an |ssrc| of 0 will return encoding parameters with an unset |ssrc|
-  // member.
   virtual webrtc::RtpParameters GetRtpReceiveParameters(
       uint32_t ssrc) const = 0;
+  // Retrieve the receive parameters for the default receive
+  // stream, which is used when SSRCs are not signaled.
+  virtual webrtc::RtpParameters GetDefaultRtpReceiveParameters() const = 0;
   // Gets the currently set codecs/payload types to be used for outgoing media.
   virtual bool GetSendCodec(VideoCodec* send_codec) = 0;
   // Starts or stops transmission (and potentially capture) of local video.
@@ -885,9 +887,11 @@ class VideoMediaChannel : public MediaChannel, public Delayable {
       const VideoOptions* options,
       rtc::VideoSourceInterface<webrtc::VideoFrame>* source) = 0;
   // Sets the sink object to be used for the specified stream.
-  // If SSRC is 0, the sink is used for the 'default' stream.
   virtual bool SetSink(uint32_t ssrc,
                        rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) = 0;
+  // The sink is used for the 'default' stream.
+  virtual void SetDefaultSink(
+      rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) = 0;
   // This fills the "bitrate parts" (rtx, video bitrate) of the
   // BandwidthEstimationInfo, since that part that isn't possible to get
   // through webrtc::Call::GetStats, as they are statistics of the send

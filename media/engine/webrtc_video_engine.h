@@ -129,6 +129,7 @@ class WebRtcVideoChannel : public VideoMediaChannel,
       uint32_t ssrc,
       const webrtc::RtpParameters& parameters) override;
   webrtc::RtpParameters GetRtpReceiveParameters(uint32_t ssrc) const override;
+  webrtc::RtpParameters GetDefaultRtpReceiveParameters() const override;
   bool GetSendCodec(VideoCodec* send_codec) override;
   bool SetSend(bool send) override;
   bool SetVideoSend(
@@ -143,6 +144,8 @@ class WebRtcVideoChannel : public VideoMediaChannel,
   void ResetUnsignaledRecvStream() override;
   bool SetSink(uint32_t ssrc,
                rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
+  void SetDefaultSink(
+      rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
   void FillBitrateInfo(BandwidthEstimationInfo* bwe_info) override;
   bool GetStats(VideoMediaInfo* info) override;
 
@@ -210,6 +213,7 @@ class WebRtcVideoChannel : public VideoMediaChannel,
   void RequestEncoderFallback() override;
   void RequestEncoderSwitch(
       const EncoderSwitchRequestCallback::Config& conf) override;
+
   void SetRecordableEncodedFrameCallback(
       uint32_t ssrc,
       std::function<void(const webrtc::RecordableEncodedFrame&)> callback)
@@ -220,8 +224,8 @@ class WebRtcVideoChannel : public VideoMediaChannel,
  private:
   class WebRtcVideoReceiveStream;
 
-  // Finds VideoReceiveStream corresponding to ssrc. Aware of unsignalled
-  // ssrc handling.
+  // Finds VideoReceiveStream corresponding to ssrc. Aware of unsignalled ssrc
+  // handling.
   WebRtcVideoReceiveStream* FindReceiveStream(uint32_t ssrc)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(thread_checker_);
 

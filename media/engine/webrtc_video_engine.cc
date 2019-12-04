@@ -923,26 +923,34 @@ webrtc::RtpParameters WebRtcVideoChannel::GetRtpReceiveParameters(
     uint32_t ssrc) const {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   webrtc::RtpParameters rtp_params;
-  // SSRC of 0 represents an unsignaled receive stream.
-  if (ssrc == 0) {
-    if (!default_unsignalled_ssrc_handler_.GetDefaultSink()) {
-      RTC_LOG(LS_WARNING)
-          << "Attempting to get RTP parameters for the default, "
-             "unsignaled video receive stream, but not yet "
-             "configured to receive such a stream.";
-      return rtp_params;
-    }
-    rtp_params.encodings.emplace_back();
-  } else {
-    auto it = receive_streams_.find(ssrc);
-    if (it == receive_streams_.end()) {
-      RTC_LOG(LS_WARNING)
-          << "Attempting to get RTP receive parameters for stream "
-          << "with SSRC " << ssrc << " which doesn't exist.";
-      return webrtc::RtpParameters();
-    }
-    rtp_params = it->second->GetRtpParameters();
+  auto it = receive_streams_.find(ssrc);
+  if (it == receive_streams_.end()) {
+    RTC_LOG(LS_WARNING)
+        << "Attempting to get RTP receive parameters for stream "
+        << "with SSRC " << ssrc << " which doesn't exist.";
+    return webrtc::RtpParameters();
   }
+  rtp_params = it->second->GetRtpParameters();
+
+  // Add codecs, which any stream is prepared to receive.
+  for (const VideoCodec& codec : recv_params_.codecs) {
+    rtp_params.codecs.push_back(codec.ToCodecParameters());
+  }
+
+  return rtp_params;
+}
+
+webrtc::RtpParameters WebRtcVideoChannel::GetDefaultRtpReceiveParameters()
+    const {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  webrtc::RtpParameters rtp_params;
+  if (!default_unsignalled_ssrc_handler_.GetDefaultSink()) {
+    RTC_LOG(LS_WARNING) << "Attempting to get RTP parameters for the default, "
+                           "unsignaled video receive stream, but not yet "
+                           "configured to receive such a stream.";
+    return rtp_params;
+  }
+  rtp_params.encodings.emplace_back();
 
   // Add codecs, which any stream is prepared to receive.
   for (const VideoCodec& codec : recv_params_.codecs) {
@@ -1360,10 +1368,6 @@ bool WebRtcVideoChannel::SetSink(
   RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_LOG(LS_INFO) << "SetSink: ssrc:" << ssrc << " "
                    << (sink ? "(ptr)" : "nullptr");
-  if (ssrc == 0) {
-    default_unsignalled_ssrc_handler_.SetDefaultSink(this, sink);
-    return true;
-  }
 
   std::map<uint32_t, WebRtcVideoReceiveStream*>::iterator it =
       receive_streams_.find(ssrc);
@@ -1373,6 +1377,13 @@ bool WebRtcVideoChannel::SetSink(
 
   it->second->SetSink(sink);
   return true;
+}
+
+void WebRtcVideoChannel::SetDefaultSink(
+    rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_LOG(LS_INFO) << "SetDefaultSink: " << (sink ? "(ptr)" : "nullptr");
+  default_unsignalled_ssrc_handler_.SetDefaultSink(this, sink);
 }
 
 bool WebRtcVideoChannel::GetStats(VideoMediaInfo* info) {

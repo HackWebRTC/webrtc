@@ -83,8 +83,8 @@ RtpParameters VideoRtpReceiver::GetParameters() const {
     return RtpParameters();
   }
   return worker_thread_->Invoke<RtpParameters>(RTC_FROM_HERE, [&] {
-    // TODO(bugs.webrtc.org/8694): Stop using 0 to mean unsignalled SSRC
-    return media_channel_->GetRtpReceiveParameters(ssrc_.value_or(0));
+    return ssrc_ ? media_channel_->GetRtpReceiveParameters(*ssrc_)
+                 : media_channel_->GetDefaultRtpReceiveParameters();
   });
 }
 
@@ -155,8 +155,11 @@ void VideoRtpReceiver::RestartMediaChannel(absl::optional<uint32_t> ssrc) {
 }
 
 void VideoRtpReceiver::SetSink(rtc::VideoSinkInterface<VideoFrame>* sink) {
-  // TODO(bugs.webrtc.org/8694): Stop using 0 to mean unsignalled SSRC
-  media_channel_->SetSink(ssrc_.value_or(0), sink);
+  if (ssrc_) {
+    media_channel_->SetSink(*ssrc_, sink);
+    return;
+  }
+  media_channel_->SetDefaultSink(sink);
 }
 
 void VideoRtpReceiver::SetupMediaChannel(uint32_t ssrc) {

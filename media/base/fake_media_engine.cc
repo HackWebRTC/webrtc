@@ -147,17 +147,17 @@ bool FakeVoiceMediaChannel::InsertDtmf(uint32_t ssrc,
   return true;
 }
 bool FakeVoiceMediaChannel::SetOutputVolume(uint32_t ssrc, double volume) {
-  if (0 == ssrc) {
-    std::map<uint32_t, double>::iterator it;
-    for (it = output_scalings_.begin(); it != output_scalings_.end(); ++it) {
-      it->second = volume;
-    }
-    return true;
-  } else if (output_scalings_.find(ssrc) != output_scalings_.end()) {
+  if (output_scalings_.find(ssrc) != output_scalings_.end()) {
     output_scalings_[ssrc] = volume;
     return true;
   }
   return false;
+}
+bool FakeVoiceMediaChannel::SetDefaultOutputVolume(double volume) {
+  for (auto& entry : output_scalings_) {
+    entry.second = volume;
+  }
+  return true;
 }
 bool FakeVoiceMediaChannel::GetOutputVolume(uint32_t ssrc, double* volume) {
   if (output_scalings_.find(ssrc) == output_scalings_.end())
@@ -187,6 +187,10 @@ bool FakeVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
 }
 void FakeVoiceMediaChannel::SetRawAudioSink(
     uint32_t ssrc,
+    std::unique_ptr<webrtc::AudioSinkInterface> sink) {
+  sink_ = std::move(sink);
+}
+void FakeVoiceMediaChannel::SetDefaultRawAudioSink(
     std::unique_ptr<webrtc::AudioSinkInterface> sink) {
   sink_ = std::move(sink);
 }
@@ -308,14 +312,15 @@ bool FakeVideoMediaChannel::GetSendCodec(VideoCodec* send_codec) {
 bool FakeVideoMediaChannel::SetSink(
     uint32_t ssrc,
     rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
-  if (ssrc != 0 && sinks_.find(ssrc) == sinks_.end()) {
+  auto it = sinks_.find(ssrc);
+  if (it == sinks_.end()) {
     return false;
   }
-  if (ssrc != 0) {
-    sinks_[ssrc] = sink;
-  }
+  it->second = sink;
   return true;
 }
+void FakeVideoMediaChannel::SetDefaultSink(
+    rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {}
 bool FakeVideoMediaChannel::HasSink(uint32_t ssrc) const {
   return sinks_.find(ssrc) != sinks_.end() && sinks_.at(ssrc) != nullptr;
 }
