@@ -459,6 +459,7 @@ if (rtc_include_tests) {
       ":frame_generator_api",
       "../system_wrappers",
       "../test:video_test_common",
+      "../test:video_test_support",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }

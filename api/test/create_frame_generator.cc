@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "test/frame_generator.h"
+#include "test/testsupport/ivf_video_frame_generator.h"
 
 namespace webrtc {
 namespace test {
@@ -33,6 +34,12 @@ std::unique_ptr<FrameGeneratorInterface> CreateFromYuvFileFrameGenerator(
     int frame_repeat_count) {
   return FrameGenerator::CreateFromYuvFile(std::move(files), width, height,
                                            frame_repeat_count);
+}
+
+// Creates a frame generator that repeatedly plays an ivf file.
+std::unique_ptr<FrameGeneratorInterface> CreateFromYuvFileFrameGenerator(
+    std::string file) {
+  return std::make_unique<IvfVideoFrameGenerator>(std::move(file));
 }
 
 std::unique_ptr<FrameGeneratorInterface>
