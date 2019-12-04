@@ -1808,7 +1808,12 @@ void AudioProcessingImpl::InitializeTransient() {
 }
 
 void AudioProcessingImpl::InitializeHighPassFilter() {
-  if (submodule_states_.HighPassFilteringRequired()) {
+  bool high_pass_filter_needed_by_aec =
+      config_.echo_canceller.enabled &&
+      config_.echo_canceller.enforce_high_pass_filtering &&
+      !config_.echo_canceller.mobile_mode;
+  if (submodule_states_.HighPassFilteringRequired() ||
+      high_pass_filter_needed_by_aec) {
     submodules_.high_pass_filter.reset(new HighPassFilter(num_proc_channels()));
   } else {
     submodules_.high_pass_filter.reset();
