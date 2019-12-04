@@ -45,13 +45,6 @@ std::unique_ptr<MediaEngineInterface> CreateMediaEngine(
 }
 
 namespace {
-// If this FieldTrial is enabled, we will not filter out the abs-send-time
-// header extension when the TWCC extensions were also negotiated, but keep
-// kAbsSendTimeUri also if kTransportSequenceNumberUri is present.
-bool IsKeepAbsSendTimeExtensionFieldTrialEnabled() {
-  return webrtc::field_trial::IsEnabled("WebRTC-KeepAbsSendTimeExtension");
-}
-
 // Remove mutually exclusive extensions with lower priority.
 void DiscardRedundantExtensions(
     std::vector<webrtc::RtpExtension>* extensions,
@@ -128,14 +121,14 @@ std::vector<webrtc::RtpExtension> FilterRtpExtensions(
     result.erase(it, result.end());
 
     // Keep just the highest priority extension of any in the following lists.
-    if (IsKeepAbsSendTimeExtensionFieldTrialEnabled()) {
+    if (webrtc::field_trial::IsEnabled("WebRTC-FilterAbsSendTimeExtension")) {
       static const char* const kBweExtensionPriorities[] = {
+          webrtc::RtpExtension::kTransportSequenceNumberUri,
           webrtc::RtpExtension::kAbsSendTimeUri,
           webrtc::RtpExtension::kTimestampOffsetUri};
       DiscardRedundantExtensions(&result, kBweExtensionPriorities);
     } else {
       static const char* const kBweExtensionPriorities[] = {
-          webrtc::RtpExtension::kTransportSequenceNumberUri,
           webrtc::RtpExtension::kAbsSendTimeUri,
           webrtc::RtpExtension::kTimestampOffsetUri};
       DiscardRedundantExtensions(&result, kBweExtensionPriorities);

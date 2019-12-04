@@ -71,7 +71,6 @@ TEST(RemoteEstimateEndToEnd, OfferedCapabilityIsInAnswer) {
 }
 
 TEST(RemoteEstimateEndToEnd, AudioUsesAbsSendTimeExtension) {
-  ScopedFieldTrials trials("WebRTC-KeepAbsSendTimeExtension/Enabled/");
   // Defined before PeerScenario so it gets destructed after, to avoid use after free.
   rtc::Event received_abs_send_time;
   PeerScenario s(*test_info_);
