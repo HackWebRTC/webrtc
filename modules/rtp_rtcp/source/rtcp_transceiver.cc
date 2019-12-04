@@ -133,10 +133,16 @@ void RtcpTransceiver::SendPictureLossIndication(uint32_t ssrc) {
 }
 
 void RtcpTransceiver::SendFullIntraRequest(std::vector<uint32_t> ssrcs) {
+  return SendFullIntraRequest(std::move(ssrcs), true);
+}
+
+void RtcpTransceiver::SendFullIntraRequest(std::vector<uint32_t> ssrcs,
+                                           bool new_request) {
   RTC_CHECK(rtcp_transceiver_);
   RtcpTransceiverImpl* ptr = rtcp_transceiver_.get();
-  task_queue_->PostTask(
-      [ptr, ssrcs = std::move(ssrcs)] { ptr->SendFullIntraRequest(ssrcs); });
+  task_queue_->PostTask([ptr, ssrcs = std::move(ssrcs), new_request] {
+    ptr->SendFullIntraRequest(ssrcs, new_request);
+  });
 }
 
 }  // namespace webrtc

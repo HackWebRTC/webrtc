@@ -200,15 +200,19 @@ void RtcpTransceiverImpl::SendPictureLossIndication(uint32_t ssrc) {
 }
 
 void RtcpTransceiverImpl::SendFullIntraRequest(
-    rtc::ArrayView<const uint32_t> ssrcs) {
+    rtc::ArrayView<const uint32_t> ssrcs,
+    bool new_request) {
   RTC_DCHECK(!ssrcs.empty());
   if (!ready_to_send_)
     return;
   rtcp::Fir fir;
   fir.SetSenderSsrc(config_.feedback_ssrc);
-  for (uint32_t media_ssrc : ssrcs)
-    fir.AddRequestTo(media_ssrc,
-                     remote_senders_[media_ssrc].fir_sequence_number++);
+  for (uint32_t media_ssrc : ssrcs) {
+    uint8_t& command_seq_num = remote_senders_[media_ssrc].fir_sequence_number;
+    if (new_request)
+      command_seq_num += 1;
+    fir.AddRequestTo(media_ssrc, command_seq_num);
+  }
   SendImmediateFeedback(fir);
 }
 

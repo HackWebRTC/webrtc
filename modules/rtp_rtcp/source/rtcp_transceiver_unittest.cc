@@ -294,4 +294,43 @@ TEST(RtcpTransceiverTest, SendsCombinedRtcpPacketOnTaskQueue) {
   WaitPostedTasks(&queue);
 }
 
+TEST(RtcpTransceiverTest, SendFrameIntraRequestDefaultsToNewRequest) {
+  static constexpr uint32_t kSenderSsrc = 12345;
+
+  MockTransport outgoing_transport;
+  TaskQueueForTest queue("rtcp");
+  RtcpTransceiverConfig config;
+  config.feedback_ssrc = kSenderSsrc;
+  config.outgoing_transport = &outgoing_transport;
+  config.task_queue = &queue;
+  config.schedule_periodic_compound_packets = false;
+  RtcpTransceiver rtcp_transceiver(config);
+
+  uint8_t first_seq_nr;
+  EXPECT_CALL(outgoing_transport, SendRtcp)
+      .WillOnce([&](const uint8_t* buffer, size_t size) {
+        EXPECT_TRUE(queue.IsCurrent());
+        RtcpPacketParser rtcp_parser;
+        rtcp_parser.Parse(buffer, size);
+        EXPECT_EQ(rtcp_parser.fir()->requests()[0].ssrc, kSenderSsrc);
+        first_seq_nr = rtcp_parser.fir()->requests()[0].seq_nr;
+        return true;
+      })
+      .WillOnce([&](const uint8_t* buffer, size_t size) {
+        EXPECT_TRUE(queue.IsCurrent());
+        RtcpPacketParser rtcp_parser;
+        rtcp_parser.Parse(buffer, size);
+        EXPECT_EQ(rtcp_parser.fir()->requests()[0].ssrc, kSenderSsrc);
+        EXPECT_EQ(rtcp_parser.fir()->requests()[0].seq_nr, first_seq_nr + 1);
+        return true;
+      });
+
+  // Send 2 FIR packets because the sequence numbers are incremented after,
+  // sending. One wouldn't be able to differentiate the new_request.
+  rtcp_transceiver.SendFullIntraRequest({kSenderSsrc});
+  rtcp_transceiver.SendFullIntraRequest({kSenderSsrc});
+
+  WaitPostedTasks(&queue);
+}
+
 }  // namespace

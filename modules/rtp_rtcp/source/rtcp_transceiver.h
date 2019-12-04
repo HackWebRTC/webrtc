@@ -85,7 +85,11 @@ class RtcpTransceiver : public RtcpFeedbackSenderInterface {
   // using PLI, https://tools.ietf.org/html/rfc4585#section-6.3.1.1
   void SendPictureLossIndication(uint32_t ssrc);
   // using FIR, https://tools.ietf.org/html/rfc5104#section-4.3.1.2
+  // Use the SendFullIntraRequest(ssrcs, true) instead.
   void SendFullIntraRequest(std::vector<uint32_t> ssrcs);
+  // If new_request is true then requested sequence no. will increase for each
+  // requested ssrc.
+  void SendFullIntraRequest(std::vector<uint32_t> ssrcs, bool new_request);
 
  private:
   rtc::TaskQueue* const task_queue_;
