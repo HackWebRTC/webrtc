@@ -465,6 +465,7 @@ Call::Call(Clock* clock,
       transport_send_ptr_(transport_send.get()),
       transport_send_(std::move(transport_send)) {
   RTC_DCHECK(config.event_log != nullptr);
+  RTC_DCHECK(config.trials != nullptr);
   worker_sequence_checker_.Detach();
 
   call_stats_->RegisterStatsObserver(&receive_side_cc_);
