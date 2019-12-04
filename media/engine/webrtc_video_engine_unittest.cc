@@ -26,6 +26,7 @@
 #include "api/test/mock_video_bitrate_allocator_factory.h"
 #include "api/test/mock_video_decoder_factory.h"
 #include "api/test/mock_video_encoder_factory.h"
+#include "api/test/video/function_video_decoder_factory.h"
 #include "api/transport/field_trial_based_config.h"
 #include "api/transport/media/media_transport_config.h"
 #include "api/units/time_delta.h"
@@ -57,6 +58,7 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/time_utils.h"
+#include "test/fake_decoder.h"
 #include "test/field_trial.h"
 #include "test/frame_generator.h"
 #include "test/gmock.h"
@@ -1305,6 +1307,147 @@ TEST_F(WebRtcVideoEngineTest, DISABLED_RecreatesEncoderOnContentTypeChange) {
   // Remove stream previously added to free the external encoder instance.
   EXPECT_TRUE(channel->RemoveSendStream(kSsrc));
   EXPECT_EQ(0u, encoder_factory_->encoders().size());
+}
+
+class WebRtcVideoChannelEncodedFrameCallbackTest : public ::testing::Test {
+ protected:
+  webrtc::Call::Config GetCallConfig(
+      webrtc::RtcEventLogNull* event_log,
+      webrtc::TaskQueueFactory* task_queue_factory) {
+    webrtc::Call::Config call_config(event_log);
+    call_config.task_queue_factory = task_queue_factory;
+    call_config.trials = &field_trials_;
+    return call_config;
+  }
+
+  WebRtcVideoChannelEncodedFrameCallbackTest()
+      : task_queue_factory_(webrtc::CreateDefaultTaskQueueFactory()),
+        call_(absl::WrapUnique(webrtc::Call::Create(
+            GetCallConfig(&event_log_, task_queue_factory_.get())))),
+        video_bitrate_allocator_factory_(
+            webrtc::CreateBuiltinVideoBitrateAllocatorFactory()),
+        engine_(
+            webrtc::CreateBuiltinVideoEncoderFactory(),
+            std::make_unique<webrtc::test::FunctionVideoDecoderFactory>([]() {
+              return std::make_unique<webrtc::test::FakeDecoder>();
+            })),
+        channel_(absl::WrapUnique(static_cast<cricket::WebRtcVideoChannel*>(
+            engine_.CreateMediaChannel(
+                call_.get(),
+                cricket::MediaConfig(),
+                cricket::VideoOptions(),
+                webrtc::CryptoOptions(),
+                video_bitrate_allocator_factory_.get())))) {
+    network_interface_.SetDestination(channel_.get());
+    channel_->SetInterface(&network_interface_, webrtc::MediaTransportConfig());
+    cricket::VideoRecvParameters parameters;
+    parameters.codecs = engine_.codecs();
+    channel_->SetRecvParameters(parameters);
+  }
+
+  void DeliverKeyFrame(uint32_t ssrc) {
+    webrtc::RtpPacket packet;
+    packet.SetMarker(true);
+    packet.SetPayloadType(96);  // VP8
+    packet.SetSsrc(ssrc);
+
+    // VP8 Keyframe + 1 byte payload
+    uint8_t* buf_ptr = packet.AllocatePayload(11);
+    memset(buf_ptr, 0, 11);  // Pass MSAN (don't care about bytes 1-9)
+    buf_ptr[0] = 0x10;       // Partition ID 0 + beginning of partition.
+    call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, packet.Buffer(),
+                                     /*packet_time_us=*/0);
+  }
+
+  void DeliverKeyFrameAndWait(uint32_t ssrc) {
+    DeliverKeyFrame(ssrc);
+    EXPECT_EQ_WAIT(1, renderer_.num_rendered_frames(), kTimeout);
+    EXPECT_EQ(0, renderer_.errors());
+  }
+
+  webrtc::FieldTrialBasedConfig field_trials_;
+  webrtc::RtcEventLogNull event_log_;
+  std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory_;
+  std::unique_ptr<webrtc::Call> call_;
+  std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
+      video_bitrate_allocator_factory_;
+  WebRtcVideoEngine engine_;
+  std::unique_ptr<WebRtcVideoChannel> channel_;
+  cricket::FakeNetworkInterface network_interface_;
+  cricket::FakeVideoRenderer renderer_;
+};
+
+TEST_F(WebRtcVideoChannelEncodedFrameCallbackTest,
+       SetEncodedFrameBufferFunction_DefaultStream) {
+  testing::MockFunction<void(const webrtc::RecordableEncodedFrame&)> callback;
+  EXPECT_CALL(callback, Call);
+  EXPECT_TRUE(channel_->AddRecvStream(
+      cricket::StreamParams::CreateLegacy(kSsrc), /*is_default_stream=*/true));
+  channel_->SetRecordableEncodedFrameCallback(/*ssrc=*/0,
+                                              callback.AsStdFunction());
+  EXPECT_TRUE(channel_->SetSink(kSsrc, &renderer_));
+  DeliverKeyFrame(kSsrc);
+  EXPECT_EQ_WAIT(1, renderer_.num_rendered_frames(), kTimeout);
+  EXPECT_EQ(0, renderer_.errors());
+  channel_->RemoveRecvStream(kSsrc);
+}
+
+TEST_F(WebRtcVideoChannelEncodedFrameCallbackTest,
+       SetEncodedFrameBufferFunction_MatchSsrcWithDefaultStream) {
+  testing::MockFunction<void(const webrtc::RecordableEncodedFrame&)> callback;
+  EXPECT_CALL(callback, Call);
+  EXPECT_TRUE(channel_->AddRecvStream(
+      cricket::StreamParams::CreateLegacy(kSsrc), /*is_default_stream=*/true));
+  EXPECT_TRUE(channel_->SetSink(kSsrc, &renderer_));
+  channel_->SetRecordableEncodedFrameCallback(kSsrc, callback.AsStdFunction());
+  DeliverKeyFrame(kSsrc);
+  EXPECT_EQ_WAIT(1, renderer_.num_rendered_frames(), kTimeout);
+  EXPECT_EQ(0, renderer_.errors());
+  channel_->RemoveRecvStream(kSsrc);
+}
+
+TEST_F(WebRtcVideoChannelEncodedFrameCallbackTest,
+       SetEncodedFrameBufferFunction_MatchSsrc) {
+  testing::MockFunction<void(const webrtc::RecordableEncodedFrame&)> callback;
+  EXPECT_CALL(callback, Call);
+  EXPECT_TRUE(channel_->AddRecvStream(
+      cricket::StreamParams::CreateLegacy(kSsrc), /*is_default_stream=*/false));
+  EXPECT_TRUE(channel_->SetSink(kSsrc, &renderer_));
+  channel_->SetRecordableEncodedFrameCallback(kSsrc, callback.AsStdFunction());
+  DeliverKeyFrame(kSsrc);
+  EXPECT_EQ_WAIT(1, renderer_.num_rendered_frames(), kTimeout);
+  EXPECT_EQ(0, renderer_.errors());
+  channel_->RemoveRecvStream(kSsrc);
+}
+
+TEST_F(WebRtcVideoChannelEncodedFrameCallbackTest,
+       SetEncodedFrameBufferFunction_MismatchSsrc) {
+  testing::StrictMock<
+      testing::MockFunction<void(const webrtc::RecordableEncodedFrame&)>>
+      callback;
+  EXPECT_TRUE(
+      channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(kSsrc + 1),
+                              /*is_default_stream=*/false));
+  EXPECT_TRUE(channel_->SetSink(kSsrc + 1, &renderer_));
+  channel_->SetRecordableEncodedFrameCallback(kSsrc, callback.AsStdFunction());
+  DeliverKeyFrame(kSsrc);  // Expected to not cause function to fire.
+  DeliverKeyFrameAndWait(kSsrc + 1);
+  channel_->RemoveRecvStream(kSsrc + 1);
+}
+
+TEST_F(WebRtcVideoChannelEncodedFrameCallbackTest,
+       SetEncodedFrameBufferFunction_MismatchSsrcWithDefaultStream) {
+  testing::StrictMock<
+      testing::MockFunction<void(const webrtc::RecordableEncodedFrame&)>>
+      callback;
+  EXPECT_TRUE(
+      channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(kSsrc + 1),
+                              /*is_default_stream=*/true));
+  EXPECT_TRUE(channel_->SetSink(kSsrc + 1, &renderer_));
+  channel_->SetRecordableEncodedFrameCallback(kSsrc, callback.AsStdFunction());
+  DeliverKeyFrame(kSsrc);  // Expected to not cause function to fire.
+  DeliverKeyFrameAndWait(kSsrc + 1);
+  channel_->RemoveRecvStream(kSsrc + 1);
 }
 
 class WebRtcVideoChannelBaseTest : public ::testing::Test {

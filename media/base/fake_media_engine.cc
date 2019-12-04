@@ -400,10 +400,20 @@ bool FakeVideoMediaChannel::SetOptions(const VideoOptions& options) {
   options_ = options;
   return true;
 }
+
 bool FakeVideoMediaChannel::SetMaxSendBandwidth(int bps) {
   max_bps_ = bps;
   return true;
 }
+
+void FakeVideoMediaChannel::SetRecordableEncodedFrameCallback(
+    uint32_t ssrc,
+    std::function<void(const webrtc::RecordableEncodedFrame&)> callback) {}
+
+void FakeVideoMediaChannel::ClearRecordableEncodedFrameCallback(uint32_t ssrc) {
+}
+
+void FakeVideoMediaChannel::GenerateKeyFrame(uint32_t ssrc) {}
 
 FakeDataMediaChannel::FakeDataMediaChannel(void* unused,
                                            const DataOptions& options)
