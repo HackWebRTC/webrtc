@@ -32,7 +32,7 @@ EmulatedNetworkManager::EmulatedNetworkManager(
   network_thread_.Start();
 }
 
-void EmulatedNetworkManager::EnableEndpoint(EmulatedEndpoint* endpoint) {
+void EmulatedNetworkManager::EnableEndpoint(EmulatedEndpointImpl* endpoint) {
   RTC_CHECK(endpoints_container_->HasEndpoint(endpoint))
       << "No such interface: " << endpoint->GetPeerLocalAddress().ToString();
   network_thread_.PostTask(RTC_FROM_HERE, [this, endpoint]() {
@@ -41,7 +41,7 @@ void EmulatedNetworkManager::EnableEndpoint(EmulatedEndpoint* endpoint) {
   });
 }
 
-void EmulatedNetworkManager::DisableEndpoint(EmulatedEndpoint* endpoint) {
+void EmulatedNetworkManager::DisableEndpoint(EmulatedEndpointImpl* endpoint) {
   RTC_CHECK(endpoints_container_->HasEndpoint(endpoint))
       << "No such interface: " << endpoint->GetPeerLocalAddress().ToString();
   network_thread_.PostTask(RTC_FROM_HERE, [this, endpoint]() {

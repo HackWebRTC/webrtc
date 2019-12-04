@@ -92,22 +92,17 @@ class PulsedPeaksCrossTraffic {
   bool sending_ RTC_GUARDED_BY(sequence_checker_) = false;
 };
 
-// Simulates a TCP connection, this roughly implements the Reno algorithm. In
-// difference from TCP this only support sending messages with a fixed length,
-// no streaming. This is useful to simulate signaling and cross traffic using
-// message based protocols such as HTTP. It differs from UDP messages in that
-// they are guranteed to be delivered eventually, even on lossy networks.
-class TcpMessageRoute {
+class TcpMessageRouteImpl final : public TcpMessageRoute {
  public:
-  TcpMessageRoute(Clock* clock,
-                  TaskQueueBase* task_queue,
-                  EmulatedRoute* send_route,
-                  EmulatedRoute* ret_route);
+  TcpMessageRouteImpl(Clock* clock,
+                      TaskQueueBase* task_queue,
+                      EmulatedRoute* send_route,
+                      EmulatedRoute* ret_route);
 
   // Sends a TCP message of the given |size| over the route, |on_received| is
   // called when the message has been delivered. Note that the connection
   // parameters are reset iff there's no currently pending message on the route.
-  void SendMessage(size_t size, std::function<void()> on_received);
+  void SendMessage(size_t size, std::function<void()> on_received) override;
 
  private:
   // Represents a message sent over the route. When all fragments has been

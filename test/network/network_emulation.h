@@ -33,42 +33,6 @@
 
 namespace webrtc {
 
-struct EmulatedIpPacket {
- public:
-  static constexpr int kUdpHeaderSize = 8;
-
-  EmulatedIpPacket(const rtc::SocketAddress& from,
-                   const rtc::SocketAddress& to,
-                   rtc::CopyOnWriteBuffer data,
-                   Timestamp arrival_time);
-  ~EmulatedIpPacket() = default;
-  // This object is not copyable or assignable.
-  EmulatedIpPacket(const EmulatedIpPacket&) = delete;
-  EmulatedIpPacket& operator=(const EmulatedIpPacket&) = delete;
-  // This object is only moveable.
-  EmulatedIpPacket(EmulatedIpPacket&&) = default;
-  EmulatedIpPacket& operator=(EmulatedIpPacket&&) = default;
-
-  size_t size() const { return data.size(); }
-  const uint8_t* cdata() const { return data.cdata(); }
-
-  size_t ip_packet_size() const {
-    return size() + kUdpHeaderSize + ip_header_size;
-  }
-  rtc::SocketAddress from;
-  rtc::SocketAddress to;
-  // Holds the UDP payload.
-  rtc::CopyOnWriteBuffer data;
-  int ip_header_size;
-  Timestamp arrival_time;
-};
-
-class EmulatedNetworkReceiverInterface {
- public:
-  virtual ~EmulatedNetworkReceiverInterface() = default;
-
-  virtual void OnPacketReceived(EmulatedIpPacket packet) = 0;
-};
 
 class LinkEmulation : public EmulatedNetworkReceiverInterface {
  public:
@@ -158,42 +122,29 @@ class EmulatedNetworkNode : public EmulatedNetworkReceiverInterface {
 // It will be used as sender from socket side to send data to the network and
 // will act as packet receiver from emulated network side to receive packets
 // from other EmulatedNetworkNodes.
-class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
+class EmulatedEndpointImpl : public EmulatedEndpoint {
  public:
-  EmulatedEndpoint(uint64_t id,
-                   const rtc::IPAddress& ip,
-                   bool is_enabled,
-                   rtc::TaskQueue* task_queue,
-                   Clock* clock);
-  ~EmulatedEndpoint() override;
+  EmulatedEndpointImpl(uint64_t id,
+                       const rtc::IPAddress& ip,
+                       bool is_enabled,
+                       rtc::TaskQueue* task_queue,
+                       Clock* clock);
+  ~EmulatedEndpointImpl() override;
 
   uint64_t GetId() const;
 
   NetworkRouterNode* router() { return &router_; }
-  // Send packet into network.
-  // |from| will be used to set source address for the packet in destination
-  // socket.
-  // |to| will be used for routing verification and picking right socket by port
-  // on destination endpoint.
+
   void SendPacket(const rtc::SocketAddress& from,
                   const rtc::SocketAddress& to,
-                  rtc::CopyOnWriteBuffer packet_data);
+                  rtc::CopyOnWriteBuffer packet_data) override;
 
-  // Binds receiver to this endpoint to send and receive data.
-  // |desired_port| is a port that should be used. If it is equal to 0,
-  // endpoint will pick the first available port starting from
-  // |kFirstEphemeralPort|.
-  //
-  // Returns the port, that should be used (it will be equals to desired, if
-  // |desired_port| != 0 and is free or will be the one, selected by endpoint)
-  // or absl::nullopt if desired_port in used. Also fails if there are no more
-  // free ports to bind to.
   absl::optional<uint16_t> BindReceiver(
       uint16_t desired_port,
-      EmulatedNetworkReceiverInterface* receiver);
-  void UnbindReceiver(uint16_t port);
+      EmulatedNetworkReceiverInterface* receiver) override;
+  void UnbindReceiver(uint16_t port) override;
 
-  rtc::IPAddress GetPeerLocalAddress() const;
+  rtc::IPAddress GetPeerLocalAddress() const override;
 
   // Will be called to deliver packet into endpoint from network node.
   void OnPacketReceived(EmulatedIpPacket packet) override;
@@ -204,7 +155,7 @@ class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
 
   const rtc::Network& network() const { return *network_.get(); }
 
-  EmulatedNetworkStats stats();
+  EmulatedNetworkStats stats() override;
 
  private:
   static constexpr uint16_t kFirstEphemeralPort = 49152;
@@ -232,29 +183,31 @@ class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
 
 class EmulatedRoute {
  public:
-  EmulatedRoute(EmulatedEndpoint* from,
+  EmulatedRoute(EmulatedEndpointImpl* from,
                 std::vector<EmulatedNetworkNode*> via_nodes,
-                EmulatedEndpoint* to)
+                EmulatedEndpointImpl* to)
       : from(from), via_nodes(std::move(via_nodes)), to(to), active(true) {}
 
-  EmulatedEndpoint* from;
+  EmulatedEndpointImpl* from;
   std::vector<EmulatedNetworkNode*> via_nodes;
-  EmulatedEndpoint* to;
+  EmulatedEndpointImpl* to;
   bool active;
 };
 class EndpointsContainer {
  public:
-  explicit EndpointsContainer(const std::vector<EmulatedEndpoint*>& endpoints);
+  explicit EndpointsContainer(
+      const std::vector<EmulatedEndpointImpl*>& endpoints);
 
-  EmulatedEndpoint* LookupByLocalAddress(const rtc::IPAddress& local_ip) const;
-  bool HasEndpoint(EmulatedEndpoint* endpoint) const;
+  EmulatedEndpointImpl* LookupByLocalAddress(
+      const rtc::IPAddress& local_ip) const;
+  bool HasEndpoint(EmulatedEndpointImpl* endpoint) const;
   // Returns list of networks for enabled endpoints. Caller takes ownership of
   // returned rtc::Network objects.
   std::vector<std::unique_ptr<rtc::Network>> GetEnabledNetworks() const;
   EmulatedNetworkStats GetStats() const;
 
  private:
-  const std::vector<EmulatedEndpoint*> endpoints_;
+  const std::vector<EmulatedEndpointImpl*> endpoints_;
 };
 
 template <typename FakePacketType>

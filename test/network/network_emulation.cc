@@ -20,24 +20,6 @@
 
 namespace webrtc {
 
-namespace {
-constexpr size_t kIPv4HeaderSize = 20;
-constexpr size_t kIPv6HeaderSize = 40;
-}  // namespace
-
-EmulatedIpPacket::EmulatedIpPacket(const rtc::SocketAddress& from,
-                                   const rtc::SocketAddress& to,
-                                   rtc::CopyOnWriteBuffer data,
-                                   Timestamp arrival_time)
-    : from(from),
-      to(to),
-      data(data),
-      ip_header_size((to.family() == AF_INET) ? kIPv4HeaderSize
-                                              : kIPv6HeaderSize),
-      arrival_time(arrival_time) {
-  RTC_DCHECK(to.family() == AF_INET || to.family() == AF_INET6);
-}
-
 void LinkEmulation::OnPacketReceived(EmulatedIpPacket packet) {
   task_queue_->PostTask([this, packet = std::move(packet)]() mutable {
     RTC_DCHECK_RUN_ON(task_queue_);
@@ -172,11 +154,11 @@ void EmulatedNetworkNode::ClearRoute(rtc::IPAddress receiver_ip,
 
 EmulatedNetworkNode::~EmulatedNetworkNode() = default;
 
-EmulatedEndpoint::EmulatedEndpoint(uint64_t id,
-                                   const rtc::IPAddress& ip,
-                                   bool is_enabled,
-                                   rtc::TaskQueue* task_queue,
-                                   Clock* clock)
+EmulatedEndpointImpl::EmulatedEndpointImpl(uint64_t id,
+                                           const rtc::IPAddress& ip,
+                                           bool is_enabled,
+                                           rtc::TaskQueue* task_queue,
+                                           Clock* clock)
     : id_(id),
       peer_local_addr_(ip),
       is_enabled_(is_enabled),
@@ -201,15 +183,15 @@ EmulatedEndpoint::EmulatedEndpoint(uint64_t id,
 
   enabled_state_checker_.Detach();
 }
-EmulatedEndpoint::~EmulatedEndpoint() = default;
+EmulatedEndpointImpl::~EmulatedEndpointImpl() = default;
 
-uint64_t EmulatedEndpoint::GetId() const {
+uint64_t EmulatedEndpointImpl::GetId() const {
   return id_;
 }
 
-void EmulatedEndpoint::SendPacket(const rtc::SocketAddress& from,
-                                  const rtc::SocketAddress& to,
-                                  rtc::CopyOnWriteBuffer packet_data) {
+void EmulatedEndpointImpl::SendPacket(const rtc::SocketAddress& from,
+                                      const rtc::SocketAddress& to,
+                                      rtc::CopyOnWriteBuffer packet_data) {
   RTC_CHECK(from.ipaddr() == peer_local_addr_);
   EmulatedIpPacket packet(from, to, std::move(packet_data),
                           clock_->CurrentTime());
@@ -228,7 +210,7 @@ void EmulatedEndpoint::SendPacket(const rtc::SocketAddress& from,
   });
 }
 
-absl::optional<uint16_t> EmulatedEndpoint::BindReceiver(
+absl::optional<uint16_t> EmulatedEndpointImpl::BindReceiver(
     uint16_t desired_port,
     EmulatedNetworkReceiverInterface* receiver) {
   rtc::CritScope crit(&receiver_lock_);
@@ -259,7 +241,7 @@ absl::optional<uint16_t> EmulatedEndpoint::BindReceiver(
   return port;
 }
 
-uint16_t EmulatedEndpoint::NextPort() {
+uint16_t EmulatedEndpointImpl::NextPort() {
   uint16_t out = next_port_;
   if (next_port_ == std::numeric_limits<uint16_t>::max()) {
     next_port_ = kFirstEphemeralPort;
@@ -269,16 +251,16 @@ uint16_t EmulatedEndpoint::NextPort() {
   return out;
 }
 
-void EmulatedEndpoint::UnbindReceiver(uint16_t port) {
+void EmulatedEndpointImpl::UnbindReceiver(uint16_t port) {
   rtc::CritScope crit(&receiver_lock_);
   port_to_receiver_.erase(port);
 }
 
-rtc::IPAddress EmulatedEndpoint::GetPeerLocalAddress() const {
+rtc::IPAddress EmulatedEndpointImpl::GetPeerLocalAddress() const {
   return peer_local_addr_;
 }
 
-void EmulatedEndpoint::OnPacketReceived(EmulatedIpPacket packet) {
+void EmulatedEndpointImpl::OnPacketReceived(EmulatedIpPacket packet) {
   RTC_DCHECK_RUN_ON(task_queue_);
   RTC_CHECK(packet.to.ipaddr() == peer_local_addr_)
       << "Routing error: wrong destination endpoint. Packet.to.ipaddr()=: "
@@ -303,29 +285,29 @@ void EmulatedEndpoint::OnPacketReceived(EmulatedIpPacket packet) {
   it->second->OnPacketReceived(std::move(packet));
 }
 
-void EmulatedEndpoint::Enable() {
+void EmulatedEndpointImpl::Enable() {
   RTC_DCHECK_RUN_ON(&enabled_state_checker_);
   RTC_CHECK(!is_enabled_);
   is_enabled_ = true;
 }
 
-void EmulatedEndpoint::Disable() {
+void EmulatedEndpointImpl::Disable() {
   RTC_DCHECK_RUN_ON(&enabled_state_checker_);
   RTC_CHECK(is_enabled_);
   is_enabled_ = false;
 }
 
-bool EmulatedEndpoint::Enabled() const {
+bool EmulatedEndpointImpl::Enabled() const {
   RTC_DCHECK_RUN_ON(&enabled_state_checker_);
   return is_enabled_;
 }
 
-EmulatedNetworkStats EmulatedEndpoint::stats() {
+EmulatedNetworkStats EmulatedEndpointImpl::stats() {
   RTC_DCHECK_RUN_ON(task_queue_);
   return stats_;
 }
 
-void EmulatedEndpoint::UpdateReceiveStats(const EmulatedIpPacket& packet) {
+void EmulatedEndpointImpl::UpdateReceiveStats(const EmulatedIpPacket& packet) {
   RTC_DCHECK_RUN_ON(task_queue_);
   Timestamp current_time = clock_->CurrentTime();
   if (stats_.first_packet_received_time.IsInfinite()) {
@@ -339,10 +321,10 @@ void EmulatedEndpoint::UpdateReceiveStats(const EmulatedIpPacket& packet) {
 }
 
 EndpointsContainer::EndpointsContainer(
-    const std::vector<EmulatedEndpoint*>& endpoints)
+    const std::vector<EmulatedEndpointImpl*>& endpoints)
     : endpoints_(endpoints) {}
 
-EmulatedEndpoint* EndpointsContainer::LookupByLocalAddress(
+EmulatedEndpointImpl* EndpointsContainer::LookupByLocalAddress(
     const rtc::IPAddress& local_ip) const {
   for (auto* endpoint : endpoints_) {
     rtc::IPAddress peer_local_address = endpoint->GetPeerLocalAddress();
@@ -353,7 +335,7 @@ EmulatedEndpoint* EndpointsContainer::LookupByLocalAddress(
   RTC_CHECK(false) << "No network found for address" << local_ip.ToString();
 }
 
-bool EndpointsContainer::HasEndpoint(EmulatedEndpoint* endpoint) const {
+bool EndpointsContainer::HasEndpoint(EmulatedEndpointImpl* endpoint) const {
   for (auto* e : endpoints_) {
     if (e->GetId() == endpoint->GetId()) {
       return true;

@@ -38,7 +38,7 @@ class FakeNetworkSocketServer : public rtc::SocketServer,
                           EndpointsContainer* endpoints_controller);
   ~FakeNetworkSocketServer() override;
 
-  EmulatedEndpoint* GetEndpointNode(const rtc::IPAddress& ip) override;
+  EmulatedEndpointImpl* GetEndpointNode(const rtc::IPAddress& ip) override;
   void Unregister(SocketIoProcessor* io_processor) override;
   void OnMessageQueueDestroyed();
 

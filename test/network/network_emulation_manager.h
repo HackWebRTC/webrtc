@@ -32,7 +32,6 @@
 #include "test/network/emulated_network_manager.h"
 #include "test/network/fake_network_socket_server.h"
 #include "test/network/network_emulation.h"
-#include "test/network/simulated_network_node.h"
 #include "test/network/traffic_route.h"
 
 namespace webrtc {
@@ -49,7 +48,7 @@ class NetworkEmulationManagerImpl : public NetworkEmulationManager {
   EmulatedNetworkNode* CreateEmulatedNode(
       std::unique_ptr<NetworkBehaviorInterface> network_behavior) override;
 
-  SimulatedNetworkNode::Builder NodeBuilder();
+  SimulatedNetworkNode::Builder NodeBuilder() override;
 
   EmulatedEndpoint* CreateEndpoint(EmulatedEndpointConfig config) override;
   void EnableEndpoint(EmulatedEndpoint* endpoint) override;
@@ -60,7 +59,7 @@ class NetworkEmulationManagerImpl : public NetworkEmulationManager {
                              EmulatedEndpoint* to) override;
 
   EmulatedRoute* CreateRoute(
-      const std::vector<EmulatedNetworkNode*>& via_nodes);
+      const std::vector<EmulatedNetworkNode*>& via_nodes) override;
 
   void ClearRoute(EmulatedRoute* route) override;
 
@@ -78,7 +77,7 @@ class NetworkEmulationManagerImpl : public NetworkEmulationManager {
       FakeTcpConfig config);
 
   TcpMessageRoute* CreateTcpRoute(EmulatedRoute* send_route,
-                                  EmulatedRoute* ret_route);
+                                  EmulatedRoute* ret_route) override;
 
   void StopCrossTraffic(FakeTcpCrossTraffic* traffic);
 
@@ -105,7 +104,7 @@ class NetworkEmulationManagerImpl : public NetworkEmulationManager {
   std::vector<std::unique_ptr<RandomWalkCrossTraffic>> random_cross_traffics_;
   std::vector<std::unique_ptr<PulsedPeaksCrossTraffic>> pulsed_cross_traffics_;
   std::list<std::unique_ptr<FakeTcpCrossTraffic>> tcp_cross_traffics_;
-  std::list<std::unique_ptr<TcpMessageRoute>> tcp_message_routes_;
+  std::list<std::unique_ptr<TcpMessageRouteImpl>> tcp_message_routes_;
   std::vector<std::unique_ptr<EndpointsContainer>> endpoints_containers_;
   std::vector<std::unique_ptr<EmulatedNetworkManager>> network_managers_;
 

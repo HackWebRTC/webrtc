@@ -36,8 +36,8 @@ class EmulatedNetworkManager : public rtc::NetworkManagerBase,
                          TaskQueueForTest* task_queue,
                          EndpointsContainer* endpoints_container);
 
-  void EnableEndpoint(EmulatedEndpoint* endpoint);
-  void DisableEndpoint(EmulatedEndpoint* endpoint);
+  void EnableEndpoint(EmulatedEndpointImpl* endpoint);
+  void DisableEndpoint(EmulatedEndpointImpl* endpoint);
 
   // NetworkManager interface. All these methods are supposed to be called from
   // the same thread.

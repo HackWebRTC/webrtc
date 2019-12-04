@@ -39,7 +39,7 @@ class SocketManager {
   virtual void WakeUp() = 0;
   virtual void Unregister(SocketIoProcessor* io_processor) = 0;
   // Provides endpoints by IP address.
-  virtual EmulatedEndpoint* GetEndpointNode(const rtc::IPAddress& ip) = 0;
+  virtual EmulatedEndpointImpl* GetEndpointNode(const rtc::IPAddress& ip) = 0;
 };
 
 // Represents a socket, which will operate with emulated network.
@@ -82,7 +82,7 @@ class FakeNetworkSocket : public rtc::AsyncSocket,
   absl::optional<EmulatedIpPacket> PopFrontPacket();
 
   SocketManager* const socket_manager_;
-  EmulatedEndpoint* endpoint_;
+  EmulatedEndpointImpl* endpoint_;
 
   rtc::SocketAddress local_addr_;
   rtc::SocketAddress remote_addr_;

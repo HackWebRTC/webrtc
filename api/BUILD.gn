@@ -420,6 +420,7 @@ if (rtc_include_tests) {
     ]
   }
 
+  # TODO(srte): Move to network_emulation sub directory.
   rtc_library("create_network_emulation_manager") {
     visibility = [ "*" ]
     testonly = true
@@ -541,6 +542,7 @@ rtc_source_set("bitrate_allocation") {
   ]
 }
 
+# TODO(srte): Move to network_emulation sub directory.
 rtc_source_set("simulated_network_api") {
   visibility = [ "*" ]
   sources = [
@@ -553,14 +555,18 @@ rtc_source_set("simulated_network_api") {
   ]
 }
 
+# TODO(srte): Move to network_emulation sub directory.
 rtc_source_set("network_emulation_manager_api") {
   visibility = [ "*" ]
   sources = [
+    "test/network_emulation_manager.cc",
     "test/network_emulation_manager.h",
   ]
   deps = [
     ":simulated_network_api",
+    "../call:simulated_network",
     "../rtc_base",
+    "test/network_emulation",
     "units:data_rate",
     "units:data_size",
     "units:timestamp",

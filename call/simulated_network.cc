@@ -79,15 +79,14 @@ bool CoDelSimulation::DropDequeuedPacket(Timestamp now,
   }
 }
 
-SimulatedNetwork::SimulatedNetwork(SimulatedNetwork::Config config,
-                                   uint64_t random_seed)
+SimulatedNetwork::SimulatedNetwork(Config config, uint64_t random_seed)
     : random_(random_seed), bursting_(false) {
   SetConfig(config);
 }
 
 SimulatedNetwork::~SimulatedNetwork() = default;
 
-void SimulatedNetwork::SetConfig(const SimulatedNetwork::Config& config) {
+void SimulatedNetwork::SetConfig(const Config& config) {
   rtc::CritScope crit(&config_lock_);
   config_state_.config = config;  // Shallow copy of the struct.
   double prob_loss = config.loss_percent / 100.0;

@@ -29,7 +29,7 @@ void FakeNetworkSocketServer::OnMessageQueueDestroyed() {
   msg_queue_ = nullptr;
 }
 
-EmulatedEndpoint* FakeNetworkSocketServer::GetEndpointNode(
+EmulatedEndpointImpl* FakeNetworkSocketServer::GetEndpointNode(
     const rtc::IPAddress& ip) {
   return endpoints_container_->LookupByLocalAddress(ip);
 }

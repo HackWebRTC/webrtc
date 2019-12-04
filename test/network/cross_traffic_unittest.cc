@@ -45,8 +45,8 @@ struct TrafficCounterFixture {
   SimulatedClock clock{0};
   CountingReceiver counter;
   TaskQueueForTest task_queue_;
-  EmulatedEndpoint endpoint{/*id=*/1, rtc::IPAddress(kTestIpAddress),
-                            /*is_enabled=*/true, &task_queue_, &clock};
+  EmulatedEndpointImpl endpoint{/*id=*/1, rtc::IPAddress(kTestIpAddress),
+                                /*is_enabled=*/true, &task_queue_, &clock};
 };
 
 }  // namespace

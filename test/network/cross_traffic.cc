@@ -116,10 +116,10 @@ ColumnPrinter PulsedPeaksCrossTraffic::StatsPrinter() {
       32);
 }
 
-TcpMessageRoute::TcpMessageRoute(Clock* clock,
-                                 TaskQueueBase* task_queue,
-                                 EmulatedRoute* send_route,
-                                 EmulatedRoute* ret_route)
+TcpMessageRouteImpl::TcpMessageRouteImpl(Clock* clock,
+                                         TaskQueueBase* task_queue,
+                                         EmulatedRoute* send_route,
+                                         EmulatedRoute* ret_route)
     : clock_(clock),
       task_queue_(task_queue),
       request_route_(send_route,
@@ -131,8 +131,8 @@ TcpMessageRoute::TcpMessageRoute(Clock* clock,
                         OnResponse(std::move(packet), arrival_time);
                       }) {}
 
-void TcpMessageRoute::SendMessage(size_t size,
-                                  std::function<void()> on_received) {
+void TcpMessageRouteImpl::SendMessage(size_t size,
+                                      std::function<void()> on_received) {
   task_queue_->PostTask(
       ToQueuedTask([this, size, handler = std::move(on_received)] {
         // If we are currently sending a message we won't reset the connection,
@@ -159,7 +159,7 @@ void TcpMessageRoute::SendMessage(size_t size,
       }));
 }
 
-void TcpMessageRoute::OnRequest(TcpPacket packet_info) {
+void TcpMessageRouteImpl::OnRequest(TcpPacket packet_info) {
   for (auto it = messages_.begin(); it != messages_.end(); ++it) {
     if (it->pending_fragment_ids.count(packet_info.fragment.fragment_id) != 0) {
       it->pending_fragment_ids.erase(packet_info.fragment.fragment_id);
@@ -174,7 +174,7 @@ void TcpMessageRoute::OnRequest(TcpPacket packet_info) {
   response_route_.SendPacket(kAckPacketSize, packet_info);
 }
 
-void TcpMessageRoute::OnResponse(TcpPacket packet_info, Timestamp at_time) {
+void TcpMessageRouteImpl::OnResponse(TcpPacket packet_info, Timestamp at_time) {
   auto it = in_flight_.find(packet_info.sequence_number);
   if (it != in_flight_.end()) {
     last_rtt_ = at_time - packet_info.send_time;
@@ -198,7 +198,7 @@ void TcpMessageRoute::OnResponse(TcpPacket packet_info, Timestamp at_time) {
   SendPackets(at_time);
 }
 
-void TcpMessageRoute::HandleLoss(Timestamp at_time) {
+void TcpMessageRouteImpl::HandleLoss(Timestamp at_time) {
   if (at_time - last_reduction_time_ < last_rtt_)
     return;
   last_reduction_time_ = at_time;
@@ -206,7 +206,7 @@ void TcpMessageRoute::HandleLoss(Timestamp at_time) {
   cwnd_ = ssthresh_;
 }
 
-void TcpMessageRoute::SendPackets(Timestamp at_time) {
+void TcpMessageRouteImpl::SendPackets(Timestamp at_time) {
   const TimeDelta kPacketTimeout = TimeDelta::seconds(1);
   int cwnd = std::ceil(cwnd_);
   int packets_to_send = std::max(cwnd - static_cast<int>(in_flight_.size()), 0);
@@ -227,7 +227,7 @@ void TcpMessageRoute::SendPackets(Timestamp at_time) {
   }
 }
 
-void TcpMessageRoute::HandlePacketTimeout(int seq_num, Timestamp at_time) {
+void TcpMessageRouteImpl::HandlePacketTimeout(int seq_num, Timestamp at_time) {
   auto lost = in_flight_.find(seq_num);
   if (lost != in_flight_.end()) {
     pending_.push_front(lost->second.fragment);
