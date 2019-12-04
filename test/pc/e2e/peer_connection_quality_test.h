@@ -121,14 +121,14 @@ class PeerConfigurerImpl final
   PeerConfigurer* AddVideoConfig(
       PeerConnectionE2EQualityTestFixture::VideoConfig config) override {
     params_->video_configs.push_back(std::move(config));
-    video_sources_.push_back(nullptr);
+    video_generators_.push_back(nullptr);
     return this;
   }
   PeerConfigurer* AddVideoConfig(
       PeerConnectionE2EQualityTestFixture::VideoConfig config,
-      std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>> source) override {
+      std::unique_ptr<test::FrameGeneratorInterface> generator) override {
     params_->video_configs.push_back(std::move(config));
-    video_sources_.push_back(std::move(source));
+    video_generators_.push_back(std::move(generator));
     return this;
   }
   PeerConfigurer* SetAudioConfig(
@@ -162,16 +162,15 @@ class PeerConfigurerImpl final
     return std::move(components_);
   }
   std::unique_ptr<Params> ReleaseParams() { return std::move(params_); }
-  std::vector<std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>>
-  ReleaseVideoSources() {
-    return std::move(video_sources_);
+  std::vector<std::unique_ptr<test::FrameGeneratorInterface>>
+  ReleaseVideoGenerators() {
+    return std::move(video_generators_);
   }
 
  private:
   std::unique_ptr<InjectableComponents> components_;
   std::unique_ptr<Params> params_;
-  std::vector<std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>>
-      video_sources_;
+  std::vector<std::unique_ptr<test::FrameGeneratorInterface>> video_generators_;
 };
 
 class TestVideoCapturerVideoTrackSource : public VideoTrackSource {
@@ -262,16 +261,14 @@ class PeerConnectionE2EQualityTest
   //  * Set video source generation mode if it is not specified
   void SetDefaultValuesForMissingParams(
       std::vector<Params*> params,
-      std::vector<
-          std::vector<std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>>*>
+      std::vector<std::vector<std::unique_ptr<test::FrameGeneratorInterface>>*>
           video_sources);
   // Validate peer's parameters, also ensure uniqueness of all video stream
   // labels.
   void ValidateParams(
       const RunParams& run_params,
       std::vector<Params*> params,
-      std::vector<
-          std::vector<std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>>*>
+      std::vector<std::vector<std::unique_ptr<test::FrameGeneratorInterface>>*>
           video_sources);
   // For some functionality some field trials have to be enabled, so we will
   // enable them here.
@@ -287,7 +284,7 @@ class PeerConnectionE2EQualityTest
   MaybeAddVideo(TestPeer* peer);
   std::unique_ptr<test::TestVideoCapturer> CreateVideoCapturer(
       const VideoConfig& video_config,
-      std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>> source,
+      std::unique_ptr<test::FrameGeneratorInterface> generator,
       std::unique_ptr<test::TestVideoCapturer::FramePreprocessor>
           frame_preprocessor);
   std::unique_ptr<test::FrameGeneratorInterface>

@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/test/frame_generator_interface.h"
 #include "api/test/peerconnection_quality_test_fixture.h"
 #include "media/base/media_engine.h"
 #include "modules/audio_device/include/test_audio_device.h"
@@ -62,8 +63,8 @@ class TestPeer final : public PeerConnectionWrapper {
   static std::unique_ptr<TestPeer> CreateTestPeer(
       std::unique_ptr<InjectableComponents> components,
       std::unique_ptr<Params> params,
-      std::vector<std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>>
-          video_sources,
+      std::vector<std::unique_ptr<test::FrameGeneratorInterface>>
+          video_generators,
       std::unique_ptr<MockPeerConnectionObserver> observer,
       VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
       rtc::Thread* signaling_thread,
@@ -73,9 +74,9 @@ class TestPeer final : public PeerConnectionWrapper {
       rtc::TaskQueue* task_queue);
 
   Params* params() const { return params_.get(); }
-  std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>> ReleaseVideoSource(
+  std::unique_ptr<test::FrameGeneratorInterface> ReleaseVideoGenerator(
       size_t i) {
-    return std::move(video_sources_[i]);
+    return std::move(video_generators_[i]);
   }
 
   void DetachAecDump() { audio_processing_->DetachAecDump(); }
@@ -89,13 +90,12 @@ class TestPeer final : public PeerConnectionWrapper {
            rtc::scoped_refptr<PeerConnectionInterface> pc,
            std::unique_ptr<MockPeerConnectionObserver> observer,
            std::unique_ptr<Params> params,
-           std::vector<std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>>
-               video_sources,
+           std::vector<std::unique_ptr<test::FrameGeneratorInterface>>
+               video_generators,
            rtc::scoped_refptr<AudioProcessing> audio_processing);
 
   std::unique_ptr<Params> params_;
-  std::vector<std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>>
-      video_sources_;
+  std::vector<std::unique_ptr<test::FrameGeneratorInterface>> video_generators_;
   rtc::scoped_refptr<AudioProcessing> audio_processing_;
 
   std::vector<std::unique_ptr<IceCandidateInterface>> remote_ice_candidates_;

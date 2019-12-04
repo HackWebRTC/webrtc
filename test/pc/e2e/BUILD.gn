@@ -177,19 +177,6 @@ rtc_library("quality_analyzing_video_encoder") {
   ]
 }
 
-rtc_library("video_source_based_video_capturer") {
-  visibility = [ "*" ]
-  testonly = true
-  sources = [
-    "video_source_based_video_capturer.cc",
-    "video_source_based_video_capturer.h",
-  ]
-  deps = [
-    "../..:video_test_common",
-    "../../../api/video:video_frame",
-  ]
-}
-
 if (rtc_include_tests) {
   rtc_library("video_quality_analyzer_injection_helper") {
     visibility = [ "*" ]
@@ -242,6 +229,7 @@ if (rtc_include_tests) {
       ":echo_emulation",
       ":peer_connection_quality_test_params",
       ":video_quality_analyzer_injection_helper",
+      "../../../api:frame_generator_api",
       "../../../api:peer_connection_quality_test_fixture_api",
       "../../../api:scoped_refptr",
       "../../../api/rtc_event_log:rtc_event_log_factory",
@@ -287,7 +275,6 @@ if (rtc_include_tests) {
       ":stats_poller",
       ":test_peer",
       ":video_quality_analyzer_injection_helper",
-      ":video_source_based_video_capturer",
       "../..:field_trial",
       "../..:platform_video_capturer",
       "../..:video_test_common",

@@ -36,7 +36,6 @@
 #include "test/pc/e2e/analyzer/audio/default_audio_quality_analyzer.h"
 #include "test/pc/e2e/analyzer/video/default_video_quality_analyzer.h"
 #include "test/pc/e2e/stats_poller.h"
-#include "test/pc/e2e/video_source_based_video_capturer.h"
 #include "test/platform_video_capturer.h"
 #include "test/testsupport/file_utils.h"
 
@@ -65,7 +64,9 @@ constexpr int kQuickTestModeRunDurationMs = 100;
 constexpr char kFlexFecEnabledFieldTrials[] =
     "WebRTC-FlexFEC-03-Advertised/Enabled/WebRTC-FlexFEC-03/Enabled/";
 
-std::string VideoConfigSourcePresenceToString(const VideoConfig& video_config) {
+std::string VideoConfigSourcePresenceToString(
+    const VideoConfig& video_config,
+    bool has_user_provided_generator) {
   char buf[1024];
   rtc::SimpleStringBuilder builder(buf);
   builder << "video_config.generator=" << video_config.generator.has_value()
@@ -74,7 +75,9 @@ std::string VideoConfigSourcePresenceToString(const VideoConfig& video_config) {
           << "; video_config.screen_share_config="
           << video_config.screen_share_config.has_value()
           << "; video_config.capturing_device_index="
-          << video_config.capturing_device_index.has_value() << ";";
+          << video_config.capturing_device_index.has_value()
+          << "; has_user_provided_generator=" << has_user_provided_generator
+          << ";";
   return builder.str();
 }
 
@@ -236,19 +239,21 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
       peer_configurations_[0]->ReleaseParams();
   std::unique_ptr<InjectableComponents> alice_components =
       peer_configurations_[0]->ReleaseComponents();
-  std::vector<std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>>
-      alice_video_sources = peer_configurations_[0]->ReleaseVideoSources();
+  std::vector<std::unique_ptr<test::FrameGeneratorInterface>>
+      alice_video_generators =
+          peer_configurations_[0]->ReleaseVideoGenerators();
   std::unique_ptr<Params> bob_params = peer_configurations_[1]->ReleaseParams();
   std::unique_ptr<InjectableComponents> bob_components =
       peer_configurations_[1]->ReleaseComponents();
-  std::vector<std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>>
-      bob_video_sources = peer_configurations_[1]->ReleaseVideoSources();
+  std::vector<std::unique_ptr<test::FrameGeneratorInterface>>
+      bob_video_generators = peer_configurations_[1]->ReleaseVideoGenerators();
   peer_configurations_.clear();
 
-  SetDefaultValuesForMissingParams({alice_params.get(), bob_params.get()},
-                                   {&alice_video_sources, &bob_video_sources});
+  SetDefaultValuesForMissingParams(
+      {alice_params.get(), bob_params.get()},
+      {&alice_video_generators, &bob_video_generators});
   ValidateParams(run_params, {alice_params.get(), bob_params.get()},
-                 {&alice_video_sources, &bob_video_sources});
+                 {&alice_video_generators, &bob_video_generators});
   SetupRequiredFieldTrials(run_params);
 
   // Print test summary
@@ -281,7 +286,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
 
   alice_ = TestPeer::CreateTestPeer(
       std::move(alice_components), std::move(alice_params),
-      std::move(alice_video_sources),
+      std::move(alice_video_generators),
       std::make_unique<FixturePeerConnectionObserver>(
           [this, bob_video_configs](
               rtc::scoped_refptr<RtpTransceiverInterface> transceiver) {
@@ -293,7 +298,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
       run_params.echo_emulation_config, task_queue_.get());
   bob_ = TestPeer::CreateTestPeer(
       std::move(bob_components), std::move(bob_params),
-      std::move(bob_video_sources),
+      std::move(bob_video_generators),
       std::make_unique<FixturePeerConnectionObserver>(
           [this, alice_video_configs](
               rtc::scoped_refptr<RtpTransceiverInterface> transceiver) {
@@ -448,9 +453,8 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
 
 void PeerConnectionE2EQualityTest::SetDefaultValuesForMissingParams(
     std::vector<Params*> params,
-    std::vector<
-        std::vector<std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>>*>
-        video_sources) {
+    std::vector<std::vector<std::unique_ptr<test::FrameGeneratorInterface>>*>
+        video_generators) {
   int video_counter = 0;
   int audio_counter = 0;
   std::set<std::string> video_labels;
@@ -459,11 +463,11 @@ void PeerConnectionE2EQualityTest::SetDefaultValuesForMissingParams(
     auto* p = params[i];
     for (size_t j = 0; j < p->video_configs.size(); ++j) {
       VideoConfig& video_config = p->video_configs[j];
-      std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>& video_source =
-          (*video_sources[i])[j];
+      std::unique_ptr<test::FrameGeneratorInterface>& video_generator =
+          (*video_generators[i])[j];
       if (!video_config.generator && !video_config.input_file_name &&
           !video_config.screen_share_config &&
-          !video_config.capturing_device_index && !video_source) {
+          !video_config.capturing_device_index && !video_generator) {
         video_config.generator = VideoGeneratorType::kDefault;
       }
       if (!video_config.stream_label) {
@@ -491,9 +495,8 @@ void PeerConnectionE2EQualityTest::SetDefaultValuesForMissingParams(
 void PeerConnectionE2EQualityTest::ValidateParams(
     const RunParams& run_params,
     std::vector<Params*> params,
-    std::vector<
-        std::vector<std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>>*>
-        video_sources) {
+    std::vector<std::vector<std::unique_ptr<test::FrameGeneratorInterface>>*>
+        video_generators) {
   RTC_CHECK_GT(run_params.video_encoder_bitrate_multiplier, 0.0);
 
   std::set<std::string> video_labels;
@@ -526,11 +529,12 @@ void PeerConnectionE2EQualityTest::ValidateParams(
         ++input_sources_count;
       if (video_config.capturing_device_index)
         ++input_sources_count;
-      if ((*video_sources[i])[j])
+      if ((*video_generators[i])[j])
         ++input_sources_count;
 
-      RTC_CHECK_EQ(input_sources_count, 1)
-          << VideoConfigSourcePresenceToString(video_config);
+      // TODO(titovartem) handle video_generators case properly
+      RTC_CHECK_EQ(input_sources_count, 1) << VideoConfigSourcePresenceToString(
+          video_config, (*video_generators[i])[j] != nullptr);
 
       if (video_config.screen_share_config) {
         if (video_config.screen_share_config->slides_yuv_file_names.empty()) {
@@ -733,7 +737,7 @@ PeerConnectionE2EQualityTest::MaybeAddVideo(TestPeer* peer) {
     test::VideoFrameWriter* writer =
         MaybeCreateVideoWriter(video_config.input_dump_file_name, video_config);
     std::unique_ptr<test::TestVideoCapturer> capturer = CreateVideoCapturer(
-        video_config, peer->ReleaseVideoSource(i),
+        video_config, peer->ReleaseVideoGenerator(i),
         video_quality_analyzer_injection_helper_->CreateFramePreprocessor(
             video_config, writer));
     rtc::scoped_refptr<TestVideoCapturerVideoTrackSource> source =
@@ -770,7 +774,7 @@ PeerConnectionE2EQualityTest::MaybeAddVideo(TestPeer* peer) {
 std::unique_ptr<test::TestVideoCapturer>
 PeerConnectionE2EQualityTest::CreateVideoCapturer(
     const VideoConfig& video_config,
-    std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>> source,
+    std::unique_ptr<test::FrameGeneratorInterface> generator,
     std::unique_ptr<test::TestVideoCapturer::FramePreprocessor>
         frame_preprocessor) {
   if (video_config.capturing_device_index) {
@@ -785,14 +789,11 @@ PeerConnectionE2EQualityTest::CreateVideoCapturer(
     return capturer;
   }
 
-  if (source != nullptr) {
-    std::unique_ptr<test::TestVideoCapturer> capturer =
-        std::make_unique<VideoSourceBasedVideoCapturer>(std::move(source));
-    capturer->SetFramePreprocessor(std::move(frame_preprocessor));
-    return capturer;
+  std::unique_ptr<test::FrameGeneratorInterface> frame_generator = nullptr;
+  if (generator) {
+    frame_generator = std::move(generator);
   }
 
-  std::unique_ptr<test::FrameGeneratorInterface> frame_generator = nullptr;
   if (video_config.generator) {
     absl::optional<test::FrameGeneratorInterface::OutputType>
         frame_generator_type = absl::nullopt;

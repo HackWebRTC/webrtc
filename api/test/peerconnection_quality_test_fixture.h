@@ -25,13 +25,13 @@
 #include "api/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "api/test/audio_quality_analyzer_interface.h"
+#include "api/test/frame_generator_interface.h"
 #include "api/test/simulated_network.h"
 #include "api/test/stats_observer_interface.h"
 #include "api/test/video_quality_analyzer_interface.h"
 #include "api/transport/media/media_transport_interface.h"
 #include "api/transport/network_control.h"
 #include "api/units/time_delta.h"
-#include "api/video/video_source_interface.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
@@ -292,10 +292,10 @@ class PeerConnectionE2EQualityTestFixture {
     // Add new video stream to the call that will be sent from this peer.
     virtual PeerConfigurer* AddVideoConfig(VideoConfig config) = 0;
     // Add new video stream to the call that will be sent from this peer with
-    // provided own implementation of video frames source.
+    // provided own implementation of video frames generator.
     virtual PeerConfigurer* AddVideoConfig(
         VideoConfig config,
-        std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>> source) = 0;
+        std::unique_ptr<test::FrameGeneratorInterface> generator) = 0;
     // Set the audio stream for the call from this peer. If this method won't
     // be invoked, this peer will send no audio.
     virtual PeerConfigurer* SetAudioConfig(AudioConfig config) = 0;
