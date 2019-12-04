@@ -110,11 +110,13 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal>,
 
  private:
   void RestartMediaChannel(absl::optional<uint32_t> ssrc);
-  bool SetSink(rtc::VideoSinkInterface<VideoFrame>* sink);
+  void SetSink(rtc::VideoSinkInterface<VideoFrame>* sink)
+      RTC_RUN_ON(worker_thread_);
 
   // VideoRtpTrackSource::Callback
   void OnGenerateKeyFrame() override;
   void OnEncodedSinkEnabled(bool enable) override;
+  void SetEncodedSinkEnabled(bool enable) RTC_RUN_ON(worker_thread_);
 
   rtc::Thread* const worker_thread_;
 
@@ -135,6 +137,10 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal>,
   // Allows to thread safely change jitter buffer delay. Handles caching cases
   // if |SetJitterBufferMinimumDelay| is called before start.
   rtc::scoped_refptr<JitterBufferDelayInterface> delay_;
+  // Records if we should generate a keyframe when |media_channel_| gets set up
+  // or switched.
+  bool saved_generate_keyframe_ RTC_GUARDED_BY(worker_thread_) = false;
+  bool saved_encoded_sink_enabled_ RTC_GUARDED_BY(worker_thread_) = false;
 };
 
 }  // namespace webrtc

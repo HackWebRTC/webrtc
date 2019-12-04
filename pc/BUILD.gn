@@ -314,6 +314,7 @@ if (rtc_include_tests) {
       "test/rtp_transport_test_util.h",
       "test/srtp_test_util.h",
       "used_ids_unittest.cc",
+      "video_rtp_receiver_unittest.cc",
     ]
 
     include_dirs = [ "//third_party/libsrtp/srtp" ]
@@ -325,6 +326,7 @@ if (rtc_include_tests) {
     deps = [
       ":libjingle_peerconnection",
       ":pc_test_utils",
+      ":peerconnection",
       ":rtc_pc",
       ":rtc_pc_base",
       "../api:array_view",
@@ -338,6 +340,7 @@ if (rtc_include_tests) {
       "../api:rtp_parameters",
       "../api/transport/media:media_transport_interface",
       "../api/video:builtin_video_bitrate_allocator_factory",
+      "../api/video/test:mock_recordable_encoded_frame",
       "../call:rtp_interfaces",
       "../call:rtp_receiver",
       "../media:rtc_data",
