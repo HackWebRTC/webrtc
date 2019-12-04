@@ -136,6 +136,11 @@ class PeerConfigurerImpl final
     params_->audio_config = std::move(config);
     return this;
   }
+  PeerConfigurer* SetNetEqFactory(
+      std::unique_ptr<NetEqFactory> neteq_factory) override {
+    components_->pcf_dependencies->neteq_factory = std::move(neteq_factory);
+    return this;
+  }
   PeerConfigurer* SetRtcEventLogPath(std::string path) override {
     params_->rtc_event_log_path = std::move(path);
     return this;

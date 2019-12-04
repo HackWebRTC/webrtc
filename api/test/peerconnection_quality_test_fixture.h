@@ -299,6 +299,9 @@ class PeerConnectionE2EQualityTestFixture {
     // Set the audio stream for the call from this peer. If this method won't
     // be invoked, this peer will send no audio.
     virtual PeerConfigurer* SetAudioConfig(AudioConfig config) = 0;
+    // Set a custom NetEqFactory to be used in the call.
+    virtual PeerConfigurer* SetNetEqFactory(
+        std::unique_ptr<NetEqFactory> neteq_factory) = 0;
     // If is set, an RTCEventLog will be saved in that location and it will be
     // available for further analysis.
     virtual PeerConfigurer* SetRtcEventLogPath(std::string path) = 0;

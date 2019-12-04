@@ -162,6 +162,9 @@ class TestPeerComponents {
       pcf_deps.media_transport_factory =
           std::move(pcf_dependencies->media_transport_factory);
     }
+    if (pcf_dependencies->neteq_factory != nullptr) {
+      pcf_deps.neteq_factory = std::move(pcf_dependencies->neteq_factory);
+    }
 
     return pcf_deps;
   }
