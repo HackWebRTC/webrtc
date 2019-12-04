@@ -91,14 +91,13 @@ class GlobalSimulatedTimeController : public TimeController {
   std::unique_ptr<ProcessThread> CreateProcessThread(
       const char* thread_name) override;
   void AdvanceTime(TimeDelta duration) override;
-  void InvokeWithControlledYield(std::function<void()> closure) override;
-  rtc::YieldInterface* YieldInterface() override;
 
  private:
   rtc::ScopedBaseFakeClock global_clock_;
   // Provides simulated CurrentNtpInMilliseconds()
   SimulatedClock sim_clock_;
   sim_time_impl::SimulatedTimeControllerImpl impl_;
+  rtc::ScopedYieldPolicy yield_policy_;
 };
 }  // namespace webrtc
 

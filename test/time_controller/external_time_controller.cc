@@ -159,7 +159,9 @@ class ExternalTimeController::TaskQueueWrapper : public TaskQueueBase {
 };
 
 ExternalTimeController::ExternalTimeController(ControlledAlarmClock* alarm)
-    : alarm_(alarm), impl_(alarm_->GetClock()->CurrentTime()) {
+    : alarm_(alarm),
+      impl_(alarm_->GetClock()->CurrentTime()),
+      yield_policy_(&impl_) {
   global_clock_.SetTime(alarm_->GetClock()->CurrentTime());
   alarm_->SetCallback([this] { Run(); });
 }
@@ -180,16 +182,6 @@ std::unique_ptr<ProcessThread> ExternalTimeController::CreateProcessThread(
 
 void ExternalTimeController::AdvanceTime(TimeDelta duration) {
   alarm_->Sleep(duration);
-}
-
-void ExternalTimeController::InvokeWithControlledYield(
-    std::function<void()> closure) {
-  rtc::ScopedYieldPolicy policy(YieldInterface());
-  closure();
-}
-
-rtc::YieldInterface* ExternalTimeController::YieldInterface() {
-  return &impl_;
 }
 
 std::unique_ptr<TaskQueueBase, TaskQueueDeleter>

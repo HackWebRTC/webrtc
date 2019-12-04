@@ -138,11 +138,9 @@ TEST(ExternalTimeControllerTest, YieldForTask) {
       time_simulation.GetTaskQueueFactory()->CreateTaskQueue(
           "TestQueue", TaskQueueFactory::Priority::NORMAL));
 
-  time_simulation.InvokeWithControlledYield([&] {
-    rtc::Event event;
-    task_queue.PostTask([&] { event.Set(); });
-    EXPECT_TRUE(event.Wait(200));
-  });
+  rtc::Event event;
+  task_queue.PostTask([&] { event.Set(); });
+  EXPECT_TRUE(event.Wait(200));
 }
 
 TEST(ExternalTimeControllerTest, TasksYieldToEachOther) {

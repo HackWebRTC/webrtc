@@ -34,15 +34,6 @@ void RealTimeController::AdvanceTime(TimeDelta duration) {
   SleepMs(duration.ms());
 }
 
-void RealTimeController::InvokeWithControlledYield(
-    std::function<void()> closure) {
-  closure();
-}
-
-rtc::YieldInterface* RealTimeController::YieldInterface() {
-  return nullptr;
-}
-
 RealTimeController* GlobalRealTimeController() {
   static RealTimeController* time_controller = new RealTimeController();
   return time_controller;

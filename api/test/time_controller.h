@@ -40,12 +40,6 @@ class TimeController {
   // Allow task queues and process threads created by this instance to execute
   // for the given |duration|.
   virtual void AdvanceTime(TimeDelta duration) = 0;
-  // Execute closure in an implementation defined scope where rtc::Event::Wait
-  // might yield to execute other tasks. This allows doing blocking waits on
-  // tasks on other task queues froma a task queue without deadlocking.
-  virtual void InvokeWithControlledYield(std::function<void()> closure) = 0;
-  // Returns a YieldInterface which can be installed as a ScopedYieldPolicy.
-  virtual rtc::YieldInterface* YieldInterface() = 0;
 };
 
 // Interface for telling time, scheduling an event to fire at a particular time,

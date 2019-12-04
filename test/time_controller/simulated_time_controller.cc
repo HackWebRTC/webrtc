@@ -399,7 +399,7 @@ void SimulatedTimeControllerImpl::Unregister(SimulatedSequenceRunner* runner) {
 
 GlobalSimulatedTimeController::GlobalSimulatedTimeController(
     Timestamp start_time)
-    : sim_clock_(start_time.us()), impl_(start_time) {
+    : sim_clock_(start_time.us()), impl_(start_time), yield_policy_(&impl_) {
   global_clock_.SetTime(start_time);
 }
 
@@ -433,17 +433,5 @@ void GlobalSimulatedTimeController::AdvanceTime(TimeDelta duration) {
     global_clock_.AdvanceTime(delta);
   }
 }
-
-void GlobalSimulatedTimeController::InvokeWithControlledYield(
-    std::function<void()> closure) {
-  rtc::ScopedYieldPolicy yield_policy(&impl_);
-  closure();
-}
-
-rtc::YieldInterface* GlobalSimulatedTimeController::YieldInterface() {
-  return &impl_;
-}
-
-// namespace sim_time_impl
 
 }  // namespace webrtc

@@ -493,26 +493,18 @@ class VideoReceiveStreamTestWithSimulatedClock : public ::testing::Test {
                               &call_stats_,
                               time_controller_.GetClock(),
                               new VCMTiming(time_controller_.GetClock())) {
-    time_controller_.InvokeWithControlledYield(
-        [this] { video_receive_stream_.Start(); });
-  }
-
-  ~VideoReceiveStreamTestWithSimulatedClock() {
-    time_controller_.InvokeWithControlledYield(
-        [this] { video_receive_stream_.Stop(); });
+    video_receive_stream_.Start();
   }
 
   void OnFrameDecoded() { event_->Set(); }
 
   void PassEncodedFrameAndWait(
       std::unique_ptr<video_coding::EncodedFrame> frame) {
-    time_controller_.InvokeWithControlledYield([this, &frame] {
       event_ = std::make_unique<rtc::Event>();
       // This call will eventually end up in the Decoded method where the
       // event is set.
       video_receive_stream_.OnCompleteFrame(std::move(frame));
       event_->Wait(rtc::Event::kForever);
-    });
   }
 
  protected:

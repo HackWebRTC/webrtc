@@ -38,8 +38,6 @@ class ExternalTimeController : public TimeController, public TaskQueueFactory {
   std::unique_ptr<ProcessThread> CreateProcessThread(
       const char* thread_name) override;
   void AdvanceTime(TimeDelta duration) override;
-  void InvokeWithControlledYield(std::function<void()> closure) override;
-  rtc::YieldInterface* YieldInterface() override;
 
   // Implementation of TaskQueueFactory.
   std::unique_ptr<TaskQueueBase, TaskQueueDeleter> CreateTaskQueue(
@@ -59,6 +57,7 @@ class ExternalTimeController : public TimeController, public TaskQueueFactory {
 
   ControlledAlarmClock* alarm_;
   sim_time_impl::SimulatedTimeControllerImpl impl_;
+  rtc::ScopedYieldPolicy yield_policy_;
 
   // Overrides the global rtc::Clock to ensure that it reports the same times as
   // the time controller.

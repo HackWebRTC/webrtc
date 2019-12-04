@@ -29,8 +29,6 @@ class RealTimeController : public TimeController {
   std::unique_ptr<ProcessThread> CreateProcessThread(
       const char* thread_name) override;
   void AdvanceTime(TimeDelta duration) override;
-  void InvokeWithControlledYield(std::function<void()> closure) override;
-  rtc::YieldInterface* YieldInterface() override;
 
  private:
   std::unique_ptr<TaskQueueFactory> task_queue_factory_;
