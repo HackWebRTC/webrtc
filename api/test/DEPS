@@ -37,4 +37,7 @@ specific_include_rules = {
     "+rtc_base/synchronization/yield_policy.h",
     "+system_wrappers/include/clock.h",
   ],
+  "create_frame_generator\.h": [
+    "+system_wrappers/include/clock.h",
+  ],
 }

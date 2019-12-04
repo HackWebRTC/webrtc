@@ -96,10 +96,11 @@ class FrameGeneratorCapturer : public TestVideoCapturer {
     virtual ~SinkWantsObserver() {}
   };
 
-  FrameGeneratorCapturer(Clock* clock,
-                         std::unique_ptr<FrameGenerator> frame_generator,
-                         int target_fps,
-                         TaskQueueFactory& task_queue_factory);
+  FrameGeneratorCapturer(
+      Clock* clock,
+      std::unique_ptr<FrameGeneratorInterface> frame_generator,
+      int target_fps,
+      TaskQueueFactory& task_queue_factory);
   virtual ~FrameGeneratorCapturer();
 
   static std::unique_ptr<FrameGeneratorCapturer> Create(
@@ -154,7 +155,7 @@ class FrameGeneratorCapturer : public TestVideoCapturer {
   SinkWantsObserver* sink_wants_observer_ RTC_GUARDED_BY(&lock_);
 
   rtc::CriticalSection lock_;
-  std::unique_ptr<FrameGenerator> frame_generator_;
+  std::unique_ptr<FrameGeneratorInterface> frame_generator_;
 
   int source_fps_ RTC_GUARDED_BY(&lock_);
   int target_capture_fps_ RTC_GUARDED_BY(&lock_);

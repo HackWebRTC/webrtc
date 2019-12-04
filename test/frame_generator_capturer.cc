@@ -44,7 +44,7 @@ std::string TransformFilePath(std::string path) {
 
 FrameGeneratorCapturer::FrameGeneratorCapturer(
     Clock* clock,
-    std::unique_ptr<FrameGenerator> frame_generator,
+    std::unique_ptr<FrameGeneratorInterface> frame_generator,
     int target_fps,
     TaskQueueFactory& task_queue_factory)
     : clock_(clock),

@@ -53,6 +53,7 @@ rtc_library("video_test_common") {
 
   deps = [
     ":fileutils",
+    "../api:frame_generator_api",
     "../api:scoped_refptr",
     "../api/task_queue",
     "../api/video:video_frame",

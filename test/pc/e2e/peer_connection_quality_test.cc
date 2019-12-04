@@ -21,6 +21,7 @@
 #include "api/rtc_event_log_output_file.h"
 #include "api/scoped_refptr.h"
 #include "api/task_queue/default_task_queue_factory.h"
+#include "api/test/create_frame_generator.h"
 #include "api/test/video_quality_analyzer_interface.h"
 #include "api/units/time_delta.h"
 #include "api/video/video_source_interface.h"
@@ -791,24 +792,24 @@ PeerConnectionE2EQualityTest::CreateVideoCapturer(
     return capturer;
   }
 
-  std::unique_ptr<test::FrameGenerator> frame_generator = nullptr;
+  std::unique_ptr<test::FrameGeneratorInterface> frame_generator = nullptr;
   if (video_config.generator) {
-    absl::optional<test::FrameGenerator::OutputType> frame_generator_type =
-        absl::nullopt;
+    absl::optional<test::FrameGeneratorInterface::OutputType>
+        frame_generator_type = absl::nullopt;
     if (video_config.generator == VideoGeneratorType::kDefault) {
-      frame_generator_type = test::FrameGenerator::OutputType::kI420;
+      frame_generator_type = test::FrameGeneratorInterface::OutputType::kI420;
     } else if (video_config.generator == VideoGeneratorType::kI420A) {
-      frame_generator_type = test::FrameGenerator::OutputType::kI420A;
+      frame_generator_type = test::FrameGeneratorInterface::OutputType::kI420A;
     } else if (video_config.generator == VideoGeneratorType::kI010) {
-      frame_generator_type = test::FrameGenerator::OutputType::kI010;
+      frame_generator_type = test::FrameGeneratorInterface::OutputType::kI010;
     }
-    frame_generator = test::FrameGenerator::CreateSquareGenerator(
-        static_cast<int>(video_config.width),
-        static_cast<int>(video_config.height), frame_generator_type,
-        absl::nullopt);
+    frame_generator =
+        test::CreateSquareFrameGenerator(static_cast<int>(video_config.width),
+                                         static_cast<int>(video_config.height),
+                                         frame_generator_type, absl::nullopt);
   }
   if (video_config.input_file_name) {
-    frame_generator = test::FrameGenerator::CreateFromYuvFile(
+    frame_generator = test::CreateFromYuvFileFrameGenerator(
         std::vector<std::string>(/*count=*/1,
                                  video_config.input_file_name.value()),
         video_config.width, video_config.height, /*frame_repeat_count=*/1);
@@ -826,12 +827,12 @@ PeerConnectionE2EQualityTest::CreateVideoCapturer(
   return capturer;
 }
 
-std::unique_ptr<test::FrameGenerator>
+std::unique_ptr<test::FrameGeneratorInterface>
 PeerConnectionE2EQualityTest::CreateScreenShareFrameGenerator(
     const VideoConfig& video_config) {
   RTC_CHECK(video_config.screen_share_config);
   if (video_config.screen_share_config->generate_slides) {
-    return test::FrameGenerator::CreateSlideGenerator(
+    return test::CreateSlideFrameGenerator(
         video_config.width, video_config.height,
         video_config.screen_share_config->slide_change_interval.seconds() *
             video_config.fps);
@@ -849,7 +850,7 @@ PeerConnectionE2EQualityTest::CreateScreenShareFrameGenerator(
   }
   if (!video_config.screen_share_config->scrolling_params) {
     // Cycle image every slide_change_interval seconds.
-    return test::FrameGenerator::CreateFromYuvFile(
+    return test::CreateFromYuvFileFrameGenerator(
         slides, video_config.width, video_config.height,
         video_config.screen_share_config->slide_change_interval.seconds() *
             video_config.fps);
@@ -860,7 +861,7 @@ PeerConnectionE2EQualityTest::CreateScreenShareFrameGenerator(
       video_config.screen_share_config->slide_change_interval -
       video_config.screen_share_config->scrolling_params->duration;
 
-  return test::FrameGenerator::CreateScrollingInputFromYuvFiles(
+  return test::CreateScrollingInputFromYuvFilesFrameGenerator(
       clock_, slides,
       video_config.screen_share_config->scrolling_params->source_width,
       video_config.screen_share_config->scrolling_params->source_height,

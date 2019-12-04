@@ -292,6 +292,8 @@ if (rtc_include_tests) {
       "../..:platform_video_capturer",
       "../..:video_test_common",
       "../../../api:audio_quality_analyzer_api",
+      "../../../api:create_frame_generator",
+      "../../../api:frame_generator_api",
       "../../../api:libjingle_peerconnection_api",
       "../../../api:media_stream_interface",
       "../../../api:peer_connection_quality_test_fixture_api",

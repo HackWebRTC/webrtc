@@ -17,6 +17,7 @@
 
 #include "api/task_queue/task_queue_factory.h"
 #include "api/test/audio_quality_analyzer_interface.h"
+#include "api/test/frame_generator_interface.h"
 #include "api/test/peerconnection_quality_test_fixture.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -289,8 +290,8 @@ class PeerConnectionE2EQualityTest
       std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>> source,
       std::unique_ptr<test::TestVideoCapturer::FramePreprocessor>
           frame_preprocessor);
-  std::unique_ptr<test::FrameGenerator> CreateScreenShareFrameGenerator(
-      const VideoConfig& video_config);
+  std::unique_ptr<test::FrameGeneratorInterface>
+  CreateScreenShareFrameGenerator(const VideoConfig& video_config);
   void MaybeAddAudio(TestPeer* peer);
   void SetPeerCodecPreferences(TestPeer* peer, const RunParams& run_params);
   void SetupCall(const RunParams& run_params);
