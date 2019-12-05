@@ -38,7 +38,6 @@
 #include "test/encoder_settings.h"
 #include "test/fake_encoder.h"
 #include "test/field_trial.h"
-#include "test/frame_generator.h"
 #include "test/frame_generator_capturer.h"
 #include "test/gtest.h"
 #include "test/null_transport.h"

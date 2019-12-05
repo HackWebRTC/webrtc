@@ -259,7 +259,9 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":frame_dumping_decoder",
+      "../api:create_frame_generator",
       "../api:fec_controller_api",
+      "../api:frame_generator_api",
       "../api:libjingle_peerconnection_api",
       "../api:rtc_event_log_output_file",
       "../api:test_dependency_factory",
@@ -563,8 +565,10 @@ if (rtc_include_tests) {
       ":video",
       ":video_mocks",
       ":video_stream_encoder_impl",
+      "../api:create_frame_generator",
       "../api:fake_frame_decryptor",
       "../api:fake_frame_encryptor",
+      "../api:frame_generator_api",
       "../api:libjingle_peerconnection_api",
       "../api:mock_fec_controller_override",
       "../api:mock_frame_decryptor",
@@ -641,6 +645,7 @@ if (rtc_include_tests) {
       "../test:fake_video_codecs",
       "../test:field_trial",
       "../test:fileutils",
+      "../test:frame_utils",
       "../test:null_transport",
       "../test:perf_test",
       "../test:rtp_test_utils",

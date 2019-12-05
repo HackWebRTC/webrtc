@@ -17,6 +17,7 @@
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/task_queue/task_queue_base.h"
+#include "api/test/create_frame_generator.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video_codecs/video_encoder_config.h"
 #include "call/fake_network_pipe.h"
@@ -468,8 +469,8 @@ void CallTest::CreateFrameGeneratorCapturerWithDrift(Clock* clock,
   auto frame_generator_capturer =
       std::make_unique<test::FrameGeneratorCapturer>(
           clock,
-          test::FrameGenerator::CreateSquareGenerator(
-              width, height, absl::nullopt, absl::nullopt),
+          test::CreateSquareFrameGenerator(width, height, absl::nullopt,
+                                           absl::nullopt),
           framerate * speed, *task_queue_factory_);
   frame_generator_capturer_ = frame_generator_capturer.get();
   frame_generator_capturer->Init();
@@ -484,8 +485,8 @@ void CallTest::CreateFrameGeneratorCapturer(int framerate,
   auto frame_generator_capturer =
       std::make_unique<test::FrameGeneratorCapturer>(
           clock_,
-          test::FrameGenerator::CreateSquareGenerator(
-              width, height, absl::nullopt, absl::nullopt),
+          test::CreateSquareFrameGenerator(width, height, absl::nullopt,
+                                           absl::nullopt),
           framerate, *task_queue_factory_);
   frame_generator_capturer_ = frame_generator_capturer.get();
   frame_generator_capturer->Init();

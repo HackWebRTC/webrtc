@@ -13,6 +13,8 @@
 #include <memory>
 #include <utility>
 
+#include "api/test/create_frame_generator.h"
+#include "api/test/frame_generator_interface.h"
 #include "api/test/video/function_video_encoder_factory.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "media/base/media_constants.h"
@@ -261,7 +263,7 @@ VideoEncoderConfig CreateVideoEncoderConfig(VideoStreamConfig config) {
   return encoder_config;
 }
 
-std::unique_ptr<FrameGenerator> CreateImageSlideGenerator(
+std::unique_ptr<FrameGeneratorInterface> CreateImageSlideGenerator(
     Clock* clock,
     VideoStreamConfig::Source::Slides slides,
     int framerate) {
@@ -276,33 +278,33 @@ std::unique_ptr<FrameGenerator> CreateImageSlideGenerator(
     int crop_height = slides.images.crop.height.value_or(slides.images.height);
     RTC_CHECK_LE(crop_width, slides.images.width);
     RTC_CHECK_LE(crop_height, slides.images.height);
-    return FrameGenerator::CreateScrollingInputFromYuvFiles(
+    return CreateScrollingInputFromYuvFilesFrameGenerator(
         clock, paths, slides.images.width, slides.images.height, crop_width,
         crop_height, slides.images.crop.scroll_duration.ms(),
         pause_duration.ms());
   } else {
-    return FrameGenerator::CreateFromYuvFile(
+    return CreateFromYuvFileFrameGenerator(
         paths, slides.images.width, slides.images.height,
         slides.change_interval.seconds<double>() * framerate);
   }
 }
 
-std::unique_ptr<FrameGenerator> CreateFrameGenerator(
+std::unique_ptr<FrameGeneratorInterface> CreateFrameGenerator(
     Clock* clock,
     VideoStreamConfig::Source source) {
   using Capture = VideoStreamConfig::Source::Capture;
   switch (source.capture) {
     case Capture::kGenerator:
-      return FrameGenerator::CreateSquareGenerator(
+      return CreateSquareFrameGenerator(
           source.generator.width, source.generator.height,
           source.generator.pixel_format, /*num_squares*/ absl::nullopt);
     case Capture::kVideoFile:
       RTC_CHECK(source.video_file.width && source.video_file.height);
-      return FrameGenerator::CreateFromYuvFile(
+      return CreateFromYuvFileFrameGenerator(
           {TransformFilePath(source.video_file.name)}, source.video_file.width,
           source.video_file.height, /*frame_repeat_count*/ 1);
     case Capture::kGenerateSlides:
-      return FrameGenerator::CreateSlideGenerator(
+      return CreateSlideFrameGenerator(
           source.slides.generator.width, source.slides.generator.height,
           source.slides.change_interval.seconds<double>() * source.framerate);
     case Capture::kImageSlides:

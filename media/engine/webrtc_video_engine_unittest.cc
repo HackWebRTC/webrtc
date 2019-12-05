@@ -60,7 +60,7 @@
 #include "rtc_base/time_utils.h"
 #include "test/fake_decoder.h"
 #include "test/field_trial.h"
-#include "test/frame_generator.h"
+#include "test/frame_forwarder.h"
 #include "test/gmock.h"
 #include "test/rtp_header_parser.h"
 

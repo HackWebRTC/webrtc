@@ -18,6 +18,7 @@
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/task_queue/task_queue_base.h"
+#include "api/test/create_frame_generator.h"
 #include "api/test/simulated_network.h"
 #include "api/test/video/function_video_encoder_factory.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
@@ -114,8 +115,8 @@ void MultiStreamTester::RunTest() {
 
       auto* frame_generator = new test::FrameGeneratorCapturer(
           Clock::GetRealTimeClock(),
-          test::FrameGenerator::CreateSquareGenerator(
-              width, height, absl::nullopt, absl::nullopt),
+          test::CreateSquareFrameGenerator(width, height, absl::nullopt,
+                                           absl::nullopt),
           30, *task_queue_factory);
       frame_generators[i] = frame_generator;
       send_streams[i]->SetSource(frame_generator,

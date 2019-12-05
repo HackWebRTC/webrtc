@@ -112,6 +112,7 @@ if (rtc_include_tests) {
       "../../api/video:video_rtp_headers",
       "../../common_video",
       "../../test:fileutils",
+      "../../test:frame_utils",
       "../../test:test_support",
       "../../test:video_test_common",
     ]

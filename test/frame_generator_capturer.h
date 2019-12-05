@@ -14,11 +14,12 @@
 #include <string>
 
 #include "api/task_queue/task_queue_factory.h"
+#include "api/test/frame_generator_interface.h"
 #include "api/video/video_frame.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/task_utils/repeating_task.h"
-#include "test/frame_generator.h"
+#include "system_wrappers/include/clock.h"
 #include "test/test_video_capturer.h"
 
 namespace webrtc {
@@ -38,7 +39,8 @@ class AutoOpt : public absl::optional<T> {
 struct FrameGeneratorCapturerConfig {
   struct SquaresVideo {
     int framerate = 30;
-    FrameGenerator::OutputType pixel_format = FrameGenerator::OutputType::kI420;
+    FrameGeneratorInterface::OutputType pixel_format =
+        FrameGeneratorInterface::OutputType::kI420;
     int width = 320;
     int height = 180;
     int num_squares = 10;

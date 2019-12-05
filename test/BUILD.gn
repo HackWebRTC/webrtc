@@ -34,18 +34,71 @@ group("test") {
   }
 }
 
+rtc_library("frame_generator_impl") {
+  visibility = [
+    "../api:create_frame_generator",
+    ":*",
+  ]
+  testonly = true
+  sources = [
+    "frame_generator.cc",
+    "frame_generator.h",
+    "testsupport/ivf_video_frame_generator.cc",
+    "testsupport/ivf_video_frame_generator.h",
+  ]
+  deps = [
+    ":frame_utils",
+    "../api:frame_generator_api",
+    "../api:scoped_refptr",
+    "../api/video:encoded_image",
+    "../api/video:video_frame",
+    "../api/video:video_frame_i010",
+    "../api/video:video_frame_i420",
+    "../api/video:video_rtp_headers",
+    "../api/video_codecs:video_codecs_api",
+    "../common_video",
+    "../media:rtc_media_base",
+    "../modules/video_coding:video_codec_interface",
+    "../modules/video_coding:video_coding_utility",
+    "../modules/video_coding:webrtc_h264",
+    "../modules/video_coding:webrtc_vp8",
+    "../modules/video_coding:webrtc_vp9",
+    "../rtc_base",
+    "../rtc_base:checks",
+    "../rtc_base:criticalsection",
+    "../rtc_base:rtc_base_approved",
+    "../rtc_base:rtc_event",
+    "../rtc_base/synchronization:sequence_checker",
+    "../rtc_base/system:file_wrapper",
+    "../system_wrappers",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
+rtc_library("frame_utils") {
+  visibility = [ "*" ]
+  testonly = true
+  sources = [
+    "frame_utils.cc",
+    "frame_utils.h",
+  ]
+  deps = [
+    "../api:scoped_refptr",
+    "../api/video:video_frame",
+    "../api/video:video_frame_i420",
+  ]
+}
+
 rtc_library("video_test_common") {
   visibility = [ "*" ]
   testonly = true
   sources = [
     "fake_texture_frame.cc",
     "fake_texture_frame.h",
-    "frame_generator.cc",
-    "frame_generator.h",
+    "frame_forwarder.cc",
+    "frame_forwarder.h",
     "frame_generator_capturer.cc",
     "frame_generator_capturer.h",
-    "frame_utils.cc",
-    "frame_utils.h",
     "test_video_capturer.cc",
     "test_video_capturer.h",
     "video_codec_settings.h",
@@ -53,6 +106,8 @@ rtc_library("video_test_common") {
 
   deps = [
     ":fileutils",
+    ":frame_utils",
+    "../api:create_frame_generator",
     "../api:frame_generator_api",
     "../api:scoped_refptr",
     "../api/task_queue",
@@ -293,8 +348,6 @@ if (rtc_include_tests) {
     sources = [
       "testsupport/frame_reader.h",
       "testsupport/frame_writer.h",
-      "testsupport/ivf_video_frame_generator.cc",
-      "testsupport/ivf_video_frame_generator.h",
       "testsupport/mock/mock_frame_reader.h",
       "testsupport/video_frame_writer.cc",
       "testsupport/video_frame_writer.h",
@@ -306,6 +359,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":fileutils",
+      ":frame_utils",
       ":test_support",
       ":video_test_common",
       "../api:scoped_refptr",
@@ -385,6 +439,7 @@ if (rtc_include_tests) {
       ":fake_video_codecs",
       ":fileutils",
       ":fileutils_unittests",
+      ":frame_generator_impl",
       ":perf_test",
       ":rtc_expect_death",
       ":rtp_test_utils",
@@ -393,7 +448,9 @@ if (rtc_include_tests) {
       ":test_support_test_artifacts",
       ":video_test_common",
       ":video_test_support",
+      "../api:create_frame_generator",
       "../api:create_simulcast_test_fixture_api",
+      "../api:frame_generator_api",
       "../api:scoped_refptr",
       "../api:simulcast_test_fixture_api",
       "../api/task_queue:task_queue_test",
@@ -764,6 +821,8 @@ rtc_library("test_common") {
     ":rtp_test_utils",
     ":test_support",
     ":video_test_common",
+    "../api:create_frame_generator",
+    "../api:frame_generator_api",
     "../api:rtp_headers",
     "../api:rtp_parameters",
     "../api:simulated_network_api",

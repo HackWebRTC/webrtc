@@ -36,14 +36,14 @@ std::unique_ptr<FrameGeneratorInterface> CreateSquareFrameGenerator(
 // The frame_repeat_count determines how many times each frame is shown,
 // with 1 = show each frame once, etc.
 std::unique_ptr<FrameGeneratorInterface> CreateFromYuvFileFrameGenerator(
-    std::vector<std::string> files,
+    std::vector<std::string> filenames,
     size_t width,
     size_t height,
     int frame_repeat_count);
 
 // Creates a frame generator that repeatedly plays an ivf file.
 std::unique_ptr<FrameGeneratorInterface> CreateFromIvfFileFrameGenerator(
-    std::string file);
+    std::string filename);
 
 // Creates a frame generator which takes a set of yuv files (wrapping a
 // frame generator created by CreateFromYuvFile() above), but outputs frames

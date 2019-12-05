@@ -16,6 +16,7 @@
 
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/task_queue/task_queue_factory.h"
+#include "api/test/create_frame_generator.h"
 #include "pc/video_track_source.h"
 #include "test/frame_generator_capturer.h"
 
@@ -47,9 +48,9 @@ class FrameGeneratorCapturerVideoTrackSource : public VideoTrackSource {
         is_screencast_(is_screencast) {
     video_capturer_ = std::make_unique<test::FrameGeneratorCapturer>(
         clock,
-        test::FrameGenerator::CreateSquareGenerator(
-            config.width, config.height, absl::nullopt,
-            config.num_squares_generated),
+        test::CreateSquareFrameGenerator(config.width, config.height,
+                                         absl::nullopt,
+                                         config.num_squares_generated),
         config.frames_per_second, *task_queue_factory_);
     video_capturer_->Init();
   }

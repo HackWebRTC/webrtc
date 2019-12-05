@@ -15,6 +15,7 @@
 #include <utility>
 
 #include "api/task_queue/default_task_queue_factory.h"
+#include "api/test/create_frame_generator.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "api/video_codecs/video_encoder.h"
@@ -224,9 +225,9 @@ RtpGenerator::RtpGenerator(const RtpGeneratorOptions& options)
     std::unique_ptr<test::FrameGeneratorCapturer> frame_generator =
         std::make_unique<test::FrameGeneratorCapturer>(
             Clock::GetRealTimeClock(),
-            test::FrameGenerator::CreateSquareGenerator(
-                send_config.video_width, send_config.video_height,
-                absl::nullopt, absl::nullopt),
+            test::CreateSquareFrameGenerator(send_config.video_width,
+                                             send_config.video_height,
+                                             absl::nullopt, absl::nullopt),
             send_config.video_fps, *task_queue_);
     frame_generator->Init();
 

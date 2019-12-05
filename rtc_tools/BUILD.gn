@@ -153,6 +153,7 @@ if (!build_with_chromium) {
     ]
 
     deps = [
+      "../api:create_frame_generator",
       "../api:rtp_parameters",
       "../api:transport_api",
       "../api/rtc_event_log",

@@ -12,6 +12,7 @@
 #include <memory>
 #include <string>
 
+#include "api/test/create_frame_generator.h"
 #include "call/call.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
@@ -180,8 +181,8 @@ class BitrateEstimatorTest : public test::CallTest {
       frame_generator_capturer_ =
           std::make_unique<test::FrameGeneratorCapturer>(
               test->clock_,
-              test::FrameGenerator::CreateSquareGenerator(
-                  kDefaultWidth, kDefaultHeight, absl::nullopt, absl::nullopt),
+              test::CreateSquareFrameGenerator(kDefaultWidth, kDefaultHeight,
+                                               absl::nullopt, absl::nullopt),
               kDefaultFramerate, *test->task_queue_factory_);
       frame_generator_capturer_->Init();
       send_stream_->SetSource(frame_generator_capturer_.get(),

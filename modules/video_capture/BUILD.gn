@@ -132,6 +132,7 @@ if (!build_with_chromium) {
         "../../common_video",
         "../../rtc_base:rtc_base_approved",
         "../../system_wrappers",
+        "../../test:frame_utils",
         "../../test:test_support",
         "../../test:video_test_common",
         "../utility",

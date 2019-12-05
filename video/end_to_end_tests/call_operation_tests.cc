@@ -9,6 +9,9 @@
  */
 
 #include <memory>
+
+#include "api/test/create_frame_generator.h"
+#include "api/test/frame_generator_interface.h"
 #include "api/test/simulated_network.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
@@ -16,7 +19,7 @@
 #include "system_wrappers/include/sleep.h"
 #include "test/call_test.h"
 #include "test/field_trial.h"
-#include "test/frame_generator.h"
+#include "test/frame_forwarder.h"
 #include "test/gtest.h"
 #include "test/null_transport.h"
 
@@ -125,13 +128,13 @@ TEST_F(CallOperationEndToEndTest, RendersSingleDelayedFrame) {
 
         // Create frames that are smaller than the send width/height, this is
         // done to check that the callbacks are done after processing video.
-        std::unique_ptr<test::FrameGenerator> frame_generator(
-            test::FrameGenerator::CreateSquareGenerator(
-                kWidth, kHeight, absl::nullopt, absl::nullopt));
+        std::unique_ptr<test::FrameGeneratorInterface> frame_generator(
+            test::CreateSquareFrameGenerator(kWidth, kHeight, absl::nullopt,
+                                             absl::nullopt));
         GetVideoSendStream()->SetSource(
             &frame_forwarder, DegradationPreference::MAINTAIN_FRAMERATE);
 
-        test::FrameGenerator::VideoFrameData frame_data =
+        test::FrameGeneratorInterface::VideoFrameData frame_data =
             frame_generator->NextFrame();
         VideoFrame frame = VideoFrame::Builder()
                                .set_video_frame_buffer(frame_data.buffer)
@@ -163,7 +166,7 @@ TEST_F(CallOperationEndToEndTest, TransmitsFirstFrame) {
     rtc::Event event_;
   } renderer;
 
-  std::unique_ptr<test::FrameGenerator> frame_generator;
+  std::unique_ptr<test::FrameGeneratorInterface> frame_generator;
   test::FrameForwarder frame_forwarder;
 
   std::unique_ptr<test::DirectTransport> sender_transport;
@@ -197,11 +200,11 @@ TEST_F(CallOperationEndToEndTest, TransmitsFirstFrame) {
         CreateVideoStreams();
         Start();
 
-        frame_generator = test::FrameGenerator::CreateSquareGenerator(
+        frame_generator = test::CreateSquareFrameGenerator(
             kDefaultWidth, kDefaultHeight, absl::nullopt, absl::nullopt);
         GetVideoSendStream()->SetSource(
             &frame_forwarder, DegradationPreference::MAINTAIN_FRAMERATE);
-        test::FrameGenerator::VideoFrameData frame_data =
+        test::FrameGeneratorInterface::VideoFrameData frame_data =
             frame_generator->NextFrame();
         VideoFrame frame = VideoFrame::Builder()
                                .set_video_frame_buffer(frame_data.buffer)

@@ -64,7 +64,7 @@ IvfVideoFrameGenerator::~IvfVideoFrameGenerator() {
   }
 }
 
-FrameGenerator::VideoFrameData IvfVideoFrameGenerator::NextFrame() {
+FrameGeneratorInterface::VideoFrameData IvfVideoFrameGenerator::NextFrame() {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   next_frame_decoded_.Reset();
   RTC_CHECK(file_reader_);

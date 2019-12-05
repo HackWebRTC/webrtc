@@ -15,6 +15,7 @@
 #include <string>
 
 #include "absl/types/optional.h"
+#include "api/test/frame_generator_interface.h"
 #include "api/video/video_codec_type.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_decoder.h"
@@ -22,13 +23,12 @@
 #include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "rtc_base/synchronization/sequence_checker.h"
-#include "test/frame_generator.h"
 
 namespace webrtc {
 namespace test {
 
 // All methods except constructor must be used from the same thread.
-class IvfVideoFrameGenerator : public FrameGenerator {
+class IvfVideoFrameGenerator : public FrameGeneratorInterface {
  public:
   explicit IvfVideoFrameGenerator(const std::string& file_name);
   ~IvfVideoFrameGenerator() override;

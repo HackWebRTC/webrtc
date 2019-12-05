@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "api/test/create_frame_generator.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/logging.h"
@@ -71,8 +72,8 @@ std::unique_ptr<FrameGeneratorCapturer> FrameGeneratorCapturer::Create(
     FrameGeneratorCapturerConfig::SquaresVideo config) {
   return std::make_unique<FrameGeneratorCapturer>(
       clock,
-      FrameGenerator::CreateSquareGenerator(
-          config.width, config.height, config.pixel_format, config.num_squares),
+      CreateSquareFrameGenerator(config.width, config.height,
+                                 config.pixel_format, config.num_squares),
       config.framerate, task_queue_factory);
 }
 std::unique_ptr<FrameGeneratorCapturer> FrameGeneratorCapturer::Create(
@@ -81,7 +82,7 @@ std::unique_ptr<FrameGeneratorCapturer> FrameGeneratorCapturer::Create(
     FrameGeneratorCapturerConfig::SquareSlides config) {
   return std::make_unique<FrameGeneratorCapturer>(
       clock,
-      FrameGenerator::CreateSlideGenerator(
+      CreateSlideFrameGenerator(
           config.width, config.height,
           /*frame_repeat_count*/ config.change_interval.seconds<double>() *
               config.framerate),
@@ -94,9 +95,9 @@ std::unique_ptr<FrameGeneratorCapturer> FrameGeneratorCapturer::Create(
   RTC_CHECK(config.width && config.height);
   return std::make_unique<FrameGeneratorCapturer>(
       clock,
-      FrameGenerator::CreateFromYuvFile({TransformFilePath(config.name)},
-                                        config.width, config.height,
-                                        /*frame_repeat_count*/ 1),
+      CreateFromYuvFileFrameGenerator({TransformFilePath(config.name)},
+                                      config.width, config.height,
+                                      /*frame_repeat_count*/ 1),
       config.framerate, task_queue_factory);
 }
 
@@ -104,7 +105,7 @@ std::unique_ptr<FrameGeneratorCapturer> FrameGeneratorCapturer::Create(
     Clock* clock,
     TaskQueueFactory& task_queue_factory,
     FrameGeneratorCapturerConfig::ImageSlides config) {
-  std::unique_ptr<FrameGenerator> slides_generator;
+  std::unique_ptr<FrameGeneratorInterface> slides_generator;
   std::vector<std::string> paths = config.paths;
   for (std::string& path : paths)
     path = TransformFilePath(path);
@@ -117,11 +118,11 @@ std::unique_ptr<FrameGeneratorCapturer> FrameGeneratorCapturer::Create(
     int crop_height = config.crop.height.value_or(config.height);
     RTC_CHECK_LE(crop_width, config.width);
     RTC_CHECK_LE(crop_height, config.height);
-    slides_generator = FrameGenerator::CreateScrollingInputFromYuvFiles(
+    slides_generator = CreateScrollingInputFromYuvFilesFrameGenerator(
         clock, paths, config.width, config.height, crop_width, crop_height,
         config.crop.scroll_duration.ms(), pause_duration.ms());
   } else {
-    slides_generator = FrameGenerator::CreateFromYuvFile(
+    slides_generator = CreateFromYuvFileFrameGenerator(
         paths, config.width, config.height,
         /*frame_repeat_count*/ config.change_interval.seconds<double>() *
             config.framerate);
@@ -176,7 +177,8 @@ bool FrameGeneratorCapturer::Init() {
 void FrameGeneratorCapturer::InsertFrame() {
   rtc::CritScope cs(&lock_);
   if (sending_) {
-    FrameGenerator::VideoFrameData frame_data = frame_generator_->NextFrame();
+    FrameGeneratorInterface::VideoFrameData frame_data =
+        frame_generator_->NextFrame();
     // TODO(srte): Use more advanced frame rate control to allow arbritrary
     // fractions.
     int decimation =

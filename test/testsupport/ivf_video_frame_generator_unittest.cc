@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/test/create_frame_generator.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_codec_type.h"
 #include "api/video_codecs/video_codec.h"
@@ -26,7 +27,6 @@
 #include "modules/video_coding/utility/ivf_file_writer.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
-#include "test/frame_generator.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 #include "test/testsupport/ivf_video_frame_generator.h"
@@ -102,7 +102,7 @@ class IvfVideoFrameGeneratorTest : public ::testing::Test {
   }
   void TearDown() override { webrtc::test::RemoveFile(file_name_); }
 
-  VideoFrame BuildFrame(FrameGenerator::VideoFrameData frame_data) {
+  VideoFrame BuildFrame(FrameGeneratorInterface::VideoFrameData frame_data) {
     return VideoFrame::Builder()
         .set_video_frame_buffer(frame_data.buffer)
         .set_update_rect(frame_data.update_rect)
@@ -111,9 +111,9 @@ class IvfVideoFrameGeneratorTest : public ::testing::Test {
 
   void CreateTestVideoFile(VideoCodecType video_codec_type,
                            std::unique_ptr<VideoEncoder> video_encoder) {
-    std::unique_ptr<test::FrameGenerator> frame_generator =
-        test::FrameGenerator::CreateSquareGenerator(
-            kWidth, kHeight, test::FrameGenerator::OutputType::kI420,
+    std::unique_ptr<test::FrameGeneratorInterface> frame_generator =
+        test::CreateSquareFrameGenerator(
+            kWidth, kHeight, test::FrameGeneratorInterface::OutputType::kI420,
             absl::nullopt);
 
     VideoCodec codec_settings;

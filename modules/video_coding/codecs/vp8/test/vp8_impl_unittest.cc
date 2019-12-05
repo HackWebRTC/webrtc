@@ -12,6 +12,8 @@
 
 #include <memory>
 
+#include "api/test/create_frame_generator.h"
+#include "api/test/frame_generator_interface.h"
 #include "api/test/mock_video_decoder.h"
 #include "api/test/mock_video_encoder.h"
 #include "api/video_codecs/video_encoder.h"
@@ -487,9 +489,9 @@ TEST_F(TestVp8Impl, DontDropKeyframes) {
 
   // Reset the frame generator with large number of squares, leading to lots of
   // details and high probability of overshoot.
-  input_frame_generator_ = test::FrameGenerator::CreateSquareGenerator(
+  input_frame_generator_ = test::CreateSquareFrameGenerator(
       codec_settings_.width, codec_settings_.height,
-      test::FrameGenerator::OutputType::kI420,
+      test::FrameGeneratorInterface::OutputType::kI420,
       /* num_squares = */ absl::optional<int>(300));
 
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
