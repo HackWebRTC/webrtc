@@ -138,6 +138,8 @@ rtc_library("rtp_rtcp") {
     "source/absolute_capture_time_receiver.h",
     "source/absolute_capture_time_sender.cc",
     "source/absolute_capture_time_sender.h",
+    "source/create_video_rtp_depacketizer.cc",
+    "source/create_video_rtp_depacketizer.h",
     "source/dtmf_queue.cc",
     "source/dtmf_queue.h",
     "source/fec_private_tables_bursty.cc",
@@ -211,6 +213,8 @@ rtc_library("rtp_rtcp") {
     "source/ulpfec_receiver_impl.cc",
     "source/ulpfec_receiver_impl.h",
     "source/video_rtp_depacketizer.h",
+    "source/video_rtp_depacketizer_raw.cc",
+    "source/video_rtp_depacketizer_raw.h",
   ]
 
   if (rtc_enable_bwe_test_logging) {
@@ -273,6 +277,7 @@ rtc_library("rtp_rtcp") {
     "../video_coding:codec_globals_headers",
     "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/container:inlined_vector",
+    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
     "//third_party/abseil-cpp/absl/types:variant",
@@ -474,6 +479,7 @@ if (rtc_include_tests) {
       "source/ulpfec_generator_unittest.cc",
       "source/ulpfec_header_reader_writer_unittest.cc",
       "source/ulpfec_receiver_unittest.cc",
+      "source/video_rtp_depacketizer_raw_unittest.cc",
     ]
     deps = [
       ":fec_test_helper",
