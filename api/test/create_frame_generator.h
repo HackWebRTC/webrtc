@@ -42,7 +42,7 @@ std::unique_ptr<FrameGeneratorInterface> CreateFromYuvFileFrameGenerator(
     int frame_repeat_count);
 
 // Creates a frame generator that repeatedly plays an ivf file.
-std::unique_ptr<FrameGeneratorInterface> CreateFromYuvFileFrameGenerator(
+std::unique_ptr<FrameGeneratorInterface> CreateFromIvfFileFrameGenerator(
     std::string file);
 
 // Creates a frame generator which takes a set of yuv files (wrapping a
