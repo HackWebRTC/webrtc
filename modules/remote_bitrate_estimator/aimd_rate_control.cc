@@ -40,6 +40,11 @@ bool IsEnabled(const WebRtcKeyValueConfig& field_trials,
   return field_trials.Lookup(key).find("Enabled") == 0;
 }
 
+bool IsNotDisabled(const WebRtcKeyValueConfig& field_trials,
+                   absl::string_view key) {
+  return field_trials.Lookup(key).find("Disabled") != 0;
+}
+
 double ReadBackoffFactor(const WebRtcKeyValueConfig& key_value_config) {
   std::string experiment_string =
       key_value_config.Lookup(kBweBackOffFactorExperiment);
@@ -90,9 +95,11 @@ AimdRateControl::AimdRateControl(const WebRtcKeyValueConfig* key_value_config,
       smoothing_experiment_(
           IsEnabled(*key_value_config, "WebRTC-Audio-BandwidthSmoothing")),
       estimate_bounded_backoff_(
-          IsEnabled(*key_value_config, "WebRTC-Bwe-EstimateBoundedBackoff")),
+          IsNotDisabled(*key_value_config,
+                        "WebRTC-Bwe-EstimateBoundedBackoff")),
       estimate_bounded_increase_(
-          IsEnabled(*key_value_config, "WebRTC-Bwe-EstimateBoundedIncrease")),
+          IsNotDisabled(*key_value_config,
+                        "WebRTC-Bwe-EstimateBoundedIncrease")),
       initial_backoff_interval_("initial_backoff_interval"),
       low_throughput_threshold_("low_throughput", DataRate::Zero()) {
   // E.g

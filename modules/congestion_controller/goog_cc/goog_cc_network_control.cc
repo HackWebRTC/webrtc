@@ -51,9 +51,7 @@ int64_t GetBpsOrDefault(const absl::optional<DataRate>& rate,
     return fallback_bps;
   }
 }
-bool IsEnabled(const WebRtcKeyValueConfig* config, absl::string_view key) {
-  return config->Lookup(key).find("Enabled") == 0;
-}
+
 bool IsNotDisabled(const WebRtcKeyValueConfig* config, absl::string_view key) {
   return config->Lookup(key).find("Disabled") != 0;
 }
@@ -69,9 +67,9 @@ GoogCcNetworkController::GoogCcNetworkController(NetworkControllerConfig config,
       safe_reset_acknowledged_rate_("ack"),
       use_min_allocatable_as_lower_bound_(
           IsNotDisabled(key_value_config_, "WebRTC-Bwe-MinAllocAsLowerBound")),
-      ignore_probes_lower_than_network_estimate_(
-          IsEnabled(key_value_config_,
-                    "WebRTC-Bwe-IgnoreProbesLowerThanNetworkStateEstimate")),
+      ignore_probes_lower_than_network_estimate_(IsNotDisabled(
+          key_value_config_,
+          "WebRTC-Bwe-IgnoreProbesLowerThanNetworkStateEstimate")),
       rate_control_settings_(
           RateControlSettings::ParseFromKeyValueConfig(key_value_config_)),
       probe_controller_(
