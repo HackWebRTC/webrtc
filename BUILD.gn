@@ -271,6 +271,8 @@ config("common_config") {
     defines += [ "RTC_DISABLE_TRACE_EVENTS" ]
   }
 
+  cflags = []
+
   if (build_with_chromium) {
     defines += [
       # NOTICE: Since common_inherited_config is used in public_configs for our
@@ -282,14 +284,6 @@ config("common_config") {
     ]
   } else {
     if (is_posix || is_fuchsia) {
-      # Enable more warnings: -Wextra is currently disabled in Chromium.
-      cflags = [
-        "-Wextra",
-
-        # Repeat some flags that get overridden by -Wextra.
-        "-Wno-unused-parameter",
-        "-Wno-missing-field-initializers",
-      ]
       cflags_c += [
         # TODO(bugs.webrtc.org/9029): enable commented compiler flags.
         # Some of these flags should also be added to cflags_objc.
