@@ -155,6 +155,7 @@ void VideoRtpReceiver::RestartMediaChannel(absl::optional<uint32_t> ssrc) {
 }
 
 void VideoRtpReceiver::SetSink(rtc::VideoSinkInterface<VideoFrame>* sink) {
+  RTC_DCHECK(media_channel_);
   if (ssrc_) {
     media_channel_->SetSink(*ssrc_, sink);
     return;
@@ -271,6 +272,11 @@ std::vector<RtpSource> VideoRtpReceiver::GetSources() const {
 
 void VideoRtpReceiver::OnGenerateKeyFrame() {
   RTC_DCHECK_RUN_ON(worker_thread_);
+  if (!media_channel_) {
+    RTC_LOG(LS_ERROR)
+        << "VideoRtpReceiver::OnGenerateKeyFrame: No video channel exists.";
+    return;
+  }
   // TODO(bugs.webrtc.org/8694): Stop using 0 to mean unsignalled SSRC
   media_channel_->GenerateKeyFrame(ssrc_.value_or(0));
   // We need to remember to request generation of a new key frame if the media
