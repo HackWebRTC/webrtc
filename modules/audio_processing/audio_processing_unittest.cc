@@ -2692,4 +2692,13 @@ TEST(ApmConfiguration, HandlingOfRateCombinations) {
                            capture_channel_counts);
 }
 
+TEST(ApmConfiguration, SelfAssignment) {
+  // At some point memory sanitizer was complaining about self-assigment.
+  // Make sure we don't regress.
+  AudioProcessing::Config config;
+  AudioProcessing::Config* config2 = &config;
+  *config2 = *config2;  // Workaround -Wself-assign-overloaded
+  SUCCEED();  // Real success is absence of defects from asan/msan/ubsan.
+}
+
 }  // namespace webrtc

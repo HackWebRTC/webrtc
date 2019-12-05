@@ -247,22 +247,6 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
   // submodule resets, affecting the audio quality. Use the RuntimeSetting
   // construct for runtime configuration.
   struct RTC_EXPORT Config {
-    Config() = default;
-
-    // Explicit copy assignment implementation to avoid issues with memory
-    // sanitizer complaints in case of self-assignment.
-    // TODO(peah): Add buildflag to ensure that this is only included for memory
-    // sanitizer builds.
-    Config& operator=(const Config& config) {
-      if (this != &config) {
-        memcpy(this, &config, sizeof(*this));
-      }
-      return *this;
-    }
-
-    // Explicit copy constructor needed to avoid errors due to the above
-    // implemented copy assignment operator.
-    Config(const Config& config) { *this = config; }
 
     // Sets the properties of the audio processing pipeline.
     struct RTC_EXPORT Pipeline {
