@@ -1177,14 +1177,15 @@ bool RtpDataChannel::SendData(const SendDataParams& params,
 }
 
 bool RtpDataChannel::CheckDataChannelTypeFromContent(
-    const RtpDataContentDescription* content,
+    const MediaContentDescription* content,
     std::string* error_desc) {
-  bool is_sctp = ((content->protocol() == kMediaProtocolSctp) ||
-                  (content->protocol() == kMediaProtocolDtlsSctp));
-  // It's been set before, but doesn't match.  That's bad.
-  if (is_sctp) {
-    SafeSetError("Data channel type mismatch. Expected RTP, got SCTP.",
-                 error_desc);
+  if (!content->as_rtp_data()) {
+    if (content->as_sctp()) {
+      SafeSetError("Data channel type mismatch. Expected RTP, got SCTP.",
+                   error_desc);
+    } else {
+      SafeSetError("Data channel is not RTP or SCTP.", error_desc);
+    }
     return false;
   }
   return true;
@@ -1203,11 +1204,10 @@ bool RtpDataChannel::SetLocalContent_w(const MediaContentDescription* content,
     return false;
   }
 
-  const RtpDataContentDescription* data = content->as_rtp_data();
-
-  if (!CheckDataChannelTypeFromContent(data, error_desc)) {
+  if (!CheckDataChannelTypeFromContent(content, error_desc)) {
     return false;
   }
+  const RtpDataContentDescription* data = content->as_rtp_data();
 
   RtpHeaderExtensions rtp_header_extensions =
       GetFilteredRtpHeaderExtensions(data->rtp_header_extensions());
@@ -1257,20 +1257,15 @@ bool RtpDataChannel::SetRemoteContent_w(const MediaContentDescription* content,
     return false;
   }
 
-  const RtpDataContentDescription* data = content->as_rtp_data();
-
-  if (!data) {
-    RTC_LOG(LS_INFO) << "Accepting and ignoring non-RTP content description";
-    return true;
+  if (!CheckDataChannelTypeFromContent(content, error_desc)) {
+    return false;
   }
+
+  const RtpDataContentDescription* data = content->as_rtp_data();
 
   // If the remote data doesn't have codecs, it must be empty, so ignore it.
   if (!data->has_codecs()) {
     return true;
-  }
-
-  if (!CheckDataChannelTypeFromContent(data, error_desc)) {
-    return false;
   }
 
   RtpHeaderExtensions rtp_header_extensions =

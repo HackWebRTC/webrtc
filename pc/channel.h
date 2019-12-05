@@ -488,7 +488,7 @@ class RtpDataChannel : public BaseChannel {
 
   // overrides from BaseChannel
   // Checks that data channel type is RTP.
-  bool CheckDataChannelTypeFromContent(const RtpDataContentDescription* content,
+  bool CheckDataChannelTypeFromContent(const MediaContentDescription* content,
                                        std::string* error_desc);
   bool SetLocalContent_w(const MediaContentDescription* content,
                          webrtc::SdpType type,
