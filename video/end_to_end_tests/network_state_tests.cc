@@ -14,6 +14,7 @@
 #include "api/video_codecs/video_encoder.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
+#include "modules/rtp_rtcp/source/rtp_packet.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/call_test.h"
@@ -177,9 +178,9 @@ TEST_F(NetworkStateEndToEndTest, RespectsNetworkState) {
 
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock(&test_crit_);
-      RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, length, &header));
-      if (length == header.headerLength + header.paddingLength)
+      RtpPacket rtp_packet;
+      EXPECT_TRUE(rtp_packet.Parse(packet, length));
+      if (rtp_packet.payload_size() == 0)
         ++sender_padding_;
       ++sender_rtp_;
       packet_event_.Set();

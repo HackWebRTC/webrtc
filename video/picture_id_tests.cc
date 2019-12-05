@@ -17,6 +17,7 @@
 #include "media/engine/internal_encoder_factory.h"
 #include "media/engine/simulcast_encoder_adapter.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
+#include "modules/rtp_rtcp/source/rtp_packet.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -80,27 +81,26 @@ class PictureIdObserver : public test::RtpRtcpObserver {
   bool ParsePayload(const uint8_t* packet,
                     size_t length,
                     ParsedPacket* parsed) const {
-    RTPHeader header;
-    EXPECT_TRUE(parser_->Parse(packet, length, &header));
-    EXPECT_TRUE(header.ssrc == test::CallTest::kVideoSendSsrcs[0] ||
-                header.ssrc == test::CallTest::kVideoSendSsrcs[1] ||
-                header.ssrc == test::CallTest::kVideoSendSsrcs[2])
+    RtpPacket rtp_packet;
+    EXPECT_TRUE(rtp_packet.Parse(packet, length));
+    EXPECT_TRUE(rtp_packet.Ssrc() == test::CallTest::kVideoSendSsrcs[0] ||
+                rtp_packet.Ssrc() == test::CallTest::kVideoSendSsrcs[1] ||
+                rtp_packet.Ssrc() == test::CallTest::kVideoSendSsrcs[2])
         << "Unknown SSRC sent.";
 
-    EXPECT_GE(length, header.headerLength + header.paddingLength);
-    size_t payload_length = length - header.headerLength - header.paddingLength;
-    if (payload_length == 0) {
+    rtc::ArrayView<const uint8_t> rtp_payload = rtp_packet.payload();
+    if (rtp_payload.empty()) {
       return false;  // Padding packet.
     }
 
-    parsed->timestamp = header.timestamp;
-    parsed->ssrc = header.ssrc;
+    parsed->timestamp = rtp_packet.Timestamp();
+    parsed->ssrc = rtp_packet.Ssrc();
 
     std::unique_ptr<RtpDepacketizer> depacketizer(
         RtpDepacketizer::Create(codec_type_));
     RtpDepacketizer::ParsedPayload parsed_payload;
-    EXPECT_TRUE(depacketizer->Parse(
-        &parsed_payload, &packet[header.headerLength], payload_length));
+    EXPECT_TRUE(depacketizer->Parse(&parsed_payload, rtp_payload.data(),
+                                    rtp_payload.size()));
 
     switch (codec_type_) {
       case kVideoCodecVP8: {

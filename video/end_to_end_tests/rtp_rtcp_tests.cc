@@ -14,6 +14,7 @@
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
 #include "modules/include/module_common_types_public.h"
+#include "modules/rtp_rtcp/source/rtp_packet.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "test/call_test.h"
@@ -204,14 +205,13 @@ void RtpRtcpEndToEndTest::TestRtpStatePreservation(
     }
 
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
-      RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, length, &header));
-      const uint32_t ssrc = header.ssrc;
+      RtpPacket rtp_packet;
+      EXPECT_TRUE(rtp_packet.Parse(packet, length));
+      const uint32_t ssrc = rtp_packet.Ssrc();
       const int64_t sequence_number =
-          seq_numbers_unwrapper_.Unwrap(header.sequenceNumber);
-      const uint32_t timestamp = header.timestamp;
-      const bool only_padding =
-          header.headerLength + header.paddingLength == length;
+          seq_numbers_unwrapper_.Unwrap(rtp_packet.SequenceNumber());
+      const uint32_t timestamp = rtp_packet.Timestamp();
+      const bool only_padding = rtp_packet.payload_size() == 0;
 
       EXPECT_TRUE(ssrc_is_rtx_.find(ssrc) != ssrc_is_rtx_.end())
           << "Received SSRC that wasn't configured: " << ssrc;
@@ -422,11 +422,11 @@ TEST_F(RtpRtcpEndToEndTest, DISABLED_TestFlexfecRtpStatePreservation) {
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock(&crit_);
 
-      RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, length, &header));
-      const uint16_t sequence_number = header.sequenceNumber;
-      const uint32_t timestamp = header.timestamp;
-      const uint32_t ssrc = header.ssrc;
+      RtpPacket rtp_packet;
+      EXPECT_TRUE(rtp_packet.Parse(packet, length));
+      const uint16_t sequence_number = rtp_packet.SequenceNumber();
+      const uint32_t timestamp = rtp_packet.Timestamp();
+      const uint32_t ssrc = rtp_packet.Ssrc();
 
       if (ssrc == kVideoSendSsrcs[0] || ssrc == kSendRtxSsrcs[0]) {
         return SEND_PACKET;

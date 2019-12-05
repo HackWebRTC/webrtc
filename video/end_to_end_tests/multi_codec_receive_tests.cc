@@ -15,6 +15,7 @@
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
 #include "modules/include/module_common_types_public.h"
+#include "modules/rtp_rtcp/source/rtp_packet.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
@@ -75,29 +76,28 @@ class FrameObserver : public test::RtpRtcpObserver,
   Action OnSendRtp(const uint8_t* packet, size_t length) override {
     rtc::CritScope lock(&crit_);
 
-    RTPHeader header;
-    EXPECT_TRUE(parser_->Parse(packet, length, &header));
-    EXPECT_EQ(header.ssrc, test::CallTest::kVideoSendSsrcs[0]);
-    EXPECT_GE(length, header.headerLength + header.paddingLength);
-    if ((length - header.headerLength) == header.paddingLength)
+    RtpPacket rtp_packet;
+    EXPECT_TRUE(rtp_packet.Parse(packet, length));
+    EXPECT_EQ(rtp_packet.Ssrc(), test::CallTest::kVideoSendSsrcs[0]);
+    if (rtp_packet.payload_size() == 0)
       return SEND_PACKET;  // Skip padding, may be sent after OnFrame is called.
 
     if (expected_payload_type_ &&
-        header.payloadType != expected_payload_type_.value()) {
+        rtp_packet.PayloadType() != expected_payload_type_.value()) {
       return DROP_PACKET;  // All frames sent.
     }
 
-    if (!last_timestamp_ || header.timestamp != *last_timestamp_) {
+    if (!last_timestamp_ || rtp_packet.Timestamp() != *last_timestamp_) {
       // New frame.
       // Sent enough frames?
       if (num_sent_frames_ >= kFramesToObserve)
         return DROP_PACKET;
 
       ++num_sent_frames_;
-      sent_timestamps_.push_back(header.timestamp);
+      sent_timestamps_.push_back(rtp_packet.Timestamp());
     }
 
-    last_timestamp_ = header.timestamp;
+    last_timestamp_ = rtp_packet.Timestamp();
     return SEND_PACKET;
   }
 
