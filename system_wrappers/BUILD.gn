@@ -96,6 +96,7 @@ rtc_library("field_trial") {
   deps = [
     "../rtc_base:checks",
     "../rtc_base:logging",
+    "../rtc_base:stringutils",
     "//third_party/abseil-cpp/absl/strings",
   ]
 }
