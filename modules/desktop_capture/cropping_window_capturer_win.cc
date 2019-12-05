@@ -21,8 +21,7 @@ namespace webrtc {
 
 namespace {
 
-// Used to pass input/output data during the EnumWindows call for verifying if
-// the selected window is on top.
+// Used to pass input data for verifying the selected window is on top.
 struct TopWindowVerifierContext : public SelectedWindowContext {
   TopWindowVerifierContext(HWND selected_window,
                            HWND excluded_window,
@@ -31,70 +30,101 @@ struct TopWindowVerifierContext : public SelectedWindowContext {
       : SelectedWindowContext(selected_window,
                               selected_window_rect,
                               window_capture_helper),
-        excluded_window(excluded_window),
-        is_top_window(false) {
+        excluded_window(excluded_window) {
     RTC_DCHECK_NE(selected_window, excluded_window);
   }
 
+  // Determines whether the selected window is on top (not occluded by any
+  // windows except for those it owns or any excluded window).
+  bool IsTopWindow() {
+    if (!IsSelectedWindowValid()) {
+      return false;
+    }
+
+    // Enumerate all top-level windows above the selected window in Z-order,
+    // checking whether any overlaps it. This uses FindWindowEx rather than
+    // EnumWindows because the latter excludes certain system windows (e.g. the
+    // Start menu & other taskbar menus) that should be detected here to avoid
+    // inadvertent capture.
+    int num_retries = 0;
+    while (true) {
+      HWND hwnd = nullptr;
+      while ((hwnd = FindWindowEx(nullptr, hwnd, nullptr, nullptr))) {
+        if (hwnd == selected_window()) {
+          // Windows are enumerated in top-down Z-order, so we can stop
+          // enumerating upon reaching the selected window & report it's on top.
+          return true;
+        }
+
+        // Ignore the excluded window.
+        if (hwnd == excluded_window) {
+          continue;
+        }
+
+        // Ignore windows that aren't visible on the current desktop.
+        if (!window_capture_helper()->IsWindowVisibleOnCurrentDesktop(hwnd)) {
+          continue;
+        }
+
+        // Ignore Chrome notification windows, especially the notification for
+        // the ongoing window sharing. Notes:
+        // - This only works with notifications from Chrome, not other Apps.
+        // - All notifications from Chrome will be ignored.
+        // - This may cause part or whole of notification window being cropped
+        // into the capturing of the target window if there is overlapping.
+        if (window_capture_helper()->IsWindowChromeNotification(hwnd)) {
+          continue;
+        }
+
+        // Ignore windows owned by the selected window since we want to capture
+        // them.
+        if (IsWindowOwnedBySelectedWindow(hwnd)) {
+          continue;
+        }
+
+        // Check whether this window intersects with the selected window.
+        if (IsWindowOverlappingSelectedWindow(hwnd)) {
+          // If intersection is not empty, the selected window is not on top.
+          return false;
+        }
+      }
+
+      DWORD lastError = GetLastError();
+      if (lastError == ERROR_SUCCESS) {
+        // The enumeration completed successfully without finding the selected
+        // window (which may have been closed).
+        RTC_LOG(LS_WARNING) << "Failed to find selected window (only expected "
+                               "if it was closed)";
+        assert(!IsWindow(selected_window()));
+        return false;
+      } else if (lastError == ERROR_INVALID_WINDOW_HANDLE) {
+        // This error may occur if a window is closed around the time it's
+        // enumerated; retry the enumeration in this case up to 10 times
+        // (this should be a rare race & unlikely to recur).
+        if (++num_retries <= 10) {
+          RTC_LOG(LS_WARNING) << "Enumeration failed due to race with a window "
+                                 "closing; retrying - retry #"
+                              << num_retries;
+          continue;
+        } else {
+          RTC_LOG(LS_ERROR)
+              << "Exhausted retry allowance around window enumeration failures "
+                 "due to races with windows closing";
+        }
+      }
+
+      // The enumeration failed with an unexpected error (or more repeats of
+      // an infrequently-expected error than anticipated). After logging this &
+      // firing an assert when enabled, report that the selected window isn't
+      // topmost to avoid inadvertent capture of other windows.
+      RTC_LOG(LS_ERROR) << "Failed to enumerate windows: " << lastError;
+      assert(false);
+      return false;
+    }
+  }
+
   const HWND excluded_window;
-  bool is_top_window;
 };
-
-// The function is called during EnumWindow for every window enumerated and is
-// responsible for verifying if the selected window is on top.
-// Return TRUE to continue enumerating if the current window belongs to the
-// selected window or is to be ignored.
-// Return FALSE to stop enumerating if the selected window is found or decided
-// if it's on top most.
-BOOL CALLBACK TopWindowVerifier(HWND hwnd, LPARAM param) {
-  TopWindowVerifierContext* context =
-      reinterpret_cast<TopWindowVerifierContext*>(param);
-
-  if (context->IsWindowSelected(hwnd)) {
-    // Windows are enumerated in top-down z-order, so we can stop enumerating
-    // upon reaching the selected window & report it's on top.
-    context->is_top_window = true;
-    return FALSE;
-  }
-
-  // Ignore the excluded window.
-  if (hwnd == context->excluded_window) {
-    return TRUE;
-  }
-
-  // Ignore invisible window on current desktop.
-  if (!context->window_capture_helper()->IsWindowVisibleOnCurrentDesktop(
-          hwnd)) {
-    return TRUE;
-  }
-
-  // Ignore Chrome notification windows, especially the notification for the
-  // ongoing window sharing.
-  // Notes:
-  // - This only works with notifications from Chrome, not other Apps.
-  // - All notifications from Chrome will be ignored.
-  // - This may cause part or whole of notification window being cropped into
-  // the capturing of the target window if there is overlapping.
-  if (context->window_capture_helper()->IsWindowChromeNotification(hwnd)) {
-    return TRUE;
-  }
-
-  // Ignore descendant/owned windows since we want to capture them.
-  if (context->IsWindowOwned(hwnd)) {
-    return TRUE;
-  }
-
-  // Checks whether current window |hwnd| intersects with
-  // |context|->selected_window.
-  if (context->IsWindowOverlapping(hwnd)) {
-    // If intersection is not empty, the selected window is not on top.
-    context->is_top_window = false;
-    return FALSE;
-  }
-
-  // Otherwise, keep enumerating.
-  return TRUE;
-}
 
 class CroppingWindowCapturerWin : public CroppingWindowCapturer {
  public:
@@ -217,17 +247,12 @@ bool CroppingWindowCapturerWin::ShouldUseScreenCapturer() {
 
   // Check if the window is occluded by any other window, excluding the child
   // windows, context menus, and |excluded_window_|.
-  // |content_rect| is preferred, see the comments in TopWindowVerifier()
-  // function.
+  // |content_rect| is preferred, see the comments on
+  // IsWindowIntersectWithSelectedWindow().
   TopWindowVerifierContext context(selected,
                                    reinterpret_cast<HWND>(excluded_window()),
                                    content_rect, &window_capture_helper_);
-  if (!context.IsSelectedWindowValid()) {
-    return false;
-  }
-
-  EnumWindows(&TopWindowVerifier, reinterpret_cast<LPARAM>(&context));
-  return context.is_top_window;
+  return context.IsTopWindow();
 }
 
 DesktopRect CroppingWindowCapturerWin::GetWindowRectInVirtualScreen() {

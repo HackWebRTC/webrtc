@@ -104,7 +104,7 @@ struct OwnedWindowCollectorContext : public SelectedWindowContext {
 BOOL CALLBACK OwnedWindowCollector(HWND hwnd, LPARAM param) {
   OwnedWindowCollectorContext* context =
       reinterpret_cast<OwnedWindowCollectorContext*>(param);
-  if (context->IsWindowSelected(hwnd)) {
+  if (hwnd == context->selected_window()) {
     // Windows are enumerated in top-down z-order, so we can stop enumerating
     // upon reaching the selected window.
     return FALSE;
@@ -118,7 +118,8 @@ BOOL CALLBACK OwnedWindowCollector(HWND hwnd, LPARAM param) {
   }
 
   // Owned windows that intersect the selected window should be captured.
-  if (context->IsWindowOwned(hwnd) && context->IsWindowOverlapping(hwnd)) {
+  if (context->IsWindowOwnedBySelectedWindow(hwnd) &&
+      context->IsWindowOverlappingSelectedWindow(hwnd)) {
     // Skip windows that draw shadows around menus. These "SysShadow" windows
     // would otherwise be captured as solid black bars with no transparency
     // gradient (since this capturer doesn't detect / respect variations in the
