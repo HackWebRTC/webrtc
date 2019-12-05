@@ -60,7 +60,7 @@ class RtpPacketizer {
                                             const PayloadSizeLimits& limits);
 };
 
-// TODO(sprang): Update the depacketizer to return a std::unqie_ptr with a copy
+// TODO(bugs.webrtc.org/11152): Update the depacketizer to return a copy
 // of the parsed payload, rather than just a pointer into the incoming buffer.
 // This way we can move some parsing out from the jitter buffer into here, and
 // the jitter buffer can just store that pointer rather than doing a copy there.
