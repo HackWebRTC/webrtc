@@ -74,9 +74,9 @@ FrameGenerator::VideoFrameData IvfVideoFrameGenerator::NextFrame() {
   absl::optional<EncodedImage> image = file_reader_->NextFrame();
   RTC_CHECK(image);
   // Last parameter is undocumented and there is no usage of it found.
-  RTC_DCHECK_EQ(WEBRTC_VIDEO_CODEC_OK,
-                video_decoder_->Decode(*image, /*missing_frames=*/false,
-                                       /*render_time_ms=*/0));
+  RTC_CHECK_EQ(WEBRTC_VIDEO_CODEC_OK,
+               video_decoder_->Decode(*image, /*missing_frames=*/false,
+                                      /*render_time_ms=*/0));
   bool decoded = next_frame_decoded_.Wait(kMaxNextFrameWaitTemeoutMs);
   RTC_CHECK(decoded) << "Failed to decode next frame in "
                      << kMaxNextFrameWaitTemeoutMs << "ms. Can't continue";
