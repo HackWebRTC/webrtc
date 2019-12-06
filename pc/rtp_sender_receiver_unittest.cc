@@ -1229,6 +1229,43 @@ TEST_F(RtpSenderReceiverTest, VideoSenderDetectInvalidScaleResolutionDownBy) {
   DestroyVideoRtpSender();
 }
 
+TEST_F(RtpSenderReceiverTest, VideoSenderCanSetMaxFramerate) {
+  CreateVideoRtpSender();
+
+  RtpParameters params = video_rtp_sender_->GetParameters();
+  params.encodings[0].max_framerate = 20;
+
+  EXPECT_TRUE(video_rtp_sender_->SetParameters(params).ok());
+  params = video_rtp_sender_->GetParameters();
+  EXPECT_EQ(20., params.encodings[0].max_framerate);
+
+  DestroyVideoRtpSender();
+}
+
+TEST_F(RtpSenderReceiverTest, VideoSenderCanSetMaxFramerateZero) {
+  CreateVideoRtpSender();
+
+  RtpParameters params = video_rtp_sender_->GetParameters();
+  params.encodings[0].max_framerate = 0.;
+
+  EXPECT_TRUE(video_rtp_sender_->SetParameters(params).ok());
+  params = video_rtp_sender_->GetParameters();
+  EXPECT_EQ(0., params.encodings[0].max_framerate);
+
+  DestroyVideoRtpSender();
+}
+
+TEST_F(RtpSenderReceiverTest, VideoSenderDetectInvalidMaxFramerate) {
+  CreateVideoRtpSender();
+
+  RtpParameters params = video_rtp_sender_->GetParameters();
+  params.encodings[0].max_framerate = -5.;
+  RTCError result = video_rtp_sender_->SetParameters(params);
+  EXPECT_EQ(RTCErrorType::INVALID_RANGE, result.type());
+
+  DestroyVideoRtpSender();
+}
+
 // A video sender can have multiple simulcast layers, in which case it will
 // contain multiple RtpEncodingParameters. This tests that if this is the case
 // (simulcast), then we can't set the bitrate_priority, or max_bitrate_bps
