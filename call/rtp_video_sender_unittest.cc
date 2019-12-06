@@ -135,17 +135,24 @@ class RtpVideoSenderTestFixture {
                      VideoEncoderConfig::ContentType::kRealtimeVideo),
         retransmission_rate_limiter_(time_controller_.GetClock(),
                                      kRetransmitWindowSizeMs) {
-    std::map<uint32_t, RtpState> suspended_ssrcs;
-    router_ = std::make_unique<RtpVideoSender>(
-        time_controller_.GetClock(), suspended_ssrcs, suspended_payload_states,
-        config_.rtp, config_.rtcp_report_interval_ms, &transport_,
-        CreateObservers(&call_stats_, &encoder_feedback_, &stats_proxy_,
-                        &stats_proxy_, &stats_proxy_, &stats_proxy_,
-                        frame_count_observer, &stats_proxy_, &stats_proxy_,
-                        &send_delay_stats_),
-        &transport_controller_, &event_log_, &retransmission_rate_limiter_,
-        std::make_unique<FecControllerDefault>(time_controller_.GetClock()),
-        nullptr, CryptoOptions{});
+    rtc::Event done;
+    transport_controller_.GetWorkerQueue()->PostTask([&]() {
+      std::map<uint32_t, RtpState> suspended_ssrcs;
+
+      router_ = std::make_unique<RtpVideoSender>(
+          time_controller_.GetClock(), suspended_ssrcs,
+          suspended_payload_states, config_.rtp,
+          config_.rtcp_report_interval_ms, &transport_,
+          CreateObservers(&call_stats_, &encoder_feedback_, &stats_proxy_,
+                          &stats_proxy_, &stats_proxy_, &stats_proxy_,
+                          frame_count_observer, &stats_proxy_, &stats_proxy_,
+                          &send_delay_stats_),
+          &transport_controller_, &event_log_, &retransmission_rate_limiter_,
+          std::make_unique<FecControllerDefault>(time_controller_.GetClock()),
+          nullptr, CryptoOptions{});
+      done.Set();
+    });
+    done.Wait(rtc::Event::kForever);
   }
   RtpVideoSenderTestFixture(
       const std::vector<uint32_t>& ssrcs,
@@ -157,7 +164,14 @@ class RtpVideoSenderTestFixture {
                                   payload_type,
                                   suspended_payload_states,
                                   /*frame_count_observer=*/nullptr) {}
-
+  ~RtpVideoSenderTestFixture() {
+    rtc::Event done;
+    transport_controller_.GetWorkerQueue()->PostTask([&]() {
+      router_.reset();
+      done.Set();
+    });
+    done.Wait(rtc::Event::kForever);
+  }
   RtpVideoSender* router() { return router_.get(); }
   MockTransport& transport() { return transport_; }
   void AdvanceTime(TimeDelta delta) { time_controller_.AdvanceTime(delta); }
