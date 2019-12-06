@@ -62,7 +62,8 @@ constexpr char CongestionWindowConfig::kKey[];
 
 std::unique_ptr<StructParametersParser> CongestionWindowConfig::Parser() {
   return StructParametersParser::Create("QueueSize", &queue_size_ms,  //
-                                        "MinBitrate", &min_bitrate_bps);
+                                        "MinBitrate", &min_bitrate_bps,
+                                        "InitWin", &initial_data_window);
 }
 
 // static
@@ -145,6 +146,11 @@ uint32_t RateControlSettings::CongestionWindowMinPushbackTargetBitrateBps()
     const {
   return congestion_window_config_.min_bitrate_bps.value_or(
       kDefaultMinPushbackTargetBitrateBps);
+}
+
+absl::optional<DataSize>
+RateControlSettings::CongestionWindowInitialDataWindow() const {
+  return congestion_window_config_.initial_data_window;
 }
 
 absl::optional<double> RateControlSettings::GetPacingFactor() const {

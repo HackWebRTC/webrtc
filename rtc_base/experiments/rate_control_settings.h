@@ -13,6 +13,7 @@
 
 #include "absl/types/optional.h"
 #include "api/transport/webrtc_key_value_config.h"
+#include "api/units/data_size.h"
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder_config.h"
 #include "rtc_base/experiments/struct_parameters_parser.h"
@@ -23,6 +24,7 @@ struct CongestionWindowConfig {
   static constexpr char kKey[] = "WebRTC-CongestionWindow";
   absl::optional<int> queue_size_ms;
   absl::optional<int> min_bitrate_bps;
+  absl::optional<DataSize> initial_data_window;
   std::unique_ptr<StructParametersParser> Parser();
   static CongestionWindowConfig Parse(absl::string_view config);
 };
@@ -65,6 +67,7 @@ class RateControlSettings final {
   int64_t GetCongestionWindowAdditionalTimeMs() const;
   bool UseCongestionWindowPushback() const;
   uint32_t CongestionWindowMinPushbackTargetBitrateBps() const;
+  absl::optional<DataSize> CongestionWindowInitialDataWindow() const;
 
   absl::optional<double> GetPacingFactor() const;
   bool UseAlrProbing() const;

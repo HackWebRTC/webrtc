@@ -161,6 +161,7 @@ rtc_library("rate_control_settings") {
     "../:rtc_base_approved",
     "../../api/transport:field_trial_based_config",
     "../../api/transport:webrtc_key_value_config",
+    "../../api/units:data_size",
     "../../api/video_codecs:video_codecs_api",
     "../../system_wrappers:field_trial",
     "//third_party/abseil-cpp/absl/types:optional",
