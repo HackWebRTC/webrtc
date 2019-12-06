@@ -214,8 +214,7 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported() {
   BOOL isVistaRTMorXP = VerifyVersionInfo(&osvi, dwTypeMask, dwlConditionMask);
   if (isVistaRTMorXP != 0) {
     RTC_LOG(LS_VERBOSE)
-        << "*** Windows Core Audio is only supported on Vista SP1 or later"
-        << " => will revert to the Wave API ***";
+        << "*** Windows Core Audio is only supported on Vista SP1 or later";
     return false;
   }
 
@@ -302,55 +301,18 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported() {
 
   // 4) Verify that we can create and initialize our Core Audio class.
   //
-  // Also, perform a limited "API test" to ensure that Core Audio is supported
-  // for all devices.
-  //
   if (MMDeviceIsAvailable) {
     coreAudioIsSupported = false;
 
-    AudioDeviceWindowsCore* p = new AudioDeviceWindowsCore();
+    AudioDeviceWindowsCore* p = new (std::nothrow) AudioDeviceWindowsCore();
     if (p == NULL) {
       return false;
     }
 
     int ok(0);
-    int temp_ok(0);
-    bool available(false);
 
     if (p->Init() != InitStatus::OK) {
       ok |= -1;
-    }
-
-    int16_t numDevsRec = p->RecordingDevices();
-    for (uint16_t i = 0; i < numDevsRec; i++) {
-      ok |= p->SetRecordingDevice(i);
-      temp_ok = p->RecordingIsAvailable(available);
-      ok |= temp_ok;
-      ok |= (available == false);
-      if (available) {
-        ok |= p->InitMicrophone();
-      }
-      if (ok) {
-        RTC_LOG(LS_WARNING)
-            << "AudioDeviceWindowsCore::CoreAudioIsSupported()"
-            << " Failed to use Core Audio Recording for device id=" << i;
-      }
-    }
-
-    int16_t numDevsPlay = p->PlayoutDevices();
-    for (uint16_t i = 0; i < numDevsPlay; i++) {
-      ok |= p->SetPlayoutDevice(i);
-      temp_ok = p->PlayoutIsAvailable(available);
-      ok |= temp_ok;
-      ok |= (available == false);
-      if (available) {
-        ok |= p->InitSpeaker();
-      }
-      if (ok) {
-        RTC_LOG(LS_WARNING)
-            << "AudioDeviceWindowsCore::CoreAudioIsSupported()"
-            << " Failed to use Core Audio Playout for device id=" << i;
-      }
     }
 
     ok |= p->Terminate();
@@ -365,8 +327,7 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported() {
   if (coreAudioIsSupported) {
     RTC_LOG(LS_VERBOSE) << "*** Windows Core Audio is supported ***";
   } else {
-    RTC_LOG(LS_VERBOSE) << "*** Windows Core Audio is NOT supported"
-                        << " => will revert to the Wave API ***";
+    RTC_LOG(LS_VERBOSE) << "*** Windows Core Audio is NOT supported";
   }
 
   return (coreAudioIsSupported);
