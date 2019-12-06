@@ -30,7 +30,7 @@ abstract class CameraCapturer implements CameraVideoCapturer {
   private final static int OPEN_CAMERA_TIMEOUT = 10000;
 
   private final CameraEnumerator cameraEnumerator;
-  @Nullable private final CameraEventsHandler eventsHandler;
+  private final CameraEventsHandler eventsHandler;
   private final Handler uiThreadHandler;
 
   @Nullable
@@ -175,10 +175,10 @@ abstract class CameraCapturer implements CameraVideoCapturer {
 
   // Initialized on initialize
   // -------------------------
-  @Nullable private Handler cameraThreadHandler;
+  private Handler cameraThreadHandler;
   private Context applicationContext;
   private org.webrtc.CapturerObserver capturerObserver;
-  @Nullable private SurfaceTextureHelper surfaceHelper;
+  private SurfaceTextureHelper surfaceHelper;
 
   private final Object stateLock = new Object();
   private boolean sessionOpening; /* guarded by stateLock */
@@ -230,13 +230,12 @@ abstract class CameraCapturer implements CameraVideoCapturer {
   }
 
   @Override
-  public void initialize(@Nullable SurfaceTextureHelper surfaceTextureHelper,
-      Context applicationContext, org.webrtc.CapturerObserver capturerObserver) {
+  public void initialize(SurfaceTextureHelper surfaceTextureHelper, Context applicationContext,
+      org.webrtc.CapturerObserver capturerObserver) {
     this.applicationContext = applicationContext;
     this.capturerObserver = capturerObserver;
     this.surfaceHelper = surfaceTextureHelper;
-    this.cameraThreadHandler =
-        surfaceTextureHelper == null ? null : surfaceTextureHelper.getHandler();
+    this.cameraThreadHandler = surfaceTextureHelper.getHandler();
   }
 
   @Override
