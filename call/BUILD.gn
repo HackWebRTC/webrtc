@@ -457,6 +457,7 @@ if (rtc_include_tests) {
       "../modules/audio_device:audio_device_impl",
       "../modules/audio_mixer:audio_mixer_impl",
       "../modules/rtp_rtcp",
+      "../modules/rtp_rtcp:rtp_rtcp_format",
       "../rtc_base",
       "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
