@@ -98,7 +98,6 @@ VideoFrameType ConvertToVideoFrameType(EVideoFrameType type) {
 // is updated to point to each fragment, with offsets and lengths set as to
 // exclude the start codes.
 static void RtpFragmentize(EncodedImage* encoded_image,
-                           const VideoFrameBuffer& frame_buffer,
                            SFrameBSInfo* info,
                            RTPFragmentationHeader* frag_header) {
   // Calculate minimum buffer size required to hold encoded data.
@@ -487,7 +486,7 @@ int32_t H264EncoderImpl::Encode(
     // Split encoded image up into fragments. This also updates
     // |encoded_image_|.
     RTPFragmentationHeader frag_header;
-    RtpFragmentize(&encoded_images_[i], *frame_buffer, &info, &frag_header);
+    RtpFragmentize(&encoded_images_[i], &info, &frag_header);
 
     // Encoder can skip frames to save bandwidth in which case
     // |encoded_images_[i]._length| == 0.
