@@ -330,7 +330,7 @@ void DataChannelController::AllocateSctpSids(rtc::SSLRole role) {
   // Since closing modifies the list of channels, we have to do the actual
   // closing outside the loop.
   for (const auto& channel : channels_to_close) {
-    channel->CloseAbruptly();
+    channel->CloseAbruptlyWithDataChannelFailure("Failed to allocate SCTP SID");
   }
 }
 
