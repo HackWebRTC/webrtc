@@ -115,25 +115,9 @@ ABSL_FLAG(bool,
           "Activate all of the default components (will be overridden by any "
           "other settings)");
 ABSL_FLAG(int,
-          aec_suppression_level,
-          kParameterNotSpecifiedValue,
-          "Set the aec suppression level (0-2)");
-ABSL_FLAG(int,
-          delay_agnostic,
-          kParameterNotSpecifiedValue,
-          "Activate (1) or deactivate(0) the AEC delay agnostic mode");
-ABSL_FLAG(int,
-          extended_filter,
-          kParameterNotSpecifiedValue,
-          "Activate (1) or deactivate(0) the AEC extended filter mode");
-ABSL_FLAG(int,
-          use_legacy_aec,
-          kParameterNotSpecifiedValue,
-          "Activate (1) or deactivate(0) the legacy AEC");
-ABSL_FLAG(int,
           use_legacy_ns,
           kParameterNotSpecifiedValue,
-          "Activate (1) or deactivate(0) the legacy AEC");
+          "Activate (1) or deactivate(0) the legacy NS");
 ABSL_FLAG(int,
           experimental_agc,
           kParameterNotSpecifiedValue,
@@ -153,11 +137,6 @@ ABSL_FLAG(int,
           kParameterNotSpecifiedValue,
           "AGC2 level estimation"
           " in the experimental AGC. AGC1 level estimation is the default (0)");
-ABSL_FLAG(
-    int,
-    refined_adaptive_filter,
-    kParameterNotSpecifiedValue,
-    "Activate (1) or deactivate(0) the refined adaptive filter functionality");
 ABSL_FLAG(int,
           agc_mode,
           kParameterNotSpecifiedValue,
@@ -395,17 +374,6 @@ SimulationSettings CreateSettings() {
   SetSettingIfFlagSet(absl::GetFlag(FLAGS_ts), &settings.use_ts);
   SetSettingIfFlagSet(absl::GetFlag(FLAGS_vad), &settings.use_vad);
   SetSettingIfFlagSet(absl::GetFlag(FLAGS_le), &settings.use_le);
-  SetSettingIfSpecified(absl::GetFlag(FLAGS_aec_suppression_level),
-                        &settings.aec_suppression_level);
-  SetSettingIfFlagSet(absl::GetFlag(FLAGS_delay_agnostic),
-                      &settings.use_delay_agnostic);
-  SetSettingIfFlagSet(absl::GetFlag(FLAGS_extended_filter),
-                      &settings.use_extended_filter);
-  SetSettingIfFlagSet(absl::GetFlag(FLAGS_refined_adaptive_filter),
-                      &settings.use_refined_adaptive_filter);
-
-  SetSettingIfFlagSet(absl::GetFlag(FLAGS_use_legacy_aec),
-                      &settings.use_legacy_aec);
   SetSettingIfFlagSet(absl::GetFlag(FLAGS_use_legacy_ns),
                       &settings.use_legacy_ns);
   SetSettingIfFlagSet(absl::GetFlag(FLAGS_experimental_agc),
@@ -440,8 +408,6 @@ SimulationSettings CreateSettings() {
                         &settings.stream_delay);
   SetSettingIfFlagSet(absl::GetFlag(FLAGS_use_stream_delay),
                       &settings.use_stream_delay);
-  SetSettingIfSpecified(absl::GetFlag(FLAGS_stream_drift_samples),
-                        &settings.stream_drift_samples);
   SetSettingIfSpecified(absl::GetFlag(FLAGS_custom_call_order_file),
                         &settings.call_order_input_filename);
   SetSettingIfSpecified(absl::GetFlag(FLAGS_output_custom_call_order_file),
@@ -525,14 +491,6 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
                                 "be specified without the AEC being active");
 
   ReportConditionalErrorAndExit(
-      ((settings.use_aec && *settings.use_aec && settings.use_legacy_aec &&
-        *settings.use_legacy_aec) ||
-       (settings.use_aecm && *settings.use_aecm)) &&
-          !!settings.linear_aec_output_filename,
-      "Error: The linear AEC ouput filename cannot be specified when the "
-      "legacy AEC or the AECm are used");
-
-  ReportConditionalErrorAndExit(
       settings.use_aec && *settings.use_aec && settings.use_aecm &&
           *settings.use_aecm,
       "Error: The AEC and the AECM cannot be activated at the same time!\n");
@@ -555,13 +513,6 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
       settings.reverse_output_num_channels &&
           *settings.reverse_output_num_channels <= 0,
       "Error: --reverse_output_num_channels must be positive!\n");
-
-  ReportConditionalErrorAndExit(settings.aec_suppression_level &&
-                                    ((*settings.aec_suppression_level) < 1 ||
-                                     (*settings.aec_suppression_level) > 2),
-                                "Error: --aec_suppression_level must be "
-                                "specified between 1 and 2. 0 is "
-                                "deprecated.\n");
 
   ReportConditionalErrorAndExit(
       settings.agc_target_level && ((*settings.agc_target_level) < 0 ||

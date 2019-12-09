@@ -37,7 +37,6 @@ struct SimulationSettings {
   ~SimulationSettings();
   absl::optional<int> stream_delay;
   absl::optional<bool> use_stream_delay;
-  absl::optional<int> stream_drift_samples;
   absl::optional<int> output_sample_rate_hz;
   absl::optional<int> output_num_channels;
   absl::optional<int> reverse_output_sample_rate_hz;
@@ -61,11 +60,6 @@ struct SimulationSettings {
   absl::optional<bool> use_vad;
   absl::optional<bool> use_le;
   absl::optional<bool> use_all;
-  absl::optional<int> aec_suppression_level;
-  absl::optional<bool> use_delay_agnostic;
-  absl::optional<bool> use_extended_filter;
-  absl::optional<bool> use_drift_compensation;
-  absl::optional<bool> use_legacy_aec;
   absl::optional<bool> use_legacy_ns;
   absl::optional<bool> use_experimental_agc;
   absl::optional<bool> use_experimental_agc_agc2_level_estimator;
@@ -82,7 +76,6 @@ struct SimulationSettings {
   absl::optional<float> pre_amplifier_gain_factor;
   absl::optional<int> ns_level;
   absl::optional<int> maximum_internal_processing_rate;
-  absl::optional<bool> use_refined_adaptive_filter;
   int initial_mic_level;
   bool simulate_mic_gain = false;
   absl::optional<bool> multi_channel_render;

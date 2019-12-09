@@ -551,17 +551,6 @@ void AudioProcessingImplLockTest::SetUp() {
   apm_config.voice_detection.enabled = true;
   apm_config.level_estimation.enabled = true;
   apm_->ApplyConfig(apm_config);
-
-  Config config;
-  config.Set<ExtendedFilter>(
-      new ExtendedFilter(test_config_.aec_type ==
-                         AecType::BasicWebRtcAecSettingsWithExtentedFilter));
-
-  config.Set<DelayAgnostic>(
-      new DelayAgnostic(test_config_.aec_type ==
-                        AecType::BasicWebRtcAecSettingsWithDelayAgnosticAec));
-
-  apm_->SetExtraOptions(config);
 }
 
 void AudioProcessingImplLockTest::TearDown() {

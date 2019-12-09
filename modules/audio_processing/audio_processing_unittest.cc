@@ -1536,8 +1536,6 @@ TEST_F(ApmTest, Process) {
 
     Config config;
     config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
-    config.Set<ExtendedFilter>(
-        new ExtendedFilter(test->use_aec_extended_filter()));
     apm_.reset(AudioProcessingBuilder().Create(config));
 
     EnableAllComponents();

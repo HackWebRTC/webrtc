@@ -483,12 +483,6 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
       apm->ApplyConfig(apm_config);
     };
 
-    // Lambda function for adding default desktop APM settings to a config.
-    auto add_default_desktop_config = [](Config* config) {
-      config->Set<ExtendedFilter>(new ExtendedFilter(true));
-      config->Set<DelayAgnostic>(new DelayAgnostic(true));
-    };
-
     int num_capture_channels = 1;
     switch (simulation_config_.simulation_settings) {
       case SettingsType::kDefaultApmMobile: {
@@ -499,7 +493,6 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
       }
       case SettingsType::kDefaultApmDesktop: {
         Config config;
-        add_default_desktop_config(&config);
         apm_.reset(AudioProcessingBuilder().Create(config));
         ASSERT_TRUE(!!apm_);
         set_default_desktop_apm_runtime_settings(apm_.get());
@@ -514,8 +507,6 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
       }
       case SettingsType::kDefaultApmDesktopWithoutDelayAgnostic: {
         Config config;
-        config.Set<ExtendedFilter>(new ExtendedFilter(true));
-        config.Set<DelayAgnostic>(new DelayAgnostic(false));
         apm_.reset(AudioProcessingBuilder().Create(config));
         ASSERT_TRUE(!!apm_);
         set_default_desktop_apm_runtime_settings(apm_.get());
@@ -524,8 +515,6 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
       }
       case SettingsType::kDefaultApmDesktopWithoutExtendedFilter: {
         Config config;
-        config.Set<ExtendedFilter>(new ExtendedFilter(false));
-        config.Set<DelayAgnostic>(new DelayAgnostic(true));
         apm_.reset(AudioProcessingBuilder().Create(config));
         ASSERT_TRUE(!!apm_);
         set_default_desktop_apm_runtime_settings(apm_.get());

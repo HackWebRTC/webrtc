@@ -11,13 +11,6 @@ if (rtc_enable_protobuf) {
   import("//third_party/protobuf/proto_library.gni")
 }
 
-declare_args() {
-  # Disables the usual mode where we trust the reported system delay
-  # values the AEC receives. The corresponding define is set appropriately
-  # in the code, but it can be force-enabled here for testing.
-  aec_untrusted_delay_for_testing = false
-}
-
 config("apm_debug_dump") {
   if (apm_debug_dump) {
     defines = [ "WEBRTC_APM_DEBUG_DUMP=1" ]
@@ -112,8 +105,6 @@ rtc_library("audio_processing") {
     "audio_processing_impl.cc",
     "audio_processing_impl.h",
     "common.h",
-    "echo_cancellation_impl.cc",
-    "echo_cancellation_impl.h",
     "echo_control_mobile_impl.cc",
     "echo_control_mobile_impl.h",
     "echo_detector/circular_buffer.cc",
@@ -187,8 +178,6 @@ rtc_library("audio_processing") {
     "../../system_wrappers:cpu_features_api",
     "../../system_wrappers:field_trial",
     "../../system_wrappers:metrics",
-    "aec",
-    "aec:aec_core",
     "aec3",
     "aecm:aecm_core",
     "agc",
@@ -201,10 +190,6 @@ rtc_library("audio_processing") {
     "vad",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
-
-  if (aec_untrusted_delay_for_testing) {
-    defines += [ "WEBRTC_UNTRUSTED_DELAY" ]
-  }
 
   if (rtc_prefer_fixed_point) {
     defines += [ "WEBRTC_NS_FIXED" ]
@@ -400,7 +385,6 @@ if (rtc_include_tests) {
       "audio_buffer_unittest.cc",
       "audio_frame_view_unittest.cc",
       "config_unittest.cc",
-      "echo_cancellation_impl_unittest.cc",
       "echo_control_mobile_unittest.cc",
       "gain_controller2_unittest.cc",
       "splitting_filter_unittest.cc",
@@ -451,8 +435,6 @@ if (rtc_include_tests) {
       "../../test:rtc_expect_death",
       "../../test:test_support",
       "../audio_coding:neteq_input_audio_tools",
-      "aec:aec_core",
-      "aec:aec_unittests",
       "aec_dump:mock_aec_dump_unittests",
       "agc:agc_unittests",
       "agc2:adaptive_digital_unittests",
@@ -463,7 +445,6 @@ if (rtc_include_tests) {
       "agc2:test_utils",
       "agc2/rnn_vad:unittests",
       "test/conversational_speech:unittest",
-      "utility:block_mean_calculator_unittest",
       "utility:legacy_delay_estimator_unittest",
       "utility:pffft_wrapper_unittest",
       "vad:vad_unittests",
@@ -499,7 +480,6 @@ if (rtc_include_tests) {
         "audio_processing_impl_locking_unittest.cc",
         "audio_processing_impl_unittest.cc",
         "audio_processing_unittest.cc",
-        "echo_cancellation_bit_exact_unittest.cc",
         "echo_control_mobile_bit_exact_unittest.cc",
         "echo_detector/circular_buffer_unittest.cc",
         "echo_detector/mean_variance_estimator_unittest.cc",

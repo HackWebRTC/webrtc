@@ -19,17 +19,6 @@ rtc_library("cascaded_biquad_filter") {
   ]
 }
 
-rtc_library("block_mean_calculator") {
-  sources = [
-    "block_mean_calculator.cc",
-    "block_mean_calculator.h",
-  ]
-  deps = [
-    "../../../rtc_base:checks",
-    "../../../rtc_base:rtc_base_approved",
-  ]
-}
-
 rtc_library("legacy_delay_estimator") {
   sources = [
     "delay_estimator.cc",
@@ -107,20 +96,6 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":cascaded_biquad_filter",
-      "../../../rtc_base:rtc_base_approved",
-      "../../../test:test_support",
-      "//testing/gtest",
-    ]
-  }
-
-  rtc_library("block_mean_calculator_unittest") {
-    testonly = true
-
-    sources = [
-      "block_mean_calculator_unittest.cc",
-    ]
-    deps = [
-      ":block_mean_calculator",
       "../../../rtc_base:rtc_base_approved",
       "../../../test:test_support",
       "//testing/gtest",

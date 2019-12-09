@@ -22,7 +22,6 @@
 #include "api/audio/echo_canceller3_factory.h"
 #include "common_audio/include/audio_util.h"
 #include "modules/audio_processing/aec_dump/aec_dump_factory.h"
-#include "modules/audio_processing/echo_cancellation_impl.h"
 #include "modules/audio_processing/echo_control_mobile_impl.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
@@ -433,23 +432,17 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
     }
   }
 
-  const bool use_legacy_aec = settings_.use_aec && *settings_.use_aec &&
-                              settings_.use_legacy_aec &&
-                              *settings_.use_legacy_aec;
   const bool use_aec = settings_.use_aec && *settings_.use_aec;
   const bool use_aecm = settings_.use_aecm && *settings_.use_aecm;
-  if (use_legacy_aec || use_aec || use_aecm) {
+  if (use_aec || use_aecm) {
     apm_config.echo_canceller.enabled = true;
     apm_config.echo_canceller.mobile_mode = use_aecm;
-    apm_config.echo_canceller.use_legacy_aec = use_legacy_aec;
+    apm_config.echo_canceller.use_legacy_aec = false;
   }
   apm_config.echo_canceller.export_linear_aec_output =
       !!settings_.linear_aec_output_filename;
 
-  RTC_CHECK(!(use_legacy_aec && settings_.aec_settings_filename))
-      << "The legacy AEC cannot be configured using settings";
-
-  if (use_aec && !use_legacy_aec) {
+  if (use_aec) {
     EchoCanceller3Config cfg;
     if (settings_.aec_settings_filename) {
       if (settings_.use_verbose_logging) {
@@ -469,22 +462,6 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
         std::cout << "AEC settings:" << std::endl;
       }
       std::cout << Aec3ConfigToJsonString(cfg) << std::endl;
-    }
-  }
-
-  if (settings_.use_drift_compensation && *settings_.use_drift_compensation) {
-    RTC_LOG(LS_ERROR) << "Ignoring deprecated setting: AEC2 drift compensation";
-  }
-  if (settings_.aec_suppression_level) {
-    auto level = static_cast<webrtc::EchoCancellationImpl::SuppressionLevel>(
-        *settings_.aec_suppression_level);
-    if (level ==
-        webrtc::EchoCancellationImpl::SuppressionLevel::kLowSuppression) {
-      RTC_LOG(LS_ERROR) << "Ignoring deprecated setting: AEC2 low suppression";
-    } else {
-      apm_config.echo_canceller.legacy_moderate_suppression_level =
-          (level == webrtc::EchoCancellationImpl::SuppressionLevel::
-                        kModerateSuppression);
     }
   }
 
@@ -519,14 +496,6 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
         *settings_.agc_compression_gain;
   }
 
-  if (settings_.use_refined_adaptive_filter) {
-    config.Set<RefinedAdaptiveFilter>(
-        new RefinedAdaptiveFilter(*settings_.use_refined_adaptive_filter));
-  }
-  config.Set<ExtendedFilter>(new ExtendedFilter(
-      !settings_.use_extended_filter || *settings_.use_extended_filter));
-  config.Set<DelayAgnostic>(new DelayAgnostic(!settings_.use_delay_agnostic ||
-                                              *settings_.use_delay_agnostic));
   config.Set<ExperimentalAgc>(new ExperimentalAgc(
       !settings_.use_experimental_agc || *settings_.use_experimental_agc,
       !!settings_.use_experimental_agc_agc2_level_estimator &&

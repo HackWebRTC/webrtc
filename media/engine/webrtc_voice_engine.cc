@@ -473,7 +473,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   if (options.echo_cancellation) {
     apm_config.echo_canceller.enabled = *options.echo_cancellation;
     apm_config.echo_canceller.mobile_mode = use_mobile_software_aec;
-    apm_config.echo_canceller.legacy_moderate_suppression_level = false;
   }
 
   if (options.auto_gain_control) {

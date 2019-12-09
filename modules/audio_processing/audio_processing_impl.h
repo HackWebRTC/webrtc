@@ -20,7 +20,6 @@
 #include "modules/audio_processing/agc/agc_manager_direct.h"
 #include "modules/audio_processing/agc/gain_control.h"
 #include "modules/audio_processing/audio_buffer.h"
-#include "modules/audio_processing/echo_cancellation_impl.h"
 #include "modules/audio_processing/echo_control_mobile_impl.h"
 #include "modules/audio_processing/gain_control_impl.h"
 #include "modules/audio_processing/gain_controller2.h"
@@ -171,7 +170,6 @@ class AudioProcessingImpl : public AudioProcessing {
                     bool capture_analyzer_enabled);
     // Updates the submodule state and returns true if it has changed.
     bool Update(bool high_pass_filter_enabled,
-                bool echo_canceller_enabled,
                 bool mobile_echo_controller_enabled,
                 bool residual_echo_detector_enabled,
                 bool noise_suppressor_enabled,
@@ -196,7 +194,6 @@ class AudioProcessingImpl : public AudioProcessing {
     const bool render_pre_processor_enabled_ = false;
     const bool capture_analyzer_enabled_ = false;
     bool high_pass_filter_enabled_ = false;
-    bool echo_canceller_enabled_ = false;
     bool mobile_echo_controller_enabled_ = false;
     bool residual_echo_detector_enabled_ = false;
     bool noise_suppressor_enabled_ = false;
@@ -337,7 +334,6 @@ class AudioProcessingImpl : public AudioProcessing {
     std::unique_ptr<GainController2> gain_controller2;
     std::unique_ptr<HighPassFilter> high_pass_filter;
     rtc::scoped_refptr<EchoDetector> echo_detector;
-    std::unique_ptr<EchoCancellationImpl> echo_cancellation;
     std::unique_ptr<EchoControl> echo_controller;
     std::unique_ptr<EchoControlMobileImpl> echo_control_mobile;
     std::unique_ptr<NoiseSuppression> legacy_noise_suppressor;
@@ -436,9 +432,6 @@ class AudioProcessingImpl : public AudioProcessing {
     int split_rate;
     int stream_delay_ms;
     bool echo_controller_enabled = false;
-    bool use_aec2_extended_filter = false;
-    bool use_aec2_delay_agnostic = false;
-    bool use_aec2_refined_adaptive_filter = false;
   } capture_nonlocked_;
 
   struct ApmRenderState {
@@ -469,8 +462,6 @@ class AudioProcessingImpl : public AudioProcessing {
   int capture_rms_interval_counter_ RTC_GUARDED_BY(crit_capture_) = 0;
 
   // Lock protection not needed.
-  std::unique_ptr<SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>>
-      aec_render_signal_queue_;
   std::unique_ptr<
       SwapQueue<std::vector<int16_t>, RenderQueueItemVerifier<int16_t>>>
       aecm_render_signal_queue_;
