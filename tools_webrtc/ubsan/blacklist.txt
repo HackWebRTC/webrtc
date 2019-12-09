@@ -18,7 +18,6 @@ src:*/third_party/openh264/*
 # Remove those once upstream code has been cleaned.
 src:*/third_party/abseil-cpp/absl/debugging/*
 src:*/third_party/libvpx/source/libvpx/vp8/*
-src:*/third_party/opus/src/*
 
 #############################################################################
 # Ignore system libraries.
