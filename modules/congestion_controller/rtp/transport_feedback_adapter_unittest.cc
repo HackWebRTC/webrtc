@@ -284,9 +284,9 @@ TEST_F(TransportFeedbackAdapterTest, SendTimeWrapsBothWays) {
                                static_cast<int64_t>((1 << 23) - 1) / 1000;
   std::vector<PacketResult> packets;
   packets.push_back(
-      CreatePacket(kHighArrivalTimeMs - 64, 200, 0, 1500, PacedPacketInfo()));
+      CreatePacket(kHighArrivalTimeMs + 64, 210, 0, 1500, PacedPacketInfo()));
   packets.push_back(
-      CreatePacket(kHighArrivalTimeMs + 64, 210, 1, 1500, PacedPacketInfo()));
+      CreatePacket(kHighArrivalTimeMs - 64, 210, 1, 1500, PacedPacketInfo()));
   packets.push_back(
       CreatePacket(kHighArrivalTimeMs, 220, 2, 1500, PacedPacketInfo()));
 

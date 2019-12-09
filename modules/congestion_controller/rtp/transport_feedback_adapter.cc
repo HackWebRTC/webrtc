@@ -220,8 +220,15 @@ TransportFeedbackAdapter::ProcessTransportFeedbackInner(
     current_offset_ = feedback_time;
   } else {
     // TODO(srte): We shouldn't need to do rounding here.
-    current_offset_ += feedback.GetBaseDelta(last_timestamp_)
-                           .RoundDownTo(TimeDelta::Millis<1>());
+    const TimeDelta delta = feedback.GetBaseDelta(last_timestamp_)
+                                .RoundDownTo(TimeDelta::Millis<1>());
+    // Protect against assigning current_offset_ negative value.
+    if (delta < Timestamp::Zero() - current_offset_) {
+      RTC_LOG(LS_WARNING) << "Unexpected feedback timestamp received.";
+      current_offset_ = feedback_time;
+    } else {
+      current_offset_ += delta;
+    }
   }
   last_timestamp_ = feedback.GetBaseTime();
 
