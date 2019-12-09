@@ -658,9 +658,6 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
 
   config_ = config;
 
-  // Ensure that this deprecated setting is not used by mistake.
-  RTC_DCHECK(!config_.echo_canceller.use_legacy_aec);
-
   if (aec_config_changed) {
     InitializeEchoController();
   }

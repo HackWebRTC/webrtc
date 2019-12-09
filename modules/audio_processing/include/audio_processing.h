@@ -229,12 +229,6 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
     struct EchoCanceller {
       bool enabled = false;
       bool mobile_mode = false;
-      // Recommended not to use. Will be removed in the future.
-      // TODO(peah): Remove.
-      bool legacy_moderate_suppression_level = false;
-      // Recommended not to use. Will be removed in the future.
-      // TODO(webrtc:11165): Remove.
-      bool use_legacy_aec = false;
       bool export_linear_aec_output = false;
       // Enforce the highpass filter to be on (has no effect for the mobile
       // mode).

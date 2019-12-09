@@ -437,7 +437,6 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
   if (use_aec || use_aecm) {
     apm_config.echo_canceller.enabled = true;
     apm_config.echo_canceller.mobile_mode = use_aecm;
-    apm_config.echo_canceller.use_legacy_aec = false;
   }
   apm_config.echo_canceller.export_linear_aec_output =
       !!settings_.linear_aec_output_filename;

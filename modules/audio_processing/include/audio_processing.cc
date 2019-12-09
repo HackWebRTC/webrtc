@@ -83,9 +83,8 @@ std::string AudioProcessing::Config::ToString() const {
           << " }, high_pass_filter: { enabled: " << high_pass_filter.enabled
           << " }, echo_canceller: { enabled: " << echo_canceller.enabled
           << ", mobile_mode: " << echo_canceller.mobile_mode
-          << ", legacy_moderate_suppression_level: "
-          << echo_canceller.legacy_moderate_suppression_level
-          << ", use_legacy_aec: " << echo_canceller.use_legacy_aec
+          << ", enforce_high_pass_filtering: "
+          << echo_canceller.enforce_high_pass_filtering
           << " }, noise_suppression: { enabled: " << noise_suppression.enabled
           << ", level: "
           << NoiseSuppressionLevelToString(noise_suppression.level)

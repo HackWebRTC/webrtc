@@ -764,7 +764,6 @@ class WebRtcVoiceEngineTestFake : public ::testing::Test {
 #endif
     EXPECT_EQ(apm_config_.echo_canceller.enabled, enabled);
     EXPECT_EQ(apm_config_.echo_canceller.mobile_mode, kDefaultUseAecm);
-    EXPECT_FALSE(apm_config_.echo_canceller.use_legacy_aec);
   }
 
   bool IsHighPassFilterEnabled() {
