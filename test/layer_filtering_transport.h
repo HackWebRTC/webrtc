@@ -20,6 +20,7 @@
 #include "api/media_types.h"
 #include "call/call.h"
 #include "call/simulated_packet_receiver.h"
+#include "modules/rtp_rtcp/source/video_rtp_depacketizer.h"
 #include "test/direct_transport.h"
 
 namespace webrtc {
@@ -57,6 +58,8 @@ class LayerFilteringTransport : public test::DirectTransport {
   // Used to distinguish between VP8 and VP9.
   const uint8_t vp8_video_payload_type_;
   const uint8_t vp9_video_payload_type_;
+  const std::unique_ptr<VideoRtpDepacketizer> vp8_depacketizer_;
+  const std::unique_ptr<VideoRtpDepacketizer> vp9_depacketizer_;
   // Discard or invalidate all temporal/spatial layers with id greater than the
   // selected one. -1 to disable filtering.
   const int selected_tl_;

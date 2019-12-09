@@ -67,6 +67,9 @@ class RtpPacket {
   rtc::ArrayView<const uint8_t> payload() const {
     return rtc::MakeArrayView(data() + payload_offset_, payload_size_);
   }
+  rtc::CopyOnWriteBuffer PayloadBuffer() const {
+    return buffer_.Slice(payload_offset_, payload_size_);
+  }
 
   // Buffer.
   rtc::CopyOnWriteBuffer Buffer() const { return buffer_; }
