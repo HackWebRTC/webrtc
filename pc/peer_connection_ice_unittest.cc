@@ -457,8 +457,9 @@ TEST_P(PeerConnectionIceTest, CannotAddCandidateWhenRemoteDescriptionNotSet) {
   caller->CreateOfferAndSetAsLocal();
 
   EXPECT_FALSE(caller->pc()->AddIceCandidate(jsep_candidate.get()));
-  EXPECT_THAT(webrtc::metrics::Samples("WebRTC.PeerConnection.AddIceCandidate"),
-              ElementsAre(Pair(kAddIceCandidateFailNoRemoteDescription, 2)));
+  EXPECT_METRIC_THAT(
+      webrtc::metrics::Samples("WebRTC.PeerConnection.AddIceCandidate"),
+      ElementsAre(Pair(kAddIceCandidateFailNoRemoteDescription, 2)));
 }
 
 TEST_P(PeerConnectionIceTest, CannotAddCandidateWhenPeerConnectionClosed) {

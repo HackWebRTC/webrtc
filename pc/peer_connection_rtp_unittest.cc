@@ -1571,8 +1571,9 @@ TEST_F(PeerConnectionMsidSignalingTest, UnifiedPlanTalkingToOurself) {
   EXPECT_EQ(cricket::kMsidSignalingMediaSection,
             answer->description()->msid_signaling());
   // Check that this is counted correctly
-  EXPECT_THAT(metrics::Samples("WebRTC.PeerConnection.SdpSemanticNegotiated"),
-              ElementsAre(Pair(kSdpSemanticNegotiatedUnifiedPlan, 2)));
+  EXPECT_METRIC_THAT(
+      metrics::Samples("WebRTC.PeerConnection.SdpSemanticNegotiated"),
+      ElementsAre(Pair(kSdpSemanticNegotiatedUnifiedPlan, 2)));
 }
 
 TEST_F(PeerConnectionMsidSignalingTest, PlanBOfferToUnifiedPlanAnswer) {
@@ -1660,8 +1661,9 @@ TEST_F(SdpFormatReceivedTest, DataChannelOnlyIsReportedAsNoTracks) {
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
   // Note that only the callee does ReportSdpFormatReceived.
-  EXPECT_THAT(metrics::Samples("WebRTC.PeerConnection.SdpFormatReceived"),
-              ElementsAre(Pair(kSdpFormatReceivedNoTracks, 1)));
+  EXPECT_METRIC_THAT(
+      metrics::Samples("WebRTC.PeerConnection.SdpFormatReceived"),
+      ElementsAre(Pair(kSdpFormatReceivedNoTracks, 1)));
 }
 #endif  // HAVE_SCTP
 
@@ -1673,8 +1675,9 @@ TEST_F(SdpFormatReceivedTest, SimpleUnifiedPlanIsReportedAsSimple) {
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
   // Note that only the callee does ReportSdpFormatReceived.
-  EXPECT_THAT(metrics::Samples("WebRTC.PeerConnection.SdpFormatReceived"),
-              ElementsAre(Pair(kSdpFormatReceivedSimple, 1)));
+  EXPECT_METRIC_THAT(
+      metrics::Samples("WebRTC.PeerConnection.SdpFormatReceived"),
+      ElementsAre(Pair(kSdpFormatReceivedSimple, 1)));
 }
 
 TEST_F(SdpFormatReceivedTest, SimplePlanBIsReportedAsSimple) {
@@ -1684,8 +1687,9 @@ TEST_F(SdpFormatReceivedTest, SimplePlanBIsReportedAsSimple) {
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
   // Note that only the callee does ReportSdpFormatReceived.
-  EXPECT_THAT(metrics::Samples("WebRTC.PeerConnection.SdpFormatReceived"),
-              ElementsAre(Pair(kSdpFormatReceivedSimple, 1)));
+  EXPECT_METRIC_THAT(
+      metrics::Samples("WebRTC.PeerConnection.SdpFormatReceived"),
+      ElementsAre(Pair(kSdpFormatReceivedSimple, 1)));
 }
 
 TEST_F(SdpFormatReceivedTest, ComplexUnifiedIsReportedAsComplexUnifiedPlan) {
@@ -1697,8 +1701,9 @@ TEST_F(SdpFormatReceivedTest, ComplexUnifiedIsReportedAsComplexUnifiedPlan) {
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
   // Note that only the callee does ReportSdpFormatReceived.
-  EXPECT_THAT(metrics::Samples("WebRTC.PeerConnection.SdpFormatReceived"),
-              ElementsAre(Pair(kSdpFormatReceivedComplexUnifiedPlan, 1)));
+  EXPECT_METRIC_THAT(
+      metrics::Samples("WebRTC.PeerConnection.SdpFormatReceived"),
+      ElementsAre(Pair(kSdpFormatReceivedComplexUnifiedPlan, 1)));
 }
 
 TEST_F(SdpFormatReceivedTest, ComplexPlanBIsReportedAsComplexPlanB) {
@@ -1712,8 +1717,9 @@ TEST_F(SdpFormatReceivedTest, ComplexPlanBIsReportedAsComplexPlanB) {
   // SDP Format to be recorded.
   ASSERT_FALSE(callee->SetRemoteDescription(caller->CreateOffer()));
   // Note that only the callee does ReportSdpFormatReceived.
-  EXPECT_THAT(metrics::Samples("WebRTC.PeerConnection.SdpFormatReceived"),
-              ElementsAre(Pair(kSdpFormatReceivedComplexPlanB, 1)));
+  EXPECT_METRIC_THAT(
+      metrics::Samples("WebRTC.PeerConnection.SdpFormatReceived"),
+      ElementsAre(Pair(kSdpFormatReceivedComplexPlanB, 1)));
 }
 
 // Sender setups in a call.

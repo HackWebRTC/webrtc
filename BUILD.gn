@@ -271,6 +271,10 @@ config("common_config") {
     defines += [ "RTC_DISABLE_TRACE_EVENTS" ]
   }
 
+  if (rtc_disable_metrics) {
+    defines += [ "RTC_DISABLE_METRICS" ]
+  }
+
   cflags = []
 
   if (build_with_chromium) {

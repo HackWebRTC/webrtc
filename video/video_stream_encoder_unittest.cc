@@ -3218,9 +3218,9 @@ TEST_F(VideoStreamEncoderTest, CpuLimitedHistogramIsReported) {
   video_stream_encoder_.reset();
   stats_proxy_.reset();
 
-  EXPECT_EQ(1,
-            metrics::NumSamples("WebRTC.Video.CpuLimitedResolutionInPercent"));
-  EXPECT_EQ(
+  EXPECT_METRIC_EQ(
+      1, metrics::NumSamples("WebRTC.Video.CpuLimitedResolutionInPercent"));
+  EXPECT_METRIC_EQ(
       1, metrics::NumEvents("WebRTC.Video.CpuLimitedResolutionInPercent", 50));
 }
 

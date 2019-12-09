@@ -571,35 +571,41 @@ TEST_F(ScreenshareLayerTest, UpdatesHistograms) {
 
   layers_.reset();  // Histograms are reported on destruction.
 
-  EXPECT_EQ(1,
-            metrics::NumSamples("WebRTC.Video.Screenshare.Layer0.FrameRate"));
-  EXPECT_EQ(1,
-            metrics::NumSamples("WebRTC.Video.Screenshare.Layer1.FrameRate"));
-  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.Screenshare.FramesPerDrop"));
-  EXPECT_EQ(1,
-            metrics::NumSamples("WebRTC.Video.Screenshare.FramesPerOvershoot"));
-  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.Screenshare.Layer0.Qp"));
-  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.Screenshare.Layer1.Qp"));
-  EXPECT_EQ(
+  EXPECT_METRIC_EQ(
+      1, metrics::NumSamples("WebRTC.Video.Screenshare.Layer0.FrameRate"));
+  EXPECT_METRIC_EQ(
+      1, metrics::NumSamples("WebRTC.Video.Screenshare.Layer1.FrameRate"));
+  EXPECT_METRIC_EQ(
+      1, metrics::NumSamples("WebRTC.Video.Screenshare.FramesPerDrop"));
+  EXPECT_METRIC_EQ(
+      1, metrics::NumSamples("WebRTC.Video.Screenshare.FramesPerOvershoot"));
+  EXPECT_METRIC_EQ(1,
+                   metrics::NumSamples("WebRTC.Video.Screenshare.Layer0.Qp"));
+  EXPECT_METRIC_EQ(1,
+                   metrics::NumSamples("WebRTC.Video.Screenshare.Layer1.Qp"));
+  EXPECT_METRIC_EQ(
       1, metrics::NumSamples("WebRTC.Video.Screenshare.Layer0.TargetBitrate"));
-  EXPECT_EQ(
+  EXPECT_METRIC_EQ(
       1, metrics::NumSamples("WebRTC.Video.Screenshare.Layer1.TargetBitrate"));
 
-  EXPECT_GT(metrics::MinSample("WebRTC.Video.Screenshare.Layer0.FrameRate"), 1);
-  EXPECT_GT(metrics::MinSample("WebRTC.Video.Screenshare.Layer1.FrameRate"), 1);
-  EXPECT_GT(metrics::MinSample("WebRTC.Video.Screenshare.FramesPerDrop"), 1);
-  EXPECT_GT(metrics::MinSample("WebRTC.Video.Screenshare.FramesPerOvershoot"),
-            1);
-  EXPECT_EQ(1,
-            metrics::NumEvents("WebRTC.Video.Screenshare.Layer0.Qp", kTl0Qp));
-  EXPECT_EQ(1,
-            metrics::NumEvents("WebRTC.Video.Screenshare.Layer1.Qp", kTl1Qp));
-  EXPECT_EQ(1,
-            metrics::NumEvents("WebRTC.Video.Screenshare.Layer0.TargetBitrate",
-                               kDefaultTl0BitrateKbps));
-  EXPECT_EQ(1,
-            metrics::NumEvents("WebRTC.Video.Screenshare.Layer1.TargetBitrate",
-                               kDefaultTl1BitrateKbps));
+  EXPECT_METRIC_GT(
+      metrics::MinSample("WebRTC.Video.Screenshare.Layer0.FrameRate"), 1);
+  EXPECT_METRIC_GT(
+      metrics::MinSample("WebRTC.Video.Screenshare.Layer1.FrameRate"), 1);
+  EXPECT_METRIC_GT(metrics::MinSample("WebRTC.Video.Screenshare.FramesPerDrop"),
+                   1);
+  EXPECT_METRIC_GT(
+      metrics::MinSample("WebRTC.Video.Screenshare.FramesPerOvershoot"), 1);
+  EXPECT_METRIC_EQ(
+      1, metrics::NumEvents("WebRTC.Video.Screenshare.Layer0.Qp", kTl0Qp));
+  EXPECT_METRIC_EQ(
+      1, metrics::NumEvents("WebRTC.Video.Screenshare.Layer1.Qp", kTl1Qp));
+  EXPECT_METRIC_EQ(
+      1, metrics::NumEvents("WebRTC.Video.Screenshare.Layer0.TargetBitrate",
+                            kDefaultTl0BitrateKbps));
+  EXPECT_METRIC_EQ(
+      1, metrics::NumEvents("WebRTC.Video.Screenshare.Layer1.TargetBitrate",
+                            kDefaultTl1BitrateKbps));
 }
 
 TEST_F(ScreenshareLayerTest, RespectsConfiguredFramerate) {

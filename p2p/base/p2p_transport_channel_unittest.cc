@@ -1310,16 +1310,16 @@ TEST_F(P2PTransportChannelTest, TestUMAIceRestartWhileDisconnected) {
   ep1_ch1()->SetIceParameters(kIceParams[2]);
   ep1_ch1()->SetRemoteIceParameters(kIceParams[3]);
   ep1_ch1()->MaybeStartGathering();
-  EXPECT_EQ(1, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.IceRestartState",
-                   static_cast<int>(IceRestartState::DISCONNECTED)));
+  EXPECT_METRIC_EQ(1, webrtc::metrics::NumEvents(
+                          "WebRTC.PeerConnection.IceRestartState",
+                          static_cast<int>(IceRestartState::DISCONNECTED)));
 
   ep2_ch1()->SetIceParameters(kIceParams[3]);
   ep2_ch1()->SetRemoteIceParameters(kIceParams[2]);
   ep2_ch1()->MaybeStartGathering();
-  EXPECT_EQ(2, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.IceRestartState",
-                   static_cast<int>(IceRestartState::DISCONNECTED)));
+  EXPECT_METRIC_EQ(2, webrtc::metrics::NumEvents(
+                          "WebRTC.PeerConnection.IceRestartState",
+                          static_cast<int>(IceRestartState::DISCONNECTED)));
 
   DestroyChannels();
 }
@@ -1337,16 +1337,16 @@ TEST_F(P2PTransportChannelTest, TestUMAIceRestartWhileConnected) {
   ep1_ch1()->SetIceParameters(kIceParams[2]);
   ep1_ch1()->SetRemoteIceParameters(kIceParams[3]);
   ep1_ch1()->MaybeStartGathering();
-  EXPECT_EQ(1, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.IceRestartState",
-                   static_cast<int>(IceRestartState::CONNECTED)));
+  EXPECT_METRIC_EQ(1, webrtc::metrics::NumEvents(
+                          "WebRTC.PeerConnection.IceRestartState",
+                          static_cast<int>(IceRestartState::CONNECTED)));
 
   ep2_ch1()->SetIceParameters(kIceParams[3]);
   ep2_ch1()->SetRemoteIceParameters(kIceParams[2]);
   ep2_ch1()->MaybeStartGathering();
-  EXPECT_EQ(2, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.IceRestartState",
-                   static_cast<int>(IceRestartState::CONNECTED)));
+  EXPECT_METRIC_EQ(2, webrtc::metrics::NumEvents(
+                          "WebRTC.PeerConnection.IceRestartState",
+                          static_cast<int>(IceRestartState::CONNECTED)));
 
   DestroyChannels();
 }
@@ -1363,16 +1363,16 @@ TEST_F(P2PTransportChannelTest, TestUMAIceRestartWhileConnecting) {
   ep1_ch1()->SetIceParameters(kIceParams[2]);
   ep1_ch1()->SetRemoteIceParameters(kIceParams[3]);
   ep1_ch1()->MaybeStartGathering();
-  EXPECT_EQ(1, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.IceRestartState",
-                   static_cast<int>(IceRestartState::CONNECTING)));
+  EXPECT_METRIC_EQ(1, webrtc::metrics::NumEvents(
+                          "WebRTC.PeerConnection.IceRestartState",
+                          static_cast<int>(IceRestartState::CONNECTING)));
 
   ep2_ch1()->SetIceParameters(kIceParams[3]);
   ep2_ch1()->SetRemoteIceParameters(kIceParams[2]);
   ep2_ch1()->MaybeStartGathering();
-  EXPECT_EQ(2, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.IceRestartState",
-                   static_cast<int>(IceRestartState::CONNECTING)));
+  EXPECT_METRIC_EQ(2, webrtc::metrics::NumEvents(
+                          "WebRTC.PeerConnection.IceRestartState",
+                          static_cast<int>(IceRestartState::CONNECTING)));
 
   DestroyChannels();
 }
@@ -1436,9 +1436,10 @@ TEST_F(P2PTransportChannelTest,
   SIMULATED_WAIT(false, kNetworkFailureTimeout, clock);
   EXPECT_LE(1, GetEndpoint(0)->GetIceRegatheringCountForReason(
                    IceRegatheringReason::NETWORK_FAILURE));
-  EXPECT_LE(1, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.IceRegatheringReason",
-                   static_cast<int>(IceRegatheringReason::NETWORK_FAILURE)));
+  EXPECT_METRIC_LE(
+      1, webrtc::metrics::NumEvents(
+             "WebRTC.PeerConnection.IceRegatheringReason",
+             static_cast<int>(IceRegatheringReason::NETWORK_FAILURE)));
   EXPECT_EQ(0, GetEndpoint(1)->GetIceRegatheringCountForReason(
                    IceRegatheringReason::NETWORK_FAILURE));
 
@@ -1469,9 +1470,10 @@ TEST_F(P2PTransportChannelTest, TestIceRegatherOnAllNetworksContinual) {
   // Expect regathering to happen 5 times in 11s with 2s interval.
   EXPECT_LE(5, GetEndpoint(0)->GetIceRegatheringCountForReason(
                    IceRegatheringReason::OCCASIONAL_REFRESH));
-  EXPECT_LE(5, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.IceRegatheringReason",
-                   static_cast<int>(IceRegatheringReason::OCCASIONAL_REFRESH)));
+  EXPECT_METRIC_LE(
+      5, webrtc::metrics::NumEvents(
+             "WebRTC.PeerConnection.IceRegatheringReason",
+             static_cast<int>(IceRegatheringReason::OCCASIONAL_REFRESH)));
   // Expect no regathering if continual gathering not configured.
   EXPECT_EQ(0, GetEndpoint(1)->GetIceRegatheringCountForReason(
                    IceRegatheringReason::OCCASIONAL_REFRESH));

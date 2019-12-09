@@ -2373,9 +2373,10 @@ TEST_F(BasicPortAllocatorTest, IceRegatheringMetricsLoggedWhenNetworkChanges) {
   AddInterface(kClientAddr2, "test_net1");
   EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
                              kDefaultAllocationTimeout, fake_clock);
-  EXPECT_EQ(1, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.IceRegatheringReason",
-                   static_cast<int>(IceRegatheringReason::NETWORK_CHANGE)));
+  EXPECT_METRIC_EQ(1,
+                   webrtc::metrics::NumEvents(
+                       "WebRTC.PeerConnection.IceRegatheringReason",
+                       static_cast<int>(IceRegatheringReason::NETWORK_CHANGE)));
 }
 
 // Test that when an mDNS responder is present, the local address of a host

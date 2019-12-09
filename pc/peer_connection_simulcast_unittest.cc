@@ -77,6 +77,7 @@ std::vector<SimulcastLayer> CreateLayers(const std::vector<std::string>& rids,
   return CreateLayers(rids, std::vector<bool>(rids.size(), active));
 }
 
+#if RTC_METRICS_ENABLED
 std::vector<SimulcastLayer> CreateLayers(int num_layers, bool active) {
   rtc::UniqueStringGenerator rid_generator;
   std::vector<std::string> rids;
@@ -85,8 +86,10 @@ std::vector<SimulcastLayer> CreateLayers(int num_layers, bool active) {
   }
   return CreateLayers(rids, active);
 }
+#endif
 
 }  // namespace
+
 namespace webrtc {
 
 class PeerConnectionSimulcastTests : public ::testing::Test {
@@ -193,6 +196,7 @@ class PeerConnectionSimulcastTests : public ::testing::Test {
   rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
 };
 
+#if RTC_METRICS_ENABLED
 // This class is used to test the metrics emitted for simulcast.
 class PeerConnectionSimulcastMetricsTests
     : public PeerConnectionSimulcastTests,
@@ -209,6 +213,7 @@ class PeerConnectionSimulcastMetricsTests
         "WebRTC.PeerConnection.Simulcast.ApplyRemoteDescription");
   }
 };
+#endif
 
 // Validates that RIDs are supported arguments when adding a transceiver.
 TEST_F(PeerConnectionSimulcastTests, CanCreateTransceiverWithRid) {
@@ -550,6 +555,8 @@ TEST_F(PeerConnectionSimulcastTests, NegotiationDoesNotHaveRidExtension) {
   EXPECT_TRUE(local->SetRemoteDescription(std::move(answer), &err)) << err;
   ValidateTransceiverParameters(transceiver, expected_layers);
 }
+
+#if RTC_METRICS_ENABLED
 //
 // Checks the logged metrics when simulcast is not used.
 TEST_F(PeerConnectionSimulcastMetricsTests, NoSimulcastUsageIsLogged) {
@@ -719,5 +726,5 @@ TEST_P(PeerConnectionSimulcastMetricsTests, NumberOfSendEncodingsIsLogged) {
 INSTANTIATE_TEST_SUITE_P(NumberOfSendEncodings,
                          PeerConnectionSimulcastMetricsTests,
                          ::testing::Range(0, kMaxLayersInMetricsTest));
-
+#endif
 }  // namespace webrtc
