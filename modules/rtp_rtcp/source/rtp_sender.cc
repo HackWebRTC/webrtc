@@ -63,6 +63,7 @@ constexpr RtpExtensionSize kFecOrPaddingExtensionSizes[] = {
     CreateExtensionSize<TransportSequenceNumber>(),
     CreateExtensionSize<PlayoutDelayLimits>(),
     CreateMaxExtensionSize<RtpMid>(),
+    CreateExtensionSize<VideoTimingExtension>(),
 };
 
 // Size info for header extensions that might be used in video packets.
