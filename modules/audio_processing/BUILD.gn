@@ -368,7 +368,6 @@ if (rtc_include_tests) {
 
     if (rtc_enable_protobuf) {
       deps += [
-        ":audioproc_f",
         ":audioproc_unittest_proto",
         "aec_dump:aec_dump_unittests",
         "test/conversational_speech",
@@ -604,18 +603,6 @@ if (rtc_include_tests) {
         "//third_party/abseil-cpp/absl/types:optional",
       ]
     }  # audioproc_f_impl
-    rtc_executable("audioproc_f") {
-      testonly = true
-      sources = [
-        "test/audioproc_float_main.cc",
-      ]
-      deps = [
-        ":api",
-        ":audio_processing",
-        "../../api:audioproc_f_api",
-        "../../rtc_base:rtc_base_approved",
-      ]
-    }  # audioproc_f
   }
 
   rtc_library("audioproc_test_utils") {

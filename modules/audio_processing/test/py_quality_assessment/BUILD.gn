@@ -34,8 +34,8 @@ copy("scripts") {
     ":apm_configs",
     ":lib",
     ":output",
-    "../..:audioproc_f",
     "../../../../resources/audio_processing/test/py_quality_assessment:probing_signals",
+    "../../../../rtc_tools:audioproc_f",
   ]
 }
 

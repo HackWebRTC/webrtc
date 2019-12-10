@@ -36,6 +36,7 @@ group("rtc_tools") {
         deps += [ ":event_log_visualizer" ]
       }
       deps += [
+        ":audioproc_f",
         ":rtp_analyzer",
         ":unpack_aecdump",
         "network_tester",
@@ -413,6 +414,19 @@ if (rtc_include_tests) {
   }
 
   if (rtc_enable_protobuf) {
+    rtc_executable("audioproc_f") {
+      testonly = true
+      sources = [
+        "audioproc_f/audioproc_float_main.cc",
+      ]
+      deps = [
+        "../api:audioproc_f_api",
+        "../modules/audio_processing",
+        "../modules/audio_processing:api",
+        "../rtc_base:rtc_base_approved",
+      ]
+    }
+
     copy("rtp_analyzer") {
       sources = [
         "py_event_log_analyzer/misc.py",
