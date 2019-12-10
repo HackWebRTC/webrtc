@@ -73,6 +73,7 @@ TransportFeedbackAdapter::~TransportFeedbackAdapter() {
 void TransportFeedbackAdapter::RegisterStreamFeedbackObserver(
     std::vector<uint32_t> ssrcs,
     StreamFeedbackObserver* observer) {
+  rtc::CritScope cs(&observers_lock_);
   RTC_DCHECK(observer);
   RTC_DCHECK(absl::c_find_if(observers_, [=](const auto& pair) {
                return pair.second == observer;
@@ -82,6 +83,7 @@ void TransportFeedbackAdapter::RegisterStreamFeedbackObserver(
 
 void TransportFeedbackAdapter::DeRegisterStreamFeedbackObserver(
     StreamFeedbackObserver* observer) {
+  rtc::CritScope cs(&observers_lock_);
   RTC_DCHECK(observer);
   const auto it = absl::c_find_if(
       observers_, [=](const auto& pair) { return pair.second == observer; });
@@ -92,31 +94,35 @@ void TransportFeedbackAdapter::DeRegisterStreamFeedbackObserver(
 void TransportFeedbackAdapter::AddPacket(const RtpPacketSendInfo& packet_info,
                                          size_t overhead_bytes,
                                          Timestamp creation_time) {
-  PacketFeedback packet;
-  packet.creation_time = creation_time;
-  packet.sent.sequence_number =
-      seq_num_unwrapper_.Unwrap(packet_info.transport_sequence_number);
-  packet.sent.size = DataSize::bytes(packet_info.length + overhead_bytes);
-  packet.local_net_id = local_net_id_;
-  packet.remote_net_id = remote_net_id_;
-  packet.sent.pacing_info = packet_info.pacing_info;
-  if (packet_info.has_rtp_sequence_number) {
-    packet.ssrc = packet_info.ssrc;
-    packet.rtp_sequence_number = packet_info.rtp_sequence_number;
-  }
+  {
+    rtc::CritScope cs(&lock_);
+    PacketFeedback packet;
+    packet.creation_time = creation_time;
+    packet.sent.sequence_number =
+        seq_num_unwrapper_.Unwrap(packet_info.transport_sequence_number);
+    packet.sent.size = DataSize::bytes(packet_info.length + overhead_bytes);
+    packet.local_net_id = local_net_id_;
+    packet.remote_net_id = remote_net_id_;
+    packet.sent.pacing_info = packet_info.pacing_info;
+    if (packet_info.has_rtp_sequence_number) {
+      packet.ssrc = packet_info.ssrc;
+      packet.rtp_sequence_number = packet_info.rtp_sequence_number;
+    }
 
-  while (!history_.empty() &&
-         creation_time - history_.begin()->second.creation_time >
-             kSendTimeHistoryWindow) {
-    // TODO(sprang): Warn if erasing (too many) old items?
-    if (history_.begin()->second.sent.sequence_number > last_ack_seq_num_)
-      in_flight_.RemoveInFlightPacketBytes(history_.begin()->second);
-    history_.erase(history_.begin());
+    while (!history_.empty() &&
+           creation_time - history_.begin()->second.creation_time >
+               kSendTimeHistoryWindow) {
+      // TODO(sprang): Warn if erasing (too many) old items?
+      if (history_.begin()->second.sent.sequence_number > last_ack_seq_num_)
+        in_flight_.RemoveInFlightPacketBytes(history_.begin()->second);
+      history_.erase(history_.begin());
+    }
+    history_.insert(std::make_pair(packet.sent.sequence_number, packet));
   }
-  history_.insert(std::make_pair(packet.sent.sequence_number, packet));
 }
 absl::optional<SentPacket> TransportFeedbackAdapter::ProcessSentPacket(
     const rtc::SentPacket& sent_packet) {
+  rtc::CritScope cs(&lock_);
   auto send_time = Timestamp::ms(sent_packet.send_time_ms);
   // TODO(srte): Only use one way to indicate that packet feedback is used.
   if (sent_packet.info.included_in_feedback || sent_packet.packet_id != -1) {
@@ -165,37 +171,41 @@ TransportFeedbackAdapter::ProcessTransportFeedback(
   std::vector<PacketFeedback> feedback_vector;
   TransportPacketsFeedback msg;
   msg.feedback_time = feedback_receive_time;
-  msg.prior_in_flight =
-      in_flight_.GetOutstandingData(local_net_id_, remote_net_id_);
-  feedback_vector =
-      ProcessTransportFeedbackInner(feedback, feedback_receive_time);
-  if (feedback_vector.empty())
-    return absl::nullopt;
+  {
+    rtc::CritScope cs(&lock_);
+    msg.prior_in_flight =
+        in_flight_.GetOutstandingData(local_net_id_, remote_net_id_);
+    feedback_vector =
+        ProcessTransportFeedbackInner(feedback, feedback_receive_time);
+    if (feedback_vector.empty())
+      return absl::nullopt;
 
-  for (const PacketFeedback& fb : feedback_vector) {
-    PacketResult res;
-    res.sent_packet = fb.sent;
-    res.receive_time = fb.receive_time;
-    msg.packet_feedbacks.push_back(res);
+    for (const PacketFeedback& fb : feedback_vector) {
+      PacketResult res;
+      res.sent_packet = fb.sent;
+      res.receive_time = fb.receive_time;
+      msg.packet_feedbacks.push_back(res);
+    }
+    auto it = history_.find(last_ack_seq_num_);
+    if (it != history_.end()) {
+      msg.first_unacked_send_time = it->second.sent.send_time;
+    }
+    msg.data_in_flight =
+        in_flight_.GetOutstandingData(local_net_id_, remote_net_id_);
   }
-  auto it = history_.find(last_ack_seq_num_);
-  if (it != history_.end()) {
-    msg.first_unacked_send_time = it->second.sent.send_time;
-  }
-  msg.data_in_flight =
-      in_flight_.GetOutstandingData(local_net_id_, remote_net_id_);
-
   SignalObservers(feedback_vector);
   return msg;
 }
 
 void TransportFeedbackAdapter::SetNetworkIds(uint16_t local_id,
                                              uint16_t remote_id) {
+  rtc::CritScope cs(&lock_);
   local_net_id_ = local_id;
   remote_net_id_ = remote_id;
 }
 
 DataSize TransportFeedbackAdapter::GetOutstandingData() const {
+  rtc::CritScope cs(&lock_);
   return in_flight_.GetOutstandingData(local_net_id_, remote_net_id_);
 }
 
@@ -280,6 +290,7 @@ TransportFeedbackAdapter::ProcessTransportFeedbackInner(
 
 void TransportFeedbackAdapter::SignalObservers(
     const std::vector<PacketFeedback>& feedback_vector) {
+  rtc::CritScope cs(&observers_lock_);
   for (auto& observer : observers_) {
     std::vector<StreamFeedbackObserver::StreamPacketInfo> selected_feedback;
     for (const auto& packet : feedback_vector) {

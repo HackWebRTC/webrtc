@@ -155,8 +155,8 @@ TEST_F(BbrNetworkControllerTest, UpdatesTargetSendRate) {
   ret_net->UpdateConfig(
       [](NetworkSimulationConfig* c) { c->delay = TimeDelta::ms(200); });
 
-  s.RunFor(TimeDelta::seconds(35));
-  EXPECT_NEAR(client->send_bandwidth().kbps(), 180, 50);
+  s.RunFor(TimeDelta::seconds(40));
+  EXPECT_NEAR(client->send_bandwidth().kbps(), 200, 40);
 }
 
 }  // namespace test
