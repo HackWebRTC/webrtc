@@ -237,7 +237,7 @@ class EchoCanceller3Tester {
         capture_output.push_back(capture_buffer_.split_bands(0)[0][k]);
       }
     }
-    HighPassFilter hp_filter(1);
+    HighPassFilter hp_filter(16000, 1);
     hp_filter.Process(&render_input);
 
     EXPECT_TRUE(
@@ -530,7 +530,7 @@ class EchoCanceller3Tester {
         capture_output.push_back(capture_buffer_.split_bands(0)[0][k]);
       }
     }
-    HighPassFilter hp_filter(1);
+    HighPassFilter hp_filter(16000, 1);
     hp_filter.Process(&render_input);
 
     EXPECT_TRUE(

@@ -224,6 +224,7 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
 
     struct HighPassFilter {
       bool enabled = false;
+      bool apply_in_full_band = true;
     } high_pass_filter;
 
     struct EchoCanceller {

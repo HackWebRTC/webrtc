@@ -372,7 +372,8 @@ class AudioProcessingImpl : public AudioProcessing {
                  bool use_experimental_agc_agc2_level_estimation,
                  bool use_experimental_agc_agc2_digital_adaptive,
                  bool multi_channel_render_support,
-                 bool multi_channel_capture_support)
+                 bool multi_channel_capture_support,
+                 bool enforce_split_band_hpf)
         : agc_startup_min_volume(agc_startup_min_volume),
           agc_clipped_level_min(agc_clipped_level_min),
           use_experimental_agc(use_experimental_agc),
@@ -381,7 +382,8 @@ class AudioProcessingImpl : public AudioProcessing {
           use_experimental_agc_agc2_digital_adaptive(
               use_experimental_agc_agc2_digital_adaptive),
           multi_channel_render_support(multi_channel_render_support),
-          multi_channel_capture_support(multi_channel_capture_support) {}
+          multi_channel_capture_support(multi_channel_capture_support),
+          enforce_split_band_hpf(enforce_split_band_hpf) {}
     int agc_startup_min_volume;
     int agc_clipped_level_min;
     bool use_experimental_agc;
@@ -389,6 +391,7 @@ class AudioProcessingImpl : public AudioProcessing {
     bool use_experimental_agc_agc2_digital_adaptive;
     bool multi_channel_render_support;
     bool multi_channel_capture_support;
+    bool enforce_split_band_hpf;
   } constants_;
 
   struct ApmCaptureState {

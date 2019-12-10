@@ -21,20 +21,20 @@ namespace webrtc {
 
 class AudioBuffer;
 
-// Filters that high
 class HighPassFilter {
  public:
-  explicit HighPassFilter(size_t num_channels);
+  HighPassFilter(int sample_rate_hz, size_t num_channels);
   ~HighPassFilter();
   HighPassFilter(const HighPassFilter&) = delete;
   HighPassFilter& operator=(const HighPassFilter&) = delete;
 
-  void Process(AudioBuffer* audio);
+  void Process(AudioBuffer* audio, bool use_split_band_data);
   void Process(std::vector<std::vector<float>>* audio);
   void Reset();
   void Reset(size_t num_channels);
 
  private:
+  const int sample_rate_hz_;
   std::vector<std::unique_ptr<CascadedBiQuadFilter>> filters_;
 };
 }  // namespace webrtc

@@ -32,7 +32,7 @@ std::vector<float> ProcessOneFrameAsAudioBuffer(
       stream_config.sample_rate_hz(), stream_config.num_channels());
 
   test::CopyVectorToAudioBuffer(stream_config, frame_input, &audio_buffer);
-  high_pass_filter->Process(&audio_buffer);
+  high_pass_filter->Process(&audio_buffer, /*use_split_band_data=*/false);
   std::vector<float> frame_output;
   test::ExtractVectorFromAudioBuffer(stream_config, &audio_buffer,
                                      &frame_output);
@@ -76,7 +76,7 @@ void RunBitexactnessTest(int num_channels,
                          const std::vector<float>& input,
                          const std::vector<float>& reference) {
   const StreamConfig stream_config(16000, num_channels, false);
-  HighPassFilter high_pass_filter(num_channels);
+  HighPassFilter high_pass_filter(16000, num_channels);
 
   std::vector<float> output;
   const size_t num_frames_to_process =
@@ -135,7 +135,7 @@ TEST(HighPassFilterAccuracyTest, ResetWithAudioBufferInterface) {
   const StreamConfig stream_config_mono(16000, 1, false);
   std::vector<float> x_mono(160, 1.f);
   std::vector<float> x_stereo(320, 1.f);
-  HighPassFilter hpf(1);
+  HighPassFilter hpf(16000, 1);
   std::vector<float> y =
       ProcessOneFrameAsAudioBuffer(x_mono, stream_config_mono, &hpf);
   hpf.Reset(2);
@@ -151,7 +151,7 @@ TEST(HighPassFilterAccuracyTest, ResetWithVectorInterface) {
   const StreamConfig stream_config_mono(16000, 1, false);
   std::vector<float> x_mono(160, 1.f);
   std::vector<float> x_stereo(320, 1.f);
-  HighPassFilter hpf(1);
+  HighPassFilter hpf(16000, 1);
   std::vector<float> y =
       ProcessOneFrameAsVector(x_mono, stream_config_mono, &hpf);
   hpf.Reset(2);

@@ -248,7 +248,7 @@ EchoCanceller3::RenderWriter::RenderWriter(
     : data_dumper_(data_dumper),
       num_bands_(num_bands),
       num_channels_(num_channels),
-      high_pass_filter_(num_channels),
+      high_pass_filter_(16000, num_channels),
       render_queue_input_frame_(
           num_bands_,
           std::vector<std::vector<float>>(
