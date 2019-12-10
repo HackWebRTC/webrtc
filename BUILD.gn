@@ -605,6 +605,7 @@ if (rtc_include_tests) {
       # TODO(eladalon): call_tests aren't actually video-specific, so we
       # should move them to a more appropriate test suite.
       "call:call_tests",
+      "call/adaptation:resource_adaptation_tests",
       "test:test_common",
       "test:test_main",
       "test:video_test_common",
