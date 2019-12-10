@@ -254,7 +254,7 @@ declare_args() {
   rtc_disable_check_msg = false
 
   # Set this to true to disable webrtc metrics.
-  rtc_disable_metrics = true
+  rtc_disable_metrics = false
 }
 
 # Make it possible to provide custom locations for some libraries (move these
