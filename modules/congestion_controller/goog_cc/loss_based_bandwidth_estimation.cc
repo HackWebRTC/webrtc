@@ -74,20 +74,19 @@ double ExponentialUpdate(TimeDelta window, TimeDelta interval) {
 }  // namespace
 
 LossBasedControlConfig::LossBasedControlConfig()
-    : enabled(field_trial::IsEnabled(kBweLossBasedControl)),
-      min_increase_factor("min_incr", 1.02),
+    : min_increase_factor("min_incr", 1.02),
       max_increase_factor("max_incr", 1.08),
       increase_low_rtt("incr_low_rtt", TimeDelta::ms(200)),
       increase_high_rtt("incr_high_rtt", TimeDelta::ms(800)),
-      decrease_factor("decr", 0.99),
+      decrease_factor("decr", 0.85),
       loss_window("loss_win", TimeDelta::ms(800)),
       loss_max_window("loss_max_win", TimeDelta::ms(800)),
       acknowledged_rate_max_window("ackrate_max_win", TimeDelta::ms(800)),
       increase_offset("incr_offset", DataRate::bps(1000)),
-      loss_bandwidth_balance_increase("balance_incr", DataRate::kbps(0.5)),
-      loss_bandwidth_balance_decrease("balance_decr", DataRate::kbps(4)),
-      loss_bandwidth_balance_exponent("exponent", 0.5),
-      allow_resets("resets", false),
+      loss_bandwidth_balance_increase("balance_incr", DataRate::kbps(5)),
+      loss_bandwidth_balance_decrease("balance_decr", DataRate::kbps(24)),
+      loss_bandwidth_balance_exponent("exponent", 0.7),
+      allow_resets("resets", true),
       decrease_interval("decr_intvl", TimeDelta::ms(300)),
       loss_report_timeout("timeout", TimeDelta::ms(6000)) {
   std::string trial_string = field_trial::FindFullName(kBweLossBasedControl);

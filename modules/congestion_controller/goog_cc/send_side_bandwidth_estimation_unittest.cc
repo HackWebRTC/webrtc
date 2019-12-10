@@ -79,59 +79,6 @@ TEST(SendSideBweTest, InitialDelayBasedBweWithProbing) {
   TestProbing(true);
 }
 
-TEST(SendSideBweTest, DoesntReapplyBitrateDecreaseWithoutFollowingRemb) {
-  MockRtcEventLog event_log;
-  EXPECT_CALL(event_log, LogProxy(LossBasedBweUpdateWithBitrateOnly()))
-      .Times(1);
-  EXPECT_CALL(event_log,
-              LogProxy(LossBasedBweUpdateWithBitrateAndLossFraction()))
-      .Times(1);
-  SendSideBandwidthEstimation bwe(&event_log);
-  static const int kMinBitrateBps = 100000;
-  static const int kInitialBitrateBps = 1000000;
-  int64_t now_ms = 1000;
-  bwe.SetMinMaxBitrate(DataRate::bps(kMinBitrateBps), DataRate::bps(1500000));
-  bwe.SetSendBitrate(DataRate::bps(kInitialBitrateBps), Timestamp::ms(now_ms));
-
-  static const uint8_t kFractionLoss = 128;
-  static const int64_t kRttMs = 50;
-  now_ms += 10000;
-
-  EXPECT_EQ(kInitialBitrateBps, bwe.target_rate().bps());
-  EXPECT_EQ(0, bwe.fraction_loss());
-  EXPECT_EQ(0, bwe.round_trip_time().ms());
-
-  // Signal heavy loss to go down in bitrate.
-  bwe.UpdatePacketsLost(/*packets_lost=*/50, /*number_of_packets=*/100,
-                        Timestamp::ms(now_ms));
-  bwe.UpdateRtt(TimeDelta::ms(kRttMs), Timestamp::ms(now_ms));
-
-  // Trigger an update 2 seconds later to not be rate limited.
-  now_ms += 1000;
-  bwe.UpdateEstimate(Timestamp::ms(now_ms));
-  EXPECT_LT(bwe.target_rate().bps(), kInitialBitrateBps);
-  // Verify that the obtained bitrate isn't hitting the min bitrate, or this
-  // test doesn't make sense. If this ever happens, update the thresholds or
-  // loss rates so that it doesn't hit min bitrate after one bitrate update.
-  EXPECT_GT(bwe.target_rate().bps(), kMinBitrateBps);
-  EXPECT_EQ(kFractionLoss, bwe.fraction_loss());
-  EXPECT_EQ(kRttMs, bwe.round_trip_time().ms());
-
-  // Triggering an update shouldn't apply further downgrade nor upgrade since
-  // there's no intermediate receiver block received indicating whether this is
-  // currently good or not.
-  int last_bitrate_bps = bwe.target_rate().bps();
-  // Trigger an update 2 seconds later to not be rate limited (but it still
-  // shouldn't update).
-  now_ms += 1000;
-  bwe.UpdateEstimate(Timestamp::ms(now_ms));
-
-  EXPECT_EQ(last_bitrate_bps, bwe.target_rate().bps());
-  // The old loss rate should still be applied though.
-  EXPECT_EQ(kFractionLoss, bwe.fraction_loss());
-  EXPECT_EQ(kRttMs, bwe.round_trip_time().ms());
-}
-
 TEST(SendSideBweTest, SettingSendBitrateOverridesDelayBasedEstimate) {
   ::testing::NiceMock<MockRtcEventLog> event_log;
   SendSideBandwidthEstimation bwe(&event_log);

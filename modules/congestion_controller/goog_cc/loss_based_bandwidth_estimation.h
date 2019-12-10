@@ -26,7 +26,6 @@ struct LossBasedControlConfig {
   LossBasedControlConfig(const LossBasedControlConfig&);
   LossBasedControlConfig& operator=(const LossBasedControlConfig&) = default;
   ~LossBasedControlConfig();
-  bool enabled;
   FieldTrialParameter<double> min_increase_factor;
   FieldTrialParameter<double> max_increase_factor;
   FieldTrialParameter<TimeDelta> increase_low_rtt;
@@ -54,7 +53,6 @@ class LossBasedBandwidthEstimation {
                                  Timestamp at_time);
   void MaybeReset(DataRate bitrate);
   void SetInitialBitrate(DataRate bitrate);
-  bool Enabled() const { return config_.enabled; }
   void UpdateLossStatistics(const std::vector<PacketResult>& packet_results,
                             Timestamp at_time);
   DataRate GetEstimate() const { return loss_based_bitrate_; }
