@@ -123,8 +123,11 @@ PacketBuffer::InsertResult PacketBuffer::InsertPacket(
 
   int64_t now_ms = clock_->TimeInMilliseconds();
   last_received_packet_ms_ = now_ms;
-  if (packet->video_header.frame_type == VideoFrameType::kVideoFrameKey)
+  if (packet->video_header.frame_type == VideoFrameType::kVideoFrameKey ||
+      last_received_keyframe_rtp_timestamp_ == packet->timestamp) {
     last_received_keyframe_packet_ms_ = now_ms;
+    last_received_keyframe_rtp_timestamp_ = packet->timestamp;
+  }
 
   StoredPacket& new_entry = buffer_[index];
   new_entry.continuous = false;

@@ -755,7 +755,7 @@ TEST_F(PacketBufferTest, PacketTimestamps) {
   EXPECT_FALSE(packet_keyframe_ms);
 
   int64_t keyframe_ms = clock_.TimeInMilliseconds();
-  Insert(100, kKeyFrame, kFirst, kLast);
+  Insert(100, kKeyFrame, kFirst, kLast, {}, /*timestamp=*/1000);
   packet_ms = packet_buffer_.LastReceivedPacketMs();
   packet_keyframe_ms = packet_buffer_.LastReceivedKeyframePacketMs();
   EXPECT_TRUE(packet_ms);
@@ -765,7 +765,7 @@ TEST_F(PacketBufferTest, PacketTimestamps) {
 
   clock_.AdvanceTimeMilliseconds(100);
   int64_t delta_ms = clock_.TimeInMilliseconds();
-  Insert(101, kDeltaFrame, kFirst, kLast);
+  Insert(101, kDeltaFrame, kFirst, kLast, {}, /*timestamp=*/2000);
   packet_ms = packet_buffer_.LastReceivedPacketMs();
   packet_keyframe_ms = packet_buffer_.LastReceivedKeyframePacketMs();
   EXPECT_TRUE(packet_ms);
@@ -778,6 +778,32 @@ TEST_F(PacketBufferTest, PacketTimestamps) {
   packet_keyframe_ms = packet_buffer_.LastReceivedKeyframePacketMs();
   EXPECT_FALSE(packet_ms);
   EXPECT_FALSE(packet_keyframe_ms);
+}
+
+TEST_F(PacketBufferTest,
+       LastReceivedKeyFrameReturnsReceiveTimeOfALastReceivedPacketOfAKeyFrame) {
+  clock_.AdvanceTimeMilliseconds(100);
+  Insert(/*seq_num=*/100, kKeyFrame, kFirst, kNotLast, {}, /*timestamp=*/1000);
+  EXPECT_EQ(packet_buffer_.LastReceivedKeyframePacketMs(),
+            clock_.TimeInMilliseconds());
+
+  clock_.AdvanceTimeMilliseconds(100);
+  Insert(/*seq_num=*/102, kDeltaFrame, kNotFirst, kLast, {},
+         /*timestamp=*/1000);
+  EXPECT_EQ(packet_buffer_.LastReceivedKeyframePacketMs(),
+            clock_.TimeInMilliseconds());
+
+  clock_.AdvanceTimeMilliseconds(100);
+  Insert(/*seq_num=*/101, kDeltaFrame, kNotFirst, kNotLast, {},
+         /*timestamp=*/1000);
+  EXPECT_EQ(packet_buffer_.LastReceivedKeyframePacketMs(),
+            clock_.TimeInMilliseconds());
+
+  clock_.AdvanceTimeMilliseconds(100);
+  Insert(/*seq_num=*/103, kDeltaFrame, kFirst, kNotLast, {},
+         /*timestamp=*/2000);
+  EXPECT_EQ(packet_buffer_.LastReceivedKeyframePacketMs(),
+            clock_.TimeInMilliseconds() - 100);
 }
 
 TEST_F(PacketBufferTest, IncomingCodecChange) {

@@ -160,9 +160,11 @@ class PacketBuffer {
   // determine continuity between them.
   std::vector<StoredPacket> buffer_ RTC_GUARDED_BY(crit_);
 
-  // Timestamp (not RTP timestamp) of the last received packet/keyframe packet.
+  // Timestamp of the last received packet/keyframe packet.
   absl::optional<int64_t> last_received_packet_ms_ RTC_GUARDED_BY(crit_);
   absl::optional<int64_t> last_received_keyframe_packet_ms_
+      RTC_GUARDED_BY(crit_);
+  absl::optional<uint32_t> last_received_keyframe_rtp_timestamp_
       RTC_GUARDED_BY(crit_);
 
   absl::optional<uint16_t> newest_inserted_seq_num_ RTC_GUARDED_BY(crit_);
