@@ -215,6 +215,8 @@ rtc_library("rtp_rtcp") {
     "source/video_rtp_depacketizer.h",
     "source/video_rtp_depacketizer_raw.cc",
     "source/video_rtp_depacketizer_raw.h",
+    "source/video_rtp_depacketizer_vp8.cc",
+    "source/video_rtp_depacketizer_vp8.h",
   ]
 
   if (rtc_enable_bwe_test_logging) {
@@ -480,6 +482,7 @@ if (rtc_include_tests) {
       "source/ulpfec_header_reader_writer_unittest.cc",
       "source/ulpfec_receiver_unittest.cc",
       "source/video_rtp_depacketizer_raw_unittest.cc",
+      "source/video_rtp_depacketizer_vp8_unittest.cc",
     ]
     deps = [
       ":fec_test_helper",

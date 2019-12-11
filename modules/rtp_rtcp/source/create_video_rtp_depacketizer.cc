@@ -16,6 +16,7 @@
 #include "absl/types/optional.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer.h"
+#include "modules/rtp_rtcp/source/video_rtp_depacketizer_vp8.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/copy_on_write_buffer.h"
 
@@ -56,7 +57,12 @@ std::unique_ptr<VideoRtpDepacketizer> CreateVideoRtpDepacketizer(
     VideoCodecType codec) {
   // TODO(bugs.webrtc.org/11152): switch on codec and create specialized
   // VideoRtpDepacketizers when they are migrated to new interface.
-  return std::make_unique<LegacyRtpDepacketizer>(codec);
+  switch (codec) {
+    case kVideoCodecVP8:
+      return std::make_unique<VideoRtpDepacketizerVp8>();
+    default:
+      return std::make_unique<LegacyRtpDepacketizer>(codec);
+  }
 }
 
 }  // namespace webrtc
