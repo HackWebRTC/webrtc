@@ -334,6 +334,11 @@ bool ModuleRtpRtcpImpl::SendingMedia() const {
   return rtp_sender_ ? rtp_sender_->packet_generator.SendingMedia() : false;
 }
 
+bool ModuleRtpRtcpImpl::IsAudioConfigured() const {
+  return rtp_sender_ ? rtp_sender_->packet_generator.IsAudioConfigured()
+                     : false;
+}
+
 void ModuleRtpRtcpImpl::SetAsPartOfAllocation(bool part_of_allocation) {
   RTC_CHECK(rtp_sender_);
   rtp_sender_->packet_sender.ForceIncludeSendPacketsInAllocation(

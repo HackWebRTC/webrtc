@@ -54,6 +54,7 @@ class RTPSender {
 
   void SetSendingMediaStatus(bool enabled);
   bool SendingMedia() const;
+  bool IsAudioConfigured() const;
 
   uint32_t TimestampOffset() const;
   void SetTimestampOffset(uint32_t timestamp);

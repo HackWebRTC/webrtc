@@ -95,7 +95,7 @@ TEST_F(PacketRouterTest, Sanity_NoModuleRegistered_SendTransportFeedback) {
   EXPECT_FALSE(packet_router_.SendCombinedRtcpPacket(std::move(feedback)));
 }
 
-TEST_F(PacketRouterTest, GeneratePaddingPicksCorrectModule) {
+TEST_F(PacketRouterTest, GeneratePaddingPrioritizesRtx) {
   // Two RTP modules. The first (prioritized due to rtx) isn't sending media so
   // should not be called.
   const uint16_t kSsrc1 = 1234;
@@ -127,6 +127,65 @@ TEST_F(PacketRouterTest, GeneratePaddingPicksCorrectModule) {
 
   packet_router_.RemoveSendRtpModule(&rtp_1);
   packet_router_.RemoveSendRtpModule(&rtp_2);
+}
+
+TEST_F(PacketRouterTest, GeneratePaddingPrioritizesVideo) {
+  // Two RTP modules. Neither support RTX, both support padding,
+  // but the first one is for audio and second for video.
+  const uint16_t kSsrc1 = 1234;
+  const uint16_t kSsrc2 = 4567;
+  const size_t kPaddingSize = 123;
+  const size_t kExpectedPaddingPackets = 1;
+
+  auto generate_padding = [&](size_t padding_size) {
+    return std::vector<std::unique_ptr<RtpPacketToSend>>(
+        kExpectedPaddingPackets);
+  };
+
+  NiceMock<MockRtpRtcp> audio_module;
+  ON_CALL(audio_module, RtxSendStatus()).WillByDefault(Return(kRtxOff));
+  ON_CALL(audio_module, SSRC()).WillByDefault(Return(kSsrc1));
+  ON_CALL(audio_module, SupportsPadding).WillByDefault(Return(true));
+  ON_CALL(audio_module, IsAudioConfigured).WillByDefault(Return(true));
+
+  NiceMock<MockRtpRtcp> video_module;
+  ON_CALL(video_module, RtxSendStatus()).WillByDefault(Return(kRtxOff));
+  ON_CALL(video_module, SSRC()).WillByDefault(Return(kSsrc2));
+  ON_CALL(video_module, SupportsPadding).WillByDefault(Return(true));
+  ON_CALL(video_module, IsAudioConfigured).WillByDefault(Return(false));
+
+  // First add only the audio module. Since this is the only choice we have,
+  // padding should be sent on the audio ssrc.
+  packet_router_.AddSendRtpModule(&audio_module, false);
+  EXPECT_CALL(audio_module, GeneratePadding(kPaddingSize))
+      .WillOnce(generate_padding);
+  packet_router_.GeneratePadding(kPaddingSize);
+
+  // Add the video module, this should now be prioritized since we cannot
+  // guarantee that audio packets will be included in the BWE.
+  packet_router_.AddSendRtpModule(&video_module, false);
+  EXPECT_CALL(audio_module, GeneratePadding).Times(0);
+  EXPECT_CALL(video_module, GeneratePadding(kPaddingSize))
+      .WillOnce(generate_padding);
+  packet_router_.GeneratePadding(kPaddingSize);
+
+  // Remove and the add audio module again. Module order shouldn't matter;
+  // video should still be prioritized.
+  packet_router_.RemoveSendRtpModule(&audio_module);
+  packet_router_.AddSendRtpModule(&audio_module, false);
+  EXPECT_CALL(audio_module, GeneratePadding).Times(0);
+  EXPECT_CALL(video_module, GeneratePadding(kPaddingSize))
+      .WillOnce(generate_padding);
+  packet_router_.GeneratePadding(kPaddingSize);
+
+  // Remove and the video module, we should fall back to padding on the
+  // audio module again.
+  packet_router_.RemoveSendRtpModule(&video_module);
+  EXPECT_CALL(audio_module, GeneratePadding(kPaddingSize))
+      .WillOnce(generate_padding);
+  packet_router_.GeneratePadding(kPaddingSize);
+
+  packet_router_.RemoveSendRtpModule(&audio_module);
 }
 
 TEST_F(PacketRouterTest, PadsOnLastActiveMediaStream) {

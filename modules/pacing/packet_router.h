@@ -94,10 +94,9 @@ class PacketRouter : public RemoteBitrateObserver,
       RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
 
   rtc::CriticalSection modules_crit_;
-  // Ssrc to RtpRtcp module and iterator into |send_modules_list_|;
-  std::unordered_map<uint32_t,
-                     std::pair<RtpRtcp*, std::list<RtpRtcp*>::iterator>>
-      send_modules_map_ RTC_GUARDED_BY(modules_crit_);
+  // Ssrc to RtpRtcp module;
+  std::unordered_map<uint32_t, RtpRtcp*> send_modules_map_
+      RTC_GUARDED_BY(modules_crit_);
   std::list<RtpRtcp*> send_modules_list_ RTC_GUARDED_BY(modules_crit_);
   // The last module used to send media.
   RtpRtcp* last_send_module_ RTC_GUARDED_BY(modules_crit_);

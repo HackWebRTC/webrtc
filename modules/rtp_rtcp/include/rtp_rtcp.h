@@ -250,6 +250,9 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   // Returns current media sending status.
   virtual bool SendingMedia() const = 0;
 
+  // Returns whether audio is configured (i.e. Configuration::audio = true).
+  virtual bool IsAudioConfigured() const = 0;
+
   // Indicate that the packets sent by this module should be counted towards the
   // bitrate estimate since the stream participates in the bitrate allocation.
   virtual void SetAsPartOfAllocation(bool part_of_allocation) = 0;

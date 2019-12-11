@@ -125,6 +125,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   bool SendingMedia() const override;
 
+  bool IsAudioConfigured() const override;
+
   void SetAsPartOfAllocation(bool part_of_allocation) override;
 
   bool OnSendingRtpFrame(uint32_t timestamp,

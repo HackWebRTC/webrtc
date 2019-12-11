@@ -545,6 +545,10 @@ bool RTPSender::SendingMedia() const {
   return sending_media_;
 }
 
+bool RTPSender::IsAudioConfigured() const {
+  return audio_configured_;
+}
+
 void RTPSender::SetTimestampOffset(uint32_t timestamp) {
   rtc::CritScope lock(&send_critsect_);
   timestamp_offset_ = timestamp;

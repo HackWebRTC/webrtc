@@ -74,15 +74,22 @@ void PacketRouter::AddSendRtpModule(RtpRtcp* rtp_module, bool remb_candidate) {
 
 void PacketRouter::AddSendRtpModuleToMap(RtpRtcp* rtp_module, uint32_t ssrc) {
   RTC_DCHECK(send_modules_map_.find(ssrc) == send_modules_map_.end());
-  send_modules_list_.push_front(rtp_module);
-  send_modules_map_[ssrc] = std::pair<RtpRtcp*, std::list<RtpRtcp*>::iterator>(
-      rtp_module, send_modules_list_.begin());
+  // Always keep the audio modules at the back of the list, so that when we
+  // iterate over the modules in order to find one that can send padding we
+  // will prioritize video. This is important to make sure they are counted
+  // into the bandwidth estimate properly.
+  if (rtp_module->IsAudioConfigured()) {
+    send_modules_list_.push_back(rtp_module);
+  } else {
+    send_modules_list_.push_front(rtp_module);
+  }
+  send_modules_map_[ssrc] = rtp_module;
 }
 
 void PacketRouter::RemoveSendRtpModuleFromMap(uint32_t ssrc) {
   auto kv = send_modules_map_.find(ssrc);
   RTC_DCHECK(kv != send_modules_map_.end());
-  send_modules_list_.erase(kv->second.second);
+  send_modules_list_.remove(kv->second);
   send_modules_map_.erase(kv);
 }
 
@@ -146,7 +153,7 @@ void PacketRouter::SendPacket(std::unique_ptr<RtpPacketToSend> packet,
     return;
   }
 
-  RtpRtcp* rtp_module = kv->second.first;
+  RtpRtcp* rtp_module = kv->second;
   if (!rtp_module->TrySendPacket(packet.get(), cluster_info)) {
     RTC_LOG(LS_WARNING) << "Failed to send packet, rejected by RTP module.";
     return;
@@ -177,6 +184,9 @@ std::vector<std::unique_ptr<RtpPacketToSend>> PacketRouter::GeneratePadding(
     }
   }
 
+  // Iterate over all modules send module. Video modules will be at the front
+  // and so will be prioritized. This is important since audio packets may not
+  // be taken into account by the bandwidth estimator, e.g. in FF.
   for (RtpRtcp* rtp_module : send_modules_list_) {
     if (rtp_module->SupportsPadding()) {
       padding_packets = rtp_module->GeneratePadding(target_size_bytes);
