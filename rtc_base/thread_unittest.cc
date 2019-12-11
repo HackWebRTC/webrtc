@@ -902,6 +902,48 @@ TEST(ThreadPostTaskTest, InvokesInPostedOrder) {
   fourth.Wait(Event::kForever);
 }
 
+TEST(ThreadPostDelayedTaskTest, InvokesAsynchronously) {
+  std::unique_ptr<rtc::Thread> background_thread(rtc::Thread::Create());
+  background_thread->Start();
+
+  // The first event ensures that SendSingleMessage() is not blocking this
+  // thread. The second event ensures that the message is processed.
+  Event event_set_by_test_thread;
+  Event event_set_by_background_thread;
+  background_thread->PostDelayedTask(
+      RTC_FROM_HERE,
+      Bind(&WaitAndSetEvent, &event_set_by_test_thread,
+           &event_set_by_background_thread),
+      /*milliseconds=*/10);
+  event_set_by_test_thread.Set();
+  event_set_by_background_thread.Wait(Event::kForever);
+}
+
+TEST(ThreadPostDelayedTaskTest, InvokesInDelayOrder) {
+  std::unique_ptr<rtc::Thread> background_thread(rtc::Thread::Create());
+  background_thread->Start();
+
+  Event first;
+  Event second;
+  Event third;
+  Event fourth;
+
+  background_thread->PostDelayedTask(RTC_FROM_HERE,
+                                     Bind(&WaitAndSetEvent, &third, &fourth),
+                                     /*milliseconds=*/11);
+  background_thread->PostDelayedTask(RTC_FROM_HERE,
+                                     Bind(&WaitAndSetEvent, &first, &second),
+                                     /*milliseconds=*/9);
+  background_thread->PostDelayedTask(RTC_FROM_HERE,
+                                     Bind(&WaitAndSetEvent, &second, &third),
+                                     /*milliseconds=*/10);
+
+  // All tasks have been posted before the first one is unblocked.
+  first.Set();
+  // Only if the chain is invoked in posted order will the last event be set.
+  fourth.Wait(Event::kForever);
+}
+
 class ThreadFactory : public webrtc::TaskQueueFactory {
  public:
   std::unique_ptr<webrtc::TaskQueueBase, webrtc::TaskQueueDeleter>

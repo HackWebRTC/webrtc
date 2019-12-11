@@ -63,6 +63,24 @@ class ScopedAutoReleasePool {
 #endif
 
 namespace rtc {
+namespace {
+
+class MessageHandlerWithTask final : public MessageHandler {
+ public:
+  MessageHandlerWithTask() = default;
+
+  void OnMessage(Message* msg) override {
+    static_cast<rtc_thread_internal::MessageLikeTask*>(msg->pdata)->Run();
+    delete msg->pdata;
+  }
+
+ private:
+  ~MessageHandlerWithTask() override {}
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(MessageHandlerWithTask);
+};
+
+}  // namespace
 
 ThreadManager* ThreadManager::Instance() {
   static ThreadManager* const thread_manager = new ThreadManager();
@@ -610,6 +628,13 @@ bool Thread::IsRunning() {
 #elif defined(WEBRTC_POSIX)
   return thread_ != 0;
 #endif
+}
+
+// static
+MessageHandler* Thread::GetPostTaskMessageHandler() {
+  // Allocate at first call, never deallocate.
+  static MessageHandler* handler = new MessageHandlerWithTask;
+  return handler;
 }
 
 AutoThread::AutoThread()

@@ -64,21 +64,6 @@ class MessageWithFunctor final : public MessageLikeTask {
   RTC_DISALLOW_COPY_AND_ASSIGN(MessageWithFunctor);
 };
 
-class MessageHandlerWithTask final : public MessageHandler {
- public:
-  MessageHandlerWithTask() = default;
-
-  void OnMessage(Message* msg) override {
-    static_cast<MessageLikeTask*>(msg->pdata)->Run();
-    delete msg->pdata;
-  }
-
- private:
-  ~MessageHandlerWithTask() override {}
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(MessageHandlerWithTask);
-};
-
 }  // namespace rtc_thread_internal
 
 class RTC_EXPORT ThreadManager {
@@ -267,12 +252,18 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public MessageQueue,
   //                  [&x, &y] { x.TrackComputations(y.Compute()); });
   template <class FunctorT>
   void PostTask(const Location& posted_from, FunctorT&& functor) {
-    // Allocate at first call, never deallocate.
-    static auto* const handler =
-        new rtc_thread_internal::MessageHandlerWithTask;
-    Post(posted_from, handler, 0,
+    Post(posted_from, GetPostTaskMessageHandler(), /*id=*/0,
          new rtc_thread_internal::MessageWithFunctor<FunctorT>(
              std::forward<FunctorT>(functor)));
+  }
+  template <class FunctorT>
+  void PostDelayedTask(const Location& posted_from,
+                       FunctorT&& functor,
+                       uint32_t milliseconds) {
+    PostDelayed(posted_from, milliseconds, GetPostTaskMessageHandler(),
+                /*id=*/0,
+                new rtc_thread_internal::MessageWithFunctor<FunctorT>(
+                    std::forward<FunctorT>(functor)));
   }
 
   // From TaskQueueBase
@@ -347,6 +338,7 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public MessageQueue,
    public:
     void OnMessage(Message* msg) override;
   };
+
   // Sets the per-thread allow-blocking-calls flag and returns the previous
   // value. Must be called on this thread.
   bool SetAllowBlockingCalls(bool allow);
@@ -380,6 +372,10 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public MessageQueue,
 
   void InvokeInternal(const Location& posted_from,
                       rtc::FunctionView<void()> functor);
+
+  // Returns a static-lifetime MessageHandler which runs message with
+  // MessageLikeTask payload data.
+  static MessageHandler* GetPostTaskMessageHandler();
 
   std::list<_SendMessage> sendlist_;
   std::string name_;
