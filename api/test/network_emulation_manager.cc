@@ -48,6 +48,13 @@ NetworkEmulationManager::SimulatedNetworkNode::Builder::loss(double loss_rate) {
   return *this;
 }
 
+NetworkEmulationManager::SimulatedNetworkNode::Builder&
+NetworkEmulationManager::SimulatedNetworkNode::Builder::packet_queue_length(
+    int max_queue_length_in_packets) {
+  config_.queue_length_packets = max_queue_length_in_packets;
+  return *this;
+}
+
 NetworkEmulationManager::SimulatedNetworkNode
 NetworkEmulationManager::SimulatedNetworkNode::Builder::Build() const {
   RTC_CHECK(net_);

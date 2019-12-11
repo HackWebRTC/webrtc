@@ -92,6 +92,7 @@ class NetworkEmulationManager {
       Builder& capacity_kbps(int link_capacity_kbps);
       Builder& capacity_Mbps(int link_capacity_Mbps);
       Builder& loss(double loss_rate);
+      Builder& packet_queue_length(int max_queue_length_in_packets);
       SimulatedNetworkNode Build() const;
       SimulatedNetworkNode Build(NetworkEmulationManager* net) const;
 
