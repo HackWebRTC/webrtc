@@ -83,6 +83,7 @@ class NetworkEmulationManager {
     class Builder {
      public:
       explicit Builder(NetworkEmulationManager* net) : net_(net) {}
+      Builder() : net_(nullptr) {}
       Builder(const Builder&) = default;
       // Sets the config state, note that this will replace any previously set
       // values.
@@ -92,6 +93,7 @@ class NetworkEmulationManager {
       Builder& capacity_Mbps(int link_capacity_Mbps);
       Builder& loss(double loss_rate);
       SimulatedNetworkNode Build() const;
+      SimulatedNetworkNode Build(NetworkEmulationManager* net) const;
 
      private:
       NetworkEmulationManager* const net_;

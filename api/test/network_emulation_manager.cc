@@ -50,10 +50,19 @@ NetworkEmulationManager::SimulatedNetworkNode::Builder::loss(double loss_rate) {
 
 NetworkEmulationManager::SimulatedNetworkNode
 NetworkEmulationManager::SimulatedNetworkNode::Builder::Build() const {
+  RTC_CHECK(net_);
+  return Build(net_);
+}
+
+NetworkEmulationManager::SimulatedNetworkNode
+NetworkEmulationManager::SimulatedNetworkNode::Builder::Build(
+    NetworkEmulationManager* net) const {
+  RTC_CHECK(net);
+  RTC_CHECK(net_ == nullptr || net_ == net);
   SimulatedNetworkNode res;
   auto behavior = std::make_unique<SimulatedNetwork>(config_);
   res.simulation = behavior.get();
-  res.node = net_->CreateEmulatedNode(std::move(behavior));
+  res.node = net->CreateEmulatedNode(std::move(behavior));
   return res;
 }
 }  // namespace webrtc
