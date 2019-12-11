@@ -89,7 +89,7 @@ class RTC_EXPORT VideoEncoder {
   };
 
   // Quality scaling is enabled if thresholds are provided.
-  struct ScalingSettings {
+  struct RTC_EXPORT ScalingSettings {
    private:
     // Private magic type for kOff, implicitly convertible to
     // ScalingSettings.
