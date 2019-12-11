@@ -71,6 +71,56 @@ CallClient* CreateVideoSendingClient(
   s->CreateVideoStream(route->forward(), VideoStreamConfig());
   return client;
 }
+
+void UpdatesTargetRateBasedOnLinkCapacity(std::string test_name = "") {
+  ScopedFieldTrials trial("WebRTC-SendSideBwe-WithOverhead/Enabled/");
+  auto factory = CreateFeedbackOnlyFactory();
+  Scenario s("googcc_unit/target_capacity" + test_name, false);
+  CallClientConfig config;
+  config.transport.cc_factory = &factory;
+  config.transport.rates.min_rate = DataRate::kbps(10);
+  config.transport.rates.max_rate = DataRate::kbps(1500);
+  config.transport.rates.start_rate = DataRate::kbps(300);
+  auto send_net = s.CreateMutableSimulationNode([](NetworkSimulationConfig* c) {
+    c->bandwidth = DataRate::kbps(500);
+    c->delay = TimeDelta::ms(100);
+    c->loss_rate = 0.0;
+  });
+  auto ret_net = s.CreateMutableSimulationNode(
+      [](NetworkSimulationConfig* c) { c->delay = TimeDelta::ms(100); });
+  StatesPrinter* truth = s.CreatePrinter(
+      "send.truth.txt", TimeDelta::PlusInfinity(), {send_net->ConfigPrinter()});
+
+  auto* client = CreateVideoSendingClient(&s, config, {send_net->node()},
+                                          {ret_net->node()});
+
+  truth->PrintRow();
+  s.RunFor(TimeDelta::seconds(25));
+  truth->PrintRow();
+  EXPECT_NEAR(client->target_rate().kbps(), 450, 100);
+
+  send_net->UpdateConfig([](NetworkSimulationConfig* c) {
+    c->bandwidth = DataRate::kbps(800);
+    c->delay = TimeDelta::ms(100);
+  });
+
+  truth->PrintRow();
+  s.RunFor(TimeDelta::seconds(20));
+  truth->PrintRow();
+  EXPECT_NEAR(client->target_rate().kbps(), 750, 150);
+
+  send_net->UpdateConfig([](NetworkSimulationConfig* c) {
+    c->bandwidth = DataRate::kbps(100);
+    c->delay = TimeDelta::ms(200);
+  });
+  ret_net->UpdateConfig(
+      [](NetworkSimulationConfig* c) { c->delay = TimeDelta::ms(200); });
+
+  truth->PrintRow();
+  s.RunFor(TimeDelta::seconds(50));
+  truth->PrintRow();
+  EXPECT_NEAR(client->target_rate().kbps(), 90, 25);
+}
 }  // namespace
 
 class GoogCcNetworkControllerTest : public ::testing::Test {
@@ -366,53 +416,7 @@ TEST_F(GoogCcNetworkControllerTest, LimitsToFloorIfRttIsHighInTrial) {
 }
 
 TEST_F(GoogCcNetworkControllerTest, UpdatesTargetRateBasedOnLinkCapacity) {
-  ScopedFieldTrials trial("WebRTC-SendSideBwe-WithOverhead/Enabled/");
-  auto factory = CreateFeedbackOnlyFactory();
-  Scenario s("googcc_unit/target_capacity", false);
-  CallClientConfig config;
-  config.transport.cc_factory = &factory;
-  config.transport.rates.min_rate = DataRate::kbps(10);
-  config.transport.rates.max_rate = DataRate::kbps(1500);
-  config.transport.rates.start_rate = DataRate::kbps(300);
-  auto send_net = s.CreateMutableSimulationNode([](NetworkSimulationConfig* c) {
-    c->bandwidth = DataRate::kbps(500);
-    c->delay = TimeDelta::ms(100);
-    c->loss_rate = 0.0;
-  });
-  auto ret_net = s.CreateMutableSimulationNode(
-      [](NetworkSimulationConfig* c) { c->delay = TimeDelta::ms(100); });
-  StatesPrinter* truth = s.CreatePrinter(
-      "send.truth.txt", TimeDelta::PlusInfinity(), {send_net->ConfigPrinter()});
-
-  auto* client = CreateVideoSendingClient(&s, config, {send_net->node()},
-                                          {ret_net->node()});
-
-  truth->PrintRow();
-  s.RunFor(TimeDelta::seconds(25));
-  truth->PrintRow();
-  EXPECT_NEAR(client->target_rate().kbps(), 450, 100);
-
-  send_net->UpdateConfig([](NetworkSimulationConfig* c) {
-    c->bandwidth = DataRate::kbps(800);
-    c->delay = TimeDelta::ms(100);
-  });
-
-  truth->PrintRow();
-  s.RunFor(TimeDelta::seconds(20));
-  truth->PrintRow();
-  EXPECT_NEAR(client->target_rate().kbps(), 750, 150);
-
-  send_net->UpdateConfig([](NetworkSimulationConfig* c) {
-    c->bandwidth = DataRate::kbps(100);
-    c->delay = TimeDelta::ms(200);
-  });
-  ret_net->UpdateConfig(
-      [](NetworkSimulationConfig* c) { c->delay = TimeDelta::ms(200); });
-
-  truth->PrintRow();
-  s.RunFor(TimeDelta::seconds(50));
-  truth->PrintRow();
-  EXPECT_NEAR(client->target_rate().kbps(), 90, 25);
+  UpdatesTargetRateBasedOnLinkCapacity();
 }
 
 TEST_F(GoogCcNetworkControllerTest, StableEstimateDoesNotVaryInSteadyState) {
@@ -452,7 +456,16 @@ TEST_F(GoogCcNetworkControllerTest, StableEstimateDoesNotVaryInSteadyState) {
   EXPECT_GE(min_stable_target / max_stable_target, min_target / max_target);
 }
 
-TEST_F(GoogCcNetworkControllerTest, DoesModestBackoffToHighLoss) {
+TEST_F(GoogCcNetworkControllerTest,
+       LossBasedControlUpdatesTargetRateBasedOnLinkCapacity) {
+  ScopedFieldTrials trial("WebRTC-Bwe-LossBasedControl/Enabled/");
+  // TODO(srte): Should the behavior be unaffected at low loss rates?
+  UpdatesTargetRateBasedOnLinkCapacity("_loss_based");
+}
+
+TEST_F(GoogCcNetworkControllerTest,
+       LossBasedControlDoesModestBackoffToHighLoss) {
+  ScopedFieldTrials trial("WebRTC-Bwe-LossBasedControl/Enabled/");
   Scenario s("googcc_unit/high_loss_channel", false);
   CallClientConfig config;
   config.transport.rates.min_rate = DataRate::kbps(10);
@@ -469,11 +482,12 @@ TEST_F(GoogCcNetworkControllerTest, DoesModestBackoffToHighLoss) {
   auto* client = CreateVideoSendingClient(&s, config, {send_net}, {ret_net});
 
   s.RunFor(TimeDelta::seconds(120));
+  // Without LossBasedControl trial, bandwidth drops to ~10 kbps.
   EXPECT_GT(client->target_rate().kbps(), 100);
 }
 
-TEST_F(GoogCcNetworkControllerTest, RecoversAfterCrossInducedLoss) {
-  Scenario s("googcc_unit/cross_loss_based", false);
+DataRate AverageBitrateAfterCrossInducedLoss(std::string name) {
+  Scenario s(name, false);
   NetworkSimulationConfig net_conf;
   net_conf.bandwidth = DataRate::kbps(1000);
   net_conf.delay = TimeDelta::ms(100);
@@ -499,16 +513,33 @@ TEST_F(GoogCcNetworkControllerTest, RecoversAfterCrossInducedLoss) {
     s.net()->StopCrossTraffic(tcp_traffic);
     s.RunFor(TimeDelta::seconds(20));
   }
-  DataRate average_bitrate =
-      DataSize::bytes(
-          video->receive()->GetStats().rtp_stats.packet_counter.TotalBytes()) /
-      s.TimeSinceStart();
-
-  // We recover bitrate when subject to loss spikes from cross traffic.
-  RTC_DCHECK_GE(average_bitrate, DataRate::kbps(720));
+  return DataSize::bytes(video->receive()
+                             ->GetStats()
+                             .rtp_stats.packet_counter.TotalBytes()) /
+         s.TimeSinceStart();
 }
 
-TEST_F(GoogCcNetworkControllerTest, CapsRateAtModerateLoss) {
+TEST_F(GoogCcNetworkControllerTest,
+       NoLossBasedRecoversSlowerAfterCrossInducedLoss) {
+  // This test acts as a reference for the test below, showing that wihtout the
+  // trial, we have worse behavior.
+  DataRate average_bitrate =
+      AverageBitrateAfterCrossInducedLoss("googcc_unit/no_cross_loss_based");
+  RTC_DCHECK_LE(average_bitrate, DataRate::kbps(650));
+}
+
+TEST_F(GoogCcNetworkControllerTest,
+       LossBasedRecoversFasterAfterCrossInducedLoss) {
+  // We recover bitrate better when subject to loss spikes from cross traffic
+  // when loss based controller is used.
+  ScopedFieldTrials trial("WebRTC-Bwe-LossBasedControl/Enabled/");
+  DataRate average_bitrate =
+      AverageBitrateAfterCrossInducedLoss("googcc_unit/cross_loss_based");
+  RTC_DCHECK_GE(average_bitrate, DataRate::kbps(750));
+}
+
+TEST_F(GoogCcNetworkControllerTest, LossBasedEstimatorCapsRateAtModerateLoss) {
+  ScopedFieldTrials trial("WebRTC-Bwe-LossBasedControl/Enabled/");
   Scenario s("googcc_unit/moderate_loss_channel", false);
   CallClientConfig config;
   config.transport.rates.min_rate = DataRate::kbps(10);
@@ -529,11 +560,13 @@ TEST_F(GoogCcNetworkControllerTest, CapsRateAtModerateLoss) {
   s.CreateVideoStream(route->forward(), VideoStreamConfig());
   // Allow the controller to stabilize at the lower bitrate.
   s.RunFor(TimeDelta::seconds(1));
+  // This increase in capacity would cause the target bitrate to increase to
+  // over 4000 kbps without LossBasedControl.
   send_net->UpdateConfig(
       [](NetworkSimulationConfig* c) { c->bandwidth = DataRate::kbps(5000); });
   s.RunFor(TimeDelta::seconds(20));
-  // The bitrate will not increase over 2500 kbps since we have detected
-  // moderate loss.
+  // Using LossBasedControl, the bitrate will not increase over 2500 kbps since
+  // we have detected moderate loss.
   EXPECT_LT(client->target_rate().kbps(), 2500);
 }
 
@@ -662,6 +695,7 @@ TEST_F(GoogCcNetworkControllerTest,
 }
 
 TEST_F(GoogCcNetworkControllerTest, NoBandwidthTogglingInLossControlTrial) {
+  ScopedFieldTrials trial("WebRTC-Bwe-LossBasedControl/Enabled/");
   Scenario s("googcc_unit/no_toggling");
   auto* send_net = s.CreateSimulationNode([&](NetworkSimulationConfig* c) {
     c->bandwidth = DataRate::kbps(2000);
