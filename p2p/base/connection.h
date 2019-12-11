@@ -11,6 +11,7 @@
 #ifndef P2P_BASE_CONNECTION_H_
 #define P2P_BASE_CONNECTION_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -30,6 +31,10 @@
 #include "rtc_base/rate_tracker.h"
 
 namespace cricket {
+
+// Version number for GOOG_PING, this is added to have the option of
+// adding other flavors in the future.
+constexpr int kGoogPingVersion = 1;
 
 // Connection and Port has circular dependencies.
 // So we use forward declaration rather than include.
@@ -227,7 +232,7 @@ class Connection : public CandidatePairInterface,
   void ReceivedPing(
       const absl::optional<std::string>& request_id = absl::nullopt);
   // Handles the binding request; sends a response if this is a valid request.
-  void HandleBindingRequest(IceMessage* msg);
+  void HandleStunBindingOrGoogPingRequest(IceMessage* msg);
   // Handles the piggyback acknowledgement of the lastest connectivity check
   // that the remote peer has received, if it is indicated in the incoming
   // connectivity check from the peer.
@@ -298,7 +303,9 @@ class Connection : public CandidatePairInterface,
     return rtt_estimate_;
   }
 
-  void SendBindingResponse(const StunMessage* request);
+  void SendStunBindingResponse(const StunMessage* request);
+  void SendGoogPingResponse(const StunMessage* request);
+  void SendResponseMessage(const StunMessage& response);
 
   // An accessor for unit tests.
   Port* PortForTest() { return port_; }
@@ -368,6 +375,10 @@ class Connection : public CandidatePairInterface,
   void LogCandidatePairEvent(webrtc::IceCandidatePairEventType type,
                              uint32_t transaction_id);
 
+  // Check if this IceMessage is identical
+  // to last message ack:ed STUN_BINDING_REQUEST.
+  bool ShouldSendGoogPing(const StunMessage* message);
+
   WriteState write_state_;
   bool receiving_;
   bool connected_;
@@ -423,6 +434,13 @@ class Connection : public CandidatePairInterface,
 
   absl::optional<webrtc::IceCandidatePairDescription> log_description_;
   webrtc::IceEventLog* ice_event_log_ = nullptr;
+
+  // GOOG_PING_REQUEST is sent in place of STUN_BINDING_REQUEST
+  // if configured via field trial, the remote peer supports it (signaled
+  // in STUN_BINDING) and if the last STUN BINDING is identical to the one
+  // that is about to be sent.
+  absl::optional<bool> remote_support_goog_ping_;
+  std::unique_ptr<StunMessage> cached_stun_binding_;
 
   const IceFieldTrials* field_trials_;
   rtc::EventBasedExponentialMovingAverage rtt_estimate_;

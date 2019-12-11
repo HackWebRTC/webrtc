@@ -302,7 +302,7 @@ class TestChannel : public sigslot::has_slots<> {
     c.set_address(remote_address_);
     conn_ = port_->CreateConnection(c, Port::ORIGIN_MESSAGE);
     conn_->SignalDestroyed.connect(this, &TestChannel::OnDestroyed);
-    conn_->SendBindingResponse(remote_request_.get());
+    conn_->SendStunBindingResponse(remote_request_.get());
     remote_request_.reset();
   }
   void Ping() { Ping(0); }
@@ -406,6 +406,8 @@ class PortTest : public ::testing::Test, public sigslot::has_slots<> {
         ports_destroyed_(0) {}
 
  protected:
+  std::string password() { return password_; }
+
   void TestLocalToLocal() {
     auto port1 = CreateUdpPort(kLocalAddr1);
     port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
@@ -2621,7 +2623,7 @@ TEST_F(PortTest, TestIceLiteConnectivity) {
   auto* con = ice_lite_port->CreateConnection(
       ice_full_port_ptr->Candidates()[0], cricket::Port::ORIGIN_MESSAGE);
   std::unique_ptr<IceMessage> request = CopyStunMessage(*msg);
-  con->SendBindingResponse(request.get());
+  con->SendStunBindingResponse(request.get());
 
   // Feeding the respone message from litemode to the full mode connection.
   ch1.conn()->OnReadPacket(ice_lite_port->last_stun_buf()->data<char>(),
@@ -2640,6 +2642,305 @@ TEST_F(PortTest, TestIceLiteConnectivity) {
   ASSERT_TRUE_WAIT(ice_full_port_ptr->last_stun_msg() != NULL, kDefaultTimeout);
   msg = ice_full_port_ptr->last_stun_msg();
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_USE_CANDIDATE) != NULL);
+  ch1.Stop();
+}
+
+namespace {
+
+// Utility function for testing goog ping.
+absl::optional<int> GetSupportedGoogPingVersion(const StunMessage* response) {
+  auto goog_misc = response->GetUInt16List(STUN_ATTR_GOOG_MISC_INFO);
+  if (goog_misc == nullptr) {
+    return absl::nullopt;
+  }
+
+  if (goog_misc->Size() <
+      static_cast<int>(cricket::IceGoogMiscInfoBindingResponseAttributeIndex::
+                           SUPPORT_GOOG_PING_VERSION)) {
+    return absl::nullopt;
+  }
+
+  return goog_misc->GetType(
+      static_cast<int>(cricket::IceGoogMiscInfoBindingResponseAttributeIndex::
+                           SUPPORT_GOOG_PING_VERSION));
+}
+
+}  // namespace
+
+class GoogPingTest
+    : public PortTest,
+      public ::testing::WithParamInterface<std::pair<bool, bool>> {};
+
+// This test verifies the announce/enable on/off behavior
+TEST_P(GoogPingTest, TestGoogPingAnnounceEnable) {
+  IceFieldTrials trials;
+  trials.announce_goog_ping = GetParam().first;
+  trials.enable_goog_ping = GetParam().second;
+  RTC_LOG(LS_INFO) << "Testing combination: "
+                   << " announce: " << trials.announce_goog_ping
+                   << " enable:" << trials.enable_goog_ping;
+
+  auto port1_unique =
+      CreateTestPort(kLocalAddr1, "lfrag", "lpass",
+                     cricket::ICEROLE_CONTROLLING, kTiebreaker1);
+  auto* port1 = port1_unique.get();
+  auto port2 = CreateTestPort(kLocalAddr2, "rfrag", "rpass",
+                              cricket::ICEROLE_CONTROLLED, kTiebreaker2);
+
+  TestChannel ch1(std::move(port1_unique));
+  // Block usage of STUN_ATTR_USE_CANDIDATE so that
+  // ch1.conn() will sent GOOG_PING_REQUEST directly.
+  // This only makes test a bit shorter...
+  ch1.SetIceMode(ICEMODE_LITE);
+  // Start gathering candidates.
+  ch1.Start();
+  port2->PrepareAddress();
+
+  ASSERT_EQ_WAIT(1, ch1.complete_count(), kDefaultTimeout);
+  ASSERT_FALSE(port2->Candidates().empty());
+
+  ch1.CreateConnection(GetCandidate(port2.get()));
+  ASSERT_TRUE(ch1.conn() != NULL);
+  EXPECT_EQ(Connection::STATE_WRITE_INIT, ch1.conn()->write_state());
+  ch1.conn()->SetIceFieldTrials(&trials);
+
+  // Send ping.
+  ch1.Ping();
+
+  ASSERT_TRUE_WAIT(port1->last_stun_msg() != NULL, kDefaultTimeout);
+  const IceMessage* request1 = port1->last_stun_msg();
+  auto* con = port2->CreateConnection(port1->Candidates()[0],
+                                      cricket::Port::ORIGIN_MESSAGE);
+  con->SetIceFieldTrials(&trials);
+
+  con->SendStunBindingResponse(request1);
+
+  // Then check the response matches the settings.
+  const auto* response = port2->last_stun_msg();
+  ASSERT_EQ(response->type(), STUN_BINDING_RESPONSE);
+  ASSERT_EQ(trials.announce_goog_ping,
+            GetSupportedGoogPingVersion(response) &&
+                GetSupportedGoogPingVersion(response) >= kGoogPingVersion);
+
+  // Feeding the respone message back.
+  ch1.conn()->OnReadPacket(port2->last_stun_buf()->data<char>(),
+                           port2->last_stun_buf()->size(),
+                           /* packet_time_us */ -1);
+
+  port1->Reset();
+  port2->Reset();
+
+  ch1.Ping();
+  ASSERT_TRUE_WAIT(port1->last_stun_msg() != NULL, kDefaultTimeout);
+  const IceMessage* request2 = port1->last_stun_msg();
+
+  // It should be a GOOG_PING if both of these are TRUE
+  if (trials.announce_goog_ping && trials.enable_goog_ping) {
+    ASSERT_EQ(request2->type(), GOOG_PING_REQUEST);
+    con->SendGoogPingResponse(request2);
+  } else {
+    ASSERT_EQ(request2->type(), STUN_BINDING_REQUEST);
+    con->SendStunBindingResponse(request2);
+  }
+
+  const auto* response2 = port2->last_stun_msg();
+  ASSERT_TRUE(response2 != nullptr);
+
+  // It should be a GOOG_PING_RESPONSE if both of these are TRUE
+  if (trials.announce_goog_ping && trials.enable_goog_ping) {
+    ASSERT_EQ(response2->type(), GOOG_PING_RESPONSE);
+  } else {
+    ASSERT_EQ(response2->type(), STUN_BINDING_RESPONSE);
+  }
+
+  ch1.Stop();
+}
+
+INSTANTIATE_TEST_SUITE_P(GoogPingTest,
+                         GoogPingTest,
+                         // test all combinations of <announce, enable> pairs.
+                         ::testing::Values(std::make_pair(false, false),
+                                           std::make_pair(true, false),
+                                           std::make_pair(false, true),
+                                           std::make_pair(true, true)));
+
+// This test checks that a change in attributes falls back to STUN_BINDING
+TEST_F(PortTest, TestChangeInAttributeMakesGoogPingFallsbackToStunBinding) {
+  IceFieldTrials trials;
+  trials.announce_goog_ping = true;
+  trials.enable_goog_ping = true;
+
+  auto port1_unique =
+      CreateTestPort(kLocalAddr1, "lfrag", "lpass",
+                     cricket::ICEROLE_CONTROLLING, kTiebreaker1);
+  auto* port1 = port1_unique.get();
+  auto port2 = CreateTestPort(kLocalAddr2, "rfrag", "rpass",
+                              cricket::ICEROLE_CONTROLLED, kTiebreaker2);
+
+  TestChannel ch1(std::move(port1_unique));
+  // Block usage of STUN_ATTR_USE_CANDIDATE so that
+  // ch1.conn() will sent GOOG_PING_REQUEST directly.
+  // This only makes test a bit shorter...
+  ch1.SetIceMode(ICEMODE_LITE);
+  // Start gathering candidates.
+  ch1.Start();
+  port2->PrepareAddress();
+
+  ASSERT_EQ_WAIT(1, ch1.complete_count(), kDefaultTimeout);
+  ASSERT_FALSE(port2->Candidates().empty());
+
+  ch1.CreateConnection(GetCandidate(port2.get()));
+  ASSERT_TRUE(ch1.conn() != nullptr);
+  EXPECT_EQ(Connection::STATE_WRITE_INIT, ch1.conn()->write_state());
+  ch1.conn()->SetIceFieldTrials(&trials);
+
+  // Send ping.
+  ch1.Ping();
+
+  ASSERT_TRUE_WAIT(port1->last_stun_msg() != NULL, kDefaultTimeout);
+  const IceMessage* msg = port1->last_stun_msg();
+  auto* con = port2->CreateConnection(port1->Candidates()[0],
+                                      cricket::Port::ORIGIN_MESSAGE);
+  con->SetIceFieldTrials(&trials);
+
+  // Feed the message into the connection.
+  con->SendStunBindingResponse(msg);
+
+  // The check reply wrt to settings.
+  const auto* response = port2->last_stun_msg();
+  ASSERT_EQ(response->type(), STUN_BINDING_RESPONSE);
+  ASSERT_TRUE(GetSupportedGoogPingVersion(response) >= kGoogPingVersion);
+
+  // Feeding the respone message back.
+  ch1.conn()->OnReadPacket(port2->last_stun_buf()->data<char>(),
+                           port2->last_stun_buf()->size(),
+                           /* packet_time_us */ -1);
+
+  port1->Reset();
+  port2->Reset();
+
+  ch1.Ping();
+  ASSERT_TRUE_WAIT(port1->last_stun_msg() != NULL, kDefaultTimeout);
+  const IceMessage* msg2 = port1->last_stun_msg();
+
+  // It should be a GOOG_PING if both of these are TRUE
+  ASSERT_EQ(msg2->type(), GOOG_PING_REQUEST);
+  con->SendGoogPingResponse(msg2);
+
+  const auto* response2 = port2->last_stun_msg();
+  ASSERT_TRUE(response2 != nullptr);
+
+  // It should be a GOOG_PING_RESPONSE.
+  ASSERT_EQ(response2->type(), GOOG_PING_RESPONSE);
+
+  // And now the third ping.
+  port1->Reset();
+  port2->Reset();
+
+  // Modify the message to be sent.
+  ch1.conn()->set_use_candidate_attr(!ch1.conn()->use_candidate_attr());
+
+  ch1.Ping();
+  ASSERT_TRUE_WAIT(port1->last_stun_msg() != NULL, kDefaultTimeout);
+  const IceMessage* msg3 = port1->last_stun_msg();
+
+  // It should be a STUN_BINDING_REQUEST
+  ASSERT_EQ(msg3->type(), STUN_BINDING_REQUEST);
+
+  ch1.Stop();
+}
+
+// This test that an error response fall back to STUN_BINDING.
+TEST_F(PortTest, TestErrorResponseMakesGoogPingFallBackToStunBinding) {
+  IceFieldTrials trials;
+  trials.announce_goog_ping = true;
+  trials.enable_goog_ping = true;
+
+  auto port1_unique =
+      CreateTestPort(kLocalAddr1, "lfrag", "lpass",
+                     cricket::ICEROLE_CONTROLLING, kTiebreaker1);
+  auto* port1 = port1_unique.get();
+  auto port2 = CreateTestPort(kLocalAddr2, "rfrag", "rpass",
+                              cricket::ICEROLE_CONTROLLED, kTiebreaker2);
+
+  TestChannel ch1(std::move(port1_unique));
+  // Block usage of STUN_ATTR_USE_CANDIDATE so that
+  // ch1.conn() will sent GOOG_PING_REQUEST directly.
+  // This only makes test a bit shorter...
+  ch1.SetIceMode(ICEMODE_LITE);
+  // Start gathering candidates.
+  ch1.Start();
+  port2->PrepareAddress();
+
+  ASSERT_EQ_WAIT(1, ch1.complete_count(), kDefaultTimeout);
+  ASSERT_FALSE(port2->Candidates().empty());
+
+  ch1.CreateConnection(GetCandidate(port2.get()));
+  ASSERT_TRUE(ch1.conn() != NULL);
+  EXPECT_EQ(Connection::STATE_WRITE_INIT, ch1.conn()->write_state());
+  ch1.conn()->SetIceFieldTrials(&trials);
+
+  // Send ping.
+  ch1.Ping();
+
+  ASSERT_TRUE_WAIT(port1->last_stun_msg() != NULL, kDefaultTimeout);
+  const IceMessage* msg = port1->last_stun_msg();
+  auto* con = port2->CreateConnection(port1->Candidates()[0],
+                                      cricket::Port::ORIGIN_MESSAGE);
+  con->SetIceFieldTrials(&trials);
+
+  // Feed the message into the connection.
+  con->SendStunBindingResponse(msg);
+
+  // The check reply wrt to settings.
+  const auto* response = port2->last_stun_msg();
+  ASSERT_EQ(response->type(), STUN_BINDING_RESPONSE);
+  ASSERT_TRUE(GetSupportedGoogPingVersion(response) >= kGoogPingVersion);
+
+  // Feeding the respone message back.
+  ch1.conn()->OnReadPacket(port2->last_stun_buf()->data<char>(),
+                           port2->last_stun_buf()->size(),
+                           /* packet_time_us */ -1);
+
+  port1->Reset();
+  port2->Reset();
+
+  ch1.Ping();
+  ASSERT_TRUE_WAIT(port1->last_stun_msg() != NULL, kDefaultTimeout);
+  const IceMessage* msg2 = port1->last_stun_msg();
+
+  // It should be a GOOG_PING.
+  ASSERT_EQ(msg2->type(), GOOG_PING_REQUEST);
+  con->SendGoogPingResponse(msg2);
+
+  const auto* response2 = port2->last_stun_msg();
+  ASSERT_TRUE(response2 != nullptr);
+
+  // It should be a GOOG_PING_RESPONSE.
+  ASSERT_EQ(response2->type(), GOOG_PING_RESPONSE);
+
+  // But rather than the RESPONSE...feedback an error.
+  StunMessage error_response;
+  error_response.SetType(GOOG_PING_ERROR_RESPONSE);
+  error_response.SetTransactionID(response2->transaction_id());
+  error_response.AddMessageIntegrity32("rpass");
+  rtc::ByteBufferWriter buf;
+  error_response.Write(&buf);
+
+  ch1.conn()->OnReadPacket(buf.Data(), buf.Length(),
+                           /* packet_time_us */ -1);
+
+  // And now the third ping...this should be a binding.
+  port1->Reset();
+  port2->Reset();
+
+  ch1.Ping();
+  ASSERT_TRUE_WAIT(port1->last_stun_msg() != NULL, kDefaultTimeout);
+  const IceMessage* msg3 = port1->last_stun_msg();
+
+  // It should be a STUN_BINDING_REQUEST
+  ASSERT_EQ(msg3->type(), STUN_BINDING_REQUEST);
+
   ch1.Stop();
 }
 

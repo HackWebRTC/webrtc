@@ -641,12 +641,21 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
   }
 
   webrtc::StructParametersParser::Create(
+      // go/skylift-light
       "skip_relay_to_non_relay_connections",
       &field_trials_.skip_relay_to_non_relay_connections,
+      // Limiting pings sent.
       "max_outstanding_pings", &field_trials_.max_outstanding_pings,
+      // Delay initial selection of connection.
       "initial_select_dampening", &field_trials_.initial_select_dampening,
+      // Delay initial selection of connections, that are receiving.
       "initial_select_dampening_ping_received",
       &field_trials_.initial_select_dampening_ping_received,
+      // Reply that we support goog ping.
+      "announce_goog_ping", &field_trials_.announce_goog_ping,
+      // Use goog ping if remote support it.
+      "enable_goog_ping", &field_trials_.enable_goog_ping,
+      // How fast does a RTT sample decay.
       "rtt_estimate_halftime_ms", &field_trials_.rtt_estimate_halftime_ms)
       ->Parse(webrtc::field_trial::FindFullName("WebRTC-IceFieldTrials"));
 
@@ -1028,7 +1037,7 @@ void P2PTransportChannel::OnUnknownAddress(PortInterface* port,
                                                : "resurrected")
                    << " candidate: " << remote_candidate.ToSensitiveString();
   AddConnection(connection);
-  connection->HandleBindingRequest(stun_msg);
+  connection->HandleStunBindingOrGoogPingRequest(stun_msg);
 
   // Update the list of connections since we just added another.  We do this
   // after sending the response since it could (in principle) delete the

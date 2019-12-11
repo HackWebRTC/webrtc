@@ -609,7 +609,7 @@ class P2PTransportChannelTestBase : public ::testing::Test,
     return CheckConnected(ch1, ch2) && CheckCandidatePair(ch1, ch2, from, to);
   }
 
-  void Test(const Result& expected) {
+  virtual void Test(const Result& expected) {
     rtc::ScopedFakeClock clock;
     int64_t connect_start = rtc::TimeMillis();
     int64_t connect_time;
@@ -1195,16 +1195,26 @@ const P2PTransportChannelTest::Result*
          LTRT},
 };
 
+class P2PTransportChannelTestWithFieldTrials
+    : public P2PTransportChannelTest,
+      public ::testing::WithParamInterface<std::string> {
+ public:
+  void Test(const Result& expected) override {
+    webrtc::test::ScopedFieldTrials field_trials(GetParam());
+    P2PTransportChannelTest::Test(expected);
+  }
+};
+
 // The actual tests that exercise all the various configurations.
 // Test names are of the form P2PTransportChannelTest_TestOPENToNAT_FULL_CONE
-#define P2P_TEST_DECLARATION(x, y, z)                            \
-  TEST_F(P2PTransportChannelTest, z##Test##x##To##y) {           \
-    ConfigureEndpoints(x, y, PORTALLOCATOR_ENABLE_SHARED_SOCKET, \
-                       PORTALLOCATOR_ENABLE_SHARED_SOCKET);      \
-    if (kMatrix[x][y] != NULL)                                   \
-      Test(*kMatrix[x][y]);                                      \
-    else                                                         \
-      RTC_LOG(LS_WARNING) << "Not yet implemented";              \
+#define P2P_TEST_DECLARATION(x, y, z)                                 \
+  TEST_P(P2PTransportChannelTestWithFieldTrials, z##Test##x##To##y) { \
+    ConfigureEndpoints(x, y, PORTALLOCATOR_ENABLE_SHARED_SOCKET,      \
+                       PORTALLOCATOR_ENABLE_SHARED_SOCKET);           \
+    if (kMatrix[x][y] != NULL)                                        \
+      Test(*kMatrix[x][y]);                                           \
+    else                                                              \
+      RTC_LOG(LS_WARNING) << "Not yet implemented";                   \
   }
 
 #define P2P_TEST(x, y) P2P_TEST_DECLARATION(x, y, /* empty argument */)
@@ -1235,6 +1245,12 @@ P2P_TEST_SET(BLOCK_UDP_AND_INCOMING_TCP)
 P2P_TEST_SET(BLOCK_ALL_BUT_OUTGOING_HTTP)
 P2P_TEST_SET(PROXY_HTTPS)
 P2P_TEST_SET(PROXY_SOCKS)
+
+INSTANTIATE_TEST_SUITE_P(
+    P2PTransportChannelTestWithFieldTrials,
+    P2PTransportChannelTestWithFieldTrials,
+    // Each field-trial is ~144 tests (some return not-yet-implemented).
+    testing::Values("", "WebRTC-IceFieldTrials/enable_goog_ping:true/"));
 
 // Test that we restart candidate allocation when local ufrag&pwd changed.
 // Standard Ice protocol is used.

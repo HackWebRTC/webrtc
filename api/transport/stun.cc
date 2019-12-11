@@ -1115,6 +1115,55 @@ bool StunUInt16ListAttribute::Write(ByteBufferWriter* buf) const {
   return true;
 }
 
+std::string StunMethodToString(int msg_type) {
+  switch (msg_type) {
+    case STUN_BINDING_REQUEST:
+      return "STUN BINDING request";
+    case STUN_BINDING_INDICATION:
+      return "STUN BINDING indication";
+    case STUN_BINDING_RESPONSE:
+      return "STUN BINDING response";
+    case STUN_BINDING_ERROR_RESPONSE:
+      return "STUN BINDING error response";
+    case GOOG_PING_REQUEST:
+      return "GOOG PING request";
+    case GOOG_PING_RESPONSE:
+      return "GOOG PING response";
+    case GOOG_PING_ERROR_RESPONSE:
+      return "GOOG PING error response";
+    case STUN_ALLOCATE_REQUEST:
+      return "TURN ALLOCATE request";
+    case STUN_ALLOCATE_RESPONSE:
+      return "TURN ALLOCATE response";
+    case STUN_ALLOCATE_ERROR_RESPONSE:
+      return "TURN ALLOCATE error response";
+    case TURN_REFRESH_REQUEST:
+      return "TURN REFRESH request";
+    case TURN_REFRESH_RESPONSE:
+      return "TURN REFRESH response";
+    case TURN_REFRESH_ERROR_RESPONSE:
+      return "TURN REFRESH error response";
+    case TURN_SEND_INDICATION:
+      return "TURN SEND INDICATION";
+    case TURN_DATA_INDICATION:
+      return "TURN DATA INDICATION";
+    case TURN_CREATE_PERMISSION_REQUEST:
+      return "TURN CREATE PERMISSION request";
+    case TURN_CREATE_PERMISSION_RESPONSE:
+      return "TURN CREATE PERMISSION response";
+    case TURN_CREATE_PERMISSION_ERROR_RESPONSE:
+      return "TURN CREATE PERMISSION error response";
+    case TURN_CHANNEL_BIND_REQUEST:
+      return "TURN CHANNEL BIND request";
+    case TURN_CHANNEL_BIND_RESPONSE:
+      return "TURN CHANNEL BIND response";
+    case TURN_CHANNEL_BIND_ERROR_RESPONSE:
+      return "TURN CHANNEL BIND error response";
+    default:
+      return "UNKNOWN<" + std::to_string(msg_type) + ">";
+  }
+}
+
 int GetStunSuccessResponseType(int req_type) {
   return IsStunRequestType(req_type) ? (req_type | 0x100) : -1;
 }

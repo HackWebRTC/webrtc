@@ -32,6 +32,12 @@ struct IceFieldTrials {
   // give us chance to find a better connection before starting.
   absl::optional<int> initial_select_dampening_ping_received;
 
+  // Announce GOOG_PING support in STUN_BINDING_RESPONSE.
+  bool announce_goog_ping = true;
+
+  // Enable sending GOOG_PING if remote announce it.
+  bool enable_goog_ping = false;
+
   // Decay rate for RTT estimate using EventBasedExponentialMovingAverage
   // expressed as halving time.
   int rtt_estimate_halftime_ms = 500;
