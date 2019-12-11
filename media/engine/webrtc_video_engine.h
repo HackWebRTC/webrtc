@@ -590,6 +590,8 @@ class WebRtcVideoChannel : public VideoMediaChannel,
       RTC_GUARDED_BY(thread_checker_);
 
   bool allow_codec_switching_ = false;
+  absl::optional<EncoderSwitchRequestCallback::Config>
+      requested_encoder_switch_;
 
   // In order for the |invoker_| to protect other members from being destructed
   // as they are used in asynchronous tasks it has to be destructed first.
