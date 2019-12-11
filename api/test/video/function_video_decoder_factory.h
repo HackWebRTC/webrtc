@@ -33,11 +33,14 @@ class FunctionVideoDecoderFactory final : public VideoDecoderFactory {
       std::function<std::unique_ptr<VideoDecoder>(const SdpVideoFormat&)>
           create)
       : create_(std::move(create)) {}
+  FunctionVideoDecoderFactory(
+      std::function<std::unique_ptr<VideoDecoder>()> create,
+      std::vector<SdpVideoFormat> sdp_video_formats)
+      : create_([create](const SdpVideoFormat&) { return create(); }),
+        sdp_video_formats_(sdp_video_formats) {}
 
-  // Unused by tests.
   std::vector<SdpVideoFormat> GetSupportedFormats() const override {
-    RTC_NOTREACHED();
-    return {};
+    return sdp_video_formats_;
   }
 
   std::unique_ptr<VideoDecoder> CreateVideoDecoder(
@@ -48,6 +51,7 @@ class FunctionVideoDecoderFactory final : public VideoDecoderFactory {
  private:
   const std::function<std::unique_ptr<VideoDecoder>(const SdpVideoFormat&)>
       create_;
+  const std::vector<SdpVideoFormat> sdp_video_formats_;
 };
 
 }  // namespace test
