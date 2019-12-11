@@ -16,7 +16,7 @@
 #include "call/simulated_network.h"
 #include "media/engine/internal_encoder_factory.h"
 #include "media/engine/simulcast_encoder_adapter.h"
-#include "modules/rtp_rtcp/source/rtp_format.h"
+#include "modules/rtp_rtcp/source/create_video_rtp_depacketizer.h"
 #include "modules/rtp_rtcp/source/rtp_packet.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
@@ -43,7 +43,7 @@ class PictureIdObserver : public test::RtpRtcpObserver {
  public:
   explicit PictureIdObserver(VideoCodecType codec_type)
       : test::RtpRtcpObserver(test::CallTest::kDefaultTimeoutMs),
-        codec_type_(codec_type),
+        depacketizer_(CreateVideoRtpDepacketizer(codec_type)),
         max_expected_picture_id_gap_(0),
         max_expected_tl0_idx_gap_(0),
         num_ssrcs_to_observe_(1) {}
@@ -88,43 +88,32 @@ class PictureIdObserver : public test::RtpRtcpObserver {
                 rtp_packet.Ssrc() == test::CallTest::kVideoSendSsrcs[2])
         << "Unknown SSRC sent.";
 
-    rtc::ArrayView<const uint8_t> rtp_payload = rtp_packet.payload();
-    if (rtp_payload.empty()) {
+    if (rtp_packet.payload_size() == 0) {
       return false;  // Padding packet.
     }
 
     parsed->timestamp = rtp_packet.Timestamp();
     parsed->ssrc = rtp_packet.Ssrc();
 
-    std::unique_ptr<RtpDepacketizer> depacketizer(
-        RtpDepacketizer::Create(codec_type_));
-    RtpDepacketizer::ParsedPayload parsed_payload;
-    EXPECT_TRUE(depacketizer->Parse(&parsed_payload, rtp_payload.data(),
-                                    rtp_payload.size()));
+    absl::optional<VideoRtpDepacketizer::ParsedRtpPayload> parsed_payload =
+        depacketizer_->Parse(rtp_packet.PayloadBuffer());
+    EXPECT_TRUE(parsed_payload);
 
-    switch (codec_type_) {
-      case kVideoCodecVP8: {
-        const auto& vp8_header = absl::get<RTPVideoHeaderVP8>(
-            parsed_payload.video_header().video_type_header);
-        parsed->picture_id = vp8_header.pictureId;
-        parsed->tl0_pic_idx = vp8_header.tl0PicIdx;
-        parsed->temporal_idx = vp8_header.temporalIdx;
-        break;
-      }
-      case kVideoCodecVP9: {
-        const auto& vp9_header = absl::get<RTPVideoHeaderVP9>(
-            parsed_payload.video_header().video_type_header);
-        parsed->picture_id = vp9_header.picture_id;
-        parsed->tl0_pic_idx = vp9_header.tl0_pic_idx;
-        parsed->temporal_idx = vp9_header.temporal_idx;
-        break;
-      }
-      default:
-        RTC_NOTREACHED();
-        break;
+    if (const auto* vp8_header = absl::get_if<RTPVideoHeaderVP8>(
+            &parsed_payload->video_header.video_type_header)) {
+      parsed->picture_id = vp8_header->pictureId;
+      parsed->tl0_pic_idx = vp8_header->tl0PicIdx;
+      parsed->temporal_idx = vp8_header->temporalIdx;
+    } else if (const auto* vp9_header = absl::get_if<RTPVideoHeaderVP9>(
+                   &parsed_payload->video_header.video_type_header)) {
+      parsed->picture_id = vp9_header->picture_id;
+      parsed->tl0_pic_idx = vp9_header->tl0_pic_idx;
+      parsed->temporal_idx = vp9_header->temporal_idx;
+    } else {
+      RTC_NOTREACHED();
     }
 
-    parsed->frame_type = parsed_payload.video_header().frame_type;
+    parsed->frame_type = parsed_payload->video_header.frame_type;
     return true;
   }
 
@@ -208,7 +197,7 @@ class PictureIdObserver : public test::RtpRtcpObserver {
   }
 
   rtc::CriticalSection crit_;
-  const VideoCodecType codec_type_;
+  const std::unique_ptr<VideoRtpDepacketizer> depacketizer_;
   std::map<uint32_t, ParsedPacket> last_observed_packet_ RTC_GUARDED_BY(crit_);
   std::map<uint32_t, size_t> num_packets_sent_ RTC_GUARDED_BY(crit_);
   int max_expected_picture_id_gap_ RTC_GUARDED_BY(crit_);

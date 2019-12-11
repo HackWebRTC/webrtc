@@ -286,6 +286,7 @@ if (rtc_include_tests) {
       "../modules/audio_device:windows_core_audio_utility",
       "../modules/audio_mixer:audio_mixer_impl",
       "../modules/rtp_rtcp",
+      "../modules/rtp_rtcp:rtp_rtcp_format",
       "../modules/video_coding",
       "../modules/video_coding:video_coding_utility",
       "../modules/video_coding:webrtc_h264",
