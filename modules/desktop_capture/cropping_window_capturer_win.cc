@@ -95,7 +95,7 @@ struct TopWindowVerifierContext : public SelectedWindowContext {
         // window (which may have been closed).
         RTC_LOG(LS_WARNING) << "Failed to find selected window (only expected "
                                "if it was closed)";
-        assert(!IsWindow(selected_window()));
+        RTC_DCHECK(!IsWindow(selected_window()));
         return false;
       } else if (lastError == ERROR_INVALID_WINDOW_HANDLE) {
         // This error may occur if a window is closed around the time it's
@@ -118,7 +118,7 @@ struct TopWindowVerifierContext : public SelectedWindowContext {
       // firing an assert when enabled, report that the selected window isn't
       // topmost to avoid inadvertent capture of other windows.
       RTC_LOG(LS_ERROR) << "Failed to enumerate windows: " << lastError;
-      assert(false);
+      RTC_DCHECK(false);
       return false;
     }
   }
