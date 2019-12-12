@@ -228,7 +228,7 @@ void RtpTransportControllerSend::SetQueueTimeLimit(int limit_ms) {
 }
 StreamFeedbackProvider*
 RtpTransportControllerSend::GetStreamFeedbackProvider() {
-  return &transport_feedback_adapter_;
+  return &feedback_demuxer_;
 }
 
 void RtpTransportControllerSend::RegisterTargetTransferRateObserver(
