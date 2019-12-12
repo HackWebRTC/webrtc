@@ -31,6 +31,7 @@ void VerifyIsDefault(
                               {0, 0, 0},
                               {0, 0, 0},
                               {0, 0, 0},
+                              {0, 0, 0},
                               {0, 0, 0}},
                           BalancedDegradationSettings::Config{
                               480 * 270,
@@ -41,6 +42,7 @@ void VerifyIsDefault(
                               {0, 0, 0},
                               {0, 0, 0},
                               {0, 0, 0},
+                              {0, 0, 0},
                               {0, 0, 0}},
                           BalancedDegradationSettings::Config{
                               640 * 480,
@@ -48,6 +50,7 @@ void VerifyIsDefault(
                               0,
                               0,
                               BalancedDegradationSettings::kNoFpsDiff,
+                              {0, 0, 0},
                               {0, 0, 0},
                               {0, 0, 0},
                               {0, 0, 0},
@@ -67,6 +70,7 @@ TEST(BalancedDegradationSettings, GetsDefaultConfigIfNoList) {
   EXPECT_FALSE(settings.GetQpThresholds(kVideoCodecVP8, 1));
   EXPECT_FALSE(settings.GetQpThresholds(kVideoCodecVP9, 1));
   EXPECT_FALSE(settings.GetQpThresholds(kVideoCodecH264, 1));
+  EXPECT_FALSE(settings.GetQpThresholds(kVideoCodecAV1, 1));
   EXPECT_FALSE(settings.GetQpThresholds(kVideoCodecGeneric, 1));
   EXPECT_FALSE(settings.GetQpThresholds(kVideoCodecMultiplex, 1));
 }
@@ -87,6 +91,7 @@ TEST(BalancedDegradationSettings, GetsConfig) {
                       {0, 0, 0},
                       {0, 0, 0},
                       {0, 0, 0},
+                      {0, 0, 0},
                       {0, 0, 0}},
                   BalancedDegradationSettings::Config{
                       22,
@@ -97,6 +102,7 @@ TEST(BalancedDegradationSettings, GetsConfig) {
                       {0, 0, 0},
                       {0, 0, 0},
                       {0, 0, 0},
+                      {0, 0, 0},
                       {0, 0, 0}},
                   BalancedDegradationSettings::Config{
                       33,
@@ -104,6 +110,7 @@ TEST(BalancedDegradationSettings, GetsConfig) {
                       0,
                       0,
                       BalancedDegradationSettings::kNoFpsDiff,
+                      {0, 0, 0},
                       {0, 0, 0},
                       {0, 0, 0},
                       {0, 0, 0},
@@ -138,7 +145,7 @@ TEST(BalancedDegradationSettings, GetsConfigWithSpecificFps) {
   webrtc::test::ScopedFieldTrials field_trials(
       "WebRTC-Video-BalancedDegradationSettings/"
       "pixels:1000|2000|3000,fps:5|15|25,vp8_fps:7|8|9,vp9_fps:9|10|11,"
-      "h264_fps:11|12|13,generic_fps:13|14|15/");
+      "h264_fps:11|12|13,av1_fps:1|2|3,generic_fps:13|14|15/");
   BalancedDegradationSettings settings;
   EXPECT_THAT(settings.GetConfigs(),
               ::testing::ElementsAre(
@@ -151,6 +158,7 @@ TEST(BalancedDegradationSettings, GetsConfigWithSpecificFps) {
                       {0, 0, 7},
                       {0, 0, 9},
                       {0, 0, 11},
+                      {0, 0, 1},
                       {0, 0, 13}},
                   BalancedDegradationSettings::Config{
                       2000,
@@ -161,6 +169,7 @@ TEST(BalancedDegradationSettings, GetsConfigWithSpecificFps) {
                       {0, 0, 8},
                       {0, 0, 10},
                       {0, 0, 12},
+                      {0, 0, 2},
                       {0, 0, 14}},
                   BalancedDegradationSettings::Config{
                       3000,
@@ -171,6 +180,7 @@ TEST(BalancedDegradationSettings, GetsConfigWithSpecificFps) {
                       {0, 0, 9},
                       {0, 0, 11},
                       {0, 0, 13},
+                      {0, 0, 3},
                       {0, 0, 15}}));
 }
 
@@ -310,6 +320,7 @@ TEST(BalancedDegradationSettings, GetsConfigWithBitrate) {
                       {0, 0, 0},
                       {0, 0, 0},
                       {0, 0, 0},
+                      {0, 0, 0},
                       {0, 0, 0}},
                   BalancedDegradationSettings::Config{
                       22,
@@ -320,6 +331,7 @@ TEST(BalancedDegradationSettings, GetsConfigWithBitrate) {
                       {0, 0, 0},
                       {0, 0, 0},
                       {0, 0, 0},
+                      {0, 0, 0},
                       {0, 0, 0}},
                   BalancedDegradationSettings::Config{
                       33,
@@ -327,6 +339,7 @@ TEST(BalancedDegradationSettings, GetsConfigWithBitrate) {
                       99,
                       222,
                       BalancedDegradationSettings::kNoFpsDiff,
+                      {0, 0, 0},
                       {0, 0, 0},
                       {0, 0, 0},
                       {0, 0, 0},
@@ -461,6 +474,7 @@ TEST(BalancedDegradationSettings, QpThresholdsNotSetByDefault) {
   EXPECT_FALSE(settings.GetQpThresholds(kVideoCodecVP8, 1));
   EXPECT_FALSE(settings.GetQpThresholds(kVideoCodecVP9, 1));
   EXPECT_FALSE(settings.GetQpThresholds(kVideoCodecH264, 1));
+  EXPECT_FALSE(settings.GetQpThresholds(kVideoCodecAV1, 1));
   EXPECT_FALSE(settings.GetQpThresholds(kVideoCodecGeneric, 1));
 }
 
@@ -469,8 +483,8 @@ TEST(BalancedDegradationSettings, GetsConfigWithQpThresholds) {
       "WebRTC-Video-BalancedDegradationSettings/"
       "pixels:1000|2000|3000,fps:5|15|25,vp8_qp_low:89|90|88,"
       "vp8_qp_high:90|91|92,vp9_qp_low:27|28|29,vp9_qp_high:120|130|140,"
-      "h264_qp_low:12|13|14,h264_qp_high:20|30|40,generic_qp_low:7|6|5,"
-      "generic_qp_high:22|23|24/");
+      "h264_qp_low:12|13|14,h264_qp_high:20|30|40,av1_qp_low:2|3|4,"
+      "av1_qp_high:11|33|44,generic_qp_low:7|6|5,generic_qp_high:22|23|24/");
   BalancedDegradationSettings settings;
   EXPECT_THAT(settings.GetConfigs(),
               ::testing::ElementsAre(
@@ -483,6 +497,7 @@ TEST(BalancedDegradationSettings, GetsConfigWithQpThresholds) {
                       {89, 90, 0},
                       {27, 120, 0},
                       {12, 20, 0},
+                      {2, 11, 0},
                       {7, 22, 0}},
                   BalancedDegradationSettings::Config{
                       2000,
@@ -493,6 +508,7 @@ TEST(BalancedDegradationSettings, GetsConfigWithQpThresholds) {
                       {90, 91, 0},
                       {28, 130, 0},
                       {13, 30, 0},
+                      {3, 33, 0},
                       {6, 23, 0}},
                   BalancedDegradationSettings::Config{
                       3000,
@@ -503,6 +519,7 @@ TEST(BalancedDegradationSettings, GetsConfigWithQpThresholds) {
                       {88, 92, 0},
                       {29, 140, 0},
                       {14, 40, 0},
+                      {4, 44, 0},
                       {5, 24, 0}}));
 }
 

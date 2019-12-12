@@ -52,12 +52,14 @@ class BalancedDegradationSettings {
            CodecTypeSpecific vp8,
            CodecTypeSpecific vp9,
            CodecTypeSpecific h264,
+           CodecTypeSpecific av1,
            CodecTypeSpecific generic);
 
     bool operator==(const Config& o) const {
       return pixels == o.pixels && fps == o.fps && kbps == o.kbps &&
              kbps_res == o.kbps_res && fps_diff == o.fps_diff && vp8 == o.vp8 &&
-             vp9 == o.vp9 && h264 == o.h264 && generic == o.generic;
+             vp9 == o.vp9 && h264 == o.h264 && av1 == o.av1 &&
+             generic == o.generic;
     }
 
     int pixels = 0;  // Video frame size.
@@ -71,6 +73,7 @@ class BalancedDegradationSettings {
     CodecTypeSpecific vp8;
     CodecTypeSpecific vp9;
     CodecTypeSpecific h264;
+    CodecTypeSpecific av1;
     CodecTypeSpecific generic;
   };
 

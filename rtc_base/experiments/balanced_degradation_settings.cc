@@ -32,6 +32,7 @@ std::vector<BalancedDegradationSettings::Config> DefaultConfigs() {
            {0, 0, 0},
            {0, 0, 0},
            {0, 0, 0},
+           {0, 0, 0},
            {0, 0, 0}},
           {480 * 270,
            10,
@@ -41,12 +42,14 @@ std::vector<BalancedDegradationSettings::Config> DefaultConfigs() {
            {0, 0, 0},
            {0, 0, 0},
            {0, 0, 0},
+           {0, 0, 0},
            {0, 0, 0}},
           {640 * 480,
            15,
            0,
            0,
            BalancedDegradationSettings::kNoFpsDiff,
+           {0, 0, 0},
            {0, 0, 0},
            {0, 0, 0},
            {0, 0, 0},
@@ -118,13 +121,15 @@ bool IsValid(const std::vector<BalancedDegradationSettings::Config>& configs) {
     if (!IsValid(configs[i].vp8, configs[i - 1].vp8) ||
         !IsValid(configs[i].vp9, configs[i - 1].vp9) ||
         !IsValid(configs[i].h264, configs[i - 1].h264) ||
+        !IsValid(configs[i].av1, configs[i - 1].av1) ||
         !IsValid(configs[i].generic, configs[i - 1].generic)) {
       return false;
     }
   }
   for (const auto& config : configs) {
     if (!IsValidConfig(config.vp8) || !IsValidConfig(config.vp9) ||
-        !IsValidConfig(config.h264) || !IsValidConfig(config.generic)) {
+        !IsValidConfig(config.h264) || !IsValidConfig(config.av1) ||
+        !IsValidConfig(config.generic)) {
       return false;
     }
   }
@@ -158,6 +163,10 @@ absl::optional<VideoEncoder::QpThresholds> GetThresholds(
       low = config.h264.GetQpLow();
       high = config.h264.GetQpHigh();
       break;
+    case kVideoCodecAV1:
+      low = config.av1.GetQpLow();
+      high = config.av1.GetQpHigh();
+      break;
     case kVideoCodecGeneric:
       low = config.generic.GetQpLow();
       high = config.generic.GetQpHigh();
@@ -190,6 +199,9 @@ int GetFps(VideoCodecType type,
       break;
     case kVideoCodecH264:
       fps = config->h264.GetFps();
+      break;
+    case kVideoCodecAV1:
+      fps = config->av1.GetFps();
       break;
     case kVideoCodecGeneric:
       fps = config->generic.GetFps();
@@ -229,6 +241,7 @@ BalancedDegradationSettings::Config::Config(int pixels,
                                             CodecTypeSpecific vp8,
                                             CodecTypeSpecific vp9,
                                             CodecTypeSpecific h264,
+                                            CodecTypeSpecific av1,
                                             CodecTypeSpecific generic)
     : pixels(pixels),
       fps(fps),
@@ -238,6 +251,7 @@ BalancedDegradationSettings::Config::Config(int pixels,
       vp8(vp8),
       vp9(vp9),
       h264(h264),
+      av1(av1),
       generic(generic) {}
 
 BalancedDegradationSettings::BalancedDegradationSettings() {
@@ -265,6 +279,11 @@ BalancedDegradationSettings::BalancedDegradationSettings() {
                               [](Config* c) { return &c->h264.qp_high; }),
        FieldTrialStructMember("h264_fps",
                               [](Config* c) { return &c->h264.fps; }),
+       FieldTrialStructMember("av1_qp_low",
+                              [](Config* c) { return &c->av1.qp_low; }),
+       FieldTrialStructMember("av1_qp_high",
+                              [](Config* c) { return &c->av1.qp_high; }),
+       FieldTrialStructMember("av1_fps", [](Config* c) { return &c->av1.fps; }),
        FieldTrialStructMember("generic_qp_low",
                               [](Config* c) { return &c->generic.qp_low; }),
        FieldTrialStructMember("generic_qp_high",
