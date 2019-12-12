@@ -366,6 +366,11 @@ bool SrtpSession::UpdateKey(int type,
 ABSL_CONST_INIT int g_libsrtp_usage_count = 0;
 ABSL_CONST_INIT rtc::GlobalLock g_libsrtp_lock;
 
+void ProhibitLibsrtpInitialization() {
+  rtc::GlobalLockScope ls(&g_libsrtp_lock);
+  ++g_libsrtp_usage_count;
+}
+
 // static
 bool SrtpSession::IncrementLibsrtpUsageCountAndMaybeInit() {
   rtc::GlobalLockScope ls(&g_libsrtp_lock);

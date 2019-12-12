@@ -22,6 +22,11 @@ struct srtp_ctx_t_;
 
 namespace cricket {
 
+// Prohibits webrtc from initializing libsrtp. This can be used if libsrtp is
+// initialized by another library or explicitly. Note that this must be called
+// before creating an SRTP session with WebRTC.
+void ProhibitLibsrtpInitialization();
+
 // Class that wraps a libSRTP session.
 class SrtpSession {
  public:
