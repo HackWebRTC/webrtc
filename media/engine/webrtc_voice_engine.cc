@@ -233,16 +233,16 @@ void WebRtcVoiceEngine::Init() {
           "rtc-low-prio", webrtc::TaskQueueFactory::Priority::LOW)));
 
   // Load our audio codec lists.
-  RTC_LOG(LS_INFO) << "Supported send codecs in order of preference:";
+  RTC_LOG(LS_VERBOSE) << "Supported send codecs in order of preference:";
   send_codecs_ = CollectCodecs(encoder_factory_->GetSupportedEncoders());
   for (const AudioCodec& codec : send_codecs_) {
-    RTC_LOG(LS_INFO) << ToString(codec);
+    RTC_LOG(LS_VERBOSE) << ToString(codec);
   }
 
-  RTC_LOG(LS_INFO) << "Supported recv codecs in order of preference:";
+  RTC_LOG(LS_VERBOSE) << "Supported recv codecs in order of preference:";
   recv_codecs_ = CollectCodecs(decoder_factory_->GetSupportedDecoders());
   for (const AudioCodec& codec : recv_codecs_) {
-    RTC_LOG(LS_INFO) << ToString(codec);
+    RTC_LOG(LS_VERBOSE) << ToString(codec);
   }
 
 #if defined(WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)

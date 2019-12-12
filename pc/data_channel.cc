@@ -722,7 +722,7 @@ bool DataChannel::SendControlMessage(const rtc::CopyOnWriteBuffer& buffer) {
   cricket::SendDataResult send_result = cricket::SDR_SUCCESS;
   bool retval = provider_->SendData(send_params, buffer, &send_result);
   if (retval) {
-    RTC_LOG(LS_INFO) << "Sent CONTROL message on channel " << config_.id;
+    RTC_LOG(LS_VERBOSE) << "Sent CONTROL message on channel " << config_.id;
 
     if (handshake_state_ == kHandshakeShouldSendAck) {
       handshake_state_ = kHandshakeReady;

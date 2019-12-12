@@ -5924,7 +5924,7 @@ cricket::ChannelInterface* PeerConnection::GetChannel(
 bool PeerConnection::GetSctpSslRole(rtc::SSLRole* role) {
   RTC_DCHECK_RUN_ON(signaling_thread());
   if (!local_description() || !remote_description()) {
-    RTC_LOG(LS_INFO)
+    RTC_LOG(LS_VERBOSE)
         << "Local and Remote descriptions must be applied to get the "
            "SSL Role of the SCTP transport.";
     return false;

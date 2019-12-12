@@ -780,7 +780,7 @@ void OpenSSLAdapter::SSLInfoCallback(const SSL* s, int where, int ret) {
     str = "SSL_accept";
   }
   if (where & SSL_CB_LOOP) {
-    RTC_DLOG(LS_INFO) << str << ":" << SSL_state_string_long(s);
+    RTC_DLOG(LS_VERBOSE) << str << ":" << SSL_state_string_long(s);
   } else if (where & SSL_CB_ALERT) {
     str = (where & SSL_CB_READ) ? "read" : "write";
     RTC_DLOG(LS_INFO) << "SSL3 alert " << str << ":"

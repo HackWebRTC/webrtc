@@ -302,8 +302,8 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
   }
 }
 void RtpTransportControllerSend::OnNetworkAvailability(bool network_available) {
-  RTC_LOG(LS_INFO) << "SignalNetworkState "
-                   << (network_available ? "Up" : "Down");
+  RTC_LOG(LS_VERBOSE) << "SignalNetworkState "
+                      << (network_available ? "Up" : "Down");
   NetworkAvailability msg;
   msg.at_time = Timestamp::ms(clock_->TimeInMilliseconds());
   msg.network_available = network_available;
