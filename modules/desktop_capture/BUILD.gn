@@ -13,6 +13,12 @@ import("../../webrtc.gni")
 
 use_desktop_capture_differ_sse2 = current_cpu == "x86" || current_cpu == "x64"
 
+config("x11_config") {
+  if (rtc_use_x11_extensions) {
+    defines = [ "WEBRTC_USE_X11" ]
+  }
+}
+
 rtc_library("primitives") {
   visibility = [ "*" ]
   sources = [
@@ -44,6 +50,7 @@ if (rtc_include_tests) {
   rtc_library("desktop_capture_modules_tests") {
     testonly = true
 
+    defines = []
     sources = []
     deps = [
       "../../api:function_view",
@@ -67,12 +74,14 @@ if (rtc_include_tests) {
         "screen_drawer_unittest.cc",
         "window_finder_unittest.cc",
       ]
+      public_configs = [ ":x11_config" ]
     }
   }
 
   rtc_library("desktop_capture_unittests") {
     testonly = true
 
+    defines = []
     sources = [
       "blank_detector_desktop_capturer_wrapper_unittest.cc",
       "cropped_desktop_frame_unittest.cc",
@@ -116,6 +125,7 @@ if (rtc_include_tests) {
         "window_capturer_unittest.cc",
       ]
       deps += [ ":desktop_capture_mock" ]
+      public_configs = [ ":x11_config" ]
     }
   }
 
@@ -267,6 +277,8 @@ if (is_mac) {
 }
 
 rtc_library("desktop_capture_generic") {
+  defines = []
+  public_configs = [ ":x11_config" ]
   visibility = [
     ":desktop_capture",
     ":desktop_capture_objc",

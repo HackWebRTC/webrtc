@@ -13,7 +13,7 @@
 #include "api/scoped_refptr.h"
 #include "rtc_base/system/rtc_export.h"
 
-#if defined(USE_X11)
+#if defined(WEBRTC_USE_X11)
 #include "modules/desktop_capture/linux/shared_x_display.h"
 #endif
 
@@ -42,7 +42,7 @@ class RTC_EXPORT DesktopCaptureOptions {
   DesktopCaptureOptions& operator=(const DesktopCaptureOptions& options);
   DesktopCaptureOptions& operator=(DesktopCaptureOptions&& options);
 
-#if defined(USE_X11)
+#if defined(WEBRTC_USE_X11)
   SharedXDisplay* x_display() const { return x_display_; }
   void set_x_display(rtc::scoped_refptr<SharedXDisplay> x_display) {
     x_display_ = x_display;
@@ -134,7 +134,7 @@ class RTC_EXPORT DesktopCaptureOptions {
 #endif
 
  private:
-#if defined(USE_X11)
+#if defined(WEBRTC_USE_X11)
   rtc::scoped_refptr<SharedXDisplay> x_display_;
 #endif
 
@@ -150,7 +150,7 @@ class RTC_EXPORT DesktopCaptureOptions {
   bool allow_directx_capturer_ = false;
   bool allow_cropping_window_capturer_ = false;
 #endif
-#if defined(USE_X11)
+#if defined(WEBRTC_USE_X11)
   bool use_update_notifications_ = false;
 #else
   bool use_update_notifications_ = true;

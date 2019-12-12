@@ -32,7 +32,7 @@ DesktopCaptureOptions& DesktopCaptureOptions::operator=(
 // static
 DesktopCaptureOptions DesktopCaptureOptions::CreateDefault() {
   DesktopCaptureOptions result;
-#if defined(USE_X11)
+#if defined(WEBRTC_USE_X11)
   result.set_x_display(SharedXDisplay::CreateDefault());
 #endif
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
