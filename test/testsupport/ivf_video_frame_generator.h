@@ -63,11 +63,22 @@ class IvfVideoFrameGenerator : public FrameGeneratorInterface {
   size_t width_;
   size_t height_;
 
-  rtc::Event next_frame_decoded_;
-  SequenceChecker sequence_checker_;
-
+  // This lock is used to ensure that all API method will be called
+  // sequentially. It is required because we need to ensure that generator
+  // won't be destroyed while it is reading the next frame on another thread,
+  // because it will cause SIGSEGV when decoder callback will be invoked.
+  //
+  // FrameGenerator is injected into PeerConnection via some scoped_ref object
+  // and it can happen that the last pointer will be destroyed on the different
+  // thread comparing to the one from which frames were read.
   rtc::CriticalSection lock_;
-  absl::optional<VideoFrame> next_frame_ RTC_GUARDED_BY(lock_);
+  // This lock is used to sync between sending and receiving frame from decoder.
+  // We can't reuse |lock_| because then generator can be destroyed between
+  // frame was sent to decoder and decoder callback was invoked.
+  rtc::CriticalSection frame_decode_lock_;
+
+  rtc::Event next_frame_decoded_;
+  absl::optional<VideoFrame> next_frame_ RTC_GUARDED_BY(frame_decode_lock_);
 };
 
 }  // namespace test
