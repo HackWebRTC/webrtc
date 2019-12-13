@@ -24,7 +24,6 @@
 #include "call/rtp_video_sender.h"
 #include "modules/congestion_controller/rtp/control_handler.h"
 #include "modules/congestion_controller/rtp/transport_feedback_adapter.h"
-#include "modules/congestion_controller/rtp/transport_feedback_demuxer.h"
 #include "modules/pacing/paced_sender.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/pacing/rtp_packet_pacer.h"
@@ -150,7 +149,6 @@ class RtpTransportControllerSend final
   std::unique_ptr<TaskQueuePacedSender> task_queue_pacer_;
 
   TargetTransferRateObserver* observer_ RTC_GUARDED_BY(task_queue_);
-  TransportFeedbackDemuxer feedback_demuxer_;
 
   // TODO(srte): Move all access to feedback adapter to task queue.
   TransportFeedbackAdapter transport_feedback_adapter_;
