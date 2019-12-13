@@ -456,7 +456,8 @@ int RtpPacketHistory::GetPacketIndex(uint16_t sequence_number) const {
 RtpPacketHistory::StoredPacket* RtpPacketHistory::GetStoredPacket(
     uint16_t sequence_number) {
   int index = GetPacketIndex(sequence_number);
-  if (index < 0 || static_cast<size_t>(index) >= packet_history_.size()) {
+  if (index < 0 || static_cast<size_t>(index) >= packet_history_.size() ||
+      packet_history_[index].packet_ == nullptr) {
     return nullptr;
   }
   return &packet_history_[index];

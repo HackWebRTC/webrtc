@@ -735,6 +735,20 @@ TEST_F(RtpPacketHistoryTest, PayloadPaddingWithEncapsulation) {
   EXPECT_EQ(padding_packet->SequenceNumber(), kStartSeqNum + 1);
 }
 
+TEST_F(RtpPacketHistoryTest, NackAfterAckIsNoop) {
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 2);
+  // Add two sent packets.
+  hist_.PutRtpPacket(CreateRtpPacket(kStartSeqNum),
+                     fake_clock_.TimeInMilliseconds());
+  hist_.PutRtpPacket(CreateRtpPacket(kStartSeqNum + 1),
+                     fake_clock_.TimeInMilliseconds());
+  // Remove newest one.
+  hist_.CullAcknowledgedPackets(std::vector<uint16_t>{kStartSeqNum + 1});
+  // Retransmission request for already acked packet, should be noop.
+  auto packet = hist_.GetPacketAndMarkAsPending(kStartSeqNum + 1);
+  EXPECT_EQ(packet.get(), nullptr);
+}
+
 TEST_F(RtpPacketHistoryTest, OutOfOrderInsertRemoval) {
   hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
 
