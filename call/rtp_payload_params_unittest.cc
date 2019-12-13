@@ -14,6 +14,7 @@
 
 #include <map>
 #include <set>
+#include <vector>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
@@ -29,11 +30,13 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
-using ::testing::ElementsAre;
-using ::testing::IsEmpty;
-
 namespace webrtc {
 namespace {
+
+using ::testing::ElementsAre;
+using ::testing::IsEmpty;
+using ::testing::UnorderedElementsAreArray;
+
 const uint32_t kSsrc1 = 12345;
 const uint32_t kSsrc2 = 23456;
 const int16_t kPictureId = 123;
@@ -378,20 +381,32 @@ class RtpPayloadParamsVp8ToGenericTest : public ::testing::Test {
 
   void ConvertAndCheck(int temporal_index,
                        int64_t shared_frame_id,
-                       VideoFrameType frame_type,
+                       const std::vector<int>& references,
+                       const std::vector<int>& updates,
                        LayerSync layer_sync,
                        const std::set<int64_t>& expected_deps,
                        uint16_t width = 0,
                        uint16_t height = 0) {
     EncodedImage encoded_image;
-    encoded_image._frameType = frame_type;
+    encoded_image._frameType = references.empty()
+                                   ? VideoFrameType::kVideoFrameKey
+                                   : VideoFrameType::kVideoFrameDelta;
     encoded_image._encodedWidth = width;
     encoded_image._encodedHeight = height;
 
     CodecSpecificInfo codec_info;
     codec_info.codecType = kVideoCodecVP8;
-    codec_info.codecSpecific.VP8.temporalIdx = temporal_index;
-    codec_info.codecSpecific.VP8.layerSync = layer_sync == kSync;
+    auto& vp8 = codec_info.codecSpecific.VP8;
+    vp8.temporalIdx = temporal_index;
+    vp8.layerSync = layer_sync == kSync;
+    vp8.referencedBuffersCount = 0;
+    for (int reference : references) {
+      vp8.referencedBuffers[vp8.referencedBuffersCount++] = reference;
+    }
+    vp8.updatedBuffersCount = 0;
+    for (int update : updates) {
+      vp8.updatedBuffers[vp8.updatedBuffersCount++] = update;
+    }
 
     RTPVideoHeader header =
         params_.GetRtpVideoHeader(encoded_image, &codec_info, shared_frame_id);
@@ -402,9 +417,8 @@ class RtpPayloadParamsVp8ToGenericTest : public ::testing::Test {
 
     EXPECT_EQ(header.generic->frame_id, shared_frame_id);
     EXPECT_EQ(header.generic->temporal_index, temporal_index);
-    std::set<int64_t> actual_deps(header.generic->dependencies.begin(),
-                                  header.generic->dependencies.end());
-    EXPECT_EQ(expected_deps, actual_deps);
+    EXPECT_THAT(header.generic->dependencies,
+                UnorderedElementsAreArray(expected_deps));
 
     EXPECT_EQ(header.width, width);
     EXPECT_EQ(header.height, height);
@@ -417,13 +431,16 @@ class RtpPayloadParamsVp8ToGenericTest : public ::testing::Test {
 };
 
 TEST_F(RtpPayloadParamsVp8ToGenericTest, Keyframe) {
-  ConvertAndCheck(0, 0, VideoFrameType::kVideoFrameKey, kNoSync, {}, 480, 360);
-  ConvertAndCheck(0, 1, VideoFrameType::kVideoFrameDelta, kNoSync, {0});
-  ConvertAndCheck(0, 2, VideoFrameType::kVideoFrameKey, kNoSync, {}, 480, 360);
+  ConvertAndCheck(0, 0, /*references=*/{}, /*updates=*/{0}, kNoSync, {}, 480,
+                  360);
+  ConvertAndCheck(0, 1, /*references=*/{0}, /*updates=*/{0}, kNoSync, {0});
+  ConvertAndCheck(0, 2, /*references=*/{}, /*updates=*/{0}, kNoSync, {}, 480,
+                  360);
 }
 
 TEST_F(RtpPayloadParamsVp8ToGenericTest, TooHighTemporalIndex) {
-  ConvertAndCheck(0, 0, VideoFrameType::kVideoFrameKey, kNoSync, {}, 480, 360);
+  ConvertAndCheck(0, 0, /*references=*/{}, /*updates=*/{0}, kNoSync, {}, 480,
+                  360);
 
   EncodedImage encoded_image;
   encoded_image._frameType = VideoFrameType::kVideoFrameDelta;
@@ -438,30 +455,35 @@ TEST_F(RtpPayloadParamsVp8ToGenericTest, TooHighTemporalIndex) {
   EXPECT_FALSE(header.generic);
 }
 
-TEST_F(RtpPayloadParamsVp8ToGenericTest, LayerSync) {
-  // 02120212 pattern
-  ConvertAndCheck(0, 0, VideoFrameType::kVideoFrameKey, kNoSync, {}, 480, 360);
-  ConvertAndCheck(2, 1, VideoFrameType::kVideoFrameDelta, kNoSync, {0});
-  ConvertAndCheck(1, 2, VideoFrameType::kVideoFrameDelta, kNoSync, {0});
-  ConvertAndCheck(2, 3, VideoFrameType::kVideoFrameDelta, kNoSync, {0, 1, 2});
+TEST_F(RtpPayloadParamsVp8ToGenericTest, Pattern02120212) {
+  ConvertAndCheck(0, 0, /*references=*/{}, /*updates=*/{0}, kNoSync, {}, 480,
+                  360);
+  ConvertAndCheck(2, 1, /*references=*/{0}, /*updates=*/{2}, kNoSync, {0});
+  ConvertAndCheck(1, 2, /*references=*/{0}, /*updates=*/{1}, kNoSync, {0});
+  ConvertAndCheck(2, 3, /*references=*/{0, 1, 2}, /*updates=*/{2}, kNoSync,
+                  {0, 1, 2});
 
-  ConvertAndCheck(0, 4, VideoFrameType::kVideoFrameDelta, kNoSync, {0});
-  ConvertAndCheck(2, 5, VideoFrameType::kVideoFrameDelta, kNoSync, {2, 3, 4});
-  ConvertAndCheck(1, 6, VideoFrameType::kVideoFrameDelta, kSync,
-                  {4});  // layer sync
-  ConvertAndCheck(2, 7, VideoFrameType::kVideoFrameDelta, kNoSync, {4, 5, 6});
+  ConvertAndCheck(0, 4, /*references=*/{0}, /*updates=*/{0}, kNoSync, {0});
+  ConvertAndCheck(2, 5, /*references=*/{0, 1, 2}, /*updates=*/{2}, kNoSync,
+                  {2, 3, 4});
+  ConvertAndCheck(1, 6, /*references=*/{0}, /*updates=*/{1}, kSync, {4});
+  ConvertAndCheck(2, 7, /*references=*/{0, 1, 2}, /*updates=*/{2}, kNoSync,
+                  {4, 5, 6});
 }
 
 TEST_F(RtpPayloadParamsVp8ToGenericTest, FrameIdGaps) {
   // 0101 pattern
-  ConvertAndCheck(0, 0, VideoFrameType::kVideoFrameKey, kNoSync, {}, 480, 360);
-  ConvertAndCheck(1, 1, VideoFrameType::kVideoFrameDelta, kNoSync, {0});
+  ConvertAndCheck(0, 0, /*references=*/{}, /*updates=*/{0}, kNoSync, {}, 480,
+                  360);
+  ConvertAndCheck(1, 1, /*references=*/{0}, /*updates=*/{1}, kNoSync, {0});
 
-  ConvertAndCheck(0, 5, VideoFrameType::kVideoFrameDelta, kNoSync, {0});
-  ConvertAndCheck(1, 10, VideoFrameType::kVideoFrameDelta, kNoSync, {1, 5});
+  ConvertAndCheck(0, 5, /*references=*/{0}, /*updates=*/{0}, kNoSync, {0});
+  ConvertAndCheck(1, 10, /*references=*/{0, 1}, /*updates=*/{1}, kNoSync,
+                  {1, 5});
 
-  ConvertAndCheck(0, 15, VideoFrameType::kVideoFrameDelta, kNoSync, {5});
-  ConvertAndCheck(1, 20, VideoFrameType::kVideoFrameDelta, kNoSync, {10, 15});
+  ConvertAndCheck(0, 15, /*references=*/{0}, /*updates=*/{0}, kNoSync, {5});
+  ConvertAndCheck(1, 20, /*references=*/{0, 1}, /*updates=*/{1}, kNoSync,
+                  {10, 15});
 }
 
 class RtpPayloadParamsH264ToGenericTest : public ::testing::Test {

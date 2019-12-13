@@ -520,7 +520,6 @@ void DefaultTemporalLayers::OnEncodeDone(size_t stream_index,
     }
   }
 
-  vp8_info.useExplicitDependencies = true;
   RTC_DCHECK_EQ(vp8_info.referencedBuffersCount, 0u);
   RTC_DCHECK_EQ(vp8_info.updatedBuffersCount, 0u);
 
