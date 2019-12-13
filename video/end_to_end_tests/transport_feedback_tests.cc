@@ -43,7 +43,6 @@ TEST(TransportFeedbackMultiStreamTest, AssignsTransportSequenceNumbers) {
     RtpExtensionHeaderObserver(
         TaskQueueBase* task_queue,
         Call* sender_call,
-        const uint32_t& first_media_ssrc,
         const std::map<uint32_t, uint32_t>& ssrc_map,
         const std::map<uint8_t, MediaType>& payload_type_map)
         : DirectTransport(task_queue,
@@ -53,7 +52,6 @@ TEST(TransportFeedbackMultiStreamTest, AssignsTransportSequenceNumbers) {
                                   BuiltInNetworkBehaviorConfig())),
                           sender_call,
                           payload_type_map),
-          first_media_ssrc_(first_media_ssrc),
           rtx_to_media_ssrcs_(ssrc_map),
           rtx_padding_observed_(false),
           retransmit_observed_(false),
@@ -88,17 +86,17 @@ TEST(TransportFeedbackMultiStreamTest, AssignsTransportSequenceNumbers) {
           }
 
           // Drop (up to) every 17th packet, so we get retransmits.
-          // Only drop media, and not on the first stream (otherwise it will be
-          // hard to distinguish from padding, which is always sent on the first
-          // stream).
+          // Only drop media, do not drop padding packets.
           if (rtp_packet.PayloadType() != kSendRtxPayloadType &&
-              rtp_packet.Ssrc() != first_media_ssrc_ &&
+              rtp_packet.payload_size() > 0 &&
               transport_sequence_number % 17 == 0) {
             dropped_seq_[rtp_packet.Ssrc()].insert(rtp_packet.SequenceNumber());
             drop_packet = true;
           }
 
-          if (rtp_packet.PayloadType() == kSendRtxPayloadType) {
+          if (rtp_packet.payload_size() == 0) {
+            // Ignore padding packets.
+          } else if (rtp_packet.PayloadType() == kSendRtxPayloadType) {
             uint16_t original_sequence_number =
                 ByteReader<uint16_t>::ReadBigEndian(
                     rtp_packet.payload().data());
@@ -157,7 +155,6 @@ TEST(TransportFeedbackMultiStreamTest, AssignsTransportSequenceNumbers) {
     std::set<int64_t> received_packed_ids_;
     std::set<uint32_t> streams_observed_;
     std::map<uint32_t, std::set<uint16_t>> dropped_seq_;
-    const uint32_t& first_media_ssrc_;
     const std::map<uint32_t, uint32_t>& rtx_to_media_ssrcs_;
     bool rtx_padding_observed_;
     bool retransmit_observed_;
@@ -166,8 +163,7 @@ TEST(TransportFeedbackMultiStreamTest, AssignsTransportSequenceNumbers) {
 
   class TransportSequenceNumberTester : public MultiStreamTester {
    public:
-    TransportSequenceNumberTester()
-        : first_media_ssrc_(0), observer_(nullptr) {}
+    TransportSequenceNumberTester() : observer_(nullptr) {}
     ~TransportSequenceNumberTester() override = default;
 
    protected:
@@ -200,9 +196,6 @@ TEST(TransportFeedbackMultiStreamTest, AssignsTransportSequenceNumbers) {
       send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
       rtx_to_media_ssrcs_[kSendRtxSsrcs[stream_index]] =
           send_config->rtp.ssrcs[0];
-
-      if (stream_index == 0)
-        first_media_ssrc_ = send_config->rtp.ssrcs[0];
     }
 
     void UpdateReceiveConfig(
@@ -225,15 +218,13 @@ TEST(TransportFeedbackMultiStreamTest, AssignsTransportSequenceNumbers) {
                  payload_type_map.end());
       payload_type_map[kSendRtxPayloadType] = MediaType::VIDEO;
       auto observer = std::make_unique<RtpExtensionHeaderObserver>(
-          task_queue, sender_call, first_media_ssrc_, rtx_to_media_ssrcs_,
-          payload_type_map);
+          task_queue, sender_call, rtx_to_media_ssrcs_, payload_type_map);
       observer_ = observer.get();
       return observer;
     }
 
    private:
     test::FakeVideoRenderer fake_renderer_;
-    uint32_t first_media_ssrc_;
     std::map<uint32_t, uint32_t> rtx_to_media_ssrcs_;
     RtpExtensionHeaderObserver* observer_;
   } tester;

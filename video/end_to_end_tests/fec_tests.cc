@@ -196,6 +196,11 @@ class FlexfecRenderObserver : public test::EndToEndTest,
     if (rtp_packet.PayloadType() == test::CallTest::kSendRtxPayloadType) {
       EXPECT_EQ(test::CallTest::kSendRtxSsrcs[0], rtp_packet.Ssrc());
 
+      if (rtp_packet.payload_size() == 0) {
+        // Pure padding packet.
+        return SEND_PACKET;
+      }
+
       // Parse RTX header.
       uint16_t original_sequence_number =
           ByteReader<uint16_t>::ReadBigEndian(rtp_packet.payload().data());
