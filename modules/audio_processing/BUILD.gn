@@ -121,8 +121,6 @@ rtc_library("audio_processing") {
     "gain_controller2.h",
     "include/aec_dump.cc",
     "include/aec_dump.h",
-    "legacy_noise_suppression.cc",
-    "legacy_noise_suppression.h",
     "level_estimator.cc",
     "level_estimator.h",
     "render_queue_item_verifier.h",
@@ -156,7 +154,6 @@ rtc_library("audio_processing") {
     ":audio_buffer",
     ":audio_frame_view",
     ":audio_generator_interface",
-    ":audio_processing_c",
     ":audio_processing_statistics",
     ":config",
     ":high_pass_filter",
@@ -186,16 +183,12 @@ rtc_library("audio_processing") {
     "agc2:adaptive_digital",
     "agc2:fixed_digital",
     "agc2:gain_applier",
+    "legacy_ns:legacy_ns",
+    "legacy_ns:legacy_ns_c",
     "ns",
     "vad",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
-
-  if (rtc_prefer_fixed_point) {
-    defines += [ "WEBRTC_NS_FIXED" ]
-  } else {
-    defines += [ "WEBRTC_NS_FLOAT" ]
-  }
 
   deps += [
     "../../common_audio",
@@ -266,56 +259,6 @@ rtc_library("file_audio_generator") {
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
   ]
-}
-
-rtc_source_set("audio_processing_c") {
-  visibility = [ ":*" ]  # Only targets in this file can depend on this.
-  sources = [
-    "legacy_ns/windows_private.h",
-  ]
-
-  if (rtc_prefer_fixed_point) {
-    sources += [
-      "legacy_ns/noise_suppression_x.c",
-      "legacy_ns/noise_suppression_x.h",
-      "legacy_ns/nsx_core.c",
-      "legacy_ns/nsx_core.h",
-      "legacy_ns/nsx_defines.h",
-    ]
-    if (current_cpu == "mipsel") {
-      sources += [ "legacy_ns/nsx_core_mips.c" ]
-    } else {
-      sources += [ "legacy_ns/nsx_core_c.c" ]
-    }
-  } else {
-    sources += [
-      "legacy_ns/defines.h",
-      "legacy_ns/noise_suppression.c",
-      "legacy_ns/noise_suppression.h",
-      "legacy_ns/ns_core.c",
-      "legacy_ns/ns_core.h",
-    ]
-  }
-
-  deps = [
-    "../../common_audio",
-    "../../common_audio:common_audio_c",
-    "../../common_audio/third_party/fft4g",
-    "../../rtc_base:checks",
-    "../../rtc_base:rtc_base_approved",
-    "../../system_wrappers:cpu_features_api",
-    "agc:agc_legacy_c",
-  ]
-
-  if (rtc_build_with_neon) {
-    sources += [ "legacy_ns/nsx_core_neon.c" ]
-
-    if (current_cpu != "arm64") {
-      # Enable compilation for the NEON instruction set.
-      suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
-      cflags = [ "-mfpu=neon" ]
-    }
-  }
 }
 
 if (rtc_enable_protobuf) {
@@ -443,6 +386,7 @@ if (rtc_include_tests) {
       "agc2:rnn_vad_with_level_unittests",
       "agc2:test_utils",
       "agc2/rnn_vad:unittests",
+      "legacy_ns:legacy_ns",
       "test/conversational_speech:unittest",
       "utility:legacy_delay_estimator_unittest",
       "utility:pffft_wrapper_unittest",
@@ -486,7 +430,6 @@ if (rtc_include_tests) {
         "echo_detector/normalized_covariance_estimator_unittest.cc",
         "gain_control_unittest.cc",
         "high_pass_filter_unittest.cc",
-        "legacy_noise_suppression_unittest.cc",
         "level_estimator_unittest.cc",
         "residual_echo_detector_unittest.cc",
         "rms_level_unittest.cc",

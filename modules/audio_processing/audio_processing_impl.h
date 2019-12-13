@@ -27,7 +27,7 @@
 #include "modules/audio_processing/include/aec_dump.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
-#include "modules/audio_processing/legacy_noise_suppression.h"
+#include "modules/audio_processing/legacy_ns/legacy_noise_suppression.h"
 #include "modules/audio_processing/level_estimator.h"
 #include "modules/audio_processing/ns/noise_suppressor.h"
 #include "modules/audio_processing/render_queue_item_verifier.h"
