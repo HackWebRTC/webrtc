@@ -11,6 +11,7 @@
 #include "video/rtp_video_stream_receiver.h"
 
 #include <memory>
+#include <utility>
 
 #include "api/video/video_codec_type.h"
 #include "api/video/video_frame_type.h"
@@ -170,13 +171,12 @@ class RtpVideoStreamReceiverTest : public ::testing::Test {
   // code.
   void AddSps(RTPVideoHeader* video_header,
               uint8_t sps_id,
-              std::vector<uint8_t>* data) {
+              rtc::CopyOnWriteBuffer* data) {
     NaluInfo info;
     info.type = H264::NaluType::kSps;
     info.sps_id = sps_id;
     info.pps_id = -1;
-    data->push_back(H264::NaluType::kSps);
-    data->push_back(sps_id);
+    data->AppendData({H264::NaluType::kSps, sps_id});
     auto& h264 = absl::get<RTPVideoHeaderH264>(video_header->video_type_header);
     h264.nalus[h264.nalus_length++] = info;
   }
@@ -184,13 +184,12 @@ class RtpVideoStreamReceiverTest : public ::testing::Test {
   void AddPps(RTPVideoHeader* video_header,
               uint8_t sps_id,
               uint8_t pps_id,
-              std::vector<uint8_t>* data) {
+              rtc::CopyOnWriteBuffer* data) {
     NaluInfo info;
     info.type = H264::NaluType::kPps;
     info.sps_id = sps_id;
     info.pps_id = pps_id;
-    data->push_back(H264::NaluType::kPps);
-    data->push_back(pps_id);
+    data->AppendData({H264::NaluType::kPps, pps_id});
     auto& h264 = absl::get<RTPVideoHeaderH264>(video_header->video_type_header);
     h264.nalus[h264.nalus_length++] = info;
   }
@@ -342,7 +341,7 @@ TEST_F(RtpVideoStreamReceiverTest, CacheColorSpaceFromLastPacketOfKeyframe) {
 TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrame) {
   RtpPacketReceived rtp_packet;
   RTPVideoHeader video_header;
-  const std::vector<uint8_t> data({1, 2, 3, 4});
+  rtc::CopyOnWriteBuffer data({1, 2, 3, 4});
   rtp_packet.SetSequenceNumber(1);
   video_header.is_first_packet_in_frame = true;
   video_header.is_last_packet_in_frame = true;
@@ -363,7 +362,7 @@ TEST_F(RtpVideoStreamReceiverTest, PacketInfoIsPropagatedIntoVideoFrames) {
   extension_map.Register<AbsoluteCaptureTimeExtension>(kId0);
   RtpPacketReceived rtp_packet(&extension_map);
   RTPVideoHeader video_header;
-  const std::vector<uint8_t> data({1, 2, 3, 4});
+  rtc::CopyOnWriteBuffer data({1, 2, 3, 4});
   rtp_packet.SetSequenceNumber(1);
   rtp_packet.SetTimestamp(1);
   rtp_packet.SetSsrc(kSsrc);
@@ -397,7 +396,7 @@ TEST_F(RtpVideoStreamReceiverTest,
   RtpPacketReceived rtp_packet(&extension_map);
 
   RTPVideoHeader video_header;
-  const std::vector<uint8_t> data({1, 2, 3, 4});
+  rtc::CopyOnWriteBuffer data({1, 2, 3, 4});
   uint16_t sequence_number = 1;
   uint32_t rtp_timestamp = 1;
   rtp_packet.SetSequenceNumber(sequence_number);
@@ -479,7 +478,7 @@ TEST_F(RtpVideoStreamReceiverTest,
 TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrameBitstreamError) {
   RtpPacketReceived rtp_packet;
   RTPVideoHeader video_header;
-  const std::vector<uint8_t> data({1, 2, 3, 4});
+  rtc::CopyOnWriteBuffer data({1, 2, 3, 4});
   rtp_packet.SetSequenceNumber(1);
   video_header.is_first_packet_in_frame = true;
   video_header.is_last_packet_in_frame = true;
@@ -506,7 +505,7 @@ INSTANTIATE_TEST_SUITE_P(SpsPpsIdrIsKeyframe,
                          Values("", "WebRTC-SpsPpsIdrIsH264Keyframe/Enabled/"));
 
 TEST_P(RtpVideoStreamReceiverTestH264, InBandSpsPps) {
-  std::vector<uint8_t> sps_data;
+  rtc::CopyOnWriteBuffer sps_data;
   RtpPacketReceived rtp_packet;
   RTPVideoHeader sps_video_header = GetDefaultH264VideoHeader();
   AddSps(&sps_video_header, 0, &sps_data);
@@ -520,7 +519,7 @@ TEST_P(RtpVideoStreamReceiverTestH264, InBandSpsPps) {
   rtp_video_stream_receiver_->OnReceivedPayloadData(sps_data, rtp_packet,
                                                     sps_video_header);
 
-  std::vector<uint8_t> pps_data;
+  rtc::CopyOnWriteBuffer pps_data;
   RTPVideoHeader pps_video_header = GetDefaultH264VideoHeader();
   AddPps(&pps_video_header, 0, 1, &pps_data);
   rtp_packet.SetSequenceNumber(1);
@@ -533,14 +532,15 @@ TEST_P(RtpVideoStreamReceiverTestH264, InBandSpsPps) {
   rtp_video_stream_receiver_->OnReceivedPayloadData(pps_data, rtp_packet,
                                                     pps_video_header);
 
-  std::vector<uint8_t> idr_data;
+  rtc::CopyOnWriteBuffer idr_data;
   RTPVideoHeader idr_video_header = GetDefaultH264VideoHeader();
   AddIdr(&idr_video_header, 1);
   rtp_packet.SetSequenceNumber(2);
   idr_video_header.is_first_packet_in_frame = true;
   idr_video_header.is_last_packet_in_frame = true;
   idr_video_header.frame_type = VideoFrameType::kVideoFrameKey;
-  idr_data.insert(idr_data.end(), {0x65, 1, 2, 3});
+  const uint8_t idr[] = {0x65, 1, 2, 3};
+  idr_data.AppendData(idr);
   mock_on_complete_frame_callback_.AppendExpectedBitstream(
       kH264StartCode, sizeof(kH264StartCode));
   mock_on_complete_frame_callback_.AppendExpectedBitstream(idr_data.data(),
@@ -573,7 +573,6 @@ TEST_P(RtpVideoStreamReceiverTestH264, OutOfBandFmtpSpsPps) {
   mock_on_complete_frame_callback_.AppendExpectedBitstream(binary_pps,
                                                            sizeof(binary_pps));
 
-  std::vector<uint8_t> data;
   RtpPacketReceived rtp_packet;
   RTPVideoHeader video_header = GetDefaultH264VideoHeader();
   AddIdr(&video_header, 0);
@@ -583,7 +582,7 @@ TEST_P(RtpVideoStreamReceiverTestH264, OutOfBandFmtpSpsPps) {
   video_header.is_last_packet_in_frame = true;
   video_header.codec = kVideoCodecH264;
   video_header.frame_type = VideoFrameType::kVideoFrameKey;
-  data.insert(data.end(), {1, 2, 3});
+  rtc::CopyOnWriteBuffer data({1, 2, 3});
   mock_on_complete_frame_callback_.AppendExpectedBitstream(
       kH264StartCode, sizeof(kH264StartCode));
   mock_on_complete_frame_callback_.AppendExpectedBitstream(data.data(),
@@ -596,8 +595,7 @@ TEST_P(RtpVideoStreamReceiverTestH264, OutOfBandFmtpSpsPps) {
 TEST_F(RtpVideoStreamReceiverTest, PaddingInMediaStream) {
   RtpPacketReceived rtp_packet;
   RTPVideoHeader video_header = GetDefaultH264VideoHeader();
-  std::vector<uint8_t> data;
-  data.insert(data.end(), {1, 2, 3});
+  rtc::CopyOnWriteBuffer data({1, 2, 3});
   rtp_packet.SetPayloadType(99);
   rtp_packet.SetSequenceNumber(2);
   video_header.is_first_packet_in_frame = true;
@@ -634,7 +632,7 @@ TEST_F(RtpVideoStreamReceiverTest, PaddingInMediaStream) {
 TEST_F(RtpVideoStreamReceiverTest, RequestKeyframeIfFirstFrameIsDelta) {
   RtpPacketReceived rtp_packet;
   RTPVideoHeader video_header;
-  const std::vector<uint8_t> data({1, 2, 3, 4});
+  rtc::CopyOnWriteBuffer data({1, 2, 3, 4});
   rtp_packet.SetSequenceNumber(1);
   video_header.is_first_packet_in_frame = true;
   video_header.is_last_packet_in_frame = true;
@@ -650,7 +648,7 @@ TEST_F(RtpVideoStreamReceiverTest, RequestKeyframeWhenPacketBufferGetsFull) {
 
   RtpPacketReceived rtp_packet;
   RTPVideoHeader video_header;
-  const std::vector<uint8_t> data({1, 2, 3, 4});
+  rtc::CopyOnWriteBuffer data({1, 2, 3, 4});
   video_header.is_first_packet_in_frame = true;
   // Incomplete frames so that the packet buffer is filling up.
   video_header.is_last_packet_in_frame = false;

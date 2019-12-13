@@ -34,6 +34,7 @@
 #include "modules/rtp_rtcp/source/absolute_capture_time_receiver.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
+#include "modules/rtp_rtcp/source/video_rtp_depacketizer.h"
 #include "modules/video_coding/h264_sps_pps_tracker.h"
 #include "modules/video_coding/loss_notification_controller.h"
 #include "modules/video_coding/packet_buffer.h"
@@ -116,7 +117,7 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
 
   // TODO(philipel): Stop using VCMPacket in the new jitter buffer and then
   //                 remove this function. Public only for tests.
-  void OnReceivedPayloadData(rtc::ArrayView<const uint8_t> codec_payload,
+  void OnReceivedPayloadData(rtc::CopyOnWriteBuffer codec_payload,
                              const RtpPacketReceived& rtp_packet,
                              const RTPVideoHeader& video);
 
@@ -288,8 +289,8 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
       RTC_GUARDED_BY(last_seq_num_cs_);
   video_coding::H264SpsPpsTracker tracker_;
 
-  // Maps payload type to codec type, for packetization.
-  std::map<uint8_t, absl::optional<VideoCodecType>> payload_type_map_;
+  // Maps payload id to the depacketizer.
+  std::map<uint8_t, std::unique_ptr<VideoRtpDepacketizer>> payload_type_map_;
 
   // TODO(johan): Remove pt_codec_params_ once
   // https://bugs.chromium.org/p/webrtc/issues/detail?id=6883 is resolved.

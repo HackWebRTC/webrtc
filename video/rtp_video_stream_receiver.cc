@@ -17,6 +17,7 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
+#include "absl/types/optional.h"
 #include "media/base/media_constants.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
@@ -24,11 +25,14 @@
 #include "modules/rtp_rtcp/include/rtp_cvo.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/ulpfec_receiver.h"
+#include "modules/rtp_rtcp/source/create_video_rtp_depacketizer.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor_extension.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
+#include "modules/rtp_rtcp/source/video_rtp_depacketizer.h"
+#include "modules/rtp_rtcp/source/video_rtp_depacketizer_raw.h"
 #include "modules/utility/include/process_thread.h"
 #include "modules/video_coding/frame_object.h"
 #include "modules/video_coding/h264_sprop_parameter_sets.h"
@@ -295,11 +299,10 @@ void RtpVideoStreamReceiver::AddReceiveCodec(
     const VideoCodec& video_codec,
     const std::map<std::string, std::string>& codec_params,
     bool raw_payload) {
-  absl::optional<VideoCodecType> video_type;
-  if (!raw_payload) {
-    video_type = video_codec.codecType;
-  }
-  payload_type_map_.emplace(video_codec.plType, video_type);
+  payload_type_map_.emplace(
+      video_codec.plType,
+      raw_payload ? std::make_unique<VideoRtpDepacketizerRaw>()
+                  : CreateVideoRtpDepacketizer(video_codec.codecType));
   pt_codec_params_.emplace(video_codec.plType, codec_params);
 }
 
@@ -324,7 +327,7 @@ absl::optional<Syncable::Info> RtpVideoStreamReceiver::GetSyncInfo() const {
 }
 
 void RtpVideoStreamReceiver::OnReceivedPayloadData(
-    rtc::ArrayView<const uint8_t> codec_payload,
+    rtc::CopyOnWriteBuffer codec_payload,
     const RtpPacketReceived& rtp_packet,
     const RTPVideoHeader& video) {
   RTC_DCHECK_RUN_ON(&worker_task_checker_);
@@ -440,7 +443,7 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
     packet.times_nacked = -1;
   }
 
-  if (codec_payload.empty()) {
+  if (codec_payload.size() == 0) {
     NotifyReceiverOfEmptyPacket(packet.seq_num);
     rtcp_feedback_buffer_.SendBufferedRtcpFeedback();
     return;
@@ -456,7 +459,9 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
     }
 
     video_coding::H264SpsPpsTracker::FixedBitstream fixed =
-        tracker_.CopyAndFixBitstream(codec_payload, &packet.video_header);
+        tracker_.CopyAndFixBitstream(
+            rtc::MakeArrayView(codec_payload.cdata(), codec_payload.size()),
+            &packet.video_header);
 
     switch (fixed.action) {
       case video_coding::H264SpsPpsTracker::kRequestKeyframe:
@@ -471,7 +476,7 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
     }
 
   } else {
-    packet.video_payload.SetData(codec_payload.data(), codec_payload.size());
+    packet.video_payload = std::move(codec_payload);
   }
 
   rtcp_feedback_buffer_.SendBufferedRtcpFeedback();
@@ -755,23 +760,15 @@ void RtpVideoStreamReceiver::ReceivePacket(const RtpPacketReceived& packet) {
   if (type_it == payload_type_map_.end()) {
     return;
   }
-  auto depacketizer =
-      absl::WrapUnique(RtpDepacketizer::Create(type_it->second));
-
-  if (!depacketizer) {
-    RTC_LOG(LS_ERROR) << "Failed to create depacketizer.";
-    return;
-  }
-  RtpDepacketizer::ParsedPayload parsed_payload;
-  if (!depacketizer->Parse(&parsed_payload, packet.payload().data(),
-                           packet.payload().size())) {
+  absl::optional<VideoRtpDepacketizer::ParsedRtpPayload> parsed_payload =
+      type_it->second->Parse(packet.PayloadBuffer());
+  if (parsed_payload == absl::nullopt) {
     RTC_LOG(LS_WARNING) << "Failed parsing payload.";
     return;
   }
 
-  OnReceivedPayloadData(
-      rtc::MakeArrayView(parsed_payload.payload, parsed_payload.payload_length),
-      packet, parsed_payload.video);
+  OnReceivedPayloadData(std::move(parsed_payload->video_payload), packet,
+                        parsed_payload->video_header);
 }
 
 void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(
