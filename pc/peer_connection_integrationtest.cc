@@ -3556,6 +3556,7 @@ TEST_P(PeerConnectionIntegrationTest, SctpDataChannelToAudioVideoUpgrade) {
 static void MakeSpecCompliantSctpOffer(cricket::SessionDescription* desc) {
   cricket::SctpDataContentDescription* dcd_offer =
       GetFirstSctpDataContentDescription(desc);
+  // See https://crbug.com/webrtc/11211 - this function is a no-op
   ASSERT_TRUE(dcd_offer);
   dcd_offer->set_use_sctpmap(false);
   dcd_offer->set_protocol("UDP/DTLS/SCTP");
@@ -5967,15 +5968,25 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   caller()->CreateDataChannel();
   caller()->AddAudioVideoTracks();
   callee()->AddAudioVideoTracks();
-  caller()->SetGeneratedSdpMunger(MakeSpecCompliantSctpOffer);
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-  // Ensure that media and data are multiplexed on the same DTLS transport.
-  // This only works on Unified Plan, because transports are not exposed in plan
-  // B.
-  auto sctp_info = caller()->pc()->GetSctpTransport()->Information();
-  EXPECT_EQ(sctp_info.dtls_transport(),
-            caller()->pc()->GetSenders()[0]->dtls_transport());
+  ASSERT_EQ_WAIT(SctpTransportState::kConnected,
+                 caller()->pc()->GetSctpTransport()->Information().state(),
+                 kDefaultTimeout);
+  ASSERT_TRUE_WAIT(callee()->data_channel(), kDefaultTimeout);
+  ASSERT_TRUE_WAIT(callee()->data_observer()->IsOpen(), kDefaultTimeout);
+}
+
+TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
+       EndToEndCallWithDataChannelOnlyConnects) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->CreateDataChannel();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ASSERT_TRUE_WAIT(callee()->data_channel(), kDefaultTimeout);
+  ASSERT_TRUE_WAIT(callee()->data_observer()->IsOpen(), kDefaultTimeout);
+  ASSERT_TRUE(caller()->data_observer()->IsOpen());
 }
 
 #endif  // HAVE_SCTP
