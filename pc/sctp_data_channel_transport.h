@@ -38,6 +38,7 @@ class SctpDataChannelTransport : public DataChannelTransportInterface,
                       const rtc::CopyOnWriteBuffer& buffer);
   void OnClosingProcedureStartedRemotely(int channel_id);
   void OnClosingProcedureComplete(int channel_id);
+  void OnClosedAbruptly();
 
   cricket::SctpTransportInternal* const sctp_transport_;
 

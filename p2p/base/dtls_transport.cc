@@ -656,6 +656,7 @@ void DtlsTransport::OnDtlsEvent(rtc::StreamInterface* dtls, int sig, int err) {
         RTC_LOG(LS_INFO) << ToString() << ": DTLS transport closed by remote";
         set_writable(false);
         set_dtls_state(DTLS_TRANSPORT_CLOSED);
+        SignalClosed(this);
       } else if (ret == rtc::SR_ERROR) {
         // Remote peer shut down the association with an error.
         RTC_LOG(LS_INFO)
@@ -664,6 +665,7 @@ void DtlsTransport::OnDtlsEvent(rtc::StreamInterface* dtls, int sig, int err) {
             << read_error;
         set_writable(false);
         set_dtls_state(DTLS_TRANSPORT_FAILED);
+        SignalClosed(this);
       }
     } while (ret == rtc::SR_SUCCESS);
   }

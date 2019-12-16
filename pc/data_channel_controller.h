@@ -46,6 +46,7 @@ class DataChannelController : public DataChannelProviderInterface,
   void OnChannelClosing(int channel_id) override;
   void OnChannelClosed(int channel_id) override;
   void OnReadyToSend() override;
+  void OnTransportClosed() override;
 
   // Called from PeerConnection::SetupDataChannelTransport_n
   void SetupDataChannelTransport_n();

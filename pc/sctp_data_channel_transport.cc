@@ -24,6 +24,8 @@ SctpDataChannelTransport::SctpDataChannelTransport(
       this, &SctpDataChannelTransport::OnClosingProcedureStartedRemotely);
   sctp_transport_->SignalClosingProcedureComplete.connect(
       this, &SctpDataChannelTransport::OnClosingProcedureComplete);
+  sctp_transport_->SignalClosedAbruptly.connect(
+      this, &SctpDataChannelTransport::OnClosedAbruptly);
 }
 
 RTCError SctpDataChannelTransport::OpenChannel(int channel_id) {
@@ -106,6 +108,12 @@ void SctpDataChannelTransport::OnClosingProcedureStartedRemotely(
 void SctpDataChannelTransport::OnClosingProcedureComplete(int channel_id) {
   if (sink_) {
     sink_->OnChannelClosed(channel_id);
+  }
+}
+
+void SctpDataChannelTransport::OnClosedAbruptly() {
+  if (sink_) {
+    sink_->OnTransportClosed();
   }
 }
 

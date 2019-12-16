@@ -662,6 +662,7 @@ void SctpTransport::ConnectTransportSignals() {
   transport_->SignalWritableState.connect(this,
                                           &SctpTransport::OnWritableState);
   transport_->SignalReadPacket.connect(this, &SctpTransport::OnPacketRead);
+  transport_->SignalClosed.connect(this, &SctpTransport::OnClosed);
 }
 
 void SctpTransport::DisconnectTransportSignals() {
@@ -671,6 +672,7 @@ void SctpTransport::DisconnectTransportSignals() {
   }
   transport_->SignalWritableState.disconnect(this);
   transport_->SignalReadPacket.disconnect(this);
+  transport_->SignalClosed.disconnect(this);
 }
 
 bool SctpTransport::Connect() {
@@ -988,6 +990,10 @@ void SctpTransport::OnPacketRead(rtc::PacketTransportInternal* transport,
     // TODO(ldixon): Consider caching the packet for very slightly better
     // reliability.
   }
+}
+
+void SctpTransport::OnClosed(rtc::PacketTransportInternal* transport) {
+  SignalClosedAbruptly();
 }
 
 void SctpTransport::OnSendThresholdCallback() {
