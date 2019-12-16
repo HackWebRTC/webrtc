@@ -67,8 +67,12 @@ RtpBitrateConfigurator::UpdateWithSdpParameters(
       bitrate_config.start_bitrate_bps !=
           base_bitrate_config_.start_bitrate_bps) {
     new_start.emplace(bitrate_config.start_bitrate_bps);
+    base_bitrate_config_.start_bitrate_bps = bitrate_config.start_bitrate_bps;
   }
-  base_bitrate_config_ = bitrate_config;
+  if (bitrate_config.min_bitrate_bps > 0)
+    base_bitrate_config_.min_bitrate_bps = bitrate_config.min_bitrate_bps;
+  if (bitrate_config.max_bitrate_bps > 0)
+    base_bitrate_config_.max_bitrate_bps = bitrate_config.max_bitrate_bps;
   return UpdateConstraints(new_start);
 }
 
