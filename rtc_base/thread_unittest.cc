@@ -920,6 +920,7 @@ TEST(ThreadPostDelayedTaskTest, InvokesAsynchronously) {
 }
 
 TEST(ThreadPostDelayedTaskTest, InvokesInDelayOrder) {
+  ScopedFakeClock clock;
   std::unique_ptr<rtc::Thread> background_thread(rtc::Thread::Create());
   background_thread->Start();
 
@@ -940,8 +941,9 @@ TEST(ThreadPostDelayedTaskTest, InvokesInDelayOrder) {
 
   // All tasks have been posted before the first one is unblocked.
   first.Set();
-  // Only if the chain is invoked in posted order will the last event be set.
-  fourth.Wait(Event::kForever);
+  // Only if the chain is invoked in delay order will the last event be set.
+  clock.AdvanceTime(webrtc::TimeDelta::ms(11));
+  EXPECT_TRUE(fourth.Wait(0));
 }
 
 class ThreadFactory : public webrtc::TaskQueueFactory {
