@@ -101,11 +101,13 @@ AimdRateControl::AimdRateControl(const WebRtcKeyValueConfig* key_value_config,
           IsNotDisabled(*key_value_config,
                         "WebRTC-Bwe-EstimateBoundedIncrease")),
       initial_backoff_interval_("initial_backoff_interval"),
-      low_throughput_threshold_("low_throughput", DataRate::Zero()) {
+      low_throughput_threshold_("low_throughput", DataRate::Zero()),
+      link_capacity_fix_("link_capacity_fix") {
   // E.g
   // WebRTC-BweAimdRateControlConfig/initial_backoff_interval:100ms,
   // low_throughput:50kbps/
-  ParseFieldTrial({&initial_backoff_interval_, &low_throughput_threshold_},
+  ParseFieldTrial({&initial_backoff_interval_, &low_throughput_threshold_,
+                   &link_capacity_fix_},
                   key_value_config->Lookup("WebRTC-BweAimdRateControlConfig"));
   if (initial_backoff_interval_) {
     RTC_LOG(LS_INFO) << "Using aimd rate control with initial back-off interval"
@@ -312,8 +314,10 @@ DataRate AimdRateControl::ChangeBitrate(DataRate new_bitrate,
         // Set bit rate to something slightly lower than the measured throughput
         // to get rid of any self-induced delay.
         new_bitrate = estimated_throughput * beta_;
-        if (new_bitrate > current_bitrate_) {
-          // Avoid increasing the rate when over-using.
+        if (new_bitrate > current_bitrate_ && !link_capacity_fix_) {
+          // TODO(terelius): The link_capacity estimate may be based on old
+          // throughput measurements. Relying on them may lead to unnecessary
+          // BWE drops.
           if (link_capacity_.has_estimate()) {
             new_bitrate = beta_ * link_capacity_.estimate();
           }
@@ -329,6 +333,7 @@ DataRate AimdRateControl::ChangeBitrate(DataRate new_bitrate,
         }
         new_bitrate = std::min(new_bitrate, low_throughput_threshold_.Get());
       }
+      // Avoid increasing the rate when over-using.
       new_bitrate = std::min(new_bitrate, current_bitrate_);
 
       if (bitrate_is_initialized_ && estimated_throughput < current_bitrate_) {

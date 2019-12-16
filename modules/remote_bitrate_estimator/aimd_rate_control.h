@@ -117,6 +117,7 @@ class AimdRateControl {
   absl::optional<DataRate> last_decrease_;
   FieldTrialOptional<TimeDelta> initial_backoff_interval_;
   FieldTrialParameter<DataRate> low_throughput_threshold_;
+  FieldTrialFlag link_capacity_fix_;
 };
 }  // namespace webrtc
 
