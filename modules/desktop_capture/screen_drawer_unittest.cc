@@ -36,8 +36,6 @@ void TestScreenDrawerLock(
     rtc::FunctionView<std::unique_ptr<ScreenDrawerLock>()> ctor) {
   constexpr int kLockDurationMs = 100;
 
-  RTC_DCHECK(ctor);
-
   std::atomic<bool> created(false);
   std::atomic<bool> ready(false);
 
