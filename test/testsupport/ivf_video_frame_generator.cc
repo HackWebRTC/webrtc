@@ -10,6 +10,8 @@
 
 #include "test/testsupport/ivf_video_frame_generator.h"
 
+#include <limits>
+
 #include "api/video/encoded_image.h"
 #include "api/video/i420_buffer.h"
 #include "api/video_codecs/video_codec.h"
@@ -40,6 +42,10 @@ IvfVideoFrameGenerator::IvfVideoFrameGenerator(const std::string& file_name)
   codec_settings.codecType = file_reader_->GetVideoCodecType();
   codec_settings.width = file_reader_->GetFrameWidth();
   codec_settings.height = file_reader_->GetFrameHeight();
+  // Set buffer pool size to max value to ensure that if users of generator,
+  // ex. test frameworks, will retain frames for quite a long time, decoder
+  // won't crash with buffers pool overflow error.
+  codec_settings.buffer_pool_size = std::numeric_limits<int>::max();
   RTC_CHECK_EQ(video_decoder_->RegisterDecodeCompleteCallback(&callback_),
                WEBRTC_VIDEO_CODEC_OK);
   RTC_CHECK_EQ(

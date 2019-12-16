@@ -97,6 +97,36 @@ int Vp9FrameBufferPool::GetNumBuffersInUse() const {
   return num_buffers_in_use;
 }
 
+bool Vp9FrameBufferPool::Resize(size_t max_number_of_buffers) {
+  rtc::CritScope cs(&buffers_lock_);
+  size_t used_buffers_count = 0;
+  for (const auto& buffer : allocated_buffers_) {
+    // If the buffer is in use, the ref count will be >= 2, one from the list we
+    // are looping over and one from the application. If the ref count is 1,
+    // then the list we are looping over holds the only reference and it's safe
+    // to reuse.
+    if (!buffer->HasOneRef()) {
+      used_buffers_count++;
+    }
+  }
+  if (used_buffers_count > max_number_of_buffers) {
+    return false;
+  }
+  max_num_buffers_ = max_number_of_buffers;
+
+  size_t buffers_to_purge = allocated_buffers_.size() - max_num_buffers_;
+  auto iter = allocated_buffers_.begin();
+  while (iter != allocated_buffers_.end() && buffers_to_purge > 0) {
+    if ((*iter)->HasOneRef()) {
+      iter = allocated_buffers_.erase(iter);
+      buffers_to_purge--;
+    } else {
+      ++iter;
+    }
+  }
+  return true;
+}
+
 void Vp9FrameBufferPool::ClearPool() {
   rtc::CritScope cs(&buffers_lock_);
   allocated_buffers_.clear();

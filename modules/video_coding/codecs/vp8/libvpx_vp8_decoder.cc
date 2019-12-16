@@ -149,6 +149,11 @@ int LibvpxVp8Decoder::InitDecode(const VideoCodec* inst, int number_of_cores) {
 
   // Always start with a complete key frame.
   key_frame_required_ = true;
+  if (inst && inst->buffer_pool_size) {
+    if (!buffer_pool_.Resize(*inst->buffer_pool_size)) {
+      return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+    }
+  }
   return WEBRTC_VIDEO_CODEC_OK;
 }
 

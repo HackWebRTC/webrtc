@@ -218,6 +218,12 @@ int32_t H264DecoderImpl::InitDecode(const VideoCodec* codec_settings,
   }
 
   av_frame_.reset(av_frame_alloc());
+
+  if (codec_settings && codec_settings->buffer_pool_size) {
+    if (!pool_.Resize(*codec_settings->buffer_pool_size)) {
+      return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+    }
+  }
   return WEBRTC_VIDEO_CODEC_OK;
 }
 

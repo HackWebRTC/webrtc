@@ -1652,6 +1652,11 @@ int VP9DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
   inited_ = true;
   // Always start with a complete key frame.
   key_frame_required_ = true;
+  if (inst && inst->buffer_pool_size) {
+    if (!frame_buffer_pool_.Resize(*inst->buffer_pool_size)) {
+      return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+    }
+  }
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
