@@ -94,7 +94,9 @@ void ChannelManager::GetSupportedVideoCodecs(
   }
   codecs->clear();
 
-  std::vector<VideoCodec> video_codecs = media_engine_->video().codecs();
+  // TODO(kron): Update code to distuiguish between send and receive codecs. Use
+  // send codecs for now to be consistent with old behavior.
+  std::vector<VideoCodec> video_codecs = media_engine_->video().send_codecs();
   for (const auto& video_codec : video_codecs) {
     if (!enable_rtx_ &&
         absl::EqualsIgnoreCase(kRtxCodecName, video_codec.name)) {
