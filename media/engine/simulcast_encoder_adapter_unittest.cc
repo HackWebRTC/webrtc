@@ -1377,5 +1377,21 @@ TEST_F(TestSimulcastEncoderAdapterFake, SupportsFallback) {
   EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
 }
 
+TEST_F(TestSimulcastEncoderAdapterFake, SupportsPerSimulcastLayerMaxFramerate) {
+  SimulcastTestFixtureImpl::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile),
+      kVideoCodecVP8);
+  codec_.numberOfSimulcastStreams = 3;
+  codec_.simulcastStream[0].maxFramerate = 60;
+  codec_.simulcastStream[1].maxFramerate = 30;
+  codec_.simulcastStream[2].maxFramerate = 10;
+
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, kSettings));
+  ASSERT_EQ(3u, helper_->factory()->encoders().size());
+  EXPECT_EQ(60u, helper_->factory()->encoders()[0]->codec().maxFramerate);
+  EXPECT_EQ(30u, helper_->factory()->encoders()[1]->codec().maxFramerate);
+  EXPECT_EQ(10u, helper_->factory()->encoders()[2]->codec().maxFramerate);
+}
+
 }  // namespace test
 }  // namespace webrtc

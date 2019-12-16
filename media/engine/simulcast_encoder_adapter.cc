@@ -318,15 +318,18 @@ int SimulcastEncoderAdapter::InitEncode(
       // Without simulcast, just pass through the encoder info from the one
       // active encoder.
       encoder->RegisterEncodeCompleteCallback(encoded_complete_callback_);
-      streaminfos_.emplace_back(std::move(encoder), nullptr, stream_codec.width,
-                                stream_codec.height, send_stream);
+      streaminfos_.emplace_back(
+          std::move(encoder), nullptr,
+          std::make_unique<FramerateController>(stream_codec.maxFramerate),
+          stream_codec.width, stream_codec.height, send_stream);
     } else {
       std::unique_ptr<EncodedImageCallback> callback(
           new AdapterEncodedImageCallback(this, i));
       encoder->RegisterEncodeCompleteCallback(callback.get());
-      streaminfos_.emplace_back(std::move(encoder), std::move(callback),
-                                stream_codec.width, stream_codec.height,
-                                send_stream);
+      streaminfos_.emplace_back(
+          std::move(encoder), std::move(callback),
+          std::make_unique<FramerateController>(stream_codec.maxFramerate),
+          stream_codec.width, stream_codec.height, send_stream);
     }
   }
 
@@ -377,13 +380,21 @@ int SimulcastEncoderAdapter::Encode(
       continue;
     }
 
+    const uint32_t frame_timestamp_ms =
+        1000 * input_image.timestamp() / 90000;  // kVideoPayloadTypeFrequency;
+
     std::vector<VideoFrameType> stream_frame_types;
     if (send_key_frame) {
       stream_frame_types.push_back(VideoFrameType::kVideoFrameKey);
       streaminfos_[stream_idx].key_frame_request = false;
     } else {
+      if (streaminfos_[stream_idx].framerate_controller->DropFrame(
+              frame_timestamp_ms)) {
+        continue;
+      }
       stream_frame_types.push_back(VideoFrameType::kVideoFrameDelta);
     }
+    streaminfos_[stream_idx].framerate_controller->AddFrame(frame_timestamp_ms);
 
     int dst_width = streaminfos_[stream_idx].width;
     int dst_height = streaminfos_[stream_idx].height;
@@ -504,6 +515,10 @@ void SimulcastEncoderAdapter::SetRates(
       }
     }
 
+    stream_parameters.framerate_fps = std::min<double>(
+        parameters.framerate_fps,
+        streaminfos_[stream_idx].framerate_controller->GetTargetRate());
+
     streaminfos_[stream_idx].encoder->SetRates(stream_parameters);
   }
 }
@@ -557,6 +572,7 @@ void SimulcastEncoderAdapter::PopulateStreamCodec(
   stream_codec->height = inst.simulcastStream[stream_index].height;
   stream_codec->maxBitrate = inst.simulcastStream[stream_index].maxBitrate;
   stream_codec->minBitrate = inst.simulcastStream[stream_index].minBitrate;
+  stream_codec->maxFramerate = inst.simulcastStream[stream_index].maxFramerate;
   stream_codec->qpMax = inst.simulcastStream[stream_index].qpMax;
   // Settings that are based on stream/resolution.
   if (stream_resolution == StreamResolution::LOWEST) {

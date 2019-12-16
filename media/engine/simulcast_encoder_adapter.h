@@ -23,6 +23,7 @@
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder.h"
 #include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/utility/framerate_controller.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/system/rtc_export.h"
@@ -78,17 +79,20 @@ class RTC_EXPORT SimulcastEncoderAdapter : public VideoEncoder {
   struct StreamInfo {
     StreamInfo(std::unique_ptr<VideoEncoder> encoder,
                std::unique_ptr<EncodedImageCallback> callback,
+               std::unique_ptr<FramerateController> framerate_controller,
                uint16_t width,
                uint16_t height,
                bool send_stream)
         : encoder(std::move(encoder)),
           callback(std::move(callback)),
+          framerate_controller(std::move(framerate_controller)),
           width(width),
           height(height),
           key_frame_request(false),
           send_stream(send_stream) {}
     std::unique_ptr<VideoEncoder> encoder;
     std::unique_ptr<EncodedImageCallback> callback;
+    std::unique_ptr<FramerateController> framerate_controller;
     uint16_t width;
     uint16_t height;
     bool key_frame_request;
