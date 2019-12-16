@@ -17,6 +17,7 @@
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer_vp8.h"
+#include "modules/rtp_rtcp/source/video_rtp_depacketizer_vp9.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/copy_on_write_buffer.h"
 
@@ -60,6 +61,8 @@ std::unique_ptr<VideoRtpDepacketizer> CreateVideoRtpDepacketizer(
   switch (codec) {
     case kVideoCodecVP8:
       return std::make_unique<VideoRtpDepacketizerVp8>();
+    case kVideoCodecVP9:
+      return std::make_unique<VideoRtpDepacketizerVp9>();
     default:
       return std::make_unique<LegacyRtpDepacketizer>(codec);
   }
