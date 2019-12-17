@@ -308,6 +308,10 @@ bool PacingController::ShouldSendKeepalive(Timestamp now) const {
 Timestamp PacingController::NextSendTime() const {
   Timestamp now = CurrentTime();
 
+  if (paused_) {
+    return last_send_time_ + kPausedProcessInterval;
+  }
+
   // If probing is active, that always takes priority.
   if (prober_.IsProbing()) {
     Timestamp probe_time = prober_.NextProbeTime(now);
@@ -318,10 +322,7 @@ Timestamp PacingController::NextSendTime() const {
   }
 
   if (mode_ == ProcessMode::kPeriodic) {
-    // In periodc non-probing mode, we just have a fixed interval.
-    if (paused_) {
-      return last_send_time_ + kPausedProcessInterval;
-    }
+    // In periodic non-probing mode, we just have a fixed interval.
     return last_process_time_ + min_packet_limit_;
   }
 
