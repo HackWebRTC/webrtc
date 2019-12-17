@@ -318,7 +318,7 @@ void RTCPSender::SetLastRtpTime(uint32_t rtp_timestamp,
     last_payload_type_ = payload_type;
   }
   last_rtp_timestamp_ = rtp_timestamp;
-  if (capture_time_ms < 0) {
+  if (capture_time_ms <= 0) {
     // We don't currently get a capture time from VoiceEngine.
     last_frame_capture_time_ms_ = clock_->TimeInMilliseconds();
   } else {
