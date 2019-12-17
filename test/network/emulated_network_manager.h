@@ -44,6 +44,9 @@ class EmulatedNetworkManager : public rtc::NetworkManagerBase,
   void StartUpdating() override;
   void StopUpdating() override;
 
+  // We don't support any address interfaces in the network emulation framework.
+  void GetAnyAddressNetworks(NetworkList* networks) override {}
+
   // EmulatedNetworkManagerInterface API
   rtc::Thread* network_thread() override { return &network_thread_; }
   rtc::NetworkManager* network_manager() override { return this; }
