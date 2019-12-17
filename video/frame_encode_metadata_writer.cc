@@ -105,7 +105,7 @@ void FrameEncodeMetadataWriter::OnEncodeStarted(const VideoFrame& frame) {
     // If stream is disabled due to low bandwidth OnEncodeStarted still will be
     // called and have to be ignored.
     if (timing_frames_info_[si].target_bitrate_bytes_per_sec == 0)
-      return;
+      continue;
     if (timing_frames_info_[si].frames.size() == kMaxEncodeStartTimeListSize) {
       ++stalled_encoder_logged_messages_;
       if (stalled_encoder_logged_messages_ <= kMessagesThrottlingThreshold ||
