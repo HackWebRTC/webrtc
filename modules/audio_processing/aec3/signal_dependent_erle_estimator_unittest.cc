@@ -143,7 +143,7 @@ TEST(SignalDependentErleEstimator, SweepSettings) {
     for (size_t num_capture_channels : {1, 2, 4}) {
       EchoCanceller3Config cfg;
       size_t max_length_blocks = 50;
-      for (size_t blocks = 0; blocks < max_length_blocks;
+      for (size_t blocks = 1; blocks < max_length_blocks;
            blocks = blocks + 10) {
         for (size_t delay_headroom = 0; delay_headroom < 5; ++delay_headroom) {
           for (size_t num_sections = 2; num_sections < max_length_blocks;

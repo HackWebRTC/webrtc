@@ -38,6 +38,14 @@ bool Limit(int* value, int min, int max) {
   *value = clamped;
   return res;
 }
+
+bool FloorLimit(size_t* value, size_t min) {
+  size_t clamped = *value >= min ? *value : min;
+  bool res = *value == clamped;
+  *value = clamped;
+  return res;
+}
+
 }  // namespace
 
 EchoCanceller3Config::EchoCanceller3Config() = default;
@@ -110,14 +118,14 @@ bool EchoCanceller3Config::Validate(EchoCanceller3Config* config) {
   res = res & Limit(&c->delay.delay_selection_thresholds.initial, 1, 250);
   res = res & Limit(&c->delay.delay_selection_thresholds.converged, 1, 250);
 
-  res = res & Limit(&c->filter.main.length_blocks, 1, 50);
+  res = res & FloorLimit(&c->filter.main.length_blocks, 1);
   res = res & Limit(&c->filter.main.leakage_converged, 0.f, 1000.f);
   res = res & Limit(&c->filter.main.leakage_diverged, 0.f, 1000.f);
   res = res & Limit(&c->filter.main.error_floor, 0.f, 1000.f);
   res = res & Limit(&c->filter.main.error_ceil, 0.f, 100000000.f);
   res = res & Limit(&c->filter.main.noise_gate, 0.f, 100000000.f);
 
-  res = res & Limit(&c->filter.main_initial.length_blocks, 1, 50);
+  res = res & FloorLimit(&c->filter.main_initial.length_blocks, 1);
   res = res & Limit(&c->filter.main_initial.leakage_converged, 0.f, 1000.f);
   res = res & Limit(&c->filter.main_initial.leakage_diverged, 0.f, 1000.f);
   res = res & Limit(&c->filter.main_initial.error_floor, 0.f, 1000.f);
@@ -129,11 +137,11 @@ bool EchoCanceller3Config::Validate(EchoCanceller3Config* config) {
     res = false;
   }
 
-  res = res & Limit(&c->filter.shadow.length_blocks, 1, 50);
+  res = res & FloorLimit(&c->filter.shadow.length_blocks, 1);
   res = res & Limit(&c->filter.shadow.rate, 0.f, 1.f);
   res = res & Limit(&c->filter.shadow.noise_gate, 0.f, 100000000.f);
 
-  res = res & Limit(&c->filter.shadow_initial.length_blocks, 1, 50);
+  res = res & FloorLimit(&c->filter.shadow_initial.length_blocks, 1);
   res = res & Limit(&c->filter.shadow_initial.rate, 0.f, 1.f);
   res = res & Limit(&c->filter.shadow_initial.noise_gate, 0.f, 100000000.f);
 
