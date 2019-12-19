@@ -31,11 +31,13 @@ const int kDefaultFps = 30;
 
 rtc::VideoSinkWants BuildSinkWants(absl::optional<int> target_pixel_count,
                                    int max_pixel_count,
-                                   int max_framerate_fps) {
+                                   int max_framerate_fps,
+                                   int sink_alignment = 1) {
   rtc::VideoSinkWants wants;
   wants.target_pixel_count = target_pixel_count;
   wants.max_pixel_count = max_pixel_count;
   wants.max_framerate_fps = max_framerate_fps;
+  wants.resolution_alignment = sink_alignment;
   return wants;
 }
 
@@ -44,14 +46,16 @@ rtc::VideoSinkWants BuildSinkWants(absl::optional<int> target_pixel_count,
 class VideoAdapterTest : public ::testing::Test,
                          public ::testing::WithParamInterface<bool> {
  public:
-  VideoAdapterTest() : VideoAdapterTest("") {}
-  explicit VideoAdapterTest(const std::string& field_trials)
+  VideoAdapterTest() : VideoAdapterTest("", 1) {}
+  explicit VideoAdapterTest(const std::string& field_trials,
+                            int source_resolution_alignment)
       : override_field_trials_(field_trials),
         frame_source_(std::make_unique<FakeFrameSource>(
             kWidth,
             kHeight,
             VideoFormat::FpsToInterval(kDefaultFps) /
                 rtc::kNumNanosecsPerMicrosec)),
+        adapter_(source_resolution_alignment),
         adapter_wrapper_(std::make_unique<VideoAdapterWrapper>(&adapter_)),
         use_new_format_request_(GetParam()) {}
 
@@ -146,7 +150,8 @@ class VideoAdapterTest : public ::testing::Test,
 class VideoAdapterTestVariableStartScale : public VideoAdapterTest {
  public:
   VideoAdapterTestVariableStartScale()
-      : VideoAdapterTest("WebRTC-Video-VariableStartScaleFactor/Enabled/") {}
+      : VideoAdapterTest("WebRTC-Video-VariableStartScaleFactor/Enabled/",
+                         /*source_resolution_alignment=*/1) {}
 };
 
 INSTANTIATE_TEST_SUITE_P(OnOutputFormatRequests,
@@ -673,7 +678,7 @@ TEST_P(VideoAdapterTest, TestViewRequestPlusCameraSwitch) {
 }
 
 TEST_P(VideoAdapterTest, TestVgaWidth) {
-  // Reqeuested Output format is 640x360.
+  // Requested output format is 640x360.
   OnOutputFormatRequest(640, 360, absl::nullopt);
 
   EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 480, 0, &cropped_width_,
@@ -1303,5 +1308,82 @@ TEST_P(VideoAdapterTestVariableStartScale, AdaptResolutionInStepsFirst2x2_3) {
     request_height = out_height_;
   }
 }
+
+TEST_P(VideoAdapterTest, AdaptResolutionWithSinkAlignment) {
+  constexpr int kSourceWidth = 1280;
+  constexpr int kSourceHeight = 720;
+  constexpr int kSourceFramerate = 30;
+  constexpr int kRequestedWidth = 480;
+  constexpr int kRequestedHeight = 270;
+  constexpr int kRequestedFramerate = 30;
+
+  OnOutputFormatRequest(kRequestedWidth, kRequestedHeight, kRequestedFramerate);
+
+  int frame_num = 1;
+  for (const int sink_alignment : {2, 3, 4, 5}) {
+    adapter_.OnSinkWants(
+        BuildSinkWants(absl::nullopt, std::numeric_limits<int>::max(),
+                       std::numeric_limits<int>::max(), sink_alignment));
+    EXPECT_TRUE(adapter_.AdaptFrameResolution(
+        kSourceWidth, kSourceHeight,
+        frame_num * rtc::kNumNanosecsPerSec / kSourceFramerate, &cropped_width_,
+        &cropped_height_, &out_width_, &out_height_));
+    EXPECT_EQ(out_width_ % sink_alignment, 0);
+    EXPECT_EQ(out_height_ % sink_alignment, 0);
+
+    ++frame_num;
+  }
+}
+
+class VideoAdapterWithSourceAlignmentTest : public VideoAdapterTest {
+ protected:
+  static constexpr int kSourceResolutionAlignment = 7;
+
+  VideoAdapterWithSourceAlignmentTest()
+      : VideoAdapterTest(/*field_trials=*/"", kSourceResolutionAlignment) {}
+};
+
+TEST_P(VideoAdapterWithSourceAlignmentTest, AdaptResolution) {
+  constexpr int kSourceWidth = 1280;
+  constexpr int kSourceHeight = 720;
+  constexpr int kRequestedWidth = 480;
+  constexpr int kRequestedHeight = 270;
+  constexpr int kRequestedFramerate = 30;
+
+  OnOutputFormatRequest(kRequestedWidth, kRequestedHeight, kRequestedFramerate);
+
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(
+      kSourceWidth, kSourceHeight, /*in_timestamp_ns=*/0, &cropped_width_,
+      &cropped_height_, &out_width_, &out_height_));
+  EXPECT_EQ(out_width_ % kSourceResolutionAlignment, 0);
+  EXPECT_EQ(out_height_ % kSourceResolutionAlignment, 0);
+}
+
+TEST_P(VideoAdapterWithSourceAlignmentTest, AdaptResolutionWithSinkAlignment) {
+  constexpr int kSourceWidth = 1280;
+  constexpr int kSourceHeight = 720;
+  // 7 and 8 neither divide 480 nor 270.
+  constexpr int kRequestedWidth = 480;
+  constexpr int kRequestedHeight = 270;
+  constexpr int kRequestedFramerate = 30;
+  constexpr int kSinkResolutionAlignment = 8;
+
+  OnOutputFormatRequest(kRequestedWidth, kRequestedHeight, kRequestedFramerate);
+
+  adapter_.OnSinkWants(BuildSinkWants(
+      absl::nullopt, std::numeric_limits<int>::max(),
+      std::numeric_limits<int>::max(), kSinkResolutionAlignment));
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(
+      kSourceWidth, kSourceHeight, /*in_timestamp_ns=*/0, &cropped_width_,
+      &cropped_height_, &out_width_, &out_height_));
+  EXPECT_EQ(out_width_ % kSourceResolutionAlignment, 0);
+  EXPECT_EQ(out_height_ % kSourceResolutionAlignment, 0);
+  EXPECT_EQ(out_width_ % kSinkResolutionAlignment, 0);
+  EXPECT_EQ(out_height_ % kSinkResolutionAlignment, 0);
+}
+
+INSTANTIATE_TEST_SUITE_P(OnOutputFormatRequests,
+                         VideoAdapterWithSourceAlignmentTest,
+                         ::testing::Values(true, false));
 
 }  // namespace cricket

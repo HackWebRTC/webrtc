@@ -165,6 +165,7 @@ rtc_library("rtc_simulcast_encoder_adapter") {
     "engine/simulcast_encoder_adapter.h",
   ]
   deps = [
+    ":rtc_media_base",
     "../api:fec_controller_api",
     "../api:scoped_refptr",
     "../api/video:video_codec_constants",
@@ -491,11 +492,11 @@ if (rtc_include_tests) {
   rtc_media_unittests_resources = [
     "../resources/media/captured-320x240-2s-48.frames",
     "../resources/media/faces.1280x720_P420.yuv",
+    "../resources/media/faces_I400.jpg",
+    "../resources/media/faces_I411.jpg",
     "../resources/media/faces_I420.jpg",
     "../resources/media/faces_I422.jpg",
     "../resources/media/faces_I444.jpg",
-    "../resources/media/faces_I411.jpg",
-    "../resources/media/faces_I400.jpg",
   ]
 
   if (is_ios) {

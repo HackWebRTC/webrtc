@@ -166,6 +166,14 @@ class RTC_EXPORT VideoEncoder {
     // quality scaler must populate this field.
     ScalingSettings scaling_settings;
 
+    // The width and height of the incoming video frames should be divisible
+    // by |requested_resolution_alignment|. If they are not, the encoder may
+    // drop the incoming frame.
+    // For example: With I420, this value would be a multiple of 2.
+    // Note that this field is unrelated to any horizontal or vertical stride
+    // requirements the encoder has on the incoming video frame buffers.
+    int requested_resolution_alignment;
+
     // If true, encoder supports working with a native handle (e.g. texture
     // handle for hw codecs) rather than requiring a raw I420 buffer.
     bool supports_native_handle;

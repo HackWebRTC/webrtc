@@ -26,6 +26,7 @@
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "api/video_codecs/video_encoder_software_fallback_wrapper.h"
+#include "media/base/video_common.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "rtc_base/atomic_ops.h"
@@ -626,6 +627,7 @@ VideoEncoder::EncoderInfo SimulcastEncoderAdapter::GetEncoderInfo() const {
 
   VideoEncoder::EncoderInfo encoder_info;
   encoder_info.implementation_name = "SimulcastEncoderAdapter";
+  encoder_info.requested_resolution_alignment = 1;
   encoder_info.supports_native_handle = true;
   encoder_info.scaling_settings.thresholds = absl::nullopt;
   if (streaminfos_.empty()) {
@@ -674,6 +676,9 @@ VideoEncoder::EncoderInfo SimulcastEncoderAdapter::GetEncoderInfo() const {
       encoder_info.has_internal_source &= encoder_impl_info.has_internal_source;
     }
     encoder_info.fps_allocation[i] = encoder_impl_info.fps_allocation[0];
+    encoder_info.requested_resolution_alignment = cricket::LeastCommonMultiple(
+        encoder_info.requested_resolution_alignment,
+        encoder_impl_info.requested_resolution_alignment);
   }
   encoder_info.implementation_name += ")";
 

@@ -31,9 +31,9 @@ namespace cricket {
 class VideoAdapter {
  public:
   VideoAdapter();
-  // The output frames will have height and width that is divisible by
-  // |required_resolution_alignment|.
-  explicit VideoAdapter(int required_resolution_alignment);
+  // The source requests output frames whose width and height are divisible
+  // by |source_resolution_alignment|.
+  explicit VideoAdapter(int source_resolution_alignment);
   virtual ~VideoAdapter();
 
   // Return the adapted resolution and cropping parameters given the
@@ -90,6 +90,8 @@ class VideoAdapter {
   // |sink_wants.max_pixel_count|, but for framerate rather than resolution.
   // Set |sink_wants.max_pixel_count| and/or |sink_wants.max_framerate_fps| to
   // std::numeric_limit<int>::max() if no upper limit is desired.
+  // The sink resolution alignment requirement is given by
+  // |sink_wants.resolution_alignment|.
   // Note: Should be called from the sink only.
   void OnSinkWants(const rtc::VideoSinkWants& sink_wants);
 
@@ -104,8 +106,14 @@ class VideoAdapter {
   int previous_width_;    // Previous adapter output width.
   int previous_height_;   // Previous adapter output height.
   const bool variable_start_scale_factor_;
-  // Resolution must be divisible by this factor.
-  const int required_resolution_alignment_;
+
+  // The fixed source resolution alignment requirement.
+  const int source_resolution_alignment_;
+  // The currently applied resolution alignment, as given by the requirements:
+  //  - the fixed |source_resolution_alignment_|; and
+  //  - the latest |sink_wants.resolution_alignment|.
+  int resolution_alignment_ RTC_GUARDED_BY(critical_section_);
+
   // The target timestamp for the next frame based on requested format.
   absl::optional<int64_t> next_frame_timestamp_ns_
       RTC_GUARDED_BY(critical_section_);

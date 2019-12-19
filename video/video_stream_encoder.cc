@@ -225,7 +225,8 @@ class VideoStreamEncoder::VideoSourceProxy {
         degradation_preference_(DegradationPreference::DISABLED),
         source_(nullptr),
         max_framerate_(std::numeric_limits<int>::max()),
-        max_pixels_(std::numeric_limits<int>::max()) {}
+        max_pixels_(std::numeric_limits<int>::max()),
+        resolution_alignment_(1) {}
 
   void SetSource(rtc::VideoSourceInterface<VideoFrame>* source,
                  const DegradationPreference& degradation_preference) {
@@ -252,14 +253,19 @@ class VideoStreamEncoder::VideoSourceProxy {
     source->AddOrUpdateSink(video_stream_encoder_, wants);
   }
 
-  void SetMaxFramerate(int max_framerate) {
+  void SetMaxFramerateAndAlignment(int max_framerate,
+                                   int resolution_alignment) {
     RTC_DCHECK_GT(max_framerate, 0);
     rtc::CritScope lock(&crit_);
-    if (max_framerate == max_framerate_)
+    if (max_framerate == max_framerate_ &&
+        resolution_alignment == resolution_alignment_) {
       return;
+    }
 
-    RTC_LOG(LS_INFO) << "Set max framerate: " << max_framerate;
+    RTC_LOG(LS_INFO) << "Set max framerate: " << max_framerate
+                     << " and resolution alignment: " << resolution_alignment;
     max_framerate_ = max_framerate;
+    resolution_alignment_ = resolution_alignment;
     if (source_) {
       source_->AddOrUpdateSink(video_stream_encoder_,
                                GetActiveSinkWantsInternal());
@@ -454,7 +460,7 @@ class VideoStreamEncoder::VideoSourceProxy {
     wants.max_framerate_fps = std::min(max_framerate_, wants.max_framerate_fps);
     // Limit resolution due to automatic animation detection for screenshare.
     wants.max_pixel_count = std::min(max_pixels_, wants.max_pixel_count);
-
+    wants.resolution_alignment = resolution_alignment_;
     return wants;
   }
 
@@ -466,6 +472,7 @@ class VideoStreamEncoder::VideoSourceProxy {
   rtc::VideoSourceInterface<VideoFrame>* source_ RTC_GUARDED_BY(&crit_);
   int max_framerate_ RTC_GUARDED_BY(&crit_);
   int max_pixels_ RTC_GUARDED_BY(&crit_);
+  int resolution_alignment_ RTC_GUARDED_BY(&crit_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(VideoSourceProxy);
 };
@@ -881,7 +888,8 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   for (const auto& stream : streams) {
     max_framerate = std::max(stream.max_framerate, max_framerate);
   }
-  source_proxy_->SetMaxFramerate(max_framerate);
+  source_proxy_->SetMaxFramerateAndAlignment(
+      max_framerate, encoder_->GetEncoderInfo().requested_resolution_alignment);
 
   if (codec.maxBitrate == 0) {
     // max is one bit per pixel

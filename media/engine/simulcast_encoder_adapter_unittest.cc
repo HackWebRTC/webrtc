@@ -27,6 +27,7 @@
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/utility/simulcast_test_fixture_impl.h"
+#include "rtc_base/checks.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -171,6 +172,10 @@ class MockVideoEncoderFactory : public VideoEncoderFactory {
   const std::vector<MockVideoEncoder*>& encoders() const;
   void SetEncoderNames(const std::vector<const char*>& encoder_names);
   void set_init_encode_return_value(int32_t value);
+  void set_requested_resolution_alignments(
+      std::vector<int> requested_resolution_alignments) {
+    requested_resolution_alignments_ = requested_resolution_alignments;
+  }
   void set_supports_simulcast(bool supports_simulcast) {
     supports_simulcast_ = supports_simulcast;
   }
@@ -181,6 +186,8 @@ class MockVideoEncoderFactory : public VideoEncoderFactory {
   int32_t init_encode_return_value_ = 0;
   std::vector<MockVideoEncoder*> encoders_;
   std::vector<const char*> encoder_names_;
+  // Keep number of entries in sync with |kMaxSimulcastStreams|.
+  std::vector<int> requested_resolution_alignments_ = {1, 1, 1};
   bool supports_simulcast_ = false;
 };
 
@@ -226,6 +233,7 @@ class MockVideoEncoder : public VideoEncoder {
     info.supports_native_handle = supports_native_handle_;
     info.implementation_name = implementation_name_;
     info.scaling_settings = scaling_settings_;
+    info.requested_resolution_alignment = requested_resolution_alignment_;
     info.has_trusted_rate_controller = has_trusted_rate_controller_;
     info.is_hardware_accelerated = is_hardware_accelerated_;
     info.has_internal_source = has_internal_source_;
@@ -264,6 +272,10 @@ class MockVideoEncoder : public VideoEncoder {
     scaling_settings_ = settings;
   }
 
+  void set_requested_resolution_alignment(int requested_resolution_alignment) {
+    requested_resolution_alignment_ = requested_resolution_alignment;
+  }
+
   void set_has_trusted_rate_controller(bool trusted) {
     has_trusted_rate_controller_ = trusted;
   }
@@ -293,6 +305,7 @@ class MockVideoEncoder : public VideoEncoder {
   bool supports_native_handle_ = false;
   std::string implementation_name_ = "unknown";
   VideoEncoder::ScalingSettings scaling_settings_;
+  int requested_resolution_alignment_ = 1;
   bool has_trusted_rate_controller_ = false;
   bool is_hardware_accelerated_ = false;
   bool has_internal_source_ = false;
@@ -320,6 +333,9 @@ std::unique_ptr<VideoEncoder> MockVideoEncoderFactory::CreateVideoEncoder(
                                  ? "codec_implementation_name"
                                  : encoder_names_[encoders_.size()];
   encoder->set_implementation_name(encoder_name);
+  RTC_CHECK_LT(encoders_.size(), requested_resolution_alignments_.size());
+  encoder->set_requested_resolution_alignment(
+      requested_resolution_alignments_[encoders_.size()]);
   encoder->set_supports_simulcast(supports_simulcast_);
   encoders_.push_back(encoder.get());
   return encoder;
@@ -1174,6 +1190,18 @@ TEST_F(TestSimulcastEncoderAdapterFake, ReportsHardwareAccelerated) {
   helper_->factory()->encoders()[2]->set_is_hardware_accelerated(true);
   EXPECT_EQ(0, adapter_->InitEncode(&codec_, kSettings));
   EXPECT_TRUE(adapter_->GetEncoderInfo().is_hardware_accelerated);
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake,
+       ReportsLeastCommonMultipleOfRequestedResolutionAlignments) {
+  SimulcastTestFixtureImpl::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile),
+      kVideoCodecVP8);
+  codec_.numberOfSimulcastStreams = 3;
+  helper_->factory()->set_requested_resolution_alignments({2, 4, 7});
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, kSettings));
+
+  EXPECT_EQ(adapter_->GetEncoderInfo().requested_resolution_alignment, 28);
 }
 
 TEST_F(TestSimulcastEncoderAdapterFake, ReportsInternalSource) {

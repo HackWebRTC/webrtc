@@ -380,6 +380,7 @@ rtc_library("webrtc_multiplex") {
     "../../api/video:video_rtp_headers",
     "../../api/video_codecs:video_codecs_api",
     "../../common_video",
+    "../../media:rtc_media_base",
     "../../rtc_base",
     "../../rtc_base:checks",
     "../rtp_rtcp:rtp_rtcp_format",
@@ -656,8 +657,8 @@ if (rtc_include_tests) {
   }
   if (!is_android) {
     video_coding_modules_tests_resources += [
-      "../../resources/FourPeople_1280x720_30.yuv",
       "../../resources/ConferenceMotion_1280_720_50.yuv",
+      "../../resources/FourPeople_1280x720_30.yuv",
     ]
   }
 

@@ -24,24 +24,13 @@
 #include "system_wrappers/include/field_trial.h"
 
 namespace {
-int Gcd(int a, int b) {
-  RTC_DCHECK_GE(a, 0);
-  RTC_DCHECK_GT(b, 0);
-  int c = a % b;
-  while (c != 0) {
-    a = b;
-    b = c;
-    c = a % b;
-  }
-  return b;
-}
 
 struct Fraction {
   int numerator;
   int denominator;
 
   void DivideByGcd() {
-    int g = Gcd(numerator, denominator);
+    int g = cricket::GreatestCommonDivisor(numerator, denominator);
     numerator /= g;
     denominator /= g;
   }
@@ -136,7 +125,7 @@ Fraction FindScale(int input_width,
 
 namespace cricket {
 
-VideoAdapter::VideoAdapter(int required_resolution_alignment)
+VideoAdapter::VideoAdapter(int source_resolution_alignment)
     : frames_in_(0),
       frames_out_(0),
       frames_scaled_(0),
@@ -145,7 +134,8 @@ VideoAdapter::VideoAdapter(int required_resolution_alignment)
       previous_height_(0),
       variable_start_scale_factor_(webrtc::field_trial::IsEnabled(
           "WebRTC-Video-VariableStartScaleFactor")),
-      required_resolution_alignment_(required_resolution_alignment),
+      source_resolution_alignment_(source_resolution_alignment),
+      resolution_alignment_(source_resolution_alignment),
       resolution_request_target_pixel_count_(std::numeric_limits<int>::max()),
       resolution_request_max_pixel_count_(std::numeric_limits<int>::max()),
       max_framerate_request_(std::numeric_limits<int>::max()) {}
@@ -237,7 +227,8 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
                        << " Input: " << in_width << "x" << in_height
                        << " timestamp: " << in_timestamp_ns
                        << " Output fps: " << max_framerate_request_ << "/"
-                       << max_fps_.value_or(-1);
+                       << max_fps_.value_or(-1)
+                       << " alignment: " << resolution_alignment_;
     }
 
     // Drop frame.
@@ -261,23 +252,20 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
   const Fraction scale =
       FindScale(*cropped_width, *cropped_height, target_pixel_count,
                 max_pixel_count, variable_start_scale_factor_);
-  // Adjust cropping slightly to get even integer output size and a perfect
-  // scale factor. Make sure the resulting dimensions are aligned correctly
-  // to be nice to hardware encoders.
-  *cropped_width =
-      roundUp(*cropped_width,
-              scale.denominator * required_resolution_alignment_, in_width);
-  *cropped_height =
-      roundUp(*cropped_height,
-              scale.denominator * required_resolution_alignment_, in_height);
+  // Adjust cropping slightly to get correctly aligned output size and a perfect
+  // scale factor.
+  *cropped_width = roundUp(*cropped_width,
+                           scale.denominator * resolution_alignment_, in_width);
+  *cropped_height = roundUp(
+      *cropped_height, scale.denominator * resolution_alignment_, in_height);
   RTC_DCHECK_EQ(0, *cropped_width % scale.denominator);
   RTC_DCHECK_EQ(0, *cropped_height % scale.denominator);
 
   // Calculate final output size.
   *out_width = *cropped_width / scale.denominator * scale.numerator;
   *out_height = *cropped_height / scale.denominator * scale.numerator;
-  RTC_DCHECK_EQ(0, *out_width % required_resolution_alignment_);
-  RTC_DCHECK_EQ(0, *out_height % required_resolution_alignment_);
+  RTC_DCHECK_EQ(0, *out_width % resolution_alignment_);
+  RTC_DCHECK_EQ(0, *out_height % resolution_alignment_);
 
   ++frames_out_;
   if (scale.numerator != scale.denominator)
@@ -293,7 +281,8 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
                      << " Scale: " << scale.numerator << "/"
                      << scale.denominator << " Output: " << *out_width << "x"
                      << *out_height << " fps: " << max_framerate_request_ << "/"
-                     << max_fps_.value_or(-1);
+                     << max_fps_.value_or(-1)
+                     << " alignment: " << resolution_alignment_;
   }
 
   previous_width_ = *out_width;
@@ -358,6 +347,8 @@ void VideoAdapter::OnSinkWants(const rtc::VideoSinkWants& sink_wants) {
       sink_wants.target_pixel_count.value_or(
           resolution_request_max_pixel_count_);
   max_framerate_request_ = sink_wants.max_framerate_fps;
+  resolution_alignment_ = cricket::LeastCommonMultiple(
+      source_resolution_alignment_, sink_wants.resolution_alignment);
 }
 
 }  // namespace cricket

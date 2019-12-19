@@ -12,6 +12,9 @@ specific_include_rules = {
   "android_codec_factory_helper\.cc": [
     "+base/android",
   ],
+  "multiplex_encoder_adapter\.cc": [
+    "+media/base",
+  ],
   ".*test.*\.cc": [
      "+media/base",
      "+media/engine",

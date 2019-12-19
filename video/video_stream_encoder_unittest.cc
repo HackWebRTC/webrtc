@@ -703,6 +703,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
       }
 
       info.resolution_bitrate_limits = resolution_bitrate_limits_;
+      info.requested_resolution_alignment = requested_resolution_alignment_;
       return info;
     }
 
@@ -725,6 +726,11 @@ class VideoStreamEncoderTest : public ::testing::Test {
     void SetQualityScaling(bool b) {
       rtc::CritScope lock(&local_crit_sect_);
       quality_scaling_ = b;
+    }
+
+    void SetRequestedResolutionAlignment(int requested_resolution_alignment) {
+      rtc::CritScope lock(&local_crit_sect_);
+      requested_resolution_alignment_ = requested_resolution_alignment;
     }
 
     void SetIsHardwareAccelerated(bool is_hardware_accelerated) {
@@ -914,6 +920,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
     int last_input_width_ RTC_GUARDED_BY(local_crit_sect_) = 0;
     int last_input_height_ RTC_GUARDED_BY(local_crit_sect_) = 0;
     bool quality_scaling_ RTC_GUARDED_BY(local_crit_sect_) = true;
+    int requested_resolution_alignment_ RTC_GUARDED_BY(local_crit_sect_) = 1;
     bool is_hardware_accelerated_ RTC_GUARDED_BY(local_crit_sect_) = false;
     std::unique_ptr<Vp8FrameBufferController> frame_buffer_controller_
         RTC_GUARDED_BY(local_crit_sect_);
@@ -978,6 +985,18 @@ class VideoStreamEncoderTest : public ::testing::Test {
       }
       EXPECT_EQ(expected_height, height);
       EXPECT_EQ(expected_width, width);
+    }
+
+    void CheckLastFrameSizeIsMultipleOf(int resolution_alignment) {
+      int width = 0;
+      int height = 0;
+      {
+        rtc::CritScope lock(&crit_);
+        width = last_width_;
+        height = last_height_;
+      }
+      EXPECT_EQ(width % resolution_alignment, 0);
+      EXPECT_EQ(height % resolution_alignment, 0);
     }
 
     void CheckLastFrameRotationMatches(VideoRotation expected_rotation) {
@@ -1623,6 +1642,33 @@ TEST_F(VideoStreamEncoderTest, SinkWantsRotationApplied) {
   video_stream_encoder_->Stop();
 }
 
+TEST_F(VideoStreamEncoderTest, SinkWantsResolutionAlignment) {
+  constexpr int kRequestedResolutionAlignment = 7;
+  video_source_.set_adaptation_enabled(true);
+  fake_encoder_.SetRequestedResolutionAlignment(kRequestedResolutionAlignment);
+  video_stream_encoder_->OnBitrateUpdated(
+      DataRate::bps(kTargetBitrateBps), DataRate::bps(kTargetBitrateBps),
+      DataRate::bps(kTargetBitrateBps), 0, 0);
+
+  // On the 1st frame, we should have initialized the encoder and
+  // asked for its resolution requirements.
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(1, codec_width_, codec_height_));
+  WaitForEncodedFrame(1);
+  EXPECT_EQ(video_source_.sink_wants().resolution_alignment,
+            kRequestedResolutionAlignment);
+
+  // On the 2nd frame, we should be receiving a correctly aligned resolution.
+  // (It's up the to the encoder to potentially drop the previous frame,
+  // to avoid coding back-to-back keyframes.)
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(2, codec_width_, codec_height_));
+  WaitForEncodedFrame(2);
+  sink_.CheckLastFrameSizeIsMultipleOf(kRequestedResolutionAlignment);
+
+  video_stream_encoder_->Stop();
+}
+
 TEST_F(VideoStreamEncoderTest, TestCpuDowngrades_BalancedMode) {
   const int kFramerateFps = 30;
   const int kWidth = 1280;
@@ -1716,6 +1762,7 @@ TEST_F(VideoStreamEncoderTest, TestCpuDowngrades_BalancedMode) {
 
   video_stream_encoder_->Stop();
 }
+
 TEST_F(VideoStreamEncoderTest, SinkWantsStoredByDegradationPreference) {
   video_stream_encoder_->OnBitrateUpdated(
       DataRate::bps(kTargetBitrateBps), DataRate::bps(kTargetBitrateBps),
@@ -5011,7 +5058,7 @@ TEST_F(VideoStreamEncoderTest, BandwidthAllocationLowerBound) {
   video_stream_encoder_->Stop();
 }
 
-TEST_F(VideoStreamEncoderTest, EncoderRatesPropegatedOnReconfigure) {
+TEST_F(VideoStreamEncoderTest, EncoderRatesPropagatedOnReconfigure) {
   video_stream_encoder_->OnBitrateUpdated(
       DataRate::bps(kTargetBitrateBps), DataRate::bps(kTargetBitrateBps),
       DataRate::bps(kTargetBitrateBps), 0, 0);
@@ -5138,7 +5185,7 @@ TEST_F(VideoStreamEncoderTest, ResolutionEncoderSwitch) {
 }
 
 TEST_F(VideoStreamEncoderTest,
-       AllocationPropegratedToEncoderWhenTargetRateChanged) {
+       AllocationPropagatedToEncoderWhenTargetRateChanged) {
   const int kFrameWidth = 320;
   const int kFrameHeight = 180;
 
@@ -5173,7 +5220,7 @@ TEST_F(VideoStreamEncoderTest,
 }
 
 TEST_F(VideoStreamEncoderTest,
-       AllocationNotPropegratedToEncoderWhenTargetRateUnchanged) {
+       AllocationNotPropagatedToEncoderWhenTargetRateUnchanged) {
   const int kFrameWidth = 320;
   const int kFrameHeight = 180;
 

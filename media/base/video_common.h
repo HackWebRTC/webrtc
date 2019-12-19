@@ -213,6 +213,12 @@ struct RTC_EXPORT VideoFormat : VideoFormatPod {
   std::string ToString() const;
 };
 
+// Returns the largest positive integer that divides both |a| and |b|.
+int GreatestCommonDivisor(int a, int b);
+
+// Returns the smallest positive integer that is divisible by both |a| and |b|.
+int LeastCommonMultiple(int a, int b);
+
 }  // namespace cricket
 
 #endif  // MEDIA_BASE_VIDEO_COMMON_H_
