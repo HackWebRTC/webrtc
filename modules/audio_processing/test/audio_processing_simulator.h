@@ -75,6 +75,7 @@ struct SimulationSettings {
       agc2_adaptive_level_estimator;
   absl::optional<float> pre_amplifier_gain_factor;
   absl::optional<int> ns_level;
+  absl::optional<bool> ns_analysis_on_linear_aec_output;
   absl::optional<int> maximum_internal_processing_rate;
   int initial_mic_level;
   bool simulate_mic_gain = false;

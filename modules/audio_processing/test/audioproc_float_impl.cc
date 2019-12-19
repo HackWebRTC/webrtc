@@ -174,6 +174,11 @@ ABSL_FLAG(int,
           kParameterNotSpecifiedValue,
           "Specify the NS level (0-3)");
 ABSL_FLAG(int,
+          ns_analysis_on_linear_aec_output,
+          kParameterNotSpecifiedValue,
+          "Specifies whether the noise suppression analysis is done on the "
+          "linear AEC output");
+ABSL_FLAG(int,
           maximum_internal_processing_rate,
           kParameterNotSpecifiedValue,
           "Set a maximum internal processing rate (32000 or 48000) to override "
@@ -402,6 +407,8 @@ SimulationSettings CreateSettings() {
   SetSettingIfSpecified(absl::GetFlag(FLAGS_pre_amplifier_gain_factor),
                         &settings.pre_amplifier_gain_factor);
   SetSettingIfSpecified(absl::GetFlag(FLAGS_ns_level), &settings.ns_level);
+  SetSettingIfFlagSet(absl::GetFlag(FLAGS_ns_analysis_on_linear_aec_output),
+                      &settings.ns_analysis_on_linear_aec_output);
   SetSettingIfSpecified(absl::GetFlag(FLAGS_maximum_internal_processing_rate),
                         &settings.maximum_internal_processing_rate);
   SetSettingIfSpecified(absl::GetFlag(FLAGS_stream_delay),

@@ -528,6 +528,10 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
     apm_config.noise_suppression.level =
         static_cast<AudioProcessing::Config::NoiseSuppression::Level>(level);
   }
+  if (settings_.ns_analysis_on_linear_aec_output) {
+    apm_config.noise_suppression.analyze_linear_aec_output_when_available =
+        *settings_.ns_analysis_on_linear_aec_output;
+  }
 
   RTC_CHECK(ap_builder_);
   if (echo_control_factory) {
