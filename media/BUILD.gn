@@ -63,6 +63,20 @@ rtc_library("rtc_vp9_profile") {
   ]
 }
 
+rtc_library("rtc_sdp_fmtp_utils") {
+  visibility = [ "*" ]
+  sources = [
+    "base/sdp_fmtp_utils.cc",
+    "base/sdp_fmtp_utils.h",
+  ]
+
+  deps = [
+    "../api/video_codecs:video_codecs_api",
+    "../rtc_base:stringutils",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
 rtc_library("rtc_media_base") {
   visibility = [ "*" ]
   defines = []
@@ -523,6 +537,7 @@ if (rtc_include_tests) {
       ":rtc_media_base",
       ":rtc_media_engine_defaults",
       ":rtc_media_tests_utils",
+      ":rtc_sdp_fmtp_utils",
       ":rtc_simulcast_encoder_adapter",
       ":rtc_vp9_profile",
       "../:webrtc_common",
@@ -589,6 +604,7 @@ if (rtc_include_tests) {
       "base/codec_unittest.cc",
       "base/rtp_data_engine_unittest.cc",
       "base/rtp_utils_unittest.cc",
+      "base/sdp_fmtp_utils_unittest.cc",
       "base/stream_params_unittest.cc",
       "base/turn_utils_unittest.cc",
       "base/video_adapter_unittest.cc",
