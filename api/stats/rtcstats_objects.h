@@ -370,9 +370,6 @@ class RTC_EXPORT RTCRTPStreamStats : public RTCStats {
   ~RTCRTPStreamStats() override;
 
   RTCStatsMember<uint32_t> ssrc;
-  // TODO(hbos): When the remote case is supported |RTCStatsCollector| needs to
-  // set this. crbug.com/657855, 657856
-  RTCStatsMember<std::string> associate_stats_id;
   // TODO(hbos): Remote case not supported by |RTCStatsCollector|.
   // crbug.com/657855, 657856
   RTCStatsMember<bool> is_remote;          // = false
@@ -468,6 +465,7 @@ class RTC_EXPORT RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
   ~RTCOutboundRTPStreamStats() override;
 
   RTCStatsMember<std::string> media_source_id;
+  RTCStatsMember<std::string> remote_id;
   RTCStatsMember<uint32_t> packets_sent;
   RTCStatsMember<uint64_t> retransmitted_packets_sent;
   RTCStatsMember<uint64_t> bytes_sent;

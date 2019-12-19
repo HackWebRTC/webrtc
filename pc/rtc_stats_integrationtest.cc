@@ -755,7 +755,6 @@ class RTCStatsReportVerifier {
   void VerifyRTCRTPStreamStats(const RTCRTPStreamStats& stream,
                                RTCStatsVerifier* verifier) {
     verifier->TestMemberIsDefined(stream.ssrc);
-    verifier->TestMemberIsUndefined(stream.associate_stats_id);
     verifier->TestMemberIsDefined(stream.is_remote);
     verifier->TestMemberIsDefined(stream.media_type);
     verifier->TestMemberIsDefined(stream.kind);
@@ -863,6 +862,8 @@ class RTCStatsReportVerifier {
                                        RTCAudioSourceStats::kType);
       verifier.TestMemberIsUndefined(outbound_stream.qp_sum);
     }
+    verifier.TestMemberIsOptionalIDReference(
+        outbound_stream.remote_id, RTCRemoteInboundRtpStreamStats::kType);
     verifier.TestMemberIsNonNegative<uint32_t>(outbound_stream.packets_sent);
     verifier.TestMemberIsNonNegative<uint64_t>(
         outbound_stream.retransmitted_packets_sent);

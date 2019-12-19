@@ -541,7 +541,6 @@ RTCPeerConnectionStats::~RTCPeerConnectionStats() {}
 // clang-format off
 WEBRTC_RTCSTATS_IMPL(RTCRTPStreamStats, RTCStats, "rtp",
     &ssrc,
-    &associate_stats_id,
     &is_remote,
     &media_type,
     &kind,
@@ -562,7 +561,6 @@ RTCRTPStreamStats::RTCRTPStreamStats(const std::string& id,
 RTCRTPStreamStats::RTCRTPStreamStats(std::string&& id, int64_t timestamp_us)
     : RTCStats(std::move(id), timestamp_us),
       ssrc("ssrc"),
-      associate_stats_id("associateStatsId"),
       is_remote("isRemote", false),
       media_type("mediaType"),
       kind("kind"),
@@ -578,7 +576,6 @@ RTCRTPStreamStats::RTCRTPStreamStats(std::string&& id, int64_t timestamp_us)
 RTCRTPStreamStats::RTCRTPStreamStats(const RTCRTPStreamStats& other)
     : RTCStats(other.id(), other.timestamp_us()),
       ssrc(other.ssrc),
-      associate_stats_id(other.associate_stats_id),
       is_remote(other.is_remote),
       media_type(other.media_type),
       kind(other.kind),
@@ -695,6 +692,7 @@ RTCInboundRTPStreamStats::~RTCInboundRTPStreamStats() {}
 WEBRTC_RTCSTATS_IMPL(
     RTCOutboundRTPStreamStats, RTCRTPStreamStats, "outbound-rtp",
     &media_source_id,
+    &remote_id,
     &packets_sent,
     &retransmitted_packets_sent,
     &bytes_sent,
@@ -720,6 +718,7 @@ RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(std::string&& id,
                                                      int64_t timestamp_us)
     : RTCRTPStreamStats(std::move(id), timestamp_us),
       media_source_id("mediaSourceId"),
+      remote_id("remoteId"),
       packets_sent("packetsSent"),
       retransmitted_packets_sent("retransmittedPacketsSent"),
       bytes_sent("bytesSent"),
@@ -741,6 +740,7 @@ RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
     const RTCOutboundRTPStreamStats& other)
     : RTCRTPStreamStats(other),
       media_source_id(other.media_source_id),
+      remote_id(other.remote_id),
       packets_sent(other.packets_sent),
       retransmitted_packets_sent(other.retransmitted_packets_sent),
       bytes_sent(other.bytes_sent),

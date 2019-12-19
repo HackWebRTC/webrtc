@@ -1935,6 +1935,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
   RTCOutboundRTPStreamStats expected_audio("RTCOutboundRTPAudioStream_1",
                                            report->timestamp_us());
   expected_audio.media_source_id = "RTCAudioSource_50";
+  // |expected_audio.remote_id| should be undefined.
   expected_audio.ssrc = 1;
   expected_audio.is_remote = false;
   expected_audio.media_type = "audio";
@@ -2013,6 +2014,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   RTCOutboundRTPStreamStats expected_video(stats_of_my_type[0]->id(),
                                            report->timestamp_us());
   expected_video.media_source_id = "RTCVideoSource_50";
+  // |expected_video.remote_id| should be undefined.
   expected_video.ssrc = 1;
   expected_video.is_remote = false;
   expected_video.media_type = "video";
@@ -2606,7 +2608,12 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
                 ->cast_to<RTCRemoteInboundRtpStreamStats>(),
             expected_remote_inbound_rtp);
   EXPECT_TRUE(report->Get(*expected_remote_inbound_rtp.transport_id));
-  EXPECT_TRUE(report->Get(*expected_remote_inbound_rtp.local_id));
+  ASSERT_TRUE(report->Get(*expected_remote_inbound_rtp.local_id));
+  // Lookup works in both directions.
+  EXPECT_EQ(*report->Get(*expected_remote_inbound_rtp.local_id)
+                 ->cast_to<RTCOutboundRTPStreamStats>()
+                 .remote_id,
+            expected_remote_inbound_rtp.id());
 }
 
 TEST_P(RTCStatsCollectorTestWithParamKind,
