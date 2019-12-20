@@ -140,6 +140,7 @@ public class MediaCodecVideoEncoder {
     VIDEO_CODEC_UNKNOWN,
     VIDEO_CODEC_VP8,
     VIDEO_CODEC_VP9,
+    VIDEO_CODEC_AV1,
     VIDEO_CODEC_H264;
 
     @CalledByNative("VideoCodecType")
