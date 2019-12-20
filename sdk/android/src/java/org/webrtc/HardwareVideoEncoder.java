@@ -586,7 +586,14 @@ class HardwareVideoEncoder implements VideoEncoder {
         EncodedImage encodedImage = builder
                                         .setBuffer(frameBuffer,
                                             () -> {
-                                              codec.releaseOutputBuffer(index, false);
+                                              // This callback should not throw any exceptions since
+                                              // it may be called on an arbitrary thread.
+                                              // Check bug webrtc:11230 for more details.
+                                              try {
+                                                codec.releaseOutputBuffer(index, false);
+                                              } catch (Exception e) {
+                                                Logging.e(TAG, "releaseOutputBuffer failed", e);
+                                              }
                                               outputBuffersBusyCount.decrement();
                                             })
                                         .setFrameType(frameType)
