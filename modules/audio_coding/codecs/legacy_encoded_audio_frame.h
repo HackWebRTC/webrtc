@@ -40,6 +40,10 @@ class LegacyEncodedAudioFrame final : public AudioDecoder::EncodedAudioFrame {
   absl::optional<DecodeResult> Decode(
       rtc::ArrayView<int16_t> decoded) const override;
 
+  AudioEncoder::CodecType CodecType() override { return decoder_->CodecType(); }
+  int PayloadSize() override { return payload_.size(); }
+  const uint8_t* PayloadData() override { return payload_.data(); }
+
   // For testing:
   const rtc::Buffer& payload() const { return payload_; }
 

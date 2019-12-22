@@ -308,6 +308,9 @@ RTC_OBJC_EXPORT
 - (BOOL)startRtcEventLogWithFilePath:(NSString *)filePath maxSizeInBytes:(int64_t)maxSizeInBytes;
 - (void)stopRtcEventLog;
 
+- (int32_t)startRecorder:(int32_t)dir path:(NSString*)path;
+- (int32_t)stopRecorder:(int32_t)dir;
+
 @end
 
 @interface RTCPeerConnection (Media)

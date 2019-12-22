@@ -26,6 +26,9 @@
 #include "modules/audio_coding/acm2/acm_resampler.h"
 #include "modules/audio_coding/acm2/call_statistics.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
+#ifndef DISABLE_RECORDER
+#include "modules/recording/recorder.h"
+#endif
 #include "rtc_base/critical_section.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -201,6 +204,10 @@ class AcmReceiver {
   //
   // Get statistics of calls to GetAudio().
   void GetDecodingCallStatistics(AudioDecodingCallStats* stats) const;
+
+#ifndef DISABLE_RECORDER
+  void InjectRecorder(Recorder* recorder);
+#endif
 
  private:
   struct DecoderInfo {
