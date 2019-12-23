@@ -8,9 +8,9 @@ if (is_android) {
     min_sdk_version = 19
     target_sdk_version = 27
 
-    java_files = [
-      "java/org/webrtc/examples/androidnativeapi/MainActivity.java",
+    sources = [
       "java/org/webrtc/examples/androidnativeapi/CallClient.java",
+      "java/org/webrtc/examples/androidnativeapi/MainActivity.java",
     ]
 
     deps = [

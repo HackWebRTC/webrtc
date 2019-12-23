@@ -129,7 +129,7 @@ if (is_android) {
     testonly = true
     android_manifest_for_lint = "androidapp/AndroidManifest.xml"
 
-    java_files = [
+    sources = [
       "androidapp/src/com/google/media/networktester/MainActivity.java",
       "androidapp/src/com/google/media/networktester/NetworkTester.java",
     ]

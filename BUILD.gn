@@ -622,10 +622,10 @@ if (rtc_include_tests) {
   }
 
   webrtc_perf_tests_resources = [
+    "resources/ConferenceMotion_1280_720_50.yuv",
     "resources/audio_coding/speech_mono_16kHz.pcm",
     "resources/audio_coding/speech_mono_32_48kHz.pcm",
     "resources/audio_coding/testfile32kHz.pcm",
-    "resources/ConferenceMotion_1280_720_50.yuv",
     "resources/difficult_photo_1850_1110.yuv",
     "resources/foreman_cif.yuv",
     "resources/paris_qcif.yuv",
@@ -681,19 +681,19 @@ if (rtc_include_tests) {
 
   if (is_android) {
     junit_binary("android_junit_tests") {
-      java_files = [
+      sources = [
         "examples/androidjunit/src/org/appspot/apprtc/BluetoothManagerTest.java",
         "examples/androidjunit/src/org/appspot/apprtc/DirectRTCClientTest.java",
         "examples/androidjunit/src/org/appspot/apprtc/TCPChannelClientTest.java",
         "sdk/android/tests/src/org/webrtc/AndroidVideoDecoderTest.java",
         "sdk/android/tests/src/org/webrtc/CameraEnumerationTest.java",
         "sdk/android/tests/src/org/webrtc/CodecTestHelper.java",
+        "sdk/android/tests/src/org/webrtc/CryptoOptionsTest.java",
         "sdk/android/tests/src/org/webrtc/FakeMediaCodecWrapper.java",
         "sdk/android/tests/src/org/webrtc/GlGenericDrawerTest.java",
         "sdk/android/tests/src/org/webrtc/HardwareVideoEncoderTest.java",
         "sdk/android/tests/src/org/webrtc/IceCandidateTest.java",
         "sdk/android/tests/src/org/webrtc/ScalingSettingsTest.java",
-        "sdk/android/tests/src/org/webrtc/CryptoOptionsTest.java",
       ]
 
       deps = [

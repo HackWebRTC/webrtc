@@ -107,7 +107,7 @@ if (is_android) {
     testonly = true
     android_manifest_for_lint = "androidapp/AndroidManifest.xml"
 
-    java_files = [
+    sources = [
       "androidapp/src/org/appspot/apprtc/AppRTCAudioManager.java",
       "androidapp/src/org/appspot/apprtc/AppRTCBluetoothManager.java",
       "androidapp/src/org/appspot/apprtc/AppRTCClient.java",
@@ -120,9 +120,9 @@ if (is_android) {
       "androidapp/src/org/appspot/apprtc/DirectRTCClient.java",
       "androidapp/src/org/appspot/apprtc/HudFragment.java",
       "androidapp/src/org/appspot/apprtc/PeerConnectionClient.java",
+      "androidapp/src/org/appspot/apprtc/RecordedAudioToFileController.java",
       "androidapp/src/org/appspot/apprtc/RoomParametersFetcher.java",
       "androidapp/src/org/appspot/apprtc/RtcEventLog.java",
-      "androidapp/src/org/appspot/apprtc/RecordedAudioToFileController.java",
       "androidapp/src/org/appspot/apprtc/SettingsActivity.java",
       "androidapp/src/org/appspot/apprtc/SettingsFragment.java",
       "androidapp/src/org/appspot/apprtc/TCPChannelClient.java",
@@ -168,7 +168,7 @@ if (is_android) {
     min_sdk_version = 16
     target_sdk_version = 21
 
-    java_files = [
+    sources = [
       "androidtests/src/org/appspot/apprtc/test/PeerConnectionClientTest.java",
     ]
 
@@ -826,7 +826,9 @@ if (is_win || is_android) {
 
 if (is_android) {
   rtc_android_library("webrtc_unity_java") {
-    java_files = [ "unityplugin/java/src/org/webrtc/UnityUtility.java" ]
+    sources = [
+      "unityplugin/java/src/org/webrtc/UnityUtility.java",
+    ]
     deps = [
       "../rtc_base:base_java",
       "../sdk/android:camera_java",
