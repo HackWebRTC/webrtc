@@ -843,9 +843,13 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
   ProcessingConfig processing_config;
   bool reinitialization_required = false;
   {
-    // Acquire the capture lock in order to safely call the function
-    // that retrieves the render side data. This function accesses apm
-    // getters that need the capture lock held when being called.
+    // Acquire the capture lock in order to:
+    // - Safely call the function that retrieves the render side data. This
+    //   function accesses APM getters that need the capture lock held when
+    //   being called.
+    // - Access api_format. The lock is released immediately due to the
+    //   conditional reinitialization.
+
     rtc::CritScope cs_capture(&crit_capture_);
     EmptyQueuedRenderAudio();
 
@@ -1101,32 +1105,30 @@ void AudioProcessingImpl::EmptyQueuedRenderAudio() {
 
 int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   TRACE_EVENT0("webrtc", "AudioProcessing::ProcessStream_AudioFrame");
-  {
-    // Acquire the capture lock in order to safely call the function
-    // that retrieves the render side data. This function accesses APM
-    // getters that need the capture lock held when being called.
-    rtc::CritScope cs_capture(&crit_capture_);
-    EmptyQueuedRenderAudio();
-  }
-
-  if (!frame) {
-    return kNullPointerError;
-  }
-  // Must be a native rate.
-  if (frame->sample_rate_hz_ != kSampleRate8kHz &&
-      frame->sample_rate_hz_ != kSampleRate16kHz &&
-      frame->sample_rate_hz_ != kSampleRate32kHz &&
-      frame->sample_rate_hz_ != kSampleRate48kHz) {
-    return kBadSampleRateError;
-  }
 
   ProcessingConfig processing_config;
   bool reinitialization_required = false;
   {
-    // Aquire lock for the access of api_format.
-    // The lock is released immediately due to the conditional
-    // reinitialization.
+    // Acquire the capture lock in order to:
+    // - Safely call the function that retrieves the render side data. This
+    //   function accesses APM getters that need the capture lock held when
+    //   being called.
+    // - Access api_format. The lock is released immediately due to the
+    //   conditional reinitialization.
     rtc::CritScope cs_capture(&crit_capture_);
+    EmptyQueuedRenderAudio();
+
+    if (!frame) {
+      return kNullPointerError;
+    }
+    // Must be a native rate.
+    if (frame->sample_rate_hz_ != kSampleRate8kHz &&
+        frame->sample_rate_hz_ != kSampleRate16kHz &&
+        frame->sample_rate_hz_ != kSampleRate32kHz &&
+        frame->sample_rate_hz_ != kSampleRate48kHz) {
+      return kBadSampleRateError;
+    }
+
     // TODO(ajm): The input and output rates and channels are currently
     // constrained to be identical in the int16 interface.
     processing_config = formats_.api_format;
@@ -1198,9 +1200,8 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   // Ensure that not both the AEC and AECM are active at the same time.
   // TODO(peah): Simplify once the public API Enable functions for these
   // are moved to APM.
-  RTC_DCHECK_LE(!!submodules_.echo_controller +
-                    !!submodules_.echo_control_mobile,
-                1);
+  RTC_DCHECK_LE(
+      !!submodules_.echo_controller + !!submodules_.echo_control_mobile, 1);
 
   AudioBuffer* capture_buffer = capture_.capture_audio.get();  // For brevity.
   AudioBuffer* linear_aec_buffer = capture_.linear_aec_output.get();
