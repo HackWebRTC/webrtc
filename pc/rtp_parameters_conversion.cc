@@ -200,29 +200,6 @@ template RTCErrorOr<std::vector<cricket::AudioCodec>> ToCricketCodecs<
 template RTCErrorOr<std::vector<cricket::VideoCodec>> ToCricketCodecs<
     cricket::VideoCodec>(const std::vector<RtpCodecParameters>& codecs);
 
-RTCErrorOr<cricket::RtpHeaderExtensions> ToCricketRtpHeaderExtensions(
-    const std::vector<RtpHeaderExtensionParameters>& extensions) {
-  cricket::RtpHeaderExtensions cricket_extensions;
-  std::set<int> seen_header_extension_ids;
-  for (const RtpHeaderExtensionParameters& extension : extensions) {
-    if (extension.id < RtpHeaderExtensionParameters::kMinId ||
-        extension.id > RtpHeaderExtensionParameters::kMaxId) {
-      char buf[50];
-      rtc::SimpleStringBuilder sb(buf);
-      sb << "Invalid header extension id: " << extension.id;
-      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_RANGE, sb.str());
-    }
-    if (!seen_header_extension_ids.insert(extension.id).second) {
-      char buf[50];
-      rtc::SimpleStringBuilder sb(buf);
-      sb << "Duplicate header extension id: " << extension.id;
-      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, sb.str());
-    }
-    cricket_extensions.push_back(extension);
-  }
-  return std::move(cricket_extensions);
-}
-
 RTCErrorOr<cricket::StreamParamsVec> ToCricketStreamParamsVec(
     const std::vector<RtpEncodingParameters>& encodings) {
   if (encodings.size() > 1u) {

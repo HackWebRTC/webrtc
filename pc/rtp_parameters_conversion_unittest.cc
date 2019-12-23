@@ -301,39 +301,6 @@ TEST(RtpParametersConversionTest, ToCricketCodecsDuplicatePayloadType) {
   EXPECT_TRUE(result.ok());
 }
 
-TEST(RtpParametersConversionTest, ToCricketRtpHeaderExtensions) {
-  std::vector<RtpHeaderExtensionParameters> extensions = {
-      {"http://example.com", 1},
-      {"urn:foo:bar", 14},
-      {"urn:first:two-byte-only:id", 15}};
-  auto result = ToCricketRtpHeaderExtensions(extensions);
-  ASSERT_TRUE(result.ok());
-  ASSERT_EQ(3u, result.value().size());
-  EXPECT_EQ("http://example.com", result.value()[0].uri);
-  EXPECT_EQ(1, result.value()[0].id);
-  EXPECT_EQ("urn:foo:bar", result.value()[1].uri);
-  EXPECT_EQ(14, result.value()[1].id);
-  EXPECT_EQ("urn:first:two-byte-only:id", result.value()[2].uri);
-  EXPECT_EQ(15, result.value()[2].id);
-}
-
-TEST(RtpParametersConversionTest, ToCricketRtpHeaderExtensionsErrors) {
-  // First, IDs outside the range 1-255.
-  std::vector<RtpHeaderExtensionParameters> extensions = {
-      {"http://example.com", 0}};
-  auto result = ToCricketRtpHeaderExtensions(extensions);
-  EXPECT_EQ(RTCErrorType::INVALID_RANGE, result.error().type());
-
-  extensions[0].id = 256;
-  result = ToCricketRtpHeaderExtensions(extensions);
-  EXPECT_EQ(RTCErrorType::INVALID_RANGE, result.error().type());
-
-  // Duplicate IDs.
-  extensions = {{"http://example.com", 1}, {"urn:foo:bar", 1}};
-  result = ToCricketRtpHeaderExtensions(extensions);
-  EXPECT_EQ(RTCErrorType::INVALID_PARAMETER, result.error().type());
-}
-
 TEST(RtpParametersConversionTest, ToCricketStreamParamsVecSimple) {
   std::vector<RtpEncodingParameters> encodings;
   RtpEncodingParameters encoding;
