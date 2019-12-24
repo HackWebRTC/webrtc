@@ -1351,6 +1351,12 @@ if (is_ios || is_mac) {
           ]
         }
 
+        if (rtc_use_bt_mixer) {
+          common_objc_headers += [
+            "objc/avconf/CFAudioMixer.h",
+          ]
+        }
+
         sources = common_objc_headers
         public_headers = common_objc_headers
 
@@ -1735,10 +1741,21 @@ if (is_ios || is_mac) {
         "objc/avconf/CFHijackCapturerDelegate.h",
         "objc/avconf/CFHijackCapturerDelegate.mm",
       ]
+      if (rtc_use_bt_mixer) {
+        sources += [
+          "objc/avconf/CFAudioMixer.h",
+          "objc/avconf/CFAudioMixer.mm",
+        ]
+      }
 
       deps = [
         ":base_objc",
       ]
+      if (rtc_use_bt_mixer) {
+        deps += [
+          "//modules/backing_track:backing_track",
+        ]
+      }
 
       configs += [
         "..:common_objc",
