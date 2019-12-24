@@ -10,6 +10,9 @@
 
 #import "ARDAppClient+Internal.h"
 
+#import <sys/time.h>
+
+#import <WebRTC/CFHijackCapturerDelegate.h>
 #import <WebRTC/RTCAudioTrack.h>
 #import <WebRTC/RTCCameraVideoCapturer.h>
 #import <WebRTC/RTCConfiguration.h>
@@ -34,13 +37,14 @@
 #import "ARDMessageResponse.h"
 #import "ARDSettingsModel.h"
 #import "ARDSignalingMessage.h"
+#import "ARDTimerProxy.h"
 #import "ARDTURNClient+Internal.h"
 #import "ARDUtilities.h"
 #import "ARDWebSocketChannel.h"
 #import "RTCIceCandidate+JSON.h"
 #import "RTCSessionDescription+JSON.h"
 
-static NSString * const kARDIceServerRequestUrl = @"https://appr.tc/params";
+static NSString * const kARDIceServerRequestUrl = @"http://123.56.66.149:3033/iceconfig";
 
 static NSString * const kARDAppClientErrorDomain = @"ARDAppClient";
 static NSInteger const kARDAppClientErrorUnknown = -1;
@@ -63,52 +67,13 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
 #endif
 static int const kKbpsMultiplier = 1000;
 
-// We need a proxy to NSTimer because it causes a strong retain cycle. When
-// using the proxy, |invalidate| must be called before it properly deallocs.
-@interface ARDTimerProxy : NSObject
-
-- (instancetype)initWithInterval:(NSTimeInterval)interval
-                         repeats:(BOOL)repeats
-                    timerHandler:(void (^)(void))timerHandler;
-- (void)invalidate;
-
-@end
-
-@implementation ARDTimerProxy {
-  NSTimer *_timer;
-  void (^_timerHandler)(void);
-}
-
-- (instancetype)initWithInterval:(NSTimeInterval)interval
-                         repeats:(BOOL)repeats
-                    timerHandler:(void (^)(void))timerHandler {
-  NSParameterAssert(timerHandler);
-  if (self = [super init]) {
-    _timerHandler = timerHandler;
-    _timer = [NSTimer scheduledTimerWithTimeInterval:interval
-                                              target:self
-                                            selector:@selector(timerDidFire:)
-                                            userInfo:nil
-                                             repeats:repeats];
-  }
-  return self;
-}
-
-- (void)invalidate {
-  [_timer invalidate];
-}
-
-- (void)timerDidFire:(NSTimer *)timer {
-  _timerHandler();
-}
-
-@end
-
 @implementation ARDAppClient {
   RTCFileLogger *_fileLogger;
   ARDTimerProxy *_statsTimer;
   ARDSettingsModel *_settings;
   RTCVideoTrack *_localVideoTrack;
+  CFHijackCapturerDelegate* _hijackDelegate;
+  bool _recording;
 }
 
 @synthesize shouldGetStats = _shouldGetStats;
@@ -144,6 +109,7 @@ static int const kKbpsMultiplier = 1000;
     _delegate = delegate;
     NSURL *turnRequestURL = [NSURL URLWithString:kARDIceServerRequestUrl];
     _turnClient = [[ARDTURNClient alloc] initWithURL:turnRequestURL];
+    _recording = false;
     [self configure];
   }
   return self;
@@ -325,6 +291,29 @@ static int const kKbpsMultiplier = 1000;
 #endif
 }
 
+- (void)toggleRecorder {
+  _recording = !_recording;
+  int dir = 1;
+  if (_recording) {
+      struct timeval time;
+      gettimeofday(&time, nil);
+      int64_t now_ms = ((time.tv_sec * 1000) + (time.tv_usec / 1000));
+      NSString* folder = [NSSearchPathForDirectoriesInDomains(
+          NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+      [_peerConnection
+          startRecorder:dir
+                   path:[NSString stringWithFormat:@"%@/recording_%lld.mkv",
+                                                   folder, now_ms]];
+  } else {
+    [_peerConnection stopRecorder:dir];
+  }
+}
+
+- (void)toggleVideoTrack {
+  _localVideoTrack.isEnabled = !_localVideoTrack.isEnabled;
+  [_hijackDelegate toggleMute:!_localVideoTrack.isEnabled];
+}
+
 #pragma mark - ARDSignalingChannelDelegate
 
 - (void)channel:(id<ARDSignalingChannel>)channel
@@ -466,15 +455,25 @@ static int const kKbpsMultiplier = 1000;
       [self.delegate appClient:self didError:sdpError];
       return;
     }
+
+    NSArray<NSString*>* sdpLines = [sdp.sdp componentsSeparatedByString:@"\r\n"];
+    NSString* newDesc = @"";
+    for (NSString* line in sdpLines) {
+        if (![line containsString:@"urn:3gpp:video-orientation"] && ![line isEqualToString:@""]) {
+            newDesc = [newDesc stringByAppendingFormat:@"%@\r\n", line];
+        }
+    }
+    RTCSessionDescription* newSdp = [[RTCSessionDescription alloc] initWithType:sdp.type sdp:newDesc];
+
     __weak ARDAppClient *weakSelf = self;
-    [self.peerConnection setLocalDescription:sdp
+    [self.peerConnection setLocalDescription:newSdp
                            completionHandler:^(NSError *error) {
                              ARDAppClient *strongSelf = weakSelf;
                              [strongSelf peerConnection:strongSelf.peerConnection
                                  didSetSessionDescriptionWithError:error];
                            }];
     ARDSessionDescriptionMessage *message =
-        [[ARDSessionDescriptionMessage alloc] initWithDescription:sdp];
+        [[ARDSessionDescriptionMessage alloc] initWithDescription:newSdp];
     [self sendSignalingMessage:message];
     [self setMaxBitrateForPeerConnectionVideoSender];
   });
@@ -740,7 +739,8 @@ static int const kKbpsMultiplier = 1000;
         [[ARDExternalSampleCapturer alloc] initWithDelegate:source];
     [_delegate appClient:self didCreateLocalExternalSampleCapturer:capturer];
   } else {
-    RTCCameraVideoCapturer *capturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:source];
+    _hijackDelegate = [[CFHijackCapturerDelegate alloc] initWithRealDelegate:source];
+    RTCCameraVideoCapturer *capturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:_hijackDelegate];
     [_delegate appClient:self didCreateLocalCapturer:capturer];
   }
 #else

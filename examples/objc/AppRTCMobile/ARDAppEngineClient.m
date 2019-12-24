@@ -19,15 +19,15 @@
 
 // TODO(tkchin): move these to a configuration object.
 static NSString * const kARDRoomServerHostUrl =
-    @"https://appr.tc";
+    @"http://123.56.66.149:8080";
 static NSString * const kARDRoomServerJoinFormat =
-    @"https://appr.tc/join/%@";
+    @"http://123.56.66.149:8080/join/%@";
 static NSString * const kARDRoomServerJoinFormatLoopback =
-    @"https://appr.tc/join/%@?debug=loopback";
+    @"http://123.56.66.149:8080/join/%@?debug=loopback";
 static NSString * const kARDRoomServerMessageFormat =
-    @"https://appr.tc/message/%@/%@";
+    @"http://123.56.66.149:8080/message/%@/%@";
 static NSString * const kARDRoomServerLeaveFormat =
-    @"https://appr.tc/leave/%@/%@";
+    @"http://123.56.66.149:8080/leave/%@/%@";
 
 static NSString * const kARDAppEngineClientErrorDomain = @"ARDAppEngineClient";
 static NSInteger const kARDAppEngineClientErrorBadResponse = -1;

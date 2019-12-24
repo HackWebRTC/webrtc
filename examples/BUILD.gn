@@ -276,6 +276,8 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       "objc/AppRTCMobile/ARDSignalingMessage.m",
       "objc/AppRTCMobile/ARDStatsBuilder.h",
       "objc/AppRTCMobile/ARDStatsBuilder.m",
+      "objc/AppRTCMobile/ARDTimerProxy.h",
+      "objc/AppRTCMobile/ARDTimerProxy.m",
       "objc/AppRTCMobile/ARDTURNClient+Internal.h",
       "objc/AppRTCMobile/ARDTURNClient.h",
       "objc/AppRTCMobile/ARDTURNClient.m",
@@ -351,6 +353,9 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     ios_app_bundle("AppRTCMobile") {
       testonly = true
       sources = [ "objc/AppRTCMobile/ios/main.m" ]
+      extra_substitutions = [
+        "PRODUCT_BUNDLE_IDENTIFIER=com.piasy.AppRTCMobile",
+      ]
 
       info_plist = "objc/AppRTCMobile/ios/Info.plist"
 

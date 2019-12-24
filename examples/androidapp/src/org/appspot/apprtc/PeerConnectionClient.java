@@ -15,6 +15,7 @@ import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import com.piasy.avconf.HijackCapturerObserver;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -35,7 +36,6 @@ import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.appspot.apprtc.AppRTCClient.SignalingParameters;
-import org.appspot.apprtc.RecordedAudioToFileController;
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
 import org.webrtc.CameraVideoCapturer;
@@ -161,6 +161,7 @@ public class PeerConnectionClient {
   private boolean renderVideo = true;
   @Nullable
   private VideoTrack localVideoTrack;
+  private HijackCapturerObserver hijackCapturerObserver;
   @Nullable
   private VideoTrack remoteVideoTrack;
   @Nullable
@@ -178,6 +179,7 @@ public class PeerConnectionClient {
   // Implements the WebRtcAudioRecordSamplesReadyCallback interface and writes
   // recorded audio samples to an output file.
   @Nullable private RecordedAudioToFileController saveRecordedAudioToFile;
+  private boolean recording = false;
 
   /**
    * Peer connection parameters.
@@ -714,6 +716,9 @@ public class PeerConnectionClient {
       videoCapturer.dispose();
       videoCapturer = null;
     }
+    if (hijackCapturerObserver != null) {
+      hijackCapturerObserver.dispose();
+    }
     Log.d(TAG, "Closing video source.");
     if (videoSource != null) {
       videoSource.dispose();
@@ -918,6 +923,35 @@ public class PeerConnectionClient {
     });
   }
 
+  public void toggleRecorder() {
+    executor.execute(() -> {
+      recording = !recording;
+      int dir = 1;
+      if (recording) {
+        peerConnection.startRecorder(dir, "/sdcard/avconf/recording_" + System.currentTimeMillis()
+                + ".mkv");
+      } else {
+        peerConnection.stopRecorder(dir);
+      }
+    });
+  }
+
+  public void toggleVideoTrack(boolean enabled) {
+    executor.execute(() -> {
+      if (localVideoTrack != null) {
+        localVideoTrack.setEnabled(enabled);
+      }
+      if (hijackCapturerObserver != null) {
+        hijackCapturerObserver.toggleMute(!enabled);
+      }
+    });
+    if (enabled) {
+      startVideoSource();
+    } else {
+      stopVideoSource();
+    }
+  }
+
   private void reportError(final String errorMessage) {
     Log.e(TAG, "Peerconnection error: " + errorMessage);
     executor.execute(() -> {
@@ -941,7 +975,8 @@ public class PeerConnectionClient {
     surfaceTextureHelper =
         SurfaceTextureHelper.create("CaptureThread", rootEglBase.getEglBaseContext());
     videoSource = factory.createVideoSource(capturer.isScreencast());
-    capturer.initialize(surfaceTextureHelper, appContext, videoSource.getCapturerObserver());
+    hijackCapturerObserver = new HijackCapturerObserver(videoSource.getCapturerObserver());
+    capturer.initialize(surfaceTextureHelper, appContext, hijackCapturerObserver);
     capturer.startCapture(videoWidth, videoHeight, videoFps);
 
     localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
@@ -1144,7 +1179,13 @@ public class PeerConnectionClient {
     }
     Log.d(TAG, "Change media description from: " + lines[mLineIndex] + " to " + newMLine);
     lines[mLineIndex] = newMLine;
-    return joinString(Arrays.asList(lines), "\r\n", true /* delimiterAtEnd */);
+    List<String> newLines = new ArrayList<>();
+    for (String line : lines) {
+      if (!line.contains("urn:3gpp:video-orientation")) {
+        newLines.add(line);
+      }
+    }
+    return joinString(newLines, "\r\n", true /* delimiterAtEnd */);
   }
 
   private void drainCandidates() {

@@ -10,6 +10,7 @@
 
 #import "ARDVideoCallViewController.h"
 
+#import <WebRTC/CFAudioMixer.h>
 #import <WebRTC/RTCAudioSession.h>
 #import <WebRTC/RTCCameraVideoCapturer.h>
 #import <WebRTC/RTCDispatcher.h>
@@ -24,7 +25,8 @@
 
 @interface ARDVideoCallViewController () <ARDAppClientDelegate,
                                           ARDVideoCallViewDelegate,
-                                          RTCAudioSessionDelegate>
+                                          RTCAudioSessionDelegate,
+                                          CFAudioMixerDelegate>
 @property(nonatomic, strong) RTCVideoTrack *remoteVideoTrack;
 @property(nonatomic, readonly) ARDVideoCallView *videoCallView;
 @property(nonatomic, assign) AVAudioSessionPortOverride portOverride;
@@ -35,6 +37,8 @@
   RTCVideoTrack *_remoteVideoTrack;
   ARDCaptureController *_captureController;
   ARDFileCaptureController *_fileCaptureController NS_AVAILABLE_IOS(10);
+  bool _capturing;
+  CFAudioMixer* _mixer;
 }
 
 @synthesize videoCallView = _videoCallView;
@@ -49,6 +53,8 @@
     ARDSettingsModel *settingsModel = [[ARDSettingsModel alloc] init];
     _delegate = delegate;
 
+    _capturing = true;
+    _mixer = nil;
     _client = [[ARDAppClient alloc] initWithDelegate:self];
     [_client connectToRoomWithId:room settings:settingsModel isLoopback:isLoopback];
   }
@@ -155,10 +161,38 @@
 - (void)videoCallViewDidSwitchCamera:(ARDVideoCallView *)view {
   // TODO(tkchin): Rate limit this so you can't tap continously on it.
   // Probably through an animation.
-  [_captureController switchCamera];
+  //[_captureController switchCamera];
+  [_client toggleRecorder];
 }
 
 - (void)videoCallViewDidChangeRoute:(ARDVideoCallView *)view {
+  if (_mixer) {
+    [_mixer stopMixer];
+    _mixer = nil;
+  } else {
+    _mixer = [[CFAudioMixer alloc]
+        initWithBackingTrack:[self pathForFileName:@"mozart.mp3"]
+           captureSampleRate:48000
+           captureChannelNum:1
+             frameDurationUs:10000
+          enableMusicSyncFix:false
+        waitingMixDelayFrame:5
+                    delegate:self];
+    [_mixer startMixer];
+    [_mixer toggleMusicStreaming:true];
+  }
+
+/*
+  _capturing = !_capturing;
+  [_client toggleVideoTrack];
+  if (_capturing) {
+    [_captureController startCapture];
+  } else {
+    [_captureController stopCapture];
+  }
+*/
+
+/*
   AVAudioSessionPortOverride override = AVAudioSessionPortOverrideNone;
   if (_portOverride == AVAudioSessionPortOverrideNone) {
     override = AVAudioSessionPortOverrideSpeaker;
@@ -176,6 +210,7 @@
     }
     [session unlockForConfiguration];
   }];
+  */
 }
 
 - (void)videoCallViewDidEnableStats:(ARDVideoCallView *)view {
@@ -188,6 +223,32 @@
 - (void)audioSession:(RTCAudioSession *)audioSession
     didDetectPlayoutGlitch:(int64_t)totalNumberOfGlitches {
   RTCLog(@"Audio session detected glitch, total: %lld", totalNumberOfGlitches);
+}
+
+#pragma mark - CFAudioMixerDelegate
+
+- (void)onSsrcFinished:(int32_t)ssrc {
+    RTCLog(@"onSsrcFinished: %d", ssrc);
+    __weak ARDVideoCallViewController* weakSelf = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+      ARDVideoCallViewController* strongSelf = weakSelf;
+      if (strongSelf) {
+        [strongSelf->_mixer stopMixer];
+        strongSelf->_mixer = nil;
+      }
+    });
+}
+
+- (void)onSsrcError:(int32_t)ssrc code:(int32_t)code {
+    RTCLog(@"onSsrcError: %d %d", ssrc, code);
+    __weak ARDVideoCallViewController* weakSelf = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+      ARDVideoCallViewController* strongSelf = weakSelf;
+      if (strongSelf) {
+        [strongSelf->_mixer stopMixer];
+        strongSelf->_mixer = nil;
+      }
+    });
 }
 
 #pragma mark - Private
@@ -242,6 +303,17 @@
 
   [alert addAction:defaultAction];
   [self presentViewController:alert animated:YES completion:nil];
+}
+
+- (nullable NSString*)pathForFileName:(NSString*)fileName {
+    NSArray* nameComponents = [fileName componentsSeparatedByString:@"."];
+    if (nameComponents.count != 2) {
+        return nil;
+    }
+
+    NSString* path = [[NSBundle mainBundle] pathForResource:nameComponents[0]
+                                                     ofType:nameComponents[1]];
+    return path;
 }
 
 @end

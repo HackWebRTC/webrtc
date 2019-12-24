@@ -32,6 +32,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
 import android.widget.Toast;
+import com.piasy.avconf.AudioMixer;
 import java.io.IOException;
 import java.lang.RuntimeException;
 import java.util.ArrayList;
@@ -151,6 +152,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   private final ProxyVideoSink remoteProxyRenderer = new ProxyVideoSink();
   private final ProxyVideoSink localProxyVideoSink = new ProxyVideoSink();
   @Nullable private PeerConnectionClient peerConnectionClient;
+  private AudioMixer mixer;
   @Nullable
   private AppRTCClient appRtcClient;
   @Nullable
@@ -520,16 +522,53 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     disconnect();
   }
 
+  private boolean videoEnabled = true;
+
   @Override
   public void onCameraSwitch() {
     if (peerConnectionClient != null) {
-      peerConnectionClient.switchCamera();
+      //peerConnectionClient.switchCamera();
+      videoEnabled = !videoEnabled;
+      peerConnectionClient.toggleVideoTrack(videoEnabled);
     }
   }
 
   @Override
   public void onVideoScalingSwitch(ScalingType scalingType) {
-    fullscreenRenderer.setScalingType(scalingType);
+    //fullscreenRenderer.setScalingType(scalingType);
+
+    //if (peerConnectionClient != null) {
+    //  peerConnectionClient.toggleRecorder();
+    //}
+
+    if (mixer != null) {
+      mixer.stopMixer();
+      mixer = null;
+    } else {
+      // adb push examples/objc/AppRTCMobile/ios/resources/mozart.mp3 /sdcard/
+      mixer = new AudioMixer("/sdcard/mozart.mp3", 48000, 1, 10_000, false, 20,
+              new AudioMixer.MixerCallback() {
+                @Override
+                public void onMixerSsrcFinished(final int ssrc) {
+                  Logging.d(TAG, "onMixerSsrcFinished " + ssrc);
+                  runOnUiThread(() -> {
+                    mixer.stopMixer();
+                    mixer = null;
+                  });
+                }
+
+                @Override
+                public void onMixerSsrcError(final int ssrc, final int code) {
+                  Logging.d(TAG, "onMixerSsrcError " + ssrc + " " + code);
+                  runOnUiThread(() -> {
+                    mixer.stopMixer();
+                    mixer = null;
+                  });
+                }
+              });
+      mixer.startMixer();
+      mixer.toggleMusicStreaming(true);
+    }
   }
 
   @Override
