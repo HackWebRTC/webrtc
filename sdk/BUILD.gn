@@ -286,7 +286,37 @@ if (is_ios || is_mac) {
         libs = [ "AudioToolbox.framework" ]
       }
 
-      rtc_library("audio_objc") {
+      # This target exists to expose :audio_session_objc and
+      # :audio_session_delegate_adapter_objc for backward compatibility,
+      # and should be deprecated.
+      group("audio_objc") {
+        public_deps = [  # no-presubmit-check TODO(webrtc:11238)
+          ":audio_session_delegate_adapter_objc",
+          ":audio_session_objc",
+        ]
+      }
+
+      rtc_library("audio_session_delegate_adapter_objc") {
+        sources = [
+          "objc/components/audio/RTCNativeAudioSessionDelegateAdapter.h",
+          "objc/components/audio/RTCNativeAudioSessionDelegateAdapter.mm",
+        ]
+
+        configs += [
+          "..:common_objc",
+          ":used_from_extension",
+        ]
+
+        public_configs = [ ":common_config_objc" ]
+
+        deps = [
+          ":audio_session_objc",
+          ":audio_session_observer",
+          ":base_objc",
+        ]
+      }
+
+      rtc_library("audio_session_objc") {
         sources = [
           "objc/components/audio/RTCAudioSession+Configuration.mm",
           "objc/components/audio/RTCAudioSession+Private.h",
@@ -294,9 +324,8 @@ if (is_ios || is_mac) {
           "objc/components/audio/RTCAudioSession.mm",
           "objc/components/audio/RTCAudioSessionConfiguration.h",
           "objc/components/audio/RTCAudioSessionConfiguration.m",
-          "objc/components/audio/RTCNativeAudioSessionDelegateAdapter.h",
-          "objc/components/audio/RTCNativeAudioSessionDelegateAdapter.mm",
         ]
+
         configs += [
           "..:common_objc",
           ":used_from_extension",
@@ -307,7 +336,6 @@ if (is_ios || is_mac) {
         libs = [ "AVFoundation.framework" ]
 
         deps = [
-          ":audio_session_observer",
           ":base_objc",
           ":helpers_objc",
           "../rtc_base",
@@ -1073,7 +1101,7 @@ if (is_ios || is_mac) {
 
           deps = [
             ":audio_device",
-            ":audio_objc",
+            ":audio_session_objc",
             ":base_objc",
             ":callback_logger_objc",
             ":framework_objc",
@@ -1225,7 +1253,7 @@ if (is_ios || is_mac) {
 
         if (is_ios) {
           sources += [ "objc/unittests/RTCAudioSessionTest.mm" ]
-          deps += [ ":audio_objc" ]
+          deps += [ ":audio_session_objc" ]
         }
       }
     }

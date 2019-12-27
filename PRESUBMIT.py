@@ -521,7 +521,7 @@ def CheckPublicDepsIsNotUsed(gn_files, input_api, output_api):
   """Checks that public_deps is not used without a good reason."""
   result = []
   no_presubmit_check_re = input_api.re.compile(
-      r'# no-presubmit-check TODO\(webrtc:8603\)')
+      r'# no-presubmit-check TODO\(webrtc:\d+\)')
   error_msg = ('public_deps is not recommended in WebRTC BUILD.gn files '
                'because it doesn\'t map well to downstream build systems.\n'
                'Used in: %s (line %d).\n'
