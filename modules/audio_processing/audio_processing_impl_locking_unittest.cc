@@ -584,7 +584,7 @@ void StatsProcessor::Process() {
   EXPECT_TRUE(apm_config.noise_suppression.enabled);
 
   // The below return value is not testable.
-  apm_->GetStatistics(/*has_remote_tracks=*/true);
+  apm_->GetStatistics();
 }
 
 const float CaptureProcessor::kCaptureInputFloatLevel = 0.03125f;

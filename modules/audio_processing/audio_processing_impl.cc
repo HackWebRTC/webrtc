@@ -1449,6 +1449,25 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
                           &level);
   }
 
+  // Compute echo-related stats.
+  if (submodules_.echo_controller) {
+    auto ec_metrics = submodules_.echo_controller->GetMetrics();
+    capture_.stats.echo_return_loss = ec_metrics.echo_return_loss;
+    capture_.stats.echo_return_loss_enhancement =
+        ec_metrics.echo_return_loss_enhancement;
+    capture_.stats.delay_ms = ec_metrics.delay_ms;
+  }
+  if (config_.residual_echo_detector.enabled) {
+    RTC_DCHECK(submodules_.echo_detector);
+    auto ed_metrics = submodules_.echo_detector->GetMetrics();
+    capture_.stats.residual_echo_likelihood = ed_metrics.echo_likelihood;
+    capture_.stats.residual_echo_likelihood_recent_max =
+        ed_metrics.echo_likelihood_recent_max;
+  }
+
+  // Pass stats for reporting.
+  stats_reporter_.UpdateStatistics(capture_.stats);
+
   capture_.was_stream_delay_set = false;
   return kNoError;
 }
@@ -1724,30 +1743,6 @@ void AudioProcessingImpl::AttachPlayoutAudioGenerator(
 void AudioProcessingImpl::DetachPlayoutAudioGenerator() {
   // TODO(bugs.webrtc.org/8882) Stub.
   // Delete audio generator, if one is attached.
-}
-
-AudioProcessingStats AudioProcessingImpl::GetStatistics(
-    bool has_remote_tracks) const {
-  rtc::CritScope cs_capture(&crit_capture_);
-  if (!has_remote_tracks) {
-    return capture_.stats;
-  }
-  AudioProcessingStats stats = capture_.stats;
-  if (submodules_.echo_controller) {
-    auto ec_metrics = submodules_.echo_controller->GetMetrics();
-    stats.echo_return_loss = ec_metrics.echo_return_loss;
-    stats.echo_return_loss_enhancement =
-        ec_metrics.echo_return_loss_enhancement;
-    stats.delay_ms = ec_metrics.delay_ms;
-  }
-  if (config_.residual_echo_detector.enabled) {
-    RTC_DCHECK(submodules_.echo_detector);
-    auto ed_metrics = submodules_.echo_detector->GetMetrics();
-    stats.residual_echo_likelihood = ed_metrics.echo_likelihood;
-    stats.residual_echo_likelihood_recent_max =
-        ed_metrics.echo_likelihood_recent_max;
-  }
-  return stats;
 }
 
 void AudioProcessingImpl::MutateConfig(
@@ -2119,5 +2114,27 @@ void AudioProcessingImpl::ApmCaptureState::KeyboardInfo::Extract(
 AudioProcessingImpl::ApmRenderState::ApmRenderState() = default;
 
 AudioProcessingImpl::ApmRenderState::~ApmRenderState() = default;
+
+AudioProcessingImpl::ApmStatsReporter::ApmStatsReporter()
+    : stats_message_queue_(1) {}
+
+AudioProcessingImpl::ApmStatsReporter::~ApmStatsReporter() = default;
+
+AudioProcessingStats AudioProcessingImpl::ApmStatsReporter::GetStatistics() {
+  rtc::CritScope cs_stats(&crit_stats_);
+  bool new_stats_available = stats_message_queue_.Remove(&cached_stats_);
+  // If the message queue is full, return the cached stats.
+  static_cast<void>(new_stats_available);
+
+  return cached_stats_;
+}
+
+void AudioProcessingImpl::ApmStatsReporter::UpdateStatistics(
+    const AudioProcessingStats& new_stats) {
+  AudioProcessingStats stats_to_queue = new_stats;
+  bool stats_message_passed = stats_message_queue_.Insert(&stats_to_queue);
+  // If the message queue is full, discard the new stats.
+  static_cast<void>(stats_message_passed);
+}
 
 }  // namespace webrtc

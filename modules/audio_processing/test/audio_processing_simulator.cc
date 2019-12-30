@@ -241,7 +241,7 @@ void AudioProcessingSimulator::ProcessStream(bool fixed_interface) {
   }
 
   if (residual_echo_likelihood_graph_writer_.is_open()) {
-    auto stats = ap_->GetStatistics(true /*has_remote_tracks*/);
+    auto stats = ap_->GetStatistics();
     residual_echo_likelihood_graph_writer_
         << stats.residual_echo_likelihood.value_or(-1.f) << ", ";
   }

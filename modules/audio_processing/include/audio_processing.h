@@ -631,12 +631,14 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
   // TODO(peah): Remove this method.
   virtual void UpdateHistogramsOnCallEnd() = 0;
 
-  // Get audio processing statistics. The |has_remote_tracks| argument should be
-  // set if there are active remote tracks (this would usually be true during
-  // a call). If there are no remote tracks some of the stats will not be set by
-  // AudioProcessing, because they only make sense if there is at least one
-  // remote track.
-  virtual AudioProcessingStats GetStatistics(bool has_remote_tracks) const = 0;
+  // Get audio processing statistics.
+  virtual AudioProcessingStats GetStatistics() = 0;
+  // TODO(webrtc:5298) Deprecated variant. The |has_remote_tracks| argument
+  // should be set if there are active remote tracks (this would usually be true
+  // during a call). If there are no remote tracks some of the stats will not be
+  // set by AudioProcessing, because they only make sense if there is at least
+  // one remote track.
+  virtual AudioProcessingStats GetStatistics(bool has_remote_tracks) = 0;
 
   // Returns the last applied configuration.
   virtual AudioProcessing::Config GetConfig() const = 0;

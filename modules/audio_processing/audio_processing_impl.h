@@ -118,7 +118,12 @@ class AudioProcessingImpl : public AudioProcessing {
   bool was_stream_delay_set() const override
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
-  AudioProcessingStats GetStatistics(bool has_remote_tracks) const override;
+  AudioProcessingStats GetStatistics(bool has_remote_tracks) override {
+    return GetStatistics();
+  }
+  AudioProcessingStats GetStatistics() override {
+    return stats_reporter_.GetStatistics();
+  }
 
   // TODO(peah): Remove MutateConfig once the new API allows that.
   void MutateConfig(rtc::FunctionView<void(AudioProcessing::Config*)> mutator);
@@ -443,6 +448,25 @@ class AudioProcessingImpl : public AudioProcessing {
     std::unique_ptr<AudioConverter> render_converter;
     std::unique_ptr<AudioBuffer> render_audio;
   } render_ RTC_GUARDED_BY(crit_render_);
+
+  // Class for statistics reporting. The class is thread-safe and no lock is
+  // needed when accessing it.
+  class ApmStatsReporter {
+   public:
+    ApmStatsReporter();
+    ~ApmStatsReporter();
+
+    // Returns the most recently reported statistics.
+    AudioProcessingStats GetStatistics();
+
+    // Update the cached statistics.
+    void UpdateStatistics(const AudioProcessingStats& new_stats);
+
+   private:
+    rtc::CriticalSection crit_stats_;
+    AudioProcessingStats cached_stats_ RTC_GUARDED_BY(crit_stats_);
+    SwapQueue<AudioProcessingStats> stats_message_queue_;
+  } stats_reporter_;
 
   std::vector<float> aec_render_queue_buffer_ RTC_GUARDED_BY(crit_render_);
   std::vector<float> aec_capture_queue_buffer_ RTC_GUARDED_BY(crit_capture_);

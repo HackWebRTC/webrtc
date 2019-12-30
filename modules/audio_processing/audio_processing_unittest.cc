@@ -644,7 +644,7 @@ void ApmTest::ProcessDelayVerificationTest(int delay_ms,
 
     if (frame_count == 250) {
       // Discard the first delay metrics to avoid convergence effects.
-      static_cast<void>(apm_->GetStatistics(true /* has_remote_tracks */));
+      static_cast<void>(apm_->GetStatistics());
     }
   }
 
@@ -667,8 +667,7 @@ void ApmTest::ProcessDelayVerificationTest(int delay_ms,
       expected_median - rtc::dchecked_cast<int>(96 / samples_per_ms), delay_min,
       delay_max);
   // Verify delay metrics.
-  AudioProcessingStats stats =
-      apm_->GetStatistics(true /* has_remote_tracks */);
+  AudioProcessingStats stats = apm_->GetStatistics();
   ASSERT_TRUE(stats.delay_median_ms.has_value());
   int32_t median = *stats.delay_median_ms;
   EXPECT_GE(expected_median_high, median);
@@ -1577,8 +1576,7 @@ TEST_F(ApmTest, Process) {
 
       analog_level = apm_->recommended_stream_analog_level();
       analog_level_average += analog_level;
-      AudioProcessingStats stats =
-          apm_->GetStatistics(/*has_remote_tracks=*/false);
+      AudioProcessingStats stats = apm_->GetStatistics();
       EXPECT_TRUE(stats.voice_detected);
       EXPECT_TRUE(stats.output_rms_dbfs);
       has_voice_count += *stats.voice_detected ? 1 : 0;
@@ -1597,8 +1595,7 @@ TEST_F(ApmTest, Process) {
       const int kStatsAggregationFrameNum = 100;  // 1 second.
       if (frame_count % kStatsAggregationFrameNum == 0) {
         // Get echo and delay metrics.
-        AudioProcessingStats stats =
-            apm_->GetStatistics(true /* has_remote_tracks */);
+        AudioProcessingStats stats = apm_->GetStatistics();
 
         // Echo metrics.
         const float echo_return_loss = stats.echo_return_loss.value_or(-1.0f);
@@ -2517,7 +2514,7 @@ TEST(MAYBE_ApmStatistics, AECEnabledTest) {
   }
 
   // Test statistics interface.
-  AudioProcessingStats stats = apm->GetStatistics(true);
+  AudioProcessingStats stats = apm->GetStatistics();
   // We expect all statistics to be set and have a sensible value.
   ASSERT_TRUE(stats.residual_echo_likelihood);
   EXPECT_GE(*stats.residual_echo_likelihood, 0.0);
@@ -2529,17 +2526,6 @@ TEST(MAYBE_ApmStatistics, AECEnabledTest) {
   EXPECT_NE(*stats.echo_return_loss, -100.0);
   ASSERT_TRUE(stats.echo_return_loss_enhancement);
   EXPECT_NE(*stats.echo_return_loss_enhancement, -100.0);
-
-  // If there are no receive streams, we expect the stats not to be set. The
-  // 'false' argument signals to APM that no receive streams are currently
-  // active. In that situation the statistics would get stuck at their last
-  // calculated value (AEC and echo detection need at least one stream in each
-  // direction), so to avoid that, they should not be set by APM.
-  stats = apm->GetStatistics(false);
-  EXPECT_FALSE(stats.residual_echo_likelihood);
-  EXPECT_FALSE(stats.residual_echo_likelihood_recent_max);
-  EXPECT_FALSE(stats.echo_return_loss);
-  EXPECT_FALSE(stats.echo_return_loss_enhancement);
 }
 
 TEST(MAYBE_ApmStatistics, AECMEnabledTest) {
@@ -2566,7 +2552,7 @@ TEST(MAYBE_ApmStatistics, AECMEnabledTest) {
   }
 
   // Test statistics interface.
-  AudioProcessingStats stats = apm->GetStatistics(true);
+  AudioProcessingStats stats = apm->GetStatistics();
   // We expect only the residual echo detector statistics to be set and have a
   // sensible value.
   EXPECT_TRUE(stats.residual_echo_likelihood);
@@ -2579,13 +2565,6 @@ TEST(MAYBE_ApmStatistics, AECMEnabledTest) {
     EXPECT_GE(*stats.residual_echo_likelihood_recent_max, 0.0);
     EXPECT_LE(*stats.residual_echo_likelihood_recent_max, 1.0);
   }
-  EXPECT_FALSE(stats.echo_return_loss);
-  EXPECT_FALSE(stats.echo_return_loss_enhancement);
-
-  // If there are no receive streams, we expect the stats not to be set.
-  stats = apm->GetStatistics(false);
-  EXPECT_FALSE(stats.residual_echo_likelihood);
-  EXPECT_FALSE(stats.residual_echo_likelihood_recent_max);
   EXPECT_FALSE(stats.echo_return_loss);
   EXPECT_FALSE(stats.echo_return_loss_enhancement);
 }
@@ -2611,13 +2590,13 @@ TEST(ApmStatistics, ReportOutputRmsDbfs) {
 
   // If not enabled, no metric should be reported.
   EXPECT_EQ(apm->ProcessStream(&frame), 0);
-  EXPECT_FALSE(apm->GetStatistics(false).output_rms_dbfs);
+  EXPECT_FALSE(apm->GetStatistics().output_rms_dbfs);
 
   // If enabled, metrics should be reported.
   config.level_estimation.enabled = true;
   apm->ApplyConfig(config);
   EXPECT_EQ(apm->ProcessStream(&frame), 0);
-  auto stats = apm->GetStatistics(false);
+  auto stats = apm->GetStatistics();
   EXPECT_TRUE(stats.output_rms_dbfs);
   EXPECT_GE(*stats.output_rms_dbfs, 0);
 
@@ -2625,7 +2604,7 @@ TEST(ApmStatistics, ReportOutputRmsDbfs) {
   config.level_estimation.enabled = false;
   apm->ApplyConfig(config);
   EXPECT_EQ(apm->ProcessStream(&frame), 0);
-  EXPECT_FALSE(apm->GetStatistics(false).output_rms_dbfs);
+  EXPECT_FALSE(apm->GetStatistics().output_rms_dbfs);
 }
 
 TEST(ApmStatistics, ReportHasVoice) {
@@ -2649,20 +2628,20 @@ TEST(ApmStatistics, ReportHasVoice) {
 
   // If not enabled, no metric should be reported.
   EXPECT_EQ(apm->ProcessStream(&frame), 0);
-  EXPECT_FALSE(apm->GetStatistics(false).voice_detected);
+  EXPECT_FALSE(apm->GetStatistics().voice_detected);
 
   // If enabled, metrics should be reported.
   config.voice_detection.enabled = true;
   apm->ApplyConfig(config);
   EXPECT_EQ(apm->ProcessStream(&frame), 0);
-  auto stats = apm->GetStatistics(false);
+  auto stats = apm->GetStatistics();
   EXPECT_TRUE(stats.voice_detected);
 
   // If re-disabled, the value is again not reported.
   config.voice_detection.enabled = false;
   apm->ApplyConfig(config);
   EXPECT_EQ(apm->ProcessStream(&frame), 0);
-  EXPECT_FALSE(apm->GetStatistics(false).voice_detected);
+  EXPECT_FALSE(apm->GetStatistics().voice_detected);
 }
 
 TEST(ApmConfiguration, HandlingOfRateAndChannelCombinations) {
