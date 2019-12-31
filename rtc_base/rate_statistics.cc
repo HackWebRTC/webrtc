@@ -11,6 +11,7 @@
 #include "rtc_base/rate_statistics.h"
 
 #include <algorithm>
+#include <limits>
 #include <memory>
 
 #include "rtc_base/checks.h"
@@ -91,7 +92,13 @@ absl::optional<uint32_t> RateStatistics::Rate(int64_t now_ms) const {
   }
 
   float scale = scale_ / active_window_size;
-  return static_cast<uint32_t>(accumulated_count_ * scale + 0.5f);
+  float result = accumulated_count_ * scale + 0.5f;
+
+  // Better return unavailable rate than garbage value (undefined behavior).
+  if (result > std::numeric_limits<uint32_t>::max()) {
+    return absl::nullopt;
+  }
+  return static_cast<uint32_t>(result);
 }
 
 void RateStatistics::EraseOld(int64_t now_ms) {
