@@ -2068,7 +2068,9 @@ webrtc::RTCError WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
     UpdateSendState();
   }
   if (new_degradation_preference) {
-    stream_->SetSource(this, GetDegradationPreference());
+    if (source_ && stream_) {
+      stream_->SetSource(this, GetDegradationPreference());
+    }
   }
   return webrtc::RTCError::OK();
 }
