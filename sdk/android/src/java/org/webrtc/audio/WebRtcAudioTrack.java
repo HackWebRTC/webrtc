@@ -142,20 +142,6 @@ class WebRtcAudioTrack {
         // counting number of written frames and subtracting the result from
         // audioTrack.getPlaybackHeadPosition().
       }
-
-      // Stops playing the audio data. Since the instance was created in
-      // MODE_STREAM mode, audio will stop playing after the last buffer that
-      // was written has been played.
-      if (audioTrack != null) {
-        Logging.d(TAG, "Calling AudioTrack.stop...");
-        try {
-          audioTrack.stop();
-          Logging.d(TAG, "AudioTrack.stop is done.");
-          doAudioTrackStateCallback(AUDIO_TRACK_STOP);
-        } catch (IllegalStateException e) {
-          Logging.e(TAG, "AudioTrack.stop failed: " + e.getMessage());
-        }
-      }
     }
 
     private int writeBytes(AudioTrack audioTrack, ByteBuffer byteBuffer, int sizeInBytes) {
@@ -320,6 +306,16 @@ class WebRtcAudioTrack {
     }
     Logging.d(TAG, "AudioTrackThread has now been stopped.");
     audioThread = null;
+    if (audioTrack != null) {
+      Logging.d(TAG, "Calling AudioTrack.stop...");
+      try {
+        audioTrack.stop();
+        Logging.d(TAG, "AudioTrack.stop is done.");
+        doAudioTrackStateCallback(AUDIO_TRACK_STOP);
+      } catch (IllegalStateException e) {
+        Logging.e(TAG, "AudioTrack.stop failed: " + e.getMessage());
+      }
+    }
     releaseAudioResources();
     return true;
   }
