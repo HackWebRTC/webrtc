@@ -225,24 +225,29 @@ class AudioProcessingImpl : public AudioProcessing {
   bool UpdateActiveSubmoduleStates()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
-  // Methods requiring APM running in a single-threaded manner.
-  // Are called with both the render and capture locks already
-  // acquired.
-  void InitializeTransient()
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
+  // Methods requiring APM running in a single-threaded manner, requiring both
+  // the render and capture lock to be acquired.
   int InitializeLocked(const ProcessingConfig& config)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void InitializeResidualEchoDetector()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
-  void InitializeHighPassFilter() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
-  void InitializeVoiceDetector() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializeEchoController()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
+
+  // Initializations of capture-only submodules, requiring the capture lock
+  // already acquired.
+  void InitializeHighPassFilter() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void InitializeVoiceDetector() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void InitializeTransientSuppressor()
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializeGainController2() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializeNoiseSuppressor() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializePreAmplifier() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializePostProcessor() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializeAnalyzer() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+
+  // Initializations of render-only submodules, requiring the render lock
+  // already acquired.
   void InitializePreProcessor() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
   // Sample rate used for the fullband processing.
@@ -400,13 +405,12 @@ class AudioProcessingImpl : public AudioProcessing {
   } constants_;
 
   struct ApmCaptureState {
-    ApmCaptureState(bool transient_suppressor_enabled);
+    ApmCaptureState();
     ~ApmCaptureState();
     int delay_offset_ms;
     bool was_stream_delay_set;
     bool output_will_be_muted;
     bool key_pressed;
-    bool transient_suppressor_enabled;
     std::unique_ptr<AudioBuffer> capture_audio;
     std::unique_ptr<AudioBuffer> capture_fullband_audio;
     std::unique_ptr<AudioBuffer> linear_aec_output;

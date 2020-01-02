@@ -185,10 +185,6 @@ void DebugDumpReplayer::MaybeRecreateApm(const audioproc::Config& msg) {
   config.Set<ExperimentalAgc>(
       new ExperimentalAgc(msg.noise_robust_agc_enabled()));
 
-  RTC_CHECK(msg.has_transient_suppression_enabled());
-  config.Set<ExperimentalNs>(
-      new ExperimentalNs(msg.transient_suppression_enabled()));
-
   RTC_CHECK(msg.has_aec_extended_filter_enabled());
 
   // We only create APM once, since changes on these fields should not
@@ -224,6 +220,11 @@ void DebugDumpReplayer::ConfigureApm(const audioproc::Config& msg) {
   apm_config.noise_suppression.level =
       static_cast<AudioProcessing::Config::NoiseSuppression::Level>(
           msg.ns_level());
+
+  // TS configs.
+  RTC_CHECK(msg.has_transient_suppression_enabled());
+  apm_config.transient_suppression.enabled =
+      msg.transient_suppression_enabled();
 
   // AGC configs.
   RTC_CHECK(msg.has_agc_enabled());

@@ -379,7 +379,7 @@ void AecDumpBasedSimulator::HandleMessage(
     if (msg.has_transient_suppression_enabled() || settings_.use_ts) {
       bool enable = settings_.use_ts ? *settings_.use_ts
                                      : msg.transient_suppression_enabled();
-      config.Set<ExperimentalNs>(new ExperimentalNs(enable));
+      apm_config.transient_suppression.enabled = enable;
       if (settings_.use_verbose_logging) {
         std::cout << " transient_suppression_enabled: "
                   << (enable ? "true" : "false") << std::endl;

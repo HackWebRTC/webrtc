@@ -350,11 +350,6 @@ AudioProcessingImpl::AudioProcessingImpl(
                  !field_trial::IsEnabled(
                      "WebRTC-ApmExperimentalMultiChannelCaptureKillSwitch"),
                  EnforceSplitBandHpf()),
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
-      capture_(false),
-#else
-      capture_(config.Get<ExperimentalNs>().enabled),
-#endif
       capture_nonlocked_() {
   RTC_LOG(LS_INFO) << "Injected APM submodules:"
                    << "\nEcho control factory: " << !!echo_control_factory_
@@ -381,7 +376,11 @@ AudioProcessingImpl::AudioProcessingImpl(
   // implemented.
   submodules_.gain_controller2.reset(new GainController2());
 
-  SetExtraOptions(config);
+  // TODO(webrtc:5298): Remove once the use of ExperimentalNs has been
+  // deprecated.
+#if !(defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS))
+  config_.transient_suppression.enabled = config.Get<ExperimentalNs>().enabled;
+#endif
 }
 
 AudioProcessingImpl::~AudioProcessingImpl() = default;
@@ -513,7 +512,7 @@ int AudioProcessingImpl::InitializeLocked() {
         submodules_.gain_control.get());
     submodules_.agc_manager->SetCaptureMuted(capture_.output_will_be_muted);
   }
-  InitializeTransient();
+  InitializeTransientSuppressor();
   InitializeHighPassFilter();
   InitializeVoiceDetector();
   InitializeResidualEchoDetector();
@@ -664,6 +663,9 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
       config_.noise_suppression.enabled != config.noise_suppression.enabled ||
       config_.noise_suppression.level != config.noise_suppression.level;
 
+  const bool ts_config_changed = config_.transient_suppression.enabled !=
+                                 config.transient_suppression.enabled;
+
   config_ = config;
 
   if (aec_config_changed) {
@@ -672,6 +674,10 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
 
   if (ns_config_changed) {
     InitializeNoiseSuppressor();
+  }
+
+  if (ts_config_changed) {
+    InitializeTransientSuppressor();
   }
 
   InitializeHighPassFilter();
@@ -730,17 +736,8 @@ void AudioProcessingImpl::ApplyAgc1Config(
   }
 }
 
+// TODO(webrtc:5298): Remove.
 void AudioProcessingImpl::SetExtraOptions(const webrtc::Config& config) {
-  // Run in a single-threaded manner when setting the extra options.
-  rtc::CritScope cs_render(&crit_render_);
-  rtc::CritScope cs_capture(&crit_capture_);
-
-  if (capture_.transient_suppressor_enabled !=
-      config.Get<ExperimentalNs>().enabled) {
-    capture_.transient_suppressor_enabled =
-        config.Get<ExperimentalNs>().enabled;
-    InitializeTransient();
-  }
 }
 
 int AudioProcessingImpl::proc_sample_rate_hz() const {
@@ -1394,7 +1391,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
 
   // TODO(aluebs): Investigate if the transient suppression placement should be
   // before or after the AGC.
-  if (capture_.transient_suppressor_enabled) {
+  if (submodules_.transient_suppressor) {
     float voice_probability = submodules_.agc_manager.get()
                                   ? submodules_.agc_manager->voice_probability()
                                   : 1.f;
@@ -1766,17 +1763,19 @@ bool AudioProcessingImpl::UpdateActiveSubmoduleStates() {
       !!submodules_.legacy_noise_suppressor || !!submodules_.noise_suppressor,
       submodules_.gain_control->is_enabled(), config_.gain_controller2.enabled,
       config_.pre_amplifier.enabled, capture_nonlocked_.echo_controller_enabled,
-      config_.voice_detection.enabled, capture_.transient_suppressor_enabled);
+      config_.voice_detection.enabled, !!submodules_.transient_suppressor);
 }
 
-void AudioProcessingImpl::InitializeTransient() {
-  if (capture_.transient_suppressor_enabled) {
-    if (!submodules_.transient_suppressor.get()) {
+void AudioProcessingImpl::InitializeTransientSuppressor() {
+  if (config_.transient_suppression.enabled) {
+    if (!submodules_.transient_suppressor) {
       submodules_.transient_suppressor.reset(new TransientSuppressor());
     }
     submodules_.transient_suppressor->Initialize(proc_fullband_sample_rate_hz(),
                                                  capture_nonlocked_.split_rate,
                                                  num_proc_channels());
+  } else {
+    submodules_.transient_suppressor.reset();
   }
 }
 
@@ -2019,7 +2018,7 @@ void AudioProcessingImpl::WriteAecDumpConfigMessage(bool forced) {
   apm_config.ns_level = static_cast<int>(config_.noise_suppression.level);
 
   apm_config.transient_suppression_enabled =
-      capture_.transient_suppressor_enabled;
+      config_.transient_suppression.enabled;
   apm_config.experiments_description = experiments_description;
   apm_config.pre_amplifier_enabled = config_.pre_amplifier.enabled;
   apm_config.pre_amplifier_fixed_gain_factor =
@@ -2083,13 +2082,11 @@ void AudioProcessingImpl::RecordAudioProcessingState() {
   aec_dump_->AddAudioProcessingState(audio_proc_state);
 }
 
-AudioProcessingImpl::ApmCaptureState::ApmCaptureState(
-    bool transient_suppressor_enabled)
+AudioProcessingImpl::ApmCaptureState::ApmCaptureState()
     : delay_offset_ms(0),
       was_stream_delay_set(false),
       output_will_be_muted(false),
       key_pressed(false),
-      transient_suppressor_enabled(transient_suppressor_enabled),
       capture_processing_format(kSampleRate16kHz),
       split_rate(kSampleRate16kHz),
       echo_path_gain_change(false),

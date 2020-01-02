@@ -400,7 +400,7 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
   AudioProcessing::Config apm_config;
   std::unique_ptr<EchoControlFactory> echo_control_factory;
   if (settings_.use_ts) {
-    config.Set<ExperimentalNs>(new ExperimentalNs(*settings_.use_ts));
+    apm_config.transient_suppression.enabled = *settings_.use_ts;
   }
   if (settings_.multi_channel_render) {
     apm_config.pipeline.multi_channel_render = *settings_.multi_channel_render;

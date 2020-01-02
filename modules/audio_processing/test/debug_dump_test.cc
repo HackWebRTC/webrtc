@@ -519,8 +519,12 @@ TEST_F(DebugDumpTest, ToggleNs) {
 
 TEST_F(DebugDumpTest, TransientSuppressionOn) {
   Config config;
-  config.Set<ExperimentalNs>(new ExperimentalNs(true));
   DebugDumpGenerator generator(config, AudioProcessing::Config());
+
+  AudioProcessing::Config apm_config = generator.apm()->GetConfig();
+  apm_config.transient_suppression.enabled = true;
+  generator.apm()->ApplyConfig(apm_config);
+
   generator.StartRecording();
   generator.Process(100);
   generator.StopRecording();

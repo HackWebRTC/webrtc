@@ -92,8 +92,12 @@ struct ExperimentalAgc {
   bool digital_adaptive_disabled = false;
 };
 
+// To be deprecated: Please instead use the flag in the
+// AudioProcessing::Config::TransientSuppression.
+//
 // Use to enable experimental noise suppression. It can be set in the
 // constructor or using AudioProcessing::SetExtraOptions().
+// TODO(webrtc:5298): Remove.
 struct ExperimentalNs {
   ExperimentalNs() : enabled(false) {}
   explicit ExperimentalNs(bool enabled) : enabled(enabled) {}
@@ -245,6 +249,11 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
       // Recommended not to use. Will be removed in the future.
       bool use_legacy_ns = false;
     } noise_suppression;
+
+    // Enables transient suppression.
+    struct TransientSuppression {
+      bool enabled = false;
+    } transient_suppression;
 
     // Enables reporting of |voice_detected| in webrtc::AudioProcessingStats.
     // In addition to |voice_detected|, VAD decision is provided through the
