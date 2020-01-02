@@ -1711,6 +1711,12 @@ TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
       extensions_.Register<TransportSequenceNumber>(kExtensionId);
     }
 
+    ~ChangingNetworkRouteTest() {
+      // Block until all already posted tasks run to avoid 'use after free'
+      // when such task accesses |this|.
+      SendTask(RTC_FROM_HERE, task_queue_, [] {});
+    }
+
     void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
       RTC_DCHECK_RUN_ON(&task_queue_thread_);
       RTC_DCHECK(!call_);
@@ -1894,6 +1900,12 @@ class MaxPaddingSetTest : public test::SendTest {
     RTC_DCHECK(stream_resetter_);
     module_process_thread_.Detach();
     task_queue_thread_.Detach();
+  }
+
+  ~MaxPaddingSetTest() {
+    // Block until all already posted tasks run to avoid 'use after free'
+    // when such task accesses |this|.
+    SendTask(RTC_FROM_HERE, task_queue_, [] {});
   }
 
   void ModifyVideoConfigs(
