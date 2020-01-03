@@ -236,7 +236,8 @@ class AudioProcessingImpl : public AudioProcessing {
 
   // Initializations of capture-only submodules, requiring the capture lock
   // already acquired.
-  void InitializeHighPassFilter() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void InitializeHighPassFilter(bool forced_reset)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializeVoiceDetector() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializeTransientSuppressor()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);

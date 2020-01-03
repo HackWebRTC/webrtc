@@ -33,6 +33,9 @@ class HighPassFilter {
   void Reset();
   void Reset(size_t num_channels);
 
+  int sample_rate_hz() const { return sample_rate_hz_; }
+  size_t num_channels() const { return filters_.size(); }
+
  private:
   const int sample_rate_hz_;
   std::vector<std::unique_ptr<CascadedBiQuadFilter>> filters_;
