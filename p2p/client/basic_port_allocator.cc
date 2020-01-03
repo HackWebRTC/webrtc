@@ -163,7 +163,6 @@ BasicPortAllocator::BasicPortAllocator(
   RTC_DCHECK(socket_factory_ != nullptr);
   SetConfiguration(ServerAddresses(), std::vector<RelayServerConfig>(), 0,
                    webrtc::NO_PRUNE, customizer);
-  Construct();
 }
 
 BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager)
@@ -171,7 +170,6 @@ BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager)
   InitRelayPortFactory(nullptr);
   RTC_DCHECK(relay_port_factory_ != nullptr);
   RTC_DCHECK(network_manager_ != nullptr);
-  Construct();
 }
 
 BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager,
@@ -188,11 +186,6 @@ BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager,
   RTC_DCHECK(relay_port_factory_ != nullptr);
   SetConfiguration(stun_servers, std::vector<RelayServerConfig>(), 0,
                    webrtc::NO_PRUNE, nullptr);
-  Construct();
-}
-
-void BasicPortAllocator::Construct() {
-  allow_tcp_listen_ = true;
 }
 
 void BasicPortAllocator::OnIceRegathering(PortAllocatorSession* session,

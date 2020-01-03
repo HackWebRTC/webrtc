@@ -77,8 +77,6 @@ class RTC_EXPORT BasicPortAllocator : public PortAllocator {
   }
 
  private:
-  void Construct();
-
   void OnIceRegathering(PortAllocatorSession* session,
                         IceRegatheringReason reason);
 
@@ -89,7 +87,6 @@ class RTC_EXPORT BasicPortAllocator : public PortAllocator {
 
   rtc::NetworkManager* network_manager_;
   rtc::PacketSocketFactory* socket_factory_;
-  bool allow_tcp_listen_;
   int network_ignore_mask_ = rtc::kDefaultNetworkIgnoreMask;
 
   // This is the factory being used.
