@@ -37,7 +37,7 @@ const int kMinMicLevel = 12;
 class MockGainControl : public GainControl {
  public:
   virtual ~MockGainControl() {}
-  MOCK_METHOD1(Enable, int(bool enable));
+  MOCK_METHOD0(Initialize, void());
   MOCK_CONST_METHOD0(is_enabled, bool());
   MOCK_METHOD1(set_stream_analog_level, int(int level));
   MOCK_CONST_METHOD0(stream_analog_level, int());
