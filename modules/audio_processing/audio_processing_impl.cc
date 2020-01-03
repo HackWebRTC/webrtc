@@ -746,8 +746,7 @@ void AudioProcessingImpl::ApplyAgc1Config(
 }
 
 // TODO(webrtc:5298): Remove.
-void AudioProcessingImpl::SetExtraOptions(const webrtc::Config& config) {
-}
+void AudioProcessingImpl::SetExtraOptions(const webrtc::Config& config) {}
 
 int AudioProcessingImpl::proc_sample_rate_hz() const {
   // Used as callback from submodules, hence locking is not allowed.
@@ -844,28 +843,16 @@ void AudioProcessingImpl::RuntimeSettingEnqueuer::Enqueue(
     RTC_LOG(LS_ERROR) << "Cannot enqueue a new runtime setting.";
 }
 
-int AudioProcessingImpl::ProcessStream(const float* const* src,
-                                       const StreamConfig& input_config,
-                                       const StreamConfig& output_config,
-                                       float* const* dest) {
-  TRACE_EVENT0("webrtc", "AudioProcessing::ProcessStream_StreamConfig");
+int AudioProcessingImpl::MaybeInitializeCapture(
+    const StreamConfig& input_config,
+    const StreamConfig& output_config) {
   ProcessingConfig processing_config;
   bool reinitialization_required = false;
   {
-    // Acquire the capture lock in order to:
-    // - Safely call the function that retrieves the render side data. This
-    //   function accesses APM getters that need the capture lock held when
-    //   being called.
-    // - Access api_format. The lock is released immediately due to the
-    //   conditional reinitialization.
-
+    // Acquire the capture lock in order to access api_format. The lock is
+    // released immediately, as we may need to acquire the render lock as part
+    // of the conditional reinitialization.
     rtc::CritScope cs_capture(&crit_capture_);
-    EmptyQueuedRenderAudio();
-
-    if (!src || !dest) {
-      return kNullPointerError;
-    }
-
     processing_config = formats_.api_format;
     reinitialization_required = UpdateActiveSubmoduleStates();
   }
@@ -881,15 +868,25 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
   }
 
   if (reinitialization_required) {
-    // Reinitialize.
     rtc::CritScope cs_render(&crit_render_);
     rtc::CritScope cs_capture(&crit_capture_);
     RETURN_ON_ERR(InitializeLocked(processing_config));
   }
+  return kNoError;
+}
+
+int AudioProcessingImpl::ProcessStream(const float* const* src,
+                                       const StreamConfig& input_config,
+                                       const StreamConfig& output_config,
+                                       float* const* dest) {
+  TRACE_EVENT0("webrtc", "AudioProcessing::ProcessStream_StreamConfig");
+  if (!src || !dest) {
+    return kNullPointerError;
+  }
+
+  RETURN_ON_ERR(MaybeInitializeCapture(input_config, output_config));
 
   rtc::CritScope cs_capture(&crit_capture_);
-  RTC_DCHECK_EQ(processing_config.input_stream().num_frames(),
-                formats_.api_format.input_stream().num_frames());
 
   if (aec_dump_) {
     RecordUnprocessedCaptureStream(src);
@@ -1114,64 +1111,18 @@ void AudioProcessingImpl::EmptyQueuedRenderAudio() {
 
 int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   TRACE_EVENT0("webrtc", "AudioProcessing::ProcessStream_AudioFrame");
-
-  ProcessingConfig processing_config;
-  bool reinitialization_required = false;
-  {
-    // Acquire the capture lock in order to:
-    // - Safely call the function that retrieves the render side data. This
-    //   function accesses APM getters that need the capture lock held when
-    //   being called.
-    // - Access api_format. The lock is released immediately due to the
-    //   conditional reinitialization.
-    rtc::CritScope cs_capture(&crit_capture_);
-    EmptyQueuedRenderAudio();
-
-    if (!frame) {
-      return kNullPointerError;
-    }
-    // Must be a native rate.
-    if (frame->sample_rate_hz_ != kSampleRate8kHz &&
-        frame->sample_rate_hz_ != kSampleRate16kHz &&
-        frame->sample_rate_hz_ != kSampleRate32kHz &&
-        frame->sample_rate_hz_ != kSampleRate48kHz) {
-      return kBadSampleRateError;
-    }
-
-    // TODO(ajm): The input and output rates and channels are currently
-    // constrained to be identical in the int16 interface.
-    processing_config = formats_.api_format;
-
-    reinitialization_required = UpdateActiveSubmoduleStates();
+  if (!frame) {
+    return kNullPointerError;
   }
 
-  reinitialization_required =
-      reinitialization_required ||
-      processing_config.input_stream().sample_rate_hz() !=
-          frame->sample_rate_hz_ ||
-      processing_config.input_stream().num_channels() != frame->num_channels_ ||
-      processing_config.output_stream().sample_rate_hz() !=
-          frame->sample_rate_hz_ ||
-      processing_config.output_stream().num_channels() != frame->num_channels_;
-
-  if (reinitialization_required) {
-    processing_config.input_stream().set_sample_rate_hz(frame->sample_rate_hz_);
-    processing_config.input_stream().set_num_channels(frame->num_channels_);
-    processing_config.output_stream().set_sample_rate_hz(
-        frame->sample_rate_hz_);
-    processing_config.output_stream().set_num_channels(frame->num_channels_);
-
-    // Reinitialize.
-    rtc::CritScope cs_render(&crit_render_);
-    rtc::CritScope cs_capture(&crit_capture_);
-    RETURN_ON_ERR(InitializeLocked(processing_config));
-  }
+  StreamConfig input_config(frame->sample_rate_hz_, frame->num_channels_,
+                            /*has_keyboard=*/false);
+  StreamConfig output_config(frame->sample_rate_hz_, frame->num_channels_,
+                             /*has_keyboard=*/false);
+  RTC_DCHECK_EQ(frame->samples_per_channel(), input_config.num_frames());
+  RETURN_ON_ERR(MaybeInitializeCapture(input_config, output_config));
 
   rtc::CritScope cs_capture(&crit_capture_);
-  if (frame->samples_per_channel_ !=
-      formats_.api_format.input_stream().num_frames()) {
-    return kBadDataLengthError;
-  }
 
   if (aec_dump_) {
     RecordUnprocessedCaptureStream(*frame);
@@ -1204,6 +1155,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
 }
 
 int AudioProcessingImpl::ProcessCaptureStreamLocked() {
+  EmptyQueuedRenderAudio();
   HandleCaptureRuntimeSettings();
 
   // Ensure that not both the AEC and AECM are active at the same time.

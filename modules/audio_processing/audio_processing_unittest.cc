@@ -832,13 +832,9 @@ TEST_F(ApmTest, Channels) {
 }
 
 TEST_F(ApmTest, SampleRatesInt) {
-  // Testing invalid sample rates
-  SetContainerFormat(10000, 2, &frame_, &float_cb_);
-  EXPECT_EQ(apm_->kBadSampleRateError, ProcessStreamChooser(kIntFormat));
-  // Testing valid sample rates
-  int fs[] = {8000, 16000, 32000, 48000};
-  for (size_t i = 0; i < arraysize(fs); i++) {
-    SetContainerFormat(fs[i], 2, &frame_, &float_cb_);
+  // Testing some valid sample rates.
+  for (int sample_rate : {8000, 12000, 16000, 32000, 44100, 48000, 96000}) {
+    SetContainerFormat(sample_rate, 2, &frame_, &float_cb_);
     EXPECT_NOERR(ProcessStreamChooser(kIntFormat));
   }
 }

@@ -378,6 +378,15 @@ TEST(AudioProcessingImplTest, RenderPreProcessorBeforeEchoDetector) {
   constexpr int16_t kAudioLevel = 1000;
   constexpr int kSampleRateHz = 16000;
   constexpr size_t kNumChannels = 1;
+  // Explicitly initialize APM to ensure no render frames are discarded.
+  const ProcessingConfig processing_config = {{
+      {kSampleRateHz, kNumChannels, /*has_keyboard=*/false},
+      {kSampleRateHz, kNumChannels, /*has_keyboard=*/false},
+      {kSampleRateHz, kNumChannels, /*has_keyboard=*/false},
+      {kSampleRateHz, kNumChannels, /*has_keyboard=*/false},
+  }};
+  apm->Initialize(processing_config);
+
   AudioFrame frame;
   InitializeAudioFrame(kSampleRateHz, kNumChannels, &frame);
 

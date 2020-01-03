@@ -211,14 +211,18 @@ class AudioProcessingImpl : public AudioProcessing {
     bool first_update_ = true;
   };
 
-  // Method for modifying the formats struct that are called from both
-  // the render and capture threads. The check for whether modifications
-  // are needed is done while holding the render lock only, thereby avoiding
-  // that the capture thread blocks the render thread.
-  // The struct is modified in a single-threaded manner by holding both the
-  // render and capture locks.
+  // Methods for modifying the formats struct that is used by both
+  // the render and capture threads. The check for whether modifications are
+  // needed is done while holding a single lock only, thereby avoiding that the
+  // capture thread blocks the render thread.
+  // Called by render: Holds the render lock when reading the format struct and
+  // acquires both locks if reinitialization is required.
   int MaybeInitializeRender(const ProcessingConfig& processing_config)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+  // Called by capture: Holds the capture lock when reading the format struct
+  // and acquires both locks if reinitialization is needed.
+  int MaybeInitializeCapture(const StreamConfig& input_config,
+                             const StreamConfig& output_config);
 
   // Method for updating the state keeping track of the active submodules.
   // Returns a bool indicating whether the state has changed.
@@ -472,9 +476,6 @@ class AudioProcessingImpl : public AudioProcessing {
     AudioProcessingStats cached_stats_ RTC_GUARDED_BY(crit_stats_);
     SwapQueue<AudioProcessingStats> stats_message_queue_;
   } stats_reporter_;
-
-  std::vector<float> aec_render_queue_buffer_ RTC_GUARDED_BY(crit_render_);
-  std::vector<float> aec_capture_queue_buffer_ RTC_GUARDED_BY(crit_capture_);
 
   std::vector<int16_t> aecm_render_queue_buffer_ RTC_GUARDED_BY(crit_render_);
   std::vector<int16_t> aecm_capture_queue_buffer_ RTC_GUARDED_BY(crit_capture_);
