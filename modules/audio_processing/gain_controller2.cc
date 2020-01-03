@@ -27,8 +27,11 @@ GainController2::GainController2()
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       gain_applier_(/*hard_clip_samples=*/false,
                     /*initial_gain_factor=*/0.f),
-      adaptive_agc_(new AdaptiveAgc(data_dumper_.get())),
-      limiter_(static_cast<size_t>(48000), data_dumper_.get(), "Agc2") {}
+      limiter_(static_cast<size_t>(48000), data_dumper_.get(), "Agc2") {
+  if (config_.adaptive_digital.enabled) {
+    adaptive_agc_.reset(new AdaptiveAgc(data_dumper_.get()));
+  }
+}
 
 GainController2::~GainController2() = default;
 
@@ -47,14 +50,14 @@ void GainController2::Process(AudioBuffer* audio) {
                                     audio->num_frames());
   // Apply fixed gain first, then the adaptive one.
   gain_applier_.ApplyGain(float_frame);
-  if (config_.adaptive_digital.enabled) {
+  if (adaptive_agc_) {
     adaptive_agc_->Process(float_frame, limiter_.LastAudioLevel());
   }
   limiter_.Process(float_frame);
 }
 
 void GainController2::NotifyAnalogLevel(int level) {
-  if (analog_level_ != level && config_.adaptive_digital.enabled) {
+  if (analog_level_ != level && adaptive_agc_) {
     adaptive_agc_->Reset();
   }
   analog_level_ = level;
@@ -72,7 +75,11 @@ void GainController2::ApplyConfig(
     limiter_.Reset();
   }
   gain_applier_.SetGainFactor(DbToRatio(config_.fixed_digital.gain_db));
-  adaptive_agc_.reset(new AdaptiveAgc(data_dumper_.get(), config_));
+  if (config_.adaptive_digital.enabled) {
+    adaptive_agc_.reset(new AdaptiveAgc(data_dumper_.get(), config_));
+  } else {
+    adaptive_agc_.reset();
+  }
 }
 
 bool GainController2::Validate(
