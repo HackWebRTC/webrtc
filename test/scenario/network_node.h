@@ -60,7 +60,7 @@ class NetworkNodeTransport : public Transport {
   bool SendRtcp(const uint8_t* packet, size_t length) override;
 
   void Connect(EmulatedNetworkNode* send_node,
-               rtc::IPAddress receiver_ip,
+               const rtc::IPAddress& receiver_ip,
                DataSize packet_overhead);
   void Disconnect();
 

@@ -396,7 +396,7 @@ IPAddress TruncateIP(const IPAddress& ip, int length) {
   return IPAddress();
 }
 
-int CountIPMaskBits(IPAddress mask) {
+int CountIPMaskBits(const IPAddress& mask) {
   uint32_t word_to_count = 0;
   int bits = 0;
   switch (mask.family()) {

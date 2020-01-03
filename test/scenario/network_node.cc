@@ -110,7 +110,7 @@ bool NetworkNodeTransport::SendRtcp(const uint8_t* packet, size_t length) {
 }
 
 void NetworkNodeTransport::Connect(EmulatedNetworkNode* send_node,
-                                   rtc::IPAddress receiver_ip,
+                                   const rtc::IPAddress& receiver_ip,
                                    DataSize packet_overhead) {
   rtc::NetworkRoute route;
   route.connected = true;

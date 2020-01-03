@@ -101,7 +101,7 @@ void NetworkRouterNode::OnPacketReceived(EmulatedIpPacket packet) {
 }
 
 void NetworkRouterNode::SetReceiver(
-    rtc::IPAddress dest_ip,
+    const rtc::IPAddress& dest_ip,
     EmulatedNetworkReceiverInterface* receiver) {
   task_queue_->PostTask([=] {
     RTC_DCHECK_RUN_ON(task_queue_);
@@ -112,7 +112,7 @@ void NetworkRouterNode::SetReceiver(
   });
 }
 
-void NetworkRouterNode::RemoveReceiver(rtc::IPAddress dest_ip) {
+void NetworkRouterNode::RemoveReceiver(const rtc::IPAddress& dest_ip) {
   RTC_DCHECK_RUN_ON(task_queue_);
   routing_.erase(dest_ip);
 }
@@ -137,7 +137,7 @@ void EmulatedNetworkNode::OnPacketReceived(EmulatedIpPacket packet) {
 }
 
 void EmulatedNetworkNode::CreateRoute(
-    rtc::IPAddress receiver_ip,
+    const rtc::IPAddress& receiver_ip,
     std::vector<EmulatedNetworkNode*> nodes,
     EmulatedNetworkReceiverInterface* receiver) {
   RTC_CHECK(!nodes.empty());
@@ -146,7 +146,7 @@ void EmulatedNetworkNode::CreateRoute(
   nodes.back()->router()->SetReceiver(receiver_ip, receiver);
 }
 
-void EmulatedNetworkNode::ClearRoute(rtc::IPAddress receiver_ip,
+void EmulatedNetworkNode::ClearRoute(const rtc::IPAddress& receiver_ip,
                                      std::vector<EmulatedNetworkNode*> nodes) {
   for (EmulatedNetworkNode* node : nodes)
     node->router()->RemoveReceiver(receiver_ip);

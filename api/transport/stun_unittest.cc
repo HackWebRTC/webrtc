@@ -45,7 +45,7 @@ class StunTest : public ::testing::Test {
   void CheckStunAddressAttribute(const StunAddressAttribute* addr,
                                  StunAddressFamily expected_family,
                                  int expected_port,
-                                 rtc::IPAddress expected_address) {
+                                 const rtc::IPAddress& expected_address) {
     ASSERT_EQ(expected_family, addr->family());
     ASSERT_EQ(expected_port, addr->port());
 

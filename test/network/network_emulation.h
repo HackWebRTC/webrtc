@@ -69,9 +69,9 @@ class NetworkRouterNode : public EmulatedNetworkReceiverInterface {
   explicit NetworkRouterNode(rtc::TaskQueue* task_queue);
 
   void OnPacketReceived(EmulatedIpPacket packet) override;
-  void SetReceiver(rtc::IPAddress dest_ip,
+  void SetReceiver(const rtc::IPAddress& dest_ip,
                    EmulatedNetworkReceiverInterface* receiver);
-  void RemoveReceiver(rtc::IPAddress dest_ip);
+  void RemoveReceiver(const rtc::IPAddress& dest_ip);
   void SetWatcher(std::function<void(const EmulatedIpPacket&)> watcher);
 
  private:
@@ -107,10 +107,10 @@ class EmulatedNetworkNode : public EmulatedNetworkReceiverInterface {
 
   // Creates a route for the given receiver_ip over all the given nodes to the
   // given receiver.
-  static void CreateRoute(rtc::IPAddress receiver_ip,
+  static void CreateRoute(const rtc::IPAddress& receiver_ip,
                           std::vector<EmulatedNetworkNode*> nodes,
                           EmulatedNetworkReceiverInterface* receiver);
-  static void ClearRoute(rtc::IPAddress receiver_ip,
+  static void ClearRoute(const rtc::IPAddress& receiver_ip,
                          std::vector<EmulatedNetworkNode*> nodes);
 
  private:

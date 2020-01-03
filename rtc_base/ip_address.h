@@ -194,7 +194,7 @@ IPAddress GetAnyIP(int family);
 // Returns the number of contiguously set bits, counting from the MSB in network
 // byte order, in this IPAddress. Bits after the first 0 encountered are not
 // counted.
-int CountIPMaskBits(IPAddress mask);
+int CountIPMaskBits(const IPAddress& mask);
 
 }  // namespace rtc
 
