@@ -38,7 +38,7 @@ TEST(FrameGeneratorCapturerTest, CreateFromConfig) {
   capturer->AddOrUpdateSink(&mock_sink, rtc::VideoSinkWants());
   capturer->Start();
   EXPECT_CALL(mock_sink, OnFrame(Property(&VideoFrame::width, Eq(300))))
-      .Times(20);
+      .Times(21);
   time.AdvanceTime(TimeDelta::seconds(1));
 }
 }  // namespace test

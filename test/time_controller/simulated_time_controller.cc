@@ -432,6 +432,9 @@ void GlobalSimulatedTimeController::AdvanceTime(TimeDelta duration) {
     sim_clock_.AdvanceTimeMicroseconds(delta.us());
     global_clock_.AdvanceTime(delta);
   }
+  // After time has been simulated up until |target_time| we also need to run
+  // tasks meant to be executed at |target_time|.
+  impl_.RunReadyRunners();
 }
 
 }  // namespace webrtc

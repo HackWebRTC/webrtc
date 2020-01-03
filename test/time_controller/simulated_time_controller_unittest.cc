@@ -76,6 +76,7 @@ TEST(SimulatedTimeControllerTest, TaskCanStopItself) {
   time_simulation.AdvanceTime(TimeDelta::ms(10));
   EXPECT_EQ(counter.load(), 1);
 }
+
 TEST(SimulatedTimeControllerTest, Example) {
   class ObjectOnTaskQueue {
    public:
@@ -109,5 +110,18 @@ TEST(SimulatedTimeControllerTest, Example) {
     std::unique_ptr<ObjectOnTaskQueue> object;
   };
   task_queue.PostTask(Destructor{std::move(object)});
+}
+
+TEST(SimulatedTimeControllerTest, DelayTaskRunOnTime) {
+  GlobalSimulatedTimeController time_simulation(kStartTime);
+  rtc::TaskQueue task_queue(
+      time_simulation.GetTaskQueueFactory()->CreateTaskQueue(
+          "TestQueue", TaskQueueFactory::Priority::NORMAL));
+
+  bool delay_task_executed = false;
+  task_queue.PostDelayedTask([&] { delay_task_executed = true; }, 10);
+
+  time_simulation.AdvanceTime(TimeDelta::ms(10));
+  EXPECT_TRUE(delay_task_executed);
 }
 }  // namespace webrtc
