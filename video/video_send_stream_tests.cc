@@ -3149,8 +3149,13 @@ class Vp9HeaderObserver : public test::SendTest {
   }
 
   void PerformTest() override {
-    EXPECT_TRUE(Wait()) << "Test timed out waiting for VP9 packet, num frames "
+    bool wait = Wait();
+    {
+      // In case of time out, OnSendRtp might still access frames_sent_;
+      rtc::CritScope lock(&crit_);
+      EXPECT_TRUE(wait) << "Test timed out waiting for VP9 packet, num frames "
                         << frames_sent_;
+    }
   }
 
   Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -3179,6 +3184,7 @@ class Vp9HeaderObserver : public test::SendTest {
 
       ++packets_sent_;
       if (rtp_packet.Marker()) {
+        rtc::CritScope lock(&crit_);
         ++frames_sent_;
       }
       last_packet_marker_ = rtp_packet.Marker();
@@ -3405,6 +3411,7 @@ class Vp9HeaderObserver : public test::SendTest {
   uint32_t last_packet_timestamp_ = 0;
   RTPVideoHeaderVP9 last_vp9_;
   size_t packets_sent_;
+  rtc::CriticalSection crit_;
   size_t frames_sent_;
   int expected_width_;
   int expected_height_;
