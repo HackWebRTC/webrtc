@@ -1182,7 +1182,6 @@ if (is_ios || is_mac) {
         output_name = "WebRTC"
 
         common_objc_headers = [
-          "objc/avconf/CFHijackCapturerDelegate.h",
           "objc/base/RTCCodecSpecificInfo.h",
           "objc/base/RTCEncodedImage.h",
           "objc/base/RTCI420Buffer.h",
@@ -1270,6 +1269,8 @@ if (is_ios || is_mac) {
           "objc/api/video_codec/RTCVideoEncoderVP9.h",
           "objc/api/video_frame_buffer/RTCNativeI420Buffer.h",
           "objc/api/video_frame_buffer/RTCNativeMutableI420Buffer.h",
+          "objc/avconf/CFHijackCapturerDelegate.h",
+          "objc/avconf/CFRPCapturer.h",
         ]
 
         if (!build_with_chromium) {
@@ -1393,7 +1394,6 @@ if (is_ios || is_mac) {
           "objc/api/video_codec/RTCVideoEncoderVP9.h",
           "objc/api/video_frame_buffer/RTCNativeI420Buffer.h",
           "objc/api/video_frame_buffer/RTCNativeMutableI420Buffer.h",
-          "objc/avconf/CFHijackCapturerDelegate.h",
           "objc/base/RTCCodecSpecificInfo.h",
           "objc/base/RTCEncodedImage.h",
           "objc/base/RTCI420Buffer.h",
@@ -1683,6 +1683,8 @@ if (is_ios || is_mac) {
       sources = [
         "objc/avconf/CFHijackCapturerDelegate.h",
         "objc/avconf/CFHijackCapturerDelegate.mm",
+        "objc/avconf/CFRPCapturer.h",
+        "objc/avconf/CFRPCapturer.m",
       ]
       if (rtc_use_bt_mixer) {
         sources += [
@@ -1699,6 +1701,10 @@ if (is_ios || is_mac) {
           "//modules/backing_track:backing_track",
         ]
       }
+
+      frameworks = [
+        "ReplayKit.framework",
+      ]
 
       configs += [
         "..:common_objc",
