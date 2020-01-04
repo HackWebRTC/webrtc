@@ -12,6 +12,8 @@ package org.appspot.apprtc;
 
 import android.content.Context;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -84,7 +86,7 @@ import org.webrtc.audio.JavaAudioDeviceModule.AudioTrackStateCallback;
  * All PeerConnectionEvents callbacks are invoked from the same looper thread.
  * This class is a singleton.
  */
-public class PeerConnectionClient {
+public class PeerConnectionClient implements DataChannel.Observer {
   public static final String VIDEO_TRACK_ID = "ARDAMSv0";
   public static final String AUDIO_TRACK_ID = "ARDAMSa0";
   public static final String VIDEO_TRACK_TYPE = "video";
@@ -608,16 +610,17 @@ public class PeerConnectionClient {
 
     peerConnection = factory.createPeerConnection(rtcConfig, pcObserver);
 
-    if (dataChannelEnabled) {
-      DataChannel.Init init = new DataChannel.Init();
-      init.ordered = peerConnectionParameters.dataChannelParameters.ordered;
-      init.negotiated = peerConnectionParameters.dataChannelParameters.negotiated;
-      init.maxRetransmits = peerConnectionParameters.dataChannelParameters.maxRetransmits;
-      init.maxRetransmitTimeMs = peerConnectionParameters.dataChannelParameters.maxRetransmitTimeMs;
-      init.id = peerConnectionParameters.dataChannelParameters.id;
-      init.protocol = peerConnectionParameters.dataChannelParameters.protocol;
-      dataChannel = peerConnection.createDataChannel("ApprtcDemo data", init);
-    }
+    DataChannel.Init init = new DataChannel.Init();
+    init.ordered = true;
+    //init.negotiated = true;
+    init.maxRetransmits = -1;
+    init.maxRetransmitTimeMs = -1;
+    //init.id = 100;
+    //init.protocol = "Android DC";
+    dataChannel = peerConnection.createDataChannel("Android ApprtcDemo data", init);
+    //dataChannel.registerObserver(this);
+    startSendDcMsg();
+
     isInitiator = false;
 
     // Set INFO libjingle logging.
@@ -813,6 +816,53 @@ public class PeerConnectionClient {
         peerConnection.createOffer(sdpObserver, sdpMediaConstraints);
       }
     });
+  }
+
+  private void startSendDcMsg() {
+    int[] count = new int[1];
+    Handler mainHandler = new Handler(Looper.getMainLooper());
+    Runnable sendDcMsg = new Runnable() {
+      @Override
+      public void run() {
+        if (dataChannel == null) {
+          Logging.e(TAG, "DataChannel is null");
+          return;
+        }
+
+        count[0]++;
+        String message = "Android dc msg " + count[0];
+        DataChannel.Buffer buffer =
+                new DataChannel.Buffer(ByteBuffer.wrap(message.getBytes()), false);
+        dataChannel.send(buffer);
+        Logging.d(TAG, "DataChannel send `" + message + "`");
+
+        mainHandler.postDelayed(this, 1000);
+      }
+    };
+    mainHandler.postDelayed(sendDcMsg, 1000);
+  }
+
+  @Override
+  public void onBufferedAmountChange(long previousAmount) {
+    Log.d(TAG, "Data channel buffered amount changed");
+  }
+
+  @Override
+  public void onStateChange() {
+    Log.d(TAG, "Data channel state changed");
+  }
+
+  @Override
+  public void onMessage(final DataChannel.Buffer buffer) {
+    if (buffer.binary) {
+      Log.d(TAG, "Received binary msg over " + dataChannel);
+      return;
+    }
+    ByteBuffer data = buffer.data;
+    final byte[] bytes = new byte[data.capacity()];
+    data.get(bytes);
+    String message = new String(bytes, Charset.forName("UTF-8"));
+    Logging.d(TAG, "DataChannel receive `" + message + "`");
   }
 
   public void createAnswer() {
@@ -1300,35 +1350,9 @@ public class PeerConnectionClient {
 
     @Override
     public void onDataChannel(final DataChannel dc) {
-      Log.d(TAG, "New Data channel " + dc.label());
+      Log.d(TAG, "onDataChannel " + dc.label());
 
-      if (!dataChannelEnabled)
-        return;
-
-      dc.registerObserver(new DataChannel.Observer() {
-        @Override
-        public void onBufferedAmountChange(long previousAmount) {
-          Log.d(TAG, "Data channel buffered amount changed: " + dc.label() + ": " + dc.state());
-        }
-
-        @Override
-        public void onStateChange() {
-          Log.d(TAG, "Data channel state changed: " + dc.label() + ": " + dc.state());
-        }
-
-        @Override
-        public void onMessage(final DataChannel.Buffer buffer) {
-          if (buffer.binary) {
-            Log.d(TAG, "Received binary msg over " + dc);
-            return;
-          }
-          ByteBuffer data = buffer.data;
-          final byte[] bytes = new byte[data.capacity()];
-          data.get(bytes);
-          String strData = new String(bytes, Charset.forName("UTF-8"));
-          Log.d(TAG, "Got msg: " + strData + " over " + dc);
-        }
-      });
+      dc.registerObserver(PeerConnectionClient.this);
     }
 
     @Override

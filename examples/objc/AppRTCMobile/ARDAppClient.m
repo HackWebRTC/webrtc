@@ -74,6 +74,10 @@ static int const kKbpsMultiplier = 1000;
   RTCVideoTrack *_localVideoTrack;
   CFHijackCapturerDelegate* _hijackDelegate;
   bool _recording;
+  RTCDataChannel* _sendDataChannel;
+  RTCDataChannel* _recvDataChannel;
+  void (^_sendDcMsg)(void);
+  int _testCount;
 }
 
 @synthesize shouldGetStats = _shouldGetStats;
@@ -110,6 +114,8 @@ static int const kKbpsMultiplier = 1000;
     NSURL *turnRequestURL = [NSURL URLWithString:kARDIceServerRequestUrl];
     _turnClient = [[ARDTURNClient alloc] initWithURL:turnRequestURL];
     _recording = false;
+    _sendDcMsg = nil;
+    _testCount = 0;
     [self configure];
   }
   return self;
@@ -432,6 +438,40 @@ static int const kKbpsMultiplier = 1000;
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
     didOpenDataChannel:(RTCDataChannel *)dataChannel {
+    NSLog(@"onDataChannel `%@`", dataChannel.label);
+    dataChannel.delegate = self;
+    _recvDataChannel = dataChannel;
+}
+
+- (void)dataChannelDidChangeState:(RTCDataChannel *)dataChannel {
+}
+
+- (void)dataChannel:(RTCDataChannel *)dataChannel
+    didReceiveMessageWithBuffer:(RTCDataBuffer *)buffer {
+    if (!buffer.isBinary) {
+        NSString* message = [[NSString alloc] initWithData:buffer.data
+                                                  encoding:NSUTF8StringEncoding];
+        NSLog(@"DataChannel receive `%@`", message);
+    }
+}
+
+- (void)startSendDcMsg {
+    __weak ARDAppClient* weakSelf = self;
+    _sendDcMsg = ^{
+        ARDAppClient* strongSelf = weakSelf;
+        if (!strongSelf) {
+            return;
+        }
+        strongSelf->_testCount++;
+        NSString* message = [NSString stringWithFormat:@"iOS dc msg %d", strongSelf->_testCount];
+        RTCDataBuffer* buffer = [[RTCDataBuffer alloc]
+            initWithData:[message dataUsingEncoding:NSUTF8StringEncoding]
+                isBinary:NO];
+        [strongSelf->_sendDataChannel sendData:buffer];
+        NSLog(@"DataChannel send `%@`", message);
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), strongSelf->_sendDcMsg);
+    };
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), _sendDcMsg);
 }
 
 #pragma mark - RTCSessionDescriptionDelegate
@@ -558,6 +598,19 @@ static int const kKbpsMultiplier = 1000;
                                                      delegate:self];
   // Create AV senders.
   [self createMediaSenders];
+
+  RTCDataChannelConfiguration* dcConfig = [[RTCDataChannelConfiguration alloc] init];
+  dcConfig.isOrdered = YES;
+  //dcConfig.isNegotiated = YES;
+  //dcConfig.channelId = 100;
+  dcConfig.maxRetransmits = -1;
+  dcConfig.maxPacketLifeTime = -1;
+  //dcConfig.protocol = @"iOS DC";
+  _sendDataChannel = [_peerConnection dataChannelForLabel:@"iOS ApprtcDemo data"
+                                        configuration:dcConfig];
+  //_sendDataChannel.delegate = self;
+  [self startSendDcMsg];
+
   if (_isInitiator) {
     // Send offer.
     __weak ARDAppClient *weakSelf = self;
