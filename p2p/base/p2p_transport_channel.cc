@@ -1773,7 +1773,8 @@ void P2PTransportChannel::UpdateState() {
         // TODO(deadbeef): Once we implement end-of-candidates signaling,
         // we shouldn't go from INIT to COMPLETED.
         RTC_DCHECK(state == IceTransportState::STATE_CONNECTING ||
-                   state == IceTransportState::STATE_COMPLETED);
+                   state == IceTransportState::STATE_COMPLETED ||
+                   state == IceTransportState::STATE_FAILED);
         break;
       case IceTransportState::STATE_CONNECTING:
         RTC_DCHECK(state == IceTransportState::STATE_COMPLETED ||

@@ -211,14 +211,24 @@ int TCPPort::SendTo(const void* data,
       return SOCKET_ERROR;
     }
     socket = conn->socket();
+    if (!socket) {
+      // The failure to initialize should have been logged elsewhere,
+      // so this log is not important.
+      RTC_LOG(LS_INFO) << ToString()
+                       << ": Attempted to send to an uninitialized socket: "
+                       << addr.ToSensitiveString();
+      error_ = EHOSTUNREACH;
+      return SOCKET_ERROR;
+    }
   } else {
     socket = GetIncoming(addr);
-  }
-  if (!socket) {
-    RTC_LOG(LS_ERROR) << ToString()
-                      << ": Attempted to send to an unknown destination: "
-                      << addr.ToSensitiveString();
-    return SOCKET_ERROR;  // TODO(tbd): Set error_
+    if (!socket) {
+      RTC_LOG(LS_ERROR) << ToString()
+                        << ": Attempted to send to an unknown destination: "
+                        << addr.ToSensitiveString();
+      error_ = EHOSTUNREACH;
+      return SOCKET_ERROR;
+    }
   }
   rtc::PacketOptions modified_options(options);
   CopyPortInformationToPacketInfo(&modified_options.info_signaled_after_sent);
@@ -546,7 +556,6 @@ void TCPConnection::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
 
 void TCPConnection::CreateOutgoingTcpSocket() {
   RTC_DCHECK(outgoing_);
-  // TODO(guoweis): Handle failures here (unlikely since TCP).
   int opts = (remote_candidate().protocol() == SSLTCP_PROTOCOL_NAME)
                  ? rtc::PacketSocketFactory::OPT_TLS_FAKE
                  : 0;
@@ -567,6 +576,7 @@ void TCPConnection::CreateOutgoingTcpSocket() {
   } else {
     RTC_LOG(LS_WARNING) << ToString() << ": Failed to create connection to "
                         << remote_candidate().address().ToSensitiveString();
+    FailAndPrune();
   }
 }
 
