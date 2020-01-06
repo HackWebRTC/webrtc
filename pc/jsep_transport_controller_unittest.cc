@@ -99,9 +99,9 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
                              int64_t packet_time_us) { RTC_NOTREACHED(); };
     config.ice_transport_factory = fake_ice_transport_factory_.get();
     config.dtls_transport_factory = fake_dtls_transport_factory_.get();
-    // TODO(zstein): Provide an AsyncResolverFactory once it is required.
     transport_controller_ = std::make_unique<JsepTransportController>(
-        signaling_thread, network_thread, port_allocator, nullptr, config);
+        signaling_thread, network_thread, port_allocator,
+        nullptr /* async_resolver_factory */, config);
     ConnectTransportControllerSignals();
   }
 
