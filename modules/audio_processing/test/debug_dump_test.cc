@@ -210,7 +210,6 @@ void DebugDumpGenerator::Process(size_t num_blocks) {
     ReadAndDeinterleave(&input_audio_, input_file_channels_, input_config_,
                         input_->channels());
     RTC_CHECK_EQ(AudioProcessing::kNoError, apm_->set_stream_delay_ms(100));
-    apm_->set_stream_analog_level(100);
     if (enable_pre_amplifier_) {
       apm_->SetRuntimeSetting(
           AudioProcessing::RuntimeSetting::CreateCapturePreGain(1 + i % 10));
@@ -359,10 +358,8 @@ TEST_F(DebugDumpTest, VerifyCombinedExperimentalStringInclusive) {
   Config config;
   AudioProcessing::Config apm_config;
   apm_config.echo_canceller.enabled = true;
-  apm_config.gain_controller1.analog_gain_controller.enabled = true;
-  apm_config.gain_controller1.analog_gain_controller.startup_min_volume = 0;
   // Arbitrarily set clipping gain to 17, which will never be the default.
-  apm_config.gain_controller1.analog_gain_controller.clipped_level_min = 17;
+  config.Set<ExperimentalAgc>(new ExperimentalAgc(true, 0, 17));
   DebugDumpGenerator generator(config, apm_config);
   generator.StartRecording();
   generator.Process(100);
@@ -439,12 +436,9 @@ TEST_F(DebugDumpTest, VerifyAec3ExperimentalString) {
 
 TEST_F(DebugDumpTest, VerifyAgcClippingLevelExperimentalString) {
   Config config;
-  AudioProcessing::Config apm_config;
-  apm_config.gain_controller1.analog_gain_controller.enabled = true;
-  apm_config.gain_controller1.analog_gain_controller.startup_min_volume = 0;
   // Arbitrarily set clipping gain to 17, which will never be the default.
-  apm_config.gain_controller1.analog_gain_controller.clipped_level_min = 17;
-  DebugDumpGenerator generator(config, apm_config);
+  config.Set<ExperimentalAgc>(new ExperimentalAgc(true, 0, 17));
+  DebugDumpGenerator generator(config, AudioProcessing::Config());
   generator.StartRecording();
   generator.Process(100);
   generator.StopRecording();

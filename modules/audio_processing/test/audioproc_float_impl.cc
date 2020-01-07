@@ -102,10 +102,6 @@ ABSL_FLAG(int,
           kParameterNotSpecifiedValue,
           "Activate (1) or deactivate(0) the transient suppressor");
 ABSL_FLAG(int,
-          analog_agc,
-          kParameterNotSpecifiedValue,
-          "Activate (1) or deactivate(0) the transient suppressor");
-ABSL_FLAG(int,
           vad,
           kParameterNotSpecifiedValue,
           "Activate (1) or deactivate(0) the voice activity detector");
@@ -123,12 +119,21 @@ ABSL_FLAG(int,
           kParameterNotSpecifiedValue,
           "Activate (1) or deactivate(0) the legacy NS");
 ABSL_FLAG(int,
-          analog_agc_disable_digital_adaptive,
+          experimental_agc,
+          kParameterNotSpecifiedValue,
+          "Activate (1) or deactivate(0) the experimental AGC");
+ABSL_FLAG(int,
+          experimental_agc_disable_digital_adaptive,
           kParameterNotSpecifiedValue,
           "Force-deactivate (1) digital adaptation in "
           "experimental AGC. Digital adaptation is active by default (0).");
 ABSL_FLAG(int,
-          analog_agc_agc2_level_estimator,
+          experimental_agc_analyze_before_aec,
+          kParameterNotSpecifiedValue,
+          "Make level estimation happen before AEC"
+          " in the experimental AGC. After AEC is the default (0)");
+ABSL_FLAG(int,
+          experimental_agc_agc2_level_estimator,
           kParameterNotSpecifiedValue,
           "AGC2 level estimation"
           " in the experimental AGC. AGC1 level estimation is the default (0)");
@@ -329,7 +334,6 @@ SimulationSettings CreateSettings() {
     settings.use_le = true;
     settings.use_vad = true;
     settings.use_ts = true;
-    settings.use_analog_agc = true;
     settings.use_ns = true;
     settings.use_hpf = true;
     settings.use_agc = true;
@@ -373,16 +377,20 @@ SimulationSettings CreateSettings() {
   SetSettingIfFlagSet(absl::GetFlag(FLAGS_hpf), &settings.use_hpf);
   SetSettingIfFlagSet(absl::GetFlag(FLAGS_ns), &settings.use_ns);
   SetSettingIfFlagSet(absl::GetFlag(FLAGS_ts), &settings.use_ts);
-  SetSettingIfFlagSet(absl::GetFlag(FLAGS_analog_agc),
-                      &settings.use_analog_agc);
   SetSettingIfFlagSet(absl::GetFlag(FLAGS_vad), &settings.use_vad);
   SetSettingIfFlagSet(absl::GetFlag(FLAGS_le), &settings.use_le);
   SetSettingIfFlagSet(absl::GetFlag(FLAGS_use_legacy_ns),
                       &settings.use_legacy_ns);
-  SetSettingIfFlagSet(absl::GetFlag(FLAGS_analog_agc_disable_digital_adaptive),
-                      &settings.analog_agc_disable_digital_adaptive);
-  SetSettingIfFlagSet(absl::GetFlag(FLAGS_analog_agc_agc2_level_estimator),
-                      &settings.use_analog_agc_agc2_level_estimator);
+  SetSettingIfFlagSet(absl::GetFlag(FLAGS_experimental_agc),
+                      &settings.use_experimental_agc);
+  SetSettingIfFlagSet(
+      absl::GetFlag(FLAGS_experimental_agc_disable_digital_adaptive),
+      &settings.experimental_agc_disable_digital_adaptive);
+  SetSettingIfFlagSet(absl::GetFlag(FLAGS_experimental_agc_analyze_before_aec),
+                      &settings.experimental_agc_analyze_before_aec);
+  SetSettingIfFlagSet(
+      absl::GetFlag(FLAGS_experimental_agc_agc2_level_estimator),
+      &settings.use_experimental_agc_agc2_level_estimator);
   SetSettingIfSpecified(absl::GetFlag(FLAGS_agc_mode), &settings.agc_mode);
   SetSettingIfSpecified(absl::GetFlag(FLAGS_agc_target_level),
                         &settings.agc_target_level);

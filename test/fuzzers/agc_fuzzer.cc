@@ -67,7 +67,9 @@ void FuzzGainControllerConfig(test::FuzzDataHelper* fuzz_data,
   }
   gc->set_compression_gain_db(gain);
   gc->set_target_level_dbfs(target_level_dbfs);
+  gc->Enable(true);
 
+  static_cast<void>(gc->is_enabled());
   static_cast<void>(gc->mode());
   static_cast<void>(gc->analog_level_minimum());
   static_cast<void>(gc->analog_level_maximum());
