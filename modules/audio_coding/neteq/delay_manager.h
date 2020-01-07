@@ -23,22 +23,12 @@
 
 namespace webrtc {
 
-// Forward declaration.
-class DelayPeakDetector;
-
 class DelayManager {
  public:
-  enum HistogramMode {
-    INTER_ARRIVAL_TIME,
-    RELATIVE_ARRIVAL_DELAY,
-  };
-
   DelayManager(size_t max_packets_in_buffer,
                int base_minimum_delay_ms,
                int histogram_quantile,
-               HistogramMode histogram_mode,
                bool enable_rtx_handling,
-               DelayPeakDetector* peak_detector,
                const TickTimer* tick_timer,
                std::unique_ptr<Histogram> histogram);
 
@@ -50,7 +40,6 @@ class DelayManager {
   static std::unique_ptr<DelayManager> Create(size_t max_packets_in_buffer,
                                               int base_minimum_delay_ms,
                                               bool enable_rtx_handling,
-                                              DelayPeakDetector* peak_detector,
                                               const TickTimer* tick_timer);
 
   virtual ~DelayManager();
@@ -68,7 +57,7 @@ class DelayManager {
   // Sets target_level_ (in Q8) and returns the same value. Also calculates
   // and updates base_target_level_, which is the target buffer level before
   // taking delay peaks into account.
-  virtual int CalculateTargetLevel(int iat_packets, bool reordered);
+  virtual int CalculateTargetLevel();
 
   // Notifies the DelayManager of how much audio data is carried in each packet.
   // The method updates the DelayPeakDetector too, and resets the inter-arrival
@@ -77,11 +66,6 @@ class DelayManager {
 
   // Resets the DelayManager and the associated DelayPeakDetector.
   virtual void Reset();
-
-  // Returns true if peak-mode is active. That is, delay peaks were observed
-  // recently. This method simply asks for the same information from the
-  // DelayPeakDetector object.
-  virtual bool PeakFound() const;
 
   // Reset the inter-arrival time counter to 0.
   virtual void ResetPacketIatCount();
@@ -122,7 +106,6 @@ class DelayManager {
   }
 
   // These accessors are only intended for testing purposes.
-  HistogramMode histogram_mode() const { return histogram_mode_; }
   int histogram_quantile() const { return histogram_quantile_; }
   Histogram* histogram() const { return histogram_.get(); }
 
@@ -163,7 +146,6 @@ class DelayManager {
   const size_t max_packets_in_buffer_;  // Capacity of the packet buffer.
   std::unique_ptr<Histogram> histogram_;
   const int histogram_quantile_;
-  const HistogramMode histogram_mode_;
   const TickTimer* tick_timer_;
   int base_minimum_delay_ms_;
   // Provides delay which is used by LimitTargetLevel as lower bound on target
@@ -183,9 +165,7 @@ class DelayManager {
   uint32_t last_timestamp_;  // Timestamp for the last received packet.
   int minimum_delay_ms_;     // Externally set minimum delay.
   int maximum_delay_ms_;     // Externally set maximum allowed delay.
-  DelayPeakDetector& peak_detector_;
   int last_pack_cng_or_dtmf_;
-  const bool frame_length_change_experiment_;
   const bool enable_rtx_handling_;
   int num_reordered_packets_ = 0;  // Number of consecutive reordered packets.
 

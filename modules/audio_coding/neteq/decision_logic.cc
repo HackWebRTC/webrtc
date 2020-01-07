@@ -33,11 +33,9 @@ constexpr int kDefaultTargetLevelWindowMs = 100;
 namespace webrtc {
 
 DecisionLogic::DecisionLogic(NetEqController::Config config)
-    : delay_peak_detector_(config.tick_timer, config.enable_rtx_handling),
-      delay_manager_(DelayManager::Create(config.max_packets_in_buffer,
+    : delay_manager_(DelayManager::Create(config.max_packets_in_buffer,
                                           config.base_min_delay_ms,
                                           config.enable_rtx_handling,
-                                          &delay_peak_detector_,
                                           config.tick_timer)),
       tick_timer_(config.tick_timer),
       disallow_time_stretching_(!config.allow_time_stretching),

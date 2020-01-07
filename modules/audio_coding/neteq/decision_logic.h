@@ -16,7 +16,6 @@
 #include "api/neteq/tick_timer.h"
 #include "modules/audio_coding/neteq/buffer_level_filter.h"
 #include "modules/audio_coding/neteq/delay_manager.h"
-#include "modules/audio_coding/neteq/delay_peak_detector.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 
@@ -97,7 +96,7 @@ class DecisionLogic : public NetEqController {
   int GetBaseMinimumDelay() const override {
     return delay_manager_->GetBaseMinimumDelay();
   }
-  bool PeakFound() const override { return delay_manager_->PeakFound(); }
+  bool PeakFound() const override { return false; }
 
   int GetFilteredBufferLevel() const override {
     return buffer_level_filter_.filtered_current_level();
@@ -172,7 +171,6 @@ class DecisionLogic : public NetEqController {
   // Checks if num_consecutive_expands_ >= kMaxWaitForPacket.
   bool MaxWaitForPacket() const;
 
-  DelayPeakDetector delay_peak_detector_;
   std::unique_ptr<DelayManager> delay_manager_;
   BufferLevelFilter buffer_level_filter_;
   const TickTimer* tick_timer_;
