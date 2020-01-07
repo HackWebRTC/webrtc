@@ -10,6 +10,8 @@
 
 #include "modules/audio_coding/codecs/opus/opus_interface.h"
 
+#include <cstdlib>
+
 #include "rtc_base/checks.h"
 #include "system_wrappers/include/field_trial.h"
 
