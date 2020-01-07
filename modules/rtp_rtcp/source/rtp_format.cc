@@ -13,7 +13,6 @@
 #include <memory>
 
 #include "absl/types/variant.h"
-#include "modules/rtp_rtcp/source/rtp_depacketizer_av1.h"
 #include "modules/rtp_rtcp/source/rtp_format_h264.h"
 #include "modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "modules/rtp_rtcp/source/rtp_format_vp8.h"
@@ -141,26 +140,6 @@ std::vector<int> RtpPacketizer::SplitAboutEqually(
   }
 
   return result;
-}
-
-RtpDepacketizer* RtpDepacketizer::Create(absl::optional<VideoCodecType> type) {
-  if (!type) {
-    // Use raw depacketizer.
-    return new RtpDepacketizerGeneric(/*generic_header_enabled=*/false);
-  }
-
-  switch (*type) {
-    case kVideoCodecH264:
-      return new RtpDepacketizerH264();
-    case kVideoCodecVP8:
-      return new RtpDepacketizerVp8();
-    case kVideoCodecVP9:
-      return new RtpDepacketizerVp9();
-    case kVideoCodecAV1:
-      return new RtpDepacketizerAv1();
-    default:
-      return new RtpDepacketizerGeneric(/*generic_header_enabled=*/true);
-  }
 }
 
 }  // namespace webrtc

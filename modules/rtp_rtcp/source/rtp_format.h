@@ -76,9 +76,6 @@ class RtpDepacketizer {
     size_t payload_length;
   };
 
-  // If type is not set, returns a raw depacketizer.
-  static RtpDepacketizer* Create(absl::optional<VideoCodecType> type);
-
   virtual ~RtpDepacketizer() {}
 
   // Parses the RTP payload, parsed result will be saved in |parsed_payload|.

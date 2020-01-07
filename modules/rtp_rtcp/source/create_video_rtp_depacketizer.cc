@@ -14,7 +14,8 @@
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
-#include "modules/rtp_rtcp/source/rtp_format.h"
+#include "modules/rtp_rtcp/source/rtp_depacketizer_av1.h"
+#include "modules/rtp_rtcp/source/rtp_format_h264.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer_generic.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer_vp8.h"
@@ -28,18 +29,15 @@ namespace {
 // Wrapper over legacy RtpDepacketizer interface.
 // TODO(bugs.webrtc.org/11152): Delete when all RtpDepacketizers updated to
 // the VideoRtpDepacketizer interface.
-class LegacyRtpDepacketizer : public VideoRtpDepacketizer {
+template <typename Depacketizer>
+class Legacy : public VideoRtpDepacketizer {
  public:
-  explicit LegacyRtpDepacketizer(VideoCodecType codec) : codec_(codec) {}
-  ~LegacyRtpDepacketizer() override = default;
-
   absl::optional<ParsedRtpPayload> Parse(
       rtc::CopyOnWriteBuffer rtp_payload) override {
-    auto depacketizer = absl::WrapUnique(RtpDepacketizer::Create(codec_));
-    RTC_CHECK(depacketizer);
+    Depacketizer depacketizer;
     RtpDepacketizer::ParsedPayload parsed_payload;
-    if (!depacketizer->Parse(&parsed_payload, rtp_payload.cdata(),
-                             rtp_payload.size())) {
+    if (!depacketizer.Parse(&parsed_payload, rtp_payload.cdata(),
+                            rtp_payload.size())) {
       return absl::nullopt;
     }
     absl::optional<ParsedRtpPayload> result(absl::in_place);
@@ -48,9 +46,6 @@ class LegacyRtpDepacketizer : public VideoRtpDepacketizer {
                                   parsed_payload.payload_length);
     return result;
   }
-
- private:
-  const VideoCodecType codec_;
 };
 
 }  // namespace
@@ -59,13 +54,13 @@ std::unique_ptr<VideoRtpDepacketizer> CreateVideoRtpDepacketizer(
     VideoCodecType codec) {
   switch (codec) {
     case kVideoCodecH264:
-      return std::make_unique<LegacyRtpDepacketizer>(codec);
+      return std::make_unique<Legacy<RtpDepacketizerH264>>();
     case kVideoCodecVP8:
       return std::make_unique<VideoRtpDepacketizerVp8>();
     case kVideoCodecVP9:
       return std::make_unique<VideoRtpDepacketizerVp9>();
     case kVideoCodecAV1:
-      return std::make_unique<LegacyRtpDepacketizer>(codec);
+      return std::make_unique<Legacy<RtpDepacketizerAv1>>();
     case kVideoCodecGeneric:
     case kVideoCodecMultiplex:
       return std::make_unique<VideoRtpDepacketizerGeneric>();

@@ -174,7 +174,7 @@ TEST(RtpPacketizerVp8Test, TIDAndKeyIdx) {
 class RtpDepacketizerVp8Test : public ::testing::Test {
  protected:
   RtpDepacketizerVp8Test()
-      : depacketizer_(RtpDepacketizer::Create(kVideoCodecVP8)) {}
+      : depacketizer_(std::make_unique<RtpDepacketizerVp8>()) {}
 
   void ExpectPacket(RtpDepacketizer::ParsedPayload* parsed_payload,
                     const uint8_t* data,
