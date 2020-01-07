@@ -405,6 +405,10 @@ deps = {
               'package': 'chromium/third_party/android_sdk/public/tools-lint',
               'version': '89hXqZYzCum3delB5RV7J_QyWkaRodqdtQS0s3LMh3wC',
           },
+          {
+              'package': 'chromium/third_party/android_sdk/public/cmdline-tools',
+              'version': 'CR25ixsRhwuRnhdgDpGFyl9S0C_0HO9SUgFrwX46zq8C',
+          },
       ],
       'condition': 'checkout_android',
       'dep_type': 'cipd',
