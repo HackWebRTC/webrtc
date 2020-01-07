@@ -16,15 +16,21 @@
 #include <utility>
 
 #include "absl/strings/match.h"
+#include "absl/types/optional.h"
 #include "api/audio_codecs/audio_format.h"
+#include "api/rtp_headers.h"
+#include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/absolute_capture_time_sender.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "modules/rtp_rtcp/source/time_util.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/trace_event.h"
+#include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
 
@@ -46,7 +52,9 @@ const char* FrameTypeToString(AudioFrameType frame_type) {
 }  // namespace
 
 RTPSenderAudio::RTPSenderAudio(Clock* clock, RTPSender* rtp_sender)
-    : clock_(clock), rtp_sender_(rtp_sender) {
+    : clock_(clock),
+      rtp_sender_(rtp_sender),
+      absolute_capture_time_sender_(clock) {
   RTC_DCHECK(clock_);
 }
 
@@ -82,6 +90,10 @@ int32_t RTPSenderAudio::RegisterAudioPayload(absl::string_view payload_name,
     // we dont want to allow send with a DTMF payloadtype
     dtmf_payload_type_ = payload_type;
     dtmf_payload_freq_ = frequency;
+    return 0;
+  } else if (payload_name == "audio") {
+    rtc::CritScope cs(&send_audio_critsect_);
+    encoder_rtp_timestamp_frequency_ = frequency;
     return 0;
   }
   return 0;
@@ -135,7 +147,19 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
                                uint32_t rtp_timestamp,
                                const uint8_t* payload_data,
                                size_t payload_size) {
-  #if RTC_TRACE_EVENTS_ENABLED
+  return SendAudio(frame_type, payload_type, rtp_timestamp, payload_data,
+                   payload_size,
+                   // TODO(bugs.webrtc.org/10739) replace once plumbed.
+                   /*absolute_capture_timestamp_ms=*/0);
+}
+
+bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
+                               int8_t payload_type,
+                               uint32_t rtp_timestamp,
+                               const uint8_t* payload_data,
+                               size_t payload_size,
+                               int64_t absolute_capture_timestamp_ms) {
+#if RTC_TRACE_EVENTS_ENABLED
   TRACE_EVENT_ASYNC_STEP1("webrtc", "Audio", rtp_timestamp, "Send", "type",
                           FrameTypeToString(frame_type));
   #endif
@@ -148,10 +172,12 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
   constexpr int kDtmfIntervalTimeMs = 50;
   uint8_t audio_level_dbov = 0;
   uint32_t dtmf_payload_freq = 0;
+  absl::optional<uint32_t> encoder_rtp_timestamp_frequency;
   {
     rtc::CritScope cs(&send_audio_critsect_);
     audio_level_dbov = audio_level_dbov_;
     dtmf_payload_freq = dtmf_payload_freq_;
+    encoder_rtp_timestamp_frequency = encoder_rtp_timestamp_frequency_;
   }
 
   // Check if we have pending DTMFs to send
@@ -243,6 +269,23 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
   // Update audio level extension, if included.
   packet->SetExtension<AudioLevel>(
       frame_type == AudioFrameType::kAudioFrameSpeech, audio_level_dbov);
+
+  // Send absolute capture time periodically in order to optimize and save
+  // network traffic. Missing absolute capture times can be interpolated on the
+  // receiving end if sending intervals are small enough.
+  auto absolute_capture_time = absolute_capture_time_sender_.OnSendPacket(
+      AbsoluteCaptureTimeSender::GetSource(packet->Ssrc(), packet->Csrcs()),
+      packet->Timestamp(),
+      // Replace missing value with 0 (invalid frequency), this will trigger
+      // absolute capture time sending.
+      encoder_rtp_timestamp_frequency.value_or(0),
+      Int64MsToUQ32x32(absolute_capture_timestamp_ms + NtpOffsetMs()),
+      /*estimated_capture_clock_offset=*/absl::nullopt);
+  if (absolute_capture_time) {
+    // It also checks that extension was registered during SDP negotiation. If
+    // not then setter won't do anything.
+    packet->SetExtension<AbsoluteCaptureTimeExtension>(*absolute_capture_time);
+  }
 
   uint8_t* payload = packet->AllocatePayload(payload_size);
   if (!payload)  // Too large payload buffer.
