@@ -19,27 +19,25 @@
 #include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "rtc_base/message_queue.h"
-#include "rtc_base/socket.h"
-#include "rtc_base/socket_address.h"
 #include "rtc_base/socket_server.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "system_wrappers/include/clock.h"
-#include "test/network/fake_network_socket.h"
+#include "test/network/network_emulation.h"
 
 namespace webrtc {
 namespace test {
+class FakeNetworkSocket;
 
 // FakeNetworkSocketServer must outlive any sockets it creates.
 class FakeNetworkSocketServer : public rtc::SocketServer,
-                                public sigslot::has_slots<>,
-                                public SocketManager {
+                                public sigslot::has_slots<> {
  public:
   FakeNetworkSocketServer(Clock* clock,
                           EndpointsContainer* endpoints_controller);
   ~FakeNetworkSocketServer() override;
 
-  EmulatedEndpointImpl* GetEndpointNode(const rtc::IPAddress& ip) override;
-  void Unregister(SocketIoProcessor* io_processor) override;
+  EmulatedEndpointImpl* GetEndpointNode(const rtc::IPAddress& ip);
+  void Unregister(FakeNetworkSocket* socket);
   void OnMessageQueueDestroyed();
 
   // rtc::SocketFactory methods:
@@ -62,7 +60,7 @@ class FakeNetworkSocketServer : public rtc::SocketServer,
   rtc::MessageQueue* msg_queue_;
 
   rtc::CriticalSection lock_;
-  std::set<SocketIoProcessor*> io_processors_ RTC_GUARDED_BY(lock_);
+  std::vector<FakeNetworkSocket*> sockets_ RTC_GUARDED_BY(lock_);
 };
 
 }  // namespace test

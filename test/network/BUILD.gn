@@ -25,8 +25,6 @@ rtc_library("emulated_network") {
     "cross_traffic.h",
     "emulated_network_manager.cc",
     "emulated_network_manager.h",
-    "fake_network_socket.cc",
-    "fake_network_socket.h",
     "fake_network_socket_server.cc",
     "fake_network_socket_server.h",
     "network_emulation.cc",
@@ -56,6 +54,7 @@ rtc_library("emulated_network") {
     "../../system_wrappers",
     "../scenario:column_printer",
     "../time_controller",
+    "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
