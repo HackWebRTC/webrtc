@@ -22,7 +22,6 @@
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "modules/video_coding/include/video_error_codes.h"
-#include "rtc_base/deprecation.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -42,9 +41,9 @@ struct CodecSpecificInfoVP8 {
   // codec buffers, but the exact mapping (i.e. whether 0 refers to Last,
   // to Golden or to Arf) is not pre-determined.
   // More references may be specified than are strictly necessary, but not less.
-  // TODO(bugs.webrtc.org/10242): Remove |useExplicitDependencies| when not set
-  // by downstream projects.
-  RTC_DEPRECATED bool useExplicitDependencies;
+  // TODO(bugs.webrtc.org/10242): Remove |useExplicitDependencies| once all
+  // encoder-wrappers are updated.
+  bool useExplicitDependencies;
   static constexpr size_t kBuffersCount = 3;
   size_t referencedBuffers[kBuffersCount];
   size_t referencedBuffersCount;

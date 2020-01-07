@@ -379,6 +379,71 @@ void RtpPayloadParams::Vp8ToGeneric(const CodecSpecificInfoVP8& vp8_info,
   generic.spatial_index = spatial_index;
   generic.temporal_index = temporal_index;
 
+  if (vp8_info.useExplicitDependencies) {
+    SetDependenciesVp8New(vp8_info, shared_frame_id, is_keyframe,
+                          vp8_header.layerSync, &generic);
+  } else {
+    SetDependenciesVp8Deprecated(vp8_info, shared_frame_id, is_keyframe,
+                                 spatial_index, temporal_index,
+                                 vp8_header.layerSync, &generic);
+  }
+}
+
+void RtpPayloadParams::SetDependenciesVp8Deprecated(
+    const CodecSpecificInfoVP8& vp8_info,
+    int64_t shared_frame_id,
+    bool is_keyframe,
+    int spatial_index,
+    int temporal_index,
+    bool layer_sync,
+    RTPVideoHeader::GenericDescriptorInfo* generic) {
+  RTC_DCHECK(!vp8_info.useExplicitDependencies);
+  RTC_DCHECK(!new_version_used_.has_value() || !new_version_used_.value());
+  new_version_used_ = false;
+
+  if (is_keyframe) {
+    RTC_DCHECK_EQ(temporal_index, 0);
+    last_shared_frame_id_[spatial_index].fill(-1);
+    last_shared_frame_id_[spatial_index][temporal_index] = shared_frame_id;
+    return;
+  }
+
+  if (layer_sync) {
+    int64_t tl0_frame_id = last_shared_frame_id_[spatial_index][0];
+
+    for (int i = 1; i < RtpGenericFrameDescriptor::kMaxTemporalLayers; ++i) {
+      if (last_shared_frame_id_[spatial_index][i] < tl0_frame_id) {
+        last_shared_frame_id_[spatial_index][i] = -1;
+      }
+    }
+
+    RTC_DCHECK_GE(tl0_frame_id, 0);
+    RTC_DCHECK_LT(tl0_frame_id, shared_frame_id);
+    generic->dependencies.push_back(tl0_frame_id);
+  } else {
+    for (int i = 0; i <= temporal_index; ++i) {
+      int64_t frame_id = last_shared_frame_id_[spatial_index][i];
+
+      if (frame_id != -1) {
+        RTC_DCHECK_LT(frame_id, shared_frame_id);
+        generic->dependencies.push_back(frame_id);
+      }
+    }
+  }
+
+  last_shared_frame_id_[spatial_index][temporal_index] = shared_frame_id;
+}
+
+void RtpPayloadParams::SetDependenciesVp8New(
+    const CodecSpecificInfoVP8& vp8_info,
+    int64_t shared_frame_id,
+    bool is_keyframe,
+    bool layer_sync,
+    RTPVideoHeader::GenericDescriptorInfo* generic) {
+  RTC_DCHECK(vp8_info.useExplicitDependencies);
+  RTC_DCHECK(!new_version_used_.has_value() || new_version_used_.value());
+  new_version_used_ = true;
+
   if (is_keyframe) {
     RTC_DCHECK_EQ(vp8_info.referencedBuffersCount, 0u);
     buffer_id_to_frame_id_.fill(shared_frame_id);
@@ -402,10 +467,10 @@ void RtpPayloadParams::Vp8ToGeneric(const CodecSpecificInfoVP8& vp8_info,
     RTC_DCHECK_LT(dependency_frame_id, shared_frame_id);
 
     const bool is_new_dependency =
-        std::find(generic.dependencies.begin(), generic.dependencies.end(),
-                  dependency_frame_id) == generic.dependencies.end();
+        std::find(generic->dependencies.begin(), generic->dependencies.end(),
+                  dependency_frame_id) == generic->dependencies.end();
     if (is_new_dependency) {
-      generic.dependencies.push_back(dependency_frame_id);
+      generic->dependencies.push_back(dependency_frame_id);
     }
   }
 
