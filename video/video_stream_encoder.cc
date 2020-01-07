@@ -84,26 +84,6 @@ bool IsFramerateScalingEnabled(DegradationPreference degradation_preference) {
          degradation_preference == DegradationPreference::BALANCED;
 }
 
-// TODO(pbos): Lower these thresholds (to closer to 100%) when we handle
-// pipelining encoders better (multiple input frames before something comes
-// out). This should effectively turn off CPU adaptations for systems that
-// remotely cope with the load right now.
-CpuOveruseOptions GetCpuOveruseOptions(
-    const VideoStreamEncoderSettings& settings,
-    bool full_overuse_time) {
-  CpuOveruseOptions options;
-
-  if (full_overuse_time) {
-    options.low_encode_usage_threshold_percent = 150;
-    options.high_encode_usage_threshold_percent = 200;
-  }
-  if (settings.experiment_cpu_load_estimator) {
-    options.filter_time_ms = 5 * rtc::kNumMillisecsPerSec;
-  }
-
-  return options;
-}
-
 bool RequiresEncoderReset(const VideoCodec& prev_send_codec,
                           const VideoCodec& new_send_codec,
                           bool was_encode_called_since_last_initialization) {
@@ -340,7 +320,8 @@ VideoStreamEncoder::VideoStreamEncoder(
       encoder_switch_requested_(false),
       resource_adaptation_module_(
           std::make_unique<OveruseFrameDetectorResourceAdaptationModule>(
-              this,
+              /*video_stream_encoder=*/this,
+              /*sink=*/this,
               std::move(overuse_detector),
               encoder_stats_observer)),
       encoder_queue_(task_queue_factory->CreateTaskQueue(
@@ -703,8 +684,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
 
   if (pending_encoder_creation_) {
     resource_adaptation_module_->StopCheckForOveruse();
-    resource_adaptation_module_->StartCheckForOveruse(GetCpuOveruseOptions(
-        settings_, encoder_->GetEncoderInfo().is_hardware_accelerated));
+    resource_adaptation_module_->StartCheckForOveruse();
     pending_encoder_creation_ = false;
   }
 
@@ -1716,6 +1696,25 @@ bool VideoStreamEncoder::TryQualityRampup(int64_t now_ms) {
     }
   }
   return false;
+}
+
+// TODO(pbos): Lower these thresholds (to closer to 100%) when we handle
+// pipelining encoders better (multiple input frames before something comes
+// out). This should effectively turn off CPU adaptations for systems that
+// remotely cope with the load right now.
+CpuOveruseOptions VideoStreamEncoder::GetCpuOveruseOptions() const {
+  RTC_DCHECK_RUN_ON(&encoder_queue_);
+  CpuOveruseOptions options;
+  // Hardware accelerated encoders are assumed to be pipelined; give them
+  // additional overuse time.
+  if (encoder_->GetEncoderInfo().is_hardware_accelerated) {
+    options.low_encode_usage_threshold_percent = 150;
+    options.high_encode_usage_threshold_percent = 200;
+  }
+  if (settings_.experiment_cpu_load_estimator) {
+    options.filter_time_ms = 5 * rtc::kNumMillisecsPerSec;
+  }
+  return options;
 }
 
 bool VideoStreamEncoder::TriggerAdaptDown(

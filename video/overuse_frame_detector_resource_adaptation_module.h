@@ -25,10 +25,13 @@
 #include "api/video/video_stream_encoder_observer.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_config.h"
+#include "call/adaptation/resource_adaptation_module_interface.h"
 #include "rtc_base/experiments/balanced_degradation_settings.h"
 #include "video/overuse_frame_detector.h"
 
 namespace webrtc {
+
+class VideoStreamEncoder;
 
 // This class is used by the VideoStreamEncoder and is responsible for adapting
 // resolution up or down based on encode usage percent. It keeps track of video
@@ -43,9 +46,11 @@ namespace webrtc {
 // generic interface in VideoStreamEncoder, unblocking other modules from being
 // implemented and used.
 class OveruseFrameDetectorResourceAdaptationModule
-    : public AdaptationObserverInterface {
+    : public ResourceAdaptationModuleInterface,
+      public AdaptationObserverInterface {
  public:
   OveruseFrameDetectorResourceAdaptationModule(
+      VideoStreamEncoder* video_stream_encoder,
       rtc::VideoSinkInterface<VideoFrame>* sink,
       std::unique_ptr<OveruseFrameDetector> overuse_detector,
       VideoStreamEncoderObserver* encoder_stats_observer);
@@ -64,13 +69,15 @@ class OveruseFrameDetectorResourceAdaptationModule
     return degradation_preference_;
   }
 
+  // ResourceAdaptationModuleInterface implementation.
+  void StartCheckForOveruse() override;
+  void StopCheckForOveruse() override;
+
   // Input to the OveruseFrameDetector, which are required for this module to
   // function. These map to OveruseFrameDetector methods.
   // TODO(hbos): Define virtual methods in ResourceAdaptationModuleInterface
   // for input that are more generic so that this class can be used without
   // assumptions about underlying implementation.
-  void StartCheckForOveruse(const CpuOveruseOptions& options);
-  void StopCheckForOveruse();
   void FrameCaptured(const VideoFrame& frame, int64_t time_when_first_seen_us);
   void FrameSent(uint32_t timestamp,
                  int64_t time_sent_in_us,
@@ -187,7 +194,11 @@ class OveruseFrameDetectorResourceAdaptationModule
   bool CanAdaptUpResolution(int pixels, uint32_t bitrate_bps) const
       RTC_RUN_ON(encoder_queue_);
 
+  // TODO(hbos): Can we move the |source_proxy_| to the |encoder_queue_| and
+  // replace |encoder_queue_| with a sequence checker instead?
   rtc::TaskQueue* encoder_queue_;
+  // Used to query CpuOveruseOptions at StartCheckForOveruse().
+  VideoStreamEncoder* video_stream_encoder_ RTC_GUARDED_BY(encoder_queue_);
   DegradationPreference degradation_preference_ RTC_GUARDED_BY(encoder_queue_);
   // Counters used for deciding if the video resolution or framerate is
   // currently restricted, and if so, why, on a per degradation preference

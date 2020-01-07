@@ -423,10 +423,12 @@ OveruseFrameDetectorResourceAdaptationModule::AdaptCounter::ToString(
 
 OveruseFrameDetectorResourceAdaptationModule::
     OveruseFrameDetectorResourceAdaptationModule(
+        VideoStreamEncoder* video_stream_encoder,
         rtc::VideoSinkInterface<VideoFrame>* sink,
         std::unique_ptr<OveruseFrameDetector> overuse_detector,
         VideoStreamEncoderObserver* encoder_stats_observer)
     : encoder_queue_(nullptr),
+      video_stream_encoder_(video_stream_encoder),
       degradation_preference_(DegradationPreference::DISABLED),
       adapt_counters_(),
       balanced_settings_(),
@@ -440,6 +442,7 @@ OveruseFrameDetectorResourceAdaptationModule::
       encoder_config_(),
       encoder_(nullptr),
       encoder_stats_observer_(encoder_stats_observer) {
+  RTC_DCHECK(video_stream_encoder_);
   RTC_DCHECK(overuse_detector_);
   RTC_DCHECK(encoder_stats_observer_);
 }
@@ -461,12 +464,12 @@ void OveruseFrameDetectorResourceAdaptationModule::SetEncoder(
   encoder_ = encoder;
 }
 
-void OveruseFrameDetectorResourceAdaptationModule::StartCheckForOveruse(
-    const CpuOveruseOptions& options) {
+void OveruseFrameDetectorResourceAdaptationModule::StartCheckForOveruse() {
   RTC_DCHECK(encoder_queue_);
   RTC_DCHECK_RUN_ON(encoder_queue_);
   RTC_DCHECK(encoder_);
-  overuse_detector_->StartCheckForOveruse(encoder_queue_, options, this);
+  overuse_detector_->StartCheckForOveruse(
+      encoder_queue_, video_stream_encoder_->GetCpuOveruseOptions(), this);
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::StopCheckForOveruse() {

@@ -203,6 +203,7 @@ rtc_library("video_stream_encoder_impl") {
     "../api/video:video_rtp_headers",
     "../api/video:video_stream_encoder",
     "../api/video_codecs:video_codecs_api",
+    "../call/adaptation:resource_adaptation",
     "../common_video",
     "../modules:module_api_public",
     "../modules/video_coding",
