@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 The WebRTC project authors. All Rights Reserved.
+ *  Copyright 2020 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -11,24 +11,22 @@
 package org.webrtc;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import android.support.test.InstrumentationRegistry;
 import android.support.test.filters.SmallTest;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import org.chromium.base.test.BaseJUnit4ClassRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.webrtc.RtpParameters.Encoding;
-import org.webrtc.RtpTransceiver.RtpTransceiverInit;
+import org.webrtc.RtpParameters.DegradationPreference;
 
-/** Unit-tests for {@link RtpTransceiver}. */
+/** Unit-tests for {@link RtpSender}. */
 @RunWith(BaseJUnit4ClassRunner.class)
-public class RtpTranceiverTest {
+public class RtpSenderTest {
   private PeerConnectionFactory factory;
   private PeerConnection pc;
 
@@ -47,24 +45,35 @@ public class RtpTranceiverTest {
     pc = factory.createPeerConnection(config, mock(PeerConnection.Observer.class));
   }
 
-  /** Test that RIDs get set in the RTP sender when passed in through an RtpTransceiverInit. */
+  /** Test checking the enum values for DegradationPreference stay consistent */
   @Test
   @SmallTest
-  public void testSetRidInSimulcast() throws Exception {
-    List<Encoding> encodings = new ArrayList<Encoding>();
-    encodings.add(new Encoding("F", true, null));
-    encodings.add(new Encoding("H", true, null));
-
-    RtpTransceiverInit init = new RtpTransceiverInit(
-        RtpTransceiver.RtpTransceiverDirection.SEND_ONLY, Collections.emptyList(), encodings);
-    RtpTransceiver transceiver =
-        pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, init);
-
+  public void testSetDegradationPreference() throws Exception {
+    RtpTransceiver transceiver = pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO);
     RtpSender sender = transceiver.getSender();
+
     RtpParameters parameters = sender.getParameters();
-    List<Encoding> sendEncodings = parameters.getEncodings();
-    assertEquals(2, sendEncodings.size());
-    assertEquals("F", sendEncodings.get(0).getRid());
-    assertEquals("H", sendEncodings.get(1).getRid());
+    assertNotNull(parameters);
+    assertEquals(DegradationPreference.BALANCED, parameters.degradationPreference);
+
+    parameters.degradationPreference = DegradationPreference.MAINTAIN_FRAMERATE;
+    assertTrue(sender.setParameters(parameters));
+    parameters = sender.getParameters();
+    assertEquals(DegradationPreference.MAINTAIN_FRAMERATE, parameters.degradationPreference);
+
+    parameters.degradationPreference = DegradationPreference.MAINTAIN_RESOLUTION;
+    assertTrue(sender.setParameters(parameters));
+    parameters = sender.getParameters();
+    assertEquals(DegradationPreference.MAINTAIN_RESOLUTION, parameters.degradationPreference);
+
+    parameters.degradationPreference = DegradationPreference.BALANCED;
+    assertTrue(sender.setParameters(parameters));
+    parameters = sender.getParameters();
+    assertEquals(DegradationPreference.BALANCED, parameters.degradationPreference);
+
+    parameters.degradationPreference = DegradationPreference.DISABLED;
+    assertTrue(sender.setParameters(parameters));
+    parameters = sender.getParameters();
+    assertEquals(DegradationPreference.DISABLED, parameters.degradationPreference);
   }
 }
