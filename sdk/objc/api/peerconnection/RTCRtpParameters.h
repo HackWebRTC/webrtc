@@ -48,7 +48,7 @@ RTC_OBJC_EXPORT
  * Degradation preference in case of CPU adaptation or constrained bandwidth.
  * If nil, implementation default degradation preference will be used.
  */
-@property(nonatomic, copy) NSNumber *degradationPreference;
+@property(nonatomic, copy, nullable) NSNumber *degradationPreference;
 
 - (instancetype)init NS_DESIGNATED_INITIALIZER;
 
