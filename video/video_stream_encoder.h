@@ -30,7 +30,6 @@
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
-#include "rtc_base/experiments/balanced_degradation_settings.h"
 #include "rtc_base/experiments/quality_rampup_experiment.h"
 #include "rtc_base/experiments/quality_scaler_settings.h"
 #include "rtc_base/experiments/rate_control_settings.h"
@@ -42,9 +41,13 @@
 #include "system_wrappers/include/clock.h"
 #include "video/encoder_bitrate_adjuster.h"
 #include "video/frame_encode_metadata_writer.h"
-#include "video/overuse_frame_detector.h"
+#include "video/overuse_frame_detector_resource_adaptation_module.h"
 
 namespace webrtc {
+
+absl::optional<VideoEncoder::ResolutionBitrateLimits> GetEncoderBitrateLimits(
+    const VideoEncoder::EncoderInfo& encoder_info,
+    int frame_size_pixels);
 
 // VideoStreamEncoder represent a video encoder that accepts raw video frames as
 // input and produces an encoded bit stream.
@@ -55,9 +58,7 @@ namespace webrtc {
 //  Call ConfigureEncoder with the codec settings.
 //  Call Stop() when done.
 class VideoStreamEncoder : public VideoStreamEncoderInterface,
-                           private EncodedImageCallback,
-                           // Protected only to provide access to tests.
-                           protected AdaptationObserverInterface {
+                           private EncodedImageCallback {
  public:
   VideoStreamEncoder(Clock* clock,
                      uint32_t number_of_cores,
@@ -104,14 +105,14 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // be called on |encoder_queue_|.
   rtc::TaskQueue* encoder_queue() { return &encoder_queue_; }
 
-  // AdaptationObserverInterface implementation.
   // These methods are protected for easier testing.
-  void AdaptUp(AdaptReason reason) override;
-  bool AdaptDown(AdaptReason reason) override;
+  // TODO(hbos): When "DropDueToSize" no longer causes TriggerAdaptDown(), these
+  // methods are only used for testing and can be removed in favor of the test
+  // invoking AdaptUp() or AdaptDown() on a test-injected adaptation module.
+  void TriggerAdaptUp(AdaptationObserverInterface::AdaptReason reason);
+  bool TriggerAdaptDown(AdaptationObserverInterface::AdaptReason reason);
 
  private:
-  class VideoSourceProxy;
-
   class VideoFrameInfo {
    public:
     VideoFrameInfo(int width, int height, bool is_texture)
@@ -183,50 +184,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   void SetEncoderRates(const EncoderRateSettings& rate_settings)
       RTC_RUN_ON(&encoder_queue_);
 
-  // Class holding adaptation information.
-  class AdaptCounter final {
-   public:
-    AdaptCounter();
-    ~AdaptCounter();
-
-    // Get number of adaptation downscales for |reason|.
-    VideoStreamEncoderObserver::AdaptationSteps Counts(int reason) const;
-
-    std::string ToString() const;
-
-    void IncrementFramerate(int reason);
-    void IncrementResolution(int reason);
-    void DecrementFramerate(int reason);
-    void DecrementResolution(int reason);
-    void DecrementFramerate(int reason, int cur_fps);
-
-    // Gets the total number of downgrades (for all adapt reasons).
-    int FramerateCount() const;
-    int ResolutionCount() const;
-
-    // Gets the total number of downgrades for |reason|.
-    int FramerateCount(int reason) const;
-    int ResolutionCount(int reason) const;
-    int TotalCount(int reason) const;
-
-   private:
-    std::string ToString(const std::vector<int>& counters) const;
-    int Count(const std::vector<int>& counters) const;
-    void MoveCount(std::vector<int>* counters, int from_reason);
-
-    // Degradation counters holding number of framerate/resolution reductions
-    // per adapt reason.
-    std::vector<int> fps_counters_;
-    std::vector<int> resolution_counters_;
-  };
-
-  AdaptCounter& GetAdaptCounter() RTC_RUN_ON(&encoder_queue_);
-  const AdaptCounter& GetConstAdaptCounter() RTC_RUN_ON(&encoder_queue_);
-  void UpdateAdaptationStats(AdaptReason reason) RTC_RUN_ON(&encoder_queue_);
-  VideoStreamEncoderObserver::AdaptationSteps GetActiveCounts(
-      AdaptReason reason) RTC_RUN_ON(&encoder_queue_);
-  bool CanAdaptUpResolution(int pixels, uint32_t bitrate_bps) const
-      RTC_RUN_ON(&encoder_queue_);
   void RunPostEncode(EncodedImage encoded_image,
                      int64_t time_sent_us,
                      int temporal_index,
@@ -236,10 +193,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   void CheckForAnimatedContent(const VideoFrame& frame,
                                int64_t time_when_posted_in_ms)
-      RTC_RUN_ON(&encoder_queue_);
-
-  // Calculates degradation preference used in adaptation down or up.
-  DegradationPreference EffectiveDegradataionPreference() const
       RTC_RUN_ON(&encoder_queue_);
 
   rtc::Event shutdown_event_;
@@ -255,14 +208,11 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   const bool quality_scaling_experiment_enabled_;
 
-  const std::unique_ptr<VideoSourceProxy> source_proxy_;
   EncoderSink* sink_;
   const VideoStreamEncoderSettings settings_;
   const RateControlSettings rate_control_settings_;
   const QualityScalerSettings quality_scaler_settings_;
 
-  const std::unique_ptr<OveruseFrameDetector> overuse_detector_
-      RTC_PT_GUARDED_BY(&encoder_queue_);
   std::unique_ptr<QualityScaler> quality_scaler_ RTC_GUARDED_BY(&encoder_queue_)
       RTC_PT_GUARDED_BY(&encoder_queue_);
 
@@ -277,8 +227,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   bool encoder_initialized_;
   std::unique_ptr<VideoBitrateAllocator> rate_allocator_
       RTC_GUARDED_BY(&encoder_queue_) RTC_PT_GUARDED_BY(&encoder_queue_);
-  // The maximum frame rate of the current codec configuration, as determined
-  // at the last ReconfigureEncoder() call.
   int max_framerate_ RTC_GUARDED_BY(&encoder_queue_);
 
   // Set when ConfigureEncoder has been called in order to lazy reconfigure the
@@ -308,30 +256,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   bool encoder_failed_ RTC_GUARDED_BY(&encoder_queue_);
   Clock* const clock_;
-  // Counters used for deciding if the video resolution or framerate is
-  // currently restricted, and if so, why, on a per degradation preference
-  // basis.
-  // TODO(sprang): Replace this with a state holding a relative overuse measure
-  // instead, that can be translated into suitable down-scale or fps limit.
-  std::map<const DegradationPreference, AdaptCounter> adapt_counters_
-      RTC_GUARDED_BY(&encoder_queue_);
-  // Set depending on degradation preferences.
-  DegradationPreference degradation_preference_ RTC_GUARDED_BY(&encoder_queue_);
-
-  const BalancedDegradationSettings balanced_settings_;
-
-  struct AdaptationRequest {
-    // The pixel count produced by the source at the time of the adaptation.
-    int input_pixel_count_;
-    // Framerate received from the source at the time of the adaptation.
-    int framerate_fps_;
-    // Indicates if request was to adapt up or down.
-    enum class Mode { kAdaptUp, kAdaptDown } mode_;
-  };
-  // Stores a snapshot of the last adaptation request triggered by an AdaptUp
-  // or AdaptDown signal.
-  absl::optional<AdaptationRequest> last_adaptation_request_
-      RTC_GUARDED_BY(&encoder_queue_);
 
   rtc::RaceChecker incoming_frame_race_checker_
       RTC_GUARDED_BY(incoming_frame_race_checker_);
@@ -472,6 +396,9 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // An encoder switch is only requested once, this variable is used to keep
   // track of whether a request has been made or not.
   bool encoder_switch_requested_ RTC_GUARDED_BY(&encoder_queue_);
+
+  std::unique_ptr<OveruseFrameDetectorResourceAdaptationModule>
+      resource_adaptation_module_;
 
   // All public methods are proxied to |encoder_queue_|. It must must be
   // destroyed first to make sure no tasks are run that use other members.

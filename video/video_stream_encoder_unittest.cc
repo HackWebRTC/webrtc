@@ -155,17 +155,20 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
                                    new CpuOveruseDetectorProxy(stats_proxy)),
                            task_queue_factory) {}
 
-  void PostTaskAndWait(bool down, AdaptReason reason) {
+  void PostTaskAndWait(bool down,
+                       AdaptationObserverInterface::AdaptReason reason) {
     PostTaskAndWait(down, reason, /*expected_results=*/true);
   }
 
-  void PostTaskAndWait(bool down, AdaptReason reason, bool expected_results) {
+  void PostTaskAndWait(bool down,
+                       AdaptationObserverInterface::AdaptReason reason,
+                       bool expected_results) {
     rtc::Event event;
     encoder_queue()->PostTask([this, &event, reason, down, expected_results] {
       if (down)
-        EXPECT_EQ(expected_results, AdaptDown(reason));
+        EXPECT_EQ(expected_results, TriggerAdaptDown(reason));
       else
-        AdaptUp(reason);
+        TriggerAdaptUp(reason);
       event.Set();
     });
     ASSERT_TRUE(event.Wait(5000));
@@ -180,24 +183,29 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
   }
 
   void TriggerCpuOveruse() {
-    PostTaskAndWait(/*down=*/true, AdaptReason::kCpu);
+    PostTaskAndWait(/*down=*/true,
+                    AdaptationObserverInterface::AdaptReason::kCpu);
   }
 
   void TriggerCpuNormalUsage() {
-    PostTaskAndWait(/*down=*/false, AdaptReason::kCpu);
+    PostTaskAndWait(/*down=*/false,
+                    AdaptationObserverInterface::AdaptReason::kCpu);
   }
 
   void TriggerQualityLow() {
-    PostTaskAndWait(/*down=*/true, AdaptReason::kQuality);
+    PostTaskAndWait(/*down=*/true,
+                    AdaptationObserverInterface::AdaptReason::kQuality);
   }
 
   void TriggerQualityLowExpectFalse() {
-    PostTaskAndWait(/*down=*/true, AdaptReason::kQuality,
+    PostTaskAndWait(/*down=*/true,
+                    AdaptationObserverInterface::AdaptReason::kQuality,
                     /*expected_results=*/false);
   }
 
   void TriggerQualityHigh() {
-    PostTaskAndWait(/*down=*/false, AdaptReason::kQuality);
+    PostTaskAndWait(/*down=*/false,
+                    AdaptationObserverInterface::AdaptReason::kQuality);
   }
 
   CpuOveruseDetectorProxy* overuse_detector_proxy_;

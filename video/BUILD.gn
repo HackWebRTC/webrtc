@@ -184,11 +184,14 @@ rtc_library("video_stream_encoder_impl") {
     "frame_encode_metadata_writer.h",
     "overuse_frame_detector.cc",
     "overuse_frame_detector.h",
+    "overuse_frame_detector_resource_adaptation_module.cc",
+    "overuse_frame_detector_resource_adaptation_module.h",
     "video_stream_encoder.cc",
     "video_stream_encoder.h",
   ]
 
   deps = [
+    "../api:rtp_parameters",
     "../api/units:data_rate",
     "../api/video:encoded_image",
     "../api/video:video_bitrate_allocation",
