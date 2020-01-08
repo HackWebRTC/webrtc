@@ -20,7 +20,6 @@
 #include <vector>
 
 #include "rtc_base/buffer.h"
-#include "rtc_base/message_queue.h"
 #include "rtc_base/openssl_identity.h"
 #include "rtc_base/ssl_identity.h"
 #include "rtc_base/ssl_stream_adapter.h"

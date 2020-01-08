@@ -20,7 +20,6 @@
 #include "p2p/client/relay_port_factory_interface.h"
 #include "p2p/client/turn_port_factory.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/message_queue.h"
 #include "rtc_base/network.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread.h"
