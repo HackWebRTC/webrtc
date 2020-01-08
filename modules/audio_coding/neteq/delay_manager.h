@@ -131,8 +131,7 @@ class DelayManager {
   void UpdateEffectiveMinimumDelay();
 
   // Makes sure that |target_level_| is not too large, taking
-  // |max_packets_in_buffer_| and |extra_delay_ms_| into account. This method is
-  // called by Update().
+  // |max_packets_in_buffer_| into account. This method is called by Update().
   void LimitTargetLevel();
 
   // Makes sure that |delay_ms| is less than maximum delay, if any maximum
@@ -174,8 +173,6 @@ class DelayManager {
     uint32_t timestamp;
   };
   std::deque<PacketDelay> delay_history_;
-
-  const absl::optional<int> extra_delay_ms_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DelayManager);
 };
