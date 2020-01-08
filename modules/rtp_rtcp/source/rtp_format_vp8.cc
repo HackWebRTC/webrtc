@@ -163,19 +163,4 @@ RtpPacketizerVp8::RawHeader RtpPacketizerVp8::BuildHeader(
   return result;
 }
 
-bool RtpDepacketizerVp8::Parse(ParsedPayload* parsed_payload,
-                               const uint8_t* payload_data,
-                               size_t payload_data_length) {
-  RTC_DCHECK(parsed_payload);
-  int offset = VideoRtpDepacketizerVp8::ParseRtpPayload(
-      rtc::MakeArrayView(payload_data, payload_data_length),
-      &parsed_payload->video);
-  if (offset == 0) {
-    return false;
-  }
-  parsed_payload->payload = payload_data + offset;
-  parsed_payload->payload_length = payload_data_length - offset;
-  return true;
-}
-
 }  // namespace webrtc

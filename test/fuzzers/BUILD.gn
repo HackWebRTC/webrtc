@@ -77,7 +77,9 @@ webrtc_fuzzer_test("vp8_depacketizer_fuzzer") {
     "vp8_depacketizer_fuzzer.cc",
   ]
   deps = [
+    "../../api:array_view",
     "../../modules/rtp_rtcp",
+    "../../modules/rtp_rtcp:rtp_video_header",
   ]
 }
 
