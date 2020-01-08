@@ -367,7 +367,8 @@ TEST_P(PacingControllerFieldTrialTest, PaddingInSilenceWithTrial) {
   pacer.ProcessPackets();
 }
 
-TEST_P(PacingControllerFieldTrialTest, DefaultCongestionWindowAffectsAudio) {
+TEST_P(PacingControllerFieldTrialTest, CongestionWindowAffectsAudioInTrial) {
+  ScopedFieldTrials trial("WebRTC-Pacer-BlockAudio/Enabled/");
   EXPECT_CALL(callback_, SendPadding).Times(0);
   PacingController pacer(&clock_, &callback_, nullptr, nullptr, GetParam());
   pacer.SetPacingRates(DataRate::kbps(10000), DataRate::Zero());
@@ -394,8 +395,7 @@ TEST_P(PacingControllerFieldTrialTest, DefaultCongestionWindowAffectsAudio) {
 }
 
 TEST_P(PacingControllerFieldTrialTest,
-       CongestionWindowDoesNotAffectAudioInTrial) {
-  ScopedFieldTrials trial("WebRTC-Pacer-BlockAudio/Disabled/");
+       DefaultCongestionWindowDoesNotAffectAudio) {
   EXPECT_CALL(callback_, SendPadding).Times(0);
   PacingController pacer(&clock_, &callback_, nullptr, nullptr, GetParam());
   pacer.SetPacingRates(DataRate::bps(10000000), DataRate::Zero());
@@ -411,7 +411,8 @@ TEST_P(PacingControllerFieldTrialTest,
   ProcessNext(&pacer);
 }
 
-TEST_P(PacingControllerFieldTrialTest, DefaultBudgetAffectsAudio) {
+TEST_P(PacingControllerFieldTrialTest, BudgetAffectsAudioInTrial) {
+  ScopedFieldTrials trial("WebRTC-Pacer-BlockAudio/Enabled/");
   PacingController pacer(&clock_, &callback_, nullptr, nullptr, GetParam());
   DataRate pacing_rate =
       DataRate::bps(video.packet_size / 3 * 8 * kProcessIntervalsPerSecond);
@@ -440,8 +441,7 @@ TEST_P(PacingControllerFieldTrialTest, DefaultBudgetAffectsAudio) {
                 : PacingController::kMinSleepTime);
 }
 
-TEST_P(PacingControllerFieldTrialTest, BudgetDoesNotAffectAudioInTrial) {
-  ScopedFieldTrials trial("WebRTC-Pacer-BlockAudio/Disabled/");
+TEST_P(PacingControllerFieldTrialTest, DefaultBudgetDoesNotAffectAudio) {
   EXPECT_CALL(callback_, SendPadding).Times(0);
   PacingController pacer(&clock_, &callback_, nullptr, nullptr, GetParam());
   pacer.SetPacingRates(

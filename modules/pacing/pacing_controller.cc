@@ -96,7 +96,7 @@ PacingController::PacingController(Clock* clock,
           !IsDisabled(*field_trials_, "WebRTC-Pacer-DrainQueue")),
       send_padding_if_silent_(
           IsEnabled(*field_trials_, "WebRTC-Pacer-PadInSilence")),
-      pace_audio_(!IsDisabled(*field_trials_, "WebRTC-Pacer-BlockAudio")),
+      pace_audio_(IsEnabled(*field_trials_, "WebRTC-Pacer-BlockAudio")),
       small_first_probe_packet_(
           IsEnabled(*field_trials_, "WebRTC-Pacer-SmallFirstProbePacket")),
       send_side_bwe_with_overhead_(
@@ -600,7 +600,7 @@ std::unique_ptr<RtpPacketToSend> PacingController::GetPendingPacket(
   bool is_probe = pacing_info.probe_cluster_id != PacedPacketInfo::kNotAProbe;
   if (!unpaced_audio_packet && !is_probe) {
     if (Congested()) {
-      // Don't send anyting if congested.
+      // Don't send anything if congested.
       return nullptr;
     }
 
