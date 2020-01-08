@@ -115,7 +115,9 @@ class RTC_EXPORT RTCError {
   // but copy and assignment are provided for those cases that need it.
   // Note that this has extra overhead because it copies strings.
   RTCError(const RTCError& other) = default;
+  RTCError(RTCError&&) = default;
   RTCError& operator=(const RTCError& other) = default;
+  RTCError& operator=(RTCError&&) = default;
 
   // Identical to default constructed error.
   //
