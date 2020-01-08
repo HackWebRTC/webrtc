@@ -5,7 +5,7 @@ vars = {
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
-  'chromium_revision': '170b5c3c752a9b5c0c5ebc379a1d79556562e242',
+  'chromium_revision': '086dd4c4421df32a43bb55e1def0c8a7d455fbd4',
 }
 
 deps = {
@@ -115,7 +115,7 @@ deps = {
   'src/third_party/colorama/src':
     'https://chromium.googlesource.com/external/colorama.git@799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
   'src/third_party/depot_tools':
-    'https://chromium.googlesource.com/chromium/tools/depot_tools.git@1961043388e63c48946322de077bebbb333fde6a',
+    'https://chromium.googlesource.com/chromium/tools/depot_tools.git@3a797afd61ff49d783b9b319e6cdfb33d493e3f4',
   'src/third_party/ffmpeg':
     'https://chromium.googlesource.com/chromium/third_party/ffmpeg.git@252792a1ff65deadc4e627e59ce80b8811c5a5de',
   'src/third_party/findbugs': {
