@@ -42,6 +42,7 @@
 #include "rtc_base/fake_ssl_identity.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/strings/json.h"
 #include "rtc_base/time_utils.h"
 
 using ::testing::AtLeast;
@@ -767,6 +768,17 @@ TEST_F(RTCStatsCollectorTest, MultipleCallbacksWithInvalidatedCacheInBetween) {
   // The act of doing |AdvanceTime| processes all messages. If this was not the
   // case we might not require |c| to be fresher than |b|.
   EXPECT_NE(c.get(), b.get());
+}
+
+TEST_F(RTCStatsCollectorTest, ToJsonProducesParseableJson) {
+  ExampleStatsGraph graph = SetupExampleStatsGraphForSelectorTests();
+  rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
+  std::string json_format = report->ToJson();
+  Json::Reader reader;
+  Json::Value json_value;
+  ASSERT_TRUE(reader.parse(json_format, json_value));
+  // A very brief sanity check on the result.
+  EXPECT_EQ(report->size(), json_value.size());
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsSingle) {
