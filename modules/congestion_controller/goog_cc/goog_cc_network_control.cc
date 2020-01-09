@@ -52,6 +52,10 @@ int64_t GetBpsOrDefault(const absl::optional<DataRate>& rate,
   }
 }
 
+bool IsEnabled(const WebRtcKeyValueConfig* config, absl::string_view key) {
+  return config->Lookup(key).find("Enabled") == 0;
+}
+
 bool IsNotDisabled(const WebRtcKeyValueConfig* config, absl::string_view key) {
   return config->Lookup(key).find("Disabled") != 0;
 }
@@ -72,6 +76,8 @@ GoogCcNetworkController::GoogCcNetworkController(NetworkControllerConfig config,
           "WebRTC-Bwe-IgnoreProbesLowerThanNetworkStateEstimate")),
       rate_control_settings_(
           RateControlSettings::ParseFromKeyValueConfig(key_value_config_)),
+      loss_based_stable_rate_(
+          IsEnabled(key_value_config_, "WebRTC-Bwe-LossBasedStableRate")),
       probe_controller_(
           new ProbeController(key_value_config_, config.event_log)),
       congestion_window_pushback_controller_(
@@ -619,9 +625,15 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
     TargetTransferRate target_rate_msg;
     target_rate_msg.at_time = at_time;
     target_rate_msg.target_rate = pushback_target_rate;
-    target_rate_msg.stable_target_rate =
-        std::min(bandwidth_estimation_->GetEstimatedLinkCapacity(),
-                 pushback_target_rate);
+    if (loss_based_stable_rate_) {
+      target_rate_msg.stable_target_rate =
+          std::min(bandwidth_estimation_->GetEstimatedLinkCapacity(),
+                   loss_based_target_rate);
+    } else {
+      target_rate_msg.stable_target_rate =
+          std::min(bandwidth_estimation_->GetEstimatedLinkCapacity(),
+                   pushback_target_rate);
+    }
     target_rate_msg.network_estimate.at_time = at_time;
     target_rate_msg.network_estimate.round_trip_time = round_trip_time;
     target_rate_msg.network_estimate.loss_rate_ratio = fraction_loss / 255.0f;
