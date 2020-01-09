@@ -29,6 +29,12 @@ class DataChannelController : public DataChannelProviderInterface,
  public:
   explicit DataChannelController(PeerConnection* pc) : pc_(pc) {}
 
+  // Not copyable or movable.
+  DataChannelController(DataChannelController&) = delete;
+  DataChannelController& operator=(const DataChannelController& other) = delete;
+  DataChannelController(DataChannelController&&) = delete;
+  DataChannelController& operator=(DataChannelController&& other) = delete;
+
   // Implements DataChannelProviderInterface.
   bool SendData(const cricket::SendDataParams& params,
                 const rtc::CopyOnWriteBuffer& payload,
