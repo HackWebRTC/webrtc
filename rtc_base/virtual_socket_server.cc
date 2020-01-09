@@ -599,7 +599,7 @@ VirtualSocket* VirtualSocketServer::CreateSocketInternal(int family, int type) {
   return socket;
 }
 
-void VirtualSocketServer::SetMessageQueue(MessageQueue* msg_queue) {
+void VirtualSocketServer::SetMessageQueue(Thread* msg_queue) {
   msg_queue_ = msg_queue;
   if (msg_queue_) {
     msg_queue_->SignalQueueDestroyed.connect(
@@ -614,7 +614,7 @@ bool VirtualSocketServer::Wait(int cmsWait, bool process_io) {
   }
   // Note: we don't need to do anything with |process_io| since we don't have
   // any real I/O. Received packets come in the form of queued messages, so
-  // MessageQueue will ensure WakeUp is called if another thread sends a
+  // Thread will ensure WakeUp is called if another thread sends a
   // packet.
   wakeup_.Wait(cmsWait);
   return true;

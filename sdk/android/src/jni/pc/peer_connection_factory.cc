@@ -68,10 +68,10 @@ std::unique_ptr<T> TakeOwnershipOfUniquePtr(jlong native_pointer) {
 
 typedef void (*JavaMethodPointer)(JNIEnv*, const JavaRef<jobject>&);
 
-// Post a message on the given queue that will call the Java method on the given
-// Java object.
+// Post a message on the given thread that will call the Java method on the
+// given Java object.
 void PostJavaCallback(JNIEnv* env,
-                      rtc::MessageQueue* queue,
+                      rtc::Thread* queue,
                       const rtc::Location& posted_from,
                       const JavaRef<jobject>& j_object,
                       JavaMethodPointer java_method_pointer) {

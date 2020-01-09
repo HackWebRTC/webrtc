@@ -319,7 +319,7 @@ rtc::AsyncSocket* FakeNetworkSocketServer::CreateAsyncSocket(int family,
   return out;
 }
 
-void FakeNetworkSocketServer::SetMessageQueue(rtc::MessageQueue* msg_queue) {
+void FakeNetworkSocketServer::SetMessageQueue(rtc::Thread* msg_queue) {
   msg_queue_ = msg_queue;
   if (msg_queue_) {
     msg_queue_->SignalQueueDestroyed.connect(

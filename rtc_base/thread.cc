@@ -181,6 +181,7 @@ Thread::Thread(std::unique_ptr<SocketServer> ss)
 
 Thread::Thread(SocketServer* ss, bool do_init)
     : MessageQueue(ss, /*do_init=*/false) {
+  socketserver()->SetMessageQueue(this);
   SetName("Thread", this);  // default name
   if (do_init) {
     DoInit();
@@ -189,6 +190,7 @@ Thread::Thread(SocketServer* ss, bool do_init)
 
 Thread::Thread(std::unique_ptr<SocketServer> ss, bool do_init)
     : MessageQueue(std::move(ss), false) {
+  socketserver()->SetMessageQueue(this);
   SetName("Thread", this);  // default name
   if (do_init) {
     DoInit();

@@ -107,7 +107,7 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   AsyncSocket* CreateAsyncSocket(int family, int type) override;
 
   // SocketServer:
-  void SetMessageQueue(MessageQueue* queue) override;
+  void SetMessageQueue(Thread* queue) override;
   bool Wait(int cms, bool process_io) override;
   void WakeUp() override;
 
@@ -267,7 +267,7 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
 
   // Used to implement Wait/WakeUp.
   Event wakeup_;
-  MessageQueue* msg_queue_;
+  Thread* msg_queue_;
   bool stop_on_idle_;
   in_addr next_ipv4_;
   in6_addr next_ipv6_;

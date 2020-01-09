@@ -162,7 +162,6 @@ MessageQueue::MessageQueue(SocketServer* ss, bool init_queue)
   // server, and provide it to the MessageQueue, since the Thread controls
   // the I/O model, and MQ is agnostic to those details.  Anyway, this causes
   // messagequeue_unittest to depend on network libraries... yuck.
-  ss_->SetMessageQueue(this);
   if (init_queue) {
     DoInit();
   }
