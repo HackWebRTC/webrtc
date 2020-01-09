@@ -317,6 +317,8 @@ if (is_ios || is_mac) {
       }
 
       rtc_library("audio_session_objc") {
+        visibility = [ "*" ]
+
         sources = [
           "objc/components/audio/RTCAudioSession+Configuration.mm",
           "objc/components/audio/RTCAudioSession+Private.h",
