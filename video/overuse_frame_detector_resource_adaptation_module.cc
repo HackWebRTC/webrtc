@@ -629,7 +629,8 @@ void OveruseFrameDetectorResourceAdaptationModule::AdaptUp(AdaptReason reason) {
     case DegradationPreference::BALANCED: {
       // Check if quality should be increased based on bitrate.
       if (reason == kQuality &&
-          !balanced_settings_.CanAdaptUp(*last_frame_pixel_count_,
+          !balanced_settings_.CanAdaptUp(encoder_config_.codec_type,
+                                         *last_frame_pixel_count_,
                                          encoder_start_bitrate_bps_)) {
         return;
       }
@@ -649,7 +650,8 @@ void OveruseFrameDetectorResourceAdaptationModule::AdaptUp(AdaptReason reason) {
       // Check if resolution should be increased based on bitrate.
       if (reason == kQuality &&
           !balanced_settings_.CanAdaptUpResolution(
-              *last_frame_pixel_count_, encoder_start_bitrate_bps_)) {
+              encoder_config_.codec_type, *last_frame_pixel_count_,
+              encoder_start_bitrate_bps_)) {
         return;
       }
       // Scale up resolution.
