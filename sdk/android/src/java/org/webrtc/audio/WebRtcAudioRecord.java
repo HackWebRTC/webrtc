@@ -426,6 +426,9 @@ class WebRtcAudioRecord {
       Logging.w(TAG, "AudioManager#getActiveRecordingConfigurations() requires N or higher");
       return 0;
     }
+    if (audioRecord == null) {
+      return 0;
+    }
     // Get a list of the currently active audio recording configurations of the device (can be more
     // than one). An empty list indicates there is no recording active when queried.
     List<AudioRecordingConfiguration> configs = audioManager.getActiveRecordingConfigurations();
