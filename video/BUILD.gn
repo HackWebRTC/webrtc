@@ -564,11 +564,13 @@ if (rtc_include_tests) {
       "video_receive_stream_unittest.cc",
       "video_send_stream_impl_unittest.cc",
       "video_send_stream_tests.cc",
+      "video_stream_decoder_impl_unittest.cc",
       "video_stream_encoder_unittest.cc",
     ]
     deps = [
       ":video",
       ":video_mocks",
+      ":video_stream_decoder_impl",
       ":video_stream_encoder_impl",
       "../api:create_frame_generator",
       "../api:fake_frame_decryptor",
