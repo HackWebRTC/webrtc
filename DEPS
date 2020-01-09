@@ -5,7 +5,7 @@ vars = {
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
-  'chromium_revision': 'f9fb583f4e0d31dfc1d72046d518a084a0f4c0f5',
+  'chromium_revision': '5bd3bd2b6cbfa2ca59516e0417cab924d6e5a001',
 }
 
 deps = {
@@ -107,7 +107,7 @@ deps = {
   'src/third_party/boringssl/src':
     'https://boringssl.googlesource.com/boringssl.git@cb3f04f584a53844546aaa32e949534c453185aa',
   'src/third_party/catapult':
-    'https://chromium.googlesource.com/catapult.git@9506caf2ea1f11687121fab0d7ad8a6e2a8abc75',
+    'https://chromium.googlesource.com/catapult.git@a47e1e9794a79e808878498b1146dca30c4902ae',
   'src/third_party/ced/src': {
     'url': 'https://chromium.googlesource.com/external/github.com/google/compact_enc_det.git@ba412eaaacd3186085babcd901679a48863c7dd5',
     'condition': 'checkout_android',
@@ -115,7 +115,7 @@ deps = {
   'src/third_party/colorama/src':
     'https://chromium.googlesource.com/external/colorama.git@799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
   'src/third_party/depot_tools':
-    'https://chromium.googlesource.com/chromium/tools/depot_tools.git@3a797afd61ff49d783b9b319e6cdfb33d493e3f4',
+    'https://chromium.googlesource.com/chromium/tools/depot_tools.git@0d462e99bc1f4e053b682249d3b4e2e972d11c6f',
   'src/third_party/ffmpeg':
     'https://chromium.googlesource.com/chromium/third_party/ffmpeg.git@252792a1ff65deadc4e627e59ce80b8811c5a5de',
   'src/third_party/findbugs': {
