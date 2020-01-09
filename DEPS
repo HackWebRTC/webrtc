@@ -5,7 +5,7 @@ vars = {
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
-  'chromium_revision': 'efba8d2927574721d8e9c39c444a0c363694c312',
+  'chromium_revision': 'b57c714b1d296ef2879a7549aef5cc752aea322a',
 }
 
 deps = {
@@ -86,7 +86,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/android_build_tools/aapt2',
-              'version': 'by7YdhjwRQYtrv0Q_q_fPsqptrm5ib-SXmiNfgJYp50C',
+              'version': 'TM6ESkOFwhdEwjsIxbY3m6j7BIhg8mpY_X9Pg0nwb1AC',
           },
       ],
       'condition': 'checkout_android',
@@ -107,7 +107,7 @@ deps = {
   'src/third_party/boringssl/src':
     'https://boringssl.googlesource.com/boringssl.git@cb3f04f584a53844546aaa32e949534c453185aa',
   'src/third_party/catapult':
-    'https://chromium.googlesource.com/catapult.git@52175631d301a98a7c0580343d5e6771fe0f5fb0',
+    'https://chromium.googlesource.com/catapult.git@85c4a438f6f1a86137b109db6b6283d1f084f2be',
   'src/third_party/ced/src': {
     'url': 'https://chromium.googlesource.com/external/github.com/google/compact_enc_det.git@ba412eaaacd3186085babcd901679a48863c7dd5',
     'condition': 'checkout_android',
