@@ -27,9 +27,9 @@
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/rtcp_sender.h"
-#include "modules/rtp_rtcp/source/rtp_format_vp9.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet.h"
+#include "modules/rtp_rtcp/source/video_rtp_depacketizer_vp9.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "rtc_base/checks.h"
@@ -3169,16 +3169,16 @@ class Vp9HeaderObserver : public test::SendTest {
                       IsNewerSequenceNumber(rtp_packet.SequenceNumber(),
                                             last_packet_sequence_number_);
     if (!rtp_payload.empty() && new_packet) {
-      RtpDepacketizer::ParsedPayload parsed;
-      RtpDepacketizerVp9 depacketizer;
-      EXPECT_TRUE(
-          depacketizer.Parse(&parsed, rtp_payload.data(), rtp_payload.size()));
-      EXPECT_EQ(VideoCodecType::kVideoCodecVP9, parsed.video_header().codec);
+      RTPVideoHeader video_header;
+      EXPECT_NE(
+          VideoRtpDepacketizerVp9::ParseRtpPayload(rtp_payload, &video_header),
+          0);
+      EXPECT_EQ(VideoCodecType::kVideoCodecVP9, video_header.codec);
       // Verify common fields for all configurations.
       const auto& vp9_header =
-          absl::get<RTPVideoHeaderVP9>(parsed.video_header().video_type_header);
+          absl::get<RTPVideoHeaderVP9>(video_header.video_type_header);
       VerifyCommonHeader(vp9_header);
-      CompareConsecutiveFrames(rtp_packet, parsed.video_header());
+      CompareConsecutiveFrames(rtp_packet, video_header);
       // Verify configuration specific settings.
       InspectHeader(vp9_header);
 

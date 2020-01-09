@@ -421,17 +421,4 @@ bool RtpPacketizerVp9::WriteHeader(bool layer_begin,
   return true;
 }
 
-bool RtpDepacketizerVp9::Parse(ParsedPayload* parsed_payload,
-                               const uint8_t* payload,
-                               size_t payload_length) {
-  RTC_DCHECK(parsed_payload);
-  int offset = VideoRtpDepacketizerVp9::ParseRtpPayload(
-      rtc::MakeArrayView(payload, payload_length), &parsed_payload->video);
-  if (offset == 0)
-    return false;
-
-  parsed_payload->payload = payload + offset;
-  parsed_payload->payload_length = payload_length - offset;
-  return true;
-}
 }  // namespace webrtc
