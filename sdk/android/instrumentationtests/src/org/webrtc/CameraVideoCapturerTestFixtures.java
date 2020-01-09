@@ -472,6 +472,10 @@ class CameraVideoCapturerTestFixtures {
   }
 
   public void switchCamera() throws InterruptedException {
+    switchCamera(false /* specifyCameraName */);
+  }
+
+  public void switchCamera(boolean specifyCameraName) throws InterruptedException {
     if (!testObjectFactory.haveTwoCameras()) {
       Logging.w(
           TAG, "Skipping test switch video capturer because the device doesn't have two cameras.");
@@ -487,18 +491,25 @@ class CameraVideoCapturerTestFixtures {
     // Array with one element to avoid final problem in nested classes.
     final boolean[] cameraSwitchSuccessful = new boolean[1];
     final CountDownLatch barrier = new CountDownLatch(1);
-    capturerInstance.capturer.switchCamera(new CameraVideoCapturer.CameraSwitchHandler() {
-      @Override
-      public void onCameraSwitchDone(boolean isFrontCamera) {
-        cameraSwitchSuccessful[0] = true;
-        barrier.countDown();
-      }
-      @Override
-      public void onCameraSwitchError(String errorDescription) {
-        cameraSwitchSuccessful[0] = false;
-        barrier.countDown();
-      }
-    });
+    final CameraVideoCapturer.CameraSwitchHandler cameraSwitchHandler =
+        new CameraVideoCapturer.CameraSwitchHandler() {
+          @Override
+          public void onCameraSwitchDone(boolean isFrontCamera) {
+            cameraSwitchSuccessful[0] = true;
+            barrier.countDown();
+          }
+          @Override
+          public void onCameraSwitchError(String errorDescription) {
+            cameraSwitchSuccessful[0] = false;
+            barrier.countDown();
+          }
+        };
+    if (specifyCameraName) {
+      String expectedCameraName = testObjectFactory.cameraEnumerator.getDeviceNames()[1];
+      capturerInstance.capturer.switchCamera(cameraSwitchHandler, expectedCameraName);
+    } else {
+      capturerInstance.capturer.switchCamera(cameraSwitchHandler);
+    }
     // Wait until the camera has been switched.
     barrier.await();
 

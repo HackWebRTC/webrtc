@@ -239,6 +239,12 @@ public class Camera2CapturerTest {
 
   @Test
   @MediumTest
+  public void testSwitchVideoCapturerToSpecificCameraName() throws InterruptedException {
+    fixtures.switchCamera(true /* specifyCameraName */);
+  }
+
+  @Test
+  @MediumTest
   public void testCameraEvents() throws InterruptedException {
     fixtures.cameraEventsInvoked();
   }
