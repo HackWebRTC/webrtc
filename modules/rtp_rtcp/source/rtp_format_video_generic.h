@@ -67,21 +67,5 @@ class RtpPacketizerGeneric : public RtpPacketizer {
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpPacketizerGeneric);
 };
-
-// Depacketizer for generic codec.
-class RtpDepacketizerGeneric : public RtpDepacketizer {
- public:
-  // Parses the generic payload header if |generic_header_enabled| is true,
-  // returns raw payload otherwise.
-  explicit RtpDepacketizerGeneric(bool generic_header_enabled);
-  ~RtpDepacketizerGeneric() override;
-
-  bool Parse(ParsedPayload* parsed_payload,
-             const uint8_t* payload_data,
-             size_t payload_data_length) override;
-
- private:
-  bool generic_header_enabled_;
-};
 }  // namespace webrtc
 #endif  // MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VIDEO_GENERIC_H_

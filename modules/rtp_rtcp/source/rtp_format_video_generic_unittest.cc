@@ -165,42 +165,5 @@ TEST(RtpPacketizerVideoGeneric, DoesNotWriteHeaderForRawPayload) {
   EXPECT_THAT(payload, ElementsAreArray(kPayload));
 }
 
-TEST(RtpDepacketizerVideoGeneric, NonExtendedHeaderNoFrameId) {
-  const size_t kPayloadLen = 1;
-  uint8_t payload[kPayloadLen] = {0x01};
-
-  RtpDepacketizerGeneric depacketizer(/*generic_header_enabled=*/true);
-  RtpDepacketizer::ParsedPayload parsed_payload;
-  depacketizer.Parse(&parsed_payload, payload, kPayloadLen);
-
-  EXPECT_FALSE(parsed_payload.video_header().generic);
-}
-
-TEST(RtpDepacketizerVideoGeneric, ExtendedHeaderParsesFrameId) {
-  const size_t kPayloadLen = 3;
-  uint8_t payload[kPayloadLen] = {0x05, 0x13, 0x37};
-
-  RtpDepacketizerGeneric depacketizer(/*generic_header_enabled=*/true);
-  RtpDepacketizer::ParsedPayload parsed_payload;
-  depacketizer.Parse(&parsed_payload, payload, kPayloadLen);
-
-  ASSERT_TRUE(parsed_payload.video_header().generic);
-  EXPECT_EQ(0x1337, parsed_payload.video_header().generic->frame_id);
-}
-
-TEST(RtpDepacketizerVideoGeneric, DoesNotParseHeaderForRawPayload) {
-  const uint8_t kPayload[] = {0x05, 0x25, 0x52};
-  const size_t kPayloadLen = sizeof(kPayload);
-
-  RtpDepacketizerGeneric depacketizer(/*generic_header_enabled=*/false);
-  RtpDepacketizer::ParsedPayload parsed_payload;
-  depacketizer.Parse(&parsed_payload, kPayload, kPayloadLen);
-
-  EXPECT_FALSE(parsed_payload.video_header().generic);
-  EXPECT_THAT(rtc::MakeArrayView<const uint8_t>(parsed_payload.payload,
-                                                parsed_payload.payload_length),
-              ElementsAreArray(kPayload));
-}
-
 }  // namespace
 }  // namespace webrtc
