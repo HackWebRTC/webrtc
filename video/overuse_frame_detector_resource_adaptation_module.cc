@@ -19,6 +19,7 @@
 #include "absl/algorithm/container.h"
 #include "api/video/video_source_interface.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/system/fallthrough.h"
 #include "video/video_stream_encoder.h"
@@ -39,6 +40,47 @@ bool IsFramerateScalingEnabled(DegradationPreference degradation_preference) {
          degradation_preference == DegradationPreference::BALANCED;
 }
 
+// Constructs VideoSourceRestrictions from |target_pixel_count|,
+// |max_pixel_count| and |max_framerate_fps|. Other rtc::VideoSinkWants
+// information such as |rotation_applied| is lost in the conversion.
+VideoSourceRestrictions VideoSinkWantsToVideoSourceRestrictions(
+    rtc::VideoSinkWants active_sink_wants) {
+  return VideoSourceRestrictions(
+      active_sink_wants.max_pixel_count != std::numeric_limits<int>::max()
+          ? absl::optional<size_t>(active_sink_wants.max_pixel_count)
+          : absl::nullopt,
+      active_sink_wants.target_pixel_count.has_value()
+          ? absl::optional<size_t>(rtc::dchecked_cast<size_t, int>(
+                active_sink_wants.target_pixel_count.value()))
+          : absl::nullopt,
+      active_sink_wants.max_framerate_fps != std::numeric_limits<int>::max()
+          ? absl::optional<double>(active_sink_wants.max_framerate_fps)
+          : absl::nullopt);
+}
+
+// Constructs rtc::VideoSinkWants from max_pixels_per_frame(),
+// target_pixels_per_frame() and max_frame_rate(). The rest of the members, such
+// as |rotation_applied|, are obtained from the |baseline_sink_wants|.
+rtc::VideoSinkWants VideoSourceRestrictionsToVideoSinkWants(
+    const rtc::VideoSinkWants& baseline_sink_wants,
+    VideoSourceRestrictions restrictions) {
+  rtc::VideoSinkWants sink_wants = baseline_sink_wants;
+  sink_wants.max_pixel_count =
+      restrictions.max_pixels_per_frame().has_value()
+          ? static_cast<int>(restrictions.max_pixels_per_frame().value())
+          : std::numeric_limits<int>::max();
+  sink_wants.target_pixel_count =
+      restrictions.target_pixels_per_frame().has_value()
+          ? absl::optional<int>(rtc::dchecked_cast<int, size_t>(
+                restrictions.target_pixels_per_frame().value()))
+          : absl::nullopt;
+  sink_wants.max_framerate_fps =
+      restrictions.max_frame_rate().has_value()
+          ? static_cast<int>(restrictions.max_frame_rate().value())
+          : std::numeric_limits<int>::max();
+  return sink_wants;
+}
+
 }  // namespace
 
 // VideoSourceProxy is responsible ensuring thread safety between calls to
@@ -56,6 +98,21 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceProxy {
         max_pixels_(std::numeric_limits<int>::max()),
         resolution_alignment_(1) {}
 
+  VideoSourceRestrictions ToVideoSourceRestrictions() {
+    return VideoSinkWantsToVideoSourceRestrictions(GetActiveSinkWants());
+  }
+
+  void ApplyVideoSourceRestrictions(VideoSourceRestrictions restrictions) {
+    rtc::CritScope lock(&crit_);
+    rtc::VideoSinkWants wants = VideoSourceRestrictionsToVideoSinkWants(
+        GetActiveSinkWantsInternal(), std::move(restrictions));
+    if (!source_)
+      return;
+    source_->AddOrUpdateSink(sink_, wants);
+  }
+
+  // Informs the sink of the new source settings.
+  // TODO(hbos): Handle all sink updates in video_stream_encoder.cc.
   void SetSource(rtc::VideoSourceInterface<VideoFrame>* source,
                  const DegradationPreference& degradation_preference) {
     // Called on libjingle's worker thread.
@@ -81,6 +138,8 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceProxy {
     source->AddOrUpdateSink(sink_, wants);
   }
 
+  // Informs the sink of the new source settings.
+  // TODO(hbos): Handle all sink updates in video_stream_encoder.cc.
   void SetMaxFramerateAndAlignment(int max_framerate,
                                    int resolution_alignment) {
     RTC_DCHECK_GT(max_framerate, 0);
@@ -99,6 +158,8 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceProxy {
     }
   }
 
+  // Informs the sink of the new source settings.
+  // TODO(hbos): Handle all sink updates in video_stream_encoder.cc.
   void SetWantsRotationApplied(bool rotation_applied) {
     rtc::CritScope lock(&crit_);
     sink_wants_.rotation_applied = rotation_applied;
@@ -112,6 +173,8 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceProxy {
     return GetActiveSinkWantsInternal();
   }
 
+  // Informs the sink of the new source settings.
+  // TODO(hbos): Handle all sink updates in video_stream_encoder.cc.
   void ResetPixelFpsCount() {
     rtc::CritScope lock(&crit_);
     sink_wants_.max_pixel_count = std::numeric_limits<int>::max();
@@ -121,6 +184,11 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceProxy {
       source_->AddOrUpdateSink(sink_, GetActiveSinkWantsInternal());
   }
 
+  // Updates the sink settings, but DOES NOT inform the sink of the new
+  // settings. Reapplying video source restrictions is required, see
+  // ToVideoSourceRestrictions() and ApplyVideoSourceRestrictions() for more
+  // information.
+  // TODO(hbos): Handle all sink updates in video_stream_encoder.cc.
   bool RequestResolutionLowerThan(int pixel_count,
                                   int min_pixels_per_frame,
                                   bool* min_pixels_reached) {
@@ -145,10 +213,14 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceProxy {
                      << pixels_wanted;
     sink_wants_.max_pixel_count = pixels_wanted;
     sink_wants_.target_pixel_count = absl::nullopt;
-    source_->AddOrUpdateSink(sink_, GetActiveSinkWantsInternal());
     return true;
   }
 
+  // Updates the sink settings, but DOES NOT inform the sink of the new
+  // settings. Reapplying video source restrictions is required, see
+  // ToVideoSourceRestrictions() and ApplyVideoSourceRestrictions() for more
+  // information.
+  // TODO(hbos): Handle all sink updates in video_stream_encoder.cc.
   int RequestFramerateLowerThan(int fps) {
     // Called on the encoder task queue.
     // The input video frame rate will be scaled down to 2/3, rounding down.
@@ -166,6 +238,11 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceProxy {
     return (pixel_count * 5) / 3;
   }
 
+  // Updates the sink settings, but DOES NOT inform the sink of the new
+  // settings. Reapplying video source restrictions is required, see
+  // ToVideoSourceRestrictions() and ApplyVideoSourceRestrictions() for more
+  // information.
+  // TODO(hbos): Handle all sink updates in video_stream_encoder.cc.
   bool RequestHigherResolutionThan(int pixel_count) {
     // Called on the encoder task queue.
     rtc::CritScope lock(&crit_);
@@ -190,7 +267,6 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceProxy {
     }
     RTC_LOG(LS_INFO) << "Scaling up resolution, max pixels: "
                      << max_pixels_wanted;
-    source_->AddOrUpdateSink(sink_, GetActiveSinkWantsInternal());
     return true;
   }
 
@@ -208,6 +284,11 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceProxy {
     return IncreaseFramerate(framerate_wanted) ? framerate_wanted : -1;
   }
 
+  // Updates the sink settings, but DOES NOT inform the sink of the new
+  // settings. Reapplying video source restrictions is required, see
+  // ToVideoSourceRestrictions() and ApplyVideoSourceRestrictions() for more
+  // information.
+  // TODO(hbos): Handle all sink updates in video_stream_encoder.cc.
   bool RestrictFramerate(int fps) {
     // Called on the encoder task queue.
     rtc::CritScope lock(&crit_);
@@ -220,10 +301,14 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceProxy {
 
     RTC_LOG(LS_INFO) << "Scaling down framerate: " << fps_wanted;
     sink_wants_.max_framerate_fps = fps_wanted;
-    source_->AddOrUpdateSink(sink_, GetActiveSinkWantsInternal());
     return true;
   }
 
+  // Updates the sink settings, but DOES NOT inform the sink of the new
+  // settings. Reapplying video source restrictions is required, see
+  // ToVideoSourceRestrictions() and ApplyVideoSourceRestrictions() for more
+  // information.
+  // TODO(hbos): Handle all sink updates in video_stream_encoder.cc.
   bool IncreaseFramerate(int fps) {
     // Called on the encoder task queue.
     rtc::CritScope lock(&crit_);
@@ -236,11 +321,12 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceProxy {
 
     RTC_LOG(LS_INFO) << "Scaling up framerate: " << fps_wanted;
     sink_wants_.max_framerate_fps = fps_wanted;
-    source_->AddOrUpdateSink(sink_, GetActiveSinkWantsInternal());
     return true;
   }
 
+  // Informs the sink of the new source settings.
   // Used in automatic animation detection for screenshare.
+  // TODO(hbos): Handle all sink updates in video_stream_encoder.cc.
   bool RestrictPixels(int max_pixels) {
     // Called on the encoder task queue.
     rtc::CritScope lock(&crit_);
@@ -426,8 +512,10 @@ OveruseFrameDetectorResourceAdaptationModule::
         VideoStreamEncoder* video_stream_encoder,
         rtc::VideoSinkInterface<VideoFrame>* sink,
         std::unique_ptr<OveruseFrameDetector> overuse_detector,
-        VideoStreamEncoderObserver* encoder_stats_observer)
+        VideoStreamEncoderObserver* encoder_stats_observer,
+        ResourceAdaptationModuleListener* adaptation_listener)
     : encoder_queue_(nullptr),
+      adaptation_listener_(adaptation_listener),
       video_stream_encoder_(video_stream_encoder),
       degradation_preference_(DegradationPreference::DISABLED),
       adapt_counters_(),
@@ -442,6 +530,7 @@ OveruseFrameDetectorResourceAdaptationModule::
       encoder_config_(),
       encoder_(nullptr),
       encoder_stats_observer_(encoder_stats_observer) {
+  RTC_DCHECK(adaptation_listener_);
   RTC_DCHECK(video_stream_encoder_);
   RTC_DCHECK(overuse_detector_);
   RTC_DCHECK(encoder_stats_observer_);
@@ -464,10 +553,18 @@ void OveruseFrameDetectorResourceAdaptationModule::SetEncoder(
   encoder_ = encoder;
 }
 
-void OveruseFrameDetectorResourceAdaptationModule::StartCheckForOveruse() {
+void OveruseFrameDetectorResourceAdaptationModule::StartCheckForOveruse(
+    ResourceAdaptationModuleListener* adaptation_listener) {
   RTC_DCHECK(encoder_queue_);
   RTC_DCHECK_RUN_ON(encoder_queue_);
   RTC_DCHECK(encoder_);
+  // TODO(hbos): When AdaptUp() and AdaptDown() are no longer invoked outside
+  // the interval between StartCheckForOveruse() and StopCheckForOveruse(),
+  // support configuring which |adaptation_listener_| to use on the fly. It is
+  // currently hardcoded for the entire lifetime of the module in order to
+  // support adaptation caused by VideoStreamEncoder or QualityScaler invoking
+  // AdaptUp() and AdaptDown() even when the OveruseDetector is inactive.
+  RTC_DCHECK_EQ(adaptation_listener, adaptation_listener_);
   overuse_detector_->StartCheckForOveruse(
       encoder_queue_, video_stream_encoder_->GetCpuOveruseOptions(), this);
 }
@@ -476,6 +573,13 @@ void OveruseFrameDetectorResourceAdaptationModule::StopCheckForOveruse() {
   RTC_DCHECK(encoder_queue_);
   RTC_DCHECK_RUN_ON(encoder_queue_);
   overuse_detector_->StopCheckForOveruse();
+}
+
+void OveruseFrameDetectorResourceAdaptationModule::ApplyVideoSourceRestrictions(
+    VideoSourceRestrictions restrictions) {
+  RTC_DCHECK(encoder_queue_);
+  RTC_DCHECK_RUN_ON(encoder_queue_);
+  source_proxy_->ApplyVideoSourceRestrictions(std::move(restrictions));
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::FrameCaptured(
@@ -700,6 +804,11 @@ void OveruseFrameDetectorResourceAdaptationModule::AdaptUp(AdaptReason reason) {
       return;
   }
 
+  // Tell the adaptation listener to reconfigure the source for us according to
+  // the latest adaptation.
+  adaptation_listener_->OnVideoSourceRestrictionsUpdated(
+      source_proxy_->ToVideoSourceRestrictions());
+
   last_adaptation_request_.emplace(adaptation_request);
 
   UpdateAdaptationStats(reason);
@@ -800,6 +909,11 @@ bool OveruseFrameDetectorResourceAdaptationModule::AdaptDown(
     case DegradationPreference::DISABLED:
       RTC_NOTREACHED();
   }
+
+  // Tell the adaptation listener to reconfigure the source for us according to
+  // the latest adaptation.
+  adaptation_listener_->OnVideoSourceRestrictionsUpdated(
+      source_proxy_->ToVideoSourceRestrictions());
 
   last_adaptation_request_.emplace(adaptation_request);
 

@@ -53,7 +53,8 @@ class OveruseFrameDetectorResourceAdaptationModule
       VideoStreamEncoder* video_stream_encoder,
       rtc::VideoSinkInterface<VideoFrame>* sink,
       std::unique_ptr<OveruseFrameDetector> overuse_detector,
-      VideoStreamEncoderObserver* encoder_stats_observer);
+      VideoStreamEncoderObserver* encoder_stats_observer,
+      ResourceAdaptationModuleListener* adaptation_listener);
   ~OveruseFrameDetectorResourceAdaptationModule() override;
 
   void Initialize(rtc::TaskQueue* encoder_queue);
@@ -70,8 +71,13 @@ class OveruseFrameDetectorResourceAdaptationModule
   }
 
   // ResourceAdaptationModuleInterface implementation.
-  void StartCheckForOveruse() override;
+  void StartCheckForOveruse(
+      ResourceAdaptationModuleListener* adaptation_listener) override;
   void StopCheckForOveruse() override;
+
+  // TODO(hbos): When VideoSourceProxy is refactored and reconfiguration logic
+  // is entirely moved to video_stream_encoder.cc, remove this method.
+  void ApplyVideoSourceRestrictions(VideoSourceRestrictions restrictions);
 
   // Input to the OveruseFrameDetector, which are required for this module to
   // function. These map to OveruseFrameDetector methods.
@@ -197,6 +203,8 @@ class OveruseFrameDetectorResourceAdaptationModule
   // TODO(hbos): Can we move the |source_proxy_| to the |encoder_queue_| and
   // replace |encoder_queue_| with a sequence checker instead?
   rtc::TaskQueue* encoder_queue_;
+  ResourceAdaptationModuleListener* const adaptation_listener_
+      RTC_GUARDED_BY(encoder_queue_);
   // Used to query CpuOveruseOptions at StartCheckForOveruse().
   VideoStreamEncoder* video_stream_encoder_ RTC_GUARDED_BY(encoder_queue_);
   DegradationPreference degradation_preference_ RTC_GUARDED_BY(encoder_queue_);

@@ -26,6 +26,7 @@
 #include "api/video/video_stream_encoder_settings.h"
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
+#include "call/adaptation/resource_adaptation_module_interface.h"
 #include "modules/video_coding/utility/frame_dropper.h"
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "rtc_base/critical_section.h"
@@ -58,7 +59,8 @@ absl::optional<VideoEncoder::ResolutionBitrateLimits> GetEncoderBitrateLimits(
 //  Call ConfigureEncoder with the codec settings.
 //  Call Stop() when done.
 class VideoStreamEncoder : public VideoStreamEncoderInterface,
-                           private EncodedImageCallback {
+                           private EncodedImageCallback,
+                           public ResourceAdaptationModuleListener {
  public:
   VideoStreamEncoder(Clock* clock,
                      uint32_t number_of_cores,
@@ -115,6 +117,9 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // invoking AdaptUp() or AdaptDown() on a test-injected adaptation module.
   void TriggerAdaptUp(AdaptationObserverInterface::AdaptReason reason);
   bool TriggerAdaptDown(AdaptationObserverInterface::AdaptReason reason);
+
+  void OnVideoSourceRestrictionsUpdated(
+      VideoSourceRestrictions restrictions) override;
 
  private:
   class VideoFrameInfo {
