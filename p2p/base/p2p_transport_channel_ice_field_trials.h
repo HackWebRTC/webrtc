@@ -33,7 +33,7 @@ struct IceFieldTrials {
   absl::optional<int> initial_select_dampening_ping_received;
 
   // Announce GOOG_PING support in STUN_BINDING_RESPONSE.
-  bool announce_goog_ping = true;
+  bool announce_goog_ping = false;
 
   // Enable sending GOOG_PING if remote announce it.
   bool enable_goog_ping = false;
