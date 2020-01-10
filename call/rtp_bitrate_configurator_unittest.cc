@@ -27,7 +27,7 @@ class RtpBitrateConfiguratorTest : public ::testing::Test {
                            absl::optional<int> max_bitrate_bps) {
     absl::optional<BitrateConstraints> result =
         configurator_->UpdateWithSdpParameters(bitrate_config);
-    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result.has_value());
     if (start_bitrate_bps.has_value())
       EXPECT_EQ(result->start_bitrate_bps, start_bitrate_bps);
     if (min_bitrate_bps.has_value())
@@ -229,23 +229,6 @@ TEST_F(RtpBitrateConfiguratorTest, NewConfigWithNoChangesDoesNotCallNewConfig) {
   // change any values.
   UpdateConfigMatches(config1, 0, 1000, -1);
   EXPECT_FALSE(configurator_->UpdateWithSdpParameters(config2).has_value());
-}
-
-TEST_F(RtpBitrateConfiguratorTest,
-       NewConfigWithUnsetMinAndMaxDoesNotCallNewConfig) {
-  BitrateConstraints config1;
-  config1.min_bitrate_bps = 100'000;
-  config1.start_bitrate_bps = 1'000;
-  config1.max_bitrate_bps = 1'000'000;
-
-  BitrateConstraints config2;
-  config2.min_bitrate_bps = 0;
-  config2.start_bitrate_bps = -1;
-  config2.max_bitrate_bps = -1;
-
-  configurator_->UpdateWithSdpParameters(config1);
-  // The second call should return nothing because it doesn't change any values.
-  EXPECT_EQ(configurator_->UpdateWithSdpParameters(config2), absl::nullopt);
 }
 
 // If config changes the max, but not the effective max,
