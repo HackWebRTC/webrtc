@@ -502,6 +502,13 @@ NSUInteger GetMaxSampleRate(const webrtc::H264::ProfileLevelId &profile_level_id
     [self resetCompressionSessionWithPixelFormat:[self pixelFormatOfFrame:frame]];
 
     return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
+  } else if (status == kVTVideoEncoderMalfunctionErr) {
+    // Sometimes the encoder malfunctions and needs to be restarted.
+    RTC_LOG(LS_ERROR)
+        << "Encountered video encoder malfunction error. Resetting compression session.";
+    [self resetCompressionSessionWithPixelFormat:[self pixelFormatOfFrame:frame]];
+
+    return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
   } else if (status != noErr) {
     RTC_LOG(LS_ERROR) << "Failed to encode frame with code: " << status;
     return WEBRTC_VIDEO_CODEC_ERROR;
