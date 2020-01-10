@@ -8,10 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/rtp_rtcp/source/rtp_depacketizer_av1.h"
+#include "modules/rtp_rtcp/source/video_rtp_depacketizer_av1.h"
 
 #include <stddef.h>
 #include <stdint.h>
+
+#include <utility>
 
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "rtc_base/byte_buffer.h"
@@ -333,7 +335,7 @@ bool CalculateObuSizes(ObuInfo* obu_info) {
 
 }  // namespace
 
-rtc::scoped_refptr<EncodedImageBuffer> RtpDepacketizerAv1::AssembleFrame(
+rtc::scoped_refptr<EncodedImageBuffer> VideoRtpDepacketizerAv1::AssembleFrame(
     rtc::ArrayView<const rtc::ArrayView<const uint8_t>> rtp_payloads) {
   VectorObuInfo obu_infos = ParseObus(rtp_payloads);
   if (obu_infos.empty()) {
@@ -363,42 +365,40 @@ rtc::scoped_refptr<EncodedImageBuffer> RtpDepacketizerAv1::AssembleFrame(
   return bitstream;
 }
 
-bool RtpDepacketizerAv1::Parse(ParsedPayload* parsed_payload,
-                               const uint8_t* payload_data,
-                               size_t payload_data_length) {
-  RTC_DCHECK(parsed_payload);
-  if (payload_data_length == 0) {
+absl::optional<VideoRtpDepacketizer::ParsedRtpPayload>
+VideoRtpDepacketizerAv1::Parse(rtc::CopyOnWriteBuffer rtp_payload) {
+  if (rtp_payload.size() == 0) {
     RTC_DLOG(LS_ERROR) << "Empty rtp payload.";
-    return false;
+    return absl::nullopt;
   }
-  uint8_t aggregation_header = payload_data[0];
+  uint8_t aggregation_header = rtp_payload.cdata()[0];
   if (RtpStartsNewCodedVideoSequence(aggregation_header) &&
       RtpStartsWithFragment(aggregation_header)) {
     // new coded video sequence can't start from an OBU fragment.
-    return false;
+    return absl::nullopt;
   }
+  absl::optional<ParsedRtpPayload> parsed(absl::in_place);
 
   // To assemble frame, all of the rtp payload is required, including
   // aggregation header.
-  parsed_payload->payload = payload_data;
-  parsed_payload->payload_length = payload_data_length;
+  parsed->video_payload = std::move(rtp_payload);
 
-  parsed_payload->video.codec = VideoCodecType::kVideoCodecAV1;
+  parsed->video_header.codec = VideoCodecType::kVideoCodecAV1;
   // These are not accurate since frame may consist of several packet aligned
   // chunks of obus, but should be good enough for most cases. It might produce
   // frame that do not map to any real frame, but av1 decoder should be able to
   // handle it since it promise to handle individual obus rather than full
   // frames.
-  parsed_payload->video.is_first_packet_in_frame =
+  parsed->video_header.is_first_packet_in_frame =
       !RtpStartsWithFragment(aggregation_header);
-  parsed_payload->video.is_last_packet_in_frame =
+  parsed->video_header.is_last_packet_in_frame =
       !RtpEndsWithFragment(aggregation_header);
 
-  parsed_payload->video.frame_type =
+  parsed->video_header.frame_type =
       RtpStartsNewCodedVideoSequence(aggregation_header)
           ? VideoFrameType::kVideoFrameKey
           : VideoFrameType::kVideoFrameDelta;
-  return true;
+  return parsed;
 }
 
 }  // namespace webrtc

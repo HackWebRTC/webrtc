@@ -20,8 +20,8 @@
 #include "api/array_view.h"
 #include "api/scoped_refptr.h"
 #include "api/video/encoded_image.h"
-#include "modules/rtp_rtcp/source/rtp_depacketizer_av1.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "modules/rtp_rtcp/source/video_rtp_depacketizer_av1.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -104,7 +104,7 @@ Av1Frame ReassembleFrame(rtc::ArrayView<const RtpPayload> rtp_payloads) {
   for (size_t i = 0; i < rtp_payloads.size(); ++i) {
     payloads[i] = rtp_payloads[i];
   }
-  return Av1Frame(RtpDepacketizerAv1::AssembleFrame(payloads));
+  return Av1Frame(VideoRtpDepacketizerAv1::AssembleFrame(payloads));
 }
 
 class Obu {

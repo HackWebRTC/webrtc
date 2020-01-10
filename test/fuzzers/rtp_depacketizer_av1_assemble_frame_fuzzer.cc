@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "modules/rtp_rtcp/source/rtp_depacketizer_av1.h"
+#include "modules/rtp_rtcp/source/video_rtp_depacketizer_av1.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -34,6 +34,6 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     rtp_payloads.push_back(fuzz_input.ReadByteArray(next_size));
   }
   // Run code under test.
-  RtpDepacketizerAv1::AssembleFrame(rtp_payloads);
+  VideoRtpDepacketizerAv1::AssembleFrame(rtp_payloads);
 }
 }  // namespace webrtc

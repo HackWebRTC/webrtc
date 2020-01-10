@@ -8,33 +8,34 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_RTP_RTCP_SOURCE_RTP_DEPACKETIZER_AV1_H_
-#define MODULES_RTP_RTCP_SOURCE_RTP_DEPACKETIZER_AV1_H_
+#ifndef MODULES_RTP_RTCP_SOURCE_VIDEO_RTP_DEPACKETIZER_AV1_H_
+#define MODULES_RTP_RTCP_SOURCE_VIDEO_RTP_DEPACKETIZER_AV1_H_
 
 #include <stddef.h>
 #include <stdint.h>
 
+#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/scoped_refptr.h"
 #include "api/video/encoded_image.h"
-#include "modules/rtp_rtcp/source/rtp_format.h"
+#include "modules/rtp_rtcp/source/video_rtp_depacketizer.h"
+#include "rtc_base/copy_on_write_buffer.h"
 
 namespace webrtc {
 
-class RtpDepacketizerAv1 : public RtpDepacketizer {
+class VideoRtpDepacketizerAv1 : public VideoRtpDepacketizer {
  public:
-  RtpDepacketizerAv1() = default;
-  RtpDepacketizerAv1(const RtpDepacketizerAv1&) = delete;
-  RtpDepacketizerAv1& operator=(const RtpDepacketizerAv1&) = delete;
-  ~RtpDepacketizerAv1() override = default;
+  VideoRtpDepacketizerAv1() = default;
+  VideoRtpDepacketizerAv1(const VideoRtpDepacketizerAv1&) = delete;
+  VideoRtpDepacketizerAv1& operator=(const VideoRtpDepacketizerAv1&) = delete;
+  ~VideoRtpDepacketizerAv1() override = default;
 
   static rtc::scoped_refptr<EncodedImageBuffer> AssembleFrame(
       rtc::ArrayView<const rtc::ArrayView<const uint8_t>> rtp_payloads);
 
-  bool Parse(ParsedPayload* parsed_payload,
-             const uint8_t* payload_data,
-             size_t payload_data_length) override;
+  absl::optional<ParsedRtpPayload> Parse(
+      rtc::CopyOnWriteBuffer rtp_payload) override;
 };
 
 }  // namespace webrtc
-#endif  // MODULES_RTP_RTCP_SOURCE_RTP_DEPACKETIZER_AV1_H_
+#endif  // MODULES_RTP_RTCP_SOURCE_VIDEO_RTP_DEPACKETIZER_AV1_H_

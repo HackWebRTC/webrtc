@@ -14,8 +14,8 @@
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
-#include "modules/rtp_rtcp/source/rtp_depacketizer_av1.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer.h"
+#include "modules/rtp_rtcp/source/video_rtp_depacketizer_av1.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer_generic.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer_h264.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer_vp8.h"
@@ -60,7 +60,7 @@ std::unique_ptr<VideoRtpDepacketizer> CreateVideoRtpDepacketizer(
     case kVideoCodecVP9:
       return std::make_unique<VideoRtpDepacketizerVp9>();
     case kVideoCodecAV1:
-      return std::make_unique<Legacy<RtpDepacketizerAv1>>();
+      return std::make_unique<VideoRtpDepacketizerAv1>();
     case kVideoCodecGeneric:
     case kVideoCodecMultiplex:
       return std::make_unique<VideoRtpDepacketizerGeneric>();
