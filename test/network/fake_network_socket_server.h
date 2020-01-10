@@ -31,13 +31,9 @@ class FakeNetworkSocket;
 class FakeNetworkSocketServer : public rtc::SocketServer,
                                 public sigslot::has_slots<> {
  public:
-  FakeNetworkSocketServer(Clock* clock,
-                          EndpointsContainer* endpoints_controller);
+  explicit FakeNetworkSocketServer(EndpointsContainer* endpoints_controller);
   ~FakeNetworkSocketServer() override;
 
-  EmulatedEndpointImpl* GetEndpointNode(const rtc::IPAddress& ip);
-  void Unregister(FakeNetworkSocket* socket);
-  void OnMessageQueueDestroyed();
 
   // rtc::SocketFactory methods:
   rtc::Socket* CreateSocket(int family, int type) override;
@@ -46,17 +42,21 @@ class FakeNetworkSocketServer : public rtc::SocketServer,
   // rtc::SocketServer methods:
   // Called by the network thread when this server is installed, kicking off the
   // message handler loop.
-  void SetMessageQueue(rtc::Thread* msg_queue) override;
+  void SetMessageQueue(rtc::Thread* thread) override;
   bool Wait(int cms, bool process_io) override;
   void WakeUp() override;
 
- private:
-  Timestamp Now() const;
+ protected:
+  friend class FakeNetworkSocket;
+  EmulatedEndpointImpl* GetEndpointNode(const rtc::IPAddress& ip);
+  void Unregister(FakeNetworkSocket* socket);
 
-  Clock* const clock_;
+ private:
+  void OnMessageQueueDestroyed();
+
   const EndpointsContainer* endpoints_container_;
   rtc::Event wakeup_;
-  rtc::Thread* msg_queue_;
+  rtc::Thread* thread_ = nullptr;
 
   rtc::CriticalSection lock_;
   std::vector<FakeNetworkSocket*> sockets_ RTC_GUARDED_BY(lock_);

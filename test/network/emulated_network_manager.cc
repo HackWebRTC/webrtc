@@ -24,7 +24,7 @@ EmulatedNetworkManager::EmulatedNetworkManager(
     EndpointsContainer* endpoints_container)
     : task_queue_(task_queue),
       endpoints_container_(endpoints_container),
-      socket_server_(clock, endpoints_container),
+      socket_server_(endpoints_container),
       network_thread_(&socket_server_),
       sent_first_update_(false),
       start_count_(0) {

@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "rtc_base/async_invoker.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
 
@@ -32,13 +33,12 @@ std::string ToString(const rtc::SocketAddress& addr) {
 class FakeNetworkSocket : public rtc::AsyncSocket,
                           public EmulatedNetworkReceiverInterface {
  public:
-  explicit FakeNetworkSocket(FakeNetworkSocketServer* scoket_manager);
+  explicit FakeNetworkSocket(FakeNetworkSocketServer* scoket_manager,
+                             rtc::Thread* thread);
   ~FakeNetworkSocket() override;
 
   // Will be invoked by EmulatedEndpoint to deliver packets into this socket.
   void OnPacketReceived(EmulatedIpPacket packet) override;
-  // Will fire read event for incoming packets.
-  bool ProcessIo();
 
   // rtc::Socket methods:
   rtc::SocketAddress GetLocalAddress() const override;
@@ -64,72 +64,62 @@ class FakeNetworkSocket : public rtc::AsyncSocket,
   int SetOption(Option opt, int value) override;
 
  private:
-  absl::optional<EmulatedIpPacket> PopFrontPacket();
-
   FakeNetworkSocketServer* const socket_server_;
-  EmulatedEndpointImpl* endpoint_;
+  rtc::Thread* const thread_;
+  EmulatedEndpointImpl* endpoint_ RTC_GUARDED_BY(&thread_);
+  rtc::SocketAddress local_addr_ RTC_GUARDED_BY(&thread_);
+  rtc::SocketAddress remote_addr_ RTC_GUARDED_BY(&thread_);
+  ConnState state_ RTC_GUARDED_BY(&thread_);
+  int error_ RTC_GUARDED_BY(&thread_);
+  std::map<Option, int> options_map_ RTC_GUARDED_BY(&thread_);
 
-  rtc::SocketAddress local_addr_;
-  rtc::SocketAddress remote_addr_;
-  ConnState state_;
-  int error_;
-  std::map<Option, int> options_map_;
-
-  rtc::CriticalSection lock_;
-  // Count of packets in the queue for which we didn't fire read event.
-  // |pending_read_events_count_| can be different from |packet_queue_.size()|
-  // because read events will be fired by one thread and packets in the queue
-  // can be processed by another thread.
-  int pending_read_events_count_;
-  std::deque<EmulatedIpPacket> packet_queue_ RTC_GUARDED_BY(lock_);
+  absl::optional<EmulatedIpPacket> pending_ RTC_GUARDED_BY(thread_);
+  rtc::AsyncInvoker invoker_;
 };
 
-FakeNetworkSocket::FakeNetworkSocket(FakeNetworkSocketServer* socket_server)
+FakeNetworkSocket::FakeNetworkSocket(FakeNetworkSocketServer* socket_server,
+                                     rtc::Thread* thread)
     : socket_server_(socket_server),
+      thread_(thread),
       state_(CS_CLOSED),
-      error_(0),
-      pending_read_events_count_(0) {}
+      error_(0) {}
+
 FakeNetworkSocket::~FakeNetworkSocket() {
   Close();
   socket_server_->Unregister(this);
 }
 
 void FakeNetworkSocket::OnPacketReceived(EmulatedIpPacket packet) {
-  {
-    rtc::CritScope crit(&lock_);
-    packet_queue_.push_back(std::move(packet));
-    pending_read_events_count_++;
-  }
+  auto task = [this, packet = std::move(packet)]() mutable {
+    RTC_DCHECK_RUN_ON(thread_);
+    if (!endpoint_->Enabled())
+      return;
+    RTC_DCHECK(!pending_);
+    pending_ = std::move(packet);
+    // Note that we expect that this will trigger exactly one call to RecvFrom()
+    // where pending_packet will be read and reset. This call is done without
+    // any thread switch (see AsyncUDPSocket::OnReadEvent) so it's safe to
+    // assume that SignalReadEvent() will block until the packet has been read.
+    SignalReadEvent(this);
+    RTC_DCHECK(!pending_);
+  };
+  invoker_.AsyncInvoke<void>(RTC_FROM_HERE, thread_, std::move(task));
   socket_server_->WakeUp();
 }
 
-bool FakeNetworkSocket::ProcessIo() {
-  {
-    rtc::CritScope crit(&lock_);
-    if (pending_read_events_count_ == 0) {
-      return false;
-    }
-    pending_read_events_count_--;
-    RTC_DCHECK_GE(pending_read_events_count_, 0);
-  }
-  if (!endpoint_->Enabled()) {
-    // If endpoint disabled then just pop and discard packet.
-    PopFrontPacket();
-    return true;
-  }
-  SignalReadEvent(this);
-  return true;
-}
 
 rtc::SocketAddress FakeNetworkSocket::GetLocalAddress() const {
+  RTC_DCHECK_RUN_ON(thread_);
   return local_addr_;
 }
 
 rtc::SocketAddress FakeNetworkSocket::GetRemoteAddress() const {
+  RTC_DCHECK_RUN_ON(thread_);
   return remote_addr_;
 }
 
 int FakeNetworkSocket::Bind(const rtc::SocketAddress& addr) {
+  RTC_DCHECK_RUN_ON(thread_);
   RTC_CHECK(local_addr_.IsNil())
       << "Socket already bound to address: " << ToString(local_addr_);
   local_addr_ = addr;
@@ -153,6 +143,7 @@ int FakeNetworkSocket::Bind(const rtc::SocketAddress& addr) {
 }
 
 int FakeNetworkSocket::Connect(const rtc::SocketAddress& addr) {
+  RTC_DCHECK_RUN_ON(thread_);
   RTC_CHECK(remote_addr_.IsNil())
       << "Socket already connected to address: " << ToString(remote_addr_);
   RTC_CHECK(!local_addr_.IsNil())
@@ -163,6 +154,7 @@ int FakeNetworkSocket::Connect(const rtc::SocketAddress& addr) {
 }
 
 int FakeNetworkSocket::Send(const void* pv, size_t cb) {
+  RTC_DCHECK_RUN_ON(thread_);
   RTC_CHECK(state_ == CS_CONNECTED) << "Socket cannot send: not connected";
   return SendTo(pv, cb, remote_addr_);
 }
@@ -170,6 +162,7 @@ int FakeNetworkSocket::Send(const void* pv, size_t cb) {
 int FakeNetworkSocket::SendTo(const void* pv,
                               size_t cb,
                               const rtc::SocketAddress& addr) {
+  RTC_DCHECK_RUN_ON(thread_);
   RTC_CHECK(!local_addr_.IsNil())
       << "Socket have to be bind to some local address";
   if (!endpoint_->Enabled()) {
@@ -192,34 +185,32 @@ int FakeNetworkSocket::RecvFrom(void* pv,
                                 size_t cb,
                                 rtc::SocketAddress* paddr,
                                 int64_t* timestamp) {
+  RTC_DCHECK_RUN_ON(thread_);
+
   if (timestamp) {
     *timestamp = -1;
   }
-  absl::optional<EmulatedIpPacket> packetOpt = PopFrontPacket();
+  RTC_CHECK(pending_);
 
-  if (!packetOpt) {
-    error_ = EAGAIN;
-    return -1;
-  }
-
-  EmulatedIpPacket packet = std::move(packetOpt.value());
-  *paddr = packet.from;
-  size_t data_read = std::min(cb, packet.size());
-  memcpy(pv, packet.cdata(), data_read);
-  *timestamp = packet.arrival_time.us();
+  *paddr = pending_->from;
+  size_t data_read = std::min(cb, pending_->size());
+  memcpy(pv, pending_->cdata(), data_read);
+  *timestamp = pending_->arrival_time.us();
 
   // According to RECV(2) Linux Man page
   // real socket will discard data, that won't fit into provided buffer,
   // but we won't to skip such error, so we will assert here.
-  RTC_CHECK(data_read == packet.size())
+  RTC_CHECK(data_read == pending_->size())
       << "Too small buffer is provided for socket read. "
-      << "Received data size: " << packet.size()
+      << "Received data size: " << pending_->size()
       << "; Provided buffer size: " << cb;
+
+  pending_.reset();
 
   // According to RECV(2) Linux Man page
   // real socket will return message length, not data read. In our case it is
   // actually the same value.
-  return static_cast<int>(packet.size());
+  return static_cast<int>(data_read);
 }
 
 int FakeNetworkSocket::Listen(int backlog) {
@@ -231,6 +222,7 @@ rtc::AsyncSocket* FakeNetworkSocket::Accept(rtc::SocketAddress* /*paddr*/) {
 }
 
 int FakeNetworkSocket::Close() {
+  RTC_DCHECK_RUN_ON(thread_);
   state_ = CS_CLOSED;
   if (!local_addr_.IsNil()) {
     endpoint_->UnbindReceiver(local_addr_.port());
@@ -241,19 +233,23 @@ int FakeNetworkSocket::Close() {
 }
 
 int FakeNetworkSocket::GetError() const {
+  RTC_DCHECK_RUN_ON(thread_);
   return error_;
 }
 
 void FakeNetworkSocket::SetError(int error) {
+  RTC_DCHECK_RUN_ON(thread_);
   RTC_CHECK(error == 0);
   error_ = error;
 }
 
 rtc::AsyncSocket::ConnState FakeNetworkSocket::GetState() const {
+  RTC_DCHECK_RUN_ON(thread_);
   return state_;
 }
 
 int FakeNetworkSocket::GetOption(Option opt, int* value) {
+  RTC_DCHECK_RUN_ON(thread_);
   auto it = options_map_.find(opt);
   if (it == options_map_.end()) {
     return -1;
@@ -263,32 +259,19 @@ int FakeNetworkSocket::GetOption(Option opt, int* value) {
 }
 
 int FakeNetworkSocket::SetOption(Option opt, int value) {
+  RTC_DCHECK_RUN_ON(thread_);
   options_map_[opt] = value;
   return 0;
 }
 
-absl::optional<EmulatedIpPacket> FakeNetworkSocket::PopFrontPacket() {
-  rtc::CritScope crit(&lock_);
-  if (packet_queue_.empty()) {
-    return absl::nullopt;
-  }
-
-  absl::optional<EmulatedIpPacket> packet =
-      absl::make_optional(std::move(packet_queue_.front()));
-  packet_queue_.pop_front();
-  return packet;
-}
-
 FakeNetworkSocketServer::FakeNetworkSocketServer(
-    Clock* clock,
     EndpointsContainer* endpoints_container)
-    : clock_(clock),
-      endpoints_container_(endpoints_container),
+    : endpoints_container_(endpoints_container),
       wakeup_(/*manual_reset=*/false, /*initially_signaled=*/false) {}
 FakeNetworkSocketServer::~FakeNetworkSocketServer() = default;
 
 void FakeNetworkSocketServer::OnMessageQueueDestroyed() {
-  msg_queue_ = nullptr;
+  thread_ = nullptr;
 }
 
 EmulatedEndpointImpl* FakeNetworkSocketServer::GetEndpointNode(
@@ -311,7 +294,8 @@ rtc::AsyncSocket* FakeNetworkSocketServer::CreateAsyncSocket(int family,
   RTC_DCHECK(family == AF_INET || family == AF_INET6);
   // We support only UDP sockets for now.
   RTC_DCHECK(type == SOCK_DGRAM) << "Only UDP sockets are supported";
-  FakeNetworkSocket* out = new FakeNetworkSocket(this);
+  RTC_DCHECK(thread_) << "must be attached to thread before creating sockets";
+  FakeNetworkSocket* out = new FakeNetworkSocket(this, thread_);
   {
     rtc::CritScope crit(&lock_);
     sockets_.push_back(out);
@@ -319,28 +303,19 @@ rtc::AsyncSocket* FakeNetworkSocketServer::CreateAsyncSocket(int family,
   return out;
 }
 
-void FakeNetworkSocketServer::SetMessageQueue(rtc::Thread* msg_queue) {
-  msg_queue_ = msg_queue;
-  if (msg_queue_) {
-    msg_queue_->SignalQueueDestroyed.connect(
+void FakeNetworkSocketServer::SetMessageQueue(rtc::Thread* thread) {
+  thread_ = thread;
+  if (thread_) {
+    thread_->SignalQueueDestroyed.connect(
         this, &FakeNetworkSocketServer::OnMessageQueueDestroyed);
   }
 }
 
 // Always returns true (if return false, it won't be invoked again...)
 bool FakeNetworkSocketServer::Wait(int cms, bool process_io) {
-  RTC_DCHECK(msg_queue_ == rtc::Thread::Current());
-  if (!process_io) {
+  RTC_DCHECK(thread_ == rtc::Thread::Current());
+  if (cms != 0)
     wakeup_.Wait(cms);
-    return true;
-  }
-  wakeup_.Wait(cms);
-
-  rtc::CritScope crit(&lock_);
-  for (auto* socket : sockets_) {
-    while (socket->ProcessIo()) {
-    }
-  }
   return true;
 }
 
@@ -348,9 +323,6 @@ void FakeNetworkSocketServer::WakeUp() {
   wakeup_.Set();
 }
 
-Timestamp FakeNetworkSocketServer::Now() const {
-  return clock_->CurrentTime();
-}
 
 }  // namespace test
 }  // namespace webrtc
