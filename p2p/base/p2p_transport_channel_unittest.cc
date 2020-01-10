@@ -426,6 +426,7 @@ class P2PTransportChannelTestBase : public ::testing::Test,
     channel->SetIceTiebreaker(GetEndpoint(endpoint)->GetIceTiebreaker());
     return channel;
   }
+
   void DestroyChannels() {
     main_.Clear(this);
     ep1_.cd1_.ch_.reset();
@@ -737,6 +738,7 @@ class P2PTransportChannelTestBase : public ::testing::Test,
                 ep2_ch1()->selected_connection());
 
     TestSendRecv(&clock);
+    DestroyChannels();
   }
 
   void TestPacketInfoIsSet(rtc::PacketInfo info) {
@@ -1545,6 +1547,7 @@ class P2PTransportRegatherAllNetworksTest : public P2PTransportChannelTest {
 
     // Make sure we can communicate over the new connection too.
     TestSendRecv(&clock);
+    DestroyChannels();
   }
 };
 
@@ -1961,6 +1964,7 @@ TEST_F(P2PTransportChannelTest, TestDefaultDscpValue) {
   GetEndpoint(1)->cd1_.ch_->SetOption(rtc::Socket::OPT_DSCP, rtc::DSCP_AF41);
   EXPECT_EQ(rtc::DSCP_AF41, GetEndpoint(0)->cd1_.ch_->DefaultDscpValue());
   EXPECT_EQ(rtc::DSCP_AF41, GetEndpoint(1)->cd1_.ch_->DefaultDscpValue());
+  DestroyChannels();
 }
 
 // Verify IPv6 connection is preferred over IPv4.
@@ -2088,6 +2092,7 @@ TEST_F(P2PTransportChannelTest, TestUsingPooledSessionBeforeDoneGathering) {
               Contains(ep1_ch1()->selected_connection()->PortForTest()));
   EXPECT_THAT(pooled_ports_2,
               Contains(ep2_ch1()->selected_connection()->PortForTest()));
+  DestroyChannels();
 }
 
 // Test that a connection succeeds when the P2PTransportChannel uses a pooled
@@ -2130,6 +2135,7 @@ TEST_F(P2PTransportChannelTest, TestUsingPooledSessionAfterDoneGathering) {
               Contains(ep1_ch1()->selected_connection()->PortForTest()));
   EXPECT_THAT(pooled_ports_2,
               Contains(ep2_ch1()->selected_connection()->PortForTest()));
+  DestroyChannels();
 }
 
 // Test that when the "presume_writable_when_fully_relayed" flag is set to
@@ -2170,6 +2176,8 @@ TEST_F(P2PTransportChannelTest, TurnToTurnPresumedWritable) {
   const char* data = "test";
   int len = static_cast<int>(strlen(data));
   EXPECT_EQ(len, SendData(ep1_ch1(), data, len));
+  // Prevent pending messages to access endpoints after their destruction.
+  DestroyChannels();
 }
 
 // Test that a TURN/peer reflexive candidate pair is also presumed writable.
@@ -2294,6 +2302,7 @@ TEST_F(P2PTransportChannelTest, SignalReadyToSendWithPresumedWritable) {
   virtual_socket_server()->SetSendingBlocked(false);
   EXPECT_TRUE(GetEndpoint(0)->ready_to_send_);
   EXPECT_EQ(len, SendData(ep1_ch1(), data, len));
+  DestroyChannels();
 }
 
 // Test that role conflict error responses are sent as expected when receiving a
@@ -2961,6 +2970,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestGetState) {
                            ep1_ch1()->GetState(), kShortTimeout, clock);
   EXPECT_EQ_SIMULATED_WAIT(IceTransportState::STATE_COMPLETED,
                            ep2_ch1()->GetState(), kShortTimeout, clock);
+  DestroyChannels();
 }
 
 // Tests that when a network interface becomes inactive, if Continual Gathering
@@ -5235,6 +5245,7 @@ TEST_F(P2PTransportChannelTest,
   EXPECT_EQ(
       "1.1.1.1:1",
       ep1_ch1()->connections()[0]->remote_candidate().address().ToString());
+  DestroyChannels();
 }
 
 class MockMdnsResponder : public webrtc::MdnsResponderInterface {
@@ -5346,6 +5357,7 @@ TEST_F(P2PTransportChannelTest,
       kDefaultTimeout, clock);
   EXPECT_EQ(RELAY_PORT_TYPE,
             ep1_ch1()->selected_connection()->remote_candidate().type());
+  DestroyChannels();
 }
 
 // A similar test as SurfaceHostCandidateOnCandidateFilterChangeFromRelayToAll,
@@ -5412,6 +5424,7 @@ TEST_F(P2PTransportChannelTest,
       kDefaultTimeout, clock);
   EXPECT_EQ(RELAY_PORT_TYPE,
             ep1_ch1()->selected_connection()->remote_candidate().type());
+  DestroyChannels();
 }
 
 // This is the complement to
@@ -5450,6 +5463,7 @@ TEST_F(P2PTransportChannelTest,
   ep2->allocator_->SetCandidateFilter(CF_ALL);
   EXPECT_EQ(RELAY_PORT_TYPE,
             ep2_ch1()->selected_connection()->local_candidate().type());
+  DestroyChannels();
 }
 
 // Test that when the candidate filter is updated to be more restrictive,
@@ -5517,6 +5531,7 @@ TEST_F(P2PTransportChannelTest,
   ep1->allocator_->SetCandidateFilter(CF_NONE);
   SIMULATED_WAIT(false, kDefaultTimeout, clock);
   test_invariants();
+  DestroyChannels();
 }
 
 TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampening0) {
