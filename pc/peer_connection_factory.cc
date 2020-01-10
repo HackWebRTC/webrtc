@@ -55,9 +55,8 @@ CreateModularPeerConnectionFactory(
           std::move(dependencies)));
   // Call Initialize synchronously but make sure it is executed on
   // |signaling_thread|.
-  MethodCall<PeerConnectionFactory, bool> call(
-      pc_factory.get(), &PeerConnectionFactory::Initialize);
-  bool result = call.Marshal(RTC_FROM_HERE, pc_factory->signaling_thread());
+  bool result = pc_factory->signaling_thread()->Invoke<bool>(
+      RTC_FROM_HERE, [&] { return pc_factory->Initialize(); });
 
   if (!result) {
     return nullptr;
