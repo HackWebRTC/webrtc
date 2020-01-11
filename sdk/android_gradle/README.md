@@ -14,6 +14,12 @@ Note:
 + (re)Create `protoc` after updating WebRTC repo, to create the `protoc` program, you need build WebRTC Android via ninja once, let's assume the output dir is `out/android_ninja`, then the `protoc` will be `out/android_ninja/clang_x64/protoc`;
 + Delete `webrtc_build_dir` after updating WebRTC repo;
 
+## WebRTC src extractor
+
+`python3 webrtc_src_extractor.py <repo dir> <dst dir> <wanted src file, seperated by space>`
+
+If you only want use a small part of WebRTC code, this script could help you find all related sources and headers, and copy them into `dst dir`. Note that it's just a best effort script, you may still need copy some files manually.
+
 ## Caveat
 
 + Delete `webrtc_build_dir` and `.externalNativeBuild`, run `./gradlew genWebrtcSrc`, and "Refresh Linked C++ Projects" (note that "Sync Project with Gradle Files" won't work) before your build and debug, otherwise the generated sources may not be compiled, undefined reference error will happen, e.g. `webrtc::rtclog::Event` related references;
