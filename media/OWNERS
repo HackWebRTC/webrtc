@@ -7,6 +7,10 @@ perkj@webrtc.org
 shampson@webrtc.org
 steveanton@webrtc.org
 
+# Audio-related changes:
+peah@webrtc.org
+saza@webrtc.org
+
 # These are for the common case of adding or renaming files. If you're doing
 # structural changes, please get a review from a reviewer in this file.
 per-file *.gn=*
