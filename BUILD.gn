@@ -334,6 +334,9 @@ config("common_config") {
       # TODO(bugs.webrtc.org/9274): Remove these warnings as soon as MSVC allows
       # external headers warning suppression (or fix them upstream).
       cflags += [ "/wd4702" ]  # unreachable code
+
+      # MSVC 2019 warning suppressions for C++17 compiling
+      cflags += [ "/wd5041" ]  # out-of-line definition for constexpr static data member is not needed and is deprecated in C++17
     }
   }
 

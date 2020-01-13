@@ -1272,12 +1272,12 @@ rtc_library("audio_coding_modules_tests_shared") {
 
 if (rtc_include_tests) {
   audio_coding_deps = [
-    "../../common_audio",
-    "../../system_wrappers",
     ":audio_encoder_cng",
     ":g711",
     ":g722",
     ":pcm16b",
+    "../../common_audio",
+    "../../system_wrappers",
   ]
   if (rtc_include_ilbc) {
     audio_coding_deps += [ ":ilbc" ]
