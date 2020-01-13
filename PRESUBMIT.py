@@ -502,7 +502,10 @@ def CheckNoStreamUsageIsAdded(input_api, output_api,
     is_test = any(file_path.endswith(x) for x in ['_test.cc', '_tests.cc',
                                                   '_unittest.cc',
                                                   '_unittests.cc'])
-    return file_path.startswith('examples') or is_test
+    return (file_path.startswith('examples') or
+            file_path.startswith('test') or
+            is_test)
+
 
   for f in input_api.AffectedSourceFiles(file_filter):
     # Usage of stringstream is allowed under examples/ and in tests.

@@ -222,15 +222,22 @@ rtc_library("field_trial") {
 
 rtc_library("perf_test") {
   visibility = [ "*" ]
+  testonly = true
   sources = [
     "testsupport/perf_test.cc",
     "testsupport/perf_test.h",
+    "testsupport/perf_test_graphjson_writer.cc",
+    "testsupport/perf_test_graphjson_writer.h",
+    "testsupport/perf_test_histogram_writer.cc",
+    "testsupport/perf_test_histogram_writer.h",
+    "testsupport/perf_test_result_writer.h",
   ]
   deps = [
     "../api:array_view",
     "../rtc_base:checks",
     "../rtc_base:criticalsection",
     "../rtc_base:rtc_numerics",
+    "//third_party/abseil-cpp/absl/flags:flag",
   ]
 }
 

@@ -80,6 +80,7 @@ rtc_library("video_file_writer") {
 }
 
 rtc_library("video_quality_analysis") {
+  testonly = true
   sources = [
     "frame_analyzer/linear_least_squares.cc",
     "frame_analyzer/linear_least_squares.h",
@@ -207,6 +208,7 @@ if (!build_with_chromium) {
   }
 
   rtc_library("reference_less_video_analysis_lib") {
+    testonly = true
     sources = [
       "frame_analyzer/reference_less_video_analysis_lib.cc",
       "frame_analyzer/reference_less_video_analysis_lib.h",
