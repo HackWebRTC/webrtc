@@ -74,10 +74,6 @@ TEST(VideoSourceSinkControllerTest, VideoRestrictionsToSinkWants) {
   MockVideoSourceWithVideoFrame source;
   VideoSourceSinkController controller(&sink, &source);
 
-  // Balanced degradation preference gives us what we ask for.
-  EXPECT_CALL(source, AddOrUpdateSink(_, _)).Times(1);
-  controller.SetSource(&source, DegradationPreference::BALANCED);
-
   VideoSourceRestrictions restrictions = controller.restrictions();
   // max_pixels_per_frame() maps to |max_pixel_count|.
   restrictions.set_max_pixels_per_frame(42u);
@@ -95,24 +91,9 @@ TEST(VideoSourceSinkControllerTest, VideoRestrictionsToSinkWants) {
       });
   controller.PushSourceSinkSettings();
 
-  // Disabled degradation preference makes the "wants" unconstrained despite our
-  // restrictions.
-  EXPECT_CALL(source, AddOrUpdateSink(_, _)).Times(1);
-  controller.SetSource(&source, DegradationPreference::DISABLED);
-  EXPECT_CALL(source, AddOrUpdateSink(_, _))
-      .WillOnce([](rtc::VideoSinkInterface<VideoFrame>* sink,
-                   const rtc::VideoSinkWants& wants) {
-        EXPECT_EQ(wants.max_pixel_count, kIntUnconstrained);
-        EXPECT_FALSE(wants.target_pixel_count.has_value());
-        EXPECT_EQ(wants.max_framerate_fps, kIntUnconstrained);
-      });
-  controller.PushSourceSinkSettings();
-
-  // pixels_per_frame_upper_limit() caps |max_pixel_count| regardless of
-  // degradation preferences.
+  // pixels_per_frame_upper_limit() caps |max_pixel_count|.
   controller.SetPixelsPerFrameUpperLimit(24);
-  // frame_rate_upper_limit() caps |max_framerate_fps| regardless of degradation
-  // preferences.
+  // frame_rate_upper_limit() caps |max_framerate_fps|.
   controller.SetFrameRateUpperLimit(10.0);
 
   EXPECT_CALL(source, AddOrUpdateSink(_, _))

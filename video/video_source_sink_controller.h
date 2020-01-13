@@ -12,7 +12,6 @@
 #define VIDEO_VIDEO_SOURCE_SINK_CONTROLLER_H_
 
 #include "absl/types/optional.h"
-#include "api/rtp_parameters.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
@@ -30,12 +29,7 @@ class VideoSourceSinkController {
   VideoSourceSinkController(rtc::VideoSinkInterface<VideoFrame>* sink,
                             rtc::VideoSourceInterface<VideoFrame>* source);
 
-  // TODO(https://crbug.com/webrtc/11222): Remove dependency on
-  // DegradationPreference! How degradation preference affects
-  // VideoSourceRestrictions should not be a responsibility of the controller,
-  // but of the resource adaptation module.
-  void SetSource(rtc::VideoSourceInterface<VideoFrame>* source,
-                 DegradationPreference degradation_preference);
+  void SetSource(rtc::VideoSourceInterface<VideoFrame>* source);
   // Must be called in order for changes to settings to have an effect. This
   // allows you to modify multiple properties in a single push to the sink.
   void PushSourceSinkSettings();
@@ -55,15 +49,8 @@ class VideoSourceSinkController {
   void SetRotationApplied(bool rotation_applied);
   void SetResolutionAlignment(int resolution_alignment);
 
-  // TODO(https://crbug.com/webrtc/11222): Outside of testing, this is only used
-  // by OveruseFrameDetectorResourceAdaptationModule::RefreshTargetFramerate().
-  // When the DegradationPreference logic has moved outside of this class, there
-  // will be no public need for this method other than testing reasons and this
-  // can be renamed "ForTesting".
-  rtc::VideoSinkWants CurrentSettingsToSinkWants() const;
-
  private:
-  rtc::VideoSinkWants CurrentSettingsToSinkWantsInternal() const
+  rtc::VideoSinkWants CurrentSettingsToSinkWants() const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // TODO(hbos): If everything is handled on the same sequence (i.e.
@@ -72,7 +59,6 @@ class VideoSourceSinkController {
   mutable rtc::CriticalSection crit_;
   rtc::VideoSinkInterface<VideoFrame>* const sink_;
   rtc::VideoSourceInterface<VideoFrame>* source_ RTC_GUARDED_BY(&crit_);
-  DegradationPreference degradation_preference_ RTC_GUARDED_BY(&crit_);
   // Pixel and frame rate restrictions.
   VideoSourceRestrictions restrictions_ RTC_GUARDED_BY(&crit_);
   // Ensures that even if we are not restricted, the sink is never configured

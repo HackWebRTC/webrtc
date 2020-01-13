@@ -324,7 +324,6 @@ VideoStreamEncoder::VideoStreamEncoder(
       resource_adaptation_module_(
           std::make_unique<OveruseFrameDetectorResourceAdaptationModule>(
               /*video_stream_encoder=*/this,
-              video_source_sink_controller_.get(),
               std::move(overuse_detector),
               encoder_stats_observer,
               /*adaptation_listener=*/this)),
@@ -347,7 +346,7 @@ VideoStreamEncoder::~VideoStreamEncoder() {
 
 void VideoStreamEncoder::Stop() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  video_source_sink_controller_->SetSource(nullptr, DegradationPreference());
+  video_source_sink_controller_->SetSource(nullptr);
   encoder_queue_.PostTask([this] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     resource_adaptation_module_->StopCheckForOveruse();
@@ -388,7 +387,7 @@ void VideoStreamEncoder::SetSource(
     rtc::VideoSourceInterface<VideoFrame>* source,
     const DegradationPreference& degradation_preference) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  video_source_sink_controller_->SetSource(source, degradation_preference);
+  video_source_sink_controller_->SetSource(source);
   resource_adaptation_module_->SetHasInputVideoAndDegradationPreference(
       source, degradation_preference);
   encoder_queue_.PostTask([this, degradation_preference] {
@@ -1742,7 +1741,9 @@ void VideoStreamEncoder::TriggerAdaptUp(
 
 void VideoStreamEncoder::OnVideoSourceRestrictionsUpdated(
     VideoSourceRestrictions restrictions) {
-  RTC_DCHECK_RUN_ON(&encoder_queue_);
+  // TODO(https://crbug.com/webrtc/11222): DCHECK that we are using the
+  // |encoder_queue_| when OnVideoSourceRestrictionsUpdated() is no longer
+  // invoked off this thread due to VideoStreamEncoder::SetSource() stuff.
   video_source_sink_controller_->SetRestrictions(std::move(restrictions));
   video_source_sink_controller_->PushSourceSinkSettings();
 }

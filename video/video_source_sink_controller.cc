@@ -21,23 +21,19 @@ namespace webrtc {
 VideoSourceSinkController::VideoSourceSinkController(
     rtc::VideoSinkInterface<VideoFrame>* sink,
     rtc::VideoSourceInterface<VideoFrame>* source)
-    : sink_(sink),
-      source_(source),
-      degradation_preference_(DegradationPreference::DISABLED) {
+    : sink_(sink), source_(source) {
   RTC_DCHECK(sink_);
 }
 
 void VideoSourceSinkController::SetSource(
-    rtc::VideoSourceInterface<VideoFrame>* source,
-    DegradationPreference degradation_preference) {
+    rtc::VideoSourceInterface<VideoFrame>* source) {
   rtc::VideoSourceInterface<VideoFrame>* old_source;
   rtc::VideoSinkWants wants;
   {
     rtc::CritScope lock(&crit_);
     old_source = source_;
     source_ = source;
-    degradation_preference_ = degradation_preference;
-    wants = CurrentSettingsToSinkWantsInternal();
+    wants = CurrentSettingsToSinkWants();
   }
   if (old_source != source && old_source)
     old_source->RemoveSink(sink_);
@@ -50,7 +46,7 @@ void VideoSourceSinkController::PushSourceSinkSettings() {
   rtc::CritScope lock(&crit_);
   if (!source_)
     return;
-  source_->AddOrUpdateSink(sink_, CurrentSettingsToSinkWantsInternal());
+  source_->AddOrUpdateSink(sink_, CurrentSettingsToSinkWants());
 }
 
 VideoSourceRestrictions VideoSourceSinkController::restrictions() const {
@@ -109,15 +105,9 @@ void VideoSourceSinkController::SetResolutionAlignment(
   resolution_alignment_ = resolution_alignment;
 }
 
+// RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_)
 rtc::VideoSinkWants VideoSourceSinkController::CurrentSettingsToSinkWants()
     const {
-  rtc::CritScope lock(&crit_);
-  return CurrentSettingsToSinkWantsInternal();
-}
-
-// RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_)
-rtc::VideoSinkWants
-VideoSourceSinkController::CurrentSettingsToSinkWantsInternal() const {
   rtc::VideoSinkWants wants;
   wants.rotation_applied = rotation_applied_;
   // |wants.black_frames| is not used, it always has its default value false.
@@ -134,25 +124,6 @@ VideoSourceSinkController::CurrentSettingsToSinkWantsInternal() const {
           ? static_cast<int>(restrictions_.max_frame_rate().value())
           : std::numeric_limits<int>::max();
   wants.resolution_alignment = resolution_alignment_;
-  {
-    // Clear any constraints from the current sink wants that don't apply to
-    // the used degradation_preference.
-    switch (degradation_preference_) {
-      case DegradationPreference::BALANCED:
-        break;
-      case DegradationPreference::MAINTAIN_FRAMERATE:
-        wants.max_framerate_fps = std::numeric_limits<int>::max();
-        break;
-      case DegradationPreference::MAINTAIN_RESOLUTION:
-        wants.max_pixel_count = std::numeric_limits<int>::max();
-        wants.target_pixel_count.reset();
-        break;
-      case DegradationPreference::DISABLED:
-        wants.max_pixel_count = std::numeric_limits<int>::max();
-        wants.target_pixel_count.reset();
-        wants.max_framerate_fps = std::numeric_limits<int>::max();
-    }
-  }
   wants.max_pixel_count =
       std::min(wants.max_pixel_count,
                rtc::dchecked_cast<int>(pixels_per_frame_upper_limit_.value_or(
