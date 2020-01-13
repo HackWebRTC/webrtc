@@ -5,7 +5,7 @@ vars = {
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
-  'chromium_revision': 'b581de5b1b790aefd7e64b6fd1a06f92ba33783c',
+  'chromium_revision': '210e790756c23220f7010a1f4c13e5fe9ee84a8c',
 }
 
 deps = {
@@ -35,7 +35,7 @@ deps = {
     'packages': [
       {
         'package': 'gn/gn/linux-amd64',
-        'version': 'git_revision:a5bcbd726ac7bd342ca6ee3e3a006478fd1f00b5',
+        'version': 'git_revision:0c5557d173ce217cea095086a9c9610068123503',
       }
     ],
     'dep_type': 'cipd',
@@ -45,7 +45,7 @@ deps = {
     'packages': [
       {
         'package': 'gn/gn/mac-amd64',
-        'version': 'git_revision:a5bcbd726ac7bd342ca6ee3e3a006478fd1f00b5',
+        'version': 'git_revision:0c5557d173ce217cea095086a9c9610068123503',
       }
     ],
     'dep_type': 'cipd',
@@ -55,7 +55,7 @@ deps = {
     'packages': [
       {
         'package': 'gn/gn/windows-amd64',
-        'version': 'git_revision:a5bcbd726ac7bd342ca6ee3e3a006478fd1f00b5',
+        'version': 'git_revision:0c5557d173ce217cea095086a9c9610068123503',
       }
     ],
     'dep_type': 'cipd',
@@ -115,7 +115,7 @@ deps = {
   'src/third_party/colorama/src':
     'https://chromium.googlesource.com/external/colorama.git@799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
   'src/third_party/depot_tools':
-    'https://chromium.googlesource.com/chromium/tools/depot_tools.git@7a8bf94894ef3c5da4e09b1850e3b8a268153147',
+    'https://chromium.googlesource.com/chromium/tools/depot_tools.git@5e96ad12acb36b2aaf0fd91a9e2cc4ed48dafe61',
   'src/third_party/ffmpeg':
     'https://chromium.googlesource.com/chromium/third_party/ffmpeg.git@bcc5d9fec0a32ec5a90b831e5d0414639af34e1f',
   'src/third_party/findbugs': {
