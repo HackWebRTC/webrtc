@@ -16,6 +16,10 @@ if (rtc_include_tests) {
       "external_time_controller.h",
       "real_time_controller.cc",
       "real_time_controller.h",
+      "simulated_process_thread.cc",
+      "simulated_process_thread.h",
+      "simulated_task_queue.cc",
+      "simulated_task_queue.h",
       "simulated_time_controller.cc",
       "simulated_time_controller.h",
     ]

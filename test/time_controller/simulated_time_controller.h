@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "api/test/time_controller.h"
 #include "api/units/timestamp.h"
 #include "modules/include/module.h"
@@ -27,9 +28,21 @@
 #include "rtc_base/thread_checker.h"
 
 namespace webrtc {
-
 namespace sim_time_impl {
-class SimulatedSequenceRunner;
+class SimulatedSequenceRunner {
+ public:
+  virtual ~SimulatedSequenceRunner() = default;
+  // Provides next run time.
+  virtual Timestamp GetNextRunTime() const = 0;
+  // Runs all ready tasks and modules and updates next run time.
+  virtual void RunReady(Timestamp at_time) = 0;
+
+  // All implementations also implements TaskQueueBase in some form, but if we'd
+  // inherit from it in this interface we'd run into issues with double
+  // inheritance. Therefore we simply allow the implementations to provide a
+  // casted pointer to themself.
+  virtual TaskQueueBase* GetAsTaskQueue() = 0;
+};
 
 class SimulatedTimeControllerImpl : public TaskQueueFactory,
                                     public rtc::YieldInterface {
@@ -47,6 +60,7 @@ class SimulatedTimeControllerImpl : public TaskQueueFactory,
   void YieldExecution() override;
   // Create process thread with the name |thread_name|.
   std::unique_ptr<ProcessThread> CreateProcessThread(const char* thread_name);
+
   // Runs all runners in |runners_| that has tasks or modules ready for
   // execution.
   void RunReadyRunners();
@@ -61,7 +75,6 @@ class SimulatedTimeControllerImpl : public TaskQueueFactory,
 
  private:
   const rtc::PlatformThreadId thread_id_;
-  rtc::ThreadChecker thread_checker_;
   rtc::CriticalSection time_lock_;
   Timestamp current_time_ RTC_GUARDED_BY(time_lock_);
   rtc::CriticalSection lock_;
@@ -71,10 +84,26 @@ class SimulatedTimeControllerImpl : public TaskQueueFactory,
   // runners can removed from here by Unregister().
   std::list<SimulatedSequenceRunner*> ready_runners_ RTC_GUARDED_BY(lock_);
 
-  // Task queues on which YieldExecution has been called.
-  std::unordered_set<TaskQueueBase*> yielded_ RTC_GUARDED_BY(thread_checker_);
+  // Runners on which YieldExecution has been called.
+  std::unordered_set<TaskQueueBase*> yielded_;
 };
 }  // namespace sim_time_impl
+
+// Used to satisfy sequence checkers for non task queue sequences.
+class TokenTaskQueue : public TaskQueueBase {
+ public:
+  // Promoted to public
+  using CurrentTaskQueueSetter = TaskQueueBase::CurrentTaskQueueSetter;
+
+  void Delete() override { RTC_NOTREACHED(); }
+  void PostTask(std::unique_ptr<QueuedTask> /*task*/) override {
+    RTC_NOTREACHED();
+  }
+  void PostDelayedTask(std::unique_ptr<QueuedTask> /*task*/,
+                       uint32_t /*milliseconds*/) override {
+    RTC_NOTREACHED();
+  }
+};
 
 // TimeController implementation using completely simulated time. Task queues
 // and process threads created by this controller will run delayed activities
@@ -90,6 +119,7 @@ class GlobalSimulatedTimeController : public TimeController {
   TaskQueueFactory* GetTaskQueueFactory() override;
   std::unique_ptr<ProcessThread> CreateProcessThread(
       const char* thread_name) override;
+
   void AdvanceTime(TimeDelta duration) override;
 
  private:
