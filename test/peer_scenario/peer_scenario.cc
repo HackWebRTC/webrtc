@@ -84,9 +84,9 @@ void PeerScenario::SimpleConnection(
   net()->CreateRoute(callee->endpoint(), ret_link, caller->endpoint());
   auto signaling = ConnectSignaling(caller, callee, send_link, ret_link);
   signaling.StartIceSignaling();
-  rtc::Event done;
+  std::atomic<bool> done(false);
   signaling.NegotiateSdp(
-      [&](const SessionDescriptionInterface&) { done.Set(); });
+      [&](const SessionDescriptionInterface&) { done = true; });
   RTC_CHECK(WaitAndProcess(&done));
 }
 
@@ -99,13 +99,15 @@ void PeerScenario::AttachVideoQualityAnalyzer(VideoQualityAnalyzer* analyzer,
   receiver->AddVideoReceiveSink(send_track->id(), &pair->decode_tap_);
 }
 
-bool PeerScenario::WaitAndProcess(rtc::Event* event, TimeDelta max_duration) {
-  constexpr int kStepMs = 5;
-  if (event->Wait(0))
+bool PeerScenario::WaitAndProcess(std::atomic<bool>* event,
+                                  TimeDelta max_duration) {
+  const auto kStep = TimeDelta::ms(5);
+  if (*event)
     return true;
-  for (int elapsed = 0; elapsed < max_duration.ms(); elapsed += kStepMs) {
-    thread()->ProcessMessages(kStepMs);
-    if (event->Wait(0))
+  for (auto elapsed = TimeDelta::Zero(); elapsed < max_duration;
+       elapsed += kStep) {
+    thread()->ProcessMessages(kStep.ms());
+    if (*event)
       return true;
   }
   return false;

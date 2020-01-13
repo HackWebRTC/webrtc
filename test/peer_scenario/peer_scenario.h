@@ -84,7 +84,7 @@ class PeerScenario {
                                   PeerScenarioClient* receiver);
 
   // Waits on |event| while processing messages on the signaling thread.
-  bool WaitAndProcess(rtc::Event* event,
+  bool WaitAndProcess(std::atomic<bool>* event,
                       TimeDelta max_duration = TimeDelta::seconds(5));
 
   // Process messages on the signaling thread for the given duration.

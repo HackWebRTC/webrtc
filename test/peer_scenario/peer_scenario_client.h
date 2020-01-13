@@ -147,12 +147,12 @@ class PeerScenarioClient {
 
  private:
   const std::map<int, EmulatedEndpoint*> endpoints_;
+  TaskQueueFactory* task_queue_factory_;
   rtc::Thread* const signaling_thread_;
   const std::unique_ptr<LogWriterFactoryInterface> log_writer_factory_;
   const std::unique_ptr<rtc::Thread> worker_thread_;
   CallbackHandlers handlers_ RTC_GUARDED_BY(signaling_thread_);
   const std::unique_ptr<PeerConnectionObserver> observer_;
-  TaskQueueFactory* task_queue_factory_;
   std::map<std::string, std::vector<rtc::VideoSinkInterface<VideoFrame>*>>
       track_id_to_video_sinks_ RTC_GUARDED_BY(signaling_thread_);
   std::list<std::unique_ptr<IceCandidateInterface>> pending_ice_candidates_

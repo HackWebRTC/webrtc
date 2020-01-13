@@ -21,7 +21,6 @@
 #include "rtc_base/socket_server.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_checker.h"
-#include "test/network/fake_network_socket_server.h"
 #include "test/network/network_emulation.h"
 
 namespace webrtc {
@@ -48,7 +47,7 @@ class EmulatedNetworkManager : public rtc::NetworkManagerBase,
   void GetAnyAddressNetworks(NetworkList* networks) override {}
 
   // EmulatedNetworkManagerInterface API
-  rtc::Thread* network_thread() override { return &network_thread_; }
+  rtc::Thread* network_thread() override { return network_thread_.get(); }
   rtc::NetworkManager* network_manager() override { return this; }
   void GetStats(
       std::function<void(EmulatedNetworkStats)> stats_callback) const override;
@@ -59,8 +58,7 @@ class EmulatedNetworkManager : public rtc::NetworkManagerBase,
 
   TaskQueueForTest* const task_queue_;
   EndpointsContainer* const endpoints_container_;
-  FakeNetworkSocketServer socket_server_;
-  rtc::Thread network_thread_;
+  std::unique_ptr<rtc::Thread> network_thread_;
 
   bool sent_first_update_ RTC_GUARDED_BY(network_thread_);
   int start_count_ RTC_GUARDED_BY(network_thread_);
