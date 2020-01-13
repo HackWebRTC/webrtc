@@ -44,11 +44,9 @@ class GainControlImpl : public GainControl {
                                     std::vector<int16_t>* packed_buffer);
 
   // GainControl implementation.
-  bool is_enabled() const override { return enabled_; }
   int stream_analog_level() const override;
   bool is_limiter_enabled() const override { return limiter_enabled_; }
   Mode mode() const override { return mode_; }
-  int Enable(bool enable) override;
   int set_mode(Mode mode) override;
   int compression_gain_db() const override { return compression_gain_db_; }
   int set_analog_level_limits(int minimum, int maximum) override;
@@ -70,8 +68,6 @@ class GainControlImpl : public GainControl {
 
   std::unique_ptr<ApmDataDumper> data_dumper_;
 
-  bool enabled_ = false;
-
   const bool use_legacy_gain_applier_;
   Mode mode_;
   int minimum_capture_level_;
@@ -79,7 +75,7 @@ class GainControlImpl : public GainControl {
   bool limiter_enabled_;
   int target_level_dbfs_;
   int compression_gain_db_;
-  int analog_capture_level_;
+  int analog_capture_level_ = 0;
   bool was_analog_level_set_;
   bool stream_is_saturated_;
 

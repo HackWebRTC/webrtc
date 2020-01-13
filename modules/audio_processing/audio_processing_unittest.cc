@@ -430,10 +430,9 @@ ApmTest::ApmTest()
       far_file_(NULL),
       near_file_(NULL),
       out_file_(NULL) {
-  Config config;
-  config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
-  apm_.reset(AudioProcessingBuilder().Create(config));
+  apm_.reset(AudioProcessingBuilder().Create());
   AudioProcessing::Config apm_config = apm_->GetConfig();
+  apm_config.gain_controller1.analog_gain_controller.enabled = false;
   apm_config.pipeline.maximum_internal_processing_rate = 48000;
   apm_->ApplyConfig(apm_config);
 }
@@ -967,42 +966,49 @@ TEST_F(ApmTest, GainControl) {
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 TEST_F(ApmTest, GainControlDiesOnTooLowTargetLevelDbfs) {
   auto config = apm_->GetConfig();
+  config.gain_controller1.enabled = true;
   config.gain_controller1.target_level_dbfs = -1;
   EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
 TEST_F(ApmTest, GainControlDiesOnTooHighTargetLevelDbfs) {
   auto config = apm_->GetConfig();
+  config.gain_controller1.enabled = true;
   config.gain_controller1.target_level_dbfs = 32;
   EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
 TEST_F(ApmTest, GainControlDiesOnTooLowCompressionGainDb) {
   auto config = apm_->GetConfig();
+  config.gain_controller1.enabled = true;
   config.gain_controller1.compression_gain_db = -1;
   EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
 TEST_F(ApmTest, GainControlDiesOnTooHighCompressionGainDb) {
   auto config = apm_->GetConfig();
+  config.gain_controller1.enabled = true;
   config.gain_controller1.compression_gain_db = 91;
   EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
 TEST_F(ApmTest, GainControlDiesOnTooLowAnalogLevelLowerLimit) {
   auto config = apm_->GetConfig();
+  config.gain_controller1.enabled = true;
   config.gain_controller1.analog_level_minimum = -1;
   EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
 TEST_F(ApmTest, GainControlDiesOnTooHighAnalogLevelUpperLimit) {
   auto config = apm_->GetConfig();
+  config.gain_controller1.enabled = true;
   config.gain_controller1.analog_level_maximum = 65536;
   EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
 TEST_F(ApmTest, GainControlDiesOnInvertedAnalogLevelLimits) {
   auto config = apm_->GetConfig();
+  config.gain_controller1.enabled = true;
   config.gain_controller1.analog_level_minimum = 512;
   config.gain_controller1.analog_level_maximum = 255;
   EXPECT_DEATH(apm_->ApplyConfig(config), "");
@@ -1010,6 +1016,7 @@ TEST_F(ApmTest, GainControlDiesOnInvertedAnalogLevelLimits) {
 
 TEST_F(ApmTest, ApmDiesOnTooLowAnalogLevel) {
   auto config = apm_->GetConfig();
+  config.gain_controller1.enabled = true;
   config.gain_controller1.analog_level_minimum = 255;
   config.gain_controller1.analog_level_maximum = 512;
   apm_->ApplyConfig(config);
@@ -1018,6 +1025,7 @@ TEST_F(ApmTest, ApmDiesOnTooLowAnalogLevel) {
 
 TEST_F(ApmTest, ApmDiesOnTooHighAnalogLevel) {
   auto config = apm_->GetConfig();
+  config.gain_controller1.enabled = true;
   config.gain_controller1.analog_level_minimum = 255;
   config.gain_controller1.analog_level_maximum = 512;
   apm_->ApplyConfig(config);
@@ -1533,9 +1541,10 @@ TEST_F(ApmTest, Process) {
     if (test->num_input_channels() != test->num_output_channels())
       continue;
 
-    Config config;
-    config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
-    apm_.reset(AudioProcessingBuilder().Create(config));
+    apm_.reset(AudioProcessingBuilder().Create());
+    AudioProcessing::Config apm_config = apm_->GetConfig();
+    apm_config.gain_controller1.analog_gain_controller.enabled = false;
+    apm_->ApplyConfig(apm_config);
 
     EnableAllComponents();
 
@@ -1818,10 +1827,11 @@ class AudioProcessingTest
                             size_t num_reverse_input_channels,
                             size_t num_reverse_output_channels,
                             const std::string& output_file_prefix) {
-    Config config;
-    config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
-    std::unique_ptr<AudioProcessing> ap(
-        AudioProcessingBuilder().Create(config));
+    std::unique_ptr<AudioProcessing> ap(AudioProcessingBuilder().Create());
+    AudioProcessing::Config apm_config = ap->GetConfig();
+    apm_config.gain_controller1.analog_gain_controller.enabled = false;
+    ap->ApplyConfig(apm_config);
+
     EnableAllAPComponents(ap.get());
 
     ProcessingConfig processing_config = {

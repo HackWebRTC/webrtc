@@ -20,9 +20,6 @@ namespace webrtc {
 // Recommended to be enabled on the client-side.
 class GainControl {
  public:
-  virtual int Enable(bool enable) = 0;
-  virtual bool is_enabled() const = 0;
-
   // When an analog mode is set, this must be called prior to |ProcessStream()|
   // to pass the current analog level from the audio HAL. Must be within the
   // range provided to |set_analog_level_limits()|.

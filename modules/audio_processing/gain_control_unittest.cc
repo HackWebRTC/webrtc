@@ -52,7 +52,6 @@ void SetupComponent(int sample_rate_hz,
                     GainControlImpl* gain_controller) {
   gain_controller->Initialize(1, sample_rate_hz);
   GainControl* gc = static_cast<GainControl*>(gain_controller);
-  gc->Enable(true);
   gc->set_mode(mode);
   gc->set_stream_analog_level(stream_analog_level);
   gc->set_target_level_dbfs(target_level_dbfs);

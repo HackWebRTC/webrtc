@@ -180,11 +180,6 @@ void DebugDumpReplayer::MaybeRecreateApm(const audioproc::Config& msg) {
   // These configurations cannot be changed on the fly.
   Config config;
   RTC_CHECK(msg.has_aec_delay_agnostic_enabled());
-
-  RTC_CHECK(msg.has_noise_robust_agc_enabled());
-  config.Set<ExperimentalAgc>(
-      new ExperimentalAgc(msg.noise_robust_agc_enabled()));
-
   RTC_CHECK(msg.has_aec_extended_filter_enabled());
 
   // We only create APM once, since changes on these fields should not
@@ -235,6 +230,9 @@ void DebugDumpReplayer::ConfigureApm(const audioproc::Config& msg) {
       static_cast<AudioProcessing::Config::GainController1::Mode>(
           msg.agc_mode());
   apm_config.gain_controller1.enable_limiter = msg.agc_limiter_enabled();
+  RTC_CHECK(msg.has_noise_robust_agc_enabled());
+  apm_config.gain_controller1.analog_gain_controller.enabled =
+      msg.noise_robust_agc_enabled();
 
   apm_->ApplyConfig(apm_config);
 }

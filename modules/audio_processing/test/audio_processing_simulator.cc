@@ -494,15 +494,20 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
     apm_config.gain_controller1.compression_gain_db =
         *settings_.agc_compression_gain;
   }
+  if (settings_.use_analog_agc) {
+    apm_config.gain_controller1.analog_gain_controller.enabled =
+        *settings_.use_analog_agc;
+  }
+  if (settings_.use_analog_agc_agc2_level_estimator) {
+    apm_config.gain_controller1.analog_gain_controller
+        .enable_agc2_level_estimator =
+        *settings_.use_analog_agc_agc2_level_estimator;
+  }
+  if (settings_.analog_agc_disable_digital_adaptive) {
+    apm_config.gain_controller1.analog_gain_controller.enable_digital_adaptive =
+        *settings_.analog_agc_disable_digital_adaptive;
+  }
 
-  config.Set<ExperimentalAgc>(new ExperimentalAgc(
-      !settings_.use_experimental_agc || *settings_.use_experimental_agc,
-      !!settings_.use_experimental_agc_agc2_level_estimator &&
-          *settings_.use_experimental_agc_agc2_level_estimator,
-      !!settings_.experimental_agc_disable_digital_adaptive &&
-          *settings_.experimental_agc_disable_digital_adaptive,
-      !!settings_.experimental_agc_analyze_before_aec &&
-          *settings_.experimental_agc_analyze_before_aec));
   if (settings_.use_ed) {
     apm_config.residual_echo_detector.enabled = *settings_.use_ed;
   }

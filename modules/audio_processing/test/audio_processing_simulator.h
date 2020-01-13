@@ -57,14 +57,13 @@ struct SimulationSettings {
   absl::optional<bool> use_hpf;
   absl::optional<bool> use_ns;
   absl::optional<bool> use_ts;
+  absl::optional<bool> use_analog_agc;
   absl::optional<bool> use_vad;
   absl::optional<bool> use_le;
   absl::optional<bool> use_all;
   absl::optional<bool> use_legacy_ns;
-  absl::optional<bool> use_experimental_agc;
-  absl::optional<bool> use_experimental_agc_agc2_level_estimator;
-  absl::optional<bool> experimental_agc_disable_digital_adaptive;
-  absl::optional<bool> experimental_agc_analyze_before_aec;
+  absl::optional<bool> use_analog_agc_agc2_level_estimator;
+  absl::optional<bool> analog_agc_disable_digital_adaptive;
   absl::optional<int> agc_mode;
   absl::optional<int> agc_target_level;
   absl::optional<bool> use_agc_limiter;
