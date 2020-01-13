@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/message_queue.h"
+#include "rtc_base/thread.h"
 
 #include <functional>
 
@@ -29,14 +29,14 @@ namespace {
 
 using ::webrtc::ToQueuedTask;
 
-class MessageQueueTest : public ::testing::Test, public MessageQueue {
+class MessageQueueTest : public ::testing::Test, public Thread {
  public:
-  MessageQueueTest() : MessageQueue(SocketServer::CreateDefault(), true) {}
+  MessageQueueTest() : Thread(SocketServer::CreateDefault(), true) {}
   bool IsLocked_Worker() {
-    if (!crit_.TryEnter()) {
+    if (!CritForTest()->TryEnter()) {
       return true;
     }
-    crit_.Leave();
+    CritForTest()->Leave();
     return false;
   }
   bool IsLocked() {
@@ -61,8 +61,7 @@ struct DeletedLockChecker {
   bool* deleted;
 };
 
-static void DelayedPostsWithIdenticalTimesAreProcessedInFifoOrder(
-    MessageQueue* q) {
+static void DelayedPostsWithIdenticalTimesAreProcessedInFifoOrder(Thread* q) {
   EXPECT_TRUE(q != nullptr);
   int64_t now = TimeMillis();
   q->PostAt(RTC_FROM_HERE, now, nullptr, 3);
@@ -83,11 +82,11 @@ static void DelayedPostsWithIdenticalTimesAreProcessedInFifoOrder(
 
 TEST_F(MessageQueueTest,
        DelayedPostsWithIdenticalTimesAreProcessedInFifoOrder) {
-  MessageQueue q(SocketServer::CreateDefault(), true);
+  Thread q(SocketServer::CreateDefault(), true);
   DelayedPostsWithIdenticalTimesAreProcessedInFifoOrder(&q);
 
   NullSocketServer nullss;
-  MessageQueue q_nullss(&nullss, true);
+  Thread q_nullss(&nullss, true);
   DelayedPostsWithIdenticalTimesAreProcessedInFifoOrder(&q_nullss);
 }
 
@@ -127,7 +126,7 @@ TEST_F(MessageQueueTest, DiposeHandlerWithPostedMessagePending) {
 // Ensure that ProcessAllMessageQueues does its essential function; process
 // all messages (both delayed and non delayed) up until the current time, on
 // all registered message queues.
-TEST(MessageQueueManager, ProcessAllMessageQueues) {
+TEST(ThreadManager, ProcessAllMessageQueues) {
   Event entered_process_all_message_queues(true, false);
   auto a = Thread::CreateWithSocketServer();
   auto b = Thread::CreateWithSocketServer();
@@ -155,21 +154,21 @@ TEST(MessageQueueManager, ProcessAllMessageQueues) {
   b->PostDelayedTask(ToQueuedTask(incrementer), 0);
   rtc::Thread::Current()->PostTask(ToQueuedTask(event_signaler));
 
-  MessageQueueManager::ProcessAllMessageQueuesForTesting();
+  ThreadManager::ProcessAllMessageQueuesForTesting();
   EXPECT_EQ(4, AtomicOps::AcquireLoad(&messages_processed));
 }
 
 // Test that ProcessAllMessageQueues doesn't hang if a thread is quitting.
-TEST(MessageQueueManager, ProcessAllMessageQueuesWithQuittingThread) {
+TEST(ThreadManager, ProcessAllMessageQueuesWithQuittingThread) {
   auto t = Thread::CreateWithSocketServer();
   t->Start();
   t->Quit();
-  MessageQueueManager::ProcessAllMessageQueuesForTesting();
+  ThreadManager::ProcessAllMessageQueuesForTesting();
 }
 
 // Test that ProcessAllMessageQueues doesn't hang if a queue clears its
 // messages.
-TEST(MessageQueueManager, ProcessAllMessageQueuesWithClearedQueue) {
+TEST(ThreadManager, ProcessAllMessageQueuesWithClearedQueue) {
   Event entered_process_all_message_queues(true, false);
   auto t = Thread::CreateWithSocketServer();
   t->Start();
@@ -189,7 +188,7 @@ TEST(MessageQueueManager, ProcessAllMessageQueuesWithClearedQueue) {
   // Post messages (both delayed and non delayed) to both threads.
   t->PostTask(RTC_FROM_HERE, clearer);
   rtc::Thread::Current()->PostTask(RTC_FROM_HERE, event_signaler);
-  MessageQueueManager::ProcessAllMessageQueuesForTesting();
+  ThreadManager::ProcessAllMessageQueuesForTesting();
 }
 
 class RefCountedHandler : public MessageHandler, public rtc::RefCountInterface {
@@ -202,7 +201,7 @@ class EmptyHandler : public MessageHandler {
   void OnMessage(Message* msg) override {}
 };
 
-TEST(MessageQueueManager, ClearReentrant) {
+TEST(ThreadManager, ClearReentrant) {
   std::unique_ptr<Thread> t(Thread::Create());
   EmptyHandler handler;
   RefCountedHandler* inner_handler(

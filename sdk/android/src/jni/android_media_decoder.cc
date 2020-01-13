@@ -264,7 +264,7 @@ int32_t MediaCodecVideoDecoder::ResetDecodeOnCodecThread() {
         << ". Frames decoded: " << frames_decoded_;
 
   inited_ = false;
-  rtc::MessageQueueManager::Clear(this);
+  rtc::ThreadManager::Clear(this);
   ResetVariables();
 
   Java_MediaCodecVideoDecoder_reset(jni, j_media_codec_video_decoder_,
@@ -300,7 +300,7 @@ int32_t MediaCodecVideoDecoder::ReleaseOnCodecThread() {
   input_buffers_.clear();
   Java_MediaCodecVideoDecoder_release(jni, j_media_codec_video_decoder_);
   inited_ = false;
-  rtc::MessageQueueManager::Clear(this);
+  rtc::ThreadManager::Clear(this);
   if (CheckException(jni)) {
     ALOGE << "Decoder release exception";
     return WEBRTC_VIDEO_CODEC_ERROR;

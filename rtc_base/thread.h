@@ -15,8 +15,10 @@
 
 #include <list>
 #include <memory>
+#include <queue>
 #include <string>
 #include <type_traits>
+#include <vector>
 
 #if defined(WEBRTC_POSIX)
 #include <pthread.h>
@@ -25,13 +27,14 @@
 #include "api/task_queue/queued_task.h"
 #include "api/task_queue/task_queue_base.h"
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/location.h"
 #include "rtc_base/message_handler.h"
-#include "rtc_base/message_queue.h"
 #include "rtc_base/platform_thread_types.h"
 #include "rtc_base/socket_server.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread_annotations.h"
+#include "rtc_base/thread_message.h"
 
 #if defined(WEBRTC_WIN)
 #include "rtc_base/win32.h"
@@ -73,6 +76,18 @@ class RTC_EXPORT ThreadManager {
   // Singleton, constructor and destructor are private.
   static ThreadManager* Instance();
 
+  static void Add(Thread* message_queue);
+  static void Remove(Thread* message_queue);
+  static void Clear(MessageHandler* handler);
+
+  // TODO(nisse): Delete alias, as soon as downstream code is updated.
+  static void ProcessAllMessageQueues() { ProcessAllMessageQueuesForTesting(); }
+
+  // For testing purposes, for use with a simulated clock.
+  // Ensures that all message queues have processed delayed messages
+  // up until the current point in time.
+  static void ProcessAllMessageQueuesForTesting();
+
   Thread* CurrentThread();
   void SetCurrentThread(Thread* thread);
 
@@ -98,6 +113,20 @@ class RTC_EXPORT ThreadManager {
   ThreadManager();
   ~ThreadManager();
 
+  void AddInternal(Thread* message_queue);
+  void RemoveInternal(Thread* message_queue);
+  void ClearInternal(MessageHandler* handler);
+  void ProcessAllMessageQueuesInternal();
+
+  // This list contains all live Threads.
+  std::vector<Thread*> message_queues_ RTC_GUARDED_BY(crit_);
+
+  // Methods that don't modify the list of message queues may be called in a
+  // re-entrant fashion. "processing_" keeps track of the depth of re-entrant
+  // calls.
+  CriticalSection crit_;
+  size_t processing_ RTC_GUARDED_BY(crit_) = 0;
+
 #if defined(WEBRTC_POSIX)
   pthread_key_t key_;
 #endif
@@ -121,11 +150,18 @@ struct _SendMessage {
 
 // WARNING! SUBCLASSES MUST CALL Stop() IN THEIR DESTRUCTORS!  See ~Thread().
 
-class RTC_LOCKABLE RTC_EXPORT Thread : public MessageQueue,
-                                       public webrtc::TaskQueueBase {
+class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
  public:
+  static const int kForever = -1;
+
+  // Create a new Thread and optionally assign it to the passed
+  // SocketServer. Subclasses that override Clear should pass false for
+  // init_queue and call DoInit() from their constructor to prevent races
+  // with the ThreadManager using the object while the vtable is still
+  // being created.
   explicit Thread(SocketServer* ss);
   explicit Thread(std::unique_ptr<SocketServer> ss);
+
   // Constructors meant for subclasses; they should call DoInit themselves and
   // pass false for |do_init|, so that DoInit is called only on the fully
   // instantiated class, which avoids a vptr data race.
@@ -136,6 +172,11 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public MessageQueue,
   // guarantee Stop() is explicitly called before the subclass is destroyed).
   // This is required to avoid a data race between the destructor modifying the
   // vtable, and the Thread::PreRun calling the virtual method Run().
+
+  // NOTE: SUBCLASSES OF Thread THAT OVERRIDE Clear MUST CALL
+  // DoDestroy() IN THEIR DESTRUCTORS! This is required to avoid a data race
+  // between the destructor modifying the vtable, and the ThreadManager
+  // calling Clear on the object from a different thread.
   ~Thread() override;
 
   static std::unique_ptr<Thread> CreateWithSocketServer();
@@ -159,6 +200,78 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public MessageQueue,
     const bool previous_state_;
   };
 
+  SocketServer* socketserver();
+
+  // Note: The behavior of Thread has changed.  When a thread is stopped,
+  // futher Posts and Sends will fail.  However, any pending Sends and *ready*
+  // Posts (as opposed to unexpired delayed Posts) will be delivered before
+  // Get (or Peek) returns false.  By guaranteeing delivery of those messages,
+  // we eliminate the race condition when an MessageHandler and Thread
+  // may be destroyed independently of each other.
+  virtual void Quit();
+  virtual bool IsQuitting();
+  virtual void Restart();
+  // Not all message queues actually process messages (such as SignalThread).
+  // In those cases, it's important to know, before posting, that it won't be
+  // Processed.  Normally, this would be true until IsQuitting() is true.
+  virtual bool IsProcessingMessagesForTesting();
+
+  // Get() will process I/O until:
+  //  1) A message is available (returns true)
+  //  2) cmsWait seconds have elapsed (returns false)
+  //  3) Stop() is called (returns false)
+  virtual bool Get(Message* pmsg,
+                   int cmsWait = kForever,
+                   bool process_io = true);
+  virtual bool Peek(Message* pmsg, int cmsWait = 0);
+  virtual void Post(const Location& posted_from,
+                    MessageHandler* phandler,
+                    uint32_t id = 0,
+                    MessageData* pdata = nullptr,
+                    bool time_sensitive = false);
+  virtual void PostDelayed(const Location& posted_from,
+                           int cmsDelay,
+                           MessageHandler* phandler,
+                           uint32_t id = 0,
+                           MessageData* pdata = nullptr);
+  virtual void PostAt(const Location& posted_from,
+                      int64_t tstamp,
+                      MessageHandler* phandler,
+                      uint32_t id = 0,
+                      MessageData* pdata = nullptr);
+  // TODO(honghaiz): Remove this when all the dependencies are removed.
+  virtual void PostAt(const Location& posted_from,
+                      uint32_t tstamp,
+                      MessageHandler* phandler,
+                      uint32_t id = 0,
+                      MessageData* pdata = nullptr);
+  virtual void Clear(MessageHandler* phandler,
+                     uint32_t id = MQID_ANY,
+                     MessageList* removed = nullptr);
+  virtual void Dispatch(Message* pmsg);
+  virtual void ReceiveSends();
+
+  // Amount of time until the next message can be retrieved
+  virtual int GetDelay();
+
+  bool empty() const { return size() == 0u; }
+  size_t size() const {
+    CritScope cs(&crit_);  // msgq_.size() is not thread safe.
+    return msgq_.size() + dmsgq_.size() + (fPeekKeep_ ? 1u : 0u);
+  }
+
+  // Internally posts a message which causes the doomed object to be deleted
+  template <class T>
+  void Dispose(T* doomed) {
+    if (doomed) {
+      Post(RTC_FROM_HERE, nullptr, MQID_DISPOSE, new DisposeData<T>(doomed));
+    }
+  }
+
+  // When this signal is sent out, any references to this queue should
+  // no longer be used.
+  sigslot::signal0<> SignalQueueDestroyed;
+
   bool IsCurrent() const;
 
   // Sleeps the calling thread for the specified number of milliseconds, during
@@ -176,7 +289,7 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public MessageQueue,
 
   // Tells the thread to stop and waits until it is joined.
   // Never call Stop on the current thread.  Instead use the inherited Quit
-  // function which will exit the base MessageQueue without terminating the
+  // function which will exit the base Thread without terminating the
   // underlying OS thread.
   virtual void Stop();
 
@@ -272,13 +385,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public MessageQueue,
                        uint32_t milliseconds) override;
   void Delete() override;
 
-  // From MessageQueue
-  bool IsProcessingMessagesForTesting() override;
-  void Clear(MessageHandler* phandler,
-             uint32_t id = MQID_ANY,
-             MessageList* removed = nullptr) override;
-  void ReceiveSends() override;
-
   // ProcessMessages will process I/O and dispatch messages until:
   //  1) cms milliseconds have elapsed (returns true)
   //  2) Stop() is called (returns false)
@@ -321,6 +427,35 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public MessageQueue,
 #endif
 
  protected:
+  class PriorityQueue : public std::priority_queue<DelayedMessage> {
+   public:
+    container_type& container() { return c; }
+    void reheap() { make_heap(c.begin(), c.end(), comp); }
+  };
+
+  void DoDelayPost(const Location& posted_from,
+                   int64_t cmsDelay,
+                   int64_t tstamp,
+                   MessageHandler* phandler,
+                   uint32_t id,
+                   MessageData* pdata);
+
+  // Perform initialization, subclasses must call this from their constructor
+  // if false was passed as init_queue to the Thread constructor.
+  void DoInit();
+
+  // Does not take any lock. Must be called either while holding crit_, or by
+  // the destructor (by definition, the latter has exclusive access).
+  void ClearInternal(MessageHandler* phandler,
+                     uint32_t id,
+                     MessageList* removed) RTC_EXCLUSIVE_LOCKS_REQUIRED(&crit_);
+
+  // Perform cleanup; subclasses must call this from the destructor,
+  // and are not expected to actually hold the lock.
+  void DoDestroy() RTC_EXCLUSIVE_LOCKS_REQUIRED(&crit_);
+
+  void WakeUpSocketServer();
+
   // Same as WrapCurrent except that it never fails as it does not try to
   // acquire the synchronization access of the thread. The caller should never
   // call Stop() or Join() on this thread.
@@ -332,6 +467,8 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public MessageQueue,
   static void AssertBlockingIsAllowedOnCurrentThread();
 
   friend class ScopedDisallowBlockingCalls;
+
+  CriticalSection* CritForTest() { return &crit_; }
 
  private:
   class QueuedTaskHandler final : public MessageHandler {
@@ -376,6 +513,22 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public MessageQueue,
   // Returns a static-lifetime MessageHandler which runs message with
   // MessageLikeTask payload data.
   static MessageHandler* GetPostTaskMessageHandler();
+
+  bool fPeekKeep_;
+  Message msgPeek_;
+  MessageList msgq_ RTC_GUARDED_BY(crit_);
+  PriorityQueue dmsgq_ RTC_GUARDED_BY(crit_);
+  uint32_t dmsgq_next_num_ RTC_GUARDED_BY(crit_);
+  CriticalSection crit_;
+  bool fInitialized_;
+  bool fDestroyed_;
+
+  volatile int stop_;
+
+  // The SocketServer might not be owned by Thread.
+  SocketServer* const ss_;
+  // Used if SocketServer ownership lies with |this|.
+  std::unique_ptr<SocketServer> own_ss_;
 
   std::list<_SendMessage> sendlist_;
   std::string name_;
@@ -436,6 +589,10 @@ class AutoSocketServerThread : public Thread {
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AutoSocketServerThread);
 };
+
+// TODO(srte): Remove these when all dependencies has been updated.
+using MessageQueue = Thread;
+using MessageQueueManager = ThreadManager;
 
 }  // namespace rtc
 

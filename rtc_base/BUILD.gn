@@ -845,7 +845,6 @@ rtc_library("rtc_base") {
     "message_digest.h",
     "message_handler.cc",
     "message_handler.h",
-    "message_queue.cc",
     "message_queue.h",
     "net_helper.cc",
     "net_helper.h",
@@ -909,6 +908,7 @@ rtc_library("rtc_base") {
     "stream.h",
     "thread.cc",
     "thread.h",
+    "thread_message.h",
     "unique_id_generator.cc",
     "unique_id_generator.h",
   ]
