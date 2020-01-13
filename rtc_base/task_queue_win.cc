@@ -134,11 +134,15 @@ class MultimediaTimer {
   }
 
   void Cancel() {
-    ::ResetEvent(event_);
     if (timer_id_) {
       ::timeKillEvent(timer_id_);
       timer_id_ = 0;
     }
+    // Now that timer is killed and not able to set the event, reset the event.
+    // Doing it in opposite order is racy because event may be set between
+    // event was reset and timer is killed leaving MultimediaTimer in surprising
+    // state where both event is set and timer is canceled.
+    ::ResetEvent(event_);
   }
 
   HANDLE* event_for_wait() { return &event_; }
