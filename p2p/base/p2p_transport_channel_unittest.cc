@@ -5639,7 +5639,7 @@ TEST(P2PTransportChannel, InjectIceController) {
   MockIceControllerFactory factory;
   FakePortAllocator pa(rtc::Thread::Current(), nullptr);
   EXPECT_CALL(factory, RecordIceControllerCreated()).Times(1);
-  std::make_unique<cricket::P2PTransportChannel>(
+  auto dummy = std::make_unique<cricket::P2PTransportChannel>(
       "transport_name",
       /* component= */ 77, &pa,
       /* async_resolver_factory = */ nullptr,
