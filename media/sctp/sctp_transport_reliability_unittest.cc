@@ -403,7 +403,7 @@ class SctpPingPong final {
     return result;
   }
 
-  void WaitForCompletion(uint32_t timeout_millis) {
+  void WaitForCompletion(int32_t timeout_millis) {
     if (data_sender1_ == nullptr) {
       ReportError("SctpPingPong id = " + rtc::ToString(id_) +
                   ", sender 1 is not created");
@@ -593,6 +593,20 @@ class SctpPingPong final {
   RTC_DISALLOW_COPY_AND_ASSIGN(SctpPingPong);
 };
 
+/**
+ * Helper function to calculate max number of milliseconds
+ * allowed for test to run based on test configuration.
+ */
+constexpr int32_t GetExecutionTimeLimitInMillis(uint32_t total_messages,
+                                                uint8_t packet_loss_percents) {
+  return std::min<int64_t>(
+      std::numeric_limits<int32_t>::max(),
+      std::max<int64_t>(
+          1LL * total_messages * 100 *
+              std::max(1, packet_loss_percents * packet_loss_percents),
+          kDefaultTimeout));
+}
+
 }  // namespace
 
 namespace cricket {
@@ -631,6 +645,10 @@ TEST_F(UsrSctpReliabilityTest,
   constexpr uint8_t packet_loss_percents = 0;
   constexpr uint16_t avg_send_delay_millis = 10;
   constexpr uint32_t messages_count = 100;
+  constexpr int32_t wait_timeout =
+      GetExecutionTimeLimitInMillis(messages_count, packet_loss_percents);
+  static_assert(wait_timeout > 0,
+                "Timeout computation must produce positive value");
 
   cricket::SendDataParams send_params;
   send_params.sid = -1;
@@ -643,8 +661,7 @@ TEST_F(UsrSctpReliabilityTest,
                     thread2.get(), messages_count, packet_loss_percents,
                     avg_send_delay_millis, send_params);
   EXPECT_TRUE(test.Start()) << rtc::join(test.GetErrorsList(), ';');
-  test.WaitForCompletion(
-      std::max<uint32_t>(messages_count * 100, kDefaultTimeout));
+  test.WaitForCompletion(wait_timeout);
   auto errors_list = test.GetErrorsList();
   EXPECT_TRUE(errors_list.empty()) << rtc::join(errors_list, ';');
 }
@@ -666,6 +683,11 @@ TEST_F(UsrSctpReliabilityTest,
   constexpr uint8_t packet_loss_percents = 5;
   constexpr uint16_t avg_send_delay_millis = 16;
   constexpr uint32_t messages_count = 10000;
+  constexpr int32_t wait_timeout =
+      GetExecutionTimeLimitInMillis(messages_count, packet_loss_percents);
+  static_assert(wait_timeout > 0,
+                "Timeout computation must produce positive value");
+
   cricket::SendDataParams send_params;
   send_params.sid = -1;
   send_params.ordered = true;
@@ -678,8 +700,7 @@ TEST_F(UsrSctpReliabilityTest,
                     avg_send_delay_millis, send_params);
 
   EXPECT_TRUE(test.Start()) << rtc::join(test.GetErrorsList(), ';');
-  test.WaitForCompletion(
-      std::max<uint32_t>(messages_count * 100, kDefaultTimeout));
+  test.WaitForCompletion(wait_timeout);
   auto errors_list = test.GetErrorsList();
   EXPECT_TRUE(errors_list.empty()) << rtc::join(errors_list, ';');
 }
@@ -700,6 +721,12 @@ TEST_F(UsrSctpReliabilityTest,
   thread2->Start();
   constexpr uint8_t packet_loss_percents = 5;
   constexpr uint16_t avg_send_delay_millis = 16;
+  constexpr uint32_t messages_count = 10000;
+  constexpr int32_t wait_timeout =
+      GetExecutionTimeLimitInMillis(messages_count, packet_loss_percents);
+  static_assert(wait_timeout > 0,
+                "Timeout computation must produce positive value");
+
   cricket::SendDataParams send_params;
   send_params.sid = -1;
   send_params.ordered = false;
@@ -707,14 +734,12 @@ TEST_F(UsrSctpReliabilityTest,
   send_params.max_rtx_count = INT_MAX;
   send_params.max_rtx_ms = INT_MAX;
 
-  constexpr uint32_t messages_count = 10000;
   SctpPingPong test(1, kTransport1Port, kTransport2Port, thread1.get(),
                     thread2.get(), messages_count, packet_loss_percents,
                     avg_send_delay_millis, send_params);
 
   EXPECT_TRUE(test.Start()) << rtc::join(test.GetErrorsList(), ';');
-  test.WaitForCompletion(
-      std::max<uint32_t>(messages_count * 100, kDefaultTimeout));
+  test.WaitForCompletion(wait_timeout);
   auto errors_list = test.GetErrorsList();
   EXPECT_TRUE(errors_list.empty()) << rtc::join(errors_list, ';');
 }
@@ -759,10 +784,10 @@ TEST_F(UsrSctpReliabilityTest,
   constexpr uint32_t parallel_ping_pongs = 16 * 1024;
   constexpr uint32_t total_ping_pong_tests = 16 * parallel_ping_pongs;
 
-  constexpr uint32_t timeout = std::max<uint32_t>(
-      messages_count * total_ping_pong_tests * 100 *
-          std::max(1, packet_loss_percents * packet_loss_percents),
-      kDefaultTimeout);
+  constexpr int32_t wait_timeout = GetExecutionTimeLimitInMillis(
+      total_ping_pong_tests * messages_count, packet_loss_percents);
+  static_assert(wait_timeout > 0,
+                "Timeout computation must produce positive value");
 
   std::queue<std::unique_ptr<SctpPingPong>> tests;
 
@@ -780,7 +805,7 @@ TEST_F(UsrSctpReliabilityTest,
 
     while (tests.size() >= parallel_ping_pongs) {
       auto& oldest_test = tests.front();
-      oldest_test->WaitForCompletion(timeout);
+      oldest_test->WaitForCompletion(wait_timeout);
 
       auto errors_list = oldest_test->GetErrorsList();
       EXPECT_TRUE(errors_list.empty()) << rtc::join(errors_list, ';');
@@ -790,7 +815,7 @@ TEST_F(UsrSctpReliabilityTest,
 
   while (!tests.empty()) {
     auto& oldest_test = tests.front();
-    oldest_test->WaitForCompletion(timeout);
+    oldest_test->WaitForCompletion(wait_timeout);
 
     auto errors_list = oldest_test->GetErrorsList();
     EXPECT_TRUE(errors_list.empty()) << rtc::join(errors_list, ';');
