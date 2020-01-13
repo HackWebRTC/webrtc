@@ -10,38 +10,7 @@
 
 #include "call/adaptation/resource_adaptation_module_interface.h"
 
-#include "rtc_base/checks.h"
-
 namespace webrtc {
-
-VideoSourceRestrictions::VideoSourceRestrictions(
-    absl::optional<size_t> max_pixels_per_frame,
-    absl::optional<size_t> target_pixels_per_frame,
-    absl::optional<double> max_frame_rate)
-    : max_pixels_per_frame_(std::move(max_pixels_per_frame)),
-      target_pixels_per_frame_(std::move(target_pixels_per_frame)),
-      max_frame_rate_(std::move(max_frame_rate)) {
-  RTC_DCHECK(!max_pixels_per_frame_.has_value() ||
-             max_pixels_per_frame_.value() <
-                 static_cast<size_t>(std::numeric_limits<int>::max()));
-  RTC_DCHECK(!max_frame_rate_.has_value() ||
-             max_frame_rate_.value() < std::numeric_limits<int>::max());
-  RTC_DCHECK(!max_frame_rate_.has_value() || max_frame_rate_.value() > 0.0);
-}
-
-const absl::optional<size_t>& VideoSourceRestrictions::max_pixels_per_frame()
-    const {
-  return max_pixels_per_frame_;
-}
-
-const absl::optional<size_t>& VideoSourceRestrictions::target_pixels_per_frame()
-    const {
-  return target_pixels_per_frame_;
-}
-
-const absl::optional<double>& VideoSourceRestrictions::max_frame_rate() const {
-  return max_frame_rate_;
-}
 
 ResourceAdaptationModuleListener::~ResourceAdaptationModuleListener() {}
 

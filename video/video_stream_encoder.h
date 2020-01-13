@@ -27,6 +27,7 @@
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
 #include "call/adaptation/resource_adaptation_module_interface.h"
+#include "call/adaptation/video_source_restrictions.h"
 #include "modules/video_coding/utility/frame_dropper.h"
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "rtc_base/critical_section.h"
@@ -43,6 +44,7 @@
 #include "video/encoder_bitrate_adjuster.h"
 #include "video/frame_encode_metadata_writer.h"
 #include "video/overuse_frame_detector_resource_adaptation_module.h"
+#include "video/video_source_sink_controller.h"
 
 namespace webrtc {
 
@@ -406,6 +408,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // track of whether a request has been made or not.
   bool encoder_switch_requested_ RTC_GUARDED_BY(&encoder_queue_);
 
+  std::unique_ptr<VideoSourceSinkController> video_source_sink_controller_;
   std::unique_ptr<OveruseFrameDetectorResourceAdaptationModule>
       resource_adaptation_module_;
 

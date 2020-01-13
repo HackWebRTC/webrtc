@@ -20,6 +20,8 @@ rtc_library("resource_adaptation") {
     "resource_consumer.h",
     "resource_consumer_configuration.cc",
     "resource_consumer_configuration.h",
+    "video_source_restrictions.cc",
+    "video_source_restrictions.h",
   ]
   deps = [
     "../../rtc_base:checks",

@@ -186,6 +186,8 @@ rtc_library("video_stream_encoder_impl") {
     "overuse_frame_detector.h",
     "overuse_frame_detector_resource_adaptation_module.cc",
     "overuse_frame_detector_resource_adaptation_module.h",
+    "video_source_sink_controller.cc",
+    "video_source_sink_controller.h",
     "video_stream_encoder.cc",
     "video_stream_encoder.h",
   ]
@@ -564,6 +566,7 @@ if (rtc_include_tests) {
       "video_receive_stream_unittest.cc",
       "video_send_stream_impl_unittest.cc",
       "video_send_stream_tests.cc",
+      "video_source_sink_controller_unittest.cc",
       "video_stream_decoder_impl_unittest.cc",
       "video_stream_encoder_unittest.cc",
     ]
@@ -609,6 +612,7 @@ if (rtc_include_tests) {
       "../call:simulated_network",
       "../call:simulated_packet_receiver",
       "../call:video_stream_api",
+      "../call/adaptation:resource_adaptation",
       "../common_video",
       "../common_video/test:utilities",
       "../media:rtc_audio_video",

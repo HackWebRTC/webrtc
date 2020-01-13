@@ -20,7 +20,6 @@
 #include "absl/types/optional.h"
 #include "api/rtp_parameters.h"
 #include "api/video/video_frame.h"
-#include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
 #include "api/video/video_stream_encoder_observer.h"
 #include "api/video_codecs/video_encoder.h"
@@ -28,6 +27,7 @@
 #include "call/adaptation/resource_adaptation_module_interface.h"
 #include "rtc_base/experiments/balanced_degradation_settings.h"
 #include "video/overuse_frame_detector.h"
+#include "video/video_source_sink_controller.h"
 
 namespace webrtc {
 
@@ -51,7 +51,7 @@ class OveruseFrameDetectorResourceAdaptationModule
  public:
   OveruseFrameDetectorResourceAdaptationModule(
       VideoStreamEncoder* video_stream_encoder,
-      rtc::VideoSinkInterface<VideoFrame>* sink,
+      VideoSourceSinkController* video_source_controller,
       std::unique_ptr<OveruseFrameDetector> overuse_detector,
       VideoStreamEncoderObserver* encoder_stats_observer,
       ResourceAdaptationModuleListener* adaptation_listener);
@@ -74,10 +74,6 @@ class OveruseFrameDetectorResourceAdaptationModule
   void StartCheckForOveruse(
       ResourceAdaptationModuleListener* adaptation_listener) override;
   void StopCheckForOveruse() override;
-
-  // TODO(hbos): When VideoSourceProxy is refactored and reconfiguration logic
-  // is entirely moved to video_stream_encoder.cc, remove this method.
-  void ApplyVideoSourceRestrictions(VideoSourceRestrictions restrictions);
 
   // Input to the OveruseFrameDetector, which are required for this module to
   // function. These map to OveruseFrameDetector methods.
@@ -105,12 +101,9 @@ class OveruseFrameDetectorResourceAdaptationModule
   // method is called incorrectly.
   void SetIsQualityScalerEnabled(bool is_quality_scaler_enabled);
 
-  void SetSource(rtc::VideoSourceInterface<VideoFrame>* source,
-                 const DegradationPreference& degradation_preference);
-  void SetSourceWantsRotationApplied(bool rotation_applied);
-  void SetSourceMaxFramerateAndAlignment(int max_framerate,
-                                         int resolution_alignment);
-  void SetSourceMaxPixels(int max_pixels);
+  void SetHasInputVideoAndDegradationPreference(
+      bool has_input_video,
+      DegradationPreference degradation_preference);
 
   // TODO(hbos): Can we get rid of this? Seems we should know whether the frame
   // rate has updated.
@@ -182,7 +175,7 @@ class OveruseFrameDetectorResourceAdaptationModule
   absl::optional<VideoEncoder::QpThresholds> GetQpThresholds() const;
 
  private:
-  class VideoSourceProxy;
+  class VideoSourceRestrictor;
 
   struct AdaptationRequest {
     // The pixel count produced by the source at the time of the adaptation.
@@ -200,13 +193,18 @@ class OveruseFrameDetectorResourceAdaptationModule
   bool CanAdaptUpResolution(int pixels, uint32_t bitrate_bps) const
       RTC_RUN_ON(encoder_queue_);
 
-  // TODO(hbos): Can we move the |source_proxy_| to the |encoder_queue_| and
-  // replace |encoder_queue_| with a sequence checker instead?
+  // TODO(hbos): Can we move the |source_restrictor_| to the |encoder_queue_|
+  // and replace |encoder_queue_| with a sequence checker instead?
   rtc::TaskQueue* encoder_queue_;
   ResourceAdaptationModuleListener* const adaptation_listener_
       RTC_GUARDED_BY(encoder_queue_);
   // Used to query CpuOveruseOptions at StartCheckForOveruse().
   VideoStreamEncoder* video_stream_encoder_ RTC_GUARDED_BY(encoder_queue_);
+  // TODO(https://crbug.com/webrtc/11222): When the VideoSourceSinkController is
+  // no longer aware of DegradationPreference, and the degradation
+  // preference-related logic resides within this class, we can remove this
+  // dependency on the VideoSourceSinkController.
+  VideoSourceSinkController* const video_source_sink_controller_;
   DegradationPreference degradation_preference_ RTC_GUARDED_BY(encoder_queue_);
   // Counters used for deciding if the video resolution or framerate is
   // currently restricted, and if so, why, on a per degradation preference
@@ -222,8 +220,8 @@ class OveruseFrameDetectorResourceAdaptationModule
   absl::optional<AdaptationRequest> last_adaptation_request_
       RTC_GUARDED_BY(encoder_queue_);
   absl::optional<int> last_frame_pixel_count_ RTC_GUARDED_BY(encoder_queue_);
-  // The source proxy may modify its source or sink off the |encoder_queue_|.
-  const std::unique_ptr<VideoSourceProxy> source_proxy_;
+  // Keeps track of source restrictions that this adaptation module outputs.
+  const std::unique_ptr<VideoSourceRestrictor> source_restrictor_;
   const std::unique_ptr<OveruseFrameDetector> overuse_detector_
       RTC_PT_GUARDED_BY(encoder_queue_);
   int codec_max_framerate_ RTC_GUARDED_BY(encoder_queue_);

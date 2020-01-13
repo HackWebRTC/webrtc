@@ -11,36 +11,9 @@
 #ifndef CALL_ADAPTATION_RESOURCE_ADAPTATION_MODULE_INTERFACE_H_
 #define CALL_ADAPTATION_RESOURCE_ADAPTATION_MODULE_INTERFACE_H_
 
-#include <limits>
-#include <utility>
-
-#include "absl/types/optional.h"
+#include "call/adaptation/video_source_restrictions.h"
 
 namespace webrtc {
-
-// Describes optional restrictions to the resolution and frame rate of a video
-// source.
-class VideoSourceRestrictions {
- public:
-  // All values must be positive or nullopt.
-  // TODO(hbos): Support expressing "disable this stream"?
-  VideoSourceRestrictions(absl::optional<size_t> max_pixels_per_frame,
-                          absl::optional<size_t> target_pixels_per_frame,
-                          absl::optional<double> max_frame_rate);
-
-  const absl::optional<size_t>& max_pixels_per_frame() const;
-  const absl::optional<size_t>& target_pixels_per_frame() const;
-  const absl::optional<double>& max_frame_rate() const;
-
- private:
-  // These map to rtc::VideoSinkWants's |max_pixel_count| and
-  // |target_pixel_count|.
-  // TODO(hbos): It's not clear what "target" means; either make it well-defined
-  // or remove it in favor of only using |max_pixels_per_frame_|.
-  absl::optional<size_t> max_pixels_per_frame_;
-  absl::optional<size_t> target_pixels_per_frame_;
-  absl::optional<double> max_frame_rate_;
-};
 
 // The listener is responsible for carrying out the reconfiguration of the video
 // source such that the VideoSourceRestrictions are fulfilled.
