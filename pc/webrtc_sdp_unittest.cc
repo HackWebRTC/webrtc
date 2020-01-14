@@ -1963,18 +1963,22 @@ class WebRtcSdpTest : public ::testing::Test {
     os << "minptime=" << params.min_ptime << "; stereo=" << params.stereo
        << "; sprop-stereo=" << params.sprop_stereo
        << "; useinbandfec=" << params.useinband
-       << "; maxaveragebitrate=" << params.maxaveragebitrate << "\r\n"
-       << "a=ptime:" << params.ptime << "\r\n"
-       << "a=maxptime:" << params.max_ptime << "\r\n";
+       << "; maxaveragebitrate=" << params.maxaveragebitrate
+       << "\r\n"
+          "a=ptime:"
+       << params.ptime
+       << "\r\n"
+          "a=maxptime:"
+       << params.max_ptime << "\r\n";
     sdp += os.str();
 
     os.clear();
     os.str("");
     // Pl type 100 preferred.
     os << "m=video 9 RTP/SAVPF 99 95\r\n"
-       << "a=rtpmap:99 VP8/90000\r\n"
-       << "a=rtpmap:95 RTX/90000\r\n"
-       << "a=fmtp:95 apt=99;\r\n";
+          "a=rtpmap:99 VP8/90000\r\n"
+          "a=rtpmap:95 RTX/90000\r\n"
+          "a=fmtp:95 apt=99;\r\n";
     sdp += os.str();
 
     // Deserialize
@@ -2118,8 +2122,11 @@ void TestMismatch(const std::string& string1, const std::string& string2) {
   }
   EXPECT_EQ(0, position) << "Strings mismatch at the " << position
                          << " character\n"
-                         << " 1: " << string1.substr(position, 20) << "\n"
-                         << " 2: " << string2.substr(position, 20) << "\n";
+                            " 1: "
+                         << string1.substr(position, 20)
+                         << "\n"
+                            " 2: "
+                         << string2.substr(position, 20) << "\n";
 }
 
 TEST_F(WebRtcSdpTest, SerializeSessionDescription) {

@@ -352,7 +352,8 @@ AudioProcessingImpl::AudioProcessingImpl(
                  EnforceSplitBandHpf()),
       capture_nonlocked_() {
   RTC_LOG(LS_INFO) << "Injected APM submodules:"
-                   << "\nEcho control factory: " << !!echo_control_factory_
+                      "\nEcho control factory: "
+                   << !!echo_control_factory_
                    << "\nEcho detector: " << !!submodules_.echo_detector
                    << "\nCapture analyzer: " << !!submodules_.capture_analyzer
                    << "\nCapture post processor: "

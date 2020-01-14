@@ -593,7 +593,7 @@ bool RTPSenderVideo::SendVideo(
   } else if (require_frame_encryption_) {
     RTC_LOG(LS_WARNING)
         << "No FrameEncryptor is attached to this video sending stream but "
-        << "one is required since require_frame_encryptor is set";
+           "one is required since require_frame_encryptor is set";
   }
 
   std::unique_ptr<RtpPacketizer> packetizer = RtpPacketizer::Create(

@@ -927,7 +927,8 @@ void RtpVideoStreamReceiver::InsertSpsPpsIntoTracker(uint8_t payload_type) {
     return;
 
   RTC_LOG(LS_INFO) << "Found out of band supplied codec parameters for"
-                   << " payload type: " << static_cast<int>(payload_type);
+                      " payload type: "
+                   << static_cast<int>(payload_type);
 
   H264SpropParameterSets sprop_decoder;
   auto sprop_base64_it =

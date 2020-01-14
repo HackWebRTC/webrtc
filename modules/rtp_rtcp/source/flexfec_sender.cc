@@ -58,8 +58,8 @@ RtpHeaderExtensionMap RegisterSupportedExtensions(
     } else {
       RTC_LOG(LS_INFO)
           << "FlexfecSender only supports RTP header extensions for "
-          << "BWE and MID, so the extension " << extension.ToString()
-          << " will not be used.";
+             "BWE and MID, so the extension "
+          << extension.ToString() << " will not be used.";
     }
   }
   return map;

@@ -25,7 +25,8 @@ RtpStreamReceiverController::Receiver::Receiver(
   if (!sink_added) {
     RTC_LOG(LS_ERROR)
         << "RtpStreamReceiverController::Receiver::Receiver: Sink "
-        << "could not be added for SSRC=" << ssrc << ".";
+           "could not be added for SSRC="
+        << ssrc << ".";
   }
 }
 

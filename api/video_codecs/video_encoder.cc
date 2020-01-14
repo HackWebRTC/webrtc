@@ -112,18 +112,21 @@ std::string VideoEncoder::EncoderInfo::ToString() const {
   rtc::SimpleStringBuilder oss(string_buf);
 
   oss << "EncoderInfo { "
-      << "ScalingSettings { ";
+         "ScalingSettings { ";
   if (scaling_settings.thresholds) {
     oss << "Thresholds { "
-        << "low = " << scaling_settings.thresholds->low
+           "low = "
+        << scaling_settings.thresholds->low
         << ", high = " << scaling_settings.thresholds->high << "}, ";
   }
   oss << "min_pixels_per_frame = " << scaling_settings.min_pixels_per_frame
       << " }";
   oss << ", requested_resolution_alignment = " << requested_resolution_alignment
       << ", supports_native_handle = " << supports_native_handle
-      << ", implementation_name = '" << implementation_name << "'"
-      << ", has_trusted_rate_controller = " << has_trusted_rate_controller
+      << ", implementation_name = '" << implementation_name
+      << "'"
+         ", has_trusted_rate_controller = "
+      << has_trusted_rate_controller
       << ", is_hardware_accelerated = " << is_hardware_accelerated
       << ", has_internal_source = " << has_internal_source
       << ", fps_allocation = [";
@@ -154,13 +157,15 @@ std::string VideoEncoder::EncoderInfo::ToString() const {
     }
     ResolutionBitrateLimits l = resolution_bitrate_limits[i];
     oss << "Limits { "
-        << "frame_size_pixels = " << l.frame_size_pixels
+           "frame_size_pixels = "
+        << l.frame_size_pixels
         << ", min_start_bitrate_bps = " << l.min_start_bitrate_bps
         << ", min_bitrate_bps = " << l.min_bitrate_bps
         << ", max_bitrate_bps = " << l.max_bitrate_bps << "} ";
   }
   oss << "] "
-      << ", supports_simulcast = " << supports_simulcast << "}";
+         ", supports_simulcast = "
+      << supports_simulcast << "}";
   return oss.str();
 }
 

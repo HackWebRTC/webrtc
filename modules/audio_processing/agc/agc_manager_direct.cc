@@ -244,9 +244,13 @@ void MonoAgc::SetLevel(int new_level) {
   }
 
   stream_analog_level_ = new_level;
-  RTC_DLOG(LS_INFO) << "[agc] voe_level=" << voe_level << ", "
-                    << "level_=" << level_ << ", "
-                    << "new_level=" << new_level;
+  RTC_DLOG(LS_INFO) << "[agc] voe_level=" << voe_level
+                    << ", "
+                       "level_="
+                    << level_
+                    << ", "
+                       "new_level="
+                    << new_level;
   level_ = new_level;
 }
 

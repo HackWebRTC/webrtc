@@ -330,7 +330,7 @@ ScopedJavaLocalRef<jobject> CreatePeerConnectionFactoryForJava(
       CreateModularPeerConnectionFactory(std::move(dependencies));
 
   RTC_CHECK(factory) << "Failed to create the peer connection factory; "
-                     << "WebRTC/libjingle init likely failed on this device";
+                        "WebRTC/libjingle init likely failed on this device";
   // TODO(honghaiz): Maybe put the options as the argument of
   // CreatePeerConnectionFactory.
   if (options)

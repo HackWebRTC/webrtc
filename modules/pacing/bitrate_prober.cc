@@ -132,8 +132,9 @@ Timestamp BitrateProber::NextProbeTime(Timestamp now) const {
   if (next_probe_time_.IsFinite() &&
       now - next_probe_time_ > config_.max_probe_delay.Get()) {
     RTC_DLOG(LS_WARNING) << "Probe delay too high"
-                         << " (next_ms:" << next_probe_time_.ms()
-                         << ", now_ms: " << now.ms() << ")";
+                            " (next_ms:"
+                         << next_probe_time_.ms() << ", now_ms: " << now.ms()
+                         << ")";
     return Timestamp::PlusInfinity();
   }
 

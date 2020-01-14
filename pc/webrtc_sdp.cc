@@ -1061,8 +1061,9 @@ bool ParseCandidate(const std::string& message,
       attribute_candidate != kAttributeCandidate) {
     if (is_raw) {
       rtc::StringBuilder description;
-      description << "Expect line: " << kAttributeCandidate << ":"
-                  << "<candidate-str>";
+      description << "Expect line: " << kAttributeCandidate
+                  << ":"
+                     "<candidate-str>";
       return ParseFailed(first_line, 0, description.str(), error);
     } else {
       return ParseFailedExpectLine(first_line, 0, kLineTypeAttributes,

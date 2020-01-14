@@ -99,9 +99,13 @@ bool RTCStats::operator!=(const RTCStats& other) const {
 
 std::string RTCStats::ToJson() const {
   rtc::StringBuilder sb;
-  sb << "{\"type\":\"" << type() << "\","
-     << "\"id\":\"" << id_ << "\","
-     << "\"timestamp\":" << timestamp_us_;
+  sb << "{\"type\":\"" << type()
+     << "\","
+        "\"id\":\""
+     << id_
+     << "\","
+        "\"timestamp\":"
+     << timestamp_us_;
   for (const RTCStatsMemberInterface* member : Members()) {
     if (member->is_defined()) {
       sb << ",\"" << member->name() << "\":";

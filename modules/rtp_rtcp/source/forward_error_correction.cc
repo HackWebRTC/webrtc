@@ -131,7 +131,7 @@ int ForwardErrorCorrection::EncodeFec(const PacketList& media_packets,
     if (media_packet->data.size() < kRtpHeaderSize) {
       RTC_LOG(LS_WARNING) << "Media packet " << media_packet->data.size()
                           << " bytes "
-                          << "is smaller than RTP header.";
+                             "is smaller than RTP header.";
       return -1;
     }
     // Ensure the FEC packets will fit in a typical MTU.
@@ -139,8 +139,8 @@ int ForwardErrorCorrection::EncodeFec(const PacketList& media_packets,
         IP_PACKET_SIZE) {
       RTC_LOG(LS_WARNING) << "Media packet " << media_packet->data.size()
                           << " bytes "
-                          << "with overhead is larger than " << IP_PACKET_SIZE
-                          << " bytes.";
+                             "with overhead is larger than "
+                          << IP_PACKET_SIZE << " bytes.";
     }
   }
 
@@ -549,7 +549,7 @@ bool ForwardErrorCorrection::StartPacketRecovery(
       fec_packet.fec_header_size + fec_packet.protection_length) {
     RTC_LOG(LS_WARNING)
         << "The FEC packet is truncated: it does not contain enough room "
-        << "for its own header.";
+           "for its own header.";
     return false;
   }
   if (fec_packet.protection_length >
@@ -590,7 +590,7 @@ bool ForwardErrorCorrection::FinishPacketRecovery(
       ByteReader<uint16_t>::ReadBigEndian(&data[2]) + kRtpHeaderSize;
   if (new_size > size_t{IP_PACKET_SIZE - kRtpHeaderSize}) {
     RTC_LOG(LS_WARNING) << "The recovered packet had a length larger than a "
-                        << "typical IP packet, and is thus dropped.";
+                           "typical IP packet, and is thus dropped.";
     return false;
   }
   recovered_packet->pkt->data.SetSize(new_size);

@@ -766,7 +766,7 @@ void Thread::Join() {
   RTC_DCHECK(!IsCurrent());
   if (Current() && !Current()->blocking_calls_allowed_) {
     RTC_LOG(LS_WARNING) << "Waiting for the thread to join, "
-                        << "but blocking calls have been disallowed";
+                           "but blocking calls have been disallowed";
   }
 
 #if defined(WEBRTC_WIN)

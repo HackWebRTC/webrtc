@@ -339,8 +339,10 @@ TEST(LogTest, Perf) {
   stream.Close();
 
   EXPECT_EQ(str.size(), (message.size() + logging_overhead) * kRepetitions);
-  RTC_LOG(LS_INFO) << "Total log time: " << TimeDiff(finish, start) << " ms "
-                   << " total bytes logged: " << str.size();
+  RTC_LOG(LS_INFO) << "Total log time: " << TimeDiff(finish, start)
+                   << " ms "
+                      " total bytes logged: "
+                   << str.size();
 }
 
 TEST(LogTest, EnumsAreSupported) {

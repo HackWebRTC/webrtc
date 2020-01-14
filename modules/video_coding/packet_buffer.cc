@@ -357,8 +357,8 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
         if (has_h264_idr && (!has_h264_sps || !has_h264_pps)) {
           RTC_LOG(LS_WARNING)
               << "Received H.264-IDR frame "
-              << "(SPS: " << has_h264_sps << ", PPS: " << has_h264_pps
-              << "). Treating as "
+                 "(SPS: "
+              << has_h264_sps << ", PPS: " << has_h264_pps << "). Treating as "
               << (sps_pps_idr_is_h264_keyframe_ ? "delta" : "key")
               << " frame since WebRTC-SpsPpsIdrIsH264Keyframe is "
               << (sps_pps_idr_is_h264_keyframe_ ? "enabled." : "disabled");

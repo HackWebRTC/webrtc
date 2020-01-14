@@ -525,15 +525,15 @@ void Connection::HandleStunBindingOrGoogPingRequest(IceMessage* msg) {
       if (last_ping_sent_ + kMinExtraPingDelayMs <= now) {
         RTC_LOG(LS_INFO) << ToString()
                          << "WebRTC-ExtraICEPing/Sending extra ping"
-                         << " last_ping_sent_: " << last_ping_sent_
-                         << " now: " << now
+                            " last_ping_sent_: "
+                         << last_ping_sent_ << " now: " << now
                          << " (diff: " << (now - last_ping_sent_) << ")";
         Ping(now);
       } else {
         RTC_LOG(LS_INFO) << ToString()
                          << "WebRTC-ExtraICEPing/Not sending extra ping"
-                         << " last_ping_sent_: " << last_ping_sent_
-                         << " now: " << now
+                            " last_ping_sent_: "
+                         << last_ping_sent_ << " now: " << now
                          << " (diff: " << (now - last_ping_sent_) << ")";
       }
     }

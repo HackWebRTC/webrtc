@@ -384,7 +384,7 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
                           << " and packet range [" << frame->first_seq_num()
                           << ", " << frame->last_seq_num()
                           << "] already received, "
-                          << " dropping frame.";
+                             " dropping frame.";
       return kDrop;
     }
 
@@ -585,8 +585,9 @@ bool RtpFrameReferenceFinder::MissingRequiredFrameVp9(uint16_t picture_id,
   size_t temporal_idx = info.gof->temporal_idx[gof_idx];
 
   if (temporal_idx >= kMaxTemporalLayers) {
-    RTC_LOG(LS_WARNING) << "At most " << kMaxTemporalLayers << " temporal "
-                        << "layers are supported.";
+    RTC_LOG(LS_WARNING) << "At most " << kMaxTemporalLayers
+                        << " temporal "
+                           "layers are supported.";
     return true;
   }
 
@@ -628,8 +629,9 @@ void RtpFrameReferenceFinder::FrameReceivedVp9(uint16_t picture_id,
 
       size_t temporal_idx = info->gof->temporal_idx[gof_idx];
       if (temporal_idx >= kMaxTemporalLayers) {
-        RTC_LOG(LS_WARNING) << "At most " << kMaxTemporalLayers << " temporal "
-                            << "layers are supported.";
+        RTC_LOG(LS_WARNING) << "At most " << kMaxTemporalLayers
+                            << " temporal "
+                               "layers are supported.";
         return;
       }
 
@@ -646,8 +648,9 @@ void RtpFrameReferenceFinder::FrameReceivedVp9(uint16_t picture_id,
 
     size_t temporal_idx = info->gof->temporal_idx[gof_idx];
     if (temporal_idx >= kMaxTemporalLayers) {
-      RTC_LOG(LS_WARNING) << "At most " << kMaxTemporalLayers << " temporal "
-                          << "layers are supported.";
+      RTC_LOG(LS_WARNING) << "At most " << kMaxTemporalLayers
+                          << " temporal "
+                             "layers are supported.";
       return;
     }
 
@@ -783,7 +786,7 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameH264(
                           << " and packet range [" << frame->first_seq_num()
                           << ", " << frame->last_seq_num()
                           << "] already received, "
-                          << " dropping frame.";
+                             " dropping frame.";
       return kDrop;
     }
 

@@ -202,8 +202,8 @@ int FakeNetworkSocket::RecvFrom(void* pv,
   // but we won't to skip such error, so we will assert here.
   RTC_CHECK(data_read == pending_->size())
       << "Too small buffer is provided for socket read. "
-      << "Received data size: " << pending_->size()
-      << "; Provided buffer size: " << cb;
+         "Received data size: "
+      << pending_->size() << "; Provided buffer size: " << cb;
 
   pending_.reset();
 

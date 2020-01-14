@@ -390,7 +390,7 @@ void RtpTransportControllerSend::SetSdpBitrateParameters(
   } else {
     RTC_LOG(LS_VERBOSE)
         << "WebRTC.RtpTransportControllerSend.SetSdpBitrateParameters: "
-        << "nothing to update";
+           "nothing to update";
   }
 }
 
@@ -411,7 +411,7 @@ void RtpTransportControllerSend::SetClientBitratePreferences(
   } else {
     RTC_LOG(LS_VERBOSE)
         << "WebRTC.RtpTransportControllerSend.SetClientBitratePreferences: "
-        << "nothing to update";
+           "nothing to update";
   }
 }
 

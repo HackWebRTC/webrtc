@@ -158,7 +158,8 @@ aaudio_data_callback_result_t AAudioPlayer::OnDataCallback(void* audio_data,
   // utilized.
   if (first_data_callback_) {
     RTC_LOG(INFO) << "--- First output data callback: "
-                  << "device id=" << aaudio_.device_id();
+                     "device id="
+                  << aaudio_.device_id();
     first_data_callback_ = false;
   }
 

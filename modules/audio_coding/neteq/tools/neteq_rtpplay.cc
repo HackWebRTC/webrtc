@@ -242,8 +242,9 @@ bool ValidateOutputFilesOptions(bool textlog,
   bool output_files_base_name_specified = !output_files_base_name.empty();
   if (!textlog && !plotting && output_files_base_name_specified) {
     std::cout << "Error: --output_files_base_name cannot be used without at "
-              << "least one of the following flags: --textlog, --matlabplot, "
-              << "--pythonplot." << std::endl;
+                 "least one of the following flags: --textlog, --matlabplot, "
+                 "--pythonplot."
+              << std::endl;
     return false;
   }
   // Without |output_audio_filename|, |output_files_base_name| is required when
@@ -252,8 +253,9 @@ bool ValidateOutputFilesOptions(bool textlog,
   if (output_audio_filename.empty() && plotting &&
       !output_files_base_name_specified) {
     std::cout << "Error: when no output audio file is specified and "
-              << "--matlabplot and/or --pythonplot are used, "
-              << "--output_files_base_name must be also used." << std::endl;
+                 "--matlabplot and/or --pythonplot are used, "
+                 "--output_files_base_name must be also used."
+              << std::endl;
     return false;
   }
   return true;

@@ -79,8 +79,8 @@ void CallTest::RegisterRtpExtension(const RtpExtension& extension) {
           << "URI " << extension.uri
           << (extension.encrypt ? " with " : " without ")
           << "encryption already registered with a different "
-          << "ID (" << extension.id << " vs. " << registered_extension.id
-          << ").";
+             "ID ("
+          << extension.id << " vs. " << registered_extension.id << ").";
     }
   }
   rtp_extensions_.push_back(extension);

@@ -99,7 +99,7 @@ void ReceiveSideCongestionController::WrappingBitrateEstimator::
       if (packets_since_absolute_send_time_ >= kTimeOffsetSwitchThreshold) {
         RTC_LOG(LS_INFO)
             << "WrappingBitrateEstimator: Switching to transmission "
-            << "time offset RBE.";
+               "time offset RBE.";
         using_absolute_send_time_ = false;
         PickEstimator();
       }

@@ -297,7 +297,7 @@ bool VCMDecodingState::UsingFlexibleMode(const VCMFrameBuffer* frame) const {
       frame->CodecSpecific()->codecSpecific.VP9.flexible_mode;
   if (is_flexible_mode && frame->PictureId() == kNoPictureId) {
     RTC_LOG(LS_WARNING) << "Frame is marked as using flexible mode but no"
-                        << "picture id is set.";
+                           "picture id is set.";
     return false;
   }
   return is_flexible_mode;

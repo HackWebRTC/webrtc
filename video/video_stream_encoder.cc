@@ -1172,7 +1172,7 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
   if (frame_dropping_enabled && frame_dropper_.DropFrame()) {
     RTC_LOG(LS_VERBOSE)
         << "Drop Frame: "
-        << "target bitrate "
+           "target bitrate "
         << (last_encoder_rate_settings_
                 ? last_encoder_rate_settings_->encoder_target.bps()
                 : 0)
@@ -1901,8 +1901,8 @@ VideoStreamEncoder::ParseEncoderSwitchFieldTrial() const {
   rtc::StringBuilder ss;
   ss << "Successfully parsed WebRTC-NetworkCondition-EncoderSwitch field "
         "trial."
-     << " to_codec:" << result.to_codec
-     << " to_param:" << result.to_param.value_or("<none>")
+        " to_codec:"
+     << result.to_codec << " to_param:" << result.to_param.value_or("<none>")
      << " to_value:" << result.to_value.value_or("<none>")
      << " codec_thresholds:";
 
@@ -1935,7 +1935,8 @@ VideoStreamEncoder::ParseAutomatincAnimationDetectionFieldTrial() const {
   }
 
   RTC_LOG(LS_INFO) << "Automatic animation detection experiment settings:"
-                   << " min_duration_ms=" << result.min_duration_ms
+                      " min_duration_ms="
+                   << result.min_duration_ms
                    << " min_area_ration=" << result.min_area_ratio
                    << " min_fps=" << result.min_fps;
 

@@ -1032,7 +1032,8 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   if (rv != VPX_CODEC_OK) {
     RTC_LOG(LS_ERROR) << "Encoding error: " << vpx_codec_err_to_string(rv)
                       << "\n"
-                      << "Details: " << vpx_codec_error(encoder_) << "\n"
+                         "Details: "
+                      << vpx_codec_error(encoder_) << "\n"
                       << vpx_codec_error_detail(encoder_);
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
@@ -1608,8 +1609,9 @@ VP9DecoderImpl::~VP9DecoderImpl() {
     // The frame buffers are reference counted and frames are exposed after
     // decoding. There may be valid usage cases where previous frames are still
     // referenced after ~VP9DecoderImpl that is not a leak.
-    RTC_LOG(LS_INFO) << num_buffers_in_use << " Vp9FrameBuffers are still "
-                     << "referenced during ~VP9DecoderImpl.";
+    RTC_LOG(LS_INFO) << num_buffers_in_use
+                     << " Vp9FrameBuffers are still "
+                        "referenced during ~VP9DecoderImpl.";
   }
 }
 

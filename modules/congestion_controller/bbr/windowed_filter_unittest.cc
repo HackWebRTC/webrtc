@@ -41,7 +41,8 @@ class WindowedFilterTest : public ::testing::Test {
       windowed_min_rtt_.Update(rtt_sample, now_ms);
       RTC_LOG(LS_VERBOSE) << "i: " << i << " sample: " << ToString(rtt_sample)
                           << " mins: "
-                          << " " << ToString(windowed_min_rtt_.GetBest()) << " "
+                             " "
+                          << ToString(windowed_min_rtt_.GetBest()) << " "
                           << ToString(windowed_min_rtt_.GetSecondBest()) << " "
                           << ToString(windowed_min_rtt_.GetThirdBest());
       now_ms += 25;
@@ -63,7 +64,8 @@ class WindowedFilterTest : public ::testing::Test {
       windowed_max_bw_.Update(bw_sample, now_ms);
       RTC_LOG(LS_VERBOSE) << "i: " << i << " sample: " << ToString(bw_sample)
                           << " maxs: "
-                          << " " << ToString(windowed_max_bw_.GetBest()) << " "
+                             " "
+                          << ToString(windowed_max_bw_.GetBest()) << " "
                           << ToString(windowed_max_bw_.GetSecondBest()) << " "
                           << ToString(windowed_max_bw_.GetThirdBest());
       now_ms += 25;
@@ -117,7 +119,8 @@ TEST_F(WindowedFilterTest, MonotonicallyIncreasingMin) {
     windowed_min_rtt_.Update(rtt_sample, now_ms);
     RTC_LOG(LS_VERBOSE) << "i: " << i << " sample: " << rtt_sample.ms()
                         << " mins: "
-                        << " " << windowed_min_rtt_.GetBest().ms() << " "
+                           " "
+                        << windowed_min_rtt_.GetBest().ms() << " "
                         << windowed_min_rtt_.GetSecondBest().ms() << " "
                         << windowed_min_rtt_.GetThirdBest().ms();
     if (i < 3) {
@@ -144,7 +147,8 @@ TEST_F(WindowedFilterTest, MonotonicallyDecreasingMax) {
     windowed_max_bw_.Update(bw_sample, now_ms);
     RTC_LOG(LS_VERBOSE) << "i: " << i << " sample: " << bw_sample.bps()
                         << " maxs: "
-                        << " " << windowed_max_bw_.GetBest().bps() << " "
+                           " "
+                        << windowed_max_bw_.GetBest().bps() << " "
                         << windowed_max_bw_.GetSecondBest().bps() << " "
                         << windowed_max_bw_.GetThirdBest().bps();
     if (i < 3) {

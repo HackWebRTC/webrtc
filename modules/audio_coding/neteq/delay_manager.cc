@@ -71,7 +71,8 @@ DelayHistogramConfig GetDelayHistogramConfig() {
     }
   }
   RTC_LOG(LS_INFO) << "Delay histogram config:"
-                   << " quantile=" << config.quantile
+                      " quantile="
+                   << config.quantile
                    << " forget_factor=" << config.forget_factor
                    << " start_forget_weight="
                    << config.start_forget_weight.value_or(0);

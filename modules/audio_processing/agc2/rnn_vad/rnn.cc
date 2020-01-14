@@ -331,7 +331,7 @@ GatedRecurrentLayer::GatedRecurrentLayer(
       optimization_(optimization) {
   RTC_DCHECK_LE(output_size_, kRecurrentLayersMaxUnits)
       << "Static over-allocation of recurrent layers state vectors is not "
-      << "sufficient.";
+         "sufficient.";
   RTC_DCHECK_EQ(kNumGruGates * output_size_, bias_.size())
       << "Mismatching output size and bias terms array size.";
   RTC_DCHECK_EQ(kNumGruGates * input_size_ * output_size_, weights_.size())
@@ -339,7 +339,7 @@ GatedRecurrentLayer::GatedRecurrentLayer(
   RTC_DCHECK_EQ(kNumGruGates * output_size_ * output_size_,
                 recurrent_weights_.size())
       << "Mismatching input-output size and recurrent weight coefficients array"
-      << " size.";
+         " size.";
   Reset();
 }
 

@@ -2677,7 +2677,8 @@ TEST_P(GoogPingTest, TestGoogPingAnnounceEnable) {
   trials.announce_goog_ping = GetParam().first;
   trials.enable_goog_ping = GetParam().second;
   RTC_LOG(LS_INFO) << "Testing combination: "
-                   << " announce: " << trials.announce_goog_ping
+                      " announce: "
+                   << trials.announce_goog_ping
                    << " enable:" << trials.enable_goog_ping;
 
   auto port1_unique =

@@ -107,15 +107,15 @@ std::string GainController2::ToString(
   // clang-format off
   // clang formatting doesn't respect custom nested style.
   ss << "{"
-     << "enabled: " << (config.enabled ? "true" : "false") << ", "
-     << "fixed_digital: {gain_db: " << config.fixed_digital.gain_db << "}, "
-     << "adaptive_digital: {"
-      << "enabled: "
-        << (config.adaptive_digital.enabled ? "true" : "false") << ", "
-      << "level_estimator: " << adaptive_digital_level_estimator << ", "
-      << "extra_saturation_margin_db:"
-        << config.adaptive_digital.extra_saturation_margin_db << "}"
-      << "}";
+        "enabled: " << (config.enabled ? "true" : "false") << ", "
+        "fixed_digital: {gain_db: " << config.fixed_digital.gain_db << "}, "
+        "adaptive_digital: {"
+          "enabled: "
+            << (config.adaptive_digital.enabled ? "true" : "false") << ", "
+          "level_estimator: " << adaptive_digital_level_estimator << ", "
+          "extra_saturation_margin_db:"
+            << config.adaptive_digital.extra_saturation_margin_db << "}"
+          "}";
   // clang-format on
   return ss.Release();
 }

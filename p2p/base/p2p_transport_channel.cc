@@ -1105,7 +1105,7 @@ void P2PTransportChannel::ResolveHostnameCandidate(const Candidate& candidate) {
   RTC_DCHECK_RUN_ON(network_thread_);
   if (!async_resolver_factory_) {
     RTC_LOG(LS_WARNING) << "Dropping ICE candidate with hostname address "
-                        << "(no AsyncResolverFactory)";
+                           "(no AsyncResolverFactory)";
     return;
   }
 

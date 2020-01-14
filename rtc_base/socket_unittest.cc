@@ -391,7 +391,7 @@ void SocketTest::ConnectWithDnsLookupFailInternal(const IPAddress& loopback) {
         dns_lookup_finished);
   if (!dns_lookup_finished) {
     RTC_LOG(LS_WARNING) << "Skipping test; DNS resolution took longer than 5 "
-                        << "seconds.";
+                           "seconds.";
     return;
   }
 

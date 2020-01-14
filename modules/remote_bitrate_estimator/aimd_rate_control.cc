@@ -111,7 +111,8 @@ AimdRateControl::AimdRateControl(const WebRtcKeyValueConfig* key_value_config,
                   key_value_config->Lookup("WebRTC-BweAimdRateControlConfig"));
   if (initial_backoff_interval_) {
     RTC_LOG(LS_INFO) << "Using aimd rate control with initial back-off interval"
-                     << " " << ToString(*initial_backoff_interval_) << ".";
+                        " "
+                     << ToString(*initial_backoff_interval_) << ".";
   }
   RTC_LOG(LS_INFO) << "Using aimd rate control with back off factor " << beta_;
 }

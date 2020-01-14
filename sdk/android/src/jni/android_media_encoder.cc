@@ -649,7 +649,8 @@ int32_t MediaCodecVideoEncoder::Encode(
   if (input_frame_infos_.size() > MAX_ENCODER_Q_SIZE) {
     ALOGD << "Already " << input_frame_infos_.size()
           << " frames in the queue, dropping"
-          << ". TS: " << static_cast<int>(current_timestamp_us_ / 1000)
+             ". TS: "
+          << static_cast<int>(current_timestamp_us_ / 1000)
           << ". Fps: " << last_set_fps_
           << ". Consecutive drops: " << consecutive_full_queue_frame_drops_;
     current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
@@ -1134,8 +1135,10 @@ void MediaCodecVideoEncoder::LogStatistics(bool force_log) {
         (current_frames_ * 1000 + statistic_time_ms / 2) / statistic_time_ms;
     ALOGD << "Encoded frames: " << frames_encoded_
           << ". Bitrate: " << current_bitrate
-          << ", target: " << last_set_bitrate_kbps_ << " kbps"
-          << ", fps: " << current_fps << ", encTime: "
+          << ", target: " << last_set_bitrate_kbps_
+          << " kbps"
+             ", fps: "
+          << current_fps << ", encTime: "
           << (current_encoding_time_ms_ / current_frames_divider)
           << ". QP: " << (current_acc_qp_ / current_frames_divider)
           << " for last " << statistic_time_ms << " ms.";

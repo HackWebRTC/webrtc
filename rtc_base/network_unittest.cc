@@ -930,7 +930,7 @@ TEST_F(NetworkTest, TestIgnoreNonDefaultRoutes) {
     return;
   }
   RTC_LOG(LS_INFO) << "Found dummy, running again while ignoring non-default "
-                   << "routes.";
+                      "routes.";
   manager.set_ignore_non_default_routes(true);
   list = GetNetworks(manager, false);
   for (NetworkManager::NetworkList::iterator it = list.begin();

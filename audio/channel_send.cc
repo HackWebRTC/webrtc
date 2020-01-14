@@ -420,7 +420,7 @@ int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
       payload = encrypted_audio_payload;
     } else if (crypto_options_.sframe.require_frame_encryption) {
       RTC_DLOG(LS_ERROR) << "Channel::SendData() failed sending audio payload: "
-                         << "A frame encryptor is required but one is not set.";
+                            "A frame encryptor is required but one is not set.";
       return -1;
     }
   }

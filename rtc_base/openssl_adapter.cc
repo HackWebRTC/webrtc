@@ -857,8 +857,10 @@ SSL_CTX* OpenSSLAdapter::CreateContext(SSLMode mode, bool enable_cache) {
   if (ctx == nullptr) {
     unsigned long error = ERR_get_error();  // NOLINT: type used by OpenSSL.
     RTC_LOG(LS_WARNING) << "SSL_CTX creation failed: " << '"'
-                        << ERR_reason_error_string(error) << "\" "
-                        << "(error=" << error << ')';
+                        << ERR_reason_error_string(error)
+                        << "\" "
+                           "(error="
+                        << error << ')';
     return nullptr;
   }
 
@@ -906,7 +908,7 @@ std::string TransformAlpnProtocols(
   for (const std::string& proto : alpn_protocols) {
     if (proto.size() == 0 || proto.size() > 0xFF) {
       RTC_LOG(LS_ERROR) << "OpenSSLAdapter::Error("
-                        << "TransformAlpnProtocols received proto with size "
+                           "TransformAlpnProtocols received proto with size "
                         << proto.size() << ")";
       return "";
     }

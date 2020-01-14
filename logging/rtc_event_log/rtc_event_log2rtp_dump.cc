@@ -249,7 +249,9 @@ int main(int argc, char* argv[]) {
   event_processor.ProcessEventsInOrder();
 
   std::cout << "Wrote " << rtp_counter << (header_only ? " header-only" : "")
-            << " RTP packets and " << rtcp_counter << " RTCP packets to the "
-            << "output file." << std::endl;
+            << " RTP packets and " << rtcp_counter
+            << " RTCP packets to the "
+               "output file."
+            << std::endl;
   return 0;
 }

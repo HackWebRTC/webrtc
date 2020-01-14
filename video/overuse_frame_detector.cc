@@ -677,9 +677,10 @@ void OveruseFrameDetector::CheckForOveruse(
       in_quick_rampup_ ? kQuickRampUpDelayMs : current_rampup_delay_ms_;
 
   RTC_LOG(LS_VERBOSE) << " Frame stats: "
-                      << " encode usage " << *encode_usage_percent_
-                      << " overuse detections " << num_overuse_detections_
-                      << " rampup delay " << rampup_delay;
+                         " encode usage "
+                      << *encode_usage_percent_ << " overuse detections "
+                      << num_overuse_detections_ << " rampup delay "
+                      << rampup_delay;
 }
 
 void OveruseFrameDetector::SetOptions(const CpuOveruseOptions& options) {

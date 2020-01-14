@@ -834,7 +834,7 @@ void ChannelReceive::UpdatePlayoutTimestamp(bool rtcp, int64_t now_ms) {
   if (_audioDeviceModulePtr->PlayoutDelay(&delay_ms) == -1) {
     RTC_DLOG(LS_WARNING)
         << "ChannelReceive::UpdatePlayoutTimestamp() failed to read"
-        << " playout delay from the ADM";
+           " playout delay from the ADM";
     return;
   }
 

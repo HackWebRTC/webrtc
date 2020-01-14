@@ -72,13 +72,16 @@ std::string AudioProcessing::Config::ToString() const {
   char buf[1024];
   rtc::SimpleStringBuilder builder(buf);
   builder << "AudioProcessing::Config{ "
-          << "pipeline: {"
-          << "maximum_internal_processing_rate: "
+             "pipeline: {"
+             "maximum_internal_processing_rate: "
           << pipeline.maximum_internal_processing_rate
-          << ", multi_channel_render: " << pipeline.multi_channel_render << ", "
-          << ", multi_channel_capture: " << pipeline.multi_channel_capture
+          << ", multi_channel_render: " << pipeline.multi_channel_render
+          << ", "
+             ", multi_channel_capture: "
+          << pipeline.multi_channel_capture
           << "}, "
-          << "pre_amplifier: { enabled: " << pre_amplifier.enabled
+             "pre_amplifier: { enabled: "
+          << pre_amplifier.enabled
           << ", fixed_gain_factor: " << pre_amplifier.fixed_gain_factor
           << " }, high_pass_filter: { enabled: " << high_pass_filter.enabled
           << " }, echo_canceller: { enabled: " << echo_canceller.enabled

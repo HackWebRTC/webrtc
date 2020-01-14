@@ -122,8 +122,8 @@ int64_t TimestampAligner::ClipTimestamp(int64_t filtered_time_us,
       // duplicate timestamps in case this function is called several times with
       // exactly the same |system_time_us|.
       RTC_LOG(LS_WARNING) << "too short translated timestamp interval: "
-                          << "system time (us) = " << system_time_us
-                          << ", interval (us) = "
+                             "system time (us) = "
+                          << system_time_us << ", interval (us) = "
                           << system_time_us - prev_translated_time_us_;
       time_us = system_time_us;
     }

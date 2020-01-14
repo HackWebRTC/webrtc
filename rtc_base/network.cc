@@ -773,7 +773,7 @@ bool IsDefaultRoute(const std::string& network_name) {
   if (!f) {
     RTC_LOG(LS_WARNING)
         << "Couldn't read /proc/net/route, skipping default "
-        << "route check (assuming everything is a default route).";
+           "route check (assuming everything is a default route).";
     return true;
   }
   bool is_default_route = false;

@@ -248,7 +248,8 @@ rtc::NetworkBindingResult AndroidNetworkMonitor::BindSocketToNetwork(
   if (!network_binding_supported) {
     RTC_LOG(LS_WARNING)
         << "BindSocketToNetwork is not supported on this platform "
-        << "(Android SDK: " << android_sdk_int_ << ")";
+           "(Android SDK: "
+        << android_sdk_int_ << ")";
     return rtc::NetworkBindingResult::NOT_IMPLEMENTED;
   }
 

@@ -173,7 +173,8 @@ aaudio_data_callback_result_t AAudioRecorder::OnDataCallback(
   // is obtained.
   if (first_data_callback_) {
     RTC_LOG(INFO) << "--- First input data callback: "
-                  << "device id=" << aaudio_.device_id();
+                     "device id="
+                  << aaudio_.device_id();
     aaudio_.ClearInputStream(audio_data, num_frames);
     first_data_callback_ = false;
   }

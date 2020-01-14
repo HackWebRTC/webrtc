@@ -735,7 +735,7 @@ void WebRtcVideoChannel::RequestEncoderSwitch(
 
     if (!allow_codec_switching_) {
       RTC_LOG(LS_INFO) << "Encoder switch requested but codec switching has"
-                       << " not been enabled yet.";
+                          " not been enabled yet.";
       requested_encoder_switch_ = conf;
       return;
     }
@@ -857,7 +857,8 @@ webrtc::RtpParameters WebRtcVideoChannel::GetRtpSendParameters(
   auto it = send_streams_.find(ssrc);
   if (it == send_streams_.end()) {
     RTC_LOG(LS_WARNING) << "Attempting to get RTP send parameters for stream "
-                        << "with ssrc " << ssrc << " which doesn't exist.";
+                           "with ssrc "
+                        << ssrc << " which doesn't exist.";
     return webrtc::RtpParameters();
   }
 
@@ -878,7 +879,8 @@ webrtc::RTCError WebRtcVideoChannel::SetRtpSendParameters(
   auto it = send_streams_.find(ssrc);
   if (it == send_streams_.end()) {
     RTC_LOG(LS_ERROR) << "Attempting to set RTP send parameters for stream "
-                      << "with ssrc " << ssrc << " which doesn't exist.";
+                         "with ssrc "
+                      << ssrc << " which doesn't exist.";
     return webrtc::RTCError(webrtc::RTCErrorType::INTERNAL_ERROR);
   }
 
@@ -887,7 +889,7 @@ webrtc::RTCError WebRtcVideoChannel::SetRtpSendParameters(
   webrtc::RtpParameters current_parameters = GetRtpSendParameters(ssrc);
   if (current_parameters.codecs != parameters.codecs) {
     RTC_DLOG(LS_ERROR) << "Using SetParameters to change the set of codecs "
-                       << "is not currently supported.";
+                          "is not currently supported.";
     return webrtc::RTCError(webrtc::RTCErrorType::INTERNAL_ERROR);
   }
 
@@ -922,7 +924,8 @@ webrtc::RtpParameters WebRtcVideoChannel::GetRtpReceiveParameters(
   if (it == receive_streams_.end()) {
     RTC_LOG(LS_WARNING)
         << "Attempting to get RTP receive parameters for stream "
-        << "with SSRC " << ssrc << " which doesn't exist.";
+           "with SSRC "
+        << ssrc << " which doesn't exist.";
     return webrtc::RtpParameters();
   }
   rtp_params = it->second->GetRtpParameters();
@@ -2736,7 +2739,8 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::SetFrameDecryptor(
   if (stream_) {
     RTC_LOG(LS_INFO)
         << "Setting FrameDecryptor (recv) because of SetFrameDecryptor, "
-        << "remote_ssrc=" << config_.rtp.remote_ssrc;
+           "remote_ssrc="
+        << config_.rtp.remote_ssrc;
     stream_->SetFrameDecryptor(frame_decryptor);
   }
 }

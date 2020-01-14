@@ -2174,21 +2174,36 @@ std::string ProduceDebugText(int render_input_sample_rate_hz,
                              size_t capture_output_num_channels) {
   rtc::StringBuilder ss;
   ss << "Sample rates:"
+        "\n"
+        " Render input: "
+     << render_input_sample_rate_hz
+     << " Hz"
+        "\n"
+        " Render output: "
+     << render_output_sample_rate_hz
+     << " Hz"
+        "\n"
+        " Capture input: "
+     << capture_input_sample_rate_hz
+     << " Hz"
+        "\n"
+        " Capture output: "
+     << capture_output_sample_rate_hz
+     << " Hz"
+        "\n"
+        "Number of channels:"
+        "\n"
+        " Render input: "
+     << render_input_num_channels
      << "\n"
-     << " Render input: " << render_input_sample_rate_hz << " Hz"
+        " Render output: "
+     << render_output_num_channels
      << "\n"
-     << " Render output: " << render_output_sample_rate_hz << " Hz"
+        " Capture input: "
+     << capture_input_num_channels
      << "\n"
-     << " Capture input: " << capture_input_sample_rate_hz << " Hz"
-     << "\n"
-     << " Capture output: " << capture_output_sample_rate_hz << " Hz"
-     << "\n"
-     << "Number of channels:"
-     << "\n"
-     << " Render input: " << render_input_num_channels << "\n"
-     << " Render output: " << render_output_num_channels << "\n"
-     << " Capture input: " << capture_input_num_channels << "\n"
-     << " Capture output: " << capture_output_num_channels;
+        " Capture output: "
+     << capture_output_num_channels;
   return ss.Release();
 }
 

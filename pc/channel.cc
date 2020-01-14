@@ -423,7 +423,7 @@ bool BaseChannel::SendPacket(bool rtcp,
       // (and SetSend(true) is called).
       RTC_LOG(LS_ERROR)
           << "Can't send outgoing RTP packet when SRTP is inactive"
-          << " and crypto is required";
+             " and crypto is required";
       RTC_NOTREACHED();
       return false;
     }

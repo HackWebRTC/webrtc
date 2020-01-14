@@ -114,7 +114,8 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,
     int frame_delay = static_cast<int>(std::abs(render_time_ms - now_ms));
     RTC_LOG(LS_WARNING)
         << "A frame about to be decoded is out of the configured "
-        << "delay bounds (" << frame_delay << " > " << max_video_delay_ms_
+           "delay bounds ("
+        << frame_delay << " > " << max_video_delay_ms_
         << "). Resetting the video jitter buffer.";
     timing_error = true;
   } else if (static_cast<int>(timing_->TargetVideoDelay()) >

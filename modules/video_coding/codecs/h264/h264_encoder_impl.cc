@@ -378,7 +378,7 @@ int32_t H264EncoderImpl::Encode(
   if (!encoded_image_callback_) {
     RTC_LOG(LS_WARNING)
         << "InitEncode() has been called, but a callback function "
-        << "has not been set with RegisterEncodeCompleteCallback()";
+           "has not been set with RegisterEncodeCompleteCallback()";
     ReportError();
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }

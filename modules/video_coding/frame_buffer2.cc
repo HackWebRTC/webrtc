@@ -350,7 +350,8 @@ bool FrameBuffer::HasBadRenderTiming(const EncodedFrame& frame,
     int frame_delay = static_cast<int>(std::abs(render_time_ms - now_ms));
     RTC_LOG(LS_WARNING)
         << "A frame about to be decoded is out of the configured "
-        << "delay bounds (" << frame_delay << " > " << kMaxVideoDelayMs
+           "delay bounds ("
+        << frame_delay << " > " << kMaxVideoDelayMs
         << "). Resetting the video jitter buffer.";
     return true;
   }
@@ -482,14 +483,14 @@ int64_t FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
                           << id.picture_id << ":"
                           << static_cast<int>(id.spatial_layer)
                           << ") but buffer is full, clearing"
-                          << " buffer and inserting the frame.";
+                             " buffer and inserting the frame.";
       ClearFramesAndHistory();
     } else {
       RTC_LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) ("
                           << id.picture_id << ":"
                           << static_cast<int>(id.spatial_layer)
                           << ") could not be inserted due to the frame "
-                          << "buffer being full, dropping frame.";
+                             "buffer being full, dropping frame.";
       return last_continuous_picture_id;
     }
   }
@@ -662,7 +663,7 @@ bool FrameBuffer::UpdateFrameInfoWithIncomingFrame(const EncodedFrame& frame,
               << "Frame with (picture_id:spatial_id) (" << id.picture_id << ":"
               << static_cast<int>(id.spatial_layer)
               << ") depends on a non-decoded frame more previous than"
-              << " the last decoded frame, dropping frame.";
+                 " the last decoded frame, dropping frame.";
           last_log_non_decoded_ms_ = now_ms;
         }
         return false;

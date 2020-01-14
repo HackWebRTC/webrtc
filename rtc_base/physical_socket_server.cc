@@ -1265,8 +1265,8 @@ void PhysicalSocketServer::Remove(Dispatcher* pdispatcher) {
     if (!pending_add_dispatchers_.erase(pdispatcher) &&
         dispatchers_.find(pdispatcher) == dispatchers_.end()) {
       RTC_LOG(LS_WARNING) << "PhysicalSocketServer asked to remove a unknown "
-                          << "dispatcher, potentially from a duplicate call to "
-                          << "Add.";
+                             "dispatcher, potentially from a duplicate call to "
+                             "Add.";
       return;
     }
 
@@ -1274,7 +1274,7 @@ void PhysicalSocketServer::Remove(Dispatcher* pdispatcher) {
   } else if (!dispatchers_.erase(pdispatcher)) {
     RTC_LOG(LS_WARNING)
         << "PhysicalSocketServer asked to remove a unknown "
-        << "dispatcher, potentially from a duplicate call to Add.";
+           "dispatcher, potentially from a duplicate call to Add.";
     return;
   }
 #if defined(WEBRTC_USE_EPOLL)

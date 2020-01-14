@@ -1262,7 +1262,7 @@ bool PeerConnection::Initialize(
       RTC_DCHECK(false)
           << "PeerConnecton is initialized with use_datagram_transport = true "
              "or use_datagram_transport_for_data_channels = true "
-          << "but media transport factory is not set in PeerConnectionFactory";
+             "but media transport factory is not set in PeerConnectionFactory";
       return false;
     }
 
