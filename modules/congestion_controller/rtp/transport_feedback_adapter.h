@@ -38,9 +38,6 @@ struct PacketFeedback {
   // The network route ids that this packet is associated with.
   uint16_t local_net_id = 0;
   uint16_t remote_net_id = 0;
-  // The SSRC and RTP sequence number of the packet this feedback refers to.
-  absl::optional<uint32_t> ssrc;
-  uint16_t rtp_sequence_number = 0;
 };
 
 class InFlightBytesTracker {
@@ -55,16 +52,9 @@ class InFlightBytesTracker {
   std::map<RemoteAndLocalNetworkId, DataSize> in_flight_data_;
 };
 
-class TransportFeedbackAdapter : public StreamFeedbackProvider {
+class TransportFeedbackAdapter {
  public:
   TransportFeedbackAdapter();
-  virtual ~TransportFeedbackAdapter();
-
-  void RegisterStreamFeedbackObserver(
-      std::vector<uint32_t> ssrcs,
-      StreamFeedbackObserver* observer) override;
-  void DeRegisterStreamFeedbackObserver(
-      StreamFeedbackObserver* observer) override;
 
   void AddPacket(const RtpPacketSendInfo& packet_info,
                  size_t overhead_bytes,
@@ -83,14 +73,9 @@ class TransportFeedbackAdapter : public StreamFeedbackProvider {
  private:
   enum class SendTimeHistoryStatus { kNotAdded, kOk, kDuplicate };
 
-  void OnTransportFeedback(const rtcp::TransportFeedback& feedback);
-
-  std::vector<PacketFeedback> ProcessTransportFeedbackInner(
+  std::vector<PacketResult> ProcessTransportFeedbackInner(
       const rtcp::TransportFeedback& feedback,
       Timestamp feedback_time) RTC_RUN_ON(&lock_);
-
-  void SignalObservers(
-      const std::vector<PacketFeedback>& packet_feedback_vector);
 
   rtc::CriticalSection lock_;
   DataSize pending_untracked_size_ RTC_GUARDED_BY(&lock_) = DataSize::Zero();
@@ -110,13 +95,6 @@ class TransportFeedbackAdapter : public StreamFeedbackProvider {
 
   uint16_t local_net_id_ RTC_GUARDED_BY(&lock_) = 0;
   uint16_t remote_net_id_ RTC_GUARDED_BY(&lock_) = 0;
-
-  rtc::CriticalSection observers_lock_;
-  // Maps a set of ssrcs to corresponding observer. Vectors are used rather than
-  // set/map to ensure that the processing order is consistent independently of
-  // the randomized ssrcs.
-  std::vector<std::pair<std::vector<uint32_t>, StreamFeedbackObserver*>>
-      observers_ RTC_GUARDED_BY(&observers_lock_);
 };
 
 }  // namespace webrtc
