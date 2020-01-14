@@ -323,7 +323,13 @@ if (rtc_include_tests) {
       sources = [
         "rtc_event_log_visualizer/main.cc",
       ]
-
+      data = [
+        # If --wav_filename is not provided, event_log_visualizer uses
+        # EN_script2_F_sp2_B1.wav by default. This is a good default to use
+        # for example with flags --plot=all when there is no need to use a
+        # specific .wav file.
+        "../resources/audio_processing/conversational_speech/EN_script2_F_sp2_B1.wav",
+      ]
       deps = [
         ":event_log_visualizer_utils",
         "../api/neteq:neteq_api",
