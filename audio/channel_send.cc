@@ -115,13 +115,7 @@ class ChannelSend : public ChannelSendInterface,
                                         int payload_frequency) override;
 
   // RTP+RTCP
-  void SetRid(const std::string& rid,
-              int extension_id,
-              int repaired_extension_id) override;
-  void SetMid(const std::string& mid, int extension_id) override;
-  void SetExtmapAllowMixed(bool extmap_allow_mixed) override;
   void SetSendAudioLevelIndicationStatus(bool enable, int id) override;
-  void EnableSendTransportSequenceNumber(int id) override;
 
   void RegisterSenderCongestionControlObjects(
       RtpTransportControllerSendInterface* transport,
@@ -158,8 +152,6 @@ class ChannelSend : public ChannelSendInterface,
 
   void OnUplinkPacketLossRate(float packet_loss_rate);
   bool InputMute() const;
-
-  void SetSendRtpHeaderExtension(bool enable, absl::string_view uri, int id);
 
   int32_t SendRtpAudio(AudioFrameType frameType,
                        uint8_t payloadType,
@@ -698,40 +690,14 @@ void ChannelSend::SetSendTelephoneEventPayloadType(int payload_type,
                                           payload_frequency, 0, 0);
 }
 
-void ChannelSend::SetRid(const std::string& rid,
-                         int extension_id,
-                         int repaired_extension_id) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  if (extension_id != 0) {
-    SetSendRtpHeaderExtension(!rid.empty(), RtpStreamId::kUri, extension_id);
-  }
-  if (repaired_extension_id != 0) {
-    SetSendRtpHeaderExtension(!rid.empty(), RtpStreamId::kUri,
-                              repaired_extension_id);
-  }
-  _rtpRtcpModule->SetRid(rid);
-}
-
-void ChannelSend::SetMid(const std::string& mid, int extension_id) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  SetSendRtpHeaderExtension(true, RtpMid::kUri, extension_id);
-  _rtpRtcpModule->SetMid(mid);
-}
-
-void ChannelSend::SetExtmapAllowMixed(bool extmap_allow_mixed) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  _rtpRtcpModule->SetExtmapAllowMixed(extmap_allow_mixed);
-}
-
 void ChannelSend::SetSendAudioLevelIndicationStatus(bool enable, int id) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   _includeAudioLevelIndication = enable;
-  SetSendRtpHeaderExtension(enable, AudioLevel::kUri, id);
-}
-
-void ChannelSend::EnableSendTransportSequenceNumber(int id) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  SetSendRtpHeaderExtension(true, TransportSequenceNumber::kUri, id);
+  if (enable) {
+    _rtpRtcpModule->RegisterRtpHeaderExtension(AudioLevel::kUri, id);
+  } else {
+    _rtpRtcpModule->DeregisterSendRtpHeaderExtension(AudioLevel::kUri);
+  }
 }
 
 void ChannelSend::RegisterSenderCongestionControlObjects(
@@ -893,15 +859,6 @@ ANAStats ChannelSend::GetANAStatistics() const {
 RtpRtcp* ChannelSend::GetRtpRtcp() const {
   RTC_DCHECK(module_process_thread_checker_.IsCurrent());
   return _rtpRtcpModule.get();
-}
-
-void ChannelSend::SetSendRtpHeaderExtension(bool enable,
-                                            absl::string_view uri,
-                                            int id) {
-  _rtpRtcpModule->DeregisterSendRtpHeaderExtension(uri);
-  if (enable) {
-    _rtpRtcpModule->RegisterRtpHeaderExtension(uri, id);
-  }
 }
 
 int64_t ChannelSend::GetRTT() const {

@@ -82,15 +82,8 @@ class MockChannelSend : public voe::ChannelSendInterface {
       void(rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier));
   MOCK_METHOD1(CallEncoder,
                void(rtc::FunctionView<void(AudioEncoder*)> modifier));
-  MOCK_METHOD3(SetRid,
-               void(const std::string& rid,
-                    int extension_id,
-                    int repaired_extension_id));
-  MOCK_METHOD2(SetMid, void(const std::string& mid, int extension_id));
   MOCK_METHOD1(SetRTCP_CNAME, void(absl::string_view c_name));
-  MOCK_METHOD1(SetExtmapAllowMixed, void(bool extmap_allow_mixed));
   MOCK_METHOD2(SetSendAudioLevelIndicationStatus, void(bool enable, int id));
-  MOCK_METHOD1(EnableSendTransportSequenceNumber, void(int id));
   MOCK_METHOD2(RegisterSenderCongestionControlObjects,
                void(RtpTransportControllerSendInterface* transport,
                     RtcpBandwidthObserver* bandwidth_observer));

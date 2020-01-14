@@ -195,6 +195,7 @@ struct ConfigHelper {
     return *static_cast<MockAudioEncoderFactory*>(
         stream_config_.encoder_factory.get());
   }
+  MockRtpRtcp* rtp_rtcp() { return &rtp_rtcp_; }
   MockChannelSend* channel_send() { return channel_send_; }
   RtpTransportControllerSendInterface* transport() { return &rtp_transport_; }
 
@@ -213,15 +214,16 @@ struct ConfigHelper {
     EXPECT_CALL(rtp_rtcp_, SSRC).WillRepeatedly(Return(kSsrc));
     EXPECT_CALL(*channel_send_, SetRTCP_CNAME(StrEq(kCName))).Times(1);
     EXPECT_CALL(*channel_send_, SetFrameEncryptor(_)).Times(1);
-    EXPECT_CALL(*channel_send_, SetExtmapAllowMixed(false)).Times(1);
+    EXPECT_CALL(rtp_rtcp_, SetExtmapAllowMixed(false)).Times(1);
     EXPECT_CALL(*channel_send_,
                 SetSendAudioLevelIndicationStatus(true, kAudioLevelId))
         .Times(1);
     EXPECT_CALL(rtp_transport_, GetBandwidthObserver())
         .WillRepeatedly(Return(&bandwidth_observer_));
     if (audio_bwe_enabled) {
-      EXPECT_CALL(*channel_send_,
-                  EnableSendTransportSequenceNumber(kTransportSequenceNumberId))
+      EXPECT_CALL(rtp_rtcp_,
+                  RegisterRtpHeaderExtension(TransportSequenceNumber::kUri,
+                                             kTransportSequenceNumberId))
           .Times(1);
       EXPECT_CALL(*channel_send_,
                   RegisterSenderCongestionControlObjects(
@@ -233,7 +235,7 @@ struct ConfigHelper {
           .Times(1);
     }
     EXPECT_CALL(*channel_send_, ResetSenderCongestionControlObjects()).Times(1);
-    EXPECT_CALL(*channel_send_, SetRid(std::string(), 0, 0)).Times(1);
+    EXPECT_CALL(rtp_rtcp_, SetRid(std::string())).Times(1);
   }
 
   void SetupMockForSetupSendCodec(bool expect_set_encoder_call) {
@@ -705,8 +707,10 @@ TEST(AudioSendStreamTest, ReconfigureTransportCcResetsFirst) {
   auto send_stream = helper.CreateAudioSendStream();
   auto new_config = helper.config();
   ConfigHelper::AddBweToConfig(&new_config);
-  EXPECT_CALL(*helper.channel_send(),
-              EnableSendTransportSequenceNumber(kTransportSequenceNumberId))
+
+  EXPECT_CALL(*helper.rtp_rtcp(),
+              RegisterRtpHeaderExtension(TransportSequenceNumber::kUri,
+                                         kTransportSequenceNumberId))
       .Times(1);
   {
     ::testing::InSequence seq;

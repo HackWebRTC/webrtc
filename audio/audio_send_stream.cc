@@ -32,6 +32,7 @@
 #include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/audio_coding/codecs/cng/audio_encoder_cng.h"
 #include "modules/audio_processing/include/audio_processing.h"
+#include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
 #include "rtc_base/logging.h"
@@ -156,7 +157,7 @@ AudioSendStream::AudioSendStream(
           !field_trial::IsDisabled("WebRTC-Audio-LegacyOverhead")),
       bitrate_allocator_(bitrate_allocator),
       rtp_transport_(rtp_transport),
-      rtp_rtcp_module_(nullptr),
+      rtp_rtcp_module_(channel_send_->GetRtpRtcp()),
       suspended_rtp_state_(suspended_rtp_state) {
   RTC_LOG(LS_INFO) << "AudioSendStream: " << config.rtp.ssrc;
   RTC_DCHECK(worker_queue_);
@@ -165,7 +166,6 @@ AudioSendStream::AudioSendStream(
   RTC_DCHECK(bitrate_allocator_);
   RTC_DCHECK(rtp_transport);
 
-  rtp_rtcp_module_ = channel_send_->GetRtpRtcp();
   RTC_DCHECK(rtp_rtcp_module_);
 
   ConfigureStream(config, true);
@@ -249,7 +249,7 @@ void AudioSendStream::ConfigureStream(
 
   if (first_time ||
       new_config.rtp.extmap_allow_mixed != old_config.rtp.extmap_allow_mixed) {
-    channel_send_->SetExtmapAllowMixed(new_config.rtp.extmap_allow_mixed);
+    rtp_rtcp_module_->SetExtmapAllowMixed(new_config.rtp.extmap_allow_mixed);
   }
 
   const ExtensionIds old_ids = FindExtensionIds(old_config.rtp.extensions);
@@ -262,7 +262,7 @@ void AudioSendStream::ConfigureStream(
   }
 
   if (first_time || new_ids.abs_send_time != old_ids.abs_send_time) {
-    channel_send_->GetRtpRtcp()->DeregisterSendRtpHeaderExtension(
+    rtp_rtcp_module_->DeregisterSendRtpHeaderExtension(
         kRtpExtensionAbsoluteSendTime);
     if (new_ids.abs_send_time) {
       rtp_rtcp_module_->RegisterRtpHeaderExtension(AbsoluteSendTime::kUri,
@@ -282,8 +282,8 @@ void AudioSendStream::ConfigureStream(
 
     if (audio_send_side_bwe_ && !allocate_audio_without_feedback_ &&
         new_ids.transport_sequence_number != 0) {
-      channel_send_->EnableSendTransportSequenceNumber(
-          new_ids.transport_sequence_number);
+      rtp_rtcp_module_->RegisterRtpHeaderExtension(
+          TransportSequenceNumber::kUri, new_ids.transport_sequence_number);
       // Probing in application limited region is only used in combination with
       // send side congestion control, wich depends on feedback packets which
       // requires transport sequence numbers to be enabled.
@@ -301,15 +301,26 @@ void AudioSendStream::ConfigureStream(
   if ((first_time || new_ids.mid != old_ids.mid ||
        new_config.rtp.mid != old_config.rtp.mid) &&
       new_ids.mid != 0 && !new_config.rtp.mid.empty()) {
-    channel_send_->SetMid(new_config.rtp.mid, new_ids.mid);
+    rtp_rtcp_module_->RegisterRtpHeaderExtension(RtpMid::kUri, new_ids.mid);
+    rtp_rtcp_module_->SetMid(new_config.rtp.mid);
   }
 
   // RID RTP header extension
   if ((first_time || new_ids.rid != old_ids.rid ||
        new_ids.repaired_rid != old_ids.repaired_rid ||
        new_config.rtp.rid != old_config.rtp.rid)) {
-    channel_send_->SetRid(new_config.rtp.rid, new_ids.rid,
-                          new_ids.repaired_rid);
+    if (new_ids.rid != 0 || new_ids.repaired_rid != 0) {
+      if (new_config.rtp.rid.empty()) {
+        rtp_rtcp_module_->DeregisterSendRtpHeaderExtension(RtpStreamId::kUri);
+      } else if (new_ids.repaired_rid != 0) {
+        rtp_rtcp_module_->RegisterRtpHeaderExtension(RtpStreamId::kUri,
+                                                     new_ids.repaired_rid);
+      } else {
+        rtp_rtcp_module_->RegisterRtpHeaderExtension(RtpStreamId::kUri,
+                                                     new_ids.rid);
+      }
+    }
+    rtp_rtcp_module_->SetRid(new_config.rtp.rid);
   }
 
   if (!ReconfigureSendCodec(new_config)) {

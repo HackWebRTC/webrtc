@@ -181,7 +181,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
       RTC_GUARDED_BY(worker_queue_);
   RtpTransportControllerSendInterface* const rtp_transport_;
 
-  RtpRtcp* rtp_rtcp_module_;
+  RtpRtcp* const rtp_rtcp_module_;
   absl::optional<RtpState> const suspended_rtp_state_;
 
   // RFC 5285: Each distinct extension MUST have a unique ID. The value 0 is
