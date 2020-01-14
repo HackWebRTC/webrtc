@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "api/test/network_emulation_manager.h"
+#include "api/test/time_controller.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/ip_address.h"
 #include "rtc_base/network.h"
@@ -31,7 +32,7 @@ class EmulatedNetworkManager : public rtc::NetworkManagerBase,
                                public sigslot::has_slots<>,
                                public EmulatedNetworkManagerInterface {
  public:
-  EmulatedNetworkManager(Clock* clock,
+  EmulatedNetworkManager(TimeController* time_controller,
                          TaskQueueForTest* task_queue,
                          EndpointsContainer* endpoints_container);
 

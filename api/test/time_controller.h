@@ -12,12 +12,14 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 
 #include "api/task_queue/task_queue_factory.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/synchronization/yield_policy.h"
+#include "rtc_base/thread.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -37,6 +39,11 @@ class TimeController {
   // Creates a process thread.
   virtual std::unique_ptr<ProcessThread> CreateProcessThread(
       const char* thread_name) = 0;
+  // Creates an rtc::Thread instance. If |socket_server| is nullptr, a default
+  // noop socket server is created.
+  virtual std::unique_ptr<rtc::Thread> CreateThread(
+      const std::string& name,
+      std::unique_ptr<rtc::SocketServer> socket_server = nullptr) = 0;
   // Allow task queues and process threads created by this instance to execute
   // for the given |duration|.
   virtual void AdvanceTime(TimeDelta duration) = 0;

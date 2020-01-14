@@ -60,6 +60,10 @@ class SimulatedTimeControllerImpl : public TaskQueueFactory,
   void YieldExecution() override;
   // Create process thread with the name |thread_name|.
   std::unique_ptr<ProcessThread> CreateProcessThread(const char* thread_name);
+  // Create thread using provided |socket_server|.
+  std::unique_ptr<rtc::Thread> CreateThread(
+      const std::string& name,
+      std::unique_ptr<rtc::SocketServer> socket_server);
 
   // Runs all runners in |runners_| that has tasks or modules ready for
   // execution.
@@ -75,6 +79,7 @@ class SimulatedTimeControllerImpl : public TaskQueueFactory,
 
  private:
   const rtc::PlatformThreadId thread_id_;
+  std::unique_ptr<rtc::Thread> dummy_thread_ = rtc::Thread::Create();
   rtc::CriticalSection time_lock_;
   Timestamp current_time_ RTC_GUARDED_BY(time_lock_);
   rtc::CriticalSection lock_;
@@ -119,6 +124,9 @@ class GlobalSimulatedTimeController : public TimeController {
   TaskQueueFactory* GetTaskQueueFactory() override;
   std::unique_ptr<ProcessThread> CreateProcessThread(
       const char* thread_name) override;
+  std::unique_ptr<rtc::Thread> CreateThread(
+      const std::string& name,
+      std::unique_ptr<rtc::SocketServer> socket_server) override;
 
   void AdvanceTime(TimeDelta duration) override;
 

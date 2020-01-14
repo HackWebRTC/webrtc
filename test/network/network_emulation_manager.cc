@@ -34,7 +34,8 @@ NetworkEmulationManagerImpl::NetworkEmulationManagerImpl()
 
 NetworkEmulationManagerImpl::NetworkEmulationManagerImpl(
     TimeController* time_controller)
-    : clock_(time_controller->GetClock()),
+    : time_controller_(time_controller),
+      clock_(time_controller->GetClock()),
       next_node_id_(1),
       next_ip4_address_(kMinIPv4Address),
       task_queue_(time_controller->GetTaskQueueFactory()->CreateTaskQueue(
@@ -265,7 +266,7 @@ NetworkEmulationManagerImpl::CreateEmulatedNetworkManagerInterface(
   auto endpoints_container =
       std::make_unique<EndpointsContainer>(endpoint_impls);
   auto network_manager = std::make_unique<EmulatedNetworkManager>(
-      clock_, &task_queue_, endpoints_container.get());
+      time_controller_, &task_queue_, endpoints_container.get());
   for (auto* endpoint : endpoints) {
     // Associate endpoint with network manager.
     bool insertion_result =

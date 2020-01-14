@@ -20,6 +20,7 @@
 #include "absl/strings/string_view.h"
 #include "test/time_controller/simulated_process_thread.h"
 #include "test/time_controller/simulated_task_queue.h"
+#include "test/time_controller/simulated_thread.h"
 
 namespace webrtc {
 namespace {
@@ -63,6 +64,16 @@ std::unique_ptr<ProcessThread> SimulatedTimeControllerImpl::CreateProcessThread(
   return process_thread;
 }
 
+std::unique_ptr<rtc::Thread> SimulatedTimeControllerImpl::CreateThread(
+    const std::string& name,
+    std::unique_ptr<rtc::SocketServer> socket_server) {
+  rtc::CritScope lock(&lock_);
+  auto thread =
+      std::make_unique<SimulatedThread>(this, name, std::move(socket_server));
+  runners_.push_back(thread.get());
+  return thread;
+}
+
 void SimulatedTimeControllerImpl::YieldExecution() {
   if (rtc::CurrentThreadId() == thread_id_) {
     TaskQueueBase* yielding_from = TaskQueueBase::Current();
@@ -83,6 +94,9 @@ void SimulatedTimeControllerImpl::YieldExecution() {
 }
 
 void SimulatedTimeControllerImpl::RunReadyRunners() {
+  // Using a dummy thread rather than nullptr to avoid implicit thread creation
+  // by Thread::Current().
+  SimulatedThread::CurrentThreadSetter set_current(dummy_thread_.get());
   rtc::CritScope lock(&lock_);
   RTC_DCHECK_EQ(rtc::CurrentThreadId(), thread_id_);
   Timestamp current_time = CurrentTime();
@@ -163,6 +177,12 @@ TaskQueueFactory* GlobalSimulatedTimeController::GetTaskQueueFactory() {
 std::unique_ptr<ProcessThread>
 GlobalSimulatedTimeController::CreateProcessThread(const char* thread_name) {
   return impl_.CreateProcessThread(thread_name);
+}
+
+std::unique_ptr<rtc::Thread> GlobalSimulatedTimeController::CreateThread(
+    const std::string& name,
+    std::unique_ptr<rtc::SocketServer> socket_server) {
+  return impl_.CreateThread(name, std::move(socket_server));
 }
 
 void GlobalSimulatedTimeController::AdvanceTime(TimeDelta duration) {
