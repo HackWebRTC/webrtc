@@ -486,6 +486,22 @@ void SendVideoStream::UpdateActiveLayers(std::vector<bool> active_layers) {
   });
 }
 
+bool SendVideoStream::UsingSsrc(uint32_t ssrc) const {
+  for (uint32_t owned : ssrcs_) {
+    if (owned == ssrc)
+      return true;
+  }
+  return false;
+}
+
+bool SendVideoStream::UsingRtxSsrc(uint32_t ssrc) const {
+  for (uint32_t owned : rtx_ssrcs_) {
+    if (owned == ssrc)
+      return true;
+  }
+  return false;
+}
+
 void SendVideoStream::SetCaptureFramerate(int framerate) {
   sender_->SendTask([&] { video_capturer_->ChangeFramerate(framerate); });
 }
@@ -520,7 +536,8 @@ ReceiveVideoStream::ReceiveVideoStream(CallClient* receiver,
                                        VideoFrameMatcher* matcher)
     : receiver_(receiver), config_(config) {
   if (config.encoder.codec ==
-      VideoStreamConfig::Encoder::Codec::kVideoCodecGeneric) {
+          VideoStreamConfig::Encoder::Codec::kVideoCodecGeneric ||
+      config.encoder.implementation == VideoStreamConfig::Encoder::kFake) {
     decoder_factory_ = std::make_unique<FunctionVideoDecoderFactory>(
         []() { return std::make_unique<FakeDecoder>(); });
   } else {

@@ -10,8 +10,10 @@
 
 #include "call/rtp_video_sender.h"
 
+#include <atomic>
 #include <memory>
 #include <string>
+
 #include "call/rtp_transport_controller_send.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
@@ -25,6 +27,7 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/mock_transport.h"
+#include "test/scenario/scenario.h"
 #include "test/time_controller/simulated_time_controller.h"
 #include "video/call_stats.h"
 #include "video/send_delay_stats.h"
@@ -503,6 +506,62 @@ TEST(RtpVideoSenderTest, DoesNotRetrasmitAckedPackets) {
   test.router()->DeliverRtcp(nack_buffer.data(), nack_buffer.size());
   test.AdvanceTime(TimeDelta::ms(33));
   ASSERT_TRUE(event.Wait(kTimeoutMs));
+}
+
+// This tests that we utilize transport wide feedback to retransmit lost
+// packets. This is tested by dropping all ordirary packets from a "lossy"
+// stream send along with an secondary untouched stream. The transport wide
+// feedback packets from the secondary stream allows the sending side to
+// detect and retreansmit the lost packets from the lossy stream.
+TEST(RtpVideoSenderTest, RetransmitsOnTransportWideLossInfo) {
+  int rtx_packets;
+  test::Scenario s(test_info_);
+  test::CallClientConfig call_conf;
+  // Keeping the bitrate fixed to avoid RTX due to probing.
+  call_conf.transport.rates.max_rate = DataRate::kbps(300);
+  call_conf.transport.rates.start_rate = DataRate::kbps(300);
+  test::NetworkSimulationConfig net_conf;
+  net_conf.bandwidth = DataRate::kbps(300);
+  auto send_node = s.CreateSimulationNode(net_conf);
+  auto* route = s.CreateRoutes(s.CreateClient("send", call_conf), {send_node},
+                               s.CreateClient("return", call_conf),
+                               {s.CreateSimulationNode(net_conf)});
+
+  test::VideoStreamConfig lossy_config;
+  lossy_config.source.framerate = 5;
+  auto* lossy = s.CreateVideoStream(route->forward(), lossy_config);
+  // The secondary stream acts a driver for transport feedback messages,
+  // ensuring that lost packets on the lossy stream are retransmitted.
+  s.CreateVideoStream(route->forward(), test::VideoStreamConfig());
+
+  send_node->router()->SetFilter([&](const EmulatedIpPacket& packet) {
+    RtpPacket rtp;
+    if (rtp.Parse(packet.data)) {
+      // Drops all regular packets for the lossy stream and counts all RTX
+      // packets. Since no packets are let trough, NACKs can't be triggered
+      // by the receiving side.
+      if (lossy->send()->UsingSsrc(rtp.Ssrc())) {
+        return false;
+      } else if (lossy->send()->UsingRtxSsrc(rtp.Ssrc())) {
+        ++rtx_packets;
+      }
+    }
+    return true;
+  });
+
+  // Run for a short duration and reset counters to avoid counting RTX packets
+  // from initial probing.
+  s.RunFor(TimeDelta::seconds(1));
+  rtx_packets = 0;
+  int decoded_baseline = lossy->receive()->GetStats().frames_decoded;
+  s.RunFor(TimeDelta::seconds(1));
+  // We expect both that RTX packets were sent and that an appropriate number of
+  // frames were received. This is somewhat redundant but reduces the risk of
+  // false positives in future regressions (e.g. RTX is send due to probing).
+  EXPECT_GE(rtx_packets, 1);
+  int frames_decoded =
+      lossy->receive()->GetStats().frames_decoded - decoded_baseline;
+  EXPECT_EQ(frames_decoded, 5);
 }
 
 // Integration test verifying that retransmissions are sent for packets which

@@ -73,12 +73,15 @@ class NetworkRouterNode : public EmulatedNetworkReceiverInterface {
                    EmulatedNetworkReceiverInterface* receiver);
   void RemoveReceiver(const rtc::IPAddress& dest_ip);
   void SetWatcher(std::function<void(const EmulatedIpPacket&)> watcher);
+  void SetFilter(std::function<bool(const EmulatedIpPacket&)> filter);
 
  private:
   rtc::TaskQueue* const task_queue_;
   std::map<rtc::IPAddress, EmulatedNetworkReceiverInterface*> routing_
       RTC_GUARDED_BY(task_queue_);
   std::function<void(const EmulatedIpPacket&)> watcher_
+      RTC_GUARDED_BY(task_queue_);
+  std::function<bool(const EmulatedIpPacket&)> filter_
       RTC_GUARDED_BY(task_queue_);
 };
 

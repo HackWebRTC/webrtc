@@ -91,6 +91,10 @@ void NetworkRouterNode::OnPacketReceived(EmulatedIpPacket packet) {
   if (watcher_) {
     watcher_(packet);
   }
+  if (filter_) {
+    if (!filter_(packet))
+      return;
+  }
   auto receiver_it = routing_.find(packet.to.ipaddr());
   if (receiver_it == routing_.end()) {
     return;
@@ -122,6 +126,14 @@ void NetworkRouterNode::SetWatcher(
   task_queue_->PostTask([=] {
     RTC_DCHECK_RUN_ON(task_queue_);
     watcher_ = watcher;
+  });
+}
+
+void NetworkRouterNode::SetFilter(
+    std::function<bool(const EmulatedIpPacket&)> filter) {
+  task_queue_->PostTask([=] {
+    RTC_DCHECK_RUN_ON(task_queue_);
+    filter_ = filter;
   });
 }
 
