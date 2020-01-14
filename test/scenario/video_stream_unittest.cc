@@ -126,8 +126,11 @@ TEST(VideoStreamTest, SendsNacksOnLoss) {
   // NACK retransmissions are enabled by default.
   auto video = s.CreateVideoStream(route->forward(), VideoStreamConfig());
   s.RunFor(TimeDelta::seconds(1));
-  auto stream_stats = video->send()->GetStats().substreams.begin()->second;
-  EXPECT_GT(stream_stats.rtp_stats.retransmitted.packets, 0u);
+  int retransmit_packets = 0;
+  for (const auto& substream : video->send()->GetStats().substreams) {
+    retransmit_packets += substream.second.rtp_stats.retransmitted.packets;
+  }
+  EXPECT_GT(retransmit_packets, 0);
 }
 
 TEST(VideoStreamTest, SendsFecWithUlpFec) {
@@ -136,6 +139,7 @@ TEST(VideoStreamTest, SendsFecWithUlpFec) {
       s.CreateRoutes(s.CreateClient("caller", CallClientConfig()),
                      {s.CreateSimulationNode([](NetworkSimulationConfig* c) {
                        c->loss_rate = 0.1;
+                       c->delay = TimeDelta::ms(100);
                      })},
                      s.CreateClient("callee", CallClientConfig()),
                      {s.CreateSimulationNode(NetworkSimulationConfig())});
@@ -154,6 +158,7 @@ TEST(VideoStreamTest, SendsFecWithFlexFec) {
       s.CreateRoutes(s.CreateClient("caller", CallClientConfig()),
                      {s.CreateSimulationNode([](NetworkSimulationConfig* c) {
                        c->loss_rate = 0.1;
+                       c->delay = TimeDelta::ms(100);
                      })},
                      s.CreateClient("callee", CallClientConfig()),
                      {s.CreateSimulationNode(NetworkSimulationConfig())});

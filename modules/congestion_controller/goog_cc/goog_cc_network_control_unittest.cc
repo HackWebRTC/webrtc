@@ -412,7 +412,7 @@ TEST_F(GoogCcNetworkControllerTest, LimitsToFloorIfRttIsHighInTrial) {
   // Wait to allow the high RTT to be detected and acted upon.
   s.RunFor(TimeDelta::seconds(4));
   // By now the target rate should have dropped to the minimum configured rate.
-  EXPECT_NEAR(client->target_rate().kbps(), kBandwidthFloor.kbps(), 1);
+  EXPECT_NEAR(client->target_rate().kbps(), kBandwidthFloor.kbps(), 5);
 }
 
 TEST_F(GoogCcNetworkControllerTest, UpdatesTargetRateBasedOnLinkCapacity) {
@@ -502,7 +502,10 @@ DataRate AverageBitrateAfterCrossInducedLoss(std::string name) {
   auto* client = s.CreateClient("send", CallClientConfig());
   auto* route = s.CreateRoutes(
       client, send_net, s.CreateClient("return", CallClientConfig()), ret_net);
-  auto* video = s.CreateVideoStream(route->forward(), VideoStreamConfig());
+  // TODO(srte): Make this work with RTX enabled or remove it.
+  auto* video = s.CreateVideoStream(route->forward(), [](VideoStreamConfig* c) {
+    c->stream.use_rtx = false;
+  });
   s.RunFor(TimeDelta::seconds(10));
   for (int i = 0; i < 4; ++i) {
     // Sends TCP cross traffic inducing loss.
@@ -521,7 +524,7 @@ DataRate AverageBitrateAfterCrossInducedLoss(std::string name) {
 
 TEST_F(GoogCcNetworkControllerTest,
        NoLossBasedRecoversSlowerAfterCrossInducedLoss) {
-  // This test acts as a reference for the test below, showing that wihtout the
+  // This test acts as a reference for the test below, showing that without the
   // trial, we have worse behavior.
   DataRate average_bitrate =
       AverageBitrateAfterCrossInducedLoss("googcc_unit/no_cross_loss_based");
