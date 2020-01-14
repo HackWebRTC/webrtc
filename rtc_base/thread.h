@@ -90,6 +90,9 @@ class RTC_EXPORT ThreadManager {
 
   Thread* CurrentThread();
   void SetCurrentThread(Thread* thread);
+  // Allows changing the current thread, this is intended for tests where we
+  // want to simulate multiple threads running on a single physical thread.
+  void ChangeCurrentThreadForTest(Thread* thread);
 
   // Returns a thread object with its thread_ ivar set
   // to whatever the OS uses to represent the thread.
@@ -113,6 +116,7 @@ class RTC_EXPORT ThreadManager {
   ThreadManager();
   ~ThreadManager();
 
+  void SetCurrentThreadInternal(Thread* thread);
   void AddInternal(Thread* message_queue);
   void RemoveInternal(Thread* message_queue);
   void ClearInternal(MessageHandler* handler);

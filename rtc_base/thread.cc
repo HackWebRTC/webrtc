@@ -237,12 +237,7 @@ Thread* ThreadManager::CurrentThread() {
   return static_cast<Thread*>(pthread_getspecific(key_));
 }
 
-void ThreadManager::SetCurrentThread(Thread* thread) {
-#if RTC_DLOG_IS_ON
-  if (CurrentThread() && thread) {
-    RTC_DLOG(LS_ERROR) << "SetCurrentThread: Overwriting an existing value?";
-  }
-#endif  // RTC_DLOG_IS_ON
+void ThreadManager::SetCurrentThreadInternal(Thread* thread) {
   pthread_setspecific(key_, thread);
 }
 #endif
@@ -255,11 +250,23 @@ Thread* ThreadManager::CurrentThread() {
   return static_cast<Thread*>(TlsGetValue(key_));
 }
 
-void ThreadManager::SetCurrentThread(Thread* thread) {
-  RTC_DCHECK(!CurrentThread() || !thread);
+void ThreadManager::SetCurrentThreadInternal(Thread* thread) {
   TlsSetValue(key_, thread);
 }
 #endif
+
+void ThreadManager::SetCurrentThread(Thread* thread) {
+#if RTC_DLOG_IS_ON
+  if (CurrentThread() && thread) {
+    RTC_DLOG(LS_ERROR) << "SetCurrentThread: Overwriting an existing value?";
+  }
+#endif  // RTC_DLOG_IS_ON
+  SetCurrentThreadInternal(thread);
+}
+
+void rtc::ThreadManager::ChangeCurrentThreadForTest(rtc::Thread* thread) {
+  SetCurrentThreadInternal(thread);
+}
 
 Thread* ThreadManager::WrapCurrentThread() {
   Thread* result = CurrentThread();
