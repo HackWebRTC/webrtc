@@ -325,7 +325,7 @@ void EchoRemoverImpl::ProcessCapture(
         gain_change_hangover_ = kMaxBlocksPerFrame;
         rtc::LoggingSeverity log_level =
             config_.delay.log_warning_on_delay_changes ? rtc::LS_WARNING
-                                                       : rtc::LS_INFO;
+                                                       : rtc::LS_VERBOSE;
         RTC_LOG_V(log_level)
             << "Gain change detected at block " << block_counter_;
       } else {
