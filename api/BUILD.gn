@@ -145,6 +145,7 @@ rtc_library("libjingle_peerconnection_api") {
     "peer_connection_interface.cc",
     "peer_connection_interface.h",
     "peer_connection_proxy.h",
+    "proxy.cc",
     "proxy.h",
     "rtp_receiver_interface.cc",
     "rtp_receiver_interface.h",

@@ -70,6 +70,106 @@ class Location;
 
 namespace webrtc {
 
+template <typename R>
+class ReturnType {
+ public:
+  template <typename C, typename M, typename... Args>
+  void Invoke(C* c, M m, Args&&... args) {
+    r_ = (c->*m)(std::forward<Args>(args)...);
+  }
+
+  R moved_result() { return std::move(r_); }
+
+ private:
+  R r_;
+};
+
+template <>
+class ReturnType<void> {
+ public:
+  template <typename C, typename M, typename... Args>
+  void Invoke(C* c, M m, Args&&... args) {
+    (c->*m)(std::forward<Args>(args)...);
+  }
+
+  void moved_result() {}
+};
+
+namespace internal {
+
+class RTC_EXPORT SynchronousMethodCall : public rtc::MessageData,
+                                         public rtc::MessageHandler {
+ public:
+  explicit SynchronousMethodCall(rtc::MessageHandler* proxy);
+  ~SynchronousMethodCall() override;
+
+  void Invoke(const rtc::Location& posted_from, rtc::Thread* t);
+
+ private:
+  void OnMessage(rtc::Message*) override;
+
+  rtc::Event e_;
+  rtc::MessageHandler* proxy_;
+};
+
+}  // namespace internal
+
+template <typename C, typename R, typename... Args>
+class MethodCall : public rtc::Message, public rtc::MessageHandler {
+ public:
+  typedef R (C::*Method)(Args...);
+  MethodCall(C* c, Method m, Args&&... args)
+      : c_(c),
+        m_(m),
+        args_(std::forward_as_tuple(std::forward<Args>(args)...)) {}
+
+  R Marshal(const rtc::Location& posted_from, rtc::Thread* t) {
+    internal::SynchronousMethodCall(this).Invoke(posted_from, t);
+    return r_.moved_result();
+  }
+
+ private:
+  void OnMessage(rtc::Message*) { Invoke(std::index_sequence_for<Args...>()); }
+
+  template <size_t... Is>
+  void Invoke(std::index_sequence<Is...>) {
+    r_.Invoke(c_, m_, std::move(std::get<Is>(args_))...);
+  }
+
+  C* c_;
+  Method m_;
+  ReturnType<R> r_;
+  std::tuple<Args&&...> args_;
+};
+
+template <typename C, typename R, typename... Args>
+class ConstMethodCall : public rtc::Message, public rtc::MessageHandler {
+ public:
+  typedef R (C::*Method)(Args...) const;
+  ConstMethodCall(const C* c, Method m, Args&&... args)
+      : c_(c),
+        m_(m),
+        args_(std::forward_as_tuple(std::forward<Args>(args)...)) {}
+
+  R Marshal(const rtc::Location& posted_from, rtc::Thread* t) {
+    internal::SynchronousMethodCall(this).Invoke(posted_from, t);
+    return r_.moved_result();
+  }
+
+ private:
+  void OnMessage(rtc::Message*) { Invoke(std::index_sequence_for<Args...>()); }
+
+  template <size_t... Is>
+  void Invoke(std::index_sequence<Is...>) {
+    r_.Invoke(c_, m_, std::move(std::get<Is>(args_))...);
+  }
+
+  const C* c_;
+  Method m_;
+  ReturnType<R> r_;
+  std::tuple<Args&&...> args_;
+};
+
 // Helper macros to reduce code duplication.
 #define PROXY_MAP_BOILERPLATE(c)                          \
   template <class INTERNAL_CLASS>                         \
@@ -113,14 +213,16 @@ namespace webrtc {
 
 // Note that the destructor is protected so that the proxy can only be
 // destroyed via RefCountInterface.
-#define REFCOUNTED_PROXY_MAP_BOILERPLATE(c)                            \
- protected:                                                            \
-  ~c##ProxyWithInternal() {                                            \
-    destructor_thread()->template Invoke<void>(RTC_FROM_HERE,          \
-                                               [&] { c_ = nullptr; }); \
-  }                                                                    \
-                                                                       \
- private:                                                              \
+#define REFCOUNTED_PROXY_MAP_BOILERPLATE(c)            \
+ protected:                                            \
+  ~c##ProxyWithInternal() {                            \
+    MethodCall<c##ProxyWithInternal, void> call(       \
+        this, &c##ProxyWithInternal::DestroyInternal); \
+    call.Marshal(RTC_FROM_HERE, destructor_thread());  \
+  }                                                    \
+                                                       \
+ private:                                              \
+  void DestroyInternal() { c_ = nullptr; }             \
   rtc::scoped_refptr<INTERNAL_CLASS> c_;
 
 // Note: This doesn't use a unique_ptr, because it intends to handle a corner
@@ -128,14 +230,16 @@ namespace webrtc {
 // this proxy object. If relying on a unique_ptr to delete the object, its
 // inner pointer would be set to null before this reentrant callback would have
 // a chance to run, resulting in a segfault.
-#define OWNED_PROXY_MAP_BOILERPLATE(c)                              \
- public:                                                            \
-  ~c##ProxyWithInternal() {                                         \
-    destructor_thread()->template Invoke<void>(RTC_FROM_HERE,       \
-                                               [&] { delete c_; }); \
-  }                                                                 \
-                                                                    \
- private:                                                           \
+#define OWNED_PROXY_MAP_BOILERPLATE(c)                 \
+ public:                                               \
+  ~c##ProxyWithInternal() {                            \
+    MethodCall<c##ProxyWithInternal, void> call(       \
+        this, &c##ProxyWithInternal::DestroyInternal); \
+    call.Marshal(RTC_FROM_HERE, destructor_thread());  \
+  }                                                    \
+                                                       \
+ private:                                              \
+  void DestroyInternal() { delete c_; }                \
   INTERNAL_CLASS* c_;
 
 #define BEGIN_SIGNALING_PROXY_MAP(c)                                         \
@@ -185,95 +289,112 @@ namespace webrtc {
                                                                     \
  public:  // NOLINTNEXTLINE
 
-#define PROXY_METHOD0_BASE(t, modifier, r, method)                             \
-  r method() modifier override {                                               \
-    return t->template Invoke<r>(RTC_FROM_HERE, [&] { return c_->method(); }); \
+#define PROXY_METHOD0(r, method)                           \
+  r method() override {                                    \
+    MethodCall<C, r> call(c_, &C::method);                 \
+    return call.Marshal(RTC_FROM_HERE, signaling_thread_); \
   }
 
-#define PROXY_METHOD1_BASE(t, modifier, r, method, t1)                       \
-  r method(t1 a1) modifier override {                                        \
-    return t->template Invoke<r>(RTC_FROM_HERE,                              \
-                                 [&] { return c_->method(std::move(a1)); }); \
+#define PROXY_CONSTMETHOD0(r, method)                      \
+  r method() const override {                              \
+    ConstMethodCall<C, r> call(c_, &C::method);            \
+    return call.Marshal(RTC_FROM_HERE, signaling_thread_); \
   }
 
-#define PROXY_METHOD2_BASE(t, modifier, r, method, t1, t2) \
-  r method(t1 a1, t2 a2) modifier override {               \
-    return t->template Invoke<r>(RTC_FROM_HERE, [&] {      \
-      return c_->method(std::move(a1), std::move(a2));     \
-    });                                                    \
+#define PROXY_METHOD1(r, method, t1)                          \
+  r method(t1 a1) override {                                  \
+    MethodCall<C, r, t1> call(c_, &C::method, std::move(a1)); \
+    return call.Marshal(RTC_FROM_HERE, signaling_thread_);    \
   }
 
-#define PROXY_METHOD3_BASE(t, modifier, r, method, t1, t2, t3)        \
-  r method(t1 a1, t2 a2, t3 a3) modifier override {                   \
-    return t->template Invoke<r>(RTC_FROM_HERE, [&] {                 \
-      return c_->method(std::move(a1), std::move(a2), std::move(a3)); \
-    });                                                               \
+#define PROXY_CONSTMETHOD1(r, method, t1)                          \
+  r method(t1 a1) const override {                                 \
+    ConstMethodCall<C, r, t1> call(c_, &C::method, std::move(a1)); \
+    return call.Marshal(RTC_FROM_HERE, signaling_thread_);         \
   }
 
-#define PROXY_METHOD4_BASE(t, modifier, r, method, t1, t2, t3, t4)   \
-  r method(t1 a1, t2 a2, t3 a3, t4 a4) modifier override {           \
-    return t->template Invoke<r>(RTC_FROM_HERE, [&] {                \
-      return c_->method(std::move(a1), std::move(a2), std::move(a3), \
-                        std::move(a4));                              \
-    });                                                              \
+#define PROXY_METHOD2(r, method, t1, t2)                         \
+  r method(t1 a1, t2 a2) override {                              \
+    MethodCall<C, r, t1, t2> call(c_, &C::method, std::move(a1), \
+                                  std::move(a2));                \
+    return call.Marshal(RTC_FROM_HERE, signaling_thread_);       \
   }
 
-#define PROXY_METHOD5_BASE(t, modifier, r, method, t1, t2, t3, t4, t5) \
-  r method(t1 a1, t2 a2, t3 a3, t4 a4, t5 a5) modifier override {      \
-    return t->template Invoke<r>(RTC_FROM_HERE, [&] {                  \
-      return c_->method(std::move(a1), std::move(a2), std::move(a3),   \
-                        std::move(a4), std::move(a5));                 \
-    });                                                                \
+#define PROXY_METHOD3(r, method, t1, t2, t3)                         \
+  r method(t1 a1, t2 a2, t3 a3) override {                           \
+    MethodCall<C, r, t1, t2, t3> call(c_, &C::method, std::move(a1), \
+                                      std::move(a2), std::move(a3)); \
+    return call.Marshal(RTC_FROM_HERE, signaling_thread_);           \
   }
 
-#define PROXY_METHOD0(r, method) \
-  PROXY_METHOD0_BASE(signaling_thread_, , r, method)
+#define PROXY_METHOD4(r, method, t1, t2, t3, t4)                         \
+  r method(t1 a1, t2 a2, t3 a3, t4 a4) override {                        \
+    MethodCall<C, r, t1, t2, t3, t4> call(c_, &C::method, std::move(a1), \
+                                          std::move(a2), std::move(a3),  \
+                                          std::move(a4));                \
+    return call.Marshal(RTC_FROM_HERE, signaling_thread_);               \
+  }
 
-#define PROXY_CONSTMETHOD0(r, method) \
-  PROXY_METHOD0_BASE(signaling_thread_, const, r, method)
-
-#define PROXY_METHOD1(r, method, t1) \
-  PROXY_METHOD1_BASE(signaling_thread_, , r, method, t1)
-
-#define PROXY_CONSTMETHOD1(r, method, t1) \
-  PROXY_METHOD1_BASE(signaling_thread_, const, r, method, t1)
-
-#define PROXY_METHOD2(r, method, t1, t2) \
-  PROXY_METHOD2_BASE(signaling_thread_, , r, method, t1, t2)
-
-#define PROXY_METHOD3(r, method, t1, t2, t3) \
-  PROXY_METHOD3_BASE(signaling_thread_, , r, method, t1, t2, t3)
-
-#define PROXY_METHOD4(r, method, t1, t2, t3, t4) \
-  PROXY_METHOD4_BASE(signaling_thread_, , r, method, t1, t2, t3, t4)
-
-#define PROXY_METHOD5(r, method, t1, t2, t3, t4, t5) \
-  PROXY_METHOD5_BASE(signaling_thread_, , r, method, t1, t2, t3, t4, t5)
+#define PROXY_METHOD5(r, method, t1, t2, t3, t4, t5)                         \
+  r method(t1 a1, t2 a2, t3 a3, t4 a4, t5 a5) override {                     \
+    MethodCall<C, r, t1, t2, t3, t4, t5> call(c_, &C::method, std::move(a1), \
+                                              std::move(a2), std::move(a3),  \
+                                              std::move(a4), std::move(a5)); \
+    return call.Marshal(RTC_FROM_HERE, signaling_thread_);                   \
+  }
 
 // Define methods which should be invoked on the worker thread.
-#define PROXY_WORKER_METHOD0(r, method) \
-  PROXY_METHOD0_BASE(worker_thread_, , r, method)
+#define PROXY_WORKER_METHOD0(r, method)                 \
+  r method() override {                                 \
+    MethodCall<C, r> call(c_, &C::method);              \
+    return call.Marshal(RTC_FROM_HERE, worker_thread_); \
+  }
 
-#define PROXY_WORKER_CONSTMETHOD0(r, method) \
-  PROXY_METHOD0_BASE(worker_thread_, const, r, method)
+#define PROXY_WORKER_CONSTMETHOD0(r, method)            \
+  r method() const override {                           \
+    ConstMethodCall<C, r> call(c_, &C::method);         \
+    return call.Marshal(RTC_FROM_HERE, worker_thread_); \
+  }
 
-#define PROXY_WORKER_METHOD1(r, method, t1) \
-  PROXY_METHOD1_BASE(worker_thread_, , r, method, t1)
+#define PROXY_WORKER_METHOD1(r, method, t1)                   \
+  r method(t1 a1) override {                                  \
+    MethodCall<C, r, t1> call(c_, &C::method, std::move(a1)); \
+    return call.Marshal(RTC_FROM_HERE, worker_thread_);       \
+  }
 
-#define PROXY_WORKER_CONSTMETHOD1(r, method, t1) \
-  PROXY_METHOD1_BASE(worker_thread_, const, r, method, t1)
+#define PROXY_WORKER_CONSTMETHOD1(r, method, t1)                   \
+  r method(t1 a1) const override {                                 \
+    ConstMethodCall<C, r, t1> call(c_, &C::method, std::move(a1)); \
+    return call.Marshal(RTC_FROM_HERE, worker_thread_);            \
+  }
 
-#define PROXY_WORKER_METHOD2(r, method, t1, t2) \
-  PROXY_METHOD2_BASE(worker_thread_, , r, method, t1, t2)
+#define PROXY_WORKER_METHOD2(r, method, t1, t2)                  \
+  r method(t1 a1, t2 a2) override {                              \
+    MethodCall<C, r, t1, t2> call(c_, &C::method, std::move(a1), \
+                                  std::move(a2));                \
+    return call.Marshal(RTC_FROM_HERE, worker_thread_);          \
+  }
 
-#define PROXY_WORKER_CONSTMETHOD2(r, method, t1, t2) \
-  PROXY_METHOD2_BASE(worker_thread_, const, r, method, t1, t2)
+#define PROXY_WORKER_CONSTMETHOD2(r, method, t1, t2)                  \
+  r method(t1 a1, t2 a2) const override {                             \
+    ConstMethodCall<C, r, t1, t2> call(c_, &C::method, std::move(a1), \
+                                       std::move(a2));                \
+    return call.Marshal(RTC_FROM_HERE, worker_thread_);               \
+  }
 
-#define PROXY_WORKER_METHOD3(r, method, t1, t2, t3) \
-  PROXY_METHOD3_BASE(worker_thread_, , r, method, t1, t2, t3)
+#define PROXY_WORKER_METHOD3(r, method, t1, t2, t3)                  \
+  r method(t1 a1, t2 a2, t3 a3) override {                           \
+    MethodCall<C, r, t1, t2, t3> call(c_, &C::method, std::move(a1), \
+                                      std::move(a2), std::move(a3)); \
+    return call.Marshal(RTC_FROM_HERE, worker_thread_);              \
+  }
 
-#define PROXY_WORKER_CONSTMETHOD3(r, method, t1, t2) \
-  PROXY_METHOD3_BASE(worker_thread_, const, r, method, t1, t2, t3)
+#define PROXY_WORKER_CONSTMETHOD3(r, method, t1, t2)                      \
+  r method(t1 a1, t2 a2, t3 a3) const override {                          \
+    ConstMethodCall<C, r, t1, t2, t3> call(c_, &C::method, std::move(a1), \
+                                           std::move(a2), std::move(a3)); \
+    return call.Marshal(RTC_FROM_HERE, worker_thread_);                   \
+  }
 
 }  // namespace webrtc
 
