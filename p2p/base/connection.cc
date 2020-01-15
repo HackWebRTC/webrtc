@@ -143,7 +143,11 @@ constexpr int64_t kMinExtraPingDelayMs = 100;
 // Default field trials.
 const cricket::IceFieldTrials kDefaultFieldTrials;
 
-constexpr int kSupportGoogPingVersionIndex =
+constexpr int kSupportGoogPingVersionRequestIndex =
+    static_cast<int>(cricket::IceGoogMiscInfoBindingRequestAttributeIndex::
+                         SUPPORT_GOOG_PING_VERSION);
+
+constexpr int kSupportGoogPingVersionResponseIndex =
     static_cast<int>(cricket::IceGoogMiscInfoBindingResponseAttributeIndex::
                          SUPPORT_GOOG_PING_VERSION);
 
@@ -223,6 +227,17 @@ void ConnectionRequest::Prepare(StunMessage* request) {
       (connection_->local_candidate().priority() & 0x00FFFFFF);
   request->AddAttribute(std::make_unique<StunUInt32Attribute>(
       STUN_ATTR_PRIORITY, prflx_priority));
+
+  if (connection_->field_trials_->enable_goog_ping &&
+      !connection_->remote_support_goog_ping_.has_value()) {
+    // Check if remote supports GOOG PING by announcing which version we
+    // support. This is sent on all STUN_BINDING_REQUEST until we get a
+    // STUN_BINDING_RESPONSE.
+    auto list =
+        StunAttribute::CreateUInt16ListAttribute(STUN_ATTR_GOOG_MISC_INFO);
+    list->AddTypeAtIndex(kSupportGoogPingVersionRequestIndex, kGoogPingVersion);
+    request->AddAttribute(std::move(list));
+  }
 
   if (connection_->ShouldSendGoogPing(request)) {
     request->SetType(GOOG_PING_REQUEST);
@@ -647,10 +662,18 @@ void Connection::SendStunBindingResponse(const StunMessage* request) {
       STUN_ATTR_XOR_MAPPED_ADDRESS, remote_candidate_.address()));
 
   if (field_trials_->announce_goog_ping) {
-    auto list =
-        StunAttribute::CreateUInt16ListAttribute(STUN_ATTR_GOOG_MISC_INFO);
-    list->AddTypeAtIndex(kSupportGoogPingVersionIndex, kGoogPingVersion);
-    response.AddAttribute(std::move(list));
+    // Check if request contains a announce-request.
+    auto goog_misc = request->GetUInt16List(STUN_ATTR_GOOG_MISC_INFO);
+    if (goog_misc != nullptr &&
+        goog_misc->Size() >= kSupportGoogPingVersionRequestIndex &&
+        // Which version can we handle...currently any >= 1
+        goog_misc->GetType(kSupportGoogPingVersionRequestIndex) >= 1) {
+      auto list =
+          StunAttribute::CreateUInt16ListAttribute(STUN_ATTR_GOOG_MISC_INFO);
+      list->AddTypeAtIndex(kSupportGoogPingVersionResponseIndex,
+                           kGoogPingVersion);
+      response.AddAttribute(std::move(list));
+    }
   }
 
   response.AddMessageIntegrity(local_candidate().password());
@@ -1053,12 +1076,18 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
       response->reduced_transaction_id());
 
   if (request->msg()->type() == STUN_BINDING_REQUEST) {
-    auto goog_misc = response->GetUInt16List(STUN_ATTR_GOOG_MISC_INFO);
-    if (goog_misc != nullptr &&
-        goog_misc->Size() >= kSupportGoogPingVersionIndex &&
-        goog_misc->GetType(kSupportGoogPingVersionIndex) >= kGoogPingVersion) {
-      // The remote peer has indicated that it supports GOOG_PING.
-      remote_support_goog_ping_ = true;
+    if (!remote_support_goog_ping_.has_value()) {
+      auto goog_misc = response->GetUInt16List(STUN_ATTR_GOOG_MISC_INFO);
+      if (goog_misc != nullptr &&
+          goog_misc->Size() >= kSupportGoogPingVersionResponseIndex) {
+        // The remote peer has indicated that it {does/does not} supports
+        // GOOG_PING.
+        remote_support_goog_ping_ =
+            goog_misc->GetType(kSupportGoogPingVersionResponseIndex) >=
+            kGoogPingVersion;
+      } else {
+        remote_support_goog_ping_ = false;
+      }
     }
 
     MaybeUpdateLocalCandidate(request, response);
@@ -1289,12 +1318,15 @@ bool Connection::TooManyOutstandingPings(
 }
 
 bool Connection::ShouldSendGoogPing(const StunMessage* message) {
-  if (remote_support_goog_ping_ && cached_stun_binding_ &&
+  if (remote_support_goog_ping_ == true && cached_stun_binding_ &&
       cached_stun_binding_->EqualAttributes(message, [](int type) {
         // Ignore these attributes.
+        // NOTE: Consider what to do if adding more content to
+        // STUN_ATTR_GOOG_MISC_INFO
         return type != STUN_ATTR_FINGERPRINT &&
                type != STUN_ATTR_MESSAGE_INTEGRITY &&
-               type != STUN_ATTR_RETRANSMIT_COUNT;
+               type != STUN_ATTR_RETRANSMIT_COUNT &&
+               type != STUN_ATTR_GOOG_MISC_INFO;
       })) {
     return true;
   }

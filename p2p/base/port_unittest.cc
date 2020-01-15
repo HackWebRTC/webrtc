@@ -2648,21 +2648,36 @@ TEST_F(PortTest, TestIceLiteConnectivity) {
 namespace {
 
 // Utility function for testing goog ping.
-absl::optional<int> GetSupportedGoogPingVersion(const StunMessage* response) {
-  auto goog_misc = response->GetUInt16List(STUN_ATTR_GOOG_MISC_INFO);
+absl::optional<int> GetSupportedGoogPingVersion(const StunMessage* msg) {
+  auto goog_misc = msg->GetUInt16List(STUN_ATTR_GOOG_MISC_INFO);
   if (goog_misc == nullptr) {
     return absl::nullopt;
   }
 
-  if (goog_misc->Size() <
-      static_cast<int>(cricket::IceGoogMiscInfoBindingResponseAttributeIndex::
-                           SUPPORT_GOOG_PING_VERSION)) {
-    return absl::nullopt;
+  if (msg->type() == STUN_BINDING_REQUEST) {
+    if (goog_misc->Size() <
+        static_cast<int>(cricket::IceGoogMiscInfoBindingRequestAttributeIndex::
+                             SUPPORT_GOOG_PING_VERSION)) {
+      return absl::nullopt;
+    }
+
+    return goog_misc->GetType(
+        static_cast<int>(cricket::IceGoogMiscInfoBindingRequestAttributeIndex::
+                             SUPPORT_GOOG_PING_VERSION));
   }
 
-  return goog_misc->GetType(
-      static_cast<int>(cricket::IceGoogMiscInfoBindingResponseAttributeIndex::
-                           SUPPORT_GOOG_PING_VERSION));
+  if (msg->type() == STUN_BINDING_RESPONSE) {
+    if (goog_misc->Size() <
+        static_cast<int>(cricket::IceGoogMiscInfoBindingResponseAttributeIndex::
+                             SUPPORT_GOOG_PING_VERSION)) {
+      return absl::nullopt;
+    }
+
+    return goog_misc->GetType(
+        static_cast<int>(cricket::IceGoogMiscInfoBindingResponseAttributeIndex::
+                             SUPPORT_GOOG_PING_VERSION));
+  }
+  return absl::nullopt;
 }
 
 }  // namespace
@@ -2710,6 +2725,11 @@ TEST_P(GoogPingTest, TestGoogPingAnnounceEnable) {
 
   ASSERT_TRUE_WAIT(port1->last_stun_msg() != NULL, kDefaultTimeout);
   const IceMessage* request1 = port1->last_stun_msg();
+
+  ASSERT_EQ(trials.enable_goog_ping,
+            GetSupportedGoogPingVersion(request1) &&
+                GetSupportedGoogPingVersion(request1) >= kGoogPingVersion);
+
   auto* con = port2->CreateConnection(port1->Candidates()[0],
                                       cricket::Port::ORIGIN_MESSAGE);
   con->SetIceFieldTrials(&trials);
@@ -2718,8 +2738,8 @@ TEST_P(GoogPingTest, TestGoogPingAnnounceEnable) {
 
   // Then check the response matches the settings.
   const auto* response = port2->last_stun_msg();
-  ASSERT_EQ(response->type(), STUN_BINDING_RESPONSE);
-  ASSERT_EQ(trials.announce_goog_ping,
+  EXPECT_EQ(response->type(), STUN_BINDING_RESPONSE);
+  EXPECT_EQ(trials.enable_goog_ping && trials.announce_goog_ping,
             GetSupportedGoogPingVersion(response) &&
                 GetSupportedGoogPingVersion(response) >= kGoogPingVersion);
 
@@ -2741,6 +2761,10 @@ TEST_P(GoogPingTest, TestGoogPingAnnounceEnable) {
     con->SendGoogPingResponse(request2);
   } else {
     ASSERT_EQ(request2->type(), STUN_BINDING_REQUEST);
+    // If we sent a BINDING with enable, and we got a reply that
+    // didn't contain announce, the next ping should not contain
+    // the enable again.
+    ASSERT_FALSE(GetSupportedGoogPingVersion(request2).has_value());
     con->SendStunBindingResponse(request2);
   }
 
@@ -2753,6 +2777,170 @@ TEST_P(GoogPingTest, TestGoogPingAnnounceEnable) {
   } else {
     ASSERT_EQ(response2->type(), STUN_BINDING_RESPONSE);
   }
+
+  ch1.Stop();
+}
+
+// This test if a someone send a STUN_BINDING with unsupported version
+// (kGoogPingVersion == 0)
+TEST_F(PortTest, TestGoogPingUnsupportedVersionInStunBinding) {
+  IceFieldTrials trials;
+  trials.announce_goog_ping = true;
+  trials.enable_goog_ping = true;
+
+  auto port1_unique =
+      CreateTestPort(kLocalAddr1, "lfrag", "lpass",
+                     cricket::ICEROLE_CONTROLLING, kTiebreaker1);
+  auto* port1 = port1_unique.get();
+  auto port2 = CreateTestPort(kLocalAddr2, "rfrag", "rpass",
+                              cricket::ICEROLE_CONTROLLED, kTiebreaker2);
+
+  TestChannel ch1(std::move(port1_unique));
+  // Block usage of STUN_ATTR_USE_CANDIDATE so that
+  // ch1.conn() will sent GOOG_PING_REQUEST directly.
+  // This only makes test a bit shorter...
+  ch1.SetIceMode(ICEMODE_LITE);
+  // Start gathering candidates.
+  ch1.Start();
+  port2->PrepareAddress();
+
+  ASSERT_EQ_WAIT(1, ch1.complete_count(), kDefaultTimeout);
+  ASSERT_FALSE(port2->Candidates().empty());
+
+  ch1.CreateConnection(GetCandidate(port2.get()));
+  ASSERT_TRUE(ch1.conn() != NULL);
+  EXPECT_EQ(Connection::STATE_WRITE_INIT, ch1.conn()->write_state());
+  ch1.conn()->SetIceFieldTrials(&trials);
+
+  // Send ping.
+  ch1.Ping();
+
+  ASSERT_TRUE_WAIT(port1->last_stun_msg() != NULL, kDefaultTimeout);
+  const IceMessage* request1 = port1->last_stun_msg();
+
+  ASSERT_TRUE(GetSupportedGoogPingVersion(request1) &&
+              GetSupportedGoogPingVersion(request1) >= kGoogPingVersion);
+
+  // Modify the STUN message request1 to send GetSupportedGoogPingVersion == 0
+  auto modified_request1 = request1->Clone();
+  ASSERT_TRUE(modified_request1->RemoveAttribute(STUN_ATTR_GOOG_MISC_INFO) !=
+              nullptr);
+  ASSERT_TRUE(modified_request1->RemoveAttribute(STUN_ATTR_MESSAGE_INTEGRITY) !=
+              nullptr);
+  {
+    auto list =
+        StunAttribute::CreateUInt16ListAttribute(STUN_ATTR_GOOG_MISC_INFO);
+    list->AddTypeAtIndex(
+        static_cast<uint16_t>(
+            cricket::IceGoogMiscInfoBindingRequestAttributeIndex::
+                SUPPORT_GOOG_PING_VERSION),
+        /* version */ 0);
+    modified_request1->AddAttribute(std::move(list));
+    modified_request1->AddMessageIntegrity("rpass");
+  }
+  auto* con = port2->CreateConnection(port1->Candidates()[0],
+                                      cricket::Port::ORIGIN_MESSAGE);
+  con->SetIceFieldTrials(&trials);
+
+  con->SendStunBindingResponse(modified_request1.get());
+
+  // Then check the response matches the settings.
+  const auto* response = port2->last_stun_msg();
+  EXPECT_EQ(response->type(), STUN_BINDING_RESPONSE);
+  EXPECT_FALSE(GetSupportedGoogPingVersion(response));
+
+  ch1.Stop();
+}
+
+// This test if a someone send a STUN_BINDING_RESPONSE with unsupported version
+// (kGoogPingVersion == 0)
+TEST_F(PortTest, TestGoogPingUnsupportedVersionInStunBindingResponse) {
+  IceFieldTrials trials;
+  trials.announce_goog_ping = true;
+  trials.enable_goog_ping = true;
+
+  auto port1_unique =
+      CreateTestPort(kLocalAddr1, "lfrag", "lpass",
+                     cricket::ICEROLE_CONTROLLING, kTiebreaker1);
+  auto* port1 = port1_unique.get();
+  auto port2 = CreateTestPort(kLocalAddr2, "rfrag", "rpass",
+                              cricket::ICEROLE_CONTROLLED, kTiebreaker2);
+
+  TestChannel ch1(std::move(port1_unique));
+  // Block usage of STUN_ATTR_USE_CANDIDATE so that
+  // ch1.conn() will sent GOOG_PING_REQUEST directly.
+  // This only makes test a bit shorter...
+  ch1.SetIceMode(ICEMODE_LITE);
+  // Start gathering candidates.
+  ch1.Start();
+  port2->PrepareAddress();
+
+  ASSERT_EQ_WAIT(1, ch1.complete_count(), kDefaultTimeout);
+  ASSERT_FALSE(port2->Candidates().empty());
+
+  ch1.CreateConnection(GetCandidate(port2.get()));
+  ASSERT_TRUE(ch1.conn() != NULL);
+  EXPECT_EQ(Connection::STATE_WRITE_INIT, ch1.conn()->write_state());
+  ch1.conn()->SetIceFieldTrials(&trials);
+
+  // Send ping.
+  ch1.Ping();
+
+  ASSERT_TRUE_WAIT(port1->last_stun_msg() != NULL, kDefaultTimeout);
+  const IceMessage* request1 = port1->last_stun_msg();
+
+  ASSERT_TRUE(GetSupportedGoogPingVersion(request1) &&
+              GetSupportedGoogPingVersion(request1) >= kGoogPingVersion);
+
+  auto* con = port2->CreateConnection(port1->Candidates()[0],
+                                      cricket::Port::ORIGIN_MESSAGE);
+  con->SetIceFieldTrials(&trials);
+
+  con->SendStunBindingResponse(request1);
+
+  // Then check the response matches the settings.
+  const auto* response = port2->last_stun_msg();
+  EXPECT_EQ(response->type(), STUN_BINDING_RESPONSE);
+  EXPECT_TRUE(GetSupportedGoogPingVersion(response));
+
+  // Modify the STUN message response to contain GetSupportedGoogPingVersion ==
+  // 0
+  auto modified_response = response->Clone();
+  ASSERT_TRUE(modified_response->RemoveAttribute(STUN_ATTR_GOOG_MISC_INFO) !=
+              nullptr);
+  ASSERT_TRUE(modified_response->RemoveAttribute(STUN_ATTR_MESSAGE_INTEGRITY) !=
+              nullptr);
+  ASSERT_TRUE(modified_response->RemoveAttribute(STUN_ATTR_FINGERPRINT) !=
+              nullptr);
+  {
+    auto list =
+        StunAttribute::CreateUInt16ListAttribute(STUN_ATTR_GOOG_MISC_INFO);
+    list->AddTypeAtIndex(
+        static_cast<uint16_t>(
+            cricket::IceGoogMiscInfoBindingResponseAttributeIndex::
+                SUPPORT_GOOG_PING_VERSION),
+        /* version */ 0);
+    modified_response->AddAttribute(std::move(list));
+    modified_response->AddMessageIntegrity("rpass");
+    modified_response->AddFingerprint();
+  }
+
+  rtc::ByteBufferWriter buf;
+  modified_response->Write(&buf);
+
+  // Feeding the modified respone message back.
+  ch1.conn()->OnReadPacket(buf.Data(), buf.Length(), /* packet_time_us */ -1);
+
+  port1->Reset();
+  port2->Reset();
+
+  ch1.Ping();
+  ASSERT_TRUE_WAIT(port1->last_stun_msg() != NULL, kDefaultTimeout);
+
+  // This should now be a STUN_BINDING...without a kGoogPingVersion
+  const IceMessage* request2 = port1->last_stun_msg();
+  EXPECT_EQ(request2->type(), STUN_BINDING_REQUEST);
+  EXPECT_FALSE(GetSupportedGoogPingVersion(request2));
 
   ch1.Stop();
 }

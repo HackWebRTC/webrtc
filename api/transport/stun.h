@@ -678,7 +678,9 @@ enum IceAttributeType {
 // consistent with those used in ConnectionRequest::Prepare when forming a STUN
 // message for the ICE connectivity check, and they are used when parsing a
 // received STUN message.
-enum class IceGoogMiscInfoBindingRequestAttributeIndex {};
+enum class IceGoogMiscInfoBindingRequestAttributeIndex {
+  SUPPORT_GOOG_PING_VERSION = 0,
+};
 
 enum class IceGoogMiscInfoBindingResponseAttributeIndex {
   SUPPORT_GOOG_PING_VERSION = 0,
