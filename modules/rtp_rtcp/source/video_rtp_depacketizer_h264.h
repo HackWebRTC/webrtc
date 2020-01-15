@@ -11,33 +11,17 @@
 #ifndef MODULES_RTP_RTCP_SOURCE_VIDEO_RTP_DEPACKETIZER_H264_H_
 #define MODULES_RTP_RTCP_SOURCE_VIDEO_RTP_DEPACKETIZER_H264_H_
 
-#include <stddef.h>
-#include <stdint.h>
-
-#include <memory>
-
-#include "modules/rtp_rtcp/source/rtp_format.h"
-#include "rtc_base/buffer.h"
+#include "absl/types/optional.h"
+#include "modules/rtp_rtcp/source/video_rtp_depacketizer.h"
+#include "rtc_base/copy_on_write_buffer.h"
 
 namespace webrtc {
-class RtpDepacketizerH264 : public RtpDepacketizer {
+class VideoRtpDepacketizerH264 : public VideoRtpDepacketizer {
  public:
-  RtpDepacketizerH264();
-  ~RtpDepacketizerH264() override;
+  ~VideoRtpDepacketizerH264() override = default;
 
-  bool Parse(ParsedPayload* parsed_payload,
-             const uint8_t* payload_data,
-             size_t payload_data_length) override;
-
- private:
-  bool ParseFuaNalu(RtpDepacketizer::ParsedPayload* parsed_payload,
-                    const uint8_t* payload_data);
-  bool ProcessStapAOrSingleNalu(RtpDepacketizer::ParsedPayload* parsed_payload,
-                                const uint8_t* payload_data);
-
-  size_t offset_;
-  size_t length_;
-  std::unique_ptr<rtc::Buffer> modified_buffer_;
+  absl::optional<ParsedRtpPayload> Parse(
+      rtc::CopyOnWriteBuffer rtp_payload) override;
 };
 }  // namespace webrtc
 

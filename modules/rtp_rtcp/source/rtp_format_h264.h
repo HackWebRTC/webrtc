@@ -22,7 +22,6 @@
 #include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
-#include "modules/rtp_rtcp/source/video_rtp_depacketizer_h264.h"
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/constructor_magic.h"

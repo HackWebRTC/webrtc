@@ -12,49 +12,21 @@
 
 #include <memory>
 
-#include "absl/memory/memory.h"
-#include "absl/types/optional.h"
+#include "api/video/video_codec_type.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer_av1.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer_generic.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer_h264.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer_vp8.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer_vp9.h"
-#include "rtc_base/checks.h"
-#include "rtc_base/copy_on_write_buffer.h"
 
 namespace webrtc {
-namespace {
-
-// Wrapper over legacy RtpDepacketizer interface.
-// TODO(bugs.webrtc.org/11152): Delete when all RtpDepacketizers updated to
-// the VideoRtpDepacketizer interface.
-template <typename Depacketizer>
-class Legacy : public VideoRtpDepacketizer {
- public:
-  absl::optional<ParsedRtpPayload> Parse(
-      rtc::CopyOnWriteBuffer rtp_payload) override {
-    Depacketizer depacketizer;
-    RtpDepacketizer::ParsedPayload parsed_payload;
-    if (!depacketizer.Parse(&parsed_payload, rtp_payload.cdata(),
-                            rtp_payload.size())) {
-      return absl::nullopt;
-    }
-    absl::optional<ParsedRtpPayload> result(absl::in_place);
-    result->video_header = parsed_payload.video;
-    result->video_payload.SetData(parsed_payload.payload,
-                                  parsed_payload.payload_length);
-    return result;
-  }
-};
-
-}  // namespace
 
 std::unique_ptr<VideoRtpDepacketizer> CreateVideoRtpDepacketizer(
     VideoCodecType codec) {
   switch (codec) {
     case kVideoCodecH264:
-      return std::make_unique<Legacy<RtpDepacketizerH264>>();
+      return std::make_unique<VideoRtpDepacketizerH264>();
     case kVideoCodecVP8:
       return std::make_unique<VideoRtpDepacketizerVp8>();
     case kVideoCodecVP9:
