@@ -265,10 +265,6 @@ specific_include_rules = {
     "+rtc_base/thread_checker.h",
   ],
 
-  "time_controller\.h": [
-    "+rtc_base/thread.h",
-  ],
-
   "videocodec_test_fixture\.h": [
     "+modules/video_coding/include/video_codec_interface.h"
   ],

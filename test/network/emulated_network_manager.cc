@@ -20,16 +20,18 @@ namespace webrtc {
 namespace test {
 
 EmulatedNetworkManager::EmulatedNetworkManager(
-    TimeController* time_controller,
+    Clock* clock,
     TaskQueueForTest* task_queue,
     EndpointsContainer* endpoints_container)
     : task_queue_(task_queue),
       endpoints_container_(endpoints_container),
-      network_thread_(time_controller->CreateThread(
-          "net_thread",
+      network_thread_(std::make_unique<rtc::Thread>(
           std::make_unique<FakeNetworkSocketServer>(endpoints_container))),
       sent_first_update_(false),
-      start_count_(0) {}
+      start_count_(0) {
+  network_thread_->SetName("net_thread", nullptr);
+  network_thread_->Start();
+}
 
 void EmulatedNetworkManager::EnableEndpoint(EmulatedEndpointImpl* endpoint) {
   RTC_CHECK(endpoints_container_->HasEndpoint(endpoint))

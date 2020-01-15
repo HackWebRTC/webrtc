@@ -88,7 +88,6 @@ class NetworkEmulationManagerImpl : public NetworkEmulationManager {
   absl::optional<rtc::IPAddress> GetNextIPv4Address();
   Timestamp Now() const;
 
-  TimeController* const time_controller_;
   Clock* const clock_;
   int next_node_id_;
 

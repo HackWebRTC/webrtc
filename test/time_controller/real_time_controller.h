@@ -28,9 +28,6 @@ class RealTimeController : public TimeController {
   TaskQueueFactory* GetTaskQueueFactory() override;
   std::unique_ptr<ProcessThread> CreateProcessThread(
       const char* thread_name) override;
-  std::unique_ptr<rtc::Thread> CreateThread(
-      const std::string& name,
-      std::unique_ptr<rtc::SocketServer> socket_server) override;
   void AdvanceTime(TimeDelta duration) override;
 
  private:

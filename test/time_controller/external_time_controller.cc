@@ -21,7 +21,6 @@
 #include "api/units/timestamp.h"
 #include "modules/include/module.h"
 #include "modules/utility/include/process_thread.h"
-#include "rtc_base/checks.h"
 #include "rtc_base/synchronization/yield_policy.h"
 #include "test/time_controller/simulated_time_controller.h"
 
@@ -183,13 +182,6 @@ std::unique_ptr<ProcessThread> ExternalTimeController::CreateProcessThread(
 
 void ExternalTimeController::AdvanceTime(TimeDelta duration) {
   alarm_->Sleep(duration);
-}
-
-std::unique_ptr<rtc::Thread> ExternalTimeController::CreateThread(
-    const std::string& name,
-    std::unique_ptr<rtc::SocketServer> socket_server) {
-  RTC_NOTREACHED();
-  return nullptr;
 }
 
 std::unique_ptr<TaskQueueBase, TaskQueueDeleter>
