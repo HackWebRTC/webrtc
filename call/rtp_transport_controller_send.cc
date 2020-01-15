@@ -228,7 +228,7 @@ void RtpTransportControllerSend::SetQueueTimeLimit(int limit_ms) {
 }
 StreamFeedbackProvider*
 RtpTransportControllerSend::GetStreamFeedbackProvider() {
-  return &feedback_demuxer_;
+  return &transport_feedback_adapter_;
 }
 
 void RtpTransportControllerSend::RegisterTargetTransferRateObserver(
@@ -468,8 +468,6 @@ void RtpTransportControllerSend::OnReceivedRtcpReceiverReport(
 
 void RtpTransportControllerSend::OnAddPacket(
     const RtpPacketSendInfo& packet_info) {
-  feedback_demuxer_.AddPacket(packet_info);
-
   transport_feedback_adapter_.AddPacket(
       packet_info,
       send_side_bwe_with_overhead_ ? transport_overhead_bytes_per_packet_.load()
@@ -480,7 +478,6 @@ void RtpTransportControllerSend::OnAddPacket(
 void RtpTransportControllerSend::OnTransportFeedback(
     const rtcp::TransportFeedback& feedback) {
   RTC_DCHECK_RUNS_SERIALIZED(&worker_race_);
-  feedback_demuxer_.OnTransportFeedback(feedback);
 
   absl::optional<TransportPacketsFeedback> feedback_msg =
       transport_feedback_adapter_.ProcessTransportFeedback(

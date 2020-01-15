@@ -126,6 +126,58 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
   std::unique_ptr<TransportFeedbackAdapter> adapter_;
 };
 
+TEST_F(TransportFeedbackAdapterTest, ObserverSanity) {
+  MockStreamFeedbackObserver mock;
+  adapter_->RegisterStreamFeedbackObserver({kSsrc}, &mock);
+
+  const std::vector<PacketResult> packets = {
+      CreatePacket(100, 200, 0, 1000, kPacingInfo0),
+      CreatePacket(110, 210, 1, 2000, kPacingInfo0),
+      CreatePacket(120, 220, 2, 3000, kPacingInfo0)};
+
+  rtcp::TransportFeedback feedback;
+  feedback.SetBase(packets[0].sent_packet.sequence_number,
+                   packets[0].receive_time.us());
+
+  for (const auto& packet : packets) {
+    OnSentPacket(packet);
+    EXPECT_TRUE(feedback.AddReceivedPacket(packet.sent_packet.sequence_number,
+                                           packet.receive_time.us()));
+  }
+
+  EXPECT_CALL(mock, OnPacketFeedbackVector(_)).Times(1);
+  adapter_->ProcessTransportFeedback(feedback, clock_.CurrentTime());
+
+  adapter_->DeRegisterStreamFeedbackObserver(&mock);
+
+  auto new_packet = CreatePacket(130, 230, 3, 4000, kPacingInfo0);
+  OnSentPacket(new_packet);
+
+  rtcp::TransportFeedback second_feedback;
+  second_feedback.SetBase(new_packet.sent_packet.sequence_number,
+                          new_packet.receive_time.us());
+  EXPECT_TRUE(second_feedback.AddReceivedPacket(
+      new_packet.sent_packet.sequence_number, new_packet.receive_time.us()));
+  EXPECT_CALL(mock, OnPacketFeedbackVector(_)).Times(0);
+  adapter_->ProcessTransportFeedback(second_feedback, clock_.CurrentTime());
+}
+
+#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+TEST_F(TransportFeedbackAdapterTest, ObserverDoubleRegistrationDeathTest) {
+  MockStreamFeedbackObserver mock;
+  adapter_->RegisterStreamFeedbackObserver({0}, &mock);
+  EXPECT_DEATH(adapter_->RegisterStreamFeedbackObserver({0}, &mock), "");
+  adapter_->DeRegisterStreamFeedbackObserver(&mock);
+}
+
+TEST_F(TransportFeedbackAdapterTest, ObserverMissingDeRegistrationDeathTest) {
+  MockStreamFeedbackObserver mock;
+  adapter_->RegisterStreamFeedbackObserver({0}, &mock);
+  EXPECT_DEATH(adapter_.reset(), "");
+  adapter_->DeRegisterStreamFeedbackObserver(&mock);
+}
+#endif
+
 TEST_F(TransportFeedbackAdapterTest, AdaptsFeedbackAndPopulatesSendTimes) {
   std::vector<PacketResult> packets;
   packets.push_back(CreatePacket(100, 200, 0, 1500, kPacingInfo0));
