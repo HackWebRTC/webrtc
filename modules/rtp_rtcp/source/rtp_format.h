@@ -59,29 +59,5 @@ class RtpPacketizer {
   static std::vector<int> SplitAboutEqually(int payload_len,
                                             const PayloadSizeLimits& limits);
 };
-
-// TODO(bugs.webrtc.org/11152): Update the depacketizer to return a copy
-// of the parsed payload, rather than just a pointer into the incoming buffer.
-// This way we can move some parsing out from the jitter buffer into here, and
-// the jitter buffer can just store that pointer rather than doing a copy there.
-class RtpDepacketizer {
- public:
-  struct ParsedPayload {
-    RTPVideoHeader& video_header() { return video; }
-    const RTPVideoHeader& video_header() const { return video; }
-
-    RTPVideoHeader video;
-
-    const uint8_t* payload;
-    size_t payload_length;
-  };
-
-  virtual ~RtpDepacketizer() {}
-
-  // Parses the RTP payload, parsed result will be saved in |parsed_payload|.
-  virtual bool Parse(ParsedPayload* parsed_payload,
-                     const uint8_t* payload_data,
-                     size_t payload_data_length) = 0;
-};
 }  // namespace webrtc
 #endif  // MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_H_
