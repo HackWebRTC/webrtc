@@ -1805,7 +1805,12 @@ TEST_F(VideoStreamEncoderTest, SinkWantsStoredByDegradationPreference) {
   test::FrameForwarder new_video_source;
   video_stream_encoder_->SetSource(
       &new_video_source, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
-
+  // Give the encoder queue time to process the change in degradation preference
+  // by waiting for an encoded frame.
+  new_video_source.IncomingCapturedFrame(
+      CreateFrame(frame_timestamp, kFrameWidth, kFrameWidth));
+  sink_.WaitForEncodedFrame(frame_timestamp);
+  frame_timestamp += kFrameIntervalMs;
   // Initially no degradation registered.
   VerifyFpsMaxResolutionMax(new_video_source.sink_wants());
 
@@ -1831,6 +1836,12 @@ TEST_F(VideoStreamEncoderTest, SinkWantsStoredByDegradationPreference) {
   // Turn off degradation completely.
   video_stream_encoder_->SetSource(&new_video_source,
                                    webrtc::DegradationPreference::DISABLED);
+  // Give the encoder queue time to process the change in degradation preference
+  // by waiting for an encoded frame.
+  new_video_source.IncomingCapturedFrame(
+      CreateFrame(frame_timestamp, kFrameWidth, kFrameWidth));
+  sink_.WaitForEncodedFrame(frame_timestamp);
+  frame_timestamp += kFrameIntervalMs;
   VerifyFpsMaxResolutionMax(new_video_source.sink_wants());
 
   video_stream_encoder_->TriggerCpuOveruse();
@@ -1845,6 +1856,12 @@ TEST_F(VideoStreamEncoderTest, SinkWantsStoredByDegradationPreference) {
   // Calling SetSource with resolution scaling enabled apply the old SinkWants.
   video_stream_encoder_->SetSource(
       &new_video_source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
+  // Give the encoder queue time to process the change in degradation preference
+  // by waiting for an encoded frame.
+  new_video_source.IncomingCapturedFrame(
+      CreateFrame(frame_timestamp, kFrameWidth, kFrameWidth));
+  sink_.WaitForEncodedFrame(frame_timestamp);
+  frame_timestamp += kFrameIntervalMs;
   EXPECT_LT(new_video_source.sink_wants().max_pixel_count,
             kFrameWidth * kFrameHeight);
   EXPECT_FALSE(new_video_source.sink_wants().target_pixel_count);
@@ -1853,6 +1870,12 @@ TEST_F(VideoStreamEncoderTest, SinkWantsStoredByDegradationPreference) {
   // Calling SetSource with framerate scaling enabled apply the old SinkWants.
   video_stream_encoder_->SetSource(
       &new_video_source, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
+  // Give the encoder queue time to process the change in degradation preference
+  // by waiting for an encoded frame.
+  new_video_source.IncomingCapturedFrame(
+      CreateFrame(frame_timestamp, kFrameWidth, kFrameWidth));
+  sink_.WaitForEncodedFrame(frame_timestamp);
+  frame_timestamp += kFrameIntervalMs;
   EXPECT_FALSE(new_video_source.sink_wants().target_pixel_count);
   EXPECT_EQ(std::numeric_limits<int>::max(),
             new_video_source.sink_wants().max_pixel_count);
@@ -2561,12 +2584,16 @@ TEST_F(VideoStreamEncoderTest,
   test::FrameForwarder new_video_source;
   video_stream_encoder_->SetSource(
       &new_video_source, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
+  // Give the encoder queue time to process the change in degradation preference
+  // by waiting for an encoded frame.
+  new_video_source.IncomingCapturedFrame(CreateFrame(3, kWidth, kHeight));
+  sink_.WaitForEncodedFrame(3);
   VerifyFpsMaxResolutionMax(new_video_source.sink_wants());
 
   // Trigger adapt down, expect reduced framerate.
   video_stream_encoder_->TriggerQualityLow();
-  new_video_source.IncomingCapturedFrame(CreateFrame(3, kWidth, kHeight));
-  sink_.WaitForEncodedFrame(3);
+  new_video_source.IncomingCapturedFrame(CreateFrame(4, kWidth, kHeight));
+  sink_.WaitForEncodedFrame(4);
   VerifyFpsLtResolutionMax(new_video_source.sink_wants(), kInputFps);
 
   // Trigger adapt up, expect no restriction.

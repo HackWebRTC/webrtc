@@ -408,9 +408,20 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // track of whether a request has been made or not.
   bool encoder_switch_requested_ RTC_GUARDED_BY(&encoder_queue_);
 
+  // The controller updates the sink wants based on restrictions that come from
+  // the resource adaptation module or adaptation due to bandwidth adaptation.
+  //
+  // This is used on the encoder queue, with a few exceptions:
+  // - VideoStreamEncoder::SetSource() invokes SetSource().
+  // - VideoStreamEncoder::SetSink() invokes SetRotationApplied() and
+  //   PushSourceSinkSettings().
+  // - VideoStreamEncoder::Stop() invokes SetSource().
+  // TODO(hbos): If these can be moved to the encoder queue,
+  // VideoSourceSinkController can be made single-threaded, and its lock can be
+  // replaced with a sequence checker.
   std::unique_ptr<VideoSourceSinkController> video_source_sink_controller_;
   std::unique_ptr<OveruseFrameDetectorResourceAdaptationModule>
-      resource_adaptation_module_;
+      resource_adaptation_module_ RTC_GUARDED_BY(&encoder_queue_);
 
   // All public methods are proxied to |encoder_queue_|. It must must be
   // destroyed first to make sure no tasks are run that use other members.

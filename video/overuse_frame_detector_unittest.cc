@@ -433,7 +433,8 @@ TEST_F(OveruseFrameDetectorTest, RunOnTqNormalUsage) {
 
   queue.SendTask(
       [&] {
-        overuse_detector_->StartCheckForOveruse(&queue, options_, observer_);
+        overuse_detector_->StartCheckForOveruse(queue.Get(), options_,
+                                                observer_);
       },
       RTC_FROM_HERE);
 
@@ -914,7 +915,8 @@ TEST_F(OveruseFrameDetectorTest2, RunOnTqNormalUsage) {
 
   queue.SendTask(
       [&] {
-        overuse_detector_->StartCheckForOveruse(&queue, options_, observer_);
+        overuse_detector_->StartCheckForOveruse(queue.Get(), options_,
+                                                observer_);
       },
       RTC_FROM_HERE);
 

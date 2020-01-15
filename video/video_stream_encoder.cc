@@ -332,7 +332,6 @@ VideoStreamEncoder::VideoStreamEncoder(
           TaskQueueFactory::Priority::NORMAL)) {
   RTC_DCHECK(encoder_stats_observer);
   RTC_DCHECK_GE(number_of_cores, 1);
-  resource_adaptation_module_->Initialize(encoder_queue());
 
   for (auto& state : encoder_buffer_state_)
     state.fill(std::numeric_limits<int64_t>::max());
@@ -388,10 +387,10 @@ void VideoStreamEncoder::SetSource(
     const DegradationPreference& degradation_preference) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   video_source_sink_controller_->SetSource(source);
-  resource_adaptation_module_->SetHasInputVideoAndDegradationPreference(
-      source, degradation_preference);
-  encoder_queue_.PostTask([this, degradation_preference] {
+  encoder_queue_.PostTask([this, source, degradation_preference] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
+    resource_adaptation_module_->SetHasInputVideoAndDegradationPreference(
+        source, degradation_preference);
     if (encoder_)
       ConfigureQualityScaler(encoder_->GetEncoderInfo());
 
@@ -1731,19 +1730,19 @@ CpuOveruseOptions VideoStreamEncoder::GetCpuOveruseOptions() const {
 
 bool VideoStreamEncoder::TriggerAdaptDown(
     AdaptationObserverInterface::AdaptReason reason) {
+  RTC_DCHECK_RUN_ON(&encoder_queue_);
   return resource_adaptation_module_->AdaptDown(reason);
 }
 
 void VideoStreamEncoder::TriggerAdaptUp(
     AdaptationObserverInterface::AdaptReason reason) {
+  RTC_DCHECK_RUN_ON(&encoder_queue_);
   resource_adaptation_module_->AdaptUp(reason);
 }
 
 void VideoStreamEncoder::OnVideoSourceRestrictionsUpdated(
     VideoSourceRestrictions restrictions) {
-  // TODO(https://crbug.com/webrtc/11222): DCHECK that we are using the
-  // |encoder_queue_| when OnVideoSourceRestrictionsUpdated() is no longer
-  // invoked off this thread due to VideoStreamEncoder::SetSource() stuff.
+  RTC_DCHECK_RUN_ON(&encoder_queue_);
   video_source_sink_controller_->SetRestrictions(std::move(restrictions));
   video_source_sink_controller_->PushSourceSinkSettings();
 }

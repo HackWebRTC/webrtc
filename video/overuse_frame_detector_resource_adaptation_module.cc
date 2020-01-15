@@ -17,6 +17,7 @@
 #include <utility>
 
 #include "absl/algorithm/container.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/video/video_source_interface.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "rtc_base/logging.h"
@@ -73,10 +74,6 @@ VideoSourceRestrictions ApplyDegradationPreference(
 // AdaptDown() - only how to modify the source/sink restrictions when this
 // happens. Note that it is also not responsible for reconfigruring the
 // source/sink, it is only a keeper of desired restrictions.
-//
-// Thread safety is ensured between SetHasInputVideoAndDegradationPreference()
-// calls on the worker thread and adaptation logic on the encoder task queue
-// using a lock.
 class OveruseFrameDetectorResourceAdaptationModule::VideoSourceRestrictor {
  public:
   VideoSourceRestrictor()
@@ -84,25 +81,19 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceRestrictor {
         degradation_preference_(DegradationPreference::DISABLED) {}
 
   VideoSourceRestrictions source_restrictions() {
-    rtc::CritScope lock(&crit_);
     return source_restrictions_;
   }
 
-  // Inform the restrictor of new source status and degradation preference.
-  // TODO(hbos): Can this be moved to the encoder queue? If so, the |crit_| lock
-  // can be removed and we only need a sequence checker.
   void SetHasInputVideoAndDegradationPreference(
       bool has_input_video,
       DegradationPreference degradation_preference) {
-    // Called on libjingle's worker thread.
-    RTC_DCHECK_RUN_ON(&main_checker_);
-    rtc::CritScope lock(&crit_);
     has_input_video_ = has_input_video;
     degradation_preference_ = degradation_preference;
   }
 
+  // Updates the source_restrictions(). The source/sink has to be informed of
+  // this separately.
   void ClearRestrictions() {
-    rtc::CritScope lock(&crit_);
     source_restrictions_ = VideoSourceRestrictions();
   }
 
@@ -111,14 +102,9 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceRestrictor {
   bool RequestResolutionLowerThan(int pixel_count,
                                   int min_pixels_per_frame,
                                   bool* min_pixels_reached) {
-    // Called on the encoder task queue.
-    rtc::CritScope lock(&crit_);
-    if (!has_input_video_ ||
-        !IsResolutionScalingEnabled(degradation_preference_)) {
-      // This can happen since |degradation_preference_| is set on libjingle's
-      // worker thread but the adaptation is done on the encoder task queue.
+    RTC_DCHECK(IsResolutionScalingEnabled(degradation_preference_));
+    if (!has_input_video_)
       return false;
-    }
     // The input video frame size will have a resolution less than or equal to
     // |max_pixel_count| depending on how the source can scale the frame size.
     const int pixels_wanted = (pixel_count * 3) / 5;
@@ -145,7 +131,6 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceRestrictor {
   // Updates the source_restrictions(). The source/sink has to be informed of
   // this separately.
   int RequestFramerateLowerThan(int fps) {
-    // Called on the encoder task queue.
     // The input video frame rate will be scaled down to 2/3, rounding down.
     int framerate_wanted = (fps * 2) / 3;
     return RestrictFramerate(framerate_wanted) ? framerate_wanted : -1;
@@ -164,14 +149,9 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceRestrictor {
   // Updates the source_restrictions(). The source/sink has to be informed of
   // this separately.
   bool RequestHigherResolutionThan(int pixel_count) {
-    // Called on the encoder task queue.
-    rtc::CritScope lock(&crit_);
-    if (!has_input_video_ ||
-        !IsResolutionScalingEnabled(degradation_preference_)) {
-      // This can happen since |degradation_preference_| is set on libjingle's
-      // worker thread but the adaptation is done on the encoder task queue.
+    RTC_DCHECK(IsResolutionScalingEnabled(degradation_preference_));
+    if (!has_input_video_)
       return false;
-    }
     int max_pixels_wanted = pixel_count;
     if (max_pixels_wanted != std::numeric_limits<int>::max())
       max_pixels_wanted = pixel_count * 4;
@@ -203,7 +183,6 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceRestrictor {
   // adaptation requests are removed completely. In that case, consider
   // |max_framerate_| to be the current limit (assuming the capturer complies).
   int RequestHigherFramerateThan(int fps) {
-    // Called on the encoder task queue.
     // The input frame rate will be scaled up to the last step, with rounding.
     int framerate_wanted = fps;
     if (fps != std::numeric_limits<int>::max())
@@ -215,10 +194,8 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceRestrictor {
   // Updates the source_restrictions(). The source/sink has to be informed of
   // this separately.
   bool RestrictFramerate(int fps) {
-    // Called on the encoder task queue.
-    rtc::CritScope lock(&crit_);
-    if (!has_input_video_ ||
-        !IsFramerateScalingEnabled(degradation_preference_))
+    RTC_DCHECK(IsFramerateScalingEnabled(degradation_preference_));
+    if (!has_input_video_)
       return false;
 
     const int fps_wanted = std::max(kMinFramerateFps, fps);
@@ -238,10 +215,8 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceRestrictor {
   // Updates the source_restrictions(). The source/sink has to be informed of
   // this separately.
   bool IncreaseFramerate(int fps) {
-    // Called on the encoder task queue.
-    rtc::CritScope lock(&crit_);
-    if (!has_input_video_ ||
-        !IsFramerateScalingEnabled(degradation_preference_))
+    RTC_DCHECK(IsFramerateScalingEnabled(degradation_preference_));
+    if (!has_input_video_)
       return false;
 
     const int fps_wanted = std::max(kMinFramerateFps, fps);
@@ -259,11 +234,9 @@ class OveruseFrameDetectorResourceAdaptationModule::VideoSourceRestrictor {
   }
 
  private:
-  rtc::CriticalSection crit_;
-  SequenceChecker main_checker_;
-  VideoSourceRestrictions source_restrictions_ RTC_GUARDED_BY(&crit_);
-  bool has_input_video_ RTC_GUARDED_BY(&crit_);
-  DegradationPreference degradation_preference_ RTC_GUARDED_BY(&crit_);
+  VideoSourceRestrictions source_restrictions_;
+  bool has_input_video_;
+  DegradationPreference degradation_preference_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(VideoSourceRestrictor);
 };
@@ -397,8 +370,7 @@ OveruseFrameDetectorResourceAdaptationModule::
         std::unique_ptr<OveruseFrameDetector> overuse_detector,
         VideoStreamEncoderObserver* encoder_stats_observer,
         ResourceAdaptationModuleListener* adaptation_listener)
-    : encoder_queue_(nullptr),
-      adaptation_listener_(adaptation_listener),
+    : adaptation_listener_(adaptation_listener),
       video_stream_encoder_(video_stream_encoder),
       degradation_preference_(DegradationPreference::DISABLED),
       adapt_counters_(),
@@ -422,24 +394,13 @@ OveruseFrameDetectorResourceAdaptationModule::
 OveruseFrameDetectorResourceAdaptationModule::
     ~OveruseFrameDetectorResourceAdaptationModule() {}
 
-void OveruseFrameDetectorResourceAdaptationModule::Initialize(
-    rtc::TaskQueue* encoder_queue) {
-  RTC_DCHECK(!encoder_queue_);
-  encoder_queue_ = encoder_queue;
-  RTC_DCHECK(encoder_queue_);
-}
-
 void OveruseFrameDetectorResourceAdaptationModule::SetEncoder(
     VideoEncoder* encoder) {
-  RTC_DCHECK(encoder_queue_);
-  RTC_DCHECK_RUN_ON(encoder_queue_);
   encoder_ = encoder;
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::StartCheckForOveruse(
     ResourceAdaptationModuleListener* adaptation_listener) {
-  RTC_DCHECK(encoder_queue_);
-  RTC_DCHECK_RUN_ON(encoder_queue_);
   RTC_DCHECK(encoder_);
   // TODO(hbos): When AdaptUp() and AdaptDown() are no longer invoked outside
   // the interval between StartCheckForOveruse() and StopCheckForOveruse(),
@@ -449,20 +410,17 @@ void OveruseFrameDetectorResourceAdaptationModule::StartCheckForOveruse(
   // AdaptUp() and AdaptDown() even when the OveruseDetector is inactive.
   RTC_DCHECK_EQ(adaptation_listener, adaptation_listener_);
   overuse_detector_->StartCheckForOveruse(
-      encoder_queue_, video_stream_encoder_->GetCpuOveruseOptions(), this);
+      TaskQueueBase::Current(), video_stream_encoder_->GetCpuOveruseOptions(),
+      this);
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::StopCheckForOveruse() {
-  RTC_DCHECK(encoder_queue_);
-  RTC_DCHECK_RUN_ON(encoder_queue_);
   overuse_detector_->StopCheckForOveruse();
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::FrameCaptured(
     const VideoFrame& frame,
     int64_t time_when_first_seen_us) {
-  RTC_DCHECK(encoder_queue_);
-  RTC_DCHECK_RUN_ON(encoder_queue_);
   overuse_detector_->FrameCaptured(frame, time_when_first_seen_us);
 }
 
@@ -471,44 +429,32 @@ void OveruseFrameDetectorResourceAdaptationModule::FrameSent(
     int64_t time_sent_in_us,
     int64_t capture_time_us,
     absl::optional<int> encode_duration_us) {
-  RTC_DCHECK(encoder_queue_);
-  RTC_DCHECK_RUN_ON(encoder_queue_);
   overuse_detector_->FrameSent(timestamp, time_sent_in_us, capture_time_us,
                                encode_duration_us);
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::SetLastFramePixelCount(
     absl::optional<int> last_frame_pixel_count) {
-  RTC_DCHECK(encoder_queue_);
-  RTC_DCHECK_RUN_ON(encoder_queue_);
   last_frame_pixel_count_ = last_frame_pixel_count;
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::SetEncoderConfig(
     VideoEncoderConfig encoder_config) {
-  RTC_DCHECK(encoder_queue_);
-  RTC_DCHECK_RUN_ON(encoder_queue_);
   encoder_config_ = std::move(encoder_config);
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::SetCodecMaxFramerate(
     int codec_max_framerate) {
-  RTC_DCHECK(encoder_queue_);
-  RTC_DCHECK_RUN_ON(encoder_queue_);
   codec_max_framerate_ = codec_max_framerate;
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::SetEncoderStartBitrateBps(
     uint32_t encoder_start_bitrate_bps) {
-  RTC_DCHECK(encoder_queue_);
-  RTC_DCHECK_RUN_ON(encoder_queue_);
   encoder_start_bitrate_bps_ = encoder_start_bitrate_bps;
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::SetIsQualityScalerEnabled(
     bool is_quality_scaler_enabled) {
-  RTC_DCHECK(encoder_queue_);
-  RTC_DCHECK_RUN_ON(encoder_queue_);
   is_quality_scaler_enabled_ = is_quality_scaler_enabled;
 }
 
@@ -516,43 +462,25 @@ void OveruseFrameDetectorResourceAdaptationModule::
     SetHasInputVideoAndDegradationPreference(
         bool has_input_video,
         DegradationPreference degradation_preference) {
-  // TODO(https://crbug.com/webrtc/11222): Move this call to the encoder queue,
-  // making VideoSourceRestrictor single-threaded and removing the only call to
-  // MaybeUpdateVideoSourceRestrictions() that isn't on the |encoder_queue_|.
-  source_restrictor_->SetHasInputVideoAndDegradationPreference(
-      has_input_video, degradation_preference);
-  MaybeUpdateVideoSourceRestrictions(degradation_preference);
-  encoder_queue_->PostTask([this, degradation_preference] {
-    RTC_DCHECK_RUN_ON(encoder_queue_);
-    if (degradation_preference_ != degradation_preference) {
-      // Reset adaptation state, so that we're not tricked into thinking there's
-      // an already pending request of the same type.
-      last_adaptation_request_.reset();
-      if (degradation_preference == DegradationPreference::BALANCED ||
-          degradation_preference_ == DegradationPreference::BALANCED) {
-        // TODO(asapersson): Consider removing |adapt_counters_| map and use one
-        // AdaptCounter for all modes.
-        source_restrictor_->ClearRestrictions();
-        adapt_counters_.clear();
-      }
+  if (degradation_preference_ != degradation_preference) {
+    // Reset adaptation state, so that we're not tricked into thinking there's
+    // an already pending request of the same type.
+    last_adaptation_request_.reset();
+    if (degradation_preference == DegradationPreference::BALANCED ||
+        degradation_preference_ == DegradationPreference::BALANCED) {
+      // TODO(asapersson): Consider removing |adapt_counters_| map and use one
+      // AdaptCounter for all modes.
+      source_restrictor_->ClearRestrictions();
+      adapt_counters_.clear();
     }
-    degradation_preference_ = degradation_preference;
-    // This is the second time we're invoking
-    // MaybeUpdateVideoSourceRestrictions() in this method. This is because
-    // current tests expect the changes to the source restrictions to be
-    // immediate (outside of the encoder queue) while it is possible that they
-    // change again after ClearRestrictions() on the encoder queue.
-    // TODO(https://crbug.com/webrtc/11222): Change the expectations to allow
-    // source restrictions only to change on the encoder queue. This unblocks
-    // making OveruseFrameDetectorResourceAdaptationModule and
-    // VideoSourceRestrictor single-threaded.
-    MaybeUpdateVideoSourceRestrictions(degradation_preference_);
-  });
+  }
+  degradation_preference_ = degradation_preference;
+  source_restrictor_->SetHasInputVideoAndDegradationPreference(
+      has_input_video, degradation_preference_);
+  MaybeUpdateVideoSourceRestrictions();
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::RefreshTargetFramerate() {
-  RTC_DCHECK(encoder_queue_);
-  RTC_DCHECK_RUN_ON(encoder_queue_);
   absl::optional<double> restricted_frame_rate =
       ApplyDegradationPreference(source_restrictor_->source_restrictions(),
                                  degradation_preference_)
@@ -571,17 +499,13 @@ void OveruseFrameDetectorResourceAdaptationModule::RefreshTargetFramerate() {
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::ResetAdaptationCounters() {
-  RTC_DCHECK(encoder_queue_);
-  RTC_DCHECK_RUN_ON(encoder_queue_);
   last_adaptation_request_.reset();
   source_restrictor_->ClearRestrictions();
   adapt_counters_.clear();
-  MaybeUpdateVideoSourceRestrictions(degradation_preference_);
+  MaybeUpdateVideoSourceRestrictions();
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::AdaptUp(AdaptReason reason) {
-  RTC_DCHECK(encoder_queue_);
-  RTC_DCHECK_RUN_ON(encoder_queue_);
   const AdaptCounter& adapt_counter = GetConstAdaptCounter();
   int num_downgrades = adapt_counter.TotalCount(reason);
   if (num_downgrades == 0)
@@ -685,7 +609,7 @@ void OveruseFrameDetectorResourceAdaptationModule::AdaptUp(AdaptReason reason) {
 
   // Tell the adaptation listener to reconfigure the source for us according to
   // the latest adaptation.
-  MaybeUpdateVideoSourceRestrictions(degradation_preference_);
+  MaybeUpdateVideoSourceRestrictions();
 
   last_adaptation_request_.emplace(adaptation_request);
 
@@ -696,8 +620,6 @@ void OveruseFrameDetectorResourceAdaptationModule::AdaptUp(AdaptReason reason) {
 
 bool OveruseFrameDetectorResourceAdaptationModule::AdaptDown(
     AdaptReason reason) {
-  RTC_DCHECK(encoder_queue_);
-  RTC_DCHECK_RUN_ON(encoder_queue_);
   AdaptationRequest adaptation_request = {
       *last_frame_pixel_count_, encoder_stats_observer_->GetInputFrameRate(),
       AdaptationRequest::Mode::kAdaptDown};
@@ -791,7 +713,7 @@ bool OveruseFrameDetectorResourceAdaptationModule::AdaptDown(
 
   // Tell the adaptation listener to reconfigure the source for us according to
   // the latest adaptation.
-  MaybeUpdateVideoSourceRestrictions(degradation_preference_);
+  MaybeUpdateVideoSourceRestrictions();
 
   last_adaptation_request_.emplace(adaptation_request);
 
@@ -802,21 +724,13 @@ bool OveruseFrameDetectorResourceAdaptationModule::AdaptDown(
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::
-    MaybeUpdateVideoSourceRestrictions(
-        DegradationPreference degradation_preference) {
-  absl::optional<VideoSourceRestrictions> updated_restrictions;
-  {
-    rtc::CritScope lock(&video_source_restrictions_crit_);
-    VideoSourceRestrictions new_restrictions = ApplyDegradationPreference(
-        source_restrictor_->source_restrictions(), degradation_preference);
-    if (video_source_restrictions_ != new_restrictions) {
-      video_source_restrictions_ = std::move(new_restrictions);
-      updated_restrictions = video_source_restrictions_;
-    }
-  }
-  if (updated_restrictions.has_value()) {
+    MaybeUpdateVideoSourceRestrictions() {
+  VideoSourceRestrictions new_restrictions = ApplyDegradationPreference(
+      source_restrictor_->source_restrictions(), degradation_preference_);
+  if (video_source_restrictions_ != new_restrictions) {
+    video_source_restrictions_ = std::move(new_restrictions);
     adaptation_listener_->OnVideoSourceRestrictionsUpdated(
-        updated_restrictions.value());
+        video_source_restrictions_);
   }
 }
 
@@ -840,8 +754,6 @@ void OveruseFrameDetectorResourceAdaptationModule::UpdateAdaptationStats(
 VideoStreamEncoderObserver::AdaptationSteps
 OveruseFrameDetectorResourceAdaptationModule::GetActiveCounts(
     AdaptReason reason) {
-  RTC_DCHECK(encoder_queue_);
-  RTC_DCHECK_RUN_ON(encoder_queue_);
   VideoStreamEncoderObserver::AdaptationSteps counts =
       GetConstAdaptCounter().Counts(reason);
   switch (reason) {
@@ -885,15 +797,11 @@ OveruseFrameDetectorResourceAdaptationModule::GetAdaptCounter() {
 
 const OveruseFrameDetectorResourceAdaptationModule::AdaptCounter&
 OveruseFrameDetectorResourceAdaptationModule::GetConstAdaptCounter() {
-  RTC_DCHECK(encoder_queue_);
-  RTC_DCHECK_RUN_ON(encoder_queue_);
   return adapt_counters_[degradation_preference_];
 }
 
 absl::optional<VideoEncoder::QpThresholds>
 OveruseFrameDetectorResourceAdaptationModule::GetQpThresholds() const {
-  RTC_DCHECK(encoder_queue_);
-  RTC_DCHECK_RUN_ON(encoder_queue_);
   RTC_DCHECK(last_frame_pixel_count_.has_value());
   return balanced_settings_.GetQpThresholds(encoder_config_.codec_type,
                                             last_frame_pixel_count_.value());
