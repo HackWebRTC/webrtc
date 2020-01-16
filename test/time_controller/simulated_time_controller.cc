@@ -20,6 +20,7 @@
 #include "absl/strings/string_view.h"
 #include "test/time_controller/simulated_process_thread.h"
 #include "test/time_controller/simulated_task_queue.h"
+#include "test/time_controller/simulated_thread.h"
 
 namespace webrtc {
 namespace {
@@ -49,8 +50,8 @@ SimulatedTimeControllerImpl::CreateTaskQueue(
   auto mutable_this = const_cast<SimulatedTimeControllerImpl*>(this);
   auto task_queue = std::unique_ptr<SimulatedTaskQueue, TaskQueueDeleter>(
       new SimulatedTaskQueue(mutable_this, name));
-  rtc::CritScope lock(&mutable_this->lock_);
-  mutable_this->runners_.push_back(task_queue.get());
+  ;
+  mutable_this->Register(task_queue.get());
   return task_queue;
 }
 
@@ -59,8 +60,17 @@ std::unique_ptr<ProcessThread> SimulatedTimeControllerImpl::CreateProcessThread(
   rtc::CritScope lock(&lock_);
   auto process_thread =
       std::make_unique<SimulatedProcessThread>(this, thread_name);
-  runners_.push_back(process_thread.get());
+  Register(process_thread.get());
   return process_thread;
+}
+
+std::unique_ptr<rtc::Thread> SimulatedTimeControllerImpl::CreateThread(
+    const std::string& name,
+    std::unique_ptr<rtc::SocketServer> socket_server) {
+  auto thread =
+      std::make_unique<SimulatedThread>(this, name, std::move(socket_server));
+  Register(thread.get());
+  return thread;
 }
 
 void SimulatedTimeControllerImpl::YieldExecution() {
@@ -83,6 +93,9 @@ void SimulatedTimeControllerImpl::YieldExecution() {
 }
 
 void SimulatedTimeControllerImpl::RunReadyRunners() {
+  // Using a dummy thread rather than nullptr to avoid implicit thread creation
+  // by Thread::Current().
+  SimulatedThread::CurrentThreadSetter set_current(dummy_thread_.get());
   rtc::CritScope lock(&lock_);
   RTC_DCHECK_EQ(rtc::CurrentThreadId(), thread_id_);
   Timestamp current_time = CurrentTime();
@@ -136,6 +149,11 @@ void SimulatedTimeControllerImpl::AdvanceTime(Timestamp target_time) {
   current_time_ = target_time;
 }
 
+void SimulatedTimeControllerImpl::Register(SimulatedSequenceRunner* runner) {
+  rtc::CritScope lock(&lock_);
+  runners_.push_back(runner);
+}
+
 void SimulatedTimeControllerImpl::Unregister(SimulatedSequenceRunner* runner) {
   rtc::CritScope lock(&lock_);
   bool removed = RemoveByValue(&runners_, runner);
@@ -148,6 +166,9 @@ GlobalSimulatedTimeController::GlobalSimulatedTimeController(
     Timestamp start_time)
     : sim_clock_(start_time.us()), impl_(start_time), yield_policy_(&impl_) {
   global_clock_.SetTime(start_time);
+  auto main_thread = std::make_unique<SimulatedMainThread>(&impl_);
+  impl_.Register(main_thread.get());
+  main_thread_ = std::move(main_thread);
 }
 
 GlobalSimulatedTimeController::~GlobalSimulatedTimeController() = default;
@@ -163,6 +184,16 @@ TaskQueueFactory* GlobalSimulatedTimeController::GetTaskQueueFactory() {
 std::unique_ptr<ProcessThread>
 GlobalSimulatedTimeController::CreateProcessThread(const char* thread_name) {
   return impl_.CreateProcessThread(thread_name);
+}
+
+std::unique_ptr<rtc::Thread> GlobalSimulatedTimeController::CreateThread(
+    const std::string& name,
+    std::unique_ptr<rtc::SocketServer> socket_server) {
+  return impl_.CreateThread(name, std::move(socket_server));
+}
+
+rtc::Thread* GlobalSimulatedTimeController::GetMainThread() {
+  return main_thread_.get();
 }
 
 void GlobalSimulatedTimeController::AdvanceTime(TimeDelta duration) {

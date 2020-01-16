@@ -20,6 +20,7 @@
 #include "absl/memory/memory.h"
 #include "api/peer_connection_interface.h"
 #include "api/test/network_emulation_manager.h"
+#include "api/test/time_controller.h"
 #include "pc/test/frame_generator_capturer_video_track_source.h"
 #include "test/logging/log_writer.h"
 
@@ -107,6 +108,7 @@ class PeerScenarioClient {
 
   PeerScenarioClient(
       NetworkEmulationManager* net,
+      TimeController* time_controller,
       rtc::Thread* signaling_thread,
       std::unique_ptr<LogWriterFactoryInterface> log_writer_factory,
       Config config);
@@ -147,7 +149,7 @@ class PeerScenarioClient {
 
  private:
   const std::map<int, EmulatedEndpoint*> endpoints_;
-  TaskQueueFactory* task_queue_factory_;
+  TaskQueueFactory* const task_queue_factory_;
   rtc::Thread* const signaling_thread_;
   const std::unique_ptr<LogWriterFactoryInterface> log_writer_factory_;
   const std::unique_ptr<rtc::Thread> worker_thread_;

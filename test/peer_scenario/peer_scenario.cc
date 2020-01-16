@@ -11,10 +11,13 @@
 
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
+#include "rtc_base/null_socket_server.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/strings/string_builder.h"
 #include "test/logging/file_log_writer.h"
 #include "test/testsupport/file_utils.h"
+#include "test/time_controller/real_time_controller.h"
+#include "test/time_controller/simulated_time_controller.h"
 
 ABSL_FLAG(bool, peer_logs, false, "Save logs from peer scenario framework.");
 ABSL_FLAG(std::string,
@@ -38,19 +41,34 @@ std::unique_ptr<FileLogWriterFactory> GetPeerScenarioLogManager(
   }
   return nullptr;
 }
+
+std::unique_ptr<TimeController> CreateTimeController(bool real_time) {
+  if (real_time) {
+    return std::make_unique<RealTimeController>();
+  } else {
+    // Using an offset of 100000 to get nice fixed width and readable timestamps
+    // in typical test scenarios.
+    const Timestamp kSimulatedStartTime = Timestamp::seconds(100000);
+    return std::make_unique<GlobalSimulatedTimeController>(kSimulatedStartTime);
+  }
+}
 }  // namespace
 
-PeerScenario::PeerScenario(const testing::TestInfo& test_info)
-    : PeerScenario(std::string(test_info.test_suite_name()) + "/" +
-                   test_info.name()) {}
+PeerScenario::PeerScenario(const testing::TestInfo& test_info, bool real_time)
+    : PeerScenario(
+          std::string(test_info.test_suite_name()) + "/" + test_info.name(),
+          real_time) {}
 
-PeerScenario::PeerScenario(std::string file_name)
-    : PeerScenario(GetPeerScenarioLogManager(file_name)) {}
+PeerScenario::PeerScenario(std::string file_name, bool real_time)
+    : PeerScenario(GetPeerScenarioLogManager(file_name), real_time) {}
 
 PeerScenario::PeerScenario(
-    std::unique_ptr<LogWriterFactoryInterface> log_writer_manager)
-    : signaling_thread_(rtc::Thread::Current()),
-      log_writer_manager_(std::move(log_writer_manager)) {}
+    std::unique_ptr<LogWriterFactoryInterface> log_writer_manager,
+    bool real_time)
+    : log_writer_manager_(std::move(log_writer_manager)),
+      time_controller_(CreateTimeController(real_time)),
+      signaling_thread_(time_controller_->GetMainThread()),
+      net_(time_controller_.get()) {}
 
 PeerScenarioClient* PeerScenario::CreateClient(
     PeerScenarioClient::Config config) {
@@ -61,8 +79,8 @@ PeerScenarioClient* PeerScenario::CreateClient(
 PeerScenarioClient* PeerScenario::CreateClient(
     std::string name,
     PeerScenarioClient::Config config) {
-  peer_clients_.emplace_back(net(), thread(), GetLogWriterFactory(name),
-                             config);
+  peer_clients_.emplace_back(net(), time_controller_.get(), thread(),
+                             GetLogWriterFactory(name), config);
   return &peer_clients_.back();
 }
 
@@ -106,7 +124,7 @@ bool PeerScenario::WaitAndProcess(std::atomic<bool>* event,
     return true;
   for (auto elapsed = TimeDelta::Zero(); elapsed < max_duration;
        elapsed += kStep) {
-    thread()->ProcessMessages(kStep.ms());
+    time_controller_->AdvanceTime(kStep);
     if (*event)
       return true;
   }
@@ -114,7 +132,7 @@ bool PeerScenario::WaitAndProcess(std::atomic<bool>* event,
 }
 
 void PeerScenario::ProcessMessages(TimeDelta duration) {
-  thread()->ProcessMessages(duration.ms());
+  time_controller_->AdvanceTime(duration);
 }
 
 std::unique_ptr<LogWriterFactoryInterface> PeerScenario::GetLogWriterFactory(

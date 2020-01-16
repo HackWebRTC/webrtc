@@ -10,10 +10,10 @@
 #include "test/time_controller/real_time_controller.h"
 
 #include "api/task_queue/default_task_queue_factory.h"
+#include "rtc_base/null_socket_server.h"
 #include "system_wrappers/include/sleep.h"
 
 namespace webrtc {
-
 RealTimeController::RealTimeController()
     : task_queue_factory_(CreateDefaultTaskQueueFactory()) {}
 
@@ -30,8 +30,23 @@ std::unique_ptr<ProcessThread> RealTimeController::CreateProcessThread(
   return ProcessThread::Create(thread_name);
 }
 
+std::unique_ptr<rtc::Thread> RealTimeController::CreateThread(
+    const std::string& name,
+    std::unique_ptr<rtc::SocketServer> socket_server) {
+  if (!socket_server)
+    socket_server = std::make_unique<rtc::NullSocketServer>();
+  auto res = std::make_unique<rtc::Thread>(std::move(socket_server));
+  res->SetName(name, nullptr);
+  res->Start();
+  return res;
+}
+
+rtc::Thread* RealTimeController::GetMainThread() {
+  return rtc::Thread::Current();
+}
+
 void RealTimeController::AdvanceTime(TimeDelta duration) {
-  SleepMs(duration.ms());
+  GetMainThread()->ProcessMessages(duration.ms());
 }
 
 RealTimeController* GlobalRealTimeController() {
