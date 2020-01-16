@@ -996,7 +996,7 @@ TEST(RtpPacketTest,
             kFeedbackRequest->sequence_count);
 }
 
-TEST(RtpPacketTest, IsExtensionReserved) {
+TEST(RtpPacketTest, ReservedExtensionsCountedAsSetExtension) {
   // Register two extensions.
   RtpPacketToSend::ExtensionManager extensions;
   extensions.Register<TransmissionOffset>(kTransmissionOffsetExtensionId);
@@ -1011,9 +1011,9 @@ TEST(RtpPacketTest, IsExtensionReserved) {
 
   // Only the extension that is both registered and reserved matches
   // IsExtensionReserved().
-  EXPECT_FALSE(packet.IsExtensionReserved<VideoContentTypeExtension>());
-  EXPECT_FALSE(packet.IsExtensionReserved<AudioLevel>());
-  EXPECT_TRUE(packet.IsExtensionReserved<TransmissionOffset>());
+  EXPECT_FALSE(packet.HasExtension<VideoContentTypeExtension>());
+  EXPECT_FALSE(packet.HasExtension<AudioLevel>());
+  EXPECT_TRUE(packet.HasExtension<TransmissionOffset>());
 }
 
 // Tests that RtpPacket::RemoveExtension can successfully remove extensions.

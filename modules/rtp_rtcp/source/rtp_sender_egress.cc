@@ -124,10 +124,10 @@ void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
   // data after rtp header may be corrupted if these packets are protected by
   // the FEC.
   int64_t diff_ms = now_ms - packet->capture_time_ms();
-  if (packet->IsExtensionReserved<TransmissionOffset>()) {
+  if (packet->HasExtension<TransmissionOffset>()) {
     packet->SetExtension<TransmissionOffset>(kTimestampTicksPerMs * diff_ms);
   }
-  if (packet->IsExtensionReserved<AbsoluteSendTime>()) {
+  if (packet->HasExtension<AbsoluteSendTime>()) {
     packet->SetExtension<AbsoluteSendTime>(
         AbsoluteSendTime::MsTo24Bits(now_ms));
   }

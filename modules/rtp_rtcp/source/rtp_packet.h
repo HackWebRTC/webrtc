@@ -112,10 +112,6 @@ class RtpPacket {
   bool HasExtension() const;
   bool HasExtension(ExtensionType type) const;
 
-  template <typename Extension>
-  bool IsExtensionReserved() const;
-  bool IsExtensionReserved(ExtensionType type) const;
-
   template <typename Extension, typename FirstValue, typename... Values>
   bool GetExtension(FirstValue, Values...) const;
 
@@ -205,11 +201,6 @@ class RtpPacket {
 template <typename Extension>
 bool RtpPacket::HasExtension() const {
   return HasExtension(Extension::kId);
-}
-
-template <typename Extension>
-bool RtpPacket::IsExtensionReserved() const {
-  return IsExtensionReserved(Extension::kId);
 }
 
 template <typename Extension, typename FirstValue, typename... Values>

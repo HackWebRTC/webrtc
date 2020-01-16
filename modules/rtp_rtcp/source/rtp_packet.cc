@@ -618,11 +618,6 @@ rtc::ArrayView<uint8_t> RtpPacket::AllocateExtension(ExtensionType type,
 }
 
 bool RtpPacket::HasExtension(ExtensionType type) const {
-  // TODO(webrtc:7990): Add support for empty extensions (length==0).
-  return !FindExtension(type).empty();
-}
-
-bool RtpPacket::IsExtensionReserved(ExtensionType type) const {
   uint8_t id = extensions_.GetId(type);
   if (id == ExtensionManager::kInvalidId) {
     // Extension not registered.

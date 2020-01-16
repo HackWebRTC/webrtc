@@ -2239,9 +2239,9 @@ TEST_P(RtpSenderTest, GeneratePaddingResendsOldPacketsWithRtx) {
   EXPECT_EQ(padding_packet->Ssrc(), kRtxSsrc);
   EXPECT_EQ(padding_packet->payload_size(),
             kPayloadPacketSize + kRtxHeaderSize);
-  EXPECT_TRUE(padding_packet->IsExtensionReserved<TransportSequenceNumber>());
-  EXPECT_TRUE(padding_packet->IsExtensionReserved<AbsoluteSendTime>());
-  EXPECT_TRUE(padding_packet->IsExtensionReserved<TransmissionOffset>());
+  EXPECT_TRUE(padding_packet->HasExtension<TransportSequenceNumber>());
+  EXPECT_TRUE(padding_packet->HasExtension<AbsoluteSendTime>());
+  EXPECT_TRUE(padding_packet->HasExtension<TransmissionOffset>());
 
   // Verify all header extensions are received.
   rtp_egress()->SendPacket(padding_packet.get(), PacedPacketInfo());
@@ -2265,9 +2265,9 @@ TEST_P(RtpSenderTest, GeneratePaddingResendsOldPacketsWithRtx) {
     EXPECT_GT(packet->padding_size(), 0u);
     padding_bytes_generated += packet->padding_size();
 
-    EXPECT_TRUE(packet->IsExtensionReserved<TransportSequenceNumber>());
-    EXPECT_TRUE(packet->IsExtensionReserved<AbsoluteSendTime>());
-    EXPECT_TRUE(packet->IsExtensionReserved<TransmissionOffset>());
+    EXPECT_TRUE(packet->HasExtension<TransportSequenceNumber>());
+    EXPECT_TRUE(packet->HasExtension<AbsoluteSendTime>());
+    EXPECT_TRUE(packet->HasExtension<TransmissionOffset>());
 
     // Verify all header extensions are received.
     rtp_egress()->SendPacket(packet.get(), PacedPacketInfo());
@@ -2323,9 +2323,9 @@ TEST_P(RtpSenderTest, GeneratePaddingCreatesPurePaddingWithoutRtx) {
     EXPECT_EQ(packet->payload_size(), 0u);
     EXPECT_GT(packet->padding_size(), 0u);
     padding_bytes_generated += packet->padding_size();
-    EXPECT_TRUE(packet->IsExtensionReserved<TransportSequenceNumber>());
-    EXPECT_TRUE(packet->IsExtensionReserved<AbsoluteSendTime>());
-    EXPECT_TRUE(packet->IsExtensionReserved<TransmissionOffset>());
+    EXPECT_TRUE(packet->HasExtension<TransportSequenceNumber>());
+    EXPECT_TRUE(packet->HasExtension<AbsoluteSendTime>());
+    EXPECT_TRUE(packet->HasExtension<TransmissionOffset>());
 
     // Verify all header extensions are received.
     rtp_egress()->SendPacket(packet.get(), PacedPacketInfo());
