@@ -397,7 +397,6 @@ class RtpPayloadParamsVp8ToGenericTest : public ::testing::Test {
         params_.GetRtpVideoHeader(encoded_image, &codec_info, shared_frame_id);
 
     ASSERT_TRUE(header.generic);
-    EXPECT_TRUE(header.generic->higher_spatial_layers.empty());
     EXPECT_EQ(header.generic->spatial_index, 0);
 
     EXPECT_EQ(header.generic->frame_id, shared_frame_id);
@@ -494,7 +493,6 @@ class RtpPayloadParamsH264ToGenericTest : public ::testing::Test {
         params_.GetRtpVideoHeader(encoded_image, &codec_info, shared_frame_id);
 
     ASSERT_TRUE(header.generic);
-    EXPECT_TRUE(header.generic->higher_spatial_layers.empty());
     EXPECT_EQ(header.generic->spatial_index, 0);
 
     EXPECT_EQ(header.generic->frame_id, shared_frame_id);

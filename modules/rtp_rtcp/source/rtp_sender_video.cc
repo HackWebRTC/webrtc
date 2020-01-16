@@ -121,11 +121,6 @@ void AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
       }
 
       uint8_t spatial_bimask = 1 << video_header.generic->spatial_index;
-      for (int layer : video_header.generic->higher_spatial_layers) {
-        RTC_DCHECK_GT(layer, video_header.generic->spatial_index);
-        RTC_DCHECK_LT(layer, 8);
-        spatial_bimask |= 1 << layer;
-      }
       generic_descriptor.SetSpatialLayersBitmask(spatial_bimask);
 
       generic_descriptor.SetTemporalLayer(video_header.generic->temporal_index);

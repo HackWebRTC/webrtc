@@ -531,7 +531,6 @@ void RtpSenderVideoTest::PopulateGenericFrameDescriptor(int version) {
   generic.frame_id = kFrameId;
   generic.temporal_index = 3;
   generic.spatial_index = 2;
-  generic.higher_spatial_layers.push_back(4);
   generic.dependencies.push_back(kFrameId - 1);
   generic.dependencies.push_back(kFrameId - 500);
   hdr.frame_type = VideoFrameType::kVideoFrameDelta;
@@ -552,8 +551,7 @@ void RtpSenderVideoTest::PopulateGenericFrameDescriptor(int version) {
   EXPECT_EQ(static_cast<uint16_t>(generic.frame_id), descriptor_wire.FrameId());
   EXPECT_EQ(generic.temporal_index, descriptor_wire.TemporalLayer());
   EXPECT_THAT(descriptor_wire.FrameDependenciesDiffs(), ElementsAre(1, 500));
-  uint8_t spatial_bitmask = 0x14;
-  EXPECT_EQ(spatial_bitmask, descriptor_wire.SpatialLayersBitmask());
+  EXPECT_EQ(descriptor_wire.SpatialLayersBitmask(), 0b0000'0100);
 }
 
 TEST_P(RtpSenderVideoTest, PopulateGenericFrameDescriptor00) {
