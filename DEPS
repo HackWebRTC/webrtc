@@ -5,29 +5,29 @@ vars = {
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
-  'chromium_revision': '7356cb8842e46507806756748f07c5f40bc71565',
+  'chromium_revision': '112d17363167f625c78cf648ccbed989a916fc68',
 }
 
 deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    'https://chromium.googlesource.com/chromium/src/base@b58e32966815493c59c4ba4c6789109c1fbc47de',
+    'https://chromium.googlesource.com/chromium/src/base@20156a5f5fb87cdc4b25bb3d7978723c7585db38',
   'src/build':
-    'https://chromium.googlesource.com/chromium/src/build@ac1042c8478693c1813dc73ea926bedb4f278db5',
+    'https://chromium.googlesource.com/chromium/src/build@0942841069d265353e99fce3e16d5a6fc705bf6e',
   'src/buildtools':
-    'https://chromium.googlesource.com/chromium/src/buildtools@40fcea44ce074f414e375d055bb52a38d813f15d',
+    'https://chromium.googlesource.com/chromium/src/buildtools@73414d522630b27aa3b8d8b63e61d0a5c912a35a',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
   'src/examples/androidtests/third_party/gradle': {
     'url': 'https://chromium.googlesource.com/external/github.com/gradle/gradle.git@89af43c4d0506f69980f00dde78c97b2f81437f8',
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': 'https://chromium.googlesource.com/chromium/src/ios@2ec14af0a48193c64fcdce71c0828af3f3c76a0a',
+    'url': 'https://chromium.googlesource.com/chromium/src/ios@97a7668593df563a84ba830028b6b579a9d29692',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    'https://chromium.googlesource.com/chromium/src/testing@beaff39b0624084b7c27c9569f02fa25120fcfaa',
+    'https://chromium.googlesource.com/chromium/src/testing@1526d013695cdca5593383da4be4c8ae9097451d',
   'src/third_party':
     'https://chromium.googlesource.com/chromium/src/third_party@e88d42df9f24ba69b14923944a0aca7fb8cc96c5',
 
@@ -107,7 +107,7 @@ deps = {
   'src/third_party/boringssl/src':
     'https://boringssl.googlesource.com/boringssl.git@cb3f04f584a53844546aaa32e949534c453185aa',
   'src/third_party/catapult':
-    'https://chromium.googlesource.com/catapult.git@e5b0598dee84652234849ea3338023e6abecc9f3',
+    'https://chromium.googlesource.com/catapult.git@251c7653021328d5d27e26e18a05b7cae9205b8e',
   'src/third_party/ced/src': {
     'url': 'https://chromium.googlesource.com/external/github.com/google/compact_enc_det.git@ba412eaaacd3186085babcd901679a48863c7dd5',
     'condition': 'checkout_android',
