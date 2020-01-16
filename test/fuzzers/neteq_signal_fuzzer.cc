@@ -186,7 +186,8 @@ void FuzzOneInputTest(const uint8_t* data, size_t size) {
   RTC_CHECK(
       MapHas(codecs, rate_types[3].second, SdpAudioFormat("l16", 48000, 1)));
 
-  NetEqTest test(config, CreateBuiltinAudioDecoderFactory(), codecs, nullptr,
+  NetEqTest test(config, CreateBuiltinAudioDecoderFactory(), codecs,
+                 /*text_log=*/nullptr, /*neteq_factory=*/nullptr,
                  std::move(input), std::move(output), callbacks);
   test.Run();
 }

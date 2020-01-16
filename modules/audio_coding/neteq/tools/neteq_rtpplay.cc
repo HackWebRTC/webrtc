@@ -397,7 +397,8 @@ int main(int argc, char* argv[]) {
   }
 
   std::unique_ptr<webrtc::test::NetEqTest> test =
-      factory.InitializeTestFromFile(/*input_filename=*/args[1], config);
+      factory.InitializeTestFromFile(/*input_filename=*/args[1],
+                                     /*factory=*/nullptr, config);
   RTC_CHECK(test) << "ERROR: Unable to run test";
   test->Run();
   return 0;

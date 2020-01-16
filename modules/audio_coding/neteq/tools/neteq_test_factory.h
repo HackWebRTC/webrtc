@@ -147,13 +147,16 @@ class NetEqTestFactory {
 
   std::unique_ptr<NetEqTest> InitializeTestFromFile(
       const std::string& input_filename,
+      NetEqFactory* neteq_factory,
       const Config& config);
   std::unique_ptr<NetEqTest> InitializeTestFromString(
       const std::string& input_string,
+      NetEqFactory* neteq_factory,
       const Config& config);
 
  private:
   std::unique_ptr<NetEqTest> InitializeTest(std::unique_ptr<NetEqInput> input,
+                                            NetEqFactory* neteq_factory,
                                             const Config& config);
   std::unique_ptr<SsrcSwitchDetector> ssrc_switch_detector_;
   std::unique_ptr<NetEqStatsPlotter> stats_plotter_;
