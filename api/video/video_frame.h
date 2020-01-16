@@ -72,6 +72,12 @@ class RTC_EXPORT VideoFrame {
                               int scaled_height) const;
   };
 
+  struct RTC_EXPORT ProcessingTime {
+    TimeDelta Elapsed() const { return finish - start; }
+    Timestamp start;
+    Timestamp finish;
+  };
+
   // Preferred way of building VideoFrame objects.
   class RTC_EXPORT Builder {
    public:
@@ -223,6 +229,13 @@ class RTC_EXPORT VideoFrame {
     packet_infos_ = std::move(value);
   }
 
+  const absl::optional<ProcessingTime> processing_time() const {
+    return processing_time_;
+  }
+  void set_processing_time(const ProcessingTime& processing_time) {
+    processing_time_ = processing_time;
+  }
+
  private:
   VideoFrame(uint16_t id,
              const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
@@ -252,6 +265,11 @@ class RTC_EXPORT VideoFrame {
   // MediaStreamTrack, in order to implement getContributingSources(). See:
   // https://w3c.github.io/webrtc-pc/#dom-rtcrtpreceiver-getcontributingsources
   RtpPacketInfos packet_infos_;
+  // Processing timestamps of the frame. For received video frames these are the
+  // timestamps when the frame is sent to the decoder and the decoded image
+  // returned from the decoder.
+  // Currently, not set for locally captured video frames.
+  absl::optional<ProcessingTime> processing_time_;
 };
 
 }  // namespace webrtc

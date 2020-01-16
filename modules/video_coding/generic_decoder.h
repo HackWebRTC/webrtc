@@ -30,14 +30,14 @@ enum { kDecoderFrameMemoryLength = 10 };
 
 struct VCMFrameInformation {
   int64_t renderTimeMs;
-  int64_t decodeStartTimeMs;
+  absl::optional<Timestamp> decodeStart;
   void* userData;
   VideoRotation rotation;
   VideoContentType content_type;
   EncodedImage::Timing timing;
   int64_t ntp_time_ms;
   RtpPacketInfos packet_infos;
-  // ColorSpace is not storred here, as it might be modified by decoders.
+  // ColorSpace is not stored here, as it might be modified by decoders.
 };
 
 class VCMDecodedFrameCallback : public DecodedImageCallback {
@@ -92,7 +92,7 @@ class VCMGenericDecoder {
    *
    * inputVideoBuffer reference to encoded video frame
    */
-  int32_t Decode(const VCMEncodedFrame& inputFrame, int64_t nowMs);
+  int32_t Decode(const VCMEncodedFrame& inputFrame, Timestamp now);
 
   /**
    * Set decode callback. Deregistering while decoding is illegal.

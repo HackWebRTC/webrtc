@@ -259,7 +259,7 @@ int32_t VideoReceiver::Decode(const VCMEncodedFrame& frame) {
   if (decoder == nullptr) {
     return VCM_NO_CODEC_REGISTERED;
   }
-  return decoder->Decode(frame, clock_->TimeInMilliseconds());
+  return decoder->Decode(frame, clock_->CurrentTime());
 }
 
 // Register possible receive codecs, can be called multiple times

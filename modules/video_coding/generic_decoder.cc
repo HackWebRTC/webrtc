@@ -99,11 +99,13 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
   decodedImage.set_packet_infos(frameInfo->packet_infos);
   decodedImage.set_rotation(frameInfo->rotation);
 
-  const int64_t now_ms = _clock->TimeInMilliseconds();
+  const Timestamp now = _clock->CurrentTime();
+  RTC_DCHECK(frameInfo->decodeStart);
   if (!decode_time_ms) {
-    decode_time_ms = now_ms - frameInfo->decodeStartTimeMs;
+    decode_time_ms = (now - *frameInfo->decodeStart).ms();
   }
-  _timing->StopDecodeTimer(*decode_time_ms, now_ms);
+  _timing->StopDecodeTimer(*decode_time_ms, now.ms());
+  decodedImage.set_processing_time({*frameInfo->decodeStart, now});
 
   // Report timing information.
   TimingFrameInfo timing_frame_info;
@@ -147,8 +149,8 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
   }
 
   timing_frame_info.flags = frameInfo->timing.flags;
-  timing_frame_info.decode_start_ms = frameInfo->decodeStartTimeMs;
-  timing_frame_info.decode_finish_ms = now_ms;
+  timing_frame_info.decode_start_ms = frameInfo->decodeStart->ms();
+  timing_frame_info.decode_finish_ms = now.ms();
   timing_frame_info.render_time_ms = frameInfo->renderTimeMs;
   timing_frame_info.rtp_timestamp = decodedImage.timestamp();
   timing_frame_info.receive_start_ms = frameInfo->timing.receive_start_ms;
@@ -210,10 +212,10 @@ int32_t VCMGenericDecoder::InitDecode(const VideoCodec* settings,
   return decoder_->InitDecode(settings, numberOfCores);
 }
 
-int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
+int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, Timestamp now) {
   TRACE_EVENT1("webrtc", "VCMGenericDecoder::Decode", "timestamp",
                frame.Timestamp());
-  _frameInfos[_nextFrameInfoIdx].decodeStartTimeMs = nowMs;
+  _frameInfos[_nextFrameInfoIdx].decodeStart = now;
   _frameInfos[_nextFrameInfoIdx].renderTimeMs = frame.RenderTimeMs();
   _frameInfos[_nextFrameInfoIdx].rotation = frame.rotation();
   _frameInfos[_nextFrameInfoIdx].timing = frame.video_timing();
