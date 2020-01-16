@@ -593,11 +593,6 @@ class AutoSocketServerThread : public Thread {
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AutoSocketServerThread);
 };
-
-// TODO(srte): Remove these when all dependencies has been updated.
-using MessageQueue = Thread;
-using MessageQueueManager = ThreadManager;
-
 }  // namespace rtc
 
 #endif  // RTC_BASE_THREAD_H_
