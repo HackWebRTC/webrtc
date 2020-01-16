@@ -24,6 +24,7 @@ rtc_library("resource_adaptation") {
     "video_source_restrictions.h",
   ]
   deps = [
+    "../../api:rtp_parameters",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/types:optional",
@@ -34,9 +35,7 @@ if (rtc_include_tests) {
   rtc_library("resource_adaptation_tests") {
     testonly = true
 
-    sources = [
-      "resource_adaptation_processor_unittest.cc",
-    ]
+    sources = [ "resource_adaptation_processor_unittest.cc" ]
     deps = [
       ":resource_adaptation",
       ":resource_adaptation_test_utilities",

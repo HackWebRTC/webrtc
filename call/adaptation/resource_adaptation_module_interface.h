@@ -11,6 +11,7 @@
 #ifndef CALL_ADAPTATION_RESOURCE_ADAPTATION_MODULE_INTERFACE_H_
 #define CALL_ADAPTATION_RESOURCE_ADAPTATION_MODULE_INTERFACE_H_
 
+#include "api/rtp_parameters.h"
 #include "call/adaptation/video_source_restrictions.h"
 
 namespace webrtc {
@@ -49,9 +50,17 @@ class ResourceAdaptationModuleInterface {
   // in a VideoStreamEncoder here directly then have a dependency on a different
   // build target). For the multi-stream use case we may consider making
   // ResourceAdaptationModuleInterface reference counted.
-  virtual void StartCheckForOveruse(
+  virtual void StartResourceAdaptation(
       ResourceAdaptationModuleListener* adaptation_listener) = 0;
-  virtual void StopCheckForOveruse() = 0;
+  virtual void StopResourceAdaptation() = 0;
+
+  // The following methods are callable whether or not adaption is started.
+
+  // Informs the module whether we have input video. By default, the module must
+  // assume the value is false.
+  virtual void SetHasInputVideo(bool has_input_video) = 0;
+  virtual void SetDegradationPreference(
+      DegradationPreference degradation_preference) = 0;
 };
 
 }  // namespace webrtc

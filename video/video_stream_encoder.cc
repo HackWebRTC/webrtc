@@ -347,7 +347,7 @@ void VideoStreamEncoder::Stop() {
   video_source_sink_controller_->SetSource(nullptr);
   encoder_queue_.PostTask([this] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
-    resource_adaptation_module_->StopCheckForOveruse();
+    resource_adaptation_module_->StopResourceAdaptation();
     rate_allocator_ = nullptr;
     bitrate_observer_ = nullptr;
     ReleaseEncoder();
@@ -388,8 +388,9 @@ void VideoStreamEncoder::SetSource(
   video_source_sink_controller_->SetSource(source);
   encoder_queue_.PostTask([this, source, degradation_preference] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
-    resource_adaptation_module_->SetHasInputVideoAndDegradationPreference(
-        source, degradation_preference);
+    resource_adaptation_module_->SetHasInputVideo(source);
+    resource_adaptation_module_->SetDegradationPreference(
+        degradation_preference);
     if (encoder_)
       ConfigureQualityScaler(encoder_->GetEncoderInfo());
 
@@ -693,8 +694,8 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   }
 
   if (pending_encoder_creation_) {
-    resource_adaptation_module_->StopCheckForOveruse();
-    resource_adaptation_module_->StartCheckForOveruse(this);
+    resource_adaptation_module_->StopResourceAdaptation();
+    resource_adaptation_module_->StartResourceAdaptation(this);
     pending_encoder_creation_ = false;
   }
 

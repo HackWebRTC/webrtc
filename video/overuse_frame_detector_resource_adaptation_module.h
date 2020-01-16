@@ -71,9 +71,12 @@ class OveruseFrameDetectorResourceAdaptationModule
   }
 
   // ResourceAdaptationModuleInterface implementation.
-  void StartCheckForOveruse(
+  void StartResourceAdaptation(
       ResourceAdaptationModuleListener* adaptation_listener) override;
-  void StopCheckForOveruse() override;
+  void StopResourceAdaptation() override;
+  void SetHasInputVideo(bool has_input_video) override;
+  void SetDegradationPreference(
+      DegradationPreference degradation_preference) override;
 
   // Input to the OveruseFrameDetector, which are required for this module to
   // function. These map to OveruseFrameDetector methods.
@@ -100,10 +103,6 @@ class OveruseFrameDetectorResourceAdaptationModule
   // this boolean? It would be really easy to report the wrong thing if this
   // method is called incorrectly.
   void SetIsQualityScalerEnabled(bool is_quality_scaler_enabled);
-
-  void SetHasInputVideoAndDegradationPreference(
-      bool has_input_video,
-      DegradationPreference degradation_preference);
 
   // TODO(hbos): Can we get rid of this? Seems we should know whether the frame
   // rate has updated.
@@ -201,6 +200,7 @@ class OveruseFrameDetectorResourceAdaptationModule
   VideoSourceRestrictions video_source_restrictions_;
   // Used to query CpuOveruseOptions at StartCheckForOveruse().
   VideoStreamEncoder* video_stream_encoder_;
+  bool has_input_video_;
   DegradationPreference degradation_preference_;
   // Counters used for deciding if the video resolution or framerate is
   // currently restricted, and if so, why, on a per degradation preference
