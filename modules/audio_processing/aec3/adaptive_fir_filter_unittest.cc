@@ -330,8 +330,8 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
   constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
   constexpr size_t kNumBlocksToProcessPerRenderChannel = 1000;
 
-  for (size_t num_capture_channels : {1, 2, 4}) {
-    for (size_t num_render_channels : {1, 2, 3, 6, 8}) {
+  for (size_t num_capture_channels : {1, 4}) {
+    for (size_t num_render_channels : {1, 8}) {
       ApmDataDumper data_dumper(42);
       EchoCanceller3Config config;
 
