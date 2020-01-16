@@ -4474,10 +4474,12 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
   // background.
   caller()->CreateAndSetAndSignalOffer();
 
-  ASSERT_EQ(PeerConnectionInterface::kIceConnectionCompleted,
-            caller()->ice_connection_state());
-  ASSERT_EQ(PeerConnectionInterface::kIceConnectionCompleted,
-            caller()->standardized_ice_connection_state());
+  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
+                           caller()->ice_connection_state(), kDefaultTimeout,
+                           fake_clock);
+  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
+                           caller()->standardized_ice_connection_state(),
+                           kDefaultTimeout, fake_clock);
 
   // Verify that the observer was notified of the intermediate transitions.
   EXPECT_THAT(caller()->ice_connection_state_history(),
