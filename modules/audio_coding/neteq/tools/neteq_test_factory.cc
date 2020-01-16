@@ -110,6 +110,7 @@ NetEqTestFactory::Config::~Config() = default;
 
 std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTestFromString(
     const std::string& input_string,
+    NetEqFactory* factory,
     const Config& config) {
   std::unique_ptr<NetEqInput> input(
       NetEqEventLogInput::CreateFromString(input_string, config.ssrc_filter));
@@ -117,11 +118,12 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTestFromString(
     std::cerr << "Error: Cannot parse input string" << std::endl;
     return nullptr;
   }
-  return InitializeTest(std::move(input), config);
+  return InitializeTest(std::move(input), factory, config);
 }
 
 std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTestFromFile(
     const std::string& input_file_name,
+    NetEqFactory* factory,
     const Config& config) {
   // Gather RTP header extensions in a map.
   NetEqPacketSourceInput::RtpHeaderExtensionMap rtp_ext_map = {
@@ -146,11 +148,12 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTestFromFile(
     std::cerr << "Error: Cannot open input file" << std::endl;
     return nullptr;
   }
-  return InitializeTest(std::move(input), config);
+  return InitializeTest(std::move(input), factory, config);
 }
 
 std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
     std::unique_ptr<NetEqInput> input,
+    NetEqFactory* factory,
     const Config& config) {
   if (input->ended()) {
     std::cerr << "Error: Input is empty" << std::endl;
@@ -330,9 +333,9 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
   neteq_config.sample_rate_hz = *sample_rate_hz;
   neteq_config.max_packets_in_buffer = config.max_nr_packets_in_buffer;
   neteq_config.enable_fast_accelerate = config.enable_fast_accelerate;
-  return std::make_unique<NetEqTest>(neteq_config, decoder_factory, codecs,
-                                     std::move(text_log), std::move(input),
-                                     std::move(output), callbacks);
+  return std::make_unique<NetEqTest>(
+      neteq_config, decoder_factory, codecs, std::move(text_log), factory,
+      std::move(input), std::move(output), callbacks);
 }
 
 }  // namespace test

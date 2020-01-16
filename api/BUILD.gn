@@ -678,6 +678,7 @@ if (rtc_include_tests) {
         ":neteq_simulator_api",
         "../modules/audio_coding:neteq_test_factory",
         "../rtc_base:checks",
+        "neteq:neteq_api",
         "//third_party/abseil-cpp/absl/flags:flag",
         "//third_party/abseil-cpp/absl/flags:parse",
         "//third_party/abseil-cpp/absl/strings",

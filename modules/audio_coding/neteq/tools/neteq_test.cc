@@ -63,11 +63,14 @@ NetEqTest::NetEqTest(const NetEq::Config& config,
                      rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
                      const DecoderMap& codecs,
                      std::unique_ptr<std::ofstream> text_log,
+                     NetEqFactory* neteq_factory,
                      std::unique_ptr<NetEqInput> input,
                      std::unique_ptr<AudioSink> output,
                      Callbacks callbacks)
     : clock_(0),
-      neteq_(CreateNetEq(config, &clock_, decoder_factory)),
+      neteq_(neteq_factory
+                 ? neteq_factory->CreateNetEq(config, decoder_factory, &clock_)
+                 : CreateNetEq(config, &clock_, decoder_factory)),
       input_(std::move(input)),
       output_(std::move(output)),
       callbacks_(callbacks),
