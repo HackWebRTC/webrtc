@@ -419,8 +419,16 @@ int DtlsTransport::SendPacket(const char* data,
                    : -1;
       }
     case DTLS_TRANSPORT_FAILED:
+      // Can't send anything when we're failed.
+      RTC_LOG(LS_ERROR)
+          << ToString()
+          << ": Couldn't send packet due to DTLS_TRANSPORT_FAILED.";
+      return -1;
     case DTLS_TRANSPORT_CLOSED:
       // Can't send anything when we're closed.
+      RTC_LOG(LS_ERROR)
+          << ToString()
+          << ": Couldn't send packet due to DTLS_TRANSPORT_CLOSED.";
       return -1;
     default:
       RTC_NOTREACHED();
@@ -510,8 +518,16 @@ void DtlsTransport::OnWritableState(rtc::PacketTransportInternal* transport) {
       // Do nothing.
       break;
     case DTLS_TRANSPORT_FAILED:
+      // Should not happen. Do nothing.
+      RTC_LOG(LS_ERROR)
+          << ToString()
+          << ": OnWritableState() called in state DTLS_TRANSPORT_FAILED.";
+      break;
     case DTLS_TRANSPORT_CLOSED:
       // Should not happen. Do nothing.
+      RTC_LOG(LS_ERROR)
+          << ToString()
+          << ": OnWritableState() called in state DTLS_TRANSPORT_CLOSED.";
       break;
   }
 }
