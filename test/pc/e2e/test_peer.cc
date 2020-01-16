@@ -301,6 +301,10 @@ class TestPeerComponents {
     if (pc_dependencies->tls_cert_verifier != nullptr) {
       pc_deps.tls_cert_verifier = std::move(pc_dependencies->tls_cert_verifier);
     }
+    if (pc_dependencies->ice_transport_factory != nullptr) {
+      pc_deps.ice_transport_factory =
+          std::move(pc_dependencies->ice_transport_factory);
+    }
     return pc_deps;
   }
 

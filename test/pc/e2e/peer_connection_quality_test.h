@@ -160,6 +160,12 @@ class PeerConfigurerImpl final
     return this;
   }
 
+  PeerConfigurer* SetIceTransportFactory(
+      std::unique_ptr<IceTransportFactory> factory) override {
+    components_->pc_dependencies->ice_transport_factory = std::move(factory);
+    return this;
+  }
+
  protected:
   friend class PeerConnectionE2EQualityTest;
 

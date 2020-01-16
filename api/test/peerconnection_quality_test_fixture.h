@@ -277,7 +277,7 @@ class PeerConnectionE2EQualityTestFixture {
     virtual PeerConfigurer* SetVideoDecoderFactory(
         std::unique_ptr<VideoDecoderFactory> video_decoder_factory) = 0;
 
-    // The parameters of the following 3 methods will be passed to the
+    // The parameters of the following 4 methods will be passed to the
     // PeerConnectionInterface implementation that will be created for this
     // peer.
     virtual PeerConfigurer* SetAsyncResolverFactory(
@@ -288,6 +288,8 @@ class PeerConnectionE2EQualityTestFixture {
             cert_generator) = 0;
     virtual PeerConfigurer* SetSSLCertificateVerifier(
         std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier) = 0;
+    virtual PeerConfigurer* SetIceTransportFactory(
+        std::unique_ptr<IceTransportFactory> factory) = 0;
 
     // Add new video stream to the call that will be sent from this peer.
     virtual PeerConfigurer* AddVideoConfig(VideoConfig config) = 0;

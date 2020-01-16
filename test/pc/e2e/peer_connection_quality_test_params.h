@@ -75,6 +75,7 @@ struct PeerConnectionComponents {
   std::unique_ptr<webrtc::AsyncResolverFactory> async_resolver_factory;
   std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator;
   std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier;
+  std::unique_ptr<IceTransportFactory> ice_transport_factory;
 };
 
 // Contains all components, that can be overridden in peer connection. Also
