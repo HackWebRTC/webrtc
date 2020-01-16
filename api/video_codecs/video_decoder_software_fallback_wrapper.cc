@@ -16,12 +16,12 @@
 #include <string>
 #include <utility>
 
+#include "absl/base/macros.h"
 #include "api/video/encoded_image.h"
 #include "api/video_codecs/video_codec.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/system/fallthrough.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
 
@@ -166,7 +166,7 @@ int32_t VideoDecoderSoftwareFallbackWrapper::Decode(
       }
 
       // Fallback decoder initialized, fall-through.
-      RTC_FALLTHROUGH();
+      ABSL_FALLTHROUGH_INTENDED;
     }
     case DecoderType::kFallback:
       return fallback_decoder_->Decode(input_image, missing_frames,

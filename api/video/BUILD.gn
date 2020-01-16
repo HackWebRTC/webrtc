@@ -58,9 +58,7 @@ rtc_library("video_frame") {
 
 rtc_source_set("recordable_encoded_frame") {
   visibility = [ "*" ]
-  sources = [
-    "recordable_encoded_frame.h",
-  ]
+  sources = [ "recordable_encoded_frame.h" ]
 
   deps = [
     ":encoded_image",
@@ -75,9 +73,7 @@ rtc_source_set("recordable_encoded_frame") {
 
 rtc_source_set("video_frame_type") {
   visibility = [ "*" ]
-  sources = [
-    "video_frame_type.h",
-  ]
+  sources = [ "video_frame_type.h" ]
 }
 
 rtc_library("video_frame_i420") {
@@ -146,16 +142,12 @@ rtc_library("encoded_frame") {
     "encoded_frame.h",
   ]
 
-  deps = [
-    "../../modules/video_coding:encoded_frame",
-  ]
+  deps = [ "../../modules/video_coding:encoded_frame" ]
 }
 
 rtc_source_set("video_codec_constants") {
   visibility = [ "*" ]
-  sources = [
-    "video_codec_constants.h",
-  ]
+  sources = [ "video_codec_constants.h" ]
   deps = []
 }
 
@@ -189,9 +181,7 @@ rtc_library("video_bitrate_allocator") {
 
 rtc_source_set("video_bitrate_allocator_factory") {
   visibility = [ "*" ]
-  sources = [
-    "video_bitrate_allocator_factory.h",
-  ]
+  sources = [ "video_bitrate_allocator_factory.h" ]
   deps = [
     ":video_bitrate_allocator",
     "../../rtc_base:rtc_base_approved",
@@ -201,9 +191,7 @@ rtc_source_set("video_bitrate_allocator_factory") {
 
 rtc_source_set("video_stream_decoder") {
   visibility = [ "*" ]
-  sources = [
-    "video_stream_decoder.h",
-  ]
+  sources = [ "video_stream_decoder.h" ]
 
   deps = [
     ":encoded_frame",
@@ -288,17 +276,15 @@ rtc_library("builtin_video_bitrate_allocator_factory") {
     "../../media:rtc_media_base",
     "../../modules/video_coding:video_coding_utility",
     "../../modules/video_coding:webrtc_vp9_helpers",
-    "../../rtc_base/system:fallthrough",
     "../video_codecs:video_codecs_api",
+    "//third_party/abseil-cpp/absl/base:core_headers",
   ]
 }
 
 if (rtc_include_tests) {
   rtc_library("video_unittests") {
     testonly = true
-    sources = [
-      "video_stream_decoder_create_unittest.cc",
-    ]
+    sources = [ "video_stream_decoder_create_unittest.cc" ]
     deps = [
       ":video_stream_decoder_create",
       "../../test:test_support",

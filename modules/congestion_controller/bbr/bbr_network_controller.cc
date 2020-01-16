@@ -15,9 +15,9 @@
 #include <string>
 #include <vector>
 
+#include "absl/base/macros.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/system/fallthrough.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
@@ -784,7 +784,7 @@ void BbrNetworkController::UpdateRecoveryState(int64_t last_acked_packet,
       if (is_round_start) {
         recovery_state_ = GROWTH;
       }
-      RTC_FALLTHROUGH();
+      ABSL_FALLTHROUGH_INTENDED;
     case GROWTH:
       // Exit recovery if appropriate.
       if (!has_losses &&

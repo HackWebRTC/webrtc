@@ -58,12 +58,8 @@ rtc_library("video_codecs_api") {
 
 rtc_source_set("bitstream_parser_api") {
   visibility = [ "*" ]
-  sources = [
-    "bitstream_parser.h",
-  ]
-  deps = [
-    "..:array_view",
-  ]
+  sources = [ "bitstream_parser.h" ]
+  deps = [ "..:array_view" ]
 }
 
 rtc_library("builtin_video_decoder_factory") {
@@ -143,13 +139,13 @@ rtc_library("rtc_software_fallback_wrappers") {
     "../../modules/video_coding:video_codec_interface",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
-    "../../rtc_base/system:fallthrough",
     "../../rtc_base/system:rtc_export",
     "../../system_wrappers:field_trial",
     "../video:encoded_image",
     "../video:video_bitrate_allocation",
     "../video:video_frame",
     "../video:video_rtp_headers",
+    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }

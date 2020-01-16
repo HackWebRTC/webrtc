@@ -13,12 +13,12 @@
 #include <algorithm>
 #include <limits>
 
+#include "absl/base/macros.h"
 #include "absl/types/variant.h"
 #include "modules/video_coding/frame_object.h"
 #include "modules/video_coding/packet_buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/system/fallthrough.h"
 
 namespace webrtc {
 namespace video_coding {
@@ -78,7 +78,7 @@ void RtpFrameReferenceFinder::RetryStashedFrames() {
         case kHandOff:
           complete_frame = true;
           HandOffFrame(std::move(*frame_it));
-          RTC_FALLTHROUGH();
+          ABSL_FALLTHROUGH_INTENDED;
         case kDrop:
           frame_it = stashed_frames_.erase(frame_it);
       }

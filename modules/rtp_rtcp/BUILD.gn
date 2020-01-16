@@ -277,13 +277,13 @@ rtc_library("rtp_rtcp") {
     "../../rtc_base:rtc_numerics",
     "../../rtc_base:safe_minmax",
     "../../rtc_base/synchronization:sequence_checker",
-    "../../rtc_base/system:fallthrough",
     "../../rtc_base/time:timestamp_extrapolator",
     "../../system_wrappers",
     "../../system_wrappers:metrics",
     "../remote_bitrate_estimator",
     "../video_coding:codec_globals_headers",
     "//third_party/abseil-cpp/absl/algorithm:container",
+    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/container:inlined_vector",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",
@@ -404,9 +404,7 @@ if (rtc_include_tests) {
   rtc_library("rtp_rtcp_modules_tests") {
     testonly = true
 
-    sources = [
-      "test/testFec/test_fec.cc",
-    ]
+    sources = [ "test/testFec/test_fec.cc" ]
     deps = [
       ":rtp_rtcp",
       ":rtp_rtcp_format",

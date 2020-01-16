@@ -110,7 +110,6 @@ rtc_library("video") {
     "../rtc_base/experiments:quality_scaling_experiment",
     "../rtc_base/experiments:rate_control_settings",
     "../rtc_base/synchronization:sequence_checker",
-    "../rtc_base/system:fallthrough",
     "../rtc_base/system:thread_registry",
     "../rtc_base/task_utils:repeating_task",
     "../rtc_base/task_utils:to_queued_task",
@@ -119,6 +118,7 @@ rtc_library("video") {
     "../system_wrappers:field_trial",
     "../system_wrappers:metrics",
     "//third_party/abseil-cpp/absl/algorithm:container",
+    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -230,11 +230,11 @@ rtc_library("video_stream_encoder_impl") {
     "../rtc_base/experiments:quality_scaling_experiment",
     "../rtc_base/experiments:rate_control_settings",
     "../rtc_base/synchronization:sequence_checker",
-    "../rtc_base/system:fallthrough",
     "../rtc_base/task_utils:repeating_task",
     "../system_wrappers",
     "../system_wrappers:field_trial",
     "//third_party/abseil-cpp/absl/algorithm:container",
+    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -242,9 +242,7 @@ rtc_library("video_stream_encoder_impl") {
 if (rtc_include_tests) {
   rtc_library("video_mocks") {
     testonly = true
-    sources = [
-      "test/mock_video_stream_encoder.h",
-    ]
+    sources = [ "test/mock_video_stream_encoder.h" ]
     deps = [
       "../api/video:video_stream_encoder",
       "../test:test_support",
@@ -330,9 +328,7 @@ if (rtc_include_tests) {
   rtc_library("video_full_stack_tests") {
     testonly = true
 
-    sources = [
-      "full_stack_tests.cc",
-    ]
+    sources = [ "full_stack_tests.cc" ]
     deps = [
       ":video_quality_test",
       "../api:simulated_network_api",
@@ -357,9 +353,7 @@ if (rtc_include_tests) {
   rtc_library("video_pc_full_stack_tests") {
     testonly = true
 
-    sources = [
-      "pc_full_stack_tests.cc",
-    ]
+    sources = [ "pc_full_stack_tests.cc" ]
     deps = [
       "../api:create_network_emulation_manager",
       "../api:create_peerconnection_quality_test_fixture",
@@ -408,31 +402,21 @@ if (rtc_include_tests) {
   if (is_mac) {
     mac_app_bundle("video_loopback") {
       testonly = true
-      sources = [
-        "video_loopback_main.mm",
-      ]
+      sources = [ "video_loopback_main.mm" ]
       info_plist = "../test/mac/Info.plist"
-      deps = [
-        ":video_loopback_lib",
-      ]
+      deps = [ ":video_loopback_lib" ]
     }
   } else {
     rtc_executable("video_loopback") {
       testonly = true
-      sources = [
-        "video_loopback_main.cc",
-      ]
-      deps = [
-        ":video_loopback_lib",
-      ]
+      sources = [ "video_loopback_main.cc" ]
+      deps = [ ":video_loopback_lib" ]
     }
   }
 
   rtc_executable("screenshare_loopback") {
     testonly = true
-    sources = [
-      "screenshare_loopback.cc",
-    ]
+    sources = [ "screenshare_loopback.cc" ]
 
     deps = [
       ":video_quality_test",
@@ -459,9 +443,7 @@ if (rtc_include_tests) {
 
   rtc_executable("sv_loopback") {
     testonly = true
-    sources = [
-      "sv_loopback.cc",
-    ]
+    sources = [ "sv_loopback.cc" ]
     deps = [
       ":video_quality_test",
       "../api:libjingle_peerconnection_api",
@@ -487,9 +469,7 @@ if (rtc_include_tests) {
 
   rtc_executable("video_replay") {
     testonly = true
-    sources = [
-      "video_replay.cc",
-    ]
+    sources = [ "video_replay.cc" ]
     deps = [
       "../api/rtc_event_log",
       "../api/task_queue:default_task_queue_factory",

@@ -41,9 +41,7 @@ rtc_library("media_constraints") {
 
 rtc_library("sdk_tests") {
   testonly = true
-  sources = [
-    "media_constraints_unittest.cc",
-  ]
+  sources = [ "media_constraints_unittest.cc" ]
   deps = [
     ":media_constraints",
     "../test:test_support",
@@ -84,9 +82,7 @@ if (is_ios || is_mac) {
   rtc_library("common_objc") {
     visibility = [ "*" ]
 
-    sources = [
-      "objc/helpers/noop.mm",
-    ]
+    sources = [ "objc/helpers/noop.mm" ]
 
     public_configs = [ ":common_config_objc" ]
 
@@ -243,13 +239,9 @@ if (is_ios || is_mac) {
       rtc_source_set("audio_session_observer") {
         visibility = [ ":*" ]
 
-        sources = [
-          "objc/native/src/audio/audio_session_observer.h",
-        ]
+        sources = [ "objc/native/src/audio/audio_session_observer.h" ]
 
-        deps = [
-          "../rtc_base",
-        ]
+        deps = [ "../rtc_base" ]
       }
 
       rtc_library("audio_device") {
@@ -278,9 +270,9 @@ if (is_ios || is_mac) {
           "../modules/audio_device:audio_device_generic",
           "../rtc_base",
           "../rtc_base:checks",
-          "../rtc_base/system:fallthrough",
           "../system_wrappers:field_trial",
           "../system_wrappers:metrics",
+          "//third_party/abseil-cpp/absl/base:core_headers",
         ]
 
         libs = [ "AudioToolbox.framework" ]
@@ -542,9 +534,7 @@ if (is_ios || is_mac) {
     # TODO(bugs.webrtc.org/9627): Remove this target.
     rtc_library("videocapturebase_objc") {
       visibility = [ "*" ]
-      sources = [
-        "objc/helpers/noop.mm",
-      ]
+      sources = [ "objc/helpers/noop.mm" ]
 
       configs += [ "..:common_objc" ]
 
@@ -700,9 +690,7 @@ if (is_ios || is_mac) {
       ]
       defines = [ "HAVE_NO_MEDIA" ]
 
-      sources = [
-        "objc/helpers/noop.mm",
-      ]
+      sources = [ "objc/helpers/noop.mm" ]
 
       public_configs = [ ":common_config_objc" ]
 
@@ -734,16 +722,12 @@ if (is_ios || is_mac) {
     # TODO(bugs.webrtc.org/9627): Remove, targets should depend on base_objc.
     rtc_library("videorenderer_objc") {
       visibility = [ "*" ]
-      sources = [
-        "objc/helpers/noop.mm",
-      ]
+      sources = [ "objc/helpers/noop.mm" ]
 
       configs += [ "..:common_objc" ]
       public_configs = [ ":common_config_objc" ]
 
-      deps = [
-        ":base_objc",
-      ]
+      deps = [ ":base_objc" ]
     }
 
     rtc_library("videorendereradapter_objc") {
@@ -1152,17 +1136,13 @@ if (is_ios || is_mac) {
             # Sample video taken from https://media.xiph.org/video/derf/
             "objc/unittests/foreman.mp4",
           ]
-          outputs = [
-            "{{bundle_resources_dir}}/{{source_file_part}}",
-          ]
+          outputs = [ "{{bundle_resources_dir}}/{{source_file_part}}" ]
         }
 
         # These tests use static linking.
         rtc_ios_xctest_test("sdk_unittests") {
           info_plist = "//test/ios/Info.plist"
-          sources = [
-            "objc/unittests/main.mm",
-          ]
+          sources = [ "objc/unittests/main.mm" ]
 
           extra_substitutions = [ "GTEST_BUNDLE_ID_SUFFIX=generic-unit-test" ]
           deps = [
@@ -1405,15 +1385,9 @@ if (is_ios || is_mac) {
       }
 
       bundle_data("ios_framework_bundle") {
-        deps = [
-          "../sdk:framework_objc",
-        ]
-        sources = [
-          "$root_build_dir/WebRTC.framework",
-        ]
-        outputs = [
-          "{{bundle_resources_dir}}/Frameworks/{{source_file_part}}",
-        ]
+        deps = [ "../sdk:framework_objc" ]
+        sources = [ "$root_build_dir/WebRTC.framework" ]
+        outputs = [ "{{bundle_resources_dir}}/Frameworks/{{source_file_part}}" ]
       }
     }
 
@@ -1542,15 +1516,9 @@ if (is_ios || is_mac) {
       }
 
       bundle_data("mac_framework_bundle") {
-        deps = [
-          "../sdk:mac_framework_objc",
-        ]
-        sources = [
-          "$root_build_dir/WebRTC.framework",
-        ]
-        outputs = [
-          "{{bundle_contents_dir}}/Frameworks/{{source_file_part}}",
-        ]
+        deps = [ "../sdk:mac_framework_objc" ]
+        sources = [ "$root_build_dir/WebRTC.framework" ]
+        outputs = [ "{{bundle_contents_dir}}/Frameworks/{{source_file_part}}" ]
       }
     }
 

@@ -13,7 +13,6 @@
 #include <utility>
 
 #include "rtc_base/logging.h"
-#include "rtc_base/system/fallthrough.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
