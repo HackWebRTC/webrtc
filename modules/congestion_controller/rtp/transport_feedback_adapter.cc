@@ -70,31 +70,27 @@ TransportFeedbackAdapter::TransportFeedbackAdapter() = default;
 void TransportFeedbackAdapter::AddPacket(const RtpPacketSendInfo& packet_info,
                                          size_t overhead_bytes,
                                          Timestamp creation_time) {
-  {
-    rtc::CritScope cs(&lock_);
-    PacketFeedback packet;
-    packet.creation_time = creation_time;
-    packet.sent.sequence_number =
-        seq_num_unwrapper_.Unwrap(packet_info.transport_sequence_number);
-    packet.sent.size = DataSize::bytes(packet_info.length + overhead_bytes);
-    packet.local_net_id = local_net_id_;
-    packet.remote_net_id = remote_net_id_;
-    packet.sent.pacing_info = packet_info.pacing_info;
+  PacketFeedback packet;
+  packet.creation_time = creation_time;
+  packet.sent.sequence_number =
+      seq_num_unwrapper_.Unwrap(packet_info.transport_sequence_number);
+  packet.sent.size = DataSize::bytes(packet_info.length + overhead_bytes);
+  packet.local_net_id = local_net_id_;
+  packet.remote_net_id = remote_net_id_;
+  packet.sent.pacing_info = packet_info.pacing_info;
 
-    while (!history_.empty() &&
-           creation_time - history_.begin()->second.creation_time >
-               kSendTimeHistoryWindow) {
-      // TODO(sprang): Warn if erasing (too many) old items?
-      if (history_.begin()->second.sent.sequence_number > last_ack_seq_num_)
-        in_flight_.RemoveInFlightPacketBytes(history_.begin()->second);
-      history_.erase(history_.begin());
-    }
-    history_.insert(std::make_pair(packet.sent.sequence_number, packet));
+  while (!history_.empty() &&
+         creation_time - history_.begin()->second.creation_time >
+             kSendTimeHistoryWindow) {
+    // TODO(sprang): Warn if erasing (too many) old items?
+    if (history_.begin()->second.sent.sequence_number > last_ack_seq_num_)
+      in_flight_.RemoveInFlightPacketBytes(history_.begin()->second);
+    history_.erase(history_.begin());
   }
+  history_.insert(std::make_pair(packet.sent.sequence_number, packet));
 }
 absl::optional<SentPacket> TransportFeedbackAdapter::ProcessSentPacket(
     const rtc::SentPacket& sent_packet) {
-  rtc::CritScope cs(&lock_);
   auto send_time = Timestamp::ms(sent_packet.send_time_ms);
   // TODO(srte): Only use one way to indicate that packet feedback is used.
   if (sent_packet.info.included_in_feedback || sent_packet.packet_id != -1) {
@@ -141,7 +137,6 @@ TransportFeedbackAdapter::ProcessTransportFeedback(
     return absl::nullopt;
   }
 
-  rtc::CritScope cs(&lock_);
   TransportPacketsFeedback msg;
   msg.feedback_time = feedback_receive_time;
 
@@ -164,13 +159,11 @@ TransportFeedbackAdapter::ProcessTransportFeedback(
 
 void TransportFeedbackAdapter::SetNetworkIds(uint16_t local_id,
                                              uint16_t remote_id) {
-  rtc::CritScope cs(&lock_);
   local_net_id_ = local_id;
   remote_net_id_ = remote_id;
 }
 
 DataSize TransportFeedbackAdapter::GetOutstandingData() const {
-  rtc::CritScope cs(&lock_);
   return in_flight_.GetOutstandingData(local_net_id_, remote_net_id_);
 }
 
