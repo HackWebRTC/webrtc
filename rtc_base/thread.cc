@@ -844,6 +844,7 @@ void Thread::Send(const Location& posted_from,
                   MessageHandler* phandler,
                   uint32_t id,
                   MessageData* pdata) {
+  RTC_DCHECK(!IsQuitting());
   if (IsQuitting())
     return;
 
