@@ -16,7 +16,7 @@
 
 #include "absl/algorithm/container.h"
 #include "api/array_view.h"
-#include "common_video/generic_frame_descriptor/generic_frame_info.h"
+#include "api/transport/rtp/dependency_descriptor.h"
 #include "rtc_base/bit_buffer.h"
 #include "rtc_base/checks.h"
 

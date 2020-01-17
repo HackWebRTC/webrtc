@@ -13,7 +13,7 @@
 #include <cstdint>
 
 #include "api/array_view.h"
-#include "common_video/generic_frame_descriptor/generic_frame_info.h"
+#include "api/transport/rtp/dependency_descriptor.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_dependency_descriptor_reader.h"
 #include "modules/rtp_rtcp/source/rtp_dependency_descriptor_writer.h"

@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "api/transport/rtp/dependency_descriptor.h"
 #include "rtc_base/bit_buffer.h"
 #include "rtc_base/checks.h"
 
