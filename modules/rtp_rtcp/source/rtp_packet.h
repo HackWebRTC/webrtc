@@ -123,7 +123,7 @@ class RtpPacket {
   rtc::ArrayView<const uint8_t> GetRawExtension() const;
 
   template <typename Extension, typename... Values>
-  bool SetExtension(Values...);
+  bool SetExtension(const Values&...);
 
   template <typename Extension>
   bool ReserveExtension();
@@ -226,7 +226,7 @@ rtc::ArrayView<const uint8_t> RtpPacket::GetRawExtension() const {
 }
 
 template <typename Extension, typename... Values>
-bool RtpPacket::SetExtension(Values... values) {
+bool RtpPacket::SetExtension(const Values&... values) {
   const size_t value_size = Extension::ValueSize(values...);
   auto buffer = AllocateExtension(Extension::kId, value_size);
   if (buffer.empty())

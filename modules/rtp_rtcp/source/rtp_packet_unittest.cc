@@ -201,7 +201,6 @@ void TestCreateAndParseColorSpaceExtension(bool with_hdr_metadata) {
   EXPECT_TRUE(parsed.GetExtension<ColorSpaceExtension>(&parsed_color_space));
   EXPECT_EQ(kColorSpace, parsed_color_space);
 }
-}  // namespace
 
 TEST(RtpPacketTest, CreateMinimum) {
   RtpPacketToSend packet(nullptr);
@@ -751,6 +750,48 @@ TEST(RtpPacketTest, ParseWithMid) {
   EXPECT_EQ(mid, kMid);
 }
 
+struct UncopyableValue {
+  UncopyableValue() = default;
+  UncopyableValue(const UncopyableValue&) = delete;
+  UncopyableValue& operator=(const UncopyableValue&) = delete;
+};
+struct UncopyableExtension {
+  static constexpr RTPExtensionType kId = kRtpExtensionGenericFrameDescriptor02;
+  static constexpr char kUri[] = "uri";
+
+  static size_t ValueSize(const UncopyableValue& value) { return 1; }
+  static bool Write(rtc::ArrayView<uint8_t> data,
+                    const UncopyableValue& value) {
+    return true;
+  }
+  static bool Parse(rtc::ArrayView<const uint8_t> data,
+                    UncopyableValue* value) {
+    return true;
+  }
+};
+constexpr RTPExtensionType UncopyableExtension::kId;
+constexpr char UncopyableExtension::kUri[];
+
+TEST(RtpPacketTest, SetUncopyableExtension) {
+  RtpPacket::ExtensionManager extensions;
+  extensions.Register<UncopyableExtension>(1);
+  RtpPacket rtp_packet(&extensions);
+
+  UncopyableValue value;
+  EXPECT_TRUE(rtp_packet.SetExtension<UncopyableExtension>(value));
+}
+
+TEST(RtpPacketTest, GetUncopyableExtension) {
+  RtpPacket::ExtensionManager extensions;
+  extensions.Register<UncopyableExtension>(1);
+  RtpPacket rtp_packet(&extensions);
+  UncopyableValue value;
+  rtp_packet.SetExtension<UncopyableExtension>(value);
+
+  UncopyableValue value2;
+  EXPECT_TRUE(rtp_packet.GetExtension<UncopyableExtension>(&value2));
+}
+
 TEST(RtpPacketTest, CreateAndParseTimingFrameExtension) {
   // Create a packet with video frame timing extension populated.
   RtpPacketToSend::ExtensionManager send_extensions;
@@ -1100,4 +1141,5 @@ TEST(RtpPacketTest, RemoveExtensionFailure) {
   EXPECT_THAT(kPacketWithTO, ElementsAreArray(packet.data(), packet.size()));
 }
 
+}  // namespace
 }  // namespace webrtc
