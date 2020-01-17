@@ -166,7 +166,6 @@ void Scenario::ChangeRoute(std::pair<CallClient*, CallClient*> clients,
                            std::vector<EmulatedNetworkNode*> over_nodes,
                            DataSize overhead) {
   rtc::IPAddress route_ip(next_route_id_++);
-  clients.second->route_overhead_.insert({route_ip, overhead});
   EmulatedNetworkNode::CreateRoute(route_ip, over_nodes, clients.second);
   clients.first->transport_->Connect(over_nodes.front(), route_ip, overhead);
 }

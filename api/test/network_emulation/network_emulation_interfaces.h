@@ -22,12 +22,11 @@ namespace webrtc {
 
 struct EmulatedIpPacket {
  public:
-  static constexpr int kUdpHeaderSize = 8;
-
   EmulatedIpPacket(const rtc::SocketAddress& from,
                    const rtc::SocketAddress& to,
                    rtc::CopyOnWriteBuffer data,
-                   Timestamp arrival_time);
+                   Timestamp arrival_time,
+                   uint16_t application_overhead = 0);
   ~EmulatedIpPacket() = default;
   // This object is not copyable or assignable.
   EmulatedIpPacket(const EmulatedIpPacket&) = delete;
@@ -39,14 +38,12 @@ struct EmulatedIpPacket {
   size_t size() const { return data.size(); }
   const uint8_t* cdata() const { return data.cdata(); }
 
-  size_t ip_packet_size() const {
-    return size() + kUdpHeaderSize + ip_header_size;
-  }
+  size_t ip_packet_size() const { return size() + headers_size; }
   rtc::SocketAddress from;
   rtc::SocketAddress to;
   // Holds the UDP payload.
   rtc::CopyOnWriteBuffer data;
-  int ip_header_size;
+  uint16_t headers_size;
   Timestamp arrival_time;
 };
 

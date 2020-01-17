@@ -28,9 +28,6 @@
 namespace webrtc {
 namespace test {
 struct PacketOverhead {
-  static constexpr size_t kIpv4 = 20;
-  static constexpr size_t kIpv6 = 40;
-  static constexpr size_t kUdp = 8;
   static constexpr size_t kSrtp = 10;
   static constexpr size_t kStun = 4;
   // TURN messages can be sent either with or without an establieshed channel.
@@ -38,7 +35,7 @@ struct PacketOverhead {
   // significantly more overhead.
   static constexpr size_t kTurnChannelMessage = 4;
   static constexpr size_t kTurnIndicationMessage = 36;
-  static constexpr size_t kDefault = kIpv4 + kUdp + kSrtp;
+  static constexpr size_t kDefault = kSrtp;
 };
 struct TransportControllerConfig {
   struct Rates {

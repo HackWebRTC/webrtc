@@ -12,19 +12,23 @@
 namespace webrtc {
 
 namespace {
-constexpr size_t kIPv4HeaderSize = 20;
-constexpr size_t kIPv6HeaderSize = 40;
+constexpr int kIPv4HeaderSize = 20;
+constexpr int kIPv6HeaderSize = 40;
+constexpr int kUdpHeaderSize = 8;
+int IpHeaderSize(const rtc::SocketAddress& address) {
+  return (address.family() == AF_INET) ? kIPv4HeaderSize : kIPv6HeaderSize;
+}
 }  // namespace
 
 EmulatedIpPacket::EmulatedIpPacket(const rtc::SocketAddress& from,
                                    const rtc::SocketAddress& to,
                                    rtc::CopyOnWriteBuffer data,
-                                   Timestamp arrival_time)
+                                   Timestamp arrival_time,
+                                   uint16_t application_overhead)
     : from(from),
       to(to),
       data(data),
-      ip_header_size((to.family() == AF_INET) ? kIPv4HeaderSize
-                                              : kIPv6HeaderSize),
+      headers_size(IpHeaderSize(to) + application_overhead + kUdpHeaderSize),
       arrival_time(arrival_time) {
   RTC_DCHECK(to.family() == AF_INET || to.family() == AF_INET6);
 }

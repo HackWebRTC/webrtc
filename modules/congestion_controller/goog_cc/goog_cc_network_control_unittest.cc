@@ -410,7 +410,7 @@ TEST_F(GoogCcNetworkControllerTest, LimitsToFloorIfRttIsHighInTrial) {
   // This will cause the RTT to be large for a while.
   s.TriggerPacketBurst({send_net}, kBloatPacketCount, kBloatPacketSize.bytes());
   // Wait to allow the high RTT to be detected and acted upon.
-  s.RunFor(TimeDelta::seconds(4));
+  s.RunFor(TimeDelta::seconds(6));
   // By now the target rate should have dropped to the minimum configured rate.
   EXPECT_NEAR(client->target_rate().kbps(), kBandwidthFloor.kbps(), 5);
 }

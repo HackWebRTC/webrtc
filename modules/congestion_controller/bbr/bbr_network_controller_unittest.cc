@@ -132,9 +132,10 @@ TEST_F(BbrNetworkControllerTest, UpdatesTargetSendRate) {
   auto ret_net = s.CreateMutableSimulationNode(
       [](NetworkSimulationConfig* c) { c->delay = TimeDelta::ms(100); });
   auto* client = s.CreateClient("send", config);
-  auto routes = s.CreateRoutes(client, {send_net->node()},
+  const DataSize kOverhead = DataSize::bytes(38);  // IPV4 + UDP + SRTP
+  auto routes = s.CreateRoutes(client, {send_net->node()}, kOverhead,
                                s.CreateClient("recv", CallClientConfig()),
-                               {ret_net->node()});
+                               {ret_net->node()}, kOverhead);
   s.CreateVideoStream(routes->forward(), VideoStreamConfig());
 
   s.RunFor(TimeDelta::seconds(25));
@@ -156,7 +157,7 @@ TEST_F(BbrNetworkControllerTest, UpdatesTargetSendRate) {
       [](NetworkSimulationConfig* c) { c->delay = TimeDelta::ms(200); });
 
   s.RunFor(TimeDelta::seconds(35));
-  EXPECT_NEAR(client->send_bandwidth().kbps(), 180, 50);
+  EXPECT_NEAR(client->send_bandwidth().kbps(), 170, 50);
 }
 
 }  // namespace test
