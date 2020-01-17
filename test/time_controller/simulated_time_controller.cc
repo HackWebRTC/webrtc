@@ -160,6 +160,15 @@ void SimulatedTimeControllerImpl::Unregister(SimulatedSequenceRunner* runner) {
   RTC_CHECK(removed);
   RemoveByValue(&ready_runners_, runner);
 }
+
+void SimulatedTimeControllerImpl::StartYield(TaskQueueBase* yielding_from) {
+  auto inserted = yielded_.insert(yielding_from);
+  RTC_DCHECK(inserted.second);
+}
+
+void SimulatedTimeControllerImpl::StopYield(TaskQueueBase* yielding_from) {
+  yielded_.erase(yielding_from);
+}
 }  // namespace sim_time_impl
 
 GlobalSimulatedTimeController::GlobalSimulatedTimeController(

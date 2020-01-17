@@ -81,8 +81,11 @@ void SimulatedThread::Send(const rtc::Location& posted_from,
   if (IsCurrent()) {
     msg.phandler->OnMessage(&msg);
   } else {
+    TaskQueueBase* yielding_from = TaskQueueBase::Current();
+    handler_->StartYield(yielding_from);
     CurrentThreadSetter set_current(this);
     msg.phandler->OnMessage(&msg);
+    handler_->StopYield(yielding_from);
   }
 }
 

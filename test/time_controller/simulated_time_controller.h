@@ -79,6 +79,11 @@ class SimulatedTimeControllerImpl : public TaskQueueFactory,
   // Removes |runner| from |runners_|.
   void Unregister(SimulatedSequenceRunner* runner);
 
+  // Indicates that |yielding_from| is not ready to run.
+  void StartYield(TaskQueueBase* yielding_from);
+  // Indicates that processing can be continued on |yielding_from|.
+  void StopYield(TaskQueueBase* yielding_from);
+
  private:
   const rtc::PlatformThreadId thread_id_;
   const std::unique_ptr<rtc::Thread> dummy_thread_ = rtc::Thread::Create();
