@@ -1761,7 +1761,7 @@ void VideoStreamEncoder::OnVideoSourceRestrictionsUpdated(
   video_source_sink_controller_->PushSourceSinkSettings();
 }
 
-void VideoStreamEncoder::RunPostEncode(EncodedImage encoded_image,
+void VideoStreamEncoder::RunPostEncode(const EncodedImage& encoded_image,
                                        int64_t time_sent_us,
                                        int temporal_index,
                                        DataSize frame_size) {
