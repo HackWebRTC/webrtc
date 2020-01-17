@@ -101,8 +101,7 @@ const uint32_t MQID_DISPOSE = static_cast<uint32_t>(-2);
 // No destructor
 
 struct Message {
-  Message()
-      : phandler(nullptr), message_id(0), pdata(nullptr), ts_sensitive(0) {}
+  Message() : phandler(nullptr), message_id(0), pdata(nullptr) {}
   inline bool Match(MessageHandler* handler, uint32_t id) const {
     return (handler == nullptr || handler == phandler) &&
            (id == MQID_ANY || id == message_id);
@@ -111,31 +110,8 @@ struct Message {
   MessageHandler* phandler;
   uint32_t message_id;
   MessageData* pdata;
-  int64_t ts_sensitive;
 };
 
 typedef std::list<Message> MessageList;
-
-// DelayedMessage goes into a priority queue, sorted by trigger time.  Messages
-// with the same trigger time are processed in num_ (FIFO) order.
-
-class DelayedMessage {
- public:
-  DelayedMessage(int64_t delay,
-                 int64_t trigger,
-                 uint32_t num,
-                 const Message& msg)
-      : cmsDelay_(delay), msTrigger_(trigger), num_(num), msg_(msg) {}
-
-  bool operator<(const DelayedMessage& dmsg) const {
-    return (dmsg.msTrigger_ < msTrigger_) ||
-           ((dmsg.msTrigger_ == msTrigger_) && (dmsg.num_ < num_));
-  }
-
-  int64_t cmsDelay_;  // for debugging
-  int64_t msTrigger_;
-  uint32_t num_;
-  Message msg_;
-};
 }  // namespace rtc
 #endif  // RTC_BASE_THREAD_MESSAGE_H_

@@ -228,24 +228,19 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
                    int cmsWait = kForever,
                    bool process_io = true);
   virtual bool Peek(Message* pmsg, int cmsWait = 0);
+  // |time_sensitive| is deprecated and should always be false.
   virtual void Post(const Location& posted_from,
                     MessageHandler* phandler,
                     uint32_t id = 0,
                     MessageData* pdata = nullptr,
                     bool time_sensitive = false);
   virtual void PostDelayed(const Location& posted_from,
-                           int cmsDelay,
+                           int delay_ms,
                            MessageHandler* phandler,
                            uint32_t id = 0,
                            MessageData* pdata = nullptr);
   virtual void PostAt(const Location& posted_from,
-                      int64_t tstamp,
-                      MessageHandler* phandler,
-                      uint32_t id = 0,
-                      MessageData* pdata = nullptr);
-  // TODO(honghaiz): Remove this when all the dependencies are removed.
-  virtual void PostAt(const Location& posted_from,
-                      uint32_t tstamp,
+                      int64_t run_at_ms,
                       MessageHandler* phandler,
                       uint32_t id = 0,
                       MessageData* pdata = nullptr);
@@ -253,15 +248,14 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
                      uint32_t id = MQID_ANY,
                      MessageList* removed = nullptr);
   virtual void Dispatch(Message* pmsg);
-  virtual void ReceiveSends();
 
   // Amount of time until the next message can be retrieved
   virtual int GetDelay();
 
   bool empty() const { return size() == 0u; }
   size_t size() const {
-    CritScope cs(&crit_);  // msgq_.size() is not thread safe.
-    return msgq_.size() + dmsgq_.size() + (fPeekKeep_ ? 1u : 0u);
+    CritScope cs(&crit_);
+    return messages_.size() + delayed_messages_.size() + (fPeekKeep_ ? 1u : 0u);
   }
 
   // Internally posts a message which causes the doomed object to be deleted
@@ -431,6 +425,33 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
 #endif
 
  protected:
+  // DelayedMessage goes into a priority queue, sorted by trigger time. Messages
+  // with the same trigger time are processed in num_ (FIFO) order.
+  class DelayedMessage {
+   public:
+    DelayedMessage(int64_t delay,
+                   int64_t run_time_ms,
+                   uint32_t num,
+                   const Message& msg)
+        : delay_ms_(delay),
+          run_time_ms_(run_time_ms),
+          message_number_(num),
+          msg_(msg) {}
+
+    bool operator<(const DelayedMessage& dmsg) const {
+      return (dmsg.run_time_ms_ < run_time_ms_) ||
+             ((dmsg.run_time_ms_ == run_time_ms_) &&
+              (dmsg.message_number_ < message_number_));
+    }
+
+    int64_t delay_ms_;  // for debugging
+    int64_t run_time_ms_;
+    // Monotonicaly incrementing number used for ordering of messages
+    // targeted to execute at the same time.
+    uint32_t message_number_;
+    Message msg_;
+  };
+
   class PriorityQueue : public std::priority_queue<DelayedMessage> {
    public:
     container_type& container() { return c; }
@@ -520,9 +541,9 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
 
   bool fPeekKeep_;
   Message msgPeek_;
-  MessageList msgq_ RTC_GUARDED_BY(crit_);
-  PriorityQueue dmsgq_ RTC_GUARDED_BY(crit_);
-  uint32_t dmsgq_next_num_ RTC_GUARDED_BY(crit_);
+  MessageList messages_ RTC_GUARDED_BY(crit_);
+  PriorityQueue delayed_messages_ RTC_GUARDED_BY(crit_);
+  uint32_t delayed_next_num_ RTC_GUARDED_BY(crit_);
   CriticalSection crit_;
   bool fInitialized_;
   bool fDestroyed_;
