@@ -255,7 +255,7 @@ class PeerConnectionE2EQualityTestFixture {
    public:
     virtual ~PeerConfigurer() = default;
 
-    // The parameters of the following 8 methods will be passed to the
+    // The parameters of the following 9 methods will be passed to the
     // PeerConnectionFactoryInterface implementation that will be created for
     // this peer.
     virtual PeerConfigurer* SetTaskQueueFactory(
@@ -276,6 +276,9 @@ class PeerConnectionE2EQualityTestFixture {
         std::unique_ptr<VideoEncoderFactory> video_encoder_factory) = 0;
     virtual PeerConfigurer* SetVideoDecoderFactory(
         std::unique_ptr<VideoDecoderFactory> video_decoder_factory) = 0;
+    // Set a custom NetEqFactory to be used in the call.
+    virtual PeerConfigurer* SetNetEqFactory(
+        std::unique_ptr<NetEqFactory> neteq_factory) = 0;
 
     // The parameters of the following 4 methods will be passed to the
     // PeerConnectionInterface implementation that will be created for this
@@ -301,9 +304,6 @@ class PeerConnectionE2EQualityTestFixture {
     // Set the audio stream for the call from this peer. If this method won't
     // be invoked, this peer will send no audio.
     virtual PeerConfigurer* SetAudioConfig(AudioConfig config) = 0;
-    // Set a custom NetEqFactory to be used in the call.
-    virtual PeerConfigurer* SetNetEqFactory(
-        std::unique_ptr<NetEqFactory> neteq_factory) = 0;
     // If is set, an RTCEventLog will be saved in that location and it will be
     // available for further analysis.
     virtual PeerConfigurer* SetRtcEventLogPath(std::string path) = 0;
