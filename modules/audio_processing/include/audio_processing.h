@@ -611,19 +611,10 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
   //     ProcessStream().
   virtual int set_stream_delay_ms(int delay) = 0;
   virtual int stream_delay_ms() const = 0;
-  virtual bool was_stream_delay_set() const = 0;
 
   // Call to signal that a key press occurred (true) or did not occur (false)
   // with this chunk of audio.
   virtual void set_stream_key_pressed(bool key_pressed) = 0;
-
-  // Sets a delay |offset| in ms to add to the values passed in through
-  // set_stream_delay_ms(). May be positive or negative.
-  //
-  // Note that this could cause an otherwise valid value passed to
-  // set_stream_delay_ms() to return an error.
-  virtual void set_delay_offset_ms(int offset) = 0;
-  virtual int delay_offset_ms() const = 0;
 
   // Attaches provided webrtc::AecDump for recording debugging
   // information. Log file and maximum file size logic is supposed to

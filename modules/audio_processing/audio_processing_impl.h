@@ -89,8 +89,6 @@ class AudioProcessingImpl : public AudioProcessing {
       rtc::ArrayView<std::array<float, 160>> linear_output) const override;
   void set_output_will_be_muted(bool muted) override;
   int set_stream_delay_ms(int delay) override;
-  void set_delay_offset_ms(int offset) override;
-  int delay_offset_ms() const override;
   void set_stream_key_pressed(bool key_pressed) override;
   void set_stream_analog_level(int level) override;
   int recommended_stream_analog_level() const override;
@@ -115,8 +113,6 @@ class AudioProcessingImpl : public AudioProcessing {
   size_t num_output_channels() const override;
   size_t num_reverse_channels() const override;
   int stream_delay_ms() const override;
-  bool was_stream_delay_set() const override
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
   AudioProcessingStats GetStatistics(bool has_remote_tracks) override {
     return GetStatistics();
@@ -394,7 +390,6 @@ class AudioProcessingImpl : public AudioProcessing {
   struct ApmCaptureState {
     ApmCaptureState();
     ~ApmCaptureState();
-    int delay_offset_ms;
     bool was_stream_delay_set;
     bool output_will_be_muted;
     bool key_pressed;

@@ -1235,7 +1235,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   if (submodules_.echo_control_mobile) {
     // Ensure that the stream delay was set before the call to the
     // AECM ProcessCaptureAudio function.
-    if (!was_stream_delay_set()) {
+    if (!capture_.was_stream_delay_set) {
       return AudioProcessing::kStreamParameterNotSetError;
     }
 
@@ -1252,7 +1252,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     if (submodules_.echo_controller) {
       data_dumper_->DumpRaw("stream_delay", stream_delay_ms());
 
-      if (was_stream_delay_set()) {
+      if (capture_.was_stream_delay_set) {
         submodules_.echo_controller->SetAudioBufferDelay(stream_delay_ms());
       }
 
@@ -1553,7 +1553,6 @@ int AudioProcessingImpl::set_stream_delay_ms(int delay) {
   rtc::CritScope cs(&crit_capture_);
   Error retval = kNoError;
   capture_.was_stream_delay_set = true;
-  delay += capture_.delay_offset_ms;
 
   if (delay < 0) {
     delay = 0;
@@ -1600,24 +1599,9 @@ int AudioProcessingImpl::stream_delay_ms() const {
   return capture_nonlocked_.stream_delay_ms;
 }
 
-bool AudioProcessingImpl::was_stream_delay_set() const {
-  // Used as callback from submodules, hence locking is not allowed.
-  return capture_.was_stream_delay_set;
-}
-
 void AudioProcessingImpl::set_stream_key_pressed(bool key_pressed) {
   rtc::CritScope cs(&crit_capture_);
   capture_.key_pressed = key_pressed;
-}
-
-void AudioProcessingImpl::set_delay_offset_ms(int offset) {
-  rtc::CritScope cs(&crit_capture_);
-  capture_.delay_offset_ms = offset;
-}
-
-int AudioProcessingImpl::delay_offset_ms() const {
-  rtc::CritScope cs(&crit_capture_);
-  return capture_.delay_offset_ms;
 }
 
 void AudioProcessingImpl::set_stream_analog_level(int level) {
@@ -2107,8 +2091,7 @@ void AudioProcessingImpl::RecordAudioProcessingState() {
 }
 
 AudioProcessingImpl::ApmCaptureState::ApmCaptureState()
-    : delay_offset_ms(0),
-      was_stream_delay_set(false),
+    : was_stream_delay_set(false),
       output_will_be_muted(false),
       key_pressed(false),
       capture_processing_format(kSampleRate16kHz),
