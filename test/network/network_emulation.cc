@@ -203,10 +203,11 @@ uint64_t EmulatedEndpointImpl::GetId() const {
 
 void EmulatedEndpointImpl::SendPacket(const rtc::SocketAddress& from,
                                       const rtc::SocketAddress& to,
-                                      rtc::CopyOnWriteBuffer packet_data) {
+                                      rtc::CopyOnWriteBuffer packet_data,
+                                      uint16_t application_overhead) {
   RTC_CHECK(from.ipaddr() == peer_local_addr_);
   EmulatedIpPacket packet(from, to, std::move(packet_data),
-                          clock_->CurrentTime());
+                          clock_->CurrentTime(), application_overhead);
   task_queue_->PostTask([this, packet = std::move(packet)]() mutable {
     RTC_DCHECK_RUN_ON(task_queue_);
     Timestamp current_time = clock_->CurrentTime();

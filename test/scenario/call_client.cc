@@ -318,6 +318,17 @@ void CallClient::SendTask(std::function<void()> task) {
   task_queue_.SendTask(std::move(task), RTC_FROM_HERE);
 }
 
+int16_t CallClient::Bind(EmulatedEndpoint* endpoint) {
+  uint16_t port = endpoint->BindReceiver(0, this).value();
+  endpoints_.push_back({endpoint, port});
+  return port;
+}
+
+void CallClient::UnBind() {
+  for (auto ep_port : endpoints_)
+    ep_port.first->UnbindReceiver(ep_port.second);
+}
+
 CallClientPair::~CallClientPair() = default;
 
 }  // namespace test

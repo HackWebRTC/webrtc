@@ -140,7 +140,8 @@ class EmulatedEndpointImpl : public EmulatedEndpoint {
 
   void SendPacket(const rtc::SocketAddress& from,
                   const rtc::SocketAddress& to,
-                  rtc::CopyOnWriteBuffer packet_data) override;
+                  rtc::CopyOnWriteBuffer packet_data,
+                  uint16_t application_overhead = 0) override;
 
   absl::optional<uint16_t> BindReceiver(
       uint16_t desired_port,

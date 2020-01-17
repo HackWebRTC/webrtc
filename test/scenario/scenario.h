@@ -162,6 +162,7 @@ class Scenario {
 
   const std::unique_ptr<LogWriterFactoryInterface> log_writer_factory_;
   std::unique_ptr<TimeController> time_controller_;
+  NetworkEmulationManagerImpl network_manager_;
   Clock* clock_;
 
   std::vector<std::unique_ptr<CallClient>> clients_;
@@ -171,12 +172,10 @@ class Scenario {
   std::vector<std::unique_ptr<SimulationNode>> simulation_nodes_;
   std::vector<std::unique_ptr<StatesPrinter>> printers_;
 
-  int64_t next_route_id_ = 40000;
   rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory_;
   rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory_;
 
   Timestamp start_time_ = Timestamp::PlusInfinity();
-  NetworkEmulationManagerImpl network_manager_;
   // Defined last so it's destroyed first.
   rtc::TaskQueue task_queue_;
 };

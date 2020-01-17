@@ -75,10 +75,10 @@ Scenario::Scenario(
     bool real_time)
     : log_writer_factory_(std::move(log_writer_factory)),
       time_controller_(CreateTimeController(real_time)),
+      network_manager_(time_controller_.get()),
       clock_(time_controller_->GetClock()),
       audio_decoder_factory_(CreateBuiltinAudioDecoderFactory()),
       audio_encoder_factory_(CreateBuiltinAudioEncoderFactory()),
-      network_manager_(time_controller_.get()),
       task_queue_(time_controller_->GetTaskQueueFactory()->CreateTaskQueue(
           "Scenario",
           TaskQueueFactory::Priority::NORMAL)) {}
@@ -86,8 +86,10 @@ Scenario::Scenario(
 Scenario::~Scenario() {
   if (start_time_.IsFinite())
     Stop();
-  for (auto& call_client : clients_)
+  for (auto& call_client : clients_) {
     call_client->transport_->Disconnect();
+    call_client->UnBind();
+  }
 }
 
 ColumnPrinter Scenario::TimePrinter() {
@@ -165,9 +167,10 @@ void Scenario::ChangeRoute(std::pair<CallClient*, CallClient*> clients,
 void Scenario::ChangeRoute(std::pair<CallClient*, CallClient*> clients,
                            std::vector<EmulatedNetworkNode*> over_nodes,
                            DataSize overhead) {
-  rtc::IPAddress route_ip(next_route_id_++);
-  EmulatedNetworkNode::CreateRoute(route_ip, over_nodes, clients.second);
-  clients.first->transport_->Connect(over_nodes.front(), route_ip, overhead);
+  EmulatedRoute* route = network_manager_.CreateRoute(over_nodes);
+  uint16_t port = clients.second->Bind(route->to);
+  auto addr = rtc::SocketAddress(route->to->GetPeerLocalAddress(), port);
+  clients.first->transport_->Connect(route->from, addr, overhead);
 }
 
 EmulatedNetworkNode* Scenario::CreateSimulationNode(

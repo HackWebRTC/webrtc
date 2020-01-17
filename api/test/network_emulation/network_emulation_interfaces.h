@@ -99,7 +99,8 @@ class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
   // on destination endpoint.
   virtual void SendPacket(const rtc::SocketAddress& from,
                           const rtc::SocketAddress& to,
-                          rtc::CopyOnWriteBuffer packet_data) = 0;
+                          rtc::CopyOnWriteBuffer packet_data,
+                          uint16_t application_overhead = 0) = 0;
 
   // Binds receiver to this endpoint to send and receive data.
   // |desired_port| is a port that should be used. If it is equal to 0,

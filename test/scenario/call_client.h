@@ -130,6 +130,8 @@ class CallClient : public EmulatedNetworkReceiverInterface {
   uint32_t GetNextRtxSsrc();
   void AddExtensions(std::vector<RtpExtension> extensions);
   void SendTask(std::function<void()> task);
+  int16_t Bind(EmulatedEndpoint* endpoint);
+  void UnBind();
 
   TimeController* const time_controller_;
   Clock* clock_;
@@ -140,6 +142,7 @@ class CallClient : public EmulatedNetworkReceiverInterface {
   std::unique_ptr<Call> call_;
   std::unique_ptr<NetworkNodeTransport> transport_;
   std::unique_ptr<RtpHeaderParser> const header_parser_;
+  std::vector<std::pair<EmulatedEndpoint*, uint16_t>> endpoints_;
 
   int next_video_ssrc_index_ = 0;
   int next_video_local_ssrc_index_ = 0;
