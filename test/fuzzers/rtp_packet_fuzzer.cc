@@ -156,5 +156,8 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
         break;
     }
   }
+
+  // Check that zero-ing mutable extensions wouldn't cause any problems.
+  packet.ZeroMutableExtensions();
 }
 }  // namespace webrtc
