@@ -63,8 +63,6 @@ class RTC_EXPORT DesktopAndCursorComposer
 
   // MouseCursorMonitor::Callback interface.
   void OnMouseCursor(MouseCursor* cursor) override;
-  void OnMouseCursorPosition(MouseCursorMonitor::CursorState state,
-                             const DesktopVector& position) override;
   void OnMouseCursorPosition(const DesktopVector& position) override;
 
   const std::unique_ptr<DesktopCapturer> desktop_capturer_;

@@ -198,12 +198,6 @@ void DesktopAndCursorComposer::OnMouseCursor(MouseCursor* cursor) {
 }
 
 void DesktopAndCursorComposer::OnMouseCursorPosition(
-    MouseCursorMonitor::CursorState state,
-    const DesktopVector& position) {
-  RTC_NOTREACHED();
-}
-
-void DesktopAndCursorComposer::OnMouseCursorPosition(
     const DesktopVector& position) {
   cursor_position_ = position;
 }
