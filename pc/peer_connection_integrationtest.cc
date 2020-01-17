@@ -1711,6 +1711,30 @@ class PeerConnectionIntegrationTest
       : PeerConnectionIntegrationBaseTest(GetParam()) {}
 };
 
+// Fake clock must be set before threads are started to prevent race on
+// Set/GetClockForTesting().
+// To achieve that, multiple inheritance is used as a mixin pattern
+// where order of construction is finely controlled.
+// This also ensures peerconnection is closed before switching back to non-fake
+// clock, avoiding other races and DCHECK failures such as in rtp_sender.cc.
+class FakeClockForTest : public rtc::ScopedFakeClock {
+ protected:
+  FakeClockForTest() {
+    // Some things use a time of "0" as a special value, so we need to start out
+    // the fake clock at a nonzero time.
+    // TODO(deadbeef): Fix this.
+    AdvanceTime(webrtc::TimeDelta::seconds(1));
+  }
+
+  // Explicit handle.
+  ScopedFakeClock& FakeClock() { return *this; }
+};
+
+// Ensure FakeClockForTest is constructed first (see class for rationale).
+class PeerConnectionIntegrationTestWithFakeClock
+    : public FakeClockForTest,
+      public PeerConnectionIntegrationTest {};
+
 class PeerConnectionIntegrationTestPlanB
     : public PeerConnectionIntegrationBaseTest {
  protected:
@@ -3257,15 +3281,11 @@ TEST_P(PeerConnectionIntegrationTest,
 // transport has detected that a channel is writable and thus data can be
 // received before the data channel state changes to open. That is hard to test
 // but the same buffering is expected to be used in that case.
-TEST_P(PeerConnectionIntegrationTest,
+//
+// Use fake clock and simulated network delay so that we predictably can wait
+// until an SCTP message has been delivered without "sleep()"ing.
+TEST_P(PeerConnectionIntegrationTestWithFakeClock,
        DataBufferedUntilRtpDataChannelObserverRegistered) {
-  // Use fake clock and simulated network delay so that we predictably can wait
-  // until an SCTP message has been delivered without "sleep()"ing.
-  rtc::ScopedFakeClock fake_clock;
-  // Some things use a time of "0" as a special value, so we need to start out
-  // the fake clock at a nonzero time.
-  // TODO(deadbeef): Fix this.
-  fake_clock.AdvanceTime(webrtc::TimeDelta::seconds(1));
   virtual_socket_server()->set_delay_mean(5);  // 5 ms per hop.
   virtual_socket_server()->UpdateDelayDistribution();
 
@@ -3278,30 +3298,26 @@ TEST_P(PeerConnectionIntegrationTest,
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE(caller()->data_channel() != nullptr);
   ASSERT_TRUE_SIMULATED_WAIT(callee()->data_channel() != nullptr,
-                             kDefaultTimeout, fake_clock);
+                             kDefaultTimeout, FakeClock());
   ASSERT_TRUE_SIMULATED_WAIT(caller()->data_observer()->IsOpen(),
-                             kDefaultTimeout, fake_clock);
+                             kDefaultTimeout, FakeClock());
   ASSERT_EQ_SIMULATED_WAIT(DataChannelInterface::kOpen,
                            callee()->data_channel()->state(), kDefaultTimeout,
-                           fake_clock);
+                           FakeClock());
 
   // Unregister the observer which is normally automatically registered.
   callee()->data_channel()->UnregisterObserver();
   // Send data and advance fake clock until it should have been received.
   std::string data = "hello world";
   caller()->data_channel()->Send(DataBuffer(data));
-  SIMULATED_WAIT(false, 50, fake_clock);
+  SIMULATED_WAIT(false, 50, FakeClock());
 
   // Attach data channel and expect data to be received immediately. Note that
   // EXPECT_EQ_WAIT is used, such that the simulated clock is not advanced any
   // further, but data can be received even if the callback is asynchronous.
   MockDataChannelObserver new_observer(callee()->data_channel());
   EXPECT_EQ_SIMULATED_WAIT(data, new_observer.last_message(), kDefaultTimeout,
-                           fake_clock);
-  // Closing the PeerConnections destroys the ports before the ScopedFakeClock.
-  // If this is not done a DCHECK can be hit in ports.cc, because a large
-  // negative number is calculated for the rtt due to the global clock changing.
-  ClosePeerConnections();
+                           FakeClock());
 }
 
 // This test sets up a call between two parties with audio, video and but only
@@ -4432,16 +4448,16 @@ class PeerConnectionIntegrationIceStatesTest
   std::unique_ptr<cricket::TestStunServer> stun_server_;
 };
 
+// Ensure FakeClockForTest is constructed first (see class for rationale).
+class PeerConnectionIntegrationIceStatesTestWithFakeClock
+    : public FakeClockForTest,
+      public PeerConnectionIntegrationIceStatesTest {};
+
 // Tests that the PeerConnection goes through all the ICE gathering/connection
 // states over the duration of the call. This includes Disconnected and Failed
 // states, induced by putting a firewall between the peers and waiting for them
 // to time out.
-TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
-  rtc::ScopedFakeClock fake_clock;
-  // Some things use a time of "0" as a special value, so we need to start out
-  // the fake clock at a nonzero time.
-  fake_clock.AdvanceTime(TimeDelta::seconds(1));
-
+TEST_P(PeerConnectionIntegrationIceStatesTestWithFakeClock, VerifyIceStates) {
   const SocketAddress kStunServerAddress =
       SocketAddress("99.99.99.1", cricket::STUN_SERVER_PORT);
   StartStunServer(kStunServerAddress);
@@ -4476,10 +4492,10 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
 
   ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
                            caller()->ice_connection_state(), kDefaultTimeout,
-                           fake_clock);
+                           FakeClock());
   ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
                            caller()->standardized_ice_connection_state(),
-                           kDefaultTimeout, fake_clock);
+                           kDefaultTimeout, FakeClock());
 
   // Verify that the observer was notified of the intermediate transitions.
   EXPECT_THAT(caller()->ice_connection_state_history(),
@@ -4506,20 +4522,20 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
   RTC_LOG(LS_INFO) << "Firewall rules applied";
   ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionDisconnected,
                            caller()->ice_connection_state(), kDefaultTimeout,
-                           fake_clock);
+                           FakeClock());
   ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionDisconnected,
                            caller()->standardized_ice_connection_state(),
-                           kDefaultTimeout, fake_clock);
+                           kDefaultTimeout, FakeClock());
 
   // Let ICE re-establish by removing the firewall rules.
   firewall()->ClearRules();
   RTC_LOG(LS_INFO) << "Firewall rules cleared";
   ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
                            caller()->ice_connection_state(), kDefaultTimeout,
-                           fake_clock);
+                           FakeClock());
   ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
                            caller()->standardized_ice_connection_state(),
-                           kDefaultTimeout, fake_clock);
+                           kDefaultTimeout, FakeClock());
 
   // According to RFC7675, if there is no response within 30 seconds then the
   // peer should consider the other side to have rejected the connection. This
@@ -4531,26 +4547,16 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
   RTC_LOG(LS_INFO) << "Firewall rules applied again";
   ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionFailed,
                            caller()->ice_connection_state(), kConsentTimeout,
-                           fake_clock);
+                           FakeClock());
   ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionFailed,
                            caller()->standardized_ice_connection_state(),
-                           kConsentTimeout, fake_clock);
-
-  // We need to manually close the peerconnections before the fake clock goes
-  // out of scope, or we trigger a DCHECK in rtp_sender.cc when we briefly
-  // return to using non-faked time.
-  delete SetCallerPcWrapperAndReturnCurrent(nullptr);
-  delete SetCalleePcWrapperAndReturnCurrent(nullptr);
+                           kConsentTimeout, FakeClock());
 }
 
 // Tests that if the connection doesn't get set up properly we eventually reach
 // the "failed" iceConnectionState.
-TEST_P(PeerConnectionIntegrationIceStatesTest, IceStateSetupFailure) {
-  rtc::ScopedFakeClock fake_clock;
-  // Some things use a time of "0" as a special value, so we need to start out
-  // the fake clock at a nonzero time.
-  fake_clock.AdvanceTime(TimeDelta::seconds(1));
-
+TEST_P(PeerConnectionIntegrationIceStatesTestWithFakeClock,
+       IceStateSetupFailure) {
   // Block connections to/from the caller and wait for ICE to become
   // disconnected.
   for (const auto& caller_address : CallerAddresses()) {
@@ -4570,13 +4576,7 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, IceStateSetupFailure) {
   constexpr int kConsentTimeout = 30000;
   ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionFailed,
                            caller()->standardized_ice_connection_state(),
-                           kConsentTimeout, fake_clock);
-
-  // We need to manually close the peerconnections before the fake clock goes
-  // out of scope, or we trigger a DCHECK in rtp_sender.cc when we briefly
-  // return to using non-faked time.
-  delete SetCallerPcWrapperAndReturnCurrent(nullptr);
-  delete SetCalleePcWrapperAndReturnCurrent(nullptr);
+                           kConsentTimeout, FakeClock());
 }
 
 // Tests that the best connection is set to the appropriate IPv4/IPv6 connection
@@ -4631,6 +4631,14 @@ constexpr uint32_t kFlagsIPv4Stun =
 INSTANTIATE_TEST_SUITE_P(
     PeerConnectionIntegrationTest,
     PeerConnectionIntegrationIceStatesTest,
+    Combine(Values(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),
+            Values(std::make_pair("IPv4 no STUN", kFlagsIPv4NoStun),
+                   std::make_pair("IPv6 no STUN", kFlagsIPv6NoStun),
+                   std::make_pair("IPv4 with STUN", kFlagsIPv4Stun))));
+
+INSTANTIATE_TEST_SUITE_P(
+    PeerConnectionIntegrationTest,
+    PeerConnectionIntegrationIceStatesTestWithFakeClock,
     Combine(Values(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),
             Values(std::make_pair("IPv4 no STUN", kFlagsIPv4NoStun),
                    std::make_pair("IPv6 no STUN", kFlagsIPv6NoStun),
@@ -4938,13 +4946,8 @@ TEST_F(PeerConnectionIntegrationTestPlanB, CanSendRemoteVideoTrack) {
 // 2. 9 media hops: Rest of the DTLS handshake. 3 hops in each direction when
 //                  using TURN<->TURN pair, and DTLS exchange is 4 packets,
 //                  the first of which should have arrived before the answer.
-TEST_P(PeerConnectionIntegrationTest, EndToEndConnectionTimeWithTurnTurnPair) {
-  rtc::ScopedFakeClock fake_clock;
-  // Some things use a time of "0" as a special value, so we need to start out
-  // the fake clock at a nonzero time.
-  // TODO(deadbeef): Fix this.
-  fake_clock.AdvanceTime(webrtc::TimeDelta::seconds(1));
-
+TEST_P(PeerConnectionIntegrationTestWithFakeClock,
+       EndToEndConnectionTimeWithTurnTurnPair) {
   static constexpr int media_hop_delay_ms = 50;
   static constexpr int signaling_trip_delay_ms = 500;
   // For explanation of these values, see comment above.
@@ -5013,7 +5016,7 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndConnectionTimeWithTurnTurnPair) {
   caller()->SetOfferAnswerOptions(options);
   caller()->CreateAndSetAndSignalOffer();
   EXPECT_TRUE_SIMULATED_WAIT(DtlsConnected(), total_connection_time_ms,
-                             fake_clock);
+                             FakeClock());
   // Closing the PeerConnections destroys the ports before the ScopedFakeClock.
   // If this is not done a DCHECK can be hit in ports.cc, because a large
   // negative number is calculated for the rtt due to the global clock changing.
@@ -5780,6 +5783,11 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
 
 INSTANTIATE_TEST_SUITE_P(PeerConnectionIntegrationTest,
                          PeerConnectionIntegrationTest,
+                         Values(SdpSemantics::kPlanB,
+                                SdpSemantics::kUnifiedPlan));
+
+INSTANTIATE_TEST_SUITE_P(PeerConnectionIntegrationTest,
+                         PeerConnectionIntegrationTestWithFakeClock,
                          Values(SdpSemantics::kPlanB,
                                 SdpSemantics::kUnifiedPlan));
 
