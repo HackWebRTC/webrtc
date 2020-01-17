@@ -30,11 +30,7 @@ class VideoMediaChannel;
 // CompositeMediaEngine.
 class NullWebRtcVideoEngine : public VideoEngineInterface {
  public:
-  std::vector<VideoCodec> send_codecs() const override {
-    return std::vector<VideoCodec>();
-  }
-
-  std::vector<VideoCodec> recv_codecs() const override {
+  std::vector<VideoCodec> codecs() const override {
     return std::vector<VideoCodec>();
   }
 
