@@ -15,6 +15,7 @@
 #include <utility>
 
 #include "modules/rtp_rtcp/source/byte_io.h"
+#include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -167,10 +168,12 @@ void RtpPacket::ZeroMutableExtensions() {
       case RTPExtensionType::kRtpExtensionVideoTiming: {
         // Nullify last entries, starting at pacer delay.
         // These are set by pacer and SFUs
-        if (VideoSendTiming::kPacerExitDeltaOffset < extension.length) {
-          memset(WriteAt(extension.offset +
-                         VideoSendTiming::kPacerExitDeltaOffset),
-                 0, extension.length - VideoSendTiming::kPacerExitDeltaOffset);
+        if (VideoTimingExtension::kPacerExitDeltaOffset < extension.length) {
+          memset(
+              WriteAt(extension.offset +
+                      VideoTimingExtension::kPacerExitDeltaOffset),
+              0,
+              extension.length - VideoTimingExtension::kPacerExitDeltaOffset);
         }
         break;
       }
