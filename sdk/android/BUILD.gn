@@ -1564,4 +1564,29 @@ if (is_android) {
     namespace = "webrtc::jni"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
+
+  junit_binary("android_sdk_junit_tests") {
+    sources = [
+      "tests/src/org/webrtc/AndroidVideoDecoderTest.java",
+      "tests/src/org/webrtc/CameraEnumerationTest.java",
+      "tests/src/org/webrtc/CodecTestHelper.java",
+      "tests/src/org/webrtc/CryptoOptionsTest.java",
+      "tests/src/org/webrtc/FakeMediaCodecWrapper.java",
+      "tests/src/org/webrtc/GlGenericDrawerTest.java",
+      "tests/src/org/webrtc/HardwareVideoEncoderTest.java",
+      "tests/src/org/webrtc/IceCandidateTest.java",
+      "tests/src/org/webrtc/ScalingSettingsTest.java",
+    ]
+
+    deps = [
+      ":libjingle_peerconnection_java",
+      "//base:base_java_test_support",
+      "//third_party/google-truth:google_truth_java",
+    ]
+
+    additional_jar_files = [ [
+          "tests/resources/robolectric.properties",
+          "robolectric.properties",
+        ] ]
+  }
 }

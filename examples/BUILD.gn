@@ -854,6 +854,25 @@ if (is_android) {
       "//third_party/android_deps:com_android_support_support_annotations_java",
     ]
   }
+
+  junit_binary("android_examples_junit_tests") {
+    sources = [
+      "androidjunit/src/org/appspot/apprtc/BluetoothManagerTest.java",
+      "androidjunit/src/org/appspot/apprtc/DirectRTCClientTest.java",
+      "androidjunit/src/org/appspot/apprtc/TCPChannelClientTest.java",
+    ]
+
+    deps = [
+      ":AppRTCMobile_javalib",
+      "//base:base_java_test_support",
+      "//third_party/google-truth:google_truth_java",
+    ]
+
+    additional_jar_files = [ [
+          "../sdk/android/tests/resources/robolectric.properties",
+          "robolectric.properties",
+        ] ]
+  }
 }
 
 if (!build_with_chromium) {

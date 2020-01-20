@@ -74,6 +74,8 @@ if (!build_with_chromium) {
       if (is_android) {
         deps += [
           ":android_junit_tests",
+          "examples:android_examples_junit_tests",
+          "sdk/android:android_sdk_junit_tests",
           "sdk/android:android_instrumentation_test_apk",
         ]
       } else {
