@@ -35,25 +35,25 @@ class TimeDelta final : public rtc_units_impl::RelativeUnit<TimeDelta> {
   TimeDelta() = delete;
   template <int64_t seconds>
   static constexpr TimeDelta Seconds() {
-    return FromStaticFraction<seconds, 1000000>();
+    return FromFraction(1'000'000, seconds);
   }
   template <int64_t ms>
   static constexpr TimeDelta Millis() {
-    return FromStaticFraction<ms, 1000>();
+    return FromFraction(1000, ms);
   }
   template <int64_t us>
   static constexpr TimeDelta Micros() {
-    return FromStaticValue<us>();
+    return FromValue(us);
   }
   template <typename T>
   static TimeDelta seconds(T seconds) {
     static_assert(std::is_arithmetic<T>::value, "");
-    return FromFraction<1000000>(seconds);
+    return FromFraction(1'000'000, seconds);
   }
   template <typename T>
   static TimeDelta ms(T milliseconds) {
     static_assert(std::is_arithmetic<T>::value, "");
-    return FromFraction<1000>(milliseconds);
+    return FromFraction(1000, milliseconds);
   }
   template <typename T>
   static TimeDelta us(T microseconds) {

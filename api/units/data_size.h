@@ -28,7 +28,7 @@ class DataSize final : public rtc_units_impl::RelativeUnit<DataSize> {
   static constexpr DataSize Infinity() { return PlusInfinity(); }
   template <int64_t bytes>
   static constexpr DataSize Bytes() {
-    return FromStaticValue<bytes>();
+    return FromValue(bytes);
   }
 
   template <typename T>

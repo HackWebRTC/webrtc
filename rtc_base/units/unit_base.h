@@ -90,26 +90,10 @@ class UnitBase {
   }
 
  protected:
-  template <int64_t value>
-  static constexpr Unit_T FromStaticValue() {
-    static_assert(value >= 0 || !Unit_T::one_sided, "");
-    static_assert(value > MinusInfinityVal(), "");
-    static_assert(value < PlusInfinityVal(), "");
-    return Unit_T(value);
-  }
-
-  template <int64_t fraction_value, int64_t Denominator>
-  static constexpr Unit_T FromStaticFraction() {
-    static_assert(fraction_value >= 0 || !Unit_T::one_sided, "");
-    static_assert(fraction_value > MinusInfinityVal() / Denominator, "");
-    static_assert(fraction_value < PlusInfinityVal() / Denominator, "");
-    return Unit_T(fraction_value * Denominator);
-  }
-
   template <
       typename T,
       typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-  static Unit_T FromValue(T value) {
+  static constexpr Unit_T FromValue(T value) {
     if (Unit_T::one_sided)
       RTC_DCHECK_GE(value, 0);
     RTC_DCHECK_GT(value, MinusInfinityVal());
@@ -119,7 +103,7 @@ class UnitBase {
   template <typename T,
             typename std::enable_if<std::is_floating_point<T>::value>::type* =
                 nullptr>
-  static Unit_T FromValue(T value) {
+  static constexpr Unit_T FromValue(T value) {
     if (value == std::numeric_limits<T>::infinity()) {
       return PlusInfinity();
     } else if (value == -std::numeric_limits<T>::infinity()) {
@@ -131,22 +115,20 @@ class UnitBase {
   }
 
   template <
-      int64_t Denominator,
       typename T,
       typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-  static Unit_T FromFraction(T value) {
+  static constexpr Unit_T FromFraction(int64_t denominator, T value) {
     if (Unit_T::one_sided)
       RTC_DCHECK_GE(value, 0);
-    RTC_DCHECK_GT(value, MinusInfinityVal() / Denominator);
-    RTC_DCHECK_LT(value, PlusInfinityVal() / Denominator);
-    return Unit_T(rtc::dchecked_cast<int64_t>(value * Denominator));
+    RTC_DCHECK_GT(value, MinusInfinityVal() / denominator);
+    RTC_DCHECK_LT(value, PlusInfinityVal() / denominator);
+    return Unit_T(rtc::dchecked_cast<int64_t>(value * denominator));
   }
-  template <int64_t Denominator,
-            typename T,
+  template <typename T,
             typename std::enable_if<std::is_floating_point<T>::value>::type* =
                 nullptr>
-  static Unit_T FromFraction(T value) {
-    return FromValue(value * Denominator);
+  static constexpr Unit_T FromFraction(int64_t denominator, T value) {
+    return FromValue(value * denominator);
   }
 
   template <typename T = int64_t>
