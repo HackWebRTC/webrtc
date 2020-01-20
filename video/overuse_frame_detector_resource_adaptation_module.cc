@@ -355,7 +355,9 @@ OveruseFrameDetectorResourceAdaptationModule::
       last_frame_pixel_count_(absl::nullopt),
       source_restrictor_(std::make_unique<VideoSourceRestrictor>()),
       overuse_detector_(std::move(overuse_detector)),
-      codec_max_framerate_(-1),
+      overuse_detector_is_started_(false),
+      codec_max_frame_rate_(absl::nullopt),
+      target_frame_rate_(absl::nullopt),
       encoder_start_bitrate_bps_(0),
       is_quality_scaler_enabled_(false),
       encoder_config_(),
@@ -378,6 +380,7 @@ void OveruseFrameDetectorResourceAdaptationModule::SetEncoder(
 void OveruseFrameDetectorResourceAdaptationModule::StartResourceAdaptation(
     ResourceAdaptationModuleListener* adaptation_listener) {
   RTC_DCHECK(encoder_);
+  RTC_DCHECK(!overuse_detector_is_started_);
   // TODO(hbos): When AdaptUp() and AdaptDown() are no longer invoked outside
   // the interval between StartCheckForOveruse() and StopCheckForOveruse(),
   // support configuring which |adaptation_listener_| to use on the fly. It is
@@ -388,10 +391,16 @@ void OveruseFrameDetectorResourceAdaptationModule::StartResourceAdaptation(
   overuse_detector_->StartCheckForOveruse(
       TaskQueueBase::Current(), video_stream_encoder_->GetCpuOveruseOptions(),
       this);
+  overuse_detector_is_started_ = true;
+  overuse_detector_->OnTargetFramerateUpdated(
+      target_frame_rate_.has_value()
+          ? static_cast<int>(target_frame_rate_.value())
+          : std::numeric_limits<int>::max());
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::StopResourceAdaptation() {
   overuse_detector_->StopCheckForOveruse();
+  overuse_detector_is_started_ = false;
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::SetHasInputVideo(
@@ -415,6 +424,14 @@ void OveruseFrameDetectorResourceAdaptationModule::SetDegradationPreference(
     }
   }
   degradation_preference_ = degradation_preference;
+  MaybeUpdateVideoSourceRestrictions();
+}
+
+void OveruseFrameDetectorResourceAdaptationModule::
+    ResetVideoSourceRestrictions() {
+  last_adaptation_request_.reset();
+  source_restrictor_->ClearRestrictions();
+  adapt_counters_.clear();
   MaybeUpdateVideoSourceRestrictions();
 }
 
@@ -443,9 +460,12 @@ void OveruseFrameDetectorResourceAdaptationModule::SetEncoderConfig(
   encoder_config_ = std::move(encoder_config);
 }
 
-void OveruseFrameDetectorResourceAdaptationModule::SetCodecMaxFramerate(
-    int codec_max_framerate) {
-  codec_max_framerate_ = codec_max_framerate;
+void OveruseFrameDetectorResourceAdaptationModule::SetCodecMaxFrameRate(
+    absl::optional<double> codec_max_frame_rate) {
+  RTC_DCHECK(!codec_max_frame_rate.has_value() ||
+             codec_max_frame_rate.value() > 0.0);
+  codec_max_frame_rate_ = codec_max_frame_rate;
+  MaybeUpdateTargetFrameRate();
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::SetEncoderStartBitrateBps(
@@ -456,31 +476,6 @@ void OveruseFrameDetectorResourceAdaptationModule::SetEncoderStartBitrateBps(
 void OveruseFrameDetectorResourceAdaptationModule::SetIsQualityScalerEnabled(
     bool is_quality_scaler_enabled) {
   is_quality_scaler_enabled_ = is_quality_scaler_enabled;
-}
-
-void OveruseFrameDetectorResourceAdaptationModule::RefreshTargetFramerate() {
-  absl::optional<double> restricted_frame_rate =
-      ApplyDegradationPreference(source_restrictor_->source_restrictions(),
-                                 degradation_preference_)
-          .max_frame_rate();
-  // Get the current target framerate, ie the maximum framerate as specified by
-  // the current codec configuration, or any limit imposed by cpu adaption in
-  // maintain-resolution or balanced mode. This is used to make sure overuse
-  // detection doesn't needlessly trigger in low and/or variable framerate
-  // scenarios.
-  int target_framerate =
-      std::min(codec_max_framerate_,
-               restricted_frame_rate.has_value()
-                   ? static_cast<int>(restricted_frame_rate.value())
-                   : std::numeric_limits<int>::max());
-  overuse_detector_->OnTargetFramerateUpdated(target_framerate);
-}
-
-void OveruseFrameDetectorResourceAdaptationModule::ResetAdaptationCounters() {
-  last_adaptation_request_.reset();
-  source_restrictor_->ClearRestrictions();
-  adapt_counters_.clear();
-  MaybeUpdateVideoSourceRestrictions();
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::AdaptUp(AdaptReason reason) {
@@ -575,11 +570,8 @@ void OveruseFrameDetectorResourceAdaptationModule::AdaptUp(AdaptReason reason) {
       const int requested_framerate =
           source_restrictor_->RequestHigherFramerateThan(fps);
       if (requested_framerate == -1) {
-        overuse_detector_->OnTargetFramerateUpdated(codec_max_framerate_);
         return;
       }
-      overuse_detector_->OnTargetFramerateUpdated(
-          std::min(codec_max_framerate_, requested_framerate));
       GetAdaptCounter().DecrementFramerate(reason);
       break;
     }
@@ -683,9 +675,6 @@ bool OveruseFrameDetectorResourceAdaptationModule::AdaptDown(
               adaptation_request.framerate_fps_);
       if (requested_framerate == -1)
         return true;
-      RTC_DCHECK_NE(codec_max_framerate_, -1);
-      overuse_detector_->OnTargetFramerateUpdated(
-          std::min(codec_max_framerate_, requested_framerate));
       GetAdaptCounter().IncrementFramerate(reason);
       break;
     }
@@ -713,6 +702,33 @@ void OveruseFrameDetectorResourceAdaptationModule::
     video_source_restrictions_ = std::move(new_restrictions);
     adaptation_listener_->OnVideoSourceRestrictionsUpdated(
         video_source_restrictions_);
+    MaybeUpdateTargetFrameRate();
+  }
+}
+
+void OveruseFrameDetectorResourceAdaptationModule::
+    MaybeUpdateTargetFrameRate() {
+  // The current target framerate is the maximum frame rate as specified by
+  // the current codec configuration or any limit imposed by the adaptation
+  // module. This is used to make sure overuse detection doesn't needlessly
+  // trigger in low and/or variable framerate scenarios.
+  absl::optional<double> target_frame_rate =
+      ApplyDegradationPreference(source_restrictor_->source_restrictions(),
+                                 degradation_preference_)
+          .max_frame_rate();
+  if (!target_frame_rate.has_value() ||
+      (codec_max_frame_rate_.has_value() &&
+       codec_max_frame_rate_.value() < target_frame_rate.value())) {
+    target_frame_rate = codec_max_frame_rate_;
+  }
+  if (target_frame_rate != target_frame_rate_) {
+    target_frame_rate_ = target_frame_rate;
+    if (overuse_detector_is_started_) {
+      overuse_detector_->OnTargetFramerateUpdated(
+          target_frame_rate_.has_value()
+              ? static_cast<int>(target_frame_rate_.value())
+              : std::numeric_limits<int>::max());
+    }
   }
 }
 

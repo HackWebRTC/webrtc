@@ -78,11 +78,6 @@ bool IsResolutionScalingEnabled(DegradationPreference degradation_preference) {
          degradation_preference == DegradationPreference::BALANCED;
 }
 
-bool IsFramerateScalingEnabled(DegradationPreference degradation_preference) {
-  return degradation_preference == DegradationPreference::MAINTAIN_RESOLUTION ||
-         degradation_preference == DegradationPreference::BALANCED;
-}
-
 bool RequiresEncoderReset(const VideoCodec& prev_send_codec,
                           const VideoCodec& new_send_codec,
                           bool was_encode_called_since_last_initialization) {
@@ -393,13 +388,6 @@ void VideoStreamEncoder::SetSource(
         degradation_preference);
     if (encoder_)
       ConfigureQualityScaler(encoder_->GetEncoderInfo());
-
-    if (!IsFramerateScalingEnabled(degradation_preference) &&
-        max_framerate_ != -1) {
-      // If frame rate scaling is no longer allowed, remove any potential
-      // allowance for longer frame intervals.
-      resource_adaptation_module_->RefreshTargetFramerate();
-    }
   });
 }
 
@@ -599,7 +587,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   // Make sure the start bit rate is sane...
   RTC_DCHECK_LE(codec.startBitrate, 1000000);
   max_framerate_ = codec.maxFramerate;
-  resource_adaptation_module_->SetCodecMaxFramerate(max_framerate_);
+  resource_adaptation_module_->SetCodecMaxFrameRate(max_framerate_);
 
   // Inform source about max configured framerate.
   int max_framerate = 0;
@@ -749,8 +737,6 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   sink_->OnEncoderConfigurationChanged(
       std::move(streams), encoder_config_.content_type,
       encoder_config_.min_transmit_bitrate_bps);
-
-  resource_adaptation_module_->RefreshTargetFramerate();
 
   ConfigureQualityScaler(info);
 }
@@ -1137,7 +1123,7 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
       resource_adaptation_module_->GetConstAdaptCounter().TotalCount(
           AdaptationObserverInterface::AdaptReason::kCpu) == 0) {
     RTC_LOG(LS_INFO) << "Reset quality limitations.";
-    resource_adaptation_module_->ResetAdaptationCounters();
+    resource_adaptation_module_->ResetVideoSourceRestrictions();
     quality_rampup_done_ = true;
   }
 
