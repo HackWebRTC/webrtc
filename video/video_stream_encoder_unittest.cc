@@ -1426,93 +1426,82 @@ TEST_F(VideoStreamEncoderTest, BitrateLimitsChangeReconfigureRateAllocator) {
 }
 
 TEST_F(VideoStreamEncoderTest,
-       EncoderRecommendedBitrateLimitsDoNotOverrideAppBitrateLimits) {
+       IntersectionOfEncoderAndAppBitrateLimitsUsedWhenBothProvided) {
   video_stream_encoder_->OnBitrateUpdated(
       DataRate::bps(kTargetBitrateBps), DataRate::bps(kTargetBitrateBps),
       DataRate::bps(kTargetBitrateBps), 0, 0);
 
-  VideoEncoderConfig video_encoder_config;
-  test::FillEncoderConfiguration(kVideoCodecVP8, 1, &video_encoder_config);
-  video_encoder_config.max_bitrate_bps = 0;
-  video_encoder_config.simulcast_layers[0].min_bitrate_bps = 0;
-  video_stream_encoder_->ConfigureEncoder(video_encoder_config.Copy(),
-                                          kMaxPayloadLength);
-
-  video_source_.IncomingCapturedFrame(CreateFrame(1, 360, 180));
-  WaitForEncodedFrame(1);
-
-  // Get the default bitrate limits and use them as baseline for custom
-  // application and encoder recommended limits.
-  const uint32_t kDefaultMinBitrateKbps =
-      bitrate_allocator_factory_.codec_config().minBitrate;
-  const uint32_t kDefaultMaxBitrateKbps =
-      bitrate_allocator_factory_.codec_config().maxBitrate;
-  const uint32_t kEncMinBitrateKbps = kDefaultMinBitrateKbps * 2;
-  const uint32_t kEncMaxBitrateKbps = kDefaultMaxBitrateKbps * 2;
-  const uint32_t kAppMinBitrateKbps = kDefaultMinBitrateKbps * 3;
-  const uint32_t kAppMaxBitrateKbps = kDefaultMaxBitrateKbps * 3;
-
+  const uint32_t kMinEncBitrateKbps = 100;
+  const uint32_t kMaxEncBitrateKbps = 1000;
   const VideoEncoder::ResolutionBitrateLimits encoder_bitrate_limits(
-      codec_width_ * codec_height_, kEncMinBitrateKbps * 1000,
-      kEncMinBitrateKbps * 1000, kEncMaxBitrateKbps * 1000);
+      /*frame_size_pixels=*/codec_width_ * codec_height_,
+      /*min_start_bitrate_bps=*/0,
+      /*min_bitrate_bps=*/kMinEncBitrateKbps * 1000,
+      /*max_bitrate_bps=*/kMaxEncBitrateKbps * 1000);
   fake_encoder_.SetResolutionBitrateLimits({encoder_bitrate_limits});
 
-  // Change resolution. This will trigger encoder re-configuration and video
-  // stream encoder will pick up the bitrate limits recommended by encoder.
-  video_source_.IncomingCapturedFrame(CreateFrame(2, 640, 360));
+  VideoEncoderConfig video_encoder_config;
+  test::FillEncoderConfiguration(kVideoCodecVP8, 1, &video_encoder_config);
+  video_encoder_config.max_bitrate_bps = (kMaxEncBitrateKbps + 1) * 1000;
+  video_encoder_config.simulcast_layers[0].min_bitrate_bps =
+      (kMinEncBitrateKbps + 1) * 1000;
+  video_stream_encoder_->ConfigureEncoder(video_encoder_config.Copy(),
+                                          kMaxPayloadLength);
+
+  // When both encoder and app provide bitrate limits, the intersection of
+  // provided sets should be used.
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
+  WaitForEncodedFrame(1);
+  EXPECT_EQ(kMaxEncBitrateKbps,
+            bitrate_allocator_factory_.codec_config().maxBitrate);
+  EXPECT_EQ(kMinEncBitrateKbps + 1,
+            bitrate_allocator_factory_.codec_config().minBitrate);
+
+  video_encoder_config.max_bitrate_bps = (kMaxEncBitrateKbps - 1) * 1000;
+  video_encoder_config.simulcast_layers[0].min_bitrate_bps =
+      (kMinEncBitrateKbps - 1) * 1000;
+  video_stream_encoder_->ConfigureEncoder(video_encoder_config.Copy(),
+                                          kMaxPayloadLength);
+  video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
   WaitForEncodedFrame(2);
-  video_source_.IncomingCapturedFrame(CreateFrame(3, 360, 180));
-  WaitForEncodedFrame(3);
-
-  // App bitrate limits are not set - bitrate limits recommended by encoder
-  // should be used.
-  EXPECT_EQ(kEncMaxBitrateKbps,
+  EXPECT_EQ(kMaxEncBitrateKbps - 1,
             bitrate_allocator_factory_.codec_config().maxBitrate);
-  EXPECT_EQ(kEncMinBitrateKbps,
+  EXPECT_EQ(kMinEncBitrateKbps,
             bitrate_allocator_factory_.codec_config().minBitrate);
 
-  video_encoder_config.max_bitrate_bps = kAppMaxBitrateKbps * 1000;
-  video_encoder_config.simulcast_layers[0].min_bitrate_bps = 0;
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest,
+       EncoderAndAppLimitsDontIntersectEncoderLimitsIgnored) {
+  video_stream_encoder_->OnBitrateUpdated(
+      DataRate::bps(kTargetBitrateBps), DataRate::bps(kTargetBitrateBps),
+      DataRate::bps(kTargetBitrateBps), 0, 0);
+
+  const uint32_t kMinAppBitrateKbps = 100;
+  const uint32_t kMaxAppBitrateKbps = 200;
+  const uint32_t kMinEncBitrateKbps = kMaxAppBitrateKbps + 1;
+  const uint32_t kMaxEncBitrateKbps = kMaxAppBitrateKbps * 2;
+  const VideoEncoder::ResolutionBitrateLimits encoder_bitrate_limits(
+      /*frame_size_pixels=*/codec_width_ * codec_height_,
+      /*min_start_bitrate_bps=*/0,
+      /*min_bitrate_bps=*/kMinEncBitrateKbps * 1000,
+      /*max_bitrate_bps=*/kMaxEncBitrateKbps * 1000);
+  fake_encoder_.SetResolutionBitrateLimits({encoder_bitrate_limits});
+
+  VideoEncoderConfig video_encoder_config;
+  test::FillEncoderConfiguration(kVideoCodecVP8, 1, &video_encoder_config);
+  video_encoder_config.max_bitrate_bps = kMaxAppBitrateKbps * 1000;
+  video_encoder_config.simulcast_layers[0].min_bitrate_bps =
+      kMinAppBitrateKbps * 1000;
   video_stream_encoder_->ConfigureEncoder(video_encoder_config.Copy(),
                                           kMaxPayloadLength);
-  video_source_.IncomingCapturedFrame(CreateFrame(4, nullptr));
-  WaitForEncodedFrame(4);
 
-  // App limited the max bitrate - bitrate limits recommended by encoder should
-  // not be applied.
-  EXPECT_EQ(kAppMaxBitrateKbps,
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
+  WaitForEncodedFrame(1);
+  EXPECT_EQ(kMaxAppBitrateKbps,
             bitrate_allocator_factory_.codec_config().maxBitrate);
-  EXPECT_EQ(kDefaultMinBitrateKbps,
-            bitrate_allocator_factory_.codec_config().minBitrate);
-
-  video_encoder_config.max_bitrate_bps = 0;
-  video_encoder_config.simulcast_layers[0].min_bitrate_bps =
-      kAppMinBitrateKbps * 1000;
-  video_stream_encoder_->ConfigureEncoder(video_encoder_config.Copy(),
-                                          kMaxPayloadLength);
-  video_source_.IncomingCapturedFrame(CreateFrame(5, nullptr));
-  WaitForEncodedFrame(5);
-
-  // App limited the min bitrate - bitrate limits recommended by encoder should
-  // not be applied.
-  EXPECT_EQ(kDefaultMaxBitrateKbps,
-            bitrate_allocator_factory_.codec_config().maxBitrate);
-  EXPECT_EQ(kAppMinBitrateKbps,
-            bitrate_allocator_factory_.codec_config().minBitrate);
-
-  video_encoder_config.max_bitrate_bps = kAppMaxBitrateKbps * 1000;
-  video_encoder_config.simulcast_layers[0].min_bitrate_bps =
-      kAppMinBitrateKbps * 1000;
-  video_stream_encoder_->ConfigureEncoder(std::move(video_encoder_config),
-                                          kMaxPayloadLength);
-  video_source_.IncomingCapturedFrame(CreateFrame(6, nullptr));
-  WaitForEncodedFrame(6);
-
-  // App limited both min and max bitrates - bitrate limits recommended by
-  // encoder should not be applied.
-  EXPECT_EQ(kAppMaxBitrateKbps,
-            bitrate_allocator_factory_.codec_config().maxBitrate);
-  EXPECT_EQ(kAppMinBitrateKbps,
+  EXPECT_EQ(kMinAppBitrateKbps,
             bitrate_allocator_factory_.codec_config().minBitrate);
 
   video_stream_encoder_->Stop();
