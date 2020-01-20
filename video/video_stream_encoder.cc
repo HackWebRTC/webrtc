@@ -183,6 +183,7 @@ VideoBitrateAllocation UpdateAllocationFromEncoderInfo(
       }
     }
   }
+  new_allocation.set_bw_limited(allocation.is_bw_limited());
   return new_allocation;
 }
 }  //  namespace
