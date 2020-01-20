@@ -33,6 +33,8 @@ class PeerConnectionE2EQualityTestSmokeTest : public ::testing::Test {
   using PeerConfigurer = PeerConnectionE2EQualityTestFixture::PeerConfigurer;
   using RunParams = PeerConnectionE2EQualityTestFixture::RunParams;
   using VideoConfig = PeerConnectionE2EQualityTestFixture::VideoConfig;
+  using VideoCodecConfig =
+      PeerConnectionE2EQualityTestFixture::VideoCodecConfig;
   using AudioConfig = PeerConnectionE2EQualityTestFixture::AudioConfig;
   using ScreenShareConfig =
       PeerConnectionE2EQualityTestFixture::ScreenShareConfig;
@@ -133,8 +135,8 @@ class PeerConnectionE2EQualityTestSmokeTest : public ::testing::Test {
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
   RunParams run_params(TimeDelta::seconds(7));
-  run_params.video_codec_name = cricket::kVp9CodecName;
-  run_params.video_codec_required_params = {{"profile-id", "0"}};
+  run_params.video_codecs = {
+      VideoCodecConfig(cricket::kVp9CodecName, {{"profile-id", "0"}})};
   run_params.use_flex_fec = true;
   run_params.use_ulp_fec = true;
   run_params.video_encoder_bitrate_multiplier = 1.1;
@@ -217,7 +219,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Echo) {
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Simulcast) {
   RunParams run_params(TimeDelta::seconds(7));
-  run_params.video_codec_name = cricket::kVp8CodecName;
+  run_params.video_codecs = {VideoCodecConfig(cricket::kVp8CodecName)};
   RunTest(
       "simulcast", run_params,
       [](PeerConfigurer* alice) {
@@ -255,7 +257,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Simulcast) {
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Svc) {
   RunParams run_params(TimeDelta::seconds(7));
-  run_params.video_codec_name = cricket::kVp9CodecName;
+  run_params.video_codecs = {VideoCodecConfig(cricket::kVp9CodecName)};
   RunTest(
       "simulcast", run_params,
       [](PeerConfigurer* alice) {
@@ -295,8 +297,8 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Svc) {
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_HighBitrate) {
   RunParams run_params(TimeDelta::seconds(7));
-  run_params.video_codec_name = cricket::kVp9CodecName;
-  run_params.video_codec_required_params = {{"profile-id", "0"}};
+  run_params.video_codecs = {
+      VideoCodecConfig(cricket::kVp9CodecName, {{"profile-id", "0"}})};
 
   RunTest(
       "smoke", run_params,

@@ -44,9 +44,7 @@ if (rtc_include_tests) {
 rtc_library("peer_connection_quality_test_params") {
   visibility = [ "*" ]
   testonly = true
-  sources = [
-    "peer_connection_quality_test_params.h",
-  ]
+  sources = [ "peer_connection_quality_test_params.h" ]
 
   deps = [
     "../../../api:callfactory_api",
@@ -66,13 +64,9 @@ rtc_library("peer_connection_quality_test_params") {
 rtc_library("encoded_image_data_injector_api") {
   visibility = [ "*" ]
   testonly = true
-  sources = [
-    "analyzer/video/encoded_image_data_injector.h",
-  ]
+  sources = [ "analyzer/video/encoded_image_data_injector.h" ]
 
-  deps = [
-    "../../../api/video:encoded_image",
-  ]
+  deps = [ "../../../api/video:encoded_image" ]
 }
 
 rtc_library("default_encoded_image_data_injector") {
@@ -324,9 +318,8 @@ if (rtc_include_tests) {
 
   rtc_library("default_encoded_image_data_injector_unittest") {
     testonly = true
-    sources = [
-      "analyzer/video/default_encoded_image_data_injector_unittest.cc",
-    ]
+    sources =
+        [ "analyzer/video/default_encoded_image_data_injector_unittest.cc" ]
     deps = [
       ":default_encoded_image_data_injector",
       "../../../api/video:encoded_image",
@@ -343,18 +336,14 @@ if (rtc_include_tests) {
     bundle_data("peer_connection_e2e_smoke_test_resources_bundle_data") {
       testonly = true
       sources = peer_connection_e2e_smoke_test_resources
-      outputs = [
-        "{{bundle_resources_dir}}/{{source_file_part}}",
-      ]
+      outputs = [ "{{bundle_resources_dir}}/{{source_file_part}}" ]
     }
   }
 
   rtc_library("peer_connection_e2e_smoke_test") {
     testonly = true
 
-    sources = [
-      "peer_connection_e2e_smoke_test.cc",
-    ]
+    sources = [ "peer_connection_e2e_smoke_test.cc" ]
     deps = [
       ":default_audio_quality_analyzer",
       ":default_video_quality_analyzer",
@@ -512,6 +501,7 @@ rtc_library("sdp_changer") {
   deps = [
     "../../../api:array_view",
     "../../../api:libjingle_peerconnection_api",
+    "../../../api:peer_connection_quality_test_fixture_api",
     "../../../api:rtp_parameters",
     "../../../media:rtc_media_base",
     "../../../p2p:rtc_p2p",

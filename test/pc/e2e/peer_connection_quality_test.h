@@ -270,7 +270,9 @@ class PeerConnectionE2EQualityTest
   //  * Generate video stream labels if some of them missed
   //  * Generate audio stream labels if some of them missed
   //  * Set video source generation mode if it is not specified
+  //  * Video codecs under test
   void SetDefaultValuesForMissingParams(
+      RunParams* run_params,
       std::vector<Params*> params,
       std::vector<std::vector<std::unique_ptr<test::FrameGeneratorInterface>>*>
           video_sources);

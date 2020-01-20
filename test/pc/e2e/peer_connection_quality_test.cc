@@ -44,6 +44,7 @@ namespace webrtc_pc_e2e {
 namespace {
 
 using VideoConfig = PeerConnectionE2EQualityTestFixture::VideoConfig;
+using VideoCodecConfig = PeerConnectionE2EQualityTestFixture::VideoCodecConfig;
 
 constexpr int kDefaultTimeoutMs = 10000;
 constexpr char kSignalThreadName[] = "signaling_thread";
@@ -250,7 +251,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   peer_configurations_.clear();
 
   SetDefaultValuesForMissingParams(
-      {alice_params.get(), bob_params.get()},
+      &run_params, {alice_params.get(), bob_params.get()},
       {&alice_video_generators, &bob_video_generators});
   ValidateParams(run_params, {alice_params.get(), bob_params.get()},
                  {&alice_video_generators, &bob_video_generators});
@@ -452,6 +453,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
 }
 
 void PeerConnectionE2EQualityTest::SetDefaultValuesForMissingParams(
+    RunParams* run_params,
     std::vector<Params*> params,
     std::vector<std::vector<std::unique_ptr<test::FrameGeneratorInterface>>*>
         video_generators) {
@@ -489,6 +491,11 @@ void PeerConnectionE2EQualityTest::SetDefaultValuesForMissingParams(
         p->audio_config->stream_label = label;
       }
     }
+  }
+
+  if (run_params->video_codecs.empty()) {
+    run_params->video_codecs.push_back(VideoCodecConfig(
+        run_params->video_codec_name, run_params->video_codec_required_params));
   }
 }
 
@@ -888,15 +895,15 @@ void PeerConnectionE2EQualityTest::SetPeerCodecPreferences(
     const RunParams& run_params) {
   std::vector<RtpCodecCapability> with_rtx_video_capabilities =
       FilterVideoCodecCapabilities(
-          run_params.video_codec_name, run_params.video_codec_required_params,
-          true, run_params.use_ulp_fec, run_params.use_flex_fec,
+          run_params.video_codecs, true, run_params.use_ulp_fec,
+          run_params.use_flex_fec,
           peer->pc_factory()
               ->GetRtpSenderCapabilities(cricket::MediaType::MEDIA_TYPE_VIDEO)
               .codecs);
   std::vector<RtpCodecCapability> without_rtx_video_capabilities =
       FilterVideoCodecCapabilities(
-          run_params.video_codec_name, run_params.video_codec_required_params,
-          false, run_params.use_ulp_fec, run_params.use_flex_fec,
+          run_params.video_codecs, false, run_params.use_ulp_fec,
+          run_params.use_flex_fec,
           peer->pc_factory()
               ->GetRtpSenderCapabilities(cricket::MediaType::MEDIA_TYPE_VIDEO)
               .codecs);
