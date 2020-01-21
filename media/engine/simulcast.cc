@@ -272,7 +272,7 @@ std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
     // TODO(pbos): Fill actual temporal-layer bitrate thresholds.
     layers[s].max_qp = max_qp;
     layers[s].num_temporal_layers =
-        temporal_layers_supported ? DefaultNumberOfTemporalLayers(s, false) : 0;
+        temporal_layers_supported ? DefaultNumberOfTemporalLayers(s, false) : 1;
     layers[s].max_bitrate_bps = FindSimulcastMaxBitrateBps(width, height);
     layers[s].target_bitrate_bps = FindSimulcastTargetBitrateBps(width, height);
     int num_temporal_layers = DefaultNumberOfTemporalLayers(s, false);
@@ -343,7 +343,7 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
   layers[0].min_bitrate_bps = webrtc::kDefaultMinVideoBitrateBps;
   layers[0].target_bitrate_bps = kScreenshareDefaultTl0BitrateKbps * 1000;
   layers[0].max_bitrate_bps = kScreenshareDefaultTl1BitrateKbps * 1000;
-  layers[0].num_temporal_layers = temporal_layers_supported ? 2 : 0;
+  layers[0].num_temporal_layers = temporal_layers_supported ? 2 : 1;
 
   // With simulcast enabled, add another spatial layer. This one will have a
   // more normal layout, with the regular 3 temporal layer pattern and no fps
@@ -388,7 +388,7 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
     layers[1].max_qp = max_qp;
     layers[1].max_framerate = kDefaultVideoMaxFramerate;
     layers[1].num_temporal_layers =
-        temporal_layers_supported ? DefaultNumberOfTemporalLayers(1, true) : 0;
+        temporal_layers_supported ? DefaultNumberOfTemporalLayers(1, true) : 1;
     layers[1].min_bitrate_bps = using_boosted_bitrate
                                     ? kScreenshareHighStreamMinBitrateBps
                                     : layers[0].target_bitrate_bps * 2;

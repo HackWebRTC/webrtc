@@ -471,6 +471,16 @@ void VideoStreamEncoder::ReconfigureEncoder() {
       encoder_config_.video_stream_factory->CreateEncoderStreams(
           last_frame_info_->width, last_frame_info_->height, encoder_config_);
 
+  // Check that the higher layers do not try to set number of temporal layers
+  // to less than 1.
+  // TODO(brandtr): Get rid of the wrapping optional as it serves no purpose
+  // at this layer.
+#if RTC_DCHECK_IS_ON
+  for (const auto& stream : streams) {
+    RTC_DCHECK_GE(stream.num_temporal_layers.value_or(1), 1);
+  }
+#endif
+
   // TODO(ilnik): If configured resolution is significantly less than provided,
   // e.g. because there are not enough SSRCs for all simulcast streams,
   // signal new resolutions via SinkWants to video source.
