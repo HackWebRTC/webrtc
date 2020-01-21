@@ -612,6 +612,19 @@ class EncoderStreamFactory
       int height,
       const webrtc::VideoEncoderConfig& encoder_config) override;
 
+  std::vector<webrtc::VideoStream> CreateDefaultVideoStreams(
+      int width,
+      int height,
+      const webrtc::VideoEncoderConfig& encoder_config,
+      const absl::optional<webrtc::DataRate>& experimental_min_bitrate) const;
+
+  std::vector<webrtc::VideoStream>
+  CreateSimulcastOrConfereceModeScreenshareStreams(
+      int width,
+      int height,
+      const webrtc::VideoEncoderConfig& encoder_config,
+      const absl::optional<webrtc::DataRate>& experimental_min_bitrate) const;
+
   const std::string codec_name_;
   const int max_qp_;
   const bool is_screenshare_;
