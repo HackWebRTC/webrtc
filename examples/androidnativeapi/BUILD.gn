@@ -28,9 +28,7 @@ if (is_android) {
 
   generate_jni("generated_jni") {
     testonly = true
-    sources = [
-      "java/org/webrtc/examples/androidnativeapi/CallClient.java",
-    ]
+    sources = [ "java/org/webrtc/examples/androidnativeapi/CallClient.java" ]
     namespace = "webrtc_examples"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }

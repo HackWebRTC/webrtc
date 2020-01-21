@@ -14,9 +14,7 @@ if (is_android) {
 
 rtc_source_set("audio_encoder_ilbc_config") {
   visibility = [ "*" ]
-  sources = [
-    "audio_encoder_ilbc_config.h",
-  ]
+  sources = [ "audio_encoder_ilbc_config.h" ]
 }
 
 rtc_library("audio_encoder_ilbc") {

@@ -866,9 +866,7 @@ if (is_ios) {
 
       script = "//tools_webrtc/ios/generate_umbrella_header.py"
 
-      outputs = [
-        umbrella_header_path,
-      ]
+      outputs = [ umbrella_header_path ]
       args = [
                "--out",
                rebase_path(umbrella_header_path, root_build_dir),
@@ -877,16 +875,11 @@ if (is_ios) {
     }
 
     copy("copy_umbrella_header_$target_name") {
-      sources = [
-        umbrella_header_path,
-      ]
-      outputs = [
-        "$root_out_dir/$output_name.framework/Headers/$output_name.h",
-      ]
+      sources = [ umbrella_header_path ]
+      outputs =
+          [ "$root_out_dir/$output_name.framework/Headers/$output_name.h" ]
 
-      deps = [
-        ":umbrella_header_$target_name",
-      ]
+      deps = [ ":umbrella_header_$target_name" ]
     }
   }
 
@@ -933,9 +926,7 @@ if (is_mac) {
     bundle_data("copy_framework_headers_$this_target_name") {
       forward_variables_from(invoker, [ "sources" ])
 
-      outputs = [
-        "{{bundle_contents_dir}}/Headers/{{source_file_part}}",
-      ]
+      outputs = [ "{{bundle_contents_dir}}/Headers/{{source_file_part}}" ]
     }
 
     action("modulemap_$this_target_name") {
@@ -946,21 +937,13 @@ if (is_mac) {
         "--name",
         output_name,
       ]
-      outputs = [
-        modulemap_path,
-      ]
+      outputs = [ modulemap_path ]
     }
 
     bundle_data("copy_modulemap_$this_target_name") {
-      sources = [
-        modulemap_path,
-      ]
-      outputs = [
-        "{{bundle_contents_dir}}/Modules/module.modulemap",
-      ]
-      deps = [
-        ":modulemap_$this_target_name",
-      ]
+      sources = [ modulemap_path ]
+      outputs = [ "{{bundle_contents_dir}}/Modules/module.modulemap" ]
+      deps = [ ":modulemap_$this_target_name" ]
     }
 
     action("umbrella_header_$this_target_name") {
@@ -968,9 +951,7 @@ if (is_mac) {
 
       script = "//tools_webrtc/ios/generate_umbrella_header.py"
 
-      outputs = [
-        umbrella_header_path,
-      ]
+      outputs = [ umbrella_header_path ]
       args = [
                "--out",
                rebase_path(umbrella_header_path, root_build_dir),
@@ -979,16 +960,10 @@ if (is_mac) {
     }
 
     bundle_data("copy_umbrella_header_$this_target_name") {
-      sources = [
-        umbrella_header_path,
-      ]
-      outputs = [
-        "{{bundle_contents_dir}}/Headers/$output_name.h",
-      ]
+      sources = [ umbrella_header_path ]
+      outputs = [ "{{bundle_contents_dir}}/Headers/$output_name.h" ]
 
-      deps = [
-        ":umbrella_header_$this_target_name",
-      ]
+      deps = [ ":umbrella_header_$this_target_name" ]
     }
   }
 }

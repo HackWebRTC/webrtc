@@ -20,36 +20,24 @@ if (is_android) {
 rtc_source_set("audio_encoder_isac") {
   visibility = [ "*" ]
   poisonous = [ "audio_codecs" ]
-  public = [
-    "audio_encoder_isac.h",
-  ]
+  public = [ "audio_encoder_isac.h" ]
   public_configs = [ ":isac_config" ]
   if (current_cpu == "arm") {
-    deps = [
-      ":audio_encoder_isac_fix",
-    ]
+    deps = [ ":audio_encoder_isac_fix" ]
   } else {
-    deps = [
-      ":audio_encoder_isac_float",
-    ]
+    deps = [ ":audio_encoder_isac_float" ]
   }
 }
 
 rtc_source_set("audio_decoder_isac") {
   visibility = [ "*" ]
   poisonous = [ "audio_codecs" ]
-  public = [
-    "audio_decoder_isac.h",
-  ]
+  public = [ "audio_decoder_isac.h" ]
   public_configs = [ ":isac_config" ]
   if (current_cpu == "arm") {
-    deps = [
-      ":audio_decoder_isac_fix",
-    ]
+    deps = [ ":audio_decoder_isac_fix" ]
   } else {
-    deps = [
-      ":audio_decoder_isac_float",
-    ]
+    deps = [ ":audio_decoder_isac_float" ]
   }
 }
 

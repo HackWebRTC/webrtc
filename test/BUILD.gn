@@ -215,9 +215,7 @@ rtc_library("field_trial") {
     "field_trial.h",
   ]
 
-  deps = [
-    "../system_wrappers:field_trial",
-  ]
+  deps = [ "../system_wrappers:field_trial" ]
 }
 
 rtc_library("perf_test") {
@@ -338,9 +336,7 @@ if (rtc_include_tests) {
   rtc_library("test_main") {
     visibility = [ "*" ]
     testonly = true
-    sources = [
-      "test_main.cc",
-    ]
+    sources = [ "test_main.cc" ]
 
     deps = [
       ":test_main_lib",
@@ -432,9 +428,7 @@ if (rtc_include_tests) {
     bundle_data("test_support_unittests_bundle_data") {
       testonly = true
       sources = test_support_unittests_resources
-      outputs = [
-        "{{bundle_resources_dir}}/{{source_file_part}}",
-      ]
+      outputs = [ "{{bundle_resources_dir}}/{{source_file_part}}" ]
     }
   }
 
@@ -553,9 +547,7 @@ if (is_mac) {
       "testsupport/mac_file_utils.h",
       "testsupport/mac_file_utils.mm",
     ]
-    deps = [
-      "../rtc_base:checks",
-    ]
+    deps = [ "../rtc_base:checks" ]
   }
 }
 
@@ -591,26 +583,20 @@ rtc_library("resources_dir_flag") {
     "testsupport/resources_dir_flag.cc",
     "testsupport/resources_dir_flag.h",
   ]
-  deps = [
-    "//third_party/abseil-cpp/absl/flags:flag",
-  ]
+  deps = [ "//third_party/abseil-cpp/absl/flags:flag" ]
 }
 
 # We separate header into own target to make it possible for downstream
 # projects to override implementation.
 rtc_source_set("fileutils_override_api") {
   testonly = true
-  sources = [
-    "testsupport/file_utils_override.h",
-  ]
+  sources = [ "testsupport/file_utils_override.h" ]
 }
 
 rtc_library("fileutils_override_impl") {
   testonly = true
   visibility = [ ":fileutils" ]
-  sources = [
-    "testsupport/file_utils_override.cc",
-  ]
+  sources = [ "testsupport/file_utils_override.cc" ]
   deps = [
     ":fileutils_override_api",
     "../rtc_base:checks",
@@ -632,52 +618,36 @@ rtc_library("fileutils_override_impl") {
 rtc_source_set("run_test") {
   testonly = true
   if (is_mac) {
-    public_deps = [  # no-presubmit-check TODO(webrtc:8603)
-      ":run_test_objc",
-    ]
+    public_deps = [ ":run_test_objc" ]  # no-presubmit-check TODO(webrtc:8603)
   } else {
-    public_deps = [  # no-presubmit-check TODO(webrtc:8603)
-      ":run_test_generic",
-    ]
+    public_deps = [ ":run_test_generic" ]  # no-presubmit-check TODO(webrtc:8603)
   }
 }
 
 rtc_source_set("run_test_interface") {
-  sources = [
-    "run_test.h",
-  ]
+  sources = [ "run_test.h" ]
 }
 
 if (is_mac) {
   rtc_library("run_test_objc") {
     testonly = true
     visibility = [ ":run_test" ]
-    sources = [
-      "mac/run_test.mm",
-    ]
-    deps = [
-      ":run_test_interface",
-    ]
+    sources = [ "mac/run_test.mm" ]
+    deps = [ ":run_test_interface" ]
   }
 }
 
 rtc_library("run_test_generic") {
   testonly = true
   visibility = [ ":run_test" ]
-  sources = [
-    "run_test.cc",
-  ]
-  deps = [
-    ":run_test_interface",
-  ]
+  sources = [ "run_test.cc" ]
+  deps = [ ":run_test_interface" ]
 }
 
 rtc_library("fileutils_unittests") {
   testonly = true
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
-  sources = [
-    "testsupport/file_utils_unittest.cc",
-  ]
+  sources = [ "testsupport/file_utils_unittest.cc" ]
   deps = [
     ":fileutils",
     ":test_support",
@@ -707,9 +677,7 @@ rtc_library("direct_transport") {
     "../rtc_base/task_utils:repeating_task",
     "//third_party/abseil-cpp/absl/memory",
   ]
-  public_deps = [  # no-presubmit-check TODO(webrtc:8603)
-    "../call:fake_network",
-  ]
+  public_deps = [ "../call:fake_network" ]  # no-presubmit-check TODO(webrtc:8603)
 }
 
 rtc_library("fake_video_codecs") {
@@ -759,9 +727,7 @@ rtc_library("null_transport") {
     "null_transport.cc",
     "null_transport.h",
   ]
-  deps = [
-    "../api:transport_api",
-  ]
+  deps = [ "../api:transport_api" ]
 }
 
 rtc_library("encoder_settings") {
@@ -782,12 +748,8 @@ rtc_library("encoder_settings") {
 
 rtc_library("rtc_expect_death") {
   testonly = true
-  sources = [
-    "testsupport/rtc_expect_death.h",
-  ]
-  deps = [
-    ":test_support",
-  ]
+  sources = [ "testsupport/rtc_expect_death.h" ]
+  deps = [ ":test_support" ]
 }
 
 rtc_library("test_common") {
@@ -870,9 +832,7 @@ rtc_library("test_common") {
 }
 
 rtc_source_set("test_renderer") {
-  public_deps = [  # no-presubmit-check TODO(webrtc:8603)
-    ":test_renderer_generic",
-  ]
+  public_deps = [ ":test_renderer_generic" ]  # no-presubmit-check TODO(webrtc:8603)
   testonly = true
   if (is_mac) {
     public_deps += [ ":test_renderer_objc" ]  # no-presubmit-check TODO(webrtc:8603)
@@ -996,9 +956,7 @@ rtc_library("copy_to_file_audio_capturer") {
 
 rtc_library("copy_to_file_audio_capturer_unittest") {
   testonly = true
-  sources = [
-    "testsupport/copy_to_file_audio_capturer_unittest.cc",
-  ]
+  sources = [ "testsupport/copy_to_file_audio_capturer_unittest.cc" ]
   deps = [
     ":copy_to_file_audio_capturer",
     ":fileutils",

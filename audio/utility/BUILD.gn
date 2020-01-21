@@ -8,9 +8,7 @@
 import("../../webrtc.gni")
 
 group("utility") {
-  deps = [
-    ":audio_frame_operations",
-  ]
+  deps = [ ":audio_frame_operations" ]
 }
 
 rtc_library("audio_frame_operations") {

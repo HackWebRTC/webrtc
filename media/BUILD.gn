@@ -42,9 +42,7 @@ rtc_library("rtc_h264_profile_id") {
 
 rtc_source_set("rtc_media_config") {
   visibility = [ "*" ]
-  sources = [
-    "base/media_config.h",
-  ]
+  sources = [ "base/media_config.h" ]
 }
 
 rtc_library("rtc_vp9_profile") {
@@ -418,9 +416,7 @@ rtc_library("rtc_data") {
     ]
   } else {
     # libtool on mac does not like empty targets.
-    sources = [
-      "sctp/noop.cc",
-    ]
+    sources = [ "sctp/noop.cc" ]
   }
 
   if (rtc_enable_sctp && rtc_build_usrsctp) {
@@ -517,9 +513,7 @@ if (rtc_include_tests) {
     bundle_data("rtc_media_unittests_bundle_data") {
       testonly = true
       sources = rtc_media_unittests_resources
-      outputs = [
-        "{{bundle_resources_dir}}/{{source_file_part}}",
-      ]
+      outputs = [ "{{bundle_resources_dir}}/{{source_file_part}}" ]
     }
   }
 

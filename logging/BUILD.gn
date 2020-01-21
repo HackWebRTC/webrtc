@@ -27,13 +27,9 @@ group("logging") {
 }
 
 rtc_source_set("rtc_event_log_api") {
-  sources = [
-    "rtc_event_log/encoder/rtc_event_log_encoder.h",
-  ]
+  sources = [ "rtc_event_log/encoder/rtc_event_log_encoder.h" ]
 
-  deps = [
-    "../api/rtc_event_log",
-  ]
+  deps = [ "../api/rtc_event_log" ]
 }
 
 rtc_library("rtc_stream_config") {
@@ -226,12 +222,8 @@ rtc_library("rtc_event_log_impl_encoder") {
 # TODO(bugs.webrtc.org/6463): For backwards compatibility; delete as
 # soon as downstream dependencies are updated.
 rtc_source_set("rtc_event_log_impl_output") {
-  sources = [
-    "rtc_event_log/output/rtc_event_log_output_file.h",
-  ]
-  deps = [
-    "../api:rtc_event_log_output_file",
-  ]
+  sources = [ "rtc_event_log/output/rtc_event_log_output_file.h" ]
+  deps = [ "../api:rtc_event_log_output_file" ]
 }
 
 if (rtc_enable_protobuf) {
@@ -278,17 +270,13 @@ rtc_library("fake_rtc_event_log") {
 if (rtc_enable_protobuf) {
   proto_library("rtc_event_log_proto") {
     visibility = [ "*" ]
-    sources = [
-      "rtc_event_log/rtc_event_log.proto",
-    ]
+    sources = [ "rtc_event_log/rtc_event_log.proto" ]
     proto_out_dir = "logging/rtc_event_log"
   }
 
   proto_library("rtc_event_log2_proto") {
     visibility = [ "*" ]
-    sources = [
-      "rtc_event_log/rtc_event_log2.proto",
-    ]
+    sources = [ "rtc_event_log/rtc_event_log2.proto" ]
     proto_out_dir = "logging/rtc_event_log"
   }
 
@@ -388,9 +376,7 @@ if (rtc_enable_protobuf) {
 
     rtc_executable("rtc_event_log_rtp_dump") {
       testonly = true
-      sources = [
-        "rtc_event_log/rtc_event_log2rtp_dump.cc",
-      ]
+      sources = [ "rtc_event_log/rtc_event_log2rtp_dump.cc" ]
       deps = [
         ":rtc_event_log_parser",
         "../api:array_view",

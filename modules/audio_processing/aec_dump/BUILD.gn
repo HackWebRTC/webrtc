@@ -10,9 +10,7 @@ import("../../../webrtc.gni")  # This contains def of 'rtc_enable_protobuf'
 
 rtc_source_set("aec_dump") {
   visibility = [ "*" ]
-  sources = [
-    "aec_dump_factory.h",
-  ]
+  sources = [ "aec_dump_factory.h" ]
 
   deps = [
     "../",
@@ -38,9 +36,7 @@ rtc_library("mock_aec_dump") {
 rtc_library("mock_aec_dump_unittests") {
   testonly = true
 
-  sources = [
-    "aec_dump_integration_test.cc",
-  ]
+  sources = [ "aec_dump_integration_test.cc" ]
 
   deps = [
     ":mock_aec_dump",
@@ -92,17 +88,13 @@ if (rtc_enable_protobuf) {
       "../../../test:test_support",
       "//testing/gtest",
     ]
-    sources = [
-      "aec_dump_unittest.cc",
-    ]
+    sources = [ "aec_dump_unittest.cc" ]
   }
 }
 
 rtc_library("null_aec_dump_factory") {
   assert_no_deps = [ ":aec_dump_impl" ]
-  sources = [
-    "null_aec_dump_factory.cc",
-  ]
+  sources = [ "null_aec_dump_factory.cc" ]
 
   deps = [
     ":aec_dump",

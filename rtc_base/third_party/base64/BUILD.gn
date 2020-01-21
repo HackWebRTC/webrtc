@@ -14,7 +14,5 @@ rtc_library("base64") {
     "base64.cc",
     "base64.h",
   ]
-  deps = [
-    "../../system:rtc_export",
-  ]
+  deps = [ "../../system:rtc_export" ]
 }

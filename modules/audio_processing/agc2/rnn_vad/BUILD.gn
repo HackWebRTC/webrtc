@@ -76,8 +76,8 @@ if (rtc_include_tests) {
   unittest_resources = [
     "../../../../resources/audio_processing/agc2/rnn_vad/band_energies.dat",
     "../../../../resources/audio_processing/agc2/rnn_vad/pitch_buf_24k.dat",
-    "../../../../resources/audio_processing/agc2/rnn_vad/pitch_search_int.dat",
     "../../../../resources/audio_processing/agc2/rnn_vad/pitch_lp_res.dat",
+    "../../../../resources/audio_processing/agc2/rnn_vad/pitch_search_int.dat",
     "../../../../resources/audio_processing/agc2/rnn_vad/samples.pcm",
     "../../../../resources/audio_processing/agc2/rnn_vad/vad_prob.dat",
   ]
@@ -86,9 +86,7 @@ if (rtc_include_tests) {
     bundle_data("unittests_bundle_data") {
       testonly = true
       sources = unittest_resources
-      outputs = [
-        "{{bundle_resources_dir}}/{{source_file_part}}",
-      ]
+      outputs = [ "{{bundle_resources_dir}}/{{source_file_part}}" ]
     }
   }
 
@@ -130,9 +128,7 @@ if (rtc_include_tests) {
 
   rtc_executable("rnn_vad_tool") {
     testonly = true
-    sources = [
-      "rnn_vad_tool.cc",
-    ]
+    sources = [ "rnn_vad_tool.cc" ]
     deps = [
       ":rnn_vad",
       "../../../../api:array_view",

@@ -11,7 +11,5 @@ rtc_library("webrtc") {
     "call.h",
     "dummy_source.h",
   ]
-  deps = [
-    "call",
-  ]
+  deps = [ "call" ]
 }

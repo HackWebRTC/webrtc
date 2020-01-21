@@ -75,9 +75,7 @@ if (is_android) {
   # Old target that pulls in everything. This will be going away in the future,
   # clients should depend on individual video_java etc. targets instead.
   rtc_android_library("libjingle_peerconnection_java") {
-    sources = [
-      "src/java/org/webrtc/Empty.java",
-    ]
+    sources = [ "src/java/org/webrtc/Empty.java" ]
 
     deps = [
       ":audio_api_java",
@@ -97,9 +95,7 @@ if (is_android) {
   }
 
   rtc_android_library("libjingle_peerconnection_metrics_default_java") {
-    sources = [
-      "api/org/webrtc/Metrics.java",
-    ]
+    sources = [ "api/org/webrtc/Metrics.java" ]
 
     deps = [
       ":base_java",
@@ -129,9 +125,7 @@ if (is_android) {
 
   rtc_library("libjingle_peerconnection_metrics_default_jni") {
     visibility = [ "*" ]
-    sources = [
-      "src/jni/android_metrics.cc",
-    ]
+    sources = [ "src/jni/android_metrics.cc" ]
     deps = [
       ":base_jni",
       ":generated_metrics_jni",
@@ -143,9 +137,7 @@ if (is_android) {
   }
 
   rtc_shared_library("libjingle_peerconnection_so") {
-    sources = [
-      "src/jni/jni_onload.cc",
-    ]
+    sources = [ "src/jni/jni_onload.cc" ]
 
     suppressed_configs += [ "//build/config/android:hide_all_but_jni_onload" ]
     configs += [ "//build/config/android:hide_all_but_jni" ]
@@ -450,16 +442,12 @@ if (is_android) {
       "api/org/webrtc/BuiltinAudioEncoderFactoryFactory.java",
     ]
 
-    deps = [
-      ":audio_api_java",
-    ]
+    deps = [ ":audio_api_java" ]
   }
 
   rtc_android_library("screencapturer_java") {
     visibility = [ "*" ]
-    sources = [
-      "api/org/webrtc/ScreenCapturerAndroid.java",
-    ]
+    sources = [ "api/org/webrtc/ScreenCapturerAndroid.java" ]
 
     deps = [
       ":video_api_java",
@@ -573,9 +561,7 @@ if (current_os == "linux" || is_android) {
   rtc_library("audio_jni") {
     visibility = [ "*" ]
     allow_poison = [ "audio_codecs" ]
-    sources = [
-      "src/jni/pc/audio.cc",
-    ]
+    sources = [ "src/jni/pc/audio.cc" ]
 
     deps = [
       ":base_jni",
@@ -798,9 +784,7 @@ if (current_os == "linux" || is_android) {
   # JNI target for java_audio_device_module_java
   rtc_library("java_audio_device_module_jni") {
     visibility = [ "*" ]
-    sources = [
-      "src/jni/audio_device/java_audio_device_module.cc",
-    ]
+    sources = [ "src/jni/audio_device/java_audio_device_module.cc" ]
 
     deps = [
       ":base_jni",
@@ -821,9 +805,7 @@ if (current_os == "linux" || is_android) {
   rtc_library("libvpx_vp8_jni") {
     visibility = [ "*" ]
     allow_poison = [ "software_video_codecs" ]
-    sources = [
-      "src/jni/vp8_codec.cc",
-    ]
+    sources = [ "src/jni/vp8_codec.cc" ]
     deps = [
       ":base_jni",
       ":generated_libvpx_vp8_jni",
@@ -835,9 +817,7 @@ if (current_os == "linux" || is_android) {
   rtc_library("libvpx_vp9_jni") {
     visibility = [ "*" ]
     allow_poison = [ "software_video_codecs" ]
-    sources = [
-      "src/jni/vp9_codec.cc",
-    ]
+    sources = [ "src/jni/vp9_codec.cc" ]
     deps = [
       ":base_jni",
       ":generated_libvpx_vp9_jni",
@@ -1016,9 +996,7 @@ if (current_os == "linux" || is_android) {
   ####################
 
   rtc_android_library("logging_java") {
-    sources = [
-      "src/java/org/webrtc/JNILogging.java",
-    ]
+    sources = [ "src/java/org/webrtc/JNILogging.java" ]
 
     deps = [
       ":base_java",
@@ -1035,9 +1013,7 @@ if (current_os == "linux" || is_android) {
       "src/jni/jvm.h",
     ]
 
-    deps = [
-      "../../rtc_base:checks",
-    ]
+    deps = [ "../../rtc_base:checks" ]
   }
 
   rtc_library("videoframe_jni") {
@@ -1199,9 +1175,7 @@ if (current_os == "linux" || is_android) {
   }
 
   generate_jni("generated_metrics_jni") {
-    sources = [
-      "api/org/webrtc/Metrics.java",
-    ]
+    sources = [ "api/org/webrtc/Metrics.java" ]
     namespace = "webrtc::jni"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
@@ -1307,9 +1281,7 @@ if (current_os == "linux" || is_android) {
   }
 
   generate_jni("generated_java_audio_jni") {
-    sources = [
-      "api/org/webrtc/audio/JavaAudioDeviceModule.java",
-    ]
+    sources = [ "api/org/webrtc/audio/JavaAudioDeviceModule.java" ]
     namespace = "webrtc::jni"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
@@ -1337,16 +1309,12 @@ if (current_os == "linux" || is_android) {
   # Generated JNI for internal targets.
 
   generate_jni("generated_logging_jni") {
-    sources = [
-      "src/java/org/webrtc/JNILogging.java",
-    ]
+    sources = [ "src/java/org/webrtc/JNILogging.java" ]
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
 
   generate_jni("generated_audio_device_module_base_jni") {
-    sources = [
-      "src/java/org/webrtc/audio/WebRtcAudioManager.java",
-    ]
+    sources = [ "src/java/org/webrtc/audio/WebRtcAudioManager.java" ]
     namespace = "webrtc::jni"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
@@ -1406,9 +1374,7 @@ if (is_android) {
         "instrumentationtests/src/org/webrtc/YuvHelperTest.java",
       ]
 
-      data = [
-        "../../sdk/android/instrumentationtests/src/org/webrtc/capturetestvideo.y4m",
-      ]
+      data = [ "../../sdk/android/instrumentationtests/src/org/webrtc/capturetestvideo.y4m" ]
 
       deps = [
         ":base_java",
@@ -1434,9 +1400,7 @@ if (is_android) {
 
   rtc_shared_library("libjingle_peerconnection_instrumentationtests_so") {
     testonly = true
-    sources = [
-      "src/jni/jni_onload.cc",
-    ]
+    sources = [ "src/jni/jni_onload.cc" ]
 
     suppressed_configs += [ "//build/config/android:hide_all_but_jni_onload" ]
     configs += [ "//build/config/android:hide_all_but_jni" ]
@@ -1453,9 +1417,7 @@ if (is_android) {
 
   rtc_library("instrumentationtests_jni") {
     testonly = true
-    sources = [
-      "instrumentationtests/loggable_test.cc",
-    ]
+    sources = [ "instrumentationtests/loggable_test.cc" ]
 
     deps = [
       ":base_jni",

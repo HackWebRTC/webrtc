@@ -23,19 +23,13 @@ group("api") {
 
 rtc_source_set("call_api") {
   visibility = [ "*" ]
-  sources = [
-    "call/audio_sink.h",
-  ]
+  sources = [ "call/audio_sink.h" ]
 }
 
 rtc_source_set("callfactory_api") {
   visibility = [ "*" ]
-  sources = [
-    "call/call_factory_interface.h",
-  ]
-  deps = [
-    "../rtc_base/system:rtc_export",
-  ]
+  sources = [ "call/call_factory_interface.h" ]
+  deps = [ "../rtc_base/system:rtc_export" ]
 }
 
 if (!build_with_chromium) {
@@ -248,17 +242,13 @@ rtc_source_set("packet_socket_factory") {
 
 rtc_source_set("scoped_refptr") {
   visibility = [ "*" ]
-  sources = [
-    "scoped_refptr.h",
-  ]
+  sources = [ "scoped_refptr.h" ]
 }
 
 rtc_source_set("video_quality_test_fixture_api") {
   visibility = [ "*" ]
   testonly = true
-  sources = [
-    "test/video_quality_test_fixture.h",
-  ]
+  sources = [ "test/video_quality_test_fixture.h" ]
   deps = [
     ":fec_controller_api",
     ":libjingle_peerconnection_api",
@@ -279,9 +269,7 @@ rtc_source_set("video_quality_test_fixture_api") {
 rtc_source_set("video_quality_analyzer_api") {
   visibility = [ "*" ]
   testonly = true
-  sources = [
-    "test/video_quality_analyzer_interface.h",
-  ]
+  sources = [ "test/video_quality_analyzer_interface.h" ]
 
   deps = [
     ":stats_observer_interface",
@@ -295,9 +283,7 @@ rtc_source_set("video_quality_analyzer_api") {
 
 rtc_source_set("track_id_stream_label_map") {
   visibility = [ "*" ]
-  sources = [
-    "test/track_id_stream_label_map.h",
-  ]
+  sources = [ "test/track_id_stream_label_map.h" ]
 }
 
 rtc_library("rtp_parameters") {
@@ -320,9 +306,7 @@ rtc_library("rtp_parameters") {
 rtc_source_set("audio_quality_analyzer_api") {
   visibility = [ "*" ]
   testonly = true
-  sources = [
-    "test/audio_quality_analyzer_interface.h",
-  ]
+  sources = [ "test/audio_quality_analyzer_interface.h" ]
 
   deps = [
     ":stats_observer_interface",
@@ -333,9 +317,7 @@ rtc_source_set("audio_quality_analyzer_api") {
 rtc_source_set("stats_observer_interface") {
   visibility = [ "*" ]
   testonly = true
-  sources = [
-    "test/stats_observer_interface.h",
-  ]
+  sources = [ "test/stats_observer_interface.h" ]
 
   deps = [
     # For api/stats_types.h
@@ -347,9 +329,7 @@ rtc_source_set("stats_observer_interface") {
 rtc_source_set("peer_connection_quality_test_fixture_api") {
   visibility = [ "*" ]
   testonly = true
-  sources = [
-    "test/peerconnection_quality_test_fixture.h",
-  ]
+  sources = [ "test/peerconnection_quality_test_fixture.h" ]
 
   deps = [
     ":audio_quality_analyzer_api",
@@ -380,9 +360,7 @@ rtc_source_set("peer_connection_quality_test_fixture_api") {
 rtc_source_set("frame_generator_api") {
   visibility = [ "*" ]
   testonly = true
-  sources = [
-    "test/frame_generator_interface.h",
-  ]
+  sources = [ "test/frame_generator_interface.h" ]
 
   deps = [
     ":scoped_refptr",
@@ -471,9 +449,7 @@ rtc_library("create_frame_generator") {
 
 rtc_source_set("libjingle_logging_api") {
   visibility = [ "*" ]
-  sources = [
-    "rtc_event_log_output.h",
-  ]
+  sources = [ "rtc_event_log_output.h" ]
 }
 
 rtc_library("rtc_event_log_output_file") {
@@ -535,9 +511,7 @@ rtc_library("transport_api") {
 
 rtc_source_set("bitrate_allocation") {
   visibility = [ "*" ]
-  sources = [
-    "call/bitrate_allocation.h",
-  ]
+  sources = [ "call/bitrate_allocation.h" ]
   deps = [
     "units:data_rate",
     "units:time_delta",
@@ -547,9 +521,7 @@ rtc_source_set("bitrate_allocation") {
 # TODO(srte): Move to network_emulation sub directory.
 rtc_source_set("simulated_network_api") {
   visibility = [ "*" ]
-  sources = [
-    "test/simulated_network.h",
-  ]
+  sources = [ "test/simulated_network.h" ]
   deps = [
     "../rtc_base",
     "../rtc_base:criticalsection",
@@ -590,16 +562,12 @@ rtc_source_set("fec_controller_api") {
 
 rtc_source_set("network_state_predictor_api") {
   visibility = [ "*" ]
-  sources = [
-    "network_state_predictor.h",
-  ]
+  sources = [ "network_state_predictor.h" ]
 }
 
 rtc_source_set("array_view") {
   visibility = [ "*" ]
-  sources = [
-    "array_view.h",
-  ]
+  sources = [ "array_view.h" ]
   deps = [
     "../rtc_base:checks",
     "../rtc_base:type_traits",
@@ -608,12 +576,8 @@ rtc_source_set("array_view") {
 
 rtc_source_set("refcountedbase") {
   visibility = [ "*" ]
-  sources = [
-    "ref_counted_base.h",
-  ]
-  deps = [
-    "../rtc_base:rtc_base_approved",
-  ]
+  sources = [ "ref_counted_base.h" ]
+  deps = [ "../rtc_base:rtc_base_approved" ]
 }
 
 rtc_library("ice_transport_factory") {
@@ -643,12 +607,8 @@ rtc_library("neteq_simulator_api") {
 
 rtc_source_set("function_view") {
   visibility = [ "*" ]
-  sources = [
-    "function_view.h",
-  ]
-  deps = [
-    "../rtc_base:checks",
-  ]
+  sources = [ "function_view.h" ]
+  deps = [ "../rtc_base:checks" ]
 }
 
 if (rtc_include_tests) {
@@ -690,9 +650,7 @@ if (rtc_include_tests) {
   rtc_source_set("simulcast_test_fixture_api") {
     visibility = [ "*" ]
     testonly = true
-    sources = [
-      "test/simulcast_test_fixture.h",
-    ]
+    sources = [ "test/simulcast_test_fixture.h" ]
   }
 
   rtc_library("create_simulcast_test_fixture_api") {
@@ -745,9 +703,7 @@ if (rtc_include_tests) {
 
   rtc_source_set("mock_audio_mixer") {
     testonly = true
-    sources = [
-      "test/mock_audio_mixer.h",
-    ]
+    sources = [ "test/mock_audio_mixer.h" ]
 
     deps = [
       "../test:test_support",
@@ -757,9 +713,7 @@ if (rtc_include_tests) {
 
   rtc_source_set("mock_fec_controller_override") {
     testonly = true
-    sources = [
-      "test/mock_fec_controller_override.h",
-    ]
+    sources = [ "test/mock_fec_controller_override.h" ]
     deps = [
       ":fec_controller_api",
       "../test:test_support",
@@ -830,9 +784,7 @@ if (rtc_include_tests) {
   rtc_source_set("dummy_peer_connection") {
     visibility = [ "*" ]
     testonly = true
-    sources = [
-      "test/dummy_peer_connection.h",
-    ]
+    sources = [ "test/dummy_peer_connection.h" ]
 
     deps = [
       ":libjingle_peerconnection_api",
@@ -844,9 +796,7 @@ if (rtc_include_tests) {
 
   rtc_source_set("mock_peerconnectioninterface") {
     testonly = true
-    sources = [
-      "test/mock_peerconnectioninterface.h",
-    ]
+    sources = [ "test/mock_peerconnectioninterface.h" ]
 
     deps = [
       ":libjingle_peerconnection_api",
@@ -869,9 +819,7 @@ if (rtc_include_tests) {
 
   rtc_source_set("mock_video_bitrate_allocator") {
     testonly = true
-    sources = [
-      "test/mock_video_bitrate_allocator.h",
-    ]
+    sources = [ "test/mock_video_bitrate_allocator.h" ]
 
     deps = [
       "../api/video:video_bitrate_allocator",
@@ -881,9 +829,7 @@ if (rtc_include_tests) {
 
   rtc_source_set("mock_video_bitrate_allocator_factory") {
     testonly = true
-    sources = [
-      "test/mock_video_bitrate_allocator_factory.h",
-    ]
+    sources = [ "test/mock_video_bitrate_allocator_factory.h" ]
 
     deps = [
       "../api/video:video_bitrate_allocator_factory",
@@ -970,9 +916,7 @@ if (rtc_include_tests) {
   rtc_library("time_controller") {
     visibility = [ "*" ]
     testonly = true
-    sources = [
-      "test/time_controller.h",
-    ]
+    sources = [ "test/time_controller.h" ]
 
     deps = [
       "../modules:module_api",
@@ -1052,9 +996,7 @@ if (rtc_include_tests) {
   rtc_library("compile_all_headers") {
     testonly = true
 
-    sources = [
-      "test/compile_all_headers.cc",
-    ]
+    sources = [ "test/compile_all_headers.cc" ]
 
     deps = [
       ":fake_frame_decryptor",

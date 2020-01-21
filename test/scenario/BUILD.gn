@@ -35,16 +35,12 @@ if (is_ios) {
   bundle_data("scenario_resources_bundle_data") {
     testonly = true
     sources = scenario_resources
-    outputs = [
-      "{{bundle_resources_dir}}/{{source_file_part}}",
-    ]
+    outputs = [ "{{bundle_resources_dir}}/{{source_file_part}}" ]
   }
   bundle_data("scenario_unittest_resources_bundle_data") {
     testonly = true
     sources = scenario_unittest_resources
-    outputs = [
-      "{{bundle_resources_dir}}/{{source_file_part}}",
-    ]
+    outputs = [ "{{bundle_resources_dir}}/{{source_file_part}}" ]
   }
 }
 if (rtc_include_tests) {

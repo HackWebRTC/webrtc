@@ -13,15 +13,9 @@ if (is_android) {
 }
 
 rtc_library("rw_lock_wrapper") {
-  public = [
-    "rw_lock_wrapper.h",
-  ]
-  sources = [
-    "rw_lock_wrapper.cc",
-  ]
-  deps = [
-    "..:macromagic",
-  ]
+  public = [ "rw_lock_wrapper.h" ]
+  sources = [ "rw_lock_wrapper.cc" ]
+  deps = [ "..:macromagic" ]
   if (is_win) {
     sources += [
       "rw_lock_win.cc",
@@ -66,9 +60,7 @@ rtc_library("yield_policy") {
 if (rtc_include_tests) {
   rtc_library("synchronization_unittests") {
     testonly = true
-    sources = [
-      "yield_policy_unittest.cc",
-    ]
+    sources = [ "yield_policy_unittest.cc" ]
     deps = [
       ":yield_policy",
       "..:rtc_event",
@@ -79,9 +71,7 @@ if (rtc_include_tests) {
   rtc_library("sequence_checker_unittests") {
     testonly = true
 
-    sources = [
-      "sequence_checker_unittest.cc",
-    ]
+    sources = [ "sequence_checker_unittest.cc" ]
     deps = [
       ":sequence_checker",
       "..:checks",

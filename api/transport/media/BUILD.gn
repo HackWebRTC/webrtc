@@ -39,9 +39,7 @@ rtc_library("audio_interfaces") {
     "audio_transport.cc",
     "audio_transport.h",
   ]
-  deps = [
-    "../..:array_view",
-  ]
+  deps = [ "../..:array_view" ]
 }
 
 rtc_library("video_interfaces") {
@@ -50,7 +48,5 @@ rtc_library("video_interfaces") {
     "video_transport.cc",
     "video_transport.h",
   ]
-  deps = [
-    "../../video:encoded_image",
-  ]
+  deps = [ "../../video:encoded_image" ]
 }

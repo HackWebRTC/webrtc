@@ -13,16 +13,12 @@ if (rtc_enable_protobuf) {
 
 if (rtc_enable_protobuf) {
   proto_library("network_tester_config_proto") {
-    sources = [
-      "network_tester_config.proto",
-    ]
+    sources = [ "network_tester_config.proto" ]
     proto_out_dir = "rtc_tools/network_tester"
   }
 
   proto_library("network_tester_packet_proto") {
-    sources = [
-      "network_tester_packet.proto",
-    ]
+    sources = [ "network_tester_packet.proto" ]
     proto_out_dir = "rtc_tools/network_tester"
   }
 
@@ -67,18 +63,14 @@ if (rtc_enable_protobuf) {
     bundle_data("network_tester_unittests_bundle_data") {
       testonly = true
       sources = network_tester_unittests_resources
-      outputs = [
-        "{{bundle_resources_dir}}/{{source_file_part}}",
-      ]
+      outputs = [ "{{bundle_resources_dir}}/{{source_file_part}}" ]
     }
   }
 
   rtc_library("network_tester_unittests") {
     testonly = true
 
-    sources = [
-      "network_tester_unittest.cc",
-    ]
+    sources = [ "network_tester_unittest.cc" ]
 
     deps = [
       ":network_tester",
@@ -98,13 +90,9 @@ if (rtc_enable_protobuf) {
   }
 
   rtc_executable("network_tester_server") {
-    sources = [
-      "server.cc",
-    ]
+    sources = [ "server.cc" ]
 
-    deps = [
-      ":network_tester",
-    ]
+    deps = [ ":network_tester" ]
   }
 }
 
@@ -147,13 +135,9 @@ if (is_android) {
   }
 
   rtc_shared_library("network_tester_so") {
-    sources = [
-      "jni.cpp",
-    ]
+    sources = [ "jni.cpp" ]
 
-    deps = [
-      ":network_tester",
-    ]
+    deps = [ ":network_tester" ]
 
     suppressed_configs += [ "//build/config/android:hide_all_but_jni_onload" ]
     configs += [ "//build/config/android:hide_all_but_jni" ]

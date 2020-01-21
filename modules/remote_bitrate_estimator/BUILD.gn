@@ -82,9 +82,7 @@ if (!build_with_chromium) {
 
   rtc_executable("rtp_to_text") {
     testonly = true
-    sources = [
-      "tools/rtp_to_text.cc",
-    ]
+    sources = [ "tools/rtp_to_text.cc" ]
     deps = [
       ":bwe_rtp",
       "../../modules/rtp_rtcp",

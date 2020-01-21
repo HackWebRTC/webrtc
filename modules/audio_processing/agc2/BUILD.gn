@@ -199,9 +199,7 @@ rtc_library("adaptive_digital_unittests") {
 
 rtc_library("biquad_filter_unittests") {
   testonly = true
-  sources = [
-    "biquad_filter_unittest.cc",
-  ]
+  sources = [ "biquad_filter_unittest.cc" ]
   deps = [
     ":biquad_filter",
     "../../../rtc_base:gunit_helpers",
@@ -260,9 +258,7 @@ rtc_library("noise_estimator_unittests") {
 
 rtc_library("rnn_vad_with_level_unittests") {
   testonly = true
-  sources = [
-    "vad_with_level_unittest.cc",
-  ]
+  sources = [ "vad_with_level_unittest.cc" ]
   deps = [
     ":rnn_vad_with_level",
     "..:audio_frame_view",

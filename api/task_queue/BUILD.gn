@@ -15,9 +15,7 @@ rtc_library("task_queue") {
     "task_queue_base.h",
     "task_queue_factory.h",
   ]
-  sources = [
-    "task_queue_base.cc",
-  ]
+  sources = [ "task_queue_base.cc" ]
 
   deps = [
     "../../rtc_base:checks",
@@ -75,12 +73,8 @@ rtc_library("default_task_queue_factory") {
   if (!is_ios && !is_android) {
     poisonous = [ "default_task_queue" ]
   }
-  sources = [
-    "default_task_queue_factory.h",
-  ]
-  deps = [
-    ":task_queue",
-  ]
+  sources = [ "default_task_queue_factory.h" ]
+  deps = [ ":task_queue" ]
 
   if (rtc_enable_libevent) {
     sources += [ "default_task_queue_factory_libevent.cc" ]
@@ -100,9 +94,7 @@ rtc_library("default_task_queue_factory") {
 if (rtc_include_tests) {
   rtc_library("task_queue_default_factory_unittests") {
     testonly = true
-    sources = [
-      "default_task_queue_factory_unittest.cc",
-    ]
+    sources = [ "default_task_queue_factory_unittest.cc" ]
     deps = [
       ":default_task_queue_factory",
       ":task_queue_test",

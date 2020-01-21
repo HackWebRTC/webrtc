@@ -87,9 +87,7 @@ rtc_source_set("tick_timer") {
 rtc_source_set("tick_timer_unittest") {
   visibility = [ "*" ]
   testonly = true
-  sources = [
-    "tick_timer_unittest.cc",
-  ]
+  sources = [ "tick_timer_unittest.cc" ]
   deps = [
     ":tick_timer",
     "../../test:test_support",

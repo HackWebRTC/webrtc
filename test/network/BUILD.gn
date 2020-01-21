@@ -62,9 +62,7 @@ rtc_library("emulated_network") {
 
 rtc_library("network_emulation_unittest") {
   testonly = true
-  sources = [
-    "network_emulation_unittest.cc",
-  ]
+  sources = [ "network_emulation_unittest.cc" ]
   deps = [
     ":emulated_network",
     "../:test_support",
@@ -80,9 +78,7 @@ rtc_library("network_emulation_unittest") {
 
 rtc_library("network_emulation_pc_unittest") {
   testonly = true
-  sources = [
-    "network_emulation_pc_unittest.cc",
-  ]
+  sources = [ "network_emulation_pc_unittest.cc" ]
   deps = [
     ":emulated_network",
     "../:test_support",
@@ -108,9 +104,7 @@ rtc_library("network_emulation_pc_unittest") {
 
 rtc_library("cross_traffic_unittest") {
   testonly = true
-  sources = [
-    "cross_traffic_unittest.cc",
-  ]
+  sources = [ "cross_traffic_unittest.cc" ]
   deps = [
     ":emulated_network",
     "../:test_support",
@@ -141,9 +135,7 @@ rtc_library("feedback_generator") {
 
 rtc_library("feedback_generator_unittest") {
   testonly = true
-  sources = [
-    "feedback_generator_unittest.cc",
-  ]
+  sources = [ "feedback_generator_unittest.cc" ]
   deps = [
     "../:test_support",
     "../../api/transport:test_feedback_generator",

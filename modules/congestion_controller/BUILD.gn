@@ -42,9 +42,7 @@ if (rtc_include_tests) {
   rtc_library("congestion_controller_unittests") {
     testonly = true
 
-    sources = [
-      "receive_side_congestion_controller_unittest.cc",
-    ]
+    sources = [ "receive_side_congestion_controller_unittest.cc" ]
     deps = [
       ":congestion_controller",
       "../../system_wrappers",

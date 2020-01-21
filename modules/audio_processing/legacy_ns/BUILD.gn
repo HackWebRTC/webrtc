@@ -34,9 +34,7 @@ rtc_library("legacy_ns") {
 
 rtc_library("legacy_ns_c") {
   visibility = [ "*" ]  # Only targets in this file can depend on this.
-  sources = [
-    "windows_private.h",
-  ]
+  sources = [ "windows_private.h" ]
 
   if (rtc_prefer_fixed_point) {
     sources += [
@@ -89,9 +87,7 @@ if (rtc_include_tests) {
     testonly = true
 
     configs += []
-    sources = [
-      "legacy_noise_suppression_unittest.cc",
-    ]
+    sources = [ "legacy_noise_suppression_unittest.cc" ]
 
     deps = [
       "..:audio_buffer",

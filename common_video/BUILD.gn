@@ -72,9 +72,7 @@ if (rtc_include_tests) {
     bundle_data("common_video_unittests_bundle_data") {
       testonly = true
       sources = common_video_resources
-      outputs = [
-        "{{bundle_resources_dir}}/{{source_file_part}}",
-      ]
+      outputs = [ "{{bundle_resources_dir}}/{{source_file_part}}" ]
     }
   }
 

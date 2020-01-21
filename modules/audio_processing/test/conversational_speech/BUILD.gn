@@ -10,16 +10,12 @@ import("../../../../webrtc.gni")
 
 group("conversational_speech") {
   testonly = true
-  deps = [
-    ":conversational_speech_generator",
-  ]
+  deps = [ ":conversational_speech_generator" ]
 }
 
 rtc_executable("conversational_speech_generator") {
   testonly = true
-  sources = [
-    "generator.cc",
-  ]
+  sources = [ "generator.cc" ]
   deps = [
     ":lib",
     "../../../../test:fileutils",

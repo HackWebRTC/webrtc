@@ -28,27 +28,19 @@ if (!rtc_build_ssl) {
 }
 
 rtc_source_set("protobuf_utils") {
-  sources = [
-    "protobuf_utils.h",
-  ]
+  sources = [ "protobuf_utils.h" ]
   if (rtc_enable_protobuf) {
     public_configs = [ "//third_party/protobuf:protobuf_config" ]
-    deps = [
-      "//third_party/protobuf:protobuf_lite",
-    ]
+    deps = [ "//third_party/protobuf:protobuf_lite" ]
   }
 }
 
 rtc_source_set("compile_assert_c") {
-  sources = [
-    "compile_assert_c.h",
-  ]
+  sources = [ "compile_assert_c.h" ]
 }
 
 rtc_source_set("ignore_wundef") {
-  sources = [
-    "ignore_wundef.h",
-  ]
+  sources = [ "ignore_wundef.h" ]
 }
 
 # The subset of rtc_base approved for use outside of libjingle.
@@ -116,9 +108,7 @@ rtc_library("rtc_base_approved") {
       "win/windows_version.cc",
       "win/windows_version.h",
     ]
-    data_deps = [
-      "//build/win:runtime_libs",
-    ]
+    data_deps = [ "//build/win:runtime_libs" ]
   }
 
   if (is_nacl) {
@@ -155,9 +145,7 @@ rtc_source_set("macromagic") {
     "stringize_macros.h",
     "thread_annotations.h",
   ]
-  deps = [
-    "system:arch",
-  ]
+  deps = [ "system:arch" ]
 }
 
 rtc_library("platform_thread_types") {
@@ -174,9 +162,7 @@ rtc_source_set("refcount") {
     "ref_counted_object.h",
     "ref_counter.h",
   ]
-  deps = [
-    ":macromagic",
-  ]
+  deps = [ ":macromagic" ]
 }
 
 rtc_library("criticalsection") {
@@ -291,9 +277,7 @@ rtc_library("logging") {
 }
 
 rtc_source_set("thread_checker") {
-  sources = [
-    "thread_checker.h",
-  ]
+  sources = [ "thread_checker.h" ]
   deps = [
     ":deprecation",
     "synchronization:sequence_checker",
@@ -301,9 +285,7 @@ rtc_source_set("thread_checker") {
 }
 
 rtc_source_set("atomicops") {
-  sources = [
-    "atomic_ops.h",
-  ]
+  sources = [ "atomic_ops.h" ]
 }
 
 rtc_library("checks") {
@@ -339,18 +321,12 @@ rtc_library("rate_limiter") {
 }
 
 rtc_source_set("sanitizer") {
-  sources = [
-    "sanitizer.h",
-  ]
-  deps = [
-    "//third_party/abseil-cpp/absl/meta:type_traits",
-  ]
+  sources = [ "sanitizer.h" ]
+  deps = [ "//third_party/abseil-cpp/absl/meta:type_traits" ]
 }
 
 rtc_source_set("divide_round") {
-  sources = [
-    "numerics/divide_round.h",
-  ]
+  sources = [ "numerics/divide_round.h" ]
   deps = [
     ":checks",
     ":safe_compare",
@@ -358,18 +334,12 @@ rtc_source_set("divide_round") {
 }
 
 rtc_source_set("safe_compare") {
-  sources = [
-    "numerics/safe_compare.h",
-  ]
-  deps = [
-    ":type_traits",
-  ]
+  sources = [ "numerics/safe_compare.h" ]
+  deps = [ ":type_traits" ]
 }
 
 rtc_source_set("safe_minmax") {
-  sources = [
-    "numerics/safe_minmax.h",
-  ]
+  sources = [ "numerics/safe_minmax.h" ]
   deps = [
     ":checks",
     ":safe_compare",
@@ -382,9 +352,7 @@ rtc_source_set("safe_conversions") {
     "numerics/safe_conversions.h",
     "numerics/safe_conversions_impl.h",
   ]
-  deps = [
-    ":checks",
-  ]
+  deps = [ ":checks" ]
 }
 
 rtc_library("timeutils") {
@@ -438,15 +406,11 @@ rtc_library("audio_format_to_string") {
 }
 
 rtc_source_set("type_traits") {
-  sources = [
-    "type_traits.h",
-  ]
+  sources = [ "type_traits.h" ]
 }
 
 rtc_source_set("deprecation") {
-  sources = [
-    "deprecation.h",
-  ]
+  sources = [ "deprecation.h" ]
 }
 
 rtc_library("rtc_task_queue") {
@@ -629,14 +593,10 @@ rtc_library("rtc_json") {
     "strings/json.cc",
     "strings/json.h",
   ]
-  deps = [
-    ":stringutils",
-  ]
+  deps = [ ":stringutils" ]
   all_dependent_configs = [ "//third_party/jsoncpp:jsoncpp_config" ]
   if (rtc_build_json) {
-    public_deps = [
-      "//third_party/jsoncpp",
-    ]
+    public_deps = [ "//third_party/jsoncpp" ]  # no-presubmit-check TODO(webrtc:8603)
   } else {
     include_dirs = [ "$rtc_jsoncpp_root" ]
 
@@ -803,9 +763,7 @@ rtc_library("rtc_base") {
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
-  public_deps = [
-    ":rtc_base_approved",
-  ]
+  public_deps = [ ":rtc_base_approved" ]  # no-presubmit-check TODO(webrtc:8603)
   public_configs = []
 
   sources = [
@@ -1008,9 +966,7 @@ rtc_library("rtc_base") {
 }
 
 rtc_source_set("gtest_prod") {
-  sources = [
-    "gtest_prod_util.h",
-  ]
+  sources = [ "gtest_prod_util.h" ]
 }
 
 rtc_library("gunit_helpers") {
@@ -1119,9 +1075,7 @@ rtc_library("task_queue_for_test") {
 if (rtc_include_tests) {
   rtc_library("sigslot_unittest") {
     testonly = true
-    sources = [
-      "sigslot_unittest.cc",
-    ]
+    sources = [ "sigslot_unittest.cc" ]
     deps = [
       ":gunit_helpers",
       ":rtc_base",
@@ -1243,9 +1197,7 @@ if (rtc_include_tests) {
   rtc_library("rtc_task_queue_unittests") {
     testonly = true
 
-    sources = [
-      "task_queue_unittest.cc",
-    ]
+    sources = [ "task_queue_unittest.cc" ]
     deps = [
       ":gunit_helpers",
       ":rtc_base_approved",
@@ -1261,9 +1213,7 @@ if (rtc_include_tests) {
   rtc_library("rtc_operations_chain_unittests") {
     testonly = true
 
-    sources = [
-      "operations_chain_unittest.cc",
-    ]
+    sources = [ "operations_chain_unittest.cc" ]
     deps = [
       ":rtc_base",
       ":rtc_base_approved",
@@ -1276,9 +1226,7 @@ if (rtc_include_tests) {
   rtc_library("weak_ptr_unittests") {
     testonly = true
 
-    sources = [
-      "weak_ptr_unittest.cc",
-    ]
+    sources = [ "weak_ptr_unittest.cc" ]
     deps = [
       ":gunit_helpers",
       ":rtc_base_approved",
@@ -1316,9 +1264,7 @@ if (rtc_include_tests) {
   rtc_library("rtc_json_unittests") {
     testonly = true
 
-    sources = [
-      "strings/json_unittest.cc",
-    ]
+    sources = [ "strings/json_unittest.cc" ]
     deps = [
       ":gunit_helpers",
       ":rtc_base_tests_utils",
@@ -1390,9 +1336,7 @@ if (rtc_include_tests) {
       "//third_party/abseil-cpp/absl/strings",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
-    public_deps = [
-      ":rtc_base",
-    ]
+    public_deps = [ ":rtc_base" ]  # no-presubmit-check TODO(webrtc:8603)
     if (build_with_chromium) {
       include_dirs = [ "../../boringssl/src/include" ]
     }

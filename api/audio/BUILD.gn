@@ -26,9 +26,7 @@ rtc_library("audio_frame_api") {
 
 rtc_source_set("audio_mixer_api") {
   visibility = [ "*" ]
-  sources = [
-    "audio_mixer.h",
-  ]
+  sources = [ "audio_mixer.h" ]
 
   deps = [
     ":audio_frame_api",
@@ -86,10 +84,6 @@ rtc_library("aec3_factory") {
 
 rtc_source_set("echo_control") {
   visibility = [ "*" ]
-  sources = [
-    "echo_control.h",
-  ]
-  deps = [
-    "../../rtc_base:checks",
-  ]
+  sources = [ "echo_control.h" ]
+  deps = [ "../../rtc_base:checks" ]
 }

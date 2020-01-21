@@ -28,9 +28,7 @@ if (!build_with_chromium) {
   # 'ninja default' and then 'ninja all', the second build should do no work.
   group("default") {
     testonly = true
-    deps = [
-      ":webrtc",
-    ]
+    deps = [ ":webrtc" ]
     if (rtc_build_examples) {
       deps += [ "examples" ]
     }
@@ -74,8 +72,8 @@ if (!build_with_chromium) {
       if (is_android) {
         deps += [
           "examples:android_examples_junit_tests",
-          "sdk/android:android_sdk_junit_tests",
           "sdk/android:android_instrumentation_test_apk",
+          "sdk/android:android_sdk_junit_tests",
         ]
       } else {
         deps += [ "modules/video_capture:video_capture_tests" ]
@@ -486,9 +484,7 @@ if (!build_with_chromium) {
     rtc_executable("webrtc_lib_link_test") {
       testonly = true
 
-      sources = [
-        "webrtc_lib_link_test.cc",
-      ]
+      sources = [ "webrtc_lib_link_test.cc" ]
       deps = [
         # NOTE: Don't add deps here. If this test fails to link, it means you
         # need to add stuff to the webrtc static lib target above.
@@ -504,9 +500,7 @@ rtc_source_set("webrtc_common") {
   # TODO(bugs.webrtc.org/9808): Move to private visibility as soon as that
   # client code gets updated.
   visibility = [ "*" ]
-  sources = [
-    "common_types.h",
-  ]
+  sources = [ "common_types.h" ]
 }
 
 if (use_libfuzzer || use_afl) {
@@ -514,9 +508,7 @@ if (use_libfuzzer || use_afl) {
   # webrtc/test/fuzzers/.
   group("webrtc_fuzzers_dummy") {
     testonly = true
-    deps = [
-      "test/fuzzers:webrtc_fuzzer_main",
-    ]
+    deps = [ "test/fuzzers:webrtc_fuzzer_main" ]
   }
 }
 
@@ -595,9 +587,7 @@ if (rtc_include_tests) {
     bundle_data("video_engine_tests_bundle_data") {
       testonly = true
       sources = video_engine_tests_resources
-      outputs = [
-        "{{bundle_resources_dir}}/{{source_file_part}}",
-      ]
+      outputs = [ "{{bundle_resources_dir}}/{{source_file_part}}" ]
     }
   }
 
@@ -643,9 +633,7 @@ if (rtc_include_tests) {
     bundle_data("webrtc_perf_tests_bundle_data") {
       testonly = true
       sources = webrtc_perf_tests_resources
-      outputs = [
-        "{{bundle_resources_dir}}/{{source_file_part}}",
-      ]
+      outputs = [ "{{bundle_resources_dir}}/{{source_file_part}}" ]
     }
   }
 
@@ -674,9 +662,7 @@ if (rtc_include_tests) {
 
   rtc_test("webrtc_nonparallel_tests") {
     testonly = true
-    deps = [
-      "rtc_base:rtc_base_nonparallel_tests",
-    ]
+    deps = [ "rtc_base:rtc_base_nonparallel_tests" ]
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_support" ]
       shard_timeout = 900

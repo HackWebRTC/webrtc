@@ -120,9 +120,7 @@ if (rtc_include_tests) {
 
   rtc_executable("audio_mixer_test") {
     testonly = true
-    sources = [
-      "audio_mixer_test.cc",
-    ]
+    sources = [ "audio_mixer_test.cc" ]
 
     deps = [
       ":audio_mixer_impl",
