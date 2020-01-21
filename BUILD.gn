@@ -62,6 +62,7 @@ if (!build_with_chromium) {
         "video:screenshare_loopback",
         "video:sv_loopback",
         "video:video_loopback",
+        "video:video_replay",
       ]
       if (!is_asan) {
         # Do not build :webrtc_lib_link_test because lld complains on some OS

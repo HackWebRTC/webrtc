@@ -19,6 +19,7 @@
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/video/function_video_decoder_factory.h"
+#include "api/transport/field_trial_based_config.h"
 #include "api/video_codecs/video_decoder.h"
 #include "call/call.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
@@ -267,6 +268,7 @@ class RtpReplayer final {
     webrtc::RtcEventLogNull event_log;
     Call::Config call_config(&event_log);
     call_config.task_queue_factory = task_queue_factory.get();
+    call_config.trials = new FieldTrialBasedConfig();
     std::unique_ptr<Call> call(Call::Create(call_config));
     std::unique_ptr<StreamState> stream_state;
     // Attempt to load the configuration
