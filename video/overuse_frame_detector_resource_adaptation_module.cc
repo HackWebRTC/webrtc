@@ -357,7 +357,7 @@ OveruseFrameDetectorResourceAdaptationModule::
       overuse_detector_(std::move(overuse_detector)),
       overuse_detector_is_started_(false),
       target_frame_rate_(absl::nullopt),
-      encoder_start_bitrate_bps_(0),
+      target_bitrate_bps_(absl::nullopt),
       is_quality_scaler_enabled_(false),
       encoder_settings_(absl::nullopt),
       encoder_stats_observer_(encoder_stats_observer) {
@@ -426,6 +426,11 @@ void OveruseFrameDetectorResourceAdaptationModule::SetEncoderSettings(
   MaybeUpdateTargetFrameRate();
 }
 
+void OveruseFrameDetectorResourceAdaptationModule::SetEncoderTargetBitrate(
+    absl::optional<uint32_t> target_bitrate_bps) {
+  target_bitrate_bps_ = target_bitrate_bps;
+}
+
 void OveruseFrameDetectorResourceAdaptationModule::
     ResetVideoSourceRestrictions() {
   last_adaptation_request_.reset();
@@ -472,11 +477,6 @@ void OveruseFrameDetectorResourceAdaptationModule::SetLastFramePixelCount(
   last_frame_pixel_count_ = last_frame_pixel_count;
 }
 
-void OveruseFrameDetectorResourceAdaptationModule::SetEncoderStartBitrateBps(
-    uint32_t encoder_start_bitrate_bps) {
-  encoder_start_bitrate_bps_ = encoder_start_bitrate_bps;
-}
-
 void OveruseFrameDetectorResourceAdaptationModule::SetIsQualityScalerEnabled(
     bool is_quality_scaler_enabled) {
   is_quality_scaler_enabled_ = is_quality_scaler_enabled;
@@ -516,7 +516,7 @@ void OveruseFrameDetectorResourceAdaptationModule::AdaptUp(AdaptReason reason) {
       if (reason == kQuality &&
           !balanced_settings_.CanAdaptUp(GetVideoCodecTypeOrGeneric(),
                                          *last_frame_pixel_count_,
-                                         encoder_start_bitrate_bps_)) {
+                                         target_bitrate_bps_.value_or(0))) {
         return;
       }
       // Try scale up framerate, if higher.
@@ -537,7 +537,7 @@ void OveruseFrameDetectorResourceAdaptationModule::AdaptUp(AdaptReason reason) {
       if (reason == kQuality &&
           !balanced_settings_.CanAdaptUpResolution(
               GetVideoCodecTypeOrGeneric(), *last_frame_pixel_count_,
-              encoder_start_bitrate_bps_)) {
+              target_bitrate_bps_.value_or(0))) {
         return;
       }
       // Scale up resolution.
@@ -548,7 +548,7 @@ void OveruseFrameDetectorResourceAdaptationModule::AdaptUp(AdaptReason reason) {
       // limits specified by encoder capabilities.
       if (reason == kQuality &&
           !CanAdaptUpResolution(*last_frame_pixel_count_,
-                                encoder_start_bitrate_bps_)) {
+                                target_bitrate_bps_.value_or(0))) {
         return;
       }
 

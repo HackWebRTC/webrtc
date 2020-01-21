@@ -73,6 +73,8 @@ class OveruseFrameDetectorResourceAdaptationModule
   void SetDegradationPreference(
       DegradationPreference degradation_preference) override;
   void SetEncoderSettings(EncoderSettings encoder_settings) override;
+  void SetEncoderTargetBitrate(
+      absl::optional<uint32_t> target_bitrate_bps) override;
   void ResetVideoSourceRestrictions() override;
 
   // Input to the OveruseFrameDetector, which are required for this module to
@@ -92,7 +94,6 @@ class OveruseFrameDetectorResourceAdaptationModule
   // resource adaptation module. Unify code paths where possible. Do we really
   // need this many public methods?
   void SetLastFramePixelCount(absl::optional<int> last_frame_pixel_count);
-  void SetEncoderStartBitrateBps(uint32_t encoder_start_bitrate_bps);
   // Inform the detector whether or not the quality scaler is enabled. This
   // helps GetActiveCounts() return absl::nullopt when appropriate.
   // TODO(hbos): This feels really hacky, can we report the right values without
@@ -215,7 +216,7 @@ class OveruseFrameDetectorResourceAdaptationModule
   const std::unique_ptr<OveruseFrameDetector> overuse_detector_;
   bool overuse_detector_is_started_;
   absl::optional<double> target_frame_rate_;
-  uint32_t encoder_start_bitrate_bps_;
+  absl::optional<uint32_t> target_bitrate_bps_;
   bool is_quality_scaler_enabled_;
   absl::optional<EncoderSettings> encoder_settings_;
   VideoStreamEncoderObserver* const encoder_stats_observer_;

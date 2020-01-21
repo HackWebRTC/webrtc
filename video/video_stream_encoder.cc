@@ -279,7 +279,7 @@ VideoStreamEncoder::VideoStreamEncoder(
       pending_encoder_creation_(false),
       crop_width_(0),
       crop_height_(0),
-      encoder_start_bitrate_bps_(0),
+      encoder_target_bitrate_bps_(absl::nullopt),
       set_start_bitrate_bps_(0),
       set_start_bitrate_time_ms_(0),
       has_seen_first_bwe_drop_(false),
@@ -405,9 +405,11 @@ void VideoStreamEncoder::SetSink(EncoderSink* sink, bool rotation_applied) {
 void VideoStreamEncoder::SetStartBitrate(int start_bitrate_bps) {
   encoder_queue_.PostTask([this, start_bitrate_bps] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
-    encoder_start_bitrate_bps_ = start_bitrate_bps;
-    resource_adaptation_module_->SetEncoderStartBitrateBps(
-        encoder_start_bitrate_bps_);
+    encoder_target_bitrate_bps_ =
+        start_bitrate_bps != 0 ? absl::optional<uint32_t>(start_bitrate_bps)
+                               : absl::nullopt;
+    resource_adaptation_module_->SetEncoderTargetBitrate(
+        encoder_target_bitrate_bps_);
     set_start_bitrate_bps_ = start_bitrate_bps;
     set_start_bitrate_time_ms_ = clock_->TimeInMilliseconds();
   });
@@ -619,8 +621,8 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   }
   RTC_LOG(LS_INFO) << log_stream.str();
 
-  codec.startBitrate =
-      std::max(encoder_start_bitrate_bps_ / 1000, codec.minBitrate);
+  codec.startBitrate = std::max(encoder_target_bitrate_bps_.value_or(0) / 1000,
+                                codec.minBitrate);
   codec.startBitrate = std::min(codec.startBitrate, codec.maxBitrate);
   codec.expect_encode_from_texture = last_frame_info_->is_texture;
   // Make sure the start bit rate is sane...
@@ -1617,11 +1619,11 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
 
   // On significant changes to BWE at the start of the call,
   // enable frame drops to quickly react to jumps in available bandwidth.
-  if (encoder_start_bitrate_bps_ != 0 &&
+  if (encoder_target_bitrate_bps_.has_value() &&
       !has_seen_first_significant_bwe_change_ && quality_scaler_ &&
       initial_framedrop_on_bwe_enabled_ &&
-      abs_diff(target_bitrate.bps(), encoder_start_bitrate_bps_) >=
-          kFramedropThreshold * encoder_start_bitrate_bps_) {
+      abs_diff(target_bitrate.bps(), encoder_target_bitrate_bps_.value()) >=
+          kFramedropThreshold * encoder_target_bitrate_bps_.value()) {
     // Reset initial framedrop feature when first real BW estimate arrives.
     // TODO(kthelgason): Update BitrateAllocator to not call OnBitrateUpdated
     // without an actual BW estimate.
@@ -1659,11 +1661,10 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
       link_allocation, target_bitrate, stable_target_bitrate};
   SetEncoderRates(UpdateBitrateAllocationAndNotifyObserver(new_rate_settings));
 
-  encoder_start_bitrate_bps_ = target_bitrate.bps() != 0
-                                   ? target_bitrate.bps()
-                                   : encoder_start_bitrate_bps_;
-  resource_adaptation_module_->SetEncoderStartBitrateBps(
-      encoder_start_bitrate_bps_);
+  if (target_bitrate.bps() != 0)
+    encoder_target_bitrate_bps_ = target_bitrate.bps();
+  resource_adaptation_module_->SetEncoderTargetBitrate(
+      encoder_target_bitrate_bps_);
 
   if (video_suspension_changed) {
     RTC_LOG(LS_INFO) << "Video suspend state changed to: "
@@ -1681,7 +1682,7 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
 
 bool VideoStreamEncoder::DropDueToSize(uint32_t pixel_count) const {
   if (initial_framedrop_ >= kMaxInitialFramedrop ||
-      encoder_start_bitrate_bps_ == 0) {
+      !encoder_target_bitrate_bps_.has_value()) {
     return false;
   }
 
@@ -1690,13 +1691,13 @@ bool VideoStreamEncoder::DropDueToSize(uint32_t pixel_count) const {
 
   if (encoder_bitrate_limits.has_value()) {
     // Use bitrate limits provided by encoder.
-    return encoder_start_bitrate_bps_ <
+    return encoder_target_bitrate_bps_.value() <
            static_cast<uint32_t>(encoder_bitrate_limits->min_start_bitrate_bps);
   }
 
-  if (encoder_start_bitrate_bps_ < 300000 /* qvga */) {
+  if (encoder_target_bitrate_bps_.value() < 300000 /* qvga */) {
     return pixel_count > 320 * 240;
-  } else if (encoder_start_bitrate_bps_ < 500000 /* vga */) {
+  } else if (encoder_target_bitrate_bps_.value() < 500000 /* vga */) {
     return pixel_count > 640 * 480;
   }
   return false;
@@ -1713,7 +1714,8 @@ bool VideoStreamEncoder::TryQualityRampup(int64_t now_ms) {
 
   if (quality_rampup_experiment_.BwHigh(now_ms, bw_kbps)) {
     // Verify that encoder is at max bitrate and the QP is low.
-    if (encoder_start_bitrate_bps_ == send_codec_.maxBitrate * 1000 &&
+    if (encoder_target_bitrate_bps_.value_or(0) ==
+            send_codec_.maxBitrate * 1000 &&
         quality_scaler_->QpFastFilterLow()) {
       return true;
     }

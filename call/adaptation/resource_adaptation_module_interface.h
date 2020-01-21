@@ -11,6 +11,7 @@
 #ifndef CALL_ADAPTATION_RESOURCE_ADAPTATION_MODULE_INTERFACE_H_
 #define CALL_ADAPTATION_RESOURCE_ADAPTATION_MODULE_INTERFACE_H_
 
+#include "absl/types/optional.h"
 #include "api/rtp_parameters.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_config.h"
@@ -84,6 +85,8 @@ class ResourceAdaptationModuleInterface {
   virtual void SetDegradationPreference(
       DegradationPreference degradation_preference) = 0;
   virtual void SetEncoderSettings(EncoderSettings encoder_settings) = 0;
+  virtual void SetEncoderTargetBitrate(
+      absl::optional<uint32_t> target_bitrate_bps) = 0;
   // Removes all restrictions; the module will need to adapt all over again.
   // TODO(hbos): It's not clear why anybody should be able to tell the module to
   // reset like this; can we get rid of this method?

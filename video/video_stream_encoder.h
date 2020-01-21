@@ -251,7 +251,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
       RTC_GUARDED_BY(&encoder_queue_);
   int crop_width_ RTC_GUARDED_BY(&encoder_queue_);
   int crop_height_ RTC_GUARDED_BY(&encoder_queue_);
-  uint32_t encoder_start_bitrate_bps_ RTC_GUARDED_BY(&encoder_queue_);
+  absl::optional<uint32_t> encoder_target_bitrate_bps_
+      RTC_GUARDED_BY(&encoder_queue_);
   int set_start_bitrate_bps_ RTC_GUARDED_BY(&encoder_queue_);
   int64_t set_start_bitrate_time_ms_ RTC_GUARDED_BY(&encoder_queue_);
   bool has_seen_first_bwe_drop_ RTC_GUARDED_BY(&encoder_queue_);
