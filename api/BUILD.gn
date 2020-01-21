@@ -96,6 +96,7 @@ rtc_library("rtp_packet_info") {
     "..:webrtc_common",
     "../rtc_base:deprecation",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
