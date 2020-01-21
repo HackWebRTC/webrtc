@@ -12,9 +12,31 @@
 #define CALL_ADAPTATION_RESOURCE_ADAPTATION_MODULE_INTERFACE_H_
 
 #include "api/rtp_parameters.h"
+#include "api/video_codecs/video_encoder.h"
+#include "api/video_codecs/video_encoder_config.h"
 #include "call/adaptation/video_source_restrictions.h"
 
 namespace webrtc {
+
+// Information about an encoder available when reconfiguring the encoder.
+class EncoderSettings {
+ public:
+  EncoderSettings(VideoEncoder::EncoderInfo encoder_info,
+                  VideoEncoderConfig encoder_config,
+                  VideoCodec video_codec);
+
+  // Encoder capabilities, implementation info, etc.
+  const VideoEncoder::EncoderInfo& encoder_info() const;
+  // Configuration parameters, ultimately coming from the API and negotiation.
+  const VideoEncoderConfig& encoder_config() const;
+  // Lower level config, heavily based on the VideoEncoderConfig.
+  const VideoCodec& video_codec() const;
+
+ private:
+  VideoEncoder::EncoderInfo encoder_info_;
+  VideoEncoderConfig encoder_config_;
+  VideoCodec video_codec_;
+};
 
 // The listener is responsible for carrying out the reconfiguration of the video
 // source such that the VideoSourceRestrictions are fulfilled.
@@ -61,6 +83,7 @@ class ResourceAdaptationModuleInterface {
   virtual void SetHasInputVideo(bool has_input_video) = 0;
   virtual void SetDegradationPreference(
       DegradationPreference degradation_preference) = 0;
+  virtual void SetEncoderSettings(EncoderSettings encoder_settings) = 0;
   // Removes all restrictions; the module will need to adapt all over again.
   // TODO(hbos): It's not clear why anybody should be able to tell the module to
   // reset like this; can we get rid of this method?

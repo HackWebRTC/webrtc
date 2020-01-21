@@ -34,6 +34,8 @@ class RTPFragmentationHeader;
 // TODO(pbos): Expose these through a public (root) header or change these APIs.
 struct CodecSpecificInfo;
 
+constexpr int kDefaultMinPixelsPerFrame = 320 * 180;
+
 class EncodedImageCallback {
  public:
   virtual ~EncodedImageCallback() {}
@@ -115,7 +117,7 @@ class RTC_EXPORT VideoEncoder {
     // TODO(kthelgason): Lower this limit when better testing
     // on MediaCodec and fallback implementations are in place.
     // See https://bugs.chromium.org/p/webrtc/issues/detail?id=7206
-    int min_pixels_per_frame = 320 * 180;
+    int min_pixels_per_frame = kDefaultMinPixelsPerFrame;
 
    private:
     // Private constructor; to get an object without thresholds, use

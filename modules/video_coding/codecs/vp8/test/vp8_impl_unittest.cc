@@ -50,7 +50,6 @@ constexpr int64_t kTestNtpTimeMs = 456;
 constexpr int64_t kInitialTimestampMs = 789;
 constexpr int kNumCores = 1;
 constexpr size_t kMaxPayloadSize = 1440;
-constexpr int kDefaultMinPixelsPerFrame = 320 * 180;
 constexpr int kWidth = 172;
 constexpr int kHeight = 144;
 constexpr float kFramerateFps = 30;

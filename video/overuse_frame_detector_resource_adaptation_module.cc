@@ -356,12 +356,10 @@ OveruseFrameDetectorResourceAdaptationModule::
       source_restrictor_(std::make_unique<VideoSourceRestrictor>()),
       overuse_detector_(std::move(overuse_detector)),
       overuse_detector_is_started_(false),
-      codec_max_frame_rate_(absl::nullopt),
       target_frame_rate_(absl::nullopt),
       encoder_start_bitrate_bps_(0),
       is_quality_scaler_enabled_(false),
-      encoder_config_(),
-      encoder_(nullptr),
+      encoder_settings_(absl::nullopt),
       encoder_stats_observer_(encoder_stats_observer) {
   RTC_DCHECK(adaptation_listener_);
   RTC_DCHECK(video_stream_encoder_);
@@ -372,14 +370,9 @@ OveruseFrameDetectorResourceAdaptationModule::
 OveruseFrameDetectorResourceAdaptationModule::
     ~OveruseFrameDetectorResourceAdaptationModule() {}
 
-void OveruseFrameDetectorResourceAdaptationModule::SetEncoder(
-    VideoEncoder* encoder) {
-  encoder_ = encoder;
-}
-
 void OveruseFrameDetectorResourceAdaptationModule::StartResourceAdaptation(
     ResourceAdaptationModuleListener* adaptation_listener) {
-  RTC_DCHECK(encoder_);
+  RTC_DCHECK(encoder_settings_.has_value());
   RTC_DCHECK(!overuse_detector_is_started_);
   // TODO(hbos): When AdaptUp() and AdaptDown() are no longer invoked outside
   // the interval between StartCheckForOveruse() and StopCheckForOveruse(),
@@ -425,6 +418,12 @@ void OveruseFrameDetectorResourceAdaptationModule::SetDegradationPreference(
   }
   degradation_preference_ = degradation_preference;
   MaybeUpdateVideoSourceRestrictions();
+}
+
+void OveruseFrameDetectorResourceAdaptationModule::SetEncoderSettings(
+    EncoderSettings encoder_settings) {
+  encoder_settings_ = std::move(encoder_settings);
+  MaybeUpdateTargetFrameRate();
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::
@@ -473,19 +472,6 @@ void OveruseFrameDetectorResourceAdaptationModule::SetLastFramePixelCount(
   last_frame_pixel_count_ = last_frame_pixel_count;
 }
 
-void OveruseFrameDetectorResourceAdaptationModule::SetEncoderConfig(
-    VideoEncoderConfig encoder_config) {
-  encoder_config_ = std::move(encoder_config);
-}
-
-void OveruseFrameDetectorResourceAdaptationModule::SetCodecMaxFrameRate(
-    absl::optional<double> codec_max_frame_rate) {
-  RTC_DCHECK(!codec_max_frame_rate.has_value() ||
-             codec_max_frame_rate.value() > 0.0);
-  codec_max_frame_rate_ = codec_max_frame_rate;
-  MaybeUpdateTargetFrameRate();
-}
-
 void OveruseFrameDetectorResourceAdaptationModule::SetEncoderStartBitrateBps(
     uint32_t encoder_start_bitrate_bps) {
   encoder_start_bitrate_bps_ = encoder_start_bitrate_bps;
@@ -528,13 +514,13 @@ void OveruseFrameDetectorResourceAdaptationModule::AdaptUp(AdaptReason reason) {
     case DegradationPreference::BALANCED: {
       // Check if quality should be increased based on bitrate.
       if (reason == kQuality &&
-          !balanced_settings_.CanAdaptUp(encoder_config_.codec_type,
+          !balanced_settings_.CanAdaptUp(GetVideoCodecTypeOrGeneric(),
                                          *last_frame_pixel_count_,
                                          encoder_start_bitrate_bps_)) {
         return;
       }
       // Try scale up framerate, if higher.
-      int fps = balanced_settings_.MaxFps(encoder_config_.codec_type,
+      int fps = balanced_settings_.MaxFps(GetVideoCodecTypeOrGeneric(),
                                           *last_frame_pixel_count_);
       if (source_restrictor_->IncreaseFramerate(fps)) {
         GetAdaptCounter().DecrementFramerate(reason, fps);
@@ -550,7 +536,7 @@ void OveruseFrameDetectorResourceAdaptationModule::AdaptUp(AdaptReason reason) {
       // Check if resolution should be increased based on bitrate.
       if (reason == kQuality &&
           !balanced_settings_.CanAdaptUpResolution(
-              encoder_config_.codec_type, *last_frame_pixel_count_,
+              GetVideoCodecTypeOrGeneric(), *last_frame_pixel_count_,
               encoder_start_bitrate_bps_)) {
         return;
       }
@@ -654,7 +640,7 @@ bool OveruseFrameDetectorResourceAdaptationModule::AdaptDown(
   switch (EffectiveDegradataionPreference()) {
     case DegradationPreference::BALANCED: {
       // Try scale down framerate, if lower.
-      int fps = balanced_settings_.MinFps(encoder_config_.codec_type,
+      int fps = balanced_settings_.MinFps(GetVideoCodecTypeOrGeneric(),
                                           *last_frame_pixel_count_);
       if (source_restrictor_->RestrictFramerate(fps)) {
         GetAdaptCounter().IncrementFramerate(reason);
@@ -677,7 +663,10 @@ bool OveruseFrameDetectorResourceAdaptationModule::AdaptDown(
       bool min_pixels_reached = false;
       if (!source_restrictor_->RequestResolutionLowerThan(
               adaptation_request.input_pixel_count_,
-              encoder_->GetEncoderInfo().scaling_settings.min_pixels_per_frame,
+              encoder_settings_.has_value()
+                  ? encoder_settings_->encoder_info()
+                        .scaling_settings.min_pixels_per_frame
+                  : kDefaultMinPixelsPerFrame,
               &min_pixels_reached)) {
         if (min_pixels_reached)
           encoder_stats_observer_->OnMinPixelLimitReached();
@@ -712,6 +701,14 @@ bool OveruseFrameDetectorResourceAdaptationModule::AdaptDown(
   return did_adapt;
 }
 
+VideoCodecType
+OveruseFrameDetectorResourceAdaptationModule::GetVideoCodecTypeOrGeneric()
+    const {
+  return encoder_settings_.has_value()
+             ? encoder_settings_->encoder_config().codec_type
+             : kVideoCodecGeneric;
+}
+
 void OveruseFrameDetectorResourceAdaptationModule::
     MaybeUpdateVideoSourceRestrictions() {
   VideoSourceRestrictions new_restrictions = ApplyDegradationPreference(
@@ -726,6 +723,11 @@ void OveruseFrameDetectorResourceAdaptationModule::
 
 void OveruseFrameDetectorResourceAdaptationModule::
     MaybeUpdateTargetFrameRate() {
+  absl::optional<double> codec_max_frame_rate =
+      encoder_settings_.has_value()
+          ? absl::optional<double>(
+                encoder_settings_->video_codec().maxFramerate)
+          : absl::nullopt;
   // The current target framerate is the maximum frame rate as specified by
   // the current codec configuration or any limit imposed by the adaptation
   // module. This is used to make sure overuse detection doesn't needlessly
@@ -735,9 +737,9 @@ void OveruseFrameDetectorResourceAdaptationModule::
                                  degradation_preference_)
           .max_frame_rate();
   if (!target_frame_rate.has_value() ||
-      (codec_max_frame_rate_.has_value() &&
-       codec_max_frame_rate_.value() < target_frame_rate.value())) {
-    target_frame_rate = codec_max_frame_rate_;
+      (codec_max_frame_rate.has_value() &&
+       codec_max_frame_rate.value() < target_frame_rate.value())) {
+    target_frame_rate = codec_max_frame_rate;
   }
   if (target_frame_rate != target_frame_rate_) {
     target_frame_rate_ = target_frame_rate;
@@ -799,7 +801,8 @@ DegradationPreference OveruseFrameDetectorResourceAdaptationModule::
   // Resolution is capped for fullscreen animated content.
   // Adapatation is done only via framerate downgrade.
   // Thus effective degradation preference is MAINTAIN_RESOLUTION.
-  return (encoder_config_.content_type ==
+  return (encoder_settings_.has_value() &&
+          encoder_settings_->encoder_config().content_type ==
               VideoEncoderConfig::ContentType::kScreen &&
           degradation_preference_ == DegradationPreference::BALANCED)
              ? DegradationPreference::MAINTAIN_RESOLUTION
@@ -819,7 +822,7 @@ OveruseFrameDetectorResourceAdaptationModule::GetConstAdaptCounter() {
 absl::optional<VideoEncoder::QpThresholds>
 OveruseFrameDetectorResourceAdaptationModule::GetQpThresholds() const {
   RTC_DCHECK(last_frame_pixel_count_.has_value());
-  return balanced_settings_.GetQpThresholds(encoder_config_.codec_type,
+  return balanced_settings_.GetQpThresholds(GetVideoCodecTypeOrGeneric(),
                                             last_frame_pixel_count_.value());
 }
 
@@ -827,9 +830,11 @@ bool OveruseFrameDetectorResourceAdaptationModule::CanAdaptUpResolution(
     int pixels,
     uint32_t bitrate_bps) const {
   absl::optional<VideoEncoder::ResolutionBitrateLimits> bitrate_limits =
-      GetEncoderBitrateLimits(
-          encoder_->GetEncoderInfo(),
-          source_restrictor_->GetHigherResolutionThan(pixels));
+      encoder_settings_.has_value()
+          ? GetEncoderBitrateLimits(
+                encoder_settings_->encoder_info(),
+                source_restrictor_->GetHigherResolutionThan(pixels))
+          : absl::nullopt;
   if (!bitrate_limits.has_value() || bitrate_bps == 0) {
     return true;  // No limit configured or bitrate provided.
   }

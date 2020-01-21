@@ -48,7 +48,6 @@ const int kHeight = 240;
 const int kNumCores = 2;
 const uint32_t kFramerate = 30;
 const size_t kMaxPayloadSize = 800;
-const int kDefaultMinPixelsPerFrame = 320 * 180;
 const int kLowThreshold = 10;
 const int kHighThreshold = 20;
 

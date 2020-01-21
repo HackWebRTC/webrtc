@@ -23,6 +23,7 @@
 #include "api/video/video_bitrate_allocator_factory.h"
 #include "api/video/video_codec_constants.h"
 #include "api/video_codecs/video_encoder.h"
+#include "call/adaptation/resource_adaptation_module_interface.h"
 #include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
 #include "modules/video_coding/include/video_codec_initializer.h"
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
@@ -424,7 +425,6 @@ void VideoStreamEncoder::ConfigureEncoder(VideoEncoderConfig config,
             (!encoder_ || encoder_config_.video_format != config.video_format ||
              max_data_payload_length_ != max_data_payload_length);
         encoder_config_ = std::move(config);
-        resource_adaptation_module_->SetEncoderConfig(encoder_config_.Copy());
         max_data_payload_length_ = max_data_payload_length;
         pending_encoder_reconfiguration_ = true;
 
@@ -498,7 +498,6 @@ void VideoStreamEncoder::ReconfigureEncoder() {
 
     encoder_ = settings_.encoder_factory->CreateVideoEncoder(
         encoder_config_.video_format);
-    resource_adaptation_module_->SetEncoder(encoder_.get());
     // TODO(nisse): What to do if creating the encoder fails? Crash,
     // or just discard incoming frames?
     RTC_CHECK(encoder_);
@@ -588,7 +587,6 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   // Make sure the start bit rate is sane...
   RTC_DCHECK_LE(codec.startBitrate, 1000000);
   max_framerate_ = codec.maxFramerate;
-  resource_adaptation_module_->SetCodecMaxFrameRate(max_framerate_);
 
   // Inform source about max configured framerate.
   int max_framerate = 0;
@@ -631,6 +629,9 @@ void VideoStreamEncoder::ReconfigureEncoder() {
         codec, send_codec_, was_encode_called_since_last_initialization_);
   }
   send_codec_ = codec;
+
+  resource_adaptation_module_->SetEncoderSettings(EncoderSettings(
+      encoder_->GetEncoderInfo(), encoder_config_.Copy(), send_codec_));
 
   encoder_switch_experiment_.SetCodec(send_codec_.codecType);
   quality_rampup_experiment_.SetMaxBitrate(
@@ -1180,6 +1181,8 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   }
 
   if (encoder_info_ != info) {
+    resource_adaptation_module_->SetEncoderSettings(EncoderSettings(
+        encoder_->GetEncoderInfo(), encoder_config_.Copy(), send_codec_));
     RTC_LOG(LS_INFO) << "Encoder settings changed from "
                      << encoder_info_.ToString() << " to " << info.ToString();
   }
