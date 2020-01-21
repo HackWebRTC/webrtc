@@ -1084,24 +1084,7 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
 
   if (DropDueToSize(video_frame.size())) {
     RTC_LOG(LS_INFO) << "Dropping frame. Too large for target bitrate.";
-    int fps_count =
-        resource_adaptation_module_->GetConstAdaptCounter().FramerateCount(
-            AdaptationObserverInterface::AdaptReason::kQuality);
-    int res_count =
-        resource_adaptation_module_->GetConstAdaptCounter().ResolutionCount(
-            AdaptationObserverInterface::AdaptReason::kQuality);
-    TriggerAdaptDown(AdaptationObserverInterface::AdaptReason::kQuality);
-    if (resource_adaptation_module_->degradation_preference() ==
-            DegradationPreference::BALANCED &&
-        resource_adaptation_module_->GetConstAdaptCounter().FramerateCount(
-            AdaptationObserverInterface::AdaptReason::kQuality) > fps_count) {
-      // Adapt framerate in same step as resolution.
-      TriggerAdaptDown(AdaptationObserverInterface::AdaptReason::kQuality);
-    }
-    if (resource_adaptation_module_->GetConstAdaptCounter().ResolutionCount(
-            AdaptationObserverInterface::AdaptReason::kQuality) > res_count) {
-      encoder_stats_observer_->OnInitialQualityResolutionAdaptDown();
-    }
+    resource_adaptation_module_->FrameDroppedDueToSize();
     ++initial_framedrop_;
     // Storing references to a native buffer risks blocking frame capture.
     if (video_frame.video_frame_buffer()->type() !=

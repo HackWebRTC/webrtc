@@ -450,6 +450,24 @@ void OveruseFrameDetectorResourceAdaptationModule::FrameSent(
                                encode_duration_us);
 }
 
+void OveruseFrameDetectorResourceAdaptationModule::FrameDroppedDueToSize() {
+  int fps_count = GetConstAdaptCounter().FramerateCount(
+      AdaptationObserverInterface::AdaptReason::kQuality);
+  int res_count = GetConstAdaptCounter().ResolutionCount(
+      AdaptationObserverInterface::AdaptReason::kQuality);
+  AdaptDown(AdaptationObserverInterface::AdaptReason::kQuality);
+  if (degradation_preference() == DegradationPreference::BALANCED &&
+      GetConstAdaptCounter().FramerateCount(
+          AdaptationObserverInterface::AdaptReason::kQuality) > fps_count) {
+    // Adapt framerate in same step as resolution.
+    AdaptDown(AdaptationObserverInterface::AdaptReason::kQuality);
+  }
+  if (GetConstAdaptCounter().ResolutionCount(
+          AdaptationObserverInterface::AdaptReason::kQuality) > res_count) {
+    encoder_stats_observer_->OnInitialQualityResolutionAdaptDown();
+  }
+}
+
 void OveruseFrameDetectorResourceAdaptationModule::SetLastFramePixelCount(
     absl::optional<int> last_frame_pixel_count) {
   last_frame_pixel_count_ = last_frame_pixel_count;

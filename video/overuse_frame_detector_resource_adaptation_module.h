@@ -89,6 +89,7 @@ class OveruseFrameDetectorResourceAdaptationModule
                  int64_t time_sent_in_us,
                  int64_t capture_time_us,
                  absl::optional<int> encode_duration_us);
+  void FrameDroppedDueToSize();
 
   // Various other settings and feedback mechanisms.
   // TODO(hbos): Find a common interface that would make sense for a generic
