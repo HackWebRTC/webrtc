@@ -64,6 +64,14 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
                            private EncodedImageCallback,
                            public ResourceAdaptationModuleListener {
  public:
+  // If the encoder is reconfigured with a source, but we've yet to receive any
+  // frames, this 144p resolution is picked as the default value of
+  // |last_frame_size_|.
+  // TODO(hbos): Can we avoid guesses and properly handle the case of
+  // |last_frame_info_| not having a value, deleting these constants?
+  static const int kDefaultLastFrameInfoWidth;
+  static const int kDefaultLastFrameInfoHeight;
+
   VideoStreamEncoder(Clock* clock,
                      uint32_t number_of_cores,
                      VideoStreamEncoderObserver* encoder_stats_observer,

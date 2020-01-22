@@ -77,23 +77,15 @@ class OveruseFrameDetectorResourceAdaptationModule
       absl::optional<uint32_t> target_bitrate_bps) override;
   void ResetVideoSourceRestrictions() override;
 
-  // Input to the OveruseFrameDetector, which are required for this module to
-  // function. These map to OveruseFrameDetector methods.
-  // TODO(hbos): Define virtual methods in ResourceAdaptationModuleInterface
-  // for input that are more generic so that this class can be used without
-  // assumptions about underlying implementation.
-  void FrameCaptured(const VideoFrame& frame, int64_t time_when_first_seen_us);
-  void FrameSent(uint32_t timestamp,
-                 int64_t time_sent_in_us,
-                 int64_t capture_time_us,
-                 absl::optional<int> encode_duration_us);
-  void FrameDroppedDueToSize();
+  void OnFrame(const VideoFrame& frame) override;
+  void OnFrameDroppedDueToSize() override;
+  void OnEncodeStarted(const VideoFrame& cropped_frame,
+                       int64_t time_when_first_seen_us) override;
+  void OnEncodeCompleted(uint32_t timestamp,
+                         int64_t time_sent_in_us,
+                         int64_t capture_time_us,
+                         absl::optional<int> encode_duration_us) override;
 
-  // Various other settings and feedback mechanisms.
-  // TODO(hbos): Find a common interface that would make sense for a generic
-  // resource adaptation module. Unify code paths where possible. Do we really
-  // need this many public methods?
-  void SetLastFramePixelCount(absl::optional<int> last_frame_pixel_count);
   // Inform the detector whether or not the quality scaler is enabled. This
   // helps GetActiveCounts() return absl::nullopt when appropriate.
   // TODO(hbos): This feels really hacky, can we report the right values without
@@ -178,6 +170,7 @@ class OveruseFrameDetectorResourceAdaptationModule
   };
 
   VideoCodecType GetVideoCodecTypeOrGeneric() const;
+  int LastInputFrameSizeOrDefault() const;
 
   // Makes |video_source_restrictions_| up-to-date and informs the
   // |adaptation_listener_| if restrictions are changed, allowing the listener
@@ -210,11 +203,11 @@ class OveruseFrameDetectorResourceAdaptationModule
   // Stores a snapshot of the last adaptation request triggered by an AdaptUp
   // or AdaptDown signal.
   absl::optional<AdaptationRequest> last_adaptation_request_;
-  absl::optional<int> last_frame_pixel_count_;
   // Keeps track of source restrictions that this adaptation module outputs.
   const std::unique_ptr<VideoSourceRestrictor> source_restrictor_;
   const std::unique_ptr<OveruseFrameDetector> overuse_detector_;
   bool overuse_detector_is_started_;
+  absl::optional<int> last_input_frame_size_;
   absl::optional<double> target_frame_rate_;
   absl::optional<uint32_t> target_bitrate_bps_;
   bool is_quality_scaler_enabled_;

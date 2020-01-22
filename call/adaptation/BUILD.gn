@@ -25,6 +25,7 @@ rtc_library("resource_adaptation") {
   ]
   deps = [
     "../../api:rtp_parameters",
+    "../../api/video:video_frame",
     "../../api/video_codecs:video_codecs_api",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",

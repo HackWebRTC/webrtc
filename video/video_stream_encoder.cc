@@ -226,6 +226,9 @@ absl::optional<VideoEncoder::ResolutionBitrateLimits> GetEncoderBitrateLimits(
   return absl::nullopt;
 }
 
+const int VideoStreamEncoder::kDefaultLastFrameInfoWidth = 176;
+const int VideoStreamEncoder::kDefaultLastFrameInfoHeight = 144;
+
 VideoStreamEncoder::EncoderRateSettings::EncoderRateSettings()
     : rate_control(),
       encoder_target(DataRate::Zero()),
@@ -441,9 +444,8 @@ void VideoStreamEncoder::ConfigureEncoder(VideoEncoderConfig config,
           codec_info_ = settings_.encoder_factory->QueryVideoEncoder(
               encoder_config_.video_format);
           if (HasInternalSource()) {
-            last_frame_info_ = VideoFrameInfo(176, 144, false);
-            resource_adaptation_module_->SetLastFramePixelCount(
-                last_frame_info_->pixel_count());
+            last_frame_info_ = VideoFrameInfo(
+                kDefaultLastFrameInfoWidth, kDefaultLastFrameInfoHeight, false);
             ReconfigureEncoder();
           }
         }
@@ -1063,6 +1065,7 @@ void VideoStreamEncoder::SetEncoderRates(
 void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
                                                int64_t time_when_posted_us) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
+  resource_adaptation_module_->OnFrame(video_frame);
 
   if (!last_frame_info_ || video_frame.width() != last_frame_info_->width ||
       video_frame.height() != last_frame_info_->height ||
@@ -1070,8 +1073,6 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
     pending_encoder_reconfiguration_ = true;
     last_frame_info_ = VideoFrameInfo(video_frame.width(), video_frame.height(),
                                       video_frame.is_texture());
-    resource_adaptation_module_->SetLastFramePixelCount(
-        last_frame_info_->pixel_count());
     RTC_LOG(LS_INFO) << "Video frame parameters changed: dimensions="
                      << last_frame_info_->width << "x"
                      << last_frame_info_->height
@@ -1126,7 +1127,7 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
 
   if (DropDueToSize(video_frame.size())) {
     RTC_LOG(LS_INFO) << "Dropping frame. Too large for target bitrate.";
-    resource_adaptation_module_->FrameDroppedDueToSize();
+    resource_adaptation_module_->OnFrameDroppedDueToSize();
     ++initial_framedrop_;
     // Storing references to a native buffer risks blocking frame capture.
     if (video_frame.video_frame_buffer()->type() !=
@@ -1335,7 +1336,7 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", video_frame.render_time_ms(),
                           "Encode");
 
-  resource_adaptation_module_->FrameCaptured(out_frame, time_when_posted_us);
+  resource_adaptation_module_->OnEncodeStarted(out_frame, time_when_posted_us);
 
   RTC_DCHECK_LE(send_codec_.width, out_frame.width());
   RTC_DCHECK_LE(send_codec_.height, out_frame.height());
@@ -1803,7 +1804,7 @@ void VideoStreamEncoder::RunPostEncode(const EncodedImage& encoded_image,
     }
   }
 
-  resource_adaptation_module_->FrameSent(
+  resource_adaptation_module_->OnEncodeCompleted(
       encoded_image.Timestamp(), time_sent_us,
       encoded_image.capture_time_ms_ * rtc::kNumMicrosecsPerMillisec,
       encode_duration_us);
