@@ -161,7 +161,6 @@ class Scenario {
   TimeDelta TimeUntilTarget(TimeDelta target_time_offset);
 
   const std::unique_ptr<LogWriterFactoryInterface> log_writer_factory_;
-  std::unique_ptr<TimeController> time_controller_;
   NetworkEmulationManagerImpl network_manager_;
   Clock* clock_;
 

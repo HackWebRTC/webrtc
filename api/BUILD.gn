@@ -538,11 +538,30 @@ rtc_source_set("network_emulation_manager_api") {
   ]
   deps = [
     ":simulated_network_api",
+    ":time_controller",
     "../call:simulated_network",
     "../rtc_base",
     "test/network_emulation",
     "units:data_rate",
     "units:data_size",
+    "units:timestamp",
+  ]
+}
+
+rtc_source_set("time_controller") {
+  visibility = [ "*" ]
+  sources = [
+    "test/time_controller.cc",
+    "test/time_controller.h",
+  ]
+
+  deps = [
+    "../modules/utility",
+    "../rtc_base",
+    "../rtc_base/synchronization:yield_policy",
+    "../system_wrappers",
+    "task_queue",
+    "units:time_delta",
     "units:timestamp",
   ]
 }
@@ -910,29 +929,6 @@ if (rtc_include_tests) {
       "transport:datagram_transport_interface",
       "transport/media:media_transport_interface",
       "//third_party/abseil-cpp/absl/algorithm:container",
-    ]
-  }
-
-  rtc_library("time_controller") {
-    visibility = [ "*" ]
-    testonly = true
-    sources = [ "test/time_controller.h" ]
-
-    deps = [
-      "../modules:module_api",
-      "../modules/utility:utility",
-      "../rtc_base",
-      "../rtc_base:rtc_base_tests_utils",
-      "../rtc_base:rtc_event",
-      "../rtc_base/synchronization:sequence_checker",
-      "../rtc_base/synchronization:yield_policy",
-      "../rtc_base/task_utils:to_queued_task",
-      "../system_wrappers",
-      "task_queue",
-      "task_queue:default_task_queue_factory",
-      "units:time_delta",
-      "units:timestamp",
-      "//third_party/abseil-cpp/absl/strings",
     ]
   }
 

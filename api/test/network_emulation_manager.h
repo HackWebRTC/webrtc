@@ -16,6 +16,7 @@
 
 #include "api/test/network_emulation/network_emulation_interfaces.h"
 #include "api/test/simulated_network.h"
+#include "api/test/time_controller.h"
 
 #include "api/units/timestamp.h"
 #include "rtc_base/network.h"
@@ -69,6 +70,8 @@ class EmulatedNetworkManagerInterface {
       std::function<void(EmulatedNetworkStats)> stats_callback) const = 0;
 };
 
+enum class TimeMode { kRealTime, kSimulated };
+
 // Provides an API for creating and configuring emulated network layer.
 // All objects returned by this API are owned by NetworkEmulationManager itself
 // and will be deleted when manager will be deleted.
@@ -102,6 +105,8 @@ class NetworkEmulationManager {
     };
   };
   virtual ~NetworkEmulationManager() = default;
+
+  virtual TimeController* time_controller() = 0;
 
   // Creates an emulated network node, which represents single network in
   // the emulated network layer.

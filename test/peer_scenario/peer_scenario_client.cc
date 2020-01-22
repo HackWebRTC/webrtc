@@ -147,15 +147,14 @@ class TimeControllerBasedCallFactory : public CallFactoryInterface {
 
 PeerScenarioClient::PeerScenarioClient(
     NetworkEmulationManager* net,
-    TimeController* time_controller,
     rtc::Thread* signaling_thread,
     std::unique_ptr<LogWriterFactoryInterface> log_writer_factory,
     PeerScenarioClient::Config config)
     : endpoints_(CreateEndpoints(net, config.endpoints)),
-      task_queue_factory_(time_controller->GetTaskQueueFactory()),
+      task_queue_factory_(net->time_controller()->GetTaskQueueFactory()),
       signaling_thread_(signaling_thread),
       log_writer_factory_(std::move(log_writer_factory)),
-      worker_thread_(time_controller->CreateThread("worker")),
+      worker_thread_(net->time_controller()->CreateThread("worker")),
       handlers_(config.handlers),
       observer_(new LambdaPeerConnectionObserver(&handlers_)) {
   handlers_.on_track.push_back(
@@ -191,7 +190,7 @@ PeerScenarioClient::PeerScenarioClient(
   pcf_deps.signaling_thread = signaling_thread_;
   pcf_deps.worker_thread = worker_thread_.get();
   pcf_deps.call_factory =
-      std::make_unique<TimeControllerBasedCallFactory>(time_controller);
+      std::make_unique<TimeControllerBasedCallFactory>(net->time_controller());
   pcf_deps.task_queue_factory =
       std::make_unique<TaskQueueFactoryWrapper>(task_queue_factory_);
   pcf_deps.event_log_factory =

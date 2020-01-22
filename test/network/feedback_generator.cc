@@ -17,8 +17,7 @@ namespace webrtc {
 FeedbackGeneratorImpl::FeedbackGeneratorImpl(
     FeedbackGeneratorImpl::Config config)
     : conf_(config),
-      time_controller_{Timestamp::seconds(100000)},
-      net_{&time_controller_},
+      net_(TimeMode::kSimulated),
       send_link_{new SimulatedNetwork(conf_.send_link)},
       ret_link_{new SimulatedNetwork(conf_.return_link)},
       route_(this,
@@ -28,11 +27,11 @@ FeedbackGeneratorImpl::FeedbackGeneratorImpl(
                  {net_.CreateEmulatedNode(absl::WrapUnique(ret_link_))})) {}
 
 Timestamp FeedbackGeneratorImpl::Now() {
-  return time_controller_.GetClock()->CurrentTime();
+  return net_.Now();
 }
 
 void FeedbackGeneratorImpl::Sleep(TimeDelta duration) {
-  time_controller_.AdvanceTime(duration);
+  net_.time_controller()->AdvanceTime(duration);
 }
 
 void FeedbackGeneratorImpl::SendPacket(size_t size) {

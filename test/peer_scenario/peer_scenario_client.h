@@ -108,7 +108,6 @@ class PeerScenarioClient {
 
   PeerScenarioClient(
       NetworkEmulationManager* net,
-      TimeController* time_controller,
       rtc::Thread* signaling_thread,
       std::unique_ptr<LogWriterFactoryInterface> log_writer_factory,
       Config config);

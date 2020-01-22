@@ -41,34 +41,22 @@ std::unique_ptr<FileLogWriterFactory> GetPeerScenarioLogManager(
   }
   return nullptr;
 }
-
-std::unique_ptr<TimeController> CreateTimeController(bool real_time) {
-  if (real_time) {
-    return std::make_unique<RealTimeController>();
-  } else {
-    // Using an offset of 100000 to get nice fixed width and readable timestamps
-    // in typical test scenarios.
-    const Timestamp kSimulatedStartTime = Timestamp::seconds(100000);
-    return std::make_unique<GlobalSimulatedTimeController>(kSimulatedStartTime);
-  }
-}
 }  // namespace
 
-PeerScenario::PeerScenario(const testing::TestInfo& test_info, bool real_time)
+PeerScenario::PeerScenario(const testing::TestInfo& test_info, TimeMode mode)
     : PeerScenario(
           std::string(test_info.test_suite_name()) + "/" + test_info.name(),
-          real_time) {}
+          mode) {}
 
-PeerScenario::PeerScenario(std::string file_name, bool real_time)
-    : PeerScenario(GetPeerScenarioLogManager(file_name), real_time) {}
+PeerScenario::PeerScenario(std::string file_name, TimeMode mode)
+    : PeerScenario(GetPeerScenarioLogManager(file_name), mode) {}
 
 PeerScenario::PeerScenario(
     std::unique_ptr<LogWriterFactoryInterface> log_writer_manager,
-    bool real_time)
+    TimeMode mode)
     : log_writer_manager_(std::move(log_writer_manager)),
-      time_controller_(CreateTimeController(real_time)),
-      signaling_thread_(time_controller_->GetMainThread()),
-      net_(time_controller_.get()) {}
+      net_(mode),
+      signaling_thread_(net_.time_controller()->GetMainThread()) {}
 
 PeerScenarioClient* PeerScenario::CreateClient(
     PeerScenarioClient::Config config) {
@@ -79,7 +67,7 @@ PeerScenarioClient* PeerScenario::CreateClient(
 PeerScenarioClient* PeerScenario::CreateClient(
     std::string name,
     PeerScenarioClient::Config config) {
-  peer_clients_.emplace_back(net(), time_controller_.get(), thread(),
+  peer_clients_.emplace_back(net(), signaling_thread_,
                              GetLogWriterFactory(name), config);
   return &peer_clients_.back();
 }
@@ -119,20 +107,12 @@ void PeerScenario::AttachVideoQualityAnalyzer(VideoQualityAnalyzer* analyzer,
 
 bool PeerScenario::WaitAndProcess(std::atomic<bool>* event,
                                   TimeDelta max_duration) {
-  const auto kStep = TimeDelta::ms(5);
-  if (*event)
-    return true;
-  for (auto elapsed = TimeDelta::Zero(); elapsed < max_duration;
-       elapsed += kStep) {
-    time_controller_->AdvanceTime(kStep);
-    if (*event)
-      return true;
-  }
-  return false;
+  return net_.time_controller()->Wait([event] { return event->load(); },
+                                      max_duration);
 }
 
 void PeerScenario::ProcessMessages(TimeDelta duration) {
-  time_controller_->AdvanceTime(duration);
+  net_.time_controller()->AdvanceTime(duration);
 }
 
 std::unique_ptr<LogWriterFactoryInterface> PeerScenario::GetLogWriterFactory(

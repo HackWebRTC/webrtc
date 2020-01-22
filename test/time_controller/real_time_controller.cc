@@ -14,8 +14,28 @@
 #include "system_wrappers/include/sleep.h"
 
 namespace webrtc {
+namespace {
+class MainThread : public rtc::Thread {
+ public:
+  MainThread()
+      : Thread(std::make_unique<rtc::NullSocketServer>(), false),
+        current_setter_(this) {
+    DoInit();
+  }
+  ~MainThread() {
+    Stop();
+    DoDestroy();
+  }
+
+ private:
+  CurrentThreadSetter current_setter_;
+};
+}  // namespace
 RealTimeController::RealTimeController()
-    : task_queue_factory_(CreateDefaultTaskQueueFactory()) {}
+    : task_queue_factory_(CreateDefaultTaskQueueFactory()),
+      main_thread_(std::make_unique<MainThread>()) {
+  main_thread_->SetName("Main", this);
+}
 
 Clock* RealTimeController::GetClock() {
   return Clock::GetRealTimeClock();
@@ -42,16 +62,11 @@ std::unique_ptr<rtc::Thread> RealTimeController::CreateThread(
 }
 
 rtc::Thread* RealTimeController::GetMainThread() {
-  return rtc::Thread::Current();
+  return main_thread_.get();
 }
 
 void RealTimeController::AdvanceTime(TimeDelta duration) {
-  GetMainThread()->ProcessMessages(duration.ms());
-}
-
-RealTimeController* GlobalRealTimeController() {
-  static RealTimeController* time_controller = new RealTimeController();
-  return time_controller;
+  main_thread_->ProcessMessages(duration.ms());
 }
 
 }  // namespace webrtc

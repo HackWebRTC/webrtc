@@ -18,6 +18,7 @@
 #include "call/simulated_network.h"
 #include "rtc_base/fake_network.h"
 #include "test/time_controller/real_time_controller.h"
+#include "test/time_controller/simulated_time_controller.h"
 
 namespace webrtc {
 namespace test {
@@ -27,18 +28,27 @@ namespace {
 constexpr uint32_t kMinIPv4Address = 0xC0A80000;
 // uint32_t representation of 192.168.255.255 address
 constexpr uint32_t kMaxIPv4Address = 0xC0A8FFFF;
+
+std::unique_ptr<TimeController> CreateTimeController(TimeMode mode) {
+  switch (mode) {
+    case TimeMode::kRealTime:
+      return std::make_unique<RealTimeController>();
+    case TimeMode::kSimulated:
+      // Using an offset of 100000 to get nice fixed width and readable
+      // timestamps in typical test scenarios.
+      const Timestamp kSimulatedStartTime = Timestamp::seconds(100000);
+      return std::make_unique<GlobalSimulatedTimeController>(
+          kSimulatedStartTime);
+  }
+}
 }  // namespace
 
-NetworkEmulationManagerImpl::NetworkEmulationManagerImpl()
-    : NetworkEmulationManagerImpl(GlobalRealTimeController()) {}
-
-NetworkEmulationManagerImpl::NetworkEmulationManagerImpl(
-    TimeController* time_controller)
-    : time_controller_(time_controller),
-      clock_(time_controller->GetClock()),
+NetworkEmulationManagerImpl::NetworkEmulationManagerImpl(TimeMode mode)
+    : time_controller_(CreateTimeController(mode)),
+      clock_(time_controller_->GetClock()),
       next_node_id_(1),
       next_ip4_address_(kMinIPv4Address),
-      task_queue_(time_controller->GetTaskQueueFactory()->CreateTaskQueue(
+      task_queue_(time_controller_->GetTaskQueueFactory()->CreateTaskQueue(
           "NetworkEmulation",
           TaskQueueFactory::Priority::NORMAL)) {}
 
@@ -266,7 +276,7 @@ NetworkEmulationManagerImpl::CreateEmulatedNetworkManagerInterface(
   auto endpoints_container =
       std::make_unique<EndpointsContainer>(endpoint_impls);
   auto network_manager = std::make_unique<EmulatedNetworkManager>(
-      time_controller_, &task_queue_, endpoints_container.get());
+      time_controller_.get(), &task_queue_, endpoints_container.get());
   for (auto* endpoint : endpoints) {
     // Associate endpoint with network manager.
     bool insertion_result =

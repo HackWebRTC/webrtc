@@ -425,6 +425,21 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
 #endif
 
  protected:
+  class CurrentThreadSetter : CurrentTaskQueueSetter {
+   public:
+    explicit CurrentThreadSetter(Thread* thread)
+        : CurrentTaskQueueSetter(thread),
+          manager_(rtc::ThreadManager::Instance()),
+          previous_(manager_->CurrentThread()) {
+      manager_->ChangeCurrentThreadForTest(thread);
+    }
+    ~CurrentThreadSetter() { manager_->ChangeCurrentThreadForTest(previous_); }
+
+   private:
+    rtc::ThreadManager* const manager_;
+    rtc::Thread* const previous_;
+  };
+
   // DelayedMessage goes into a priority queue, sorted by trigger time. Messages
   // with the same trigger time are processed in num_ (FIFO) order.
   class DelayedMessage {

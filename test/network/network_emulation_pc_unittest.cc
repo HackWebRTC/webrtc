@@ -99,7 +99,7 @@ TEST(NetworkEmulationManagerPCTest, Run) {
   signaling_thread->Start();
 
   // Setup emulated network
-  NetworkEmulationManagerImpl emulation;
+  NetworkEmulationManagerImpl emulation(TimeMode::kRealTime);
 
   EmulatedNetworkNode* alice_node = emulation.CreateEmulatedNode(
       std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));

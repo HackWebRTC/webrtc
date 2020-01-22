@@ -19,20 +19,7 @@ namespace webrtc {
 class SimulatedThread : public rtc::Thread,
                         public sim_time_impl::SimulatedSequenceRunner {
  public:
-  class CurrentThreadSetter : CurrentTaskQueueSetter {
-   public:
-    explicit CurrentThreadSetter(Thread* thread)
-        : CurrentTaskQueueSetter(thread),
-          manager_(rtc::ThreadManager::Instance()),
-          previous_(manager_->CurrentThread()) {
-      manager_->ChangeCurrentThreadForTest(thread);
-    }
-    ~CurrentThreadSetter() { manager_->ChangeCurrentThreadForTest(previous_); }
-
-   private:
-    rtc::ThreadManager* const manager_;
-    rtc::Thread* const previous_;
-  };
+  using CurrentThreadSetter = CurrentThreadSetter;
   SimulatedThread(sim_time_impl::SimulatedTimeControllerImpl* handler,
                   absl::string_view name,
                   std::unique_ptr<rtc::SocketServer> socket_server);

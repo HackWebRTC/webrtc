@@ -28,8 +28,8 @@ namespace webrtc {
 namespace test {
 namespace {
 
-constexpr int kNetworkPacketWaitTimeoutMs = 100;
-constexpr int kStatsWaitTimeoutMs = 1000;
+constexpr TimeDelta kNetworkPacketWaitTimeout = TimeDelta::Millis<100>();
+constexpr TimeDelta kStatsWaitTimeout = TimeDelta::Seconds<1>();
 constexpr int kOverheadIpv4Udp = 20 + 8;
 
 class SocketReader : public sigslot::has_slots<> {
@@ -128,7 +128,7 @@ class NetworkEmulationManagerThreeNodesRoutingTest : public ::testing::Test {
         rtc::CopyOnWriteBuffer(10));
 
     // Sleep at the end to wait for async packets delivery.
-    SleepMs(kNetworkPacketWaitTimeoutMs);
+    emulation_.time_controller()->AdvanceTime(kNetworkPacketWaitTimeout);
   }
 
  private:
@@ -139,7 +139,7 @@ class NetworkEmulationManagerThreeNodesRoutingTest : public ::testing::Test {
   MockReceiver r_e1_e3_;
   MockReceiver r_e3_e1_;
 
-  NetworkEmulationManagerImpl emulation_;
+  NetworkEmulationManagerImpl emulation_{TimeMode::kRealTime};
   EmulatedEndpoint* e1_;
   EmulatedEndpoint* e2_;
   EmulatedEndpoint* e3_;
@@ -156,7 +156,7 @@ EmulatedNetworkNode* CreateEmulatedNodeWithDefaultBuiltInConfig(
 using ::testing::_;
 
 TEST(NetworkEmulationManagerTest, GeneratedIpv4AddressDoesNotCollide) {
-  NetworkEmulationManagerImpl network_manager;
+  NetworkEmulationManagerImpl network_manager(TimeMode::kRealTime);
   std::set<rtc::IPAddress> ips;
   EmulatedEndpointConfig config;
   config.generated_ip_family = EmulatedEndpointConfig::IpAddressFamily::kIpv4;
@@ -169,7 +169,7 @@ TEST(NetworkEmulationManagerTest, GeneratedIpv4AddressDoesNotCollide) {
 }
 
 TEST(NetworkEmulationManagerTest, GeneratedIpv6AddressDoesNotCollide) {
-  NetworkEmulationManagerImpl network_manager;
+  NetworkEmulationManagerImpl network_manager(TimeMode::kRealTime);
   std::set<rtc::IPAddress> ips;
   EmulatedEndpointConfig config;
   config.generated_ip_family = EmulatedEndpointConfig::IpAddressFamily::kIpv6;
@@ -182,7 +182,7 @@ TEST(NetworkEmulationManagerTest, GeneratedIpv6AddressDoesNotCollide) {
 }
 
 TEST(NetworkEmulationManagerTest, Run) {
-  NetworkEmulationManagerImpl network_manager;
+  NetworkEmulationManagerImpl network_manager(TimeMode::kRealTime);
 
   EmulatedNetworkNode* alice_node = network_manager.CreateEmulatedNode(
       std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
@@ -233,8 +233,8 @@ TEST(NetworkEmulationManagerTest, Run) {
                    [&]() { s2->Send(data.data(), data.size()); });
     }
 
-    rtc::Event wait;
-    wait.Wait(1000);
+    network_manager.time_controller()->AdvanceTime(TimeDelta::seconds(1));
+
     EXPECT_EQ(r1.ReceivedCount(), 1000);
     EXPECT_EQ(r2.ReceivedCount(), 1000);
 
@@ -262,11 +262,13 @@ TEST(NetworkEmulationManagerTest, Run) {
     EXPECT_EQ(st.bytes_dropped.bytes(), 0l);
     received_stats_count++;
   });
-  ASSERT_EQ_WAIT(received_stats_count.load(), 2, kStatsWaitTimeoutMs);
+  ASSERT_EQ_SIMULATED_WAIT(received_stats_count.load(), 2,
+                           kStatsWaitTimeout.ms(),
+                           *network_manager.time_controller());
 }
 
 TEST(NetworkEmulationManagerTest, ThroughputStats) {
-  NetworkEmulationManagerImpl network_manager;
+  NetworkEmulationManagerImpl network_manager(TimeMode::kRealTime);
 
   EmulatedNetworkNode* alice_node = network_manager.CreateEmulatedNode(
       std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
@@ -313,12 +315,11 @@ TEST(NetworkEmulationManagerTest, ThroughputStats) {
 
   // Send 11 packets, totalizing 1 second between the first and the last.
   const int kNumPacketsSent = 11;
-  const int kDelayMs = 100;
-  rtc::Event wait;
+  const TimeDelta kDelay = TimeDelta::ms(100);
   for (int i = 0; i < kNumPacketsSent; i++) {
     t1->PostTask(RTC_FROM_HERE, [&]() { s1->Send(data.data(), data.size()); });
     t2->PostTask(RTC_FROM_HERE, [&]() { s2->Send(data.data(), data.size()); });
-    wait.Wait(kDelayMs);
+    network_manager.time_controller()->AdvanceTime(kDelay);
   }
 
   std::atomic<int> received_stats_count{0};
@@ -328,11 +329,15 @@ TEST(NetworkEmulationManagerTest, ThroughputStats) {
 
     const double tolerance = 0.95;  // Accept 5% tolerance for timing.
     EXPECT_GE(st.last_packet_sent_time - st.first_packet_sent_time,
-              TimeDelta::ms((kNumPacketsSent - 1) * kDelayMs * tolerance));
+              (kNumPacketsSent - 1) * kDelay * tolerance);
     EXPECT_GT(st.AverageSendRate().bps(), 0);
     received_stats_count++;
   });
-  ASSERT_EQ_WAIT(received_stats_count.load(), 1, kStatsWaitTimeoutMs);
+
+  ASSERT_EQ_SIMULATED_WAIT(received_stats_count.load(), 1,
+                           kStatsWaitTimeout.ms(),
+                           *network_manager.time_controller());
+
   EXPECT_EQ(r1.ReceivedCount(), 11);
   EXPECT_EQ(r2.ReceivedCount(), 11);
 
