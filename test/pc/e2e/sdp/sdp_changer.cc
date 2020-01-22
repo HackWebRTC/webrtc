@@ -165,12 +165,15 @@ LocalAndRemoteSdp SignalingInterceptor::PatchOffer(
     media_desc->set_conference_mode(params_.use_conference_mode);
   }
 
-  if (params_.video_codec_name == cricket::kVp8CodecName) {
-    return PatchVp8Offer(std::move(offer));
-  }
+  if (params_.stream_label_to_simulcast_streams_count.size() > 0) {
+    // Because simulcast enabled |params_.video_codecs| has only 1 element.
+    if (params_.video_codecs[0].name == cricket::kVp8CodecName) {
+      return PatchVp8Offer(std::move(offer));
+    }
 
-  if (params_.video_codec_name == cricket::kVp9CodecName) {
-    return PatchVp9Offer(std::move(offer));
+    if (params_.video_codecs[0].name == cricket::kVp9CodecName) {
+      return PatchVp9Offer(std::move(offer));
+    }
   }
 
   auto offer_for_remote = CloneSessionDescription(offer.get());
@@ -353,12 +356,15 @@ LocalAndRemoteSdp SignalingInterceptor::PatchAnswer(
     media_desc->set_conference_mode(params_.use_conference_mode);
   }
 
-  if (params_.video_codec_name == cricket::kVp8CodecName) {
-    return PatchVp8Answer(std::move(answer));
-  }
+  if (params_.stream_label_to_simulcast_streams_count.size() > 0) {
+    // Because simulcast enabled |params_.video_codecs| has only 1 element.
+    if (params_.video_codecs[0].name == cricket::kVp8CodecName) {
+      return PatchVp8Answer(std::move(answer));
+    }
 
-  if (params_.video_codec_name == cricket::kVp9CodecName) {
-    return PatchVp9Answer(std::move(answer));
+    if (params_.video_codecs[0].name == cricket::kVp9CodecName) {
+      return PatchVp9Answer(std::move(answer));
+    }
   }
 
   auto answer_for_remote = CloneSessionDescription(answer.get());
