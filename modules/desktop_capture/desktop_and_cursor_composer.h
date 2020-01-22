@@ -78,6 +78,8 @@ class RTC_EXPORT DesktopAndCursorComposer
 
   std::unique_ptr<MouseCursor> cursor_;
   DesktopVector cursor_position_;
+  DesktopRect previous_cursor_rect_;
+  bool cursor_changed_ = false;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DesktopAndCursorComposer);
 };
