@@ -23,6 +23,8 @@
 #include "media/engine/webrtc_media_engine.h"
 #include "modules/audio_device/include/test_audio_device.h"
 #include "p2p/client/basic_port_allocator.h"
+#include "test/fake_decoder.h"
+#include "test/fake_vp8_encoder.h"
 #include "test/frame_generator_capturer.h"
 #include "test/peer_scenario/sdp_callbacks.h"
 
@@ -114,7 +116,37 @@ class LambdaPeerConnectionObserver final : public PeerConnectionObserver {
   PeerScenarioClient::CallbackHandlers* handlers_;
 };
 
+class FakeVideoEncoderFactory : public VideoEncoderFactory {
+ public:
+  FakeVideoEncoderFactory(Clock* clock) : clock_(clock) {}
+  std::vector<SdpVideoFormat> GetSupportedFormats() const override {
+    return {SdpVideoFormat("VP8")};
+  }
+  CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override {
+    RTC_CHECK_EQ(format.name, "VP8");
+    CodecInfo info;
+    info.has_internal_source = false;
+    info.is_hardware_accelerated = false;
+    return info;
+  }
+  std::unique_ptr<VideoEncoder> CreateVideoEncoder(
+      const SdpVideoFormat& format) override {
+    return std::make_unique<FakeVP8Encoder>(clock_);
+  }
 
+ private:
+  Clock* const clock_;
+};
+class FakeVideoDecoderFactory : public VideoDecoderFactory {
+ public:
+  std::vector<SdpVideoFormat> GetSupportedFormats() const override {
+    return {SdpVideoFormat("VP8")};
+  }
+  std::unique_ptr<VideoDecoder> CreateVideoDecoder(
+      const SdpVideoFormat& format) override {
+    return std::make_unique<FakeDecoder>();
+  }
+};
 }  // namespace
 
 PeerScenarioClient::PeerScenarioClient(
@@ -179,8 +211,16 @@ PeerScenarioClient::PeerScenarioClient(
       TestAudioDeviceModule::CreateDiscardRenderer(config.audio.sample_rate));
 
   media_deps.audio_processing = AudioProcessingBuilder().Create();
-  media_deps.video_encoder_factory = CreateBuiltinVideoEncoderFactory();
-  media_deps.video_decoder_factory = CreateBuiltinVideoDecoderFactory();
+  if (config.video.use_fake_codecs) {
+    media_deps.video_encoder_factory =
+        std::make_unique<FakeVideoEncoderFactory>(
+            net->time_controller()->GetClock());
+    media_deps.video_decoder_factory =
+        std::make_unique<FakeVideoDecoderFactory>();
+  } else {
+    media_deps.video_encoder_factory = CreateBuiltinVideoEncoderFactory();
+    media_deps.video_decoder_factory = CreateBuiltinVideoDecoderFactory();
+  }
   media_deps.audio_encoder_factory = CreateBuiltinAudioEncoderFactory();
   media_deps.audio_decoder_factory = CreateBuiltinAudioDecoderFactory();
 

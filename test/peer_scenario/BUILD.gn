@@ -24,6 +24,7 @@ if (rtc_include_tests) {
       "signaling_route.h",
     ]
     deps = [
+      "..:fake_video_codecs",
       "..:fileutils",
       "..:test_support",
       "../:video_test_common",
@@ -47,8 +48,8 @@ if (rtc_include_tests) {
       "../../pc:rtc_pc_base",
       "../../rtc_base",
       "../../rtc_base:stringutils",
-      "..//network:emulated_network",
       "../logging:log_writer",
+      "../network:emulated_network",
       "../scenario",
       "../time_controller",
       "//third_party/abseil-cpp/absl/flags:flag",

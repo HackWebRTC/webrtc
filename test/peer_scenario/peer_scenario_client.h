@@ -80,6 +80,9 @@ class PeerScenarioClient {
       };
       absl::optional<PulsedNoise> pulsed_noise = PulsedNoise();
     } audio;
+    struct Video {
+      bool use_fake_codecs = false;
+    } video;
     // The created endpoints can be accessed using the map key as |index| in
     // PeerScenarioClient::endpoint(index).
     std::map<int, EmulatedEndpointConfig> endpoints = {
