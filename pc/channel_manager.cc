@@ -87,14 +87,31 @@ void ChannelManager::GetSupportedAudioRtpHeaderExtensions(
   *ext = media_engine_->voice().GetCapabilities().header_extensions;
 }
 
-void ChannelManager::GetSupportedVideoCodecs(
+void ChannelManager::GetSupportedVideoSendCodecs(
     std::vector<VideoCodec>* codecs) const {
   if (!media_engine_) {
     return;
   }
   codecs->clear();
 
-  std::vector<VideoCodec> video_codecs = media_engine_->video().codecs();
+  std::vector<VideoCodec> video_codecs = media_engine_->video().send_codecs();
+  for (const auto& video_codec : video_codecs) {
+    if (!enable_rtx_ &&
+        absl::EqualsIgnoreCase(kRtxCodecName, video_codec.name)) {
+      continue;
+    }
+    codecs->push_back(video_codec);
+  }
+}
+
+void ChannelManager::GetSupportedVideoReceiveCodecs(
+    std::vector<VideoCodec>* codecs) const {
+  if (!media_engine_) {
+    return;
+  }
+  codecs->clear();
+
+  std::vector<VideoCodec> video_codecs = media_engine_->video().recv_codecs();
   for (const auto& video_codec : video_codecs) {
     if (!enable_rtx_ &&
         absl::EqualsIgnoreCase(kRtxCodecName, video_codec.name)) {

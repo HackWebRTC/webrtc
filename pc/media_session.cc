@@ -1330,10 +1330,12 @@ MediaSessionDescriptionFactory::MediaSessionDescriptionFactory(
   channel_manager->GetSupportedAudioSendCodecs(&audio_send_codecs_);
   channel_manager->GetSupportedAudioReceiveCodecs(&audio_recv_codecs_);
   channel_manager->GetSupportedAudioRtpHeaderExtensions(&audio_rtp_extensions_);
-  channel_manager->GetSupportedVideoCodecs(&video_codecs_);
+  channel_manager->GetSupportedVideoSendCodecs(&video_send_codecs_);
+  channel_manager->GetSupportedVideoReceiveCodecs(&video_recv_codecs_);
   channel_manager->GetSupportedVideoRtpHeaderExtensions(&video_rtp_extensions_);
   channel_manager->GetSupportedDataCodecs(&rtp_data_codecs_);
   ComputeAudioCodecsIntersectionAndUnion();
+  ComputeVideoCodecsIntersectionAndUnion();
 }
 
 const AudioCodecs& MediaSessionDescriptionFactory::audio_sendrecv_codecs()
@@ -1355,6 +1357,27 @@ void MediaSessionDescriptionFactory::set_audio_codecs(
   audio_send_codecs_ = send_codecs;
   audio_recv_codecs_ = recv_codecs;
   ComputeAudioCodecsIntersectionAndUnion();
+}
+
+const VideoCodecs& MediaSessionDescriptionFactory::video_sendrecv_codecs()
+    const {
+  return video_sendrecv_codecs_;
+}
+
+const VideoCodecs& MediaSessionDescriptionFactory::video_send_codecs() const {
+  return video_send_codecs_;
+}
+
+const VideoCodecs& MediaSessionDescriptionFactory::video_recv_codecs() const {
+  return video_recv_codecs_;
+}
+
+void MediaSessionDescriptionFactory::set_video_codecs(
+    const VideoCodecs& send_codecs,
+    const VideoCodecs& recv_codecs) {
+  video_send_codecs_ = send_codecs;
+  video_recv_codecs_ = recv_codecs;
+  ComputeVideoCodecsIntersectionAndUnion();
 }
 
 static void RemoveUnifiedPlanExtensions(RtpHeaderExtensions* extensions) {
@@ -1737,6 +1760,41 @@ const AudioCodecs& MediaSessionDescriptionFactory::GetAudioCodecsForAnswer(
   return audio_sendrecv_codecs_;
 }
 
+const VideoCodecs& MediaSessionDescriptionFactory::GetVideoCodecsForOffer(
+    const RtpTransceiverDirection& direction) const {
+  switch (direction) {
+    // If stream is inactive - generate list as if sendrecv.
+    case RtpTransceiverDirection::kSendRecv:
+    case RtpTransceiverDirection::kInactive:
+      return video_sendrecv_codecs_;
+    case RtpTransceiverDirection::kSendOnly:
+      return video_send_codecs_;
+    case RtpTransceiverDirection::kRecvOnly:
+      return video_recv_codecs_;
+  }
+  RTC_NOTREACHED();
+  return video_sendrecv_codecs_;
+}
+
+const VideoCodecs& MediaSessionDescriptionFactory::GetVideoCodecsForAnswer(
+    const RtpTransceiverDirection& offer,
+    const RtpTransceiverDirection& answer) const {
+  switch (answer) {
+    // For inactive and sendrecv answers, generate lists as if we were to accept
+    // the offer's direction. See RFC 3264 Section 6.1.
+    case RtpTransceiverDirection::kSendRecv:
+    case RtpTransceiverDirection::kInactive:
+      return GetVideoCodecsForOffer(
+          webrtc::RtpTransceiverDirectionReversed(offer));
+    case RtpTransceiverDirection::kSendOnly:
+      return video_send_codecs_;
+    case RtpTransceiverDirection::kRecvOnly:
+      return video_recv_codecs_;
+  }
+  RTC_NOTREACHED();
+  return video_sendrecv_codecs_;
+}
+
 void MergeCodecsFromDescription(
     const std::vector<const ContentInfo*>& current_active_contents,
     AudioCodecs* audio_codecs,
@@ -1784,7 +1842,7 @@ void MediaSessionDescriptionFactory::GetCodecsForOffer(
 
   // Add our codecs that are not in the current description.
   MergeCodecs<AudioCodec>(all_audio_codecs_, audio_codecs, &used_pltypes);
-  MergeCodecs<VideoCodec>(video_codecs_, video_codecs, &used_pltypes);
+  MergeCodecs<VideoCodec>(all_video_codecs_, video_codecs, &used_pltypes);
   MergeCodecs<DataCodec>(rtp_data_codecs_, rtp_data_codecs, &used_pltypes);
 }
 
@@ -1832,7 +1890,7 @@ void MediaSessionDescriptionFactory::GetCodecsForAnswer(
         if (!FindMatchingCodec<VideoCodec>(video->codecs(),
                                            filtered_offered_video_codecs,
                                            offered_video_codec, nullptr) &&
-            FindMatchingCodec<VideoCodec>(video->codecs(), video_codecs_,
+            FindMatchingCodec<VideoCodec>(video->codecs(), all_video_codecs_,
                                           offered_video_codec, nullptr)) {
           filtered_offered_video_codecs.push_back(offered_video_codec);
         }
@@ -2039,7 +2097,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
       IsDtlsActive(current_content, current_description) ? cricket::SEC_DISABLED
                                                          : secure();
 
-  std::unique_ptr<AudioContentDescription> audio(new AudioContentDescription());
+  auto audio = std::make_unique<AudioContentDescription>();
   std::vector<std::string> crypto_suites;
   GetSupportedAudioSdesCryptoSuiteNames(session_options.crypto_options,
                                         &crypto_suites);
@@ -2067,6 +2125,8 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
   return true;
 }
 
+// TODO(kron): This function is very similar to AddAudioContentForOffer.
+// Refactor to reuse shared code.
 bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
     const MediaDescriptionOptions& media_description_options,
     const MediaSessionOptions& session_options,
@@ -2077,14 +2137,10 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
     StreamParamsVec* current_streams,
     SessionDescription* desc,
     IceCredentialsIterator* ice_credentials) const {
-  cricket::SecurePolicy sdes_policy =
-      IsDtlsActive(current_content, current_description) ? cricket::SEC_DISABLED
-                                                         : secure();
-
-  std::unique_ptr<VideoContentDescription> video(new VideoContentDescription());
-  std::vector<std::string> crypto_suites;
-  GetSupportedVideoSdesCryptoSuiteNames(session_options.crypto_options,
-                                        &crypto_suites);
+  // Filter video_codecs (which includes all codecs, with correctly remapped
+  // payload types) based on transceiver direction.
+  const VideoCodecs& supported_video_codecs =
+      GetVideoCodecsForOffer(media_description_options.direction);
 
   VideoCodecs filtered_codecs;
 
@@ -2092,7 +2148,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
     // Add the codecs from the current transceiver's codec preferences.
     // They override any existing codecs from previous negotiations.
     filtered_codecs = MatchCodecPreference(
-        media_description_options.codec_preferences, video_codecs_);
+        media_description_options.codec_preferences, supported_video_codecs);
   } else {
     // Add the codecs from current content if it exists and is not rejected nor
     // recycled.
@@ -2110,11 +2166,11 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
     }
     // Add other supported video codecs.
     VideoCodec found_codec;
-    for (const VideoCodec& codec : video_codecs_) {
-      if (FindMatchingCodec<VideoCodec>(video_codecs_, video_codecs, codec,
-                                        &found_codec) &&
-          !FindMatchingCodec<VideoCodec>(video_codecs_, filtered_codecs, codec,
-                                         nullptr)) {
+    for (const VideoCodec& codec : supported_video_codecs) {
+      if (FindMatchingCodec<VideoCodec>(supported_video_codecs, video_codecs,
+                                        codec, &found_codec) &&
+          !FindMatchingCodec<VideoCodec>(supported_video_codecs,
+                                         filtered_codecs, codec, nullptr)) {
         // Use the |found_codec| from |video_codecs| because it has the
         // correctly mapped payload type.
         filtered_codecs.push_back(found_codec);
@@ -2130,6 +2186,13 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
     }
   }
 
+  cricket::SecurePolicy sdes_policy =
+      IsDtlsActive(current_content, current_description) ? cricket::SEC_DISABLED
+                                                         : secure();
+  auto video = std::make_unique<VideoContentDescription>();
+  std::vector<std::string> crypto_suites;
+  GetSupportedVideoSdesCryptoSuiteNames(session_options.crypto_options,
+                                        &crypto_suites);
   if (!CreateMediaContentOffer(media_description_options, session_options,
                                filtered_codecs, sdes_policy,
                                GetCryptos(current_content), crypto_suites,
@@ -2152,6 +2215,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
                          current_description, desc, ice_credentials)) {
     return false;
   }
+
   return true;
 }
 
@@ -2163,8 +2227,7 @@ bool MediaSessionDescriptionFactory::AddSctpDataContentForOffer(
     StreamParamsVec* current_streams,
     SessionDescription* desc,
     IceCredentialsIterator* ice_credentials) const {
-  std::unique_ptr<SctpDataContentDescription> data(
-      new SctpDataContentDescription());
+  auto data = std::make_unique<SctpDataContentDescription>();
 
   bool secure_transport = (transport_desc_factory_->secure() != SEC_DISABLED);
 
@@ -2210,8 +2273,7 @@ bool MediaSessionDescriptionFactory::AddRtpDataContentForOffer(
     StreamParamsVec* current_streams,
     SessionDescription* desc,
     IceCredentialsIterator* ice_credentials) const {
-  std::unique_ptr<RtpDataContentDescription> data(
-      new RtpDataContentDescription());
+  auto data = std::make_unique<RtpDataContentDescription>();
   bool secure_transport = (transport_desc_factory_->secure() != SEC_DISABLED);
 
   cricket::SecurePolicy sdes_policy =
@@ -2351,8 +2413,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
 
   bool bundle_enabled = offer_description->HasGroup(GROUP_TYPE_BUNDLE) &&
                         session_options.bundle_enabled;
-  std::unique_ptr<AudioContentDescription> audio_answer(
-      new AudioContentDescription());
+  auto audio_answer = std::make_unique<AudioContentDescription>();
   // Do not require or create SDES cryptos if DTLS is used.
   cricket::SecurePolicy sdes_policy =
       audio_transport->secure() ? cricket::SEC_DISABLED : secure();
@@ -2392,6 +2453,8 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
   return true;
 }
 
+// TODO(kron): This function is very similar to AddAudioContentForAnswer.
+// Refactor to reuse shared code.
 bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
     const MediaDescriptionOptions& media_description_options,
     const MediaSessionOptions& session_options,
@@ -2416,11 +2479,20 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
     return false;
   }
 
+  // Pick codecs based on the requested communications direction in the offer
+  // and the selected direction in the answer.
+  // Note these will be filtered one final time in CreateMediaContentAnswer.
+  auto wants_rtd = media_description_options.direction;
+  auto offer_rtd = offer_video_description->direction();
+  auto answer_rtd = NegotiateRtpTransceiverDirection(offer_rtd, wants_rtd);
+  VideoCodecs supported_video_codecs =
+      GetVideoCodecsForAnswer(offer_rtd, answer_rtd);
+
   VideoCodecs filtered_codecs;
 
   if (!media_description_options.codec_preferences.empty()) {
     filtered_codecs = MatchCodecPreference(
-        media_description_options.codec_preferences, video_codecs_);
+        media_description_options.codec_preferences, supported_video_codecs);
   } else {
     // Add the codecs from current content if it exists and is not rejected nor
     // recycled.
@@ -2437,11 +2509,11 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
       }
     }
     // Add other supported video codecs.
-    for (const VideoCodec& codec : video_codecs_) {
-      if (FindMatchingCodec<VideoCodec>(video_codecs_, video_codecs, codec,
-                                        nullptr) &&
-          !FindMatchingCodec<VideoCodec>(video_codecs_, filtered_codecs, codec,
-                                         nullptr)) {
+    for (const VideoCodec& codec : supported_video_codecs) {
+      if (FindMatchingCodec<VideoCodec>(supported_video_codecs, video_codecs,
+                                        codec, nullptr) &&
+          !FindMatchingCodec<VideoCodec>(supported_video_codecs,
+                                         filtered_codecs, codec, nullptr)) {
         // We should use the local codec with local parameters and the codec id
         // would be correctly mapped in |NegotiateCodecs|.
         filtered_codecs.push_back(codec);
@@ -2459,9 +2531,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
 
   bool bundle_enabled = offer_description->HasGroup(GROUP_TYPE_BUNDLE) &&
                         session_options.bundle_enabled;
-
-  std::unique_ptr<VideoContentDescription> video_answer(
-      new VideoContentDescription());
+  auto video_answer = std::make_unique<VideoContentDescription>();
   // Do not require or create SDES cryptos if DTLS is used.
   cricket::SecurePolicy sdes_policy =
       video_transport->secure() ? cricket::SEC_DISABLED : secure();
@@ -2629,6 +2699,38 @@ void MediaSessionDescriptionFactory::ComputeAudioCodecsIntersectionAndUnion() {
   // means it's a codec we can handle efficiently.
   NegotiateCodecs(audio_recv_codecs_, audio_send_codecs_,
                   &audio_sendrecv_codecs_, true);
+}
+
+void MediaSessionDescriptionFactory::ComputeVideoCodecsIntersectionAndUnion() {
+  video_sendrecv_codecs_.clear();
+  all_video_codecs_.clear();
+  // Compute the video codecs union.
+  for (const VideoCodec& send : video_send_codecs_) {
+    all_video_codecs_.push_back(send);
+    if (!FindMatchingCodec<VideoCodec>(video_send_codecs_, video_recv_codecs_,
+                                       send, nullptr)) {
+      // TODO(kron): This check is violated by the unit test:
+      // MediaSessionDescriptionFactoryTest.RtxWithoutApt
+      // Remove either the test or the check.
+
+      // It doesn't make sense to have an RTX codec we support sending but not
+      // receiving.
+      // RTC_DCHECK(!IsRtxCodec(send));
+    }
+  }
+  for (const VideoCodec& recv : video_recv_codecs_) {
+    if (!FindMatchingCodec<VideoCodec>(video_recv_codecs_, video_send_codecs_,
+                                       recv, nullptr)) {
+      all_video_codecs_.push_back(recv);
+    }
+  }
+  // Use NegotiateCodecs to merge our codec lists, since the operation is
+  // essentially the same. Put send_codecs as the offered_codecs, which is the
+  // order we'd like to follow. The reasoning is that encoding is usually more
+  // expensive than decoding, and prioritizing a codec in the send list probably
+  // means it's a codec we can handle efficiently.
+  NegotiateCodecs(video_recv_codecs_, video_send_codecs_,
+                  &video_sendrecv_codecs_, true);
 }
 
 bool IsMediaContent(const ContentInfo* content) {

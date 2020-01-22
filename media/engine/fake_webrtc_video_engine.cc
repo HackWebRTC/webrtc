@@ -113,8 +113,11 @@ void FakeWebRtcVideoDecoderFactory::DecoderDestroyed(
 }
 
 void FakeWebRtcVideoDecoderFactory::AddSupportedVideoCodecType(
-    const webrtc::SdpVideoFormat& format) {
-  supported_codec_formats_.push_back(format);
+    const std::string& name) {
+  // This is to match the default H264 params of cricket::VideoCodec.
+  cricket::VideoCodec video_codec(name);
+  supported_codec_formats_.push_back(
+      webrtc::SdpVideoFormat(video_codec.name, video_codec.params));
 }
 
 int FakeWebRtcVideoDecoderFactory::GetNumCreatedDecoders() {
