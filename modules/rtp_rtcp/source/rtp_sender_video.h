@@ -23,6 +23,7 @@
 #include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/absolute_capture_time_sender.h"
 #include "modules/rtp_rtcp/source/playout_delay_oracle.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
@@ -234,6 +235,8 @@ class RTPSenderVideo {
   const bool generic_descriptor_auth_experiment_;
 
   const bool exclude_transport_sequence_number_from_fec_experiment_;
+
+  AbsoluteCaptureTimeSender absolute_capture_time_sender_;
 };
 
 }  // namespace webrtc

@@ -24,6 +24,7 @@
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor_extension.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "modules/rtp_rtcp/source/time_util.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/rate_limiter.h"
 #include "test/gmock.h"
@@ -44,6 +45,7 @@ enum : int {  // The first valid value is 1.
   kTransportSequenceNumberExtensionId,
   kVideoRotationExtensionId,
   kVideoTimingExtensionId,
+  kAbsoluteCaptureTimeExtensionId,
 };
 
 constexpr int kPayload = 100;
@@ -73,6 +75,8 @@ class LoopbackTransportTest : public webrtc::Transport {
         kGenericDescriptorId01);
     receivers_extensions_.Register<FrameMarkingExtension>(
         kFrameMarkingExtensionId);
+    receivers_extensions_.Register<AbsoluteCaptureTimeExtension>(
+        kAbsoluteCaptureTimeExtensionId);
   }
 
   bool SendRtp(const uint8_t* data,
@@ -85,6 +89,9 @@ class LoopbackTransportTest : public webrtc::Transport {
   bool SendRtcp(const uint8_t* data, size_t len) override { return false; }
   const RtpPacketReceived& last_sent_packet() { return sent_packets_.back(); }
   int packets_sent() { return sent_packets_.size(); }
+  const std::vector<RtpPacketReceived>& sent_packets() const {
+    return sent_packets_;
+  }
 
  private:
   RtpHeaderExtensionMap receivers_extensions_;
@@ -604,6 +611,33 @@ TEST_P(RtpSenderVideoTest,
 TEST_P(RtpSenderVideoTest,
        UsesMinimalVp8DescriptorWhenGenericFrameDescriptorExtensionIsUsed01) {
   UsesMinimalVp8DescriptorWhenGenericFrameDescriptorExtensionIsUsed(1);
+}
+
+TEST_P(RtpSenderVideoTest, AbsoluteCaptureTime) {
+  constexpr int64_t kAbsoluteCaptureTimestampMs = 12345678;
+  uint8_t kFrame[kMaxPacketLength];
+  rtp_module_->RegisterRtpHeaderExtension(AbsoluteCaptureTimeExtension::kUri,
+                                          kAbsoluteCaptureTimeExtensionId);
+
+  RTPVideoHeader hdr;
+  hdr.frame_type = VideoFrameType::kVideoFrameKey;
+  rtp_sender_video_.SendVideo(kPayload, kType, kTimestamp,
+                              kAbsoluteCaptureTimestampMs, kFrame, nullptr, hdr,
+                              kDefaultExpectedRetransmissionTimeMs);
+
+  // It is expected that one and only one of the packets sent on this video
+  // frame has absolute capture time header extension.
+  int packets_with_abs_capture_time = 0;
+  for (const RtpPacketReceived& packet : transport_.sent_packets()) {
+    auto absolute_capture_time =
+        packet.GetExtension<AbsoluteCaptureTimeExtension>();
+    if (absolute_capture_time) {
+      ++packets_with_abs_capture_time;
+      EXPECT_EQ(absolute_capture_time->absolute_capture_timestamp,
+                Int64MsToUQ32x32(kAbsoluteCaptureTimestampMs + NtpOffsetMs()));
+    }
+  }
+  EXPECT_EQ(packets_with_abs_capture_time, 1);
 }
 
 INSTANTIATE_TEST_SUITE_P(WithAndWithoutOverhead,

@@ -22,11 +22,13 @@
 #include "api/crypto/frame_encryptor_interface.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/absolute_capture_time_sender.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor_extension.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "modules/rtp_rtcp/source/time_util.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/trace_event.h"
@@ -66,14 +68,16 @@ void BuildRedPayload(const RtpPacketToSend& media_packet,
          media_payload.size());
 }
 
-void AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
-                            const absl::optional<PlayoutDelay>& playout_delay,
-                            bool set_video_rotation,
-                            bool set_color_space,
-                            bool set_frame_marking,
-                            bool first_packet,
-                            bool last_packet,
-                            RtpPacketToSend* packet) {
+void AddRtpHeaderExtensions(
+    const RTPVideoHeader& video_header,
+    const absl::optional<PlayoutDelay>& playout_delay,
+    const absl::optional<AbsoluteCaptureTime>& absolute_capture_time,
+    bool set_video_rotation,
+    bool set_color_space,
+    bool set_frame_marking,
+    bool first_packet,
+    bool last_packet,
+    RtpPacketToSend* packet) {
   // Color space requires two-byte header extensions if HDR metadata is
   // included. Therefore, it's best to add this extension first so that the
   // other extensions in the same packet are written as two-byte headers at
@@ -97,6 +101,10 @@ void AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
   // If transmitted, add to all packets; ack logic depends on this.
   if (playout_delay) {
     packet->SetExtension<PlayoutDelayLimits>(*playout_delay);
+  }
+
+  if (first_packet && absolute_capture_time) {
+    packet->SetExtension<AbsoluteCaptureTimeExtension>(*absolute_capture_time);
   }
 
   if (set_frame_marking) {
@@ -246,7 +254,8 @@ RTPSenderVideo::RTPSenderVideo(const Config& config)
       exclude_transport_sequence_number_from_fec_experiment_(
           config.field_trials
               ->Lookup(kExcludeTransportSequenceNumberFromFecFieldTrial)
-              .find("Enabled") == 0) {
+              .find("Enabled") == 0),
+      absolute_capture_time_sender_(config.clock) {
   RTC_DCHECK(playout_delay_oracle_);
 }
 
@@ -501,21 +510,29 @@ bool RTPSenderVideo::SendVideo(
   single_packet->SetTimestamp(rtp_timestamp);
   single_packet->set_capture_time_ms(capture_time_ms);
 
+  const absl::optional<AbsoluteCaptureTime> absolute_capture_time =
+      absolute_capture_time_sender_.OnSendPacket(
+          AbsoluteCaptureTimeSender::GetSource(single_packet->Ssrc(),
+                                               single_packet->Csrcs()),
+          single_packet->Timestamp(), kVideoPayloadTypeFrequency,
+          Int64MsToUQ32x32(single_packet->capture_time_ms() + NtpOffsetMs()),
+          /*estimated_capture_clock_offset=*/absl::nullopt);
+
   auto first_packet = std::make_unique<RtpPacketToSend>(*single_packet);
   auto middle_packet = std::make_unique<RtpPacketToSend>(*single_packet);
   auto last_packet = std::make_unique<RtpPacketToSend>(*single_packet);
   // Simplest way to estimate how much extensions would occupy is to set them.
-  AddRtpHeaderExtensions(video_header, playout_delay, set_video_rotation,
-                         set_color_space, set_frame_marking,
+  AddRtpHeaderExtensions(video_header, playout_delay, absolute_capture_time,
+                         set_video_rotation, set_color_space, set_frame_marking,
                          /*first=*/true, /*last=*/true, single_packet.get());
-  AddRtpHeaderExtensions(video_header, playout_delay, set_video_rotation,
-                         set_color_space, set_frame_marking,
+  AddRtpHeaderExtensions(video_header, playout_delay, absolute_capture_time,
+                         set_video_rotation, set_color_space, set_frame_marking,
                          /*first=*/true, /*last=*/false, first_packet.get());
-  AddRtpHeaderExtensions(video_header, playout_delay, set_video_rotation,
-                         set_color_space, set_frame_marking,
+  AddRtpHeaderExtensions(video_header, playout_delay, absolute_capture_time,
+                         set_video_rotation, set_color_space, set_frame_marking,
                          /*first=*/false, /*last=*/false, middle_packet.get());
-  AddRtpHeaderExtensions(video_header, playout_delay, set_video_rotation,
-                         set_color_space, set_frame_marking,
+  AddRtpHeaderExtensions(video_header, playout_delay, absolute_capture_time,
+                         set_video_rotation, set_color_space, set_frame_marking,
                          /*first=*/false, /*last=*/true, last_packet.get());
 
   RTC_DCHECK_GT(packet_capacity, single_packet->headers_size());
