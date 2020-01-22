@@ -355,6 +355,7 @@ rtc_source_set("mock_audio_device") {
     ":audio_device",
     ":audio_device_buffer",
     ":audio_device_impl",
+    "../../rtc_base:refcount",
     "../../test:test_support",
   ]
 }
