@@ -10,6 +10,22 @@
 #include "api/test/time_controller.h"
 
 namespace webrtc {
+std::unique_ptr<TaskQueueFactory> TimeController::CreateTaskQueueFactory() {
+  class FactoryWrapper final : public TaskQueueFactory {
+   public:
+    explicit FactoryWrapper(TaskQueueFactory* inner_factory)
+        : inner_(inner_factory) {}
+    std::unique_ptr<TaskQueueBase, TaskQueueDeleter> CreateTaskQueue(
+        absl::string_view name,
+        Priority priority) const override {
+      return inner_->CreateTaskQueue(name, priority);
+    }
+
+   private:
+    TaskQueueFactory* const inner_;
+  };
+  return std::make_unique<FactoryWrapper>(GetTaskQueueFactory());
+}
 bool TimeController::Wait(const std::function<bool()>& done,
                           TimeDelta max_duration) {
   // Step size is chosen to be short enough to not significantly affect latency

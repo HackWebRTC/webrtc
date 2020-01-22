@@ -114,21 +114,6 @@ class LambdaPeerConnectionObserver final : public PeerConnectionObserver {
   PeerScenarioClient::CallbackHandlers* handlers_;
 };
 
-// Used to supply a unique_ptr for an unowned TaskQueueFactory.
-class TaskQueueFactoryWrapper final : public TaskQueueFactory {
- public:
-  explicit TaskQueueFactoryWrapper(TaskQueueFactory* inner_factory)
-      : inner_factory_(inner_factory) {}
-  std::unique_ptr<TaskQueueBase, TaskQueueDeleter> CreateTaskQueue(
-      absl::string_view name,
-      Priority priority) const override {
-    return inner_factory_->CreateTaskQueue(name, priority);
-  }
-
- private:
-  TaskQueueFactory* const inner_factory_;
-};
-
 class TimeControllerBasedCallFactory : public CallFactoryInterface {
  public:
   explicit TimeControllerBasedCallFactory(TimeController* time_controller)
@@ -192,7 +177,7 @@ PeerScenarioClient::PeerScenarioClient(
   pcf_deps.call_factory =
       std::make_unique<TimeControllerBasedCallFactory>(net->time_controller());
   pcf_deps.task_queue_factory =
-      std::make_unique<TaskQueueFactoryWrapper>(task_queue_factory_);
+      net->time_controller()->CreateTaskQueueFactory();
   pcf_deps.event_log_factory =
       std::make_unique<RtcEventLogFactory>(task_queue_factory_);
 

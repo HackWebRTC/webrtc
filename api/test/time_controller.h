@@ -35,6 +35,12 @@ class TimeController {
   // The returned factory will created task queues that runs in implementation
   // defined time domain.
   virtual TaskQueueFactory* GetTaskQueueFactory() = 0;
+  // Simple helper to create an owned factory that can be used as a parameter
+  // for PeerConnectionFactory. Note that this might depend on the underlying
+  // time controller and therfore must be destroyed before the time controller
+  // is destroyed.
+  std::unique_ptr<TaskQueueFactory> CreateTaskQueueFactory();
+
   // Creates a process thread.
   virtual std::unique_ptr<ProcessThread> CreateProcessThread(
       const char* thread_name) = 0;
