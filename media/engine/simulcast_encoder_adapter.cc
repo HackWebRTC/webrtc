@@ -243,7 +243,8 @@ int SimulcastEncoderAdapter::InitEncode(
   RTC_DCHECK_LT(highest_resolution_stream_index, number_of_streams);
 
   const SdpVideoFormat format(
-      codec_.codecType == webrtc::kVideoCodecVP8 ? "VP8" : "H264");
+      codec_.codecType == webrtc::kVideoCodecVP8 ? "VP8" : "H264",
+      video_format_.parameters);
 
   for (int i = 0; i < number_of_streams; ++i) {
     // If an existing encoder instance exists, reuse it.
