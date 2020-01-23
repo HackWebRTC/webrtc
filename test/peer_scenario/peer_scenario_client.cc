@@ -17,9 +17,9 @@
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/rtc_event_log/rtc_event_log_factory.h"
 #include "api/task_queue/default_task_queue_factory.h"
+#include "api/test/create_time_controller.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
-#include "call/call.h"
 #include "media/engine/webrtc_media_engine.h"
 #include "modules/audio_device/include/test_audio_device.h"
 #include "p2p/client/basic_port_allocator.h"
@@ -114,19 +114,6 @@ class LambdaPeerConnectionObserver final : public PeerConnectionObserver {
   PeerScenarioClient::CallbackHandlers* handlers_;
 };
 
-class TimeControllerBasedCallFactory : public CallFactoryInterface {
- public:
-  explicit TimeControllerBasedCallFactory(TimeController* time_controller)
-      : time_controller_(time_controller) {}
-  Call* CreateCall(const Call::Config& config) override {
-    return Call::Create(config, time_controller_->GetClock(),
-                        time_controller_->CreateProcessThread("CallModules"),
-                        time_controller_->CreateProcessThread("Pacer"));
-  }
-
- private:
-  TimeController* time_controller_;
-};
 
 }  // namespace
 
@@ -175,7 +162,7 @@ PeerScenarioClient::PeerScenarioClient(
   pcf_deps.signaling_thread = signaling_thread_;
   pcf_deps.worker_thread = worker_thread_.get();
   pcf_deps.call_factory =
-      std::make_unique<TimeControllerBasedCallFactory>(net->time_controller());
+      CreateTimeControllerBasedCallFactory(net->time_controller());
   pcf_deps.task_queue_factory =
       net->time_controller()->CreateTaskQueueFactory();
   pcf_deps.event_log_factory =

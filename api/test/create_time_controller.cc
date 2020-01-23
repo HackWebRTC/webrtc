@@ -12,6 +12,7 @@
 
 #include <memory>
 
+#include "call/call.h"
 #include "test/time_controller/external_time_controller.h"
 
 namespace webrtc {
@@ -19,6 +20,24 @@ namespace webrtc {
 std::unique_ptr<TimeController> CreateTimeController(
     ControlledAlarmClock* alarm) {
   return std::make_unique<ExternalTimeController>(alarm);
+}
+
+std::unique_ptr<CallFactoryInterface> CreateTimeControllerBasedCallFactory(
+    TimeController* time_controller) {
+  class TimeControllerBasedCallFactory : public CallFactoryInterface {
+   public:
+    explicit TimeControllerBasedCallFactory(TimeController* time_controller)
+        : time_controller_(time_controller) {}
+    Call* CreateCall(const Call::Config& config) override {
+      return Call::Create(config, time_controller_->GetClock(),
+                          time_controller_->CreateProcessThread("CallModules"),
+                          time_controller_->CreateProcessThread("Pacer"));
+    }
+
+   private:
+    TimeController* time_controller_;
+  };
+  return std::make_unique<TimeControllerBasedCallFactory>(time_controller);
 }
 
 }  // namespace webrtc
