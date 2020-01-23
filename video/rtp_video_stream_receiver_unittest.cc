@@ -975,6 +975,55 @@ TEST_P(RtpVideoStreamReceiverGenericDescriptorTest,
   rtp_video_stream_receiver_->OnRtpPacket(rtp_packet);
 }
 
+TEST_P(RtpVideoStreamReceiverGenericDescriptorTest, UnwrapsFrameId) {
+  const int version = GetParam();
+  const std::vector<uint8_t> data = {0, 1, 2, 3, 4};
+  const int kPayloadType = 123;
+
+  VideoCodec codec;
+  codec.plType = kPayloadType;
+  rtp_video_stream_receiver_->AddReceiveCodec(codec, {}, /*raw_payload=*/true);
+  rtp_video_stream_receiver_->StartReceive();
+  RtpHeaderExtensionMap extension_map;
+  RegisterRtpGenericFrameDescriptorExtension(&extension_map, version);
+
+  uint16_t rtp_sequence_number = 1;
+  auto inject_packet = [&](uint16_t wrapped_frame_id) {
+    RtpPacketReceived rtp_packet(&extension_map);
+
+    RtpGenericFrameDescriptor generic_descriptor;
+    generic_descriptor.SetFirstPacketInSubFrame(true);
+    generic_descriptor.SetLastPacketInSubFrame(true);
+    generic_descriptor.SetFrameId(wrapped_frame_id);
+    ASSERT_TRUE(SetExtensionRtpGenericFrameDescriptorExtension(
+        generic_descriptor, &rtp_packet, version));
+
+    uint8_t* payload = rtp_packet.SetPayloadSize(data.size());
+    ASSERT_TRUE(payload);
+    memcpy(payload, data.data(), data.size());
+    mock_on_complete_frame_callback_.ClearExpectedBitstream();
+    mock_on_complete_frame_callback_.AppendExpectedBitstream(data.data(),
+                                                             data.size());
+    rtp_packet.SetMarker(true);
+    rtp_packet.SetPayloadType(kPayloadType);
+    rtp_packet.SetSequenceNumber(++rtp_sequence_number);
+    rtp_video_stream_receiver_->OnRtpPacket(rtp_packet);
+  };
+
+  int64_t first_picture_id;
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .WillOnce([&](video_coding::EncodedFrame* frame) {
+        first_picture_id = frame->id.picture_id;
+      });
+  inject_packet(/*wrapped_frame_id=*/0xffff);
+
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame)
+      .WillOnce([&](video_coding::EncodedFrame* frame) {
+        EXPECT_EQ(frame->id.picture_id - first_picture_id, 3);
+      });
+  inject_packet(/*wrapped_frame_id=*/0x0002);
+}
+
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 TEST_F(RtpVideoStreamReceiverTest, RepeatedSecondarySinkDisallowed) {
   MockRtpPacketSink secondary_sink;

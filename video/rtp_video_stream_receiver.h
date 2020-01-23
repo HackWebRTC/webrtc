@@ -277,6 +277,8 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
 
   video_coding::PacketBuffer packet_buffer_;
   UniqueTimestampCounter frame_counter_ RTC_GUARDED_BY(worker_task_checker_);
+  SeqNumUnwrapper<uint16_t> frame_id_unwrapper_
+      RTC_GUARDED_BY(worker_task_checker_);
 
   rtc::CriticalSection reference_finder_lock_;
   std::unique_ptr<video_coding::RtpFrameReferenceFinder> reference_finder_
