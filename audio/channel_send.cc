@@ -146,17 +146,19 @@ class ChannelSend : public ChannelSendInterface,
   // From AudioPacketizationCallback in the ACM
   int32_t SendData(AudioFrameType frameType,
                    uint8_t payloadType,
-                   uint32_t timeStamp,
+                   uint32_t rtp_timestamp,
                    const uint8_t* payloadData,
-                   size_t payloadSize) override;
+                   size_t payloadSize,
+                   int64_t absolute_capture_timestamp_ms) override;
 
   void OnUplinkPacketLossRate(float packet_loss_rate);
   bool InputMute() const;
 
   int32_t SendRtpAudio(AudioFrameType frameType,
                        uint8_t payloadType,
-                       uint32_t timeStamp,
-                       rtc::ArrayView<const uint8_t> payload)
+                       uint32_t rtp_timestamp,
+                       rtc::ArrayView<const uint8_t> payload,
+                       int64_t absolute_capture_timestamp_ms)
       RTC_RUN_ON(encoder_queue_);
 
   void OnReceivedRtt(int64_t rtt_ms);
@@ -360,18 +362,21 @@ class VoERtcpObserver : public RtcpBandwidthObserver {
 
 int32_t ChannelSend::SendData(AudioFrameType frameType,
                               uint8_t payloadType,
-                              uint32_t timeStamp,
+                              uint32_t rtp_timestamp,
                               const uint8_t* payloadData,
-                              size_t payloadSize) {
+                              size_t payloadSize,
+                              int64_t absolute_capture_timestamp_ms) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   rtc::ArrayView<const uint8_t> payload(payloadData, payloadSize);
-  return SendRtpAudio(frameType, payloadType, timeStamp, payload);
+  return SendRtpAudio(frameType, payloadType, rtp_timestamp, payload,
+                      absolute_capture_timestamp_ms);
 }
 
 int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
                                   uint8_t payloadType,
-                                  uint32_t timeStamp,
-                                  rtc::ArrayView<const uint8_t> payload) {
+                                  uint32_t rtp_timestamp,
+                                  rtc::ArrayView<const uint8_t> payload,
+                                  int64_t absolute_capture_timestamp_ms) {
   if (_includeAudioLevelIndication) {
     // Store current audio level in the RTP sender.
     // The level will be used in combination with voice-activity state
@@ -419,7 +424,7 @@ int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
 
   // Push data from ACM to RTP/RTCP-module to deliver audio frame for
   // packetization.
-  if (!_rtpRtcpModule->OnSendingRtpFrame(timeStamp,
+  if (!_rtpRtcpModule->OnSendingRtpFrame(rtp_timestamp,
                                          // Leaving the time when this frame was
                                          // received from the capture device as
                                          // undefined for voice for now.
@@ -433,10 +438,12 @@ int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
   // call.
   // TODO(nisse): Delete RTCPSender:timestamp_offset_, and see if we can confine
   // knowledge of the offset to a single place.
-  const uint32_t rtp_timestamp = timeStamp + _rtpRtcpModule->StartTimestamp();
+
   // This call will trigger Transport::SendPacket() from the RTP/RTCP module.
-  if (!rtp_sender_audio_->SendAudio(frameType, payloadType, rtp_timestamp,
-                                    payload.data(), payload.size())) {
+  if (!rtp_sender_audio_->SendAudio(
+          frameType, payloadType,
+          rtp_timestamp + _rtpRtcpModule->StartTimestamp(), payload.data(),
+          payload.size(), absolute_capture_timestamp_ms)) {
     RTC_DLOG(LS_ERROR)
         << "ChannelSend::SendData() failed to send data to RTP/RTCP module";
     return -1;
