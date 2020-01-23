@@ -20,6 +20,7 @@
 #include "call/simulated_network.h"
 #include "rtc_base/event.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/network_constants.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/network/network_emulation_manager.h"
@@ -45,8 +46,12 @@ struct TrafficCounterFixture {
   SimulatedClock clock{0};
   CountingReceiver counter;
   TaskQueueForTest task_queue_;
-  EmulatedEndpointImpl endpoint{/*id=*/1, rtc::IPAddress(kTestIpAddress),
-                                /*is_enabled=*/true, &task_queue_, &clock};
+  EmulatedEndpointImpl endpoint{/*id=*/1,
+                                rtc::IPAddress(kTestIpAddress),
+                                /*is_enabled=*/true,
+                                /*type=*/rtc::AdapterType::ADAPTER_TYPE_UNKNOWN,
+                                &task_queue_,
+                                &clock};
 };
 
 }  // namespace

@@ -17,9 +17,9 @@
 #include "api/test/network_emulation/network_emulation_interfaces.h"
 #include "api/test/simulated_network.h"
 #include "api/test/time_controller.h"
-
 #include "api/units/timestamp.h"
 #include "rtc_base/network.h"
+#include "rtc_base/network_constants.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {
@@ -52,6 +52,8 @@ struct EmulatedEndpointConfig {
   // Should endpoint be enabled or not, when it will be created.
   // Enabled endpoints will be available for webrtc to send packets.
   bool start_as_enabled = true;
+  // Network type which will be used to represent endpoint to WebRTC.
+  rtc::AdapterType type = rtc::AdapterType::ADAPTER_TYPE_UNKNOWN;
 };
 
 

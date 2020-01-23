@@ -23,6 +23,7 @@ specific_include_rules = {
   "network_emulation_manager\.h": [
     "+rtc_base/thread.h",
     "+rtc_base/network.h",
+    "+rtc_base/network_constants.h",
   ],
   "peerconnection_quality_test_fixture\.h": [
     "+logging/rtc_event_log/rtc_event_log_factory_interface.h",

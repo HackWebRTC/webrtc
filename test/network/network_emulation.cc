@@ -169,11 +169,13 @@ EmulatedNetworkNode::~EmulatedNetworkNode() = default;
 EmulatedEndpointImpl::EmulatedEndpointImpl(uint64_t id,
                                            const rtc::IPAddress& ip,
                                            bool is_enabled,
+                                           rtc::AdapterType type,
                                            rtc::TaskQueue* task_queue,
                                            Clock* clock)
     : id_(id),
       peer_local_addr_(ip),
       is_enabled_(is_enabled),
+      type_(type),
       clock_(clock),
       task_queue_(task_queue),
       router_(task_queue_),
@@ -190,7 +192,7 @@ EmulatedEndpointImpl::EmulatedEndpointImpl(uint64_t id,
   rtc::IPAddress prefix = TruncateIP(ip, prefix_length);
   network_ = std::make_unique<rtc::Network>(
       ip.ToString(), "Endpoint id=" + std::to_string(id_), prefix,
-      prefix_length, rtc::AdapterType::ADAPTER_TYPE_UNKNOWN);
+      prefix_length, type_);
   network_->AddIP(ip);
 
   enabled_state_checker_.Detach();

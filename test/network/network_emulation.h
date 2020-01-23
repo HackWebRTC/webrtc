@@ -25,6 +25,7 @@
 #include "api/units/timestamp.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/network.h"
+#include "rtc_base/network_constants.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/task_utils/repeating_task.h"
@@ -130,6 +131,7 @@ class EmulatedEndpointImpl : public EmulatedEndpoint {
   EmulatedEndpointImpl(uint64_t id,
                        const rtc::IPAddress& ip,
                        bool is_enabled,
+                       rtc::AdapterType type,
                        rtc::TaskQueue* task_queue,
                        Clock* clock);
   ~EmulatedEndpointImpl() override;
@@ -173,6 +175,7 @@ class EmulatedEndpointImpl : public EmulatedEndpoint {
   // Peer's local IP address for this endpoint network interface.
   const rtc::IPAddress peer_local_addr_;
   bool is_enabled_ RTC_GUARDED_BY(enabled_state_checker_);
+  const rtc::AdapterType type_;
   Clock* const clock_;
   rtc::TaskQueue* const task_queue_;
   std::unique_ptr<rtc::Network> network_;
