@@ -33,8 +33,7 @@ int32_t TestPacketization::SendData(const AudioFrameType /* frameType */,
                                     const uint8_t payloadType,
                                     const uint32_t timeStamp,
                                     const uint8_t* payloadData,
-                                    const size_t payloadSize,
-                                    int64_t absolute_capture_timestamp_ms) {
+                                    const size_t payloadSize) {
   _rtpStream->Write(payloadType, timeStamp, _seqNo++, payloadData, payloadSize,
                     _frequency);
   return 1;
