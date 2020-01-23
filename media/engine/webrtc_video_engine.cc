@@ -139,11 +139,11 @@ std::vector<VideoCodec> AssignPayloadTypesAndDefaultCodecs(
   return output_codecs;
 }
 
-std::vector<VideoCodec> AssignPayloadTypesAndDefaultCodecs(
-    const webrtc::VideoEncoderFactory* encoder_factory) {
-  return encoder_factory ? AssignPayloadTypesAndDefaultCodecs(
-                               encoder_factory->GetSupportedFormats())
-                         : std::vector<VideoCodec>();
+template <class T>
+std::vector<VideoCodec> GetPayloadTypesAndDefaultCodecs(const T factory) {
+  return factory ? AssignPayloadTypesAndDefaultCodecs(
+                       factory->GetSupportedFormats())
+                 : std::vector<VideoCodec>();
 }
 
 bool IsTemporalLayersSupported(const std::string& codec_name) {
@@ -476,8 +476,12 @@ VideoMediaChannel* WebRtcVideoEngine::CreateMediaChannel(
                                 encoder_factory_.get(), decoder_factory_.get(),
                                 video_bitrate_allocator_factory);
 }
-std::vector<VideoCodec> WebRtcVideoEngine::codecs() const {
-  return AssignPayloadTypesAndDefaultCodecs(encoder_factory_.get());
+std::vector<VideoCodec> WebRtcVideoEngine::send_codecs() const {
+  return GetPayloadTypesAndDefaultCodecs(encoder_factory_.get());
+}
+
+std::vector<VideoCodec> WebRtcVideoEngine::recv_codecs() const {
+  return GetPayloadTypesAndDefaultCodecs(decoder_factory_.get());
 }
 
 RtpCapabilities WebRtcVideoEngine::GetCapabilities() const {
@@ -547,9 +551,9 @@ WebRtcVideoChannel::WebRtcVideoChannel(
 
   rtcp_receiver_report_ssrc_ = kDefaultRtcpReceiverReportSsrc;
   sending_ = false;
-  recv_codecs_ =
-      MapCodecs(AssignPayloadTypesAndDefaultCodecs(encoder_factory_));
-  recv_flexfec_payload_type_ = recv_codecs_.front().flexfec_payload_type;
+  recv_codecs_ = MapCodecs(GetPayloadTypesAndDefaultCodecs(decoder_factory_));
+  recv_flexfec_payload_type_ =
+      recv_codecs_.empty() ? 0 : recv_codecs_.front().flexfec_payload_type;
 }
 
 WebRtcVideoChannel::~WebRtcVideoChannel() {
@@ -976,7 +980,7 @@ bool WebRtcVideoChannel::GetChangedRecvParameters(
 
   // Verify that every mapped codec is supported locally.
   const std::vector<VideoCodec> local_supported_codecs =
-      AssignPayloadTypesAndDefaultCodecs(encoder_factory_);
+      GetPayloadTypesAndDefaultCodecs(decoder_factory_);
   for (const VideoCodecSettings& mapped_codec : mapped_codecs) {
     if (!FindMatchingCodec(local_supported_codecs, mapped_codec.codec)) {
       RTC_LOG(LS_ERROR)
@@ -2909,6 +2913,9 @@ bool WebRtcVideoChannel::VideoCodecSettings::operator!=(
 
 std::vector<WebRtcVideoChannel::VideoCodecSettings>
 WebRtcVideoChannel::MapCodecs(const std::vector<VideoCodec>& codecs) {
+  if (codecs.empty()) {
+    return {};
+  }
   RTC_DCHECK(!codecs.empty());
 
   std::vector<VideoCodecSettings> video_codecs;

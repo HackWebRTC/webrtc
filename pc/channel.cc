@@ -993,7 +993,8 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
 
   VideoSendParameters send_params = last_send_params_;
   bool needs_send_params_update = false;
-  if (type == SdpType::kAnswer || type == SdpType::kPrAnswer) {
+  if ((type == SdpType::kAnswer || type == SdpType::kPrAnswer) &&
+      webrtc::RtpTransceiverDirectionHasSend(video->direction())) {
     for (auto& send_codec : send_params.codecs) {
       auto* recv_codec = FindMatchingCodec(recv_params.codecs, send_codec);
       if (recv_codec) {
@@ -1010,13 +1011,13 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
     }
   }
 
-  if (!media_channel()->SetRecvParameters(recv_params)) {
-    SafeSetError("Failed to set local video description recv parameters.",
-                 error_desc);
-    return false;
-  }
-
   if (webrtc::RtpTransceiverDirectionHasRecv(video->direction())) {
+    if (!media_channel()->SetRecvParameters(recv_params)) {
+      SafeSetError("Failed to set local video description recv parameters.",
+                   error_desc);
+      return false;
+    }
+
     for (const VideoCodec& codec : video->codecs()) {
       AddHandledPayloadType(codec.id);
     }
@@ -1025,11 +1026,11 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
       RTC_LOG(LS_ERROR) << "Failed to set up video demuxing.";
       return false;
     }
+    last_recv_params_ = recv_params;
   }
 
-  last_recv_params_ = recv_params;
-
   if (needs_send_params_update) {
+    RTC_DCHECK(webrtc::RtpTransceiverDirectionHasSend(video->direction()));
     if (!media_channel()->SetSendParameters(send_params)) {
       SafeSetError("Failed to set send parameters.", error_desc);
       return false;
@@ -1079,7 +1080,10 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
 
   VideoRecvParameters recv_params = last_recv_params_;
   bool needs_recv_params_update = false;
-  if (type == SdpType::kAnswer || type == SdpType::kPrAnswer) {
+  // Require SEND direction for receive parameters since we're in
+  // SetRemoteContent_w.
+  if ((type == SdpType::kAnswer || type == SdpType::kPrAnswer) &&
+      webrtc::RtpTransceiverDirectionHasSend(video->direction())) {
     for (auto& recv_codec : recv_params.codecs) {
       auto* send_codec = FindMatchingCodec(send_params.codecs, recv_codec);
       if (send_codec) {
@@ -1096,14 +1100,19 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
     }
   }
 
-  if (!media_channel()->SetSendParameters(send_params)) {
-    SafeSetError("Failed to set remote video description send parameters.",
-                 error_desc);
-    return false;
+  // Require RECV direction for send parameters since we're in
+  // SetRemoteContent_w.
+  if (webrtc::RtpTransceiverDirectionHasRecv(video->direction())) {
+    if (!media_channel()->SetSendParameters(send_params)) {
+      SafeSetError("Failed to set remote video description send parameters.",
+                   error_desc);
+      return false;
+    }
+    last_send_params_ = send_params;
   }
-  last_send_params_ = send_params;
 
   if (needs_recv_params_update) {
+    RTC_DCHECK(webrtc::RtpTransceiverDirectionHasSend(video->direction()));
     if (!media_channel()->SetRecvParameters(recv_params)) {
       SafeSetError("Failed to set recv parameters.", error_desc);
       return false;
