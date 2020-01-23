@@ -219,8 +219,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   const uint32_t number_of_cores_;
   // Counts how many frames we've dropped in the initial framedrop phase.
   int initial_framedrop_;
-  const bool initial_framedrop_on_bwe_enabled_;
-  bool has_seen_first_significant_bwe_change_ = false;
   bool quality_rampup_done_ RTC_GUARDED_BY(&encoder_queue_);
   QualityRampupExperiment quality_rampup_experiment_
       RTC_GUARDED_BY(&encoder_queue_);

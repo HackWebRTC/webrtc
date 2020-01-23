@@ -49,15 +49,11 @@ const int64_t kFrameLogIntervalMs = 60000;
 // Time to keep a single cached pending frame in paused state.
 const int64_t kPendingFrameTimeoutMs = 1000;
 
-const char kInitialFramedropFieldTrial[] = "WebRTC-InitialFramedrop";
 constexpr char kFrameDropperFieldTrial[] = "WebRTC-FrameDropper";
 
 // The maximum number of frames to drop at beginning of stream
 // to try and achieve desired bitrate.
 const int kMaxInitialFramedrop = 4;
-// When the first change in BWE above this threshold occurs,
-// enable DropFrameDueToSize logic.
-const float kFramedropThreshold = 0.3;
 
 // Averaging window spanning 90 frames at default 30fps, matching old media
 // optimization module defaults.
@@ -69,10 +65,6 @@ const int64_t kParameterUpdateIntervalMs = 1000;
 
 // Animation is capped to 720p.
 constexpr int kMaxAnimationPixels = 1280 * 720;
-
-uint32_t abs_diff(uint32_t a, uint32_t b) {
-  return (a < b) ? b - a : a - b;
-}
 
 bool IsResolutionScalingEnabled(DegradationPreference degradation_preference) {
   return degradation_preference == DegradationPreference::MAINTAIN_FRAMERATE ||
@@ -266,8 +258,6 @@ VideoStreamEncoder::VideoStreamEncoder(
     : shutdown_event_(true /* manual_reset */, false),
       number_of_cores_(number_of_cores),
       initial_framedrop_(0),
-      initial_framedrop_on_bwe_enabled_(
-          webrtc::field_trial::IsEnabled(kInitialFramedropFieldTrial)),
       quality_rampup_done_(false),
       quality_rampup_experiment_(QualityRampupExperiment::ParseSettings()),
       quality_scaling_experiment_enabled_(QualityScalingExperiment::Enabled()),
@@ -813,7 +803,6 @@ void VideoStreamEncoder::ConfigureQualityScaler(
           experimental_thresholds ? *experimental_thresholds
                                   : *(scaling_settings.thresholds));
       resource_adaptation_module_->SetIsQualityScalerEnabled(true);
-      has_seen_first_significant_bwe_change_ = false;
       initial_framedrop_ = 0;
     }
   } else {
@@ -1618,19 +1607,6 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
                       << " packet loss " << static_cast<int>(fraction_lost)
                       << " rtt " << round_trip_time_ms;
 
-  // On significant changes to BWE at the start of the call,
-  // enable frame drops to quickly react to jumps in available bandwidth.
-  if (encoder_target_bitrate_bps_.has_value() &&
-      !has_seen_first_significant_bwe_change_ && quality_scaler_ &&
-      initial_framedrop_on_bwe_enabled_ &&
-      abs_diff(target_bitrate.bps(), encoder_target_bitrate_bps_.value()) >=
-          kFramedropThreshold * encoder_target_bitrate_bps_.value()) {
-    // Reset initial framedrop feature when first real BW estimate arrives.
-    // TODO(kthelgason): Update BitrateAllocator to not call OnBitrateUpdated
-    // without an actual BW estimate.
-    initial_framedrop_ = 0;
-    has_seen_first_significant_bwe_change_ = true;
-  }
   if (set_start_bitrate_bps_ > 0 && !has_seen_first_bwe_drop_ &&
       quality_scaler_ && quality_scaler_settings_.InitialBitrateIntervalMs() &&
       quality_scaler_settings_.InitialBitrateFactor()) {
