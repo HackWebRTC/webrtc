@@ -4780,10 +4780,6 @@ void PeerConnection::ChangeSignalingState(
         PeerConnectionInterface::IceConnectionState::kIceConnectionClosed;
     connection_state_ = PeerConnectionInterface::PeerConnectionState::kClosed;
     Observer()->OnConnectionChange(connection_state_);
-    if (ice_gathering_state_ != kIceGatheringComplete) {
-      ice_gathering_state_ = kIceGatheringComplete;
-      Observer()->OnIceGatheringChange(ice_gathering_state_);
-    }
   }
   Observer()->OnSignalingChange(signaling_state_);
 }

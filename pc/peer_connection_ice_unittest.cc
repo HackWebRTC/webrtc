@@ -1404,4 +1404,13 @@ TEST_P(PeerConnectionIceTest, IceCredentialsCreateAnswer) {
   }
 }
 
+// Regression test for https://bugs.chromium.org/p/webrtc/issues/detail?id=4728
+TEST_P(PeerConnectionIceTest, CloseDoesNotTransitionGatheringStateToComplete) {
+  auto pc = CreatePeerConnectionWithAudioVideo();
+  pc->pc()->Close();
+  EXPECT_FALSE(pc->IsIceGatheringDone());
+  EXPECT_EQ(PeerConnectionInterface::kIceGatheringNew,
+            pc->pc()->ice_gathering_state());
+}
+
 }  // namespace webrtc
