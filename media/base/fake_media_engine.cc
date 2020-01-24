@@ -567,8 +567,7 @@ FakeVideoEngine::FakeVideoEngine()
     : capture_(false), fail_create_channel_(false) {
   // Add a fake video codec. Note that the name must not be "" as there are
   // sanity checks against that.
-  send_codecs_.push_back(VideoCodec(0, "fake_video_codec"));
-  recv_codecs_.push_back(VideoCodec(0, "fake_video_codec"));
+  codecs_.push_back(VideoCodec(0, "fake_video_codec"));
 }
 RtpCapabilities FakeVideoEngine::GetCapabilities() const {
   return RtpCapabilities();
@@ -599,22 +598,12 @@ void FakeVideoEngine::UnregisterChannel(VideoMediaChannel* channel) {
   RTC_DCHECK(it != channels_.end());
   channels_.erase(it);
 }
-std::vector<VideoCodec> FakeVideoEngine::send_codecs() const {
-  return send_codecs_;
+std::vector<VideoCodec> FakeVideoEngine::codecs() const {
+  return codecs_;
 }
-
-std::vector<VideoCodec> FakeVideoEngine::recv_codecs() const {
-  return recv_codecs_;
+void FakeVideoEngine::SetCodecs(const std::vector<VideoCodec> codecs) {
+  codecs_ = codecs;
 }
-
-void FakeVideoEngine::SetSendCodecs(const std::vector<VideoCodec>& codecs) {
-  send_codecs_ = codecs;
-}
-
-void FakeVideoEngine::SetRecvCodecs(const std::vector<VideoCodec>& codecs) {
-  recv_codecs_ = codecs;
-}
-
 bool FakeVideoEngine::SetCapture(bool capture) {
   capture_ = capture;
   return true;
@@ -638,8 +627,7 @@ void FakeMediaEngine::SetAudioSendCodecs(
   voice_->SetSendCodecs(codecs);
 }
 void FakeMediaEngine::SetVideoCodecs(const std::vector<VideoCodec>& codecs) {
-  video_->SetSendCodecs(codecs);
-  video_->SetRecvCodecs(codecs);
+  video_->SetCodecs(codecs);
 }
 
 FakeVoiceMediaChannel* FakeMediaEngine::GetVoiceChannel(size_t index) {
