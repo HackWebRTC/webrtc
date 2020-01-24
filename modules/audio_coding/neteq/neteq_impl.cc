@@ -61,13 +61,15 @@ std::unique_ptr<NetEqController> CreateNetEqController(
     int max_packets_in_buffer,
     bool enable_rtx_handling,
     bool allow_time_stretching,
-    TickTimer* tick_timer) {
+    TickTimer* tick_timer,
+    webrtc::Clock* clock) {
   NetEqController::Config config;
   config.base_min_delay_ms = base_min_delay;
   config.max_packets_in_buffer = max_packets_in_buffer;
   config.enable_rtx_handling = enable_rtx_handling;
   config.allow_time_stretching = allow_time_stretching;
   config.tick_timer = tick_timer;
+  config.clock = clock;
   return controller_factory.CreateNetEqController(config);
 }
 
@@ -93,7 +95,8 @@ NetEqImpl::Dependencies::Dependencies(
                                 config.max_packets_in_buffer,
                                 config.enable_rtx_handling,
                                 !config.for_test_no_time_stretching,
-                                tick_timer.get())),
+                                tick_timer.get(),
+                                clock)),
       red_payload_splitter(new RedPayloadSplitter),
       timestamp_scaler(new TimestampScaler(*decoder_database)),
       accelerate_factory(new AccelerateFactory),
@@ -1084,6 +1087,7 @@ int NetEqImpl::GetDecision(Operation* operation,
   status.last_mode = last_mode_;
   status.play_dtmf = *play_dtmf;
   status.generated_noise_samples = generated_noise_samples;
+  status.sync_buffer_samples = sync_buffer_->FutureLength();
   if (packet) {
     status.next_packet = {
         packet->timestamp, packet->frame && packet->frame->IsDtxPacket(),

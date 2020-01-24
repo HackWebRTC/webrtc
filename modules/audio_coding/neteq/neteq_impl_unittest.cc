@@ -125,6 +125,7 @@ class NetEqImplTest : public ::testing::Test {
       controller_config.enable_rtx_handling = config_.enable_rtx_handling;
       controller_config.allow_time_stretching = true;
       controller_config.max_packets_in_buffer = config_.max_packets_in_buffer;
+      controller_config.clock = &clock_;
       deps.neteq_controller =
           std::make_unique<DecisionLogic>(std::move(controller_config));
     }
