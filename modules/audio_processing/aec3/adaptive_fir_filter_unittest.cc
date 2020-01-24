@@ -51,15 +51,137 @@ std::string ProduceDebugText(size_t num_render_channels, size_t delay) {
 
 }  // namespace
 
+class AdaptiveFirFilterOneTwoFourEightRenderChannels
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<size_t> {};
+
+INSTANTIATE_TEST_SUITE_P(MultiChannel,
+                         AdaptiveFirFilterOneTwoFourEightRenderChannels,
+                         ::testing::Values(1, 2, 4, 8));
+
 #if defined(WEBRTC_HAS_NEON)
 // Verifies that the optimized methods for filter adaptation are similar to
 // their reference counterparts.
-TEST(AdaptiveFirFilter, FilterAdaptationNeonOptimizations) {
+TEST_P(AdaptiveFirFilterOneTwoFourEightRenderChannels,
+       FilterAdaptationNeonOptimizations) {
+  const size_t num_render_channels = GetParam();
   for (size_t num_partitions : {2, 5, 12, 30, 50}) {
-    for (size_t num_render_channels : {1, 2, 4, 8}) {
-      constexpr int kSampleRateHz = 48000;
-      constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
+    constexpr int kSampleRateHz = 48000;
+    constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
 
+    std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
+        RenderDelayBuffer::Create(EchoCanceller3Config(), kSampleRateHz,
+                                  num_render_channels));
+    Random random_generator(42U);
+    std::vector<std::vector<std::vector<float>>> x(
+        kNumBands,
+        std::vector<std::vector<float>>(num_render_channels,
+                                        std::vector<float>(kBlockSize, 0.f)));
+    FftData S_C;
+    FftData S_Neon;
+    FftData G;
+    Aec3Fft fft;
+    std::vector<std::vector<FftData>> H_C(
+        num_partitions, std::vector<FftData>(num_render_channels));
+    std::vector<std::vector<FftData>> H_Neon(
+        num_partitions, std::vector<FftData>(num_render_channels));
+    for (size_t p = 0; p < num_partitions; ++p) {
+      for (size_t ch = 0; ch < num_render_channels; ++ch) {
+        H_C[p][ch].Clear();
+        H_Neon[p][ch].Clear();
+      }
+    }
+
+    for (size_t k = 0; k < 30; ++k) {
+      for (size_t band = 0; band < x.size(); ++band) {
+        for (size_t ch = 0; ch < x[band].size(); ++ch) {
+          RandomizeSampleVector(&random_generator, x[band][ch]);
+        }
+      }
+      render_delay_buffer->Insert(x);
+      if (k == 0) {
+        render_delay_buffer->Reset();
+      }
+      render_delay_buffer->PrepareCaptureProcessing();
+    }
+    auto* const render_buffer = render_delay_buffer->GetRenderBuffer();
+
+    for (size_t j = 0; j < G.re.size(); ++j) {
+      G.re[j] = j / 10001.f;
+    }
+    for (size_t j = 1; j < G.im.size() - 1; ++j) {
+      G.im[j] = j / 20001.f;
+    }
+    G.im[0] = 0.f;
+    G.im[G.im.size() - 1] = 0.f;
+
+    AdaptPartitions_Neon(*render_buffer, G, num_partitions, &H_Neon);
+    AdaptPartitions(*render_buffer, G, num_partitions, &H_C);
+    AdaptPartitions_Neon(*render_buffer, G, num_partitions, &H_Neon);
+    AdaptPartitions(*render_buffer, G, num_partitions, &H_C);
+
+    for (size_t p = 0; p < num_partitions; ++p) {
+      for (size_t ch = 0; ch < num_render_channels; ++ch) {
+        for (size_t j = 0; j < H_C[p][ch].re.size(); ++j) {
+          EXPECT_FLOAT_EQ(H_C[p][ch].re[j], H_Neon[p][ch].re[j]);
+          EXPECT_FLOAT_EQ(H_C[p][ch].im[j], H_Neon[p][ch].im[j]);
+        }
+      }
+    }
+
+    ApplyFilter_Neon(*render_buffer, num_partitions, H_Neon, &S_Neon);
+    ApplyFilter(*render_buffer, num_partitions, H_C, &S_C);
+    for (size_t j = 0; j < S_C.re.size(); ++j) {
+      EXPECT_NEAR(S_C.re[j], S_Neon.re[j], fabs(S_C.re[j] * 0.00001f));
+      EXPECT_NEAR(S_C.im[j], S_Neon.im[j], fabs(S_C.re[j] * 0.00001f));
+    }
+  }
+}
+
+// Verifies that the optimized method for frequency response computation is
+// bitexact to the reference counterpart.
+TEST_P(AdaptiveFirFilterOneTwoFourEightRenderChannels,
+       ComputeFrequencyResponseNeonOptimization) {
+  const size_t num_render_channels = GetParam();
+  for (size_t num_partitions : {2, 5, 12, 30, 50}) {
+    std::vector<std::vector<FftData>> H(
+        num_partitions, std::vector<FftData>(num_render_channels));
+    std::vector<std::array<float, kFftLengthBy2Plus1>> H2(num_partitions);
+    std::vector<std::array<float, kFftLengthBy2Plus1>> H2_Neon(num_partitions);
+
+    for (size_t p = 0; p < num_partitions; ++p) {
+      for (size_t ch = 0; ch < num_render_channels; ++ch) {
+        for (size_t k = 0; k < H[p][ch].re.size(); ++k) {
+          H[p][ch].re[k] = k + p / 3.f + ch;
+          H[p][ch].im[k] = p + k / 7.f - ch;
+        }
+      }
+    }
+
+    ComputeFrequencyResponse(num_partitions, H, &H2);
+    ComputeFrequencyResponse_Neon(num_partitions, H, &H2_Neon);
+
+    for (size_t p = 0; p < num_partitions; ++p) {
+      for (size_t k = 0; k < H2[p].size(); ++k) {
+        EXPECT_FLOAT_EQ(H2[p][k], H2_Neon[p][k]);
+      }
+    }
+  }
+}
+#endif
+
+#if defined(WEBRTC_ARCH_X86_FAMILY)
+// Verifies that the optimized methods for filter adaptation are bitexact to
+// their reference counterparts.
+TEST_P(AdaptiveFirFilterOneTwoFourEightRenderChannels,
+       FilterAdaptationSse2Optimizations) {
+  const size_t num_render_channels = GetParam();
+  constexpr int kSampleRateHz = 48000;
+  constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
+
+  bool use_sse2 = (WebRtc_GetCPUInfo(kSSE2) != 0);
+  if (use_sse2) {
+    for (size_t num_partitions : {2, 5, 12, 30, 50}) {
       std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
           RenderDelayBuffer::Create(EchoCanceller3Config(), kSampleRateHz,
                                     num_render_channels));
@@ -69,21 +191,21 @@ TEST(AdaptiveFirFilter, FilterAdaptationNeonOptimizations) {
           std::vector<std::vector<float>>(num_render_channels,
                                           std::vector<float>(kBlockSize, 0.f)));
       FftData S_C;
-      FftData S_Neon;
+      FftData S_Sse2;
       FftData G;
       Aec3Fft fft;
       std::vector<std::vector<FftData>> H_C(
           num_partitions, std::vector<FftData>(num_render_channels));
-      std::vector<std::vector<FftData>> H_Neon(
+      std::vector<std::vector<FftData>> H_Sse2(
           num_partitions, std::vector<FftData>(num_render_channels));
       for (size_t p = 0; p < num_partitions; ++p) {
         for (size_t ch = 0; ch < num_render_channels; ++ch) {
           H_C[p][ch].Clear();
-          H_Neon[p][ch].Clear();
+          H_Sse2[p][ch].Clear();
         }
       }
 
-      for (size_t k = 0; k < 30; ++k) {
+      for (size_t k = 0; k < 500; ++k) {
         for (size_t band = 0; band < x.size(); ++band) {
           for (size_t ch = 0; ch < x[band].size(); ++ch) {
             RandomizeSampleVector(&random_generator, x[band][ch]);
@@ -94,37 +216,31 @@ TEST(AdaptiveFirFilter, FilterAdaptationNeonOptimizations) {
           render_delay_buffer->Reset();
         }
         render_delay_buffer->PrepareCaptureProcessing();
-      }
-      auto* const render_buffer = render_delay_buffer->GetRenderBuffer();
+        auto* const render_buffer = render_delay_buffer->GetRenderBuffer();
 
-      for (size_t j = 0; j < G.re.size(); ++j) {
-        G.re[j] = j / 10001.f;
-      }
-      for (size_t j = 1; j < G.im.size() - 1; ++j) {
-        G.im[j] = j / 20001.f;
-      }
-      G.im[0] = 0.f;
-      G.im[G.im.size() - 1] = 0.f;
+        ApplyFilter_Sse2(*render_buffer, num_partitions, H_Sse2, &S_Sse2);
+        ApplyFilter(*render_buffer, num_partitions, H_C, &S_C);
+        for (size_t j = 0; j < S_C.re.size(); ++j) {
+          EXPECT_FLOAT_EQ(S_C.re[j], S_Sse2.re[j]);
+          EXPECT_FLOAT_EQ(S_C.im[j], S_Sse2.im[j]);
+        }
 
-      AdaptPartitions_Neon(*render_buffer, G, num_partitions, &H_Neon);
-      AdaptPartitions(*render_buffer, G, num_partitions, &H_C);
-      AdaptPartitions_Neon(*render_buffer, G, num_partitions, &H_Neon);
-      AdaptPartitions(*render_buffer, G, num_partitions, &H_C);
+        std::for_each(G.re.begin(), G.re.end(),
+                      [&](float& a) { a = random_generator.Rand<float>(); });
+        std::for_each(G.im.begin(), G.im.end(),
+                      [&](float& a) { a = random_generator.Rand<float>(); });
 
-      for (size_t p = 0; p < num_partitions; ++p) {
-        for (size_t ch = 0; ch < num_render_channels; ++ch) {
-          for (size_t j = 0; j < H_C[p][ch].re.size(); ++j) {
-            EXPECT_FLOAT_EQ(H_C[p][ch].re[j], H_Neon[p][ch].re[j]);
-            EXPECT_FLOAT_EQ(H_C[p][ch].im[j], H_Neon[p][ch].im[j]);
+        AdaptPartitions_Sse2(*render_buffer, G, num_partitions, &H_Sse2);
+        AdaptPartitions(*render_buffer, G, num_partitions, &H_C);
+
+        for (size_t p = 0; p < num_partitions; ++p) {
+          for (size_t ch = 0; ch < num_render_channels; ++ch) {
+            for (size_t j = 0; j < H_C[p][ch].re.size(); ++j) {
+              EXPECT_FLOAT_EQ(H_C[p][ch].re[j], H_Sse2[p][ch].re[j]);
+              EXPECT_FLOAT_EQ(H_C[p][ch].im[j], H_Sse2[p][ch].im[j]);
+            }
           }
         }
-      }
-
-      ApplyFilter_Neon(*render_buffer, num_partitions, H_Neon, &S_Neon);
-      ApplyFilter(*render_buffer, num_partitions, H_C, &S_C);
-      for (size_t j = 0; j < S_C.re.size(); ++j) {
-        EXPECT_NEAR(S_C.re[j], S_Neon.re[j], fabs(S_C.re[j] * 0.00001f));
-        EXPECT_NEAR(S_C.im[j], S_Neon.im[j], fabs(S_C.re[j] * 0.00001f));
       }
     }
   }
@@ -132,13 +248,16 @@ TEST(AdaptiveFirFilter, FilterAdaptationNeonOptimizations) {
 
 // Verifies that the optimized method for frequency response computation is
 // bitexact to the reference counterpart.
-TEST(AdaptiveFirFilter, ComputeFrequencyResponseNeonOptimization) {
-  for (size_t num_partitions : {2, 5, 12, 30, 50}) {
-    for (size_t num_render_channels : {1, 2, 4, 8}) {
+TEST_P(AdaptiveFirFilterOneTwoFourEightRenderChannels,
+       ComputeFrequencyResponseSse2Optimization) {
+  const size_t num_render_channels = GetParam();
+  bool use_sse2 = (WebRtc_GetCPUInfo(kSSE2) != 0);
+  if (use_sse2) {
+    for (size_t num_partitions : {2, 5, 12, 30, 50}) {
       std::vector<std::vector<FftData>> H(
           num_partitions, std::vector<FftData>(num_render_channels));
       std::vector<std::array<float, kFftLengthBy2Plus1>> H2(num_partitions);
-      std::vector<std::array<float, kFftLengthBy2Plus1>> H2_Neon(
+      std::vector<std::array<float, kFftLengthBy2Plus1>> H2_Sse2(
           num_partitions);
 
       for (size_t p = 0; p < num_partitions; ++p) {
@@ -151,123 +270,11 @@ TEST(AdaptiveFirFilter, ComputeFrequencyResponseNeonOptimization) {
       }
 
       ComputeFrequencyResponse(num_partitions, H, &H2);
-      ComputeFrequencyResponse_Neon(num_partitions, H, &H2_Neon);
+      ComputeFrequencyResponse_Sse2(num_partitions, H, &H2_Sse2);
 
       for (size_t p = 0; p < num_partitions; ++p) {
         for (size_t k = 0; k < H2[p].size(); ++k) {
-          EXPECT_FLOAT_EQ(H2[p][k], H2_Neon[p][k]);
-        }
-      }
-    }
-  }
-}
-#endif
-
-#if defined(WEBRTC_ARCH_X86_FAMILY)
-// Verifies that the optimized methods for filter adaptation are bitexact to
-// their reference counterparts.
-TEST(AdaptiveFirFilter, FilterAdaptationSse2Optimizations) {
-  constexpr int kSampleRateHz = 48000;
-  constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
-
-  bool use_sse2 = (WebRtc_GetCPUInfo(kSSE2) != 0);
-  if (use_sse2) {
-    for (size_t num_partitions : {2, 5, 12, 30, 50}) {
-      for (size_t num_render_channels : {1, 2, 4, 8}) {
-        std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-            RenderDelayBuffer::Create(EchoCanceller3Config(), kSampleRateHz,
-                                      num_render_channels));
-        Random random_generator(42U);
-        std::vector<std::vector<std::vector<float>>> x(
-            kNumBands,
-            std::vector<std::vector<float>>(
-                num_render_channels, std::vector<float>(kBlockSize, 0.f)));
-        FftData S_C;
-        FftData S_Sse2;
-        FftData G;
-        Aec3Fft fft;
-        std::vector<std::vector<FftData>> H_C(
-            num_partitions, std::vector<FftData>(num_render_channels));
-        std::vector<std::vector<FftData>> H_Sse2(
-            num_partitions, std::vector<FftData>(num_render_channels));
-        for (size_t p = 0; p < num_partitions; ++p) {
-          for (size_t ch = 0; ch < num_render_channels; ++ch) {
-            H_C[p][ch].Clear();
-            H_Sse2[p][ch].Clear();
-          }
-        }
-
-        for (size_t k = 0; k < 500; ++k) {
-          for (size_t band = 0; band < x.size(); ++band) {
-            for (size_t ch = 0; ch < x[band].size(); ++ch) {
-              RandomizeSampleVector(&random_generator, x[band][ch]);
-            }
-          }
-          render_delay_buffer->Insert(x);
-          if (k == 0) {
-            render_delay_buffer->Reset();
-          }
-          render_delay_buffer->PrepareCaptureProcessing();
-          auto* const render_buffer = render_delay_buffer->GetRenderBuffer();
-
-          ApplyFilter_Sse2(*render_buffer, num_partitions, H_Sse2, &S_Sse2);
-          ApplyFilter(*render_buffer, num_partitions, H_C, &S_C);
-          for (size_t j = 0; j < S_C.re.size(); ++j) {
-            EXPECT_FLOAT_EQ(S_C.re[j], S_Sse2.re[j]);
-            EXPECT_FLOAT_EQ(S_C.im[j], S_Sse2.im[j]);
-          }
-
-          std::for_each(G.re.begin(), G.re.end(),
-                        [&](float& a) { a = random_generator.Rand<float>(); });
-          std::for_each(G.im.begin(), G.im.end(),
-                        [&](float& a) { a = random_generator.Rand<float>(); });
-
-          AdaptPartitions_Sse2(*render_buffer, G, num_partitions, &H_Sse2);
-          AdaptPartitions(*render_buffer, G, num_partitions, &H_C);
-
-          for (size_t p = 0; p < num_partitions; ++p) {
-            for (size_t ch = 0; ch < num_render_channels; ++ch) {
-              for (size_t j = 0; j < H_C[p][ch].re.size(); ++j) {
-                EXPECT_FLOAT_EQ(H_C[p][ch].re[j], H_Sse2[p][ch].re[j]);
-                EXPECT_FLOAT_EQ(H_C[p][ch].im[j], H_Sse2[p][ch].im[j]);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-// Verifies that the optimized method for frequency response computation is
-// bitexact to the reference counterpart.
-TEST(AdaptiveFirFilter, ComputeFrequencyResponseSse2Optimization) {
-  bool use_sse2 = (WebRtc_GetCPUInfo(kSSE2) != 0);
-  if (use_sse2) {
-    for (size_t num_partitions : {2, 5, 12, 30, 50}) {
-      for (size_t num_render_channels : {1, 2, 4, 8}) {
-        std::vector<std::vector<FftData>> H(
-            num_partitions, std::vector<FftData>(num_render_channels));
-        std::vector<std::array<float, kFftLengthBy2Plus1>> H2(num_partitions);
-        std::vector<std::array<float, kFftLengthBy2Plus1>> H2_Sse2(
-            num_partitions);
-
-        for (size_t p = 0; p < num_partitions; ++p) {
-          for (size_t ch = 0; ch < num_render_channels; ++ch) {
-            for (size_t k = 0; k < H[p][ch].re.size(); ++k) {
-              H[p][ch].re[k] = k + p / 3.f + ch;
-              H[p][ch].im[k] = p + k / 7.f - ch;
-            }
-          }
-        }
-
-        ComputeFrequencyResponse(num_partitions, H, &H2);
-        ComputeFrequencyResponse_Sse2(num_partitions, H, &H2_Sse2);
-
-        for (size_t p = 0; p < num_partitions; ++p) {
-          for (size_t k = 0; k < H2[p].size(); ++k) {
-            EXPECT_FLOAT_EQ(H2[p][k], H2_Sse2[p][k]);
-          }
+          EXPECT_FLOAT_EQ(H2[p][k], H2_Sse2[p][k]);
         }
       }
     }
@@ -278,13 +285,13 @@ TEST(AdaptiveFirFilter, ComputeFrequencyResponseSse2Optimization) {
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 // Verifies that the check for non-null data dumper works.
-TEST(AdaptiveFirFilter, NullDataDumper) {
+TEST(AdaptiveFirFilterTest, NullDataDumper) {
   EXPECT_DEATH(AdaptiveFirFilter(9, 9, 250, 1, DetectOptimization(), nullptr),
                "");
 }
 
 // Verifies that the check for non-null filter output works.
-TEST(AdaptiveFirFilter, NullFilterOutput) {
+TEST(AdaptiveFirFilterTest, NullFilterOutput) {
   ApmDataDumper data_dumper(42);
   AdaptiveFirFilter filter(9, 9, 250, 1, DetectOptimization(), &data_dumper);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
@@ -297,7 +304,7 @@ TEST(AdaptiveFirFilter, NullFilterOutput) {
 
 // Verifies that the filter statistics can be accessed when filter statistics
 // are turned on.
-TEST(AdaptiveFirFilter, FilterStatisticsAccess) {
+TEST(AdaptiveFirFilterTest, FilterStatisticsAccess) {
   ApmDataDumper data_dumper(42);
   Aec3Optimization optimization = DetectOptimization();
   AdaptiveFirFilter filter(9, 9, 250, 1, optimization, &data_dumper);
@@ -314,7 +321,7 @@ TEST(AdaptiveFirFilter, FilterStatisticsAccess) {
 }
 
 // Verifies that the filter size if correctly repported.
-TEST(AdaptiveFirFilter, FilterSize) {
+TEST(AdaptiveFirFilterTest, FilterSize) {
   ApmDataDumper data_dumper(42);
   for (size_t filter_size = 1; filter_size < 5; ++filter_size) {
     AdaptiveFirFilter filter(filter_size, filter_size, 250, 1,
@@ -323,163 +330,166 @@ TEST(AdaptiveFirFilter, FilterSize) {
   }
 }
 
+class AdaptiveFirFilterMultiChannel
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<std::tuple<size_t, size_t>> {};
+
+INSTANTIATE_TEST_SUITE_P(MultiChannel,
+                         AdaptiveFirFilterMultiChannel,
+                         ::testing::Combine(::testing::Values(1, 4),
+                                            ::testing::Values(1, 8)));
+
 // Verifies that the filter is being able to properly filter a signal and to
 // adapt its coefficients.
-TEST(AdaptiveFirFilter, FilterAndAdapt) {
+TEST_P(AdaptiveFirFilterMultiChannel, FilterAndAdapt) {
+  const size_t num_render_channels = std::get<0>(GetParam());
+  const size_t num_capture_channels = std::get<1>(GetParam());
+
   constexpr int kSampleRateHz = 48000;
   constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
   constexpr size_t kNumBlocksToProcessPerRenderChannel = 1000;
 
-  for (size_t num_capture_channels : {1, 4}) {
-    for (size_t num_render_channels : {1, 8}) {
-      ApmDataDumper data_dumper(42);
-      EchoCanceller3Config config;
+  ApmDataDumper data_dumper(42);
+  EchoCanceller3Config config;
 
-      if (num_render_channels == 33) {
-        config.filter.main = {13, 0.00005f, 0.0005f, 0.0001f, 2.f, 20075344.f};
-        config.filter.shadow = {13, 0.1f, 20075344.f};
-        config.filter.main_initial = {12,     0.005f, 0.5f,
-                                      0.001f, 2.f,    20075344.f};
-        config.filter.shadow_initial = {12, 0.7f, 20075344.f};
-      }
+  if (num_render_channels == 33) {
+    config.filter.main = {13, 0.00005f, 0.0005f, 0.0001f, 2.f, 20075344.f};
+    config.filter.shadow = {13, 0.1f, 20075344.f};
+    config.filter.main_initial = {12, 0.005f, 0.5f, 0.001f, 2.f, 20075344.f};
+    config.filter.shadow_initial = {12, 0.7f, 20075344.f};
+  }
 
-      AdaptiveFirFilter filter(
-          config.filter.main.length_blocks, config.filter.main.length_blocks,
-          config.filter.config_change_duration_blocks, num_render_channels,
-          DetectOptimization(), &data_dumper);
-      std::vector<std::vector<std::array<float, kFftLengthBy2Plus1>>> H2(
-          num_capture_channels,
-          std::vector<std::array<float, kFftLengthBy2Plus1>>(
-              filter.max_filter_size_partitions(),
-              std::array<float, kFftLengthBy2Plus1>()));
-      std::vector<std::vector<float>> h(
-          num_capture_channels,
-          std::vector<float>(
-              GetTimeDomainLength(filter.max_filter_size_partitions()), 0.f));
-      Aec3Fft fft;
-      config.delay.default_delay = 1;
-      std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-          RenderDelayBuffer::Create(config, kSampleRateHz,
-                                    num_render_channels));
-      ShadowFilterUpdateGain gain(config.filter.shadow,
-                                  config.filter.config_change_duration_blocks);
-      Random random_generator(42U);
-      std::vector<std::vector<std::vector<float>>> x(
-          kNumBands,
-          std::vector<std::vector<float>>(num_render_channels,
-                                          std::vector<float>(kBlockSize, 0.f)));
-      std::vector<float> n(kBlockSize, 0.f);
-      std::vector<float> y(kBlockSize, 0.f);
-      AecState aec_state(EchoCanceller3Config{}, num_capture_channels);
-      RenderSignalAnalyzer render_signal_analyzer(config);
-      absl::optional<DelayEstimate> delay_estimate;
-      std::vector<float> e(kBlockSize, 0.f);
-      std::array<float, kFftLength> s_scratch;
-      std::vector<SubtractorOutput> output(num_capture_channels);
-      FftData S;
-      FftData G;
-      FftData E;
-      std::vector<std::array<float, kFftLengthBy2Plus1>> Y2(
-          num_capture_channels);
-      std::vector<std::array<float, kFftLengthBy2Plus1>> E2_main(
-          num_capture_channels);
-      std::array<float, kFftLengthBy2Plus1> E2_shadow;
-      // [B,A] = butter(2,100/8000,'high')
-      constexpr CascadedBiQuadFilter::BiQuadCoefficients
-          kHighPassFilterCoefficients = {{0.97261f, -1.94523f, 0.97261f},
-                                         {-1.94448f, 0.94598f}};
-      for (auto& Y2_ch : Y2) {
-        Y2_ch.fill(0.f);
-      }
-      for (auto& E2_main_ch : E2_main) {
-        E2_main_ch.fill(0.f);
-      }
-      E2_shadow.fill(0.f);
-      for (auto& subtractor_output : output) {
-        subtractor_output.Reset();
-      }
+  AdaptiveFirFilter filter(
+      config.filter.main.length_blocks, config.filter.main.length_blocks,
+      config.filter.config_change_duration_blocks, num_render_channels,
+      DetectOptimization(), &data_dumper);
+  std::vector<std::vector<std::array<float, kFftLengthBy2Plus1>>> H2(
+      num_capture_channels, std::vector<std::array<float, kFftLengthBy2Plus1>>(
+                                filter.max_filter_size_partitions(),
+                                std::array<float, kFftLengthBy2Plus1>()));
+  std::vector<std::vector<float>> h(
+      num_capture_channels,
+      std::vector<float>(
+          GetTimeDomainLength(filter.max_filter_size_partitions()), 0.f));
+  Aec3Fft fft;
+  config.delay.default_delay = 1;
+  std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
+      RenderDelayBuffer::Create(config, kSampleRateHz, num_render_channels));
+  ShadowFilterUpdateGain gain(config.filter.shadow,
+                              config.filter.config_change_duration_blocks);
+  Random random_generator(42U);
+  std::vector<std::vector<std::vector<float>>> x(
+      kNumBands, std::vector<std::vector<float>>(
+                     num_render_channels, std::vector<float>(kBlockSize, 0.f)));
+  std::vector<float> n(kBlockSize, 0.f);
+  std::vector<float> y(kBlockSize, 0.f);
+  AecState aec_state(EchoCanceller3Config{}, num_capture_channels);
+  RenderSignalAnalyzer render_signal_analyzer(config);
+  absl::optional<DelayEstimate> delay_estimate;
+  std::vector<float> e(kBlockSize, 0.f);
+  std::array<float, kFftLength> s_scratch;
+  std::vector<SubtractorOutput> output(num_capture_channels);
+  FftData S;
+  FftData G;
+  FftData E;
+  std::vector<std::array<float, kFftLengthBy2Plus1>> Y2(num_capture_channels);
+  std::vector<std::array<float, kFftLengthBy2Plus1>> E2_main(
+      num_capture_channels);
+  std::array<float, kFftLengthBy2Plus1> E2_shadow;
+  // [B,A] = butter(2,100/8000,'high')
+  constexpr CascadedBiQuadFilter::BiQuadCoefficients
+      kHighPassFilterCoefficients = {{0.97261f, -1.94523f, 0.97261f},
+                                     {-1.94448f, 0.94598f}};
+  for (auto& Y2_ch : Y2) {
+    Y2_ch.fill(0.f);
+  }
+  for (auto& E2_main_ch : E2_main) {
+    E2_main_ch.fill(0.f);
+  }
+  E2_shadow.fill(0.f);
+  for (auto& subtractor_output : output) {
+    subtractor_output.Reset();
+  }
 
-      constexpr float kScale = 1.0f / kFftLengthBy2;
+  constexpr float kScale = 1.0f / kFftLengthBy2;
 
-      for (size_t delay_samples : {0, 64, 150, 200, 301}) {
-        std::vector<DelayBuffer<float>> delay_buffer(
-            num_render_channels, DelayBuffer<float>(delay_samples));
-        std::vector<std::unique_ptr<CascadedBiQuadFilter>> x_hp_filter(
-            num_render_channels);
-        for (size_t ch = 0; ch < num_render_channels; ++ch) {
-          x_hp_filter[ch] = std::make_unique<CascadedBiQuadFilter>(
-              kHighPassFilterCoefficients, 1);
-        }
-        CascadedBiQuadFilter y_hp_filter(kHighPassFilterCoefficients, 1);
-
-        SCOPED_TRACE(ProduceDebugText(num_render_channels, delay_samples));
-        const size_t num_blocks_to_process =
-            kNumBlocksToProcessPerRenderChannel * num_render_channels;
-        for (size_t j = 0; j < num_blocks_to_process; ++j) {
-          std::fill(y.begin(), y.end(), 0.f);
-          for (size_t ch = 0; ch < num_render_channels; ++ch) {
-            RandomizeSampleVector(&random_generator, x[0][ch]);
-            std::array<float, kBlockSize> y_channel;
-            delay_buffer[ch].Delay(x[0][ch], y_channel);
-            for (size_t k = 0; k < y.size(); ++k) {
-              y[k] += y_channel[k] / num_render_channels;
-            }
-          }
-
-          RandomizeSampleVector(&random_generator, n);
-          const float noise_scaling = 1.f / 100.f / num_render_channels;
-          for (size_t k = 0; k < y.size(); ++k) {
-            y[k] += n[k] * noise_scaling;
-          }
-
-          for (size_t ch = 0; ch < num_render_channels; ++ch) {
-            x_hp_filter[ch]->Process(x[0][ch]);
-          }
-          y_hp_filter.Process(y);
-
-          render_delay_buffer->Insert(x);
-          if (j == 0) {
-            render_delay_buffer->Reset();
-          }
-          render_delay_buffer->PrepareCaptureProcessing();
-          auto* const render_buffer = render_delay_buffer->GetRenderBuffer();
-
-          render_signal_analyzer.Update(*render_buffer,
-                                        aec_state.MinDirectPathFilterDelay());
-
-          filter.Filter(*render_buffer, &S);
-          fft.Ifft(S, &s_scratch);
-          std::transform(y.begin(), y.end(), s_scratch.begin() + kFftLengthBy2,
-                         e.begin(),
-                         [&](float a, float b) { return a - b * kScale; });
-          std::for_each(e.begin(), e.end(), [](float& a) {
-            a = rtc::SafeClamp(a, -32768.f, 32767.f);
-          });
-          fft.ZeroPaddedFft(e, Aec3Fft::Window::kRectangular, &E);
-          for (auto& o : output) {
-            for (size_t k = 0; k < kBlockSize; ++k) {
-              o.s_main[k] = kScale * s_scratch[k + kFftLengthBy2];
-            }
-          }
-
-          std::array<float, kFftLengthBy2Plus1> render_power;
-          render_buffer->SpectralSum(filter.SizePartitions(), &render_power);
-          gain.Compute(render_power, render_signal_analyzer, E,
-                       filter.SizePartitions(), false, &G);
-          filter.Adapt(*render_buffer, G, &h[0]);
-          aec_state.HandleEchoPathChange(EchoPathVariability(
-              false, EchoPathVariability::DelayAdjustment::kNone, false));
-
-          filter.ComputeFrequencyResponse(&H2[0]);
-          aec_state.Update(delay_estimate, H2, h, *render_buffer, E2_main, Y2,
-                           output);
-        }
-        // Verify that the filter is able to perform well.
-        EXPECT_LT(1000 * std::inner_product(e.begin(), e.end(), e.begin(), 0.f),
-                  std::inner_product(y.begin(), y.end(), y.begin(), 0.f));
-      }
+  for (size_t delay_samples : {0, 64, 150, 200, 301}) {
+    std::vector<DelayBuffer<float>> delay_buffer(
+        num_render_channels, DelayBuffer<float>(delay_samples));
+    std::vector<std::unique_ptr<CascadedBiQuadFilter>> x_hp_filter(
+        num_render_channels);
+    for (size_t ch = 0; ch < num_render_channels; ++ch) {
+      x_hp_filter[ch] = std::make_unique<CascadedBiQuadFilter>(
+          kHighPassFilterCoefficients, 1);
     }
+    CascadedBiQuadFilter y_hp_filter(kHighPassFilterCoefficients, 1);
+
+    SCOPED_TRACE(ProduceDebugText(num_render_channels, delay_samples));
+    const size_t num_blocks_to_process =
+        kNumBlocksToProcessPerRenderChannel * num_render_channels;
+    for (size_t j = 0; j < num_blocks_to_process; ++j) {
+      std::fill(y.begin(), y.end(), 0.f);
+      for (size_t ch = 0; ch < num_render_channels; ++ch) {
+        RandomizeSampleVector(&random_generator, x[0][ch]);
+        std::array<float, kBlockSize> y_channel;
+        delay_buffer[ch].Delay(x[0][ch], y_channel);
+        for (size_t k = 0; k < y.size(); ++k) {
+          y[k] += y_channel[k] / num_render_channels;
+        }
+      }
+
+      RandomizeSampleVector(&random_generator, n);
+      const float noise_scaling = 1.f / 100.f / num_render_channels;
+      for (size_t k = 0; k < y.size(); ++k) {
+        y[k] += n[k] * noise_scaling;
+      }
+
+      for (size_t ch = 0; ch < num_render_channels; ++ch) {
+        x_hp_filter[ch]->Process(x[0][ch]);
+      }
+      y_hp_filter.Process(y);
+
+      render_delay_buffer->Insert(x);
+      if (j == 0) {
+        render_delay_buffer->Reset();
+      }
+      render_delay_buffer->PrepareCaptureProcessing();
+      auto* const render_buffer = render_delay_buffer->GetRenderBuffer();
+
+      render_signal_analyzer.Update(*render_buffer,
+                                    aec_state.MinDirectPathFilterDelay());
+
+      filter.Filter(*render_buffer, &S);
+      fft.Ifft(S, &s_scratch);
+      std::transform(y.begin(), y.end(), s_scratch.begin() + kFftLengthBy2,
+                     e.begin(),
+                     [&](float a, float b) { return a - b * kScale; });
+      std::for_each(e.begin(), e.end(),
+                    [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
+      fft.ZeroPaddedFft(e, Aec3Fft::Window::kRectangular, &E);
+      for (auto& o : output) {
+        for (size_t k = 0; k < kBlockSize; ++k) {
+          o.s_main[k] = kScale * s_scratch[k + kFftLengthBy2];
+        }
+      }
+
+      std::array<float, kFftLengthBy2Plus1> render_power;
+      render_buffer->SpectralSum(filter.SizePartitions(), &render_power);
+      gain.Compute(render_power, render_signal_analyzer, E,
+                   filter.SizePartitions(), false, &G);
+      filter.Adapt(*render_buffer, G, &h[0]);
+      aec_state.HandleEchoPathChange(EchoPathVariability(
+          false, EchoPathVariability::DelayAdjustment::kNone, false));
+
+      filter.ComputeFrequencyResponse(&H2[0]);
+      aec_state.Update(delay_estimate, H2, h, *render_buffer, E2_main, Y2,
+                       output);
+    }
+    // Verify that the filter is able to perform well.
+    EXPECT_LT(1000 * std::inner_product(e.begin(), e.end(), e.begin(), 0.f),
+              std::inner_product(y.begin(), y.end(), y.begin(), 0.f));
   }
 }
+
 }  // namespace aec3
 }  // namespace webrtc

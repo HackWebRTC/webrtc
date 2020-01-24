@@ -138,36 +138,42 @@ void TestInputs::UpdateCurrentPowerSpectra() {
 
 }  // namespace
 
-TEST(SignalDependentErleEstimator, SweepSettings) {
-  for (size_t num_render_channels : {1, 2, 4}) {
-    for (size_t num_capture_channels : {1, 2, 4}) {
-      EchoCanceller3Config cfg;
-      size_t max_length_blocks = 50;
-      for (size_t blocks = 1; blocks < max_length_blocks;
-           blocks = blocks + 10) {
-        for (size_t delay_headroom = 0; delay_headroom < 5; ++delay_headroom) {
-          for (size_t num_sections = 2; num_sections < max_length_blocks;
-               ++num_sections) {
-            cfg.filter.main.length_blocks = blocks;
-            cfg.filter.main_initial.length_blocks =
-                std::min(cfg.filter.main_initial.length_blocks, blocks);
-            cfg.delay.delay_headroom_samples = delay_headroom * kBlockSize;
-            cfg.erle.num_sections = num_sections;
-            if (EchoCanceller3Config::Validate(&cfg)) {
-              SignalDependentErleEstimator s(cfg, num_capture_channels);
-              std::vector<std::array<float, kFftLengthBy2Plus1>> average_erle(
-                  num_capture_channels);
-              for (auto& e : average_erle) {
-                e.fill(cfg.erle.max_l);
-              }
-              TestInputs inputs(cfg, num_render_channels, num_capture_channels);
-              for (size_t n = 0; n < 10; ++n) {
-                inputs.Update();
-                s.Update(inputs.GetRenderBuffer(), inputs.GetH2(),
-                         inputs.GetX2(), inputs.GetY2(), inputs.GetE2(),
-                         average_erle, inputs.GetConvergedFilters());
-              }
-            }
+class SignalDependentErleEstimatorMultiChannel
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<std::tuple<size_t, size_t>> {};
+
+INSTANTIATE_TEST_SUITE_P(MultiChannel,
+                         SignalDependentErleEstimatorMultiChannel,
+                         ::testing::Combine(::testing::Values(1, 2, 4),
+                                            ::testing::Values(1, 2, 4)));
+
+TEST_P(SignalDependentErleEstimatorMultiChannel, SweepSettings) {
+  const size_t num_render_channels = std::get<0>(GetParam());
+  const size_t num_capture_channels = std::get<1>(GetParam());
+  EchoCanceller3Config cfg;
+  size_t max_length_blocks = 50;
+  for (size_t blocks = 1; blocks < max_length_blocks; blocks = blocks + 10) {
+    for (size_t delay_headroom = 0; delay_headroom < 5; ++delay_headroom) {
+      for (size_t num_sections = 2; num_sections < max_length_blocks;
+           ++num_sections) {
+        cfg.filter.main.length_blocks = blocks;
+        cfg.filter.main_initial.length_blocks =
+            std::min(cfg.filter.main_initial.length_blocks, blocks);
+        cfg.delay.delay_headroom_samples = delay_headroom * kBlockSize;
+        cfg.erle.num_sections = num_sections;
+        if (EchoCanceller3Config::Validate(&cfg)) {
+          SignalDependentErleEstimator s(cfg, num_capture_channels);
+          std::vector<std::array<float, kFftLengthBy2Plus1>> average_erle(
+              num_capture_channels);
+          for (auto& e : average_erle) {
+            e.fill(cfg.erle.max_l);
+          }
+          TestInputs inputs(cfg, num_render_channels, num_capture_channels);
+          for (size_t n = 0; n < 10; ++n) {
+            inputs.Update();
+            s.Update(inputs.GetRenderBuffer(), inputs.GetH2(), inputs.GetX2(),
+                     inputs.GetY2(), inputs.GetE2(), average_erle,
+                     inputs.GetConvergedFilters());
           }
         }
       }
@@ -175,30 +181,28 @@ TEST(SignalDependentErleEstimator, SweepSettings) {
   }
 }
 
-TEST(SignalDependentErleEstimator, LongerRun) {
-  for (size_t num_render_channels : {1, 2, 4}) {
-    for (size_t num_capture_channels : {1, 2, 4}) {
-      EchoCanceller3Config cfg;
-      cfg.filter.main.length_blocks = 2;
-      cfg.filter.main_initial.length_blocks = 1;
-      cfg.delay.delay_headroom_samples = 0;
-      cfg.delay.hysteresis_limit_blocks = 0;
-      cfg.erle.num_sections = 2;
-      EXPECT_EQ(EchoCanceller3Config::Validate(&cfg), true);
-      std::vector<std::array<float, kFftLengthBy2Plus1>> average_erle(
-          num_capture_channels);
-      for (auto& e : average_erle) {
-        e.fill(cfg.erle.max_l);
-      }
-      SignalDependentErleEstimator s(cfg, num_capture_channels);
-      TestInputs inputs(cfg, num_render_channels, num_capture_channels);
-      for (size_t n = 0; n < 200; ++n) {
-        inputs.Update();
-        s.Update(inputs.GetRenderBuffer(), inputs.GetH2(), inputs.GetX2(),
-                 inputs.GetY2(), inputs.GetE2(), average_erle,
-                 inputs.GetConvergedFilters());
-      }
-    }
+TEST_P(SignalDependentErleEstimatorMultiChannel, LongerRun) {
+  const size_t num_render_channels = std::get<0>(GetParam());
+  const size_t num_capture_channels = std::get<1>(GetParam());
+  EchoCanceller3Config cfg;
+  cfg.filter.main.length_blocks = 2;
+  cfg.filter.main_initial.length_blocks = 1;
+  cfg.delay.delay_headroom_samples = 0;
+  cfg.delay.hysteresis_limit_blocks = 0;
+  cfg.erle.num_sections = 2;
+  EXPECT_EQ(EchoCanceller3Config::Validate(&cfg), true);
+  std::vector<std::array<float, kFftLengthBy2Plus1>> average_erle(
+      num_capture_channels);
+  for (auto& e : average_erle) {
+    e.fill(cfg.erle.max_l);
+  }
+  SignalDependentErleEstimator s(cfg, num_capture_channels);
+  TestInputs inputs(cfg, num_render_channels, num_capture_channels);
+  for (size_t n = 0; n < 200; ++n) {
+    inputs.Update();
+    s.Update(inputs.GetRenderBuffer(), inputs.GetH2(), inputs.GetX2(),
+             inputs.GetY2(), inputs.GetE2(), average_erle,
+             inputs.GetConvergedFilters());
   }
 }
 

@@ -34,30 +34,35 @@ std::string ProduceDebugText(size_t delay, size_t down_sampling_factor) {
 
 }  // namespace
 
+class EchoPathDelayEstimatorMultiChannel
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<std::tuple<size_t, size_t>> {};
+
+INSTANTIATE_TEST_SUITE_P(MultiChannel,
+                         EchoPathDelayEstimatorMultiChannel,
+                         ::testing::Combine(::testing::Values(1, 2, 3, 6, 8),
+                                            ::testing::Values(1, 2, 4)));
+
 // Verifies that the basic API calls work.
-TEST(EchoPathDelayEstimator, BasicApiCalls) {
+TEST_P(EchoPathDelayEstimatorMultiChannel, BasicApiCalls) {
+  const size_t num_render_channels = std::get<0>(GetParam());
+  const size_t num_capture_channels = std::get<1>(GetParam());
   constexpr int kSampleRateHz = 48000;
   constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
-  for (size_t num_capture_channels : {1, 2, 4}) {
-    for (size_t num_render_channels : {1, 2, 3, 6, 8}) {
-      ApmDataDumper data_dumper(0);
-      EchoCanceller3Config config;
-      std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-          RenderDelayBuffer::Create(config, kSampleRateHz,
-                                    num_render_channels));
-      EchoPathDelayEstimator estimator(&data_dumper, config,
-                                       num_capture_channels);
-      std::vector<std::vector<std::vector<float>>> render(
-          kNumBands, std::vector<std::vector<float>>(
-                         num_render_channels, std::vector<float>(kBlockSize)));
-      std::vector<std::vector<float>> capture(num_capture_channels,
-                                              std::vector<float>(kBlockSize));
-      for (size_t k = 0; k < 100; ++k) {
-        render_delay_buffer->Insert(render);
-        estimator.EstimateDelay(
-            render_delay_buffer->GetDownsampledRenderBuffer(), capture);
-      }
-    }
+  ApmDataDumper data_dumper(0);
+  EchoCanceller3Config config;
+  std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
+      RenderDelayBuffer::Create(config, kSampleRateHz, num_render_channels));
+  EchoPathDelayEstimator estimator(&data_dumper, config, num_capture_channels);
+  std::vector<std::vector<std::vector<float>>> render(
+      kNumBands, std::vector<std::vector<float>>(
+                     num_render_channels, std::vector<float>(kBlockSize)));
+  std::vector<std::vector<float>> capture(num_capture_channels,
+                                          std::vector<float>(kBlockSize));
+  for (size_t k = 0; k < 100; ++k) {
+    render_delay_buffer->Insert(render);
+    estimator.EstimateDelay(render_delay_buffer->GetDownsampledRenderBuffer(),
+                            capture);
   }
 }
 

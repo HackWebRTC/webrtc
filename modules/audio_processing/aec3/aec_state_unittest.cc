@@ -18,13 +18,6 @@
 
 namespace webrtc {
 namespace {
-std::string ProduceDebugText(size_t num_render_channels,
-                             size_t num_capture_channels) {
-  rtc::StringBuilder ss;
-  ss << "Render channels: " << num_render_channels;
-  ss << ", Capture channels: " << num_capture_channels;
-  return ss.Release();
-}
 
 void RunNormalUsageTest(size_t num_render_channels,
                         size_t num_capture_channels) {
@@ -232,14 +225,20 @@ void RunNormalUsageTest(size_t num_render_channels,
 
 }  // namespace
 
+class AecStateMultiChannel
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<std::tuple<size_t, size_t>> {};
+
+INSTANTIATE_TEST_SUITE_P(MultiChannel,
+                         AecStateMultiChannel,
+                         ::testing::Combine(::testing::Values(1, 2, 8),
+                                            ::testing::Values(1, 2, 8)));
+
 // Verify the general functionality of AecState
-TEST(AecState, NormalUsage) {
-  for (size_t num_render_channels : {1, 2, 8}) {
-    for (size_t num_capture_channels : {1, 2, 8}) {
-      SCOPED_TRACE(ProduceDebugText(num_render_channels, num_capture_channels));
-      RunNormalUsageTest(num_render_channels, num_capture_channels);
-    }
-  }
+TEST_P(AecStateMultiChannel, NormalUsage) {
+  const size_t num_render_channels = std::get<0>(GetParam());
+  const size_t num_capture_channels = std::get<1>(GetParam());
+  RunNormalUsageTest(num_render_channels, num_capture_channels);
 }
 
 // Verifies the delay for a converged filter is correctly identified.
