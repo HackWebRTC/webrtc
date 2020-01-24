@@ -8,6 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+#include <utility>
+
 #include "modules/video_coding/frame_object.h"
 #include "modules/video_coding/packet_buffer.h"
 #include "system_wrappers/include/clock.h"
@@ -26,20 +29,20 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   test::FuzzDataHelper helper(rtc::ArrayView<const uint8_t>(data, size));
 
   while (helper.BytesLeft()) {
-    video_coding::PacketBuffer::Packet packet;
+    auto packet = std::make_unique<video_coding::PacketBuffer::Packet>();
     // Fuzz POD members of the packet.
-    helper.CopyTo(&packet.marker_bit);
-    helper.CopyTo(&packet.payload_type);
-    helper.CopyTo(&packet.seq_num);
-    helper.CopyTo(&packet.timestamp);
-    helper.CopyTo(&packet.ntp_time_ms);
-    helper.CopyTo(&packet.times_nacked);
+    helper.CopyTo(&packet->marker_bit);
+    helper.CopyTo(&packet->payload_type);
+    helper.CopyTo(&packet->seq_num);
+    helper.CopyTo(&packet->timestamp);
+    helper.CopyTo(&packet->ntp_time_ms);
+    helper.CopyTo(&packet->times_nacked);
 
     // Fuzz non-POD member of the packet.
-    packet.video_payload.SetSize(helper.ReadOrDefaultValue<uint8_t>(0));
+    packet->video_payload.SetSize(helper.ReadOrDefaultValue<uint8_t>(0));
     // TODO(danilchap): Fuzz other non-POD members of the |packet|.
 
-    IgnoreResult(packet_buffer.InsertPacket(&packet));
+    IgnoreResult(packet_buffer.InsertPacket(std::move(packet)));
   }
 }
 

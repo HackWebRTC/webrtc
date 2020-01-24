@@ -41,9 +41,9 @@ class PacketBuffer {
            int64_t ntp_time_ms,
            int64_t receive_time_ms);
     Packet(const Packet&) = delete;
-    Packet(Packet&&) = default;
+    Packet(Packet&&) = delete;
     Packet& operator=(const Packet&) = delete;
-    Packet& operator=(Packet&&) = default;
+    Packet& operator=(Packet&&) = delete;
     ~Packet() = default;
 
     VideoCodecType codec() const { return video_header.codec; }
@@ -82,9 +82,8 @@ class PacketBuffer {
   PacketBuffer(Clock* clock, size_t start_buffer_size, size_t max_buffer_size);
   ~PacketBuffer();
 
-  // The PacketBuffer will always take ownership of the |packet.dataPtr| when
-  // this function is called.
-  InsertResult InsertPacket(Packet* packet) ABSL_MUST_USE_RESULT;
+  InsertResult InsertPacket(std::unique_ptr<Packet> packet)
+      ABSL_MUST_USE_RESULT;
   InsertResult InsertPadding(uint16_t seq_num) ABSL_MUST_USE_RESULT;
   void ClearTo(uint16_t seq_num);
   void Clear();
@@ -95,21 +94,21 @@ class PacketBuffer {
 
  private:
   struct StoredPacket {
-    uint16_t seq_num() const { return data.seq_num; }
+    uint16_t seq_num() const { return packet->seq_num; }
 
     // If this is the first packet of the frame.
-    bool frame_begin() const { return data.is_first_packet_in_frame(); }
+    bool frame_begin() const { return packet->is_first_packet_in_frame(); }
 
     // If this is the last packet of the frame.
-    bool frame_end() const { return data.is_last_packet_in_frame(); }
+    bool frame_end() const { return packet->is_last_packet_in_frame(); }
 
     // If this slot is currently used.
-    bool used = false;
+    bool used() const { return packet != nullptr; }
 
     // If all its previous packets have been inserted into the packet buffer.
     bool continuous = false;
 
-    Packet data;
+    std::unique_ptr<Packet> packet;
   };
 
   Clock* const clock_;
