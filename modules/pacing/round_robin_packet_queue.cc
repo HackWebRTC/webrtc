@@ -114,8 +114,7 @@ RoundRobinPacketQueue::RoundRobinPacketQueue(
       max_size_(kMaxLeadingSize),
       queue_time_sum_(TimeDelta::Zero()),
       pause_time_sum_(TimeDelta::Zero()),
-      send_side_bwe_with_overhead_(
-          IsEnabled(field_trials, "WebRTC-SendSideBwe-WithOverhead")) {}
+      include_overhead_(false) {}
 
 RoundRobinPacketQueue::~RoundRobinPacketQueue() {
   // Make sure to release any packets owned by raw pointer in QueuedPacket.
@@ -158,7 +157,7 @@ std::unique_ptr<RtpPacketToSend> RoundRobinPacketQueue::Pop() {
   // case a "budget" will be built up for the stream sending at the lower
   // rate. To avoid building a too large budget we limit |bytes| to be within
   // kMaxLeading bytes of the stream that has sent the most amount of bytes.
-  DataSize packet_size = queued_packet.Size(send_side_bwe_with_overhead_);
+  DataSize packet_size = queued_packet.Size(include_overhead_);
   stream->size =
       std::max(stream->size + packet_size, max_size_ - kMaxLeadingSize);
   max_size_ = std::max(max_size_, stream->size);
@@ -238,6 +237,10 @@ void RoundRobinPacketQueue::SetPauseState(bool paused, Timestamp now) {
   paused_ = paused;
 }
 
+void RoundRobinPacketQueue::SetIncludeOverhead() {
+  include_overhead_ = true;
+}
+
 TimeDelta RoundRobinPacketQueue::AverageQueueTime() const {
   if (Empty())
     return TimeDelta::Zero();
@@ -279,7 +282,7 @@ void RoundRobinPacketQueue::Push(QueuedPacket packet) {
   packet.SubtractPauseTime(pause_time_sum_);
 
   size_packets_ += 1;
-  size_ += packet.Size(send_side_bwe_with_overhead_);
+  size_ += packet.Size(include_overhead_);
 
   stream->packet_queue.push(packet);
 }

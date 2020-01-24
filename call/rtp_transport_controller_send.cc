@@ -434,6 +434,10 @@ void RtpTransportControllerSend::AccountForAudioPacketsInPacedSender(
   pacer()->SetAccountForAudioPackets(account_for_audio);
 }
 
+void RtpTransportControllerSend::IncludeOverheadInPacedSender() {
+  pacer()->SetIncludeOverhead();
+}
+
 void RtpTransportControllerSend::OnReceivedEstimatedBitrate(uint32_t bitrate) {
   RemoteBitrateReport msg;
   msg.receive_time = Timestamp::ms(clock_->TimeInMilliseconds());
