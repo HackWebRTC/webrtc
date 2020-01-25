@@ -1373,10 +1373,6 @@ TEST_F(BasicPortAllocatorTest, TestDisableUdpTurn) {
   EXPECT_TRUE(HasCandidate(candidates_, "local", "tcp", kClientAddr));
 }
 
-// Disable for asan, see
-// https://code.google.com/p/webrtc/issues/detail?id=4743 for details.
-#if !defined(ADDRESS_SANITIZER)
-
 // Test that we can get OnCandidatesAllocationDone callback when all the ports
 // are disabled.
 TEST_F(BasicPortAllocatorTest, TestDisableAllPorts) {
@@ -1401,8 +1397,6 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoUdpSockets) {
   EXPECT_EQ(1U, ports_.size());
   EXPECT_TRUE(HasCandidate(candidates_, "local", "tcp", kClientAddr));
 }
-
-#endif  // if !defined(ADDRESS_SANITIZER)
 
 // Test that we don't crash or malfunction if we can't create UDP sockets or
 // listen on TCP sockets. We still give out a local TCP address, since
