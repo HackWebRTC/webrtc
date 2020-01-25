@@ -193,6 +193,7 @@ if (rtc_include_tests) {
       "base/stun_server_unittest.cc",
       "base/tcp_port_unittest.cc",
       "base/transport_description_factory_unittest.cc",
+      "base/transport_description_unittest.cc",
       "base/turn_port_unittest.cc",
       "base/turn_server_unittest.cc",
       "client/basic_port_allocator_unittest.cc",

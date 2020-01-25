@@ -31,28 +31,6 @@ using webrtc::SdpType;
 
 namespace cricket {
 
-static bool VerifyIceParams(const JsepTransportDescription& jsep_description) {
-  // For legacy protocols.
-  // TODO(zhihuang): Remove this once the legacy protocol is no longer
-  // supported.
-  if (jsep_description.transport_desc.ice_ufrag.empty() &&
-      jsep_description.transport_desc.ice_pwd.empty()) {
-    return true;
-  }
-
-  if (jsep_description.transport_desc.ice_ufrag.length() <
-          ICE_UFRAG_MIN_LENGTH ||
-      jsep_description.transport_desc.ice_ufrag.length() >
-          ICE_UFRAG_MAX_LENGTH) {
-    return false;
-  }
-  if (jsep_description.transport_desc.ice_pwd.length() < ICE_PWD_MIN_LENGTH ||
-      jsep_description.transport_desc.ice_pwd.length() > ICE_PWD_MAX_LENGTH) {
-    return false;
-  }
-  return true;
-}
-
 JsepTransportDescription::JsepTransportDescription() {}
 
 JsepTransportDescription::JsepTransportDescription(
@@ -199,10 +177,17 @@ webrtc::RTCError JsepTransport::SetLocalJsepTransportDescription(
   webrtc::RTCError error;
 
   RTC_DCHECK_RUN_ON(network_thread_);
-  if (!VerifyIceParams(jsep_description)) {
+
+  webrtc::RTCErrorOr<IceParameters> ice_parameters_result =
+      IceParameters::Parse(jsep_description.transport_desc.ice_ufrag,
+                           jsep_description.transport_desc.ice_pwd);
+  if (!ice_parameters_result.ok()) {
+    rtc::StringBuilder sb;
+    sb << "Invalid ICE parameters: " << ice_parameters_result.error().message();
     return webrtc::RTCError(webrtc::RTCErrorType::INVALID_PARAMETER,
-                            "Invalid ice-ufrag or ice-pwd length.");
+                            sb.Release());
   }
+  IceParameters ice_parameters = ice_parameters_result.MoveValue();
 
   if (!SetRtcpMux(jsep_description.rtcp_mux_enabled, type,
                   ContentSource::CS_LOCAL)) {
@@ -233,8 +218,7 @@ webrtc::RTCError JsepTransport::SetLocalJsepTransportDescription(
       local_description_ != nullptr &&
       IceCredentialsChanged(local_description_->transport_desc.ice_ufrag,
                             local_description_->transport_desc.ice_pwd,
-                            jsep_description.transport_desc.ice_ufrag,
-                            jsep_description.transport_desc.ice_pwd);
+                            ice_parameters.ufrag, ice_parameters.pwd);
   local_description_.reset(new JsepTransportDescription(jsep_description));
 
   rtc::SSLFingerprint* local_fp =
@@ -252,11 +236,13 @@ webrtc::RTCError JsepTransport::SetLocalJsepTransportDescription(
   {
     rtc::CritScope scope(&accessor_lock_);
     RTC_DCHECK(rtp_dtls_transport_->internal());
-    SetLocalIceParameters(rtp_dtls_transport_->internal()->ice_transport());
+    rtp_dtls_transport_->internal()->ice_transport()->SetIceParameters(
+        ice_parameters);
 
     if (rtcp_dtls_transport_) {
       RTC_DCHECK(rtcp_dtls_transport_->internal());
-      SetLocalIceParameters(rtcp_dtls_transport_->internal()->ice_transport());
+      rtcp_dtls_transport_->internal()->ice_transport()->SetIceParameters(
+          ice_parameters);
     }
   }
   // If PRANSWER/ANSWER is set, we should decide transport protocol type.
@@ -286,11 +272,18 @@ webrtc::RTCError JsepTransport::SetRemoteJsepTransportDescription(
   webrtc::RTCError error;
 
   RTC_DCHECK_RUN_ON(network_thread_);
-  if (!VerifyIceParams(jsep_description)) {
+
+  webrtc::RTCErrorOr<IceParameters> ice_parameters_result =
+      IceParameters::Parse(jsep_description.transport_desc.ice_ufrag,
+                           jsep_description.transport_desc.ice_pwd);
+  if (!ice_parameters_result.ok()) {
     remote_description_.reset();
+    rtc::StringBuilder sb;
+    sb << "Invalid ICE parameters: " << ice_parameters_result.error().message();
     return webrtc::RTCError(webrtc::RTCErrorType::INVALID_PARAMETER,
-                            "Invalid ice-ufrag or ice-pwd length.");
+                            sb.Release());
   }
+  IceParameters ice_parameters = ice_parameters_result.MoveValue();
 
   if (!SetRtcpMux(jsep_description.rtcp_mux_enabled, type,
                   ContentSource::CS_REMOTE)) {
@@ -324,10 +317,11 @@ webrtc::RTCError JsepTransport::SetRemoteJsepTransportDescription(
 
   remote_description_.reset(new JsepTransportDescription(jsep_description));
   RTC_DCHECK(rtp_dtls_transport());
-  SetRemoteIceParameters(rtp_dtls_transport()->ice_transport());
+  SetRemoteIceParameters(ice_parameters, rtp_dtls_transport()->ice_transport());
 
   if (rtcp_dtls_transport()) {
-    SetRemoteIceParameters(rtcp_dtls_transport()->ice_transport());
+    SetRemoteIceParameters(ice_parameters,
+                           rtcp_dtls_transport()->ice_transport());
   }
 
   // If PRANSWER/ANSWER is set, we should decide transport protocol type.
@@ -456,21 +450,13 @@ void JsepTransport::SetActiveResetSrtpParams(bool active_reset_srtp_params) {
   }
 }
 
-void JsepTransport::SetLocalIceParameters(IceTransportInternal* ice_transport) {
-  RTC_DCHECK_RUN_ON(network_thread_);
-  RTC_DCHECK(ice_transport);
-  RTC_DCHECK(local_description_);
-  ice_transport->SetIceParameters(
-      local_description_->transport_desc.GetIceParameters());
-}
-
 void JsepTransport::SetRemoteIceParameters(
+    const IceParameters& ice_parameters,
     IceTransportInternal* ice_transport) {
   RTC_DCHECK_RUN_ON(network_thread_);
   RTC_DCHECK(ice_transport);
   RTC_DCHECK(remote_description_);
-  ice_transport->SetRemoteIceParameters(
-      remote_description_->transport_desc.GetIceParameters());
+  ice_transport->SetRemoteIceParameters(ice_parameters);
   ice_transport->SetRemoteIceMode(remote_description_->transport_desc.ice_mode);
 }
 

@@ -297,12 +297,9 @@ class JsepTransport : public sigslot::has_slots<> {
       ConnectionRole remote_connection_role,
       absl::optional<rtc::SSLRole>* negotiated_dtls_role);
 
-  // Pushes down the ICE parameters from the local description, such
-  // as the ICE ufrag and pwd.
-  void SetLocalIceParameters(IceTransportInternal* ice);
-
   // Pushes down the ICE parameters from the remote description.
-  void SetRemoteIceParameters(IceTransportInternal* ice);
+  void SetRemoteIceParameters(const IceParameters& ice_parameters,
+                              IceTransportInternal* ice);
 
   // Pushes down the DTLS parameters obtained via negotiation.
   webrtc::RTCError SetNegotiatedDtlsParameters(
