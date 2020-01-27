@@ -536,7 +536,7 @@
     },
 
     'minimal_symbols': {
-      'gn_args': 'symbol_level=1 strip_absolute_paths_from_debug_symbols=true',
+      'gn_args': 'symbol_level=1',
     },
 
     'msan': {
