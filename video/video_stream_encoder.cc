@@ -312,7 +312,7 @@ VideoStreamEncoder::VideoStreamEncoder(
           /*source=*/nullptr)),
       resource_adaptation_module_(
           std::make_unique<OveruseFrameDetectorResourceAdaptationModule>(
-              /*video_stream_encoder=*/this,
+              settings_.experiment_cpu_load_estimator,
               std::move(overuse_detector),
               encoder_stats_observer,
               /*adaptation_listener=*/this)),
@@ -663,9 +663,6 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   }
   send_codec_ = codec;
 
-  resource_adaptation_module_->SetEncoderSettings(EncoderSettings(
-      encoder_->GetEncoderInfo(), encoder_config_.Copy(), send_codec_));
-
   encoder_switch_experiment_.SetCodec(send_codec_.codecType);
   quality_rampup_experiment_.SetMaxBitrate(
       last_frame_info_->width * last_frame_info_->height, codec.maxBitrate);
@@ -701,6 +698,9 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     last_encode_info_ms_ = absl::nullopt;
     was_encode_called_since_last_initialization_ = false;
   }
+
+  resource_adaptation_module_->SetEncoderSettings(EncoderSettings(
+      encoder_->GetEncoderInfo(), encoder_config_.Copy(), send_codec_));
 
   if (success) {
     next_frame_types_.clear();
@@ -1698,25 +1698,6 @@ bool VideoStreamEncoder::TryQualityRampup(int64_t now_ms) {
     }
   }
   return false;
-}
-
-// TODO(pbos): Lower these thresholds (to closer to 100%) when we handle
-// pipelining encoders better (multiple input frames before something comes
-// out). This should effectively turn off CPU adaptations for systems that
-// remotely cope with the load right now.
-CpuOveruseOptions VideoStreamEncoder::GetCpuOveruseOptions() const {
-  RTC_DCHECK_RUN_ON(&encoder_queue_);
-  CpuOveruseOptions options;
-  // Hardware accelerated encoders are assumed to be pipelined; give them
-  // additional overuse time.
-  if (encoder_->GetEncoderInfo().is_hardware_accelerated) {
-    options.low_encode_usage_threshold_percent = 150;
-    options.high_encode_usage_threshold_percent = 200;
-  }
-  if (settings_.experiment_cpu_load_estimator) {
-    options.filter_time_ms = 5 * rtc::kNumMillisecsPerSec;
-  }
-  return options;
 }
 
 bool VideoStreamEncoder::TriggerAdaptDown(

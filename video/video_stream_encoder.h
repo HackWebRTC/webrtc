@@ -112,10 +112,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
                         uint8_t fraction_lost,
                         int64_t round_trip_time_ms) override;
 
-  // If an OveruseFrameDetectorResourceAdaptationModule is used, this method is
-  // used by the module to configure its OveruseFrameDetector.
-  CpuOveruseOptions GetCpuOveruseOptions() const;
-
  protected:
   // Used for testing. For example the |ScalingObserverInterface| methods must
   // be called on |encoder_queue_|.

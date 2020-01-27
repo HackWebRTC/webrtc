@@ -24,6 +24,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/time_utils.h"
 #include "video/video_stream_encoder.h"
 
 namespace webrtc {
@@ -341,12 +342,12 @@ OveruseFrameDetectorResourceAdaptationModule::AdaptCounter::ToString(
 
 OveruseFrameDetectorResourceAdaptationModule::
     OveruseFrameDetectorResourceAdaptationModule(
-        VideoStreamEncoder* video_stream_encoder,
+        bool experiment_cpu_load_estimator,
         std::unique_ptr<OveruseFrameDetector> overuse_detector,
         VideoStreamEncoderObserver* encoder_stats_observer,
         ResourceAdaptationModuleListener* adaptation_listener)
     : adaptation_listener_(adaptation_listener),
-      video_stream_encoder_(video_stream_encoder),
+      experiment_cpu_load_estimator_(experiment_cpu_load_estimator),
       has_input_video_(false),
       degradation_preference_(DegradationPreference::DISABLED),
       adapt_counters_(),
@@ -362,7 +363,6 @@ OveruseFrameDetectorResourceAdaptationModule::
       encoder_settings_(absl::nullopt),
       encoder_stats_observer_(encoder_stats_observer) {
   RTC_DCHECK(adaptation_listener_);
-  RTC_DCHECK(video_stream_encoder_);
   RTC_DCHECK(overuse_detector_);
   RTC_DCHECK(encoder_stats_observer_);
 }
@@ -381,9 +381,8 @@ void OveruseFrameDetectorResourceAdaptationModule::StartResourceAdaptation(
   // support adaptation caused by VideoStreamEncoder or QualityScaler invoking
   // AdaptUp() and AdaptDown() even when the OveruseDetector is inactive.
   RTC_DCHECK_EQ(adaptation_listener, adaptation_listener_);
-  overuse_detector_->StartCheckForOveruse(
-      TaskQueueBase::Current(), video_stream_encoder_->GetCpuOveruseOptions(),
-      this);
+  overuse_detector_->StartCheckForOveruse(TaskQueueBase::Current(),
+                                          GetCpuOveruseOptions(), this);
   overuse_detector_is_started_ = true;
   overuse_detector_->OnTargetFramerateUpdated(
       target_frame_rate_.has_value()
@@ -705,6 +704,28 @@ bool OveruseFrameDetectorResourceAdaptationModule::AdaptDown(
 
   RTC_LOG(LS_INFO) << GetConstAdaptCounter().ToString();
   return did_adapt;
+}
+
+// TODO(pbos): Lower these thresholds (to closer to 100%) when we handle
+// pipelining encoders better (multiple input frames before something comes
+// out). This should effectively turn off CPU adaptations for systems that
+// remotely cope with the load right now.
+CpuOveruseOptions
+OveruseFrameDetectorResourceAdaptationModule::GetCpuOveruseOptions() const {
+  // This is already ensured by the only caller of this method:
+  // StartResourceAdaptation().
+  RTC_DCHECK(encoder_settings_.has_value());
+  CpuOveruseOptions options;
+  // Hardware accelerated encoders are assumed to be pipelined; give them
+  // additional overuse time.
+  if (encoder_settings_->encoder_info().is_hardware_accelerated) {
+    options.low_encode_usage_threshold_percent = 150;
+    options.high_encode_usage_threshold_percent = 200;
+  }
+  if (experiment_cpu_load_estimator_) {
+    options.filter_time_ms = 5 * rtc::kNumMillisecsPerSec;
+  }
+  return options;
 }
 
 VideoCodecType

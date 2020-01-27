@@ -40,7 +40,6 @@ class VideoStreamEncoder;
 //
 // This class is single-threaded. The caller is responsible for ensuring safe
 // usage.
-// TODO(hbos): Reduce the coupling with VideoStreamEncoder.
 // TODO(hbos): Add unittests specific to this class, it is currently only tested
 // indirectly in video_stream_encoder_unittest.cc and other tests exercising
 // VideoStreamEncoder.
@@ -55,7 +54,7 @@ class OveruseFrameDetectorResourceAdaptationModule
   // The module can be constructed on any sequence, but must be initialized and
   // used on a single sequence, e.g. the encoder queue.
   OveruseFrameDetectorResourceAdaptationModule(
-      VideoStreamEncoder* video_stream_encoder,
+      bool experiment_cpu_load_estimator,
       std::unique_ptr<OveruseFrameDetector> overuse_detector,
       VideoStreamEncoderObserver* encoder_stats_observer,
       ResourceAdaptationModuleListener* adaptation_listener);
@@ -169,6 +168,7 @@ class OveruseFrameDetectorResourceAdaptationModule
     enum class Mode { kAdaptUp, kAdaptDown } mode_;
   };
 
+  CpuOveruseOptions GetCpuOveruseOptions() const;
   VideoCodecType GetVideoCodecTypeOrGeneric() const;
   int LastInputFrameSizeOrDefault() const;
 
@@ -187,10 +187,9 @@ class OveruseFrameDetectorResourceAdaptationModule
   bool CanAdaptUpResolution(int pixels, uint32_t bitrate_bps) const;
 
   ResourceAdaptationModuleListener* const adaptation_listener_;
+  const bool experiment_cpu_load_estimator_;
   // The restrictions that |adaptation_listener_| is informed of.
   VideoSourceRestrictions video_source_restrictions_;
-  // Used to query CpuOveruseOptions at StartCheckForOveruse().
-  VideoStreamEncoder* video_stream_encoder_;
   bool has_input_video_;
   DegradationPreference degradation_preference_;
   // Counters used for deciding if the video resolution or framerate is
