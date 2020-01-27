@@ -52,7 +52,6 @@ class RoundRobinPacketQueue {
   TimeDelta AverageQueueTime() const;
   void UpdateQueueTime(Timestamp now);
   void SetPauseState(bool paused, Timestamp now);
-  void SetIncludeOverhead();
 
  private:
   struct QueuedPacket {
@@ -151,7 +150,7 @@ class RoundRobinPacketQueue {
   // the age of the oldest packet in the queue.
   std::multiset<Timestamp> enqueue_times_;
 
-  bool include_overhead_;
+  const bool send_side_bwe_with_overhead_;
 };
 }  // namespace webrtc
 

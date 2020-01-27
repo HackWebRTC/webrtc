@@ -64,7 +64,6 @@ class RtpPacketPacer {
   // the pacer budget calculation. The audio traffic still will be injected
   // at high priority.
   virtual void SetAccountForAudioPackets(bool account_for_audio) = 0;
-  virtual void SetIncludeOverhead() = 0;
 };
 
 }  // namespace webrtc

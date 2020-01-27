@@ -107,7 +107,6 @@ class RtpTransportControllerSend final
       size_t transport_overhead_per_packet) override;
 
   void AccountForAudioPacketsInPacedSender(bool account_for_audio) override;
-  void IncludeOverheadInPacedSender() override;
 
   // Implements RtcpBandwidthObserver interface
   void OnReceivedEstimatedBitrate(uint32_t bitrate) override;

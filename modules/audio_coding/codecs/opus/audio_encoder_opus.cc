@@ -593,11 +593,6 @@ void AudioEncoderOpusImpl::OnReceivedUplinkPacketLossFraction(
   ApplyAudioNetworkAdaptor();
 }
 
-void AudioEncoderOpusImpl::OnReceivedTargetAudioBitrate(
-    int target_audio_bitrate_bps) {
-  SetTargetBitrate(target_audio_bitrate_bps);
-}
-
 void AudioEncoderOpusImpl::OnReceivedUplinkBandwidth(
     int target_audio_bitrate_bps,
     absl::optional<int64_t> bwe_period_ms,
