@@ -1732,15 +1732,28 @@ int VP9DecoderImpl::ReturnFrame(
   rtc::scoped_refptr<VideoFrameBuffer> img_wrapped_buffer;
   switch (img->bit_depth) {
     case 8:
-      img_wrapped_buffer = WrapI420Buffer(
-          img->d_w, img->d_h, img->planes[VPX_PLANE_Y],
-          img->stride[VPX_PLANE_Y], img->planes[VPX_PLANE_U],
-          img->stride[VPX_PLANE_U], img->planes[VPX_PLANE_V],
-          img->stride[VPX_PLANE_V],
-          // WrappedI420Buffer's mechanism for allowing the release of its frame
-          // buffer is through a callback function. This is where we should
-          // release |img_buffer|.
-          rtc::KeepRefUntilDone(img_buffer));
+      RTC_DCHECK(img->fmt == VPX_IMG_FMT_I420 || img->fmt == VPX_IMG_FMT_I444);
+      if (img->fmt == VPX_IMG_FMT_I420) {
+        img_wrapped_buffer = WrapI420Buffer(
+            img->d_w, img->d_h, img->planes[VPX_PLANE_Y],
+            img->stride[VPX_PLANE_Y], img->planes[VPX_PLANE_U],
+            img->stride[VPX_PLANE_U], img->planes[VPX_PLANE_V],
+            img->stride[VPX_PLANE_V],
+            // WrappedI420Buffer's mechanism for allowing the release of its
+            // frame buffer is through a callback function. This is where we
+            // should release |img_buffer|.
+            rtc::KeepRefUntilDone(img_buffer));
+      } else if (img->fmt == VPX_IMG_FMT_I444) {
+        img_wrapped_buffer = WrapI444Buffer(
+            img->d_w, img->d_h, img->planes[VPX_PLANE_Y],
+            img->stride[VPX_PLANE_Y], img->planes[VPX_PLANE_U],
+            img->stride[VPX_PLANE_U], img->planes[VPX_PLANE_V],
+            img->stride[VPX_PLANE_V],
+            // WrappedI444Buffer's mechanism for allowing the release of its
+            // frame buffer is through a callback function. This is where we
+            // should release |img_buffer|.
+            rtc::KeepRefUntilDone(img_buffer));
+      }
       break;
     case 10:
       img_wrapped_buffer = WrapI010Buffer(
