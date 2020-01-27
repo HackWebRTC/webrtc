@@ -14,10 +14,7 @@
 #include <stdint.h>
 #include <time.h>
 
-#include <string>
-
 #include "rtc_base/checks.h"
-#include "rtc_base/strings/string_builder.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
@@ -136,34 +133,6 @@ int64_t TimeUTCMicros();
 // Return the number of milliseconds since January 1, 1970, UTC.
 // See above.
 int64_t TimeUTCMillis();
-
-// Interval of time from the range [min, max] inclusive.
-class IntervalRange {
- public:
-  IntervalRange() : min_(0), max_(0) {}
-  IntervalRange(int min, int max) : min_(min), max_(max) {
-    RTC_DCHECK_LE(min, max);
-  }
-
-  int min() const { return min_; }
-  int max() const { return max_; }
-
-  std::string ToString() const {
-    rtc::StringBuilder ss;
-    ss << "[" << min_ << "," << max_ << "]";
-    return ss.Release();
-  }
-
-  bool operator==(const IntervalRange& o) const {
-    return min_ == o.min_ && max_ == o.max_;
-  }
-
-  bool operator!=(const IntervalRange& o) const { return !operator==(o); }
-
- private:
-  int min_;
-  int max_;
-};
 
 }  // namespace rtc
 

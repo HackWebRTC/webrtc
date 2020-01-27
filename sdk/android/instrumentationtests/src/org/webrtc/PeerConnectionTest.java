@@ -168,7 +168,6 @@ public class PeerConnectionTest {
 
     // Test configuration options.
     config.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
-    config.iceRegatherIntervalRange = new PeerConnection.IntervalRange(1000, 2000);
 
     PeerConnection offeringPC =
         factory.createPeerConnection(config, mock(PeerConnection.Observer.class));

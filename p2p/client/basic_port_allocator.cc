@@ -463,23 +463,6 @@ void BasicPortAllocatorSession::RegatherOnFailedNetworks() {
            IceRegatheringReason::NETWORK_FAILURE);
 }
 
-void BasicPortAllocatorSession::RegatherOnAllNetworks() {
-  RTC_DCHECK_RUN_ON(network_thread_);
-
-  std::vector<rtc::Network*> networks = GetNetworks();
-  if (networks.empty()) {
-    return;
-  }
-
-  RTC_LOG(LS_INFO) << "Regather candidates on all networks";
-
-  // We expect to generate candidates that are equivalent to what we have now.
-  // Force DoAllocate to generate them instead of skipping.
-  bool disable_equivalent_phases = false;
-  Regather(networks, disable_equivalent_phases,
-           IceRegatheringReason::OCCASIONAL_REFRESH);
-}
-
 void BasicPortAllocatorSession::Regather(
     const std::vector<rtc::Network*>& networks,
     bool disable_equivalent_phases,

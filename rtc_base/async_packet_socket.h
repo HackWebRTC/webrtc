@@ -11,6 +11,8 @@
 #ifndef RTC_BASE_ASYNC_PACKET_SOCKET_H_
 #define RTC_BASE_ASYNC_PACKET_SOCKET_H_
 
+#include <vector>
+
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/dscp.h"
 #include "rtc_base/network/sent_packet.h"

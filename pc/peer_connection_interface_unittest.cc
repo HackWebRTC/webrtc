@@ -3666,28 +3666,6 @@ TEST_P(PeerConnectionInterfaceTest, SetBitrateMaxNegativeFails) {
   EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
 }
 
-// ice_regather_interval_range requires WebRTC to be configured for continual
-// gathering already.
-TEST_P(PeerConnectionInterfaceTest,
-       SetIceRegatherIntervalRangeWithoutContinualGatheringFails) {
-  PeerConnectionInterface::RTCConfiguration config;
-  config.ice_regather_interval_range.emplace(1000, 2000);
-  config.continual_gathering_policy =
-      PeerConnectionInterface::ContinualGatheringPolicy::GATHER_ONCE;
-  CreatePeerConnectionExpectFail(config);
-}
-
-// Ensures that there is no error when ice_regather_interval_range is set with
-// continual gathering enabled.
-TEST_P(PeerConnectionInterfaceTest,
-       SetIceRegatherIntervalRangeWithContinualGathering) {
-  PeerConnectionInterface::RTCConfiguration config;
-  config.ice_regather_interval_range.emplace(1000, 2000);
-  config.continual_gathering_policy =
-      PeerConnectionInterface::ContinualGatheringPolicy::GATHER_CONTINUALLY;
-  CreatePeerConnection(config);
-}
-
 // The current bitrate from BitrateSettings is currently clamped
 // by Call's BitrateConstraints, which comes from the SDP or a default value.
 // This test checks that a call to SetBitrate with a current bitrate that will

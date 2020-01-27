@@ -13,6 +13,7 @@
 
 #include <deque>
 #include <map>
+#include <vector>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"

@@ -116,9 +116,9 @@ P2PTransportChannel::P2PTransportChannel(
   // Validate IceConfig even for mostly built-in constant default values in case
   // we change them.
   RTC_DCHECK(ValidateIceConfig(config_).ok());
-  webrtc::BasicRegatheringController::Config regathering_config(
-      config_.regather_all_networks_interval_range,
-      config_.regather_on_failed_networks_interval_or_default());
+  webrtc::BasicRegatheringController::Config regathering_config;
+  regathering_config.regather_on_failed_networks_interval =
+      config_.regather_on_failed_networks_interval_or_default();
   regathering_controller_ =
       std::make_unique<webrtc::BasicRegatheringController>(
           regathering_config, this, network_thread_);
@@ -538,18 +538,6 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
         << config_.regather_on_failed_networks_interval_or_default();
   }
 
-  if (config_.regather_all_networks_interval_range !=
-      config.regather_all_networks_interval_range) {
-    // Config validation is assumed to have already happened at the API layer.
-    RTC_DCHECK(config.continual_gathering_policy != GATHER_ONCE);
-    config_.regather_all_networks_interval_range =
-        config.regather_all_networks_interval_range;
-    RTC_LOG(LS_INFO) << "Set regather_all_networks_interval_range to "
-                     << config.regather_all_networks_interval_range
-                            .value_or(rtc::IntervalRange(-1, 0))
-                            .ToString();
-  }
-
   if (config_.receiving_switching_delay != config.receiving_switching_delay) {
     config_.receiving_switching_delay = config.receiving_switching_delay;
     RTC_LOG(LS_INFO) << "Set receiving_switching_delay to "
@@ -678,9 +666,9 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
                      << *field_trials_.initial_select_dampening_ping_received;
   }
 
-  webrtc::BasicRegatheringController::Config regathering_config(
-      config_.regather_all_networks_interval_range,
-      config_.regather_on_failed_networks_interval_or_default());
+  webrtc::BasicRegatheringController::Config regathering_config;
+  regathering_config.regather_on_failed_networks_interval =
+      config_.regather_on_failed_networks_interval_or_default();
   regathering_controller_->SetConfig(regathering_config);
 
   ice_controller_->SetIceConfig(config_);
@@ -697,13 +685,6 @@ const IceConfig& P2PTransportChannel::config() const {
 // PeerConnection::SetConfiguration.
 // Static
 RTCError P2PTransportChannel::ValidateIceConfig(const IceConfig& config) {
-  if (config.regather_all_networks_interval_range &&
-      config.continual_gathering_policy == GATHER_ONCE) {
-    return RTCError(RTCErrorType::INVALID_PARAMETER,
-                    "regather_all_networks_interval_range specified but "
-                    "continual gathering policy is GATHER_ONCE");
-  }
-
   if (config.ice_check_interval_strong_connectivity_or_default() <
       config.ice_check_interval_weak_connectivity.value_or(
           GetWeakPingIntervalInFieldTrial())) {
@@ -742,13 +723,6 @@ RTCError P2PTransportChannel::ValidateIceConfig(const IceConfig& config) {
     return RTCError(RTCErrorType::INVALID_PARAMETER,
                     "The timeout period for the writability state to become "
                     "UNRELIABLE is longer than that to become TIMEOUT.");
-  }
-
-  if (config.regather_all_networks_interval_range &&
-      config.regather_all_networks_interval_range.value().min() < 0) {
-    return RTCError(
-        RTCErrorType::INVALID_RANGE,
-        "The minimum regathering interval for all networks is negative.");
   }
 
   return RTCError::OK();

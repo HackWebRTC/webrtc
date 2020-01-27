@@ -240,8 +240,6 @@ class RTC_EXPORT PortAllocatorSession : public sigslot::has_slots<> {
   // network. Only if all networks of an interface have no connection, the
   // implementation should start re-gathering on all networks of that interface.
   virtual void RegatherOnFailedNetworks() {}
-  // Re-gathers candidates on all networks.
-  virtual void RegatherOnAllNetworks() {}
   // Get candidate-level stats from all candidates on the ready ports and return
   // the stats to the given list.
   virtual void GetCandidateStatsFromReadyPorts(

@@ -892,7 +892,6 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     absl::optional<int> ice_unwritable_min_checks;
     absl::optional<int> ice_inactive_timeout;
     absl::optional<int> stun_candidate_keepalive_interval;
-    absl::optional<rtc::IntervalRange> ice_regather_interval_range;
     webrtc::TurnCustomizer* turn_customizer;
     SdpSemantics sdp_semantics;
     absl::optional<rtc::AdapterType> network_preference;
@@ -958,7 +957,6 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          ice_inactive_timeout == o.ice_inactive_timeout &&
          stun_candidate_keepalive_interval ==
              o.stun_candidate_keepalive_interval &&
-         ice_regather_interval_range == o.ice_regather_interval_range &&
          turn_customizer == o.turn_customizer &&
          sdp_semantics == o.sdp_semantics &&
          network_preference == o.network_preference &&
@@ -1424,15 +1422,8 @@ bool PeerConnection::Initialize(
 
 RTCError PeerConnection::ValidateConfiguration(
     const RTCConfiguration& config) const {
-  if (config.ice_regather_interval_range &&
-      config.continual_gathering_policy == GATHER_ONCE) {
-    return RTCError(RTCErrorType::INVALID_PARAMETER,
-                    "ice_regather_interval_range specified but continual "
-                    "gathering policy is GATHER_ONCE");
-  }
-  auto result =
-      cricket::P2PTransportChannel::ValidateIceConfig(ParseIceConfig(config));
-  return result;
+  return cricket::P2PTransportChannel::ValidateIceConfig(
+      ParseIceConfig(config));
 }
 
 rtc::scoped_refptr<StreamCollectionInterface> PeerConnection::local_streams() {
@@ -6165,8 +6156,6 @@ cricket::IceConfig PeerConnection::ParseIceConfig(
   ice_config.ice_unwritable_min_checks = config.ice_unwritable_min_checks;
   ice_config.ice_inactive_timeout = config.ice_inactive_timeout;
   ice_config.stun_keepalive_interval = config.stun_candidate_keepalive_interval;
-  ice_config.regather_all_networks_interval_range =
-      config.ice_regather_interval_range;
   ice_config.network_preference = config.network_preference;
   return ice_config;
 }

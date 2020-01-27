@@ -30,6 +30,7 @@
 #include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/string_utils.h"
+#include "rtc_base/strings/string_builder.h"
 #include "rtc_base/third_party/base64/base64.h"
 #include "system_wrappers/include/field_trial.h"
 

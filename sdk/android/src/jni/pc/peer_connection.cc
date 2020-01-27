@@ -240,13 +240,6 @@ void JavaToNativeRTCConfiguration(
       Java_RTCConfiguration_getDisableIPv6OnWifi(jni, j_rtc_config);
   rtc_config->max_ipv6_networks =
       Java_RTCConfiguration_getMaxIPv6Networks(jni, j_rtc_config);
-  ScopedJavaLocalRef<jobject> j_ice_regather_interval_range =
-      Java_RTCConfiguration_getIceRegatherIntervalRange(jni, j_rtc_config);
-  if (!IsNull(jni, j_ice_regather_interval_range)) {
-    int min = Java_IntervalRange_getMin(jni, j_ice_regather_interval_range);
-    int max = Java_IntervalRange_getMax(jni, j_ice_regather_interval_range);
-    rtc_config->ice_regather_interval_range.emplace(min, max);
-  }
 
   rtc_config->turn_customizer = GetNativeTurnCustomizer(jni, j_turn_customizer);
 

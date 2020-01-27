@@ -570,12 +570,6 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     // binding requests to keep NAT bindings open.
     absl::optional<int> stun_candidate_keepalive_interval;
 
-    // ICE Periodic Regathering
-    // If set, WebRTC will periodically create and propose candidates without
-    // starting a new ICE generation. The regathering happens continuously with
-    // interval specified in milliseconds by the uniform distribution [a, b].
-    absl::optional<rtc::IntervalRange> ice_regather_interval_range;
-
     // Optional TurnCustomizer.
     // With this class one can modify outgoing TURN messages.
     // The object passed in must remain valid until PeerConnection::Close() is
