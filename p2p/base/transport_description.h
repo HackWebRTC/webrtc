@@ -20,6 +20,7 @@
 #include "api/rtc_error.h"
 #include "p2p/base/p2p_constants.h"
 #include "rtc_base/ssl_fingerprint.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace cricket {
 
@@ -59,8 +60,9 @@ enum ConnectionRole {
 struct IceParameters {
   // Constructs an IceParameters from a user-provided ufrag/pwd combination.
   // Returns a SyntaxError if the ufrag or pwd are malformed.
-  static webrtc::RTCErrorOr<IceParameters> Parse(absl::string_view raw_ufrag,
-                                                 absl::string_view raw_pwd);
+  static RTC_EXPORT webrtc::RTCErrorOr<IceParameters> Parse(
+      absl::string_view raw_ufrag,
+      absl::string_view raw_pwd);
 
   // TODO(honghaiz): Include ICE mode in this structure to match the ORTC
   // struct:
