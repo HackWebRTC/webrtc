@@ -122,13 +122,6 @@ class TestMainImpl : public TestMain {
     rtc::LogMessage::SetLogToStderr(absl::GetFlag(FLAGS_logs) ||
                                     absl::GetFlag(FLAGS_verbose));
 
-    std::string trace_event_path = absl::GetFlag(FLAGS_trace_event);
-    const bool capture_events = !trace_event_path.empty();
-    if (capture_events) {
-      rtc::tracing::SetupInternalTracer();
-      rtc::tracing::StartInternalCapture(trace_event_path.c_str());
-    }
-
     // InitFieldTrialsFromString stores the char*, so the char array must
     // outlive the application.
     field_trials_ = absl::GetFlag(FLAGS_force_fieldtrials);
@@ -152,18 +145,22 @@ class TestMainImpl : public TestMain {
     rtc::ThreadManager::Instance()->WrapCurrentThread();
     RTC_CHECK(rtc::Thread::Current());
 
-    if (capture_events) {
-      rtc::tracing::StopInternalCapture();
-    }
     return 0;
   }
 
   int Run(int argc, char* argv[]) override {
+    std::string trace_event_path = absl::GetFlag(FLAGS_trace_event);
+    const bool capture_events = !trace_event_path.empty();
+    if (capture_events) {
+      rtc::tracing::SetupInternalTracer();
+      rtc::tracing::StartInternalCapture(trace_event_path.c_str());
+    }
+
 #if defined(WEBRTC_IOS)
     rtc::test::InitTestSuite(RUN_ALL_TESTS, argc, argv,
                              absl::GetFlag(FLAGS_save_chartjson_result));
     rtc::test::RunTestsFromIOSApp();
-    return 0;
+    int exit_code = 0;
 #else
     int exit_code = RUN_ALL_TESTS();
 
@@ -188,17 +185,21 @@ class TestMainImpl : public TestMain {
       result_file << "{\"version\": 3}";
       result_file.close();
     }
+#endif
+
+    if (capture_events) {
+      rtc::tracing::StopInternalCapture();
+    }
 
 #if defined(ADDRESS_SANITIZER) || defined(LEAK_SANITIZER) ||  \
     defined(MEMORY_SANITIZER) || defined(THREAD_SANITIZER) || \
     defined(UNDEFINED_SANITIZER)
     // We want the test flagged as failed only for sanitizer defects,
     // in which case the sanitizer will override exit code with 66.
-    return 0;
+    exit_code = 0;
 #endif
 
     return exit_code;
-#endif
   }
 
   ~TestMainImpl() override = default;
