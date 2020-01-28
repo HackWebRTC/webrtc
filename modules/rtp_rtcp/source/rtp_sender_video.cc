@@ -806,6 +806,9 @@ uint8_t RTPSenderVideo::GetTemporalId(const RTPVideoHeader& header) {
       return vp9.temporal_idx;
     }
     uint8_t operator()(const RTPVideoHeaderH264&) { return kNoTemporalIdx; }
+    uint8_t operator()(const RTPVideoHeaderLegacyGeneric&) {
+      return kNoTemporalIdx;
+    }
     uint8_t operator()(const absl::monostate&) { return kNoTemporalIdx; }
   };
   switch (header.codec) {

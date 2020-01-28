@@ -59,9 +59,9 @@ VideoRtpDepacketizerGeneric::Parse(rtc::CopyOnWriteBuffer rtp_payload) {
       RTC_LOG(LS_WARNING) << "Too short payload for generic header.";
       return absl::nullopt;
     }
-    parsed->video_header.generic.emplace();
-    parsed->video_header.generic->frame_id =
-        ((payload_data[1] & 0x7F) << 8) | payload_data[2];
+    parsed->video_header.video_type_header
+        .emplace<RTPVideoHeaderLegacyGeneric>()
+        .picture_id = ((payload_data[1] & 0x7F) << 8) | payload_data[2];
     offset += kExtendedHeaderLength;
   }
 

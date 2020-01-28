@@ -28,10 +28,18 @@
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 
 namespace webrtc {
+// Details passed in the rtp payload for legacy generic rtp packetizer.
+// TODO(bugs.webrtc.org/9772): Deprecate in favor of passing generic video
+// details in an rtp header extension.
+struct RTPVideoHeaderLegacyGeneric {
+  uint16_t picture_id;
+};
+
 using RTPVideoTypeHeader = absl::variant<absl::monostate,
                                          RTPVideoHeaderVP8,
                                          RTPVideoHeaderVP9,
-                                         RTPVideoHeaderH264>;
+                                         RTPVideoHeaderH264,
+                                         RTPVideoHeaderLegacyGeneric>;
 
 struct RTPVideoHeader {
   struct GenericDescriptorInfo {

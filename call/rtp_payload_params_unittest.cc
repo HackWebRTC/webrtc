@@ -333,12 +333,16 @@ TEST(RtpPayloadParamsTest, PictureIdForOldGenericFormat) {
       params.GetRtpVideoHeader(encoded_image, &codec_info, kDontCare);
 
   EXPECT_EQ(kVideoCodecGeneric, header.codec);
-  ASSERT_TRUE(header.generic);
-  EXPECT_EQ(0, header.generic->frame_id);
+  const auto* generic =
+      absl::get_if<RTPVideoHeaderLegacyGeneric>(&header.video_type_header);
+  ASSERT_TRUE(generic);
+  EXPECT_EQ(0, generic->picture_id);
 
   header = params.GetRtpVideoHeader(encoded_image, &codec_info, kDontCare);
-  ASSERT_TRUE(header.generic);
-  EXPECT_EQ(1, header.generic->frame_id);
+  generic =
+      absl::get_if<RTPVideoHeaderLegacyGeneric>(&header.video_type_header);
+  ASSERT_TRUE(generic);
+  EXPECT_EQ(1, generic->picture_id);
 }
 
 TEST(RtpPayloadParamsTest, GenericDescriptorForGenericCodec) {

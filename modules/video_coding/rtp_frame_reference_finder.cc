@@ -111,15 +111,14 @@ RtpFrameReferenceFinder::ManageFrameInternal(RtpFrameObject* frame) {
       return ManageFrameVp9(frame);
     case kVideoCodecH264:
       return ManageFrameH264(frame);
-    default: {
-      // Use 15 first bits of frame ID as picture ID if available.
-      const RTPVideoHeader& video_header = frame->GetRtpVideoHeader();
-      int picture_id = kNoPictureId;
-      if (video_header.generic)
-        picture_id = video_header.generic->frame_id & 0x7fff;
-
-      return ManageFramePidOrSeqNum(frame, picture_id);
-    }
+    case kVideoCodecGeneric:
+      if (auto* generic_header = absl::get_if<RTPVideoHeaderLegacyGeneric>(
+              &frame->GetRtpVideoHeader().video_type_header)) {
+        return ManageFramePidOrSeqNum(frame, generic_header->picture_id);
+      }
+      ABSL_FALLTHROUGH_INTENDED;
+    default:
+      return ManageFramePidOrSeqNum(frame, kNoPictureId);
   }
 }
 
