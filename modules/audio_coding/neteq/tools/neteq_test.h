@@ -92,7 +92,7 @@ class NetEqTest : public NetEqSimulator {
   ~NetEqTest() override;
 
   // Runs the test. Returns the duration of the produced audio in ms.
-  int64_t Run();
+  int64_t Run() override;
   // Runs the simulation until we hit the next GetAudio event. If the simulation
   // is finished, is_simulation_finished will be set to true in the returned
   // SimulationStepResult.
