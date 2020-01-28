@@ -338,11 +338,14 @@ EchoCanceller3::EchoCanceller3(const EchoCanceller3Config& config,
           std::vector<rtc::ArrayView<float>>(num_render_channels_)),
       capture_sub_frame_view_(
           num_bands_,
-          std::vector<rtc::ArrayView<float>>(num_capture_channels_)),
-      block_delay_buffer_(num_bands_,
-                          AudioBuffer::kSplitBandSize,
-                          config_.delay.fixed_capture_delay_samples) {
+          std::vector<rtc::ArrayView<float>>(num_capture_channels_)) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz_));
+
+  if (config_.delay.fixed_capture_delay_samples > 0) {
+    block_delay_buffer_.reset(new BlockDelayBuffer(
+        num_capture_channels_, num_bands_, AudioBuffer::kSplitBandSize,
+        config_.delay.fixed_capture_delay_samples));
+  }
 
   render_writer_.reset(new RenderWriter(data_dumper_.get(),
                                         &render_transfer_queue_, num_bands_,
@@ -417,7 +420,8 @@ void EchoCanceller3::ProcessCapture(AudioBuffer* capture,
 
   // Optionally delay the capture signal.
   if (config_.delay.fixed_capture_delay_samples > 0) {
-    block_delay_buffer_.DelaySignal(capture);
+    RTC_DCHECK(block_delay_buffer_);
+    block_delay_buffer_->DelaySignal(capture);
   }
 
   rtc::ArrayView<float> capture_lower_band = rtc::ArrayView<float>(

@@ -182,7 +182,8 @@ class EchoCanceller3 : public EchoControl {
       RTC_GUARDED_BY(capture_race_checker_);
   std::vector<std::vector<rtc::ArrayView<float>>> capture_sub_frame_view_
       RTC_GUARDED_BY(capture_race_checker_);
-  BlockDelayBuffer block_delay_buffer_ RTC_GUARDED_BY(capture_race_checker_);
+  std::unique_ptr<BlockDelayBuffer> block_delay_buffer_
+      RTC_GUARDED_BY(capture_race_checker_);
   ApiCallJitterMetrics api_call_metrics_ RTC_GUARDED_BY(capture_race_checker_);
 };
 }  // namespace webrtc
