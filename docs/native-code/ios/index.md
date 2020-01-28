@@ -1,28 +1,5 @@
 # WebRTC iOS development
 
-## Using Cocoapods
-
-The WebRTC framework  is published on [cocoapods.org][cocoapods].
-The framework is built from tip-of-tree.
-
-_NOTICE_: The pod version of the framework doesn't support bitcode currently.
-If you need bitcode support, you'll need to manually build the framework.
-The process is described in detail in the following sections.
-
-To integrate it into your project add the following lines to your Podfile
-
-```
-source 'https://github.com/CocoaPods/Specs.git'
-target 'YOUR_APPLICATION_TARGET_NAME_HERE' do
-  platform :ios, '9.0'
-  pod 'GoogleWebRTC'
-end
-```
-
-The versioning system used is *1.1.cr-commit-position*, where *cr-commit-position* can
-be used to identify the exact WebRTC revision the pod was built from. You can check the
-revision at crrev.com/CR_COMMIT_POSITION_HERE.
-
 ## Development Environment
 
 In case you need to build the framework manually
