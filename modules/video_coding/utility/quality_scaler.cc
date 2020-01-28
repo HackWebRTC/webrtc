@@ -68,14 +68,12 @@ class QualityScaler::QpSmoother {
   rtc::ExpFilter smoother_;
 };
 
-QualityScaler::QualityScaler(rtc::TaskQueue* task_queue,
-                             AdaptationObserverInterface* observer,
+QualityScaler::QualityScaler(AdaptationObserverInterface* observer,
                              VideoEncoder::QpThresholds thresholds)
-    : QualityScaler(task_queue, observer, thresholds, kMeasureMs) {}
+    : QualityScaler(observer, thresholds, kMeasureMs) {}
 
 // Protected ctor, should not be called directly.
-QualityScaler::QualityScaler(rtc::TaskQueue* task_queue,
-                             AdaptationObserverInterface* observer,
+QualityScaler::QualityScaler(AdaptationObserverInterface* observer,
                              VideoEncoder::QpThresholds thresholds,
                              int64_t sampling_period_ms)
     : observer_(observer),
@@ -106,7 +104,7 @@ QualityScaler::QualityScaler(rtc::TaskQueue* task_queue,
   }
   RTC_DCHECK(observer_ != nullptr);
   check_qp_task_ = RepeatingTaskHandle::DelayedStart(
-      task_queue->Get(), TimeDelta::ms(GetSamplingPeriodMs()), [this]() {
+      TaskQueueBase::Current(), TimeDelta::ms(GetSamplingPeriodMs()), [this]() {
         CheckQp();
         return TimeDelta::ms(GetSamplingPeriodMs());
       });

@@ -50,10 +50,9 @@ class MockAdaptationObserver : public AdaptationObserverInterface {
 // Pass a lower sampling period to speed up the tests.
 class QualityScalerUnderTest : public QualityScaler {
  public:
-  explicit QualityScalerUnderTest(rtc::TaskQueue* task_queue,
-                                  AdaptationObserverInterface* observer,
+  explicit QualityScalerUnderTest(AdaptationObserverInterface* observer,
                                   VideoEncoder::QpThresholds thresholds)
-      : QualityScaler(task_queue, observer, thresholds, 5) {}
+      : QualityScaler(observer, thresholds, 5) {}
 };
 
 class QualityScalerTest : public ::testing::Test,
@@ -74,8 +73,7 @@ class QualityScalerTest : public ::testing::Test,
     task_queue_.SendTask(
         [this] {
           qs_ = std::unique_ptr<QualityScaler>(new QualityScalerUnderTest(
-              &task_queue_, observer_.get(),
-              VideoEncoder::QpThresholds(kLowQp, kHighQp)));
+              observer_.get(), VideoEncoder::QpThresholds(kLowQp, kHighQp)));
         },
         RTC_FROM_HERE);
   }

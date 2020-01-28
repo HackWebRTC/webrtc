@@ -799,9 +799,8 @@ void VideoStreamEncoder::ConfigureQualityScaler(
       // upcast.
       AdaptationObserverInterface* observer = resource_adaptation_module_.get();
       quality_scaler_ = std::make_unique<QualityScaler>(
-          &encoder_queue_, observer,
-          experimental_thresholds ? *experimental_thresholds
-                                  : *(scaling_settings.thresholds));
+          observer, experimental_thresholds ? *experimental_thresholds
+                                            : *(scaling_settings.thresholds));
       resource_adaptation_module_->SetIsQualityScalerEnabled(true);
       initial_framedrop_ = 0;
     }
