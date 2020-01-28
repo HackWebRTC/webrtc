@@ -36,7 +36,7 @@
 
 namespace webrtc {
 
-// This class implements a leaky-buck packet pacing algorithm. It handles the
+// This class implements a leaky-bucket packet pacing algorithm. It handles the
 // logic of determining which packets to send when, but the actual timing of
 // the processing is done externally (e.g. PacedSender). Furthermore, the
 // forwarding of packets when they are ready to be sent is also handled
