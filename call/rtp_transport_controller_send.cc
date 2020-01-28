@@ -421,6 +421,9 @@ void RtpTransportControllerSend::OnTransportOverheadChanged(
     return;
   }
 
+  pacer()->SetTransportOverhead(
+      DataSize::bytes(transport_overhead_bytes_per_packet));
+
   // TODO(holmer): Call AudioRtpSenders when they have been moved to
   // RtpTransportControllerSend.
   for (auto& rtp_video_sender : video_rtp_senders_) {

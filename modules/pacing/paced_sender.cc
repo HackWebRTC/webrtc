@@ -131,6 +131,11 @@ void PacedSender::SetIncludeOverhead() {
   pacing_controller_.SetIncludeOverhead();
 }
 
+void PacedSender::SetTransportOverhead(DataSize overhead_per_packet) {
+  rtc::CritScope cs(&critsect_);
+  pacing_controller_.SetTransportOverhead(overhead_per_packet);
+}
+
 TimeDelta PacedSender::ExpectedQueueTime() const {
   rtc::CritScope cs(&critsect_);
   return pacing_controller_.ExpectedQueueTime();
