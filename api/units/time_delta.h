@@ -32,7 +32,26 @@ namespace webrtc {
 // microseconds (us).
 class TimeDelta final : public rtc_units_impl::RelativeUnit<TimeDelta> {
  public:
+  template <typename T>
+  static constexpr TimeDelta Seconds(T value) {
+    static_assert(std::is_arithmetic<T>::value, "");
+    return FromFraction(1'000'000, value);
+  }
+  template <typename T>
+  static constexpr TimeDelta Millis(T value) {
+    static_assert(std::is_arithmetic<T>::value, "");
+    return FromFraction(1'000, value);
+  }
+  template <typename T>
+  static constexpr TimeDelta Micros(T value) {
+    static_assert(std::is_arithmetic<T>::value, "");
+    return FromValue(value);
+  }
+
   TimeDelta() = delete;
+
+  // TODO(danilchap): Migrate all code to the 3 factories above and delete the
+  // 6 factories below.
   template <int64_t seconds>
   static constexpr TimeDelta Seconds() {
     return FromFraction(1'000'000, seconds);
