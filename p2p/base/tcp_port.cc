@@ -520,6 +520,9 @@ void TCPConnection::OnMessage(rtc::Message* pmsg) {
         Destroy();
       }
       break;
+    case MSG_TCPCONNECTION_FAILED_CREATE_SOCKET:
+      FailAndPrune();
+      break;
     default:
       Connection::OnMessage(pmsg);
   }
@@ -576,7 +579,13 @@ void TCPConnection::CreateOutgoingTcpSocket() {
   } else {
     RTC_LOG(LS_WARNING) << ToString() << ": Failed to create connection to "
                         << remote_candidate().address().ToSensitiveString();
-    FailAndPrune();
+    // We can't FailAndPrune directly here. FailAndPrune and deletes all
+    // the StunRequests from the request_map_. And if this is in the stack
+    // of Connection::Ping(), we are still using the request.
+    // Unwind the stack and defer the FailAndPrune.
+    set_state(IceCandidatePairState::FAILED);
+    port()->thread()->Post(RTC_FROM_HERE, this,
+                           MSG_TCPCONNECTION_FAILED_CREATE_SOCKET);
   }
 }
 
