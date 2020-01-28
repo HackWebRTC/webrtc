@@ -255,6 +255,10 @@ ABSL_FLAG(std::string,
           dump_data_output_dir,
           "",
           "Internal data dump output directory");
+ABSL_FLAG(bool,
+          float_wav_output,
+          false,
+          "Produce floating point wav output files.");
 
 namespace webrtc {
 namespace test {
@@ -437,6 +441,9 @@ SimulationSettings CreateSettings() {
   settings.dump_internal_data = absl::GetFlag(FLAGS_dump_data);
   SetSettingIfSpecified(absl::GetFlag(FLAGS_dump_data_output_dir),
                         &settings.dump_internal_data_output_dir);
+  settings.wav_output_format = absl::GetFlag(FLAGS_float_wav_output)
+                                   ? WavFile::SampleFormat::kFloat
+                                   : WavFile::SampleFormat::kInt16;
 
   return settings;
 }

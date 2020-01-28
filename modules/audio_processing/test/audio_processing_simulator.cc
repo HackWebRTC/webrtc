@@ -348,7 +348,8 @@ void AudioProcessingSimulator::SetupOutput() {
 
     std::unique_ptr<WavWriter> out_file(
         new WavWriter(filename, out_config_.sample_rate_hz(),
-                      static_cast<size_t>(out_config_.num_channels())));
+                      static_cast<size_t>(out_config_.num_channels()),
+                      settings_.wav_output_format));
     buffer_file_writer_.reset(new ChannelBufferWavWriter(std::move(out_file)));
   } else if (settings_.aec_dump_input_string.has_value()) {
     buffer_memory_writer_ = std::make_unique<ChannelBufferVectorWriter>(
@@ -365,7 +366,8 @@ void AudioProcessingSimulator::SetupOutput() {
     }
 
     linear_aec_output_file_writer_.reset(
-        new WavWriter(filename, 16000, out_config_.num_channels()));
+        new WavWriter(filename, 16000, out_config_.num_channels(),
+                      settings_.wav_output_format));
 
     linear_aec_output_buf_.resize(out_config_.num_channels());
   }
@@ -381,7 +383,8 @@ void AudioProcessingSimulator::SetupOutput() {
 
     std::unique_ptr<WavWriter> reverse_out_file(
         new WavWriter(filename, reverse_out_config_.sample_rate_hz(),
-                      static_cast<size_t>(reverse_out_config_.num_channels())));
+                      static_cast<size_t>(reverse_out_config_.num_channels()),
+                      settings_.wav_output_format));
     reverse_buffer_file_writer_.reset(
         new ChannelBufferWavWriter(std::move(reverse_out_file)));
   }

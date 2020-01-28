@@ -93,6 +93,7 @@ struct SimulationSettings {
   bool store_intermediate_output = false;
   bool print_aec_parameter_values = false;
   bool dump_internal_data = false;
+  WavFile::SampleFormat wav_output_format = WavFile::SampleFormat::kInt16;
   absl::optional<std::string> dump_internal_data_output_dir;
   absl::optional<std::string> call_order_input_filename;
   absl::optional<std::string> call_order_output_filename;
