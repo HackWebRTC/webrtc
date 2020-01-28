@@ -795,6 +795,9 @@ class RTCStatsReportVerifier {
           inbound_stream.fec_packets_received);
       verifier.TestMemberIsNonNegative<uint64_t>(
           inbound_stream.fec_packets_discarded);
+    } else {
+      verifier.TestMemberIsUndefined(inbound_stream.fec_packets_received);
+      verifier.TestMemberIsUndefined(inbound_stream.fec_packets_discarded);
     }
     verifier.TestMemberIsNonNegative<uint64_t>(inbound_stream.bytes_received);
     verifier.TestMemberIsNonNegative<uint64_t>(

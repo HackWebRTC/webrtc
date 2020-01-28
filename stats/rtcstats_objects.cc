@@ -594,6 +594,8 @@ RTCRTPStreamStats::~RTCRTPStreamStats() {}
 WEBRTC_RTCSTATS_IMPL(
     RTCInboundRTPStreamStats, RTCRTPStreamStats, "inbound-rtp",
     &packets_received,
+    &fec_packets_received,
+    &fec_packets_discarded,
     &bytes_received,
     &header_bytes_received,
     &packets_lost,
