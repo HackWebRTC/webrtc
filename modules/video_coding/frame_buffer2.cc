@@ -116,50 +116,6 @@ void FrameBuffer::StartWaitForNextFrameOnQueue() {
       });
 }
 
-FrameBuffer::ReturnReason FrameBuffer::NextFrame(
-    int64_t max_wait_time_ms,
-    std::unique_ptr<EncodedFrame>* frame_out,
-    bool keyframe_required) {
-  TRACE_EVENT0("webrtc", "FrameBuffer::NextFrame");
-  int64_t latest_return_time_ms =
-      clock_->TimeInMilliseconds() + max_wait_time_ms;
-  int64_t wait_ms = max_wait_time_ms;
-  int64_t now_ms = 0;
-
-  do {
-    now_ms = clock_->TimeInMilliseconds();
-    {
-      rtc::CritScope lock(&crit_);
-      new_continuous_frame_event_.Reset();
-      if (stopped_)
-        return kStopped;
-
-      keyframe_required_ = keyframe_required;
-      latest_return_time_ms_ = latest_return_time_ms;
-      wait_ms = FindNextFrame(now_ms);
-    }
-  } while (new_continuous_frame_event_.Wait(wait_ms));
-
-  {
-    rtc::CritScope lock(&crit_);
-
-    if (!frames_to_decode_.empty()) {
-      frame_out->reset(GetNextFrame());
-      return kFrameFound;
-    }
-  }
-
-  if (latest_return_time_ms - clock_->TimeInMilliseconds() > 0) {
-    // If |next_frame_it_ == frames_.end()| and there is still time left, it
-    // means that the frame buffer was cleared as the thread in this function
-    // was waiting to acquire |crit_| in order to return. Wait for the
-    // remaining time and then return.
-    return NextFrame(latest_return_time_ms - now_ms, frame_out,
-                     keyframe_required);
-  }
-  return kTimeout;
-}
-
 int64_t FrameBuffer::FindNextFrame(int64_t now_ms) {
   int64_t wait_ms = latest_return_time_ms_ - now_ms;
   frames_to_decode_.clear();
@@ -379,7 +335,6 @@ void FrameBuffer::Stop() {
   TRACE_EVENT0("webrtc", "FrameBuffer::Stop");
   rtc::CritScope lock(&crit_);
   stopped_ = true;
-  new_continuous_frame_event_.Set();
   CancelCallback();
 }
 
@@ -563,8 +518,6 @@ int64_t FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
 
     // Since we now have new continuous frames there might be a better frame
     // to return from NextFrame.
-    new_continuous_frame_event_.Set();
-
     if (callback_queue_) {
       callback_queue_->PostTask([this] {
         rtc::CritScope lock(&crit_);

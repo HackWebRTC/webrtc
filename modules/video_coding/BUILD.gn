@@ -248,7 +248,9 @@ rtc_source_set("codec_globals_headers") {
     "codecs/vp9/include/vp9_globals.h",
   ]
 
-  deps = [ "../../rtc_base:checks" ]
+  deps = [
+    "../../rtc_base:checks",
+  ]
 }
 
 rtc_library("video_coding_utility") {
@@ -669,7 +671,9 @@ if (rtc_include_tests) {
       bundle_data("video_coding_modules_tests_resources_bundle_data") {
         testonly = true
         sources = video_coding_modules_tests_resources
-        outputs = [ "{{bundle_resources_dir}}/{{source_file_part}}" ]
+        outputs = [
+          "{{bundle_resources_dir}}/{{source_file_part}}",
+        ]
       }
     }
   }
@@ -923,6 +927,7 @@ if (rtc_include_tests) {
       "../../test:test_support",
       "../../test:video_test_common",
       "../../test:video_test_support",
+      "../../test/time_controller:time_controller",
       "../rtp_rtcp:rtp_rtcp_format",
       "../rtp_rtcp:rtp_video_header",
       "//third_party/abseil-cpp/absl/memory",
