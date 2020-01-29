@@ -30,7 +30,6 @@ ABSL_FLAG(std::string,
 namespace webrtc {
 namespace test {
 namespace {
-const Timestamp kSimulatedStartTime = Timestamp::seconds(100000);
 
 std::unique_ptr<FileLogWriterFactory> GetScenarioLogManager(
     std::string file_name) {

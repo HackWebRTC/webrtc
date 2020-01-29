@@ -32,12 +32,12 @@ class DataSize final : public rtc_units_impl::RelativeUnit<DataSize> {
   }
 
   template <typename T>
-  static DataSize bytes(T bytes) {
+  static constexpr DataSize bytes(T bytes) {
     static_assert(std::is_arithmetic<T>::value, "");
     return FromValue(bytes);
   }
   template <typename T = int64_t>
-  T bytes() const {
+  constexpr T bytes() const {
     return ToValue<T>();
   }
 

@@ -43,6 +43,10 @@ class TestUnit final : public rtc_units_impl::RelativeUnit<TestUnit> {
   static constexpr bool one_sided = false;
   using RelativeUnit<TestUnit>::RelativeUnit;
 };
+constexpr TestUnit TestUnitAddKilo(TestUnit value, int add_kilo) {
+  value += TestUnit::FromKilo(add_kilo);
+  return value;
+}
 }  // namespace
 namespace test {
 TEST(UnitBaseTest, ConstExpr) {
@@ -62,6 +66,8 @@ TEST(UnitBaseTest, ConstExpr) {
 
   static_assert(kTestUnitKilo.ToKiloOr(0) == kValue, "");
   static_assert(kTestUnitValue.ToValueOr(0) == kValue, "");
+  static_assert(TestUnitAddKilo(kTestUnitValue, 2).ToValue() == kValue + 2000,
+                "");
 }
 
 TEST(UnitBaseTest, GetBackSameValues) {
