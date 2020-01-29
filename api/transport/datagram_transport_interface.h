@@ -128,6 +128,22 @@ class DatagramTransportInterface : public DataChannelTransportInterface {
   // the client, possibly removing any fields or parameters which the client
   // does not understand.
   virtual std::string GetTransportParameters() const = 0;
+
+  // Sets remote transport parameters.  |remote_params| is a serialized string
+  // of opaque parameters, understood by the datagram transport implementation.
+  // Returns an error if |remote_params| are not compatible with this transport.
+  //
+  // TODO(mellem): Make pure virtual.  The default implementation maintains
+  // original negotiation behavior (negotiation falls back to RTP if the
+  // remote datagram transport fails to echo exactly the local parameters).
+  virtual RTCError SetRemoteTransportParameters(
+      absl::string_view remote_params) {
+    if (remote_params == GetTransportParameters()) {
+      return RTCError::OK();
+    }
+    return RTCError(RTCErrorType::UNSUPPORTED_PARAMETER,
+                    "Local and remote transport parameters do not match");
+  }
 };
 
 }  // namespace webrtc

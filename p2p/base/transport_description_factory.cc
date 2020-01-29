@@ -110,10 +110,10 @@ std::unique_ptr<TransportDescription> TransportDescriptionFactory::CreateAnswer(
     return NULL;
   }
 
-  // Answers may only attach opaque parameters that exactly match parameters
-  // present in the offer.  If the answerer cannot fully understand or accept
-  // the offered transport, it must reject it and fall back.
-  if (offer->opaque_parameters == options.opaque_parameters) {
+  // Answers may only attach opaque parameters if the offer contained them as
+  // well.  The answer's parameters may differ, and it's up to the opaque
+  // transport implementation to decide if the difference is acceptable.
+  if (offer->opaque_parameters && options.opaque_parameters) {
     desc->opaque_parameters = options.opaque_parameters;
   }
 

@@ -26,9 +26,14 @@ constexpr size_t kMaxFakeDatagramSize = 1000;
 // or sending data.  Only used for tests that need to stub out a transport.
 class FakeDatagramTransport : public DatagramTransportInterface {
  public:
-  FakeDatagramTransport(const MediaTransportSettings& settings,
-                        std::string transport_parameters)
-      : settings_(settings), transport_parameters_(transport_parameters) {}
+  FakeDatagramTransport(
+      const MediaTransportSettings& settings,
+      std::string transport_parameters,
+      const std::function<bool(absl::string_view, absl::string_view)>&
+          are_parameters_compatible)
+      : settings_(settings),
+        transport_parameters_(transport_parameters),
+        are_parameters_compatible_(are_parameters_compatible) {}
 
   ~FakeDatagramTransport() override { RTC_DCHECK(!state_callback_); }
 
@@ -63,6 +68,16 @@ class FakeDatagramTransport : public DatagramTransportInterface {
     return transport_parameters_;
   }
 
+  RTCError SetRemoteTransportParameters(
+      absl::string_view remote_parameters) override {
+    if (are_parameters_compatible_(GetTransportParameters(),
+                                   remote_parameters)) {
+      return RTCError::OK();
+    }
+    return RTCError(RTCErrorType::UNSUPPORTED_PARAMETER,
+                    "Incompatible remote transport parameters");
+  }
+
   RTCError OpenChannel(int channel_id) override {
     return RTCError(RTCErrorType::UNSUPPORTED_OPERATION);
   }
@@ -94,6 +109,8 @@ class FakeDatagramTransport : public DatagramTransportInterface {
  private:
   const MediaTransportSettings settings_;
   const std::string transport_parameters_;
+  const std::function<bool(absl::string_view, absl::string_view)>
+      are_parameters_compatible_;
 
   rtc::PacketTransportInternal* packet_transport_ = nullptr;
   MediaTransportStateCallback* state_callback_ = nullptr;

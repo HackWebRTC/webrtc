@@ -1116,8 +1116,19 @@ JsepTransportController::MaybeCreateDatagramTransport(
       config_.media_transport_factory->CreateDatagramTransport(network_thread_,
                                                                settings);
 
-  // TODO(sukhanov): Proper error handling.
-  RTC_CHECK(datagram_transport_result.ok());
+  if (!datagram_transport_result.ok()) {
+    // Datagram transport negotiation will fail and we'll fall back to RTP.
+    return nullptr;
+  }
+
+  if (!datagram_transport_result.value()
+           ->SetRemoteTransportParameters(
+               transport_description->opaque_parameters->parameters)
+           .ok()) {
+    // Datagram transport negotiation failed (parameters are incompatible).
+    // Fall back to RTP.
+    return nullptr;
+  }
 
   return datagram_transport_result.MoveValue();
 }

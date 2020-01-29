@@ -57,6 +57,10 @@ class WrapperDatagramTransport : public DatagramTransportInterface {
     return wrapped_->GetTransportParameters();
   }
 
+  RTCError SetRemoteTransportParameters(absl::string_view parameters) override {
+    return wrapped_->SetRemoteTransportParameters(parameters);
+  }
+
   // Data channel overrides.
   RTCError OpenChannel(int channel_id) override {
     return wrapped_->OpenChannel(channel_id);
@@ -297,6 +301,18 @@ void MediaTransportPair::LoopbackDatagramTransport::SetDatagramSink(
 std::string
 MediaTransportPair::LoopbackDatagramTransport::GetTransportParameters() const {
   return transport_parameters_;
+}
+
+RTCError
+MediaTransportPair::LoopbackDatagramTransport::SetRemoteTransportParameters(
+    absl::string_view remote_parameters) {
+  RTC_DCHECK_RUN_ON(thread_);
+  if (transport_parameters_comparison_(GetTransportParameters(),
+                                       remote_parameters)) {
+    return RTCError::OK();
+  }
+  return RTCError(RTCErrorType::UNSUPPORTED_PARAMETER,
+                  "Incompatible remote transport parameters");
 }
 
 RTCError MediaTransportPair::LoopbackDatagramTransport::OpenChannel(

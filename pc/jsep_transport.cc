@@ -765,10 +765,19 @@ void JsepTransport::NegotiateDatagramTransport(SdpType type) {
     return;  // No need to negotiate the use of datagram transport.
   }
 
-  bool compatible_datagram_transport =
-      remote_description_->transport_desc.opaque_parameters &&
-      remote_description_->transport_desc.opaque_parameters ==
-          local_description_->transport_desc.opaque_parameters;
+  bool compatible_datagram_transport = false;
+  if (datagram_transport_ &&
+      local_description_->transport_desc.opaque_parameters &&
+      remote_description_->transport_desc.opaque_parameters) {
+    // If both descriptions have datagram transport parameters, and the remote
+    // parameters are accepted by the datagram transport, then use the datagram
+    // transport.  Otherwise, fall back to RTP.
+    compatible_datagram_transport =
+        datagram_transport_
+            ->SetRemoteTransportParameters(remote_description_->transport_desc
+                                               .opaque_parameters->parameters)
+            .ok();
+  }
 
   bool use_datagram_transport_for_media =
       compatible_datagram_transport &&

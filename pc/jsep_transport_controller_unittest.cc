@@ -1827,6 +1827,65 @@ TEST_P(JsepTransportControllerDatagramTest, OfferHasWrongTransportName) {
             absl::nullopt);
 }
 
+TEST_P(JsepTransportControllerDatagramTest, IncompatibleAnswer) {
+  // Transport will claim that no parameters are compatible, even if they match
+  // exactly.
+  fake_media_transport_factory_.set_transport_parameters_comparison(
+      [](absl::string_view, absl::string_view) { return false; });
+
+  cricket::OpaqueTransportParameters fake_params = CreateTransportParameters();
+  if (IsOfferer()) {
+    EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+              fake_params);
+    EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+              fake_params);
+  }
+
+  auto offer = CreateSessionDescriptionForDatagramTransport(fake_params);
+  EXPECT_TRUE(SetDescription(SdpType::kOffer, offer.get()).ok());
+
+  auto answer = CreateSessionDescriptionForDatagramTransport(fake_params);
+  EXPECT_TRUE(SetDescription(SdpType::kAnswer, answer.get()).ok());
+
+  // The offerer and answerer have incompatible parameters, so the answerer
+  // rejects the offered parameters.
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            absl::nullopt);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            absl::nullopt);
+}
+
+TEST_P(JsepTransportControllerDatagramTest, CompatibleAnswer) {
+  // Transport will claim that no parameters are compatible, even if they are
+  // completely different.
+  fake_media_transport_factory_.set_transport_parameters_comparison(
+      [](absl::string_view, absl::string_view) { return true; });
+
+  cricket::OpaqueTransportParameters fake_params = CreateTransportParameters();
+  if (IsOfferer()) {
+    EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+              fake_params);
+    EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+              fake_params);
+  }
+
+  auto offer = CreateSessionDescriptionForDatagramTransport(fake_params);
+  EXPECT_TRUE(SetDescription(SdpType::kOffer, offer.get()).ok());
+
+  cricket::OpaqueTransportParameters answer_params;
+  answer_params.protocol = fake_params.protocol;
+  answer_params.parameters = "something different from offer";
+  auto answer = CreateSessionDescriptionForDatagramTransport(answer_params);
+  EXPECT_TRUE(SetDescription(SdpType::kAnswer, answer.get()).ok());
+
+  // The offerer and answerer have compatible parameters, so the answerer
+  // accepts the offered parameters.
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            fake_params);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            fake_params);
+}
+
 TEST_P(JsepTransportControllerDatagramTest, AnswerRejectsDatagram) {
   cricket::OpaqueTransportParameters fake_params = CreateTransportParameters();
   if (IsOfferer()) {

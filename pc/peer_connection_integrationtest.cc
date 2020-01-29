@@ -3696,6 +3696,180 @@ TEST_P(PeerConnectionIntegrationTest,
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
 }
 
+// Tests that the datagram transport to SCTP fallback works correctly when
+// datagram transports do not advertise compatible transport parameters.
+TEST_P(PeerConnectionIntegrationTest,
+       DatagramTransportIncompatibleParametersFallsBackToSctp) {
+  PeerConnectionInterface::RTCConfiguration rtc_config;
+  rtc_config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  rtc_config.bundle_policy = PeerConnectionInterface::kBundlePolicyMaxBundle;
+  rtc_config.use_datagram_transport_for_data_channels = true;
+
+  // By default, only equal parameters are compatible.
+  loopback_media_transports()->SetFirstDatagramTransportParameters("foo");
+  loopback_media_transports()->SetSecondDatagramTransportParameters("bar");
+
+  // Configure one endpoint to use datagram transport for data channels while
+  // the other does not.
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfigAndMediaTransportFactory(
+      rtc_config, rtc_config, loopback_media_transports()->first_factory(),
+      loopback_media_transports()->second_factory()));
+  ConnectFakeSignaling();
+
+  // The caller offers a data channel using either datagram transport or SCTP.
+  caller()->CreateDataChannel();
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Negotiation should fallback to SCTP, allowing the data channel to be
+  // established.
+  ASSERT_NE(nullptr, caller()->data_channel());
+  ASSERT_TRUE_WAIT(callee()->data_channel() != nullptr, kDefaultTimeout);
+  EXPECT_TRUE_WAIT(caller()->data_observer()->IsOpen(), kDefaultTimeout);
+  EXPECT_TRUE_WAIT(callee()->data_observer()->IsOpen(), kDefaultTimeout);
+
+  // Both endpoints should agree to use SCTP for data channels.
+  EXPECT_NE(nullptr, caller()->pc()->GetSctpTransport());
+  EXPECT_NE(nullptr, callee()->pc()->GetSctpTransport());
+
+  // Ensure data can be sent in both directions.
+  std::string data = "hello world";
+  caller()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, callee()->data_observer()->last_message(),
+                 kDefaultTimeout);
+  callee()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, caller()->data_observer()->last_message(),
+                 kDefaultTimeout);
+
+  // Ensure that failure of the datagram negotiation doesn't impede media flow.
+  MediaExpectations media_expectations;
+  media_expectations.ExpectBidirectionalAudioAndVideo();
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+}
+
+// Tests that the datagram transport to SCTP fallback works correctly when
+// only the answerer believes datagram transport parameters are incompatible.
+TEST_P(PeerConnectionIntegrationTest,
+       DatagramTransportIncompatibleParametersOnAnswererFallsBackToSctp) {
+  PeerConnectionInterface::RTCConfiguration rtc_config;
+  rtc_config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  rtc_config.bundle_policy = PeerConnectionInterface::kBundlePolicyMaxBundle;
+  rtc_config.use_datagram_transport_for_data_channels = true;
+
+  // By default, only equal parameters are compatible.
+  loopback_media_transports()->SetFirstDatagramTransportParameters("foo");
+  loopback_media_transports()->SetSecondDatagramTransportParameters("bar");
+
+  // Set the offerer to accept different parameters, while the answerer rejects
+  // them.
+  loopback_media_transports()->SetFirstDatagramTransportParametersComparison(
+      [](absl::string_view a, absl::string_view b) { return true; });
+  loopback_media_transports()->SetSecondDatagramTransportParametersComparison(
+      [](absl::string_view a, absl::string_view b) { return false; });
+
+  // Configure one endpoint to use datagram transport for data channels while
+  // the other does not.
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfigAndMediaTransportFactory(
+      rtc_config, rtc_config, loopback_media_transports()->first_factory(),
+      loopback_media_transports()->second_factory()));
+  ConnectFakeSignaling();
+
+  // The caller offers a data channel using either datagram transport or SCTP.
+  caller()->CreateDataChannel();
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Negotiation should fallback to SCTP, allowing the data channel to be
+  // established.
+  ASSERT_NE(nullptr, caller()->data_channel());
+  ASSERT_TRUE_WAIT(callee()->data_channel() != nullptr, kDefaultTimeout);
+  EXPECT_TRUE_WAIT(caller()->data_observer()->IsOpen(), kDefaultTimeout);
+  EXPECT_TRUE_WAIT(callee()->data_observer()->IsOpen(), kDefaultTimeout);
+
+  // Both endpoints should agree to use SCTP for data channels.
+  EXPECT_NE(nullptr, caller()->pc()->GetSctpTransport());
+  EXPECT_NE(nullptr, callee()->pc()->GetSctpTransport());
+
+  // Ensure data can be sent in both directions.
+  std::string data = "hello world";
+  caller()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, callee()->data_observer()->last_message(),
+                 kDefaultTimeout);
+  callee()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, caller()->data_observer()->last_message(),
+                 kDefaultTimeout);
+
+  // Ensure that failure of the datagram negotiation doesn't impede media flow.
+  MediaExpectations media_expectations;
+  media_expectations.ExpectBidirectionalAudioAndVideo();
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+}
+
+// Tests that the data channel transport works correctly when datagram
+// transports provide different, but compatible, transport parameters.
+TEST_P(PeerConnectionIntegrationTest,
+       DatagramTransportCompatibleParametersDoNotFallbackToSctp) {
+  PeerConnectionInterface::RTCConfiguration rtc_config;
+  rtc_config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  rtc_config.bundle_policy = PeerConnectionInterface::kBundlePolicyMaxBundle;
+  rtc_config.use_datagram_transport_for_data_channels = true;
+
+  // By default, only equal parameters are compatible.
+  loopback_media_transports()->SetFirstDatagramTransportParameters("foo");
+  loopback_media_transports()->SetSecondDatagramTransportParameters("bar");
+
+  // Change the comparison used to treat these transport parameters are
+  // compatible (on both sides).
+  loopback_media_transports()->SetFirstDatagramTransportParametersComparison(
+      [](absl::string_view a, absl::string_view b) { return true; });
+  loopback_media_transports()->SetSecondDatagramTransportParametersComparison(
+      [](absl::string_view a, absl::string_view b) { return true; });
+
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfigAndMediaTransportFactory(
+      rtc_config, rtc_config, loopback_media_transports()->first_factory(),
+      loopback_media_transports()->second_factory()));
+  ConnectFakeSignaling();
+
+  // The caller offers a data channel using either datagram transport or SCTP.
+  caller()->CreateDataChannel();
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Ensure that the data channel transport is ready.
+  loopback_media_transports()->SetState(webrtc::MediaTransportState::kWritable);
+  loopback_media_transports()->FlushAsyncInvokes();
+
+  // Negotiation should succeed, allowing the data channel to be established.
+  ASSERT_NE(nullptr, caller()->data_channel());
+  ASSERT_TRUE_WAIT(callee()->data_channel() != nullptr, kDefaultTimeout);
+  EXPECT_TRUE_WAIT(caller()->data_observer()->IsOpen(), kDefaultTimeout);
+  EXPECT_TRUE_WAIT(callee()->data_observer()->IsOpen(), kDefaultTimeout);
+
+  // Both endpoints should agree to use datagram transport for data channels.
+  EXPECT_EQ(nullptr, caller()->pc()->GetSctpTransport());
+  EXPECT_EQ(nullptr, callee()->pc()->GetSctpTransport());
+
+  // Ensure data can be sent in both directions.
+  std::string data = "hello world";
+  caller()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, callee()->data_observer()->last_message(),
+                 kDefaultTimeout);
+  callee()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, caller()->data_observer()->last_message(),
+                 kDefaultTimeout);
+
+  // Ensure that failure of the datagram negotiation doesn't impede media flow.
+  MediaExpectations media_expectations;
+  media_expectations.ExpectBidirectionalAudioAndVideo();
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+}
+
 TEST_P(PeerConnectionIntegrationTest,
        DatagramTransportDataChannelWithMediaOnCaller) {
   // Configure the caller to attempt use of datagram transport for media and

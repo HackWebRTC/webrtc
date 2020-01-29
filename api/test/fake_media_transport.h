@@ -51,11 +51,22 @@ class FakeMediaTransportFactory : public MediaTransportFactory {
   CreateDatagramTransport(rtc::Thread* network_thread,
                           const MediaTransportSettings& settings) override {
     return std::unique_ptr<DatagramTransportInterface>(
-        new FakeDatagramTransport(settings, transport_offer_.value_or("")));
+        new FakeDatagramTransport(settings, transport_offer_.value_or(""),
+                                  transport_parameters_comparison_));
+  }
+
+  void set_transport_parameters_comparison(
+      std::function<bool(absl::string_view, absl::string_view)> comparison) {
+    transport_parameters_comparison_ = std::move(comparison);
   }
 
  private:
   const absl::optional<std::string> transport_offer_;
+  std::function<bool(absl::string_view, absl::string_view)>
+      transport_parameters_comparison_ =
+          [](absl::string_view local, absl::string_view remote) {
+            return local == remote;
+          };
 };
 
 }  // namespace webrtc

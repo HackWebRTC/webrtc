@@ -115,6 +115,22 @@ class MediaTransportPair {
     first_datagram_transport_.set_transport_parameters(params);
   }
 
+  void SetSecondDatagramTransportParameters(const std::string& params) {
+    second_datagram_transport_.set_transport_parameters(params);
+  }
+
+  void SetFirstDatagramTransportParametersComparison(
+      std::function<bool(absl::string_view, absl::string_view)> comparison) {
+    first_datagram_transport_.set_transport_parameters_comparison(
+        std::move(comparison));
+  }
+
+  void SetSecondDatagramTransportParametersComparison(
+      std::function<bool(absl::string_view, absl::string_view)> comparison) {
+    second_datagram_transport_.set_transport_parameters_comparison(
+        std::move(comparison));
+  }
+
   void FlushAsyncInvokes() {
     first_datagram_transport_.FlushAsyncInvokes();
     second_datagram_transport_.FlushAsyncInvokes();
@@ -186,6 +202,8 @@ class MediaTransportPair {
     size_t GetLargestDatagramSize() const override;
     void SetDatagramSink(DatagramSinkInterface* sink) override;
     std::string GetTransportParameters() const override;
+    RTCError SetRemoteTransportParameters(
+        absl::string_view remote_parameters) override;
 
     // Data channel overrides.
     RTCError OpenChannel(int channel_id) override;
@@ -208,6 +226,15 @@ class MediaTransportPair {
       transport_parameters_ = value;
     }
 
+    void set_transport_parameters_comparison(
+        std::function<bool(absl::string_view, absl::string_view)> comparison) {
+      thread_->Invoke<void>(
+          RTC_FROM_HERE, [this, comparison = std::move(comparison)] {
+            RTC_DCHECK_RUN_ON(thread_);
+            transport_parameters_comparison_ = std::move(comparison);
+          });
+    }
+
    private:
     void DeliverDatagram(rtc::CopyOnWriteBuffer buffer);
 
@@ -222,6 +249,9 @@ class MediaTransportPair {
     LoopbackDatagramTransport* other_;
 
     std::string transport_parameters_;
+    std::function<bool(absl::string_view, absl::string_view)>
+        transport_parameters_comparison_ RTC_GUARDED_BY(thread_) =
+            [](absl::string_view a, absl::string_view b) { return a == b; };
 
     absl::optional<MediaTransportState> state_after_connect_;
 
