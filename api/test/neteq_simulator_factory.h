@@ -44,8 +44,6 @@ class NetEqSimulatorFactory {
     // A custom NetEqFactory can be used.
     NetEqFactory* neteq_factory = nullptr;
   };
-  // This function takes the same arguments as the neteq_rtpplay utility.
-  std::unique_ptr<NetEqSimulator> CreateSimulator(int argc, char* argv[]);
   std::unique_ptr<NetEqSimulator> CreateSimulatorFromFile(
       absl::string_view event_log_filename,
       absl::string_view replacement_audio_filename,

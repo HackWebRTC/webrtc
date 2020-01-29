@@ -19,16 +19,6 @@
 #include "modules/audio_coding/neteq/tools/neteq_test_factory.h"
 #include "rtc_base/checks.h"
 
-ABSL_FLAG(std::string,
-          replacement_audio_file,
-          "",
-          "A PCM file that will be used to populate dummy"
-          " RTP packets");
-ABSL_FLAG(int,
-          max_nr_packets_in_buffer,
-          50,
-          "Maximum allowed number of packets in the buffer");
-
 namespace webrtc {
 namespace test {
 
@@ -36,23 +26,6 @@ NetEqSimulatorFactory::NetEqSimulatorFactory()
     : factory_(std::make_unique<NetEqTestFactory>()) {}
 
 NetEqSimulatorFactory::~NetEqSimulatorFactory() = default;
-
-std::unique_ptr<NetEqSimulator> NetEqSimulatorFactory::CreateSimulator(
-    int argc,
-    char* argv[]) {
-  std::vector<char*> args = absl::ParseCommandLine(argc, argv);
-  RTC_CHECK_EQ(args.size(), 3)
-      << "Wrong number of input arguments. Expected 3, got " << args.size();
-  // TODO(ivoc) Stop (ab)using command-line flags in this function.
-  const std::string output_audio_filename(args[2]);
-  NetEqTestFactory::Config config;
-  config.replacement_audio_file = absl::GetFlag(FLAGS_replacement_audio_file);
-  config.max_nr_packets_in_buffer =
-      absl::GetFlag(FLAGS_max_nr_packets_in_buffer);
-  config.output_audio_filename = output_audio_filename;
-  return factory_->InitializeTestFromFile(/*input_file_name=*/args[1],
-                                          /*factory=*/nullptr, config);
-}
 
 std::unique_ptr<NetEqSimulator> NetEqSimulatorFactory::CreateSimulatorFromFile(
     absl::string_view event_log_filename,
