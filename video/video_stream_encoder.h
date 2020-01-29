@@ -226,9 +226,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   const RateControlSettings rate_control_settings_;
   const QualityScalerSettings quality_scaler_settings_;
 
-  std::unique_ptr<QualityScaler> quality_scaler_ RTC_GUARDED_BY(&encoder_queue_)
-      RTC_PT_GUARDED_BY(&encoder_queue_);
-
   VideoStreamEncoderObserver* const encoder_stats_observer_;
   // |thread_checker_| checks that public methods that are related to lifetime
   // of VideoStreamEncoder are called on the same thread.

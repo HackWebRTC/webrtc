@@ -18,6 +18,7 @@
 #include <utility>
 
 #include "absl/algorithm/container.h"
+#include "absl/types/optional.h"
 #include "api/video/encoded_image.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_bitrate_allocator_factory.h"
@@ -341,8 +342,7 @@ void VideoStreamEncoder::Stop() {
     rate_allocator_ = nullptr;
     bitrate_observer_ = nullptr;
     ReleaseEncoder();
-    quality_scaler_ = nullptr;
-    resource_adaptation_module_->SetIsQualityScalerEnabled(false);
+    resource_adaptation_module_->UpdateQualityScalerSettings(absl::nullopt);
     shutdown_event_.Set();
   });
 
@@ -786,7 +786,7 @@ void VideoStreamEncoder::ConfigureQualityScaler(
       scaling_settings.thresholds;
 
   if (quality_scaling_allowed) {
-    if (quality_scaler_ == nullptr) {
+    if (resource_adaptation_module_->quality_scaler() == nullptr) {
       // Quality scaler has not already been configured.
 
       // Use experimental thresholds if available.
@@ -795,28 +795,24 @@ void VideoStreamEncoder::ConfigureQualityScaler(
         experimental_thresholds = QualityScalingExperiment::GetQpThresholds(
             encoder_config_.codec_type);
       }
-      // Since the interface is non-public, std::make_unique can't do this
-      // upcast.
-      AdaptationObserverInterface* observer = resource_adaptation_module_.get();
-      quality_scaler_ = std::make_unique<QualityScaler>(
-          observer, experimental_thresholds ? *experimental_thresholds
-                                            : *(scaling_settings.thresholds));
-      resource_adaptation_module_->SetIsQualityScalerEnabled(true);
+      resource_adaptation_module_->UpdateQualityScalerSettings(
+          experimental_thresholds ? *experimental_thresholds
+                                  : *(scaling_settings.thresholds));
       initial_framedrop_ = 0;
     }
   } else {
-    quality_scaler_.reset(nullptr);
-    resource_adaptation_module_->SetIsQualityScalerEnabled(false);
+    resource_adaptation_module_->UpdateQualityScalerSettings(absl::nullopt);
     initial_framedrop_ = kMaxInitialFramedrop;
   }
 
+  QualityScaler* quality_scaler = resource_adaptation_module_->quality_scaler();
   if (resource_adaptation_module_->degradation_preference() ==
           DegradationPreference::BALANCED &&
-      quality_scaler_ && last_frame_info_) {
+      quality_scaler && last_frame_info_) {
     absl::optional<VideoEncoder::QpThresholds> thresholds =
         resource_adaptation_module_->GetQpThresholds();
     if (thresholds) {
-      quality_scaler_->SetQpThresholds(*thresholds);
+      quality_scaler->SetQpThresholds(*thresholds);
     }
   }
 
@@ -1553,8 +1549,10 @@ void VideoStreamEncoder::OnDroppedFrame(DropReason reason) {
           VideoStreamEncoderObserver::DropReason::kMediaOptimization);
       encoder_queue_.PostTask([this] {
         RTC_DCHECK_RUN_ON(&encoder_queue_);
-        if (quality_scaler_)
-          quality_scaler_->ReportDroppedFrameByMediaOpt();
+        QualityScaler* quality_scaler =
+            resource_adaptation_module_->quality_scaler();
+        if (quality_scaler)
+          quality_scaler->ReportDroppedFrameByMediaOpt();
       });
       break;
     case DropReason::kDroppedByEncoder:
@@ -1562,8 +1560,10 @@ void VideoStreamEncoder::OnDroppedFrame(DropReason reason) {
           VideoStreamEncoderObserver::DropReason::kEncoder);
       encoder_queue_.PostTask([this] {
         RTC_DCHECK_RUN_ON(&encoder_queue_);
-        if (quality_scaler_)
-          quality_scaler_->ReportDroppedFrameByEncoder();
+        QualityScaler* quality_scaler =
+            resource_adaptation_module_->quality_scaler();
+        if (quality_scaler)
+          quality_scaler->ReportDroppedFrameByEncoder();
       });
       break;
   }
@@ -1607,7 +1607,8 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
                       << " rtt " << round_trip_time_ms;
 
   if (set_start_bitrate_bps_ > 0 && !has_seen_first_bwe_drop_ &&
-      quality_scaler_ && quality_scaler_settings_.InitialBitrateIntervalMs() &&
+      resource_adaptation_module_->quality_scaler() &&
+      quality_scaler_settings_.InitialBitrateIntervalMs() &&
       quality_scaler_settings_.InitialBitrateFactor()) {
     int64_t diff_ms = clock_->TimeInMilliseconds() - set_start_bitrate_time_ms_;
     if (diff_ms < quality_scaler_settings_.InitialBitrateIntervalMs().value() &&
@@ -1680,7 +1681,8 @@ bool VideoStreamEncoder::DropDueToSize(uint32_t pixel_count) const {
 }
 
 bool VideoStreamEncoder::TryQualityRampup(int64_t now_ms) {
-  if (!quality_scaler_)
+  QualityScaler* quality_scaler = resource_adaptation_module_->quality_scaler();
+  if (!quality_scaler)
     return false;
 
   uint32_t bw_kbps = last_encoder_rate_settings_
@@ -1692,7 +1694,7 @@ bool VideoStreamEncoder::TryQualityRampup(int64_t now_ms) {
     // Verify that encoder is at max bitrate and the QP is low.
     if (encoder_target_bitrate_bps_.value_or(0) ==
             send_codec_.maxBitrate * 1000 &&
-        quality_scaler_->QpFastFilterLow()) {
+        quality_scaler->QpFastFilterLow()) {
       return true;
     }
   }
@@ -1764,8 +1766,9 @@ void VideoStreamEncoder::RunPostEncode(const EncodedImage& encoded_image,
       encoded_image.Timestamp(), time_sent_us,
       encoded_image.capture_time_ms_ * rtc::kNumMicrosecsPerMillisec,
       encode_duration_us);
-  if (quality_scaler_ && encoded_image.qp_ >= 0)
-    quality_scaler_->ReportQp(encoded_image.qp_, time_sent_us);
+  QualityScaler* quality_scaler = resource_adaptation_module_->quality_scaler();
+  if (quality_scaler && encoded_image.qp_ >= 0)
+    quality_scaler->ReportQp(encoded_image.qp_, time_sent_us);
   if (bitrate_adjuster_) {
     bitrate_adjuster_->OnEncodedFrame(encoded_image, temporal_index);
   }

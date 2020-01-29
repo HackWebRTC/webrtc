@@ -63,6 +63,7 @@ class OveruseFrameDetectorResourceAdaptationModule
   DegradationPreference degradation_preference() const {
     return degradation_preference_;
   }
+  QualityScaler* quality_scaler() const { return quality_scaler_.get(); }
 
   // ResourceAdaptationModuleInterface implementation.
   void StartResourceAdaptation(
@@ -85,12 +86,9 @@ class OveruseFrameDetectorResourceAdaptationModule
                          int64_t capture_time_us,
                          absl::optional<int> encode_duration_us) override;
 
-  // Inform the detector whether or not the quality scaler is enabled. This
-  // helps GetActiveCounts() return absl::nullopt when appropriate.
-  // TODO(hbos): This feels really hacky, can we report the right values without
-  // this boolean? It would be really easy to report the wrong thing if this
-  // method is called incorrectly.
-  void SetIsQualityScalerEnabled(bool is_quality_scaler_enabled);
+  // Use nullopt to disable quality scaling.
+  void UpdateQualityScalerSettings(
+      absl::optional<VideoEncoder::QpThresholds> qp_thresholds);
 
   class AdaptCounter final {
    public:
@@ -209,7 +207,7 @@ class OveruseFrameDetectorResourceAdaptationModule
   absl::optional<int> last_input_frame_size_;
   absl::optional<double> target_frame_rate_;
   absl::optional<uint32_t> target_bitrate_bps_;
-  bool is_quality_scaler_enabled_;
+  std::unique_ptr<QualityScaler> quality_scaler_;
   absl::optional<EncoderSettings> encoder_settings_;
   VideoStreamEncoderObserver* const encoder_stats_observer_;
 };
