@@ -126,11 +126,6 @@ void PacedSender::SetAccountForAudioPackets(bool account_for_audio) {
   pacing_controller_.SetAccountForAudioPackets(account_for_audio);
 }
 
-void PacedSender::SetIncludeOverhead() {
-  rtc::CritScope cs(&critsect_);
-  pacing_controller_.SetIncludeOverhead();
-}
-
 TimeDelta PacedSender::ExpectedQueueTime() const {
   rtc::CritScope cs(&critsect_);
   return pacing_controller_.ExpectedQueueTime();

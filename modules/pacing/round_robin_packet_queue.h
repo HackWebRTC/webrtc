@@ -52,7 +52,6 @@ class RoundRobinPacketQueue {
   TimeDelta AverageQueueTime() const;
   void UpdateQueueTime(Timestamp now);
   void SetPauseState(bool paused, Timestamp now);
-  void SetIncludeOverhead();
 
  private:
   struct QueuedPacket {
@@ -90,13 +89,6 @@ class RoundRobinPacketQueue {
     RtpPacketToSend* owned_packet_;
   };
 
-  class PriorityPacketQueue : public std::priority_queue<QueuedPacket> {
-   public:
-    using const_iterator = container_type::const_iterator;
-    const_iterator begin() const;
-    const_iterator end() const;
-  };
-
   struct StreamPrioKey {
     StreamPrioKey(int priority, DataSize size)
         : priority(priority), size(size) {}
@@ -119,8 +111,7 @@ class RoundRobinPacketQueue {
 
     DataSize size;
     uint32_t ssrc;
-
-    PriorityPacketQueue packet_queue;
+    std::priority_queue<QueuedPacket> packet_queue;
 
     // Whenever a packet is inserted for this stream we check if |priority_it|
     // points to an element in |stream_priorities_|, and if it does it means
@@ -159,7 +150,7 @@ class RoundRobinPacketQueue {
   // the age of the oldest packet in the queue.
   std::multiset<Timestamp> enqueue_times_;
 
-  bool include_overhead_;
+  const bool send_side_bwe_with_overhead_;
 };
 }  // namespace webrtc
 

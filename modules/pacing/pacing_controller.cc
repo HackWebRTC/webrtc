@@ -99,6 +99,8 @@ PacingController::PacingController(Clock* clock,
       pace_audio_(IsEnabled(*field_trials_, "WebRTC-Pacer-BlockAudio")),
       small_first_probe_packet_(
           IsEnabled(*field_trials_, "WebRTC-Pacer-SmallFirstProbePacket")),
+      send_side_bwe_with_overhead_(
+          IsEnabled(*field_trials_, "WebRTC-SendSideBwe-WithOverhead")),
       min_packet_limit_(kDefaultMinPacketLimit),
       last_timestamp_(clock_->CurrentTime()),
       paused_(false),
@@ -118,8 +120,7 @@ PacingController::PacingController(Clock* clock,
       congestion_window_size_(DataSize::PlusInfinity()),
       outstanding_data_(DataSize::Zero()),
       queue_time_limit(kMaxExpectedQueueLength),
-      account_for_audio_(false),
-      include_overhead_(false) {
+      account_for_audio_(false) {
   if (!drain_large_queues_) {
     RTC_LOG(LS_WARNING) << "Pacer queues will not be drained,"
                            "pushback experiment must be enabled.";
@@ -223,11 +224,6 @@ void PacingController::EnqueuePacket(std::unique_ptr<RtpPacketToSend> packet) {
 
 void PacingController::SetAccountForAudioPackets(bool account_for_audio) {
   account_for_audio_ = account_for_audio;
-}
-
-void PacingController::SetIncludeOverhead() {
-  include_overhead_ = true;
-  packet_queue_.SetIncludeOverhead();
 }
 
 TimeDelta PacingController::ExpectedQueueTime() const {
@@ -521,10 +517,10 @@ void PacingController::ProcessPackets() {
     RTC_DCHECK(rtp_packet);
     RTC_DCHECK(rtp_packet->packet_type().has_value());
     const RtpPacketToSend::Type packet_type = *rtp_packet->packet_type();
-    const DataSize packet_size =
-        DataSize::bytes(include_overhead_ ? rtp_packet->size()
-                                          : rtp_packet->payload_size() +
-                                                rtp_packet->padding_size());
+    const DataSize packet_size = DataSize::bytes(
+        send_side_bwe_with_overhead_
+            ? rtp_packet->size()
+            : rtp_packet->payload_size() + rtp_packet->padding_size());
     packet_sender_->SendRtpPacket(std::move(rtp_packet), pacing_info);
 
     data_sent += packet_size;

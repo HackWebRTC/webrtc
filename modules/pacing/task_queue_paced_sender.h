@@ -79,7 +79,6 @@ class TaskQueuePacedSender : public RtpPacketPacer,
   // at high priority.
   void SetAccountForAudioPackets(bool account_for_audio) override;
 
-  void SetIncludeOverhead() override;
   // Returns the time since the oldest queued packet was enqueued.
   TimeDelta OldestPacketWaitTime() const override;
 

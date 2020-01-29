@@ -342,8 +342,6 @@ void AudioSendStream::Start() {
       config_.max_bitrate_bps != -1 &&
       (allocate_audio_without_feedback_ || TransportSeqNumId(config_) != 0)) {
     rtp_transport_->AccountForAudioPacketsInPacedSender(true);
-    if (send_side_bwe_with_overhead_)
-      rtp_transport_->IncludeOverheadInPacedSender();
     rtp_rtcp_module_->SetAsPartOfAllocation(true);
     rtc::Event thread_sync_event;
     worker_queue_->PostTask([&] {
@@ -593,8 +591,7 @@ bool AudioSendStream::SetupSendCodec(const Config& new_config) {
   }
 
   // Enable ANA if configured (currently only used by Opus).
-  if (new_config.audio_network_adaptor_config &&
-      TransportSeqNumId(new_config) != 0) {
+  if (new_config.audio_network_adaptor_config) {
     if (encoder->EnableAudioNetworkAdaptor(
             *new_config.audio_network_adaptor_config, event_log_)) {
       RTC_DLOG(LS_INFO) << "Audio network adaptor enabled on SSRC "
@@ -693,8 +690,7 @@ void AudioSendStream::ReconfigureANA(const Config& new_config) {
       config_.audio_network_adaptor_config) {
     return;
   }
-  if (new_config.audio_network_adaptor_config &&
-      TransportSeqNumId(new_config) != 0) {
+  if (new_config.audio_network_adaptor_config) {
     channel_send_->CallEncoder([&](AudioEncoder* encoder) {
       if (encoder->EnableAudioNetworkAdaptor(
               *new_config.audio_network_adaptor_config, event_log_)) {
@@ -769,8 +765,6 @@ void AudioSendStream::ReconfigureBitrateObserver(
   if (!new_config.has_dscp && new_config.min_bitrate_bps != -1 &&
       new_config.max_bitrate_bps != -1 && TransportSeqNumId(new_config) != 0) {
     rtp_transport_->AccountForAudioPacketsInPacedSender(true);
-    if (send_side_bwe_with_overhead_)
-      rtp_transport_->IncludeOverheadInPacedSender();
     rtc::Event thread_sync_event;
     worker_queue_->PostTask([&] {
       RTC_DCHECK_RUN_ON(worker_queue_);
