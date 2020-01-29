@@ -53,7 +53,6 @@ class RoundRobinPacketQueue {
   void UpdateQueueTime(Timestamp now);
   void SetPauseState(bool paused, Timestamp now);
   void SetIncludeOverhead();
-  void SetTransportOverhead(DataSize overhead_per_packet);
 
  private:
   struct QueuedPacket {
@@ -74,6 +73,7 @@ class RoundRobinPacketQueue {
     Timestamp EnqueueTime() const;
     bool IsRetransmission() const;
     uint64_t EnqueueOrder() const;
+    DataSize Size(bool count_overhead) const;
     RtpPacketToSend* RtpPacket() const;
 
     std::multiset<Timestamp>::iterator EnqueueTimeIterator() const;
@@ -136,8 +136,6 @@ class RoundRobinPacketQueue {
 
   // Just used to verify correctness.
   bool IsSsrcScheduled(uint32_t ssrc) const;
-
-  DataSize transport_overhead_per_packet_;
 
   Timestamp time_last_updated_;
 

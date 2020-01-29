@@ -65,7 +65,6 @@ class RtpPacketPacer {
   // at high priority.
   virtual void SetAccountForAudioPackets(bool account_for_audio) = 0;
   virtual void SetIncludeOverhead() = 0;
-  virtual void SetTransportOverhead(DataSize overhead_per_packet) = 0;
 };
 
 }  // namespace webrtc

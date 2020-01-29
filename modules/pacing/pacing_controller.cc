@@ -99,10 +99,7 @@ PacingController::PacingController(Clock* clock,
       pace_audio_(IsEnabled(*field_trials_, "WebRTC-Pacer-BlockAudio")),
       small_first_probe_packet_(
           IsEnabled(*field_trials_, "WebRTC-Pacer-SmallFirstProbePacket")),
-      ignore_transport_overhead_(
-          !IsDisabled(*field_trials_, "WebRTC-Pacer-IgnoreTransportOverhead")),
       min_packet_limit_(kDefaultMinPacketLimit),
-      transport_overhead_per_packet_(DataSize::Zero()),
       last_timestamp_(clock_->CurrentTime()),
       paused_(false),
       media_budget_(0),
@@ -231,13 +228,6 @@ void PacingController::SetAccountForAudioPackets(bool account_for_audio) {
 void PacingController::SetIncludeOverhead() {
   include_overhead_ = true;
   packet_queue_.SetIncludeOverhead();
-}
-
-void PacingController::SetTransportOverhead(DataSize overhead_per_packet) {
-  if (ignore_transport_overhead_)
-    return;
-  transport_overhead_per_packet_ = overhead_per_packet;
-  packet_queue_.SetTransportOverhead(overhead_per_packet);
 }
 
 TimeDelta PacingController::ExpectedQueueTime() const {
@@ -531,13 +521,10 @@ void PacingController::ProcessPackets() {
     RTC_DCHECK(rtp_packet);
     RTC_DCHECK(rtp_packet->packet_type().has_value());
     const RtpPacketToSend::Type packet_type = *rtp_packet->packet_type();
-    DataSize packet_size = DataSize::bytes(rtp_packet->payload_size() +
-                                           rtp_packet->padding_size());
-
-    if (include_overhead_) {
-      packet_size += DataSize::bytes(rtp_packet->headers_size()) +
-                     transport_overhead_per_packet_;
-    }
+    const DataSize packet_size =
+        DataSize::bytes(include_overhead_ ? rtp_packet->size()
+                                          : rtp_packet->payload_size() +
+                                                rtp_packet->padding_size());
     packet_sender_->SendRtpPacket(std::move(rtp_packet), pacing_info);
 
     data_sent += packet_size;

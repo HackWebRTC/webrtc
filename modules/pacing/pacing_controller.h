@@ -109,8 +109,6 @@ class PacingController {
   void SetAccountForAudioPackets(bool account_for_audio);
   void SetIncludeOverhead();
 
-  void SetTransportOverhead(DataSize overhead_per_packet);
-
   // Returns the time since the oldest queued packet was enqueued.
   TimeDelta OldestPacketWaitTime() const;
 
@@ -179,11 +177,8 @@ class PacingController {
   const bool send_padding_if_silent_;
   const bool pace_audio_;
   const bool small_first_probe_packet_;
-  const bool ignore_transport_overhead_;
 
   TimeDelta min_packet_limit_;
-
-  DataSize transport_overhead_per_packet_;
 
   // TODO(webrtc:9716): Remove this when we are certain clocks are monotonic.
   // The last millisecond timestamp returned by |clock_|.
