@@ -20,6 +20,83 @@
 #include "rtc_base/logging.h"
 
 namespace webrtc {
+namespace {
+template <class T>
+RTCError VerifyCodecPreferences(const std::vector<RtpCodecCapability>& codecs,
+                                const std::vector<T>& send_codecs,
+                                const std::vector<T>& recv_codecs) {
+  // 6. If the intersection between codecs and
+  // RTCRtpSender.getCapabilities(kind).codecs or the intersection between
+  // codecs and RTCRtpReceiver.getCapabilities(kind).codecs only contains RTX,
+  // RED or FEC codecs or is an empty set, throw InvalidModificationError.
+  // This ensures that we always have something to offer, regardless of
+  // transceiver.direction.
+
+  if (!absl::c_any_of(codecs, [&recv_codecs](const RtpCodecCapability& codec) {
+        return codec.name != cricket::kRtxCodecName &&
+               codec.name != cricket::kRedCodecName &&
+               codec.name != cricket::kFlexfecCodecName &&
+               absl::c_any_of(recv_codecs, [&codec](const T& recv_codec) {
+                 return recv_codec.MatchesCapability(codec);
+               });
+      })) {
+    return RTCError(RTCErrorType::INVALID_MODIFICATION,
+                    "Invalid codec preferences: Missing codec from recv "
+                    "codec capabilities.");
+  }
+
+  if (!absl::c_any_of(codecs, [&send_codecs](const RtpCodecCapability& codec) {
+        return codec.name != cricket::kRtxCodecName &&
+               codec.name != cricket::kRedCodecName &&
+               codec.name != cricket::kFlexfecCodecName &&
+               absl::c_any_of(send_codecs, [&codec](const T& send_codec) {
+                 return send_codec.MatchesCapability(codec);
+               });
+      })) {
+    return RTCError(RTCErrorType::INVALID_MODIFICATION,
+                    "Invalid codec preferences: Missing codec from send "
+                    "codec capabilities.");
+  }
+
+  // 7. Let codecCapabilities be the union of
+  // RTCRtpSender.getCapabilities(kind).codecs and
+  // RTCRtpReceiver.getCapabilities(kind).codecs. 8.1 For each codec in
+  // codecs, If codec is not in codecCapabilities, throw
+  // InvalidModificationError.
+  for (const auto& codec_preference : codecs) {
+    bool is_recv_codec =
+        absl::c_any_of(recv_codecs, [&codec_preference](const T& codec) {
+          return codec.MatchesCapability(codec_preference);
+        });
+
+    bool is_send_codec =
+        absl::c_any_of(send_codecs, [&codec_preference](const T& codec) {
+          return codec.MatchesCapability(codec_preference);
+        });
+
+    if (!is_recv_codec && !is_send_codec) {
+      return RTCError(
+          RTCErrorType::INVALID_MODIFICATION,
+          std::string("Invalid codec preferences: invalid codec with name \"") +
+              codec_preference.name + "\".");
+    }
+  }
+
+  // Check we have a real codec (not just rtx, red or fec)
+  if (absl::c_all_of(codecs, [](const RtpCodecCapability& codec) {
+        return codec.name == cricket::kRtxCodecName ||
+               codec.name == cricket::kRedCodecName ||
+               codec.name == cricket::kUlpfecCodecName;
+      })) {
+    return RTCError(RTCErrorType::INVALID_MODIFICATION,
+                    "Invalid codec preferences: codec list must have a non "
+                    "RTX, RED or FEC entry.");
+  }
+
+  return RTCError::OK();
+}
+
+}  // namespace
 
 RtpTransceiver::RtpTransceiver(cricket::MediaType media_type)
     : unified_plan_(false), media_type_(media_type) {
@@ -251,111 +328,26 @@ RTCError RtpTransceiver::SetCodecPreferences(
                            return absl::c_linear_search(codecs, codec);
                          });
 
+  RTCError result;
   if (media_type_ == cricket::MEDIA_TYPE_AUDIO) {
-    std::vector<cricket::AudioCodec> audio_codecs;
-
     std::vector<cricket::AudioCodec> recv_codecs, send_codecs;
     channel_manager_->GetSupportedAudioReceiveCodecs(&recv_codecs);
     channel_manager_->GetSupportedAudioSendCodecs(&send_codecs);
 
-    // 6. If the intersection between codecs and
-    // RTCRtpSender.getCapabilities(kind).codecs or the intersection between
-    // codecs and RTCRtpReceiver.getCapabilities(kind).codecs only contains RTX,
-    // RED or FEC codecs or is an empty set, throw InvalidModificationError.
-    // This ensures that we always have something to offer, regardless of
-    // transceiver.direction.
-
-    if (!absl::c_any_of(
-            codecs, [&recv_codecs](const RtpCodecCapability& codec) {
-              return codec.name != cricket::kRtxCodecName &&
-                     codec.name != cricket::kRedCodecName &&
-                     codec.name != cricket::kFlexfecCodecName &&
-                     absl::c_any_of(
-                         recv_codecs,
-                         [&codec](const cricket::AudioCodec& recv_codec) {
-                           return recv_codec.MatchesCapability(codec);
-                         });
-            })) {
-      return RTCError(RTCErrorType::INVALID_MODIFICATION,
-                      "Invalid codec preferences: Missing codec from recv "
-                      "codec capabilities.");
-    }
-
-    if (!absl::c_any_of(
-            codecs, [&send_codecs](const RtpCodecCapability& codec) {
-              return codec.name != cricket::kRtxCodecName &&
-                     codec.name != cricket::kRedCodecName &&
-                     codec.name != cricket::kFlexfecCodecName &&
-                     absl::c_any_of(
-                         send_codecs,
-                         [&codec](const cricket::AudioCodec& send_codec) {
-                           return send_codec.MatchesCapability(codec);
-                         });
-            })) {
-      return RTCError(RTCErrorType::INVALID_MODIFICATION,
-                      "Invalid codec preferences: Missing codec from send "
-                      "codec capabilities.");
-    }
-
-    // 7. Let codecCapabilities be the union of
-    // RTCRtpSender.getCapabilities(kind).codecs and
-    // RTCRtpReceiver.getCapabilities(kind).codecs. 8.1 For each codec in
-    // codecs, If codec is not in codecCapabilities, throw
-    // InvalidModificationError.
-    for (const auto& codec_preference : codecs) {
-      bool is_recv_codec = absl::c_any_of(
-          recv_codecs, [&codec_preference](const cricket::AudioCodec& codec) {
-            return codec.MatchesCapability(codec_preference);
-          });
-
-      bool is_send_codec = absl::c_any_of(
-          send_codecs, [&codec_preference](const cricket::AudioCodec& codec) {
-            return codec.MatchesCapability(codec_preference);
-          });
-
-      if (!is_recv_codec && !is_send_codec) {
-        return RTCError(
-            RTCErrorType::INVALID_MODIFICATION,
-            std::string(
-                "Invalid codec preferences: invalid codec with name \"") +
-                codec_preference.name + "\".");
-      }
-    }
+    result = VerifyCodecPreferences(codecs, send_codecs, recv_codecs);
   } else if (media_type_ == cricket::MEDIA_TYPE_VIDEO) {
-    std::vector<cricket::VideoCodec> video_codecs;
-    // Video codecs are both for the receive and send side, so the checks are
-    // simpler than the audio ones.
-    channel_manager_->GetSupportedVideoCodecs(&video_codecs);
+    std::vector<cricket::VideoCodec> recv_codecs, send_codecs;
+    channel_manager_->GetSupportedVideoReceiveCodecs(&recv_codecs);
+    channel_manager_->GetSupportedVideoSendCodecs(&send_codecs);
 
-    // Validate codecs
-    for (const auto& codec_preference : codecs) {
-      if (!absl::c_any_of(video_codecs, [&codec_preference](
-                                            const cricket::VideoCodec& codec) {
-            return codec.MatchesCapability(codec_preference);
-          })) {
-        return RTCError(
-            RTCErrorType::INVALID_MODIFICATION,
-            std::string(
-                "Invalid codec preferences: invalid codec with name \"") +
-                codec_preference.name + "\".");
-      }
-    }
+    result = VerifyCodecPreferences(codecs, send_codecs, recv_codecs);
   }
 
-  // Check we have a real codec (not just rtx, red or fec)
-  if (absl::c_all_of(codecs, [](const RtpCodecCapability& codec) {
-        return codec.name == cricket::kRtxCodecName ||
-               codec.name == cricket::kRedCodecName ||
-               codec.name == cricket::kUlpfecCodecName;
-      })) {
-    return RTCError(RTCErrorType::INVALID_MODIFICATION,
-                    "Invalid codec preferences: codec list must have a non "
-                    "RTX, RED or FEC entry.");
+  if (result.ok()) {
+    codec_preferences_ = codecs;
   }
 
-  codec_preferences_ = codecs;
-
-  return RTCError::OK();
+  return result;
 }
 
 }  // namespace webrtc
