@@ -69,6 +69,7 @@ struct CodecSpecificInfoVP9 {
 
   // SS data.
   size_t num_spatial_layers;  // Always populated.
+  size_t first_active_layer;
   bool spatial_layer_resolution_present;
   uint16_t width[kMaxVp9NumberOfSpatialLayers];
   uint16_t height[kMaxVp9NumberOfSpatialLayers];

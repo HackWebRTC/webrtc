@@ -169,6 +169,21 @@ class RtpPacketizerVp9Test : public ::testing::Test {
       expected_.ss_data_available = false;
     }
   }
+
+  void CreateParseAndCheckPacketsLayers(size_t num_spatial_layers,
+                                        size_t expected_layer) {
+    ASSERT_TRUE(packetizer_ != nullptr);
+    for (size_t i = 0; i < num_packets_; ++i) {
+      EXPECT_TRUE(packetizer_->NextPacket(&packet_));
+      RTPVideoHeader video_header;
+      VideoRtpDepacketizerVp9::ParseRtpPayload(packet_.payload(),
+                                               &video_header);
+      const auto& vp9_header =
+          absl::get<RTPVideoHeaderVP9>(video_header.video_type_header);
+      EXPECT_EQ(vp9_header.spatial_idx, expected_layer);
+      EXPECT_EQ(vp9_header.num_spatial_layers, num_spatial_layers);
+    }
+  }
 };
 
 TEST_F(RtpPacketizerVp9Test, TestEqualSizedMode_OnePacket) {
@@ -544,6 +559,49 @@ TEST_F(RtpPacketizerVp9Test, TestNonRefForInterLayerPred) {
   const size_t kExpectedHdrSizes[] = {1};
   const size_t kExpectedSizes[] = {26};
   CreateParseAndCheckPackets(kExpectedHdrSizes, kExpectedSizes);
+}
+
+TEST_F(RtpPacketizerVp9Test,
+       ShiftsSpatialLayersTowardZeroWhenFirstLayersAreDisabled) {
+  const size_t kFrameSize = 25;
+  const size_t kPacketSize = 1024;
+
+  expected_.width[0] = 0;
+  expected_.height[0] = 0;
+  expected_.width[1] = 640;
+  expected_.height[1] = 360;
+  expected_.width[2] = 1280;
+  expected_.height[2] = 720;
+  expected_.num_spatial_layers = 3;
+  expected_.first_active_layer = 1;
+  expected_.ss_data_available = true;
+  expected_.spatial_layer_resolution_present = true;
+  expected_.gof.num_frames_in_gof = 3;
+  expected_.gof.temporal_idx[0] = 0;
+  expected_.gof.temporal_idx[1] = 1;
+  expected_.gof.temporal_idx[2] = 2;
+  expected_.gof.temporal_up_switch[0] = true;
+  expected_.gof.temporal_up_switch[1] = true;
+  expected_.gof.temporal_up_switch[2] = false;
+  expected_.gof.num_ref_pics[0] = 0;
+  expected_.gof.num_ref_pics[1] = 3;
+  expected_.gof.num_ref_pics[2] = 2;
+  expected_.gof.pid_diff[1][0] = 5;
+  expected_.gof.pid_diff[1][1] = 6;
+  expected_.gof.pid_diff[1][2] = 7;
+  expected_.gof.pid_diff[2][0] = 8;
+  expected_.gof.pid_diff[2][1] = 9;
+
+  expected_.spatial_idx = 1;
+  Init(kFrameSize, kPacketSize);
+  CreateParseAndCheckPacketsLayers(/*num_spatial_layers=*/2,
+                                   /*expected_layer=*/0);
+
+  // Now check for SL 2;
+  expected_.spatial_idx = 2;
+  Init(kFrameSize, kPacketSize);
+  CreateParseAndCheckPacketsLayers(/*num_spatial_layers=*/2,
+                                   /*expected_layer=*/1);
 }
 
 }  // namespace

@@ -280,15 +280,42 @@ bool WriteSsData(const RTPVideoHeaderVP9& vp9, rtc::BitBufferWriter* writer) {
   }
   return true;
 }
+
+// TODO(https://bugs.webrtc.org/11319):
+// Workaround for switching off spatial layers on the fly.
+// Sent layers must start from SL0 on RTP layer, but can start from any
+// spatial layer because WebRTC-SVC api isn't implemented yet and
+// current API to invoke SVC is not flexible enough.
+RTPVideoHeaderVP9 RemoveInactiveSpatialLayers(
+    const RTPVideoHeaderVP9& original_header) {
+  RTPVideoHeaderVP9 hdr(original_header);
+  if (original_header.first_active_layer == 0)
+    return hdr;
+  for (size_t i = hdr.first_active_layer; i < hdr.num_spatial_layers; ++i) {
+    hdr.width[i - hdr.first_active_layer] = hdr.width[i];
+    hdr.height[i - hdr.first_active_layer] = hdr.height[i];
+  }
+  for (size_t i = hdr.num_spatial_layers - hdr.first_active_layer;
+       i < hdr.num_spatial_layers; ++i) {
+    hdr.width[i] = 0;
+    hdr.height[i] = 0;
+  }
+  hdr.num_spatial_layers -= hdr.first_active_layer;
+  hdr.spatial_idx -= hdr.first_active_layer;
+  hdr.first_active_layer = 0;
+  return hdr;
+}
 }  // namespace
 
 RtpPacketizerVp9::RtpPacketizerVp9(rtc::ArrayView<const uint8_t> payload,
                                    PayloadSizeLimits limits,
                                    const RTPVideoHeaderVP9& hdr)
-    : hdr_(hdr),
+    : hdr_(RemoveInactiveSpatialLayers(hdr)),
       header_size_(PayloadDescriptorLengthMinusSsData(hdr_)),
       first_packet_extra_header_size_(SsDataLength(hdr_)),
       remaining_payload_(payload) {
+  RTC_DCHECK_EQ(hdr_.first_active_layer, 0);
+
   limits.max_payload_len -= header_size_;
   limits.first_packet_reduction_len += first_packet_extra_header_size_;
   limits.single_packet_reduction_len += first_packet_extra_header_size_;

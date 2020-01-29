@@ -61,6 +61,7 @@ void PopulateRtpWithCodecSpecifics(const CodecSpecificInfo& info,
           info.codecSpecific.VP9.inter_layer_predicted;
       vp9_header.gof_idx = info.codecSpecific.VP9.gof_idx;
       vp9_header.num_spatial_layers = info.codecSpecific.VP9.num_spatial_layers;
+      vp9_header.first_active_layer = info.codecSpecific.VP9.first_active_layer;
       if (vp9_header.num_spatial_layers > 1) {
         vp9_header.spatial_idx = spatial_index.value_or(kNoSpatialIdx);
       } else {
