@@ -144,8 +144,11 @@ void RemoteAudioSource::OnData(const AudioSinkInterface::Data& audio) {
   // Called on the externally-owned audio callback thread, via/from webrtc.
   rtc::CritScope lock(&sink_lock_);
   for (auto* sink : sinks_) {
+    // When peerconnection acts as an audio source, it should not provide
+    // absolute capture timestamp.
     sink->OnData(audio.data, 16, audio.sample_rate, audio.channels,
-                 audio.samples_per_channel);
+                 audio.samples_per_channel,
+                 /*absolute_capture_timestamp_ms=*/absl::nullopt);
   }
 }
 

@@ -202,7 +202,25 @@ class AudioTrackSinkInterface {
                       int bits_per_sample,
                       int sample_rate,
                       size_t number_of_channels,
-                      size_t number_of_frames) = 0;
+                      size_t number_of_frames) {
+    RTC_NOTREACHED() << "This method must be overridden, or not used.";
+  }
+
+  // In this method, |absolute_capture_timestamp_ms|, when available, is
+  // supposed to deliver the timestamp when this audio frame was originally
+  // captured. This timestamp MUST be based on the same clock as
+  // rtc::TimeMillis().
+  virtual void OnData(const void* audio_data,
+                      int bits_per_sample,
+                      int sample_rate,
+                      size_t number_of_channels,
+                      size_t number_of_frames,
+                      absl::optional<int64_t> absolute_capture_timestamp_ms) {
+    // TODO(bugs.webrtc.org/10739): Deprecate the old OnData and make this one
+    // pure virtual.
+    return OnData(audio_data, bits_per_sample, sample_rate, number_of_channels,
+                  number_of_frames);
+  }
 
  protected:
   virtual ~AudioTrackSinkInterface() {}

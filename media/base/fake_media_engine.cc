@@ -39,7 +39,8 @@ void FakeVoiceMediaChannel::VoiceChannelAudioSink::OnData(
     int bits_per_sample,
     int sample_rate,
     size_t number_of_channels,
-    size_t number_of_frames) {}
+    size_t number_of_frames,
+    absl::optional<int64_t> absolute_capture_timestamp_ms) {}
 void FakeVoiceMediaChannel::VoiceChannelAudioSink::OnClose() {
   source_ = nullptr;
 }
