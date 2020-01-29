@@ -154,6 +154,7 @@ TEST(FrequencyTest, InfinityOperations) {
 TEST(UnitConversionTest, TimeDeltaAndFrequency) {
   EXPECT_EQ(1 / Frequency::hertz(50), TimeDelta::ms(20));
   EXPECT_EQ(1 / TimeDelta::ms(20), Frequency::hertz(50));
+  EXPECT_EQ(Frequency::kHz(200) * TimeDelta::ms(2), 400.0);
 }
 }  // namespace test
 }  // namespace webrtc

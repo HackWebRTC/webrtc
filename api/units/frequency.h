@@ -32,6 +32,11 @@ class Frequency final : public rtc_units_impl::RelativeUnit<Frequency> {
     return FromFraction(1000, hertz);
   }
   template <typename T>
+  static constexpr Frequency kHz(T hertz) {
+    static_assert(std::is_arithmetic<T>::value, "");
+    return FromFraction(1000000, hertz);
+  }
+  template <typename T>
   static constexpr Frequency hertz(T hertz) {
     static_assert(std::is_arithmetic<T>::value, "");
     return FromFraction(1000, hertz);
@@ -72,6 +77,13 @@ inline constexpr TimeDelta operator/(int64_t nominator,
   RTC_CHECK(frequency.IsFinite());
   RTC_CHECK(!frequency.IsZero());
   return TimeDelta::us(nominator * kMegaPerMilli / frequency.millihertz());
+}
+
+inline constexpr double operator*(Frequency frequency, TimeDelta time_delta) {
+  return frequency.hertz<double>() * time_delta.seconds<double>();
+}
+inline constexpr double operator*(TimeDelta time_delta, Frequency frequency) {
+  return frequency * time_delta;
 }
 
 std::string ToString(Frequency value);
