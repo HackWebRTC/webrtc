@@ -150,6 +150,7 @@ class RtpTransportControllerSendInterface {
       size_t transport_overhead_per_packet) = 0;
 
   virtual void AccountForAudioPacketsInPacedSender(bool account_for_audio) = 0;
+  virtual void IncludeOverheadInPacedSender() = 0;
 };
 
 }  // namespace webrtc

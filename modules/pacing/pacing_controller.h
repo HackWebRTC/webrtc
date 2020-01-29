@@ -107,6 +107,7 @@ class PacingController {
   // the pacer budget calculation. The audio traffic still will be injected
   // at high priority.
   void SetAccountForAudioPackets(bool account_for_audio);
+  void SetIncludeOverhead();
 
   // Returns the time since the oldest queued packet was enqueued.
   TimeDelta OldestPacketWaitTime() const;
@@ -176,7 +177,6 @@ class PacingController {
   const bool send_padding_if_silent_;
   const bool pace_audio_;
   const bool small_first_probe_packet_;
-  const bool send_side_bwe_with_overhead_;
 
   TimeDelta min_packet_limit_;
 
@@ -219,6 +219,7 @@ class PacingController {
 
   TimeDelta queue_time_limit;
   bool account_for_audio_;
+  bool include_overhead_;
 };
 }  // namespace webrtc
 

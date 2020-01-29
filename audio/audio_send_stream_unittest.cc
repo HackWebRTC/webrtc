@@ -490,6 +490,8 @@ TEST(AudioSendStreamTest, SendCodecAppliesAudioNetworkAdaptor) {
   const std::string kAnaConfigString = "abcde";
   const std::string kAnaReconfigString = "12345";
 
+  helper.config().rtp.extensions.push_back(RtpExtension(
+      RtpExtension::kTransportSequenceNumberUri, kTransportSequenceNumberId));
   helper.config().audio_network_adaptor_config = kAnaConfigString;
 
   EXPECT_CALL(helper.mock_encoder_factory(), MakeAudioEncoderMock(_, _, _, _))

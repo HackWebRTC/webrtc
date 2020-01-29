@@ -279,6 +279,11 @@ absl::optional<VideoCodecType> GetVideoCodecType(const RtpConfig& config) {
   }
   return PayloadStringToCodecType(config.payload_name);
 }
+bool TransportSeqNumExtensionConfigured(const RtpConfig& config_config) {
+  return absl::c_any_of(config_config.extensions, [](const RtpExtension& ext) {
+    return ext.uri == RtpExtension::kTransportSequenceNumberUri;
+  });
+}
 }  // namespace
 
 RtpVideoSender::RtpVideoSender(
@@ -301,6 +306,7 @@ RtpVideoSender::RtpVideoSender(
           "WebRTC-SubtractPacketizationOverhead")),
       use_early_loss_detection_(
           !webrtc::field_trial::IsDisabled("WebRTC-UseEarlyLossDetection")),
+      has_packet_feedback_(TransportSeqNumExtensionConfigured(rtp_config)),
       active_(false),
       module_process_thread_(nullptr),
       suspended_ssrcs_(std::move(suspended_ssrcs)),
@@ -330,6 +336,8 @@ RtpVideoSender::RtpVideoSender(
       frame_counts_(rtp_config.ssrcs.size()),
       frame_count_observer_(observers.frame_count_observer) {
   RTC_DCHECK_EQ(rtp_config_.ssrcs.size(), rtp_streams_.size());
+  if (send_side_bwe_with_overhead_ && has_packet_feedback_)
+    transport_->IncludeOverheadInPacedSender();
   module_process_thread_checker_.Detach();
   // SSRCs are assumed to be sorted in the same order as |rtp_modules|.
   for (uint32_t ssrc : rtp_config_.ssrcs) {
@@ -700,7 +708,7 @@ void RtpVideoSender::OnBitrateUpdated(BitrateAllocationUpdate update,
   DataSize max_total_packet_size = DataSize::bytes(
       rtp_config_.max_packet_size + transport_overhead_bytes_per_packet_);
   uint32_t payload_bitrate_bps = update.target_bitrate.bps();
-  if (send_side_bwe_with_overhead_) {
+  if (send_side_bwe_with_overhead_ && has_packet_feedback_) {
     DataRate overhead_rate = CalculateOverheadRate(
         update.target_bitrate, max_total_packet_size, packet_overhead);
     // TODO(srte): We probably should not accept 0 payload bitrate here.
@@ -736,7 +744,7 @@ void RtpVideoSender::OnBitrateUpdated(BitrateAllocationUpdate update,
   loss_mask_vector_.clear();
 
   uint32_t encoder_overhead_rate_bps = 0;
-  if (send_side_bwe_with_overhead_) {
+  if (send_side_bwe_with_overhead_ && has_packet_feedback_) {
     // TODO(srte): The packet size should probably be the same as in the
     // CalculateOverheadRate call above (just max_total_packet_size), it doesn't
     // make sense to use different packet rates for different overhead
