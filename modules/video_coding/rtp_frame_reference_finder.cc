@@ -98,9 +98,8 @@ void RtpFrameReferenceFinder::HandOffFrame(
 
 RtpFrameReferenceFinder::FrameDecision
 RtpFrameReferenceFinder::ManageFrameInternal(RtpFrameObject* frame) {
-  absl::optional<RtpGenericFrameDescriptor> generic_descriptor =
-      frame->GetGenericFrameDescriptor();
-  if (generic_descriptor) {
+  if (const absl::optional<RTPVideoHeader::GenericDescriptorInfo>&
+          generic_descriptor = frame->GetRtpVideoHeader().generic) {
     return ManageFrameGeneric(frame, *generic_descriptor);
   }
 
@@ -183,20 +182,18 @@ void RtpFrameReferenceFinder::UpdateLastPictureIdWithPadding(uint16_t seq_num) {
 RtpFrameReferenceFinder::FrameDecision
 RtpFrameReferenceFinder::ManageFrameGeneric(
     RtpFrameObject* frame,
-    const RtpGenericFrameDescriptor& descriptor) {
-  int64_t frame_id = generic_frame_id_unwrapper_.Unwrap(descriptor.FrameId());
-  frame->id.picture_id = frame_id;
-  frame->id.spatial_layer = descriptor.SpatialLayer();
+    const RTPVideoHeader::GenericDescriptorInfo& descriptor) {
+  frame->id.picture_id = descriptor.frame_id;
+  frame->id.spatial_layer = descriptor.spatial_index;
 
-  rtc::ArrayView<const uint16_t> diffs = descriptor.FrameDependenciesDiffs();
-  if (EncodedFrame::kMaxFrameReferences < diffs.size()) {
+  if (EncodedFrame::kMaxFrameReferences < descriptor.dependencies.size()) {
     RTC_LOG(LS_WARNING) << "Too many dependencies in generic descriptor.";
     return kDrop;
   }
 
-  frame->num_references = diffs.size();
-  for (size_t i = 0; i < diffs.size(); ++i)
-    frame->references[i] = frame_id - diffs[i];
+  frame->num_references = descriptor.dependencies.size();
+  for (size_t i = 0; i < descriptor.dependencies.size(); ++i)
+    frame->references[i] = descriptor.dependencies[i];
 
   return kHandOff;
 }
