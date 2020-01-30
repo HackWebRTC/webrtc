@@ -260,6 +260,15 @@ void RoundRobinPacketQueue::SetIncludeOverhead() {
 }
 
 void RoundRobinPacketQueue::SetTransportOverhead(DataSize overhead_per_packet) {
+  if (include_overhead_) {
+    DataSize previous_overhead = transport_overhead_per_packet_;
+    // We need to update the size to reflect overhead for existing packets.
+    for (const auto& stream : streams_) {
+      int packets = stream.second.packet_queue.size();
+      size_ -= packets * previous_overhead;
+      size_ += packets * overhead_per_packet;
+    }
+  }
   transport_overhead_per_packet_ = overhead_per_packet;
 }
 

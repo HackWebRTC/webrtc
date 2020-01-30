@@ -154,7 +154,7 @@ AudioSendStream::AudioSendStream(
       channel_send_(std::move(channel_send)),
       event_log_(event_log),
       use_legacy_overhead_calculation_(
-          !field_trial::IsDisabled("WebRTC-Audio-LegacyOverhead")),
+          field_trial::IsEnabled("WebRTC-Audio-LegacyOverhead")),
       bitrate_allocator_(bitrate_allocator),
       rtp_transport_(rtp_transport),
       rtp_rtcp_module_(channel_send_->GetRtpRtcp()),

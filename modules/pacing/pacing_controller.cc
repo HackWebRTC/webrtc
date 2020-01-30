@@ -100,7 +100,7 @@ PacingController::PacingController(Clock* clock,
       small_first_probe_packet_(
           IsEnabled(*field_trials_, "WebRTC-Pacer-SmallFirstProbePacket")),
       ignore_transport_overhead_(
-          !IsDisabled(*field_trials_, "WebRTC-Pacer-IgnoreTransportOverhead")),
+          IsEnabled(*field_trials_, "WebRTC-Pacer-IgnoreTransportOverhead")),
       min_packet_limit_(kDefaultMinPacketLimit),
       transport_overhead_per_packet_(DataSize::Zero()),
       last_timestamp_(clock_->CurrentTime()),
