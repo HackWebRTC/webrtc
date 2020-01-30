@@ -40,23 +40,18 @@ SimulatedProcessThread::~SimulatedProcessThread() {
 void SimulatedProcessThread::RunReady(Timestamp at_time) {
   TokenTaskQueue::CurrentTaskQueueSetter set_current(this);
   rtc::CritScope lock(&lock_);
+  std::vector<Module*> ready_modules;
   for (auto it = delayed_modules_.begin();
        it != delayed_modules_.end() && it->first <= at_time;
        it = delayed_modules_.erase(it)) {
     for (auto module : it->second) {
-      ready_modules_.push_back(module);
+      ready_modules.push_back(module);
     }
   }
-  if (!ready_modules_.empty()) {
-    for (auto* module : ready_modules_) {
-      module->Process();
-      delayed_modules_[GetNextTime(module, at_time)].push_back(module);
-    }
-    next_run_time_ = delayed_modules_.begin()->first;
-  } else {
-    next_run_time_ = Timestamp::PlusInfinity();
+  for (auto* module : ready_modules) {
+    module->Process();
+    delayed_modules_[GetNextTime(module, at_time)].push_back(module);
   }
-  ready_modules_.clear();
 
   while (!queue_.empty()) {
     std::unique_ptr<QueuedTask> task = std::move(queue_.front());
@@ -65,6 +60,12 @@ void SimulatedProcessThread::RunReady(Timestamp at_time) {
     bool should_delete = task->Run();
     RTC_CHECK(should_delete);
     lock_.Enter();
+  }
+  RTC_DCHECK(queue_.empty());
+  if (!delayed_modules_.empty()) {
+    next_run_time_ = delayed_modules_.begin()->first;
+  } else {
+    next_run_time_ = Timestamp::PlusInfinity();
   }
 }
 void SimulatedProcessThread::Start() {
@@ -84,7 +85,7 @@ void SimulatedProcessThread::Start() {
   for (auto& module : starting)
     delayed_modules_[GetNextTime(module, at_time)].push_back(module);
 
-  if (!ready_modules_.empty() || !queue_.empty()) {
+  if (!queue_.empty()) {
     next_run_time_ = Timestamp::MinusInfinity();
   } else if (!delayed_modules_.empty()) {
     next_run_time_ = delayed_modules_.begin()->first;
@@ -98,10 +99,6 @@ void SimulatedProcessThread::Stop() {
   {
     rtc::CritScope lock(&lock_);
     process_thread_running_ = false;
-
-    for (auto* ready : ready_modules_)
-      stopped_modules_.push_back(ready);
-    ready_modules_.clear();
 
     for (auto& delayed : delayed_modules_) {
       for (auto mod : delayed.second)
@@ -117,12 +114,6 @@ void SimulatedProcessThread::Stop() {
 
 void SimulatedProcessThread::WakeUp(Module* module) {
   rtc::CritScope lock(&lock_);
-  // If we already are planning to run this module as soon as possible, we don't
-  // need to do anything.
-  for (auto mod : ready_modules_)
-    if (mod == module)
-      return;
-
   for (auto it = delayed_modules_.begin(); it != delayed_modules_.end(); ++it) {
     if (RemoveByValue(&it->second, module))
       break;
@@ -152,12 +143,9 @@ void SimulatedProcessThread::DeRegisterModule(Module* module) {
     if (!process_thread_running_) {
       RemoveByValue(&stopped_modules_, module);
     } else {
-      bool removed = RemoveByValue(&ready_modules_, module);
-      if (!removed) {
-        for (auto& pair : delayed_modules_) {
-          if (RemoveByValue(&pair.second, module))
-            break;
-        }
+      for (auto& pair : delayed_modules_) {
+        if (RemoveByValue(&pair.second, module))
+          break;
       }
     }
     modules_running = process_thread_running_;

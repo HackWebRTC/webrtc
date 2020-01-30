@@ -57,7 +57,6 @@ class SimulatedProcessThread : public TokenTaskQueue,
 
   bool process_thread_running_ RTC_GUARDED_BY(lock_) = false;
   std::vector<Module*> stopped_modules_ RTC_GUARDED_BY(lock_);
-  std::vector<Module*> ready_modules_ RTC_GUARDED_BY(lock_);
   std::map<Timestamp, std::list<Module*>> delayed_modules_
       RTC_GUARDED_BY(lock_);
 };
