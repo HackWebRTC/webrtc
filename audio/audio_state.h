@@ -16,11 +16,11 @@
 #include <unordered_set>
 
 #include "audio/audio_transport_impl.h"
+#include "audio/null_audio_poller.h"
 #include "call/audio_state.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/ref_count.h"
-#include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread_checker.h"
 
 namespace webrtc {
@@ -75,7 +75,7 @@ class AudioState : public webrtc::AudioState {
   // Null audio poller is used to continue polling the audio streams if audio
   // playout is disabled so that audio processing still happens and the audio
   // stats are still updated.
-  RepeatingTaskHandle null_audio_poller_;
+  std::unique_ptr<NullAudioPoller> null_audio_poller_;
 
   std::unordered_set<webrtc::AudioReceiveStream*> receiving_streams_;
   struct StreamProperties {
