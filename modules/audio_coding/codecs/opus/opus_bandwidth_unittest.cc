@@ -101,7 +101,8 @@ float EncodedPowerRatio(AudioEncoder* encoder,
 
 }  // namespace
 
-TEST(BandwidthAdaptationTest, BandwidthAdaptationTest) {
+// TODO(webrtc:11325) Reenable after Opus has been upgraded to 1.3.
+TEST(BandwidthAdaptationTest, DISABLED_BandwidthAdaptationTest) {
   test::ScopedFieldTrials override_field_trials(
       "WebRTC-AdjustOpusBandwidth/Enabled/");
 

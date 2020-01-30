@@ -912,7 +912,8 @@ TEST(AudioEncoderOpusTest, SetMaxPlaybackRateFb) {
   EXPECT_EQ(64000, config.bitrate_bps);
 }
 
-TEST_P(AudioEncoderOpusTest, OpusFlagDtxAsNonSpeech) {
+// TODO(webrtc:11325) Reenable after Opus has been upgraded to 1.3.
+TEST_P(AudioEncoderOpusTest, DISABLED_OpusFlagDtxAsNonSpeech) {
   // Create encoder with DTX enabled.
   AudioEncoderOpusConfig config;
   config.dtx_enabled = true;
