@@ -99,7 +99,8 @@ void VideoLayerAnalyzer::HandleFramePair(VideoFramePair sample,
                    sample.capture_time.seconds<double>(),
                    sample.render_time.seconds<double>(),
                    sample.captured->width(), sample.captured->height(),
-                   sample.decoded->width(), sample.decoded->height(), psnr);
+                   sample.decoded ? sample.decoded->width() : 0,
+                   sample.decoded ? sample.decoded->height() : 0, psnr);
   }
 }
 
