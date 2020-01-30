@@ -18,12 +18,15 @@
 #include <string>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "api/crypto/frame_encryptor_interface.h"
+#include "api/transport/rtp/dependency_descriptor.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/absolute_capture_time_sender.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
+#include "modules/rtp_rtcp/source/rtp_dependency_descriptor_extension.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor_extension.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
@@ -72,6 +75,7 @@ void AddRtpHeaderExtensions(
     const RTPVideoHeader& video_header,
     const absl::optional<PlayoutDelay>& playout_delay,
     const absl::optional<AbsoluteCaptureTime>& absolute_capture_time,
+    FrameDependencyStructure* video_structure,
     bool set_video_rotation,
     bool set_color_space,
     bool set_frame_marking,
@@ -115,34 +119,71 @@ void AddRtpHeaderExtensions(
   }
 
   if (video_header.generic) {
-    RtpGenericFrameDescriptor generic_descriptor;
-    generic_descriptor.SetFirstPacketInSubFrame(first_packet);
-    generic_descriptor.SetLastPacketInSubFrame(last_packet);
-    generic_descriptor.SetDiscardable(video_header.generic->discardable);
-
-    if (first_packet) {
-      generic_descriptor.SetFrameId(
-          static_cast<uint16_t>(video_header.generic->frame_id));
+    bool extension_is_set = false;
+    if (video_structure != nullptr) {
+      DependencyDescriptor descriptor;
+      descriptor.first_packet_in_frame = first_packet;
+      descriptor.last_packet_in_frame = last_packet;
+      descriptor.frame_number = video_header.generic->frame_id & 0xFFFF;
+      descriptor.frame_dependencies.spatial_id =
+          video_header.generic->spatial_index;
+      descriptor.frame_dependencies.temporal_id =
+          video_header.generic->temporal_index;
       for (int64_t dep : video_header.generic->dependencies) {
-        generic_descriptor.AddFrameDependencyDiff(
+        descriptor.frame_dependencies.frame_diffs.push_back(
             video_header.generic->frame_id - dep);
       }
+      descriptor.frame_dependencies.decode_target_indications =
+          video_header.generic->decode_target_indications;
+      RTC_DCHECK_EQ(
+          descriptor.frame_dependencies.decode_target_indications.size(),
+          video_structure->num_decode_targets);
 
-      uint8_t spatial_bimask = 1 << video_header.generic->spatial_index;
-      generic_descriptor.SetSpatialLayersBitmask(spatial_bimask);
-
-      generic_descriptor.SetTemporalLayer(video_header.generic->temporal_index);
-
-      if (video_header.frame_type == VideoFrameType::kVideoFrameKey) {
-        generic_descriptor.SetResolution(video_header.width,
-                                         video_header.height);
+      // To avoid extra structure copy, temporary share ownership of the
+      // video_structure with the dependency descriptor.
+      if (video_header.frame_type == VideoFrameType::kVideoFrameKey &&
+          first_packet) {
+        descriptor.attached_structure = absl::WrapUnique(video_structure);
       }
+      extension_is_set = packet->SetExtension<RtpDependencyDescriptorExtension>(
+          *video_structure, descriptor);
+
+      // Remove the temporary shared ownership.
+      descriptor.attached_structure.release();
     }
 
-    if (!packet->SetExtension<RtpGenericFrameDescriptorExtension01>(
-            generic_descriptor)) {
-      packet->SetExtension<RtpGenericFrameDescriptorExtension00>(
-          generic_descriptor);
+    // Do not use v0/v1 generic frame descriptor when v2 is stored.
+    if (!extension_is_set) {
+      RtpGenericFrameDescriptor generic_descriptor;
+      generic_descriptor.SetFirstPacketInSubFrame(first_packet);
+      generic_descriptor.SetLastPacketInSubFrame(last_packet);
+      generic_descriptor.SetDiscardable(video_header.generic->discardable);
+
+      if (first_packet) {
+        generic_descriptor.SetFrameId(
+            static_cast<uint16_t>(video_header.generic->frame_id));
+        for (int64_t dep : video_header.generic->dependencies) {
+          generic_descriptor.AddFrameDependencyDiff(
+              video_header.generic->frame_id - dep);
+        }
+
+        uint8_t spatial_bimask = 1 << video_header.generic->spatial_index;
+        generic_descriptor.SetSpatialLayersBitmask(spatial_bimask);
+
+        generic_descriptor.SetTemporalLayer(
+            video_header.generic->temporal_index);
+
+        if (video_header.frame_type == VideoFrameType::kVideoFrameKey) {
+          generic_descriptor.SetResolution(video_header.width,
+                                           video_header.height);
+        }
+      }
+
+      if (!packet->SetExtension<RtpGenericFrameDescriptorExtension01>(
+              generic_descriptor)) {
+        packet->SetExtension<RtpGenericFrameDescriptorExtension00>(
+            generic_descriptor);
+      }
     }
   }
 }
@@ -417,6 +458,38 @@ absl::optional<uint32_t> RTPSenderVideo::FlexfecSsrc() const {
   return absl::nullopt;
 }
 
+void RTPSenderVideo::SetVideoStructure(
+    const FrameDependencyStructure* video_structure) {
+  RTC_DCHECK_RUNS_SERIALIZED(&send_checker_);
+  if (video_structure == nullptr) {
+    video_structure_ = nullptr;
+    return;
+  }
+  // Simple sanity checks video structure is set up.
+  RTC_DCHECK_GT(video_structure->num_decode_targets, 0);
+  RTC_DCHECK_GT(video_structure->templates.size(), 0);
+
+  int structure_id = 0;
+  if (video_structure_) {
+    if (*video_structure_ == *video_structure) {
+      // Same structure (just a new key frame), no update required.
+      return;
+    }
+    // When setting different video structure make sure structure_id is updated
+    // so that templates from different structures do not collide.
+    static constexpr int kMaxTemplates = 64;
+    structure_id =
+        (video_structure_->structure_id + video_structure_->templates.size()) %
+        kMaxTemplates;
+  }
+
+  video_structure_ =
+      std::make_unique<FrameDependencyStructure>(*video_structure);
+  video_structure_->structure_id = structure_id;
+  // TODO(bugs.webrtc.org/10342): Support chains.
+  video_structure_->num_chains = 0;
+}
+
 bool RTPSenderVideo::SendVideo(
     int payload_type,
     absl::optional<VideoCodecType> codec_type,
@@ -523,16 +596,20 @@ bool RTPSenderVideo::SendVideo(
   auto last_packet = std::make_unique<RtpPacketToSend>(*single_packet);
   // Simplest way to estimate how much extensions would occupy is to set them.
   AddRtpHeaderExtensions(video_header, playout_delay, absolute_capture_time,
-                         set_video_rotation, set_color_space, set_frame_marking,
+                         video_structure_.get(), set_video_rotation,
+                         set_color_space, set_frame_marking,
                          /*first=*/true, /*last=*/true, single_packet.get());
   AddRtpHeaderExtensions(video_header, playout_delay, absolute_capture_time,
-                         set_video_rotation, set_color_space, set_frame_marking,
+                         video_structure_.get(), set_video_rotation,
+                         set_color_space, set_frame_marking,
                          /*first=*/true, /*last=*/false, first_packet.get());
   AddRtpHeaderExtensions(video_header, playout_delay, absolute_capture_time,
-                         set_video_rotation, set_color_space, set_frame_marking,
+                         video_structure_.get(), set_video_rotation,
+                         set_color_space, set_frame_marking,
                          /*first=*/false, /*last=*/false, middle_packet.get());
   AddRtpHeaderExtensions(video_header, playout_delay, absolute_capture_time,
-                         set_video_rotation, set_color_space, set_frame_marking,
+                         video_structure_.get(), set_video_rotation,
+                         set_color_space, set_frame_marking,
                          /*first=*/false, /*last=*/true, last_packet.get());
 
   RTC_DCHECK_GT(packet_capacity, single_packet->headers_size());

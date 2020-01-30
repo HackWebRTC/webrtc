@@ -15,6 +15,7 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "api/transport/rtp/dependency_descriptor.h"
 #include "api/video/color_space.h"
 #include "api/video/video_codec_type.h"
 #include "api/video/video_content_type.h"
@@ -50,6 +51,7 @@ struct RTPVideoHeader {
     int64_t frame_id = 0;
     int spatial_index = 0;
     int temporal_index = 0;
+    absl::InlinedVector<DecodeTargetIndication, 10> decode_target_indications;
     absl::InlinedVector<int64_t, 5> dependencies;
     bool discardable = false;
   };
