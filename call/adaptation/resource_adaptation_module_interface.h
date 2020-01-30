@@ -122,9 +122,8 @@ class ResourceAdaptationModuleInterface {
   // 3. The frame has successfully completed encoding. Next up: The encoded
   // frame is dropped or packetized and sent over the network. There is
   // currently no signal what happens beyond this point.
-  virtual void OnEncodeCompleted(uint32_t timestamp,
+  virtual void OnEncodeCompleted(const EncodedImage& encoded_image,
                                  int64_t time_sent_in_us,
-                                 int64_t capture_time_us,
                                  absl::optional<int> encode_duration_us) = 0;
 };
 

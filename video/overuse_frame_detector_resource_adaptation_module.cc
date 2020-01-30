@@ -470,14 +470,18 @@ void OveruseFrameDetectorResourceAdaptationModule::OnEncodeStarted(
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::OnEncodeCompleted(
-    uint32_t timestamp,
+    const EncodedImage& encoded_image,
     int64_t time_sent_in_us,
-    int64_t capture_time_us,
     absl::optional<int> encode_duration_us) {
   // TODO(hbos): Rename FrameSent() to something more appropriate (e.g.
   // "OnEncodeCompleted"?).
+  uint32_t timestamp = encoded_image.Timestamp();
+  int64_t capture_time_us =
+      encoded_image.capture_time_ms_ * rtc::kNumMicrosecsPerMillisec;
   overuse_detector_->FrameSent(timestamp, time_sent_in_us, capture_time_us,
                                encode_duration_us);
+  if (quality_scaler_ && encoded_image.qp_ >= 0)
+    quality_scaler_->ReportQp(encoded_image.qp_, time_sent_in_us);
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::UpdateQualityScalerSettings(

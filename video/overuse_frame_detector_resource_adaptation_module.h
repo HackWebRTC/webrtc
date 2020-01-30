@@ -81,9 +81,8 @@ class OveruseFrameDetectorResourceAdaptationModule
   void OnFrameDroppedDueToSize() override;
   void OnEncodeStarted(const VideoFrame& cropped_frame,
                        int64_t time_when_first_seen_us) override;
-  void OnEncodeCompleted(uint32_t timestamp,
+  void OnEncodeCompleted(const EncodedImage& encoded_image,
                          int64_t time_sent_in_us,
-                         int64_t capture_time_us,
                          absl::optional<int> encode_duration_us) override;
 
   // Use nullopt to disable quality scaling.

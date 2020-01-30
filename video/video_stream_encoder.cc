@@ -1762,13 +1762,8 @@ void VideoStreamEncoder::RunPostEncode(const EncodedImage& encoded_image,
     }
   }
 
-  resource_adaptation_module_->OnEncodeCompleted(
-      encoded_image.Timestamp(), time_sent_us,
-      encoded_image.capture_time_ms_ * rtc::kNumMicrosecsPerMillisec,
-      encode_duration_us);
-  QualityScaler* quality_scaler = resource_adaptation_module_->quality_scaler();
-  if (quality_scaler && encoded_image.qp_ >= 0)
-    quality_scaler->ReportQp(encoded_image.qp_, time_sent_us);
+  resource_adaptation_module_->OnEncodeCompleted(encoded_image, time_sent_us,
+                                                 encode_duration_us);
   if (bitrate_adjuster_) {
     bitrate_adjuster_->OnEncodedFrame(encoded_image, temporal_index);
   }
