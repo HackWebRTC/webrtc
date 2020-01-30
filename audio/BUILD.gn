@@ -29,8 +29,6 @@ rtc_library("audio") {
     "channel_send.cc",
     "channel_send.h",
     "conversion.h",
-    "null_audio_poller.cc",
-    "null_audio_poller.h",
     "remix_resample.cc",
     "remix_resample.h",
   ]
@@ -82,6 +80,7 @@ rtc_library("audio") {
     "../rtc_base:rtc_task_queue",
     "../rtc_base:safe_minmax",
     "../rtc_base/experiments:field_trial_parser",
+    "../rtc_base/task_utils:repeating_task",
     "../system_wrappers",
     "../system_wrappers:field_trial",
     "../system_wrappers:metrics",
