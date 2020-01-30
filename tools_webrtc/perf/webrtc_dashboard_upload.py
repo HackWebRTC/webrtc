@@ -10,7 +10,7 @@
 """Adds build info to perf results and uploads them.
 
 The tests don't know which bot executed the tests or at what revision, so we
-need to take their output and enrich it with this information. We load the JSON
+need to take their output and enrich it with this information. We load the proto
 from the tests, add the build information as shared diagnostics and then
 upload it to the dashboard.
 
@@ -26,14 +26,27 @@ import sys
 import subprocess
 import zlib
 
+# We just yank the python scripts we require into the PYTHONPATH. You could also
+# imagine a solution where we use for instance protobuf:py_proto_runtime to copy
+# catapult and protobuf code to out/, but this approach is allowed by
+# convention. Fortunately neither catapult nor protobuf require any build rules
+# to be executed. We can't do this for the histogram proto stub though because
+# it's generated; see _LoadHistogramSetFromProto.
+#
+# It would be better if there was an equivalent to py_binary in GN, but there's
+# not.
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 CHECKOUT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
 sys.path.insert(0, os.path.join(CHECKOUT_ROOT, 'third_party', 'catapult',
                                 'tracing'))
+sys.path.insert(0, os.path.join(CHECKOUT_ROOT, 'third_party', 'protobuf',
+                                'python'))
 
 from tracing.value import histogram_set
 from tracing.value.diagnostics import generic_set
 from tracing.value.diagnostics import reserved_infos
+
+from google.protobuf import json_format
 
 
 def _GenerateOauthToken():
@@ -72,13 +85,33 @@ def _SendHistogramSet(url, histograms, oauth_token):
   return response, content
 
 
-def _LoadHistogramSetFromJson(options):
-  with options.input_results_file as f:
-    json_data = json.load(f)
+def _LoadHistogramSetFromProto(options):
+  # The webrtc_dashboard_upload gn rule will build the protobuf stub for python,
+  # so put it in the path for this script before we attempt to import it.
+  histogram_proto_path = os.path.join(options.outdir, 'pyproto', 'tracing',
+                                      'tracing', 'proto')
+  sys.path.insert(0, histogram_proto_path)
 
-  histograms = histogram_set.HistogramSet()
-  histograms.ImportDicts(json_data)
-  return histograms
+  # TODO(https://crbug.com/1029452): Get rid of this import hack once we can
+  # just hand the contents of input_results_file straight to the histogram set.
+  try:
+    import histogram_pb2
+  except ImportError:
+    raise ImportError('Could not find histogram_pb2. You need to build the '
+                      'webrtc_dashboard_upload target before invoking this '
+                      'script. Expected to find '
+                      'histogram_pb2 in %s.' % histogram_proto_path)
+
+  with options.input_results_file as f:
+    histograms = histogram_pb2.HistogramSet()
+    histograms.ParseFromString(f.read())
+
+  # TODO(https://crbug.com/1029452): Don't convert to JSON as a middle step once
+  # there is a proto de-serializer ready in catapult.
+  json_data = json.loads(json_format.MessageToJson(histograms))
+  hs = histogram_set.HistogramSet()
+  hs.ImportDicts(json_data)
+  return hs
 
 
 def _AddBuildInfo(histograms, options):
@@ -127,6 +160,8 @@ def _CreateParser():
                       help='A JSON file with output from WebRTC tests.')
   parser.add_argument('--output-json-file', type=argparse.FileType('w'),
                       help='Where to write the output (for debugging).')
+  parser.add_argument('--outdir', required=True,
+                      help='Path to the local out/ dir (usually out/Default)')
   return parser
 
 
@@ -134,7 +169,7 @@ def main(args):
   parser = _CreateParser()
   options = parser.parse_args(args)
 
-  histograms = _LoadHistogramSetFromJson(options)
+  histograms = _LoadHistogramSetFromProto(options)
   _AddBuildInfo(histograms, options)
 
   if options.output_json_file:

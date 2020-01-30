@@ -83,6 +83,7 @@ if (!build_with_chromium) {
         deps += [
           "audio:low_bandwidth_audio_test",
           "logging:rtc_event_log_rtp_dump",
+          "tools_webrtc/perf:webrtc_dashboard_upload",
         ]
       }
     }
@@ -336,7 +337,9 @@ config("common_config") {
       cflags += [ "/wd4702" ]  # unreachable code
 
       # MSVC 2019 warning suppressions for C++17 compiling
-      cflags += [ "/wd5041" ]  # out-of-line definition for constexpr static data member is not needed and is deprecated in C++17
+      cflags +=
+          [ "/wd5041" ]  # out-of-line definition for constexpr static data
+                         # member is not needed and is deprecated in C++17
     }
   }
 
