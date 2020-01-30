@@ -250,8 +250,6 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
       enum Level { kLow, kModerate, kHigh, kVeryHigh };
       Level level = kModerate;
       bool analyze_linear_aec_output_when_available = false;
-      // Recommended not to use. Will be removed in the future.
-      bool use_legacy_ns = false;
     } noise_suppression;
 
     // Enables transient suppression.

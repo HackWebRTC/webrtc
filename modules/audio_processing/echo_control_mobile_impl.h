@@ -54,7 +54,6 @@ class EchoControlMobileImpl {
 
   void ProcessRenderAudio(rtc::ArrayView<const int16_t> packed_render_audio);
   int ProcessCaptureAudio(AudioBuffer* audio, int stream_delay_ms);
-  void CopyLowPassReference(AudioBuffer* audio);
 
   void Initialize(int sample_rate_hz,
                   size_t num_reverse_channels,

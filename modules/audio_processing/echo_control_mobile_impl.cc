@@ -220,16 +220,6 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio,
   return AudioProcessing::kNoError;
 }
 
-void EchoControlMobileImpl::CopyLowPassReference(AudioBuffer* audio) {
-  RTC_DCHECK_LE(audio->num_channels(), low_pass_reference_.size());
-  reference_copied_ = true;
-  for (size_t capture = 0; capture < audio->num_channels(); ++capture) {
-    FloatS16ToS16(audio->split_bands_const(capture)[kBand0To8kHz],
-                  audio->num_frames_per_band(),
-                  low_pass_reference_[capture].data());
-  }
-}
-
 int EchoControlMobileImpl::set_routing_mode(RoutingMode mode) {
   if (MapSetting(mode) == -1) {
     return AudioProcessing::kBadParameterError;

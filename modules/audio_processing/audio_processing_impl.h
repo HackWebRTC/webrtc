@@ -27,7 +27,6 @@
 #include "modules/audio_processing/include/aec_dump.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
-#include "modules/audio_processing/legacy_ns/legacy_noise_suppression.h"
 #include "modules/audio_processing/level_estimator.h"
 #include "modules/audio_processing/ns/noise_suppressor.h"
 #include "modules/audio_processing/render_queue_item_verifier.h"
@@ -152,7 +151,6 @@ class AudioProcessingImpl : public AudioProcessing {
 
   std::unique_ptr<ApmDataDumper> data_dumper_;
   static int instance_count_;
-  const bool enforced_usage_of_legacy_ns_;
   const bool use_setup_specific_default_aec3_config_;
 
   SwapQueue<RuntimeSetting> capture_runtime_settings_;
@@ -346,7 +344,6 @@ class AudioProcessingImpl : public AudioProcessing {
     rtc::scoped_refptr<EchoDetector> echo_detector;
     std::unique_ptr<EchoControl> echo_controller;
     std::unique_ptr<EchoControlMobileImpl> echo_control_mobile;
-    std::unique_ptr<NoiseSuppression> legacy_noise_suppressor;
     std::unique_ptr<NoiseSuppressor> noise_suppressor;
     std::unique_ptr<TransientSuppressor> transient_suppressor;
     std::unique_ptr<CustomProcessing> capture_post_processor;
