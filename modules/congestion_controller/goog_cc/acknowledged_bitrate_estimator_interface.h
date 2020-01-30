@@ -49,6 +49,15 @@ struct RobustThroughputEstimatorSettings {
   unsigned min_packets = 20;
   TimeDelta window_duration = TimeDelta::ms(500);
 
+  // The estimator window requires at least |initial_packets| packets received
+  // over at least |initial_duration|.
+  unsigned initial_packets = 20;
+
+  // If audio packets are included in allocation, but not in bandwidth
+  // estimation and the sent audio packets get double counted,
+  // then it might be useful to reduce the weight to 0.5.
+  double unacked_weight = 1.0;
+
   std::unique_ptr<StructParametersParser> Parser();
 };
 

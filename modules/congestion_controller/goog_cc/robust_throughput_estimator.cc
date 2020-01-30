@@ -53,7 +53,7 @@ void RobustThroughputEstimator::IncomingPacketFeedbackVector(
 }
 
 absl::optional<DataRate> RobustThroughputEstimator::bitrate() const {
-  if (window_.size() < settings_.min_packets)
+  if (window_.size() < settings_.initial_packets)
     return absl::nullopt;
 
   TimeDelta largest_recv_gap(TimeDelta::ms(0));
@@ -80,7 +80,8 @@ absl::optional<DataRate> RobustThroughputEstimator::bitrate() const {
     min_recv_time = std::min(min_recv_time, packet.receive_time);
     max_recv_time = std::max(max_recv_time, packet.receive_time);
     data_size += packet.sent_packet.size;
-    data_size += packet.sent_packet.prior_unacked_data;
+    data_size +=
+        packet.sent_packet.prior_unacked_data * settings_.unacked_weight;
   }
 
   // Suppose a packet of size S is sent every T milliseconds.

@@ -10,6 +10,8 @@
 
 #include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator_interface.h"
 
+#include <algorithm>
+
 #include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
 #include "modules/congestion_controller/goog_cc/robust_throughput_estimator.h"
 #include "rtc_base/logging.h"
@@ -27,21 +29,34 @@ RobustThroughputEstimatorSettings::RobustThroughputEstimatorSettings(
                         << " packets";
     min_packets = 20;
   }
+  if (initial_packets < 10 || kMaxPackets < initial_packets) {
+    RTC_LOG(LS_WARNING) << "Initial size must be between 10 and " << kMaxPackets
+                        << " packets";
+    initial_packets = 20;
+  }
+  initial_packets = std::min(initial_packets, min_packets);
   if (window_duration < TimeDelta::ms(100) ||
       TimeDelta::ms(2000) < window_duration) {
     RTC_LOG(LS_WARNING) << "Window duration must be between 100 and 2000 ms";
     window_duration = TimeDelta::ms(500);
   }
+  if (unacked_weight < 0.0 || 1.0 < unacked_weight) {
+    RTC_LOG(LS_WARNING)
+        << "Weight for prior unacked size must be between 0 and 1.";
+    unacked_weight = 1.0;
+  }
 }
 
 std::unique_ptr<StructParametersParser>
 RobustThroughputEstimatorSettings::Parser() {
-  return StructParametersParser::Create("enabled", &enabled,          //
-                                        "reduce_bias", &reduce_bias,  //
-                                        "assume_shared_link",
-                                        &assume_shared_link,          //
-                                        "min_packets", &min_packets,  //
-                                        "window_duration", &window_duration);
+  return StructParametersParser::Create("enabled", &enabled,                  //
+                                        "reduce_bias", &reduce_bias,          //
+                                        "assume_shared_link",                 //
+                                        &assume_shared_link,                  //
+                                        "min_packets", &min_packets,          //
+                                        "window_duration", &window_duration,  //
+                                        "initial_packets", &initial_packets,  //
+                                        "unacked_weight", &unacked_weight);
 }
 
 AcknowledgedBitrateEstimatorInterface::
