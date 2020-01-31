@@ -1547,27 +1547,17 @@ void VideoStreamEncoder::OnDroppedFrame(DropReason reason) {
     case DropReason::kDroppedByMediaOptimizations:
       encoder_stats_observer_->OnFrameDropped(
           VideoStreamEncoderObserver::DropReason::kMediaOptimization);
-      encoder_queue_.PostTask([this] {
-        RTC_DCHECK_RUN_ON(&encoder_queue_);
-        QualityScaler* quality_scaler =
-            resource_adaptation_module_->quality_scaler();
-        if (quality_scaler)
-          quality_scaler->ReportDroppedFrameByMediaOpt();
-      });
       break;
     case DropReason::kDroppedByEncoder:
       encoder_stats_observer_->OnFrameDropped(
           VideoStreamEncoderObserver::DropReason::kEncoder);
-      encoder_queue_.PostTask([this] {
-        RTC_DCHECK_RUN_ON(&encoder_queue_);
-        QualityScaler* quality_scaler =
-            resource_adaptation_module_->quality_scaler();
-        if (quality_scaler)
-          quality_scaler->ReportDroppedFrameByEncoder();
-      });
       break;
   }
   sink_->OnDroppedFrame(reason);
+  encoder_queue_.PostTask([this, reason] {
+    RTC_DCHECK_RUN_ON(&encoder_queue_);
+    resource_adaptation_module_->OnFrameDropped(reason);
+  });
 }
 
 void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,

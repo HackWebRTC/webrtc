@@ -119,12 +119,15 @@ class ResourceAdaptationModuleInterface {
   // currently no signal for encode failure.
   virtual void OnEncodeStarted(const VideoFrame& cropped_frame,
                                int64_t time_when_first_seen_us) = 0;
-  // 3. The frame has successfully completed encoding. Next up: The encoded
+  // 3.i) The frame has successfully completed encoding. Next up: The encoded
   // frame is dropped or packetized and sent over the network. There is
   // currently no signal what happens beyond this point.
   virtual void OnEncodeCompleted(const EncodedImage& encoded_image,
                                  int64_t time_sent_in_us,
                                  absl::optional<int> encode_duration_us) = 0;
+  // A frame was dropped at any point in the pipeline. This may come from
+  // the encoder, or elsewhere, like a frame dropper or frame size check.
+  virtual void OnFrameDropped(EncodedImageCallback::DropReason reason) = 0;
 };
 
 }  // namespace webrtc

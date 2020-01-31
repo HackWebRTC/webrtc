@@ -84,6 +84,7 @@ class OveruseFrameDetectorResourceAdaptationModule
   void OnEncodeCompleted(const EncodedImage& encoded_image,
                          int64_t time_sent_in_us,
                          absl::optional<int> encode_duration_us) override;
+  void OnFrameDropped(EncodedImageCallback::DropReason reason) override;
 
   // Use nullopt to disable quality scaling.
   void UpdateQualityScalerSettings(

@@ -484,6 +484,21 @@ void OveruseFrameDetectorResourceAdaptationModule::OnEncodeCompleted(
     quality_scaler_->ReportQp(encoded_image.qp_, time_sent_in_us);
 }
 
+void OveruseFrameDetectorResourceAdaptationModule::OnFrameDropped(
+    EncodedImageCallback::DropReason reason) {
+  if (!quality_scaler_) {
+    return;
+  }
+  switch (reason) {
+    case EncodedImageCallback::DropReason::kDroppedByMediaOptimizations:
+      quality_scaler_->ReportDroppedFrameByMediaOpt();
+      break;
+    case EncodedImageCallback::DropReason::kDroppedByEncoder:
+      quality_scaler_->ReportDroppedFrameByEncoder();
+      break;
+  }
+}
+
 void OveruseFrameDetectorResourceAdaptationModule::UpdateQualityScalerSettings(
     absl::optional<VideoEncoder::QpThresholds> qp_thresholds) {
   if (qp_thresholds.has_value()) {
@@ -874,7 +889,6 @@ OveruseFrameDetectorResourceAdaptationModule::GetQpThresholds() const {
   return balanced_settings_.GetQpThresholds(GetVideoCodecTypeOrGeneric(),
                                             LastInputFrameSizeOrDefault());
 }
-
 bool OveruseFrameDetectorResourceAdaptationModule::CanAdaptUpResolution(
     int pixels,
     uint32_t bitrate_bps) const {
