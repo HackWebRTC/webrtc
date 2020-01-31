@@ -291,6 +291,16 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
   if (last_picture_id_ == -1)
     last_picture_id_ = frame->id.picture_id;
 
+  // Clean up info about not yet received frames that are too old.
+  uint16_t old_picture_id =
+      Subtract<kPicIdLength>(frame->id.picture_id, kMaxNotYetReceivedFrames);
+  auto clean_frames_to = not_yet_received_frames_.lower_bound(old_picture_id);
+  not_yet_received_frames_.erase(not_yet_received_frames_.begin(),
+                                 clean_frames_to);
+  // Avoid re-adding picture ids that were just erased.
+  if (AheadOf<uint16_t, kPicIdLength>(old_picture_id, last_picture_id_)) {
+    last_picture_id_ = old_picture_id;
+  }
   // Find if there has been a gap in fully received frames and save the picture
   // id of those frames in |not_yet_received_frames_|.
   if (AheadOf<uint16_t, kPicIdLength>(frame->id.picture_id, last_picture_id_)) {
@@ -306,13 +316,6 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
   int64_t old_tl0_pic_idx = unwrapped_tl0 - kMaxLayerInfo;
   auto clean_layer_info_to = layer_info_.lower_bound(old_tl0_pic_idx);
   layer_info_.erase(layer_info_.begin(), clean_layer_info_to);
-
-  // Clean up info about not yet received frames that are too old.
-  uint16_t old_picture_id =
-      Subtract<kPicIdLength>(frame->id.picture_id, kMaxNotYetReceivedFrames);
-  auto clean_frames_to = not_yet_received_frames_.lower_bound(old_picture_id);
-  not_yet_received_frames_.erase(not_yet_received_frames_.begin(),
-                                 clean_frames_to);
 
   if (frame->frame_type() == VideoFrameType::kVideoFrameKey) {
     if (codec_header.temporalIdx != 0) {
