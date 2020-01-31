@@ -47,7 +47,7 @@ class PerfTestResultWriter {
       const bool important,
       webrtc::test::ImproveDirection improve_direction) = 0;
 
-  virtual std::string ToJSON() const = 0;
+  virtual std::string Serialize() const = 0;
 };
 
 }  // namespace test

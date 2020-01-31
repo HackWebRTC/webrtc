@@ -110,7 +110,7 @@ class PerfTestGraphJsonWriter : public PerfTestResultWriter {
     graphs_[graph_name].push_back(json_stream.str());
   }
 
-  std::string ToJSON() const {
+  std::string Serialize() const {
     std::ostringstream json_stream;
     json_stream << R"({"format_version":"1.0",)";
     json_stream << R"("charts":{)";

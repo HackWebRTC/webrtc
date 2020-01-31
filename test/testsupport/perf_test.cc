@@ -17,7 +17,6 @@
 #include <sstream>
 #include <vector>
 
-#include "absl/flags/flag.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/critical_section.h"
 #include "test/testsupport/perf_test_graphjson_writer.h"
@@ -213,8 +212,8 @@ void SetPerfResultsOutput(FILE* output) {
   GetResultsLinePrinter().SetOutput(output);
 }
 
-std::string GetPerfResultsJSON() {
-  return GetPerfWriter().ToJSON();
+std::string GetPerfResults() {
+  return GetPerfWriter().Serialize();
 }
 
 void PrintPlottableResults(const std::vector<std::string>& desired_graphs) {
@@ -222,10 +221,10 @@ void PrintPlottableResults(const std::vector<std::string>& desired_graphs) {
 }
 
 void WritePerfResults(const std::string& output_path) {
-  std::string json_results = GetPerfResultsJSON();
-  std::fstream json_file(output_path, std::fstream::out);
-  json_file << json_results;
-  json_file.close();
+  std::string results = GetPerfResults();
+  std::fstream output(output_path, std::fstream::out);
+  output << results;
+  output.close();
 }
 
 void PrintResult(const std::string& measurement,

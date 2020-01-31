@@ -226,7 +226,6 @@ rtc_library("perf_test") {
     "testsupport/perf_test.h",
     "testsupport/perf_test_graphjson_writer.cc",
     "testsupport/perf_test_graphjson_writer.h",
-    "testsupport/perf_test_histogram_writer.cc",
     "testsupport/perf_test_histogram_writer.h",
     "testsupport/perf_test_result_writer.h",
   ]
@@ -234,9 +233,19 @@ rtc_library("perf_test") {
     "../api:array_view",
     "../rtc_base:checks",
     "../rtc_base:criticalsection",
+    "../rtc_base:logging",
     "../rtc_base:rtc_numerics",
     "//third_party/abseil-cpp/absl/flags:flag",
   ]
+  if (rtc_enable_protobuf) {
+    sources += [ "testsupport/perf_test_histogram_writer.cc" ]
+    deps += [
+      "//third_party/catapult/tracing/tracing:histogram",
+      "//third_party/catapult/tracing/tracing:reserved_infos",
+    ]
+  } else {
+    sources += [ "testsupport/perf_test_histogram_writer_no_protobuf.cc" ]
+  }
 }
 
 if (is_ios) {
@@ -501,6 +510,11 @@ if (rtc_include_tests) {
       "testsupport/yuv_frame_reader_unittest.cc",
       "testsupport/yuv_frame_writer_unittest.cc",
     ]
+
+    if (rtc_enable_protobuf) {
+      sources += [ "testsupport/perf_test_histogram_writer_unittest.cc" ]
+      deps += [ "//third_party/catapult/tracing/tracing:histogram" ]
+    }
 
     data = test_support_unittests_resources
     if (is_android) {

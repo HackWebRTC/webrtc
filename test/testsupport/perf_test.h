@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/flags/flag.h"
 #include "api/array_view.h"
 #include "rtc_base/numerics/samples_stats_counter.h"
 
@@ -88,9 +89,13 @@ void PrintResult(const std::string& measurement,
                  const bool important,
                  ImproveDirection improve_direction = ImproveDirection::kNone);
 
-// Returns all perf results to date in a JSON string formatted as described in
-// https://github.com/catapult-project/catapult/blob/master/dashboard/docs/data-format.md
-std::string GetPerfResultsJSON();
+// If --write_histogram_proto_json=false, this returns all perf results to date
+// in a JSON string formatted as described in dashboard/docs/data-format.md
+// in https://github.com/catapult-project/catapult/blob/master/. If
+// --write_histogram_proto_json=true, returns a string-encoded proto as
+// described in tracing/tracing/proto/histogram.proto in
+// https://github.com/catapult-project/catapult/blob/master/.
+std::string GetPerfResults();
 
 // Print into stdout plottable metrics for further post processing.
 // |desired_graphs| - list of metrics, that should be plotted. If empty - all
@@ -98,18 +103,20 @@ std::string GetPerfResultsJSON();
 // they will be skipped.
 void PrintPlottableResults(const std::vector<std::string>& desired_graphs);
 
-// Writes the JSON representation of the perf results returned by
-// GetPerfResultsJSON() to the file in output_path.
+// Call GetPerfResults() and write its output to a file.
 void WritePerfResults(const std::string& output_path);
 
 // By default, perf results are printed to stdout. Set the FILE* to where they
 // should be printing instead.
 void SetPerfResultsOutput(FILE* output);
 
-// You shouldn't use this function. It's only used to test the functions above.
+// Only for use by tests.
 void ClearPerfResults();
 
 }  // namespace test
 }  // namespace webrtc
+
+// Only for use by tests.
+ABSL_DECLARE_FLAG(bool, write_histogram_proto_json);
 
 #endif  // TEST_TESTSUPPORT_PERF_TEST_H_
