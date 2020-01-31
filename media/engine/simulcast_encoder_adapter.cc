@@ -150,7 +150,9 @@ SimulcastEncoderAdapter::SimulcastEncoderAdapter(
       encoded_complete_callback_(nullptr),
       experimental_boosted_screenshare_qp_(GetScreenshareBoostedQpValue()),
       boost_base_layer_quality_(RateControlSettings::ParseFromFieldTrials()
-                                    .Vp8BoostBaseLayerQuality()) {
+                                    .Vp8BoostBaseLayerQuality()),
+      prefer_temporal_support_on_base_layer_(field_trial::IsEnabled(
+          "WebRTC-Video-PreferTemporalSupportOnBaseLayer")) {
   RTC_DCHECK(primary_factory);
 
   // The adapter is typically created on the worker thread, but operated on
@@ -259,7 +261,9 @@ int SimulcastEncoderAdapter::InitEncode(
       if (fallback_encoder_factory_ != nullptr) {
         encoder = CreateVideoEncoderSoftwareFallbackWrapper(
             fallback_encoder_factory_->CreateVideoEncoder(format),
-            std::move(encoder));
+            std::move(encoder),
+            i == lowest_resolution_stream_index &&
+                prefer_temporal_support_on_base_layer_);
       }
     }
 
