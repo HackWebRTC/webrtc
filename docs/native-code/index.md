@@ -33,8 +33,10 @@ bugs found in native code.
 * [Development][webrtc-development]
 * [Android][webtc-android-development]
 * [iOS][webrtc-ios-development]
+* [Experimental RTP header extensions][rtp_hdrext]
 
 [webrtc-prerequitite-sw]: https://webrtc.googlesource.com/src/+/refs/heads/master/docs/native-code/development/prerequisite-sw/index.md
 [webrtc-development]: https://webrtc.googlesource.com/src/+/refs/heads/master/docs/native-code/development/index.md
 [webtc-android-development]: https://webrtc.googlesource.com/src/+/refs/heads/master/docs/native-code/android/index.md
 [webrtc-ios-development]: https://webrtc.googlesource.com/src/+/refs/heads/master/docs/native-code/ios/index.md
+[rtp_hdrext]: https://webrtc.googlesource.com/src/+/refs/heads/master/docs/native-code/rtp_hdrext/index.md
