@@ -135,7 +135,9 @@ public class VideoSource extends MediaSource {
       }
       videoProcessor = newVideoProcessor;
       if (newVideoProcessor != null) {
-        newVideoProcessor.setSink(nativeAndroidVideoTrackSource::onFrameCaptured);
+        newVideoProcessor.setSink(
+            (frame)
+                -> runWithReference(() -> nativeAndroidVideoTrackSource.onFrameCaptured(frame)));
         if (isCapturerRunning) {
           newVideoProcessor.onCapturerStarted(/* success= */ true);
         }
