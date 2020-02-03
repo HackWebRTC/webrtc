@@ -563,6 +563,9 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
                                                     frame->id.picture_id);
   size_t gof_idx = diff % info->gof->num_frames_in_gof;
 
+  if (info->gof->num_ref_pics[gof_idx] > EncodedFrame::kMaxFrameReferences) {
+    return kDrop;
+  }
   // Populate references according to the scalability structure.
   frame->num_references = info->gof->num_ref_pics[gof_idx];
   for (size_t i = 0; i < frame->num_references; ++i) {
