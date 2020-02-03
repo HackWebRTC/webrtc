@@ -943,6 +943,7 @@ if (rtc_include_tests) {
     deps = [
       ":callfactory_api",
       ":time_controller",
+      "../call",
       "../call:call_interfaces",
       "../test/time_controller",
     ]

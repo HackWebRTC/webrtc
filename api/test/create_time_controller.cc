@@ -14,12 +14,18 @@
 
 #include "call/call.h"
 #include "test/time_controller/external_time_controller.h"
+#include "test/time_controller/simulated_time_controller.h"
 
 namespace webrtc {
 
 std::unique_ptr<TimeController> CreateTimeController(
     ControlledAlarmClock* alarm) {
   return std::make_unique<ExternalTimeController>(alarm);
+}
+
+std::unique_ptr<TimeController> CreateSimulatedTimeController() {
+  return std::make_unique<GlobalSimulatedTimeController>(
+      Timestamp::seconds(10000));
 }
 
 std::unique_ptr<CallFactoryInterface> CreateTimeControllerBasedCallFactory(
