@@ -66,6 +66,10 @@ VideoSourceRestrictions ApplyDegradationPreference(
   return source_restrictions;
 }
 
+// The maximum number of frames to drop at beginning of stream
+// to try and achieve desired bitrate.
+const int kMaxInitialFramedrop = 4;
+
 }  // namespace
 
 // VideoSourceRestrictor is responsible for keeping track of current
@@ -361,7 +365,8 @@ OveruseFrameDetectorResourceAdaptationModule::
       target_bitrate_bps_(absl::nullopt),
       quality_scaler_(nullptr),
       encoder_settings_(absl::nullopt),
-      encoder_stats_observer_(encoder_stats_observer) {
+      encoder_stats_observer_(encoder_stats_observer),
+      initial_framedrop_(0) {
   RTC_DCHECK(adaptation_listener_);
   RTC_DCHECK(overuse_detector_);
   RTC_DCHECK(encoder_stats_observer_);
@@ -459,6 +464,7 @@ void OveruseFrameDetectorResourceAdaptationModule::OnFrameDroppedDueToSize() {
           AdaptationObserverInterface::AdaptReason::kQuality) > res_count) {
     encoder_stats_observer_->OnInitialQualityResolutionAdaptDown();
   }
+  ++initial_framedrop_;
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::OnEncodeStarted(
@@ -499,13 +505,29 @@ void OveruseFrameDetectorResourceAdaptationModule::OnFrameDropped(
   }
 }
 
+void OveruseFrameDetectorResourceAdaptationModule::OnMaybeEncodeFrame() {
+  initial_framedrop_ = kMaxInitialFramedrop;
+}
+
+bool OveruseFrameDetectorResourceAdaptationModule::DropInitialFrames() const {
+  return initial_framedrop_ < kMaxInitialFramedrop;
+}
+
+void OveruseFrameDetectorResourceAdaptationModule::ResetInitialFrameDropping() {
+  initial_framedrop_ = 0;
+}
+
 void OveruseFrameDetectorResourceAdaptationModule::UpdateQualityScalerSettings(
     absl::optional<VideoEncoder::QpThresholds> qp_thresholds) {
   if (qp_thresholds.has_value()) {
     quality_scaler_ =
         std::make_unique<QualityScaler>(this, qp_thresholds.value());
+    // Restart frame drops due to size.
+    initial_framedrop_ = 0;
   } else {
     quality_scaler_ = nullptr;
+    // Quality scaling disabled so we shouldn't drop initial frames.
+    initial_framedrop_ = kMaxInitialFramedrop;
   }
 }
 

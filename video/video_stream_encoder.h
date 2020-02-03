@@ -213,8 +213,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   rtc::Event shutdown_event_;
 
   const uint32_t number_of_cores_;
-  // Counts how many frames we've dropped in the initial framedrop phase.
-  int initial_framedrop_;
   bool quality_rampup_done_ RTC_GUARDED_BY(&encoder_queue_);
   QualityRampupExperiment quality_rampup_experiment_
       RTC_GUARDED_BY(&encoder_queue_);

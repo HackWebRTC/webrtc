@@ -52,10 +52,6 @@ const int64_t kPendingFrameTimeoutMs = 1000;
 
 constexpr char kFrameDropperFieldTrial[] = "WebRTC-FrameDropper";
 
-// The maximum number of frames to drop at beginning of stream
-// to try and achieve desired bitrate.
-const int kMaxInitialFramedrop = 4;
-
 // Averaging window spanning 90 frames at default 30fps, matching old media
 // optimization module defaults.
 const int64_t kFrameRateAvergingWindowSizeMs = (1000 / 30) * 90;
@@ -258,7 +254,6 @@ VideoStreamEncoder::VideoStreamEncoder(
     TaskQueueFactory* task_queue_factory)
     : shutdown_event_(true /* manual_reset */, false),
       number_of_cores_(number_of_cores),
-      initial_framedrop_(0),
       quality_rampup_done_(false),
       quality_rampup_experiment_(QualityRampupExperiment::ParseSettings()),
       quality_scaling_experiment_enabled_(QualityScalingExperiment::Enabled()),
@@ -798,11 +793,9 @@ void VideoStreamEncoder::ConfigureQualityScaler(
       resource_adaptation_module_->UpdateQualityScalerSettings(
           experimental_thresholds ? *experimental_thresholds
                                   : *(scaling_settings.thresholds));
-      initial_framedrop_ = 0;
     }
   } else {
     resource_adaptation_module_->UpdateQualityScalerSettings(absl::nullopt);
-    initial_framedrop_ = kMaxInitialFramedrop;
   }
 
   QualityScaler* quality_scaler = resource_adaptation_module_->quality_scaler();
@@ -1112,7 +1105,6 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
   if (DropDueToSize(video_frame.size())) {
     RTC_LOG(LS_INFO) << "Dropping frame. Too large for target bitrate.";
     resource_adaptation_module_->OnFrameDroppedDueToSize();
-    ++initial_framedrop_;
     // Storing references to a native buffer risks blocking frame capture.
     if (video_frame.video_frame_buffer()->type() !=
         VideoFrameBuffer::Type::kNative) {
@@ -1126,7 +1118,7 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
     }
     return;
   }
-  initial_framedrop_ = kMaxInitialFramedrop;
+  resource_adaptation_module_->OnMaybeEncodeFrame();
 
   if (!quality_rampup_done_ && TryQualityRampup(now_ms) &&
       resource_adaptation_module_->GetConstAdaptCounter().ResolutionCount(
@@ -1608,7 +1600,7 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
       RTC_LOG(LS_INFO) << "Reset initial_framedrop_. Start bitrate: "
                        << set_start_bitrate_bps_
                        << ", target bitrate: " << target_bitrate.bps();
-      initial_framedrop_ = 0;
+      resource_adaptation_module_->ResetInitialFrameDropping();
       has_seen_first_bwe_drop_ = true;
     }
   }
@@ -1648,7 +1640,7 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
 }
 
 bool VideoStreamEncoder::DropDueToSize(uint32_t pixel_count) const {
-  if (initial_framedrop_ >= kMaxInitialFramedrop ||
+  if (!resource_adaptation_module_->DropInitialFrames() ||
       !encoder_target_bitrate_bps_.has_value()) {
     return false;
   }

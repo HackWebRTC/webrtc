@@ -113,7 +113,13 @@ class ResourceAdaptationModuleInterface {
   // TODO(hbos): If we take frame rate into account perhaps it would be valid to
   // adapt down in frame rate as well.
   virtual void OnFrameDroppedDueToSize() = 0;
-  // 2.ii) An input frame is about to be encoded. It may have been cropped and
+  // 2.ii) If the frame will not be dropped due to size then signal that it may
+  // get encoded. However the frame is not guaranteed to be encoded right away
+  // or ever (for example if encoding is paused).
+  // TODO(eshr): Try replace OnMaybeEncodeFrame and merge behaviour into
+  // EncodeStarted.
+  virtual void OnMaybeEncodeFrame() = 0;
+  // 2.iii) An input frame is about to be encoded. It may have been cropped and
   // have different dimensions than what was observed at OnFrame(). Next
   // up: encoding completes or fails, see OnEncodeCompleted(). There is
   // currently no signal for encode failure.

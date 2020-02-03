@@ -79,12 +79,16 @@ class OveruseFrameDetectorResourceAdaptationModule
 
   void OnFrame(const VideoFrame& frame) override;
   void OnFrameDroppedDueToSize() override;
+  void OnMaybeEncodeFrame() override;
   void OnEncodeStarted(const VideoFrame& cropped_frame,
                        int64_t time_when_first_seen_us) override;
   void OnEncodeCompleted(const EncodedImage& encoded_image,
                          int64_t time_sent_in_us,
                          absl::optional<int> encode_duration_us) override;
   void OnFrameDropped(EncodedImageCallback::DropReason reason) override;
+  bool DropInitialFrames() const;
+  // TODO(eshr): Remove once all qp-scaling is in this class.
+  void ResetInitialFrameDropping();
 
   // Use nullopt to disable quality scaling.
   void UpdateQualityScalerSettings(
@@ -210,6 +214,8 @@ class OveruseFrameDetectorResourceAdaptationModule
   std::unique_ptr<QualityScaler> quality_scaler_;
   absl::optional<EncoderSettings> encoder_settings_;
   VideoStreamEncoderObserver* const encoder_stats_observer_;
+  // Counts how many frames we've dropped in the initial framedrop phase.
+  int initial_framedrop_;
 };
 
 }  // namespace webrtc
