@@ -161,8 +161,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   void ReconfigureEncoder() RTC_RUN_ON(&encoder_queue_);
 
-  void ConfigureQualityScaler(const VideoEncoder::EncoderInfo& encoder_info);
-
   // Implements VideoSinkInterface.
   void OnFrame(const VideoFrame& video_frame) override;
   void OnDiscardedFrame() override;

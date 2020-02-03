@@ -90,9 +90,10 @@ class OveruseFrameDetectorResourceAdaptationModule
   // TODO(eshr): Remove once all qp-scaling is in this class.
   void ResetInitialFrameDropping();
 
-  // Use nullopt to disable quality scaling.
-  void UpdateQualityScalerSettings(
-      absl::optional<VideoEncoder::QpThresholds> qp_thresholds);
+  // TODO(eshr): This can be made private if we configure on
+  // SetDegredationPreference and SetEncoderSettings.
+  // (https://crbug.com/webrtc/11338)
+  void ConfigureQualityScaler(const VideoEncoder::EncoderInfo& encoder_info);
 
   class AdaptCounter final {
    public:
@@ -141,22 +142,10 @@ class OveruseFrameDetectorResourceAdaptationModule
   void AdaptUp(AdaptReason reason) override;
   bool AdaptDown(AdaptReason reason) override;
 
-  // Used by VideoStreamEncoder when ConfigureQualityScaler() occurs and the
-  // |encoder_stats_observer_| is called outside of this class.
-  // TODO(hbos): Decouple quality scaling and resource adaptation logic and make
-  // this method private.
-  VideoStreamEncoderObserver::AdaptationSteps GetActiveCounts(
-      AdaptReason reason);
-
   // Used by VideoStreamEncoder::MaybeEncodeVideoFrame().
   // TODO(hbos): VideoStreamEncoder should not be responsible for any part of
   // the adaptation. Move this logic to this module?
   const AdaptCounter& GetConstAdaptCounter();
-
-  // Used by VideoStreamEncoder::ConfigureQualityScaler().
-  // TODO(hbos): Decouple quality scaling and resource adaptation logic and
-  // delete this method.
-  absl::optional<VideoEncoder::QpThresholds> GetQpThresholds() const;
 
  private:
   class VideoSourceRestrictor;
@@ -173,6 +162,8 @@ class OveruseFrameDetectorResourceAdaptationModule
   CpuOveruseOptions GetCpuOveruseOptions() const;
   VideoCodecType GetVideoCodecTypeOrGeneric() const;
   int LastInputFrameSizeOrDefault() const;
+  VideoStreamEncoderObserver::AdaptationSteps GetActiveCounts(
+      AdaptReason reason);
 
   // Makes |video_source_restrictions_| up-to-date and informs the
   // |adaptation_listener_| if restrictions are changed, allowing the listener
@@ -182,6 +173,10 @@ class OveruseFrameDetectorResourceAdaptationModule
   // |overuse_detector_| of the new value if it changed and the detector is
   // started.
   void MaybeUpdateTargetFrameRate();
+
+  // Use nullopt to disable quality scaling.
+  void UpdateQualityScalerSettings(
+      absl::optional<VideoEncoder::QpThresholds> qp_thresholds);
 
   void UpdateAdaptationStats(AdaptReason reason);
   DegradationPreference EffectiveDegradataionPreference();
@@ -212,6 +207,7 @@ class OveruseFrameDetectorResourceAdaptationModule
   absl::optional<double> target_frame_rate_;
   absl::optional<uint32_t> target_bitrate_bps_;
   std::unique_ptr<QualityScaler> quality_scaler_;
+  const bool quality_scaling_experiment_enabled_;
   absl::optional<EncoderSettings> encoder_settings_;
   VideoStreamEncoderObserver* const encoder_stats_observer_;
   // Counts how many frames we've dropped in the initial framedrop phase.

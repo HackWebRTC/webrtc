@@ -364,6 +364,7 @@ OveruseFrameDetectorResourceAdaptationModule::
       target_frame_rate_(absl::nullopt),
       target_bitrate_bps_(absl::nullopt),
       quality_scaler_(nullptr),
+      quality_scaling_experiment_enabled_(QualityScalingExperiment::Enabled()),
       encoder_settings_(absl::nullopt),
       encoder_stats_observer_(encoder_stats_observer),
       initial_framedrop_(0) {
@@ -398,6 +399,7 @@ void OveruseFrameDetectorResourceAdaptationModule::StartResourceAdaptation(
 void OveruseFrameDetectorResourceAdaptationModule::StopResourceAdaptation() {
   overuse_detector_->StopCheckForOveruse();
   overuse_detector_is_started_ = false;
+  quality_scaler_.reset();
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::SetHasInputVideo(
@@ -529,6 +531,48 @@ void OveruseFrameDetectorResourceAdaptationModule::UpdateQualityScalerSettings(
     // Quality scaling disabled so we shouldn't drop initial frames.
     initial_framedrop_ = kMaxInitialFramedrop;
   }
+}
+
+void OveruseFrameDetectorResourceAdaptationModule::ConfigureQualityScaler(
+    const VideoEncoder::EncoderInfo& encoder_info) {
+  const auto scaling_settings = encoder_info.scaling_settings;
+  const bool quality_scaling_allowed =
+      IsResolutionScalingEnabled(degradation_preference_) &&
+      scaling_settings.thresholds;
+
+  if (quality_scaling_allowed) {
+    if (quality_scaler_ == nullptr) {
+      // Quality scaler has not already been configured.
+
+      // Use experimental thresholds if available.
+      absl::optional<VideoEncoder::QpThresholds> experimental_thresholds;
+      if (quality_scaling_experiment_enabled_) {
+        experimental_thresholds = QualityScalingExperiment::GetQpThresholds(
+            GetVideoCodecTypeOrGeneric());
+      }
+      UpdateQualityScalerSettings(experimental_thresholds
+                                      ? *experimental_thresholds
+                                      : *(scaling_settings.thresholds));
+    }
+  } else {
+    UpdateQualityScalerSettings(absl::nullopt);
+  }
+
+  // Set the qp-thresholds to the balanced settings if balanced mode.
+  if (degradation_preference_ == DegradationPreference::BALANCED &&
+      quality_scaler_) {
+    absl::optional<VideoEncoder::QpThresholds> thresholds =
+        balanced_settings_.GetQpThresholds(GetVideoCodecTypeOrGeneric(),
+                                           LastInputFrameSizeOrDefault());
+    if (thresholds) {
+      quality_scaler_->SetQpThresholds(*thresholds);
+    }
+  }
+
+  encoder_stats_observer_->OnAdaptationChanged(
+      VideoStreamEncoderObserver::AdaptationReason::kNone,
+      GetActiveCounts(AdaptationObserverInterface::AdaptReason::kCpu),
+      GetActiveCounts(AdaptationObserverInterface::AdaptReason::kQuality));
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::AdaptUp(AdaptReason reason) {
@@ -906,11 +950,6 @@ OveruseFrameDetectorResourceAdaptationModule::GetConstAdaptCounter() {
   return adapt_counters_[degradation_preference_];
 }
 
-absl::optional<VideoEncoder::QpThresholds>
-OveruseFrameDetectorResourceAdaptationModule::GetQpThresholds() const {
-  return balanced_settings_.GetQpThresholds(GetVideoCodecTypeOrGeneric(),
-                                            LastInputFrameSizeOrDefault());
-}
 bool OveruseFrameDetectorResourceAdaptationModule::CanAdaptUpResolution(
     int pixels,
     uint32_t bitrate_bps) const {

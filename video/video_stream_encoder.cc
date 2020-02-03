@@ -63,11 +63,6 @@ const int64_t kParameterUpdateIntervalMs = 1000;
 // Animation is capped to 720p.
 constexpr int kMaxAnimationPixels = 1280 * 720;
 
-bool IsResolutionScalingEnabled(DegradationPreference degradation_preference) {
-  return degradation_preference == DegradationPreference::MAINTAIN_FRAMERATE ||
-         degradation_preference == DegradationPreference::BALANCED;
-}
-
 bool RequiresEncoderReset(const VideoCodec& prev_send_codec,
                           const VideoCodec& new_send_codec,
                           bool was_encode_called_since_last_initialization) {
@@ -337,7 +332,6 @@ void VideoStreamEncoder::Stop() {
     rate_allocator_ = nullptr;
     bitrate_observer_ = nullptr;
     ReleaseEncoder();
-    resource_adaptation_module_->UpdateQualityScalerSettings(absl::nullopt);
     shutdown_event_.Set();
   });
 
@@ -377,7 +371,8 @@ void VideoStreamEncoder::SetSource(
     resource_adaptation_module_->SetDegradationPreference(
         degradation_preference);
     if (encoder_)
-      ConfigureQualityScaler(encoder_->GetEncoderInfo());
+      resource_adaptation_module_->ConfigureQualityScaler(
+          encoder_->GetEncoderInfo());
   });
 }
 
@@ -768,53 +763,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
       std::move(streams), encoder_config_.content_type,
       encoder_config_.min_transmit_bitrate_bps);
 
-  ConfigureQualityScaler(info);
-}
-
-void VideoStreamEncoder::ConfigureQualityScaler(
-    const VideoEncoder::EncoderInfo& encoder_info) {
-  RTC_DCHECK_RUN_ON(&encoder_queue_);
-  const auto scaling_settings = encoder_info.scaling_settings;
-  const bool quality_scaling_allowed =
-      IsResolutionScalingEnabled(
-          resource_adaptation_module_->degradation_preference()) &&
-      scaling_settings.thresholds;
-
-  if (quality_scaling_allowed) {
-    if (resource_adaptation_module_->quality_scaler() == nullptr) {
-      // Quality scaler has not already been configured.
-
-      // Use experimental thresholds if available.
-      absl::optional<VideoEncoder::QpThresholds> experimental_thresholds;
-      if (quality_scaling_experiment_enabled_) {
-        experimental_thresholds = QualityScalingExperiment::GetQpThresholds(
-            encoder_config_.codec_type);
-      }
-      resource_adaptation_module_->UpdateQualityScalerSettings(
-          experimental_thresholds ? *experimental_thresholds
-                                  : *(scaling_settings.thresholds));
-    }
-  } else {
-    resource_adaptation_module_->UpdateQualityScalerSettings(absl::nullopt);
-  }
-
-  QualityScaler* quality_scaler = resource_adaptation_module_->quality_scaler();
-  if (resource_adaptation_module_->degradation_preference() ==
-          DegradationPreference::BALANCED &&
-      quality_scaler && last_frame_info_) {
-    absl::optional<VideoEncoder::QpThresholds> thresholds =
-        resource_adaptation_module_->GetQpThresholds();
-    if (thresholds) {
-      quality_scaler->SetQpThresholds(*thresholds);
-    }
-  }
-
-  encoder_stats_observer_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone,
-      resource_adaptation_module_->GetActiveCounts(
-          AdaptationObserverInterface::AdaptReason::kCpu),
-      resource_adaptation_module_->GetActiveCounts(
-          AdaptationObserverInterface::AdaptReason::kQuality));
+  resource_adaptation_module_->ConfigureQualityScaler(info);
 }
 
 void VideoStreamEncoder::OnFrame(const VideoFrame& video_frame) {

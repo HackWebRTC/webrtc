@@ -118,6 +118,8 @@ class ResourceAdaptationModuleInterface {
   // or ever (for example if encoding is paused).
   // TODO(eshr): Try replace OnMaybeEncodeFrame and merge behaviour into
   // EncodeStarted.
+  // TODO(eshr): Try to merge OnFrame, OnFrameDroppedDueToSize, and
+  // OnMaybeEncode frame into one method.
   virtual void OnMaybeEncodeFrame() = 0;
   // 2.iii) An input frame is about to be encoded. It may have been cropped and
   // have different dimensions than what was observed at OnFrame(). Next
