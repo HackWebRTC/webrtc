@@ -1113,6 +1113,7 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   // Always populate this, so that the packetizer can properly set the marker
   // bit.
   vp9_info->num_spatial_layers = num_active_spatial_layers_;
+  vp9_info->first_active_layer = first_active_layer_;
 
   vp9_info->num_ref_pics = 0;
   FillReferenceIndices(pkt, pics_since_key_, vp9_info->inter_layer_predicted,
