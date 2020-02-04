@@ -86,8 +86,11 @@ class ResourceAdaptationModuleInterface {
   virtual void SetDegradationPreference(
       DegradationPreference degradation_preference) = 0;
   virtual void SetEncoderSettings(EncoderSettings encoder_settings) = 0;
-  virtual void SetEncoderTargetBitrate(
-      absl::optional<uint32_t> target_bitrate_bps) = 0;
+  // TODO(bugs.webrtc.org/11222): This function shouldn't be needed, start
+  // bitrates should be apart of the constructor ideally. See the comment on
+  // VideoStreamEncoderInterface::SetStartBitrate.
+  virtual void SetStartBitrate(DataRate start_bitrate) = 0;
+  virtual void SetTargetBitrate(DataRate target_bitrate) = 0;
   // Removes all restrictions; the module will need to adapt all over again.
   // TODO(hbos): It's not clear why anybody should be able to tell the module to
   // reset like this; can we get rid of this method?

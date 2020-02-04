@@ -346,11 +346,13 @@ OveruseFrameDetectorResourceAdaptationModule::AdaptCounter::ToString(
 
 OveruseFrameDetectorResourceAdaptationModule::
     OveruseFrameDetectorResourceAdaptationModule(
+        Clock* clock,
         bool experiment_cpu_load_estimator,
         std::unique_ptr<OveruseFrameDetector> overuse_detector,
         VideoStreamEncoderObserver* encoder_stats_observer,
         ResourceAdaptationModuleListener* adaptation_listener)
     : adaptation_listener_(adaptation_listener),
+      clock_(clock),
       experiment_cpu_load_estimator_(experiment_cpu_load_estimator),
       has_input_video_(false),
       degradation_preference_(DegradationPreference::DISABLED),
@@ -362,9 +364,10 @@ OveruseFrameDetectorResourceAdaptationModule::
       overuse_detector_is_started_(false),
       last_input_frame_size_(absl::nullopt),
       target_frame_rate_(absl::nullopt),
-      target_bitrate_bps_(absl::nullopt),
+      encoder_target_bitrate_bps_(absl::nullopt),
       quality_scaler_(nullptr),
       quality_scaling_experiment_enabled_(QualityScalingExperiment::Enabled()),
+      quality_scaler_settings_(QualityScalerSettings::ParseFromFieldTrials()),
       encoder_settings_(absl::nullopt),
       encoder_stats_observer_(encoder_stats_observer),
       initial_framedrop_(0) {
@@ -432,9 +435,37 @@ void OveruseFrameDetectorResourceAdaptationModule::SetEncoderSettings(
   MaybeUpdateTargetFrameRate();
 }
 
-void OveruseFrameDetectorResourceAdaptationModule::SetEncoderTargetBitrate(
-    absl::optional<uint32_t> target_bitrate_bps) {
-  target_bitrate_bps_ = target_bitrate_bps;
+void OveruseFrameDetectorResourceAdaptationModule::SetStartBitrate(
+    DataRate start_bitrate) {
+  if (!start_bitrate.IsZero())
+    encoder_target_bitrate_bps_ = start_bitrate.bps();
+  start_bitrate_.set_start_bitrate_ = start_bitrate;
+  start_bitrate_.set_start_bitrate_time_ms_ = clock_->TimeInMicroseconds();
+}
+
+void OveruseFrameDetectorResourceAdaptationModule::SetTargetBitrate(
+    DataRate target_bitrate) {
+  if (!target_bitrate.IsZero())
+    encoder_target_bitrate_bps_ = target_bitrate.bps();
+
+  // Check for bwe drop experiment
+  if (start_bitrate_.set_start_bitrate_ > DataRate::Zero() &&
+      !start_bitrate_.has_seen_first_bwe_drop_ && quality_scaler_ &&
+      quality_scaler_settings_.InitialBitrateIntervalMs() &&
+      quality_scaler_settings_.InitialBitrateFactor()) {
+    int64_t diff_ms = clock_->TimeInMilliseconds() -
+                      start_bitrate_.set_start_bitrate_time_ms_;
+    if (diff_ms < quality_scaler_settings_.InitialBitrateIntervalMs().value() &&
+        (target_bitrate <
+         (start_bitrate_.set_start_bitrate_ *
+          quality_scaler_settings_.InitialBitrateFactor().value()))) {
+      RTC_LOG(LS_INFO) << "Reset initial_framedrop_. Start bitrate: "
+                       << start_bitrate_.set_start_bitrate_.bps()
+                       << ", target bitrate: " << target_bitrate.bps();
+      initial_framedrop_ = 0;
+      start_bitrate_.has_seen_first_bwe_drop_ = true;
+    }
+  }
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::
@@ -513,10 +544,6 @@ void OveruseFrameDetectorResourceAdaptationModule::OnMaybeEncodeFrame() {
 
 bool OveruseFrameDetectorResourceAdaptationModule::DropInitialFrames() const {
   return initial_framedrop_ < kMaxInitialFramedrop;
-}
-
-void OveruseFrameDetectorResourceAdaptationModule::ResetInitialFrameDropping() {
-  initial_framedrop_ = 0;
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::UpdateQualityScalerSettings(
@@ -608,9 +635,9 @@ void OveruseFrameDetectorResourceAdaptationModule::AdaptUp(AdaptReason reason) {
     case DegradationPreference::BALANCED: {
       // Check if quality should be increased based on bitrate.
       if (reason == kQuality &&
-          !balanced_settings_.CanAdaptUp(GetVideoCodecTypeOrGeneric(),
-                                         LastInputFrameSizeOrDefault(),
-                                         target_bitrate_bps_.value_or(0))) {
+          !balanced_settings_.CanAdaptUp(
+              GetVideoCodecTypeOrGeneric(), LastInputFrameSizeOrDefault(),
+              encoder_target_bitrate_bps_.value_or(0))) {
         return;
       }
       // Try scale up framerate, if higher.
@@ -631,7 +658,7 @@ void OveruseFrameDetectorResourceAdaptationModule::AdaptUp(AdaptReason reason) {
       if (reason == kQuality &&
           !balanced_settings_.CanAdaptUpResolution(
               GetVideoCodecTypeOrGeneric(), LastInputFrameSizeOrDefault(),
-              target_bitrate_bps_.value_or(0))) {
+              encoder_target_bitrate_bps_.value_or(0))) {
         return;
       }
       // Scale up resolution.
@@ -642,7 +669,7 @@ void OveruseFrameDetectorResourceAdaptationModule::AdaptUp(AdaptReason reason) {
       // limits specified by encoder capabilities.
       if (reason == kQuality &&
           !CanAdaptUpResolution(LastInputFrameSizeOrDefault(),
-                                target_bitrate_bps_.value_or(0))) {
+                                encoder_target_bitrate_bps_.value_or(0))) {
         return;
       }
 
