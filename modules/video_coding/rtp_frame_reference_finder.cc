@@ -435,7 +435,8 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
   }
 
   // Protect against corrupted packets with arbitrary large temporal idx.
-  if (codec_header.temporal_idx >= kMaxTemporalLayers)
+  if (codec_header.temporal_idx >= kMaxTemporalLayers ||
+      codec_header.spatial_idx >= kMaxSpatialLayers)
     return kDrop;
 
   frame->id.spatial_layer = codec_header.spatial_idx;
@@ -475,6 +476,12 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
     } else {
       if (codec_header.gof.num_frames_in_gof > kMaxVp9FramesInGof) {
         return kDrop;
+      }
+
+      for (size_t i = 0; i < codec_header.gof.num_frames_in_gof; ++i) {
+        if (codec_header.gof.num_ref_pics[i] > kMaxVp9RefPics) {
+          return kDrop;
+        }
       }
 
       GofInfoVP9 gof = codec_header.gof;
