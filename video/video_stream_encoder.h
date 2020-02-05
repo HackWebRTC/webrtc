@@ -173,7 +173,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // Indicates wether frame should be dropped because the pixel count is too
   // large for the current bitrate configuration.
   bool DropDueToSize(uint32_t pixel_count) const RTC_RUN_ON(&encoder_queue_);
-  bool TryQualityRampup(int64_t now_ms) RTC_RUN_ON(&encoder_queue_);
 
   // Implements EncodedImageCallback.
   EncodedImageCallback::Result OnEncodedImage(
@@ -211,9 +210,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   rtc::Event shutdown_event_;
 
   const uint32_t number_of_cores_;
-  bool quality_rampup_done_ RTC_GUARDED_BY(&encoder_queue_);
-  QualityRampupExperiment quality_rampup_experiment_
-      RTC_GUARDED_BY(&encoder_queue_);
 
   const bool quality_scaling_experiment_enabled_;
 

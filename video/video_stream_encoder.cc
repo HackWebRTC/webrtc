@@ -249,8 +249,6 @@ VideoStreamEncoder::VideoStreamEncoder(
     TaskQueueFactory* task_queue_factory)
     : shutdown_event_(true /* manual_reset */, false),
       number_of_cores_(number_of_cores),
-      quality_rampup_done_(false),
-      quality_rampup_experiment_(QualityRampupExperiment::ParseSettings()),
       quality_scaling_experiment_enabled_(QualityScalingExperiment::Enabled()),
       sink_(nullptr),
       settings_(settings),
@@ -650,8 +648,6 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   send_codec_ = codec;
 
   encoder_switch_experiment_.SetCodec(send_codec_.codecType);
-  quality_rampup_experiment_.SetMaxBitrate(
-      last_frame_info_->width * last_frame_info_->height, codec.maxBitrate);
 
   // Keep the same encoder, as long as the video_format is unchanged.
   // Encoder creation block is split in two since EncoderInfo needed to start
@@ -981,6 +977,7 @@ void VideoStreamEncoder::SetEncoderRates(
     frame_encode_metadata_writer_.OnSetRates(
         rate_settings.rate_control.bitrate,
         static_cast<uint32_t>(rate_settings.rate_control.framerate_fps + 0.5));
+    resource_adaptation_module_->SetEncoderRates(rate_settings.rate_control);
   }
 }
 
@@ -1064,16 +1061,6 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
     return;
   }
   resource_adaptation_module_->OnMaybeEncodeFrame();
-
-  if (!quality_rampup_done_ && TryQualityRampup(now_ms) &&
-      resource_adaptation_module_->GetConstAdaptCounter().ResolutionCount(
-          AdaptationObserverInterface::AdaptReason::kQuality) > 0 &&
-      resource_adaptation_module_->GetConstAdaptCounter().TotalCount(
-          AdaptationObserverInterface::AdaptReason::kCpu) == 0) {
-    RTC_LOG(LS_INFO) << "Reset quality limitations.";
-    resource_adaptation_module_->ResetVideoSourceRestrictions();
-    quality_rampup_done_ = true;
-  }
 
   if (EncoderPaused()) {
     // Storing references to a native buffer risks blocking frame capture.
@@ -1586,27 +1573,6 @@ bool VideoStreamEncoder::DropDueToSize(uint32_t pixel_count) const {
     return pixel_count > 320 * 240;
   } else if (encoder_target_bitrate_bps_.value() < 500000 /* vga */) {
     return pixel_count > 640 * 480;
-  }
-  return false;
-}
-
-bool VideoStreamEncoder::TryQualityRampup(int64_t now_ms) {
-  QualityScaler* quality_scaler = resource_adaptation_module_->quality_scaler();
-  if (!quality_scaler)
-    return false;
-
-  uint32_t bw_kbps = last_encoder_rate_settings_
-                         ? last_encoder_rate_settings_->rate_control
-                               .bandwidth_allocation.kbps()
-                         : 0;
-
-  if (quality_rampup_experiment_.BwHigh(now_ms, bw_kbps)) {
-    // Verify that encoder is at max bitrate and the QP is low.
-    if (encoder_target_bitrate_bps_.value_or(0) ==
-            send_codec_.maxBitrate * 1000 &&
-        quality_scaler->QpFastFilterLow()) {
-      return true;
-    }
   }
   return false;
 }

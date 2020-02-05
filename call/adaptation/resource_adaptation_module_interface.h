@@ -91,10 +91,13 @@ class ResourceAdaptationModuleInterface {
   // VideoStreamEncoderInterface::SetStartBitrate.
   virtual void SetStartBitrate(DataRate start_bitrate) = 0;
   virtual void SetTargetBitrate(DataRate target_bitrate) = 0;
-  // Removes all restrictions; the module will need to adapt all over again.
-  // TODO(hbos): It's not clear why anybody should be able to tell the module to
-  // reset like this; can we get rid of this method?
-  virtual void ResetVideoSourceRestrictions() = 0;
+  // The encoder rates are the target encoder bitrate distributed across spatial
+  // and temporal layers. This may be different than target bitrate depending on
+  // encoder configuration, e.g. if we can encode at desired quality in less
+  // than the allowed target bitrate or if the encoder has not been initialized
+  // yet.
+  virtual void SetEncoderRates(
+      const VideoEncoder::RateControlParameters& encoder_rates) = 0;
 
   // The following methods correspond to the pipeline that a frame goes through.
   // Note that if the encoder is parallelized, multiple frames may be processed

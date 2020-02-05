@@ -27,6 +27,7 @@
 #include "api/video_codecs/video_encoder_config.h"
 #include "call/adaptation/resource_adaptation_module_interface.h"
 #include "rtc_base/experiments/balanced_degradation_settings.h"
+#include "rtc_base/experiments/quality_rampup_experiment.h"
 #include "rtc_base/experiments/quality_scaler_settings.h"
 #include "system_wrappers/include/clock.h"
 #include "video/overuse_frame_detector.h"
@@ -66,7 +67,6 @@ class OveruseFrameDetectorResourceAdaptationModule
   DegradationPreference degradation_preference() const {
     return degradation_preference_;
   }
-  QualityScaler* quality_scaler() const { return quality_scaler_.get(); }
 
   // ResourceAdaptationModuleInterface implementation.
   void StartResourceAdaptation(
@@ -78,7 +78,8 @@ class OveruseFrameDetectorResourceAdaptationModule
   void SetEncoderSettings(EncoderSettings encoder_settings) override;
   void SetStartBitrate(DataRate start_bitrate) override;
   void SetTargetBitrate(DataRate target_bitrate) override;
-  void ResetVideoSourceRestrictions() override;
+  void SetEncoderRates(
+      const VideoEncoder::RateControlParameters& encoder_rates) override;
 
   void OnFrame(const VideoFrame& frame) override;
   void OnFrameDroppedDueToSize() override;
@@ -89,48 +90,13 @@ class OveruseFrameDetectorResourceAdaptationModule
                          int64_t time_sent_in_us,
                          absl::optional<int> encode_duration_us) override;
   void OnFrameDropped(EncodedImageCallback::DropReason reason) override;
+
   bool DropInitialFrames() const;
 
   // TODO(eshr): This can be made private if we configure on
   // SetDegredationPreference and SetEncoderSettings.
   // (https://crbug.com/webrtc/11338)
   void ConfigureQualityScaler(const VideoEncoder::EncoderInfo& encoder_info);
-
-  class AdaptCounter final {
-   public:
-    AdaptCounter();
-    ~AdaptCounter();
-
-    // Get number of adaptation downscales for |reason|.
-    VideoStreamEncoderObserver::AdaptationSteps Counts(int reason) const;
-
-    std::string ToString() const;
-
-    void IncrementFramerate(int reason);
-    void IncrementResolution(int reason);
-    void DecrementFramerate(int reason);
-    void DecrementResolution(int reason);
-    void DecrementFramerate(int reason, int cur_fps);
-
-    // Gets the total number of downgrades (for all adapt reasons).
-    int FramerateCount() const;
-    int ResolutionCount() const;
-
-    // Gets the total number of downgrades for |reason|.
-    int FramerateCount(int reason) const;
-    int ResolutionCount(int reason) const;
-    int TotalCount(int reason) const;
-
-   private:
-    std::string ToString(const std::vector<int>& counters) const;
-    int Count(const std::vector<int>& counters) const;
-    void MoveCount(std::vector<int>* counters, int from_reason);
-
-    // Degradation counters holding number of framerate/resolution reductions
-    // per adapt reason.
-    std::vector<int> fps_counters_;
-    std::vector<int> resolution_counters_;
-  };
 
   // AdaptationObserverInterface implementation. Used both "internally" as
   // feedback from |overuse_detector_|, and externally from VideoStreamEncoder:
@@ -143,12 +109,8 @@ class OveruseFrameDetectorResourceAdaptationModule
   void AdaptUp(AdaptReason reason) override;
   bool AdaptDown(AdaptReason reason) override;
 
-  // Used by VideoStreamEncoder::MaybeEncodeVideoFrame().
-  // TODO(hbos): VideoStreamEncoder should not be responsible for any part of
-  // the adaptation. Move this logic to this module?
-  const AdaptCounter& GetConstAdaptCounter();
-
  private:
+  class AdaptCounter;
   class VideoSourceRestrictor;
 
   struct AdaptationRequest {
@@ -171,6 +133,7 @@ class OveruseFrameDetectorResourceAdaptationModule
   int LastInputFrameSizeOrDefault() const;
   VideoStreamEncoderObserver::AdaptationSteps GetActiveCounts(
       AdaptReason reason);
+  const AdaptCounter& GetConstAdaptCounter();
 
   // Makes |video_source_restrictions_| up-to-date and informs the
   // |adaptation_listener_| if restrictions are changed, allowing the listener
@@ -189,6 +152,14 @@ class OveruseFrameDetectorResourceAdaptationModule
   DegradationPreference EffectiveDegradataionPreference();
   AdaptCounter& GetAdaptCounter();
   bool CanAdaptUpResolution(int pixels, uint32_t bitrate_bps) const;
+
+  // Checks to see if we should execute the quality rampup experiment. The
+  // experiment resets all video restrictions at the start of the call in the
+  // case the bandwidth estimate is high enough.
+  // TODO(https://crbug.com/webrtc/11222) Move experiment details into an inner
+  // class.
+  void MaybePerformQualityRampupExperiment();
+  void ResetVideoSourceRestrictions();
 
   ResourceAdaptationModuleListener* const adaptation_listener_;
   Clock* clock_;
@@ -215,9 +186,12 @@ class OveruseFrameDetectorResourceAdaptationModule
   absl::optional<double> target_frame_rate_;
   // This is the last non-zero target bitrate for the encoder.
   absl::optional<uint32_t> encoder_target_bitrate_bps_;
+  absl::optional<VideoEncoder::RateControlParameters> encoder_rates_;
   std::unique_ptr<QualityScaler> quality_scaler_;
   const bool quality_scaling_experiment_enabled_;
   const QualityScalerSettings quality_scaler_settings_;
+  bool quality_rampup_done_;
+  QualityRampupExperiment quality_rampup_experiment_;
   StartBitrate start_bitrate_;
   absl::optional<EncoderSettings> encoder_settings_;
   VideoStreamEncoderObserver* const encoder_stats_observer_;
