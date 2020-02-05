@@ -34,6 +34,26 @@ rtc_library("encoded_frame") {
   ]
 }
 
+rtc_library("frame_dependencies_calculator") {
+  sources = [
+    "frame_dependencies_calculator.cc",
+    "frame_dependencies_calculator.h",
+  ]
+
+  deps = [
+    "../../api:array_view",
+    "../../api/video:video_frame_type",
+    "../../common_video/generic_frame_descriptor",
+    "../../rtc_base:checks",
+    "../../rtc_base:logging",
+    "../../rtc_base:macromagic",
+    "../../rtc_base/synchronization:sequence_checker",
+    "//third_party/abseil-cpp/absl/algorithm:container",
+    "//third_party/abseil-cpp/absl/container:inlined_vector",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
 rtc_library("nack_module") {
   visibility = [ "*" ]
   sources = [
@@ -827,6 +847,7 @@ if (rtc_include_tests) {
       "decoding_state_unittest.cc",
       "fec_controller_unittest.cc",
       "frame_buffer2_unittest.cc",
+      "frame_dependencies_calculator_unittest.cc",
       "generic_decoder_unittest.cc",
       "h264_sprop_parameter_sets_unittest.cc",
       "h264_sps_pps_tracker_unittest.cc",
@@ -864,6 +885,7 @@ if (rtc_include_tests) {
     deps = [
       ":codec_globals_headers",
       ":encoded_frame",
+      ":frame_dependencies_calculator",
       ":nack_module",
       ":simulcast_test_fixture_impl",
       ":video_codec_interface",
@@ -897,10 +919,12 @@ if (rtc_include_tests) {
       "../../api/video:video_bitrate_allocator_factory",
       "../../api/video:video_frame",
       "../../api/video:video_frame_i420",
+      "../../api/video:video_frame_type",
       "../../api/video:video_rtp_headers",
       "../../api/video_codecs:video_codecs_api",
       "../../api/video_codecs:vp8_temporal_layers_factory",
       "../../common_video",
+      "../../common_video/generic_frame_descriptor",
       "../../common_video/test:utilities",
       "../../media:rtc_media_base",
       "../../rtc_base",
