@@ -156,6 +156,9 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
       break;
     }
     case kVideoCodecVP9: {
+      // Force the first stream to always be active.
+      video_codec.simulcastStream[0].active = codec_active;
+
       if (!config.encoder_specific_settings) {
         *video_codec.VP9() = VideoEncoder::GetDefaultVp9Settings();
       }
@@ -197,7 +200,7 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
              spatial_idx < config.simulcast_layers.size() &&
              spatial_idx < spatial_layers.size();
              ++spatial_idx) {
-          spatial_layers[spatial_layers.size() - spatial_idx - 1].active =
+          spatial_layers[spatial_idx].active =
               config.simulcast_layers[spatial_idx].active;
         }
       }
