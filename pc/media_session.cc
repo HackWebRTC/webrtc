@@ -2255,7 +2255,7 @@ bool MediaSessionDescriptionFactory::AddSctpDataContentForOffer(
   }
 
   desc->AddContent(media_description_options.mid, MediaProtocolType::kSctp,
-                   std::move(data));
+                   media_description_options.stopped, std::move(data));
   if (!AddTransportOffer(media_description_options.mid,
                          media_description_options.transport_options,
                          current_description, desc, ice_credentials)) {

@@ -5128,13 +5128,18 @@ void PeerConnection::GetOptionsForUnifiedPlanOffer(
       }
     } else {
       RTC_CHECK_EQ(cricket::MEDIA_TYPE_DATA, media_type);
-      RTC_CHECK(GetDataMid());
-      if (had_been_rejected || mid != *GetDataMid()) {
+      if (had_been_rejected) {
         session_options->media_description_options.push_back(
             GetMediaDescriptionOptionsForRejectedData(mid));
       } else {
-        session_options->media_description_options.push_back(
-            GetMediaDescriptionOptionsForActiveData(mid));
+        RTC_CHECK(GetDataMid());
+        if (mid == *GetDataMid()) {
+          session_options->media_description_options.push_back(
+              GetMediaDescriptionOptionsForActiveData(mid));
+        } else {
+          session_options->media_description_options.push_back(
+              GetMediaDescriptionOptionsForRejectedData(mid));
+        }
       }
     }
   }
