@@ -257,10 +257,6 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
     return {};
   }
 
-  absl::optional<std::string> sctp_content_name() const override {
-    return absl::nullopt;
-  }
-
   absl::optional<std::string> sctp_transport_name() const override {
     return absl::nullopt;
   }

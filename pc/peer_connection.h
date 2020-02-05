@@ -283,11 +283,6 @@ class PeerConnection : public PeerConnectionInternal,
     return *data_channel_controller_.sctp_data_channels();
   }
 
-  absl::optional<std::string> sctp_content_name() const override {
-    RTC_DCHECK_RUN_ON(signaling_thread());
-    return sctp_mid_;
-  }
-
   absl::optional<std::string> sctp_transport_name() const override;
 
   cricket::CandidateStatsList GetPooledCandidateStats() const override;
@@ -324,6 +319,10 @@ class PeerConnection : public PeerConnectionInternal,
     return_histogram_very_quickly_ = true;
   }
   void RequestUsagePatternReportForTesting();
+  absl::optional<std::string> sctp_mid() {
+    RTC_DCHECK_RUN_ON(signaling_thread());
+    return sctp_mid_;
+  }
 
  protected:
   ~PeerConnection() override;

@@ -111,8 +111,8 @@ class PeerConnectionWrapperForDataChannelTest : public PeerConnectionWrapper {
     sctp_transport_factory_ = sctp_transport_factory;
   }
 
-  absl::optional<std::string> sctp_content_name() {
-    return GetInternalPeerConnection()->sctp_content_name();
+  absl::optional<std::string> sctp_mid() {
+    return GetInternalPeerConnection()->sctp_mid();
   }
 
   absl::optional<std::string> sctp_transport_name() {
@@ -248,14 +248,14 @@ TEST_P(PeerConnectionDataChannelTest, InternalSctpTransportDeletedOnTeardown) {
             nullptr);
 }
 
-// Test that sctp_content_name/sctp_transport_name (used for stats) are correct
+// Test that sctp_mid/sctp_transport_name (used for stats) are correct
 // before and after BUNDLE is negotiated.
 TEST_P(PeerConnectionDataChannelTest, SctpContentAndTransportNameSetCorrectly) {
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
   // Initially these fields should be empty.
-  EXPECT_FALSE(caller->sctp_content_name());
+  EXPECT_FALSE(caller->sctp_mid());
   EXPECT_FALSE(caller->sctp_transport_name());
 
   // Create offer with audio/video/data.
@@ -278,8 +278,8 @@ TEST_P(PeerConnectionDataChannelTest, SctpContentAndTransportNameSetCorrectly) {
       caller->SetLocalDescription(CloneSessionDescription(offer.get())));
   ASSERT_TRUE(callee->SetRemoteDescription(std::move(offer)));
 
-  ASSERT_TRUE(caller->sctp_content_name());
-  EXPECT_EQ(data_mid, *caller->sctp_content_name());
+  ASSERT_TRUE(caller->sctp_mid());
+  EXPECT_EQ(data_mid, *caller->sctp_mid());
   ASSERT_TRUE(caller->sctp_transport_name());
   EXPECT_EQ(data_mid, *caller->sctp_transport_name());
 
@@ -290,8 +290,8 @@ TEST_P(PeerConnectionDataChannelTest, SctpContentAndTransportNameSetCorrectly) {
   ASSERT_TRUE(
       caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal()));
 
-  ASSERT_TRUE(caller->sctp_content_name());
-  EXPECT_EQ(data_mid, *caller->sctp_content_name());
+  ASSERT_TRUE(caller->sctp_mid());
+  EXPECT_EQ(data_mid, *caller->sctp_mid());
   ASSERT_TRUE(caller->sctp_transport_name());
   EXPECT_EQ(audio_mid, *caller->sctp_transport_name());
 }
