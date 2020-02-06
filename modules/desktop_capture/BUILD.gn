@@ -397,7 +397,6 @@ rtc_library("desktop_capture_generic") {
       "Xext",
       "Xfixes",
       "Xrender",
-      "Xrandr",
     ]
   }
 
@@ -483,10 +482,6 @@ rtc_library("desktop_capture_generic") {
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",
   ]
-
-  if (rtc_use_x11_extensions) {
-    deps += [ "../../rtc_base:sanitizer" ]
-  }
 
   if (build_with_mozilla) {
     deps += [ "../../rtc_base:rtc_base_approved" ]
