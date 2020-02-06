@@ -318,6 +318,60 @@ rtc_source_set("test_support") {
   ]
 }
 
+rtc_library("video_test_support") {
+  testonly = true
+
+  sources = [
+    "testsupport/frame_reader.h",
+    "testsupport/frame_writer.h",
+    "testsupport/mock/mock_frame_reader.h",
+    "testsupport/video_frame_writer.cc",
+    "testsupport/video_frame_writer.h",
+    "testsupport/y4m_frame_reader.cc",
+    "testsupport/y4m_frame_writer.cc",
+    "testsupport/yuv_frame_reader.cc",
+    "testsupport/yuv_frame_writer.cc",
+  ]
+
+  deps = [
+    ":fileutils",
+    ":frame_utils",
+    ":test_support",
+    ":video_test_common",
+    "../api:scoped_refptr",
+    "../api/video:encoded_image",
+    "../api/video:video_frame",
+    "../api/video:video_frame_i420",
+    "../api/video_codecs:video_codecs_api",
+    "../common_video",
+    "../media:rtc_media_base",
+    "../modules/video_coding:video_codec_interface",
+    "../modules/video_coding:video_coding_utility",
+    "../modules/video_coding:webrtc_h264",
+    "../modules/video_coding:webrtc_vp8",
+    "../modules/video_coding:webrtc_vp9",
+    "../rtc_base:checks",
+    "../rtc_base:criticalsection",
+    "../rtc_base:logging",
+    "../rtc_base:rtc_base_approved",
+    "../rtc_base:rtc_event",
+    "../rtc_base/synchronization:sequence_checker",
+    "../rtc_base/system:file_wrapper",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+
+  if (!is_ios) {
+    deps += [ "//third_party:jpeg" ]
+    sources += [ "testsupport/jpeg_frame_writer.cc" ]
+  } else {
+    sources += [ "testsupport/jpeg_frame_writer_ios.cc" ]
+  }
+
+  if (is_android) {
+    deps += [ "//base" ]
+  }
+}
+
 if (rtc_include_tests) {
   rtc_library("test_main_lib") {
     visibility = [ "*" ]
@@ -353,60 +407,6 @@ if (rtc_include_tests) {
       "//third_party/abseil-cpp/absl/debugging:failure_signal_handler",
       "//third_party/abseil-cpp/absl/debugging:symbolize",
     ]
-  }
-
-  rtc_library("video_test_support") {
-    testonly = true
-
-    sources = [
-      "testsupport/frame_reader.h",
-      "testsupport/frame_writer.h",
-      "testsupport/mock/mock_frame_reader.h",
-      "testsupport/video_frame_writer.cc",
-      "testsupport/video_frame_writer.h",
-      "testsupport/y4m_frame_reader.cc",
-      "testsupport/y4m_frame_writer.cc",
-      "testsupport/yuv_frame_reader.cc",
-      "testsupport/yuv_frame_writer.cc",
-    ]
-
-    deps = [
-      ":fileutils",
-      ":frame_utils",
-      ":test_support",
-      ":video_test_common",
-      "../api:scoped_refptr",
-      "../api/video:encoded_image",
-      "../api/video:video_frame",
-      "../api/video:video_frame_i420",
-      "../api/video_codecs:video_codecs_api",
-      "../common_video",
-      "../media:rtc_media_base",
-      "../modules/video_coding:video_codec_interface",
-      "../modules/video_coding:video_coding_utility",
-      "../modules/video_coding:webrtc_h264",
-      "../modules/video_coding:webrtc_vp8",
-      "../modules/video_coding:webrtc_vp9",
-      "../rtc_base:checks",
-      "../rtc_base:criticalsection",
-      "../rtc_base:logging",
-      "../rtc_base:rtc_base_approved",
-      "../rtc_base:rtc_event",
-      "../rtc_base/synchronization:sequence_checker",
-      "../rtc_base/system:file_wrapper",
-      "//third_party/abseil-cpp/absl/types:optional",
-    ]
-
-    if (!is_ios) {
-      deps += [ "//third_party:jpeg" ]
-      sources += [ "testsupport/jpeg_frame_writer.cc" ]
-    } else {
-      sources += [ "testsupport/jpeg_frame_writer_ios.cc" ]
-    }
-
-    if (is_android) {
-      deps += [ "//base" ]
-    }
   }
 
   rtc_library("test_support_test_artifacts") {
