@@ -176,6 +176,8 @@ rtc_library("video_stream_encoder_impl") {
 
   # visibility = [ "../api/video:video_stream_encoder_create" ]
   sources = [
+    "encode_usage_resource.cc",
+    "encode_usage_resource.h",
     "encoder_bitrate_adjuster.cc",
     "encoder_bitrate_adjuster.h",
     "encoder_overshoot_detector.cc",
@@ -186,6 +188,8 @@ rtc_library("video_stream_encoder_impl") {
     "overuse_frame_detector.h",
     "overuse_frame_detector_resource_adaptation_module.cc",
     "overuse_frame_detector_resource_adaptation_module.h",
+    "quality_scaler_resource.cc",
+    "quality_scaler_resource.h",
     "video_source_sink_controller.cc",
     "video_source_sink_controller.h",
     "video_stream_encoder.cc",
