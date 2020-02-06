@@ -165,6 +165,8 @@ rtc_library("rtp_rtcp") {
     "source/rtcp_receiver.h",
     "source/rtcp_sender.cc",
     "source/rtcp_sender.h",
+    "source/rtp_descriptor_authentication.cc",
+    "source/rtp_descriptor_authentication.h",
     "source/rtp_format.cc",
     "source/rtp_format.h",
     "source/rtp_format_h264.cc",

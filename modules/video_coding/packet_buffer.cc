@@ -473,7 +473,6 @@ std::unique_ptr<RtpFrameObject> PacketBuffer::AssembleFrame(
       last_packet.video_header.content_type,    //
       first_packet.video_header,                //
       last_packet.video_header.color_space,     //
-      first_packet.generic_descriptor,          //
       RtpPacketInfos(std::move(packet_infos)),  //
       std::move(bitstream));
 }

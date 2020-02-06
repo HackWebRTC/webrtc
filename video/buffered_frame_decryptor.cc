@@ -11,7 +11,10 @@
 #include "video/buffered_frame_decryptor.h"
 
 #include <utility>
+#include <vector>
 
+#include "modules/rtp_rtcp/source/rtp_descriptor_authentication.h"
+#include "modules/video_coding/frame_object.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/field_trial.h"
 
@@ -60,8 +63,8 @@ BufferedFrameDecryptor::FrameDecision BufferedFrameDecryptor::DecryptFrame(
     return FrameDecision::kStash;
   }
   // When using encryption we expect the frame to have the generic descriptor.
-  absl::optional<RtpGenericFrameDescriptor> descriptor =
-      frame->GetGenericFrameDescriptor();
+  const absl::optional<RTPVideoHeader::GenericDescriptorInfo>& descriptor =
+      frame->GetRtpVideoHeader().generic;
   if (!descriptor) {
     RTC_LOG(LS_ERROR) << "No generic frame descriptor found dropping frame.";
     return FrameDecision::kDrop;
@@ -76,9 +79,9 @@ BufferedFrameDecryptor::FrameDecision BufferedFrameDecryptor::DecryptFrame(
                                                      max_plaintext_byte_size);
 
   // Only enable authenticating the header if the field trial is enabled.
-  rtc::ArrayView<const uint8_t> additional_data;
+  std::vector<uint8_t> additional_data;
   if (generic_descriptor_auth_experiment_) {
-    additional_data = descriptor->GetByteRepresentation();
+    additional_data = RtpDescriptorAuthentication(*descriptor);
   }
 
   // Attempt to decrypt the video frame.
