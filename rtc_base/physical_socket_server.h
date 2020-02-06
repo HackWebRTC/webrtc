@@ -199,11 +199,12 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
   virtual void EnableEvents(uint8_t events);
   virtual void DisableEvents(uint8_t events);
 
-  static int TranslateOption(Option opt, int* slevel, int* sopt);
+  int TranslateOption(Option opt, int* slevel, int* sopt);
 
   PhysicalSocketServer* ss_;
   SOCKET s_;
   bool udp_;
+  int family_ = 0;
   CriticalSection crit_;
   int error_ RTC_GUARDED_BY(crit_);
   ConnState state_;

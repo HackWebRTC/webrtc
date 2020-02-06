@@ -1027,6 +1027,15 @@ void SocketTest::GetSetOptionsInternal(const IPAddress& loopback) {
   int current_nd, desired_nd = 1;
   ASSERT_EQ(-1, socket->GetOption(Socket::OPT_NODELAY, &current_nd));
   ASSERT_EQ(-1, socket->SetOption(Socket::OPT_NODELAY, desired_nd));
+
+#if defined(WEBRTC_POSIX)
+  // Check DSCP.
+  int current_dscp, desired_dscp = 1;
+  ASSERT_NE(-1, socket->GetOption(Socket::OPT_DSCP, &current_dscp));
+  ASSERT_NE(-1, socket->SetOption(Socket::OPT_DSCP, desired_dscp));
+  ASSERT_NE(-1, socket->GetOption(Socket::OPT_DSCP, &current_dscp));
+  ASSERT_EQ(desired_dscp, current_dscp);
+#endif
 }
 
 void SocketTest::SocketRecvTimestamp(const IPAddress& loopback) {
