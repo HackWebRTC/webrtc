@@ -21,7 +21,6 @@
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "modules/rtp_rtcp/source/playout_delay_oracle.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "rtc_base/rate_limiter.h"
@@ -140,7 +139,6 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     RTPSenderVideo::Config video_config;
     video_config.clock = &fake_clock;
     video_config.rtp_sender = rtp_rtcp_module_->RtpSender();
-    video_config.playout_delay_oracle = &playout_delay_oracle_;
     video_config.field_trials = &field_trials;
     rtp_sender_video_ = std::make_unique<RTPSenderVideo>(video_config);
     rtp_rtcp_module_->SetRTCPStatus(RtcpMode::kCompound);
@@ -227,7 +225,6 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
 
   std::unique_ptr<ReceiveStatistics> receive_statistics_;
   std::unique_ptr<RtpRtcp> rtp_rtcp_module_;
-  PlayoutDelayOracle playout_delay_oracle_;
   std::unique_ptr<RTPSenderVideo> rtp_sender_video_;
   RtxLoopBackTransport transport_;
   const std::map<int, int> rtx_associated_payload_types_ = {

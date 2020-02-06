@@ -101,7 +101,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
     SendPacketObserver* send_packet_observer = nullptr;
     RateLimiter* retransmission_rate_limiter = nullptr;
     OverheadObserver* overhead_observer = nullptr;
-    RtcpAckObserver* ack_observer = nullptr;
     StreamDataCountersCallback* rtp_stats_callback = nullptr;
 
     int rtcp_report_interval_ms = 0;

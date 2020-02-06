@@ -24,7 +24,6 @@
 #include "modules/pacing/packet_router.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "modules/rtp_rtcp/source/playout_delay_oracle.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "modules/utility/include/process_thread.h"
 #include "modules/video_coding/include/video_codec_interface.h"
@@ -37,13 +36,9 @@ namespace webrtc {
 
 namespace webrtc_internal_rtp_video_sender {
 
-RtpStreamSender::RtpStreamSender(
-    std::unique_ptr<PlayoutDelayOracle> playout_delay_oracle,
-    std::unique_ptr<RtpRtcp> rtp_rtcp,
-    std::unique_ptr<RTPSenderVideo> sender_video)
-    : playout_delay_oracle(std::move(playout_delay_oracle)),
-      rtp_rtcp(std::move(rtp_rtcp)),
-      sender_video(std::move(sender_video)) {}
+RtpStreamSender::RtpStreamSender(std::unique_ptr<RtpRtcp> rtp_rtcp,
+                                 std::unique_ptr<RTPSenderVideo> sender_video)
+    : rtp_rtcp(std::move(rtp_rtcp)), sender_video(std::move(sender_video)) {}
 
 RtpStreamSender::~RtpStreamSender() = default;
 
@@ -177,9 +172,7 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
                                     configuration.local_media_ssrc) !=
                               flexfec_protected_ssrcs.end();
     configuration.flexfec_sender = enable_flexfec ? flexfec_sender : nullptr;
-    auto playout_delay_oracle = std::make_unique<PlayoutDelayOracle>();
 
-    configuration.ack_observer = playout_delay_oracle.get();
     if (rtp_config.rtx.ssrcs.size() > i) {
       configuration.rtx_send_ssrc = rtp_config.rtx.ssrcs[i];
     }
@@ -196,7 +189,6 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
     video_config.clock = configuration.clock;
     video_config.rtp_sender = rtp_rtcp->RtpSender();
     video_config.flexfec_sender = configuration.flexfec_sender;
-    video_config.playout_delay_oracle = playout_delay_oracle.get();
     video_config.frame_encryptor = frame_encryptor;
     video_config.require_frame_encryption =
         crypto_options.sframe.require_frame_encryption;
@@ -214,8 +206,7 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
       video_config.ulpfec_payload_type = rtp_config.ulpfec.ulpfec_payload_type;
     }
     auto sender_video = std::make_unique<RTPSenderVideo>(video_config);
-    rtp_streams.emplace_back(std::move(playout_delay_oracle),
-                             std::move(rtp_rtcp), std::move(sender_video));
+    rtp_streams.emplace_back(std::move(rtp_rtcp), std::move(sender_video));
   }
   return rtp_streams;
 }

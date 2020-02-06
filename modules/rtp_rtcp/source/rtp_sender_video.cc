@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
 #include <limits>
 #include <memory>
 #include <string>
@@ -240,6 +241,10 @@ const char* FrameTypeToString(VideoFrameType frame_type) {
 }
 #endif
 
+bool IsNoopDelay(const PlayoutDelay& delay) {
+  return delay.min_ms == -1 && delay.max_ms == -1;
+}
+
 }  // namespace
 
 RTPSenderVideo::RTPSenderVideo(Clock* clock,
@@ -256,7 +261,6 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock,
         config.clock = clock;
         config.rtp_sender = rtp_sender;
         config.flexfec_sender = flexfec_sender;
-        config.playout_delay_oracle = playout_delay_oracle;
         config.frame_encryptor = frame_encryptor;
         config.require_frame_encryption = require_frame_encryption;
         config.need_rtp_packet_infos = need_rtp_packet_infos;
@@ -274,7 +278,8 @@ RTPSenderVideo::RTPSenderVideo(const Config& config)
               : (kRetransmitBaseLayer | kConditionallyRetransmitHigherLayers)),
       last_rotation_(kVideoRotation_0),
       transmit_color_space_next_frame_(false),
-      playout_delay_oracle_(config.playout_delay_oracle),
+      current_playout_delay_{-1, -1},
+      playout_delay_pending_(false),
       rtp_sequence_number_map_(config.need_rtp_packet_infos
                                    ? std::make_unique<RtpSequenceNumberMap>(
                                          kRtpSequenceNumberMapMaxEntries)
@@ -296,9 +301,7 @@ RTPSenderVideo::RTPSenderVideo(const Config& config)
           config.field_trials
               ->Lookup(kExcludeTransportSequenceNumberFromFecFieldTrial)
               .find("Enabled") == 0),
-      absolute_capture_time_sender_(config.clock) {
-  RTC_DCHECK(playout_delay_oracle_);
-}
+      absolute_capture_time_sender_(config.clock) {}
 
 RTPSenderVideo::~RTPSenderVideo() {}
 
@@ -521,8 +524,16 @@ bool RTPSenderVideo::SendVideo(
       video_header.codec == kVideoCodecH264 &&
       video_header.frame_marking.temporal_id != kNoTemporalIdx;
 
+  MaybeUpdateCurrentPlayoutDelay(video_header);
+  if (video_header.frame_type == VideoFrameType::kVideoFrameKey &&
+      !IsNoopDelay(current_playout_delay_)) {
+    // Force playout delay on key-frames, if set.
+    playout_delay_pending_ = true;
+  }
   const absl::optional<PlayoutDelay> playout_delay =
-      playout_delay_oracle_->PlayoutDelayToSend(video_header.playout_delay);
+      playout_delay_pending_
+          ? absl::optional<PlayoutDelay>(current_playout_delay_)
+          : absl::nullopt;
 
   // According to
   // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/
@@ -651,6 +662,15 @@ bool RTPSenderVideo::SendVideo(
     MinimizeDescriptor(&video_header);
   }
 
+  if (video_header.frame_type == VideoFrameType::kVideoFrameKey ||
+      (IsBaseLayer(video_header) &&
+       !(video_header.generic.has_value() ? video_header.generic->discardable
+                                          : false))) {
+    // This frame has guaranteed delivery, no need to populate playout
+    // delay extensions until it changes again.
+    playout_delay_pending_ = false;
+  }
+
   // TODO(benwright@webrtc.org) - Allocate enough to always encrypt inline.
   rtc::Buffer encrypted_video_payload;
   if (frame_encryptor_ != nullptr) {
@@ -745,10 +765,6 @@ bool RTPSenderVideo::SendVideo(
       first_sequence_number = packet->SequenceNumber();
     }
 
-    if (i == 0) {
-      playout_delay_oracle_->OnSentPacket(packet->SequenceNumber(),
-                                          playout_delay);
-    }
     // No FEC protection for upper temporal layers, if used.
     bool protect_packet = temporal_id == 0 || temporal_id == kNoTemporalIdx;
 
@@ -940,6 +956,54 @@ bool RTPSenderVideo::UpdateConditionalRetransmit(
   }
 
   return false;
+}
+
+void RTPSenderVideo::MaybeUpdateCurrentPlayoutDelay(
+    const RTPVideoHeader& header) {
+  if (IsNoopDelay(header.playout_delay)) {
+    return;
+  }
+
+  PlayoutDelay requested_delay = header.playout_delay;
+
+  if (requested_delay.min_ms > PlayoutDelayLimits::kMaxMs ||
+      requested_delay.max_ms > PlayoutDelayLimits::kMaxMs) {
+    RTC_DLOG(LS_ERROR)
+        << "Requested playout delay values out of range, ignored";
+    return;
+  }
+  if (requested_delay.max_ms != -1 &&
+      requested_delay.min_ms > requested_delay.max_ms) {
+    RTC_DLOG(LS_ERROR) << "Requested playout delay values out of order";
+    return;
+  }
+
+  if (!playout_delay_pending_) {
+    current_playout_delay_ = requested_delay;
+    playout_delay_pending_ = true;
+    return;
+  }
+
+  if ((requested_delay.min_ms == -1 ||
+       requested_delay.min_ms == current_playout_delay_.min_ms) &&
+      (requested_delay.max_ms == -1 ||
+       requested_delay.max_ms == current_playout_delay_.max_ms)) {
+    // No change, ignore.
+    return;
+  }
+
+  if (requested_delay.min_ms == -1) {
+    RTC_DCHECK_GE(requested_delay.max_ms, 0);
+    requested_delay.min_ms =
+        std::min(current_playout_delay_.min_ms, requested_delay.max_ms);
+  }
+  if (requested_delay.max_ms == -1) {
+    requested_delay.max_ms =
+        std::max(current_playout_delay_.max_ms, requested_delay.min_ms);
+  }
+
+  current_playout_delay_ = requested_delay;
+  playout_delay_pending_ = true;
 }
 
 }  // namespace webrtc
