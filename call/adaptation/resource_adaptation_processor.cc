@@ -51,12 +51,11 @@ absl::optional<ConsumerConfigurationPair>
 ResourceAdaptationProcessor::FindNextConfiguration() {
   ResourceUsageState overall_usage = ResourceUsageState::kUnderuse;
   for (auto& resource : resources_) {
-    ResourceUsageState resource_usage = resource->CurrentUsageState();
-    if (resource_usage == ResourceUsageState::kStable) {
+    if (resource->usage_state() == ResourceUsageState::kStable) {
       // If any resource is "stable", we are not underusing.
       if (overall_usage == ResourceUsageState::kUnderuse)
         overall_usage = ResourceUsageState::kStable;
-    } else if (resource_usage == ResourceUsageState::kOveruse) {
+    } else if (resource->usage_state() == ResourceUsageState::kOveruse) {
       // If any resource is "overuse", we are overusing.
       overall_usage = ResourceUsageState::kOveruse;
       break;

@@ -49,11 +49,11 @@ class CpuOveruseObserverImpl : public AdaptationObserverInterface {
   CpuOveruseObserverImpl() : overuse_(0), normaluse_(0) {}
   virtual ~CpuOveruseObserverImpl() {}
 
-  bool AdaptDown(AdaptReason) {
+  bool AdaptDown(AdaptReason) override {
     ++overuse_;
     return true;
   }
-  void AdaptUp(AdaptReason) { ++normaluse_; }
+  void AdaptUp(AdaptReason) override { ++normaluse_; }
 
   int overuse_;
   int normaluse_;

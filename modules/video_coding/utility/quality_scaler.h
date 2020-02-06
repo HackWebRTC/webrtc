@@ -28,6 +28,11 @@ namespace webrtc {
 
 // An interface for signaling requests to limit or increase the resolution or
 // framerate of the captured video stream.
+// TODO(hbos): Can we remove AdaptationObserverInterface in favor of
+// ResourceUsageListener? If we need to adapt that is because of resource usage.
+// A multi-stream and multi-resource aware solution needs to sparate the notion
+// of being resource constrained from the decision to downgrade a specific
+// stream.
 class AdaptationObserverInterface {
  public:
   // Indicates if the adaptation is due to overuse of the CPU resources, or if

@@ -189,8 +189,8 @@ TEST(ResourceAdaptationProcessorTest,
   // When the first resource is overused.
   EXPECT_TRUE(processor.FindNextConfiguration().has_value());
   // When the second resource is overused.
-  first_resource->set_usage(ResourceUsageState::kStable);
-  second_resource->set_usage(ResourceUsageState::kOveruse);
+  first_resource->set_usage_state(ResourceUsageState::kStable);
+  second_resource->set_usage_state(ResourceUsageState::kOveruse);
   EXPECT_TRUE(processor.FindNextConfiguration().has_value());
 }
 
@@ -207,7 +207,7 @@ TEST(ResourceAdaptationProcessorTest,
   // When only the first resource is underused.
   EXPECT_EQ(absl::nullopt, processor.FindNextConfiguration());
   // When all resources are underused.
-  second_resource->set_usage(ResourceUsageState::kUnderuse);
+  second_resource->set_usage_state(ResourceUsageState::kUnderuse);
   EXPECT_TRUE(processor.FindNextConfiguration().has_value());
 }
 
@@ -250,7 +250,7 @@ TEST(ResourceAdaptationProcessorTest,
   consumer->SetConfiguration(d);
 
   // We should expect to adapt up: d -> b -> c -> a
-  resource->set_usage(ResourceUsageState::kUnderuse);
+  resource->set_usage_state(ResourceUsageState::kUnderuse);
   EXPECT_EQ(b, processor.FindNextConfiguration()->configuration);
   consumer->SetConfiguration(b);
   EXPECT_EQ(c, processor.FindNextConfiguration()->configuration);

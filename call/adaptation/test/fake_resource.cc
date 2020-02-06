@@ -14,39 +14,14 @@
 
 namespace webrtc {
 
-FakeResource::FakeResource(std::string name, ResourceUsageState usage)
-    : name_(std::move(name)), usage_(usage) {}
-
-FakeResource::FakeResource(ResourceUsageState usage)
-    : FakeResource("UnnamedResource", usage) {}
+FakeResource::FakeResource(ResourceUsageState usage_state) : Resource() {
+  set_usage_state(usage_state);
+}
 
 FakeResource::~FakeResource() {}
 
-void FakeResource::set_usage(ResourceUsageState usage) {
-  usage_ = usage;
-}
-
-std::string FakeResource::Name() const {
-  return name_;
-}
-
-std::string FakeResource::UsageUnitsOfMeasurement() const {
-  return "%";
-}
-
-double FakeResource::CurrentUsage() const {
-  switch (usage_) {
-    case ResourceUsageState::kOveruse:
-      return 1.2;
-    case ResourceUsageState::kStable:
-      return 0.8;
-    case ResourceUsageState::kUnderuse:
-      return 0.4;
-  }
-}
-
-ResourceUsageState FakeResource::CurrentUsageState() const {
-  return usage_;
+void FakeResource::set_usage_state(ResourceUsageState usage_state) {
+  OnResourceUsageStateMeasured(usage_state);
 }
 
 }  // namespace webrtc
