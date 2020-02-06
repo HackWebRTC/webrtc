@@ -68,7 +68,6 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       nack_last_time_sent_full_ms_(0),
       nack_last_seq_number_sent_(0),
       remote_bitrate_(configuration.remote_bitrate_estimator),
-      ack_observer_(configuration.ack_observer),
       rtt_stats_(configuration.rtt_stats),
       rtt_ms_(0) {
   if (!configuration.receiver_only) {
@@ -736,7 +735,7 @@ void ModuleRtpRtcpImpl::OnReceivedNack(
 
 void ModuleRtpRtcpImpl::OnReceivedRtcpReportBlocks(
     const ReportBlockList& report_blocks) {
-  if (ack_observer_) {
+  if (rtp_sender_) {
     uint32_t ssrc = SSRC();
     absl::optional<uint32_t> rtx_ssrc;
     if (rtp_sender_->packet_generator.RtxStatus() != kRtxOff) {
@@ -746,8 +745,6 @@ void ModuleRtpRtcpImpl::OnReceivedRtcpReportBlocks(
     for (const RTCPReportBlock& report_block : report_blocks) {
       if (ssrc == report_block.source_ssrc) {
         rtp_sender_->packet_generator.OnReceivedAckOnSsrc(
-            report_block.extended_highest_sequence_number);
-        ack_observer_->OnReceivedAck(
             report_block.extended_highest_sequence_number);
       } else if (rtx_ssrc && *rtx_ssrc == report_block.source_ssrc) {
         rtp_sender_->packet_generator.OnReceivedAckOnRtxSsrc(

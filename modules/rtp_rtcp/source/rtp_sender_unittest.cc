@@ -649,12 +649,10 @@ TEST_P(RtpSenderTestWithoutPacer, OnSendSideDelayUpdated) {
   config.event_log = &mock_rtc_event_log_;
   rtp_sender_context_ = std::make_unique<RtpSenderContext>(config);
 
-  PlayoutDelayOracle playout_delay_oracle;
   FieldTrialBasedConfig field_trials;
   RTPSenderVideo::Config video_config;
   video_config.clock = &fake_clock_;
   video_config.rtp_sender = rtp_sender();
-  video_config.playout_delay_oracle = &playout_delay_oracle;
   video_config.field_trials = &field_trials;
   RTPSenderVideo rtp_sender_video(video_config);
 
@@ -1150,12 +1148,10 @@ TEST_P(RtpSenderTest, OnSendPacketNotUpdatedForRetransmits) {
 TEST_P(RtpSenderTestWithoutPacer, SendGenericVideo) {
   const uint8_t kPayloadType = 127;
   const VideoCodecType kCodecType = VideoCodecType::kVideoCodecGeneric;
-  PlayoutDelayOracle playout_delay_oracle;
   FieldTrialBasedConfig field_trials;
   RTPSenderVideo::Config video_config;
   video_config.clock = &fake_clock_;
   video_config.rtp_sender = rtp_sender();
-  video_config.playout_delay_oracle = &playout_delay_oracle;
   video_config.field_trials = &field_trials;
   RTPSenderVideo rtp_sender_video(video_config);
   uint8_t payload[] = {47, 11, 32, 93, 89};
@@ -1194,12 +1190,10 @@ TEST_P(RtpSenderTestWithoutPacer, SendRawVideo) {
   const uint8_t kPayloadType = 111;
   const uint8_t payload[] = {11, 22, 33, 44, 55};
 
-  PlayoutDelayOracle playout_delay_oracle;
   FieldTrialBasedConfig field_trials;
   RTPSenderVideo::Config video_config;
   video_config.clock = &fake_clock_;
   video_config.rtp_sender = rtp_sender();
-  video_config.playout_delay_oracle = &playout_delay_oracle;
   video_config.field_trials = &field_trials;
   RTPSenderVideo rtp_sender_video(video_config);
 
@@ -1241,13 +1235,11 @@ TEST_P(RtpSenderTest, SendFlexfecPackets) {
   rtp_sender_context_->packet_history_.SetStorePacketsStatus(
       RtpPacketHistory::StorageMode::kStoreAndCull, 10);
 
-  PlayoutDelayOracle playout_delay_oracle;
   FieldTrialBasedConfig field_trials;
   RTPSenderVideo::Config video_config;
   video_config.clock = &fake_clock_;
   video_config.rtp_sender = rtp_sender();
   video_config.flexfec_sender = &flexfec_sender;
-  video_config.playout_delay_oracle = &playout_delay_oracle;
   video_config.field_trials = &field_trials;
   RTPSenderVideo rtp_sender_video(video_config);
 
@@ -1327,13 +1319,11 @@ TEST_P(RtpSenderTestWithoutPacer, SendFlexfecPackets) {
 
   rtp_sender()->SetSequenceNumber(kSeqNum);
 
-  PlayoutDelayOracle playout_delay_oracle;
   FieldTrialBasedConfig field_trials;
   RTPSenderVideo::Config video_config;
   video_config.clock = &fake_clock_;
   video_config.rtp_sender = rtp_sender();
   video_config.flexfec_sender = &flexfec_sender;
-  video_config.playout_delay_oracle = &playout_delay_oracle;
   video_config.field_trials = &field_trials;
   RTPSenderVideo rtp_sender_video(video_config);
 
@@ -1601,13 +1591,11 @@ TEST_P(RtpSenderTest, FecOverheadRate) {
 
   rtp_sender()->SetSequenceNumber(kSeqNum);
 
-  PlayoutDelayOracle playout_delay_oracle;
   FieldTrialBasedConfig field_trials;
   RTPSenderVideo::Config video_config;
   video_config.clock = &fake_clock_;
   video_config.rtp_sender = rtp_sender();
   video_config.flexfec_sender = &flexfec_sender;
-  video_config.playout_delay_oracle = &playout_delay_oracle;
   video_config.field_trials = &field_trials;
   RTPSenderVideo rtp_sender_video(video_config);
   // Parameters selected to generate a single FEC packet per media packet.
@@ -1677,12 +1665,10 @@ TEST_P(RtpSenderTest, BitrateCallbacks) {
   config.retransmission_rate_limiter = &retransmission_rate_limiter_;
   rtp_sender_context_ = std::make_unique<RtpSenderContext>(config);
 
-  PlayoutDelayOracle playout_delay_oracle;
   FieldTrialBasedConfig field_trials;
   RTPSenderVideo::Config video_config;
   video_config.clock = &fake_clock_;
   video_config.rtp_sender = rtp_sender();
-  video_config.playout_delay_oracle = &playout_delay_oracle;
   video_config.field_trials = &field_trials;
   RTPSenderVideo rtp_sender_video(video_config);
   const VideoCodecType kCodecType = VideoCodecType::kVideoCodecGeneric;
@@ -1735,12 +1721,10 @@ TEST_P(RtpSenderTest, BitrateCallbacks) {
 TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
   const uint8_t kPayloadType = 127;
   const VideoCodecType kCodecType = VideoCodecType::kVideoCodecGeneric;
-  PlayoutDelayOracle playout_delay_oracle;
   FieldTrialBasedConfig field_trials;
   RTPSenderVideo::Config video_config;
   video_config.clock = &fake_clock_;
   video_config.rtp_sender = rtp_sender();
-  video_config.playout_delay_oracle = &playout_delay_oracle;
   video_config.field_trials = &field_trials;
   RTPSenderVideo rtp_sender_video(video_config);
   uint8_t payload[] = {47, 11, 32, 93, 89};
@@ -1792,12 +1776,10 @@ TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacksUlpfec) {
   const uint8_t kUlpfecPayloadType = 97;
   const uint8_t kPayloadType = 127;
   const VideoCodecType kCodecType = VideoCodecType::kVideoCodecGeneric;
-  PlayoutDelayOracle playout_delay_oracle;
   FieldTrialBasedConfig field_trials;
   RTPSenderVideo::Config video_config;
   video_config.clock = &fake_clock_;
   video_config.rtp_sender = rtp_sender();
-  video_config.playout_delay_oracle = &playout_delay_oracle;
   video_config.field_trials = &field_trials;
   video_config.red_payload_type = kRedPayloadType;
   video_config.ulpfec_payload_type = kUlpfecPayloadType;
