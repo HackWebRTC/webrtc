@@ -54,7 +54,6 @@ enum : int {  // The first valid value is 1.
   kVideoRotationExtensionId,
   kVideoTimingExtensionId,
   kAbsoluteCaptureTimeExtensionId,
-  kPlayoutDelayExtensionId
 };
 
 constexpr int kPayload = 100;
@@ -88,8 +87,6 @@ class LoopbackTransportTest : public webrtc::Transport {
         kFrameMarkingExtensionId);
     receivers_extensions_.Register<AbsoluteCaptureTimeExtension>(
         kAbsoluteCaptureTimeExtensionId);
-    receivers_extensions_.Register<PlayoutDelayLimits>(
-        kPlayoutDelayExtensionId);
   }
 
   bool SendRtp(const uint8_t* data,
@@ -124,6 +121,7 @@ class TestRtpSenderVideo : public RTPSenderVideo {
           config.clock = clock;
           config.rtp_sender = rtp_sender;
           config.flexfec_sender = flexfec_sender;
+          config.playout_delay_oracle = &playout_delay_oracle_;
           config.field_trials = &field_trials;
           return config;
         }()) {}
@@ -136,6 +134,7 @@ class TestRtpSenderVideo : public RTPSenderVideo {
                                                retransmission_settings,
                                                expected_retransmission_time_ms);
   }
+  PlayoutDelayOracle playout_delay_oracle_;
 };
 
 class FieldTrials : public WebRtcKeyValueConfig {
@@ -791,63 +790,6 @@ TEST_P(RtpSenderVideoTest, AbsoluteCaptureTime) {
     }
   }
   EXPECT_EQ(packets_with_abs_capture_time, 1);
-}
-
-TEST_P(RtpSenderVideoTest, PopulatesPlayoutDelay) {
-  // Single packet frames.
-  constexpr size_t kPacketSize = 123;
-  uint8_t kFrame[kPacketSize];
-  rtp_module_->RegisterRtpHeaderExtension(PlayoutDelayLimits::kUri,
-                                          kPlayoutDelayExtensionId);
-  const PlayoutDelay kExpectedDelay = {10, 20};
-
-  // Send initial key-frame without playout delay.
-  RTPVideoHeader hdr;
-  hdr.frame_type = VideoFrameType::kVideoFrameKey;
-  hdr.codec = VideoCodecType::kVideoCodecVP8;
-  auto& vp8_header = hdr.video_type_header.emplace<RTPVideoHeaderVP8>();
-  vp8_header.temporalIdx = 0;
-
-  rtp_sender_video_.SendVideo(kPayload, kType, kTimestamp, 0, kFrame, nullptr,
-                              hdr, kDefaultExpectedRetransmissionTimeMs);
-  EXPECT_FALSE(
-      transport_.last_sent_packet().HasExtension<PlayoutDelayLimits>());
-
-  // Set playout delay on a discardable frame.
-  hdr.playout_delay = kExpectedDelay;
-  hdr.frame_type = VideoFrameType::kVideoFrameDelta;
-  vp8_header.temporalIdx = 1;
-  rtp_sender_video_.SendVideo(kPayload, kType, kTimestamp, 0, kFrame, nullptr,
-                              hdr, kDefaultExpectedRetransmissionTimeMs);
-  PlayoutDelay received_delay = PlayoutDelay::Noop();
-  ASSERT_TRUE(transport_.last_sent_packet().GetExtension<PlayoutDelayLimits>(
-      &received_delay));
-  EXPECT_EQ(received_delay, kExpectedDelay);
-
-  // Set playout delay on a non-discardable frame, the extension should still
-  // be populated since dilvery wasn't guaranteed on the last one.
-  hdr.playout_delay = PlayoutDelay::Noop();  // Inidcates "no change".
-  vp8_header.temporalIdx = 0;
-  rtp_sender_video_.SendVideo(kPayload, kType, kTimestamp, 0, kFrame, nullptr,
-                              hdr, kDefaultExpectedRetransmissionTimeMs);
-  ASSERT_TRUE(transport_.last_sent_packet().GetExtension<PlayoutDelayLimits>(
-      &received_delay));
-  EXPECT_EQ(received_delay, kExpectedDelay);
-
-  // The next frame does not need the extensions since it's delivery has
-  // already been guaranteed.
-  rtp_sender_video_.SendVideo(kPayload, kType, kTimestamp, 0, kFrame, nullptr,
-                              hdr, kDefaultExpectedRetransmissionTimeMs);
-  EXPECT_FALSE(
-      transport_.last_sent_packet().HasExtension<PlayoutDelayLimits>());
-
-  // Insert key-frame, we need to refresh the state here.
-  hdr.frame_type = VideoFrameType::kVideoFrameKey;
-  rtp_sender_video_.SendVideo(kPayload, kType, kTimestamp, 0, kFrame, nullptr,
-                              hdr, kDefaultExpectedRetransmissionTimeMs);
-  ASSERT_TRUE(transport_.last_sent_packet().GetExtension<PlayoutDelayLimits>(
-      &received_delay));
-  EXPECT_EQ(received_delay, kExpectedDelay);
 }
 
 INSTANTIATE_TEST_SUITE_P(WithAndWithoutOverhead,

@@ -70,6 +70,7 @@ class RTPSenderVideo {
     Clock* clock = nullptr;
     RTPSender* rtp_sender = nullptr;
     FlexfecSender* flexfec_sender = nullptr;
+    PlayoutDelayOracle* playout_delay_oracle = nullptr;
     FrameEncryptorInterface* frame_encryptor = nullptr;
     bool require_frame_encryption = false;
     bool need_rtp_packet_infos = false;
@@ -180,9 +181,6 @@ class RTPSenderVideo {
                                    int64_t expected_retransmission_time_ms)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(stats_crit_);
 
-  void MaybeUpdateCurrentPlayoutDelay(const RTPVideoHeader& header)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(send_checker_);
-
   RTPSender* const rtp_sender_;
   Clock* const clock_;
 
@@ -197,11 +195,10 @@ class RTPSenderVideo {
   std::unique_ptr<FrameDependencyStructure> video_structure_
       RTC_GUARDED_BY(send_checker_);
 
-  // Current target playout delay.
-  PlayoutDelay current_playout_delay_ RTC_GUARDED_BY(send_checker_);
-  // Flag indicating if we need to propagate |current_playout_delay_| in order
-  // to guarantee it gets delivered.
-  bool playout_delay_pending_;
+  // Tracks the current request for playout delay limits from application
+  // and decides whether the current RTP frame should include the playout
+  // delay extension on header.
+  PlayoutDelayOracle* const playout_delay_oracle_;
 
   // Should never be held when calling out of this class.
   rtc::CriticalSection crit_;

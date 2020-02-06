@@ -340,6 +340,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   RemoteBitrateEstimator* const remote_bitrate_;
 
+  RtcpAckObserver* const ack_observer_;
+
   RtcpRttStats* const rtt_stats_;
 
   // The processed RTT from RtcpRttStats.

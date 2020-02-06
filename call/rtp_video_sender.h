@@ -50,7 +50,8 @@ namespace webrtc_internal_rtp_video_sender {
 // RTP state for a single simulcast stream. Internal to the implementation of
 // RtpVideoSender.
 struct RtpStreamSender {
-  RtpStreamSender(std::unique_ptr<RtpRtcp> rtp_rtcp,
+  RtpStreamSender(std::unique_ptr<PlayoutDelayOracle> playout_delay_oracle,
+                  std::unique_ptr<RtpRtcp> rtp_rtcp,
                   std::unique_ptr<RTPSenderVideo> sender_video);
   ~RtpStreamSender();
 
@@ -58,6 +59,7 @@ struct RtpStreamSender {
   RtpStreamSender& operator=(RtpStreamSender&&) = default;
 
   // Note: Needs pointer stability.
+  std::unique_ptr<PlayoutDelayOracle> playout_delay_oracle;
   std::unique_ptr<RtpRtcp> rtp_rtcp;
   std::unique_ptr<RTPSenderVideo> sender_video;
 };

@@ -17,6 +17,7 @@
 #include "api/transport/field_trial_based_config.h"
 #include "api/video_codecs/video_codec.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/playout_delay_oracle.h"
 #include "modules/rtp_rtcp/source/rtcp_packet.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/nack.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
@@ -181,6 +182,7 @@ class RtpRtcpImplTest : public ::testing::Test {
     RTPSenderVideo::Config video_config;
     video_config.clock = &clock_;
     video_config.rtp_sender = sender_.impl_->RtpSender();
+    video_config.playout_delay_oracle = &playout_delay_oracle_;
     video_config.field_trials = &field_trials;
     sender_video_ = std::make_unique<RTPSenderVideo>(video_config);
 
@@ -199,6 +201,7 @@ class RtpRtcpImplTest : public ::testing::Test {
 
   SimulatedClock clock_;
   RtpRtcpModule sender_;
+  PlayoutDelayOracle playout_delay_oracle_;
   std::unique_ptr<RTPSenderVideo> sender_video_;
   RtpRtcpModule receiver_;
   VideoCodec codec_;
