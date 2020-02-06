@@ -248,6 +248,7 @@ if (!is_component_build) {
   # is_component_build=true because it depends on WebRTC testonly code
   # which is not part of //third_party/webrtc_overrides:webrtc_component.
   rtc_executable("video_replay") {
+    visibility = [ "*" ]
     testonly = true
     sources = [ "video_replay.cc" ]
     deps = [
