@@ -18,6 +18,7 @@
 #include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/video/video_timing.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet.h"
 
@@ -25,13 +26,8 @@ namespace webrtc {
 // Class to hold rtp packet with metadata for sender side.
 class RtpPacketToSend : public RtpPacket {
  public:
-  enum class Type {
-    kAudio,                   // Audio media packets.
-    kVideo,                   // Video media packets.
-    kRetransmission,          // RTX (usually) packets send as response to NACK.
-    kForwardErrorCorrection,  // FEC packets.
-    kPadding                  // RTX or plain padding sent to maintain BWE.
-  };
+  // RtpPacketToSend::Type is deprecated. Use RtpPacketMediaType directly.
+  using Type = RtpPacketMediaType;
 
   explicit RtpPacketToSend(const ExtensionManager* extensions);
   RtpPacketToSend(const ExtensionManager* extensions, size_t capacity);
@@ -48,8 +44,10 @@ class RtpPacketToSend : public RtpPacket {
 
   void set_capture_time_ms(int64_t time) { capture_time_ms_ = time; }
 
-  void set_packet_type(Type type) { packet_type_ = type; }
-  absl::optional<Type> packet_type() const { return packet_type_; }
+  void set_packet_type(RtpPacketMediaType type) { packet_type_ = type; }
+  absl::optional<RtpPacketMediaType> packet_type() const {
+    return packet_type_;
+  }
 
   // If this is a retransmission, indicates the sequence number of the original
   // media packet that this packet represents. If RTX is used this will likely
@@ -102,7 +100,7 @@ class RtpPacketToSend : public RtpPacket {
 
  private:
   int64_t capture_time_ms_ = 0;
-  absl::optional<Type> packet_type_;
+  absl::optional<RtpPacketMediaType> packet_type_;
   bool allow_retransmission_ = false;
   absl::optional<uint16_t> retransmitted_sequence_number_;
   std::vector<uint8_t> application_data_;

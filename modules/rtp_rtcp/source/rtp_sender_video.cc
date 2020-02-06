@@ -346,7 +346,7 @@ void RTPSenderVideo::AppendAsRedMaybeWithUlpfec(
   }
 
   // Send |red_packet| instead of |packet| for allocated sequence number.
-  red_packet->set_packet_type(RtpPacketToSend::Type::kVideo);
+  red_packet->set_packet_type(RtpPacketMediaType::kVideo);
   red_packet->set_allow_retransmission(media_packet->allow_retransmission());
   packets->emplace_back(std::move(red_packet));
 
@@ -357,7 +357,7 @@ void RTPSenderVideo::AppendAsRedMaybeWithUlpfec(
         new RtpPacketToSend(*media_packet));
     RTC_CHECK(rtp_packet->Parse(fec_packet->data(), fec_packet->length()));
     rtp_packet->set_capture_time_ms(media_packet->capture_time_ms());
-    rtp_packet->set_packet_type(RtpPacketToSend::Type::kForwardErrorCorrection);
+    rtp_packet->set_packet_type(RtpPacketMediaType::kForwardErrorCorrection);
     rtp_packet->set_allow_retransmission(false);
     RTC_DCHECK_EQ(fec_packet->length(), rtp_packet->size());
     packets->emplace_back(std::move(rtp_packet));
@@ -372,8 +372,7 @@ void RTPSenderVideo::GenerateAndAppendFlexfec(
     std::vector<std::unique_ptr<RtpPacketToSend>> fec_packets =
         flexfec_sender_->GetFecPackets();
     for (auto& fec_packet : fec_packets) {
-      fec_packet->set_packet_type(
-          RtpPacketToSend::Type::kForwardErrorCorrection);
+      fec_packet->set_packet_type(RtpPacketMediaType::kForwardErrorCorrection);
       fec_packet->set_allow_retransmission(false);
       packets->emplace_back(std::move(fec_packet));
     }
@@ -386,8 +385,7 @@ void RTPSenderVideo::LogAndSendToNetwork(
   int64_t now_ms = clock_->TimeInMilliseconds();
 #if BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
   for (const auto& packet : packets) {
-    if (packet->packet_type() ==
-        RtpPacketToSend::Type::kForwardErrorCorrection) {
+    if (packet->packet_type() == RtpPacketMediaType::kForwardErrorCorrection) {
       const uint32_t ssrc = packet->Ssrc();
       BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoFecBitrate_kbps", now_ms,
                                       FecOverheadRate() / 1000, ssrc);
@@ -400,11 +398,11 @@ void RTPSenderVideo::LogAndSendToNetwork(
     size_t packetized_payload_size = 0;
     for (const auto& packet : packets) {
       switch (*packet->packet_type()) {
-        case RtpPacketToSend::Type::kVideo:
+        case RtpPacketMediaType::kVideo:
           video_bitrate_.Update(packet->size(), now_ms);
           packetized_payload_size += packet->payload_size();
           break;
-        case RtpPacketToSend::Type::kForwardErrorCorrection:
+        case RtpPacketMediaType::kForwardErrorCorrection:
           fec_bitrate_.Update(packet->size(), clock_->TimeInMilliseconds());
           break;
         default:
@@ -763,7 +761,7 @@ bool RTPSenderVideo::SendVideo(
       AppendAsRedMaybeWithUlpfec(std::move(packet), protect_packet,
                                  &rtp_packets);
     } else {
-      packet->set_packet_type(RtpPacketToSend::Type::kVideo);
+      packet->set_packet_type(RtpPacketMediaType::kVideo);
       const RtpPacketToSend& media_packet = *packet;
       rtp_packets.emplace_back(std::move(packet));
       if (flexfec_enabled()) {

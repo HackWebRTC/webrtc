@@ -128,7 +128,7 @@ std::vector<std::unique_ptr<RtpPacketToSend>> FlexfecSender::GetFecPackets() {
     std::unique_ptr<RtpPacketToSend> fec_packet_to_send(
         new RtpPacketToSend(&rtp_header_extension_map_));
     fec_packet_to_send->set_packet_type(
-        RtpPacketToSend::Type::kForwardErrorCorrection);
+        RtpPacketMediaType::kForwardErrorCorrection);
 
     // RTP header.
     fec_packet_to_send->SetMarker(false);

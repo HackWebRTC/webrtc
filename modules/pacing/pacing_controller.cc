@@ -50,22 +50,22 @@ bool IsEnabled(const WebRtcKeyValueConfig& field_trials,
   return field_trials.Lookup(key).find("Enabled") == 0;
 }
 
-int GetPriorityForType(RtpPacketToSend::Type type) {
+int GetPriorityForType(RtpPacketMediaType type) {
   // Lower number takes priority over higher.
   switch (type) {
-    case RtpPacketToSend::Type::kAudio:
+    case RtpPacketMediaType::kAudio:
       // Audio is always prioritized over other packet types.
       return kFirstPriority + 1;
-    case RtpPacketToSend::Type::kRetransmission:
+    case RtpPacketMediaType::kRetransmission:
       // Send retransmissions before new media.
       return kFirstPriority + 2;
-    case RtpPacketToSend::Type::kVideo:
-    case RtpPacketToSend::Type::kForwardErrorCorrection:
+    case RtpPacketMediaType::kVideo:
+    case RtpPacketMediaType::kForwardErrorCorrection:
       // Video has "normal" priority, in the old speak.
       // Send redundancy concurrently to video. If it is delayed it might have a
       // lower chance of being useful.
       return kFirstPriority + 3;
-    case RtpPacketToSend::Type::kPadding:
+    case RtpPacketMediaType::kPadding:
       // Packets that are in themselves likely useless, only sent to keep the
       // BWE high.
       return kFirstPriority + 4;
@@ -530,7 +530,7 @@ void PacingController::ProcessPackets() {
 
     RTC_DCHECK(rtp_packet);
     RTC_DCHECK(rtp_packet->packet_type().has_value());
-    const RtpPacketToSend::Type packet_type = *rtp_packet->packet_type();
+    const RtpPacketMediaType packet_type = *rtp_packet->packet_type();
     DataSize packet_size = DataSize::bytes(rtp_packet->payload_size() +
                                            rtp_packet->padding_size());
 
@@ -643,13 +643,13 @@ std::unique_ptr<RtpPacketToSend> PacingController::GetPendingPacket(
   return packet_queue_.Pop();
 }
 
-void PacingController::OnPacketSent(RtpPacketToSend::Type packet_type,
+void PacingController::OnPacketSent(RtpPacketMediaType packet_type,
                                     DataSize packet_size,
                                     Timestamp send_time) {
   if (!first_sent_packet_time_) {
     first_sent_packet_time_ = send_time;
   }
-  bool audio_packet = packet_type == RtpPacketToSend::Type::kAudio;
+  bool audio_packet = packet_type == RtpPacketMediaType::kAudio;
   if (!audio_packet || account_for_audio_) {
     // Update media bytes sent.
     UpdateBudgetWithSentData(packet_size);

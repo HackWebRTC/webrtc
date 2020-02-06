@@ -212,6 +212,14 @@ class RtcpBandwidthObserver {
   virtual ~RtcpBandwidthObserver() {}
 };
 
+enum class RtpPacketMediaType {
+  kAudio,                   // Audio media packets.
+  kVideo,                   // Video media packets.
+  kRetransmission,          // RTX (usually) packets send as response to NACK.
+  kForwardErrorCorrection,  // FEC packets.
+  kPadding                  // RTX or plain padding sent to maintain BWE.
+};
+
 struct RtpPacketSendInfo {
  public:
   RtpPacketSendInfo() = default;
@@ -222,8 +230,10 @@ struct RtpPacketSendInfo {
   // Get rid of this flag when all code paths populate |rtp_sequence_number|.
   bool has_rtp_sequence_number = false;
   size_t length = 0;
+  absl::optional<RtpPacketMediaType> packet_type;
   PacedPacketInfo pacing_info;
 };
+
 class NetworkStateEstimateObserver {
  public:
   virtual void OnRemoteNetworkEstimate(NetworkStateEstimate estimate) = 0;

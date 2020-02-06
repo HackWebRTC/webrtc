@@ -266,7 +266,7 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
   if (!packet) {
     return -1;
   }
-  packet->set_packet_type(RtpPacketToSend::Type::kRetransmission);
+  packet->set_packet_type(RtpPacketMediaType::kRetransmission);
   std::vector<std::unique_ptr<RtpPacketToSend>> packets;
   packets.emplace_back(std::move(packet));
   paced_sender_->EnqueuePackets(std::move(packets));
@@ -334,7 +334,7 @@ std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
       }
 
       bytes_left -= std::min(bytes_left, packet->payload_size());
-      packet->set_packet_type(RtpPacketToSend::Type::kPadding);
+      packet->set_packet_type(RtpPacketMediaType::kPadding);
       padding_packets.push_back(std::move(packet));
     }
   }
@@ -362,7 +362,7 @@ std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
   while (bytes_left > 0) {
     auto padding_packet =
         std::make_unique<RtpPacketToSend>(&rtp_header_extension_map_);
-    padding_packet->set_packet_type(RtpPacketToSend::Type::kPadding);
+    padding_packet->set_packet_type(RtpPacketMediaType::kPadding);
     padding_packet->SetMarker(false);
     padding_packet->SetTimestamp(last_rtp_timestamp_);
     padding_packet->set_capture_time_ms(capture_time_ms_);

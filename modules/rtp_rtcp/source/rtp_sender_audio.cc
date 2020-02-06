@@ -302,7 +302,7 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
   TRACE_EVENT_ASYNC_END2("webrtc", "Audio", rtp_timestamp, "timestamp",
                          packet->Timestamp(), "seqnum",
                          packet->SequenceNumber());
-  packet->set_packet_type(RtpPacketToSend::Type::kAudio);
+  packet->set_packet_type(RtpPacketMediaType::kAudio);
   packet->set_allow_retransmission(true);
   bool send_result = rtp_sender_->SendToNetwork(std::move(packet));
   if (first_packet_sent_()) {
@@ -387,7 +387,7 @@ bool RTPSenderAudio::SendTelephoneEventPacket(bool ended,
     dtmfbuffer[1] = E | R | volume;
     ByteWriter<uint16_t>::WriteBigEndian(dtmfbuffer + 2, duration);
 
-    packet->set_packet_type(RtpPacketToSend::Type::kAudio);
+    packet->set_packet_type(RtpPacketMediaType::kAudio);
     packet->set_allow_retransmission(true);
     result = rtp_sender_->SendToNetwork(std::move(packet));
     send_count--;

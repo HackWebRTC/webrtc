@@ -29,6 +29,7 @@
 #include "modules/pacing/round_robin_packet_queue.h"
 #include "modules/pacing/rtp_packet_pacer.h"
 #include "modules/rtp_rtcp/include/rtp_packet_sender.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/experiments/field_trial_parser.h"
@@ -162,7 +163,7 @@ class PacingController {
       const PacedPacketInfo& pacing_info,
       Timestamp target_send_time,
       Timestamp now);
-  void OnPacketSent(RtpPacketToSend::Type packet_type,
+  void OnPacketSent(RtpPacketMediaType packet_type,
                     DataSize packet_size,
                     Timestamp send_time);
   void OnPaddingSent(DataSize padding_sent);

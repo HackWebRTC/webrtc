@@ -35,7 +35,7 @@ RoundRobinPacketQueue::QueuedPacket::QueuedPacket(
       enqueue_time_(enqueue_time),
       enqueue_order_(enqueue_order),
       is_retransmission_(packet->packet_type() ==
-                         RtpPacketToSend::Type::kRetransmission),
+                         RtpPacketMediaType::kRetransmission),
       enqueue_time_it_(enqueue_time_it),
       owned_packet_(packet.release()) {}
 
@@ -53,7 +53,7 @@ int RoundRobinPacketQueue::QueuedPacket::Priority() const {
   return priority_;
 }
 
-RtpPacketToSend::Type RoundRobinPacketQueue::QueuedPacket::Type() const {
+RtpPacketMediaType RoundRobinPacketQueue::QueuedPacket::Type() const {
   return *owned_packet_->packet_type();
 }
 
@@ -66,7 +66,7 @@ Timestamp RoundRobinPacketQueue::QueuedPacket::EnqueueTime() const {
 }
 
 bool RoundRobinPacketQueue::QueuedPacket::IsRetransmission() const {
-  return Type() == RtpPacketToSend::Type::kRetransmission;
+  return Type() == RtpPacketMediaType::kRetransmission;
 }
 
 uint64_t RoundRobinPacketQueue::QueuedPacket::EnqueueOrder() const {
@@ -215,7 +215,7 @@ bool RoundRobinPacketQueue::NextPacketIsAudio() const {
 
   auto stream_info_it = streams_.find(ssrc);
   return stream_info_it->second.packet_queue.top().Type() ==
-         RtpPacketToSend::Type::kAudio;
+         RtpPacketMediaType::kAudio;
 }
 
 Timestamp RoundRobinPacketQueue::OldestEnqueueTime() const {

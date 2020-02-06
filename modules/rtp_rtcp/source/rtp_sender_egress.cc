@@ -140,9 +140,8 @@ void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
     }
   }
 
-  const bool is_media =
-      packet->packet_type() == RtpPacketToSend::Type::kAudio ||
-      packet->packet_type() == RtpPacketToSend::Type::kVideo;
+  const bool is_media = packet->packet_type() == RtpPacketMediaType::kAudio ||
+                        packet->packet_type() == RtpPacketMediaType::kVideo;
 
   // Downstream code actually uses this flag to distinguish between media and
   // everything else.
@@ -157,8 +156,8 @@ void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
   options.application_data.assign(packet->application_data().begin(),
                                   packet->application_data().end());
 
-  if (packet->packet_type() != RtpPacketToSend::Type::kPadding &&
-      packet->packet_type() != RtpPacketToSend::Type::kRetransmission) {
+  if (packet->packet_type() != RtpPacketMediaType::kPadding &&
+      packet->packet_type() != RtpPacketMediaType::kRetransmission) {
     UpdateDelayStatistics(packet->capture_time_ms(), now_ms, packet_ssrc);
     UpdateOnSendPacket(options.packet_id, packet->capture_time_ms(),
                        packet_ssrc);
@@ -229,15 +228,15 @@ void RtpSenderEgress::SetMediaHasBeenSent(bool media_sent) {
 
 bool RtpSenderEgress::HasCorrectSsrc(const RtpPacketToSend& packet) const {
   switch (*packet.packet_type()) {
-    case RtpPacketToSend::Type::kAudio:
-    case RtpPacketToSend::Type::kVideo:
+    case RtpPacketMediaType::kAudio:
+    case RtpPacketMediaType::kVideo:
       return packet.Ssrc() == ssrc_;
-    case RtpPacketToSend::Type::kRetransmission:
-    case RtpPacketToSend::Type::kPadding:
+    case RtpPacketMediaType::kRetransmission:
+    case RtpPacketMediaType::kPadding:
       // Both padding and retransmission must be on either the media or the
       // RTX stream.
       return packet.Ssrc() == rtx_ssrc_ || packet.Ssrc() == ssrc_;
-    case RtpPacketToSend::Type::kForwardErrorCorrection:
+    case RtpPacketMediaType::kForwardErrorCorrection:
       // FlexFEC is on separate SSRC, ULPFEC uses media SSRC.
       return packet.Ssrc() == ssrc_ || packet.Ssrc() == flexfec_ssrc_;
   }
@@ -261,6 +260,7 @@ void RtpSenderEgress::AddPacketToTransportFeedback(
     packet_info.rtp_sequence_number = packet.SequenceNumber();
     packet_info.length = packet_size;
     packet_info.pacing_info = pacing_info;
+    packet_info.packet_type = packet.packet_type();
     transport_feedback_observer_->OnAddPacket(packet_info);
   }
 }
@@ -409,11 +409,11 @@ void RtpSenderEgress::UpdateRtpStats(const RtpPacketToSend& packet) {
     counters->first_packet_time_ms = now_ms;
   }
 
-  if (packet.packet_type() == RtpPacketToSend::Type::kForwardErrorCorrection) {
+  if (packet.packet_type() == RtpPacketMediaType::kForwardErrorCorrection) {
     counters->fec.AddPacket(packet);
   }
 
-  if (packet.packet_type() == RtpPacketToSend::Type::kRetransmission) {
+  if (packet.packet_type() == RtpPacketMediaType::kRetransmission) {
     counters->retransmitted.AddPacket(packet);
     nack_bitrate_sent_.Update(packet.size(), now_ms);
   }

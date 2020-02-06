@@ -69,7 +69,7 @@ class RoundRobinPacketQueue {
     bool operator<(const QueuedPacket& other) const;
 
     int Priority() const;
-    RtpPacketToSend::Type Type() const;
+    RtpPacketMediaType Type() const;
     uint32_t Ssrc() const;
     Timestamp EnqueueTime() const;
     bool IsRetransmission() const;
