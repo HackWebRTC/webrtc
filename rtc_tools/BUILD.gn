@@ -138,9 +138,10 @@ if (!build_with_chromium && !build_with_mozilla) {
   }
 }
 
-# Only expose the targets needed by Chromium (e.g. frame_analyzer) to avoid
-# building a lot of redundant code as part of Chromium builds.
-if (!build_with_chromium) {
+if (!is_component_build) {
+  # This target can be built from Chromium but it doesn't support
+  # is_component_build=true because it depends on WebRTC testonly code
+  # which is not part of //third_party/webrtc_overrides:webrtc_component.
   rtc_executable("rtp_generator") {
     visibility = [ "*" ]
     testonly = true
@@ -183,8 +184,17 @@ if (!build_with_chromium) {
       "//third_party/abseil-cpp/absl/flags:usage",
       "//third_party/abseil-cpp/absl/strings",
     ]
+    if (build_with_chromium) {
+      # When building from Chromium, WebRTC's metrics and field trial
+      # implementations need to be replaced by the Chromium ones.
+      deps += [ "//third_party/webrtc_overrides:webrtc_component" ]
+    }
   }
+}
 
+# Only expose the targets needed by Chromium (e.g. frame_analyzer) to avoid
+# building a lot of redundant code as part of Chromium builds.
+if (!build_with_chromium) {
   rtc_executable("psnr_ssim_analyzer") {
     testonly = true
     sources = [ "psnr_ssim_analyzer/psnr_ssim_analyzer.cc" ]
