@@ -117,12 +117,13 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // be called on |encoder_queue_|.
   rtc::TaskQueue* encoder_queue() { return &encoder_queue_; }
 
-  // These methods are protected for easier testing.
-  // TODO(hbos): When "DropDueToSize" no longer causes TriggerAdaptDown(), these
-  // methods are only used for testing and can be removed in favor of the test
-  // invoking AdaptUp() or AdaptDown() on a test-injected adaptation module.
-  void TriggerAdaptUp(AdaptationObserverInterface::AdaptReason reason);
-  bool TriggerAdaptDown(AdaptationObserverInterface::AdaptReason reason);
+  // TODO(https://crbug.com/webrtc/11222): When the concept of "resources" that
+  // can be overused or underused has materialized, trigger overuse/underuse by
+  // injecting a fake Resource instead and remove these methods.
+  void OnResourceUnderuseForTesting(
+      AdaptationObserverInterface::AdaptReason reason);
+  bool OnResourceOveruseForTesting(
+      AdaptationObserverInterface::AdaptReason reason);
 
   void OnVideoSourceRestrictionsUpdated(
       VideoSourceRestrictions restrictions) override;

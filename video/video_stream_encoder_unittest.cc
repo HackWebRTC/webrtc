@@ -166,9 +166,9 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
     rtc::Event event;
     encoder_queue()->PostTask([this, &event, reason, down, expected_results] {
       if (down)
-        EXPECT_EQ(expected_results, TriggerAdaptDown(reason));
+        EXPECT_EQ(expected_results, OnResourceOveruseForTesting(reason));
       else
-        TriggerAdaptUp(reason);
+        OnResourceUnderuseForTesting(reason);
       event.Set();
     });
     ASSERT_TRUE(event.Wait(5000));
