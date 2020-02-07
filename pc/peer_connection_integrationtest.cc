@@ -214,9 +214,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     dependencies.cert_generator = std::move(cert_generator);
     if (!client->Init(nullptr, nullptr, std::move(dependencies), network_thread,
                       worker_thread, nullptr,
-                      /*media_transport_factory=*/nullptr,
-                      /*reset_encoder_factory=*/false,
-                      /*reset_decoder_factory=*/false)) {
+                      /*media_transport_factory=*/nullptr)) {
       delete client;
       return nullptr;
     }
@@ -606,9 +604,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
       rtc::Thread* network_thread,
       rtc::Thread* worker_thread,
       std::unique_ptr<webrtc::FakeRtcEventLogFactory> event_log_factory,
-      std::unique_ptr<webrtc::MediaTransportFactory> media_transport_factory,
-      bool reset_encoder_factory,
-      bool reset_decoder_factory) {
+      std::unique_ptr<webrtc::MediaTransportFactory> media_transport_factory) {
     // There's an error in this test code if Init ends up being called twice.
     RTC_DCHECK(!peer_connection_);
     RTC_DCHECK(!peer_connection_factory_);
@@ -636,14 +632,6 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
         pc_factory_dependencies.task_queue_factory.get();
     media_deps.adm = fake_audio_capture_module_;
     webrtc::SetMediaEngineDefaults(&media_deps);
-
-    if (reset_encoder_factory) {
-      media_deps.video_encoder_factory.reset();
-    }
-    if (reset_decoder_factory) {
-      media_deps.video_decoder_factory.reset();
-    }
-
     pc_factory_dependencies.media_engine =
         cricket::CreateMediaEngine(std::move(media_deps));
     pc_factory_dependencies.call_factory = webrtc::CreateCallFactory();
@@ -1277,9 +1265,7 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
       const RTCConfiguration* config,
       webrtc::PeerConnectionDependencies dependencies,
       std::unique_ptr<webrtc::FakeRtcEventLogFactory> event_log_factory,
-      std::unique_ptr<webrtc::MediaTransportFactory> media_transport_factory,
-      bool reset_encoder_factory,
-      bool reset_decoder_factory) {
+      std::unique_ptr<webrtc::MediaTransportFactory> media_transport_factory) {
     RTCConfiguration modified_config;
     if (config) {
       modified_config = *config;
@@ -1295,8 +1281,7 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
     if (!client->Init(options, &modified_config, std::move(dependencies),
                       network_thread_.get(), worker_thread_.get(),
                       std::move(event_log_factory),
-                      std::move(media_transport_factory), reset_encoder_factory,
-                      reset_decoder_factory)) {
+                      std::move(media_transport_factory))) {
       return nullptr;
     }
     return client;
@@ -1310,11 +1295,10 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
       webrtc::PeerConnectionDependencies dependencies) {
     std::unique_ptr<webrtc::FakeRtcEventLogFactory> event_log_factory(
         new webrtc::FakeRtcEventLogFactory(rtc::Thread::Current()));
-    return CreatePeerConnectionWrapper(
-        debug_name, options, config, std::move(dependencies),
-        std::move(event_log_factory),
-        /*media_transport_factory=*/nullptr, /*reset_encoder_factory=*/false,
-        /*reset_decoder_factory=*/false);
+    return CreatePeerConnectionWrapper(debug_name, options, config,
+                                       std::move(dependencies),
+                                       std::move(event_log_factory),
+                                       /*media_transport_factory=*/nullptr);
   }
 
   bool CreatePeerConnectionWrappers() {
@@ -1335,15 +1319,11 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
     sdp_semantics_ = caller_semantics;
     caller_ = CreatePeerConnectionWrapper(
         "Caller", nullptr, nullptr, webrtc::PeerConnectionDependencies(nullptr),
-        nullptr, /*media_transport_factory=*/nullptr,
-        /*reset_encoder_factory=*/false,
-        /*reset_decoder_factory=*/false);
+        nullptr, /*media_transport_factory=*/nullptr);
     sdp_semantics_ = callee_semantics;
     callee_ = CreatePeerConnectionWrapper(
         "Callee", nullptr, nullptr, webrtc::PeerConnectionDependencies(nullptr),
-        nullptr, /*media_transport_factory=*/nullptr,
-        /*reset_encoder_factory=*/false,
-        /*reset_decoder_factory=*/false);
+        nullptr, /*media_transport_factory=*/nullptr);
     sdp_semantics_ = original_semantics;
     return caller_ && callee_;
   }
@@ -1354,13 +1334,11 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
     caller_ = CreatePeerConnectionWrapper(
         "Caller", nullptr, &caller_config,
         webrtc::PeerConnectionDependencies(nullptr), nullptr,
-        /*media_transport_factory=*/nullptr, /*reset_encoder_factory=*/false,
-        /*reset_decoder_factory=*/false);
+        /*media_transport_factory=*/nullptr);
     callee_ = CreatePeerConnectionWrapper(
         "Callee", nullptr, &callee_config,
         webrtc::PeerConnectionDependencies(nullptr), nullptr,
-        /*media_transport_factory=*/nullptr, /*reset_encoder_factory=*/false,
-        /*reset_decoder_factory=*/false);
+        /*media_transport_factory=*/nullptr);
     return caller_ && callee_;
   }
 
@@ -1369,16 +1347,14 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
       const PeerConnectionInterface::RTCConfiguration& callee_config,
       std::unique_ptr<webrtc::MediaTransportFactory> caller_factory,
       std::unique_ptr<webrtc::MediaTransportFactory> callee_factory) {
-    caller_ = CreatePeerConnectionWrapper(
-        "Caller", nullptr, &caller_config,
-        webrtc::PeerConnectionDependencies(nullptr), nullptr,
-        std::move(caller_factory), /*reset_encoder_factory=*/false,
-        /*reset_decoder_factory=*/false);
-    callee_ = CreatePeerConnectionWrapper(
-        "Callee", nullptr, &callee_config,
-        webrtc::PeerConnectionDependencies(nullptr), nullptr,
-        std::move(callee_factory), /*reset_encoder_factory=*/false,
-        /*reset_decoder_factory=*/false);
+    caller_ =
+        CreatePeerConnectionWrapper("Caller", nullptr, &caller_config,
+                                    webrtc::PeerConnectionDependencies(nullptr),
+                                    nullptr, std::move(caller_factory));
+    callee_ =
+        CreatePeerConnectionWrapper("Callee", nullptr, &callee_config,
+                                    webrtc::PeerConnectionDependencies(nullptr),
+                                    nullptr, std::move(callee_factory));
     return caller_ && callee_;
   }
 
@@ -1387,16 +1363,14 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
       webrtc::PeerConnectionDependencies caller_dependencies,
       const PeerConnectionInterface::RTCConfiguration& callee_config,
       webrtc::PeerConnectionDependencies callee_dependencies) {
-    caller_ = CreatePeerConnectionWrapper(
-        "Caller", nullptr, &caller_config, std::move(caller_dependencies),
-        nullptr,
-        /*media_transport_factory=*/nullptr, /*reset_encoder_factory=*/false,
-        /*reset_decoder_factory=*/false);
-    callee_ = CreatePeerConnectionWrapper(
-        "Callee", nullptr, &callee_config, std::move(callee_dependencies),
-        nullptr,
-        /*media_transport_factory=*/nullptr, /*reset_encoder_factory=*/false,
-        /*reset_decoder_factory=*/false);
+    caller_ =
+        CreatePeerConnectionWrapper("Caller", nullptr, &caller_config,
+                                    std::move(caller_dependencies), nullptr,
+                                    /*media_transport_factory=*/nullptr);
+    callee_ =
+        CreatePeerConnectionWrapper("Callee", nullptr, &callee_config,
+                                    std::move(callee_dependencies), nullptr,
+                                    /*media_transport_factory=*/nullptr);
     return caller_ && callee_;
   }
 
@@ -1406,13 +1380,11 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
     caller_ = CreatePeerConnectionWrapper(
         "Caller", &caller_options, nullptr,
         webrtc::PeerConnectionDependencies(nullptr), nullptr,
-        /*media_transport_factory=*/nullptr, /*reset_encoder_factory=*/false,
-        /*reset_decoder_factory=*/false);
+        /*media_transport_factory=*/nullptr);
     callee_ = CreatePeerConnectionWrapper(
         "Callee", &callee_options, nullptr,
         webrtc::PeerConnectionDependencies(nullptr), nullptr,
-        /*media_transport_factory=*/nullptr, /*reset_encoder_factory=*/false,
-        /*reset_decoder_factory=*/false);
+        /*media_transport_factory=*/nullptr);
     return caller_ && callee_;
   }
 
@@ -1435,24 +1407,9 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
 
     webrtc::PeerConnectionDependencies dependencies(nullptr);
     dependencies.cert_generator = std::move(cert_generator);
-    return CreatePeerConnectionWrapper(
-        "New Peer", nullptr, nullptr, std::move(dependencies), nullptr,
-        /*media_transport_factory=*/nullptr, /*reset_encoder_factory=*/false,
-        /*reset_decoder_factory=*/false);
-  }
-
-  bool CreateOneDirectionalPeerConnectionWrappers(bool caller_to_callee) {
-    caller_ = CreatePeerConnectionWrapper(
-        "Caller", nullptr, nullptr, webrtc::PeerConnectionDependencies(nullptr),
-        nullptr, /*media_transport_factory=*/nullptr,
-        /*reset_encoder_factory=*/!caller_to_callee,
-        /*reset_decoder_factory=*/caller_to_callee);
-    callee_ = CreatePeerConnectionWrapper(
-        "Callee", nullptr, nullptr, webrtc::PeerConnectionDependencies(nullptr),
-        nullptr, /*media_transport_factory=*/nullptr,
-        /*reset_encoder_factory=*/caller_to_callee,
-        /*reset_decoder_factory=*/!caller_to_callee);
-    return caller_ && callee_;
+    return CreatePeerConnectionWrapper("New Peer", nullptr, nullptr,
+                                       std::move(dependencies), nullptr,
+                                       /*media_transport_factory=*/nullptr);
   }
 
   cricket::TestTurnServer* CreateTurnServer(
@@ -2081,168 +2038,6 @@ TEST_P(PeerConnectionIntegrationTest, OneWayMediaCall) {
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
 }
 
-// Tests that send only works without the caller having a decoder factory and
-// the callee having an encoder factory.
-TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithSendOnlyVideo) {
-  ASSERT_TRUE(
-      CreateOneDirectionalPeerConnectionWrappers(/*caller_to_callee=*/true));
-  ConnectFakeSignaling();
-  // Add one-directional video, from caller to callee.
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> caller_track =
-      caller()->CreateLocalVideoTrack();
-  caller()->AddTrack(caller_track);
-  PeerConnectionInterface::RTCOfferAnswerOptions options;
-  options.offer_to_receive_video = 0;
-  caller()->SetOfferAnswerOptions(options);
-  caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-  ASSERT_EQ(callee()->pc()->GetReceivers().size(), 1u);
-
-  // Expect video to be received in one direction.
-  MediaExpectations media_expectations;
-  media_expectations.CallerExpectsNoVideo();
-  media_expectations.CalleeExpectsSomeVideo();
-
-  EXPECT_TRUE(ExpectNewFrames(media_expectations));
-}
-
-// Tests that receive only works without the caller having an encoder factory
-// and the callee having a decoder factory.
-TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithReceiveOnlyVideo) {
-  ASSERT_TRUE(
-      CreateOneDirectionalPeerConnectionWrappers(/*caller_to_callee=*/false));
-  ConnectFakeSignaling();
-  // Add one-directional video, from callee to caller.
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> callee_track =
-      callee()->CreateLocalVideoTrack();
-  callee()->AddTrack(callee_track);
-  PeerConnectionInterface::RTCOfferAnswerOptions options;
-  options.offer_to_receive_video = 1;
-  caller()->SetOfferAnswerOptions(options);
-  caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-  ASSERT_EQ(caller()->pc()->GetReceivers().size(), 1u);
-
-  // Expect video to be received in one direction.
-  MediaExpectations media_expectations;
-  media_expectations.CallerExpectsSomeVideo();
-  media_expectations.CalleeExpectsNoVideo();
-
-  EXPECT_TRUE(ExpectNewFrames(media_expectations));
-}
-
-TEST_P(PeerConnectionIntegrationTest,
-       EndToEndCallAddReceiveVideoToSendOnlyCall) {
-  ASSERT_TRUE(CreatePeerConnectionWrappers());
-  ConnectFakeSignaling();
-  // Add one-directional video, from caller to callee.
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> caller_track =
-      caller()->CreateLocalVideoTrack();
-  caller()->AddTrack(caller_track);
-  caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-
-  // Add receive video.
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> callee_track =
-      callee()->CreateLocalVideoTrack();
-  callee()->AddTrack(callee_track);
-  caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-
-  // Ensure that video frames are received end-to-end.
-  MediaExpectations media_expectations;
-  media_expectations.ExpectBidirectionalVideo();
-  ASSERT_TRUE(ExpectNewFrames(media_expectations));
-}
-
-TEST_P(PeerConnectionIntegrationTest,
-       EndToEndCallAddSendVideoToReceiveOnlyCall) {
-  ASSERT_TRUE(CreatePeerConnectionWrappers());
-  ConnectFakeSignaling();
-  // Add one-directional video, from callee to caller.
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> callee_track =
-      callee()->CreateLocalVideoTrack();
-  callee()->AddTrack(callee_track);
-  caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-
-  // Add send video.
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> caller_track =
-      caller()->CreateLocalVideoTrack();
-  caller()->AddTrack(caller_track);
-  caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-
-  // Expect video to be received in one direction.
-  MediaExpectations media_expectations;
-  media_expectations.ExpectBidirectionalVideo();
-  ASSERT_TRUE(ExpectNewFrames(media_expectations));
-}
-
-TEST_P(PeerConnectionIntegrationTest,
-       EndToEndCallRemoveReceiveVideoFromSendReceiveCall) {
-  ASSERT_TRUE(CreatePeerConnectionWrappers());
-  ConnectFakeSignaling();
-  // Add send video, from caller to callee.
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> caller_track =
-      caller()->CreateLocalVideoTrack();
-  rtc::scoped_refptr<webrtc::RtpSenderInterface> caller_sender =
-      caller()->AddTrack(caller_track);
-  // Add receive video, from callee to caller.
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> callee_track =
-      callee()->CreateLocalVideoTrack();
-
-  rtc::scoped_refptr<webrtc::RtpSenderInterface> callee_sender =
-      callee()->AddTrack(callee_track);
-  caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-
-  // Remove receive video (i.e., callee sender track).
-  callee()->pc()->RemoveTrack(callee_sender);
-
-  caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-
-  // Expect one-directional video.
-  MediaExpectations media_expectations;
-  media_expectations.CallerExpectsNoVideo();
-  media_expectations.CalleeExpectsSomeVideo();
-
-  ASSERT_TRUE(ExpectNewFrames(media_expectations));
-}
-
-TEST_P(PeerConnectionIntegrationTest,
-       EndToEndCallRemoveSendVideoFromSendReceiveCall) {
-  ASSERT_TRUE(CreatePeerConnectionWrappers());
-  ConnectFakeSignaling();
-  // Add send video, from caller to callee.
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> caller_track =
-      caller()->CreateLocalVideoTrack();
-  rtc::scoped_refptr<webrtc::RtpSenderInterface> caller_sender =
-      caller()->AddTrack(caller_track);
-  // Add receive video, from callee to caller.
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> callee_track =
-      callee()->CreateLocalVideoTrack();
-
-  rtc::scoped_refptr<webrtc::RtpSenderInterface> callee_sender =
-      callee()->AddTrack(callee_track);
-  caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-
-  // Remove send video (i.e., caller sender track).
-  caller()->pc()->RemoveTrack(caller_sender);
-
-  caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-
-  // Expect one-directional video.
-  MediaExpectations media_expectations;
-  media_expectations.CalleeExpectsNoVideo();
-  media_expectations.CallerExpectsSomeVideo();
-
-  ASSERT_TRUE(ExpectNewFrames(media_expectations));
-}
-
 // This test sets up a audio call initially, with the callee rejecting video
 // initially. Then later the callee decides to upgrade to audio/video, and
 // initiates a new offer/answer exchange.
@@ -2737,37 +2532,6 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   MediaExpectations media_expectations;
   media_expectations.ExpectBidirectionalAudio();
-  ASSERT_TRUE(ExpectNewFrames(media_expectations));
-}
-
-TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
-       EndToEndCallAddReceiveVideoToSendOnlyCall) {
-  ASSERT_TRUE(CreatePeerConnectionWrappers());
-  ConnectFakeSignaling();
-  // Add one-directional video, from caller to callee.
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> track =
-      caller()->CreateLocalVideoTrack();
-
-  RtpTransceiverInit video_transceiver_init;
-  video_transceiver_init.stream_ids = {"video1"};
-  video_transceiver_init.direction = RtpTransceiverDirection::kSendOnly;
-  auto video_sender =
-      caller()->pc()->AddTransceiver(track, video_transceiver_init).MoveValue();
-  caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-
-  // Add receive direction.
-  video_sender->SetDirection(RtpTransceiverDirection::kSendRecv);
-
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> callee_track =
-      callee()->CreateLocalVideoTrack();
-
-  callee()->AddTrack(callee_track);
-  caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-  // Ensure that video frames are received end-to-end.
-  MediaExpectations media_expectations;
-  media_expectations.ExpectBidirectionalVideo();
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
 }
 
@@ -5666,10 +5430,9 @@ TEST_P(PeerConnectionIntegrationTest, IceTransportFactoryUsedForConnections) {
   auto ice_transport_factory = std::make_unique<MockIceTransportFactory>();
   EXPECT_CALL(*ice_transport_factory, RecordIceTransportCreated()).Times(1);
   dependencies.ice_transport_factory = std::move(ice_transport_factory);
-  auto wrapper = CreatePeerConnectionWrapper(
-      "Caller", nullptr, &default_config, std::move(dependencies), nullptr,
-      nullptr, /*reset_encoder_factory=*/false,
-      /*reset_decoder_factory=*/false);
+  auto wrapper =
+      CreatePeerConnectionWrapper("Caller", nullptr, &default_config,
+                                  std::move(dependencies), nullptr, nullptr);
   ASSERT_TRUE(wrapper);
   wrapper->CreateDataChannel();
   rtc::scoped_refptr<MockSetSessionDescriptionObserver> observer(

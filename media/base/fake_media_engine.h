@@ -560,16 +560,13 @@ class FakeVideoEngine : public VideoEngineInterface {
       override;
   FakeVideoMediaChannel* GetChannel(size_t index);
   void UnregisterChannel(VideoMediaChannel* channel);
-  std::vector<VideoCodec> send_codecs() const override;
-  std::vector<VideoCodec> recv_codecs() const override;
-  void SetSendCodecs(const std::vector<VideoCodec>& codecs);
-  void SetRecvCodecs(const std::vector<VideoCodec>& codecs);
+  std::vector<VideoCodec> codecs() const override;
+  void SetCodecs(const std::vector<VideoCodec> codecs);
   bool SetCapture(bool capture);
 
  private:
   std::vector<FakeVideoMediaChannel*> channels_;
-  std::vector<VideoCodec> send_codecs_;
-  std::vector<VideoCodec> recv_codecs_;
+  std::vector<VideoCodec> codecs_;
   bool capture_;
   VideoOptions options_;
   bool fail_create_channel_;

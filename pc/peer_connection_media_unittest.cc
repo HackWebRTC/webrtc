@@ -1434,11 +1434,9 @@ TEST_F(PeerConnectionMediaTestUnifiedPlan,
 TEST_F(PeerConnectionMediaTestUnifiedPlan,
        SetCodecPreferencesVideoRejectsOnlyRtxRedFec) {
   auto fake_engine = std::make_unique<FakeMediaEngine>();
-  auto video_codecs = fake_engine->video().send_codecs();
+  auto video_codecs = fake_engine->video().codecs();
   video_codecs.push_back(
       cricket::VideoCodec(video_codecs.back().id + 1, cricket::kRtxCodecName));
-  video_codecs.back().params[cricket::kCodecParamAssociatedPayloadType] =
-      std::to_string(video_codecs.back().id - 1);
   video_codecs.push_back(
       cricket::VideoCodec(video_codecs.back().id + 1, cricket::kRedCodecName));
   video_codecs.push_back(cricket::VideoCodec(video_codecs.back().id + 1,
@@ -1542,7 +1540,7 @@ TEST_F(PeerConnectionMediaTestUnifiedPlan,
 
 TEST_F(PeerConnectionMediaTestUnifiedPlan, SetCodecPreferencesVideoWithRtx) {
   auto caller_fake_engine = std::make_unique<FakeMediaEngine>();
-  auto caller_video_codecs = caller_fake_engine->video().send_codecs();
+  auto caller_video_codecs = caller_fake_engine->video().codecs();
   caller_video_codecs.push_back(cricket::VideoCodec(
       caller_video_codecs.back().id + 1, cricket::kVp8CodecName));
   caller_video_codecs.push_back(cricket::VideoCodec(
@@ -1594,7 +1592,7 @@ TEST_F(PeerConnectionMediaTestUnifiedPlan, SetCodecPreferencesVideoWithRtx) {
 TEST_F(PeerConnectionMediaTestUnifiedPlan,
        SetCodecPreferencesVideoCodecsNegotiation) {
   auto caller_fake_engine = std::make_unique<FakeMediaEngine>();
-  auto caller_video_codecs = caller_fake_engine->video().send_codecs();
+  auto caller_video_codecs = caller_fake_engine->video().codecs();
   caller_video_codecs.push_back(cricket::VideoCodec(
       caller_video_codecs.back().id + 1, cricket::kVp8CodecName));
   caller_video_codecs.push_back(cricket::VideoCodec(
@@ -1668,7 +1666,7 @@ TEST_F(PeerConnectionMediaTestUnifiedPlan,
 TEST_F(PeerConnectionMediaTestUnifiedPlan,
        SetCodecPreferencesVideoCodecsNegotiationReverseOrder) {
   auto caller_fake_engine = std::make_unique<FakeMediaEngine>();
-  auto caller_video_codecs = caller_fake_engine->video().send_codecs();
+  auto caller_video_codecs = caller_fake_engine->video().codecs();
   caller_video_codecs.push_back(cricket::VideoCodec(
       caller_video_codecs.back().id + 1, cricket::kVp8CodecName));
   caller_video_codecs.push_back(cricket::VideoCodec(

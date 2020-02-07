@@ -738,10 +738,6 @@ struct RtpParameters {
 
   std::vector<Codec> codecs;
   std::vector<webrtc::RtpExtension> extensions;
-  // For a send stream this is true if we've neogtiated a send direction,
-  // for a receive stream this is true if we've negotiated a receive direction.
-  bool is_stream_active = true;
-
   // TODO(pthatcher): Add streams.
   RtcpParameters rtcp;
 
