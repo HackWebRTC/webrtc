@@ -190,6 +190,50 @@ if (!is_component_build) {
       deps += [ "//third_party/webrtc_overrides:webrtc_component" ]
     }
   }
+
+  # This target can be built from Chromium but it doesn't support
+  # is_component_build=true because it depends on WebRTC testonly code
+  # which is not part of //third_party/webrtc_overrides:webrtc_component.
+  rtc_executable("video_replay") {
+    visibility = [ "*" ]
+    testonly = true
+    sources = [ "video_replay.cc" ]
+    deps = [
+      "../api/rtc_event_log",
+      "../api/task_queue:default_task_queue_factory",
+      "../api/test/video:function_video_factory",
+      "../api/transport:field_trial_based_config",
+      "../api/video_codecs:video_codecs_api",
+      "../call",
+      "../call:call_interfaces",
+      "../common_video",
+      "../media:rtc_internal_video_codecs",
+      "../rtc_base:checks",
+      "../rtc_base:rtc_json",
+      "../rtc_base:stringutils",
+      "../rtc_base:timeutils",
+      "../system_wrappers",
+      "../test:call_config_utils",
+      "../test:encoder_settings",
+      "../test:fake_video_codecs",
+      "../test:null_transport",
+      "../test:rtp_test_utils",
+      "../test:run_test",
+      "../test:run_test_interface",
+      "../test:test_common",
+      "../test:test_renderer",
+      "../test:test_support",
+      "../test:video_test_common",
+      "../test:video_test_support",
+      "//third_party/abseil-cpp/absl/flags:flag",
+      "//third_party/abseil-cpp/absl/flags:parse",
+    ]
+    if (build_with_chromium) {
+      # When building from Chromium, WebRTC's metrics and field trial
+      # implementations need to be replaced by the Chromium ones.
+      deps += [ "//third_party/webrtc_overrides:webrtc_component" ]
+    }
+  }
 }
 
 # Only expose the targets needed by Chromium (e.g. frame_analyzer) to avoid

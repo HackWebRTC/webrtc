@@ -56,13 +56,13 @@ if (!build_with_chromium) {
         "pc:peerconnection_unittests",
         "pc:rtc_pc_unittests",
         "rtc_tools:rtp_generator",
+        "rtc_tools:video_replay",
         "stats:rtc_stats_unittests",
         "system_wrappers:system_wrappers_unittests",
         "test",
         "video:screenshare_loopback",
         "video:sv_loopback",
         "video:video_loopback",
-        "video:video_replay",
       ]
       if (!is_asan) {
         # Do not build :webrtc_lib_link_test because lld complains on some OS
