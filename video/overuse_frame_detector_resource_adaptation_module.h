@@ -127,6 +127,7 @@ class OveruseFrameDetectorResourceAdaptationModule
  private:
   class VideoSourceRestrictor;
   class AdaptCounter;
+  class InitialFrameDropper;
 
   struct AdaptationRequest {
     // The pixel count produced by the source at the time of the adaptation.
@@ -135,12 +136,6 @@ class OveruseFrameDetectorResourceAdaptationModule
     int framerate_fps_;
     // Indicates if request was to adapt up or down.
     enum class Mode { kAdaptUp, kAdaptDown } mode_;
-  };
-
-  struct StartBitrate {
-    bool has_seen_first_bwe_drop_ = false;
-    DataRate set_start_bitrate_ = DataRate::Zero();
-    int64_t set_start_bitrate_time_ms_ = 0;
   };
 
   void OnResourceUnderuse(AdaptationObserverInterface::AdaptReason reason);
@@ -200,20 +195,17 @@ class OveruseFrameDetectorResourceAdaptationModule
   const std::unique_ptr<VideoSourceRestrictor> source_restrictor_;
   const std::unique_ptr<EncodeUsageResource> encode_usage_resource_;
   const std::unique_ptr<QualityScalerResource> quality_scaler_resource_;
+  const std::unique_ptr<InitialFrameDropper> initial_frame_dropper_;
   const bool quality_scaling_experiment_enabled_;
   absl::optional<int> last_input_frame_size_;
   absl::optional<double> target_frame_rate_;
   // This is the last non-zero target bitrate for the encoder.
   absl::optional<uint32_t> encoder_target_bitrate_bps_;
   absl::optional<VideoEncoder::RateControlParameters> encoder_rates_;
-  const QualityScalerSettings quality_scaler_settings_;
   bool quality_rampup_done_;
   QualityRampupExperiment quality_rampup_experiment_;
-  StartBitrate start_bitrate_;
   absl::optional<EncoderSettings> encoder_settings_;
   VideoStreamEncoderObserver* const encoder_stats_observer_;
-  // Counts how many frames we've dropped in the initial framedrop phase.
-  int initial_framedrop_;
 };
 
 }  // namespace webrtc
