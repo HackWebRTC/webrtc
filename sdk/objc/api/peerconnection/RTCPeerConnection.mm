@@ -307,6 +307,23 @@ void PeerConnectionDelegateAdapter::OnRemoveTrack(
                     constraints:(RTCMediaConstraints *)constraints
                        delegate:(id<RTCPeerConnectionDelegate>)delegate {
   NSParameterAssert(factory);
+  std::unique_ptr<webrtc::PeerConnectionDependencies> dependencies =
+      std::make_unique<webrtc::PeerConnectionDependencies>(nullptr);
+  return [self initWithDependencies:factory
+                      configuration:configuration
+                        constraints:constraints
+                       dependencies:std::move(dependencies)
+                           delegate:delegate];
+}
+
+- (instancetype)initWithDependencies:(RTCPeerConnectionFactory *)factory
+                       configuration:(RTCConfiguration *)configuration
+                         constraints:(RTCMediaConstraints *)constraints
+                        dependencies:
+                            (std::unique_ptr<webrtc::PeerConnectionDependencies>)dependencies
+                            delegate:(id<RTCPeerConnectionDelegate>)delegate {
+  NSParameterAssert(factory);
+  NSParameterAssert(dependencies.get());
   std::unique_ptr<webrtc::PeerConnectionInterface::RTCConfiguration> config(
       [configuration createNativeConfiguration]);
   if (!config) {
@@ -315,13 +332,12 @@ void PeerConnectionDelegateAdapter::OnRemoveTrack(
   if (self = [super init]) {
     _observer.reset(new webrtc::PeerConnectionDelegateAdapter(self));
     _nativeConstraints = constraints.nativeConstraints;
-    CopyConstraintsIntoRtcConfiguration(_nativeConstraints.get(),
-                                        config.get());
-    _peerConnection =
-        factory.nativeFactory->CreatePeerConnection(*config,
-                                                    nullptr,
-                                                    nullptr,
-                                                    _observer.get());
+    CopyConstraintsIntoRtcConfiguration(_nativeConstraints.get(), config.get());
+
+    webrtc::PeerConnectionDependencies deps = std::move(*dependencies.release());
+    deps.observer = _observer.get();
+    _peerConnection = factory.nativeFactory->CreatePeerConnection(*config, std::move(deps));
+
     if (!_peerConnection) {
       return nil;
     }
