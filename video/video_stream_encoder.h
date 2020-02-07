@@ -110,7 +110,11 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
                         DataRate stable_target_bitrate,
                         DataRate target_headroom,
                         uint8_t fraction_lost,
-                        int64_t round_trip_time_ms) override;
+                        int64_t round_trip_time_ms,
+                        double cwnd_reduce_ratio) override;
+
+  DataRate UpdateTargetBitrate(DataRate target_bitrate,
+                               double cwnd_reduce_ratio);
 
  protected:
   // Used for testing. For example the |ScalingObserverInterface| methods must
@@ -269,7 +273,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   int64_t last_frame_log_ms_ RTC_GUARDED_BY(incoming_frame_race_checker_);
   int captured_frame_count_ RTC_GUARDED_BY(&encoder_queue_);
-  int dropped_frame_count_ RTC_GUARDED_BY(&encoder_queue_);
+  int dropped_frame_cwnd_pushback_count_ RTC_GUARDED_BY(&encoder_queue_);
+  int dropped_frame_encoder_block_count_ RTC_GUARDED_BY(&encoder_queue_);
   absl::optional<VideoFrame> pending_frame_ RTC_GUARDED_BY(&encoder_queue_);
   int64_t pending_frame_post_time_us_ RTC_GUARDED_BY(&encoder_queue_);
 
@@ -316,6 +321,12 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // OnEncodedImage(), which is only called by one thread but not necessarily
   // the worker thread.
   std::atomic<int> pending_frame_drops_;
+
+  // Congestion window frame drop ratio (drop 1 in every
+  // cwnd_frame_drop_interval_ frames).
+  absl::optional<int> cwnd_frame_drop_interval_ RTC_GUARDED_BY(&encoder_queue_);
+  // Frame counter for congestion window frame drop.
+  int cwnd_frame_counter_ RTC_GUARDED_BY(&encoder_queue_);
 
   std::unique_ptr<EncoderBitrateAdjuster> bitrate_adjuster_
       RTC_GUARDED_BY(&encoder_queue_);

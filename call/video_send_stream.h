@@ -81,6 +81,7 @@ class VideoSendStream {
     uint32_t frames_dropped_by_capturer = 0;
     uint32_t frames_dropped_by_encoder_queue = 0;
     uint32_t frames_dropped_by_rate_limiter = 0;
+    uint32_t frames_dropped_by_congestion_window = 0;
     uint32_t frames_dropped_by_encoder = 0;
     absl::optional<uint64_t> qp_sum;
     // Bitrate the encoder is currently configured to use due to bandwidth

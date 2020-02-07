@@ -59,7 +59,8 @@ class VideoStreamEncoderObserver : public CpuOveruseMetricsObserver {
     kSource,
     kEncoderQueue,
     kEncoder,
-    kMediaOptimization
+    kMediaOptimization,
+    kCongestionWindow
   };
 
   ~VideoStreamEncoderObserver() override = default;

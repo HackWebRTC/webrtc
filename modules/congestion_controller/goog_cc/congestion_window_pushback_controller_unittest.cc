@@ -89,5 +89,17 @@ TEST_F(CongestionWindowPushbackControllerTest, PushbackOnInititialDataWindow) {
   EXPECT_GT(80000u, bitrate_bps);
 }
 
+TEST_F(CongestionWindowPushbackControllerTest, PushbackDropFrame) {
+  test::ScopedFieldTrials trials("WebRTC-CongestionWindow/DropFrame:true/");
+  cwnd_controller_.reset(
+      new CongestionWindowPushbackController(&field_trial_config_));
+  cwnd_controller_->UpdateOutstandingData(1e8);  // Large number
+  cwnd_controller_->SetDataWindow(DataSize::bytes(50000));
+
+  uint32_t bitrate_bps = 80000;
+  bitrate_bps = cwnd_controller_->UpdateTargetBitrate(bitrate_bps);
+  EXPECT_GT(80000u, bitrate_bps);
+}
+
 }  // namespace test
 }  // namespace webrtc

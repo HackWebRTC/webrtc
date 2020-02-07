@@ -218,6 +218,7 @@ struct TargetTransferRate {
   NetworkEstimate network_estimate;
   DataRate target_rate = DataRate::Zero();
   DataRate stable_target_rate = DataRate::Zero();
+  double cwnd_reduce_ratio = 0;
 };
 
 // Contains updates of network controller comand state. Using optionals to

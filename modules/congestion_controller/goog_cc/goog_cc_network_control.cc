@@ -600,6 +600,7 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
   BWE_TEST_LOGGING_PLOT(1, "Target_bitrate_kbps", at_time.ms(),
                         loss_based_target_rate.kbps());
 
+  double cwnd_reduce_ratio = 0.0;
   if (congestion_window_pushback_controller_) {
     int64_t pushback_rate =
         congestion_window_pushback_controller_->UpdateTargetBitrate(
@@ -607,6 +608,11 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
     pushback_rate = std::max<int64_t>(bandwidth_estimation_->GetMinBitrate(),
                                       pushback_rate);
     pushback_target_rate = DataRate::bps(pushback_rate);
+    if (rate_control_settings_.UseCongestionWindowDropFrameOnly()) {
+      cwnd_reduce_ratio = static_cast<double>(loss_based_target_rate.bps() -
+                                              pushback_target_rate.bps()) /
+                          loss_based_target_rate.bps();
+    }
   }
 
   if ((loss_based_target_rate != last_loss_based_target_rate_) ||
@@ -624,7 +630,12 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
 
     TargetTransferRate target_rate_msg;
     target_rate_msg.at_time = at_time;
-    target_rate_msg.target_rate = pushback_target_rate;
+    if (rate_control_settings_.UseCongestionWindowDropFrameOnly()) {
+      target_rate_msg.target_rate = loss_based_target_rate;
+      target_rate_msg.cwnd_reduce_ratio = cwnd_reduce_ratio;
+    } else {
+      target_rate_msg.target_rate = pushback_target_rate;
+    }
     if (loss_based_stable_rate_) {
       target_rate_msg.stable_target_rate =
           std::min(bandwidth_estimation_->GetEstimatedLinkCapacity(),

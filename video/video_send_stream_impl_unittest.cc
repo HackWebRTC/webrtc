@@ -706,7 +706,7 @@ TEST_F(VideoSendStreamImplTest, CallsVideoStreamEncoderOnBitrateUpdate) {
         EXPECT_CALL(
             video_stream_encoder_,
             OnBitrateUpdated(network_constrained_rate, network_constrained_rate,
-                             network_constrained_rate, 0, _));
+                             network_constrained_rate, 0, _, 0));
         static_cast<BitrateAllocatorObserver*>(vss_impl.get())
             ->OnBitrateUpdated(update);
 
@@ -723,7 +723,7 @@ TEST_F(VideoSendStreamImplTest, CallsVideoStreamEncoderOnBitrateUpdate) {
             .WillOnce(Return(rate_with_headroom.bps()));
         EXPECT_CALL(video_stream_encoder_,
                     OnBitrateUpdated(qvga_max_bitrate, qvga_max_bitrate,
-                                     rate_with_headroom, 0, _));
+                                     rate_with_headroom, 0, _, 0));
         static_cast<BitrateAllocatorObserver*>(vss_impl.get())
             ->OnBitrateUpdated(update);
 
@@ -740,7 +740,7 @@ TEST_F(VideoSendStreamImplTest, CallsVideoStreamEncoderOnBitrateUpdate) {
             rate_with_headroom - DataRate::bps(protection_bitrate_bps);
         EXPECT_CALL(video_stream_encoder_,
                     OnBitrateUpdated(qvga_max_bitrate, qvga_max_bitrate,
-                                     headroom_minus_protection, 0, _));
+                                     headroom_minus_protection, 0, _, 0));
         static_cast<BitrateAllocatorObserver*>(vss_impl.get())
             ->OnBitrateUpdated(update);
 
@@ -753,14 +753,14 @@ TEST_F(VideoSendStreamImplTest, CallsVideoStreamEncoderOnBitrateUpdate) {
             .WillOnce(Return(rate_with_headroom.bps()));
         EXPECT_CALL(video_stream_encoder_,
                     OnBitrateUpdated(qvga_max_bitrate, qvga_max_bitrate,
-                                     qvga_max_bitrate, 0, _));
+                                     qvga_max_bitrate, 0, _, 0));
         static_cast<BitrateAllocatorObserver*>(vss_impl.get())
             ->OnBitrateUpdated(update);
 
         // Set rates to zero on stop.
         EXPECT_CALL(video_stream_encoder_,
                     OnBitrateUpdated(DataRate::Zero(), DataRate::Zero(),
-                                     DataRate::Zero(), 0, 0));
+                                     DataRate::Zero(), 0, 0, 0));
         vss_impl->Stop();
       },
       RTC_FROM_HERE);

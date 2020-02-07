@@ -25,6 +25,7 @@ struct CongestionWindowConfig {
   absl::optional<int> queue_size_ms;
   absl::optional<int> min_bitrate_bps;
   absl::optional<DataSize> initial_data_window;
+  bool drop_frame_only = false;
   std::unique_ptr<StructParametersParser> Parser();
   static CongestionWindowConfig Parse(absl::string_view config);
 };
@@ -66,6 +67,7 @@ class RateControlSettings final {
   bool UseCongestionWindow() const;
   int64_t GetCongestionWindowAdditionalTimeMs() const;
   bool UseCongestionWindowPushback() const;
+  bool UseCongestionWindowDropFrameOnly() const;
   uint32_t CongestionWindowMinPushbackTargetBitrateBps() const;
   absl::optional<DataSize> CongestionWindowInitialDataWindow() const;
 

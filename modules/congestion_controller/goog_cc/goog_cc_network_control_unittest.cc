@@ -289,6 +289,40 @@ TEST_F(GoogCcNetworkControllerTest, CongestionWindowPushbackOnNetworkDelay) {
   EXPECT_LT(client->target_rate().kbps(), 40);
 }
 
+// Test congestion window pushback on network delay happens.
+TEST_F(GoogCcNetworkControllerTest,
+       CongestionWindowPushbackDropFrameOnNetworkDelay) {
+  auto factory = CreateFeedbackOnlyFactory();
+  ScopedFieldTrials trial(
+      "WebRTC-CongestionWindow/QueueSize:800,MinBitrate:30000,DropFrame:true/");
+  Scenario s("googcc_unit/cwnd_on_delay", false);
+  auto send_net =
+      s.CreateMutableSimulationNode([=](NetworkSimulationConfig* c) {
+        c->bandwidth = DataRate::kbps(1000);
+        c->delay = TimeDelta::ms(100);
+      });
+  auto ret_net = s.CreateSimulationNode(
+      [](NetworkSimulationConfig* c) { c->delay = TimeDelta::ms(100); });
+  CallClientConfig config;
+  config.transport.cc_factory = &factory;
+  // Start high so bandwidth drop has max effect.
+  config.transport.rates.start_rate = DataRate::kbps(300);
+  config.transport.rates.max_rate = DataRate::kbps(2000);
+  config.transport.rates.min_rate = DataRate::kbps(10);
+
+  auto* client = CreateVideoSendingClient(&s, std::move(config),
+                                          {send_net->node()}, {ret_net});
+
+  s.RunFor(TimeDelta::seconds(10));
+  send_net->PauseTransmissionUntil(s.Now() + TimeDelta::seconds(10));
+  s.RunFor(TimeDelta::seconds(3));
+
+  // As the dropframe is set, after 3 seconds without feedback from any sent
+  // packets, we expect that the target rate is not reduced by congestion
+  // window.
+  EXPECT_GT(client->target_rate().kbps(), 300);
+}
+
 TEST_F(GoogCcNetworkControllerTest, OnNetworkRouteChanged) {
   NetworkControlUpdate update;
   DataRate new_bitrate = DataRate::bps(200000);

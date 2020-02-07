@@ -652,9 +652,11 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
   RTC_HISTOGRAMS_COUNTS_1000(kIndex, uma_prefix_ + "DroppedFrames.Encoder",
                              current_stats.frames_dropped_by_encoder);
   log_stream << uma_prefix_ << "DroppedFrames.Ratelimiter "
-             << current_stats.frames_dropped_by_rate_limiter;
+             << current_stats.frames_dropped_by_rate_limiter << "\n";
   RTC_HISTOGRAMS_COUNTS_1000(kIndex, uma_prefix_ + "DroppedFrames.Ratelimiter",
                              current_stats.frames_dropped_by_rate_limiter);
+  log_stream << uma_prefix_ << "DroppedFrames.CongestionWindow "
+             << current_stats.frames_dropped_by_congestion_window;
 
   RTC_LOG(LS_INFO) << log_stream.str();
 }
@@ -1041,6 +1043,9 @@ void SendStatisticsProxy::OnFrameDropped(DropReason reason) {
       break;
     case DropReason::kMediaOptimization:
       ++stats_.frames_dropped_by_rate_limiter;
+      break;
+    case DropReason::kCongestionWindow:
+      ++stats_.frames_dropped_by_congestion_window;
       break;
   }
 }
