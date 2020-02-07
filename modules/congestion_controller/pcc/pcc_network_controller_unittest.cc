@@ -29,7 +29,7 @@ namespace test {
 namespace {
 
 const DataRate kInitialBitrate = DataRate::kbps(60);
-const Timestamp kDefaultStartTime = Timestamp::ms(10000000);
+const Timestamp kDefaultStartTime = Timestamp::Millis(10000000);
 
 constexpr double kDataRateMargin = 0.20;
 constexpr double kMinDataRateFactor = 1 - kDataRateMargin;
@@ -82,10 +82,10 @@ TEST(PccNetworkControllerTest, UpdatesTargetSendRate) {
   config.transport.rates.start_rate = DataRate::kbps(300);
   auto send_net = s.CreateMutableSimulationNode([](NetworkSimulationConfig* c) {
     c->bandwidth = DataRate::kbps(500);
-    c->delay = TimeDelta::ms(100);
+    c->delay = TimeDelta::Millis(100);
   });
   auto ret_net = s.CreateMutableSimulationNode(
-      [](NetworkSimulationConfig* c) { c->delay = TimeDelta::ms(100); });
+      [](NetworkSimulationConfig* c) { c->delay = TimeDelta::Millis(100); });
 
   auto* client = s.CreateClient("send", config);
   auto* route = s.CreateRoutes(client, {send_net->node()},
@@ -94,21 +94,21 @@ TEST(PccNetworkControllerTest, UpdatesTargetSendRate) {
   VideoStreamConfig video;
   video.stream.use_rtx = false;
   s.CreateVideoStream(route->forward(), video);
-  s.RunFor(TimeDelta::seconds(30));
+  s.RunFor(TimeDelta::Seconds(30));
   EXPECT_NEAR(client->target_rate().kbps(), 450, 100);
   send_net->UpdateConfig([](NetworkSimulationConfig* c) {
     c->bandwidth = DataRate::kbps(800);
-    c->delay = TimeDelta::ms(100);
+    c->delay = TimeDelta::Millis(100);
   });
-  s.RunFor(TimeDelta::seconds(20));
+  s.RunFor(TimeDelta::Seconds(20));
   EXPECT_NEAR(client->target_rate().kbps(), 750, 150);
   send_net->UpdateConfig([](NetworkSimulationConfig* c) {
     c->bandwidth = DataRate::kbps(200);
-    c->delay = TimeDelta::ms(200);
+    c->delay = TimeDelta::Millis(200);
   });
   ret_net->UpdateConfig(
-      [](NetworkSimulationConfig* c) { c->delay = TimeDelta::ms(200); });
-  s.RunFor(TimeDelta::seconds(35));
+      [](NetworkSimulationConfig* c) { c->delay = TimeDelta::Millis(200); });
+  s.RunFor(TimeDelta::Seconds(35));
   EXPECT_NEAR(client->target_rate().kbps(), 170, 50);
 }
 

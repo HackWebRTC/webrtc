@@ -37,7 +37,7 @@ class TransportFeedback : public Rtpfb {
     uint16_t sequence_number() const { return sequence_number_; }
     int16_t delta_ticks() const { return delta_ticks_; }
     int32_t delta_us() const { return delta_ticks_ * kDeltaScaleFactor; }
-    TimeDelta delta() const { return TimeDelta::us(delta_us()); }
+    TimeDelta delta() const { return TimeDelta::Micros(delta_us()); }
     bool received() const { return received_; }
 
    private:

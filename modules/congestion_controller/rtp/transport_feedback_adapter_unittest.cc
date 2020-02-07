@@ -69,8 +69,8 @@ PacketResult CreatePacket(int64_t receive_time_ms,
                           size_t payload_size,
                           const PacedPacketInfo& pacing_info) {
   PacketResult res;
-  res.receive_time = Timestamp::ms(receive_time_ms);
-  res.sent_packet.send_time = Timestamp::ms(send_time_ms);
+  res.receive_time = Timestamp::Millis(receive_time_ms);
+  res.sent_packet.send_time = Timestamp::Millis(send_time_ms);
   res.sent_packet.sequence_number = sequence_number;
   res.sent_packet.size = DataSize::bytes(payload_size);
   res.sent_packet.pacing_info = pacing_info;
@@ -294,21 +294,21 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
   std::vector<PacketResult> sent_packets;
   // TODO(srte): Consider using us resolution in the constants.
   const TimeDelta kSmallDelta =
-      TimeDelta::us(rtcp::TransportFeedback::kDeltaScaleFactor * 0xFF)
-          .RoundDownTo(TimeDelta::ms(1));
+      TimeDelta::Micros(rtcp::TransportFeedback::kDeltaScaleFactor * 0xFF)
+          .RoundDownTo(TimeDelta::Millis(1));
   const TimeDelta kLargePositiveDelta =
-      TimeDelta::us(rtcp::TransportFeedback::kDeltaScaleFactor *
-                    std::numeric_limits<int16_t>::max())
-          .RoundDownTo(TimeDelta::ms(1));
+      TimeDelta::Micros(rtcp::TransportFeedback::kDeltaScaleFactor *
+                        std::numeric_limits<int16_t>::max())
+          .RoundDownTo(TimeDelta::Millis(1));
   const TimeDelta kLargeNegativeDelta =
-      TimeDelta::us(rtcp::TransportFeedback::kDeltaScaleFactor *
-                    std::numeric_limits<int16_t>::min())
-          .RoundDownTo(TimeDelta::ms(1));
+      TimeDelta::Micros(rtcp::TransportFeedback::kDeltaScaleFactor *
+                        std::numeric_limits<int16_t>::min())
+          .RoundDownTo(TimeDelta::Millis(1));
 
   PacketResult packet_feedback;
   packet_feedback.sent_packet.sequence_number = 1;
-  packet_feedback.sent_packet.send_time = Timestamp::ms(100);
-  packet_feedback.receive_time = Timestamp::ms(200);
+  packet_feedback.sent_packet.send_time = Timestamp::Millis(100);
+  packet_feedback.receive_time = Timestamp::Millis(200);
   packet_feedback.sent_packet.size = DataSize::bytes(1500);
   sent_packets.push_back(packet_feedback);
 
@@ -331,8 +331,8 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
 
   // Too large, delta - will need two feedback messages.
   packet_feedback.sent_packet.send_time +=
-      kLargePositiveDelta + TimeDelta::ms(1);
-  packet_feedback.receive_time += kLargePositiveDelta + TimeDelta::ms(1);
+      kLargePositiveDelta + TimeDelta::Millis(1);
+  packet_feedback.receive_time += kLargePositiveDelta + TimeDelta::Millis(1);
   ++packet_feedback.sent_packet.sequence_number;
 
   // Packets will be added to send history.

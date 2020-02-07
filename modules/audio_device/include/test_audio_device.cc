@@ -93,7 +93,7 @@ class TestAudioDeviceModuleImpl
 
     RepeatingTaskHandle::Start(task_queue_->Get(), [this]() {
       ProcessAudio();
-      return TimeDelta::us(process_interval_us_);
+      return TimeDelta::Micros(process_interval_us_);
     });
     return 0;
   }

@@ -23,10 +23,10 @@ namespace {
 // If no calls to MaybeProcessPackets() happen, make sure we update stats
 // at least every |kMaxTimeBetweenStatsUpdates| as long as the pacer isn't
 // completely drained.
-constexpr TimeDelta kMaxTimeBetweenStatsUpdates = TimeDelta::Millis<33>();
+constexpr TimeDelta kMaxTimeBetweenStatsUpdates = TimeDelta::Millis(33);
 // Don't call UpdateStats() more than |kMinTimeBetweenStatsUpdates| apart,
 // for performance reasons.
-constexpr TimeDelta kMinTimeBetweenStatsUpdates = TimeDelta::Millis<1>();
+constexpr TimeDelta kMinTimeBetweenStatsUpdates = TimeDelta::Millis(1);
 }  // namespace
 
 TaskQueuePacedSender::TaskQueuePacedSender(

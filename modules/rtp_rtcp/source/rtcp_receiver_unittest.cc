@@ -1211,7 +1211,7 @@ TEST_F(RtcpReceiverTest,
   // The "report_block_timestamp_utc_us" is obtained from the global UTC clock
   // (not the simulcated |system_clock_|) and requires a scoped fake clock.
   rtc::ScopedFakeClock fake_clock;
-  fake_clock.SetTime(Timestamp::us(kUtcNowUs));
+  fake_clock.SetTime(Timestamp::Micros(kUtcNowUs));
 
   rtcp::ReportBlock rtcp_block;
   rtcp_block.SetMediaSsrc(kReceiverMainSsrc);

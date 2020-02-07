@@ -28,16 +28,16 @@ namespace {
 // we have a min probe packet size of 200 bytes.
 constexpr size_t kMinProbePacketSize = 200;
 
-constexpr TimeDelta kProbeClusterTimeout = TimeDelta::Seconds<5>();
+constexpr TimeDelta kProbeClusterTimeout = TimeDelta::Seconds(5);
 
 }  // namespace
 
 BitrateProberConfig::BitrateProberConfig(
     const WebRtcKeyValueConfig* key_value_config)
     : min_probe_packets_sent("min_probe_packets_sent", 5),
-      min_probe_delta("min_probe_delta", TimeDelta::ms(1)),
-      min_probe_duration("min_probe_duration", TimeDelta::ms(15)),
-      max_probe_delay("max_probe_delay", TimeDelta::ms(3)) {
+      min_probe_delta("min_probe_delta", TimeDelta::Millis(1)),
+      min_probe_duration("min_probe_duration", TimeDelta::Millis(15)),
+      max_probe_delay("max_probe_delay", TimeDelta::Millis(3)) {
   ParseFieldTrial({&min_probe_packets_sent, &min_probe_delta,
                    &min_probe_duration, &max_probe_delay},
                   key_value_config->Lookup("WebRTC-Bwe-ProbingConfiguration"));

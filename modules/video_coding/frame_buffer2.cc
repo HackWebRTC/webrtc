@@ -92,7 +92,7 @@ void FrameBuffer::StartWaitForNextFrameOnQueue() {
   RTC_DCHECK(!callback_task_.Running());
   int64_t wait_ms = FindNextFrame(clock_->TimeInMilliseconds());
   callback_task_ = RepeatingTaskHandle::DelayedStart(
-      callback_queue_->Get(), TimeDelta::ms(wait_ms), [this] {
+      callback_queue_->Get(), TimeDelta::Millis(wait_ms), [this] {
         // If this task has not been cancelled, we did not get any new frames
         // while waiting. Continue with frame delivery.
         rtc::CritScope lock(&crit_);
@@ -111,7 +111,7 @@ void FrameBuffer::StartWaitForNextFrameOnQueue() {
           // means that the frame buffer was cleared between creation and
           // execution of this task. Continue waiting for the remaining time.
           int64_t wait_ms = FindNextFrame(clock_->TimeInMilliseconds());
-          return TimeDelta::ms(wait_ms);
+          return TimeDelta::Millis(wait_ms);
         }
       });
 }

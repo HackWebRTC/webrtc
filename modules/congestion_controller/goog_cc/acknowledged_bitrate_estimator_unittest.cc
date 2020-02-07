@@ -60,15 +60,16 @@ AcknowledgedBitrateEstimatorTestStates CreateTestStates() {
 
 std::vector<PacketResult> CreateFeedbackVector() {
   std::vector<PacketResult> packet_feedback_vector(2);
-  packet_feedback_vector[0].receive_time = Timestamp::ms(kFirstArrivalTimeMs);
+  packet_feedback_vector[0].receive_time =
+      Timestamp::Millis(kFirstArrivalTimeMs);
   packet_feedback_vector[0].sent_packet.send_time =
-      Timestamp::ms(kFirstSendTimeMs);
+      Timestamp::Millis(kFirstSendTimeMs);
   packet_feedback_vector[0].sent_packet.sequence_number = kSequenceNumber;
   packet_feedback_vector[0].sent_packet.size = DataSize::bytes(kPayloadSize);
   packet_feedback_vector[1].receive_time =
-      Timestamp::ms(kFirstArrivalTimeMs + 10);
+      Timestamp::Millis(kFirstArrivalTimeMs + 10);
   packet_feedback_vector[1].sent_packet.send_time =
-      Timestamp::ms(kFirstSendTimeMs + 10);
+      Timestamp::Millis(kFirstSendTimeMs + 10);
   packet_feedback_vector[1].sent_packet.sequence_number = kSequenceNumber;
   packet_feedback_vector[1].sent_packet.size =
       DataSize::bytes(kPayloadSize + 10);
@@ -116,7 +117,7 @@ TEST(TestAcknowledgedBitrateEstimator, ExpectFastRateChangeWhenLeftAlr) {
         .Times(1);
   }
   states.acknowledged_bitrate_estimator->SetAlrEndedTime(
-      Timestamp::ms(kFirstArrivalTimeMs + 1));
+      Timestamp::Millis(kFirstArrivalTimeMs + 1));
   states.acknowledged_bitrate_estimator->IncomingPacketFeedbackVector(
       packet_feedback_vector);
 }

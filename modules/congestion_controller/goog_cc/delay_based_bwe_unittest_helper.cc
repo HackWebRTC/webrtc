@@ -53,7 +53,7 @@ int64_t RtpStream::GenerateFrame(int64_t time_now_us,
   for (size_t i = 0; i < n_packets; ++i) {
     PacketResult packet;
     packet.sent_packet.send_time =
-        Timestamp::us(time_now_us + kSendSideOffsetUs);
+        Timestamp::Micros(time_now_us + kSendSideOffsetUs);
     packet.sent_packet.size = DataSize::bytes(payload_size);
     packets->push_back(packet);
   }
@@ -137,7 +137,7 @@ int64_t StreamGenerator::GenerateFrame(std::vector<PacketResult>* packets,
     prev_arrival_time_us_ =
         std::max(time_now_us + required_network_time_us,
                  prev_arrival_time_us_ + required_network_time_us);
-    packet.receive_time = Timestamp::us(prev_arrival_time_us_);
+    packet.receive_time = Timestamp::Micros(prev_arrival_time_us_);
     ++i;
   }
   it = std::min_element(streams_.begin(), streams_.end(), RtpStream::Compare);
@@ -194,8 +194,8 @@ void DelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
   RTC_CHECK_GE(arrival_time_ms + arrival_time_offset_ms_, 0);
   PacketResult packet;
   packet.receive_time =
-      Timestamp::ms(arrival_time_ms + arrival_time_offset_ms_);
-  packet.sent_packet.send_time = Timestamp::ms(send_time_ms);
+      Timestamp::Millis(arrival_time_ms + arrival_time_offset_ms_);
+  packet.sent_packet.send_time = Timestamp::Millis(send_time_ms);
   packet.sent_packet.size = DataSize::bytes(payload_size);
   packet.sent_packet.pacing_info = pacing_info;
   if (packet.sent_packet.pacing_info.probe_cluster_id !=
@@ -203,7 +203,7 @@ void DelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
     probe_bitrate_estimator_->HandleProbeAndEstimateBitrate(packet);
 
   TransportPacketsFeedback msg;
-  msg.feedback_time = Timestamp::ms(clock_.TimeInMilliseconds());
+  msg.feedback_time = Timestamp::Millis(clock_.TimeInMilliseconds());
   msg.packet_feedbacks.push_back(packet);
   acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(
       msg.SortedByReceiveTime());
@@ -239,7 +239,7 @@ bool DelayBasedBweTest::GenerateAndProcessFrame(uint32_t ssrc,
                                  clock_.TimeInMicroseconds());
   for (auto& packet : packets) {
     RTC_CHECK_GE(packet.receive_time.ms() + arrival_time_offset_ms_, 0);
-    packet.receive_time += TimeDelta::ms(arrival_time_offset_ms_);
+    packet.receive_time += TimeDelta::Millis(arrival_time_offset_ms_);
 
     if (packet.sent_packet.pacing_info.probe_cluster_id !=
         PacedPacketInfo::kNotAProbe)
@@ -249,7 +249,7 @@ bool DelayBasedBweTest::GenerateAndProcessFrame(uint32_t ssrc,
   acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(packets);
   TransportPacketsFeedback msg;
   msg.packet_feedbacks = packets;
-  msg.feedback_time = Timestamp::ms(clock_.TimeInMilliseconds());
+  msg.feedback_time = Timestamp::Millis(clock_.TimeInMilliseconds());
 
   DelayBasedBwe::Result result =
       bitrate_estimator_->IncomingPacketFeedbackVector(

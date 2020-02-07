@@ -58,7 +58,7 @@ void UpdateRateControl(const AimdRateControlStates& states,
                        int64_t now_ms) {
   RateControlInput input(bandwidth_usage,
                          OptionalRateFromOptionalBps(throughput_estimate));
-  states.aimd_rate_control->Update(&input, Timestamp::ms(now_ms));
+  states.aimd_rate_control->Update(&input, Timestamp::Millis(now_ms));
 }
 void SetEstimate(const AimdRateControlStates& states, int bitrate_bps) {
   states.aimd_rate_control->SetEstimate(DataRate::bps(bitrate_bps),
@@ -87,7 +87,7 @@ TEST(AimdRateControlTest, NearMaxIncreaseRateIs5kbpsOn60kbpsAnd100msRtt) {
   auto states = CreateAimdRateControlStates();
   constexpr int kBitrate = 60000;
   SetEstimate(states, kBitrate);
-  states.aimd_rate_control->SetRtt(TimeDelta::ms(100));
+  states.aimd_rate_control->SetRtt(TimeDelta::Millis(100));
   EXPECT_EQ(5000,
             states.aimd_rate_control->GetNearMaxIncreaseRateBpsPerSecond());
 }

@@ -202,7 +202,7 @@ RemoteBitrateEstimatorAbsSendTime::ProcessClusters(int64_t now_ms) {
                        << " ms, mean recv delta: " << best_it->recv_mean_ms
                        << " ms, num probes: " << best_it->count;
       remote_rate_.SetEstimate(DataRate::bps(probe_bitrate_bps),
-                               Timestamp::ms(now_ms));
+                               Timestamp::Millis(now_ms));
       return ProbeResult::kBitrateUpdated;
     }
   }
@@ -336,7 +336,7 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
         absl::optional<uint32_t> incoming_rate =
             incoming_bitrate_.Rate(arrival_time_ms);
         if (incoming_rate &&
-            remote_rate_.TimeToReduceFurther(Timestamp::ms(now_ms),
+            remote_rate_.TimeToReduceFurther(Timestamp::Millis(now_ms),
                                              DataRate::bps(*incoming_rate))) {
           update_estimate = true;
         }
@@ -351,7 +351,8 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
           detector_.State(),
           OptionalRateFromOptionalBps(incoming_bitrate_.Rate(arrival_time_ms)));
       target_bitrate_bps =
-          remote_rate_.Update(&input, Timestamp::ms(now_ms)).bps<uint32_t>();
+          remote_rate_.Update(&input, Timestamp::Millis(now_ms))
+              .bps<uint32_t>();
       update_estimate = remote_rate_.ValidEstimate();
       ssrcs = Keys(ssrcs_);
     }
@@ -391,7 +392,7 @@ void RemoteBitrateEstimatorAbsSendTime::TimeoutStreams(int64_t now_ms) {
 void RemoteBitrateEstimatorAbsSendTime::OnRttUpdate(int64_t avg_rtt_ms,
                                                     int64_t max_rtt_ms) {
   rtc::CritScope lock(&crit_);
-  remote_rate_.SetRtt(TimeDelta::ms(avg_rtt_ms));
+  remote_rate_.SetRtt(TimeDelta::Millis(avg_rtt_ms));
 }
 
 void RemoteBitrateEstimatorAbsSendTime::RemoveStream(uint32_t ssrc) {

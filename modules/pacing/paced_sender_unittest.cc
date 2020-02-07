@@ -145,7 +145,7 @@ TEST_P(PacedSenderTest, PacesPackets) {
   // Packets should be sent over a period of close to 1s. Expect a little lower
   // than this since initial probing is a bit quicker.
   TimeDelta duration = clock_.CurrentTime() - start_time;
-  EXPECT_GT(duration, TimeDelta::ms(900));
+  EXPECT_GT(duration, TimeDelta::Millis(900));
 }
 
 INSTANTIATE_TEST_SUITE_P(

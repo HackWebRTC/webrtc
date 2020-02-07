@@ -26,17 +26,17 @@
 namespace webrtc {
 namespace {
 // Time limit in milliseconds between packet bursts.
-constexpr TimeDelta kDefaultMinPacketLimit = TimeDelta::Millis<5>();
-constexpr TimeDelta kCongestedPacketInterval = TimeDelta::Millis<500>();
+constexpr TimeDelta kDefaultMinPacketLimit = TimeDelta::Millis(5);
+constexpr TimeDelta kCongestedPacketInterval = TimeDelta::Millis(500);
 // TODO(sprang): Consider dropping this limit.
 // The maximum debt level, in terms of time, capped when sending packets.
-constexpr TimeDelta kMaxDebtInTime = TimeDelta::Millis<500>();
-constexpr TimeDelta kMaxElapsedTime = TimeDelta::Seconds<2>();
+constexpr TimeDelta kMaxDebtInTime = TimeDelta::Millis(500);
+constexpr TimeDelta kMaxElapsedTime = TimeDelta::Seconds(2);
 constexpr DataSize kDefaultPaddingTarget = DataSize::Bytes<50>();
 
 // Upper cap on process interval, in case process has not been called in a long
 // time.
-constexpr TimeDelta kMaxProcessingInterval = TimeDelta::Millis<30>();
+constexpr TimeDelta kMaxProcessingInterval = TimeDelta::Millis(30);
 
 constexpr int kFirstPriority = 0;
 
@@ -75,11 +75,11 @@ int GetPriorityForType(RtpPacketMediaType type) {
 }  // namespace
 
 const TimeDelta PacingController::kMaxExpectedQueueLength =
-    TimeDelta::Millis<2000>();
+    TimeDelta::Millis(2000);
 const float PacingController::kDefaultPaceMultiplier = 2.5f;
 const TimeDelta PacingController::kPausedProcessInterval =
     kCongestedPacketInterval;
-const TimeDelta PacingController::kMinSleepTime = TimeDelta::Millis<1>();
+const TimeDelta PacingController::kMinSleepTime = TimeDelta::Millis(1);
 
 PacingController::PacingController(Clock* clock,
                                    PacketSender* packet_sender,
@@ -130,7 +130,7 @@ PacingController::PacingController(Clock* clock,
   FieldTrialParameter<int> min_packet_limit_ms("", min_packet_limit_.ms());
   ParseFieldTrial({&min_packet_limit_ms},
                   field_trials_->Lookup("WebRTC-Pacer-MinPacketLimitMs"));
-  min_packet_limit_ = TimeDelta::ms(min_packet_limit_ms.Get());
+  min_packet_limit_ = TimeDelta::Millis(min_packet_limit_ms.Get());
   UpdateBudgetWithElapsedTime(min_packet_limit_);
 }
 
@@ -242,7 +242,7 @@ void PacingController::SetTransportOverhead(DataSize overhead_per_packet) {
 
 TimeDelta PacingController::ExpectedQueueTime() const {
   RTC_DCHECK_GT(pacing_bitrate_, DataRate::Zero());
-  return TimeDelta::ms(
+  return TimeDelta::Millis(
       (QueueSizeData().bytes() * 8 * rtc::kNumMillisecsPerSec) /
       pacing_bitrate_.bps());
 }
@@ -439,7 +439,7 @@ void PacingController::ProcessPackets() {
       packet_queue_.UpdateQueueTime(now);
       if (drain_large_queues_) {
         TimeDelta avg_time_left =
-            std::max(TimeDelta::ms(1),
+            std::max(TimeDelta::Millis(1),
                      queue_time_limit - packet_queue_.AverageQueueTime());
         DataRate min_rate_needed = queue_size_data / avg_time_left;
         if (min_rate_needed > target_rate) {

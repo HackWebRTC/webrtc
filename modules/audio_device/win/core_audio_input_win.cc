@@ -410,8 +410,8 @@ absl::optional<int> CoreAudioInput::EstimateLatencyMillis(
   }
   uint64_t qpc_now_raw = perf_counter_now.QuadPart;
   uint64_t now_time_100ns = qpc_now_raw * (*qpc_to_100ns_);
-  webrtc::TimeDelta delay_us =
-      webrtc::TimeDelta::us(0.1 * (now_time_100ns - capture_time_100ns) + 0.5);
+  webrtc::TimeDelta delay_us = webrtc::TimeDelta::Micros(
+      0.1 * (now_time_100ns - capture_time_100ns) + 0.5);
   return delay_us.ms();
 }
 

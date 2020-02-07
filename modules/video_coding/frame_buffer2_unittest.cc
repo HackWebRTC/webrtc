@@ -135,7 +135,7 @@ class TestFrameBuffer2 : public ::testing::Test {
 
   TestFrameBuffer2()
       : trial_("WebRTC-AddRttToPlayoutDelay/Enabled/"),
-        time_controller_(Timestamp::seconds(0)),
+        time_controller_(Timestamp::Seconds(0)),
         time_task_queue_(
             time_controller_.GetTaskQueueFactory()->CreateTaskQueue(
                 "extract queue",
@@ -206,7 +206,7 @@ class TestFrameBuffer2 : public ::testing::Test {
           });
     });
     if (max_wait_time == 0) {
-      time_controller_.AdvanceTime(TimeDelta::ms(0));
+      time_controller_.AdvanceTime(TimeDelta::Millis(0));
     }
   }
 
@@ -256,7 +256,7 @@ TEST_F(TestFrameBuffer2, WaitForFrame) {
 
   ExtractFrame(50);
   InsertFrame(pid, 0, ts, false, true, kFrameSize);
-  time_controller_.AdvanceTime(TimeDelta::ms(50));
+  time_controller_.AdvanceTime(TimeDelta::Millis(50));
   CheckFrame(0, pid, 0);
 }
 
@@ -293,7 +293,7 @@ TEST_F(TestFrameBuffer2, DISABLED_OneUnorderedSuperFrame) {
   ExtractFrame(50);
   InsertFrame(pid, 1, ts, true, true, kFrameSize);
   InsertFrame(pid, 0, ts, false, false, kFrameSize);
-  time_controller_.AdvanceTime(TimeDelta::ms(0));
+  time_controller_.AdvanceTime(TimeDelta::Millis(0));
 
   CheckFrame(0, pid, 0);
   CheckFrame(1, pid, 1);
@@ -310,10 +310,10 @@ TEST_F(TestFrameBuffer2, DISABLED_OneLayerStreamReordered) {
     ExtractFrame(50);
     InsertFrame(pid + i + 1, 0, ts + (i + 1) * kFps10, false, true, kFrameSize,
                 pid + i);
-    time_controller_.AdvanceTime(TimeDelta::ms(kFps10));
+    time_controller_.AdvanceTime(TimeDelta::Millis(kFps10));
     InsertFrame(pid + i, 0, ts + i * kFps10, false, true, kFrameSize,
                 pid + i - 1);
-    time_controller_.AdvanceTime(TimeDelta::ms(kFps10));
+    time_controller_.AdvanceTime(TimeDelta::Millis(kFps10));
     ExtractFrame();
     CheckFrame(i, pid + i, 0);
     CheckFrame(i + 1, pid + i + 1, 0);
@@ -352,7 +352,7 @@ TEST_F(TestFrameBuffer2, OneLayerStream) {
     InsertFrame(pid + i, 0, ts + i * kFps10, false, true, kFrameSize,
                 pid + i - 1);
     ExtractFrame();
-    time_controller_.AdvanceTime(TimeDelta::ms(kFps10));
+    time_controller_.AdvanceTime(TimeDelta::Millis(kFps10));
     CheckFrame(i, pid + i, 0);
   }
 }
@@ -374,7 +374,7 @@ TEST_F(TestFrameBuffer2, DropTemporalLayerSlowDecoder) {
 
   for (int i = 0; i < 10; ++i) {
     ExtractFrame();
-    time_controller_.AdvanceTime(TimeDelta::ms(70));
+    time_controller_.AdvanceTime(TimeDelta::Millis(70));
   }
 
   CheckFrame(0, pid, 0);
@@ -400,7 +400,7 @@ TEST_F(TestFrameBuffer2, DropFramesIfSystemIsStalled) {
 
   ExtractFrame();
   // Jump forward in time, simulating the system being stalled for some reason.
-  time_controller_.AdvanceTime(TimeDelta::ms(3) * kFps10);
+  time_controller_.AdvanceTime(TimeDelta::Millis(3) * kFps10);
   // Extract one more frame, expect second and third frame to be dropped.
   EXPECT_CALL(stats_callback_, OnDroppedFrames(2)).Times(1);
   ExtractFrame();
@@ -683,7 +683,7 @@ TEST_F(TestFrameBuffer2, HigherSpatialLayerNonDecodable) {
   InsertFrame(pid + 2, 0, ts + kFps10, false, false, kFrameSize, pid);
   InsertFrame(pid + 2, 1, ts + kFps10, true, true, kFrameSize, pid + 1);
 
-  time_controller_.AdvanceTime(TimeDelta::ms(1000));
+  time_controller_.AdvanceTime(TimeDelta::Millis(1000));
   // Frame pid+1 is decodable but too late.
   // In superframe pid+2 frame sid=0 is decodable, but frame sid=1 is not.
   // Incorrect implementation might skip pid+1 frame and output undecodable

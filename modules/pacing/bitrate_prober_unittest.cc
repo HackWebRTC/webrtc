@@ -21,7 +21,7 @@ TEST(BitrateProberTest, VerifyStatesAndTimeBetweenProbes) {
   BitrateProber prober(config);
   EXPECT_FALSE(prober.IsProbing());
 
-  Timestamp now = Timestamp::ms(0);
+  Timestamp now = Timestamp::Millis(0);
   const Timestamp start_time = now;
   EXPECT_EQ(prober.NextProbeTime(now), Timestamp::PlusInfinity());
 
@@ -29,7 +29,7 @@ TEST(BitrateProberTest, VerifyStatesAndTimeBetweenProbes) {
   const DataRate kTestBitrate2 = DataRate::kbps(1800);
   const int kClusterSize = 5;
   const int kProbeSize = 1000;
-  const TimeDelta kMinProbeDuration = TimeDelta::ms(15);
+  const TimeDelta kMinProbeDuration = TimeDelta::Millis(15);
 
   prober.CreateProbeCluster(kTestBitrate1, now, 0);
   prober.CreateProbeCluster(kTestBitrate2, now, 1);
@@ -92,7 +92,7 @@ TEST(BitrateProberTest, DoesntProbeWithoutRecentPackets) {
   EXPECT_EQ(now, std::max(now, prober.NextProbeTime(now)));
   prober.ProbeSent(now, 1000);
   // Let time pass, no large enough packets put into prober.
-  now += TimeDelta::seconds(6);
+  now += TimeDelta::Seconds(6);
   EXPECT_EQ(prober.NextProbeTime(now), Timestamp::PlusInfinity());
   // Check that legacy behaviour where prober is reset in TimeUntilNextProbe is
   // no longer there. Probes are no longer retried if they are timed out.
@@ -117,10 +117,11 @@ TEST(BitrateProberTest, VerifyProbeSizeOnHighBitrate) {
 
   const DataRate kHighBitrate = DataRate::kbps(10000);  // 10 Mbps
 
-  prober.CreateProbeCluster(kHighBitrate, Timestamp::ms(0), /*cluster_id=*/0);
+  prober.CreateProbeCluster(kHighBitrate, Timestamp::Millis(0),
+                            /*cluster_id=*/0);
   // Probe size should ensure a minimum of 1 ms interval.
   EXPECT_GT(prober.RecommendedMinProbeSize(),
-            (kHighBitrate * TimeDelta::ms(1)).bytes<size_t>());
+            (kHighBitrate * TimeDelta::Millis(1)).bytes<size_t>());
 }
 
 TEST(BitrateProberTest, MinumumNumberOfProbingPackets) {
@@ -131,7 +132,7 @@ TEST(BitrateProberTest, MinumumNumberOfProbingPackets) {
   const DataRate kBitrate = DataRate::kbps(100);
   const int kPacketSizeBytes = 1000;
 
-  Timestamp now = Timestamp::ms(0);
+  Timestamp now = Timestamp::Millis(0);
   prober.CreateProbeCluster(kBitrate, now, 0);
   prober.OnIncomingPacket(kPacketSizeBytes);
   for (int i = 0; i < 5; ++i) {
@@ -147,9 +148,9 @@ TEST(BitrateProberTest, ScaleBytesUsedForProbing) {
   BitrateProber prober(config);
   const DataRate kBitrate = DataRate::kbps(10000);  // 10 Mbps.
   const int kPacketSizeBytes = 1000;
-  const int kExpectedBytesSent = (kBitrate * TimeDelta::ms(15)).bytes();
+  const int kExpectedBytesSent = (kBitrate * TimeDelta::Millis(15)).bytes();
 
-  Timestamp now = Timestamp::ms(0);
+  Timestamp now = Timestamp::Millis(0);
   prober.CreateProbeCluster(kBitrate, now, /*cluster_id=*/0);
   prober.OnIncomingPacket(kPacketSizeBytes);
   int bytes_sent = 0;
@@ -167,9 +168,9 @@ TEST(BitrateProberTest, HighBitrateProbing) {
   BitrateProber prober(config);
   const DataRate kBitrate = DataRate::kbps(1000000);  // 1 Gbps.
   const int kPacketSizeBytes = 1000;
-  const int kExpectedBytesSent = (kBitrate * TimeDelta::ms(15)).bytes();
+  const int kExpectedBytesSent = (kBitrate * TimeDelta::Millis(15)).bytes();
 
-  Timestamp now = Timestamp::ms(0);
+  Timestamp now = Timestamp::Millis(0);
   prober.CreateProbeCluster(kBitrate, now, 0);
   prober.OnIncomingPacket(kPacketSizeBytes);
   int bytes_sent = 0;
@@ -189,9 +190,9 @@ TEST(BitrateProberTest, ProbeClusterTimeout) {
   const int kSmallPacketSize = 20;
   // Expecting two probe clusters of 5 packets each.
   const int kExpectedBytesSent = 20 * 2 * 5;
-  const TimeDelta kTimeout = TimeDelta::ms(5000);
+  const TimeDelta kTimeout = TimeDelta::Millis(5000);
 
-  Timestamp now = Timestamp::ms(0);
+  Timestamp now = Timestamp::Millis(0);
   prober.CreateProbeCluster(kBitrate, now, /*cluster_id=*/0);
   prober.OnIncomingPacket(kSmallPacketSize);
   EXPECT_FALSE(prober.IsProbing());
@@ -199,7 +200,7 @@ TEST(BitrateProberTest, ProbeClusterTimeout) {
   prober.CreateProbeCluster(kBitrate / 10, now, /*cluster_id=*/1);
   prober.OnIncomingPacket(kSmallPacketSize);
   EXPECT_FALSE(prober.IsProbing());
-  now += TimeDelta::ms(1);
+  now += TimeDelta::Millis(1);
   prober.CreateProbeCluster(kBitrate / 10, now, /*cluster_id=*/2);
   prober.OnIncomingPacket(kSmallPacketSize);
   EXPECT_TRUE(prober.IsProbing());

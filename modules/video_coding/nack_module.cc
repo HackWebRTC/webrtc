@@ -65,11 +65,11 @@ NackModule::BackoffSettings::BackoffSettings(TimeDelta min_retry,
 absl::optional<NackModule::BackoffSettings>
 NackModule::BackoffSettings::ParseFromFieldTrials() {
   // Matches magic number in RTPSender::OnReceivedNack().
-  const TimeDelta kDefaultMinRetryInterval = TimeDelta::ms(5);
+  const TimeDelta kDefaultMinRetryInterval = TimeDelta::Millis(5);
   // Upper bound on link-delay considered for exponential backoff.
   // Selected so that cumulative delay with 1.25 base and 10 retries ends up
   // below 3s, since above that there will be a FIR generated instead.
-  const TimeDelta kDefaultMaxRtt = TimeDelta::ms(160);
+  const TimeDelta kDefaultMaxRtt = TimeDelta::Millis(160);
   // Default base for exponential backoff, adds 25% RTT delay for each retry.
   const double kDefaultBase = 1.25;
 
@@ -296,13 +296,13 @@ std::vector<uint16_t> NackModule::GetNackBatch(NackFilterOptions options) {
   std::vector<uint16_t> nack_batch;
   auto it = nack_list_.begin();
   while (it != nack_list_.end()) {
-    TimeDelta resend_delay = TimeDelta::ms(rtt_ms_);
+    TimeDelta resend_delay = TimeDelta::Millis(rtt_ms_);
     if (backoff_settings_) {
       resend_delay =
           std::max(resend_delay, backoff_settings_->min_retry_interval);
       if (it->second.retries > 1) {
         TimeDelta exponential_backoff =
-            std::min(TimeDelta::ms(rtt_ms_), backoff_settings_->max_rtt) *
+            std::min(TimeDelta::Millis(rtt_ms_), backoff_settings_->max_rtt) *
             std::pow(backoff_settings_->base, it->second.retries - 1);
         resend_delay = std::max(resend_delay, exponential_backoff);
       }

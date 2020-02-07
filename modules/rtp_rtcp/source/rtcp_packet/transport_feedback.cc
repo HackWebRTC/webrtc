@@ -377,7 +377,7 @@ int64_t TransportFeedback::GetBaseTimeUs() const {
 }
 
 TimeDelta TransportFeedback::GetBaseTime() const {
-  return TimeDelta::us(GetBaseTimeUs());
+  return TimeDelta::Micros(GetBaseTimeUs());
 }
 
 int64_t TransportFeedback::GetBaseDeltaUs(int64_t prev_timestamp_us) const {
@@ -393,7 +393,7 @@ int64_t TransportFeedback::GetBaseDeltaUs(int64_t prev_timestamp_us) const {
 }
 
 TimeDelta TransportFeedback::GetBaseDelta(TimeDelta prev_timestamp) const {
-  return TimeDelta::us(GetBaseDeltaUs(prev_timestamp.us()));
+  return TimeDelta::Micros(GetBaseDeltaUs(prev_timestamp.us()));
 }
 
 // De-serialize packet.

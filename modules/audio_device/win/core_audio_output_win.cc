@@ -377,8 +377,8 @@ int CoreAudioOutput::EstimateOutputLatencyMillis(uint64_t device_frequency) {
 
     // Convert latency in number of frames into milliseconds.
     webrtc::TimeDelta delay =
-        webrtc::TimeDelta::us(delay_frames * rtc::kNumMicrosecsPerSec /
-                              format_.Format.nSamplesPerSec);
+        webrtc::TimeDelta::Micros(delay_frames * rtc::kNumMicrosecsPerSec /
+                                  format_.Format.nSamplesPerSec);
     delay_ms = delay.ms();
   }
   return delay_ms;

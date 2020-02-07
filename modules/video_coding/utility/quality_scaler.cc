@@ -104,9 +104,10 @@ QualityScaler::QualityScaler(AdaptationObserverInterface* observer,
   }
   RTC_DCHECK(observer_ != nullptr);
   check_qp_task_ = RepeatingTaskHandle::DelayedStart(
-      TaskQueueBase::Current(), TimeDelta::ms(GetSamplingPeriodMs()), [this]() {
+      TaskQueueBase::Current(), TimeDelta::Millis(GetSamplingPeriodMs()),
+      [this]() {
         CheckQp();
-        return TimeDelta::ms(GetSamplingPeriodMs());
+        return TimeDelta::Millis(GetSamplingPeriodMs());
       });
   RTC_LOG(LS_INFO) << "QP thresholds: low: " << thresholds_.low
                    << ", high: " << thresholds_.high;

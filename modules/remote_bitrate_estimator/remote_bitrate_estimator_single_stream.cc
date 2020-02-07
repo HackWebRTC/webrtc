@@ -143,10 +143,10 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
   if (estimator->detector.State() == BandwidthUsage::kBwOverusing) {
     absl::optional<uint32_t> incoming_bitrate_bps =
         incoming_bitrate_.Rate(now_ms);
-    if (incoming_bitrate_bps &&
-        (prior_state != BandwidthUsage::kBwOverusing ||
-         GetRemoteRate()->TimeToReduceFurther(
-             Timestamp::ms(now_ms), DataRate::bps(*incoming_bitrate_bps)))) {
+    if (incoming_bitrate_bps && (prior_state != BandwidthUsage::kBwOverusing ||
+                                 GetRemoteRate()->TimeToReduceFurther(
+                                     Timestamp::Millis(now_ms),
+                                     DataRate::bps(*incoming_bitrate_bps)))) {
       // The first overuse should immediately trigger a new estimate.
       // We also have to update the estimate immediately if we are overusing
       // and the target bitrate is too high compared to what we are receiving.
@@ -203,7 +203,7 @@ void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t now_ms) {
   const RateControlInput input(
       bw_state, OptionalRateFromOptionalBps(incoming_bitrate_.Rate(now_ms)));
   uint32_t target_bitrate =
-      remote_rate->Update(&input, Timestamp::ms(now_ms)).bps<uint32_t>();
+      remote_rate->Update(&input, Timestamp::Millis(now_ms)).bps<uint32_t>();
   if (remote_rate->ValidEstimate()) {
     process_interval_ms_ = remote_rate->GetFeedbackInterval().ms();
     RTC_DCHECK_GT(process_interval_ms_, 0);
@@ -217,7 +217,7 @@ void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t now_ms) {
 void RemoteBitrateEstimatorSingleStream::OnRttUpdate(int64_t avg_rtt_ms,
                                                      int64_t max_rtt_ms) {
   rtc::CritScope cs(&crit_sect_);
-  GetRemoteRate()->SetRtt(TimeDelta::ms(avg_rtt_ms));
+  GetRemoteRate()->SetRtt(TimeDelta::Millis(avg_rtt_ms));
 }
 
 void RemoteBitrateEstimatorSingleStream::RemoveStream(unsigned int ssrc) {

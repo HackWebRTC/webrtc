@@ -29,8 +29,8 @@ constexpr double kSlowStartModeIncrease = 1.5;
 
 constexpr double kAlphaForPacketInterval = 0.9;
 constexpr int64_t kMinPacketsNumberPerInterval = 20;
-const TimeDelta kMinDurationOfMonitorInterval = TimeDelta::Millis<50>();
-const TimeDelta kStartupDuration = TimeDelta::Millis<500>();
+const TimeDelta kMinDurationOfMonitorInterval = TimeDelta::Millis(50);
+const TimeDelta kStartupDuration = TimeDelta::Millis(500);
 constexpr double kMinRateChangeBps = 4000;
 constexpr DataRate kMinRateHaveMultiplicativeRateChange =
     DataRate::BitsPerSec<static_cast<int64_t>(kMinRateChangeBps /
@@ -59,8 +59,9 @@ PccNetworkController::PccNetworkController(NetworkControllerConfig config)
       mode_(Mode::kStartup),
       default_bandwidth_(DataRate::kbps(kInitialBandwidthKbps)),
       bandwidth_estimate_(default_bandwidth_),
-      rtt_tracker_(TimeDelta::ms(kInitialRttMs), kAlphaForRtt),
-      monitor_interval_timeout_(TimeDelta::ms(kInitialRttMs) * kTimeoutRatio),
+      rtt_tracker_(TimeDelta::Millis(kInitialRttMs), kAlphaForRtt),
+      monitor_interval_timeout_(TimeDelta::Millis(kInitialRttMs) *
+                                kTimeoutRatio),
       monitor_interval_length_strategy_(MonitorIntervalLengthStrategy::kFixed),
       monitor_interval_duration_ratio_(kMonitorIntervalDurationRatio),
       sampling_step_(kDefaultSamplingStep),
@@ -115,7 +116,7 @@ NetworkControlUpdate PccNetworkController::CreateRateUpdate(
   // Set up pacing/padding target rate.
   PacerConfig pacer_config;
   pacer_config.at_time = at_time;
-  pacer_config.time_window = TimeDelta::ms(1);
+  pacer_config.time_window = TimeDelta::Millis(1);
   pacer_config.data_window = sending_rate * pacer_config.time_window;
   pacer_config.pad_window = sending_rate * pacer_config.time_window;
 

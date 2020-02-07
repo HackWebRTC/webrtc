@@ -30,7 +30,7 @@
 namespace webrtc {
 namespace {
 
-constexpr TimeDelta kDefaultRtt = TimeDelta::Millis<200>();
+constexpr TimeDelta kDefaultRtt = TimeDelta::Millis(200);
 constexpr double kDefaultBackoffFactor = 0.85;
 
 constexpr char kBweBackOffFactorExperiment[] = "WebRTC-BweBackOffFactor";
@@ -140,15 +140,15 @@ TimeDelta AimdRateControl::GetFeedbackInterval() const {
   const DataSize kRtcpSize = DataSize::bytes(80);
   const DataRate rtcp_bitrate = current_bitrate_ * 0.05;
   const TimeDelta interval = kRtcpSize / rtcp_bitrate;
-  const TimeDelta kMinFeedbackInterval = TimeDelta::ms(200);
-  const TimeDelta kMaxFeedbackInterval = TimeDelta::ms(1000);
+  const TimeDelta kMinFeedbackInterval = TimeDelta::Millis(200);
+  const TimeDelta kMaxFeedbackInterval = TimeDelta::Millis(1000);
   return interval.Clamped(kMinFeedbackInterval, kMaxFeedbackInterval);
 }
 
 bool AimdRateControl::TimeToReduceFurther(Timestamp at_time,
                                           DataRate estimated_throughput) const {
   const TimeDelta bitrate_reduction_interval =
-      rtt_.Clamped(TimeDelta::ms(10), TimeDelta::ms(200));
+      rtt_.Clamped(TimeDelta::Millis(10), TimeDelta::Millis(200));
   if (at_time - time_last_bitrate_change_ >= bitrate_reduction_interval) {
     return true;
   }
@@ -192,7 +192,7 @@ DataRate AimdRateControl::Update(const RateControlInput* input,
   // second.
   // TODO(bugs.webrtc.org/9379): The comment above doesn't match to the code.
   if (!bitrate_is_initialized_) {
-    const TimeDelta kInitializationTime = TimeDelta::seconds(5);
+    const TimeDelta kInitializationTime = TimeDelta::Seconds(5);
     RTC_DCHECK_LE(kBitrateWindowMs, kInitializationTime.ms());
     if (time_first_throughput_estimate_.IsInfinite()) {
       if (input->estimated_throughput)
@@ -230,14 +230,14 @@ void AimdRateControl::SetNetworkStateEstimate(
 
 double AimdRateControl::GetNearMaxIncreaseRateBpsPerSecond() const {
   RTC_DCHECK(!current_bitrate_.IsZero());
-  const TimeDelta kFrameInterval = TimeDelta::seconds(1) / 30;
+  const TimeDelta kFrameInterval = TimeDelta::Seconds(1) / 30;
   DataSize frame_size = current_bitrate_ * kFrameInterval;
   const DataSize kPacketSize = DataSize::bytes(1200);
   double packets_per_frame = std::ceil(frame_size / kPacketSize);
   DataSize avg_packet_size = frame_size / packets_per_frame;
 
   // Approximate the over-use estimator delay to 100 ms.
-  TimeDelta response_time = rtt_ + TimeDelta::ms(100);
+  TimeDelta response_time = rtt_ + TimeDelta::Millis(100);
   if (in_experiment_)
     response_time = response_time * 2;
   double increase_rate_bps_per_second =
@@ -248,16 +248,16 @@ double AimdRateControl::GetNearMaxIncreaseRateBpsPerSecond() const {
 
 TimeDelta AimdRateControl::GetExpectedBandwidthPeriod() const {
   const TimeDelta kMinPeriod =
-      smoothing_experiment_ ? TimeDelta::ms(500) : TimeDelta::seconds(2);
-  const TimeDelta kDefaultPeriod = TimeDelta::seconds(3);
-  const TimeDelta kMaxPeriod = TimeDelta::seconds(50);
+      smoothing_experiment_ ? TimeDelta::Millis(500) : TimeDelta::Seconds(2);
+  const TimeDelta kDefaultPeriod = TimeDelta::Seconds(3);
+  const TimeDelta kMaxPeriod = TimeDelta::Seconds(50);
 
   double increase_rate_bps_per_second = GetNearMaxIncreaseRateBpsPerSecond();
   if (!last_decrease_)
     return smoothing_experiment_ ? kMinPeriod : kDefaultPeriod;
   double time_to_recover_decrease_seconds =
       last_decrease_->bps() / increase_rate_bps_per_second;
-  TimeDelta period = TimeDelta::seconds(time_to_recover_decrease_seconds);
+  TimeDelta period = TimeDelta::Seconds(time_to_recover_decrease_seconds);
   return period.Clamped(kMinPeriod, kMaxPeriod);
 }
 

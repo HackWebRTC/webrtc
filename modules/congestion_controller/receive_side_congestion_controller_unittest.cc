@@ -77,7 +77,7 @@ TEST(ReceiveSideCongestionControllerTest, ConvergesToCapacity) {
   Scenario s("recieve_cc_unit/converge");
   NetworkSimulationConfig net_conf;
   net_conf.bandwidth = DataRate::kbps(1000);
-  net_conf.delay = TimeDelta::ms(50);
+  net_conf.delay = TimeDelta::Millis(50);
   auto* client = s.CreateClient("send", [&](CallClientConfig* c) {
     c->transport.rates.start_rate = DataRate::kbps(300);
   });
@@ -88,7 +88,7 @@ TEST(ReceiveSideCongestionControllerTest, ConvergesToCapacity) {
   VideoStreamConfig video;
   video.stream.packet_feedback = false;
   s.CreateVideoStream(route->forward(), video);
-  s.RunFor(TimeDelta::seconds(30));
+  s.RunFor(TimeDelta::Seconds(30));
   EXPECT_NEAR(client->send_bandwidth().kbps(), 900, 150);
 }
 
@@ -96,7 +96,7 @@ TEST(ReceiveSideCongestionControllerTest, IsFairToTCP) {
   Scenario s("recieve_cc_unit/tcp_fairness");
   NetworkSimulationConfig net_conf;
   net_conf.bandwidth = DataRate::kbps(1000);
-  net_conf.delay = TimeDelta::ms(50);
+  net_conf.delay = TimeDelta::Millis(50);
   auto* client = s.CreateClient("send", [&](CallClientConfig* c) {
     c->transport.rates.start_rate = DataRate::kbps(1000);
   });
@@ -108,7 +108,7 @@ TEST(ReceiveSideCongestionControllerTest, IsFairToTCP) {
   video.stream.packet_feedback = false;
   s.CreateVideoStream(route->forward(), video);
   s.net()->StartFakeTcpCrossTraffic(send_net, ret_net, FakeTcpConfig());
-  s.RunFor(TimeDelta::seconds(30));
+  s.RunFor(TimeDelta::Seconds(30));
   // For some reason we get outcompeted by TCP here, this should probably be
   // fixed and a lower bound should be added to the test.
   EXPECT_LT(client->send_bandwidth().kbps(), 750);

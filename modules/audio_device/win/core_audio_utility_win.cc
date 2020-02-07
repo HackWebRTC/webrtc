@@ -1505,7 +1505,7 @@ std::string WaveFormatToString(const WaveFormatWrapper format) {
 
 webrtc::TimeDelta ReferenceTimeToTimeDelta(REFERENCE_TIME time) {
   // Each unit of reference time is 100 nanoseconds <=> 0.1 microsecond.
-  return webrtc::TimeDelta::us(0.1 * time + 0.5);
+  return webrtc::TimeDelta::Micros(0.1 * time + 0.5);
 }
 
 double FramesToMilliseconds(uint32_t num_frames, uint16_t sample_rate) {

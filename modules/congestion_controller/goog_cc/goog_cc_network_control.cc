@@ -34,7 +34,7 @@ namespace webrtc {
 
 namespace {
 // From RTCPSender video report interval.
-constexpr TimeDelta kLossUpdateInterval = TimeDelta::Millis<1000>();
+constexpr TimeDelta kLossUpdateInterval = TimeDelta::Millis(1000);
 
 // Pacing-rate relative to our target send rate.
 // Multiplicative factor that is applied to the target bitrate to calculate
@@ -372,13 +372,13 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportLossReport(
 }
 
 void GoogCcNetworkController::UpdateCongestionWindowSize() {
-  TimeDelta min_feedback_max_rtt = TimeDelta::ms(
+  TimeDelta min_feedback_max_rtt = TimeDelta::Millis(
       *std::min_element(feedback_max_rtts_.begin(), feedback_max_rtts_.end()));
 
   const DataSize kMinCwnd = DataSize::bytes(2 * 1500);
   TimeDelta time_window =
       min_feedback_max_rtt +
-      TimeDelta::ms(
+      TimeDelta::Millis(
           rate_control_settings_.GetCongestionWindowAdditionalTimeMs());
 
   DataSize data_window = last_loss_based_target_rate_ * time_window;
@@ -435,7 +435,7 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
                                            feedback_max_rtts_.end(), 0);
       int64_t mean_rtt_ms = sum_rtt_ms / feedback_max_rtts_.size();
       if (delay_based_bwe_)
-        delay_based_bwe_->OnRttUpdate(TimeDelta::ms(mean_rtt_ms));
+        delay_based_bwe_->OnRttUpdate(TimeDelta::Millis(mean_rtt_ms));
     }
 
     TimeDelta feedback_min_rtt = TimeDelta::PlusInfinity();
@@ -674,7 +674,7 @@ PacerConfig GoogCcNetworkController::GetPacingRates(Timestamp at_time) const {
       std::min(max_padding_rate_, last_pushback_target_rate_);
   PacerConfig msg;
   msg.at_time = at_time;
-  msg.time_window = TimeDelta::seconds(1);
+  msg.time_window = TimeDelta::Seconds(1);
   msg.data_window = pacing_rate * msg.time_window;
   msg.pad_window = padding_rate * msg.time_window;
   return msg;

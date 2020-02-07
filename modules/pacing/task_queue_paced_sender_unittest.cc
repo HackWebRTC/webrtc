@@ -51,7 +51,7 @@ namespace test {
 class TaskQueuePacedSenderTest : public ::testing::Test {
  public:
   TaskQueuePacedSenderTest()
-      : time_controller_(Timestamp::ms(1234)),
+      : time_controller_(Timestamp::Millis(1234)),
         pacer_(time_controller_.GetClock(),
                &packet_router_,
                /*event_log=*/nullptr,
@@ -123,7 +123,7 @@ TEST_F(TaskQueuePacedSenderTest, PacesPackets) {
 
   // Packets should be sent over a period of close to 1s. Expect a little lower
   // than this since initial probing is a bit quicker.
-  time_controller_.AdvanceTime(TimeDelta::seconds(1));
+  time_controller_.AdvanceTime(TimeDelta::Seconds(1));
   EXPECT_EQ(packets_sent, kPacketsToSend);
   ASSERT_TRUE(end_time.IsFinite());
   EXPECT_NEAR((end_time - start_time).ms<double>(), 1000.0, 50.0);
@@ -140,7 +140,7 @@ TEST_F(TaskQueuePacedSenderTest, ReschedulesProcessOnRateChange) {
   EXPECT_CALL(packet_router_, SendPacket).Times(kPacketsPerSecond);
   pacer_.EnqueuePackets(
       GeneratePackets(RtpPacketMediaType::kVideo, kPacketsPerSecond));
-  time_controller_.AdvanceTime(TimeDelta::seconds(1));
+  time_controller_.AdvanceTime(TimeDelta::Seconds(1));
 
   // Insert three packets, and record send time of each of them.
   // After the second packet is sent, double the send rate so we can
@@ -164,7 +164,7 @@ TEST_F(TaskQueuePacedSenderTest, ReschedulesProcessOnRateChange) {
       });
 
   pacer_.EnqueuePackets(GeneratePackets(RtpPacketMediaType::kVideo, 3));
-  time_controller_.AdvanceTime(TimeDelta::ms(500));
+  time_controller_.AdvanceTime(TimeDelta::Millis(500));
   ASSERT_TRUE(third_packet_time.IsFinite());
   EXPECT_NEAR((second_packet_time - first_packet_time).ms<double>(), 200.0,
               1.0);

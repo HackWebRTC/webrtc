@@ -734,10 +734,10 @@ TEST(RtcpTransceiverImplTest,
   };
 
   receive_sender_report(kRemoteSsrc1);
-  clock.AdvanceTime(webrtc::TimeDelta::ms(100));
+  clock.AdvanceTime(webrtc::TimeDelta::Millis(100));
 
   receive_sender_report(kRemoteSsrc2);
-  clock.AdvanceTime(webrtc::TimeDelta::ms(100));
+  clock.AdvanceTime(webrtc::TimeDelta::Millis(100));
 
   // Trigger ReceiverReport back.
   rtcp_transceiver.SendCompoundPacket();

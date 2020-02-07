@@ -509,7 +509,7 @@ NetworkControlUpdate BbrNetworkController::OnNetworkStateEstimate(
 
 TimeDelta BbrNetworkController::GetMinRtt() const {
   return !min_rtt_.IsZero() ? min_rtt_
-                            : TimeDelta::us(rtt_stats_.initial_rtt_us());
+                            : TimeDelta::Micros(rtt_stats_.initial_rtt_us());
 }
 
 DataSize BbrNetworkController::GetTargetCongestionWindow(double gain) const {
@@ -597,7 +597,7 @@ bool BbrNetworkController::UpdateBandwidthAndMinRtt(
   min_rtt_since_last_probe_rtt_ =
       std::min(min_rtt_since_last_probe_rtt_, sample_rtt);
 
-  const TimeDelta kMinRttExpiry = TimeDelta::seconds(kMinRttExpirySeconds);
+  const TimeDelta kMinRttExpiry = TimeDelta::Seconds(kMinRttExpirySeconds);
   // Do not expire min_rtt if none was ever available.
   bool min_rtt_expired =
       !min_rtt_.IsZero() && (now > (min_rtt_timestamp_ + kMinRttExpiry));
@@ -733,7 +733,8 @@ void BbrNetworkController::MaybeEnterOrExitProbeRtt(
       // we allow an extra packet since QUIC checks CWND before sending a
       // packet.
       if (msg.data_in_flight < ProbeRttCongestionWindow() + kMaxPacketSize) {
-        exit_probe_rtt_at_ = msg.feedback_time + TimeDelta::ms(kProbeRttTimeMs);
+        exit_probe_rtt_at_ =
+            msg.feedback_time + TimeDelta::Millis(kProbeRttTimeMs);
         probe_rtt_round_passed_ = false;
       }
     } else {

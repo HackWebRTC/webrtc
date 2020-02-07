@@ -46,11 +46,11 @@ constexpr float kTargetUtilizationFraction = 0.95f;
 // The maximum time period over which the cluster history is retained.
 // This is also the maximum time period beyond which a probing burst is not
 // expected to last.
-constexpr TimeDelta kMaxClusterHistory = TimeDelta::Seconds<1>();
+constexpr TimeDelta kMaxClusterHistory = TimeDelta::Seconds(1);
 
 // The maximum time interval between first and the last probe on a cluster
 // on the sender side as well as the receive side.
-constexpr TimeDelta kMaxProbeInterval = TimeDelta::Seconds<1>();
+constexpr TimeDelta kMaxProbeInterval = TimeDelta::Seconds(1);
 
 }  // namespace
 

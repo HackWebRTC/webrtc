@@ -57,7 +57,7 @@ std::unique_ptr<AudioEncoderOpusStates> CreateCodec(int sample_rate_hz,
       std::make_unique<AudioEncoderOpusStates>();
   states->mock_audio_network_adaptor = nullptr;
   states->fake_clock.reset(new rtc::ScopedFakeClock());
-  states->fake_clock->SetTime(Timestamp::us(kInitialTimeUs));
+  states->fake_clock->SetTime(Timestamp::Micros(kInitialTimeUs));
 
   MockAudioNetworkAdaptor** mock_ptr = &states->mock_audio_network_adaptor;
   AudioEncoderOpusImpl::AudioNetworkAdaptorCreator creator =
@@ -249,7 +249,7 @@ void TestSetPacketLossRate(const AudioEncoderOpusStates* states,
   constexpr int64_t kSampleIntervalMs = 184198;
   for (float loss : losses) {
     states->encoder->OnReceivedUplinkPacketLossFraction(loss);
-    states->fake_clock->AdvanceTime(TimeDelta::ms(kSampleIntervalMs));
+    states->fake_clock->AdvanceTime(TimeDelta::Millis(kSampleIntervalMs));
     EXPECT_FLOAT_EQ(expected_return, states->encoder->packet_loss_rate());
   }
 }
@@ -429,7 +429,7 @@ TEST_P(AudioEncoderOpusTest,
   states->encoder->OnReceivedUplinkPacketLossFraction(kPacketLossFraction_1);
   EXPECT_FLOAT_EQ(0.01f, states->encoder->packet_loss_rate());
 
-  states->fake_clock->AdvanceTime(TimeDelta::ms(kSecondSampleTimeMs));
+  states->fake_clock->AdvanceTime(TimeDelta::Millis(kSecondSampleTimeMs));
   states->encoder->OnReceivedUplinkPacketLossFraction(kPacketLossFraction_2);
 
   // Now the output of packet loss fraction smoother should be
@@ -667,8 +667,8 @@ TEST_P(AudioEncoderOpusTest, UpdateUplinkBandwidthInAudioNetworkAdaptor) {
   // Repeat update uplink bandwidth tests.
   for (int i = 0; i < 5; i++) {
     // Don't update till it is time to update again.
-    states->fake_clock->AdvanceTime(
-        TimeDelta::ms(states->config.uplink_bandwidth_update_interval_ms - 1));
+    states->fake_clock->AdvanceTime(TimeDelta::Millis(
+        states->config.uplink_bandwidth_update_interval_ms - 1));
     states->encoder->Encode(
         0, rtc::ArrayView<const int16_t>(audio.data(), audio.size()), &encoded);
 
@@ -676,7 +676,7 @@ TEST_P(AudioEncoderOpusTest, UpdateUplinkBandwidthInAudioNetworkAdaptor) {
     EXPECT_CALL(*states->mock_bitrate_smoother, GetAverage())
         .WillOnce(Return(40000));
     EXPECT_CALL(*states->mock_audio_network_adaptor, SetUplinkBandwidth(40000));
-    states->fake_clock->AdvanceTime(TimeDelta::ms(1));
+    states->fake_clock->AdvanceTime(TimeDelta::Millis(1));
     states->encoder->Encode(
         0, rtc::ArrayView<const int16_t>(audio.data(), audio.size()), &encoded);
   }

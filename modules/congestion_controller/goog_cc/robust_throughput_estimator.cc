@@ -56,8 +56,8 @@ absl::optional<DataRate> RobustThroughputEstimator::bitrate() const {
   if (window_.size() < settings_.initial_packets)
     return absl::nullopt;
 
-  TimeDelta largest_recv_gap(TimeDelta::ms(0));
-  TimeDelta second_largest_recv_gap(TimeDelta::ms(0));
+  TimeDelta largest_recv_gap(TimeDelta::Millis(0));
+  TimeDelta second_largest_recv_gap(TimeDelta::Millis(0));
   for (size_t i = 1; i < window_.size(); i++) {
     // Find receive time gaps
     TimeDelta gap = window_[i].receive_time - window_[i - 1].receive_time;
@@ -125,8 +125,8 @@ absl::optional<DataRate> RobustThroughputEstimator::bitrate() const {
     recv_duration += recv_duration / (window_.size() - 2);
   }
 
-  send_duration = std::max(send_duration, TimeDelta::ms(1));
-  recv_duration = std::max(recv_duration, TimeDelta::ms(1));
+  send_duration = std::max(send_duration, TimeDelta::Millis(1));
+  recv_duration = std::max(recv_duration, TimeDelta::Millis(1));
   return std::min(send_size / send_duration, recv_size / recv_duration);
 }
 

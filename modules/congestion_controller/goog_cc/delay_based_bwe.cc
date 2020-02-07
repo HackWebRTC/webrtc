@@ -28,7 +28,7 @@
 
 namespace webrtc {
 namespace {
-constexpr TimeDelta kStreamTimeOut = TimeDelta::Seconds<2>();
+constexpr TimeDelta kStreamTimeOut = TimeDelta::Seconds(2);
 constexpr int kTimestampGroupLengthMs = 5;
 constexpr int kAbsSendTimeFraction = 18;
 constexpr int kAbsSendTimeInterArrivalUpshift = 8;

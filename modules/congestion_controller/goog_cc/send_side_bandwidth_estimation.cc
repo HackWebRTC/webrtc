@@ -27,16 +27,16 @@
 
 namespace webrtc {
 namespace {
-constexpr TimeDelta kBweIncreaseInterval = TimeDelta::Millis<1000>();
-constexpr TimeDelta kBweDecreaseInterval = TimeDelta::Millis<300>();
-constexpr TimeDelta kStartPhase = TimeDelta::Millis<2000>();
-constexpr TimeDelta kBweConverganceTime = TimeDelta::Millis<20000>();
+constexpr TimeDelta kBweIncreaseInterval = TimeDelta::Millis(1000);
+constexpr TimeDelta kBweDecreaseInterval = TimeDelta::Millis(300);
+constexpr TimeDelta kStartPhase = TimeDelta::Millis(2000);
+constexpr TimeDelta kBweConverganceTime = TimeDelta::Millis(20000);
 constexpr int kLimitNumPackets = 20;
 constexpr DataRate kDefaultMaxBitrate = DataRate::BitsPerSec<1000000000>();
-constexpr TimeDelta kLowBitrateLogPeriod = TimeDelta::Millis<10000>();
-constexpr TimeDelta kRtcEventLogPeriod = TimeDelta::Millis<5000>();
+constexpr TimeDelta kLowBitrateLogPeriod = TimeDelta::Millis(10000);
+constexpr TimeDelta kRtcEventLogPeriod = TimeDelta::Millis(5000);
 // Expecting that RTCP feedback is sent uniformly within [0.5, 1.5]s intervals.
-constexpr TimeDelta kMaxRtcpFeedbackInterval = TimeDelta::Millis<5000>();
+constexpr TimeDelta kMaxRtcpFeedbackInterval = TimeDelta::Millis(5000);
 
 constexpr float kDefaultLowLossThreshold = 0.02f;
 constexpr float kDefaultHighLossThreshold = 0.1f;
@@ -103,7 +103,7 @@ bool ReadBweLossExperimentParameters(float* low_loss_threshold,
 }  // namespace
 
 LinkCapacityTracker::LinkCapacityTracker()
-    : tracking_rate("rate", TimeDelta::seconds(10)) {
+    : tracking_rate("rate", TimeDelta::Seconds(10)) {
   ParseFieldTrial({&tracking_rate},
                   field_trial::FindFullName("WebRTC-Bwe-LinkCapacity"));
 }
@@ -153,9 +153,9 @@ DataRate LinkCapacityTracker::estimate() const {
 }
 
 RttBasedBackoff::RttBasedBackoff()
-    : rtt_limit_("limit", TimeDelta::seconds(3)),
+    : rtt_limit_("limit", TimeDelta::Seconds(3)),
       drop_fraction_("fraction", 0.8),
-      drop_interval_("interval", TimeDelta::seconds(1)),
+      drop_interval_("interval", TimeDelta::Seconds(1)),
       bandwidth_floor_("floor", DataRate::kbps(5)),
       // By initializing this to plus infinity, we make sure that we never
       // trigger rtt backoff unless packet feedback is enabled.
@@ -549,7 +549,7 @@ void SendSideBandwidthEstimation::UpdateMinHistory(Timestamp at_time) {
   // Since history precision is in ms, add one so it is able to increase
   // bitrate if it is off by as little as 0.5ms.
   while (!min_bitrate_history_.empty() &&
-         at_time - min_bitrate_history_.front().first + TimeDelta::ms(1) >
+         at_time - min_bitrate_history_.front().first + TimeDelta::Millis(1) >
              kBweIncreaseInterval) {
     min_bitrate_history_.pop_front();
   }

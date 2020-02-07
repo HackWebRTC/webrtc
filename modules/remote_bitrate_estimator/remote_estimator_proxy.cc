@@ -112,12 +112,12 @@ void RemoteEstimatorProxy::IncomingPacket(int64_t arrival_time_ms,
 
   if (network_state_estimator_ && header.extension.hasAbsoluteSendTime) {
     PacketResult packet_result;
-    packet_result.receive_time = Timestamp::ms(arrival_time_ms);
+    packet_result.receive_time = Timestamp::Millis(arrival_time_ms);
     // Ignore reordering of packets and assume they have approximately the same
     // send time.
     abs_send_timestamp_ += std::max(
         header.extension.GetAbsoluteSendTimeDelta(previous_abs_send_time_),
-        TimeDelta::ms(0));
+        TimeDelta::Millis(0));
     previous_abs_send_time_ = header.extension.absoluteSendTime;
     packet_result.sent_packet.send_time = abs_send_timestamp_;
     // TODO(webrtc:10742): Take IP header and transport overhead into account.

@@ -184,12 +184,12 @@ TEST_P(TestNackModule, ResendNack) {
   const double b = GetParam() ? 1.25 : 1.0;
   for (int i = 2; i < 10; ++i) {
     // Change RTT, above the 40ms max for exponential backoff.
-    TimeDelta rtt = TimeDelta::ms(160);  // + (i * 10 - 40)
+    TimeDelta rtt = TimeDelta::Millis(160);  // + (i * 10 - 40)
     nack_module_.UpdateRtt(rtt.ms());
 
     // RTT gets capped at 160ms in backoff calculations.
     TimeDelta expected_backoff_delay =
-        std::pow(b, i - 1) * std::min(rtt, TimeDelta::ms(160));
+        std::pow(b, i - 1) * std::min(rtt, TimeDelta::Millis(160));
 
     // Move to one millisecond before next allowed NACK.
     clock_->AdvanceTimeMilliseconds(expected_backoff_delay.ms() - 1);

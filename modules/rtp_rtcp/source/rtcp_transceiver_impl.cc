@@ -332,11 +332,11 @@ void RtcpTransceiverImpl::ReschedulePeriodicCompoundPackets() {
 
 void RtcpTransceiverImpl::SchedulePeriodicCompoundPackets(int64_t delay_ms) {
   periodic_task_handle_ = RepeatingTaskHandle::DelayedStart(
-      config_.task_queue->Get(), TimeDelta::ms(delay_ms), [this] {
+      config_.task_queue->Get(), TimeDelta::Millis(delay_ms), [this] {
         RTC_DCHECK(config_.schedule_periodic_compound_packets);
         RTC_DCHECK(ready_to_send_);
         SendPeriodicCompoundPacket();
-        return TimeDelta::ms(config_.report_period_ms);
+        return TimeDelta::Millis(config_.report_period_ms);
       });
 }
 

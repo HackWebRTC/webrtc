@@ -95,7 +95,7 @@ ProbeControllerConfig::ProbeControllerConfig(
       second_exponential_probe_scale("p2", 6.0),
       further_exponential_probe_scale("step_size", 2),
       further_probe_threshold("further_probe_threshold", 0.7),
-      alr_probing_interval("alr_interval", TimeDelta::seconds(5)),
+      alr_probing_interval("alr_interval", TimeDelta::Seconds(5)),
       alr_probe_scale("alr_scale", 2),
       first_allocation_probe_scale("alloc_p1", 1),
       second_allocation_probe_scale("alloc_p2", 2),
@@ -417,9 +417,9 @@ std::vector<ProbeClusterConfig> ProbeController::InitiateProbing(
     }
 
     ProbeClusterConfig config;
-    config.at_time = Timestamp::ms(now_ms);
+    config.at_time = Timestamp::Millis(now_ms);
     config.target_data_rate = DataRate::bps(rtc::dchecked_cast<int>(bitrate));
-    config.target_duration = TimeDelta::ms(kMinProbeDurationMs);
+    config.target_duration = TimeDelta::Millis(kMinProbeDurationMs);
     config.target_probe_count = kMinProbePacketsSent;
     config.id = next_probe_cluster_id_;
     next_probe_cluster_id_++;
