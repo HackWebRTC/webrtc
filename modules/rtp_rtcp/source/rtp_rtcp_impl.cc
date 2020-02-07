@@ -224,6 +224,7 @@ uint32_t ModuleRtpRtcpImpl::StartTimestamp() const {
 void ModuleRtpRtcpImpl::SetStartTimestamp(const uint32_t timestamp) {
   rtcp_sender_.SetTimestampOffset(timestamp);
   rtp_sender_->packet_generator.SetTimestampOffset(timestamp);
+  rtp_sender_->packet_sender.SetTimestampOffset(timestamp);
 }
 
 uint16_t ModuleRtpRtcpImpl::SequenceNumber() const {
@@ -391,6 +392,13 @@ ModuleRtpRtcpImpl::GeneratePadding(size_t target_size_bytes) {
   RTC_DCHECK(rtp_sender_);
   return rtp_sender_->packet_generator.GeneratePadding(
       target_size_bytes, rtp_sender_->packet_sender.MediaHasBeenSent());
+}
+
+std::vector<RtpSequenceNumberMap::Info>
+ModuleRtpRtcpImpl::GetSentRtpPacketInfos(
+    rtc::ArrayView<const uint16_t> sequence_numbers) const {
+  RTC_DCHECK(rtp_sender_);
+  return rtp_sender_->packet_sender.GetSentRtpPacketInfos(sequence_numbers);
 }
 
 size_t ModuleRtpRtcpImpl::MaxRtpPacketSize() const {

@@ -152,6 +152,7 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
     config.rtt_stats = &rtt_stats_;
     config.rtcp_report_interval_ms = rtcp_report_interval_ms_;
     config.local_media_ssrc = is_sender_ ? kSenderSsrc : kReceiverSsrc;
+    config.need_rtp_packet_infos = true;
 
     impl_.reset(new ModuleRtpRtcpImpl(config));
     impl_->SetRemoteSSRC(is_sender_ ? kReceiverSsrc : kSenderSsrc);
@@ -567,6 +568,63 @@ TEST_F(RtpRtcpImplTest, ConfigurableRtcpReportInterval) {
   clock_.AdvanceTimeMilliseconds(kVideoReportInterval / 2);
   sender_.impl_->Process();
   EXPECT_EQ(sender_.transport_.NumRtcpSent(), 2u);
+}
+
+TEST_F(RtpRtcpImplTest, StoresPacketInfoForSentPackets) {
+  const uint32_t kStartTimestamp = 1u;
+  SetUp();
+  sender_.impl_->SetStartTimestamp(kStartTimestamp);
+
+  PacedPacketInfo pacing_info;
+  RtpPacketToSend packet(nullptr);
+  packet.set_packet_type(RtpPacketToSend::Type::kVideo);
+  packet.SetSsrc(kSenderSsrc);
+
+  // Single-packet frame.
+  packet.SetTimestamp(1);
+  packet.SetSequenceNumber(1);
+  packet.set_first_packet_of_frame(true);
+  packet.SetMarker(true);
+  sender_.impl_->TrySendPacket(&packet, pacing_info);
+
+  std::vector<RtpSequenceNumberMap::Info> seqno_info =
+      sender_.impl_->GetSentRtpPacketInfos(std::vector<uint16_t>{1});
+
+  EXPECT_THAT(seqno_info, ElementsAre(RtpSequenceNumberMap::Info(
+                              /*timestamp=*/1 - kStartTimestamp,
+                              /*is_first=*/1,
+                              /*is_last=*/1)));
+
+  // Three-packet frame.
+  packet.SetTimestamp(2);
+  packet.SetSequenceNumber(2);
+  packet.set_first_packet_of_frame(true);
+  packet.SetMarker(false);
+  sender_.impl_->TrySendPacket(&packet, pacing_info);
+
+  packet.SetSequenceNumber(3);
+  packet.set_first_packet_of_frame(false);
+  sender_.impl_->TrySendPacket(&packet, pacing_info);
+
+  packet.SetSequenceNumber(4);
+  packet.SetMarker(true);
+  sender_.impl_->TrySendPacket(&packet, pacing_info);
+
+  seqno_info =
+      sender_.impl_->GetSentRtpPacketInfos(std::vector<uint16_t>{2, 3, 4});
+
+  EXPECT_THAT(seqno_info, ElementsAre(RtpSequenceNumberMap::Info(
+                                          /*timestamp=*/2 - kStartTimestamp,
+                                          /*is_first=*/1,
+                                          /*is_last=*/0),
+                                      RtpSequenceNumberMap::Info(
+                                          /*timestamp=*/2 - kStartTimestamp,
+                                          /*is_first=*/0,
+                                          /*is_last=*/0),
+                                      RtpSequenceNumberMap::Info(
+                                          /*timestamp=*/2 - kStartTimestamp,
+                                          /*is_first=*/0,
+                                          /*is_last=*/1)));
 }
 
 }  // namespace webrtc

@@ -41,7 +41,6 @@ namespace webrtc {
 
 namespace {
 constexpr size_t kRedForFecHeaderLength = 1;
-constexpr size_t kRtpSequenceNumberMapMaxEntries = 1 << 13;
 constexpr int64_t kMaxUnretransmittableFrameIntervalMs = 33 * 4;
 
 // This is experimental field trial to exclude transport sequence number from
@@ -253,7 +252,6 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock,
                                PlayoutDelayOracle* playout_delay_oracle,
                                FrameEncryptorInterface* frame_encryptor,
                                bool require_frame_encryption,
-                               bool need_rtp_packet_infos,
                                bool enable_retransmit_all_layers,
                                const WebRtcKeyValueConfig& field_trials)
     : RTPSenderVideo([&] {
@@ -263,7 +261,6 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock,
         config.flexfec_sender = flexfec_sender;
         config.frame_encryptor = frame_encryptor;
         config.require_frame_encryption = require_frame_encryption;
-        config.need_rtp_packet_infos = need_rtp_packet_infos;
         config.enable_retransmit_all_layers = enable_retransmit_all_layers;
         config.field_trials = &field_trials;
         return config;
@@ -280,10 +277,6 @@ RTPSenderVideo::RTPSenderVideo(const Config& config)
       transmit_color_space_next_frame_(false),
       current_playout_delay_{-1, -1},
       playout_delay_pending_(false),
-      rtp_sequence_number_map_(config.need_rtp_packet_infos
-                                   ? std::make_unique<RtpSequenceNumberMap>(
-                                         kRtpSequenceNumberMapMaxEntries)
-                                   : nullptr),
       red_payload_type_(config.red_payload_type),
       ulpfec_payload_type_(config.ulpfec_payload_type),
       flexfec_sender_(config.flexfec_sender),
@@ -729,7 +722,6 @@ bool RTPSenderVideo::SendVideo(
   if (num_packets == 0)
     return false;
 
-  uint16_t first_sequence_number;
   bool first_frame = first_frame_sent_();
   std::vector<std::unique_ptr<RtpPacketToSend>> rtp_packets;
   for (size_t i = 0; i < num_packets; ++i) {
@@ -753,15 +745,13 @@ bool RTPSenderVideo::SendVideo(
       expected_payload_capacity = limits.max_payload_len;
     }
 
+    packet->set_first_packet_of_frame(i == 0);
+
     if (!packetizer->NextPacket(packet.get()))
       return false;
     RTC_DCHECK_LE(packet->payload_size(), expected_payload_capacity);
     if (!rtp_sender_->AssignSequenceNumber(packet.get()))
       return false;
-
-    if (rtp_sequence_number_map_ && i == 0) {
-      first_sequence_number = packet->SequenceNumber();
-    }
 
     // No FEC protection for upper temporal layers, if used.
     bool protect_packet = temporal_id == 0 || temporal_id == kNoTemporalIdx;
@@ -802,13 +792,6 @@ bool RTPSenderVideo::SendVideo(
     }
   }
 
-  if (rtp_sequence_number_map_) {
-    const uint32_t timestamp = rtp_timestamp - rtp_sender_->TimestampOffset();
-    rtc::CritScope cs(&crit_);
-    rtp_sequence_number_map_->InsertFrame(first_sequence_number, num_packets,
-                                          timestamp);
-  }
-
   LogAndSendToNetwork(std::move(rtp_packets), unpacketized_payload_size);
 
   TRACE_EVENT_ASYNC_END1("webrtc", "Video", capture_time_ms, "timestamp",
@@ -830,37 +813,6 @@ uint32_t RTPSenderVideo::PacketizationOverheadBps() const {
   rtc::CritScope cs(&stats_crit_);
   return packetization_overhead_bitrate_.Rate(clock_->TimeInMilliseconds())
       .value_or(0);
-}
-
-std::vector<RtpSequenceNumberMap::Info> RTPSenderVideo::GetSentRtpPacketInfos(
-    rtc::ArrayView<const uint16_t> sequence_numbers) const {
-  RTC_DCHECK(!sequence_numbers.empty());
-
-  std::vector<RtpSequenceNumberMap::Info> results;
-  if (!rtp_sequence_number_map_) {
-    return results;
-  }
-  results.reserve(sequence_numbers.size());
-
-  {
-    rtc::CritScope cs(&crit_);
-    for (uint16_t sequence_number : sequence_numbers) {
-      const absl::optional<RtpSequenceNumberMap::Info> info =
-          rtp_sequence_number_map_->Get(sequence_number);
-      if (!info) {
-        // The empty vector will be returned. We can delay the clearing
-        // of the vector until after we exit the critical section.
-        break;
-      }
-      results.push_back(*info);
-    }
-  }
-
-  if (results.size() != sequence_numbers.size()) {
-    results.clear();  // Some sequence number was not found.
-  }
-
-  return results;
 }
 
 bool RTPSenderVideo::AllowRetransmission(

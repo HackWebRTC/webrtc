@@ -177,6 +177,8 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
       configuration.rtx_send_ssrc = rtp_config.rtx.ssrcs[i];
     }
 
+    configuration.need_rtp_packet_infos = rtp_config.lntf.enabled;
+
     auto rtp_rtcp = RtpRtcp::Create(configuration);
     rtp_rtcp->SetSendingStatus(false);
     rtp_rtcp->SetSendingMediaStatus(false);
@@ -192,7 +194,6 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
     video_config.frame_encryptor = frame_encryptor;
     video_config.require_frame_encryption =
         crypto_options.sframe.require_frame_encryption;
-    video_config.need_rtp_packet_infos = rtp_config.lntf.enabled;
     video_config.enable_retransmit_all_layers = false;
     video_config.field_trials = &field_trial_config;
     const bool should_disable_red_and_ulpfec =
@@ -770,7 +771,7 @@ std::vector<RtpSequenceNumberMap::Info> RtpVideoSender::GetSentRtpPacketInfos(
     rtc::ArrayView<const uint16_t> sequence_numbers) const {
   for (const auto& rtp_stream : rtp_streams_) {
     if (ssrc == rtp_stream.rtp_rtcp->SSRC()) {
-      return rtp_stream.sender_video->GetSentRtpPacketInfos(sequence_numbers);
+      return rtp_stream.rtp_rtcp->GetSentRtpPacketInfos(sequence_numbers);
     }
   }
   return std::vector<RtpSequenceNumberMap::Info>();

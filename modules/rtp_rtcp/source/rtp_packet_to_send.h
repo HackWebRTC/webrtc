@@ -98,12 +98,19 @@ class RtpPacketToSend : public RtpPacket {
         VideoTimingExtension::kNetwork2TimestampDeltaOffset);
   }
 
+  void set_first_packet_of_frame(bool is_first_packet) {
+    is_first_packet_of_frame_ = is_first_packet;
+  }
+
+  bool is_first_packet_of_frame() const { return is_first_packet_of_frame_; }
+
  private:
   int64_t capture_time_ms_ = 0;
   absl::optional<RtpPacketMediaType> packet_type_;
   bool allow_retransmission_ = false;
   absl::optional<uint16_t> retransmitted_sequence_number_;
   std::vector<uint8_t> application_data_;
+  bool is_first_packet_of_frame_ = false;
 };
 
 }  // namespace webrtc

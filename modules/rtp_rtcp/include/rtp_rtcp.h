@@ -28,6 +28,7 @@
 #include "modules/rtp_rtcp/include/rtp_packet_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "modules/rtp_rtcp/source/rtp_sequence_number_map.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/deprecation.h"
 
@@ -124,6 +125,8 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
     // FlexFec SSRC is fetched from |flexfec_sender|.
     uint32_t local_media_ssrc = 0;
     absl::optional<uint32_t> rtx_send_ssrc;
+
+    bool need_rtp_packet_infos = false;
 
    private:
     RTC_DISALLOW_COPY_AND_ASSIGN(Configuration);
@@ -283,6 +286,9 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
 
   virtual std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
       size_t target_size_bytes) = 0;
+
+  virtual std::vector<RtpSequenceNumberMap::Info> GetSentRtpPacketInfos(
+      rtc::ArrayView<const uint16_t> sequence_numbers) const = 0;
 
   // **************************************************************************
   // RTCP

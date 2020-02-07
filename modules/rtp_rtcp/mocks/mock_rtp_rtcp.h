@@ -94,6 +94,9 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(
       GeneratePadding,
       std::vector<std::unique_ptr<RtpPacketToSend>>(size_t target_size_bytes));
+  MOCK_CONST_METHOD1(GetSentRtpPacketInfos,
+                     std::vector<RtpSequenceNumberMap::Info>(
+                         rtc::ArrayView<const uint16_t> sequence_numbers));
   MOCK_METHOD2(RegisterRtcpObservers,
                void(RtcpIntraFrameObserver* intra_frame_callback,
                     RtcpBandwidthObserver* bandwidth_callback));
