@@ -25,7 +25,6 @@
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/absolute_capture_time_sender.h"
-#include "modules/rtp_rtcp/source/playout_delay_oracle.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
@@ -69,8 +68,6 @@ class RTPSenderVideo {
     Clock* clock = nullptr;
     RTPSender* rtp_sender = nullptr;
     FlexfecSender* flexfec_sender = nullptr;
-    // TODO(sprang): Remove when downstream usage is gone.
-    PlayoutDelayOracle* playout_delay_oracle = nullptr;
     FrameEncryptorInterface* frame_encryptor = nullptr;
     bool require_frame_encryption = false;
     bool enable_retransmit_all_layers = false;
@@ -81,15 +78,6 @@ class RTPSenderVideo {
 
   explicit RTPSenderVideo(const Config& config);
 
-  // TODO(bugs.webrtc.org/10809): Remove when downstream usage is gone.
-  RTPSenderVideo(Clock* clock,
-                 RTPSender* rtpSender,
-                 FlexfecSender* flexfec_sender,
-                 PlayoutDelayOracle* playout_delay_oracle,
-                 FrameEncryptorInterface* frame_encryptor,
-                 bool require_frame_encryption,
-                 bool enable_retransmit_all_layers,
-                 const WebRtcKeyValueConfig& field_trials);
   virtual ~RTPSenderVideo();
 
   // expected_retransmission_time_ms.has_value() -> retransmission allowed.

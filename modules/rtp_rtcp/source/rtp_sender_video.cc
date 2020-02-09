@@ -246,26 +246,6 @@ bool IsNoopDelay(const PlayoutDelay& delay) {
 
 }  // namespace
 
-RTPSenderVideo::RTPSenderVideo(Clock* clock,
-                               RTPSender* rtp_sender,
-                               FlexfecSender* flexfec_sender,
-                               PlayoutDelayOracle* playout_delay_oracle,
-                               FrameEncryptorInterface* frame_encryptor,
-                               bool require_frame_encryption,
-                               bool enable_retransmit_all_layers,
-                               const WebRtcKeyValueConfig& field_trials)
-    : RTPSenderVideo([&] {
-        Config config;
-        config.clock = clock;
-        config.rtp_sender = rtp_sender;
-        config.flexfec_sender = flexfec_sender;
-        config.frame_encryptor = frame_encryptor;
-        config.require_frame_encryption = require_frame_encryption;
-        config.enable_retransmit_all_layers = enable_retransmit_all_layers;
-        config.field_trials = &field_trials;
-        return config;
-      }()) {}
-
 RTPSenderVideo::RTPSenderVideo(const Config& config)
     : rtp_sender_(config.rtp_sender),
       clock_(config.clock),
