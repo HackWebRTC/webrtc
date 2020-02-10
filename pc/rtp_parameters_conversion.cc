@@ -164,7 +164,7 @@ RTCErrorOr<C> ToCricketCodec(const RtpCodecParameters& codec) {
     }
     cricket_codec.AddFeedbackParam(result.MoveValue());
   }
-  cricket_codec.params.insert(codec.parameters.begin(), codec.parameters.end());
+  cricket_codec.params = codec.parameters;
   return std::move(cricket_codec);
 }
 
@@ -366,8 +366,7 @@ RtpCodecParameters ToRtpCodecParameters(const C& cricket_codec) {
     }
   }
   ToRtpCodecParametersTypeSpecific(cricket_codec, &codec_param);
-  codec_param.parameters.insert(cricket_codec.params.begin(),
-                                cricket_codec.params.end());
+  codec_param.parameters = cricket_codec.params;
   return codec_param;
 }
 

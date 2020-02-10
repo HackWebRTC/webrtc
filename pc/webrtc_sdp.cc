@@ -1785,24 +1785,6 @@ void WriteFmtpParameter(const std::string& parameter_name,
   *os << parameter_name << kSdpDelimiterEqual << parameter_value;
 }
 
-void WriteFmtpParameters(const cricket::CodecParameterMap& parameters,
-                         rtc::StringBuilder* os) {
-  bool first = true;
-  for (const auto& entry : parameters) {
-    const std::string& key = entry.first;
-    const std::string& value = entry.second;
-    // Parameters are a semicolon-separated list, no spaces.
-    // The list is separated from the header by a space.
-    if (first) {
-      *os << kSdpDelimiterSpace;
-      first = false;
-    } else {
-      *os << kSdpDelimiterSemicolon;
-    }
-    WriteFmtpParameter(key, value, os);
-  }
-}
-
 bool IsFmtpParam(const std::string& name) {
   // RFC 4855, section 3 specifies the mapping of media format parameters to SDP
   // parameters. Only ptime, maxptime, channels and rate are placed outside of
@@ -1811,31 +1793,35 @@ bool IsFmtpParam(const std::string& name) {
   return name != kCodecParamPTime && name != kCodecParamMaxPTime;
 }
 
-// Retreives fmtp parameters from |params|, which may contain other parameters
-// as well, and puts them in |fmtp_parameters|.
-void GetFmtpParams(const cricket::CodecParameterMap& params,
-                   cricket::CodecParameterMap* fmtp_parameters) {
-  for (const auto& entry : params) {
+bool WriteFmtpParameters(const cricket::CodecParameterMap& parameters,
+                         rtc::StringBuilder* os) {
+  bool empty = true;
+  const char* delimiter = "";  // No delimiter before first parameter.
+  for (const auto& entry : parameters) {
     const std::string& key = entry.first;
     const std::string& value = entry.second;
+
     if (IsFmtpParam(key)) {
-      (*fmtp_parameters)[key] = value;
+      *os << delimiter;
+      // A semicolon before each subsequent parameter.
+      delimiter = kSdpDelimiterSemicolon;
+      WriteFmtpParameter(key, value, os);
+      empty = false;
     }
   }
+
+  return !empty;
 }
 
 template <class T>
 void AddFmtpLine(const T& codec, std::string* message) {
-  cricket::CodecParameterMap fmtp_parameters;
-  GetFmtpParams(codec.params, &fmtp_parameters);
-  if (fmtp_parameters.empty()) {
-    // No need to add an fmtp if it will have no (optional) parameters.
-    return;
-  }
   rtc::StringBuilder os;
   WriteFmtpHeader(codec.id, &os);
-  WriteFmtpParameters(fmtp_parameters, &os);
-  AddLine(os.str(), message);
+  os << kSdpDelimiterSpace;
+  // Create FMTP line and check that it's nonempty.
+  if (WriteFmtpParameters(codec.params, &os)) {
+    AddLine(os.str(), message);
+  }
   return;
 }
 

@@ -813,6 +813,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCodecStats) {
   inbound_audio_codec.kind = cricket::MEDIA_TYPE_AUDIO;
   inbound_audio_codec.name = "opus";
   inbound_audio_codec.clock_rate = 1337;
+  inbound_audio_codec.num_channels = 1;
+  inbound_audio_codec.parameters = {{"minptime", "10"}, {"useinbandfec", "1"}};
   voice_media_info.receive_codecs.insert(
       std::make_pair(inbound_audio_codec.payload_type, inbound_audio_codec));
 
@@ -821,6 +823,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCodecStats) {
   outbound_audio_codec.kind = cricket::MEDIA_TYPE_AUDIO;
   outbound_audio_codec.name = "isac";
   outbound_audio_codec.clock_rate = 1338;
+  outbound_audio_codec.num_channels = 2;
   voice_media_info.send_codecs.insert(
       std::make_pair(outbound_audio_codec.payload_type, outbound_audio_codec));
 
@@ -835,6 +838,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCodecStats) {
   inbound_video_codec.kind = cricket::MEDIA_TYPE_VIDEO;
   inbound_video_codec.name = "H264";
   inbound_video_codec.clock_rate = 1339;
+  inbound_video_codec.parameters = {{"level-asymmetry-allowed", "1"},
+                                    {"packetization-mode", "1"},
+                                    {"profile-level-id", "42001f"}};
   video_media_info.receive_codecs.insert(
       std::make_pair(inbound_video_codec.payload_type, inbound_video_codec));
 
@@ -856,18 +862,23 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCodecStats) {
   expected_inbound_audio_codec.payload_type = 1;
   expected_inbound_audio_codec.mime_type = "audio/opus";
   expected_inbound_audio_codec.clock_rate = 1337;
+  expected_inbound_audio_codec.channels = 1;
+  expected_inbound_audio_codec.sdp_fmtp_line = "minptime=10;useinbandfec=1";
 
   RTCCodecStats expected_outbound_audio_codec("RTCCodec_AudioMid_Outbound_2",
                                               report->timestamp_us());
   expected_outbound_audio_codec.payload_type = 2;
   expected_outbound_audio_codec.mime_type = "audio/isac";
   expected_outbound_audio_codec.clock_rate = 1338;
+  expected_outbound_audio_codec.channels = 2;
 
   RTCCodecStats expected_inbound_video_codec("RTCCodec_VideoMid_Inbound_3",
                                              report->timestamp_us());
   expected_inbound_video_codec.payload_type = 3;
   expected_inbound_video_codec.mime_type = "video/H264";
   expected_inbound_video_codec.clock_rate = 1339;
+  expected_inbound_video_codec.sdp_fmtp_line =
+      "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42001f";
 
   RTCCodecStats expected_outbound_video_codec("RTCCodec_VideoMid_Outbound_4",
                                               report->timestamp_us());

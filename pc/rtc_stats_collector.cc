@@ -10,6 +10,7 @@
 
 #include "pc/rtc_stats_collector.h"
 
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -24,6 +25,7 @@
 #include "p2p/base/port.h"
 #include "pc/peer_connection.h"
 #include "pc/rtc_stats_traversal.h"
+#include "pc/webrtc_sdp.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/time_utils.h"
@@ -234,6 +236,14 @@ std::unique_ptr<RTCCodecStats> CodecStatsFromRtpCodecParameters(
   codec_stats->mime_type = codec_params.mime_type();
   if (codec_params.clock_rate) {
     codec_stats->clock_rate = static_cast<uint32_t>(*codec_params.clock_rate);
+  }
+  if (codec_params.num_channels) {
+    codec_stats->channels = *codec_params.num_channels;
+  }
+
+  rtc::StringBuilder fmtp;
+  if (WriteFmtpParameters(codec_params.parameters, &fmtp)) {
+    codec_stats->sdp_fmtp_line = fmtp.Release();
   }
   return codec_stats;
 }

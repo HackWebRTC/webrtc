@@ -118,9 +118,7 @@ class RTC_EXPORT RTCCodecStats final : public RTCStats {
   RTCStatsMember<uint32_t> payload_type;
   RTCStatsMember<std::string> mime_type;
   RTCStatsMember<uint32_t> clock_rate;
-  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7061
   RTCStatsMember<uint32_t> channels;
-  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7061
   RTCStatsMember<std::string> sdp_fmtp_line;
 };
 

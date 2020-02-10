@@ -13,8 +13,8 @@
 
 #include <stdint.h>
 
+#include <map>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "absl/types/optional.h"
@@ -157,12 +157,12 @@ struct RTC_EXPORT RtpCodecCapability {
   // Contrary to ORTC, these parameters are named using all lowercase strings.
   // This helps make the mapping to SDP simpler, if an application is using SDP.
   // Boolean values are represented by the string "1".
-  std::unordered_map<std::string, std::string> parameters;
+  std::map<std::string, std::string> parameters;
 
   // Codec-specific parameters that may optionally be signaled to the remote
   // party.
   // TODO(deadbeef): Not implemented.
-  std::unordered_map<std::string, std::string> options;
+  std::map<std::string, std::string> options;
 
   // Maximum number of temporal layer extensions supported by this codec.
   // For example, a value of 1 indicates that 2 total layers are supported.
@@ -500,7 +500,7 @@ struct RTC_EXPORT RtpCodecParameters {
   // Contrary to ORTC, these parameters are named using all lowercase strings.
   // This helps make the mapping to SDP simpler, if an application is using SDP.
   // Boolean values are represented by the string "1".
-  std::unordered_map<std::string, std::string> parameters;
+  std::map<std::string, std::string> parameters;
 
   bool operator==(const RtpCodecParameters& o) const {
     return name == o.name && kind == o.kind && payload_type == o.payload_type &&
