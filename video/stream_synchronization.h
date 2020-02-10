@@ -26,7 +26,7 @@ class StreamSynchronization {
     uint32_t latest_timestamp;
   };
 
-  StreamSynchronization(int video_stream_id, int audio_stream_id);
+  StreamSynchronization(uint32_t video_stream_id, uint32_t audio_stream_id);
 
   bool ComputeDelays(int relative_delay_ms,
                      int current_audio_delay_ms,
@@ -44,16 +44,19 @@ class StreamSynchronization {
   // |target_delay_ms|.
   void SetTargetBufferingDelay(int target_delay_ms);
 
+  uint32_t audio_stream_id() const { return audio_stream_id_; }
+  uint32_t video_stream_id() const { return video_stream_id_; }
+
  private:
   struct SynchronizationDelays {
     int extra_ms = 0;
     int last_ms = 0;
   };
 
+  const uint32_t video_stream_id_;
+  const uint32_t audio_stream_id_;
   SynchronizationDelays audio_delay_;
   SynchronizationDelays video_delay_;
-  const int video_stream_id_;
-  const int audio_stream_id_;
   int base_target_delay_ms_;
   int avg_diff_ms_;
 };

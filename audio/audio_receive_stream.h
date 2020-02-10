@@ -87,7 +87,7 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   int PreferredSampleRate() const override;
 
   // Syncable
-  int id() const override;
+  uint32_t id() const override;
   absl::optional<Syncable::Info> GetInfo() const override;
   bool GetPlayoutRtpTimestamp(uint32_t* rtp_timestamp,
                               int64_t* time_ms) const override;

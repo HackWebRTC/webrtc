@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// RtpStreamsSynchronizer is responsible for synchronization audio and video for
-// a given voice engine channel and video receive stream.
+// RtpStreamsSynchronizer is responsible for synchronizing audio and video for
+// a given audio receive stream and video receive stream.
 
 #ifndef VIDEO_RTP_STREAMS_SYNCHRONIZER_H_
 #define VIDEO_RTP_STREAMS_SYNCHRONIZER_H_
@@ -58,6 +58,7 @@ class RtpStreamsSynchronizer : public Module {
 
   rtc::ThreadChecker process_thread_checker_;
   int64_t last_sync_time_ RTC_GUARDED_BY(&process_thread_checker_);
+  int64_t last_stats_log_ms_ RTC_GUARDED_BY(&process_thread_checker_);
 };
 
 }  // namespace webrtc

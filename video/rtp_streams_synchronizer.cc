@@ -13,12 +13,16 @@
 #include "absl/types/optional.h"
 #include "call/syncable.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/rtp_to_ntp_estimator.h"
 
 namespace webrtc {
 namespace {
+// Time interval for logging stats.
+constexpr int64_t kStatsLogIntervalMs = 10000;
+
 bool UpdateMeasurements(StreamSynchronization::Measurements* stream,
                         const Syncable::Info& info) {
   RTC_DCHECK(stream);
@@ -38,7 +42,8 @@ RtpStreamsSynchronizer::RtpStreamsSynchronizer(Syncable* syncable_video)
     : syncable_video_(syncable_video),
       syncable_audio_(nullptr),
       sync_(),
-      last_sync_time_(rtc::TimeNanos()) {
+      last_sync_time_(rtc::TimeNanos()),
+      last_stats_log_ms_(rtc::TimeMillis()) {
   RTC_DCHECK(syncable_video);
   process_thread_checker_.Detach();
 }
@@ -77,6 +82,13 @@ void RtpStreamsSynchronizer::Process() {
   }
   RTC_DCHECK(sync_.get());
 
+  bool log_stats = false;
+  const int64_t now_ms = rtc::TimeMillis();
+  if (now_ms - last_stats_log_ms_ > kStatsLogIntervalMs) {
+    last_stats_log_ms_ = now_ms;
+    log_stats = true;
+  }
+
   absl::optional<Syncable::Info> audio_info = syncable_audio_->GetInfo();
   if (!audio_info || !UpdateMeasurements(&audio_measurement_, *audio_info)) {
     return;
@@ -100,11 +112,21 @@ void RtpStreamsSynchronizer::Process() {
     return;
   }
 
+  if (log_stats) {
+    RTC_LOG(LS_INFO) << "Sync info stats: " << now_ms
+                     << ", {ssrc: " << sync_->audio_stream_id() << ", "
+                     << "cur_delay_ms: " << audio_info->current_delay_ms
+                     << "} {ssrc: " << sync_->video_stream_id() << ", "
+                     << "cur_delay_ms: " << video_info->current_delay_ms
+                     << "} {relative_delay_ms: " << relative_delay_ms << "} ";
+  }
+
   TRACE_COUNTER1("webrtc", "SyncCurrentVideoDelay",
                  video_info->current_delay_ms);
   TRACE_COUNTER1("webrtc", "SyncCurrentAudioDelay",
                  audio_info->current_delay_ms);
   TRACE_COUNTER1("webrtc", "SyncRelativeDelay", relative_delay_ms);
+
   int target_audio_delay_ms = 0;
   int target_video_delay_ms = video_info->current_delay_ms;
   // Calculate the necessary extra audio delay and desired total video
@@ -112,6 +134,14 @@ void RtpStreamsSynchronizer::Process() {
   if (!sync_->ComputeDelays(relative_delay_ms, audio_info->current_delay_ms,
                             &target_audio_delay_ms, &target_video_delay_ms)) {
     return;
+  }
+
+  if (log_stats) {
+    RTC_LOG(LS_INFO) << "Sync delay stats: " << now_ms
+                     << ", {ssrc: " << sync_->audio_stream_id() << ", "
+                     << "target_delay_ms: " << target_audio_delay_ms
+                     << "} {ssrc: " << sync_->video_stream_id() << ", "
+                     << "target_delay_ms: " << target_video_delay_ms << "} ";
   }
 
   syncable_audio_->SetMinimumPlayoutDelay(target_audio_delay_ms);

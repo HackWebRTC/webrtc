@@ -24,8 +24,8 @@ static const int kFilterLength = 4;
 // Minimum difference between audio and video to warrant a change.
 static const int kMinDeltaMs = 30;
 
-StreamSynchronization::StreamSynchronization(int video_stream_id,
-                                             int audio_stream_id)
+StreamSynchronization::StreamSynchronization(uint32_t video_stream_id,
+                                             uint32_t audio_stream_id)
     : video_stream_id_(video_stream_id),
       audio_stream_id_(audio_stream_id),
       base_target_delay_ms_(0),
@@ -53,6 +53,7 @@ bool StreamSynchronization::ComputeRelativeDelay(
       video_measurement.latest_receive_time_ms -
       audio_measurement.latest_receive_time_ms -
       (video_last_capture_time_ms - audio_last_capture_time_ms);
+
   if (*relative_delay_ms > kMaxDeltaDelayMs ||
       *relative_delay_ms < -kMaxDeltaDelayMs) {
     return false;
@@ -177,7 +178,6 @@ void StreamSynchronization::SetTargetBufferingDelay(int target_delay_ms) {
   // The video delay is compared to the last value (and how much we can update
   // is limited by that as well).
   video_delay_.last_ms += target_delay_ms - base_target_delay_ms_;
-
   video_delay_.extra_ms += target_delay_ms - base_target_delay_ms_;
 
   // Video is already delayed by the desired amount.

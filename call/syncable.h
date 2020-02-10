@@ -33,7 +33,7 @@ class Syncable {
 
   virtual ~Syncable();
 
-  virtual int id() const = 0;
+  virtual uint32_t id() const = 0;
   virtual absl::optional<Info> GetInfo() const = 0;
   virtual bool GetPlayoutRtpTimestamp(uint32_t* rtp_timestamp,
                                       int64_t* time_ms) const = 0;

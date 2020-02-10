@@ -295,7 +295,7 @@ int AudioReceiveStream::PreferredSampleRate() const {
   return channel_receive_->PreferredSampleRate();
 }
 
-int AudioReceiveStream::id() const {
+uint32_t AudioReceiveStream::id() const {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   return config_.rtp.remote_ssrc;
 }

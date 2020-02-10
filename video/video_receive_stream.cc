@@ -580,7 +580,7 @@ void VideoReceiveStream::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
   rtp_video_stream_receiver_.UpdateRtt(max_rtt_ms);
 }
 
-int VideoReceiveStream::id() const {
+uint32_t VideoReceiveStream::id() const {
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
   return config_.rtp.remote_ssrc;
 }
