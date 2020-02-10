@@ -254,6 +254,7 @@ VideoStreamEncoder::VideoStreamEncoder(
       settings_(settings),
       rate_control_settings_(RateControlSettings::ParseFromFieldTrials()),
       quality_scaler_settings_(QualityScalerSettings::ParseFromFieldTrials()),
+      encoder_selector_(settings.encoder_factory->GetEncoderSelector()),
       encoder_stats_observer_(encoder_stats_observer),
       encoder_initialized_(false),
       max_framerate_(-1),
@@ -435,7 +436,8 @@ void VideoStreamEncoder::ConfigureEncoder(VideoEncoderConfig config,
 void VideoStreamEncoder::ReconfigureEncoder() {
   RTC_DCHECK(pending_encoder_reconfiguration_);
 
-  if (encoder_switch_experiment_.IsPixelCountBelowThreshold(
+  if (!encoder_selector_ &&
+      encoder_switch_experiment_.IsPixelCountBelowThreshold(
           last_frame_info_->width * last_frame_info_->height) &&
       !encoder_switch_requested_ && settings_.encoder_switch_request_callback) {
     EncoderSwitchRequestCallback::Config conf;
@@ -491,6 +493,10 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     // TODO(nisse): What to do if creating the encoder fails? Crash,
     // or just discard incoming frames?
     RTC_CHECK(encoder_);
+
+    if (encoder_selector_) {
+      encoder_selector_->OnCurrentEncoder(encoder_config_.video_format);
+    }
 
     encoder_->SetFecControllerOverride(fec_controller_override_);
 
@@ -1283,9 +1289,17 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
     if (encode_status == WEBRTC_VIDEO_CODEC_ENCODER_FAILURE) {
       RTC_LOG(LS_ERROR) << "Encoder failed, failing encoder format: "
                         << encoder_config_.video_format.ToString();
+
       if (settings_.encoder_switch_request_callback) {
-        encoder_failed_ = true;
-        settings_.encoder_switch_request_callback->RequestEncoderFallback();
+        if (encoder_selector_) {
+          if (auto encoder = encoder_selector_->OnEncoderBroken()) {
+            settings_.encoder_switch_request_callback->RequestEncoderSwitch(
+                *encoder);
+          }
+        } else {
+          encoder_failed_ = true;
+          settings_.encoder_switch_request_callback->RequestEncoderFallback();
+        }
       } else {
         RTC_LOG(LS_ERROR)
             << "Encoder failed but no encoder fallback callback is registered";
@@ -1548,15 +1562,23 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
   }
   RTC_DCHECK_RUN_ON(&encoder_queue_);
 
-  if (encoder_switch_experiment_.IsBitrateBelowThreshold(target_bitrate) &&
-      settings_.encoder_switch_request_callback && !encoder_switch_requested_) {
-    EncoderSwitchRequestCallback::Config conf;
-    conf.codec_name = encoder_switch_experiment_.to_codec;
-    conf.param = encoder_switch_experiment_.to_param;
-    conf.value = encoder_switch_experiment_.to_value;
-    settings_.encoder_switch_request_callback->RequestEncoderSwitch(conf);
+  if (settings_.encoder_switch_request_callback) {
+    if (encoder_selector_) {
+      if (auto encoder = encoder_selector_->OnEncodingBitrate(target_bitrate)) {
+        settings_.encoder_switch_request_callback->RequestEncoderSwitch(
+            *encoder);
+      }
+    } else if (encoder_switch_experiment_.IsBitrateBelowThreshold(
+                   target_bitrate) &&
+               !encoder_switch_requested_) {
+      EncoderSwitchRequestCallback::Config conf;
+      conf.codec_name = encoder_switch_experiment_.to_codec;
+      conf.param = encoder_switch_experiment_.to_param;
+      conf.value = encoder_switch_experiment_.to_value;
+      settings_.encoder_switch_request_callback->RequestEncoderSwitch(conf);
 
-    encoder_switch_requested_ = true;
+      encoder_switch_requested_ = true;
+    }
   }
 
   RTC_DCHECK(sink_) << "sink_ must be set before the encoder is active.";

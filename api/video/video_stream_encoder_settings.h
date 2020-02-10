@@ -34,6 +34,8 @@ class EncoderSwitchRequestCallback {
 
   // Requests that a switch to a specific encoder is performed.
   virtual void RequestEncoderSwitch(const Config& conf) = 0;
+
+  virtual void RequestEncoderSwitch(const SdpVideoFormat& format) = 0;
 };
 
 struct VideoStreamEncoderSettings {

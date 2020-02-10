@@ -18,6 +18,7 @@
 #include "absl/memory/memory.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/mock_fec_controller_override.h"
+#include "api/test/mock_video_encoder.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_bitrate_allocation.h"
@@ -51,6 +52,9 @@ using ScaleReason = AdaptationObserverInterface::AdaptReason;
 using ::testing::_;
 using ::testing::AllOf;
 using ::testing::Field;
+using ::testing::Matcher;
+using ::testing::NiceMock;
+using ::testing::Return;
 using ::testing::StrictMock;
 
 namespace {
@@ -383,6 +387,15 @@ class MockableSendStatisticsProxy : public SendStatisticsProxy {
 class MockBitrateObserver : public VideoBitrateAllocationObserver {
  public:
   MOCK_METHOD1(OnBitrateAllocationUpdated, void(const VideoBitrateAllocation&));
+};
+
+class MockEncoderSelector
+    : public VideoEncoderFactory::EncoderSelectorInterface {
+ public:
+  MOCK_METHOD1(OnCurrentEncoder, void(const SdpVideoFormat& format));
+  MOCK_METHOD1(OnEncodingBitrate,
+               absl::optional<SdpVideoFormat>(const DataRate& rate));
+  MOCK_METHOD0(OnEncoderBroken, absl::optional<SdpVideoFormat>());
 };
 
 }  // namespace
@@ -5122,6 +5135,8 @@ TEST_F(VideoStreamEncoderTest, EncoderRatesPropagatedOnReconfigure) {
 struct MockEncoderSwitchRequestCallback : public EncoderSwitchRequestCallback {
   MOCK_METHOD0(RequestEncoderFallback, void());
   MOCK_METHOD1(RequestEncoderSwitch, void(const Config& conf));
+  MOCK_METHOD1(RequestEncoderSwitch,
+               void(const webrtc::SdpVideoFormat& format));
 };
 
 TEST_F(VideoStreamEncoderTest, BitrateEncoderSwitch) {
@@ -5145,10 +5160,10 @@ TEST_F(VideoStreamEncoderTest, BitrateEncoderSwitch) {
       CreateFrame(kDontCare, kDontCare, kDontCare));
 
   using Config = EncoderSwitchRequestCallback::Config;
-  EXPECT_CALL(switch_callback,
-              RequestEncoderSwitch(AllOf(Field(&Config::codec_name, "AV1"),
+  EXPECT_CALL(switch_callback, RequestEncoderSwitch(Matcher<const Config&>(
+                                   AllOf(Field(&Config::codec_name, "AV1"),
                                          Field(&Config::param, "ping"),
-                                         Field(&Config::value, "pong"))));
+                                         Field(&Config::value, "pong")))));
 
   video_stream_encoder_->OnBitrateUpdated(
       /*target_bitrate=*/DataRate::kbps(50),
@@ -5195,15 +5210,121 @@ TEST_F(VideoStreamEncoderTest, ResolutionEncoderSwitch) {
   WaitForEncodedFrame(1);
 
   using Config = EncoderSwitchRequestCallback::Config;
-  EXPECT_CALL(switch_callback,
-              RequestEncoderSwitch(AllOf(Field(&Config::codec_name, "AV1"),
+  EXPECT_CALL(switch_callback, RequestEncoderSwitch(Matcher<const Config&>(
+                                   AllOf(Field(&Config::codec_name, "AV1"),
                                          Field(&Config::param, "ping"),
-                                         Field(&Config::value, "pong"))));
+                                         Field(&Config::value, "pong")))));
 
   video_source_.IncomingCapturedFrame(CreateFrame(2, kLowRes, kLowRes));
   WaitForEncodedFrame(2);
 
   video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, EncoderSelectorCurrentEncoderIsSignaled) {
+  constexpr int kDontCare = 100;
+  StrictMock<MockEncoderSelector> encoder_selector;
+  auto encoder_factory = std::make_unique<test::VideoEncoderProxyFactory>(
+      &fake_encoder_, &encoder_selector);
+  video_send_config_.encoder_settings.encoder_factory = encoder_factory.get();
+
+  // Reset encoder for new configuration to take effect.
+  ConfigureEncoder(video_encoder_config_.Copy());
+
+  EXPECT_CALL(encoder_selector, OnCurrentEncoder(_));
+
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(kDontCare, kDontCare, kDontCare));
+  video_stream_encoder_->Stop();
+
+  // The encoders produces by the VideoEncoderProxyFactory have a pointer back
+  // to it's factory, so in order for the encoder instance in the
+  // |video_stream_encoder_| to be destroyed before the |encoder_factory| we
+  // reset the |video_stream_encoder_| here.
+  video_stream_encoder_.reset();
+}
+
+TEST_F(VideoStreamEncoderTest, EncoderSelectorBitrateSwitch) {
+  constexpr int kDontCare = 100;
+
+  NiceMock<MockEncoderSelector> encoder_selector;
+  StrictMock<MockEncoderSwitchRequestCallback> switch_callback;
+  video_send_config_.encoder_settings.encoder_switch_request_callback =
+      &switch_callback;
+  auto encoder_factory = std::make_unique<test::VideoEncoderProxyFactory>(
+      &fake_encoder_, &encoder_selector);
+  video_send_config_.encoder_settings.encoder_factory = encoder_factory.get();
+
+  // Reset encoder for new configuration to take effect.
+  ConfigureEncoder(video_encoder_config_.Copy());
+
+  ON_CALL(encoder_selector, OnEncodingBitrate(_))
+      .WillByDefault(Return(SdpVideoFormat("AV1")));
+  EXPECT_CALL(switch_callback,
+              RequestEncoderSwitch(Matcher<const SdpVideoFormat&>(
+                  Field(&SdpVideoFormat::name, "AV1"))));
+
+  video_stream_encoder_->OnBitrateUpdated(
+      /*target_bitrate=*/DataRate::kbps(50),
+      /*stable_target_bitrate=*/DataRate::kbps(kDontCare),
+      /*link_allocation=*/DataRate::kbps(kDontCare),
+      /*fraction_lost=*/0,
+      /*rtt_ms=*/0,
+      /*cwnd_reduce_ratio=*/0);
+
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, EncoderSelectorBrokenEncoderSwitch) {
+  constexpr int kSufficientBitrateToNotDrop = 1000;
+  constexpr int kDontCare = 100;
+
+  NiceMock<MockVideoEncoder> video_encoder;
+  NiceMock<MockEncoderSelector> encoder_selector;
+  StrictMock<MockEncoderSwitchRequestCallback> switch_callback;
+  video_send_config_.encoder_settings.encoder_switch_request_callback =
+      &switch_callback;
+  auto encoder_factory = std::make_unique<test::VideoEncoderProxyFactory>(
+      &video_encoder, &encoder_selector);
+  video_send_config_.encoder_settings.encoder_factory = encoder_factory.get();
+
+  // Reset encoder for new configuration to take effect.
+  ConfigureEncoder(video_encoder_config_.Copy());
+
+  // The VideoStreamEncoder needs some bitrate before it can start encoding,
+  // setting some bitrate so that subsequent calls to WaitForEncodedFrame does
+  // not fail.
+  video_stream_encoder_->OnBitrateUpdated(
+      /*target_bitrate=*/DataRate::kbps(kSufficientBitrateToNotDrop),
+      /*stable_target_bitrate=*/DataRate::kbps(kSufficientBitrateToNotDrop),
+      /*link_allocation=*/DataRate::kbps(kSufficientBitrateToNotDrop),
+      /*fraction_lost=*/0,
+      /*rtt_ms=*/0,
+      /*cwnd_reduce_ratio=*/0);
+
+  ON_CALL(video_encoder, Encode(_, _))
+      .WillByDefault(Return(WEBRTC_VIDEO_CODEC_ENCODER_FAILURE));
+  ON_CALL(encoder_selector, OnEncoderBroken())
+      .WillByDefault(Return(SdpVideoFormat("AV2")));
+
+  rtc::Event encode_attempted;
+  EXPECT_CALL(switch_callback,
+              RequestEncoderSwitch(Matcher<const SdpVideoFormat&>(_)))
+      .WillOnce([&encode_attempted](const SdpVideoFormat& format) {
+        EXPECT_EQ(format.name, "AV2");
+        encode_attempted.Set();
+      });
+
+  video_source_.IncomingCapturedFrame(CreateFrame(1, kDontCare, kDontCare));
+  encode_attempted.Wait(3000);
+
+  video_stream_encoder_->Stop();
+
+  // The encoders produces by the VideoEncoderProxyFactory have a pointer back
+  // to it's factory, so in order for the encoder instance in the
+  // |video_stream_encoder_| to be destroyed before the |encoder_factory| we
+  // reset the |video_stream_encoder_| here.
+  video_stream_encoder_.reset();
 }
 
 TEST_F(VideoStreamEncoderTest,

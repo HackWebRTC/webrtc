@@ -774,6 +774,31 @@ void WebRtcVideoChannel::RequestEncoderSwitch(
   });
 }
 
+void WebRtcVideoChannel::RequestEncoderSwitch(
+    const webrtc::SdpVideoFormat& format) {
+  invoker_.AsyncInvoke<void>(RTC_FROM_HERE, worker_thread_, [this, format] {
+    RTC_DCHECK_RUN_ON(&thread_checker_);
+
+    for (const VideoCodecSettings& codec_setting : negotiated_codecs_) {
+      if (IsSameCodec(format.name, format.parameters, codec_setting.codec.name,
+                      codec_setting.codec.params)) {
+        if (send_codec_ == codec_setting) {
+          // Already using this codec, no switch required.
+          return;
+        }
+
+        ChangedSendParameters params;
+        params.send_codec = codec_setting;
+        ApplyChangedParams(params);
+        return;
+      }
+    }
+
+    RTC_LOG(LS_WARNING) << "Encoder switch failed: SdpVideoFormat "
+                        << format.ToString() << " not negotiated.";
+  });
+}
+
 bool WebRtcVideoChannel::ApplyChangedParams(
     const ChangedSendParameters& changed_params) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
