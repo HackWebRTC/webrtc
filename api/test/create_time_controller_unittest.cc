@@ -68,7 +68,7 @@ void FakeAlarm::Sleep(TimeDelta duration) {
 }
 
 TEST(CreateTimeControllerTest, CreatesNonNullController) {
-  FakeAlarm alarm(Timestamp::ms(100));
+  FakeAlarm alarm(Timestamp::Millis(100));
   EXPECT_NE(CreateTimeController(&alarm), nullptr);
 }
 

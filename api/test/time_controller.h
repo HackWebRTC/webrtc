@@ -59,7 +59,7 @@ class TimeController {
 
   // Waits until done() == true, polling done() in small time intervals.
   bool Wait(const std::function<bool()>& done,
-            TimeDelta max_duration = TimeDelta::seconds(5));
+            TimeDelta max_duration = TimeDelta::Seconds(5));
 };
 
 // Interface for telling time, scheduling an event to fire at a particular time,

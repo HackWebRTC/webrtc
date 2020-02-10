@@ -25,7 +25,7 @@ std::unique_ptr<TimeController> CreateTimeController(
 
 std::unique_ptr<TimeController> CreateSimulatedTimeController() {
   return std::make_unique<GlobalSimulatedTimeController>(
-      Timestamp::seconds(10000));
+      Timestamp::Seconds(10000));
 }
 
 std::unique_ptr<CallFactoryInterface> CreateTimeControllerBasedCallFactory(

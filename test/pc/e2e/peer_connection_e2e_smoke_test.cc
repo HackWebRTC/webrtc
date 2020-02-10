@@ -81,7 +81,7 @@ class PeerConnectionE2EQualityTestSmokeTest : public ::testing::Test {
     auto fixture = CreatePeerConnectionE2EQualityTestFixture(
         test_case_name, /*audio_quality_analyzer=*/nullptr,
         std::move(video_quality_analyzer));
-    fixture->ExecuteAt(TimeDelta::seconds(2),
+    fixture->ExecuteAt(TimeDelta::Seconds(2),
                        [alice_network_behavior_ptr](TimeDelta) {
                          BuiltInNetworkBehaviorConfig config;
                          config.loss_percent = 5;
@@ -134,7 +134,7 @@ class PeerConnectionE2EQualityTestSmokeTest : public ::testing::Test {
 #define MAYBE_Smoke Smoke
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
-  RunParams run_params(TimeDelta::seconds(7));
+  RunParams run_params(TimeDelta::Seconds(7));
   run_params.video_codecs = {
       VideoCodecConfig(cricket::kVp9CodecName, {{"profile-id", "0"}})};
   run_params.use_flex_fec = true;
@@ -167,9 +167,9 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
         VideoConfig screenshare(640, 360, 30);
         screenshare.stream_label = "bob-screenshare";
         screenshare.screen_share_config =
-            ScreenShareConfig(TimeDelta::seconds(2));
+            ScreenShareConfig(TimeDelta::Seconds(2));
         screenshare.screen_share_config->scrolling_params = ScrollingParams(
-            TimeDelta::ms(1800), kDefaultSlidesWidth, kDefaultSlidesHeight);
+            TimeDelta::Millis(1800), kDefaultSlidesWidth, kDefaultSlidesHeight);
         bob->AddVideoConfig(screenshare);
 
         AudioConfig audio;
@@ -188,7 +188,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
 #define MAYBE_Echo Echo
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Echo) {
-  RunParams run_params(TimeDelta::seconds(7));
+  RunParams run_params(TimeDelta::Seconds(7));
   run_params.echo_emulation_config = EchoEmulationConfig();
   RunTest(
       "smoke", run_params,
@@ -218,7 +218,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Echo) {
 #define MAYBE_Simulcast Simulcast
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Simulcast) {
-  RunParams run_params(TimeDelta::seconds(7));
+  RunParams run_params(TimeDelta::Seconds(7));
   run_params.video_codecs = {VideoCodecConfig(cricket::kVp8CodecName)};
   RunTest(
       "simulcast", run_params,
@@ -256,7 +256,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Simulcast) {
 #define MAYBE_Svc Svc
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Svc) {
-  RunParams run_params(TimeDelta::seconds(7));
+  RunParams run_params(TimeDelta::Seconds(7));
   run_params.video_codecs = {VideoCodecConfig(cricket::kVp9CodecName)};
   RunTest(
       "simulcast", run_params,
@@ -296,7 +296,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Svc) {
 #define MAYBE_HighBitrate HighBitrate
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_HighBitrate) {
-  RunParams run_params(TimeDelta::seconds(7));
+  RunParams run_params(TimeDelta::Seconds(7));
   run_params.video_codecs = {
       VideoCodecConfig(cricket::kVp9CodecName, {{"profile-id", "0"}})};
 

@@ -31,7 +31,7 @@ bool TimeController::Wait(const std::function<bool()>& done,
   // Step size is chosen to be short enough to not significantly affect latency
   // in real time tests while being long enough to avoid adding too much load to
   // the system.
-  const auto kStep = TimeDelta::ms(5);
+  const auto kStep = TimeDelta::Millis(5);
   for (auto elapsed = TimeDelta::Zero(); elapsed < max_duration;
        elapsed += kStep) {
     if (done())

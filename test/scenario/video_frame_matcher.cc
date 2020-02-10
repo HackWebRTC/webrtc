@@ -180,7 +180,7 @@ DecodedFrameTap::DecodedFrameTap(Clock* clock,
 
 void DecodedFrameTap::OnFrame(const VideoFrame& frame) {
   matcher_->OnDecodedFrame(frame, layer_id_,
-                           Timestamp::ms(frame.render_time_ms()),
+                           Timestamp::Millis(frame.render_time_ms()),
                            clock_->CurrentTime());
 }
 

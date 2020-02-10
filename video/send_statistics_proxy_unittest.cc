@@ -397,7 +397,8 @@ TEST_F(SendStatisticsProxyTest,
   // TODO(https://crbug.com/webrtc/10640): When the RateTracker uses a Clock
   // this test can stop relying on rtc::ScopedFakeClock.
   rtc::ScopedFakeClock fake_global_clock;
-  fake_global_clock.SetTime(Timestamp::ms(fake_clock_.TimeInMilliseconds()));
+  fake_global_clock.SetTime(
+      Timestamp::Millis(fake_clock_.TimeInMilliseconds()));
 
   statistics_proxy_->OnSetEncoderTargetRate(kTargetBytesPerSecond * 8);
   EncodedImage encoded_image;
@@ -408,7 +409,8 @@ TEST_F(SendStatisticsProxyTest,
       statistics_proxy_->GetStats().total_encoded_bytes_target;
   // Second frame
   fake_clock_.AdvanceTimeMilliseconds(kInterframeDelayMs);
-  fake_global_clock.SetTime(Timestamp::ms(fake_clock_.TimeInMilliseconds()));
+  fake_global_clock.SetTime(
+      Timestamp::Millis(fake_clock_.TimeInMilliseconds()));
   encoded_image.SetTimestamp(encoded_image.Timestamp() +
                              90 * kInterframeDelayMs);
   statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);

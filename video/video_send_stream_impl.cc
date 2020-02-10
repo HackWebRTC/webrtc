@@ -47,7 +47,7 @@ static constexpr int kMaxVbaSizeDifferencePercent = 10;
 // Max time we will throttle similar video bitrate allocations.
 static constexpr int64_t kMaxVbaThrottleTimeMs = 500;
 
-constexpr TimeDelta kEncoderTimeOut = TimeDelta::Seconds<2>();
+constexpr TimeDelta kEncoderTimeOut = TimeDelta::Seconds(2);
 
 bool TransportSeqNumExtensionConfigured(const VideoSendStream::Config& config) {
   const std::vector<RtpExtension>& extensions = config.rtp.extensions;
@@ -158,7 +158,7 @@ bool SameStreamsEnabled(const VideoBitrateAllocation& lhs,
 PacingConfig::PacingConfig()
     : pacing_factor("factor", PacedSender::kDefaultPaceMultiplier),
       max_pacing_delay("max_delay",
-                       TimeDelta::ms(PacedSender::kMaxQueueLengthMs)) {
+                       TimeDelta::Millis(PacedSender::kMaxQueueLengthMs)) {
   ParseFieldTrial({&pacing_factor, &max_pacing_delay},
                   field_trial::FindFullName("WebRTC-Video-Pacing"));
 }

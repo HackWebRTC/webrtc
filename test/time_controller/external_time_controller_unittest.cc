@@ -29,7 +29,7 @@ using ::testing::Invoke;
 using ::testing::MockFunction;
 using ::testing::NiceMock;
 using ::testing::Return;
-constexpr Timestamp kStartTime = Timestamp::Seconds<1000>();
+constexpr Timestamp kStartTime = Timestamp::Seconds(1000);
 
 class FakeAlarm : public ControlledAlarmClock {
  public:
@@ -82,8 +82,8 @@ void FakeAlarm::Sleep(TimeDelta duration) {
 }  // namespace
 
 TEST(ExternalTimeControllerTest, TaskIsStoppedOnStop) {
-  const TimeDelta kShortInterval = TimeDelta::ms(5);
-  const TimeDelta kLongInterval = TimeDelta::ms(20);
+  const TimeDelta kShortInterval = TimeDelta::Millis(5);
+  const TimeDelta kLongInterval = TimeDelta::Millis(20);
   const int kShortIntervalCount = 4;
   const int kMargin = 1;
   FakeAlarm alarm(kStartTime);
@@ -123,10 +123,10 @@ TEST(ExternalTimeControllerTest, TaskCanStopItself) {
     handle = RepeatingTaskHandle::Start(task_queue.Get(), [&] {
       ++counter;
       handle.Stop();
-      return TimeDelta::ms(2);
+      return TimeDelta::Millis(2);
     });
   });
-  time_simulation.AdvanceTime(TimeDelta::ms(10));
+  time_simulation.AdvanceTime(TimeDelta::Millis(10));
   EXPECT_EQ(counter.load(), 1);
 }
 
@@ -160,7 +160,7 @@ TEST(ExternalTimeControllerTest, TasksYieldToEachOther) {
     EXPECT_TRUE(event.Wait(200));
   });
 
-  time_simulation.AdvanceTime(TimeDelta::ms(300));
+  time_simulation.AdvanceTime(TimeDelta::Millis(300));
 }
 
 TEST(ExternalTimeControllerTest, CurrentTaskQueue) {
@@ -173,7 +173,7 @@ TEST(ExternalTimeControllerTest, CurrentTaskQueue) {
 
   task_queue.PostTask([&] { EXPECT_TRUE(task_queue.IsCurrent()); });
 
-  time_simulation.AdvanceTime(TimeDelta::ms(10));
+  time_simulation.AdvanceTime(TimeDelta::Millis(10));
 }
 
 }  // namespace webrtc

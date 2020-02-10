@@ -26,10 +26,10 @@ const char kBweReceiveTimeCorrection[] = "WebRTC-Bwe-ReceiveTimeFix";
 }  // namespace
 
 ReceiveTimeCalculatorConfig::ReceiveTimeCalculatorConfig()
-    : max_packet_time_repair("maxrep", TimeDelta::ms(2000)),
-      stall_threshold("stall", TimeDelta::ms(5)),
-      tolerance("tol", TimeDelta::ms(1)),
-      max_stall("maxstall", TimeDelta::seconds(5)) {
+    : max_packet_time_repair("maxrep", TimeDelta::Millis(2000)),
+      stall_threshold("stall", TimeDelta::Millis(5)),
+      tolerance("tol", TimeDelta::Millis(1)),
+      max_stall("maxstall", TimeDelta::Seconds(5)) {
   std::string trial_string =
       field_trial::FindFullName(kBweReceiveTimeCorrection);
   ParseFieldTrial(

@@ -475,7 +475,7 @@ class VideoReceiveStreamTestWithSimulatedClock : public ::testing::Test {
   }
 
   VideoReceiveStreamTestWithSimulatedClock()
-      : time_controller_(Timestamp::ms(4711)),
+      : time_controller_(Timestamp::Millis(4711)),
         fake_decoder_factory_([this] {
           return std::make_unique<FakeDecoder2>([this] { OnFrameDecoded(); });
         }),
@@ -523,8 +523,8 @@ class VideoReceiveStreamTestWithSimulatedClock : public ::testing::Test {
 
 TEST_F(VideoReceiveStreamTestWithSimulatedClock,
        RequestsKeyFramesUntilKeyFrameReceived) {
-  auto tick =
-      TimeDelta::ms(internal::VideoReceiveStream::kMaxWaitForKeyFrameMs / 2);
+  auto tick = TimeDelta::Millis(
+      internal::VideoReceiveStream::kMaxWaitForKeyFrameMs / 2);
   EXPECT_CALL(mock_transport_, SendRtcp).Times(1);
   video_receive_stream_.GenerateKeyFrame();
   PassEncodedFrameAndWait(MakeFrame(VideoFrameType::kVideoFrameDelta, 0));

@@ -1894,10 +1894,10 @@ void VideoStreamEncoder::CheckForAnimatedContent(
   } else if ((!last_update_rect_ ||
               frame.update_rect() != *last_update_rect_)) {
     last_update_rect_ = frame.update_rect();
-    animation_start_time_ = Timestamp::us(time_when_posted_in_us);
+    animation_start_time_ = Timestamp::Micros(time_when_posted_in_us);
   } else {
     TimeDelta animation_duration =
-        Timestamp::us(time_when_posted_in_us) - animation_start_time_;
+        Timestamp::Micros(time_when_posted_in_us) - animation_start_time_;
     float area_ratio = static_cast<float>(last_update_rect_->width *
                                           last_update_rect_->height) /
                        (frame.width() * frame.height());

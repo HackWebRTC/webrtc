@@ -107,7 +107,7 @@ class TimeDelta final : public rtc_units_impl::RelativeUnit<TimeDelta> {
   }
 
   constexpr TimeDelta Abs() const {
-    return us() < 0 ? TimeDelta::us(-us()) : *this;
+    return us() < 0 ? TimeDelta::Micros(-us()) : *this;
   }
 
  private:

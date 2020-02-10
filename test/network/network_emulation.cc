@@ -40,7 +40,7 @@ void LinkEmulation::OnPacketReceived(EmulatedIpPacket packet) {
     process_task_ = RepeatingTaskHandle::DelayedStart(
         task_queue_->Get(),
         std::max(TimeDelta::Zero(),
-                 Timestamp::us(*next_time_us) - current_time),
+                 Timestamp::Micros(*next_time_us) - current_time),
         [this]() {
           RTC_DCHECK_RUN_ON(task_queue_);
           Timestamp current_time = clock_->CurrentTime();
@@ -52,7 +52,7 @@ void LinkEmulation::OnPacketReceived(EmulatedIpPacket packet) {
             return TimeDelta::Zero();  // This is ignored.
           }
           RTC_DCHECK_GE(*next_time_us, current_time.us());
-          return Timestamp::us(*next_time_us) - current_time;
+          return Timestamp::Micros(*next_time_us) - current_time;
         });
   });
 }
@@ -74,7 +74,7 @@ void LinkEmulation::Process(Timestamp at_time) {
 
     if (delivery_info.receive_time_us != PacketDeliveryInfo::kNotReceived) {
       packet->packet.arrival_time =
-          Timestamp::us(delivery_info.receive_time_us);
+          Timestamp::Micros(delivery_info.receive_time_us);
       receiver_->OnPacketReceived(std::move(packet->packet));
     }
     while (!packets_.empty() && packets_.front().removed) {

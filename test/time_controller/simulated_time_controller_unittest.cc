@@ -29,12 +29,12 @@ using ::testing::Invoke;
 using ::testing::MockFunction;
 using ::testing::NiceMock;
 using ::testing::Return;
-constexpr Timestamp kStartTime = Timestamp::Seconds<1000>();
+constexpr Timestamp kStartTime = Timestamp::Seconds(1000);
 }  // namespace
 
 TEST(SimulatedTimeControllerTest, TaskIsStoppedOnStop) {
-  const TimeDelta kShortInterval = TimeDelta::ms(5);
-  const TimeDelta kLongInterval = TimeDelta::ms(20);
+  const TimeDelta kShortInterval = TimeDelta::Millis(5);
+  const TimeDelta kLongInterval = TimeDelta::Millis(20);
   const int kShortIntervalCount = 4;
   const int kMargin = 1;
   GlobalSimulatedTimeController time_simulation(kStartTime);
@@ -72,10 +72,10 @@ TEST(SimulatedTimeControllerTest, TaskCanStopItself) {
     handle = RepeatingTaskHandle::Start(task_queue.Get(), [&] {
       ++counter;
       handle.Stop();
-      return TimeDelta::ms(2);
+      return TimeDelta::Millis(2);
     });
   });
-  time_simulation.AdvanceTime(TimeDelta::ms(10));
+  time_simulation.AdvanceTime(TimeDelta::Millis(10));
   EXPECT_EQ(counter.load(), 1);
 }
 
@@ -83,7 +83,7 @@ TEST(SimulatedTimeControllerTest, Example) {
   class ObjectOnTaskQueue {
    public:
     void DoPeriodicTask() {}
-    TimeDelta TimeUntilNextRun() { return TimeDelta::ms(100); }
+    TimeDelta TimeUntilNextRun() { return TimeDelta::Millis(100); }
     void StartPeriodicTask(RepeatingTaskHandle* handle,
                            rtc::TaskQueue* task_queue) {
       *handle = RepeatingTaskHandle::Start(task_queue->Get(), [this] {
@@ -123,7 +123,7 @@ TEST(SimulatedTimeControllerTest, DelayTaskRunOnTime) {
   bool delay_task_executed = false;
   task_queue.PostDelayedTask([&] { delay_task_executed = true; }, 10);
 
-  time_simulation.AdvanceTime(TimeDelta::ms(10));
+  time_simulation.AdvanceTime(TimeDelta::Millis(10));
   EXPECT_TRUE(delay_task_executed);
 }
 
@@ -145,7 +145,7 @@ TEST(SimulatedTimeControllerTest, ThreadYeildsOnInvoke) {
   // Since we are doing an invoke from the main thread, we don't expect the main
   // thread message loop to be processed.
   EXPECT_FALSE(task_has_run);
-  sim.AdvanceTime(TimeDelta::seconds(1));
+  sim.AdvanceTime(TimeDelta::Seconds(1));
   ASSERT_TRUE(task_has_run);
 }
 

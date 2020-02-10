@@ -74,11 +74,11 @@ absl::optional<TimeDelta> ParseTypedParameter<TimeDelta>(std::string str) {
   absl::optional<ValueWithUnit> result = ParseValueWithUnit(str);
   if (result) {
     if (result->unit == "s" || result->unit == "seconds") {
-      return TimeDelta::seconds(result->value);
+      return TimeDelta::Seconds(result->value);
     } else if (result->unit == "us") {
-      return TimeDelta::us(result->value);
+      return TimeDelta::Micros(result->value);
     } else if (result->unit.empty() || result->unit == "ms") {
-      return TimeDelta::ms(result->value);
+      return TimeDelta::Millis(result->value);
     }
   }
   return absl::nullopt;

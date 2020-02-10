@@ -64,7 +64,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     return;
   }
   DataReader reader(data, size);
-  GlobalSimulatedTimeController time_controller(Timestamp::seconds(0));
+  GlobalSimulatedTimeController time_controller(Timestamp::Seconds(0));
   rtc::TaskQueue task_queue(
       time_controller.GetTaskQueueFactory()->CreateTaskQueue(
           "time_tq", TaskQueueFactory::Priority::NORMAL));
@@ -106,7 +106,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
       }
     }
 
-    time_controller.AdvanceTime(TimeDelta::ms(reader.GetNum<uint8_t>()));
+    time_controller.AdvanceTime(TimeDelta::Millis(reader.GetNum<uint8_t>()));
   }
 }
 

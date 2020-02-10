@@ -48,12 +48,12 @@ TEST(ScenarioTest, StartsAndStopsWithoutErrors) {
 
   s.NetworkDelayedAction({alice_net, bob_net}, 100,
                          [&packet_received] { packet_received = true; });
-  s.Every(TimeDelta::ms(10), [alice, bob, &bitrate_changed] {
+  s.Every(TimeDelta::Millis(10), [alice, bob, &bitrate_changed] {
     if (alice->GetStats().send_bandwidth_bps != 300000 &&
         bob->GetStats().send_bandwidth_bps != 300000)
       bitrate_changed = true;
   });
-  s.RunUntil(TimeDelta::seconds(2), TimeDelta::ms(5),
+  s.RunUntil(TimeDelta::Seconds(2), TimeDelta::Millis(5),
              [&bitrate_changed, &packet_received] {
                return packet_received && bitrate_changed;
              });
@@ -67,7 +67,7 @@ void SetupVideoCall(Scenario& s, VideoQualityAnalyzer* analyzer) {
   auto* bob = s.CreateClient("bob", call_config);
   NetworkSimulationConfig network_config;
   network_config.bandwidth = DataRate::kbps(1000);
-  network_config.delay = TimeDelta::ms(50);
+  network_config.delay = TimeDelta::Millis(50);
   auto alice_net = s.CreateSimulationNode(network_config);
   auto bob_net = s.CreateSimulationNode(network_config);
   auto route = s.CreateRoutes(alice, {alice_net}, bob, {bob_net});
@@ -101,7 +101,7 @@ TEST(ScenarioTest, MAYBE_SimTimeEncoding) {
   {
     Scenario s("scenario/encode_sim", false);
     SetupVideoCall(s, &analyzer);
-    s.RunFor(TimeDelta::seconds(60));
+    s.RunFor(TimeDelta::Seconds(60));
   }
   // Regression tests based on previous runs.
   EXPECT_EQ(analyzer.stats().lost_count, 0);
@@ -121,7 +121,7 @@ TEST(ScenarioTest, MAYBE_RealTimeEncoding) {
   {
     Scenario s("scenario/encode_real", true);
     SetupVideoCall(s, &analyzer);
-    s.RunFor(TimeDelta::seconds(10));
+    s.RunFor(TimeDelta::Seconds(10));
   }
   // Regression tests based on previous runs.
   EXPECT_LT(analyzer.stats().lost_count, 2);
@@ -131,7 +131,7 @@ TEST(ScenarioTest, MAYBE_RealTimeEncoding) {
 TEST(ScenarioTest, SimTimeFakeing) {
   Scenario s("scenario/encode_sim", false);
   SetupVideoCall(s, nullptr);
-  s.RunFor(TimeDelta::seconds(10));
+  s.RunFor(TimeDelta::Seconds(10));
 }
 
 TEST(ScenarioTest, WritesToRtcEventLog) {
@@ -139,7 +139,7 @@ TEST(ScenarioTest, WritesToRtcEventLog) {
   {
     Scenario s(storage.CreateFactory(), false);
     SetupVideoCall(s, nullptr);
-    s.RunFor(TimeDelta::seconds(1));
+    s.RunFor(TimeDelta::Seconds(1));
   }
   auto logs = storage.logs();
   // We expect that a rtc event log has been created and that it has some data.

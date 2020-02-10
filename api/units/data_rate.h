@@ -106,7 +106,7 @@ inline constexpr DataRate operator/(const DataSize size,
   return DataRate::bps(data_rate_impl::Microbits(size) / duration.us());
 }
 inline constexpr TimeDelta operator/(const DataSize size, const DataRate rate) {
-  return TimeDelta::us(data_rate_impl::Microbits(size) / rate.bps());
+  return TimeDelta::Micros(data_rate_impl::Microbits(size) / rate.bps());
 }
 inline constexpr DataSize operator*(const DataRate rate,
                                     const TimeDelta duration) {

@@ -140,7 +140,7 @@ TEST(PCLowBandwidthAudioTest, PCGoodNetworkHighBitrate) {
         alice->SetAudioConfig(std::move(audio));
       },
       [](PeerConfigurer* bob) {});
-  fixture->Run(RunParams(TimeDelta::ms(
+  fixture->Run(RunParams(TimeDelta::Millis(
       absl::GetFlag(FLAGS_quick) ? kQuickTestDurationMs : kTestDurationMs)));
   LogTestResults();
 }
@@ -166,7 +166,7 @@ TEST(PCLowBandwidthAudioTest, PC40kbpsNetwork) {
         alice->SetAudioConfig(std::move(audio));
       },
       [](PeerConfigurer* bob) {});
-  fixture->Run(RunParams(TimeDelta::ms(
+  fixture->Run(RunParams(TimeDelta::Millis(
       absl::GetFlag(FLAGS_quick) ? kQuickTestDurationMs : kTestDurationMs)));
   LogTestResults();
 }

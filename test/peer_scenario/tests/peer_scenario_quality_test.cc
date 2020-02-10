@@ -27,7 +27,7 @@ TEST(PeerScenarioQualityTest, PsnrIsCollected) {
     s.AttachVideoQualityAnalyzer(&analyzer, video.track, callee);
     s.SimpleConnection(caller, callee, {link_builder.Build().node},
                        {link_builder.Build().node});
-    s.ProcessMessages(TimeDelta::seconds(2));
+    s.ProcessMessages(TimeDelta::Seconds(2));
     // Exit scope to ensure that there's no pending tasks reporting to analyzer.
   }
 

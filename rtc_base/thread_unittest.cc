@@ -1134,7 +1134,7 @@ TEST(ThreadPostDelayedTaskTest, InvokesInDelayOrder) {
   // All tasks have been posted before the first one is unblocked.
   first.Set();
   // Only if the chain is invoked in delay order will the last event be set.
-  clock.AdvanceTime(webrtc::TimeDelta::ms(11));
+  clock.AdvanceTime(webrtc::TimeDelta::Millis(11));
   EXPECT_TRUE(fourth.Wait(0));
 }
 

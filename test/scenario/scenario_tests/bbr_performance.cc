@@ -41,7 +41,7 @@ struct CallTestConfig {
         : random_seed("rs", 1),
           return_traffic("ret"),
           capacity("bw", DataRate::kbps(300)),
-          propagation_delay("dl", TimeDelta::ms(100)),
+          propagation_delay("dl", TimeDelta::Millis(100)),
           cross_traffic("ct", DataRate::Zero()),
           delay_noise("dn", TimeDelta::Zero()),
           loss_rate("pl", 0) {}
@@ -196,7 +196,7 @@ TEST_P(BbrScenarioTest, ReceivesVideo) {
   auto* cross_traffic = s.net()->CreateRandomWalkCrossTraffic(
       s.net()->CreateTrafficRoute({send_net->node()}), cross_config);
 
-  s.CreatePrinter("send.stats.txt", TimeDelta::ms(100),
+  s.CreatePrinter("send.stats.txt", TimeDelta::Millis(100),
                   {alice->StatsPrinter(), alice_video->send()->StatsPrinter(),
                    cross_traffic->StatsPrinter(), send_net->ConfigPrinter()});
 
@@ -205,9 +205,9 @@ TEST_P(BbrScenarioTest, ReceivesVideo) {
       ret_net->ConfigPrinter()};
   if (bob_video)
     return_printers.push_back(bob_video->send()->StatsPrinter());
-  s.CreatePrinter("return.stats.txt", TimeDelta::ms(100), return_printers);
+  s.CreatePrinter("return.stats.txt", TimeDelta::Millis(100), return_printers);
 
-  s.RunFor(TimeDelta::ms(kRunTimeMs));
+  s.RunFor(TimeDelta::Millis(kRunTimeMs));
 }
 
 INSTANTIATE_TEST_SUITE_P(Selected,

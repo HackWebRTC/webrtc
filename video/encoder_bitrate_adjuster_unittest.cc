@@ -106,7 +106,7 @@ class EncoderBitrateAdjusterTest : public ::testing::Test {
     const int64_t start_us = rtc::TimeMicros();
     while (rtc::TimeMicros() <
            start_us + (duration_ms * rtc::kNumMicrosecsPerMillisec)) {
-      clock_.AdvanceTime(TimeDelta::seconds(1) / target_framerate_fps_);
+      clock_.AdvanceTime(TimeDelta::Seconds(1) / target_framerate_fps_);
       for (size_t si = 0; si < NumSpatialLayers(); ++si) {
         const std::vector<int>& tl_pattern =
             kTlPatterns[NumTemporalLayers(si) - 1];

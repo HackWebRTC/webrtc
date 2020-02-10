@@ -79,7 +79,7 @@ SendAudioStream::SendAudioStream(
   SdpAudioFormat::Parameters sdp_params;
   if (config.source.channels == 2)
     sdp_params["stereo"] = "1";
-  if (config.encoder.initial_frame_length != TimeDelta::ms(20))
+  if (config.encoder.initial_frame_length != TimeDelta::Millis(20))
     sdp_params["ptime"] =
         std::to_string(config.encoder.initial_frame_length.ms());
   if (config.encoder.enable_dtx)

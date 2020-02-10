@@ -20,7 +20,7 @@ namespace webrtc_repeating_task_impl {
 RepeatingTaskBase::RepeatingTaskBase(TaskQueueBase* task_queue,
                                      TimeDelta first_delay)
     : task_queue_(task_queue),
-      next_run_time_(Timestamp::us(rtc::TimeMicros()) + first_delay) {}
+      next_run_time_(Timestamp::Micros(rtc::TimeMicros()) + first_delay) {}
 
 RepeatingTaskBase::~RepeatingTaskBase() = default;
 
@@ -38,7 +38,7 @@ bool RepeatingTaskBase::Run() {
     return true;
 
   RTC_DCHECK(delay.IsFinite());
-  TimeDelta lost_time = Timestamp::us(rtc::TimeMicros()) - next_run_time_;
+  TimeDelta lost_time = Timestamp::Micros(rtc::TimeMicros()) - next_run_time_;
   next_run_time_ += delay;
   delay -= lost_time;
   delay = std::max(delay, TimeDelta::Zero());

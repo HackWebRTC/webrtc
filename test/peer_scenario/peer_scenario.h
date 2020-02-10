@@ -87,7 +87,7 @@ class PeerScenario {
 
   // Waits on |event| while processing messages on the signaling thread.
   bool WaitAndProcess(std::atomic<bool>* event,
-                      TimeDelta max_duration = TimeDelta::seconds(5));
+                      TimeDelta max_duration = TimeDelta::Seconds(5));
 
   // Process messages on the signaling thread for the given duration.
   void ProcessMessages(TimeDelta duration);

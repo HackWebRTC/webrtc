@@ -166,7 +166,7 @@ class TurnPortTest : public ::testing::Test,
     // Some code uses "last received time == 0" to represent "nothing received
     // so far", so we need to start the fake clock at a nonzero time...
     // TODO(deadbeef): Fix this.
-    fake_clock_.AdvanceTime(webrtc::TimeDelta::seconds(1));
+    fake_clock_.AdvanceTime(webrtc::TimeDelta::Seconds(1));
   }
 
   virtual void OnMessage(rtc::Message* msg) {

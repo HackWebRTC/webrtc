@@ -109,7 +109,7 @@ class Timestamp final : public rtc_units_impl::UnitBase<Timestamp> {
       RTC_DCHECK(!delta.IsPlusInfinity());
       return MinusInfinity();
     }
-    return Timestamp::us(us() + delta.us());
+    return Timestamp::Micros(us() + delta.us());
   }
   constexpr Timestamp operator-(const TimeDelta delta) const {
     if (IsPlusInfinity() || delta.IsMinusInfinity()) {
@@ -121,7 +121,7 @@ class Timestamp final : public rtc_units_impl::UnitBase<Timestamp> {
       RTC_DCHECK(!delta.IsMinusInfinity());
       return MinusInfinity();
     }
-    return Timestamp::us(us() - delta.us());
+    return Timestamp::Micros(us() - delta.us());
   }
   constexpr TimeDelta operator-(const Timestamp other) const {
     if (IsPlusInfinity() || other.IsMinusInfinity()) {
@@ -133,7 +133,7 @@ class Timestamp final : public rtc_units_impl::UnitBase<Timestamp> {
       RTC_DCHECK(!other.IsMinusInfinity());
       return TimeDelta::MinusInfinity();
     }
-    return TimeDelta::us(us() - other.us());
+    return TimeDelta::Micros(us() - other.us());
   }
   constexpr Timestamp& operator-=(const TimeDelta delta) {
     *this = *this - delta;

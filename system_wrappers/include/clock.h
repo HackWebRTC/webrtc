@@ -33,7 +33,7 @@ class Clock {
   virtual ~Clock() {}
   // Return a timestamp relative to an unspecified epoch.
   virtual Timestamp CurrentTime() {
-    return Timestamp::us(TimeInMicroseconds());
+    return Timestamp::Micros(TimeInMicroseconds());
   }
   virtual int64_t TimeInMilliseconds() { return CurrentTime().ms(); }
   virtual int64_t TimeInMicroseconds() { return CurrentTime().us(); }

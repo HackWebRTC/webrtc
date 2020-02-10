@@ -116,7 +116,7 @@ class RtpVideoSenderTestFixture {
       int payload_type,
       const std::map<uint32_t, RtpPayloadState>& suspended_payload_states,
       FrameCountObserver* frame_count_observer)
-      : time_controller_(Timestamp::ms(1000000)),
+      : time_controller_(Timestamp::Millis(1000000)),
         config_(CreateVideoSendStreamConfig(&transport_,
                                             ssrcs,
                                             rtx_ssrcs,
@@ -433,7 +433,7 @@ TEST(RtpVideoSenderTest, DoesNotRetrasmitAckedPackets) {
       EncodedImageCallback::Result::OK,
       test.router()->OnEncodedImage(encoded_image, nullptr, nullptr).error);
 
-  test.AdvanceTime(TimeDelta::ms(33));
+  test.AdvanceTime(TimeDelta::Millis(33));
 
   ASSERT_TRUE(event.Wait(kTimeoutMs));
 
@@ -462,7 +462,7 @@ TEST(RtpVideoSenderTest, DoesNotRetrasmitAckedPackets) {
         return true;
       });
   test.router()->DeliverRtcp(nack_buffer.data(), nack_buffer.size());
-  test.AdvanceTime(TimeDelta::ms(33));
+  test.AdvanceTime(TimeDelta::Millis(33));
   ASSERT_TRUE(event.Wait(kTimeoutMs));
 
   // Verify that both packets were retransmitted.
@@ -488,7 +488,7 @@ TEST(RtpVideoSenderTest, DoesNotRetrasmitAckedPackets) {
   // the history has been notified of the ack and removed the packet. The
   // second packet, included in the feedback but not marked as received, should
   // still be retransmitted.
-  test.AdvanceTime(TimeDelta::ms(33));
+  test.AdvanceTime(TimeDelta::Millis(33));
   EXPECT_CALL(test.transport(), SendRtp)
       .WillOnce([&event, &lost_packet_feedback](const uint8_t* packet,
                                                 size_t length,
@@ -504,7 +504,7 @@ TEST(RtpVideoSenderTest, DoesNotRetrasmitAckedPackets) {
         return true;
       });
   test.router()->DeliverRtcp(nack_buffer.data(), nack_buffer.size());
-  test.AdvanceTime(TimeDelta::ms(33));
+  test.AdvanceTime(TimeDelta::Millis(33));
   ASSERT_TRUE(event.Wait(kTimeoutMs));
 }
 
@@ -551,10 +551,10 @@ TEST(RtpVideoSenderTest, RetransmitsOnTransportWideLossInfo) {
 
   // Run for a short duration and reset counters to avoid counting RTX packets
   // from initial probing.
-  s.RunFor(TimeDelta::seconds(1));
+  s.RunFor(TimeDelta::Seconds(1));
   rtx_packets = 0;
   int decoded_baseline = lossy->receive()->GetStats().frames_decoded;
-  s.RunFor(TimeDelta::seconds(1));
+  s.RunFor(TimeDelta::Seconds(1));
   // We expect both that RTX packets were sent and that an appropriate number of
   // frames were received. This is somewhat redundant but reduces the risk of
   // false positives in future regressions (e.g. RTX is send due to probing).
@@ -608,7 +608,7 @@ TEST(RtpVideoSenderTest, EarlyRetransmits) {
                 .error,
             EncodedImageCallback::Result::OK);
 
-  test.AdvanceTime(TimeDelta::ms(33));
+  test.AdvanceTime(TimeDelta::Millis(33));
   ASSERT_TRUE(event.Wait(kTimeoutMs));
 
   uint16_t frame2_rtp_sequence_number = 0;
@@ -631,7 +631,7 @@ TEST(RtpVideoSenderTest, EarlyRetransmits) {
                 ->OnEncodedImage(encoded_image, &codec_specific, nullptr)
                 .error,
             EncodedImageCallback::Result::OK);
-  test.AdvanceTime(TimeDelta::ms(33));
+  test.AdvanceTime(TimeDelta::Millis(33));
   ASSERT_TRUE(event.Wait(kTimeoutMs));
 
   EXPECT_NE(frame1_transport_sequence_number, frame2_transport_sequence_number);
@@ -669,7 +669,7 @@ TEST(RtpVideoSenderTest, EarlyRetransmits) {
       {first_packet_feedback, second_packet_feedback});
 
   // Wait for pacer to run and send the RTX packet.
-  test.AdvanceTime(TimeDelta::ms(33));
+  test.AdvanceTime(TimeDelta::Millis(33));
   ASSERT_TRUE(event.Wait(kTimeoutMs));
 }
 

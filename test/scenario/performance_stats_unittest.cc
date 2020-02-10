@@ -17,10 +17,10 @@ namespace test {
 TEST(EventRateCounter, ReturnsCorrectTotalDuration) {
   EventRateCounter event_rate_counter;
   EXPECT_EQ(event_rate_counter.TotalDuration(), TimeDelta::Zero());
-  event_rate_counter.AddEvent(Timestamp::seconds(1));
+  event_rate_counter.AddEvent(Timestamp::Seconds(1));
   EXPECT_EQ(event_rate_counter.TotalDuration(), TimeDelta::Zero());
-  event_rate_counter.AddEvent(Timestamp::seconds(2));
-  EXPECT_EQ(event_rate_counter.TotalDuration(), TimeDelta::seconds(1));
+  event_rate_counter.AddEvent(Timestamp::Seconds(2));
+  EXPECT_EQ(event_rate_counter.TotalDuration(), TimeDelta::Seconds(1));
 }
 
 }  // namespace test

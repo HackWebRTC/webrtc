@@ -88,13 +88,13 @@ TargetTransferRate CreateTargetRateMessage(uint32_t target_bitrate_bps,
   TargetTransferRate msg;
   // The timestamp is just for log output, keeping it fixed just means fewer log
   // messages in the test.
-  msg.at_time = Timestamp::seconds(10000);
+  msg.at_time = Timestamp::Seconds(10000);
   msg.target_rate = DataRate::bps(target_bitrate_bps);
   msg.stable_target_rate = msg.target_rate;
   msg.network_estimate.bandwidth = msg.target_rate;
   msg.network_estimate.loss_rate_ratio = fraction_loss / 255.0;
-  msg.network_estimate.round_trip_time = TimeDelta::ms(rtt_ms);
-  msg.network_estimate.bwe_period = TimeDelta::ms(bwe_period_ms);
+  msg.network_estimate.round_trip_time = TimeDelta::Millis(rtt_ms);
+  msg.network_estimate.bwe_period = TimeDelta::Millis(bwe_period_ms);
   return msg;
 }
 }  // namespace

@@ -208,7 +208,7 @@ void DefaultVideoQualityAnalyzer::OnFramePreDecode(
                          return a.receive_time_ms() < b.receive_time_ms();
                        })
           ->receive_time_ms();
-  it->second.received_time = Timestamp::ms(last_receive_time);
+  it->second.received_time = Timestamp::Millis(last_receive_time);
 }
 
 void DefaultVideoQualityAnalyzer::OnFrameDecoded(

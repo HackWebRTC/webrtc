@@ -28,8 +28,8 @@ namespace webrtc {
 namespace test {
 namespace {
 
-constexpr TimeDelta kNetworkPacketWaitTimeout = TimeDelta::Millis<100>();
-constexpr TimeDelta kStatsWaitTimeout = TimeDelta::Seconds<1>();
+constexpr TimeDelta kNetworkPacketWaitTimeout = TimeDelta::Millis(100);
+constexpr TimeDelta kStatsWaitTimeout = TimeDelta::Seconds(1);
 constexpr int kOverheadIpv4Udp = 20 + 8;
 
 class SocketReader : public sigslot::has_slots<> {
@@ -233,7 +233,7 @@ TEST(NetworkEmulationManagerTest, Run) {
                    [&]() { s2->Send(data.data(), data.size()); });
     }
 
-    network_manager.time_controller()->AdvanceTime(TimeDelta::seconds(1));
+    network_manager.time_controller()->AdvanceTime(TimeDelta::Seconds(1));
 
     EXPECT_EQ(r1.ReceivedCount(), 1000);
     EXPECT_EQ(r2.ReceivedCount(), 1000);
@@ -315,7 +315,7 @@ TEST(NetworkEmulationManagerTest, ThroughputStats) {
 
   // Send 11 packets, totalizing 1 second between the first and the last.
   const int kNumPacketsSent = 11;
-  const TimeDelta kDelay = TimeDelta::ms(100);
+  const TimeDelta kDelay = TimeDelta::Millis(100);
   for (int i = 0; i < kNumPacketsSent; i++) {
     t1->PostTask(RTC_FROM_HERE, [&]() { s1->Send(data.data(), data.size()); });
     t2->PostTask(RTC_FROM_HERE, [&]() { s2->Send(data.data(), data.size()); });

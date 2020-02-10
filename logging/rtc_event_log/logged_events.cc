@@ -31,7 +31,7 @@ LoggedPacketInfo::LoggedPacketInfo(const LoggedRtpPacket& rtp,
           has_transport_seq_no ? rtp.header.extension.transportSequenceNumber
                                : 0)),
       capture_time(capture_time),
-      log_packet_time(Timestamp::us(rtp.log_time_us())),
+      log_packet_time(Timestamp::Micros(rtp.log_time_us())),
       reported_send_time(rtp.header.extension.hasAbsoluteSendTime
                              ? rtp.header.extension.GetAbsoluteSendTimestamp()
                              : Timestamp::MinusInfinity()) {}

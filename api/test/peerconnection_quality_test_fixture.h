@@ -322,7 +322,7 @@ class PeerConnectionE2EQualityTestFixture {
   struct EchoEmulationConfig {
     // Delay which represents the echo path delay, i.e. how soon rendered signal
     // should reach capturer.
-    TimeDelta echo_delay = TimeDelta::ms(50);
+    TimeDelta echo_delay = TimeDelta::Millis(50);
   };
 
   struct VideoCodecConfig {

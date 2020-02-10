@@ -802,7 +802,7 @@ void AudioSendStream::ConfigureBitrateObserver() {
     if (use_legacy_overhead_calculation_) {
       // OverheadPerPacket = Ipv4(20B) + UDP(8B) + SRTP(10B) + RTP(12)
       constexpr int kOverheadPerPacket = 20 + 8 + 10 + 12;
-      const TimeDelta kMinPacketDuration = TimeDelta::ms(20);
+      const TimeDelta kMinPacketDuration = TimeDelta::Millis(20);
       DataRate max_overhead =
           DataSize::bytes(kOverheadPerPacket) / kMinPacketDuration;
       priority_bitrate += max_overhead;
@@ -858,7 +858,7 @@ AudioSendStream::GetMinMaxBitrateConstraints() const {
       // OverheadPerPacket = Ipv4(20B) + UDP(8B) + SRTP(10B) + RTP(12)
       const DataSize kOverheadPerPacket = DataSize::bytes(20 + 8 + 10 + 12);
       const TimeDelta kMaxFrameLength =
-          TimeDelta::ms(60);  // Based on Opus spec
+          TimeDelta::Millis(60);  // Based on Opus spec
       const DataRate kMinOverhead = kOverheadPerPacket / kMaxFrameLength;
       constraints.min += kMinOverhead;
       constraints.max += kMinOverhead;

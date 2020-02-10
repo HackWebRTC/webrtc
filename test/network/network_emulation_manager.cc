@@ -36,7 +36,7 @@ std::unique_ptr<TimeController> CreateTimeController(TimeMode mode) {
     case TimeMode::kSimulated:
       // Using an offset of 100000 to get nice fixed width and readable
       // timestamps in typical test scenarios.
-      const Timestamp kSimulatedStartTime = Timestamp::seconds(100000);
+      const Timestamp kSimulatedStartTime = Timestamp::Seconds(100000);
       return std::make_unique<GlobalSimulatedTimeController>(
           kSimulatedStartTime);
   }

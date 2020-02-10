@@ -549,10 +549,10 @@ void OveruseFrameDetector::StartCheckForOveruse(
 
   SetOptions(options);
   check_overuse_task_ = RepeatingTaskHandle::DelayedStart(
-      task_queue_base, TimeDelta::ms(kTimeToFirstCheckForOveruseMs),
+      task_queue_base, TimeDelta::Millis(kTimeToFirstCheckForOveruseMs),
       [this, overuse_observer] {
         CheckForOveruse(overuse_observer);
-        return TimeDelta::ms(kCheckForOveruseIntervalMs);
+        return TimeDelta::Millis(kCheckForOveruseIntervalMs);
       });
 }
 void OveruseFrameDetector::StopCheckForOveruse() {

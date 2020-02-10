@@ -21,7 +21,7 @@
 
 namespace webrtc {
 namespace {
-constexpr TimeDelta kDefaultProcessDelay = TimeDelta::Millis<5>();
+constexpr TimeDelta kDefaultProcessDelay = TimeDelta::Millis(5);
 }  // namespace
 
 CoDelSimulation::CoDelSimulation() = default;
@@ -31,9 +31,9 @@ bool CoDelSimulation::DropDequeuedPacket(Timestamp now,
                                          Timestamp enqueing_time,
                                          DataSize packet_size,
                                          DataSize queue_size) {
-  constexpr TimeDelta kWindow = TimeDelta::Millis<100>();
-  constexpr TimeDelta kDelayThreshold = TimeDelta::Millis<5>();
-  constexpr TimeDelta kDropCountMemory = TimeDelta::Millis<1600>();
+  constexpr TimeDelta kWindow = TimeDelta::Millis(100);
+  constexpr TimeDelta kDelayThreshold = TimeDelta::Millis(5);
+  constexpr TimeDelta kDropCountMemory = TimeDelta::Millis(1600);
   constexpr DataSize kMaxPacketSize = DataSize::Bytes<1500>();
 
   // Compensates for process interval in simulation; not part of standard CoDel.
@@ -191,8 +191,8 @@ void SimulatedNetwork::UpdateCapacityQueue(ConfigState state,
     if (state.config.codel_active_queue_management) {
       while (!capacity_link_.empty() &&
              codel_controller_.DropDequeuedPacket(
-                 Timestamp::us(time_us),
-                 Timestamp::us(capacity_link_.front().packet.send_time_us),
+                 Timestamp::Micros(time_us),
+                 Timestamp::Micros(capacity_link_.front().packet.send_time_us),
                  DataSize::bytes(capacity_link_.front().packet.size),
                  DataSize::bytes(queue_size_bytes_))) {
         PacketInfo dropped = capacity_link_.front();

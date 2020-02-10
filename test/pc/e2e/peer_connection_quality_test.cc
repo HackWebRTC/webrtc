@@ -55,9 +55,9 @@ constexpr int kPeerConnectionUsedThreads = 7;
 constexpr int kFrameworkUsedThreads = 2;
 constexpr int kMaxVideoAnalyzerThreads = 8;
 
-constexpr TimeDelta kStatsUpdateInterval = TimeDelta::Seconds<1>();
+constexpr TimeDelta kStatsUpdateInterval = TimeDelta::Seconds(1);
 
-constexpr TimeDelta kAliveMessageLogInterval = TimeDelta::Seconds<30>();
+constexpr TimeDelta kAliveMessageLogInterval = TimeDelta::Seconds(30);
 
 constexpr int kQuickTestModeRunDurationMs = 100;
 

@@ -48,7 +48,7 @@ class FakePeriodicVideoSource final
     thread_checker_.Detach();
     frame_source_.SetRotation(config.rotation);
 
-    TimeDelta frame_interval = TimeDelta::ms(config.frame_interval_ms);
+    TimeDelta frame_interval = TimeDelta::Millis(config.frame_interval_ms);
     RepeatingTaskHandle::Start(task_queue_->Get(), [this, frame_interval] {
       if (broadcaster_.wants().rotation_applied) {
         broadcaster_.OnFrame(frame_source_.GetFrameRotationApplied());

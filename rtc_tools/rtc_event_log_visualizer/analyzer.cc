@@ -1228,7 +1228,7 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
   // TODO(holmer): Log the call config and use that here instead.
   static const uint32_t kDefaultStartBitrateBps = 300000;
   NetworkControllerConfig cc_config;
-  cc_config.constraints.at_time = Timestamp::us(clock.TimeInMicroseconds());
+  cc_config.constraints.at_time = Timestamp::Micros(clock.TimeInMicroseconds());
   cc_config.constraints.starting_rate = DataRate::bps(kDefaultStartBitrateBps);
   cc_config.event_log = &null_event_log;
   auto goog_cc = factory.Create(cc_config);
@@ -1298,7 +1298,7 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
         transport_feedback.AddPacket(
             packet_info,
             0u,  // Per packet overhead bytes.
-            Timestamp::us(rtp_packet.rtp.log_time_us()));
+            Timestamp::Micros(rtp_packet.rtp.log_time_us()));
         rtc::SentPacket sent_packet(
             rtp_packet.rtp.header.extension.transportSequenceNumber,
             rtp_packet.rtp.log_time_us() / 1000);
@@ -1313,7 +1313,7 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
 
       auto feedback_msg = transport_feedback.ProcessTransportFeedback(
           rtcp_iterator->transport_feedback,
-          Timestamp::ms(clock.TimeInMilliseconds()));
+          Timestamp::Millis(clock.TimeInMilliseconds()));
       absl::optional<uint32_t> bitrate_bps;
       if (feedback_msg) {
         observer.Update(goog_cc->OnTransportPacketsFeedback(*feedback_msg));
@@ -1345,7 +1345,7 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
     if (clock.TimeInMicroseconds() >= NextProcessTime()) {
       RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextProcessTime());
       ProcessInterval msg;
-      msg.at_time = Timestamp::us(clock.TimeInMicroseconds());
+      msg.at_time = Timestamp::Micros(clock.TimeInMicroseconds());
       observer.Update(goog_cc->OnProcessInterval(msg));
       next_process_time_us_ += process_interval.us();
     }

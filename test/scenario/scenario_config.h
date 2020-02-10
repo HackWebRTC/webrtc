@@ -47,7 +47,7 @@ struct TransportControllerConfig {
     DataRate start_rate = DataRate::kbps(300);
   } rates;
   NetworkControllerFactoryInterface* cc_factory = nullptr;
-  TimeDelta state_log_interval = TimeDelta::ms(100);
+  TimeDelta state_log_interval = TimeDelta::Millis(100);
 };
 
 struct CallClientConfig {
@@ -78,14 +78,14 @@ struct VideoStreamConfig {
       // Support for explicit frame triggers should be added here if needed.
     } capture = Capture::kGenerator;
     struct Slides {
-      TimeDelta change_interval = TimeDelta::seconds(10);
+      TimeDelta change_interval = TimeDelta::Seconds(10);
       struct Generator {
         int width = 1600;
         int height = 1200;
       } generator;
       struct Images {
         struct Crop {
-          TimeDelta scroll_duration = TimeDelta::seconds(0);
+          TimeDelta scroll_duration = TimeDelta::Seconds(0);
           absl::optional<int> width;
           absl::optional<int> height;
         } crop;
@@ -158,7 +158,7 @@ struct VideoStreamConfig {
     bool packet_feedback = true;
     bool use_rtx = true;
     DataRate pad_to_rate = DataRate::Zero();
-    TimeDelta nack_history_time = TimeDelta::ms(1000);
+    TimeDelta nack_history_time = TimeDelta::Millis(1000);
     bool use_flexfec = false;
     bool use_ulpfec = false;
     FecControllerFactoryInterface* fec_controller_factory = nullptr;
@@ -200,7 +200,7 @@ struct AudioStreamConfig {
     absl::optional<DataRate> fixed_rate;
     absl::optional<DataRate> min_rate;
     absl::optional<DataRate> max_rate;
-    TimeDelta initial_frame_length = TimeDelta::ms(20);
+    TimeDelta initial_frame_length = TimeDelta::Millis(20);
   } encoder;
   struct Stream {
     Stream();

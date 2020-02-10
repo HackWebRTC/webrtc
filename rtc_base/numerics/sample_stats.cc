@@ -59,7 +59,7 @@ void SampleStats<TimeDelta>::AddSample(TimeDelta delta) {
 }
 
 void SampleStats<TimeDelta>::AddSampleMs(double delta_ms) {
-  AddSample(TimeDelta::ms(delta_ms));
+  AddSample(TimeDelta::Millis(delta_ms));
 }
 void SampleStats<TimeDelta>::AddSamples(const SampleStats<TimeDelta>& other) {
   stats_.AddSamples(other.stats_);
@@ -70,11 +70,11 @@ bool SampleStats<TimeDelta>::IsEmpty() {
 }
 
 TimeDelta SampleStats<TimeDelta>::Max() {
-  return TimeDelta::seconds(stats_.Max());
+  return TimeDelta::Seconds(stats_.Max());
 }
 
 TimeDelta SampleStats<TimeDelta>::Mean() {
-  return TimeDelta::seconds(stats_.Mean());
+  return TimeDelta::Seconds(stats_.Mean());
 }
 
 TimeDelta SampleStats<TimeDelta>::Median() {
@@ -82,19 +82,19 @@ TimeDelta SampleStats<TimeDelta>::Median() {
 }
 
 TimeDelta SampleStats<TimeDelta>::Quantile(double quantile) {
-  return TimeDelta::seconds(stats_.Quantile(quantile));
+  return TimeDelta::Seconds(stats_.Quantile(quantile));
 }
 
 TimeDelta SampleStats<TimeDelta>::Min() {
-  return TimeDelta::seconds(stats_.Min());
+  return TimeDelta::Seconds(stats_.Min());
 }
 
 TimeDelta SampleStats<TimeDelta>::Variance() {
-  return TimeDelta::seconds(stats_.Variance());
+  return TimeDelta::Seconds(stats_.Variance());
 }
 
 TimeDelta SampleStats<TimeDelta>::StandardDeviation() {
-  return TimeDelta::seconds(stats_.StandardDeviation());
+  return TimeDelta::Seconds(stats_.StandardDeviation());
 }
 
 int SampleStats<TimeDelta>::Count() {

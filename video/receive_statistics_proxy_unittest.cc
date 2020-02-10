@@ -189,9 +189,9 @@ TEST_F(ReceiveStatisticsProxyTest, ReportsContentType) {
 
 TEST_F(ReceiveStatisticsProxyTest, ReportsMaxTotalInterFrameDelay) {
   webrtc::VideoFrame frame = CreateFrame(kWidth, kHeight);
-  const TimeDelta kInterFrameDelay1 = TimeDelta::ms(100);
-  const TimeDelta kInterFrameDelay2 = TimeDelta::ms(200);
-  const TimeDelta kInterFrameDelay3 = TimeDelta::ms(300);
+  const TimeDelta kInterFrameDelay1 = TimeDelta::Millis(100);
+  const TimeDelta kInterFrameDelay2 = TimeDelta::Millis(200);
+  const TimeDelta kInterFrameDelay3 = TimeDelta::Millis(300);
   double expected_total_inter_frame_delay = 0;
   double expected_total_squared_inter_frame_delay = 0;
   EXPECT_EQ(expected_total_inter_frame_delay,

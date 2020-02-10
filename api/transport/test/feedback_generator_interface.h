@@ -21,7 +21,7 @@ class FeedbackGenerator {
   struct Config {
     BuiltInNetworkBehaviorConfig send_link;
     BuiltInNetworkBehaviorConfig return_link;
-    TimeDelta feedback_interval = TimeDelta::ms(50);
+    TimeDelta feedback_interval = TimeDelta::Millis(50);
     DataSize feedback_packet_size = DataSize::bytes(20);
   };
   virtual ~FeedbackGenerator() = default;

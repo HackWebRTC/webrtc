@@ -156,7 +156,7 @@ class FrameBuilder {
 class VideoStreamDecoderImplTest : public ::testing::Test {
  public:
   VideoStreamDecoderImplTest()
-      : time_controller_(Timestamp::seconds(0)),
+      : time_controller_(Timestamp::Seconds(0)),
         video_stream_decoder_(&callbacks_,
                               &decoder_factory_,
                               time_controller_.GetTaskQueueFactory(),
@@ -173,20 +173,20 @@ class VideoStreamDecoderImplTest : public ::testing::Test {
 TEST_F(VideoStreamDecoderImplTest, InsertAndDecodeFrame) {
   video_stream_decoder_.OnFrame(FrameBuilder().WithPayloadType(1).Build());
   EXPECT_CALL(callbacks_, OnDecodedFrame);
-  time_controller_.AdvanceTime(TimeDelta::ms(1));
+  time_controller_.AdvanceTime(TimeDelta::Millis(1));
 }
 
 TEST_F(VideoStreamDecoderImplTest, NonDecodableStateWaitingForKeyframe) {
   EXPECT_CALL(callbacks_, OnNonDecodableState);
-  time_controller_.AdvanceTime(TimeDelta::ms(200));
+  time_controller_.AdvanceTime(TimeDelta::Millis(200));
 }
 
 TEST_F(VideoStreamDecoderImplTest, NonDecodableStateWaitingForDeltaFrame) {
   video_stream_decoder_.OnFrame(FrameBuilder().WithPayloadType(1).Build());
   EXPECT_CALL(callbacks_, OnDecodedFrame);
-  time_controller_.AdvanceTime(TimeDelta::ms(1));
+  time_controller_.AdvanceTime(TimeDelta::Millis(1));
   EXPECT_CALL(callbacks_, OnNonDecodableState);
-  time_controller_.AdvanceTime(TimeDelta::ms(3000));
+  time_controller_.AdvanceTime(TimeDelta::Millis(3000));
 }
 
 TEST_F(VideoStreamDecoderImplTest, InsertAndDecodeFrameWithKeyframeRequest) {
@@ -195,7 +195,7 @@ TEST_F(VideoStreamDecoderImplTest, InsertAndDecodeFrameWithKeyframeRequest) {
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK_REQUEST_KEYFRAME));
   EXPECT_CALL(callbacks_, OnDecodedFrame);
   EXPECT_CALL(callbacks_, OnNonDecodableState);
-  time_controller_.AdvanceTime(TimeDelta::ms(1));
+  time_controller_.AdvanceTime(TimeDelta::Millis(1));
 }
 
 TEST_F(VideoStreamDecoderImplTest, FailToInitDecoder) {
@@ -203,7 +203,7 @@ TEST_F(VideoStreamDecoderImplTest, FailToInitDecoder) {
   ON_CALL(decoder_factory_.Vp8Decoder(), InitDecode)
       .WillByDefault(Return(WEBRTC_VIDEO_CODEC_ERROR));
   EXPECT_CALL(callbacks_, OnNonDecodableState);
-  time_controller_.AdvanceTime(TimeDelta::ms(1));
+  time_controller_.AdvanceTime(TimeDelta::Millis(1));
 }
 
 TEST_F(VideoStreamDecoderImplTest, FailToDecodeFrame) {
@@ -211,7 +211,7 @@ TEST_F(VideoStreamDecoderImplTest, FailToDecodeFrame) {
   ON_CALL(decoder_factory_.Vp8Decoder(), DecodeCall)
       .WillByDefault(Return(WEBRTC_VIDEO_CODEC_ERROR));
   EXPECT_CALL(callbacks_, OnNonDecodableState);
-  time_controller_.AdvanceTime(TimeDelta::ms(1));
+  time_controller_.AdvanceTime(TimeDelta::Millis(1));
 }
 
 TEST_F(VideoStreamDecoderImplTest, ChangeFramePayloadType) {
@@ -219,13 +219,13 @@ TEST_F(VideoStreamDecoderImplTest, ChangeFramePayloadType) {
       FrameBuilder().WithPayloadType(1).WithPictureId(0).Build());
   EXPECT_CALL(decoder_factory_.Vp8Decoder(), DecodeCall);
   EXPECT_CALL(callbacks_, OnDecodedFrame);
-  time_controller_.AdvanceTime(TimeDelta::ms(1));
+  time_controller_.AdvanceTime(TimeDelta::Millis(1));
 
   video_stream_decoder_.OnFrame(
       FrameBuilder().WithPayloadType(2).WithPictureId(1).Build());
   EXPECT_CALL(decoder_factory_.Av1Decoder(), DecodeCall);
   EXPECT_CALL(callbacks_, OnDecodedFrame);
-  time_controller_.AdvanceTime(TimeDelta::ms(1));
+  time_controller_.AdvanceTime(TimeDelta::Millis(1));
 }
 
 }  // namespace

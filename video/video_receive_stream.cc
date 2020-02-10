@@ -101,7 +101,7 @@ class WebRtcRecordableEncodedFrame : public RecordableEncodedFrame {
   EncodedResolution resolution() const override { return resolution_; }
 
   Timestamp render_time() const override {
-    return Timestamp::ms(render_time_ms_);
+    return Timestamp::Millis(render_time_ms_);
   }
 
  private:

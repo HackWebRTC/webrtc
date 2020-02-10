@@ -108,10 +108,10 @@ void DirectTransport::ProcessPackets() {
     return;
 
   next_process_task_ = RepeatingTaskHandle::DelayedStart(
-      task_queue_, TimeDelta::ms(*initial_delay_ms), [this] {
+      task_queue_, TimeDelta::Millis(*initial_delay_ms), [this] {
         fake_network_->Process();
         if (auto delay_ms = fake_network_->TimeUntilNextProcess())
-          return TimeDelta::ms(*delay_ms);
+          return TimeDelta::Millis(*delay_ms);
         // Otherwise stop the task.
         rtc::CritScope cs(&process_lock_);
         next_process_task_.Stop();

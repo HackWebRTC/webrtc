@@ -438,7 +438,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
         video_encoder_config.video_stream_factory->CreateEncoderStreams(
             codec_width_, codec_height_, video_encoder_config);
     max_framerate_ = streams[0].max_framerate;
-    fake_clock_.SetTime(Timestamp::us(1234));
+    fake_clock_.SetTime(Timestamp::Micros(1234));
 
     ConfigureEncoder(std::move(video_encoder_config));
   }
@@ -667,28 +667,28 @@ class VideoStreamEncoderTest : public ::testing::Test {
 
   void WaitForEncodedFrame(int64_t expected_ntp_time) {
     sink_.WaitForEncodedFrame(expected_ntp_time);
-    fake_clock_.AdvanceTime(TimeDelta::seconds(1) / max_framerate_);
+    fake_clock_.AdvanceTime(TimeDelta::Seconds(1) / max_framerate_);
   }
 
   bool TimedWaitForEncodedFrame(int64_t expected_ntp_time, int64_t timeout_ms) {
     bool ok = sink_.TimedWaitForEncodedFrame(expected_ntp_time, timeout_ms);
-    fake_clock_.AdvanceTime(TimeDelta::seconds(1) / max_framerate_);
+    fake_clock_.AdvanceTime(TimeDelta::Seconds(1) / max_framerate_);
     return ok;
   }
 
   void WaitForEncodedFrame(uint32_t expected_width, uint32_t expected_height) {
     sink_.WaitForEncodedFrame(expected_width, expected_height);
-    fake_clock_.AdvanceTime(TimeDelta::seconds(1) / max_framerate_);
+    fake_clock_.AdvanceTime(TimeDelta::Seconds(1) / max_framerate_);
   }
 
   void ExpectDroppedFrame() {
     sink_.ExpectDroppedFrame();
-    fake_clock_.AdvanceTime(TimeDelta::seconds(1) / max_framerate_);
+    fake_clock_.AdvanceTime(TimeDelta::Seconds(1) / max_framerate_);
   }
 
   bool WaitForFrame(int64_t timeout_ms) {
     bool ok = sink_.WaitForFrame(timeout_ms);
-    fake_clock_.AdvanceTime(TimeDelta::seconds(1) / max_framerate_);
+    fake_clock_.AdvanceTime(TimeDelta::Seconds(1) / max_framerate_);
     return ok;
   }
 
@@ -3380,7 +3380,7 @@ TEST_F(VideoStreamEncoderTest, CallsBitrateObserver) {
   EXPECT_EQ(bitrate_allocation.get_sum_bps(), kLowTargetBitrateBps);
   // TODO(srte): The use of millisecs here looks like an error, but the tests
   // fails using seconds, this should be investigated.
-  fake_clock_.AdvanceTime(TimeDelta::ms(1) / kDefaultFps);
+  fake_clock_.AdvanceTime(TimeDelta::Millis(1) / kDefaultFps);
 
   // Not called on second frame.
   EXPECT_CALL(bitrate_observer, OnBitrateAllocationUpdated(expected_bitrate))
@@ -3388,7 +3388,7 @@ TEST_F(VideoStreamEncoderTest, CallsBitrateObserver) {
   video_source_.IncomingCapturedFrame(
       CreateFrame(rtc::TimeMillis(), codec_width_, codec_height_));
   WaitForEncodedFrame(rtc::TimeMillis());
-  fake_clock_.AdvanceTime(TimeDelta::ms(1) / kDefaultFps);
+  fake_clock_.AdvanceTime(TimeDelta::Millis(1) / kDefaultFps);
 
   // Called after a process interval.
   EXPECT_CALL(bitrate_observer, OnBitrateAllocationUpdated(expected_bitrate))
@@ -3398,7 +3398,7 @@ TEST_F(VideoStreamEncoderTest, CallsBitrateObserver) {
     video_source_.IncomingCapturedFrame(
         CreateFrame(rtc::TimeMillis(), codec_width_, codec_height_));
     WaitForEncodedFrame(rtc::TimeMillis());
-    fake_clock_.AdvanceTime(TimeDelta::ms(1) / kDefaultFps);
+    fake_clock_.AdvanceTime(TimeDelta::Millis(1) / kDefaultFps);
   }
 
   // Since rates are unchanged, encoder should not be reconfigured.
@@ -3835,7 +3835,7 @@ TEST_F(VideoStreamEncoderTest, RampsUpInQualityWhenBwIsHigh) {
   EXPECT_TRUE(stats_proxy_->GetStats().bw_limited_resolution);
   EXPECT_LT(source.sink_wants().max_pixel_count, kWidth * kHeight);
 
-  fake_clock_.AdvanceTime(TimeDelta::ms(2000));
+  fake_clock_.AdvanceTime(TimeDelta::Millis(2000));
 
   // Insert frame should trigger high BW and release quality limitation.
   timestamp_ms += kFrameIntervalMs;
@@ -4093,7 +4093,7 @@ TEST_F(VideoStreamEncoderTest, DoesntAdaptDownPastMinFramerate) {
         sink_.WaitForEncodedFrame(timestamp_ms);
       }
       timestamp_ms += kFrameIntervalMs;
-      fake_clock_.AdvanceTime(TimeDelta::ms(kFrameIntervalMs));
+      fake_clock_.AdvanceTime(TimeDelta::Millis(kFrameIntervalMs));
     }
     // ...and then try to adapt again.
     video_stream_encoder_->TriggerCpuOveruse();
@@ -4606,7 +4606,7 @@ TEST_F(VideoStreamEncoderTest, DoesNotUpdateBitrateAllocationWhenSuspended) {
 
   // Skip ahead until a new periodic parameter update should have occured.
   timestamp_ms += kProcessIntervalMs;
-  fake_clock_.AdvanceTime(TimeDelta::ms(kProcessIntervalMs));
+  fake_clock_.AdvanceTime(TimeDelta::Millis(kProcessIntervalMs));
 
   // Bitrate observer should not be called.
   EXPECT_CALL(bitrate_observer, OnBitrateAllocationUpdated(_)).Times(0);

@@ -83,8 +83,8 @@ const AudioCodecSpec kCodecSpecs[] = {
 // should be made more precise in the future. This can be changed when that
 // logic is more accurate.
 const DataSize kOverheadPerPacket = DataSize::bytes(20 + 8 + 10 + 12);
-const TimeDelta kMinFrameLength = TimeDelta::ms(20);
-const TimeDelta kMaxFrameLength = TimeDelta::ms(120);
+const TimeDelta kMinFrameLength = TimeDelta::Millis(20);
+const TimeDelta kMaxFrameLength = TimeDelta::Millis(120);
 const DataRate kMinOverheadRate = kOverheadPerPacket / kMaxFrameLength;
 const DataRate kMaxOverheadRate = kOverheadPerPacket / kMinFrameLength;
 
@@ -108,7 +108,7 @@ std::unique_ptr<MockAudioEncoder> SetupAudioEncoderMock(
           .WillByDefault(Return(spec.format.clockrate_hz));
       ON_CALL(*encoder.get(), GetFrameLengthRange())
           .WillByDefault(Return(absl::optional<std::pair<TimeDelta, TimeDelta>>{
-              {TimeDelta::ms(20), TimeDelta::ms(120)}}));
+              {TimeDelta::Millis(20), TimeDelta::Millis(120)}}));
       return encoder;
     }
   }
@@ -555,8 +555,8 @@ TEST(AudioSendStreamTest, DoesNotPassHigherBitrateThanMaxBitrate) {
   BitrateAllocationUpdate update;
   update.target_bitrate = DataRate::bps(helper.config().max_bitrate_bps + 5000);
   update.packet_loss_ratio = 0;
-  update.round_trip_time = TimeDelta::ms(50);
-  update.bwe_period = TimeDelta::ms(6000);
+  update.round_trip_time = TimeDelta::Millis(50);
+  update.bwe_period = TimeDelta::Millis(6000);
   helper.worker()->SendTask([&] { send_stream->OnBitrateUpdated(update); },
                             RTC_FROM_HERE);
 }
@@ -673,12 +673,12 @@ TEST(AudioSendStreamTest, ProbingIntervalOnBitrateUpdated) {
 
   EXPECT_CALL(*helper.channel_send(),
               OnBitrateAllocation(Field(&BitrateAllocationUpdate::bwe_period,
-                                        Eq(TimeDelta::ms(5000)))));
+                                        Eq(TimeDelta::Millis(5000)))));
   BitrateAllocationUpdate update;
   update.target_bitrate = DataRate::bps(helper.config().max_bitrate_bps + 5000);
   update.packet_loss_ratio = 0;
-  update.round_trip_time = TimeDelta::ms(50);
-  update.bwe_period = TimeDelta::ms(5000);
+  update.round_trip_time = TimeDelta::Millis(50);
+  update.bwe_period = TimeDelta::Millis(5000);
   helper.worker()->SendTask([&] { send_stream->OnBitrateUpdated(update); },
                             RTC_FROM_HERE);
 }

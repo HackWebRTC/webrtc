@@ -153,7 +153,7 @@ TEST(UnitConversionTest, DataRateAndDataSizeAndTimeDelta) {
   const int64_t kSeconds = 5;
   const int64_t kBitsPerSecond = 440;
   const int64_t kBytes = 44000;
-  const TimeDelta delta_a = TimeDelta::seconds(kSeconds);
+  const TimeDelta delta_a = TimeDelta::Seconds(kSeconds);
   const DataRate rate_b = DataRate::bps(kBitsPerSecond);
   const DataSize size_c = DataSize::bytes(kBytes);
   EXPECT_EQ((delta_a * rate_b).bytes(), kSeconds * kBitsPerSecond / 8);
@@ -183,7 +183,7 @@ TEST(UnitConversionTest, DivisionFailsOnLargeSize) {
       std::numeric_limits<int64_t>::max() / 8000000;
   const DataSize large_size = DataSize::bytes(kJustSmallEnoughForDivision);
   const DataRate data_rate = DataRate::kbps(100);
-  const TimeDelta time_delta = TimeDelta::ms(100);
+  const TimeDelta time_delta = TimeDelta::Millis(100);
   EXPECT_TRUE((large_size / data_rate).IsFinite());
   EXPECT_TRUE((large_size / time_delta).IsFinite());
 #if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID) && RTC_DCHECK_IS_ON

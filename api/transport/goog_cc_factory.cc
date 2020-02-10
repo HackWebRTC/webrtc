@@ -53,7 +53,7 @@ GoogCcNetworkControllerFactory::Create(NetworkControllerConfig config) {
 
 TimeDelta GoogCcNetworkControllerFactory::GetProcessInterval() const {
   const int64_t kUpdateIntervalMs = 25;
-  return TimeDelta::ms(kUpdateIntervalMs);
+  return TimeDelta::Millis(kUpdateIntervalMs);
 }
 
 GoogCcFeedbackNetworkControllerFactory::GoogCcFeedbackNetworkControllerFactory(

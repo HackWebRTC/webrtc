@@ -21,7 +21,7 @@ struct DummyExperiment {
   FieldTrialParameter<DataRate> target_rate =
       FieldTrialParameter<DataRate>("t", DataRate::kbps(100));
   FieldTrialParameter<TimeDelta> period =
-      FieldTrialParameter<TimeDelta>("p", TimeDelta::ms(100));
+      FieldTrialParameter<TimeDelta>("p", TimeDelta::Millis(100));
   FieldTrialOptional<DataSize> max_buffer =
       FieldTrialOptional<DataSize>("b", absl::nullopt);
 
@@ -35,19 +35,19 @@ TEST(FieldTrialParserUnitsTest, FallsBackToDefaults) {
   DummyExperiment exp("");
   EXPECT_EQ(exp.target_rate.Get(), DataRate::kbps(100));
   EXPECT_FALSE(exp.max_buffer.GetOptional().has_value());
-  EXPECT_EQ(exp.period.Get(), TimeDelta::ms(100));
+  EXPECT_EQ(exp.period.Get(), TimeDelta::Millis(100));
 }
 TEST(FieldTrialParserUnitsTest, ParsesUnitParameters) {
   DummyExperiment exp("t:300kbps,b:5bytes,p:300ms");
   EXPECT_EQ(exp.target_rate.Get(), DataRate::kbps(300));
   EXPECT_EQ(*exp.max_buffer.GetOptional(), DataSize::bytes(5));
-  EXPECT_EQ(exp.period.Get(), TimeDelta::ms(300));
+  EXPECT_EQ(exp.period.Get(), TimeDelta::Millis(300));
 }
 TEST(FieldTrialParserUnitsTest, ParsesDefaultUnitParameters) {
   DummyExperiment exp("t:300,b:5,p:300");
   EXPECT_EQ(exp.target_rate.Get(), DataRate::kbps(300));
   EXPECT_EQ(*exp.max_buffer.GetOptional(), DataSize::bytes(5));
-  EXPECT_EQ(exp.period.Get(), TimeDelta::ms(300));
+  EXPECT_EQ(exp.period.Get(), TimeDelta::Millis(300));
 }
 TEST(FieldTrialParserUnitsTest, ParsesInfinityParameter) {
   DummyExperiment exp("t:inf,p:inf");
@@ -58,13 +58,14 @@ TEST(FieldTrialParserUnitsTest, ParsesOtherUnitParameters) {
   DummyExperiment exp("t:300bps,p:0.3 seconds,b:8 bytes");
   EXPECT_EQ(exp.target_rate.Get(), DataRate::bps(300));
   EXPECT_EQ(*exp.max_buffer.GetOptional(), DataSize::bytes(8));
-  EXPECT_EQ(exp.period.Get(), TimeDelta::ms(300));
+  EXPECT_EQ(exp.period.Get(), TimeDelta::Millis(300));
 }
 TEST(FieldTrialParserUnitsTest, IgnoresOutOfRange) {
   FieldTrialConstrained<DataRate> rate("r", DataRate::kbps(30),
                                        DataRate::kbps(10), DataRate::kbps(100));
-  FieldTrialConstrained<TimeDelta> delta("d", TimeDelta::ms(30),
-                                         TimeDelta::ms(10), TimeDelta::ms(100));
+  FieldTrialConstrained<TimeDelta> delta("d", TimeDelta::Millis(30),
+                                         TimeDelta::Millis(10),
+                                         TimeDelta::Millis(100));
   FieldTrialConstrained<DataSize> size(
       "s", DataSize::bytes(30), DataSize::bytes(10), DataSize::bytes(100));
   ParseFieldTrial({&rate, &delta, &size}, "r:0,d:0,s:0");

@@ -207,7 +207,7 @@ void TcpMessageRouteImpl::HandleLoss(Timestamp at_time) {
 }
 
 void TcpMessageRouteImpl::SendPackets(Timestamp at_time) {
-  const TimeDelta kPacketTimeout = TimeDelta::seconds(1);
+  const TimeDelta kPacketTimeout = TimeDelta::Seconds(1);
   int cwnd = std::ceil(cwnd_);
   int packets_to_send = std::max(cwnd - static_cast<int>(in_flight_.size()), 0);
   while (packets_to_send-- > 0 && !pending_.empty()) {

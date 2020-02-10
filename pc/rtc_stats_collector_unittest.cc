@@ -748,7 +748,7 @@ TEST_F(RTCStatsCollectorTest, CachedStatsReports) {
   rtc::scoped_refptr<const RTCStatsReport> c = stats_->GetStatsReport();
   EXPECT_NE(b.get(), c.get());
   // Invalidate cache by advancing time.
-  fake_clock_.AdvanceTime(TimeDelta::ms(51));
+  fake_clock_.AdvanceTime(TimeDelta::Millis(51));
   rtc::scoped_refptr<const RTCStatsReport> d = stats_->GetStatsReport();
   EXPECT_TRUE(d);
   EXPECT_NE(c.get(), d.get());
@@ -759,7 +759,7 @@ TEST_F(RTCStatsCollectorTest, MultipleCallbacksWithInvalidatedCacheInBetween) {
   stats_->stats_collector()->GetStatsReport(RTCStatsObtainer::Create(&a));
   stats_->stats_collector()->GetStatsReport(RTCStatsObtainer::Create(&b));
   // Cache is invalidated after 50 ms.
-  fake_clock_.AdvanceTime(TimeDelta::ms(51));
+  fake_clock_.AdvanceTime(TimeDelta::Millis(51));
   stats_->stats_collector()->GetStatsReport(RTCStatsObtainer::Create(&c));
   EXPECT_TRUE_WAIT(a, kGetStatsReportTimeoutMs);
   EXPECT_TRUE_WAIT(b, kGetStatsReportTimeoutMs);
@@ -2582,7 +2582,7 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
 
   // The report block's timestamp cannot be from the future, set the fake clock
   // to match.
-  fake_clock_.SetTime(Timestamp::us(kReportBlockTimestampUtcUs));
+  fake_clock_.SetTime(Timestamp::Micros(kReportBlockTimestampUtcUs));
 
   RTCPReportBlock report_block;
   // The remote-inbound-rtp SSRC and the outbound-rtp SSRC is the same as the
@@ -2631,7 +2631,7 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
 TEST_P(RTCStatsCollectorTestWithParamKind,
        RTCRemoteInboundRtpStreamStatsWithTimestampFromReportBlock) {
   const int64_t kReportBlockTimestampUtcUs = 123456789;
-  fake_clock_.SetTime(Timestamp::us(kReportBlockTimestampUtcUs));
+  fake_clock_.SetTime(Timestamp::Micros(kReportBlockTimestampUtcUs));
 
   RTCPReportBlock report_block;
   // The remote-inbound-rtp SSRC and the outbound-rtp SSRC is the same as the
@@ -2644,7 +2644,7 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
                                absl::nullopt);
 
   // Advance time, it should be OK to have fresher reports than report blocks.
-  fake_clock_.AdvanceTime(TimeDelta::us(1234));
+  fake_clock_.AdvanceTime(TimeDelta::Micros(1234));
 
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
@@ -2663,7 +2663,7 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
 TEST_P(RTCStatsCollectorTestWithParamKind,
        RTCRemoteInboundRtpStreamStatsWithCodecBasedMembers) {
   const int64_t kReportBlockTimestampUtcUs = 123456789;
-  fake_clock_.SetTime(Timestamp::us(kReportBlockTimestampUtcUs));
+  fake_clock_.SetTime(Timestamp::Micros(kReportBlockTimestampUtcUs));
 
   RTCPReportBlock report_block;
   // The remote-inbound-rtp SSRC and the outbound-rtp SSRC is the same as the
@@ -2700,7 +2700,7 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
 TEST_P(RTCStatsCollectorTestWithParamKind,
        RTCRemoteInboundRtpStreamStatsWithRtcpTransport) {
   const int64_t kReportBlockTimestampUtcUs = 123456789;
-  fake_clock_.SetTime(Timestamp::us(kReportBlockTimestampUtcUs));
+  fake_clock_.SetTime(Timestamp::Micros(kReportBlockTimestampUtcUs));
 
   RTCPReportBlock report_block;
   // The remote-inbound-rtp SSRC and the outbound-rtp SSRC is the same as the

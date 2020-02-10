@@ -407,8 +407,8 @@ void BitrateAllocator::OnNetworkEstimateChanged(TargetTransferRate msg) {
     update.target_bitrate = DataRate::bps(allocated_bitrate);
     update.stable_target_bitrate = DataRate::bps(allocated_stable_target_rate);
     update.packet_loss_ratio = last_fraction_loss_ / 256.0;
-    update.round_trip_time = TimeDelta::ms(last_rtt_);
-    update.bwe_period = TimeDelta::ms(last_bwe_period_ms_);
+    update.round_trip_time = TimeDelta::Millis(last_rtt_);
+    update.bwe_period = TimeDelta::Millis(last_bwe_period_ms_);
     update.cwnd_reduce_ratio = msg.cwnd_reduce_ratio;
     uint32_t protection_bitrate = config.observer->OnBitrateUpdated(update);
 
@@ -472,8 +472,8 @@ void BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
       update.target_bitrate = DataRate::bps(allocated_bitrate);
       update.stable_target_bitrate = DataRate::bps(allocated_stable_bitrate);
       update.packet_loss_ratio = last_fraction_loss_ / 256.0;
-      update.round_trip_time = TimeDelta::ms(last_rtt_);
-      update.bwe_period = TimeDelta::ms(last_bwe_period_ms_);
+      update.round_trip_time = TimeDelta::Millis(last_rtt_);
+      update.bwe_period = TimeDelta::Millis(last_bwe_period_ms_);
       uint32_t protection_bitrate = config.observer->OnBitrateUpdated(update);
       config.allocated_bitrate_bps = allocated_bitrate;
       if (allocated_bitrate > 0)
@@ -488,8 +488,8 @@ void BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
     update.target_bitrate = DataRate::Zero();
     update.stable_target_bitrate = DataRate::Zero();
     update.packet_loss_ratio = last_fraction_loss_ / 256.0;
-    update.round_trip_time = TimeDelta::ms(last_rtt_);
-    update.bwe_period = TimeDelta::ms(last_bwe_period_ms_);
+    update.round_trip_time = TimeDelta::Millis(last_rtt_);
+    update.bwe_period = TimeDelta::Millis(last_bwe_period_ms_);
     observer->OnBitrateUpdated(update);
   }
   UpdateAllocationLimits();

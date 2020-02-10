@@ -1352,7 +1352,7 @@ void Call::NotifyBweOfReceivedPacket(const RtpPacketReceived& packet,
 
   ReceivedPacket packet_msg;
   packet_msg.size = DataSize::bytes(packet.payload_size());
-  packet_msg.receive_time = Timestamp::ms(packet.arrival_time_ms());
+  packet_msg.receive_time = Timestamp::Millis(packet.arrival_time_ms());
   if (header.extension.hasAbsoluteSendTime) {
     packet_msg.send_time = header.extension.GetAbsoluteSendTimestamp();
   }

@@ -699,7 +699,7 @@ TEST_F(VideoSendStreamImplTest, CallsVideoStreamEncoderOnBitrateUpdate) {
         BitrateAllocationUpdate update;
         update.target_bitrate = network_constrained_rate;
         update.stable_target_bitrate = network_constrained_rate;
-        update.round_trip_time = TimeDelta::ms(1);
+        update.round_trip_time = TimeDelta::Millis(1);
         EXPECT_CALL(rtp_video_sender_, OnBitrateUpdated(update, _));
         EXPECT_CALL(rtp_video_sender_, GetPayloadBitrateBps())
             .WillOnce(Return(network_constrained_rate.bps()));

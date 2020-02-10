@@ -38,7 +38,7 @@ ABSL_FLAG(bool,
 
 namespace webrtc {
 namespace {
-constexpr TimeDelta kSendStatsPollingInterval = TimeDelta::Seconds<1>();
+constexpr TimeDelta kSendStatsPollingInterval = TimeDelta::Seconds(1);
 constexpr size_t kMaxComparisons = 10;
 // How often is keep alive message printed.
 constexpr int kKeepAliveIntervalSeconds = 30;
