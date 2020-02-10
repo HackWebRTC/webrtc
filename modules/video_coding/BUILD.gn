@@ -46,8 +46,6 @@ rtc_library("frame_dependencies_calculator") {
     "../../common_video/generic_frame_descriptor",
     "../../rtc_base:checks",
     "../../rtc_base:logging",
-    "../../rtc_base:macromagic",
-    "../../rtc_base/synchronization:sequence_checker",
     "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/container:inlined_vector",
     "//third_party/abseil-cpp/absl/types:optional",

@@ -167,6 +167,7 @@ rtc_library("rtp_sender") {
     "../modules/rtp_rtcp:rtp_video_header",
     "../modules/utility",
     "../modules/video_coding:codec_globals_headers",
+    "../modules/video_coding:frame_dependencies_calculator",
     "../modules/video_coding:video_codec_interface",
     "../rtc_base",
     "../rtc_base:checks",

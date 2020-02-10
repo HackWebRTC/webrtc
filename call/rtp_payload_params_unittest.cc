@@ -371,6 +371,50 @@ TEST(RtpPayloadParamsTest, GenericDescriptorForGenericCodec) {
   EXPECT_THAT(header.generic->dependencies, ElementsAre(0));
 }
 
+TEST(RtpPayloadParamsTest, SetsGenericFromGenericFrameInfo) {
+  test::ScopedFieldTrials generic_picture_id(
+      "WebRTC-GenericDescriptor/Enabled/");
+  RtpPayloadState state;
+  EncodedImage encoded_image;
+  CodecSpecificInfo codec_info;
+
+  RtpPayloadParams params(kSsrc1, &state);
+
+  encoded_image._frameType = VideoFrameType::kVideoFrameKey;
+  codec_info.generic_frame_info =
+      GenericFrameInfo::Builder().S(1).T(0).Dtis("S").Build();
+  codec_info.generic_frame_info->encoder_buffers = {
+      {/*id=*/0, /*referenced=*/false, /*updated=*/true}};
+  RTPVideoHeader key_header =
+      params.GetRtpVideoHeader(encoded_image, &codec_info, /*frame_id=*/1);
+
+  ASSERT_TRUE(key_header.generic);
+  EXPECT_EQ(key_header.generic->spatial_index, 1);
+  EXPECT_EQ(key_header.generic->temporal_index, 0);
+  EXPECT_EQ(key_header.generic->frame_id, 1);
+  EXPECT_THAT(key_header.generic->dependencies, IsEmpty());
+  EXPECT_THAT(key_header.generic->decode_target_indications,
+              ElementsAre(DecodeTargetIndication::kSwitch));
+  EXPECT_FALSE(key_header.generic->discardable);
+
+  encoded_image._frameType = VideoFrameType::kVideoFrameDelta;
+  codec_info.generic_frame_info =
+      GenericFrameInfo::Builder().S(2).T(3).Dtis("D").Build();
+  codec_info.generic_frame_info->encoder_buffers = {
+      {/*id=*/0, /*referenced=*/true, /*updated=*/false}};
+  RTPVideoHeader delta_header =
+      params.GetRtpVideoHeader(encoded_image, &codec_info, /*frame_id=*/3);
+
+  ASSERT_TRUE(delta_header.generic);
+  EXPECT_EQ(delta_header.generic->spatial_index, 2);
+  EXPECT_EQ(delta_header.generic->temporal_index, 3);
+  EXPECT_EQ(delta_header.generic->frame_id, 3);
+  EXPECT_THAT(delta_header.generic->dependencies, ElementsAre(1));
+  EXPECT_THAT(delta_header.generic->decode_target_indications,
+              ElementsAre(DecodeTargetIndication::kDiscardable));
+  EXPECT_TRUE(delta_header.generic->discardable);
+}
+
 class RtpPayloadParamsVp8ToGenericTest : public ::testing::Test {
  public:
   enum LayerSync { kNoSync, kSync };

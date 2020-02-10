@@ -14,6 +14,7 @@
 
 #include <algorithm>
 
+#include "absl/algorithm/container.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/types/variant.h"
 #include "api/video/video_timing.h"
@@ -21,6 +22,7 @@
 #include "modules/video_coding/codecs/interface/common_constants.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_globals.h"
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
+#include "modules/video_coding/frame_dependencies_calculator.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -248,10 +250,36 @@ void RtpPayloadParams::SetCodecSpecific(RTPVideoHeader* rtp_video_header,
   }
 }
 
+RTPVideoHeader::GenericDescriptorInfo
+RtpPayloadParams::GenericDescriptorFromFrameInfo(
+    const GenericFrameInfo& frame_info,
+    int64_t frame_id,
+    VideoFrameType frame_type) {
+  RTPVideoHeader::GenericDescriptorInfo generic;
+  generic.frame_id = frame_id;
+  generic.dependencies = dependencies_calculator_.FromBuffersUsage(
+      frame_type, frame_id, frame_info.encoder_buffers);
+  generic.spatial_index = frame_info.spatial_id;
+  generic.temporal_index = frame_info.temporal_id;
+  generic.decode_target_indications = frame_info.decode_target_indications;
+  generic.discardable =
+      absl::c_linear_search(frame_info.decode_target_indications,
+                            DecodeTargetIndication::kDiscardable);
+  return generic;
+}
+
 void RtpPayloadParams::SetGeneric(const CodecSpecificInfo* codec_specific_info,
                                   int64_t frame_id,
                                   bool is_keyframe,
                                   RTPVideoHeader* rtp_video_header) {
+  if (codec_specific_info && codec_specific_info->generic_frame_info &&
+      !codec_specific_info->generic_frame_info->encoder_buffers.empty()) {
+    rtp_video_header->generic =
+        GenericDescriptorFromFrameInfo(*codec_specific_info->generic_frame_info,
+                                       frame_id, rtp_video_header->frame_type);
+    return;
+  }
+
   switch (rtp_video_header->codec) {
     case VideoCodecType::kVideoCodecGeneric:
       GenericToGeneric(frame_id, is_keyframe, rtp_video_header);

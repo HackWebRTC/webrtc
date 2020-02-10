@@ -20,16 +20,15 @@
 #include "api/array_view.h"
 #include "api/video/video_frame_type.h"
 #include "common_video/generic_frame_descriptor/generic_frame_info.h"
-#include "rtc_base/synchronization/sequence_checker.h"
-#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
+// This class is thread compatible.
 class FrameDependenciesCalculator {
  public:
   FrameDependenciesCalculator() = default;
-  FrameDependenciesCalculator(FrameDependenciesCalculator&&) = default;
-  FrameDependenciesCalculator& operator=(FrameDependenciesCalculator&&) =
+  FrameDependenciesCalculator(const FrameDependenciesCalculator&) = default;
+  FrameDependenciesCalculator& operator=(const FrameDependenciesCalculator&) =
       default;
 
   // Calculates frame dependencies based on previous encoder buffer usage.
@@ -44,8 +43,7 @@ class FrameDependenciesCalculator {
     absl::InlinedVector<int64_t, 4> dependencies;
   };
 
-  SequenceChecker checker_;
-  absl::InlinedVector<BufferUsage, 4> buffers_ RTC_GUARDED_BY(checker_);
+  absl::InlinedVector<BufferUsage, 4> buffers_;
 };
 
 }  // namespace webrtc

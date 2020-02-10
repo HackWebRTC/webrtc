@@ -20,7 +20,6 @@
 #include "api/video/video_frame_type.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/synchronization/sequence_checker.h"
 
 namespace webrtc {
 
@@ -28,8 +27,6 @@ absl::InlinedVector<int64_t, 5> FrameDependenciesCalculator::FromBuffersUsage(
     VideoFrameType frame_type,
     int64_t frame_id,
     rtc::ArrayView<const CodecBufferUsage> buffers_usage) {
-  RTC_DCHECK_RUN_ON(&checker_);
-
   absl::InlinedVector<int64_t, 5> dependencies;
   RTC_DCHECK_GT(buffers_usage.size(), 0);
   for (const CodecBufferUsage& buffer_usage : buffers_usage) {
