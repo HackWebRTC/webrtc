@@ -242,9 +242,10 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   void ReportResults();
   static void ReportVideoBweResults(const std::string& test_case_name,
                                     const VideoBweStats& video_bwe_stats);
-  static void ReportResults(const std::string& test_case_name,
-                            const StreamStats& stats,
-                            const FrameCounters& frame_counters);
+  void ReportResults(const std::string& test_case_name,
+                     const StreamStats& stats,
+                     const FrameCounters& frame_counters)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
   // Report result for single metric for specified stream.
   static void ReportResult(const std::string& metric_name,
                            const std::string& test_case_name,

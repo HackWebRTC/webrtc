@@ -635,6 +635,23 @@ void DefaultVideoQualityAnalyzer::ReportResults(
     const FrameCounters& frame_counters) {
   using ::webrtc::test::ImproveDirection;
 
+  double sum_squared_interframe_delays_secs = 0;
+  for (const double interframe_delay_ms :
+       stats.time_between_rendered_frames_ms.GetSamples()) {
+    const double interframe_delays_secs = interframe_delay_ms / 1000.0;
+    // Sum of squared inter frame intervals is used to calculate the harmonic
+    // frame rate metric. The metric aims to reflect overall experience related
+    // to smoothness of video playback and includes both freezes and pauses.
+    sum_squared_interframe_delays_secs +=
+        interframe_delays_secs * interframe_delays_secs;
+  }
+  double harmonic_framerate_fps = 0;
+  if (sum_squared_interframe_delays_secs > 0.0) {
+    TimeDelta video_duration = Now() - start_time_;
+    harmonic_framerate_fps =
+        video_duration.seconds() / sum_squared_interframe_delays_secs;
+  }
+
   ReportResult("psnr", test_case_name, stats.psnr, "dB",
                ImproveDirection::kBiggerIsBetter);
   ReportResult("ssim", test_case_name, stats.ssim, "unitless",
@@ -647,11 +664,14 @@ void DefaultVideoQualityAnalyzer::ReportResults(
   ReportResult("time_between_rendered_frames", test_case_name,
                stats.time_between_rendered_frames_ms, "ms",
                ImproveDirection::kSmallerIsBetter);
+  test::PrintResult("harmonic_framerate", "", test_case_name,
+                    harmonic_framerate_fps, "Hz", /*important=*/false,
+                    ImproveDirection::kBiggerIsBetter);
   test::PrintResult("encode_frame_rate", "", test_case_name,
                     stats.encode_frame_rate.IsEmpty()
                         ? 0
                         : stats.encode_frame_rate.GetEventsPerSecond(),
-                    "fps", /*important=*/false,
+                    "Hz", /*important=*/false,
                     ImproveDirection::kBiggerIsBetter);
   ReportResult("encode_time", test_case_name, stats.encode_time_ms, "ms",
                ImproveDirection::kSmallerIsBetter);
