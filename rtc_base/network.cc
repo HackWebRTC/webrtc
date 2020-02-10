@@ -472,10 +472,7 @@ Network* NetworkManagerBase::GetNetworkFromAddress(
 }
 
 BasicNetworkManager::BasicNetworkManager()
-    : thread_(nullptr),
-      sent_first_update_(false),
-      start_count_(0),
-      ignore_non_default_routes_(false) {}
+    : thread_(nullptr), sent_first_update_(false), start_count_(0) {}
 
 BasicNetworkManager::~BasicNetworkManager() {}
 
@@ -810,12 +807,6 @@ bool BasicNetworkManager::IsIgnoredNetwork(const Network& network) const {
       strncmp(network.name().c_str(), "vboxnet", 7) == 0) {
     return true;
   }
-#if defined(WEBRTC_LINUX)
-  // Make sure this is a default route, if we're ignoring non-defaults.
-  if (ignore_non_default_routes_ && !IsDefaultRoute(network.name())) {
-    return true;
-  }
-#endif
 #elif defined(WEBRTC_WIN)
   // Ignore any HOST side vmware adapters with a description like:
   // VMware Virtual Ethernet Adapter for VMnet1

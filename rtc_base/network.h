@@ -238,14 +238,6 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
     network_ignore_list_ = list;
   }
 
-#if defined(WEBRTC_LINUX)
-  // Sets the flag for ignoring non-default routes.
-  // Defaults to false.
-  void set_ignore_non_default_routes(bool value) {
-    ignore_non_default_routes_ = value;
-  }
-#endif
-
  protected:
 #if defined(WEBRTC_POSIX)
   // Separated from CreateNetworks for tests.
@@ -286,7 +278,6 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
   bool sent_first_update_;
   int start_count_;
   std::vector<std::string> network_ignore_list_;
-  bool ignore_non_default_routes_;
   std::unique_ptr<NetworkMonitorInterface> network_monitor_;
 };
 

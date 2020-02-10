@@ -900,51 +900,6 @@ TEST_F(NetworkTest, TestGetAdapterTypeFromNameMatching) {
 }
 #endif  // defined(WEBRTC_POSIX)
 
-#if defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
-// If you want to test non-default routes, you can do the following on a linux
-// machine:
-// 1) Load the dummy network driver:
-// sudo modprobe dummy
-// sudo ifconfig dummy0 127.0.0.1
-// 2) Run this test and confirm the output says it found a dummy route (and
-// passes).
-// 3) When done:
-// sudo rmmmod dummy
-TEST_F(NetworkTest, TestIgnoreNonDefaultRoutes) {
-  BasicNetworkManager manager;
-  NetworkManager::NetworkList list;
-  list = GetNetworks(manager, false);
-  bool found_dummy = false;
-  RTC_LOG(LS_INFO) << "Looking for dummy network: ";
-  for (NetworkManager::NetworkList::iterator it = list.begin();
-       it != list.end(); ++it) {
-    RTC_LOG(LS_INFO) << "  Network name: " << (*it)->name();
-    found_dummy |= (*it)->name().find("dummy0") != std::string::npos;
-  }
-  for (NetworkManager::NetworkList::iterator it = list.begin();
-       it != list.end(); ++it) {
-    delete (*it);
-  }
-  if (!found_dummy) {
-    RTC_LOG(LS_INFO) << "No dummy found, quitting.";
-    return;
-  }
-  RTC_LOG(LS_INFO) << "Found dummy, running again while ignoring non-default "
-                      "routes.";
-  manager.set_ignore_non_default_routes(true);
-  list = GetNetworks(manager, false);
-  for (NetworkManager::NetworkList::iterator it = list.begin();
-       it != list.end(); ++it) {
-    RTC_LOG(LS_INFO) << "  Network name: " << (*it)->name();
-    EXPECT_TRUE((*it)->name().find("dummy0") == std::string::npos);
-  }
-  for (NetworkManager::NetworkList::iterator it = list.begin();
-       it != list.end(); ++it) {
-    delete (*it);
-  }
-}
-#endif
-
 // Test MergeNetworkList successfully combines all IPs for the same
 // prefix/length into a single Network.
 TEST_F(NetworkTest, TestMergeNetworkList) {
