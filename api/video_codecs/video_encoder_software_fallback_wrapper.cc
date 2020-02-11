@@ -19,6 +19,7 @@
 
 #include "absl/types/optional.h"
 #include "api/fec_controller_override.h"
+#include "api/video/i420_buffer.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_codec.h"
@@ -194,6 +195,8 @@ class VideoEncoderSoftwareFallbackWrapper final : public VideoEncoder {
   EncodedImageCallback* callback_;
 
   const absl::optional<ForcedFallbackParams> fallback_params_;
+  int32_t EncodeWithMainEncoder(const VideoFrame& frame,
+                                const std::vector<VideoFrameType>* frame_types);
 };
 
 VideoEncoderSoftwareFallbackWrapper::VideoEncoderSoftwareFallbackWrapper(
@@ -335,21 +338,46 @@ int32_t VideoEncoderSoftwareFallbackWrapper::Encode(
     case EncoderState::kUninitialized:
       return WEBRTC_VIDEO_CODEC_ERROR;
     case EncoderState::kMainEncoderUsed: {
-      int32_t ret = encoder_->Encode(frame, frame_types);
-      // If requested, try a software fallback.
-      bool fallback_requested = (ret == WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE);
-      if (fallback_requested && InitFallbackEncoder(/*is_forced=*/false)) {
-        // Start using the fallback with this frame.
-        PrimeEncoder(current_encoder());
-        return fallback_encoder_->Encode(frame, frame_types);
-      }
-      // Fallback encoder failed too, return original error code.
-      return ret;
+      return EncodeWithMainEncoder(frame, frame_types);
     }
     case EncoderState::kFallbackDueToFailure:
     case EncoderState::kForcedFallback:
       return fallback_encoder_->Encode(frame, frame_types);
   }
+}
+int32_t VideoEncoderSoftwareFallbackWrapper::EncodeWithMainEncoder(
+    const VideoFrame& frame,
+    const std::vector<VideoFrameType>* frame_types) {
+  int32_t ret = encoder_->Encode(frame, frame_types);
+  // If requested, try a software fallback.
+  bool fallback_requested = (ret == WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE);
+  if (fallback_requested && InitFallbackEncoder(/*is_forced=*/false)) {
+    // Start using the fallback with this frame.
+    PrimeEncoder(current_encoder());
+    if (frame.video_frame_buffer()->type() == VideoFrameBuffer::Type::kNative &&
+        fallback_encoder_->GetEncoderInfo().supports_native_handle) {
+      return fallback_encoder_->Encode(frame, frame_types);
+    } else {
+      RTC_LOG(INFO) << "Fallback encoder does not support native handle - "
+                       "converting frame to I420";
+      rtc::scoped_refptr<I420BufferInterface> src_buffer =
+          frame.video_frame_buffer()->ToI420();
+      if (!src_buffer) {
+        RTC_LOG(LS_ERROR) << "Failed to convert from to I420";
+        return WEBRTC_VIDEO_CODEC_ENCODER_FAILURE;
+      }
+      rtc::scoped_refptr<I420Buffer> dst_buffer =
+          I420Buffer::Create(codec_settings_.width, codec_settings_.height);
+      dst_buffer->ScaleFrom(*src_buffer);
+      VideoFrame scaled_frame = frame;
+      scaled_frame.set_video_frame_buffer(dst_buffer);
+      scaled_frame.set_update_rect(VideoFrame::UpdateRect{
+          0, 0, scaled_frame.width(), scaled_frame.height()});
+      return fallback_encoder_->Encode(scaled_frame, frame_types);
+    }
+  }
+  // Fallback encoder failed too, return original error code.
+  return ret;
 }
 
 void VideoEncoderSoftwareFallbackWrapper::SetRates(

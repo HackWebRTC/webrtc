@@ -32,6 +32,7 @@ if (rtc_include_tests) {
       "../../../rtc_base:rtc_base_tests_utils",
       "../../../test:field_trial",
       "../../../test:test_support",
+      "../../../test:video_test_common",
       "../../video:encoded_image",
       "../../video:video_bitrate_allocation",
       "../../video:video_frame",
