@@ -197,7 +197,6 @@ rtc_library("rtc_simulcast_encoder_adapter") {
     "../system_wrappers",
     "../system_wrappers:field_trial",
     "//third_party/abseil-cpp/absl/types:optional",
-    "//third_party/libyuv",
   ]
 }
 
