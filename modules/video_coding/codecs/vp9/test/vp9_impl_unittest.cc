@@ -114,8 +114,8 @@ class TestVp9Impl : public VideoCodecUnitTest {
 
     std::vector<SpatialLayer> layers =
         GetSvcConfig(codec_settings_.width, codec_settings_.height,
-                     codec_settings_.maxFramerate, num_spatial_layers,
-                     num_temporal_layers, false);
+                     codec_settings_.maxFramerate, /*min_spatial_layers=*/1,
+                     num_spatial_layers, num_temporal_layers, false);
     for (size_t i = 0; i < layers.size(); ++i) {
       codec_settings_.spatialLayers[i] = layers[i];
     }

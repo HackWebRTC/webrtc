@@ -62,8 +62,8 @@ const int kMaxQp = 56;
 
 void ConfigureSimulcast(VideoCodec* codec_settings) {
   const std::vector<webrtc::VideoStream> streams = cricket::GetSimulcastConfig(
-      codec_settings->numberOfSimulcastStreams, codec_settings->width,
-      codec_settings->height, kBitratePriority, kMaxQp,
+      /*min_layer=*/1, codec_settings->numberOfSimulcastStreams,
+      codec_settings->width, codec_settings->height, kBitratePriority, kMaxQp,
       /* is_screenshare = */ false, true);
 
   for (size_t i = 0; i < streams.size(); ++i) {
@@ -85,7 +85,7 @@ void ConfigureSvc(VideoCodec* codec_settings) {
 
   const std::vector<SpatialLayer> layers = GetSvcConfig(
       codec_settings->width, codec_settings->height, kMaxFramerateFps,
-      codec_settings->VP9()->numberOfSpatialLayers,
+      /*min_spatial_layers=*/1, codec_settings->VP9()->numberOfSpatialLayers,
       codec_settings->VP9()->numberOfTemporalLayers,
       /* is_screen_sharing = */ false);
   ASSERT_EQ(codec_settings->VP9()->numberOfSpatialLayers, layers.size())

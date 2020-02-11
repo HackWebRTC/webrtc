@@ -32,13 +32,14 @@ int NormalizeSimulcastSize(int size, size_t simulcast_layers);
 
 // Gets simulcast settings.
 std::vector<webrtc::VideoStream> GetSimulcastConfig(
+    size_t min_layers,
     size_t max_layers,
     int width,
     int height,
     double bitrate_priority,
     int max_qp,
     bool is_screenshare_with_conference_mode,
-    bool temporal_layers_supported = true);
+    bool temporal_layers_supported);
 
 // Gets the simulcast config layers for a non-screensharing case.
 std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(

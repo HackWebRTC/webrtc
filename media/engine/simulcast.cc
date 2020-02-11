@@ -207,11 +207,15 @@ int GetTotalMaxBitrateBps(const std::vector<webrtc::VideoStream>& layers) {
   return total_max_bitrate_bps;
 }
 
-int LimitSimulcastLayerCount(int width, int height, int layer_count) {
+size_t LimitSimulcastLayerCount(int width,
+                                int height,
+                                size_t need_layers,
+                                size_t layer_count) {
   if (!webrtc::field_trial::IsDisabled(
           kUseLegacySimulcastLayerLimitFieldTrial)) {
-    int adaptive_layer_count =
-        kSimulcastFormats[FindSimulcastFormatIndex(width, height)].max_layers;
+    size_t adaptive_layer_count = std::max(
+        need_layers,
+        kSimulcastFormats[FindSimulcastFormatIndex(width, height)].max_layers);
     if (layer_count > adaptive_layer_count) {
       RTC_LOG(LS_WARNING) << "Reducing simulcast layer count from "
                           << layer_count << " to " << adaptive_layer_count;
@@ -222,6 +226,7 @@ int LimitSimulcastLayerCount(int width, int height, int layer_count) {
 }
 
 std::vector<webrtc::VideoStream> GetSimulcastConfig(
+    size_t min_layers,
     size_t max_layers,
     int width,
     int height,
@@ -229,6 +234,7 @@ std::vector<webrtc::VideoStream> GetSimulcastConfig(
     int max_qp,
     bool is_screenshare_with_conference_mode,
     bool temporal_layers_supported) {
+  RTC_DCHECK_LE(min_layers, max_layers);
   RTC_DCHECK(max_layers > 1 || is_screenshare_with_conference_mode);
 
   const bool base_heavy_tl3_rate_alloc =
@@ -242,7 +248,8 @@ std::vector<webrtc::VideoStream> GetSimulcastConfig(
     // Some applications rely on the old behavior limiting the simulcast layer
     // count based on the resolution automatically, which they can get through
     // the WebRTC-LegacySimulcastLayerLimit field trial until they update.
-    max_layers = LimitSimulcastLayerCount(width, height, max_layers);
+    max_layers =
+        LimitSimulcastLayerCount(width, height, min_layers, max_layers);
 
     return GetNormalSimulcastLayers(max_layers, width, height, bitrate_priority,
                                     max_qp, temporal_layers_supported,

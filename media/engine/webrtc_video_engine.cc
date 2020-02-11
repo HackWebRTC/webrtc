@@ -302,6 +302,17 @@ bool IsLayerActive(const webrtc::RtpEncodingParameters& layer) {
          (!layer.max_framerate || *layer.max_framerate > 0);
 }
 
+size_t FindRequiredActiveLayers(
+    const webrtc::VideoEncoderConfig& encoder_config) {
+  // Need enough layers so that at least the first active one is present.
+  for (size_t i = 0; i < encoder_config.number_of_streams; ++i) {
+    if (encoder_config.simulcast_layers[i].active) {
+      return i + 1;
+    }
+  }
+  return 0;
+}
+
 }  // namespace
 
 // This constant is really an on/off, lower-level configurable NACK history
@@ -3250,7 +3261,8 @@ EncoderStreamFactory::CreateSimulcastOrConfereceModeScreenshareStreams(
       absl::EqualsIgnoreCase(codec_name_, kH264CodecName);
   // Use legacy simulcast screenshare if conference mode is explicitly enabled
   // or use the regular simulcast configuration path which is generic.
-  layers = GetSimulcastConfig(encoder_config.number_of_streams, width, height,
+  layers = GetSimulcastConfig(FindRequiredActiveLayers(encoder_config),
+                              encoder_config.number_of_streams, width, height,
                               encoder_config.bitrate_priority, max_qp_,
                               is_screenshare_ && conference_mode_,
                               temporal_layers_supported);

@@ -7630,8 +7630,8 @@ class WebRtcVideoChannelSimulcastTest : public ::testing::Test {
     std::vector<webrtc::VideoStream> expected_streams;
     if (num_configured_streams > 1 || conference_mode) {
       expected_streams = GetSimulcastConfig(
-          num_configured_streams, capture_width, capture_height,
-          webrtc::kDefaultBitratePriority, kDefaultQpMax,
+          /*min_layers=*/1, num_configured_streams, capture_width,
+          capture_height, webrtc::kDefaultBitratePriority, kDefaultQpMax,
           screenshare && conference_mode, true);
       if (screenshare && conference_mode) {
         for (const webrtc::VideoStream& stream : expected_streams) {
