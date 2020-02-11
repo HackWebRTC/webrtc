@@ -29,11 +29,8 @@
 #include "call/adaptation/resource_adaptation_module_interface.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "modules/video_coding/utility/frame_dropper.h"
-#include "modules/video_coding/utility/quality_scaler.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
-#include "rtc_base/experiments/quality_rampup_experiment.h"
-#include "rtc_base/experiments/quality_scaler_settings.h"
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/numerics/exp_filter.h"
 #include "rtc_base/race_checker.h"
@@ -221,7 +218,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   EncoderSink* sink_;
   const VideoStreamEncoderSettings settings_;
   const RateControlSettings rate_control_settings_;
-  const QualityScalerSettings quality_scaler_settings_;
 
   std::unique_ptr<VideoEncoderFactory::EncoderSelectorInterface> const
       encoder_selector_;

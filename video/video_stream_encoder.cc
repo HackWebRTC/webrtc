@@ -31,7 +31,6 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/alr_experiment.h"
-#include "rtc_base/experiments/quality_scaling_experiment.h"
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
@@ -253,7 +252,6 @@ VideoStreamEncoder::VideoStreamEncoder(
       sink_(nullptr),
       settings_(settings),
       rate_control_settings_(RateControlSettings::ParseFromFieldTrials()),
-      quality_scaler_settings_(QualityScalerSettings::ParseFromFieldTrials()),
       encoder_selector_(settings.encoder_factory->GetEncoderSelector()),
       encoder_stats_observer_(encoder_stats_observer),
       encoder_initialized_(false),
