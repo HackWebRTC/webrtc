@@ -37,6 +37,7 @@ RtpFrameObject::RtpFrameObject(
     VideoContentType content_type,
     const RTPVideoHeader& video_header,
     const absl::optional<webrtc::ColorSpace>& color_space,
+    const absl::optional<RtpGenericFrameDescriptor>& generic_descriptor,
     RtpPacketInfos packet_infos,
     rtc::scoped_refptr<EncodedImageBuffer> image_buffer)
     : first_seq_num_(first_seq_num),
@@ -44,6 +45,7 @@ RtpFrameObject::RtpFrameObject(
       last_packet_received_time_(last_packet_received_time),
       times_nacked_(times_nacked) {
   rtp_video_header_ = video_header;
+  rtp_generic_frame_descriptor_ = generic_descriptor;
 
   // EncodedFrame members
   codec_type_ = codec;
@@ -127,6 +129,11 @@ bool RtpFrameObject::delayed_by_retransmission() const {
 
 const RTPVideoHeader& RtpFrameObject::GetRtpVideoHeader() const {
   return rtp_video_header_;
+}
+
+const absl::optional<RtpGenericFrameDescriptor>&
+RtpFrameObject::GetGenericFrameDescriptor() const {
+  return rtp_generic_frame_descriptor_;
 }
 
 const FrameMarking& RtpFrameObject::GetFrameMarking() const {

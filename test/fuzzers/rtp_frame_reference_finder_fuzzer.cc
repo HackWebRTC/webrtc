@@ -63,31 +63,25 @@ class NullCallback : public video_coding::OnCompleteFrameCallback {
       std::unique_ptr<video_coding::EncodedFrame> frame) override {}
 };
 
-absl::optional<RTPVideoHeader::GenericDescriptorInfo>
-GenerateGenericFrameDependencies(DataReader* reader) {
-  absl::optional<RTPVideoHeader::GenericDescriptorInfo> result;
-  uint8_t flags = reader->GetNum<uint8_t>();
-  if (flags & 0b1000'0000) {
-    // i.e. with 50% chance there are no generic dependencies.
-    // in such case codec-specfic code path of the RtpFrameReferenceFinder will
-    // be validated.
-    return result;
-  }
+RtpGenericFrameDescriptor GenerateRtpGenericFrameDescriptor(
+    DataReader* reader) {
+  RtpGenericFrameDescriptor res;
+  res.SetFirstPacketInSubFrame(true);
+  res.SetFrameId(reader->GetNum<uint16_t>());
 
-  result.emplace();
-  result->frame_id = reader->GetNum<int64_t>();
-  result->spatial_index = (flags & 0b0111'0000) >> 4;
-  result->temporal_index = (flags & 0b0000'1110) >> 1;
-  result->discardable = (flags & 0b0000'0001);
+  int spatial_layer =
+      reader->GetNum<uint8_t>() % RtpGenericFrameDescriptor::kMaxSpatialLayers;
+  res.SetSpatialLayersBitmask(1 << spatial_layer);
+  res.SetTemporalLayer(reader->GetNum<uint8_t>() %
+                       RtpGenericFrameDescriptor::kMaxTemporalLayers);
 
-  // Larger than supported by the RtpFrameReferenceFinder.
-  int num_diffs = (reader->GetNum<uint8_t>() % 16);
+  int num_diffs = (reader->GetNum<uint8_t>() %
+                   RtpGenericFrameDescriptor::kMaxNumFrameDependencies);
   for (int i = 0; i < num_diffs; ++i) {
-    result->dependencies.push_back(result->frame_id -
-                                   (reader->GetNum<uint16_t>() % (1 << 14)));
+    res.AddFrameDependencyDiff(reader->GetNum<uint16_t>() % (1 << 14));
   }
 
-  return result;
+  return res;
 }
 }  // namespace
 
@@ -96,7 +90,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   NullCallback cb;
   video_coding::RtpFrameReferenceFinder reference_finder(&cb);
 
-  auto codec = static_cast<VideoCodecType>(reader.GetNum<uint8_t>() % 5);
+  auto codec = static_cast<VideoCodecType>(reader.GetNum<uint8_t>() % 4);
 
   while (reader.MoreToRead()) {
     uint16_t first_seq_num = reader.GetNum<uint16_t>();
@@ -134,7 +128,6 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     }
 
     reader.CopyTo(&video_header.frame_marking);
-    video_header.generic = GenerateGenericFrameDependencies(&reader);
 
     // clang-format off
     auto frame = std::make_unique<video_coding::RtpFrameObject>(
@@ -153,6 +146,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
         VideoContentType::UNSPECIFIED,
         video_header,
         /*color_space=*/absl::nullopt,
+        GenerateRtpGenericFrameDescriptor(&reader),
         RtpPacketInfos(),
         EncodedImageBuffer::Create(/*size=*/0));
     // clang-format on

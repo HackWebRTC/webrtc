@@ -57,8 +57,6 @@ class BufferedFrameDecryptorTest : public ::testing::Test,
   std::unique_ptr<video_coding::RtpFrameObject> CreateRtpFrameObject(
       bool key_frame) {
     seq_num_++;
-    RTPVideoHeader rtp_video_header;
-    rtp_video_header.generic.emplace();
 
     // clang-format off
     return std::make_unique<video_coding::RtpFrameObject>(
@@ -75,8 +73,9 @@ class BufferedFrameDecryptorTest : public ::testing::Test,
         kVideoCodecGeneric,
         kVideoRotation_0,
         VideoContentType::UNSPECIFIED,
-        rtp_video_header,
+        RTPVideoHeader(),
         /*color_space=*/absl::nullopt,
+        RtpGenericFrameDescriptor(),
         RtpPacketInfos(),
         EncodedImageBuffer::Create(/*size=*/0));
     // clang-format on
