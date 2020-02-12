@@ -84,6 +84,7 @@ rtc_library("video_coding") {
     "../../api/video:encoded_image",
     "../../api/video:video_bitrate_allocation",
     "../../api/video:video_bitrate_allocator_factory",
+    "../../rtc_base:deprecation",
     "../../system_wrappers:field_trial",
     "../../system_wrappers:metrics",
     "../rtp_rtcp:rtp_video_header",
