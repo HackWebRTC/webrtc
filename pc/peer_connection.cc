@@ -4363,10 +4363,10 @@ PeerConnection::LookupDtlsTransportByMidInternal(const std::string& mid) {
 rtc::scoped_refptr<SctpTransportInterface> PeerConnection::GetSctpTransport()
     const {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  if (!sctp_mid_) {
+  if (!sctp_mid_s_) {
     return nullptr;
   }
-  return transport_controller_->GetSctpTransport(*sctp_mid_);
+  return transport_controller_->GetSctpTransport(*sctp_mid_s_);
 }
 
 const SessionDescriptionInterface* PeerConnection::local_description() const {
@@ -5400,7 +5400,7 @@ absl::optional<std::string> PeerConnection::GetDataMid() const {
     case cricket::DCT_SCTP:
     case cricket::DCT_DATA_CHANNEL_TRANSPORT:
     case cricket::DCT_DATA_CHANNEL_TRANSPORT_SCTP:
-      return sctp_mid_;
+      return sctp_mid_s_;
     default:
       return absl::nullopt;
   }
@@ -5927,8 +5927,8 @@ bool PeerConnection::GetSctpSslRole(rtc::SSLRole* role) {
   }
 
   absl::optional<rtc::SSLRole> dtls_role;
-  if (sctp_mid_) {
-    dtls_role = transport_controller_->GetDtlsRole(*sctp_mid_);
+  if (sctp_mid_s_) {
+    dtls_role = transport_controller_->GetDtlsRole(*sctp_mid_s_);
     if (!dtls_role && is_caller_.has_value()) {
       dtls_role = *is_caller_ ? rtc::SSL_SERVER : rtc::SSL_CLIENT;
     }
@@ -6060,9 +6060,9 @@ RTCError PeerConnection::PushdownMediaDescription(
 
   // Need complete offer/answer with an SCTP m= section before starting SCTP,
   // according to https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-19
-  if (sctp_mid_ && local_description() && remote_description()) {
+  if (sctp_mid_s_ && local_description() && remote_description()) {
     rtc::scoped_refptr<SctpTransport> sctp_transport =
-        transport_controller_->GetSctpTransport(*sctp_mid_);
+        transport_controller_->GetSctpTransport(*sctp_mid_s_);
     auto local_sctp_description = cricket::GetFirstSctpDataContentDescription(
         local_description()->description());
     auto remote_sctp_description = cricket::GetFirstSctpDataContentDescription(
@@ -6163,8 +6163,8 @@ cricket::IceConfig PeerConnection::ParseIceConfig(
 
 absl::optional<std::string> PeerConnection::sctp_transport_name() const {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  if (sctp_mid_ && transport_controller_) {
-    auto dtls_transport = transport_controller_->GetDtlsTransport(*sctp_mid_);
+  if (sctp_mid_s_ && transport_controller_) {
+    auto dtls_transport = transport_controller_->GetDtlsTransport(*sctp_mid_s_);
     if (dtls_transport) {
       return dtls_transport->transport_name();
     }
@@ -6201,7 +6201,7 @@ std::map<std::string, std::string> PeerConnection::GetTransportNamesByMid()
   if (data_channel_controller_.data_channel_transport()) {
     absl::optional<std::string> transport_name = sctp_transport_name();
     RTC_DCHECK(transport_name);
-    transport_names_by_mid[*sctp_mid_] = *transport_name;
+    transport_names_by_mid[*sctp_mid_s_] = *transport_name;
   }
   return transport_names_by_mid;
 }
@@ -6633,10 +6633,12 @@ bool PeerConnection::CreateDataChannel(const std::string& mid) {
     case cricket::DCT_SCTP:
     case cricket::DCT_DATA_CHANNEL_TRANSPORT_SCTP:
     case cricket::DCT_DATA_CHANNEL_TRANSPORT:
-      if (!network_thread()->Invoke<bool>(
+      if (network_thread()->Invoke<bool>(
               RTC_FROM_HERE,
               rtc::Bind(&PeerConnection::SetupDataChannelTransport_n, this,
                         mid))) {
+        sctp_mid_s_ = mid;
+      } else {
         return false;
       }
 
@@ -6694,7 +6696,7 @@ bool PeerConnection::SetupDataChannelTransport_n(const std::string& mid) {
 
   data_channel_controller_.set_data_channel_transport(transport);
   data_channel_controller_.SetupDataChannelTransport_n();
-  sctp_mid_ = mid;
+  sctp_mid_n_ = mid;
 
   // Note: setting the data sink and checking initial state must be done last,
   // after setting up the data channel.  Setting the data sink may trigger
@@ -6705,15 +6707,15 @@ bool PeerConnection::SetupDataChannelTransport_n(const std::string& mid) {
 }
 
 void PeerConnection::TeardownDataChannelTransport_n() {
-  if (!sctp_mid_ && !data_channel_controller_.data_channel_transport()) {
+  if (!sctp_mid_n_ && !data_channel_controller_.data_channel_transport()) {
     return;
   }
   RTC_LOG(LS_INFO) << "Tearing down data channel transport for mid="
-                   << *sctp_mid_;
+                   << *sctp_mid_n_;
 
   // |sctp_mid_| may still be active through an SCTP transport.  If not, unset
   // it.
-  sctp_mid_.reset();
+  sctp_mid_n_.reset();
   data_channel_controller_.TeardownDataChannelTransport_n();
 }
 
@@ -7234,8 +7236,8 @@ const std::string PeerConnection::GetTransportName(
     return channel->transport_name();
   }
   if (data_channel_controller_.data_channel_transport()) {
-    RTC_DCHECK(sctp_mid_);
-    if (content_name == *sctp_mid_) {
+    RTC_DCHECK(sctp_mid_s_);
+    if (content_name == *sctp_mid_s_) {
       return *sctp_transport_name();
     }
   }
@@ -7268,12 +7270,13 @@ void PeerConnection::DestroyDataChannelTransport() {
   // been destroyed (since it is a subclass of PeerConnection) and using
   // rtc::Bind will cause "Pure virtual function called" error to appear.
 
-  if (sctp_mid_) {
+  if (sctp_mid_s_) {
     data_channel_controller_.OnTransportChannelClosed();
     network_thread()->Invoke<void>(RTC_FROM_HERE, [this] {
       RTC_DCHECK_RUN_ON(network_thread());
       TeardownDataChannelTransport_n();
     });
+    sctp_mid_s_.reset();
   }
 }
 
@@ -7310,7 +7313,7 @@ bool PeerConnection::OnTransportChanged(
   if (base_channel) {
     ret = base_channel->SetRtpTransport(rtp_transport);
   }
-  if (mid == sctp_mid_) {
+  if (mid == sctp_mid_n_) {
     data_channel_controller_.OnTransportChanged(data_channel_transport);
   }
   return ret;
