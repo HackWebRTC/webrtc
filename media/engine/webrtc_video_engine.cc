@@ -521,8 +521,6 @@ RtpCapabilities WebRtcVideoEngine::GetCapabilities() const {
   if (webrtc::field_trial::IsEnabled("WebRTC-GenericDescriptorAdvertised")) {
     capabilities.header_extensions.push_back(webrtc::RtpExtension(
         webrtc::RtpExtension::kGenericFrameDescriptorUri00, id++));
-    capabilities.header_extensions.push_back(webrtc::RtpExtension(
-        webrtc::RtpExtension::kGenericFrameDescriptorUri01, id++));
   }
 
   return capabilities;

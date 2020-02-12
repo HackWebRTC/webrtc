@@ -349,10 +349,6 @@ TEST_F(WebRtcVideoEngineTest, AdvertiseGenericDescriptor00) {
   ExpectRtpCapabilitySupport(RtpExtension::kGenericFrameDescriptorUri00, false);
 }
 
-TEST_F(WebRtcVideoEngineTest, AdvertiseGenericDescriptor01) {
-  ExpectRtpCapabilitySupport(RtpExtension::kGenericFrameDescriptorUri01, false);
-}
-
 class WebRtcVideoEngineTestWithGenericDescriptor
     : public WebRtcVideoEngineTest {
  public:
@@ -363,11 +359,6 @@ class WebRtcVideoEngineTestWithGenericDescriptor
 TEST_F(WebRtcVideoEngineTestWithGenericDescriptor,
        AdvertiseGenericDescriptor00) {
   ExpectRtpCapabilitySupport(RtpExtension::kGenericFrameDescriptorUri00, true);
-}
-
-TEST_F(WebRtcVideoEngineTestWithGenericDescriptor,
-       AdvertiseGenericDescriptor01) {
-  ExpectRtpCapabilitySupport(RtpExtension::kGenericFrameDescriptorUri01, true);
 }
 
 TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionBeforeCapturer) {
