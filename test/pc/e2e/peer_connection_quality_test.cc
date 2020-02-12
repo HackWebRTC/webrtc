@@ -494,8 +494,8 @@ void PeerConnectionE2EQualityTest::SetDefaultValuesForMissingParams(
   }
 
   if (run_params->video_codecs.empty()) {
-    run_params->video_codecs.push_back(VideoCodecConfig(
-        run_params->video_codec_name, run_params->video_codec_required_params));
+    run_params->video_codecs.push_back(
+        VideoCodecConfig(cricket::kVp8CodecName));
   }
 }
 
