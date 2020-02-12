@@ -274,8 +274,6 @@ rtc_library("video_coding_utility") {
   sources = [
     "utility/decoded_frames_history.cc",
     "utility/decoded_frames_history.h",
-    "utility/default_video_bitrate_allocator.cc",
-    "utility/default_video_bitrate_allocator.h",
     "utility/frame_dropper.cc",
     "utility/frame_dropper.h",
     "utility/framerate_controller.cc",
@@ -863,7 +861,6 @@ if (rtc_include_tests) {
       "timing_unittest.cc",
       "unique_timestamp_counter_unittest.cc",
       "utility/decoded_frames_history_unittest.cc",
-      "utility/default_video_bitrate_allocator_unittest.cc",
       "utility/frame_dropper_unittest.cc",
       "utility/framerate_controller_unittest.cc",
       "utility/ivf_file_reader_unittest.cc",

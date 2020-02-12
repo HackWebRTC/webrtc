@@ -29,7 +29,6 @@
 #include "common_video/include/video_frame_buffer.h"
 #include "media/base/video_adapter.h"
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
-#include "modules/video_coding/utility/default_video_bitrate_allocator.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/logging.h"
@@ -3361,7 +3360,7 @@ TEST_F(VideoStreamEncoderTest, CallsBitrateObserver) {
 
   const int kDefaultFps = 30;
   const VideoBitrateAllocation expected_bitrate =
-      DefaultVideoBitrateAllocator(fake_encoder_.codec_config())
+      SimulcastRateAllocator(fake_encoder_.codec_config())
           .Allocate(VideoBitrateAllocationParameters(kLowTargetBitrateBps,
                                                      kDefaultFps));
 
