@@ -99,7 +99,8 @@ ProbeControllerConfig::ProbeControllerConfig(
       alr_probe_scale("alr_scale", 2),
       first_allocation_probe_scale("alloc_p1", 1),
       second_allocation_probe_scale("alloc_p2", 2),
-      allocation_allow_further_probing("alloc_probe_further", false) {
+      allocation_allow_further_probing("alloc_probe_further", false),
+      allocation_probe_max("alloc_probe_max", DataRate::PlusInfinity()) {
   ParseFieldTrial(
       {&first_exponential_probe_scale, &second_exponential_probe_scale,
        &further_exponential_probe_scale, &further_probe_threshold,
@@ -117,7 +118,7 @@ ProbeControllerConfig::ProbeControllerConfig(
                   key_value_config->Lookup("WebRTC-Bwe-AlrProbing"));
   ParseFieldTrial(
       {&first_allocation_probe_scale, &second_allocation_probe_scale,
-       &allocation_allow_further_probing},
+       &allocation_allow_further_probing, &allocation_probe_max},
       key_value_config->Lookup("WebRTC-Bwe-AllocationProbing"));
 }
 
@@ -208,12 +209,18 @@ std::vector<ProbeClusterConfig> ProbeController::OnMaxTotalAllocatedBitrate(
     if (!config_.first_allocation_probe_scale)
       return std::vector<ProbeClusterConfig>();
 
-    std::vector<int64_t> probes = {
-        static_cast<int64_t>(config_.first_allocation_probe_scale.Value() *
-                             max_total_allocated_bitrate)};
+    DataRate first_probe_rate = DataRate::bps(max_total_allocated_bitrate) *
+                                config_.first_allocation_probe_scale.Value();
+    DataRate probe_cap = config_.allocation_probe_max.Get();
+    first_probe_rate = std::min(first_probe_rate, probe_cap);
+    std::vector<int64_t> probes = {first_probe_rate.bps()};
     if (config_.second_allocation_probe_scale) {
-      probes.push_back(config_.second_allocation_probe_scale.Value() *
-                       max_total_allocated_bitrate);
+      DataRate second_probe_rate =
+          DataRate::bps(max_total_allocated_bitrate) *
+          config_.second_allocation_probe_scale.Value();
+      second_probe_rate = std::min(second_probe_rate, probe_cap);
+      if (second_probe_rate > first_probe_rate)
+        probes.push_back(second_probe_rate.bps());
     }
     return InitiateProbing(at_time_ms, probes,
                            config_.allocation_allow_further_probing);
