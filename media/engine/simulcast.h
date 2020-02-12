@@ -15,16 +15,18 @@
 
 #include <vector>
 
+#include "api/units/data_rate.h"
 #include "api/video_codecs/video_encoder_config.h"
 
 namespace cricket {
 
 // Gets the total maximum bitrate for the |streams|.
-int GetTotalMaxBitrateBps(const std::vector<webrtc::VideoStream>& streams);
+webrtc::DataRate GetTotalMaxBitrate(
+    const std::vector<webrtc::VideoStream>& streams);
 
-// Adds any bitrate of |max_bitrate_bps| that is above the total maximum bitrate
-// for the |layers| to the highest quality layer.
-void BoostMaxSimulcastLayer(int max_bitrate_bps,
+// Adds any bitrate of |max_bitrate| that is above the total maximum bitrate for
+// the |layers| to the highest quality layer.
+void BoostMaxSimulcastLayer(webrtc::DataRate max_bitrate,
                             std::vector<webrtc::VideoStream>* layers);
 
 // Round size to nearest simulcast-friendly size

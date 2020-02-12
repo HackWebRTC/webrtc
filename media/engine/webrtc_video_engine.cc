@@ -3341,10 +3341,12 @@ EncoderStreamFactory::CreateSimulcastOrConfereceModeScreenshareStreams(
           encoder_config.simulcast_layers[i].max_bitrate_bps > 0;
     }
   }
-  if (!is_screenshare_ && !is_highest_layer_max_bitrate_configured) {
+  if (!is_screenshare_ && !is_highest_layer_max_bitrate_configured &&
+      encoder_config.max_bitrate_bps > 0) {
     // No application-configured maximum for the largest layer.
     // If there is bitrate leftover, give it to the largest layer.
-    BoostMaxSimulcastLayer(encoder_config.max_bitrate_bps, &layers);
+    BoostMaxSimulcastLayer(
+        webrtc::DataRate::bps(encoder_config.max_bitrate_bps), &layers);
   }
   return layers;
 }

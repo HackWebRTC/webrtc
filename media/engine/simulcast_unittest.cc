@@ -40,13 +40,13 @@ const std::vector<VideoStream> GetSimulcastBitrates720p() {
 
 TEST(SimulcastTest, TotalMaxBitrateIsZeroForNoStreams) {
   std::vector<VideoStream> streams;
-  EXPECT_EQ(0, cricket::GetTotalMaxBitrateBps(streams));
+  EXPECT_EQ(0, cricket::GetTotalMaxBitrate(streams).bps());
 }
 
 TEST(SimulcastTest, GetTotalMaxBitrateForSingleStream) {
   std::vector<VideoStream> streams(1);
   streams[0].max_bitrate_bps = 100000;
-  EXPECT_EQ(100000, cricket::GetTotalMaxBitrateBps(streams));
+  EXPECT_EQ(100000, cricket::GetTotalMaxBitrate(streams).bps());
 }
 
 TEST(SimulcastTest, GetTotalMaxBitrateForMultipleStreams) {
@@ -54,7 +54,7 @@ TEST(SimulcastTest, GetTotalMaxBitrateForMultipleStreams) {
   streams[0].target_bitrate_bps = 100000;
   streams[1].target_bitrate_bps = 200000;
   streams[2].max_bitrate_bps = 400000;
-  EXPECT_EQ(700000, cricket::GetTotalMaxBitrateBps(streams));
+  EXPECT_EQ(700000, cricket::GetTotalMaxBitrate(streams).bps());
 }
 
 TEST(SimulcastTest, BandwidthAboveTotalMaxBitrateGivenToHighestStream) {
@@ -63,16 +63,19 @@ TEST(SimulcastTest, BandwidthAboveTotalMaxBitrateGivenToHighestStream) {
   streams[1].target_bitrate_bps = 200000;
   streams[2].max_bitrate_bps = 400000;
 
+  const webrtc::DataRate one_bps = webrtc::DataRate::bps(1);
+
   // No bitrate above the total max to give to the highest stream.
-  const int kMaxTotalBps = cricket::GetTotalMaxBitrateBps(streams);
-  cricket::BoostMaxSimulcastLayer(kMaxTotalBps, &streams);
+  const webrtc::DataRate max_total_bitrate =
+      cricket::GetTotalMaxBitrate(streams);
+  cricket::BoostMaxSimulcastLayer(max_total_bitrate, &streams);
   EXPECT_EQ(400000, streams[2].max_bitrate_bps);
-  EXPECT_EQ(kMaxTotalBps, cricket::GetTotalMaxBitrateBps(streams));
+  EXPECT_EQ(max_total_bitrate, cricket::GetTotalMaxBitrate(streams));
 
   // The bitrate above the total max should be given to the highest stream.
-  cricket::BoostMaxSimulcastLayer(kMaxTotalBps + 1, &streams);
+  cricket::BoostMaxSimulcastLayer(max_total_bitrate + one_bps, &streams);
   EXPECT_EQ(400000 + 1, streams[2].max_bitrate_bps);
-  EXPECT_EQ(kMaxTotalBps + 1, cricket::GetTotalMaxBitrateBps(streams));
+  EXPECT_EQ(max_total_bitrate + one_bps, cricket::GetTotalMaxBitrate(streams));
 }
 
 TEST(SimulcastTest, GetConfig) {
