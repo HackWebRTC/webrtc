@@ -299,10 +299,10 @@ TEST_F(GoogCcNetworkControllerTest,
   auto send_net =
       s.CreateMutableSimulationNode([=](NetworkSimulationConfig* c) {
         c->bandwidth = DataRate::kbps(1000);
-        c->delay = TimeDelta::ms(100);
+        c->delay = TimeDelta::Millis(100);
       });
   auto ret_net = s.CreateSimulationNode(
-      [](NetworkSimulationConfig* c) { c->delay = TimeDelta::ms(100); });
+      [](NetworkSimulationConfig* c) { c->delay = TimeDelta::Millis(100); });
   CallClientConfig config;
   config.transport.cc_factory = &factory;
   // Start high so bandwidth drop has max effect.
@@ -313,9 +313,9 @@ TEST_F(GoogCcNetworkControllerTest,
   auto* client = CreateVideoSendingClient(&s, std::move(config),
                                           {send_net->node()}, {ret_net});
 
-  s.RunFor(TimeDelta::seconds(10));
-  send_net->PauseTransmissionUntil(s.Now() + TimeDelta::seconds(10));
-  s.RunFor(TimeDelta::seconds(3));
+  s.RunFor(TimeDelta::Seconds(10));
+  send_net->PauseTransmissionUntil(s.Now() + TimeDelta::Seconds(10));
+  s.RunFor(TimeDelta::Seconds(3));
 
   // As the dropframe is set, after 3 seconds without feedback from any sent
   // packets, we expect that the target rate is not reduced by congestion

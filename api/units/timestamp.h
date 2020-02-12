@@ -46,36 +46,6 @@ class Timestamp final : public rtc_units_impl::UnitBase<Timestamp> {
 
   Timestamp() = delete;
 
-  // TODO(danilchap): Migrate all code to the 3 factories above and delete the
-  // 6 factories below.
-  template <int64_t seconds>
-  static constexpr Timestamp Seconds() {
-    return FromFraction(1'000'000, seconds);
-  }
-  template <int64_t ms>
-  static constexpr Timestamp Millis() {
-    return FromFraction(1000, ms);
-  }
-  template <int64_t us>
-  static constexpr Timestamp Micros() {
-    return FromValue(us);
-  }
-
-  template <typename T>
-  static constexpr Timestamp seconds(T seconds) {
-    static_assert(std::is_arithmetic<T>::value, "");
-    return FromFraction(1'000'000, seconds);
-  }
-  template <typename T>
-  static constexpr Timestamp ms(T milliseconds) {
-    static_assert(std::is_arithmetic<T>::value, "");
-    return FromFraction(1000, milliseconds);
-  }
-  template <typename T>
-  static constexpr Timestamp us(T microseconds) {
-    static_assert(std::is_arithmetic<T>::value, "");
-    return FromValue(microseconds);
-  }
   template <typename T = int64_t>
   constexpr T seconds() const {
     return ToFraction<1000000, T>();
