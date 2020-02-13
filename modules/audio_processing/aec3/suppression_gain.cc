@@ -390,8 +390,8 @@ bool SuppressionGain::LowNoiseRenderDetector::Detect(
     const std::vector<std::vector<std::vector<float>>>& render) {
   float x2_sum = 0.f;
   float x2_max = 0.f;
-  for (auto x_ch : render[0]) {
-    for (auto x_k : x_ch) {
+  for (const auto& x_ch : render[0]) {
+    for (const auto& x_k : x_ch) {
       const float x2 = x_k * x_k;
       x2_sum += x2;
       x2_max = std::max(x2_max, x2);
