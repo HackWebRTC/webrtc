@@ -1719,7 +1719,7 @@ int16_t WebRtcIsac_ReadBwIndex(const uint8_t* encoded,
  *        - frameLength       : Length of frame in packet (in samples)
  *
  */
-int16_t WebRtcIsac_ReadFrameLen(ISACStruct* ISAC_main_inst,
+int16_t WebRtcIsac_ReadFrameLen(const ISACStruct* ISAC_main_inst,
                                 const uint8_t* encoded,
                                 int16_t* frameLength) {
   Bitstr streamdata;

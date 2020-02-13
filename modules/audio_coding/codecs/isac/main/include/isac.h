@@ -252,7 +252,7 @@ int16_t WebRtcIsac_ControlBwe(ISACStruct* ISAC_main_inst,
  *
  */
 
-int16_t WebRtcIsac_ReadFrameLen(ISACStruct* ISAC_main_inst,
+int16_t WebRtcIsac_ReadFrameLen(const ISACStruct* ISAC_main_inst,
                                 const uint8_t* encoded,
                                 int16_t* frameLength);
 

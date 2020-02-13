@@ -744,7 +744,8 @@ rtc_library("webrtc_opus") {
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
-  public_deps = [ ":webrtc_opus_wrapper" ]  # no-presubmit-check TODO(webrtc:8603)
+  public_deps =  # no-presubmit-check TODO(webrtc:8603)
+      [ ":webrtc_opus_wrapper" ]
 
   defines = audio_codec_defines
 
@@ -780,7 +781,8 @@ rtc_library("webrtc_multiopus") {
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
-  public_deps = [ ":webrtc_opus_wrapper" ]  # no-presubmit-check TODO(webrtc:8603)
+  public_deps =  # no-presubmit-check TODO(webrtc:8603)
+      [ ":webrtc_opus_wrapper" ]
 
   defines = audio_codec_defines
 
@@ -865,7 +867,8 @@ rtc_library("audio_network_adaptor") {
     "audio_network_adaptor/util/threshold_curve.h",
   ]
 
-  public_deps = [ ":audio_network_adaptor_config" ]  # no-presubmit-check TODO(webrtc:8603)
+  public_deps =  # no-presubmit-check TODO(webrtc:8603)
+      [ ":audio_network_adaptor_config" ]
 
   deps = [
     "../../api/audio_codecs:audio_codecs_api",
@@ -1160,7 +1163,8 @@ if (rtc_enable_protobuf) {
       "../rtp_rtcp:rtp_rtcp_format",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
-    public_deps = [ "../../logging:rtc_event_log_proto" ]  # no-presubmit-check TODO(webrtc:8603)
+    public_deps =  # no-presubmit-check TODO(webrtc:8603)
+        [ "../../logging:rtc_event_log_proto" ]
   }
 
   # Only used for test purpose. Since we want to use it from chromium
@@ -1911,6 +1915,7 @@ if (rtc_include_tests) {
       "codecs/isac/fix/source/filters_unittest.cc",
       "codecs/isac/fix/source/lpc_masking_model_unittest.cc",
       "codecs/isac/fix/source/transform_unittest.cc",
+      "codecs/isac/isac_webrtc_api_test.cc",
       "codecs/isac/main/source/audio_encoder_isac_unittest.cc",
       "codecs/isac/main/source/isac_unittest.cc",
       "codecs/legacy_encoded_audio_frame_unittest.cc",
@@ -1976,6 +1981,7 @@ if (rtc_include_tests) {
       ":ilbc",
       ":isac",
       ":isac_c",
+      ":isac_common",
       ":isac_fix",
       ":legacy_encoded_audio_frame",
       ":mocks",
@@ -1988,10 +1994,15 @@ if (rtc_include_tests) {
       ":webrtc_opus",
       "..:module_api",
       "..:module_api_public",
+      "../../api:array_view",
       "../../api/audio:audio_frame_api",
       "../../api/audio_codecs:audio_codecs_api",
       "../../api/audio_codecs:builtin_audio_decoder_factory",
       "../../api/audio_codecs:builtin_audio_encoder_factory",
+      "../../api/audio_codecs/isac:audio_decoder_isac_fix",
+      "../../api/audio_codecs/isac:audio_decoder_isac_float",
+      "../../api/audio_codecs/isac:audio_encoder_isac_fix",
+      "../../api/audio_codecs/isac:audio_encoder_isac_float",
       "../../api/audio_codecs/opus:audio_decoder_multiopus",
       "../../api/audio_codecs/opus:audio_decoder_opus",
       "../../api/audio_codecs/opus:audio_encoder_multiopus",
