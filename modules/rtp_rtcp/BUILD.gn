@@ -208,6 +208,7 @@ rtc_library("rtp_rtcp") {
     "source/ulpfec_header_reader_writer.h",
     "source/ulpfec_receiver_impl.cc",
     "source/ulpfec_receiver_impl.h",
+    "source/video_fec_generator.h",
     "source/video_rtp_depacketizer.h",
     "source/video_rtp_depacketizer_av1.cc",
     "source/video_rtp_depacketizer_av1.h",

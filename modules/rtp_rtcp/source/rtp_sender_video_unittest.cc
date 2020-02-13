@@ -123,7 +123,7 @@ class TestRtpSenderVideo : public RTPSenderVideo {
           Config config;
           config.clock = clock;
           config.rtp_sender = rtp_sender;
-          config.flexfec_sender = flexfec_sender;
+          config.fec_generator = flexfec_sender;
           config.field_trials = &field_trials;
           return config;
         }()) {}

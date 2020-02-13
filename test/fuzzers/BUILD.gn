@@ -148,6 +148,7 @@ webrtc_fuzzer_test("ulpfec_generator_fuzzer") {
     "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
+    "../../system_wrappers",
   ]
 }
 

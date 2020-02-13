@@ -102,9 +102,8 @@ RTPSender::RTPSender(const RtpRtcp::Configuration& config,
       audio_configured_(config.audio),
       ssrc_(config.local_media_ssrc),
       rtx_ssrc_(config.rtx_send_ssrc),
-      flexfec_ssrc_(config.flexfec_sender
-                        ? absl::make_optional(config.flexfec_sender->ssrc())
-                        : absl::nullopt),
+      flexfec_ssrc_(config.fec_generator ? config.fec_generator->FecSsrc()
+                                         : absl::nullopt),
       packet_history_(packet_history),
       paced_sender_(packet_sender),
       sending_media_(true),                   // Default to sending media.
