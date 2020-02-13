@@ -259,6 +259,10 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
   auto kv = result.first;
   bool inserted = result.second;
   if (inserted) {
+    task_queue_.PostTask([this, network_route] {
+      RTC_DCHECK_RUN_ON(&task_queue_);
+      transport_overhead_bytes_per_packet_ = network_route.packet_overhead;
+    });
     // No need to reset BWE if this is the first time the network connects.
     return;
   }
