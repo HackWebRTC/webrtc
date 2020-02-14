@@ -26,26 +26,24 @@ namespace webrtc {
 
 class Frequency final : public rtc_units_impl::RelativeUnit<Frequency> {
  public:
+  template <typename T>
+  static constexpr Frequency MilliHertz(T value) {
+    static_assert(std::is_arithmetic<T>::value, "");
+    return FromValue(value);
+  }
+  template <typename T>
+  static constexpr Frequency Hertz(T value) {
+    static_assert(std::is_arithmetic<T>::value, "");
+    return FromFraction(1'000, value);
+  }
+  template <typename T>
+  static constexpr Frequency KiloHertz(T value) {
+    static_assert(std::is_arithmetic<T>::value, "");
+    return FromFraction(1'000'000, value);
+  }
+
   Frequency() = delete;
-  template <int64_t hertz>
-  static constexpr Frequency Hertz() {
-    return FromFraction(1000, hertz);
-  }
-  template <typename T>
-  static constexpr Frequency kHz(T hertz) {
-    static_assert(std::is_arithmetic<T>::value, "");
-    return FromFraction(1000000, hertz);
-  }
-  template <typename T>
-  static constexpr Frequency hertz(T hertz) {
-    static_assert(std::is_arithmetic<T>::value, "");
-    return FromFraction(1000, hertz);
-  }
-  template <typename T>
-  static constexpr Frequency millihertz(T hertz) {
-    static_assert(std::is_arithmetic<T>::value, "");
-    return FromValue(hertz);
-  }
+
   template <typename T = int64_t>
   constexpr T hertz() const {
     return ToFraction<1000, T>();
@@ -67,7 +65,7 @@ inline constexpr Frequency operator/(int64_t nominator,
   RTC_DCHECK_LE(nominator, std::numeric_limits<int64_t>::max() / kKiloPerMicro);
   RTC_CHECK(interval.IsFinite());
   RTC_CHECK(!interval.IsZero());
-  return Frequency::millihertz(nominator * kKiloPerMicro / interval.us());
+  return Frequency::MilliHertz(nominator * kKiloPerMicro / interval.us());
 }
 
 inline constexpr TimeDelta operator/(int64_t nominator,

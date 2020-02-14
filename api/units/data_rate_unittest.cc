@@ -166,7 +166,7 @@ TEST(UnitConversionTest, DataRateAndDataSizeAndFrequency) {
   const int64_t kHertz = 30;
   const int64_t kBitsPerSecond = 96000;
   const int64_t kBytes = 1200;
-  const Frequency freq_a = Frequency::hertz(kHertz);
+  const Frequency freq_a = Frequency::Hertz(kHertz);
   const DataRate rate_b = DataRate::bps(kBitsPerSecond);
   const DataSize size_c = DataSize::bytes(kBytes);
   EXPECT_EQ((freq_a * size_c).bps(), kHertz * kBytes * 8);

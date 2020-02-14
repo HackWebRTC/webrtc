@@ -262,7 +262,7 @@ DataRate CalculateOverheadRate(DataRate data_rate,
   Frequency packet_rate = data_rate / packet_size;
   // TOSO(srte): We should not need to round to nearest whole packet per second
   // rate here.
-  return packet_rate.RoundUpTo(Frequency::hertz(1)) * overhead_per_packet;
+  return packet_rate.RoundUpTo(Frequency::Hertz(1)) * overhead_per_packet;
 }
 
 absl::optional<VideoCodecType> GetVideoCodecType(const RtpConfig& config) {
