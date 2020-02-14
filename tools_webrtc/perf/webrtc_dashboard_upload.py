@@ -79,6 +79,8 @@ def _SendHistogramSet(url, histograms, oauth_token):
   else:
     data = zlib.compress(serialized)
 
+  print 'Sending %d bytes to %s.' % (len(data), url + '/add_histograms')
+
   http = httplib2.Http()
   response, content = http.request(url + '/add_histograms', method='POST',
                                    body=data, headers=headers)
@@ -180,9 +182,10 @@ def main(args):
       options.dashboard_url, histograms, oauth_token)
 
   if response.status == 200:
+    print 'Received 200 from dashboard.'
     return 0
   else:
-    print("Upload failed with %d: %s\n\n%s" % (response.status, response.reason,
+    print('Upload failed with %d: %s\n\n%s' % (response.status, response.reason,
                                                content))
     return 1
 
