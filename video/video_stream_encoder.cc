@@ -1079,7 +1079,6 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
     }
     return;
   }
-  resource_adaptation_module_->OnMaybeEncodeFrame();
 
   if (EncoderPaused()) {
     // Storing references to a native buffer risks blocking frame capture.
