@@ -55,7 +55,7 @@ std::unique_ptr<RtpPacketToSend> GenerateSingleFlexfecPacket(
   params.fec_mask_type = kFecMaskRandom;
   constexpr size_t kNumPackets = 4;
 
-  sender->SetProtectionParameters(params, params);
+  sender->SetFecParameters(params);
   AugmentedPacketGenerator packet_generator(kMediaSsrc);
   packet_generator.NewFrame(kNumPackets);
   for (size_t i = 0; i < kNumPackets; ++i) {
@@ -63,12 +63,13 @@ std::unique_ptr<RtpPacketToSend> GenerateSingleFlexfecPacket(
         packet_generator.NextPacket(i, kPayloadLength);
     RtpPacketToSend rtp_packet(nullptr);  // No header extensions.
     rtp_packet.Parse(packet->data);
-    sender->AddPacketAndGenerateFec(rtp_packet);
+    EXPECT_TRUE(sender->AddRtpPacketAndGenerateFec(rtp_packet));
   }
+  EXPECT_TRUE(sender->FecAvailable());
   std::vector<std::unique_ptr<RtpPacketToSend>> fec_packets =
       sender->GetFecPackets();
+  EXPECT_FALSE(sender->FecAvailable());
   EXPECT_EQ(1U, fec_packets.size());
-  EXPECT_TRUE(sender->GetFecPackets().empty());
 
   return std::move(fec_packets.front());
 }
@@ -81,7 +82,7 @@ TEST(FlexfecSenderTest, Ssrc) {
                        kNoRtpHeaderExtensions, kNoRtpHeaderExtensionSizes,
                        nullptr /* rtp_state */, &clock);
 
-  EXPECT_EQ(kFlexfecSsrc, sender.FecSsrc());
+  EXPECT_EQ(kFlexfecSsrc, sender.ssrc());
 }
 
 TEST(FlexfecSenderTest, NoFecAvailableBeforeMediaAdded) {
@@ -90,7 +91,9 @@ TEST(FlexfecSenderTest, NoFecAvailableBeforeMediaAdded) {
                        kNoRtpHeaderExtensions, kNoRtpHeaderExtensionSizes,
                        nullptr /* rtp_state */, &clock);
 
-  EXPECT_TRUE(sender.GetFecPackets().empty());
+  EXPECT_FALSE(sender.FecAvailable());
+  auto fec_packets = sender.GetFecPackets();
+  EXPECT_EQ(0U, fec_packets.size());
 }
 
 TEST(FlexfecSenderTest, ProtectOneFrameWithOneFecPacket) {
@@ -121,7 +124,7 @@ TEST(FlexfecSenderTest, ProtectTwoFramesWithOneFecPacket) {
   FlexfecSender sender(kFlexfecPayloadType, kFlexfecSsrc, kMediaSsrc, kNoMid,
                        kNoRtpHeaderExtensions, kNoRtpHeaderExtensionSizes,
                        nullptr /* rtp_state */, &clock);
-  sender.SetProtectionParameters(params, params);
+  sender.SetFecParameters(params);
 
   AugmentedPacketGenerator packet_generator(kMediaSsrc);
   for (size_t i = 0; i < kNumFrames; ++i) {
@@ -131,13 +134,14 @@ TEST(FlexfecSenderTest, ProtectTwoFramesWithOneFecPacket) {
           packet_generator.NextPacket(i, kPayloadLength);
       RtpPacketToSend rtp_packet(nullptr);
       rtp_packet.Parse(packet->data);
-      sender.AddPacketAndGenerateFec(rtp_packet);
+      EXPECT_TRUE(sender.AddRtpPacketAndGenerateFec(rtp_packet));
     }
   }
+  EXPECT_TRUE(sender.FecAvailable());
   std::vector<std::unique_ptr<RtpPacketToSend>> fec_packets =
       sender.GetFecPackets();
+  EXPECT_FALSE(sender.FecAvailable());
   ASSERT_EQ(1U, fec_packets.size());
-  EXPECT_TRUE(sender.GetFecPackets().empty());
 
   RtpPacketToSend* fec_packet = fec_packets.front().get();
   EXPECT_EQ(kRtpHeaderSize, fec_packet->headers_size());
@@ -160,7 +164,7 @@ TEST(FlexfecSenderTest, ProtectTwoFramesWithTwoFecPackets) {
   FlexfecSender sender(kFlexfecPayloadType, kFlexfecSsrc, kMediaSsrc, kNoMid,
                        kNoRtpHeaderExtensions, kNoRtpHeaderExtensionSizes,
                        nullptr /* rtp_state */, &clock);
-  sender.SetProtectionParameters(params, params);
+  sender.SetFecParameters(params);
 
   AugmentedPacketGenerator packet_generator(kMediaSsrc);
   for (size_t i = 0; i < kNumFrames; ++i) {
@@ -170,12 +174,13 @@ TEST(FlexfecSenderTest, ProtectTwoFramesWithTwoFecPackets) {
           packet_generator.NextPacket(i, kPayloadLength);
       RtpPacketToSend rtp_packet(nullptr);
       rtp_packet.Parse(packet->data);
-      sender.AddPacketAndGenerateFec(rtp_packet);
+      EXPECT_TRUE(sender.AddRtpPacketAndGenerateFec(rtp_packet));
     }
+    EXPECT_TRUE(sender.FecAvailable());
     std::vector<std::unique_ptr<RtpPacketToSend>> fec_packets =
         sender.GetFecPackets();
+    EXPECT_FALSE(sender.FecAvailable());
     ASSERT_EQ(1U, fec_packets.size());
-    EXPECT_TRUE(sender.GetFecPackets().empty());
 
     RtpPacketToSend* fec_packet = fec_packets.front().get();
     EXPECT_EQ(kRtpHeaderSize, fec_packet->headers_size());

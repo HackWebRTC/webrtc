@@ -98,15 +98,11 @@ class RtpPacketToSend : public RtpPacket {
         VideoTimingExtension::kNetwork2TimestampDeltaOffset);
   }
 
-  // Indicates if packet is the first packet of a video frame.
   void set_first_packet_of_frame(bool is_first_packet) {
     is_first_packet_of_frame_ = is_first_packet;
   }
-  bool is_first_packet_of_frame() const { return is_first_packet_of_frame_; }
 
-  // Indicates if packet contains payload for a video key-frame.
-  void set_is_key_frame(bool is_key_frame) { is_key_frame_ = is_key_frame; }
-  bool is_key_frame() const { return is_key_frame_; }
+  bool is_first_packet_of_frame() const { return is_first_packet_of_frame_; }
 
  private:
   int64_t capture_time_ms_ = 0;
@@ -115,7 +111,6 @@ class RtpPacketToSend : public RtpPacket {
   absl::optional<uint16_t> retransmitted_sequence_number_;
   std::vector<uint8_t> application_data_;
   bool is_first_packet_of_frame_ = false;
-  bool is_key_frame_ = false;
 };
 
 }  // namespace webrtc
