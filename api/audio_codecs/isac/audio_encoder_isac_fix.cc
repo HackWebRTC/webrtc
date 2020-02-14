@@ -56,6 +56,7 @@ std::unique_ptr<AudioEncoder> AudioEncoderIsacFix::MakeAudioEncoder(
   RTC_DCHECK(config.IsOk());
   AudioEncoderIsacFixImpl::Config c;
   c.frame_size_ms = config.frame_size_ms;
+  c.bit_rate = config.bit_rate;
   c.payload_type = payload_type;
   return std::make_unique<AudioEncoderIsacFixImpl>(c);
 }
