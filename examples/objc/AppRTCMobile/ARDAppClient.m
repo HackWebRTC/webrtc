@@ -30,6 +30,7 @@
 #import <WebRTC/RTCTracing.h>
 #import <WebRTC/RTCVideoSource.h>
 #import <WebRTC/RTCVideoTrack.h>
+#import <WebRTC/CFVideoProcessor.h>
 
 #import "ARDAppEngineClient.h"
 #import "ARDExternalSampleCapturer.h"
@@ -78,6 +79,7 @@ static int const kKbpsMultiplier = 1000;
   RTCDataChannel* _recvDataChannel;
   void (^_sendDcMsg)(void);
   int _testCount;
+  __weak id<CFVideoProcessorDelegate> _videoProcessorDelegate;
 }
 
 @synthesize shouldGetStats = _shouldGetStats;
@@ -474,6 +476,19 @@ static int const kKbpsMultiplier = 1000;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), _sendDcMsg);
 }
 
+#pragma mark - CFVideoProcessorDelegate
+
+- (void)setVideoProcessorDelegate:(nullable id<CFVideoProcessorDelegate>)delegate {
+  _videoProcessorDelegate = delegate;
+}
+
+- (void)onVideoFrame:(RTCVideoFrame *)frame {
+  id<CFVideoProcessorDelegate> strongDelegate = _videoProcessorDelegate;
+  if (strongDelegate) {
+    [strongDelegate onProcessedVideoFrame:frame];
+  }
+}
+
 #pragma mark - RTCSessionDescriptionDelegate
 // Callbacks for this delegate occur on non-main thread and need to be
 // dispatched back to main queue as needed.
@@ -785,6 +800,7 @@ static int const kKbpsMultiplier = 1000;
   }
 
   RTCVideoSource *source = [_factory videoSource];
+  [source setVideoProcessor:self];
 
 #if !TARGET_IPHONE_SIMULATOR
   if (self.isBroadcast) {

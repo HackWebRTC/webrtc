@@ -58,7 +58,7 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 
 // Handles connections to the AppRTC server for a given room. Methods on this
 // class should only be called from the main queue.
-@interface ARDAppClient : NSObject <RTCDataChannelDelegate>
+@interface ARDAppClient : NSObject <RTCDataChannelDelegate, CFVideoProcessor>
 
 // If |shouldGetStats| is true, stats will be reported in 1s intervals through
 // the delegate.

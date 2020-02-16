@@ -69,6 +69,8 @@ import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoDecoderFactory;
 import org.webrtc.VideoEncoderFactory;
+import org.webrtc.VideoFrame;
+import org.webrtc.VideoProcessor;
 import org.webrtc.VideoSink;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
@@ -1025,6 +1027,7 @@ public class PeerConnectionClient implements DataChannel.Observer {
     surfaceTextureHelper =
         SurfaceTextureHelper.create("CaptureThread", rootEglBase.getEglBaseContext());
     videoSource = factory.createVideoSource(capturer.isScreencast());
+    videoSource.setVideoProcessor(new BeautifyProcessor());
     hijackCapturerObserver = new HijackCapturerObserver(videoSource.getCapturerObserver());
     capturer.initialize(surfaceTextureHelper, appContext, hijackCapturerObserver);
     capturer.startCapture(videoWidth, videoHeight, videoFps);
