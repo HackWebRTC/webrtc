@@ -791,13 +791,18 @@ void WebRtcVideoChannel::RequestEncoderSwitch(
     for (const VideoCodecSettings& codec_setting : negotiated_codecs_) {
       if (IsSameCodec(format.name, format.parameters, codec_setting.codec.name,
                       codec_setting.codec.params)) {
-        if (send_codec_ == codec_setting) {
+        VideoCodecSettings new_codec_setting = codec_setting;
+        for (const auto& kv : format.parameters) {
+          new_codec_setting.codec.params[kv.first] = kv.second;
+        }
+
+        if (send_codec_ == new_codec_setting) {
           // Already using this codec, no switch required.
           return;
         }
 
         ChangedSendParameters params;
-        params.send_codec = codec_setting;
+        params.send_codec = new_codec_setting;
         ApplyChangedParams(params);
         return;
       }
