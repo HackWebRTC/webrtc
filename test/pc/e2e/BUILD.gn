@@ -463,6 +463,7 @@ rtc_library("default_video_quality_analyzer") {
     "../../../api/units:timestamp",
     "../../../api/video:encoded_image",
     "../../../api/video:video_frame",
+    "../../../api/video:video_frame_i420",
     "../../../api/video:video_rtp_headers",
     "../../../common_video",
     "../../../rtc_base:criticalsection",
