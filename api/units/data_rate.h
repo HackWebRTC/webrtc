@@ -31,8 +31,26 @@ namespace webrtc {
 // second (bps).
 class DataRate final : public rtc_units_impl::RelativeUnit<DataRate> {
  public:
-  DataRate() = delete;
+  template <typename T>
+  static constexpr DataRate BitsPerSec(T value) {
+    static_assert(std::is_arithmetic<T>::value, "");
+    return FromValue(value);
+  }
+  template <typename T>
+  static constexpr DataRate BytesPerSec(T value) {
+    static_assert(std::is_arithmetic<T>::value, "");
+    return FromFraction(8, value);
+  }
+  template <typename T>
+  static constexpr DataRate KilobitsPerSec(T value) {
+    static_assert(std::is_arithmetic<T>::value, "");
+    return FromFraction(1000, value);
+  }
   static constexpr DataRate Infinity() { return PlusInfinity(); }
+
+  DataRate() = delete;
+  // TODO(danilchap): Migrate all code to the 3 factories above and delete the
+  // 5 factories below.
   template <int64_t bps>
   static constexpr DataRate BitsPerSec() {
     return FromValue(bps);
@@ -103,7 +121,7 @@ inline constexpr int64_t MillibytePerSec(const DataRate& size) {
 
 inline constexpr DataRate operator/(const DataSize size,
                                     const TimeDelta duration) {
-  return DataRate::bps(data_rate_impl::Microbits(size) / duration.us());
+  return DataRate::BitsPerSec(data_rate_impl::Microbits(size) / duration.us());
 }
 inline constexpr TimeDelta operator/(const DataSize size, const DataRate rate) {
   return TimeDelta::Micros(data_rate_impl::Microbits(size) / rate.bps());
@@ -111,7 +129,7 @@ inline constexpr TimeDelta operator/(const DataSize size, const DataRate rate) {
 inline constexpr DataSize operator*(const DataRate rate,
                                     const TimeDelta duration) {
   int64_t microbits = rate.bps() * duration.us();
-  return DataSize::bytes((microbits + 4000000) / 8000000);
+  return DataSize::Bytes((microbits + 4000000) / 8000000);
 }
 inline constexpr DataSize operator*(const TimeDelta duration,
                                     const DataRate rate) {
@@ -123,7 +141,7 @@ inline constexpr DataSize operator/(const DataRate rate,
   int64_t millihertz = frequency.millihertz<int64_t>();
   // Note that the value is truncated here reather than rounded, potentially
   // introducing an error of .5 bytes if rounding were expected.
-  return DataSize::bytes(data_rate_impl::MillibytePerSec(rate) / millihertz);
+  return DataSize::Bytes(data_rate_impl::MillibytePerSec(rate) / millihertz);
 }
 inline constexpr Frequency operator/(const DataRate rate, const DataSize size) {
   return Frequency::MilliHertz(data_rate_impl::MillibytePerSec(rate) /
@@ -136,7 +154,7 @@ inline constexpr DataRate operator*(const DataSize size,
                                  frequency.millihertz<int64_t>());
   int64_t millibits_per_second =
       size.bytes() * 8 * frequency.millihertz<int64_t>();
-  return DataRate::bps((millibits_per_second + 500) / 1000);
+  return DataRate::BitsPerSec((millibits_per_second + 500) / 1000);
 }
 inline constexpr DataRate operator*(const Frequency frequency,
                                     const DataSize size) {

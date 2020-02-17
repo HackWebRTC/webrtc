@@ -24,8 +24,16 @@ namespace webrtc {
 // DataSize is a class represeting a count of bytes.
 class DataSize final : public rtc_units_impl::RelativeUnit<DataSize> {
  public:
-  DataSize() = delete;
+  template <typename T>
+  static constexpr DataSize Bytes(T value) {
+    static_assert(std::is_arithmetic<T>::value, "");
+    return FromValue(value);
+  }
   static constexpr DataSize Infinity() { return PlusInfinity(); }
+
+  DataSize() = delete;
+  // TODO(danilchap): Migrate all code to the factory above and delete the
+  // 2 factories below.
   template <int64_t bytes>
   static constexpr DataSize Bytes() {
     return FromValue(bytes);
