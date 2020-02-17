@@ -269,7 +269,7 @@ RTPSenderVideo::RTPSenderVideo(const Config& config)
       require_frame_encryption_(config.require_frame_encryption),
       generic_descriptor_auth_experiment_(
           config.field_trials->Lookup("WebRTC-GenericDescriptorAuth")
-              .find("Enabled") == 0),
+              .find("Disabled") != 0),
       exclude_transport_sequence_number_from_fec_experiment_(
           config.field_trials
               ->Lookup(kExcludeTransportSequenceNumberFromFecFieldTrial)
@@ -656,7 +656,7 @@ bool RTPSenderVideo::SendVideo(
 
     size_t bytes_written = 0;
 
-    // Only enable header authentication if the field trial is enabled.
+    // Enable header authentication if the field trial isn't disabled.
     rtc::ArrayView<const uint8_t> additional_data;
     if (generic_descriptor_auth_experiment_) {
       additional_data = generic_descriptor_raw;

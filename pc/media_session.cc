@@ -961,13 +961,13 @@ static bool FindByUri(const RtpHeaderExtensions& extensions,
 
 static bool FindByUriWithEncryptionPreference(
     const RtpHeaderExtensions& extensions,
-    const webrtc::RtpExtension& ext_to_match,
+    absl::string_view uri_to_match,
     bool encryption_preference,
     webrtc::RtpExtension* found_extension) {
   const webrtc::RtpExtension* unencrypted_extension = nullptr;
   for (const webrtc::RtpExtension& extension : extensions) {
     // We assume that all URIs are given in a canonical format.
-    if (extension.uri == ext_to_match.uri) {
+    if (extension.uri == uri_to_match) {
       if (!encryption_preference || extension.encrypt) {
         if (found_extension) {
           *found_extension = extension;
@@ -1037,7 +1037,7 @@ static void AddEncryptedVersionsOfHdrExts(RtpHeaderExtensions* extensions,
     // extensions.
     if (extension.encrypt ||
         !webrtc::RtpExtension::IsEncryptionSupported(extension.uri) ||
-        (FindByUriWithEncryptionPreference(*extensions, extension, true,
+        (FindByUriWithEncryptionPreference(*extensions, extension.uri, true,
                                            &existing) &&
          existing.encrypt)) {
       continue;
@@ -1073,11 +1073,14 @@ static void NegotiateRtpHeaderExtensions(
           offered_extensions,
           webrtc::RtpExtension::kTransportSequenceNumberV2Uri);
 
+  bool frame_descriptor_in_local = false;
   for (const webrtc::RtpExtension& ours : local_extensions) {
+    if (ours.uri == webrtc::RtpExtension::kGenericFrameDescriptorUri00)
+      frame_descriptor_in_local = true;
     webrtc::RtpExtension theirs;
     if (FindByUriWithEncryptionPreference(
-            offered_extensions, ours, enable_encrypted_rtp_header_extensions,
-            &theirs)) {
+            offered_extensions, ours.uri,
+            enable_encrypted_rtp_header_extensions, &theirs)) {
       if (transport_sequence_number_v2_offer &&
           ours.uri == webrtc::RtpExtension::kTransportSequenceNumberUri) {
         // Don't respond to
@@ -1095,6 +1098,17 @@ static void NegotiateRtpHeaderExtensions(
   if (transport_sequence_number_v2_offer) {
     // Respond that we support kTransportSequenceNumberV2Uri.
     negotiated_extensions->push_back(*transport_sequence_number_v2_offer);
+  }
+
+  // Frame descriptor support. If the extension is not present locally, but is
+  // in the offer, we add it to the list.
+  if (!frame_descriptor_in_local) {
+    webrtc::RtpExtension theirs;
+    if (FindByUriWithEncryptionPreference(
+            offered_extensions,
+            webrtc::RtpExtension::kGenericFrameDescriptorUri00,
+            enable_encrypted_rtp_header_extensions, &theirs))
+      negotiated_extensions->push_back(theirs);
   }
 }
 

@@ -24,7 +24,7 @@ BufferedFrameDecryptor::BufferedFrameDecryptor(
     OnDecryptedFrameCallback* decrypted_frame_callback,
     OnDecryptionStatusChangeCallback* decryption_status_change_callback)
     : generic_descriptor_auth_experiment_(
-          field_trial::IsEnabled("WebRTC-GenericDescriptorAuth")),
+          !field_trial::IsDisabled("WebRTC-GenericDescriptorAuth")),
       decrypted_frame_callback_(decrypted_frame_callback),
       decryption_status_change_callback_(decryption_status_change_callback) {}
 
@@ -76,7 +76,7 @@ BufferedFrameDecryptor::FrameDecision BufferedFrameDecryptor::DecryptFrame(
   rtc::ArrayView<uint8_t> inline_decrypted_bitstream(frame->data(),
                                                      max_plaintext_byte_size);
 
-  // Only enable authenticating the header if the field trial is enabled.
+  // Enable authenticating the header if the field trial isn't disabled.
   std::vector<uint8_t> additional_data;
   if (generic_descriptor_auth_experiment_) {
     additional_data = RtpDescriptorAuthentication(frame->GetRtpVideoHeader());
