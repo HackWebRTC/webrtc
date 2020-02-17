@@ -2148,11 +2148,9 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::UpdateSendState() {
       // SVC is used.
       // The only present simulcast layer should be active if any of the
       // configured SVC layers is active.
-      bool is_active = false;
-      for (size_t i = 0; i < rtp_parameters_.encodings.size(); ++i) {
-        is_active |= rtp_parameters_.encodings[i].active;
-      }
-      active_layers[0] = is_active;
+      active_layers[0] =
+          absl::c_any_of(rtp_parameters_.encodings,
+                         [](const auto& encoding) { return encoding.active; });
     }
     // This updates what simulcast layers are sending, and possibly starts
     // or stops the VideoSendStream.
