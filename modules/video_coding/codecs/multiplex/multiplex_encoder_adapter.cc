@@ -242,7 +242,7 @@ void MultiplexEncoderAdapter::SetRates(
         bitrate_allocation,
         static_cast<uint32_t>(encoders_.size() * parameters.framerate_fps),
         parameters.bandwidth_allocation -
-            DataRate::bps(augmenting_data_size_)));
+            DataRate::BitsPerSec(augmenting_data_size_)));
   }
 }
 

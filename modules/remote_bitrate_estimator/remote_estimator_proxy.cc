@@ -122,7 +122,7 @@ void RemoteEstimatorProxy::IncomingPacket(int64_t arrival_time_ms,
     packet_result.sent_packet.send_time = abs_send_timestamp_;
     // TODO(webrtc:10742): Take IP header and transport overhead into account.
     packet_result.sent_packet.size =
-        DataSize::bytes(header.headerLength + payload_size);
+        DataSize::Bytes(header.headerLength + payload_size);
     packet_result.sent_packet.sequence_number = seq;
     network_state_estimator_->OnReceivedPacket(packet_result);
   }

@@ -25,8 +25,8 @@ TEST(BitrateProberTest, VerifyStatesAndTimeBetweenProbes) {
   const Timestamp start_time = now;
   EXPECT_EQ(prober.NextProbeTime(now), Timestamp::PlusInfinity());
 
-  const DataRate kTestBitrate1 = DataRate::kbps(900);
-  const DataRate kTestBitrate2 = DataRate::kbps(1800);
+  const DataRate kTestBitrate1 = DataRate::KilobitsPerSec(900);
+  const DataRate kTestBitrate2 = DataRate::KilobitsPerSec(1800);
   const int kClusterSize = 5;
   const int kProbeSize = 1000;
   const TimeDelta kMinProbeDuration = TimeDelta::Millis(15);
@@ -52,7 +52,7 @@ TEST(BitrateProberTest, VerifyStatesAndTimeBetweenProbes) {
   EXPECT_GE(now - start_time, kMinProbeDuration);
   // Verify that the actual bitrate is withing 10% of the target.
   DataRate bitrate =
-      DataSize::bytes(kProbeSize * (kClusterSize - 1)) / (now - start_time);
+      DataSize::Bytes(kProbeSize * (kClusterSize - 1)) / (now - start_time);
   EXPECT_GT(bitrate, kTestBitrate1 * 0.9);
   EXPECT_LT(bitrate, kTestBitrate1 * 1.1);
 
@@ -69,7 +69,7 @@ TEST(BitrateProberTest, VerifyStatesAndTimeBetweenProbes) {
   // Verify that the actual bitrate is withing 10% of the target.
   TimeDelta duration = now - probe2_started;
   EXPECT_GE(duration, kMinProbeDuration);
-  bitrate = DataSize::bytes(kProbeSize * (kClusterSize - 1)) / duration;
+  bitrate = DataSize::Bytes(kProbeSize * (kClusterSize - 1)) / duration;
   EXPECT_GT(bitrate, kTestBitrate2 * 0.9);
   EXPECT_LT(bitrate, kTestBitrate2 * 1.1);
 
@@ -84,7 +84,7 @@ TEST(BitrateProberTest, DoesntProbeWithoutRecentPackets) {
   Timestamp now = Timestamp::Zero();
   EXPECT_EQ(prober.NextProbeTime(now), Timestamp::PlusInfinity());
 
-  prober.CreateProbeCluster(DataRate::kbps(900), now, 0);
+  prober.CreateProbeCluster(DataRate::KilobitsPerSec(900), now, 0);
   EXPECT_FALSE(prober.IsProbing());
 
   prober.OnIncomingPacket(1000);
@@ -115,7 +115,7 @@ TEST(BitrateProberTest, VerifyProbeSizeOnHighBitrate) {
   const FieldTrialBasedConfig config;
   BitrateProber prober(config);
 
-  const DataRate kHighBitrate = DataRate::kbps(10000);  // 10 Mbps
+  const DataRate kHighBitrate = DataRate::KilobitsPerSec(10000);  // 10 Mbps
 
   prober.CreateProbeCluster(kHighBitrate, Timestamp::Millis(0),
                             /*cluster_id=*/0);
@@ -129,7 +129,7 @@ TEST(BitrateProberTest, MinumumNumberOfProbingPackets) {
   BitrateProber prober(config);
   // Even when probing at a low bitrate we expect a minimum number
   // of packets to be sent.
-  const DataRate kBitrate = DataRate::kbps(100);
+  const DataRate kBitrate = DataRate::KilobitsPerSec(100);
   const int kPacketSizeBytes = 1000;
 
   Timestamp now = Timestamp::Millis(0);
@@ -146,7 +146,7 @@ TEST(BitrateProberTest, MinumumNumberOfProbingPackets) {
 TEST(BitrateProberTest, ScaleBytesUsedForProbing) {
   const FieldTrialBasedConfig config;
   BitrateProber prober(config);
-  const DataRate kBitrate = DataRate::kbps(10000);  // 10 Mbps.
+  const DataRate kBitrate = DataRate::KilobitsPerSec(10000);  // 10 Mbps.
   const int kPacketSizeBytes = 1000;
   const int kExpectedBytesSent = (kBitrate * TimeDelta::Millis(15)).bytes();
 
@@ -166,7 +166,7 @@ TEST(BitrateProberTest, ScaleBytesUsedForProbing) {
 TEST(BitrateProberTest, HighBitrateProbing) {
   const FieldTrialBasedConfig config;
   BitrateProber prober(config);
-  const DataRate kBitrate = DataRate::kbps(1000000);  // 1 Gbps.
+  const DataRate kBitrate = DataRate::KilobitsPerSec(1000000);  // 1 Gbps.
   const int kPacketSizeBytes = 1000;
   const int kExpectedBytesSent = (kBitrate * TimeDelta::Millis(15)).bytes();
 
@@ -186,7 +186,7 @@ TEST(BitrateProberTest, HighBitrateProbing) {
 TEST(BitrateProberTest, ProbeClusterTimeout) {
   const FieldTrialBasedConfig config;
   BitrateProber prober(config);
-  const DataRate kBitrate = DataRate::kbps(300);
+  const DataRate kBitrate = DataRate::KilobitsPerSec(300);
   const int kSmallPacketSize = 20;
   // Expecting two probe clusters of 5 packets each.
   const int kExpectedBytesSent = 20 * 2 * 5;

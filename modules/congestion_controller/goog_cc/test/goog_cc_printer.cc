@@ -70,7 +70,7 @@ GoogCcStatePrinter::GoogCcStatePrinter() {
 
 std::deque<FieldLogger*> GoogCcStatePrinter::CreateLoggers() {
   auto stable_estimate = [this] {
-    return DataRate::kbps(
+    return DataRate::KilobitsPerSec(
         controller_->delay_based_bwe_->rate_control_.link_capacity_
             .estimate_kbps_.value_or(-INFINITY));
   };

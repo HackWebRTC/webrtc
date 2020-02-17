@@ -73,7 +73,7 @@ absl::optional<DataRate> RobustThroughputEstimator::bitrate() const {
   Timestamp max_send_time = window_[0].sent_packet.send_time;
   Timestamp min_recv_time = window_[0].receive_time;
   Timestamp max_recv_time = window_[0].receive_time;
-  DataSize data_size = DataSize::bytes(0);
+  DataSize data_size = DataSize::Bytes(0);
   for (const auto& packet : window_) {
     min_send_time = std::min(min_send_time, packet.sent_packet.send_time);
     max_send_time = std::max(max_send_time, packet.sent_packet.send_time);

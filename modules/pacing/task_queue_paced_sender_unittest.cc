@@ -102,8 +102,9 @@ class TaskQueuePacedSenderTest : public ::testing::Test {
 TEST_F(TaskQueuePacedSenderTest, PacesPackets) {
   // Insert a number of packets, covering one second.
   static constexpr size_t kPacketsToSend = 42;
-  pacer_.SetPacingRates(DataRate::bps(kDefaultPacketSize * 8 * kPacketsToSend),
-                        DataRate::Zero());
+  pacer_.SetPacingRates(
+      DataRate::BitsPerSec(kDefaultPacketSize * 8 * kPacketsToSend),
+      DataRate::Zero());
   pacer_.EnqueuePackets(
       GeneratePackets(RtpPacketMediaType::kVideo, kPacketsToSend));
 
@@ -133,7 +134,7 @@ TEST_F(TaskQueuePacedSenderTest, ReschedulesProcessOnRateChange) {
   // Insert a number of packets to be sent 200ms apart.
   const size_t kPacketsPerSecond = 5;
   const DataRate kPacingRate =
-      DataRate::bps(kDefaultPacketSize * 8 * kPacketsPerSecond);
+      DataRate::BitsPerSec(kDefaultPacketSize * 8 * kPacketsPerSecond);
   pacer_.SetPacingRates(kPacingRate, DataRate::Zero());
 
   // Send some initial packets to be rid of any probes.

@@ -167,7 +167,7 @@ void VideoSendStatsCollector::AddStats(VideoSendStream::Stats sample,
                  kv.second.rtp_stats.fec.padding_bytes;
   }
   if (last_update_.IsFinite()) {
-    auto fec_delta = DataSize::bytes(fec_bytes - last_fec_bytes_);
+    auto fec_delta = DataSize::Bytes(fec_bytes - last_fec_bytes_);
     auto time_delta = at_time - last_update_;
     stats_.fec_bitrate.AddSample(fec_delta / time_delta);
   }

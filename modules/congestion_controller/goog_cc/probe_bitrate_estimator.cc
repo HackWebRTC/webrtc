@@ -94,7 +94,7 @@ absl::optional<DataRate> ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
       packet_feedback.sent_packet.pacing_info.probe_cluster_min_probes *
       kMinReceivedProbesRatio;
   DataSize min_size =
-      DataSize::bytes(
+      DataSize::Bytes(
           packet_feedback.sent_packet.pacing_info.probe_cluster_min_bytes) *
       kMinReceivedBytesRatio;
   if (cluster->num_probes < min_probes || cluster->size_total < min_size)

@@ -46,7 +46,7 @@ TEST(ScenarioAnalyzerTest, PsnrIsHighWhenNetworkIsGood) {
   {
     Scenario s;
     NetworkSimulationConfig good_network;
-    good_network.bandwidth = DataRate::kbps(1000);
+    good_network.bandwidth = DataRate::KilobitsPerSec(1000);
     CreateAnalyzedStream(&s, good_network, &analyzer, &stats);
     s.RunFor(TimeDelta::Seconds(3));
   }
@@ -67,7 +67,7 @@ TEST(ScenarioAnalyzerTest, PsnrIsLowWhenNetworkIsBad) {
   {
     Scenario s;
     NetworkSimulationConfig bad_network;
-    bad_network.bandwidth = DataRate::kbps(100);
+    bad_network.bandwidth = DataRate::KilobitsPerSec(100);
     bad_network.loss_rate = 0.02;
     CreateAnalyzedStream(&s, bad_network, &analyzer, &stats);
     s.RunFor(TimeDelta::Seconds(3));

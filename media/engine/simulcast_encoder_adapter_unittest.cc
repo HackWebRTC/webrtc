@@ -1275,10 +1275,11 @@ TEST_F(TestSimulcastEncoderAdapterFake, SetRateDistributesBandwithAllocation) {
       kVideoCodecVP8);
   codec_.numberOfSimulcastStreams = 3;
   const DataRate target_bitrate =
-      DataRate::kbps(codec_.simulcastStream[0].targetBitrate +
-                     codec_.simulcastStream[1].targetBitrate +
-                     codec_.simulcastStream[2].minBitrate);
-  const DataRate bandwidth_allocation = target_bitrate + DataRate::kbps(600);
+      DataRate::KilobitsPerSec(codec_.simulcastStream[0].targetBitrate +
+                               codec_.simulcastStream[1].targetBitrate +
+                               codec_.simulcastStream[2].minBitrate);
+  const DataRate bandwidth_allocation =
+      target_bitrate + DataRate::KilobitsPerSec(600);
 
   rate_allocator_.reset(new SimulcastRateAllocator(codec_));
   EXPECT_EQ(0, adapter_->InitEncode(&codec_, kSettings));
@@ -1357,7 +1358,8 @@ TEST_F(TestSimulcastEncoderAdapterFake, SupportsFallback) {
   // Make sure we have bitrate for all layers.
   DataRate max_bitrate = DataRate::Zero();
   for (int i = 0; i < 3; ++i) {
-    max_bitrate += DataRate::kbps(codec_.simulcastStream[i].maxBitrate);
+    max_bitrate +=
+        DataRate::KilobitsPerSec(codec_.simulcastStream[i].maxBitrate);
   }
   const auto rate_settings = VideoEncoder::RateControlParameters(
       rate_allocator_->Allocate(

@@ -47,7 +47,7 @@ AimdRateControlStates CreateAimdRateControlStates(bool send_side = false) {
 absl::optional<DataRate> OptionalRateFromOptionalBps(
     absl::optional<int> bitrate_bps) {
   if (bitrate_bps) {
-    return DataRate::bps(*bitrate_bps);
+    return DataRate::BitsPerSec(*bitrate_bps);
   } else {
     return absl::nullopt;
   }
@@ -61,7 +61,7 @@ void UpdateRateControl(const AimdRateControlStates& states,
   states.aimd_rate_control->Update(&input, Timestamp::Millis(now_ms));
 }
 void SetEstimate(const AimdRateControlStates& states, int bitrate_bps) {
-  states.aimd_rate_control->SetEstimate(DataRate::bps(bitrate_bps),
+  states.aimd_rate_control->SetEstimate(DataRate::BitsPerSec(bitrate_bps),
                                         states.simulated_clock->CurrentTime());
 }
 
@@ -161,7 +161,7 @@ TEST(AimdRateControlTest, BweNotLimitedByDecreasingAckedBitrate) {
 TEST(AimdRateControlTest, DefaultPeriodUntilFirstOveruse) {
   // Smoothing experiment disabled
   auto states = CreateAimdRateControlStates();
-  states.aimd_rate_control->SetStartBitrate(DataRate::kbps(300));
+  states.aimd_rate_control->SetStartBitrate(DataRate::KilobitsPerSec(300));
   EXPECT_EQ(kDefaultPeriodMsNoSmoothingExp,
             states.aimd_rate_control->GetExpectedBandwidthPeriod().ms());
   states.simulated_clock->AdvanceTimeMilliseconds(100);
@@ -175,7 +175,7 @@ TEST(AimdRateControlTest, MinPeriodUntilFirstOveruseSmoothingExp) {
   // Smoothing experiment enabled
   test::ScopedFieldTrials override_field_trials(kSmoothingExpFieldTrial);
   auto states = CreateAimdRateControlStates();
-  states.aimd_rate_control->SetStartBitrate(DataRate::kbps(300));
+  states.aimd_rate_control->SetStartBitrate(DataRate::KilobitsPerSec(300));
   EXPECT_EQ(kMinBwePeriodMsSmoothingExp,
             states.aimd_rate_control->GetExpectedBandwidthPeriod().ms());
   states.simulated_clock->AdvanceTimeMilliseconds(100);

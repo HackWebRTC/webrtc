@@ -35,11 +35,11 @@ const double kProbeBWCongestionWindowGain = 2.0f;
 // minus the IP and UDP headers. IPv6 has a 40 byte header, UDP adds an
 // additional 8 bytes.  This is a total overhead of 48 bytes.  Ethernet's
 // max packet size is 1500 bytes,  1500 - 48 = 1452.
-const DataSize kMaxPacketSize = DataSize::Bytes<1452>();
+const DataSize kMaxPacketSize = DataSize::Bytes(1452);
 
 // Default maximum packet size used in the Linux TCP implementation.
 // Used in QUIC for congestion window computations in bytes.
-constexpr DataSize kDefaultTCPMSS = DataSize::Bytes<1460>();
+constexpr DataSize kDefaultTCPMSS = DataSize::Bytes(1460);
 // Constants based on TCP defaults.
 constexpr DataSize kMaxSegmentSize = kDefaultTCPMSS;
 
@@ -184,7 +184,7 @@ BbrNetworkController::BbrNetworkController(NetworkControllerConfig config)
       last_sent_packet_(0),
       current_round_trip_end_(0),
       max_bandwidth_(kBandwidthWindowSize, DataRate::Zero(), 0),
-      default_bandwidth_(DataRate::kbps(kInitialBandwidthKbps)),
+      default_bandwidth_(DataRate::KilobitsPerSec(kInitialBandwidthKbps)),
       max_ack_height_(kBandwidthWindowSize, DataSize::Zero(), 0),
       aggregation_epoch_start_time_(),
       aggregation_epoch_bytes_(DataSize::Zero()),

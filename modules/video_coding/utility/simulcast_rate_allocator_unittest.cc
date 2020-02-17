@@ -133,7 +133,7 @@ class SimulcastRateAllocatorTest : public ::testing::TestWithParam<bool> {
 
   VideoBitrateAllocation GetAllocation(uint32_t target_bitrate) {
     return allocator_->Allocate(VideoBitrateAllocationParameters(
-        DataRate::kbps(target_bitrate), kDefaultFrameRate));
+        DataRate::KilobitsPerSec(target_bitrate), kDefaultFrameRate));
   }
 
   VideoBitrateAllocation GetAllocation(DataRate target_rate,
@@ -143,15 +143,18 @@ class SimulcastRateAllocatorTest : public ::testing::TestWithParam<bool> {
   }
 
   DataRate MinRate(size_t layer_index) const {
-    return DataRate::kbps(codec_.simulcastStream[layer_index].minBitrate);
+    return DataRate::KilobitsPerSec(
+        codec_.simulcastStream[layer_index].minBitrate);
   }
 
   DataRate TargetRate(size_t layer_index) const {
-    return DataRate::kbps(codec_.simulcastStream[layer_index].targetBitrate);
+    return DataRate::KilobitsPerSec(
+        codec_.simulcastStream[layer_index].targetBitrate);
   }
 
   DataRate MaxRate(size_t layer_index) const {
-    return DataRate::kbps(codec_.simulcastStream[layer_index].maxBitrate);
+    return DataRate::KilobitsPerSec(
+        codec_.simulcastStream[layer_index].maxBitrate);
   }
 
  protected:
@@ -590,8 +593,8 @@ TEST_F(SimulcastRateAllocatorTest, StableRate) {
     // Let stable rate go to a bitrate below what is needed for two streams.
     uint32_t expected[] = {MaxRate(0).kbps<uint32_t>(), 0};
     ExpectEqual(expected,
-                GetAllocation(volatile_rate,
-                              TargetRate(0) + MinRate(1) - DataRate::bps(1)));
+                GetAllocation(volatile_rate, TargetRate(0) + MinRate(1) -
+                                                 DataRate::BitsPerSec(1)));
   }
 
   {

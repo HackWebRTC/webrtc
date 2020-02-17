@@ -88,7 +88,7 @@ class MockRtpVideoSender : public RtpVideoSenderInterface {
 
 BitrateAllocationUpdate CreateAllocation(int bitrate_bps) {
   BitrateAllocationUpdate update;
-  update.target_bitrate = DataRate::bps(bitrate_bps);
+  update.target_bitrate = DataRate::BitsPerSec(bitrate_bps);
   update.packet_loss_ratio = 0;
   update.round_trip_time = TimeDelta::Zero();
   return update;
@@ -695,7 +695,7 @@ TEST_F(VideoSendStreamImplTest, CallsVideoStreamEncoderOnBitrateUpdate) {
                 min_transmit_bitrate_bps);
 
         const DataRate network_constrained_rate =
-            DataRate::bps(qvga_stream.target_bitrate_bps);
+            DataRate::BitsPerSec(qvga_stream.target_bitrate_bps);
         BitrateAllocationUpdate update;
         update.target_bitrate = network_constrained_rate;
         update.stable_target_bitrate = network_constrained_rate;
@@ -713,8 +713,8 @@ TEST_F(VideoSendStreamImplTest, CallsVideoStreamEncoderOnBitrateUpdate) {
         // Test allocation where the link allocation is larger than the target,
         // meaning we have some headroom on the link.
         const DataRate qvga_max_bitrate =
-            DataRate::bps(qvga_stream.max_bitrate_bps);
-        const DataRate headroom = DataRate::bps(50000);
+            DataRate::BitsPerSec(qvga_stream.max_bitrate_bps);
+        const DataRate headroom = DataRate::BitsPerSec(50000);
         const DataRate rate_with_headroom = qvga_max_bitrate + headroom;
         update.target_bitrate = rate_with_headroom;
         update.stable_target_bitrate = rate_with_headroom;
@@ -737,7 +737,7 @@ TEST_F(VideoSendStreamImplTest, CallsVideoStreamEncoderOnBitrateUpdate) {
         EXPECT_CALL(rtp_video_sender_, GetPayloadBitrateBps())
             .WillOnce(Return(rate_with_headroom.bps()));
         const DataRate headroom_minus_protection =
-            rate_with_headroom - DataRate::bps(protection_bitrate_bps);
+            rate_with_headroom - DataRate::BitsPerSec(protection_bitrate_bps);
         EXPECT_CALL(video_stream_encoder_,
                     OnBitrateUpdated(qvga_max_bitrate, qvga_max_bitrate,
                                      headroom_minus_protection, 0, _, 0));

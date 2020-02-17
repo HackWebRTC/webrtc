@@ -45,7 +45,7 @@ TEST(RobustThroughputEstimatorTest, SteadyRate) {
   FieldTrialBasedConfig field_trial_config;
   RobustThroughputEstimatorSettings settings(&field_trial_config);
   RobustThroughputEstimator throughput_estimator(settings);
-  DataSize packet_size(DataSize::bytes(1000));
+  DataSize packet_size(DataSize::Bytes(1000));
   Timestamp send_clock(Timestamp::Millis(100000));
   Timestamp recv_clock(Timestamp::Millis(10000));
   TimeDelta send_increment(TimeDelta::Millis(10));
@@ -75,7 +75,7 @@ TEST(RobustThroughputEstimatorTest, DelaySpike) {
   FieldTrialBasedConfig field_trial_config;
   RobustThroughputEstimatorSettings settings(&field_trial_config);
   RobustThroughputEstimator throughput_estimator(settings);
-  DataSize packet_size(DataSize::bytes(1000));
+  DataSize packet_size(DataSize::Bytes(1000));
   Timestamp send_clock(Timestamp::Millis(100000));
   Timestamp recv_clock(Timestamp::Millis(10000));
   TimeDelta send_increment(TimeDelta::Millis(10));
@@ -124,7 +124,7 @@ TEST(RobustThroughputEstimatorTest, CappedByReceiveRate) {
   FieldTrialBasedConfig field_trial_config;
   RobustThroughputEstimatorSettings settings(&field_trial_config);
   RobustThroughputEstimator throughput_estimator(settings);
-  DataSize packet_size(DataSize::bytes(1000));
+  DataSize packet_size(DataSize::Bytes(1000));
   Timestamp send_clock(Timestamp::Millis(100000));
   Timestamp recv_clock(Timestamp::Millis(10000));
   TimeDelta send_increment(TimeDelta::Millis(10));
@@ -148,7 +148,7 @@ TEST(RobustThroughputEstimatorTest, CappedBySendRate) {
   FieldTrialBasedConfig field_trial_config;
   RobustThroughputEstimatorSettings settings(&field_trial_config);
   RobustThroughputEstimator throughput_estimator(settings);
-  DataSize packet_size(DataSize::bytes(1000));
+  DataSize packet_size(DataSize::Bytes(1000));
   Timestamp send_clock(Timestamp::Millis(100000));
   Timestamp recv_clock(Timestamp::Millis(10000));
   TimeDelta send_increment(TimeDelta::Millis(20));

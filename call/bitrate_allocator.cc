@@ -404,8 +404,9 @@ void BitrateAllocator::OnNetworkEstimateChanged(TargetTransferRate msg) {
     uint32_t allocated_stable_target_rate =
         stable_bitrate_allocation[config.observer];
     BitrateAllocationUpdate update;
-    update.target_bitrate = DataRate::bps(allocated_bitrate);
-    update.stable_target_bitrate = DataRate::bps(allocated_stable_target_rate);
+    update.target_bitrate = DataRate::BitsPerSec(allocated_bitrate);
+    update.stable_target_bitrate =
+        DataRate::BitsPerSec(allocated_stable_target_rate);
     update.packet_loss_ratio = last_fraction_loss_ / 256.0;
     update.round_trip_time = TimeDelta::Millis(last_rtt_);
     update.bwe_period = TimeDelta::Millis(last_bwe_period_ms_);
@@ -469,8 +470,9 @@ void BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
       uint32_t allocated_stable_bitrate =
           stable_bitrate_allocation[config.observer];
       BitrateAllocationUpdate update;
-      update.target_bitrate = DataRate::bps(allocated_bitrate);
-      update.stable_target_bitrate = DataRate::bps(allocated_stable_bitrate);
+      update.target_bitrate = DataRate::BitsPerSec(allocated_bitrate);
+      update.stable_target_bitrate =
+          DataRate::BitsPerSec(allocated_stable_bitrate);
       update.packet_loss_ratio = last_fraction_loss_ / 256.0;
       update.round_trip_time = TimeDelta::Millis(last_rtt_);
       update.bwe_period = TimeDelta::Millis(last_bwe_period_ms_);
@@ -501,13 +503,14 @@ void BitrateAllocator::UpdateAllocationLimits() {
     uint32_t stream_padding = config.config.pad_up_bitrate_bps;
     if (config.config.enforce_min_bitrate) {
       limits.min_allocatable_rate +=
-          DataRate::bps(config.config.min_bitrate_bps);
+          DataRate::BitsPerSec(config.config.min_bitrate_bps);
     } else if (config.allocated_bitrate_bps == 0) {
       stream_padding =
           std::max(config.MinBitrateWithHysteresis(), stream_padding);
     }
-    limits.max_padding_rate += DataRate::bps(stream_padding);
-    limits.max_allocatable_rate += DataRate::bps(config.config.max_bitrate_bps);
+    limits.max_padding_rate += DataRate::BitsPerSec(stream_padding);
+    limits.max_allocatable_rate +=
+        DataRate::BitsPerSec(config.config.max_bitrate_bps);
   }
 
   if (limits.min_allocatable_rate == current_limits_.min_allocatable_rate &&

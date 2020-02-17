@@ -502,10 +502,10 @@ TEST(RtpVideoSenderTest, RetransmitsOnTransportWideLossInfo) {
   test::Scenario s(test_info_);
   test::CallClientConfig call_conf;
   // Keeping the bitrate fixed to avoid RTX due to probing.
-  call_conf.transport.rates.max_rate = DataRate::kbps(300);
-  call_conf.transport.rates.start_rate = DataRate::kbps(300);
+  call_conf.transport.rates.max_rate = DataRate::KilobitsPerSec(300);
+  call_conf.transport.rates.start_rate = DataRate::KilobitsPerSec(300);
   test::NetworkSimulationConfig net_conf;
-  net_conf.bandwidth = DataRate::kbps(300);
+  net_conf.bandwidth = DataRate::KilobitsPerSec(300);
   auto send_node = s.CreateSimulationNode(net_conf);
   auto* route = s.CreateRoutes(s.CreateClient("send", call_conf), {send_node},
                                s.CreateClient("return", call_conf),

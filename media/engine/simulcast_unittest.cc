@@ -63,7 +63,7 @@ TEST(SimulcastTest, BandwidthAboveTotalMaxBitrateGivenToHighestStream) {
   streams[1].target_bitrate_bps = 200000;
   streams[2].max_bitrate_bps = 400000;
 
-  const webrtc::DataRate one_bps = webrtc::DataRate::bps(1);
+  const webrtc::DataRate one_bps = webrtc::DataRate::BitsPerSec(1);
 
   // No bitrate above the total max to give to the highest stream.
   const webrtc::DataRate max_total_bitrate =

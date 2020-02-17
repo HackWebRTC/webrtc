@@ -35,9 +35,9 @@ constexpr double kDelayGradientNegativeBound = 10;
 const Timestamp kStartTime = Timestamp::Micros(0);
 const TimeDelta kPacketsDelta = TimeDelta::Millis(1);
 const TimeDelta kIntervalDuration = TimeDelta::Millis(100);
-const DataRate kSendingBitrate = DataRate::bps(1000);
+const DataRate kSendingBitrate = DataRate::BitsPerSec(1000);
 
-const DataSize kDefaultDataSize = DataSize::bytes(100);
+const DataSize kDefaultDataSize = DataSize::Bytes(100);
 const TimeDelta kDefaultDelay = TimeDelta::Millis(100);
 
 std::vector<PacketResult> CreatePacketResults(

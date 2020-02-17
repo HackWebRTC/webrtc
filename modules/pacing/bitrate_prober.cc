@@ -194,8 +194,9 @@ Timestamp BitrateProber::CalculateNextProbeTime(
 
   // Compute the time delta from the cluster start to ensure probe bitrate stays
   // close to the target bitrate. Result is in milliseconds.
-  DataSize sent_bytes = DataSize::bytes(cluster.sent_bytes);
-  DataRate send_bitrate = DataRate::bps(cluster.pace_info.send_bitrate_bps);
+  DataSize sent_bytes = DataSize::Bytes(cluster.sent_bytes);
+  DataRate send_bitrate =
+      DataRate::BitsPerSec(cluster.pace_info.send_bitrate_bps);
   TimeDelta delta = sent_bytes / send_bitrate;
   return cluster.started_at + delta;
 }

@@ -1667,7 +1667,7 @@ TEST_F(TestVp9Impl, EncodeWithDynamicRate) {
 
   // Set 300kbps target with 100% headroom.
   VideoEncoder::RateControlParameters params;
-  params.bandwidth_allocation = DataRate::bps(300000);
+  params.bandwidth_allocation = DataRate::BitsPerSec(300000);
   params.bitrate.SetBitrate(0, 0, params.bandwidth_allocation.bps());
   params.framerate_fps = 30.0;
 

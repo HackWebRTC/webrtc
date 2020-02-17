@@ -26,7 +26,7 @@ struct ResultForTest {
 class DataTransferTrackerForTest : public DataTransferTracker {
  public:
   void AddSample(int bytes, int send_time_ms, int ack_time_ms) {
-    DataTransferTracker::AddSample(DataSize::bytes(bytes),
+    DataTransferTracker::AddSample(DataSize::Bytes(bytes),
                                    Timestamp::Millis(send_time_ms),
                                    Timestamp::Millis(ack_time_ms));
   }

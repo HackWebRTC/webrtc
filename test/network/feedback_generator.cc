@@ -37,7 +37,7 @@ void FeedbackGeneratorImpl::Sleep(TimeDelta duration) {
 void FeedbackGeneratorImpl::SendPacket(size_t size) {
   SentPacket sent;
   sent.send_time = Now();
-  sent.size = DataSize::bytes(size);
+  sent.size = DataSize::Bytes(size);
   sent.sequence_number = sequence_number_++;
   route_.SendRequest(size, sent);
 }

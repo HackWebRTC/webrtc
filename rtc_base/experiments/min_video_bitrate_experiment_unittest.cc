@@ -59,16 +59,16 @@ TEST(GetExperimentalMinVideoBitrateTest, BrForAllCodecsIfDefined) {
       "WebRTC-Video-MinVideoBitrate/Enabled,br:123kbps/");
 
   EXPECT_EQ(GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecGeneric),
-            absl::make_optional(DataRate::kbps(123)));
+            absl::make_optional(DataRate::KilobitsPerSec(123)));
   EXPECT_EQ(GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecVP8),
-            absl::make_optional(DataRate::kbps(123)));
+            absl::make_optional(DataRate::KilobitsPerSec(123)));
   EXPECT_EQ(GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecVP9),
-            absl::make_optional(DataRate::kbps(123)));
+            absl::make_optional(DataRate::KilobitsPerSec(123)));
   EXPECT_EQ(GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecH264),
-            absl::make_optional(DataRate::kbps(123)));
+            absl::make_optional(DataRate::KilobitsPerSec(123)));
   EXPECT_EQ(
       GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecMultiplex),
-      absl::make_optional(DataRate::kbps(123)));
+      absl::make_optional(DataRate::KilobitsPerSec(123)));
 }
 
 TEST(GetExperimentalMinVideoBitrateTest, BrTrumpsSpecificCodecConfigs) {
@@ -77,16 +77,16 @@ TEST(GetExperimentalMinVideoBitrateTest, BrTrumpsSpecificCodecConfigs) {
       "Enabled,br:123kbps,vp8_br:100kbps,vp9_br:200kbps,h264_br:300kbps/");
 
   EXPECT_EQ(GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecGeneric),
-            absl::make_optional(DataRate::kbps(123)));
+            absl::make_optional(DataRate::KilobitsPerSec(123)));
   EXPECT_EQ(GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecVP8),
-            absl::make_optional(DataRate::kbps(123)));
+            absl::make_optional(DataRate::KilobitsPerSec(123)));
   EXPECT_EQ(GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecVP9),
-            absl::make_optional(DataRate::kbps(123)));
+            absl::make_optional(DataRate::KilobitsPerSec(123)));
   EXPECT_EQ(GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecH264),
-            absl::make_optional(DataRate::kbps(123)));
+            absl::make_optional(DataRate::KilobitsPerSec(123)));
   EXPECT_EQ(
       GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecMultiplex),
-      absl::make_optional(DataRate::kbps(123)));
+      absl::make_optional(DataRate::KilobitsPerSec(123)));
 }
 
 TEST(GetExperimentalMinVideoBitrateTest,
@@ -116,11 +116,11 @@ TEST(GetExperimentalMinVideoBitrateTest, SpecificCodecConfigsUsedIfExpEnabled) {
   EXPECT_EQ(GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecGeneric),
             absl::nullopt);
   EXPECT_EQ(GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecVP8),
-            absl::make_optional(DataRate::kbps(100)));
+            absl::make_optional(DataRate::KilobitsPerSec(100)));
   EXPECT_EQ(GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecVP9),
-            absl::make_optional(DataRate::kbps(200)));
+            absl::make_optional(DataRate::KilobitsPerSec(200)));
   EXPECT_EQ(GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecH264),
-            absl::make_optional(DataRate::kbps(300)));
+            absl::make_optional(DataRate::KilobitsPerSec(300)));
   EXPECT_EQ(
       GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecMultiplex),
       absl::nullopt);
@@ -135,7 +135,7 @@ TEST(GetExperimentalMinVideoBitrateTest,
       "Enabled-444444,555555,666666/");
 
   EXPECT_EQ(GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecVP8),
-            absl::make_optional(DataRate::bps(666666)));
+            absl::make_optional(DataRate::BitsPerSec(666666)));
 }
 
 TEST(GetExperimentalMinVideoBitrateTest,
@@ -149,9 +149,9 @@ TEST(GetExperimentalMinVideoBitrateTest,
   EXPECT_EQ(GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecGeneric),
             absl::nullopt);
   EXPECT_EQ(GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecVP9),
-            absl::make_optional(DataRate::kbps(200)));
+            absl::make_optional(DataRate::KilobitsPerSec(200)));
   EXPECT_EQ(GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecH264),
-            absl::make_optional(DataRate::kbps(300)));
+            absl::make_optional(DataRate::KilobitsPerSec(300)));
   EXPECT_EQ(
       GetExperimentalMinVideoBitrate(VideoCodecType::kVideoCodecMultiplex),
       absl::nullopt);

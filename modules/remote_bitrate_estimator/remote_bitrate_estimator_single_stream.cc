@@ -31,7 +31,7 @@ namespace {
 absl::optional<DataRate> OptionalRateFromOptionalBps(
     absl::optional<int> bitrate_bps) {
   if (bitrate_bps) {
-    return DataRate::bps(*bitrate_bps);
+    return DataRate::BitsPerSec(*bitrate_bps);
   } else {
     return absl::nullopt;
   }
@@ -143,10 +143,11 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
   if (estimator->detector.State() == BandwidthUsage::kBwOverusing) {
     absl::optional<uint32_t> incoming_bitrate_bps =
         incoming_bitrate_.Rate(now_ms);
-    if (incoming_bitrate_bps && (prior_state != BandwidthUsage::kBwOverusing ||
-                                 GetRemoteRate()->TimeToReduceFurther(
-                                     Timestamp::Millis(now_ms),
-                                     DataRate::bps(*incoming_bitrate_bps)))) {
+    if (incoming_bitrate_bps &&
+        (prior_state != BandwidthUsage::kBwOverusing ||
+         GetRemoteRate()->TimeToReduceFurther(
+             Timestamp::Millis(now_ms),
+             DataRate::BitsPerSec(*incoming_bitrate_bps)))) {
       // The first overuse should immediately trigger a new estimate.
       // We also have to update the estimate immediately if we are overusing
       // and the target bitrate is too high compared to what we are receiving.
@@ -264,7 +265,7 @@ AimdRateControl* RemoteBitrateEstimatorSingleStream::GetRemoteRate() {
 
 void RemoteBitrateEstimatorSingleStream::SetMinBitrate(int min_bitrate_bps) {
   rtc::CritScope cs(&crit_sect_);
-  remote_rate_->SetMinBitrate(DataRate::bps(min_bitrate_bps));
+  remote_rate_->SetMinBitrate(DataRate::BitsPerSec(min_bitrate_bps));
 }
 
 }  // namespace webrtc

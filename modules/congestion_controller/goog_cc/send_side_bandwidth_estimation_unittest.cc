@@ -38,8 +38,9 @@ void TestProbing(bool use_delay_based) {
   ::testing::NiceMock<MockRtcEventLog> event_log;
   SendSideBandwidthEstimation bwe(&event_log);
   int64_t now_ms = 0;
-  bwe.SetMinMaxBitrate(DataRate::bps(100000), DataRate::bps(1500000));
-  bwe.SetSendBitrate(DataRate::bps(200000), Timestamp::Millis(now_ms));
+  bwe.SetMinMaxBitrate(DataRate::BitsPerSec(100000),
+                       DataRate::BitsPerSec(1500000));
+  bwe.SetSendBitrate(DataRate::BitsPerSec(200000), Timestamp::Millis(now_ms));
 
   const int kRembBps = 1000000;
   const int kSecondRembBps = kRembBps + 500000;
@@ -51,10 +52,10 @@ void TestProbing(bool use_delay_based) {
   // Initial REMB applies immediately.
   if (use_delay_based) {
     bwe.UpdateDelayBasedEstimate(Timestamp::Millis(now_ms),
-                                 DataRate::bps(kRembBps));
+                                 DataRate::BitsPerSec(kRembBps));
   } else {
     bwe.UpdateReceiverEstimate(Timestamp::Millis(now_ms),
-                               DataRate::bps(kRembBps));
+                               DataRate::BitsPerSec(kRembBps));
   }
   bwe.UpdateEstimate(Timestamp::Millis(now_ms));
   EXPECT_EQ(kRembBps, bwe.target_rate().bps());
@@ -63,10 +64,10 @@ void TestProbing(bool use_delay_based) {
   now_ms += 2001;
   if (use_delay_based) {
     bwe.UpdateDelayBasedEstimate(Timestamp::Millis(now_ms),
-                                 DataRate::bps(kSecondRembBps));
+                                 DataRate::BitsPerSec(kSecondRembBps));
   } else {
     bwe.UpdateReceiverEstimate(Timestamp::Millis(now_ms),
-                               DataRate::bps(kSecondRembBps));
+                               DataRate::BitsPerSec(kSecondRembBps));
   }
   bwe.UpdateEstimate(Timestamp::Millis(now_ms));
   EXPECT_EQ(kRembBps, bwe.target_rate().bps());
@@ -91,8 +92,9 @@ TEST(SendSideBweTest, DoesntReapplyBitrateDecreaseWithoutFollowingRemb) {
   static const int kMinBitrateBps = 100000;
   static const int kInitialBitrateBps = 1000000;
   int64_t now_ms = 1000;
-  bwe.SetMinMaxBitrate(DataRate::bps(kMinBitrateBps), DataRate::bps(1500000));
-  bwe.SetSendBitrate(DataRate::bps(kInitialBitrateBps),
+  bwe.SetMinMaxBitrate(DataRate::BitsPerSec(kMinBitrateBps),
+                       DataRate::BitsPerSec(1500000));
+  bwe.SetSendBitrate(DataRate::BitsPerSec(kInitialBitrateBps),
                      Timestamp::Millis(now_ms));
 
   static const uint8_t kFractionLoss = 128;
@@ -145,18 +147,18 @@ TEST(SendSideBweTest, SettingSendBitrateOverridesDelayBasedEstimate) {
 
   int64_t now_ms = 0;
 
-  bwe.SetMinMaxBitrate(DataRate::bps(kMinBitrateBps),
-                       DataRate::bps(kMaxBitrateBps));
-  bwe.SetSendBitrate(DataRate::bps(kInitialBitrateBps),
+  bwe.SetMinMaxBitrate(DataRate::BitsPerSec(kMinBitrateBps),
+                       DataRate::BitsPerSec(kMaxBitrateBps));
+  bwe.SetSendBitrate(DataRate::BitsPerSec(kInitialBitrateBps),
                      Timestamp::Millis(now_ms));
 
   bwe.UpdateDelayBasedEstimate(Timestamp::Millis(now_ms),
-                               DataRate::bps(kDelayBasedBitrateBps));
+                               DataRate::BitsPerSec(kDelayBasedBitrateBps));
   bwe.UpdateEstimate(Timestamp::Millis(now_ms));
   EXPECT_GE(bwe.target_rate().bps(), kInitialBitrateBps);
   EXPECT_LE(bwe.target_rate().bps(), kDelayBasedBitrateBps);
 
-  bwe.SetSendBitrate(DataRate::bps(kForcedHighBitrate),
+  bwe.SetSendBitrate(DataRate::BitsPerSec(kForcedHighBitrate),
                      Timestamp::Millis(now_ms));
   EXPECT_EQ(bwe.target_rate().bps(), kForcedHighBitrate);
 }

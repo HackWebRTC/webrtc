@@ -40,12 +40,14 @@ TargetRateConstraints ConvertConstraints(int min_bitrate_bps,
                                          Clock* clock) {
   TargetRateConstraints msg;
   msg.at_time = Timestamp::Millis(clock->TimeInMilliseconds());
-  msg.min_data_rate =
-      min_bitrate_bps >= 0 ? DataRate::bps(min_bitrate_bps) : DataRate::Zero();
-  msg.max_data_rate = max_bitrate_bps > 0 ? DataRate::bps(max_bitrate_bps)
-                                          : DataRate::Infinity();
+  msg.min_data_rate = min_bitrate_bps >= 0
+                          ? DataRate::BitsPerSec(min_bitrate_bps)
+                          : DataRate::Zero();
+  msg.max_data_rate = max_bitrate_bps > 0
+                          ? DataRate::BitsPerSec(max_bitrate_bps)
+                          : DataRate::Infinity();
   if (start_bitrate_bps > 0)
-    msg.starting_rate = DataRate::bps(start_bitrate_bps);
+    msg.starting_rate = DataRate::BitsPerSec(start_bitrate_bps);
   return msg;
 }
 
@@ -114,8 +116,8 @@ RtpTransportControllerSend::RtpTransportControllerSend(
   initial_config_.key_value_config = trials;
   RTC_DCHECK(bitrate_config.start_bitrate_bps > 0);
 
-  pacer()->SetPacingRates(DataRate::bps(bitrate_config.start_bitrate_bps),
-                          DataRate::Zero());
+  pacer()->SetPacingRates(
+      DataRate::BitsPerSec(bitrate_config.start_bitrate_bps), DataRate::Zero());
 
   if (!use_task_queue_pacer_) {
     process_thread_->Start();
@@ -426,7 +428,7 @@ void RtpTransportControllerSend::OnTransportOverheadChanged(
   }
 
   pacer()->SetTransportOverhead(
-      DataSize::bytes(transport_overhead_bytes_per_packet));
+      DataSize::Bytes(transport_overhead_bytes_per_packet));
 
   // TODO(holmer): Call AudioRtpSenders when they have been moved to
   // RtpTransportControllerSend.
@@ -448,7 +450,7 @@ void RtpTransportControllerSend::IncludeOverheadInPacedSender() {
 void RtpTransportControllerSend::OnReceivedEstimatedBitrate(uint32_t bitrate) {
   RemoteBitrateReport msg;
   msg.receive_time = Timestamp::Millis(clock_->TimeInMilliseconds());
-  msg.bandwidth = DataRate::bps(bitrate);
+  msg.bandwidth = DataRate::BitsPerSec(bitrate);
   task_queue_.PostTask([this, msg]() {
     RTC_DCHECK_RUN_ON(&task_queue_);
     if (controller_)

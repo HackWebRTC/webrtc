@@ -375,7 +375,7 @@ void GoogCcNetworkController::UpdateCongestionWindowSize() {
   TimeDelta min_feedback_max_rtt = TimeDelta::Millis(
       *std::min_element(feedback_max_rtts_.begin(), feedback_max_rtts_.end()));
 
-  const DataSize kMinCwnd = DataSize::bytes(2 * 1500);
+  const DataSize kMinCwnd = DataSize::Bytes(2 * 1500);
   TimeDelta time_window =
       min_feedback_max_rtt +
       TimeDelta::Millis(
@@ -607,7 +607,7 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
             loss_based_target_rate.bps());
     pushback_rate = std::max<int64_t>(bandwidth_estimation_->GetMinBitrate(),
                                       pushback_rate);
-    pushback_target_rate = DataRate::bps(pushback_rate);
+    pushback_target_rate = DataRate::BitsPerSec(pushback_rate);
     if (rate_control_settings_.UseCongestionWindowDropFrameOnly()) {
       cwnd_reduce_ratio = static_cast<double>(loss_based_target_rate.bps() -
                                               pushback_target_rate.bps()) /

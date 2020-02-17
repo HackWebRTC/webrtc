@@ -206,7 +206,7 @@ TEST_F(TestVp8Impl, DynamicSetRates) {
       static_cast<double>(codec_settings_.maxFramerate);
 
   // Set rates with no headroom.
-  rate_settings.bandwidth_allocation = DataRate::bps(kBitrateBps);
+  rate_settings.bandwidth_allocation = DataRate::BitsPerSec(kBitrateBps);
   EXPECT_CALL(
       *vpx,
       codec_enc_config_set(
@@ -221,7 +221,7 @@ TEST_F(TestVp8Impl, DynamicSetRates) {
   encoder.SetRates(rate_settings);
 
   // Set rates with max headroom.
-  rate_settings.bandwidth_allocation = DataRate::bps(kBitrateBps * 2);
+  rate_settings.bandwidth_allocation = DataRate::BitsPerSec(kBitrateBps * 2);
   EXPECT_CALL(
       *vpx, codec_enc_config_set(
                 _, AllOf(Field(&vpx_codec_enc_cfg_t::rc_target_bitrate,
@@ -235,7 +235,8 @@ TEST_F(TestVp8Impl, DynamicSetRates) {
   encoder.SetRates(rate_settings);
 
   // Set rates with headroom half way.
-  rate_settings.bandwidth_allocation = DataRate::bps((3 * kBitrateBps) / 2);
+  rate_settings.bandwidth_allocation =
+      DataRate::BitsPerSec((3 * kBitrateBps) / 2);
   EXPECT_CALL(
       *vpx,
       codec_enc_config_set(

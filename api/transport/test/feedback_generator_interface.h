@@ -22,7 +22,7 @@ class FeedbackGenerator {
     BuiltInNetworkBehaviorConfig send_link;
     BuiltInNetworkBehaviorConfig return_link;
     TimeDelta feedback_interval = TimeDelta::Millis(50);
-    DataSize feedback_packet_size = DataSize::bytes(20);
+    DataSize feedback_packet_size = DataSize::Bytes(20);
   };
   virtual ~FeedbackGenerator() = default;
   virtual Timestamp Now() = 0;

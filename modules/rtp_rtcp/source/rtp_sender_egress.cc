@@ -213,13 +213,13 @@ void RtpSenderEgress::ProcessBitrateAndNotifyObservers() {
 
 DataRate RtpSenderEgress::SendBitrate() const {
   rtc::CritScope cs(&lock_);
-  return DataRate::bps(
+  return DataRate::BitsPerSec(
       total_bitrate_sent_.Rate(clock_->TimeInMilliseconds()).value_or(0));
 }
 
 DataRate RtpSenderEgress::NackOverheadRate() const {
   rtc::CritScope cs(&lock_);
-  return DataRate::bps(
+  return DataRate::BitsPerSec(
       nack_bitrate_sent_.Rate(clock_->TimeInMilliseconds()).value_or(0));
 }
 

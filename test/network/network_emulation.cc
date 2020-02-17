@@ -215,11 +215,11 @@ void EmulatedEndpointImpl::SendPacket(const rtc::SocketAddress& from,
     Timestamp current_time = clock_->CurrentTime();
     if (stats_.first_packet_sent_time.IsInfinite()) {
       stats_.first_packet_sent_time = current_time;
-      stats_.first_sent_packet_size = DataSize::bytes(packet.ip_packet_size());
+      stats_.first_sent_packet_size = DataSize::Bytes(packet.ip_packet_size());
     }
     stats_.last_packet_sent_time = current_time;
     stats_.packets_sent++;
-    stats_.bytes_sent += DataSize::bytes(packet.ip_packet_size());
+    stats_.bytes_sent += DataSize::Bytes(packet.ip_packet_size());
 
     router_.OnPacketReceived(std::move(packet));
   });
@@ -291,7 +291,7 @@ void EmulatedEndpointImpl::OnPacketReceived(EmulatedIpPacket packet) {
     RTC_LOG(INFO) << "Drop packet: no receiver registered in " << id_
                   << " on port " << packet.to.port();
     stats_.packets_dropped++;
-    stats_.bytes_dropped += DataSize::bytes(packet.ip_packet_size());
+    stats_.bytes_dropped += DataSize::Bytes(packet.ip_packet_size());
     return;
   }
   // Endpoint assumes frequent calls to bind and unbind methods, so it holds
@@ -328,11 +328,11 @@ void EmulatedEndpointImpl::UpdateReceiveStats(const EmulatedIpPacket& packet) {
   if (stats_.first_packet_received_time.IsInfinite()) {
     stats_.first_packet_received_time = current_time;
     stats_.first_received_packet_size =
-        DataSize::bytes(packet.ip_packet_size());
+        DataSize::Bytes(packet.ip_packet_size());
   }
   stats_.last_packet_received_time = current_time;
   stats_.packets_received++;
-  stats_.bytes_received += DataSize::bytes(packet.ip_packet_size());
+  stats_.bytes_received += DataSize::Bytes(packet.ip_packet_size());
 }
 
 EndpointsContainer::EndpointsContainer(

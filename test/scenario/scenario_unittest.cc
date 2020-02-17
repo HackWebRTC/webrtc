@@ -22,7 +22,7 @@ TEST(ScenarioTest, StartsAndStopsWithoutErrors) {
   std::atomic<bool> bitrate_changed(false);
   Scenario s;
   CallClientConfig call_client_config;
-  call_client_config.transport.rates.start_rate = DataRate::kbps(300);
+  call_client_config.transport.rates.start_rate = DataRate::KilobitsPerSec(300);
   auto* alice = s.CreateClient("alice", call_client_config);
   auto* bob = s.CreateClient("bob", call_client_config);
   NetworkSimulationConfig network_config;
@@ -35,8 +35,8 @@ TEST(ScenarioTest, StartsAndStopsWithoutErrors) {
   s.CreateVideoStream(route->reverse(), video_stream_config);
 
   AudioStreamConfig audio_stream_config;
-  audio_stream_config.encoder.min_rate = DataRate::kbps(6);
-  audio_stream_config.encoder.max_rate = DataRate::kbps(64);
+  audio_stream_config.encoder.min_rate = DataRate::KilobitsPerSec(6);
+  audio_stream_config.encoder.max_rate = DataRate::KilobitsPerSec(64);
   audio_stream_config.encoder.allocate_bitrate = true;
   audio_stream_config.stream.in_bandwidth_estimation = false;
   s.CreateAudioStream(route->forward(), audio_stream_config);
@@ -66,7 +66,7 @@ void SetupVideoCall(Scenario& s, VideoQualityAnalyzer* analyzer) {
   auto* alice = s.CreateClient("alice", call_config);
   auto* bob = s.CreateClient("bob", call_config);
   NetworkSimulationConfig network_config;
-  network_config.bandwidth = DataRate::kbps(1000);
+  network_config.bandwidth = DataRate::KilobitsPerSec(1000);
   network_config.delay = TimeDelta::Millis(50);
   auto alice_net = s.CreateSimulationNode(network_config);
   auto bob_net = s.CreateSimulationNode(network_config);

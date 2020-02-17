@@ -148,12 +148,12 @@ float BitrateEstimator::UpdateWindow(int64_t now_ms,
 absl::optional<DataRate> BitrateEstimator::bitrate() const {
   if (bitrate_estimate_kbps_ < 0.f)
     return absl::nullopt;
-  return DataRate::kbps(bitrate_estimate_kbps_);
+  return DataRate::KilobitsPerSec(bitrate_estimate_kbps_);
 }
 
 absl::optional<DataRate> BitrateEstimator::PeekRate() const {
   if (current_window_ms_ > 0)
-    return DataSize::bytes(sum_) / TimeDelta::Millis(current_window_ms_);
+    return DataSize::Bytes(sum_) / TimeDelta::Millis(current_window_ms_);
   return absl::nullopt;
 }
 

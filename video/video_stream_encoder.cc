@@ -388,7 +388,7 @@ void VideoStreamEncoder::SetStartBitrate(int start_bitrate_bps) {
         start_bitrate_bps != 0 ? absl::optional<uint32_t>(start_bitrate_bps)
                                : absl::nullopt;
     resource_adaptation_module_->SetStartBitrate(
-        DataRate::bps(start_bitrate_bps));
+        DataRate::BitsPerSec(start_bitrate_bps));
   });
 }
 
@@ -934,9 +934,10 @@ VideoStreamEncoder::UpdateBitrateAllocationAndNotifyObserver(
   // target in order to sustain the min bitrate of the video codec. In this
   // case, make sure the bandwidth allocation is at least equal the allocation
   // as that is part of the document contract for that field.
-  new_rate_settings.rate_control.bandwidth_allocation = std::max(
-      new_rate_settings.rate_control.bandwidth_allocation,
-      DataRate::bps(new_rate_settings.rate_control.bitrate.get_sum_bps()));
+  new_rate_settings.rate_control.bandwidth_allocation =
+      std::max(new_rate_settings.rate_control.bandwidth_allocation,
+               DataRate::BitsPerSec(
+                   new_rate_settings.rate_control.bitrate.get_sum_bps()));
 
   if (bitrate_adjuster_) {
     VideoBitrateAllocation adjusted_allocation =
@@ -1459,7 +1460,7 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
   // We are only interested in propagating the meta-data about the image, not
   // encoded data itself, to the post encode function. Since we cannot be sure
   // the pointer will still be valid when run on the task queue, set it to null.
-  DataSize frame_size = DataSize::bytes(image_copy.size());
+  DataSize frame_size = DataSize::Bytes(image_copy.size());
   image_copy.ClearEncodedData();
 
   int temporal_index = 0;
@@ -1727,8 +1728,8 @@ void VideoStreamEncoder::ReleaseEncoder() {
 
 bool VideoStreamEncoder::EncoderSwitchExperiment::IsBitrateBelowThreshold(
     const DataRate& target_bitrate) {
-  DataRate rate =
-      DataRate::kbps(bitrate_filter.Apply(1.0, target_bitrate.kbps()));
+  DataRate rate = DataRate::KilobitsPerSec(
+      bitrate_filter.Apply(1.0, target_bitrate.kbps()));
   return current_thresholds.bitrate && rate < *current_thresholds.bitrate;
 }
 
@@ -1794,7 +1795,8 @@ VideoStreamEncoder::ParseEncoderSwitchFieldTrial() const {
     rtc::FromString(thresholds_split[2], &pixel_count);
 
     if (bitrate_kbps > 0) {
-      result.codec_thresholds[codec].bitrate = DataRate::kbps(bitrate_kbps);
+      result.codec_thresholds[codec].bitrate =
+          DataRate::KilobitsPerSec(bitrate_kbps);
     }
 
     if (pixel_count > 0) {

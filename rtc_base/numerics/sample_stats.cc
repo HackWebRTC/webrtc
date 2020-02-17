@@ -118,11 +118,11 @@ bool SampleStats<DataRate>::IsEmpty() {
 }
 
 DataRate SampleStats<DataRate>::Max() {
-  return DataRate::bps(stats_.Max());
+  return DataRate::BitsPerSec(stats_.Max());
 }
 
 DataRate SampleStats<DataRate>::Mean() {
-  return DataRate::bps(stats_.Mean());
+  return DataRate::BitsPerSec(stats_.Mean());
 }
 
 DataRate SampleStats<DataRate>::Median() {
@@ -130,19 +130,19 @@ DataRate SampleStats<DataRate>::Median() {
 }
 
 DataRate SampleStats<DataRate>::Quantile(double quantile) {
-  return DataRate::bps(stats_.Quantile(quantile));
+  return DataRate::BitsPerSec(stats_.Quantile(quantile));
 }
 
 DataRate SampleStats<DataRate>::Min() {
-  return DataRate::bps(stats_.Min());
+  return DataRate::BitsPerSec(stats_.Min());
 }
 
 DataRate SampleStats<DataRate>::Variance() {
-  return DataRate::bps(stats_.Variance());
+  return DataRate::BitsPerSec(stats_.Variance());
 }
 
 DataRate SampleStats<DataRate>::StandardDeviation() {
-  return DataRate::bps(stats_.StandardDeviation());
+  return DataRate::BitsPerSec(stats_.StandardDeviation());
 }
 
 int SampleStats<DataRate>::Count() {

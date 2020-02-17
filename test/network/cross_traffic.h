@@ -29,8 +29,8 @@ namespace test {
 
 struct RandomWalkConfig {
   int random_seed = 1;
-  DataRate peak_rate = DataRate::kbps(100);
-  DataSize min_packet_size = DataSize::bytes(200);
+  DataRate peak_rate = DataRate::KilobitsPerSec(100);
+  DataSize min_packet_size = DataSize::Bytes(200);
   TimeDelta min_packet_interval = TimeDelta::Millis(1);
   TimeDelta update_interval = TimeDelta::Millis(200);
   double variance = 0.6;
@@ -63,8 +63,8 @@ class RandomWalkCrossTraffic {
 };
 
 struct PulsedPeaksConfig {
-  DataRate peak_rate = DataRate::kbps(100);
-  DataSize min_packet_size = DataSize::bytes(200);
+  DataRate peak_rate = DataRate::KilobitsPerSec(100);
+  DataSize min_packet_size = DataSize::Bytes(200);
   TimeDelta min_packet_interval = TimeDelta::Millis(1);
   TimeDelta send_duration = TimeDelta::Millis(100);
   TimeDelta hold_duration = TimeDelta::Millis(2000);
@@ -150,7 +150,7 @@ class TcpMessageRouteImpl final : public TcpMessageRoute {
 };
 
 struct FakeTcpConfig {
-  DataSize packet_size = DataSize::bytes(1200);
+  DataSize packet_size = DataSize::Bytes(1200);
   DataSize send_limit = DataSize::PlusInfinity();
   TimeDelta process_interval = TimeDelta::Millis(200);
   TimeDelta packet_timeout = TimeDelta::Seconds(1);

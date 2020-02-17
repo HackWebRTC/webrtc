@@ -39,7 +39,7 @@ class TestProbeBitrateEstimator : public ::testing::Test {
     PacketResult feedback;
     feedback.sent_packet.send_time =
         kReferenceTime + TimeDelta::Millis(send_time_ms);
-    feedback.sent_packet.size = DataSize::bytes(size_bytes);
+    feedback.sent_packet.size = DataSize::Bytes(size_bytes);
     feedback.sent_packet.pacing_info =
         PacedPacketInfo(probe_cluster_id, min_probes, min_bytes);
     feedback.receive_time = kReferenceTime + TimeDelta::Millis(arrival_time_ms);

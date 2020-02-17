@@ -25,7 +25,7 @@ namespace {
 
 static constexpr int kFieldValueSize = 3;
 static constexpr int kFieldSize = 1 + kFieldValueSize;
-static constexpr DataRate kDataRateResolution = DataRate::KilobitsPerSec<1>();
+static constexpr DataRate kDataRateResolution = DataRate::KilobitsPerSec(1);
 constexpr int64_t kMaxEncoded = (1 << (kFieldValueSize * 8)) - 1;
 
 class DataRateSerializer {

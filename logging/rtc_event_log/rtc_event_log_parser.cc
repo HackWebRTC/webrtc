@@ -2407,14 +2407,14 @@ ParsedRtcEventLog::ParseStatus ParsedRtcEventLog::StoreRemoteEstimateEvent(
   if (proto.has_link_capacity_lower_kbps()) {
     base_link_capacity_lower_kbps = proto.link_capacity_lower_kbps();
     base_event.link_capacity_lower =
-        DataRate::kbps(proto.link_capacity_lower_kbps());
+        DataRate::KilobitsPerSec(proto.link_capacity_lower_kbps());
   }
 
   absl::optional<uint64_t> base_link_capacity_upper_kbps;
   if (proto.has_link_capacity_upper_kbps()) {
     base_link_capacity_upper_kbps = proto.link_capacity_upper_kbps();
     base_event.link_capacity_upper =
-        DataRate::kbps(proto.link_capacity_upper_kbps());
+        DataRate::KilobitsPerSec(proto.link_capacity_upper_kbps());
   }
 
   remote_estimate_events_.push_back(base_event);
@@ -2452,10 +2452,10 @@ ParsedRtcEventLog::ParseStatus ParsedRtcEventLog::StoreRemoteEstimateEvent(
     event.timestamp_ms = *timestamp_ms_values[i];
     if (link_capacity_lower_kbps_values[i])
       event.link_capacity_lower =
-          DataRate::kbps(*link_capacity_lower_kbps_values[i]);
+          DataRate::KilobitsPerSec(*link_capacity_lower_kbps_values[i]);
     if (link_capacity_upper_kbps_values[i])
       event.link_capacity_upper =
-          DataRate::kbps(*link_capacity_upper_kbps_values[i]);
+          DataRate::KilobitsPerSec(*link_capacity_upper_kbps_values[i]);
     remote_estimate_events_.push_back(event);
   }
   return ParseStatus::Success();

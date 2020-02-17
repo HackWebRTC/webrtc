@@ -3349,7 +3349,7 @@ EncoderStreamFactory::CreateSimulcastOrConfereceModeScreenshareStreams(
     // No application-configured maximum for the largest layer.
     // If there is bitrate leftover, give it to the largest layer.
     BoostMaxSimulcastLayer(
-        webrtc::DataRate::bps(encoder_config.max_bitrate_bps), &layers);
+        webrtc::DataRate::BitsPerSec(encoder_config.max_bitrate_bps), &layers);
   }
   return layers;
 }

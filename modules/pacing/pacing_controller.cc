@@ -32,7 +32,7 @@ constexpr TimeDelta kCongestedPacketInterval = TimeDelta::Millis(500);
 // The maximum debt level, in terms of time, capped when sending packets.
 constexpr TimeDelta kMaxDebtInTime = TimeDelta::Millis(500);
 constexpr TimeDelta kMaxElapsedTime = TimeDelta::Seconds(2);
-constexpr DataSize kDefaultPaddingTarget = DataSize::Bytes<50>();
+constexpr DataSize kDefaultPaddingTarget = DataSize::Bytes(50);
 
 // Upper cap on process interval, in case process has not been called in a long
 // time.
@@ -415,10 +415,10 @@ void PacingController::ProcessPackets() {
     } else {
       DataSize keepalive_data_sent = DataSize::Zero();
       std::vector<std::unique_ptr<RtpPacketToSend>> keepalive_packets =
-          packet_sender_->GeneratePadding(DataSize::bytes(1));
+          packet_sender_->GeneratePadding(DataSize::Bytes(1));
       for (auto& packet : keepalive_packets) {
         keepalive_data_sent +=
-            DataSize::bytes(packet->payload_size() + packet->padding_size());
+            DataSize::Bytes(packet->payload_size() + packet->padding_size());
         packet_sender_->SendRtpPacket(std::move(packet), PacedPacketInfo());
       }
       OnPaddingSent(keepalive_data_sent);
@@ -468,7 +468,7 @@ void PacingController::ProcessPackets() {
   if (is_probing) {
     pacing_info = prober_.CurrentCluster();
     first_packet_in_probe = pacing_info.probe_cluster_bytes_sent == 0;
-    recommended_probe_size = DataSize::bytes(prober_.RecommendedMinProbeSize());
+    recommended_probe_size = DataSize::Bytes(prober_.RecommendedMinProbeSize());
   }
 
   DataSize data_sent = DataSize::Zero();
@@ -479,7 +479,7 @@ void PacingController::ProcessPackets() {
     if (small_first_probe_packet_ && first_packet_in_probe) {
       // If first packet in probe, insert a small padding packet so we have a
       // more reliable start window for the rate estimation.
-      auto padding = packet_sender_->GeneratePadding(DataSize::bytes(1));
+      auto padding = packet_sender_->GeneratePadding(DataSize::Bytes(1));
       // If no RTP modules sending media are registered, we may not get a
       // padding packet back.
       if (!padding.empty()) {
@@ -531,11 +531,11 @@ void PacingController::ProcessPackets() {
     RTC_DCHECK(rtp_packet);
     RTC_DCHECK(rtp_packet->packet_type().has_value());
     const RtpPacketMediaType packet_type = *rtp_packet->packet_type();
-    DataSize packet_size = DataSize::bytes(rtp_packet->payload_size() +
+    DataSize packet_size = DataSize::Bytes(rtp_packet->payload_size() +
                                            rtp_packet->padding_size());
 
     if (include_overhead_) {
-      packet_size += DataSize::bytes(rtp_packet->headers_size()) +
+      packet_size += DataSize::Bytes(rtp_packet->headers_size()) +
                      transport_overhead_per_packet_;
     }
     packet_sender_->SendRtpPacket(std::move(rtp_packet), pacing_info);
@@ -594,7 +594,7 @@ DataSize PacingController::PaddingToAdd(
   }
 
   if (mode_ == ProcessMode::kPeriodic) {
-    return DataSize::bytes(padding_budget_.bytes_remaining());
+    return DataSize::Bytes(padding_budget_.bytes_remaining());
   } else if (padding_rate_ > DataRate::Zero() &&
              padding_debt_ == DataSize::Zero()) {
     return kDefaultPaddingTarget;

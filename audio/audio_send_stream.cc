@@ -804,12 +804,12 @@ void AudioSendStream::ConfigureBitrateObserver() {
       constexpr int kOverheadPerPacket = 20 + 8 + 10 + 12;
       const TimeDelta kMinPacketDuration = TimeDelta::Millis(20);
       DataRate max_overhead =
-          DataSize::bytes(kOverheadPerPacket) / kMinPacketDuration;
+          DataSize::Bytes(kOverheadPerPacket) / kMinPacketDuration;
       priority_bitrate += max_overhead;
     } else {
       RTC_DCHECK(frame_length_range_);
       const DataSize kOverheadPerPacket =
-          DataSize::bytes(total_packet_overhead_bytes_);
+          DataSize::Bytes(total_packet_overhead_bytes_);
       DataRate max_overhead = kOverheadPerPacket / frame_length_range_->first;
       priority_bitrate += max_overhead;
     }
@@ -841,8 +841,8 @@ void AudioSendStream::RemoveBitrateObserver() {
 AudioSendStream::TargetAudioBitrateConstraints
 AudioSendStream::GetMinMaxBitrateConstraints() const {
   TargetAudioBitrateConstraints constraints{
-      DataRate::bps(config_.min_bitrate_bps),
-      DataRate::bps(config_.max_bitrate_bps)};
+      DataRate::BitsPerSec(config_.min_bitrate_bps),
+      DataRate::BitsPerSec(config_.max_bitrate_bps)};
 
   // If bitrates were explicitly overriden via field trial, use those values.
   if (allocation_settings_.min_bitrate)
@@ -856,7 +856,7 @@ AudioSendStream::GetMinMaxBitrateConstraints() const {
   if (send_side_bwe_with_overhead_) {
     if (use_legacy_overhead_calculation_) {
       // OverheadPerPacket = Ipv4(20B) + UDP(8B) + SRTP(10B) + RTP(12)
-      const DataSize kOverheadPerPacket = DataSize::bytes(20 + 8 + 10 + 12);
+      const DataSize kOverheadPerPacket = DataSize::Bytes(20 + 8 + 10 + 12);
       const TimeDelta kMaxFrameLength =
           TimeDelta::Millis(60);  // Based on Opus spec
       const DataRate kMinOverhead = kOverheadPerPacket / kMaxFrameLength;
@@ -865,7 +865,7 @@ AudioSendStream::GetMinMaxBitrateConstraints() const {
     } else {
       RTC_DCHECK(frame_length_range_);
       const DataSize kOverheadPerPacket =
-          DataSize::bytes(total_packet_overhead_bytes_);
+          DataSize::Bytes(total_packet_overhead_bytes_);
       constraints.min += kOverheadPerPacket / frame_length_range_->second;
       constraints.max += kOverheadPerPacket / frame_length_range_->first;
     }

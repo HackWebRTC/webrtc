@@ -72,7 +72,7 @@ PacketResult CreatePacket(int64_t receive_time_ms,
   res.receive_time = Timestamp::Millis(receive_time_ms);
   res.sent_packet.send_time = Timestamp::Millis(send_time_ms);
   res.sent_packet.sequence_number = sequence_number;
-  res.sent_packet.size = DataSize::bytes(payload_size);
+  res.sent_packet.size = DataSize::Bytes(payload_size);
   res.sent_packet.pacing_info = pacing_info;
   return res;
 }
@@ -309,7 +309,7 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
   packet_feedback.sent_packet.sequence_number = 1;
   packet_feedback.sent_packet.send_time = Timestamp::Millis(100);
   packet_feedback.receive_time = Timestamp::Millis(200);
-  packet_feedback.sent_packet.size = DataSize::bytes(1500);
+  packet_feedback.sent_packet.size = DataSize::Bytes(1500);
   sent_packets.push_back(packet_feedback);
 
   // TODO(srte): This rounding maintains previous behavior, but should ot be

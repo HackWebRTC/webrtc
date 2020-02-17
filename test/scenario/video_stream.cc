@@ -256,7 +256,8 @@ VideoEncoderConfig CreateVideoEncoderConfig(VideoStreamConfig config) {
 
   // TODO(srte): Base this on encoder capabilities.
   encoder_config.max_bitrate_bps =
-      config.encoder.max_data_rate.value_or(DataRate::kbps(10000)).bps();
+      config.encoder.max_data_rate.value_or(DataRate::KilobitsPerSec(10000))
+          .bps();
 
   encoder_config.encoder_specific_settings =
       CreateEncoderSpecificSettings(config);

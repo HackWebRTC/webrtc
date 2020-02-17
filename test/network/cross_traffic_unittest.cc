@@ -70,8 +70,8 @@ TEST(CrossTrafficTest, PulsedPeaksCrossTraffic) {
   TrafficRoute traffic(&fixture.clock, &fixture.counter, &fixture.endpoint);
 
   PulsedPeaksConfig config;
-  config.peak_rate = DataRate::kbps(1000);
-  config.min_packet_size = DataSize::bytes(1);
+  config.peak_rate = DataRate::KilobitsPerSec(1000);
+  config.min_packet_size = DataSize::Bytes(1);
   config.min_packet_interval = TimeDelta::Millis(25);
   config.send_duration = TimeDelta::Millis(500);
   config.hold_duration = TimeDelta::Millis(250);
@@ -95,8 +95,8 @@ TEST(CrossTrafficTest, RandomWalkCrossTraffic) {
   TrafficRoute traffic(&fixture.clock, &fixture.counter, &fixture.endpoint);
 
   RandomWalkConfig config;
-  config.peak_rate = DataRate::kbps(1000);
-  config.min_packet_size = DataSize::bytes(1);
+  config.peak_rate = DataRate::KilobitsPerSec(1000);
+  config.min_packet_size = DataSize::Bytes(1);
   config.min_packet_interval = TimeDelta::Millis(25);
   config.update_interval = TimeDelta::Millis(500);
   config.variance = 0.0;

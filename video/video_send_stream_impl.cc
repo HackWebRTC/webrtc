@@ -624,24 +624,25 @@ uint32_t VideoSendStreamImpl::OnBitrateUpdated(BitrateAllocationUpdate update) {
   DataRate link_allocation = DataRate::Zero();
   if (encoder_target_rate_bps_ > protection_bitrate_bps) {
     link_allocation =
-        DataRate::bps(encoder_target_rate_bps_ - protection_bitrate_bps);
+        DataRate::BitsPerSec(encoder_target_rate_bps_ - protection_bitrate_bps);
   }
   DataRate overhead =
-      update.target_bitrate - DataRate::bps(encoder_target_rate_bps_);
+      update.target_bitrate - DataRate::BitsPerSec(encoder_target_rate_bps_);
   DataRate encoder_stable_target_rate = update.stable_target_bitrate;
   if (encoder_stable_target_rate > overhead) {
     encoder_stable_target_rate = encoder_stable_target_rate - overhead;
   } else {
-    encoder_stable_target_rate = DataRate::bps(encoder_target_rate_bps_);
+    encoder_stable_target_rate = DataRate::BitsPerSec(encoder_target_rate_bps_);
   }
 
   encoder_target_rate_bps_ =
       std::min(encoder_max_bitrate_bps_, encoder_target_rate_bps_);
 
-  encoder_stable_target_rate = std::min(DataRate::bps(encoder_max_bitrate_bps_),
-                                        encoder_stable_target_rate);
+  encoder_stable_target_rate =
+      std::min(DataRate::BitsPerSec(encoder_max_bitrate_bps_),
+               encoder_stable_target_rate);
 
-  DataRate encoder_target_rate = DataRate::bps(encoder_target_rate_bps_);
+  DataRate encoder_target_rate = DataRate::BitsPerSec(encoder_target_rate_bps_);
   link_allocation = std::max(encoder_target_rate, link_allocation);
   video_stream_encoder_->OnBitrateUpdated(
       encoder_target_rate, encoder_stable_target_rate, link_allocation,

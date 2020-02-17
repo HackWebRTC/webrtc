@@ -34,7 +34,7 @@ bool CoDelSimulation::DropDequeuedPacket(Timestamp now,
   constexpr TimeDelta kWindow = TimeDelta::Millis(100);
   constexpr TimeDelta kDelayThreshold = TimeDelta::Millis(5);
   constexpr TimeDelta kDropCountMemory = TimeDelta::Millis(1600);
-  constexpr DataSize kMaxPacketSize = DataSize::Bytes<1500>();
+  constexpr DataSize kMaxPacketSize = DataSize::Bytes(1500);
 
   // Compensates for process interval in simulation; not part of standard CoDel.
   TimeDelta queuing_time = now - enqueing_time - kDefaultProcessDelay;
@@ -193,8 +193,8 @@ void SimulatedNetwork::UpdateCapacityQueue(ConfigState state,
              codel_controller_.DropDequeuedPacket(
                  Timestamp::Micros(time_us),
                  Timestamp::Micros(capacity_link_.front().packet.send_time_us),
-                 DataSize::bytes(capacity_link_.front().packet.size),
-                 DataSize::bytes(queue_size_bytes_))) {
+                 DataSize::Bytes(capacity_link_.front().packet.size),
+                 DataSize::Bytes(queue_size_bytes_))) {
         PacketInfo dropped = capacity_link_.front();
         capacity_link_.pop();
         queue_size_bytes_ -= dropped.packet.size;

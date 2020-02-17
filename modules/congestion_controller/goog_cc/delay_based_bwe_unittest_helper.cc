@@ -54,7 +54,7 @@ int64_t RtpStream::GenerateFrame(int64_t time_now_us,
     PacketResult packet;
     packet.sent_packet.send_time =
         Timestamp::Micros(time_now_us + kSendSideOffsetUs);
-    packet.sent_packet.size = DataSize::bytes(payload_size);
+    packet.sent_packet.size = DataSize::Bytes(payload_size);
     packets->push_back(packet);
   }
   next_rtp_time_ = time_now_us + (1000000 + fps_ / 2) / fps_;
@@ -196,7 +196,7 @@ void DelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
   packet.receive_time =
       Timestamp::Millis(arrival_time_ms + arrival_time_offset_ms_);
   packet.sent_packet.send_time = Timestamp::Millis(send_time_ms);
-  packet.sent_packet.size = DataSize::bytes(payload_size);
+  packet.sent_packet.size = DataSize::Bytes(payload_size);
   packet.sent_packet.pacing_info = pacing_info;
   if (packet.sent_packet.pacing_info.probe_cluster_id !=
       PacedPacketInfo::kNotAProbe)

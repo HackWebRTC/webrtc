@@ -30,19 +30,19 @@ auto AllocationLimitsEq(uint32_t min_allocatable_rate_bps,
                         uint32_t max_padding_rate_bps,
                         uint32_t max_allocatable_rate_bps) {
   return AllOf(Field(&BitrateAllocationLimits::min_allocatable_rate,
-                     DataRate::bps(min_allocatable_rate_bps)),
+                     DataRate::BitsPerSec(min_allocatable_rate_bps)),
                Field(&BitrateAllocationLimits::max_allocatable_rate,
-                     DataRate::bps(max_allocatable_rate_bps)),
+                     DataRate::BitsPerSec(max_allocatable_rate_bps)),
                Field(&BitrateAllocationLimits::max_padding_rate,
-                     DataRate::bps(max_padding_rate_bps)));
+                     DataRate::BitsPerSec(max_padding_rate_bps)));
 }
 
 auto AllocationLimitsEq(uint32_t min_allocatable_rate_bps,
                         uint32_t max_padding_rate_bps) {
   return AllOf(Field(&BitrateAllocationLimits::min_allocatable_rate,
-                     DataRate::bps(min_allocatable_rate_bps)),
+                     DataRate::BitsPerSec(min_allocatable_rate_bps)),
                Field(&BitrateAllocationLimits::max_padding_rate,
-                     DataRate::bps(max_padding_rate_bps)));
+                     DataRate::BitsPerSec(max_padding_rate_bps)));
 }
 
 class MockLimitObserver : public BitrateAllocator::LimitObserver {
@@ -89,7 +89,7 @@ TargetTransferRate CreateTargetRateMessage(uint32_t target_bitrate_bps,
   // The timestamp is just for log output, keeping it fixed just means fewer log
   // messages in the test.
   msg.at_time = Timestamp::Seconds(10000);
-  msg.target_rate = DataRate::bps(target_bitrate_bps);
+  msg.target_rate = DataRate::BitsPerSec(target_bitrate_bps);
   msg.stable_target_rate = msg.target_rate;
   msg.network_estimate.bandwidth = msg.target_rate;
   msg.network_estimate.loss_rate_ratio = fraction_loss / 255.0;

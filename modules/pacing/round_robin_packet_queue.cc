@@ -18,7 +18,7 @@
 
 namespace webrtc {
 namespace {
-static constexpr DataSize kMaxLeadingSize = DataSize::Bytes<1400>();
+static constexpr DataSize kMaxLeadingSize = DataSize::Bytes(1400);
 }
 
 RoundRobinPacketQueue::QueuedPacket::QueuedPacket(const QueuedPacket& rhs) =
@@ -163,10 +163,10 @@ std::unique_ptr<RtpPacketToSend> RoundRobinPacketQueue::Pop() {
   // rate. To avoid building a too large budget we limit |bytes| to be within
   // kMaxLeading bytes of the stream that has sent the most amount of bytes.
   DataSize packet_size =
-      DataSize::bytes(queued_packet.RtpPacket()->payload_size() +
+      DataSize::Bytes(queued_packet.RtpPacket()->payload_size() +
                       queued_packet.RtpPacket()->padding_size());
   if (include_overhead_) {
-    packet_size += DataSize::bytes(queued_packet.RtpPacket()->headers_size()) +
+    packet_size += DataSize::Bytes(queued_packet.RtpPacket()->headers_size()) +
                    transport_overhead_per_packet_;
   }
   stream->size =
@@ -253,7 +253,7 @@ void RoundRobinPacketQueue::SetIncludeOverhead() {
   // We need to update the size to reflect overhead for existing packets.
   for (const auto& stream : streams_) {
     for (const QueuedPacket& packet : stream.second.packet_queue) {
-      size_ += DataSize::bytes(packet.RtpPacket()->headers_size()) +
+      size_ += DataSize::Bytes(packet.RtpPacket()->headers_size()) +
                transport_overhead_per_packet_;
     }
   }
@@ -313,10 +313,10 @@ void RoundRobinPacketQueue::Push(QueuedPacket packet) {
   packet.SubtractPauseTime(pause_time_sum_);
 
   size_packets_ += 1;
-  size_ += DataSize::bytes(packet.RtpPacket()->payload_size() +
+  size_ += DataSize::Bytes(packet.RtpPacket()->payload_size() +
                            packet.RtpPacket()->padding_size());
   if (include_overhead_) {
-    size_ += DataSize::bytes(packet.RtpPacket()->headers_size()) +
+    size_ += DataSize::Bytes(packet.RtpPacket()->headers_size()) +
              transport_overhead_per_packet_;
   }
 

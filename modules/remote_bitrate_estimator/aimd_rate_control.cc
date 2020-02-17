@@ -73,7 +73,7 @@ AimdRateControl::AimdRateControl(const WebRtcKeyValueConfig* key_value_config)
 AimdRateControl::AimdRateControl(const WebRtcKeyValueConfig* key_value_config,
                                  bool send_side)
     : min_configured_bitrate_(congestion_controller::GetMinBitrate()),
-      max_configured_bitrate_(DataRate::kbps(30000)),
+      max_configured_bitrate_(DataRate::KilobitsPerSec(30000)),
       current_bitrate_(max_configured_bitrate_),
       latest_estimated_throughput_(current_bitrate_),
       link_capacity_(),
@@ -137,7 +137,7 @@ bool AimdRateControl::ValidEstimate() const {
 TimeDelta AimdRateControl::GetFeedbackInterval() const {
   // Estimate how often we can send RTCP if we allocate up to 5% of bandwidth
   // to feedback.
-  const DataSize kRtcpSize = DataSize::bytes(80);
+  const DataSize kRtcpSize = DataSize::Bytes(80);
   const DataRate rtcp_bitrate = current_bitrate_ * 0.05;
   const TimeDelta interval = kRtcpSize / rtcp_bitrate;
   const TimeDelta kMinFeedbackInterval = TimeDelta::Millis(200);
@@ -165,7 +165,7 @@ bool AimdRateControl::InitialTimeToReduceFurther(Timestamp at_time) const {
   if (!initial_backoff_interval_) {
     return ValidEstimate() &&
            TimeToReduceFurther(at_time,
-                               LatestEstimate() / 2 - DataRate::bps(1));
+                               LatestEstimate() / 2 - DataRate::BitsPerSec(1));
   }
   // TODO(terelius): We could use the RTT (clamped to suitable limits) instead
   // of a fixed bitrate_reduction_interval.
@@ -232,7 +232,7 @@ double AimdRateControl::GetNearMaxIncreaseRateBpsPerSecond() const {
   RTC_DCHECK(!current_bitrate_.IsZero());
   const TimeDelta kFrameInterval = TimeDelta::Seconds(1) / 30;
   DataSize frame_size = current_bitrate_ * kFrameInterval;
-  const DataSize kPacketSize = DataSize::bytes(1200);
+  const DataSize kPacketSize = DataSize::Bytes(1200);
   double packets_per_frame = std::ceil(frame_size / kPacketSize);
   DataSize avg_packet_size = frame_size / packets_per_frame;
 
@@ -380,7 +380,7 @@ DataRate AimdRateControl::ClampBitrate(DataRate new_bitrate,
     // We allow a bit more lag at very low rates to not too easily get stuck if
     // the encoder produces uneven outputs.
     const DataRate max_bitrate =
-        1.5 * estimated_throughput + DataRate::kbps(10);
+        1.5 * estimated_throughput + DataRate::KilobitsPerSec(10);
     if (new_bitrate > current_bitrate_ && new_bitrate > max_bitrate) {
       new_bitrate = std::max(current_bitrate_, max_bitrate);
     }
@@ -404,7 +404,7 @@ DataRate AimdRateControl::MultiplicativeRateIncrease(
     alpha = pow(alpha, std::min(time_since_last_update.seconds<double>(), 1.0));
   }
   DataRate multiplicative_increase =
-      std::max(current_bitrate * (alpha - 1.0), DataRate::bps(1000));
+      std::max(current_bitrate * (alpha - 1.0), DataRate::BitsPerSec(1000));
   return multiplicative_increase;
 }
 
@@ -413,7 +413,7 @@ DataRate AimdRateControl::AdditiveRateIncrease(Timestamp at_time,
   double time_period_seconds = (at_time - last_time).seconds<double>();
   double data_rate_increase_bps =
       GetNearMaxIncreaseRateBpsPerSecond() * time_period_seconds;
-  return DataRate::bps(data_rate_increase_bps);
+  return DataRate::BitsPerSec(data_rate_increase_bps);
 }
 
 void AimdRateControl::ChangeState(const RateControlInput& input,

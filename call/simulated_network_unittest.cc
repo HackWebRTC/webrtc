@@ -26,8 +26,8 @@ constexpr int kNotReceived = PacketDeliveryInfo::kNotReceived;
 TEST(SimulatedNetworkTest, CodelDoesNothingAtCapacity) {
   const TimeDelta kRuntime = TimeDelta::Seconds(30);
 
-  DataRate link_capacity = DataRate::kbps(1000);
-  const DataSize packet_size = DataSize::bytes(1000);
+  DataRate link_capacity = DataRate::KilobitsPerSec(1000);
+  const DataSize packet_size = DataSize::Bytes(1000);
 
   SimulatedNetwork::Config config;
   config.codel_active_queue_management = true;
@@ -80,8 +80,8 @@ TEST(SimulatedNetworkTest, CodelLimitsDelayAndDropsPacketsOnOverload) {
   const TimeDelta kRuntime = TimeDelta::Seconds(30);
   const TimeDelta kCheckInterval = TimeDelta::Millis(2000);
 
-  DataRate link_capacity = DataRate::kbps(1000);
-  const DataSize rough_packet_size = DataSize::bytes(1500);
+  DataRate link_capacity = DataRate::KilobitsPerSec(1000);
+  const DataSize rough_packet_size = DataSize::Bytes(1500);
   const double overload_rate = 1.5;
 
   SimulatedNetwork::Config config;

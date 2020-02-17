@@ -23,7 +23,7 @@ class EncoderOvershootDetectorTest : public ::testing::Test {
   static constexpr double kDefaultFrameRateFps = 15;
   EncoderOvershootDetectorTest()
       : detector_(kWindowSizeMs),
-        target_bitrate_(DataRate::bps(kDefaultBitrateBps)),
+        target_bitrate_(DataRate::BitsPerSec(kDefaultBitrateBps)),
         target_framerate_fps_(kDefaultFrameRateFps) {}
 
  protected:
@@ -111,7 +111,7 @@ TEST_F(EncoderOvershootDetectorTest, ConstantOvershootVaryingRates) {
   RunConstantUtilizationTest(1.2, 1.2, 0.01, kWindowSizeMs);
   target_framerate_fps_ /= 2;
   RunConstantUtilizationTest(1.2, 1.2, 0.01, kWindowSizeMs / 2);
-  target_bitrate_ = DataRate::bps(target_bitrate_.bps() / 2);
+  target_bitrate_ = DataRate::BitsPerSec(target_bitrate_.bps() / 2);
   RunConstantUtilizationTest(1.2, 1.2, 0.01, kWindowSizeMs / 2);
 }
 

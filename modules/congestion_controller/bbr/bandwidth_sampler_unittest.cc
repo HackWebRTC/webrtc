@@ -36,7 +36,7 @@ const int64_t kRegularPacketSizeBytes = 1280;
 static_assert((kRegularPacketSizeBytes & 31) == 0,
               "kRegularPacketSizeBytes has to be five times divisible by 2");
 
-const DataSize kRegularPacketSize = DataSize::bytes(kRegularPacketSizeBytes);
+const DataSize kRegularPacketSize = DataSize::Bytes(kRegularPacketSizeBytes);
 
 // A test fixture with utility methods for BandwidthSampler tests.
 class BandwidthSamplerTest : public ::testing::Test {

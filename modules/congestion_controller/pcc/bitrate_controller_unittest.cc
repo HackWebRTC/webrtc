@@ -32,13 +32,13 @@ constexpr double kThroughputPower = 0.99;
 constexpr double kDelayGradientThreshold = 0.01;
 constexpr double kDelayGradientNegativeBound = 10;
 
-const DataRate kTargetSendingRate = DataRate::kbps(300);
+const DataRate kTargetSendingRate = DataRate::KilobitsPerSec(300);
 const double kEpsilon = 0.05;
 const Timestamp kStartTime = Timestamp::Micros(0);
 const TimeDelta kPacketsDelta = TimeDelta::Millis(1);
 const TimeDelta kIntervalDuration = TimeDelta::Millis(1000);
 const TimeDelta kDefaultRtt = TimeDelta::Millis(1000);
-const DataSize kDefaultDataSize = DataSize::bytes(100);
+const DataSize kDefaultDataSize = DataSize::Bytes(100);
 
 std::vector<PacketResult> CreatePacketResults(
     const std::vector<Timestamp>& packets_send_times,

@@ -61,7 +61,7 @@ absl::optional<DataRate> GetExperimentalMinVideoBitrate(VideoCodecType type) {
   const absl::optional<int> fallback_min_bitrate_bps =
       GetFallbackMinBpsFromFieldTrial(type);
   if (fallback_min_bitrate_bps) {
-    return DataRate::bps(*fallback_min_bitrate_bps);
+    return DataRate::BitsPerSec(*fallback_min_bitrate_bps);
   }
 
   if (webrtc::field_trial::IsEnabled(kMinVideoBitrateExperiment)) {

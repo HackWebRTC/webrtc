@@ -59,7 +59,7 @@ class WindowedFilterTest : public ::testing::Test {
   // Third best = 600 bps, recorded at 100ms
   void InitializeMaxFilter() {
     int64_t now_ms = 0;
-    DataRate bw_sample = DataRate::bps(1000);
+    DataRate bw_sample = DataRate::BitsPerSec(1000);
     for (int i = 0; i < 5; ++i) {
       windowed_max_bw_.Update(bw_sample, now_ms);
       RTC_LOG(LS_VERBOSE) << "i: " << i << " sample: " << ToString(bw_sample)
@@ -69,11 +69,11 @@ class WindowedFilterTest : public ::testing::Test {
                           << ToString(windowed_max_bw_.GetSecondBest()) << " "
                           << ToString(windowed_max_bw_.GetThirdBest());
       now_ms += 25;
-      bw_sample = DataRate::bps(bw_sample.bps() - 100);
+      bw_sample = DataRate::BitsPerSec(bw_sample.bps() - 100);
     }
-    EXPECT_EQ(DataRate::bps(900), windowed_max_bw_.GetBest());
-    EXPECT_EQ(DataRate::bps(700), windowed_max_bw_.GetSecondBest());
-    EXPECT_EQ(DataRate::bps(600), windowed_max_bw_.GetThirdBest());
+    EXPECT_EQ(DataRate::BitsPerSec(900), windowed_max_bw_.GetBest());
+    EXPECT_EQ(DataRate::BitsPerSec(700), windowed_max_bw_.GetSecondBest());
+    EXPECT_EQ(DataRate::BitsPerSec(600), windowed_max_bw_.GetThirdBest());
   }
 
  protected:
@@ -135,15 +135,15 @@ TEST_F(WindowedFilterTest, MonotonicallyIncreasingMin) {
 
 TEST_F(WindowedFilterTest, MonotonicallyDecreasingMax) {
   int64_t now_ms = 0;
-  DataRate bw_sample = DataRate::bps(1000);
+  DataRate bw_sample = DataRate::BitsPerSec(1000);
   windowed_max_bw_.Update(bw_sample, now_ms);
-  EXPECT_EQ(DataRate::bps(1000), windowed_max_bw_.GetBest());
+  EXPECT_EQ(DataRate::BitsPerSec(1000), windowed_max_bw_.GetBest());
 
   // Gradually decrease the bw samples and ensure the windowed max bw starts
   // decreasing.
   for (int i = 0; i < 6; ++i) {
     now_ms += 25;
-    bw_sample = DataRate::bps(bw_sample.bps() - 100);
+    bw_sample = DataRate::BitsPerSec(bw_sample.bps() - 100);
     windowed_max_bw_.Update(bw_sample, now_ms);
     RTC_LOG(LS_VERBOSE) << "i: " << i << " sample: " << bw_sample.bps()
                         << " maxs: "
@@ -152,11 +152,11 @@ TEST_F(WindowedFilterTest, MonotonicallyDecreasingMax) {
                         << windowed_max_bw_.GetSecondBest().bps() << " "
                         << windowed_max_bw_.GetThirdBest().bps();
     if (i < 3) {
-      EXPECT_EQ(DataRate::bps(1000), windowed_max_bw_.GetBest());
+      EXPECT_EQ(DataRate::BitsPerSec(1000), windowed_max_bw_.GetBest());
     } else if (i == 3) {
-      EXPECT_EQ(DataRate::bps(900), windowed_max_bw_.GetBest());
+      EXPECT_EQ(DataRate::BitsPerSec(900), windowed_max_bw_.GetBest());
     } else if (i < 6) {
-      EXPECT_EQ(DataRate::bps(700), windowed_max_bw_.GetBest());
+      EXPECT_EQ(DataRate::BitsPerSec(700), windowed_max_bw_.GetBest());
     }
   }
 }
@@ -181,13 +181,13 @@ TEST_F(WindowedFilterTest, SampleChangesThirdBestMax) {
   InitializeMaxFilter();
   // BW sample higher than the third-choice max sets that, but nothing else.
   DataRate bw_sample =
-      DataRate::bps(windowed_max_bw_.GetThirdBest().bps() + 50);
+      DataRate::BitsPerSec(windowed_max_bw_.GetThirdBest().bps() + 50);
   // Latest sample was recorded at 100ms.
   int64_t now_ms = 101;
   windowed_max_bw_.Update(bw_sample, now_ms);
   EXPECT_EQ(bw_sample, windowed_max_bw_.GetThirdBest());
-  EXPECT_EQ(DataRate::bps(700), windowed_max_bw_.GetSecondBest());
-  EXPECT_EQ(DataRate::bps(900), windowed_max_bw_.GetBest());
+  EXPECT_EQ(DataRate::BitsPerSec(700), windowed_max_bw_.GetSecondBest());
+  EXPECT_EQ(DataRate::BitsPerSec(900), windowed_max_bw_.GetBest());
 }
 
 TEST_F(WindowedFilterTest, SampleChangesSecondBestMin) {
@@ -212,14 +212,14 @@ TEST_F(WindowedFilterTest, SampleChangesSecondBestMax) {
   // BW sample higher than the second-choice max sets that and also
   // the third-choice max.
   DataRate bw_sample =
-      DataRate::bps(windowed_max_bw_.GetSecondBest().bps() + 50);
+      DataRate::BitsPerSec(windowed_max_bw_.GetSecondBest().bps() + 50);
 
   // Latest sample was recorded at 100ms.
   int64_t now_ms = 101;
   windowed_max_bw_.Update(bw_sample, now_ms);
   EXPECT_EQ(bw_sample, windowed_max_bw_.GetThirdBest());
   EXPECT_EQ(bw_sample, windowed_max_bw_.GetSecondBest());
-  EXPECT_EQ(DataRate::bps(900), windowed_max_bw_.GetBest());
+  EXPECT_EQ(DataRate::BitsPerSec(900), windowed_max_bw_.GetBest());
 }
 
 TEST_F(WindowedFilterTest, SampleChangesAllMins) {
@@ -242,7 +242,8 @@ TEST_F(WindowedFilterTest, SampleChangesAllMaxs) {
   InitializeMaxFilter();
   // BW sample higher than the first-choice max sets that and also
   // the second and third-choice maxs.
-  DataRate bw_sample = DataRate::bps(windowed_max_bw_.GetBest().bps() + 50);
+  DataRate bw_sample =
+      DataRate::BitsPerSec(windowed_max_bw_.GetBest().bps() + 50);
   // Latest sample was recorded at 100ms.
   int64_t now_ms = 101;
   windowed_max_bw_.Update(bw_sample, now_ms);
@@ -268,7 +269,7 @@ TEST_F(WindowedFilterTest, ExpireBestMax) {
   InitializeMaxFilter();
   DataRate old_third_best = windowed_max_bw_.GetThirdBest();
   DataRate old_second_best = windowed_max_bw_.GetSecondBest();
-  DataRate bw_sample = DataRate::bps(old_third_best.bps() - 50);
+  DataRate bw_sample = DataRate::BitsPerSec(old_third_best.bps() - 50);
   // Best max sample was recorded at 25ms, so expiry time is 124ms.
   int64_t now_ms = 125;
   windowed_max_bw_.Update(bw_sample, now_ms);
@@ -292,7 +293,7 @@ TEST_F(WindowedFilterTest, ExpireSecondBestMin) {
 TEST_F(WindowedFilterTest, ExpireSecondBestMax) {
   InitializeMaxFilter();
   DataRate old_third_best = windowed_max_bw_.GetThirdBest();
-  DataRate bw_sample = DataRate::bps(old_third_best.bps() - 50);
+  DataRate bw_sample = DataRate::BitsPerSec(old_third_best.bps() - 50);
   // Second best max sample was recorded at 75ms, so expiry time is 174ms.
   int64_t now_ms = 175;
   windowed_max_bw_.Update(bw_sample, now_ms);
@@ -319,7 +320,7 @@ TEST_F(WindowedFilterTest, ExpireAllMins) {
 TEST_F(WindowedFilterTest, ExpireAllMaxs) {
   InitializeMaxFilter();
   DataRate bw_sample =
-      DataRate::bps(windowed_max_bw_.GetThirdBest().bps() - 50);
+      DataRate::BitsPerSec(windowed_max_bw_.GetThirdBest().bps() - 50);
   // Third best max sample was recorded at 100ms, so expiry time is 199ms.
   int64_t now_ms = 200;
   windowed_max_bw_.Update(bw_sample, now_ms);

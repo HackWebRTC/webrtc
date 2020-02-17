@@ -358,8 +358,8 @@ std::unique_ptr<RtcEventRouteChange> EventGenerator::NewRouteChange() {
 
 std::unique_ptr<RtcEventRemoteEstimate> EventGenerator::NewRemoteEstimate() {
   return std::make_unique<RtcEventRemoteEstimate>(
-      DataRate::kbps(prng_.Rand(0, 100000)),
-      DataRate::kbps(prng_.Rand(0, 100000)));
+      DataRate::KilobitsPerSec(prng_.Rand(0, 100000)),
+      DataRate::KilobitsPerSec(prng_.Rand(0, 100000)));
 }
 
 std::unique_ptr<RtcEventRtcpPacketIncoming>

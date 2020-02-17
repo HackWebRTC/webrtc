@@ -74,7 +74,7 @@ void TransportFeedbackAdapter::AddPacket(const RtpPacketSendInfo& packet_info,
   packet.creation_time = creation_time;
   packet.sent.sequence_number =
       seq_num_unwrapper_.Unwrap(packet_info.transport_sequence_number);
-  packet.sent.size = DataSize::bytes(packet_info.length + overhead_bytes);
+  packet.sent.size = DataSize::Bytes(packet_info.length + overhead_bytes);
   packet.local_net_id = local_net_id_;
   packet.remote_net_id = remote_net_id_;
   packet.sent.pacing_info = packet_info.pacing_info;
@@ -122,7 +122,7 @@ absl::optional<SentPacket> TransportFeedbackAdapter::ProcessSentPacket(
       RTC_LOG(LS_WARNING) << "ignoring untracked data for out of order packet.";
     }
     pending_untracked_size_ +=
-        DataSize::bytes(sent_packet.info.packet_size_bytes);
+        DataSize::Bytes(sent_packet.info.packet_size_bytes);
     last_untracked_send_time_ = std::max(last_untracked_send_time_, send_time);
   }
   return absl::nullopt;

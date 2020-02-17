@@ -131,7 +131,7 @@ DataRate PccBitrateController::ComputeRateUpdateForOnlineLearningMode(
   double rate_change_bps = gradient * ComputeStepSize(gradient);  // delta_r
   rate_change_bps =
       ApplyDynamicBoundary(rate_change_bps, bandwith_estimate.bps());
-  return DataRate::bps(
+  return DataRate::BitsPerSec(
       std::max(0.0, bandwith_estimate.bps() + rate_change_bps));
 }
 
