@@ -1937,6 +1937,12 @@ void AudioProcessingImpl::WriteAecDumpConfigMessage(bool forced) {
       kClippedLevelMin) {
     experiments_description += "AgcClippingLevelExperiment;";
   }
+  if (!!submodules_.capture_post_processor) {
+    experiments_description += "CapturePostProcessor;";
+  }
+  if (!!submodules_.render_pre_processor) {
+    experiments_description += "RenderPreProcessor;";
+  }
   if (capture_nonlocked_.echo_controller_enabled) {
     experiments_description += "EchoController;";
   }
