@@ -32,9 +32,8 @@ constexpr int64_t kMinPacketsNumberPerInterval = 20;
 const TimeDelta kMinDurationOfMonitorInterval = TimeDelta::Millis(50);
 const TimeDelta kStartupDuration = TimeDelta::Millis(500);
 constexpr double kMinRateChangeBps = 4000;
-constexpr DataRate kMinRateHaveMultiplicativeRateChange =
-    DataRate::BitsPerSec<static_cast<int64_t>(kMinRateChangeBps /
-                                              kDefaultSamplingStep)>();
+constexpr DataRate kMinRateHaveMultiplicativeRateChange = DataRate::BitsPerSec(
+    static_cast<int64_t>(kMinRateChangeBps / kDefaultSamplingStep));
 
 // Bitrate controller constants.
 constexpr double kInitialConversionFactor = 5;
