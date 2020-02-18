@@ -75,7 +75,7 @@ GenerateGenericFrameDependencies(DataReader* reader) {
   }
 
   result.emplace();
-  result->frame_id = reader->GetNum<int64_t>();
+  result->frame_id = reader->GetNum<int32_t>();
   result->spatial_index = (flags & 0b0111'0000) >> 4;
   result->temporal_index = (flags & 0b0000'1110) >> 1;
   result->discardable = (flags & 0b0000'0001);
