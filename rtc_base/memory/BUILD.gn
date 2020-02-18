@@ -12,14 +12,6 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
-rtc_source_set("aligned_array") {
-  sources = [ "aligned_array.h" ]
-  deps = [
-    ":aligned_malloc",
-    "..:checks",
-  ]
-}
-
 rtc_library("aligned_malloc") {
   sources = [
     "aligned_malloc.cc",
@@ -45,12 +37,10 @@ rtc_library("fifo_buffer") {
 rtc_library("unittests") {
   testonly = true
   sources = [
-    "aligned_array_unittest.cc",
     "aligned_malloc_unittest.cc",
     "fifo_buffer_unittest.cc",
   ]
   deps = [
-    ":aligned_array",
     ":aligned_malloc",
     ":fifo_buffer",
     "../../test:test_support",
