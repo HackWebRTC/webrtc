@@ -289,6 +289,7 @@ struct RTC_EXPORT RtpExtension {
   // Experimental codec agnostic frame descriptor.
   static const char kGenericFrameDescriptorUri00[];
   static const char kGenericFrameDescriptorUri01[];
+  static const char kDependencyDescriptorUri[];
   // TODO(bugs.webrtc.org/10243): Remove once dependencies have been updated.
   static const char kGenericFrameDescriptorUri[];
 

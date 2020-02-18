@@ -493,6 +493,16 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
         rtp_streams_[stream_index].rtp_rtcp->ExpectedRetransmissionTimeMs();
   }
 
+  if (encoded_image._frameType == VideoFrameType::kVideoFrameKey) {
+    // If encoder adapter produce FrameDependencyStructure, pass it so that
+    // dependency descriptor rtp header extension can be used.
+    // If not supported, disable using dependency descriptor by passing nullptr.
+    rtp_streams_[stream_index].sender_video->SetVideoStructure(
+        (codec_specific_info && codec_specific_info->template_structure)
+            ? &*codec_specific_info->template_structure
+            : nullptr);
+  }
+
   bool send_result = rtp_streams_[stream_index].sender_video->SendVideo(
       rtp_config_.payload_type, codec_type_, rtp_timestamp,
       encoded_image.capture_time_ms_, encoded_image, fragmentation,
