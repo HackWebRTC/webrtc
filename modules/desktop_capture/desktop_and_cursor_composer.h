@@ -53,6 +53,10 @@ class RTC_EXPORT DesktopAndCursorComposer
       std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
   void CaptureFrame() override;
   void SetExcludedWindow(WindowId window) override;
+  bool GetSourceList(SourceList* sources) override;
+  bool SelectSource(SourceId id) override;
+  bool FocusOnSelectedSource() override;
+  bool IsOccluded(const DesktopVector& pos) override;
 
   // MouseCursorMonitor::Callback interface.
   void OnMouseCursor(MouseCursor* cursor) override;

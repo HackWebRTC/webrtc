@@ -187,6 +187,22 @@ void DesktopAndCursorComposer::SetExcludedWindow(WindowId window) {
   desktop_capturer_->SetExcludedWindow(window);
 }
 
+bool DesktopAndCursorComposer::GetSourceList(SourceList* sources) {
+  return desktop_capturer_->GetSourceList(sources);
+}
+
+bool DesktopAndCursorComposer::SelectSource(SourceId id) {
+  return desktop_capturer_->SelectSource(id);
+}
+
+bool DesktopAndCursorComposer::FocusOnSelectedSource() {
+  return desktop_capturer_->FocusOnSelectedSource();
+}
+
+bool DesktopAndCursorComposer::IsOccluded(const DesktopVector& pos) {
+  return desktop_capturer_->IsOccluded(pos);
+}
+
 void DesktopAndCursorComposer::OnCaptureResult(
     DesktopCapturer::Result result,
     std::unique_ptr<DesktopFrame> frame) {
