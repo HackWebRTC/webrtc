@@ -4672,3 +4672,17 @@ TEST_F(WebRtcSdpTest, DeserializeWithAllSctpProtocols) {
     EXPECT_TRUE(webrtc::SdpDeserialize(message, &jsep_output, &error));
   }
 }
+
+// According to https://tools.ietf.org/html/rfc5576#section-6.1, the CNAME
+// attribute is mandatory, but we relax that restriction.
+TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithoutCname) {
+  std::string sdp_without_cname = kSdpFullString;
+  Replace("a=ssrc:1 cname:stream_1_cname\r\n", "", &sdp_without_cname);
+  JsepSessionDescription new_jdesc(kDummyType);
+  EXPECT_TRUE(SdpDeserialize(sdp_without_cname, &new_jdesc));
+
+  audio_desc_->mutable_streams()[0].cname = "";
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
+                                jdesc_.session_version()));
+  EXPECT_TRUE(CompareSessionDescription(jdesc_, new_jdesc));
+}
