@@ -859,7 +859,7 @@ void ChannelReceive::UpdatePlayoutTimestamp(bool rtcp, int64_t now_ms) {
 
   {
     rtc::CritScope lock(&video_sync_lock_);
-    if (!rtcp) {
+    if (!rtcp && playout_timestamp != playout_timestamp_rtp_) {
       playout_timestamp_rtp_ = playout_timestamp;
       playout_timestamp_rtp_time_ms_ = now_ms;
     }
