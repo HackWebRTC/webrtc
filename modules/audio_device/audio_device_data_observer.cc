@@ -22,15 +22,16 @@ namespace {
 // callback and redirects the PCM data to AudioDeviceDataObserver callback.
 class ADMWrapper : public AudioDeviceModule, public AudioTransport {
  public:
+  ADMWrapper(rtc::scoped_refptr<AudioDeviceModule> impl,
+             AudioDeviceDataObserver* observer)
+      : impl_(impl), observer_(observer) {
+    is_valid_ = impl_.get() != nullptr;
+  }
   ADMWrapper(AudioLayer audio_layer,
              TaskQueueFactory* task_queue_factory,
              AudioDeviceDataObserver* observer)
-      : impl_(AudioDeviceModule::Create(audio_layer, task_queue_factory)),
-        observer_(observer) {
-    // Register self as the audio transport callback for underlying ADM impl.
-    auto res = impl_->RegisterAudioCallback(this);
-    is_valid_ = (impl_.get() != nullptr) && (res == 0);
-  }
+      : ADMWrapper(AudioDeviceModule::Create(audio_layer, task_queue_factory),
+                   observer) {}
   ~ADMWrapper() override {
     audio_transport_ = nullptr;
     observer_ = nullptr;
@@ -119,7 +120,15 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
   int32_t ActiveAudioLayer(AudioLayer* audio_layer) const override {
     return impl_->ActiveAudioLayer(audio_layer);
   }
-  int32_t Init() override { return impl_->Init(); }
+  int32_t Init() override {
+    int res = impl_->Init();
+    if (res != 0) {
+      return res;
+    }
+    // Register self as the audio transport callback for underlying ADM impl.
+    impl_->RegisterAudioCallback(this);
+    return res;
+  }
   int32_t Terminate() override { return impl_->Terminate(); }
   bool Initialized() const override { return impl_->Initialized(); }
   int16_t PlayoutDevices() override { return impl_->PlayoutDevices(); }
@@ -282,6 +291,19 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
 };
 
 }  // namespace
+
+rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceWithDataObserver(
+    rtc::scoped_refptr<AudioDeviceModule> impl,
+    AudioDeviceDataObserver* observer) {
+  rtc::scoped_refptr<ADMWrapper> audio_device(
+      new rtc::RefCountedObject<ADMWrapper>(impl, observer));
+
+  if (!audio_device->IsValid()) {
+    return nullptr;
+  }
+
+  return audio_device;
+}
 
 rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceWithDataObserver(
     AudioDeviceModule::AudioLayer audio_layer,

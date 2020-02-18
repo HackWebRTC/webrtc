@@ -40,6 +40,12 @@ class AudioDeviceDataObserver {
   virtual ~AudioDeviceDataObserver() = default;
 };
 
+// Creates an ADMWrapper around an ADM instance that registers
+// the provided AudioDeviceDataObserver.
+rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceWithDataObserver(
+    rtc::scoped_refptr<AudioDeviceModule> impl,
+    AudioDeviceDataObserver* observer);
+
 // Creates an ADM instance with AudioDeviceDataObserver registered.
 rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceWithDataObserver(
     const AudioDeviceModule::AudioLayer audio_layer,
