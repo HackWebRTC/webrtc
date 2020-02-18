@@ -880,8 +880,12 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
         audio_frame->timestamp_, static_cast<const int16_t*>(audio_data),
         number_of_frames, sample_rate, audio_frame->speech_type_,
         audio_frame->vad_activity_, number_of_channels);
-    // TODO(bugs.webrtc.org/10739): pass absolute_capture_timestamp_ms to
-    // stream_.
+    // TODO(bugs.webrtc.org/10739): add dcheck that
+    // |absolute_capture_timestamp_ms| always receives a value.
+    if (absolute_capture_timestamp_ms) {
+      audio_frame->set_absolute_capture_timestamp_ms(
+          *absolute_capture_timestamp_ms);
+    }
     stream_->SendAudioData(std::move(audio_frame));
   }
 
