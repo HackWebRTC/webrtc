@@ -327,6 +327,52 @@ absl::optional<Syncable::Info> RtpVideoStreamReceiver::GetSyncInfo() const {
   return info;
 }
 
+RtpVideoStreamReceiver::ParseGenericDependenciesResult
+RtpVideoStreamReceiver::ParseGenericDependenciesExtension(
+    const RtpPacketReceived& rtp_packet,
+    RTPVideoHeader* video_header) {
+  if (rtp_packet.HasExtension<RtpGenericFrameDescriptorExtension00>() &&
+      rtp_packet.HasExtension<RtpGenericFrameDescriptorExtension01>()) {
+    RTC_LOG(LS_WARNING) << "RTP packet had two different GFD versions.";
+    return kDropPacket;
+  }
+
+  RtpGenericFrameDescriptor generic_descriptor;
+  bool has_generic_descriptor =
+      rtp_packet.GetExtension<RtpGenericFrameDescriptorExtension01>(
+          &generic_descriptor) ||
+      rtp_packet.GetExtension<RtpGenericFrameDescriptorExtension00>(
+          &generic_descriptor);
+  if (!has_generic_descriptor) {
+    return kNoGenericDescriptor;
+  }
+
+  video_header->is_first_packet_in_frame =
+      generic_descriptor.FirstPacketInSubFrame();
+  video_header->is_last_packet_in_frame =
+      generic_descriptor.LastPacketInSubFrame();
+
+  if (generic_descriptor.FirstPacketInSubFrame()) {
+    video_header->frame_type =
+        generic_descriptor.FrameDependenciesDiffs().empty()
+            ? VideoFrameType::kVideoFrameKey
+            : VideoFrameType::kVideoFrameDelta;
+
+    auto& descriptor = video_header->generic.emplace();
+    int64_t frame_id = frame_id_unwrapper_.Unwrap(generic_descriptor.FrameId());
+    descriptor.frame_id = frame_id;
+    descriptor.spatial_index = generic_descriptor.SpatialLayer();
+    descriptor.temporal_index = generic_descriptor.TemporalLayer();
+    descriptor.discardable = generic_descriptor.Discardable().value_or(false);
+    for (uint16_t fdiff : generic_descriptor.FrameDependenciesDiffs()) {
+      descriptor.dependencies.push_back(frame_id - fdiff);
+    }
+  }
+  video_header->width = generic_descriptor.Width();
+  video_header->height = generic_descriptor.Height();
+  return kHasGenericDescriptor;
+}
+
 void RtpVideoStreamReceiver::OnReceivedPayloadData(
     rtc::CopyOnWriteBuffer codec_payload,
     const RtpPacketReceived& rtp_packet,
@@ -368,44 +414,10 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
   rtp_packet.GetExtension<PlayoutDelayLimits>(&video_header.playout_delay);
   rtp_packet.GetExtension<FrameMarkingExtension>(&video_header.frame_marking);
 
-  if (rtp_packet.HasExtension<RtpGenericFrameDescriptorExtension00>() &&
-      rtp_packet.HasExtension<RtpGenericFrameDescriptorExtension01>()) {
-    RTC_LOG(LS_WARNING) << "RTP packet had two different GFD versions.";
+  ParseGenericDependenciesResult generic_descriptor_state =
+      ParseGenericDependenciesExtension(rtp_packet, &video_header);
+  if (generic_descriptor_state == kDropPacket)
     return;
-  }
-
-  RtpGenericFrameDescriptor generic_descriptor;
-  bool has_generic_descriptor =
-      rtp_packet.GetExtension<RtpGenericFrameDescriptorExtension01>(
-          &generic_descriptor) ||
-      rtp_packet.GetExtension<RtpGenericFrameDescriptorExtension00>(
-          &generic_descriptor);
-  if (has_generic_descriptor) {
-    video_header.is_first_packet_in_frame =
-        generic_descriptor.FirstPacketInSubFrame();
-    video_header.is_last_packet_in_frame =
-        generic_descriptor.LastPacketInSubFrame();
-
-    if (generic_descriptor.FirstPacketInSubFrame()) {
-      video_header.frame_type =
-          generic_descriptor.FrameDependenciesDiffs().empty()
-              ? VideoFrameType::kVideoFrameKey
-              : VideoFrameType::kVideoFrameDelta;
-
-      auto& descriptor = video_header.generic.emplace();
-      int64_t frame_id =
-          frame_id_unwrapper_.Unwrap(generic_descriptor.FrameId());
-      descriptor.frame_id = frame_id;
-      descriptor.spatial_index = generic_descriptor.SpatialLayer();
-      descriptor.temporal_index = generic_descriptor.TemporalLayer();
-      descriptor.discardable = generic_descriptor.Discardable().value_or(false);
-      for (uint16_t fdiff : generic_descriptor.FrameDependenciesDiffs()) {
-        descriptor.dependencies.push_back(frame_id - fdiff);
-      }
-    }
-    video_header.width = generic_descriptor.Width();
-    video_header.height = generic_descriptor.Height();
-  }
 
   // Color space should only be transmitted in the last packet of a frame,
   // therefore, neglect it otherwise so that last_color_space_ is not reset by
@@ -428,7 +440,7 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
       // TODO(bugs.webrtc.org/10336): Implement support for reordering.
       RTC_LOG(LS_INFO)
           << "LossNotificationController does not support reordering.";
-    } else if (!has_generic_descriptor) {
+    } else if (generic_descriptor_state == kNoGenericDescriptor) {
       RTC_LOG(LS_WARNING) << "LossNotificationController requires generic "
                              "frame descriptor, but it is missing.";
     } else {

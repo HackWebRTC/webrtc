@@ -236,6 +236,11 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
     };
     absl::optional<LossNotificationState> lntf_state_ RTC_GUARDED_BY(cs_);
   };
+  enum ParseGenericDependenciesResult {
+    kDropPacket,
+    kHasGenericDescriptor,
+    kNoGenericDescriptor
+  };
 
   // Entry point doing non-stats work for a received packet. Called
   // for the same packet both before and after RED decapsulation.
@@ -248,6 +253,9 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   bool IsRedEnabled() const;
   void InsertSpsPpsIntoTracker(uint8_t payload_type);
   void OnInsertedPacket(video_coding::PacketBuffer::InsertResult result);
+  ParseGenericDependenciesResult ParseGenericDependenciesExtension(
+      const RtpPacketReceived& rtp_packet,
+      RTPVideoHeader* video_header) RTC_RUN_ON(worker_task_checker_);
   void OnAssembledFrame(std::unique_ptr<video_coding::RtpFrameObject> frame);
 
   Clock* const clock_;
