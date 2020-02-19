@@ -101,6 +101,7 @@ GoogCcNetworkController::GoogCcNetworkController(NetworkControllerConfig config,
       initial_config_(config),
       last_loss_based_target_rate_(*config.constraints.starting_rate),
       last_pushback_target_rate_(last_loss_based_target_rate_),
+      last_stable_target_rate_(last_loss_based_target_rate_),
       pacing_factor_(config.stream_based_config.pacing_factor.value_or(
           kDefaultPaceMultiplier)),
       min_total_allocated_bitrate_(
@@ -614,15 +615,24 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
                           loss_based_target_rate.bps();
     }
   }
+  DataRate stable_target_rate =
+      bandwidth_estimation_->GetEstimatedLinkCapacity();
+  if (loss_based_stable_rate_) {
+    stable_target_rate = std::min(stable_target_rate, loss_based_target_rate);
+  } else {
+    stable_target_rate = std::min(stable_target_rate, pushback_target_rate);
+  }
 
   if ((loss_based_target_rate != last_loss_based_target_rate_) ||
       (fraction_loss != last_estimated_fraction_loss_) ||
       (round_trip_time != last_estimated_round_trip_time_) ||
-      (pushback_target_rate != last_pushback_target_rate_)) {
+      (pushback_target_rate != last_pushback_target_rate_) ||
+      (stable_target_rate != last_stable_target_rate_)) {
     last_loss_based_target_rate_ = loss_based_target_rate;
     last_pushback_target_rate_ = pushback_target_rate;
     last_estimated_fraction_loss_ = fraction_loss;
     last_estimated_round_trip_time_ = round_trip_time;
+    last_stable_target_rate_ = stable_target_rate;
 
     alr_detector_->SetEstimatedBitrate(loss_based_target_rate.bps());
 
@@ -636,15 +646,7 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
     } else {
       target_rate_msg.target_rate = pushback_target_rate;
     }
-    if (loss_based_stable_rate_) {
-      target_rate_msg.stable_target_rate =
-          std::min(bandwidth_estimation_->GetEstimatedLinkCapacity(),
-                   loss_based_target_rate);
-    } else {
-      target_rate_msg.stable_target_rate =
-          std::min(bandwidth_estimation_->GetEstimatedLinkCapacity(),
-                   pushback_target_rate);
-    }
+    target_rate_msg.stable_target_rate = stable_target_rate;
     target_rate_msg.network_estimate.at_time = at_time;
     target_rate_msg.network_estimate.round_trip_time = round_trip_time;
     target_rate_msg.network_estimate.loss_rate_ratio = fraction_loss / 255.0f;

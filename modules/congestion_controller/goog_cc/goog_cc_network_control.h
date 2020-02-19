@@ -122,6 +122,7 @@ class GoogCcNetworkController : public NetworkControllerInterface {
 
   DataRate last_loss_based_target_rate_;
   DataRate last_pushback_target_rate_;
+  DataRate last_stable_target_rate_;
 
   absl::optional<uint8_t> last_estimated_fraction_loss_ = 0;
   TimeDelta last_estimated_round_trip_time_ = TimeDelta::PlusInfinity();
