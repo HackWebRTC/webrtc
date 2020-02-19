@@ -429,8 +429,8 @@ void DataChannelController::UpdateRemoteRtpDataChannels(
   RTC_DCHECK_RUN_ON(signaling_thread());
   // Find new and active data channels.
   for (const cricket::StreamParams& params : streams) {
-    // The data channel label is either the mslabel or the SSRC if the mslabel
-    // does not exist. Ex a=ssrc:444330170 mslabel:test1.
+    // The data channel label is either the msid stream id or the SSRC if
+    // the msid does not exist. Ex a=ssrc:444330170 msid:test1 test1.
     std::string label = params.first_stream_id().empty()
                             ? rtc::ToString(params.first_ssrc())
                             : params.first_stream_id();
