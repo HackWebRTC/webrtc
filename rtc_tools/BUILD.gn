@@ -30,7 +30,10 @@ group("rtc_tools") {
   }
 
   if (rtc_include_tests) {
-    deps += [ ":tools_unittests" ]
+    deps += [
+      ":tools_unittests",
+      ":yuv_to_ivf_converter",
+    ]
     if (rtc_enable_protobuf) {
       if (!build_with_chromium) {
         deps += [ ":event_log_visualizer" ]
@@ -363,6 +366,42 @@ if (!build_with_chromium) {
 }
 
 if (rtc_include_tests) {
+  rtc_executable("yuv_to_ivf_converter") {
+    visibility = [ "*" ]
+    testonly = true
+    sources = [
+      "converter/yuv_to_ivf_converter.cc",
+    ]
+    deps = [
+      "../api:create_frame_generator",
+      "../api:frame_generator_api",
+      "../api/task_queue:default_task_queue_factory",
+      "../api/video:encoded_image",
+      "../api/video:video_frame",
+      "../api/video_codecs:video_codecs_api",
+      "../media:rtc_media_base",
+      "../modules/rtp_rtcp:rtp_rtcp_format",
+      "../modules/video_coding:video_codec_interface",
+      "../modules/video_coding:video_coding_utility",
+      "../modules/video_coding:webrtc_h264",
+      "../modules/video_coding:webrtc_vp8",
+      "../modules/video_coding:webrtc_vp9",
+      "../rtc_base:checks",
+      "../rtc_base:criticalsection",
+      "../rtc_base:logging",
+      "../rtc_base:rtc_event",
+      "../rtc_base:rtc_task_queue",
+      "../rtc_base/system:file_wrapper",
+      "../test:video_test_common",
+      "../test:video_test_support",
+      "//third_party/abseil-cpp/absl/debugging:failure_signal_handler",
+      "//third_party/abseil-cpp/absl/debugging:symbolize",
+      "//third_party/abseil-cpp/absl/flags:flag",
+      "//third_party/abseil-cpp/absl/flags:parse",
+      "//third_party/abseil-cpp/absl/strings",
+    ]
+  }
+
   if (rtc_enable_protobuf && !build_with_chromium) {
     rtc_executable("event_log_visualizer") {
       testonly = true
