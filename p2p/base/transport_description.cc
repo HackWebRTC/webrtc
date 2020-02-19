@@ -14,6 +14,7 @@
 #include "absl/strings/match.h"
 #include "p2p/base/p2p_constants.h"
 #include "rtc_base/arraysize.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
 
 using webrtc::RTCError;
@@ -24,6 +25,16 @@ namespace cricket {
 namespace {
 
 bool IsIceChar(char c) {
+  // Note: '-' and '=' are *not* valid ice-chars but temporarily permitted
+  // in order to allow external software to upgrade.
+  if (c == '-' || c == '=') {
+    RTC_LOG(LS_WARNING)
+        << "'-' and '=' are not valid ice-char and thus not permitted in "
+        << "ufrag or pwd. This is a protocol violation that is permitted "
+        << "for to allow upgrading but will be rejected in the future. "
+        << "See https://crbug.com/1053756";
+    return true;
+  }
   return absl::ascii_isalnum(c) || c == '+' || c == '/';
 }
 
