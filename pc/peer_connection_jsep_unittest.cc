@@ -2129,4 +2129,73 @@ TEST_F(PeerConnectionJsepTest, RollbackMultipleStreamChanges) {
             "id_1");
 }
 
+TEST_F(PeerConnectionJsepTest, DataChannelImplicitRollback) {
+  RTCConfiguration config;
+  config.sdp_semantics = SdpSemantics::kUnifiedPlan;
+  config.enable_implicit_rollback = true;
+  auto caller = CreatePeerConnection(config);
+  caller->AddTransceiver(cricket::MEDIA_TYPE_VIDEO);
+  auto callee = CreatePeerConnection(config);
+  callee->CreateDataChannel("dummy");
+  EXPECT_TRUE(callee->CreateOfferAndSetAsLocal());
+  EXPECT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
+  EXPECT_TRUE(callee->CreateAnswerAndSetAsLocal());
+  EXPECT_TRUE(callee->observer()->negotiation_needed());
+  EXPECT_TRUE(callee->CreateOfferAndSetAsLocal());
+}
+
+TEST_F(PeerConnectionJsepTest, RollbackRemoteDataChannelThenAddTransceiver) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+  caller->CreateDataChannel("dummy");
+  EXPECT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
+  EXPECT_TRUE(callee->SetRemoteDescription(callee->CreateRollback()));
+  callee->AddTransceiver(cricket::MEDIA_TYPE_VIDEO);
+  EXPECT_TRUE(callee->CreateOfferAndSetAsLocal());
+}
+
+TEST_F(PeerConnectionJsepTest,
+       RollbackRemoteDataChannelThenAddTransceiverAndDataChannel) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+  caller->CreateDataChannel("dummy");
+  EXPECT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
+  EXPECT_TRUE(callee->SetRemoteDescription(callee->CreateRollback()));
+  callee->AddTransceiver(cricket::MEDIA_TYPE_VIDEO);
+  callee->CreateDataChannel("dummy");
+  EXPECT_TRUE(callee->CreateOfferAndSetAsLocal());
+}
+
+TEST_F(PeerConnectionJsepTest, RollbackRemoteDataChannelThenAddDataChannel) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+  caller->CreateDataChannel("dummy");
+  EXPECT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
+  EXPECT_TRUE(callee->SetRemoteDescription(callee->CreateRollback()));
+  callee->CreateDataChannel("dummy");
+  EXPECT_TRUE(callee->CreateOfferAndSetAsLocal());
+}
+
+TEST_F(PeerConnectionJsepTest, RollbackRemoteTransceiverThenAddDataChannel) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+  caller->AddTransceiver(cricket::MEDIA_TYPE_VIDEO);
+  EXPECT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
+  EXPECT_TRUE(callee->SetRemoteDescription(callee->CreateRollback()));
+  callee->CreateDataChannel("dummy");
+  EXPECT_TRUE(callee->CreateOfferAndSetAsLocal());
+}
+
+TEST_F(PeerConnectionJsepTest,
+       RollbackRemoteTransceiverThenAddDataChannelAndTransceiver) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+  caller->AddTransceiver(cricket::MEDIA_TYPE_VIDEO);
+  EXPECT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
+  EXPECT_TRUE(callee->SetRemoteDescription(callee->CreateRollback()));
+  callee->CreateDataChannel("dummy");
+  callee->AddTransceiver(cricket::MEDIA_TYPE_VIDEO);
+  EXPECT_TRUE(callee->CreateOfferAndSetAsLocal());
+}
+
 }  // namespace webrtc

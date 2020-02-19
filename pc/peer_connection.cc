@@ -7536,7 +7536,6 @@ RTCError PeerConnection::Rollback(SdpType sdp_type) {
   }
   RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(IsUnifiedPlan());
-  std::vector<std::string> mids;
   std::vector<rtc::scoped_refptr<MediaStreamInterface>> all_added_streams;
   std::vector<rtc::scoped_refptr<MediaStreamInterface>> all_removed_streams;
   std::vector<rtc::scoped_refptr<RtpReceiverInterface>> removed_receivers;
@@ -7563,8 +7562,6 @@ RTCError PeerConnection::Rollback(SdpType sdp_type) {
     }
 
     RTC_DCHECK(transceiver->internal()->mid().has_value());
-    std::string mid = transceiver->internal()->mid().value();
-    mids.push_back(mid);
     DestroyTransceiverChannel(transceiver);
 
     if (signaling_state() == PeerConnectionInterface::kHaveRemoteOffer &&
@@ -7589,7 +7586,7 @@ RTCError PeerConnection::Rollback(SdpType sdp_type) {
     transceiver->internal()->set_mid(state.mid());
     transceiver->internal()->set_mline_index(state.mline_index());
   }
-  transport_controller_->RollbackTransportForMids(mids);
+  transport_controller_->RollbackTransports();
   transceiver_stable_states_by_transceivers_.clear();
   pending_local_description_.reset();
   pending_remote_description_.reset();

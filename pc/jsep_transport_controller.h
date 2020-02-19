@@ -224,9 +224,9 @@ class JsepTransportController : public sigslot::has_slots<> {
       bool use_datagram_transport_for_data_channels,
       bool use_datagram_transport_for_data_channels_receive_only);
 
-  // TODO(elrello): For now the rollback only removes mid to transport mappings
+  // For now the rollback only removes mid to transport mappings
   // and deletes unused transports, but doesn't consider anything more complex.
-  void RollbackTransportForMids(const std::vector<std::string>& mids);
+  void RollbackTransports();
 
   // Gets the transport parameters for the transport identified by |mid|.
   // If |mid| is bundled, returns the parameters for the bundled transport.
@@ -430,7 +430,8 @@ class JsepTransportController : public sigslot::has_slots<> {
   // This keeps track of the mapping between media section
   // (BaseChannel/SctpTransport) and the JsepTransport underneath.
   std::map<std::string, cricket::JsepTransport*> mid_to_transport_;
-
+  // Keep track of mids that have been mapped to transports. Used for rollback.
+  std::vector<std::string> pending_mids_ RTC_GUARDED_BY(network_thread_);
   // Aggregate states for Transports.
   // standardized_ice_connection_state_ is intended to replace
   // ice_connection_state, see bugs.webrtc.org/9308
