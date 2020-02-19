@@ -32,6 +32,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/absolute_capture_time_receiver.h"
+#include "modules/rtp_rtcp/source/rtp_dependency_descriptor_extension.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer.h"
@@ -286,6 +287,16 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   video_coding::PacketBuffer packet_buffer_;
   UniqueTimestampCounter frame_counter_ RTC_GUARDED_BY(worker_task_checker_);
   SeqNumUnwrapper<uint16_t> frame_id_unwrapper_
+      RTC_GUARDED_BY(worker_task_checker_);
+
+  // Video structure provided in the dependency descriptor in a first packet
+  // of a key frame. It is required to parse dependency descriptor in the
+  // following delta packets.
+  std::unique_ptr<FrameDependencyStructure> video_structure_
+      RTC_GUARDED_BY(worker_task_checker_);
+  // Frame id of the last frame with the attached video structure.
+  // absl::nullopt when `video_structure_ == nullptr`;
+  absl::optional<int64_t> video_structure_frame_id_
       RTC_GUARDED_BY(worker_task_checker_);
 
   rtc::CriticalSection reference_finder_lock_;

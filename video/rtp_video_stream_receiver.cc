@@ -27,6 +27,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/ulpfec_receiver.h"
 #include "modules/rtp_rtcp/source/create_video_rtp_depacketizer.h"
+#include "modules/rtp_rtcp/source/rtp_dependency_descriptor_extension.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor_extension.h"
@@ -331,45 +332,119 @@ RtpVideoStreamReceiver::ParseGenericDependenciesResult
 RtpVideoStreamReceiver::ParseGenericDependenciesExtension(
     const RtpPacketReceived& rtp_packet,
     RTPVideoHeader* video_header) {
+  if (rtp_packet.HasExtension<RtpDependencyDescriptorExtension>()) {
+    webrtc::DependencyDescriptor dependency_descriptor;
+    if (!rtp_packet.GetExtension<RtpDependencyDescriptorExtension>(
+            video_structure_.get(), &dependency_descriptor)) {
+      // Descriptor is there, but failed to parse. Either it is invalid,
+      // or too old packet (after relevant video_structure_ changed),
+      // or too new packet (before relevant video_structure_ arrived).
+      // Drop such packet to be on the safe side.
+      // TODO(bugs.webrtc.org/10342): Stash too new packet.
+      RTC_LOG(LS_WARNING) << "ssrc: " << rtp_packet.Ssrc()
+                          << " Failed to parse dependency descriptor.";
+      return kDropPacket;
+    }
+    if (dependency_descriptor.attached_structure != nullptr &&
+        !dependency_descriptor.first_packet_in_frame) {
+      RTC_LOG(LS_WARNING) << "ssrc: " << rtp_packet.Ssrc()
+                          << "Invalid dependency descriptor: structure "
+                             "attached to non first packet of a frame.";
+      return kDropPacket;
+    }
+    video_header->is_first_packet_in_frame =
+        dependency_descriptor.first_packet_in_frame;
+    video_header->is_last_packet_in_frame =
+        dependency_descriptor.last_packet_in_frame;
+
+    int64_t frame_id =
+        frame_id_unwrapper_.Unwrap(dependency_descriptor.frame_number);
+    auto& generic_descriptor_info = video_header->generic.emplace();
+    generic_descriptor_info.frame_id = frame_id;
+    generic_descriptor_info.spatial_index =
+        dependency_descriptor.frame_dependencies.spatial_id;
+    generic_descriptor_info.temporal_index =
+        dependency_descriptor.frame_dependencies.temporal_id;
+    for (int fdiff : dependency_descriptor.frame_dependencies.frame_diffs) {
+      generic_descriptor_info.dependencies.push_back(frame_id - fdiff);
+    }
+    generic_descriptor_info.decode_target_indications =
+        dependency_descriptor.frame_dependencies.decode_target_indications;
+    generic_descriptor_info.discardable =
+        absl::c_linear_search(generic_descriptor_info.decode_target_indications,
+                              DecodeTargetIndication::kDiscardable);
+    if (dependency_descriptor.resolution) {
+      video_header->width = dependency_descriptor.resolution->Width();
+      video_header->height = dependency_descriptor.resolution->Height();
+    }
+
+    // FrameDependencyStructure is sent in dependency descriptor of the first
+    // packet of a key frame and required for parsed dependency descriptor in
+    // all the following packets until next key frame.
+    // Save it if there is a (potentially) new structure.
+    if (dependency_descriptor.attached_structure) {
+      RTC_DCHECK(dependency_descriptor.first_packet_in_frame);
+      if (video_structure_frame_id_ > frame_id) {
+        RTC_LOG(LS_WARNING)
+            << "Arrived key frame with id " << frame_id << " and structure id "
+            << dependency_descriptor.attached_structure->structure_id
+            << " is older than the latest received key frame with id "
+            << *video_structure_frame_id_ << " and structure id "
+            << video_structure_->structure_id;
+        return kDropPacket;
+      }
+      video_structure_ = std::move(dependency_descriptor.attached_structure);
+      video_structure_frame_id_ = frame_id;
+      video_header->frame_type = VideoFrameType::kVideoFrameKey;
+    } else {
+      video_header->frame_type = VideoFrameType::kVideoFrameDelta;
+    }
+    return kHasGenericDescriptor;
+  }
+
   if (rtp_packet.HasExtension<RtpGenericFrameDescriptorExtension00>() &&
       rtp_packet.HasExtension<RtpGenericFrameDescriptorExtension01>()) {
     RTC_LOG(LS_WARNING) << "RTP packet had two different GFD versions.";
     return kDropPacket;
   }
 
-  RtpGenericFrameDescriptor generic_descriptor;
+  RtpGenericFrameDescriptor generic_frame_descriptor;
   bool has_generic_descriptor =
       rtp_packet.GetExtension<RtpGenericFrameDescriptorExtension01>(
-          &generic_descriptor) ||
+          &generic_frame_descriptor) ||
       rtp_packet.GetExtension<RtpGenericFrameDescriptorExtension00>(
-          &generic_descriptor);
+          &generic_frame_descriptor);
   if (!has_generic_descriptor) {
     return kNoGenericDescriptor;
   }
 
   video_header->is_first_packet_in_frame =
-      generic_descriptor.FirstPacketInSubFrame();
+      generic_frame_descriptor.FirstPacketInSubFrame();
   video_header->is_last_packet_in_frame =
-      generic_descriptor.LastPacketInSubFrame();
+      generic_frame_descriptor.LastPacketInSubFrame();
 
-  if (generic_descriptor.FirstPacketInSubFrame()) {
+  if (generic_frame_descriptor.FirstPacketInSubFrame()) {
     video_header->frame_type =
-        generic_descriptor.FrameDependenciesDiffs().empty()
+        generic_frame_descriptor.FrameDependenciesDiffs().empty()
             ? VideoFrameType::kVideoFrameKey
             : VideoFrameType::kVideoFrameDelta;
 
-    auto& descriptor = video_header->generic.emplace();
-    int64_t frame_id = frame_id_unwrapper_.Unwrap(generic_descriptor.FrameId());
-    descriptor.frame_id = frame_id;
-    descriptor.spatial_index = generic_descriptor.SpatialLayer();
-    descriptor.temporal_index = generic_descriptor.TemporalLayer();
-    descriptor.discardable = generic_descriptor.Discardable().value_or(false);
-    for (uint16_t fdiff : generic_descriptor.FrameDependenciesDiffs()) {
-      descriptor.dependencies.push_back(frame_id - fdiff);
+    auto& generic_descriptor_info = video_header->generic.emplace();
+    int64_t frame_id =
+        frame_id_unwrapper_.Unwrap(generic_frame_descriptor.FrameId());
+    generic_descriptor_info.frame_id = frame_id;
+    generic_descriptor_info.spatial_index =
+        generic_frame_descriptor.SpatialLayer();
+    generic_descriptor_info.temporal_index =
+        generic_frame_descriptor.TemporalLayer();
+    generic_descriptor_info.discardable =
+        generic_frame_descriptor.Discardable().value_or(false);
+    for (uint16_t fdiff : generic_frame_descriptor.FrameDependenciesDiffs()) {
+      generic_descriptor_info.dependencies.push_back(frame_id - fdiff);
     }
   }
-  video_header->width = generic_descriptor.Width();
-  video_header->height = generic_descriptor.Height();
+  video_header->width = generic_frame_descriptor.Width();
+  video_header->height = generic_frame_descriptor.Height();
   return kHasGenericDescriptor;
 }
 
