@@ -101,7 +101,7 @@ TEST(ScenarioTest, MAYBE_SimTimeEncoding) {
   {
     Scenario s("scenario/encode_sim", false);
     SetupVideoCall(s, &analyzer);
-    s.RunFor(TimeDelta::Seconds(60));
+    s.RunFor(TimeDelta::Seconds(2));
   }
   // Regression tests based on previous runs.
   EXPECT_EQ(analyzer.stats().lost_count, 0);
@@ -121,7 +121,7 @@ TEST(ScenarioTest, MAYBE_RealTimeEncoding) {
   {
     Scenario s("scenario/encode_real", true);
     SetupVideoCall(s, &analyzer);
-    s.RunFor(TimeDelta::Seconds(10));
+    s.RunFor(TimeDelta::Seconds(2));
   }
   // Regression tests based on previous runs.
   EXPECT_LT(analyzer.stats().lost_count, 2);
@@ -131,7 +131,7 @@ TEST(ScenarioTest, MAYBE_RealTimeEncoding) {
 TEST(ScenarioTest, SimTimeFakeing) {
   Scenario s("scenario/encode_sim", false);
   SetupVideoCall(s, nullptr);
-  s.RunFor(TimeDelta::Seconds(10));
+  s.RunFor(TimeDelta::Seconds(2));
 }
 
 TEST(ScenarioTest, WritesToRtcEventLog) {
