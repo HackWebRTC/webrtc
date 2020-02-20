@@ -367,7 +367,7 @@ class OveruseFrameDetectorResourceAdaptationModule::InitialFrameDropper {
 
   void OnFrameDroppedDueToSize() { ++initial_framedrop_; }
 
-  void OnEncodeStarted() { initial_framedrop_ = kMaxInitialFramedrop; }
+  void OnMaybeEncodeFrame() { initial_framedrop_ = kMaxInitialFramedrop; }
 
   void OnQualityScalerSettingsUpdated() {
     if (quality_scaler_resource_->is_started()) {
@@ -536,8 +536,6 @@ void OveruseFrameDetectorResourceAdaptationModule::OnFrameDroppedDueToSize() {
 void OveruseFrameDetectorResourceAdaptationModule::OnEncodeStarted(
     const VideoFrame& cropped_frame,
     int64_t time_when_first_seen_us) {
-  initial_frame_dropper_->OnEncodeStarted();
-  MaybePerformQualityRampupExperiment();
   encode_usage_resource_->OnEncodeStarted(cropped_frame,
                                           time_when_first_seen_us);
 }
@@ -563,6 +561,11 @@ void OveruseFrameDetectorResourceAdaptationModule::OnFrameDropped(
 
 bool OveruseFrameDetectorResourceAdaptationModule::DropInitialFrames() const {
   return initial_frame_dropper_->DropInitialFrames();
+}
+
+void OveruseFrameDetectorResourceAdaptationModule::OnMaybeEncodeFrame() {
+  initial_frame_dropper_->OnMaybeEncodeFrame();
+  MaybePerformQualityRampupExperiment();
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::UpdateQualityScalerSettings(

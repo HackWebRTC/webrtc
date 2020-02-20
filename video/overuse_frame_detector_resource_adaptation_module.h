@@ -86,6 +86,7 @@ class OveruseFrameDetectorResourceAdaptationModule
 
   void OnFrame(const VideoFrame& frame) override;
   void OnFrameDroppedDueToSize() override;
+  void OnMaybeEncodeFrame() override;
   void OnEncodeStarted(const VideoFrame& cropped_frame,
                        int64_t time_when_first_seen_us) override;
   void OnEncodeCompleted(const EncodedImage& encoded_image,
