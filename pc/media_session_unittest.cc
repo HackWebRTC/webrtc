@@ -88,6 +88,7 @@ using rtc::CS_AES_CM_128_HMAC_SHA1_80;
 using rtc::UniqueRandomIdGenerator;
 using ::testing::Contains;
 using ::testing::Each;
+using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
 using ::testing::Eq;
 using ::testing::Field;
@@ -1719,6 +1720,40 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   EXPECT_THAT(
       GetFirstVideoContentDescription(answer.get())->rtp_header_extensions(),
       ElementsAreArray(offered));
+}
+
+TEST_F(MediaSessionDescriptionFactoryTest,
+       NegotiateDependencyDescriptorWhenUnexposedLocally) {
+  MediaSessionOptions opts;
+  AddAudioVideoSections(RtpTransceiverDirection::kRecvOnly, &opts);
+
+  RtpExtension offer_dd(RtpExtension::kDependencyDescriptorUri, 7);
+  RtpExtension local_tsn(RtpExtension::kTransportSequenceNumberUri, 5);
+  f1_.set_video_rtp_header_extensions({offer_dd});
+  f2_.set_video_rtp_header_extensions({local_tsn});
+  std::unique_ptr<SessionDescription> offer = f1_.CreateOffer(opts, nullptr);
+  std::unique_ptr<SessionDescription> answer =
+      f2_.CreateAnswer(offer.get(), opts, nullptr);
+  EXPECT_THAT(
+      GetFirstVideoContentDescription(answer.get())->rtp_header_extensions(),
+      ElementsAre(offer_dd));
+}
+
+TEST_F(MediaSessionDescriptionFactoryTest,
+       NegotiateDependencyDescriptorWhenExposedLocally) {
+  MediaSessionOptions opts;
+  AddAudioVideoSections(RtpTransceiverDirection::kRecvOnly, &opts);
+
+  RtpExtension offer_dd(RtpExtension::kDependencyDescriptorUri, 7);
+  RtpExtension local_dd(RtpExtension::kDependencyDescriptorUri, 5);
+  f1_.set_video_rtp_header_extensions({offer_dd});
+  f2_.set_video_rtp_header_extensions({local_dd});
+  std::unique_ptr<SessionDescription> offer = f1_.CreateOffer(opts, nullptr);
+  std::unique_ptr<SessionDescription> answer =
+      f2_.CreateAnswer(offer.get(), opts, nullptr);
+  EXPECT_THAT(
+      GetFirstVideoContentDescription(answer.get())->rtp_header_extensions(),
+      ElementsAre(offer_dd));
 }
 
 TEST_F(MediaSessionDescriptionFactoryTest,

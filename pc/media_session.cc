@@ -1074,9 +1074,12 @@ static void NegotiateRtpHeaderExtensions(
           webrtc::RtpExtension::kTransportSequenceNumberV2Uri);
 
   bool frame_descriptor_in_local = false;
+  bool dependency_descriptor_in_local = false;
   for (const webrtc::RtpExtension& ours : local_extensions) {
     if (ours.uri == webrtc::RtpExtension::kGenericFrameDescriptorUri00)
       frame_descriptor_in_local = true;
+    else if (ours.uri == webrtc::RtpExtension::kDependencyDescriptorUri)
+      dependency_descriptor_in_local = true;
     webrtc::RtpExtension theirs;
     if (FindByUriWithEncryptionPreference(
             offered_extensions, ours.uri,
@@ -1100,15 +1103,21 @@ static void NegotiateRtpHeaderExtensions(
     negotiated_extensions->push_back(*transport_sequence_number_v2_offer);
   }
 
-  // Frame descriptor support. If the extension is not present locally, but is
+  // Frame descriptors support. If the extension is not present locally, but is
   // in the offer, we add it to the list.
-  if (!frame_descriptor_in_local) {
-    webrtc::RtpExtension theirs;
-    if (FindByUriWithEncryptionPreference(
-            offered_extensions,
-            webrtc::RtpExtension::kGenericFrameDescriptorUri00,
-            enable_encrypted_rtp_header_extensions, &theirs))
-      negotiated_extensions->push_back(theirs);
+  webrtc::RtpExtension theirs;
+  if (!dependency_descriptor_in_local &&
+      FindByUriWithEncryptionPreference(
+          offered_extensions, webrtc::RtpExtension::kDependencyDescriptorUri,
+          enable_encrypted_rtp_header_extensions, &theirs)) {
+    negotiated_extensions->push_back(theirs);
+  }
+  if (!frame_descriptor_in_local &&
+      FindByUriWithEncryptionPreference(
+          offered_extensions,
+          webrtc::RtpExtension::kGenericFrameDescriptorUri00,
+          enable_encrypted_rtp_header_extensions, &theirs)) {
+    negotiated_extensions->push_back(theirs);
   }
 }
 
