@@ -1063,6 +1063,7 @@ if (is_ios || is_mac) {
             "objc/unittests/ObjCVideoTrackSource_xctest.mm",
             "objc/unittests/RTCCVPixelBuffer_xctest.mm",
             "objc/unittests/RTCCallbackLogger_xctest.m",
+            "objc/unittests/RTCEncodedImage_xctest.mm",
             "objc/unittests/RTCFileVideoCapturer_xctest.mm",
             "objc/unittests/RTCH264ProfileLevelId_xctest.m",
             "objc/unittests/RTCNV12TextureCache_xctest.m",
@@ -1084,6 +1085,7 @@ if (is_ios || is_mac) {
           deps = [
             ":audio_device",
             ":audio_session_objc",
+            ":base_native_additions_objc",
             ":base_objc",
             ":callback_logger_objc",
             ":framework_objc",

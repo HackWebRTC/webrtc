@@ -70,6 +70,7 @@ TEST(ObjCVideoDecoderFactoryTest, DecodeReturnsOKOnSuccess) {
   std::unique_ptr<webrtc::VideoDecoder> decoder = GetObjCDecoder(CreateOKDecoderFactory());
 
   webrtc::EncodedImage encoded_image;
+  encoded_image.SetEncodedData(webrtc::EncodedImageBuffer::Create());
 
   EXPECT_EQ(decoder->Decode(encoded_image, false, 0), WEBRTC_VIDEO_CODEC_OK);
 }
@@ -78,6 +79,7 @@ TEST(ObjCVideoDecoderFactoryTest, DecodeReturnsErrorOnFail) {
   std::unique_ptr<webrtc::VideoDecoder> decoder = GetObjCDecoder(CreateErrorDecoderFactory());
 
   webrtc::EncodedImage encoded_image;
+  encoded_image.SetEncodedData(webrtc::EncodedImageBuffer::Create());
 
   EXPECT_EQ(decoder->Decode(encoded_image, false, 0), WEBRTC_VIDEO_CODEC_ERROR);
 }
