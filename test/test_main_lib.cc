@@ -16,6 +16,8 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/memory/memory.h"
+#include "absl/types/optional.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event_tracer.h"
 #include "rtc_base/logging.h"
@@ -69,6 +71,7 @@ ABSL_FLAG(
     "by "
     "https://github.com/catapult-project/catapult/blob/master/dashboard/docs/"
     "data-format.md.");
+#endif
 
 constexpr char kPlotAllMetrics[] = "all";
 ABSL_FLAG(std::vector<std::string>,
@@ -77,8 +80,6 @@ ABSL_FLAG(std::vector<std::string>,
           "List of metrics that should be exported for plotting (if they are "
           "available). Example: psnr,ssim,encode_time. To plot all available "
           " metrics pass 'all' as flag value");
-
-#endif
 
 ABSL_FLAG(bool, logs, true, "print logs to stderr");
 ABSL_FLAG(bool, verbose, false, "verbose logs to stderr");
@@ -156,9 +157,22 @@ class TestMainImpl : public TestMain {
       rtc::tracing::StartInternalCapture(trace_event_path.c_str());
     }
 
+    absl::optional<std::vector<std::string>> metrics_to_plot =
+        absl::GetFlag(FLAGS_plot);
+
+    if (metrics_to_plot->empty()) {
+      metrics_to_plot = absl::nullopt;
+    } else {
+      if (metrics_to_plot->size() == 1 &&
+          (*metrics_to_plot)[0] == kPlotAllMetrics) {
+        metrics_to_plot->clear();
+      }
+    }
+
 #if defined(WEBRTC_IOS)
     rtc::test::InitTestSuite(RUN_ALL_TESTS, argc, argv,
-                             absl::GetFlag(FLAGS_save_chartjson_result));
+                             absl::GetFlag(FLAGS_save_chartjson_result),
+                             metrics_to_plot);
     rtc::test::RunTestsFromIOSApp();
     int exit_code = 0;
 #else
@@ -169,13 +183,8 @@ class TestMainImpl : public TestMain {
     if (!chartjson_result_file.empty()) {
       webrtc::test::WritePerfResults(chartjson_result_file);
     }
-    std::vector<std::string> metrics_to_plot = absl::GetFlag(FLAGS_plot);
-    if (!metrics_to_plot.empty()) {
-      if (metrics_to_plot.size() == 1 &&
-          metrics_to_plot[0] == kPlotAllMetrics) {
-        metrics_to_plot.clear();
-      }
-      webrtc::test::PrintPlottableResults(metrics_to_plot);
+    if (metrics_to_plot) {
+      webrtc::test::PrintPlottableResults(*metrics_to_plot);
     }
 
     std::string result_filename =

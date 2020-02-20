@@ -261,6 +261,7 @@ if (is_ios) {
     deps = [
       ":perf_test",
       "../sdk:helpers_objc",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
     configs += [ ":test_support_objc_config" ]
   }
@@ -394,6 +395,8 @@ if (rtc_include_tests) {
       "../system_wrappers:metrics",
       "//third_party/abseil-cpp/absl/flags:flag",
       "//third_party/abseil-cpp/absl/flags:parse",
+      "//third_party/abseil-cpp/absl/memory",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
 
