@@ -49,7 +49,31 @@ class DataRate final : public rtc_units_impl::RelativeUnit<DataRate> {
   static constexpr DataRate Infinity() { return PlusInfinity(); }
 
   DataRate() = delete;
-
+  // TODO(danilchap): Migrate all code to the 3 factories above and delete the
+  // 5 factories below.
+  template <int64_t bps>
+  static constexpr DataRate BitsPerSec() {
+    return FromValue(bps);
+  }
+  template <int64_t kbps>
+  static constexpr DataRate KilobitsPerSec() {
+    return FromFraction(1000, kbps);
+  }
+  template <typename T>
+  static constexpr DataRate bps(T bits_per_second) {
+    static_assert(std::is_arithmetic<T>::value, "");
+    return FromValue(bits_per_second);
+  }
+  template <typename T>
+  static constexpr DataRate bytes_per_sec(T bytes_per_second) {
+    static_assert(std::is_arithmetic<T>::value, "");
+    return FromFraction(8, bytes_per_second);
+  }
+  template <typename T>
+  static constexpr DataRate kbps(T kilobits_per_sec) {
+    static_assert(std::is_arithmetic<T>::value, "");
+    return FromFraction(1000, kilobits_per_sec);
+  }
   template <typename T = int64_t>
   constexpr T bps() const {
     return ToValue<T>();

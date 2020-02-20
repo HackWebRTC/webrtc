@@ -32,7 +32,18 @@ class DataSize final : public rtc_units_impl::RelativeUnit<DataSize> {
   static constexpr DataSize Infinity() { return PlusInfinity(); }
 
   DataSize() = delete;
+  // TODO(danilchap): Migrate all code to the factory above and delete the
+  // 2 factories below.
+  template <int64_t bytes>
+  static constexpr DataSize Bytes() {
+    return FromValue(bytes);
+  }
 
+  template <typename T>
+  static constexpr DataSize bytes(T bytes) {
+    static_assert(std::is_arithmetic<T>::value, "");
+    return FromValue(bytes);
+  }
   template <typename T = int64_t>
   constexpr T bytes() const {
     return ToValue<T>();
