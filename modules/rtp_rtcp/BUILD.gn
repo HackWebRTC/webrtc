@@ -532,6 +532,7 @@ if (rtc_include_tests) {
       "../../rtc_base:task_queue_for_test",
       "../../system_wrappers",
       "../../test:field_trial",
+      "../../test:mock_transport",
       "../../test:rtp_test_utils",
       "../../test:test_common",
       "../../test:test_support",

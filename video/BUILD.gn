@@ -610,6 +610,7 @@ if (rtc_include_tests) {
       "../test:field_trial",
       "../test:fileutils",
       "../test:frame_utils",
+      "../test:mock_transport",
       "../test:null_transport",
       "../test:perf_test",
       "../test:rtp_test_utils",

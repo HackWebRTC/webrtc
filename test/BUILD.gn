@@ -782,8 +782,6 @@ rtc_library("test_common") {
     "fake_videorenderer.h",
     "layer_filtering_transport.cc",
     "layer_filtering_transport.h",
-    "mock_transport.cc",
-    "mock_transport.h",
     "rtp_rtcp_observer.h",
     "video_decoder_proxy_factory.h",
     "video_encoder_proxy_factory.h",
@@ -807,6 +805,7 @@ rtc_library("test_common") {
     ":encoder_settings",
     ":fake_video_codecs",
     ":fileutils",
+    ":mock_transport",
     ":rtp_test_utils",
     ":test_support",
     ":video_test_common",
@@ -849,6 +848,18 @@ rtc_library("test_common") {
   if (!is_android && !build_with_chromium) {
     deps += [ "../modules/video_capture:video_capture_internal_impl" ]
   }
+}
+
+rtc_library("mock_transport") {
+  testonly = true
+  sources = [
+    "mock_transport.cc",
+    "mock_transport.h",
+  ]
+  deps = [
+    ":test_support",
+    "../api:transport_api",
+  ]
 }
 
 rtc_source_set("test_renderer") {
