@@ -111,11 +111,11 @@ class PeerConnectionE2EQualityTestSmokeTest : public ::testing::Test {
     for (auto stream_label : video_analyzer_ptr->GetKnownVideoStreams()) {
       FrameCounters stream_conters =
           video_analyzer_ptr->GetPerStreamCounters().at(stream_label);
-      // 150 = 30fps * 5s. On some devices pipeline can be too slow, so it can
-      // happen, that frames will stuck in the middle, so we actually can't
-      // force real constraints here, so lets just check, that at least 1 frame
-      // passed whole pipeline.
-      EXPECT_GE(stream_conters.captured, 150);
+      // On some devices the pipeline can be too slow, so we actually can't
+      // force real constraints here. Lets just check, that at least 1
+      // frame passed whole pipeline.
+      int64_t expected_min_fps = run_params.run_duration.seconds() * 30;
+      EXPECT_GE(stream_conters.captured, expected_min_fps);
       EXPECT_GE(stream_conters.pre_encoded, 1);
       EXPECT_GE(stream_conters.encoded, 1);
       EXPECT_GE(stream_conters.received, 1);
@@ -134,7 +134,7 @@ class PeerConnectionE2EQualityTestSmokeTest : public ::testing::Test {
 #define MAYBE_Smoke Smoke
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
-  RunParams run_params(TimeDelta::Seconds(7));
+  RunParams run_params(TimeDelta::Seconds(2));
   run_params.video_codecs = {
       VideoCodecConfig(cricket::kVp9CodecName, {{"profile-id", "0"}})};
   run_params.use_flex_fec = true;
@@ -188,7 +188,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
 #define MAYBE_Echo Echo
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Echo) {
-  RunParams run_params(TimeDelta::Seconds(7));
+  RunParams run_params(TimeDelta::Seconds(2));
   run_params.echo_emulation_config = EchoEmulationConfig();
   RunTest(
       "smoke", run_params,
@@ -218,7 +218,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Echo) {
 #define MAYBE_Simulcast Simulcast
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Simulcast) {
-  RunParams run_params(TimeDelta::Seconds(7));
+  RunParams run_params(TimeDelta::Seconds(2));
   run_params.video_codecs = {VideoCodecConfig(cricket::kVp8CodecName)};
   RunTest(
       "simulcast", run_params,
@@ -256,7 +256,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Simulcast) {
 #define MAYBE_Svc Svc
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Svc) {
-  RunParams run_params(TimeDelta::Seconds(7));
+  RunParams run_params(TimeDelta::Seconds(2));
   run_params.video_codecs = {VideoCodecConfig(cricket::kVp9CodecName)};
   RunTest(
       "simulcast", run_params,
@@ -296,7 +296,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Svc) {
 #define MAYBE_HighBitrate HighBitrate
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_HighBitrate) {
-  RunParams run_params(TimeDelta::Seconds(7));
+  RunParams run_params(TimeDelta::Seconds(2));
   run_params.video_codecs = {
       VideoCodecConfig(cricket::kVp9CodecName, {{"profile-id", "0"}})};
 
