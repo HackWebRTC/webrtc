@@ -502,6 +502,7 @@ if (rtc_include_tests) {
       "../..:webrtc_common",
       "../../api:array_view",
       "../../api:libjingle_peerconnection_api",
+      "../../api:mock_frame_encryptor",
       "../../api:rtp_headers",
       "../../api:rtp_packet_info",
       "../../api:rtp_parameters",

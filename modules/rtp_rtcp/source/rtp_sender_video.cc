@@ -28,6 +28,7 @@
 #include "modules/rtp_rtcp/source/absolute_capture_time_sender.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/rtp_dependency_descriptor_extension.h"
+#include "modules/rtp_rtcp/source/rtp_descriptor_authentication.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor_extension.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
@@ -613,23 +614,24 @@ bool RTPSenderVideo::SendVideo(
   limits.last_packet_reduction_len =
       last_packet->headers_size() - middle_packet->headers_size();
 
-  rtc::ArrayView<const uint8_t> generic_descriptor_raw_00 =
-      first_packet->GetRawExtension<RtpGenericFrameDescriptorExtension00>();
-  rtc::ArrayView<const uint8_t> generic_descriptor_raw_01 =
-      first_packet->GetRawExtension<RtpGenericFrameDescriptorExtension01>();
+  bool has_generic_descriptor_00 =
+      first_packet->HasExtension<RtpGenericFrameDescriptorExtension00>();
+  bool has_generic_descriptor_01 =
+      first_packet->HasExtension<RtpGenericFrameDescriptorExtension01>();
+  bool has_dependency_descriptor =
+      first_packet->HasExtension<RtpDependencyDescriptorExtension>();
 
-  if (!generic_descriptor_raw_00.empty() &&
-      !generic_descriptor_raw_01.empty()) {
+  if (has_generic_descriptor_00 && has_generic_descriptor_01) {
     RTC_LOG(LS_WARNING) << "Two versions of GFD extension used.";
     return false;
   }
 
-  // Minimiazation of the vp8 descriptor may erase temporal_id, so save it.
+  // Minimization of the vp8 descriptor may erase temporal_id, so save it.
   const uint8_t temporal_id = GetTemporalId(video_header);
-  rtc::ArrayView<const uint8_t> generic_descriptor_raw =
-      !generic_descriptor_raw_01.empty() ? generic_descriptor_raw_01
-                                         : generic_descriptor_raw_00;
-  if (!generic_descriptor_raw.empty()) {
+  bool has_generic_descriptor = has_generic_descriptor_00 ||
+                                has_generic_descriptor_01 ||
+                                has_dependency_descriptor;
+  if (has_generic_descriptor) {
     MinimizeDescriptor(&video_header);
   }
 
@@ -645,7 +647,7 @@ bool RTPSenderVideo::SendVideo(
   // TODO(benwright@webrtc.org) - Allocate enough to always encrypt inline.
   rtc::Buffer encrypted_video_payload;
   if (frame_encryptor_ != nullptr) {
-    if (generic_descriptor_raw.empty()) {
+    if (!has_generic_descriptor) {
       return false;
     }
 
@@ -657,9 +659,9 @@ bool RTPSenderVideo::SendVideo(
     size_t bytes_written = 0;
 
     // Enable header authentication if the field trial isn't disabled.
-    rtc::ArrayView<const uint8_t> additional_data;
+    std::vector<uint8_t> additional_data;
     if (generic_descriptor_auth_experiment_) {
-      additional_data = generic_descriptor_raw;
+      additional_data = RtpDescriptorAuthentication(video_header);
     }
 
     if (frame_encryptor_->Encrypt(

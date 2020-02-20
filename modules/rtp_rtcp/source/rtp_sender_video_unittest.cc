@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "api/test/mock_frame_encryptor.h"
 #include "api/transport/rtp/dependency_descriptor.h"
 #include "api/video/video_codec_constants.h"
 #include "api/video/video_timing.h"
@@ -39,16 +40,22 @@ namespace webrtc {
 
 namespace {
 
+using ::testing::_;
 using ::testing::ElementsAre;
+using ::testing::ElementsAreArray;
 using ::testing::IsEmpty;
+using ::testing::NiceMock;
+using ::testing::Return;
+using ::testing::ReturnArg;
 using ::testing::SizeIs;
+using ::testing::WithArgs;
 
 enum : int {  // The first valid value is 1.
   kAbsoluteSendTimeExtensionId = 1,
   kFrameMarkingExtensionId,
   kGenericDescriptorId00,
   kGenericDescriptorId01,
-  kGenericDescriptorId02,
+  kDependencyDescriptorId,
   kTransmissionTimeOffsetExtensionId,
   kTransportSequenceNumberExtensionId,
   kVideoRotationExtensionId,
@@ -83,7 +90,7 @@ class LoopbackTransportTest : public webrtc::Transport {
     receivers_extensions_.Register<RtpGenericFrameDescriptorExtension01>(
         kGenericDescriptorId01);
     receivers_extensions_.Register<RtpDependencyDescriptorExtension>(
-        kGenericDescriptorId02);
+        kDependencyDescriptorId);
     receivers_extensions_.Register<FrameMarkingExtension>(
         kFrameMarkingExtensionId);
     receivers_extensions_.Register<AbsoluteCaptureTimeExtension>(
@@ -537,7 +544,7 @@ TEST_P(RtpSenderVideoTest, SendsDependencyDescriptorWhenVideoStructureIsSet) {
   const int64_t kFrameId = 100000;
   uint8_t kFrame[100];
   rtp_module_->RegisterRtpHeaderExtension(
-      RtpDependencyDescriptorExtension::kUri, kGenericDescriptorId02);
+      RtpDependencyDescriptorExtension::kUri, kDependencyDescriptorId);
   FrameDependencyStructure video_structure;
   video_structure.num_decode_targets = 2;
   video_structure.templates = {
@@ -606,7 +613,7 @@ TEST_P(RtpSenderVideoTest,
   const int64_t kFrameId = 100000;
   uint8_t kFrame[100];
   rtp_module_->RegisterRtpHeaderExtension(
-      RtpDependencyDescriptorExtension::kUri, kGenericDescriptorId02);
+      RtpDependencyDescriptorExtension::kUri, kDependencyDescriptorId);
   FrameDependencyStructure video_structure1;
   video_structure1.num_decode_targets = 2;
   video_structure1.templates = {
@@ -673,6 +680,50 @@ TEST_P(RtpSenderVideoTest,
       descriptor_key1.attached_structure.get(), &descriptor_delta));
   EXPECT_FALSE(delta_packet.GetExtension<RtpDependencyDescriptorExtension>(
       descriptor_key2.attached_structure.get(), &descriptor_delta));
+}
+
+TEST_P(RtpSenderVideoTest,
+       AuthenticateVideoHeaderWhenDependencyDescriptorExtensionIsUsed) {
+  static constexpr size_t kFrameSize = 100;
+  uint8_t kFrame[kFrameSize] = {1, 2, 3, 4};
+
+  rtp_module_->RegisterRtpHeaderExtension(
+      RtpDependencyDescriptorExtension::kUri, kDependencyDescriptorId);
+  rtc::scoped_refptr<MockFrameEncryptor> encryptor(
+      new rtc::RefCountedObject<NiceMock<MockFrameEncryptor>>);
+  ON_CALL(*encryptor, GetMaxCiphertextByteSize).WillByDefault(ReturnArg<1>());
+  ON_CALL(*encryptor, Encrypt)
+      .WillByDefault(WithArgs<3, 5>(
+          [](rtc::ArrayView<const uint8_t> frame, size_t* bytes_written) {
+            *bytes_written = frame.size();
+            return 0;
+          }));
+  RTPSenderVideo::Config config;
+  config.clock = &fake_clock_;
+  config.rtp_sender = rtp_module_->RtpSender();
+  config.field_trials = &field_trials_;
+  config.frame_encryptor = encryptor;
+  RTPSenderVideo rtp_sender_video(config);
+
+  FrameDependencyStructure video_structure;
+  video_structure.num_decode_targets = 1;
+  video_structure.templates = {GenericFrameInfo::Builder().Dtis("S").Build()};
+  rtp_sender_video.SetVideoStructure(&video_structure);
+
+  // Send key frame.
+  RTPVideoHeader hdr;
+  hdr.frame_type = VideoFrameType::kVideoFrameKey;
+  hdr.generic.emplace().decode_target_indications =
+      video_structure.templates[0].decode_target_indications;
+
+  EXPECT_CALL(*encryptor,
+              Encrypt(_, _, Not(IsEmpty()), ElementsAreArray(kFrame), _, _));
+  rtp_sender_video.SendVideo(kPayload, kType, kTimestamp, 0, kFrame, nullptr,
+                             hdr, kDefaultExpectedRetransmissionTimeMs);
+  // Double check packet with the dependency descriptor is sent.
+  ASSERT_EQ(transport_.packets_sent(), 1);
+  EXPECT_TRUE(transport_.last_sent_packet()
+                  .HasExtension<RtpDependencyDescriptorExtension>());
 }
 
 void RtpSenderVideoTest::PopulateGenericFrameDescriptor(int version) {
