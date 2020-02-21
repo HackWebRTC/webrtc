@@ -1560,7 +1560,10 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
   }
   RTC_DCHECK_RUN_ON(&encoder_queue_);
 
-  if (settings_.encoder_switch_request_callback) {
+  const bool video_is_suspended = target_bitrate == DataRate::Zero();
+  const bool video_suspension_changed = video_is_suspended != EncoderPaused();
+
+  if (!video_is_suspended && settings_.encoder_switch_request_callback) {
     if (encoder_selector_) {
       if (auto encoder = encoder_selector_->OnEncodingBitrate(target_bitrate)) {
         settings_.encoder_switch_request_callback->RequestEncoderSwitch(
@@ -1594,8 +1597,6 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
 
   uint32_t framerate_fps = GetInputFramerateFps();
   frame_dropper_.SetRates((target_bitrate.bps() + 500) / 1000, framerate_fps);
-  const bool video_is_suspended = target_bitrate == DataRate::Zero();
-  const bool video_suspension_changed = video_is_suspended != EncoderPaused();
 
   EncoderRateSettings new_rate_settings{
       VideoBitrateAllocation(), static_cast<double>(framerate_fps),

@@ -5258,6 +5258,41 @@ TEST_F(VideoStreamEncoderTest, BitrateEncoderSwitch) {
   video_stream_encoder_->Stop();
 }
 
+TEST_F(VideoStreamEncoderTest, VideoSuspendedNoEncoderSwitch) {
+  constexpr int kDontCare = 100;
+
+  StrictMock<MockEncoderSwitchRequestCallback> switch_callback;
+  video_send_config_.encoder_settings.encoder_switch_request_callback =
+      &switch_callback;
+  VideoEncoderConfig encoder_config = video_encoder_config_.Copy();
+  encoder_config.codec_type = kVideoCodecVP8;
+  webrtc::test::ScopedFieldTrials field_trial(
+      "WebRTC-NetworkCondition-EncoderSwitch/"
+      "codec_thresholds:VP8;100;-1|H264;-1;30000,"
+      "to_codec:AV1,to_param:ping,to_value:pong,window:2.0/");
+
+  // Reset encoder for new configuration to take effect.
+  ConfigureEncoder(std::move(encoder_config));
+
+  // Send one frame to trigger ReconfigureEncoder.
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(kDontCare, kDontCare, kDontCare));
+
+  using Config = EncoderSwitchRequestCallback::Config;
+  EXPECT_CALL(switch_callback, RequestEncoderSwitch(Matcher<const Config&>(_)))
+      .Times(0);
+
+  video_stream_encoder_->OnBitrateUpdated(
+      /*target_bitrate=*/DataRate::KilobitsPerSec(0),
+      /*stable_target_bitrate=*/DataRate::KilobitsPerSec(0),
+      /*link_allocation=*/DataRate::KilobitsPerSec(kDontCare),
+      /*fraction_lost=*/0,
+      /*rtt_ms=*/0,
+      /*cwnd_reduce_ratio=*/0);
+
+  video_stream_encoder_->Stop();
+}
+
 TEST_F(VideoStreamEncoderTest, ResolutionEncoderSwitch) {
   constexpr int kSufficientBitrateToNotDrop = 1000;
   constexpr int kHighRes = 500;
