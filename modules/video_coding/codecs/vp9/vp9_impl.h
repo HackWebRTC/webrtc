@@ -176,6 +176,8 @@ class VP9EncoderImpl : public VP9Encoder {
       std::string group_name);
   FramerateController variable_framerate_controller_;
   int num_steady_state_frames_;
+  // Only set config when this flag is set.
+  bool config_changed_;
 };
 
 class VP9DecoderImpl : public VP9Decoder {
