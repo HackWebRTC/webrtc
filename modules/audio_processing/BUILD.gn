@@ -73,6 +73,7 @@ rtc_library("audio_buffer") {
 
   deps = [
     ":api",
+    "../../api:array_view",
     "../../api/audio:audio_frame_api",
     "../../common_audio",
     "../../common_audio:common_audio_c",
