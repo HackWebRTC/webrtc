@@ -917,7 +917,10 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
     }
   }
 
-  for (int sl_idx = 0; sl_idx < num_active_spatial_layers_; ++sl_idx) {
+  // Need to set temporal layer id on ALL layers, even disabled ones.
+  // Otherwise libvpx might produce frames on a disabled layer:
+  // http://crbug.com/1051476
+  for (int sl_idx = 0; sl_idx < num_spatial_layers_; ++sl_idx) {
     layer_id.temporal_layer_id_per_spatial[sl_idx] = layer_id.temporal_layer_id;
   }
 
