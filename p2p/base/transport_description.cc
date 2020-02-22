@@ -25,14 +25,14 @@ namespace cricket {
 namespace {
 
 bool IsIceChar(char c) {
-  // Note: '-' and '=' are *not* valid ice-chars but temporarily permitted
-  // in order to allow external software to upgrade.
-  if (c == '-' || c == '=') {
+  // Note: '-', '=', '#' and '_' are *not* valid ice-chars but temporarily
+  // permitted in order to allow external software to upgrade.
+  if (c == '-' || c == '=' || c == '#' || c == '_') {
     RTC_LOG(LS_WARNING)
-        << "'-' and '=' are not valid ice-char and thus not permitted in "
-        << "ufrag or pwd. This is a protocol violation that is permitted "
-        << "for to allow upgrading but will be rejected in the future. "
-        << "See https://crbug.com/1053756";
+        << "'-', '=', '#' and '-' are not valid ice-char and thus not "
+        << "permitted in ufrag or pwd. This is a protocol violation that "
+        << "is permitted to allow upgrading but will be rejected in "
+        << "the future. See https://crbug.com/1053756";
     return true;
   }
   return absl::ascii_isalnum(c) || c == '+' || c == '/';
