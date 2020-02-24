@@ -502,7 +502,13 @@ INSTANTIATE_TEST_SUITE_P(SpsPpsIdrIsKeyframe,
                          RtpVideoStreamReceiverTestH264,
                          Values("", "WebRTC-SpsPpsIdrIsH264Keyframe/Enabled/"));
 
-TEST_P(RtpVideoStreamReceiverTestH264, InBandSpsPps) {
+// Fails on MSAN: https://bugs.chromium.org/p/webrtc/issues/detail?id=11376.
+#if defined(MEMORY_SANITIZER)
+#define MAYBE_InBandSpsPps DISABLED_InBandSpsPps
+#else
+#define MAYBE_InBandSpsPps InBandSpsPps
+#endif
+TEST_P(RtpVideoStreamReceiverTestH264, MAYBE_InBandSpsPps) {
   rtc::CopyOnWriteBuffer sps_data;
   RtpPacketReceived rtp_packet;
   RTPVideoHeader sps_video_header = GetDefaultH264VideoHeader();
