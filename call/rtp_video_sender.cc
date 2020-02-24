@@ -36,9 +36,13 @@ namespace webrtc {
 
 namespace webrtc_internal_rtp_video_sender {
 
-RtpStreamSender::RtpStreamSender(std::unique_ptr<RtpRtcp> rtp_rtcp,
-                                 std::unique_ptr<RTPSenderVideo> sender_video)
-    : rtp_rtcp(std::move(rtp_rtcp)), sender_video(std::move(sender_video)) {}
+RtpStreamSender::RtpStreamSender(
+    std::unique_ptr<RtpRtcp> rtp_rtcp,
+    std::unique_ptr<RTPSenderVideo> sender_video,
+    std::unique_ptr<VideoFecGenerator> fec_generator)
+    : rtp_rtcp(std::move(rtp_rtcp)),
+      sender_video(std::move(sender_video)),
+      fec_generator(std::move(fec_generator)) {}
 
 RtpStreamSender::~RtpStreamSender() = default;
 
@@ -113,6 +117,67 @@ bool ShouldDisableRedAndUlpfec(bool flexfec_enabled,
   return should_disable_red_and_ulpfec;
 }
 
+// TODO(brandtr): Update this function when we support multistream protection.
+std::unique_ptr<VideoFecGenerator> MaybeCreateFecGenerator(
+    Clock* clock,
+    const RtpConfig& rtp,
+    const std::map<uint32_t, RtpState>& suspended_ssrcs,
+    int simulcast_index) {
+  // If flexfec is configured that takes priority.
+  if (rtp.flexfec.payload_type >= 0) {
+    RTC_DCHECK_GE(rtp.flexfec.payload_type, 0);
+    RTC_DCHECK_LE(rtp.flexfec.payload_type, 127);
+    if (rtp.flexfec.ssrc == 0) {
+      RTC_LOG(LS_WARNING) << "FlexFEC is enabled, but no FlexFEC SSRC given. "
+                             "Therefore disabling FlexFEC.";
+      return nullptr;
+    }
+    if (rtp.flexfec.protected_media_ssrcs.empty()) {
+      RTC_LOG(LS_WARNING)
+          << "FlexFEC is enabled, but no protected media SSRC given. "
+             "Therefore disabling FlexFEC.";
+      return nullptr;
+    }
+
+    if (rtp.flexfec.protected_media_ssrcs.size() > 1) {
+      RTC_LOG(LS_WARNING)
+          << "The supplied FlexfecConfig contained multiple protected "
+             "media streams, but our implementation currently only "
+             "supports protecting a single media stream. "
+             "To avoid confusion, disabling FlexFEC completely.";
+      return nullptr;
+    }
+
+    if (absl::c_find(rtp.flexfec.protected_media_ssrcs,
+                     rtp.ssrcs[simulcast_index]) ==
+        rtp.flexfec.protected_media_ssrcs.end()) {
+      // Media SSRC not among flexfec protected SSRCs.
+      return nullptr;
+    }
+
+    const RtpState* rtp_state = nullptr;
+    auto it = suspended_ssrcs.find(rtp.flexfec.ssrc);
+    if (it != suspended_ssrcs.end()) {
+      rtp_state = &it->second;
+    }
+
+    RTC_DCHECK_EQ(1U, rtp.flexfec.protected_media_ssrcs.size());
+    return std::make_unique<FlexfecSender>(
+        rtp.flexfec.payload_type, rtp.flexfec.ssrc,
+        rtp.flexfec.protected_media_ssrcs[0], rtp.mid, rtp.extensions,
+        RTPSender::FecExtensionSizes(), rtp_state, clock);
+  } else if (rtp.ulpfec.red_payload_type >= 0 &&
+             rtp.ulpfec.ulpfec_payload_type >= 0 &&
+             !ShouldDisableRedAndUlpfec(/*flexfec_enabled=*/false, rtp)) {
+    // Flexfec not configured, but ulpfec is and is not disabled.
+    return std::make_unique<UlpfecGenerator>(
+        rtp.ulpfec.red_payload_type, rtp.ulpfec.ulpfec_payload_type, clock);
+  }
+
+  // Not a single FEC is given.
+  return nullptr;
+}
+
 std::vector<RtpStreamSender> CreateRtpStreamSenders(
     Clock* clock,
     const RtpConfig& rtp_config,
@@ -121,7 +186,7 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
     Transport* send_transport,
     RtcpBandwidthObserver* bandwidth_callback,
     RtpTransportControllerSendInterface* transport,
-    FlexfecSender* flexfec_sender,
+    const std::map<uint32_t, RtpState>& suspended_ssrcs,
     RtcEventLog* event_log,
     RateLimiter* retransmission_rate_limiter,
     OverheadObserver* overhead_observer,
@@ -160,18 +225,17 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
   configuration.rtcp_report_interval_ms = rtcp_report_interval_ms;
 
   std::vector<RtpStreamSender> rtp_streams;
-  const std::vector<uint32_t>& flexfec_protected_ssrcs =
-      rtp_config.flexfec.protected_media_ssrcs;
+
   RTC_DCHECK(rtp_config.rtx.ssrcs.empty() ||
              rtp_config.rtx.ssrcs.size() == rtp_config.rtx.ssrcs.size());
   for (size_t i = 0; i < rtp_config.ssrcs.size(); ++i) {
+    RTPSenderVideo::Config video_config;
     configuration.local_media_ssrc = rtp_config.ssrcs[i];
-    bool enable_flexfec = flexfec_sender != nullptr &&
-                          std::find(flexfec_protected_ssrcs.begin(),
-                                    flexfec_protected_ssrcs.end(),
-                                    configuration.local_media_ssrc) !=
-                              flexfec_protected_ssrcs.end();
-    configuration.flexfec_sender = enable_flexfec ? flexfec_sender : nullptr;
+
+    std::unique_ptr<VideoFecGenerator> fec_generator =
+        MaybeCreateFecGenerator(clock, rtp_config, suspended_ssrcs, i);
+    configuration.fec_generator = fec_generator.get();
+    video_config.fec_generator = fec_generator.get();
 
     if (rtp_config.rtx.ssrcs.size() > i) {
       configuration.rtx_send_ssrc = rtp_config.rtx.ssrcs[i];
@@ -187,73 +251,29 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
     rtp_rtcp->SetStorePacketsStatus(true, kMinSendSidePacketHistorySize);
 
     FieldTrialBasedConfig field_trial_config;
-    RTPSenderVideo::Config video_config;
     video_config.clock = configuration.clock;
     video_config.rtp_sender = rtp_rtcp->RtpSender();
-    video_config.flexfec_sender = configuration.flexfec_sender;
     video_config.frame_encryptor = frame_encryptor;
     video_config.require_frame_encryption =
         crypto_options.sframe.require_frame_encryption;
     video_config.enable_retransmit_all_layers = false;
     video_config.field_trials = &field_trial_config;
+
+    const bool using_flexfec =
+        fec_generator &&
+        fec_generator->GetFecType() == VideoFecGenerator::FecType::kFlexFec;
     const bool should_disable_red_and_ulpfec =
-        ShouldDisableRedAndUlpfec(enable_flexfec, rtp_config);
-    if (rtp_config.ulpfec.red_payload_type != -1 &&
-        !should_disable_red_and_ulpfec) {
+        ShouldDisableRedAndUlpfec(using_flexfec, rtp_config);
+    if (!should_disable_red_and_ulpfec &&
+        rtp_config.ulpfec.red_payload_type != -1) {
       video_config.red_payload_type = rtp_config.ulpfec.red_payload_type;
     }
-    if (rtp_config.ulpfec.ulpfec_payload_type != -1 &&
-        !should_disable_red_and_ulpfec) {
-      video_config.ulpfec_payload_type = rtp_config.ulpfec.ulpfec_payload_type;
-    }
+
     auto sender_video = std::make_unique<RTPSenderVideo>(video_config);
-    rtp_streams.emplace_back(std::move(rtp_rtcp), std::move(sender_video));
+    rtp_streams.emplace_back(std::move(rtp_rtcp), std::move(sender_video),
+                             std::move(fec_generator));
   }
   return rtp_streams;
-}
-
-// TODO(brandtr): Update this function when we support multistream protection.
-std::unique_ptr<FlexfecSender> MaybeCreateFlexfecSender(
-    Clock* clock,
-    const RtpConfig& rtp,
-    const std::map<uint32_t, RtpState>& suspended_ssrcs) {
-  if (rtp.flexfec.payload_type < 0) {
-    return nullptr;
-  }
-  RTC_DCHECK_GE(rtp.flexfec.payload_type, 0);
-  RTC_DCHECK_LE(rtp.flexfec.payload_type, 127);
-  if (rtp.flexfec.ssrc == 0) {
-    RTC_LOG(LS_WARNING) << "FlexFEC is enabled, but no FlexFEC SSRC given. "
-                           "Therefore disabling FlexFEC.";
-    return nullptr;
-  }
-  if (rtp.flexfec.protected_media_ssrcs.empty()) {
-    RTC_LOG(LS_WARNING)
-        << "FlexFEC is enabled, but no protected media SSRC given. "
-           "Therefore disabling FlexFEC.";
-    return nullptr;
-  }
-
-  if (rtp.flexfec.protected_media_ssrcs.size() > 1) {
-    RTC_LOG(LS_WARNING)
-        << "The supplied FlexfecConfig contained multiple protected "
-           "media streams, but our implementation currently only "
-           "supports protecting a single media stream. "
-           "To avoid confusion, disabling FlexFEC completely.";
-    return nullptr;
-  }
-
-  const RtpState* rtp_state = nullptr;
-  auto it = suspended_ssrcs.find(rtp.flexfec.ssrc);
-  if (it != suspended_ssrcs.end()) {
-    rtp_state = &it->second;
-  }
-
-  RTC_DCHECK_EQ(1U, rtp.flexfec.protected_media_ssrcs.size());
-  return std::make_unique<FlexfecSender>(
-      rtp.flexfec.payload_type, rtp.flexfec.ssrc,
-      rtp.flexfec.protected_media_ssrcs[0], rtp.mid, rtp.extensions,
-      RTPSender::FecExtensionSizes(), rtp_state, clock);
 }
 
 DataRate CalculateOverheadRate(DataRate data_rate,
@@ -302,8 +322,6 @@ RtpVideoSender::RtpVideoSender(
       active_(false),
       module_process_thread_(nullptr),
       suspended_ssrcs_(std::move(suspended_ssrcs)),
-      flexfec_sender_(
-          MaybeCreateFlexfecSender(clock, rtp_config, suspended_ssrcs_)),
       fec_controller_(std::move(fec_controller)),
       fec_allowed_(true),
       rtp_streams_(CreateRtpStreamSenders(clock,
@@ -313,7 +331,7 @@ RtpVideoSender::RtpVideoSender(
                                           send_transport,
                                           transport->GetBandwidthObserver(),
                                           transport,
-                                          flexfec_sender_.get(),
+                                          suspended_ssrcs_,
                                           event_log,
                                           retransmission_limiter,
                                           this,
@@ -375,6 +393,7 @@ RtpVideoSender::RtpVideoSender(
     }
   }
 
+  bool fec_enabled = false;
   for (const RtpStreamSender& stream : rtp_streams_) {
     // Simulcast has one module for each layer. Set the CNAME on all modules.
     stream.rtp_rtcp->SetCNAME(rtp_config_.c_name.c_str());
@@ -384,10 +403,13 @@ RtpVideoSender::RtpVideoSender(
     stream.rtp_rtcp->SetMaxRtpPacketSize(rtp_config_.max_packet_size);
     stream.rtp_rtcp->RegisterSendPayloadFrequency(rtp_config_.payload_type,
                                                   kVideoPayloadTypeFrequency);
+    if (stream.fec_generator != nullptr) {
+      fec_enabled = true;
+    }
   }
   // Currently, both ULPFEC and FlexFEC use the same FEC rate calculation logic,
   // so enable that logic if either of those FEC schemes are enabled.
-  fec_controller_->SetProtectionMethod(FecEnabled(), NackEnabled());
+  fec_controller_->SetProtectionMethod(fec_enabled, NackEnabled());
 
   fec_controller_->SetProtectionCallback(this);
   // Signal congestion controller this object is ready for OnPacket* callbacks.
@@ -555,14 +577,6 @@ void RtpVideoSender::OnBitrateAllocationUpdated(
   }
 }
 
-bool RtpVideoSender::FecEnabled() const {
-  const bool flexfec_enabled = (flexfec_sender_ != nullptr);
-  const bool ulpfec_enabled =
-      !webrtc::field_trial::IsEnabled("WebRTC-DisableUlpFecExperiment") &&
-      (rtp_config_.ulpfec.ulpfec_payload_type >= 0);
-  return flexfec_enabled || ulpfec_enabled;
-}
-
 bool RtpVideoSender::NackEnabled() const {
   const bool nack_enabled = rtp_config_.nack.rtp_history_ms > 0;
   return nack_enabled;
@@ -657,16 +671,19 @@ std::map<uint32_t, RtpState> RtpVideoSender::GetRtpStates() const {
     uint32_t ssrc = rtp_config_.ssrcs[i];
     RTC_DCHECK_EQ(ssrc, rtp_streams_[i].rtp_rtcp->SSRC());
     rtp_states[ssrc] = rtp_streams_[i].rtp_rtcp->GetRtpState();
+
+    VideoFecGenerator* fec_generator = rtp_streams_[i].fec_generator.get();
+    if (fec_generator &&
+        fec_generator->GetFecType() == VideoFecGenerator::FecType::kFlexFec) {
+      auto* flexfec_sender = static_cast<FlexfecSender*>(fec_generator);
+      uint32_t ssrc = rtp_config_.flexfec.ssrc;
+      rtp_states[ssrc] = flexfec_sender->GetRtpState();
+    }
   }
 
   for (size_t i = 0; i < rtp_config_.rtx.ssrcs.size(); ++i) {
     uint32_t ssrc = rtp_config_.rtx.ssrcs[i];
     rtp_states[ssrc] = rtp_streams_[i].rtp_rtcp->GetRtxState();
-  }
-
-  if (flexfec_sender_) {
-    uint32_t ssrc = rtp_config_.flexfec.ssrc;
-    rtp_states[ssrc] = flexfec_sender_->GetRtpState();
   }
 
   return rtp_states;

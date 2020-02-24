@@ -51,7 +51,8 @@ namespace webrtc_internal_rtp_video_sender {
 // RtpVideoSender.
 struct RtpStreamSender {
   RtpStreamSender(std::unique_ptr<RtpRtcp> rtp_rtcp,
-                  std::unique_ptr<RTPSenderVideo> sender_video);
+                  std::unique_ptr<RTPSenderVideo> sender_video,
+                  std::unique_ptr<VideoFecGenerator> fec_generator);
   ~RtpStreamSender();
 
   RtpStreamSender(RtpStreamSender&&) = default;
@@ -60,6 +61,7 @@ struct RtpStreamSender {
   // Note: Needs pointer stability.
   std::unique_ptr<RtpRtcp> rtp_rtcp;
   std::unique_ptr<RTPSenderVideo> sender_video;
+  std::unique_ptr<VideoFecGenerator> fec_generator;
 };
 
 }  // namespace webrtc_internal_rtp_video_sender
@@ -154,7 +156,6 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   void ConfigureProtection();
   void ConfigureSsrcs();
   void ConfigureRids();
-  bool FecEnabled() const;
   bool NackEnabled() const;
   uint32_t GetPacketizationOverheadRate() const;
 
@@ -171,8 +172,6 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   ProcessThread* module_process_thread_;
   rtc::ThreadChecker module_process_thread_checker_;
   std::map<uint32_t, RtpState> suspended_ssrcs_;
-
-  std::unique_ptr<FlexfecSender> flexfec_sender_;
 
   const std::unique_ptr<FecController> fec_controller_;
   bool fec_allowed_ RTC_GUARDED_BY(crit_);

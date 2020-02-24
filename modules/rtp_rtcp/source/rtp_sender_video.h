@@ -22,13 +22,12 @@
 #include "api/video/video_codec_type.h"
 #include "api/video/video_frame_type.h"
 #include "modules/include/module_common_types.h"
-#include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/absolute_capture_time_sender.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
-#include "modules/rtp_rtcp/source/ulpfec_generator.h"
+#include "modules/rtp_rtcp/source/video_fec_generator.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/one_time_event.h"
 #include "rtc_base/race_checker.h"
@@ -68,11 +67,11 @@ class RTPSenderVideo {
     Clock* clock = nullptr;
     RTPSender* rtp_sender = nullptr;
     FlexfecSender* flexfec_sender = nullptr;
+    VideoFecGenerator* fec_generator = nullptr;
     FrameEncryptorInterface* frame_encryptor = nullptr;
     bool require_frame_encryption = false;
     bool enable_retransmit_all_layers = false;
     absl::optional<int> red_payload_type;
-    absl::optional<int> ulpfec_payload_type;
     const WebRtcKeyValueConfig* field_trials = nullptr;
   };
 
@@ -99,12 +98,8 @@ class RTPSenderVideo {
 
   // FlexFEC/ULPFEC.
   // Set FEC rates, max frames before FEC is sent, and type of FEC masks.
-  // Returns false on failure.
   void SetFecParameters(const FecProtectionParams& delta_params,
                         const FecProtectionParams& key_params);
-
-  // FlexFEC.
-  absl::optional<uint32_t> FlexfecSsrc() const;
 
   uint32_t VideoBitrateSent() const;
   uint32_t FecOverheadRate() const;
@@ -134,26 +129,11 @@ class RTPSenderVideo {
 
   size_t FecPacketOverhead() const RTC_EXCLUSIVE_LOCKS_REQUIRED(send_checker_);
 
-  void AppendAsRedMaybeWithUlpfec(
-      std::unique_ptr<RtpPacketToSend> media_packet,
-      bool protect_media_packet,
-      std::vector<std::unique_ptr<RtpPacketToSend>>* packets)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(send_checker_);
-
-  // TODO(brandtr): Remove the FlexFEC functions when FlexfecSender has been
-  // moved to PacedSender.
-  void GenerateAndAppendFlexfec(
-      std::vector<std::unique_ptr<RtpPacketToSend>>* packets);
-
   void LogAndSendToNetwork(
       std::vector<std::unique_ptr<RtpPacketToSend>> packets,
       size_t unpacketized_payload_size);
 
   bool red_enabled() const { return red_payload_type_.has_value(); }
-
-  bool ulpfec_enabled() const { return ulpfec_payload_type_.has_value(); }
-
-  bool flexfec_enabled() const { return flexfec_sender_ != nullptr; }
 
   bool UpdateConditionalRetransmit(uint8_t temporal_id,
                                    int64_t expected_retransmission_time_ms)
@@ -185,22 +165,10 @@ class RTPSenderVideo {
   // Should never be held when calling out of this class.
   rtc::CriticalSection crit_;
 
-  // RED/ULPFEC.
   const absl::optional<int> red_payload_type_;
-  const absl::optional<int> ulpfec_payload_type_;
-  UlpfecGenerator ulpfec_generator_ RTC_GUARDED_BY(send_checker_);
-
-  // FlexFEC.
-  FlexfecSender* const flexfec_sender_;
-
-  // FEC parameters, applicable to either ULPFEC or FlexFEC.
-  FecProtectionParams delta_fec_params_ RTC_GUARDED_BY(crit_);
-  FecProtectionParams key_fec_params_ RTC_GUARDED_BY(crit_);
+  VideoFecGenerator* const fec_generator_;
 
   rtc::CriticalSection stats_crit_;
-  // Bitrate used for FEC payload, RED headers, RTP headers for FEC packets
-  // and any padding overhead.
-  RateStatistics fec_bitrate_ RTC_GUARDED_BY(stats_crit_);
   // Bitrate used for video payload and RTP headers.
   RateStatistics video_bitrate_ RTC_GUARDED_BY(stats_crit_);
   RateStatistics packetization_overhead_bitrate_ RTC_GUARDED_BY(stats_crit_);

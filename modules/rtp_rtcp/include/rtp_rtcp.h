@@ -22,13 +22,13 @@
 #include "api/transport/webrtc_key_value_config.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "modules/include/module.h"
-#include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/include/rtp_packet_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "modules/rtp_rtcp/source/rtp_sequence_number_map.h"
+#include "modules/rtp_rtcp/source/video_fec_generator.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/deprecation.h"
 
@@ -92,9 +92,9 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
     // Spread any bursts of packets into smaller bursts to minimize packet loss.
     RtpPacketSender* paced_sender = nullptr;
 
-    // Generate FlexFEC packets.
-    // TODO(brandtr): Remove when FlexfecSender is wired up to PacedSender.
-    FlexfecSender* flexfec_sender = nullptr;
+    // Generates FEC packets.
+    // TODO(sprang): Wire up to RtpSenderEgress.
+    VideoFecGenerator* fec_generator = nullptr;
 
     BitrateStatisticsObserver* send_bitrate_observer = nullptr;
     SendSideDelayObserver* send_side_delay_observer = nullptr;
