@@ -541,29 +541,6 @@ class SessionDescription {
                   bool bundle_only,
                   std::unique_ptr<MediaContentDescription> description);
   void AddContent(ContentInfo&& content);
-  RTC_DEPRECATED void AddContent(const std::string& name,
-                                 MediaProtocolType type,
-                                 MediaContentDescription* description) {
-    AddContent(name, type, absl::WrapUnique(description));
-  }
-  RTC_DEPRECATED void AddContent(const std::string& name,
-                                 MediaProtocolType type,
-                                 bool rejected,
-                                 MediaContentDescription* description) {
-    AddContent(name, type, rejected, absl::WrapUnique(description));
-  }
-  RTC_DEPRECATED void AddContent(const std::string& name,
-                                 MediaProtocolType type,
-                                 bool rejected,
-                                 bool bundle_only,
-                                 MediaContentDescription* description) {
-    AddContent(name, type, rejected, bundle_only,
-               absl::WrapUnique(description));
-  }
-
-  RTC_DEPRECATED void AddContent(ContentInfo* content) {
-    AddContent(std::move(*content));
-  }
 
   bool RemoveContentByName(const std::string& name);
 
