@@ -25,10 +25,10 @@
 ABSL_FLAG(bool,
           write_histogram_proto_json,
           false,
-          "Use the histogram C++ API, which will write Histogram proto JSON "
-          "instead of Chart JSON. Note, Histogram set JSON and Histogram "
-          "proto JSON are not quite the same thing. This flag only has effect "
-          "if --isolated_script_test_perf_output is specified.");
+          "Use the histogram C++ API, which will write Histogram protos "
+          "instead of Chart JSON. See histogram.proto in third_party/catapult. "
+          "This flag only has effect  if --isolated_script_test_perf_output is "
+          "specified");
 
 namespace webrtc {
 namespace test {

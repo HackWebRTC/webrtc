@@ -222,6 +222,8 @@ rtc_library("perf_test") {
   visibility = [ "*" ]
   testonly = true
   sources = [
+    "testsupport/perf_result_reporter.cc",
+    "testsupport/perf_result_reporter.h",
     "testsupport/perf_test.cc",
     "testsupport/perf_test.h",
     "testsupport/perf_test_graphjson_writer.cc",
@@ -236,6 +238,7 @@ rtc_library("perf_test") {
     "../rtc_base:logging",
     "../rtc_base:rtc_numerics",
     "//third_party/abseil-cpp/absl/flags:flag",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
   if (rtc_enable_protobuf) {
     sources += [ "testsupport/perf_test_histogram_writer.cc" ]
