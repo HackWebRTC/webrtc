@@ -138,7 +138,23 @@ class OveruseFrameDetectorResourceAdaptationModule
     enum class Mode { kAdaptUp, kAdaptDown } mode_;
   };
 
+  // TODO(https://crbug.com/webrtc/11222): Make CanAdaptUp/CanAdaptDown const.
+  // This requires making other private methods const like GetConstAdaptCounter
+  // and EffectiveDegradataionPreference.
+  // Preconditions for OnResourceUnderuse() to adapt up.
+  bool CanAdaptUp(AdaptationObserverInterface::AdaptReason reason,
+                  const AdaptationRequest& adaptation_request);
+  // Adapts up if preconditions apply and VideoSourceRestrictor allows it.
+  // TODO(https://crbug.com/webrtc/11222): This method is still a "Maybe" method
+  // due to the remaining VideoSourceRestrictor logic and it implicitly
+  // calculating the tareet. Instead have the steps "GetNextTarget",
+  // "CanApplyTarget?" and "DoApplyTarget!". In the future "GetNextTarget" and
+  // "CanApplyTarget?" may even be merged, such that "GetNextTarget" always
+  // returns a valid target (or null if there is no next target).
   void OnResourceUnderuse(AdaptationObserverInterface::AdaptReason reason);
+  // Preconditions for OnResourceOveruse() to adapt down.
+  bool CanAdaptDown(const AdaptationRequest& adaptation_request);
+  // Adapts down if preconditions apply and VideoSourceRestrictor allows it.
   ResourceListenerResponse OnResourceOveruse(
       AdaptationObserverInterface::AdaptReason reason);
 

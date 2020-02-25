@@ -655,45 +655,54 @@ bool OveruseFrameDetectorResourceAdaptationModule::OnResourceOveruseForTesting(
          ResourceListenerResponse::kQualityScalerShouldIncreaseFrequency;
 }
 
+bool OveruseFrameDetectorResourceAdaptationModule::CanAdaptUp(
+    AdaptationObserverInterface::AdaptReason reason,
+    const AdaptationRequest& adaptation_request) {
+  if (!has_input_video_)
+    return false;
+  // We can't adapt up if we're already at the highest setting.
+  int num_downgrades = GetConstAdaptCounter().TotalCount(reason);
+  RTC_DCHECK_GE(num_downgrades, 0);
+  if (num_downgrades == 0)
+    return false;
+  // We shouldn't adapt up if we're currently waiting for a previous upgrade to
+  // have an effect.
+  // TODO(hbos): What about in the case of other degradation preferences?
+  bool last_adaptation_was_up =
+      last_adaptation_request_ &&
+      last_adaptation_request_->mode_ == AdaptationRequest::Mode::kAdaptUp;
+  if (last_adaptation_was_up &&
+      degradation_preference_ == DegradationPreference::MAINTAIN_FRAMERATE &&
+      adaptation_request.input_pixel_count_ <=
+          last_adaptation_request_->input_pixel_count_) {
+    return false;
+  }
+  // We shouldn't adapt up if BalancedSettings doesn't allow it, which is only
+  // applicable if reason is kQuality and preference is BALANCED.
+  if (reason == AdaptationObserverInterface::AdaptReason::kQuality &&
+      EffectiveDegradataionPreference() == DegradationPreference::BALANCED &&
+      !balanced_settings_.CanAdaptUp(GetVideoCodecTypeOrGeneric(),
+                                     LastInputFrameSizeOrDefault(),
+                                     encoder_target_bitrate_bps_.value_or(0))) {
+    return false;
+  }
+  // TODO(https://crbug.com/webrtc/11222): We may also not adapt up if the
+  // VideoSourceRestrictor disallows it, due to other BalancedSettings logic or
+  // CanAdaptUpResolution(). Make this method predict all cases of not adapting.
+  return true;
+}
+
 void OveruseFrameDetectorResourceAdaptationModule::OnResourceUnderuse(
     AdaptationObserverInterface::AdaptReason reason) {
-  if (!has_input_video_)
-    return;
-  const AdaptCounter& adapt_counter = GetConstAdaptCounter();
-  int num_downgrades = adapt_counter.TotalCount(reason);
-  if (num_downgrades == 0)
-    return;
-  RTC_DCHECK_GT(num_downgrades, 0);
-
   AdaptationRequest adaptation_request = {
       LastInputFrameSizeOrDefault(),
       encoder_stats_observer_->GetInputFrameRate(),
       AdaptationRequest::Mode::kAdaptUp};
-
-  bool adapt_up_requested =
-      last_adaptation_request_ &&
-      last_adaptation_request_->mode_ == AdaptationRequest::Mode::kAdaptUp;
-
-  if (EffectiveDegradataionPreference() ==
-      DegradationPreference::MAINTAIN_FRAMERATE) {
-    if (adapt_up_requested &&
-        adaptation_request.input_pixel_count_ <=
-            last_adaptation_request_->input_pixel_count_) {
-      // Don't request higher resolution if the current resolution is not
-      // higher than the last time we asked for the resolution to be higher.
-      return;
-    }
-  }
+  if (!CanAdaptUp(reason, adaptation_request))
+    return;
 
   switch (EffectiveDegradataionPreference()) {
     case DegradationPreference::BALANCED: {
-      // Check if quality should be increased based on bitrate.
-      if (reason == AdaptationObserverInterface::AdaptReason::kQuality &&
-          !balanced_settings_.CanAdaptUp(
-              GetVideoCodecTypeOrGeneric(), LastInputFrameSizeOrDefault(),
-              encoder_target_bitrate_bps_.value_or(0))) {
-        return;
-      }
       // Try scale up framerate, if higher.
       int fps = balanced_settings_.MaxFps(GetVideoCodecTypeOrGeneric(),
                                           LastInputFrameSizeOrDefault());
@@ -701,7 +710,7 @@ void OveruseFrameDetectorResourceAdaptationModule::OnResourceUnderuse(
         source_restrictor_->IncreaseFrameRateTo(fps);
         GetAdaptCounter().DecrementFramerate(reason, fps);
         // Reset framerate in case of fewer fps steps down than up.
-        if (adapt_counter.FramerateCount() == 0 &&
+        if (GetConstAdaptCounter().FramerateCount() == 0 &&
             fps != std::numeric_limits<int>::max()) {
           RTC_LOG(LS_INFO) << "Removing framerate down-scaling setting.";
           source_restrictor_->IncreaseFrameRateTo(
@@ -730,7 +739,7 @@ void OveruseFrameDetectorResourceAdaptationModule::OnResourceUnderuse(
 
       // Scale up resolution.
       int pixel_count = adaptation_request.input_pixel_count_;
-      if (adapt_counter.ResolutionCount() == 1) {
+      if (GetConstAdaptCounter().ResolutionCount() == 1) {
         RTC_LOG(LS_INFO) << "Removing resolution down-scaling setting.";
         pixel_count = std::numeric_limits<int>::max();
       }
@@ -745,7 +754,7 @@ void OveruseFrameDetectorResourceAdaptationModule::OnResourceUnderuse(
     case DegradationPreference::MAINTAIN_RESOLUTION: {
       // Scale up framerate.
       int fps = adaptation_request.framerate_fps_;
-      if (adapt_counter.FramerateCount() == 1) {
+      if (GetConstAdaptCounter().FramerateCount() == 1) {
         RTC_LOG(LS_INFO) << "Removing framerate down-scaling setting.";
         fps = std::numeric_limits<int>::max();
       }
@@ -769,7 +778,47 @@ void OveruseFrameDetectorResourceAdaptationModule::OnResourceUnderuse(
 
   UpdateAdaptationStats(reason);
 
-  RTC_LOG(LS_INFO) << adapt_counter.ToString();
+  RTC_LOG(LS_INFO) << GetConstAdaptCounter().ToString();
+}
+
+bool OveruseFrameDetectorResourceAdaptationModule::CanAdaptDown(
+    const AdaptationRequest& adaptation_request) {
+  if (!has_input_video_)
+    return false;
+  // TODO(hbos): Don't support DISABLED, it doesn't exist in the spec and it
+  // causes scaling due to bandwidth constraints (QualityScalerResource) to be
+  // ignored, not just CPU signals. This is not a use case we want to support;
+  // remove the enum value.
+  if (degradation_preference_ == DegradationPreference::DISABLED)
+    return false;
+  bool last_adaptation_was_down =
+      last_adaptation_request_ &&
+      last_adaptation_request_->mode_ == AdaptationRequest::Mode::kAdaptDown;
+  // We shouldn't adapt down if our frame rate is below the minimum or if its
+  // currently unknown.
+  if (EffectiveDegradataionPreference() ==
+      DegradationPreference::MAINTAIN_RESOLUTION) {
+    // TODO(hbos): This usage of |last_adaptation_was_down| looks like a mistake
+    // - delete it.
+    if (adaptation_request.framerate_fps_ <= 0 ||
+        (last_adaptation_was_down &&
+         adaptation_request.framerate_fps_ < kMinFramerateFps)) {
+      return false;
+    }
+  }
+  // We shouldn't adapt down if we're currently waiting for a previous downgrade
+  // to have an effect.
+  // TODO(hbos): What about in the case of other degradation preferences?
+  if (last_adaptation_was_down &&
+      degradation_preference_ == DegradationPreference::MAINTAIN_FRAMERATE &&
+      adaptation_request.input_pixel_count_ >=
+          last_adaptation_request_->input_pixel_count_) {
+    return false;
+  }
+  // TODO(https://crbug.com/webrtc/11222): We may also not adapt down if the
+  // VideoSourceRestrictor disallows it or due to other BalancedSettings logic.
+  // Make this method predict all cases of not adapting.
+  return true;
 }
 
 ResourceListenerResponse
@@ -781,39 +830,8 @@ OveruseFrameDetectorResourceAdaptationModule::OnResourceOveruse(
       LastInputFrameSizeOrDefault(),
       encoder_stats_observer_->GetInputFrameRate(),
       AdaptationRequest::Mode::kAdaptDown};
-
-  bool downgrade_requested =
-      last_adaptation_request_ &&
-      last_adaptation_request_->mode_ == AdaptationRequest::Mode::kAdaptDown;
-
-  switch (EffectiveDegradataionPreference()) {
-    case DegradationPreference::BALANCED:
-      break;
-    case DegradationPreference::MAINTAIN_FRAMERATE:
-      if (downgrade_requested &&
-          adaptation_request.input_pixel_count_ >=
-              last_adaptation_request_->input_pixel_count_) {
-        // Don't request lower resolution if the current resolution is not
-        // lower than the last time we asked for the resolution to be lowered.
-        return ResourceListenerResponse::kNothing;
-      }
-      break;
-    case DegradationPreference::MAINTAIN_RESOLUTION:
-      if (adaptation_request.framerate_fps_ <= 0 ||
-          (downgrade_requested &&
-           adaptation_request.framerate_fps_ < kMinFramerateFps)) {
-        // If no input fps estimate available, can't determine how to scale down
-        // framerate. Otherwise, don't request lower framerate if we don't have
-        // a valid frame rate. Since framerate, unlike resolution, is a measure
-        // we have to estimate, and can fluctuate naturally over time, don't
-        // make the same kind of limitations as for resolution, but trust the
-        // overuse detector to not trigger too often.
-        return ResourceListenerResponse::kNothing;
-      }
-      break;
-    case DegradationPreference::DISABLED:
-      return ResourceListenerResponse::kNothing;
-  }
+  if (!CanAdaptDown(adaptation_request))
+    return ResourceListenerResponse::kNothing;
 
   ResourceListenerResponse response = ResourceListenerResponse::kNothing;
 
