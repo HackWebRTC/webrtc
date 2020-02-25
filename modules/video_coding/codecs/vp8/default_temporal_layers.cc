@@ -554,10 +554,14 @@ void DefaultTemporalLayers::OnEncodeDone(size_t stream_index,
   // subsequent frames.
   if (is_keyframe) {
     info->template_structure = GetTemplateStructure(num_layers_);
+    generic_frame_info.decode_target_indications =
+        temporal_pattern_.front().decode_target_indications;
+    generic_frame_info.temporal_id = 0;
+  } else {
+    generic_frame_info.decode_target_indications =
+        frame.dependency_info.decode_target_indications;
+    generic_frame_info.temporal_id = frame_config.packetizer_temporal_idx;
   }
-  generic_frame_info.decode_target_indications =
-      frame.dependency_info.decode_target_indications;
-  generic_frame_info.temporal_id = frame_config.packetizer_temporal_idx;
 
   if (!frame.expired) {
     for (Vp8BufferReference buffer : kAllBuffers) {
