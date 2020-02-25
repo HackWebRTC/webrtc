@@ -1170,6 +1170,23 @@ TEST(FullStackTest, VP9KSVC_3SL_Low) {
   fixture->RunWithAnalyzer(simulcast);
 }
 
+TEST(FullStackTest, VP9KSVC_3SL_Low_Bw_Limited) {
+  webrtc::test::ScopedFieldTrials override_trials(
+      AppendFieldTrials("WebRTC-Vp9IssueKeyFrameOnLayerDeactivation/Enabled/"
+                        "WebRTC-Vp9ExternalRefCtrl/Enabled/"));
+  auto fixture = CreateVideoQualityTestFixture();
+  ParamsWithLogging simulcast;
+  simulcast.config->link_capacity_kbps = 500;
+  simulcast.call.send_side_bwe = true;
+  simulcast.video[0] = SvcVp9Video();
+  simulcast.analyzer = {"vp9ksvc_3sl_low_bw_limited", 0.0, 0.0,
+                        kFullStackTestDurationSecs};
+  simulcast.ss[0] = {
+      std::vector<VideoStream>(),  0,    3, 0, InterLayerPredMode::kOnKeyPic,
+      std::vector<SpatialLayer>(), false};
+  fixture->RunWithAnalyzer(simulcast);
+}
+
 TEST(FullStackTest, VP9KSVC_3SL_Medium_Network_Restricted) {
   webrtc::test::ScopedFieldTrials override_trials(
       AppendFieldTrials("WebRTC-Vp9IssueKeyFrameOnLayerDeactivation/Enabled/"));
