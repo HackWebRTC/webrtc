@@ -130,12 +130,9 @@ class OveruseFrameDetectorResourceAdaptationModule
     enum class Mode { kAdaptUp, kAdaptDown } mode_;
   };
 
-  // TODO(https://crbug.com/webrtc/11222): Make CanAdaptUp/CanAdaptDown const.
-  // This requires making other private methods const like GetConstAdaptCounter
-  // and EffectiveDegradataionPreference.
   // Preconditions for OnResourceUnderuse() to adapt up.
   bool CanAdaptUp(AdaptationObserverInterface::AdaptReason reason,
-                  const AdaptationRequest& adaptation_request);
+                  const AdaptationRequest& adaptation_request) const;
   // Adapts up if preconditions apply and VideoSourceRestrictor allows it.
   // TODO(https://crbug.com/webrtc/11222): This method is still a "Maybe" method
   // due to the remaining VideoSourceRestrictor logic and it implicitly
@@ -145,7 +142,7 @@ class OveruseFrameDetectorResourceAdaptationModule
   // returns a valid target (or null if there is no next target).
   void OnResourceUnderuse(AdaptationObserverInterface::AdaptReason reason);
   // Preconditions for OnResourceOveruse() to adapt down.
-  bool CanAdaptDown(const AdaptationRequest& adaptation_request);
+  bool CanAdaptDown(const AdaptationRequest& adaptation_request) const;
   // Adapts down if preconditions apply and VideoSourceRestrictor allows it.
   ResourceListenerResponse OnResourceOveruse(
       AdaptationObserverInterface::AdaptReason reason);
@@ -155,7 +152,8 @@ class OveruseFrameDetectorResourceAdaptationModule
   int LastInputFrameSizeOrDefault() const;
   VideoStreamEncoderObserver::AdaptationSteps GetActiveCounts(
       AdaptationObserverInterface::AdaptReason reason);
-  const AdaptCounter& GetConstAdaptCounter();
+  void ClearAdaptCounters();
+  const AdaptCounter& GetConstAdaptCounter() const;
 
   // Makes |video_source_restrictions_| up-to-date and informs the
   // |adaptation_listener_| if restrictions are changed, allowing the listener
@@ -170,7 +168,7 @@ class OveruseFrameDetectorResourceAdaptationModule
       absl::optional<VideoEncoder::QpThresholds> qp_thresholds);
 
   void UpdateAdaptationStats(AdaptationObserverInterface::AdaptReason reason);
-  DegradationPreference EffectiveDegradataionPreference();
+  DegradationPreference EffectiveDegradationPreference() const;
   AdaptCounter& GetAdaptCounter();
   bool CanAdaptUpResolution(int pixels, uint32_t bitrate_bps) const;
 

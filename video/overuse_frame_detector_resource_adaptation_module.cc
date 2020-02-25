@@ -417,6 +417,7 @@ OveruseFrameDetectorResourceAdaptationModule::
       encoder_stats_observer_(encoder_stats_observer) {
   RTC_DCHECK(adaptation_listener_);
   RTC_DCHECK(encoder_stats_observer_);
+  ClearAdaptCounters();
   AddResource(encode_usage_resource_.get(),
               AdaptationObserverInterface::AdaptReason::kCpu);
   AddResource(quality_scaler_resource_.get(),
@@ -486,7 +487,7 @@ void OveruseFrameDetectorResourceAdaptationModule::SetDegradationPreference(
       // TODO(asapersson): Consider removing |adapt_counters_| map and use one
       // AdaptCounter for all modes.
       source_restrictor_->ClearRestrictions();
-      adapt_counters_.clear();
+      ClearAdaptCounters();
     }
   }
   degradation_preference_ = degradation_preference;
@@ -528,7 +529,7 @@ void OveruseFrameDetectorResourceAdaptationModule::
     ResetVideoSourceRestrictions() {
   last_adaptation_request_.reset();
   source_restrictor_->ClearRestrictions();
-  adapt_counters_.clear();
+  ClearAdaptCounters();
   MaybeUpdateVideoSourceRestrictions();
 }
 
@@ -678,7 +679,7 @@ OveruseFrameDetectorResourceAdaptationModule::OnResourceUsageStateMeasured(
 
 bool OveruseFrameDetectorResourceAdaptationModule::CanAdaptUp(
     AdaptationObserverInterface::AdaptReason reason,
-    const AdaptationRequest& adaptation_request) {
+    const AdaptationRequest& adaptation_request) const {
   if (!has_input_video_)
     return false;
   // We can't adapt up if we're already at the highest setting.
@@ -701,7 +702,7 @@ bool OveruseFrameDetectorResourceAdaptationModule::CanAdaptUp(
   // We shouldn't adapt up if BalancedSettings doesn't allow it, which is only
   // applicable if reason is kQuality and preference is BALANCED.
   if (reason == AdaptationObserverInterface::AdaptReason::kQuality &&
-      EffectiveDegradataionPreference() == DegradationPreference::BALANCED &&
+      EffectiveDegradationPreference() == DegradationPreference::BALANCED &&
       !balanced_settings_.CanAdaptUp(GetVideoCodecTypeOrGeneric(),
                                      LastInputFrameSizeOrDefault(),
                                      encoder_target_bitrate_bps_.value_or(0))) {
@@ -722,7 +723,7 @@ void OveruseFrameDetectorResourceAdaptationModule::OnResourceUnderuse(
   if (!CanAdaptUp(reason, adaptation_request))
     return;
 
-  switch (EffectiveDegradataionPreference()) {
+  switch (EffectiveDegradationPreference()) {
     case DegradationPreference::BALANCED: {
       // Try scale up framerate, if higher.
       int fps = balanced_settings_.MaxFps(GetVideoCodecTypeOrGeneric(),
@@ -803,7 +804,7 @@ void OveruseFrameDetectorResourceAdaptationModule::OnResourceUnderuse(
 }
 
 bool OveruseFrameDetectorResourceAdaptationModule::CanAdaptDown(
-    const AdaptationRequest& adaptation_request) {
+    const AdaptationRequest& adaptation_request) const {
   if (!has_input_video_)
     return false;
   // TODO(hbos): Don't support DISABLED, it doesn't exist in the spec and it
@@ -817,7 +818,7 @@ bool OveruseFrameDetectorResourceAdaptationModule::CanAdaptDown(
       last_adaptation_request_->mode_ == AdaptationRequest::Mode::kAdaptDown;
   // We shouldn't adapt down if our frame rate is below the minimum or if its
   // currently unknown.
-  if (EffectiveDegradataionPreference() ==
+  if (EffectiveDegradationPreference() ==
       DegradationPreference::MAINTAIN_RESOLUTION) {
     // TODO(hbos): This usage of |last_adaptation_was_down| looks like a mistake
     // - delete it.
@@ -856,7 +857,7 @@ OveruseFrameDetectorResourceAdaptationModule::OnResourceOveruse(
 
   ResourceListenerResponse response = ResourceListenerResponse::kNothing;
 
-  switch (EffectiveDegradataionPreference()) {
+  switch (EffectiveDegradationPreference()) {
     case DegradationPreference::BALANCED: {
       // Try scale down framerate, if lower.
       int fps = balanced_settings_.MinFps(GetVideoCodecTypeOrGeneric(),
@@ -1048,8 +1049,9 @@ OveruseFrameDetectorResourceAdaptationModule::GetActiveCounts(
   return counts;
 }
 
-DegradationPreference OveruseFrameDetectorResourceAdaptationModule::
-    EffectiveDegradataionPreference() {
+DegradationPreference
+OveruseFrameDetectorResourceAdaptationModule::EffectiveDegradationPreference()
+    const {
   // Balanced mode for screenshare works via automatic animation detection:
   // Resolution is capped for fullscreen animated content.
   // Adapatation is done only via framerate downgrade.
@@ -1067,9 +1069,23 @@ OveruseFrameDetectorResourceAdaptationModule::GetAdaptCounter() {
   return adapt_counters_[degradation_preference_];
 }
 
+void OveruseFrameDetectorResourceAdaptationModule::ClearAdaptCounters() {
+  adapt_counters_.clear();
+  adapt_counters_.insert(
+      std::make_pair(DegradationPreference::DISABLED, AdaptCounter()));
+  adapt_counters_.insert(std::make_pair(
+      DegradationPreference::MAINTAIN_FRAMERATE, AdaptCounter()));
+  adapt_counters_.insert(std::make_pair(
+      DegradationPreference::MAINTAIN_RESOLUTION, AdaptCounter()));
+  adapt_counters_.insert(
+      std::make_pair(DegradationPreference::BALANCED, AdaptCounter()));
+}
+
 const OveruseFrameDetectorResourceAdaptationModule::AdaptCounter&
-OveruseFrameDetectorResourceAdaptationModule::GetConstAdaptCounter() {
-  return adapt_counters_[degradation_preference_];
+OveruseFrameDetectorResourceAdaptationModule::GetConstAdaptCounter() const {
+  auto it = adapt_counters_.find(degradation_preference_);
+  RTC_DCHECK(it != adapt_counters_.cend());
+  return it->second;
 }
 
 bool OveruseFrameDetectorResourceAdaptationModule::CanAdaptUpResolution(
