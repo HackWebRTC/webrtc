@@ -38,7 +38,17 @@ class VideoSourceRestrictions {
     return !(*this == rhs);
   }
 
+  // The source must produce a resolution less than or equal to
+  // max_pixels_per_frame().
   const absl::optional<size_t>& max_pixels_per_frame() const;
+  // The source should produce a resolution as close to the
+  // target_pixels_per_frame() as possible, provided this does not exceed
+  // max_pixels_per_frame().
+  // The actual pixel count selected depends on the capabilities of the source.
+  // TODO(hbos): Clarify how "target" is used. One possible implementation: open
+  // the camera in the smallest resolution that is greater than or equal to the
+  // target and scale it down to the target if it is greater. Is this an
+  // accurate description of what this does today, or do we do something else?
   const absl::optional<size_t>& target_pixels_per_frame() const;
   const absl::optional<double>& max_frame_rate() const;
 
@@ -50,8 +60,6 @@ class VideoSourceRestrictions {
  private:
   // These map to rtc::VideoSinkWants's |max_pixel_count| and
   // |target_pixel_count|.
-  // TODO(hbos): It's not clear what "target" means; either make it well-defined
-  // or remove it in favor of only using |max_pixels_per_frame_|.
   absl::optional<size_t> max_pixels_per_frame_;
   absl::optional<size_t> target_pixels_per_frame_;
   absl::optional<double> max_frame_rate_;
