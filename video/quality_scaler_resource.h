@@ -12,6 +12,7 @@
 #define VIDEO_QUALITY_SCALER_RESOURCE_H_
 
 #include <memory>
+#include <string>
 
 #include "api/video_codecs/video_encoder.h"
 #include "call/adaptation/resource.h"
@@ -45,6 +46,8 @@ class QualityScalerResource : public Resource,
   // signal when its stable to support multi-stream aware modules.
   void AdaptUp(AdaptReason reason) override;
   bool AdaptDown(AdaptReason reason) override;
+
+  std::string name() const override { return "QualityScalerResource"; }
 
  private:
   std::unique_ptr<QualityScaler> quality_scaler_;

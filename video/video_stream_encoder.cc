@@ -1645,18 +1645,6 @@ bool VideoStreamEncoder::DropDueToSize(uint32_t pixel_count) const {
   return false;
 }
 
-void VideoStreamEncoder::OnResourceUnderuseForTesting(
-    AdaptationObserverInterface::AdaptReason reason) {
-  RTC_DCHECK_RUN_ON(&encoder_queue_);
-  resource_adaptation_module_->OnResourceUnderuseForTesting(reason);
-}
-
-bool VideoStreamEncoder::OnResourceOveruseForTesting(
-    AdaptationObserverInterface::AdaptReason reason) {
-  RTC_DCHECK_RUN_ON(&encoder_queue_);
-  return resource_adaptation_module_->OnResourceOveruseForTesting(reason);
-}
-
 void VideoStreamEncoder::OnVideoSourceRestrictionsUpdated(
     VideoSourceRestrictions restrictions) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
@@ -1925,6 +1913,11 @@ void VideoStreamEncoder::CheckForAnimatedContent(
                               : absl::nullopt);
     video_source_sink_controller_->PushSourceSinkSettings();
   }
+}
+void VideoStreamEncoder::InjectAdaptationResource(
+    Resource* resource,
+    AdaptationObserverInterface::AdaptReason reason) {
+  resource_adaptation_module_->AddResource(resource, reason);
 }
 
 }  // namespace webrtc

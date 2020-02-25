@@ -16,6 +16,7 @@
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_config.h"
+#include "call/adaptation/resource.h"
 #include "call/adaptation/video_source_restrictions.h"
 
 namespace webrtc {
@@ -77,6 +78,9 @@ class ResourceAdaptationModuleInterface {
   virtual void StartResourceAdaptation(
       ResourceAdaptationModuleListener* adaptation_listener) = 0;
   virtual void StopResourceAdaptation() = 0;
+
+  // The resource must out-live the module.
+  virtual void AddResource(Resource* resource) = 0;
 
   // The following methods are callable whether or not adaption is started.
 

@@ -21,9 +21,20 @@ namespace webrtc {
 class FakeResource : public Resource {
  public:
   explicit FakeResource(ResourceUsageState usage_state);
+  FakeResource(ResourceUsageState usage_state, const std::string& name);
   ~FakeResource() override;
 
   void set_usage_state(ResourceUsageState usage_state);
+
+  absl::optional<ResourceListenerResponse> last_response() const {
+    return last_response_;
+  }
+
+  std::string name() const override { return name_; }
+
+ private:
+  absl::optional<ResourceListenerResponse> last_response_;
+  const std::string name_;
 };
 
 }  // namespace webrtc

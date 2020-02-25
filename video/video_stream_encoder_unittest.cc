@@ -25,6 +25,7 @@
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "api/video_codecs/vp8_temporal_layers_factory.h"
+#include "call/adaptation/test/fake_resource.h"
 #include "common_video/h264/h264_common.h"
 #include "common_video/include/video_frame_buffer.h"
 #include "media/base/video_adapter.h"
@@ -156,7 +157,19 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
                            std::unique_ptr<OveruseFrameDetector>(
                                overuse_detector_proxy_ =
                                    new CpuOveruseDetectorProxy(stats_proxy)),
-                           task_queue_factory) {}
+                           task_queue_factory),
+        fake_cpu_resource_(
+            std::make_unique<FakeResource>(ResourceUsageState::kStable,
+                                           "FakeResource[CPU]")),
+        fake_quality_resource_(
+            std::make_unique<FakeResource>(ResourceUsageState::kStable,
+                                           "FakeResource[QP]")) {
+    InjectAdaptationResource(
+        fake_quality_resource_.get(),
+        AdaptationObserverInterface::AdaptReason::kQuality);
+    InjectAdaptationResource(fake_cpu_resource_.get(),
+                             AdaptationObserverInterface::AdaptReason::kCpu);
+  }
 
   void PostTaskAndWait(bool down,
                        AdaptationObserverInterface::AdaptReason reason) {
@@ -168,10 +181,33 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
                        bool expected_results) {
     rtc::Event event;
     encoder_queue()->PostTask([this, &event, reason, down, expected_results] {
-      if (down)
-        EXPECT_EQ(expected_results, OnResourceOveruseForTesting(reason));
-      else
-        OnResourceUnderuseForTesting(reason);
+      ResourceUsageState usage_state =
+          down ? ResourceUsageState::kOveruse : ResourceUsageState::kUnderuse;
+
+      FakeResource* resource = nullptr;
+      switch (reason) {
+        case AdaptationObserverInterface::kQuality:
+          resource = fake_quality_resource_.get();
+          break;
+        case AdaptationObserverInterface::kCpu:
+          resource = fake_cpu_resource_.get();
+          break;
+        default:
+          RTC_NOTREACHED();
+      }
+
+      resource->set_usage_state(usage_state);
+      if (!expected_results) {
+        ASSERT_EQ(AdaptationObserverInterface::kQuality, reason)
+            << "We can only assert adaptation result for quality resources";
+        EXPECT_EQ(
+            ResourceListenerResponse::kQualityScalerShouldIncreaseFrequency,
+            resource->last_response());
+      } else {
+        EXPECT_EQ(ResourceListenerResponse::kNothing,
+                  resource->last_response());
+      }
+
       event.Set();
     });
     ASSERT_TRUE(event.Wait(5000));
@@ -212,6 +248,8 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
   }
 
   CpuOveruseDetectorProxy* overuse_detector_proxy_;
+  std::unique_ptr<FakeResource> fake_cpu_resource_;
+  std::unique_ptr<FakeResource> fake_quality_resource_;
 };
 
 class VideoStreamFactory

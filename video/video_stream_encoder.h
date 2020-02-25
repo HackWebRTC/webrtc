@@ -118,16 +118,14 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // be called on |encoder_queue_|.
   rtc::TaskQueue* encoder_queue() { return &encoder_queue_; }
 
-  // TODO(https://crbug.com/webrtc/11222): When the concept of "resources" that
-  // can be overused or underused has materialized, trigger overuse/underuse by
-  // injecting a fake Resource instead and remove these methods.
-  void OnResourceUnderuseForTesting(
-      AdaptationObserverInterface::AdaptReason reason);
-  bool OnResourceOveruseForTesting(
-      AdaptationObserverInterface::AdaptReason reason);
-
   void OnVideoSourceRestrictionsUpdated(
       VideoSourceRestrictions restrictions) override;
+
+  // Used for injected test resources.
+  // TODO(eshr): Move all adaptation tests out of VideoStreamEncoder tests.
+  void InjectAdaptationResource(Resource* resource,
+                                AdaptationObserverInterface::AdaptReason reason)
+      RTC_RUN_ON(&encoder_queue_);
 
  private:
   class VideoFrameInfo {

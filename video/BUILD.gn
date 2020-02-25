@@ -566,6 +566,7 @@ if (rtc_include_tests) {
       "../call:simulated_packet_receiver",
       "../call:video_stream_api",
       "../call/adaptation:resource_adaptation",
+      "../call/adaptation:resource_adaptation_test_utilities",
       "../common_video",
       "../common_video/test:utilities",
       "../media:rtc_audio_video",

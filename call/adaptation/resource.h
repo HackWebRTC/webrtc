@@ -11,6 +11,7 @@
 #ifndef CALL_ADAPTATION_RESOURCE_H_
 #define CALL_ADAPTATION_RESOURCE_H_
 
+#include <string>
 #include <vector>
 
 #include "absl/types/optional.h"
@@ -78,11 +79,12 @@ class Resource {
   Resource();
   virtual ~Resource();
 
-  // TODO(https://crbug.com/webrtc/11222): Make it possible to unregister
-  // listeners and DCHECK that they're all unregistered in the destructor.
   void RegisterListener(ResourceListener* listener);
+  void UnregisterListener(ResourceListener* listener);
 
   ResourceUsageState usage_state() const;
+
+  virtual std::string name() const = 0;
 
  protected:
   // Updates the usage state and informs all registered listeners.
