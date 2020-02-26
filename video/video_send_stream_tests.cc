@@ -96,9 +96,15 @@ enum VideoFormat {
   kGeneric,
   kVP8,
 };
-}  // namespace
 
-VideoFrame CreateVideoFrame(int width, int height, uint8_t data);
+VideoFrame CreateVideoFrame(int width, int height, int64_t timestamp_ms) {
+  return webrtc::VideoFrame::Builder()
+      .set_video_frame_buffer(I420Buffer::Create(width, height))
+      .set_rotation(webrtc::kVideoRotation_0)
+      .set_timestamp_ms(timestamp_ms)
+      .build();
+}
+}  // namespace
 
 class VideoSendStreamTest : public test::CallTest {
  public:
@@ -619,7 +625,7 @@ class UlpfecObserver : public test::EndToEndTest {
 
   VideoEncoderFactory* encoder_factory_;
   RtpHeaderExtensionMap extensions_;
-  std::string payload_name_;
+  const std::string payload_name_;
   const bool use_nack_;
   const bool expect_red_;
   const bool expect_ulpfec_;
@@ -826,7 +832,7 @@ class FlexfecObserver : public test::EndToEndTest {
 
   VideoEncoderFactory* encoder_factory_;
   RtpHeaderExtensionMap extensions_;
-  std::string payload_name_;
+  const std::string payload_name_;
   const bool use_nack_;
   bool sent_media_;
   bool sent_flexfec_;
@@ -1005,8 +1011,8 @@ void VideoSendStreamTest::TestNackRetransmission(
     std::unique_ptr<internal::TransportAdapter> transport_adapter_;
     int send_count_;
     int retransmit_count_;
-    uint32_t retransmit_ssrc_;
-    uint8_t retransmit_payload_type_;
+    const uint32_t retransmit_ssrc_;
+    const uint8_t retransmit_payload_type_;
     std::vector<uint16_t> nacked_sequence_numbers_;
     std::vector<uint16_t> non_padding_sequence_numbers_;
   } test(retransmit_ssrc, retransmit_payload_type);
@@ -1452,7 +1458,6 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
     NoPaddingWhenVideoIsMuted()
         : SendTest(kDefaultTimeoutMs),
           clock_(Clock::GetRealTimeClock()),
-          last_packet_time_ms_(-1),
           capturer_(nullptr) {}
 
    private:
@@ -1488,8 +1493,8 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
       rtc::CritScope lock(&crit_);
       const int kNoPacketsThresholdMs = 2000;
       if (test_state_ == kWaitingForNoPackets &&
-          (last_packet_time_ms_ > 0 &&
-           clock_->TimeInMilliseconds() - last_packet_time_ms_ >
+          (last_packet_time_ms_ &&
+           clock_->TimeInMilliseconds() - last_packet_time_ms_.value() >
                kNoPacketsThresholdMs)) {
         // No packets seen for |kNoPacketsThresholdMs|, restart camera.
         capturer_->Start();
@@ -1527,9 +1532,8 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
 
     TestState test_state_ = kBeforeStopCapture;
     Clock* const clock_;
-    std::unique_ptr<internal::TransportAdapter> transport_adapter_;
     rtc::CriticalSection crit_;
-    int64_t last_packet_time_ms_ RTC_GUARDED_BY(crit_);
+    absl::optional<int64_t> last_packet_time_ms_ RTC_GUARDED_BY(crit_);
     test::FrameGeneratorCapturer* capturer_ RTC_GUARDED_BY(crit_);
   } test;
 
@@ -2353,22 +2357,6 @@ TEST_F(VideoSendStreamTest, VideoSendStreamUpdateActiveSimulcastLayers) {
   });
 }
 
-VideoFrame CreateVideoFrame(int width, int height, uint8_t data) {
-  const int kSizeY = width * height * 2;
-  std::unique_ptr<uint8_t[]> buffer(new uint8_t[kSizeY]);
-  memset(buffer.get(), data, kSizeY);
-  VideoFrame frame =
-      webrtc::VideoFrame::Builder()
-          .set_video_frame_buffer(I420Buffer::Create(width, height))
-          .set_rotation(webrtc::kVideoRotation_0)
-          .set_timestamp_us(data)
-          .build();
-  frame.set_timestamp(data);
-  // Use data as a ms timestamp.
-  frame.set_timestamp_us(data * rtc::kNumMicrosecsPerMillisec);
-  return frame;
-}
-
 TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
   class EncoderStateObserver : public test::SendTest, public VideoEncoder {
    public:
@@ -2465,8 +2453,7 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
         stream_->ReconfigureVideoEncoder(std::move(encoder_config_));
         EXPECT_EQ(0u, num_releases());
         stream_->Stop();
-        // Encoder should not be released before destroying the
-        // VideoSendStream.
+        // Encoder should not be released before destroying the VideoSendStream.
         EXPECT_FALSE(IsReleased());
         EXPECT_TRUE(IsReadyForEncode());
         stream_->Start();
@@ -2872,9 +2859,8 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
       } else if (num_rate_allocator_creations_ == 2) {
         EXPECT_EQ(static_cast<unsigned int>(kIncreasedMaxBitrateKbps),
                   codec.maxBitrate);
-        // The start bitrate will be whatever the rate BitRateController
-        // has currently configured but in the span of the set max and min
-        // bitrate.
+        // The start bitrate will be whatever the rate BitRateController has
+        // currently configured but in the span of the set max and min bitrate.
       }
       ++num_rate_allocator_creations_;
       create_rate_allocator_event_.Set();
