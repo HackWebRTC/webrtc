@@ -441,8 +441,6 @@ class RTC_EXPORT ContentInfo {
 
   void set_media_description(std::unique_ptr<MediaContentDescription> desc) {
     description_ = std::move(desc);
-    // For backwards compatibility only.
-    description = description_.get();
   }
 
   // TODO(bugs.webrtc.org/8620): Rename this to mid.
@@ -454,10 +452,6 @@ class RTC_EXPORT ContentInfo {
  private:
   friend class SessionDescription;
   std::unique_ptr<MediaContentDescription> description_;
-
- public:
-  // Kept for backwards compatibility only.
-  MediaContentDescription* description = nullptr;
 };
 
 typedef std::vector<std::string> ContentNames;
