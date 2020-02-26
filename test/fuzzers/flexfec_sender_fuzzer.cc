@@ -41,7 +41,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   FecProtectionParams params = {
       data[i++], static_cast<int>(data[i++] % 100),
       data[i++] <= 127 ? kFecMaskRandom : kFecMaskBursty};
-  sender.SetProtectionParameters(params, params);
+  sender.SetFecParameters(params);
   uint16_t seq_num = data[i++];
 
   while (i + 1 < size) {
@@ -59,8 +59,11 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     RtpPacketToSend rtp_packet(nullptr);
     if (!rtp_packet.Parse(packet.get(), kRtpHeaderSize + payload_size))
       break;
-    sender.AddPacketAndGenerateFec(rtp_packet);
-    sender.GetFecPackets();
+    sender.AddRtpPacketAndGenerateFec(rtp_packet);
+    if (sender.FecAvailable()) {
+      std::vector<std::unique_ptr<RtpPacketToSend>> fec_packets =
+          sender.GetFecPackets();
+    }
   }
 }
 

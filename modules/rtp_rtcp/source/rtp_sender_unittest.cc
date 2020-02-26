@@ -272,7 +272,7 @@ class RtpSenderTest : public ::testing::TestWithParam<TestConfig> {
     config.outgoing_transport = &transport_;
     config.local_media_ssrc = kSsrc;
     config.rtx_send_ssrc = kRtxSsrc;
-    config.fec_generator = &flexfec_sender_;
+    config.flexfec_sender = &flexfec_sender_;
     config.event_log = &mock_rtc_event_log_;
     config.send_packet_observer = &send_packet_observer_;
     config.retransmission_rate_limiter = &retransmission_rate_limiter_;
@@ -1225,7 +1225,7 @@ TEST_P(RtpSenderTest, SendFlexfecPackets) {
   config.outgoing_transport = &transport_;
   config.paced_sender = &mock_paced_sender_;
   config.local_media_ssrc = kSsrc;
-  config.fec_generator = &flexfec_sender_;
+  config.flexfec_sender = &flexfec_sender_;
   config.event_log = &mock_rtc_event_log_;
   config.send_packet_observer = &send_packet_observer_;
   config.retransmission_rate_limiter = &retransmission_rate_limiter_;
@@ -1239,7 +1239,7 @@ TEST_P(RtpSenderTest, SendFlexfecPackets) {
   RTPSenderVideo::Config video_config;
   video_config.clock = &fake_clock_;
   video_config.rtp_sender = rtp_sender();
-  video_config.fec_generator = &flexfec_sender;
+  video_config.flexfec_sender = &flexfec_sender;
   video_config.field_trials = &field_trials;
   RTPSenderVideo rtp_sender_video(video_config);
 
@@ -1311,7 +1311,7 @@ TEST_P(RtpSenderTestWithoutPacer, SendFlexfecPackets) {
   config.clock = &fake_clock_;
   config.outgoing_transport = &transport_;
   config.local_media_ssrc = kSsrc;
-  config.fec_generator = &flexfec_sender;
+  config.flexfec_sender = &flexfec_sender;
   config.event_log = &mock_rtc_event_log_;
   config.send_packet_observer = &send_packet_observer_;
   config.retransmission_rate_limiter = &retransmission_rate_limiter_;
@@ -1323,7 +1323,7 @@ TEST_P(RtpSenderTestWithoutPacer, SendFlexfecPackets) {
   RTPSenderVideo::Config video_config;
   video_config.clock = &fake_clock_;
   video_config.rtp_sender = rtp_sender();
-  video_config.fec_generator = &flexfec_sender;
+  video_config.flexfec_sender = &flexfec_sender;
   video_config.field_trials = &field_trials;
   RTPSenderVideo rtp_sender_video(video_config);
 
@@ -1583,7 +1583,7 @@ TEST_P(RtpSenderTest, FecOverheadRate) {
   config.outgoing_transport = &transport_;
   config.paced_sender = &mock_paced_sender_;
   config.local_media_ssrc = kSsrc;
-  config.fec_generator = &flexfec_sender;
+  config.flexfec_sender = &flexfec_sender;
   config.event_log = &mock_rtc_event_log_;
   config.send_packet_observer = &send_packet_observer_;
   config.retransmission_rate_limiter = &retransmission_rate_limiter_;
@@ -1595,7 +1595,7 @@ TEST_P(RtpSenderTest, FecOverheadRate) {
   RTPSenderVideo::Config video_config;
   video_config.clock = &fake_clock_;
   video_config.rtp_sender = rtp_sender();
-  video_config.fec_generator = &flexfec_sender;
+  video_config.flexfec_sender = &flexfec_sender;
   video_config.field_trials = &field_trials;
   RTPSenderVideo rtp_sender_video(video_config);
   // Parameters selected to generate a single FEC packet per media packet.
@@ -1777,14 +1777,12 @@ TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacksUlpfec) {
   const uint8_t kPayloadType = 127;
   const VideoCodecType kCodecType = VideoCodecType::kVideoCodecGeneric;
   FieldTrialBasedConfig field_trials;
-  UlpfecGenerator ulpfec_generator(kRedPayloadType, kUlpfecPayloadType,
-                                   &fake_clock_);
   RTPSenderVideo::Config video_config;
   video_config.clock = &fake_clock_;
   video_config.rtp_sender = rtp_sender();
   video_config.field_trials = &field_trials;
   video_config.red_payload_type = kRedPayloadType;
-  video_config.fec_generator = &ulpfec_generator;
+  video_config.ulpfec_payload_type = kUlpfecPayloadType;
   RTPSenderVideo rtp_sender_video(video_config);
   uint8_t payload[] = {47, 11, 32, 93, 89};
   rtp_sender_context_->packet_history_.SetStorePacketsStatus(
@@ -2120,7 +2118,7 @@ TEST_P(RtpSenderTest, SendPacketUpdatesStats) {
   config.outgoing_transport = &transport_;
   config.local_media_ssrc = kSsrc;
   config.rtx_send_ssrc = kRtxSsrc;
-  config.fec_generator = &flexfec_sender_;
+  config.flexfec_sender = &flexfec_sender_;
   config.send_side_delay_observer = &send_side_delay_observer;
   config.event_log = &mock_rtc_event_log_;
   config.send_packet_observer = &send_packet_observer_;
