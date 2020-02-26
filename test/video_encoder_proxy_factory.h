@@ -140,9 +140,9 @@ class VideoEncoderProxyFactory final : public VideoEncoderFactory {
       encoder_selector_->OnCurrentEncoder(format);
     }
 
-    absl::optional<SdpVideoFormat> OnEncodingBitrate(
+    absl::optional<SdpVideoFormat> OnAvailableBitrate(
         const DataRate& rate) override {
-      return encoder_selector_->OnEncodingBitrate(rate);
+      return encoder_selector_->OnAvailableBitrate(rate);
     }
 
     absl::optional<SdpVideoFormat> OnEncoderBroken() override {

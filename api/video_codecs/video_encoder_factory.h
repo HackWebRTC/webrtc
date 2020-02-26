@@ -49,9 +49,9 @@ class VideoEncoderFactory {
     // used.
     virtual void OnCurrentEncoder(const SdpVideoFormat& format) = 0;
 
-    // Called every time the encoding bitrate is updated. Should return a
+    // Called every time the available bitrate is updated. Should return a
     // non-empty if an encoder switch should be performed.
-    virtual absl::optional<SdpVideoFormat> OnEncodingBitrate(
+    virtual absl::optional<SdpVideoFormat> OnAvailableBitrate(
         const DataRate& rate) = 0;
 
     // Called if the currently used encoder reports itself as broken. Should

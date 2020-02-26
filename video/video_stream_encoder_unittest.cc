@@ -430,7 +430,7 @@ class MockEncoderSelector
     : public VideoEncoderFactory::EncoderSelectorInterface {
  public:
   MOCK_METHOD1(OnCurrentEncoder, void(const SdpVideoFormat& format));
-  MOCK_METHOD1(OnEncodingBitrate,
+  MOCK_METHOD1(OnAvailableBitrate,
                absl::optional<SdpVideoFormat>(const DataRate& rate));
   MOCK_METHOD0(OnEncoderBroken, absl::optional<SdpVideoFormat>());
 };
@@ -5414,7 +5414,7 @@ TEST_F(VideoStreamEncoderTest, EncoderSelectorBitrateSwitch) {
   // Reset encoder for new configuration to take effect.
   ConfigureEncoder(video_encoder_config_.Copy());
 
-  ON_CALL(encoder_selector, OnEncodingBitrate(_))
+  ON_CALL(encoder_selector, OnAvailableBitrate(_))
       .WillByDefault(Return(SdpVideoFormat("AV1")));
   EXPECT_CALL(switch_callback,
               RequestEncoderSwitch(Matcher<const SdpVideoFormat&>(

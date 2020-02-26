@@ -1565,7 +1565,8 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
 
   if (!video_is_suspended && settings_.encoder_switch_request_callback) {
     if (encoder_selector_) {
-      if (auto encoder = encoder_selector_->OnEncodingBitrate(target_bitrate)) {
+      if (auto encoder =
+              encoder_selector_->OnAvailableBitrate(link_allocation)) {
         settings_.encoder_switch_request_callback->RequestEncoderSwitch(
             *encoder);
       }

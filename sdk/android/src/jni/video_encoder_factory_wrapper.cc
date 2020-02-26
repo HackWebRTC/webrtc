@@ -36,12 +36,12 @@ class VideoEncoderSelectorWrapper
                                                j_codec_info);
   }
 
-  absl::optional<SdpVideoFormat> OnEncodingBitrate(
+  absl::optional<SdpVideoFormat> OnAvailableBitrate(
       const DataRate& rate) override {
     JNIEnv* jni = AttachCurrentThreadIfNeeded();
     ScopedJavaLocalRef<jobject> codec_info =
-        Java_VideoEncoderSelector_onEncodingBitrate(jni, encoder_selector_,
-                                                    rate.kbps<int>());
+        Java_VideoEncoderSelector_onAvailableBitrate(jni, encoder_selector_,
+                                                     rate.kbps<int>());
     if (codec_info.is_null()) {
       return absl::nullopt;
     }
