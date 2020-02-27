@@ -239,6 +239,7 @@ rtc_library("rtp_rtcp") {
     "..:module_fec_api",
     "../..:webrtc_common",
     "../../api:array_view",
+    "../../api:frame_transformer_interface",
     "../../api:function_view",
     "../../api:libjingle_peerconnection_api",
     "../../api:rtp_headers",

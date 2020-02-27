@@ -22,6 +22,7 @@
 #include "api/audio_options.h"
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/crypto/frame_encryptor_interface.h"
+#include "api/frame_transformer_interface.h"
 #include "api/rtc_error.h"
 #include "api/rtp_parameters.h"
 #include "api/transport/media/media_transport_config.h"
@@ -286,6 +287,10 @@ class MediaChannel : public sigslot::has_slots<> {
   virtual webrtc::RTCError SetRtpSendParameters(
       uint32_t ssrc,
       const webrtc::RtpParameters& parameters) = 0;
+
+  virtual void SetEncoderToPacketizerFrameTransformer(
+      uint32_t ssrc,
+      rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer);
 
  protected:
   bool DscpEnabled() const { return enable_dscp_; }

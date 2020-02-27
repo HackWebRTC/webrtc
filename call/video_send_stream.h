@@ -20,6 +20,7 @@
 #include "absl/types/optional.h"
 #include "api/call/transport.h"
 #include "api/crypto/crypto_options.h"
+#include "api/frame_transformer_interface.h"
 #include "api/rtp_parameters.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_frame.h"
@@ -162,6 +163,8 @@ class VideoSendStream {
 
     // Per PeerConnection cryptography options.
     CryptoOptions crypto_options;
+
+    rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer;
 
    private:
     // Access to the copy constructor is private to force use of the Copy()

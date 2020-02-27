@@ -149,6 +149,9 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   // If the specified list is empty, this is a no-op.
   RTCError DisableEncodingLayers(const std::vector<std::string>& rid) override;
 
+  void SetEncoderToPacketizerFrameTransformer(
+      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) override;
+
  protected:
   // If |set_streams_observer| is not null, it is invoked when SetStreams()
   // is called. |set_streams_observer| is not owned by this object. If not
@@ -197,6 +200,8 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   std::vector<std::string> disabled_rids_;
 
   SetStreamsObserver* set_streams_observer_ = nullptr;
+
+  rtc::scoped_refptr<FrameTransformerInterface> frame_transformer_;
 };
 
 // LocalAudioSinkAdapter receives data callback as a sink to the local

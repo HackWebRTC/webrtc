@@ -297,6 +297,9 @@ void RtpSenderBase::SetSsrc(uint32_t ssrc) {
   if (frame_encryptor_) {
     SetFrameEncryptor(frame_encryptor_);
   }
+  if (frame_transformer_) {
+    SetEncoderToPacketizerFrameTransformer(frame_transformer_);
+  }
 }
 
 void RtpSenderBase::Stop() {
@@ -362,6 +365,17 @@ RTCError RtpSenderBase::DisableEncodingLayers(
     last_transaction_id_.reset();
   }
   return result;
+}
+
+void RtpSenderBase::SetEncoderToPacketizerFrameTransformer(
+    rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) {
+  frame_transformer_ = std::move(frame_transformer);
+  if (media_channel_ && ssrc_ && !stopped_) {
+    worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+      media_channel_->SetEncoderToPacketizerFrameTransformer(
+          ssrc_, frame_transformer_);
+    });
+  }
 }
 
 LocalAudioSinkAdapter::LocalAudioSinkAdapter() : sink_(nullptr) {}

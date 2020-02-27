@@ -19,6 +19,8 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "api/frame_transformer_interface.h"
+#include "api/scoped_refptr.h"
 #include "api/transport/webrtc_key_value_config.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "modules/include/module.h"
@@ -108,6 +110,8 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
 
     // Update network2 instead of pacer_exit field of video timing extension.
     bool populate_network2_timestamp = false;
+
+    rtc::scoped_refptr<FrameTransformerInterface> frame_transformer;
 
     // E2EE Custom Video Frame Encryption
     FrameEncryptorInterface* frame_encryptor = nullptr;

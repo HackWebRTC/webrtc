@@ -52,9 +52,9 @@ constexpr int64_t kMaxUnretransmittableFrameIntervalMs = 33 * 4;
 // result recovered packets will be corrupt unless we also remove transport
 // sequence number during FEC calculation.
 //
-// TODO(sukhanov): We need to find find better way to implement FEC with
-// datagram transport, probably moving FEC to datagram integration layter. We
-// should also remove special field trial once we switch datagram path from
+// TODO(sukhanov): We need to find a better way to implement FEC with datagram
+// transport, probably moving FEC to datagram integration layter. We should
+// also remove special field trial once we switch datagram path from
 // RTCConfiguration flags to field trial and use the same field trial for FEC
 // workaround.
 const char kExcludeTransportSequenceNumberFromFecFieldTrial[] =
@@ -275,7 +275,8 @@ RTPSenderVideo::RTPSenderVideo(const Config& config)
           config.field_trials
               ->Lookup(kExcludeTransportSequenceNumberFromFecFieldTrial)
               .find("Enabled") == 0),
-      absolute_capture_time_sender_(config.clock) {}
+      absolute_capture_time_sender_(config.clock),
+      frame_transformer_(config.frame_transformer) {}
 
 RTPSenderVideo::~RTPSenderVideo() {}
 

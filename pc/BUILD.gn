@@ -231,6 +231,7 @@ rtc_library("peerconnection") {
     "../api:audio_options_api",
     "../api:call_api",
     "../api:fec_controller_api",
+    "../api:frame_transformer_interface",
     "../api:ice_transport_factory",
     "../api:libjingle_peerconnection_api",
     "../api:media_stream_interface",
@@ -624,7 +625,8 @@ if (rtc_include_tests) {
       "../api/video_codecs:video_codecs_api",
       "../call:call_interfaces",
       "../media:rtc_audio_video",
-      "../media:rtc_data",  # TODO(phoglund): AFAIK only used for one sctp constant.
+      "../media:rtc_data",  # TODO(phoglund): AFAIK only used for one sctp
+                            # constant.
       "../media:rtc_media_base",
       "../media:rtc_media_tests_utils",
       "../modules/audio_processing",

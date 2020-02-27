@@ -151,7 +151,7 @@ class RtpVideoSenderTestFixture {
                         &send_delay_stats_),
         &transport_controller_, &event_log_, &retransmission_rate_limiter_,
         std::make_unique<FecControllerDefault>(time_controller_.GetClock()),
-        nullptr, CryptoOptions{});
+        nullptr, CryptoOptions{}, nullptr);
   }
   RtpVideoSenderTestFixture(
       const std::vector<uint32_t>& ssrcs,

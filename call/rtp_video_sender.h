@@ -85,7 +85,8 @@ class RtpVideoSender : public RtpVideoSenderInterface,
       RateLimiter* retransmission_limiter,  // move inside RtpTransport
       std::unique_ptr<FecController> fec_controller,
       FrameEncryptorInterface* frame_encryptor,
-      const CryptoOptions& crypto_options);  // move inside RtpTransport
+      const CryptoOptions& crypto_options,  // move inside RtpTransport
+      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer);
   ~RtpVideoSender() override;
 
   // RegisterProcessThread register |module_process_thread| with those objects

@@ -21,6 +21,7 @@
 #include "absl/types/optional.h"
 #include "api/crypto/crypto_options.h"
 #include "api/fec_controller.h"
+#include "api/frame_transformer_interface.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/transport/bitrate_settings.h"
 #include "api/units/timestamp.h"
@@ -110,7 +111,8 @@ class RtpTransportControllerSendInterface {
       const RtpSenderObservers& observers,
       RtcEventLog* event_log,
       std::unique_ptr<FecController> fec_controller,
-      const RtpSenderFrameEncryptionConfig& frame_encryption_config) = 0;
+      const RtpSenderFrameEncryptionConfig& frame_encryption_config,
+      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) = 0;
   virtual void DestroyRtpVideoSender(
       RtpVideoSenderInterface* rtp_video_sender) = 0;
 

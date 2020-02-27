@@ -18,6 +18,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "api/array_view.h"
+#include "api/frame_transformer_interface.h"
+#include "api/scoped_refptr.h"
 #include "api/transport/rtp/dependency_descriptor.h"
 #include "api/video/video_codec_type.h"
 #include "api/video/video_frame_type.h"
@@ -74,6 +76,7 @@ class RTPSenderVideo {
     absl::optional<int> red_payload_type;
     absl::optional<int> ulpfec_payload_type;
     const WebRtcKeyValueConfig* field_trials = nullptr;
+    rtc::scoped_refptr<FrameTransformerInterface> frame_transformer;
   };
 
   explicit RTPSenderVideo(const Config& config);
@@ -222,6 +225,8 @@ class RTPSenderVideo {
   const bool exclude_transport_sequence_number_from_fec_experiment_;
 
   AbsoluteCaptureTimeSender absolute_capture_time_sender_;
+
+  const rtc::scoped_refptr<FrameTransformerInterface> frame_transformer_;
 };
 
 }  // namespace webrtc

@@ -89,6 +89,7 @@ rtc_library("rtp_interfaces") {
   deps = [
     "../api:array_view",
     "../api:fec_controller_api",
+    "../api:frame_transformer_interface",
     "../api:rtp_headers",
     "../api:rtp_parameters",
     "../api/crypto:options",
@@ -293,6 +294,7 @@ rtc_library("video_stream_api") {
   ]
   deps = [
     ":rtp_interfaces",
+    "../api:frame_transformer_interface",
     "../api:rtp_headers",
     "../api:rtp_parameters",
     "../api:transport_api",
@@ -501,6 +503,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":rtp_interfaces",
+      "../api:frame_transformer_interface",
       "../api:libjingle_peerconnection_api",
       "../api/crypto:frame_encryptor_interface",
       "../api/crypto:options",

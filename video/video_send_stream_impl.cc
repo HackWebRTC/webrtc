@@ -202,19 +202,20 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       video_stream_encoder_(video_stream_encoder),
       encoder_feedback_(clock, config_->rtp.ssrcs, video_stream_encoder),
       bandwidth_observer_(transport->GetBandwidthObserver()),
-      rtp_video_sender_(transport_->CreateRtpVideoSender(
-          suspended_ssrcs,
-          suspended_payload_states,
-          config_->rtp,
-          config_->rtcp_report_interval_ms,
-          config_->send_transport,
-          CreateObservers(call_stats,
-                          &encoder_feedback_,
-                          stats_proxy_,
-                          send_delay_stats),
-          event_log,
-          std::move(fec_controller),
-          CreateFrameEncryptionConfig(config_))),
+      rtp_video_sender_(
+          transport_->CreateRtpVideoSender(suspended_ssrcs,
+                                           suspended_payload_states,
+                                           config_->rtp,
+                                           config_->rtcp_report_interval_ms,
+                                           config_->send_transport,
+                                           CreateObservers(call_stats,
+                                                           &encoder_feedback_,
+                                                           stats_proxy_,
+                                                           send_delay_stats),
+                                           event_log,
+                                           std::move(fec_controller),
+                                           CreateFrameEncryptionConfig(config_),
+                                           config->frame_transformer)),
       weak_ptr_factory_(this) {
   video_stream_encoder->SetFecControllerOverride(rtp_video_sender_);
   RTC_DCHECK_RUN_ON(worker_queue_);

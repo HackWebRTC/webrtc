@@ -86,6 +86,7 @@ rtc_library("rtc_media_base") {
     "..:webrtc_common",
     "../api:array_view",
     "../api:audio_options_api",
+    "../api:frame_transformer_interface",
     "../api:media_stream_interface",
     "../api:rtc_error",
     "../api:rtp_parameters",
