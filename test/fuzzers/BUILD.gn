@@ -28,6 +28,7 @@ rtc_library("webrtc_fuzzer_main") {
 }
 
 rtc_library("fuzz_data_helper") {
+  testonly = true
   sources = [
     "fuzz_data_helper.cc",
     "fuzz_data_helper.h",
@@ -228,6 +229,7 @@ webrtc_fuzzer_test("congestion_controller_feedback_fuzzer") {
 }
 
 rtc_library("audio_decoder_fuzzer") {
+  testonly = true
   sources = [
     "audio_decoder_fuzzer.cc",
     "audio_decoder_fuzzer.h",
@@ -290,13 +292,27 @@ webrtc_fuzzer_test("audio_decoder_multiopus_fuzzer") {
   ]
 }
 
+rtc_library("audio_encoder_fuzzer") {
+  testonly = true
+  sources = [
+    "audio_encoder_fuzzer.cc",
+    "audio_encoder_fuzzer.h",
+  ]
+  deps = [
+    ":fuzz_data_helper",
+    "../../api:array_view",
+    "../../api/audio_codecs:audio_codecs_api",
+    "../../rtc_base:checks",
+    "../../rtc_base:rtc_base_approved",
+  ]
+}
+
 webrtc_fuzzer_test("audio_encoder_opus_fuzzer") {
   sources = [ "audio_encoder_opus_fuzzer.cc" ]
   deps = [
-    "../../api:array_view",
+    ":audio_encoder_fuzzer",
     "../../api/audio_codecs/opus:audio_encoder_opus",
     "../../rtc_base:checks",
-    "../../rtc_base:rtc_base_approved",
   ]
 }
 
@@ -391,6 +407,7 @@ webrtc_fuzzer_test("pseudotcp_parser_fuzzer") {
 }
 
 rtc_library("audio_processing_fuzzer_helper") {
+  testonly = true
   sources = [
     "audio_processing_fuzzer_helper.cc",
     "audio_processing_fuzzer_helper.h",
