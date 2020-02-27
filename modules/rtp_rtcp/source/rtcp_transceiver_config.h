@@ -97,6 +97,10 @@ struct RtcpTransceiverConfig {
   // Estimate RTT as non-sender as described in
   // https://tools.ietf.org/html/rfc3611#section-4.4 and #section-4.5
   bool non_sender_rtt_measurement = false;
+
+  // Allows a REMB message to be sent immediately when SetRemb is called without
+  // having to wait for the next compount message to be sent.
+  bool send_remb_on_change = false;
 };
 
 }  // namespace webrtc

@@ -445,7 +445,7 @@ TEST_F(RtcpSenderTest, RembNotIncludedBeforeSet) {
 }
 
 TEST_F(RtcpSenderTest, RembNotIncludedAfterUnset) {
-  const uint64_t kBitrate = 261011;
+  const int64_t kBitrate = 261011;
   const std::vector<uint32_t> kSsrcs = {kRemoteSsrc, kRemoteSsrc + 1};
   rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
   rtcp_sender_->SetRemb(kBitrate, kSsrcs);
@@ -461,7 +461,7 @@ TEST_F(RtcpSenderTest, RembNotIncludedAfterUnset) {
 }
 
 TEST_F(RtcpSenderTest, SendRemb) {
-  const uint64_t kBitrate = 261011;
+  const int64_t kBitrate = 261011;
   const std::vector<uint32_t> kSsrcs = {kRemoteSsrc, kRemoteSsrc + 1};
   rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
   rtcp_sender_->SetRemb(kBitrate, kSsrcs);

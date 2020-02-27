@@ -67,7 +67,8 @@ class RtcpTransceiver : public RtcpFeedbackSenderInterface {
   void SendCompoundPacket();
 
   // (REMB) Receiver Estimated Max Bitrate.
-  // Includes REMB in following compound packets.
+  // Includes REMB in following compound packets and sends a REMB message
+  // immediately if 'RtcpTransceiverConfig::send_remb_on_change' is set.
   void SetRemb(int64_t bitrate_bps, std::vector<uint32_t> ssrcs) override;
   // Stops sending REMB in following compound packets.
   void UnsetRemb() override;
