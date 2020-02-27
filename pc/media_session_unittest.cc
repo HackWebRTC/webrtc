@@ -3371,18 +3371,12 @@ TEST(MediaSessionDescription, CopySessionDescription) {
       std::make_unique<AudioContentDescription>();
   acd->set_codecs(MAKE_VECTOR(kAudioCodecs1));
   acd->AddLegacyStream(1);
-  std::unique_ptr<AudioContentDescription> acd_passed =
-      absl::WrapUnique(acd->Copy());
-  source.AddContent(cricket::CN_AUDIO, MediaProtocolType::kRtp,
-                    std::move(acd_passed));
+  source.AddContent(cricket::CN_AUDIO, MediaProtocolType::kRtp, acd->Clone());
   std::unique_ptr<VideoContentDescription> vcd =
       std::make_unique<VideoContentDescription>();
   vcd->set_codecs(MAKE_VECTOR(kVideoCodecs1));
   vcd->AddLegacyStream(2);
-  std::unique_ptr<VideoContentDescription> vcd_passed =
-      absl::WrapUnique(vcd->Copy());
-  source.AddContent(cricket::CN_VIDEO, MediaProtocolType::kRtp,
-                    std::move(vcd_passed));
+  source.AddContent(cricket::CN_VIDEO, MediaProtocolType::kRtp, vcd->Clone());
 
   std::unique_ptr<SessionDescription> copy = source.Clone();
   ASSERT_TRUE(copy.get() != NULL);

@@ -204,7 +204,7 @@ LocalAndRemoteSdp SignalingInterceptor::PatchVp8Offer(
     // single simulcast section will be converted. Do it before removing content
     // because otherwise description will be deleted.
     std::unique_ptr<cricket::MediaContentDescription> prototype_media_desc =
-        absl::WrapUnique(simulcast_content->media_description()->Copy());
+        simulcast_content->media_description()->Clone();
 
     // Remove simulcast video section from offer.
     RTC_CHECK(desc->RemoveContentByName(simulcast_content->mid()));
