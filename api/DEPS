@@ -90,6 +90,10 @@ specific_include_rules = {
     "+modules/include/module_fec_types.h",
   ],
 
+  "frame_transformer_interface\.h": [
+    "+rtc_base/ref_count.h",
+  ],
+
   "ice_transport_interface\.h": [
     "+rtc_base/ref_count.h",
   ],
