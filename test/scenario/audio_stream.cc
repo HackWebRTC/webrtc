@@ -153,7 +153,7 @@ void SendAudioStream::Stop() {
 }
 
 void SendAudioStream::SetMuted(bool mute) {
-  send_stream_->SetMuted(mute);
+  sender_->SendTask([this, mute] { send_stream_->SetMuted(mute); });
 }
 
 ColumnPrinter SendAudioStream::StatsPrinter() {
