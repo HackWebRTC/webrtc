@@ -82,7 +82,7 @@ TEST(ArrayViewTest, TestConstructFromPtrAndArray) {
   // ArrayView<float> n(arr + 2, 2);
 }
 
-TEST(ArrayViewTest, TestCopyConstructorVariable) {
+TEST(ArrayViewTest, TestCopyConstructorVariableLvalue) {
   char arr[] = "Arrr!";
   ArrayView<char> x = arr;
   EXPECT_EQ(6u, x.size());
@@ -97,6 +97,23 @@ TEST(ArrayViewTest, TestCopyConstructorVariable) {
   EXPECT_EQ(6u, w.size());
   EXPECT_EQ(arr, w.data());
   // ArrayView<char> v = z;  // Compile error, because can't drop const.
+}
+
+TEST(ArrayViewTest, TestCopyConstructorVariableRvalue) {
+  char arr[] = "Arrr!";
+  ArrayView<char> x = arr;
+  EXPECT_EQ(6u, x.size());
+  EXPECT_EQ(arr, x.data());
+  ArrayView<char> y = std::move(x);  // Copy non-const -> non-const.
+  EXPECT_EQ(6u, y.size());
+  EXPECT_EQ(arr, y.data());
+  ArrayView<const char> z = std::move(x);  // Copy non-const -> const.
+  EXPECT_EQ(6u, z.size());
+  EXPECT_EQ(arr, z.data());
+  ArrayView<const char> w = std::move(z);  // Copy const -> const.
+  EXPECT_EQ(6u, w.size());
+  EXPECT_EQ(arr, w.data());
+  // ArrayView<char> v = std::move(z);  // Error, because can't drop const.
 }
 
 TEST(ArrayViewTest, TestCopyConstructorFixed) {
@@ -130,7 +147,7 @@ TEST(ArrayViewTest, TestCopyConstructorFixed) {
   // ArrayView<char> vv = z;  // Compile error, because can't drop const.
 }
 
-TEST(ArrayViewTest, TestCopyAssignmentVariable) {
+TEST(ArrayViewTest, TestCopyAssignmentVariableLvalue) {
   char arr[] = "Arrr!";
   ArrayView<char> x(arr);
   EXPECT_EQ(6u, x.size());
@@ -149,6 +166,27 @@ TEST(ArrayViewTest, TestCopyAssignmentVariable) {
   EXPECT_EQ(arr, w.data());
   // ArrayView<char> v;
   // v = z;  // Compile error, because can't drop const.
+}
+
+TEST(ArrayViewTest, TestCopyAssignmentVariableRvalue) {
+  char arr[] = "Arrr!";
+  ArrayView<char> x(arr);
+  EXPECT_EQ(6u, x.size());
+  EXPECT_EQ(arr, x.data());
+  ArrayView<char> y;
+  y = std::move(x);  // Copy non-const -> non-const.
+  EXPECT_EQ(6u, y.size());
+  EXPECT_EQ(arr, y.data());
+  ArrayView<const char> z;
+  z = std::move(x);  // Copy non-const -> const.
+  EXPECT_EQ(6u, z.size());
+  EXPECT_EQ(arr, z.data());
+  ArrayView<const char> w;
+  w = std::move(z);  // Copy const -> const.
+  EXPECT_EQ(6u, w.size());
+  EXPECT_EQ(arr, w.data());
+  // ArrayView<char> v;
+  // v = std::move(z);  // Compile error, because can't drop const.
 }
 
 TEST(ArrayViewTest, TestCopyAssignmentFixed) {
