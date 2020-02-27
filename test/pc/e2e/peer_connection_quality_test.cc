@@ -629,8 +629,9 @@ void PeerConnectionE2EQualityTest::OnTrackCallback(
     std::vector<VideoConfig> remote_video_configs) {
   const rtc::scoped_refptr<MediaStreamTrackInterface>& track =
       transceiver->receiver()->track();
-  RTC_CHECK_EQ(transceiver->receiver()->stream_ids().size(), 1);
-  std::string stream_label = transceiver->receiver()->stream_ids().front();
+  RTC_CHECK_EQ(transceiver->receiver()->stream_ids().size(), 2)
+      << "Expected 2 stream ids: 1st - sync group, 2nd - unique stream label";
+  std::string stream_label = transceiver->receiver()->stream_ids()[1];
   analyzer_helper_.AddTrackToStreamMapping(track->id(), stream_label);
   if (track->kind() != MediaStreamTrackInterface::kVideoKind) {
     return;
@@ -770,8 +771,11 @@ PeerConnectionE2EQualityTest::MaybeAddVideo(TestPeer* peer) {
         video_config.screen_share_config->use_text_content_hint) {
       track->set_content_hint(VideoTrackInterface::ContentHint::kText);
     }
+    std::string sync_group = video_config.sync_group
+                                 ? video_config.sync_group.value()
+                                 : video_config.stream_label.value();
     RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> sender =
-        peer->AddTrack(track, {video_config.stream_label.value()});
+        peer->AddTrack(track, {sync_group, *video_config.stream_label});
     RTC_CHECK(sender.ok());
     if (video_config.temporal_layers_count) {
       RtpParameters rtp_parameters = sender.value()->GetParameters();
@@ -895,7 +899,10 @@ void PeerConnectionE2EQualityTest::MaybeAddAudio(TestPeer* peer) {
       peer->pc_factory()->CreateAudioSource(audio_config.audio_options);
   rtc::scoped_refptr<AudioTrackInterface> track =
       peer->pc_factory()->CreateAudioTrack(*audio_config.stream_label, source);
-  peer->AddTrack(track, {*audio_config.stream_label});
+  std::string sync_group = audio_config.sync_group
+                               ? audio_config.sync_group.value()
+                               : audio_config.stream_label.value();
+  peer->AddTrack(track, {sync_group, *audio_config.stream_label});
 }
 
 void PeerConnectionE2EQualityTest::SetPeerCodecPreferences(

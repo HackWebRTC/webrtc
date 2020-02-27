@@ -17,6 +17,8 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "api/async_resolver_factory.h"
 #include "api/call/call_factory_interface.h"
 #include "api/fec_controller.h"
@@ -202,7 +204,7 @@ class PeerConnectionE2EQualityTestFixture {
     // each RtpEncodingParameters of RtpParameters of corresponding
     // RtpSenderInterface for this video stream.
     absl::optional<int> temporal_layers_count;
-    // Sets the maxiumum encode bitrate in bps. If this value is not set, the
+    // Sets the maximum encode bitrate in bps. If this value is not set, the
     // encoder will be capped at an internal maximum value around 2 Mbps
     // depending on the resolution. This means that it will never be able to
     // utilize a high bandwidth link.
@@ -225,6 +227,11 @@ class PeerConnectionE2EQualityTestFixture {
     absl::optional<std::string> output_dump_file_name;
     // If true will display input and output video on the user's screen.
     bool show_on_screen = false;
+    // If specified, determines a sync group to which this video stream belongs.
+    // According to bugs.webrtc.org/4762 WebRTC supports synchronization only
+    // for pair of single audio and single video stream. Framework won't do any
+    // enforcements on this field.
+    absl::optional<std::string> sync_group;
   };
 
   // Contains properties for audio in the call.
@@ -248,6 +255,11 @@ class PeerConnectionE2EQualityTestFixture {
     cricket::AudioOptions audio_options;
     // Sampling frequency of input audio data (from file or generated).
     int sampling_frequency_in_hz = 48000;
+    // If specified, determines a sync group to which this audio stream belongs.
+    // According to bugs.webrtc.org/4762 WebRTC supports synchronization only
+    // for pair of single audio and single video stream. Framework won't do any
+    // enforcements on this field.
+    absl::optional<std::string> sync_group;
   };
 
   // This class is used to fully configure one peer inside the call.

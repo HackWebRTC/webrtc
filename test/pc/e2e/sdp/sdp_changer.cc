@@ -312,9 +312,10 @@ LocalAndRemoteSdp SignalingInterceptor::PatchVp9Offer(
     RTC_CHECK_EQ(content.media_description()->streams().size(), 1);
     cricket::StreamParams& stream =
         content.media_description()->mutable_streams()[0];
-    RTC_CHECK_EQ(stream.stream_ids().size(), 1)
-        << "Too many stream ids in video stream";
-    std::string stream_label = stream.stream_ids()[0];
+    RTC_CHECK_EQ(stream.stream_ids().size(), 2)
+        << "Expected 2 stream ids in video stream: 1st - sync_group, 2nd - "
+           "unique label";
+    std::string stream_label = stream.stream_ids()[1];
 
     auto it =
         params_.stream_label_to_simulcast_streams_count.find(stream_label);

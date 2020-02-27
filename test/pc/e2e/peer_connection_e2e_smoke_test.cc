@@ -148,6 +148,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
       [](PeerConfigurer* alice) {
         VideoConfig video(640, 360, 30);
         video.stream_label = "alice-video";
+        video.sync_group = "alice-media";
         alice->AddVideoConfig(std::move(video));
 
         AudioConfig audio;
@@ -156,6 +157,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
         audio.input_file_name =
             test::ResourcePath("pc_quality_smoke_test_alice_source", "wav");
         audio.sampling_frequency_in_hz = 48000;
+        audio.sync_group = "alice-media";
         alice->SetAudioConfig(std::move(audio));
       },
       [](PeerConfigurer* bob) {
@@ -262,7 +264,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Svc) {
       "simulcast", run_params,
       [](PeerConfigurer* alice) {
         VideoConfig simulcast(1280, 720, 30);
-        simulcast.stream_label = "alice-simulcast";
+        simulcast.stream_label = "alice-svc";
         // Because we have network with packets loss we can analyze only the
         // highest spatial layer in SVC mode.
         simulcast.simulcast_config = VideoSimulcastConfig(3, 2);
