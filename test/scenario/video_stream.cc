@@ -615,7 +615,7 @@ VideoReceiveStream::Stats ReceiveVideoStream::GetStats() const {
   if (receive_streams_.empty())
     return VideoReceiveStream::Stats();
   // TODO(srte): Handle multiple receive streams.
-  return receive_streams_.front()->GetStats();
+  return receive_streams_.back()->GetStats();
 }
 
 VideoStreamPair::~VideoStreamPair() = default;
