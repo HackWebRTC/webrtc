@@ -28,7 +28,6 @@ class AudioEncoderIsacT final : public AudioEncoder {
   //  - 32000 Hz, 30 ms, 10000-56000 bps (if T has super-wideband support)
   struct Config {
     bool IsOk() const;
-
     int payload_type = 103;
     int sample_rate_hz = 16000;
     int frame_size_ms = 30;

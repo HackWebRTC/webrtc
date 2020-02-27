@@ -126,7 +126,7 @@ void AudioEncoderIsacT<T>::RecreateEncoderInstance(const Config& config) {
   if (isac_state_)
     RTC_CHECK_EQ(0, T::Free(isac_state_));
   RTC_CHECK_EQ(0, T::Create(&isac_state_));
-  RTC_CHECK_EQ(0, T::EncoderInit(isac_state_, 1));
+  RTC_CHECK_EQ(0, T::EncoderInit(isac_state_, /*coding_mode=*/1));
   RTC_CHECK_EQ(0, T::SetEncSampRate(isac_state_, config.sample_rate_hz));
   const int bit_rate = config.bit_rate == 0 ? kDefaultBitRate : config.bit_rate;
   RTC_CHECK_EQ(0, T::Control(isac_state_, bit_rate, config.frame_size_ms));

@@ -57,6 +57,7 @@ rtc_source_set("module_fec_api") {
 
 if (rtc_include_tests) {
   modules_tests_resources = [
+    "../resources/audio_coding/testfile16kHz.pcm",
     "../resources/audio_coding/testfile32kHz.pcm",
     "../resources/audio_coding/teststereo32kHz.pcm",
     "../resources/foreman_cif.yuv",
@@ -111,6 +112,7 @@ if (rtc_include_tests) {
     "../resources/audio_coding/speech_4_channels_48k_one_second.wav",
     "../resources/audio_coding/speech_mono_16kHz.pcm",
     "../resources/audio_coding/speech_mono_32_48kHz.pcm",
+    "../resources/audio_coding/testfile16kHz.pcm",
     "../resources/audio_coding/testfile32kHz.pcm",
     "../resources/audio_coding/testfile_fake_stereo_32kHz.pcm",
     "../resources/audio_coding/teststereo32kHz.pcm",

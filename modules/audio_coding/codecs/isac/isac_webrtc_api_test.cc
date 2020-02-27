@@ -9,7 +9,7 @@
  */
 
 #include <array>
-#include <limits>
+#include <memory>
 #include <vector>
 
 #include "absl/strings/string_view.h"
@@ -18,9 +18,11 @@
 #include "api/audio_codecs/isac/audio_decoder_isac_float.h"
 #include "api/audio_codecs/isac/audio_encoder_isac_fix.h"
 #include "api/audio_codecs/isac/audio_encoder_isac_float.h"
-#include "rtc_base/random.h"
+#include "modules/audio_coding/test/PCMFile.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/strings/string_builder.h"
 #include "test/gtest.h"
+#include "test/testsupport/file_utils.h"
 
 namespace webrtc {
 namespace {
@@ -38,15 +40,31 @@ absl::string_view IsacImplToString(IsacImpl impl) {
   }
 }
 
-std::vector<int16_t> GetRandomSamplesVector(size_t size) {
-  constexpr int32_t kMin = std::numeric_limits<int16_t>::min();
-  constexpr int32_t kMax = std::numeric_limits<int16_t>::max();
-  std::vector<int16_t> v(size);
-  Random gen(/*seed=*/42);
-  for (auto& x : v) {
-    x = static_cast<int16_t>(gen.Rand(kMin, kMax));
+std::unique_ptr<PCMFile> GetPcmTestFileReader(int sample_rate_hz) {
+  std::string filename;
+  switch (sample_rate_hz) {
+    case 16000:
+      filename = test::ResourcePath("audio_coding/testfile16kHz", "pcm");
+      break;
+    case 32000:
+      filename = test::ResourcePath("audio_coding/testfile32kHz", "pcm");
+      break;
+    default:
+      RTC_NOTREACHED() << "No test file available for " << sample_rate_hz
+                       << " Hz.";
   }
-  return v;
+  auto pcm_file = std::make_unique<PCMFile>();
+  pcm_file->ReadStereo(false);
+  pcm_file->Open(filename, sample_rate_hz, "rb", /*auto_rewind=*/true);
+  pcm_file->FastForward(/*num_10ms_blocks=*/100);  // Skip initial silence.
+  RTC_CHECK(!pcm_file->EndOfFile());
+  return pcm_file;
+}
+
+// Returns a view to the interleaved samples of an AudioFrame object.
+rtc::ArrayView<const int16_t> AudioFrameToView(const AudioFrame& audio_frame) {
+  return {audio_frame.data(),
+          audio_frame.samples_per_channel() * audio_frame.num_channels()};
 }
 
 std::unique_ptr<AudioEncoder> CreateEncoder(IsacImpl impl,
@@ -119,6 +137,7 @@ TEST_P(EncoderTest, TestConfig) {
 // checks that the number of produces bytes in the first case is less than that
 // of the second case.
 TEST_P(EncoderTest, TestDifferentBitrates) {
+  auto pcm_file = GetPcmTestFileReader(GetSampleRateHz());
   constexpr int kLowBps = 20000;
   constexpr int kHighBps = 25000;
   auto encoder_low = CreateEncoder(GetIsacImpl(), GetSampleRateHz(),
@@ -127,39 +146,39 @@ TEST_P(EncoderTest, TestDifferentBitrates) {
                                     GetFrameSizeMs(), kHighBps);
   int num_bytes_low = 0;
   int num_bytes_high = 0;
-  const auto in = GetRandomSamplesVector(
-      /*size=*/rtc::CheckedDivExact(GetSampleRateHz(), 100));
   constexpr int kNumFrames = 12;
   for (int i = 0; i < kNumFrames; ++i) {
+    AudioFrame in;
+    pcm_file->Read10MsData(in);
     rtc::Buffer low, high;
-    encoder_low->Encode(/*rtp_timestamp=*/0, in, &low);
-    encoder_high->Encode(/*rtp_timestamp=*/0, in, &high);
+    encoder_low->Encode(/*rtp_timestamp=*/0, AudioFrameToView(in), &low);
+    encoder_high->Encode(/*rtp_timestamp=*/0, AudioFrameToView(in), &high);
     num_bytes_low += low.size();
     num_bytes_high += high.size();
   }
   EXPECT_LT(num_bytes_low, num_bytes_high);
 }
 
-// Checks that the target and the measured bitrates are within tolerance.
-// TODO(webrtc:11360): Add CBR flag to the config and re-enable test with CBR.
-TEST_P(EncoderTest, DISABLED_TestBitrateNearTarget) {
-  const auto in = GetRandomSamplesVector(
-      /*size=*/rtc::CheckedDivExact(GetSampleRateHz(), 100));  // 10 ms.
+// Checks that, given a target bitrate, the encoder does not overshoot too much.
+TEST_P(EncoderTest, DoNotOvershootTargetBitrate) {
   for (int bitrate_bps : {10000, 15000, 20000, 26000, 32000}) {
     SCOPED_TRACE(bitrate_bps);
+    auto pcm_file = GetPcmTestFileReader(GetSampleRateHz());
     auto e = CreateEncoder(GetIsacImpl(), GetSampleRateHz(), GetFrameSizeMs(),
                            bitrate_bps);
     int num_bytes = 0;
-    constexpr int kNumFrames = 60;
+    constexpr int kNumFrames = 200;  // 2 seconds.
     for (int i = 0; i < kNumFrames; ++i) {
+      AudioFrame in;
+      pcm_file->Read10MsData(in);
       rtc::Buffer encoded;
-      e->Encode(/*rtp_timestamp=*/0, in, &encoded);
+      e->Encode(/*rtp_timestamp=*/0, AudioFrameToView(in), &encoded);
       num_bytes += encoded.size();
     }
     // Inverse of the duration of |kNumFrames| 10 ms frames (unit: seconds^-1).
     constexpr float kAudioDurationInv = 100.f / kNumFrames;
     const int measured_bitrate_bps = 8 * num_bytes * kAudioDurationInv;
-    EXPECT_NEAR(bitrate_bps, measured_bitrate_bps, 1000);  // Max 1 kbps.
+    EXPECT_LT(measured_bitrate_bps, bitrate_bps + 2000);  // Max 2 kbps extra.
   }
 }
 
@@ -227,27 +246,19 @@ struct EncoderDecoderPairTestParams {
 class EncoderDecoderPairTest
     : public testing::TestWithParam<EncoderDecoderPairTestParams> {
  protected:
-  EncoderDecoderPairTest()
-      : input_frame_(GetRandomSamplesVector(GetInputFrameSize())) {}
-  rtc::ArrayView<const int16_t> GetInputFrame() { return input_frame_; }
+  EncoderDecoderPairTest() = default;
   int GetSampleRateHz() const { return GetParam().sample_rate_hz; }
   int GetEncoderFrameSizeMs() const { return GetParam().frame_size_ms; }
   IsacImpl GetEncoderIsacImpl() const { return GetParam().encoder_impl; }
   IsacImpl GetDecoderIsacImpl() const { return GetParam().decoder_impl; }
-
   int GetEncoderFrameSize() const {
     return GetEncoderFrameSizeMs() * GetSampleRateHz() / 1000;
-  }
-
- private:
-  const std::vector<int16_t> input_frame_;
-  int GetInputFrameSize() const {
-    return rtc::CheckedDivExact(GetParam().sample_rate_hz, 100);  // 10 ms.
   }
 };
 
 // Checks that the number of encoded and decoded samples match.
 TEST_P(EncoderDecoderPairTest, EncodeDecode) {
+  auto pcm_file = GetPcmTestFileReader(GetSampleRateHz());
   auto encoder = CreateEncoder(GetEncoderIsacImpl(), GetSampleRateHz(),
                                GetEncoderFrameSizeMs(), /*bitrate_bps=*/20000);
   auto decoder = CreateDecoder(GetDecoderIsacImpl(), GetSampleRateHz());
@@ -257,10 +268,11 @@ TEST_P(EncoderDecoderPairTest, EncodeDecode) {
   size_t num_decoded_samples = 0;
   constexpr int kNumFrames = 12;
   for (int i = 0; i < kNumFrames; ++i) {
+    AudioFrame in;
+    pcm_file->Read10MsData(in);
     rtc::Buffer encoded;
-    auto in = GetInputFrame();
-    encoder->Encode(/*rtp_timestamp=*/0, in, &encoded);
-    num_encoded_samples += in.size();
+    encoder->Encode(/*rtp_timestamp=*/0, AudioFrameToView(in), &encoded);
+    num_encoded_samples += in.samples_per_channel();
     if (encoded.empty()) {
       continue;
     }
