@@ -20,8 +20,7 @@
 
 namespace webrtc {
 
-class SimulatedProcessThread : public TokenTaskQueue,
-                               public ProcessThread,
+class SimulatedProcessThread : public ProcessThread,
                                public sim_time_impl::SimulatedSequenceRunner {
  public:
   SimulatedProcessThread(sim_time_impl::SimulatedTimeControllerImpl* handler,
@@ -43,8 +42,14 @@ class SimulatedProcessThread : public TokenTaskQueue,
   void RegisterModule(Module* module, const rtc::Location& from) override;
   void DeRegisterModule(Module* module) override;
   void PostTask(std::unique_ptr<QueuedTask> task) override;
+  void PostDelayedTask(std::unique_ptr<QueuedTask> task,
+                       uint32_t milliseconds) override;
 
  private:
+  void Delete() override {
+    // ProcessThread shouldn't be deleted as a TaskQueue.
+    RTC_NOTREACHED();
+  }
   Timestamp GetNextTime(Module* module, Timestamp at_time);
 
   sim_time_impl::SimulatedTimeControllerImpl* const handler_;
@@ -54,6 +59,8 @@ class SimulatedProcessThread : public TokenTaskQueue,
   Timestamp next_run_time_ RTC_GUARDED_BY(lock_) = Timestamp::PlusInfinity();
 
   std::deque<std::unique_ptr<QueuedTask>> queue_;
+  std::map<Timestamp, std::vector<std::unique_ptr<QueuedTask>>> delayed_tasks_
+      RTC_GUARDED_BY(lock_);
 
   bool process_thread_running_ RTC_GUARDED_BY(lock_) = false;
   std::vector<Module*> stopped_modules_ RTC_GUARDED_BY(lock_);

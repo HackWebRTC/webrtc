@@ -61,6 +61,13 @@ class ExternalTimeController::ProcessThreadWrapper : public ProcessThread {
     parent_->ScheduleNext();
   }
 
+  void PostDelayedTask(std::unique_ptr<QueuedTask> task,
+                       uint32_t milliseconds) override {
+    parent_->UpdateTime();
+    thread_->PostDelayedTask(std::move(task), milliseconds);
+    parent_->ScheduleNext();
+  }
+
   void RegisterModule(Module* module, const rtc::Location& from) override {
     parent_->UpdateTime();
     module_wrappers_.emplace(module, new ModuleWrapper(module, this));
@@ -99,6 +106,11 @@ class ExternalTimeController::ProcessThreadWrapper : public ProcessThread {
     Module* module_;
     ProcessThreadWrapper* thread_;
   };
+
+  void Delete() override {
+    // ProcessThread shouldn't be deleted as a TaskQueue.
+    RTC_NOTREACHED();
+  }
 
   ModuleWrapper* GetWrapper(Module* module) {
     auto it = module_wrappers_.find(module);

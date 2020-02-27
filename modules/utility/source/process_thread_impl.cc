@@ -14,6 +14,7 @@
 
 #include "modules/include/module.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 
@@ -50,10 +51,22 @@ ProcessThreadImpl::~ProcessThreadImpl() {
   RTC_DCHECK(!thread_.get());
   RTC_DCHECK(!stop_);
 
+  while (!delayed_tasks_.empty()) {
+    delete delayed_tasks_.top().task;
+    delayed_tasks_.pop();
+  }
+
   while (!queue_.empty()) {
     delete queue_.front();
     queue_.pop();
   }
+}
+
+void ProcessThreadImpl::Delete() {
+  RTC_LOG(LS_WARNING) << "Process thread " << thread_name_
+                      << " is destroyed as a TaskQueue.";
+  Stop();
+  delete this;
 }
 
 void ProcessThreadImpl::Start() {
@@ -113,6 +126,21 @@ void ProcessThreadImpl::PostTask(std::unique_ptr<QueuedTask> task) {
   wake_up_.Set();
 }
 
+void ProcessThreadImpl::PostDelayedTask(std::unique_ptr<QueuedTask> task,
+                                        uint32_t milliseconds) {
+  int64_t run_at_ms = rtc::TimeMillis() + milliseconds;
+  bool recalculate_wakeup_time;
+  {
+    rtc::CritScope lock(&lock_);
+    recalculate_wakeup_time =
+        delayed_tasks_.empty() || run_at_ms < delayed_tasks_.top().run_at_ms;
+    delayed_tasks_.emplace(run_at_ms, std::move(task));
+  }
+  if (recalculate_wakeup_time) {
+    wake_up_.Set();
+  }
+}
+
 void ProcessThreadImpl::RegisterModule(Module* module,
                                        const rtc::Location& from) {
   RTC_DCHECK(thread_checker_.IsCurrent());
@@ -166,6 +194,7 @@ void ProcessThreadImpl::DeRegisterModule(Module* module) {
 // static
 void ProcessThreadImpl::Run(void* obj) {
   ProcessThreadImpl* impl = static_cast<ProcessThreadImpl*>(obj);
+  CurrentTaskQueueSetter set_current(impl);
   while (impl->Process()) {
   }
 }
@@ -206,12 +235,23 @@ bool ProcessThreadImpl::Process() {
         next_checkpoint = m.next_callback;
     }
 
+    while (!delayed_tasks_.empty() && delayed_tasks_.top().run_at_ms <= now) {
+      queue_.push(delayed_tasks_.top().task);
+      delayed_tasks_.pop();
+    }
+
+    if (!delayed_tasks_.empty()) {
+      next_checkpoint =
+          std::min(next_checkpoint, delayed_tasks_.top().run_at_ms);
+    }
+
     while (!queue_.empty()) {
       QueuedTask* task = queue_.front();
       queue_.pop();
       lock_.Leave();
-      task->Run();
-      delete task;
+      if (task->Run()) {
+        delete task;
+      }
       lock_.Enter();
     }
   }

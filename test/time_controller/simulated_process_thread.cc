@@ -38,7 +38,7 @@ SimulatedProcessThread::~SimulatedProcessThread() {
 }
 
 void SimulatedProcessThread::RunReady(Timestamp at_time) {
-  TokenTaskQueue::CurrentTaskQueueSetter set_current(this);
+  CurrentTaskQueueSetter set_current(this);
   rtc::CritScope lock(&lock_);
   std::vector<Module*> ready_modules;
   for (auto it = delayed_modules_.begin();
@@ -53,6 +53,13 @@ void SimulatedProcessThread::RunReady(Timestamp at_time) {
     delayed_modules_[GetNextTime(module, at_time)].push_back(module);
   }
 
+  for (auto it = delayed_tasks_.begin();
+       it != delayed_tasks_.end() && it->first <= at_time;
+       it = delayed_tasks_.erase(it)) {
+    for (auto& task : it->second) {
+      queue_.push_back(std::move(task));
+    }
+  }
   while (!queue_.empty()) {
     std::unique_ptr<QueuedTask> task = std::move(queue_.front());
     queue_.pop_front();
@@ -66,6 +73,9 @@ void SimulatedProcessThread::RunReady(Timestamp at_time) {
     next_run_time_ = delayed_modules_.begin()->first;
   } else {
     next_run_time_ = Timestamp::PlusInfinity();
+  }
+  if (!delayed_tasks_.empty()) {
+    next_run_time_ = std::min(next_run_time_, delayed_tasks_.begin()->first);
   }
 }
 void SimulatedProcessThread::Start() {
@@ -158,6 +168,15 @@ void SimulatedProcessThread::PostTask(std::unique_ptr<QueuedTask> task) {
   rtc::CritScope lock(&lock_);
   queue_.emplace_back(std::move(task));
   next_run_time_ = Timestamp::MinusInfinity();
+}
+
+void SimulatedProcessThread::PostDelayedTask(std::unique_ptr<QueuedTask> task,
+                                             uint32_t milliseconds) {
+  rtc::CritScope lock(&lock_);
+  Timestamp target_time =
+      handler_->CurrentTime() + TimeDelta::Millis(milliseconds);
+  delayed_tasks_[target_time].push_back(std::move(task));
+  next_run_time_ = std::min(next_run_time_, target_time);
 }
 
 Timestamp SimulatedProcessThread::GetNextTime(Module* module,
