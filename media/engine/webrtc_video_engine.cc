@@ -944,22 +944,25 @@ webrtc::RTCError WebRtcVideoChannel::SetRtpSendParameters(
   }
 
   if (!parameters.encodings.empty()) {
-    const auto& priority = parameters.encodings[0].network_priority;
+    // Note that these values come from:
+    // https://tools.ietf.org/html/draft-ietf-tsvwg-rtcweb-qos-16#section-5
+    // TODO(deadbeef): Change values depending on whether we are sending a
+    // keyframe or non-keyframe.
     rtc::DiffServCodePoint new_dscp = rtc::DSCP_DEFAULT;
-    if (priority == 0.5 * webrtc::kDefaultBitratePriority) {
-      new_dscp = rtc::DSCP_CS1;
-    } else if (priority == webrtc::kDefaultBitratePriority) {
-      new_dscp = rtc::DSCP_DEFAULT;
-    } else if (priority == 2.0 * webrtc::kDefaultBitratePriority) {
-      new_dscp = rtc::DSCP_AF42;
-    } else if (priority == 4.0 * webrtc::kDefaultBitratePriority) {
-      new_dscp = rtc::DSCP_AF41;
-    } else {
-      RTC_LOG(LS_WARNING) << "Received invalid send network priority: "
-                          << priority;
-      return webrtc::RTCError(webrtc::RTCErrorType::INVALID_RANGE);
+    switch (parameters.encodings[0].network_priority) {
+      case webrtc::Priority::kVeryLow:
+        new_dscp = rtc::DSCP_CS1;
+        break;
+      case webrtc::Priority::kLow:
+        new_dscp = rtc::DSCP_DEFAULT;
+        break;
+      case webrtc::Priority::kMedium:
+        new_dscp = rtc::DSCP_AF42;
+        break;
+      case webrtc::Priority::kHigh:
+        new_dscp = rtc::DSCP_AF41;
+        break;
     }
-
     SetPreferredDscp(new_dscp);
   }
 

@@ -711,8 +711,8 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     config_.rtp.c_name = c_name;
     config_.rtp.extmap_allow_mixed = extmap_allow_mixed;
     config_.rtp.extensions = extensions;
-    config_.has_dscp = rtp_parameters_.encodings[0].network_priority !=
-                       webrtc::kDefaultBitratePriority;
+    config_.has_dscp =
+        rtp_parameters_.encodings[0].network_priority != webrtc::Priority::kLow;
     config_.audio_network_adaptor_config = audio_network_adaptor_config;
     config_.encoder_factory = encoder_factory;
     config_.codec_pair_id = codec_pair_id;
@@ -923,11 +923,11 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     const absl::optional<int> old_rtp_max_bitrate =
         rtp_parameters_.encodings[0].max_bitrate_bps;
     double old_priority = rtp_parameters_.encodings[0].bitrate_priority;
-    double old_dscp = rtp_parameters_.encodings[0].network_priority;
+    webrtc::Priority old_dscp = rtp_parameters_.encodings[0].network_priority;
     rtp_parameters_ = parameters;
     config_.bitrate_priority = rtp_parameters_.encodings[0].bitrate_priority;
     config_.has_dscp = (rtp_parameters_.encodings[0].network_priority !=
-                        webrtc::kDefaultBitratePriority);
+                        webrtc::Priority::kLow);
 
     bool reconfigure_send_stream =
         (rtp_parameters_.encodings[0].max_bitrate_bps != old_rtp_max_bitrate) ||
@@ -1389,22 +1389,23 @@ webrtc::RTCError WebRtcVoiceMediaChannel::SetRtpSendParameters(
   }
 
   if (!parameters.encodings.empty()) {
-    auto& priority = parameters.encodings[0].network_priority;
+    // Note that these values come from:
+    // https://tools.ietf.org/html/draft-ietf-tsvwg-rtcweb-qos-16#section-5
     rtc::DiffServCodePoint new_dscp = rtc::DSCP_DEFAULT;
-    if (priority == 0.5 * webrtc::kDefaultBitratePriority) {
-      new_dscp = rtc::DSCP_CS1;
-    } else if (priority == 1.0 * webrtc::kDefaultBitratePriority) {
-      new_dscp = rtc::DSCP_DEFAULT;
-    } else if (priority == 2.0 * webrtc::kDefaultBitratePriority) {
-      new_dscp = rtc::DSCP_EF;
-    } else if (priority == 4.0 * webrtc::kDefaultBitratePriority) {
-      new_dscp = rtc::DSCP_EF;
-    } else {
-      RTC_LOG(LS_WARNING) << "Received invalid send network priority: "
-                          << priority;
-      return webrtc::RTCError(webrtc::RTCErrorType::INVALID_RANGE);
+    switch (parameters.encodings[0].network_priority) {
+      case webrtc::Priority::kVeryLow:
+        new_dscp = rtc::DSCP_CS1;
+        break;
+      case webrtc::Priority::kLow:
+        new_dscp = rtc::DSCP_DEFAULT;
+        break;
+      case webrtc::Priority::kMedium:
+        new_dscp = rtc::DSCP_EF;
+        break;
+      case webrtc::Priority::kHigh:
+        new_dscp = rtc::DSCP_EF;
+        break;
     }
-
     SetPreferredDscp(new_dscp);
   }
 

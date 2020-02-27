@@ -50,7 +50,7 @@ int GenerateUniqueId() {
 bool PerSenderRtpEncodingParameterHasValue(
     const RtpEncodingParameters& encoding_params) {
   if (encoding_params.bitrate_priority != kDefaultBitratePriority ||
-      encoding_params.network_priority != kDefaultBitratePriority) {
+      encoding_params.network_priority != Priority::kLow) {
     return true;
   }
   return false;
