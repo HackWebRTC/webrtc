@@ -316,6 +316,24 @@ webrtc_fuzzer_test("audio_encoder_opus_fuzzer") {
   ]
 }
 
+webrtc_fuzzer_test("audio_encoder_isac_fixed_fuzzer") {
+  sources = [ "audio_encoder_isax_fixed_fuzzer.cc" ]
+  deps = [
+    ":audio_encoder_fuzzer",
+    "../../api/audio_codecs/isac:audio_encoder_isac_fix",
+    "../../rtc_base:checks",
+  ]
+}
+
+webrtc_fuzzer_test("audio_encoder_isac_float_fuzzer") {
+  sources = [ "audio_encoder_isax_float_fuzzer.cc" ]
+  deps = [
+    ":audio_encoder_fuzzer",
+    "../../api/audio_codecs/isac:audio_encoder_isac_float",
+    "../../rtc_base:checks",
+  ]
+}
+
 webrtc_fuzzer_test("turn_unwrap_fuzzer") {
   sources = [ "turn_unwrap_fuzzer.cc" ]
   deps = [
