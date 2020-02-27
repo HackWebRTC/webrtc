@@ -96,8 +96,9 @@ SendAudioStream::SendAudioStream(
   if (config.encoder.fixed_rate)
     send_config.send_codec_spec->target_bitrate_bps =
         config.encoder.fixed_rate->bps();
-
-  if (config.network_adaptation) {
+  if (!config.adapt.binary_proto.empty()) {
+    send_config.audio_network_adaptor_config = config.adapt.binary_proto;
+  } else if (config.network_adaptation) {
     send_config.audio_network_adaptor_config =
         CreateAdaptationString(config.adapt);
   }

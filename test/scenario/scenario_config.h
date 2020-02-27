@@ -190,6 +190,7 @@ struct AudioStreamConfig {
       DataRate min_rate_for_60_ms = DataRate::Zero();
       DataRate max_rate_for_120_ms = DataRate::Infinity();
     } frame;
+    std::string binary_proto;
   } adapt;
   struct Encoder {
     Encoder();
