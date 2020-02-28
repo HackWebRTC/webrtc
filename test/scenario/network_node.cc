@@ -13,6 +13,7 @@
 #include <vector>
 
 #include <memory>
+#include "rtc_base/net_helper.h"
 #include "rtc_base/numerics/safe_minmax.h"
 
 namespace webrtc {
@@ -114,6 +115,9 @@ void NetworkNodeTransport::Connect(EmulatedEndpoint* endpoint,
       receiver_address.ipaddr().v4AddressAsHostOrderInteger());
   route.remote_network_id = static_cast<uint16_t>(
       receiver_address.ipaddr().v4AddressAsHostOrderInteger());
+  route.packet_overhead = packet_overhead.bytes() +
+                          receiver_address.ipaddr().overhead() +
+                          cricket::kUdpHeaderSize;
   {
     // Only IPv4 address is supported.
     RTC_CHECK_EQ(receiver_address.family(), AF_INET);
