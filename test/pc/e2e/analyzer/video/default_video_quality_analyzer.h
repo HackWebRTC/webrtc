@@ -124,14 +124,6 @@ struct AnalyzerStats {
   int64_t memory_overloaded_comparisons_done = 0;
 };
 
-struct VideoBweStats {
-  SamplesStatsCounter available_send_bandwidth;
-  SamplesStatsCounter transmission_bitrate;
-  SamplesStatsCounter retransmission_bitrate;
-  SamplesStatsCounter actual_encode_bitrate;
-  SamplesStatsCounter target_encode_bitrate;
-};
-
 class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
  public:
   explicit DefaultVideoQualityAnalyzer(
@@ -157,6 +149,8 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   void OnDecoderError(uint16_t frame_id, int32_t error_code) override;
   void Stop() override;
   std::string GetStreamLabel(uint16_t frame_id) override;
+  void OnStatsReports(const std::string& pc_label,
+                      const StatsReports& stats_reports) override {}
 
   // Returns set of stream labels, that were met during test call.
   std::set<std::string> GetKnownVideoStreams() const;
@@ -168,13 +162,6 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   // obtained by calling GetKnownVideoStreams()
   std::map<std::string, StreamStats> GetStats() const;
   AnalyzerStats GetAnalyzerStats() const;
-
-  // Will be called everytime new stats reports are available for the
-  // Peer Connection identified by |pc_label|.
-  void OnStatsReports(const std::string& pc_label,
-                      const StatsReports& stats_reports) override;
-
-  std::map<std::string, VideoBweStats> GetVideoBweStats() const;
 
  private:
   struct FrameStats {
@@ -285,8 +272,6 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   void ProcessComparison(const FrameComparison& comparison);
   // Report results for all metrics for all streams.
   void ReportResults();
-  static void ReportVideoBweResults(const std::string& test_case_name,
-                                    const VideoBweStats& video_bwe_stats);
   void ReportResults(const std::string& test_case_name,
                      const StreamStats& stats,
                      const FrameCounters& frame_counters)
@@ -343,12 +328,6 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
       RTC_GUARDED_BY(comparison_lock_);
   std::deque<FrameComparison> comparisons_ RTC_GUARDED_BY(comparison_lock_);
   AnalyzerStats analyzer_stats_ RTC_GUARDED_BY(comparison_lock_);
-
-  rtc::CriticalSection video_bwe_stats_lock_;
-  // Map between a peer connection label (provided by the framework) and
-  // its video BWE stats.
-  std::map<std::string, VideoBweStats> video_bwe_stats_
-      RTC_GUARDED_BY(video_bwe_stats_lock_);
 
   std::vector<std::unique_ptr<rtc::PlatformThread>> thread_pool_;
   rtc::Event comparison_available_event_;

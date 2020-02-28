@@ -26,7 +26,6 @@ namespace {
 constexpr int kMaxActiveComparisons = 10;
 constexpr int kFreezeThresholdMs = 150;
 constexpr int kMicrosPerSecond = 1000000;
-constexpr int kBitsInByte = 8;
 
 void LogFrameCounters(const std::string& name, const FrameCounters& counters) {
   RTC_LOG(INFO) << "[" << name << "] Captured    : " << counters.captured;
@@ -422,59 +421,6 @@ AnalyzerStats DefaultVideoQualityAnalyzer::GetAnalyzerStats() const {
   return analyzer_stats_;
 }
 
-// TODO(bugs.webrtc.org/10430): Migrate to the new GetStats as soon as
-// bugs.webrtc.org/10428 is fixed.
-void DefaultVideoQualityAnalyzer::OnStatsReports(
-    const std::string& pc_label,
-    const StatsReports& stats_reports) {
-  for (const StatsReport* stats_report : stats_reports) {
-    // The only stats collected by this analyzer are present in
-    // kStatsReportTypeBwe reports, so all other reports are just ignored.
-    if (stats_report->type() != StatsReport::StatsType::kStatsReportTypeBwe) {
-      continue;
-    }
-    const webrtc::StatsReport::Value* available_send_bandwidth =
-        stats_report->FindValue(
-            StatsReport::StatsValueName::kStatsValueNameAvailableSendBandwidth);
-    const webrtc::StatsReport::Value* retransmission_bitrate =
-        stats_report->FindValue(
-            StatsReport::StatsValueName::kStatsValueNameRetransmitBitrate);
-    const webrtc::StatsReport::Value* transmission_bitrate =
-        stats_report->FindValue(
-            StatsReport::StatsValueName::kStatsValueNameTransmitBitrate);
-    const webrtc::StatsReport::Value* actual_encode_bitrate =
-        stats_report->FindValue(
-            StatsReport::StatsValueName::kStatsValueNameActualEncBitrate);
-    const webrtc::StatsReport::Value* target_encode_bitrate =
-        stats_report->FindValue(
-            StatsReport::StatsValueName::kStatsValueNameTargetEncBitrate);
-    RTC_CHECK(available_send_bandwidth);
-    RTC_CHECK(retransmission_bitrate);
-    RTC_CHECK(transmission_bitrate);
-    RTC_CHECK(actual_encode_bitrate);
-    RTC_CHECK(target_encode_bitrate);
-
-    rtc::CritScope crit(&video_bwe_stats_lock_);
-    VideoBweStats& video_bwe_stats = video_bwe_stats_[pc_label];
-    video_bwe_stats.available_send_bandwidth.AddSample(
-        available_send_bandwidth->int_val());
-    video_bwe_stats.transmission_bitrate.AddSample(
-        transmission_bitrate->int_val());
-    video_bwe_stats.retransmission_bitrate.AddSample(
-        retransmission_bitrate->int_val());
-    video_bwe_stats.actual_encode_bitrate.AddSample(
-        actual_encode_bitrate->int_val());
-    video_bwe_stats.target_encode_bitrate.AddSample(
-        target_encode_bitrate->int_val());
-  }
-}
-
-std::map<std::string, VideoBweStats>
-DefaultVideoQualityAnalyzer::GetVideoBweStats() const {
-  rtc::CritScope crit(&video_bwe_stats_lock_);
-  return video_bwe_stats_;
-}
-
 void DefaultVideoQualityAnalyzer::AddComparison(
     absl::optional<VideoFrame> captured,
     absl::optional<VideoFrame> rendered,
@@ -620,12 +566,6 @@ void DefaultVideoQualityAnalyzer::ReportResults() {
     ReportResults(GetTestCaseName(item.first), item.second,
                   stream_frame_counters_.at(item.first));
   }
-  {
-    rtc::CritScope video_bwe_crit(&video_bwe_stats_lock_);
-    for (const auto& item : video_bwe_stats_) {
-      ReportVideoBweResults(GetTestCaseName(item.first), item.second);
-    }
-  }
   LogFrameCounters("Global", frame_counters_);
   for (auto& item : stream_stats_) {
     LogFrameCounters(item.first, stream_frame_counters_.at(item.first));
@@ -643,26 +583,6 @@ void DefaultVideoQualityAnalyzer::ReportResults() {
                 << analyzer_stats_.cpu_overloaded_comparisons_done;
   RTC_LOG(INFO) << "memory_overloaded_comparisons_done="
                 << analyzer_stats_.memory_overloaded_comparisons_done;
-}
-
-void DefaultVideoQualityAnalyzer::ReportVideoBweResults(
-    const std::string& test_case_name,
-    const VideoBweStats& video_bwe_stats) {
-  ReportResult("available_send_bandwidth", test_case_name,
-               video_bwe_stats.available_send_bandwidth / kBitsInByte,
-               "bytesPerSecond");
-  ReportResult("transmission_bitrate", test_case_name,
-               video_bwe_stats.transmission_bitrate / kBitsInByte,
-               "bytesPerSecond");
-  ReportResult("retransmission_bitrate", test_case_name,
-               video_bwe_stats.retransmission_bitrate / kBitsInByte,
-               "bytesPerSecond");
-  ReportResult("actual_encode_bitrate", test_case_name,
-               video_bwe_stats.actual_encode_bitrate / kBitsInByte,
-               "bytesPerSecond");
-  ReportResult("target_encode_bitrate", test_case_name,
-               video_bwe_stats.target_encode_bitrate / kBitsInByte,
-               "bytesPerSecond");
 }
 
 void DefaultVideoQualityAnalyzer::ReportResults(

@@ -272,6 +272,7 @@ if (rtc_include_tests) {
       ":stats_poller",
       ":test_peer",
       ":video_quality_analyzer_injection_helper",
+      ":video_quality_metrics_reporter",
       "../..:field_trial",
       "../..:platform_video_capturer",
       "../..:video_test_common",
@@ -463,6 +464,22 @@ rtc_library("example_video_quality_analyzer") {
     "../../../api/video:video_rtp_headers",
     "../../../rtc_base:criticalsection",
     "../../../rtc_base:logging",
+  ]
+}
+
+rtc_library("video_quality_metrics_reporter") {
+  visibility = [ "*" ]
+
+  testonly = true
+  sources = [
+    "analyzer/video/video_quality_metrics_reporter.cc",
+    "analyzer/video/video_quality_metrics_reporter.h",
+  ]
+  deps = [
+    "../..:perf_test",
+    "../../../api:peer_connection_quality_test_fixture_api",
+    "../../../rtc_base:criticalsection",
+    "../../../rtc_base:rtc_numerics",
   ]
 }
 

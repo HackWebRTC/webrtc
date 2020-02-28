@@ -35,6 +35,7 @@
 #include "test/frame_generator_capturer.h"
 #include "test/pc/e2e/analyzer/audio/default_audio_quality_analyzer.h"
 #include "test/pc/e2e/analyzer/video/default_video_quality_analyzer.h"
+#include "test/pc/e2e/analyzer/video/video_quality_metrics_reporter.h"
 #include "test/pc/e2e/stats_poller.h"
 #include "test/platform_video_capturer.h"
 #include "test/testsupport/file_utils.h"
@@ -321,6 +322,8 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   video_analyzer_threads =
       std::min(video_analyzer_threads, kMaxVideoAnalyzerThreads);
   RTC_LOG(INFO) << "video_analyzer_threads=" << video_analyzer_threads;
+  quality_metrics_reporters_.push_back(
+      std::make_unique<VideoQualityMetricsReporter>());
 
   video_quality_analyzer_injection_helper_->Start(test_case_name_,
                                                   video_analyzer_threads);
