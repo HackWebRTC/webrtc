@@ -28,6 +28,7 @@ rtc_library("encoded_frame") {
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base/experiments:alr_experiment",
     "../../rtc_base/experiments:rtt_mult_experiment",
+    "../../rtc_base/system:rtc_export",
     "../../system_wrappers",
     "//third_party/abseil-cpp/absl/types:optional",
     "//third_party/abseil-cpp/absl/types:variant",
