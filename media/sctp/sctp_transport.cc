@@ -317,7 +317,7 @@ class SctpTransport::UsrSctpWrapper {
     // memory cleanup. But this does simplify code.
     const PayloadProtocolIdentifier ppid =
         static_cast<PayloadProtocolIdentifier>(
-            rtc::HostToNetwork32(rcv.rcv_ppid));
+            rtc::NetworkToHost32(rcv.rcv_ppid));
     DataMessageType type = DMT_NONE;
     if (!GetDataMediaType(ppid, &type) && !(flags & MSG_NOTIFICATION)) {
       // It's neither a notification nor a recognized data packet.  Drop it.
