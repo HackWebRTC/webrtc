@@ -87,9 +87,6 @@ class MediaContentDescription {
 
   virtual bool has_codecs() const = 0;
 
-  RTC_DEPRECATED virtual MediaContentDescription* Copy() const {
-    return CloneInternal();
-  }
   // Copy operator that returns an unique_ptr.
   // Not a virtual function.
   // If a type-specific variant of Clone() is desired, override it, or
@@ -349,9 +346,6 @@ class AudioContentDescription : public MediaContentDescriptionImpl<AudioCodec> {
  public:
   AudioContentDescription() {}
 
-  RTC_DEPRECATED virtual AudioContentDescription* Copy() const {
-    return CloneInternal();
-  }
   virtual MediaType type() const { return MEDIA_TYPE_AUDIO; }
   virtual AudioContentDescription* as_audio() { return this; }
   virtual const AudioContentDescription* as_audio() const { return this; }
@@ -364,9 +358,6 @@ class AudioContentDescription : public MediaContentDescriptionImpl<AudioCodec> {
 
 class VideoContentDescription : public MediaContentDescriptionImpl<VideoCodec> {
  public:
-  RTC_DEPRECATED virtual VideoContentDescription* Copy() const {
-    return CloneInternal();
-  }
   virtual MediaType type() const { return MEDIA_TYPE_VIDEO; }
   virtual VideoContentDescription* as_video() { return this; }
   virtual const VideoContentDescription* as_video() const { return this; }
