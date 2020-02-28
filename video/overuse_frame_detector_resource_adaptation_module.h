@@ -130,26 +130,53 @@ class OveruseFrameDetectorResourceAdaptationModule
     enum class Mode { kAdaptUp, kAdaptDown } mode_;
   };
 
-  // Preconditions for OnResourceUnderuse() to adapt up.
-  bool CanAdaptUp(AdaptationObserverInterface::AdaptReason reason,
-                  const AdaptationRequest& adaptation_request) const;
-  // Adapts up if preconditions apply and VideoSourceRestrictor allows it.
-  // TODO(https://crbug.com/webrtc/11222): This method is still a "Maybe" method
-  // due to the remaining VideoSourceRestrictor logic and it implicitly
-  // calculating the tareet. Instead have the steps "GetNextTarget",
-  // "CanApplyTarget?" and "DoApplyTarget!". In the future "GetNextTarget" and
-  // "CanApplyTarget?" may even be merged, such that "GetNextTarget" always
-  // returns a valid target (or null if there is no next target).
+  enum class AdaptationAction {
+    kIncreaseResolution,
+    kDecreaseResolution,
+    kIncreaseFrameRate,
+    kDecreaseFrameRate,
+  };
+
+  // Describes an adaptation step: increasing or decreasing resolution or frame
+  // rate to a given value.
+  struct AdaptationTarget {
+    AdaptationTarget(AdaptationAction action, int value);
+    // Which action the VideoSourceRestrictor needs to take.
+    const AdaptationAction action;
+    // Target pixel count or frame rate depending on |action|.
+    const int value;
+
+    // Allow this struct to be instantiated as an optional, even though it's in
+    // a private namespace.
+    friend class absl::optional<AdaptationTarget>;
+  };
+
+  // Returns a target that we are guaranteed to be able to adapt to, or null if
+  // adaptation is not desired or not possible.
+  absl::optional<AdaptationTarget> GetAdaptUpTarget(
+      int input_pixels,
+      int input_fps,
+      AdaptationObserverInterface::AdaptReason reason) const;
+  absl::optional<AdaptationTarget> GetAdaptDownTarget(
+      int input_pixels,
+      int input_fps,
+      int min_pixels_per_frame,
+      AdaptationObserverInterface::AdaptReason reason) const;
+  // Applies the |target| to |source_restrictor_|.
+  void ApplyAdaptationTarget(const AdaptationTarget& target,
+                             int min_pixels_per_frame,
+                             AdaptationObserverInterface::AdaptReason reason);
+
+  // Performs the adaptation by getting the next target, applying it and
+  // informing listeners of the new VideoSourceRestriction and adapt counters.
   void OnResourceUnderuse(AdaptationObserverInterface::AdaptReason reason);
-  // Preconditions for OnResourceOveruse() to adapt down.
-  bool CanAdaptDown(const AdaptationRequest& adaptation_request) const;
-  // Adapts down if preconditions apply and VideoSourceRestrictor allows it.
   ResourceListenerResponse OnResourceOveruse(
       AdaptationObserverInterface::AdaptReason reason);
 
   CpuOveruseOptions GetCpuOveruseOptions() const;
   VideoCodecType GetVideoCodecTypeOrGeneric() const;
   int LastInputFrameSizeOrDefault() const;
+  int MinPixelsPerFrame() const;
   VideoStreamEncoderObserver::AdaptationSteps GetActiveCounts(
       AdaptationObserverInterface::AdaptReason reason);
   void ClearAdaptCounters();

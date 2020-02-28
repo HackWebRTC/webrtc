@@ -693,9 +693,11 @@ class VideoStreamEncoderTest : public ::testing::Test {
     // attempting to scale resolution.
     int fps_limit = wants.max_framerate_fps;
     if (last_frame_pixels <= 320 * 240) {
-      EXPECT_TRUE(7 <= fps_limit && fps_limit <= 10);
+      EXPECT_LE(7, fps_limit);
+      EXPECT_LE(fps_limit, 10);
     } else if (last_frame_pixels <= 480 * 270) {
-      EXPECT_TRUE(10 <= fps_limit && fps_limit <= 15);
+      EXPECT_LE(10, fps_limit);
+      EXPECT_LE(fps_limit, 15);
     } else if (last_frame_pixels <= 640 * 480) {
       EXPECT_LE(15, fps_limit);
     } else {
