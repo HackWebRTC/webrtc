@@ -155,7 +155,7 @@ class RtpVideoStreamReceiverTest : public ::testing::Test {
         Clock::GetRealTimeClock(), &mock_transport_, nullptr, nullptr, &config_,
         rtp_receive_statistics_.get(), nullptr, process_thread_.get(),
         &mock_nack_sender_, &mock_key_frame_request_sender_,
-        &mock_on_complete_frame_callback_, nullptr);
+        &mock_on_complete_frame_callback_, nullptr, nullptr);
   }
 
   RTPVideoHeader GetDefaultH264VideoHeader() {

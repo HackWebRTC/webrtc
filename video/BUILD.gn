@@ -54,6 +54,7 @@ rtc_library("video") {
     ":frame_dumping_decoder",
     "../api:array_view",
     "../api:fec_controller_api",
+    "../api:frame_transformer_interface",
     "../api:libjingle_peerconnection_api",
     "../api:rtp_parameters",
     "../api:scoped_refptr",

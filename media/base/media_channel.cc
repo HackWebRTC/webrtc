@@ -52,6 +52,9 @@ void MediaChannel::SetVideoCodecSwitchingEnabled(bool enabled) {}
 void MediaChannel::SetEncoderToPacketizerFrameTransformer(
     uint32_t ssrc,
     rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer) {}
+void MediaChannel::SetDepacketizerToDecoderFrameTransformer(
+    uint32_t ssrc,
+    rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer) {}
 
 MediaSenderInfo::MediaSenderInfo() = default;
 MediaSenderInfo::~MediaSenderInfo() = default;

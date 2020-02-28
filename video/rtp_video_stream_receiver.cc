@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -194,7 +195,8 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
     NackSender* nack_sender,
     KeyFrameRequestSender* keyframe_request_sender,
     video_coding::OnCompleteFrameCallback* complete_frame_callback,
-    rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor)
+    rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
+    rtc::scoped_refptr<FrameTransformerInterface> frame_transformer)
     : clock_(clock),
       config_(*config),
       packet_router_(packet_router),
@@ -221,7 +223,8 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
       packet_buffer_(clock_, kPacketBufferStartSize, PacketBufferMaxSize()),
       has_received_frame_(false),
       frames_decryptable_(false),
-      absolute_capture_time_receiver_(clock) {
+      absolute_capture_time_receiver_(clock),
+      frame_transformer_(frame_transformer) {
   constexpr bool remb_candidate = true;
   if (packet_router_)
     packet_router_->AddReceiveRtpModule(rtp_rtcp_.get(), remb_candidate);
@@ -282,6 +285,33 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
     }
   }
 }
+
+RtpVideoStreamReceiver::RtpVideoStreamReceiver(
+    Clock* clock,
+    Transport* transport,
+    RtcpRttStats* rtt_stats,
+    PacketRouter* packet_router,
+    const VideoReceiveStream::Config* config,
+    ReceiveStatistics* rtp_receive_statistics,
+    ReceiveStatisticsProxy* receive_stats_proxy,
+    ProcessThread* process_thread,
+    NackSender* nack_sender,
+    KeyFrameRequestSender* keyframe_request_sender,
+    video_coding::OnCompleteFrameCallback* complete_frame_callback,
+    rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor)
+    : RtpVideoStreamReceiver(clock,
+                             transport,
+                             rtt_stats,
+                             packet_router,
+                             config,
+                             rtp_receive_statistics,
+                             receive_stats_proxy,
+                             process_thread,
+                             nack_sender,
+                             keyframe_request_sender,
+                             complete_frame_callback,
+                             frame_decryptor,
+                             nullptr) {}
 
 RtpVideoStreamReceiver::~RtpVideoStreamReceiver() {
   RTC_DCHECK(secondary_sinks_.empty());

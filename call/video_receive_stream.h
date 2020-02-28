@@ -21,6 +21,7 @@
 #include "api/call/transport.h"
 #include "api/crypto/crypto_options.h"
 #include "api/crypto/frame_decryptor_interface.h"
+#include "api/frame_transformer_interface.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
 #include "api/transport/rtp/rtp_source.h"
@@ -262,6 +263,8 @@ class VideoReceiveStream {
 
     // Per PeerConnection cryptography options.
     CryptoOptions crypto_options;
+
+    rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer;
   };
 
   // Starts stream activity.

@@ -291,6 +291,9 @@ class MediaChannel : public sigslot::has_slots<> {
   virtual void SetEncoderToPacketizerFrameTransformer(
       uint32_t ssrc,
       rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer);
+  virtual void SetDepacketizerToDecoderFrameTransformer(
+      uint32_t ssrc,
+      rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer);
 
  protected:
   bool DscpEnabled() const { return enable_dscp_; }

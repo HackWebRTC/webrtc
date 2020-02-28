@@ -215,7 +215,8 @@ VideoReceiveStream::VideoReceiveStream(
                                  this,     // NackSender
                                  nullptr,  // Use default KeyFrameRequestSender
                                  this,     // OnCompleteFrameCallback
-                                 config_.frame_decryptor),
+                                 config_.frame_decryptor,
+                                 config_.frame_transformer),
       rtp_stream_sync_(this),
       max_wait_for_keyframe_ms_(KeyframeIntervalSettings::ParseFromFieldTrials()
                                     .MaxWaitForKeyframeMs()

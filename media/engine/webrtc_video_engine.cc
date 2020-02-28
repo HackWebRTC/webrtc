@@ -2941,6 +2941,13 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::GenerateKeyFrame() {
   }
 }
 
+void WebRtcVideoChannel::WebRtcVideoReceiveStream::
+    SetDepacketizerToDecoderFrameTransformer(
+        rtc::scoped_refptr<webrtc::FrameTransformerInterface>
+            frame_transformer) {
+  config_.frame_transformer = frame_transformer;
+}
+
 WebRtcVideoChannel::VideoCodecSettings::VideoCodecSettings()
     : flexfec_payload_type(-1), rtx_payload_type(-1) {}
 
@@ -3148,6 +3155,17 @@ void WebRtcVideoChannel::SetEncoderToPacketizerFrameTransformer(
   auto matching_stream = send_streams_.find(ssrc);
   if (matching_stream != send_streams_.end()) {
     matching_stream->second->SetEncoderToPacketizerFrameTransformer(
+        std::move(frame_transformer));
+  }
+}
+
+void WebRtcVideoChannel::SetDepacketizerToDecoderFrameTransformer(
+    uint32_t ssrc,
+    rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  auto matching_stream = receive_streams_.find(ssrc);
+  if (matching_stream != receive_streams_.end()) {
+    matching_stream->second->SetDepacketizerToDecoderFrameTransformer(
         std::move(frame_transformer));
   }
 }
