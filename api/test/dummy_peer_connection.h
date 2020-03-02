@@ -229,6 +229,8 @@ class DummyPeerConnection : public PeerConnectionInterface {
     return IceGatheringState();
   }
 
+  absl::optional<bool> can_trickle_ice_candidates() { return absl::nullopt; }
+
   bool StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output,
                         int64_t output_period_ms) override {
     return false;
