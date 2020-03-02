@@ -1682,8 +1682,7 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn,
         selected_connection_->remote_candidate().network_id();
     network_route_->last_sent_packet_id = last_sent_packet_id_;
     network_route_->packet_overhead =
-        GetIpOverhead(
-            selected_connection_->local_candidate().address().family()) +
+        selected_connection_->local_candidate().address().ipaddr().overhead() +
         GetProtocolOverhead(selected_connection_->local_candidate().protocol());
   } else {
     RTC_LOG(LS_INFO) << ToString() << ": No selected connection";

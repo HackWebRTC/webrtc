@@ -9,17 +9,9 @@
  */
 #include "api/test/network_emulation/network_emulation_interfaces.h"
 
+#include "rtc_base/net_helper.h"
+
 namespace webrtc {
-
-namespace {
-constexpr int kIPv4HeaderSize = 20;
-constexpr int kIPv6HeaderSize = 40;
-constexpr int kUdpHeaderSize = 8;
-int IpHeaderSize(const rtc::SocketAddress& address) {
-  return (address.family() == AF_INET) ? kIPv4HeaderSize : kIPv6HeaderSize;
-}
-}  // namespace
-
 EmulatedIpPacket::EmulatedIpPacket(const rtc::SocketAddress& from,
                                    const rtc::SocketAddress& to,
                                    rtc::CopyOnWriteBuffer data,
@@ -28,7 +20,8 @@ EmulatedIpPacket::EmulatedIpPacket(const rtc::SocketAddress& from,
     : from(from),
       to(to),
       data(data),
-      headers_size(IpHeaderSize(to) + application_overhead + kUdpHeaderSize),
+      headers_size(to.ipaddr().overhead() + application_overhead +
+                   cricket::kUdpHeaderSize),
       arrival_time(arrival_time) {
   RTC_DCHECK(to.family() == AF_INET || to.family() == AF_INET6);
 }

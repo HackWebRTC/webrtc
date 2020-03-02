@@ -111,6 +111,9 @@ class RTC_EXPORT IPAddress {
   // For socketaddress' benefit. Returns the IP in host byte order.
   uint32_t v4AddressAsHostOrderInteger() const;
 
+  // Get the network layer overhead per packet based on the IP address family.
+  int overhead() const;
+
   // Whether this is an unspecified IP address.
   bool IsNil() const;
 
