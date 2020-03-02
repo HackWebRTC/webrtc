@@ -63,13 +63,12 @@ TEST_F(SsrcEndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
       if (RtpHeaderParser::IsRtcp(packet.cdata(), packet.size())) {
         return receiver_->DeliverPacket(media_type, std::move(packet),
                                         packet_time_us);
-      } else {
-        DeliveryStatus delivery_status = receiver_->DeliverPacket(
-            media_type, std::move(packet), packet_time_us);
-        EXPECT_EQ(DELIVERY_UNKNOWN_SSRC, delivery_status);
-        delivered_packet_.Set();
-        return delivery_status;
       }
+      DeliveryStatus delivery_status = receiver_->DeliverPacket(
+          media_type, std::move(packet), packet_time_us);
+      EXPECT_EQ(DELIVERY_UNKNOWN_SSRC, delivery_status);
+      delivered_packet_.Set();
+      return delivery_status;
     }
 
     PacketReceiver* receiver_;
@@ -292,39 +291,17 @@ TEST_F(SsrcEndToEndTest, DISABLED_RedundantPayloadsTransmittedOnAllSsrcs) {
 
     size_t GetNumVideoStreams() const override { return kNumSimulcastStreams; }
 
-    // This test use other VideoStream settings than the the default settings
-    // implemented in DefaultVideoStreamFactory. Therefore  this test implement
-    // its own VideoEncoderConfig::VideoStreamFactoryInterface which is created
-    // in ModifyVideoConfigs.
-    class VideoStreamFactory
-        : public VideoEncoderConfig::VideoStreamFactoryInterface {
-     public:
-      VideoStreamFactory() {}
-
-     private:
-      std::vector<VideoStream> CreateEncoderStreams(
-          int width,
-          int height,
-          const VideoEncoderConfig& encoder_config) override {
-        std::vector<VideoStream> streams =
-            test::CreateVideoStreams(width, height, encoder_config);
-        // Set low simulcast bitrates to not have to wait for bandwidth ramp-up.
-        for (size_t i = 0; i < encoder_config.number_of_streams; ++i) {
-          streams[i].min_bitrate_bps = 10000;
-          streams[i].target_bitrate_bps = 15000;
-          streams[i].max_bitrate_bps = 20000;
-        }
-        return streams;
-      }
-    };
-
     void ModifyVideoConfigs(
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       // Set low simulcast bitrates to not have to wait for bandwidth ramp-up.
-      encoder_config->video_stream_factory =
-          new rtc::RefCountedObject<VideoStreamFactory>();
+      encoder_config->max_bitrate_bps = 50000;
+      for (auto& layer : encoder_config->simulcast_layers) {
+        layer.min_bitrate_bps = 10000;
+        layer.target_bitrate_bps = 15000;
+        layer.max_bitrate_bps = 20000;
+      }
       send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
 
       for (size_t i = 0; i < kNumSimulcastStreams; ++i)
