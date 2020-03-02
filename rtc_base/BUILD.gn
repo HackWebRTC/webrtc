@@ -325,6 +325,12 @@ rtc_source_set("sanitizer") {
   deps = [ "//third_party/abseil-cpp/absl/meta:type_traits" ]
 }
 
+rtc_source_set("bounded_inline_vector") {
+  public = [ "bounded_inline_vector.h" ]
+  sources = [ "bounded_inline_vector_impl.h" ]
+  deps = [ ":checks" ]
+}
+
 rtc_source_set("divide_round") {
   sources = [ "numerics/divide_round.h" ]
   deps = [
@@ -1123,6 +1129,7 @@ if (rtc_include_tests) {
       "base64_unittest.cc",
       "bind_unittest.cc",
       "bit_buffer_unittest.cc",
+      "bounded_inline_vector_unittest.cc",
       "buffer_queue_unittest.cc",
       "buffer_unittest.cc",
       "byte_buffer_unittest.cc",
@@ -1165,6 +1172,7 @@ if (rtc_include_tests) {
       sources += [ "win/windows_version_unittest.cc" ]
     }
     deps = [
+      ":bounded_inline_vector",
       ":checks",
       ":divide_round",
       ":gunit_helpers",
