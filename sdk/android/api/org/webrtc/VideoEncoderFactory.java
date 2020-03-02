@@ -19,27 +19,10 @@ public interface VideoEncoderFactory {
     @CalledByNative("VideoEncoderSelector") void onCurrentEncoder(VideoCodecInfo info);
 
     /**
-     * Called with the current encoding bitrate. Returns null if the encoder selector prefers to
-     * keep the current encoder or a VideoCodecInfo if a new encoder is preferred.
-     *
-     * <p>TODO(bugs.webrtc.org/11341): Delete onEncodingBitrate and remove the default
-     * implementation for onAvailableBitrate once downstream project is updated.
-     */
-    @Deprecated
-    @Nullable
-    default VideoCodecInfo onEncodingBitrate(int kbps) {
-      throw new UnsupportedOperationException("Not implemented.");
-    }
-
-    /**
      * Called with the current available bitrate. Returns null if the encoder selector prefers to
      * keep the current encoder or a VideoCodecInfo if a new encoder is preferred.
      */
-    @Nullable
-    @CalledByNative("VideoEncoderSelector")
-    default VideoCodecInfo onAvailableBitrate(int kbps) {
-      return onEncodingBitrate(kbps);
-    }
+    @Nullable @CalledByNative("VideoEncoderSelector") VideoCodecInfo onAvailableBitrate(int kbps);
 
     /**
      * Called when the currently used encoder signal itself as broken. Returns null if the encoder
