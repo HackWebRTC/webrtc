@@ -1109,10 +1109,6 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
 
   virtual IceGatheringState ice_gathering_state() = 0;
 
-  // Returns the current state of canTrickleIceCandidates per
-  // https://w3c.github.io/webrtc-pc/#attributes-1
-  virtual absl::optional<bool> can_trickle_ice_candidates() = 0;
-
   // Start RtcEventLog using an existing output-sink. Takes ownership of
   // |output| and passes it on to Call, which will take the ownership. If the
   // operation fails the output will be closed and deallocated. The event log

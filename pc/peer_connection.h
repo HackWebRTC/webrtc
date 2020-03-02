@@ -189,7 +189,6 @@ class PeerConnection : public PeerConnectionInternal,
   IceConnectionState standardized_ice_connection_state() override;
   PeerConnectionState peer_connection_state() override;
   IceGatheringState ice_gathering_state() override;
-  absl::optional<bool> can_trickle_ice_candidates() override;
 
   const SessionDescriptionInterface* local_description() const override;
   const SessionDescriptionInterface* remote_description() const override;
