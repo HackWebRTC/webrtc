@@ -313,6 +313,16 @@ size_t FindRequiredActiveLayers(
   return 0;
 }
 
+int NumActiveStreams(const webrtc::RtpParameters& rtp_parameters) {
+  int res = 0;
+  for (size_t i = 0; i < rtp_parameters.encodings.size(); ++i) {
+    if (rtp_parameters.encodings[i].active) {
+      ++res;
+    }
+  }
+  return res;
+}
+
 }  // namespace
 
 // This constant is really an on/off, lower-level configurable NACK history
@@ -331,7 +341,8 @@ WebRtcVideoChannel::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
   bool is_screencast = parameters_.options.is_screencast.value_or(false);
   // No automatic resizing when using simulcast or screencast.
   bool automatic_resize =
-      !is_screencast && parameters_.config.rtp.ssrcs.size() == 1;
+      !is_screencast && (parameters_.config.rtp.ssrcs.size() == 1 ||
+                         NumActiveStreams(rtp_parameters_) == 1);
   bool frame_dropping = !is_screencast;
   bool denoising;
   bool codec_default_denoising = false;

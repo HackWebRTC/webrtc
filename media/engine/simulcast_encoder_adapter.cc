@@ -97,7 +97,7 @@ int VerifyCodec(const webrtc::VideoCodec* inst) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   if (inst->codecType == webrtc::kVideoCodecVP8 &&
-      inst->VP8().automaticResizeOn && inst->numberOfSimulcastStreams > 1) {
+      inst->VP8().automaticResizeOn && NumActiveStreams(*inst) > 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   return WEBRTC_VIDEO_CODEC_OK;
@@ -585,6 +585,7 @@ void SimulcastEncoderAdapter::PopulateStreamCodec(
   stream_codec->minBitrate = inst.simulcastStream[stream_index].minBitrate;
   stream_codec->maxFramerate = inst.simulcastStream[stream_index].maxFramerate;
   stream_codec->qpMax = inst.simulcastStream[stream_index].qpMax;
+  stream_codec->active = inst.simulcastStream[stream_index].active;
   // Settings that are based on stream/resolution.
   if (stream_resolution == StreamResolution::LOWEST) {
     // Settings for lowest spatial resolutions.
@@ -644,14 +645,14 @@ VideoEncoder::EncoderInfo SimulcastEncoderAdapter::GetEncoderInfo() const {
     return encoder_info;
   }
 
+  encoder_info.scaling_settings = VideoEncoder::ScalingSettings::kOff;
+  int num_active_streams = NumActiveStreams(codec_);
+
   for (size_t i = 0; i < streaminfos_.size(); ++i) {
     VideoEncoder::EncoderInfo encoder_impl_info =
         streaminfos_[i].encoder->GetEncoderInfo();
 
     if (i == 0) {
-      // Quality scaling not enabled for simulcast.
-      encoder_info.scaling_settings = VideoEncoder::ScalingSettings::kOff;
-
       // Encoder name indicates names of all sub-encoders.
       encoder_info.implementation_name += " (";
       encoder_info.implementation_name += encoder_impl_info.implementation_name;
@@ -689,6 +690,9 @@ VideoEncoder::EncoderInfo SimulcastEncoderAdapter::GetEncoderInfo() const {
     encoder_info.requested_resolution_alignment = cricket::LeastCommonMultiple(
         encoder_info.requested_resolution_alignment,
         encoder_impl_info.requested_resolution_alignment);
+    if (num_active_streams == 1 && codec_.simulcastStream[i].active) {
+      encoder_info.scaling_settings = encoder_impl_info.scaling_settings;
+    }
   }
   encoder_info.implementation_name += ")";
 

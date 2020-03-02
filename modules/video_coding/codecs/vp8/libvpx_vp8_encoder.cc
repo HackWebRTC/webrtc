@@ -288,6 +288,7 @@ LibvpxVp8Encoder::LibvpxVp8Encoder(
       cpu_speed_default_(-6),
       number_of_cores_(0),
       rc_max_intra_target_(0),
+      num_active_streams_(0),
       frame_buffer_controller_factory_(
           std::move(frame_buffer_controller_factory)),
       key_frame_request_(kMaxSimulcastStreams, false),
@@ -475,9 +476,21 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   if (settings.number_of_cores < 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-  if (inst->VP8().automaticResizeOn && inst->numberOfSimulcastStreams > 1) {
+
+  num_active_streams_ = 0;
+  for (int i = 0; i < inst->numberOfSimulcastStreams; ++i) {
+    if (inst->simulcastStream[i].active) {
+      ++num_active_streams_;
+    }
+  }
+  if (inst->numberOfSimulcastStreams == 0 && inst->active) {
+    num_active_streams_ = 1;
+  }
+
+  if (inst->VP8().automaticResizeOn && num_active_streams_ > 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
+
   int retVal = Release();
   if (retVal < 0) {
     return retVal;
@@ -1232,9 +1245,11 @@ VideoEncoder::EncoderInfo LibvpxVp8Encoder::GetEncoderInfo() const {
   info.has_internal_source = false;
   info.supports_simulcast = true;
 
-  const bool enable_scaling = encoders_.size() == 1 &&
-                              vpx_configs_[0].rc_dropframe_thresh > 0 &&
-                              codec_.VP8().automaticResizeOn;
+  const bool enable_scaling =
+      num_active_streams_ == 1 &&
+      (vpx_configs_.empty() || vpx_configs_[0].rc_dropframe_thresh > 0) &&
+      codec_.VP8().automaticResizeOn;
+
   info.scaling_settings = enable_scaling
                               ? VideoEncoder::ScalingSettings(
                                     kLowVp8QpThreshold, kHighVp8QpThreshold)
