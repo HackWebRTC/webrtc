@@ -114,5 +114,20 @@ TYPED_TEST(BoundedInlineVectorTestAllTypes, Return) {
   EXPECT_EQ((Returns<TypeParam, 3>(TypeParam(), TypeParam()).size()), 2);
 }
 
+TYPED_TEST(BoundedInlineVectorTestAllTypes, Resize) {
+  BoundedInlineVector<TypeParam, 17> x;
+  EXPECT_EQ(x.size(), 0);
+  x.resize(17);
+  EXPECT_EQ(x.size(), 17);
+  // Test one arbitrary element, mostly to give MSan a chance to scream. But if
+  // the type has a trivial default constructor we can't, because the element
+  // won't be initialized.
+  if (!std::is_trivially_default_constructible<TypeParam>::value) {
+    EXPECT_EQ(x[4], TypeParam());
+  }
+  x.resize(2);
+  EXPECT_EQ(x.size(), 2);
+}
+
 }  // namespace
 }  // namespace webrtc

@@ -45,6 +45,16 @@ void InitializeElements(T* data, U&& element, Us&&... elements) {
   InitializeElements(data + 1, std::forward<Us>(elements)...);
 }
 
+// Default initializes uninitialized array elements.
+// TODO(kwiberg): Replace with std::uninitialized_default_construct_n() (C++17).
+template <typename T>
+void DefaultInitializeElements(T* data, int size) {
+  for (int i = 0; i < size; ++i) {
+    // Placement new, because we construct a new object in uninitialized memory.
+    ::new (&data[i]) T;
+  }
+}
+
 // Copies from source to uninitialized destination. Caller is responsible for
 // ensuring that there is enough space in `dst_data`.
 template <typename T>
