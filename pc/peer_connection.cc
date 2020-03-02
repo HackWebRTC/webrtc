@@ -2144,6 +2144,23 @@ PeerConnection::ice_gathering_state() {
   return ice_gathering_state_;
 }
 
+absl::optional<bool> PeerConnection::can_trickle_ice_candidates() {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  SessionDescriptionInterface* description = current_remote_description_.get();
+  if (!description) {
+    description = pending_remote_description_.get();
+  }
+  if (!description) {
+    return absl::nullopt;
+  }
+  // TODO(bugs.webrtc.org/7443): Change to retrieve from session-level option.
+  if (description->description()->transport_infos().size() < 1) {
+    return absl::nullopt;
+  }
+  return description->description()->transport_infos()[0].description.HasOption(
+      "trickle");
+}
+
 rtc::scoped_refptr<DataChannelInterface> PeerConnection::CreateDataChannel(
     const std::string& label,
     const DataChannelInit* config) {

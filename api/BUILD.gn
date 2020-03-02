@@ -1010,6 +1010,7 @@ if (rtc_include_tests) {
     sources = [ "test/compile_all_headers.cc" ]
 
     deps = [
+      ":dummy_peer_connection",
       ":fake_frame_decryptor",
       ":fake_frame_encryptor",
       ":fake_media_transport",

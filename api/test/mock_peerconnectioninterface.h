@@ -127,6 +127,7 @@ class MockPeerConnectionInterface
   MOCK_METHOD0(standardized_ice_connection_state, IceConnectionState());
   MOCK_METHOD0(peer_connection_state, PeerConnectionState());
   MOCK_METHOD0(ice_gathering_state, IceGatheringState());
+  MOCK_METHOD0(can_trickle_ice_candidates, absl::optional<bool>());
   MOCK_METHOD2(StartRtcEventLog,
                bool(std::unique_ptr<RtcEventLogOutput>, int64_t));
   MOCK_METHOD1(StartRtcEventLog, bool(std::unique_ptr<RtcEventLogOutput>));
