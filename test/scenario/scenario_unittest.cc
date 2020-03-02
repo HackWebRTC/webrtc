@@ -105,7 +105,7 @@ TEST(ScenarioTest, MAYBE_SimTimeEncoding) {
   }
   // Regression tests based on previous runs.
   EXPECT_EQ(analyzer.stats().lost_count, 0);
-  EXPECT_NEAR(analyzer.stats().psnr_with_freeze.Mean(), 38, 2);
+  EXPECT_NEAR(analyzer.stats().psnr_with_freeze.Mean(), 38, 3);
 }
 
 // TODO(bugs.webrtc.org/10515): Remove this when performance has been improved.
