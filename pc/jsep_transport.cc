@@ -178,16 +178,15 @@ webrtc::RTCError JsepTransport::SetLocalJsepTransportDescription(
 
   RTC_DCHECK_RUN_ON(network_thread_);
 
-  webrtc::RTCErrorOr<IceParameters> ice_parameters_result =
-      IceParameters::Parse(jsep_description.transport_desc.ice_ufrag,
-                           jsep_description.transport_desc.ice_pwd);
+  IceParameters ice_parameters =
+      jsep_description.transport_desc.GetIceParameters();
+  webrtc::RTCError ice_parameters_result = ice_parameters.Validate();
   if (!ice_parameters_result.ok()) {
     rtc::StringBuilder sb;
-    sb << "Invalid ICE parameters: " << ice_parameters_result.error().message();
+    sb << "Invalid ICE parameters: " << ice_parameters_result.message();
     return webrtc::RTCError(webrtc::RTCErrorType::INVALID_PARAMETER,
                             sb.Release());
   }
-  IceParameters ice_parameters = ice_parameters_result.MoveValue();
 
   if (!SetRtcpMux(jsep_description.rtcp_mux_enabled, type,
                   ContentSource::CS_LOCAL)) {
@@ -273,17 +272,16 @@ webrtc::RTCError JsepTransport::SetRemoteJsepTransportDescription(
 
   RTC_DCHECK_RUN_ON(network_thread_);
 
-  webrtc::RTCErrorOr<IceParameters> ice_parameters_result =
-      IceParameters::Parse(jsep_description.transport_desc.ice_ufrag,
-                           jsep_description.transport_desc.ice_pwd);
+  IceParameters ice_parameters =
+      jsep_description.transport_desc.GetIceParameters();
+  webrtc::RTCError ice_parameters_result = ice_parameters.Validate();
   if (!ice_parameters_result.ok()) {
     remote_description_.reset();
     rtc::StringBuilder sb;
-    sb << "Invalid ICE parameters: " << ice_parameters_result.error().message();
+    sb << "Invalid ICE parameters: " << ice_parameters_result.message();
     return webrtc::RTCError(webrtc::RTCErrorType::INVALID_PARAMETER,
                             sb.Release());
   }
-  IceParameters ice_parameters = ice_parameters_result.MoveValue();
 
   if (!SetRtcpMux(jsep_description.rtcp_mux_enabled, type,
                   ContentSource::CS_REMOTE)) {

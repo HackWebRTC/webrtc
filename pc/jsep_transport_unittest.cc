@@ -1256,5 +1256,39 @@ INSTANTIATE_TEST_SUITE_P(
         std::make_tuple(Scenario::kDtlsBeforeCallerSendOffer, false),
         std::make_tuple(Scenario::kDtlsBeforeCallerSetAnswer, false),
         std::make_tuple(Scenario::kDtlsAfterCallerSetAnswer, false)));
+
+// This test verifies the ICE parameters are properly applied to the transports.
+TEST_F(JsepTransport2Test, SetIceParametersWithRenomination) {
+  jsep_transport_ =
+      CreateJsepTransport2(/* rtcp_mux_enabled= */ true, SrtpMode::kDtlsSrtp);
+
+  JsepTransportDescription jsep_description;
+  jsep_description.transport_desc = TransportDescription(kIceUfrag1, kIcePwd1);
+  jsep_description.transport_desc.AddOption(ICE_OPTION_RENOMINATION);
+  ASSERT_TRUE(
+      jsep_transport_
+          ->SetLocalJsepTransportDescription(jsep_description, SdpType::kOffer)
+          .ok());
+  auto fake_ice_transport = static_cast<FakeIceTransport*>(
+      jsep_transport_->rtp_dtls_transport()->ice_transport());
+  EXPECT_EQ(ICEMODE_FULL, fake_ice_transport->remote_ice_mode());
+  EXPECT_EQ(kIceUfrag1, fake_ice_transport->ice_ufrag());
+  EXPECT_EQ(kIcePwd1, fake_ice_transport->ice_pwd());
+  EXPECT_TRUE(fake_ice_transport->ice_parameters().renomination);
+
+  jsep_description.transport_desc = TransportDescription(kIceUfrag2, kIcePwd2);
+  jsep_description.transport_desc.AddOption(ICE_OPTION_RENOMINATION);
+  ASSERT_TRUE(jsep_transport_
+                  ->SetRemoteJsepTransportDescription(jsep_description,
+                                                      SdpType::kAnswer)
+                  .ok());
+  fake_ice_transport = static_cast<FakeIceTransport*>(
+      jsep_transport_->rtp_dtls_transport()->ice_transport());
+  EXPECT_EQ(ICEMODE_FULL, fake_ice_transport->remote_ice_mode());
+  EXPECT_EQ(kIceUfrag2, fake_ice_transport->remote_ice_ufrag());
+  EXPECT_EQ(kIcePwd2, fake_ice_transport->remote_ice_pwd());
+  EXPECT_TRUE(fake_ice_transport->remote_ice_parameters().renomination);
+}
+
 }  // namespace
 }  // namespace cricket

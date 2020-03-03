@@ -83,6 +83,10 @@ struct IceParameters {
   bool operator!=(const IceParameters& other) const {
     return !(*this == other);
   }
+
+  // Validate IceParameters, returns a SyntaxError if the ufrag or pwd are
+  // malformed.
+  webrtc::RTCError Validate() const;
 };
 
 extern const char CONNECTIONROLE_ACTIVE_STR[];
@@ -142,7 +146,7 @@ struct TransportDescription {
   }
   bool secure() const { return identity_fingerprint != nullptr; }
 
-  IceParameters GetIceParameters() {
+  IceParameters GetIceParameters() const {
     return IceParameters(ice_ufrag, ice_pwd,
                          HasOption(ICE_OPTION_RENOMINATION));
   }

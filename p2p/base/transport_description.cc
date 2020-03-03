@@ -38,7 +38,7 @@ bool IsIceChar(char c) {
   return absl::ascii_isalnum(c) || c == '+' || c == '/';
 }
 
-RTCErrorOr<std::string> ParseIceUfrag(absl::string_view raw_ufrag) {
+RTCError ValidateIceUfrag(absl::string_view raw_ufrag) {
   if (!(ICE_UFRAG_MIN_LENGTH <= raw_ufrag.size() &&
         raw_ufrag.size() <= ICE_UFRAG_MAX_LENGTH)) {
     rtc::StringBuilder sb;
@@ -53,10 +53,10 @@ RTCErrorOr<std::string> ParseIceUfrag(absl::string_view raw_ufrag) {
         "ICE ufrag must contain only alphanumeric characters, '+', and '/'.");
   }
 
-  return std::string(raw_ufrag);
+  return RTCError::OK();
 }
 
-RTCErrorOr<std::string> ParseIcePwd(absl::string_view raw_pwd) {
+RTCError ValidateIcePwd(absl::string_view raw_pwd) {
   if (!(ICE_PWD_MIN_LENGTH <= raw_pwd.size() &&
         raw_pwd.size() <= ICE_PWD_MAX_LENGTH)) {
     rtc::StringBuilder sb;
@@ -71,35 +71,41 @@ RTCErrorOr<std::string> ParseIcePwd(absl::string_view raw_pwd) {
         "ICE pwd must contain only alphanumeric characters, '+', and '/'.");
   }
 
-  return std::string(raw_pwd);
+  return RTCError::OK();
 }
 
 }  // namespace
 
-// static
 RTCErrorOr<IceParameters> IceParameters::Parse(absl::string_view raw_ufrag,
                                                absl::string_view raw_pwd) {
+  IceParameters parameters(std::string(raw_ufrag), std::string(raw_pwd),
+                           /* renomination= */ false);
+  auto result = parameters.Validate();
+  if (!result.ok()) {
+    return result;
+  }
+  return parameters;
+}
+
+RTCError IceParameters::Validate() const {
   // For legacy protocols.
   // TODO(zhihuang): Remove this once the legacy protocol is no longer
   // supported.
-  if (raw_ufrag.empty() && raw_pwd.empty()) {
-    return IceParameters();
+  if (ufrag.empty() && pwd.empty()) {
+    return RTCError::OK();
   }
 
-  auto ufrag_result = ParseIceUfrag(raw_ufrag);
+  auto ufrag_result = ValidateIceUfrag(ufrag);
   if (!ufrag_result.ok()) {
-    return ufrag_result.MoveError();
+    return ufrag_result;
   }
 
-  auto pwd_result = ParseIcePwd(raw_pwd);
+  auto pwd_result = ValidateIcePwd(pwd);
   if (!pwd_result.ok()) {
-    return pwd_result.MoveError();
+    return pwd_result;
   }
 
-  IceParameters parameters;
-  parameters.ufrag = ufrag_result.MoveValue();
-  parameters.pwd = pwd_result.MoveValue();
-  return parameters;
+  return RTCError::OK();
 }
 
 bool StringToConnectionRole(const std::string& role_str, ConnectionRole* role) {
