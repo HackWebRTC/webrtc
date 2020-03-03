@@ -174,7 +174,7 @@ std::string NetworkInformation::ToString() const {
     ss << "; underlying_type_for_vpn " << underlying_type_for_vpn;
   }
   ss << "; address";
-  for (const rtc::IPAddress address : ip_addresses) {
+  for (const rtc::IPAddress& address : ip_addresses) {
     ss << " " << address.ToString();
   }
   ss << "]";

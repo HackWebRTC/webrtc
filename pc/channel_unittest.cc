@@ -1312,7 +1312,7 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
   void CreateSimulcastContent(const std::vector<std::string>& rids,
                               typename T::Content* content) {
     std::vector<RidDescription> rid_descriptions;
-    for (const std::string name : rids) {
+    for (const std::string& name : rids) {
       rid_descriptions.push_back(RidDescription(name, RidDirection::kSend));
     }
 
