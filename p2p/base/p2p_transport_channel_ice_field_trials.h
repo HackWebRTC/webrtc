@@ -42,6 +42,12 @@ struct IceFieldTrials {
   // Decay rate for RTT estimate using EventBasedExponentialMovingAverage
   // expressed as halving time.
   int rtt_estimate_halftime_ms = 500;
+
+  // Sending a PING directly after a switch on ICE_CONTROLLING-side.
+  bool send_ping_on_switch_ice_controlling = false;
+
+  // Sending a PING directly after a nomination on ICE_CONTROLLED-side.
+  bool send_ping_on_nomination_ice_controlled = false;
 };
 
 }  // namespace cricket

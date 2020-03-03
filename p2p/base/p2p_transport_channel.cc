@@ -644,7 +644,13 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
       // Use goog ping if remote support it.
       "enable_goog_ping", &field_trials_.enable_goog_ping,
       // How fast does a RTT sample decay.
-      "rtt_estimate_halftime_ms", &field_trials_.rtt_estimate_halftime_ms)
+      "rtt_estimate_halftime_ms", &field_trials_.rtt_estimate_halftime_ms,
+      // Make sure that nomination reaching ICE controlled asap.
+      "send_ping_on_switch_ice_controlling",
+      &field_trials_.send_ping_on_switch_ice_controlling,
+      // Reply to nomination ASAP.
+      "send_ping_on_nomination_ice_controlled",
+      &field_trials_.send_ping_on_nomination_ice_controlled)
       ->Parse(webrtc::field_trial::FindFullName("WebRTC-IceFieldTrials"));
 
   if (field_trials_.skip_relay_to_non_relay_connections) {
@@ -1058,6 +1064,11 @@ void P2PTransportChannel::OnNominated(Connection* conn) {
 
   if (selected_connection_ == conn) {
     return;
+  }
+
+  if (field_trials_.send_ping_on_nomination_ice_controlled && conn != nullptr) {
+    PingConnection(conn);
+    MarkConnectionPinged(conn);
   }
 
   // TODO(qingsi): RequestSortAndStateUpdate will eventually call
@@ -1687,6 +1698,14 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn,
   } else {
     RTC_LOG(LS_INFO) << ToString() << ": No selected connection";
   }
+
+  if (field_trials_.send_ping_on_switch_ice_controlling &&
+      ice_role_ == ICEROLE_CONTROLLING && old_selected_connection != nullptr &&
+      conn != nullptr) {
+    PingConnection(conn);
+    MarkConnectionPinged(conn);
+  }
+
   SignalNetworkRouteChanged(network_route_);
 
   // Create event for candidate pair change.
