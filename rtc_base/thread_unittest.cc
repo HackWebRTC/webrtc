@@ -24,6 +24,7 @@
 #include "rtc_base/socket_address.h"
 #include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
+#include "test/testsupport/rtc_expect_death.h"
 
 #if defined(WEBRTC_WIN)
 #include <comdef.h>  // NOLINT
@@ -307,28 +308,37 @@ TEST(ThreadTest, Invoke) {
 }
 
 // Verifies that two threads calling Invoke on each other at the same time does
-// not deadlock.
-TEST(ThreadTest, TwoThreadsInvokeNoDeadlock) {
+// not deadlock but crash.
+#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+TEST(ThreadTest, TwoThreadsInvokeDeathTest) {
+  ::testing::GTEST_FLAG(death_test_style) = "threadsafe";
   AutoThread thread;
-  Thread* current_thread = Thread::Current();
-  ASSERT_TRUE(current_thread != nullptr);
-
+  Thread* main_thread = Thread::Current();
   auto other_thread = Thread::CreateWithSocketServer();
   other_thread->Start();
-
-  struct LocalFuncs {
-    static void Set(bool* out) { *out = true; }
-    static void InvokeSet(Thread* thread, bool* out) {
-      thread->Invoke<void>(RTC_FROM_HERE, Bind(&Set, out));
-    }
-  };
-
-  bool called = false;
-  other_thread->Invoke<void>(
-      RTC_FROM_HERE, Bind(&LocalFuncs::InvokeSet, current_thread, &called));
-
-  EXPECT_TRUE(called);
+  other_thread->Invoke<void>(RTC_FROM_HERE, [main_thread] {
+    RTC_EXPECT_DEATH(main_thread->Invoke<void>(RTC_FROM_HERE, [] {}), "loop");
+  });
 }
+
+TEST(ThreadTest, ThreeThreadsInvokeDeathTest) {
+  ::testing::GTEST_FLAG(death_test_style) = "threadsafe";
+  AutoThread thread;
+  Thread* first = Thread::Current();
+
+  auto second = Thread::Create();
+  second->Start();
+  auto third = Thread::Create();
+  third->Start();
+
+  second->Invoke<void>(RTC_FROM_HERE, [&] {
+    third->Invoke<void>(RTC_FROM_HERE, [&] {
+      RTC_EXPECT_DEATH(first->Invoke<void>(RTC_FROM_HERE, [] {}), "loop");
+    });
+  });
+}
+
+#endif
 
 // Verifies that if thread A invokes a call on thread B and thread C is trying
 // to invoke A at the same time, thread A does not handle C's invoke while
