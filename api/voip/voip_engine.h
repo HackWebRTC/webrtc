@@ -11,13 +11,11 @@
 #ifndef API_VOIP_VOIP_ENGINE_H_
 #define API_VOIP_VOIP_ENGINE_H_
 
-#include <memory>
-
-#include "api/voip/voip_base.h"
-#include "api/voip/voip_codec.h"
-#include "api/voip/voip_network.h"
-
 namespace webrtc {
+
+class VoipBase;
+class VoipCodec;
+class VoipNetwork;
 
 // VoipEngine interfaces
 //
@@ -31,47 +29,47 @@ namespace webrtc {
 //           .SetAudioDecoderFactory(CreateBuiltinAudioDecoderFactory())
 //           .Create();
 //
-//   auto* voip_base = voip_engine->Base();
-//   auto* voip_codec = voip_engine->Codec();
-//   auto* voip_network = voip_engine->Network();
+//   auto voip_base = voip_engine->Base();
+//   auto voip_codec = voip_engine->Codec();
+//   auto voip_network = voip_engine->Network();
 //
 //   VoipChannel::Config config = { &app_transport_, 0xdeadc0de };
-//   int channel = voip_base->CreateChannel(config);
+//   int channel = voip_base.CreateChannel(config);
 //
 //   // After SDP offer/answer, payload type and codec usage have been
 //   // decided through negotiation.
-//   voip_codec->SetSendCodec(channel, ...);
-//   voip_codec->SetReceiveCodecs(channel, ...);
+//   voip_codec.SetSendCodec(channel, ...);
+//   voip_codec.SetReceiveCodecs(channel, ...);
 //
 //   // Start Send/Playout on voip channel.
-//   voip_base->StartSend(channel);
-//   voip_base->StartPlayout(channel);
+//   voip_base.StartSend(channel);
+//   voip_base.StartPlayout(channel);
 //
 //   // Inject received rtp/rtcp thru voip network interface.
-//   voip_network->ReceivedRTPPacket(channel, rtp_data, rtp_size);
-//   voip_network->ReceivedRTCPPacket(channel, rtcp_data, rtcp_size);
+//   voip_network.ReceivedRTPPacket(channel, rtp_data, rtp_size);
+//   voip_network.ReceivedRTCPPacket(channel, rtcp_data, rtcp_size);
 //
 //   // Stop and release voip channel.
-//   voip_base->StopSend(channel);
-//   voip_base->StopPlayout(channel);
+//   voip_base.StopSend(channel);
+//   voip_base.StopPlayout(channel);
 //
-//   voip_base->ReleaseChannel(channel);
+//   voip_base.ReleaseChannel(channel);
 //
 class VoipEngine {
  public:
+  virtual ~VoipEngine() = default;
+
   // VoipBase is the audio session management interface that
   // create/release/start/stop one-to-one audio media session.
-  virtual VoipBase* Base() = 0;
+  virtual VoipBase& Base() = 0;
 
   // VoipNetwork provides injection APIs that would enable application
   // to send and receive RTP/RTCP packets. There is no default network module
   // that provides RTP transmission and reception.
-  virtual VoipNetwork* Network() = 0;
+  virtual VoipNetwork& Network() = 0;
 
   // VoipCodec provides codec configuration APIs for encoder and decoders.
-  virtual VoipCodec* Codec() = 0;
-
-  virtual ~VoipEngine() = default;
+  virtual VoipCodec& Codec() = 0;
 };
 
 }  // namespace webrtc

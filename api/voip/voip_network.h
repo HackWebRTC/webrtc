@@ -11,7 +11,8 @@
 #ifndef API_VOIP_VOIP_NETWORK_H_
 #define API_VOIP_VOIP_NETWORK_H_
 
-#include "api/call/transport.h"
+#include "api/array_view.h"
+#include "api/voip/voip_base.h"
 
 namespace webrtc {
 
@@ -25,16 +26,14 @@ class VoipNetwork {
   // The packets received from the network should be passed to this
   // function. Note that the data including the RTP-header must also be
   // given to the VoipEngine.
-  virtual bool ReceivedRTPPacket(int channel,
-                                 const uint8_t* data,
-                                 size_t length) = 0;
+  virtual void ReceivedRTPPacket(ChannelId channel_id,
+                                 rtc::ArrayView<const uint8_t> data) = 0;
 
   // The packets received from the network should be passed to this
   // function. Note that the data including the RTCP-header must also be
   // given to the VoipEngine.
-  virtual bool ReceivedRTCPPacket(int channel,
-                                  const uint8_t* data,
-                                  size_t length) = 0;
+  virtual void ReceivedRTCPPacket(ChannelId channel_id,
+                                  rtc::ArrayView<const uint8_t> data) = 0;
 
  protected:
   virtual ~VoipNetwork() = default;

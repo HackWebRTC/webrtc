@@ -14,6 +14,7 @@
 #include <map>
 
 #include "api/audio_codecs/audio_format.h"
+#include "api/voip/voip_base.h"
 
 namespace webrtc {
 
@@ -24,11 +25,11 @@ namespace webrtc {
 // are used with negotiated codecs.  This interface is subject to expand
 // as needed in future.
 //
-// This interface requires a channel handle created via VoipBase interface.
+// This interface requires a channel id created via VoipBase interface.
 class VoipCodec {
  public:
   // Set encoder type here along with its payload type to use.
-  virtual bool SetSendCodec(int channel,
+  virtual void SetSendCodec(ChannelId channel_id,
                             int payload_type,
                             const SdpAudioFormat& encoder_spec) = 0;
 
@@ -36,8 +37,8 @@ class VoipCodec {
   // this should be called after payload type has been agreed in media
   // session.  Note that payload type can differ with same codec in each
   // direction.
-  virtual bool SetReceiveCodecs(
-      int channel,
+  virtual void SetReceiveCodecs(
+      ChannelId channel_id,
       const std::map<int, SdpAudioFormat>& decoder_specs) = 0;
 
  protected:
