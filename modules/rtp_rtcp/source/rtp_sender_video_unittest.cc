@@ -25,6 +25,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_dependency_descriptor_extension.h"
+#include "modules/rtp_rtcp/source/rtp_descriptor_authentication.h"
 #include "modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor_extension.h"
@@ -899,6 +900,45 @@ TEST_P(RtpSenderVideoTest, PopulatesPlayoutDelay) {
   ASSERT_TRUE(transport_.last_sent_packet().GetExtension<PlayoutDelayLimits>(
       &received_delay));
   EXPECT_EQ(received_delay, kExpectedDelay);
+}
+
+class MockFrameTransformer : public FrameTransformerInterface {
+ public:
+  MOCK_METHOD3(TransformFrame,
+               void(std::unique_ptr<video_coding::EncodedFrame> frame,
+                    std::vector<uint8_t> additional_data,
+                    uint32_t ssrc));
+  MOCK_METHOD1(RegisterTransformedFrameCallback,
+               void(rtc::scoped_refptr<TransformedFrameCallback>));
+  MOCK_METHOD0(UnregisterTransformedFrameCallback, void());
+};
+
+TEST_P(RtpSenderVideoTest, SendEncodedImageWithFrameTransformer) {
+  rtc::scoped_refptr<MockFrameTransformer> transformer =
+      new rtc::RefCountedObject<MockFrameTransformer>();
+  RTPSenderVideo::Config config;
+  config.clock = &fake_clock_;
+  config.rtp_sender = rtp_module_->RtpSender();
+  config.field_trials = &field_trials_;
+  config.frame_transformer = transformer;
+
+  EXPECT_CALL(*transformer, RegisterTransformedFrameCallback(_));
+  std::unique_ptr<RTPSenderVideo> rtp_sender_video =
+      std::make_unique<RTPSenderVideo>(config);
+
+  const uint8_t data[] = {1, 2, 3, 4};
+  EncodedImage encoded_image;
+  encoded_image.SetEncodedData(
+      webrtc::EncodedImageBuffer::Create(data, sizeof(data)));
+  RTPVideoHeader hdr;
+  EXPECT_CALL(*transformer, TransformFrame(_, RtpDescriptorAuthentication(hdr),
+                                           rtp_module_->RtpSender()->SSRC()));
+  rtp_sender_video->SendEncodedImage(kPayload, kType, kTimestamp, encoded_image,
+                                     nullptr, hdr,
+                                     kDefaultExpectedRetransmissionTimeMs);
+
+  EXPECT_CALL(*transformer, UnregisterTransformedFrameCallback());
+  rtp_sender_video.reset();
 }
 
 INSTANTIATE_TEST_SUITE_P(WithAndWithoutOverhead,

@@ -29,6 +29,7 @@
 #include "modules/rtp_rtcp/source/absolute_capture_time_sender.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
+#include "modules/rtp_rtcp/source/rtp_sender_video_frame_transformer_delegate.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "modules/rtp_rtcp/source/ulpfec_generator.h"
 #include "rtc_base/critical_section.h"
@@ -93,12 +94,24 @@ class RTPSenderVideo {
                  const RTPFragmentationHeader* fragmentation,
                  RTPVideoHeader video_header,
                  absl::optional<int64_t> expected_retransmission_time_ms);
+
+  bool SendEncodedImage(
+      int payload_type,
+      absl::optional<VideoCodecType> codec_type,
+      uint32_t rtp_timestamp,
+      const EncodedImage& encoded_image,
+      const RTPFragmentationHeader* fragmentation,
+      RTPVideoHeader video_header,
+      absl::optional<int64_t> expected_retransmission_time_ms);
+
   // Configures video structures produced by encoder to send using the
   // dependency descriptor rtp header extension. Next call to SendVideo should
   // have video_header.frame_type == kVideoFrameKey.
   // All calls to SendVideo after this call must use video_header compatible
   // with the video_structure.
   void SetVideoStructure(const FrameDependencyStructure* video_structure);
+  void SetVideoStructureUnderLock(
+      const FrameDependencyStructure* video_structure);
 
   // FlexFEC/ULPFEC.
   // Set FEC rates, max frames before FEC is sent, and type of FEC masks.
@@ -226,7 +239,8 @@ class RTPSenderVideo {
 
   AbsoluteCaptureTimeSender absolute_capture_time_sender_;
 
-  const rtc::scoped_refptr<FrameTransformerInterface> frame_transformer_;
+  const rtc::scoped_refptr<RTPSenderVideoFrameTransformerDelegate>
+      frame_transformer_delegate_;
 };
 
 }  // namespace webrtc

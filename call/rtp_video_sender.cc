@@ -507,9 +507,9 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
             : nullptr);
   }
 
-  bool send_result = rtp_streams_[stream_index].sender_video->SendVideo(
-      rtp_config_.payload_type, codec_type_, rtp_timestamp,
-      encoded_image.capture_time_ms_, encoded_image, fragmentation,
+  bool send_result = rtp_streams_[stream_index].sender_video->SendEncodedImage(
+      rtp_config_.payload_type, codec_type_, rtp_timestamp, encoded_image,
+      fragmentation,
       params_[stream_index].GetRtpVideoHeader(
           encoded_image, codec_specific_info, shared_frame_id_),
       expected_retransmission_time_ms);
