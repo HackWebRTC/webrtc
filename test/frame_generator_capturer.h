@@ -29,6 +29,7 @@ namespace frame_gen_cap_impl {
 template <typename T>
 class AutoOpt : public absl::optional<T> {
  public:
+  using absl::optional<T>::optional;
   T* operator->() {
     if (!absl::optional<T>::has_value())
       this->emplace(T());
