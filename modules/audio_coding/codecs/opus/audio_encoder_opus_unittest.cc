@@ -912,8 +912,7 @@ TEST(AudioEncoderOpusTest, SetMaxPlaybackRateFb) {
   EXPECT_EQ(64000, config.bitrate_bps);
 }
 
-// TODO(webrtc:11325) Reenable after Opus has been upgraded to 1.3.
-TEST_P(AudioEncoderOpusTest, DISABLED_OpusFlagDtxAsNonSpeech) {
+TEST_P(AudioEncoderOpusTest, OpusFlagDtxAsNonSpeech) {
   // Create encoder with DTX enabled.
   AudioEncoderOpusConfig config;
   config.dtx_enabled = true;
@@ -970,8 +969,8 @@ TEST_P(AudioEncoderOpusTest, DISABLED_OpusFlagDtxAsNonSpeech) {
     }
   }
 
-  // Maximum number of consecutive non-speech packets should exceed 20.
-  EXPECT_GT(max_nonspeech_frames, 20);
+  // Maximum number of consecutive non-speech packets should exceed 15.
+  EXPECT_GT(max_nonspeech_frames, 15);
 }
 
 }  // namespace webrtc

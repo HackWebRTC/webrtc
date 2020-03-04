@@ -105,25 +105,23 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
 #else
 #define MAYBE_TestOpusBitExactness DISABLED_TestOpusBitExactness
 #endif
-// TODO(webrtc:11325) Reenable after Opus has been upgraded to 1.3.
-TEST_F(NetEqDecodingTest, DISABLED_TestOpusBitExactness) {
+TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
   const std::string input_rtp_file =
       webrtc::test::ResourcePath("audio_coding/neteq_opus", "rtp");
 
-  // Checksum depends on libopus being compiled with or without SSE.
   const std::string maybe_sse =
-      "6b602683ca7285a98118b4824d72f4257952c18f|"
-      "eb0b68bddcac00fc85403df64f83126f8ea9bc93";
+      "554ad4133934e3920f97575579a46f674683d77c"
+      "|de316e2bfb15192edb820fe5fb579d11ff5a524b";
   const std::string output_checksum = PlatformChecksum(
-      maybe_sse, "f95f2a220c9ca5d60b81c4653d46e0de2bee159f",
-      "6f288a03d34958f62496f18fa85655593eef4dbe", maybe_sse, maybe_sse);
+      maybe_sse, "459c356a0ef245ddff381f7d82d205d426ef2002",
+      "625055e5eb0e6de2c9d170b4494eadc5afab08c8", maybe_sse, maybe_sse);
 
   const std::string network_stats_checksum =
-      PlatformChecksum("87d2d3e5ca7f1b3fb7a501ffaa51ae29aea74544",
-                       "6b8c29e39c82f5479f59726744d0cf3e88e725d3",
+      PlatformChecksum("439a3d0c9b5115e6d4f8387f64ed2d57cae29b0a",
+                       "048f33d85d0a32a328b7da42448f560456a5fef0",
                        "c876f2a04c4f0a91da7f084f80e87871b7c5a4a1",
-                       "87d2d3e5ca7f1b3fb7a501ffaa51ae29aea74544",
-                       "87d2d3e5ca7f1b3fb7a501ffaa51ae29aea74544");
+                       "439a3d0c9b5115e6d4f8387f64ed2d57cae29b0a",
+                       "439a3d0c9b5115e6d4f8387f64ed2d57cae29b0a");
 
   DecodeAndCompare(input_rtp_file, output_checksum, network_stats_checksum,
                    absl::GetFlag(FLAGS_gen_ref));
@@ -135,17 +133,16 @@ TEST_F(NetEqDecodingTest, DISABLED_TestOpusBitExactness) {
 #else
 #define MAYBE_TestOpusDtxBitExactness DISABLED_TestOpusDtxBitExactness
 #endif
-// TODO(webrtc:11325) Reenable after Opus has been upgraded to 1.3.
-TEST_F(NetEqDecodingTest, DISABLED_TestOpusDtxBitExactness) {
+TEST_F(NetEqDecodingTest, MAYBE_TestOpusDtxBitExactness) {
   const std::string input_rtp_file =
       webrtc::test::ResourcePath("audio_coding/neteq_opus_dtx", "rtp");
 
   const std::string maybe_sse =
-      "0bdeb4ccf95a2577e38274360903ad099fc46787|"
-      "f7bbf5d92a0595a2a3445ffbaddfb20e98b6e94e";
+      "df5d1d3019bf3764829b84f4fb315721f4adde29"
+      "|5935d2fad14a69a8b61dbc8e6f2d37c8c0814925";
   const std::string output_checksum = PlatformChecksum(
-      maybe_sse, "6d200cc51a001b6137abf67db2bb8eeb0375cdee",
-      "36d43761de86b12520cf2e63f97372a2b7c6f939", maybe_sse, maybe_sse);
+      maybe_sse, "551df04e8f45cd99eff28503edf0cf92974898ac",
+      "709a3f0f380393d3a67bace10e2265b90a6ebbeb", maybe_sse, maybe_sse);
 
   const std::string network_stats_checksum =
       "8caf49765f35b6862066d3f17531ce44d8e25f60";

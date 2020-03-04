@@ -599,10 +599,9 @@ TEST_F(AudioDecoderG722StereoTest, SetTargetBitrate) {
   TestSetAndGetTargetBitratesWithFixedCodec(audio_encoder_.get(), 128000);
 }
 
-// TODO(webrtc:11325) Reenable after Opus has been upgraded to 1.3.
-TEST_P(AudioDecoderOpusTest, DISABLED_EncodeDecode) {
+TEST_P(AudioDecoderOpusTest, EncodeDecode) {
   constexpr int tolerance = 6176;
-  const int channel_diff_tolerance = opus_sample_rate_hz_ == 16000 ? 6 : 0;
+  constexpr int channel_diff_tolerance = 6;
   constexpr double mse = 238630.0;
   constexpr int delay = 22;  // Delay from input to output.
   EncodeDecodeTest(0, tolerance, mse, delay, channel_diff_tolerance);
