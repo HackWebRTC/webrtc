@@ -574,13 +574,13 @@ class LogMessage {
 // Logging Helpers
 //////////////////////////////////////////////////////////////////////
 
-#define RTC_LOG_FILE_LINE(sev, file, line)          \
-  RTC_LOG_ENABLED() &&                              \
-      rtc::webrtc_logging_impl::LogCall() &         \
-          rtc::webrtc_logging_impl::LogStreamer<>() \
-              << rtc::webrtc_logging_impl::LogMetadata(file, line, sev)
+#define RTC_LOG_FILE_LINE(sev, file, line)            \
+  RTC_LOG_ENABLED() &&                                \
+      ::rtc::webrtc_logging_impl::LogCall() &         \
+          ::rtc::webrtc_logging_impl::LogStreamer<>() \
+              << ::rtc::webrtc_logging_impl::LogMetadata(file, line, sev)
 
-#define RTC_LOG(sev) RTC_LOG_FILE_LINE(rtc::sev, __FILE__, __LINE__)
+#define RTC_LOG(sev) RTC_LOG_FILE_LINE(::rtc::sev, __FILE__, __LINE__)
 
 // The _V version is for when a variable is passed in.
 #define RTC_LOG_V(sev) RTC_LOG_FILE_LINE(sev, __FILE__, __LINE__)
@@ -595,18 +595,18 @@ class LogMessage {
 #define RTC_LOG_T_F(sev) RTC_LOG(sev) << this << ": " << __FUNCTION__ << ": "
 #endif
 
-#define RTC_LOG_CHECK_LEVEL(sev) rtc::LogCheckLevel(rtc::sev)
-#define RTC_LOG_CHECK_LEVEL_V(sev) rtc::LogCheckLevel(sev)
+#define RTC_LOG_CHECK_LEVEL(sev) ::rtc::LogCheckLevel(::rtc::sev)
+#define RTC_LOG_CHECK_LEVEL_V(sev) ::rtc::LogCheckLevel(sev)
 
 inline bool LogCheckLevel(LoggingSeverity sev) {
   return (LogMessage::GetMinLogSeverity() <= sev);
 }
 
-#define RTC_LOG_E(sev, ctx, err)                                             \
-  RTC_LOG_ENABLED() && rtc::webrtc_logging_impl::LogCall() &                 \
-                           rtc::webrtc_logging_impl::LogStreamer<>()         \
-                               << rtc::webrtc_logging_impl::LogMetadataErr { \
-    {__FILE__, __LINE__, rtc::sev}, rtc::ERRCTX_##ctx, (err)                 \
+#define RTC_LOG_E(sev, ctx, err)                                               \
+  RTC_LOG_ENABLED() && ::rtc::webrtc_logging_impl::LogCall() &                 \
+                           ::rtc::webrtc_logging_impl::LogStreamer<>()         \
+                               << ::rtc::webrtc_logging_impl::LogMetadataErr { \
+    {__FILE__, __LINE__, ::rtc::sev}, ::rtc::ERRCTX_##ctx, (err)               \
   }
 
 #define RTC_LOG_T(sev) RTC_LOG(sev) << this << ": "
@@ -639,11 +639,11 @@ inline const char* AdaptString(const std::string& str) {
 }
 }  // namespace webrtc_logging_impl
 
-#define RTC_LOG_TAG(sev, tag)                                                \
-  RTC_LOG_ENABLED() && rtc::webrtc_logging_impl::LogCall() &                 \
-                           rtc::webrtc_logging_impl::LogStreamer<>()         \
-                               << rtc::webrtc_logging_impl::LogMetadataTag { \
-    sev, rtc::webrtc_logging_impl::AdaptString(tag)                          \
+#define RTC_LOG_TAG(sev, tag)                                                  \
+  RTC_LOG_ENABLED() && ::rtc::webrtc_logging_impl::LogCall() &                 \
+                           ::rtc::webrtc_logging_impl::LogStreamer<>()         \
+                               << ::rtc::webrtc_logging_impl::LogMetadataTag { \
+    sev, ::rtc::webrtc_logging_impl::AdaptString(tag)                          \
   }
 
 #else
@@ -662,7 +662,7 @@ inline const char* AdaptString(const std::string& str) {
 #else
 #define RTC_DLOG_EAT_STREAM_PARAMS() \
   while (false)                      \
-  rtc::webrtc_logging_impl::LogStreamer<>()
+  ::rtc::webrtc_logging_impl::LogStreamer<>()
 #define RTC_DLOG(sev) RTC_DLOG_EAT_STREAM_PARAMS()
 #define RTC_DLOG_V(sev) RTC_DLOG_EAT_STREAM_PARAMS()
 #define RTC_DLOG_F(sev) RTC_DLOG_EAT_STREAM_PARAMS()

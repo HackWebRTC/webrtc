@@ -345,17 +345,17 @@ class FatalLogCall final {
 // in a particularly convoluted way with an extra ?: because that appears to be
 // the simplest construct that keeps Visual Studio from complaining about
 // condition being unused).
-#define RTC_EAT_STREAM_PARAMETERS(ignored)                        \
-  (true ? true : ((void)(ignored), true))                         \
-      ? static_cast<void>(0)                                      \
-      : rtc::webrtc_checks_impl::FatalLogCall<false>("", 0, "") & \
-            rtc::webrtc_checks_impl::LogStreamer<>()
+#define RTC_EAT_STREAM_PARAMETERS(ignored)                          \
+  (true ? true : ((void)(ignored), true))                           \
+      ? static_cast<void>(0)                                        \
+      : ::rtc::webrtc_checks_impl::FatalLogCall<false>("", 0, "") & \
+            ::rtc::webrtc_checks_impl::LogStreamer<>()
 
 // Call RTC_EAT_STREAM_PARAMETERS with an argument that fails to compile if
 // values of the same types as |a| and |b| can't be compared with the given
 // operation, and that would evaluate |a| and |b| if evaluated.
 #define RTC_EAT_STREAM_PARAMETERS_OP(op, a, b) \
-  RTC_EAT_STREAM_PARAMETERS(((void)rtc::Safe##op(a, b)))
+  RTC_EAT_STREAM_PARAMETERS(((void)::rtc::Safe##op(a, b)))
 
 // RTC_CHECK dies with a fatal error if condition is not true. It is *not*
 // controlled by NDEBUG or anything else, so the check will be executed
@@ -367,36 +367,36 @@ class FatalLogCall final {
 // RTC_CHECK_OP is a helper macro for binary operators.
 // Don't use this macro directly in your code, use RTC_CHECK_EQ et al below.
 #if RTC_CHECK_MSG_ENABLED
-#define RTC_CHECK(condition)                                  \
-  (condition) ? static_cast<void>(0)                          \
-              : rtc::webrtc_checks_impl::FatalLogCall<false>( \
-                    __FILE__, __LINE__, #condition) &         \
-                    rtc::webrtc_checks_impl::LogStreamer<>()
+#define RTC_CHECK(condition)                                    \
+  (condition) ? static_cast<void>(0)                            \
+              : ::rtc::webrtc_checks_impl::FatalLogCall<false>( \
+                    __FILE__, __LINE__, #condition) &           \
+                    ::rtc::webrtc_checks_impl::LogStreamer<>()
 
-#define RTC_CHECK_OP(name, op, val1, val2)                                     \
-  rtc::Safe##name((val1), (val2))                                              \
-      ? static_cast<void>(0)                                                   \
-      : rtc::webrtc_checks_impl::FatalLogCall<true>(__FILE__, __LINE__,        \
-                                                    #val1 " " #op " " #val2) & \
-            rtc::webrtc_checks_impl::LogStreamer<>() << (val1) << (val2)
+#define RTC_CHECK_OP(name, op, val1, val2)                 \
+  ::rtc::Safe##name((val1), (val2))                        \
+      ? static_cast<void>(0)                               \
+      : ::rtc::webrtc_checks_impl::FatalLogCall<true>(     \
+            __FILE__, __LINE__, #val1 " " #op " " #val2) & \
+            ::rtc::webrtc_checks_impl::LogStreamer<>() << (val1) << (val2)
 #else
-#define RTC_CHECK(condition)                                                \
-  (condition)                                                               \
-      ? static_cast<void>(0)                                                \
-      : true ? rtc::webrtc_checks_impl::FatalLogCall<false>(__FILE__,       \
-                                                            __LINE__, "") & \
-                   rtc::webrtc_checks_impl::LogStreamer<>()                 \
-             : rtc::webrtc_checks_impl::FatalLogCall<false>("", 0, "") &    \
-                   rtc::webrtc_checks_impl::LogStreamer<>()
+#define RTC_CHECK(condition)                                                  \
+  (condition)                                                                 \
+      ? static_cast<void>(0)                                                  \
+      : true ? ::rtc::webrtc_checks_impl::FatalLogCall<false>(__FILE__,       \
+                                                              __LINE__, "") & \
+                   ::rtc::webrtc_checks_impl::LogStreamer<>()                 \
+             : ::rtc::webrtc_checks_impl::FatalLogCall<false>("", 0, "") &    \
+                   ::rtc::webrtc_checks_impl::LogStreamer<>()
 
-#define RTC_CHECK_OP(name, op, val1, val2)                                     \
-  rtc::Safe##name((val1), (val2))                                              \
-      ? static_cast<void>(0)                                                   \
-      : true ? rtc::webrtc_checks_impl::FatalLogCall<true>(__FILE__, __LINE__, \
-                                                           "") &               \
-                   rtc::webrtc_checks_impl::LogStreamer<>()                    \
-             : rtc::webrtc_checks_impl::FatalLogCall<false>("", 0, "") &       \
-                   rtc::webrtc_checks_impl::LogStreamer<>()
+#define RTC_CHECK_OP(name, op, val1, val2)                                   \
+  ::rtc::Safe##name((val1), (val2))                                          \
+      ? static_cast<void>(0)                                                 \
+      : true ? ::rtc::webrtc_checks_impl::FatalLogCall<true>(__FILE__,       \
+                                                             __LINE__, "") & \
+                   ::rtc::webrtc_checks_impl::LogStreamer<>()                \
+             : ::rtc::webrtc_checks_impl::FatalLogCall<false>("", 0, "") &   \
+                   ::rtc::webrtc_checks_impl::LogStreamer<>()
 #endif
 
 #define RTC_CHECK_EQ(val1, val2) RTC_CHECK_OP(Eq, ==, val1, val2)
@@ -431,10 +431,10 @@ class FatalLogCall final {
 #define RTC_NOTREACHED() RTC_DCHECK(RTC_UNREACHABLE_CODE_HIT)
 
 // TODO(bugs.webrtc.org/8454): Add an RTC_ prefix or rename differently.
-#define FATAL()                                                    \
-  rtc::webrtc_checks_impl::FatalLogCall<false>(__FILE__, __LINE__, \
-                                               "FATAL()") &        \
-      rtc::webrtc_checks_impl::LogStreamer<>()
+#define FATAL()                                                      \
+  ::rtc::webrtc_checks_impl::FatalLogCall<false>(__FILE__, __LINE__, \
+                                                 "FATAL()") &        \
+      ::rtc::webrtc_checks_impl::LogStreamer<>()
 
 // Performs the integer division a/b and returns the result. CHECKs that the
 // remainder is zero.
