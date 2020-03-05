@@ -30,12 +30,33 @@
 #include "rtc_base/experiments/balanced_degradation_settings.h"
 #include "rtc_base/experiments/quality_rampup_experiment.h"
 #include "rtc_base/experiments/quality_scaler_settings.h"
+#include "rtc_base/strings/string_builder.h"
 #include "system_wrappers/include/clock.h"
 #include "video/encode_usage_resource.h"
 #include "video/overuse_frame_detector.h"
 #include "video/quality_scaler_resource.h"
 
 namespace webrtc {
+
+// Counts the number of adaptations have resulted due to resource overuse.
+// Today we can adapt resolution and fps.
+struct AdaptationCounters {
+  AdaptationCounters() : resolution_adaptations(0), fps_adaptations(0) {}
+  AdaptationCounters(int resolution_adaptations, int fps_adaptations)
+      : resolution_adaptations(resolution_adaptations),
+        fps_adaptations(fps_adaptations) {}
+
+  int Total() const { return fps_adaptations + resolution_adaptations; }
+
+  bool operator==(const AdaptationCounters& rhs) const;
+  bool operator!=(const AdaptationCounters& rhs) const;
+
+  AdaptationCounters operator+(const AdaptationCounters& other) const;
+  AdaptationCounters operator-(const AdaptationCounters& other) const;
+
+  int resolution_adaptations;
+  int fps_adaptations;
+};
 
 class VideoStreamEncoder;
 
@@ -114,9 +135,20 @@ class OveruseFrameDetectorResourceAdaptationModule
   ResourceListenerResponse OnResourceUsageStateMeasured(
       const Resource& resource) override;
 
+  // For reasons of adaptation and statistics, we not only count the total
+  // number of adaptations, but we also count the number of adaptations per
+  // reason.
+  // This method takes the new total number of adaptations and allocates that to
+  // the "active" count - number of adaptations for the current reason.
+  // The "other" count is the number of adaptations for the other reason.
+  // This must be called for each adaptation step made.
+  static void OnAdaptationCountChanged(
+      const AdaptationCounters& adaptation_count,
+      AdaptationCounters* active_count,
+      AdaptationCounters* other_active);
+
  private:
   class VideoSourceRestrictor;
-  class AdaptCounter;
   class InitialFrameDropper;
 
   enum class State { kStopped, kStarted };
@@ -160,8 +192,7 @@ class OveruseFrameDetectorResourceAdaptationModule
   absl::optional<AdaptationTarget> GetAdaptDownTarget(
       int input_pixels,
       int input_fps,
-      int min_pixels_per_frame,
-      AdaptationObserverInterface::AdaptReason reason) const;
+      int min_pixels_per_frame) const;
   // Applies the |target| to |source_restrictor_|.
   void ApplyAdaptationTarget(const AdaptationTarget& target,
                              int min_pixels_per_frame,
@@ -179,8 +210,6 @@ class OveruseFrameDetectorResourceAdaptationModule
   int MinPixelsPerFrame() const;
   VideoStreamEncoderObserver::AdaptationSteps GetActiveCounts(
       AdaptationObserverInterface::AdaptReason reason);
-  void ClearAdaptCounters();
-  const AdaptCounter& GetConstAdaptCounter() const;
 
   // Makes |video_source_restrictions_| up-to-date and informs the
   // |adaptation_listener_| if restrictions are changed, allowing the listener
@@ -196,7 +225,6 @@ class OveruseFrameDetectorResourceAdaptationModule
 
   void UpdateAdaptationStats(AdaptationObserverInterface::AdaptReason reason);
   DegradationPreference EffectiveDegradationPreference() const;
-  AdaptCounter& GetAdaptCounter();
   bool CanAdaptUpResolution(int pixels, uint32_t bitrate_bps) const;
 
   // Checks to see if we should execute the quality rampup experiment. The
@@ -207,6 +235,8 @@ class OveruseFrameDetectorResourceAdaptationModule
   void MaybePerformQualityRampupExperiment();
   void ResetVideoSourceRestrictions();
 
+  std::string ActiveCountsToString() const;
+
   ResourceAdaptationModuleListener* const adaptation_listener_;
   Clock* clock_;
   State state_;
@@ -215,12 +245,6 @@ class OveruseFrameDetectorResourceAdaptationModule
   VideoSourceRestrictions video_source_restrictions_;
   bool has_input_video_;
   DegradationPreference degradation_preference_;
-  // Counters used for deciding if the video resolution or framerate is
-  // currently restricted, and if so, why, on a per degradation preference
-  // basis.
-  // TODO(sprang): Replace this with a state holding a relative overuse measure
-  // instead, that can be translated into suitable down-scale or fps limit.
-  std::map<const DegradationPreference, AdaptCounter> adapt_counters_;
   const BalancedDegradationSettings balanced_settings_;
   // Stores a snapshot of the last adaptation request triggered by an AdaptUp
   // or AdaptDown signal.
@@ -253,6 +277,15 @@ class OveruseFrameDetectorResourceAdaptationModule
     const AdaptationObserverInterface::AdaptReason reason;
   };
   std::vector<ResourceAndReason> resources_;
+  // One AdaptationCounter for each reason, tracking the number of times we have
+  // adapted for each reason. The sum of active_counts_ MUST always equal the
+  // total adaptation provided by the VideoSourceRestrictions.
+  // TODO(https://crbug.com/webrtc/11392): Move all active count logic to
+  // encoder_stats_observer_; Counters used for deciding if the video resolution
+  // or framerate is currently restricted, and if so, why, on a per degradation
+  // preference basis.
+  std::array<AdaptationCounters, AdaptationObserverInterface::kScaleReasonSize>
+      active_counts_;
 };
 
 }  // namespace webrtc

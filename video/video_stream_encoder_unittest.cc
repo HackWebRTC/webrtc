@@ -2236,6 +2236,73 @@ TEST_F(VideoStreamEncoderTest,
 }
 
 TEST_F(VideoStreamEncoderTest,
+       StatsTracksCpuAdaptationStatsWhenSwitchingSource_Balanced) {
+  video_stream_encoder_->OnBitrateUpdated(
+      DataRate::BitsPerSec(kTargetBitrateBps),
+      DataRate::BitsPerSec(kTargetBitrateBps),
+      DataRate::BitsPerSec(kTargetBitrateBps), 0, 0, 0);
+
+  const int kWidth = 1280;
+  const int kHeight = 720;
+  int sequence = 1;
+
+  // Enable BALANCED preference, no initial limitation.
+  test::FrameForwarder source;
+  video_stream_encoder_->SetSource(&source,
+                                   webrtc::DegradationPreference::BALANCED);
+  source.IncomingCapturedFrame(CreateFrame(sequence, kWidth, kHeight));
+  WaitForEncodedFrame(sequence++);
+  VideoSendStream::Stats stats = stats_proxy_->GetStats();
+  EXPECT_FALSE(stats.cpu_limited_resolution);
+  EXPECT_FALSE(stats.cpu_limited_framerate);
+  EXPECT_EQ(0, stats.number_of_cpu_adapt_changes);
+
+  // Trigger CPU overuse, should now adapt down.
+  video_stream_encoder_->TriggerCpuOveruse();
+  source.IncomingCapturedFrame(CreateFrame(sequence, kWidth, kHeight));
+  WaitForEncodedFrame(sequence++);
+  stats = stats_proxy_->GetStats();
+  EXPECT_EQ(1, stats.number_of_cpu_adapt_changes);
+
+  // Set new degradation preference should clear restrictions since we changed
+  // from BALANCED.
+  video_stream_encoder_->SetSource(
+      &source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
+  source.IncomingCapturedFrame(CreateFrame(sequence, kWidth, kHeight));
+  WaitForEncodedFrame(sequence++);
+  stats = stats_proxy_->GetStats();
+  EXPECT_FALSE(stats.cpu_limited_resolution);
+  EXPECT_FALSE(stats.cpu_limited_framerate);
+  EXPECT_EQ(1, stats.number_of_cpu_adapt_changes);
+
+  // Force an input frame rate to be available, or the adaptation call won't
+  // know what framerate to adapt from.
+  VideoSendStream::Stats mock_stats = stats_proxy_->GetStats();
+  mock_stats.input_frame_rate = 30;
+  stats_proxy_->SetMockStats(mock_stats);
+  video_stream_encoder_->TriggerCpuOveruse();
+  stats_proxy_->ResetMockStats();
+  source.IncomingCapturedFrame(CreateFrame(sequence, kWidth, kHeight));
+  WaitForEncodedFrame(sequence++);
+
+  // We have now adapted once.
+  stats = stats_proxy_->GetStats();
+  EXPECT_EQ(2, stats.number_of_cpu_adapt_changes);
+
+  // Back to BALANCED, should clear the restrictions again.
+  video_stream_encoder_->SetSource(&source,
+                                   webrtc::DegradationPreference::BALANCED);
+  source.IncomingCapturedFrame(CreateFrame(sequence, kWidth, kHeight));
+  WaitForEncodedFrame(sequence++);
+  stats = stats_proxy_->GetStats();
+  EXPECT_FALSE(stats.cpu_limited_resolution);
+  EXPECT_FALSE(stats.cpu_limited_framerate);
+  EXPECT_EQ(2, stats.number_of_cpu_adapt_changes);
+
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest,
        StatsTracksCpuAdaptationStatsWhenSwitchingSource) {
   video_stream_encoder_->OnBitrateUpdated(
       DataRate::BitsPerSec(kTargetBitrateBps),
