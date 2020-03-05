@@ -371,19 +371,13 @@ DataRate AimdRateControl::ChangeBitrate(DataRate new_bitrate,
 
 DataRate AimdRateControl::ClampBitrate(DataRate new_bitrate,
                                        DataRate estimated_throughput) const {
-  // Allow the estimate to increase as long as alr is not detected to ensure
-  // that there is no BWE values that can make the estimate stuck at a too
-  // low bitrate. If an encoder can not produce the bitrate necessary to
-  // fully use the capacity, alr will sooner or later trigger.
-  if (!(send_side_ && no_bitrate_increase_in_alr_)) {
-    // Don't change the bit rate if the send side is too far off.
-    // We allow a bit more lag at very low rates to not too easily get stuck if
-    // the encoder produces uneven outputs.
-    const DataRate max_bitrate =
-        1.5 * estimated_throughput + DataRate::KilobitsPerSec(10);
-    if (new_bitrate > current_bitrate_ && new_bitrate > max_bitrate) {
-      new_bitrate = std::max(current_bitrate_, max_bitrate);
-    }
+  // Don't change the bit rate if the send side is too far off.
+  // We allow a bit more lag at very low rates to not too easily get stuck if
+  // the encoder produces uneven outputs.
+  const DataRate max_bitrate =
+      1.5 * estimated_throughput + DataRate::KilobitsPerSec(10);
+  if (new_bitrate > current_bitrate_ && new_bitrate > max_bitrate) {
+    new_bitrate = std::max(current_bitrate_, max_bitrate);
   }
 
   if (estimate_bounded_increase_ && network_estimate_) {
