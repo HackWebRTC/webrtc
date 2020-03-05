@@ -42,6 +42,16 @@ std::vector<RtpCodecCapability> FilterVideoCodecCapabilities(
     bool use_ulpfec,
     bool use_flexfec,
     rtc::ArrayView<const RtpCodecCapability> supported_codecs) {
+  RTC_LOG(INFO) << "Peer connection support these codecs:";
+  for (const auto& codec : supported_codecs) {
+    RTC_LOG(INFO) << "Codec: " << codec.name;
+    if (!codec.parameters.empty()) {
+      RTC_LOG(INFO) << "Params:";
+      for (auto param : codec.parameters) {
+        RTC_LOG(INFO) << "  " << param.first << "=" << param.second;
+      }
+    }
+  }
   std::vector<RtpCodecCapability> output_codecs;
   // Find requested codecs among supported and add them to output in the order
   // they were requested.
