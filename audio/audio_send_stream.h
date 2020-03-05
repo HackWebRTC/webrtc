@@ -190,6 +190,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   struct ExtensionIds {
     int audio_level = 0;
     int abs_send_time = 0;
+    int abs_capture_time = 0;
     int transport_sequence_number = 0;
     int mid = 0;
     int rid = 0;

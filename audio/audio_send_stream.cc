@@ -212,6 +212,8 @@ AudioSendStream::ExtensionIds AudioSendStream::FindExtensionIds(
       ids.rid = extension.id;
     } else if (extension.uri == RtpExtension::kRepairedRidUri) {
       ids.repaired_rid = extension.id;
+    } else if (extension.uri == RtpExtension::kAbsoluteCaptureTimeUri) {
+      ids.abs_capture_time = extension.id;
     }
   }
   return ids;
@@ -321,6 +323,15 @@ void AudioSendStream::ConfigureStream(
       }
     }
     rtp_rtcp_module_->SetRid(new_config.rtp.rid);
+  }
+
+  if (first_time || new_ids.abs_capture_time != old_ids.abs_capture_time) {
+    rtp_rtcp_module_->DeregisterSendRtpHeaderExtension(
+        kRtpExtensionAbsoluteCaptureTime);
+    if (new_ids.abs_capture_time) {
+      rtp_rtcp_module_->RegisterRtpHeaderExtension(
+          AbsoluteCaptureTimeExtension::kUri, new_ids.abs_capture_time);
+    }
   }
 
   if (!ReconfigureSendCodec(new_config)) {
