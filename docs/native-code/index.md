@@ -19,8 +19,8 @@ The change log is available at
 Please read the [License & Rights][webrtc-license] and [FAQ][webrtc-faq]
 before downloading the source code.
 
-[webrtc-license]: https://webrtc.org/license/
-[webrtc-faq]: https://webrtc.org/faq/
+[webrtc-license]: https://webrtc.org/support/license
+[webrtc-faq]: https://webrtc.googlesource.com/src/+/refs/heads/master/docs/faq.md
 
 The WebRTC [issue tracker][webrtc-issue-tracker] can be used for submitting
 bugs found in native code.
