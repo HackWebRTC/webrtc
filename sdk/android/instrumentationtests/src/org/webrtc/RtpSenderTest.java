@@ -12,6 +12,7 @@ package org.webrtc;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -54,7 +55,7 @@ public class RtpSenderTest {
 
     RtpParameters parameters = sender.getParameters();
     assertNotNull(parameters);
-    assertEquals(DegradationPreference.BALANCED, parameters.degradationPreference);
+    assertNull(parameters.degradationPreference);
 
     parameters.degradationPreference = DegradationPreference.MAINTAIN_FRAMERATE;
     assertTrue(sender.setParameters(parameters));

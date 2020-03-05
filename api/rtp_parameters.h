@@ -609,8 +609,7 @@ struct RTC_EXPORT RtpParameters {
   // When bandwidth is constrained and the RtpSender needs to choose between
   // degrading resolution or degrading framerate, degradationPreference
   // indicates which is preferred. Only for video tracks.
-  DegradationPreference degradation_preference =
-      DegradationPreference::BALANCED;
+  absl::optional<DegradationPreference> degradation_preference;
 
   bool operator==(const RtpParameters& o) const {
     return mid == o.mid && codecs == o.codecs &&

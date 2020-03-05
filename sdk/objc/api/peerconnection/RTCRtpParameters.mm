@@ -56,9 +56,9 @@
     }
     _codecs = codecs;
 
-    _degradationPreference = @([RTCRtpParameters
+    _degradationPreference = [RTCRtpParameters
         degradationPreferenceFromNativeDegradationPreference:nativeParameters
-                                                                 .degradation_preference]);
+                                                                 .degradation_preference];
   }
   return self;
 }
@@ -98,17 +98,21 @@
   }
 }
 
-+ (RTCDegradationPreference)degradationPreferenceFromNativeDegradationPreference:
-    (webrtc::DegradationPreference)nativeDegradationPreference {
-  switch (nativeDegradationPreference) {
++ (NSNumber *)degradationPreferenceFromNativeDegradationPreference:
+    (absl::optional<webrtc::DegradationPreference>)nativeDegradationPreference {
+  if (!nativeDegradationPreference.has_value()) {
+    return nil;
+  }
+
+  switch (*nativeDegradationPreference) {
     case webrtc::DegradationPreference::DISABLED:
-      return RTCDegradationPreferenceDisabled;
+      return @(RTCDegradationPreferenceDisabled);
     case webrtc::DegradationPreference::MAINTAIN_FRAMERATE:
-      return RTCDegradationPreferenceMaintainFramerate;
+      return @(RTCDegradationPreferenceMaintainFramerate);
     case webrtc::DegradationPreference::MAINTAIN_RESOLUTION:
-      return RTCDegradationPreferenceMaintainResolution;
+      return @(RTCDegradationPreferenceMaintainResolution);
     case webrtc::DegradationPreference::BALANCED:
-      return RTCDegradationPreferenceBalanced;
+      return @(RTCDegradationPreferenceBalanced);
   }
 }
 

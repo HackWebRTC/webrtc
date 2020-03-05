@@ -23,6 +23,7 @@
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/crypto/frame_encryptor_interface.h"
 #include "api/frame_transformer_interface.h"
+#include "api/media_stream_interface.h"
 #include "api/rtc_error.h"
 #include "api/rtp_parameters.h"
 #include "api/transport/media/media_transport_config.h"
@@ -144,6 +145,7 @@ struct VideoOptions {
   // things, e.g., screencast of a text document and screencast of a
   // youtube video have different needs.
   absl::optional<bool> is_screencast;
+  webrtc::VideoTrackInterface::ContentHint content_hint;
 
  private:
   template <typename T>

@@ -187,8 +187,10 @@ ScopedJavaLocalRef<jobject> NativeToJavaRtpParameters(
     const RtpParameters& parameters) {
   return Java_RtpParameters_Constructor(
       env, NativeToJavaString(env, parameters.transaction_id),
-      Java_DegradationPreference_fromNativeIndex(
-          env, static_cast<int>(parameters.degradation_preference)),
+      parameters.degradation_preference.has_value()
+          ? Java_DegradationPreference_fromNativeIndex(
+                env, static_cast<int>(*parameters.degradation_preference))
+          : nullptr,
       NativeToJavaRtpRtcpParameters(env, parameters.rtcp),
       NativeToJavaList(env, parameters.header_extensions,
                        &NativeToJavaRtpHeaderExtensionParameter),

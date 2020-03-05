@@ -12,7 +12,8 @@
 
 namespace cricket {
 
-VideoOptions::VideoOptions() = default;
+VideoOptions::VideoOptions()
+    : content_hint(webrtc::VideoTrackInterface::ContentHint::kNone) {}
 VideoOptions::~VideoOptions() = default;
 
 MediaChannel::MediaChannel(const MediaConfig& config)

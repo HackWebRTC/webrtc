@@ -19,6 +19,7 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/strings/match.h"
+#include "api/media_stream_interface.h"
 #include "api/transport/datagram_transport_interface.h"
 #include "api/units/data_rate.h"
 #include "api/video/video_codec_constants.h"
@@ -1948,25 +1949,37 @@ WebRtcVideoChannel::WebRtcVideoSendStream::GetDegradationPreference() const {
   // result in blurry and unreadable text.
   // |this| acts like a VideoSource to make sure SinkWants are handled on the
   // correct thread.
-  webrtc::DegradationPreference degradation_preference;
-  if (rtp_parameters_.degradation_preference !=
-      webrtc::DegradationPreference::BALANCED) {
-    // If the degradationPreference is different from the default value, assume
-    // it is what we want, regardless of trials or other internal settings.
-    degradation_preference = rtp_parameters_.degradation_preference;
-  } else if (!enable_cpu_overuse_detection_) {
-    degradation_preference = webrtc::DegradationPreference::DISABLED;
-  } else if (parameters_.options.is_screencast.value_or(false)) {
-    degradation_preference = webrtc::DegradationPreference::MAINTAIN_RESOLUTION;
-  } else if (webrtc::field_trial::IsEnabled(
-                 "WebRTC-Video-BalancedDegradation")) {
-    degradation_preference = webrtc::DegradationPreference::BALANCED;
-  } else {
-    // TODO(orphis): The default should be BALANCED as the standard mandates.
-    // Right now, there is no way to set it to BALANCED as it would change
-    // the behavior for any project expecting MAINTAIN_FRAMERATE by default.
-    degradation_preference = webrtc::DegradationPreference::MAINTAIN_FRAMERATE;
+  if (!enable_cpu_overuse_detection_) {
+    return webrtc::DegradationPreference::DISABLED;
   }
+
+  webrtc::DegradationPreference degradation_preference;
+  if (rtp_parameters_.degradation_preference.has_value()) {
+    degradation_preference = *rtp_parameters_.degradation_preference;
+  } else {
+    if (parameters_.options.content_hint ==
+        webrtc::VideoTrackInterface::ContentHint::kFluid) {
+      degradation_preference =
+          webrtc::DegradationPreference::MAINTAIN_FRAMERATE;
+    } else if (parameters_.options.is_screencast.value_or(false) ||
+               parameters_.options.content_hint ==
+                   webrtc::VideoTrackInterface::ContentHint::kDetailed ||
+               parameters_.options.content_hint ==
+                   webrtc::VideoTrackInterface::ContentHint::kText) {
+      degradation_preference =
+          webrtc::DegradationPreference::MAINTAIN_RESOLUTION;
+    } else if (webrtc::field_trial::IsEnabled(
+                   "WebRTC-Video-BalancedDegradation")) {
+      // Standard wants balanced by default, but it needs to be tuned first.
+      degradation_preference = webrtc::DegradationPreference::BALANCED;
+    } else {
+      // Keep MAINTAIN_FRAMERATE by default until BALANCED has been tuned for
+      // all codecs and launched.
+      degradation_preference =
+          webrtc::DegradationPreference::MAINTAIN_FRAMERATE;
+    }
+  }
+
   return degradation_preference;
 }
 

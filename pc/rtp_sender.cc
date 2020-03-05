@@ -606,6 +606,7 @@ void VideoRtpSender::SetSend() {
     options.is_screencast = source->is_screencast();
     options.video_noise_reduction = source->needs_denoising();
   }
+  options.content_hint = cached_track_content_hint_;
   switch (cached_track_content_hint_) {
     case VideoTrackInterface::ContentHint::kNone:
       break;

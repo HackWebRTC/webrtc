@@ -280,6 +280,7 @@ rtc_library("rtc_audio_video") {
     "..:webrtc_common",
     "../api:call_api",
     "../api:libjingle_peerconnection_api",
+    "../api:media_stream_interface",
     "../api:rtp_parameters",
     "../api:scoped_refptr",
     "../api:transport_api",
