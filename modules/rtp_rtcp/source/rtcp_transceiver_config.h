@@ -14,9 +14,9 @@
 #include <string>
 
 #include "api/rtp_headers.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "rtc_base/task_queue.h"
 #include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
@@ -65,7 +65,7 @@ struct RtcpTransceiverConfig {
   Transport* outgoing_transport = nullptr;
 
   // Queue for scheduling delayed tasks, e.g. sending periodic compound packets.
-  rtc::TaskQueue* task_queue = nullptr;
+  TaskQueueBase* task_queue = nullptr;
 
   // Rtcp report block generator for outgoing receiver reports.
   ReceiveStatisticsProvider* receive_statistics = nullptr;

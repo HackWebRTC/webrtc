@@ -32,8 +32,8 @@
 #include "modules/rtp_rtcp/source/time_util.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/task_queue.h"
 #include "rtc_base/task_utils/repeating_task.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/time_utils.h"
 
 namespace webrtc {
@@ -92,9 +92,9 @@ RtcpTransceiverImpl::RtcpTransceiverImpl(const RtcpTransceiverConfig& config)
     : config_(config), ready_to_send_(config.initial_ready_to_send) {
   RTC_CHECK(config_.Validate());
   if (ready_to_send_ && config_.schedule_periodic_compound_packets) {
-    config_.task_queue->PostTask([this] {
+    config_.task_queue->PostTask(ToQueuedTask([this] {
       SchedulePeriodicCompoundPackets(config_.initial_report_delay_ms);
-    });
+    }));
   }
 }
 
@@ -342,7 +342,7 @@ void RtcpTransceiverImpl::ReschedulePeriodicCompoundPackets() {
 
 void RtcpTransceiverImpl::SchedulePeriodicCompoundPackets(int64_t delay_ms) {
   periodic_task_handle_ = RepeatingTaskHandle::DelayedStart(
-      config_.task_queue->Get(), TimeDelta::Millis(delay_ms), [this] {
+      config_.task_queue, TimeDelta::Millis(delay_ms), [this] {
         RTC_DCHECK(config_.schedule_periodic_compound_packets);
         RTC_DCHECK(ready_to_send_);
         SendPeriodicCompoundPacket();
