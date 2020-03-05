@@ -24,8 +24,13 @@ std::string VideoReceiveStream::Decoder::ToString() const {
   ss << "{payload_type: " << payload_type;
   ss << ", payload_name: " << video_format.name;
   ss << ", codec_params: {";
-  for (const auto& it : video_format.parameters)
-    ss << it.first << ": " << it.second;
+  for (auto it = video_format.parameters.begin();
+       it != video_format.parameters.end(); ++it) {
+    if (it != video_format.parameters.begin()) {
+      ss << ", ";
+    }
+    ss << it->first << ": " << it->second;
+  }
   ss << '}';
   ss << '}';
 
