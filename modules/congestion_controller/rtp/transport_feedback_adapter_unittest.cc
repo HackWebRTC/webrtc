@@ -113,6 +113,7 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
     packet_info.has_rtp_sequence_number = true;
     packet_info.length = packet_feedback.sent_packet.size.bytes();
     packet_info.pacing_info = packet_feedback.sent_packet.pacing_info;
+    packet_info.packet_type = RtpPacketMediaType::kVideo;
     adapter_->AddPacket(RtpPacketSendInfo(packet_info), 0u,
                         clock_.CurrentTime());
     adapter_->ProcessSentPacket(rtc::SentPacket(
@@ -395,6 +396,7 @@ TEST_F(TransportFeedbackAdapterTest, IgnoreDuplicatePacketSentCalls) {
   packet_info.transport_sequence_number = packet.sent_packet.sequence_number;
   packet_info.length = packet.sent_packet.size.bytes();
   packet_info.pacing_info = packet.sent_packet.pacing_info;
+  packet_info.packet_type = RtpPacketMediaType::kVideo;
   adapter_->AddPacket(packet_info, 0u, clock_.CurrentTime());
   absl::optional<SentPacket> sent_packet = adapter_->ProcessSentPacket(
       rtc::SentPacket(packet.sent_packet.sequence_number,

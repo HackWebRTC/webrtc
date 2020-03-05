@@ -98,8 +98,8 @@ class PeerScenarioClient {
   };
 
   struct AudioSendTrack {
-    AudioTrackInterface* track;
-    RtpSenderInterface* sender;
+    rtc::scoped_refptr<AudioTrackInterface> track;
+    rtc::scoped_refptr<RtpSenderInterface> sender;
   };
 
   struct VideoSendTrack {

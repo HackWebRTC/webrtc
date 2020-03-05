@@ -75,6 +75,7 @@ void TransportFeedbackAdapter::AddPacket(const RtpPacketSendInfo& packet_info,
   packet.sent.sequence_number =
       seq_num_unwrapper_.Unwrap(packet_info.transport_sequence_number);
   packet.sent.size = DataSize::Bytes(packet_info.length + overhead_bytes);
+  packet.sent.audio = packet_info.packet_type == RtpPacketMediaType::kAudio;
   packet.local_net_id = local_net_id_;
   packet.remote_net_id = remote_net_id_;
   packet.sent.pacing_info = packet_info.pacing_info;
@@ -89,6 +90,7 @@ void TransportFeedbackAdapter::AddPacket(const RtpPacketSendInfo& packet_info,
   }
   history_.insert(std::make_pair(packet.sent.sequence_number, packet));
 }
+
 absl::optional<SentPacket> TransportFeedbackAdapter::ProcessSentPacket(
     const rtc::SentPacket& sent_packet) {
   auto send_time = Timestamp::Millis(sent_packet.send_time_ms);

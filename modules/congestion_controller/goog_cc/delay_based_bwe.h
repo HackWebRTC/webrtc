@@ -48,12 +48,26 @@ struct BweIgnoreSmallPacketsSettings {
   std::unique_ptr<StructParametersParser> Parser();
 };
 
+struct BweSeparateAudioPacketsSettings {
+  static constexpr char kKey[] = "WebRTC-Bwe-SeparateAudioPackets";
+
+  BweSeparateAudioPacketsSettings() = default;
+  explicit BweSeparateAudioPacketsSettings(
+      const WebRtcKeyValueConfig* key_value_config);
+
+  bool enabled = false;
+  int packet_threshold = 10;
+  TimeDelta time_threshold = TimeDelta::Seconds(1);
+
+  std::unique_ptr<StructParametersParser> Parser();
+};
+
 class DelayBasedBwe {
  public:
   struct Result {
     Result();
     Result(bool probe, DataRate target_bitrate);
-    ~Result();
+    ~Result() = default;
     bool updated;
     bool probe;
     DataRate target_bitrate = DataRate::Zero();
@@ -108,9 +122,20 @@ class DelayBasedBwe {
   BweIgnoreSmallPacketsSettings ignore_small_;
   double fraction_large_packets_;
 
+  // Alternatively, run two separate overuse detectors for audio and video,
+  // and fall back to the audio one if we haven't seen a video packet in a
+  // while.
+  BweSeparateAudioPacketsSettings separate_audio_;
+  int64_t audio_packets_since_last_video_;
+  Timestamp last_video_packet_recv_time_;
+
   NetworkStatePredictor* network_state_predictor_;
-  std::unique_ptr<InterArrival> inter_arrival_;
-  std::unique_ptr<DelayIncreaseDetectorInterface> delay_detector_;
+  std::unique_ptr<InterArrival> video_inter_arrival_;
+  std::unique_ptr<DelayIncreaseDetectorInterface> video_delay_detector_;
+  std::unique_ptr<InterArrival> audio_inter_arrival_;
+  std::unique_ptr<DelayIncreaseDetectorInterface> audio_delay_detector_;
+  DelayIncreaseDetectorInterface* active_delay_detector_;
+
   Timestamp last_seen_packet_;
   bool uma_recorded_;
   AimdRateControl rate_control_;

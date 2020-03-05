@@ -80,7 +80,7 @@ std::deque<FieldLogger*> GoogCcStatePrinter::CreateLoggers() {
   };
   auto trend = [this] {
     return reinterpret_cast<TrendlineEstimator*>(
-        controller_->delay_based_bwe_->delay_detector_.get());
+        controller_->delay_based_bwe_->active_delay_detector_);
   };
   auto acknowledged_rate = [this] {
     return controller_->acknowledged_bitrate_estimator_->bitrate();

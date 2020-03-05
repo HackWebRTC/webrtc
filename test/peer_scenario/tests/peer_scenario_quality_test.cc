@@ -10,6 +10,7 @@
 
 #include "test/gtest.h"
 #include "test/peer_scenario/peer_scenario.h"
+#include "test/peer_scenario/peer_scenario_client.h"
 
 namespace webrtc {
 namespace test {
