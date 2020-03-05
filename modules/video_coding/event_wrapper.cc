@@ -8,13 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "system_wrappers/include/event_wrapper.h"
-
-#if defined(_WIN32)
-#include <windows.h>
-#elif defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-#include <ApplicationServices/ApplicationServices.h>
-#endif
+#include "modules/video_coding/event_wrapper.h"
 
 #include "rtc_base/event.h"
 
@@ -29,11 +23,8 @@ class EventWrapperImpl : public EventWrapper {
     return true;
   }
 
-  EventTypeWrapper Wait(unsigned long max_time) override {
-    int to_wait = max_time == WEBRTC_EVENT_INFINITE
-                      ? rtc::Event::kForever
-                      : static_cast<int>(max_time);
-    return event_.Wait(to_wait) ? kEventSignaled : kEventTimeout;
+  EventTypeWrapper Wait(int max_time_ms) override {
+    return event_.Wait(max_time_ms) ? kEventSignaled : kEventTimeout;
   }
 
  private:

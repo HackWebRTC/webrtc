@@ -350,8 +350,8 @@ class FrameInjectEvent : public EventWrapper {
 
   bool Set() override { return true; }
 
-  EventTypeWrapper Wait(unsigned long max_time) override {  // NOLINT
-    if (clock_->AdvanceTimeMilliseconds(max_time, stop_on_frame_) &&
+  EventTypeWrapper Wait(int max_time_ms) override {
+    if (clock_->AdvanceTimeMilliseconds(max_time_ms, stop_on_frame_) &&
         stop_on_frame_) {
       return EventTypeWrapper::kEventSignaled;
     } else {

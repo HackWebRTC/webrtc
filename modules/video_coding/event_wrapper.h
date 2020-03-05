@@ -8,13 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SYSTEM_WRAPPERS_INCLUDE_EVENT_WRAPPER_H_
-#define SYSTEM_WRAPPERS_INCLUDE_EVENT_WRAPPER_H_
+#ifndef MODULES_VIDEO_CODING_EVENT_WRAPPER_H_
+#define MODULES_VIDEO_CODING_EVENT_WRAPPER_H_
 
 namespace webrtc {
 enum EventTypeWrapper { kEventSignaled = 1, kEventTimeout = 2 };
-
-#define WEBRTC_EVENT_INFINITE 0xffffffff
 
 class EventWrapper {
  public:
@@ -39,11 +37,10 @@ class EventWrapper {
   // be released. It is possible that multiple (random) threads are released
   // Depending on timing.
   //
-  // |max_time| is the maximum time to wait in milliseconds or
-  // WEBRTC_EVENT_INFINITE to wait infinitely.
-  virtual EventTypeWrapper Wait(unsigned long max_time) = 0;
+  // |max_time_ms| is the maximum time to wait in milliseconds.
+  virtual EventTypeWrapper Wait(int max_time_ms) = 0;
 };
 
 }  // namespace webrtc
 
-#endif  // SYSTEM_WRAPPERS_INCLUDE_EVENT_WRAPPER_H_
+#endif  // MODULES_VIDEO_CODING_EVENT_WRAPPER_H_

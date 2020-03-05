@@ -14,13 +14,13 @@
 #include <memory>
 #include <vector>
 
+#include "modules/video_coding/event_wrapper.h"
 #include "modules/video_coding/include/video_coding.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/jitter_buffer.h"
 #include "modules/video_coding/packet.h"
 #include "modules/video_coding/timing.h"
 #include "rtc_base/critical_section.h"
-#include "system_wrappers/include/event_wrapper.h"
 
 namespace webrtc {
 
