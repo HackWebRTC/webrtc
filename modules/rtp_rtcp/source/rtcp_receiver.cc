@@ -72,8 +72,11 @@ std::set<uint32_t> GetRegisteredSsrcs(const RtpRtcp::Configuration& config) {
   if (config.rtx_send_ssrc) {
     ssrcs.insert(*config.rtx_send_ssrc);
   }
-  if (config.flexfec_sender) {
-    ssrcs.insert(config.flexfec_sender->ssrc());
+  if (config.fec_generator) {
+    absl::optional<uint32_t> flexfec_ssrc = config.fec_generator->FecSsrc();
+    if (flexfec_ssrc) {
+      ssrcs.insert(*flexfec_ssrc);
+    }
   }
   return ssrcs;
 }
