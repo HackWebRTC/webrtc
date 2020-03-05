@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "api/task_queue/default_task_queue_factory.h"
+#include "api/transport/field_trial_based_config.h"
 #include "rtc_base/strings/json.h"
 #include "system_wrappers/include/clock.h"
 #include "test/call_config_utils.h"
@@ -62,6 +63,8 @@ void RtpReplayer::Replay(
       CreateDefaultTaskQueueFactory();
   Call::Config call_config(&event_log);
   call_config.task_queue_factory = task_queue_factory.get();
+  FieldTrialBasedConfig field_trials;
+  call_config.trials = &field_trials;
   std::unique_ptr<Call> call(Call::Create(call_config));
   SetupVideoStreams(&receive_stream_configs, stream_state.get(), call.get());
 
