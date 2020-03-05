@@ -86,7 +86,7 @@ class Connection : public CandidatePairInterface,
   ~Connection() override;
 
   // A unique ID assigned when the connection is created.
-  uint32_t id() { return id_; }
+  uint32_t id() const { return id_; }
 
   // Implementation of virtual methods in CandidatePairInterface.
   // Returns the description of the local port
