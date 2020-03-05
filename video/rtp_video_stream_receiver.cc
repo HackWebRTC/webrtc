@@ -49,6 +49,7 @@
 #include "rtc_base/strings/string_builder.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
+#include "system_wrappers/include/ntp_time.h"
 #include "video/receive_statistics_proxy.h"
 
 namespace webrtc {
@@ -488,8 +489,6 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
       clock_->TimeInMilliseconds());
 
   // Try to extrapolate absolute capture time if it is missing.
-  // TODO(bugs.webrtc.org/10739): Add support for estimated capture clock
-  // offset.
   packet->packet_info.set_absolute_capture_time(
       absolute_capture_time_receiver_.OnReceivePacket(
           AbsoluteCaptureTimeReceiver::GetSource(packet->packet_info.ssrc(),
@@ -973,6 +972,12 @@ bool RtpVideoStreamReceiver::DeliverRtcp(const uint8_t* rtcp_packet,
   // Don't use old SRs to estimate time.
   if (time_since_recieved <= 1) {
     ntp_estimator_.UpdateRtcpTimestamp(rtt, ntp_secs, ntp_frac, rtp_timestamp);
+    absl::optional<int64_t> remote_to_local_clock_offset_ms =
+        ntp_estimator_.EstimateRemoteToLocalClockOffsetMs();
+    if (remote_to_local_clock_offset_ms.has_value()) {
+      absolute_capture_time_receiver_.SetRemoteToLocalClockOffset(
+          Int64MsToQ32x32(*remote_to_local_clock_offset_ms));
+    }
   }
 
   return true;
