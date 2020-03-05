@@ -109,11 +109,15 @@ int32_t QualityAnalyzingVideoDecoder::RegisterDecodeCompleteCallback(
 }
 
 int32_t QualityAnalyzingVideoDecoder::Release() {
+  // Release decoder first. During release process it can still decode some
+  // frames, so we don't take a lock to prevent deadlock.
+  int32_t result = delegate_->Release();
+
   rtc::CritScope crit(&lock_);
   analyzing_callback_->SetDelegateCallback(nullptr);
   timestamp_to_frame_id_.clear();
   decoding_images_.clear();
-  return delegate_->Release();
+  return result;
 }
 
 bool QualityAnalyzingVideoDecoder::PrefersLateDecoding() const {

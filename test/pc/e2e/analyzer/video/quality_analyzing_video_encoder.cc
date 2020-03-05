@@ -114,9 +114,13 @@ int32_t QualityAnalyzingVideoEncoder::RegisterEncodeCompleteCallback(
 }
 
 int32_t QualityAnalyzingVideoEncoder::Release() {
+  // Release encoder first. During release process it can still encode some
+  // frames, so we don't take a lock to prevent deadlock.
+  int32_t result = delegate_->Release();
+
   rtc::CritScope crit(&lock_);
   delegate_callback_ = nullptr;
-  return delegate_->Release();
+  return result;
 }
 
 int32_t QualityAnalyzingVideoEncoder::Encode(
