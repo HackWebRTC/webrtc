@@ -17,6 +17,7 @@
 #include "api/rtp_parameters.h"
 #include "api/video/video_stream_encoder_observer.h"
 #include "call/adaptation/encoder_settings.h"
+#include "call/adaptation/resource.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "rtc_base/experiments/balanced_degradation_settings.h"
@@ -85,11 +86,6 @@ class VideoStreamAdapter {
   // tiny risk that people would discover and rely on this behavior.
   SetDegradationPreferenceResult SetDegradationPreference(
       DegradationPreference degradation_preference);
-  // TODO(hbos): This is only used in one place externally by
-  // OveruseFrameDetectorResourceAdaptationModule - can we get rid of that
-  // usage? This is exposing an implementation detail.
-  DegradationPreference EffectiveDegradationPreference(
-      VideoInputMode input_mode) const;
 
   // Returns a target that we are guaranteed to be able to adapt to, or null if
   // adaptation is not desired or not possible.
@@ -108,14 +104,15 @@ class VideoStreamAdapter {
       VideoInputMode input_mode,
       int input_pixels,
       int input_fps,
-      int min_pixels_per_frame,
       VideoStreamEncoderObserver* encoder_stats_observer) const;
   // Applies the |target| to |source_restrictor_|.
-  void ApplyAdaptationTarget(const AdaptationTarget& target,
-                             VideoInputMode input_mode,
-                             int input_pixels,
-                             int input_fps,
-                             int min_pixels_per_frame);
+  // TODO(hbos): Delete ResourceListenerResponse!
+  ResourceListenerResponse ApplyAdaptationTarget(
+      const AdaptationTarget& target,
+      const absl::optional<EncoderSettings>& encoder_settings,
+      VideoInputMode input_mode,
+      int input_pixels,
+      int input_fps);
 
  private:
   class VideoSourceRestrictor;
@@ -136,6 +133,13 @@ class VideoStreamAdapter {
     // to namespace visiblity.
     static Mode GetModeFromAdaptationAction(AdaptationAction action);
   };
+
+  // Reinterprets "balanced + screenshare" as "maintain-resolution".
+  // TODO(hbos): Don't do this. This is not what "balanced" means. If the
+  // application wants to maintain resolution it should set that degradation
+  // preference rather than depend on non-standard behaviors.
+  DegradationPreference EffectiveDegradationPreference(
+      VideoInputMode input_mode) const;
 
   // Owner and modifier of the VideoSourceRestriction of this stream adaptor.
   const std::unique_ptr<VideoSourceRestrictor> source_restrictor_;

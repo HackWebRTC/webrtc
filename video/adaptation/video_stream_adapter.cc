@@ -25,6 +25,13 @@ namespace {
 
 const int kMinFramerateFps = 2;
 
+int MinPixelsPerFrame(const absl::optional<EncoderSettings>& encoder_settings) {
+  return encoder_settings.has_value()
+             ? encoder_settings->encoder_info()
+                   .scaling_settings.min_pixels_per_frame
+             : kDefaultMinPixelsPerFrame;
+}
+
 // Generate suggested higher and lower frame rates and resolutions, to be
 // applied to the VideoSourceRestrictor. These are used in "maintain-resolution"
 // and "maintain-framerate". The "balanced" degradation preference also makes
@@ -263,21 +270,6 @@ VideoStreamAdapter::SetDegradationPreference(
                    : SetDegradationPreferenceResult::kRestrictionsNotCleared;
 }
 
-DegradationPreference VideoStreamAdapter::EffectiveDegradationPreference(
-    VideoInputMode input_mode) const {
-  // Balanced mode for screenshare works via automatic animation detection:
-  // Resolution is capped for fullscreen animated content.
-  // Adapatation is done only via framerate downgrade.
-  // Thus effective degradation preference is MAINTAIN_RESOLUTION.
-  // TODO(hbos): Don't do this. This is not what "balanced" means. If the
-  // application wants to maintain resolution it should set that degradation
-  // preference rather than depend on non-standard behaviors.
-  return (input_mode == VideoInputMode::kScreenshareVideo &&
-          degradation_preference_ == DegradationPreference::BALANCED)
-             ? DegradationPreference::MAINTAIN_RESOLUTION
-             : degradation_preference_;
-}
-
 absl::optional<VideoStreamAdapter::AdaptationTarget>
 VideoStreamAdapter::GetAdaptUpTarget(
     const absl::optional<EncoderSettings>& encoder_settings,
@@ -376,8 +368,8 @@ VideoStreamAdapter::GetAdaptDownTarget(
     VideoInputMode input_mode,
     int input_pixels,
     int input_fps,
-    int min_pixels_per_frame,
     VideoStreamEncoderObserver* encoder_stats_observer) const {
+  const int min_pixels_per_frame = MinPixelsPerFrame(encoder_settings);
   // Preconditions for being able to adapt down:
   if (input_mode == VideoInputMode::kNoVideo)
     return absl::nullopt;
@@ -451,24 +443,27 @@ VideoStreamAdapter::GetAdaptDownTarget(
   }
 }
 
-void VideoStreamAdapter::ApplyAdaptationTarget(const AdaptationTarget& target,
-                                               VideoInputMode input_mode,
-                                               int input_pixels,
-                                               int input_fps,
-                                               int min_pixels_per_frame) {
+ResourceListenerResponse VideoStreamAdapter::ApplyAdaptationTarget(
+    const AdaptationTarget& target,
+    const absl::optional<EncoderSettings>& encoder_settings,
+    VideoInputMode input_mode,
+    int input_pixels,
+    int input_fps) {
+  const int min_pixels_per_frame = MinPixelsPerFrame(encoder_settings);
   // Remember the input pixels and fps of this adaptation. Used to avoid
   // adapting again before this adaptation has had an effect.
   last_adaptation_request_.emplace(AdaptationRequest{
       input_pixels, input_fps,
       AdaptationRequest::GetModeFromAdaptationAction(target.action)});
+  // Adapt!
   switch (target.action) {
     case AdaptationAction::kIncreaseResolution:
       source_restrictor_->IncreaseResolutionTo(target.value);
-      return;
+      break;
     case AdaptationAction::kDecreaseResolution:
       source_restrictor_->DecreaseResolutionTo(target.value,
                                                min_pixels_per_frame);
-      return;
+      break;
     case AdaptationAction::kIncreaseFrameRate:
       source_restrictor_->IncreaseFrameRateTo(target.value);
       // TODO(https://crbug.com/webrtc/11222): Don't adapt in two steps.
@@ -483,11 +478,42 @@ void VideoStreamAdapter::ApplyAdaptationTarget(const AdaptationTarget& target,
         source_restrictor_->IncreaseFrameRateTo(
             std::numeric_limits<int>::max());
       }
-      return;
+      break;
     case AdaptationAction::kDecreaseFrameRate:
       source_restrictor_->DecreaseFrameRateTo(target.value);
-      return;
+      break;
   }
+  // In BALANCED, if requested FPS is higher or close to input FPS to the target
+  // we tell the QualityScaler to increase its frequency.
+  // TODO(hbos): Don't have QualityScaler-specific logic here. If the
+  // QualityScaler wants to add special logic depending on what effects
+  // adaptation had, it should listen to changes to the VideoSourceRestrictions
+  // instead.
+  if (EffectiveDegradationPreference(input_mode) ==
+          DegradationPreference::BALANCED &&
+      target.action ==
+          VideoStreamAdapter::AdaptationAction::kDecreaseFrameRate) {
+    absl::optional<int> min_diff = balanced_settings_.MinFpsDiff(input_pixels);
+    if (min_diff && input_fps > 0) {
+      int fps_diff = input_fps - target.value;
+      if (fps_diff < min_diff.value()) {
+        return ResourceListenerResponse::kQualityScalerShouldIncreaseFrequency;
+      }
+    }
+  }
+  return ResourceListenerResponse::kNothing;
+}
+
+DegradationPreference VideoStreamAdapter::EffectiveDegradationPreference(
+    VideoInputMode input_mode) const {
+  // Balanced mode for screenshare works via automatic animation detection:
+  // Resolution is capped for fullscreen animated content.
+  // Adapatation is done only via framerate downgrade.
+  // Thus effective degradation preference is MAINTAIN_RESOLUTION.
+  return (input_mode == VideoInputMode::kScreenshareVideo &&
+          degradation_preference_ == DegradationPreference::BALANCED)
+             ? DegradationPreference::MAINTAIN_RESOLUTION
+             : degradation_preference_;
 }
 
 }  // namespace webrtc

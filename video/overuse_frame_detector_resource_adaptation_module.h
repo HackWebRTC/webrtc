@@ -27,7 +27,6 @@
 #include "api/video_codecs/video_encoder_config.h"
 #include "call/adaptation/resource.h"
 #include "call/adaptation/resource_adaptation_module_interface.h"
-#include "rtc_base/experiments/balanced_degradation_settings.h"
 #include "rtc_base/experiments/quality_rampup_experiment.h"
 #include "rtc_base/experiments/quality_scaler_settings.h"
 #include "rtc_base/strings/string_builder.h"
@@ -132,22 +131,6 @@ class OveruseFrameDetectorResourceAdaptationModule
 
   enum class State { kStopped, kStarted };
 
-  // Returns a target that we are guaranteed to be able to adapt to, or null if
-  // adaptation is not desired or not possible.
-  absl::optional<VideoStreamAdapter::AdaptationTarget> GetAdaptUpTarget(
-      int input_pixels,
-      int input_fps,
-      AdaptationObserverInterface::AdaptReason reason) const;
-  absl::optional<VideoStreamAdapter::AdaptationTarget> GetAdaptDownTarget(
-      int input_pixels,
-      int input_fps,
-      int min_pixels_per_frame) const;
-  // Applies the |target| to |source_restrictor_|.
-  void ApplyAdaptationTarget(const VideoStreamAdapter::AdaptationTarget& target,
-                             int input_pixels,
-                             int input_fps,
-                             int min_pixels_per_frame);
-
   // Performs the adaptation by getting the next target, applying it and
   // informing listeners of the new VideoSourceRestriction and adapt counters.
   void OnResourceUnderuse(AdaptationObserverInterface::AdaptReason reason);
@@ -156,7 +139,6 @@ class OveruseFrameDetectorResourceAdaptationModule
 
   CpuOveruseOptions GetCpuOveruseOptions() const;
   int LastInputFrameSizeOrDefault() const;
-  int MinPixelsPerFrame() const;
   VideoStreamEncoderObserver::AdaptationSteps GetActiveCounts(
       AdaptationObserverInterface::AdaptReason reason);
   VideoStreamAdapter::VideoInputMode GetVideoInputMode() const;

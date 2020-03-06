@@ -443,11 +443,8 @@ OveruseFrameDetectorResourceAdaptationModule::OnResourceUsageStateMeasured(
   }
 }
 
-absl::optional<VideoStreamAdapter::AdaptationTarget>
-OveruseFrameDetectorResourceAdaptationModule::GetAdaptUpTarget(
-    int input_pixels,
-    int input_fps,
-    AdaptationObserverInterface::AdaptReason reason) const {
+void OveruseFrameDetectorResourceAdaptationModule::OnResourceUnderuse(
+    AdaptationObserverInterface::AdaptReason reason) {
   // We can't adapt up if we're already at the highest setting.
   // Note that this only includes counts relevant to the current degradation
   // preference. e.g. we previously adapted resolution, now prefer adpating fps,
@@ -464,45 +461,21 @@ OveruseFrameDetectorResourceAdaptationModule::GetAdaptUpTarget(
                            .Total();
   RTC_DCHECK_GE(num_downgrades, 0);
   if (num_downgrades == 0)
-    return absl::nullopt;
-  return stream_adapter_->GetAdaptUpTarget(
-      encoder_settings_, encoder_target_bitrate_bps_, GetVideoInputMode(),
-      input_pixels, input_fps, reason);
-}
-
-absl::optional<VideoStreamAdapter::AdaptationTarget>
-OveruseFrameDetectorResourceAdaptationModule::GetAdaptDownTarget(
-    int input_pixels,
-    int input_fps,
-    int min_pixels_per_frame) const {
-  return stream_adapter_->GetAdaptDownTarget(
-      encoder_settings_, GetVideoInputMode(), input_pixels, input_fps,
-      min_pixels_per_frame, encoder_stats_observer_);
-}
-
-void OveruseFrameDetectorResourceAdaptationModule::ApplyAdaptationTarget(
-    const VideoStreamAdapter::AdaptationTarget& target,
-    int input_pixels,
-    int input_fps,
-    int min_pixels_per_frame) {
-  stream_adapter_->ApplyAdaptationTarget(target, GetVideoInputMode(),
-                                         input_pixels, input_fps,
-                                         min_pixels_per_frame);
-}
-
-void OveruseFrameDetectorResourceAdaptationModule::OnResourceUnderuse(
-    AdaptationObserverInterface::AdaptReason reason) {
-  int input_pixels = LastInputFrameSizeOrDefault();
-  int input_fps = encoder_stats_observer_->GetInputFrameRate();
-  int min_pixels_per_frame = MinPixelsPerFrame();
+    return;
+  // Current video input states used by VideoStreamAdapter.
+  const VideoStreamAdapter::VideoInputMode input_mode = GetVideoInputMode();
+  const int input_pixels = LastInputFrameSizeOrDefault();
+  const int input_fps = encoder_stats_observer_->GetInputFrameRate();
   // Should we adapt, if so to what target?
   absl::optional<VideoStreamAdapter::AdaptationTarget> target =
-      GetAdaptUpTarget(input_pixels, input_fps, reason);
+      stream_adapter_->GetAdaptUpTarget(encoder_settings_,
+                                        encoder_target_bitrate_bps_, input_mode,
+                                        input_pixels, input_fps, reason);
   if (!target.has_value())
     return;
   // Apply target.
-  ApplyAdaptationTarget(target.value(), input_pixels, input_fps,
-                        min_pixels_per_frame);
+  stream_adapter_->ApplyAdaptationTarget(target.value(), encoder_settings_,
+                                         input_mode, input_pixels, input_fps);
   // Update VideoSourceRestrictions based on adaptation. This also informs the
   // |adaptation_listener_|.
   MaybeUpdateVideoSourceRestrictions();
@@ -516,39 +489,27 @@ OveruseFrameDetectorResourceAdaptationModule::OnResourceOveruse(
     AdaptationObserverInterface::AdaptReason reason) {
   if (!has_input_video_)
     return ResourceListenerResponse::kQualityScalerShouldIncreaseFrequency;
-  int input_pixels = LastInputFrameSizeOrDefault();
-  int input_fps = encoder_stats_observer_->GetInputFrameRate();
-  int min_pixels_per_frame = MinPixelsPerFrame();
+  // Current video input states used by VideoStreamAdapter.
+  const VideoStreamAdapter::VideoInputMode input_mode = GetVideoInputMode();
+  const int input_pixels = LastInputFrameSizeOrDefault();
+  const int input_fps = encoder_stats_observer_->GetInputFrameRate();
   // Should we adapt, if so to what target?
   absl::optional<VideoStreamAdapter::AdaptationTarget> target =
-      GetAdaptDownTarget(input_pixels, input_fps, min_pixels_per_frame);
+      stream_adapter_->GetAdaptDownTarget(encoder_settings_, input_mode,
+                                          input_pixels, input_fps,
+                                          encoder_stats_observer_);
   if (!target.has_value())
     return ResourceListenerResponse::kNothing;
   // Apply target.
-  ApplyAdaptationTarget(target.value(), input_pixels, input_fps,
-                        min_pixels_per_frame);
+  ResourceListenerResponse response = stream_adapter_->ApplyAdaptationTarget(
+      target.value(), encoder_settings_, input_mode, input_pixels, input_fps);
   // Update VideoSourceRestrictions based on adaptation. This also informs the
   // |adaptation_listener_|.
   MaybeUpdateVideoSourceRestrictions();
   // Stats and logging.
   UpdateAdaptationStats(reason);
   RTC_LOG(INFO) << ActiveCountsToString();
-  // In BALANCED, if requested FPS is higher or close to input FPS to the target
-  // we tell the QualityScaler to increase its frequency.
-  if (stream_adapter_->EffectiveDegradationPreference(GetVideoInputMode()) ==
-          DegradationPreference::BALANCED &&
-      target->action ==
-          VideoStreamAdapter::AdaptationAction::kDecreaseFrameRate) {
-    absl::optional<int> min_diff =
-        stream_adapter_->balanced_settings().MinFpsDiff(input_pixels);
-    if (min_diff && input_fps > 0) {
-      int fps_diff = input_fps - target->value;
-      if (fps_diff < min_diff.value()) {
-        return ResourceListenerResponse::kQualityScalerShouldIncreaseFrequency;
-      }
-    }
-  }
-  return ResourceListenerResponse::kNothing;
+  return response;
 }
 
 // TODO(pbos): Lower these thresholds (to closer to 100%) when we handle
@@ -585,13 +546,6 @@ int OveruseFrameDetectorResourceAdaptationModule::LastInputFrameSizeOrDefault()
   return last_input_frame_size_.value_or(
       VideoStreamEncoder::kDefaultLastFrameInfoWidth *
       VideoStreamEncoder::kDefaultLastFrameInfoHeight);
-}
-
-int OveruseFrameDetectorResourceAdaptationModule::MinPixelsPerFrame() const {
-  return encoder_settings_.has_value()
-             ? encoder_settings_->encoder_info()
-                   .scaling_settings.min_pixels_per_frame
-             : kDefaultMinPixelsPerFrame;
 }
 
 void OveruseFrameDetectorResourceAdaptationModule::
