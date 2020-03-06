@@ -188,7 +188,7 @@ TEST(VideoCodecTestLibvpx, VeryLowBitrateVP9) {
   std::vector<RateProfile> rate_profiles = {{50, 30, 0}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {15, 3, 75, 1, 0.5, 0.4, 1, 1}};
+      {15, 3, 75, 1, 0.5, 0.4, 2, 1}};
 
   std::vector<QualityThresholds> quality_thresholds = {{28, 25, 0.80, 0.65}};
 
