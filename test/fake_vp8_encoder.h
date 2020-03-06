@@ -70,7 +70,6 @@ class FakeVp8Encoder : public FakeEncoder {
   std::unique_ptr<Vp8FrameBufferController> frame_buffer_controller_
       RTC_GUARDED_BY(sequence_checker_);
 };
-using FakeVP8Encoder = FakeVp8Encoder;
 
 }  // namespace test
 }  // namespace webrtc
