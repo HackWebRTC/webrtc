@@ -122,6 +122,11 @@ deps = {
     'url': 'https://chromium.googlesource.com/chromium/deps/findbugs.git@4275d9ac8610db6b1bc9a5e887f97e41b33fac67',
     'condition': 'checkout_android',
   },
+  # Used for embedded builds. CrOS & Linux use the system version.
+  'src/third_party/fontconfig/src': {
+      'url': 'https://chromium.googlesource.com/external/fontconfig.git@452be8125f0e2a18a7dfef469e05d19374d36307',
+      'condition': 'checkout_linux',
+  },
   'src/third_party/freetype/src':
     'https://chromium.googlesource.com/chromium/src/third_party/freetype2.git@6a431038c9113d906d66836cd7d216a5c630be7c',
   'src/third_party/harfbuzz-ng/src':
@@ -2592,6 +2597,17 @@ hooks = [
                 '--no_auth',
                 '--bucket', 'chromium-browser-clang/rc',
                 '-s', 'src/build/toolchain/win/rc/linux64/rc.sha1',
+    ],
+  },
+  {
+    'name': 'test_fonts',
+    'pattern': '.',
+    'action': [ 'download_from_google_storage',
+                '--no_resume',
+                '--extract',
+                '--no_auth',
+                '--bucket', 'chromium-fonts',
+                '-s', 'src/third_party/test_fonts/test_fonts.tar.gz.sha1',
     ],
   },
   {
