@@ -73,14 +73,9 @@ class AimdRateControl {
   // in the "decrease" state the bitrate will be decreased to slightly below the
   // current throughput. When in the "hold" state the bitrate will be kept
   // constant to allow built up queues to drain.
-  DataRate ChangeBitrate(DataRate current_bitrate,
-                         const RateControlInput& input,
-                         Timestamp at_time);
-  // Clamps new_bitrate to within the configured min bitrate and a linear
-  // function of the throughput, so that the new bitrate can't grow too
-  // large compared to the bitrate actually being received by the other end.
-  DataRate ClampBitrate(DataRate new_bitrate,
-                        DataRate estimated_throughput) const;
+  void ChangeBitrate(const RateControlInput& input, Timestamp at_time);
+
+  DataRate ClampBitrate(DataRate new_bitrate) const;
   DataRate MultiplicativeRateIncrease(Timestamp at_time,
                                       Timestamp last_ms,
                                       DataRate current_bitrate) const;
