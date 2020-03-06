@@ -828,8 +828,8 @@ void AudioSendStream::ConfigureBitrateObserver() {
       RTC_DCHECK(frame_length_range_);
       const DataSize kOverheadPerPacket =
           DataSize::Bytes(total_packet_overhead_bytes_);
-      DataRate max_overhead = kOverheadPerPacket / frame_length_range_->first;
-      priority_bitrate += max_overhead;
+      DataRate min_overhead = kOverheadPerPacket / frame_length_range_->second;
+      priority_bitrate += min_overhead;
     }
   }
   if (allocation_settings_.priority_bitrate_raw)
