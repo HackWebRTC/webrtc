@@ -43,7 +43,7 @@ CallTest::CallTest()
       fake_encoder_factory_([this]() {
         std::unique_ptr<FakeEncoder> fake_encoder;
         if (video_encoder_configs_[0].codec_type == kVideoCodecVP8) {
-          fake_encoder = std::make_unique<FakeVP8Encoder>(clock_);
+          fake_encoder = std::make_unique<FakeVp8Encoder>(clock_);
         } else {
           fake_encoder = std::make_unique<FakeEncoder>(clock_);
         }

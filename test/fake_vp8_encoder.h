@@ -32,10 +32,10 @@
 namespace webrtc {
 namespace test {
 
-class FakeVP8Encoder : public FakeEncoder {
+class FakeVp8Encoder : public FakeEncoder {
  public:
-  explicit FakeVP8Encoder(Clock* clock);
-  virtual ~FakeVP8Encoder() = default;
+  explicit FakeVp8Encoder(Clock* clock);
+  virtual ~FakeVp8Encoder() = default;
 
   int32_t InitEncode(const VideoCodec* config,
                      const Settings& settings) override;
@@ -70,6 +70,7 @@ class FakeVP8Encoder : public FakeEncoder {
   std::unique_ptr<Vp8FrameBufferController> frame_buffer_controller_
       RTC_GUARDED_BY(sequence_checker_);
 };
+using FakeVP8Encoder = FakeVp8Encoder;
 
 }  // namespace test
 }  // namespace webrtc

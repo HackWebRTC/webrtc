@@ -131,7 +131,7 @@ class FakeVideoEncoderFactory : public VideoEncoderFactory {
   }
   std::unique_ptr<VideoEncoder> CreateVideoEncoder(
       const SdpVideoFormat& format) override {
-    return std::make_unique<FakeVP8Encoder>(clock_);
+    return std::make_unique<FakeVp8Encoder>(clock_);
   }
 
  private:

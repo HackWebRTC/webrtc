@@ -375,7 +375,7 @@ SendVideoStream::SendVideoStream(CallClient* sender,
             rtc::CritScope cs(&crit_);
             std::unique_ptr<FakeEncoder> encoder;
             if (config_.encoder.codec == Codec::kVideoCodecVP8) {
-              encoder = std::make_unique<test::FakeVP8Encoder>(sender_->clock_);
+              encoder = std::make_unique<test::FakeVp8Encoder>(sender_->clock_);
             } else if (config_.encoder.codec == Codec::kVideoCodecGeneric) {
               encoder = std::make_unique<test::FakeEncoder>(sender_->clock_);
             } else {
