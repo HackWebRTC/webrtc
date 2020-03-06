@@ -171,43 +171,6 @@ VideoBitrateAllocation UpdateAllocationFromEncoderInfo(
 }
 }  //  namespace
 
-absl::optional<VideoEncoder::ResolutionBitrateLimits> GetEncoderBitrateLimits(
-    const VideoEncoder::EncoderInfo& encoder_info,
-    int frame_size_pixels) {
-  std::vector<VideoEncoder::ResolutionBitrateLimits> bitrate_limits =
-      encoder_info.resolution_bitrate_limits;
-
-  // Sort the list of bitrate limits by resolution.
-  sort(bitrate_limits.begin(), bitrate_limits.end(),
-       [](const VideoEncoder::ResolutionBitrateLimits& lhs,
-          const VideoEncoder::ResolutionBitrateLimits& rhs) {
-         return lhs.frame_size_pixels < rhs.frame_size_pixels;
-       });
-
-  for (size_t i = 0; i < bitrate_limits.size(); ++i) {
-    RTC_DCHECK_GE(bitrate_limits[i].min_bitrate_bps, 0);
-    RTC_DCHECK_GE(bitrate_limits[i].min_start_bitrate_bps, 0);
-    RTC_DCHECK_GE(bitrate_limits[i].max_bitrate_bps,
-                  bitrate_limits[i].min_bitrate_bps);
-    if (i > 0) {
-      // The bitrate limits aren't expected to decrease with resolution.
-      RTC_DCHECK_GE(bitrate_limits[i].min_bitrate_bps,
-                    bitrate_limits[i - 1].min_bitrate_bps);
-      RTC_DCHECK_GE(bitrate_limits[i].min_start_bitrate_bps,
-                    bitrate_limits[i - 1].min_start_bitrate_bps);
-      RTC_DCHECK_GE(bitrate_limits[i].max_bitrate_bps,
-                    bitrate_limits[i - 1].max_bitrate_bps);
-    }
-
-    if (bitrate_limits[i].frame_size_pixels >= frame_size_pixels) {
-      return absl::optional<VideoEncoder::ResolutionBitrateLimits>(
-          bitrate_limits[i]);
-    }
-  }
-
-  return absl::nullopt;
-}
-
 const int VideoStreamEncoder::kDefaultLastFrameInfoWidth = 176;
 const int VideoStreamEncoder::kDefaultLastFrameInfoHeight = 144;
 
@@ -503,9 +466,9 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     encoder_reset_required = true;
   }
 
-  encoder_bitrate_limits_ = GetEncoderBitrateLimits(
-      encoder_->GetEncoderInfo(),
-      last_frame_info_->width * last_frame_info_->height);
+  encoder_bitrate_limits_ =
+      encoder_->GetEncoderInfo().GetEncoderBitrateLimitsForResolution(
+          last_frame_info_->width * last_frame_info_->height);
 
   if (streams.size() == 1 && encoder_bitrate_limits_) {
     // Bitrate limits can be set by app (in SDP or RtpEncodingParameters) or/and
@@ -1630,7 +1593,8 @@ bool VideoStreamEncoder::DropDueToSize(uint32_t pixel_count) const {
   }
 
   absl::optional<VideoEncoder::ResolutionBitrateLimits> encoder_bitrate_limits =
-      GetEncoderBitrateLimits(encoder_->GetEncoderInfo(), pixel_count);
+      encoder_->GetEncoderInfo().GetEncoderBitrateLimitsForResolution(
+          pixel_count);
 
   if (encoder_bitrate_limits.has_value()) {
     // Use bitrate limits provided by encoder.

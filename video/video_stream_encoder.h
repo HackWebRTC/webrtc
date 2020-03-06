@@ -45,10 +45,6 @@
 
 namespace webrtc {
 
-absl::optional<VideoEncoder::ResolutionBitrateLimits> GetEncoderBitrateLimits(
-    const VideoEncoder::EncoderInfo& encoder_info,
-    int frame_size_pixels);
-
 // VideoStreamEncoder represent a video encoder that accepts raw video frames as
 // input and produces an encoded bit stream.
 // Usage:

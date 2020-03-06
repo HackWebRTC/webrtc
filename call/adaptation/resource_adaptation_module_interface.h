@@ -14,32 +14,11 @@
 #include "absl/types/optional.h"
 #include "api/rtp_parameters.h"
 #include "api/video/video_frame.h"
-#include "api/video_codecs/video_encoder.h"
-#include "api/video_codecs/video_encoder_config.h"
+#include "call/adaptation/encoder_settings.h"
 #include "call/adaptation/resource.h"
 #include "call/adaptation/video_source_restrictions.h"
 
 namespace webrtc {
-
-// Information about an encoder available when reconfiguring the encoder.
-class EncoderSettings {
- public:
-  EncoderSettings(VideoEncoder::EncoderInfo encoder_info,
-                  VideoEncoderConfig encoder_config,
-                  VideoCodec video_codec);
-
-  // Encoder capabilities, implementation info, etc.
-  const VideoEncoder::EncoderInfo& encoder_info() const;
-  // Configuration parameters, ultimately coming from the API and negotiation.
-  const VideoEncoderConfig& encoder_config() const;
-  // Lower level config, heavily based on the VideoEncoderConfig.
-  const VideoCodec& video_codec() const;
-
- private:
-  VideoEncoder::EncoderInfo encoder_info_;
-  VideoEncoderConfig encoder_config_;
-  VideoCodec video_codec_;
-};
 
 // The listener is responsible for carrying out the reconfiguration of the video
 // source such that the VideoSourceRestrictions are fulfilled.

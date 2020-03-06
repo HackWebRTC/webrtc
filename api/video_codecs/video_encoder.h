@@ -236,6 +236,11 @@ class RTC_EXPORT VideoEncoder {
     // Recommended bitrate limits for different resolutions.
     std::vector<ResolutionBitrateLimits> resolution_bitrate_limits;
 
+    // Obtains the limits from |resolution_bitrate_limits| that best matches the
+    // |frame_size_pixels|.
+    absl::optional<ResolutionBitrateLimits>
+    GetEncoderBitrateLimitsForResolution(int frame_size_pixels) const;
+
     // If true, this encoder has internal support for generating simulcast
     // streams. Otherwise, an adapter class will be needed.
     // Even if true, the config provided to InitEncode() might not be supported,

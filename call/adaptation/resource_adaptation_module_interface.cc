@@ -10,28 +10,7 @@
 
 #include "call/adaptation/resource_adaptation_module_interface.h"
 
-#include <utility>
-
 namespace webrtc {
-
-EncoderSettings::EncoderSettings(VideoEncoder::EncoderInfo encoder_info,
-                                 VideoEncoderConfig encoder_config,
-                                 VideoCodec video_codec)
-    : encoder_info_(std::move(encoder_info)),
-      encoder_config_(std::move(encoder_config)),
-      video_codec_(std::move(video_codec)) {}
-
-const VideoEncoder::EncoderInfo& EncoderSettings::encoder_info() const {
-  return encoder_info_;
-}
-
-const VideoEncoderConfig& EncoderSettings::encoder_config() const {
-  return encoder_config_;
-}
-
-const VideoCodec& EncoderSettings::video_codec() const {
-  return video_codec_;
-}
 
 ResourceAdaptationModuleListener::~ResourceAdaptationModuleListener() {}
 

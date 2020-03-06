@@ -10,6 +10,8 @@ import("../../webrtc.gni")
 
 rtc_library("resource_adaptation") {
   sources = [
+    "encoder_settings.cc",
+    "encoder_settings.h",
     "resource.cc",
     "resource.h",
     "resource_adaptation_module_interface.cc",

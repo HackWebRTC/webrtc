@@ -128,55 +128,25 @@ class OveruseFrameDetectorResourceAdaptationModule
       AdaptationCounters* other_active);
 
  private:
-  class VideoSourceRestrictor;
   class InitialFrameDropper;
 
   enum class State { kStopped, kStarted };
 
-  struct AdaptationRequest {
-    // The pixel count produced by the source at the time of the adaptation.
-    int input_pixel_count_;
-    // Framerate received from the source at the time of the adaptation.
-    int framerate_fps_;
-    // Indicates if request was to adapt up or down.
-    enum class Mode { kAdaptUp, kAdaptDown } mode_;
-  };
-
-  enum class AdaptationAction {
-    kIncreaseResolution,
-    kDecreaseResolution,
-    kIncreaseFrameRate,
-    kDecreaseFrameRate,
-  };
-
-  // Describes an adaptation step: increasing or decreasing resolution or frame
-  // rate to a given value.
-  struct AdaptationTarget {
-    AdaptationTarget(AdaptationAction action, int value);
-    // Which action the VideoSourceRestrictor needs to take.
-    const AdaptationAction action;
-    // Target pixel count or frame rate depending on |action|.
-    const int value;
-
-    // Allow this struct to be instantiated as an optional, even though it's in
-    // a private namespace.
-    friend class absl::optional<AdaptationTarget>;
-  };
-
   // Returns a target that we are guaranteed to be able to adapt to, or null if
   // adaptation is not desired or not possible.
-  absl::optional<AdaptationTarget> GetAdaptUpTarget(
+  absl::optional<VideoStreamAdapter::AdaptationTarget> GetAdaptUpTarget(
       int input_pixels,
       int input_fps,
       AdaptationObserverInterface::AdaptReason reason) const;
-  absl::optional<AdaptationTarget> GetAdaptDownTarget(
+  absl::optional<VideoStreamAdapter::AdaptationTarget> GetAdaptDownTarget(
       int input_pixels,
       int input_fps,
       int min_pixels_per_frame) const;
   // Applies the |target| to |source_restrictor_|.
-  void ApplyAdaptationTarget(const AdaptationTarget& target,
-                             int min_pixels_per_frame,
-                             AdaptationObserverInterface::AdaptReason reason);
+  void ApplyAdaptationTarget(const VideoStreamAdapter::AdaptationTarget& target,
+                             int input_pixels,
+                             int input_fps,
+                             int min_pixels_per_frame);
 
   // Performs the adaptation by getting the next target, applying it and
   // informing listeners of the new VideoSourceRestriction and adapt counters.
@@ -185,11 +155,11 @@ class OveruseFrameDetectorResourceAdaptationModule
       AdaptationObserverInterface::AdaptReason reason);
 
   CpuOveruseOptions GetCpuOveruseOptions() const;
-  VideoCodecType GetVideoCodecTypeOrGeneric() const;
   int LastInputFrameSizeOrDefault() const;
   int MinPixelsPerFrame() const;
   VideoStreamEncoderObserver::AdaptationSteps GetActiveCounts(
       AdaptationObserverInterface::AdaptReason reason);
+  VideoStreamAdapter::VideoInputMode GetVideoInputMode() const;
 
   // Makes |video_source_restrictions_| up-to-date and informs the
   // |adaptation_listener_| if restrictions are changed, allowing the listener
@@ -204,8 +174,6 @@ class OveruseFrameDetectorResourceAdaptationModule
       absl::optional<VideoEncoder::QpThresholds> qp_thresholds);
 
   void UpdateAdaptationStats(AdaptationObserverInterface::AdaptReason reason);
-  DegradationPreference EffectiveDegradationPreference() const;
-  bool CanAdaptUpResolution(int pixels, uint32_t bitrate_bps) const;
 
   // Checks to see if we should execute the quality rampup experiment. The
   // experiment resets all video restrictions at the start of the call in the
@@ -224,11 +192,12 @@ class OveruseFrameDetectorResourceAdaptationModule
   // The restrictions that |adaptation_listener_| is informed of.
   VideoSourceRestrictions video_source_restrictions_;
   bool has_input_video_;
+  // TODO(https://crbug.com/webrtc/11393): DegradationPreference has mostly
+  // moved to VideoStreamAdapter. Move it entirely and delete it from this
+  // class. If the responsibility of generating next steps for adaptations is
+  // owned by the adapter, this class has no buisness relying on implementation
+  // details of the adapter.
   DegradationPreference degradation_preference_;
-  const BalancedDegradationSettings balanced_settings_;
-  // Stores a snapshot of the last adaptation request triggered by an AdaptUp
-  // or AdaptDown signal.
-  absl::optional<AdaptationRequest> last_adaptation_request_;
   // Keeps track of source restrictions that this adaptation module outputs.
   const std::unique_ptr<VideoStreamAdapter> stream_adapter_;
   const std::unique_ptr<EncodeUsageResource> encode_usage_resource_;

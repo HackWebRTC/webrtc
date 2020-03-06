@@ -17,12 +17,17 @@ rtc_library("video_adaptation") {
   ]
 
   deps = [
+    "../../api:rtp_parameters",
+    "../../api/video:video_stream_encoder",
+    "../../api/video_codecs:video_codecs_api",
     "../../call/adaptation:resource_adaptation",
+    "../../modules/video_coding:video_coding_utility",
     "../../rtc_base:checks",
     "../../rtc_base:logging",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_event",
     "../../rtc_base:rtc_numerics",
+    "../../rtc_base/experiments:balanced_degradation_settings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }

@@ -11,6 +11,7 @@
 #include "api/video_codecs/video_encoder.h"
 
 #include <string.h>
+#include <algorithm>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/strings/string_builder.h"
@@ -206,6 +207,42 @@ bool VideoEncoder::EncoderInfo::operator==(const EncoderInfo& rhs) const {
   }
 
   return true;
+}
+
+absl::optional<VideoEncoder::ResolutionBitrateLimits>
+VideoEncoder::EncoderInfo::GetEncoderBitrateLimitsForResolution(
+    int frame_size_pixels) const {
+  std::vector<ResolutionBitrateLimits> bitrate_limits =
+      resolution_bitrate_limits;
+
+  // Sort the list of bitrate limits by resolution.
+  sort(bitrate_limits.begin(), bitrate_limits.end(),
+       [](const ResolutionBitrateLimits& lhs,
+          const ResolutionBitrateLimits& rhs) {
+         return lhs.frame_size_pixels < rhs.frame_size_pixels;
+       });
+
+  for (size_t i = 0; i < bitrate_limits.size(); ++i) {
+    RTC_DCHECK_GE(bitrate_limits[i].min_bitrate_bps, 0);
+    RTC_DCHECK_GE(bitrate_limits[i].min_start_bitrate_bps, 0);
+    RTC_DCHECK_GE(bitrate_limits[i].max_bitrate_bps,
+                  bitrate_limits[i].min_bitrate_bps);
+    if (i > 0) {
+      // The bitrate limits aren't expected to decrease with resolution.
+      RTC_DCHECK_GE(bitrate_limits[i].min_bitrate_bps,
+                    bitrate_limits[i - 1].min_bitrate_bps);
+      RTC_DCHECK_GE(bitrate_limits[i].min_start_bitrate_bps,
+                    bitrate_limits[i - 1].min_start_bitrate_bps);
+      RTC_DCHECK_GE(bitrate_limits[i].max_bitrate_bps,
+                    bitrate_limits[i - 1].max_bitrate_bps);
+    }
+
+    if (bitrate_limits[i].frame_size_pixels >= frame_size_pixels) {
+      return absl::optional<ResolutionBitrateLimits>(bitrate_limits[i]);
+    }
+  }
+
+  return absl::nullopt;
 }
 
 VideoEncoder::RateControlParameters::RateControlParameters()
