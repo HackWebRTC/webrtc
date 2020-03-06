@@ -1,0 +1,48 @@
+# Copyright (c) 2020 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
+
+import("../../webrtc.gni")
+
+rtc_library("video_adaptation") {
+  sources = [
+    "adaptation_counters.cc",
+    "adaptation_counters.h",
+    "video_stream_adapter.cc",
+    "video_stream_adapter.h",
+  ]
+
+  deps = [
+    "../../call/adaptation:resource_adaptation",
+    "../../rtc_base:checks",
+    "../../rtc_base:logging",
+    "../../rtc_base:rtc_base_approved",
+    "../../rtc_base:rtc_event",
+    "../../rtc_base:rtc_numerics",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
+if (rtc_include_tests) {
+  rtc_library("video_adaptation_tests") {
+    testonly = true
+
+    defines = []
+    sources = [ "adaptation_counters_unittest.cc" ]
+    deps = [
+      ":video_adaptation",
+      "../../rtc_base:checks",
+      "../../rtc_base:logging",
+      "../../rtc_base:rtc_base_approved",
+      "../../rtc_base:rtc_event",
+      "../../rtc_base:rtc_numerics",
+      "//test:test_support",
+      "//testing/gtest",
+      "//third_party/abseil-cpp/absl/types:optional",
+    ]
+  }
+}

@@ -25,6 +25,8 @@ namespace webrtc {
 // indirectly by usage in the OveruseFrameDetectorResourceAdaptationModule
 // (which is only tested because of its usage in VideoStreamEncoder); all tests
 // are currently in video_stream_encoder_unittest.cc.
+// TODO(https://crbug.com/webrtc/11222): Move this class to the
+// video/adaptation/ subdirectory.
 class QualityScalerResource : public Resource,
                               public AdaptationObserverInterface {
  public:

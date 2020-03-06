@@ -32,31 +32,13 @@
 #include "rtc_base/experiments/quality_scaler_settings.h"
 #include "rtc_base/strings/string_builder.h"
 #include "system_wrappers/include/clock.h"
+#include "video/adaptation/adaptation_counters.h"
+#include "video/adaptation/video_stream_adapter.h"
 #include "video/encode_usage_resource.h"
 #include "video/overuse_frame_detector.h"
 #include "video/quality_scaler_resource.h"
 
 namespace webrtc {
-
-// Counts the number of adaptations have resulted due to resource overuse.
-// Today we can adapt resolution and fps.
-struct AdaptationCounters {
-  AdaptationCounters() : resolution_adaptations(0), fps_adaptations(0) {}
-  AdaptationCounters(int resolution_adaptations, int fps_adaptations)
-      : resolution_adaptations(resolution_adaptations),
-        fps_adaptations(fps_adaptations) {}
-
-  int Total() const { return fps_adaptations + resolution_adaptations; }
-
-  bool operator==(const AdaptationCounters& rhs) const;
-  bool operator!=(const AdaptationCounters& rhs) const;
-
-  AdaptationCounters operator+(const AdaptationCounters& other) const;
-  AdaptationCounters operator-(const AdaptationCounters& other) const;
-
-  int resolution_adaptations;
-  int fps_adaptations;
-};
 
 class VideoStreamEncoder;
 
@@ -70,10 +52,8 @@ class VideoStreamEncoder;
 // TODO(hbos): Add unittests specific to this class, it is currently only tested
 // indirectly in video_stream_encoder_unittest.cc and other tests exercising
 // VideoStreamEncoder.
-// TODO(hbos): Create and implement an abstract interface
-// ResourceAdaptationModuleInterface and make this class inherit it. Use the
-// generic interface in VideoStreamEncoder, unblocking other modules from being
-// implemented and used.
+// TODO(https://crbug.com/webrtc/11222): Rename this class to something more
+// appropriate and move it to the video/adaptation/ subdirectory.
 class OveruseFrameDetectorResourceAdaptationModule
     : public ResourceAdaptationModuleInterface,
       public ResourceListener {
@@ -250,7 +230,7 @@ class OveruseFrameDetectorResourceAdaptationModule
   // or AdaptDown signal.
   absl::optional<AdaptationRequest> last_adaptation_request_;
   // Keeps track of source restrictions that this adaptation module outputs.
-  const std::unique_ptr<VideoSourceRestrictor> source_restrictor_;
+  const std::unique_ptr<VideoStreamAdapter> stream_adapter_;
   const std::unique_ptr<EncodeUsageResource> encode_usage_resource_;
   const std::unique_ptr<QualityScalerResource> quality_scaler_resource_;
   const std::unique_ptr<InitialFrameDropper> initial_frame_dropper_;

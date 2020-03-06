@@ -12,41 +12,9 @@
 
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "video/adaptation/adaptation_counters.h"
 
 namespace webrtc {
-
-TEST(AdaptationCountersTest, Addition) {
-  AdaptationCounters a;
-  AdaptationCounters b(1, 2);
-  AdaptationCounters total = a + b;
-  EXPECT_EQ(1, total.resolution_adaptations);
-  EXPECT_EQ(2, total.fps_adaptations);
-}
-
-TEST(AdaptationCountersTest, Subtraction) {
-  AdaptationCounters a(0, 1);
-  AdaptationCounters b(2, 1);
-  AdaptationCounters diff = a - b;
-  EXPECT_EQ(-2, diff.resolution_adaptations);
-  EXPECT_EQ(0, diff.fps_adaptations);
-}
-
-TEST(AdaptationCountersTest, Equality) {
-  AdaptationCounters a(1, 2);
-  AdaptationCounters b(2, 1);
-  EXPECT_EQ(a, a);
-  EXPECT_NE(a, b);
-}
-
-TEST(AdaptationCountersTest, SelfAdditionSubtraction) {
-  AdaptationCounters a(1, 0);
-  AdaptationCounters b(0, 1);
-
-  EXPECT_EQ(a, a + b - b);
-  EXPECT_EQ(a, b + a - b);
-  EXPECT_EQ(a, a - b + b);
-  EXPECT_EQ(a, b - b + a);
-}
 
 TEST(OveruseFrameDetectorResourceAdaptationModuleTest,
      FirstAdaptationDown_Fps) {
@@ -108,11 +76,9 @@ TEST(OveruseFrameDetectorResourceAdaptationModuleTest,
   AdaptationCounters qp(1, 0);
   AdaptationCounters total(0, 1);
 
-  // CPU adaptation for resolution, but no
-  // resolution adaptation left from CPU.
-  // We then borrow the resolution
-  // adaptation from qp, and give qp the
-  // fps adaptation from CPU.
+  // CPU adaptation for resolution, but no resolution adaptation left from CPU.
+  // We then borrow the resolution adaptation from qp, and give qp the fps
+  // adaptation from CPU.
   OveruseFrameDetectorResourceAdaptationModule::OnAdaptationCountChanged(
       total, &cpu, &qp);
 
@@ -127,11 +93,8 @@ TEST(OveruseFrameDetectorResourceAdaptationModuleTest, AdaptUpWithBorrow_Fps) {
   AdaptationCounters qp(0, 1);
   AdaptationCounters total(1, 0);
 
-  // CPU adaptation for fps, but no
-  // fps adaptation left from CPU. We
-  // then borrow the fps adaptation
-  // from qp, and give qp the
-  // resolution adaptation from CPU.
+  // CPU adaptation for fps, but no fps adaptation left from CPU. We then borrow
+  // the fps adaptation from qp, and give qp the resolution adaptation from CPU.
   OveruseFrameDetectorResourceAdaptationModule::OnAdaptationCountChanged(
       total, &cpu, &qp);
 
