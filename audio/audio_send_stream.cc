@@ -338,6 +338,17 @@ void AudioSendStream::ConfigureStream(
     RTC_LOG(LS_ERROR) << "Failed to set up send codec state.";
   }
 
+  channel_send_->CallEncoder([this](AudioEncoder* encoder) {
+    if (!encoder) {
+      return;
+    }
+    worker_queue_->PostTask(
+        [this, length_range = encoder->GetFrameLengthRange()] {
+          RTC_DCHECK_RUN_ON(worker_queue_);
+          frame_length_range_ = length_range;
+        });
+  });
+
   if (sending_) {
     ReconfigureBitrateObserver(new_config);
   }
@@ -635,11 +646,6 @@ bool AudioSendStream::SetupSendCodec(const Config& new_config) {
       encoder->OnReceivedOverhead(GetPerPacketOverheadBytes());
     }
   }
-  worker_queue_->PostTask(
-      [this, length_range = encoder->GetFrameLengthRange()] {
-        RTC_DCHECK_RUN_ON(worker_queue_);
-        frame_length_range_ = length_range;
-      });
 
   StoreEncoderProperties(encoder->SampleRateHz(), encoder->NumChannels());
   channel_send_->SetEncoder(new_config.send_codec_spec->payload_type,
@@ -771,7 +777,9 @@ void AudioSendStream::ReconfigureBitrateObserver(
       config_.max_bitrate_bps == new_config.max_bitrate_bps &&
       config_.bitrate_priority == new_config.bitrate_priority &&
       (TransportSeqNumId(config_) == TransportSeqNumId(new_config) ||
-       !audio_send_side_bwe_)) {
+       !audio_send_side_bwe_) &&
+      config_.audio_network_adaptor_config ==
+          new_config.audio_network_adaptor_config) {
     return;
   }
 
@@ -783,7 +791,6 @@ void AudioSendStream::ReconfigureBitrateObserver(
     rtc::Event thread_sync_event;
     worker_queue_->PostTask([&] {
       RTC_DCHECK_RUN_ON(worker_queue_);
-      registered_with_allocator_ = true;
       // We may get a callback immediately as the observer is registered, so
       // make
       // sure the bitrate limits in config_ are up-to-date.
@@ -835,6 +842,7 @@ void AudioSendStream::ConfigureBitrateObserver() {
           priority_bitrate.bps(), true,
           allocation_settings_.bitrate_priority.value_or(
               config_.bitrate_priority)});
+  registered_with_allocator_ = true;
 }
 
 void AudioSendStream::RemoveBitrateObserver() {

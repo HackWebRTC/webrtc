@@ -162,6 +162,7 @@ struct ConfigHelper {
 
     SetupDefaultChannelSend(audio_bwe_enabled);
     SetupMockForSetupSendCodec(expect_set_encoder_call);
+    SetupMockForCallEncoder();
 
     // Use ISAC as default codec so as to prevent unnecessary |channel_proxy_|
     // calls from the default ctor behavior.
@@ -514,7 +515,6 @@ TEST(AudioSendStreamTest, SendCodecAppliesAudioNetworkAdaptor) {
   auto stream_config = helper.config();
   stream_config.audio_network_adaptor_config = kAnaReconfigString;
 
-  helper.SetupMockForCallEncoder();
   send_stream->Reconfigure(stream_config);
 }
 
