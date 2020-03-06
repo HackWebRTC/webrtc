@@ -1,3 +1,5 @@
+# Video Content Type
+
 The Video Content Type extension is used to communicate a video content type
 from sender to receiver of rtp video stream. Contact <ilnik@google.com> for
 more info.

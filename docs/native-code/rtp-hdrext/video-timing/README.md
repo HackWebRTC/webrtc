@@ -1,3 +1,5 @@
+# Video Timing
+
 The Video Timing extension is used to communicate a timing information on
 per-frame basis to receiver of rtp video stream. Contact <ilnik@google.com> for
 more info. It may be generalized to audio frames as well in the future.
