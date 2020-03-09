@@ -11,14 +11,14 @@
 package org.webrtc;
 
 /** Enumeration of supported video codec types. */
-enum VideoCodecType {
+enum VideoCodecMimeType {
   VP8("video/x-vnd.on2.vp8"),
   VP9("video/x-vnd.on2.vp9"),
   H264("video/avc");
 
   private final String mimeType;
 
-  private VideoCodecType(String mimeType) {
+  private VideoCodecMimeType(String mimeType) {
     this.mimeType = mimeType;
   }
 

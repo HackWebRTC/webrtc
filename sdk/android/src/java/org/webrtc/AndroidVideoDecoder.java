@@ -56,7 +56,7 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
 
   private final MediaCodecWrapperFactory mediaCodecWrapperFactory;
   private final String codecName;
-  private final VideoCodecType codecType;
+  private final VideoCodecMimeType codecType;
 
   private static class FrameInfo {
     final long decodeStartTimeMs;
@@ -129,7 +129,7 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
   @Nullable private MediaCodecWrapper codec;
 
   AndroidVideoDecoder(MediaCodecWrapperFactory mediaCodecWrapperFactory, String codecName,
-      VideoCodecType codecType, int colorFormat, @Nullable EglBase.Context sharedContext) {
+      VideoCodecMimeType codecType, int colorFormat, @Nullable EglBase.Context sharedContext) {
     if (!isSupportedColorFormat(colorFormat)) {
       throw new IllegalArgumentException("Unsupported color format: " + colorFormat);
     }

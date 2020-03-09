@@ -62,7 +62,7 @@ public class AndroidVideoDecoderTest {
     private boolean deliverDecodedFrameDone = true;
 
     public TestDecoder(MediaCodecWrapperFactory mediaCodecFactory, String codecName,
-        VideoCodecType codecType, int colorFormat, EglBase.Context sharedContext) {
+        VideoCodecMimeType codecType, int colorFormat, EglBase.Context sharedContext) {
       super(mediaCodecFactory, codecName, codecType, colorFormat, sharedContext);
     }
 
@@ -143,10 +143,10 @@ public class AndroidVideoDecoderTest {
   }
 
   private class TestDecoderBuilder {
-    private VideoCodecType codecType = VideoCodecType.VP8;
+    private VideoCodecMimeType codecType = VideoCodecMimeType.VP8;
     private boolean useSurface = true;
 
-    public TestDecoderBuilder setCodecType(VideoCodecType codecType) {
+    public TestDecoderBuilder setCodecType(VideoCodecMimeType codecType) {
       this.codecType = codecType;
       return this;
     }
@@ -216,7 +216,8 @@ public class AndroidVideoDecoderTest {
   @Test
   public void testInit() {
     // Set-up.
-    AndroidVideoDecoder decoder = new TestDecoderBuilder().setCodecType(VideoCodecType.VP8).build();
+    AndroidVideoDecoder decoder =
+        new TestDecoderBuilder().setCodecType(VideoCodecMimeType.VP8).build();
 
     // Test.
     assertThat(decoder.initDecode(TEST_DECODER_SETTINGS, mockDecoderCallback))
@@ -232,7 +233,7 @@ public class AndroidVideoDecoderTest {
     assertThat(mediaFormat.getInteger(MediaFormat.KEY_HEIGHT))
         .isEqualTo(TEST_DECODER_SETTINGS.height);
     assertThat(mediaFormat.getString(MediaFormat.KEY_MIME))
-        .isEqualTo(VideoCodecType.VP8.mimeType());
+        .isEqualTo(VideoCodecMimeType.VP8.mimeType());
   }
 
   @Test

@@ -76,7 +76,7 @@ class MediaCodecUtils {
     return null;
   }
 
-  static boolean codecSupportsType(MediaCodecInfo info, VideoCodecType type) {
+  static boolean codecSupportsType(MediaCodecInfo info, VideoCodecMimeType type) {
     for (String mimeType : info.getSupportedTypes()) {
       if (type.mimeType().equals(mimeType)) {
         return true;
@@ -85,7 +85,7 @@ class MediaCodecUtils {
     return false;
   }
 
-  static Map<String, String> getCodecProperties(VideoCodecType type, boolean highProfile) {
+  static Map<String, String> getCodecProperties(VideoCodecMimeType type, boolean highProfile) {
     switch (type) {
       case VP8:
       case VP9:

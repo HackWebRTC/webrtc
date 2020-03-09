@@ -63,7 +63,7 @@ public class HardwareVideoEncoderTest {
     private boolean deliverEncodedImageDone = true;
 
     TestEncoder(MediaCodecWrapperFactory mediaCodecWrapperFactory, String codecName,
-        VideoCodecType codecType, Integer surfaceColorFormat, Integer yuvColorFormat,
+        VideoCodecMimeType codecType, Integer surfaceColorFormat, Integer yuvColorFormat,
         Map<String, String> params, int keyFrameIntervalSec, int forceKeyFrameIntervalMs,
         BitrateAdjuster bitrateAdjuster, EglBase14.Context sharedContext) {
       super(mediaCodecWrapperFactory, codecName, codecType, surfaceColorFormat, yuvColorFormat,
@@ -113,9 +113,9 @@ public class HardwareVideoEncoderTest {
   }
 
   private class TestEncoderBuilder {
-    private VideoCodecType codecType = VideoCodecType.VP8;
+    private VideoCodecMimeType codecType = VideoCodecMimeType.VP8;
 
-    public TestEncoderBuilder setCodecType(VideoCodecType codecType) {
+    public TestEncoderBuilder setCodecType(VideoCodecMimeType codecType) {
       this.codecType = codecType;
       return this;
     }
@@ -149,7 +149,7 @@ public class HardwareVideoEncoderTest {
   public void testInit() {
     // Set-up.
     HardwareVideoEncoder encoder =
-        new TestEncoderBuilder().setCodecType(VideoCodecType.VP8).build();
+        new TestEncoderBuilder().setCodecType(VideoCodecMimeType.VP8).build();
 
     // Test.
     assertThat(encoder.initEncode(TEST_ENCODER_SETTINGS, mockEncoderCallback))
@@ -165,7 +165,7 @@ public class HardwareVideoEncoderTest {
     assertThat(mediaFormat.getInteger(MediaFormat.KEY_HEIGHT))
         .isEqualTo(TEST_ENCODER_SETTINGS.height);
     assertThat(mediaFormat.getString(MediaFormat.KEY_MIME))
-        .isEqualTo(VideoCodecType.VP8.mimeType());
+        .isEqualTo(VideoCodecMimeType.VP8.mimeType());
 
     assertThat(fakeMediaCodecWrapper.getConfiguredFlags())
         .isEqualTo(MediaCodec.CONFIGURE_FLAG_ENCODE);

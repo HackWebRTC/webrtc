@@ -405,7 +405,7 @@ if (is_android) {
       "src/java/org/webrtc/MediaCodecWrapperFactory.java",
       "src/java/org/webrtc/MediaCodecWrapperFactoryImpl.java",
       "src/java/org/webrtc/NV12Buffer.java",
-      "src/java/org/webrtc/VideoCodecType.java",
+      "src/java/org/webrtc/VideoCodecMimeType.java",
     ]
 
     deps = [
