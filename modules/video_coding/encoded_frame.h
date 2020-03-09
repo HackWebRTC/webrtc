@@ -56,6 +56,7 @@ class RTC_EXPORT VCMEncodedFrame : protected EncodedImage {
   using EncodedImage::ColorSpace;
   using EncodedImage::data;
   using EncodedImage::GetEncodedData;
+  using EncodedImage::NtpTimeMs;
   using EncodedImage::PacketInfos;
   using EncodedImage::Retain;
   using EncodedImage::set_size;

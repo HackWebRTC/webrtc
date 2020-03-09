@@ -94,6 +94,8 @@ class RTC_EXPORT EncodedImage {
 
   void SetEncodeTime(int64_t encode_start_ms, int64_t encode_finish_ms);
 
+  int64_t NtpTimeMs() const { return ntp_time_ms_; }
+
   absl::optional<int> SpatialIndex() const { return spatial_index_; }
   void SetSpatialIndex(absl::optional<int> spatial_index) {
     RTC_DCHECK_GE(spatial_index.value_or(0), 0);
@@ -184,6 +186,7 @@ class RTC_EXPORT EncodedImage {
   uint32_t _encodedWidth = 0;
   uint32_t _encodedHeight = 0;
   // NTP time of the capture time in local timebase in milliseconds.
+  // TODO(minyue): make this member private.
   int64_t ntp_time_ms_ = 0;
   int64_t capture_time_ms_ = 0;
   VideoFrameType _frameType = VideoFrameType::kVideoFrameDelta;
