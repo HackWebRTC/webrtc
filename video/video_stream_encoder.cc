@@ -169,6 +169,7 @@ VideoBitrateAllocation UpdateAllocationFromEncoderInfo(
   new_allocation.set_bw_limited(allocation.is_bw_limited());
   return new_allocation;
 }
+
 }  //  namespace
 
 const int VideoStreamEncoder::kDefaultLastFrameInfoWidth = 176;
@@ -1359,6 +1360,37 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
   // value 0 on the wire is reserved for 'no simulcast stream specified'.
   RTC_CHECK(videocontenttypehelpers::SetSimulcastId(
       &image_copy.content_type_, static_cast<uint8_t>(spatial_idx + 1)));
+
+  // Currently internal quality scaler is used for VP9 instead of webrtc qp
+  // scaler (in no-svc case or if only a single spatial layer is encoded).
+  // It has to be explicitly detected and reported to adaptation metrics.
+  // Post a task because |send_codec_| requires |encoder_queue_| lock.
+  unsigned int image_width = image_copy._encodedWidth;
+  unsigned int image_height = image_copy._encodedHeight;
+  VideoCodecType codec = codec_specific_info
+                             ? codec_specific_info->codecType
+                             : VideoCodecType::kVideoCodecGeneric;
+  encoder_queue_.PostTask([this, codec, image_width, image_height] {
+    RTC_DCHECK_RUN_ON(&encoder_queue_);
+    if (codec == VideoCodecType::kVideoCodecVP9 &&
+        send_codec_.VP9()->automaticResizeOn) {
+      unsigned int expected_width = send_codec_.width;
+      unsigned int expected_height = send_codec_.height;
+      int num_active_layers = 0;
+      for (int i = 0; i < send_codec_.VP9()->numberOfSpatialLayers; ++i) {
+        if (send_codec_.spatialLayers[i].active) {
+          ++num_active_layers;
+          expected_width = send_codec_.spatialLayers[i].width;
+          expected_height = send_codec_.spatialLayers[i].height;
+        }
+      }
+      RTC_DCHECK_LE(num_active_layers, 1)
+          << "VP9 quality scaling is enabled for "
+             "SVC with several active layers.";
+      encoder_stats_observer_->OnEncoderInternalScalerUpdate(
+          image_width < expected_width || image_height < expected_height);
+    }
+  });
 
   // Encoded is called on whatever thread the real encoder implementation run
   // on. In the case of hardware encoders, there might be several encoders

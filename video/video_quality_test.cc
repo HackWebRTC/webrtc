@@ -870,6 +870,7 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
         VideoCodecVP9 vp9_settings = VideoEncoder::GetDefaultVp9Settings();
         vp9_settings.denoisingOn = false;
         vp9_settings.frameDroppingOn = false;
+        vp9_settings.automaticResizeOn = false;
         vp9_settings.numberOfTemporalLayers = static_cast<unsigned char>(
             params_.video[video_idx].num_temporal_layers);
         vp9_settings.numberOfSpatialLayers = static_cast<unsigned char>(
@@ -892,6 +893,7 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
       vp9_settings.numberOfSpatialLayers =
           static_cast<unsigned char>(params_.ss[video_idx].num_spatial_layers);
       vp9_settings.interLayerPred = params_.ss[video_idx].inter_layer_pred;
+      vp9_settings.automaticResizeOn = false;
       video_encoder_configs_[video_idx].encoder_specific_settings =
           new rtc::RefCountedObject<
               VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
@@ -904,7 +906,9 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
                 VideoEncoderConfig::Vp8EncoderSpecificSettings>(vp8_settings);
       } else if (params_.video[video_idx].codec == "VP9") {
         VideoCodecVP9 vp9_settings = VideoEncoder::GetDefaultVp9Settings();
-        vp9_settings.automaticResizeOn = true;
+        // Only enable quality scaler for single spatial layer.
+        vp9_settings.automaticResizeOn =
+            params_.ss[video_idx].num_spatial_layers == 1;
         video_encoder_configs_[video_idx].encoder_specific_settings =
             new rtc::RefCountedObject<
                 VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
