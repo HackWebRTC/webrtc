@@ -37,6 +37,7 @@ rtc_library("system_wrappers") {
     "../rtc_base:checks",
     "../rtc_base/synchronization:rw_lock_wrapper",
     "../rtc_base/system:arch",
+    "../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 

@@ -17,6 +17,7 @@
 
 #include "api/units/timestamp.h"
 #include "rtc_base/synchronization/rw_lock_wrapper.h"
+#include "rtc_base/system/rtc_export.h"
 #include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
@@ -28,7 +29,7 @@ const uint32_t kNtpJan1970 = 2208988800UL;
 const double kMagicNtpFractionalUnit = 4.294967296E+9;
 
 // A clock interface that allows reading of absolute and relative timestamps.
-class Clock {
+class RTC_EXPORT Clock {
  public:
   virtual ~Clock() {}
   // Return a timestamp relative to an unspecified epoch.
