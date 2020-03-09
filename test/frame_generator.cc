@@ -116,21 +116,23 @@ void SquareGenerator::Square::Draw(
   RTC_DCHECK(frame_buffer->type() == VideoFrameBuffer::Type::kI420 ||
              frame_buffer->type() == VideoFrameBuffer::Type::kI420A);
   rtc::scoped_refptr<I420BufferInterface> buffer = frame_buffer->ToI420();
-  x_ = (x_ + random_generator_.Rand(0, 4)) % (buffer->width() - length_);
-  y_ = (y_ + random_generator_.Rand(0, 4)) % (buffer->height() - length_);
-  for (int y = y_; y < y_ + length_; ++y) {
+  int length_cap = std::min(buffer->height(), buffer->width()) / 4;
+  int length = std::min(length_, length_cap);
+  x_ = (x_ + random_generator_.Rand(0, 4)) % (buffer->width() - length);
+  y_ = (y_ + random_generator_.Rand(0, 4)) % (buffer->height() - length);
+  for (int y = y_; y < y_ + length; ++y) {
     uint8_t* pos_y =
         (const_cast<uint8_t*>(buffer->DataY()) + x_ + y * buffer->StrideY());
-    memset(pos_y, yuv_y_, length_);
+    memset(pos_y, yuv_y_, length);
   }
 
-  for (int y = y_; y < y_ + length_; y = y + 2) {
+  for (int y = y_; y < y_ + length; y = y + 2) {
     uint8_t* pos_u = (const_cast<uint8_t*>(buffer->DataU()) + x_ / 2 +
                       y / 2 * buffer->StrideU());
-    memset(pos_u, yuv_u_, length_ / 2);
+    memset(pos_u, yuv_u_, length / 2);
     uint8_t* pos_v = (const_cast<uint8_t*>(buffer->DataV()) + x_ / 2 +
                       y / 2 * buffer->StrideV());
-    memset(pos_v, yuv_v_, length_ / 2);
+    memset(pos_v, yuv_v_, length / 2);
   }
 
   if (frame_buffer->type() == VideoFrameBuffer::Type::kI420)
@@ -138,10 +140,10 @@ void SquareGenerator::Square::Draw(
 
   // Optionally draw on alpha plane if given.
   const webrtc::I420ABufferInterface* yuva_buffer = frame_buffer->GetI420A();
-  for (int y = y_; y < y_ + length_; ++y) {
+  for (int y = y_; y < y_ + length; ++y) {
     uint8_t* pos_y = (const_cast<uint8_t*>(yuva_buffer->DataA()) + x_ +
                       y * yuva_buffer->StrideA());
-    memset(pos_y, yuv_a_, length_);
+    memset(pos_y, yuv_a_, length);
   }
 }
 
