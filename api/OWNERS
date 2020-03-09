@@ -7,8 +7,5 @@ deadbeef@webrtc.org
 
 per-file peer_connection*=hbos@webrtc.org
 
-per-file *.gn=phoglund@webrtc.org
-per-file *.gni=phoglund@webrtc.org
-
 per-file DEPS=mbonadei@webrtc.org
 per-file DEPS=kwiberg@webrtc.org
