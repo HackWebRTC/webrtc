@@ -112,7 +112,8 @@ rtc_library("rtc_base_approved") {
   }
 
   if (is_nacl) {
-    public_deps += [ "//native_client_sdk/src/libraries/nacl_io" ]  # no-presubmit-check TODO(webrtc:8603)
+    public_deps +=  # no-presubmit-check TODO(webrtc:8603)
+        [ "//native_client_sdk/src/libraries/nacl_io" ]
   }
 
   if (is_android) {
@@ -602,7 +603,8 @@ rtc_library("rtc_json") {
   deps = [ ":stringutils" ]
   all_dependent_configs = [ "//third_party/jsoncpp:jsoncpp_config" ]
   if (rtc_build_json) {
-    public_deps = [ "//third_party/jsoncpp" ]  # no-presubmit-check TODO(webrtc:8603)
+    public_deps =  # no-presubmit-check TODO(webrtc:8603)
+        [ "//third_party/jsoncpp" ]
   } else {
     include_dirs = [ "$rtc_jsoncpp_root" ]
 
@@ -759,6 +761,7 @@ rtc_library("rtc_base") {
     "../api:function_view",
     "../api:scoped_refptr",
     "../api/task_queue",
+    "../system_wrappers:field_trial",
     "network:sent_packet",
     "system:file_wrapper",
     "system:rtc_export",
@@ -966,7 +969,9 @@ rtc_library("rtc_base") {
   }
 
   if (is_nacl) {
-    public_deps += [ "//native_client_sdk/src/libraries/nacl_io" ]  # no-presubmit-check TODO(webrtc:8603)
+    public_deps +=  # no-presubmit-check TODO(webrtc:8603)
+        [ "//native_client_sdk/src/libraries/nacl_io" ]
+
     defines += [ "timezone=_timezone" ]
     sources -= [ "ifaddrs_converter.cc" ]
   }
@@ -1333,6 +1338,7 @@ if (rtc_include_tests) {
       "../api:array_view",
       "../api/task_queue",
       "../api/task_queue:task_queue_test",
+      "../test:field_trial",
       "../test:fileutils",
       "../test:rtc_expect_death",
       "../test:test_main",

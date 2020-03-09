@@ -36,6 +36,7 @@
 #include "rtc_base/stream.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
+#include "system_wrappers/include/field_trial.h"
 
 #if (OPENSSL_VERSION_NUMBER < 0x10100000L)
 #error "webrtc requires at least OpenSSL version 1.1.0, to support DTLS-SRTP"
@@ -273,7 +274,11 @@ OpenSSLStreamAdapter::OpenSSLStreamAdapter(StreamInterface* stream)
       ssl_(nullptr),
       ssl_ctx_(nullptr),
       ssl_mode_(SSL_MODE_TLS),
-      ssl_max_version_(SSL_PROTOCOL_TLS_12) {}
+      ssl_max_version_(SSL_PROTOCOL_TLS_12),
+      // Default is to support legacy TLS protocols.
+      // This will be changed to default non-support in M82 or M83.
+      support_legacy_tls_protocols_flag_(
+          !webrtc::field_trial::IsDisabled("WebRTC-LegacyTlsProtocols")) {}
 
 OpenSSLStreamAdapter::~OpenSSLStreamAdapter() {
   Cleanup(0);
@@ -959,25 +964,34 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
     return nullptr;
   }
 
-  // TODO(https://bugs.webrtc.org/10261): Evaluate and drop (D)TLS 1.0 and 1.1
-  // support by default.
-  SSL_CTX_set_min_proto_version(
-      ctx, ssl_mode_ == SSL_MODE_DTLS ? DTLS1_VERSION : TLS1_VERSION);
-  switch (ssl_max_version_) {
-    case SSL_PROTOCOL_TLS_10:
-      SSL_CTX_set_max_proto_version(
-          ctx, ssl_mode_ == SSL_MODE_DTLS ? DTLS1_VERSION : TLS1_VERSION);
-      break;
-    case SSL_PROTOCOL_TLS_11:
-      SSL_CTX_set_max_proto_version(
-          ctx, ssl_mode_ == SSL_MODE_DTLS ? DTLS1_VERSION : TLS1_1_VERSION);
-      break;
-    case SSL_PROTOCOL_TLS_12:
-    default:
-      SSL_CTX_set_max_proto_version(
-          ctx, ssl_mode_ == SSL_MODE_DTLS ? DTLS1_2_VERSION : TLS1_2_VERSION);
-      break;
+  if (support_legacy_tls_protocols_flag_) {
+    // TODO(https://bugs.webrtc.org/10261): Completely remove this branch in
+    // M84.
+    SSL_CTX_set_min_proto_version(
+        ctx, ssl_mode_ == SSL_MODE_DTLS ? DTLS1_VERSION : TLS1_VERSION);
+    switch (ssl_max_version_) {
+      case SSL_PROTOCOL_TLS_10:
+        SSL_CTX_set_max_proto_version(
+            ctx, ssl_mode_ == SSL_MODE_DTLS ? DTLS1_VERSION : TLS1_VERSION);
+        break;
+      case SSL_PROTOCOL_TLS_11:
+        SSL_CTX_set_max_proto_version(
+            ctx, ssl_mode_ == SSL_MODE_DTLS ? DTLS1_VERSION : TLS1_1_VERSION);
+        break;
+      case SSL_PROTOCOL_TLS_12:
+      default:
+        SSL_CTX_set_max_proto_version(
+            ctx, ssl_mode_ == SSL_MODE_DTLS ? DTLS1_2_VERSION : TLS1_2_VERSION);
+        break;
+    }
+  } else {
+    // TODO(https://bugs.webrtc.org/10261): Make this the default in M84.
+    SSL_CTX_set_min_proto_version(
+        ctx, ssl_mode_ == SSL_MODE_DTLS ? DTLS1_2_VERSION : TLS1_2_VERSION);
+    SSL_CTX_set_max_proto_version(
+        ctx, ssl_mode_ == SSL_MODE_DTLS ? DTLS1_2_VERSION : TLS1_2_VERSION);
   }
+
 #ifdef OPENSSL_IS_BORINGSSL
   // SSL_CTX_set_current_time_cb is only supported in BoringSSL.
   if (g_use_time_callback_for_testing) {
