@@ -1757,6 +1757,81 @@ TEST_F(MediaSessionDescriptionFactoryTest,
 }
 
 TEST_F(MediaSessionDescriptionFactoryTest,
+       NegotiateAbsoluteCaptureTimeWhenUnexposedLocally) {
+  MediaSessionOptions opts;
+  AddAudioVideoSections(RtpTransceiverDirection::kRecvOnly, &opts);
+
+  const cricket::RtpHeaderExtensions offered_extensions = {
+      RtpExtension(RtpExtension::kAbsoluteCaptureTimeUri, 7)};
+  const cricket::RtpHeaderExtensions local_extensions = {
+      RtpExtension(RtpExtension::kTransportSequenceNumberUri, 5)};
+  f1_.set_video_rtp_header_extensions(offered_extensions);
+  f1_.set_audio_rtp_header_extensions(offered_extensions);
+  f2_.set_video_rtp_header_extensions(local_extensions);
+  f2_.set_audio_rtp_header_extensions(local_extensions);
+
+  std::unique_ptr<SessionDescription> offer = f1_.CreateOffer(opts, nullptr);
+  std::unique_ptr<SessionDescription> answer =
+      f2_.CreateAnswer(offer.get(), opts, nullptr);
+  EXPECT_THAT(
+      GetFirstVideoContentDescription(answer.get())->rtp_header_extensions(),
+      ElementsAreArray(offered_extensions));
+  EXPECT_THAT(
+      GetFirstAudioContentDescription(answer.get())->rtp_header_extensions(),
+      ElementsAreArray(offered_extensions));
+}
+
+TEST_F(MediaSessionDescriptionFactoryTest,
+       NegotiateAbsoluteCaptureTimeWhenExposedLocally) {
+  MediaSessionOptions opts;
+  AddAudioVideoSections(RtpTransceiverDirection::kRecvOnly, &opts);
+
+  const cricket::RtpHeaderExtensions offered_extensions = {
+      RtpExtension(RtpExtension::kAbsoluteCaptureTimeUri, 7)};
+  const cricket::RtpHeaderExtensions local_extensions = {
+      RtpExtension(RtpExtension::kAbsoluteCaptureTimeUri, 5)};
+  f1_.set_video_rtp_header_extensions(offered_extensions);
+  f1_.set_audio_rtp_header_extensions(offered_extensions);
+  f2_.set_video_rtp_header_extensions(local_extensions);
+  f2_.set_audio_rtp_header_extensions(local_extensions);
+
+  std::unique_ptr<SessionDescription> offer = f1_.CreateOffer(opts, nullptr);
+  std::unique_ptr<SessionDescription> answer =
+      f2_.CreateAnswer(offer.get(), opts, nullptr);
+  EXPECT_THAT(
+      GetFirstVideoContentDescription(answer.get())->rtp_header_extensions(),
+      ElementsAreArray(offered_extensions));
+  EXPECT_THAT(
+      GetFirstAudioContentDescription(answer.get())->rtp_header_extensions(),
+      ElementsAreArray(offered_extensions));
+}
+
+TEST_F(MediaSessionDescriptionFactoryTest,
+       DoNotNegotiateAbsoluteCaptureTimeWhenNotOffered) {
+  MediaSessionOptions opts;
+  AddAudioVideoSections(RtpTransceiverDirection::kRecvOnly, &opts);
+
+  const cricket::RtpHeaderExtensions offered_extensions = {
+      RtpExtension(RtpExtension::kTransportSequenceNumberUri, 7)};
+  const cricket::RtpHeaderExtensions local_extensions = {
+      RtpExtension(RtpExtension::kAbsoluteCaptureTimeUri, 5)};
+  f1_.set_video_rtp_header_extensions(offered_extensions);
+  f1_.set_audio_rtp_header_extensions(offered_extensions);
+  f2_.set_video_rtp_header_extensions(local_extensions);
+  f2_.set_audio_rtp_header_extensions(local_extensions);
+
+  std::unique_ptr<SessionDescription> offer = f1_.CreateOffer(opts, nullptr);
+  std::unique_ptr<SessionDescription> answer =
+      f2_.CreateAnswer(offer.get(), opts, nullptr);
+  EXPECT_THAT(
+      GetFirstVideoContentDescription(answer.get())->rtp_header_extensions(),
+      IsEmpty());
+  EXPECT_THAT(
+      GetFirstAudioContentDescription(answer.get())->rtp_header_extensions(),
+      IsEmpty());
+}
+
+TEST_F(MediaSessionDescriptionFactoryTest,
        TestOfferAnswerWithEncryptedRtpExtensionsBoth) {
   MediaSessionOptions opts;
   AddAudioVideoSections(RtpTransceiverDirection::kRecvOnly, &opts);

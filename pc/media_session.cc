@@ -1075,11 +1075,15 @@ static void NegotiateRtpHeaderExtensions(
 
   bool frame_descriptor_in_local = false;
   bool dependency_descriptor_in_local = false;
+  bool abs_capture_time_in_local = false;
+
   for (const webrtc::RtpExtension& ours : local_extensions) {
     if (ours.uri == webrtc::RtpExtension::kGenericFrameDescriptorUri00)
       frame_descriptor_in_local = true;
     else if (ours.uri == webrtc::RtpExtension::kDependencyDescriptorUri)
       dependency_descriptor_in_local = true;
+    else if (ours.uri == webrtc::RtpExtension::kAbsoluteCaptureTimeUri)
+      abs_capture_time_in_local = true;
     webrtc::RtpExtension theirs;
     if (FindByUriWithEncryptionPreference(
             offered_extensions, ours.uri,
@@ -1116,6 +1120,15 @@ static void NegotiateRtpHeaderExtensions(
       FindByUriWithEncryptionPreference(
           offered_extensions,
           webrtc::RtpExtension::kGenericFrameDescriptorUri00,
+          enable_encrypted_rtp_header_extensions, &theirs)) {
+    negotiated_extensions->push_back(theirs);
+  }
+
+  // Absolute capture time support. If the extension is not present locally, but
+  // is in the offer, we add it to the list.
+  if (!abs_capture_time_in_local &&
+      FindByUriWithEncryptionPreference(
+          offered_extensions, webrtc::RtpExtension::kAbsoluteCaptureTimeUri,
           enable_encrypted_rtp_header_extensions, &theirs)) {
     negotiated_extensions->push_back(theirs);
   }
