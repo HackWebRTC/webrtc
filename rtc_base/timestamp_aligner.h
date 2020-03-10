@@ -45,6 +45,11 @@ class RTC_EXPORT TimestampAligner {
   // translated timestamp.
   int64_t TranslateTimestamp(int64_t capturer_time_us, int64_t system_time_us);
 
+  // Returns the translated timestamp without updating the states. This is to
+  // allow TimestampAligner to translate capturer time into system clock based
+  // on earlier observations. It won't guarantee monotonicity.
+  int64_t TranslateTimestamp(int64_t capturer_time_us) const;
+
  protected:
   // Update the estimated offset between capturer's time and system monotonic
   // time.
@@ -69,6 +74,9 @@ class RTC_EXPORT TimestampAligner {
   int64_t clip_bias_us_;
   // Used to ensure that translated timestamps are monotonous.
   int64_t prev_translated_time_us_;
+  // Offset between |prev_translated_time_us_| and the corresponding capturer
+  // time.
+  int64_t prev_time_offset_us_;
   RTC_DISALLOW_COPY_AND_ASSIGN(TimestampAligner);
 };
 
