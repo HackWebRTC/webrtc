@@ -224,8 +224,7 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
       packet_buffer_(clock_, kPacketBufferStartSize, PacketBufferMaxSize()),
       has_received_frame_(false),
       frames_decryptable_(false),
-      absolute_capture_time_receiver_(clock),
-      frame_transformer_(frame_transformer) {
+      absolute_capture_time_receiver_(clock) {
   constexpr bool remb_candidate = true;
   if (packet_router_)
     packet_router_->AddReceiveRtpModule(rtp_rtcp_.get(), remb_candidate);
@@ -285,6 +284,13 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
       buffered_frame_decryptor_->SetFrameDecryptor(std::move(frame_decryptor));
     }
   }
+
+  if (frame_transformer) {
+    frame_transformer_delegate_ = new rtc::RefCountedObject<
+        RtpVideoStreamReceiverFrameTransformerDelegate>(
+        this, std::move(frame_transformer), rtc::Thread::Current());
+    frame_transformer_delegate_->Init();
+  }
 }
 
 RtpVideoStreamReceiver::RtpVideoStreamReceiver(
@@ -326,6 +332,8 @@ RtpVideoStreamReceiver::~RtpVideoStreamReceiver() {
   if (packet_router_)
     packet_router_->RemoveReceiveRtpModule(rtp_rtcp_.get());
   UpdateHistograms();
+  if (frame_transformer_delegate_)
+    frame_transformer_delegate_->Reset();
 }
 
 void RtpVideoStreamReceiver::AddReceiveCodec(
@@ -796,10 +804,13 @@ void RtpVideoStreamReceiver::OnAssembledFrame(
     last_assembled_frame_rtp_timestamp_ = frame->Timestamp();
   }
 
-  if (buffered_frame_decryptor_ == nullptr) {
-    reference_finder_->ManageFrame(std::move(frame));
-  } else {
+  if (buffered_frame_decryptor_ != nullptr) {
     buffered_frame_decryptor_->ManageEncryptedFrame(std::move(frame));
+  } else if (frame_transformer_delegate_) {
+    frame_transformer_delegate_->TransformFrame(std::move(frame),
+                                                config_.rtp.remote_ssrc);
+  } else {
+    reference_finder_->ManageFrame(std::move(frame));
   }
 }
 
@@ -872,6 +883,12 @@ void RtpVideoStreamReceiver::RemoveSecondarySink(
     return;
   }
   secondary_sinks_.erase(it);
+}
+
+void RtpVideoStreamReceiver::ManageFrame(
+    std::unique_ptr<video_coding::RtpFrameObject> frame) {
+  rtc::CritScope lock(&reference_finder_lock_);
+  reference_finder_->ManageFrame(std::move(frame));
 }
 
 void RtpVideoStreamReceiver::ReceivePacket(const RtpPacketReceived& packet) {

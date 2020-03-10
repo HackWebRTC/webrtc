@@ -17,6 +17,7 @@
 #include "api/video/video_frame_type.h"
 #include "common_video/h264/h264_common.h"
 #include "media/base/media_constants.h"
+#include "modules/rtp_rtcp/source/rtp_descriptor_authentication.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "modules/rtp_rtcp/source/rtp_format_vp9.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor.h"
@@ -122,6 +123,17 @@ class MockOnCompleteFrameCallback
 class MockRtpPacketSink : public RtpPacketSinkInterface {
  public:
   MOCK_METHOD1(OnRtpPacket, void(const RtpPacketReceived&));
+};
+
+class MockFrameTransformer : public FrameTransformerInterface {
+ public:
+  MOCK_METHOD3(TransformFrame,
+               void(std::unique_ptr<video_coding::EncodedFrame> frame,
+                    std::vector<uint8_t> additional_data,
+                    uint32_t ssrc));
+  MOCK_METHOD1(RegisterTransformedFrameCallback,
+               void(rtc::scoped_refptr<TransformedFrameCallback>));
+  MOCK_METHOD0(UnregisterTransformedFrameCallback, void());
 };
 
 constexpr uint32_t kSsrc = 111;
@@ -1204,5 +1216,34 @@ TEST_F(RtpVideoStreamReceiverTest, RepeatedSecondarySinkDisallowed) {
   rtp_video_stream_receiver_->RemoveSecondarySink(&secondary_sink);
 }
 #endif
+
+TEST_F(RtpVideoStreamReceiverTest, TransformFrame) {
+  rtc::scoped_refptr<MockFrameTransformer> mock_frame_transformer =
+      new rtc::RefCountedObject<MockFrameTransformer>();
+  EXPECT_CALL(*mock_frame_transformer, RegisterTransformedFrameCallback);
+  auto receiver = std::make_unique<RtpVideoStreamReceiver>(
+      Clock::GetRealTimeClock(), &mock_transport_, nullptr, nullptr, &config_,
+      rtp_receive_statistics_.get(), nullptr, process_thread_.get(),
+      &mock_nack_sender_, nullptr, &mock_on_complete_frame_callback_, nullptr,
+      mock_frame_transformer);
+
+  RtpPacketReceived rtp_packet;
+  RTPVideoHeader video_header;
+  rtc::CopyOnWriteBuffer data({1, 2, 3, 4});
+  rtp_packet.SetSequenceNumber(1);
+  video_header.is_first_packet_in_frame = true;
+  video_header.is_last_packet_in_frame = true;
+  video_header.codec = kVideoCodecGeneric;
+  video_header.frame_type = VideoFrameType::kVideoFrameKey;
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(data.data(),
+                                                           data.size());
+  EXPECT_CALL(*mock_frame_transformer,
+              TransformFrame(_, RtpDescriptorAuthentication(video_header),
+                             config_.rtp.remote_ssrc));
+  receiver->OnReceivedPayloadData(data, rtp_packet, video_header);
+
+  EXPECT_CALL(*mock_frame_transformer, UnregisterTransformedFrameCallback());
+  receiver = nullptr;
+}
 
 }  // namespace webrtc

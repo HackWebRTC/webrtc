@@ -48,6 +48,7 @@
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
 #include "video/buffered_frame_decryptor.h"
+#include "video/rtp_video_stream_receiver_frame_transformer_delegate.h"
 
 namespace webrtc {
 
@@ -197,6 +198,8 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   // themselves as secondary sinks.
   void AddSecondarySink(RtpPacketSinkInterface* sink);
   void RemoveSecondarySink(const RtpPacketSinkInterface* sink);
+
+  virtual void ManageFrame(std::unique_ptr<video_coding::RtpFrameObject> frame);
 
  private:
   // Used for buffering RTCP feedback messages and sending them all together.
@@ -370,7 +373,8 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
 
   int64_t last_completed_picture_id_ = 0;
 
-  rtc::scoped_refptr<FrameTransformerInterface> frame_transformer_;
+  rtc::scoped_refptr<RtpVideoStreamReceiverFrameTransformerDelegate>
+      frame_transformer_delegate_;
 };
 
 }  // namespace webrtc
