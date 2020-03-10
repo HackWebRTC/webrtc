@@ -3479,7 +3479,6 @@ void VideoSendStreamTest::TestVp9NonFlexMode(uint8_t num_temporal_layers,
 
       vp9_settings_.flexibleMode = false;
       vp9_settings_.frameDroppingOn = false;
-      vp9_settings_.automaticResizeOn = false;
       vp9_settings_.keyFrameInterval = kKeyFrameInterval;
       vp9_settings_.numberOfTemporalLayers = num_temporal_layers_;
       vp9_settings_.numberOfSpatialLayers = num_spatial_layers_;

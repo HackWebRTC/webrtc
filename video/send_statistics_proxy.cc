@@ -148,7 +148,6 @@ SendStatisticsProxy::SendStatisticsProxy(
       last_num_simulcast_streams_(0),
       last_spatial_layer_use_{},
       bw_limited_layers_(false),
-      internal_encoder_scaler_(false),
       uma_container_(
           new UmaSamplesContainer(GetUmaPrefix(content_type_), stats_, clock)) {
 }
@@ -1084,7 +1083,7 @@ void SendStatisticsProxy::UpdateAdaptationStats() {
                         cpu_counts_.num_framerate_reductions > 0;
   bool is_bandwidth_limited = quality_counts_.num_resolution_reductions > 0 ||
                               quality_counts_.num_framerate_reductions > 0 ||
-                              bw_limited_layers_ || internal_encoder_scaler_;
+                              bw_limited_layers_;
   if (is_bandwidth_limited) {
     // We may be both CPU limited and bandwidth limited at the same time but
     // there is no way to express this in standardized stats. Heuristically,
@@ -1118,10 +1117,6 @@ void SendStatisticsProxy::UpdateAdaptationStats() {
       }
     }
   }
-  if (internal_encoder_scaler_) {
-    stats_.bw_limited_resolution = true;
-  }
-
   stats_.quality_limitation_reason =
       quality_limitation_reason_tracker_.current_reason();
 
@@ -1167,15 +1162,6 @@ void SendStatisticsProxy::OnBitrateAllocationUpdated(
   }
   last_num_spatial_layers_ = num_spatial_layers;
   last_num_simulcast_streams_ = num_simulcast_streams;
-}
-
-// Informes observer if an internal encoder scaler has reduced video
-// resolution or not. |is_scaled| is a flag indicating if the video is scaled
-// down.
-void SendStatisticsProxy::OnEncoderInternalScalerUpdate(bool is_scaled) {
-  rtc::CritScope lock(&crit_);
-  internal_encoder_scaler_ = is_scaled;
-  UpdateAdaptationStats();
 }
 
 // TODO(asapersson): Include fps changes.

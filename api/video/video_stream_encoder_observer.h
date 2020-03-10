@@ -95,11 +95,6 @@ class VideoStreamEncoderObserver : public CpuOveruseMetricsObserver {
       const VideoCodec& codec,
       const VideoBitrateAllocation& allocation) {}
 
-  // Informes observer if an internal encoder scaler has reduced video
-  // resolution or not. |is_scaled| is a flag indicating if the video is scaled
-  // down.
-  virtual void OnEncoderInternalScalerUpdate(bool is_scaled) {}
-
   // TODO(nisse): VideoStreamEncoder wants to query the stats, which makes this
   // not a pure observer. GetInputFrameRate is needed for the cpu adaptation, so
   // can be deleted if that responsibility is moved out to a VideoStreamAdaptor
