@@ -327,6 +327,7 @@ if (is_android) {
       "//rtc_base:base_java",
       "//third_party/android_deps:com_android_support_support_annotations_java",
     ]
+    srcjar_deps = [ "//api/video:video_frame_enums" ]
   }
 
   # Modules, in alphabetical order.

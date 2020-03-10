@@ -213,10 +213,8 @@ int32_t MediaCodecVideoDecoder::InitDecodeOnCodecThread() {
 
   ResetVariables();
 
-  ScopedJavaLocalRef<jobject> j_video_codec_enum =
-      Java_VideoCodecType_fromNativeIndex(jni, codecType_);
   bool success = Java_MediaCodecVideoDecoder_initDecode(
-      jni, j_media_codec_video_decoder_, j_video_codec_enum, codec_.width,
+      jni, j_media_codec_video_decoder_, codecType_, codec_.width,
       codec_.height);
 
   if (CheckException(jni) || !success) {

@@ -512,11 +512,9 @@ int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
   frames_received_since_last_key_ = kMinKeyFrameInterval;
 
   // We enforce no extra stride/padding in the format creation step.
-  ScopedJavaLocalRef<jobject> j_video_codec_enum =
-      Java_VideoCodecType_fromNativeIndex(jni, codec_type);
   const bool encode_status = Java_MediaCodecVideoEncoder_initEncode(
-      jni, j_media_codec_video_encoder_, j_video_codec_enum, profile_, width,
-      height, kbps, fps, use_surface);
+      jni, j_media_codec_video_encoder_, codec_type, profile_, width, height,
+      kbps, fps, use_surface);
 
   if (!encode_status) {
     ALOGE << "Failed to configure encoder.";
