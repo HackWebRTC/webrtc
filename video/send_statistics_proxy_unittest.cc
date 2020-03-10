@@ -2147,6 +2147,15 @@ TEST_F(SendStatisticsProxyTest, GetStatsReportsBandwidthLimitedResolution) {
   allocation.set_bw_limited(true);
   statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
   EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
+
+  // Revert for the next test.
+  allocation.set_bw_limited(false);
+  statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
+  EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
+
+  // Internal encoder scaler reduced resolution.
+  statistics_proxy_->OnEncoderInternalScalerUpdate(/*scaled=*/true);
+  EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
 }
 
 TEST_F(SendStatisticsProxyTest, GetStatsReportsTargetMediaBitrate) {
