@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VIDEO_QUALITY_SCALER_RESOURCE_H_
-#define VIDEO_QUALITY_SCALER_RESOURCE_H_
+#ifndef VIDEO_ADAPTATION_QUALITY_SCALER_RESOURCE_H_
+#define VIDEO_ADAPTATION_QUALITY_SCALER_RESOURCE_H_
 
 #include <memory>
 #include <string>
@@ -22,9 +22,9 @@ namespace webrtc {
 
 // Handles interaction with the QualityScaler.
 // TODO(hbos): Add unittests specific to this class, it is currently only tested
-// indirectly by usage in the OveruseFrameDetectorResourceAdaptationModule
-// (which is only tested because of its usage in VideoStreamEncoder); all tests
-// are currently in video_stream_encoder_unittest.cc.
+// indirectly by usage in the ResourceAdaptationProcessor (which is only tested
+// because of its usage in VideoStreamEncoder); all tests are currently in
+// video_stream_encoder_unittest.cc.
 // TODO(https://crbug.com/webrtc/11222): Move this class to the
 // video/adaptation/ subdirectory.
 class QualityScalerResource : public Resource,
@@ -57,4 +57,4 @@ class QualityScalerResource : public Resource,
 
 }  // namespace webrtc
 
-#endif  // VIDEO_QUALITY_SCALER_RESOURCE_H_
+#endif  // VIDEO_ADAPTATION_QUALITY_SCALER_RESOURCE_H_

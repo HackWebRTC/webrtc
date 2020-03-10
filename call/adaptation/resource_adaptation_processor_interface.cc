@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 The WebRTC Project Authors. All rights reserved.
+ *  Copyright 2020 The WebRTC Project Authors. All rights reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "call/adaptation/resource_adaptation_module_interface.h"
+#include "call/adaptation/resource_adaptation_processor_interface.h"
 
 namespace webrtc {
 
-ResourceAdaptationModuleListener::~ResourceAdaptationModuleListener() {}
+ResourceAdaptationProcessorListener::~ResourceAdaptationProcessorListener() {}
 
-ResourceAdaptationModuleInterface::~ResourceAdaptationModuleInterface() {}
+ResourceAdaptationProcessorInterface::~ResourceAdaptationProcessorInterface() {}
 
 }  // namespace webrtc

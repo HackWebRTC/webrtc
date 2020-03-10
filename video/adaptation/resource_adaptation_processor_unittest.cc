@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video/overuse_frame_detector_resource_adaptation_module.h"
+#include "video/adaptation/resource_adaptation_processor.h"
 
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -16,62 +16,55 @@
 
 namespace webrtc {
 
-TEST(OveruseFrameDetectorResourceAdaptationModuleTest,
-     FirstAdaptationDown_Fps) {
+TEST(ResourceAdaptationProcessorTest, FirstAdaptationDown_Fps) {
   AdaptationCounters cpu;
   AdaptationCounters qp;
   AdaptationCounters total(0, 1);
 
-  OveruseFrameDetectorResourceAdaptationModule::OnAdaptationCountChanged(
-      total, &cpu, &qp);
+  ResourceAdaptationProcessor::OnAdaptationCountChanged(total, &cpu, &qp);
   AdaptationCounters expected_cpu(0, 1);
   AdaptationCounters expected_qp;
   EXPECT_EQ(expected_cpu, cpu);
   EXPECT_EQ(expected_qp, qp);
 }
 
-TEST(OveruseFrameDetectorResourceAdaptationModuleTest,
-     FirstAdaptationDown_Resolution) {
+TEST(ResourceAdaptationProcessorTest, FirstAdaptationDown_Resolution) {
   AdaptationCounters cpu;
   AdaptationCounters qp;
   AdaptationCounters total(1, 0);
 
-  OveruseFrameDetectorResourceAdaptationModule::OnAdaptationCountChanged(
-      total, &cpu, &qp);
+  ResourceAdaptationProcessor::OnAdaptationCountChanged(total, &cpu, &qp);
   AdaptationCounters expected_cpu(1, 0);
   AdaptationCounters expected_qp;
   EXPECT_EQ(expected_cpu, cpu);
   EXPECT_EQ(expected_qp, qp);
 }
 
-TEST(OveruseFrameDetectorResourceAdaptationModuleTest, LastAdaptUp_Fps) {
+TEST(ResourceAdaptationProcessorTest, LastAdaptUp_Fps) {
   AdaptationCounters cpu(0, 1);
   AdaptationCounters qp;
   AdaptationCounters total;
 
-  OveruseFrameDetectorResourceAdaptationModule::OnAdaptationCountChanged(
-      total, &cpu, &qp);
+  ResourceAdaptationProcessor::OnAdaptationCountChanged(total, &cpu, &qp);
   AdaptationCounters expected_cpu;
   AdaptationCounters expected_qp;
   EXPECT_EQ(expected_cpu, cpu);
   EXPECT_EQ(expected_qp, qp);
 }
 
-TEST(OveruseFrameDetectorResourceAdaptationModuleTest, LastAdaptUp_Resolution) {
+TEST(ResourceAdaptationProcessorTest, LastAdaptUp_Resolution) {
   AdaptationCounters cpu(1, 0);
   AdaptationCounters qp;
   AdaptationCounters total;
 
-  OveruseFrameDetectorResourceAdaptationModule::OnAdaptationCountChanged(
-      total, &cpu, &qp);
+  ResourceAdaptationProcessor::OnAdaptationCountChanged(total, &cpu, &qp);
   AdaptationCounters expected_cpu;
   AdaptationCounters expected_qp;
   EXPECT_EQ(expected_cpu, cpu);
   EXPECT_EQ(expected_qp, qp);
 }
 
-TEST(OveruseFrameDetectorResourceAdaptationModuleTest,
-     AdaptUpWithBorrow_Resolution) {
+TEST(ResourceAdaptationProcessorTest, AdaptUpWithBorrow_Resolution) {
   AdaptationCounters cpu(0, 1);
   AdaptationCounters qp(1, 0);
   AdaptationCounters total(0, 1);
@@ -79,8 +72,7 @@ TEST(OveruseFrameDetectorResourceAdaptationModuleTest,
   // CPU adaptation for resolution, but no resolution adaptation left from CPU.
   // We then borrow the resolution adaptation from qp, and give qp the fps
   // adaptation from CPU.
-  OveruseFrameDetectorResourceAdaptationModule::OnAdaptationCountChanged(
-      total, &cpu, &qp);
+  ResourceAdaptationProcessor::OnAdaptationCountChanged(total, &cpu, &qp);
 
   AdaptationCounters expected_cpu(0, 0);
   AdaptationCounters expected_qp(0, 1);
@@ -88,15 +80,14 @@ TEST(OveruseFrameDetectorResourceAdaptationModuleTest,
   EXPECT_EQ(expected_qp, qp);
 }
 
-TEST(OveruseFrameDetectorResourceAdaptationModuleTest, AdaptUpWithBorrow_Fps) {
+TEST(ResourceAdaptationProcessorTest, AdaptUpWithBorrow_Fps) {
   AdaptationCounters cpu(1, 0);
   AdaptationCounters qp(0, 1);
   AdaptationCounters total(1, 0);
 
   // CPU adaptation for fps, but no fps adaptation left from CPU. We then borrow
   // the fps adaptation from qp, and give qp the resolution adaptation from CPU.
-  OveruseFrameDetectorResourceAdaptationModule::OnAdaptationCountChanged(
-      total, &cpu, &qp);
+  ResourceAdaptationProcessor::OnAdaptationCountChanged(total, &cpu, &qp);
 
   AdaptationCounters expected_cpu(0, 0);
   AdaptationCounters expected_qp(1, 0);

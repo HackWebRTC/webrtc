@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video/quality_scaler_resource.h"
+#include "video/adaptation/quality_scaler_resource.h"
 
 #include <utility>
 

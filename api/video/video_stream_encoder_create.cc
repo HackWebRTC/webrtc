@@ -12,7 +12,7 @@
 
 #include <memory>
 
-#include "video/overuse_frame_detector.h"
+#include "video/adaptation/overuse_frame_detector.h"
 #include "video/video_stream_encoder.h"
 
 namespace webrtc {

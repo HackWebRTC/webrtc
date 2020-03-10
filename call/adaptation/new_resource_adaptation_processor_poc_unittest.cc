@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 The WebRTC Project Authors. All rights reserved.
+ *  Copyright 2020 The WebRTC Project Authors. All rights reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "call/adaptation/resource_adaptation_processor.h"
+#include "call/adaptation/new_resource_adaptation_processor_poc.h"
 
 #include "absl/types/optional.h"
 #include "call/adaptation/resource.h"
@@ -33,7 +33,8 @@ void ConnectNeighbors(ResourceConsumerConfiguration* upper,
 }
 
 std::vector<FakeResourceConsumerConfiguration*>
-AddStandardResolutionConfigurations(ResourceAdaptationProcessor* processor) {
+AddStandardResolutionConfigurations(
+    NewResourceAdaptationProcessorPoc* processor) {
   std::vector<FakeResourceConsumerConfiguration*> configs;
   configs.push_back(processor->AddConfiguration(
       std::make_unique<FakeResourceConsumerConfiguration>(1920, 1080, 30.0,
@@ -53,9 +54,9 @@ AddStandardResolutionConfigurations(ResourceAdaptationProcessor* processor) {
   return configs;
 }
 
-TEST(ResourceAdaptationProcessorTest,
+TEST(NewResourceAdaptationProcessorPocTest,
      SingleStreamAndResourceDontAdaptDownWhenStable) {
-  ResourceAdaptationProcessor processor;
+  NewResourceAdaptationProcessorPoc processor;
   processor.AddResource(
       std::make_unique<FakeResource>(ResourceUsageState::kStable));
   auto resolution_configs = AddStandardResolutionConfigurations(&processor);
@@ -64,9 +65,9 @@ TEST(ResourceAdaptationProcessorTest,
   EXPECT_EQ(absl::nullopt, processor.FindNextConfiguration());
 }
 
-TEST(ResourceAdaptationProcessorTest,
+TEST(NewResourceAdaptationProcessorPocTest,
      SingleStreamAndResourceAdaptDownOnOveruse) {
-  ResourceAdaptationProcessor processor;
+  NewResourceAdaptationProcessorPoc processor;
   processor.AddResource(
       std::make_unique<FakeResource>(ResourceUsageState::kOveruse));
   auto resolution_configs = AddStandardResolutionConfigurations(&processor);
@@ -78,9 +79,9 @@ TEST(ResourceAdaptationProcessorTest,
   EXPECT_EQ(resolution_configs[k720pIndex], next_config->configuration);
 }
 
-TEST(ResourceAdaptationProcessorTest,
+TEST(NewResourceAdaptationProcessorPocTest,
      SingleStreamAndResourceDontAdaptOnOveruseIfMinResolution) {
-  ResourceAdaptationProcessor processor;
+  NewResourceAdaptationProcessorPoc processor;
   processor.AddResource(
       std::make_unique<FakeResource>(ResourceUsageState::kOveruse));
   auto resolution_configs = AddStandardResolutionConfigurations(&processor);
@@ -89,9 +90,9 @@ TEST(ResourceAdaptationProcessorTest,
   EXPECT_EQ(absl::nullopt, processor.FindNextConfiguration());
 }
 
-TEST(ResourceAdaptationProcessorTest,
+TEST(NewResourceAdaptationProcessorPocTest,
      SingleStreamAndResourceAdaptUpOnUnderuse) {
-  ResourceAdaptationProcessor processor;
+  NewResourceAdaptationProcessorPoc processor;
   processor.AddResource(
       std::make_unique<FakeResource>(ResourceUsageState::kUnderuse));
   auto resolution_configs = AddStandardResolutionConfigurations(&processor);
@@ -103,9 +104,9 @@ TEST(ResourceAdaptationProcessorTest,
   EXPECT_EQ(resolution_configs[k1080pIndex], next_config->configuration);
 }
 
-TEST(ResourceAdaptationProcessorTest,
+TEST(NewResourceAdaptationProcessorPocTest,
      SingleStreamAndResourceDontAdaptOnUnderuseIfMaxResolution) {
-  ResourceAdaptationProcessor processor;
+  NewResourceAdaptationProcessorPoc processor;
   processor.AddResource(
       std::make_unique<FakeResource>(ResourceUsageState::kUnderuse));
   auto resolution_configs = AddStandardResolutionConfigurations(&processor);
@@ -114,9 +115,9 @@ TEST(ResourceAdaptationProcessorTest,
   EXPECT_EQ(absl::nullopt, processor.FindNextConfiguration());
 }
 
-TEST(ResourceAdaptationProcessorTest,
+TEST(NewResourceAdaptationProcessorPocTest,
      MultipleStreamsLargestStreamGetsAdaptedDownOnOveruse) {
-  ResourceAdaptationProcessor processor;
+  NewResourceAdaptationProcessorPoc processor;
   processor.AddResource(
       std::make_unique<FakeResource>(ResourceUsageState::kOveruse));
   auto resolution_configs = AddStandardResolutionConfigurations(&processor);
@@ -137,9 +138,9 @@ TEST(ResourceAdaptationProcessorTest,
   EXPECT_EQ(second_stream, next_config->consumer);
 }
 
-TEST(ResourceAdaptationProcessorTest,
+TEST(NewResourceAdaptationProcessorPocTest,
      MultipleStreamsSmallestStreamGetsAdaptedUpOnUnderuse) {
-  ResourceAdaptationProcessor processor;
+  NewResourceAdaptationProcessorPoc processor;
   processor.AddResource(
       std::make_unique<FakeResource>(ResourceUsageState::kUnderuse));
   auto resolution_configs = AddStandardResolutionConfigurations(&processor);
@@ -161,9 +162,9 @@ TEST(ResourceAdaptationProcessorTest,
 }
 
 // If both streams are equally valid to adapt down, the first one is preferred.
-TEST(ResourceAdaptationProcessorTest,
+TEST(NewResourceAdaptationProcessorPocTest,
      MultipleStreamsAdaptFirstStreamWhenBothStreamsHaveSameCost) {
-  ResourceAdaptationProcessor processor;
+  NewResourceAdaptationProcessorPoc processor;
   processor.AddResource(
       std::make_unique<FakeResource>(ResourceUsageState::kOveruse));
   auto resolution_configs = AddStandardResolutionConfigurations(&processor);
@@ -176,9 +177,9 @@ TEST(ResourceAdaptationProcessorTest,
   EXPECT_EQ(first_stream, next_config->consumer);
 }
 
-TEST(ResourceAdaptationProcessorTest,
+TEST(NewResourceAdaptationProcessorPocTest,
      MultipleResourcesAdaptDownIfAnyIsOverused) {
-  ResourceAdaptationProcessor processor;
+  NewResourceAdaptationProcessorPoc processor;
   auto* first_resource = processor.AddResource(
       std::make_unique<FakeResource>(ResourceUsageState::kOveruse));
   auto* second_resource = processor.AddResource(
@@ -194,9 +195,9 @@ TEST(ResourceAdaptationProcessorTest,
   EXPECT_TRUE(processor.FindNextConfiguration().has_value());
 }
 
-TEST(ResourceAdaptationProcessorTest,
+TEST(NewResourceAdaptationProcessorPocTest,
      MultipleResourcesAdaptUpIfAllAreUnderused) {
-  ResourceAdaptationProcessor processor;
+  NewResourceAdaptationProcessorPoc processor;
   processor.AddResource(
       std::make_unique<FakeResource>(ResourceUsageState::kUnderuse));
   auto* second_resource = processor.AddResource(
@@ -211,9 +212,9 @@ TEST(ResourceAdaptationProcessorTest,
   EXPECT_TRUE(processor.FindNextConfiguration().has_value());
 }
 
-TEST(ResourceAdaptationProcessorTest,
+TEST(NewResourceAdaptationProcessorPocTest,
      HighestPreferredNeighborIsPickedWhenAdapting) {
-  ResourceAdaptationProcessor processor;
+  NewResourceAdaptationProcessorPoc processor;
   // Set up the following graph, where (#) is the preference.
   //
   //    Downward arrows          Upward arrows

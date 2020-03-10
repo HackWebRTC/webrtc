@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 The WebRTC Project Authors. All rights reserved.
+ *  Copyright 2020 The WebRTC Project Authors. All rights reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VIDEO_OVERUSE_FRAME_DETECTOR_RESOURCE_ADAPTATION_MODULE_H_
-#define VIDEO_OVERUSE_FRAME_DETECTOR_RESOURCE_ADAPTATION_MODULE_H_
+#ifndef VIDEO_ADAPTATION_RESOURCE_ADAPTATION_PROCESSOR_H_
+#define VIDEO_ADAPTATION_RESOURCE_ADAPTATION_PROCESSOR_H_
 
 #include <map>
 #include <memory>
@@ -26,20 +26,24 @@
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_config.h"
 #include "call/adaptation/resource.h"
-#include "call/adaptation/resource_adaptation_module_interface.h"
+#include "call/adaptation/resource_adaptation_processor_interface.h"
 #include "rtc_base/experiments/quality_rampup_experiment.h"
 #include "rtc_base/experiments/quality_scaler_settings.h"
 #include "rtc_base/strings/string_builder.h"
 #include "system_wrappers/include/clock.h"
 #include "video/adaptation/adaptation_counters.h"
+#include "video/adaptation/encode_usage_resource.h"
+#include "video/adaptation/overuse_frame_detector.h"
+#include "video/adaptation/quality_scaler_resource.h"
 #include "video/adaptation/video_stream_adapter.h"
-#include "video/encode_usage_resource.h"
-#include "video/overuse_frame_detector.h"
-#include "video/quality_scaler_resource.h"
 
 namespace webrtc {
 
-class VideoStreamEncoder;
+// The assumed input frame size if we have not yet received a frame.
+// TODO(hbos): This is 144p - why are we assuming super low quality? Seems like
+// a bad heuristic.
+extern const int kDefaultInputPixelsWidth;
+extern const int kDefaultInputPixelsHeight;
 
 // This class is used by the VideoStreamEncoder and is responsible for adapting
 // resolution up or down based on encode usage percent. It keeps track of video
@@ -51,29 +55,26 @@ class VideoStreamEncoder;
 // TODO(hbos): Add unittests specific to this class, it is currently only tested
 // indirectly in video_stream_encoder_unittest.cc and other tests exercising
 // VideoStreamEncoder.
-// TODO(https://crbug.com/webrtc/11222): Rename this class to something more
-// appropriate and move it to the video/adaptation/ subdirectory.
-class OveruseFrameDetectorResourceAdaptationModule
-    : public ResourceAdaptationModuleInterface,
-      public ResourceListener {
+class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
+                                    public ResourceListener {
  public:
-  // The module can be constructed on any sequence, but must be initialized and
-  // used on a single sequence, e.g. the encoder queue.
-  OveruseFrameDetectorResourceAdaptationModule(
+  // The processor can be constructed on any sequence, but must be initialized
+  // and used on a single sequence, e.g. the encoder queue.
+  ResourceAdaptationProcessor(
       Clock* clock,
       bool experiment_cpu_load_estimator,
       std::unique_ptr<OveruseFrameDetector> overuse_detector,
       VideoStreamEncoderObserver* encoder_stats_observer,
-      ResourceAdaptationModuleListener* adaptation_listener);
-  ~OveruseFrameDetectorResourceAdaptationModule() override;
+      ResourceAdaptationProcessorListener* adaptation_listener);
+  ~ResourceAdaptationProcessor() override;
 
   DegradationPreference degradation_preference() const {
     return degradation_preference_;
   }
 
-  // ResourceAdaptationModuleInterface implementation.
+  // ResourceAdaptationProcessorInterface implementation.
   void StartResourceAdaptation(
-      ResourceAdaptationModuleListener* adaptation_listener) override;
+      ResourceAdaptationProcessorListener* adaptation_listener) override;
   void StopResourceAdaptation() override;
   // Uses a default AdaptReason of kCpu.
   void AddResource(Resource* resource) override;
@@ -167,7 +168,7 @@ class OveruseFrameDetectorResourceAdaptationModule
 
   std::string ActiveCountsToString() const;
 
-  ResourceAdaptationModuleListener* const adaptation_listener_;
+  ResourceAdaptationProcessorListener* const adaptation_listener_;
   Clock* clock_;
   State state_;
   const bool experiment_cpu_load_estimator_;
@@ -180,7 +181,7 @@ class OveruseFrameDetectorResourceAdaptationModule
   // owned by the adapter, this class has no buisness relying on implementation
   // details of the adapter.
   DegradationPreference degradation_preference_;
-  // Keeps track of source restrictions that this adaptation module outputs.
+  // Keeps track of source restrictions that this adaptation processor outputs.
   const std::unique_ptr<VideoStreamAdapter> stream_adapter_;
   const std::unique_ptr<EncodeUsageResource> encode_usage_resource_;
   const std::unique_ptr<QualityScalerResource> quality_scaler_resource_;
@@ -221,4 +222,4 @@ class OveruseFrameDetectorResourceAdaptationModule
 
 }  // namespace webrtc
 
-#endif  // VIDEO_OVERUSE_FRAME_DETECTOR_RESOURCE_ADAPTATION_MODULE_H_
+#endif  // VIDEO_ADAPTATION_RESOURCE_ADAPTATION_PROCESSOR_H_

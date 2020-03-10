@@ -26,7 +26,7 @@
 #include "api/video/video_stream_encoder_settings.h"
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
-#include "call/adaptation/resource_adaptation_module_interface.h"
+#include "call/adaptation/resource_adaptation_processor_interface.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "modules/video_coding/utility/frame_dropper.h"
 #include "rtc_base/critical_section.h"
@@ -38,9 +38,9 @@
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_queue.h"
 #include "system_wrappers/include/clock.h"
+#include "video/adaptation/resource_adaptation_processor.h"
 #include "video/encoder_bitrate_adjuster.h"
 #include "video/frame_encode_metadata_writer.h"
-#include "video/overuse_frame_detector_resource_adaptation_module.h"
 #include "video/video_source_sink_controller.h"
 
 namespace webrtc {
@@ -55,16 +55,8 @@ namespace webrtc {
 //  Call Stop() when done.
 class VideoStreamEncoder : public VideoStreamEncoderInterface,
                            private EncodedImageCallback,
-                           public ResourceAdaptationModuleListener {
+                           public ResourceAdaptationProcessorListener {
  public:
-  // If the encoder is reconfigured with a source, but we've yet to receive any
-  // frames, this 144p resolution is picked as the default value of
-  // |last_frame_size_|.
-  // TODO(hbos): Can we avoid guesses and properly handle the case of
-  // |last_frame_info_| not having a value, deleting these constants?
-  static const int kDefaultLastFrameInfoWidth;
-  static const int kDefaultLastFrameInfoHeight;
-
   VideoStreamEncoder(Clock* clock,
                      uint32_t number_of_cores,
                      VideoStreamEncoderObserver* encoder_stats_observer,
@@ -402,7 +394,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   bool encoder_switch_requested_ RTC_GUARDED_BY(&encoder_queue_);
 
   // The controller updates the sink wants based on restrictions that come from
-  // the resource adaptation module or adaptation due to bandwidth adaptation.
+  // the resource adaptation processor or adaptation due to bandwidth
+  // adaptation.
   //
   // This is used on the encoder queue, with a few exceptions:
   // - VideoStreamEncoder::SetSource() invokes SetSource().
@@ -413,8 +406,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // VideoSourceSinkController can be made single-threaded, and its lock can be
   // replaced with a sequence checker.
   std::unique_ptr<VideoSourceSinkController> video_source_sink_controller_;
-  std::unique_ptr<OveruseFrameDetectorResourceAdaptationModule>
-      resource_adaptation_module_ RTC_GUARDED_BY(&encoder_queue_);
+  std::unique_ptr<ResourceAdaptationProcessor> resource_adaptation_processor_
+      RTC_GUARDED_BY(&encoder_queue_);
 
   // All public methods are proxied to |encoder_queue_|. It must must be
   // destroyed first to make sure no tasks are run that use other members.

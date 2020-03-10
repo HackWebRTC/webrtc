@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 The WebRTC Project Authors. All rights reserved.
+ *  Copyright 2020 The WebRTC Project Authors. All rights reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef CALL_ADAPTATION_RESOURCE_ADAPTATION_PROCESSOR_H_
-#define CALL_ADAPTATION_RESOURCE_ADAPTATION_PROCESSOR_H_
+#ifndef CALL_ADAPTATION_NEW_RESOURCE_ADAPTATION_PROCESSOR_POC_H_
+#define CALL_ADAPTATION_NEW_RESOURCE_ADAPTATION_PROCESSOR_POC_H_
 
 #include <memory>
 #include <utility>
@@ -55,7 +55,7 @@ struct ConsumerConfigurationPair {
 //
 // This class owns all resources, consumers and configurations. As long as it is
 // alive, raw pointers to these are safe to use.
-class ResourceAdaptationProcessor {
+class NewResourceAdaptationProcessorPoc {
  public:
   const std::vector<std::unique_ptr<Resource>>& resources() const {
     return resources_;
@@ -70,7 +70,7 @@ class ResourceAdaptationProcessor {
 
   // Takes on ownership of the argument. A raw pointer is returned to the object
   // for convenience; it is valid for the lifetime of the
-  // ResourceAdaptationProcessor.
+  // NewResourceAdaptationProcessorPoc.
   // T = any subclass of Resource
   template <typename T>
   T* AddResource(std::unique_ptr<T> resource) {
@@ -96,7 +96,7 @@ class ResourceAdaptationProcessor {
   // Based on the current state of the resources and consumers, finds the
   // consumer that should be reconfigured up or down in order to maximies
   // quality without overusing any resources, as described in
-  // ResourceAdaptationProcessor's class description.
+  // NewResourceAdaptationProcessorPoc's class description.
   //
   // When this is used in a real system, care needs to be taken for how often
   // FindNextConfiguration() is called. There may be a delay between
@@ -115,4 +115,4 @@ class ResourceAdaptationProcessor {
 
 }  // namespace webrtc
 
-#endif  // CALL_ADAPTATION_RESOURCE_ADAPTATION_PROCESSOR_H_
+#endif  // CALL_ADAPTATION_NEW_RESOURCE_ADAPTATION_PROCESSOR_POC_H_

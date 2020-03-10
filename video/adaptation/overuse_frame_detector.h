@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2020 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VIDEO_OVERUSE_FRAME_DETECTOR_H_
-#define VIDEO_OVERUSE_FRAME_DETECTOR_H_
+#ifndef VIDEO_ADAPTATION_OVERUSE_FRAME_DETECTOR_H_
+#define VIDEO_ADAPTATION_OVERUSE_FRAME_DETECTOR_H_
 
 #include <list>
 #include <memory>
@@ -155,4 +155,4 @@ class OveruseFrameDetector {
 
 }  // namespace webrtc
 
-#endif  // VIDEO_OVERUSE_FRAME_DETECTOR_H_
+#endif  // VIDEO_ADAPTATION_OVERUSE_FRAME_DETECTOR_H_

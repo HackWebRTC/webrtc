@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 The WebRTC Project Authors. All rights reserved.
+ *  Copyright 2020 The WebRTC Project Authors. All rights reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "call/adaptation/resource_adaptation_processor.h"
+#include "call/adaptation/new_resource_adaptation_processor_poc.h"
 
 #include <limits>
 #include <utility>
@@ -48,7 +48,7 @@ ConsumerConfigurationPair::ConsumerConfigurationPair(
     : consumer(consumer), configuration(configuration) {}
 
 absl::optional<ConsumerConfigurationPair>
-ResourceAdaptationProcessor::FindNextConfiguration() {
+NewResourceAdaptationProcessorPoc::FindNextConfiguration() {
   ResourceUsageState overall_usage = ResourceUsageState::kUnderuse;
   for (auto& resource : resources_) {
     if (resource->usage_state() == ResourceUsageState::kStable) {
@@ -92,8 +92,8 @@ ResourceAdaptationProcessor::FindNextConfiguration() {
   }
 }
 
-ResourceConsumer*
-ResourceAdaptationProcessor::FindMostExpensiveConsumerThatCanBeAdaptedDown() {
+ResourceConsumer* NewResourceAdaptationProcessorPoc::
+    FindMostExpensiveConsumerThatCanBeAdaptedDown() {
   ResourceConsumer* max_cost_consumer = nullptr;
   double max_cost = -1.0;
   for (auto& consumer : consumers_) {
@@ -108,8 +108,8 @@ ResourceAdaptationProcessor::FindMostExpensiveConsumerThatCanBeAdaptedDown() {
   return max_cost_consumer;
 }
 
-ResourceConsumer*
-ResourceAdaptationProcessor::FindLeastExpensiveConsumerThatCanBeAdaptedUp() {
+ResourceConsumer* NewResourceAdaptationProcessorPoc::
+    FindLeastExpensiveConsumerThatCanBeAdaptedUp() {
   ResourceConsumer* min_cost_consumer = nullptr;
   double min_cost = std::numeric_limits<double>::infinity();
   for (auto& consumer : consumers_) {

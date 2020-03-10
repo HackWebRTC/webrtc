@@ -265,6 +265,7 @@ rtc_library("video_stream_encoder_create") {
     ":video_stream_encoder",
     "../../api:scoped_refptr",
     "../../video:video_stream_encoder_impl",
+    "../../video/adaptation:video_adaptation",
     "../task_queue",
     "../video_codecs:video_codecs_api",
   ]

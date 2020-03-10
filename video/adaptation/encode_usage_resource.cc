@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video/encode_usage_resource.h"
+#include "video/adaptation/encode_usage_resource.h"
 
 #include <limits>
 #include <utility>

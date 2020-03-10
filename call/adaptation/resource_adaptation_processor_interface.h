@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 The WebRTC Project Authors. All rights reserved.
+ *  Copyright 2020 The WebRTC Project Authors. All rights reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef CALL_ADAPTATION_RESOURCE_ADAPTATION_MODULE_INTERFACE_H_
-#define CALL_ADAPTATION_RESOURCE_ADAPTATION_MODULE_INTERFACE_H_
+#ifndef CALL_ADAPTATION_RESOURCE_ADAPTATION_PROCESSOR_INTERFACE_H_
+#define CALL_ADAPTATION_RESOURCE_ADAPTATION_PROCESSOR_INTERFACE_H_
 
 #include "absl/types/optional.h"
 #include "api/rtp_parameters.h"
@@ -22,12 +22,10 @@ namespace webrtc {
 
 // The listener is responsible for carrying out the reconfiguration of the video
 // source such that the VideoSourceRestrictions are fulfilled.
-class ResourceAdaptationModuleListener {
+class ResourceAdaptationProcessorListener {
  public:
-  virtual ~ResourceAdaptationModuleListener();
+  virtual ~ResourceAdaptationProcessorListener();
 
-  // TODO(hbos): When we support the muli-stream use case, the arguments need to
-  // specify which video stream's source needs to be reconfigured.
   virtual void OnVideoSourceRestrictionsUpdated(
       VideoSourceRestrictions restrictions) = 0;
 };
@@ -35,27 +33,12 @@ class ResourceAdaptationModuleListener {
 // Responsible for reconfiguring encoded streams based on resource consumption,
 // such as scaling down resolution or frame rate when CPU is overused. This
 // interface is meant to be injectable into VideoStreamEncoder.
-//
-// [UNDER CONSTRUCTION] This interface is work-in-progress. In the future it
-// needs to be able to handle all the necessary input and output for resource
-// adaptation decision making.
-//
-// TODO(https://crbug.com/webrtc/11222): Make this interface feature-complete so
-// that a module (such as OveruseFrameDetectorResourceAdaptationModule) is fully
-// operational through this abstract interface.
-class ResourceAdaptationModuleInterface {
+class ResourceAdaptationProcessorInterface {
  public:
-  virtual ~ResourceAdaptationModuleInterface();
+  virtual ~ResourceAdaptationProcessorInterface();
 
-  // TODO(hbos): When input/output of the module is adequetly handled by this
-  // interface, these methods need to say which stream to start/stop, enabling
-  // multi-stream aware implementations of ResourceAdaptationModuleInterface. We
-  // don't want to do this before we have the right interfaces (e.g. if we pass
-  // in a VideoStreamEncoder here directly then have a dependency on a different
-  // build target). For the multi-stream use case we may consider making
-  // ResourceAdaptationModuleInterface reference counted.
   virtual void StartResourceAdaptation(
-      ResourceAdaptationModuleListener* adaptation_listener) = 0;
+      ResourceAdaptationProcessorListener* adaptation_listener) = 0;
   virtual void StopResourceAdaptation() = 0;
 
   // The resource must out-live the module.
@@ -129,4 +112,4 @@ class ResourceAdaptationModuleInterface {
 
 }  // namespace webrtc
 
-#endif  // CALL_ADAPTATION_RESOURCE_ADAPTATION_MODULE_INTERFACE_H_
+#endif  // CALL_ADAPTATION_RESOURCE_ADAPTATION_PROCESSOR_INTERFACE_H_
