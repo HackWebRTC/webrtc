@@ -82,6 +82,17 @@ deps = {
     'dep_type': 'cipd',
   },
 
+  'src/third_party/android_system_sdk': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/android_system_sdk',
+              'version': '4IAlMU4jo15KjMPF3EUnrPZs0RYoPW8n9jSJ4dvHDWUC',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
   'src/third_party/android_build_tools/aapt2': {
       'packages': [
           {
@@ -106,6 +117,8 @@ deps = {
 
   'src/third_party/boringssl/src':
     'https://boringssl.googlesource.com/boringssl.git@1e859054c31ec7b974e998373e85fadea56d93ad',
+  'src/third_party/breakpad/breakpad':
+    'https://chromium.googlesource.com/breakpad/breakpad.git@f32b83eb08e9ee158d3037b2114357187fd45a05',
   'src/third_party/catapult':
     'https://chromium.googlesource.com/catapult.git@8bf3aecd3335cc7b678c2d3ba24eaab6c43de13c',
   'src/third_party/ced/src': {
