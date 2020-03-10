@@ -61,14 +61,6 @@ class AudioPacketizationCallback {
   }
 };
 
-// Callback class used for reporting VAD decision
-class ACMVADCallback {
- public:
-  virtual ~ACMVADCallback() {}
-
-  virtual int32_t InFrameType(AudioFrameType frame_type) = 0;
-};
-
 class AudioCodingModule {
  protected:
   AudioCodingModule() {}
@@ -161,26 +153,6 @@ class AudioCodingModule {
   // This is only used in test code that rely on old ACM APIs.
   // TODO(minyue): Remove it when possible.
   virtual int SetPacketLossRate(int packet_loss_rate) = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  //   (VAD) Voice Activity Detection
-  //
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int32_t RegisterVADCallback()
-  // Call this method to register a callback function which is called
-  // any time that ACM encounters an empty frame. That is a frame which is
-  // recognized inactive. Depending on the codec WebRtc VAD or internal codec
-  // VAD is employed to identify a frame as active/inactive.
-  //
-  // Input:
-  //   -vad_callback        : pointer to a callback function.
-  //
-  // Return value:
-  //   -1 if failed to register the callback function.
-  //    0 if the callback function is registered successfully.
-  //
-  virtual int32_t RegisterVADCallback(ACMVADCallback* vad_callback) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   //   Receiver
