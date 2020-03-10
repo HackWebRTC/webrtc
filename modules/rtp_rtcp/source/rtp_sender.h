@@ -179,6 +179,8 @@ class RTPSender {
   std::string rid_ RTC_GUARDED_BY(send_critsect_);
   // MID value to send in the MID header extension.
   std::string mid_ RTC_GUARDED_BY(send_critsect_);
+  // Should we send MID/RID even when ACKed? (see below).
+  const bool always_send_mid_and_rid_;
   // Track if any ACK has been received on the SSRC and RTX SSRC to indicate
   // when to stop sending the MID and RID header extensions.
   bool ssrc_has_acked_ RTC_GUARDED_BY(send_critsect_);

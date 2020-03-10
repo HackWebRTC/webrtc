@@ -121,6 +121,13 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
     // Corresponds to extmap-allow-mixed in SDP negotiation.
     bool extmap_allow_mixed = false;
 
+    // If true, the RTP sender will always annotate outgoing packets with
+    // MID and RID header extensions, if provided and negotiated.
+    // If false, the RTP sender will stop sending MID and RID header extensions,
+    // when it knows that the receiver is ready to demux based on SSRC. This is
+    // done by RTCP RR acking.
+    bool always_send_mid_and_rid = false;
+
     // If set, field trials are read from |field_trials|, otherwise
     // defaults to  webrtc::FieldTrialBasedConfig.
     const WebRtcKeyValueConfig* field_trials = nullptr;

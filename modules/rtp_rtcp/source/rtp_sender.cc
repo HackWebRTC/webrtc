@@ -112,6 +112,7 @@ RTPSender::RTPSender(const RtpRtcp::Configuration& config,
       rtp_header_extension_map_(config.extmap_allow_mixed),
       // RTP variables
       sequence_number_forced_(false),
+      always_send_mid_and_rid_(config.always_send_mid_and_rid),
       ssrc_has_acked_(false),
       rtx_ssrc_has_acked_(false),
       last_rtp_timestamp_(0),
@@ -497,13 +498,15 @@ std::unique_ptr<RtpPacketToSend> RTPSender::AllocatePacket() const {
   // in the MID and/or (R)RID header extensions if present. Therefore, the
   // sender can reduce overhead by omitting these header extensions once it
   // knows that the receiver has "bound" the SSRC.
+  // This optimization can be configured by setting
+  // |always_send_mid_and_rid_| appropriately.
   //
   // The algorithm here is fairly simple: Always attach a MID and/or RID (if
   // configured) to the outgoing packets until an RTCP receiver report comes
   // back for this SSRC. That feedback indicates the receiver must have
   // received a packet with the SSRC and header extension(s), so the sender
   // then stops attaching the MID and RID.
-  if (!ssrc_has_acked_) {
+  if (always_send_mid_and_rid_ || !ssrc_has_acked_) {
     // These are no-ops if the corresponding header extension is not registered.
     if (!mid_.empty()) {
       packet->SetExtension<RtpMid>(mid_);
@@ -686,7 +689,7 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
     // Note that RTX packets must used the RepairedRtpStreamId (RRID) header
     // extension instead of the RtpStreamId (RID) header extension even though
     // the payload is identical.
-    if (!rtx_ssrc_has_acked_) {
+    if (always_send_mid_and_rid_ || !rtx_ssrc_has_acked_) {
       // These are no-ops if the corresponding header extension is not
       // registered.
       if (!mid_.empty()) {
