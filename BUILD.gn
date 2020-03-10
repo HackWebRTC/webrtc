@@ -484,7 +484,7 @@ if (!build_with_chromium) {
     }
   }
 
-  if (rtc_include_tests) {
+  if (rtc_include_tests && !is_asan) {
     rtc_executable("webrtc_lib_link_test") {
       testonly = true
 

@@ -110,7 +110,6 @@ deps = {
     'https://chromium.googlesource.com/catapult.git@8bf3aecd3335cc7b678c2d3ba24eaab6c43de13c',
   'src/third_party/ced/src': {
     'url': 'https://chromium.googlesource.com/external/github.com/google/compact_enc_det.git@ba412eaaacd3186085babcd901679a48863c7dd5',
-    'condition': 'checkout_android',
   },
   'src/third_party/colorama/src':
     'https://chromium.googlesource.com/external/colorama.git@799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
