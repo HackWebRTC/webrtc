@@ -48,7 +48,7 @@ constexpr int kMaxFrameEncodeWaitTimeoutMs = 2000;
 static const VideoEncoder::Capabilities kCapabilities(false);
 
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
-constexpr double kExpectedMinPsnr = 35;
+constexpr double kExpectedMinPsnr = 36;
 #else
 constexpr double kExpectedMinPsnr = 39;
 #endif
