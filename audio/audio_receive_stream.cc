@@ -222,6 +222,9 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
       static_cast<double>(ns.jitterBufferDelayMs) /
       static_cast<double>(rtc::kNumMillisecsPerSec);
   stats.jitter_buffer_emitted_count = ns.jitterBufferEmittedCount;
+  stats.jitter_buffer_target_delay_seconds =
+      static_cast<double>(ns.jitterBufferTargetDelayMs) /
+      static_cast<double>(rtc::kNumMillisecsPerSec);
   stats.inserted_samples_for_deceleration = ns.insertedSamplesForDeceleration;
   stats.removed_samples_for_acceleration = ns.removedSamplesForAcceleration;
   stats.expand_rate = Q14ToFloat(ns.currentExpandRate);

@@ -648,6 +648,8 @@ ProduceMediaStreamTrackStatsFromVoiceReceiverInfo(
       voice_receiver_info.delayed_packet_outage_samples;
   audio_track_stats->relative_packet_arrival_delay =
       voice_receiver_info.relative_packet_arrival_delay_seconds;
+  audio_track_stats->jitter_buffer_target_delay =
+      voice_receiver_info.jitter_buffer_target_delay_seconds;
   audio_track_stats->interruption_count =
       voice_receiver_info.interruption_count >= 0
           ? voice_receiver_info.interruption_count

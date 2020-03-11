@@ -83,7 +83,9 @@ class StatisticsCalculator {
   void IncreaseCounter(size_t num_samples, int fs_hz);
 
   // Update jitter buffer delay counter.
-  void JitterBufferDelay(size_t num_samples, uint64_t waiting_time_ms);
+  void JitterBufferDelay(size_t num_samples,
+                         uint64_t waiting_time_ms,
+                         uint64_t target_delay_ms);
 
   // Stores new packet waiting time in waiting time statistics.
   void StoreWaitingTime(int waiting_time_ms);

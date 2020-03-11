@@ -1987,7 +1987,9 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
     }
     extracted_samples = packet->timestamp - first_timestamp + packet_duration;
 
-    stats_->JitterBufferDelay(packet_duration, waiting_time_ms);
+    RTC_DCHECK(controller_);
+    stats_->JitterBufferDelay(packet_duration, waiting_time_ms,
+                              controller_->TargetLevelMs());
 
     packet_list->push_back(std::move(*packet));  // Store packet in list.
     packet = absl::nullopt;  // Ensure it's never used after the move.

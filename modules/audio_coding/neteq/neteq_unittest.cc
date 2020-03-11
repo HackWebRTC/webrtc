@@ -986,6 +986,7 @@ void NetEqDecodingTestFaxMode::TestJitterBufferDelay(bool apply_packet_loss) {
   int packets_sent = 0;
   int packets_received = 0;
   int expected_delay = 0;
+  int expected_target_delay = 0;
   uint64_t expected_emitted_count = 0;
   while (packets_received < kNumPackets) {
     // Insert packet.
@@ -1010,6 +1011,7 @@ void NetEqDecodingTestFaxMode::TestJitterBufferDelay(bool apply_packet_loss) {
       // number of samples that are sent for play out.
       int current_delay_ms = packets_delay * kPacketLenMs;
       expected_delay += current_delay_ms * kSamples;
+      expected_target_delay += neteq_->TargetDelayMs() * kSamples;
       expected_emitted_count += kSamples;
     }
   }
@@ -1021,8 +1023,11 @@ void NetEqDecodingTestFaxMode::TestJitterBufferDelay(bool apply_packet_loss) {
 
   // Check jitter buffer delay.
   NetEqLifetimeStatistics stats = neteq_->GetLifetimeStatistics();
-  EXPECT_EQ(expected_delay, static_cast<int>(stats.jitter_buffer_delay_ms));
+  EXPECT_EQ(expected_delay,
+            rtc::checked_cast<int>(stats.jitter_buffer_delay_ms));
   EXPECT_EQ(expected_emitted_count, stats.jitter_buffer_emitted_count);
+  EXPECT_EQ(expected_target_delay,
+            rtc::checked_cast<int>(stats.jitter_buffer_target_delay_ms));
 }
 
 TEST_F(NetEqDecodingTestFaxMode, TestJitterBufferDelayWithoutLoss) {
@@ -1043,6 +1048,7 @@ TEST_F(NetEqDecodingTestFaxMode, TestJitterBufferDelayWithAcceleration) {
   rtp_info.markerBit = 0;
   const uint8_t payload[kPayloadBytes] = {0};
 
+  int expected_target_delay = neteq_->TargetDelayMs() * kSamples;
   neteq_->InsertPacket(rtp_info, payload);
 
   bool muted;
@@ -1055,6 +1061,7 @@ TEST_F(NetEqDecodingTestFaxMode, TestJitterBufferDelayWithAcceleration) {
   rtp_info.timestamp += kSamples;
   neteq_->InsertPacket(rtp_info, payload);
 
+  expected_target_delay += neteq_->TargetDelayMs() * 2 * kSamples;
   // We have two packets in the buffer and kAccelerate operation will
   // extract 20 ms of data.
   neteq_->GetAudio(&out_frame_, &muted, NetEq::Operation::kAccelerate);
@@ -1063,6 +1070,8 @@ TEST_F(NetEqDecodingTestFaxMode, TestJitterBufferDelayWithAcceleration) {
   NetEqLifetimeStatistics stats = neteq_->GetLifetimeStatistics();
   EXPECT_EQ(10 * kSamples * 3, stats.jitter_buffer_delay_ms);
   EXPECT_EQ(kSamples * 3, stats.jitter_buffer_emitted_count);
+  EXPECT_EQ(expected_target_delay,
+            rtc::checked_cast<int>(stats.jitter_buffer_target_delay_ms));
 }
 
 namespace test {

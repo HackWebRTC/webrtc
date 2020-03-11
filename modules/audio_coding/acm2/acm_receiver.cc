@@ -272,6 +272,8 @@ void AcmReceiver::GetNetworkStatistics(NetworkStatistics* acm_stat) const {
       neteq_lifetime_stat.silent_concealed_samples;
   acm_stat->concealmentEvents = neteq_lifetime_stat.concealment_events;
   acm_stat->jitterBufferDelayMs = neteq_lifetime_stat.jitter_buffer_delay_ms;
+  acm_stat->jitterBufferTargetDelayMs =
+      neteq_lifetime_stat.jitter_buffer_target_delay_ms;
   acm_stat->jitterBufferEmittedCount =
       neteq_lifetime_stat.jitter_buffer_emitted_count;
   acm_stat->delayedPacketOutageSamples =

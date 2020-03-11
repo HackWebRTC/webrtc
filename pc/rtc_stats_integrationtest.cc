@@ -650,6 +650,8 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsUndefined(media_stream_track.interruption_count);
       verifier.TestMemberIsUndefined(
           media_stream_track.total_interruption_duration);
+      verifier.TestMemberIsUndefined(
+          media_stream_track.jitter_buffer_target_delay);
     } else {
       RTC_DCHECK_EQ(*media_stream_track.kind, RTCMediaStreamTrackKind::kAudio);
       // The type of the referenced media source depends on kind.
@@ -660,6 +662,8 @@ class RTCStatsReportVerifier {
             media_stream_track.jitter_buffer_delay);
         verifier.TestMemberIsNonNegative<uint64_t>(
             media_stream_track.jitter_buffer_emitted_count);
+        verifier.TestMemberIsNonNegative<double>(
+            media_stream_track.jitter_buffer_target_delay);
         verifier.TestMemberIsPositive<double>(media_stream_track.audio_level);
         verifier.TestMemberIsPositive<double>(
             media_stream_track.total_audio_energy);
@@ -694,6 +698,8 @@ class RTCStatsReportVerifier {
         verifier.TestMemberIsUndefined(media_stream_track.jitter_buffer_delay);
         verifier.TestMemberIsUndefined(
             media_stream_track.jitter_buffer_emitted_count);
+        verifier.TestMemberIsUndefined(
+            media_stream_track.jitter_buffer_target_delay);
         verifier.TestMemberIsUndefined(media_stream_track.audio_level);
         verifier.TestMemberIsUndefined(media_stream_track.total_audio_energy);
         verifier.TestMemberIsUndefined(
