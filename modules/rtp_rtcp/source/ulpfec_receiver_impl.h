@@ -21,7 +21,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/include/ulpfec_receiver.h"
 #include "modules/rtp_rtcp/source/forward_error_correction.h"
-#include "modules/rtp_rtcp/source/rtp_packet.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "rtc_base/critical_section.h"
 
 namespace webrtc {
@@ -33,7 +33,7 @@ class UlpfecReceiverImpl : public UlpfecReceiver {
                               rtc::ArrayView<const RtpExtension> extensions);
   ~UlpfecReceiverImpl() override;
 
-  bool AddReceivedRedPacket(const RtpPacket& rtp_packet,
+  bool AddReceivedRedPacket(const RtpPacketReceived& rtp_packet,
                             uint8_t ulpfec_payload_type) override;
 
   int32_t ProcessReceivedFec() override;

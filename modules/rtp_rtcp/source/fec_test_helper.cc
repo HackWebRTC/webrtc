@@ -181,9 +181,10 @@ std::unique_ptr<AugmentedPacket> FlexfecPacketGenerator::BuildFlexfecPacket(
 UlpfecPacketGenerator::UlpfecPacketGenerator(uint32_t ssrc)
     : AugmentedPacketGenerator(ssrc) {}
 
-RtpPacket UlpfecPacketGenerator::BuildMediaRedPacket(
-    const AugmentedPacket& packet) {
-  RtpPacket red_packet;
+RtpPacketReceived UlpfecPacketGenerator::BuildMediaRedPacket(
+    const AugmentedPacket& packet,
+    bool is_recovered) {
+  RtpPacketReceived red_packet;
   // Copy RTP header.
   const size_t kHeaderLength = packet.header.headerLength;
   red_packet.Parse(packet.data.cdata(), kHeaderLength);
@@ -196,25 +197,26 @@ RtpPacket UlpfecPacketGenerator::BuildMediaRedPacket(
   // Copy the payload.
   memcpy(rtp_payload + 1, packet.data.cdata() + kHeaderLength,
          packet.data.size() - kHeaderLength);
+  red_packet.set_recovered(is_recovered);
 
   return red_packet;
 }
 
-RtpPacket UlpfecPacketGenerator::BuildUlpfecRedPacket(
+RtpPacketReceived UlpfecPacketGenerator::BuildUlpfecRedPacket(
     const ForwardErrorCorrection::Packet& packet) {
   // Create a fake media packet to get a correct header. 1 byte RED header.
   ++num_packets_;
   std::unique_ptr<AugmentedPacket> fake_packet =
       NextPacket(0, packet.data.size() + 1);
 
-  RtpPacket red_packet;
+  RtpPacketReceived red_packet;
   red_packet.Parse(fake_packet->data);
   red_packet.SetMarker(false);
   uint8_t* rtp_payload = red_packet.AllocatePayload(packet.data.size() + 1);
   rtp_payload[0] = kFecPayloadType;
   red_packet.SetPayloadType(kRedPayloadType);
-
   memcpy(rtp_payload + 1, packet.data.cdata(), packet.data.size());
+  red_packet.set_recovered(false);
 
   return red_packet;
 }

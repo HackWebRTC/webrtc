@@ -74,8 +74,9 @@ FecPacketCounter UlpfecReceiverImpl::GetPacketCounter() const {
 //    block length:  10 bits Length in bytes of the corresponding data
 //        block excluding header.
 
-bool UlpfecReceiverImpl::AddReceivedRedPacket(const RtpPacket& rtp_packet,
-                                              uint8_t ulpfec_payload_type) {
+bool UlpfecReceiverImpl::AddReceivedRedPacket(
+    const RtpPacketReceived& rtp_packet,
+    uint8_t ulpfec_payload_type) {
   if (rtp_packet.Ssrc() != ssrc_) {
     RTC_LOG(LS_WARNING)
         << "Received RED packet with different SSRC than expected; dropping.";
@@ -103,6 +104,7 @@ bool UlpfecReceiverImpl::AddReceivedRedPacket(const RtpPacket& rtp_packet,
   // Get payload type from RED header and sequence number from RTP header.
   uint8_t payload_type = rtp_packet.payload()[0] & 0x7f;
   received_packet->is_fec = payload_type == ulpfec_payload_type;
+  received_packet->is_recovered = rtp_packet.recovered();
   received_packet->ssrc = rtp_packet.Ssrc();
   received_packet->seq_num = rtp_packet.SequenceNumber();
 
@@ -185,7 +187,13 @@ int32_t UlpfecReceiverImpl::ProcessReceivedFec() {
         RTC_DCHECK_EQ(packet->data.cdata(), original_data);
       }
     }
-    fec_->DecodeFec(*received_packet, &recovered_packets_);
+    if (!received_packet->is_recovered) {
+      // Do not pass recovered packets to FEC. Recovered packet might have
+      // different set of the RTP header extensions and thus different byte
+      // representation than the original packet, That will corrupt
+      // FEC calculation.
+      fec_->DecodeFec(*received_packet, &recovered_packets_);
+    }
   }
 
   // Send any recovered media packets to VCM.

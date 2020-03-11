@@ -16,7 +16,7 @@
 #include "api/array_view.h"
 #include "api/rtp_parameters.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "modules/rtp_rtcp/source/rtp_packet.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
 
 namespace webrtc {
 
@@ -44,7 +44,7 @@ class UlpfecReceiver {
   //
   // TODO(brandtr): Set |ulpfec_payload_type| during constructor call,
   // rather than as a parameter here.
-  virtual bool AddReceivedRedPacket(const RtpPacket& rtp_packet,
+  virtual bool AddReceivedRedPacket(const RtpPacketReceived& rtp_packet,
                                     uint8_t ulpfec_payload_type) = 0;
 
   // Sends the received packets to the FEC and returns all packets

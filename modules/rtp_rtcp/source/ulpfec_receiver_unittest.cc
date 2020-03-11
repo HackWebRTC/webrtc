@@ -20,6 +20,7 @@
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/fec_test_helper.h"
 #include "modules/rtp_rtcp/source/forward_error_correction.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -66,7 +67,8 @@ class UlpfecReceiverTest : public ::testing::Test {
 
   // Build a media packet using |packet_generator_| and add it
   // to the receiver.
-  void BuildAndAddRedMediaPacket(AugmentedPacket* packet);
+  void BuildAndAddRedMediaPacket(AugmentedPacket* packet,
+                                 bool is_recovered = false);
 
   // Build a FEC packet using |packet_generator_| and add it
   // to the receiver.
@@ -120,13 +122,16 @@ void UlpfecReceiverTest::PacketizeFrame(
   }
 }
 
-void UlpfecReceiverTest::BuildAndAddRedMediaPacket(AugmentedPacket* packet) {
-  RtpPacket red_packet = packet_generator_.BuildMediaRedPacket(*packet);
+void UlpfecReceiverTest::BuildAndAddRedMediaPacket(AugmentedPacket* packet,
+                                                   bool is_recovered) {
+  RtpPacketReceived red_packet =
+      packet_generator_.BuildMediaRedPacket(*packet, is_recovered);
   EXPECT_TRUE(receiver_fec_->AddReceivedRedPacket(red_packet, kFecPayloadType));
 }
 
 void UlpfecReceiverTest::BuildAndAddRedFecPacket(Packet* packet) {
-  RtpPacket red_packet = packet_generator_.BuildUlpfecRedPacket(*packet);
+  RtpPacketReceived red_packet =
+      packet_generator_.BuildUlpfecRedPacket(*packet);
   EXPECT_TRUE(receiver_fec_->AddReceivedRedPacket(red_packet, kFecPayloadType));
 }
 
@@ -174,7 +179,7 @@ void UlpfecReceiverTest::SurvivesMaliciousPacket(const uint8_t* data,
   std::unique_ptr<UlpfecReceiver> receiver_fec(
       UlpfecReceiver::Create(kMediaSsrc, &null_callback, {}));
 
-  RtpPacket rtp_packet;
+  RtpPacketReceived rtp_packet;
   ASSERT_TRUE(rtp_packet.Parse(data, length));
   receiver_fec->AddReceivedRedPacket(rtp_packet, ulpfec_payload_type);
 }
@@ -214,6 +219,43 @@ TEST_F(UlpfecReceiverTest, TwoMediaOneFec) {
   EXPECT_EQ(2u, counter.num_packets);
   EXPECT_EQ(1u, counter.num_fec_packets);
   EXPECT_EQ(1u, counter.num_recovered_packets);
+  EXPECT_EQ(first_packet_time_ms, counter.first_packet_time_ms);
+}
+
+TEST_F(UlpfecReceiverTest, TwoMediaOneFecNotUsesRecoveredPackets) {
+  constexpr size_t kNumFecPackets = 1u;
+  std::list<AugmentedPacket*> augmented_media_packets;
+  ForwardErrorCorrection::PacketList media_packets;
+  PacketizeFrame(2, 0, &augmented_media_packets, &media_packets);
+  std::list<ForwardErrorCorrection::Packet*> fec_packets;
+  EncodeFec(media_packets, kNumFecPackets, &fec_packets);
+
+  FecPacketCounter counter = receiver_fec_->GetPacketCounter();
+  EXPECT_EQ(0u, counter.num_packets);
+  EXPECT_EQ(-1, counter.first_packet_time_ms);
+
+  // Recovery
+  auto it = augmented_media_packets.begin();
+  BuildAndAddRedMediaPacket(*it, /*is_recovered=*/true);
+  VerifyReconstructedMediaPacket(**it, 1);
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
+  counter = receiver_fec_->GetPacketCounter();
+  EXPECT_EQ(1u, counter.num_packets);
+  EXPECT_EQ(0u, counter.num_fec_packets);
+  EXPECT_EQ(0u, counter.num_recovered_packets);
+  const int64_t first_packet_time_ms = counter.first_packet_time_ms;
+  EXPECT_NE(-1, first_packet_time_ms);
+
+  // Drop one media packet.
+  auto fec_it = fec_packets.begin();
+  BuildAndAddRedFecPacket(*fec_it);
+  ++it;
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFec());
+
+  counter = receiver_fec_->GetPacketCounter();
+  EXPECT_EQ(2u, counter.num_packets);
+  EXPECT_EQ(1u, counter.num_fec_packets);
+  EXPECT_EQ(0u, counter.num_recovered_packets);
   EXPECT_EQ(first_packet_time_ms, counter.first_packet_time_ms);
 }
 

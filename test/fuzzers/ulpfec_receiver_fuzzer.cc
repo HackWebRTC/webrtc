@@ -44,7 +44,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     size_t packet_length = kRtpHeaderSize + fuzz_data.Read<uint8_t>();
     auto raw_packet = fuzz_data.ReadByteArray(packet_length);
 
-    RtpPacket parsed_packet;
+    RtpPacketReceived parsed_packet;
     if (!parsed_packet.Parse(raw_packet))
       continue;
 

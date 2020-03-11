@@ -85,6 +85,7 @@ class ForwardErrorCorrection {
 
     bool is_fec;  // Set to true if this is an FEC packet and false
                   // otherwise.
+    bool is_recovered;
     rtc::scoped_refptr<Packet> pkt;  // Pointer to the packet storage.
   };
 
