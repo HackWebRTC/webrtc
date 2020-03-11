@@ -31,7 +31,8 @@ enum class RtpTransceiverDirection {
   kSendRecv,
   kSendOnly,
   kRecvOnly,
-  kInactive
+  kInactive,
+  kStopped,
 };
 
 // Structure for initializing an RtpTransceiver in a call to

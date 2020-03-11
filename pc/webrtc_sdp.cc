@@ -1596,7 +1596,12 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
       InitAttrLine(kAttributeRecvOnly, &os);
       break;
     case RtpTransceiverDirection::kSendRecv:
+      InitAttrLine(kAttributeSendRecv, &os);
+      break;
+    case RtpTransceiverDirection::kStopped:
     default:
+      // kStopped shouldn't be used in signalling.
+      RTC_NOTREACHED();
       InitAttrLine(kAttributeSendRecv, &os);
       break;
   }

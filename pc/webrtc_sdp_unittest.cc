@@ -979,7 +979,11 @@ static void ReplaceDirection(RtpTransceiverDirection direction,
       new_direction = "a=recvonly";
       break;
     case RtpTransceiverDirection::kSendRecv:
+      new_direction = "a=sendrecv";
+      break;
+    case RtpTransceiverDirection::kStopped:
     default:
+      RTC_NOTREACHED();
       new_direction = "a=sendrecv";
       break;
   }
