@@ -72,5 +72,7 @@ default_args = {
   # for unittests, it can be disabled (see third_party/libyuv/BUILD.gn)
   libyuv_use_gflags = false
 
+  enable_libaom_decoder = true
+
   gtest_enable_absl_printers = true
 }

@@ -1,5 +1,8 @@
 # This file contains dependencies for WebRTC.
 
+gclient_gn_args_file = 'src/build/config/gclient_args.gni'
+gclient_gn_args = []
+
 vars = {
   # By default, we should check out everything needed to run on the main
   # chromium waterfalls. More info at: crbug.com/570091.
@@ -192,6 +195,8 @@ deps = {
     'https://chromium.googlesource.com/chromium/deps/libjpeg_turbo.git@ce0e57e8e636f5132fe6f0590a4dba91f92fd935',
   'src/third_party/libsrtp':
     'https://chromium.googlesource.com/chromium/deps/libsrtp.git@650611720ecc23e0e6b32b0e3100f8b4df91696c',
+  'src/third_party/libaom/source/libaom':
+    'https://aomedia.googlesource.com/aom.git@f83d681765cd2aefa9a70ce771af48edd1dbf416',
   'src/third_party/libvpx/source/libvpx':
     'https://chromium.googlesource.com/webm/libvpx.git@5532775efe808cb0942e7b99bf2f232c6ce99fee',
   'src/third_party/libyuv':
