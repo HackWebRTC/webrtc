@@ -89,28 +89,6 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
       video_coding::OnCompleteFrameCallback* complete_frame_callback,
       rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
       rtc::scoped_refptr<FrameTransformerInterface> frame_transformer);
-
-  // TODO(bugs.webrtc.org/11380) remove after updating downstream dependencies
-  // to use the new constructor.
-  RTC_DEPRECATED
-  RtpVideoStreamReceiver(
-      Clock* clock,
-      Transport* transport,
-      RtcpRttStats* rtt_stats,
-      // The packet router is optional; if provided, the RtpRtcp module for this
-      // stream is registered as a candidate for sending REMB and transport
-      // feedback.
-      PacketRouter* packet_router,
-      const VideoReceiveStream::Config* config,
-      ReceiveStatistics* rtp_receive_statistics,
-      ReceiveStatisticsProxy* receive_stats_proxy,
-      ProcessThread* process_thread,
-      NackSender* nack_sender,
-      // The KeyFrameRequestSender is optional; if not provided, key frame
-      // requests are sent via the internal RtpRtcp module.
-      KeyFrameRequestSender* keyframe_request_sender,
-      video_coding::OnCompleteFrameCallback* complete_frame_callback,
-      rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor);
   ~RtpVideoStreamReceiver() override;
 
   void AddReceiveCodec(const VideoCodec& video_codec,
