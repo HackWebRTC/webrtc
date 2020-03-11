@@ -46,6 +46,8 @@ from tracing.value import histogram_set
 from tracing.value.diagnostics import generic_set
 from tracing.value.diagnostics import reserved_infos
 
+from google.protobuf import json_format
+
 
 def _GenerateOauthToken():
   args = ['luci-auth', 'token']
@@ -92,10 +94,25 @@ def _LoadHistogramSetFromProto(options):
                                       'tracing', 'proto')
   sys.path.insert(0, histogram_proto_path)
 
-  hs = histogram_set.HistogramSet()
-  with options.input_results_file as f:
-    hs.ImportProto(f.read())
+  # TODO(https://crbug.com/1029452): Get rid of this import hack once we can
+  # just hand the contents of input_results_file straight to the histogram set.
+  try:
+    import histogram_pb2
+  except ImportError:
+    raise ImportError('Could not find histogram_pb2. You need to build the '
+                      'webrtc_dashboard_upload target before invoking this '
+                      'script. Expected to find '
+                      'histogram_pb2 in %s.' % histogram_proto_path)
 
+  with options.input_results_file as f:
+    histograms = histogram_pb2.HistogramSet()
+    histograms.ParseFromString(f.read())
+
+  # TODO(https://crbug.com/1029452): Don't convert to JSON as a middle step once
+  # there is a proto de-serializer ready in catapult.
+  json_data = json.loads(json_format.MessageToJson(histograms))
+  hs = histogram_set.HistogramSet()
+  hs.ImportDicts(json_data)
   return hs
 
 
@@ -112,6 +129,21 @@ def _AddBuildInfo(histograms, options):
   for k, v in common_diagnostics.items():
     histograms.AddSharedDiagnosticToAllHistograms(
         k.name, generic_set.GenericSet([v]))
+
+
+# TODO(https://crbug.com/1029452): Remove this once
+# https://chromium-review.googlesource.com/c/catapult/+/2094312 lands.
+def _HackSummaryOptions(histograms):
+  for histogram in histograms:
+    histogram.CustomizeSummaryOptions({
+      'avg': False,
+      'std': False,
+      'count': False,
+      'sum': False,
+      'min': False,
+      'max': False,
+      'nans': False,
+    })
 
 
 def _DumpOutput(histograms, output_file):
@@ -140,7 +172,7 @@ def _CreateParser():
                       help='URL to the build page for this build.')
   parser.add_argument('--dashboard-url', required=True,
                       help='Which dashboard to use.')
-  parser.add_argument('--input-results-file', type=argparse.FileType('rb'),
+  parser.add_argument('--input-results-file', type=argparse.FileType(),
                       required=True,
                       help='A JSON file with output from WebRTC tests.')
   parser.add_argument('--output-json-file', type=argparse.FileType('w'),
@@ -148,21 +180,6 @@ def _CreateParser():
   parser.add_argument('--outdir', required=True,
                       help='Path to the local out/ dir (usually out/Default)')
   return parser
-
-
-# TODO(https://crbug.com/1029452): Remove this once
-# https://chromium-review.googlesource.com/c/catapult/+/2094312 lands.
-def _HackSummaryOptions(histograms):
-  for histogram in histograms:
-    histogram.CustomizeSummaryOptions({
-      'avg': False,
-      'std': False,
-      'count': False,
-      'sum': False,
-      'min': False,
-      'max': False,
-      'nans': False,
-    })
 
 
 def main(args):
