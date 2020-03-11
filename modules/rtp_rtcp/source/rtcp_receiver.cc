@@ -172,14 +172,14 @@ RTCPReceiver::RTCPReceiver(const RtpRtcp::Configuration& config,
 
 RTCPReceiver::~RTCPReceiver() {}
 
-void RTCPReceiver::IncomingPacket(const uint8_t* packet, size_t packet_size) {
-  if (packet_size == 0) {
+void RTCPReceiver::IncomingPacket(rtc::ArrayView<const uint8_t> packet) {
+  if (packet.empty()) {
     RTC_LOG(LS_WARNING) << "Incoming empty RTCP packet";
     return;
   }
 
   PacketInformation packet_information;
-  if (!ParseCompoundPacket(packet, packet + packet_size, &packet_information))
+  if (!ParseCompoundPacket(packet, &packet_information))
     return;
   TriggerCallbacksFromRtcpPacket(packet_information);
 }
@@ -325,18 +325,17 @@ std::vector<ReportBlockData> RTCPReceiver::GetLatestReportBlockData() const {
   return result;
 }
 
-bool RTCPReceiver::ParseCompoundPacket(const uint8_t* packet_begin,
-                                       const uint8_t* packet_end,
+bool RTCPReceiver::ParseCompoundPacket(rtc::ArrayView<const uint8_t> packet,
                                        PacketInformation* packet_information) {
   rtc::CritScope lock(&rtcp_receiver_lock_);
 
   CommonHeader rtcp_block;
-  for (const uint8_t* next_block = packet_begin; next_block != packet_end;
+  for (const uint8_t* next_block = packet.begin(); next_block != packet.end();
        next_block = rtcp_block.NextPacket()) {
-    ptrdiff_t remaining_blocks_size = packet_end - next_block;
+    ptrdiff_t remaining_blocks_size = packet.end() - next_block;
     RTC_DCHECK_GT(remaining_blocks_size, 0);
     if (!rtcp_block.Parse(next_block, remaining_blocks_size)) {
-      if (next_block == packet_begin) {
+      if (next_block == packet.begin()) {
         // Failed to parse 1st header, nothing was extracted from this packet.
         RTC_LOG(LS_WARNING) << "Incoming invalid RTCP packet";
         return false;

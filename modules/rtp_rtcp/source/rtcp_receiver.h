@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "api/array_view.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/include/rtcp_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
@@ -37,7 +38,7 @@ class TargetBitrate;
 class TmmbItem;
 }  // namespace rtcp
 
-class RTCPReceiver {
+class RTCPReceiver final {
  public:
   class ModuleRtpRtcp {
    public:
@@ -53,9 +54,12 @@ class RTCPReceiver {
   };
 
   RTCPReceiver(const RtpRtcp::Configuration& config, ModuleRtpRtcp* owner);
-  virtual ~RTCPReceiver();
+  ~RTCPReceiver();
 
-  void IncomingPacket(const uint8_t* packet, size_t packet_size);
+  void IncomingPacket(const uint8_t* packet, size_t packet_size) {
+    IncomingPacket(rtc::MakeArrayView(packet, packet_size));
+  }
+  void IncomingPacket(rtc::ArrayView<const uint8_t> packet);
 
   int64_t LastReceivedReportBlockMs() const;
 
@@ -124,8 +128,7 @@ class RTCPReceiver {
   // RTCP report blocks map mapped by source SSRC.
   using ReportBlockMap = std::map<uint32_t, ReportBlockDataMap>;
 
-  bool ParseCompoundPacket(const uint8_t* packet_begin,
-                           const uint8_t* packet_end,
+  bool ParseCompoundPacket(rtc::ArrayView<const uint8_t> packet,
                            PacketInformation* packet_information);
 
   void TriggerCallbacksFromRtcpPacket(
