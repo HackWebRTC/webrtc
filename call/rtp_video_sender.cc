@@ -211,6 +211,9 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
   configuration.rtt_stats = observers.rtcp_rtt_stats;
   configuration.rtcp_packet_type_counter_observer =
       observers.rtcp_type_observer;
+  configuration.rtcp_statistics_callback = observers.rtcp_stats;
+  configuration.report_block_data_observer =
+      observers.report_block_data_observer;
   configuration.paced_sender = transport->packet_sender();
   configuration.send_bitrate_observer = observers.bitrate_observer;
   configuration.send_side_delay_observer = observers.send_delay_observer;
@@ -400,9 +403,6 @@ RtpVideoSender::RtpVideoSender(
   for (const RtpStreamSender& stream : rtp_streams_) {
     // Simulcast has one module for each layer. Set the CNAME on all modules.
     stream.rtp_rtcp->SetCNAME(rtp_config_.c_name.c_str());
-    stream.rtp_rtcp->RegisterRtcpStatisticsCallback(observers.rtcp_stats);
-    stream.rtp_rtcp->SetReportBlockDataObserver(
-        observers.report_block_data_observer);
     stream.rtp_rtcp->SetMaxRtpPacketSize(rtp_config_.max_packet_size);
     stream.rtp_rtcp->RegisterSendPayloadFrequency(rtp_config_.payload_type,
                                                   kVideoPayloadTypeFrequency);

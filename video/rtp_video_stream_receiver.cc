@@ -84,7 +84,7 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
     ReceiveStatistics* receive_statistics,
     Transport* outgoing_transport,
     RtcpRttStats* rtt_stats,
-    RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
+    ReceiveStatisticsProxy* rtcp_statistics_observer,
     uint32_t local_ssrc) {
   RtpRtcp::Configuration configuration;
   configuration.clock = clock;
@@ -93,8 +93,8 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
   configuration.receive_statistics = receive_statistics;
   configuration.outgoing_transport = outgoing_transport;
   configuration.rtt_stats = rtt_stats;
-  configuration.rtcp_packet_type_counter_observer =
-      rtcp_packet_type_counter_observer;
+  configuration.rtcp_packet_type_counter_observer = rtcp_statistics_observer;
+  configuration.rtcp_cname_callback = rtcp_statistics_observer;
   configuration.local_media_ssrc = local_ssrc;
 
   std::unique_ptr<RtpRtcp> rtp_rtcp = RtpRtcp::Create(configuration);
@@ -255,9 +255,6 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
   }
   if (config_.rtp.rtcp_xr.receiver_reference_time_report)
     rtp_rtcp_->SetRtcpXrRrtrStatus(true);
-
-  // Stats callback for CNAME changes.
-  rtp_rtcp_->RegisterRtcpCnameCallback(receive_stats_proxy);
 
   process_thread_->RegisterModule(rtp_rtcp_.get(), RTC_FROM_HERE);
 

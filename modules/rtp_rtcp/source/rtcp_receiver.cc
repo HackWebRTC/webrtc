@@ -161,9 +161,9 @@ RTCPReceiver::RTCPReceiver(const RtpRtcp::Configuration& config,
       oldest_tmmbr_info_ms_(0),
       last_received_rb_ms_(0),
       last_increased_sequence_number_ms_(0),
-      stats_callback_(nullptr),
-      cname_callback_(nullptr),
-      report_block_data_observer_(nullptr),
+      stats_callback_(config.rtcp_statistics_callback),
+      cname_callback_(config.rtcp_cname_callback),
+      report_block_data_observer_(config.report_block_data_observer),
       packet_type_counter_observer_(config.rtcp_packet_type_counter_observer),
       num_skipped_packets_(0),
       last_skipped_packets_warning_ms_(clock_->TimeInMilliseconds()) {
@@ -662,11 +662,8 @@ void RTCPReceiver::HandleSdes(const CommonHeader& rtcp_block,
 
   for (const rtcp::Sdes::Chunk& chunk : sdes.chunks()) {
     received_cnames_[chunk.ssrc] = chunk.cname;
-    {
-      rtc::CritScope lock(&feedbacks_lock_);
-      if (cname_callback_)
-        cname_callback_->OnCname(chunk.ssrc, chunk.cname);
-    }
+    if (cname_callback_)
+      cname_callback_->OnCname(chunk.ssrc, chunk.cname);
   }
   packet_information->packet_type_flags |= kRtcpSdes;
 }
@@ -989,28 +986,6 @@ void RTCPReceiver::NotifyTmmbrUpdated() {
   rtp_rtcp_->SetTmmbn(std::move(bounding));
 }
 
-void RTCPReceiver::RegisterRtcpStatisticsCallback(
-    RtcpStatisticsCallback* callback) {
-  rtc::CritScope cs(&feedbacks_lock_);
-  stats_callback_ = callback;
-}
-
-RtcpStatisticsCallback* RTCPReceiver::GetRtcpStatisticsCallback() {
-  rtc::CritScope cs(&feedbacks_lock_);
-  return stats_callback_;
-}
-
-void RTCPReceiver::RegisterRtcpCnameCallback(RtcpCnameCallback* callback) {
-  rtc::CritScope cs(&feedbacks_lock_);
-  cname_callback_ = callback;
-}
-
-void RTCPReceiver::SetReportBlockDataObserver(
-    ReportBlockDataObserver* observer) {
-  rtc::CritScope cs(&feedbacks_lock_);
-  report_block_data_observer_ = observer;
-}
-
 // Holding no Critical section.
 void RTCPReceiver::TriggerCallbacksFromRtcpPacket(
     const PacketInformation& packet_information) {
@@ -1114,7 +1089,6 @@ void RTCPReceiver::TriggerCallbacksFromRtcpPacket(
   }
 
   if (!receiver_only_) {
-    rtc::CritScope cs(&feedbacks_lock_);
     if (stats_callback_) {
       for (const auto& report_block : packet_information.report_blocks) {
         RtcpStatistics stats;

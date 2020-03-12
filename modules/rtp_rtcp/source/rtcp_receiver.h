@@ -113,11 +113,6 @@ class RTCPReceiver final {
   // Set new bandwidth and notify remote clients about it.
   void NotifyTmmbrUpdated();
 
-  void RegisterRtcpStatisticsCallback(RtcpStatisticsCallback* callback);
-  void RegisterRtcpCnameCallback(RtcpCnameCallback* callback);
-  RtcpStatisticsCallback* GetRtcpStatisticsCallback();
-  void SetReportBlockDataObserver(ReportBlockDataObserver* observer);
-
  private:
   struct PacketInformation;
   struct TmmbrInformation;
@@ -220,7 +215,6 @@ class RTCPReceiver final {
   const uint32_t main_ssrc_;
   const std::set<uint32_t> registered_ssrcs_;
 
-  rtc::CriticalSection feedbacks_lock_;
   RtcpBandwidthObserver* const rtcp_bandwidth_observer_;
   RtcpIntraFrameObserver* const rtcp_intra_frame_observer_;
   RtcpLossNotificationObserver* const rtcp_loss_notification_observer_;
@@ -267,13 +261,12 @@ class RTCPReceiver final {
   // delivered RTP packet to the remote side.
   int64_t last_increased_sequence_number_ms_;
 
-  RtcpStatisticsCallback* stats_callback_ RTC_GUARDED_BY(feedbacks_lock_);
-  RtcpCnameCallback* cname_callback_ RTC_GUARDED_BY(feedbacks_lock_);
+  RtcpStatisticsCallback* const stats_callback_;
+  RtcpCnameCallback* const cname_callback_;
   // TODO(hbos): Remove RtcpStatisticsCallback in favor of
   // ReportBlockDataObserver; the ReportBlockData contains a superset of the
   // RtcpStatistics data.
-  ReportBlockDataObserver* report_block_data_observer_
-      RTC_GUARDED_BY(feedbacks_lock_);
+  ReportBlockDataObserver* const report_block_data_observer_;
 
   RtcpPacketTypeCounterObserver* const packet_type_counter_observer_;
   RtcpPacketTypeCounter packet_type_counter_;

@@ -231,14 +231,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   bool StorePackets() const override;
 
-  // Called on receipt of RTCP report block from remote side.
-  void RegisterRtcpStatisticsCallback(
-      RtcpStatisticsCallback* callback) override;
-  RtcpStatisticsCallback* GetRtcpStatisticsCallback() override;
-  void RegisterRtcpCnameCallback(RtcpCnameCallback* callback) override;
-
-  void SetReportBlockDataObserver(ReportBlockDataObserver* observer) override;
-
   void SendCombinedRtcpPacket(
       std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets) override;
 

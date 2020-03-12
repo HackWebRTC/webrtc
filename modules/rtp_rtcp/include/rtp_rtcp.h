@@ -86,6 +86,16 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
     VideoBitrateAllocationObserver* bitrate_allocation_observer = nullptr;
     RtcpRttStats* rtt_stats = nullptr;
     RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer = nullptr;
+    // Called on receipt of RTCP report block from remote side.
+    // TODO(bugs.webrtc.org/10678): Remove RtcpStatisticsCallback in
+    // favor of ReportBlockDataObserver.
+    // TODO(bugs.webrtc.org/10679): Consider whether we want to use
+    // only getters or only callbacks. If we decide on getters, the
+    // ReportBlockDataObserver should also be removed in favor of
+    // GetLatestReportBlockData().
+    RtcpStatisticsCallback* rtcp_statistics_callback = nullptr;
+    RtcpCnameCallback* rtcp_cname_callback = nullptr;
+    ReportBlockDataObserver* report_block_data_observer = nullptr;
 
     // Estimates the bandwidth available for a set of streams from the same
     // client.
@@ -417,24 +427,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   // Returns true if the module is configured to store packets.
   virtual bool StorePackets() const = 0;
 
-  // Called on receipt of RTCP report block from remote side.
-  // TODO(https://crbug.com/webrtc/10678): Remove RtcpStatisticsCallback in
-  // favor of ReportBlockDataObserver.
-  // TODO(https://crbug.com/webrtc/10679): Consider whether we want to use only
-  // getters or only callbacks. If we decide on getters, the
-  // ReportBlockDataObserver should also be removed in favor of
-  // GetLatestReportBlockData().
-  // TODO(nisse): Replace RegisterRtcpStatisticsCallback and
-  // RegisterRtcpCnameCallback with construction-time settings in
-  // RtpRtcp::Configuration.
-  virtual void RegisterRtcpStatisticsCallback(
-      RtcpStatisticsCallback* callback) = 0;
-  virtual RtcpStatisticsCallback* GetRtcpStatisticsCallback() = 0;
-  virtual void RegisterRtcpCnameCallback(RtcpCnameCallback* callback) = 0;
-  // TODO(https://crbug.com/webrtc/10680): When callbacks are registered at
-  // construction, remove this setter.
-  virtual void SetReportBlockDataObserver(
-      ReportBlockDataObserver* observer) = 0;
   virtual void SetVideoBitrateAllocation(
       const VideoBitrateAllocation& bitrate) = 0;
 

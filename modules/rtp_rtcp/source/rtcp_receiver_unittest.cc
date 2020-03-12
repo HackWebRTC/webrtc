@@ -635,12 +635,13 @@ TEST(RtcpReceiverTest, InjectApp) {
 
 TEST(RtcpReceiverTest, InjectSdesWithOneChunk) {
   ReceiverMocks mocks;
-  RTCPReceiver receiver(DefaultConfiguration(&mocks), &mocks.rtp_rtcp_impl);
+  MockCnameCallbackImpl callback;
+  RtpRtcp::Configuration config = DefaultConfiguration(&mocks);
+  config.rtcp_cname_callback = &callback;
+  RTCPReceiver receiver(config, &mocks.rtp_rtcp_impl);
   receiver.SetRemoteSSRC(kSenderSsrc);
 
   const char kCname[] = "alice@host";
-  MockCnameCallbackImpl callback;
-  receiver.RegisterRtcpCnameCallback(&callback);
   rtcp::Sdes sdes;
   sdes.AddCName(kSenderSsrc, kCname);
 
@@ -1308,11 +1309,11 @@ TEST(RtcpReceiverTest, TmmbrThreeConstraintsTimeOut) {
 
 TEST(RtcpReceiverTest, Callbacks) {
   ReceiverMocks mocks;
-  RTCPReceiver receiver(DefaultConfiguration(&mocks), &mocks.rtp_rtcp_impl);
-  receiver.SetRemoteSSRC(kSenderSsrc);
-
   MockRtcpCallbackImpl callback;
-  receiver.RegisterRtcpStatisticsCallback(&callback);
+  RtpRtcp::Configuration config = DefaultConfiguration(&mocks);
+  config.rtcp_statistics_callback = &callback;
+  RTCPReceiver receiver(config, &mocks.rtp_rtcp_impl);
+  receiver.SetRemoteSSRC(kSenderSsrc);
 
   const uint8_t kFractionLoss = 3;
   const uint32_t kCumulativeLoss = 7;
@@ -1341,35 +1342,16 @@ TEST(RtcpReceiverTest, Callbacks) {
   EXPECT_CALL(mocks.rtp_rtcp_impl, OnReceivedRtcpReportBlocks);
   EXPECT_CALL(mocks.bandwidth_observer, OnReceivedRtcpReceiverReport);
   receiver.IncomingPacket(rr1.Build());
-
-  receiver.RegisterRtcpStatisticsCallback(nullptr);
-
-  // Add arbitrary numbers, callback should not be called.
-  rtcp::ReportBlock rb2;
-  rb2.SetMediaSsrc(kReceiverMainSsrc);
-  rb2.SetExtHighestSeqNum(kSequenceNumber + 1);
-  rb2.SetFractionLost(42);
-  rb2.SetCumulativeLost(137);
-  rb2.SetJitter(4711);
-
-  rtcp::ReceiverReport rr2;
-  rr2.SetSenderSsrc(kSenderSsrc);
-  rr2.AddReportBlock(rb2);
-
-  EXPECT_CALL(mocks.rtp_rtcp_impl, OnReceivedRtcpReportBlocks);
-  EXPECT_CALL(mocks.bandwidth_observer, OnReceivedRtcpReceiverReport);
-  EXPECT_CALL(callback, StatisticsUpdated).Times(0);
-  receiver.IncomingPacket(rr2.Build());
 }
 
 TEST(RtcpReceiverTest,
      VerifyBlockAndTimestampObtainedFromReportBlockDataObserver) {
   ReceiverMocks mocks;
-  RTCPReceiver receiver(DefaultConfiguration(&mocks), &mocks.rtp_rtcp_impl);
-  receiver.SetRemoteSSRC(kSenderSsrc);
-
   MockReportBlockDataObserverImpl observer;
-  receiver.SetReportBlockDataObserver(&observer);
+  RtpRtcp::Configuration config = DefaultConfiguration(&mocks);
+  config.report_block_data_observer = &observer;
+  RTCPReceiver receiver(config, &mocks.rtp_rtcp_impl);
+  receiver.SetRemoteSSRC(kSenderSsrc);
 
   const uint8_t kFractionLoss = 3;
   const uint32_t kCumulativeLoss = 7;
@@ -1414,11 +1396,11 @@ TEST(RtcpReceiverTest,
 
 TEST(RtcpReceiverTest, VerifyRttObtainedFromReportBlockDataObserver) {
   ReceiverMocks mocks;
-  RTCPReceiver receiver(DefaultConfiguration(&mocks), &mocks.rtp_rtcp_impl);
-  receiver.SetRemoteSSRC(kSenderSsrc);
-
   MockReportBlockDataObserverImpl observer;
-  receiver.SetReportBlockDataObserver(&observer);
+  RtpRtcp::Configuration config = DefaultConfiguration(&mocks);
+  config.report_block_data_observer = &observer;
+  RTCPReceiver receiver(config, &mocks.rtp_rtcp_impl);
+  receiver.SetRemoteSSRC(kSenderSsrc);
 
   const int64_t kRttMs = 120;
   const uint32_t kDelayNtp = 123000;
