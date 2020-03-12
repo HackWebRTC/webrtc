@@ -105,8 +105,9 @@ std::string GetPerfResults();
 // they will be skipped.
 void PrintPlottableResults(const std::vector<std::string>& desired_graphs);
 
-// Call GetPerfResults() and write its output to a file.
-void WritePerfResults(const std::string& output_path);
+// Call GetPerfResults() and write its output to a file. Returns false if we
+// failed to write to the file.
+bool WritePerfResults(const std::string& output_path);
 
 // By default, perf results are printed to stdout. Set the FILE* to where they
 // should be printing instead.

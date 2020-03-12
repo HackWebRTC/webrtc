@@ -861,7 +861,7 @@ TEST(IsacFixTest, Kenny) {
                             (runtime * 10000) / length_file, "us", false);
 
   if (chartjson_result_file) {
-    webrtc::test::WritePerfResults(chartjson_result_file);
+    EXPECT_TRUE(webrtc::test::WritePerfResults(chartjson_result_file));
   }
 
   fclose(inp);

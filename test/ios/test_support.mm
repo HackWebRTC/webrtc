@@ -33,7 +33,7 @@
 static int (*g_test_suite)(void) = NULL;
 static int g_argc;
 static char **g_argv;
-static bool g_save_chartjson_result;
+static bool g_write_perf_output;
 static absl::optional<std::vector<std::string>> g_metrics_to_plot;
 
 @interface UIApplication (Testing)
@@ -76,8 +76,10 @@ static absl::optional<std::vector<std::string>> g_metrics_to_plot;
 
   int exitStatus = g_test_suite();
 
-  if (g_save_chartjson_result) {
+  if (g_write_perf_output) {
     // Stores data into a json file under the app's document directory.
+    // TODO(https://crbug.com/1029452): Change ext to .pb when histograms are
+    // the default.
     NSString* fileName = @"perf_result.json";
     NSArray<NSString*>* outputDirectories = NSSearchPathForDirectoriesInDomains(
         NSDocumentDirectory, NSUserDomainMask, YES);
@@ -85,8 +87,9 @@ static absl::optional<std::vector<std::string>> g_metrics_to_plot;
       NSString* outputPath =
           [outputDirectories[0] stringByAppendingPathComponent:fileName];
 
-      webrtc::test::WritePerfResults(
-          [NSString stdStringForString:outputPath]);
+      if (!webrtc::test::WritePerfResults([NSString stdStringForString:outputPath])) {
+        exit(1);
+      }
     }
   }
   if (g_metrics_to_plot) {
@@ -121,7 +124,7 @@ void InitTestSuite(int (*test_suite)(void),
   g_test_suite = test_suite;
   g_argc = argc;
   g_argv = argv;
-  g_save_chartjson_result = save_chartjson_result;
+  g_write_perf_output = save_chartjson_result;
   g_metrics_to_plot = std::move(metrics_to_plot);
 }
 

@@ -110,7 +110,7 @@ std::string PerfResultsOutputFile() {
 
 void LogTestResults() {
   std::string perf_results_output_file = PerfResultsOutputFile();
-  webrtc::test::WritePerfResults(perf_results_output_file);
+  EXPECT_TRUE(webrtc::test::WritePerfResults(perf_results_output_file));
 
   const ::testing::TestInfo* const test_info =
       ::testing::UnitTest::GetInstance()->current_test_info();

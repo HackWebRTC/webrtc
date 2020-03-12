@@ -181,7 +181,9 @@ class TestMainImpl : public TestMain {
     std::string chartjson_result_file =
         absl::GetFlag(FLAGS_isolated_script_test_perf_output);
     if (!chartjson_result_file.empty()) {
-      webrtc::test::WritePerfResults(chartjson_result_file);
+      if (!webrtc::test::WritePerfResults(chartjson_result_file)) {
+        return 1;
+      }
     }
     if (metrics_to_plot) {
       webrtc::test::PrintPlottableResults(*metrics_to_plot);
