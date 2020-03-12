@@ -98,10 +98,8 @@ rtc_library("single_process_encoded_image_data_injector") {
   deps = [
     ":encoded_image_data_injector_api",
     "../../../api/video:encoded_image",
-    "../../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../../rtc_base:checks",
     "../../../rtc_base:criticalsection",
-    "../../../rtc_base:logging",
     "//third_party/abseil-cpp/absl/memory",
   ]
 }
