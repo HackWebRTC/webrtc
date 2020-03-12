@@ -29,7 +29,8 @@ rtc_library("audio_mixer_impl") {
 
   public = [
     "audio_mixer_impl.h",
-    "default_output_rate_calculator.h",  # For creating a mixer with limiter disabled.
+    "default_output_rate_calculator.h",  # For creating a mixer with limiter
+                                         # disabled.
     "frame_combiner.h",
   ]
 
@@ -47,7 +48,6 @@ rtc_library("audio_mixer_impl") {
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
     "../../system_wrappers:metrics",
-    "../audio_processing",
     "../audio_processing:api",
     "../audio_processing:apm_logging",
     "../audio_processing:audio_frame_view",
