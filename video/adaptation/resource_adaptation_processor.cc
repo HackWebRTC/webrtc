@@ -461,15 +461,16 @@ void ResourceAdaptationProcessor::OnResourceUnderuse(
   const int input_pixels = LastInputFrameSizeOrDefault();
   const int input_fps = encoder_stats_observer_->GetInputFrameRate();
   // Should we adapt, if so to what target?
-  absl::optional<VideoStreamAdapter::AdaptationTarget> target =
+  VideoStreamAdapter::AdaptationTargetOrReason target_or_reason =
       stream_adapter_->GetAdaptUpTarget(encoder_settings_,
                                         encoder_target_bitrate_bps_, input_mode,
                                         input_pixels, input_fps, reason);
-  if (!target.has_value())
+  if (!target_or_reason.has_target())
     return;
   // Apply target.
-  stream_adapter_->ApplyAdaptationTarget(target.value(), encoder_settings_,
-                                         input_mode, input_pixels, input_fps);
+  stream_adapter_->ApplyAdaptationTarget(target_or_reason.target(),
+                                         encoder_settings_, input_mode,
+                                         input_pixels, input_fps);
   // Update VideoSourceRestrictions based on adaptation. This also informs the
   // |adaptation_listener_|.
   MaybeUpdateVideoSourceRestrictions();
@@ -487,15 +488,17 @@ ResourceListenerResponse ResourceAdaptationProcessor::OnResourceOveruse(
   const int input_pixels = LastInputFrameSizeOrDefault();
   const int input_fps = encoder_stats_observer_->GetInputFrameRate();
   // Should we adapt, if so to what target?
-  absl::optional<VideoStreamAdapter::AdaptationTarget> target =
+  VideoStreamAdapter::AdaptationTargetOrReason target_or_reason =
       stream_adapter_->GetAdaptDownTarget(encoder_settings_, input_mode,
-                                          input_pixels, input_fps,
-                                          encoder_stats_observer_);
-  if (!target.has_value())
+                                          input_pixels, input_fps);
+  if (target_or_reason.min_pixel_limit_reached())
+    encoder_stats_observer_->OnMinPixelLimitReached();
+  if (!target_or_reason.has_target())
     return ResourceListenerResponse::kNothing;
   // Apply target.
   ResourceListenerResponse response = stream_adapter_->ApplyAdaptationTarget(
-      target.value(), encoder_settings_, input_mode, input_pixels, input_fps);
+      target_or_reason.target(), encoder_settings_, input_mode, input_pixels,
+      input_fps);
   // Update VideoSourceRestrictions based on adaptation. This also informs the
   // |adaptation_listener_|.
   MaybeUpdateVideoSourceRestrictions();

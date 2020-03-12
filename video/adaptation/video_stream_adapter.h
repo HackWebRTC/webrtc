@@ -14,8 +14,8 @@
 #include <memory>
 
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "api/rtp_parameters.h"
-#include "api/video/video_stream_encoder_observer.h"
 #include "call/adaptation/encoder_settings.h"
 #include "call/adaptation/resource.h"
 #include "call/adaptation/video_source_restrictions.h"
@@ -69,6 +69,78 @@ class VideoStreamAdapter {
     friend class absl::optional<AdaptationTarget>;
   };
 
+  // Reasons for not being able to get an AdaptationTarget that can be applied.
+  enum class CannotAdaptReason {
+    // DegradationPreference is DISABLED.
+    // TODO(hbos): Don't support DISABLED, it doesn't exist in the spec and it
+    // causes all adaptation to be ignored, even QP-scaling.
+    kAdaptationDisabled,
+    // Adaptation is refused because we don't have video, the input frame rate
+    // is not known yet or is less than the minimum allowed (below the limit).
+    kInsufficientInput,
+    // The minimum or maximum adaptation has already been reached. There are no
+    // more steps to take.
+    kLimitReached,
+    // The resolution or frame rate requested by a recent adaptation has not yet
+    // been reflected in the input resolution or frame rate; adaptation is
+    // refused to avoid "double-adapting".
+    // TODO(hbos): Can this be rephrased as a resource usage measurement
+    // cooldown mechanism? In a multi-stream setup, we need to wait before
+    // adapting again across streams. The best way to achieve this is probably
+    // to not act on racy resource usage measurements, regardless of individual
+    // adapters. When this logic is moved or replaced then remove this enum
+    // value.
+    kAwaitingPreviousAdaptation,
+    // The adaptation that would have been proposed by the adapter violates
+    // bitrate constraints and is therefore rejected.
+    // TODO(hbos): This is a version of being resource limited, except in order
+    // to know if we are constrained we need to have a proposed adaptation in
+    // mind, thus the resource alone cannot determine this in isolation.
+    // Proposal: ask resources for permission to apply a proposed adaptation.
+    // This allows rejecting a given resolution or frame rate based on bitrate
+    // limits without coupling it with the adapter's proposal logic. When this
+    // is done, remove this enum value.
+    kIsBitrateConstrained,
+  };
+
+  // Describes the next adaptation target that can be applied, or a reason
+  // explaining why there is no next adaptation step to take.
+  // TODO(hbos): Make "AdaptationTarget" a private implementation detail and
+  // expose the resulting VideoSourceRestrictions as the publically accessible
+  // "target" instead.
+  class AdaptationTargetOrReason {
+   public:
+    AdaptationTargetOrReason(AdaptationTarget target,
+                             bool min_pixel_limit_reached);
+    AdaptationTargetOrReason(CannotAdaptReason reason,
+                             bool min_pixel_limit_reached);
+    // Not explicit - we want to use AdaptationTarget and CannotAdaptReason as
+    // return values.
+    AdaptationTargetOrReason(AdaptationTarget target);   // NOLINT
+    AdaptationTargetOrReason(CannotAdaptReason reason);  // NOLINT
+
+    bool has_target() const;
+    const AdaptationTarget& target() const;
+    CannotAdaptReason reason() const;
+    // This is true if the next step down would have exceeded the minimum
+    // resolution limit. Used for stats reporting. This is similar to
+    // kLimitReached but only applies to resolution adaptations. It is also
+    // currently implemented as "the next step would have exceeded", which is
+    // subtly diffrent than "we are currently reaching the limit" - we could
+    // stay above the limit forever, not taking any steps because the steps
+    // would have been too big. (This is unlike how we adapt frame rate, where
+    // we adapt to kMinFramerateFps before reporting kLimitReached.)
+    // TODO(hbos): Adapt to the limit and indicate if the limit was reached
+    // independently of degradation preference. If stats reporting wants to
+    // filter this out by degradation preference it can take on that
+    // responsibility; the adapter should not inherit this detail.
+    bool min_pixel_limit_reached() const;
+
+   private:
+    const absl::variant<AdaptationTarget, CannotAdaptReason> target_or_reason_;
+    const bool min_pixel_limit_reached_;
+  };
+
   VideoStreamAdapter();
   ~VideoStreamAdapter();
 
@@ -77,7 +149,7 @@ class VideoStreamAdapter {
   // TODO(hbos): Can we get rid of any external dependencies on
   // BalancedDegradationPreference? How the adaptor generates possible next
   // steps for adaptation should be an implementation detail. Can the relevant
-  // information be inferred from GetAdaptUpTarget()/GetAdaptDownTarget()?
+  // information be inferred from AdaptationTargetOrReason?
   const BalancedDegradationSettings& balanced_settings() const;
   void ClearRestrictions();
 
@@ -87,24 +159,20 @@ class VideoStreamAdapter {
   SetDegradationPreferenceResult SetDegradationPreference(
       DegradationPreference degradation_preference);
 
-  // Returns a target that we are guaranteed to be able to adapt to, or null if
-  // adaptation is not desired or not possible.
-  absl::optional<AdaptationTarget> GetAdaptUpTarget(
+  // Returns a target that we are guaranteed to be able to adapt to, or the
+  // reason why there is no such target.
+  AdaptationTargetOrReason GetAdaptUpTarget(
       const absl::optional<EncoderSettings>& encoder_settings,
       absl::optional<uint32_t> encoder_target_bitrate_bps,
       VideoInputMode input_mode,
       int input_pixels,
       int input_fps,
       AdaptationObserverInterface::AdaptReason reason) const;
-  // TODO(https://crbug.com/webrtc/11393): Remove the dependency on
-  // |encoder_stats_observer| - simply checking which adaptation target is
-  // available should not have side-effects.
-  absl::optional<AdaptationTarget> GetAdaptDownTarget(
+  AdaptationTargetOrReason GetAdaptDownTarget(
       const absl::optional<EncoderSettings>& encoder_settings,
       VideoInputMode input_mode,
       int input_pixels,
-      int input_fps,
-      VideoStreamEncoderObserver* encoder_stats_observer) const;
+      int input_fps) const;
   // Applies the |target| to |source_restrictor_|.
   // TODO(hbos): Delete ResourceListenerResponse!
   ResourceListenerResponse ApplyAdaptationTarget(

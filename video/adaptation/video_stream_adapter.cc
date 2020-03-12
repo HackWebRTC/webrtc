@@ -12,8 +12,10 @@
 
 #include <algorithm>
 #include <limits>
+#include <utility>
 
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "api/video_codecs/video_encoder.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/logging.h"
@@ -97,6 +99,49 @@ bool CanAdaptUpResolution(
 VideoStreamAdapter::AdaptationTarget::AdaptationTarget(AdaptationAction action,
                                                        int value)
     : action(action), value(value) {}
+
+VideoStreamAdapter::AdaptationTargetOrReason::AdaptationTargetOrReason(
+    AdaptationTarget target,
+    bool min_pixel_limit_reached)
+    : target_or_reason_(target),
+      min_pixel_limit_reached_(min_pixel_limit_reached) {}
+
+VideoStreamAdapter::AdaptationTargetOrReason::AdaptationTargetOrReason(
+    CannotAdaptReason reason,
+    bool min_pixel_limit_reached)
+    : target_or_reason_(reason),
+      min_pixel_limit_reached_(min_pixel_limit_reached) {}
+
+// implicit
+VideoStreamAdapter::AdaptationTargetOrReason::AdaptationTargetOrReason(
+    AdaptationTarget target)
+    : target_or_reason_(target), min_pixel_limit_reached_(false) {}
+
+// implicit
+VideoStreamAdapter::AdaptationTargetOrReason::AdaptationTargetOrReason(
+    CannotAdaptReason reason)
+    : target_or_reason_(reason), min_pixel_limit_reached_(false) {}
+
+bool VideoStreamAdapter::AdaptationTargetOrReason::has_target() const {
+  return absl::holds_alternative<AdaptationTarget>(target_or_reason_);
+}
+
+const VideoStreamAdapter::AdaptationTarget&
+VideoStreamAdapter::AdaptationTargetOrReason::target() const {
+  RTC_DCHECK(has_target());
+  return absl::get<AdaptationTarget>(target_or_reason_);
+}
+
+VideoStreamAdapter::CannotAdaptReason
+VideoStreamAdapter::AdaptationTargetOrReason::reason() const {
+  RTC_DCHECK(!has_target());
+  return absl::get<CannotAdaptReason>(target_or_reason_);
+}
+
+bool VideoStreamAdapter::AdaptationTargetOrReason::min_pixel_limit_reached()
+    const {
+  return min_pixel_limit_reached_;
+}
 
 // VideoSourceRestrictor is responsible for keeping track of current
 // VideoSourceRestrictions.
@@ -270,7 +315,7 @@ VideoStreamAdapter::SetDegradationPreference(
                    : SetDegradationPreferenceResult::kRestrictionsNotCleared;
 }
 
-absl::optional<VideoStreamAdapter::AdaptationTarget>
+VideoStreamAdapter::AdaptationTargetOrReason
 VideoStreamAdapter::GetAdaptUpTarget(
     const absl::optional<EncoderSettings>& encoder_settings,
     absl::optional<uint32_t> encoder_target_bitrate_bps,
@@ -278,32 +323,31 @@ VideoStreamAdapter::GetAdaptUpTarget(
     int input_pixels,
     int input_fps,
     AdaptationObserverInterface::AdaptReason reason) const {
-  // Preconditions for being able to adapt up:
-  if (input_mode == VideoInputMode::kNoVideo)
-    return absl::nullopt;
-  // 1. We shouldn't adapt up if we're currently waiting for a previous upgrade
-  // to have an effect.
-  // TODO(hbos): What about in the case of other degradation preferences?
+  // Don't adapt if we don't have sufficient input.
+  if (input_mode == VideoInputMode::kNoVideo) {
+    return CannotAdaptReason::kInsufficientInput;
+  }
+  // Don't adapt if we're awaiting a previous adaptation to have an effect.
   bool last_adaptation_was_up =
       last_adaptation_request_ &&
       last_adaptation_request_->mode_ == AdaptationRequest::Mode::kAdaptUp;
   if (last_adaptation_was_up &&
       degradation_preference_ == DegradationPreference::MAINTAIN_FRAMERATE &&
       input_pixels <= last_adaptation_request_->input_pixel_count_) {
-    return absl::nullopt;
+    return CannotAdaptReason::kAwaitingPreviousAdaptation;
   }
-  // 2. We shouldn't adapt up if BalancedSettings doesn't allow it, which is
-  // only applicable if reason is kQuality and preference is BALANCED.
+  // Don't adapt if BalancedDegradationSettings applies and determines this will
+  // exceed bitrate constraints.
   if (reason == AdaptationObserverInterface::AdaptReason::kQuality &&
       EffectiveDegradationPreference(input_mode) ==
           DegradationPreference::BALANCED &&
       !balanced_settings_.CanAdaptUp(
           GetVideoCodecTypeOrGeneric(encoder_settings), input_pixels,
           encoder_target_bitrate_bps.value_or(0))) {
-    return absl::nullopt;
+    return CannotAdaptReason::kIsBitrateConstrained;
   }
 
-  // Attempt to find an allowed adaptation target.
+  // Maybe propose targets based on degradation preference.
   switch (EffectiveDegradationPreference(input_mode)) {
     case DegradationPreference::BALANCED: {
       // Attempt to increase target frame rate.
@@ -319,7 +363,7 @@ VideoStreamAdapter::GetAdaptUpTarget(
           !balanced_settings_.CanAdaptUpResolution(
               GetVideoCodecTypeOrGeneric(encoder_settings), input_pixels,
               encoder_target_bitrate_bps.value_or(0))) {
-        return absl::nullopt;
+        return CannotAdaptReason::kIsBitrateConstrained;
       }
       // Scale up resolution.
       ABSL_FALLTHROUGH_INTENDED;
@@ -330,7 +374,7 @@ VideoStreamAdapter::GetAdaptUpTarget(
       if (reason == AdaptationObserverInterface::AdaptReason::kQuality &&
           !CanAdaptUpResolution(encoder_settings, encoder_target_bitrate_bps,
                                 input_pixels)) {
-        return absl::nullopt;
+        return CannotAdaptReason::kIsBitrateConstrained;
       }
       // Attempt to increase pixel count.
       int target_pixels = input_pixels;
@@ -340,8 +384,9 @@ VideoStreamAdapter::GetAdaptUpTarget(
         target_pixels = std::numeric_limits<int>::max();
       }
       target_pixels = GetHigherResolutionThan(target_pixels);
-      if (!source_restrictor_->CanIncreaseResolutionTo(target_pixels))
-        return absl::nullopt;
+      if (!source_restrictor_->CanIncreaseResolutionTo(target_pixels)) {
+        return CannotAdaptReason::kLimitReached;
+      }
       return AdaptationTarget(AdaptationAction::kIncreaseResolution,
                               target_pixels);
     }
@@ -353,57 +398,50 @@ VideoStreamAdapter::GetAdaptUpTarget(
         target_fps = std::numeric_limits<int>::max();
       }
       target_fps = GetHigherFrameRateThan(target_fps);
-      if (!source_restrictor_->CanIncreaseFrameRateTo(target_fps))
-        return absl::nullopt;
+      if (!source_restrictor_->CanIncreaseFrameRateTo(target_fps)) {
+        return CannotAdaptReason::kLimitReached;
+      }
       return AdaptationTarget(AdaptationAction::kIncreaseFrameRate, target_fps);
     }
     case DegradationPreference::DISABLED:
-      return absl::nullopt;
+      return CannotAdaptReason::kAdaptationDisabled;
   }
 }
 
-absl::optional<VideoStreamAdapter::AdaptationTarget>
+VideoStreamAdapter::AdaptationTargetOrReason
 VideoStreamAdapter::GetAdaptDownTarget(
     const absl::optional<EncoderSettings>& encoder_settings,
     VideoInputMode input_mode,
     int input_pixels,
-    int input_fps,
-    VideoStreamEncoderObserver* encoder_stats_observer) const {
+    int input_fps) const {
   const int min_pixels_per_frame = MinPixelsPerFrame(encoder_settings);
-  // Preconditions for being able to adapt down:
-  if (input_mode == VideoInputMode::kNoVideo)
-    return absl::nullopt;
-  // 1. We are not disabled.
-  // TODO(hbos): Don't support DISABLED, it doesn't exist in the spec and it
-  // causes scaling due to bandwidth constraints (QualityScalerResource) to be
-  // ignored, not just CPU signals. This is not a use case we want to support
-  // long-term; remove this enum value.
-  if (degradation_preference_ == DegradationPreference::DISABLED)
-    return absl::nullopt;
+  // Don't adapt if we don't have sufficient input or adaptation is disabled.
+  if (input_mode == VideoInputMode::kNoVideo) {
+    return CannotAdaptReason::kInsufficientInput;
+  }
+  if (degradation_preference_ == DegradationPreference::DISABLED) {
+    return CannotAdaptReason::kAdaptationDisabled;
+  }
   bool last_adaptation_was_down =
       last_adaptation_request_ &&
       last_adaptation_request_->mode_ == AdaptationRequest::Mode::kAdaptDown;
-  // 2. We shouldn't adapt down if our frame rate is below the minimum or if its
-  // currently unknown.
   if (EffectiveDegradationPreference(input_mode) ==
       DegradationPreference::MAINTAIN_RESOLUTION) {
     // TODO(hbos): This usage of |last_adaptation_was_down| looks like a mistake
     // - delete it.
     if (input_fps <= 0 ||
         (last_adaptation_was_down && input_fps < kMinFramerateFps)) {
-      return absl::nullopt;
+      return CannotAdaptReason::kInsufficientInput;
     }
   }
-  // 3. We shouldn't adapt down if we're currently waiting for a previous
-  // downgrade to have an effect.
-  // TODO(hbos): What about in the case of other degradation preferences?
+  // Don't adapt if we're awaiting a previous adaptation to have an effect.
   if (last_adaptation_was_down &&
       degradation_preference_ == DegradationPreference::MAINTAIN_FRAMERATE &&
       input_pixels >= last_adaptation_request_->input_pixel_count_) {
-    return absl::nullopt;
+    return CannotAdaptReason::kAwaitingPreviousAdaptation;
   }
 
-  // Attempt to find an allowed adaptation target.
+  // Maybe propose targets based on degradation preference.
   switch (EffectiveDegradationPreference(input_mode)) {
     case DegradationPreference::BALANCED: {
       // Try scale down framerate, if lower.
@@ -419,27 +457,27 @@ VideoStreamAdapter::GetAdaptDownTarget(
     case DegradationPreference::MAINTAIN_FRAMERATE: {
       // Scale down resolution.
       int target_pixels = GetLowerResolutionThan(input_pixels);
-      // TODO(https://crbug.com/webrtc/11393): Move this logic to
-      // ApplyAdaptationTarget() or elsewhere - simply checking which adaptation
-      // target is available should not have side-effects.
-      if (target_pixels < min_pixels_per_frame)
-        encoder_stats_observer->OnMinPixelLimitReached();
+      bool min_pixel_limit_reached = target_pixels < min_pixels_per_frame;
       if (!source_restrictor_->CanDecreaseResolutionTo(target_pixels,
                                                        min_pixels_per_frame)) {
-        return absl::nullopt;
+        return AdaptationTargetOrReason(CannotAdaptReason::kLimitReached,
+                                        min_pixel_limit_reached);
       }
-      return AdaptationTarget(AdaptationAction::kDecreaseResolution,
-                              target_pixels);
+      return AdaptationTargetOrReason(
+          AdaptationTarget(AdaptationAction::kDecreaseResolution,
+                           target_pixels),
+          min_pixel_limit_reached);
     }
     case DegradationPreference::MAINTAIN_RESOLUTION: {
       int target_fps = GetLowerFrameRateThan(input_fps);
-      if (!source_restrictor_->CanDecreaseFrameRateTo(target_fps))
-        return absl::nullopt;
+      if (!source_restrictor_->CanDecreaseFrameRateTo(target_fps)) {
+        return CannotAdaptReason::kLimitReached;
+      }
       return AdaptationTarget(AdaptationAction::kDecreaseFrameRate, target_fps);
     }
     case DegradationPreference::DISABLED:
       RTC_NOTREACHED();
-      return absl::nullopt;
+      return CannotAdaptReason::kAdaptationDisabled;
   }
 }
 
