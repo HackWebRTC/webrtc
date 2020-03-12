@@ -37,6 +37,8 @@ namespace {
 // 48 kHz data.
 constexpr size_t kInitialInputDataBufferSize = 6 * 480;
 
+constexpr int32_t kMaxInputSampleRateHz = 192000;
+
 class AudioCodingModuleImpl final : public AudioCodingModule {
  public:
   explicit AudioCodingModuleImpl(const AudioCodingModule::Config& config);
@@ -346,7 +348,7 @@ int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame,
     return -1;
   }
 
-  if (audio_frame.sample_rate_hz_ > 192000) {
+  if (audio_frame.sample_rate_hz_ > kMaxInputSampleRateHz) {
     assert(false);
     RTC_LOG(LS_ERROR) << "Cannot Add 10 ms audio, input frequency not valid";
     return -1;
@@ -463,20 +465,25 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
   *ptr_out = &preprocess_frame_;
   preprocess_frame_.num_channels_ = in_frame.num_channels_;
   preprocess_frame_.samples_per_channel_ = in_frame.samples_per_channel_;
-  std::array<int16_t, WEBRTC_10MS_PCM_AUDIO> audio;
-  const int16_t* src_ptr_audio = in_frame.data();
+  std::array<int16_t, AudioFrame::kMaxDataSizeSamples> audio;
+  const int16_t* src_ptr_audio;
   if (down_mix) {
-    // If a resampling is required the output of a down-mix is written into a
+    // If a resampling is required, the output of a down-mix is written into a
     // local buffer, otherwise, it will be written to the output frame.
     int16_t* dest_ptr_audio =
         resample ? audio.data() : preprocess_frame_.mutable_data();
+    RTC_DCHECK_GE(audio.size(), preprocess_frame_.samples_per_channel_);
     RTC_DCHECK_GE(audio.size(), in_frame.samples_per_channel_);
     DownMixFrame(in_frame,
                  rtc::ArrayView<int16_t>(
                      dest_ptr_audio, preprocess_frame_.samples_per_channel_));
     preprocess_frame_.num_channels_ = 1;
-    // Set the input of the resampler is the down-mixed signal.
+
+    // Set the input of the resampler to the down-mixed signal.
     src_ptr_audio = audio.data();
+  } else {
+    // Set the input of the resampler to the original data.
+    src_ptr_audio = in_frame.data();
   }
 
   preprocess_frame_.timestamp_ = expected_codec_ts_;

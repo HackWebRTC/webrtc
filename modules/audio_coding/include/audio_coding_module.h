@@ -33,8 +33,6 @@ class AudioEncoder;
 class AudioFrame;
 struct RTPHeader;
 
-#define WEBRTC_10MS_PCM_AUDIO 960  // 16 bits super wideband 48 kHz
-
 // Callback class used for sending data ready to be packetized
 class AudioPacketizationCallback {
  public:
