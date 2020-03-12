@@ -129,24 +129,8 @@ rtc_library("audio_processing") {
     "residual_echo_detector.h",
     "rms_level.cc",
     "rms_level.h",
-    "transient/common.h",
-    "transient/daubechies_8_wavelet_coeffs.h",
-    "transient/dyadic_decimator.h",
-    "transient/moving_moments.cc",
-    "transient/moving_moments.h",
-    "transient/transient_detector.cc",
-    "transient/transient_detector.h",
-    "transient/transient_suppressor.cc",
-    "transient/transient_suppressor.h",
-    "transient/windows_private.h",
-    "transient/wpd_node.cc",
-    "transient/wpd_node.h",
-    "transient/wpd_tree.cc",
-    "transient/wpd_tree.h",
     "typing_detection.cc",
     "typing_detection.h",
-    "voice_detection.cc",
-    "voice_detection.h",
   ]
 
   defines = []
@@ -159,6 +143,7 @@ rtc_library("audio_processing") {
     ":audio_processing_statistics",
     ":config",
     ":high_pass_filter",
+    ":voice_detection",
     "../../api:array_view",
     "../../api:function_view",
     "../../api/audio:aec3_config",
@@ -186,6 +171,7 @@ rtc_library("audio_processing") {
     "agc2:fixed_digital",
     "agc2:gain_applier",
     "ns",
+    "transient:transient_suppressor",
     "vad",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -196,6 +182,20 @@ rtc_library("audio_processing") {
     "../../common_audio:fir_filter_factory",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
+  ]
+}
+
+rtc_library("voice_detection") {
+  sources = [
+    "voice_detection.cc",
+    "voice_detection.h",
+  ]
+  deps = [
+    ":api",
+    ":audio_buffer",
+    "../../api/audio:audio_frame_api",
+    "../../common_audio:common_audio_c",
+    "../../rtc_base:checks",
   ]
 }
 
@@ -295,8 +295,8 @@ if (rtc_include_tests) {
     testonly = true
     deps = [
       ":audioproc_test_utils",
-      ":click_annotate",
-      ":transient_suppression_test",
+      "transient:click_annotate",
+      "transient:transient_suppression_test",
     ]
 
     if (rtc_enable_protobuf) {
@@ -321,15 +321,6 @@ if (rtc_include_tests) {
       "gain_controller2_unittest.cc",
       "splitting_filter_unittest.cc",
       "test/fake_recording_device_unittest.cc",
-      "transient/dyadic_decimator_unittest.cc",
-      "transient/file_utils.cc",
-      "transient/file_utils.h",
-      "transient/file_utils_unittest.cc",
-      "transient/moving_moments_unittest.cc",
-      "transient/transient_detector_unittest.cc",
-      "transient/transient_suppressor_unittest.cc",
-      "transient/wpd_node_unittest.cc",
-      "transient/wpd_tree_unittest.cc",
     ]
 
     deps = [
@@ -344,6 +335,7 @@ if (rtc_include_tests) {
       ":file_audio_generator_unittests",
       ":high_pass_filter",
       ":mocks",
+      ":voice_detection",
       "../../api:array_view",
       "../../api:scoped_refptr",
       "../../api/audio:aec3_config",
@@ -377,6 +369,7 @@ if (rtc_include_tests) {
       "agc2:test_utils",
       "agc2/rnn_vad:unittests",
       "test/conversational_speech:unittest",
+      "transient:transient_suppression_unittests",
       "utility:legacy_delay_estimator_unittest",
       "utility:pffft_wrapper_unittest",
       "vad:vad_unittests",
@@ -568,42 +561,6 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_executable("transient_suppression_test") {
-    testonly = true
-    sources = [
-      "transient/file_utils.cc",
-      "transient/file_utils.h",
-      "transient/transient_suppression_test.cc",
-    ]
-    deps = [
-      ":audio_processing",
-      "../../common_audio",
-      "../../rtc_base:rtc_base_approved",
-      "../../rtc_base/system:file_wrapper",
-      "../../system_wrappers",
-      "../../test:fileutils",
-      "../../test:test_support",
-      "agc:level_estimation",
-      "//testing/gtest",
-      "//third_party/abseil-cpp/absl/flags:flag",
-      "//third_party/abseil-cpp/absl/flags:parse",
-    ]
-  }
-
-  rtc_executable("click_annotate") {
-    testonly = true
-    sources = [
-      "transient/click_annotate.cc",
-      "transient/file_utils.cc",
-      "transient/file_utils.h",
-    ]
-    deps = [
-      ":audio_processing",
-      "../../rtc_base/system:file_wrapper",
-      "../../system_wrappers",
-    ]
-  }
-
   if (rtc_enable_protobuf) {
     proto_library("audioproc_unittest_proto") {
       sources = [ "test/unittest.proto" ]
@@ -635,7 +592,6 @@ if (rtc_include_tests) {
 
       deps = [
         ":api",
-        ":audio_processing",
         ":audioproc_debug_proto",
         ":audioproc_protobuf_utils",
         "../../rtc_base:checks",

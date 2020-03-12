@@ -46,7 +46,6 @@
 
 namespace webrtc {
 
-constexpr int AudioProcessing::kNativeSampleRatesHz[];
 constexpr int kRuntimeSettingQueueSize = 100;
 
 namespace {
