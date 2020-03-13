@@ -41,7 +41,7 @@ def _SendHistogramSet(url, histograms, oauth_token):
   """
   headers = {'Authorization': 'Bearer %s' % oauth_token}
 
-  serialized = json.dumps(_ApplyAllBinsHack(histograms.AsDicts()), indent=4)
+  serialized = json.dumps(_ApplyHacks(histograms.AsDicts()), indent=4)
 
   if url.startswith('http://localhost'):
     # The catapult server turns off compression in developer mode.
@@ -59,10 +59,13 @@ def _SendHistogramSet(url, histograms, oauth_token):
 
 # TODO(https://crbug.com/1029452): HACKHACK
 # Remove once we set bin bounds correctly in the proto writer.
-def _ApplyAllBinsHack(dicts):
+def _ApplyHacks(dicts):
   for d in dicts:
     if 'name' in d:
       d['allBins'] = [[1]]
+      del d['binBoundaries']
+      d['diagnostics']['stories']['values'][0] = (
+          d['diagnostics']['stories']['values'][0].replace('/', '_'))
 
   return dicts
 
@@ -92,7 +95,7 @@ def _AddBuildInfo(histograms, options):
 
 def _DumpOutput(histograms, output_file):
   with output_file:
-    json.dump(_ApplyAllBinsHack(histograms.AsDicts()), output_file, indent=4)
+    json.dump(_ApplyHacks(histograms.AsDicts()), output_file, indent=4)
 
 
 # TODO(https://crbug.com/1029452): Remove this once
