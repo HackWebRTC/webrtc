@@ -21,7 +21,6 @@
 
 #import "helpers/AVCaptureSession+DevicePosition.h"
 #import "helpers/RTCDispatcher+Private.h"
-#include "rtc_base/system/gcd_helpers.h"
 
 const int64_t kNanosecondsPerSecond = 1000000000;
 
@@ -416,10 +415,10 @@ const int64_t kNanosecondsPerSecond = 1000000000;
 
 - (dispatch_queue_t)frameQueue {
   if (!_frameQueue) {
-    _frameQueue = RTCDispatchQueueCreateWithTarget(
-        "org.webrtc.cameravideocapturer.video",
-        DISPATCH_QUEUE_SERIAL,
-        dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0));
+    _frameQueue =
+        dispatch_queue_create("org.webrtc.cameravideocapturer.video", DISPATCH_QUEUE_SERIAL);
+    dispatch_set_target_queue(_frameQueue,
+                              dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0));
   }
   return _frameQueue;
 }

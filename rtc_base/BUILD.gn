@@ -487,7 +487,6 @@ if (is_mac || is_ios) {
       ":checks",
       ":logging",
       "../api/task_queue",
-      "system:gcd_helpers",
       "//third_party/abseil-cpp/absl/strings",
     ]
   }

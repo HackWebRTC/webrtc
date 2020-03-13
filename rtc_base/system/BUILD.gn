@@ -60,13 +60,6 @@ if (is_mac || is_ios) {
     deps = [ "..:checks" ]
     libs = [ "Foundation.framework" ]
   }
-
-  rtc_library("gcd_helpers") {
-    sources = [
-      "gcd_helpers.h",
-      "gcd_helpers.m",
-    ]
-  }
 }
 
 rtc_source_set("thread_registry") {
