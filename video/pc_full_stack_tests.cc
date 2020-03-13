@@ -1411,36 +1411,6 @@ TEST(PCFullStackTest, ScreenshareSlidesVP9_3SL_High_Fps) {
   fixture->Run(std::move(run_params));
 }
 
-TEST(PCFullStackTest, ScreenshareSlidesVP9_3SL_Variable_Fps) {
-  webrtc::test::ScopedFieldTrials override_trials(
-      AppendFieldTrials("WebRTC-VP9VariableFramerateScreenshare/"
-                        "Enabled,min_qp:32,min_fps:5.0,undershoot:30,frames_"
-                        "before_steady_state:5/"
-                        "WebRTC-Vp9InterLayerPred/"
-                        "Enabled,inter_layer_pred_mode:on/"));
-  std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
-      CreateNetworkEmulationManager();
-  auto fixture = CreateTestFixture(
-      "pc_screenshare_slides_vp9_3sl_variable_fps",
-      CreateTwoNetworkLinks(network_emulation_manager.get(),
-                            BuiltInNetworkBehaviorConfig()),
-      [](PeerConfigurer* alice) {
-        VideoConfig video(1850, 1110, 30);
-        video.stream_label = "alice-video";
-        video.screen_share_config = ScreenShareConfig(TimeDelta::Seconds(10));
-        video.simulcast_config = VideoSimulcastConfig(3, 2);
-        alice->AddVideoConfig(std::move(video));
-      },
-      [](PeerConfigurer* bob) {});
-  RunParams run_params(TimeDelta::Seconds(kTestDurationSec));
-  run_params.video_codecs = {VideoCodecConfig(
-      /*name=*/cricket::kVp9CodecName, /*required_params=*/{
-          {kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile0)}})};
-  run_params.use_flex_fec = false;
-  run_params.use_ulp_fec = false;
-  fixture->Run(std::move(run_params));
-}
-
 TEST(PCFullStackTest, VP9SVC_3SL_High) {
   webrtc::test::ScopedFieldTrials override_trials(
       AppendFieldTrials("WebRTC-Vp9InterLayerPred/"
@@ -1457,35 +1427,6 @@ TEST(PCFullStackTest, VP9SVC_3SL_High) {
         video.input_file_name =
             ClipNameToClipPath("ConferenceMotion_1280_720_50");
         video.simulcast_config = VideoSimulcastConfig(3, 2);
-        video.temporal_layers_count = 3;
-        alice->AddVideoConfig(std::move(video));
-      },
-      [](PeerConfigurer* bob) {});
-  RunParams run_params(TimeDelta::Seconds(kTestDurationSec));
-  run_params.video_codecs = {VideoCodecConfig(
-      /*name=*/cricket::kVp9CodecName, /*required_params=*/{
-          {kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile0)}})};
-  run_params.use_flex_fec = false;
-  run_params.use_ulp_fec = false;
-  fixture->Run(std::move(run_params));
-}
-
-TEST(PCFullStackTest, VP9SVC_3SL_Medium) {
-  webrtc::test::ScopedFieldTrials override_trials(
-      AppendFieldTrials("WebRTC-Vp9InterLayerPred/"
-                        "Enabled,inter_layer_pred_mode:on/"));
-  std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
-      CreateNetworkEmulationManager();
-  auto fixture = CreateTestFixture(
-      "pc_vp9svc_3sl_medium",
-      CreateTwoNetworkLinks(network_emulation_manager.get(),
-                            BuiltInNetworkBehaviorConfig()),
-      [](PeerConfigurer* alice) {
-        VideoConfig video(1280, 720, 30);
-        video.stream_label = "alice-video";
-        video.input_file_name =
-            ClipNameToClipPath("ConferenceMotion_1280_720_50");
-        video.simulcast_config = VideoSimulcastConfig(3, 1);
         video.temporal_layers_count = 3;
         alice->AddVideoConfig(std::move(video));
       },
@@ -1669,31 +1610,6 @@ TEST(PCFullStackTest, SimulcastVP8_3SL_High) {
         video.input_file_name =
             ClipNameToClipPath("ConferenceMotion_1280_720_50");
         video.simulcast_config = VideoSimulcastConfig(3, 2);
-        video.stream_label = "alice-video";
-        alice->AddVideoConfig(std::move(video));
-      },
-      [](PeerConfigurer* bob) {});
-  RunParams run_params(TimeDelta::Seconds(kTestDurationSec));
-  run_params.video_codecs = {VideoCodecConfig(cricket::kVp8CodecName)};
-  run_params.use_flex_fec = false;
-  run_params.use_ulp_fec = false;
-  fixture->Run(std::move(run_params));
-}
-
-TEST(PCFullStackTest, SimulcastVP8_3SL_Medium) {
-  std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
-      CreateNetworkEmulationManager();
-  BuiltInNetworkBehaviorConfig config;
-  config.loss_percent = 0;
-  config.queue_delay_ms = 100;
-  auto fixture = CreateTestFixture(
-      "pc_simulcast_vp8_3sl_medium",
-      CreateTwoNetworkLinks(network_emulation_manager.get(), config),
-      [](PeerConfigurer* alice) {
-        VideoConfig video(1280, 720, 30);
-        video.input_file_name =
-            ClipNameToClipPath("ConferenceMotion_1280_720_50");
-        video.simulcast_config = VideoSimulcastConfig(3, 1);
         video.stream_label = "alice-video";
         alice->AddVideoConfig(std::move(video));
       },
