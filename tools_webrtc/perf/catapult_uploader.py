@@ -41,14 +41,7 @@ def _SendHistogramSet(url, histograms, oauth_token):
   """
   headers = {'Authorization': 'Bearer %s' % oauth_token}
 
-  # TODO(https://crbug.com/1029452): HACKHACK
-  # Remove once we set bin bounds correctly in the proto writer.
-  dicts = histograms.AsDicts()
-  for d in dicts:
-    if 'name' in d:
-      d['allBins'] = [[1]]
-
-  serialized = json.dumps(dicts, indent=4)
+  serialized = json.dumps(_ApplyAllBinsHack(histograms.AsDicts()), indent=4)
 
   if url.startswith('http://localhost'):
     # The catapult server turns off compression in developer mode.
@@ -62,6 +55,16 @@ def _SendHistogramSet(url, histograms, oauth_token):
   response, content = http.request(url + '/add_histograms', method='POST',
                                    body=data, headers=headers)
   return response, content
+
+
+# TODO(https://crbug.com/1029452): HACKHACK
+# Remove once we set bin bounds correctly in the proto writer.
+def _ApplyAllBinsHack(dicts):
+  for d in dicts:
+    if 'name' in d:
+      d['allBins'] = [[1]]
+
+  return dicts
 
 
 def _LoadHistogramSetFromProto(options):
@@ -89,7 +92,7 @@ def _AddBuildInfo(histograms, options):
 
 def _DumpOutput(histograms, output_file):
   with output_file:
-    json.dump(histograms.AsDicts(), output_file, indent=4)
+    json.dump(_ApplyAllBinsHack(histograms.AsDicts()), output_file, indent=4)
 
 
 # TODO(https://crbug.com/1029452): Remove this once
