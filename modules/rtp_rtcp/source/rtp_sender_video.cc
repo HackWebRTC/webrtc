@@ -73,123 +73,6 @@ void BuildRedPayload(const RtpPacketToSend& media_packet,
          media_payload.size());
 }
 
-void AddRtpHeaderExtensions(
-    const RTPVideoHeader& video_header,
-    const absl::optional<PlayoutDelay>& playout_delay,
-    const absl::optional<AbsoluteCaptureTime>& absolute_capture_time,
-    FrameDependencyStructure* video_structure,
-    bool set_video_rotation,
-    bool set_color_space,
-    bool set_frame_marking,
-    bool first_packet,
-    bool last_packet,
-    RtpPacketToSend* packet) {
-  // Color space requires two-byte header extensions if HDR metadata is
-  // included. Therefore, it's best to add this extension first so that the
-  // other extensions in the same packet are written as two-byte headers at
-  // once.
-  if (last_packet && set_color_space && video_header.color_space)
-    packet->SetExtension<ColorSpaceExtension>(video_header.color_space.value());
-
-  if (last_packet && set_video_rotation)
-    packet->SetExtension<VideoOrientation>(video_header.rotation);
-
-  // Report content type only for key frames.
-  if (last_packet &&
-      video_header.frame_type == VideoFrameType::kVideoFrameKey &&
-      video_header.content_type != VideoContentType::UNSPECIFIED)
-    packet->SetExtension<VideoContentTypeExtension>(video_header.content_type);
-
-  if (last_packet &&
-      video_header.video_timing.flags != VideoSendTiming::kInvalid)
-    packet->SetExtension<VideoTimingExtension>(video_header.video_timing);
-
-  // If transmitted, add to all packets; ack logic depends on this.
-  if (playout_delay) {
-    packet->SetExtension<PlayoutDelayLimits>(*playout_delay);
-  }
-
-  if (first_packet && absolute_capture_time) {
-    packet->SetExtension<AbsoluteCaptureTimeExtension>(*absolute_capture_time);
-  }
-
-  if (set_frame_marking) {
-    FrameMarking frame_marking = video_header.frame_marking;
-    frame_marking.start_of_frame = first_packet;
-    frame_marking.end_of_frame = last_packet;
-    packet->SetExtension<FrameMarkingExtension>(frame_marking);
-  }
-
-  if (video_header.generic) {
-    bool extension_is_set = false;
-    if (video_structure != nullptr) {
-      DependencyDescriptor descriptor;
-      descriptor.first_packet_in_frame = first_packet;
-      descriptor.last_packet_in_frame = last_packet;
-      descriptor.frame_number = video_header.generic->frame_id & 0xFFFF;
-      descriptor.frame_dependencies.spatial_id =
-          video_header.generic->spatial_index;
-      descriptor.frame_dependencies.temporal_id =
-          video_header.generic->temporal_index;
-      for (int64_t dep : video_header.generic->dependencies) {
-        descriptor.frame_dependencies.frame_diffs.push_back(
-            video_header.generic->frame_id - dep);
-      }
-      descriptor.frame_dependencies.decode_target_indications =
-          video_header.generic->decode_target_indications;
-      RTC_DCHECK_EQ(
-          descriptor.frame_dependencies.decode_target_indications.size(),
-          video_structure->num_decode_targets);
-
-      // To avoid extra structure copy, temporary share ownership of the
-      // video_structure with the dependency descriptor.
-      if (video_header.frame_type == VideoFrameType::kVideoFrameKey &&
-          first_packet) {
-        descriptor.attached_structure = absl::WrapUnique(video_structure);
-      }
-      extension_is_set = packet->SetExtension<RtpDependencyDescriptorExtension>(
-          *video_structure, descriptor);
-
-      // Remove the temporary shared ownership.
-      descriptor.attached_structure.release();
-    }
-
-    // Do not use v0/v1 generic frame descriptor when v2 is stored.
-    if (!extension_is_set) {
-      RtpGenericFrameDescriptor generic_descriptor;
-      generic_descriptor.SetFirstPacketInSubFrame(first_packet);
-      generic_descriptor.SetLastPacketInSubFrame(last_packet);
-      generic_descriptor.SetDiscardable(video_header.generic->discardable);
-
-      if (first_packet) {
-        generic_descriptor.SetFrameId(
-            static_cast<uint16_t>(video_header.generic->frame_id));
-        for (int64_t dep : video_header.generic->dependencies) {
-          generic_descriptor.AddFrameDependencyDiff(
-              video_header.generic->frame_id - dep);
-        }
-
-        uint8_t spatial_bimask = 1 << video_header.generic->spatial_index;
-        generic_descriptor.SetSpatialLayersBitmask(spatial_bimask);
-
-        generic_descriptor.SetTemporalLayer(
-            video_header.generic->temporal_index);
-
-        if (video_header.frame_type == VideoFrameType::kVideoFrameKey) {
-          generic_descriptor.SetResolution(video_header.width,
-                                           video_header.height);
-        }
-      }
-
-      if (!packet->SetExtension<RtpGenericFrameDescriptorExtension01>(
-              generic_descriptor)) {
-        packet->SetExtension<RtpGenericFrameDescriptorExtension00>(
-            generic_descriptor);
-      }
-    }
-  }
-}
-
 bool MinimizeDescriptor(RTPVideoHeader* video_header) {
   if (auto* vp8 =
           absl::get_if<RTPVideoHeaderVP8>(&video_header->video_type_header)) {
@@ -393,6 +276,143 @@ void RTPSenderVideo::SetVideoStructureUnderLock(
   video_structure_->num_chains = 0;
 }
 
+void RTPSenderVideo::AddRtpHeaderExtensions(
+    const RTPVideoHeader& video_header,
+    const absl::optional<AbsoluteCaptureTime>& absolute_capture_time,
+    bool first_packet,
+    bool last_packet,
+    RtpPacketToSend* packet) const {
+  // Send color space when changed or if the frame is a key frame. Keep
+  // sending color space information until the first base layer frame to
+  // guarantee that the information is retrieved by the receiver.
+  bool set_color_space =
+      video_header.color_space != last_color_space_ ||
+      video_header.frame_type == VideoFrameType::kVideoFrameKey ||
+      transmit_color_space_next_frame_;
+  // Color space requires two-byte header extensions if HDR metadata is
+  // included. Therefore, it's best to add this extension first so that the
+  // other extensions in the same packet are written as two-byte headers at
+  // once.
+  if (last_packet && set_color_space && video_header.color_space)
+    packet->SetExtension<ColorSpaceExtension>(video_header.color_space.value());
+
+  // According to
+  // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/
+  // ts_126114v120700p.pdf Section 7.4.5:
+  // The MTSI client shall add the payload bytes as defined in this clause
+  // onto the last RTP packet in each group of packets which make up a key
+  // frame (I-frame or IDR frame in H.264 (AVC), or an IRAP picture in H.265
+  // (HEVC)). The MTSI client may also add the payload bytes onto the last RTP
+  // packet in each group of packets which make up another type of frame
+  // (e.g. a P-Frame) only if the current value is different from the previous
+  // value sent.
+  // Set rotation when key frame or when changed (to follow standard).
+  // Or when different from 0 (to follow current receiver implementation).
+  bool set_video_rotation =
+      video_header.frame_type == VideoFrameType::kVideoFrameKey ||
+      video_header.rotation != last_rotation_ ||
+      video_header.rotation != kVideoRotation_0;
+  if (last_packet && set_video_rotation)
+    packet->SetExtension<VideoOrientation>(video_header.rotation);
+
+  // Report content type only for key frames.
+  if (last_packet &&
+      video_header.frame_type == VideoFrameType::kVideoFrameKey &&
+      video_header.content_type != VideoContentType::UNSPECIFIED)
+    packet->SetExtension<VideoContentTypeExtension>(video_header.content_type);
+
+  if (last_packet &&
+      video_header.video_timing.flags != VideoSendTiming::kInvalid)
+    packet->SetExtension<VideoTimingExtension>(video_header.video_timing);
+
+  // If transmitted, add to all packets; ack logic depends on this.
+  if (playout_delay_pending_) {
+    packet->SetExtension<PlayoutDelayLimits>(current_playout_delay_);
+  }
+
+  if (first_packet && absolute_capture_time) {
+    packet->SetExtension<AbsoluteCaptureTimeExtension>(*absolute_capture_time);
+  }
+
+  if (video_header.codec == kVideoCodecH264 &&
+      video_header.frame_marking.temporal_id != kNoTemporalIdx) {
+    FrameMarking frame_marking = video_header.frame_marking;
+    frame_marking.start_of_frame = first_packet;
+    frame_marking.end_of_frame = last_packet;
+    packet->SetExtension<FrameMarkingExtension>(frame_marking);
+  }
+
+  if (video_header.generic) {
+    bool extension_is_set = false;
+    if (video_structure_ != nullptr) {
+      DependencyDescriptor descriptor;
+      descriptor.first_packet_in_frame = first_packet;
+      descriptor.last_packet_in_frame = last_packet;
+      descriptor.frame_number = video_header.generic->frame_id & 0xFFFF;
+      descriptor.frame_dependencies.spatial_id =
+          video_header.generic->spatial_index;
+      descriptor.frame_dependencies.temporal_id =
+          video_header.generic->temporal_index;
+      for (int64_t dep : video_header.generic->dependencies) {
+        descriptor.frame_dependencies.frame_diffs.push_back(
+            video_header.generic->frame_id - dep);
+      }
+      descriptor.frame_dependencies.decode_target_indications =
+          video_header.generic->decode_target_indications;
+      RTC_DCHECK_EQ(
+          descriptor.frame_dependencies.decode_target_indications.size(),
+          video_structure_->num_decode_targets);
+
+      // To avoid extra structure copy, temporary share ownership of the
+      // video_structure with the dependency descriptor.
+      if (video_header.frame_type == VideoFrameType::kVideoFrameKey &&
+          first_packet) {
+        descriptor.attached_structure =
+            absl::WrapUnique(video_structure_.get());
+      }
+      extension_is_set = packet->SetExtension<RtpDependencyDescriptorExtension>(
+          *video_structure_, descriptor);
+
+      // Remove the temporary shared ownership.
+      descriptor.attached_structure.release();
+    }
+
+    // Do not use v0/v1 generic frame descriptor when v2 is stored.
+    if (!extension_is_set) {
+      RtpGenericFrameDescriptor generic_descriptor;
+      generic_descriptor.SetFirstPacketInSubFrame(first_packet);
+      generic_descriptor.SetLastPacketInSubFrame(last_packet);
+      generic_descriptor.SetDiscardable(video_header.generic->discardable);
+
+      if (first_packet) {
+        generic_descriptor.SetFrameId(
+            static_cast<uint16_t>(video_header.generic->frame_id));
+        for (int64_t dep : video_header.generic->dependencies) {
+          generic_descriptor.AddFrameDependencyDiff(
+              video_header.generic->frame_id - dep);
+        }
+
+        uint8_t spatial_bimask = 1 << video_header.generic->spatial_index;
+        generic_descriptor.SetSpatialLayersBitmask(spatial_bimask);
+
+        generic_descriptor.SetTemporalLayer(
+            video_header.generic->temporal_index);
+
+        if (video_header.frame_type == VideoFrameType::kVideoFrameKey) {
+          generic_descriptor.SetResolution(video_header.width,
+                                           video_header.height);
+        }
+      }
+
+      if (!packet->SetExtension<RtpGenericFrameDescriptorExtension01>(
+              generic_descriptor)) {
+        packet->SetExtension<RtpGenericFrameDescriptorExtension00>(
+            generic_descriptor);
+      }
+    }
+  }
+}
+
 bool RTPSenderVideo::SendVideo(
     int payload_type,
     absl::optional<VideoCodecType> codec_type,
@@ -420,53 +440,11 @@ bool RTPSenderVideo::SendVideo(
     retransmission_settings = kRetransmitBaseLayer | kRetransmitHigherLayers;
   }
 
-  bool set_frame_marking =
-      video_header.codec == kVideoCodecH264 &&
-      video_header.frame_marking.temporal_id != kNoTemporalIdx;
-
   MaybeUpdateCurrentPlayoutDelay(video_header);
   if (video_header.frame_type == VideoFrameType::kVideoFrameKey &&
       !IsNoopDelay(current_playout_delay_)) {
     // Force playout delay on key-frames, if set.
     playout_delay_pending_ = true;
-  }
-  const absl::optional<PlayoutDelay> playout_delay =
-      playout_delay_pending_
-          ? absl::optional<PlayoutDelay>(current_playout_delay_)
-          : absl::nullopt;
-
-  // According to
-  // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/
-  // ts_126114v120700p.pdf Section 7.4.5:
-  // The MTSI client shall add the payload bytes as defined in this clause
-  // onto the last RTP packet in each group of packets which make up a key
-  // frame (I-frame or IDR frame in H.264 (AVC), or an IRAP picture in H.265
-  // (HEVC)). The MTSI client may also add the payload bytes onto the last RTP
-  // packet in each group of packets which make up another type of frame
-  // (e.g. a P-Frame) only if the current value is different from the previous
-  // value sent.
-  // Set rotation when key frame or when changed (to follow standard).
-  // Or when different from 0 (to follow current receiver implementation).
-  bool set_video_rotation =
-      video_header.frame_type == VideoFrameType::kVideoFrameKey ||
-      video_header.rotation != last_rotation_ ||
-      video_header.rotation != kVideoRotation_0;
-  last_rotation_ = video_header.rotation;
-
-  // Send color space when changed or if the frame is a key frame. Keep
-  // sending color space information until the first base layer frame to
-  // guarantee that the information is retrieved by the receiver.
-  bool set_color_space;
-  if (video_header.color_space != last_color_space_) {
-    last_color_space_ = video_header.color_space;
-    set_color_space = true;
-    transmit_color_space_next_frame_ = !IsBaseLayer(video_header);
-  } else {
-    set_color_space =
-        video_header.frame_type == VideoFrameType::kVideoFrameKey ||
-        transmit_color_space_next_frame_;
-    transmit_color_space_next_frame_ =
-        transmit_color_space_next_frame_ ? !IsBaseLayer(video_header) : false;
   }
 
   // Maximum size of packet including rtp headers.
@@ -493,22 +471,18 @@ bool RTPSenderVideo::SendVideo(
   auto middle_packet = std::make_unique<RtpPacketToSend>(*single_packet);
   auto last_packet = std::make_unique<RtpPacketToSend>(*single_packet);
   // Simplest way to estimate how much extensions would occupy is to set them.
-  AddRtpHeaderExtensions(video_header, playout_delay, absolute_capture_time,
-                         video_structure_.get(), set_video_rotation,
-                         set_color_space, set_frame_marking,
-                         /*first=*/true, /*last=*/true, single_packet.get());
-  AddRtpHeaderExtensions(video_header, playout_delay, absolute_capture_time,
-                         video_structure_.get(), set_video_rotation,
-                         set_color_space, set_frame_marking,
-                         /*first=*/true, /*last=*/false, first_packet.get());
-  AddRtpHeaderExtensions(video_header, playout_delay, absolute_capture_time,
-                         video_structure_.get(), set_video_rotation,
-                         set_color_space, set_frame_marking,
-                         /*first=*/false, /*last=*/false, middle_packet.get());
-  AddRtpHeaderExtensions(video_header, playout_delay, absolute_capture_time,
-                         video_structure_.get(), set_video_rotation,
-                         set_color_space, set_frame_marking,
-                         /*first=*/false, /*last=*/true, last_packet.get());
+  AddRtpHeaderExtensions(video_header, absolute_capture_time,
+                         /*first_packet=*/true, /*last_packet=*/true,
+                         single_packet.get());
+  AddRtpHeaderExtensions(video_header, absolute_capture_time,
+                         /*first_packet=*/true, /*last_packet=*/false,
+                         first_packet.get());
+  AddRtpHeaderExtensions(video_header, absolute_capture_time,
+                         /*first_packet=*/false, /*last_packet=*/false,
+                         middle_packet.get());
+  AddRtpHeaderExtensions(video_header, absolute_capture_time,
+                         /*first_packet=*/false, /*last_packet=*/true,
+                         last_packet.get());
 
   RTC_DCHECK_GT(packet_capacity, single_packet->headers_size());
   RTC_DCHECK_GT(packet_capacity, first_packet->headers_size());
@@ -548,15 +522,6 @@ bool RTPSenderVideo::SendVideo(
                                 has_dependency_descriptor;
   if (has_generic_descriptor) {
     MinimizeDescriptor(&video_header);
-  }
-
-  if (video_header.frame_type == VideoFrameType::kVideoFrameKey ||
-      (IsBaseLayer(video_header) &&
-       !(video_header.generic.has_value() ? video_header.generic->discardable
-                                          : false))) {
-    // This frame has guaranteed delivery, no need to populate playout
-    // delay extensions until it changes again.
-    playout_delay_pending_ = false;
   }
 
   // TODO(benwright@webrtc.org) - Allocate enough to always encrypt inline.
@@ -725,6 +690,26 @@ bool RTPSenderVideo::SendVideo(
   }
 
   LogAndSendToNetwork(std::move(rtp_packets), unpacketized_payload_size);
+
+  // Update details about the last sent frame.
+  last_rotation_ = video_header.rotation;
+
+  if (video_header.color_space != last_color_space_) {
+    last_color_space_ = video_header.color_space;
+    transmit_color_space_next_frame_ = !IsBaseLayer(video_header);
+  } else {
+    transmit_color_space_next_frame_ =
+        transmit_color_space_next_frame_ ? !IsBaseLayer(video_header) : false;
+  }
+
+  if (video_header.frame_type == VideoFrameType::kVideoFrameKey ||
+      (IsBaseLayer(video_header) &&
+       !(video_header.generic.has_value() ? video_header.generic->discardable
+                                          : false))) {
+    // This frame has guaranteed delivery, no need to populate playout
+    // delay extensions until it changes again.
+    playout_delay_pending_ = false;
+  }
 
   TRACE_EVENT_ASYNC_END1("webrtc", "Video", capture_time_ms, "timestamp",
                          rtp_timestamp);

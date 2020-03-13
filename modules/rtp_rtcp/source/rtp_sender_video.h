@@ -143,6 +143,14 @@ class RTPSenderVideo {
     int64_t last_frame_time_ms;
   };
 
+  void AddRtpHeaderExtensions(
+      const RTPVideoHeader& video_header,
+      const absl::optional<AbsoluteCaptureTime>& absolute_capture_time,
+      bool first_packet,
+      bool last_packet,
+      RtpPacketToSend* packet) const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(send_checker_);
+
   size_t FecPacketOverhead() const RTC_EXCLUSIVE_LOCKS_REQUIRED(send_checker_);
 
   void LogAndSendToNetwork(
