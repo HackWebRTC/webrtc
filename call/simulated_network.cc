@@ -111,6 +111,12 @@ void SimulatedNetwork::SetConfig(const Config& config) {
   }
 }
 
+void SimulatedNetwork::UpdateConfig(
+    std::function<void(BuiltInNetworkBehaviorConfig*)> config_modifier) {
+  rtc::CritScope crit(&config_lock_);
+  config_modifier(&config_state_.config);
+}
+
 void SimulatedNetwork::PauseTransmissionUntil(int64_t until_us) {
   rtc::CritScope crit(&config_lock_);
   config_state_.pause_transmission_until_us = until_us;

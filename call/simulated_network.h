@@ -62,6 +62,8 @@ class SimulatedNetwork : public SimulatedNetworkInterface {
 
   // Sets a new configuration. This won't affect packets already in the pipe.
   void SetConfig(const Config& config) override;
+  void UpdateConfig(std::function<void(BuiltInNetworkBehaviorConfig*)>
+                        config_modifier) override;
   void PauseTransmissionUntil(int64_t until_us) override;
 
   // NetworkBehaviorInterface
