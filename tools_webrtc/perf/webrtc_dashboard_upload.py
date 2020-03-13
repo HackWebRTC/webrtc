@@ -71,7 +71,15 @@ def _SendHistogramSet(url, histograms, oauth_token):
     oauth_token: An oauth token to use for authorization.
   """
   headers = {'Authorization': 'Bearer %s' % oauth_token}
-  serialized = json.dumps(histograms.AsDicts(), indent=4)
+
+  # TODO(https://crbug.com/1029452): HACKHACK
+  # Remove once we set bin bounds correctly in the proto writer.
+  dicts = histograms.AsDicts()
+  for d in dicts:
+    if 'name' in d:
+      d['allBins'] = [[1]]
+
+  serialized = json.dumps(dicts, indent=4)
 
   if url.startswith('http://localhost'):
     # The catapult server turns off compression in developer mode.
