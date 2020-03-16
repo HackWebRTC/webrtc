@@ -573,6 +573,7 @@ if (is_ios || is_mac) {
         ":helpers_objc",
         ":video_objc",
         ":videoframebuffer_objc",
+        "../rtc_base/system:gcd_helpers",
       ]
     }
 
