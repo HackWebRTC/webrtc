@@ -126,6 +126,8 @@ static const char kMediaStreamSemantic[] = "WMS";
 static const char kSsrcAttributeMsid[] = "msid";
 static const char kDefaultMsid[] = "default";
 static const char kNoStreamMsid[] = "-";
+static const char kSsrcAttributeMslabel[] = "mslabel";
+static const char kSSrcAttributeLabel[] = "label";
 static const char kAttributeSsrcGroup[] = "ssrc-group";
 static const char kAttributeCrypto[] = "crypto";
 static const char kAttributeCandidate[] = "candidate";
@@ -242,6 +244,11 @@ struct SsrcInfo {
   std::string cname;
   std::string stream_id;
   std::string track_id;
+
+  // For backward compatibility.
+  // TODO(ronghuawu): Remove below 2 fields once all the clients support msid.
+  std::string label;
+  std::string mslabel;
 };
 typedef std::vector<SsrcInfo> SsrcInfoVec;
 typedef std::vector<SsrcGroup> SsrcGroupVec;
@@ -695,6 +702,12 @@ void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
       // This is the case with Plan B SDP msid signaling.
       stream_ids.push_back(ssrc_info.stream_id);
       track_id = ssrc_info.track_id;
+    } else if (!ssrc_info.mslabel.empty()) {
+      // Since there's no a=msid or a=ssrc msid signaling, this is a sdp from
+      // an older version of client that doesn't support msid.
+      // In that case, we use the mslabel and label to construct the track.
+      stream_ids.push_back(ssrc_info.mslabel);
+      track_id = ssrc_info.label;
     } else {
       // Since no media streams isn't supported with older SDP signaling, we
       // use a default a stream id.
@@ -1703,6 +1716,15 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
            << kSsrcAttributeMsid << kSdpDelimiterColon << stream_id
            << kSdpDelimiterSpace << track.id;
         AddLine(os.str(), message);
+
+        // TODO(ronghuawu): Remove below code which is for backward
+        // compatibility.
+        // draft-alvestrand-rtcweb-mid-01
+        // a=ssrc:<ssrc-id> mslabel:<value>
+        // The label isn't yet defined.
+        // a=ssrc:<ssrc-id> label:<value>
+        AddSsrcLine(ssrc, kSsrcAttributeMslabel, stream_id, message);
+        AddSsrcLine(ssrc, kSSrcAttributeLabel, track.id, message);
       }
     }
 
@@ -3466,8 +3488,14 @@ bool ParseSsrcAttribute(const std::string& line,
       ssrc_info.track_id = fields[1];
     }
     *msid_signaling |= cricket::kMsidSignalingSsrcAttribute;
-  } else {
-    RTC_LOG(LS_INFO) << "Ignored unknown ssrc-specific attribute: " << line;
+  } else if (attribute == kSsrcAttributeMslabel) {
+    // draft-alvestrand-rtcweb-mid-01
+    // mslabel:<value>
+    ssrc_info.mslabel = value;
+  } else if (attribute == kSSrcAttributeLabel) {
+    // The label isn't defined.
+    // label:<value>
+    ssrc_info.label = value;
   }
   return true;
 }
