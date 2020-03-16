@@ -519,6 +519,7 @@ if (rtc_include_tests) {
       "peer_connection_data_channel_unittest.cc",
       "peer_connection_end_to_end_unittest.cc",
       "peer_connection_factory_unittest.cc",
+      "peer_connection_header_extension_unittest.cc",
       "peer_connection_histogram_unittest.cc",
       "peer_connection_ice_unittest.cc",
       "peer_connection_integrationtest.cc",

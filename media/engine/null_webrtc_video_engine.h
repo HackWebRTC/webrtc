@@ -34,7 +34,10 @@ class NullWebRtcVideoEngine : public VideoEngineInterface {
     return std::vector<VideoCodec>();
   }
 
-  RtpCapabilities GetCapabilities() const override { return RtpCapabilities(); }
+  std::vector<webrtc::RtpHeaderExtensionCapability> GetRtpHeaderExtensions()
+      const override {
+    return {};
+  }
 
   VideoMediaChannel* CreateMediaChannel(
       webrtc::Call* call,

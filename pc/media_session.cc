@@ -1365,9 +1365,11 @@ MediaSessionDescriptionFactory::MediaSessionDescriptionFactory(
     : MediaSessionDescriptionFactory(transport_desc_factory, ssrc_generator) {
   channel_manager->GetSupportedAudioSendCodecs(&audio_send_codecs_);
   channel_manager->GetSupportedAudioReceiveCodecs(&audio_recv_codecs_);
-  channel_manager->GetSupportedAudioRtpHeaderExtensions(&audio_rtp_extensions_);
+  audio_rtp_extensions_ =
+      channel_manager->GetDefaultEnabledAudioRtpHeaderExtensions();
   channel_manager->GetSupportedVideoCodecs(&video_codecs_);
-  channel_manager->GetSupportedVideoRtpHeaderExtensions(&video_rtp_extensions_);
+  video_rtp_extensions_ =
+      channel_manager->GetDefaultEnabledVideoRtpHeaderExtensions();
   channel_manager->GetSupportedDataCodecs(&rtp_data_codecs_);
   ComputeAudioCodecsIntersectionAndUnion();
 }

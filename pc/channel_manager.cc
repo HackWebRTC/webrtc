@@ -79,14 +79,6 @@ void ChannelManager::GetSupportedAudioReceiveCodecs(
   *codecs = media_engine_->voice().recv_codecs();
 }
 
-void ChannelManager::GetSupportedAudioRtpHeaderExtensions(
-    RtpHeaderExtensions* ext) const {
-  if (!media_engine_) {
-    return;
-  }
-  *ext = media_engine_->voice().GetCapabilities().header_extensions;
-}
-
 void ChannelManager::GetSupportedVideoCodecs(
     std::vector<VideoCodec>* codecs) const {
   if (!media_engine_) {
@@ -102,14 +94,6 @@ void ChannelManager::GetSupportedVideoCodecs(
     }
     codecs->push_back(video_codec);
   }
-}
-
-void ChannelManager::GetSupportedVideoRtpHeaderExtensions(
-    RtpHeaderExtensions* ext) const {
-  if (!media_engine_) {
-    return;
-  }
-  *ext = media_engine_->video().GetCapabilities().header_extensions;
 }
 
 void ChannelManager::GetSupportedDataCodecs(
@@ -138,6 +122,34 @@ bool ChannelManager::Init() {
     initialized_ = true;
   }
   return initialized_;
+}
+
+RtpHeaderExtensions ChannelManager::GetDefaultEnabledAudioRtpHeaderExtensions()
+    const {
+  if (!media_engine_)
+    return {};
+  return GetDefaultEnabledRtpHeaderExtensions(media_engine_->voice());
+}
+
+std::vector<webrtc::RtpHeaderExtensionCapability>
+ChannelManager::GetSupportedAudioRtpHeaderExtensions() const {
+  if (!media_engine_)
+    return {};
+  return media_engine_->voice().GetRtpHeaderExtensions();
+}
+
+RtpHeaderExtensions ChannelManager::GetDefaultEnabledVideoRtpHeaderExtensions()
+    const {
+  if (!media_engine_)
+    return {};
+  return GetDefaultEnabledRtpHeaderExtensions(media_engine_->video());
+}
+
+std::vector<webrtc::RtpHeaderExtensionCapability>
+ChannelManager::GetSupportedVideoRtpHeaderExtensions() const {
+  if (!media_engine_)
+    return {};
+  return media_engine_->video().GetRtpHeaderExtensions();
 }
 
 void ChannelManager::Terminate() {

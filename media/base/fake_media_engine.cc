@@ -513,9 +513,6 @@ FakeVoiceEngine::FakeVoiceEngine() : fail_create_channel_(false) {
   // sanity checks against that.
   SetCodecs({AudioCodec(101, "fake_audio_codec", 0, 0, 1)});
 }
-RtpCapabilities FakeVoiceEngine::GetCapabilities() const {
-  return RtpCapabilities();
-}
 void FakeVoiceEngine::Init() {}
 rtc::scoped_refptr<webrtc::AudioState> FakeVoiceEngine::GetAudioState() const {
   return rtc::scoped_refptr<webrtc::AudioState>();
@@ -564,14 +561,21 @@ bool FakeVoiceEngine::StartAecDump(webrtc::FileWrapper file,
 }
 void FakeVoiceEngine::StopAecDump() {}
 
+std::vector<webrtc::RtpHeaderExtensionCapability>
+FakeVoiceEngine::GetRtpHeaderExtensions() const {
+  return header_extensions_;
+}
+
+void FakeVoiceEngine::SetRtpHeaderExtensions(
+    std::vector<webrtc::RtpHeaderExtensionCapability> header_extensions) {
+  header_extensions_ = std::move(header_extensions);
+}
+
 FakeVideoEngine::FakeVideoEngine()
     : capture_(false), fail_create_channel_(false) {
   // Add a fake video codec. Note that the name must not be "" as there are
   // sanity checks against that.
   codecs_.push_back(VideoCodec(0, "fake_video_codec"));
-}
-RtpCapabilities FakeVideoEngine::GetCapabilities() const {
-  return RtpCapabilities();
 }
 bool FakeVideoEngine::SetOptions(const VideoOptions& options) {
   options_ = options;
@@ -608,6 +612,14 @@ void FakeVideoEngine::SetCodecs(const std::vector<VideoCodec> codecs) {
 bool FakeVideoEngine::SetCapture(bool capture) {
   capture_ = capture;
   return true;
+}
+std::vector<webrtc::RtpHeaderExtensionCapability>
+FakeVideoEngine::GetRtpHeaderExtensions() const {
+  return header_extensions_;
+}
+void FakeVideoEngine::SetRtpHeaderExtensions(
+    std::vector<webrtc::RtpHeaderExtensionCapability> header_extensions) {
+  header_extensions_ = std::move(header_extensions);
 }
 
 FakeMediaEngine::FakeMediaEngine()

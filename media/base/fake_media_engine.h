@@ -514,7 +514,6 @@ class FakeDataMediaChannel : public RtpHelper<DataMediaChannel> {
 class FakeVoiceEngine : public VoiceEngineInterface {
  public:
   FakeVoiceEngine();
-  RtpCapabilities GetCapabilities() const override;
   void Init() override;
   rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const override;
 
@@ -536,12 +535,17 @@ class FakeVoiceEngine : public VoiceEngineInterface {
   int GetInputLevel();
   bool StartAecDump(webrtc::FileWrapper file, int64_t max_size_bytes) override;
   void StopAecDump() override;
+  std::vector<webrtc::RtpHeaderExtensionCapability> GetRtpHeaderExtensions()
+      const override;
+  void SetRtpHeaderExtensions(
+      std::vector<webrtc::RtpHeaderExtensionCapability> header_extensions);
 
  private:
   std::vector<FakeVoiceMediaChannel*> channels_;
   std::vector<AudioCodec> recv_codecs_;
   std::vector<AudioCodec> send_codecs_;
   bool fail_create_channel_;
+  std::vector<webrtc::RtpHeaderExtensionCapability> header_extensions_;
 
   friend class FakeMediaEngine;
 };
@@ -549,7 +553,6 @@ class FakeVoiceEngine : public VoiceEngineInterface {
 class FakeVideoEngine : public VideoEngineInterface {
  public:
   FakeVideoEngine();
-  RtpCapabilities GetCapabilities() const override;
   bool SetOptions(const VideoOptions& options);
   VideoMediaChannel* CreateMediaChannel(
       webrtc::Call* call,
@@ -563,6 +566,10 @@ class FakeVideoEngine : public VideoEngineInterface {
   std::vector<VideoCodec> codecs() const override;
   void SetCodecs(const std::vector<VideoCodec> codecs);
   bool SetCapture(bool capture);
+  std::vector<webrtc::RtpHeaderExtensionCapability> GetRtpHeaderExtensions()
+      const override;
+  void SetRtpHeaderExtensions(
+      std::vector<webrtc::RtpHeaderExtensionCapability> header_extensions);
 
  private:
   std::vector<FakeVideoMediaChannel*> channels_;
@@ -570,6 +577,7 @@ class FakeVideoEngine : public VideoEngineInterface {
   bool capture_;
   VideoOptions options_;
   bool fail_create_channel_;
+  std::vector<webrtc::RtpHeaderExtensionCapability> header_extensions_;
 
   friend class FakeMediaEngine;
 };

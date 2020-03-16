@@ -2016,8 +2016,9 @@ class WebRtcVoiceEngineWithSendSideBweTest : public WebRtcVoiceEngineTestFake {
 
 TEST_F(WebRtcVoiceEngineWithSendSideBweTest,
        SupportsTransportSequenceNumberHeaderExtension) {
-  const cricket::RtpCapabilities capabilities = engine_->GetCapabilities();
-  EXPECT_THAT(capabilities.header_extensions,
+  const std::vector<webrtc::RtpExtension> header_extensions =
+      GetDefaultEnabledRtpHeaderExtensions(*engine_);
+  EXPECT_THAT(header_extensions,
               Contains(::testing::Field(
                   "uri", &RtpExtension::uri,
                   webrtc::RtpExtension::kTransportSequenceNumberUri)));
@@ -3204,17 +3205,18 @@ TEST_F(WebRtcVoiceEngineTestFake, ConfiguresAudioReceiveStreamRtpExtensions) {
   }
 
   // Set up receive extensions.
-  cricket::RtpCapabilities capabilities = engine_->GetCapabilities();
+  const std::vector<webrtc::RtpExtension> header_extensions =
+      GetDefaultEnabledRtpHeaderExtensions(*engine_);
   cricket::AudioRecvParameters recv_parameters;
-  recv_parameters.extensions = capabilities.header_extensions;
+  recv_parameters.extensions = header_extensions;
   channel_->SetRecvParameters(recv_parameters);
   EXPECT_EQ(2u, call_.GetAudioReceiveStreams().size());
   for (uint32_t ssrc : ssrcs) {
     const auto* s = call_.GetAudioReceiveStream(ssrc);
     EXPECT_NE(nullptr, s);
     const auto& s_exts = s->GetConfig().rtp.extensions;
-    EXPECT_EQ(capabilities.header_extensions.size(), s_exts.size());
-    for (const auto& e_ext : capabilities.header_extensions) {
+    EXPECT_EQ(header_extensions.size(), s_exts.size());
+    for (const auto& e_ext : header_extensions) {
       for (const auto& s_ext : s_exts) {
         if (e_ext.id == s_ext.id) {
           EXPECT_EQ(e_ext.uri, s_ext.uri);

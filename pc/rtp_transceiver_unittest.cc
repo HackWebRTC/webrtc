@@ -12,10 +12,19 @@
 
 #include "pc/rtp_transceiver.h"
 
+#include <memory>
+
+#include "media/base/fake_media_engine.h"
 #include "pc/test/mock_channel_interface.h"
+#include "pc/test/mock_rtp_receiver_internal.h"
+#include "pc/test/mock_rtp_sender_internal.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
+using ::testing::ElementsAre;
+using ::testing::Eq;
+using ::testing::Field;
+using ::testing::Not;
 using ::testing::Return;
 using ::testing::ReturnRef;
 
@@ -67,6 +76,29 @@ TEST(RtpTransceiverTest, CanUnsetChannelOnStoppedTransceiver) {
   // Set the channel to |nullptr|.
   transceiver.SetChannel(nullptr);
   EXPECT_EQ(nullptr, transceiver.channel());
+}
+
+TEST(RtpTransceiverTest,
+     InitsWithChannelManagerRtpHeaderExtensionCapabilities) {
+  cricket::ChannelManager channel_manager(
+      std::make_unique<cricket::FakeMediaEngine>(),
+      std::make_unique<cricket::FakeDataEngine>(), rtc::Thread::Current(),
+      rtc::Thread::Current());
+  std::vector<RtpHeaderExtensionCapability> extensions({
+      RtpHeaderExtensionCapability("uri1", 1,
+                                   RtpTransceiverDirection::kSendRecv),
+      RtpHeaderExtensionCapability("uri2", 2,
+                                   RtpTransceiverDirection::kRecvOnly),
+  });
+  RtpTransceiver transceiver(
+      RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
+          rtc::Thread::Current(),
+          new rtc::RefCountedObject<MockRtpSenderInternal>()),
+      RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
+          rtc::Thread::Current(),
+          new rtc::RefCountedObject<MockRtpReceiverInternal>()),
+      &channel_manager, extensions);
+  EXPECT_EQ(transceiver.HeaderExtensionsToOffer(), extensions);
 }
 
 }  // namespace webrtc

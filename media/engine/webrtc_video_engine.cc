@@ -503,39 +503,29 @@ std::vector<VideoCodec> WebRtcVideoEngine::codecs() const {
   return AssignPayloadTypesAndDefaultCodecs(encoder_factory_.get());
 }
 
-RtpCapabilities WebRtcVideoEngine::GetCapabilities() const {
-  RtpCapabilities capabilities;
+std::vector<webrtc::RtpHeaderExtensionCapability>
+WebRtcVideoEngine::GetRtpHeaderExtensions() const {
+  std::vector<webrtc::RtpHeaderExtensionCapability> result;
   int id = 1;
-  capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kTimestampOffsetUri, id++));
-  capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kAbsSendTimeUri, id++));
-  capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kVideoRotationUri, id++));
-  capabilities.header_extensions.push_back(webrtc::RtpExtension(
-      webrtc::RtpExtension::kTransportSequenceNumberUri, id++));
-  capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kPlayoutDelayUri, id++));
-  capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kVideoContentTypeUri, id++));
-  capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kVideoTimingUri, id++));
-  capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kFrameMarkingUri, id++));
-  capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kColorSpaceUri, id++));
-  capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kMidUri, id++));
-  capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kRidUri, id++));
-  capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kRepairedRidUri, id++));
-  if (webrtc::field_trial::IsEnabled("WebRTC-GenericDescriptorAdvertised")) {
-    capabilities.header_extensions.push_back(webrtc::RtpExtension(
-        webrtc::RtpExtension::kGenericFrameDescriptorUri00, id++));
+  for (const auto& uri :
+       {webrtc::RtpExtension::kTimestampOffsetUri,
+        webrtc::RtpExtension::kAbsSendTimeUri,
+        webrtc::RtpExtension::kVideoRotationUri,
+        webrtc::RtpExtension::kTransportSequenceNumberUri,
+        webrtc::RtpExtension::kPlayoutDelayUri,
+        webrtc::RtpExtension::kVideoContentTypeUri,
+        webrtc::RtpExtension::kVideoTimingUri,
+        webrtc::RtpExtension::kFrameMarkingUri,
+        webrtc::RtpExtension::kColorSpaceUri, webrtc::RtpExtension::kMidUri,
+        webrtc::RtpExtension::kRidUri, webrtc::RtpExtension::kRepairedRidUri}) {
+    result.emplace_back(uri, id++, webrtc::RtpTransceiverDirection::kSendRecv);
   }
-
-  return capabilities;
+  result.emplace_back(
+      webrtc::RtpExtension::kGenericFrameDescriptorUri00, id,
+      webrtc::field_trial::IsEnabled("WebRTC-GenericDescriptorAdvertised")
+          ? webrtc::RtpTransceiverDirection::kSendRecv
+          : webrtc::RtpTransceiverDirection::kStopped);
+  return result;
 }
 
 WebRtcVideoChannel::WebRtcVideoChannel(

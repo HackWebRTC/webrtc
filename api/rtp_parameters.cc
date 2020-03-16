@@ -38,6 +38,11 @@ RtpHeaderExtensionCapability::RtpHeaderExtensionCapability(
     const std::string& uri,
     int preferred_id)
     : uri(uri), preferred_id(preferred_id) {}
+RtpHeaderExtensionCapability::RtpHeaderExtensionCapability(
+    const std::string& uri,
+    int preferred_id,
+    RtpTransceiverDirection direction)
+    : uri(uri), preferred_id(preferred_id), direction(direction) {}
 RtpHeaderExtensionCapability::~RtpHeaderExtensionCapability() = default;
 
 RtpExtension::RtpExtension() = default;

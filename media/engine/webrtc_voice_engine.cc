@@ -539,23 +539,20 @@ const std::vector<AudioCodec>& WebRtcVoiceEngine::recv_codecs() const {
   return recv_codecs_;
 }
 
-RtpCapabilities WebRtcVoiceEngine::GetCapabilities() const {
+std::vector<webrtc::RtpHeaderExtensionCapability>
+WebRtcVoiceEngine::GetRtpHeaderExtensions() const {
   RTC_DCHECK(signal_thread_checker_.IsCurrent());
-  RtpCapabilities capabilities;
+  std::vector<webrtc::RtpHeaderExtensionCapability> result;
   int id = 1;
-  capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kAudioLevelUri, id++));
-  capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kAbsSendTimeUri, id++));
-  capabilities.header_extensions.push_back(webrtc::RtpExtension(
-      webrtc::RtpExtension::kTransportSequenceNumberUri, id++));
-  capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kMidUri, id++));
-  capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kRidUri, id++));
-  capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kRepairedRidUri, id++));
-  return capabilities;
+  for (const auto& uri :
+       {webrtc::RtpExtension::kAudioLevelUri,
+        webrtc::RtpExtension::kAbsSendTimeUri,
+        webrtc::RtpExtension::kTransportSequenceNumberUri,
+        webrtc::RtpExtension::kMidUri, webrtc::RtpExtension::kRidUri,
+        webrtc::RtpExtension::kRepairedRidUri}) {
+    result.emplace_back(uri, id++, webrtc::RtpTransceiverDirection::kSendRecv);
+  }
+  return result;
 }
 
 void WebRtcVoiceEngine::RegisterChannel(WebRtcVoiceMediaChannel* channel) {

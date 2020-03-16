@@ -20,20 +20,12 @@
 #include "api/rtp_parameters.h"
 #include "api/rtp_receiver_interface.h"
 #include "api/rtp_sender_interface.h"
+#include "api/rtp_transceiver_direction.h"
 #include "api/scoped_refptr.h"
 #include "rtc_base/ref_count.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
-
-// https://w3c.github.io/webrtc-pc/#dom-rtcrtptransceiverdirection
-enum class RtpTransceiverDirection {
-  kSendRecv,
-  kSendOnly,
-  kRecvOnly,
-  kInactive,
-  kStopped,
-};
 
 // Structure for initializing an RtpTransceiver in a call to
 // PeerConnectionInterface::AddTransceiver.
@@ -133,6 +125,13 @@ class RTC_EXPORT RtpTransceiverInterface : public rtc::RefCountInterface {
   virtual RTCError SetCodecPreferences(
       rtc::ArrayView<RtpCodecCapability> codecs);
   virtual std::vector<RtpCodecCapability> codec_preferences() const;
+
+  // Readonly attribute which contains the set of header extensions that was set
+  // with SetOfferedRtpHeaderExtensions, or a default set if it has not been
+  // called.
+  // https://w3c.github.io/webrtc-extensions/#rtcrtptransceiver-interface
+  virtual std::vector<RtpHeaderExtensionCapability> HeaderExtensionsToOffer()
+      const;
 
  protected:
   ~RtpTransceiverInterface() override = default;

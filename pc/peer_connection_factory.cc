@@ -160,19 +160,17 @@ RtpCapabilities PeerConnectionFactory::GetRtpSenderCapabilities(
   switch (kind) {
     case cricket::MEDIA_TYPE_AUDIO: {
       cricket::AudioCodecs cricket_codecs;
-      cricket::RtpHeaderExtensions cricket_extensions;
       channel_manager_->GetSupportedAudioSendCodecs(&cricket_codecs);
-      channel_manager_->GetSupportedAudioRtpHeaderExtensions(
-          &cricket_extensions);
-      return ToRtpCapabilities(cricket_codecs, cricket_extensions);
+      return ToRtpCapabilities(
+          cricket_codecs,
+          channel_manager_->GetDefaultEnabledAudioRtpHeaderExtensions());
     }
     case cricket::MEDIA_TYPE_VIDEO: {
       cricket::VideoCodecs cricket_codecs;
-      cricket::RtpHeaderExtensions cricket_extensions;
       channel_manager_->GetSupportedVideoCodecs(&cricket_codecs);
-      channel_manager_->GetSupportedVideoRtpHeaderExtensions(
-          &cricket_extensions);
-      return ToRtpCapabilities(cricket_codecs, cricket_extensions);
+      return ToRtpCapabilities(
+          cricket_codecs,
+          channel_manager_->GetDefaultEnabledVideoRtpHeaderExtensions());
     }
     case cricket::MEDIA_TYPE_DATA:
       return RtpCapabilities();
@@ -187,19 +185,17 @@ RtpCapabilities PeerConnectionFactory::GetRtpReceiverCapabilities(
   switch (kind) {
     case cricket::MEDIA_TYPE_AUDIO: {
       cricket::AudioCodecs cricket_codecs;
-      cricket::RtpHeaderExtensions cricket_extensions;
       channel_manager_->GetSupportedAudioReceiveCodecs(&cricket_codecs);
-      channel_manager_->GetSupportedAudioRtpHeaderExtensions(
-          &cricket_extensions);
-      return ToRtpCapabilities(cricket_codecs, cricket_extensions);
+      return ToRtpCapabilities(
+          cricket_codecs,
+          channel_manager_->GetDefaultEnabledAudioRtpHeaderExtensions());
     }
     case cricket::MEDIA_TYPE_VIDEO: {
       cricket::VideoCodecs cricket_codecs;
-      cricket::RtpHeaderExtensions cricket_extensions;
       channel_manager_->GetSupportedVideoCodecs(&cricket_codecs);
-      channel_manager_->GetSupportedVideoRtpHeaderExtensions(
-          &cricket_extensions);
-      return ToRtpCapabilities(cricket_codecs, cricket_extensions);
+      return ToRtpCapabilities(
+          cricket_codecs,
+          channel_manager_->GetDefaultEnabledVideoRtpHeaderExtensions());
     }
     case cricket::MEDIA_TYPE_DATA:
       return RtpCapabilities();

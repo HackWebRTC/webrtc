@@ -1907,7 +1907,11 @@ PeerConnection::CreateAndAddTransceiver(
   RTC_DCHECK(!FindSenderById(sender->id()));
   auto transceiver = RtpTransceiverProxyWithInternal<RtpTransceiver>::Create(
       signaling_thread(),
-      new RtpTransceiver(sender, receiver, channel_manager()));
+      new RtpTransceiver(
+          sender, receiver, channel_manager(),
+          sender->media_type() == cricket::MEDIA_TYPE_AUDIO
+              ? channel_manager()->GetSupportedAudioRtpHeaderExtensions()
+              : channel_manager()->GetSupportedVideoRtpHeaderExtensions()));
   transceivers_.push_back(transceiver);
   transceiver->internal()->SignalNegotiationNeeded.connect(
       this, &PeerConnection::OnNegotiationNeeded);
@@ -4983,6 +4987,7 @@ void PeerConnection::GetOptionsForPlanBOffer(
             cricket::MEDIA_TYPE_AUDIO, cricket::CN_AUDIO,
             RtpTransceiverDirectionFromSendRecv(send_audio, recv_audio),
             false));
+
     audio_index = session_options->media_description_options.size() - 1;
   }
   if (!video_index && offer_new_video_description) {
@@ -4991,6 +4996,7 @@ void PeerConnection::GetOptionsForPlanBOffer(
             cricket::MEDIA_TYPE_VIDEO, cricket::CN_VIDEO,
             RtpTransceiverDirectionFromSendRecv(send_video, recv_video),
             false));
+
     video_index = session_options->media_description_options.size() - 1;
   }
   if (!data_index && offer_new_data_description) {

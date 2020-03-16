@@ -19,6 +19,7 @@
 
 #include "absl/types/optional.h"
 #include "api/media_types.h"
+#include "api/rtp_transceiver_direction.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -200,7 +201,8 @@ struct RTC_EXPORT RtpCodecCapability {
   bool operator!=(const RtpCodecCapability& o) const { return !(*this == o); }
 };
 
-// Used in RtpCapabilities; represents the capabilities/preferences of an
+// Used in RtpCapabilities and RtpTransceiverInterface's header extensions query
+// and setup methods; represents the capabilities/preferences of an
 // implementation for a header extension.
 //
 // Just called "RtpHeaderExtension" in ORTC, but the "Capability" suffix was
@@ -210,7 +212,7 @@ struct RTC_EXPORT RtpCodecCapability {
 // Note that ORTC includes a "kind" field, but we omit this because it's
 // redundant; if you call "RtpReceiver::GetCapabilities(MEDIA_TYPE_AUDIO)",
 // you know you're getting audio capabilities.
-struct RtpHeaderExtensionCapability {
+struct RTC_EXPORT RtpHeaderExtensionCapability {
   // URI of this extension, as defined in RFC8285.
   std::string uri;
 
@@ -221,15 +223,23 @@ struct RtpHeaderExtensionCapability {
   // TODO(deadbeef): Not implemented.
   bool preferred_encrypt = false;
 
+  // The direction of the extension. The kStopped value is only used with
+  // RtpTransceiverInterface::header_extensions_offered() and
+  // SetOfferedRtpHeaderExtensions().
+  RtpTransceiverDirection direction = RtpTransceiverDirection::kSendRecv;
+
   // Constructors for convenience.
   RtpHeaderExtensionCapability();
   explicit RtpHeaderExtensionCapability(const std::string& uri);
   RtpHeaderExtensionCapability(const std::string& uri, int preferred_id);
+  RtpHeaderExtensionCapability(const std::string& uri,
+                               int preferred_id,
+                               RtpTransceiverDirection direction);
   ~RtpHeaderExtensionCapability();
 
   bool operator==(const RtpHeaderExtensionCapability& o) const {
     return uri == o.uri && preferred_id == o.preferred_id &&
-           preferred_encrypt == o.preferred_encrypt;
+           preferred_encrypt == o.preferred_encrypt && direction == o.direction;
   }
   bool operator!=(const RtpHeaderExtensionCapability& o) const {
     return !(*this == o);

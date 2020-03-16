@@ -98,7 +98,8 @@ class WebRtcVideoEngine : public VideoEngineInterface {
       override;
 
   std::vector<VideoCodec> codecs() const override;
-  RtpCapabilities GetCapabilities() const override;
+  std::vector<webrtc::RtpHeaderExtensionCapability> GetRtpHeaderExtensions()
+      const override;
 
  private:
   const std::unique_ptr<webrtc::VideoDecoderFactory> decoder_factory_;

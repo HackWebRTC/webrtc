@@ -11,8 +11,10 @@
 #include "pc/rtp_transceiver.h"
 
 #include <string>
+#include <utility>
 
 #include "absl/algorithm/container.h"
+#include "api/rtp_parameters.h"
 #include "pc/channel_manager.h"
 #include "pc/rtp_media_utils.h"
 #include "pc/rtp_parameters_conversion.h"
@@ -31,10 +33,12 @@ RtpTransceiver::RtpTransceiver(
     rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender,
     rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
         receiver,
-    cricket::ChannelManager* channel_manager)
+    cricket::ChannelManager* channel_manager,
+    std::vector<RtpHeaderExtensionCapability> header_extensions_offered)
     : unified_plan_(true),
       media_type_(sender->media_type()),
-      channel_manager_(channel_manager) {
+      channel_manager_(channel_manager),
+      HeaderExtensionsToOffer_(std::move(header_extensions_offered)) {
   RTC_DCHECK(media_type_ == cricket::MEDIA_TYPE_AUDIO ||
              media_type_ == cricket::MEDIA_TYPE_VIDEO);
   RTC_DCHECK_EQ(sender->media_type(), receiver->media_type());
@@ -356,6 +360,11 @@ RTCError RtpTransceiver::SetCodecPreferences(
   codec_preferences_ = codecs;
 
   return RTCError::OK();
+}
+
+std::vector<RtpHeaderExtensionCapability>
+RtpTransceiver::HeaderExtensionsToOffer() const {
+  return HeaderExtensionsToOffer_;
 }
 
 }  // namespace webrtc

@@ -599,6 +599,7 @@ if (rtc_include_tests) {
     ]
     sources = [
       "base/codec_unittest.cc",
+      "base/media_engine_unittest.cc",
       "base/rtp_data_engine_unittest.cc",
       "base/rtp_utils_unittest.cc",
       "base/sdp_fmtp_utils_unittest.cc",
