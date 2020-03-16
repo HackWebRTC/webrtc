@@ -999,7 +999,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
     bool expect_null_frame_ = false;
     EncodedImageCallback* encoded_image_callback_
         RTC_GUARDED_BY(local_crit_sect_) = nullptr;
-    MockFecControllerOverride fec_controller_override_;
+    NiceMock<MockFecControllerOverride> fec_controller_override_;
     int num_encoder_initializations_ RTC_GUARDED_BY(local_crit_sect_) = 0;
     std::vector<ResolutionBitrateLimits> resolution_bitrate_limits_
         RTC_GUARDED_BY(local_crit_sect_);
