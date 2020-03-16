@@ -41,6 +41,7 @@ class VideoAnalyzer : public PacketReceiver,
                 double avg_psnr_threshold,
                 double avg_ssim_threshold,
                 int duration_frames,
+                TimeDelta test_duration,
                 FILE* graph_data_output_file,
                 const std::string& graph_title,
                 uint32_t ssrc_to_analyze,
@@ -147,7 +148,8 @@ class VideoAnalyzer : public PacketReceiver,
    public:
     CapturedFrameForwarder(VideoAnalyzer* analyzer,
                            Clock* clock,
-                           int frames_to_process);
+                           int frames_to_capture,
+                           TimeDelta test_duration);
     void SetSource(rtc::VideoSourceInterface<VideoFrame>* video_source);
 
    private:
@@ -167,7 +169,8 @@ class VideoAnalyzer : public PacketReceiver,
     VideoSourceInterface<VideoFrame>* video_source_;
     Clock* clock_;
     int captured_frames_ RTC_GUARDED_BY(crit_);
-    const int frames_to_process_;
+    const int frames_to_capture_;
+    const Timestamp test_end_;
   };
 
   struct FrameWithPsnr {
@@ -263,6 +266,7 @@ class VideoAnalyzer : public PacketReceiver,
 
   rtc::CriticalSection crit_;
   const int frames_to_process_;
+  const Timestamp test_end_;
   int frames_recorded_ RTC_GUARDED_BY(comparison_lock_);
   int frames_processed_ RTC_GUARDED_BY(comparison_lock_);
   int captured_frames_ RTC_GUARDED_BY(comparison_lock_);

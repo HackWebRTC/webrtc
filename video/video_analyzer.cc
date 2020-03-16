@@ -57,6 +57,7 @@ VideoAnalyzer::VideoAnalyzer(test::LayerFilteringTransport* transport,
                              double avg_psnr_threshold,
                              double avg_ssim_threshold,
                              int duration_frames,
+                             TimeDelta test_duration,
                              FILE* graph_data_output_file,
                              const std::string& graph_title,
                              uint32_t ssrc_to_analyze,
@@ -74,7 +75,7 @@ VideoAnalyzer::VideoAnalyzer(test::LayerFilteringTransport* transport,
       send_stream_(nullptr),
       receive_stream_(nullptr),
       audio_receive_stream_(nullptr),
-      captured_frame_forwarder_(this, clock, duration_frames),
+      captured_frame_forwarder_(this, clock, duration_frames, test_duration),
       test_label_(test_label),
       graph_data_output_file_(graph_data_output_file),
       graph_title_(graph_title),
@@ -92,6 +93,7 @@ VideoAnalyzer::VideoAnalyzer(test::LayerFilteringTransport* transport,
       render_frame_rate_(0),
       last_fec_bytes_(0),
       frames_to_process_(duration_frames),
+      test_end_(clock->CurrentTime() + test_duration),
       frames_recorded_(0),
       frames_processed_(0),
       captured_frames_(0),
@@ -379,11 +381,8 @@ void VideoAnalyzer::Wait() {
       continue;
     }
     if (frames_processed == last_frames_processed &&
-        last_frames_captured == frames_captured) {
-      if (frames_captured < frames_to_process_) {
-        EXPECT_GT(frames_processed, last_frames_processed)
-            << "Analyzer stalled while waiting for test to finish.";
-      }
+        last_frames_captured == frames_captured &&
+        clock_->CurrentTime() > test_end_) {
       done_.Set();
       break;
     }
@@ -589,14 +588,16 @@ void VideoAnalyzer::FrameRecorded() {
 bool VideoAnalyzer::AllFramesRecorded() {
   rtc::CritScope crit(&comparison_lock_);
   RTC_DCHECK(frames_recorded_ <= frames_to_process_);
-  return frames_recorded_ == frames_to_process_ || quit_;
+  return frames_recorded_ == frames_to_process_ ||
+         (clock_->CurrentTime() > test_end_ && comparisons_.empty()) || quit_;
 }
 
 bool VideoAnalyzer::FrameProcessed() {
   rtc::CritScope crit(&comparison_lock_);
   ++frames_processed_;
   assert(frames_processed_ <= frames_to_process_);
-  return frames_processed_ == frames_to_process_;
+  return frames_processed_ == frames_to_process_ ||
+         (clock_->CurrentTime() > test_end_ && comparisons_.empty());
 }
 
 void VideoAnalyzer::PrintResults() {
@@ -973,13 +974,15 @@ VideoAnalyzer::Sample::Sample(int dropped,
 VideoAnalyzer::CapturedFrameForwarder::CapturedFrameForwarder(
     VideoAnalyzer* analyzer,
     Clock* clock,
-    int frames_to_process)
+    int frames_to_capture,
+    TimeDelta test_duration)
     : analyzer_(analyzer),
       send_stream_input_(nullptr),
       video_source_(nullptr),
       clock_(clock),
       captured_frames_(0),
-      frames_to_process_(frames_to_process) {}
+      frames_to_capture_(frames_to_capture),
+      test_end_(clock->CurrentTime() + test_duration) {}
 
 void VideoAnalyzer::CapturedFrameForwarder::SetSource(
     VideoSourceInterface<VideoFrame>* video_source) {
@@ -998,8 +1001,10 @@ void VideoAnalyzer::CapturedFrameForwarder::OnFrame(
   analyzer_->AddCapturedFrameForComparison(copy);
   rtc::CritScope lock(&crit_);
   ++captured_frames_;
-  if (send_stream_input_ && captured_frames_ <= frames_to_process_)
+  if (send_stream_input_ && clock_->CurrentTime() <= test_end_ &&
+      captured_frames_ <= frames_to_capture_) {
     send_stream_input_->OnFrame(copy);
+  }
 }
 
 void VideoAnalyzer::CapturedFrameForwarder::AddOrUpdateSink(

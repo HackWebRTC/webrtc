@@ -1287,6 +1287,9 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
       is_quick_test_enabled
           ? kFramesSentInQuickTest
           : params_.analyzer.test_durations_secs * params_.video[0].fps,
+      is_quick_test_enabled
+          ? TimeDelta::Millis(1)
+          : TimeDelta::Seconds(params_.analyzer.test_durations_secs),
       graph_data_output_file, graph_title,
       kVideoSendSsrcs[params_.ss[0].selected_stream],
       kSendRtxSsrcs[params_.ss[0].selected_stream],
