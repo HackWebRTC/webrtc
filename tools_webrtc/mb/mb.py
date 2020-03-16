@@ -56,6 +56,8 @@ class MetaBuildWrapper(object):
     self.configs = {}
     self.masters = {}
     self.mixins = {}
+    self.isolate_exe = 'isolate.exe' if self.platform.startswith(
+        'win') else 'isolate'
 
   def Main(self, args):
     self.ParseArgs(args)
@@ -337,8 +339,7 @@ class MetaBuildWrapper(object):
       dimensions += ['-d', k, v]
 
     cmd = [
-        self.executable,
-        self.PathJoin('tools', 'swarming_client', 'isolate.py'),
+        self.PathJoin(self.src_dir, 'tools', 'luci-go', self.isolate_exe),
         'archive',
         '-s',
         self.ToSrcRelPath('%s/%s.isolated' % (build_dir, target)),
@@ -364,11 +365,10 @@ class MetaBuildWrapper(object):
 
   def _RunLocallyIsolated(self, build_dir, target):
     cmd = [
-        self.executable,
-        self.PathJoin('tools', 'swarming_client', 'isolate.py'),
+        self.PathJoin(self.src_dir, 'tools', 'luci-go', self.isolate_exe),
         'run',
-        '-s',
-        self.ToSrcRelPath('%s/%s.isolated' % (build_dir, target)),
+        '-i',
+        self.ToSrcRelPath('%s/%s.isolate' % (build_dir, target)),
       ]
     if self.args.extra_args:
       cmd += ['--'] + self.args.extra_args
@@ -696,13 +696,10 @@ class MetaBuildWrapper(object):
                            extra_files)
 
     ret, _, _ = self.Run([
-        self.executable,
-        self.PathJoin('tools', 'swarming_client', 'isolate.py'),
+        self.PathJoin(self.src_dir, 'tools', 'luci-go', self.isolate_exe),
         'check',
         '-i',
-        self.ToSrcRelPath('%s/%s.isolate' % (build_dir, target)),
-        '-s',
-        self.ToSrcRelPath('%s/%s.isolated' % (build_dir, target))],
+        self.ToSrcRelPath('%s/%s.isolate' % (build_dir, target))],
         buffer_output=False)
 
     return ret

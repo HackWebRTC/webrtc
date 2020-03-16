@@ -763,7 +763,7 @@ class UnitTest(unittest.TestCase):
     }
 
     def run_stub(cmd, **_kwargs):
-      if 'isolate.py' in cmd[1]:
+      if os.path.join('tools', 'luci-go', 'isolate') in cmd[0]:
         return 0, 'fake_hash base_unittests', ''
       else:
         return 0, '', ''
