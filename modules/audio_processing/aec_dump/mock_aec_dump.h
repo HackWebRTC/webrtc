@@ -32,13 +32,22 @@ class MockAecDump : public AecDump {
                void(const AudioFrameView<const float>& src));
   MOCK_METHOD1(AddCaptureStreamOutput,
                void(const AudioFrameView<const float>& src));
-  MOCK_METHOD1(AddCaptureStreamInput, void(const AudioFrame& frame));
-  MOCK_METHOD1(AddCaptureStreamOutput, void(const AudioFrame& frame));
+  MOCK_METHOD3(AddCaptureStreamInput,
+               void(const int16_t* const data,
+                    int num_channels,
+                    int samples_per_channel));
+  MOCK_METHOD3(AddCaptureStreamOutput,
+               void(const int16_t* const data,
+                    int num_channels,
+                    int samples_per_channel));
   MOCK_METHOD1(AddAudioProcessingState,
                void(const AudioProcessingState& state));
   MOCK_METHOD0(WriteCaptureStreamMessage, void());
 
-  MOCK_METHOD1(WriteRenderStreamMessage, void(const AudioFrame& frame));
+  MOCK_METHOD3(WriteRenderStreamMessage,
+               void(const int16_t* const data,
+                    int num_channels,
+                    int samples_per_channel));
   MOCK_METHOD1(WriteRenderStreamMessage,
                void(const AudioFrameView<const float>& src));
 

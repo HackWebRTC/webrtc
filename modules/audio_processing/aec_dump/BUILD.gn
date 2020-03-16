@@ -35,7 +35,7 @@ rtc_library("mock_aec_dump") {
 
 rtc_library("mock_aec_dump_unittests") {
   testonly = true
-
+  configs += [ "..:apm_debug_dump" ]
   sources = [ "aec_dump_integration_test.cc" ]
 
   deps = [

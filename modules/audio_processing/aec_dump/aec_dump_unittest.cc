@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <array>
 #include <utility>
 
 #include "modules/audio_processing/aec_dump/aec_dump_factory.h"
@@ -27,11 +28,17 @@ TEST(AecDumper, APICallsDoNotCrash) {
     std::unique_ptr<webrtc::AecDump> aec_dump =
         webrtc::AecDumpFactory::Create(filename, -1, &file_writer_queue);
 
-    const webrtc::AudioFrame frame;
-    aec_dump->WriteRenderStreamMessage(frame);
+    constexpr int kNumChannels = 1;
+    constexpr int kNumSamplesPerChannel = 160;
+    std::array<int16_t, kNumSamplesPerChannel * kNumChannels> frame;
+    frame.fill(0.f);
+    aec_dump->WriteRenderStreamMessage(frame.data(), kNumChannels,
+                                       kNumSamplesPerChannel);
 
-    aec_dump->AddCaptureStreamInput(frame);
-    aec_dump->AddCaptureStreamOutput(frame);
+    aec_dump->AddCaptureStreamInput(frame.data(), kNumChannels,
+                                    kNumSamplesPerChannel);
+    aec_dump->AddCaptureStreamOutput(frame.data(), kNumChannels,
+                                     kNumSamplesPerChannel);
 
     aec_dump->WriteCaptureStreamMessage();
 
@@ -55,8 +62,14 @@ TEST(AecDumper, WriteToFile) {
   {
     std::unique_ptr<webrtc::AecDump> aec_dump =
         webrtc::AecDumpFactory::Create(filename, -1, &file_writer_queue);
-    const webrtc::AudioFrame frame;
-    aec_dump->WriteRenderStreamMessage(frame);
+
+    constexpr int kNumChannels = 1;
+    constexpr int kNumSamplesPerChannel = 160;
+    std::array<int16_t, kNumSamplesPerChannel * kNumChannels> frame;
+    frame.fill(0.f);
+
+    aec_dump->WriteRenderStreamMessage(frame.data(), kNumChannels,
+                                       kNumSamplesPerChannel);
   }
 
   // Verify the file has been written after the AecDump d-tor has
