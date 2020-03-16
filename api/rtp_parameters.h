@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "api/media_types.h"
 #include "api/rtp_transceiver_direction.h"
@@ -230,9 +231,9 @@ struct RTC_EXPORT RtpHeaderExtensionCapability {
 
   // Constructors for convenience.
   RtpHeaderExtensionCapability();
-  explicit RtpHeaderExtensionCapability(const std::string& uri);
-  RtpHeaderExtensionCapability(const std::string& uri, int preferred_id);
-  RtpHeaderExtensionCapability(const std::string& uri,
+  explicit RtpHeaderExtensionCapability(std::string uri);
+  RtpHeaderExtensionCapability(std::string uri, int preferred_id);
+  RtpHeaderExtensionCapability(std::string uri,
                                int preferred_id,
                                RtpTransceiverDirection direction);
   ~RtpHeaderExtensionCapability();
@@ -249,23 +250,23 @@ struct RTC_EXPORT RtpHeaderExtensionCapability {
 // RTP header extension, see RFC8285.
 struct RTC_EXPORT RtpExtension {
   RtpExtension();
-  RtpExtension(const std::string& uri, int id);
-  RtpExtension(const std::string& uri, int id, bool encrypt);
+  RtpExtension(std::string uri, int id);
+  RtpExtension(std::string uri, int id, bool encrypt);
   ~RtpExtension();
   std::string ToString() const;
   bool operator==(const RtpExtension& rhs) const {
     return uri == rhs.uri && id == rhs.id && encrypt == rhs.encrypt;
   }
-  static bool IsSupportedForAudio(const std::string& uri);
-  static bool IsSupportedForVideo(const std::string& uri);
+  static bool IsSupportedForAudio(absl::string_view uri);
+  static bool IsSupportedForVideo(absl::string_view uri);
   // Return "true" if the given RTP header extension URI may be encrypted.
-  static bool IsEncryptionSupported(const std::string& uri);
+  static bool IsEncryptionSupported(absl::string_view uri);
 
   // Returns the named header extension if found among all extensions,
   // nullptr otherwise.
   static const RtpExtension* FindHeaderExtensionByUri(
       const std::vector<RtpExtension>& extensions,
-      const std::string& uri);
+      absl::string_view uri);
 
   // Return a list of RTP header extensions with the non-encrypted extensions
   // removed if both the encrypted and non-encrypted extension is present for

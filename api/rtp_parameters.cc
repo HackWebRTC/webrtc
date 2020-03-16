@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <string>
+#include <utility>
 
 #include "api/array_view.h"
 #include "rtc_base/strings/string_builder.h"
@@ -31,24 +32,23 @@ RtpCodecCapability::RtpCodecCapability() = default;
 RtpCodecCapability::~RtpCodecCapability() = default;
 
 RtpHeaderExtensionCapability::RtpHeaderExtensionCapability() = default;
+RtpHeaderExtensionCapability::RtpHeaderExtensionCapability(std::string uri)
+    : uri(std::move(uri)) {}
+RtpHeaderExtensionCapability::RtpHeaderExtensionCapability(std::string uri,
+                                                           int preferred_id)
+    : uri(std::move(uri)), preferred_id(preferred_id) {}
 RtpHeaderExtensionCapability::RtpHeaderExtensionCapability(
-    const std::string& uri)
-    : uri(uri) {}
-RtpHeaderExtensionCapability::RtpHeaderExtensionCapability(
-    const std::string& uri,
-    int preferred_id)
-    : uri(uri), preferred_id(preferred_id) {}
-RtpHeaderExtensionCapability::RtpHeaderExtensionCapability(
-    const std::string& uri,
+    std::string uri,
     int preferred_id,
     RtpTransceiverDirection direction)
-    : uri(uri), preferred_id(preferred_id), direction(direction) {}
+    : uri(std::move(uri)), preferred_id(preferred_id), direction(direction) {}
 RtpHeaderExtensionCapability::~RtpHeaderExtensionCapability() = default;
 
 RtpExtension::RtpExtension() = default;
-RtpExtension::RtpExtension(const std::string& uri, int id) : uri(uri), id(id) {}
-RtpExtension::RtpExtension(const std::string& uri, int id, bool encrypt)
-    : uri(uri), id(id), encrypt(encrypt) {}
+RtpExtension::RtpExtension(std::string uri, int id)
+    : uri(std::move(uri)), id(id) {}
+RtpExtension::RtpExtension(std::string uri, int id, bool encrypt)
+    : uri(std::move(uri)), id(id), encrypt(encrypt) {}
 RtpExtension::~RtpExtension() = default;
 
 RtpFecParameters::RtpFecParameters() = default;
@@ -161,7 +161,7 @@ constexpr int RtpExtension::kMaxValueSize;
 constexpr int RtpExtension::kOneByteHeaderExtensionMaxId;
 constexpr int RtpExtension::kOneByteHeaderExtensionMaxValueSize;
 
-bool RtpExtension::IsSupportedForAudio(const std::string& uri) {
+bool RtpExtension::IsSupportedForAudio(absl::string_view uri) {
   return uri == webrtc::RtpExtension::kAudioLevelUri ||
          uri == webrtc::RtpExtension::kAbsSendTimeUri ||
          uri == webrtc::RtpExtension::kAbsoluteCaptureTimeUri ||
@@ -172,7 +172,7 @@ bool RtpExtension::IsSupportedForAudio(const std::string& uri) {
          uri == webrtc::RtpExtension::kRepairedRidUri;
 }
 
-bool RtpExtension::IsSupportedForVideo(const std::string& uri) {
+bool RtpExtension::IsSupportedForVideo(absl::string_view uri) {
   return uri == webrtc::RtpExtension::kTimestampOffsetUri ||
          uri == webrtc::RtpExtension::kAbsSendTimeUri ||
          uri == webrtc::RtpExtension::kAbsoluteCaptureTimeUri ||
@@ -192,7 +192,7 @@ bool RtpExtension::IsSupportedForVideo(const std::string& uri) {
          uri == webrtc::RtpExtension::kRepairedRidUri;
 }
 
-bool RtpExtension::IsEncryptionSupported(const std::string& uri) {
+bool RtpExtension::IsEncryptionSupported(absl::string_view uri) {
   return uri == webrtc::RtpExtension::kAudioLevelUri ||
          uri == webrtc::RtpExtension::kTimestampOffsetUri ||
 #if !defined(ENABLE_EXTERNAL_AUTH)
@@ -216,7 +216,7 @@ bool RtpExtension::IsEncryptionSupported(const std::string& uri) {
 
 const RtpExtension* RtpExtension::FindHeaderExtensionByUri(
     const std::vector<RtpExtension>& extensions,
-    const std::string& uri) {
+    absl::string_view uri) {
   for (const auto& extension : extensions) {
     if (extension.uri == uri) {
       return &extension;

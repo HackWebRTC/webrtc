@@ -86,7 +86,7 @@ bool ValidateRtpExtensions(
 
 std::vector<webrtc::RtpExtension> FilterRtpExtensions(
     const std::vector<webrtc::RtpExtension>& extensions,
-    bool (*supported)(const std::string&),
+    bool (*supported)(absl::string_view),
     bool filter_redundant_extensions) {
   RTC_DCHECK(ValidateRtpExtensions(extensions));
   RTC_DCHECK(supported);

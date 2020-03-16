@@ -45,11 +45,11 @@ std::vector<RtpExtension> MakeRedundantExtensions() {
   return result;
 }
 
-bool SupportedExtensions1(const std::string& name) {
+bool SupportedExtensions1(absl::string_view name) {
   return name == "c" || name == "i";
 }
 
-bool SupportedExtensions2(const std::string& name) {
+bool SupportedExtensions2(absl::string_view name) {
   return name != "a" && name != "n";
 }
 

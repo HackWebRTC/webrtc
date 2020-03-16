@@ -317,6 +317,7 @@ rtc_library("rtp_parameters") {
     "../rtc_base:checks",
     "../rtc_base:stringutils",
     "../rtc_base/system:rtc_export",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
