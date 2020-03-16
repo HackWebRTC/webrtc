@@ -79,7 +79,7 @@ class ObjCEncodedImageBuffer : public webrtc::EncodedImageBufferInterface {
     self.encodedData = encodedImage.GetEncodedData();
     // Wrap the buffer in NSData without copying, do not take ownership.
     self.buffer = [NSData dataWithBytesNoCopy:self.encodedData->data()
-                                       length:self.encodedData->size()
+                                       length:encodedImage.size()
                                  freeWhenDone:NO];
     self.encodedWidth = rtc::dchecked_cast<int32_t>(encodedImage._encodedWidth);
     self.encodedHeight = rtc::dchecked_cast<int32_t>(encodedImage._encodedHeight);
