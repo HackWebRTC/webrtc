@@ -32,7 +32,7 @@ deps = {
   'src/testing':
     'https://chromium.googlesource.com/chromium/src/testing@47e23d6c9dfe571b87fef5e3f903cfd995bb43ed',
   'src/third_party':
-    'https://chromium.googlesource.com/chromium/src/third_party@0364b335e473e6fae3f198f4d8ce05e88171bfcf',
+    'https://chromium.googlesource.com/chromium/src/third_party@67dbe528170eed566f8e8f271b6fa3bed81f9cce',
 
   'src/buildtools/linux64': {
     'packages': [
@@ -474,6 +474,22 @@ deps = {
       ],
       'condition': 'checkout_android',
       'dep_type': 'cipd',
+  },
+
+  'src/third_party/turbine': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/turbine',
+              'version': '3UJ600difG3ThRhtYrN9AfZ5kh8wCYtBiii1-NMlCrMC',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/turbine/src': {
+      'url': 'https://chromium.googlesource.com/external/github.com/google/turbine.git' + '@' + '95f6fb6f1e962e8b6ec672905b0b04233f002dc2',
+      'condition': 'checkout_android',
   },
 
   'src/third_party/xstream': {
