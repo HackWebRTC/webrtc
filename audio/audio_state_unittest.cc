@@ -24,6 +24,8 @@ namespace webrtc {
 namespace test {
 namespace {
 
+using ::testing::_;
+
 constexpr int kSampleRate = 16000;
 constexpr int kNumberOfChannels = 1;
 
@@ -120,7 +122,7 @@ TEST(AudioStateTest, RecordedAudioArrivesAtSingleStream) {
       static_cast<MockAudioProcessing*>(audio_state->audio_processing());
   EXPECT_CALL(*ap, set_stream_delay_ms(0));
   EXPECT_CALL(*ap, set_stream_key_pressed(false));
-  EXPECT_CALL(*ap, ProcessStream(::testing::_));
+  EXPECT_CALL(*ap, ProcessStream(_, _, _, _, _));
 
   constexpr int kSampleRate = 16000;
   constexpr size_t kNumChannels = 2;
@@ -170,7 +172,7 @@ TEST(AudioStateTest, RecordedAudioArrivesAtMultipleStreams) {
       static_cast<MockAudioProcessing*>(audio_state->audio_processing());
   EXPECT_CALL(*ap, set_stream_delay_ms(5));
   EXPECT_CALL(*ap, set_stream_key_pressed(true));
-  EXPECT_CALL(*ap, ProcessStream(::testing::_));
+  EXPECT_CALL(*ap, ProcessStream(_, _, _, _, _));
 
   constexpr int kSampleRate = 16000;
   constexpr size_t kNumChannels = 1;
@@ -198,7 +200,7 @@ TEST(AudioStateTest, EnableChannelSwap) {
   MockAudioSendStream stream;
   audio_state->AddSendingStream(&stream, kSampleRate, kNumChannels);
 
-  EXPECT_CALL(stream, SendAudioDataForMock(::testing::_))
+  EXPECT_CALL(stream, SendAudioDataForMock(_))
       .WillOnce(
           // Verify that channels are swapped.
           ::testing::Invoke([](AudioFrame* audio_frame) {
@@ -225,7 +227,7 @@ TEST(AudioStateTest,
   FakeAudioSource fake_source;
   helper.mixer()->AddSource(&fake_source);
 
-  EXPECT_CALL(fake_source, GetAudioFrameWithInfo(::testing::_, ::testing::_))
+  EXPECT_CALL(fake_source, GetAudioFrameWithInfo(_, _))
       .WillOnce(
           ::testing::Invoke([](int sample_rate_hz, AudioFrame* audio_frame) {
             audio_frame->sample_rate_hz_ = sample_rate_hz;

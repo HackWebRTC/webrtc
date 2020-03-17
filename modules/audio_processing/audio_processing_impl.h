@@ -25,6 +25,7 @@
 #include "modules/audio_processing/gain_controller2.h"
 #include "modules/audio_processing/high_pass_filter.h"
 #include "modules/audio_processing/include/aec_dump.h"
+#include "modules/audio_processing/include/audio_frame_proxies.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "modules/audio_processing/level_estimator.h"
@@ -80,7 +81,9 @@ class AudioProcessingImpl : public AudioProcessing {
 
   // Capture-side exclusive methods possibly running APM in a
   // multi-threaded manner. Acquire the capture lock.
-  int ProcessStream(AudioFrame* frame) override;
+  int ProcessStream(AudioFrame* frame) override {
+    return ProcessAudioFrame(this, frame);
+  }
   int ProcessStream(const int16_t* const src,
                     const StreamConfig& input_config,
                     const StreamConfig& output_config,
@@ -100,7 +103,9 @@ class AudioProcessingImpl : public AudioProcessing {
 
   // Render-side exclusive methods possibly running APM in a
   // multi-threaded manner. Acquire the render lock.
-  int ProcessReverseStream(AudioFrame* frame) override;
+  int ProcessReverseStream(AudioFrame* frame) override {
+    return ProcessReverseAudioFrame(this, frame);
+  }
   int ProcessReverseStream(const int16_t* const src,
                            const StreamConfig& input_config,
                            const StreamConfig& output_config,

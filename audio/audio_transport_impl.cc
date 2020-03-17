@@ -17,6 +17,7 @@
 #include "audio/remix_resample.h"
 #include "audio/utility/audio_frame_operations.h"
 #include "call/audio_sender.h"
+#include "modules/audio_processing/include/audio_frame_proxies.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -52,7 +53,8 @@ void ProcessCaptureFrame(uint32_t delay_ms,
   RTC_DCHECK(audio_frame);
   audio_processing->set_stream_delay_ms(delay_ms);
   audio_processing->set_stream_key_pressed(key_pressed);
-  int error = audio_processing->ProcessStream(audio_frame);
+  int error = ProcessAudioFrame(audio_processing, audio_frame);
+
   RTC_DCHECK_EQ(0, error) << "ProcessStream() error: " << error;
   if (swap_stereo_channels) {
     AudioFrameOperations::SwapStereoChannels(audio_frame);
@@ -190,7 +192,7 @@ int32_t AudioTransportImpl::NeedMorePlayData(const size_t nSamples,
   *elapsed_time_ms = mixed_frame_.elapsed_time_ms_;
   *ntp_time_ms = mixed_frame_.ntp_time_ms_;
 
-  const auto error = audio_processing_->ProcessReverseStream(&mixed_frame_);
+  const auto error = ProcessReverseAudioFrame(audio_processing_, &mixed_frame_);
   RTC_DCHECK_EQ(error, AudioProcessing::kNoError);
 
   nSamplesOut = Resample(mixed_frame_, samplesPerSec, &render_resampler_,

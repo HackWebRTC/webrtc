@@ -44,6 +44,7 @@ rtc_library("api") {
     ":config",
     "../../api:scoped_refptr",
     "../../api/audio:aec3_config",
+    "../../api/audio:audio_frame_api",
     "../../api/audio:echo_control",
     "../../rtc_base:deprecation",
     "../../rtc_base:macromagic",
@@ -52,6 +53,19 @@ rtc_library("api") {
     "../../rtc_base/system:rtc_export",
     "agc:gain_control_interface",
     "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
+rtc_library("audio_frame_proxies") {
+  visibility = [ "*" ]
+  sources = [
+    "include/audio_frame_proxies.cc",
+    "include/audio_frame_proxies.h",
+  ]
+  deps = [
+    ":api",
+    ":audio_frame_view",
+    "../../api/audio:audio_frame_api",
   ]
 }
 
@@ -74,7 +88,6 @@ rtc_library("audio_buffer") {
   deps = [
     ":api",
     "../../api:array_view",
-    "../../api/audio:audio_frame_api",
     "../../common_audio",
     "../../common_audio:common_audio_c",
     "../../rtc_base:checks",
@@ -138,6 +151,7 @@ rtc_library("audio_processing") {
     ":api",
     ":apm_logging",
     ":audio_buffer",
+    ":audio_frame_proxies",
     ":audio_frame_view",
     ":audio_generator_interface",
     ":audio_processing_statistics",

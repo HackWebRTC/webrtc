@@ -1054,37 +1054,12 @@ void AudioProcessingImpl::EmptyQueuedRenderAudio() {
   }
 }
 
-int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
-  TRACE_EVENT0("webrtc", "AudioProcessing::ProcessStream_AudioFrame");
-  if (!frame) {
-    return kNullPointerError;
-  }
-
-  StreamConfig input_config(frame->sample_rate_hz_, frame->num_channels_,
-                            /*has_keyboard=*/false);
-  StreamConfig output_config(frame->sample_rate_hz_, frame->num_channels_,
-                             /*has_keyboard=*/false);
-  RTC_DCHECK_EQ(frame->samples_per_channel(), input_config.num_frames());
-
-  VoiceDetectionResult vad_result = VoiceDetectionResult::kNotAvailable;
-
-  int result = ProcessStream(frame->data(), input_config, output_config,
-                             frame->mutable_data(), &vad_result);
-
-  if (vad_result != VoiceDetectionResult::kNotAvailable) {
-    frame->vad_activity_ = vad_result == VoiceDetectionResult::kDetected
-                               ? AudioFrame::VADActivity::kVadActive
-                               : AudioFrame::VADActivity::kVadPassive;
-  }
-
-  return result;
-}
-
 int AudioProcessingImpl::ProcessStream(const int16_t* const src,
                                        const StreamConfig& input_config,
                                        const StreamConfig& output_config,
                                        int16_t* const dest,
                                        VoiceDetectionResult* vad_result) {
+  TRACE_EVENT0("webrtc", "AudioProcessing::ProcessStream_AudioFrame");
   RETURN_ON_ERR(MaybeInitializeCapture(input_config, output_config));
 
   rtc::CritScope cs_capture(&crit_capture_);
@@ -1454,37 +1429,11 @@ int AudioProcessingImpl::AnalyzeReverseStreamLocked(
   return ProcessRenderStreamLocked();
 }
 
-int AudioProcessingImpl::ProcessReverseStream(AudioFrame* frame) {
-  TRACE_EVENT0("webrtc", "AudioProcessing::ProcessReverseStream_AudioFrame");
-  if (frame == nullptr) {
-    return kNullPointerError;
-  }
-  // Must be a native rate.
-  if (frame->sample_rate_hz_ != kSampleRate8kHz &&
-      frame->sample_rate_hz_ != kSampleRate16kHz &&
-      frame->sample_rate_hz_ != kSampleRate32kHz &&
-      frame->sample_rate_hz_ != kSampleRate48kHz) {
-    return kBadSampleRateError;
-  }
-
-  if (frame->num_channels_ <= 0) {
-    return kBadNumberChannelsError;
-  }
-
-  StreamConfig input_config(frame->sample_rate_hz_, frame->num_channels_,
-                            /*has_keyboard=*/false);
-  StreamConfig output_config(frame->sample_rate_hz_, frame->num_channels_,
-                             /*has_keyboard=*/false);
-
-  int result = ProcessReverseStream(frame->data(), input_config, output_config,
-                                    frame->mutable_data());
-  return result;
-}
-
 int AudioProcessingImpl::ProcessReverseStream(const int16_t* const src,
                                               const StreamConfig& input_config,
                                               const StreamConfig& output_config,
                                               int16_t* const dest) {
+  TRACE_EVENT0("webrtc", "AudioProcessing::ProcessReverseStream_AudioFrame");
   rtc::CritScope cs(&crit_render_);
   ProcessingConfig processing_config = formats_.api_format;
   processing_config.reverse_input_stream().set_sample_rate_hz(
