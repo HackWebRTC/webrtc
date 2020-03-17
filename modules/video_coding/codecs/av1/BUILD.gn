@@ -18,7 +18,7 @@ rtc_library("libaom_av1_decoder") {
     "//third_party/abseil-cpp/absl/base:core_headers",
   ]
 
-  if (enable_libaom_decoder) {
+  if (enable_libaom) {
     sources = [ "libaom_av1_decoder.cc" ]
     deps += [
       "../..:video_codec_interface",
