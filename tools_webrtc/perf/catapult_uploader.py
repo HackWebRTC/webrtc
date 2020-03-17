@@ -13,6 +13,7 @@ import json
 import subprocess
 import zlib
 
+from tracing.value import histogram
 from tracing.value import histogram_set
 from tracing.value.diagnostics import generic_set
 from tracing.value.diagnostics import reserved_infos
@@ -58,14 +59,17 @@ def _SendHistogramSet(url, histograms, oauth_token):
 
 
 # TODO(https://crbug.com/1029452): HACKHACK
-# Remove once we set bin bounds correctly in the proto writer.
+# Remove once we have doubles in the proto and handle -infinity correctly.
 def _ApplyHacks(dicts):
   for d in dicts:
-    if 'name' in d:
-      d['allBins'] = [[1]]
-      del d['binBoundaries']
-      d['diagnostics']['stories']['values'][0] = (
-          d['diagnostics']['stories']['values'][0].replace('/', '_'))
+    if 'running' in d:
+      def _NoInf(value):
+        if value == float('inf'):
+          return histogram.JS_MAX_VALUE
+        if value == float('-inf'):
+          return -histogram.JS_MAX_VALUE
+        return value
+      d['running'] = [_NoInf(value) for value in d['running']]
 
   return dicts
 
@@ -101,8 +105,8 @@ def _DumpOutput(histograms, output_file):
 # TODO(https://crbug.com/1029452): Remove this once
 # https://chromium-review.googlesource.com/c/catapult/+/2094312 lands.
 def _HackSummaryOptions(histograms):
-  for histogram in histograms:
-    histogram.CustomizeSummaryOptions({
+  for h in histograms:
+    h.CustomizeSummaryOptions({
       'avg': False,
       'std': False,
       'count': False,
