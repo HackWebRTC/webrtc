@@ -333,8 +333,6 @@ void ScreenshareLayers::OnEncodeDone(size_t stream_index,
           dependency_info->decode_target_indications;
     } else {
       RTC_DCHECK(is_keyframe);
-      generic_frame_info.decode_target_indications =
-          GenericFrameInfo::DecodeTargetInfo("SS");
     }
 
     if (is_keyframe) {
@@ -346,6 +344,8 @@ void ScreenshareLayers::OnEncodeDone(size_t stream_index,
       active_layer_ = 1;
       info->template_structure =
           GetTemplateStructure(number_of_temporal_layers_);
+      generic_frame_info.decode_target_indications =
+          GenericFrameInfo::DecodeTargetInfo("SS");
     } else if (active_layer_ >= 0 && layers_[active_layer_].state ==
                                          TemporalLayer::State::kKeyFrame) {
       layers_[active_layer_].state = TemporalLayer::State::kNormal;
