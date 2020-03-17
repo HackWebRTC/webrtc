@@ -113,6 +113,10 @@ class PerfTestHistogramWriter : public PerfTestResultWriter {
       proto::UnitAndDirection unit = ParseUnit(units, improve_direction);
       std::unique_ptr<catapult::HistogramBuilder> builder =
           std::make_unique<catapult::HistogramBuilder>(graph_name, unit);
+
+      // Set all summary options as false - we don't want to generate
+      // metric_std, metric_count, and so on for all metrics.
+      builder->SetSummaryOptions(proto::SummaryOptions());
       histograms_[measurement_and_story] = std::move(builder);
 
       proto::Diagnostic stories;

@@ -102,25 +102,9 @@ def _DumpOutput(histograms, output_file):
     json.dump(_ApplyHacks(histograms.AsDicts()), output_file, indent=4)
 
 
-# TODO(https://crbug.com/1029452): Remove this once
-# https://chromium-review.googlesource.com/c/catapult/+/2094312 lands.
-def _HackSummaryOptions(histograms):
-  for h in histograms:
-    h.CustomizeSummaryOptions({
-      'avg': False,
-      'std': False,
-      'count': False,
-      'sum': False,
-      'min': False,
-      'max': False,
-      'nans': False,
-    })
-
-
 def UploadToDashboard(options):
   histograms = _LoadHistogramSetFromProto(options)
   _AddBuildInfo(histograms, options)
-  _HackSummaryOptions(histograms)
 
   if options.output_json_file:
     _DumpOutput(histograms, options.output_json_file)
