@@ -592,6 +592,10 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     pc()->CreateOffer(observer, offer_answer_options_);
     return WaitForDescriptionFromObserver(observer);
   }
+  bool Rollback() {
+    return SetRemoteDescription(
+        webrtc::CreateSessionDescription(SdpType::kRollback, ""));
+  }
 
  private:
   explicit PeerConnectionWrapper(const std::string& debug_name)
@@ -3243,6 +3247,31 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithRtpDataChannel) {
                  kDefaultTimeout);
   SendRtpDataWithRetries(callee()->data_channel(), data, 5);
   EXPECT_EQ_WAIT(data, caller()->data_observer()->last_message(),
+                 kDefaultTimeout);
+}
+
+TEST_P(PeerConnectionIntegrationTest, RtpDataChannelWorksAfterRollback) {
+  PeerConnectionInterface::RTCConfiguration rtc_config;
+  rtc_config.enable_rtp_data_channel = true;
+  rtc_config.enable_dtls_srtp = false;
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(rtc_config, rtc_config));
+  ConnectFakeSignaling();
+  auto data_channel = caller()->pc()->CreateDataChannel("label_1", nullptr);
+  ASSERT_TRUE(data_channel.get() != nullptr);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  caller()->CreateDataChannel("label_2", nullptr);
+  rtc::scoped_refptr<MockSetSessionDescriptionObserver> observer(
+      new rtc::RefCountedObject<MockSetSessionDescriptionObserver>());
+  caller()->pc()->SetLocalDescription(observer,
+                                      caller()->CreateOfferAndWait().release());
+  EXPECT_TRUE_WAIT(observer->called(), kDefaultTimeout);
+  caller()->Rollback();
+
+  std::string data = "hello world";
+  SendRtpDataWithRetries(data_channel, data, 5);
+  EXPECT_EQ_WAIT(data, callee()->data_observer()->last_message(),
                  kDefaultTimeout);
 }
 

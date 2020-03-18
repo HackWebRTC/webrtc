@@ -1295,6 +1295,9 @@ class PeerConnection : public PeerConnectionInternal,
   std::map<rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>,
            TransceiverStableState>
       transceiver_stable_states_by_transceivers_;
+  // Used when rolling back RTP data channels.
+  bool have_pending_rtp_data_channel_ RTC_GUARDED_BY(signaling_thread()) =
+      false;
   // Holds remote stream ids for transceivers from stable state.
   std::map<rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>,
            std::vector<std::string>>
