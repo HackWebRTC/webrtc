@@ -24,6 +24,8 @@
 
 namespace webrtc {
 
+extern const int kMinFrameRateFps;
+
 class VideoStreamAdapter;
 
 // Represents one step that the VideoStreamAdapter can take when adapting the
