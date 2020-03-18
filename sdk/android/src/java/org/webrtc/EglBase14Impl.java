@@ -170,7 +170,9 @@ class EglBase14Impl implements EglBase14 {
     checkIsNotReleased();
     releaseSurface();
     detachCurrent();
-    EGL14.eglDestroyContext(eglDisplay, eglContext);
+    synchronized (EglBase.lock) {
+      EGL14.eglDestroyContext(eglDisplay, eglContext);
+    }
     EGL14.eglReleaseThread();
     EGL14.eglTerminate(eglDisplay);
     eglContext = EGL14.EGL_NO_CONTEXT;
