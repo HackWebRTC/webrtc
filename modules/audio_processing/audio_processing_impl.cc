@@ -2025,7 +2025,7 @@ void AudioProcessingImpl::RecordProcessedCaptureStream(
   RTC_DCHECK(aec_dump_);
 
   aec_dump_->AddCaptureStreamOutput(data, config.num_channels(),
-                                    config.num_channels());
+                                    config.num_frames());
   aec_dump_->WriteCaptureStreamMessage();
 }
 
