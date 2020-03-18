@@ -2431,9 +2431,16 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
         stream_stats.rtp_stats.transmitted.padding_bytes;
     info.packets_sent += stream_stats.rtp_stats.transmitted.packets;
     info.total_packet_send_delay_ms += stream_stats.total_packet_send_delay_ms;
-    // TODO(https://crbug.com/webrtc/10555): RTX retransmissions should show up
-    // in separate outbound-rtp stream objects.
-    if (!stream_stats.is_rtx && !stream_stats.is_flexfec) {
+    if (!stream_stats.is_flexfec) {
+      // Retransmissions can happen over the same SSRC that media is sent over,
+      // or a separate RTX stream is negotiated per SSRC, in which case there
+      // will be a |stream_stats| with "is_rtx == true". Since we are currently
+      // aggregating all substreams' counters into a single "info" we do not
+      // need to know the relationship between RTX streams and RTP streams here.
+      // TODO(https://crbug.com/webrtc/11439): To unblock simulcast-aware stats,
+      // where substreams are not aggregated, we need to know the relationship
+      // between RTX streams and RTP streams so that the correct "info" object
+      // accounts for the correct RTX retransmissions.
       info.retransmitted_bytes_sent +=
           stream_stats.rtp_stats.retransmitted.payload_bytes;
       info.retransmitted_packets_sent +=
