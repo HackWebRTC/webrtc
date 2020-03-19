@@ -77,10 +77,8 @@ static absl::optional<std::vector<std::string>> g_metrics_to_plot;
   int exitStatus = g_test_suite();
 
   if (g_write_perf_output) {
-    // Stores data into a json file under the app's document directory.
-    // TODO(https://crbug.com/1029452): Change ext to .pb when histograms are
-    // the default.
-    NSString* fileName = @"perf_result.json";
+    // Stores data into a proto file under the app's document directory.
+    NSString *fileName = @"perftest-output.pb";
     NSArray<NSString*>* outputDirectories = NSSearchPathForDirectoriesInDomains(
         NSDocumentDirectory, NSUserDomainMask, YES);
     if ([outputDirectories count] != 0) {
@@ -119,12 +117,12 @@ namespace test {
 void InitTestSuite(int (*test_suite)(void),
                    int argc,
                    char *argv[],
-                   bool save_chartjson_result,
+                   bool write_perf_output,
                    absl::optional<std::vector<std::string>> metrics_to_plot) {
   g_test_suite = test_suite;
   g_argc = argc;
   g_argv = argv;
-  g_write_perf_output = save_chartjson_result;
+  g_write_perf_output = write_perf_output;
   g_metrics_to_plot = std::move(metrics_to_plot);
 }
 

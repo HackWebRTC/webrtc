@@ -47,14 +47,16 @@ ABSL_FLAG(std::string,
           ApplePersistenceIgnoreState,
           "",
           "Intentionally ignored flag intended for iOS simulator.");
+
+// This is the cousin of isolated_script_test_perf_output, but we can't dictate
+// where to write on iOS so the semantics of this flag are a bit different.
 ABSL_FLAG(
     bool,
-    save_chartjson_result,
+    write_perf_output_on_ios,
     false,
-    "Store the perf results in Documents/perf_result.json in the format "
-    "described by "
-    "https://github.com/catapult-project/catapult/blob/master/dashboard/docs/"
-    "data-format.md.");
+    "Store the perf results in Documents/perftest_result.pb in the format "
+    "described by histogram.proto in "
+    "https://chromium.googlesource.com/catapult/.");
 
 #else
 
@@ -67,10 +69,10 @@ ABSL_FLAG(
     std::string,
     isolated_script_test_perf_output,
     "",
-    "Path where the perf results should be stored in the JSON format described "
-    "by "
-    "https://github.com/catapult-project/catapult/blob/master/dashboard/docs/"
-    "data-format.md.");
+    "Path where the perf results should be stored in proto format described "
+    "described by histogram.proto in "
+    "https://chromium.googlesource.com/catapult/.");
+
 #endif
 
 constexpr char kPlotAllMetrics[] = "all";
@@ -171,7 +173,7 @@ class TestMainImpl : public TestMain {
 
 #if defined(WEBRTC_IOS)
     rtc::test::InitTestSuite(RUN_ALL_TESTS, argc, argv,
-                             absl::GetFlag(FLAGS_save_chartjson_result),
+                             absl::GetFlag(FLAGS_write_perf_output_on_ios),
                              metrics_to_plot);
     rtc::test::RunTestsFromIOSApp();
     int exit_code = 0;
