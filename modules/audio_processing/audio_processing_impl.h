@@ -87,8 +87,7 @@ class AudioProcessingImpl : public AudioProcessing {
   int ProcessStream(const int16_t* const src,
                     const StreamConfig& input_config,
                     const StreamConfig& output_config,
-                    int16_t* const dest,
-                    VoiceDetectionResult* vad_state) override;
+                    int16_t* const dest) override;
   int ProcessStream(const float* const* src,
                     const StreamConfig& input_config,
                     const StreamConfig& output_config,

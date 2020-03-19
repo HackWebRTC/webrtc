@@ -1057,8 +1057,7 @@ void AudioProcessingImpl::EmptyQueuedRenderAudio() {
 int AudioProcessingImpl::ProcessStream(const int16_t* const src,
                                        const StreamConfig& input_config,
                                        const StreamConfig& output_config,
-                                       int16_t* const dest,
-                                       VoiceDetectionResult* vad_result) {
+                                       int16_t* const dest) {
   TRACE_EVENT0("webrtc", "AudioProcessing::ProcessStream_AudioFrame");
   RETURN_ON_ERR(MaybeInitializeCapture(input_config, output_config));
 
@@ -1079,16 +1078,6 @@ int AudioProcessingImpl::ProcessStream(const int16_t* const src,
       capture_.capture_fullband_audio->CopyTo(output_config, dest);
     } else {
       capture_.capture_audio->CopyTo(output_config, dest);
-    }
-  }
-
-  if (vad_result) {
-    if (capture_.stats.voice_detected) {
-      *vad_result = *capture_.stats.voice_detected
-                        ? VoiceDetectionResult::kDetected
-                        : VoiceDetectionResult::kNotDetected;
-    } else {
-      *vad_result = VoiceDetectionResult::kNotAvailable;
     }
   }
 

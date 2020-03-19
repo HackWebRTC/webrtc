@@ -561,7 +561,7 @@ int ApmTest::ProcessStreamChooser(Format format) {
         frame_.data.data(),
         StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
         StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-        frame_.data.data(), &frame_.vad_activity);
+        frame_.data.data());
   }
   return apm_->ProcessStream(
       float_cb_->channels(),
@@ -646,8 +646,7 @@ void ApmTest::ProcessDelayVerificationTest(int delay_ms,
                                                process_frame->num_channels),
                                   StreamConfig(process_frame->sample_rate_hz,
                                                process_frame->num_channels),
-                                  process_frame->data.data(),
-                                  &process_frame->vad_activity));
+                                  process_frame->data.data()));
     frame = frame_queue.front();
     frame_queue.pop();
     delete frame;
@@ -753,7 +752,7 @@ void ApmTest::TestChangingChannelsInt16Interface(
                 frame_.data.data(),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-                frame_.data.data(), &frame_.vad_activity));
+                frame_.data.data()));
   EXPECT_EQ(expected_return,
             apm_->ProcessReverseStream(
                 frame_.data.data(),
@@ -1052,7 +1051,7 @@ void ApmTest::RunQuantizedVolumeDoesNotGetStuckTest(int sample_rate) {
                   frame_.data.data(),
                   StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
                   StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-                  frame_.data.data(), &frame_.vad_activity));
+                  frame_.data.data()));
     out_analog_level = apm_->recommended_stream_analog_level();
   }
 
@@ -1088,7 +1087,7 @@ void ApmTest::RunManualVolumeChangeIsPossibleTest(int sample_rate) {
                   frame_.data.data(),
                   StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
                   StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-                  frame_.data.data(), &frame_.vad_activity));
+                  frame_.data.data()));
     out_analog_level = apm_->recommended_stream_analog_level();
   }
 
@@ -1108,7 +1107,7 @@ void ApmTest::RunManualVolumeChangeIsPossibleTest(int sample_rate) {
                   frame_.data.data(),
                   StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
                   StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-                  frame_.data.data(), &frame_.vad_activity));
+                  frame_.data.data()));
     out_analog_level = apm_->recommended_stream_analog_level();
     // Check that AGC respected the manually adjusted volume.
     EXPECT_LT(out_analog_level, highest_level_reached);
@@ -1154,7 +1153,7 @@ TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabled) {
                     frame_.data.data(),
                     StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
                     StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-                    frame_.data.data(), &frame_.vad_activity));
+                    frame_.data.data()));
       EXPECT_TRUE(FrameDataAreEqual(frame_, frame_copy));
       EXPECT_EQ(apm_->kNoError,
                 apm_->ProcessReverseStream(
@@ -1222,8 +1221,6 @@ TEST_F(ApmTest, IdenticalInputChannelsResultInIdenticalOutputChannels) {
               revframe_.data.data()));
 
       CopyLeftToRightChannel(frame_.data.data(), frame_.samples_per_channel);
-      frame_.vad_activity =
-          AudioProcessing::VoiceDetectionResult::kNotAvailable;
 
       ASSERT_EQ(kNoErr, apm_->set_stream_delay_ms(0));
       apm_->set_stream_analog_level(analog_level);
@@ -1232,7 +1229,7 @@ TEST_F(ApmTest, IdenticalInputChannelsResultInIdenticalOutputChannels) {
                     frame_.data.data(),
                     StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
                     StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-                    frame_.data.data(), &frame_.vad_activity));
+                    frame_.data.data()));
       analog_level = apm_->recommended_stream_analog_level();
 
       VerifyChannelsAreEqual(frame_.data.data(), frame_.samples_per_channel);
@@ -1253,13 +1250,13 @@ TEST_F(ApmTest, SplittingFilter) {
                 frame_.data.data(),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-                frame_.data.data(), &frame_.vad_activity));
+                frame_.data.data()));
   EXPECT_EQ(apm_->kNoError,
             apm_->ProcessStream(
                 frame_.data.data(),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-                frame_.data.data(), &frame_.vad_activity));
+                frame_.data.data()));
   EXPECT_TRUE(FrameDataAreEqual(frame_, frame_copy));
 
   // 2. Only the level estimator is enabled...
@@ -1273,13 +1270,13 @@ TEST_F(ApmTest, SplittingFilter) {
                 frame_.data.data(),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-                frame_.data.data(), &frame_.vad_activity));
+                frame_.data.data()));
   EXPECT_EQ(apm_->kNoError,
             apm_->ProcessStream(
                 frame_.data.data(),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-                frame_.data.data(), &frame_.vad_activity));
+                frame_.data.data()));
   EXPECT_TRUE(FrameDataAreEqual(frame_, frame_copy));
   apm_config.level_estimation.enabled = false;
   apm_->ApplyConfig(apm_config);
@@ -1294,13 +1291,13 @@ TEST_F(ApmTest, SplittingFilter) {
                 frame_.data.data(),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-                frame_.data.data(), &frame_.vad_activity));
+                frame_.data.data()));
   EXPECT_EQ(apm_->kNoError,
             apm_->ProcessStream(
                 frame_.data.data(),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-                frame_.data.data(), &frame_.vad_activity));
+                frame_.data.data()));
   EXPECT_TRUE(FrameDataAreEqual(frame_, frame_copy));
   apm_config.voice_detection.enabled = false;
   apm_->ApplyConfig(apm_config);
@@ -1316,13 +1313,13 @@ TEST_F(ApmTest, SplittingFilter) {
                 frame_.data.data(),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-                frame_.data.data(), &frame_.vad_activity));
+                frame_.data.data()));
   EXPECT_EQ(apm_->kNoError,
             apm_->ProcessStream(
                 frame_.data.data(),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-                frame_.data.data(), &frame_.vad_activity));
+                frame_.data.data()));
   EXPECT_TRUE(FrameDataAreEqual(frame_, frame_copy));
   apm_config.voice_detection.enabled = false;
   apm_config.level_estimation.enabled = false;
@@ -1344,7 +1341,7 @@ TEST_F(ApmTest, SplittingFilter) {
                 frame_.data.data(),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-                frame_.data.data(), &frame_.vad_activity));
+                frame_.data.data()));
   EXPECT_FALSE(FrameDataAreEqual(frame_, frame_copy));
 }
 
@@ -1535,7 +1532,7 @@ TEST_F(ApmTest, DebugDump) {
                 frame_.data.data(),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-                frame_.data.data(), &frame_.vad_activity));
+                frame_.data.data()));
   EXPECT_EQ(apm_->kNoError,
             apm_->ProcessReverseStream(
                 revframe_.data.data(),
@@ -1584,7 +1581,7 @@ TEST_F(ApmTest, DebugDumpFromFileHandle) {
                 frame_.data.data(),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
                 StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-                frame_.data.data(), &frame_.vad_activity));
+                frame_.data.data()));
   apm_->DetachAecDump();
 
   // Verify the file has been written.
@@ -1671,9 +1668,6 @@ TEST_F(ApmTest, Process) {
               StreamConfig(revframe_.sample_rate_hz, revframe_.num_channels),
               revframe_.data.data()));
 
-      frame_.vad_activity =
-          AudioProcessing::VoiceDetectionResult::kNotAvailable;
-
       EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(0));
       apm_->set_stream_analog_level(analog_level);
 
@@ -1682,7 +1676,7 @@ TEST_F(ApmTest, Process) {
                     frame_.data.data(),
                     StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
                     StreamConfig(frame_.sample_rate_hz, frame_.num_channels),
-                    frame_.data.data(), &frame_.vad_activity));
+                    frame_.data.data()));
 
       // Ensure the frame was downmixed properly.
       EXPECT_EQ(static_cast<size_t>(test->num_output_channels()),
@@ -2473,7 +2467,7 @@ TEST(ApmConfiguration, EnablePostProcessing) {
   apm->ProcessStream(audio.data.data(),
                      StreamConfig(audio.sample_rate_hz, audio.num_channels),
                      StreamConfig(audio.sample_rate_hz, audio.num_channels),
-                     audio.data.data(), &audio.vad_activity);
+                     audio.data.data());
 }
 
 TEST(ApmConfiguration, EnablePreProcessing) {
@@ -2517,7 +2511,7 @@ TEST(ApmConfiguration, EnableCaptureAnalyzer) {
   apm->ProcessStream(audio.data.data(),
                      StreamConfig(audio.sample_rate_hz, audio.num_channels),
                      StreamConfig(audio.sample_rate_hz, audio.num_channels),
-                     audio.data.data(), &audio.vad_activity);
+                     audio.data.data());
 }
 
 TEST(ApmConfiguration, PreProcessingReceivesRuntimeSettings) {
@@ -2581,7 +2575,7 @@ TEST(ApmConfiguration, EchoControlInjection) {
   apm->ProcessStream(audio.data.data(),
                      StreamConfig(audio.sample_rate_hz, audio.num_channels),
                      StreamConfig(audio.sample_rate_hz, audio.num_channels),
-                     audio.data.data(), &audio.vad_activity);
+                     audio.data.data());
   apm->ProcessReverseStream(
       audio.data.data(), StreamConfig(audio.sample_rate_hz, audio.num_channels),
       StreamConfig(audio.sample_rate_hz, audio.num_channels),
@@ -2589,7 +2583,7 @@ TEST(ApmConfiguration, EchoControlInjection) {
   apm->ProcessStream(audio.data.data(),
                      StreamConfig(audio.sample_rate_hz, audio.num_channels),
                      StreamConfig(audio.sample_rate_hz, audio.num_channels),
-                     audio.data.data(), &audio.vad_activity);
+                     audio.data.data());
 }
 
 std::unique_ptr<AudioProcessing> CreateApm(bool mobile_aec) {
@@ -2660,7 +2654,7 @@ TEST(MAYBE_ApmStatistics, AECEnabledTest) {
                   frame.data.data(),
                   StreamConfig(frame.sample_rate_hz, frame.num_channels),
                   StreamConfig(frame.sample_rate_hz, frame.num_channels),
-                  frame.data.data(), &frame.vad_activity),
+                  frame.data.data()),
               0);
   }
 
@@ -2708,7 +2702,7 @@ TEST(MAYBE_ApmStatistics, AECMEnabledTest) {
                   frame.data.data(),
                   StreamConfig(frame.sample_rate_hz, frame.num_channels),
                   StreamConfig(frame.sample_rate_hz, frame.num_channels),
-                  frame.data.data(), &frame.vad_activity),
+                  frame.data.data()),
               0);
   }
 
@@ -2754,7 +2748,7 @@ TEST(ApmStatistics, ReportOutputRmsDbfs) {
       apm->ProcessStream(frame.data.data(),
                          StreamConfig(frame.sample_rate_hz, frame.num_channels),
                          StreamConfig(frame.sample_rate_hz, frame.num_channels),
-                         frame.data.data(), &frame.vad_activity),
+                         frame.data.data()),
       0);
   EXPECT_FALSE(apm->GetStatistics().output_rms_dbfs);
 
@@ -2765,7 +2759,7 @@ TEST(ApmStatistics, ReportOutputRmsDbfs) {
       apm->ProcessStream(frame.data.data(),
                          StreamConfig(frame.sample_rate_hz, frame.num_channels),
                          StreamConfig(frame.sample_rate_hz, frame.num_channels),
-                         frame.data.data(), &frame.vad_activity),
+                         frame.data.data()),
       0);
   auto stats = apm->GetStatistics();
   EXPECT_TRUE(stats.output_rms_dbfs);
@@ -2778,7 +2772,7 @@ TEST(ApmStatistics, ReportOutputRmsDbfs) {
       apm->ProcessStream(frame.data.data(),
                          StreamConfig(frame.sample_rate_hz, frame.num_channels),
                          StreamConfig(frame.sample_rate_hz, frame.num_channels),
-                         frame.data.data(), &frame.vad_activity),
+                         frame.data.data()),
       0);
   EXPECT_FALSE(apm->GetStatistics().output_rms_dbfs);
 }
@@ -2807,10 +2801,8 @@ TEST(ApmStatistics, ReportHasVoice) {
       apm->ProcessStream(frame.data.data(),
                          StreamConfig(frame.sample_rate_hz, frame.num_channels),
                          StreamConfig(frame.sample_rate_hz, frame.num_channels),
-                         frame.data.data(), &frame.vad_activity),
+                         frame.data.data()),
       0);
-  EXPECT_EQ(frame.vad_activity,
-            AudioProcessing::VoiceDetectionResult::kNotAvailable);
   EXPECT_FALSE(apm->GetStatistics().voice_detected);
 
   // If enabled, metrics should be reported.
@@ -2820,25 +2812,20 @@ TEST(ApmStatistics, ReportHasVoice) {
       apm->ProcessStream(frame.data.data(),
                          StreamConfig(frame.sample_rate_hz, frame.num_channels),
                          StreamConfig(frame.sample_rate_hz, frame.num_channels),
-                         frame.data.data(), &frame.vad_activity),
+                         frame.data.data()),
       0);
   auto stats = apm->GetStatistics();
-  EXPECT_EQ(frame.vad_activity,
-            AudioProcessing::VoiceDetectionResult::kDetected);
   EXPECT_TRUE(stats.voice_detected);
 
   // If re-disabled, the value is again not reported.
-  frame.vad_activity = AudioProcessing::VoiceDetectionResult::kNotAvailable;
   config.voice_detection.enabled = false;
   apm->ApplyConfig(config);
   EXPECT_EQ(
       apm->ProcessStream(frame.data.data(),
                          StreamConfig(frame.sample_rate_hz, frame.num_channels),
                          StreamConfig(frame.sample_rate_hz, frame.num_channels),
-                         frame.data.data(), &frame.vad_activity),
+                         frame.data.data()),
       0);
-  EXPECT_EQ(frame.vad_activity,
-            AudioProcessing::VoiceDetectionResult::kNotAvailable);
   EXPECT_FALSE(apm->GetStatistics().voice_detected);
 }
 

@@ -54,14 +54,12 @@ struct Int16FrameData {
     sample_rate_hz = 0;
     num_channels = 0;
     samples_per_channel = 0;
-    vad_activity = AudioProcessing::VoiceDetectionResult::kNotAvailable;
     data.fill(0);
   }
 
   void CopyFrom(const Int16FrameData& src) {
     samples_per_channel = src.samples_per_channel;
     sample_rate_hz = src.sample_rate_hz;
-    vad_activity = src.vad_activity;
     num_channels = src.num_channels;
 
     const size_t length = samples_per_channel * num_channels;
@@ -72,7 +70,6 @@ struct Int16FrameData {
   int32_t sample_rate_hz;
   size_t num_channels;
   size_t samples_per_channel;
-  AudioProcessing::VoiceDetectionResult vad_activity;
 };
 
 // Reads ChannelBuffers from a provided WavReader.

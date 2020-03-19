@@ -668,8 +668,7 @@ void CaptureProcessor::CallApmCaptureSide() {
     case CaptureApiImpl::ProcessStreamImplInteger:
       result =
           apm_->ProcessStream(frame_data_.frame.data(), input_stream_config,
-                              output_stream_config, frame_data_.frame.data(),
-                              /*vad_result*/ nullptr);
+                              output_stream_config, frame_data_.frame.data());
       break;
     case CaptureApiImpl::ProcessStreamImplFloat:
       result = apm_->ProcessStream(&frame_data_.input_frame[0],

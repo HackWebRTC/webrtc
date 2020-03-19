@@ -26,17 +26,15 @@ int ProcessAudioFrame(AudioProcessing* ap, AudioFrame* frame) {
                              /*has_keyboard=*/false);
   RTC_DCHECK_EQ(frame->samples_per_channel(), input_config.num_frames());
 
-  AudioProcessing::VoiceDetectionResult vad_result =
-      AudioProcessing::VoiceDetectionResult::kNotAvailable;
-
   int result = ap->ProcessStream(frame->data(), input_config, output_config,
-                                 frame->mutable_data(), &vad_result);
+                                 frame->mutable_data());
 
-  if (vad_result != AudioProcessing::VoiceDetectionResult::kNotAvailable) {
-    frame->vad_activity_ =
-        vad_result == AudioProcessing::VoiceDetectionResult::kDetected
-            ? AudioFrame::VADActivity::kVadActive
-            : AudioFrame::VADActivity::kVadPassive;
+  AudioProcessingStats stats = ap->GetStatistics();
+
+  if (stats.voice_detected) {
+    frame->vad_activity_ = *stats.voice_detected
+                               ? AudioFrame::VADActivity::kVadActive
+                               : AudioFrame::VADActivity::kVadPassive;
   }
 
   return result;

@@ -74,8 +74,6 @@ TEST(AecDumpIntegration, CaptureStreamShouldBeLoggedOnceEveryProcessStream) {
   constexpr int kNumSamplesPerChannel = kNumSampleRateHz / 100;
   std::array<int16_t, kNumSamplesPerChannel * kNumChannels> frame;
   frame.fill(0.f);
-  webrtc::AudioProcessing::VoiceDetectionResult vad_result =
-      webrtc::AudioProcessing::VoiceDetectionResult::kNotAvailable;
 
   webrtc::StreamConfig stream_config(kNumSampleRateHz, kNumChannels,
                                      /*has_keyboard=*/false);
@@ -93,6 +91,5 @@ TEST(AecDumpIntegration, CaptureStreamShouldBeLoggedOnceEveryProcessStream) {
       .Times(Exactly(1));
 
   apm->AttachAecDump(std::move(mock_aec_dump));
-  apm->ProcessStream(frame.data(), stream_config, stream_config, frame.data(),
-                     &vad_result);
+  apm->ProcessStream(frame.data(), stream_config, stream_config, frame.data());
 }

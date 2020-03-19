@@ -178,11 +178,10 @@ void AudioProcessingSimulator::ProcessStream(bool fixed_interface) {
     {
       const auto st = ScopedTimer(&api_call_statistics_,
                                   ApiCallStatistics::CallType::kCapture);
-      AudioProcessing::VoiceDetectionResult vad_result;
-      RTC_CHECK_EQ(AudioProcessing::kNoError,
-                   ap_->ProcessStream(fwd_frame_.data.data(), fwd_frame_.config,
-                                      fwd_frame_.config, fwd_frame_.data.data(),
-                                      &vad_result));
+      RTC_CHECK_EQ(
+          AudioProcessing::kNoError,
+          ap_->ProcessStream(fwd_frame_.data.data(), fwd_frame_.config,
+                             fwd_frame_.config, fwd_frame_.data.data()));
     }
     fwd_frame_.CopyTo(out_buf_.get());
   } else {
