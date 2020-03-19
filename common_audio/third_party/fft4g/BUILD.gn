@@ -10,7 +10,7 @@ import("../../../webrtc.gni")
 
 rtc_library("fft4g") {
   sources = [
-    "fft4g.c",
+    "fft4g.cc",
     "fft4g.h",
   ]
 }

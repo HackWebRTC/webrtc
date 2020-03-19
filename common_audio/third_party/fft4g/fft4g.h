@@ -11,15 +11,11 @@
 #ifndef COMMON_AUDIO_THIRD_PARTY_FFT4G_FFT4G_H_
 #define COMMON_AUDIO_THIRD_PARTY_FFT4G_FFT4G_H_
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
+namespace webrtc {
 
 // Refer to fft4g.c for documentation.
 void WebRtc_rdft(size_t n, int isgn, float* a, size_t* ip, float* w);
 
-#if defined(__cplusplus)
-}
-#endif
+}  // namespace webrtc
 
 #endif /* COMMON_AUDIO_THIRD_PARTY_FFT4G_FFT4G_H_ */
