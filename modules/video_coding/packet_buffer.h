@@ -21,7 +21,6 @@
 #include "api/video/encoded_image.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
-#include "modules/video_coding/frame_object.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/numerics/sequence_number_util.h"
@@ -70,7 +69,7 @@ class PacketBuffer {
     RtpPacketInfo packet_info;
   };
   struct InsertResult {
-    std::vector<std::unique_ptr<RtpFrameObject>> frames;
+    std::vector<std::unique_ptr<Packet>> packets;
     // Indicates if the packet buffer was cleared, which means that a key
     // frame request should be sent.
     bool buffer_cleared = false;
@@ -118,22 +117,9 @@ class PacketBuffer {
   bool PotentialNewFrame(uint16_t seq_num) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  // Test if all packets of a frame has arrived, and if so, creates a frame.
-  // Returns a vector of received frames.
-  std::vector<std::unique_ptr<RtpFrameObject>> FindFrames(uint16_t seq_num)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
-
-  std::unique_ptr<RtpFrameObject> AssembleFrame(uint16_t first_seq_num,
-                                                uint16_t last_seq_num)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
-
-  // Get the packet with sequence number |seq_num|.
-  const Packet& GetPacket(uint16_t seq_num) const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
-
-  // Clears the packet buffer from |start_seq_num| to |stop_seq_num| where the
-  // endpoints are inclusive.
-  void ClearInterval(uint16_t start_seq_num, uint16_t stop_seq_num)
+  // Test if all packets of a frame has arrived, and if so, returns packets to
+  // create frames.
+  std::vector<std::unique_ptr<Packet>> FindFrames(uint16_t seq_num)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   void UpdateMissingPackets(uint16_t seq_num)

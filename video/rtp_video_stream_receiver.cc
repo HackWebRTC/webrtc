@@ -36,6 +36,7 @@
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer.h"
+#include "modules/rtp_rtcp/source/video_rtp_depacketizer_av1.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer_raw.h"
 #include "modules/utility/include/process_thread.h"
 #include "modules/video_coding/frame_object.h"
@@ -707,9 +708,80 @@ bool RtpVideoStreamReceiver::IsDecryptable() const {
 
 void RtpVideoStreamReceiver::OnInsertedPacket(
     video_coding::PacketBuffer::InsertResult result) {
-  for (std::unique_ptr<video_coding::RtpFrameObject>& frame : result.frames) {
-    OnAssembledFrame(std::move(frame));
+  video_coding::PacketBuffer::Packet* first_packet = nullptr;
+  int max_nack_count;
+  int64_t min_recv_time;
+  int64_t max_recv_time;
+  int frame_size;
+  std::vector<rtc::ArrayView<const uint8_t>> payloads;
+  RtpPacketInfos::vector_type packet_infos;
+
+  bool frame_boundary = true;
+  for (auto& packet : result.packets) {
+    // PacketBuffer promisses frame boundaries are correctly set on each
+    // packet. Document that assumption with the DCHECKs.
+    RTC_DCHECK_EQ(frame_boundary, packet->is_first_packet_in_frame());
+    if (packet->is_first_packet_in_frame()) {
+      first_packet = packet.get();
+      max_nack_count = packet->times_nacked;
+      min_recv_time = packet->packet_info.receive_time_ms();
+      max_recv_time = packet->packet_info.receive_time_ms();
+      frame_size = packet->video_payload.size();
+      payloads.clear();
+      packet_infos.clear();
+    } else {
+      max_nack_count = std::max(max_nack_count, packet->times_nacked);
+      min_recv_time =
+          std::min(min_recv_time, packet->packet_info.receive_time_ms());
+      max_recv_time =
+          std::max(max_recv_time, packet->packet_info.receive_time_ms());
+      frame_size += packet->video_payload.size();
+    }
+    payloads.emplace_back(packet->video_payload);
+    packet_infos.push_back(packet->packet_info);
+
+    frame_boundary = packet->is_last_packet_in_frame();
+    if (packet->is_last_packet_in_frame()) {
+      rtc::scoped_refptr<EncodedImageBuffer> bitstream;
+      // TODO(danilchap): Hide codec-specific code paths behind an interface.
+      if (first_packet->codec() == VideoCodecType::kVideoCodecAV1) {
+        bitstream = VideoRtpDepacketizerAv1::AssembleFrame(payloads);
+        if (!bitstream) {
+          // Failed to assemble a frame. Discard and continue.
+          continue;
+        }
+      } else {
+        bitstream = EncodedImageBuffer::Create(frame_size);
+
+        uint8_t* write_at = bitstream->data();
+        for (rtc::ArrayView<const uint8_t> payload : payloads) {
+          memcpy(write_at, payload.data(), payload.size());
+          write_at += payload.size();
+        }
+        RTC_DCHECK_EQ(write_at - bitstream->data(), bitstream->size());
+      }
+      const video_coding::PacketBuffer::Packet& last_packet = *packet;
+      OnAssembledFrame(std::make_unique<video_coding::RtpFrameObject>(
+          first_packet->seq_num,                    //
+          last_packet.seq_num,                      //
+          last_packet.marker_bit,                   //
+          max_nack_count,                           //
+          min_recv_time,                            //
+          max_recv_time,                            //
+          first_packet->timestamp,                  //
+          first_packet->ntp_time_ms,                //
+          last_packet.video_header.video_timing,    //
+          first_packet->payload_type,               //
+          first_packet->codec(),                    //
+          last_packet.video_header.rotation,        //
+          last_packet.video_header.content_type,    //
+          first_packet->video_header,               //
+          last_packet.video_header.color_space,     //
+          RtpPacketInfos(std::move(packet_infos)),  //
+          std::move(bitstream)));
+    }
   }
+  RTC_DCHECK(frame_boundary);
   if (result.buffer_cleared) {
     RequestKeyFrame();
   }
