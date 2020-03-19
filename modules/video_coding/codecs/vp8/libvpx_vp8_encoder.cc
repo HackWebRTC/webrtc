@@ -281,22 +281,12 @@ LibvpxVp8Encoder::LibvpxVp8Encoder(
       rate_control_settings_(RateControlSettings::ParseFromFieldTrials()),
       screenshare_max_qp_(
           ExperimentalScreenshareSettings::ParseFromFieldTrials().MaxQp()),
-      encoded_complete_callback_(nullptr),
-      inited_(false),
-      timestamp_(0),
-      qp_max_(56),  // Setting for max quantizer.
-      cpu_speed_default_(-6),
-      number_of_cores_(0),
-      rc_max_intra_target_(0),
-      num_active_streams_(0),
       frame_buffer_controller_factory_(
           std::move(frame_buffer_controller_factory)),
       key_frame_request_(kMaxSimulcastStreams, false),
       variable_framerate_experiment_(ParseVariableFramerateConfig(
           "WebRTC-VP8VariableFramerateScreenshare")),
-      framerate_controller_(variable_framerate_experiment_.framerate_limit),
-      num_steady_state_frames_(0),
-      fec_controller_override_(nullptr) {
+      framerate_controller_(variable_framerate_experiment_.framerate_limit) {
   // TODO(eladalon/ilnik): These reservations might be wasting memory.
   // InitEncode() is resizing to the actual size, which might be smaller.
   raw_images_.reserve(kMaxSimulcastStreams);
