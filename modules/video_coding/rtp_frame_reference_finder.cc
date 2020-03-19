@@ -341,7 +341,16 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
     layer_info_it =
         layer_info_.emplace(unwrapped_tl0, layer_info_it->second).first;
     frame->num_references = 1;
-    frame->references[0] = layer_info_it->second[0];
+    int64_t last_pid_on_layer = layer_info_it->second[0];
+
+    // Is this an old frame that has already been used to update the state? If
+    // so, drop it.
+    if (AheadOrAt<uint16_t, kPicIdLength>(last_pid_on_layer,
+                                          frame->id.picture_id)) {
+      return kDrop;
+    }
+
+    frame->references[0] = last_pid_on_layer;
     UpdateLayerInfoVp8(frame, unwrapped_tl0, codec_header.temporalIdx);
     return kHandOff;
   }
@@ -349,8 +358,17 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
   // Layer sync frame, this frame only references its base layer frame.
   if (codec_header.layerSync) {
     frame->num_references = 1;
-    frame->references[0] = layer_info_it->second[0];
+    int64_t last_pid_on_layer = layer_info_it->second[codec_header.temporalIdx];
 
+    // Is this an old frame that has already been used to update the state? If
+    // so, drop it.
+    if (last_pid_on_layer != -1 &&
+        AheadOrAt<uint16_t, kPicIdLength>(last_pid_on_layer,
+                                          frame->id.picture_id)) {
+      return kDrop;
+    }
+
+    frame->references[0] = layer_info_it->second[0];
     UpdateLayerInfoVp8(frame, unwrapped_tl0, codec_header.temporalIdx);
     return kHandOff;
   }

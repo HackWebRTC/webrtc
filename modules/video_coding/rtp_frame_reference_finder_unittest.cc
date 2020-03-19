@@ -406,6 +406,50 @@ TEST_F(TestRtpFrameReferenceFinder, Vp8KeyFrameReferences) {
   CheckReferencesVp8(sn);
 }
 
+TEST_F(TestRtpFrameReferenceFinder, Vp8RepeatedFrame_0) {
+  uint16_t pid = Rand();
+  uint16_t sn = Rand();
+
+  InsertVp8(sn, sn, true, pid, 0, 1);
+  InsertVp8(sn + 1, sn + 1, false, pid + 1, 0, 2);
+  InsertVp8(sn + 1, sn + 1, false, pid + 1, 0, 2);
+
+  ASSERT_EQ(2UL, frames_from_callback_.size());
+  CheckReferencesVp8(pid);
+  CheckReferencesVp8(pid + 1, pid);
+}
+
+TEST_F(TestRtpFrameReferenceFinder, Vp8RepeatedFrameLayerSync_01) {
+  uint16_t pid = Rand();
+  uint16_t sn = Rand();
+
+  InsertVp8(sn, sn, true, pid, 0, 1);
+  InsertVp8(sn + 1, sn + 1, false, pid + 1, 1, 1, true);
+  ASSERT_EQ(2UL, frames_from_callback_.size());
+  InsertVp8(sn + 1, sn + 1, false, pid + 1, 1, 1, true);
+
+  ASSERT_EQ(2UL, frames_from_callback_.size());
+  CheckReferencesVp8(pid);
+  CheckReferencesVp8(pid + 1, pid);
+}
+
+TEST_F(TestRtpFrameReferenceFinder, Vp8RepeatedFrame_01) {
+  uint16_t pid = Rand();
+  uint16_t sn = Rand();
+
+  InsertVp8(sn, sn, true, pid, 0, 1);
+  InsertVp8(sn + 1, sn + 1, false, pid + 1, 0, 2, true);
+  InsertVp8(sn + 2, sn + 2, false, pid + 2, 0, 3);
+  InsertVp8(sn + 3, sn + 3, false, pid + 3, 0, 4);
+  InsertVp8(sn + 3, sn + 3, false, pid + 3, 0, 4);
+
+  ASSERT_EQ(4UL, frames_from_callback_.size());
+  CheckReferencesVp8(pid);
+  CheckReferencesVp8(pid + 1, pid);
+  CheckReferencesVp8(pid + 2, pid + 1);
+  CheckReferencesVp8(pid + 3, pid + 2);
+}
+
 // Test with 1 temporal layer.
 TEST_F(TestRtpFrameReferenceFinder, Vp8TemporalLayers_0) {
   uint16_t pid = Rand();
