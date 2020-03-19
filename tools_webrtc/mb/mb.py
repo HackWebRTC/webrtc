@@ -338,18 +338,37 @@ class MetaBuildWrapper(object):
     for k, v in self.args.dimensions:
       dimensions += ['-d', k, v]
 
+    archive_json_path = self.ToSrcRelPath(
+        '%s/%s.archive.json' % (build_dir, target))
     cmd = [
         self.PathJoin(self.src_dir, 'tools', 'luci-go', self.isolate_exe),
         'archive',
+        '-i',
+        self.ToSrcRelPath('%s/%s.isolate' % (build_dir, target)),
         '-s',
         self.ToSrcRelPath('%s/%s.isolated' % (build_dir, target)),
         '-I', 'isolateserver.appspot.com',
+        '-dump-json', archive_json_path,
       ]
-    ret, out, _ = self.Run(cmd, force_verbose=False)
+    ret, _, _ = self.Run(cmd, force_verbose=False)
     if ret:
       return ret
 
-    isolated_hash = out.splitlines()[0].split()[0]
+    try:
+      archive_hashes = json.loads(self.ReadFile(archive_json_path))
+    except Exception:
+      self.Print(
+          'Failed to read JSON file "%s"' % archive_json_path, file=sys.stderr)
+      return 1
+    try:
+      isolated_hash = archive_hashes[target]
+    except Exception:
+      self.Print(
+          'Cannot find hash for "%s" in "%s", file content: %s' %
+          (target, archive_json_path, archive_hashes),
+          file=sys.stderr)
+      return 1
+
     cmd = [
         self.executable,
         self.PathJoin('tools', 'swarming_client', 'swarming.py'),
