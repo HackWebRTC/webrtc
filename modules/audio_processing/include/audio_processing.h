@@ -258,9 +258,6 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
     } transient_suppression;
 
     // Enables reporting of |voice_detected| in webrtc::AudioProcessingStats.
-    // In addition to |voice_detected|, VAD decision is provided through the
-    // |AudioFrame| passed to |ProcessStream()|. The |vad_activity_| member will
-    // be modified to reflect the current decision.
     struct VoiceDetection {
       bool enabled = false;
     } voice_detection;
@@ -697,7 +694,7 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
     kBadStreamParameterWarning = -13
   };
 
-  // Native rates supported by the AudioFrame interfaces.
+  // Native rates supported by the integer interfaces.
   enum NativeRate {
     kSampleRate8kHz = 8000,
     kSampleRate16kHz = 16000,

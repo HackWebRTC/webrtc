@@ -10,6 +10,7 @@
 
 #include "modules/audio_processing/audio_processing_impl.h"
 
+#include <array>
 #include <memory>
 
 #include "api/scoped_refptr.h"
@@ -64,26 +65,6 @@ class MockEchoControlFactory : public EchoControlFactory {
  private:
   std::unique_ptr<MockEchoControl> next_mock_;
 };
-
-void InitializeAudioFrame(size_t input_rate,
-                          size_t num_channels,
-                          AudioFrame* frame) {
-  const size_t samples_per_input_channel = rtc::CheckedDivExact(
-      input_rate, static_cast<size_t>(rtc::CheckedDivExact(
-                      1000, AudioProcessing::kChunkSizeMs)));
-  RTC_DCHECK_LE(samples_per_input_channel * num_channels,
-                AudioFrame::kMaxDataSizeSamples);
-  frame->samples_per_channel_ = samples_per_input_channel;
-  frame->sample_rate_hz_ = input_rate;
-  frame->num_channels_ = num_channels;
-}
-
-void FillFixedFrame(int16_t audio_level, AudioFrame* frame) {
-  const size_t num_samples = frame->samples_per_channel_ * frame->num_channels_;
-  for (size_t i = 0; i < num_samples; ++i) {
-    frame->mutable_data()[i] = audio_level;
-  }
-}
 
 // Mocks EchoDetector and records the first samples of the last analyzed render
 // stream frame. Used to check what data is read by an EchoDetector
@@ -145,40 +126,47 @@ class TestRenderPreProcessor : public CustomProcessing {
 }  // namespace
 
 TEST(AudioProcessingImplTest, AudioParameterChangeTriggersInit) {
-  webrtc::Config config;
-  MockInitialize mock(config);
+  webrtc::Config webrtc_config;
+  MockInitialize mock(webrtc_config);
   ON_CALL(mock, InitializeLocked())
       .WillByDefault(Invoke(&mock, &MockInitialize::RealInitializeLocked));
 
   EXPECT_CALL(mock, InitializeLocked()).Times(1);
   mock.Initialize();
 
-  AudioFrame frame;
+  constexpr size_t kMaxSampleRateHz = 32000;
+  constexpr size_t kMaxNumChannels = 2;
+  std::array<int16_t, kMaxNumChannels * kMaxSampleRateHz / 100> frame;
+  frame.fill(0);
+  StreamConfig config(16000, 1, /*has_keyboard=*/false);
   // Call with the default parameters; there should be an init.
-  frame.num_channels_ = 1;
-  SetFrameSampleRate(&frame, 16000);
   EXPECT_CALL(mock, InitializeLocked()).Times(0);
-  EXPECT_NOERR(mock.ProcessStream(&frame));
-  EXPECT_NOERR(mock.ProcessReverseStream(&frame));
+  EXPECT_NOERR(mock.ProcessStream(frame.data(), config, config, frame.data(),
+                                  /*vad_result=*/nullptr));
+  EXPECT_NOERR(
+      mock.ProcessReverseStream(frame.data(), config, config, frame.data()));
 
   // New sample rate. (Only impacts ProcessStream).
-  SetFrameSampleRate(&frame, 32000);
+  config = StreamConfig(32000, 1, /*has_keyboard=*/false);
   EXPECT_CALL(mock, InitializeLocked()).Times(1);
-  EXPECT_NOERR(mock.ProcessStream(&frame));
+  EXPECT_NOERR(mock.ProcessStream(frame.data(), config, config, frame.data(),
+                                  /*vad_result=*/nullptr));
 
   // New number of channels.
   // TODO(peah): Investigate why this causes 2 inits.
-  frame.num_channels_ = 2;
+  config = StreamConfig(32000, 2, /*has_keyboard=*/false);
   EXPECT_CALL(mock, InitializeLocked()).Times(2);
-  EXPECT_NOERR(mock.ProcessStream(&frame));
+  EXPECT_NOERR(mock.ProcessStream(frame.data(), config, config, frame.data(),
+                                  /*vad_result=*/nullptr));
   // ProcessStream sets num_channels_ == num_output_channels.
-  frame.num_channels_ = 2;
-  EXPECT_NOERR(mock.ProcessReverseStream(&frame));
+  EXPECT_NOERR(
+      mock.ProcessReverseStream(frame.data(), config, config, frame.data()));
 
   // A new sample rate passed to ProcessReverseStream should cause an init.
-  SetFrameSampleRate(&frame, 16000);
+  config = StreamConfig(16000, 2, /*has_keyboard=*/false);
   EXPECT_CALL(mock, InitializeLocked()).Times(1);
-  EXPECT_NOERR(mock.ProcessReverseStream(&frame));
+  EXPECT_NOERR(
+      mock.ProcessReverseStream(frame.data(), config, config, frame.data()));
 }
 
 TEST(AudioProcessingImplTest, UpdateCapturePreGainRuntimeSetting) {
@@ -188,15 +176,16 @@ TEST(AudioProcessingImplTest, UpdateCapturePreGainRuntimeSetting) {
   apm_config.pre_amplifier.fixed_gain_factor = 1.f;
   apm->ApplyConfig(apm_config);
 
-  AudioFrame frame;
+  constexpr int kSampleRateHz = 48000;
   constexpr int16_t kAudioLevel = 10000;
-  constexpr size_t kSampleRateHz = 48000;
   constexpr size_t kNumChannels = 2;
-  InitializeAudioFrame(kSampleRateHz, kNumChannels, &frame);
 
-  FillFixedFrame(kAudioLevel, &frame);
-  apm->ProcessStream(&frame);
-  EXPECT_EQ(frame.data()[100], kAudioLevel)
+  std::array<int16_t, kNumChannels * kSampleRateHz / 100> frame;
+  StreamConfig config(kSampleRateHz, kNumChannels, /*has_keyboard=*/false);
+  frame.fill(kAudioLevel);
+  apm->ProcessStream(frame.data(), config, config, frame.data(),
+                     /*vad_result=*/nullptr);
+  EXPECT_EQ(frame[100], kAudioLevel)
       << "With factor 1, frame shouldn't be modified.";
 
   constexpr float kGainFactor = 2.f;
@@ -205,10 +194,11 @@ TEST(AudioProcessingImplTest, UpdateCapturePreGainRuntimeSetting) {
 
   // Process for two frames to have time to ramp up gain.
   for (int i = 0; i < 2; ++i) {
-    FillFixedFrame(kAudioLevel, &frame);
-    apm->ProcessStream(&frame);
+    frame.fill(kAudioLevel);
+    apm->ProcessStream(frame.data(), config, config, frame.data(),
+                       /*vad_result=*/nullptr);
   }
-  EXPECT_EQ(frame.data()[100], kGainFactor * kAudioLevel)
+  EXPECT_EQ(frame[100], kGainFactor * kAudioLevel)
       << "Frame should be amplified.";
 }
 
@@ -231,12 +221,12 @@ TEST(AudioProcessingImplTest,
   apm_config.pre_amplifier.fixed_gain_factor = 1.f;
   apm->ApplyConfig(apm_config);
 
-  AudioFrame frame;
   constexpr int16_t kAudioLevel = 10000;
   constexpr size_t kSampleRateHz = 48000;
   constexpr size_t kNumChannels = 2;
-  InitializeAudioFrame(kSampleRateHz, kNumChannels, &frame);
-  FillFixedFrame(kAudioLevel, &frame);
+  std::array<int16_t, kNumChannels * kSampleRateHz / 100> frame;
+  StreamConfig config(kSampleRateHz, kNumChannels, /*has_keyboard=*/false);
+  frame.fill(kAudioLevel);
 
   MockEchoControl* echo_control_mock = echo_control_factory_ptr->GetNext();
 
@@ -244,7 +234,8 @@ TEST(AudioProcessingImplTest,
   EXPECT_CALL(*echo_control_mock,
               ProcessCapture(NotNull(), testing::_, /*echo_path_change=*/false))
       .Times(1);
-  apm->ProcessStream(&frame);
+  apm->ProcessStream(frame.data(), config, config, frame.data(),
+                     /*vad_result=*/nullptr);
 
   EXPECT_CALL(*echo_control_mock, AnalyzeCapture(testing::_)).Times(1);
   EXPECT_CALL(*echo_control_mock,
@@ -252,7 +243,8 @@ TEST(AudioProcessingImplTest,
       .Times(1);
   apm->SetRuntimeSetting(
       AudioProcessing::RuntimeSetting::CreateCapturePreGain(2.f));
-  apm->ProcessStream(&frame);
+  apm->ProcessStream(frame.data(), config, config, frame.data(),
+                     /*vad_result=*/nullptr);
 }
 
 TEST(AudioProcessingImplTest,
@@ -275,12 +267,13 @@ TEST(AudioProcessingImplTest,
   apm_config.pre_amplifier.enabled = false;
   apm->ApplyConfig(apm_config);
 
-  AudioFrame frame;
   constexpr int16_t kAudioLevel = 1000;
   constexpr size_t kSampleRateHz = 48000;
   constexpr size_t kNumChannels = 2;
-  InitializeAudioFrame(kSampleRateHz, kNumChannels, &frame);
-  FillFixedFrame(kAudioLevel, &frame);
+  std::array<int16_t, kNumChannels * kSampleRateHz / 100> frame;
+  StreamConfig stream_config(kSampleRateHz, kNumChannels,
+                             /*has_keyboard=*/false);
+  frame.fill(kAudioLevel);
 
   MockEchoControl* echo_control_mock = echo_control_factory_ptr->GetNext();
 
@@ -288,7 +281,8 @@ TEST(AudioProcessingImplTest,
   EXPECT_CALL(*echo_control_mock, AnalyzeCapture(testing::_)).Times(1);
   EXPECT_CALL(*echo_control_mock, ProcessCapture(NotNull(), testing::_, false))
       .Times(1);
-  apm->ProcessStream(&frame);
+  apm->ProcessStream(frame.data(), stream_config, stream_config, frame.data(),
+                     /*vad_result=*/nullptr);
 
   // Force an analog gain change if it did not happen.
   if (initial_analog_gain == apm->recommended_stream_analog_level()) {
@@ -298,7 +292,8 @@ TEST(AudioProcessingImplTest,
   EXPECT_CALL(*echo_control_mock, AnalyzeCapture(testing::_)).Times(1);
   EXPECT_CALL(*echo_control_mock, ProcessCapture(NotNull(), testing::_, true))
       .Times(1);
-  apm->ProcessStream(&frame);
+  apm->ProcessStream(frame.data(), stream_config, stream_config, frame.data(),
+                     /*vad_result=*/nullptr);
 }
 
 TEST(AudioProcessingImplTest, EchoControllerObservesPlayoutVolumeChange) {
@@ -317,12 +312,13 @@ TEST(AudioProcessingImplTest, EchoControllerObservesPlayoutVolumeChange) {
   apm_config.gain_controller2.enabled = false;
   apm->ApplyConfig(apm_config);
 
-  AudioFrame frame;
   constexpr int16_t kAudioLevel = 10000;
   constexpr size_t kSampleRateHz = 48000;
   constexpr size_t kNumChannels = 2;
-  InitializeAudioFrame(kSampleRateHz, kNumChannels, &frame);
-  FillFixedFrame(kAudioLevel, &frame);
+  std::array<int16_t, kNumChannels * kSampleRateHz / 100> frame;
+  StreamConfig stream_config(kSampleRateHz, kNumChannels,
+                             /*has_keyboard=*/false);
+  frame.fill(kAudioLevel);
 
   MockEchoControl* echo_control_mock = echo_control_factory_ptr->GetNext();
 
@@ -330,7 +326,8 @@ TEST(AudioProcessingImplTest, EchoControllerObservesPlayoutVolumeChange) {
   EXPECT_CALL(*echo_control_mock,
               ProcessCapture(NotNull(), testing::_, /*echo_path_change=*/false))
       .Times(1);
-  apm->ProcessStream(&frame);
+  apm->ProcessStream(frame.data(), stream_config, stream_config, frame.data(),
+                     /*vad_result=*/nullptr);
 
   EXPECT_CALL(*echo_control_mock, AnalyzeCapture(testing::_)).Times(1);
   EXPECT_CALL(*echo_control_mock,
@@ -338,7 +335,8 @@ TEST(AudioProcessingImplTest, EchoControllerObservesPlayoutVolumeChange) {
       .Times(1);
   apm->SetRuntimeSetting(
       AudioProcessing::RuntimeSetting::CreatePlayoutVolumeChange(50));
-  apm->ProcessStream(&frame);
+  apm->ProcessStream(frame.data(), stream_config, stream_config, frame.data(),
+                     /*vad_result=*/nullptr);
 
   EXPECT_CALL(*echo_control_mock, AnalyzeCapture(testing::_)).Times(1);
   EXPECT_CALL(*echo_control_mock,
@@ -346,7 +344,8 @@ TEST(AudioProcessingImplTest, EchoControllerObservesPlayoutVolumeChange) {
       .Times(1);
   apm->SetRuntimeSetting(
       AudioProcessing::RuntimeSetting::CreatePlayoutVolumeChange(50));
-  apm->ProcessStream(&frame);
+  apm->ProcessStream(frame.data(), stream_config, stream_config, frame.data(),
+                     /*vad_result=*/nullptr);
 
   EXPECT_CALL(*echo_control_mock, AnalyzeCapture(testing::_)).Times(1);
   EXPECT_CALL(*echo_control_mock,
@@ -354,7 +353,8 @@ TEST(AudioProcessingImplTest, EchoControllerObservesPlayoutVolumeChange) {
       .Times(1);
   apm->SetRuntimeSetting(
       AudioProcessing::RuntimeSetting::CreatePlayoutVolumeChange(100));
-  apm->ProcessStream(&frame);
+  apm->ProcessStream(frame.data(), stream_config, stream_config, frame.data(),
+                     /*vad_result=*/nullptr);
 }
 
 TEST(AudioProcessingImplTest, RenderPreProcessorBeforeEchoDetector) {
@@ -387,8 +387,9 @@ TEST(AudioProcessingImplTest, RenderPreProcessorBeforeEchoDetector) {
   }};
   apm->Initialize(processing_config);
 
-  AudioFrame frame;
-  InitializeAudioFrame(kSampleRateHz, kNumChannels, &frame);
+  std::array<int16_t, kNumChannels * kSampleRateHz / 100> frame;
+  StreamConfig stream_config(kSampleRateHz, kNumChannels,
+                             /*has_keyboard=*/false);
 
   constexpr float kAudioLevelFloat = static_cast<float>(kAudioLevel);
   constexpr float kExpectedPreprocessedAudioLevel =
@@ -396,13 +397,16 @@ TEST(AudioProcessingImplTest, RenderPreProcessorBeforeEchoDetector) {
   ASSERT_NE(kAudioLevelFloat, kExpectedPreprocessedAudioLevel);
 
   // Analyze a render stream frame.
-  FillFixedFrame(kAudioLevel, &frame);
+  frame.fill(kAudioLevel);
   ASSERT_EQ(AudioProcessing::Error::kNoError,
-            apm->ProcessReverseStream(&frame));
+            apm->ProcessReverseStream(frame.data(), stream_config,
+                                      stream_config, frame.data()));
   // Trigger a call to in EchoDetector::AnalyzeRenderAudio() via
   // ProcessStream().
-  FillFixedFrame(kAudioLevel, &frame);
-  ASSERT_EQ(AudioProcessing::Error::kNoError, apm->ProcessStream(&frame));
+  frame.fill(kAudioLevel);
+  ASSERT_EQ(AudioProcessing::Error::kNoError,
+            apm->ProcessStream(frame.data(), stream_config, stream_config,
+                               frame.data(), /*vad_result=*/nullptr));
   // Regardless of how the call to in EchoDetector::AnalyzeRenderAudio() is
   // triggered, the line below checks that the call has occurred. If not, the
   // APM implementation may have changed and this test might need to be adapted.

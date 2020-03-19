@@ -1434,6 +1434,11 @@ int AudioProcessingImpl::ProcessReverseStream(const int16_t* const src,
                                               const StreamConfig& output_config,
                                               int16_t* const dest) {
   TRACE_EVENT0("webrtc", "AudioProcessing::ProcessReverseStream_AudioFrame");
+
+  if (input_config.num_channels() <= 0) {
+    return AudioProcessing::Error::kBadNumberChannelsError;
+  }
+
   rtc::CritScope cs(&crit_render_);
   ProcessingConfig processing_config = formats_.api_format;
   processing_config.reverse_input_stream().set_sample_rate_hz(

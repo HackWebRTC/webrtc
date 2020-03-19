@@ -20,7 +20,6 @@
 
 #include "api/audio/echo_canceller3_config_json.h"
 #include "api/audio/echo_canceller3_factory.h"
-#include "common_audio/include/audio_util.h"
 #include "modules/audio_processing/aec_dump/aec_dump_factory.h"
 #include "modules/audio_processing/echo_control_mobile_impl.h"
 #include "modules/audio_processing/include/audio_processing.h"
@@ -60,15 +59,6 @@ EchoCanceller3Config ReadAec3ConfigFromJsonFile(const std::string& filename) {
   return cfg;
 }
 
-void CopyFromAudioFrame(const AudioFrame& src, ChannelBuffer<float>* dest) {
-  RTC_CHECK_EQ(src.num_channels_, dest->num_channels());
-  RTC_CHECK_EQ(src.samples_per_channel_, dest->num_frames());
-  // Copy the data from the input buffer.
-  std::vector<float> tmp(src.samples_per_channel_ * src.num_channels_);
-  S16ToFloat(src.data(), tmp.size(), tmp.data());
-  Deinterleave(tmp.data(), src.samples_per_channel_, src.num_channels_,
-               dest->channels());
-}
 
 std::string GetIndexedOutputWavFilename(const std::string& wav_name,
                                         int counter) {
@@ -121,18 +111,6 @@ SimulationSettings::SimulationSettings() = default;
 SimulationSettings::SimulationSettings(const SimulationSettings&) = default;
 SimulationSettings::~SimulationSettings() = default;
 
-void CopyToAudioFrame(const ChannelBuffer<float>& src, AudioFrame* dest) {
-  RTC_CHECK_EQ(src.num_channels(), dest->num_channels_);
-  RTC_CHECK_EQ(src.num_frames(), dest->samples_per_channel_);
-  int16_t* dest_data = dest->mutable_data();
-  for (size_t ch = 0; ch < dest->num_channels_; ++ch) {
-    for (size_t sample = 0; sample < dest->samples_per_channel_; ++sample) {
-      dest_data[sample * dest->num_channels_ + ch] =
-          src.channels()[ch][sample] * 32767;
-    }
-  }
-}
-
 AudioProcessingSimulator::AudioProcessingSimulator(
     const SimulationSettings& settings,
     std::unique_ptr<AudioProcessingBuilder> ap_builder)
@@ -181,7 +159,7 @@ void AudioProcessingSimulator::ProcessStream(bool fixed_interface) {
     }
 
     if (fixed_interface) {
-      fake_recording_device_.SimulateAnalogGain(&fwd_frame_);
+      fake_recording_device_.SimulateAnalogGain(fwd_frame_.data);
     } else {
       fake_recording_device_.SimulateAnalogGain(in_buf_.get());
     }
@@ -200,9 +178,13 @@ void AudioProcessingSimulator::ProcessStream(bool fixed_interface) {
     {
       const auto st = ScopedTimer(&api_call_statistics_,
                                   ApiCallStatistics::CallType::kCapture);
-      RTC_CHECK_EQ(AudioProcessing::kNoError, ap_->ProcessStream(&fwd_frame_));
+      AudioProcessing::VoiceDetectionResult vad_result;
+      RTC_CHECK_EQ(AudioProcessing::kNoError,
+                   ap_->ProcessStream(fwd_frame_.data.data(), fwd_frame_.config,
+                                      fwd_frame_.config, fwd_frame_.data.data(),
+                                      &vad_result));
     }
-    CopyFromAudioFrame(fwd_frame_, out_buf_.get());
+    fwd_frame_.CopyTo(out_buf_.get());
   } else {
     const auto st = ScopedTimer(&api_call_statistics_,
                                 ApiCallStatistics::CallType::kCapture);
@@ -254,10 +236,12 @@ void AudioProcessingSimulator::ProcessReverseStream(bool fixed_interface) {
     {
       const auto st = ScopedTimer(&api_call_statistics_,
                                   ApiCallStatistics::CallType::kRender);
-      RTC_CHECK_EQ(AudioProcessing::kNoError,
-                   ap_->ProcessReverseStream(&rev_frame_));
+      RTC_CHECK_EQ(
+          AudioProcessing::kNoError,
+          ap_->ProcessReverseStream(rev_frame_.data.data(), rev_frame_.config,
+                                    rev_frame_.config, rev_frame_.data.data()));
     }
-    CopyFromAudioFrame(rev_frame_, reverse_out_buf_.get());
+    rev_frame_.CopyTo(reverse_out_buf_.get());
   } else {
     const auto st = ScopedTimer(&api_call_statistics_,
                                 ApiCallStatistics::CallType::kRender);
@@ -305,15 +289,9 @@ void AudioProcessingSimulator::SetupBuffersConfigsOutputs(
       rtc::CheckedDivExact(reverse_output_sample_rate_hz, kChunksPerSecond),
       reverse_output_num_channels));
 
-  fwd_frame_.sample_rate_hz_ = input_sample_rate_hz;
-  fwd_frame_.samples_per_channel_ =
-      rtc::CheckedDivExact(fwd_frame_.sample_rate_hz_, kChunksPerSecond);
-  fwd_frame_.num_channels_ = input_num_channels;
-
-  rev_frame_.sample_rate_hz_ = reverse_input_sample_rate_hz;
-  rev_frame_.samples_per_channel_ =
-      rtc::CheckedDivExact(rev_frame_.sample_rate_hz_, kChunksPerSecond);
-  rev_frame_.num_channels_ = reverse_input_num_channels;
+  fwd_frame_.SetFormat(input_sample_rate_hz, input_num_channels);
+  rev_frame_.SetFormat(reverse_input_sample_rate_hz,
+                       reverse_input_num_channels);
 
   if (settings_.use_verbose_logging) {
     rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);

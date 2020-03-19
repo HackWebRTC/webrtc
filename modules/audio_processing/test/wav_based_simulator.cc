@@ -71,7 +71,7 @@ WavBasedSimulator::GetDefaultEventChain() {
 
 void WavBasedSimulator::PrepareProcessStreamCall() {
   if (settings_.fixed_interface) {
-    CopyToAudioFrame(*in_buf_, &fwd_frame_);
+    fwd_frame_.CopyFrom(*in_buf_);
   }
   ap_->set_stream_key_pressed(settings_.use_ts && (*settings_.use_ts));
 
@@ -84,7 +84,7 @@ void WavBasedSimulator::PrepareProcessStreamCall() {
 
 void WavBasedSimulator::PrepareReverseProcessStreamCall() {
   if (settings_.fixed_interface) {
-    CopyToAudioFrame(*reverse_in_buf_, &rev_frame_);
+    rev_frame_.CopyFrom(*reverse_in_buf_);
   }
 }
 
