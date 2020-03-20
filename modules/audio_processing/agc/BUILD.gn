@@ -56,7 +56,7 @@ rtc_library("level_estimation") {
   ]
 }
 
-rtc_library("agc_legacy_c") {
+rtc_library("legacy_agc") {
   visibility = [
     ":*",
     "..:*",
@@ -65,9 +65,9 @@ rtc_library("agc_legacy_c") {
      # this.
 
   sources = [
-    "legacy/analog_agc.c",
+    "legacy/analog_agc.cc",
     "legacy/analog_agc.h",
-    "legacy/digital_agc.c",
+    "legacy/digital_agc.cc",
     "legacy/digital_agc.h",
     "legacy/gain_control.h",
   ]

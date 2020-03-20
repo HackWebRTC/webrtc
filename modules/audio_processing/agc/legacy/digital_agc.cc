@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/* digital_agc.c
- *
- */
-
 #include "modules/audio_processing/agc/legacy/digital_agc.h"
 
 #include <string.h>
 
-#include "rtc_base/checks.h"
 #include "modules/audio_processing/agc/legacy/gain_control.h"
+#include "rtc_base/checks.h"
+
+namespace webrtc {
+
+namespace {
 
 // To generate the gaintable, copy&paste the following lines to a Matlab window:
 // MaxGain = 6; MinGain = 0; CompRatio = 3; Knee = 1;
@@ -55,12 +55,19 @@ static const uint16_t kGenFuncTable[kGenFuncTableSize] = {
 
 static const int16_t kAvgDecayTime = 250;  // frames; < 3000
 
+// the 32 most significant bits of A(19) * B(26) >> 13
+#define AGC_MUL32(A, B) (((B) >> 13) * (A) + (((0x00001FFF & (B)) * (A)) >> 13))
+// C + the 32 most significant bits of A * B
+#define AGC_SCALEDIFF32(A, B, C) \
+  ((C) + ((B) >> 16) * (A) + (((0x0000FFFF & (B)) * (A)) >> 16))
+
+}  // namespace
+
 int32_t WebRtcAgc_CalculateGainTable(int32_t* gainTable,       // Q16
                                      int16_t digCompGaindB,    // Q0
                                      int16_t targetLevelDbfs,  // Q0
                                      uint8_t limiterEnable,
-                                     int16_t analogTarget)  // Q0
-{
+                                     int16_t analogTarget) {  // Q0
   // This function generates the compressor gain table used in the fixed digital
   // part.
   uint32_t tmpU32no1, tmpU32no2, absInLevel, logApprox;
@@ -186,8 +193,7 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t* gainTable,       // Q16
     // Calculate ratio
     // Shift |numFIX| as much as possible.
     // Ensure we avoid wrap-around in |den| as well.
-    if (numFIX > (den >> 8) || -numFIX > (den >> 8))  // |den| is Q8.
-    {
+    if (numFIX > (den >> 8) || -numFIX > (den >> 8)) {  // |den| is Q8.
       zeros = WebRtcSpl_NormW32(numFIX);
     } else {
       zeros = WebRtcSpl_NormW32(den) + 8;
@@ -196,7 +202,7 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t* gainTable,       // Q16
 
     // Shift den so we end up in Qy1
     tmp32no1 = WEBRTC_SPL_SHIFT_W32(den, zeros - 9);  // Q(zeros - 1)
-    y32 = numFIX / tmp32no1;  // in Q15
+    y32 = numFIX / tmp32no1;                          // in Q15
     // This is to do rounding in Q14.
     y32 = y32 >= 0 ? (y32 + 1) >> 1 : -((-y32 + 1) >> 1);
 
@@ -394,8 +400,9 @@ int32_t WebRtcAgc_ComputeDigitalGains(DigitalAgc* stt,
     tmp32 = ((uint32_t)cur_level << zeros) & 0x7FFFFFFF;
     frac = (int16_t)(tmp32 >> 19);  // Q12.
     // Interpolate between gainTable[zeros] and gainTable[zeros-1].
-    tmp32 = ((stt->gainTable[zeros - 1] - stt->gainTable[zeros]) *
-             (int64_t)frac) >> 12;
+    tmp32 =
+        ((stt->gainTable[zeros - 1] - stt->gainTable[zeros]) * (int64_t)frac) >>
+        12;
     gains[k + 1] = stt->gainTable[zeros] + tmp32;
   }
 
@@ -476,8 +483,10 @@ int32_t WebRtcAgc_ComputeDigitalGains(DigitalAgc* stt,
   return 0;
 }
 
-int32_t WebRtcAgc_ApplyDigitalGains(const int32_t gains[11], size_t num_bands,
-                                    uint32_t FS, const int16_t* const* in_near,
+int32_t WebRtcAgc_ApplyDigitalGains(const int32_t gains[11],
+                                    size_t num_bands,
+                                    uint32_t FS,
+                                    const int16_t* const* in_near,
                                     int16_t* const* out) {
   // Apply gain
   // handle first sub frame separately
@@ -531,11 +540,9 @@ int32_t WebRtcAgc_ApplyDigitalGains(const int32_t gains[11], size_t num_bands,
         tmp64 = tmp64 >> 16;
         if (tmp64 > 32767) {
           out[i][k * L + n] = 32767;
-        }
-        else if (tmp64 < -32768) {
+        } else if (tmp64 < -32768) {
           out[i][k * L + n] = -32768;
-        }
-        else {
+        } else {
           out[i][k * L + n] = (int16_t)(tmp64);
         }
       }
@@ -572,10 +579,9 @@ void WebRtcAgc_InitVad(AgcVad* state) {
   }
 }
 
-int16_t WebRtcAgc_ProcessVad(AgcVad* state,      // (i) VAD state
-                             const int16_t* in,  // (i) Speech signal
-                             size_t nrSamples)   // (i) number of samples
-{
+int16_t WebRtcAgc_ProcessVad(AgcVad* state,       // (i) VAD state
+                             const int16_t* in,   // (i) Speech signal
+                             size_t nrSamples) {  // (i) number of samples
   uint32_t nrg;
   int32_t out, tmp32, tmp32b;
   uint16_t tmpU16;
@@ -704,3 +710,5 @@ int16_t WebRtcAgc_ProcessVad(AgcVad* state,      // (i) VAD state
 
   return state->logRatio;  // Q10
 }
+
+}  // namespace webrtc
