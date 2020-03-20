@@ -73,6 +73,8 @@ class FakeSSLIdentity : public SSLIdentity {
   virtual bool operator==(const SSLIdentity& other) const;
 
  private:
+  std::unique_ptr<SSLIdentity> CloneInternal() const override;
+
   std::unique_ptr<SSLCertChain> cert_chain_;
 };
 

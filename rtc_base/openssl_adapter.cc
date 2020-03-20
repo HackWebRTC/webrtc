@@ -20,6 +20,7 @@
 
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
@@ -226,6 +227,12 @@ void OpenSSLAdapter::SetIdentity(SSLIdentity* identity) {
   identity_.reset(static_cast<OpenSSLIdentity*>(identity));
 }
 
+void OpenSSLAdapter::SetIdentity(std::unique_ptr<SSLIdentity> identity) {
+  RTC_DCHECK(!identity_);
+  identity_ =
+      absl::WrapUnique(static_cast<OpenSSLIdentity*>(identity.release()));
+}
+
 void OpenSSLAdapter::SetRole(SSLRole role) {
   role_ = role;
 }
@@ -238,7 +245,7 @@ AsyncSocket* OpenSSLAdapter::Accept(SocketAddress* paddr) {
   }
 
   SSLAdapter* adapter = SSLAdapter::Create(socket);
-  adapter->SetIdentity(identity_->GetReference());
+  adapter->SetIdentity(identity_->Clone());
   adapter->SetRole(rtc::SSL_SERVER);
   adapter->SetIgnoreBadCert(ignore_bad_cert_);
   adapter->StartSSL("", false);

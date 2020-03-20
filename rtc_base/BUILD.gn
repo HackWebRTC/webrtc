@@ -757,6 +757,7 @@ rtc_library("rtc_base") {
   defines = []
   deps = [
     ":checks",
+    ":deprecation",
     ":stringutils",
     "../api:array_view",
     "../api:function_view",

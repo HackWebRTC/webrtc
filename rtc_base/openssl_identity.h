@@ -60,6 +60,19 @@ class OpenSSLKeyPair final {
 // them consistently.
 class OpenSSLIdentity final : public SSLIdentity {
  public:
+  static std::unique_ptr<OpenSSLIdentity> CreateWithExpiration(
+      const std::string& common_name,
+      const KeyParams& key_params,
+      time_t certificate_lifetime);
+  static std::unique_ptr<OpenSSLIdentity> CreateForTest(
+      const SSLIdentityParams& params);
+  static std::unique_ptr<SSLIdentity> CreateFromPEMStrings(
+      const std::string& private_key,
+      const std::string& certificate);
+  static std::unique_ptr<SSLIdentity> CreateFromPEMChainStrings(
+      const std::string& private_key,
+      const std::string& certificate_chain);
+  // Deprecated versions
   static OpenSSLIdentity* GenerateWithExpiration(const std::string& common_name,
                                                  const KeyParams& key_params,
                                                  time_t certificate_lifetime);
@@ -72,7 +85,7 @@ class OpenSSLIdentity final : public SSLIdentity {
 
   const OpenSSLCertificate& certificate() const override;
   const SSLCertChain& cert_chain() const override;
-  OpenSSLIdentity* GetReference() const override;
+  RTC_DEPRECATED OpenSSLIdentity* GetReference() const override;
 
   // Configure an SSL context object to use our key and certificate.
   bool ConfigureIdentity(SSL_CTX* ctx);
@@ -87,8 +100,10 @@ class OpenSSLIdentity final : public SSLIdentity {
                   std::unique_ptr<OpenSSLCertificate> certificate);
   OpenSSLIdentity(std::unique_ptr<OpenSSLKeyPair> key_pair,
                   std::unique_ptr<SSLCertChain> cert_chain);
+  std::unique_ptr<SSLIdentity> CloneInternal() const override;
 
-  static OpenSSLIdentity* GenerateInternal(const SSLIdentityParams& params);
+  static std::unique_ptr<OpenSSLIdentity> CreateInternal(
+      const SSLIdentityParams& params);
 
   std::unique_ptr<OpenSSLKeyPair> key_pair_;
   std::unique_ptr<SSLCertChain> cert_chain_;

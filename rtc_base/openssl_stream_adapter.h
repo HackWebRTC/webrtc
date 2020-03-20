@@ -57,10 +57,11 @@ class SSLCertChain;
 
 class OpenSSLStreamAdapter final : public SSLStreamAdapter {
  public:
-  explicit OpenSSLStreamAdapter(StreamInterface* stream);
+  explicit OpenSSLStreamAdapter(std::unique_ptr<StreamInterface> stream);
   ~OpenSSLStreamAdapter() override;
 
-  void SetIdentity(SSLIdentity* identity) override;
+  void SetIdentity(std::unique_ptr<SSLIdentity> identity) override;
+  OpenSSLIdentity* GetIdentityForTesting() const override;
 
   // Default argument is for compatibility
   void SetServerRole(SSLRole role = SSL_SERVER) override;

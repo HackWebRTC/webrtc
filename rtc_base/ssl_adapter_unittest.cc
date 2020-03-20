@@ -12,6 +12,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/ip_address.h"
 #include "rtc_base/message_digest.h"
@@ -163,7 +164,7 @@ class SSLAdapterTestDummyServer : public sigslot::has_slots<> {
                                      const rtc::KeyParams& key_params)
       : ssl_mode_(ssl_mode) {
     // Generate a key pair and a certificate for this host.
-    ssl_identity_.reset(rtc::SSLIdentity::Generate(GetHostname(), key_params));
+    ssl_identity_ = rtc::SSLIdentity::Create(GetHostname(), key_params);
 
     server_socket_.reset(CreateSocket(ssl_mode_));
 
@@ -254,9 +255,8 @@ class SSLAdapterTestDummyServer : public sigslot::has_slots<> {
 
  private:
   void DoHandshake(rtc::AsyncSocket* socket) {
-    rtc::SocketStream* stream = new rtc::SocketStream(socket);
-
-    ssl_stream_adapter_.reset(rtc::SSLStreamAdapter::Create(stream));
+    ssl_stream_adapter_ = rtc::SSLStreamAdapter::Create(
+        std::make_unique<rtc::SocketStream>(socket));
 
     ssl_stream_adapter_->SetMode(ssl_mode_);
     ssl_stream_adapter_->SetServerRole();
@@ -268,7 +268,7 @@ class SSLAdapterTestDummyServer : public sigslot::has_slots<> {
     // Accordingly, we must disable client authentication here.
     ssl_stream_adapter_->SetClientAuthEnabledForTesting(false);
 
-    ssl_stream_adapter_->SetIdentity(ssl_identity_->GetReference());
+    ssl_stream_adapter_->SetIdentity(ssl_identity_->Clone());
 
     // Set a bogus peer certificate digest.
     unsigned char digest[20];

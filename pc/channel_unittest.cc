@@ -179,9 +179,8 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
         rtcp1 = fake_rtcp_dtls_transport1_.get();
       }
       if (flags1 & DTLS) {
-        auto cert1 =
-            rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
-                rtc::SSLIdentity::Generate("session1", rtc::KT_DEFAULT)));
+        auto cert1 = rtc::RTCCertificate::Create(
+            rtc::SSLIdentity::Create("session1", rtc::KT_DEFAULT));
         fake_rtp_dtls_transport1_->SetLocalCertificate(cert1);
         if (fake_rtcp_dtls_transport1_) {
           fake_rtcp_dtls_transport1_->SetLocalCertificate(cert1);
@@ -209,9 +208,8 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
         rtcp2 = fake_rtcp_dtls_transport2_.get();
       }
       if (flags2 & DTLS) {
-        auto cert2 =
-            rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
-                rtc::SSLIdentity::Generate("session2", rtc::KT_DEFAULT)));
+        auto cert2 = rtc::RTCCertificate::Create(
+            rtc::SSLIdentity::Create("session2", rtc::KT_DEFAULT));
         fake_rtp_dtls_transport2_->SetLocalCertificate(cert2);
         if (fake_rtcp_dtls_transport2_) {
           fake_rtcp_dtls_transport2_->SetLocalCertificate(cert2);

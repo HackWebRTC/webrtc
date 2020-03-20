@@ -637,8 +637,8 @@ TEST_F(JsepTransportControllerTest, SetAndGetLocalCertificate) {
   CreateJsepTransportController(JsepTransportController::Config());
 
   rtc::scoped_refptr<rtc::RTCCertificate> certificate1 =
-      rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
-          rtc::SSLIdentity::Generate("session1", rtc::KT_DEFAULT)));
+      rtc::RTCCertificate::Create(
+          rtc::SSLIdentity::Create("session1", rtc::KT_DEFAULT));
   rtc::scoped_refptr<rtc::RTCCertificate> returned_certificate;
 
   auto description = std::make_unique<cricket::SessionDescription>();
@@ -662,8 +662,8 @@ TEST_F(JsepTransportControllerTest, SetAndGetLocalCertificate) {
 
   // Shouldn't be able to change the identity once set.
   rtc::scoped_refptr<rtc::RTCCertificate> certificate2 =
-      rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
-          rtc::SSLIdentity::Generate("session2", rtc::KT_DEFAULT)));
+      rtc::RTCCertificate::Create(
+          rtc::SSLIdentity::Create("session2", rtc::KT_DEFAULT));
   EXPECT_FALSE(transport_controller_->SetLocalCertificate(certificate2));
 }
 
@@ -691,12 +691,10 @@ TEST_F(JsepTransportControllerTest, GetRemoteSSLCertChain) {
 
 TEST_F(JsepTransportControllerTest, GetDtlsRole) {
   CreateJsepTransportController(JsepTransportController::Config());
-  auto offer_certificate =
-      rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
-          rtc::SSLIdentity::Generate("offer", rtc::KT_DEFAULT)));
-  auto answer_certificate =
-      rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
-          rtc::SSLIdentity::Generate("answer", rtc::KT_DEFAULT)));
+  auto offer_certificate = rtc::RTCCertificate::Create(
+      rtc::SSLIdentity::Create("offer", rtc::KT_DEFAULT));
+  auto answer_certificate = rtc::RTCCertificate::Create(
+      rtc::SSLIdentity::Create("answer", rtc::KT_DEFAULT));
   transport_controller_->SetLocalCertificate(offer_certificate);
 
   auto offer_desc = std::make_unique<cricket::SessionDescription>();

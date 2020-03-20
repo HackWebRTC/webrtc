@@ -13,6 +13,7 @@
 #include <set>
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/buffer_queue.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/gunit.h"
@@ -298,8 +299,6 @@ class SSLStreamAdapterTestBase : public ::testing::Test,
         server_key_type_(server_key_type),
         client_stream_(nullptr),
         server_stream_(nullptr),
-        client_identity_(nullptr),
-        server_identity_(nullptr),
         delay_(0),
         mtu_(1460),
         loss_(0),
@@ -320,23 +319,26 @@ class SSLStreamAdapterTestBase : public ::testing::Test,
   void SetUp() override {
     CreateStreams();
 
-    client_ssl_.reset(rtc::SSLStreamAdapter::Create(client_stream_));
-    server_ssl_.reset(rtc::SSLStreamAdapter::Create(server_stream_));
+    client_ssl_ =
+        rtc::SSLStreamAdapter::Create(absl::WrapUnique(client_stream_));
+    server_ssl_ =
+        rtc::SSLStreamAdapter::Create(absl::WrapUnique(server_stream_));
 
     // Set up the slots
     client_ssl_->SignalEvent.connect(this, &SSLStreamAdapterTestBase::OnEvent);
     server_ssl_->SignalEvent.connect(this, &SSLStreamAdapterTestBase::OnEvent);
 
+    std::unique_ptr<rtc::SSLIdentity> client_identity;
     if (!client_cert_pem_.empty() && !client_private_key_pem_.empty()) {
-      client_identity_ = rtc::SSLIdentity::FromPEMStrings(
+      client_identity = rtc::SSLIdentity::CreateFromPEMStrings(
           client_private_key_pem_, client_cert_pem_);
     } else {
-      client_identity_ = rtc::SSLIdentity::Generate("client", client_key_type_);
+      client_identity = rtc::SSLIdentity::Create("client", client_key_type_);
     }
-    server_identity_ = rtc::SSLIdentity::Generate("server", server_key_type_);
+    auto server_identity = rtc::SSLIdentity::Create("server", server_key_type_);
 
-    client_ssl_->SetIdentity(client_identity_);
-    server_ssl_->SetIdentity(server_identity_);
+    client_ssl_->SetIdentity(std::move(client_identity));
+    server_ssl_->SetIdentity(std::move(server_identity));
   }
 
   void TearDown() override {
@@ -352,8 +354,10 @@ class SSLStreamAdapterTestBase : public ::testing::Test,
   void ResetIdentitiesWithValidity(int not_before, int not_after) {
     CreateStreams();
 
-    client_ssl_.reset(rtc::SSLStreamAdapter::Create(client_stream_));
-    server_ssl_.reset(rtc::SSLStreamAdapter::Create(server_stream_));
+    client_ssl_ =
+        rtc::SSLStreamAdapter::Create(absl::WrapUnique(client_stream_));
+    server_ssl_ =
+        rtc::SSLStreamAdapter::Create(absl::WrapUnique(server_stream_));
 
     client_ssl_->SignalEvent.connect(this, &SSLStreamAdapterTestBase::OnEvent);
     server_ssl_->SignalEvent.connect(this, &SSLStreamAdapterTestBase::OnEvent);
@@ -365,17 +369,17 @@ class SSLStreamAdapterTestBase : public ::testing::Test,
     client_params.common_name = "client";
     client_params.not_before = now + not_before;
     client_params.not_after = now + not_after;
-    client_identity_ = rtc::SSLIdentity::GenerateForTest(client_params);
+    auto client_identity = rtc::SSLIdentity::CreateForTest(client_params);
 
     rtc::SSLIdentityParams server_params;
     server_params.key_params = rtc::KeyParams(rtc::KT_DEFAULT);
     server_params.common_name = "server";
     server_params.not_before = now + not_before;
     server_params.not_after = now + not_after;
-    server_identity_ = rtc::SSLIdentity::GenerateForTest(server_params);
+    auto server_identity = rtc::SSLIdentity::CreateForTest(server_params);
 
-    client_ssl_->SetIdentity(client_identity_);
-    server_ssl_->SetIdentity(server_identity_);
+    client_ssl_->SetIdentity(std::move(client_identity));
+    server_ssl_->SetIdentity(std::move(server_identity));
   }
 
   virtual void OnEvent(rtc::StreamInterface* stream, int sig, int err) {
@@ -404,10 +408,10 @@ class SSLStreamAdapterTestBase : public ::testing::Test,
 
     RTC_LOG(LS_INFO) << "Setting peer identities by digest";
 
-    rv = server_identity_->certificate().ComputeDigest(
+    rv = server_identity()->certificate().ComputeDigest(
         rtc::DIGEST_SHA_1, server_digest, 20, &server_digest_len);
     ASSERT_TRUE(rv);
-    rv = client_identity_->certificate().ComputeDigest(
+    rv = client_identity()->certificate().ComputeDigest(
         rtc::DIGEST_SHA_1, client_digest, 20, &client_digest_len);
     ASSERT_TRUE(rv);
 
@@ -634,6 +638,19 @@ class SSLStreamAdapterTestBase : public ::testing::Test,
   virtual void TestTransfer(int size) = 0;
 
  protected:
+  rtc::SSLIdentity* client_identity() const {
+    if (!client_ssl_) {
+      return nullptr;
+    }
+    return client_ssl_->GetIdentityForTesting();
+  }
+  rtc::SSLIdentity* server_identity() const {
+    if (!server_ssl_) {
+      return nullptr;
+    }
+    return server_ssl_->GetIdentityForTesting();
+  }
+
   std::string client_cert_pem_;
   std::string client_private_key_pem_;
   rtc::KeyParams client_key_type_;
@@ -642,8 +659,6 @@ class SSLStreamAdapterTestBase : public ::testing::Test,
   SSLDummyStreamBase* server_stream_;  // freed by server_ssl_ destructor
   std::unique_ptr<rtc::SSLStreamAdapter> client_ssl_;
   std::unique_ptr<rtc::SSLStreamAdapter> server_ssl_;
-  rtc::SSLIdentity* client_identity_;  // freed by client_ssl_ destructor
-  rtc::SSLIdentity* server_identity_;  // freed by server_ssl_ destructor
   int delay_;
   size_t mtu_;
   int loss_;
@@ -939,8 +954,10 @@ class SSLStreamAdapterTestDTLSCertChain : public SSLStreamAdapterTestDTLS {
   void SetUp() override {
     CreateStreams();
 
-    client_ssl_.reset(rtc::SSLStreamAdapter::Create(client_stream_));
-    server_ssl_.reset(rtc::SSLStreamAdapter::Create(server_stream_));
+    client_ssl_ =
+        rtc::SSLStreamAdapter::Create(absl::WrapUnique(client_stream_));
+    server_ssl_ =
+        rtc::SSLStreamAdapter::Create(absl::WrapUnique(server_stream_));
 
     // Set up the slots
     client_ssl_->SignalEvent.connect(
@@ -950,14 +967,15 @@ class SSLStreamAdapterTestDTLSCertChain : public SSLStreamAdapterTestDTLS {
         reinterpret_cast<SSLStreamAdapterTestBase*>(this),
         &SSLStreamAdapterTestBase::OnEvent);
 
+    std::unique_ptr<rtc::SSLIdentity> client_identity;
     if (!client_cert_pem_.empty() && !client_private_key_pem_.empty()) {
-      client_identity_ = rtc::SSLIdentity::FromPEMStrings(
+      client_identity = rtc::SSLIdentity::CreateFromPEMStrings(
           client_private_key_pem_, client_cert_pem_);
     } else {
-      client_identity_ = rtc::SSLIdentity::Generate("client", client_key_type_);
+      client_identity = rtc::SSLIdentity::Create("client", client_key_type_);
     }
 
-    client_ssl_->SetIdentity(client_identity_);
+    client_ssl_->SetIdentity(std::move(client_identity));
   }
 };
 
@@ -975,13 +993,13 @@ TEST_P(SSLStreamAdapterTestTLS, GetPeerCertChainWithOneCertificate) {
   ASSERT_NE(nullptr, cert_chain);
   EXPECT_EQ(1u, cert_chain->GetSize());
   EXPECT_EQ(cert_chain->Get(0).ToPEMString(),
-            server_identity_->certificate().ToPEMString());
+            server_identity()->certificate().ToPEMString());
 }
 
 TEST_F(SSLStreamAdapterTestDTLSCertChain, TwoCertHandshake) {
-  server_identity_ = rtc::SSLIdentity::FromPEMChainStrings(
+  auto server_identity = rtc::SSLIdentity::CreateFromPEMChainStrings(
       kRSA_PRIVATE_KEY_PEM, std::string(kCERT_PEM) + kCACert);
-  server_ssl_->SetIdentity(server_identity_);
+  server_ssl_->SetIdentity(std::move(server_identity));
   TestHandshake();
   std::unique_ptr<rtc::SSLCertChain> peer_cert_chain =
       client_ssl_->GetPeerSSLCertChain();
@@ -992,11 +1010,8 @@ TEST_F(SSLStreamAdapterTestDTLSCertChain, TwoCertHandshake) {
 }
 
 TEST_F(SSLStreamAdapterTestDTLSCertChain, TwoCertHandshakeWithCopy) {
-  std::unique_ptr<rtc::SSLIdentity> identity(
-      rtc::SSLIdentity::FromPEMChainStrings(kRSA_PRIVATE_KEY_PEM,
-                                            std::string(kCERT_PEM) + kCACert));
-  server_identity_ = identity->GetReference();
-  server_ssl_->SetIdentity(server_identity_);
+  server_ssl_->SetIdentity(rtc::SSLIdentity::CreateFromPEMChainStrings(
+      kRSA_PRIVATE_KEY_PEM, std::string(kCERT_PEM) + kCACert));
   TestHandshake();
   std::unique_ptr<rtc::SSLCertChain> peer_cert_chain =
       client_ssl_->GetPeerSSLCertChain();
@@ -1007,9 +1022,8 @@ TEST_F(SSLStreamAdapterTestDTLSCertChain, TwoCertHandshakeWithCopy) {
 }
 
 TEST_F(SSLStreamAdapterTestDTLSCertChain, ThreeCertHandshake) {
-  server_identity_ = rtc::SSLIdentity::FromPEMChainStrings(
-      kRSA_PRIVATE_KEY_PEM, std::string(kCERT_PEM) + kIntCert1 + kCACert);
-  server_ssl_->SetIdentity(server_identity_);
+  server_ssl_->SetIdentity(rtc::SSLIdentity::CreateFromPEMChainStrings(
+      kRSA_PRIVATE_KEY_PEM, std::string(kCERT_PEM) + kIntCert1 + kCACert));
   TestHandshake();
   std::unique_ptr<rtc::SSLCertChain> peer_cert_chain =
       client_ssl_->GetPeerSSLCertChain();
@@ -1075,7 +1089,7 @@ TEST_P(SSLStreamAdapterTestTLS,
   bool rv;
   rtc::SSLPeerCertificateDigestError err;
 
-  rv = server_identity_->certificate().ComputeDigest(
+  rv = server_identity()->certificate().ComputeDigest(
       rtc::DIGEST_SHA_1, server_digest, 20, &server_digest_len);
   ASSERT_TRUE(rv);
 
@@ -1093,7 +1107,7 @@ TEST_P(SSLStreamAdapterTestTLS, TestSetPeerCertificateDigestWithInvalidLength) {
   bool rv;
   rtc::SSLPeerCertificateDigestError err;
 
-  rv = server_identity_->certificate().ComputeDigest(
+  rv = server_identity()->certificate().ComputeDigest(
       rtc::DIGEST_SHA_1, server_digest, 20, &server_digest_len);
   ASSERT_TRUE(rv);
 
@@ -1476,24 +1490,26 @@ class SSLStreamAdapterTestDTLSLegacyProtocols
     webrtc::test::ScopedFieldTrials trial(experiment);
     client_stream_ =
         new SSLDummyStreamDTLS(this, "c2s", &client_buffer_, &server_buffer_);
-    client_ssl_.reset(rtc::SSLStreamAdapter::Create(client_stream_));
+    client_ssl_ =
+        rtc::SSLStreamAdapter::Create(absl::WrapUnique(client_stream_));
     client_ssl_->SignalEvent.connect(
         static_cast<SSLStreamAdapterTestBase*>(this),
         &SSLStreamAdapterTestBase::OnEvent);
-    client_identity_ = rtc::SSLIdentity::Generate("client", client_key_type_);
-    client_ssl_->SetIdentity(client_identity_);
+    auto client_identity = rtc::SSLIdentity::Create("client", client_key_type_);
+    client_ssl_->SetIdentity(std::move(client_identity));
   }
 
   void ConfigureServer(std::string experiment) {
     // webrtc::test::ScopedFieldTrials trial(experiment);
     server_stream_ =
         new SSLDummyStreamDTLS(this, "s2c", &server_buffer_, &client_buffer_);
-    server_ssl_.reset(rtc::SSLStreamAdapter::Create(server_stream_));
+    server_ssl_ =
+        rtc::SSLStreamAdapter::Create(absl::WrapUnique(server_stream_));
     server_ssl_->SignalEvent.connect(
         static_cast<SSLStreamAdapterTestBase*>(this),
         &SSLStreamAdapterTestBase::OnEvent);
-    server_identity_ = rtc::SSLIdentity::Generate("server", server_key_type_);
-    server_ssl_->SetIdentity(server_identity_);
+    server_ssl_->SetIdentity(
+        rtc::SSLIdentity::Create("server", server_key_type_));
   }
 };
 

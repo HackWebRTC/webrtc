@@ -15,8 +15,10 @@
 
 #include <stdint.h>
 #include <ctime>
+#include <memory>
 #include <string>
 
+#include "rtc_base/deprecation.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
@@ -107,26 +109,52 @@ class RTC_EXPORT SSLIdentity {
   // should be a non-negative number.
   // Returns null on failure.
   // Caller is responsible for freeing the returned object.
-  static SSLIdentity* GenerateWithExpiration(const std::string& common_name,
+  static std::unique_ptr<SSLIdentity> Create(const std::string& common_name,
                                              const KeyParams& key_param,
                                              time_t certificate_lifetime);
-  static SSLIdentity* Generate(const std::string& common_name,
-                               const KeyParams& key_param);
-  static SSLIdentity* Generate(const std::string& common_name,
-                               KeyType key_type);
+  static std::unique_ptr<SSLIdentity> Create(const std::string& common_name,
+                                             const KeyParams& key_param);
+  static std::unique_ptr<SSLIdentity> Create(const std::string& common_name,
+                                             KeyType key_type);
+  static std::unique_ptr<SSLIdentity> CreateForTest(
+      const SSLIdentityParams& params);
+
+  // Construct an identity from a private key and a certificate.
+  static std::unique_ptr<SSLIdentity> CreateFromPEMStrings(
+      const std::string& private_key,
+      const std::string& certificate);
+
+  // Construct an identity from a private key and a certificate chain.
+  static std::unique_ptr<SSLIdentity> CreateFromPEMChainStrings(
+      const std::string& private_key,
+      const std::string& certificate_chain);
+
+  // Old versions of Create(). These return a pointer, but still require the
+  // caller to take ownership.
+  RTC_DEPRECATED static SSLIdentity* GenerateWithExpiration(
+      const std::string& common_name,
+      const KeyParams& key_param,
+      time_t certificate_lifetime);
+  RTC_DEPRECATED static SSLIdentity* Generate(const std::string& common_name,
+                                              const KeyParams& key_param);
+  RTC_DEPRECATED static SSLIdentity* Generate(const std::string& common_name,
+                                              KeyType key_type);
 
   // Generates an identity with the specified validity period.
   // TODO(torbjorng): Now that Generate() accepts relevant params, make tests
   // use that instead of this function.
-  static SSLIdentity* GenerateForTest(const SSLIdentityParams& params);
+  RTC_DEPRECATED static SSLIdentity* GenerateForTest(
+      const SSLIdentityParams& params);
 
   // Construct an identity from a private key and a certificate.
-  static SSLIdentity* FromPEMStrings(const std::string& private_key,
-                                     const std::string& certificate);
+  RTC_DEPRECATED static SSLIdentity* FromPEMStrings(
+      const std::string& private_key,
+      const std::string& certificate);
 
   // Construct an identity from a private key and a certificate chain.
-  static SSLIdentity* FromPEMChainStrings(const std::string& private_key,
-                                          const std::string& certificate_chain);
+  RTC_DEPRECATED static SSLIdentity* FromPEMChainStrings(
+      const std::string& private_key,
+      const std::string& certificate_chain);
 
   virtual ~SSLIdentity() {}
 
@@ -134,7 +162,8 @@ class RTC_EXPORT SSLIdentity {
   // identity information.
   // Caller is responsible for freeing the returned object.
   // TODO(hbos,torbjorng): Rename to a less confusing name.
-  virtual SSLIdentity* GetReference() const = 0;
+  RTC_DEPRECATED virtual SSLIdentity* GetReference() const = 0;
+  std::unique_ptr<SSLIdentity> Clone() const { return CloneInternal(); }
 
   // Returns a temporary reference to the end-entity (leaf) certificate.
   virtual const SSLCertificate& certificate() const = 0;
@@ -150,6 +179,9 @@ class RTC_EXPORT SSLIdentity {
   static std::string DerToPem(const std::string& pem_type,
                               const unsigned char* data,
                               size_t length);
+
+ protected:
+  virtual std::unique_ptr<SSLIdentity> CloneInternal() const = 0;
 };
 
 bool operator==(const SSLIdentity& a, const SSLIdentity& b);

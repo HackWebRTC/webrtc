@@ -265,8 +265,9 @@ static long stream_ctrl(BIO* b, int cmd, long num, void* ptr) {
 // OpenSSLStreamAdapter
 /////////////////////////////////////////////////////////////////////////////
 
-OpenSSLStreamAdapter::OpenSSLStreamAdapter(StreamInterface* stream)
-    : SSLStreamAdapter(stream),
+OpenSSLStreamAdapter::OpenSSLStreamAdapter(
+    std::unique_ptr<StreamInterface> stream)
+    : SSLStreamAdapter(std::move(stream)),
       state_(SSL_NONE),
       role_(SSL_CLIENT),
       ssl_read_needs_write_(false),
@@ -284,9 +285,13 @@ OpenSSLStreamAdapter::~OpenSSLStreamAdapter() {
   Cleanup(0);
 }
 
-void OpenSSLStreamAdapter::SetIdentity(SSLIdentity* identity) {
+void OpenSSLStreamAdapter::SetIdentity(std::unique_ptr<SSLIdentity> identity) {
   RTC_DCHECK(!identity_);
-  identity_.reset(static_cast<OpenSSLIdentity*>(identity));
+  identity_.reset(static_cast<OpenSSLIdentity*>(identity.release()));
+}
+
+OpenSSLIdentity* OpenSSLStreamAdapter::GetIdentityForTesting() const {
+  return identity_.get();
 }
 
 void OpenSSLStreamAdapter::SetServerRole(SSLRole role) {
