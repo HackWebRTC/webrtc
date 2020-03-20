@@ -187,7 +187,8 @@ StoreAdaptiveChannel WebRtcAecm_StoreAdaptiveChannel;
 ResetAdaptiveChannel WebRtcAecm_ResetAdaptiveChannel;
 
 AecmCore* WebRtcAecm_CreateCore() {
-  AecmCore* aecm = static_cast<AecmCore*>(malloc(sizeof(AecmCore)));
+  // Allocate zero-filled memory.
+  AecmCore* aecm = static_cast<AecmCore*>(calloc(1, sizeof(AecmCore)));
 
   aecm->farFrameBuf =
       WebRtc_CreateBuffer(FRAME_LEN + PART_LEN, sizeof(int16_t));
