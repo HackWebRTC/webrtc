@@ -1772,8 +1772,8 @@ TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
     void PerformTest() override {
       rtc::NetworkRoute new_route;
       new_route.connected = true;
-      new_route.local_network_id = 10;
-      new_route.remote_network_id = 20;
+      new_route.local = rtc::RouteEndpoint::CreateWithNetworkId(10);
+      new_route.remote = rtc::RouteEndpoint::CreateWithNetworkId(20);
       BitrateConstraints bitrate_config;
 
       SendTask(RTC_FROM_HERE, task_queue_,
@@ -1799,7 +1799,8 @@ TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
             // TODO(holmer): We should set the last sent packet id here and
             // verify that we correctly ignore any packet loss reported prior to
             // that id.
-            ++new_route.local_network_id;
+            new_route.local = rtc::RouteEndpoint::CreateWithNetworkId(
+                new_route.local.network_id() + 1);
             call_->GetTransportControllerSend()->OnNetworkRouteChanged(
                 "transport", new_route);
             EXPECT_GE(call_->GetStats().send_bandwidth_bps, kStartBitrateBps);

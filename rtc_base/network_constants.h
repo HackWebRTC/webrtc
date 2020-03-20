@@ -13,6 +13,8 @@
 
 #include <stdint.h>
 
+#include <string>
+
 namespace rtc {
 
 static const uint16_t kNetworkCostMax = 999;
@@ -36,6 +38,8 @@ enum AdapterType {
   // not be determined or not fit in this enum.
   ADAPTER_TYPE_ANY = 1 << 5,
 };
+
+std::string AdapterTypeToString(AdapterType type);
 
 }  // namespace rtc
 

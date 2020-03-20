@@ -3221,9 +3221,9 @@ class P2PTransportChannelPingTest : public ::testing::Test,
       return !last_network_route_.has_value();
     } else {
       return pair->local_candidate().network_id() ==
-                 last_network_route_->local_network_id &&
+                 last_network_route_->local.network_id() &&
              pair->remote_candidate().network_id() ==
-                 last_network_route_->remote_network_id;
+                 last_network_route_->remote.network_id();
     }
   }
 

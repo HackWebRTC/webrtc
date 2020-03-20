@@ -85,28 +85,6 @@ bool SortNetworks(const Network* a, const Network* b) {
   return a->key() < b->key();
 }
 
-std::string AdapterTypeToString(AdapterType type) {
-  switch (type) {
-    case ADAPTER_TYPE_ANY:
-      return "Wildcard";
-    case ADAPTER_TYPE_UNKNOWN:
-      return "Unknown";
-    case ADAPTER_TYPE_ETHERNET:
-      return "Ethernet";
-    case ADAPTER_TYPE_WIFI:
-      return "Wifi";
-    case ADAPTER_TYPE_CELLULAR:
-      return "Cellular";
-    case ADAPTER_TYPE_VPN:
-      return "VPN";
-    case ADAPTER_TYPE_LOOPBACK:
-      return "Loopback";
-    default:
-      RTC_NOTREACHED() << "Invalid type " << type;
-      return std::string();
-  }
-}
-
 uint16_t ComputeNetworkCostByType(int type) {
   switch (type) {
     case rtc::ADAPTER_TYPE_ETHERNET:

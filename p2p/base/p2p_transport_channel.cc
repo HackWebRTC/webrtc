@@ -57,6 +57,43 @@ uint32_t GetWeakPingIntervalInFieldTrial() {
   return cricket::WEAK_PING_INTERVAL;
 }
 
+rtc::AdapterType GuessAdapterTypeFromNetworkCost(int network_cost) {
+  // The current network costs have been unchanged since they were added
+  // to webrtc. If they ever were to change we would need to reconsider
+  // this method.
+  switch (network_cost) {
+    case rtc::kNetworkCostMin:
+      return rtc::ADAPTER_TYPE_ETHERNET;
+    case rtc::kNetworkCostLow:
+      return rtc::ADAPTER_TYPE_WIFI;
+    case rtc::kNetworkCostHigh:
+      return rtc::ADAPTER_TYPE_CELLULAR;
+    case rtc::kNetworkCostUnknown:
+      return rtc::ADAPTER_TYPE_UNKNOWN;
+    case rtc::kNetworkCostMax:
+      return rtc::ADAPTER_TYPE_ANY;
+  }
+  return rtc::ADAPTER_TYPE_UNKNOWN;
+}
+
+rtc::RouteEndpoint CreateRouteEndpointFromCandidate(
+    bool local,
+    const cricket::Candidate& candidate,
+    bool uses_turn) {
+  auto adapter_type = candidate.network_type();
+  if (!local && adapter_type == rtc::ADAPTER_TYPE_UNKNOWN) {
+    adapter_type = GuessAdapterTypeFromNetworkCost(candidate.network_cost());
+  }
+
+  // TODO(bugs.webrtc.org/9446) : Rewrite if information about remote network
+  // adapter becomes available. The implication of this implementation is that
+  // we will only ever report 1 adapter per type. In practice this is probably
+  // fine, since the endpoint also contains network-id.
+  uint16_t adapter_id = static_cast<int>(adapter_type);
+  return rtc::RouteEndpoint(adapter_type, adapter_id, candidate.network_id(),
+                            uses_turn);
+}
+
 }  // unnamed namespace
 
 namespace cricket {
@@ -1687,10 +1724,21 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn,
 
     network_route_.emplace(rtc::NetworkRoute());
     network_route_->connected = ReadyToSend(selected_connection_);
-    network_route_->local_network_id =
-        selected_connection_->local_candidate().network_id();
-    network_route_->remote_network_id =
-        selected_connection_->remote_candidate().network_id();
+    network_route_->local = CreateRouteEndpointFromCandidate(
+        /* local= */ true, selected_connection_->local_candidate(),
+        /* uses_turn= */ selected_connection_->port()->Type() ==
+            RELAY_PORT_TYPE);
+    network_route_->remote = CreateRouteEndpointFromCandidate(
+        /* local= */ false, selected_connection_->remote_candidate(),
+        /* uses_turn= */ selected_connection_->remote_candidate().type() ==
+            RELAY_PORT_TYPE);
+
+    // Downstream projects depend on the old representation,
+    // populate that until they have been migrated.
+    // TODO(jonaso): remove.
+    network_route_->local_network_id = network_route_->local.network_id();
+    network_route_->remote_network_id = network_route_->remote.network_id();
+
     network_route_->last_sent_packet_id = last_sent_packet_id_;
     network_route_->packet_overhead =
         selected_connection_->local_candidate().address().ipaddr().overhead() +
