@@ -16,6 +16,8 @@
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 
+namespace webrtc {
+
 TEST(AecDumper, APICallsDoNotCrash) {
   // Note order of initialization: Task queue has to be initialized
   // before AecDump.
@@ -81,3 +83,5 @@ TEST(AecDumper, WriteToFile) {
   ASSERT_EQ(0, fclose(fid));
   ASSERT_EQ(0, remove(filename.c_str()));
 }
+
+}  // namespace webrtc
