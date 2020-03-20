@@ -592,20 +592,30 @@ void DefaultVideoQualityAnalyzer::ReportResults(
   using ::webrtc::test::ImproveDirection;
 
   double sum_squared_interframe_delays_secs = 0;
-  for (const double interframe_delay_ms :
-       stats.time_between_rendered_frames_ms.GetSamples()) {
+  Timestamp video_start_time = Timestamp::PlusInfinity();
+  Timestamp video_end_time = Timestamp::MinusInfinity();
+  for (const SamplesStatsCounter::StatsSample& sample :
+       stats.time_between_rendered_frames_ms.GetTimedSamples()) {
+    double interframe_delay_ms = sample.value;
     const double interframe_delays_secs = interframe_delay_ms / 1000.0;
     // Sum of squared inter frame intervals is used to calculate the harmonic
     // frame rate metric. The metric aims to reflect overall experience related
     // to smoothness of video playback and includes both freezes and pauses.
     sum_squared_interframe_delays_secs +=
         interframe_delays_secs * interframe_delays_secs;
+    if (sample.time < video_start_time) {
+      video_start_time = sample.time;
+    }
+    if (sample.time > video_end_time) {
+      video_end_time = sample.time;
+    }
   }
   double harmonic_framerate_fps = 0;
-  if (sum_squared_interframe_delays_secs > 0.0) {
-    TimeDelta video_duration = Now() - start_time_;
-    harmonic_framerate_fps =
-        video_duration.seconds() / sum_squared_interframe_delays_secs;
+  TimeDelta video_duration = video_end_time - video_start_time;
+  if (sum_squared_interframe_delays_secs > 0.0 && video_duration.IsFinite()) {
+    harmonic_framerate_fps = static_cast<double>(video_duration.us()) /
+                             static_cast<double>(kMicrosPerSecond) /
+                             sum_squared_interframe_delays_secs;
   }
 
   ReportResult("psnr", test_case_name, stats.psnr, "dB",
