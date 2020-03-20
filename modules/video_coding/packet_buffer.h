@@ -55,6 +55,9 @@ class PacketBuffer {
       return video_header.is_last_packet_in_frame;
     }
 
+    // If all its previous packets have been inserted into the packet buffer.
+    // Set and used internally by the PacketBuffer.
+    bool continuous = false;
     bool marker_bit = false;
     uint8_t payload_type = 0;
     uint16_t seq_num = 0;
@@ -90,24 +93,6 @@ class PacketBuffer {
   absl::optional<int64_t> LastReceivedKeyframePacketMs() const;
 
  private:
-  struct StoredPacket {
-    uint16_t seq_num() const { return packet->seq_num; }
-
-    // If this is the first packet of the frame.
-    bool frame_begin() const { return packet->is_first_packet_in_frame(); }
-
-    // If this is the last packet of the frame.
-    bool frame_end() const { return packet->is_last_packet_in_frame(); }
-
-    // If this slot is currently used.
-    bool used() const { return packet != nullptr; }
-
-    // If all its previous packets have been inserted into the packet buffer.
-    bool continuous = false;
-
-    std::unique_ptr<Packet> packet;
-  };
-
   Clock* const clock_;
 
   // Tries to expand the buffer.
@@ -141,7 +126,7 @@ class PacketBuffer {
 
   // Buffer that holds the the inserted packets and information needed to
   // determine continuity between them.
-  std::vector<StoredPacket> buffer_ RTC_GUARDED_BY(crit_);
+  std::vector<std::unique_ptr<Packet>> buffer_ RTC_GUARDED_BY(crit_);
 
   // Timestamp of the last received packet/keyframe packet.
   absl::optional<int64_t> last_received_packet_ms_ RTC_GUARDED_BY(crit_);
