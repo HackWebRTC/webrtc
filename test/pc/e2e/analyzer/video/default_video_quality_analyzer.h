@@ -102,6 +102,7 @@ struct StreamStats {
   SamplesStatsCounter time_between_freezes_ms;
   SamplesStatsCounter resolution_of_rendered_frame;
 
+  int64_t total_encoded_images_payload = 0;
   int64_t dropped_by_encoder = 0;
   int64_t dropped_before_encoder = 0;
 };
@@ -182,6 +183,8 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
 
     absl::optional<int> rendered_frame_width = absl::nullopt;
     absl::optional<int> rendered_frame_height = absl::nullopt;
+
+    int64_t encoded_image_size = 0;
   };
 
   // Describes why comparison was done in overloaded mode (without calculating

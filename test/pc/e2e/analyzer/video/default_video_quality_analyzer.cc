@@ -192,6 +192,7 @@ void DefaultVideoQualityAnalyzer::OnFrameEncoded(
     stream_frame_counters_[it->second.stream_label].encoded++;
   }
   it->second.encoded_time = Now();
+  it->second.encoded_image_size = encoded_image.size();
 }
 
 void DefaultVideoQualityAnalyzer::OnFrameDropped(
@@ -515,6 +516,7 @@ void DefaultVideoQualityAnalyzer::ProcessComparison(
     stats->encode_time_ms.AddSample(
         (frame_stats.encoded_time - frame_stats.pre_encode_time).ms());
     stats->encode_frame_rate.AddEvent(frame_stats.encoded_time);
+    stats->total_encoded_images_payload += frame_stats.encoded_image_size;
   } else {
     if (frame_stats.pre_encode_time.IsFinite()) {
       stats->dropped_by_encoder++;
@@ -590,6 +592,7 @@ void DefaultVideoQualityAnalyzer::ReportResults(
     const StreamStats& stats,
     const FrameCounters& frame_counters) {
   using ::webrtc::test::ImproveDirection;
+  TimeDelta test_duration = Now() - start_time_;
 
   double sum_squared_interframe_delays_secs = 0;
   Timestamp video_start_time = Timestamp::PlusInfinity();
@@ -667,6 +670,11 @@ void DefaultVideoQualityAnalyzer::ReportResults(
                     /*important=*/false, ImproveDirection::kSmallerIsBetter);
   ReportResult("max_skipped", test_case_name, stats.skipped_between_rendered,
                "count", ImproveDirection::kSmallerIsBetter);
+  test::PrintResult(
+      "actual_encode_bitrate", "", test_case_name,
+      static_cast<double>(stats.total_encoded_images_payload) /
+          static_cast<double>(test_duration.us()) * kMicrosPerSecond,
+      "bytesPerSecond", /*important=*/false, ImproveDirection::kNone);
 }
 
 void DefaultVideoQualityAnalyzer::ReportResult(
