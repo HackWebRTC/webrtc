@@ -124,7 +124,8 @@ TEST_F(TestVp8Impl, ErrorResilienceDisabledForNoTemporalLayers) {
   codec_settings_.simulcastStream[0].numberOfTemporalLayers = 1;
 
   auto* const vpx = new NiceMock<MockLibvpxVp8Interface>();
-  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)));
+  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)),
+                           VP8Encoder::Settings());
   EXPECT_CALL(*vpx,
               codec_enc_init(
                   _, _, Field(&vpx_codec_enc_cfg_t::g_error_resilient, 0), _));
@@ -137,7 +138,8 @@ TEST_F(TestVp8Impl, DefaultErrorResilienceEnabledForTemporalLayers) {
   codec_settings_.VP8()->numberOfTemporalLayers = 2;
 
   auto* const vpx = new NiceMock<MockLibvpxVp8Interface>();
-  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)));
+  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)),
+                           VP8Encoder::Settings());
   EXPECT_CALL(*vpx,
               codec_enc_init(_, _,
                              Field(&vpx_codec_enc_cfg_t::g_error_resilient,
@@ -155,7 +157,8 @@ TEST_F(TestVp8Impl,
   codec_settings_.VP8()->numberOfTemporalLayers = 2;
 
   auto* const vpx = new NiceMock<MockLibvpxVp8Interface>();
-  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)));
+  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)),
+                           VP8Encoder::Settings());
   EXPECT_CALL(*vpx,
               codec_enc_init(_, _,
                              Field(&vpx_codec_enc_cfg_t::g_error_resilient,
@@ -167,7 +170,8 @@ TEST_F(TestVp8Impl,
 
 TEST_F(TestVp8Impl, SetRates) {
   auto* const vpx = new NiceMock<MockLibvpxVp8Interface>();
-  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)));
+  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)),
+                           VP8Encoder::Settings());
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder.InitEncode(&codec_settings_,
                                VideoEncoder::Settings(kCapabilities, 1, 1000)));
@@ -194,7 +198,8 @@ TEST_F(TestVp8Impl, DynamicSetRates) {
   test::ScopedFieldTrials field_trials(
       "WebRTC-VideoRateControl/vp8_dynamic_rate:true/");
   auto* const vpx = new NiceMock<MockLibvpxVp8Interface>();
-  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)));
+  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)),
+                           VP8Encoder::Settings());
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder.InitEncode(&codec_settings_,
                                VideoEncoder::Settings(kCapabilities, 1, 1000)));
@@ -514,7 +519,8 @@ TEST_F(TestVp8Impl, DontDropKeyframes) {
 
 TEST_F(TestVp8Impl, KeepsTimestampOnReencode) {
   auto* const vpx = new NiceMock<MockLibvpxVp8Interface>();
-  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)));
+  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)),
+                           VP8Encoder::Settings());
 
   // Settings needed to trigger ScreenshareLayers usage, which is required for
   // overshoot-drop-reencode logic.

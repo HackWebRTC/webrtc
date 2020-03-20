@@ -221,14 +221,24 @@ void ApplyVp8EncoderConfigToVpxConfig(const Vp8EncoderConfig& encoder_config,
 }  // namespace
 
 std::unique_ptr<VideoEncoder> VP8Encoder::Create() {
-  return VP8Encoder::Create(nullptr);
+  return std::make_unique<LibvpxVp8Encoder>(LibvpxInterface::CreateEncoder(),
+                                            VP8Encoder::Settings());
+}
+
+std::unique_ptr<VideoEncoder> VP8Encoder::Create(
+    VP8Encoder::Settings settings) {
+  return std::make_unique<LibvpxVp8Encoder>(LibvpxInterface::CreateEncoder(),
+                                            std::move(settings));
 }
 
 std::unique_ptr<VideoEncoder> VP8Encoder::Create(
     std::unique_ptr<Vp8FrameBufferControllerFactory>
         frame_buffer_controller_factory) {
-  return std::make_unique<LibvpxVp8Encoder>(
-      std::move(frame_buffer_controller_factory));
+  VP8Encoder::Settings settings;
+  settings.frame_buffer_controller_factory =
+      std::move(frame_buffer_controller_factory);
+  return std::make_unique<LibvpxVp8Encoder>(LibvpxInterface::CreateEncoder(),
+                                            std::move(settings));
 }
 
 vpx_enc_frame_flags_t LibvpxVp8Encoder::EncodeFlags(
@@ -260,29 +270,15 @@ vpx_enc_frame_flags_t LibvpxVp8Encoder::EncodeFlags(
   return flags;
 }
 
-LibvpxVp8Encoder::LibvpxVp8Encoder()
-    : LibvpxVp8Encoder(nullptr, LibvpxInterface::CreateEncoder()) {}
-
-LibvpxVp8Encoder::LibvpxVp8Encoder(
-    std::unique_ptr<Vp8FrameBufferControllerFactory>
-        frame_buffer_controller_factory)
-    : LibvpxVp8Encoder(std::move(frame_buffer_controller_factory),
-                       LibvpxInterface::CreateEncoder()) {}
-
-LibvpxVp8Encoder::LibvpxVp8Encoder(std::unique_ptr<LibvpxInterface> interface)
-    : LibvpxVp8Encoder(nullptr, std::move(interface)) {}
-
-LibvpxVp8Encoder::LibvpxVp8Encoder(
-    std::unique_ptr<Vp8FrameBufferControllerFactory>
-        frame_buffer_controller_factory,
-    std::unique_ptr<LibvpxInterface> interface)
+LibvpxVp8Encoder::LibvpxVp8Encoder(std::unique_ptr<LibvpxInterface> interface,
+                                   VP8Encoder::Settings settings)
     : libvpx_(std::move(interface)),
       experimental_cpu_speed_config_arm_(CpuSpeedExperiment::GetConfigs()),
       rate_control_settings_(RateControlSettings::ParseFromFieldTrials()),
       screenshare_max_qp_(
           ExperimentalScreenshareSettings::ParseFromFieldTrials().MaxQp()),
       frame_buffer_controller_factory_(
-          std::move(frame_buffer_controller_factory)),
+          std::move(settings.frame_buffer_controller_factory)),
       key_frame_request_(kMaxSimulcastStreams, false),
       variable_framerate_experiment_(ParseVariableFramerateConfig(
           "WebRTC-VP8VariableFramerateScreenshare")),

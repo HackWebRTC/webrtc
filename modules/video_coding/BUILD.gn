@@ -435,6 +435,7 @@ rtc_library("webrtc_vp8") {
     "../../api/video_codecs:vp8_temporal_layers_factory",
     "../../common_video",
     "../../rtc_base:checks",
+    "../../rtc_base:deprecation",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_numerics",
     "../../rtc_base/experiments:cpu_speed_experiment",
