@@ -140,8 +140,6 @@ rtc_library("audio_processing") {
     "render_queue_item_verifier.h",
     "residual_echo_detector.cc",
     "residual_echo_detector.h",
-    "rms_level.cc",
-    "rms_level.h",
     "typing_detection.cc",
     "typing_detection.h",
   ]
@@ -216,10 +214,15 @@ rtc_library("voice_detection") {
 
 rtc_source_set("rms_level") {
   visibility = [ "*" ]
-
-  # TODO(webrtc:11226): Move rms_level.* to here.
-  sources = []
-  deps = []
+  sources = [
+    "rms_level.cc",
+    "rms_level.h",
+  ]
+  deps = [
+    "../../api:array_view",
+    "../../rtc_base:checks",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
 }
 
 rtc_library("audio_processing_statistics") {
@@ -415,6 +418,7 @@ if (rtc_include_tests) {
         ":audioproc_protobuf_utils",
         ":audioproc_test_utils",
         ":audioproc_unittest_proto",
+        ":rms_level",
         ":runtime_settings_protobuf_utils",
         "../../api/audio:audio_frame_api",
         "../../api/audio:echo_control",
