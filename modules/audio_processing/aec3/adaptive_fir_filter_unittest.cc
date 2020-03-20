@@ -353,14 +353,14 @@ TEST_P(AdaptiveFirFilterMultiChannel, FilterAndAdapt) {
   EchoCanceller3Config config;
 
   if (num_render_channels == 33) {
-    config.filter.main = {13, 0.00005f, 0.0005f, 0.0001f, 2.f, 20075344.f};
+    config.filter.refined = {13, 0.00005f, 0.0005f, 0.0001f, 2.f, 20075344.f};
     config.filter.shadow = {13, 0.1f, 20075344.f};
-    config.filter.main_initial = {12, 0.005f, 0.5f, 0.001f, 2.f, 20075344.f};
+    config.filter.refined_initial = {12, 0.005f, 0.5f, 0.001f, 2.f, 20075344.f};
     config.filter.shadow_initial = {12, 0.7f, 20075344.f};
   }
 
   AdaptiveFirFilter filter(
-      config.filter.main.length_blocks, config.filter.main.length_blocks,
+      config.filter.refined.length_blocks, config.filter.refined.length_blocks,
       config.filter.config_change_duration_blocks, num_render_channels,
       DetectOptimization(), &data_dumper);
   std::vector<std::vector<std::array<float, kFftLengthBy2Plus1>>> H2(
@@ -393,7 +393,7 @@ TEST_P(AdaptiveFirFilterMultiChannel, FilterAndAdapt) {
   FftData G;
   FftData E;
   std::vector<std::array<float, kFftLengthBy2Plus1>> Y2(num_capture_channels);
-  std::vector<std::array<float, kFftLengthBy2Plus1>> E2_main(
+  std::vector<std::array<float, kFftLengthBy2Plus1>> E2_refined(
       num_capture_channels);
   std::array<float, kFftLengthBy2Plus1> E2_shadow;
   // [B,A] = butter(2,100/8000,'high')
@@ -403,8 +403,8 @@ TEST_P(AdaptiveFirFilterMultiChannel, FilterAndAdapt) {
   for (auto& Y2_ch : Y2) {
     Y2_ch.fill(0.f);
   }
-  for (auto& E2_main_ch : E2_main) {
-    E2_main_ch.fill(0.f);
+  for (auto& E2_refined_ch : E2_refined) {
+    E2_refined_ch.fill(0.f);
   }
   E2_shadow.fill(0.f);
   for (auto& subtractor_output : output) {
@@ -469,7 +469,7 @@ TEST_P(AdaptiveFirFilterMultiChannel, FilterAndAdapt) {
       fft.ZeroPaddedFft(e, Aec3Fft::Window::kRectangular, &E);
       for (auto& o : output) {
         for (size_t k = 0; k < kBlockSize; ++k) {
-          o.s_main[k] = kScale * s_scratch[k + kFftLengthBy2];
+          o.s_refined[k] = kScale * s_scratch[k + kFftLengthBy2];
         }
       }
 
@@ -482,7 +482,7 @@ TEST_P(AdaptiveFirFilterMultiChannel, FilterAndAdapt) {
           false, EchoPathVariability::DelayAdjustment::kNone, false));
 
       filter.ComputeFrequencyResponse(&H2[0]);
-      aec_state.Update(delay_estimate, H2, h, *render_buffer, E2_main, Y2,
+      aec_state.Update(delay_estimate, H2, h, *render_buffer, E2_refined, Y2,
                        output);
     }
     // Verify that the filter is able to perform well.

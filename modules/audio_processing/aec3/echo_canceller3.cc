@@ -38,6 +38,11 @@ bool DetectSaturation(rtc::ArrayView<const float> y) {
 EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
   EchoCanceller3Config adjusted_cfg = config;
 
+  if (adjusted_cfg.filter.use_legacy_filter_naming) {
+    adjusted_cfg.filter.refined = adjusted_cfg.filter.main;
+    adjusted_cfg.filter.refined_initial = adjusted_cfg.filter.main_initial;
+  }
+
   if (field_trial::IsEnabled("WebRTC-Aec3ShortHeadroomKillSwitch")) {
     // Two blocks headroom.
     adjusted_cfg.delay.delay_headroom_samples = kBlockSize * 2;

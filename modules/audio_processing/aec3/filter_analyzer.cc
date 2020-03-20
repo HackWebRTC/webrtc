@@ -55,7 +55,7 @@ FilterAnalyzer::FilterAnalyzer(const EchoCanceller3Config& config,
       default_gain_(config.ep_strength.default_gain),
       h_highpass_(num_capture_channels,
                   std::vector<float>(
-                      GetTimeDomainLength(config.filter.main.length_blocks),
+                      GetTimeDomainLength(config.filter.refined.length_blocks),
                       0.f)),
       filter_analysis_states_(num_capture_channels,
                               FilterAnalysisState(config)),

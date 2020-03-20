@@ -27,8 +27,8 @@
 
 namespace webrtc {
 namespace {
-// Method for performing the simulations needed to test the main filter update
-// gain functionality.
+// Method for performing the simulations needed to test the refined filter
+// update gain functionality.
 void RunFilterUpdateTest(int num_blocks_to_process,
                          size_t delay_samples,
                          size_t num_render_channels,
@@ -39,9 +39,9 @@ void RunFilterUpdateTest(int num_blocks_to_process,
                          FftData* G_last_block) {
   ApmDataDumper data_dumper(42);
   EchoCanceller3Config config;
-  config.filter.main.length_blocks = filter_length_blocks;
-  AdaptiveFirFilter main_filter(
-      config.filter.main.length_blocks, config.filter.main.length_blocks,
+  config.filter.refined.length_blocks = filter_length_blocks;
+  AdaptiveFirFilter refined_filter(
+      config.filter.refined.length_blocks, config.filter.refined.length_blocks,
       config.filter.config_change_duration_blocks, num_render_channels,
       DetectOptimization(), &data_dumper);
   AdaptiveFirFilter shadow_filter(
@@ -179,7 +179,7 @@ TEST_P(ShadowFilterUpdateGainOneTwoEightRenderChannels,
                           filter_length_blocks, blocks_with_saturation, &e, &y,
                           &G);
 
-      // Verify that the main filter is able to perform well.
+      // Verify that the refined filter is able to perform well.
       // Use different criteria to take overmodelling into account.
       if (filter_length_blocks == 12) {
         EXPECT_LT(1000 * std::inner_product(e.begin(), e.end(), e.begin(), 0.f),

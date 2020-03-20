@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/aec3/main_filter_update_gain.h"
+#include "modules/audio_processing/aec3/refined_filter_update_gain.h"
 
 #include <algorithm>
 #include <functional>
@@ -31,10 +31,10 @@ constexpr int kPoorExcitationCounterInitial = 1000;
 
 }  // namespace
 
-int MainFilterUpdateGain::instance_count_ = 0;
+int RefinedFilterUpdateGain::instance_count_ = 0;
 
-MainFilterUpdateGain::MainFilterUpdateGain(
-    const EchoCanceller3Config::Filter::MainConfiguration& config,
+RefinedFilterUpdateGain::RefinedFilterUpdateGain(
+    const EchoCanceller3Config::Filter::RefinedConfiguration& config,
     size_t config_change_duration_blocks)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
@@ -47,9 +47,9 @@ MainFilterUpdateGain::MainFilterUpdateGain(
   one_by_config_change_duration_blocks_ = 1.f / config_change_duration_blocks_;
 }
 
-MainFilterUpdateGain::~MainFilterUpdateGain() {}
+RefinedFilterUpdateGain::~RefinedFilterUpdateGain() {}
 
-void MainFilterUpdateGain::HandleEchoPathChange(
+void RefinedFilterUpdateGain::HandleEchoPathChange(
     const EchoPathVariability& echo_path_variability) {
   if (echo_path_variability.gain_change) {
     // TODO(bugs.webrtc.org/9526) Handle gain changes.
@@ -66,7 +66,7 @@ void MainFilterUpdateGain::HandleEchoPathChange(
   }
 }
 
-void MainFilterUpdateGain::Compute(
+void RefinedFilterUpdateGain::Compute(
     const std::array<float, kFftLengthBy2Plus1>& render_power,
     const RenderSignalAnalyzer& render_signal_analyzer,
     const SubtractorOutput& subtractor_output,
@@ -76,8 +76,8 @@ void MainFilterUpdateGain::Compute(
     FftData* gain_fft) {
   RTC_DCHECK(gain_fft);
   // Introducing shorter notation to improve readability.
-  const FftData& E_main = subtractor_output.E_main;
-  const auto& E2_main = subtractor_output.E2_main;
+  const FftData& E_refined = subtractor_output.E_refined;
+  const auto& E2_refined = subtractor_output.E2_refined;
   const auto& E2_shadow = subtractor_output.E2_shadow;
   FftData* G = gain_fft;
   const auto& X2 = render_power;
@@ -102,7 +102,7 @@ void MainFilterUpdateGain::Compute(
     for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
       if (X2[k] >= current_config_.noise_gate) {
         mu[k] = H_error_[k] /
-                (0.5f * H_error_[k] * X2[k] + size_partitions * E2_main[k]);
+                (0.5f * H_error_[k] * X2[k] + size_partitions * E2_refined[k]);
       } else {
         mu[k] = 0.f;
       }
@@ -118,14 +118,14 @@ void MainFilterUpdateGain::Compute(
 
     // G = mu * E.
     for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
-      G->re[k] = mu[k] * E_main.re[k];
-      G->im[k] = mu[k] * E_main.im[k];
+      G->re[k] = mu[k] * E_refined.re[k];
+      G->im[k] = mu[k] * E_refined.im[k];
     }
   }
 
   // H_error = H_error + factor * erl.
   for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
-    if (E2_shadow[k] >= E2_main[k]) {
+    if (E2_shadow[k] >= E2_refined[k]) {
       H_error_[k] += current_config_.leakage_converged * erl[k];
     } else {
       H_error_[k] += current_config_.leakage_diverged * erl[k];
@@ -135,10 +135,10 @@ void MainFilterUpdateGain::Compute(
     H_error_[k] = std::min(H_error_[k], current_config_.error_ceil);
   }
 
-  data_dumper_->DumpRaw("aec3_main_gain_H_error", H_error_);
+  data_dumper_->DumpRaw("aec3_refined_gain_H_error", H_error_);
 }
 
-void MainFilterUpdateGain::UpdateCurrentConfig() {
+void RefinedFilterUpdateGain::UpdateCurrentConfig() {
   RTC_DCHECK_GE(config_change_duration_blocks_, config_change_counter_);
   if (config_change_counter_ > 0) {
     if (--config_change_counter_ > 0) {

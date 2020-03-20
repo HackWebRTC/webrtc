@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/aec3/main_filter_update_gain.h"
+#include "modules/audio_processing/aec3/refined_filter_update_gain.h"
 
 #include <algorithm>
 #include <numeric>
 #include <string>
+#include <vector>
 
 #include "modules/audio_processing/aec3/adaptive_fir_filter.h"
 #include "modules/audio_processing/aec3/adaptive_fir_filter_erl.h"
@@ -31,8 +32,8 @@
 namespace webrtc {
 namespace {
 
-// Method for performing the simulations needed to test the main filter update
-// gain functionality.
+// Method for performing the simulations needed to test the refined filter
+// update gain functionality.
 void RunFilterUpdateTest(int num_blocks_to_process,
                          size_t delay_samples,
                          int filter_length_blocks,
@@ -50,19 +51,19 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
 
   EchoCanceller3Config config;
-  config.filter.main.length_blocks = filter_length_blocks;
+  config.filter.refined.length_blocks = filter_length_blocks;
   config.filter.shadow.length_blocks = filter_length_blocks;
-  AdaptiveFirFilter main_filter(config.filter.main.length_blocks,
-                                config.filter.main.length_blocks,
-                                config.filter.config_change_duration_blocks,
-                                kNumRenderChannels, optimization, &data_dumper);
+  AdaptiveFirFilter refined_filter(
+      config.filter.refined.length_blocks, config.filter.refined.length_blocks,
+      config.filter.config_change_duration_blocks, kNumRenderChannels,
+      optimization, &data_dumper);
   AdaptiveFirFilter shadow_filter(
       config.filter.shadow.length_blocks, config.filter.shadow.length_blocks,
       config.filter.config_change_duration_blocks, kNumRenderChannels,
       optimization, &data_dumper);
   std::vector<std::vector<std::array<float, kFftLengthBy2Plus1>>> H2(
       kNumCaptureChannels, std::vector<std::array<float, kFftLengthBy2Plus1>>(
-                               main_filter.max_filter_size_partitions(),
+                               refined_filter.max_filter_size_partitions(),
                                std::array<float, kFftLengthBy2Plus1>()));
   for (auto& H2_ch : H2) {
     for (auto& H2_k : H2_ch) {
@@ -72,15 +73,16 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   std::vector<std::vector<float>> h(
       kNumCaptureChannels,
       std::vector<float>(
-          GetTimeDomainLength(main_filter.max_filter_size_partitions()), 0.f));
+          GetTimeDomainLength(refined_filter.max_filter_size_partitions()),
+          0.f));
 
   Aec3Fft fft;
   std::array<float, kBlockSize> x_old;
   x_old.fill(0.f);
   ShadowFilterUpdateGain shadow_gain(
       config.filter.shadow, config.filter.config_change_duration_blocks);
-  MainFilterUpdateGain main_gain(config.filter.main,
-                                 config.filter.config_change_duration_blocks);
+  RefinedFilterUpdateGain refined_gain(
+      config.filter.refined, config.filter.config_change_duration_blocks);
   Random random_generator(42U);
   std::vector<std::vector<std::vector<float>>> x(
       kNumBands, std::vector<std::vector<float>>(
@@ -100,12 +102,12 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   for (auto& subtractor_output : output) {
     subtractor_output.Reset();
   }
-  FftData& E_main = output[0].E_main;
+  FftData& E_refined = output[0].E_refined;
   FftData E_shadow;
   std::vector<std::array<float, kFftLengthBy2Plus1>> Y2(kNumCaptureChannels);
-  std::vector<std::array<float, kFftLengthBy2Plus1>> E2_main(
+  std::vector<std::array<float, kFftLengthBy2Plus1>> E2_refined(
       kNumCaptureChannels);
-  std::array<float, kBlockSize>& e_main = output[0].e_main;
+  std::array<float, kBlockSize>& e_refined = output[0].e_refined;
   std::array<float, kBlockSize>& e_shadow = output[0].e_shadow;
   for (auto& Y2_ch : Y2) {
     Y2_ch.fill(0.f);
@@ -119,7 +121,7 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     if (std::find(blocks_with_echo_path_changes.begin(),
                   blocks_with_echo_path_changes.end(),
                   k) != blocks_with_echo_path_changes.end()) {
-      main_filter.HandleEchoPathChange();
+      refined_filter.HandleEchoPathChange();
     }
 
     // Handle saturation.
@@ -152,15 +154,15 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     render_signal_analyzer.Update(*render_delay_buffer->GetRenderBuffer(),
                                   aec_state.MinDirectPathFilterDelay());
 
-    // Apply the main filter.
-    main_filter.Filter(*render_delay_buffer->GetRenderBuffer(), &S);
+    // Apply the refined filter.
+    refined_filter.Filter(*render_delay_buffer->GetRenderBuffer(), &S);
     fft.Ifft(S, &s_scratch);
     std::transform(y.begin(), y.end(), s_scratch.begin() + kFftLengthBy2,
-                   e_main.begin(),
+                   e_refined.begin(),
                    [&](float a, float b) { return a - b * kScale; });
-    std::for_each(e_main.begin(), e_main.end(),
+    std::for_each(e_refined.begin(), e_refined.end(),
                   [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
-    fft.ZeroPaddedFft(e_main, Aec3Fft::Window::kRectangular, &E_main);
+    fft.ZeroPaddedFft(e_refined, Aec3Fft::Window::kRectangular, &E_refined);
     for (size_t k = 0; k < kBlockSize; ++k) {
       s[k] = kScale * s_scratch[k + kFftLengthBy2];
     }
@@ -176,7 +178,7 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     fft.ZeroPaddedFft(e_shadow, Aec3Fft::Window::kRectangular, &E_shadow);
 
     // Compute spectra for future use.
-    E_main.Spectrum(Aec3Optimization::kNone, output[0].E2_main);
+    E_refined.Spectrum(Aec3Optimization::kNone, output[0].E2_refined);
     E_shadow.Spectrum(Aec3Optimization::kNone, output[0].E2_shadow);
 
     // Adapt the shadow filter.
@@ -187,28 +189,28 @@ void RunFilterUpdateTest(int num_blocks_to_process,
                         shadow_filter.SizePartitions(), saturation, &G);
     shadow_filter.Adapt(*render_delay_buffer->GetRenderBuffer(), G);
 
-    // Adapt the main filter
+    // Adapt the refined filter
     render_delay_buffer->GetRenderBuffer()->SpectralSum(
-        main_filter.SizePartitions(), &render_power);
+        refined_filter.SizePartitions(), &render_power);
 
     std::array<float, kFftLengthBy2Plus1> erl;
     ComputeErl(optimization, H2[0], erl);
-    main_gain.Compute(render_power, render_signal_analyzer, output[0], erl,
-                      main_filter.SizePartitions(), saturation, &G);
-    main_filter.Adapt(*render_delay_buffer->GetRenderBuffer(), G, &h[0]);
+    refined_gain.Compute(render_power, render_signal_analyzer, output[0], erl,
+                         refined_filter.SizePartitions(), saturation, &G);
+    refined_filter.Adapt(*render_delay_buffer->GetRenderBuffer(), G, &h[0]);
 
     // Update the delay.
     aec_state.HandleEchoPathChange(EchoPathVariability(
         false, EchoPathVariability::DelayAdjustment::kNone, false));
-    main_filter.ComputeFrequencyResponse(&H2[0]);
-    std::copy(output[0].E2_main.begin(), output[0].E2_main.end(),
-              E2_main[0].begin());
+    refined_filter.ComputeFrequencyResponse(&H2[0]);
+    std::copy(output[0].E2_refined.begin(), output[0].E2_refined.end(),
+              E2_refined[0].begin());
     aec_state.Update(delay_estimate, H2, h,
-                     *render_delay_buffer->GetRenderBuffer(), E2_main, Y2,
+                     *render_delay_buffer->GetRenderBuffer(), E2_refined, Y2,
                      output);
   }
 
-  std::copy(e_main.begin(), e_main.end(), e_last_block->begin());
+  std::copy(e_refined.begin(), e_refined.end(), e_last_block->begin());
   std::copy(y.begin(), y.end(), y_last_block->begin());
   std::copy(G.re.begin(), G.re.end(), G_last_block->re.begin());
   std::copy(G.im.begin(), G.im.end(), G_last_block->im.begin());
@@ -232,26 +234,27 @@ std::string ProduceDebugText(size_t delay, int filter_length_blocks) {
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 
 // Verifies that the check for non-null output gain parameter works.
-TEST(MainFilterUpdateGain, NullDataOutputGain) {
+TEST(RefinedFilterUpdateGain, NullDataOutputGain) {
   ApmDataDumper data_dumper(42);
   EchoCanceller3Config config;
   RenderSignalAnalyzer analyzer(config);
   SubtractorOutput output;
-  MainFilterUpdateGain gain(config.filter.main,
-                            config.filter.config_change_duration_blocks);
+  RefinedFilterUpdateGain gain(config.filter.refined,
+                               config.filter.config_change_duration_blocks);
   std::array<float, kFftLengthBy2Plus1> render_power;
   render_power.fill(0.f);
   std::array<float, kFftLengthBy2Plus1> erl;
   erl.fill(0.f);
-  EXPECT_DEATH(gain.Compute(render_power, analyzer, output, erl,
-                            config.filter.main.length_blocks, false, nullptr),
-               "");
+  EXPECT_DEATH(
+      gain.Compute(render_power, analyzer, output, erl,
+                   config.filter.refined.length_blocks, false, nullptr),
+      "");
 }
 
 #endif
 
 // Verifies that the gain formed causes the filter using it to converge.
-TEST(MainFilterUpdateGain, GainCausesFilterToConverge) {
+TEST(RefinedFilterUpdateGain, GainCausesFilterToConverge) {
   std::vector<int> blocks_with_echo_path_changes;
   std::vector<int> blocks_with_saturation;
   for (size_t filter_length_blocks : {12, 20, 30}) {
@@ -266,7 +269,7 @@ TEST(MainFilterUpdateGain, GainCausesFilterToConverge) {
                           blocks_with_echo_path_changes, blocks_with_saturation,
                           false, &e, &y, &G);
 
-      // Verify that the main filter is able to perform well.
+      // Verify that the refined filter is able to perform well.
       // Use different criteria to take overmodelling into account.
       if (filter_length_blocks == 12) {
         EXPECT_LT(1000 * std::inner_product(e.begin(), e.end(), e.begin(), 0.f),
@@ -281,7 +284,7 @@ TEST(MainFilterUpdateGain, GainCausesFilterToConverge) {
 
 // Verifies that the magnitude of the gain on average decreases for a
 // persistently exciting signal.
-TEST(MainFilterUpdateGain, DecreasingGain) {
+TEST(RefinedFilterUpdateGain, DecreasingGain) {
   std::vector<int> blocks_with_echo_path_changes;
   std::vector<int> blocks_with_saturation;
 
@@ -314,7 +317,7 @@ TEST(MainFilterUpdateGain, DecreasingGain) {
 
 // Verifies that the gain is zero when there is saturation and that the internal
 // error estimates cause the gain to increase after a period of saturation.
-TEST(MainFilterUpdateGain, SaturationBehavior) {
+TEST(RefinedFilterUpdateGain, SaturationBehavior) {
   std::vector<int> blocks_with_echo_path_changes;
   std::vector<int> blocks_with_saturation;
   for (int k = 99; k < 200; ++k) {
@@ -358,7 +361,7 @@ TEST(MainFilterUpdateGain, SaturationBehavior) {
 
 // Verifies that the gain increases after an echo path change.
 // TODO(peah): Correct and reactivate this test.
-TEST(MainFilterUpdateGain, DISABLED_EchoPathChangeBehavior) {
+TEST(RefinedFilterUpdateGain, DISABLED_EchoPathChangeBehavior) {
   for (size_t filter_length_blocks : {12, 20, 30}) {
     SCOPED_TRACE(ProduceDebugText(filter_length_blocks));
     std::vector<int> blocks_with_echo_path_changes;

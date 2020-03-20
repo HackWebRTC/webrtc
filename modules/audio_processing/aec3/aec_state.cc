@@ -161,7 +161,7 @@ void AecState::Update(
         adaptive_filter_frequency_responses,
     rtc::ArrayView<const std::vector<float>> adaptive_filter_impulse_responses,
     const RenderBuffer& render_buffer,
-    rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> E2_main,
+    rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> E2_refined,
     rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Y2,
     rtc::ArrayView<const SubtractorOutput> subtractor_output) {
   RTC_DCHECK_EQ(num_capture_channels_, Y2.size());
@@ -227,7 +227,7 @@ void AecState::Update(
   }
 
   erle_estimator_.Update(render_buffer, adaptive_filter_frequency_responses,
-                         avg_render_spectrum_with_reverb, Y2, E2_main,
+                         avg_render_spectrum_with_reverb, Y2, E2_refined,
                          subtractor_output_analyzer_.ConvergedFilters());
 
   erl_estimator_.Update(
@@ -511,7 +511,7 @@ void AecState::SaturationDetector::Update(
     for (size_t ch = 0; ch < subtractor_output.size(); ++ch) {
       saturated_echo_ =
           saturated_echo_ ||
-          (subtractor_output[ch].s_main_max_abs > kSaturationThreshold ||
+          (subtractor_output[ch].s_refined_max_abs > kSaturationThreshold ||
            subtractor_output[ch].s_shadow_max_abs > kSaturationThreshold);
     }
   } else {

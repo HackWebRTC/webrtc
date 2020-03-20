@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_MAIN_FILTER_UPDATE_GAIN_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_MAIN_FILTER_UPDATE_GAIN_H_
+#ifndef MODULES_AUDIO_PROCESSING_AEC3_REFINED_FILTER_UPDATE_GAIN_H_
+#define MODULES_AUDIO_PROCESSING_AEC3_REFINED_FILTER_UPDATE_GAIN_H_
 
 #include <stddef.h>
 
@@ -29,16 +29,17 @@ struct FftData;
 class RenderSignalAnalyzer;
 struct SubtractorOutput;
 
-// Provides functionality for  computing the adaptive gain for the main filter.
-class MainFilterUpdateGain {
+// Provides functionality for  computing the adaptive gain for the refined
+// filter.
+class RefinedFilterUpdateGain {
  public:
-  MainFilterUpdateGain(
-      const EchoCanceller3Config::Filter::MainConfiguration& config,
+  RefinedFilterUpdateGain(
+      const EchoCanceller3Config::Filter::RefinedConfiguration& config,
       size_t config_change_duration_blocks);
-  ~MainFilterUpdateGain();
+  ~RefinedFilterUpdateGain();
 
-  MainFilterUpdateGain(const MainFilterUpdateGain&) = delete;
-  MainFilterUpdateGain& operator=(const MainFilterUpdateGain&) = delete;
+  RefinedFilterUpdateGain(const RefinedFilterUpdateGain&) = delete;
+  RefinedFilterUpdateGain& operator=(const RefinedFilterUpdateGain&) = delete;
 
   // Takes action in the case of a known echo path change.
   void HandleEchoPathChange(const EchoPathVariability& echo_path_variability);
@@ -53,8 +54,9 @@ class MainFilterUpdateGain {
                FftData* gain_fft);
 
   // Sets a new config.
-  void SetConfig(const EchoCanceller3Config::Filter::MainConfiguration& config,
-                 bool immediate_effect) {
+  void SetConfig(
+      const EchoCanceller3Config::Filter::RefinedConfiguration& config,
+      bool immediate_effect) {
     if (immediate_effect) {
       old_target_config_ = current_config_ = target_config_ = config;
       config_change_counter_ = 0;
@@ -70,9 +72,9 @@ class MainFilterUpdateGain {
   std::unique_ptr<ApmDataDumper> data_dumper_;
   const int config_change_duration_blocks_;
   float one_by_config_change_duration_blocks_;
-  EchoCanceller3Config::Filter::MainConfiguration current_config_;
-  EchoCanceller3Config::Filter::MainConfiguration target_config_;
-  EchoCanceller3Config::Filter::MainConfiguration old_target_config_;
+  EchoCanceller3Config::Filter::RefinedConfiguration current_config_;
+  EchoCanceller3Config::Filter::RefinedConfiguration target_config_;
+  EchoCanceller3Config::Filter::RefinedConfiguration old_target_config_;
   std::array<float, kFftLengthBy2Plus1> H_error_;
   size_t poor_excitation_counter_;
   size_t call_counter_ = 0;
@@ -84,4 +86,4 @@ class MainFilterUpdateGain {
 
 }  // namespace webrtc
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_MAIN_FILTER_UPDATE_GAIN_H_
+#endif  // MODULES_AUDIO_PROCESSING_AEC3_REFINED_FILTER_UPDATE_GAIN_H_

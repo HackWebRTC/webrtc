@@ -135,7 +135,7 @@ class AecState {
       rtc::ArrayView<const std::vector<float>>
           adaptive_filter_impulse_responses,
       const RenderBuffer& render_buffer,
-      rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> E2_main,
+      rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> E2_refined,
       rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> Y2,
       rtc::ArrayView<const SubtractorOutput> subtractor_output);
 

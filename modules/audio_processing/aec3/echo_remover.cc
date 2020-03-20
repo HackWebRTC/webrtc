@@ -133,7 +133,7 @@ class EchoRemoverImpl final : public EchoRemover {
   }
 
  private:
-  // Selects which of the shadow and main linear filter outputs that is most
+  // Selects which of the shadow and refined linear filter outputs that is most
   // appropriate to pass to the suppressor and forms the linear filter output by
   // smoothly transition between those.
   void FormLinearFilterOutput(const SubtractorOutput& subtractor_output,
@@ -161,7 +161,7 @@ class EchoRemoverImpl final : public EchoRemover {
   std::vector<std::array<float, kFftLengthBy2>> y_old_;
   size_t block_counter_ = 0;
   int gain_change_hangover_ = 0;
-  bool main_filter_output_last_selected_ = true;
+  bool refined_filter_output_last_selected_ = true;
 
   std::vector<std::array<float, kFftLengthBy2>> e_heap_;
   std::vector<std::array<float, kFftLengthBy2Plus1>> Y2_heap_;
@@ -429,7 +429,7 @@ void EchoRemoverImpl::ProcessCapture(
 
   // Debug outputs for the purpose of development and analysis.
   data_dumper_->DumpWav("aec3_echo_estimate", kBlockSize,
-                        &subtractor_output[0].s_main[0], 16000, 1);
+                        &subtractor_output[0].s_refined[0], 16000, 1);
   data_dumper_->DumpRaw("aec3_output", (*y)[0][0]);
   data_dumper_->DumpRaw("aec3_narrow_render",
                         render_signal_analyzer_.NarrowPeakBand() ? 1 : 0);
@@ -456,34 +456,35 @@ void EchoRemoverImpl::ProcessCapture(
 void EchoRemoverImpl::FormLinearFilterOutput(
     const SubtractorOutput& subtractor_output,
     rtc::ArrayView<float> output) {
-  RTC_DCHECK_EQ(subtractor_output.e_main.size(), output.size());
+  RTC_DCHECK_EQ(subtractor_output.e_refined.size(), output.size());
   RTC_DCHECK_EQ(subtractor_output.e_shadow.size(), output.size());
-  bool use_main_output = true;
+  bool use_refined_output = true;
   if (use_shadow_filter_output_) {
-    // As the output of the main adaptive filter generally should be better
+    // As the output of the refined adaptive filter generally should be better
     // than the shadow filter output, add a margin and threshold for when
     // choosing the shadow filter output.
-    if (subtractor_output.e2_shadow < 0.9f * subtractor_output.e2_main &&
+    if (subtractor_output.e2_shadow < 0.9f * subtractor_output.e2_refined &&
         subtractor_output.y2 > 30.f * 30.f * kBlockSize &&
-        (subtractor_output.s2_main > 60.f * 60.f * kBlockSize ||
+        (subtractor_output.s2_refined > 60.f * 60.f * kBlockSize ||
          subtractor_output.s2_shadow > 60.f * 60.f * kBlockSize)) {
-      use_main_output = false;
+      use_refined_output = false;
     } else {
-      // If the main filter is diverged, choose the filter output that has the
-      // lowest power.
-      if (subtractor_output.e2_shadow < subtractor_output.e2_main &&
-          subtractor_output.y2 < subtractor_output.e2_main) {
-        use_main_output = false;
+      // If the refined filter is diverged, choose the filter output that has
+      // the lowest power.
+      if (subtractor_output.e2_shadow < subtractor_output.e2_refined &&
+          subtractor_output.y2 < subtractor_output.e2_refined) {
+        use_refined_output = false;
       }
     }
   }
 
-  SignalTransition(
-      main_filter_output_last_selected_ ? subtractor_output.e_main
-                                        : subtractor_output.e_shadow,
-      use_main_output ? subtractor_output.e_main : subtractor_output.e_shadow,
-      output);
-  main_filter_output_last_selected_ = use_main_output;
+  SignalTransition(refined_filter_output_last_selected_
+                       ? subtractor_output.e_refined
+                       : subtractor_output.e_shadow,
+                   use_refined_output ? subtractor_output.e_refined
+                                      : subtractor_output.e_shadow,
+                   output);
+  refined_filter_output_last_selected_ = use_refined_output;
 }
 
 }  // namespace

@@ -111,7 +111,7 @@ class FilterAnalyzer {
 
   struct FilterAnalysisState {
     explicit FilterAnalysisState(const EchoCanceller3Config& config)
-        : filter_length_blocks(config.filter.main_initial.length_blocks),
+        : filter_length_blocks(config.filter.refined_initial.length_blocks),
           consistent_filter_detector(config) {}
     float gain;
     size_t peak_index;
