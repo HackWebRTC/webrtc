@@ -23,6 +23,10 @@ extern "C" {
 }
 #include "modules/audio_processing/aecm/aecm_core.h"
 
+namespace webrtc {
+
+namespace {
+
 #define BUF_SIZE_FRAMES 50  // buffer size (frames)
 // Maximum length of resampled signal. Must be an integer multiple of frames
 // (ceil(1/(1 + MIN_SKEW)*2) + 1)*FRAME_LEN
@@ -74,6 +78,8 @@ typedef struct {
 
   AecmCore* aecmCore;
 } AecMobile;
+
+}  // namespace
 
 // Estimates delay to set the position of the farend buffer read pointer
 // (controlled by knownDelay)
@@ -590,3 +596,5 @@ static int WebRtcAecm_DelayComp(AecMobile* aecm) {
 
   return 0;
 }
+
+}  // namespace webrtc
