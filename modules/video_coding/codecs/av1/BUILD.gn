@@ -35,3 +35,31 @@ rtc_library("libaom_av1_decoder") {
     sources = [ "libaom_av1_decoder_absent.cc" ]
   }
 }
+
+rtc_library("libaom_av1_encoder") {
+  visibility = [ "*" ]
+  poisonous = [ "software_video_codecs" ]
+  public = [ "libaom_av1_encoder.h" ]
+  deps = [
+    "../../../../api/video_codecs:video_codecs_api",
+    "//third_party/abseil-cpp/absl/base:core_headers",
+  ]
+
+  if (enable_libaom) {
+    sources = [ "libaom_av1_encoder.cc" ]
+    deps += [
+      "../..:video_codec_interface",
+      "../../../../api:scoped_refptr",
+      "../../../../api/video:encoded_image",
+      "../../../../api/video:video_frame",
+      "../../../../api/video:video_frame_i420",
+      "../../../../common_video",
+      "../../../../rtc_base:checks",
+      "../../../../rtc_base:logging",
+      "//third_party/abseil-cpp/absl/algorithm:container",
+      "//third_party/libaom",
+    ]
+  } else {
+    sources = [ "libaom_av1_encoder_absent.cc" ]
+  }
+}
