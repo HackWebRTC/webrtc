@@ -170,6 +170,19 @@ bool EchoCanceller3Config::Validate(EchoCanceller3Config* config) {
     res = false;
   }
 
+  res = res & FloorLimit(&c->filter.coarse.length_blocks, 1);
+  res = res & Limit(&c->filter.coarse.rate, 0.f, 1.f);
+  res = res & Limit(&c->filter.coarse.noise_gate, 0.f, 100000000.f);
+
+  res = res & FloorLimit(&c->filter.coarse_initial.length_blocks, 1);
+  res = res & Limit(&c->filter.coarse_initial.rate, 0.f, 1.f);
+  res = res & Limit(&c->filter.coarse_initial.noise_gate, 0.f, 100000000.f);
+
+  if (c->filter.coarse.length_blocks < c->filter.coarse_initial.length_blocks) {
+    c->filter.coarse_initial.length_blocks = c->filter.coarse.length_blocks;
+    res = false;
+  }
+
   res = res & Limit(&c->filter.config_change_duration_blocks, 0, 100000);
   res = res & Limit(&c->filter.initial_state_seconds, 0.f, 100.f);
 

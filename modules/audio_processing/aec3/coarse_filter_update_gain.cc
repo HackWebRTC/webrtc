@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/aec3/shadow_filter_update_gain.h"
+#include "modules/audio_processing/aec3/coarse_filter_update_gain.h"
 
 #include <algorithm>
 #include <functional>
@@ -17,8 +17,8 @@
 
 namespace webrtc {
 
-ShadowFilterUpdateGain::ShadowFilterUpdateGain(
-    const EchoCanceller3Config::Filter::ShadowConfiguration& config,
+CoarseFilterUpdateGain::CoarseFilterUpdateGain(
+    const EchoCanceller3Config::Filter::CoarseConfiguration& config,
     size_t config_change_duration_blocks)
     : config_change_duration_blocks_(
           static_cast<int>(config_change_duration_blocks)) {
@@ -27,15 +27,15 @@ ShadowFilterUpdateGain::ShadowFilterUpdateGain(
   one_by_config_change_duration_blocks_ = 1.f / config_change_duration_blocks_;
 }
 
-void ShadowFilterUpdateGain::HandleEchoPathChange() {
+void CoarseFilterUpdateGain::HandleEchoPathChange() {
   poor_signal_excitation_counter_ = 0;
   call_counter_ = 0;
 }
 
-void ShadowFilterUpdateGain::Compute(
+void CoarseFilterUpdateGain::Compute(
     const std::array<float, kFftLengthBy2Plus1>& render_power,
     const RenderSignalAnalyzer& render_signal_analyzer,
-    const FftData& E_shadow,
+    const FftData& E_coarse,
     size_t size_partitions,
     bool saturated_capture_signal,
     FftData* G) {
@@ -72,12 +72,12 @@ void ShadowFilterUpdateGain::Compute(
 
   // G = mu * E * X2.
   for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
-    G->re[k] = mu[k] * E_shadow.re[k];
-    G->im[k] = mu[k] * E_shadow.im[k];
+    G->re[k] = mu[k] * E_coarse.re[k];
+    G->im[k] = mu[k] * E_coarse.im[k];
   }
 }
 
-void ShadowFilterUpdateGain::UpdateCurrentConfig() {
+void CoarseFilterUpdateGain::UpdateCurrentConfig() {
   RTC_DCHECK_GE(config_change_duration_blocks_, config_change_counter_);
   if (config_change_counter_ > 0) {
     if (--config_change_counter_ > 0) {

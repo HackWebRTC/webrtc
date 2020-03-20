@@ -19,17 +19,17 @@ SubtractorOutput::~SubtractorOutput() = default;
 
 void SubtractorOutput::Reset() {
   s_refined.fill(0.f);
-  s_shadow.fill(0.f);
+  s_coarse.fill(0.f);
   e_refined.fill(0.f);
-  e_shadow.fill(0.f);
+  e_coarse.fill(0.f);
   E_refined.re.fill(0.f);
   E_refined.im.fill(0.f);
   E2_refined.fill(0.f);
-  E2_shadow.fill(0.f);
+  E2_coarse.fill(0.f);
   e2_refined = 0.f;
-  e2_shadow = 0.f;
+  e2_coarse = 0.f;
   s2_refined = 0.f;
-  s2_shadow = 0.f;
+  s2_coarse = 0.f;
   y2 = 0.f;
 }
 
@@ -38,21 +38,21 @@ void SubtractorOutput::ComputeMetrics(rtc::ArrayView<const float> y) {
   y2 = std::accumulate(y.begin(), y.end(), 0.f, sum_of_squares);
   e2_refined =
       std::accumulate(e_refined.begin(), e_refined.end(), 0.f, sum_of_squares);
-  e2_shadow =
-      std::accumulate(e_shadow.begin(), e_shadow.end(), 0.f, sum_of_squares);
+  e2_coarse =
+      std::accumulate(e_coarse.begin(), e_coarse.end(), 0.f, sum_of_squares);
   s2_refined =
       std::accumulate(s_refined.begin(), s_refined.end(), 0.f, sum_of_squares);
-  s2_shadow =
-      std::accumulate(s_shadow.begin(), s_shadow.end(), 0.f, sum_of_squares);
+  s2_coarse =
+      std::accumulate(s_coarse.begin(), s_coarse.end(), 0.f, sum_of_squares);
 
   s_refined_max_abs = *std::max_element(s_refined.begin(), s_refined.end());
   s_refined_max_abs =
       std::max(s_refined_max_abs,
                -(*std::min_element(s_refined.begin(), s_refined.end())));
 
-  s_shadow_max_abs = *std::max_element(s_shadow.begin(), s_shadow.end());
-  s_shadow_max_abs = std::max(
-      s_shadow_max_abs, -(*std::min_element(s_shadow.begin(), s_shadow.end())));
+  s_coarse_max_abs = *std::max_element(s_coarse.begin(), s_coarse.end());
+  s_coarse_max_abs = std::max(
+      s_coarse_max_abs, -(*std::min_element(s_coarse.begin(), s_coarse.end())));
 }
 
 }  // namespace webrtc

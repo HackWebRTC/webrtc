@@ -25,9 +25,9 @@
 #include "modules/audio_processing/aec3/adaptive_fir_filter_erl.h"
 #include "modules/audio_processing/aec3/aec3_fft.h"
 #include "modules/audio_processing/aec3/aec_state.h"
+#include "modules/audio_processing/aec3/coarse_filter_update_gain.h"
 #include "modules/audio_processing/aec3/render_delay_buffer.h"
 #include "modules/audio_processing/aec3/render_signal_analyzer.h"
-#include "modules/audio_processing/aec3/shadow_filter_update_gain.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "modules/audio_processing/test/echo_canceller_test_tools.h"
 #include "modules/audio_processing/utility/cascaded_biquad_filter.h"
@@ -354,9 +354,9 @@ TEST_P(AdaptiveFirFilterMultiChannel, FilterAndAdapt) {
 
   if (num_render_channels == 33) {
     config.filter.refined = {13, 0.00005f, 0.0005f, 0.0001f, 2.f, 20075344.f};
-    config.filter.shadow = {13, 0.1f, 20075344.f};
+    config.filter.coarse = {13, 0.1f, 20075344.f};
     config.filter.refined_initial = {12, 0.005f, 0.5f, 0.001f, 2.f, 20075344.f};
-    config.filter.shadow_initial = {12, 0.7f, 20075344.f};
+    config.filter.coarse_initial = {12, 0.7f, 20075344.f};
   }
 
   AdaptiveFirFilter filter(
@@ -375,7 +375,7 @@ TEST_P(AdaptiveFirFilterMultiChannel, FilterAndAdapt) {
   config.delay.default_delay = 1;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, kSampleRateHz, num_render_channels));
-  ShadowFilterUpdateGain gain(config.filter.shadow,
+  CoarseFilterUpdateGain gain(config.filter.coarse,
                               config.filter.config_change_duration_blocks);
   Random random_generator(42U);
   std::vector<std::vector<std::vector<float>>> x(
@@ -395,7 +395,7 @@ TEST_P(AdaptiveFirFilterMultiChannel, FilterAndAdapt) {
   std::vector<std::array<float, kFftLengthBy2Plus1>> Y2(num_capture_channels);
   std::vector<std::array<float, kFftLengthBy2Plus1>> E2_refined(
       num_capture_channels);
-  std::array<float, kFftLengthBy2Plus1> E2_shadow;
+  std::array<float, kFftLengthBy2Plus1> E2_coarse;
   // [B,A] = butter(2,100/8000,'high')
   constexpr CascadedBiQuadFilter::BiQuadCoefficients
       kHighPassFilterCoefficients = {{0.97261f, -1.94523f, 0.97261f},
@@ -406,7 +406,7 @@ TEST_P(AdaptiveFirFilterMultiChannel, FilterAndAdapt) {
   for (auto& E2_refined_ch : E2_refined) {
     E2_refined_ch.fill(0.f);
   }
-  E2_shadow.fill(0.f);
+  E2_coarse.fill(0.f);
   for (auto& subtractor_output : output) {
     subtractor_output.Reset();
   }

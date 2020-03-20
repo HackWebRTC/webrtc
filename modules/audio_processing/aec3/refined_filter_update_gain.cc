@@ -78,7 +78,7 @@ void RefinedFilterUpdateGain::Compute(
   // Introducing shorter notation to improve readability.
   const FftData& E_refined = subtractor_output.E_refined;
   const auto& E2_refined = subtractor_output.E2_refined;
-  const auto& E2_shadow = subtractor_output.E2_shadow;
+  const auto& E2_coarse = subtractor_output.E2_coarse;
   FftData* G = gain_fft;
   const auto& X2 = render_power;
 
@@ -125,7 +125,7 @@ void RefinedFilterUpdateGain::Compute(
 
   // H_error = H_error + factor * erl.
   for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
-    if (E2_shadow[k] >= E2_refined[k]) {
+    if (E2_coarse[k] >= E2_refined[k]) {
       H_error_[k] += current_config_.leakage_converged * erl[k];
     } else {
       H_error_[k] += current_config_.leakage_diverged * erl[k];

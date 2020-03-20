@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/aec3/shadow_filter_update_gain.h"
+#include "modules/audio_processing/aec3/coarse_filter_update_gain.h"
 
 #include <algorithm>
+#include <memory>
 #include <numeric>
 #include <string>
 #include <vector>
@@ -44,8 +45,8 @@ void RunFilterUpdateTest(int num_blocks_to_process,
       config.filter.refined.length_blocks, config.filter.refined.length_blocks,
       config.filter.config_change_duration_blocks, num_render_channels,
       DetectOptimization(), &data_dumper);
-  AdaptiveFirFilter shadow_filter(
-      config.filter.shadow.length_blocks, config.filter.shadow.length_blocks,
+  AdaptiveFirFilter coarse_filter(
+      config.filter.coarse.length_blocks, config.filter.coarse.length_blocks,
       config.filter.config_change_duration_blocks, num_render_channels,
       DetectOptimization(), &data_dumper);
   Aec3Fft fft;
@@ -55,8 +56,8 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, kSampleRateHz, num_render_channels));
 
-  ShadowFilterUpdateGain shadow_gain(
-      config.filter.shadow, config.filter.config_change_duration_blocks);
+  CoarseFilterUpdateGain coarse_gain(
+      config.filter.coarse, config.filter.config_change_duration_blocks);
   Random random_generator(42U);
   std::vector<std::vector<std::vector<float>>> x(
       NumBandsForRate(kSampleRateHz),
@@ -67,8 +68,8 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   std::array<float, kFftLength> s;
   FftData S;
   FftData G;
-  FftData E_shadow;
-  std::array<float, kBlockSize> e_shadow;
+  FftData E_coarse;
+  std::array<float, kBlockSize> e_coarse;
 
   constexpr float kScale = 1.0f / kFftLengthBy2;
 
@@ -96,24 +97,24 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     render_signal_analyzer.Update(*render_delay_buffer->GetRenderBuffer(),
                                   delay_samples / kBlockSize);
 
-    shadow_filter.Filter(*render_delay_buffer->GetRenderBuffer(), &S);
+    coarse_filter.Filter(*render_delay_buffer->GetRenderBuffer(), &S);
     fft.Ifft(S, &s);
     std::transform(y.begin(), y.end(), s.begin() + kFftLengthBy2,
-                   e_shadow.begin(),
+                   e_coarse.begin(),
                    [&](float a, float b) { return a - b * kScale; });
-    std::for_each(e_shadow.begin(), e_shadow.end(),
+    std::for_each(e_coarse.begin(), e_coarse.end(),
                   [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
-    fft.ZeroPaddedFft(e_shadow, Aec3Fft::Window::kRectangular, &E_shadow);
+    fft.ZeroPaddedFft(e_coarse, Aec3Fft::Window::kRectangular, &E_coarse);
 
     std::array<float, kFftLengthBy2Plus1> render_power;
     render_delay_buffer->GetRenderBuffer()->SpectralSum(
-        shadow_filter.SizePartitions(), &render_power);
-    shadow_gain.Compute(render_power, render_signal_analyzer, E_shadow,
-                        shadow_filter.SizePartitions(), saturation, &G);
-    shadow_filter.Adapt(*render_delay_buffer->GetRenderBuffer(), G);
+        coarse_filter.SizePartitions(), &render_power);
+    coarse_gain.Compute(render_power, render_signal_analyzer, E_coarse,
+                        coarse_filter.SizePartitions(), saturation, &G);
+    coarse_filter.Adapt(*render_delay_buffer->GetRenderBuffer(), G);
   }
 
-  std::copy(e_shadow.begin(), e_shadow.end(), e_last_block->begin());
+  std::copy(e_coarse.begin(), e_coarse.end(), e_last_block->begin());
   std::copy(y.begin(), y.end(), y_last_block->begin());
   std::copy(G.re.begin(), G.re.end(), G_last_block->re.begin());
   std::copy(G.im.begin(), G.im.end(), G_last_block->im.begin());
@@ -137,14 +138,14 @@ std::string ProduceDebugText(size_t delay, int filter_length_blocks) {
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 
 // Verifies that the check for non-null output gain parameter works.
-TEST(ShadowFilterUpdateGain, NullDataOutputGain) {
+TEST(CoarseFilterUpdateGain, NullDataOutputGain) {
   ApmDataDumper data_dumper(42);
   FftBuffer fft_buffer(1, 1);
   RenderSignalAnalyzer analyzer(EchoCanceller3Config{});
   FftData E;
-  const EchoCanceller3Config::Filter::ShadowConfiguration& config = {
+  const EchoCanceller3Config::Filter::CoarseConfiguration& config = {
       12, 0.5f, 220075344.f};
-  ShadowFilterUpdateGain gain(config, 250);
+  CoarseFilterUpdateGain gain(config, 250);
   std::array<float, kFftLengthBy2Plus1> render_power;
   render_power.fill(0.f);
   EXPECT_DEATH(gain.Compute(render_power, analyzer, E, 1, false, nullptr), "");
@@ -152,16 +153,16 @@ TEST(ShadowFilterUpdateGain, NullDataOutputGain) {
 
 #endif
 
-class ShadowFilterUpdateGainOneTwoEightRenderChannels
+class CoarseFilterUpdateGainOneTwoEightRenderChannels
     : public ::testing::Test,
       public ::testing::WithParamInterface<size_t> {};
 
 INSTANTIATE_TEST_SUITE_P(MultiChannel,
-                         ShadowFilterUpdateGainOneTwoEightRenderChannels,
+                         CoarseFilterUpdateGainOneTwoEightRenderChannels,
                          ::testing::Values(1, 2, 8));
 
 // Verifies that the gain formed causes the filter using it to converge.
-TEST_P(ShadowFilterUpdateGainOneTwoEightRenderChannels,
+TEST_P(CoarseFilterUpdateGainOneTwoEightRenderChannels,
        GainCausesFilterToConverge) {
   const size_t num_render_channels = GetParam();
   std::vector<int> blocks_with_echo_path_changes;
@@ -193,7 +194,7 @@ TEST_P(ShadowFilterUpdateGainOneTwoEightRenderChannels,
 }
 
 // Verifies that the gain is zero when there is saturation.
-TEST_P(ShadowFilterUpdateGainOneTwoEightRenderChannels, SaturationBehavior) {
+TEST_P(CoarseFilterUpdateGainOneTwoEightRenderChannels, SaturationBehavior) {
   const size_t num_render_channels = GetParam();
   std::vector<int> blocks_with_echo_path_changes;
   std::vector<int> blocks_with_saturation;
@@ -218,22 +219,22 @@ TEST_P(ShadowFilterUpdateGainOneTwoEightRenderChannels, SaturationBehavior) {
   }
 }
 
-class ShadowFilterUpdateGainOneTwoFourRenderChannels
+class CoarseFilterUpdateGainOneTwoFourRenderChannels
     : public ::testing::Test,
       public ::testing::WithParamInterface<size_t> {};
 
 INSTANTIATE_TEST_SUITE_P(
     MultiChannel,
-    ShadowFilterUpdateGainOneTwoFourRenderChannels,
+    CoarseFilterUpdateGainOneTwoFourRenderChannels,
     ::testing::Values(1, 2, 4),
     [](const ::testing::TestParamInfo<
-        ShadowFilterUpdateGainOneTwoFourRenderChannels::ParamType>& info) {
+        CoarseFilterUpdateGainOneTwoFourRenderChannels::ParamType>& info) {
       return (rtc::StringBuilder() << "Render" << info.param).str();
     });
 
 // Verifies that the magnitude of the gain on average decreases for a
 // persistently exciting signal.
-TEST_P(ShadowFilterUpdateGainOneTwoFourRenderChannels, DecreasingGain) {
+TEST_P(CoarseFilterUpdateGainOneTwoFourRenderChannels, DecreasingGain) {
   const size_t num_render_channels = GetParam();
   for (size_t filter_length_blocks : {12, 20, 30}) {
     SCOPED_TRACE(ProduceDebugText(filter_length_blocks));

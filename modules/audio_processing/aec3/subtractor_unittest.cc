@@ -32,7 +32,7 @@ std::vector<float> RunSubtractorTest(
     int num_blocks_to_process,
     int delay_samples,
     int refined_filter_length_blocks,
-    int shadow_filter_length_blocks,
+    int coarse_filter_length_blocks,
     bool uncorrelated_inputs,
     const std::vector<int>& blocks_with_echo_path_changes) {
   ApmDataDumper data_dumper(42);
@@ -40,7 +40,7 @@ std::vector<float> RunSubtractorTest(
   constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
   EchoCanceller3Config config;
   config.filter.refined.length_blocks = refined_filter_length_blocks;
-  config.filter.shadow.length_blocks = shadow_filter_length_blocks;
+  config.filter.coarse.length_blocks = coarse_filter_length_blocks;
 
   Subtractor subtractor(config, num_render_channels, num_capture_channels,
                         &data_dumper, DetectOptimization());
@@ -61,7 +61,7 @@ std::vector<float> RunSubtractorTest(
   std::vector<std::array<float, kFftLengthBy2Plus1>> Y2(num_capture_channels);
   std::vector<std::array<float, kFftLengthBy2Plus1>> E2_refined(
       num_capture_channels);
-  std::array<float, kFftLengthBy2Plus1> E2_shadow;
+  std::array<float, kFftLengthBy2Plus1> E2_coarse;
   AecState aec_state(config, num_capture_channels);
   x_old.fill(0.f);
   for (auto& Y2_ch : Y2) {
@@ -70,7 +70,7 @@ std::vector<float> RunSubtractorTest(
   for (auto& E2_refined_ch : E2_refined) {
     E2_refined_ch.fill(0.f);
   }
-  E2_shadow.fill(0.f);
+  E2_coarse.fill(0.f);
 
   std::vector<std::vector<std::unique_ptr<DelayBuffer<float>>>> delay_buffer(
       num_capture_channels);
@@ -232,8 +232,8 @@ TEST(Subtractor, Convergence) {
 }
 
 // Verifies that the subtractor is able to handle the case when the refined
-// filter is longer than the shadow filter.
-TEST(Subtractor, RefinedFilterLongerThanShadowFilter) {
+// filter is longer than the coarse filter.
+TEST(Subtractor, RefinedFilterLongerThanCoarseFilter) {
   std::vector<int> blocks_with_echo_path_changes;
   std::vector<float> echo_to_nearend_powers = RunSubtractorTest(
       1, 1, 400, 64, 20, 15, false, blocks_with_echo_path_changes);
@@ -242,9 +242,9 @@ TEST(Subtractor, RefinedFilterLongerThanShadowFilter) {
   }
 }
 
-// Verifies that the subtractor is able to handle the case when the shadow
+// Verifies that the subtractor is able to handle the case when the coarse
 // filter is longer than the refined filter.
-TEST(Subtractor, ShadowFilterLongerThanRefinedFilter) {
+TEST(Subtractor, CoarseFilterLongerThanRefinedFilter) {
   std::vector<int> blocks_with_echo_path_changes;
   std::vector<float> echo_to_nearend_powers = RunSubtractorTest(
       1, 1, 400, 64, 15, 20, false, blocks_with_echo_path_changes);

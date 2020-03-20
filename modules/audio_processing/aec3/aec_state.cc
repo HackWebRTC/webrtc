@@ -512,7 +512,7 @@ void AecState::SaturationDetector::Update(
       saturated_echo_ =
           saturated_echo_ ||
           (subtractor_output[ch].s_refined_max_abs > kSaturationThreshold ||
-           subtractor_output[ch].s_shadow_max_abs > kSaturationThreshold);
+           subtractor_output[ch].s_coarse_max_abs > kSaturationThreshold);
     }
   } else {
     float max_sample = 0.f;

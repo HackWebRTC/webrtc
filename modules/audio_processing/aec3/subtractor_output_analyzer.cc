@@ -33,17 +33,17 @@ void SubtractorOutputAnalyzer::Update(
   for (size_t ch = 0; ch < subtractor_output.size(); ++ch) {
     const float y2 = subtractor_output[ch].y2;
     const float e2_refined = subtractor_output[ch].e2_refined;
-    const float e2_shadow = subtractor_output[ch].e2_shadow;
+    const float e2_coarse = subtractor_output[ch].e2_coarse;
 
     constexpr float kConvergenceThreshold = 50 * 50 * kBlockSize;
     bool refined_filter_converged =
         e2_refined < 0.5f * y2 && y2 > kConvergenceThreshold;
-    bool shadow_filter_converged =
-        e2_shadow < 0.05f * y2 && y2 > kConvergenceThreshold;
-    float min_e2 = std::min(e2_refined, e2_shadow);
+    bool coarse_filter_converged =
+        e2_coarse < 0.05f * y2 && y2 > kConvergenceThreshold;
+    float min_e2 = std::min(e2_refined, e2_coarse);
     bool filter_diverged = min_e2 > 1.5f * y2 && y2 > 30.f * 30.f * kBlockSize;
     filters_converged_[ch] =
-        refined_filter_converged || shadow_filter_converged;
+        refined_filter_converged || coarse_filter_converged;
 
     *any_filter_converged = *any_filter_converged || filters_converged_[ch];
     *all_filters_diverged = *all_filters_diverged && filter_diverged;

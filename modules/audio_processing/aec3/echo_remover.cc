@@ -133,7 +133,7 @@ class EchoRemoverImpl final : public EchoRemover {
   }
 
  private:
-  // Selects which of the shadow and refined linear filter outputs that is most
+  // Selects which of the coarse and refined linear filter outputs that is most
   // appropriate to pass to the suppressor and forms the linear filter output by
   // smoothly transition between those.
   void FormLinearFilterOutput(const SubtractorOutput& subtractor_output,
@@ -147,7 +147,7 @@ class EchoRemoverImpl final : public EchoRemover {
   const int sample_rate_hz_;
   const size_t num_render_channels_;
   const size_t num_capture_channels_;
-  const bool use_shadow_filter_output_;
+  const bool use_coarse_filter_output_;
   Subtractor subtractor_;
   SuppressionGain suppression_gain_;
   ComfortNoiseGenerator cng_;
@@ -189,8 +189,8 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
       sample_rate_hz_(sample_rate_hz),
       num_render_channels_(num_render_channels),
       num_capture_channels_(num_capture_channels),
-      use_shadow_filter_output_(
-          config_.filter.enable_shadow_filter_output_usage),
+      use_coarse_filter_output_(
+          config_.filter.enable_coarse_filter_output_usage),
       subtractor_(config,
                   num_render_channels_,
                   num_capture_channels_,
@@ -457,21 +457,21 @@ void EchoRemoverImpl::FormLinearFilterOutput(
     const SubtractorOutput& subtractor_output,
     rtc::ArrayView<float> output) {
   RTC_DCHECK_EQ(subtractor_output.e_refined.size(), output.size());
-  RTC_DCHECK_EQ(subtractor_output.e_shadow.size(), output.size());
+  RTC_DCHECK_EQ(subtractor_output.e_coarse.size(), output.size());
   bool use_refined_output = true;
-  if (use_shadow_filter_output_) {
+  if (use_coarse_filter_output_) {
     // As the output of the refined adaptive filter generally should be better
-    // than the shadow filter output, add a margin and threshold for when
-    // choosing the shadow filter output.
-    if (subtractor_output.e2_shadow < 0.9f * subtractor_output.e2_refined &&
+    // than the coarse filter output, add a margin and threshold for when
+    // choosing the coarse filter output.
+    if (subtractor_output.e2_coarse < 0.9f * subtractor_output.e2_refined &&
         subtractor_output.y2 > 30.f * 30.f * kBlockSize &&
         (subtractor_output.s2_refined > 60.f * 60.f * kBlockSize ||
-         subtractor_output.s2_shadow > 60.f * 60.f * kBlockSize)) {
+         subtractor_output.s2_coarse > 60.f * 60.f * kBlockSize)) {
       use_refined_output = false;
     } else {
       // If the refined filter is diverged, choose the filter output that has
       // the lowest power.
-      if (subtractor_output.e2_shadow < subtractor_output.e2_refined &&
+      if (subtractor_output.e2_coarse < subtractor_output.e2_refined &&
           subtractor_output.y2 < subtractor_output.e2_refined) {
         use_refined_output = false;
       }
@@ -480,9 +480,9 @@ void EchoRemoverImpl::FormLinearFilterOutput(
 
   SignalTransition(refined_filter_output_last_selected_
                        ? subtractor_output.e_refined
-                       : subtractor_output.e_shadow,
+                       : subtractor_output.e_coarse,
                    use_refined_output ? subtractor_output.e_refined
-                                      : subtractor_output.e_shadow,
+                                      : subtractor_output.e_coarse,
                    output);
   refined_filter_output_last_selected_ = use_refined_output;
 }

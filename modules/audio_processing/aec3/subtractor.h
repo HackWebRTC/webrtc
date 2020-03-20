@@ -23,11 +23,11 @@
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/aec3_fft.h"
 #include "modules/audio_processing/aec3/aec_state.h"
+#include "modules/audio_processing/aec3/coarse_filter_update_gain.h"
 #include "modules/audio_processing/aec3/echo_path_variability.h"
 #include "modules/audio_processing/aec3/refined_filter_update_gain.h"
 #include "modules/audio_processing/aec3/render_buffer.h"
 #include "modules/audio_processing/aec3/render_signal_analyzer.h"
-#include "modules/audio_processing/aec3/shadow_filter_update_gain.h"
 #include "modules/audio_processing/aec3/subtractor_output.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
@@ -80,7 +80,7 @@ class Subtractor {
                 refined_filters_[0]->max_filter_size_partitions())));
 
     refined_filters_[0]->DumpFilter("aec3_subtractor_H_refined");
-    shadow_filter_[0]->DumpFilter("aec3_subtractor_H_shadow");
+    coarse_filter_[0]->DumpFilter("aec3_subtractor_H_coarse");
   }
 
  private:
@@ -122,11 +122,11 @@ class Subtractor {
   const size_t num_capture_channels_;
 
   std::vector<std::unique_ptr<AdaptiveFirFilter>> refined_filters_;
-  std::vector<std::unique_ptr<AdaptiveFirFilter>> shadow_filter_;
+  std::vector<std::unique_ptr<AdaptiveFirFilter>> coarse_filter_;
   std::vector<std::unique_ptr<RefinedFilterUpdateGain>> refined_gains_;
-  std::vector<std::unique_ptr<ShadowFilterUpdateGain>> shadow_gains_;
+  std::vector<std::unique_ptr<CoarseFilterUpdateGain>> coarse_gains_;
   std::vector<FilterMisadjustmentEstimator> filter_misadjustment_estimators_;
-  std::vector<size_t> poor_shadow_filter_counters_;
+  std::vector<size_t> poor_coarse_filter_counters_;
   std::vector<std::vector<std::array<float, kFftLengthBy2Plus1>>>
       refined_frequency_responses_;
   std::vector<std::vector<float>> refined_impulse_responses_;

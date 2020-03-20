@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_SHADOW_FILTER_UPDATE_GAIN_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_SHADOW_FILTER_UPDATE_GAIN_H_
+#ifndef MODULES_AUDIO_PROCESSING_AEC3_COARSE_FILTER_UPDATE_GAIN_H_
+#define MODULES_AUDIO_PROCESSING_AEC3_COARSE_FILTER_UPDATE_GAIN_H_
 
 #include <stddef.h>
 
@@ -22,11 +22,11 @@
 
 namespace webrtc {
 
-// Provides functionality for computing the fixed gain for the shadow filter.
-class ShadowFilterUpdateGain {
+// Provides functionality for computing the fixed gain for the coarse filter.
+class CoarseFilterUpdateGain {
  public:
-  explicit ShadowFilterUpdateGain(
-      const EchoCanceller3Config::Filter::ShadowConfiguration& config,
+  explicit CoarseFilterUpdateGain(
+      const EchoCanceller3Config::Filter::CoarseConfiguration& config,
       size_t config_change_duration_blocks);
 
   // Takes action in the case of a known echo path change.
@@ -35,14 +35,14 @@ class ShadowFilterUpdateGain {
   // Computes the gain.
   void Compute(const std::array<float, kFftLengthBy2Plus1>& render_power,
                const RenderSignalAnalyzer& render_signal_analyzer,
-               const FftData& E_shadow,
+               const FftData& E_coarse,
                size_t size_partitions,
                bool saturated_capture_signal,
                FftData* G);
 
   // Sets a new config.
   void SetConfig(
-      const EchoCanceller3Config::Filter::ShadowConfiguration& config,
+      const EchoCanceller3Config::Filter::CoarseConfiguration& config,
       bool immediate_effect) {
     if (immediate_effect) {
       old_target_config_ = current_config_ = target_config_ = config;
@@ -55,9 +55,9 @@ class ShadowFilterUpdateGain {
   }
 
  private:
-  EchoCanceller3Config::Filter::ShadowConfiguration current_config_;
-  EchoCanceller3Config::Filter::ShadowConfiguration target_config_;
-  EchoCanceller3Config::Filter::ShadowConfiguration old_target_config_;
+  EchoCanceller3Config::Filter::CoarseConfiguration current_config_;
+  EchoCanceller3Config::Filter::CoarseConfiguration target_config_;
+  EchoCanceller3Config::Filter::CoarseConfiguration old_target_config_;
   const int config_change_duration_blocks_;
   float one_by_config_change_duration_blocks_;
   // TODO(peah): Check whether this counter should instead be initialized to a
@@ -71,4 +71,4 @@ class ShadowFilterUpdateGain {
 
 }  // namespace webrtc
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_SHADOW_FILTER_UPDATE_GAIN_H_
+#endif  // MODULES_AUDIO_PROCESSING_AEC3_COARSE_FILTER_UPDATE_GAIN_H_

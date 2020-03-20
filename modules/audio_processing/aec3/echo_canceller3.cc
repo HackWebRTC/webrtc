@@ -41,6 +41,10 @@ EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
   if (adjusted_cfg.filter.use_legacy_filter_naming) {
     adjusted_cfg.filter.refined = adjusted_cfg.filter.main;
     adjusted_cfg.filter.refined_initial = adjusted_cfg.filter.main_initial;
+    adjusted_cfg.filter.coarse = adjusted_cfg.filter.shadow;
+    adjusted_cfg.filter.coarse_initial = adjusted_cfg.filter.shadow_initial;
+    adjusted_cfg.filter.enable_coarse_filter_output_usage =
+        adjusted_cfg.filter.enable_shadow_filter_output_usage;
   }
 
   if (field_trial::IsEnabled("WebRTC-Aec3ShortHeadroomKillSwitch")) {
@@ -480,12 +484,12 @@ EchoCanceller3Config EchoCanceller3::CreateDefaultConfig(
     size_t num_capture_channels) {
   EchoCanceller3Config cfg;
   if (num_render_channels > 1) {
-    // Use shorter and more rapidly adapting shadow filter to compensate for
+    // Use shorter and more rapidly adapting coarse filter to compensate for
     // thge increased number of total filter parameters to adapt.
-    cfg.filter.shadow.length_blocks = 11;
-    cfg.filter.shadow.rate = 0.95f;
-    cfg.filter.shadow_initial.length_blocks = 11;
-    cfg.filter.shadow_initial.rate = 0.95f;
+    cfg.filter.coarse.length_blocks = 11;
+    cfg.filter.coarse.rate = 0.95f;
+    cfg.filter.coarse_initial.length_blocks = 11;
+    cfg.filter.coarse_initial.rate = 0.95f;
 
     // Use more concervative suppressor behavior for non-nearend speech.
     cfg.suppressor.normal_tuning.max_dec_factor_lf = 0.35f;
