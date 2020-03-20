@@ -157,6 +157,7 @@ rtc_library("audio_processing") {
     ":audio_processing_statistics",
     ":config",
     ":high_pass_filter",
+    ":rms_level",
     ":voice_detection",
     "../../api:array_view",
     "../../api:function_view",
@@ -211,6 +212,14 @@ rtc_library("voice_detection") {
     "../../common_audio:common_audio_c",
     "../../rtc_base:checks",
   ]
+}
+
+rtc_source_set("rms_level") {
+  visibility = [ "*" ]
+
+  # TODO(webrtc:11226): Move rms_level.* to here.
+  sources = []
+  deps = []
 }
 
 rtc_library("audio_processing_statistics") {
