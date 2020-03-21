@@ -32,7 +32,6 @@ RtpPacketSendInfo CreatePacket(uint32_t ssrc,
   res.ssrc = ssrc;
   res.transport_sequence_number = transport_sequence_number;
   res.rtp_sequence_number = rtp_sequence_number;
-  res.has_rtp_sequence_number = true;
   return res;
 }
 }  // namespace

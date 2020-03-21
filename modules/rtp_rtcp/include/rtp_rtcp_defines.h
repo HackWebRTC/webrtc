@@ -227,8 +227,6 @@ struct RtpPacketSendInfo {
   uint16_t transport_sequence_number = 0;
   uint32_t ssrc = 0;
   uint16_t rtp_sequence_number = 0;
-  // Get rid of this flag when all code paths populate |rtp_sequence_number|.
-  bool has_rtp_sequence_number = false;
   size_t length = 0;
   absl::optional<RtpPacketMediaType> packet_type;
   PacedPacketInfo pacing_info;

@@ -1294,7 +1294,6 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
         packet_info.transport_sequence_number =
             rtp_packet.rtp.header.extension.transportSequenceNumber;
         packet_info.rtp_sequence_number = rtp_packet.rtp.header.sequenceNumber;
-        packet_info.has_rtp_sequence_number = true;
         packet_info.length = rtp_packet.rtp.total_length;
         transport_feedback.AddPacket(
             packet_info,

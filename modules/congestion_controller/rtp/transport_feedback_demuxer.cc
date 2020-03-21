@@ -38,7 +38,7 @@ void TransportFeedbackDemuxer::DeRegisterStreamFeedbackObserver(
 
 void TransportFeedbackDemuxer::AddPacket(const RtpPacketSendInfo& packet_info) {
   rtc::CritScope cs(&lock_);
-  if (packet_info.has_rtp_sequence_number && packet_info.ssrc != 0) {
+  if (packet_info.ssrc != 0) {
     StreamFeedbackObserver::StreamPacketInfo info;
     info.ssrc = packet_info.ssrc;
     info.rtp_sequence_number = packet_info.rtp_sequence_number;

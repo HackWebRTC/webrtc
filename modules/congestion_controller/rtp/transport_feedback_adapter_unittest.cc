@@ -110,7 +110,6 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
     packet_info.transport_sequence_number =
         packet_feedback.sent_packet.sequence_number;
     packet_info.rtp_sequence_number = 0;
-    packet_info.has_rtp_sequence_number = true;
     packet_info.length = packet_feedback.sent_packet.size.bytes();
     packet_info.pacing_info = packet_feedback.sent_packet.pacing_info;
     packet_info.packet_type = RtpPacketMediaType::kVideo;
