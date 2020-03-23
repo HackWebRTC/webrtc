@@ -329,8 +329,14 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
     Network* net = kv.second.net;
     auto existing = networks_map_.find(key);
     if (existing == networks_map_.end()) {
-      // This network is new. Place it in the network map.
+      if (interface_ids_by_name_.find(net->name()) ==
+          interface_ids_by_name_.end()) {
+        interface_ids_by_name_.emplace(net->name(),
+                                       next_available_interface_id_++);
+      }
+      net->set_interface_id(interface_ids_by_name_[net->name()]);
       merged_list.push_back(net);
+      // This network is new. Place it in the network map.
       networks_map_[key] = net;
       net->set_id(next_available_network_id_++);
       // Also, we might have accumulated IPAddresses from the first

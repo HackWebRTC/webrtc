@@ -207,6 +207,11 @@ class RTC_EXPORT NetworkManagerBase : public NetworkManager {
 
   IPAddress default_local_ipv4_address_;
   IPAddress default_local_ipv6_address_;
+
+  std::map<std::string, uint16_t> interface_ids_by_name_;
+  // Use 16 bits to save the bandwidth consumption when sending the interface
+  // id.
+  uint16_t next_available_interface_id_ = 1;
   // We use 16 bits to save the bandwidth consumption when sending the network
   // id over the Internet. It is OK that the 16-bit integer overflows to get a
   // network id 0 because we only compare the network ids in the old and the new
@@ -415,6 +420,16 @@ class RTC_EXPORT Network {
   uint16_t id() const { return id_; }
   void set_id(uint16_t id) { id_ = id; }
 
+  // A unique id assigned by the network manager to each network interface name.
+  // Networks on the same network interface (as identified by the interface
+  // name) have the same interface id.
+  uint16_t interface_id() const { return interface_id_; }
+  void set_interface_id(uint16_t interface_id) {
+    RTC_DCHECK(interface_id_ == 0);
+    RTC_DCHECK(interface_id != 0);
+    interface_id_ = interface_id;
+  }
+
   int preference() const { return preference_; }
   void set_preference(int preference) { preference_ = preference; }
 
@@ -447,6 +462,7 @@ class RTC_EXPORT Network {
   int preference_;
   bool active_ = true;
   uint16_t id_ = 0;
+  uint16_t interface_id_ = 0;
 
   friend class NetworkManager;
 };
