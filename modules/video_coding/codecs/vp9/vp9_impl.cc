@@ -1764,6 +1764,11 @@ int VP9DecoderImpl::ReturnFrame(
             // frame buffer is through a callback function. This is where we
             // should release |img_buffer|.
             rtc::KeepRefUntilDone(img_buffer));
+      } else {
+        RTC_LOG(LS_ERROR)
+            << "Unsupported pixel format produced by the decoder: "
+            << static_cast<int>(img->fmt);
+        return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
       }
       break;
     case 10:
