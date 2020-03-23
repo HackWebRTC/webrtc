@@ -94,10 +94,6 @@ class TestVp8Impl : public VideoCodecUnitTest {
               encoder_->Encode(input_frame, &frame_types));
     ASSERT_TRUE(WaitForEncodedFrame(encoded_frame, codec_specific_info));
     VerifyQpParser(*encoded_frame);
-    VideoEncoder::EncoderInfo encoder_info = encoder_->GetEncoderInfo();
-    EXPECT_EQ("libvpx", encoder_info.implementation_name);
-    EXPECT_EQ(false, encoder_info.is_hardware_accelerated);
-    EXPECT_EQ(false, encoder_info.has_internal_source);
     EXPECT_EQ(kVideoCodecVP8, codec_specific_info->codecType);
     EXPECT_EQ(0, encoded_frame->SpatialIndex());
   }
@@ -554,6 +550,51 @@ TEST_F(TestVp8Impl, KeepsTimestampOnReencode) {
   auto delta_frame =
       std::vector<VideoFrameType>{VideoFrameType::kVideoFrameDelta};
   encoder.Encode(NextInputFrame(), &delta_frame);
+}
+
+TEST(LibvpxVp8EncoderTest, GetEncoderInfoReturnsStaticInformation) {
+  auto* const vpx = new NiceMock<MockLibvpxVp8Interface>();
+  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)),
+                           VP8Encoder::Settings());
+
+  const auto info = encoder.GetEncoderInfo();
+
+  EXPECT_FALSE(info.supports_native_handle);
+  EXPECT_FALSE(info.is_hardware_accelerated);
+  EXPECT_FALSE(info.has_internal_source);
+  EXPECT_TRUE(info.supports_simulcast);
+  EXPECT_EQ(info.implementation_name, "libvpx");
+}
+
+TEST(LibvpxVp8EncoderTest,
+     GetEncoderInfoReturnsEmptyResolutionBitrateLimitsByDefault) {
+  auto* const vpx = new NiceMock<MockLibvpxVp8Interface>();
+  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)),
+                           VP8Encoder::Settings());
+
+  const auto info = encoder.GetEncoderInfo();
+
+  EXPECT_TRUE(info.resolution_bitrate_limits.empty());
+}
+
+TEST(LibvpxVp8EncoderTest,
+     GetEncoderInfoReturnsResolutionBitrateLimitsAsConfigured) {
+  std::vector<VideoEncoder::ResolutionBitrateLimits> resolution_bitrate_limits =
+      {VideoEncoder::ResolutionBitrateLimits(/*frame_size_pixels=*/640 * 360,
+                                             /*min_start_bitrate_bps=*/300,
+                                             /*min_bitrate_bps=*/100,
+                                             /*max_bitrate_bps=*/1000),
+       VideoEncoder::ResolutionBitrateLimits(320 * 180, 100, 30, 500)};
+  VP8Encoder::Settings settings;
+  settings.resolution_bitrate_limits = resolution_bitrate_limits;
+
+  auto* const vpx = new NiceMock<MockLibvpxVp8Interface>();
+  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)),
+                           std::move(settings));
+
+  const auto info = encoder.GetEncoderInfo();
+
+  EXPECT_EQ(info.resolution_bitrate_limits, resolution_bitrate_limits);
 }
 
 TEST_F(TestVp8Impl, GetEncoderInfoFpsAllocationNoLayers) {

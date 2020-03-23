@@ -279,6 +279,7 @@ LibvpxVp8Encoder::LibvpxVp8Encoder(std::unique_ptr<LibvpxInterface> interface,
           ExperimentalScreenshareSettings::ParseFromFieldTrials().MaxQp()),
       frame_buffer_controller_factory_(
           std::move(settings.frame_buffer_controller_factory)),
+      resolution_bitrate_limits_(std::move(settings.resolution_bitrate_limits)),
       key_frame_request_(kMaxSimulcastStreams, false),
       variable_framerate_experiment_(ParseVariableFramerateConfig(
           "WebRTC-VP8VariableFramerateScreenshare")),
@@ -1230,6 +1231,9 @@ VideoEncoder::EncoderInfo LibvpxVp8Encoder::GetEncoderInfo() const {
   info.is_hardware_accelerated = false;
   info.has_internal_source = false;
   info.supports_simulcast = true;
+  if (!resolution_bitrate_limits_.empty()) {
+    info.resolution_bitrate_limits = resolution_bitrate_limits_;
+  }
 
   const bool enable_scaling =
       num_active_streams_ == 1 &&

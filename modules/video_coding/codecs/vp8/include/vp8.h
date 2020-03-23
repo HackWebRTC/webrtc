@@ -12,7 +12,9 @@
 #define MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_H_
 
 #include <memory>
+#include <vector>
 
+#include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/vp8_frame_buffer_controller.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/deprecation.h"
@@ -29,7 +31,10 @@ class VP8Encoder {
     std::unique_ptr<Vp8FrameBufferControllerFactory>
         frame_buffer_controller_factory = nullptr;
 
-    // TODO(https://bugs.webrtc.org/11436): Add resolution_bitrate_limits.
+    // Allows for overriding the resolution/bitrate limits exposed through
+    // VideoEncoder::GetEncoderInfo(). No override is done if empty.
+    std::vector<VideoEncoder::ResolutionBitrateLimits>
+        resolution_bitrate_limits = {};
   };
 
   static std::unique_ptr<VideoEncoder> Create();
