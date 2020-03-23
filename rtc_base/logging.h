@@ -391,6 +391,18 @@ class LogCall final {
   }
 };
 
+// This class is used to explicitly ignore values in the conditional
+// logging macros.  This avoids compiler warnings like "value computed
+// is not used" and "statement has no effect".
+class LogMessageVoidify {
+ public:
+  LogMessageVoidify() = default;
+  // This has to be an operator with a precedence lower than << but
+  // higher than ?:
+  template <typename... Ts>
+  void operator&(LogStreamer<Ts...>&& streamer) {}
+};
+
 }  // namespace webrtc_logging_impl
 
 // Direct use of this class is deprecated; please use the logging macros
@@ -660,9 +672,10 @@ inline const char* AdaptString(const std::string& str) {
 #define RTC_DLOG_V(sev) RTC_LOG_V(sev)
 #define RTC_DLOG_F(sev) RTC_LOG_F(sev)
 #else
-#define RTC_DLOG_EAT_STREAM_PARAMS() \
-  while (false)                      \
-  ::rtc::webrtc_logging_impl::LogStreamer<>()
+#define RTC_DLOG_EAT_STREAM_PARAMS()                \
+  while (false)                                     \
+  ::rtc::webrtc_logging_impl::LogMessageVoidify() & \
+      (::rtc::webrtc_logging_impl::LogStreamer<>())
 #define RTC_DLOG(sev) RTC_DLOG_EAT_STREAM_PARAMS()
 #define RTC_DLOG_V(sev) RTC_DLOG_EAT_STREAM_PARAMS()
 #define RTC_DLOG_F(sev) RTC_DLOG_EAT_STREAM_PARAMS()

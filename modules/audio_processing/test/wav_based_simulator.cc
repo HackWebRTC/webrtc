@@ -16,6 +16,7 @@
 
 #include "modules/audio_processing/test/test_utils.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/system/file_wrapper.h"
 
 namespace webrtc {
 namespace test {
@@ -23,13 +24,14 @@ namespace test {
 std::vector<WavBasedSimulator::SimulationEventType>
 WavBasedSimulator::GetCustomEventChain(const std::string& filename) {
   std::vector<WavBasedSimulator::SimulationEventType> call_chain;
-  FILE* stream = OpenFile(filename.c_str(), "r");
+  FileWrapper file_wrapper = FileWrapper::OpenReadOnly(filename.c_str());
 
-  RTC_CHECK(stream) << "Could not open the custom call order file, reverting "
-                       "to using the default call order";
+  RTC_CHECK(file_wrapper.is_open())
+      << "Could not open the custom call order file, reverting "
+         "to using the default call order";
 
   char c;
-  size_t num_read = fread(&c, sizeof(char), 1, stream);
+  size_t num_read = file_wrapper.Read(&c, sizeof(char));
   while (num_read > 0) {
     switch (c) {
       case 'r':
@@ -43,14 +45,12 @@ WavBasedSimulator::GetCustomEventChain(const std::string& filename) {
       default:
         FATAL() << "Incorrect custom call order file, reverting to using the "
                    "default call order";
-        fclose(stream);
         return WavBasedSimulator::GetDefaultEventChain();
     }
 
-    num_read = fread(&c, sizeof(char), 1, stream);
+    num_read = file_wrapper.Read(&c, sizeof(char));
   }
 
-  fclose(stream);
   return call_chain;
 }
 
