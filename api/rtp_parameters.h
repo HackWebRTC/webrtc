@@ -93,6 +93,7 @@ enum class DegradationPreference {
 
 RTC_EXPORT extern const double kDefaultBitratePriority;
 
+// GENERATED_JAVA_ENUM_PACKAGE: org.webrtc
 enum class Priority {
   kVeryLow,
   kLow,
@@ -399,6 +400,11 @@ struct RTC_EXPORT RtpEncodingParameters {
   // The relative bitrate priority of this encoding. Currently this is
   // implemented for the entire rtp sender by using the value of the first
   // encoding parameter.
+  // See: https://w3c.github.io/webrtc-priority/#enumdef-rtcprioritytype
+  // "very-low" = 0.5
+  // "low" = 1.0
+  // "medium" = 2.0
+  // "high" = 4.0
   // TODO(webrtc.bugs.org/8630): Implement this per encoding parameter.
   // Currently there is logic for how bitrate is distributed per simulcast layer
   // in the VideoBitrateAllocator. This must be updated to incorporate relative
@@ -407,9 +413,7 @@ struct RTC_EXPORT RtpEncodingParameters {
 
   // The relative DiffServ Code Point priority for this encoding, allowing
   // packets to be marked relatively higher or lower without affecting
-  // bandwidth allocations. See https://w3c.github.io/webrtc-dscp-exp/ . NB
-  // we follow chromium's translation of the allowed string enum values for
-  // this field to 1.0, 0.5, et cetera, similar to bitrate_priority above.
+  // bandwidth allocations. See https://w3c.github.io/webrtc-dscp-exp/ .
   // TODO(http://crbug.com/webrtc/8630): Implement this per encoding parameter.
   // TODO(http://crbug.com/webrtc/11379): TCP connections should use a single
   // DSCP value even if shared by multiple senders; this is not implemented.

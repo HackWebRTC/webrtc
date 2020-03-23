@@ -47,6 +47,7 @@ ScopedJavaLocalRef<jobject> NativeToJavaRtpEncodingParameter(
     const RtpEncodingParameters& encoding) {
   return Java_Encoding_Constructor(
       env, NativeToJavaString(env, encoding.rid), encoding.active,
+      encoding.bitrate_priority, static_cast<int>(encoding.network_priority),
       NativeToJavaInteger(env, encoding.max_bitrate_bps),
       NativeToJavaInteger(env, encoding.min_bitrate_bps),
       NativeToJavaInteger(env, encoding.max_framerate),
@@ -95,6 +96,10 @@ RtpEncodingParameters JavaToNativeRtpEncodingParameters(
   encoding.active = Java_Encoding_getActive(jni, j_encoding_parameters);
   ScopedJavaLocalRef<jobject> j_max_bitrate =
       Java_Encoding_getMaxBitrateBps(jni, j_encoding_parameters);
+  encoding.bitrate_priority =
+      Java_Encoding_getBitratePriority(jni, j_encoding_parameters);
+  encoding.network_priority = static_cast<webrtc::Priority>(
+      Java_Encoding_getNetworkPriority(jni, j_encoding_parameters));
   encoding.max_bitrate_bps = JavaToNativeOptionalInt(jni, j_max_bitrate);
   ScopedJavaLocalRef<jobject> j_min_bitrate =
       Java_Encoding_getMinBitrateBps(jni, j_encoding_parameters);

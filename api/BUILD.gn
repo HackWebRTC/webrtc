@@ -322,6 +322,12 @@ rtc_library("rtp_parameters") {
   ]
 }
 
+if (is_android) {
+  java_cpp_enum("rtp_parameters_enums") {
+    sources = [ "rtp_parameters.h" ]
+  }
+}
+
 rtc_source_set("audio_quality_analyzer_api") {
   visibility = [ "*" ]
   testonly = true
