@@ -295,6 +295,10 @@ class Port : public PortInterface,
                                 const rtc::SocketAddress& addr,
                                 int error_code,
                                 const std::string& reason) override;
+  void SendUnknownAttributesErrorResponse(
+      StunMessage* request,
+      const rtc::SocketAddress& addr,
+      const std::vector<uint16_t>& unknown_types);
 
   void set_proxy(const std::string& user_agent, const rtc::ProxyInfo& proxy) {
     user_agent_ = user_agent;

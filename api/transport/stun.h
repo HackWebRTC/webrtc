@@ -163,6 +163,10 @@ class StunMessage {
   void SetType(int type) { type_ = static_cast<uint16_t>(type); }
   bool SetTransactionID(const std::string& str);
 
+  // Get a list of all of the attribute types in the "comprehension required"
+  // range that were not recognized.
+  std::vector<uint16_t> GetNonComprehendedAttributes() const;
+
   // Gets the desired attribute value, or NULL if no such attribute type exists.
   const StunAddressAttribute* GetAddress(int type) const;
   const StunUInt32Attribute* GetUInt32(int type) const;
