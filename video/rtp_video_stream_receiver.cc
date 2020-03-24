@@ -36,7 +36,6 @@
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer.h"
-#include "modules/rtp_rtcp/source/video_rtp_depacketizer_av1.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer_raw.h"
 #include "modules/utility/include/process_thread.h"
 #include "modules/video_coding/frame_object.h"
@@ -712,7 +711,6 @@ void RtpVideoStreamReceiver::OnInsertedPacket(
   int max_nack_count;
   int64_t min_recv_time;
   int64_t max_recv_time;
-  int frame_size;
   std::vector<rtc::ArrayView<const uint8_t>> payloads;
   RtpPacketInfos::vector_type packet_infos;
 
@@ -726,7 +724,6 @@ void RtpVideoStreamReceiver::OnInsertedPacket(
       max_nack_count = packet->times_nacked;
       min_recv_time = packet->packet_info.receive_time_ms();
       max_recv_time = packet->packet_info.receive_time_ms();
-      frame_size = packet->video_payload.size();
       payloads.clear();
       packet_infos.clear();
     } else {
@@ -735,31 +732,22 @@ void RtpVideoStreamReceiver::OnInsertedPacket(
           std::min(min_recv_time, packet->packet_info.receive_time_ms());
       max_recv_time =
           std::max(max_recv_time, packet->packet_info.receive_time_ms());
-      frame_size += packet->video_payload.size();
     }
     payloads.emplace_back(packet->video_payload);
     packet_infos.push_back(packet->packet_info);
 
     frame_boundary = packet->is_last_packet_in_frame();
     if (packet->is_last_packet_in_frame()) {
-      rtc::scoped_refptr<EncodedImageBuffer> bitstream;
-      // TODO(danilchap): Hide codec-specific code paths behind an interface.
-      if (first_packet->codec() == VideoCodecType::kVideoCodecAV1) {
-        bitstream = VideoRtpDepacketizerAv1::AssembleFrame(payloads);
-        if (!bitstream) {
-          // Failed to assemble a frame. Discard and continue.
-          continue;
-        }
-      } else {
-        bitstream = EncodedImageBuffer::Create(frame_size);
+      auto depacketizer_it = payload_type_map_.find(first_packet->payload_type);
+      RTC_CHECK(depacketizer_it != payload_type_map_.end());
 
-        uint8_t* write_at = bitstream->data();
-        for (rtc::ArrayView<const uint8_t> payload : payloads) {
-          memcpy(write_at, payload.data(), payload.size());
-          write_at += payload.size();
-        }
-        RTC_DCHECK_EQ(write_at - bitstream->data(), bitstream->size());
+      rtc::scoped_refptr<EncodedImageBuffer> bitstream =
+          depacketizer_it->second->AssembleFrame(payloads);
+      if (!bitstream) {
+        // Failed to assemble a frame. Discard and continue.
+        continue;
       }
+
       const video_coding::PacketBuffer::Packet& last_packet = *packet;
       OnAssembledFrame(std::make_unique<video_coding::RtpFrameObject>(
           first_packet->seq_num,                    //
