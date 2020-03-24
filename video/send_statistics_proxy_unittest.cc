@@ -65,10 +65,16 @@ class SendStatisticsProxyTest : public ::testing::Test {
         &fake_clock_, GetTestConfig(),
         VideoEncoderConfig::ContentType::kRealtimeVideo));
     expected_ = VideoSendStream::Stats();
-    for (const auto& ssrc : config_.rtp.ssrcs)
-      expected_.substreams[ssrc].is_rtx = false;
-    for (const auto& ssrc : config_.rtp.rtx.ssrcs)
-      expected_.substreams[ssrc].is_rtx = true;
+    for (const auto& ssrc : config_.rtp.ssrcs) {
+      expected_.substreams[ssrc].type =
+          VideoSendStream::StreamStats::StreamType::kMedia;
+    }
+    for (size_t i = 0; i < config_.rtp.rtx.ssrcs.size(); ++i) {
+      uint32_t ssrc = config_.rtp.rtx.ssrcs[i];
+      expected_.substreams[ssrc].type =
+          VideoSendStream::StreamStats::StreamType::kRtx;
+      expected_.substreams[ssrc].referenced_media_ssrc = config_.rtp.ssrcs[i];
+    }
   }
 
   VideoSendStream::Config GetTestConfig() {
@@ -89,6 +95,7 @@ class SendStatisticsProxyTest : public ::testing::Test {
     config.rtp.rtx.ssrcs.push_back(kSecondRtxSsrc);
     config.rtp.flexfec.payload_type = 50;
     config.rtp.flexfec.ssrc = kFlexFecSsrc;
+    config.rtp.flexfec.protected_media_ssrcs = {kFirstSsrc};
     return config;
   }
 
@@ -123,7 +130,7 @@ class SendStatisticsProxyTest : public ::testing::Test {
       const VideoSendStream::StreamStats& a = it->second;
       const VideoSendStream::StreamStats& b = corresponding_it->second;
 
-      EXPECT_EQ(a.is_rtx, b.is_rtx);
+      EXPECT_EQ(a.type, b.type);
       EXPECT_EQ(a.frame_counts.key_frames, b.frame_counts.key_frames);
       EXPECT_EQ(a.frame_counts.delta_frames, b.frame_counts.delta_frames);
       EXPECT_EQ(a.total_bitrate_bps, b.total_bitrate_bps);
@@ -2379,6 +2386,21 @@ TEST_F(SendStatisticsProxyTest, ResetsRtcpCountersOnContentChange) {
              4 * 100 / 5));
 }
 
+TEST_F(SendStatisticsProxyTest, GetStatsReportsIsRtx) {
+  StreamDataCountersCallback* proxy =
+      static_cast<StreamDataCountersCallback*>(statistics_proxy_.get());
+  StreamDataCounters counters;
+  proxy->DataCountersUpdated(counters, kFirstSsrc);
+  proxy->DataCountersUpdated(counters, kFirstRtxSsrc);
+
+  EXPECT_NE(GetStreamStats(kFirstSsrc).type,
+            VideoSendStream::StreamStats::StreamType::kRtx);
+  EXPECT_EQ(GetStreamStats(kFirstSsrc).referenced_media_ssrc, absl::nullopt);
+  EXPECT_EQ(GetStreamStats(kFirstRtxSsrc).type,
+            VideoSendStream::StreamStats::StreamType::kRtx);
+  EXPECT_EQ(GetStreamStats(kFirstRtxSsrc).referenced_media_ssrc, kFirstSsrc);
+}
+
 TEST_F(SendStatisticsProxyTest, GetStatsReportsIsFlexFec) {
   statistics_proxy_.reset(
       new SendStatisticsProxy(&fake_clock_, GetTestConfigWithFlexFec(),
@@ -2390,8 +2412,12 @@ TEST_F(SendStatisticsProxyTest, GetStatsReportsIsFlexFec) {
   proxy->DataCountersUpdated(counters, kFirstSsrc);
   proxy->DataCountersUpdated(counters, kFlexFecSsrc);
 
-  EXPECT_FALSE(GetStreamStats(kFirstSsrc).is_flexfec);
-  EXPECT_TRUE(GetStreamStats(kFlexFecSsrc).is_flexfec);
+  EXPECT_NE(GetStreamStats(kFirstSsrc).type,
+            VideoSendStream::StreamStats::StreamType::kFlexfec);
+  EXPECT_EQ(GetStreamStats(kFirstSsrc).referenced_media_ssrc, absl::nullopt);
+  EXPECT_EQ(GetStreamStats(kFlexFecSsrc).type,
+            VideoSendStream::StreamStats::StreamType::kFlexfec);
+  EXPECT_EQ(GetStreamStats(kFlexFecSsrc).referenced_media_ssrc, kFirstSsrc);
 }
 
 TEST_F(SendStatisticsProxyTest, SendBitratesAreReportedWithFlexFecEnabled) {

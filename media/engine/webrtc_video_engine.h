@@ -51,6 +51,19 @@ namespace cricket {
 
 class WebRtcVideoChannel;
 
+// Public for testing.
+// Inputs StreamStats for all types of substreams (kMedia, kRtx, kFlexfec) and
+// merges any non-kMedia substream stats object into its referenced kMedia-type
+// substream. The resulting substreams are all kMedia. This means, for example,
+// that packet and byte counters of RTX and FlexFEC streams are accounted for in
+// the relevant RTP media stream's stats. This makes the resulting StreamStats
+// objects ready to be turned into "outbound-rtp" stats objects for GetStats()
+// which does not create separate stream stats objects for complementary
+// streams.
+std::map<uint32_t, webrtc::VideoSendStream::StreamStats>
+MergeInfoAboutOutboundRtpSubstreamsForTesting(
+    const std::map<uint32_t, webrtc::VideoSendStream::StreamStats>& substreams);
+
 class UnsignalledSsrcHandler {
  public:
   enum Action {

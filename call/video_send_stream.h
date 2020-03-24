@@ -40,15 +40,35 @@ class FrameEncryptorInterface;
 
 class VideoSendStream {
  public:
+  // Multiple StreamStats objects are present if simulcast is used (multiple
+  // kMedia streams) or if RTX or FlexFEC is negotiated. Multiple SVC layers, on
+  // the other hand, does not cause additional StreamStats.
   struct StreamStats {
+    enum class StreamType {
+      // A media stream is an RTP stream for audio or video. Retransmissions and
+      // FEC is either sent over the same SSRC or negotiated to be sent over
+      // separate SSRCs, in which case separate StreamStats objects exist with
+      // references to this media stream's SSRC.
+      kMedia,
+      // RTX streams are streams dedicated to retransmissions. They have a
+      // dependency on a single kMedia stream: |referenced_media_ssrc|.
+      kRtx,
+      // FlexFEC streams are streams dedicated to FlexFEC. They have a
+      // dependency on a single kMedia stream: |referenced_media_ssrc|.
+      kFlexfec,
+    };
+
     StreamStats();
     ~StreamStats();
 
     std::string ToString() const;
 
+    StreamType type = StreamType::kMedia;
+    // If |type| is kRtx or kFlexfec this value is present. The referenced SSRC
+    // is the kMedia stream that this stream is performing retransmissions or
+    // FEC for. If |type| is kMedia, this value is null.
+    absl::optional<uint32_t> referenced_media_ssrc;
     FrameCounts frame_counts;
-    bool is_rtx = false;
-    bool is_flexfec = false;
     int width = 0;
     int height = 0;
     // TODO(holmer): Move bitrate_bps out to the webrtc::Call layer.
@@ -63,6 +83,13 @@ class VideoSendStream {
     // A snapshot of the most recent Report Block with additional data of
     // interest to statistics. Used to implement RTCRemoteInboundRtpStreamStats.
     absl::optional<ReportBlockData> report_block_data;
+
+    // These booleans are redundant; this information is already exposed in
+    // |type|.
+    // TODO(hbos): Update downstream projects to use |type| instead and delete
+    // these members.
+    bool is_flexfec = false;
+    bool is_rtx = false;
   };
 
   struct Stats {

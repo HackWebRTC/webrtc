@@ -5269,12 +5269,112 @@ TEST_F(WebRtcVideoChannelTest, GetStatsReportsAdaptationAndBandwidthStats) {
   EXPECT_EQ(stats.number_of_cpu_adapt_changes, info.senders[0].adapt_changes);
 }
 
+TEST(WebRtcVideoChannelHelperTest, MergeInfoAboutOutboundRtpSubstreams) {
+  const uint32_t kFirstMediaStreamSsrc = 10;
+  const uint32_t kSecondMediaStreamSsrc = 20;
+  const uint32_t kRtxSsrc = 30;
+  const uint32_t kFlexfecSsrc = 40;
+  std::map<uint32_t, webrtc::VideoSendStream::StreamStats> substreams;
+  // First kMedia stream.
+  substreams[kFirstMediaStreamSsrc].type =
+      webrtc::VideoSendStream::StreamStats::StreamType::kMedia;
+  substreams[kFirstMediaStreamSsrc].rtp_stats.transmitted.header_bytes = 1;
+  substreams[kFirstMediaStreamSsrc].rtp_stats.transmitted.padding_bytes = 2;
+  substreams[kFirstMediaStreamSsrc].rtp_stats.transmitted.payload_bytes = 3;
+  substreams[kFirstMediaStreamSsrc].rtp_stats.transmitted.packets = 4;
+  substreams[kFirstMediaStreamSsrc].rtp_stats.retransmitted.header_bytes = 5;
+  substreams[kFirstMediaStreamSsrc].rtp_stats.retransmitted.padding_bytes = 6;
+  substreams[kFirstMediaStreamSsrc].rtp_stats.retransmitted.payload_bytes = 7;
+  substreams[kFirstMediaStreamSsrc].rtp_stats.retransmitted.packets = 8;
+  substreams[kFirstMediaStreamSsrc].referenced_media_ssrc = absl::nullopt;
+  substreams[kFirstMediaStreamSsrc].width = 1280;
+  substreams[kFirstMediaStreamSsrc].height = 720;
+  // Second kMedia stream.
+  substreams[kSecondMediaStreamSsrc].type =
+      webrtc::VideoSendStream::StreamStats::StreamType::kMedia;
+  substreams[kSecondMediaStreamSsrc].rtp_stats.transmitted.header_bytes = 10;
+  substreams[kSecondMediaStreamSsrc].rtp_stats.transmitted.padding_bytes = 11;
+  substreams[kSecondMediaStreamSsrc].rtp_stats.transmitted.payload_bytes = 12;
+  substreams[kSecondMediaStreamSsrc].rtp_stats.transmitted.packets = 13;
+  substreams[kSecondMediaStreamSsrc].rtp_stats.retransmitted.header_bytes = 14;
+  substreams[kSecondMediaStreamSsrc].rtp_stats.retransmitted.padding_bytes = 15;
+  substreams[kSecondMediaStreamSsrc].rtp_stats.retransmitted.payload_bytes = 16;
+  substreams[kSecondMediaStreamSsrc].rtp_stats.retransmitted.packets = 17;
+  substreams[kSecondMediaStreamSsrc].referenced_media_ssrc = absl::nullopt;
+  substreams[kSecondMediaStreamSsrc].width = 640;
+  substreams[kSecondMediaStreamSsrc].height = 480;
+  // kRtx stream referencing the first kMedia stream.
+  substreams[kRtxSsrc].type =
+      webrtc::VideoSendStream::StreamStats::StreamType::kRtx;
+  substreams[kRtxSsrc].rtp_stats.transmitted.header_bytes = 19;
+  substreams[kRtxSsrc].rtp_stats.transmitted.padding_bytes = 20;
+  substreams[kRtxSsrc].rtp_stats.transmitted.payload_bytes = 21;
+  substreams[kRtxSsrc].rtp_stats.transmitted.packets = 22;
+  substreams[kRtxSsrc].rtp_stats.retransmitted.header_bytes = 23;
+  substreams[kRtxSsrc].rtp_stats.retransmitted.padding_bytes = 24;
+  substreams[kRtxSsrc].rtp_stats.retransmitted.payload_bytes = 25;
+  substreams[kRtxSsrc].rtp_stats.retransmitted.packets = 26;
+  substreams[kRtxSsrc].referenced_media_ssrc = kFirstMediaStreamSsrc;
+  // kFlexfec stream referencing the second kMedia stream.
+  substreams[kFlexfecSsrc].type =
+      webrtc::VideoSendStream::StreamStats::StreamType::kFlexfec;
+  substreams[kFlexfecSsrc].rtp_stats.transmitted.header_bytes = 19;
+  substreams[kFlexfecSsrc].rtp_stats.transmitted.padding_bytes = 20;
+  substreams[kFlexfecSsrc].rtp_stats.transmitted.payload_bytes = 21;
+  substreams[kFlexfecSsrc].rtp_stats.transmitted.packets = 22;
+  substreams[kFlexfecSsrc].rtp_stats.retransmitted.header_bytes = 23;
+  substreams[kFlexfecSsrc].rtp_stats.retransmitted.padding_bytes = 24;
+  substreams[kFlexfecSsrc].rtp_stats.retransmitted.payload_bytes = 25;
+  substreams[kFlexfecSsrc].rtp_stats.retransmitted.packets = 26;
+  substreams[kFlexfecSsrc].referenced_media_ssrc = kSecondMediaStreamSsrc;
+
+  auto merged_substreams =
+      MergeInfoAboutOutboundRtpSubstreamsForTesting(substreams);
+  // Only kMedia substreams remain.
+  EXPECT_TRUE(merged_substreams.find(kFirstMediaStreamSsrc) !=
+              merged_substreams.end());
+  EXPECT_EQ(merged_substreams[kFirstMediaStreamSsrc].type,
+            webrtc::VideoSendStream::StreamStats::StreamType::kMedia);
+  EXPECT_TRUE(merged_substreams.find(kSecondMediaStreamSsrc) !=
+              merged_substreams.end());
+  EXPECT_EQ(merged_substreams[kSecondMediaStreamSsrc].type,
+            webrtc::VideoSendStream::StreamStats::StreamType::kMedia);
+  EXPECT_FALSE(merged_substreams.find(kRtxSsrc) != merged_substreams.end());
+  EXPECT_FALSE(merged_substreams.find(kFlexfecSsrc) != merged_substreams.end());
+  // Expect kFirstMediaStreamSsrc's rtp_stats to be merged with kRtxSsrc.
+  webrtc::StreamDataCounters first_media_expected_rtp_stats =
+      substreams[kFirstMediaStreamSsrc].rtp_stats;
+  first_media_expected_rtp_stats.Add(substreams[kRtxSsrc].rtp_stats);
+  EXPECT_EQ(merged_substreams[kFirstMediaStreamSsrc].rtp_stats.transmitted,
+            first_media_expected_rtp_stats.transmitted);
+  EXPECT_EQ(merged_substreams[kFirstMediaStreamSsrc].rtp_stats.retransmitted,
+            first_media_expected_rtp_stats.retransmitted);
+  // Expect kSecondMediaStreamSsrc' rtp_stats to be merged with kFlexfecSsrc.
+  webrtc::StreamDataCounters second_media_expected_rtp_stats =
+      substreams[kSecondMediaStreamSsrc].rtp_stats;
+  second_media_expected_rtp_stats.Add(substreams[kFlexfecSsrc].rtp_stats);
+  EXPECT_EQ(merged_substreams[kSecondMediaStreamSsrc].rtp_stats.transmitted,
+            second_media_expected_rtp_stats.transmitted);
+  EXPECT_EQ(merged_substreams[kSecondMediaStreamSsrc].rtp_stats.retransmitted,
+            second_media_expected_rtp_stats.retransmitted);
+  // Expect other metrics to come from the original kMedia stats.
+  EXPECT_EQ(merged_substreams[kFirstMediaStreamSsrc].width,
+            substreams[kFirstMediaStreamSsrc].width);
+  EXPECT_EQ(merged_substreams[kFirstMediaStreamSsrc].height,
+            substreams[kFirstMediaStreamSsrc].height);
+  EXPECT_EQ(merged_substreams[kSecondMediaStreamSsrc].width,
+            substreams[kSecondMediaStreamSsrc].width);
+  EXPECT_EQ(merged_substreams[kSecondMediaStreamSsrc].height,
+            substreams[kSecondMediaStreamSsrc].height);
+}
+
 TEST_F(WebRtcVideoChannelTest,
        GetStatsReportsTransmittedAndRetransmittedBytesAndPacketsCorrectly) {
   FakeVideoSendStream* stream = AddSendStream();
   webrtc::VideoSendStream::Stats stats;
   // Simulcast layer 1, RTP stream. header+padding=10, payload=20, packets=3.
-  stats.substreams[101].is_rtx = false;
+  stats.substreams[101].type =
+      webrtc::VideoSendStream::StreamStats::StreamType::kMedia;
   stats.substreams[101].rtp_stats.transmitted.header_bytes = 5;
   stats.substreams[101].rtp_stats.transmitted.padding_bytes = 5;
   stats.substreams[101].rtp_stats.transmitted.payload_bytes = 20;
@@ -5283,16 +5383,20 @@ TEST_F(WebRtcVideoChannelTest,
   stats.substreams[101].rtp_stats.retransmitted.padding_bytes = 0;
   stats.substreams[101].rtp_stats.retransmitted.payload_bytes = 0;
   stats.substreams[101].rtp_stats.retransmitted.packets = 0;
+  stats.substreams[101].referenced_media_ssrc = absl::nullopt;
   // Simulcast layer 1, RTX stream. header+padding=5, payload=10, packets=1.
-  stats.substreams[102].is_rtx = true;
+  stats.substreams[102].type =
+      webrtc::VideoSendStream::StreamStats::StreamType::kRtx;
   stats.substreams[102].rtp_stats.retransmitted.header_bytes = 3;
   stats.substreams[102].rtp_stats.retransmitted.padding_bytes = 2;
   stats.substreams[102].rtp_stats.retransmitted.payload_bytes = 10;
   stats.substreams[102].rtp_stats.retransmitted.packets = 1;
   stats.substreams[102].rtp_stats.transmitted =
       stats.substreams[102].rtp_stats.retransmitted;
+  stats.substreams[102].referenced_media_ssrc = 101;
   // Simulcast layer 2, RTP stream. header+padding=20, payload=40, packets=7.
-  stats.substreams[201].is_rtx = false;
+  stats.substreams[201].type =
+      webrtc::VideoSendStream::StreamStats::StreamType::kMedia;
   stats.substreams[201].rtp_stats.transmitted.header_bytes = 10;
   stats.substreams[201].rtp_stats.transmitted.padding_bytes = 10;
   stats.substreams[201].rtp_stats.transmitted.payload_bytes = 40;
@@ -5301,14 +5405,30 @@ TEST_F(WebRtcVideoChannelTest,
   stats.substreams[201].rtp_stats.retransmitted.padding_bytes = 0;
   stats.substreams[201].rtp_stats.retransmitted.payload_bytes = 0;
   stats.substreams[201].rtp_stats.retransmitted.packets = 0;
+  stats.substreams[201].referenced_media_ssrc = absl::nullopt;
   // Simulcast layer 2, RTX stream. header+padding=10, payload=20, packets=4.
-  stats.substreams[202].is_rtx = true;
+  stats.substreams[202].type =
+      webrtc::VideoSendStream::StreamStats::StreamType::kRtx;
   stats.substreams[202].rtp_stats.retransmitted.header_bytes = 6;
   stats.substreams[202].rtp_stats.retransmitted.padding_bytes = 4;
   stats.substreams[202].rtp_stats.retransmitted.payload_bytes = 20;
   stats.substreams[202].rtp_stats.retransmitted.packets = 4;
   stats.substreams[202].rtp_stats.transmitted =
       stats.substreams[202].rtp_stats.retransmitted;
+  stats.substreams[202].referenced_media_ssrc = 201;
+  // FlexFEC stream associated with the Simulcast layer 2.
+  // header+padding=15, payload=17, packets=5.
+  stats.substreams[301].type =
+      webrtc::VideoSendStream::StreamStats::StreamType::kFlexfec;
+  stats.substreams[301].rtp_stats.transmitted.header_bytes = 13;
+  stats.substreams[301].rtp_stats.transmitted.padding_bytes = 2;
+  stats.substreams[301].rtp_stats.transmitted.payload_bytes = 17;
+  stats.substreams[301].rtp_stats.transmitted.packets = 5;
+  stats.substreams[301].rtp_stats.retransmitted.header_bytes = 0;
+  stats.substreams[301].rtp_stats.retransmitted.padding_bytes = 0;
+  stats.substreams[301].rtp_stats.retransmitted.payload_bytes = 0;
+  stats.substreams[301].rtp_stats.retransmitted.packets = 0;
+  stats.substreams[301].referenced_media_ssrc = 201;
   stream->SetStats(stats);
 
   cricket::VideoMediaInfo info;
@@ -5321,9 +5441,9 @@ TEST_F(WebRtcVideoChannelTest,
   // to be set up correctly, it may need to be updated such that the
   // relationship between RTP and RTX streams are known. See also
   // https://crbug.com/webrtc/11439.
-  EXPECT_EQ(45u, info.senders[0].header_and_padding_bytes_sent);
-  EXPECT_EQ(90u, info.senders[0].payload_bytes_sent);
-  EXPECT_EQ(15, info.senders[0].packets_sent);
+  EXPECT_EQ(60u, info.senders[0].header_and_padding_bytes_sent);
+  EXPECT_EQ(107u, info.senders[0].payload_bytes_sent);
+  EXPECT_EQ(20, info.senders[0].packets_sent);
   EXPECT_EQ(30u, info.senders[0].retransmitted_bytes_sent);
   EXPECT_EQ(5u, info.senders[0].retransmitted_packets_sent);
 }

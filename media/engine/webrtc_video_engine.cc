@@ -324,6 +324,53 @@ int NumActiveStreams(const webrtc::RtpParameters& rtp_parameters) {
   return res;
 }
 
+std::map<uint32_t, webrtc::VideoSendStream::StreamStats>
+MergeInfoAboutOutboundRtpSubstreams(
+    const std::map<uint32_t, webrtc::VideoSendStream::StreamStats>&
+        substreams) {
+  std::map<uint32_t, webrtc::VideoSendStream::StreamStats> rtp_substreams;
+  // Add substreams for all RTP media streams.
+  for (const auto& pair : substreams) {
+    uint32_t ssrc = pair.first;
+    const webrtc::VideoSendStream::StreamStats& substream = pair.second;
+    switch (substream.type) {
+      case webrtc::VideoSendStream::StreamStats::StreamType::kMedia:
+        break;
+      case webrtc::VideoSendStream::StreamStats::StreamType::kRtx:
+      case webrtc::VideoSendStream::StreamStats::StreamType::kFlexfec:
+        continue;
+    }
+    rtp_substreams.insert(std::make_pair(ssrc, substream));
+  }
+  // Complement the kMedia substream stats with the associated kRtx and kFlexfec
+  // substream stats.
+  for (const auto& pair : substreams) {
+    switch (pair.second.type) {
+      case webrtc::VideoSendStream::StreamStats::StreamType::kMedia:
+        continue;
+      case webrtc::VideoSendStream::StreamStats::StreamType::kRtx:
+      case webrtc::VideoSendStream::StreamStats::StreamType::kFlexfec:
+        break;
+    }
+    // The associated substream is an RTX or FlexFEC substream that is
+    // referencing an RTP media substream.
+    const webrtc::VideoSendStream::StreamStats& associated_substream =
+        pair.second;
+    RTC_DCHECK(associated_substream.referenced_media_ssrc.has_value());
+    uint32_t media_ssrc = associated_substream.referenced_media_ssrc.value();
+    RTC_DCHECK(substreams.find(media_ssrc) != substreams.end());
+    webrtc::VideoSendStream::StreamStats& rtp_substream =
+        rtp_substreams[media_ssrc];
+
+    // We only merge |rtp_stats|. All other metrics are not applicable for RTX
+    // and FlexFEC.
+    // TODO(hbos): kRtx and kFlexfec stats should use a separate struct to make
+    // it clear what is or is not applicable.
+    rtp_substream.rtp_stats.Add(associated_substream.rtp_stats);
+  }
+  return rtp_substreams;
+}
+
 }  // namespace
 
 // This constant is really an on/off, lower-level configurable NACK history
@@ -334,6 +381,13 @@ static const int kDefaultRtcpReceiverReportSsrc = 1;
 
 // Minimum time interval for logging stats.
 static const int64_t kStatsLogIntervalMs = 10000;
+
+std::map<uint32_t, webrtc::VideoSendStream::StreamStats>
+MergeInfoAboutOutboundRtpSubstreamsForTesting(
+    const std::map<uint32_t, webrtc::VideoSendStream::StreamStats>&
+        substreams) {
+  return MergeInfoAboutOutboundRtpSubstreams(substreams);
+}
 
 rtc::scoped_refptr<webrtc::VideoEncoderConfig::EncoderSpecificSettings>
 WebRtcVideoChannel::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
@@ -2420,32 +2474,24 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
   info.send_frame_width = 0;
   info.send_frame_height = 0;
   info.total_packet_send_delay_ms = 0;
-  for (std::map<uint32_t, webrtc::VideoSendStream::StreamStats>::iterator it =
-           stats.substreams.begin();
-       it != stats.substreams.end(); ++it) {
+  std::map<uint32_t, webrtc::VideoSendStream::StreamStats>
+      outbound_rtp_substreams =
+          MergeInfoAboutOutboundRtpSubstreams(stats.substreams);
+  for (const auto& pair : outbound_rtp_substreams) {
     // TODO(pbos): Wire up additional stats, such as padding bytes.
-    webrtc::VideoSendStream::StreamStats stream_stats = it->second;
+    const webrtc::VideoSendStream::StreamStats& stream_stats = pair.second;
+    RTC_DCHECK_EQ(stream_stats.type,
+                  webrtc::VideoSendStream::StreamStats::StreamType::kMedia);
     info.payload_bytes_sent += stream_stats.rtp_stats.transmitted.payload_bytes;
     info.header_and_padding_bytes_sent +=
         stream_stats.rtp_stats.transmitted.header_bytes +
         stream_stats.rtp_stats.transmitted.padding_bytes;
     info.packets_sent += stream_stats.rtp_stats.transmitted.packets;
     info.total_packet_send_delay_ms += stream_stats.total_packet_send_delay_ms;
-    if (!stream_stats.is_flexfec) {
-      // Retransmissions can happen over the same SSRC that media is sent over,
-      // or a separate RTX stream is negotiated per SSRC, in which case there
-      // will be a |stream_stats| with "is_rtx == true". Since we are currently
-      // aggregating all substreams' counters into a single "info" we do not
-      // need to know the relationship between RTX streams and RTP streams here.
-      // TODO(https://crbug.com/webrtc/11439): To unblock simulcast-aware stats,
-      // where substreams are not aggregated, we need to know the relationship
-      // between RTX streams and RTP streams so that the correct "info" object
-      // accounts for the correct RTX retransmissions.
-      info.retransmitted_bytes_sent +=
-          stream_stats.rtp_stats.retransmitted.payload_bytes;
-      info.retransmitted_packets_sent +=
-          stream_stats.rtp_stats.retransmitted.packets;
-    }
+    info.retransmitted_bytes_sent +=
+        stream_stats.rtp_stats.retransmitted.payload_bytes;
+    info.retransmitted_packets_sent +=
+        stream_stats.rtp_stats.retransmitted.packets;
     info.packets_lost += stream_stats.rtcp_stats.packets_lost;
     if (stream_stats.width > info.send_frame_width)
       info.send_frame_width = stream_stats.width;
@@ -2454,8 +2500,7 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
     info.firs_rcvd += stream_stats.rtcp_packet_type_counts.fir_packets;
     info.nacks_rcvd += stream_stats.rtcp_packet_type_counts.nack_packets;
     info.plis_rcvd += stream_stats.rtcp_packet_type_counts.pli_packets;
-    if (stream_stats.report_block_data.has_value() && !stream_stats.is_rtx &&
-        !stream_stats.is_flexfec) {
+    if (stream_stats.report_block_data.has_value()) {
       info.report_block_datas.push_back(stream_stats.report_block_data.value());
     }
   }

@@ -314,6 +314,12 @@ struct RtpPacketCounter {
     packets -= other.packets;
   }
 
+  bool operator==(const RtpPacketCounter& other) const {
+    return header_bytes == other.header_bytes &&
+           payload_bytes == other.payload_bytes &&
+           padding_bytes == other.padding_bytes && packets == other.packets;
+  }
+
   // Not inlined, since use of RtpPacket would result in circular includes.
   void AddPacket(const RtpPacket& packet);
 
