@@ -71,12 +71,6 @@ struct NetworkRoute {
   // This is the maximum of any part of the route.
   int packet_overhead = 0;
 
-  // Downstream projects depend on the old representation,
-  // populate that until they have been migrated.
-  // TODO(jonaso): remove.
-  uint16_t local_network_id = 0;
-  uint16_t remote_network_id = 0;
-
   RTC_NO_INLINE inline std::string DebugString() const {
     rtc::StringBuilder oss;
     oss << "[ connected: " << connected << " local: [ " << local.adapter_id()

@@ -1733,12 +1733,6 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn,
         /* uses_turn= */ selected_connection_->remote_candidate().type() ==
             RELAY_PORT_TYPE);
 
-    // Downstream projects depend on the old representation,
-    // populate that until they have been migrated.
-    // TODO(jonaso): remove.
-    network_route_->local_network_id = network_route_->local.network_id();
-    network_route_->remote_network_id = network_route_->remote.network_id();
-
     network_route_->last_sent_packet_id = last_sent_packet_id_;
     network_route_->packet_overhead =
         selected_connection_->local_candidate().address().ipaddr().overhead() +
