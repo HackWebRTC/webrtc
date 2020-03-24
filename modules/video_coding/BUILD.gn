@@ -948,6 +948,7 @@ if (rtc_include_tests) {
       "../../test/time_controller:time_controller",
       "../rtp_rtcp:rtp_rtcp_format",
       "../rtp_rtcp:rtp_video_header",
+      "codecs/av1:video_coding_codecs_av1_tests",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
       "//third_party/abseil-cpp/absl/types:variant",

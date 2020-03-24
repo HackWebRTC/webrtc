@@ -63,3 +63,17 @@ rtc_library("libaom_av1_encoder") {
     sources = [ "libaom_av1_encoder_absent.cc" ]
   }
 }
+
+rtc_library("video_coding_codecs_av1_tests") {
+  testonly = true
+
+  if (enable_libaom) {
+    sources = [ "libaom_av1_encoder_unittest.cc" ]
+    deps = [
+      ":libaom_av1_encoder",
+      "../..:video_codec_interface",
+      "../../../../api/video_codecs:video_codecs_api",
+      "../../../../test:test_support",
+    ]
+  }
+}

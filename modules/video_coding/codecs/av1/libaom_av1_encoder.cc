@@ -36,9 +36,10 @@ namespace {
 // Encoder configuration parameters
 constexpr int kQpMax = 56;
 constexpr int kQpMin = 10;
-constexpr int kUsageProfile = 1;  // 0 = good quality; 1 = real-time.
-constexpr int kMinQindex = 58;    // Min qindex threshold for QP scaling.
-constexpr int kMaxQindex = 180;   // Max qindex threshold for QP scaling.
+constexpr int kDefaultEncSpeed = 7;  // Use values 6, 7, or 8 for RTC.
+constexpr int kUsageProfile = 1;     // 0 = good quality; 1 = real-time.
+constexpr int kMinQindex = 58;       // Min qindex threshold for QP scaling.
+constexpr int kMaxQindex = 180;      // Max qindex threshold for QP scaling.
 constexpr int kBitDepth = 8;
 constexpr int kLagInFrames = 0;  // No look ahead.
 constexpr int kRtpTicksPerSecond = 90000;
@@ -179,6 +180,12 @@ int LibaomAv1Encoder::InitEncode(const VideoCodec* codec_settings,
   inited_ = true;
 
   // Set control parameters
+  ret = aom_codec_control(&ctx_, AOME_SET_CPUUSED, kDefaultEncSpeed);
+  if (ret != AOM_CODEC_OK) {
+    RTC_LOG(LS_WARNING) << "LibaomAv1Encoder::EncodeInit returned " << ret
+                        << " on control AV1E_SET_CPUUSED.";
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
   ret = aom_codec_control(&ctx_, AV1E_SET_ENABLE_TPL_MODEL, 0);
   if (ret != AOM_CODEC_OK) {
     RTC_LOG(LS_WARNING) << "LibaomAv1Encoder::EncodeInit returned " << ret
