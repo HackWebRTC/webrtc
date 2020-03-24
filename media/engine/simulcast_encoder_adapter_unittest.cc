@@ -1364,6 +1364,31 @@ TEST_F(TestSimulcastEncoderAdapterFake, SetRateDistributesBandwithAllocation) {
   }
 }
 
+TEST_F(TestSimulcastEncoderAdapterFake, CanSetZeroBitrateWithHeadroom) {
+  SimulcastTestFixtureImpl::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile),
+      kVideoCodecVP8);
+  codec_.numberOfSimulcastStreams = 3;
+
+  rate_allocator_.reset(new SimulcastRateAllocator(codec_));
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, kSettings));
+  adapter_->RegisterEncodeCompleteCallback(this);
+
+  // Set allocated bitrate to 0, but keep (network) bandwidth allocation.
+  VideoEncoder::RateControlParameters rate_params;
+  rate_params.framerate_fps = 30;
+  rate_params.bandwidth_allocation = DataRate::KilobitsPerSec(600);
+
+  adapter_->SetRates(rate_params);
+
+  std::vector<MockVideoEncoder*> encoders = helper_->factory()->encoders();
+
+  ASSERT_EQ(3u, encoders.size());
+  for (size_t i = 0; i < 3; ++i) {
+    EXPECT_EQ(0u, encoders[i]->last_set_rates().bitrate.get_sum_bps());
+  }
+}
+
 TEST_F(TestSimulcastEncoderAdapterFake, SupportsSimulcast) {
   SimulcastTestFixtureImpl::DefaultSettings(
       &codec_, static_cast<const int*>(kTestTemporalLayerProfile),

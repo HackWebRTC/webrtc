@@ -513,7 +513,8 @@ void SimulcastEncoderAdapter::SetRates(
     }
 
     // Assign link allocation proportionally to spatial layer allocation.
-    if (parameters.bandwidth_allocation != DataRate::Zero()) {
+    if (!parameters.bandwidth_allocation.IsZero() &&
+        parameters.bitrate.get_sum_bps() > 0) {
       stream_parameters.bandwidth_allocation =
           DataRate::BitsPerSec((parameters.bandwidth_allocation.bps() *
                                 stream_parameters.bitrate.get_sum_bps()) /
