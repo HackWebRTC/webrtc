@@ -173,10 +173,6 @@ std::string NetworkInformation::ToString() const {
   if (type == NETWORK_VPN) {
     ss << "; underlying_type_for_vpn " << underlying_type_for_vpn;
   }
-  ss << "; address";
-  for (const rtc::IPAddress& address : ip_addresses) {
-    ss << " " << address.ToString();
-  }
   ss << "]";
   return ss.Release();
 }
