@@ -250,9 +250,6 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
     const rtc::NetworkRoute& network_route) {
   // Check if the network route is connected.
 
-  RTC_LOG(LS_INFO) << "Network route changed on transport " << transport_name
-                   << ": new_route = " << network_route.DebugString();
-
   if (!network_route.connected) {
     // TODO(honghaiz): Perhaps handle this in SignalChannelNetworkState and
     // consider merging these two methods.
@@ -264,6 +261,14 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
       network_routes_.insert(std::make_pair(transport_name, network_route));
   auto kv = result.first;
   bool inserted = result.second;
+  if (inserted || !(kv->second == network_route)) {
+    RTC_LOG(LS_INFO) << "Network route changed on transport " << transport_name
+                     << ": new_route = " << network_route.DebugString();
+    if (!inserted) {
+      RTC_LOG(LS_INFO) << "old_route = " << kv->second.DebugString();
+    }
+  }
+
   if (inserted) {
     task_queue_.PostTask([this, network_route] {
       RTC_DCHECK_RUN_ON(&task_queue_);
@@ -272,10 +277,9 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
     // No need to reset BWE if this is the first time the network connects.
     return;
   }
-  //
-  auto old_route = kv->second;
+
+  const rtc::NetworkRoute old_route = kv->second;
   kv->second = network_route;
-  RTC_LOG(LS_INFO) << "old_route = " << old_route.DebugString();
 
   // Check if enough conditions of the new/old route has changed
   // to trigger resetting of bitrates (and a probe).

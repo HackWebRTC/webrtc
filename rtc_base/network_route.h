@@ -52,6 +52,8 @@ class RouteEndpoint {
   uint16_t network_id() const { return network_id_; }
   bool uses_turn() const { return uses_turn_; }
 
+  bool operator==(const RouteEndpoint& other) const;
+
  private:
   AdapterType adapter_type_ = ADAPTER_TYPE_UNKNOWN;
   uint16_t adapter_id_ = 0;
@@ -87,6 +89,8 @@ struct NetworkRoute {
         << " ] packet_overhead_bytes: " << packet_overhead << " ]";
     return oss.Release();
   }
+
+  bool operator==(const NetworkRoute& other) const;
 };
 
 }  // namespace rtc
