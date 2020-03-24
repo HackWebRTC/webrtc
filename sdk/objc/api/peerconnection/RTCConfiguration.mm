@@ -22,6 +22,7 @@
 
 @implementation RTCConfiguration
 
+@synthesize enableDscp = _enableDscp;
 @synthesize iceServers = _iceServers;
 @synthesize certificate = _certificate;
 @synthesize iceTransportPolicy = _iceTransportPolicy;
@@ -66,6 +67,7 @@
 - (instancetype)initWithNativeConfiguration:
     (const webrtc::PeerConnectionInterface::RTCConfiguration &)config {
   if (self = [super init]) {
+    _enableDscp = config.dscp();
     NSMutableArray *iceServers = [NSMutableArray array];
     for (const webrtc::PeerConnectionInterface::IceServer& server : config.servers) {
       RTCIceServer *iceServer = [[RTCIceServer alloc] initWithNativeServer:server];
@@ -140,7 +142,7 @@
 - (NSString *)description {
   static NSString *formatString = @"RTCConfiguration: "
                                   @"{\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n%d\n%d\n%d\n"
-                                  @"%d\n%@\n%d\n%d\n%d\n%d\n%d\n%@\n}\n";
+                                  @"%d\n%@\n%d\n%d\n%d\n%d\n%d\n%@\n%d\n}\n";
 
   return [NSString
       stringWithFormat:formatString,
@@ -166,7 +168,8 @@
                        _disableIPV6OnWiFi,
                        _maxIPv6Networks,
                        _activeResetSrtpParams,
-                       _useMediaTransport];
+                       _useMediaTransport,
+                       _enableDscp];
 }
 
 #pragma mark - Private
@@ -177,6 +180,7 @@
       nativeConfig(new webrtc::PeerConnectionInterface::RTCConfiguration(
           webrtc::PeerConnectionInterface::RTCConfigurationType::kAggressive));
 
+  nativeConfig->set_dscp(_enableDscp);
   for (RTCIceServer *iceServer in _iceServers) {
     nativeConfig->servers.push_back(iceServer.nativeServer);
   }
