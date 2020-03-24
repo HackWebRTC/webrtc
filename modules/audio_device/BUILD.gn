@@ -270,7 +270,7 @@ rtc_library("audio_device_impl") {
           "linux/latebindingsymboltable_linux.cc",
           "linux/latebindingsymboltable_linux.h",
         ]
-        defines += [ "LINUX_ALSA" ]
+        defines += [ "WEBRTC_ENABLE_LINUX_ALSA" ]
         libs = [ "dl" ]
         if (rtc_use_x11) {
           libs += [ "X11" ]
@@ -285,7 +285,7 @@ rtc_library("audio_device_impl") {
             "linux/pulseaudiosymboltable_linux.cc",
             "linux/pulseaudiosymboltable_linux.h",
           ]
-          defines += [ "LINUX_PULSE" ]
+          defines += [ "WEBRTC_ENABLE_LINUX_PULSE" ]
         }
       }
       if (is_mac) {
