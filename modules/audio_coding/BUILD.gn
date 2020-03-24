@@ -101,8 +101,10 @@ rtc_library("audio_encoder_cng") {
   deps = [
     ":webrtc_cng",
     "../../api/audio_codecs:audio_codecs_api",
+    "../../api/units:time_delta",
     "../../common_audio",
     "../../rtc_base:checks",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -116,6 +118,7 @@ rtc_library("red") {
   deps = [
     "../../api:array_view",
     "../../api/audio_codecs:audio_codecs_api",
+    "../../api/units:time_delta",
     "../../common_audio",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
@@ -137,8 +140,10 @@ rtc_library("g711") {
     ":legacy_encoded_audio_frame",
     "../../api:array_view",
     "../../api/audio_codecs:audio_codecs_api",
+    "../../api/units:time_delta",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
   public_deps = [ ":g711_c" ]  # no-presubmit-check TODO(webrtc:8603)
 }
@@ -167,8 +172,10 @@ rtc_library("g722") {
     "../../api:array_view",
     "../../api/audio_codecs:audio_codecs_api",
     "../../api/audio_codecs/g722:audio_encoder_g722_config",
+    "../../api/units:time_delta",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
   public_deps = [ ":g722_c" ]  # no-presubmit-check TODO(webrtc:8603)
 }
@@ -197,9 +204,11 @@ rtc_library("ilbc") {
     "../../api:array_view",
     "../../api/audio_codecs:audio_codecs_api",
     "../../api/audio_codecs/ilbc:audio_encoder_ilbc_config",
+    "../../api/units:time_delta",
     "../../common_audio",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
   public_deps = [ ":ilbc_c" ]  # no-presubmit-check TODO(webrtc:8603)
 }
@@ -372,6 +381,7 @@ rtc_source_set("isac_common") {
     ":isac_bwinfo",
     "../../api:scoped_refptr",
     "../../api/audio_codecs:audio_codecs_api",
+    "../../api/units:time_delta",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/types:optional",
@@ -771,6 +781,7 @@ rtc_library("webrtc_multiopus") {
     "../../api/audio_codecs:audio_codecs_api",
     "../../api/audio_codecs/opus:audio_decoder_opus_config",
     "../../api/audio_codecs/opus:audio_encoder_opus_config",
+    "../../api/units:time_delta",
     "../../rtc_base:checks",
     "../../rtc_base:logging",
     "../../rtc_base:macromagic",

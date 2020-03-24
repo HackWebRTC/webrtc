@@ -120,6 +120,13 @@ void AudioEncoderIsacT<T>::Reset() {
 }
 
 template <typename T>
+absl::optional<std::pair<TimeDelta, TimeDelta>>
+AudioEncoderIsacT<T>::GetFrameLengthRange() const {
+  return {{TimeDelta::Millis(config_.frame_size_ms),
+           TimeDelta::Millis(config_.frame_size_ms)}};
+}
+
+template <typename T>
 void AudioEncoderIsacT<T>::RecreateEncoderInstance(const Config& config) {
   RTC_CHECK(config.IsOk());
   packet_in_progress_ = false;

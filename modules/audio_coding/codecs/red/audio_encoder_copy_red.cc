@@ -132,4 +132,9 @@ void AudioEncoderCopyRed::OnReceivedUplinkBandwidth(
                                              bwe_period_ms);
 }
 
+absl::optional<std::pair<TimeDelta, TimeDelta>>
+AudioEncoderCopyRed::GetFrameLengthRange() const {
+  return speech_encoder_->GetFrameLengthRange();
+}
+
 }  // namespace webrtc

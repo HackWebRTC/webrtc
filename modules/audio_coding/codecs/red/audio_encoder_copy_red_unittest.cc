@@ -20,9 +20,12 @@
 #include "test/testsupport/rtc_expect_death.h"
 
 using ::testing::_;
+using ::testing::Eq;
 using ::testing::InSequence;
 using ::testing::Invoke;
 using ::testing::MockFunction;
+using ::testing::Not;
+using ::testing::Optional;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 
@@ -105,6 +108,14 @@ TEST_F(AudioEncoderCopyRedTest, CheckTargetAudioBitratePropagation) {
 TEST_F(AudioEncoderCopyRedTest, CheckPacketLossFractionPropagation) {
   EXPECT_CALL(*mock_encoder_, OnReceivedUplinkPacketLossFraction(0.5));
   red_->OnReceivedUplinkPacketLossFraction(0.5);
+}
+
+TEST_F(AudioEncoderCopyRedTest, CheckGetFrameLengthRangePropagation) {
+  auto expected_range =
+      std::make_pair(TimeDelta::Millis(20), TimeDelta::Millis(20));
+  EXPECT_CALL(*mock_encoder_, GetFrameLengthRange())
+      .WillRepeatedly(Return(absl::make_optional(expected_range)));
+  EXPECT_THAT(red_->GetFrameLengthRange(), Optional(Eq(expected_range)));
 }
 
 // Checks that the an Encode() call is immediately propagated to the speech

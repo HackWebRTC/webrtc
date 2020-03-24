@@ -15,10 +15,12 @@
 #include <stdint.h>
 
 #include <memory>
+#include <utility>
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/audio_codecs/audio_encoder.h"
+#include "api/units/time_delta.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/constructor_magic.h"
 
@@ -60,6 +62,8 @@ class AudioEncoderCopyRed final : public AudioEncoder {
   void OnReceivedUplinkBandwidth(
       int target_audio_bitrate_bps,
       absl::optional<int64_t> bwe_period_ms) override;
+  absl::optional<std::pair<TimeDelta, TimeDelta>> GetFrameLengthRange()
+      const override;
 
  protected:
   EncodedInfo EncodeImpl(uint32_t rtp_timestamp,
