@@ -203,6 +203,11 @@ void ApplyVp8EncoderConfigToVpxConfig(const Vp8EncoderConfig& encoder_config,
     vpx_config->ts_periodicity = ts_config.ts_periodicity;
     std::copy(ts_config.ts_layer_id.begin(), ts_config.ts_layer_id.end(),
               std::begin(vpx_config->ts_layer_id));
+  } else {
+    vpx_config->ts_number_layers = 1;
+    vpx_config->ts_rate_decimator[0] = 1;
+    vpx_config->ts_periodicity = 1;
+    vpx_config->ts_layer_id[0] = 0;
   }
 
   if (encoder_config.rc_target_bitrate.has_value()) {
@@ -1248,28 +1253,31 @@ VideoEncoder::EncoderInfo LibvpxVp8Encoder::GetEncoderInfo() const {
     info.scaling_settings.min_pixels_per_frame =
         rate_control_settings_.LibvpxVp8MinPixels().value();
   }
-  // |encoder_idx| is libvpx index where 0 is highest resolution.
-  // |si| is simulcast index, where 0 is lowest resolution.
-  for (size_t si = 0, encoder_idx = encoders_.size() - 1; si < encoders_.size();
-       ++si, --encoder_idx) {
-    info.fps_allocation[si].clear();
-    if ((codec_.numberOfSimulcastStreams > si &&
-         !codec_.simulcastStream[si].active) ||
-        (si == 0 && SimulcastUtility::IsConferenceModeScreenshare(codec_))) {
-      // No defined frame rate fractions if not active or if using
-      // ScreenshareLayers, leave vector empty and continue;
-      continue;
-    }
-    if (vpx_configs_[encoder_idx].ts_number_layers <= 1) {
-      info.fps_allocation[si].push_back(EncoderInfo::kMaxFramerateFraction);
-    } else {
-      for (size_t ti = 0; ti < vpx_configs_[encoder_idx].ts_number_layers;
-           ++ti) {
-        RTC_DCHECK_GT(vpx_configs_[encoder_idx].ts_rate_decimator[ti], 0);
-        info.fps_allocation[si].push_back(rtc::saturated_cast<uint8_t>(
-            EncoderInfo::kMaxFramerateFraction /
-                vpx_configs_[encoder_idx].ts_rate_decimator[ti] +
-            0.5));
+
+  if (inited_) {
+    // |encoder_idx| is libvpx index where 0 is highest resolution.
+    // |si| is simulcast index, where 0 is lowest resolution.
+    for (size_t si = 0, encoder_idx = encoders_.size() - 1;
+         si < encoders_.size(); ++si, --encoder_idx) {
+      info.fps_allocation[si].clear();
+      if ((codec_.numberOfSimulcastStreams > si &&
+           !codec_.simulcastStream[si].active) ||
+          (si == 0 && SimulcastUtility::IsConferenceModeScreenshare(codec_))) {
+        // No defined frame rate fractions if not active or if using
+        // ScreenshareLayers, leave vector empty and continue;
+        continue;
+      }
+      if (vpx_configs_[encoder_idx].ts_number_layers <= 1) {
+        info.fps_allocation[si].push_back(EncoderInfo::kMaxFramerateFraction);
+      } else {
+        for (size_t ti = 0; ti < vpx_configs_[encoder_idx].ts_number_layers;
+             ++ti) {
+          RTC_DCHECK_GT(vpx_configs_[encoder_idx].ts_rate_decimator[ti], 0);
+          info.fps_allocation[si].push_back(rtc::saturated_cast<uint8_t>(
+              EncoderInfo::kMaxFramerateFraction /
+                  vpx_configs_[encoder_idx].ts_rate_decimator[ti] +
+              0.5));
+        }
       }
     }
   }

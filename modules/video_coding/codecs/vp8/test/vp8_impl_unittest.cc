@@ -692,6 +692,28 @@ TEST_F(TestVp8Impl, GetEncoderInfoFpsAllocationSimulcastVideo) {
   expected_fps_allocation[2] = expected_fps_allocation[0];
   EXPECT_THAT(encoder_->GetEncoderInfo().fps_allocation,
               ::testing::ElementsAreArray(expected_fps_allocation));
+
+  // Release encoder and re-init without temporal layers.
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
+
+  // Sanity check fps allocation when not inited.
+  FramerateFractions default_fps_fraction[kMaxSpatialLayers];
+  default_fps_fraction[0].push_back(EncoderInfo::kMaxFramerateFraction);
+  EXPECT_THAT(encoder_->GetEncoderInfo().fps_allocation,
+              ::testing::ElementsAreArray(default_fps_fraction));
+
+  for (int i = 0; i < codec_settings_.numberOfSimulcastStreams; ++i) {
+    codec_settings_.simulcastStream[i].numberOfTemporalLayers = 1;
+  }
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, kSettings));
+
+  for (size_t i = 0; i < 3; ++i) {
+    expected_fps_allocation[i].clear();
+    expected_fps_allocation[i].push_back(EncoderInfo::kMaxFramerateFraction);
+  }
+  EXPECT_THAT(encoder_->GetEncoderInfo().fps_allocation,
+              ::testing::ElementsAreArray(expected_fps_allocation));
 }
 
 }  // namespace webrtc

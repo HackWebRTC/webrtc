@@ -1376,6 +1376,7 @@ TEST_F(TestVp9Impl, EncoderInfoFpsAllocationFlexibleMode) {
   codec_settings_.VP9()->numberOfTemporalLayers = 1;
   codec_settings_.VP9()->flexibleMode = true;
 
+  VideoEncoder::RateControlParameters rate_params;
   for (uint8_t sl_idx = 0; sl_idx < kNumSpatialLayers; ++sl_idx) {
     codec_settings_.spatialLayers[sl_idx].width = codec_settings_.width;
     codec_settings_.spatialLayers[sl_idx].height = codec_settings_.height;
@@ -1390,7 +1391,12 @@ TEST_F(TestVp9Impl, EncoderInfoFpsAllocationFlexibleMode) {
     // fraction is correct.
     codec_settings_.spatialLayers[sl_idx].maxFramerate =
         codec_settings_.maxFramerate / (kNumSpatialLayers - sl_idx);
+    rate_params.bitrate.SetBitrate(sl_idx, 0,
+                                   codec_settings_.startBitrate * 1000);
   }
+  rate_params.bandwidth_allocation =
+      DataRate::BitsPerSec(rate_params.bitrate.get_sum_bps());
+  rate_params.framerate_fps = codec_settings_.maxFramerate;
 
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->InitEncode(&codec_settings_, kSettings));
@@ -1400,6 +1406,17 @@ TEST_F(TestVp9Impl, EncoderInfoFpsAllocationFlexibleMode) {
   expected_fps_allocation[0].push_back(EncoderInfo::kMaxFramerateFraction / 3);
   expected_fps_allocation[1].push_back(EncoderInfo::kMaxFramerateFraction / 2);
   expected_fps_allocation[2].push_back(EncoderInfo::kMaxFramerateFraction);
+  EXPECT_THAT(encoder_->GetEncoderInfo().fps_allocation,
+              ::testing::ElementsAreArray(expected_fps_allocation));
+
+  // SetRates with current fps does not alter outcome.
+  encoder_->SetRates(rate_params);
+  EXPECT_THAT(encoder_->GetEncoderInfo().fps_allocation,
+              ::testing::ElementsAreArray(expected_fps_allocation));
+
+  // Higher fps than the codec wants, should still not affect outcome.
+  rate_params.framerate_fps *= 2;
+  encoder_->SetRates(rate_params);
   EXPECT_THAT(encoder_->GetEncoderInfo().fps_allocation,
               ::testing::ElementsAreArray(expected_fps_allocation));
 }
