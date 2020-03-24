@@ -688,6 +688,7 @@ if (rtc_include_tests) {
         "//third_party/abseil-cpp/absl/flags:flag",
         "//third_party/abseil-cpp/absl/flags:parse",
         "//third_party/abseil-cpp/absl/strings",
+        "//third_party/abseil-cpp/absl/types:optional",
       ]
     }
   }
