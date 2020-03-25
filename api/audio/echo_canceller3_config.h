@@ -154,6 +154,10 @@ struct RTC_EXPORT EchoCanceller3Config {
     size_t render_post_window_size = 1;
   } echo_model;
 
+  struct ComfortNoise {
+    float noise_floor_dbfs = -96.03406f;
+  } comfort_noise;
+
   struct Suppressor {
     Suppressor();
     Suppressor(const Suppressor& e);

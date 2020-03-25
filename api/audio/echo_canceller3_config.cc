@@ -226,6 +226,8 @@ bool EchoCanceller3Config::Validate(EchoCanceller3Config* config) {
   res = res & Limit(&c->echo_model.render_pre_window_size, 0, 100);
   res = res & Limit(&c->echo_model.render_post_window_size, 0, 100);
 
+  res = res & Limit(&c->comfort_noise.noise_floor_dbfs, -200.f, 0.f);
+
   res = res & Limit(&c->suppressor.nearend_average_blocks, 1, 5000);
 
   res = res &

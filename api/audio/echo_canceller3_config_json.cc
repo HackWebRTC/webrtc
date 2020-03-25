@@ -312,6 +312,10 @@ void Aec3ConfigFromJsonString(absl::string_view json_string,
               &cfg.echo_model.render_post_window_size);
   }
 
+  if (rtc::GetValueFromJsonObject(aec3_root, "comfort_noise", &section)) {
+    ReadParam(section, "noise_floor_dbfs", &cfg.comfort_noise.noise_floor_dbfs);
+  }
+
   Json::Value subsection;
   if (rtc::GetValueFromJsonObject(aec3_root, "suppressor", &section)) {
     ReadParam(section, "nearend_average_blocks",
@@ -624,6 +628,10 @@ std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config) {
       << config.echo_model.render_pre_window_size << ",";
   ost << "\"render_post_window_size\": "
       << config.echo_model.render_post_window_size;
+  ost << "},";
+
+  ost << "\"comfort_noise\": {";
+  ost << "\"noise_floor_dbfs\": " << config.comfort_noise.noise_floor_dbfs;
   ost << "},";
 
   ost << "\"suppressor\": {";
