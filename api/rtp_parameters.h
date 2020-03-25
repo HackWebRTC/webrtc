@@ -232,9 +232,9 @@ struct RTC_EXPORT RtpHeaderExtensionCapability {
 
   // Constructors for convenience.
   RtpHeaderExtensionCapability();
-  explicit RtpHeaderExtensionCapability(std::string uri);
-  RtpHeaderExtensionCapability(std::string uri, int preferred_id);
-  RtpHeaderExtensionCapability(std::string uri,
+  explicit RtpHeaderExtensionCapability(absl::string_view uri);
+  RtpHeaderExtensionCapability(absl::string_view uri, int preferred_id);
+  RtpHeaderExtensionCapability(absl::string_view uri,
                                int preferred_id,
                                RtpTransceiverDirection direction);
   ~RtpHeaderExtensionCapability();
@@ -251,8 +251,8 @@ struct RTC_EXPORT RtpHeaderExtensionCapability {
 // RTP header extension, see RFC8285.
 struct RTC_EXPORT RtpExtension {
   RtpExtension();
-  RtpExtension(std::string uri, int id);
-  RtpExtension(std::string uri, int id, bool encrypt);
+  RtpExtension(absl::string_view uri, int id);
+  RtpExtension(absl::string_view uri, int id, bool encrypt);
   ~RtpExtension();
 
   std::string ToString() const;

@@ -32,23 +32,24 @@ RtpCodecCapability::RtpCodecCapability() = default;
 RtpCodecCapability::~RtpCodecCapability() = default;
 
 RtpHeaderExtensionCapability::RtpHeaderExtensionCapability() = default;
-RtpHeaderExtensionCapability::RtpHeaderExtensionCapability(std::string uri)
-    : uri(std::move(uri)) {}
-RtpHeaderExtensionCapability::RtpHeaderExtensionCapability(std::string uri,
-                                                           int preferred_id)
-    : uri(std::move(uri)), preferred_id(preferred_id) {}
 RtpHeaderExtensionCapability::RtpHeaderExtensionCapability(
-    std::string uri,
+    absl::string_view uri)
+    : uri(uri) {}
+RtpHeaderExtensionCapability::RtpHeaderExtensionCapability(
+    absl::string_view uri,
+    int preferred_id)
+    : uri(uri), preferred_id(preferred_id) {}
+RtpHeaderExtensionCapability::RtpHeaderExtensionCapability(
+    absl::string_view uri,
     int preferred_id,
     RtpTransceiverDirection direction)
-    : uri(std::move(uri)), preferred_id(preferred_id), direction(direction) {}
+    : uri(uri), preferred_id(preferred_id), direction(direction) {}
 RtpHeaderExtensionCapability::~RtpHeaderExtensionCapability() = default;
 
 RtpExtension::RtpExtension() = default;
-RtpExtension::RtpExtension(std::string uri, int id)
-    : uri(std::move(uri)), id(id) {}
-RtpExtension::RtpExtension(std::string uri, int id, bool encrypt)
-    : uri(std::move(uri)), id(id), encrypt(encrypt) {}
+RtpExtension::RtpExtension(absl::string_view uri, int id) : uri(uri), id(id) {}
+RtpExtension::RtpExtension(absl::string_view uri, int id, bool encrypt)
+    : uri(uri), id(id), encrypt(encrypt) {}
 RtpExtension::~RtpExtension() = default;
 
 RtpFecParameters::RtpFecParameters() = default;
