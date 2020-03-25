@@ -15,9 +15,8 @@ gtest-parallel, renaming options and translating environment variables into
 flags. Developers should execute gtest-parallel directly.
 
 In particular, this translates the GTEST_SHARD_INDEX and GTEST_TOTAL_SHARDS
-environment variables to the --shard_index and --shard_count flags, renames
-the --isolated-script-test-output flag to --dump_json_test_results,
-and interprets e.g. --workers=2x as 2 workers per core.
+environment variables to the --shard_index and --shard_count flags, and
+interprets e.g. --workers=2x as 2 workers per core.
 
 Flags before '--' will be attempted to be understood as arguments to
 gtest-parallel. If gtest-parallel doesn't recognize the flag or the flag is
@@ -38,8 +37,6 @@ For example:
       --another_flag \
       --output_dir=SOME_OUTPUT_DIR \
       --store-test-artifacts
-      --isolated-script-test-output=SOME_DIR \
-      --isolated-script-test-perf-output=SOME_OTHER_DIR \
       -- \
       --foo=bar \
       --baz
@@ -50,13 +47,11 @@ Will be converted into:
       --shard_index 0 \
       --shard_count 1 \
       --output_dir=SOME_OUTPUT_DIR \
-      --dump_json_test_results=SOME_DIR \
       some_test \
       -- \
       --test_artifacts_dir=SOME_OUTPUT_DIR/test_artifacts \
       --some_flag=some_value \
       --another_flag \
-      --isolated-script-test-perf-output=SOME_OTHER_DIR \
       --foo=bar \
       --baz
 
@@ -137,12 +132,6 @@ def ParseArgs(argv=None):
   # Syntax 'Nx' will be interpreted as N * number of cpu cores.
   gtest_group.AddArgument('-w', '--workers', type=_ParseWorkersOption)
 
-  # --isolated-script-test-output is used to upload results to the flakiness
-  # dashboard. This translation is made because gtest-parallel expects the flag
-  # to be called --dump_json_test_results instead.
-  gtest_group.AddArgument('--isolated-script-test-output',
-                          dest='dump_json_test_results')
-
   # Needed when the test wants to store test artifacts, because it doesn't know
   # what will be the swarming output dir.
   parser.add_argument('--store-test-artifacts', action='store_true')
@@ -157,20 +146,8 @@ def ParseArgs(argv=None):
 
   options, unrecognized_args = parser.parse_known_args(argv)
 
-  webrtc_flags_to_change = {
-    '--isolated-script-test-perf-output': '--isolated_script_test_perf_output',
-    '--isolated-script-test-output': '--isolated_script_test_output',
-  }
-  args_to_pass = []
-  for arg in unrecognized_args:
-    if any(arg.startswith(k) for k in webrtc_flags_to_change.keys()):
-      arg_split = arg.split('=')
-      args_to_pass.append(
-        webrtc_flags_to_change[arg_split[0]] + '=' + arg_split[1])
-    else:
-      args_to_pass.append(arg)
-
-  executable_args = options.executable_args + args_to_pass
+  # Just pass on flags we don't recognize to the test binary.
+  executable_args = options.executable_args + unrecognized_args
 
   if options.store_test_artifacts:
     assert options.output_dir, (

@@ -57,10 +57,8 @@ def _ParseArgs():
   parser.add_argument('--adb-path', help='Path to adb binary.', default='adb')
   parser.add_argument('--num-retries', default='0',
                       help='Number of times to retry the test on Android.')
-  parser.add_argument('--isolated-script-test-perf-output', default=None,
+  parser.add_argument('--isolated_script_test_perf_output', default=None,
       help='Path to store perf results in chartjson format.')
-  parser.add_argument('--isolated-script-test-output', default=None,
-      help='Path to output an empty JSON file which Chromium infra requires.')
   parser.add_argument('--extra-test-args', default=[], action='append',
       help='Extra args to path to the test binary.')
 
@@ -300,10 +298,6 @@ def main():
   if args.isolated_script_test_perf_output:
     with open(args.isolated_script_test_perf_output, 'w') as f:
       json.dump({"format_version": "1.0", "charts": charts}, f)
-
-  if args.isolated_script_test_output:
-    with open(args.isolated_script_test_output, 'w') as f:
-      json.dump({"version": 3}, f)
 
   return test_process.wait()
 
