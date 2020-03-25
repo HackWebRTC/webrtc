@@ -154,8 +154,43 @@ if (is_android) {
 
   android_resources("AppRTCMobile_resources") {
     testonly = true
-    resource_dirs = [ "androidapp/res" ]
+    sources = [
+      "androidapp/res/drawable-hdpi/disconnect.png",
+      "androidapp/res/drawable-hdpi/ic_action_full_screen.png",
+      "androidapp/res/drawable-hdpi/ic_action_return_from_full_screen.png",
+      "androidapp/res/drawable-hdpi/ic_launcher.png",
+      "androidapp/res/drawable-hdpi/ic_loopback_call.png",
+      "androidapp/res/drawable-ldpi/disconnect.png",
+      "androidapp/res/drawable-ldpi/ic_action_full_screen.png",
+      "androidapp/res/drawable-ldpi/ic_action_return_from_full_screen.png",
+      "androidapp/res/drawable-ldpi/ic_launcher.png",
+      "androidapp/res/drawable-ldpi/ic_loopback_call.png",
+      "androidapp/res/drawable-mdpi/disconnect.png",
+      "androidapp/res/drawable-mdpi/ic_action_full_screen.png",
+      "androidapp/res/drawable-mdpi/ic_action_return_from_full_screen.png",
+      "androidapp/res/drawable-mdpi/ic_launcher.png",
+      "androidapp/res/drawable-mdpi/ic_loopback_call.png",
+      "androidapp/res/drawable-xhdpi/disconnect.png",
+      "androidapp/res/drawable-xhdpi/ic_action_full_screen.png",
+      "androidapp/res/drawable-xhdpi/ic_action_return_from_full_screen.png",
+      "androidapp/res/drawable-xhdpi/ic_launcher.png",
+      "androidapp/res/drawable-xhdpi/ic_loopback_call.png",
+      "androidapp/res/layout/activity_call.xml",
+      "androidapp/res/layout/activity_connect.xml",
+      "androidapp/res/layout/fragment_call.xml",
+      "androidapp/res/layout/fragment_hud.xml",
+      "androidapp/res/menu/connect_menu.xml",
+      "androidapp/res/values/arrays.xml",
+      "androidapp/res/values/strings.xml",
+      "androidapp/res/values-v17/styles.xml",
+      "androidapp/res/values-v21/styles.xml",
+      "androidapp/res/xml/preferences.xml",
+    ]
     custom_package = "org.appspot.apprtc"
+
+    # Needed for Bazel converter.
+    resource_dirs = [ "androidapp/res" ]
+    assert(resource_dirs != [])  # Mark as used.
   }
 
   rtc_instrumentation_test_apk("AppRTCMobile_test_apk") {

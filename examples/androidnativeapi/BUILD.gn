@@ -65,7 +65,14 @@ if (is_android) {
 
   android_resources("resources") {
     testonly = true
-    resource_dirs = [ "res" ]
     custom_package = "org.webrtc.examples.androidnativeapi"
+    sources = [
+      "res/layout/activity_main.xml",
+      "res/values/strings.xml",
+    ]
+
+    # Needed for Bazel converter.
+    resource_dirs = [ "res" ]
+    assert(resource_dirs != [])  # Mark as used.
   }
 }

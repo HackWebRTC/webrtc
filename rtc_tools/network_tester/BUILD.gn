@@ -130,8 +130,24 @@ if (is_android) {
 
   android_resources("NetworkTesterMobile_resources") {
     testonly = true
-    resource_dirs = [ "androidapp/res" ]
     custom_package = "com.google.media.networktester"
+    sources = [
+      "androidapp/res/layout/activity_main.xml",
+      "androidapp/res/mipmap-hdpi/ic_launcher.png",
+      "androidapp/res/mipmap-mdpi/ic_launcher.png",
+      "androidapp/res/mipmap-xhdpi/ic_launcher.png",
+      "androidapp/res/mipmap-xxhdpi/ic_launcher.png",
+      "androidapp/res/mipmap-xxxhdpi/ic_launcher.png",
+      "androidapp/res/values/colors.xml",
+      "androidapp/res/values/dimens.xml",
+      "androidapp/res/values/strings.xml",
+      "androidapp/res/values-v17/styles.xml",
+      "androidapp/res/values-w820dp/dimens.xml",
+    ]
+
+    # Needed for Bazel converter.
+    resource_dirs = [ "androidapp/res" ]
+    assert(resource_dirs != [])  # Mark as used.
   }
 
   rtc_shared_library("network_tester_so") {
