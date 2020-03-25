@@ -277,16 +277,16 @@ rtc_library("audio_device_impl") {
           defines += [ "WEBRTC_USE_X11" ]
         }
         if (rtc_include_pulse_audio) {
-          sources += [
-            "linux/audio_device_pulse_linux.cc",
-            "linux/audio_device_pulse_linux.h",
-            "linux/audio_mixer_manager_pulse_linux.cc",
-            "linux/audio_mixer_manager_pulse_linux.h",
-            "linux/pulseaudiosymboltable_linux.cc",
-            "linux/pulseaudiosymboltable_linux.h",
-          ]
           defines += [ "WEBRTC_ENABLE_LINUX_PULSE" ]
         }
+        sources += [
+          "linux/audio_device_pulse_linux.cc",
+          "linux/audio_device_pulse_linux.h",
+          "linux/audio_mixer_manager_pulse_linux.cc",
+          "linux/audio_mixer_manager_pulse_linux.h",
+          "linux/pulseaudiosymboltable_linux.cc",
+          "linux/pulseaudiosymboltable_linux.h",
+        ]
       }
       if (is_mac) {
         sources += [
