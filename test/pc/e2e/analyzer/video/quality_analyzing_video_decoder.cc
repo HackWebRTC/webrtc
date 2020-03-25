@@ -222,7 +222,9 @@ void QualityAnalyzingVideoDecoder::OnFrameDecoded(
   // Set frame id to the value, that was extracted from corresponding encoded
   // image.
   frame->set_id(frame_id);
-  analyzer_->OnFrameDecoded(*frame, decode_time_ms, qp);
+  VideoQualityAnalyzerInterface::DecoderStats stats;
+  stats.decode_time_ms = decode_time_ms;
+  analyzer_->OnFrameDecoded(*frame, stats);
 }
 
 QualityAnalyzingVideoDecoderFactory::QualityAnalyzingVideoDecoderFactory(

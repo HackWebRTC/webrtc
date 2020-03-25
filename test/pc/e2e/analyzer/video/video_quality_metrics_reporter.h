@@ -26,7 +26,6 @@ struct VideoBweStats {
   SamplesStatsCounter available_send_bandwidth;
   SamplesStatsCounter transmission_bitrate;
   SamplesStatsCounter retransmission_bitrate;
-  SamplesStatsCounter target_encode_bitrate;
 };
 
 class VideoQualityMetricsReporter

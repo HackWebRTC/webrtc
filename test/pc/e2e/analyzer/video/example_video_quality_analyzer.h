@@ -38,13 +38,13 @@ class ExampleVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
                            const VideoFrame& frame) override;
   void OnFramePreEncode(const VideoFrame& frame) override;
   void OnFrameEncoded(uint16_t frame_id,
-                      const EncodedImage& encoded_image) override;
+                      const EncodedImage& encoded_image,
+                      const EncoderStats& stats) override;
   void OnFrameDropped(EncodedImageCallback::DropReason reason) override;
   void OnFramePreDecode(uint16_t frame_id,
                         const EncodedImage& encoded_image) override;
   void OnFrameDecoded(const VideoFrame& frame,
-                      absl::optional<int32_t> decode_time_ms,
-                      absl::optional<uint8_t> qp) override;
+                      const DecoderStats& stats) override;
   void OnFrameRendered(const VideoFrame& frame) override;
   void OnEncoderError(const VideoFrame& frame, int32_t error_code) override;
   void OnDecoderError(uint16_t frame_id, int32_t error_code) override;

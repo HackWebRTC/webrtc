@@ -26,6 +26,7 @@ namespace {
 constexpr int kMaxActiveComparisons = 10;
 constexpr int kFreezeThresholdMs = 150;
 constexpr int kMicrosPerSecond = 1000000;
+constexpr int kBitsInByte = 8;
 
 void LogFrameCounters(const std::string& name, const FrameCounters& counters) {
   RTC_LOG(INFO) << "[" << name << "] Captured    : " << counters.captured;
@@ -180,7 +181,8 @@ void DefaultVideoQualityAnalyzer::OnFramePreEncode(
 
 void DefaultVideoQualityAnalyzer::OnFrameEncoded(
     uint16_t frame_id,
-    const webrtc::EncodedImage& encoded_image) {
+    const webrtc::EncodedImage& encoded_image,
+    const EncoderStats& stats) {
   rtc::CritScope crit(&lock_);
   auto it = frame_stats_.find(frame_id);
   RTC_DCHECK(it != frame_stats_.end());
@@ -193,6 +195,7 @@ void DefaultVideoQualityAnalyzer::OnFrameEncoded(
   }
   it->second.encoded_time = Now();
   it->second.encoded_image_size = encoded_image.size();
+  it->second.target_encode_bitrate = stats.target_encode_bitrate;
 }
 
 void DefaultVideoQualityAnalyzer::OnFrameDropped(
@@ -226,8 +229,7 @@ void DefaultVideoQualityAnalyzer::OnFramePreDecode(
 
 void DefaultVideoQualityAnalyzer::OnFrameDecoded(
     const webrtc::VideoFrame& frame,
-    absl::optional<int32_t> decode_time_ms,
-    absl::optional<uint8_t> qp) {
+    const DecoderStats& stats) {
   rtc::CritScope crit(&lock_);
   auto it = frame_stats_.find(frame.id());
   RTC_DCHECK(it != frame_stats_.end());
@@ -517,6 +519,7 @@ void DefaultVideoQualityAnalyzer::ProcessComparison(
         (frame_stats.encoded_time - frame_stats.pre_encode_time).ms());
     stats->encode_frame_rate.AddEvent(frame_stats.encoded_time);
     stats->total_encoded_images_payload += frame_stats.encoded_image_size;
+    stats->target_encode_bitrate.AddSample(frame_stats.target_encode_bitrate);
   } else {
     if (frame_stats.pre_encode_time.IsFinite()) {
       stats->dropped_by_encoder++;
@@ -670,6 +673,9 @@ void DefaultVideoQualityAnalyzer::ReportResults(
                     /*important=*/false, ImproveDirection::kSmallerIsBetter);
   ReportResult("max_skipped", test_case_name, stats.skipped_between_rendered,
                "count", ImproveDirection::kSmallerIsBetter);
+  ReportResult("target_encode_bitrate", test_case_name,
+               stats.target_encode_bitrate / kBitsInByte, "bytesPerSecond",
+               ImproveDirection::kNone);
   test::PrintResult(
       "actual_encode_bitrate", "", test_case_name,
       static_cast<double>(stats.total_encoded_images_payload) /

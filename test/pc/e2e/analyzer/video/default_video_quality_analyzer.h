@@ -101,6 +101,7 @@ struct StreamStats {
   // Mean time between one freeze end and next freeze start.
   SamplesStatsCounter time_between_freezes_ms;
   SamplesStatsCounter resolution_of_rendered_frame;
+  SamplesStatsCounter target_encode_bitrate;
 
   int64_t total_encoded_images_payload = 0;
   int64_t dropped_by_encoder = 0;
@@ -138,13 +139,13 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
                            const VideoFrame& frame) override;
   void OnFramePreEncode(const VideoFrame& frame) override;
   void OnFrameEncoded(uint16_t frame_id,
-                      const EncodedImage& encoded_image) override;
+                      const EncodedImage& encoded_image,
+                      const EncoderStats& stats) override;
   void OnFrameDropped(EncodedImageCallback::DropReason reason) override;
   void OnFramePreDecode(uint16_t frame_id,
                         const EncodedImage& input_image) override;
   void OnFrameDecoded(const VideoFrame& frame,
-                      absl::optional<int32_t> decode_time_ms,
-                      absl::optional<uint8_t> qp) override;
+                      const DecoderStats& stats) override;
   void OnFrameRendered(const VideoFrame& frame) override;
   void OnEncoderError(const VideoFrame& frame, int32_t error_code) override;
   void OnDecoderError(uint16_t frame_id, int32_t error_code) override;
@@ -180,6 +181,8 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
     Timestamp decode_end_time = Timestamp::MinusInfinity();
     Timestamp rendered_time = Timestamp::MinusInfinity();
     Timestamp prev_frame_rendered_time = Timestamp::MinusInfinity();
+
+    uint32_t target_encode_bitrate = 0;
 
     absl::optional<int> rendered_frame_width = absl::nullopt;
     absl::optional<int> rendered_frame_height = absl::nullopt;

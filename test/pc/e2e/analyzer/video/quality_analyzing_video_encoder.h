@@ -150,6 +150,7 @@ class QualityAnalyzingVideoEncoder : public VideoEncoder,
   EncodedImageCallback* delegate_callback_ RTC_GUARDED_BY(lock_);
   std::list<std::pair<uint32_t, uint16_t>> timestamp_to_frame_id_list_
       RTC_GUARDED_BY(lock_);
+  VideoBitrateAllocation bitrate_allocation_ RTC_GUARDED_BY(lock_);
 };
 
 // Produces QualityAnalyzingVideoEncoder, which hold decoders, produced by

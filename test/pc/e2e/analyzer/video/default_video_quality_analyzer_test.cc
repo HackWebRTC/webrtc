@@ -83,14 +83,15 @@ TEST(DefaultVideoQualityAnalyzerTest,
     frames_order.push_back(frame.id());
     captured_frames.insert({frame.id(), frame});
     analyzer.OnFramePreEncode(frame);
-    analyzer.OnFrameEncoded(frame.id(), FakeEncode(frame));
+    analyzer.OnFrameEncoded(frame.id(), FakeEncode(frame),
+                            VideoQualityAnalyzerInterface::EncoderStats());
   }
 
   for (const uint16_t& frame_id : frames_order) {
     VideoFrame received_frame = DeepCopy(captured_frames.at(frame_id));
     analyzer.OnFramePreDecode(received_frame.id(), FakeEncode(received_frame));
-    analyzer.OnFrameDecoded(received_frame, /*decode_time_ms=*/absl::nullopt,
-                            /*qp=*/absl::nullopt);
+    analyzer.OnFrameDecoded(received_frame,
+                            VideoQualityAnalyzerInterface::DecoderStats());
     analyzer.OnFrameRendered(received_frame);
   }
 
@@ -129,15 +130,16 @@ TEST(DefaultVideoQualityAnalyzerTest,
     frames_order.push_back(frame.id());
     captured_frames.insert({frame.id(), frame});
     analyzer.OnFramePreEncode(frame);
-    analyzer.OnFrameEncoded(frame.id(), FakeEncode(frame));
+    analyzer.OnFrameEncoded(frame.id(), FakeEncode(frame),
+                            VideoQualityAnalyzerInterface::EncoderStats());
   }
 
   for (size_t i = kMaxFramesInFlightPerStream; i < frames_order.size(); ++i) {
     uint16_t frame_id = frames_order.at(i);
     VideoFrame received_frame = DeepCopy(captured_frames.at(frame_id));
     analyzer.OnFramePreDecode(received_frame.id(), FakeEncode(received_frame));
-    analyzer.OnFrameDecoded(received_frame, /*decode_time_ms=*/absl::nullopt,
-                            /*qp=*/absl::nullopt);
+    analyzer.OnFrameDecoded(received_frame,
+                            VideoQualityAnalyzerInterface::DecoderStats());
     analyzer.OnFrameRendered(received_frame);
   }
 
@@ -174,15 +176,16 @@ TEST(DefaultVideoQualityAnalyzerTest, NormalScenario) {
     frames_order.push_back(frame.id());
     captured_frames.insert({frame.id(), frame});
     analyzer.OnFramePreEncode(frame);
-    analyzer.OnFrameEncoded(frame.id(), FakeEncode(frame));
+    analyzer.OnFrameEncoded(frame.id(), FakeEncode(frame),
+                            VideoQualityAnalyzerInterface::EncoderStats());
   }
 
   for (size_t i = 1; i < frames_order.size(); i += 2) {
     uint16_t frame_id = frames_order.at(i);
     VideoFrame received_frame = DeepCopy(captured_frames.at(frame_id));
     analyzer.OnFramePreDecode(received_frame.id(), FakeEncode(received_frame));
-    analyzer.OnFrameDecoded(received_frame, /*decode_time_ms=*/absl::nullopt,
-                            /*qp=*/absl::nullopt);
+    analyzer.OnFrameDecoded(received_frame,
+                            VideoQualityAnalyzerInterface::DecoderStats());
     analyzer.OnFrameRendered(received_frame);
   }
 

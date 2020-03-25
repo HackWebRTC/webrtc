@@ -53,6 +53,20 @@ namespace webrtc_pc_e2e {
 // The analyzer will be injected in all points from A to F.
 class VideoQualityAnalyzerInterface : public StatsObserverInterface {
  public:
+  // Contains extra statistic provided by video encoder.
+  struct EncoderStats {
+    // TODO(hbos) https://crbug.com/webrtc/9547,
+    // https://crbug.com/webrtc/11443: improve stats API to make available
+    // there.
+    uint32_t target_encode_bitrate;
+  };
+  // Contains extra statistic provided by video decoder.
+  struct DecoderStats {
+    // Decode time provided by decoder itself. If decoder doesn’t produce such
+    // information can be omitted.
+    absl::optional<int32_t> decode_time_ms;
+  };
+
   ~VideoQualityAnalyzerInterface() override = default;
 
   // Will be called by framework before test.
@@ -74,18 +88,16 @@ class VideoQualityAnalyzerInterface : public StatsObserverInterface {
   // VideoFrame can produce multiple EncodedImages. Each encoded image will
   // have id from VideoFrame.
   virtual void OnFrameEncoded(uint16_t frame_id,
-                              const EncodedImage& encoded_image) {}
+                              const EncodedImage& encoded_image,
+                              const EncoderStats& stats) {}
   // Will be called for each frame dropped by encoder.
   virtual void OnFrameDropped(EncodedImageCallback::DropReason reason) {}
   // Will be called before calling the decoder.
   virtual void OnFramePreDecode(uint16_t frame_id,
                                 const EncodedImage& encoded_image) {}
-  // Will be called after decoding the frame. |decode_time_ms| is a decode
-  // time provided by decoder itself. If decoder doesn’t produce such
-  // information can be omitted.
+  // Will be called after decoding the frame.
   virtual void OnFrameDecoded(const VideoFrame& frame,
-                              absl::optional<int32_t> decode_time_ms,
-                              absl::optional<uint8_t> qp) {}
+                              const DecoderStats& stats) {}
   // Will be called when frame will be obtained from PeerConnection stack.
   virtual void OnFrameRendered(const VideoFrame& frame) {}
   // Will be called if encoder return not WEBRTC_VIDEO_CODEC_OK.
