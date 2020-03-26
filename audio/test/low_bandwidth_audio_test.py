@@ -230,16 +230,8 @@ def _ConfigurePythonPath(args):
   # python, so put it in the path for this script before we attempt to import
   # it.
   histogram_proto_path = os.path.join(
-      args.build_dir, 'pyproto', 'tracing', 'tracing', 'proto')
+      os.path.abspath(args.build_dir), 'pyproto', 'tracing', 'tracing', 'proto')
   sys.path.insert(0, histogram_proto_path)
-
-  logging.info('Contents of build dir:')
-  logging.info(str(os.listdir(args.build_dir)))
-  for root, dirs, files in os.walk(os.path.join(args.build_dir, 'pyproto')):
-    path = root.split(os.sep)
-    logging.info((len(path) - 1) * '---' + os.path.basename(root))
-    for file in files:
-        logging.info(len(path) * '---' + file)
 
   # Fail early in case the proto hasn't been built.
   from tracing.proto import histogram_proto
@@ -253,7 +245,6 @@ def _ConfigurePythonPath(args):
 def main():
   # pylint: disable=W0101
   logging.basicConfig(level=logging.INFO)
-  logging.info('Invoked with %s', str(sys.argv))
 
   args = _ParseArgs()
 
