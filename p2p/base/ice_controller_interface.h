@@ -73,6 +73,10 @@ class IceControllerInterface {
     absl::optional<IceControllerEvent> recheck_event;
   };
 
+  // A temporary typedef, so that we can migrate downstream
+  // to a new return value for SelectConnectionToPing.
+  typedef std::pair<Connection*, int> PingResult;
+
   virtual ~IceControllerInterface() = default;
 
   // These setters are called when the state of P2PTransportChannel is mutated.
@@ -90,8 +94,7 @@ class IceControllerInterface {
   virtual bool HasPingableConnection() const = 0;
 
   // Select a connection to Ping, or nullptr if none.
-  virtual std::pair<Connection*, int> SelectConnectionToPing(
-      int64_t last_ping_sent_ms) = 0;
+  virtual PingResult SelectConnectionToPing(int64_t last_ping_sent_ms) = 0;
 
   // Compute the "STUN_ATTR_USE_CANDIDATE" for |conn|.
   virtual bool GetUseCandidateAttr(const Connection* conn,

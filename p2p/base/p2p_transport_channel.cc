@@ -1888,7 +1888,7 @@ void P2PTransportChannel::CheckAndPing() {
   UpdateConnectionStates();
 
   auto result = ice_controller_->SelectConnectionToPing(last_ping_sent_ms_);
-  Connection* conn = result.first;
+  Connection* conn = const_cast<Connection*>(result.first);
   int delay = result.second;
 
   if (conn) {
