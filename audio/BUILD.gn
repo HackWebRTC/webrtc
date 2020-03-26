@@ -206,7 +206,6 @@ if (rtc_include_tests) {
       if (is_android) {
         deps += [ "//testing/android/native_test:native_test_native_code" ]
       }
-
       data = [
         "../resources/voice_engine/audio_tiny16.wav",
         "../resources/voice_engine/audio_tiny48.wav",
@@ -223,6 +222,14 @@ if (rtc_include_tests) {
         "../resources/voice_engine/audio_tiny16.wav",
         "../resources/voice_engine/audio_tiny48.wav",
       ]
+      deps += [ "//third_party/catapult/tracing/tracing/proto:histogram_proto" ]
+      data +=
+          [ "${root_out_dir}/pyproto/tracing/tracing/proto/histogram_pb2.py" ]
+
+      # TODO(http://crbug.com/1029452): Create a cleaner target with just the
+      # tracing python code. We don't need Polymer for instance.
+      data_deps = [ "//third_party/catapult/tracing:convert_chart_json" ]
+
       if (is_win) {
         data += [ "${root_out_dir}/low_bandwidth_audio_test.exe" ]
       } else {
