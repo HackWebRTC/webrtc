@@ -63,6 +63,15 @@ bool IsEnabled(const WebRtcKeyValueConfig* trials, absl::string_view key) {
   return trials->Lookup(key).find("Enabled") == 0;
 }
 
+bool IsRelevantRouteChange(const rtc::NetworkRoute& old_route,
+                           const rtc::NetworkRoute& new_route) {
+  // TODO(bugs.webrtc.org/11438): Experiment with using more information/
+  // other conditions.
+  return old_route.connected != new_route.connected ||
+         old_route.local.network_id() != new_route.local.network_id() ||
+         old_route.remote.network_id() != new_route.remote.network_id();
+}
+
 }  // namespace
 
 RtpTransportControllerSend::RtpTransportControllerSend(
@@ -283,14 +292,7 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
 
   // Check if enough conditions of the new/old route has changed
   // to trigger resetting of bitrates (and a probe).
-  // Currently we only check local/remote network id (i.e IP address) and
-  // connected state and do not consider if we change route due to TURN.
-  //
-  // TODO(bugs.webrtc.org/11438) : Experiment with using more information/
-  // other conditions.
-  if (old_route.connected != network_route.connected ||
-      old_route.local.network_id() != network_route.local.network_id() ||
-      old_route.remote.network_id() != network_route.remote.network_id()) {
+  if (IsRelevantRouteChange(old_route, network_route)) {
     BitrateConstraints bitrate_config = bitrate_configurator_.GetConfig();
     RTC_LOG(LS_INFO) << "Reset bitrates to min: "
                      << bitrate_config.min_bitrate_bps
@@ -310,11 +312,7 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
       RTC_DCHECK_RUN_ON(&task_queue_);
       transport_overhead_bytes_per_packet_ = network_route.packet_overhead;
       if (reset_feedback_on_route_change_) {
-        // TODO(bugs.webrtc.org/11438) : Consider if transport_feedback_adapter
-        // should have a real "route" rather than just local/remote network_id.
-        transport_feedback_adapter_.SetNetworkIds(
-            network_route.local.network_id(),
-            network_route.remote.network_id());
+        transport_feedback_adapter_.SetNetworkRoute(network_route);
       }
       if (controller_) {
         PostUpdates(controller_->OnNetworkRouteChange(msg));
@@ -395,20 +393,25 @@ void RtpTransportControllerSend::OnReceivedPacket(
   });
 }
 
+void RtpTransportControllerSend::UpdateBitrateConstraints(
+    const BitrateConstraints& updated) {
+  TargetRateConstraints msg = ConvertConstraints(updated, clock_);
+  task_queue_.PostTask([this, msg]() {
+    RTC_DCHECK_RUN_ON(&task_queue_);
+    if (controller_) {
+      PostUpdates(controller_->OnTargetRateConstraints(msg));
+    } else {
+      UpdateInitialConstraints(msg);
+    }
+  });
+}
+
 void RtpTransportControllerSend::SetSdpBitrateParameters(
     const BitrateConstraints& constraints) {
   absl::optional<BitrateConstraints> updated =
       bitrate_configurator_.UpdateWithSdpParameters(constraints);
   if (updated.has_value()) {
-    TargetRateConstraints msg = ConvertConstraints(*updated, clock_);
-    task_queue_.PostTask([this, msg]() {
-      RTC_DCHECK_RUN_ON(&task_queue_);
-      if (controller_) {
-        PostUpdates(controller_->OnTargetRateConstraints(msg));
-      } else {
-        UpdateInitialConstraints(msg);
-      }
-    });
+    UpdateBitrateConstraints(*updated);
   } else {
     RTC_LOG(LS_VERBOSE)
         << "WebRTC.RtpTransportControllerSend.SetSdpBitrateParameters: "
@@ -421,15 +424,7 @@ void RtpTransportControllerSend::SetClientBitratePreferences(
   absl::optional<BitrateConstraints> updated =
       bitrate_configurator_.UpdateWithClientPreferences(preferences);
   if (updated.has_value()) {
-    TargetRateConstraints msg = ConvertConstraints(*updated, clock_);
-    task_queue_.PostTask([this, msg]() {
-      RTC_DCHECK_RUN_ON(&task_queue_);
-      if (controller_) {
-        PostUpdates(controller_->OnTargetRateConstraints(msg));
-      } else {
-        UpdateInitialConstraints(msg);
-      }
-    });
+    UpdateBitrateConstraints(*updated);
   } else {
     RTC_LOG(LS_VERBOSE)
         << "WebRTC.RtpTransportControllerSend.SetClientBitratePreferences: "

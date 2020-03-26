@@ -54,6 +54,7 @@ rtc_library("transport_feedback") {
     "../../../api/transport:network_control",
     "../../../api/units:data_size",
     "../../../api/units:timestamp",
+    "../../../rtc_base",
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
     "../../../rtc_base/network:sent_packet",

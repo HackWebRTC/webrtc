@@ -105,7 +105,7 @@ class RtpTransportControllerSend final
   void SetClientBitratePreferences(const BitrateSettings& preferences) override;
 
   void OnTransportOverheadChanged(
-      size_t transport_overhead_per_packet) override;
+      size_t transport_overhead_bytes_per_packet) override;
 
   void AccountForAudioPacketsInPacedSender(bool account_for_audio) override;
   void IncludeOverheadInPacedSender() override;
@@ -131,6 +131,7 @@ class RtpTransportControllerSend final
   void StartProcessPeriodicTasks() RTC_RUN_ON(task_queue_);
   void UpdateControllerWithTimeInterval() RTC_RUN_ON(task_queue_);
 
+  void UpdateBitrateConstraints(const BitrateConstraints& updated);
   void UpdateStreamsConfig() RTC_RUN_ON(task_queue_);
   void OnReceivedRtcpReceiverReportBlocks(const ReportBlockList& report_blocks,
                                           int64_t now_ms)
