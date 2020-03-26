@@ -198,6 +198,7 @@ rtc_library("bitrate_configurator") {
     # For api/bitrate_constraints.h
     "../api:libjingle_peerconnection_api",
     "../api/transport:bitrate_settings",
+    "../api/units:data_rate",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/types:optional",

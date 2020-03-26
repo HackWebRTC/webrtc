@@ -63,13 +63,8 @@ bool IsEnabled(const WebRtcKeyValueConfig* trials, absl::string_view key) {
   return trials->Lookup(key).find("Enabled") == 0;
 }
 
-bool IsRelevantRouteChange(const rtc::NetworkRoute& old_route,
-                           const rtc::NetworkRoute& new_route) {
-  // TODO(bugs.webrtc.org/11438): Experiment with using more information/
-  // other conditions.
-  return old_route.connected != new_route.connected ||
-         old_route.local.network_id() != new_route.local.network_id() ||
-         old_route.remote.network_id() != new_route.remote.network_id();
+bool IsRelayed(const rtc::NetworkRoute& route) {
+  return route.local.uses_turn() || route.remote.uses_turn();
 }
 
 }  // namespace
@@ -114,12 +109,15 @@ RtpTransportControllerSend::RtpTransportControllerSend(
           IsEnabled(trials, "WebRTC-SendSideBwe-WithOverhead")),
       add_pacing_to_cwin_(
           IsEnabled(trials, "WebRTC-AddPacingToCongestionWindowPushback")),
+      relay_bandwidth_cap_("relay_cap", DataRate::PlusInfinity()),
       transport_overhead_bytes_per_packet_(0),
       network_available_(false),
       retransmission_rate_limiter_(clock, kRetransmitWindowSizeMs),
       task_queue_(task_queue_factory->CreateTaskQueue(
           "rtp_send_controller",
           TaskQueueFactory::Priority::NORMAL)) {
+  ParseFieldTrial({&relay_bandwidth_cap_},
+                  trials->Lookup("WebRTC-Bwe-NetworkRouteConstraints"));
   initial_config_.constraints = ConvertConstraints(bitrate_config, clock_);
   initial_config_.event_log = event_log;
   initial_config_.key_value_config = trials;
@@ -254,6 +252,24 @@ void RtpTransportControllerSend::RegisterTargetTransferRateObserver(
     MaybeCreateControllers();
   });
 }
+
+bool RtpTransportControllerSend::IsRelevantRouteChange(
+    const rtc::NetworkRoute& old_route,
+    const rtc::NetworkRoute& new_route) const {
+  // TODO(bugs.webrtc.org/11438): Experiment with using more information/
+  // other conditions.
+  bool connected_changed = old_route.connected != new_route.connected;
+  bool route_ids_changed =
+      old_route.local.network_id() != new_route.local.network_id() ||
+      old_route.remote.network_id() != new_route.remote.network_id();
+  if (relay_bandwidth_cap_->IsFinite()) {
+    bool relaying_changed = IsRelayed(old_route) != IsRelayed(new_route);
+    return connected_changed || route_ids_changed || relaying_changed;
+  } else {
+    return connected_changed || route_ids_changed;
+  }
+}
+
 void RtpTransportControllerSend::OnNetworkRouteChanged(
     const std::string& transport_name,
     const rtc::NetworkRoute& network_route) {
@@ -264,6 +280,9 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
     // consider merging these two methods.
     return;
   }
+
+  absl::optional<BitrateConstraints> relay_constraint_update =
+      ApplyOrLiftRelayCap(IsRelayed(network_route));
 
   // Check whether the network route has changed on each transport.
   auto result =
@@ -279,6 +298,9 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
   }
 
   if (inserted) {
+    if (relay_constraint_update.has_value()) {
+      UpdateBitrateConstraints(*relay_constraint_update);
+    }
     task_queue_.PostTask([this, network_route] {
       RTC_DCHECK_RUN_ON(&task_queue_);
       transport_overhead_bytes_per_packet_ = network_route.packet_overhead;
@@ -430,6 +452,12 @@ void RtpTransportControllerSend::SetClientBitratePreferences(
         << "WebRTC.RtpTransportControllerSend.SetClientBitratePreferences: "
            "nothing to update";
   }
+}
+
+absl::optional<BitrateConstraints>
+RtpTransportControllerSend::ApplyOrLiftRelayCap(bool is_relayed) {
+  DataRate cap = is_relayed ? relay_bandwidth_cap_ : DataRate::PlusInfinity();
+  return bitrate_configurator_.UpdateWithRelayCap(cap);
 }
 
 void RtpTransportControllerSend::OnTransportOverheadChanged(
