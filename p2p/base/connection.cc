@@ -1334,6 +1334,15 @@ bool Connection::ShouldSendGoogPing(const StunMessage* message) {
   return false;
 }
 
+void Connection::ForgetLearnedState() {
+  RTC_LOG(LS_INFO) << ToString() << ": Connection forget learned state";
+  requests_.Clear();
+  receiving_ = false;
+  write_state_ = STATE_WRITE_INIT;
+  rtt_estimate_.Reset();
+  pings_since_last_response_.clear();
+}
+
 ProxyConnection::ProxyConnection(Port* port,
                                  size_t index,
                                  const Candidate& remote_candidate)

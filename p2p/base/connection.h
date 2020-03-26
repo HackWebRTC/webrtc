@@ -303,6 +303,20 @@ class Connection : public CandidatePairInterface,
     return rtt_estimate_;
   }
 
+  // Reset the connection to a state of a newly connected.
+  // - STATE_WRITE_INIT
+  // - receving = false
+  // - throw away all pending request
+  // - reset RttEstimate
+  //
+  // Keep the following unchanged:
+  // - connected
+  // - remote_candidate
+  // - statistics
+  //
+  // Does not trigger SignalStateChange
+  void ForgetLearnedState();
+
   void SendStunBindingResponse(const StunMessage* request);
   void SendGoogPingResponse(const StunMessage* request);
   void SendResponseMessage(const StunMessage& response);
