@@ -16,6 +16,7 @@ output files will be performed.
 
 import argparse
 import collections
+import json
 import logging
 import os
 import re
@@ -57,7 +58,7 @@ def _ParseArgs():
   parser.add_argument('--num-retries', default='0',
                       help='Number of times to retry the test on Android.')
   parser.add_argument('--isolated_script_test_perf_output', default=None,
-      help='Path to store perf results in histogram proto format.')
+      help='Path to store perf results in chartjson format.')
   parser.add_argument('--extra-test-args', default=[], action='append',
       help='Extra args to path to the test binary.')
 
@@ -169,7 +170,7 @@ def _RunPesq(executable_path, reference_file, degraded_file,
   if match:
     raw_mos, _ = match.groups()
 
-    return {'pesq_mos': (raw_mos, 'unitless')}
+    return {'pesq_mos': (raw_mos, 'score')}
   else:
     logging.error('PESQ: %s', out.splitlines()[-1])
     return {}
@@ -195,51 +196,33 @@ def _RunPolqa(executable_path, reference_file, degraded_file):
     return {}
 
   mos_lqo, = match.groups()
-  return {'polqa_mos_lqo': (mos_lqo, 'unitless')}
+  return {'polqa_mos_lqo': (mos_lqo, 'score')}
 
 
-def _MergeInPerfResultsFromCcTests(histograms, run_perf_results_file):
-  from tracing.value import histogram_set
+def _AddChart(charts, metric, test_name, value, units):
+  chart = charts.setdefault(metric, {})
+  chart[test_name] = {
+      "type": "scalar",
+      "value": value,
+      "units": units,
+  }
 
-  cc_histograms = histogram_set.HistogramSet()
+
+def _AddRunPerfResults(charts, run_perf_results_file):
   with open(run_perf_results_file, 'rb') as f:
-    contents = f.read()
-    if not contents:
-      return
-
-    cc_histograms.ImportProto(contents)
-
-  histograms.Merge(cc_histograms)
+    per_run_perf_results = json.load(f)
+  if 'charts' not in per_run_perf_results:
+    return
+  for metric, cases in per_run_perf_results['charts'].items():
+    chart = charts.setdefault(metric, {})
+    for case_name, case_value in cases.items():
+      if case_name in chart:
+        logging.error('Overriding results for %s/%s', metric, case_name)
+      chart[case_name] = case_value
 
 
 Analyzer = collections.namedtuple('Analyzer', ['name', 'func', 'executable',
                                                'sample_rate_hz'])
-
-
-def _ConfigurePythonPath(args):
-  script_dir = os.path.dirname(os.path.realpath(__file__))
-  checkout_root = os.path.abspath(
-      os.path.join(script_dir, os.pardir, os.pardir))
-
-  sys.path.insert(0, os.path.join(checkout_root, 'third_party', 'catapult',
-                                  'tracing'))
-  sys.path.insert(0, os.path.join(checkout_root, 'third_party', 'protobuf',
-                                  'python'))
-
-  # The low_bandwidth_audio_perf_test gn rule will build the protobuf stub for
-  # python, so put it in the path for this script before we attempt to import
-  # it.
-  histogram_proto_path = os.path.join(
-      args.build_dir, 'pyproto', 'tracing', 'tracing', 'proto')
-  sys.path.insert(0, histogram_proto_path)
-
-  # Fail early in case the proto hasn't been built.
-  from tracing.proto import histogram_proto
-  if not histogram_proto.HAS_PROTO:
-    raise ImportError('Could not find histogram_pb2. You need to build the '
-                      'low_bandwidth_audio_perf_test target before invoking '
-                      'this script. Expected to find '
-                      'histogram_pb2.py in %s.' % histogram_proto_path)
 
 
 def main():
@@ -247,13 +230,6 @@ def main():
   logging.basicConfig(level=logging.INFO)
 
   args = _ParseArgs()
-
-  _ConfigurePythonPath(args)
-
-  # Import catapult modules here after configuring the pythonpath.
-  from tracing.value import histogram_set
-  from tracing.value.diagnostics import reserved_infos
-  from tracing.value.diagnostics import generic_set
 
   pesq_path, polqa_path = _GetPathToTools()
   if pesq_path is None:
@@ -274,14 +250,14 @@ def main():
   if polqa_path and _RunPolqa(polqa_path, example_path, example_path):
     analyzers.append(Analyzer('polqa', _RunPolqa, polqa_path, 48000))
 
-  histograms = histogram_set.HistogramSet()
+  charts = {}
+
   for analyzer in analyzers:
     # Start the test executable that produces audio files.
     test_process = subprocess.Popen(
         _LogCommand(test_command + [
             '--sample_rate_hz=%d' % analyzer.sample_rate_hz,
-            '--test_case_prefix=%s' % analyzer.name,
-            '--write_histogram_proto_json'
+            '--test_case_prefix=%s' % analyzer.name
           ] + args.extra_test_args),
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     perf_results_file = None
@@ -303,12 +279,9 @@ def main():
         analyzer_results = analyzer.func(analyzer.executable,
                                          reference_file, degraded_file)
         for metric, (value, units) in analyzer_results.items():
-          hist = histograms.CreateHistogram(metric, units, [value])
-          user_story = generic_set.GenericSet([test_name])
-          hist.diagnostics[reserved_infos.STORIES.name] = user_story
-
-          # Output human readable results.
+          # Output a result for the perf dashboard.
           print 'RESULT %s: %s= %s %s' % (metric, test_name, value, units)
+          _AddChart(charts, metric, test_name, value, units)
 
         if args.remove:
           os.remove(reference_file)
@@ -318,13 +291,13 @@ def main():
     if perf_results_file:
       perf_results_file = _GetFile(perf_results_file, out_dir, move=True,
                            android=args.android, adb_prefix=adb_prefix)
-      _MergeInPerfResultsFromCcTests(histograms, perf_results_file)
+      _AddRunPerfResults(charts, perf_results_file)
       if args.remove:
         os.remove(perf_results_file)
 
   if args.isolated_script_test_perf_output:
-    with open(args.isolated_script_test_perf_output, 'wb') as f:
-      f.write(histograms.AsProto().SerializeToString())
+    with open(args.isolated_script_test_perf_output, 'w') as f:
+      json.dump({"format_version": "1.0", "charts": charts}, f)
 
   return test_process.wait()
 

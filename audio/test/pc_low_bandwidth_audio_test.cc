@@ -105,7 +105,7 @@ std::string AudioOutputFile() {
 
 std::string PerfResultsOutputFile() {
   return webrtc::test::OutputPath() + "PCLowBandwidth_perf_" +
-         FileSampleRateSuffix() + ".pb";
+         FileSampleRateSuffix() + ".json";
 }
 
 void LogTestResults() {
