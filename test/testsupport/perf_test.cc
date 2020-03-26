@@ -24,7 +24,7 @@
 
 ABSL_FLAG(bool,
           write_histogram_proto_json,
-          false,
+          true,
           "Use the histogram C++ API, which will write Histogram protos "
           "instead of Chart JSON. See histogram.proto in third_party/catapult. "
           "This flag only has effect  if --isolated_script_test_perf_output is "
