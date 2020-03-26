@@ -133,7 +133,7 @@ class GtestParallelWrapperTest(unittest.TestCase):
       result = gtest_parallel_wrapper.ParseArgs([
           'some_test', '--some_flag=some_value', '--another_flag',
           '--output_dir=' + output_dir, '--store-test-artifacts',
-          '--isolated_script_test_perf_output=SOME_OTHER_DIR', '--foo=bar',
+          '--isolated-script-test-perf-output=SOME_OTHER_DIR', '--foo=bar',
           '--baz'
       ])
       expected_artifacts_dir = os.path.join(output_dir, 'test_artifacts')

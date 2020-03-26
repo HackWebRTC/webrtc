@@ -15,18 +15,25 @@ gtest-parallel, renaming options and translating environment variables into
 flags. Developers should execute gtest-parallel directly.
 
 In particular, this translates the GTEST_SHARD_INDEX and GTEST_TOTAL_SHARDS
-environment variables to the --shard_index and --shard_count flags, and
-interprets e.g. --workers=2x as 2 workers per core.
+environment variables to the --shard_index and --shard_count flags
+and interprets e.g. --workers=2x as 2 workers per core.
 
 Flags before '--' will be attempted to be understood as arguments to
 gtest-parallel. If gtest-parallel doesn't recognize the flag or the flag is
 after '--', the flag will be passed on to the test executable.
 
+--isolated-script-test-perf-output is renamed to
+--isolated_script_test_perf_output. The Android test runner needs the flag to
+be in the former form, but our tests require the latter, so this is the only
+place we can do it.
+
 If the --store-test-artifacts flag is set, an --output_dir must be also
 specified.
+
 The test artifacts will then be stored in a 'test_artifacts' subdirectory of the
 output dir, and will be compressed into a zip file once the test finishes
 executing.
+
 This is useful when running the tests in swarming, since the output directory
 is not known beforehand.
 
@@ -37,6 +44,7 @@ For example:
       --another_flag \
       --output_dir=SOME_OUTPUT_DIR \
       --store-test-artifacts
+      --isolated-script-test-perf-output=SOME_OTHER_DIR \
       -- \
       --foo=bar \
       --baz
@@ -47,11 +55,13 @@ Will be converted into:
       --shard_index 0 \
       --shard_count 1 \
       --output_dir=SOME_OUTPUT_DIR \
+      --dump_json_test_results=SOME_DIR \
       some_test \
       -- \
       --test_artifacts_dir=SOME_OUTPUT_DIR/test_artifacts \
       --some_flag=some_value \
       --another_flag \
+      --isolated_script_test_perf_output=SOME_OTHER_DIR \
       --foo=bar \
       --baz
 
@@ -146,8 +156,16 @@ def ParseArgs(argv=None):
 
   options, unrecognized_args = parser.parse_known_args(argv)
 
-  # Just pass on flags we don't recognize to the test binary.
-  executable_args = options.executable_args + unrecognized_args
+  args_to_pass = []
+  for arg in unrecognized_args:
+    if arg.startswith('--isolated-script-test-perf-output'):
+      arg_split = arg.split('=')
+      assert len(arg_split) == 2, 'You must use the = syntax for this flag.'
+      args_to_pass.append('--isolated_script_test_perf_output=' + arg_split[1])
+    else:
+      args_to_pass.append(arg)
+
+  executable_args = options.executable_args + args_to_pass
 
   if options.store_test_artifacts:
     assert options.output_dir, (
