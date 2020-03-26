@@ -1818,6 +1818,111 @@ TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
   RunBaseTest(&test);
 }
 
+// Test that if specified, relay cap is lifted on transition to direct
+// connection.
+TEST_F(VideoSendStreamTest, RelayToDirectRoute) {
+  static const int kStartBitrateBps = 300000;
+  static const int kRelayBandwidthCapBps = 800000;
+  static const int kMinPacketsToSend = 100;
+  webrtc::test::ScopedFieldTrials field_trials(
+      std::string(field_trial::GetFieldTrialString()) +
+      "WebRTC-Bwe-NetworkRouteConstraints/relay_cap:" +
+      std::to_string(kRelayBandwidthCapBps) + "bps/");
+
+  class RelayToDirectRouteTest : public test::EndToEndTest {
+   public:
+    explicit RelayToDirectRouteTest(TaskQueueBase* task_queue)
+        : EndToEndTest(test::CallTest::kDefaultTimeoutMs),
+          task_queue_(task_queue),
+          call_(nullptr),
+          packets_sent_(0),
+          relayed_phase_(true) {
+      module_process_thread_.Detach();
+      task_queue_thread_.Detach();
+    }
+
+    ~RelayToDirectRouteTest() {
+      // Block until all already posted tasks run to avoid 'use after free'
+      // when such task accesses |this|.
+      SendTask(RTC_FROM_HERE, task_queue_, [] {});
+    }
+
+    void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
+      RTC_DCHECK_RUN_ON(&task_queue_thread_);
+      RTC_DCHECK(!call_);
+      call_ = sender_call;
+    }
+
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      RTC_DCHECK_RUN_ON(&module_process_thread_);
+      task_queue_->PostTask(ToQueuedTask([this]() {
+        RTC_DCHECK_RUN_ON(&task_queue_thread_);
+        if (!call_)
+          return;
+        bool had_time_to_exceed_cap_in_relayed_phase =
+            relayed_phase_ && ++packets_sent_ > kMinPacketsToSend;
+        bool did_exceed_cap =
+            call_->GetStats().send_bandwidth_bps > kRelayBandwidthCapBps;
+        if (did_exceed_cap || had_time_to_exceed_cap_in_relayed_phase)
+          observation_complete_.Set();
+      }));
+      return SEND_PACKET;
+    }
+
+    void OnStreamsStopped() override {
+      RTC_DCHECK_RUN_ON(&task_queue_thread_);
+      call_ = nullptr;
+    }
+
+    void PerformTest() override {
+      rtc::NetworkRoute route;
+      route.connected = true;
+      route.local = rtc::RouteEndpoint::CreateWithNetworkId(10);
+      route.remote = rtc::RouteEndpoint::CreateWithNetworkId(20);
+
+      SendTask(RTC_FROM_HERE, task_queue_, [this, &route]() {
+        RTC_DCHECK_RUN_ON(&task_queue_thread_);
+        relayed_phase_ = true;
+        route.remote = route.remote.CreateWithTurn(true);
+        call_->GetTransportControllerSend()->OnNetworkRouteChanged("transport",
+                                                                   route);
+        BitrateConstraints bitrate_config;
+        bitrate_config.start_bitrate_bps = kStartBitrateBps;
+
+        call_->GetTransportControllerSend()->SetSdpBitrateParameters(
+            bitrate_config);
+      });
+
+      EXPECT_TRUE(Wait())
+          << "Timeout waiting for sufficient packets sent count.";
+
+      SendTask(RTC_FROM_HERE, task_queue_, [this, &route]() {
+        RTC_DCHECK_RUN_ON(&task_queue_thread_);
+        EXPECT_LE(call_->GetStats().send_bandwidth_bps, kRelayBandwidthCapBps);
+
+        route.remote = route.remote.CreateWithTurn(false);
+        call_->GetTransportControllerSend()->OnNetworkRouteChanged("transport",
+                                                                   route);
+        relayed_phase_ = false;
+        observation_complete_.Reset();
+      });
+
+      EXPECT_TRUE(Wait())
+          << "Timeout while waiting for bandwidth to outgrow relay cap.";
+    }
+
+   private:
+    webrtc::SequenceChecker module_process_thread_;
+    webrtc::SequenceChecker task_queue_thread_;
+    TaskQueueBase* const task_queue_;
+    Call* call_ RTC_GUARDED_BY(task_queue_thread_);
+    int packets_sent_ RTC_GUARDED_BY(task_queue_thread_);
+    bool relayed_phase_ RTC_GUARDED_BY(task_queue_thread_);
+  } test(task_queue());
+
+  RunBaseTest(&test);
+}
+
 TEST_F(VideoSendStreamTest, ChangingTransportOverhead) {
   class ChangingTransportOverheadTest : public test::EndToEndTest {
    public:

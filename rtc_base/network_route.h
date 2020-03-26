@@ -46,6 +46,9 @@ class RouteEndpoint {
                          /* adapter_id = */ 0, network_id,
                          /* uses_turn = */ false);
   }
+  RouteEndpoint CreateWithTurn(bool uses_turn) const {
+    return RouteEndpoint(adapter_type_, adapter_id_, network_id_, uses_turn);
+  }
 
   AdapterType adapter_type() const { return adapter_type_; }
   uint16_t adapter_id() const { return adapter_id_; }
