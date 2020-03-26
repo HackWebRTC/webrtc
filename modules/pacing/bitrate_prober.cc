@@ -74,10 +74,6 @@ void BitrateProber::SetEnabled(bool enable) {
   }
 }
 
-bool BitrateProber::IsProbing() const {
-  return probing_state_ == ProbingState::kActive;
-}
-
 void BitrateProber::OnIncomingPacket(size_t packet_size) {
   // Don't initialize probing unless we have something large enough to start
   // probing.

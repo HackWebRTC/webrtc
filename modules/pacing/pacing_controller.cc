@@ -327,7 +327,7 @@ Timestamp PacingController::NextSendTime() const {
   }
 
   // If probing is active, that always takes priority.
-  if (prober_.IsProbing()) {
+  if (prober_.is_probing()) {
     Timestamp probe_time = prober_.NextProbeTime(now);
     // |probe_time| == PlusInfinity indicates no probe scheduled.
     if (probe_time != Timestamp::PlusInfinity() && !probing_send_failure_) {
@@ -462,7 +462,7 @@ void PacingController::ProcessPackets() {
   }
 
   bool first_packet_in_probe = false;
-  bool is_probing = prober_.IsProbing();
+  bool is_probing = prober_.is_probing();
   PacedPacketInfo pacing_info;
   absl::optional<DataSize> recommended_probe_size;
   if (is_probing) {

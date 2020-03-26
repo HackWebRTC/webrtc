@@ -52,7 +52,7 @@ class BitrateProber {
   // Returns true if the prober is in a probing session, i.e., it currently
   // wants packets to be sent out according to the time returned by
   // TimeUntilNextProbe().
-  bool IsProbing() const;
+  bool is_probing() const { return probing_state_ == ProbingState::kActive; }
 
   // Initializes a new probing session if the prober is allowed to probe. Does
   // not initialize the prober unless the packet size is large enough to probe
