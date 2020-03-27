@@ -215,18 +215,16 @@ if (rtc_include_tests) {
     group("low_bandwidth_audio_perf_test") {
       testonly = true
 
-      deps = [
-        ":low_bandwidth_audio_test",
-        "//third_party/catapult/tracing/tracing/proto:histogram_proto",
-      ]
+      deps = [ ":low_bandwidth_audio_test" ]
 
       data = [
         "test/low_bandwidth_audio_test.py",
         "../resources/voice_engine/audio_tiny16.wav",
         "../resources/voice_engine/audio_tiny48.wav",
-        "${root_out_dir}/pyproto/tracing/tracing/proto/histogram_pb2.py",
-        "//third_party/protobuf:py_proto_runtime",
       ]
+      deps += [ "//third_party/catapult/tracing/tracing/proto:histogram_proto" ]
+      data +=
+          [ "${root_out_dir}/pyproto/tracing/tracing/proto/histogram_pb2.py" ]
 
       # TODO(http://crbug.com/1029452): Create a cleaner target with just the
       # tracing python code. We don't need Polymer for instance.
