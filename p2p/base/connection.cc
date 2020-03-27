@@ -1265,24 +1265,16 @@ void Connection::MaybeUpdateLocalCandidate(ConnectionRequest* request,
   const uint32_t priority = priority_attr->value();
   std::string id = rtc::CreateRandomString(8);
 
-  Candidate new_local_candidate;
+  // Create a peer-reflexive candidate based on the local candidate.
+  Candidate new_local_candidate(local_candidate());
   new_local_candidate.set_id(id);
-  new_local_candidate.set_component(local_candidate().component());
   new_local_candidate.set_type(PRFLX_PORT_TYPE);
-  new_local_candidate.set_protocol(local_candidate().protocol());
   new_local_candidate.set_address(addr->GetAddress());
   new_local_candidate.set_priority(priority);
-  new_local_candidate.set_username(local_candidate().username());
-  new_local_candidate.set_password(local_candidate().password());
-  new_local_candidate.set_network_name(local_candidate().network_name());
-  new_local_candidate.set_network_type(local_candidate().network_type());
   new_local_candidate.set_related_address(local_candidate().address());
-  new_local_candidate.set_generation(local_candidate().generation());
   new_local_candidate.set_foundation(Port::ComputeFoundation(
       PRFLX_PORT_TYPE, local_candidate().protocol(),
       local_candidate().relay_protocol(), local_candidate().address()));
-  new_local_candidate.set_network_id(local_candidate().network_id());
-  new_local_candidate.set_network_cost(local_candidate().network_cost());
 
   // Change the local candidate of this Connection to the new prflx candidate.
   RTC_LOG(LS_INFO) << ToString() << ": Updating local candidate type to prflx.";

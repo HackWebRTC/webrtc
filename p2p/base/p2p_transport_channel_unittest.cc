@@ -1802,6 +1802,29 @@ TEST_F(P2PTransportChannelTest, TestTcpConnectionsFromActiveToPassive) {
   DestroyChannels();
 }
 
+// Test that tcptype is set on all candidates for a connection running over TCP.
+TEST_F(P2PTransportChannelTest, TestTcpConnectionTcptypeSet) {
+  rtc::ScopedFakeClock clock;
+  ConfigureEndpoints(BLOCK_UDP_AND_INCOMING_TCP, OPEN,
+                     PORTALLOCATOR_ENABLE_SHARED_SOCKET,
+                     PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+
+  SetAllowTcpListen(0, false);  // active.
+  SetAllowTcpListen(1, true);   // actpass.
+  CreateChannels();
+
+  EXPECT_TRUE_SIMULATED_WAIT(CheckConnected(ep1_ch1(), ep2_ch1()),
+                             kMediumTimeout, clock);
+  SIMULATED_WAIT(false, kDefaultTimeout, clock);
+
+  EXPECT_EQ(RemoteCandidate(ep1_ch1())->tcptype(), "passive");
+  EXPECT_EQ(LocalCandidate(ep1_ch1())->tcptype(), "active");
+  EXPECT_EQ(RemoteCandidate(ep2_ch1())->tcptype(), "active");
+  EXPECT_EQ(LocalCandidate(ep2_ch1())->tcptype(), "passive");
+
+  DestroyChannels();
+}
+
 TEST_F(P2PTransportChannelTest, TestIceRoleConflict) {
   AddAddress(0, kPublicAddrs[0]);
   AddAddress(1, kPublicAddrs[1]);

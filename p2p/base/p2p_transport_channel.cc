@@ -1008,6 +1008,9 @@ void P2PTransportChannel::OnUnknownAddress(PortInterface* port,
         component(), ProtoToString(proto), address, remote_candidate_priority,
         remote_username, remote_password, PRFLX_PORT_TYPE, remote_generation,
         "", network_id, network_cost);
+    if (proto == PROTO_TCP) {
+      remote_candidate.set_tcptype(TCPTYPE_ACTIVE_STR);
+    }
 
     // From RFC 5245, section-7.2.1.3:
     // The foundation of the candidate is set to an arbitrary value, different
