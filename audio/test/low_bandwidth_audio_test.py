@@ -234,8 +234,10 @@ def _ConfigurePythonPath(args):
   sys.path.insert(0, histogram_proto_path)
 
   # Fail early in case the proto hasn't been built.
-  from tracing.proto import histogram_proto
-  if not histogram_proto.HAS_PROTO:
+  try:
+    import histogram_pb2
+  except ImportError as e:
+    logging.exception(e)
     raise ImportError('Could not find histogram_pb2. You need to build the '
                       'low_bandwidth_audio_perf_test target before invoking '
                       'this script. Expected to find '
@@ -245,6 +247,7 @@ def _ConfigurePythonPath(args):
 def main():
   # pylint: disable=W0101
   logging.basicConfig(level=logging.INFO)
+  logging.info('Invoked with %s', str(sys.argv))
 
   args = _ParseArgs()
 
