@@ -105,7 +105,7 @@ TEST(IsacFixTest, Kenny) {
   FILE *inp, *outp, *f_bn, *outbits;
   int endfile;
 
-  const char* perf_result_file = NULL;
+  const char* chartjson_result_file = NULL;
 
   int i;
   int errtype, h = 0, k, packetLossPercent = 0;
@@ -459,7 +459,7 @@ TEST(IsacFixTest, Kenny) {
         printf("Expected --isolated_script_test_perf_output=/some/filename\n");
         exit(1);
       }
-      perf_result_file = filename_start + 1;
+      chartjson_result_file = filename_start + 1;
     }
   }
 
@@ -858,10 +858,10 @@ TEST(IsacFixTest, Kenny) {
 
   // Record the results with Perf test tools.
   webrtc::test::PrintResult("isac", "", "time_per_10ms_frame",
-                            (runtime * 10) / length_file, "ms", false);
+                            (runtime * 10000) / length_file, "us", false);
 
-  if (perf_result_file) {
-    EXPECT_TRUE(webrtc::test::WritePerfResults(perf_result_file));
+  if (chartjson_result_file) {
+    EXPECT_TRUE(webrtc::test::WritePerfResults(chartjson_result_file));
   }
 
   fclose(inp);
