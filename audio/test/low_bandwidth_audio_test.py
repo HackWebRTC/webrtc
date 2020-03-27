@@ -232,6 +232,9 @@ def _ConfigurePythonPath(args):
   histogram_proto_path = os.path.join(
       os.path.abspath(args.build_dir), 'pyproto', 'tracing', 'tracing', 'proto')
   sys.path.insert(0, histogram_proto_path)
+  google_protobuf_path = os.path.join(
+      os.path.abspath(args.build_dir), 'pyproto')
+  sys.path.insert(0, google_protobuf_path)
 
   # Fail early in case the proto hasn't been built.
   try:
