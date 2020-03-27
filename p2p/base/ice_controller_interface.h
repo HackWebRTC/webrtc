@@ -78,15 +78,16 @@ class IceControllerInterface {
     PingResult(const Connection* conn, int _recheck_delay_ms)
         : connection(conn), recheck_delay_ms(_recheck_delay_ms) {}
 
-    // A temporary constructor while merging.
-    // Will be removed once downstream has been updated.
-    PingResult(const std::pair<Connection*, int>& pair)  // NOLINT
-        : connection(pair.first), recheck_delay_ms(pair.second) {}
-
     // Connection that we should (optionally) ping.
     const absl::optional<const Connection*> connection;
 
-    // The delay before calling SelectConnectionToPing() again.
+    // The delay before P2PTransportChannel shall call SelectConnectionToPing()
+    // again.
+    //
+    // Since the IceController determines which connection to ping and
+    // only returns one connection at a time, the recheck_delay_ms does not have
+    // any obvious implication on bitrate for pings. E.g the recheck_delay_ms
+    // will be shorter if there are more connections available.
     const int recheck_delay_ms = 0;
   };
 
