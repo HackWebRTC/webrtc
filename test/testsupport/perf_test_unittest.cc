@@ -97,6 +97,9 @@ TEST_F(PerfTest, MAYBE_TestPrintResult) {
 }
 
 TEST_F(PerfTest, TestGetPerfResultsJSON) {
+  bool original_flag = absl::GetFlag(FLAGS_write_histogram_proto_json);
+  absl::SetFlag(&FLAGS_write_histogram_proto_json, false);
+
   PrintResult("measurement", "modifier", "trace", 42, "units", false);
   PrintResult("foo", "bar", "baz_v", 7, "widgets", true);
   PrintResultMeanAndError("foo", "bar", "baz_me", 1, 2, "lemurs", false);
@@ -104,19 +107,19 @@ TEST_F(PerfTest, TestGetPerfResultsJSON) {
   PrintResultList("foo", "bar", "baz_vl", kListOfScalars, "units", false);
 
   EXPECT_EQ(RemoveSpaces(kJsonExpected), GetPerfResults());
+
+  absl::SetFlag(&FLAGS_write_histogram_proto_json, original_flag);
 }
 
 TEST_F(PerfTest, TestClearPerfResults) {
   PrintResult("measurement", "modifier", "trace", 42, "units", false);
   ClearPerfResults();
-  EXPECT_EQ(R"({"format_version":"1.0","charts":{}})", GetPerfResults());
+  EXPECT_EQ("", GetPerfResults());
 }
 
 #if WEBRTC_ENABLE_PROTOBUF
 
 TEST_F(PerfTest, TestGetPerfResultsHistograms) {
-  bool original_flag = absl::GetFlag(FLAGS_write_histogram_proto_json);
-  absl::SetFlag(&FLAGS_write_histogram_proto_json, true);
   PrintResult("measurement", "_modifier", "story_1", 42, "ms", false);
   PrintResult("foo", "bar", "story_1", 7, "sigma", true);
   // Note: the error will be ignored, not supported by histograms.
@@ -153,8 +156,6 @@ TEST_F(PerfTest, TestGetPerfResultsHistograms) {
 
   EXPECT_EQ(hist2.name(), "measurement_modifier");
   EXPECT_EQ(hist2.unit().unit(), proto::MS_BEST_FIT_FORMAT);
-
-  absl::SetFlag(&FLAGS_write_histogram_proto_json, original_flag);
 }
 
 TEST_F(PerfTest, TestClearPerfResultsHistograms) {
