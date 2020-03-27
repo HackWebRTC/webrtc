@@ -175,10 +175,10 @@ class TestMainImpl : public TestMain {
 #else
     int exit_code = RUN_ALL_TESTS();
 
-    std::string chartjson_result_file =
+    std::string perf_output_file =
         absl::GetFlag(FLAGS_isolated_script_test_perf_output);
-    if (!chartjson_result_file.empty()) {
-      if (!webrtc::test::WritePerfResults(chartjson_result_file)) {
+    if (!perf_output_file.empty()) {
+      if (!webrtc::test::WritePerfResults(perf_output_file)) {
         return 1;
       }
     }

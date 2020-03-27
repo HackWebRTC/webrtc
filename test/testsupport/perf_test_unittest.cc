@@ -22,47 +22,6 @@
 namespace proto = catapult::tracing::tracing::proto;
 #endif
 
-namespace {
-
-const char* kJsonExpected = R"({
-  "format_version":"1.0",
-  "charts":{
-    "foobar":{
-      "baz_v":{
-        "type":"scalar",
-        "value":7,
-        "units":"widgets"
-      },
-      "baz_me":{
-        "type":"list_of_scalar_values",
-        "values":[1],
-        "std":2,
-        "units":"lemurs"
-      },
-      "baz_vl":{
-        "type":"list_of_scalar_values",
-        "values":[1,2,3],
-        "units":"units"
-      }
-    },
-    "measurementmodifier":{
-      "trace":{
-        "type":"scalar",
-        "value":42,
-        "units":"units"
-      }
-    }
-  }
-})";
-
-std::string RemoveSpaces(std::string s) {
-  s.erase(std::remove(s.begin(), s.end(), ' '), s.end());
-  s.erase(std::remove(s.begin(), s.end(), '\n'), s.end());
-  return s;
-}
-
-}  // namespace
-
 namespace webrtc {
 namespace test {
 
@@ -94,21 +53,6 @@ TEST_F(PerfTest, MAYBE_TestPrintResult) {
   PrintResultList("foo", "bar", "baz_vl", kListOfScalars, "units", false);
 
   EXPECT_EQ(expected, ::testing::internal::GetCapturedStdout());
-}
-
-TEST_F(PerfTest, TestGetPerfResultsJSON) {
-  bool original_flag = absl::GetFlag(FLAGS_write_histogram_proto_json);
-  absl::SetFlag(&FLAGS_write_histogram_proto_json, false);
-
-  PrintResult("measurement", "modifier", "trace", 42, "units", false);
-  PrintResult("foo", "bar", "baz_v", 7, "widgets", true);
-  PrintResultMeanAndError("foo", "bar", "baz_me", 1, 2, "lemurs", false);
-  const double kListOfScalars[] = {1, 2, 3};
-  PrintResultList("foo", "bar", "baz_vl", kListOfScalars, "units", false);
-
-  EXPECT_EQ(RemoveSpaces(kJsonExpected), GetPerfResults());
-
-  absl::SetFlag(&FLAGS_write_histogram_proto_json, original_flag);
 }
 
 TEST_F(PerfTest, TestClearPerfResults) {
@@ -156,16 +100,6 @@ TEST_F(PerfTest, TestGetPerfResultsHistograms) {
 
   EXPECT_EQ(hist2.name(), "measurement_modifier");
   EXPECT_EQ(hist2.unit().unit(), proto::MS_BEST_FIT_FORMAT);
-}
-
-TEST_F(PerfTest, TestClearPerfResultsHistograms) {
-  bool original_flag = absl::GetFlag(FLAGS_write_histogram_proto_json);
-  absl::SetFlag(&FLAGS_write_histogram_proto_json, true);
-  PrintResult("measurement", "modifier", "trace", 42, "ms", false);
-  ClearPerfResults();
-  EXPECT_EQ("", GetPerfResults());
-
-  absl::SetFlag(&FLAGS_write_histogram_proto_json, original_flag);
 }
 
 #endif  // WEBRTC_ENABLE_PROTOBUF

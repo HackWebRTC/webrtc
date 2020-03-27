@@ -286,7 +286,6 @@ def main():
         _LogCommand(test_command + [
             '--sample_rate_hz=%d' % analyzer.sample_rate_hz,
             '--test_case_prefix=%s' % analyzer.name,
-            '--write_histogram_proto_json'
           ] + args.extra_test_args),
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     perf_results_file = None
