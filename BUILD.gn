@@ -40,6 +40,7 @@ if (!build_with_chromium) {
         ":rtc_unittests",
         ":slow_tests",
         ":video_engine_tests",
+        ":voip_unittests",
         ":webrtc_nonparallel_tests",
         ":webrtc_perf_tests",
         "common_audio:common_audio_unittests",
@@ -672,6 +673,14 @@ if (rtc_include_tests) {
       deps += [ "//testing/android/native_test:native_test_support" ]
       shard_timeout = 900
     }
+  }
+
+  rtc_test("voip_unittests") {
+    testonly = true
+    deps = [
+      "audio/voip/test:audio_egress_unittests",
+      "test:test_main",
+    ]
   }
 }
 
