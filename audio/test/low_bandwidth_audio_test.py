@@ -221,10 +221,10 @@ def _ConfigurePythonPath(args):
   checkout_root = os.path.abspath(
       os.path.join(script_dir, os.pardir, os.pardir))
 
+  # TODO(https://crbug.com/1029452): Use a copy rule and add these from the out
+  # dir like for the third_party/protobuf code.
   sys.path.insert(0, os.path.join(checkout_root, 'third_party', 'catapult',
                                   'tracing'))
-  sys.path.insert(0, os.path.join(checkout_root, 'third_party', 'protobuf',
-                                  'python'))
 
   # The low_bandwidth_audio_perf_test gn rule will build the protobuf stub for
   # python, so put it in the path for this script before we attempt to import
@@ -232,16 +232,15 @@ def _ConfigurePythonPath(args):
   histogram_proto_path = os.path.join(
       os.path.abspath(args.build_dir), 'pyproto', 'tracing', 'tracing', 'proto')
   sys.path.insert(0, histogram_proto_path)
-  google_protobuf_path = os.path.join(
-      os.path.abspath(args.build_dir), 'pyproto')
-  sys.path.insert(0, google_protobuf_path)
+  proto_stub_path = os.path.join(os.path.abspath(args.build_dir), 'pyproto')
+  sys.path.insert(0, proto_stub_path)
 
   # Fail early in case the proto hasn't been built.
   try:
     import histogram_pb2
   except ImportError as e:
     logging.exception(e)
-    raise ImportError('Could not find histogram_pb2. You need to build the '
+    raise ImportError('Could not import histogram_pb2. You need to build the '
                       'low_bandwidth_audio_perf_test target before invoking '
                       'this script. Expected to find '
                       'histogram_pb2.py in %s.' % histogram_proto_path)

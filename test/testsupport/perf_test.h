@@ -106,11 +106,14 @@ std::string GetPerfResults();
 void PrintPlottableResults(const std::vector<std::string>& desired_graphs);
 
 // Call GetPerfResults() and write its output to a file. Returns false if we
-// failed to write to the file.
+// failed to write to the file. If you want to print the proto in human readable
+// format, use tracing/bin/proto2json from third_party/catapult in your WebRTC
+// checkout.
 bool WritePerfResults(const std::string& output_path);
 
-// By default, perf results are printed to stdout. Set the FILE* to where they
-// should be printing instead.
+// By default, human-readable perf results are printed to stdout. Set the FILE*
+// to where they should be printing instead. These results are not used to
+// upload to the dashboard, however - this is only through WritePerfResults.
 void SetPerfResultsOutput(FILE* output);
 
 // Only for use by tests.
