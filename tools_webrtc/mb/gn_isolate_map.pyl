@@ -27,6 +27,14 @@
     "label": "//:android_junit_tests",
     "type": "junit_test",
   },
+  "android_examples_junit_tests": {
+    "label": "//examples:android_examples_junit_tests",
+    "type": "junit_test",
+  },
+  "android_sdk_junit_tests": {
+    "label": "//sdk/android:android_sdk_junit_tests",
+    "type": "junit_test",
+  },
   "apprtcmobile_tests": {
     "label": "//examples:apprtcmobile_tests",
     "type": "raw",
