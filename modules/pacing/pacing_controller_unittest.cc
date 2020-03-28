@@ -1767,6 +1767,34 @@ TEST_P(PacingControllerTest, NoProbingWhilePaused) {
             PacingController::kPausedProcessInterval);
 }
 
+TEST_P(PacingControllerTest, AudioNotPacedEvenWhenAccountedFor) {
+  const uint32_t kSsrc = 12345;
+  uint16_t sequence_number = 1234;
+  const size_t kPacketSize = 123;
+
+  // Account for audio - so that audio packets can cause pushback on other
+  // types such as video. Audio packet should still be immediated passed
+  // through though ("WebRTC-Pacer-BlockAudio" needs to be enabled in order
+  // to pace audio packets).
+  pacer_->SetAccountForAudioPackets(true);
+
+  // Set pacing rate to 1 packet/s, no padding.
+  pacer_->SetPacingRates(DataSize::Bytes(kPacketSize) / TimeDelta::Seconds(1),
+                         DataRate::Zero());
+
+  // Add and send an audio packet.
+  SendAndExpectPacket(RtpPacketMediaType::kAudio, kSsrc, sequence_number++,
+                      clock_.TimeInMilliseconds(), kPacketSize);
+  pacer_->ProcessPackets();
+
+  // Advance time, add another audio packet and process. It should be sent
+  // immediately.
+  clock_.AdvanceTimeMilliseconds(5);
+  SendAndExpectPacket(RtpPacketMediaType::kAudio, kSsrc, sequence_number++,
+                      clock_.TimeInMilliseconds(), kPacketSize);
+  pacer_->ProcessPackets();
+}
+
 INSTANTIATE_TEST_SUITE_P(
     WithAndWithoutIntervalBudget,
     PacingControllerTest,
