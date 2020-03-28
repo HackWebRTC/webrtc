@@ -27,6 +27,10 @@
     "label": "//:android_junit_tests",
     "type": "junit_test",
   },
+  "apprtcmobile_tests": {
+    "label": "//examples:apprtcmobile_tests",
+    "type": "raw",
+  },
   "audio_decoder_unittests": {
     "label": "//modules/audio_coding:audio_decoder_unittests",
     "type": "console_test_launcher",
@@ -93,6 +97,14 @@
   "rtc_unittests": {
     "label": "//:rtc_unittests",
     "type": "console_test_launcher",
+  },
+  "sdk_framework_unittests": {
+    "label": "//sdk:sdk_framework_unittests",
+    "type": "raw",
+  },
+  "sdk_unittests": {
+    "label": "//sdk:sdk_unittests",
+    "type": "raw",
   },
   "slow_tests": {
     "label": "//:slow_tests",
