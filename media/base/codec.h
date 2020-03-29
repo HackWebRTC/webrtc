@@ -243,6 +243,9 @@ RTC_EXPORT bool IsSameCodec(const std::string& name1,
                             const std::string& name2,
                             const CodecParameterMap& params2);
 
+RTC_EXPORT void AddH264ConstrainedBaselineProfileToSupportedFormats(
+    std::vector<webrtc::SdpVideoFormat>* supported_formats);
+
 }  // namespace cricket
 
 #endif  // MEDIA_BASE_CODEC_H_

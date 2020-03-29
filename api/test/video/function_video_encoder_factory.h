@@ -29,7 +29,9 @@ class FunctionVideoEncoderFactory final : public VideoEncoderFactory {
  public:
   explicit FunctionVideoEncoderFactory(
       std::function<std::unique_ptr<VideoEncoder>()> create)
-      : create_([create](const SdpVideoFormat&) { return create(); }) {}
+      : create_([create = std::move(create)](const SdpVideoFormat&) {
+          return create();
+        }) {}
   explicit FunctionVideoEncoderFactory(
       std::function<std::unique_ptr<VideoEncoder>(const SdpVideoFormat&)>
           create)

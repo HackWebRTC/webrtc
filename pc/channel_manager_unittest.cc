@@ -142,22 +142,29 @@ TEST_F(ChannelManagerTest, StartupShutdownOnThread) {
 }
 
 TEST_F(ChannelManagerTest, SetVideoRtxEnabled) {
-  std::vector<VideoCodec> codecs;
+  std::vector<VideoCodec> send_codecs;
+  std::vector<VideoCodec> recv_codecs;
   const VideoCodec rtx_codec(96, "rtx");
 
   // By default RTX is disabled.
-  cm_->GetSupportedVideoCodecs(&codecs);
-  EXPECT_FALSE(ContainsMatchingCodec(codecs, rtx_codec));
+  cm_->GetSupportedVideoSendCodecs(&send_codecs);
+  EXPECT_FALSE(ContainsMatchingCodec(send_codecs, rtx_codec));
+  cm_->GetSupportedVideoSendCodecs(&recv_codecs);
+  EXPECT_FALSE(ContainsMatchingCodec(recv_codecs, rtx_codec));
 
   // Enable and check.
   EXPECT_TRUE(cm_->SetVideoRtxEnabled(true));
-  cm_->GetSupportedVideoCodecs(&codecs);
-  EXPECT_TRUE(ContainsMatchingCodec(codecs, rtx_codec));
+  cm_->GetSupportedVideoSendCodecs(&send_codecs);
+  EXPECT_TRUE(ContainsMatchingCodec(send_codecs, rtx_codec));
+  cm_->GetSupportedVideoSendCodecs(&recv_codecs);
+  EXPECT_TRUE(ContainsMatchingCodec(recv_codecs, rtx_codec));
 
   // Disable and check.
   EXPECT_TRUE(cm_->SetVideoRtxEnabled(false));
-  cm_->GetSupportedVideoCodecs(&codecs);
-  EXPECT_FALSE(ContainsMatchingCodec(codecs, rtx_codec));
+  cm_->GetSupportedVideoSendCodecs(&send_codecs);
+  EXPECT_FALSE(ContainsMatchingCodec(send_codecs, rtx_codec));
+  cm_->GetSupportedVideoSendCodecs(&recv_codecs);
+  EXPECT_FALSE(ContainsMatchingCodec(recv_codecs, rtx_codec));
 
   // Cannot toggle rtx after initialization.
   EXPECT_TRUE(cm_->Init());
@@ -167,8 +174,10 @@ TEST_F(ChannelManagerTest, SetVideoRtxEnabled) {
   // Can set again after terminate.
   cm_->Terminate();
   EXPECT_TRUE(cm_->SetVideoRtxEnabled(true));
-  cm_->GetSupportedVideoCodecs(&codecs);
-  EXPECT_TRUE(ContainsMatchingCodec(codecs, rtx_codec));
+  cm_->GetSupportedVideoSendCodecs(&send_codecs);
+  EXPECT_TRUE(ContainsMatchingCodec(send_codecs, rtx_codec));
+  cm_->GetSupportedVideoSendCodecs(&recv_codecs);
+  EXPECT_TRUE(ContainsMatchingCodec(recv_codecs, rtx_codec));
 }
 
 TEST_F(ChannelManagerTest, CreateDestroyChannels) {

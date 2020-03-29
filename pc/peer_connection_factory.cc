@@ -167,7 +167,7 @@ RtpCapabilities PeerConnectionFactory::GetRtpSenderCapabilities(
     }
     case cricket::MEDIA_TYPE_VIDEO: {
       cricket::VideoCodecs cricket_codecs;
-      channel_manager_->GetSupportedVideoCodecs(&cricket_codecs);
+      channel_manager_->GetSupportedVideoSendCodecs(&cricket_codecs);
       return ToRtpCapabilities(
           cricket_codecs,
           channel_manager_->GetDefaultEnabledVideoRtpHeaderExtensions());
@@ -192,7 +192,7 @@ RtpCapabilities PeerConnectionFactory::GetRtpReceiverCapabilities(
     }
     case cricket::MEDIA_TYPE_VIDEO: {
       cricket::VideoCodecs cricket_codecs;
-      channel_manager_->GetSupportedVideoCodecs(&cricket_codecs);
+      channel_manager_->GetSupportedVideoReceiveCodecs(&cricket_codecs);
       return ToRtpCapabilities(
           cricket_codecs,
           channel_manager_->GetDefaultEnabledVideoRtpHeaderExtensions());

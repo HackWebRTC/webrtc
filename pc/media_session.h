@@ -151,8 +151,11 @@ class MediaSessionDescriptionFactory {
     audio_rtp_extensions_ = extensions;
   }
   RtpHeaderExtensions audio_rtp_header_extensions() const;
-  const VideoCodecs& video_codecs() const { return video_codecs_; }
-  void set_video_codecs(const VideoCodecs& codecs) { video_codecs_ = codecs; }
+  const VideoCodecs& video_sendrecv_codecs() const;
+  const VideoCodecs& video_send_codecs() const;
+  const VideoCodecs& video_recv_codecs() const;
+  void set_video_codecs(const VideoCodecs& send_codecs,
+                        const VideoCodecs& recv_codecs);
   void set_video_rtp_header_extensions(const RtpHeaderExtensions& extensions) {
     video_rtp_extensions_ = extensions;
   }
@@ -184,6 +187,11 @@ class MediaSessionDescriptionFactory {
   const AudioCodecs& GetAudioCodecsForOffer(
       const webrtc::RtpTransceiverDirection& direction) const;
   const AudioCodecs& GetAudioCodecsForAnswer(
+      const webrtc::RtpTransceiverDirection& offer,
+      const webrtc::RtpTransceiverDirection& answer) const;
+  const VideoCodecs& GetVideoCodecsForOffer(
+      const webrtc::RtpTransceiverDirection& direction) const;
+  const VideoCodecs& GetVideoCodecsForAnswer(
       const webrtc::RtpTransceiverDirection& offer,
       const webrtc::RtpTransceiverDirection& answer) const;
   void GetCodecsForOffer(
@@ -317,6 +325,8 @@ class MediaSessionDescriptionFactory {
 
   void ComputeAudioCodecsIntersectionAndUnion();
 
+  void ComputeVideoCodecsIntersectionAndUnion();
+
   bool is_unified_plan_ = false;
   AudioCodecs audio_send_codecs_;
   AudioCodecs audio_recv_codecs_;
@@ -325,7 +335,12 @@ class MediaSessionDescriptionFactory {
   // Union of send and recv.
   AudioCodecs all_audio_codecs_;
   RtpHeaderExtensions audio_rtp_extensions_;
-  VideoCodecs video_codecs_;
+  VideoCodecs video_send_codecs_;
+  VideoCodecs video_recv_codecs_;
+  // Intersection of send and recv.
+  VideoCodecs video_sendrecv_codecs_;
+  // Union of send and recv.
+  VideoCodecs all_video_codecs_;
   RtpHeaderExtensions video_rtp_extensions_;
   RtpDataCodecs rtp_data_codecs_;
   // This object is not owned by the channel so it must outlive it.
