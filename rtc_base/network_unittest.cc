@@ -380,9 +380,7 @@ TEST_F(NetworkTest, TestBasicMergeNetworkList) {
   EXPECT_TRUE(SameNameAndPrefix(ipv4_network1, *list[0]));
   Network* net1 = list[0];
   uint16_t net_id1 = net1->id();
-  uint16_t net_if_id1 = net1->interface_id();
   EXPECT_EQ(1, net_id1);
-  EXPECT_EQ(1, net_if_id1);
   list.clear();
 
   // Replace ipv4_network1 with ipv4_network2.
@@ -398,10 +396,8 @@ TEST_F(NetworkTest, TestBasicMergeNetworkList) {
   EXPECT_TRUE(SameNameAndPrefix(ipv4_network2, *list[0]));
   Network* net2 = list[0];
   uint16_t net_id2 = net2->id();
-  uint16_t net_if_id2 = net2->interface_id();
   // Network id will increase.
   EXPECT_LT(net_id1, net_id2);
-  EXPECT_LT(net_if_id1, net_if_id2);
   list.clear();
 
   // Add Network2 back.
@@ -420,8 +416,6 @@ TEST_F(NetworkTest, TestBasicMergeNetworkList) {
               (net1 == list[1] && net2 == list[0]));
   EXPECT_TRUE((net_id1 == list[0]->id() && net_id2 == list[1]->id()) ||
               (net_id1 == list[1]->id() && net_id2 == list[0]->id()));
-  EXPECT_TRUE((net_if_id1 == list[0]->id() && net_if_id2 == list[1]->id()) ||
-              (net_if_id1 == list[1]->id() && net_if_id2 == list[0]->id()));
   list.clear();
 
   // Call MergeNetworkList() again and verify that we don't get update
@@ -439,58 +433,9 @@ TEST_F(NetworkTest, TestBasicMergeNetworkList) {
   EXPECT_EQ(2U, list.size());
   EXPECT_TRUE((net1 == list[0] && net2 == list[1]) ||
               (net1 == list[1] && net2 == list[0]));
-  EXPECT_TRUE((net_if_id1 == list[0]->interface_id() &&
-               net_if_id2 == list[1]->interface_id()) ||
-              (net_if_id1 == list[1]->interface_id() &&
-               net_if_id2 == list[0]->interface_id()));
+  EXPECT_TRUE((net_id1 == list[0]->id() && net_id2 == list[1]->id()) ||
+              (net_id1 == list[1]->id() && net_id2 == list[0]->id()));
   list.clear();
-}
-
-// Verify that one interface id is generated per network name.
-TEST_F(NetworkTest, TestInterfaceId) {
-  Network ipv4_network1("test_eth0", "Test Network Adapter 1",
-                        IPAddress(0x12345600U), 24);
-  Network ipv4_network2("test_eth0", "Test Network Adapter 2",
-                        IPAddress(0xaabbcc00U), 24);
-  Network ipv4_network3("test_eth1", "Test Network Adapter 2",
-                        IPAddress(0x00010000U), 16);
-  ipv4_network1.AddIP(IPAddress(0x12345678));
-  ipv4_network2.AddIP(IPAddress(0xaabbcc01));
-  ipv4_network3.AddIP(IPAddress(0x00010004));
-  BasicNetworkManager manager;
-
-  // Add list of networks.
-  {
-    NetworkManager::NetworkList list;
-    list.push_back(new Network(ipv4_network1));
-    list.push_back(new Network(ipv4_network2));
-    list.push_back(new Network(ipv4_network3));
-    bool changed;
-    NetworkManager::Stats stats = MergeNetworkList(manager, list, &changed);
-    EXPECT_TRUE(changed);
-    EXPECT_EQ(stats.ipv6_network_count, 0);
-    EXPECT_EQ(stats.ipv4_network_count, 3);
-  }
-
-  {
-    NetworkManager::NetworkList list;
-    manager.GetNetworks(&list);
-    EXPECT_EQ(list.size(), 3U);
-
-    // There should be 2 interfaces
-    std::map<int, int> networks_per_interface;
-    for (const auto& network : list) {
-      networks_per_interface[network->interface_id()]++;
-    }
-    EXPECT_EQ(networks_per_interface.size(), 2U);
-    for (const auto& network : list) {
-      if (network->name() == "test_eth0") {
-        EXPECT_EQ(networks_per_interface[network->interface_id()], 2);
-      } else {
-        EXPECT_EQ(networks_per_interface[network->interface_id()], 1);
-      }
-    }
-  }
 }
 
 // Sets up some test IPv6 networks and appends them to list.
