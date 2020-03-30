@@ -164,6 +164,11 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   void SetFrameDecryptor(
       rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor);
 
+  // Sets a frame transformer after a stream has started, if no transformer
+  // has previously been set. Does not reset the decoder state.
+  void SetDepacketizerToDecoderFrameTransformer(
+      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer);
+
   // Called by VideoReceiveStream when stats are updated.
   void UpdateRtt(int64_t max_rtt_ms);
 

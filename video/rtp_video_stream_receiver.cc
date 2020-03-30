@@ -881,6 +881,20 @@ void RtpVideoStreamReceiver::SetFrameDecryptor(
   buffered_frame_decryptor_->SetFrameDecryptor(std::move(frame_decryptor));
 }
 
+void RtpVideoStreamReceiver::SetDepacketizerToDecoderFrameTransformer(
+    rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) {
+  RTC_DCHECK_RUN_ON(&network_tc_);
+  if (!frame_transformer_delegate_) {
+    frame_transformer_delegate_ = new rtc::RefCountedObject<
+        RtpVideoStreamReceiverFrameTransformerDelegate>(
+        this, std::move(frame_transformer), rtc::Thread::Current());
+    frame_transformer_delegate_->Init();
+  } else {
+    RTC_LOG(LS_ERROR)
+        << "Attempting to replace an existing frame transformer in a receiver";
+  }
+}
+
 void RtpVideoStreamReceiver::UpdateRtt(int64_t max_rtt_ms) {
   if (nack_module_)
     nack_module_->UpdateRtt(max_rtt_ms);

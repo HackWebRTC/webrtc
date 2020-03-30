@@ -300,6 +300,11 @@ class VideoReceiveStream {
   virtual void SetFrameDecryptor(
       rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) = 0;
 
+  // Allows a frame transformer to be attached to a VideoReceiveStream after
+  // creation without resetting the decoder state.
+  virtual void SetDepacketizerToDecoderFrameTransformer(
+      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) = 0;
+
   // Sets and returns recording state. The old state is moved out
   // of the video receive stream and returned to the caller, and |state|
   // is moved in. If the state's callback is set, it will be called with
