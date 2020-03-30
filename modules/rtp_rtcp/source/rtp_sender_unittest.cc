@@ -223,7 +223,7 @@ class StreamDataTestCallback : public StreamDataCountersCallback {
 // wherever possible.
 struct RtpSenderContext {
   explicit RtpSenderContext(const RtpRtcp::Configuration& config)
-      : packet_history_(config.clock),
+      : packet_history_(config.clock, config.enable_rtx_padding_prioritization),
         packet_sender_(config, &packet_history_),
         non_paced_sender_(&packet_sender_),
         packet_generator_(

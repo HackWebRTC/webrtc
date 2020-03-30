@@ -62,7 +62,7 @@ class RtpPacketHistory {
   // With kStoreAndCull, always remove packets after 3x max(1000ms, 3x rtt).
   static constexpr int kPacketCullingDelayFactor = 3;
 
-  explicit RtpPacketHistory(Clock* clock);
+  RtpPacketHistory(Clock* clock, bool enable_padding_prio);
   ~RtpPacketHistory();
 
   // Set/get storage mode. Note that setting the state will clear the history,
@@ -192,6 +192,7 @@ class RtpPacketHistory {
       const StoredPacket& stored_packet);
 
   Clock* const clock_;
+  const bool enable_padding_prio_;
   rtc::CriticalSection lock_;
   size_t number_to_store_ RTC_GUARDED_BY(lock_);
   StorageMode mode_ RTC_GUARDED_BY(lock_);

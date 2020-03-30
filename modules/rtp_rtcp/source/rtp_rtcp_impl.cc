@@ -40,7 +40,7 @@ const int64_t kDefaultExpectedRetransmissionTimeMs = 125;
 
 ModuleRtpRtcpImpl::RtpSenderContext::RtpSenderContext(
     const RtpRtcp::Configuration& config)
-    : packet_history(config.clock),
+    : packet_history(config.clock, config.enable_rtx_padding_prioritization),
       packet_sender(config, &packet_history),
       non_paced_sender(&packet_sender),
       packet_generator(

@@ -56,7 +56,7 @@ void RtpPacketHistory::StoredPacket::IncrementTimesRetransmitted(
   // Check if this StoredPacket is in the priority set. If so, we need to remove
   // it before updating |times_retransmitted_| since that is used in sorting,
   // and then add it back.
-  const bool in_priority_set = priority_set->erase(this) > 0;
+  const bool in_priority_set = priority_set && priority_set->erase(this) > 0;
   ++times_retransmitted_;
   if (in_priority_set) {
     auto it = priority_set->insert(this);
@@ -80,8 +80,9 @@ bool RtpPacketHistory::MoreUseful::operator()(StoredPacket* lhs,
   return lhs->insert_order() > rhs->insert_order();
 }
 
-RtpPacketHistory::RtpPacketHistory(Clock* clock)
+RtpPacketHistory::RtpPacketHistory(Clock* clock, bool enable_padding_prio)
     : clock_(clock),
+      enable_padding_prio_(enable_padding_prio),
       number_to_store_(0),
       mode_(StorageMode::kDisabled),
       rtt_ms_(-1),
@@ -158,11 +159,13 @@ void RtpPacketHistory::PutRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
   packet_history_[packet_index] =
       StoredPacket(std::move(packet), send_time_ms, packets_inserted_++);
 
-  if (padding_priority_.size() >= kMaxPaddingtHistory - 1) {
-    padding_priority_.erase(std::prev(padding_priority_.end()));
+  if (enable_padding_prio_) {
+    if (padding_priority_.size() >= kMaxPaddingtHistory - 1) {
+      padding_priority_.erase(std::prev(padding_priority_.end()));
+    }
+    auto prio_it = padding_priority_.insert(&packet_history_[packet_index]);
+    RTC_DCHECK(prio_it.second) << "Failed to insert packet into prio set.";
   }
-  auto prio_it = padding_priority_.insert(&packet_history_[packet_index]);
-  RTC_DCHECK(prio_it.second) << "Failed to insert packet into prio set.";
 }
 
 std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetPacketAndSetSendTime(
@@ -183,7 +186,8 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetPacketAndSetSendTime(
   }
 
   if (packet->send_time_ms_) {
-    packet->IncrementTimesRetransmitted(&padding_priority_);
+    packet->IncrementTimesRetransmitted(
+        enable_padding_prio_ ? &padding_priority_ : nullptr);
   }
 
   // Update send-time and mark as no long in pacer queue.
@@ -253,7 +257,8 @@ void RtpPacketHistory::MarkPacketAsSent(uint16_t sequence_number) {
   // transmission count.
   packet->send_time_ms_ = clock_->TimeInMilliseconds();
   packet->pending_transmission_ = false;
-  packet->IncrementTimesRetransmitted(&padding_priority_);
+  packet->IncrementTimesRetransmitted(enable_padding_prio_ ? &padding_priority_
+                                                           : nullptr);
 }
 
 absl::optional<RtpPacketHistory::PacketState> RtpPacketHistory::GetPacketState(
@@ -307,12 +312,28 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetPayloadPaddingPacket(
     rtc::FunctionView<std::unique_ptr<RtpPacketToSend>(const RtpPacketToSend&)>
         encapsulate) {
   rtc::CritScope cs(&lock_);
-  if (mode_ == StorageMode::kDisabled || padding_priority_.empty()) {
+  if (mode_ == StorageMode::kDisabled) {
     return nullptr;
   }
 
-  auto best_packet_it = padding_priority_.begin();
-  StoredPacket* best_packet = *best_packet_it;
+  StoredPacket* best_packet = nullptr;
+  if (enable_padding_prio_ && !padding_priority_.empty()) {
+    auto best_packet_it = padding_priority_.begin();
+    best_packet = *best_packet_it;
+  } else if (!enable_padding_prio_ && !packet_history_.empty()) {
+    // Prioritization not available, pick the last packet.
+    for (auto it = packet_history_.rbegin(); it != packet_history_.rend();
+         ++it) {
+      if (it->packet_ != nullptr) {
+        best_packet = &(*it);
+        break;
+      }
+    }
+  }
+  if (best_packet == nullptr) {
+    return nullptr;
+  }
+
   if (best_packet->pending_transmission_) {
     // Because PacedSender releases it's lock when it calls
     // GeneratePadding() there is the potential for a race where a new
@@ -328,7 +349,8 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetPayloadPaddingPacket(
   }
 
   best_packet->send_time_ms_ = clock_->TimeInMilliseconds();
-  best_packet->IncrementTimesRetransmitted(&padding_priority_);
+  best_packet->IncrementTimesRetransmitted(
+      enable_padding_prio_ ? &padding_priority_ : nullptr);
 
   return padding_packet;
 }
@@ -414,7 +436,9 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::RemovePacket(
       std::move(packet_history_[packet_index].packet_);
 
   // Erase from padding priority set, if eligible.
-  padding_priority_.erase(&packet_history_[packet_index]);
+  if (enable_padding_prio_) {
+    padding_priority_.erase(&packet_history_[packet_index]);
+  }
 
   if (packet_index == 0) {
     while (!packet_history_.empty() &&
