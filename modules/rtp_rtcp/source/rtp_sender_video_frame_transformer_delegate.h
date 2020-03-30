@@ -48,9 +48,12 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
   // the transformed frame to be sent on the |encoder_queue_|.
   void OnTransformedFrame(
       std::unique_ptr<video_coding::EncodedFrame> frame) override;
+  void OnTransformedFrame(
+      std::unique_ptr<TransformableFrameInterface> frame) override;
 
   // Delegates the call to RTPSendVideo::SendVideo on the |encoder_queue_|.
-  void SendVideo(const TransformableEncodedFrame& transformed_frame) const;
+  void SendVideo(std::unique_ptr<video_coding::EncodedFrame> frame) const;
+  void SendVideo(std::unique_ptr<TransformableFrameInterface> frame) const;
 
   // Delegates the call to RTPSendVideo::SendVideo under |sender_lock_|.
   void SetVideoStructureUnderLock(
