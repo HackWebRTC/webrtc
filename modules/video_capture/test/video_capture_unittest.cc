@@ -242,11 +242,6 @@ TEST_F(VideoCaptureTest, MAYBE_CreateDelete) {
 #define MAYBE_Capabilities Capabilities
 #endif
 TEST_F(VideoCaptureTest, MAYBE_Capabilities) {
-#ifdef WEBRTC_MAC
-  printf("Video capture capabilities are not supported on Mac.\n");
-  return;
-#endif
-
   TestVideoCaptureCallback capture_observer;
 
   rtc::scoped_refptr<VideoCaptureModule> module(
