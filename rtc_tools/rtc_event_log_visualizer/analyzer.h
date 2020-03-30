@@ -63,6 +63,8 @@ class EventLogAnalyzer {
 
   void CreateAccumulatedPacketsGraph(PacketDirection direction, Plot* plot);
 
+  void CreatePacketRateGraph(PacketDirection direction, Plot* plot);
+
   void CreatePlayoutGraph(Plot* plot);
 
   void CreateAudioLevelGraph(PacketDirection direction, Plot* plot);

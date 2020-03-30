@@ -617,6 +617,43 @@ void EventLogAnalyzer::CreateAccumulatedPacketsGraph(PacketDirection direction,
                  " RTP/RTCP packets");
 }
 
+void EventLogAnalyzer::CreatePacketRateGraph(PacketDirection direction,
+                                             Plot* plot) {
+  auto CountPackets = [](auto packet) { return 1.0; };
+  for (const auto& stream : parsed_log_.rtp_packets_by_ssrc(direction)) {
+    // Filter on SSRC.
+    if (!MatchingSsrc(stream.ssrc, desired_ssrc_)) {
+      continue;
+    }
+    TimeSeries time_series(
+        std::string("RTP ") + GetStreamName(direction, stream.ssrc),
+        LineStyle::kLine);
+    MovingAverage<LoggedRtpPacket, double>(CountPackets, stream.packet_view,
+                                           config_, &time_series);
+    plot->AppendTimeSeries(std::move(time_series));
+  }
+  TimeSeries time_series(
+      std::string("RTCP ") + "(" + GetDirectionAsShortString(direction) + ")",
+      LineStyle::kLine);
+  if (direction == kIncomingPacket) {
+    MovingAverage<LoggedRtcpPacketIncoming, double>(
+        CountPackets, parsed_log_.incoming_rtcp_packets(), config_,
+        &time_series);
+  } else {
+    MovingAverage<LoggedRtcpPacketOutgoing, double>(
+        CountPackets, parsed_log_.outgoing_rtcp_packets(), config_,
+        &time_series);
+  }
+  plot->AppendTimeSeries(std::move(time_series));
+
+  plot->SetXAxis(config_.CallBeginTimeSec(), config_.CallEndTimeSec(),
+                 "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "Packet Rate (packets/s)", kBottomMargin,
+                          kTopMargin);
+  plot->SetTitle("Rate of " + GetDirectionAsString(direction) +
+                 " RTP/RTCP packets");
+}
+
 // For each SSRC, plot the time between the consecutive playouts.
 void EventLogAnalyzer::CreatePlayoutGraph(Plot* plot) {
   for (const auto& playout_stream : parsed_log_.audio_playout_events()) {

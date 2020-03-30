@@ -291,6 +291,12 @@ int main(int argc, char* argv[]) {
   plots.RegisterPlot("outgoing_packet_count", [&](Plot* plot) {
     analyzer.CreateAccumulatedPacketsGraph(webrtc::kOutgoingPacket, plot);
   });
+  plots.RegisterPlot("incoming_packet_rate", [&](Plot* plot) {
+    analyzer.CreatePacketRateGraph(webrtc::kIncomingPacket, plot);
+  });
+  plots.RegisterPlot("outgoing_packet_rate", [&](Plot* plot) {
+    analyzer.CreatePacketRateGraph(webrtc::kOutgoingPacket, plot);
+  });
   plots.RegisterPlot("audio_playout",
                      [&](Plot* plot) { analyzer.CreatePlayoutGraph(plot); });
   plots.RegisterPlot("incoming_audio_level", [&](Plot* plot) {
