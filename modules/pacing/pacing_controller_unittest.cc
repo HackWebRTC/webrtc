@@ -1795,6 +1795,95 @@ TEST_P(PacingControllerTest, AudioNotPacedEvenWhenAccountedFor) {
   pacer_->ProcessPackets();
 }
 
+TEST_P(PacingControllerTest, PaddingAndAudioAfterVideoDisabled) {
+  const uint32_t kSsrc = 12345;
+  const DataRate kPacingDataRate = DataRate::KilobitsPerSec(125);
+  const DataRate kPaddingDataRate = DataRate::KilobitsPerSec(100);
+  const TimeDelta kMaxBufferInTime = TimeDelta::Millis(500);
+  const DataSize kPacketSize = DataSize::Bytes(130);
+  const TimeDelta kAudioPacketInterval = TimeDelta::Millis(20);
+
+  // In this test, we fist send a burst of video in order to saturate the
+  // padding debt level.
+  // We then proceed to send audio at a bitrate that is slightly lower than
+  // the padding rate, meaning there will be a period with audio but no
+  // padding sent while the debt is draining, then audio and padding will
+  // be interlieved.
+
+  // Verify both with and without accounting for audio.
+  for (bool account_for_audio : {false, true}) {
+    uint16_t sequence_number = 1234;
+    MockPacketSender callback;
+    EXPECT_CALL(callback, SendRtpPacket).Times(::testing::AnyNumber());
+    pacer_ = std::make_unique<PacingController>(&clock_, &callback, nullptr,
+                                                nullptr, GetParam());
+    pacer_->SetAccountForAudioPackets(account_for_audio);
+
+    // First, saturate the padding budget.
+    pacer_->SetPacingRates(kPacingDataRate, kPaddingDataRate);
+
+    const TimeDelta kPaddingSaturationTime =
+        kMaxBufferInTime * kPaddingDataRate /
+        (kPacingDataRate - kPaddingDataRate);
+    const DataSize kVideoToSend = kPaddingSaturationTime * kPacingDataRate;
+    const DataSize kVideoPacketSize = DataSize::Bytes(1200);
+    DataSize video_sent = DataSize::Zero();
+    while (video_sent < kVideoToSend) {
+      pacer_->EnqueuePacket(
+          BuildPacket(RtpPacketMediaType::kVideo, kSsrc, sequence_number++,
+                      clock_.TimeInMilliseconds(), kVideoPacketSize.bytes()));
+      video_sent += kVideoPacketSize;
+    }
+    while (pacer_->QueueSizePackets() > 0) {
+      AdvanceTimeAndProcess();
+    }
+
+    // Add a stream of audio packets at a rate slightly lower than the padding
+    // rate, once the padding debt is paid off we expect padding to be
+    // generated.
+    pacer_->SetPacingRates(kPacingDataRate, kPaddingDataRate);
+    bool padding_seen = false;
+    EXPECT_CALL(callback, GeneratePadding).WillOnce([&](DataSize padding_size) {
+      padding_seen = true;
+      std::vector<std::unique_ptr<RtpPacketToSend>> padding_packets;
+      padding_packets.emplace_back(
+          BuildPacket(RtpPacketMediaType::kPadding, kSsrc, sequence_number++,
+                      clock_.TimeInMilliseconds(), padding_size.bytes()));
+      return padding_packets;
+    });
+
+    Timestamp start_time = clock_.CurrentTime();
+    Timestamp last_audio_time = start_time;
+    while (!padding_seen) {
+      Timestamp now = clock_.CurrentTime();
+      Timestamp next_send_time = pacer_->NextSendTime();
+      TimeDelta sleep_time =
+          std::min(next_send_time, last_audio_time + kAudioPacketInterval) -
+          now;
+      clock_.AdvanceTime(sleep_time);
+      while (clock_.CurrentTime() >= last_audio_time + kAudioPacketInterval) {
+        pacer_->EnqueuePacket(
+            BuildPacket(RtpPacketMediaType::kAudio, kSsrc, sequence_number++,
+                        clock_.TimeInMilliseconds(), kPacketSize.bytes()));
+        last_audio_time += kAudioPacketInterval;
+      }
+      pacer_->ProcessPackets();
+    }
+
+    // Verify how long it took to drain the padding debt. Allow 2% error margin.
+    const DataRate kAudioDataRate = kPacketSize / kAudioPacketInterval;
+    const TimeDelta expected_drain_time =
+        account_for_audio ? (kMaxBufferInTime * kPaddingDataRate /
+                             (kPaddingDataRate - kAudioDataRate))
+                          : kMaxBufferInTime;
+    const TimeDelta actual_drain_time = clock_.CurrentTime() - start_time;
+    EXPECT_NEAR(actual_drain_time.ms(), expected_drain_time.ms(),
+                expected_drain_time.ms() * 0.02)
+        << " where account_for_audio = "
+        << (account_for_audio ? "true" : "false");
+  }
+}
+
 INSTANTIATE_TEST_SUITE_P(
     WithAndWithoutIntervalBudget,
     PacingControllerTest,

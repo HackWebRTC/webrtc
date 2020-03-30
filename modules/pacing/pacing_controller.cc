@@ -284,8 +284,9 @@ void PacingController::EnqueuePacketInternal(
   }
 
   if (mode_ == ProcessMode::kDynamic && packet_queue_.Empty() &&
-      media_debt_ == DataSize::Zero()) {
-    last_process_time_ = CurrentTime();
+      media_debt_.IsZero()) {
+    TimeDelta elapsed_time = UpdateTimeAndGetElapsed(now);
+    UpdateBudgetWithElapsedTime(elapsed_time);
   }
   packet_queue_.Push(priority, now, packet_counter_++, std::move(packet));
 }
