@@ -127,7 +127,8 @@ AudioSendStream::AudioSendStream(
                                              config.crypto_options,
                                              config.rtp.extmap_allow_mixed,
                                              config.rtcp_report_interval_ms,
-                                             config.rtp.ssrc)) {}
+                                             config.rtp.ssrc,
+                                             config.frame_transformer)) {}
 
 AudioSendStream::AudioSendStream(
     Clock* clock,
@@ -247,6 +248,12 @@ void AudioSendStream::ConfigureStream(
   // Enable the frame encryptor if a new frame encryptor has been provided.
   if (first_time || new_config.frame_encryptor != old_config.frame_encryptor) {
     channel_send_->SetFrameEncryptor(new_config.frame_encryptor);
+  }
+
+  if (first_time ||
+      new_config.frame_transformer != old_config.frame_transformer) {
+    channel_send_->SetEncoderToPacketizerFrameTransformer(
+        new_config.frame_transformer);
   }
 
   if (first_time ||

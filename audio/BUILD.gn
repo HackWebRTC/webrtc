@@ -38,6 +38,7 @@ rtc_library("audio") {
   deps = [
     "../api:array_view",
     "../api:call_api",
+    "../api:frame_transformer_interface",
     "../api:function_view",
     "../api:rtp_headers",
     "../api:rtp_parameters",
@@ -84,6 +85,7 @@ rtc_library("audio") {
     "../rtc_base:rtc_task_queue",
     "../rtc_base:safe_minmax",
     "../rtc_base/experiments:field_trial_parser",
+    "../rtc_base/synchronization:sequence_checker",
     "../system_wrappers",
     "../system_wrappers:field_trial",
     "../system_wrappers:metrics",

@@ -949,6 +949,13 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     return webrtc::RTCError::OK();
   }
 
+  void SetEncoderToPacketizerFrameTransformer(
+      rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer) {
+    RTC_DCHECK(worker_thread_checker_.IsCurrent());
+    config_.frame_transformer = std::move(frame_transformer);
+    ReconfigureAudioSendStream();
+  }
+
  private:
   void UpdateSendState() {
     RTC_DCHECK(worker_thread_checker_.IsCurrent());
@@ -2314,6 +2321,20 @@ std::vector<webrtc::RtpSource> WebRtcVoiceMediaChannel::GetSources(
     return std::vector<webrtc::RtpSource>();
   }
   return it->second->GetSources();
+}
+
+void WebRtcVoiceMediaChannel::SetEncoderToPacketizerFrameTransformer(
+    uint32_t ssrc,
+    rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer) {
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
+  auto matching_stream = send_streams_.find(ssrc);
+  if (matching_stream == send_streams_.end()) {
+    RTC_LOG(LS_INFO) << "Attempting to set frame transformer for SSRC:" << ssrc
+                     << " which doesn't exist.";
+    return;
+  }
+  matching_stream->second->SetEncoderToPacketizerFrameTransformer(
+      std::move(frame_transformer));
 }
 
 bool WebRtcVoiceMediaChannel::MaybeDeregisterUnsignaledRecvStream(

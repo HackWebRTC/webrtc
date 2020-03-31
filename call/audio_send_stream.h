@@ -23,6 +23,7 @@
 #include "api/call/transport.h"
 #include "api/crypto/crypto_options.h"
 #include "api/crypto/frame_encryptor_interface.h"
+#include "api/frame_transformer_interface.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
 #include "call/audio_sender.h"
@@ -157,6 +158,10 @@ class AudioSendStream : public AudioSender {
     // encryptor in whatever way the caller choses. This is not required by
     // default.
     rtc::scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor;
+
+    // An optional frame transformer used by insertable streams to transform
+    // encoded frames.
+    rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer;
   };
 
   virtual ~AudioSendStream() = default;

@@ -32,6 +32,7 @@ rtc_library("call_interfaces") {
     ":rtp_interfaces",
     ":video_stream_api",
     "../api:fec_controller_api",
+    "../api:frame_transformer_interface",
     "../api:network_state_predictor_api",
     "../api:rtc_error",
     "../api:rtp_headers",

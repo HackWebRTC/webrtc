@@ -118,6 +118,9 @@ class MockChannelSend : public voe::ChannelSendInterface {
   MOCK_METHOD1(
       SetFrameEncryptor,
       void(rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor));
+  MOCK_METHOD1(SetEncoderToPacketizerFrameTransformer,
+               void(rtc::scoped_refptr<webrtc::FrameTransformerInterface>
+                        frame_transformer));
 };
 }  // namespace test
 }  // namespace webrtc

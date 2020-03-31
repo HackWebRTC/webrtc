@@ -215,6 +215,8 @@ struct ConfigHelper {
     EXPECT_CALL(rtp_rtcp_, SSRC).WillRepeatedly(Return(kSsrc));
     EXPECT_CALL(*channel_send_, SetRTCP_CNAME(StrEq(kCName))).Times(1);
     EXPECT_CALL(*channel_send_, SetFrameEncryptor(_)).Times(1);
+    EXPECT_CALL(*channel_send_, SetEncoderToPacketizerFrameTransformer(_))
+        .Times(1);
     EXPECT_CALL(rtp_rtcp_, SetExtmapAllowMixed(false)).Times(1);
     EXPECT_CALL(*channel_send_,
                 SetSendAudioLevelIndicationStatus(true, kAudioLevelId))
