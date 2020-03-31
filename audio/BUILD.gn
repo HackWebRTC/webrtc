@@ -28,6 +28,8 @@ rtc_library("audio") {
     "channel_receive.h",
     "channel_send.cc",
     "channel_send.h",
+    "channel_send_frame_transformer_delegate.cc",
+    "channel_send_frame_transformer_delegate.h",
     "conversion.h",
     "null_audio_poller.cc",
     "null_audio_poller.h",
