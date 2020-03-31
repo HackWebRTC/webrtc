@@ -99,12 +99,15 @@ rtc::StreamResult StreamInterfaceChannel::Write(const void* data,
 }
 
 bool StreamInterfaceChannel::OnPacketReceived(const char* data, size_t size) {
-  // We force a read event here to ensure that we don't overflow our queue.
   bool ret = packets_.WriteBack(data, size, NULL);
-  RTC_CHECK(ret) << "Failed to write packet to queue.";
-  if (ret) {
-    SignalEvent(this, rtc::SE_READ, 0);
+  if (!ret) {
+    // Somehow we received another packet before the SSLStreamAdapter read the
+    // previous one out of our temporary buffer. In this case, we'll log an
+    // error and still signal the read event, hoping that it will read the
+    // packet currently in packets_.
+    RTC_LOG(LS_ERROR) << "Failed to write packet to queue.";
   }
+  SignalEvent(this, rtc::SE_READ, 0);
   return ret;
 }
 
