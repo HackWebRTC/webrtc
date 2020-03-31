@@ -154,7 +154,7 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
     // make padding potentially more useful.
     // If false, the last packet will always be picked. This may reduce CPU
     // overhead.
-    bool enable_rtx_padding_prioritization = false;
+    bool enable_rtx_padding_prioritization = true;
 
    private:
     RTC_DISALLOW_COPY_AND_ASSIGN(Configuration);
