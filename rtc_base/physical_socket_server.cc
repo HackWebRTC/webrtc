@@ -198,12 +198,10 @@ int PhysicalSocket::Bind(const SocketAddress& bind_addr) {
       if (bind_addr.IsLoopbackIP()) {
         // If we couldn't bind to a loopback IP (which should only happen in
         // test scenarios), continue on. This may be expected behavior.
-        RTC_LOG(LS_VERBOSE) << "Binding socket to loopback address "
-                            << bind_addr.ipaddr().ToString()
+        RTC_LOG(LS_VERBOSE) << "Binding socket to loopback address"
                             << " failed; result: " << static_cast<int>(result);
       } else {
-        RTC_LOG(LS_WARNING) << "Binding socket to network address "
-                            << bind_addr.ipaddr().ToString()
+        RTC_LOG(LS_WARNING) << "Binding socket to network address"
                             << " failed; result: " << static_cast<int>(result);
         // If a network binding was attempted and failed, we should stop here
         // and not try to use the socket. Otherwise, we may end up sending
