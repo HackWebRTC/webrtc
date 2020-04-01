@@ -37,7 +37,10 @@ static const size_t kMinRtpPacketLen = 12;
 
 // Maximum number of pending packets in the queue. Packets are read immediately
 // after they have been written, so a capacity of "1" is sufficient.
-static const size_t kMaxPendingPackets = 1;
+//
+// However, this bug seems to indicate that's not the case: crbug.com/1063834
+// So, temporarily increasing it to 2 to see if that makes a difference.
+static const size_t kMaxPendingPackets = 2;
 
 // Minimum and maximum values for the initial DTLS handshake timeout. We'll pick
 // an initial timeout based on ICE RTT estimates, but clamp it to this range.
@@ -99,6 +102,9 @@ rtc::StreamResult StreamInterfaceChannel::Write(const void* data,
 }
 
 bool StreamInterfaceChannel::OnPacketReceived(const char* data, size_t size) {
+  if (packets_.size() > 0) {
+    RTC_LOG(LS_WARNING) << "Packet already in queue.";
+  }
   bool ret = packets_.WriteBack(data, size, NULL);
   if (!ret) {
     // Somehow we received another packet before the SSLStreamAdapter read the
