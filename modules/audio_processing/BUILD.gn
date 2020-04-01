@@ -542,6 +542,7 @@ if (rtc_include_tests) {
         "../../rtc_base:task_queue_for_test",
         "../../rtc_base/system:file_wrapper",
         "../../system_wrappers",
+        "../../system_wrappers:field_trial",
         "../../test:test_support",
         "aec_dump",
         "aec_dump:aec_dump_impl",

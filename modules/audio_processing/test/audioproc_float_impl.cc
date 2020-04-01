@@ -27,6 +27,7 @@
 #include "modules/audio_processing/test/wav_based_simulator.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/strings/string_builder.h"
+#include "system_wrappers/include/field_trial.h"
 
 constexpr int kParameterNotSpecifiedValue = -10000;
 
@@ -255,6 +256,13 @@ ABSL_FLAG(bool,
           float_wav_output,
           false,
           "Produce floating point wav output files.");
+
+ABSL_FLAG(std::string,
+          force_fieldtrials,
+          "",
+          "Field trials control experimental feature code which can be forced. "
+          "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enable/"
+          " will assign the group Enable to field trial WebRTC-FooFeature.");
 
 namespace webrtc {
 namespace test {
@@ -630,6 +638,11 @@ int AudioprocFloatImpl(std::unique_ptr<AudioProcessingBuilder> ap_builder,
     printf("%s", kUsageDescription);
     return 1;
   }
+
+  // InitFieldTrialsFromString stores the char*, so the char array must
+  // outlive the application.
+  const std::string field_trials = absl::GetFlag(FLAGS_force_fieldtrials);
+  webrtc::field_trial::InitFieldTrialsFromString(field_trials.c_str());
 
   SimulationSettings settings = CreateSettings();
   if (!input_aecdump.empty()) {
