@@ -37,6 +37,7 @@
 #include "test/pc/e2e/analyzer/video/default_video_quality_analyzer.h"
 #include "test/pc/e2e/analyzer/video/video_quality_metrics_reporter.h"
 #include "test/pc/e2e/stats_poller.h"
+#include "test/pc/e2e/test_peer_factory.h"
 #include "test/platform_video_capturer.h"
 #include "test/testsupport/file_utils.h"
 
@@ -278,15 +279,15 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   // Audio streams are intercepted in AudioDeviceModule, so if it is required to
   // catch output of Alice's stream, Alice's output_dump_file_name should be
   // passed to Bob's TestPeer setup as audio output file name.
-  absl::optional<TestPeer::RemotePeerAudioConfig> alice_remote_audio_config =
-      TestPeer::CreateRemoteAudioConfig(bob_params->audio_config);
-  absl::optional<TestPeer::RemotePeerAudioConfig> bob_remote_audio_config =
-      TestPeer::CreateRemoteAudioConfig(alice_params->audio_config);
+  absl::optional<RemotePeerAudioConfig> alice_remote_audio_config =
+      RemotePeerAudioConfig::Create(bob_params->audio_config);
+  absl::optional<RemotePeerAudioConfig> bob_remote_audio_config =
+      RemotePeerAudioConfig::Create(alice_params->audio_config);
   // Copy Alice and Bob video configs to correctly pass them into lambdas.
   std::vector<VideoConfig> alice_video_configs = alice_params->video_configs;
   std::vector<VideoConfig> bob_video_configs = bob_params->video_configs;
 
-  alice_ = TestPeer::CreateTestPeer(
+  alice_ = TestPeerFactory::CreateTestPeer(
       std::move(alice_components), std::move(alice_params),
       std::move(alice_video_generators),
       std::make_unique<FixturePeerConnectionObserver>(
@@ -298,7 +299,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
       video_quality_analyzer_injection_helper_.get(), signaling_thread.get(),
       alice_remote_audio_config, run_params.video_encoder_bitrate_multiplier,
       run_params.echo_emulation_config, task_queue_.get());
-  bob_ = TestPeer::CreateTestPeer(
+  bob_ = TestPeerFactory::CreateTestPeer(
       std::move(bob_components), std::move(bob_params),
       std::move(bob_video_generators),
       std::make_unique<FixturePeerConnectionObserver>(

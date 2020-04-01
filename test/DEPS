@@ -54,6 +54,10 @@ specific_include_rules = {
     "+pc",
     "+p2p",
   ],
+  ".*test_peer_factory\.(h|cc)": [
+    "+pc",
+    "+p2p",
+  ],
   ".*network_emulation_pc_unittest\.cc": [
     "+pc/peer_connection_wrapper.h",
     "+pc/test/mock_peer_connection_observers.h",
