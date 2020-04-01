@@ -40,6 +40,7 @@ struct Int16Frame {
         rtc::CheckedDivExact(sample_rate_hz, kChunksPerSecond);
     this->num_channels = num_channels;
     config = StreamConfig(sample_rate_hz, num_channels, /*has_keyboard=*/false);
+    data.resize(num_channels * samples_per_channel);
   }
 
   void CopyTo(ChannelBuffer<float>* dest) {
