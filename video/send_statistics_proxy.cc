@@ -16,6 +16,7 @@
 #include <limits>
 #include <utility>
 
+#include "absl/strings/match.h"
 #include "api/video/video_codec_constants.h"
 #include "api/video/video_codec_type.h"
 #include "api/video_codecs/video_codec.h"
@@ -112,15 +113,17 @@ absl::optional<int> GetFallbackMaxPixels(const std::string& group) {
 absl::optional<int> GetFallbackMaxPixelsIfFieldTrialEnabled() {
   std::string group =
       webrtc::field_trial::FindFullName(kVp8ForcedFallbackEncoderFieldTrial);
-  return (group.find("Enabled") == 0) ? GetFallbackMaxPixels(group.substr(7))
-                                      : absl::optional<int>();
+  return (absl::StartsWith(group, "Enabled"))
+             ? GetFallbackMaxPixels(group.substr(7))
+             : absl::optional<int>();
 }
 
 absl::optional<int> GetFallbackMaxPixelsIfFieldTrialDisabled() {
   std::string group =
       webrtc::field_trial::FindFullName(kVp8ForcedFallbackEncoderFieldTrial);
-  return (group.find("Disabled") == 0) ? GetFallbackMaxPixels(group.substr(8))
-                                       : absl::optional<int>();
+  return (absl::StartsWith(group, "Disabled"))
+             ? GetFallbackMaxPixels(group.substr(8))
+             : absl::optional<int>();
 }
 }  // namespace
 

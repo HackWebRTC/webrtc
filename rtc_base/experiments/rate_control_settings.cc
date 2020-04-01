@@ -15,6 +15,7 @@
 
 #include <string>
 
+#include "absl/strings/match.h"
 #include "api/transport/field_trial_based_config.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -42,7 +43,7 @@ const char* kScreenshareHysteresisFieldTrialname =
 
 bool IsEnabled(const WebRtcKeyValueConfig* const key_value_config,
                absl::string_view key) {
-  return key_value_config->Lookup(key).find("Enabled") == 0;
+  return absl::StartsWith(key_value_config->Lookup(key), "Enabled");
 }
 
 void ParseHysteresisFactor(const WebRtcKeyValueConfig* const key_value_config,

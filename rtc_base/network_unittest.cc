@@ -15,6 +15,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/strings/match.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/net_helpers.h"
 #include "rtc_base/network_monitor.h"
@@ -47,10 +48,10 @@ class FakeNetworkMonitor : public NetworkMonitorBase {
   AdapterType GetAdapterType(const std::string& if_name) override {
     // Note that the name matching rules are different from the
     // GetAdapterTypeFromName in NetworkManager.
-    if (if_name.find("wifi") == 0) {
+    if (absl::StartsWith(if_name, "wifi")) {
       return ADAPTER_TYPE_WIFI;
     }
-    if (if_name.find("cellular") == 0) {
+    if (absl::StartsWith(if_name, "cellular")) {
       return ADAPTER_TYPE_CELLULAR;
     }
     return ADAPTER_TYPE_UNKNOWN;

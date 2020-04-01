@@ -148,20 +148,19 @@ RTPSenderVideo::RTPSenderVideo(const Config& config)
       packetization_overhead_bitrate_(1000, RateStatistics::kBpsScale),
       frame_encryptor_(config.frame_encryptor),
       require_frame_encryption_(config.require_frame_encryption),
-      generic_descriptor_auth_experiment_(
-          config.field_trials->Lookup("WebRTC-GenericDescriptorAuth")
-              .find("Disabled") != 0),
-      exclude_transport_sequence_number_from_fec_experiment_(
-          config.field_trials
-              ->Lookup(kExcludeTransportSequenceNumberFromFecFieldTrial)
-              .find("Enabled") == 0),
+      generic_descriptor_auth_experiment_(!absl::StartsWith(
+          config.field_trials->Lookup("WebRTC-GenericDescriptorAuth"),
+          "Disabled")),
+      exclude_transport_sequence_number_from_fec_experiment_(absl::StartsWith(
+          config.field_trials->Lookup(
+              kExcludeTransportSequenceNumberFromFecFieldTrial),
+          "Enabled")),
       absolute_capture_time_sender_(config.clock),
       frame_transformer_delegate_(
           config.frame_transformer
               ? new rtc::RefCountedObject<
                     RTPSenderVideoFrameTransformerDelegate>(
-                    this,
-                    std::move(config.frame_transformer))
+                    this, std::move(config.frame_transformer))
               : nullptr) {
   if (frame_transformer_delegate_)
     frame_transformer_delegate_->Init();

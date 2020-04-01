@@ -164,6 +164,7 @@ rtc_library("rate_control_settings") {
     "../../api/units:data_size",
     "../../api/video_codecs:video_codecs_api",
     "../../system_wrappers:field_trial",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }

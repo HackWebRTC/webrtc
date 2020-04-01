@@ -58,6 +58,7 @@ rtc_library("pacing") {
     "../rtp_rtcp:rtp_rtcp_format",
     "../utility",
     "//third_party/abseil-cpp/absl/memory",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }

@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/match.h"
 #include "absl/types/optional.h"
 #include "api/transport/goog_cc_factory.h"
 #include "api/transport/network_types.h"
@@ -60,7 +61,7 @@ TargetRateConstraints ConvertConstraints(const BitrateConstraints& contraints,
 
 bool IsEnabled(const WebRtcKeyValueConfig* trials, absl::string_view key) {
   RTC_DCHECK(trials != nullptr);
-  return trials->Lookup(key).find("Enabled") == 0;
+  return absl::StartsWith(trials->Lookup(key), "Enabled");
 }
 
 bool IsRelayed(const rtc::NetworkRoute& route) {

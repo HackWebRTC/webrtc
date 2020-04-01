@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/checks.h"
@@ -27,21 +28,19 @@ namespace webrtc {
 const int64_t PacedSender::kMaxQueueLengthMs = 2000;
 const float PacedSender::kDefaultPaceMultiplier = 2.5f;
 
-PacedSender::PacedSender(Clock* clock,
-                         PacketRouter* packet_router,
+PacedSender::PacedSender(Clock* clock, PacketRouter* packet_router,
                          RtcEventLog* event_log,
                          const WebRtcKeyValueConfig* field_trials,
                          ProcessThread* process_thread)
-    : process_mode_((field_trials != nullptr &&
-                     field_trials->Lookup("WebRTC-Pacer-DynamicProcess")
-                             .find("Enabled") == 0)
-                        ? PacingController::ProcessMode::kDynamic
-                        : PacingController::ProcessMode::kPeriodic),
+    : process_mode_(
+          (field_trials != nullptr &&
+           absl::StartsWith(field_trials->Lookup("WebRTC-Pacer-DynamicProcess"),
+                            "Enabled"))
+              ? PacingController::ProcessMode::kDynamic
+              : PacingController::ProcessMode::kPeriodic),
       pacing_controller_(clock,
                          static_cast<PacingController::PacketSender*>(this),
-                         event_log,
-                         field_trials,
-                         process_mode_),
+                         event_log, field_trials, process_mode_),
       clock_(clock),
       packet_router_(packet_router),
       process_thread_(process_thread) {

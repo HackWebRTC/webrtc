@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <utility>
 
+#include "absl/strings/match.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -105,7 +106,7 @@ bool IsEnabled(const WebRtcKeyValueConfig* field_trials, const char* name) {
   if (!field_trials) {
     return false;
   }
-  return field_trials->Lookup(name).find("Enabled") == 0;
+  return absl::StartsWith(field_trials->Lookup(name), "Enabled");
 }
 
 RoundRobinPacketQueue::RoundRobinPacketQueue(

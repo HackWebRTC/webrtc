@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/match.h"
 #include "modules/pacing/bitrate_prober.h"
 #include "modules/pacing/interval_budget.h"
 #include "modules/utility/include/process_thread.h"
@@ -42,12 +43,12 @@ constexpr int kFirstPriority = 0;
 
 bool IsDisabled(const WebRtcKeyValueConfig& field_trials,
                 absl::string_view key) {
-  return field_trials.Lookup(key).find("Disabled") == 0;
+  return absl::StartsWith(field_trials.Lookup(key), "Disabled");
 }
 
 bool IsEnabled(const WebRtcKeyValueConfig& field_trials,
                absl::string_view key) {
-  return field_trials.Lookup(key).find("Enabled") == 0;
+  return absl::StartsWith(field_trials.Lookup(key), "Enabled");
 }
 
 int GetPriorityForType(RtpPacketMediaType type) {

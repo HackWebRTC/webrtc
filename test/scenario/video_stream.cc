@@ -13,6 +13,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/strings/match.h"
 #include "api/test/create_frame_generator.h"
 #include "api/test/frame_generator_interface.h"
 #include "api/test/video/function_video_encoder_factory.h"
@@ -112,7 +113,7 @@ std::string TransformFilePath(std::string path) {
   int ext_pos = path.rfind(".");
   if (ext_pos < 0) {
     return test::ResourcePath(path, "yuv");
-  } else if (path.find(resource_prefix) == 0) {
+  } else if (absl::StartsWith(path, resource_prefix)) {
     std::string name = path.substr(resource_prefix.length(), ext_pos);
     std::string ext = path.substr(ext_pos, path.size());
     return test::ResourcePath(name, ext);
