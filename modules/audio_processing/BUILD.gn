@@ -184,7 +184,8 @@ rtc_library("audio_processing") {
     "agc2:fixed_digital",
     "agc2:gain_applier",
     "ns",
-    "transient:transient_suppressor",
+    "transient:transient_suppressor_api",
+    "transient:transient_suppressor_creator",
     "vad",
     "//third_party/abseil-cpp/absl/types:optional",
   ]

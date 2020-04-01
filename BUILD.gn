@@ -277,6 +277,10 @@ config("common_config") {
     defines += [ "RTC_DISABLE_METRICS" ]
   }
 
+  if (rtc_exclude_transient_suppressor) {
+    defines += [ "WEBRTC_EXCLUDE_TRANSIENT_SUPPRESSOR" ]
+  }
+
   cflags = []
 
   if (build_with_chromium) {

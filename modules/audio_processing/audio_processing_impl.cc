@@ -27,6 +27,7 @@
 #include "modules/audio_processing/common.h"
 #include "modules/audio_processing/include/audio_frame_view.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
+#include "modules/audio_processing/transient/transient_suppressor_creator.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
@@ -1635,12 +1636,18 @@ bool AudioProcessingImpl::UpdateActiveSubmoduleStates() {
 
 void AudioProcessingImpl::InitializeTransientSuppressor() {
   if (config_.transient_suppression.enabled) {
+    // Attempt to create a transient suppressor, if one is not already created.
     if (!submodules_.transient_suppressor) {
-      submodules_.transient_suppressor.reset(new TransientSuppressor());
+      submodules_.transient_suppressor = CreateTransientSuppressor();
     }
-    submodules_.transient_suppressor->Initialize(proc_fullband_sample_rate_hz(),
-                                                 capture_nonlocked_.split_rate,
-                                                 num_proc_channels());
+    if (submodules_.transient_suppressor) {
+      submodules_.transient_suppressor->Initialize(
+          proc_fullband_sample_rate_hz(), capture_nonlocked_.split_rate,
+          num_proc_channels());
+    } else {
+      RTC_LOG(LS_WARNING)
+          << "No transient suppressor created (probably disabled)";
+    }
   } else {
     submodules_.transient_suppressor.reset();
   }
@@ -1843,28 +1850,28 @@ void AudioProcessingImpl::InitializeNoiseSuppressor() {
   submodules_.noise_suppressor.reset();
 
   if (config_.noise_suppression.enabled) {
-      auto map_level =
-          [](AudioProcessing::Config::NoiseSuppression::Level level) {
-            using NoiseSuppresionConfig =
-                AudioProcessing::Config::NoiseSuppression;
-            switch (level) {
-              case NoiseSuppresionConfig::kLow:
-                return NsConfig::SuppressionLevel::k6dB;
-              case NoiseSuppresionConfig::kModerate:
-                return NsConfig::SuppressionLevel::k12dB;
-              case NoiseSuppresionConfig::kHigh:
-                return NsConfig::SuppressionLevel::k18dB;
-              case NoiseSuppresionConfig::kVeryHigh:
-                return NsConfig::SuppressionLevel::k21dB;
-              default:
-                RTC_NOTREACHED();
-            }
-          };
+    auto map_level =
+        [](AudioProcessing::Config::NoiseSuppression::Level level) {
+          using NoiseSuppresionConfig =
+              AudioProcessing::Config::NoiseSuppression;
+          switch (level) {
+            case NoiseSuppresionConfig::kLow:
+              return NsConfig::SuppressionLevel::k6dB;
+            case NoiseSuppresionConfig::kModerate:
+              return NsConfig::SuppressionLevel::k12dB;
+            case NoiseSuppresionConfig::kHigh:
+              return NsConfig::SuppressionLevel::k18dB;
+            case NoiseSuppresionConfig::kVeryHigh:
+              return NsConfig::SuppressionLevel::k21dB;
+            default:
+              RTC_NOTREACHED();
+          }
+        };
 
-      NsConfig cfg;
-      cfg.target_level = map_level(config_.noise_suppression.level);
-      submodules_.noise_suppressor = std::make_unique<NoiseSuppressor>(
-          cfg, proc_sample_rate_hz(), num_proc_channels());
+    NsConfig cfg;
+    cfg.target_level = map_level(config_.noise_suppression.level);
+    submodules_.noise_suppressor = std::make_unique<NoiseSuppressor>(
+        cfg, proc_sample_rate_hz(), num_proc_channels());
   }
 }
 

@@ -8,13 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/transient/transient_suppressor.h"
+#include "modules/audio_processing/transient/transient_suppressor_impl.h"
 
 #include <string.h>
 
+#include <algorithm>
 #include <cmath>
 #include <complex>
 #include <deque>
+#include <limits>
 #include <set>
 
 #include "common_audio/include/audio_util.h"
@@ -22,6 +24,7 @@
 #include "common_audio/third_party/fft4g/fft4g.h"
 #include "modules/audio_processing/transient/common.h"
 #include "modules/audio_processing/transient/transient_detector.h"
+#include "modules/audio_processing/transient/transient_suppressor.h"
 #include "modules/audio_processing/transient/windows_private.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -43,7 +46,7 @@ float ComplexMagnitude(float a, float b) {
 
 }  // namespace
 
-TransientSuppressor::TransientSuppressor()
+TransientSuppressorImpl::TransientSuppressorImpl()
     : data_length_(0),
       detection_length_(0),
       analysis_length_(0),
@@ -61,11 +64,11 @@ TransientSuppressor::TransientSuppressor()
       seed_(182),
       using_reference_(false) {}
 
-TransientSuppressor::~TransientSuppressor() {}
+TransientSuppressorImpl::~TransientSuppressorImpl() {}
 
-int TransientSuppressor::Initialize(int sample_rate_hz,
-                                    int detection_rate_hz,
-                                    int num_channels) {
+int TransientSuppressorImpl::Initialize(int sample_rate_hz,
+                                        int detection_rate_hz,
+                                        int num_channels) {
   switch (sample_rate_hz) {
     case ts::kSampleRate8kHz:
       analysis_length_ = 128u;
@@ -155,15 +158,15 @@ int TransientSuppressor::Initialize(int sample_rate_hz,
   return 0;
 }
 
-int TransientSuppressor::Suppress(float* data,
-                                  size_t data_length,
-                                  int num_channels,
-                                  const float* detection_data,
-                                  size_t detection_length,
-                                  const float* reference_data,
-                                  size_t reference_length,
-                                  float voice_probability,
-                                  bool key_pressed) {
+int TransientSuppressorImpl::Suppress(float* data,
+                                      size_t data_length,
+                                      int num_channels,
+                                      const float* detection_data,
+                                      size_t detection_length,
+                                      const float* reference_data,
+                                      size_t reference_length,
+                                      float voice_probability,
+                                      bool key_pressed) {
   if (!data || data_length != data_length_ || num_channels != num_channels_ ||
       detection_length != detection_length_ || voice_probability < 0 ||
       voice_probability > 1) {
@@ -222,9 +225,9 @@ int TransientSuppressor::Suppress(float* data,
 // This should only be called when detection is enabled. UpdateBuffers() must
 // have been called. At return, |out_buffer_| will be filled with the
 // processed output.
-void TransientSuppressor::Suppress(float* in_ptr,
-                                   float* spectral_mean,
-                                   float* out_ptr) {
+void TransientSuppressorImpl::Suppress(float* in_ptr,
+                                       float* spectral_mean,
+                                       float* out_ptr) {
   // Go to frequency domain.
   for (size_t i = 0; i < analysis_length_; ++i) {
     // TODO(aluebs): Rename windows
@@ -270,7 +273,7 @@ void TransientSuppressor::Suppress(float* in_ptr,
   }
 }
 
-void TransientSuppressor::UpdateKeypress(bool key_pressed) {
+void TransientSuppressorImpl::UpdateKeypress(bool key_pressed) {
   const int kKeypressPenalty = 1000 / ts::kChunkSizeMs;
   const int kIsTypingThreshold = 1000 / ts::kChunkSizeMs;
   const int kChunksUntilNotTyping = 4000 / ts::kChunkSizeMs;  // 4 seconds.
@@ -300,7 +303,7 @@ void TransientSuppressor::UpdateKeypress(bool key_pressed) {
   }
 }
 
-void TransientSuppressor::UpdateRestoration(float voice_probability) {
+void TransientSuppressorImpl::UpdateRestoration(float voice_probability) {
   const int kHardRestorationOffsetDelay = 3;
   const int kHardRestorationOnsetDelay = 80;
 
@@ -323,7 +326,7 @@ void TransientSuppressor::UpdateRestoration(float voice_probability) {
 
 // Shift buffers to make way for new data. Must be called after
 // |detection_enabled_| is updated by UpdateKeypress().
-void TransientSuppressor::UpdateBuffers(float* data) {
+void TransientSuppressorImpl::UpdateBuffers(float* data) {
   // TODO(aluebs): Change to ring buffer.
   memmove(in_buffer_.get(), &in_buffer_[data_length_],
           (buffer_delay_ + (num_channels_ - 1) * analysis_length_) *
@@ -350,7 +353,7 @@ void TransientSuppressor::UpdateBuffers(float* data) {
 // Attenuates by a certain factor every peak in the |fft_buffer_| that exceeds
 // the spectral mean. The attenuation depends on |detector_smoothed_|.
 // If a restoration takes place, the |magnitudes_| are updated to the new value.
-void TransientSuppressor::HardRestoration(float* spectral_mean) {
+void TransientSuppressorImpl::HardRestoration(float* spectral_mean) {
   const float detector_result =
       1.f - std::pow(1.f - detector_smoothed_, using_reference_ ? 200.f : 50.f);
   // To restore, we get the peaks in the spectrum. If higher than the previous
@@ -377,7 +380,7 @@ void TransientSuppressor::HardRestoration(float* spectral_mean) {
 // the spectral mean and that is lower than some function of the current block
 // frequency mean. The attenuation depends on |detector_smoothed_|.
 // If a restoration takes place, the |magnitudes_| are updated to the new value.
-void TransientSuppressor::SoftRestoration(float* spectral_mean) {
+void TransientSuppressorImpl::SoftRestoration(float* spectral_mean) {
   // Get the spectral magnitude mean of the current block.
   float block_frequency_mean = 0;
   for (size_t i = kMinVoiceBin; i < kMaxVoiceBin; ++i) {

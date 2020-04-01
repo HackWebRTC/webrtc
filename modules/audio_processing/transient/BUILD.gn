@@ -8,7 +8,28 @@
 
 import("../../../webrtc.gni")
 
-rtc_library("transient_suppressor") {
+rtc_source_set("transient_suppressor_api") {
+  sources = [ "transient_suppressor.h" ]
+}
+
+rtc_library("transient_suppressor_creator") {
+  sources = [
+    "transient_suppressor_creator.cc",
+    "transient_suppressor_creator.h",
+  ]
+  deps = [
+    ":transient_suppressor_api",
+    ":transient_suppressor_impl",
+  ]
+}
+
+rtc_library("transient_suppressor_impl") {
+  visibility = [
+    ":transient_suppressor_creator",
+    ":transient_suppression_test",
+    ":transient_suppression_unittests",
+    ":click_annotate",
+  ]
   sources = [
     "common.h",
     "daubechies_8_wavelet_coeffs.h",
@@ -17,8 +38,8 @@ rtc_library("transient_suppressor") {
     "moving_moments.h",
     "transient_detector.cc",
     "transient_detector.h",
-    "transient_suppressor.cc",
-    "transient_suppressor.h",
+    "transient_suppressor_impl.cc",
+    "transient_suppressor_impl.h",
     "windows_private.h",
     "wpd_node.cc",
     "wpd_node.h",
@@ -26,6 +47,7 @@ rtc_library("transient_suppressor") {
     "wpd_tree.h",
   ]
   deps = [
+    ":transient_suppressor_api",
     "../../../common_audio:common_audio",
     "../../../common_audio:common_audio_c",
     "../../../common_audio:fir_filter",
@@ -46,7 +68,7 @@ if (rtc_include_tests) {
       "file_utils.h",
     ]
     deps = [
-      ":transient_suppressor",
+      ":transient_suppressor_impl",
       "..:audio_processing",
       "../../../rtc_base/system:file_wrapper",
       "../../../system_wrappers",
@@ -61,7 +83,7 @@ if (rtc_include_tests) {
       "transient_suppression_test.cc",
     ]
     deps = [
-      ":transient_suppressor",
+      ":transient_suppressor_impl",
       "..:audio_processing",
       "../../../common_audio",
       "../../../rtc_base:rtc_base_approved",
@@ -90,7 +112,7 @@ if (rtc_include_tests) {
       "wpd_tree_unittest.cc",
     ]
     deps = [
-      ":transient_suppressor",
+      ":transient_suppressor_impl",
       "../../../rtc_base:stringutils",
       "../../../rtc_base/system:file_wrapper",
       "../../../test:fileutils",
