@@ -28,6 +28,7 @@
 #include "call/call.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
+#include "logging/rtc_event_log/rtc_event_processor.h"
 #include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "modules/audio_coding/neteq/tools/audio_sink.h"
@@ -651,6 +652,57 @@ void EventLogAnalyzer::CreatePacketRateGraph(PacketDirection direction,
   plot->SetSuggestedYAxis(0, 1, "Packet Rate (packets/s)", kBottomMargin,
                           kTopMargin);
   plot->SetTitle("Rate of " + GetDirectionAsString(direction) +
+                 " RTP/RTCP packets");
+}
+
+void EventLogAnalyzer::CreateTotalPacketRateGraph(PacketDirection direction,
+                                                  Plot* plot) {
+  // Contains a log timestamp to enable counting logged events of different
+  // types using MovingAverage().
+  class LogTime {
+   public:
+    explicit LogTime(int64_t log_time_us) : log_time_us_(log_time_us) {}
+
+    int64_t log_time_us() const { return log_time_us_; }
+
+   private:
+    int64_t log_time_us_;
+  };
+
+  std::vector<LogTime> packet_times;
+  auto handle_rtp = [&](const LoggedRtpPacket& packet) {
+    packet_times.emplace_back(packet.log_time_us());
+  };
+  RtcEventProcessor process;
+  for (const auto& stream : parsed_log_.rtp_packets_by_ssrc(direction)) {
+    process.AddEvents(stream.packet_view, handle_rtp);
+  }
+  if (direction == kIncomingPacket) {
+    auto handle_incoming_rtcp = [&](const LoggedRtcpPacketIncoming& packet) {
+      packet_times.emplace_back(packet.log_time_us());
+    };
+    process.AddEvents(parsed_log_.incoming_rtcp_packets(),
+                      handle_incoming_rtcp);
+  } else {
+    auto handle_outgoing_rtcp = [&](const LoggedRtcpPacketOutgoing& packet) {
+      packet_times.emplace_back(packet.log_time_us());
+    };
+    process.AddEvents(parsed_log_.outgoing_rtcp_packets(),
+                      handle_outgoing_rtcp);
+  }
+  process.ProcessEventsInOrder();
+  TimeSeries time_series(std::string("Total ") + "(" +
+                             GetDirectionAsShortString(direction) + ") packets",
+                         LineStyle::kLine);
+  MovingAverage<LogTime, uint64_t>([](auto packet) { return 1; }, packet_times,
+                                   config_, &time_series);
+  plot->AppendTimeSeries(std::move(time_series));
+
+  plot->SetXAxis(config_.CallBeginTimeSec(), config_.CallEndTimeSec(),
+                 "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "Packet Rate (packets/s)", kBottomMargin,
+                          kTopMargin);
+  plot->SetTitle("Rate of all " + GetDirectionAsString(direction) +
                  " RTP/RTCP packets");
 }
 
