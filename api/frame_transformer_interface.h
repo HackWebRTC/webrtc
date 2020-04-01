@@ -50,6 +50,17 @@ class TransformableVideoFrameInterface : public TransformableFrameInterface {
   virtual std::vector<uint8_t> GetAdditionalData() const = 0;
 };
 
+// Extends the TransformableFrameInterface to expose audio-specific information.
+class TransformableAudioFrameInterface : public TransformableFrameInterface {
+ public:
+  virtual ~TransformableAudioFrameInterface() = default;
+
+  // Exposes the frame header, enabling the interface clients to use the
+  // information in the header as needed, for example to compile the list of
+  // csrcs.
+  virtual const RTPHeader& GetHeader() const = 0;
+};
+
 // Objects implement this interface to be notified with the transformed frame.
 class TransformedFrameCallback : public rtc::RefCountInterface {
  public:

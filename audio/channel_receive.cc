@@ -23,6 +23,7 @@
 #include "api/frame_transformer_interface.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "audio/audio_level.h"
+#include "audio/channel_receive_frame_transformer_delegate.h"
 #include "audio/channel_send.h"
 #include "audio/utility/audio_frame_operations.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_playout.h"
@@ -183,6 +184,9 @@ class ChannelReceive : public ChannelReceiveInterface {
   void OnReceivedPayloadData(rtc::ArrayView<const uint8_t> payload,
                              const RTPHeader& rtpHeader);
 
+  void InitFrameTransformerDelegate(
+      rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer);
+
   bool Playing() const {
     rtc::CritScope lock(&playing_lock_);
     return playing_;
@@ -272,7 +276,8 @@ class ChannelReceive : public ChannelReceiveInterface {
 
   webrtc::AbsoluteCaptureTimeReceiver absolute_capture_time_receiver_;
 
-  rtc::scoped_refptr<FrameTransformerInterface> frame_transformer_;
+  rtc::scoped_refptr<ChannelReceiveFrameTransformerDelegate>
+      frame_transformer_delegate_;
 };
 
 void ChannelReceive::OnReceivedPayloadData(
@@ -300,6 +305,25 @@ void ChannelReceive::OnReceivedPayloadData(
     // compilers.
     ResendPackets(&(nack_list[0]), static_cast<int>(nack_list.size()));
   }
+}
+
+void ChannelReceive::InitFrameTransformerDelegate(
+    rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer) {
+  RTC_DCHECK(frame_transformer);
+  RTC_DCHECK(!frame_transformer_delegate_);
+
+  // Pass a callback to ChannelReceive::ReceivePacket, to be called by the
+  // delegate to receive transformed audio.
+  ChannelReceiveFrameTransformerDelegate::ReceiveFrameCallback
+      receive_audio_callback = [this](rtc::ArrayView<const uint8_t> packet,
+                                      const RTPHeader& header) {
+        ReceivePacket(packet.data(), packet.size(), header);
+      };
+  frame_transformer_delegate_ =
+      new rtc::RefCountedObject<ChannelReceiveFrameTransformerDelegate>(
+          std::move(receive_audio_callback), std::move(frame_transformer),
+          rtc::Thread::Current());
+  frame_transformer_delegate_->Init();
 }
 
 AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
@@ -456,8 +480,7 @@ ChannelReceive::ChannelReceive(
       associated_send_channel_(nullptr),
       frame_decryptor_(frame_decryptor),
       crypto_options_(crypto_options),
-      absolute_capture_time_receiver_(clock),
-      frame_transformer_(std::move(frame_transformer)) {
+      absolute_capture_time_receiver_(clock) {
   // TODO(nisse): Use _moduleProcessThreadPtr instead?
   module_process_thread_checker_.Detach();
 
@@ -480,6 +503,9 @@ ChannelReceive::ChannelReceive(
   configuration.receive_statistics = rtp_receive_statistics_.get();
   configuration.event_log = event_log_;
   configuration.local_media_ssrc = local_ssrc;
+
+  if (frame_transformer)
+    InitFrameTransformerDelegate(std::move(frame_transformer));
 
   _rtpRtcpModule = RtpRtcp::Create(configuration);
   _rtpRtcpModule->SetSendingMediaStatus(false);
@@ -569,7 +595,13 @@ void ChannelReceive::OnRtpPacket(const RtpPacketReceived& packet) {
           rtc::saturated_cast<uint32_t>(packet_copy.payload_type_frequency()),
           header.extension.absolute_capture_time);
 
-  ReceivePacket(packet_copy.data(), packet_copy.size(), header);
+  if (frame_transformer_delegate_) {
+    // Asynchronously transform the received payload. After the payload is
+    // transformed, the delegate will call ReceivePacket to handle it.
+    frame_transformer_delegate_->Transform(packet_copy, header, remote_ssrc_);
+  } else {
+    ReceivePacket(packet_copy.data(), packet_copy.size(), header);
+  }
 }
 
 void ChannelReceive::ReceivePacket(const uint8_t* packet,
@@ -758,7 +790,11 @@ void ChannelReceive::SetAssociatedSendChannel(
 void ChannelReceive::SetDepacketizerToDecoderFrameTransformer(
     rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer) {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
-  frame_transformer_ = std::move(frame_transformer);
+  // Depending on when the channel is created, the transformer might be set
+  // twice. Don't replace the delegate if it was already initialized.
+  if (!frame_transformer || frame_transformer_delegate_)
+    return;
+  InitFrameTransformerDelegate(std::move(frame_transformer));
 }
 
 NetworkStatistics ChannelReceive::GetNetworkStatistics() const {
