@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/match.h"
 #include "api/units/time_delta.h"
 #include "logging/rtc_event_log/events/rtc_event_remote_estimate.h"
 #include "modules/congestion_controller/goog_cc/alr_detector.h"
@@ -53,11 +54,11 @@ int64_t GetBpsOrDefault(const absl::optional<DataRate>& rate,
 }
 
 bool IsEnabled(const WebRtcKeyValueConfig* config, absl::string_view key) {
-  return config->Lookup(key).find("Enabled") == 0;
+  return absl::StartsWith(config->Lookup(key), "Enabled");
 }
 
 bool IsNotDisabled(const WebRtcKeyValueConfig* config, absl::string_view key) {
-  return config->Lookup(key).find("Disabled") != 0;
+  return !absl::StartsWith(config->Lookup(key), "Disabled");
 }
 }  // namespace
 

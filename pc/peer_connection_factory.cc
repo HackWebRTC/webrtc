@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/match.h"
 #include "api/fec_controller.h"
 #include "api/media_stream_proxy.h"
 #include "api/media_stream_track_proxy.h"
@@ -397,7 +398,7 @@ std::unique_ptr<Call> PeerConnectionFactory::CreateCall_w(
 
 bool PeerConnectionFactory::IsTrialEnabled(absl::string_view key) const {
   RTC_DCHECK(trials_);
-  return trials_->Lookup(key).find("Enabled") == 0;
+  return absl::StartsWith(trials_->Lookup(key), "Enabled");
 }
 
 }  // namespace webrtc

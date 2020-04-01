@@ -5820,8 +5820,9 @@ PeerConnection::InitializePortAllocator_n(
   // by experiment.
   if (configuration.disable_ipv6) {
     port_allocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
-  } else if (webrtc::field_trial::FindFullName("WebRTC-IPv6Default")
-                 .find("Disabled") == 0) {
+  } else if (absl::StartsWith(
+                 webrtc::field_trial::FindFullName("WebRTC-IPv6Default"),
+                 "Disabled")) {
     port_allocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
   }
 

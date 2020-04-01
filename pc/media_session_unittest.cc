@@ -18,6 +18,7 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 #include "media/base/codec.h"
 #include "media/base/test_utils.h"
 #include "media/sctp/sctp_transport_internal.h"
@@ -3061,7 +3062,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, RtxWithoutApt) {
   VideoContentDescription* desc = media_desc->as_video();
   std::vector<VideoCodec> codecs = desc->codecs();
   for (VideoCodec& codec : codecs) {
-    if (codec.name.find(cricket::kRtxCodecName) == 0) {
+    if (absl::StartsWith(codec.name, cricket::kRtxCodecName)) {
       codec.params.clear();
     }
   }
