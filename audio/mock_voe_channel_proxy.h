@@ -66,6 +66,9 @@ class MockChannelReceive : public voe::ChannelReceiveInterface {
   MOCK_CONST_METHOD0(GetSources, std::vector<RtpSource>());
   MOCK_METHOD0(StartPlayout, void());
   MOCK_METHOD0(StopPlayout, void());
+  MOCK_METHOD1(SetDepacketizerToDecoderFrameTransformer,
+               void(rtc::scoped_refptr<webrtc::FrameTransformerInterface>
+                        frame_transformer));
 };
 
 class MockChannelSend : public voe::ChannelSendInterface {

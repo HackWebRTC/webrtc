@@ -82,7 +82,8 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
       config.jitter_buffer_max_packets, config.jitter_buffer_fast_accelerate,
       config.jitter_buffer_min_delay_ms,
       config.jitter_buffer_enable_rtx_handling, config.decoder_factory,
-      config.codec_pair_id, config.frame_decryptor, config.crypto_options);
+      config.codec_pair_id, config.frame_decryptor, config.crypto_options,
+      std::move(config.frame_transformer));
 }
 }  // namespace
 
@@ -407,6 +408,12 @@ void AudioReceiveStream::ConfigureStream(AudioReceiveStream* stream,
   }
   if (first_time || old_config.decoder_map != new_config.decoder_map) {
     channel_receive->SetReceiveCodecs(new_config.decoder_map);
+  }
+
+  if (first_time ||
+      old_config.frame_transformer != new_config.frame_transformer) {
+    channel_receive->SetDepacketizerToDecoderFrameTransformer(
+        new_config.frame_transformer);
   }
 
   stream->config_ = new_config;

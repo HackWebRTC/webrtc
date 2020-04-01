@@ -1063,7 +1063,8 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
       int jitter_buffer_min_delay_ms,
       bool jitter_buffer_enable_rtx_handling,
       rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor,
-      const webrtc::CryptoOptions& crypto_options)
+      const webrtc::CryptoOptions& crypto_options,
+      rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer)
       : call_(call), config_() {
     RTC_DCHECK(call);
     config_.rtp.remote_ssrc = remote_ssrc;
@@ -1085,6 +1086,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     config_.codec_pair_id = codec_pair_id;
     config_.frame_decryptor = frame_decryptor;
     config_.crypto_options = crypto_options;
+    config_.frame_transformer = std::move(frame_transformer);
     RecreateAudioReceiveStream();
   }
 
@@ -1213,6 +1215,13 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     rtp_parameters.header_extensions = config_.rtp.extensions;
 
     return rtp_parameters;
+  }
+
+  void SetDepacketizerToDecoderFrameTransformer(
+      rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer) {
+    RTC_DCHECK(worker_thread_checker_.IsCurrent());
+    config_.frame_transformer = std::move(frame_transformer);
+    ReconfigureAudioReceiveStream();
   }
 
  private:
@@ -1868,7 +1877,7 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
                 engine()->audio_jitter_buffer_fast_accelerate_,
                 engine()->audio_jitter_buffer_min_delay_ms_,
                 engine()->audio_jitter_buffer_enable_rtx_handling_,
-                unsignaled_frame_decryptor_, crypto_options_)));
+                unsignaled_frame_decryptor_, crypto_options_, nullptr)));
   recv_streams_[ssrc]->SetPlayout(playout_);
 
   return true;
@@ -2334,6 +2343,20 @@ void WebRtcVoiceMediaChannel::SetEncoderToPacketizerFrameTransformer(
     return;
   }
   matching_stream->second->SetEncoderToPacketizerFrameTransformer(
+      std::move(frame_transformer));
+}
+
+void WebRtcVoiceMediaChannel::SetDepacketizerToDecoderFrameTransformer(
+    uint32_t ssrc,
+    rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer) {
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
+  auto matching_stream = recv_streams_.find(ssrc);
+  if (matching_stream == recv_streams_.end()) {
+    RTC_LOG(LS_INFO) << "Attempting to set frame transformer for SSRC:" << ssrc
+                     << " which doesn't exist.";
+    return;
+  }
+  matching_stream->second->SetDepacketizerToDecoderFrameTransformer(
       std::move(frame_transformer));
 }
 

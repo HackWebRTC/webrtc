@@ -215,6 +215,10 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
       uint32_t ssrc,
       rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer)
       override;
+  void SetDepacketizerToDecoderFrameTransformer(
+      uint32_t ssrc,
+      rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer)
+      override;
 
   // implements Transport interface
   bool SendRtp(const uint8_t* data,
