@@ -47,6 +47,58 @@ EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
         adjusted_cfg.filter.enable_shadow_filter_output_usage;
   }
 
+  if (field_trial::IsEnabled("WebRTC-Aec3UseShortConfigChangeDuration")) {
+    adjusted_cfg.filter.config_change_duration_blocks = 10;
+  }
+
+  if (field_trial::IsEnabled("WebRTC-Aec3UseZeroInitialStateDuration")) {
+    adjusted_cfg.filter.initial_state_seconds = 0.f;
+  } else if (field_trial::IsEnabled(
+                 "WebRTC-Aec3UseDot1SecondsInitialStateDuration")) {
+    adjusted_cfg.filter.initial_state_seconds = .1f;
+  } else if (field_trial::IsEnabled(
+                 "WebRTC-Aec3UseDot2SecondsInitialStateDuration")) {
+    adjusted_cfg.filter.initial_state_seconds = .2f;
+  } else if (field_trial::IsEnabled(
+                 "WebRTC-Aec3UseDot3SecondsInitialStateDuration")) {
+    adjusted_cfg.filter.initial_state_seconds = .3f;
+  } else if (field_trial::IsEnabled(
+                 "WebRTC-Aec3UseDot6SecondsInitialStateDuration")) {
+    adjusted_cfg.filter.initial_state_seconds = .6f;
+  } else if (field_trial::IsEnabled(
+                 "WebRTC-Aec3UseDot9SecondsInitialStateDuration")) {
+    adjusted_cfg.filter.initial_state_seconds = .9f;
+  } else if (field_trial::IsEnabled(
+                 "WebRTC-Aec3Use1Dot2SecondsInitialStateDuration")) {
+    adjusted_cfg.filter.initial_state_seconds = 1.2f;
+  } else if (field_trial::IsEnabled(
+                 "WebRTC-Aec3Use1Dot6SecondsInitialStateDuration")) {
+    adjusted_cfg.filter.initial_state_seconds = 1.6f;
+  } else if (field_trial::IsEnabled(
+                 "WebRTC-Aec3Use2Dot0SecondsInitialStateDuration")) {
+    adjusted_cfg.filter.initial_state_seconds = 2.0f;
+  }
+
+  if (field_trial::IsEnabled("WebRTC-Aec3EchoSaturationDetectionKillSwitch")) {
+    adjusted_cfg.ep_strength.echo_can_saturate = false;
+  }
+
+  if (field_trial::IsEnabled("WebRTC-Aec3UseDot2ReverbDefaultLen")) {
+    adjusted_cfg.ep_strength.default_len = 0.2f;
+  } else if (field_trial::IsEnabled("WebRTC-Aec3UseDot3ReverbDefaultLen")) {
+    adjusted_cfg.ep_strength.default_len = 0.3f;
+  } else if (field_trial::IsEnabled("WebRTC-Aec3UseDot4ReverbDefaultLen")) {
+    adjusted_cfg.ep_strength.default_len = 0.4f;
+  } else if (field_trial::IsEnabled("WebRTC-Aec3UseDot5ReverbDefaultLen")) {
+    adjusted_cfg.ep_strength.default_len = 0.5f;
+  } else if (field_trial::IsEnabled("WebRTC-Aec3UseDot6ReverbDefaultLen")) {
+    adjusted_cfg.ep_strength.default_len = 0.6f;
+  } else if (field_trial::IsEnabled("WebRTC-Aec3UseDot7ReverbDefaultLen")) {
+    adjusted_cfg.ep_strength.default_len = 0.7f;
+  } else if (field_trial::IsEnabled("WebRTC-Aec3UseDot8ReverbDefaultLen")) {
+    adjusted_cfg.ep_strength.default_len = 0.8f;
+  }
+
   if (field_trial::IsEnabled("WebRTC-Aec3ShortHeadroomKillSwitch")) {
     // Two blocks headroom.
     adjusted_cfg.delay.delay_headroom_samples = kBlockSize * 2;
@@ -58,6 +110,10 @@ EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
 
   if (field_trial::IsEnabled("WebRTC-Aec3ClampInstQualityToOneKillSwitch")) {
     adjusted_cfg.erle.clamp_quality_estimate_to_one = false;
+  }
+
+  if (field_trial::IsEnabled("WebRTC-Aec3OnsetDetectionKillSwitch")) {
+    adjusted_cfg.erle.onset_detection = false;
   }
 
   if (field_trial::IsEnabled(
@@ -83,6 +139,65 @@ EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
           "Aec3RenderDelayEstimationLeftRightPrioritizationKillSwitch")) {
     adjusted_cfg.delay.capture_alignment_mixing.prefer_first_two_channels =
         false;
+  }
+
+  if (field_trial::IsEnabled("WebRTC-Aec3SensitiveDominantNearendActivation")) {
+    adjusted_cfg.suppressor.dominant_nearend_detection.enr_threshold = 0.5f;
+  } else if (field_trial::IsEnabled(
+                 "WebRTC-Aec3VerySensitiveDominantNearendActivation")) {
+    adjusted_cfg.suppressor.dominant_nearend_detection.enr_threshold = 0.75f;
+  }
+
+  if (field_trial::IsEnabled("WebRTC-Aec3TransparentAntiHowlingGain")) {
+    adjusted_cfg.suppressor.high_bands_suppression.anti_howling_gain = 1.f;
+  }
+
+  if (field_trial::IsEnabled(
+          "WebRTC-Aec3EnforceMoreTransparentNormalSuppressorTuning")) {
+    adjusted_cfg.suppressor.normal_tuning.mask_lf.enr_transparent = 0.4f;
+    adjusted_cfg.suppressor.normal_tuning.mask_lf.enr_suppress = 0.5f;
+  }
+
+  if (field_trial::IsEnabled(
+          "WebRTC-Aec3EnforceMoreTransparentNearendSuppressorTuning")) {
+    adjusted_cfg.suppressor.nearend_tuning.mask_lf.enr_transparent = 1.29f;
+    adjusted_cfg.suppressor.nearend_tuning.mask_lf.enr_suppress = 1.3f;
+  }
+
+  if (field_trial::IsEnabled(
+          "WebRTC-Aec3EnforceRapidlyAdjustingNormalSuppressorTunings")) {
+    adjusted_cfg.suppressor.normal_tuning.max_inc_factor = 2.5f;
+  }
+
+  if (field_trial::IsEnabled(
+          "WebRTC-Aec3EnforceRapidlyAdjustingNearendSuppressorTunings")) {
+    adjusted_cfg.suppressor.nearend_tuning.max_inc_factor = 2.5f;
+  }
+
+  if (field_trial::IsEnabled(
+          "WebRTC-Aec3EnforceSlowlyAdjustingNormalSuppressorTunings")) {
+    adjusted_cfg.suppressor.normal_tuning.max_dec_factor_lf = .2f;
+  }
+
+  if (field_trial::IsEnabled(
+          "WebRTC-Aec3EnforceSlowlyAdjustingNearendSuppressorTunings")) {
+    adjusted_cfg.suppressor.nearend_tuning.max_dec_factor_lf = .2f;
+  }
+
+  if (field_trial::IsEnabled("WebRTC-Aec3EnforceStationarityProperties")) {
+    adjusted_cfg.echo_audibility.use_stationarity_properties = true;
+  }
+
+  if (field_trial::IsEnabled(
+          "WebRTC-Aec3EnforceStationarityPropertiesAtInit")) {
+    adjusted_cfg.echo_audibility.use_stationarity_properties_at_init = true;
+  }
+
+  if (field_trial::IsEnabled("WebRTC-Aec3EnforceLowActiveRenderLimit")) {
+    adjusted_cfg.render_levels.active_render_limit = 50.f;
+  } else if (field_trial::IsEnabled(
+                 "WebRTC-Aec3EnforceVeryLowActiveRenderLimit")) {
+    adjusted_cfg.render_levels.active_render_limit = 30.f;
   }
 
   return adjusted_cfg;

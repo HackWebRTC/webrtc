@@ -107,7 +107,9 @@ class AecState {
   }
 
   // Returns whether the transparent mode is active
-  bool TransparentMode() const { return transparent_state_.Active(); }
+  bool TransparentMode() const {
+    return transparent_mode_activated_ && transparent_state_.Active();
+  }
 
   // Takes appropriate action at an echo path change.
   void HandleEchoPathChange(const EchoPathVariability& echo_path_variability);
@@ -150,6 +152,10 @@ class AecState {
   std::unique_ptr<ApmDataDumper> data_dumper_;
   const EchoCanceller3Config config_;
   const size_t num_capture_channels_;
+  const bool transparent_mode_activated_;
+  const bool deactivate_initial_state_reset_at_echo_path_change_;
+  const bool full_reset_at_echo_path_change_;
+  const bool subtractor_analyzer_reset_at_echo_path_change_;
 
   // Class for controlling the transition from the intial state, which in turn
   // controls when the filter parameters for the initial state should be used.

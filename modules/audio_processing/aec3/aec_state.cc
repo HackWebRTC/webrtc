@@ -22,12 +22,31 @@
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace {
 
 constexpr size_t kBlocksSinceConvergencedFilterInit = 10000;
 constexpr size_t kBlocksSinceConsistentEstimateInit = 10000;
+
+bool DeactivateTransparentMode() {
+  return field_trial::IsEnabled("WebRTC-Aec3TransparentModeKillSwitch");
+}
+
+bool DeactivateInitialStateResetAtEchoPathChange() {
+  return field_trial::IsEnabled(
+      "WebRTC-Aec3DeactivateInitialStateResetKillSwitch");
+}
+
+bool FullResetAtEchoPathChange() {
+  return !field_trial::IsEnabled("WebRTC-Aec3AecStateFullResetKillSwitch");
+}
+
+bool SubtractorAnalyzerResetAtEchoPathChange() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3AecStateSubtractorAnalyzerResetKillSwitch");
+}
 
 void ComputeAvgRenderReverb(
     const SpectrumBuffer& spectrum_buffer,
@@ -115,6 +134,12 @@ AecState::AecState(const EchoCanceller3Config& config,
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       config_(config),
       num_capture_channels_(num_capture_channels),
+      transparent_mode_activated_(!DeactivateTransparentMode()),
+      deactivate_initial_state_reset_at_echo_path_change_(
+          DeactivateInitialStateResetAtEchoPathChange()),
+      full_reset_at_echo_path_change_(FullResetAtEchoPathChange()),
+      subtractor_analyzer_reset_at_echo_path_change_(
+          SubtractorAnalyzerResetAtEchoPathChange()),
       initial_state_(config_),
       delay_state_(config_, num_capture_channels_),
       transparent_state_(config_),
@@ -136,7 +161,9 @@ void AecState::HandleEchoPathChange(
     capture_signal_saturation_ = false;
     strong_not_saturated_render_blocks_ = 0;
     blocks_with_active_render_ = 0;
-    initial_state_.Reset();
+    if (!deactivate_initial_state_reset_at_echo_path_change_) {
+      initial_state_.Reset();
+    }
     transparent_state_.Reset();
     erle_estimator_.Reset(true);
     erl_estimator_.Reset();
@@ -146,13 +173,16 @@ void AecState::HandleEchoPathChange(
   // TODO(peah): Refine the reset scheme according to the type of gain and
   // delay adjustment.
 
-  if (echo_path_variability.delay_change !=
-      EchoPathVariability::DelayAdjustment::kNone) {
+  if (full_reset_at_echo_path_change_ &&
+      echo_path_variability.delay_change !=
+          EchoPathVariability::DelayAdjustment::kNone) {
     full_reset();
   } else if (echo_path_variability.gain_change) {
     erle_estimator_.Reset(false);
   }
-  subtractor_output_analyzer_.HandleEchoPathChange();
+  if (subtractor_analyzer_reset_at_echo_path_change_) {
+    subtractor_output_analyzer_.HandleEchoPathChange();
+  }
 }
 
 void AecState::Update(
@@ -235,9 +265,13 @@ void AecState::Update(
       render_buffer.Spectrum(delay_state_.MinDirectPathFilterDelay()), Y2);
 
   // Detect and flag echo saturation.
-  saturation_detector_.Update(aligned_render_block, SaturatedCapture(),
-                              UsableLinearEstimate(), subtractor_output,
-                              max_echo_path_gain);
+  if (config_.ep_strength.echo_can_saturate) {
+    saturation_detector_.Update(aligned_render_block, SaturatedCapture(),
+                                UsableLinearEstimate(), subtractor_output,
+                                max_echo_path_gain);
+  } else {
+    RTC_DCHECK(!saturation_detector_.SaturatedEcho());
+  }
 
   // Update the decision on whether to use the initial state parameter set.
   initial_state_.Update(active_render, SaturatedCapture());

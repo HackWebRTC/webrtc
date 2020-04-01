@@ -18,9 +18,66 @@
 #include "api/array_view.h"
 #include "modules/audio_processing/aec3/reverb_model.h"
 #include "rtc_base/checks.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace {
+
+bool UseLowEarlyReflectionsTransparentModeGain() {
+  return field_trial::IsEnabled(
+      "WebRTC-Aec3UseLowEarlyReflectionsTransparentModeGain");
+}
+
+bool UseLowLateReflectionsTransparentModeGain() {
+  return field_trial::IsEnabled(
+      "WebRTC-Aec3UseLowLateReflectionsTransparentModeGain");
+}
+
+bool UseLowEarlyReflectionsDefaultGain() {
+  return field_trial::IsEnabled("WebRTC-Aec3UseLowEarlyReflectionsDefaultGain");
+}
+
+bool UseLowLateReflectionsDefaultGain() {
+  return field_trial::IsEnabled("WebRTC-Aec3UseLowLateReflectionsDefaultGain");
+}
+
+bool ModelReverbInNonlinearMode() {
+  return !field_trial::IsEnabled("WebRTC-Aec3rNonlinearModeReverbKillSwitch");
+}
+
+constexpr float kDefaultTransparentModeGain = 0.01f;
+
+float GetEarlyReflectionsTransparentModeGain() {
+  if (UseLowEarlyReflectionsTransparentModeGain()) {
+    return 0.001f;
+  }
+  return kDefaultTransparentModeGain;
+}
+
+float GetLateReflectionsTransparentModeGain() {
+  if (UseLowLateReflectionsTransparentModeGain()) {
+    return 0.001f;
+  }
+
+  return kDefaultTransparentModeGain;
+}
+
+float GetEarlyReflectionsDefaultModeGain(
+    const EchoCanceller3Config::EpStrength& config) {
+  if (UseLowEarlyReflectionsDefaultGain()) {
+    return 0.1f;
+  }
+
+  return config.default_gain;
+}
+
+float GetLateReflectionsDefaultModeGain(
+    const EchoCanceller3Config::EpStrength& config) {
+  if (UseLowLateReflectionsDefaultGain()) {
+    return 0.1f;
+  }
+  return config.default_gain;
+}
 
 // Computes the indexes that will be used for computing spectral power over
 // the blocks surrounding the delay.
@@ -138,19 +195,21 @@ void EchoGeneratingPower(size_t num_render_channels,
   }
 }
 
-// Chooses the echo path gain to use.
-float GetEchoPathGain(const AecState& aec_state,
-                      const EchoCanceller3Config::EpStrength& config) {
-  float gain_amplitude =
-      aec_state.TransparentMode() ? 0.01f : config.default_gain;
-  return gain_amplitude * gain_amplitude;
-}
-
 }  // namespace
 
 ResidualEchoEstimator::ResidualEchoEstimator(const EchoCanceller3Config& config,
                                              size_t num_render_channels)
-    : config_(config), num_render_channels_(num_render_channels) {
+    : config_(config),
+      num_render_channels_(num_render_channels),
+      early_reflections_transparent_mode_gain_(
+          GetEarlyReflectionsTransparentModeGain()),
+      late_reflections_transparent_mode_gain_(
+          GetLateReflectionsTransparentModeGain()),
+      early_reflections_general_gain_(
+          GetEarlyReflectionsDefaultModeGain(config_.ep_strength)),
+      late_reflections_general_gain_(
+          GetLateReflectionsDefaultModeGain(config_.ep_strength)),
+      model_reverb_in_nonlinear_mode_(ModelReverbInNonlinearMode()) {
   Reset();
 }
 
@@ -190,7 +249,7 @@ void ResidualEchoEstimator::Estimate(
     AddReverb(ReverbType::kLinear, aec_state, render_buffer, R2);
   } else {
     const float echo_path_gain =
-        GetEchoPathGain(aec_state, config_.ep_strength);
+        GetEchoPathGain(aec_state, /*gain_for_early_reflections=*/true);
 
     // When there is saturated echo, assume the same spectral content as is
     // present in the microphone signal.
@@ -218,7 +277,7 @@ void ResidualEchoEstimator::Estimate(
       NonLinearEstimate(echo_path_gain, X2, R2);
     }
 
-    if (!aec_state.TransparentMode()) {
+    if (model_reverb_in_nonlinear_mode_ && !aec_state.TransparentMode()) {
       AddReverb(ReverbType::kNonLinear, aec_state, render_buffer, R2);
     }
   }
@@ -316,7 +375,7 @@ void ResidualEchoEstimator::AddReverb(
                               aec_state.ReverbDecay());
   } else {
     const float echo_path_gain =
-        GetEchoPathGain(aec_state, config_.ep_strength);
+        GetEchoPathGain(aec_state, /*gain_for_early_reflections=*/false);
     echo_reverb_.UpdateReverbNoFreqShaping(render_power, echo_path_gain,
                                            aec_state.ReverbDecay());
   }
@@ -329,6 +388,23 @@ void ResidualEchoEstimator::AddReverb(
       R2[ch][k] += reverb_power[k];
     }
   }
+}
+
+// Chooses the echo path gain to use.
+float ResidualEchoEstimator::GetEchoPathGain(
+    const AecState& aec_state,
+    bool gain_for_early_reflections) const {
+  float gain_amplitude;
+  if (aec_state.TransparentMode()) {
+    gain_amplitude = gain_for_early_reflections
+                         ? early_reflections_transparent_mode_gain_
+                         : late_reflections_transparent_mode_gain_;
+  } else {
+    gain_amplitude = gain_for_early_reflections
+                         ? early_reflections_general_gain_
+                         : late_reflections_general_gain_;
+  }
+  return gain_amplitude * gain_amplitude;
 }
 
 }  // namespace webrtc
