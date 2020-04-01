@@ -54,6 +54,7 @@ LIB_TO_LICENSES_DICT = {
     'libsrtp': ['third_party/libsrtp/LICENSE'],
     'libvpx': ['third_party/libvpx/source/libvpx/LICENSE'],
     'libyuv': ['third_party/libyuv/LICENSE'],
+    'nasm': ['third_party/nasm/LICENSE'],
     'opus': ['third_party/opus/src/COPYING'],
     'pffft': ['third_party/pffft/LICENSE'],
     'protobuf': ['third_party/protobuf/LICENSE'],
