@@ -130,7 +130,9 @@ rtc_executable("frame_analyzer") {
   ]
 }
 
-if (!build_with_chromium && !build_with_mozilla) {
+# TODO(bugs.webrtc.org/11474): Enable this on win if needed. For now it
+# is only required for Linux and Android.
+if (!build_with_chromium && !build_with_mozilla && !is_win) {
   action("frame_analyzer_host") {
     script = "//tools_webrtc/executable_host_build.py"
     outputs = [ "${root_out_dir}/frame_analyzer_host" ]
@@ -369,9 +371,7 @@ if (rtc_include_tests) {
   rtc_executable("yuv_to_ivf_converter") {
     visibility = [ "*" ]
     testonly = true
-    sources = [
-      "converter/yuv_to_ivf_converter.cc",
-    ]
+    sources = [ "converter/yuv_to_ivf_converter.cc" ]
     deps = [
       "../api:create_frame_generator",
       "../api:frame_generator_api",
