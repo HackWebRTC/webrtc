@@ -438,8 +438,7 @@ bool IsFormatSupported(const std::vector<SdpVideoFormat>& supported_formats,
 bool MediaCodecVideoEncoder::ProcessHWError(
     bool reset_if_fallback_unavailable) {
   ALOGE << "ProcessHWError";
-  if (IsFormatSupported(InternalEncoderFactory().GetSupportedFormats(),
-                        format_)) {
+  if (IsFormatSupported(InternalEncoderFactory::SupportedFormats(), format_)) {
     ALOGE << "Fallback to SW encoder.";
     sw_fallback_required_ = true;
     return false;

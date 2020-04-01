@@ -23,6 +23,7 @@ namespace webrtc {
 
 class RTC_EXPORT InternalEncoderFactory : public VideoEncoderFactory {
  public:
+  static std::vector<SdpVideoFormat> SupportedFormats();
   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
 
   CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override;
