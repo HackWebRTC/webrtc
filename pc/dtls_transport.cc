@@ -22,19 +22,14 @@ DtlsTransportState TranslateState(cricket::DtlsTransportState internal_state) {
   switch (internal_state) {
     case cricket::DTLS_TRANSPORT_NEW:
       return DtlsTransportState::kNew;
-      break;
     case cricket::DTLS_TRANSPORT_CONNECTING:
       return DtlsTransportState::kConnecting;
-      break;
     case cricket::DTLS_TRANSPORT_CONNECTED:
       return DtlsTransportState::kConnected;
-      break;
     case cricket::DTLS_TRANSPORT_CLOSED:
       return DtlsTransportState::kClosed;
-      break;
     case cricket::DTLS_TRANSPORT_FAILED:
       return DtlsTransportState::kFailed;
-      break;
   }
 }
 

@@ -669,7 +669,6 @@ StreamResult OpenSSLStreamAdapter::Read(void* data,
       RTC_LOG(LS_VERBOSE) << " -- remote side closed";
       Close();
       return SR_EOS;
-      break;
     default:
       Error("SSL_read", (ssl_error ? ssl_error : -1), 0, false);
       if (error) {
