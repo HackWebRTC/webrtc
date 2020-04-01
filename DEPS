@@ -8,16 +8,16 @@ vars = {
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
-  'chromium_revision': '4d555ede5249fa7ba5725cf4cccf1b29225d09c0',
+  'chromium_revision': '6bc2e353719d7a3c3ac3f32a1b25bc50d41ad69c',
 }
 
 deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    'https://chromium.googlesource.com/chromium/src/base@11978dc67d72e6a4a3019c2dc1878c4950042631',
+    'https://chromium.googlesource.com/chromium/src/base@fb5957fcc5409a11ee2f7dfadf277574a8cf5a37',
   'src/build':
-    'https://chromium.googlesource.com/chromium/src/build@2c249ccb22f58faae38342331925f657a49a9de8',
+    'https://chromium.googlesource.com/chromium/src/build@d01d1b6d2fa6bce5a10ee63c3d9ce731779bf3a1',
   'src/buildtools':
     'https://chromium.googlesource.com/chromium/src/buildtools@2c41dfb19abe40908834803b6fed797b0f341fe1',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
@@ -26,13 +26,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': 'https://chromium.googlesource.com/chromium/src/ios@ffc5b22ef166c23c5dbef5a3a79e0904f719c717',
+    'url': 'https://chromium.googlesource.com/chromium/src/ios@31d9e19a8d5d748598355c5a06568c6cb7f4beb4',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    'https://chromium.googlesource.com/chromium/src/testing@7737e73854d33ff17680d038a8eae1a860a30a4d',
+    'https://chromium.googlesource.com/chromium/src/testing@0f0c80137e9ab70191bea880e8f152e419d3a4d4',
   'src/third_party':
-    'https://chromium.googlesource.com/chromium/src/third_party@b7263f372352ae62a062d7017de9a621e81033d1',
+    'https://chromium.googlesource.com/chromium/src/third_party@1cf8966df148d0b89a2156070d975fba09e535ae',
 
   'src/buildtools/linux64': {
     'packages': [
@@ -130,7 +130,7 @@ deps = {
   'src/third_party/colorama/src':
     'https://chromium.googlesource.com/external/colorama.git@799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
   'src/third_party/depot_tools':
-    'https://chromium.googlesource.com/chromium/tools/depot_tools.git@11f4a84bb1b3918230d025c91f3331d21411a22b',
+    'https://chromium.googlesource.com/chromium/tools/depot_tools.git@4f30cf0179653b3b84b50a13e741322e91190864',
   'src/third_party/ffmpeg':
     'https://chromium.googlesource.com/chromium/third_party/ffmpeg.git@31886e8f39a47a9d7107d4c937bb053dcf5699ce',
   'src/third_party/findbugs': {
@@ -192,7 +192,7 @@ deps = {
   'src/third_party/libFuzzer/src':
     'https://chromium.googlesource.com/chromium/llvm-project/compiler-rt/lib/fuzzer.git@debe7d2d1982e540fbd6bd78604bf001753f9e74',
   'src/third_party/libjpeg_turbo':
-    'https://chromium.googlesource.com/chromium/deps/libjpeg_turbo.git@ce0e57e8e636f5132fe6f0590a4dba91f92fd935',
+    'https://chromium.googlesource.com/chromium/deps/libjpeg_turbo.git@7e3ad79800a7945fb37173149842b494ab8982b2',
   'src/third_party/libsrtp':
     'https://chromium.googlesource.com/chromium/deps/libsrtp.git@650611720ecc23e0e6b32b0e3100f8b4df91696c',
   'src/third_party/libaom/source/libaom':
@@ -221,7 +221,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/r8',
-              'version': 'C28ypVbWD-R2M9x9fH7QniIsYjJrKoUhxqEV_cZR4qgC',
+              'version': 'QBuWB80TzI5JFXtwaZQbr91Ry3Lb0AmRl8kBchm5FY0C',
           },
       ],
       'condition': 'checkout_android',
@@ -259,7 +259,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     'https://chromium.googlesource.com/chromium/deps/yasm/patched-yasm.git@720b70524a4424b15fc57e82263568c8ba0496ad',
   'src/tools':
-    'https://chromium.googlesource.com/chromium/src/tools@0389dabc9000a94ff62ac75cdad5e10e7099e0ed',
+    'https://chromium.googlesource.com/chromium/src/tools@6cd5df917ba863d8b432aa21e211e301bc841a63',
   'src/tools/swarming_client':
     'https://chromium.googlesource.com/infra/luci/client-py.git@cc958279ffd6853e0a1b227a7e957ca334fe56af',
 
