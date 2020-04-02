@@ -53,7 +53,7 @@ class ChannelReceiveFrameTransformerDelegate : public TransformedFrameCallback {
   void OnTransformedFrame(
       std::unique_ptr<TransformableFrameInterface> frame) override;
 
-  // Delegates the call to ChannelReceive::ReceivePacket on the
+  // Delegates the call to ChannelReceive::OnReceivedPayloadData on the
   // |channel_receive_thread_|, by calling |receive_frame_callback_|.
   void ReceiveFrame(std::unique_ptr<TransformableFrameInterface> frame) const;
 
