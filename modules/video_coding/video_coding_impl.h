@@ -124,7 +124,6 @@ class VideoReceiver : public Module {
   // over to the decoder thread.
   VCMDecoderDataBase _codecDataBase;
 
-  VCMProcessTimer _receiveStatsTimer RTC_GUARDED_BY(module_thread_checker_);
   VCMProcessTimer _retransmissionTimer RTC_GUARDED_BY(module_thread_checker_);
   VCMProcessTimer _keyRequestTimer RTC_GUARDED_BY(module_thread_checker_);
   ThreadUnsafeOneTimeEvent first_frame_received_

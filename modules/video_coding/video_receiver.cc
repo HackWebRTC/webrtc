@@ -53,7 +53,6 @@ VideoReceiver::VideoReceiver(Clock* clock, VCMTiming* timing)
       drop_frames_until_keyframe_(false),
       max_nack_list_size_(0),
       _codecDataBase(),
-      _receiveStatsTimer(1000, clock_),
       _retransmissionTimer(10, clock_),
       _keyRequestTimer(500, clock_) {
   decoder_thread_checker_.Detach();
@@ -66,13 +65,6 @@ VideoReceiver::~VideoReceiver() {
 
 void VideoReceiver::Process() {
   RTC_DCHECK_RUN_ON(&module_thread_checker_);
-  // Receive-side statistics
-
-  // TODO(philipel): Remove this if block when we know what to do with
-  //                 ReceiveStatisticsProxy::QualitySample.
-  if (_receiveStatsTimer.TimeUntilProcess() == 0) {
-    _receiveStatsTimer.Processed();
-  }
 
   // Key frame requests
   if (_keyRequestTimer.TimeUntilProcess() == 0) {
@@ -124,11 +116,7 @@ void VideoReceiver::ProcessThreadAttached(ProcessThread* process_thread) {
 
 int64_t VideoReceiver::TimeUntilNextProcess() {
   RTC_DCHECK_RUN_ON(&module_thread_checker_);
-  int64_t timeUntilNextProcess = _receiveStatsTimer.TimeUntilProcess();
-  // We need a Process call more often if we are relying on
-  // retransmissions
-  timeUntilNextProcess =
-      VCM_MIN(timeUntilNextProcess, _retransmissionTimer.TimeUntilProcess());
+  int64_t timeUntilNextProcess = _retransmissionTimer.TimeUntilProcess();
 
   timeUntilNextProcess =
       VCM_MIN(timeUntilNextProcess, _keyRequestTimer.TimeUntilProcess());
