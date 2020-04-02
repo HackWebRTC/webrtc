@@ -227,16 +227,15 @@ std::vector<RtpSource> AudioRtpReceiver::GetSources() const {
 
 void AudioRtpReceiver::SetDepacketizerToDecoderFrameTransformer(
     rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer) {
-  if (media_channel_ && ssrc_.has_value() && !stopped_) {
-    worker_thread_->Invoke<void>(
-        RTC_FROM_HERE,
-        [this, frame_transformer = std::move(frame_transformer)] {
-          RTC_DCHECK_RUN_ON(worker_thread_);
-          frame_transformer_ = frame_transformer;
+  worker_thread_->Invoke<void>(
+      RTC_FROM_HERE, [this, frame_transformer = std::move(frame_transformer)] {
+        RTC_DCHECK_RUN_ON(worker_thread_);
+        frame_transformer_ = frame_transformer;
+        if (media_channel_ && ssrc_.has_value() && !stopped_) {
           media_channel_->SetDepacketizerToDecoderFrameTransformer(
               *ssrc_, frame_transformer);
-        });
-  }
+        }
+      });
 }
 
 void AudioRtpReceiver::Reconfigure() {
