@@ -1141,6 +1141,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
 
     void OnEncoderConfigurationChanged(
         std::vector<VideoStream> streams,
+        bool is_svc,
         VideoEncoderConfig::ContentType content_type,
         int min_transmit_bitrate_bps) override {
       rtc::CritScope lock(&crit_);

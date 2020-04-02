@@ -516,18 +516,6 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     RTC_LOG(LS_ERROR) << "Failed to create encoder configuration.";
   }
 
-  // Set min_bitrate_bps, max_bitrate_bps, and max padding bit rate for VP9.
-  if (encoder_config_.codec_type == kVideoCodecVP9) {
-    // Lower max bitrate to the level codec actually can produce.
-    streams[0].max_bitrate_bps =
-        std::min(streams[0].max_bitrate_bps,
-                 SvcRateAllocator::GetMaxBitrate(codec).bps<int>());
-    streams[0].min_bitrate_bps = codec.spatialLayers[0].minBitrate * 1000;
-    // target_bitrate_bps specifies the maximum padding bitrate.
-    streams[0].target_bitrate_bps =
-        SvcRateAllocator::GetPaddingBitrate(codec).bps<int>();
-  }
-
   char log_stream_buf[4 * 1024];
   rtc::SimpleStringBuilder log_stream(log_stream_buf);
   log_stream << "ReconfigureEncoder:\n";
@@ -717,8 +705,26 @@ void VideoStreamEncoder::ReconfigureEncoder() {
 
   pending_encoder_reconfiguration_ = false;
 
+  bool is_svc = false;
+  // Set min_bitrate_bps, max_bitrate_bps, and max padding bit rate for VP9
+  // and leave only one stream containing all necessary information.
+  if (encoder_config_.codec_type == kVideoCodecVP9) {
+    // Lower max bitrate to the level codec actually can produce.
+    streams[0].max_bitrate_bps =
+        std::min(streams[0].max_bitrate_bps,
+                 SvcRateAllocator::GetMaxBitrate(codec).bps<int>());
+    streams[0].min_bitrate_bps = codec.spatialLayers[0].minBitrate * 1000;
+    // target_bitrate_bps specifies the maximum padding bitrate.
+    streams[0].target_bitrate_bps =
+        SvcRateAllocator::GetPaddingBitrate(codec).bps<int>();
+    streams[0].width = streams.back().width;
+    streams[0].height = streams.back().height;
+    is_svc = codec.VP9()->numberOfSpatialLayers > 1;
+    streams.resize(1);
+  }
+
   sink_->OnEncoderConfigurationChanged(
-      std::move(streams), encoder_config_.content_type,
+      std::move(streams), is_svc, encoder_config_.content_type,
       encoder_config_.min_transmit_bitrate_bps);
 
   resource_adaptation_processor_->ConfigureQualityScaler(info);

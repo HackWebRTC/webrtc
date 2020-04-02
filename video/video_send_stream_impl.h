@@ -116,6 +116,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
 
   void OnEncoderConfigurationChanged(
       std::vector<VideoStream> streams,
+      bool is_svc,
       VideoEncoderConfig::ContentType content_type,
       int min_transmit_bitrate_bps) override;
 
