@@ -184,6 +184,10 @@ const char* DtlsTransportStateToRTCDtlsTransportState(
 const char* NetworkAdapterTypeToStatsType(rtc::AdapterType type) {
   switch (type) {
     case rtc::ADAPTER_TYPE_CELLULAR:
+    case rtc::ADAPTER_TYPE_CELLULAR_2G:
+    case rtc::ADAPTER_TYPE_CELLULAR_3G:
+    case rtc::ADAPTER_TYPE_CELLULAR_4G:
+    case rtc::ADAPTER_TYPE_CELLULAR_5G:
       return RTCNetworkType::kCellular;
     case rtc::ADAPTER_TYPE_ETHERNET:
       return RTCNetworkType::kEthernet;

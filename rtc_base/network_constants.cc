@@ -26,6 +26,14 @@ std::string AdapterTypeToString(AdapterType type) {
       return "Wifi";
     case ADAPTER_TYPE_CELLULAR:
       return "Cellular";
+    case ADAPTER_TYPE_CELLULAR_2G:
+      return "Cellular2G";
+    case ADAPTER_TYPE_CELLULAR_3G:
+      return "Cellular3G";
+    case ADAPTER_TYPE_CELLULAR_4G:
+      return "Cellular4G";
+    case ADAPTER_TYPE_CELLULAR_5G:
+      return "Cellular5G";
     case ADAPTER_TYPE_VPN:
       return "VPN";
     case ADAPTER_TYPE_LOOPBACK:

@@ -86,6 +86,8 @@ bool SortNetworks(const Network* a, const Network* b) {
 }
 
 uint16_t ComputeNetworkCostByType(int type) {
+  // TODO(jonaso) : Rollout support for cellular network cost using A/B
+  // experiment to make sure it does not introduce regressions.
   switch (type) {
     case rtc::ADAPTER_TYPE_ETHERNET:
     case rtc::ADAPTER_TYPE_LOOPBACK:
@@ -93,7 +95,11 @@ uint16_t ComputeNetworkCostByType(int type) {
     case rtc::ADAPTER_TYPE_WIFI:
       return kNetworkCostLow;
     case rtc::ADAPTER_TYPE_CELLULAR:
-      return kNetworkCostHigh;
+    case rtc::ADAPTER_TYPE_CELLULAR_2G:
+    case rtc::ADAPTER_TYPE_CELLULAR_3G:
+    case rtc::ADAPTER_TYPE_CELLULAR_4G:
+    case rtc::ADAPTER_TYPE_CELLULAR_5G:
+      return kNetworkCostCellular;
     case rtc::ADAPTER_TYPE_ANY:
       // Candidates gathered from the any-address/wildcard ports, as backups,
       // are given the maximum cost so that if there are other candidates with

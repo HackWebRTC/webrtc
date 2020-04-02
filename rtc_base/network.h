@@ -409,6 +409,19 @@ class RTC_EXPORT Network {
 
   bool IsVpn() const { return type_ == ADAPTER_TYPE_VPN; }
 
+  bool IsCellular() const {
+    switch (type_) {
+      case ADAPTER_TYPE_CELLULAR:
+      case ADAPTER_TYPE_CELLULAR_2G:
+      case ADAPTER_TYPE_CELLULAR_3G:
+      case ADAPTER_TYPE_CELLULAR_4G:
+      case ADAPTER_TYPE_CELLULAR_5G:
+        return true;
+      default:
+        return false;
+    }
+  }
+
   uint16_t GetCost() const;
   // A unique id assigned by the network manager, which may be signaled
   // to the remote side in the candidate.

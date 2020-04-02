@@ -66,8 +66,16 @@ rtc::AdapterType GuessAdapterTypeFromNetworkCost(int network_cost) {
       return rtc::ADAPTER_TYPE_ETHERNET;
     case rtc::kNetworkCostLow:
       return rtc::ADAPTER_TYPE_WIFI;
-    case rtc::kNetworkCostHigh:
+    case rtc::kNetworkCostCellular:
       return rtc::ADAPTER_TYPE_CELLULAR;
+    case rtc::kNetworkCostCellular2G:
+      return rtc::ADAPTER_TYPE_CELLULAR_2G;
+    case rtc::kNetworkCostCellular3G:
+      return rtc::ADAPTER_TYPE_CELLULAR_3G;
+    case rtc::kNetworkCostCellular4G:
+      return rtc::ADAPTER_TYPE_CELLULAR_4G;
+    case rtc::kNetworkCostCellular5G:
+      return rtc::ADAPTER_TYPE_CELLULAR_5G;
     case rtc::kNetworkCostUnknown:
       return rtc::ADAPTER_TYPE_UNKNOWN;
     case rtc::kNetworkCostMax:

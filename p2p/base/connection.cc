@@ -106,18 +106,24 @@ webrtc::IceCandidatePairAddressFamily GetAddressFamilyByInt(
 }
 
 webrtc::IceCandidateNetworkType ConvertNetworkType(rtc::AdapterType type) {
-  if (type == rtc::ADAPTER_TYPE_ETHERNET) {
-    return webrtc::IceCandidateNetworkType::kEthernet;
-  } else if (type == rtc::ADAPTER_TYPE_LOOPBACK) {
-    return webrtc::IceCandidateNetworkType::kLoopback;
-  } else if (type == rtc::ADAPTER_TYPE_WIFI) {
-    return webrtc::IceCandidateNetworkType::kWifi;
-  } else if (type == rtc::ADAPTER_TYPE_VPN) {
-    return webrtc::IceCandidateNetworkType::kVpn;
-  } else if (type == rtc::ADAPTER_TYPE_CELLULAR) {
-    return webrtc::IceCandidateNetworkType::kCellular;
+  switch (type) {
+    case rtc::ADAPTER_TYPE_ETHERNET:
+      return webrtc::IceCandidateNetworkType::kEthernet;
+    case rtc::ADAPTER_TYPE_LOOPBACK:
+      return webrtc::IceCandidateNetworkType::kLoopback;
+    case rtc::ADAPTER_TYPE_WIFI:
+      return webrtc::IceCandidateNetworkType::kWifi;
+    case rtc::ADAPTER_TYPE_VPN:
+      return webrtc::IceCandidateNetworkType::kVpn;
+    case rtc::ADAPTER_TYPE_CELLULAR:
+    case rtc::ADAPTER_TYPE_CELLULAR_2G:
+    case rtc::ADAPTER_TYPE_CELLULAR_3G:
+    case rtc::ADAPTER_TYPE_CELLULAR_4G:
+    case rtc::ADAPTER_TYPE_CELLULAR_5G:
+      return webrtc::IceCandidateNetworkType::kCellular;
+    default:
+      return webrtc::IceCandidateNetworkType::kUnknown;
   }
-  return webrtc::IceCandidateNetworkType::kUnknown;
 }
 
 // When we don't have any RTT data, we have to pick something reasonable.  We
