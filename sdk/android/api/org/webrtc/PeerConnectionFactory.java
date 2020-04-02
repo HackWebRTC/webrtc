@@ -501,8 +501,6 @@ public class PeerConnectionFactory {
     networkThread = null;
     workerThread = null;
     signalingThread = null;
-    MediaCodecVideoEncoder.disposeEglContext();
-    MediaCodecVideoDecoder.disposeEglContext();
     nativeFactory = 0;
   }
 
