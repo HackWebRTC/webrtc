@@ -1111,11 +1111,14 @@ bool ParseCandidate(const std::string& message,
   if (!StringToProto(transport.c_str(), &protocol)) {
     return ParseFailed(first_line, "Unsupported transport type.", error);
   }
+  bool tcp_protocol = false;
   switch (protocol) {
+    // Supported protocols.
     case cricket::PROTO_UDP:
+      break;
     case cricket::PROTO_TCP:
     case cricket::PROTO_SSLTCP:
-      // Supported protocol.
+      tcp_protocol = true;
       break;
     default:
       return ParseFailed(first_line, "Unsupported transport type.", error);
@@ -1172,9 +1175,14 @@ bool ParseCandidate(const std::string& message,
       return ParseFailed(first_line, "Invalid TCP candidate type.", error);
     }
 
-    if (protocol != cricket::PROTO_TCP) {
+    if (!tcp_protocol) {
       return ParseFailed(first_line, "Invalid non-TCP candidate", error);
     }
+  } else if (tcp_protocol) {
+    // We allow the tcptype to be missing, for backwards compatibility,
+    // treating it as a passive candidate.
+    // TODO(bugs.webrtc.org/11466): Treat a missing tcptype as an error?
+    tcptype = cricket::TCPTYPE_PASSIVE_STR;
   }
 
   // Extension
@@ -2007,7 +2015,11 @@ void BuildCandidate(const std::vector<Candidate>& candidates,
          << candidate.related_address().PortAsString() << " ";
     }
 
-    if (candidate.protocol() == cricket::TCP_PROTOCOL_NAME) {
+    // Note that we allow the tcptype to be missing, for backwards
+    // compatibility; the implementation treats this as a passive candidate.
+    // TODO(bugs.webrtc.org/11466): Treat a missing tcptype as an error?
+    if (candidate.protocol() == cricket::TCP_PROTOCOL_NAME &&
+        !candidate.tcptype().empty()) {
       os << kTcpCandidateType << " " << candidate.tcptype() << " ";
     }
 

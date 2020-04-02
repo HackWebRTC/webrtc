@@ -2460,6 +2460,32 @@ TEST_F(WebRtcSdpTest, SerializeTcpCandidates) {
   EXPECT_EQ(std::string(kSdpTcpActiveCandidate), message);
 }
 
+// Test serializing a TCP candidate that came in with a missing tcptype. This
+// shouldn't happen according to the spec, but our implementation has been
+// accepting this for quite some time, treating it as a passive candidate.
+//
+// So, we should be able to at least convert such candidates to and from SDP.
+// See: bugs.webrtc.org/11423
+TEST_F(WebRtcSdpTest, ParseTcpCandidateWithoutTcptype) {
+  std::string missing_tcptype =
+      "candidate:a0+B/1 1 tcp 2130706432 192.168.1.5 9999 typ host";
+  JsepIceCandidate jcandidate(kDummyMid, kDummyIndex);
+  EXPECT_TRUE(SdpDeserializeCandidate(missing_tcptype, &jcandidate));
+
+  EXPECT_EQ(std::string(cricket::TCPTYPE_PASSIVE_STR),
+            jcandidate.candidate().tcptype());
+}
+
+TEST_F(WebRtcSdpTest, ParseSslTcpCandidate) {
+  std::string ssltcp =
+      "candidate:a0+B/1 1 ssltcp 2130706432 192.168.1.5 9999 typ host tcptype "
+      "passive";
+  JsepIceCandidate jcandidate(kDummyMid, kDummyIndex);
+  EXPECT_TRUE(SdpDeserializeCandidate(ssltcp, &jcandidate));
+
+  EXPECT_EQ(std::string("ssltcp"), jcandidate.candidate().protocol());
+}
+
 TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithH264) {
   cricket::VideoCodec h264_codec("H264");
   h264_codec.SetParam("profile-level-id", "42e01f");
