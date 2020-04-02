@@ -281,6 +281,25 @@ if (rtc_include_tests) {
     ]
   }
 
+  rtc_library("peer_configurer") {
+    visibility = [ "*" ]
+    testonly = true
+    sources = [ "peer_configurer.h" ]
+    deps = [
+      ":peer_connection_quality_test_params",
+      "../../../api:callfactory_api",
+      "../../../api:fec_controller_api",
+      "../../../api:packet_socket_factory",
+      "../../../api:peer_connection_quality_test_fixture_api",
+      "../../../api/rtc_event_log",
+      "../../../api/task_queue",
+      "../../../api/transport:network_control",
+      "../../../api/transport/media:media_transport_interface",
+      "../../../api/video_codecs:video_codecs_api",
+      "../../../rtc_base",
+    ]
+  }
+
   rtc_library("peerconnection_quality_test") {
     visibility = [ "*" ]
     testonly = true
@@ -294,6 +313,7 @@ if (rtc_include_tests) {
       ":default_audio_quality_analyzer",
       ":default_video_quality_analyzer",
       ":media_helper",
+      ":peer_configurer",
       ":peer_connection_quality_test_params",
       ":sdp_changer",
       ":single_process_encoded_image_data_injector",
