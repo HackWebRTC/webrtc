@@ -70,4 +70,7 @@ specific_include_rules = {
     "+pc",
     "+p2p",
   ],
+  ".*test_video_capturer_video_track_source.h": [
+    "+pc",
+  ]
 }
