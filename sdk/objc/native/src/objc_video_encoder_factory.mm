@@ -108,6 +108,33 @@ class ObjCVideoEncoder : public VideoEncoder {
   id<RTCVideoEncoder> encoder_;
   const std::string implementation_name_;
 };
+
+class ObjcVideoEncoderSelector : public VideoEncoderFactory::EncoderSelectorInterface {
+ public:
+  ObjcVideoEncoderSelector(id<RTCVideoEncoderSelector> selector) { selector_ = selector; }
+  void OnCurrentEncoder(const SdpVideoFormat &format) override {
+    RTCVideoCodecInfo *info = [[RTCVideoCodecInfo alloc] initWithNativeSdpVideoFormat:format];
+    [selector_ registerCurrentEncoderInfo:info];
+  }
+  absl::optional<SdpVideoFormat> OnEncoderBroken() override {
+    RTCVideoCodecInfo *info = [selector_ encoderForBrokenEncoder];
+    if (info) {
+      return [info nativeSdpVideoFormat];
+    }
+    return absl::nullopt;
+  }
+  absl::optional<SdpVideoFormat> OnAvailableBitrate(const DataRate &rate) override {
+    RTCVideoCodecInfo *info = [selector_ encoderForBitrate:rate.kbps<NSInteger>()];
+    if (info) {
+      return [info nativeSdpVideoFormat];
+    }
+    return absl::nullopt;
+  }
+
+ private:
+  id<RTCVideoEncoderSelector> selector_;
+};
+
 }  // namespace
 
 ObjCVideoEncoderFactory::ObjCVideoEncoderFactory(id<RTCVideoEncoderFactory> encoder_factory)
@@ -163,6 +190,14 @@ std::unique_ptr<VideoEncoder> ObjCVideoEncoderFactory::CreateVideoEncoder(
   } else {
     return std::unique_ptr<ObjCVideoEncoder>(new ObjCVideoEncoder(encoder));
   }
+}
+
+std::unique_ptr<VideoEncoderFactory::EncoderSelectorInterface>
+    ObjCVideoEncoderFactory::GetEncoderSelector() const {
+  if ([encoder_factory_ respondsToSelector:SEL("encoderSelector")]) {
+    return absl::make_unique<ObjcVideoEncoderSelector>([encoder_factory_ encoderSelector]);
+  }
+  return nullptr;
 }
 
 }  // namespace webrtc
