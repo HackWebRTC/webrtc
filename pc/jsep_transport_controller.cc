@@ -1456,7 +1456,7 @@ void JsepTransportController::OnTransportStateChanged_n(
 void JsepTransportController::OnDataChannelTransportNegotiated_n(
     cricket::JsepTransport* transport,
     DataChannelTransportInterface* data_channel_transport) {
-  for (auto it : mid_to_transport_) {
+  for (const auto& it : mid_to_transport_) {
     if (it.second == transport) {
       config_.transport_observer->OnTransportChanged(
           it.first, transport->rtp_transport(), transport->RtpDtlsTransport(),

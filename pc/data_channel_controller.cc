@@ -222,7 +222,7 @@ void DataChannelController::OnTransportChanged(
       data_channel_transport_invoker_->AsyncInvoke<void>(
           RTC_FROM_HERE, signaling_thread(), [this] {
             RTC_DCHECK_RUN_ON(signaling_thread());
-            for (auto channel : sctp_data_channels_) {
+            for (const auto& channel : sctp_data_channels_) {
               channel->OnTransportChannelCreated();
             }
           });

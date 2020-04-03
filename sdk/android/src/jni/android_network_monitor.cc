@@ -403,7 +403,7 @@ void AndroidNetworkMonitor::SetNetworkInfos(
   network_info_by_handle_.clear();
   RTC_LOG(LS_INFO) << "Android network monitor found " << network_infos.size()
                    << " networks";
-  for (NetworkInformation network : network_infos) {
+  for (const NetworkInformation& network : network_infos) {
     OnNetworkConnected_w(network);
   }
 }

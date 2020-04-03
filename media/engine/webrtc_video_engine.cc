@@ -830,7 +830,7 @@ void WebRtcVideoChannel::RequestEncoderSwitch(
       return;
     }
 
-    for (VideoCodecSettings codec_setting : negotiated_codecs_) {
+    for (const VideoCodecSettings& codec_setting : negotiated_codecs_) {
       if (codec_setting.codec.name == conf.codec_name) {
         if (conf.param) {
           auto it = codec_setting.codec.params.find(*conf.param);
