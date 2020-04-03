@@ -1118,4 +1118,65 @@ TEST_F(NetworkTest, MAYBE_DefaultLocalAddress) {
   manager.StopUpdating();
 }
 
+// Test that MergeNetworkList does not set change = true
+// when changing from cellular_X to cellular_Y.
+TEST_F(NetworkTest, TestWhenNetworkListChangeReturnsChangedFlag) {
+  BasicNetworkManager manager;
+
+  IPAddress ip1;
+  EXPECT_TRUE(IPFromString("2400:4030:1:2c00:be30:0:0:1", &ip1));
+  Network* net1 = new Network("em1", "em1", TruncateIP(ip1, 64), 64);
+  net1->set_type(ADAPTER_TYPE_CELLULAR_3G);
+  net1->AddIP(ip1);
+  NetworkManager::NetworkList list;
+  list.push_back(net1);
+
+  {
+    bool changed;
+    MergeNetworkList(manager, list, &changed);
+    EXPECT_TRUE(changed);
+    NetworkManager::NetworkList list2;
+    manager.GetNetworks(&list2);
+    EXPECT_EQ(list2.size(), 1uL);
+    EXPECT_EQ(ADAPTER_TYPE_CELLULAR_3G, list2[0]->type());
+  }
+
+  // Modify net1 from 3G to 4G
+  {
+    Network* net2 = new Network("em1", "em1", TruncateIP(ip1, 64), 64);
+    net2->set_type(ADAPTER_TYPE_CELLULAR_4G);
+    net2->AddIP(ip1);
+    list.clear();
+    list.push_back(net2);
+    bool changed;
+    MergeNetworkList(manager, list, &changed);
+
+    // Change from 3G to 4G shall not trigger OnNetworksChanged,
+    // i.e changed = false.
+    EXPECT_FALSE(changed);
+    NetworkManager::NetworkList list2;
+    manager.GetNetworks(&list2);
+    ASSERT_EQ(list2.size(), 1uL);
+    EXPECT_EQ(ADAPTER_TYPE_CELLULAR_4G, list2[0]->type());
+  }
+
+  // Don't modify.
+  {
+    Network* net2 = new Network("em1", "em1", TruncateIP(ip1, 64), 64);
+    net2->set_type(ADAPTER_TYPE_CELLULAR_4G);
+    net2->AddIP(ip1);
+    list.clear();
+    list.push_back(net2);
+    bool changed;
+    MergeNetworkList(manager, list, &changed);
+
+    // No change.
+    EXPECT_FALSE(changed);
+    NetworkManager::NetworkList list2;
+    manager.GetNetworks(&list2);
+    ASSERT_EQ(list2.size(), 1uL);
+    EXPECT_EQ(ADAPTER_TYPE_CELLULAR_4G, list2[0]->type());
+  }
+}
+
 }  // namespace rtc

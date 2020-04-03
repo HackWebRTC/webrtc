@@ -147,6 +147,18 @@ bool IsIgnoredIPv6(const InterfaceAddress& ip) {
 }
 #endif  // !defined(__native_client__)
 
+// Note: consider changing to const Network* as arguments
+// if/when considering other changes that should not trigger
+// OnNetworksChanged.
+bool ShouldAdapterChangeTriggerNetworkChange(rtc::AdapterType old_type,
+                                             rtc::AdapterType new_type) {
+  // skip triggering OnNetworksChanged if
+  // changing from one cellular to another.
+  if (Network::IsCellular(old_type) && Network::IsCellular(new_type))
+    return false;
+  return true;
+}
+
 }  // namespace
 
 // These addresses are used as the targets to find out the default local address
@@ -350,8 +362,11 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
       merged_list.push_back(existing_net);
       if (net->type() != ADAPTER_TYPE_UNKNOWN &&
           net->type() != existing_net->type()) {
+        if (ShouldAdapterChangeTriggerNetworkChange(existing_net->type(),
+                                                    net->type())) {
+          *changed = true;
+        }
         existing_net->set_type(net->type());
-        *changed = true;
       }
       // If the existing network was not active, networks have changed.
       if (!existing_net->active()) {
