@@ -165,6 +165,18 @@ EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
   }
 
   if (field_trial::IsEnabled(
+          "WebRTC-Aec3EnforceMoreTransparentNormalSuppressorHfTuning")) {
+    adjusted_cfg.suppressor.normal_tuning.mask_hf.enr_transparent = 0.3f;
+    adjusted_cfg.suppressor.normal_tuning.mask_hf.enr_suppress = 0.4f;
+  }
+
+  if (field_trial::IsEnabled(
+          "WebRTC-Aec3EnforceMoreTransparentNearendSuppressorHfTuning")) {
+    adjusted_cfg.suppressor.nearend_tuning.mask_hf.enr_transparent = 1.09f;
+    adjusted_cfg.suppressor.nearend_tuning.mask_hf.enr_suppress = 1.1f;
+  }
+
+  if (field_trial::IsEnabled(
           "WebRTC-Aec3EnforceRapidlyAdjustingNormalSuppressorTunings")) {
     adjusted_cfg.suppressor.normal_tuning.max_inc_factor = 2.5f;
   }
