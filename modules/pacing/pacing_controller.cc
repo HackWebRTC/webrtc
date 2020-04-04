@@ -345,8 +345,14 @@ Timestamp PacingController::NextSendTime() const {
   // In dynamic mode, figure out when the next packet should be sent,
   // given the current conditions.
 
-  if (!pace_audio_ && packet_queue_.NextPacketIsAudio()) {
-    return now;
+  if (!pace_audio_) {
+    // Not pacing audio, if leading packet is audio its target send
+    // time is the time at which it was enqueued.
+    absl::optional<Timestamp> audio_enqueue_time =
+        packet_queue_.LeadingAudioPacketEnqueueTime();
+    if (audio_enqueue_time.has_value()) {
+      return *audio_enqueue_time;
+    }
   }
 
   if (Congested() || packet_counter_ == 0) {
@@ -559,6 +565,8 @@ void PacingController::ProcessPackets() {
     }
   }
 
+  last_process_time_ = std::max(last_process_time_, previous_process_time);
+
   if (is_probing) {
     probing_send_failure_ = data_sent == DataSize::Zero();
     if (!probing_send_failure_) {
@@ -613,7 +621,8 @@ std::unique_ptr<RtpPacketToSend> PacingController::GetPendingPacket(
   // First, check if there is any reason _not_ to send the next queued packet.
 
   // Unpaced audio packets and probes are exempted from send checks.
-  bool unpaced_audio_packet = !pace_audio_ && packet_queue_.NextPacketIsAudio();
+  bool unpaced_audio_packet =
+      !pace_audio_ && packet_queue_.LeadingAudioPacketEnqueueTime().has_value();
   bool is_probe = pacing_info.probe_cluster_id != PacedPacketInfo::kNotAProbe;
   if (!unpaced_audio_packet && !is_probe) {
     if (Congested()) {

@@ -233,19 +233,25 @@ DataSize RoundRobinPacketQueue::Size() const {
   return size_;
 }
 
-bool RoundRobinPacketQueue::NextPacketIsAudio() const {
+absl::optional<Timestamp> RoundRobinPacketQueue::LeadingAudioPacketEnqueueTime()
+    const {
   if (single_packet_queue_.has_value()) {
-    return single_packet_queue_->Type() == RtpPacketMediaType::kAudio;
+    if (single_packet_queue_->Type() == RtpPacketMediaType::kAudio) {
+      return single_packet_queue_->EnqueueTime();
+    }
+    return absl::nullopt;
   }
 
   if (stream_priorities_.empty()) {
-    return false;
+    return absl::nullopt;
   }
   uint32_t ssrc = stream_priorities_.begin()->second;
 
-  auto stream_info_it = streams_.find(ssrc);
-  return stream_info_it->second.packet_queue.top().Type() ==
-         RtpPacketMediaType::kAudio;
+  const auto& top_packet = streams_.find(ssrc)->second.packet_queue.top();
+  if (top_packet.Type() == RtpPacketMediaType::kAudio) {
+    return top_packet.EnqueueTime();
+  }
+  return absl::nullopt;
 }
 
 Timestamp RoundRobinPacketQueue::OldestEnqueueTime() const {

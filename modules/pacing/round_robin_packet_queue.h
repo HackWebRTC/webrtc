@@ -46,7 +46,11 @@ class RoundRobinPacketQueue {
   bool Empty() const;
   size_t SizeInPackets() const;
   DataSize Size() const;
-  bool NextPacketIsAudio() const;
+  // If the next packet, that would be returned by Pop() if called
+  // now, is an audio packet this method returns the enqueue time
+  // of that packet. If queue is empty or top packet is not audio,
+  // returns nullopt.
+  absl::optional<Timestamp> LeadingAudioPacketEnqueueTime() const;
 
   Timestamp OldestEnqueueTime() const;
   TimeDelta AverageQueueTime() const;
