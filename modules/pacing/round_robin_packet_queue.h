@@ -77,6 +77,7 @@ class RoundRobinPacketQueue {
     RtpPacketToSend* RtpPacket() const;
 
     std::multiset<Timestamp>::iterator EnqueueTimeIterator() const;
+    void UpdateEnqueueTimeIterator(std::multiset<Timestamp>::iterator it);
     void SubtractPauseTime(TimeDelta pause_time_sum);
 
    private:
@@ -132,6 +133,9 @@ class RoundRobinPacketQueue {
 
   void Push(QueuedPacket packet);
 
+  DataSize PacketSize(const QueuedPacket& packet) const;
+  void MaybePromoteSinglePacketToNormalQueue();
+
   Stream* GetHighestPriorityStream();
 
   // Just used to verify correctness.
@@ -160,6 +164,8 @@ class RoundRobinPacketQueue {
   // The enqueue time of every packet currently in the queue. Used to figure out
   // the age of the oldest packet in the queue.
   std::multiset<Timestamp> enqueue_times_;
+
+  absl::optional<QueuedPacket> single_packet_queue_;
 
   bool include_overhead_;
 };
