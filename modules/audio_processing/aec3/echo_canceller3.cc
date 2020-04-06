@@ -16,6 +16,7 @@
 #include "modules/audio_processing/high_pass_filter.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomic_ops.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/field_trial.h"
 
@@ -34,7 +35,181 @@ bool DetectSaturation(rtc::ArrayView<const float> y) {
   return false;
 }
 
-// Method for adjusting config parameter dependencies..
+// Retrieves a value from a field trial if it is available. If no value is
+// present, the default value is returned. If the retrieved value is beyond the
+// specified limits, the default value is returned instead.
+void RetrieveFieldTrialValue(const char* trial_name,
+                             float min,
+                             float max,
+                             float* value_to_update) {
+  const std::string field_trial_str = field_trial::FindFullName(trial_name);
+
+  FieldTrialParameter<double> field_trial_param(/*key=*/"", *value_to_update);
+
+  ParseFieldTrial({&field_trial_param}, field_trial_str);
+  float field_trial_value = static_cast<float>(field_trial_param.Get());
+
+  if (field_trial_value >= min && field_trial_value <= max) {
+    *value_to_update = field_trial_value;
+  }
+}
+
+void RetrieveFieldTrialValue(const char* trial_name,
+                             int min,
+                             int max,
+                             int* value_to_update) {
+  const std::string field_trial_str = field_trial::FindFullName(trial_name);
+
+  FieldTrialParameter<int> field_trial_param(/*key=*/"", *value_to_update);
+
+  ParseFieldTrial({&field_trial_param}, field_trial_str);
+  float field_trial_value = field_trial_param.Get();
+
+  if (field_trial_value >= min && field_trial_value <= max) {
+    *value_to_update = field_trial_value;
+  }
+}
+
+void FillSubFrameView(
+    AudioBuffer* frame,
+    size_t sub_frame_index,
+    std::vector<std::vector<rtc::ArrayView<float>>>* sub_frame_view) {
+  RTC_DCHECK_GE(1, sub_frame_index);
+  RTC_DCHECK_LE(0, sub_frame_index);
+  RTC_DCHECK_EQ(frame->num_bands(), sub_frame_view->size());
+  RTC_DCHECK_EQ(frame->num_channels(), (*sub_frame_view)[0].size());
+  for (size_t band = 0; band < sub_frame_view->size(); ++band) {
+    for (size_t channel = 0; channel < (*sub_frame_view)[0].size(); ++channel) {
+      (*sub_frame_view)[band][channel] = rtc::ArrayView<float>(
+          &frame->split_bands(channel)[band][sub_frame_index * kSubFrameLength],
+          kSubFrameLength);
+    }
+  }
+}
+
+void FillSubFrameView(
+    std::vector<std::vector<std::vector<float>>>* frame,
+    size_t sub_frame_index,
+    std::vector<std::vector<rtc::ArrayView<float>>>* sub_frame_view) {
+  RTC_DCHECK_GE(1, sub_frame_index);
+  RTC_DCHECK_EQ(frame->size(), sub_frame_view->size());
+  RTC_DCHECK_EQ((*frame)[0].size(), (*sub_frame_view)[0].size());
+  for (size_t band = 0; band < frame->size(); ++band) {
+    for (size_t channel = 0; channel < (*frame)[band].size(); ++channel) {
+      (*sub_frame_view)[band][channel] = rtc::ArrayView<float>(
+          &(*frame)[band][channel][sub_frame_index * kSubFrameLength],
+          kSubFrameLength);
+    }
+  }
+}
+
+void ProcessCaptureFrameContent(
+    AudioBuffer* linear_output,
+    AudioBuffer* capture,
+    bool level_change,
+    bool saturated_microphone_signal,
+    size_t sub_frame_index,
+    FrameBlocker* capture_blocker,
+    BlockFramer* linear_output_framer,
+    BlockFramer* output_framer,
+    BlockProcessor* block_processor,
+    std::vector<std::vector<std::vector<float>>>* linear_output_block,
+    std::vector<std::vector<rtc::ArrayView<float>>>*
+        linear_output_sub_frame_view,
+    std::vector<std::vector<std::vector<float>>>* capture_block,
+    std::vector<std::vector<rtc::ArrayView<float>>>* capture_sub_frame_view) {
+  FillSubFrameView(capture, sub_frame_index, capture_sub_frame_view);
+
+  if (linear_output) {
+    RTC_DCHECK(linear_output_framer);
+    RTC_DCHECK(linear_output_block);
+    RTC_DCHECK(linear_output_sub_frame_view);
+    FillSubFrameView(linear_output, sub_frame_index,
+                     linear_output_sub_frame_view);
+  }
+
+  capture_blocker->InsertSubFrameAndExtractBlock(*capture_sub_frame_view,
+                                                 capture_block);
+  block_processor->ProcessCapture(level_change, saturated_microphone_signal,
+                                  linear_output_block, capture_block);
+  output_framer->InsertBlockAndExtractSubFrame(*capture_block,
+                                               capture_sub_frame_view);
+
+  if (linear_output) {
+    RTC_DCHECK(linear_output_framer);
+    linear_output_framer->InsertBlockAndExtractSubFrame(
+        *linear_output_block, linear_output_sub_frame_view);
+  }
+}
+
+void ProcessRemainingCaptureFrameContent(
+    bool level_change,
+    bool saturated_microphone_signal,
+    FrameBlocker* capture_blocker,
+    BlockFramer* linear_output_framer,
+    BlockFramer* output_framer,
+    BlockProcessor* block_processor,
+    std::vector<std::vector<std::vector<float>>>* linear_output_block,
+    std::vector<std::vector<std::vector<float>>>* block) {
+  if (!capture_blocker->IsBlockAvailable()) {
+    return;
+  }
+
+  capture_blocker->ExtractBlock(block);
+  block_processor->ProcessCapture(level_change, saturated_microphone_signal,
+                                  linear_output_block, block);
+  output_framer->InsertBlock(*block);
+
+  if (linear_output_framer) {
+    RTC_DCHECK(linear_output_block);
+    linear_output_framer->InsertBlock(*linear_output_block);
+  }
+}
+
+void BufferRenderFrameContent(
+    std::vector<std::vector<std::vector<float>>>* render_frame,
+    size_t sub_frame_index,
+    FrameBlocker* render_blocker,
+    BlockProcessor* block_processor,
+    std::vector<std::vector<std::vector<float>>>* block,
+    std::vector<std::vector<rtc::ArrayView<float>>>* sub_frame_view) {
+  FillSubFrameView(render_frame, sub_frame_index, sub_frame_view);
+  render_blocker->InsertSubFrameAndExtractBlock(*sub_frame_view, block);
+  block_processor->BufferRender(*block);
+}
+
+void BufferRemainingRenderFrameContent(
+    FrameBlocker* render_blocker,
+    BlockProcessor* block_processor,
+    std::vector<std::vector<std::vector<float>>>* block) {
+  if (!render_blocker->IsBlockAvailable()) {
+    return;
+  }
+  render_blocker->ExtractBlock(block);
+  block_processor->BufferRender(*block);
+}
+
+void CopyBufferIntoFrame(const AudioBuffer& buffer,
+                         size_t num_bands,
+                         size_t num_channels,
+                         std::vector<std::vector<std::vector<float>>>* frame) {
+  RTC_DCHECK_EQ(num_bands, frame->size());
+  RTC_DCHECK_EQ(num_channels, (*frame)[0].size());
+  RTC_DCHECK_EQ(AudioBuffer::kSplitBandSize, (*frame)[0][0].size());
+  for (size_t band = 0; band < num_bands; ++band) {
+    for (size_t channel = 0; channel < num_channels; ++channel) {
+      rtc::ArrayView<const float> buffer_view(
+          &buffer.split_bands_const(channel)[band][0],
+          AudioBuffer::kSplitBandSize);
+      std::copy(buffer_view.begin(), buffer_view.end(),
+                (*frame)[band][channel].begin());
+    }
+  }
+}
+
+}  // namespace
+
+// TODO(webrtc:5298): Move this to a separate file.
 EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
   EchoCanceller3Config adjusted_cfg = config;
 
@@ -212,147 +387,184 @@ EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
     adjusted_cfg.render_levels.active_render_limit = 30.f;
   }
 
+  // Field-trial based override for the whole suppressor tuning.
+  const std::string suppressor_tuning_override_trial_name =
+      field_trial::FindFullName("WebRTC-Aec3SuppressorTuningOverride");
+
+  FieldTrialParameter<double> nearend_tuning_mask_lf_enr_transparent(
+      "nearend_tuning_mask_lf_enr_transparent",
+      adjusted_cfg.suppressor.nearend_tuning.mask_lf.enr_transparent);
+  FieldTrialParameter<double> nearend_tuning_mask_lf_enr_suppress(
+      "nearend_tuning_mask_lf_enr_suppress",
+      adjusted_cfg.suppressor.nearend_tuning.mask_lf.enr_suppress);
+  FieldTrialParameter<double> nearend_tuning_mask_hf_enr_transparent(
+      "nearend_tuning_mask_hf_enr_transparent",
+      adjusted_cfg.suppressor.nearend_tuning.mask_hf.enr_transparent);
+  FieldTrialParameter<double> nearend_tuning_mask_hf_enr_suppress(
+      "nearend_tuning_mask_hf_enr_suppress",
+      adjusted_cfg.suppressor.nearend_tuning.mask_hf.enr_suppress);
+  FieldTrialParameter<double> nearend_tuning_max_inc_factor(
+      "nearend_tuning_max_inc_factor",
+      adjusted_cfg.suppressor.nearend_tuning.max_inc_factor);
+  FieldTrialParameter<double> nearend_tuning_max_dec_factor_lf(
+      "nearend_tuning_max_dec_factor_lf",
+      adjusted_cfg.suppressor.nearend_tuning.max_dec_factor_lf);
+  FieldTrialParameter<double> normal_tuning_mask_lf_enr_transparent(
+      "normal_tuning_mask_lf_enr_transparent",
+      adjusted_cfg.suppressor.normal_tuning.mask_lf.enr_transparent);
+  FieldTrialParameter<double> normal_tuning_mask_lf_enr_suppress(
+      "normal_tuning_mask_lf_enr_suppress",
+      adjusted_cfg.suppressor.normal_tuning.mask_lf.enr_suppress);
+  FieldTrialParameter<double> normal_tuning_mask_hf_enr_transparent(
+      "normal_tuning_mask_hf_enr_transparent",
+      adjusted_cfg.suppressor.normal_tuning.mask_hf.enr_transparent);
+  FieldTrialParameter<double> normal_tuning_mask_hf_enr_suppress(
+      "normal_tuning_mask_hf_enr_suppress",
+      adjusted_cfg.suppressor.normal_tuning.mask_hf.enr_suppress);
+  FieldTrialParameter<double> normal_tuning_max_inc_factor(
+      "normal_tuning_max_inc_factor",
+      adjusted_cfg.suppressor.normal_tuning.max_inc_factor);
+  FieldTrialParameter<double> normal_tuning_max_dec_factor_lf(
+      "normal_tuning_max_dec_factor_lf",
+      adjusted_cfg.suppressor.normal_tuning.max_dec_factor_lf);
+  FieldTrialParameter<double> dominant_nearend_detection_enr_threshold(
+      "dominant_nearend_detection_enr_threshold",
+      adjusted_cfg.suppressor.dominant_nearend_detection.enr_threshold);
+  FieldTrialParameter<double> dominant_nearend_detection_enr_exit_threshold(
+      "dominant_nearend_detection_enr_exit_threshold",
+      adjusted_cfg.suppressor.dominant_nearend_detection.enr_exit_threshold);
+  FieldTrialParameter<double> dominant_nearend_detection_snr_threshold(
+      "dominant_nearend_detection_snr_threshold",
+      adjusted_cfg.suppressor.dominant_nearend_detection.snr_threshold);
+  FieldTrialParameter<int> dominant_nearend_detection_hold_duration(
+      "dominant_nearend_detection_hold_duration",
+      adjusted_cfg.suppressor.dominant_nearend_detection.hold_duration);
+  FieldTrialParameter<int> dominant_nearend_detection_trigger_threshold(
+      "dominant_nearend_detection_trigger_threshold",
+      adjusted_cfg.suppressor.dominant_nearend_detection.trigger_threshold);
+  FieldTrialParameter<double> ep_strength_default_len(
+      "ep_strength_default_len", adjusted_cfg.ep_strength.default_len);
+
+  ParseFieldTrial(
+      {&nearend_tuning_mask_lf_enr_transparent,
+       &nearend_tuning_mask_lf_enr_suppress,
+       &nearend_tuning_mask_hf_enr_transparent,
+       &nearend_tuning_mask_hf_enr_suppress, &nearend_tuning_max_inc_factor,
+       &nearend_tuning_max_dec_factor_lf,
+       &normal_tuning_mask_lf_enr_transparent,
+       &normal_tuning_mask_lf_enr_suppress,
+       &normal_tuning_mask_hf_enr_transparent,
+       &normal_tuning_mask_hf_enr_suppress, &normal_tuning_max_inc_factor,
+       &normal_tuning_max_dec_factor_lf,
+       &dominant_nearend_detection_enr_threshold,
+       &dominant_nearend_detection_enr_exit_threshold,
+       &dominant_nearend_detection_snr_threshold,
+       &dominant_nearend_detection_hold_duration,
+       &dominant_nearend_detection_trigger_threshold, &ep_strength_default_len},
+      suppressor_tuning_override_trial_name);
+
+  adjusted_cfg.suppressor.nearend_tuning.mask_lf.enr_transparent =
+      static_cast<float>(nearend_tuning_mask_lf_enr_transparent.Get());
+  adjusted_cfg.suppressor.nearend_tuning.mask_lf.enr_suppress =
+      static_cast<float>(nearend_tuning_mask_lf_enr_suppress.Get());
+  adjusted_cfg.suppressor.nearend_tuning.mask_hf.enr_transparent =
+      static_cast<float>(nearend_tuning_mask_hf_enr_transparent.Get());
+  adjusted_cfg.suppressor.nearend_tuning.mask_hf.enr_suppress =
+      static_cast<float>(nearend_tuning_mask_hf_enr_suppress.Get());
+  adjusted_cfg.suppressor.nearend_tuning.max_inc_factor =
+      static_cast<float>(nearend_tuning_max_inc_factor.Get());
+  adjusted_cfg.suppressor.nearend_tuning.max_dec_factor_lf =
+      static_cast<float>(nearend_tuning_max_dec_factor_lf.Get());
+  adjusted_cfg.suppressor.normal_tuning.mask_lf.enr_transparent =
+      static_cast<float>(normal_tuning_mask_lf_enr_transparent.Get());
+  adjusted_cfg.suppressor.normal_tuning.mask_lf.enr_suppress =
+      static_cast<float>(normal_tuning_mask_lf_enr_suppress.Get());
+  adjusted_cfg.suppressor.normal_tuning.mask_hf.enr_transparent =
+      static_cast<float>(normal_tuning_mask_hf_enr_transparent.Get());
+  adjusted_cfg.suppressor.normal_tuning.mask_hf.enr_suppress =
+      static_cast<float>(normal_tuning_mask_hf_enr_suppress.Get());
+  adjusted_cfg.suppressor.normal_tuning.max_inc_factor =
+      static_cast<float>(normal_tuning_max_inc_factor.Get());
+  adjusted_cfg.suppressor.normal_tuning.max_dec_factor_lf =
+      static_cast<float>(normal_tuning_max_dec_factor_lf.Get());
+  adjusted_cfg.suppressor.dominant_nearend_detection.enr_threshold =
+      static_cast<float>(dominant_nearend_detection_enr_threshold.Get());
+  adjusted_cfg.suppressor.dominant_nearend_detection.enr_exit_threshold =
+      static_cast<float>(dominant_nearend_detection_enr_exit_threshold.Get());
+  adjusted_cfg.suppressor.dominant_nearend_detection.snr_threshold =
+      static_cast<float>(dominant_nearend_detection_snr_threshold.Get());
+  adjusted_cfg.suppressor.dominant_nearend_detection.hold_duration =
+      dominant_nearend_detection_hold_duration.Get();
+  adjusted_cfg.suppressor.dominant_nearend_detection.trigger_threshold =
+      dominant_nearend_detection_trigger_threshold.Get();
+  adjusted_cfg.ep_strength.default_len =
+      static_cast<float>(ep_strength_default_len.Get());
+
+  // Field trial-based overrides of individual suppressor parameters.
+  RetrieveFieldTrialValue(
+      "WebRTC-Aec3SuppressorNearendLfMaskTransparentOverride", 0.f, 10.f,
+      &adjusted_cfg.suppressor.nearend_tuning.mask_lf.enr_transparent);
+  RetrieveFieldTrialValue(
+      "WebRTC-Aec3SuppressorNearendLfMaskSuppressOverride", 0.f, 10.f,
+      &adjusted_cfg.suppressor.nearend_tuning.mask_lf.enr_suppress);
+  RetrieveFieldTrialValue(
+      "WebRTC-Aec3SuppressorNearendHfMaskTransparentOverride", 0.f, 10.f,
+      &adjusted_cfg.suppressor.nearend_tuning.mask_hf.enr_transparent);
+  RetrieveFieldTrialValue(
+      "WebRTC-Aec3SuppressorNearendHfMaskSuppressOverride", 0.f, 10.f,
+      &adjusted_cfg.suppressor.nearend_tuning.mask_hf.enr_suppress);
+  RetrieveFieldTrialValue(
+      "WebRTC-Aec3SuppressorNearendMaxIncFactorOverride", 0.f, 10.f,
+      &adjusted_cfg.suppressor.nearend_tuning.max_inc_factor);
+  RetrieveFieldTrialValue(
+      "WebRTC-Aec3SuppressorNearendMaxDecFactorLfOverride", 0.f, 10.f,
+      &adjusted_cfg.suppressor.nearend_tuning.max_dec_factor_lf);
+
+  RetrieveFieldTrialValue(
+      "WebRTC-Aec3SuppressorNormalLfMaskTransparentOverride", 0.f, 10.f,
+      &adjusted_cfg.suppressor.normal_tuning.mask_lf.enr_transparent);
+  RetrieveFieldTrialValue(
+      "WebRTC-Aec3SuppressorNormalLfMaskSuppressOverride", 0.f, 10.f,
+      &adjusted_cfg.suppressor.normal_tuning.mask_lf.enr_suppress);
+  RetrieveFieldTrialValue(
+      "WebRTC-Aec3SuppressorNormalHfMaskTransparentOverride", 0.f, 10.f,
+      &adjusted_cfg.suppressor.normal_tuning.mask_hf.enr_transparent);
+  RetrieveFieldTrialValue(
+      "WebRTC-Aec3SuppressorNormalHfMaskSuppressOverride", 0.f, 10.f,
+      &adjusted_cfg.suppressor.normal_tuning.mask_hf.enr_suppress);
+  RetrieveFieldTrialValue(
+      "WebRTC-Aec3SuppressorNormalMaxIncFactorOverride", 0.f, 10.f,
+      &adjusted_cfg.suppressor.normal_tuning.max_inc_factor);
+  RetrieveFieldTrialValue(
+      "WebRTC-Aec3SuppressorNormalMaxDecFactorLfOverride", 0.f, 10.f,
+      &adjusted_cfg.suppressor.normal_tuning.max_dec_factor_lf);
+
+  RetrieveFieldTrialValue(
+      "WebRTC-Aec3SuppressorDominantNearendEnrThresholdOverride", 0.f, 100.f,
+      &adjusted_cfg.suppressor.dominant_nearend_detection.enr_threshold);
+  RetrieveFieldTrialValue(
+      "WebRTC-Aec3SuppressorDominantNearendEnrExitThresholdOverride", 0.f,
+      100.f,
+      &adjusted_cfg.suppressor.dominant_nearend_detection.enr_exit_threshold);
+  RetrieveFieldTrialValue(
+      "WebRTC-Aec3SuppressorDominantNearendSnrThresholdOverride", 0.f, 100.f,
+      &adjusted_cfg.suppressor.dominant_nearend_detection.snr_threshold);
+  RetrieveFieldTrialValue(
+      "WebRTC-Aec3SuppressorDominantNearendHoldDurationOverride", 0, 1000,
+      &adjusted_cfg.suppressor.dominant_nearend_detection.hold_duration);
+  RetrieveFieldTrialValue(
+      "WebRTC-Aec3SuppressorDominantNearendTriggerThresholdOverride", 0, 1000,
+      &adjusted_cfg.suppressor.dominant_nearend_detection.trigger_threshold);
+
+  RetrieveFieldTrialValue(
+      "WebRTC-Aec3SuppressorAntiHowlingGainOverride", 0.f, 10.f,
+      &adjusted_cfg.suppressor.high_bands_suppression.anti_howling_gain);
+
+  RetrieveFieldTrialValue("WebRTC-Aec3SuppressorEpStrengthDefaultLenOverride",
+                          -1.f, 1.f, &adjusted_cfg.ep_strength.default_len);
+
   return adjusted_cfg;
 }
-
-void FillSubFrameView(
-    AudioBuffer* frame,
-    size_t sub_frame_index,
-    std::vector<std::vector<rtc::ArrayView<float>>>* sub_frame_view) {
-  RTC_DCHECK_GE(1, sub_frame_index);
-  RTC_DCHECK_LE(0, sub_frame_index);
-  RTC_DCHECK_EQ(frame->num_bands(), sub_frame_view->size());
-  RTC_DCHECK_EQ(frame->num_channels(), (*sub_frame_view)[0].size());
-  for (size_t band = 0; band < sub_frame_view->size(); ++band) {
-    for (size_t channel = 0; channel < (*sub_frame_view)[0].size(); ++channel) {
-      (*sub_frame_view)[band][channel] = rtc::ArrayView<float>(
-          &frame->split_bands(channel)[band][sub_frame_index * kSubFrameLength],
-          kSubFrameLength);
-    }
-  }
-}
-
-void FillSubFrameView(
-    std::vector<std::vector<std::vector<float>>>* frame,
-    size_t sub_frame_index,
-    std::vector<std::vector<rtc::ArrayView<float>>>* sub_frame_view) {
-  RTC_DCHECK_GE(1, sub_frame_index);
-  RTC_DCHECK_EQ(frame->size(), sub_frame_view->size());
-  RTC_DCHECK_EQ((*frame)[0].size(), (*sub_frame_view)[0].size());
-  for (size_t band = 0; band < frame->size(); ++band) {
-    for (size_t channel = 0; channel < (*frame)[band].size(); ++channel) {
-      (*sub_frame_view)[band][channel] = rtc::ArrayView<float>(
-          &(*frame)[band][channel][sub_frame_index * kSubFrameLength],
-          kSubFrameLength);
-    }
-  }
-}
-
-void ProcessCaptureFrameContent(
-    AudioBuffer* linear_output,
-    AudioBuffer* capture,
-    bool level_change,
-    bool saturated_microphone_signal,
-    size_t sub_frame_index,
-    FrameBlocker* capture_blocker,
-    BlockFramer* linear_output_framer,
-    BlockFramer* output_framer,
-    BlockProcessor* block_processor,
-    std::vector<std::vector<std::vector<float>>>* linear_output_block,
-    std::vector<std::vector<rtc::ArrayView<float>>>*
-        linear_output_sub_frame_view,
-    std::vector<std::vector<std::vector<float>>>* capture_block,
-    std::vector<std::vector<rtc::ArrayView<float>>>* capture_sub_frame_view) {
-  FillSubFrameView(capture, sub_frame_index, capture_sub_frame_view);
-
-  if (linear_output) {
-    RTC_DCHECK(linear_output_framer);
-    RTC_DCHECK(linear_output_block);
-    RTC_DCHECK(linear_output_sub_frame_view);
-    FillSubFrameView(linear_output, sub_frame_index,
-                     linear_output_sub_frame_view);
-  }
-
-  capture_blocker->InsertSubFrameAndExtractBlock(*capture_sub_frame_view,
-                                                 capture_block);
-  block_processor->ProcessCapture(level_change, saturated_microphone_signal,
-                                  linear_output_block, capture_block);
-  output_framer->InsertBlockAndExtractSubFrame(*capture_block,
-                                               capture_sub_frame_view);
-
-  if (linear_output) {
-    RTC_DCHECK(linear_output_framer);
-    linear_output_framer->InsertBlockAndExtractSubFrame(
-        *linear_output_block, linear_output_sub_frame_view);
-  }
-}
-
-void ProcessRemainingCaptureFrameContent(
-    bool level_change,
-    bool saturated_microphone_signal,
-    FrameBlocker* capture_blocker,
-    BlockFramer* linear_output_framer,
-    BlockFramer* output_framer,
-    BlockProcessor* block_processor,
-    std::vector<std::vector<std::vector<float>>>* linear_output_block,
-    std::vector<std::vector<std::vector<float>>>* block) {
-  if (!capture_blocker->IsBlockAvailable()) {
-    return;
-  }
-
-  capture_blocker->ExtractBlock(block);
-  block_processor->ProcessCapture(level_change, saturated_microphone_signal,
-                                  linear_output_block, block);
-  output_framer->InsertBlock(*block);
-
-  if (linear_output_framer) {
-    RTC_DCHECK(linear_output_block);
-    linear_output_framer->InsertBlock(*linear_output_block);
-  }
-}
-
-void BufferRenderFrameContent(
-    std::vector<std::vector<std::vector<float>>>* render_frame,
-    size_t sub_frame_index,
-    FrameBlocker* render_blocker,
-    BlockProcessor* block_processor,
-    std::vector<std::vector<std::vector<float>>>* block,
-    std::vector<std::vector<rtc::ArrayView<float>>>* sub_frame_view) {
-  FillSubFrameView(render_frame, sub_frame_index, sub_frame_view);
-  render_blocker->InsertSubFrameAndExtractBlock(*sub_frame_view, block);
-  block_processor->BufferRender(*block);
-}
-
-void BufferRemainingRenderFrameContent(
-    FrameBlocker* render_blocker,
-    BlockProcessor* block_processor,
-    std::vector<std::vector<std::vector<float>>>* block) {
-  if (!render_blocker->IsBlockAvailable()) {
-    return;
-  }
-  render_blocker->ExtractBlock(block);
-  block_processor->BufferRender(*block);
-}
-
-void CopyBufferIntoFrame(const AudioBuffer& buffer,
-                         size_t num_bands,
-                         size_t num_channels,
-                         std::vector<std::vector<std::vector<float>>>* frame) {
-  RTC_DCHECK_EQ(num_bands, frame->size());
-  RTC_DCHECK_EQ(num_channels, (*frame)[0].size());
-  RTC_DCHECK_EQ(AudioBuffer::kSplitBandSize, (*frame)[0][0].size());
-  for (size_t band = 0; band < num_bands; ++band) {
-    for (size_t channel = 0; channel < num_channels; ++channel) {
-      rtc::ArrayView<const float> buffer_view(
-          &buffer.split_bands_const(channel)[band][0],
-          AudioBuffer::kSplitBandSize);
-      std::copy(buffer_view.begin(), buffer_view.end(),
-                (*frame)[band][channel].begin());
-    }
-  }
-}
-
-}  // namespace
 
 class EchoCanceller3::RenderWriter {
  public:
