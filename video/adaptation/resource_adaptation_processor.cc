@@ -67,12 +67,12 @@ VideoSourceRestrictions ApplyDegradationPreference(
   return source_restrictions;
 }
 
-// Returns AdaptationCounters where constraints that don't apply to the
+// Returns VideoAdaptationCounters where constraints that don't apply to the
 // degredation preference are cleared. This behaviour must reflect that of
 // ApplyDegredationPreference for SourceRestrictions. Any to that method must
 // also change this one.
-AdaptationCounters ApplyDegradationPreference(
-    AdaptationCounters counters,
+VideoAdaptationCounters ApplyDegradationPreference(
+    VideoAdaptationCounters counters,
     DegradationPreference degradation_preference) {
   switch (degradation_preference) {
     case DegradationPreference::BALANCED:
@@ -256,7 +256,7 @@ void ResourceAdaptationProcessor::SetDegradationPreference(
   if (stream_adapter_->SetDegradationPreference(degradation_preference) ==
       VideoStreamAdapter::SetDegradationPreferenceResult::
           kRestrictionsCleared) {
-    active_counts_.fill(AdaptationCounters());
+    active_counts_.fill(VideoAdaptationCounters());
   }
   MaybeUpdateVideoSourceRestrictions();
 }
@@ -292,7 +292,7 @@ void ResourceAdaptationProcessor::SetEncoderRates(
 
 void ResourceAdaptationProcessor::ResetVideoSourceRestrictions() {
   stream_adapter_->ClearRestrictions();
-  active_counts_.fill(AdaptationCounters());
+  active_counts_.fill(VideoAdaptationCounters());
   MaybeUpdateVideoSourceRestrictions();
 }
 
@@ -301,7 +301,8 @@ void ResourceAdaptationProcessor::OnFrame(const VideoFrame& frame) {
 }
 
 void ResourceAdaptationProcessor::OnFrameDroppedDueToSize() {
-  AdaptationCounters counters_before = stream_adapter_->adaptation_counters();
+  VideoAdaptationCounters counters_before =
+      stream_adapter_->adaptation_counters();
   OnResourceOveruse(AdaptationObserverInterface::AdaptReason::kQuality);
   if (degradation_preference() == DegradationPreference::BALANCED &&
       stream_adapter_->adaptation_counters().fps_adaptations >
@@ -570,24 +571,28 @@ void ResourceAdaptationProcessor::MaybeUpdateTargetFrameRate() {
 }
 
 void ResourceAdaptationProcessor::OnAdaptationCountChanged(
-    const AdaptationCounters& adaptation_count,
-    AdaptationCounters* active_count,
-    AdaptationCounters* other_active) {
+    const VideoAdaptationCounters& adaptation_count,
+    VideoAdaptationCounters* active_count,
+    VideoAdaptationCounters* other_active) {
   RTC_DCHECK(active_count);
   RTC_DCHECK(other_active);
   const int active_total = active_count->Total();
   const int other_total = other_active->Total();
-  const AdaptationCounters prev_total = *active_count + *other_active;
-  const AdaptationCounters delta = adaptation_count - prev_total;
+  const VideoAdaptationCounters prev_total = *active_count + *other_active;
+  const int delta_resolution_adaptations =
+      adaptation_count.resolution_adaptations -
+      prev_total.resolution_adaptations;
+  const int delta_fps_adaptations =
+      adaptation_count.fps_adaptations - prev_total.fps_adaptations;
 
   RTC_DCHECK_EQ(
-      std::abs(delta.resolution_adaptations) + std::abs(delta.fps_adaptations),
+      std::abs(delta_resolution_adaptations) + std::abs(delta_fps_adaptations),
       1)
       << "Adaptation took more than one step!";
 
-  if (delta.resolution_adaptations > 0) {
+  if (delta_resolution_adaptations > 0) {
     ++active_count->resolution_adaptations;
-  } else if (delta.resolution_adaptations < 0) {
+  } else if (delta_resolution_adaptations < 0) {
     if (active_count->resolution_adaptations == 0) {
       RTC_DCHECK_GT(active_count->fps_adaptations, 0) << "No downgrades left";
       RTC_DCHECK_GT(other_active->resolution_adaptations, 0)
@@ -600,9 +605,9 @@ void ResourceAdaptationProcessor::OnAdaptationCountChanged(
       --active_count->resolution_adaptations;
     }
   }
-  if (delta.fps_adaptations > 0) {
+  if (delta_fps_adaptations > 0) {
     ++active_count->fps_adaptations;
-  } else if (delta.fps_adaptations < 0) {
+  } else if (delta_fps_adaptations < 0) {
     if (active_count->fps_adaptations == 0) {
       RTC_DCHECK_GT(active_count->resolution_adaptations, 0)
           << "No downgrades left";
@@ -619,7 +624,9 @@ void ResourceAdaptationProcessor::OnAdaptationCountChanged(
 
   RTC_DCHECK(*active_count + *other_active == adaptation_count);
   RTC_DCHECK_EQ(other_active->Total(), other_total);
-  RTC_DCHECK_EQ(active_count->Total(), active_total + delta.Total());
+  RTC_DCHECK_EQ(
+      active_count->Total(),
+      active_total + delta_resolution_adaptations + delta_fps_adaptations);
   RTC_DCHECK_GE(active_count->resolution_adaptations, 0);
   RTC_DCHECK_GE(active_count->fps_adaptations, 0);
   RTC_DCHECK_GE(other_active->resolution_adaptations, 0);
@@ -630,9 +637,9 @@ void ResourceAdaptationProcessor::OnAdaptationCountChanged(
 void ResourceAdaptationProcessor::UpdateAdaptationStats(
     AdaptationObserverInterface::AdaptReason reason) {
   // Update active counts
-  AdaptationCounters& active_count = active_counts_[reason];
-  AdaptationCounters& other_active = active_counts_[(reason + 1) % 2];
-  const AdaptationCounters total_counts =
+  VideoAdaptationCounters& active_count = active_counts_[reason];
+  VideoAdaptationCounters& other_active = active_counts_[(reason + 1) % 2];
+  const VideoAdaptationCounters total_counts =
       stream_adapter_->adaptation_counters();
 
   OnAdaptationCountChanged(total_counts, &active_count, &other_active);
@@ -658,7 +665,7 @@ ResourceAdaptationProcessor::GetActiveCounts(
     AdaptationObserverInterface::AdaptReason reason) {
   // TODO(https://crbug.com/webrtc/11392) Ideally this shuold be moved out of
   // this class and into the encoder_stats_observer_.
-  const AdaptationCounters counters = active_counts_[reason];
+  const VideoAdaptationCounters counters = active_counts_[reason];
 
   VideoStreamEncoderObserver::AdaptationSteps counts =
       VideoStreamEncoderObserver::AdaptationSteps();
@@ -720,9 +727,9 @@ void ResourceAdaptationProcessor::MaybePerformQualityRampupExperiment() {
   }
   // TODO(https://crbug.com/webrtc/11392): See if we can rely on the total
   // counts or the stats, and not the active counts.
-  const AdaptationCounters& qp_counts =
+  const VideoAdaptationCounters& qp_counts =
       std::get<AdaptationObserverInterface::kQuality>(active_counts_);
-  const AdaptationCounters& cpu_counts =
+  const VideoAdaptationCounters& cpu_counts =
       std::get<AdaptationObserverInterface::kCpu>(active_counts_);
   if (try_quality_rampup && qp_counts.resolution_adaptations > 0 &&
       cpu_counts.Total() == 0) {

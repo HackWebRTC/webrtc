@@ -10,8 +10,6 @@ import("../../webrtc.gni")
 
 rtc_library("video_adaptation") {
   sources = [
-    "adaptation_counters.cc",
-    "adaptation_counters.h",
     "encode_usage_resource.cc",
     "encode_usage_resource.h",
     "overuse_frame_detector.cc",
@@ -27,6 +25,7 @@ rtc_library("video_adaptation") {
   deps = [
     "../../api:rtp_parameters",
     "../../api/task_queue:task_queue",
+    "../../api/video:video_adaptation",
     "../../api/video:video_frame",
     "../../api/video:video_stream_encoder",
     "../../api/video_codecs:video_codecs_api",
@@ -59,7 +58,6 @@ if (rtc_include_tests) {
 
     defines = []
     sources = [
-      "adaptation_counters_unittest.cc",
       "overuse_frame_detector_unittest.cc",
       "resource_adaptation_processor_unittest.cc",
       "video_stream_adapter_unittest.cc",
@@ -67,6 +65,7 @@ if (rtc_include_tests) {
     deps = [
       ":video_adaptation",
       "../../api/video:encoded_image",
+      "../../api/video:video_adaptation",
       "../../api/video:video_frame_i420",
       "../../api/video_codecs:video_codecs_api",
       "../../call/adaptation:resource_adaptation",

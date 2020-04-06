@@ -8,31 +8,26 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video/adaptation/adaptation_counters.h"
+#include "api/video/video_adaptation_counters.h"
 
 namespace webrtc {
 
-bool AdaptationCounters::operator==(const AdaptationCounters& rhs) const {
+bool VideoAdaptationCounters::operator==(
+    const VideoAdaptationCounters& rhs) const {
   return fps_adaptations == rhs.fps_adaptations &&
          resolution_adaptations == rhs.resolution_adaptations;
 }
 
-bool AdaptationCounters::operator!=(const AdaptationCounters& rhs) const {
+bool VideoAdaptationCounters::operator!=(
+    const VideoAdaptationCounters& rhs) const {
   return !(rhs == *this);
 }
 
-AdaptationCounters AdaptationCounters::operator+(
-    const AdaptationCounters& other) const {
-  return AdaptationCounters(
+VideoAdaptationCounters VideoAdaptationCounters::operator+(
+    const VideoAdaptationCounters& other) const {
+  return VideoAdaptationCounters(
       resolution_adaptations + other.resolution_adaptations,
       fps_adaptations + other.fps_adaptations);
-}
-
-AdaptationCounters AdaptationCounters::operator-(
-    const AdaptationCounters& other) const {
-  return AdaptationCounters(
-      resolution_adaptations - other.resolution_adaptations,
-      fps_adaptations - other.fps_adaptations);
 }
 
 }  // namespace webrtc

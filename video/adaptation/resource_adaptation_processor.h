@@ -19,6 +19,7 @@
 
 #include "absl/types/optional.h"
 #include "api/rtp_parameters.h"
+#include "api/video/video_adaptation_counters.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_source_interface.h"
 #include "api/video/video_stream_encoder_observer.h"
@@ -31,7 +32,6 @@
 #include "rtc_base/experiments/quality_scaler_settings.h"
 #include "rtc_base/strings/string_builder.h"
 #include "system_wrappers/include/clock.h"
-#include "video/adaptation/adaptation_counters.h"
 #include "video/adaptation/encode_usage_resource.h"
 #include "video/adaptation/overuse_frame_detector.h"
 #include "video/adaptation/quality_scaler_resource.h"
@@ -123,9 +123,9 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   // The "other" count is the number of adaptations for the other reason.
   // This must be called for each adaptation step made.
   static void OnAdaptationCountChanged(
-      const AdaptationCounters& adaptation_count,
-      AdaptationCounters* active_count,
-      AdaptationCounters* other_active);
+      const VideoAdaptationCounters& adaptation_count,
+      VideoAdaptationCounters* active_count,
+      VideoAdaptationCounters* other_active);
 
  private:
   class InitialFrameDropper;
@@ -216,7 +216,8 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   // encoder_stats_observer_; Counters used for deciding if the video resolution
   // or framerate is currently restricted, and if so, why, on a per degradation
   // preference basis.
-  std::array<AdaptationCounters, AdaptationObserverInterface::kScaleReasonSize>
+  std::array<VideoAdaptationCounters,
+             AdaptationObserverInterface::kScaleReasonSize>
       active_counts_;
 };
 

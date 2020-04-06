@@ -15,12 +15,12 @@
 
 #include "absl/types/optional.h"
 #include "api/rtp_parameters.h"
+#include "api/video/video_adaptation_counters.h"
 #include "call/adaptation/encoder_settings.h"
 #include "call/adaptation/resource.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "rtc_base/experiments/balanced_degradation_settings.h"
-#include "video/adaptation/adaptation_counters.h"
 
 namespace webrtc {
 
@@ -138,7 +138,7 @@ class VideoStreamAdapter {
   ~VideoStreamAdapter();
 
   VideoSourceRestrictions source_restrictions() const;
-  const AdaptationCounters& adaptation_counters() const;
+  const VideoAdaptationCounters& adaptation_counters() const;
   // TODO(hbos): Can we get rid of any external dependencies on
   // BalancedDegradationPreference? How the adaptor generates possible next
   // steps for adaptation should be an implementation detail. Can the relevant

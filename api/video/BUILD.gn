@@ -229,7 +229,17 @@ rtc_library("video_stream_decoder_create") {
   ]
 }
 
-rtc_library("video_stream_encoder") {
+rtc_library("video_adaptation") {
+  visibility = [ "*" ]
+  sources = [
+    "video_adaptation_counters.cc",
+    "video_adaptation_counters.h",
+  ]
+
+  deps = [ "../../rtc_base:checks" ]
+}
+
+rtc_source_set("video_stream_encoder") {
   visibility = [ "*" ]
   sources = [
     "video_stream_encoder_interface.h",

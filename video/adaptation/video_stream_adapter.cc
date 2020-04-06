@@ -152,10 +152,12 @@ class VideoStreamAdapter::VideoSourceRestrictor {
   VideoSourceRestrictions source_restrictions() const {
     return source_restrictions_;
   }
-  const AdaptationCounters& adaptation_counters() const { return adaptations_; }
+  const VideoAdaptationCounters& adaptation_counters() const {
+    return adaptations_;
+  }
   void ClearRestrictions() {
     source_restrictions_ = VideoSourceRestrictions();
-    adaptations_ = AdaptationCounters();
+    adaptations_ = VideoAdaptationCounters();
   }
 
   void SetMinPixelsPerFrame(int min_pixels_per_frame) {
@@ -294,7 +296,7 @@ class VideoStreamAdapter::VideoSourceRestrictor {
   int min_pixels_per_frame_ = 0;
   // Current State.
   VideoSourceRestrictions source_restrictions_;
-  AdaptationCounters adaptations_;
+  VideoAdaptationCounters adaptations_;
 };
 
 // static
@@ -331,7 +333,7 @@ VideoSourceRestrictions VideoStreamAdapter::source_restrictions() const {
   return source_restrictor_->source_restrictions();
 }
 
-const AdaptationCounters& VideoStreamAdapter::adaptation_counters() const {
+const VideoAdaptationCounters& VideoStreamAdapter::adaptation_counters() const {
   return source_restrictor_->adaptation_counters();
 }
 
