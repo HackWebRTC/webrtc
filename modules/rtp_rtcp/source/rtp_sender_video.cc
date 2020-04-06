@@ -403,11 +403,8 @@ void RTPSenderVideo::AddRtpHeaderExtensions(
         }
       }
 
-      if (!packet->SetExtension<RtpGenericFrameDescriptorExtension01>(
-              generic_descriptor)) {
-        packet->SetExtension<RtpGenericFrameDescriptorExtension00>(
-            generic_descriptor);
-      }
+      packet->SetExtension<RtpGenericFrameDescriptorExtension00>(
+          generic_descriptor);
     }
   }
 }
@@ -502,23 +499,12 @@ bool RTPSenderVideo::SendVideo(
   limits.last_packet_reduction_len =
       last_packet->headers_size() - middle_packet->headers_size();
 
-  bool has_generic_descriptor_00 =
-      first_packet->HasExtension<RtpGenericFrameDescriptorExtension00>();
-  bool has_generic_descriptor_01 =
-      first_packet->HasExtension<RtpGenericFrameDescriptorExtension01>();
-  bool has_dependency_descriptor =
+  bool has_generic_descriptor =
+      first_packet->HasExtension<RtpGenericFrameDescriptorExtension00>() ||
       first_packet->HasExtension<RtpDependencyDescriptorExtension>();
-
-  if (has_generic_descriptor_00 && has_generic_descriptor_01) {
-    RTC_LOG(LS_WARNING) << "Two versions of GFD extension used.";
-    return false;
-  }
 
   // Minimization of the vp8 descriptor may erase temporal_id, so save it.
   const uint8_t temporal_id = GetTemporalId(video_header);
-  bool has_generic_descriptor = has_generic_descriptor_00 ||
-                                has_generic_descriptor_01 ||
-                                has_dependency_descriptor;
   if (has_generic_descriptor) {
     MinimizeDescriptor(&video_header);
   }

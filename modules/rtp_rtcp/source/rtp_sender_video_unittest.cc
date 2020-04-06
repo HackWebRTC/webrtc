@@ -54,8 +54,7 @@ using ::testing::WithArgs;
 enum : int {  // The first valid value is 1.
   kAbsoluteSendTimeExtensionId = 1,
   kFrameMarkingExtensionId,
-  kGenericDescriptorId00,
-  kGenericDescriptorId01,
+  kGenericDescriptorId,
   kDependencyDescriptorId,
   kTransmissionTimeOffsetExtensionId,
   kTransportSequenceNumberExtensionId,
@@ -87,9 +86,7 @@ class LoopbackTransportTest : public webrtc::Transport {
     receivers_extensions_.Register<VideoTimingExtension>(
         kVideoTimingExtensionId);
     receivers_extensions_.Register<RtpGenericFrameDescriptorExtension00>(
-        kGenericDescriptorId00);
-    receivers_extensions_.Register<RtpGenericFrameDescriptorExtension01>(
-        kGenericDescriptorId01);
+        kGenericDescriptorId);
     receivers_extensions_.Register<RtpDependencyDescriptorExtension>(
         kDependencyDescriptorId);
     receivers_extensions_.Register<FrameMarkingExtension>(
@@ -184,8 +181,6 @@ class RtpSenderVideoTest : public ::testing::TestWithParam<bool> {
     rtp_module_->SetSequenceNumber(kSeqNum);
     rtp_module_->SetStartTimestamp(0);
   }
-
-  void PopulateGenericFrameDescriptor(int version);
 
   void UsesMinimalVp8DescriptorWhenGenericFrameDescriptorExtensionIsUsed(
       int version);
@@ -727,16 +722,11 @@ TEST_P(RtpSenderVideoTest,
                   .HasExtension<RtpDependencyDescriptorExtension>());
 }
 
-void RtpSenderVideoTest::PopulateGenericFrameDescriptor(int version) {
-  const absl::string_view ext_uri =
-      (version == 0) ? RtpGenericFrameDescriptorExtension00::kUri
-                     : RtpGenericFrameDescriptorExtension01::kUri;
-  const int ext_id =
-      (version == 0) ? kGenericDescriptorId00 : kGenericDescriptorId01;
-
+TEST_P(RtpSenderVideoTest, PopulateGenericFrameDescriptor) {
   const int64_t kFrameId = 100000;
   uint8_t kFrame[100];
-  rtp_module_->RegisterRtpHeaderExtension(ext_uri, ext_id);
+  rtp_module_->RegisterRtpHeaderExtension(
+      RtpGenericFrameDescriptorExtension00::kUri, kGenericDescriptorId);
 
   RTPVideoHeader hdr;
   RTPVideoHeader::GenericDescriptorInfo& generic = hdr.generic.emplace();
@@ -751,27 +741,13 @@ void RtpSenderVideoTest::PopulateGenericFrameDescriptor(int version) {
 
   RtpGenericFrameDescriptor descriptor_wire;
   EXPECT_EQ(1, transport_.packets_sent());
-  if (version == 0) {
-    ASSERT_TRUE(transport_.last_sent_packet()
-                    .GetExtension<RtpGenericFrameDescriptorExtension00>(
-                        &descriptor_wire));
-  } else {
-    ASSERT_TRUE(transport_.last_sent_packet()
-                    .GetExtension<RtpGenericFrameDescriptorExtension01>(
-                        &descriptor_wire));
-  }
+  ASSERT_TRUE(transport_.last_sent_packet()
+                  .GetExtension<RtpGenericFrameDescriptorExtension00>(
+                      &descriptor_wire));
   EXPECT_EQ(static_cast<uint16_t>(generic.frame_id), descriptor_wire.FrameId());
   EXPECT_EQ(generic.temporal_index, descriptor_wire.TemporalLayer());
   EXPECT_THAT(descriptor_wire.FrameDependenciesDiffs(), ElementsAre(1, 500));
   EXPECT_EQ(descriptor_wire.SpatialLayersBitmask(), 0b0000'0100);
-}
-
-TEST_P(RtpSenderVideoTest, PopulateGenericFrameDescriptor00) {
-  PopulateGenericFrameDescriptor(0);
-}
-
-TEST_P(RtpSenderVideoTest, PopulateGenericFrameDescriptor01) {
-  PopulateGenericFrameDescriptor(1);
 }
 
 void RtpSenderVideoTest::
@@ -781,13 +757,8 @@ void RtpSenderVideoTest::
   const size_t kFrameSize = 100;
   uint8_t kFrame[kFrameSize];
 
-  if (version == 0) {
-    rtp_module_->RegisterRtpHeaderExtension(
-        RtpGenericFrameDescriptorExtension00::kUri, kGenericDescriptorId00);
-  } else {
-    rtp_module_->RegisterRtpHeaderExtension(
-        RtpGenericFrameDescriptorExtension01::kUri, kGenericDescriptorId01);
-  }
+  rtp_module_->RegisterRtpHeaderExtension(
+      RtpGenericFrameDescriptorExtension00::kUri, kGenericDescriptorId);
 
   RTPVideoHeader hdr;
   hdr.codec = kVideoCodecVP8;
