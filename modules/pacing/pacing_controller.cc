@@ -285,7 +285,7 @@ void PacingController::EnqueuePacketInternal(
   }
 
   if (mode_ == ProcessMode::kDynamic && packet_queue_.Empty() &&
-      media_debt_.IsZero()) {
+      NextSendTime() <= now) {
     TimeDelta elapsed_time = UpdateTimeAndGetElapsed(now);
     UpdateBudgetWithElapsedTime(elapsed_time);
   }
@@ -360,20 +360,20 @@ Timestamp PacingController::NextSendTime() const {
     return last_send_time_ + kCongestedPacketInterval;
   }
 
-  // Check how long until media buffer has drained. We schedule a call
-  // for when the last packet in the queue drains as otherwise we may
-  // be late in starting padding.
-  if (media_rate_ > DataRate::Zero() &&
-      (!packet_queue_.Empty() || !media_debt_.IsZero())) {
+  // Check how long until we can send the next media packet.
+  if (media_rate_ > DataRate::Zero() && !packet_queue_.Empty()) {
     return std::min(last_send_time_ + kPausedProcessInterval,
                     last_process_time_ + media_debt_ / media_rate_);
   }
 
   // If we _don't_ have pending packets, check how long until we have
-  // bandwidth for padding packets.
+  // bandwidth for padding packets. Both media and padding debts must
+  // have been drained to do this.
   if (padding_rate_ > DataRate::Zero() && packet_queue_.Empty()) {
+    TimeDelta drain_time =
+        std::max(media_debt_ / media_rate_, padding_debt_ / padding_rate_);
     return std::min(last_send_time_ + kPausedProcessInterval,
-                    last_process_time_ + padding_debt_ / padding_rate_);
+                    last_process_time_ + drain_time);
   }
 
   if (send_padding_if_silent_) {

@@ -173,5 +173,28 @@ TEST_F(TaskQueuePacedSenderTest, ReschedulesProcessOnRateChange) {
               1.0);
 }
 
+TEST_F(TaskQueuePacedSenderTest, SendsAudioImmediately) {
+  const DataRate kPacingDataRate = DataRate::KilobitsPerSec(125);
+  const DataSize kPacketSize = DataSize::Bytes(kDefaultPacketSize);
+  const TimeDelta kPacketPacingTime = kPacketSize / kPacingDataRate;
+
+  pacer_.SetPacingRates(kPacingDataRate, DataRate::Zero());
+
+  // Add some initial video packets, only one should be sent.
+  EXPECT_CALL(packet_router_, SendPacket);
+  pacer_.EnqueuePackets(GeneratePackets(RtpPacketMediaType::kVideo, 10));
+  time_controller_.AdvanceTime(TimeDelta::Zero());
+  ::testing::Mock::VerifyAndClearExpectations(&packet_router_);
+
+  // Advance time, but still before next packet should be sent.
+  time_controller_.AdvanceTime(kPacketPacingTime / 2);
+
+  // Insert an audio packet, it should be sent immediately.
+  EXPECT_CALL(packet_router_, SendPacket);
+  pacer_.EnqueuePackets(GeneratePackets(RtpPacketMediaType::kAudio, 1));
+  time_controller_.AdvanceTime(TimeDelta::Zero());
+  ::testing::Mock::VerifyAndClearExpectations(&packet_router_);
+}
+
 }  // namespace test
 }  // namespace webrtc
