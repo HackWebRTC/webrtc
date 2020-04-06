@@ -412,19 +412,9 @@ RtpVideoStreamReceiver::ParseGenericDependenciesExtension(
     return kHasGenericDescriptor;
   }
 
-  if (rtp_packet.HasExtension<RtpGenericFrameDescriptorExtension00>() &&
-      rtp_packet.HasExtension<RtpGenericFrameDescriptorExtension01>()) {
-    RTC_LOG(LS_WARNING) << "RTP packet had two different GFD versions.";
-    return kDropPacket;
-  }
-
   RtpGenericFrameDescriptor generic_frame_descriptor;
-  bool has_generic_descriptor =
-      rtp_packet.GetExtension<RtpGenericFrameDescriptorExtension01>(
-          &generic_frame_descriptor) ||
-      rtp_packet.GetExtension<RtpGenericFrameDescriptorExtension00>(
-          &generic_frame_descriptor);
-  if (!has_generic_descriptor) {
+  if (!rtp_packet.GetExtension<RtpGenericFrameDescriptorExtension00>(
+          &generic_frame_descriptor)) {
     return kNoGenericDescriptor;
   }
 
@@ -447,8 +437,6 @@ RtpVideoStreamReceiver::ParseGenericDependenciesExtension(
         generic_frame_descriptor.SpatialLayer();
     generic_descriptor_info.temporal_index =
         generic_frame_descriptor.TemporalLayer();
-    generic_descriptor_info.discardable =
-        generic_frame_descriptor.Discardable().value_or(false);
     for (uint16_t fdiff : generic_frame_descriptor.FrameDependenciesDiffs()) {
       generic_descriptor_info.dependencies.push_back(frame_id - fdiff);
     }
