@@ -45,6 +45,12 @@ class VCMTiming;
 
 namespace internal {
 
+// Utility function that fetches the TQ that's active in the current context
+// or the active rtc::Thread if no TQ is active. This is necessary at the moment
+// for VideoReceiveStream and downstream classes as tests and production don't
+// consistently follow the same procedures.
+TaskQueueBase* GetCurrentTaskQueue();
+
 class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public rtc::VideoSinkInterface<VideoFrame>,
                            public NackSender,
@@ -161,6 +167,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   const VideoReceiveStream::Config config_;
   const int num_cpu_cores_;
   ProcessThread* const process_thread_;
+  TaskQueueBase* const worker_thread_;
   Clock* const clock_;
 
   CallStats* const call_stats_;
