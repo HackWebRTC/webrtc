@@ -652,7 +652,10 @@ void ReceiveStatisticsProxy::UpdateDecodeTimeHistograms(
 absl::optional<int64_t>
 ReceiveStatisticsProxy::GetCurrentEstimatedPlayoutNtpTimestampMs(
     int64_t now_ms) const {
+  // TODO(webrtc:11489): Update downstream tests.
+#if !defined(WEBRTC_LINUX)
   RTC_DCHECK_RUN_ON(&main_thread_);
+#endif
   if (!last_estimated_playout_ntp_timestamp_ms_ ||
       !last_estimated_playout_time_ms_) {
     return absl::nullopt;
