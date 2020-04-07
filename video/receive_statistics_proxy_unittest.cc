@@ -22,8 +22,6 @@
 #include "api/video/video_frame.h"
 #include "api/video/video_frame_buffer.h"
 #include "api/video/video_rotation.h"
-#include "rtc_base/task_utils/to_queued_task.h"
-#include "rtc_base/thread.h"
 #include "system_wrappers/include/metrics.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
@@ -41,63 +39,13 @@ const int kHeight = 720;
 // TODO(sakal): ReceiveStatisticsProxy is lacking unittesting.
 class ReceiveStatisticsProxyTest : public ::testing::Test {
  public:
-  ReceiveStatisticsProxyTest()
-      : fake_clock_(1234),
-        config_(GetTestConfig()),
-        worker_thread_(&socket_server_) {
-    worker_thread_.WrapCurrent();
-    RTC_CHECK_EQ(webrtc::TaskQueueBase::Current(),
-                 static_cast<TaskQueueBase*>(&worker_thread_));
-    metrics::Reset();
-    statistics_proxy_.reset(
-        new ReceiveStatisticsProxy(&config_, &fake_clock_, &worker_thread_));
-  }
-
-  ~ReceiveStatisticsProxyTest() override {
-    statistics_proxy_.reset();
-    worker_thread_.UnwrapCurrent();
-  }
+  ReceiveStatisticsProxyTest() : fake_clock_(1234), config_(GetTestConfig()) {}
+  virtual ~ReceiveStatisticsProxyTest() {}
 
  protected:
-  class FakeSocketServer : public rtc::SocketServer {
-   public:
-    FakeSocketServer() = default;
-    ~FakeSocketServer() = default;
-
-    bool Wait(int cms, bool process_io) override {
-      if (fail_next_wait_) {
-        fail_next_wait_ = false;
-        return false;
-      }
-      return true;
-    }
-
-    void WakeUp() override {}
-
-    rtc::Socket* CreateSocket(int family, int type) override { return nullptr; }
-    rtc::AsyncSocket* CreateAsyncSocket(int family, int type) override {
-      return nullptr;
-    }
-
-    void FailNextWait() { fail_next_wait_ = true; }
-
-   private:
-    bool fail_next_wait_ = false;
-  };
-
-  class WorkerThread : public rtc::Thread {
-   public:
-    explicit WorkerThread(rtc::SocketServer* ss)
-        : rtc::Thread(ss), tq_setter_(this) {}
-
-   private:
-    CurrentTaskQueueSetter tq_setter_;
-  };
-
-  void FlushWorker() {
-    worker_thread_.PostTask(
-        ToQueuedTask([this]() { socket_server_.FailNextWait(); }));
-    worker_thread_.ProcessMessages(1000);
+  virtual void SetUp() {
+    metrics::Reset();
+    statistics_proxy_.reset(new ReceiveStatisticsProxy(&config_, &fake_clock_));
   }
 
   VideoReceiveStream::Config GetTestConfig() {
@@ -130,8 +78,6 @@ class ReceiveStatisticsProxyTest : public ::testing::Test {
   SimulatedClock fake_clock_;
   const VideoReceiveStream::Config config_;
   std::unique_ptr<ReceiveStatisticsProxy> statistics_proxy_;
-  FakeSocketServer socket_server_;
-  WorkerThread worker_thread_;
 };
 
 TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameIncreasesFramesDecoded) {

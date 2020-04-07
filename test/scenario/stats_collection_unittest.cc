@@ -25,26 +25,17 @@ void CreateAnalyzedStream(Scenario* s,
       VideoStreamConfig::Encoder::Implementation::kSoftware;
   config.hooks.frame_pair_handlers = {analyzer->Handler()};
   auto* caller = s->CreateClient("caller", CallClientConfig());
-  auto* callee = s->CreateClient("callee", CallClientConfig());
   auto route =
-      s->CreateRoutes(caller, {s->CreateSimulationNode(network_config)}, callee,
+      s->CreateRoutes(caller, {s->CreateSimulationNode(network_config)},
+                      s->CreateClient("callee", CallClientConfig()),
                       {s->CreateSimulationNode(NetworkSimulationConfig())});
-  VideoStreamPair* video = s->CreateVideoStream(route->forward(), config);
+  auto* video = s->CreateVideoStream(route->forward(), config);
   auto* audio = s->CreateAudioStream(route->forward(), AudioStreamConfig());
   s->Every(TimeDelta::Seconds(1), [=] {
     collectors->call.AddStats(caller->GetStats());
-    collectors->video_send.AddStats(video->send()->GetStats(), s->Now());
     collectors->audio_receive.AddStats(audio->receive()->GetStats());
-
-    // Querying the video stats from within the expected runtime environment
-    // (i.e. the TQ that belongs to the CallClient, not the Scenario TQ that
-    // we're currently on).
-    VideoReceiveStream::Stats video_receive_stats;
-    auto* video_stream = video->receive();
-    callee->SendTask([&video_stream, &video_receive_stats]() {
-      video_receive_stats = video_stream->GetStats();
-    });
-    collectors->video_receive.AddStats(video_receive_stats);
+    collectors->video_send.AddStats(video->send()->GetStats(), s->Now());
+    collectors->video_receive.AddStats(video->receive()->GetStats());
   });
 }
 }  // namespace
