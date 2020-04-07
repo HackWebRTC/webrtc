@@ -894,6 +894,14 @@ int SocketDispatcher::Close() {
   id_ = 0;
   signal_close_ = false;
 #endif
+#if defined(WEBRTC_USE_EPOLL)
+  // If we're batching events, the socket can be closed and reopened
+  // during the batch. Set saved_enabled_events_ to 0 here so the new
+  // socket, if any, has the correct old events bitfield
+  if (saved_enabled_events_ != -1) {
+    saved_enabled_events_ = 0;
+  }
+#endif
   ss_->Remove(this);
   return PhysicalSocket::Close();
 }
