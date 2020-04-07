@@ -39,6 +39,7 @@ namespace webrtc {
 
 class AecDump;
 class AudioBuffer;
+class AudioFrame;
 
 class StreamConfig;
 class ProcessingConfig;
@@ -522,6 +523,18 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
   // Enqueue a runtime setting.
   virtual void SetRuntimeSetting(RuntimeSetting setting) = 0;
 
+  // Processes a 10 ms |frame| of the primary audio stream. On the client-side,
+  // this is the near-end (or captured) audio.
+  //
+  // If needed for enabled functionality, any function with the set_stream_ tag
+  // must be called prior to processing the current frame. Any getter function
+  // with the stream_ tag which is needed should be called after processing.
+  //
+  // The |sample_rate_hz_|, |num_channels_|, and |samples_per_channel_|
+  // members of |frame| must be valid. If changed from the previous call to this
+  // method, it will trigger an initialization.
+  virtual int ProcessStream(AudioFrame* frame) = 0;
+
   // Accepts and produces a 10 ms frame interleaved 16 bit integer audio as
   // specified in |input_config| and |output_config|. |src| and |dest| may use
   // the same memory, if desired.
@@ -541,6 +554,20 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
                             const StreamConfig& input_config,
                             const StreamConfig& output_config,
                             float* const* dest) = 0;
+
+  // Processes a 10 ms |frame| of the reverse direction audio stream. The frame
+  // may be modified. On the client-side, this is the far-end (or to be
+  // rendered) audio.
+  //
+  // It is necessary to provide this if echo processing is enabled, as the
+  // reverse stream forms the echo reference signal. It is recommended, but not
+  // necessary, to provide if gain control is enabled. On the server-side this
+  // typically will not be used. If you're not sure what to pass in here,
+  // chances are you don't need to use it.
+  //
+  // The |sample_rate_hz_|, |num_channels_|, and |samples_per_channel_|
+  // members of |frame| must be valid.
+  virtual int ProcessReverseStream(AudioFrame* frame) = 0;
 
   // Accepts and produces a 10 ms frame of interleaved 16 bit integer audio for
   // the reverse direction audio stream as specified in |input_config| and

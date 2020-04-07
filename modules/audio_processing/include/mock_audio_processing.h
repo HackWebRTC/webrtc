@@ -81,6 +81,7 @@ class MockAudioProcessing : public ::testing::NiceMock<AudioProcessing> {
   MOCK_CONST_METHOD0(num_reverse_channels, size_t());
   MOCK_METHOD1(set_output_will_be_muted, void(bool muted));
   MOCK_METHOD1(SetRuntimeSetting, void(RuntimeSetting setting));
+  MOCK_METHOD1(ProcessStream, int(AudioFrame* frame));
   MOCK_METHOD4(ProcessStream,
                int(const int16_t* const src,
                    const StreamConfig& input_config,
@@ -99,6 +100,7 @@ class MockAudioProcessing : public ::testing::NiceMock<AudioProcessing> {
                    const StreamConfig& input_config,
                    const StreamConfig& output_config,
                    float* const* dest));
+  MOCK_METHOD1(ProcessReverseStream, int(AudioFrame* frame));
   MOCK_METHOD4(ProcessReverseStream,
                int(const int16_t* const src,
                    const StreamConfig& input_config,
