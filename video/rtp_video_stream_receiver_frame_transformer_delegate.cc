@@ -44,7 +44,9 @@ class TransformableVideoReceiverFrame
   uint32_t GetTimestamp() const override { return frame_->Timestamp(); }
   uint32_t GetSsrc() const override { return ssrc_; }
 
-  bool IsKeyFrame() const override { return frame_->is_keyframe(); }
+  bool IsKeyFrame() const override {
+    return frame_->FrameType() == VideoFrameType::kVideoFrameKey;
+  }
 
   std::vector<uint8_t> GetAdditionalData() const override {
     return RtpDescriptorAuthentication(frame_->GetRtpVideoHeader());
