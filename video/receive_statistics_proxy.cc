@@ -121,10 +121,7 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
       sum_missed_render_deadline_ms_(0),
       timing_frame_info_counter_(kMovingMaxWindowMs),
       worker_thread_(worker_thread) {
-  // TODO(webrtc:11489): Update downstream tests.
-#if !defined(WEBRTC_LINUX)
   RTC_DCHECK(worker_thread);
-#endif
   decode_queue_.Detach();
   incoming_render_queue_.Detach();
   stats_.ssrc = config->rtp.remote_ssrc;
@@ -662,10 +659,7 @@ ReceiveStatisticsProxy::GetCurrentEstimatedPlayoutNtpTimestampMs(
 }
 
 VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
-  // TODO(webrtc:11489): Update downstream tests.
-#if !defined(WEBRTC_LINUX)
   RTC_DCHECK_RUN_ON(&main_thread_);
-#endif
 
   // Like VideoReceiveStream::GetStats, called on the worker thread from
   // StatsCollector::ExtractMediaInfo via worker_thread()->Invoke().

@@ -447,10 +447,7 @@ void VideoReceiveStream::Stop() {
 }
 
 VideoReceiveStream::Stats VideoReceiveStream::GetStats() const {
-  // TODO(webrtc:11489): Update downstream tests.
-#if !defined(WEBRTC_LINUX)
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
-#endif
   VideoReceiveStream::Stats stats = stats_proxy_.GetStats();
   stats.total_bitrate_bps = 0;
   StreamStatistician* statistician =
