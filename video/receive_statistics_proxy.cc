@@ -769,6 +769,7 @@ void ReceiveStatisticsProxy::OnTimingFrameInfoUpdated(
 void ReceiveStatisticsProxy::RtcpPacketTypesCounterUpdated(
     uint32_t ssrc,
     const RtcpPacketTypeCounter& packet_counter) {
+#if !defined(WEBRTC_LINUX)
   if (!worker_thread_->IsCurrent()) {
     // RtpRtcp::Configuration has a single RtcpPacketTypeCounterObserver and
     // that same configuration may be used for both receiver and sender
@@ -791,6 +792,7 @@ void ReceiveStatisticsProxy::RtcpPacketTypesCounterUpdated(
   }
 
   RTC_DCHECK_RUN_ON(&main_thread_);
+#endif
   rtc::CritScope lock(&crit_);
   if (stats_.ssrc != ssrc)
     return;
