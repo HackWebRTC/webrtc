@@ -63,23 +63,6 @@ constexpr int kQuickTestModeRunDurationMs = 100;
 constexpr char kFlexFecEnabledFieldTrials[] =
     "WebRTC-FlexFEC-03-Advertised/Enabled/WebRTC-FlexFEC-03/Enabled/";
 
-std::string VideoConfigSourcePresenceToString(
-    const VideoConfig& video_config,
-    bool has_user_provided_generator) {
-  char buf[1024];
-  rtc::SimpleStringBuilder builder(buf);
-  builder << "video_config.generator=" << video_config.generator.has_value()
-          << "; video_config.input_file_name="
-          << video_config.input_file_name.has_value()
-          << "; video_config.screen_share_config="
-          << video_config.screen_share_config.has_value()
-          << "; video_config.capturing_device_index="
-          << video_config.capturing_device_index.has_value()
-          << "; has_user_provided_generator=" << has_user_provided_generator
-          << ";";
-  return builder.str();
-}
-
 class FixturePeerConnectionObserver : public MockPeerConnectionObserver {
  public:
   // |on_track_callback| will be called when any new track will be added to peer
@@ -231,6 +214,8 @@ void PeerConnectionE2EQualityTest::AddPeer(
 }
 
 void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
+  SetDefaultValuesForMissingParams(&run_params, &peer_configurations_);
+  ValidateParams(run_params, peer_configurations_);
   RTC_CHECK_EQ(peer_configurations_.size(), 2)
       << "Only peer to peer calls are allowed, please add 2 peers";
 
@@ -248,11 +233,12 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
       bob_video_generators = peer_configurations_[1]->ReleaseVideoGenerators();
   peer_configurations_.clear();
 
-  SetDefaultValuesForMissingParams(
-      &run_params, {alice_params.get(), bob_params.get()},
-      {&alice_video_generators, &bob_video_generators});
-  ValidateParams(run_params, {alice_params.get(), bob_params.get()},
-                 {&alice_video_generators, &bob_video_generators});
+  for (size_t i = 0; i < bob_params->video_configs.size(); ++i) {
+    // We support simulcast only from caller.
+    RTC_CHECK(!bob_params->video_configs[i].simulcast_config)
+        << "Only simulcast stream from first peer is supported";
+  }
+
   SetupRequiredFieldTrials(run_params);
 
   // Print test summary
@@ -452,166 +438,6 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   // thread.
   RTC_CHECK(alice_video_sources_.empty());
   RTC_CHECK(bob_video_sources_.empty());
-}
-
-void PeerConnectionE2EQualityTest::SetDefaultValuesForMissingParams(
-    RunParams* run_params,
-    std::vector<Params*> params,
-    std::vector<std::vector<std::unique_ptr<test::FrameGeneratorInterface>>*>
-        video_generators) {
-  int video_counter = 0;
-  int audio_counter = 0;
-  std::set<std::string> video_labels;
-  std::set<std::string> audio_labels;
-  for (size_t i = 0; i < params.size(); ++i) {
-    auto* p = params[i];
-    for (size_t j = 0; j < p->video_configs.size(); ++j) {
-      VideoConfig& video_config = p->video_configs[j];
-      std::unique_ptr<test::FrameGeneratorInterface>& video_generator =
-          (*video_generators[i])[j];
-      if (!video_config.generator && !video_config.input_file_name &&
-          !video_config.screen_share_config &&
-          !video_config.capturing_device_index && !video_generator) {
-        video_config.generator = VideoGeneratorType::kDefault;
-      }
-      if (!video_config.stream_label) {
-        std::string label;
-        do {
-          label = "_auto_video_stream_label_" + std::to_string(video_counter);
-          ++video_counter;
-        } while (!video_labels.insert(label).second);
-        video_config.stream_label = label;
-      }
-    }
-    if (p->audio_config) {
-      if (!p->audio_config->stream_label) {
-        std::string label;
-        do {
-          label = "_auto_audio_stream_label_" + std::to_string(audio_counter);
-          ++audio_counter;
-        } while (!audio_labels.insert(label).second);
-        p->audio_config->stream_label = label;
-      }
-    }
-  }
-
-  if (run_params->video_codecs.empty()) {
-    run_params->video_codecs.push_back(
-        VideoCodecConfig(cricket::kVp8CodecName));
-  }
-}
-
-void PeerConnectionE2EQualityTest::ValidateParams(
-    const RunParams& run_params,
-    std::vector<Params*> params,
-    std::vector<std::vector<std::unique_ptr<test::FrameGeneratorInterface>>*>
-        video_generators) {
-  RTC_CHECK_GT(run_params.video_encoder_bitrate_multiplier, 0.0);
-
-  std::set<std::string> video_labels;
-  std::set<std::string> audio_labels;
-  int media_streams_count = 0;
-
-  bool has_simulcast = false;
-  for (size_t i = 0; i < params.size(); ++i) {
-    Params* p = params[i];
-    if (p->audio_config) {
-      media_streams_count++;
-    }
-    media_streams_count += p->video_configs.size();
-
-    // Validate that each video config has exactly one of |generator|,
-    // |input_file_name| or |screen_share_config| set. Also validate that all
-    // video stream labels are unique.
-    for (size_t j = 0; j < p->video_configs.size(); ++j) {
-      VideoConfig& video_config = p->video_configs[j];
-      RTC_CHECK(video_config.stream_label);
-      bool inserted =
-          video_labels.insert(video_config.stream_label.value()).second;
-      RTC_CHECK(inserted) << "Duplicate video_config.stream_label="
-                          << video_config.stream_label.value();
-      int input_sources_count = 0;
-      if (video_config.generator)
-        ++input_sources_count;
-      if (video_config.input_file_name)
-        ++input_sources_count;
-      if (video_config.screen_share_config)
-        ++input_sources_count;
-      if (video_config.capturing_device_index)
-        ++input_sources_count;
-      if ((*video_generators[i])[j])
-        ++input_sources_count;
-
-      // TODO(titovartem) handle video_generators case properly
-      RTC_CHECK_EQ(input_sources_count, 1) << VideoConfigSourcePresenceToString(
-          video_config, (*video_generators[i])[j] != nullptr);
-
-      if (video_config.screen_share_config) {
-        if (video_config.screen_share_config->slides_yuv_file_names.empty()) {
-          if (video_config.screen_share_config->scrolling_params) {
-            // If we have scrolling params, then its |source_width| and
-            // |source_heigh| will be used as width and height of video input,
-            // so we have to validate it against width and height of default
-            // input.
-            RTC_CHECK_EQ(video_config.screen_share_config->scrolling_params
-                             ->source_width,
-                         kDefaultSlidesWidth);
-            RTC_CHECK_EQ(video_config.screen_share_config->scrolling_params
-                             ->source_height,
-                         kDefaultSlidesHeight);
-          } else {
-            RTC_CHECK_EQ(video_config.width, kDefaultSlidesWidth);
-            RTC_CHECK_EQ(video_config.height, kDefaultSlidesHeight);
-          }
-        }
-        if (video_config.screen_share_config->scrolling_params) {
-          RTC_CHECK_LE(
-              video_config.screen_share_config->scrolling_params->duration,
-              video_config.screen_share_config->slide_change_interval);
-          RTC_CHECK_GE(
-              video_config.screen_share_config->scrolling_params->source_width,
-              video_config.width);
-          RTC_CHECK_GE(
-              video_config.screen_share_config->scrolling_params->source_height,
-              video_config.height);
-        }
-      }
-      if (video_config.simulcast_config) {
-        has_simulcast = true;
-        // We support simulcast only from caller.
-        RTC_CHECK_EQ(i, 0)
-            << "Only simulcast stream from first peer is supported";
-        RTC_CHECK(!video_config.max_encode_bitrate_bps)
-            << "Setting max encode bitrate is not implemented for simulcast.";
-        RTC_CHECK(!video_config.min_encode_bitrate_bps)
-            << "Setting min encode bitrate is not implemented for simulcast.";
-      }
-    }
-    if (p->audio_config) {
-      bool inserted =
-          audio_labels.insert(p->audio_config->stream_label.value()).second;
-      RTC_CHECK(inserted) << "Duplicate audio_config.stream_label="
-                          << p->audio_config->stream_label.value();
-      // Check that if mode input file name specified only if mode is kFile.
-      if (p->audio_config.value().mode == AudioConfig::Mode::kGenerated) {
-        RTC_CHECK(!p->audio_config.value().input_file_name);
-      }
-      if (p->audio_config.value().mode == AudioConfig::Mode::kFile) {
-        RTC_CHECK(p->audio_config.value().input_file_name);
-        RTC_CHECK(
-            test::FileExists(p->audio_config.value().input_file_name.value()))
-            << p->audio_config.value().input_file_name.value()
-            << " doesn't exist";
-      }
-    }
-  }
-  if (has_simulcast) {
-    RTC_CHECK_EQ(run_params.video_codecs.size(), 1)
-        << "Only 1 video codec is supported when simulcast is enabled in at "
-        << "least 1 video config";
-  }
-
-  RTC_CHECK_GT(media_streams_count, 0) << "No media in the call.";
 }
 
 void PeerConnectionE2EQualityTest::SetupRequiredFieldTrials(

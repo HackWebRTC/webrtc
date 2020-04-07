@@ -93,23 +93,6 @@ class PeerConnectionE2EQualityTest
                    absl::optional<TimeDelta> interval,
                    std::function<void(TimeDelta)> func);
   void PostTask(ScheduledActivity activity) RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
-  // Set missing params to default values if it is required:
-  //  * Generate video stream labels if some of them missed
-  //  * Generate audio stream labels if some of them missed
-  //  * Set video source generation mode if it is not specified
-  //  * Video codecs under test
-  void SetDefaultValuesForMissingParams(
-      RunParams* run_params,
-      std::vector<Params*> params,
-      std::vector<std::vector<std::unique_ptr<test::FrameGeneratorInterface>>*>
-          video_sources);
-  // Validate peer's parameters, also ensure uniqueness of all video stream
-  // labels.
-  void ValidateParams(
-      const RunParams& run_params,
-      std::vector<Params*> params,
-      std::vector<std::vector<std::unique_ptr<test::FrameGeneratorInterface>>*>
-          video_sources);
   // For some functionality some field trials have to be enabled, so we will
   // enable them here.
   void SetupRequiredFieldTrials(const RunParams& run_params);

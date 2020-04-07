@@ -284,9 +284,13 @@ if (rtc_include_tests) {
   rtc_library("peer_configurer") {
     visibility = [ "*" ]
     testonly = true
-    sources = [ "peer_configurer.h" ]
+    sources = [
+      "peer_configurer.cc",
+      "peer_configurer.h",
+    ]
     deps = [
       ":peer_connection_quality_test_params",
+      "../..:fileutils",
       "../../../api:callfactory_api",
       "../../../api:fec_controller_api",
       "../../../api:packet_socket_factory",

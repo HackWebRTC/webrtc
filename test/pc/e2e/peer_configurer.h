@@ -163,6 +163,13 @@ class PeerConfigurerImpl final
   }
   // Implementation of PeerConnectionE2EQualityTestFixture::PeerConfigurer end.
 
+  InjectableComponents* components() { return components_.get(); }
+  Params* params() { return params_.get(); }
+  std::vector<std::unique_ptr<test::FrameGeneratorInterface>>*
+  video_generators() {
+    return &video_generators_;
+  }
+
   // Returns InjectableComponents and transfer ownership to the caller.
   // Can be called once.
   std::unique_ptr<InjectableComponents> ReleaseComponents() {
@@ -193,6 +200,20 @@ class PeerConfigurerImpl final
   std::unique_ptr<Params> params_;
   std::vector<std::unique_ptr<test::FrameGeneratorInterface>> video_generators_;
 };
+
+// Set missing params to default values if it is required:
+//  * Generate video stream labels if some of them are missing
+//  * Generate audio stream labels if some of them are missing
+//  * Set video source generation mode if it is not specified
+//  * Video codecs under test
+void SetDefaultValuesForMissingParams(
+    PeerConnectionE2EQualityTestFixture::RunParams* run_params,
+    std::vector<std::unique_ptr<PeerConfigurerImpl>>* peers);
+// Validate peer's parameters, also ensure uniqueness of all video stream
+// labels.
+void ValidateParams(
+    const PeerConnectionE2EQualityTestFixture::RunParams& run_params,
+    const std::vector<std::unique_ptr<PeerConfigurerImpl>>& peers);
 
 }  // namespace webrtc_pc_e2e
 }  // namespace webrtc
