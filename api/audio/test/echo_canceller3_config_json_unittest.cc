@@ -19,9 +19,7 @@ TEST(EchoCanceller3JsonHelpers, ToStringAndParseJson) {
   EchoCanceller3Config cfg;
   cfg.delay.down_sampling_factor = 1u;
   cfg.delay.log_warning_on_delay_changes = true;
-  cfg.filter.main.error_floor = 1.f;
   cfg.filter.refined.error_floor = 2.f;
-  cfg.filter.shadow_initial.length_blocks = 7u;
   cfg.filter.coarse_initial.length_blocks = 3u;
   cfg.comfort_noise.noise_floor_dbfs = 100.f;
   cfg.suppressor.normal_tuning.mask_hf.enr_suppress = .5f;
@@ -46,10 +44,6 @@ TEST(EchoCanceller3JsonHelpers, ToStringAndParseJson) {
             cfg_transformed.delay.log_warning_on_delay_changes);
   EXPECT_EQ(cfg.filter.coarse_initial.length_blocks,
             cfg_transformed.filter.coarse_initial.length_blocks);
-  EXPECT_EQ(cfg.filter.shadow_initial.length_blocks,
-            cfg_transformed.filter.shadow_initial.length_blocks);
-  EXPECT_EQ(cfg.filter.main.error_floor,
-            cfg_transformed.filter.main.error_floor);
   EXPECT_EQ(cfg.filter.refined.error_floor,
             cfg_transformed.filter.refined.error_floor);
   EXPECT_EQ(cfg.comfort_noise.noise_floor_dbfs,

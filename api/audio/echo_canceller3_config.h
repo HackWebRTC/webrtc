@@ -76,15 +76,10 @@ struct RTC_EXPORT EchoCanceller3Config {
       float noise_gate;
     };
 
-    RefinedConfiguration main = {13, 0.00005f, 0.05f, 0.001f, 2.f, 20075344.f};
-    CoarseConfiguration shadow = {13, 0.7f, 20075344.f};
     RefinedConfiguration refined = {13,     0.00005f, 0.05f,
                                     0.001f, 2.f,      20075344.f};
     CoarseConfiguration coarse = {13, 0.7f, 20075344.f};
 
-    RefinedConfiguration main_initial = {12,     0.005f, 0.5f,
-                                         0.001f, 2.f,    20075344.f};
-    CoarseConfiguration shadow_initial = {12, 0.9f, 20075344.f};
     RefinedConfiguration refined_initial = {12,     0.005f, 0.5f,
                                             0.001f, 2.f,    20075344.f};
     CoarseConfiguration coarse_initial = {12, 0.9f, 20075344.f};
@@ -92,13 +87,12 @@ struct RTC_EXPORT EchoCanceller3Config {
     size_t config_change_duration_blocks = 250;
     float initial_state_seconds = 2.5f;
     bool conservative_initial_phase = false;
-    bool enable_shadow_filter_output_usage = true;
     bool enable_coarse_filter_output_usage = true;
     bool use_linear_filter = true;
     bool export_linear_aec_output = false;
-    // Uses the filter configurations named main and shadow rather than those
-    // named refined and coarse.
-    bool use_legacy_filter_naming = true;
+    // Deprecated.
+    // TODO(peah): Remove.
+    bool use_legacy_filter_naming = false;
   } filter;
 
   struct Erle {
