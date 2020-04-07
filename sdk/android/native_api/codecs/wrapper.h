@@ -13,9 +13,11 @@
 
 #include <jni.h>
 #include <memory>
+#include <vector>
 
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_decoder_factory.h"
+#include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
 
 namespace webrtc {
@@ -34,6 +36,12 @@ std::unique_ptr<VideoDecoderFactory> JavaToNativeVideoDecoderFactory(
 std::unique_ptr<VideoEncoderFactory> JavaToNativeVideoEncoderFactory(
     JNIEnv* jni,
     jobject encoder_factory);
+
+// Creates an array of VideoEncoder::ResolutionBitrateLimits from Java array
+// of ResolutionBitrateLimits.
+std::vector<VideoEncoder::ResolutionBitrateLimits>
+JavaToNativeResolutionBitrateLimits(JNIEnv* jni,
+                                    const jobjectArray j_bitrate_limits_array);
 
 }  // namespace webrtc
 

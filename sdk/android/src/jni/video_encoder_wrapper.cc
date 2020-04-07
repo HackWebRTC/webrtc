@@ -38,7 +38,8 @@ VideoEncoderWrapper::VideoEncoderWrapper(JNIEnv* jni,
 
   // Get bitrate limits in the constructor. This is a static property of the
   // encoder and is expected to be available before it is initialized.
-  encoder_info_.resolution_bitrate_limits = GetResolutionBitrateLimits(jni);
+  encoder_info_.resolution_bitrate_limits = JavaToNativeResolutionBitrateLimits(
+      jni, Java_VideoEncoder_getResolutionBitrateLimits(jni, encoder_));
 }
 VideoEncoderWrapper::~VideoEncoderWrapper() = default;
 
@@ -208,37 +209,6 @@ VideoEncoderWrapper::GetScalingSettingsInternal(JNIEnv* jni) const {
     default:
       return ScalingSettings::kOff;
   }
-}
-
-std::vector<VideoEncoder::ResolutionBitrateLimits>
-VideoEncoderWrapper::GetResolutionBitrateLimits(JNIEnv* jni) const {
-  std::vector<VideoEncoder::ResolutionBitrateLimits> resolution_bitrate_limits;
-
-  ScopedJavaLocalRef<jobjectArray> j_bitrate_limits_array =
-      Java_VideoEncoder_getResolutionBitrateLimits(jni, encoder_);
-
-  const jsize num_thresholds =
-      jni->GetArrayLength(j_bitrate_limits_array.obj());
-  for (int i = 0; i < num_thresholds; ++i) {
-    ScopedJavaLocalRef<jobject> j_bitrate_limits = ScopedJavaLocalRef<jobject>(
-        jni, jni->GetObjectArrayElement(j_bitrate_limits_array.obj(), i));
-
-    jint frame_size_pixels =
-        Java_ResolutionBitrateLimits_getFrameSizePixels(jni, j_bitrate_limits);
-    jint min_start_bitrate_bps =
-        Java_ResolutionBitrateLimits_getMinStartBitrateBps(jni,
-                                                           j_bitrate_limits);
-    jint min_bitrate_bps =
-        Java_ResolutionBitrateLimits_getMinBitrateBps(jni, j_bitrate_limits);
-    jint max_bitrate_bps =
-        Java_ResolutionBitrateLimits_getMaxBitrateBps(jni, j_bitrate_limits);
-
-    resolution_bitrate_limits.push_back(VideoEncoder::ResolutionBitrateLimits(
-        frame_size_pixels, min_start_bitrate_bps, min_bitrate_bps,
-        max_bitrate_bps));
-  }
-
-  return resolution_bitrate_limits;
 }
 
 void VideoEncoderWrapper::OnEncodedFrame(
@@ -453,6 +423,35 @@ std::unique_ptr<VideoEncoder> JavaToNativeVideoEncoder(
 
 bool IsHardwareVideoEncoder(JNIEnv* jni, const JavaRef<jobject>& j_encoder) {
   return Java_VideoEncoder_isHardwareEncoder(jni, j_encoder);
+}
+
+std::vector<VideoEncoder::ResolutionBitrateLimits>
+JavaToNativeResolutionBitrateLimits(
+    JNIEnv* jni,
+    const JavaRef<jobjectArray>& j_bitrate_limits_array) {
+  std::vector<VideoEncoder::ResolutionBitrateLimits> resolution_bitrate_limits;
+
+  const jsize array_length = jni->GetArrayLength(j_bitrate_limits_array.obj());
+  for (int i = 0; i < array_length; ++i) {
+    ScopedJavaLocalRef<jobject> j_bitrate_limits = ScopedJavaLocalRef<jobject>(
+        jni, jni->GetObjectArrayElement(j_bitrate_limits_array.obj(), i));
+
+    jint frame_size_pixels =
+        Java_ResolutionBitrateLimits_getFrameSizePixels(jni, j_bitrate_limits);
+    jint min_start_bitrate_bps =
+        Java_ResolutionBitrateLimits_getMinStartBitrateBps(jni,
+                                                           j_bitrate_limits);
+    jint min_bitrate_bps =
+        Java_ResolutionBitrateLimits_getMinBitrateBps(jni, j_bitrate_limits);
+    jint max_bitrate_bps =
+        Java_ResolutionBitrateLimits_getMaxBitrateBps(jni, j_bitrate_limits);
+
+    resolution_bitrate_limits.push_back(VideoEncoder::ResolutionBitrateLimits(
+        frame_size_pixels, min_start_bitrate_bps, min_bitrate_bps,
+        max_bitrate_bps));
+  }
+
+  return resolution_bitrate_limits;
 }
 
 }  // namespace jni
