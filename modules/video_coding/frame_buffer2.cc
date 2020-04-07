@@ -491,10 +491,6 @@ int64_t FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
   auto info = frames_.emplace(id, FrameInfo()).first;
 
   if (info->second.frame) {
-    RTC_LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) ("
-                        << id.picture_id << ":"
-                        << static_cast<int>(id.spatial_layer)
-                        << ") already inserted, dropping frame.";
     return last_continuous_picture_id;
   }
 
