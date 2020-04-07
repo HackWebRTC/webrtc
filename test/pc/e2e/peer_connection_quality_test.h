@@ -21,7 +21,6 @@
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/task_queue_for_test.h"
-#include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
@@ -33,6 +32,7 @@
 #include "test/pc/e2e/peer_configurer.h"
 #include "test/pc/e2e/peer_connection_quality_test_params.h"
 #include "test/pc/e2e/sdp/sdp_changer.h"
+#include "test/pc/e2e/test_activities_executor.h"
 #include "test/pc/e2e/test_peer.h"
 
 namespace webrtc {
@@ -79,20 +79,6 @@ class PeerConnectionE2EQualityTest
   }
 
  private:
-  struct ScheduledActivity {
-    ScheduledActivity(TimeDelta initial_delay_since_start,
-                      absl::optional<TimeDelta> interval,
-                      std::function<void(TimeDelta)> func);
-
-    TimeDelta initial_delay_since_start;
-    absl::optional<TimeDelta> interval;
-    std::function<void(TimeDelta)> func;
-  };
-
-  void ExecuteTask(TimeDelta initial_delay_since_start,
-                   absl::optional<TimeDelta> interval,
-                   std::function<void(TimeDelta)> func);
-  void PostTask(ScheduledActivity activity) RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
   // For some functionality some field trials have to be enabled, so we will
   // enable them here.
   void SetupRequiredFieldTrials(const RunParams& run_params);
@@ -120,6 +106,7 @@ class PeerConnectionE2EQualityTest
   std::unique_ptr<SingleProcessEncodedImageDataInjector>
       encoded_image_id_controller_;
   std::unique_ptr<AudioQualityAnalyzerInterface> audio_quality_analyzer_;
+  std::unique_ptr<TestActivitiesExecutor> executor_;
 
   std::vector<std::unique_ptr<PeerConfigurerImpl>> peer_configurations_;
 
@@ -139,20 +126,7 @@ class PeerConnectionE2EQualityTest
   AnalyzerHelper analyzer_helper_;
 
   rtc::CriticalSection lock_;
-  // Time when test call was started. Minus infinity means that call wasn't
-  // started yet.
-  Timestamp start_time_ RTC_GUARDED_BY(lock_) = Timestamp::MinusInfinity();
   TimeDelta real_test_duration_ RTC_GUARDED_BY(lock_) = TimeDelta::Zero();
-  // Queue of activities that were added before test call was started.
-  // Activities from this queue will be posted on the |task_queue_| after test
-  // call will be set up and then this queue will be unused.
-  std::queue<ScheduledActivity> scheduled_activities_ RTC_GUARDED_BY(lock_);
-  // List of task handles for activities, that are posted on |task_queue_| as
-  // repeated during the call.
-  std::vector<RepeatingTaskHandle> repeating_task_handles_
-      RTC_GUARDED_BY(lock_);
-
-  RepeatingTaskHandle stats_polling_task_ RTC_GUARDED_BY(&task_queue_);
 
   // Task queue, that is used for running activities during test call.
   // This task queue will be created before call set up and will be destroyed

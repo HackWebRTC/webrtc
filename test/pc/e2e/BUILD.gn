@@ -304,6 +304,28 @@ if (rtc_include_tests) {
     ]
   }
 
+  rtc_library("test_activities_executor") {
+    visibility = [ "*" ]
+    testonly = true
+    sources = [
+      "test_activities_executor.cc",
+      "test_activities_executor.h",
+    ]
+    deps = [
+      "../../../api/units:time_delta",
+      "../../../api/units:timestamp",
+      "../../../rtc_base:checks",
+      "../../../rtc_base:criticalsection",
+      "../../../rtc_base:logging",
+      "../../../rtc_base:rtc_base_approved",
+      "../../../rtc_base:task_queue_for_test",
+      "../../../rtc_base/task_utils:repeating_task",
+      "../../../system_wrappers",
+      "//third_party/abseil-cpp/absl/memory",
+      "//third_party/abseil-cpp/absl/types:optional",
+    ]
+  }
+
   rtc_library("peerconnection_quality_test") {
     visibility = [ "*" ]
     testonly = true
@@ -322,6 +344,7 @@ if (rtc_include_tests) {
       ":sdp_changer",
       ":single_process_encoded_image_data_injector",
       ":stats_poller",
+      ":test_activities_executor",
       ":test_peer",
       ":test_peer_factory",
       ":video_quality_analyzer_injection_helper",
@@ -348,7 +371,6 @@ if (rtc_include_tests) {
       "../../../rtc_base:rtc_base_approved",
       "../../../rtc_base:safe_conversions",
       "../../../rtc_base:task_queue_for_test",
-      "../../../rtc_base/task_utils:repeating_task",
       "../../../system_wrappers",
       "../../../system_wrappers:field_trial",
     ]
