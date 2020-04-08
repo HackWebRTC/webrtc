@@ -157,7 +157,7 @@ std::vector<SdpVideoFormat> ObjCVideoEncoderFactory::GetSupportedFormats() const
 }
 
 std::vector<SdpVideoFormat> ObjCVideoEncoderFactory::GetImplementations() const {
-  if ([encoder_factory_ respondsToSelector:SEL("implementations")]) {
+  if ([encoder_factory_ respondsToSelector:@selector(implementations)]) {
     std::vector<SdpVideoFormat> supported_formats;
     for (RTCVideoCodecInfo *supportedCodec in [encoder_factory_ implementations]) {
       SdpVideoFormat format = [supportedCodec nativeSdpVideoFormat];
@@ -194,7 +194,7 @@ std::unique_ptr<VideoEncoder> ObjCVideoEncoderFactory::CreateVideoEncoder(
 
 std::unique_ptr<VideoEncoderFactory::EncoderSelectorInterface>
     ObjCVideoEncoderFactory::GetEncoderSelector() const {
-  if ([encoder_factory_ respondsToSelector:SEL("encoderSelector")]) {
+  if ([encoder_factory_ respondsToSelector:@selector(encoderSelector)]) {
     return absl::make_unique<ObjcVideoEncoderSelector>([encoder_factory_ encoderSelector]);
   }
   return nullptr;
