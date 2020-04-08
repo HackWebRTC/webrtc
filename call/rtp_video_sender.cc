@@ -273,7 +273,7 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
         rtp_config.ulpfec.red_payload_type != -1) {
       video_config.red_payload_type = rtp_config.ulpfec.red_payload_type;
     }
-    video_config.frame_transformer = frame_transformer;
+    video_config.frame_transformer = std::move(frame_transformer);
     auto sender_video = std::make_unique<RTPSenderVideo>(video_config);
     rtp_streams.emplace_back(std::move(rtp_rtcp), std::move(sender_video),
                              std::move(fec_generator));
