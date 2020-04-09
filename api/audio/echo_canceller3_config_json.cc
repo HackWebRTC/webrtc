@@ -230,8 +230,6 @@ void Aec3ConfigFromJsonString(absl::string_view json_string,
     ReadParam(section, "use_linear_filter", &cfg.filter.use_linear_filter);
     ReadParam(section, "export_linear_aec_output",
               &cfg.filter.export_linear_aec_output);
-    ReadParam(section, "use_legacy_filter_naming",
-              &cfg.filter.use_legacy_filter_naming);
   }
 
   if (rtc::GetValueFromJsonObject(aec3_root, "erle", &section)) {
@@ -508,9 +506,7 @@ std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config) {
   ost << "\"use_linear_filter\": "
       << (config.filter.use_linear_filter ? "true" : "false") << ",";
   ost << "\"export_linear_aec_output\": "
-      << (config.filter.export_linear_aec_output ? "true" : "false") << ",";
-  ost << "\"use_legacy_filter_naming\": "
-      << (config.filter.use_legacy_filter_naming ? "true" : "false");
+      << (config.filter.export_linear_aec_output ? "true" : "false");
 
   ost << "},";
 

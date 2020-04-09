@@ -90,9 +90,6 @@ struct RTC_EXPORT EchoCanceller3Config {
     bool enable_coarse_filter_output_usage = true;
     bool use_linear_filter = true;
     bool export_linear_aec_output = false;
-    // Deprecated.
-    // TODO(peah): Remove.
-    bool use_legacy_filter_naming = false;
   } filter;
 
   struct Erle {
