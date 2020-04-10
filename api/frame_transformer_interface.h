@@ -101,8 +101,12 @@ class FrameTransformerInterface : public rtc::RefCountInterface {
       std::unique_ptr<TransformableFrameInterface> transformable_frame) {}
 
   virtual void RegisterTransformedFrameCallback(
-      rtc::scoped_refptr<TransformedFrameCallback>) = 0;
-  virtual void UnregisterTransformedFrameCallback() = 0;
+      rtc::scoped_refptr<TransformedFrameCallback>) {}
+  virtual void RegisterTransformedFrameSinkCallback(
+      rtc::scoped_refptr<TransformedFrameCallback>,
+      uint32_t ssrc) {}
+  virtual void UnregisterTransformedFrameCallback() {}
+  virtual void UnregisterTransformedFrameSinkCallback(uint32_t ssrc) {}
 
  protected:
   ~FrameTransformerInterface() override = default;
