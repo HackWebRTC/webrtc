@@ -79,8 +79,7 @@ class SSLAdapter : public AsyncSocketAdapter {
   // StartSSL returns 0 if successful.
   // If StartSSL is called while the socket is closed or connecting, the SSL
   // negotiation will begin as soon as the socket connects.
-  // TODO(juberti): Remove |restartable|.
-  virtual int StartSSL(const char* hostname, bool restartable = false) = 0;
+  virtual int StartSSL(const char* hostname) = 0;
 
   // When an SSLAdapterFactory is used, an SSLAdapter may be used to resume
   // a previous SSL session, which results in an abbreviated handshake.

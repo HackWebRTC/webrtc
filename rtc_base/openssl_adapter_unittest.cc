@@ -80,7 +80,7 @@ TEST(OpenSSLAdapterTest, TestTransformAlpnProtocols) {
 TEST(OpenSSLAdapterTest, TestBeginSSLBeforeConnection) {
   AsyncSocket* async_socket = new MockAsyncSocket();
   OpenSSLAdapter adapter(async_socket);
-  EXPECT_EQ(adapter.StartSSL("webrtc.org", false), 0);
+  EXPECT_EQ(adapter.StartSSL("webrtc.org"), 0);
 }
 
 // Verifies that the adapter factory can create new adapters.
