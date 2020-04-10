@@ -105,12 +105,15 @@ class TransformableVideoSenderFrame : public TransformableVideoFrameInterface {
 
 RTPSenderVideoFrameTransformerDelegate::RTPSenderVideoFrameTransformerDelegate(
     RTPSenderVideo* sender,
-    rtc::scoped_refptr<FrameTransformerInterface> frame_transformer)
-    : sender_(sender), frame_transformer_(std::move(frame_transformer)) {}
+    rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
+    uint32_t ssrc)
+    : sender_(sender),
+      frame_transformer_(std::move(frame_transformer)),
+      ssrc_(ssrc) {}
 
 void RTPSenderVideoFrameTransformerDelegate::Init() {
-  frame_transformer_->RegisterTransformedFrameCallback(
-      rtc::scoped_refptr<TransformedFrameCallback>(this));
+  frame_transformer_->RegisterTransformedFrameSinkCallback(
+      rtc::scoped_refptr<TransformedFrameCallback>(this), ssrc_);
 }
 
 bool RTPSenderVideoFrameTransformerDelegate::TransformFrame(
@@ -120,8 +123,7 @@ bool RTPSenderVideoFrameTransformerDelegate::TransformFrame(
     const EncodedImage& encoded_image,
     const RTPFragmentationHeader* fragmentation,
     RTPVideoHeader video_header,
-    absl::optional<int64_t> expected_retransmission_time_ms,
-    uint32_t ssrc) {
+    absl::optional<int64_t> expected_retransmission_time_ms) {
   if (!encoder_queue_)
     encoder_queue_ = TaskQueueBase::Current();
   // TODO(bugs.webrtc.org/11380) remove once this version of TransformFrame() is
@@ -131,10 +133,10 @@ bool RTPSenderVideoFrameTransformerDelegate::TransformFrame(
           encoded_image.GetEncodedData(), video_header, payload_type,
           codec_type, rtp_timestamp, encoded_image.capture_time_ms_,
           fragmentation, expected_retransmission_time_ms),
-      RtpDescriptorAuthentication(video_header), ssrc);
+      RtpDescriptorAuthentication(video_header), ssrc_);
   frame_transformer_->Transform(std::make_unique<TransformableVideoSenderFrame>(
       encoded_image, video_header, payload_type, codec_type, rtp_timestamp,
-      fragmentation, expected_retransmission_time_ms, ssrc));
+      fragmentation, expected_retransmission_time_ms, ssrc_));
   return true;
 }
 
@@ -212,7 +214,7 @@ void RTPSenderVideoFrameTransformerDelegate::SetVideoStructureUnderLock(
 }
 
 void RTPSenderVideoFrameTransformerDelegate::Reset() {
-  frame_transformer_->UnregisterTransformedFrameCallback();
+  frame_transformer_->UnregisterTransformedFrameSinkCallback(ssrc_);
   frame_transformer_ = nullptr;
   {
     rtc::CritScope lock(&sender_lock_);

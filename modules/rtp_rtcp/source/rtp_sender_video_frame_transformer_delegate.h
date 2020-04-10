@@ -30,7 +30,8 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
  public:
   RTPSenderVideoFrameTransformerDelegate(
       RTPSenderVideo* sender,
-      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer);
+      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
+      uint32_t ssrc);
 
   void Init();
 
@@ -41,8 +42,7 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
                       const EncodedImage& encoded_image,
                       const RTPFragmentationHeader* fragmentation,
                       RTPVideoHeader video_header,
-                      absl::optional<int64_t> expected_retransmission_time_ms,
-                      uint32_t ssrc);
+                      absl::optional<int64_t> expected_retransmission_time_ms);
 
   // Implements TransformedFrameCallback. Can be called on any thread. Posts
   // the transformed frame to be sent on the |encoder_queue_|.
@@ -71,6 +71,7 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
   rtc::CriticalSection sender_lock_;
   RTPSenderVideo* sender_ RTC_GUARDED_BY(sender_lock_);
   rtc::scoped_refptr<FrameTransformerInterface> frame_transformer_;
+  const uint32_t ssrc_;
   TaskQueueBase* encoder_queue_ = nullptr;
 };
 

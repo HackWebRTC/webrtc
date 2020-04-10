@@ -160,7 +160,9 @@ RTPSenderVideo::RTPSenderVideo(const Config& config)
           config.frame_transformer
               ? new rtc::RefCountedObject<
                     RTPSenderVideoFrameTransformerDelegate>(
-                    this, std::move(config.frame_transformer))
+                    this,
+                    config.frame_transformer,
+                    rtp_sender_->SSRC())
               : nullptr) {
   if (frame_transformer_delegate_)
     frame_transformer_delegate_->Init();
@@ -713,7 +715,7 @@ bool RTPSenderVideo::SendEncodedImage(
     // The frame will be sent async once transformed.
     return frame_transformer_delegate_->TransformFrame(
         payload_type, codec_type, rtp_timestamp, encoded_image, fragmentation,
-        video_header, expected_retransmission_time_ms, rtp_sender_->SSRC());
+        video_header, expected_retransmission_time_ms);
   }
   return SendVideo(payload_type, codec_type, rtp_timestamp,
                    encoded_image.capture_time_ms_, encoded_image, fragmentation,

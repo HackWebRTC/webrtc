@@ -879,9 +879,9 @@ class MockFrameTransformer : public FrameTransformerInterface {
                void(std::unique_ptr<video_coding::EncodedFrame> frame,
                     std::vector<uint8_t> additional_data,
                     uint32_t ssrc));
-  MOCK_METHOD1(RegisterTransformedFrameCallback,
-               void(rtc::scoped_refptr<TransformedFrameCallback>));
-  MOCK_METHOD0(UnregisterTransformedFrameCallback, void());
+  MOCK_METHOD2(RegisterTransformedFrameSinkCallback,
+               void(rtc::scoped_refptr<TransformedFrameCallback>, uint32_t));
+  MOCK_METHOD1(UnregisterTransformedFrameSinkCallback, void(uint32_t));
 };
 
 TEST_P(RtpSenderVideoTest, SendEncodedImageWithFrameTransformer) {
@@ -893,7 +893,7 @@ TEST_P(RtpSenderVideoTest, SendEncodedImageWithFrameTransformer) {
   config.field_trials = &field_trials_;
   config.frame_transformer = transformer;
 
-  EXPECT_CALL(*transformer, RegisterTransformedFrameCallback(_));
+  EXPECT_CALL(*transformer, RegisterTransformedFrameSinkCallback);
   std::unique_ptr<RTPSenderVideo> rtp_sender_video =
       std::make_unique<RTPSenderVideo>(config);
 
@@ -908,7 +908,7 @@ TEST_P(RtpSenderVideoTest, SendEncodedImageWithFrameTransformer) {
                                      nullptr, hdr,
                                      kDefaultExpectedRetransmissionTimeMs);
 
-  EXPECT_CALL(*transformer, UnregisterTransformedFrameCallback());
+  EXPECT_CALL(*transformer, UnregisterTransformedFrameSinkCallback);
   rtp_sender_video.reset();
 }
 
