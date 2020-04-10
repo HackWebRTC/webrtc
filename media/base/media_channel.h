@@ -714,15 +714,11 @@ struct VideoMediaInfo {
   void Clear() {
     senders.clear();
     receivers.clear();
-    bw_estimations.clear();
     send_codecs.clear();
     receive_codecs.clear();
   }
   std::vector<VideoSenderInfo> senders;
   std::vector<VideoReceiverInfo> receivers;
-  // Deprecated.
-  // TODO(holmer): Remove once upstream projects no longer use this.
-  std::vector<BandwidthEstimationInfo> bw_estimations;
   RtpCodecParametersMap send_codecs;
   RtpCodecParametersMap receive_codecs;
 };
