@@ -1000,49 +1000,6 @@ TEST_F(JsepTransportControllerTest, IceSignalingOccursOnSignalingThread) {
   EXPECT_TRUE(!signaled_on_non_signaling_thread_);
 }
 
-// Older versions of Chrome expect the ICE role to be re-determined when an
-// ICE restart occurs, and also don't perform conflict resolution correctly,
-// so for now we can't safely stop doing this.
-// See: https://bugs.chromium.org/p/chromium/issues/detail?id=628676
-// TODO(deadbeef): Remove this when these old versions of Chrome reach a low
-// enough population.
-TEST_F(JsepTransportControllerTest, IceRoleRedeterminedOnIceRestartByDefault) {
-  CreateJsepTransportController(JsepTransportController::Config());
-  // Let the |transport_controller_| be the controlled side initially.
-  auto remote_offer = std::make_unique<cricket::SessionDescription>();
-  AddAudioSection(remote_offer.get(), kAudioMid1, kIceUfrag1, kIcePwd1,
-                  cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_ACTPASS,
-                  nullptr);
-  auto local_answer = std::make_unique<cricket::SessionDescription>();
-  AddAudioSection(local_answer.get(), kAudioMid1, kIceUfrag2, kIcePwd2,
-                  cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_PASSIVE,
-                  nullptr);
-
-  EXPECT_TRUE(transport_controller_
-                  ->SetRemoteDescription(SdpType::kOffer, remote_offer.get())
-                  .ok());
-  EXPECT_TRUE(transport_controller_
-                  ->SetLocalDescription(SdpType::kAnswer, local_answer.get())
-                  .ok());
-
-  auto fake_dtls = static_cast<FakeDtlsTransport*>(
-      transport_controller_->GetDtlsTransport(kAudioMid1));
-  EXPECT_EQ(cricket::ICEROLE_CONTROLLED,
-            fake_dtls->fake_ice_transport()->GetIceRole());
-
-  // New offer will trigger the ICE restart.
-  auto restart_local_offer = std::make_unique<cricket::SessionDescription>();
-  AddAudioSection(restart_local_offer.get(), kAudioMid1, kIceUfrag3, kIcePwd3,
-                  cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_ACTPASS,
-                  nullptr);
-  EXPECT_TRUE(
-      transport_controller_
-          ->SetLocalDescription(SdpType::kOffer, restart_local_offer.get())
-          .ok());
-  EXPECT_EQ(cricket::ICEROLE_CONTROLLING,
-            fake_dtls->fake_ice_transport()->GetIceRole());
-}
-
 // Test that if the TransportController was created with the
 // |redetermine_role_on_ice_restart| parameter set to false, the role is *not*
 // redetermined on an ICE restart.

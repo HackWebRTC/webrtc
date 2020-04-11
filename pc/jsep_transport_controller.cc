@@ -1319,28 +1319,6 @@ cricket::IceRole JsepTransportController::DetermineIceRole(
         tdesc.ice_mode == cricket::ICEMODE_FULL) {
       ice_role = cricket::ICEROLE_CONTROLLING;
     }
-
-    // Older versions of Chrome expect the ICE role to be re-determined when an
-    // ICE restart occurs, and also don't perform conflict resolution correctly,
-    // so for now we can't safely stop doing this, unless the application opts
-    // in by setting |config_.redetermine_role_on_ice_restart_| to false. See:
-    // https://bugs.chromium.org/p/chromium/issues/detail?id=628676
-    // TODO(deadbeef): Remove this when these old versions of Chrome reach a low
-    // enough population.
-    if (config_.redetermine_role_on_ice_restart &&
-        jsep_transport->local_description() &&
-        cricket::IceCredentialsChanged(
-            jsep_transport->local_description()->transport_desc.ice_ufrag,
-            jsep_transport->local_description()->transport_desc.ice_pwd,
-            tdesc.ice_ufrag, tdesc.ice_pwd) &&
-        // Don't change the ICE role if the remote endpoint is ICE lite; we
-        // should always be controlling in that case.
-        (!jsep_transport->remote_description() ||
-         jsep_transport->remote_description()->transport_desc.ice_mode !=
-             cricket::ICEMODE_LITE)) {
-      ice_role = (type == SdpType::kOffer) ? cricket::ICEROLE_CONTROLLING
-                                           : cricket::ICEROLE_CONTROLLED;
-    }
   } else {
     // If our role is cricket::ICEROLE_CONTROLLED and the remote endpoint
     // supports only ice_lite, this local endpoint should take the CONTROLLING
