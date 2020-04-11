@@ -66,27 +66,28 @@ RtpVideoStreamReceiverFrameTransformerDelegate::
     RtpVideoStreamReceiverFrameTransformerDelegate(
         RtpVideoStreamReceiver* receiver,
         rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
-        rtc::Thread* network_thread)
+        rtc::Thread* network_thread,
+        uint32_t ssrc)
     : receiver_(receiver),
       frame_transformer_(std::move(frame_transformer)),
-      network_thread_(network_thread) {}
+      network_thread_(network_thread),
+      ssrc_(ssrc) {}
 
 void RtpVideoStreamReceiverFrameTransformerDelegate::Init() {
   RTC_DCHECK_RUN_ON(&network_sequence_checker_);
-  frame_transformer_->RegisterTransformedFrameCallback(
-      rtc::scoped_refptr<TransformedFrameCallback>(this));
+  frame_transformer_->RegisterTransformedFrameSinkCallback(
+      rtc::scoped_refptr<TransformedFrameCallback>(this), ssrc_);
 }
 
 void RtpVideoStreamReceiverFrameTransformerDelegate::Reset() {
   RTC_DCHECK_RUN_ON(&network_sequence_checker_);
-  frame_transformer_->UnregisterTransformedFrameCallback();
+  frame_transformer_->UnregisterTransformedFrameSinkCallback(ssrc_);
   frame_transformer_ = nullptr;
   receiver_ = nullptr;
 }
 
 void RtpVideoStreamReceiverFrameTransformerDelegate::TransformFrame(
-    std::unique_ptr<video_coding::RtpFrameObject> frame,
-    uint32_t ssrc) {
+    std::unique_ptr<video_coding::RtpFrameObject> frame) {
   RTC_DCHECK_RUN_ON(&network_sequence_checker_);
   // TODO(bugs.webrtc.org/11380) remove once this version of TransformFrame is
   // deprecated.
@@ -95,11 +96,11 @@ void RtpVideoStreamReceiverFrameTransformerDelegate::TransformFrame(
   auto frame_copy =
       std::make_unique<video_coding::RtpFrameObject>(*frame.get());
   frame_transformer_->TransformFrame(std::move(frame_copy),
-                                     std::move(additional_data), ssrc);
+                                     std::move(additional_data), ssrc_);
 
   frame_transformer_->Transform(
       std::make_unique<TransformableVideoReceiverFrame>(std::move(frame),
-                                                        ssrc));
+                                                        ssrc_));
 }
 
 void RtpVideoStreamReceiverFrameTransformerDelegate::OnTransformedFrame(

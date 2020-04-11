@@ -30,14 +30,14 @@ class RtpVideoStreamReceiverFrameTransformerDelegate
   RtpVideoStreamReceiverFrameTransformerDelegate(
       RtpVideoStreamReceiver* receiver,
       rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
-      rtc::Thread* network_thread);
+      rtc::Thread* network_thread,
+      uint32_t ssrc);
 
   void Init();
   void Reset();
 
   // Delegates the call to FrameTransformerInterface::TransformFrame.
-  void TransformFrame(std::unique_ptr<video_coding::RtpFrameObject> frame,
-                      uint32_t ssrc);
+  void TransformFrame(std::unique_ptr<video_coding::RtpFrameObject> frame);
 
   // Implements TransformedFrameCallback. Can be called on any thread. Posts
   // the transformed frame to be managed on the |network_thread_|.
@@ -60,6 +60,7 @@ class RtpVideoStreamReceiverFrameTransformerDelegate
   rtc::scoped_refptr<FrameTransformerInterface> frame_transformer_
       RTC_GUARDED_BY(network_sequence_checker_);
   rtc::Thread* const network_thread_;
+  const uint32_t ssrc_;
 };
 
 }  // namespace webrtc

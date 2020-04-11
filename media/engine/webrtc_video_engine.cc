@@ -1404,6 +1404,9 @@ bool WebRtcVideoChannel::AddRecvStream(const StreamParams& sp,
     config.sync_group = sp.stream_ids()[0];
   }
 
+  if (unsignaled_frame_transformer_ && !config.frame_transformer)
+    config.frame_transformer = unsignaled_frame_transformer_;
+
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
       this, call_, sp, std::move(config), decoder_factory_, default_stream,
       recv_codecs_, flexfec_config);
@@ -3278,7 +3281,15 @@ void WebRtcVideoChannel::SetEncoderToPacketizerFrameTransformer(
 void WebRtcVideoChannel::SetDepacketizerToDecoderFrameTransformer(
     uint32_t ssrc,
     rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer) {
+  RTC_DCHECK(frame_transformer);
   RTC_DCHECK_RUN_ON(&thread_checker_);
+  if (ssrc == 0) {
+    // If the receiver is unsignaled, save the frame transformer and set it when
+    // the stream is associated with an ssrc.
+    unsignaled_frame_transformer_ = std::move(frame_transformer);
+    return;
+  }
+
   auto matching_stream = receive_streams_.find(ssrc);
   if (matching_stream != receive_streams_.end()) {
     matching_stream->second->SetDepacketizerToDecoderFrameTransformer(

@@ -620,6 +620,10 @@ class WebRtcVideoChannel : public VideoMediaChannel,
   // connection.
   const webrtc::CryptoOptions crypto_options_ RTC_GUARDED_BY(thread_checker_);
 
+  // Optional frame transformer set on unsignaled streams.
+  rtc::scoped_refptr<webrtc::FrameTransformerInterface>
+      unsignaled_frame_transformer_ RTC_GUARDED_BY(thread_checker_);
+
   // Buffer for unhandled packets.
   std::unique_ptr<UnhandledPacketsBuffer> unknown_ssrc_packet_buffer_
       RTC_GUARDED_BY(thread_checker_);

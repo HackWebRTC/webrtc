@@ -131,9 +131,9 @@ class MockFrameTransformer : public FrameTransformerInterface {
                void(std::unique_ptr<video_coding::EncodedFrame> frame,
                     std::vector<uint8_t> additional_data,
                     uint32_t ssrc));
-  MOCK_METHOD1(RegisterTransformedFrameCallback,
-               void(rtc::scoped_refptr<TransformedFrameCallback>));
-  MOCK_METHOD0(UnregisterTransformedFrameCallback, void());
+  MOCK_METHOD2(RegisterTransformedFrameSinkCallback,
+               void(rtc::scoped_refptr<TransformedFrameCallback>, uint32_t));
+  MOCK_METHOD1(UnregisterTransformedFrameSinkCallback, void(uint32_t));
 };
 
 constexpr uint32_t kSsrc = 111;
@@ -1221,7 +1221,8 @@ TEST_F(RtpVideoStreamReceiverTest, RepeatedSecondarySinkDisallowed) {
 TEST_F(RtpVideoStreamReceiverTest, TransformFrame) {
   rtc::scoped_refptr<MockFrameTransformer> mock_frame_transformer =
       new rtc::RefCountedObject<MockFrameTransformer>();
-  EXPECT_CALL(*mock_frame_transformer, RegisterTransformedFrameCallback);
+  EXPECT_CALL(*mock_frame_transformer,
+              RegisterTransformedFrameSinkCallback(_, config_.rtp.remote_ssrc));
   auto receiver = std::make_unique<RtpVideoStreamReceiver>(
       Clock::GetRealTimeClock(), &mock_transport_, nullptr, nullptr, &config_,
       rtp_receive_statistics_.get(), nullptr, process_thread_.get(),
@@ -1248,7 +1249,8 @@ TEST_F(RtpVideoStreamReceiverTest, TransformFrame) {
                              config_.rtp.remote_ssrc));
   receiver->OnReceivedPayloadData(data, rtp_packet, video_header);
 
-  EXPECT_CALL(*mock_frame_transformer, UnregisterTransformedFrameCallback());
+  EXPECT_CALL(*mock_frame_transformer,
+              UnregisterTransformedFrameSinkCallback(config_.rtp.remote_ssrc));
   receiver = nullptr;
 }
 

@@ -109,9 +109,9 @@ void VideoRtpReceiver::SetDepacketizerToDecoderFrameTransformer(
   worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
     RTC_DCHECK_RUN_ON(worker_thread_);
     frame_transformer_ = std::move(frame_transformer);
-    if (media_channel_ && ssrc_.has_value() && !stopped_) {
+    if (media_channel_ && !stopped_) {
       media_channel_->SetDepacketizerToDecoderFrameTransformer(
-          *ssrc_, frame_transformer_);
+          ssrc_.value_or(0), frame_transformer_);
     }
   });
 }
@@ -157,9 +157,9 @@ void VideoRtpReceiver::RestartMediaChannel(absl::optional<uint32_t> ssrc) {
       SetEncodedSinkEnabled(true);
     }
 
-    if (frame_transformer_ && media_channel_ && ssrc_.has_value()) {
+    if (frame_transformer_ && media_channel_) {
       media_channel_->SetDepacketizerToDecoderFrameTransformer(
-          *ssrc_, frame_transformer_);
+          ssrc_.value_or(0), frame_transformer_);
     }
   });
 
@@ -267,6 +267,10 @@ void VideoRtpReceiver::SetMediaChannel(cricket::MediaChannel* media_channel) {
       }
       if (encoded_sink_enabled) {
         SetEncodedSinkEnabled(true);
+      }
+      if (frame_transformer_) {
+        media_channel_->SetDepacketizerToDecoderFrameTransformer(
+            ssrc_.value_or(0), frame_transformer_);
       }
     }
   });

@@ -117,33 +117,39 @@ class MockFrameTransformer : public FrameTransformerInterface {
                uint32_t),
               (override));
   MOCK_METHOD(void,
-              RegisterTransformedFrameCallback,
-              (rtc::scoped_refptr<TransformedFrameCallback>),
+              RegisterTransformedFrameSinkCallback,
+              (rtc::scoped_refptr<TransformedFrameCallback>, uint32_t),
               (override));
-  MOCK_METHOD(void, UnregisterTransformedFrameCallback, (), (override));
+  MOCK_METHOD(void,
+              UnregisterTransformedFrameSinkCallback,
+              (uint32_t),
+              (override));
 };
 
 TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
-     RegisterTransformedFrameCallbackOnInit) {
+     RegisterTransformedFrameCallbackSinkOnInit) {
   TestRtpVideoStreamReceiver receiver;
   rtc::scoped_refptr<MockFrameTransformer> frame_transformer(
       new rtc::RefCountedObject<MockFrameTransformer>());
   rtc::scoped_refptr<RtpVideoStreamReceiverFrameTransformerDelegate> delegate(
       new rtc::RefCountedObject<RtpVideoStreamReceiverFrameTransformerDelegate>(
-          &receiver, frame_transformer, rtc::Thread::Current()));
-  EXPECT_CALL(*frame_transformer, RegisterTransformedFrameCallback);
+          &receiver, frame_transformer, rtc::Thread::Current(),
+          /*remote_ssrc*/ 1111));
+  EXPECT_CALL(*frame_transformer,
+              RegisterTransformedFrameSinkCallback(testing::_, 1111));
   delegate->Init();
 }
 
 TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
-     UnregisterTransformedFrameCallbackOnReset) {
+     UnregisterTransformedFrameSinkCallbackOnReset) {
   TestRtpVideoStreamReceiver receiver;
   rtc::scoped_refptr<MockFrameTransformer> frame_transformer(
       new rtc::RefCountedObject<MockFrameTransformer>());
   rtc::scoped_refptr<RtpVideoStreamReceiverFrameTransformerDelegate> delegate(
       new rtc::RefCountedObject<RtpVideoStreamReceiverFrameTransformerDelegate>(
-          &receiver, frame_transformer, rtc::Thread::Current()));
-  EXPECT_CALL(*frame_transformer, UnregisterTransformedFrameCallback);
+          &receiver, frame_transformer, rtc::Thread::Current(),
+          /*remote_ssrc*/ 1111));
+  EXPECT_CALL(*frame_transformer, UnregisterTransformedFrameSinkCallback(1111));
   delegate->Reset();
 }
 
@@ -153,12 +159,13 @@ TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest, TransformFrame) {
       new rtc::RefCountedObject<MockFrameTransformer>());
   rtc::scoped_refptr<RtpVideoStreamReceiverFrameTransformerDelegate> delegate(
       new rtc::RefCountedObject<RtpVideoStreamReceiverFrameTransformerDelegate>(
-          &receiver, frame_transformer, rtc::Thread::Current()));
+          &receiver, frame_transformer, rtc::Thread::Current(),
+          /*remote_ssrc*/ 1111));
   auto frame = CreateRtpFrameObject();
   EXPECT_CALL(*frame_transformer,
               TransformFrame(_, RtpDescriptorAuthentication(RTPVideoHeader()),
                              /*remote_ssrc*/ 1111));
-  delegate->TransformFrame(std::move(frame), /*remote_ssrc*/ 1111);
+  delegate->TransformFrame(std::move(frame));
 }
 
 TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
@@ -176,7 +183,8 @@ TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
       RTC_FROM_HERE, [&]() mutable {
         return new rtc::RefCountedObject<
             RtpVideoStreamReceiverFrameTransformerDelegate>(
-            &receiver, frame_transformer, network_thread.get());
+            &receiver, frame_transformer, network_thread.get(),
+            /*remote_ssrc*/ 1111);
       });
 
   auto frame = CreateRtpFrameObject();
