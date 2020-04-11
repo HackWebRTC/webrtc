@@ -98,7 +98,6 @@ class LibvpxVp8Encoder : public VideoEncoder {
   const absl::optional<std::vector<CpuSpeedExperiment::Config>>
       experimental_cpu_speed_config_arm_;
   const RateControlSettings rate_control_settings_;
-  const absl::optional<int> screenshare_max_qp_;
 
   EncodedImageCallback* encoded_complete_callback_ = nullptr;
   VideoCodec codec_;

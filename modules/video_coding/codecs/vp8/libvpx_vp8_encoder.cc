@@ -33,7 +33,6 @@
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "modules/video_coding/utility/simulcast_utility.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/experiments/experimental_screenshare_settings.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/experiments/field_trial_units.h"
 #include "rtc_base/logging.h"
@@ -280,8 +279,6 @@ LibvpxVp8Encoder::LibvpxVp8Encoder(std::unique_ptr<LibvpxInterface> interface,
     : libvpx_(std::move(interface)),
       experimental_cpu_speed_config_arm_(CpuSpeedExperiment::GetConfigs()),
       rate_control_settings_(RateControlSettings::ParseFromFieldTrials()),
-      screenshare_max_qp_(
-          ExperimentalScreenshareSettings::ParseFromFieldTrials().MaxQp()),
       frame_buffer_controller_factory_(
           std::move(settings.frame_buffer_controller_factory)),
       resolution_bitrate_limits_(std::move(settings.resolution_bitrate_limits)),
@@ -584,9 +581,6 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   if (rate_control_settings_.LibvpxVp8QpMax()) {
     qp_max_ = std::max(rate_control_settings_.LibvpxVp8QpMax().value(),
                        static_cast<int>(vpx_configs_[0].rc_min_quantizer));
-  }
-  if (codec_.mode == VideoCodecMode::kScreensharing && screenshare_max_qp_) {
-    qp_max_ = *screenshare_max_qp_;
   }
   vpx_configs_[0].rc_max_quantizer = qp_max_;
   vpx_configs_[0].rc_undershoot_pct = 100;

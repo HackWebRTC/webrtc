@@ -182,19 +182,6 @@ rtc_library("keyframe_interval_settings_experiment") {
   ]
 }
 
-rtc_library("experimental_screenshare_settings") {
-  sources = [
-    "experimental_screenshare_settings.cc",
-    "experimental_screenshare_settings.h",
-  ]
-  deps = [
-    ":field_trial_parser",
-    "../../api/transport:field_trial_based_config",
-    "../../api/transport:webrtc_key_value_config",
-    "//third_party/abseil-cpp/absl/types:optional",
-  ]
-}
-
 rtc_library("stable_target_rate_experiment") {
   sources = [
     "stable_target_rate_experiment.cc",

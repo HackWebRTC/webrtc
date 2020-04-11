@@ -320,7 +320,6 @@ rtc_library("rtc_audio_video") {
     "../rtc_base:checks",
     "../rtc_base:rtc_task_queue",
     "../rtc_base:stringutils",
-    "../rtc_base/experiments:experimental_screenshare_settings",
     "../rtc_base/experiments:field_trial_parser",
     "../rtc_base/experiments:min_video_bitrate_experiment",
     "../rtc_base/experiments:normalize_simulcast_size_experiment",

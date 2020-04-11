@@ -14,7 +14,6 @@
 #include <cmath>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/experiments/experimental_screenshare_settings.h"
 
 namespace webrtc {
 
@@ -87,14 +86,6 @@ bool SimulcastUtility::ValidSimulcastParameters(const VideoCodec& codec,
 bool SimulcastUtility::IsConferenceModeScreenshare(const VideoCodec& codec) {
   if (codec.mode != VideoCodecMode::kScreensharing ||
       NumberOfTemporalLayers(codec, 0) != 2) {
-    return false;
-  }
-
-  if (codec.numberOfSimulcastStreams > 0 &&
-      ExperimentalScreenshareSettings::ParseFromFieldTrials()
-          .DefaultTlInBaseLayer()
-          .value_or(false)) {
-    // Don't use ScreenshareLayers for base layer, regardless of flags.
     return false;
   }
 
