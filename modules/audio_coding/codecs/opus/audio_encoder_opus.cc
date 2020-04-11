@@ -230,32 +230,6 @@ float GetMinPacketLossRate() {
   return 0.0;
 }
 
-std::unique_ptr<AudioEncoderOpusImpl::NewPacketLossRateOptimizer>
-GetNewPacketLossRateOptimizer() {
-  constexpr char kPacketLossOptimizationName[] =
-      "WebRTC-Audio-NewOpusPacketLossRateOptimization";
-  const bool use_new_packet_loss_optimization =
-      webrtc::field_trial::IsEnabled(kPacketLossOptimizationName);
-  if (use_new_packet_loss_optimization) {
-    const std::string field_trial_string =
-        webrtc::field_trial::FindFullName(kPacketLossOptimizationName);
-    int min_rate;
-    int max_rate;
-    float slope;
-    if (sscanf(field_trial_string.c_str(), "Enabled-%d-%d-%f", &min_rate,
-               &max_rate, &slope) == 3 &&
-        IsValidPacketLossRate(min_rate) && IsValidPacketLossRate(max_rate)) {
-      return std::make_unique<AudioEncoderOpusImpl::NewPacketLossRateOptimizer>(
-          ToFraction(min_rate), ToFraction(max_rate), slope);
-    }
-    RTC_LOG(LS_WARNING) << "Invalid parameters for "
-                        << kPacketLossOptimizationName
-                        << ", using default values.";
-    return std::make_unique<AudioEncoderOpusImpl::NewPacketLossRateOptimizer>();
-  }
-  return nullptr;
-}
-
 std::vector<float> GetBitrateMultipliers() {
   constexpr char kBitrateMultipliersName[] =
       "WebRTC-Audio-OpusBitrateMultipliers";
@@ -297,21 +271,6 @@ int GetMultipliedBitrate(int bitrate, const std::vector<float>& multipliers) {
   return static_cast<int>(multipliers[bitrate_kbps - 5] * bitrate);
 }
 }  // namespace
-
-AudioEncoderOpusImpl::NewPacketLossRateOptimizer::NewPacketLossRateOptimizer(
-    float min_packet_loss_rate,
-    float max_packet_loss_rate,
-    float slope)
-    : min_packet_loss_rate_(min_packet_loss_rate),
-      max_packet_loss_rate_(max_packet_loss_rate),
-      slope_(slope) {}
-
-float AudioEncoderOpusImpl::NewPacketLossRateOptimizer::OptimizePacketLossRate(
-    float packet_loss_rate) const {
-  packet_loss_rate = slope_ * packet_loss_rate;
-  return std::min(std::max(packet_loss_rate, min_packet_loss_rate_),
-                  max_packet_loss_rate_);
-}
 
 void AudioEncoderOpusImpl::AppendSupportedEncoders(
     std::vector<AudioCodecSpec>* specs) {
@@ -474,7 +433,6 @@ AudioEncoderOpusImpl::AudioEncoderOpusImpl(
       bitrate_multipliers_(GetBitrateMultipliers()),
       packet_loss_rate_(0.0),
       min_packet_loss_rate_(GetMinPacketLossRate()),
-      new_packet_loss_optimizer_(GetNewPacketLossRateOptimizer()),
       inst_(nullptr),
       packet_loss_fraction_smoother_(new PacketLossFractionSmoother()),
       audio_network_adaptor_creator_(audio_network_adaptor_creator),
@@ -831,12 +789,8 @@ void AudioEncoderOpusImpl::SetNumChannelsToEncode(
 }
 
 void AudioEncoderOpusImpl::SetProjectedPacketLossRate(float fraction) {
-  if (new_packet_loss_optimizer_) {
-    fraction = new_packet_loss_optimizer_->OptimizePacketLossRate(fraction);
-  } else {
-    fraction = OptimizePacketLossRate(fraction, packet_loss_rate_);
-    fraction = std::max(fraction, min_packet_loss_rate_);
-  }
+  fraction = OptimizePacketLossRate(fraction, packet_loss_rate_);
+  fraction = std::max(fraction, min_packet_loss_rate_);
   if (packet_loss_rate_ != fraction) {
     packet_loss_rate_ = fraction;
     RTC_CHECK_EQ(
