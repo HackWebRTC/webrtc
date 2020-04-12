@@ -221,11 +221,6 @@ void OpenSSLAdapter::SetCertVerifier(
   ssl_cert_verifier_ = ssl_cert_verifier;
 }
 
-void OpenSSLAdapter::SetIdentity(SSLIdentity* identity) {
-  RTC_DCHECK(!identity_);
-  identity_.reset(static_cast<OpenSSLIdentity*>(identity));
-}
-
 void OpenSSLAdapter::SetIdentity(std::unique_ptr<SSLIdentity> identity) {
   RTC_DCHECK(!identity_);
   identity_ =

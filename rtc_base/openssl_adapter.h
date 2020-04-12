@@ -53,7 +53,6 @@ class OpenSSLAdapter final : public SSLAdapter, public MessageHandler {
   void SetEllipticCurves(const std::vector<std::string>& curves) override;
   void SetMode(SSLMode mode) override;
   void SetCertVerifier(SSLCertificateVerifier* ssl_cert_verifier) override;
-  void SetIdentity(SSLIdentity* identity) override;
   void SetIdentity(std::unique_ptr<SSLIdentity> identity) override;
   void SetRole(SSLRole role) override;
   AsyncSocket* Accept(SocketAddress* paddr) override;
