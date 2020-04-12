@@ -241,14 +241,6 @@ std::unique_ptr<OpenSSLIdentity> OpenSSLIdentity::CreateWithExpiration(
   return CreateInternal(params);
 }
 
-OpenSSLIdentity* OpenSSLIdentity::GenerateWithExpiration(
-    const std::string& common_name,
-    const KeyParams& key_params,
-    time_t certificate_lifetime) {
-  return CreateWithExpiration(common_name, key_params, certificate_lifetime)
-      .release();
-}
-
 std::unique_ptr<OpenSSLIdentity> OpenSSLIdentity::CreateForTest(
     const SSLIdentityParams& params) {
   return CreateInternal(params);

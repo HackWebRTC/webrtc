@@ -254,28 +254,6 @@ std::unique_ptr<SSLIdentity> SSLIdentity::CreateFromPEMChainStrings(
                                                     certificate_chain);
 }
 
-// static
-SSLIdentity* SSLIdentity::GenerateWithExpiration(const std::string& common_name,
-                                                 const KeyParams& key_params,
-                                                 time_t certificate_lifetime) {
-  return OpenSSLIdentity::GenerateWithExpiration(common_name, key_params,
-                                                 certificate_lifetime);
-}
-
-// static
-SSLIdentity* SSLIdentity::Generate(const std::string& common_name,
-                                   const KeyParams& key_params) {
-  return OpenSSLIdentity::GenerateWithExpiration(
-      common_name, key_params, kDefaultCertificateLifetimeInSeconds);
-}
-
-// static
-SSLIdentity* SSLIdentity::Generate(const std::string& common_name,
-                                   KeyType key_type) {
-  return OpenSSLIdentity::GenerateWithExpiration(
-      common_name, KeyParams(key_type), kDefaultCertificateLifetimeInSeconds);
-}
-
 SSLIdentity* SSLIdentity::GenerateForTest(const SSLIdentityParams& params) {
   return OpenSSLIdentity::GenerateForTest(params);
 }

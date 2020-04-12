@@ -129,17 +129,6 @@ class RTC_EXPORT SSLIdentity {
       const std::string& private_key,
       const std::string& certificate_chain);
 
-  // Old versions of Create(). These return a pointer, but still require the
-  // caller to take ownership.
-  RTC_DEPRECATED static SSLIdentity* GenerateWithExpiration(
-      const std::string& common_name,
-      const KeyParams& key_param,
-      time_t certificate_lifetime);
-  RTC_DEPRECATED static SSLIdentity* Generate(const std::string& common_name,
-                                              const KeyParams& key_param);
-  RTC_DEPRECATED static SSLIdentity* Generate(const std::string& common_name,
-                                              KeyType key_type);
-
   // Generates an identity with the specified validity period.
   // TODO(torbjorng): Now that Generate() accepts relevant params, make tests
   // use that instead of this function.
