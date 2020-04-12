@@ -136,7 +136,6 @@ class MockAudioProcessing : public ::testing::NiceMock<AudioProcessing> {
       std::unique_ptr<AudioGenerator> audio_generator) {}
   MOCK_METHOD0(DetachPlayoutAudioGenerator, void());
 
-  MOCK_METHOD0(UpdateHistogramsOnCallEnd, void());
   MOCK_METHOD0(GetStatistics, AudioProcessingStats());
   MOCK_METHOD1(GetStatistics, AudioProcessingStats(bool));
 

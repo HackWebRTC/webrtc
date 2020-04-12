@@ -624,12 +624,6 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
   // attached, its destructor is called.
   virtual void DetachPlayoutAudioGenerator() = 0;
 
-  // Use to send UMA histograms at end of a call. Note that all histogram
-  // specific member variables are reset.
-  // Deprecated. This method is deprecated and will be removed.
-  // TODO(peah): Remove this method.
-  virtual void UpdateHistogramsOnCallEnd() = 0;
-
   // Get audio processing statistics.
   virtual AudioProcessingStats GetStatistics() = 0;
   // TODO(webrtc:5298) Deprecated variant. The |has_remote_tracks| argument
