@@ -389,8 +389,9 @@ int32_t ChannelSend::SendData(AudioFrameType frameType,
     // Asynchronously transform the payload before sending it. After the payload
     // is transformed, the delegate will call SendRtpAudio to send it.
     frame_transformer_delegate_->Transform(
-        frameType, payloadType, rtp_timestamp, payloadData, payloadSize,
-        absolute_capture_timestamp_ms, _rtpRtcpModule->SSRC());
+        frameType, payloadType, rtp_timestamp, _rtpRtcpModule->StartTimestamp(),
+        payloadData, payloadSize, absolute_capture_timestamp_ms,
+        _rtpRtcpModule->SSRC());
     return 0;
   }
   return SendRtpAudio(frameType, payloadType, rtp_timestamp, payload,

@@ -54,6 +54,7 @@ class ChannelSendFrameTransformerDelegate : public TransformedFrameCallback {
   void Transform(AudioFrameType frame_type,
                  uint8_t payload_type,
                  uint32_t rtp_timestamp,
+                 uint32_t rtp_start_timestamp,
                  const uint8_t* payload_data,
                  size_t payload_size,
                  int64_t absolute_capture_timestamp_ms,
