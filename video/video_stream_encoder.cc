@@ -524,9 +524,9 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     log_stream << i << ": " << codec.simulcastStream[i].width << "x"
                << codec.simulcastStream[i].height
                << " fps: " << codec.simulcastStream[i].maxFramerate
-               << " min_bps: " << codec.simulcastStream[i].minBitrate
-               << " target_bps: " << codec.simulcastStream[i].targetBitrate
-               << " max_bps: " << codec.simulcastStream[i].maxBitrate
+               << " min_kbps: " << codec.simulcastStream[i].minBitrate
+               << " target_kbps: " << codec.simulcastStream[i].targetBitrate
+               << " max_kbps: " << codec.simulcastStream[i].maxBitrate
                << " max_fps: " << codec.simulcastStream[i].maxFramerate
                << " max_qp: " << codec.simulcastStream[i].qpMax
                << " num_tl: " << codec.simulcastStream[i].numberOfTemporalLayers
@@ -540,9 +540,9 @@ void VideoStreamEncoder::ReconfigureEncoder() {
       log_stream << i << ": " << codec.spatialLayers[i].width << "x"
                  << codec.spatialLayers[i].height
                  << " fps: " << codec.spatialLayers[i].maxFramerate
-                 << " min_bps: " << codec.spatialLayers[i].minBitrate
-                 << " target_bps: " << codec.spatialLayers[i].targetBitrate
-                 << " max_bps: " << codec.spatialLayers[i].maxBitrate
+                 << " min_kbps: " << codec.spatialLayers[i].minBitrate
+                 << " target_kbps: " << codec.spatialLayers[i].targetBitrate
+                 << " max_kbps: " << codec.spatialLayers[i].maxBitrate
                  << " max_qp: " << codec.spatialLayers[i].qpMax
                  << " num_tl: " << codec.spatialLayers[i].numberOfTemporalLayers
                  << " active: "
