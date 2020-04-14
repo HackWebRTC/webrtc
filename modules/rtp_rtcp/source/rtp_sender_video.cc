@@ -45,22 +45,6 @@ namespace {
 constexpr size_t kRedForFecHeaderLength = 1;
 constexpr int64_t kMaxUnretransmittableFrameIntervalMs = 33 * 4;
 
-// This is experimental field trial to exclude transport sequence number from
-// FEC packets and should only be used in conjunction with datagram transport.
-// Datagram transport removes transport sequence numbers from RTP packets and
-// uses datagram feedback loop to re-generate RTCP feedback packets, but FEC
-// contorol packets are calculated before sequence number is removed and as a
-// result recovered packets will be corrupt unless we also remove transport
-// sequence number during FEC calculation.
-//
-// TODO(sukhanov): We need to find a better way to implement FEC with datagram
-// transport, probably moving FEC to datagram integration layter. We should
-// also remove special field trial once we switch datagram path from
-// RTCConfiguration flags to field trial and use the same field trial for FEC
-// workaround.
-const char kExcludeTransportSequenceNumberFromFecFieldTrial[] =
-    "WebRTC-ExcludeTransportSequenceNumberFromFec";
-
 void BuildRedPayload(const RtpPacketToSend& media_packet,
                      RtpPacketToSend* red_packet) {
   uint8_t* red_payload = red_packet->AllocatePayload(
@@ -151,10 +135,6 @@ RTPSenderVideo::RTPSenderVideo(const Config& config)
       generic_descriptor_auth_experiment_(!absl::StartsWith(
           config.field_trials->Lookup("WebRTC-GenericDescriptorAuth"),
           "Disabled")),
-      exclude_transport_sequence_number_from_fec_experiment_(absl::StartsWith(
-          config.field_trials->Lookup(
-              kExcludeTransportSequenceNumberFromFecFieldTrial),
-          "Enabled")),
       absolute_capture_time_sender_(config.clock),
       frame_transformer_delegate_(
           config.frame_transformer
@@ -613,24 +593,6 @@ bool RTPSenderVideo::SendVideo(
     }
 
     if (protect_packet && fec_generator_) {
-      if (red_enabled() &&
-          exclude_transport_sequence_number_from_fec_experiment_) {
-        // See comments at the top of the file why experiment
-        // "WebRTC-kExcludeTransportSequenceNumberFromFec" is needed in
-        // conjunction with datagram transport.
-        // TODO(sukhanov): We may also need to implement it for flexfec_sender
-        // if we decide to keep this approach in the future.
-        uint16_t transport_senquence_number;
-        if (packet->GetExtension<webrtc::TransportSequenceNumber>(
-                &transport_senquence_number)) {
-          if (!packet->RemoveExtension(webrtc::TransportSequenceNumber::kId)) {
-            RTC_NOTREACHED()
-                << "Failed to remove transport sequence number, packet="
-                << packet->ToString();
-          }
-        }
-      }
-
       fec_generator_->AddPacketAndGenerateFec(*packet);
     }
 
