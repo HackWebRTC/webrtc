@@ -116,6 +116,8 @@ class RTC_EXPORT SSLIdentity {
                                              const KeyParams& key_param);
   static std::unique_ptr<SSLIdentity> Create(const std::string& common_name,
                                              KeyType key_type);
+
+  // Allows fine-grained control over expiration time.
   static std::unique_ptr<SSLIdentity> CreateForTest(
       const SSLIdentityParams& params);
 
