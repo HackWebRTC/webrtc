@@ -148,7 +148,6 @@ class StunRequest : public rtc::MessageHandler {
   StunRequestManager* manager_;
   StunMessage* msg_;
   int64_t tstamp_;
-  bool in_rfc5389_retransmission_experiment_;
 
   friend class StunRequestManager;
 };
