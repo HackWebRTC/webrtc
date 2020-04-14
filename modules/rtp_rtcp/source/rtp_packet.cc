@@ -190,7 +190,6 @@ void RtpPacket::ZeroMutableExtensions() {
       case RTPExtensionType::kRtpExtensionColorSpace:
       case RTPExtensionType::kRtpExtensionFrameMarking:
       case RTPExtensionType::kRtpExtensionGenericFrameDescriptor00:
-      case RTPExtensionType::kRtpExtensionGenericFrameDescriptor01:
       case RTPExtensionType::kRtpExtensionGenericFrameDescriptor02:
       case RTPExtensionType::kRtpExtensionMid:
       case RTPExtensionType::kRtpExtensionNumberOfExtensions:

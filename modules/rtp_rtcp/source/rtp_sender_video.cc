@@ -358,12 +358,11 @@ void RTPSenderVideo::AddRtpHeaderExtensions(
       descriptor.attached_structure.release();
     }
 
-    // Do not use v0/v1 generic frame descriptor when v2 is stored.
+    // Do not use generic frame descriptor when dependency descriptor is stored.
     if (!extension_is_set) {
       RtpGenericFrameDescriptor generic_descriptor;
       generic_descriptor.SetFirstPacketInSubFrame(first_packet);
       generic_descriptor.SetLastPacketInSubFrame(last_packet);
-      generic_descriptor.SetDiscardable(video_header.generic->discardable);
 
       if (first_packet) {
         generic_descriptor.SetFrameId(

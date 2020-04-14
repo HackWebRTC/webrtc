@@ -46,7 +46,6 @@ constexpr ExtensionInfo kExtensions[] = {
     CreateExtensionInfo<RepairedRtpStreamId>(),
     CreateExtensionInfo<RtpMid>(),
     CreateExtensionInfo<RtpGenericFrameDescriptorExtension00>(),
-    CreateExtensionInfo<RtpGenericFrameDescriptorExtension01>(),
     CreateExtensionInfo<RtpDependencyDescriptorExtension>(),
     CreateExtensionInfo<ColorSpaceExtension>(),
     CreateExtensionInfo<InbandComfortNoiseExtension>(),
