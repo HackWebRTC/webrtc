@@ -116,7 +116,7 @@ set(src_vpx_arm64
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/decoder/vp9_decoder.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/decoder/vp9_detokenize.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/decoder/vp9_dsubexp.c
-    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/arm/neon/vp9_dct_neon.c
+    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/decoder/vp9_job_queue.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/arm/neon/vp9_denoiser_neon.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/arm/neon/vp9_error_neon.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/arm/neon/vp9_frame_scale_neon.c

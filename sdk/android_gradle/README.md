@@ -13,3 +13,7 @@ Note:
 + Use the same version of Android SDK and NDK as WebRTC does;
 + (re)Create `protoc` after updating WebRTC repo, to create the `protoc` program, you need build WebRTC Android via ninja once, let's assume the output dir is `out/android_ninja`, then the `protoc` will be `out/android_ninja/clang_x64/protoc`;
 + Delete `webrtc_build_dir` after updating WebRTC repo;
+
+## Caveat
+
++ abseil-cpp sucks: you need put the `CMake` folder and `CMakeLists.txt` from [abseil/abseil-cpp](https://github.com/abseil/abseil-cpp) into `third_party/abseil-cpp/`.
