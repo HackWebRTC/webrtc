@@ -100,8 +100,7 @@ file(GLOB_RECURSE src_logging
     ${WEBRTC_REPO}/logging/rtc_event_log/rtc_event_log_factory.cc
     ${WEBRTC_REPO}/logging/rtc_event_log/rtc_event_log_impl.cc
     ${WEBRTC_REPO}/logging/rtc_event_log/rtc_stream_config.cc
-    ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen/logging/rtc_event_log/rtc_event_log.pb.cc
-    ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen/logging/rtc_event_log/rtc_event_log2.pb.cc
+    ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen/logging/*.cc
 )
 list(FILTER src_logging EXCLUDE REGEX ${TEST_CC_FILTER})
 
