@@ -796,9 +796,6 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
       video_send_configs_[video_idx].rtp.extensions.emplace_back(
           RtpExtension::kGenericFrameDescriptorUri00,
           kGenericFrameDescriptorExtensionId00);
-      video_send_configs_[video_idx].rtp.extensions.emplace_back(
-          RtpExtension::kGenericFrameDescriptorUri01,
-          kGenericFrameDescriptorExtensionId01);
     }
 
     video_send_configs_[video_idx].rtp.extensions.emplace_back(

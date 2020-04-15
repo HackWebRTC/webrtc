@@ -257,8 +257,6 @@ void CallTest::CreateVideoSendConfig(VideoSendStream::Config* video_config,
                        &video_config->rtp.extensions);
   AddRtpExtensionByUri(RtpExtension::kGenericFrameDescriptorUri00,
                        &video_config->rtp.extensions);
-  AddRtpExtensionByUri(RtpExtension::kGenericFrameDescriptorUri01,
-                       &video_config->rtp.extensions);
   AddRtpExtensionByUri(RtpExtension::kDependencyDescriptorUri,
                        &video_config->rtp.extensions);
   if (video_encoder_configs_.empty()) {
