@@ -1486,18 +1486,17 @@ void WebRtcVideoChannel::ResetUnsignaledRecvStream() {
   RTC_LOG(LS_INFO) << "ResetUnsignaledRecvStream.";
   unsignaled_stream_params_ = StreamParams();
 
-  // Delete any created default streams.
+  // Delete any created default streams. This is needed to avoid SSRC collisions
+  // in Call's RtpDemuxer, in the case that |this| has created a default video
+  // receiver, and then some other WebRtcVideoChannel gets the SSRC signaled
+  // in the corresponding Unified Plan "m=" section.
   auto it = receive_streams_.begin();
   while (it != receive_streams_.end()) {
-    auto delete_it = receive_streams_.end();
     if (it->second->IsDefaultStream()) {
-      delete_it = it;
-    }
-    ++it;
-    if (delete_it != receive_streams_.end()) {
-      DeleteReceiveStream(delete_it->second);
-      // |it| is not invalidated by this erase.
-      receive_streams_.erase(delete_it->first);
+      DeleteReceiveStream(it->second);
+      receive_streams_.erase(it++);
+    } else {
+      ++it;
     }
   }
 }
