@@ -9,7 +9,7 @@ Edit `gradle.properties`, set `compile_native_code=true` and other variables acc
 Note:
 
 + You need download and sync WebRTC repo by yourself, this project won't do that for you;
-+ Checkout the same WebRTC commit as this project does, which is [#30022](https://webrtc.googlesource.com/src/+/1256d9bcac500d962e884231b0360d8c3eb3ef02);
++ Checkout the same WebRTC commit as this project does, which is [#30432](https://webrtc.googlesource.com/src/+/be99ee8f17f93e06c81e3deb4897dfa8253d3211);
 + Use the same version of Android SDK and NDK as WebRTC does;
 + (re)Create `protoc` after updating WebRTC repo, to create the `protoc` program, you need build WebRTC Android via ninja once, let's assume the output dir is `out/android_ninja`, then the `protoc` will be `out/android_ninja/clang_x64/protoc`;
 + Delete `webrtc_build_dir` after updating WebRTC repo;
@@ -23,4 +23,3 @@ If you only want use a small part of WebRTC code, this script could help you fin
 ## Caveat
 
 + Delete `webrtc_build_dir` and `.externalNativeBuild`, run `./gradlew genWebrtcSrc`, and "Refresh Linked C++ Projects" (note that "Sync Project with Gradle Files" won't work) before your build and debug, otherwise the generated sources may not be compiled, undefined reference error will happen, e.g. `webrtc::rtclog::Event` related references;
-+ You need add `#include <stdlib.h>` into `modules/audio_coding/codecs/opus/opus_interface.cc`;

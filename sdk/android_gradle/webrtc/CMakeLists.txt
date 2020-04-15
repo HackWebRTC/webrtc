@@ -48,7 +48,7 @@ include_directories(
     ${WEBRTC_REPO}/third_party/abseil-cpp
     ${WEBRTC_REPO}/third_party/boringssl/src/include
     ${WEBRTC_REPO}/third_party/icu/source/common
-    ${WEBRTC_REPO}/third_party/ffmpeg
+    ${WEBRTC_REPO}/sdk/libs/ffmpeg/include
     ${WEBRTC_REPO}/third_party/jsoncpp/source/include
     ${WEBRTC_REPO}/third_party/libsrtp/config
     ${WEBRTC_REPO}/third_party/libsrtp/crypto/include
@@ -216,4 +216,10 @@ target_link_libraries(jingle_peerconnection_so
     log
     GLESv2
     OpenSLES
+
+    z
+    ${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libswresample.a
+    ${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libavformat.a
+    ${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libavcodec.a
+    ${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libavutil.a
 )
