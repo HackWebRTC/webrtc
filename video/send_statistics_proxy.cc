@@ -792,18 +792,12 @@ VideoSendStream::StreamStats* SendStatisticsProxy::GetStatsEntry(
     case VideoSendStream::StreamStats::StreamType::kRtx:
       entry->referenced_media_ssrc =
           rtp_config_.GetMediaSsrcAssociatedWithRtxSsrc(ssrc);
-      entry->is_rtx = true;
       break;
     case VideoSendStream::StreamStats::StreamType::kFlexfec:
       entry->referenced_media_ssrc =
           rtp_config_.GetMediaSsrcAssociatedWithFlexfecSsrc(ssrc);
-      entry->is_flexfec = true;
       break;
   }
-  // TODO(hbos): Remove these booleans once downstream projects stop depedning
-  // on them, reading the value of |type| instead.
-  RTC_DCHECK_EQ(entry->is_rtx, is_rtx);
-  RTC_DCHECK_EQ(entry->is_flexfec, is_flexfec);
 
   return entry;
 }

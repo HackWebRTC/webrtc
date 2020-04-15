@@ -83,13 +83,6 @@ class VideoSendStream {
     // A snapshot of the most recent Report Block with additional data of
     // interest to statistics. Used to implement RTCRemoteInboundRtpStreamStats.
     absl::optional<ReportBlockData> report_block_data;
-
-    // These booleans are redundant; this information is already exposed in
-    // |type|.
-    // TODO(hbos): Update downstream projects to use |type| instead and delete
-    // these members.
-    bool is_flexfec = false;
-    bool is_rtx = false;
   };
 
   struct Stats {
