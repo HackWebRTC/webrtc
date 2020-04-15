@@ -105,6 +105,10 @@ _Unwind_Reason_Code UnwindBacktrace(struct _Unwind_Context* unwind_context,
   SignalHandlerOutputState* const output_state =
       static_cast<SignalHandlerOutputState*>(unwind_output_state);
 
+  // Abort if output state is corrupt.
+  if (output_state == nullptr)
+    return _URC_END_OF_STACK;
+
   // Avoid overflowing the stack trace array.
   if (output_state->stack_size_counter >= kMaxStackSize)
     return _URC_END_OF_STACK;
@@ -121,8 +125,13 @@ _Unwind_Reason_Code UnwindBacktrace(struct _Unwind_Context* unwind_context,
 
 // This signal handler is exectued on the interrupted thread.
 void SignalHandler(int signum, siginfo_t* info, void* ptr) {
-  _Unwind_Backtrace(&UnwindBacktrace, g_signal_handler_output_state);
-  g_signal_handler_output_state->signal_handler_finish_event.Signal();
+  // This should have been set by the thread requesting the stack trace.
+  SignalHandlerOutputState* signal_handler_output_state =
+      g_signal_handler_output_state;
+  if (signal_handler_output_state != nullptr) {
+    _Unwind_Backtrace(&UnwindBacktrace, signal_handler_output_state);
+    signal_handler_output_state->signal_handler_finish_event.Signal();
+  }
 }
 
 // Temporarily change the signal handler to a function that records a raw stack
