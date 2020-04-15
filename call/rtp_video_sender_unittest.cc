@@ -526,9 +526,9 @@ TEST(RtpVideoSenderTest, RetransmitsOnTransportWideLossInfo) {
   test::NetworkSimulationConfig net_conf;
   net_conf.bandwidth = DataRate::KilobitsPerSec(300);
   auto send_node = s.CreateSimulationNode(net_conf);
+  auto* callee = s.CreateClient("return", call_conf);
   auto* route = s.CreateRoutes(s.CreateClient("send", call_conf), {send_node},
-                               s.CreateClient("return", call_conf),
-                               {s.CreateSimulationNode(net_conf)});
+                               callee, {s.CreateSimulationNode(net_conf)});
 
   test::VideoStreamConfig lossy_config;
   lossy_config.source.framerate = 5;
@@ -556,14 +556,20 @@ TEST(RtpVideoSenderTest, RetransmitsOnTransportWideLossInfo) {
   // from initial probing.
   s.RunFor(TimeDelta::Seconds(1));
   rtx_packets = 0;
-  int decoded_baseline = lossy->receive()->GetStats().frames_decoded;
+  int decoded_baseline = 0;
+  callee->SendTask([&decoded_baseline, &lossy]() {
+    decoded_baseline = lossy->receive()->GetStats().frames_decoded;
+  });
   s.RunFor(TimeDelta::Seconds(1));
   // We expect both that RTX packets were sent and that an appropriate number of
   // frames were received. This is somewhat redundant but reduces the risk of
   // false positives in future regressions (e.g. RTX is send due to probing).
   EXPECT_GE(rtx_packets, 1);
-  int frames_decoded =
-      lossy->receive()->GetStats().frames_decoded - decoded_baseline;
+  int frames_decoded = 0;
+  callee->SendTask([&decoded_baseline, &frames_decoded, &lossy]() {
+    frames_decoded =
+        lossy->receive()->GetStats().frames_decoded - decoded_baseline;
+  });
   EXPECT_EQ(frames_decoded, 5);
 }
 

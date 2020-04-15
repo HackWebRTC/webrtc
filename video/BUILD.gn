@@ -115,6 +115,7 @@ rtc_library("video") {
     "../rtc_base/experiments:rate_control_settings",
     "../rtc_base/synchronization:sequence_checker",
     "../rtc_base/system:thread_registry",
+    "../rtc_base/task_utils:pending_task_safety_flag",
     "../rtc_base/task_utils:repeating_task",
     "../rtc_base/task_utils:to_queued_task",
     "../rtc_base/time:timestamp_extrapolator",
