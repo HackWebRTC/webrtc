@@ -8,16 +8,16 @@ vars = {
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
-  'chromium_revision': '72d0f390b07b30943930a0032bea654f6cd7ed8b',
+  'chromium_revision': 'a775f4aeaa5e5847ca65467a39d5b4a2d1d54d6f',
 }
 
 deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    'https://chromium.googlesource.com/chromium/src/base@22437335ef9f053b9b575f52859f071f81e5a235',
+    'https://chromium.googlesource.com/chromium/src/base@2e2abc3c3844639a5f8d8ec3762875f01f9c1384',
   'src/build':
-    'https://chromium.googlesource.com/chromium/src/build@662ad1b84c9aefbec9cb86efda294bbb2588d138',
+    'https://chromium.googlesource.com/chromium/src/build@212b25dc86151e32abc71fa5d129614937666d69',
   'src/buildtools':
     'https://chromium.googlesource.com/chromium/src/buildtools@2c41dfb19abe40908834803b6fed797b0f341fe1',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
@@ -26,13 +26,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': 'https://chromium.googlesource.com/chromium/src/ios@416c071b8ba49d7c439fa809b166b4327db65120',
+    'url': 'https://chromium.googlesource.com/chromium/src/ios@2f8d00d1cb5b73ec4329dff7ec1ababf6a05e628',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    'https://chromium.googlesource.com/chromium/src/testing@ab4f5551cda16a66208a72e72924b2cc4f994ad6',
+    'https://chromium.googlesource.com/chromium/src/testing@e5ced5141379ee8ae28b4f93d3c02df039d2b052',
   'src/third_party':
-    'https://chromium.googlesource.com/chromium/src/third_party@8adf2b381811143dd4cce1c8dde6cacf8107a2bc',
+    'https://chromium.googlesource.com/chromium/src/third_party@76bcf1e4994827b25b4539a9ef5eed382d2de992',
 
   'src/buildtools/linux64': {
     'packages': [
@@ -123,14 +123,14 @@ deps = {
   'src/third_party/breakpad/breakpad':
     'https://chromium.googlesource.com/breakpad/breakpad.git@f32b83eb08e9ee158d3037b2114357187fd45a05',
   'src/third_party/catapult':
-    'https://chromium.googlesource.com/catapult.git@a79a2f646d240979f54ef9faa4d45863d0e194a0',
+    'https://chromium.googlesource.com/catapult.git@4b4e8791324284c92a5e6a84d93ed9ccdbbd375e',
   'src/third_party/ced/src': {
     'url': 'https://chromium.googlesource.com/external/github.com/google/compact_enc_det.git@ba412eaaacd3186085babcd901679a48863c7dd5',
   },
   'src/third_party/colorama/src':
     'https://chromium.googlesource.com/external/colorama.git@799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
   'src/third_party/depot_tools':
-    'https://chromium.googlesource.com/chromium/tools/depot_tools.git@08f4d59e0b177d3d15b65f9826bbf05491b3841d',
+    'https://chromium.googlesource.com/chromium/tools/depot_tools.git@e1a9c8db7e7cf6ba7d70b06ec3f3cf6d74451680',
   'src/third_party/ffmpeg':
     'https://chromium.googlesource.com/chromium/third_party/ffmpeg.git@31886e8f39a47a9d7107d4c937bb053dcf5699ce',
   'src/third_party/findbugs': {
@@ -212,7 +212,7 @@ deps = {
 
   # Used by boringssl.
   'src/third_party/nasm': {
-      'url': 'https://chromium.googlesource.com/chromium/deps/nasm.git@21eb595319746a669a742d210eaa413c728e7fad'
+      'url': 'https://chromium.googlesource.com/chromium/deps/nasm.git@4fa54ca5f7fc3a15a8c78ac94688e64d3e4e4fa1'
   },
 
   'src/third_party/openh264/src':
@@ -259,9 +259,9 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     'https://chromium.googlesource.com/chromium/deps/yasm/patched-yasm.git@720b70524a4424b15fc57e82263568c8ba0496ad',
   'src/tools':
-    'https://chromium.googlesource.com/chromium/src/tools@406650542a0ffbf402cb8f22a4660a03a68344e7',
+    'https://chromium.googlesource.com/chromium/src/tools@3f15275073fc339e14f39df61fbace5bad82e93d',
   'src/tools/swarming_client':
-    'https://chromium.googlesource.com/infra/luci/client-py.git@cc958279ffd6853e0a1b227a7e957ca334fe56af',
+    'https://chromium.googlesource.com/infra/luci/client-py.git@160b445a44e0daacf6f3f8570ca2707ec451f374',
 
   'src/third_party/accessibility_test_framework': {
       'packages': [
@@ -387,7 +387,7 @@ deps = {
           },
           {
               'package': 'chromium/third_party/android_sdk/public/platform-tools',
-              'version': 'Jxtur3_L9RzY4q79K-AwIahwFW4oi5uYVD5URx9h62wC',
+              'version': 'zMVtBEihXp2Z0NYFNjLLmNrwy6252b_YWG6sh2l0QAcC',
           },
           {
               'package': 'chromium/third_party/android_sdk/public/platforms/android-29',
