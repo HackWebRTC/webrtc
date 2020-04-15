@@ -61,7 +61,7 @@ const int64_t kMaxWarningLogIntervalMs = 10000;
 const int64_t kRtcpMinFrameLengthMs = 17;
 
 // Maximum number of received RRTRs that will be stored.
-const size_t kMaxNumberOfStoredRrtrs = 200;
+const size_t kMaxNumberOfStoredRrtrs = 300;
 
 constexpr int32_t kDefaultVideoReportInterval = 1000;
 constexpr int32_t kDefaultAudioReportInterval = 5000;
