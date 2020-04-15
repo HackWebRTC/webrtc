@@ -791,7 +791,7 @@ class GuardedAsyncInvokeTest : public ::testing::Test {
   }
 
  protected:
-  const static int kWaitTimeout = 1000;
+  constexpr static int kWaitTimeout = 1000;
   GuardedAsyncInvokeTest() : int_value_(0), expected_thread_(nullptr) {}
 
   int int_value_;

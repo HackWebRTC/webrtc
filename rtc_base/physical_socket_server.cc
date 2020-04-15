@@ -969,7 +969,7 @@ class PosixSignalHandler {
   // POSIX only specifies 32 signals, but in principle the system might have
   // more and the programmer might choose to use them, so we size our array
   // for 128.
-  static const int kNumPosixSignals = 128;
+  static constexpr int kNumPosixSignals = 128;
 
   // There is just a single global instance. (Signal handlers do not get any
   // sort of user-defined void * parameter, so they can't access anything that
