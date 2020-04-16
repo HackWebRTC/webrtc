@@ -254,23 +254,6 @@ std::unique_ptr<SSLIdentity> SSLIdentity::CreateFromPEMChainStrings(
                                                     certificate_chain);
 }
 
-SSLIdentity* SSLIdentity::GenerateForTest(const SSLIdentityParams& params) {
-  return OpenSSLIdentity::GenerateForTest(params);
-}
-
-// static
-SSLIdentity* SSLIdentity::FromPEMStrings(const std::string& private_key,
-                                         const std::string& certificate) {
-  return OpenSSLIdentity::FromPEMStrings(private_key, certificate);
-}
-
-// static
-SSLIdentity* SSLIdentity::FromPEMChainStrings(
-    const std::string& private_key,
-    const std::string& certificate_chain) {
-  return OpenSSLIdentity::FromPEMChainStrings(private_key, certificate_chain);
-}
-
 bool operator==(const SSLIdentity& a, const SSLIdentity& b) {
   return static_cast<const OpenSSLIdentity&>(a) ==
          static_cast<const OpenSSLIdentity&>(b);

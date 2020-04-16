@@ -82,7 +82,6 @@ class OpenSSLIdentity final : public SSLIdentity {
 
   const OpenSSLCertificate& certificate() const override;
   const SSLCertChain& cert_chain() const override;
-  RTC_DEPRECATED OpenSSLIdentity* GetReference() const override;
 
   // Configure an SSL context object to use our key and certificate.
   bool ConfigureIdentity(SSL_CTX* ctx);

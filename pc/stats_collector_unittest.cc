@@ -682,8 +682,7 @@ class StatsCollectorTest : public ::testing::Test {
 
     // Fake certificate to report.
     rtc::scoped_refptr<rtc::RTCCertificate> local_certificate(
-        rtc::RTCCertificate::Create(
-            std::unique_ptr<rtc::SSLIdentity>(local_identity.GetReference())));
+        rtc::RTCCertificate::Create(local_identity.Clone()));
     pc->SetLocalCertificate(kTransportName, local_certificate);
     pc->SetRemoteCertChain(kTransportName,
                            remote_identity.cert_chain().Clone());

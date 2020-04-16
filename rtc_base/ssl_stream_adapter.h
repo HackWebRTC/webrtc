@@ -126,9 +126,6 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   // Caller is responsible for freeing the returned object.
   static std::unique_ptr<SSLStreamAdapter> Create(
       std::unique_ptr<StreamInterface> stream);
-  RTC_DEPRECATED static SSLStreamAdapter* Create(StreamInterface* stream) {
-    return Create(absl::WrapUnique(stream)).release();
-  }
 
   explicit SSLStreamAdapter(std::unique_ptr<StreamInterface> stream);
   ~SSLStreamAdapter() override;
@@ -137,9 +134,6 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   // of the SSLIdentity object and will free it when appropriate. Should be
   // called no more than once on a given SSLStream instance.
   virtual void SetIdentity(std::unique_ptr<SSLIdentity> identity) = 0;
-  RTC_DEPRECATED virtual void SetIdentity(SSLIdentity* identity) {
-    SetIdentity(absl::WrapUnique(identity));
-  }
   virtual SSLIdentity* GetIdentityForTesting() const = 0;
 
   // Call this to indicate that we are to play the server role (or client role,

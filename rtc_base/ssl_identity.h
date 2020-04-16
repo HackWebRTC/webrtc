@@ -129,29 +129,10 @@ class RTC_EXPORT SSLIdentity {
       const std::string& private_key,
       const std::string& certificate_chain);
 
-  // Generates an identity with the specified validity period.
-  // TODO(torbjorng): Now that Generate() accepts relevant params, make tests
-  // use that instead of this function.
-  RTC_DEPRECATED static SSLIdentity* GenerateForTest(
-      const SSLIdentityParams& params);
-
-  // Construct an identity from a private key and a certificate.
-  RTC_DEPRECATED static SSLIdentity* FromPEMStrings(
-      const std::string& private_key,
-      const std::string& certificate);
-
-  // Construct an identity from a private key and a certificate chain.
-  RTC_DEPRECATED static SSLIdentity* FromPEMChainStrings(
-      const std::string& private_key,
-      const std::string& certificate_chain);
-
   virtual ~SSLIdentity() {}
 
   // Returns a new SSLIdentity object instance wrapping the same
   // identity information.
-  // Caller is responsible for freeing the returned object.
-  // TODO(hbos,torbjorng): Rename to a less confusing name.
-  RTC_DEPRECATED virtual SSLIdentity* GetReference() const = 0;
   std::unique_ptr<SSLIdentity> Clone() const { return CloneInternal(); }
 
   // Returns a temporary reference to the end-entity (leaf) certificate.

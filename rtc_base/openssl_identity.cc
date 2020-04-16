@@ -333,10 +333,6 @@ const SSLCertChain& OpenSSLIdentity::cert_chain() const {
   return *cert_chain_.get();
 }
 
-OpenSSLIdentity* OpenSSLIdentity::GetReference() const {
-  return static_cast<OpenSSLIdentity*>(CloneInternal().release());
-}
-
 std::unique_ptr<SSLIdentity> OpenSSLIdentity::CloneInternal() const {
   // We cannot use std::make_unique here because the referenced OpenSSLIdentity
   // constructor is private.
