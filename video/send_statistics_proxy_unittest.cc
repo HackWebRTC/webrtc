@@ -45,6 +45,16 @@ const CodecSpecificInfo kDefaultCodecInfo = []() {
   codec_info.codecType = kVideoCodecVP8;
   return codec_info;
 }();
+
+const VideoStreamEncoderObserver::AdaptationSettings kScalingEnabled(true,
+                                                                     true);
+const VideoStreamEncoderObserver::AdaptationSettings kFramerateScalingDisabled(
+    true,
+    false);
+const VideoStreamEncoderObserver::AdaptationSettings kResolutionScalingDisabled(
+    false,
+    true);
+const VideoStreamEncoderObserver::AdaptationSettings kScalingDisabled;
 }  // namespace
 
 class SendStatisticsProxyTest : public ::testing::Test {
@@ -432,81 +442,86 @@ TEST_F(SendStatisticsProxyTest,
 }
 
 TEST_F(SendStatisticsProxyTest, GetCpuAdaptationStats) {
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
   EXPECT_FALSE(statistics_proxy_->GetStats().cpu_limited_framerate);
   EXPECT_FALSE(statistics_proxy_->GetStats().cpu_limited_resolution);
-  cpu_counts.num_framerate_reductions = 1;
-  cpu_counts.num_resolution_reductions = 0;
+  cpu_counts.fps_adaptations = 1;
+  cpu_counts.resolution_adaptations = 0;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
+      VideoStreamEncoderObserver::AdaptationReason::kCpu, cpu_counts,
       quality_counts);
   EXPECT_TRUE(statistics_proxy_->GetStats().cpu_limited_framerate);
   EXPECT_FALSE(statistics_proxy_->GetStats().cpu_limited_resolution);
-  cpu_counts.num_framerate_reductions = 0;
-  cpu_counts.num_resolution_reductions = 1;
+  cpu_counts.fps_adaptations = 0;
+  cpu_counts.resolution_adaptations = 1;
   statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
+      VideoStreamEncoderObserver::AdaptationReason::kCpu, cpu_counts,
       quality_counts);
   EXPECT_FALSE(statistics_proxy_->GetStats().cpu_limited_framerate);
   EXPECT_TRUE(statistics_proxy_->GetStats().cpu_limited_resolution);
-  cpu_counts.num_framerate_reductions = 1;
-  cpu_counts.num_resolution_reductions = absl::nullopt;
+  cpu_counts.fps_adaptations = 1;
+  statistics_proxy_->UpdateAdaptationSettings(kResolutionScalingDisabled,
+                                              kResolutionScalingDisabled);
   statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
+      VideoStreamEncoderObserver::AdaptationReason::kCpu, cpu_counts,
       quality_counts);
   EXPECT_TRUE(statistics_proxy_->GetStats().cpu_limited_framerate);
   EXPECT_FALSE(statistics_proxy_->GetStats().cpu_limited_resolution);
-  cpu_counts.num_framerate_reductions = absl::nullopt;
-  cpu_counts.num_resolution_reductions = absl::nullopt;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingDisabled,
+                                              kScalingDisabled);
   statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
+      VideoStreamEncoderObserver::AdaptationReason::kCpu, cpu_counts,
       quality_counts);
   EXPECT_FALSE(statistics_proxy_->GetStats().cpu_limited_framerate);
   EXPECT_FALSE(statistics_proxy_->GetStats().cpu_limited_resolution);
 }
 
 TEST_F(SendStatisticsProxyTest, GetQualityAdaptationStats) {
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
   EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_framerate);
   EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
-  quality_counts.num_framerate_reductions = 1;
-  quality_counts.num_resolution_reductions = 0;
+  quality_counts.fps_adaptations = 1;
+  quality_counts.resolution_adaptations = 0;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
+      VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
   EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_framerate);
   EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
-  quality_counts.num_framerate_reductions = 0;
-  quality_counts.num_resolution_reductions = 1;
+  quality_counts.fps_adaptations = 0;
+  quality_counts.resolution_adaptations = 1;
   statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
+      VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
   EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_framerate);
   EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
-  quality_counts.num_framerate_reductions = 1;
-  quality_counts.num_resolution_reductions = absl::nullopt;
+  quality_counts.fps_adaptations = 1;
+  statistics_proxy_->UpdateAdaptationSettings(kResolutionScalingDisabled,
+                                              kResolutionScalingDisabled);
   statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
+      VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
   EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_framerate);
   EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
-  quality_counts.num_framerate_reductions = absl::nullopt;
-  quality_counts.num_resolution_reductions = absl::nullopt;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingDisabled,
+                                              kScalingDisabled);
   statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
+      VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
   EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_framerate);
   EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
 }
 
 TEST_F(SendStatisticsProxyTest, GetStatsReportsCpuAdaptChanges) {
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
   EXPECT_EQ(0, statistics_proxy_->GetStats().number_of_cpu_adapt_changes);
 
-  cpu_counts.num_resolution_reductions = 1;
+  cpu_counts.resolution_adaptations = 1;
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kCpu, cpu_counts,
       quality_counts);
@@ -514,7 +529,7 @@ TEST_F(SendStatisticsProxyTest, GetStatsReportsCpuAdaptChanges) {
   EXPECT_TRUE(statistics_proxy_->GetStats().cpu_limited_resolution);
   EXPECT_EQ(1, statistics_proxy_->GetStats().number_of_cpu_adapt_changes);
 
-  cpu_counts.num_resolution_reductions = 2;
+  cpu_counts.resolution_adaptations = 2;
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kCpu, cpu_counts,
       quality_counts);
@@ -525,11 +540,12 @@ TEST_F(SendStatisticsProxyTest, GetStatsReportsCpuAdaptChanges) {
 }
 
 TEST_F(SendStatisticsProxyTest, GetStatsReportsQualityAdaptChanges) {
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   EXPECT_EQ(0, statistics_proxy_->GetStats().number_of_quality_adapt_changes);
 
-  quality_counts.num_framerate_reductions = 1;
+  quality_counts.fps_adaptations = 1;
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
@@ -537,7 +553,7 @@ TEST_F(SendStatisticsProxyTest, GetStatsReportsQualityAdaptChanges) {
   EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
   EXPECT_EQ(1, statistics_proxy_->GetStats().number_of_quality_adapt_changes);
 
-  quality_counts.num_framerate_reductions = 0;
+  quality_counts.fps_adaptations = 0;
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
@@ -545,6 +561,77 @@ TEST_F(SendStatisticsProxyTest, GetStatsReportsQualityAdaptChanges) {
   EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
   EXPECT_EQ(2, statistics_proxy_->GetStats().number_of_quality_adapt_changes);
   EXPECT_EQ(0, statistics_proxy_->GetStats().number_of_cpu_adapt_changes);
+}
+
+TEST_F(SendStatisticsProxyTest, TestAdaptationStatisticsMasking) {
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
+  EXPECT_EQ(0, statistics_proxy_->GetStats().number_of_quality_adapt_changes);
+  EXPECT_EQ(0, statistics_proxy_->GetStats().number_of_cpu_adapt_changes);
+
+  quality_counts.resolution_adaptations = 1;
+  statistics_proxy_->OnAdaptationChanged(
+      VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
+      quality_counts);
+  quality_counts.fps_adaptations = 1;
+  statistics_proxy_->OnAdaptationChanged(
+      VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
+      quality_counts);
+  cpu_counts.resolution_adaptations = 1;
+  statistics_proxy_->OnAdaptationChanged(
+      VideoStreamEncoderObserver::AdaptationReason::kCpu, cpu_counts,
+      quality_counts);
+  cpu_counts.fps_adaptations = 1;
+  statistics_proxy_->OnAdaptationChanged(
+      VideoStreamEncoderObserver::AdaptationReason::kCpu, cpu_counts,
+      quality_counts);
+  // We have 1 fps and resolution reduction for both cpu and quality
+  EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_framerate);
+  EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
+  EXPECT_TRUE(statistics_proxy_->GetStats().cpu_limited_framerate);
+  EXPECT_TRUE(statistics_proxy_->GetStats().cpu_limited_resolution);
+  EXPECT_EQ(2, statistics_proxy_->GetStats().number_of_quality_adapt_changes);
+  EXPECT_EQ(2, statistics_proxy_->GetStats().number_of_cpu_adapt_changes);
+
+  // Disable quality scaling. Expect quality scaling not limited.
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled,
+                                              kScalingDisabled);
+  EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_framerate);
+  EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
+  EXPECT_TRUE(statistics_proxy_->GetStats().cpu_limited_framerate);
+  EXPECT_TRUE(statistics_proxy_->GetStats().cpu_limited_resolution);
+  EXPECT_EQ(2, statistics_proxy_->GetStats().number_of_quality_adapt_changes);
+  EXPECT_EQ(2, statistics_proxy_->GetStats().number_of_cpu_adapt_changes);
+
+  // Disable framerate scaling.
+  statistics_proxy_->UpdateAdaptationSettings(kFramerateScalingDisabled,
+                                              kFramerateScalingDisabled);
+  EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_framerate);
+  EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
+  EXPECT_FALSE(statistics_proxy_->GetStats().cpu_limited_framerate);
+  EXPECT_TRUE(statistics_proxy_->GetStats().cpu_limited_resolution);
+  EXPECT_EQ(2, statistics_proxy_->GetStats().number_of_quality_adapt_changes);
+  EXPECT_EQ(2, statistics_proxy_->GetStats().number_of_cpu_adapt_changes);
+
+  // Disable resolution scaling.
+  statistics_proxy_->UpdateAdaptationSettings(kResolutionScalingDisabled,
+                                              kResolutionScalingDisabled);
+  EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_framerate);
+  EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
+  EXPECT_TRUE(statistics_proxy_->GetStats().cpu_limited_framerate);
+  EXPECT_FALSE(statistics_proxy_->GetStats().cpu_limited_resolution);
+  EXPECT_EQ(2, statistics_proxy_->GetStats().number_of_quality_adapt_changes);
+  EXPECT_EQ(2, statistics_proxy_->GetStats().number_of_cpu_adapt_changes);
+
+  // Enable all
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
+  EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_framerate);
+  EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
+  EXPECT_TRUE(statistics_proxy_->GetStats().cpu_limited_framerate);
+  EXPECT_TRUE(statistics_proxy_->GetStats().cpu_limited_resolution);
+  EXPECT_EQ(2, statistics_proxy_->GetStats().number_of_quality_adapt_changes);
+  EXPECT_EQ(2, statistics_proxy_->GetStats().number_of_cpu_adapt_changes);
 }
 
 TEST_F(SendStatisticsProxyTest, AdaptChangesNotReported_AdaptationNotEnabled) {
@@ -563,11 +650,7 @@ TEST_F(SendStatisticsProxyTest, AdaptChangesNotReported_MinRuntimeNotPassed) {
   // First RTP packet sent.
   UpdateDataCounters(kFirstSsrc);
   // Enable adaptation.
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   // Min runtime has not passed.
   fake_clock_.AdvanceTimeMilliseconds(metrics::kMinRunTimeInSeconds * 1000 - 1);
   statistics_proxy_.reset();
@@ -581,11 +664,7 @@ TEST_F(SendStatisticsProxyTest, ZeroAdaptChangesReported) {
   // First RTP packet sent.
   UpdateDataCounters(kFirstSsrc);
   // Enable adaptation.
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   // Min runtime has passed.
   fake_clock_.AdvanceTimeMilliseconds(metrics::kMinRunTimeInSeconds * 1000);
   statistics_proxy_.reset();
@@ -603,11 +682,9 @@ TEST_F(SendStatisticsProxyTest, CpuAdaptChangesReported) {
   // First RTP packet sent.
   UpdateDataCounters(kFirstSsrc);
   // Enable adaptation.
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   // Adapt changes: 1, elapsed time: 10 sec => 6 per minute.
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kCpu, cpu_counts,
@@ -624,11 +701,9 @@ TEST_F(SendStatisticsProxyTest, ExcludesInitialQualityAdaptDownChange) {
   // First RTP packet sent.
   UpdateDataCounters(kFirstSsrc);
   // Enable adaptation.
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   // Adapt changes: 1 (1 initial) = 0, elapsed time: 10 sec => 0 per minute.
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
@@ -646,23 +721,21 @@ TEST_F(SendStatisticsProxyTest, ExcludesInitialQualityAdaptDownChanges) {
   // First RTP packet sent.
   UpdateDataCounters(kFirstSsrc);
   // Enable adaptation.
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   // Adapt changes: 3 (2 initial) = 1, elapsed time: 10 sec => 6 per minute.
-  quality_counts.num_resolution_reductions = 1;
+  quality_counts.resolution_adaptations = 1;
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
   statistics_proxy_->OnInitialQualityResolutionAdaptDown();
-  quality_counts.num_resolution_reductions = 2;
+  quality_counts.resolution_adaptations = 2;
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
   statistics_proxy_->OnInitialQualityResolutionAdaptDown();
-  quality_counts.num_resolution_reductions = 3;
+  quality_counts.resolution_adaptations = 3;
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
@@ -678,11 +751,9 @@ TEST_F(SendStatisticsProxyTest, InitialQualityAdaptChangesNotExcludedOnError) {
   // First RTP packet sent.
   UpdateDataCounters(kFirstSsrc);
   // Enable adaptation.
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   // Adapt changes: 1 (2 initial) = 1, elapsed time: 10 sec => 6 per minute.
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
@@ -701,43 +772,42 @@ TEST_F(SendStatisticsProxyTest, ExcludesInitialQualityAdaptDownAndUpChanges) {
   // First RTP packet sent.
   UpdateDataCounters(kFirstSsrc);
   // Enable adaptation.
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
+  statistics_proxy_->ClearAdaptationStats();
   // Adapt changes: 8 (4 initial) = 4, elapsed time: 10 sec => 24 per minute.
-  quality_counts.num_resolution_reductions = 1;
+  quality_counts.resolution_adaptations = 1;
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
   statistics_proxy_->OnInitialQualityResolutionAdaptDown();
-  quality_counts.num_resolution_reductions = 2;
+  quality_counts.resolution_adaptations = 2;
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
   statistics_proxy_->OnInitialQualityResolutionAdaptDown();
-  quality_counts.num_resolution_reductions = 3;
+  quality_counts.resolution_adaptations = 3;
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
-  quality_counts.num_framerate_reductions = 1;
+  quality_counts.fps_adaptations = 1;
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
-  quality_counts.num_framerate_reductions = 0;
+  quality_counts.fps_adaptations = 0;
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
-  quality_counts.num_resolution_reductions = 2;  // Initial resolution up.
+  quality_counts.resolution_adaptations = 2;  // Initial resolution up.
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
-  quality_counts.num_resolution_reductions = 1;  // Initial resolution up.
+  quality_counts.resolution_adaptations = 1;  // Initial resolution up.
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
-  quality_counts.num_resolution_reductions = 0;
+  quality_counts.resolution_adaptations = 0;
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
@@ -755,25 +825,20 @@ TEST_F(SendStatisticsProxyTest, AdaptChangesStatsExcludesDisabledTime) {
   UpdateDataCounters(kFirstSsrc);
 
   // Disable quality adaptation.
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
-  quality_counts.num_framerate_reductions = absl::nullopt;
-  quality_counts.num_resolution_reductions = absl::nullopt;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled,
+                                              kScalingDisabled);
   fake_clock_.AdvanceTimeMilliseconds(10000);
 
   // Enable quality adaptation.
   // Adapt changes: 2, elapsed time: 20 sec.
-  quality_counts.num_framerate_reductions = 0;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  quality_counts.fps_adaptations = 0;
+  statistics_proxy_->UpdateAdaptationSettings(kResolutionScalingDisabled,
+                                              kResolutionScalingDisabled);
   fake_clock_.AdvanceTimeMilliseconds(5000);
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  statistics_proxy_->UpdateAdaptationSettings(kResolutionScalingDisabled,
+                                              kResolutionScalingDisabled);
   fake_clock_.AdvanceTimeMilliseconds(9000);
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
@@ -784,32 +849,26 @@ TEST_F(SendStatisticsProxyTest, AdaptChangesStatsExcludesDisabledTime) {
       quality_counts);
 
   // Disable quality adaptation.
-  quality_counts.num_framerate_reductions = absl::nullopt;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  statistics_proxy_->UpdateAdaptationSettings(kScalingDisabled,
+                                              kScalingDisabled);
   fake_clock_.AdvanceTimeMilliseconds(30000);
 
   // Enable quality adaptation.
   // Adapt changes: 1, elapsed time: 10 sec.
-  quality_counts.num_resolution_reductions = 0;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  quality_counts.resolution_adaptations = 0;
+  statistics_proxy_->UpdateAdaptationSettings(kFramerateScalingDisabled,
+                                              kFramerateScalingDisabled);
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
   fake_clock_.AdvanceTimeMilliseconds(10000);
 
   // Disable quality adaptation.
-  quality_counts.num_resolution_reductions = absl::nullopt;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  statistics_proxy_->UpdateAdaptationSettings(kScalingDisabled,
+                                              kScalingDisabled);
   fake_clock_.AdvanceTimeMilliseconds(5000);
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  statistics_proxy_->UpdateAdaptationSettings(kScalingDisabled,
+                                              kScalingDisabled);
   fake_clock_.AdvanceTimeMilliseconds(20000);
 
   // Adapt changes: 3, elapsed time: 30 sec => 6 per minute.
@@ -844,12 +903,10 @@ TEST_F(SendStatisticsProxyTest, QualityAdaptChangesStatsExcludesSuspendedTime) {
   UpdateDataCounters(kFirstSsrc);
 
   // Enable adaptation.
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
   // Adapt changes: 2, elapsed time: 20 sec.
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   fake_clock_.AdvanceTimeMilliseconds(20000);
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
@@ -886,12 +943,10 @@ TEST_F(SendStatisticsProxyTest, CpuAdaptChangesStatsExcludesSuspendedTime) {
   fake_clock_.AdvanceTimeMilliseconds(30000);
 
   // Enable adaptation.
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
   // Adapt changes: 1, elapsed time: 20 sec.
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   fake_clock_.AdvanceTimeMilliseconds(10000);
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kCpu, cpu_counts,
@@ -902,11 +957,8 @@ TEST_F(SendStatisticsProxyTest, CpuAdaptChangesStatsExcludesSuspendedTime) {
   fake_clock_.AdvanceTimeMilliseconds(10000);
 
   // Disable adaptation.
-  cpu_counts.num_framerate_reductions = absl::nullopt;
-  cpu_counts.num_resolution_reductions = absl::nullopt;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  statistics_proxy_->UpdateAdaptationSettings(kScalingDisabled,
+                                              kScalingDisabled);
   fake_clock_.AdvanceTimeMilliseconds(30000);
 
   // Suspend and resume video, stats time not started when scaling not enabled.
@@ -917,11 +969,9 @@ TEST_F(SendStatisticsProxyTest, CpuAdaptChangesStatsExcludesSuspendedTime) {
 
   // Enable adaptation.
   // Adapt changes: 1, elapsed time: 10 sec.
-  cpu_counts.num_framerate_reductions = 0;
-  cpu_counts.num_resolution_reductions = 0;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  cpu_counts.fps_adaptations = 0;
+  cpu_counts.resolution_adaptations = 0;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   fake_clock_.AdvanceTimeMilliseconds(10000);
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kCpu, cpu_counts,
@@ -943,11 +993,9 @@ TEST_F(SendStatisticsProxyTest, AdaptChangesStatsNotStartedIfVideoSuspended) {
   statistics_proxy_->OnSuspendChange(true);
 
   // Enable adaptation, stats time not started when suspended.
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   fake_clock_.AdvanceTimeMilliseconds(10000);
 
   // Resume video, stats time started.
@@ -969,11 +1017,9 @@ TEST_F(SendStatisticsProxyTest, AdaptChangesStatsNotStartedIfVideoSuspended) {
 TEST_F(SendStatisticsProxyTest, AdaptChangesStatsRestartsOnFirstSentPacket) {
   // Send first packet, adaptation enabled.
   // Elapsed time before first packet is sent should be excluded.
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   fake_clock_.AdvanceTimeMilliseconds(10000);
   UpdateDataCounters(kFirstSsrc);
 
@@ -994,17 +1040,12 @@ TEST_F(SendStatisticsProxyTest, AdaptChangesStatsRestartsOnFirstSentPacket) {
 
 TEST_F(SendStatisticsProxyTest, AdaptChangesStatsStartedAfterFirstSentPacket) {
   // Enable and disable adaptation.
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   fake_clock_.AdvanceTimeMilliseconds(60000);
-  cpu_counts.num_framerate_reductions = absl::nullopt;
-  cpu_counts.num_resolution_reductions = absl::nullopt;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  statistics_proxy_->UpdateAdaptationSettings(kScalingDisabled,
+                                              kScalingDisabled);
 
   // Send first packet, scaling disabled.
   // Elapsed time before first packet is sent should be excluded.
@@ -1012,10 +1053,9 @@ TEST_F(SendStatisticsProxyTest, AdaptChangesStatsStartedAfterFirstSentPacket) {
   fake_clock_.AdvanceTimeMilliseconds(60000);
 
   // Enable adaptation.
-  cpu_counts.num_resolution_reductions = 0;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  cpu_counts.resolution_adaptations = 0;
+  statistics_proxy_->UpdateAdaptationSettings(kFramerateScalingDisabled,
+                                              kScalingDisabled);
   fake_clock_.AdvanceTimeMilliseconds(10000);
   UpdateDataCounters(kFirstSsrc);
 
@@ -1036,13 +1076,10 @@ TEST_F(SendStatisticsProxyTest, AdaptChangesStatsStartedAfterFirstSentPacket) {
 TEST_F(SendStatisticsProxyTest, AdaptChangesReportedAfterContentSwitch) {
   // First RTP packet sent, cpu adaptation enabled.
   UpdateDataCounters(kFirstSsrc);
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
-  quality_counts.num_framerate_reductions = absl::nullopt;
-  quality_counts.num_resolution_reductions = absl::nullopt;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled,
+                                              kScalingDisabled);
 
   // Adapt changes: 2, elapsed time: 15 sec => 8 per minute.
   statistics_proxy_->OnAdaptationChanged(
@@ -1067,9 +1104,8 @@ TEST_F(SendStatisticsProxyTest, AdaptChangesReportedAfterContentSwitch) {
 
   // First RTP packet sent, scaling enabled.
   UpdateDataCounters(kFirstSsrc);
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled,
+                                              kScalingDisabled);
 
   // Adapt changes: 4, elapsed time: 120 sec => 2 per minute.
   statistics_proxy_->OnAdaptationChanged(
@@ -1100,11 +1136,11 @@ TEST_F(SendStatisticsProxyTest, AdaptChangesReportedAfterContentSwitch) {
 
 TEST_F(SendStatisticsProxyTest,
        QualityLimitationReasonIsCpuWhenCpuIsResolutionLimited) {
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
 
-  cpu_counts.num_resolution_reductions = 1;
-
+  cpu_counts.resolution_adaptations = 1;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kCpu, cpu_counts,
       quality_counts);
@@ -1115,11 +1151,12 @@ TEST_F(SendStatisticsProxyTest,
 
 TEST_F(SendStatisticsProxyTest,
        QualityLimitationReasonIsCpuWhenCpuIsFramerateLimited) {
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
 
-  cpu_counts.num_framerate_reductions = 1;
+  cpu_counts.fps_adaptations = 1;
 
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kCpu, cpu_counts,
       quality_counts);
@@ -1130,11 +1167,12 @@ TEST_F(SendStatisticsProxyTest,
 
 TEST_F(SendStatisticsProxyTest,
        QualityLimitationReasonIsBandwidthWhenQualityIsResolutionLimited) {
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
 
-  quality_counts.num_resolution_reductions = 1;
+  quality_counts.resolution_adaptations = 1;
 
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
@@ -1145,11 +1183,12 @@ TEST_F(SendStatisticsProxyTest,
 
 TEST_F(SendStatisticsProxyTest,
        QualityLimitationReasonIsBandwidthWhenQualityIsFramerateLimited) {
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
 
-  quality_counts.num_framerate_reductions = 1;
+  quality_counts.fps_adaptations = 1;
 
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
@@ -1160,11 +1199,12 @@ TEST_F(SendStatisticsProxyTest,
 
 TEST_F(SendStatisticsProxyTest,
        QualityLimitationReasonIsBandwidthWhenBothCpuAndQualityIsLimited) {
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
 
-  cpu_counts.num_resolution_reductions = 1;
-  quality_counts.num_resolution_reductions = 1;
+  cpu_counts.resolution_adaptations = 1;
+  quality_counts.resolution_adaptations = 1;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
 
   // Even if the last adaptation reason is kCpu, if the counters indicate being
   // both CPU and quality (=bandwidth) limited, kBandwidth takes precedence.
@@ -1177,19 +1217,20 @@ TEST_F(SendStatisticsProxyTest,
 }
 
 TEST_F(SendStatisticsProxyTest, QualityLimitationReasonIsNoneWhenNotLimited) {
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
 
   // Observe a limitation due to CPU. This makes sure the test doesn't pass
   // due to "none" being the default value.
-  cpu_counts.num_resolution_reductions = 1;
+  cpu_counts.resolution_adaptations = 1;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kCpu, cpu_counts,
       quality_counts);
   // Go back to not being limited.
-  cpu_counts.num_resolution_reductions = 0;
+  cpu_counts.resolution_adaptations = 0;
   statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
+      VideoStreamEncoderObserver::AdaptationReason::kCpu, cpu_counts,
       quality_counts);
 
   EXPECT_EQ(QualityLimitationReason::kNone,
@@ -1197,27 +1238,28 @@ TEST_F(SendStatisticsProxyTest, QualityLimitationReasonIsNoneWhenNotLimited) {
 }
 
 TEST_F(SendStatisticsProxyTest, QualityLimitationDurationIncreasesWithTime) {
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
 
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   // Not limited for 3000 ms
   fake_clock_.AdvanceTimeMilliseconds(3000);
   // CPU limited for 2000 ms
-  cpu_counts.num_resolution_reductions = 1;
+  cpu_counts.resolution_adaptations = 1;
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kCpu, cpu_counts,
       quality_counts);
   fake_clock_.AdvanceTimeMilliseconds(2000);
   // Bandwidth limited for 1000 ms
-  cpu_counts.num_resolution_reductions = 0;
-  quality_counts.num_resolution_reductions = 1;
+  cpu_counts.resolution_adaptations = 0;
+  quality_counts.resolution_adaptations = 1;
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
   fake_clock_.AdvanceTimeMilliseconds(1000);
   // CPU limited for another 2000 ms
-  cpu_counts.num_resolution_reductions = 1;
-  quality_counts.num_resolution_reductions = 0;
+  cpu_counts.resolution_adaptations = 1;
+  quality_counts.resolution_adaptations = 0;
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kCpu, cpu_counts,
       quality_counts);
@@ -1624,12 +1666,8 @@ TEST_F(SendStatisticsProxyTest, SentFpsHistogramExcludesSuspendedTime) {
 }
 
 TEST_F(SendStatisticsProxyTest, CpuLimitedHistogramNotUpdatedWhenDisabled) {
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
-  cpu_counts.num_resolution_reductions = absl::nullopt;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  statistics_proxy_->UpdateAdaptationSettings(kResolutionScalingDisabled,
+                                              kResolutionScalingDisabled);
 
   for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
     statistics_proxy_->OnIncomingFrame(kWidth, kHeight);
@@ -1640,17 +1678,15 @@ TEST_F(SendStatisticsProxyTest, CpuLimitedHistogramNotUpdatedWhenDisabled) {
 }
 
 TEST_F(SendStatisticsProxyTest, CpuLimitedHistogramUpdated) {
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
-  cpu_counts.num_resolution_reductions = 0;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
+  cpu_counts.resolution_adaptations = 0;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
 
   for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
     statistics_proxy_->OnIncomingFrame(kWidth, kHeight);
 
-  cpu_counts.num_resolution_reductions = 1;
+  cpu_counts.resolution_adaptations = 1;
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kCpu, cpu_counts,
       quality_counts);
@@ -2033,12 +2069,8 @@ TEST_F(SendStatisticsProxyTest,
 
 TEST_F(SendStatisticsProxyTest,
        QualityLimitedHistogramsNotUpdatedWhenDisabled) {
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
-  quality_counts.num_resolution_reductions = absl::nullopt;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  statistics_proxy_->UpdateAdaptationSettings(kFramerateScalingDisabled,
+                                              kScalingDisabled);
   EncodedImage encoded_image;
   encoded_image.SetSpatialIndex(0);
   for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
@@ -2054,12 +2086,7 @@ TEST_F(SendStatisticsProxyTest,
 
 TEST_F(SendStatisticsProxyTest,
        QualityLimitedHistogramsUpdatedWhenEnabled_NoResolutionDownscale) {
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
-  quality_counts.num_resolution_reductions = 0;
-  statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
-      quality_counts);
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   EncodedImage encoded_image;
   encoded_image.SetSpatialIndex(0);
   for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
@@ -2079,11 +2106,12 @@ TEST_F(SendStatisticsProxyTest,
 TEST_F(SendStatisticsProxyTest,
        QualityLimitedHistogramsUpdatedWhenEnabled_TwoResolutionDownscales) {
   const int kDownscales = 2;
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
-  quality_counts.num_resolution_reductions = kDownscales;
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
+  quality_counts.resolution_adaptations = kDownscales;
+  statistics_proxy_->UpdateAdaptationSettings(kScalingEnabled, kScalingEnabled);
   statistics_proxy_->OnAdaptationChanged(
-      VideoStreamEncoderObserver::AdaptationReason::kNone, cpu_counts,
+      VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
   EncodedImage encoded_image;
   encoded_image.SetSpatialIndex(0);
@@ -2126,9 +2154,11 @@ TEST_F(SendStatisticsProxyTest, GetStatsReportsBandwidthLimitedResolution) {
   encoded_image._encodedHeight = kHeight / 2;
 
   // Resolution scaled due to quality.
-  SendStatisticsProxy::AdaptationSteps cpu_counts;
-  SendStatisticsProxy::AdaptationSteps quality_counts;
-  quality_counts.num_resolution_reductions = 1;
+  VideoAdaptationCounters cpu_counts;
+  VideoAdaptationCounters quality_counts;
+  quality_counts.resolution_adaptations = 1;
+  statistics_proxy_->UpdateAdaptationSettings(kFramerateScalingDisabled,
+                                              kFramerateScalingDisabled);
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);
@@ -2136,7 +2166,7 @@ TEST_F(SendStatisticsProxyTest, GetStatsReportsBandwidthLimitedResolution) {
   EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
 
   // Adapt up.
-  quality_counts.num_resolution_reductions = 0;
+  quality_counts.resolution_adaptations = 0;
   statistics_proxy_->OnAdaptationChanged(
       VideoStreamEncoderObserver::AdaptationReason::kQuality, cpu_counts,
       quality_counts);

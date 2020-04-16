@@ -70,9 +70,13 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
   void OnFrameDropped(DropReason) override;
 
   // Adaptation stats.
-  void OnAdaptationChanged(AdaptationReason reason,
-                           const AdaptationSteps& cpu_counts,
-                           const AdaptationSteps& quality_counts) override;
+  void OnAdaptationChanged(
+      AdaptationReason reason,
+      const VideoAdaptationCounters& cpu_counters,
+      const VideoAdaptationCounters& quality_counters) override;
+  void ClearAdaptationStats() override;
+  void UpdateAdaptationSettings(AdaptationSettings cpu_settings,
+                                AdaptationSettings quality_settings) override;
 
   void OnBitrateAllocationUpdated(
       const VideoCodec& codec,
@@ -223,11 +227,38 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
   VideoSendStream::StreamStats* GetStatsEntry(uint32_t ssrc)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  void SetAdaptTimer(const AdaptationSteps& counts, StatsTimer* timer)
+  struct MaskedAdaptationCounts {
+    absl::optional<int> resolution_adaptations = absl::nullopt;
+    absl::optional<int> num_framerate_reductions = absl::nullopt;
+  };
+
+  struct Adaptations {
+   public:
+    MaskedAdaptationCounts MaskedCpuCounts() const;
+    MaskedAdaptationCounts MaskedQualityCounts() const;
+
+    void set_cpu_counts(const VideoAdaptationCounters& cpu_counts);
+    void set_quality_counts(const VideoAdaptationCounters& quality_counts);
+
+    void UpdateMaskingSettings(AdaptationSettings cpu_settings,
+                               AdaptationSettings quality_settings);
+
+   private:
+    VideoAdaptationCounters cpu_counts_;
+    AdaptationSettings cpu_settings_;
+    VideoAdaptationCounters quality_counts_;
+    AdaptationSettings quality_settings_;
+
+    MaskedAdaptationCounts Mask(const VideoAdaptationCounters& counters,
+                                const AdaptationSettings& settings) const;
+  };
+
+  void SetAdaptTimer(const MaskedAdaptationCounts& counts, StatsTimer* timer)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void UpdateAdaptationStats() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void TryUpdateInitialQualityResolutionAdaptUp(
-      const AdaptationSteps& quality_counts)
+      absl::optional<int> old_quality_downscales,
+      absl::optional<int> updated_quality_downscales)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   void UpdateEncoderFallbackStats(const CodecSpecificInfo* codec_info,
@@ -250,8 +281,6 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
   VideoSendStream::Stats stats_ RTC_GUARDED_BY(crit_);
   std::map<uint32_t, StatsUpdateTimes> update_times_ RTC_GUARDED_BY(crit_);
   rtc::ExpFilter encode_time_ RTC_GUARDED_BY(crit_);
-  int quality_downscales_ RTC_GUARDED_BY(crit_);
-  int cpu_downscales_ RTC_GUARDED_BY(crit_);
   QualityLimitationReasonTracker quality_limitation_reason_tracker_
       RTC_GUARDED_BY(crit_);
   rtc::RateTracker media_byte_rate_tracker_ RTC_GUARDED_BY(crit_);
@@ -268,8 +297,7 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
   bool bw_limited_layers_ RTC_GUARDED_BY(crit_);
   // Indicastes if the encoder internally downscales input image.
   bool internal_encoder_scaler_ RTC_GUARDED_BY(crit_);
-  AdaptationSteps cpu_counts_ RTC_GUARDED_BY(crit_);
-  AdaptationSteps quality_counts_ RTC_GUARDED_BY(crit_);
+  Adaptations adaptations_ RTC_GUARDED_BY(crit_);
 
   struct EncoderChangeEvent {
     std::string previous_encoder_implementation;

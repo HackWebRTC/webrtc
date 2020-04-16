@@ -140,8 +140,6 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
 
   CpuOveruseOptions GetCpuOveruseOptions() const;
   int LastInputFrameSizeOrDefault() const;
-  VideoStreamEncoderObserver::AdaptationSteps GetActiveCounts(
-      AdaptationObserverInterface::AdaptReason reason);
   VideoStreamAdapter::VideoInputMode GetVideoInputMode() const;
 
   // Makes |video_source_restrictions_| up-to-date and informs the
@@ -157,6 +155,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
       absl::optional<VideoEncoder::QpThresholds> qp_thresholds);
 
   void UpdateAdaptationStats(AdaptationObserverInterface::AdaptReason reason);
+  void UpdateStatsAdaptationSettings() const;
 
   // Checks to see if we should execute the quality rampup experiment. The
   // experiment resets all video restrictions at the start of the call in the

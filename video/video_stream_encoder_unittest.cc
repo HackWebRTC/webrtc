@@ -3959,6 +3959,7 @@ TEST_F(VideoStreamEncoderTest, RampsUpInQualityWhenBwIsHigh) {
   // Reset encoder for field trials to take effect.
   VideoEncoderConfig config = video_encoder_config_.Copy();
   config.max_bitrate_bps = kTargetBitrateBps;
+  DataRate max_bitrate = DataRate::BitsPerSec(config.max_bitrate_bps);
   ConfigureEncoder(std::move(config));
   fake_encoder_.SetQp(kQpLow);
 
@@ -3985,10 +3986,8 @@ TEST_F(VideoStreamEncoderTest, RampsUpInQualityWhenBwIsHigh) {
   EXPECT_LT(source.sink_wants().max_pixel_count, kWidth * kHeight);
 
   // Increase bitrate to encoder max.
-  video_stream_encoder_->OnBitrateUpdated(
-      DataRate::BitsPerSec(config.max_bitrate_bps),
-      DataRate::BitsPerSec(config.max_bitrate_bps),
-      DataRate::BitsPerSec(config.max_bitrate_bps), 0, 0, 0);
+  video_stream_encoder_->OnBitrateUpdated(max_bitrate, max_bitrate, max_bitrate,
+                                          0, 0, 0);
 
   // Insert frames and advance |min_duration_ms|.
   for (size_t i = 1; i <= 10; i++) {
