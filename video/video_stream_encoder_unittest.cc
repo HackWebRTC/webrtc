@@ -21,6 +21,7 @@
 #include "api/test/mock_video_encoder.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video/i420_buffer.h"
+#include "api/video/video_adaptation_reason.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
@@ -48,7 +49,7 @@
 
 namespace webrtc {
 
-using ScaleReason = AdaptationObserverInterface::AdaptReason;
+using ScaleReason = VideoAdaptationReason;
 using ::testing::_;
 using ::testing::AllOf;
 using ::testing::Field;
@@ -164,20 +165,18 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
         fake_quality_resource_(
             std::make_unique<FakeResource>(ResourceUsageState::kStable,
                                            "FakeResource[QP]")) {
-    InjectAdaptationResource(
-        fake_quality_resource_.get(),
-        AdaptationObserverInterface::AdaptReason::kQuality);
+    InjectAdaptationResource(fake_quality_resource_.get(),
+                             VideoAdaptationReason::kQuality);
     InjectAdaptationResource(fake_cpu_resource_.get(),
-                             AdaptationObserverInterface::AdaptReason::kCpu);
+                             VideoAdaptationReason::kCpu);
   }
 
-  void PostTaskAndWait(bool down,
-                       AdaptationObserverInterface::AdaptReason reason) {
+  void PostTaskAndWait(bool down, VideoAdaptationReason reason) {
     PostTaskAndWait(down, reason, /*expected_results=*/true);
   }
 
   void PostTaskAndWait(bool down,
-                       AdaptationObserverInterface::AdaptReason reason,
+                       VideoAdaptationReason reason,
                        bool expected_results) {
     rtc::Event event;
     encoder_queue()->PostTask([this, &event, reason, down, expected_results] {
@@ -186,10 +185,10 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
 
       FakeResource* resource = nullptr;
       switch (reason) {
-        case AdaptationObserverInterface::kQuality:
+        case VideoAdaptationReason::kQuality:
           resource = fake_quality_resource_.get();
           break;
-        case AdaptationObserverInterface::kCpu:
+        case VideoAdaptationReason::kCpu:
           resource = fake_cpu_resource_.get();
           break;
         default:
@@ -198,7 +197,7 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
 
       resource->set_usage_state(usage_state);
       if (!expected_results) {
-        ASSERT_EQ(AdaptationObserverInterface::kQuality, reason)
+        ASSERT_EQ(VideoAdaptationReason::kQuality, reason)
             << "We can only assert adaptation result for quality resources";
         EXPECT_EQ(
             ResourceListenerResponse::kQualityScalerShouldIncreaseFrequency,
@@ -222,29 +221,24 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
   }
 
   void TriggerCpuOveruse() {
-    PostTaskAndWait(/*down=*/true,
-                    AdaptationObserverInterface::AdaptReason::kCpu);
+    PostTaskAndWait(/*down=*/true, VideoAdaptationReason::kCpu);
   }
 
   void TriggerCpuNormalUsage() {
-    PostTaskAndWait(/*down=*/false,
-                    AdaptationObserverInterface::AdaptReason::kCpu);
+    PostTaskAndWait(/*down=*/false, VideoAdaptationReason::kCpu);
   }
 
   void TriggerQualityLow() {
-    PostTaskAndWait(/*down=*/true,
-                    AdaptationObserverInterface::AdaptReason::kQuality);
+    PostTaskAndWait(/*down=*/true, VideoAdaptationReason::kQuality);
   }
 
   void TriggerQualityLowExpectFalse() {
-    PostTaskAndWait(/*down=*/true,
-                    AdaptationObserverInterface::AdaptReason::kQuality,
+    PostTaskAndWait(/*down=*/true, VideoAdaptationReason::kQuality,
                     /*expected_results=*/false);
   }
 
   void TriggerQualityHigh() {
-    PostTaskAndWait(/*down=*/false,
-                    AdaptationObserverInterface::AdaptReason::kQuality);
+    PostTaskAndWait(/*down=*/false, VideoAdaptationReason::kQuality);
   }
 
   CpuOveruseDetectorProxy* overuse_detector_proxy_;

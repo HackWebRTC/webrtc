@@ -1098,7 +1098,7 @@ void SendStatisticsProxy::UpdateAdaptationSettings(
 }
 
 void SendStatisticsProxy::OnAdaptationChanged(
-    AdaptationReason reason,
+    VideoAdaptationReason reason,
     const VideoAdaptationCounters& cpu_counters,
     const VideoAdaptationCounters& quality_counters) {
   rtc::CritScope lock(&crit_);
@@ -1107,10 +1107,10 @@ void SendStatisticsProxy::OnAdaptationChanged(
   adaptations_.set_cpu_counts(cpu_counters);
   adaptations_.set_quality_counts(quality_counters);
   switch (reason) {
-    case AdaptationReason::kCpu:
+    case VideoAdaptationReason::kCpu:
       ++stats_.number_of_cpu_adapt_changes;
       break;
-    case AdaptationReason::kQuality:
+    case VideoAdaptationReason::kQuality:
       TryUpdateInitialQualityResolutionAdaptUp(
           receiver.resolution_adaptations,
           adaptations_.MaskedQualityCounts().resolution_adaptations);

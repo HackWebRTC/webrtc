@@ -16,6 +16,7 @@
 #include "absl/types/optional.h"
 #include "api/rtp_parameters.h"
 #include "api/video/video_adaptation_counters.h"
+#include "api/video/video_adaptation_reason.h"
 #include "call/adaptation/encoder_settings.h"
 #include "call/adaptation/resource.h"
 #include "call/adaptation/video_source_restrictions.h"
@@ -160,8 +161,7 @@ class VideoStreamAdapter {
 
   // Returns an adaptation that we are guaranteed to be able to apply, or a
   // status code indicating the reason why we cannot adapt.
-  Adaptation GetAdaptationUp(
-      AdaptationObserverInterface::AdaptReason reason) const;
+  Adaptation GetAdaptationUp(VideoAdaptationReason reason) const;
   Adaptation GetAdaptationDown() const;
   // Returns the restrictions that result from applying the adaptation, without
   // actually applying it. If the adaptation is not valid, current restrictions

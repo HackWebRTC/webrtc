@@ -21,6 +21,7 @@
 #include "absl/types/optional.h"
 #include "api/video/encoded_image.h"
 #include "api/video/i420_buffer.h"
+#include "api/video/video_adaptation_reason.h"
 #include "api/video/video_bitrate_allocator_factory.h"
 #include "api/video/video_codec_constants.h"
 #include "api/video_codecs/video_encoder.h"
@@ -1917,7 +1918,7 @@ void VideoStreamEncoder::CheckForAnimatedContent(
 }
 void VideoStreamEncoder::InjectAdaptationResource(
     Resource* resource,
-    AdaptationObserverInterface::AdaptReason reason) {
+    VideoAdaptationReason reason) {
   resource_adaptation_processor_->AddResource(resource, reason);
 }
 

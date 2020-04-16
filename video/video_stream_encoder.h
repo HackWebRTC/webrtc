@@ -112,7 +112,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // Used for injected test resources.
   // TODO(eshr): Move all adaptation tests out of VideoStreamEncoder tests.
   void InjectAdaptationResource(Resource* resource,
-                                AdaptationObserverInterface::AdaptReason reason)
+                                VideoAdaptationReason reason)
       RTC_RUN_ON(&encoder_queue_);
 
  private:

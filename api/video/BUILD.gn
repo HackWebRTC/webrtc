@@ -234,6 +234,7 @@ rtc_library("video_adaptation") {
   sources = [
     "video_adaptation_counters.cc",
     "video_adaptation_counters.h",
+    "video_adaptation_reason.h",
   ]
 
   deps = [ "../../rtc_base:checks" ]

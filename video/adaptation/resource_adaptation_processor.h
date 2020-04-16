@@ -14,12 +14,14 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "absl/types/optional.h"
 #include "api/rtp_parameters.h"
 #include "api/video/video_adaptation_counters.h"
+#include "api/video/video_adaptation_reason.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_source_interface.h"
 #include "api/video/video_stream_encoder_observer.h"
@@ -78,8 +80,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   void StopResourceAdaptation() override;
   // Uses a default AdaptReason of kCpu.
   void AddResource(Resource* resource) override;
-  void AddResource(Resource* resource,
-                   AdaptationObserverInterface::AdaptReason reason);
+  void AddResource(Resource* resource, VideoAdaptationReason reason);
   void SetHasInputVideo(bool has_input_video) override;
   void SetDegradationPreference(
       DegradationPreference degradation_preference) override;
@@ -134,9 +135,8 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
 
   // Performs the adaptation by getting the next target, applying it and
   // informing listeners of the new VideoSourceRestriction and adapt counters.
-  void OnResourceUnderuse(AdaptationObserverInterface::AdaptReason reason);
-  ResourceListenerResponse OnResourceOveruse(
-      AdaptationObserverInterface::AdaptReason reason);
+  void OnResourceUnderuse(VideoAdaptationReason reason);
+  ResourceListenerResponse OnResourceOveruse(VideoAdaptationReason reason);
 
   CpuOveruseOptions GetCpuOveruseOptions() const;
   int LastInputFrameSizeOrDefault() const;
@@ -154,7 +154,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   void UpdateQualityScalerSettings(
       absl::optional<VideoEncoder::QpThresholds> qp_thresholds);
 
-  void UpdateAdaptationStats(AdaptationObserverInterface::AdaptReason reason);
+  void UpdateAdaptationStats(VideoAdaptationReason reason);
   void UpdateStatsAdaptationSettings() const;
 
   // Checks to see if we should execute the quality rampup experiment. The
@@ -165,6 +165,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   void MaybePerformQualityRampupExperiment();
   void ResetVideoSourceRestrictions();
 
+  void ResetActiveCounts();
   std::string ActiveCountsToString() const;
 
   ResourceAdaptationProcessorListener* const adaptation_listener_;
@@ -199,13 +200,12 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   // Ties a resource to a reason for statistical reporting. This AdaptReason is
   // also used by this module to make decisions about how to adapt up/down.
   struct ResourceAndReason {
-    ResourceAndReason(Resource* resource,
-                      AdaptationObserverInterface::AdaptReason reason)
+    ResourceAndReason(Resource* resource, VideoAdaptationReason reason)
         : resource(resource), reason(reason) {}
     virtual ~ResourceAndReason() = default;
 
     Resource* const resource;
-    const AdaptationObserverInterface::AdaptReason reason;
+    const VideoAdaptationReason reason;
   };
   std::vector<ResourceAndReason> resources_;
   // One AdaptationCounter for each reason, tracking the number of times we have
@@ -215,8 +215,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   // encoder_stats_observer_; Counters used for deciding if the video resolution
   // or framerate is currently restricted, and if so, why, on a per degradation
   // preference basis.
-  std::array<VideoAdaptationCounters,
-             AdaptationObserverInterface::kScaleReasonSize>
+  std::unordered_map<VideoAdaptationReason, VideoAdaptationCounters>
       active_counts_;
 };
 

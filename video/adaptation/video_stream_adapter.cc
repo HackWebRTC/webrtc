@@ -15,6 +15,7 @@
 #include <utility>
 
 #include "absl/types/optional.h"
+#include "api/video/video_adaptation_reason.h"
 #include "api/video_codecs/video_encoder.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/logging.h"
@@ -385,7 +386,7 @@ void VideoStreamAdapter::SetInput(
 }
 
 Adaptation VideoStreamAdapter::GetAdaptationUp(
-    AdaptationObserverInterface::AdaptReason reason) const {
+    VideoAdaptationReason reason) const {
   // Don't adapt if we don't have sufficient input.
   if (input_mode_ == VideoInputMode::kNoVideo) {
     return Adaptation(adaptation_validation_id_,
@@ -403,7 +404,7 @@ Adaptation VideoStreamAdapter::GetAdaptationUp(
   }
   // Don't adapt if BalancedDegradationSettings applies and determines this will
   // exceed bitrate constraints.
-  if (reason == AdaptationObserverInterface::AdaptReason::kQuality &&
+  if (reason == VideoAdaptationReason::kQuality &&
       EffectiveDegradationPreference() == DegradationPreference::BALANCED &&
       !balanced_settings_.CanAdaptUp(
           GetVideoCodecTypeOrGeneric(encoder_settings_), input_pixels_,
@@ -426,7 +427,7 @@ Adaptation VideoStreamAdapter::GetAdaptationUp(
       }
       // Fall-through to maybe-adapting resolution, unless |balanced_settings_|
       // forbids it based on bitrate.
-      if (reason == AdaptationObserverInterface::AdaptReason::kQuality &&
+      if (reason == VideoAdaptationReason::kQuality &&
           !balanced_settings_.CanAdaptUpResolution(
               GetVideoCodecTypeOrGeneric(encoder_settings_), input_pixels_,
               encoder_target_bitrate_bps_.value_or(0))) {
@@ -439,7 +440,7 @@ Adaptation VideoStreamAdapter::GetAdaptationUp(
     case DegradationPreference::MAINTAIN_FRAMERATE: {
       // Don't adapt resolution if CanAdaptUpResolution() forbids it based on
       // bitrate and limits specified by encoder capabilities.
-      if (reason == AdaptationObserverInterface::AdaptReason::kQuality &&
+      if (reason == VideoAdaptationReason::kQuality &&
           !CanAdaptUpResolution(encoder_settings_, encoder_target_bitrate_bps_,
                                 input_pixels_)) {
         return Adaptation(adaptation_validation_id_,

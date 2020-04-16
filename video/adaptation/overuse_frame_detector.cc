@@ -20,6 +20,7 @@
 #include <string>
 #include <utility>
 
+#include "api/video/video_adaptation_reason.h"
 #include "api/video/video_frame.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -64,7 +65,7 @@ const float kMaxSampleDiffMarginFactor = 1.35f;
 const int kMinFramerate = 7;
 const int kMaxFramerate = 30;
 
-const auto kScaleReasonCpu = AdaptationObserverInterface::AdaptReason::kCpu;
+const auto kScaleReasonCpu = VideoAdaptationReason::kCpu;
 
 // Class for calculating the processing usage on the send-side (the average
 // processing time of a frame divided by the average time difference between

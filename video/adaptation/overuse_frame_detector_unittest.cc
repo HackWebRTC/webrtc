@@ -14,6 +14,7 @@
 
 #include "api/video/encoded_image.h"
 #include "api/video/i420_buffer.h"
+#include "api/video/video_adaptation_reason.h"
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "rtc_base/event.h"
 #include "rtc_base/fake_clock.h"
@@ -40,8 +41,8 @@ class MockCpuOveruseObserver : public AdaptationObserverInterface {
   MockCpuOveruseObserver() {}
   virtual ~MockCpuOveruseObserver() {}
 
-  MOCK_METHOD1(AdaptUp, void(AdaptReason));
-  MOCK_METHOD1(AdaptDown, bool(AdaptReason));
+  MOCK_METHOD1(AdaptUp, void(VideoAdaptationReason));
+  MOCK_METHOD1(AdaptDown, bool(VideoAdaptationReason));
 };
 
 class CpuOveruseObserverImpl : public AdaptationObserverInterface {
@@ -49,11 +50,11 @@ class CpuOveruseObserverImpl : public AdaptationObserverInterface {
   CpuOveruseObserverImpl() : overuse_(0), normaluse_(0) {}
   virtual ~CpuOveruseObserverImpl() {}
 
-  bool AdaptDown(AdaptReason) override {
+  bool AdaptDown(VideoAdaptationReason) override {
     ++overuse_;
     return true;
   }
-  void AdaptUp(AdaptReason) override { ++normaluse_; }
+  void AdaptUp(VideoAdaptationReason) override { ++normaluse_; }
 
   int overuse_;
   int normaluse_;
@@ -235,7 +236,7 @@ class OveruseFrameDetectorTest : public ::testing::Test,
   std::unique_ptr<OveruseFrameDetectorUnderTest> overuse_detector_;
   int encode_usage_percent_ = -1;
 
-  static const auto reason_ = AdaptationObserverInterface::AdaptReason::kCpu;
+  static const auto reason_ = VideoAdaptationReason::kCpu;
 };
 
 // UsagePercent() > high_encode_usage_threshold_percent => overuse.

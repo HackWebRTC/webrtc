@@ -13,6 +13,7 @@
 #include <memory>
 #include <utility>
 
+#include "api/video/video_adaptation_reason.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/quality_scaler_settings.h"
 #include "rtc_base/logging.h"
@@ -234,15 +235,14 @@ void QualityScaler::CheckQp() {
 void QualityScaler::ReportQpLow() {
   RTC_DCHECK_RUN_ON(&task_checker_);
   ClearSamples();
-  observer_->AdaptUp(AdaptationObserverInterface::AdaptReason::kQuality);
+  observer_->AdaptUp(VideoAdaptationReason::kQuality);
   adapt_called_ = true;
 }
 
 void QualityScaler::ReportQpHigh() {
   RTC_DCHECK_RUN_ON(&task_checker_);
 
-  if (observer_->AdaptDown(
-          AdaptationObserverInterface::AdaptReason::kQuality)) {
+  if (observer_->AdaptDown(VideoAdaptationReason::kQuality)) {
     ClearSamples();
   } else {
     adapt_failed_ = true;

@@ -16,6 +16,7 @@
 
 #include "absl/types/optional.h"
 #include "api/video/video_adaptation_counters.h"
+#include "api/video/video_adaptation_reason.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_codec_constants.h"
 #include "api/video_codecs/video_encoder.h"
@@ -39,14 +40,6 @@ class CpuOveruseMetricsObserver {
 
 class VideoStreamEncoderObserver : public CpuOveruseMetricsObserver {
  public:
-  // TODO(nisse): There are too many enums to represent this. Besides
-  // this one, see AdaptationObserverInterface::AdaptReason and
-  // WebRtcVideoChannel::AdaptReason.
-  enum class AdaptationReason {
-    kCpu,
-    kQuality,
-  };
-
   struct AdaptationSettings {
     AdaptationSettings()
         : resolution_scaling_enabled(false), framerate_scaling_enabled(false) {}
@@ -90,7 +83,7 @@ class VideoStreamEncoderObserver : public CpuOveruseMetricsObserver {
       const std::vector<VideoStream>& streams) = 0;
 
   virtual void OnAdaptationChanged(
-      AdaptationReason reason,
+      VideoAdaptationReason reason,
       const VideoAdaptationCounters& cpu_steps,
       const VideoAdaptationCounters& quality_steps) = 0;
   virtual void ClearAdaptationStats() = 0;

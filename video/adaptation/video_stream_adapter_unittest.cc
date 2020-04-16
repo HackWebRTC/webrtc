@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "absl/types/optional.h"
+#include "api/video/video_adaptation_reason.h"
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_config.h"
@@ -31,7 +32,7 @@ namespace {
 
 // GetAdaptationUp() requires an AdaptReason. This is only used in edge cases,
 // so most tests don't care what reason is used.
-const auto kReasonDontCare = AdaptationObserverInterface::AdaptReason::kQuality;
+const auto kReasonDontCare = VideoAdaptationReason::kQuality;
 
 const int kBalancedHighResolutionPixels = 1280 * 720;
 const int kBalancedHighFrameRateFps = 30;
@@ -636,11 +637,8 @@ TEST(VideoStreamAdapterTest, BitrateConstrained_MaintainFramerate) {
   // TODO(hbos): Why would the reason matter? If the signal was kCpu then the
   // current code allows us to violate this bitrate constraint. This does not
   // make any sense: either we are limited or we are not, end of story.
-  EXPECT_EQ(
-      Adaptation::Status::kIsBitrateConstrained,
-      adapter
-          .GetAdaptationUp(AdaptationObserverInterface::AdaptReason::kQuality)
-          .status());
+  EXPECT_EQ(Adaptation::Status::kIsBitrateConstrained,
+            adapter.GetAdaptationUp(VideoAdaptationReason::kQuality).status());
 }
 
 TEST(VideoStreamAdapterTest, PeekNextRestrictions) {

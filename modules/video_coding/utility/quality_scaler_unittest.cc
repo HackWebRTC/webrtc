@@ -13,6 +13,7 @@
 #include <memory>
 #include <string>
 
+#include "api/video/video_adaptation_reason.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
 #include "rtc_base/task_queue_for_test.h"
@@ -32,11 +33,11 @@ class MockAdaptationObserver : public AdaptationObserverInterface {
  public:
   virtual ~MockAdaptationObserver() {}
 
-  void AdaptUp(AdaptReason r) override {
+  void AdaptUp(VideoAdaptationReason r) override {
     adapt_up_events_++;
     event.Set();
   }
-  bool AdaptDown(AdaptReason r) override {
+  bool AdaptDown(VideoAdaptationReason r) override {
     adapt_down_events_++;
     event.Set();
     return true;

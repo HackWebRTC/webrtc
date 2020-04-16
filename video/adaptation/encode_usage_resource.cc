@@ -13,6 +13,7 @@
 #include <limits>
 #include <utility>
 
+#include "api/video/video_adaptation_reason.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -65,13 +66,13 @@ void EncodeUsageResource::OnEncodeCompleted(
                                encode_duration_us);
 }
 
-void EncodeUsageResource::AdaptUp(AdaptReason reason) {
-  RTC_DCHECK_EQ(reason, AdaptReason::kCpu);
+void EncodeUsageResource::AdaptUp(VideoAdaptationReason reason) {
+  RTC_DCHECK_EQ(reason, VideoAdaptationReason::kCpu);
   OnResourceUsageStateMeasured(ResourceUsageState::kUnderuse);
 }
 
-bool EncodeUsageResource::AdaptDown(AdaptReason reason) {
-  RTC_DCHECK_EQ(reason, AdaptReason::kCpu);
+bool EncodeUsageResource::AdaptDown(VideoAdaptationReason reason) {
+  RTC_DCHECK_EQ(reason, VideoAdaptationReason::kCpu);
   return OnResourceUsageStateMeasured(ResourceUsageState::kOveruse) !=
          ResourceListenerResponse::kQualityScalerShouldIncreaseFrequency;
 }

@@ -15,6 +15,7 @@
 #include <string>
 
 #include "absl/types/optional.h"
+#include "api/video/video_adaptation_reason.h"
 #include "call/adaptation/resource.h"
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "video/adaptation/overuse_frame_detector.h"
@@ -48,8 +49,8 @@ class EncodeUsageResource : public Resource,
   // AdaptationObserverInterface implementation.
   // TODO(https://crbug.com/webrtc/11222, 11172): This resource also needs to
   // signal when its stable to support multi-stream aware modules.
-  void AdaptUp(AdaptReason reason) override;
-  bool AdaptDown(AdaptReason reason) override;
+  void AdaptUp(VideoAdaptationReason reason) override;
+  bool AdaptDown(VideoAdaptationReason reason) override;
 
   std::string name() const override { return "EncoderUsageResource"; }
 
