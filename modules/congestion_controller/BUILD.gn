@@ -49,7 +49,6 @@ if (rtc_include_tests) {
       "../../test:test_support",
       "../../test/scenario",
       "../pacing",
-      "bbr:bbr_unittests",
       "goog_cc:estimators",
       "goog_cc:goog_cc_unittests",
       "pcc:pcc_unittests",
