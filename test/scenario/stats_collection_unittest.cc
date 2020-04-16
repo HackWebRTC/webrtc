@@ -83,7 +83,7 @@ TEST(ScenarioAnalyzerTest, PsnrIsLowWhenNetworkIsBad) {
   }
   // This is a change detecting test, the targets are based on previous runs and
   // might change due to changes in configuration and encoder etc.
-  EXPECT_NEAR(analyzer.stats().psnr_with_freeze.Mean(), 16, 10);
+  EXPECT_NEAR(analyzer.stats().psnr_with_freeze.Mean(), 20, 10);
   EXPECT_NEAR(stats.call.stats().target_rate.Mean().kbps(), 75, 50);
   EXPECT_NEAR(stats.video_send.stats().media_bitrate.Mean().kbps(), 100, 50);
   EXPECT_NEAR(stats.video_receive.stats().resolution.Mean(), 180, 10);

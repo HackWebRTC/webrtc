@@ -28,6 +28,7 @@
 #include "modules/rtp_rtcp/source/time_util.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/rate_limiter.h"
@@ -92,6 +93,19 @@ bool HasBweExtension(const RtpHeaderExtensionMap& extensions_map) {
          extensions_map.IsRegistered(kRtpExtensionTransmissionTimeOffset);
 }
 
+double GetMaxPaddingSizeFactor(const WebRtcKeyValueConfig* field_trials) {
+  // Effectively no limit by default.
+  constexpr double kDefaultFactor = IP_PACKET_SIZE;
+  if (!field_trials) {
+    return kDefaultFactor;
+  }
+
+  FieldTrialOptional<double> factor("factor", kDefaultFactor);
+  ParseFieldTrial({&factor}, field_trials->Lookup("WebRTC-LimitPaddingSize"));
+  RTC_CHECK_GE(factor.Value(), 0.0);
+  return factor.Value();
+}
+
 }  // namespace
 
 RTPSender::RTPSender(const RtpRtcp::Configuration& config,
@@ -104,6 +118,7 @@ RTPSender::RTPSender(const RtpRtcp::Configuration& config,
       rtx_ssrc_(config.rtx_send_ssrc),
       flexfec_ssrc_(config.fec_generator ? config.fec_generator->FecSsrc()
                                          : absl::nullopt),
+      max_padding_size_factor_(GetMaxPaddingSizeFactor(config.field_trials)),
       packet_history_(packet_history),
       paced_sender_(packet_sender),
       sending_media_(true),                   // Default to sending media.
@@ -327,6 +342,15 @@ std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
           packet_history_->GetPayloadPaddingPacket(
               [&](const RtpPacketToSend& packet)
                   -> std::unique_ptr<RtpPacketToSend> {
+                // Limit overshoot, generate <= |max_padding_size_factor_| *
+                // target_size_bytes.
+                const size_t max_overshoot_bytes = static_cast<size_t>(
+                    ((max_padding_size_factor_ - 1.0) * target_size_bytes) +
+                    0.5);
+                if (packet.payload_size() + kRtxHeaderSize >
+                    max_overshoot_bytes + bytes_left) {
+                  return nullptr;
+                }
                 return BuildRtxPacket(packet);
               });
       if (!packet) {
