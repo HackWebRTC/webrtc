@@ -308,6 +308,12 @@ TEST_F(TestRtpFrameReferenceFinder, AdvanceSavedKeyframe) {
   EXPECT_EQ(6UL, frames_from_callback_.size());
 }
 
+TEST_F(TestRtpFrameReferenceFinder, AdvanceSavedKeyframeBigJump) {
+  InsertVp9Flex(0, 0, true);
+  InsertVp9Flex(1, 1, true);
+  reference_finder_->PaddingReceived(32768);
+}
+
 TEST_F(TestRtpFrameReferenceFinder, ClearTo) {
   uint16_t sn = Rand();
 

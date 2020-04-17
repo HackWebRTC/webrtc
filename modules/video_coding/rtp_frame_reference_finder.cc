@@ -173,9 +173,9 @@ void RtpFrameReferenceFinder::UpdateLastPictureIdWithPadding(uint16_t seq_num) {
   // the keyframe they belong to due to wrapping sequence number. In order
   // to prevent this we advance the picture id of the keyframe every so often.
   if (ForwardDiff(gop_seq_num_it->first, seq_num) > 10000) {
-    RTC_DCHECK_EQ(1ul, last_seq_num_gop_.size());
-    last_seq_num_gop_[seq_num] = gop_seq_num_it->second;
-    last_seq_num_gop_.erase(gop_seq_num_it);
+    auto save = gop_seq_num_it->second;
+    last_seq_num_gop_.clear();
+    last_seq_num_gop_[seq_num] = save;
   }
 }
 
