@@ -20,6 +20,7 @@
 #include "call/adaptation/encoder_settings.h"
 #include "call/adaptation/resource.h"
 #include "call/adaptation/video_source_restrictions.h"
+#include "call/adaptation/video_stream_input_state.h"
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "rtc_base/experiments/balanced_degradation_settings.h"
 
@@ -38,14 +39,6 @@ class Adaptation final {
     // Applying this adaptation will have an effect. All other Status codes
     // indicate that adaptation is not possible and why.
     kValid,
-    // Cannot adapt. DegradationPreference is DISABLED.
-    // TODO(hbos): Don't support DISABLED, it doesn't exist in the spec and it
-    // causes all adaptation to be ignored, even QP-scaling.
-    kAdaptationDisabled,
-    // Cannot adapt. Adaptation is refused because we are attempting to adapt
-    // down while the input frame rate is either not known yet or is less than
-    // the minimum.
-    kInsufficientInput,
     // Cannot adapt. The minimum or maximum adaptation has already been reached.
     // There are no more steps to take.
     kLimitReached,
@@ -147,8 +140,7 @@ class VideoStreamAdapter {
   SetDegradationPreferenceResult SetDegradationPreference(
       DegradationPreference degradation_preference);
   // The adaptaiton logic depends on these inputs.
-  void SetInput(int input_pixels,
-                int input_fps,
+  void SetInput(VideoStreamInputState input_state,
                 absl::optional<EncoderSettings> encoder_settings,
                 absl::optional<uint32_t> encoder_target_bitrate_bps);
 
@@ -196,8 +188,7 @@ class VideoStreamAdapter {
   // depending on the DegradationPreference.
   // https://w3c.github.io/mst-content-hint/#dom-rtcdegradationpreference
   DegradationPreference degradation_preference_;
-  int input_pixels_;
-  int input_fps_;
+  VideoStreamInputState input_state_;
   absl::optional<EncoderSettings> encoder_settings_;
   absl::optional<uint32_t> encoder_target_bitrate_bps_;
   // The input frame rate, resolution and adaptation direction of the last

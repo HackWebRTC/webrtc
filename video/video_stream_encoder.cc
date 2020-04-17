@@ -258,8 +258,11 @@ VideoStreamEncoder::VideoStreamEncoder(
       video_source_sink_controller_(std::make_unique<VideoSourceSinkController>(
           /*sink=*/this,
           /*source=*/nullptr)),
+      input_state_provider_(std::make_unique<VideoStreamInputStateProvider>(
+          encoder_stats_observer)),
       resource_adaptation_processor_(
           std::make_unique<ResourceAdaptationProcessor>(
+              input_state_provider_.get(),
               clock_,
               settings_.experiment_cpu_load_estimator,
               std::move(overuse_detector),
@@ -325,7 +328,7 @@ void VideoStreamEncoder::SetSource(
   video_source_sink_controller_->SetSource(source);
   encoder_queue_.PostTask([this, source, degradation_preference] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
-    resource_adaptation_processor_->SetHasInputVideo(source);
+    input_state_provider_->OnHasInputChanged(source);
     resource_adaptation_processor_->SetDegradationPreference(
         degradation_preference);
     if (encoder_)
@@ -636,8 +639,8 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     was_encode_called_since_last_initialization_ = false;
   }
 
-  resource_adaptation_processor_->SetEncoderSettings(EncoderSettings(
-      encoder_->GetEncoderInfo(), encoder_config_.Copy(), send_codec_));
+  // Inform dependents of updated encoder settings.
+  OnEncoderSettingsChanged();
 
   if (success) {
     next_frame_types_.clear();
@@ -729,6 +732,13 @@ void VideoStreamEncoder::ReconfigureEncoder() {
       encoder_config_.min_transmit_bitrate_bps);
 
   resource_adaptation_processor_->ConfigureQualityScaler(info);
+}
+
+void VideoStreamEncoder::OnEncoderSettingsChanged() {
+  EncoderSettings encoder_settings(encoder_->GetEncoderInfo(),
+                                   encoder_config_.Copy(), send_codec_);
+  input_state_provider_->OnEncoderSettingsChanged(encoder_settings);
+  resource_adaptation_processor_->SetEncoderSettings(encoder_settings);
 }
 
 void VideoStreamEncoder::OnFrame(const VideoFrame& video_frame) {
@@ -972,7 +982,7 @@ void VideoStreamEncoder::SetEncoderRates(
 void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
                                                int64_t time_when_posted_us) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
-  resource_adaptation_processor_->OnFrame(video_frame);
+  input_state_provider_->OnFrameSizeObserved(video_frame.size());
 
   if (!last_frame_info_ || video_frame.width() != last_frame_info_->width ||
       video_frame.height() != last_frame_info_->height ||
@@ -1119,8 +1129,7 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   }
 
   if (encoder_info_ != info) {
-    resource_adaptation_processor_->SetEncoderSettings(EncoderSettings(
-        encoder_->GetEncoderInfo(), encoder_config_.Copy(), send_codec_));
+    OnEncoderSettingsChanged();
     RTC_LOG(LS_INFO) << "Encoder settings changed from "
                      << encoder_info_.ToString() << " to " << info.ToString();
   }

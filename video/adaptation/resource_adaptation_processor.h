@@ -30,6 +30,7 @@
 #include "api/video_codecs/video_encoder_config.h"
 #include "call/adaptation/resource.h"
 #include "call/adaptation/resource_adaptation_processor_interface.h"
+#include "call/adaptation/video_stream_input_state_provider.h"
 #include "rtc_base/experiments/quality_rampup_experiment.h"
 #include "rtc_base/experiments/quality_scaler_settings.h"
 #include "rtc_base/strings/string_builder.h"
@@ -63,6 +64,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   // The processor can be constructed on any sequence, but must be initialized
   // and used on a single sequence, e.g. the encoder queue.
   ResourceAdaptationProcessor(
+      VideoStreamInputStateProvider* input_state_provider,
       Clock* clock,
       bool experiment_cpu_load_estimator,
       std::unique_ptr<OveruseFrameDetector> overuse_detector,
@@ -84,36 +86,31 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   // Uses a default AdaptReason of kCpu.
   void AddResource(Resource* resource) override;
   void AddResource(Resource* resource, VideoAdaptationReason reason);
-  void SetHasInputVideo(bool has_input_video) override;
   void SetDegradationPreference(
       DegradationPreference degradation_preference) override;
-  void SetEncoderSettings(EncoderSettings encoder_settings) override;
-  void SetStartBitrate(DataRate start_bitrate) override;
-  void SetTargetBitrate(DataRate target_bitrate) override;
-  void SetEncoderRates(
-      const VideoEncoder::RateControlParameters& encoder_rates) override;
 
-  void OnFrame(const VideoFrame& frame) override;
-  void OnFrameDroppedDueToSize() override;
-  void OnMaybeEncodeFrame() override;
+  // Settings that affect the VideoStreamEncoder-specific resources.
+  void SetEncoderSettings(EncoderSettings encoder_settings);
+  void SetStartBitrate(DataRate start_bitrate);
+  void SetTargetBitrate(DataRate target_bitrate);
+  void SetEncoderRates(
+      const VideoEncoder::RateControlParameters& encoder_rates);
+  // TODO(https://crbug.com/webrtc/11338): This can be made private if we
+  // configure on SetDegredationPreference and SetEncoderSettings.
+  void ConfigureQualityScaler(const VideoEncoder::EncoderInfo& encoder_info);
+
+  // Methods corresponding to different points in the encoding pipeline.
+  void OnFrameDroppedDueToSize();
+  void OnMaybeEncodeFrame();
   void OnEncodeStarted(const VideoFrame& cropped_frame,
-                       int64_t time_when_first_seen_us) override;
+                       int64_t time_when_first_seen_us);
   void OnEncodeCompleted(const EncodedImage& encoded_image,
                          int64_t time_sent_in_us,
-                         absl::optional<int> encode_duration_us) override;
-  void OnFrameDropped(EncodedImageCallback::DropReason reason) override;
-
-  // TODO(hbos): Is dropping initial frames really just a special case of "don't
-  // encode frames right now"? Can this be part of VideoSourceRestrictions,
-  // which handles the output of the rest of the encoder settings? This is
-  // something we'll need to support for "disable video due to overuse", not
-  // initial frames.
+                         absl::optional<int> encode_duration_us);
+  void OnFrameDropped(EncodedImageCallback::DropReason reason);
+  // If true, the VideoStreamEncoder should eexecute its logic to maybe drop
+  // frames baseed on size and bitrate.
   bool DropInitialFrames() const;
-
-  // TODO(eshr): This can be made private if we configure on
-  // SetDegredationPreference and SetEncoderSettings.
-  // (https://crbug.com/webrtc/11338)
-  void ConfigureQualityScaler(const VideoEncoder::EncoderInfo& encoder_info);
 
   // ResourceUsageListener implementation.
   ResourceListenerResponse OnResourceUsageStateMeasured(
@@ -136,6 +133,9 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
 
   enum class State { kStopped, kStarted };
 
+  bool HasSufficientInputForAdaptation(
+      const VideoStreamInputState& input_state) const;
+
   // Performs the adaptation by getting the next target, applying it and
   // informing listeners of the new VideoSourceRestriction and adapt counters.
   void OnResourceUnderuse(VideoAdaptationReason reason);
@@ -145,9 +145,13 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   int LastInputFrameSizeOrDefault() const;
 
   // Reinterprets "balanced + screenshare" as "maintain-resolution".
-  // TODO(hbos): Don't do this. This is not what "balanced" means. If the
-  // application wants to maintain resolution it should set that degradation
-  // preference rather than depend on non-standard behaviors.
+  // When screensharing, as far as ResourceAdaptationProcessor logic is
+  // concerned, we ALWAYS use "maintain-resolution". However, on a different
+  // layer we may cap the video resolution to 720p to make high fps
+  // screensharing feasible. This means that on the API layer the preference is
+  // "balanced" (allowing reduction in both resolution and frame rate) but on
+  // this layer (not responsible for caping to 720p) the preference is the same
+  // as "maintain-resolution".
   void MaybeUpdateEffectiveDegradationPreference();
   // Makes |video_source_restrictions_| up-to-date and informs the
   // |adaptation_listener_| if restrictions are changed, allowing the listener
@@ -175,13 +179,13 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   void ResetActiveCounts();
   std::string ActiveCountsToString() const;
 
+  VideoStreamInputStateProvider* const input_state_provider_;
   ResourceAdaptationProcessorListener* const adaptation_listener_;
   Clock* clock_;
   State state_;
   const bool experiment_cpu_load_estimator_;
   // The restrictions that |adaptation_listener_| is informed of.
   VideoSourceRestrictions video_source_restrictions_;
-  bool has_input_video_;
   DegradationPreference degradation_preference_;
   DegradationPreference effective_degradation_preference_;
   // Keeps track of source restrictions that this adaptation processor outputs.
@@ -190,8 +194,6 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   const std::unique_ptr<QualityScalerResource> quality_scaler_resource_;
   const std::unique_ptr<InitialFrameDropper> initial_frame_dropper_;
   const bool quality_scaling_experiment_enabled_;
-  absl::optional<int> last_input_frame_size_;
-  absl::optional<double> target_frame_rate_;
   // This is the last non-zero target bitrate for the encoder.
   absl::optional<uint32_t> encoder_target_bitrate_bps_;
   absl::optional<VideoEncoder::RateControlParameters> encoder_rates_;

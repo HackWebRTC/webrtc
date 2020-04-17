@@ -53,6 +53,23 @@ std::string BalancedFieldTrialConfig() {
          rtc::ToString(kBalancedHighFrameRateFps) + "/";
 }
 
+VideoStreamInputState InputState(
+    int input_pixels,
+    int input_fps,
+    absl::optional<EncoderSettings> encoder_settings) {
+  VideoStreamInputState input_state;
+  input_state.set_has_input(true);
+  input_state.set_frame_size_pixels(input_pixels);
+  input_state.set_frames_per_second(input_fps);
+  if (encoder_settings.has_value()) {
+    input_state.set_video_codec_type(
+        encoder_settings->encoder_config().codec_type);
+    input_state.set_min_pixels_per_frame(
+        encoder_settings->encoder_info().scaling_settings.min_pixels_per_frame);
+  }
+  return input_state;
+}
+
 // Responsible for adjusting the inputs to VideoStreamAdapter (SetInput), such
 // as pixels and frame rate, according to the most recent source restrictions.
 // This helps tests that apply adaptations multiple times: if the input is not
@@ -70,8 +87,8 @@ class FakeVideoStream {
         input_fps_(input_fps),
         encoder_settings_(std::move(encoder_settings)),
         encoder_target_bitrate_bps_(std::move(encoder_target_bitrate_bps)) {
-    adapter_->SetInput(input_pixels_, input_fps_, encoder_settings_,
-                       encoder_target_bitrate_bps_);
+    adapter_->SetInput(InputState(input_pixels_, input_fps_, encoder_settings_),
+                       encoder_settings_, encoder_target_bitrate_bps_);
   }
 
   int input_pixels() const { return input_pixels_; }
@@ -94,8 +111,8 @@ class FakeVideoStream {
     if (restrictions.max_frame_rate().has_value()) {
       input_fps_ = restrictions.max_frame_rate().value();
     }
-    adapter_->SetInput(input_pixels_, input_fps_, encoder_settings_,
-                       encoder_target_bitrate_bps_);
+    adapter_->SetInput(InputState(input_pixels_, input_fps_, encoder_settings_),
+                       encoder_settings_, encoder_target_bitrate_bps_);
   }
 
  private:
@@ -140,7 +157,8 @@ TEST(VideoStreamAdapterTest, MaintainFramerate_DecreasesPixelsToThreeFifths) {
   const int kInputPixels = 1280 * 720;
   VideoStreamAdapter adapter;
   adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
-  adapter.SetInput(kInputPixels, 30, absl::nullopt, absl::nullopt);
+  adapter.SetInput(InputState(kInputPixels, 30, absl::nullopt), absl::nullopt,
+                   absl::nullopt);
   Adaptation adaptation = adapter.GetAdaptationDown();
   EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
   EXPECT_FALSE(adaptation.min_pixel_limit_reached());
@@ -157,9 +175,10 @@ TEST(VideoStreamAdapterTest, MaintainFramerate_DecreasesPixelsToLimitReached) {
   const int kMinPixelsPerFrame = 640 * 480;
   VideoStreamAdapter adapter;
   adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
-  adapter.SetInput(kMinPixelsPerFrame + 1, 30,
-                   EncoderSettingsWithMinPixelsPerFrame(kMinPixelsPerFrame),
-                   absl::nullopt);
+  auto encoder_settings =
+      EncoderSettingsWithMinPixelsPerFrame(kMinPixelsPerFrame);
+  adapter.SetInput(InputState(kMinPixelsPerFrame + 1, 30, encoder_settings),
+                   encoder_settings, absl::nullopt);
   // Even though we are above kMinPixelsPerFrame, because adapting down would
   // have exceeded the limit, we are said to have reached the limit already.
   // This differs from the frame rate adaptation logic, which would have clamped
@@ -211,7 +230,8 @@ TEST(VideoStreamAdapterTest, MaintainResolution_DecreasesFpsToTwoThirds) {
   const int kInputFps = 30;
   VideoStreamAdapter adapter;
   adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_RESOLUTION);
-  adapter.SetInput(1280 * 720, kInputFps, absl::nullopt, absl::nullopt);
+  adapter.SetInput(InputState(1280 * 720, kInputFps, absl::nullopt),
+                   absl::nullopt, absl::nullopt);
   Adaptation adaptation = adapter.GetAdaptationDown();
   EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
   adapter.ApplyAdaptation(adaptation);
@@ -286,7 +306,8 @@ TEST(VideoStreamAdapterTest, Balanced_DecreaseFrameRate) {
       BalancedFieldTrialConfig());
   VideoStreamAdapter adapter;
   adapter.SetDegradationPreference(DegradationPreference::BALANCED);
-  adapter.SetInput(kBalancedMediumResolutionPixels, kBalancedHighFrameRateFps,
+  adapter.SetInput(InputState(kBalancedMediumResolutionPixels,
+                              kBalancedHighFrameRateFps, absl::nullopt),
                    absl::nullopt, absl::nullopt);
   // If our frame rate is higher than the frame rate associated with our
   // resolution we should try to adapt to the frame rate associated with our
@@ -531,30 +552,12 @@ TEST(VideoStreamAdapterTest, Balanced_LimitReached) {
   EXPECT_EQ(1, adapter.adaptation_counters().fps_adaptations);
 }
 
-TEST(VideoStreamAdapterTest, AdaptationDisabled) {
-  VideoStreamAdapter adapter;
-  adapter.SetDegradationPreference(DegradationPreference::DISABLED);
-  adapter.SetInput(1280 * 720, 30, absl::nullopt, absl::nullopt);
-  EXPECT_EQ(Adaptation::Status::kAdaptationDisabled,
-            adapter.GetAdaptationDown().status());
-  EXPECT_EQ(Adaptation::Status::kAdaptationDisabled,
-            adapter.GetAdaptationUp(kReasonDontCare).status());
-}
-
-TEST(VideoStreamAdapterTest, InsufficientInput) {
-  VideoStreamAdapter adapter;
-  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_RESOLUTION);
-  // No frame rate is insufficient when going down.
-  adapter.SetInput(1280 * 720, 0, absl::nullopt, absl::nullopt);
-  EXPECT_EQ(Adaptation::Status::kInsufficientInput,
-            adapter.GetAdaptationDown().status());
-}
-
 // kAwaitingPreviousAdaptation is only supported in "maintain-framerate".
 TEST(VideoStreamAdapterTest, MaintainFramerate_AwaitingPreviousAdaptationDown) {
   VideoStreamAdapter adapter;
   adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
-  adapter.SetInput(1280 * 720, 30, absl::nullopt, absl::nullopt);
+  adapter.SetInput(InputState(1280 * 720, 30, absl::nullopt), absl::nullopt,
+                   absl::nullopt);
   // Adapt down once, but don't update the input.
   adapter.ApplyAdaptation(adapter.GetAdaptationDown());
   EXPECT_EQ(1, adapter.adaptation_counters().resolution_adaptations);
@@ -655,7 +658,8 @@ TEST(VideoStreamAdapterTest,
                 kRestrictionsNotCleared,
             adapter.SetDegradationPreference(
                 DegradationPreference::MAINTAIN_FRAMERATE));
-  adapter.SetInput(1280 * 720, 30, absl::nullopt, absl::nullopt);
+  adapter.SetInput(InputState(1280 * 720, 30, absl::nullopt), absl::nullopt,
+                   absl::nullopt);
   adapter.ApplyAdaptation(adapter.GetAdaptationDown());
   EXPECT_NE(VideoSourceRestrictions(), adapter.source_restrictions());
   EXPECT_NE(0, adapter.adaptation_counters().Total());
@@ -687,7 +691,8 @@ TEST(VideoStreamAdapterDeathTest,
      SetDegradationPreferenceInvalidatesAdaptations) {
   VideoStreamAdapter adapter;
   adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
-  adapter.SetInput(1280 * 720, 30, absl::nullopt, absl::nullopt);
+  adapter.SetInput(InputState(1280 * 720, 30, absl::nullopt), absl::nullopt,
+                   absl::nullopt);
   Adaptation adaptation = adapter.GetAdaptationDown();
   adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_RESOLUTION);
   EXPECT_DEATH(adapter.ApplyAdaptation(adaptation), "");
@@ -696,9 +701,11 @@ TEST(VideoStreamAdapterDeathTest,
 TEST(VideoStreamAdapterDeathTest, SetInputInvalidatesAdaptations) {
   VideoStreamAdapter adapter;
   adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_RESOLUTION);
-  adapter.SetInput(1280 * 720, 30, absl::nullopt, absl::nullopt);
+  adapter.SetInput(InputState(1280 * 720, 30, absl::nullopt), absl::nullopt,
+                   absl::nullopt);
   Adaptation adaptation = adapter.GetAdaptationDown();
-  adapter.SetInput(1280 * 720, 31, absl::nullopt, absl::nullopt);
+  adapter.SetInput(InputState(1280 * 720, 31, absl::nullopt), absl::nullopt,
+                   absl::nullopt);
   EXPECT_DEATH(adapter.PeekNextRestrictions(adaptation), "");
 }
 

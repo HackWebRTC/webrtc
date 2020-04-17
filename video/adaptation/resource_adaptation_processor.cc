@@ -186,16 +186,17 @@ class ResourceAdaptationProcessor::InitialFrameDropper {
 };
 
 ResourceAdaptationProcessor::ResourceAdaptationProcessor(
+    VideoStreamInputStateProvider* input_state_provider,
     Clock* clock,
     bool experiment_cpu_load_estimator,
     std::unique_ptr<OveruseFrameDetector> overuse_detector,
     VideoStreamEncoderObserver* encoder_stats_observer,
     ResourceAdaptationProcessorListener* adaptation_listener)
-    : adaptation_listener_(adaptation_listener),
+    : input_state_provider_(input_state_provider),
+      adaptation_listener_(adaptation_listener),
       clock_(clock),
       state_(State::kStopped),
       experiment_cpu_load_estimator_(experiment_cpu_load_estimator),
-      has_input_video_(false),
       degradation_preference_(DegradationPreference::DISABLED),
       effective_degradation_preference_(DegradationPreference::DISABLED),
       stream_adapter_(std::make_unique<VideoStreamAdapter>()),
@@ -205,8 +206,6 @@ ResourceAdaptationProcessor::ResourceAdaptationProcessor(
       initial_frame_dropper_(std::make_unique<InitialFrameDropper>(
           quality_scaler_resource_.get())),
       quality_scaling_experiment_enabled_(QualityScalingExperiment::Enabled()),
-      last_input_frame_size_(absl::nullopt),
-      target_frame_rate_(absl::nullopt),
       encoder_target_bitrate_bps_(absl::nullopt),
       quality_rampup_done_(false),
       quality_rampup_experiment_(QualityRampupExperiment::ParseSettings()),
@@ -262,11 +261,6 @@ void ResourceAdaptationProcessor::AddResource(Resource* resource,
   resources_.emplace_back(resource, reason);
 }
 
-void ResourceAdaptationProcessor::SetHasInputVideo(bool has_input_video) {
-  // While false, OnResourceUnderuse() and OnResourceOveruse() are NO-OPS.
-  has_input_video_ = has_input_video;
-}
-
 void ResourceAdaptationProcessor::SetDegradationPreference(
     DegradationPreference degradation_preference) {
   degradation_preference_ = degradation_preference;
@@ -308,10 +302,6 @@ void ResourceAdaptationProcessor::ResetVideoSourceRestrictions() {
   ResetActiveCounts();
   encoder_stats_observer_->ClearAdaptationStats();
   MaybeUpdateVideoSourceRestrictions();
-}
-
-void ResourceAdaptationProcessor::OnFrame(const VideoFrame& frame) {
-  last_input_frame_size_ = frame.size();
 }
 
 void ResourceAdaptationProcessor::OnFrameDroppedDueToSize() {
@@ -447,10 +437,21 @@ ResourceAdaptationProcessor::OnResourceUsageStateMeasured(
   }
 }
 
+bool ResourceAdaptationProcessor::HasSufficientInputForAdaptation(
+    const VideoStreamInputState& input_state) const {
+  return input_state.HasInputFrameSizeAndFramesPerSecond() &&
+         (effective_degradation_preference_ !=
+              DegradationPreference::MAINTAIN_RESOLUTION ||
+          input_state.frames_per_second() >= kMinFrameRateFps);
+}
+
 void ResourceAdaptationProcessor::OnResourceUnderuse(
     VideoAdaptationReason reason) {
-  if (!has_input_video_)
+  VideoStreamInputState input_state = input_state_provider_->InputState();
+  if (effective_degradation_preference_ == DegradationPreference::DISABLED ||
+      !HasSufficientInputForAdaptation(input_state)) {
     return;
+  }
   // We can't adapt up if we're already at the highest setting.
   // Note that this only includes counts relevant to the current degradation
   // preference. e.g. we previously adapted resolution, now prefer adpating fps,
@@ -472,9 +473,8 @@ void ResourceAdaptationProcessor::OnResourceUnderuse(
   if (num_downgrades == 0)
     return;
   // Update video input states and encoder settings for accurate adaptation.
-  stream_adapter_->SetInput(LastInputFrameSizeOrDefault(),
-                            encoder_stats_observer_->GetInputFrameRate(),
-                            encoder_settings_, encoder_target_bitrate_bps_);
+  stream_adapter_->SetInput(input_state, encoder_settings_,
+                            encoder_target_bitrate_bps_);
   // Should we adapt, and if so: how?
   Adaptation adaptation = stream_adapter_->GetAdaptationUp(reason);
   if (adaptation.status() != Adaptation::Status::kValid)
@@ -491,12 +491,17 @@ void ResourceAdaptationProcessor::OnResourceUnderuse(
 
 ResourceListenerResponse ResourceAdaptationProcessor::OnResourceOveruse(
     VideoAdaptationReason reason) {
-  if (!has_input_video_)
+  VideoStreamInputState input_state = input_state_provider_->InputState();
+  if (!input_state.has_input()) {
     return ResourceListenerResponse::kQualityScalerShouldIncreaseFrequency;
+  }
+  if (effective_degradation_preference_ == DegradationPreference::DISABLED ||
+      !HasSufficientInputForAdaptation(input_state)) {
+    return ResourceListenerResponse::kNothing;
+  }
   // Update video input states and encoder settings for accurate adaptation.
-  stream_adapter_->SetInput(LastInputFrameSizeOrDefault(),
-                            encoder_stats_observer_->GetInputFrameRate(),
-                            encoder_settings_, encoder_target_bitrate_bps_);
+  stream_adapter_->SetInput(input_state, encoder_settings_,
+                            encoder_target_bitrate_bps_);
   // Should we adapt, and if so: how?
   Adaptation adaptation = stream_adapter_->GetAdaptationDown();
   if (adaptation.min_pixel_limit_reached())
@@ -537,15 +542,8 @@ CpuOveruseOptions ResourceAdaptationProcessor::GetCpuOveruseOptions() const {
 }
 
 int ResourceAdaptationProcessor::LastInputFrameSizeOrDefault() const {
-  // The dependency on this hardcoded resolution is inherited from old code,
-  // which used this resolution as a stand-in for not knowing the resolution
-  // yet.
-  // TODO(hbos): Can we simply DCHECK has_value() before usage instead? Having a
-  // DCHECK passed all the tests but adding it does change the requirements of
-  // this class (= not being allowed to call OnResourceUnderuse() or
-  // OnResourceOveruse() before OnFrame()) and deserves a standalone CL.
-  return last_input_frame_size_.value_or(kDefaultInputPixelsWidth *
-                                         kDefaultInputPixelsHeight);
+  return input_state_provider_->InputState().frame_size_pixels().value_or(
+      kDefaultInputPixelsWidth * kDefaultInputPixelsHeight);
 }
 
 void ResourceAdaptationProcessor::MaybeUpdateEffectiveDegradationPreference() {

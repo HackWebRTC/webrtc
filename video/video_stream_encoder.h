@@ -28,6 +28,7 @@
 #include "api/video_codecs/video_encoder.h"
 #include "call/adaptation/resource_adaptation_processor_interface.h"
 #include "call/adaptation/video_source_restrictions.h"
+#include "call/adaptation/video_stream_input_state_provider.h"
 #include "modules/video_coding/utility/frame_dropper.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
@@ -148,6 +149,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   };
 
   void ReconfigureEncoder() RTC_RUN_ON(&encoder_queue_);
+  void OnEncoderSettingsChanged() RTC_RUN_ON(&encoder_queue_);
 
   // Implements VideoSinkInterface.
   void OnFrame(const VideoFrame& video_frame) override;
@@ -406,6 +408,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // VideoSourceSinkController can be made single-threaded, and its lock can be
   // replaced with a sequence checker.
   std::unique_ptr<VideoSourceSinkController> video_source_sink_controller_;
+  std::unique_ptr<VideoStreamInputStateProvider> input_state_provider_
+      RTC_GUARDED_BY(&encoder_queue_);
   std::unique_ptr<ResourceAdaptationProcessor> resource_adaptation_processor_
       RTC_GUARDED_BY(&encoder_queue_);
 
