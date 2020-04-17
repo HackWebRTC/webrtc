@@ -973,7 +973,8 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          offer_extmap_allow_mixed == o.offer_extmap_allow_mixed &&
          turn_logging_id == o.turn_logging_id &&
          enable_implicit_rollback == o.enable_implicit_rollback &&
-         allow_codec_switching == o.allow_codec_switching;
+         allow_codec_switching == o.allow_codec_switching &&
+         enable_simulcast_stats == o.enable_simulcast_stats;
 }
 
 bool PeerConnectionInterface::RTCConfiguration::operator!=(

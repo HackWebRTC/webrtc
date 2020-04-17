@@ -166,6 +166,7 @@ struct RtpConfig {
       uint32_t media_ssrc) const;
   uint32_t GetMediaSsrcAssociatedWithRtxSsrc(uint32_t rtx_ssrc) const;
   uint32_t GetMediaSsrcAssociatedWithFlexfecSsrc(uint32_t flexfec_ssrc) const;
+  absl::optional<std::string> GetRidForSsrc(uint32_t ssrc) const;
 };
 }  // namespace webrtc
 #endif  // CALL_RTP_CONFIG_H_

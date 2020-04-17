@@ -372,22 +372,27 @@ TEST_F(SendStatisticsProxyTest, OnSendEncodedImageIncreasesFramesEncoded) {
 TEST_F(SendStatisticsProxyTest, OnSendEncodedImageIncreasesQpSum) {
   EncodedImage encoded_image;
   CodecSpecificInfo codec_info;
-  EXPECT_EQ(absl::nullopt, statistics_proxy_->GetStats().qp_sum);
+  auto ssrc = config_.rtp.ssrcs[0];
+  EXPECT_EQ(absl::nullopt,
+            statistics_proxy_->GetStats().substreams[ssrc].qp_sum);
   encoded_image.qp_ = 3;
   statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
-  EXPECT_EQ(3u, statistics_proxy_->GetStats().qp_sum);
+  EXPECT_EQ(3u, statistics_proxy_->GetStats().substreams[ssrc].qp_sum);
   encoded_image.qp_ = 127;
   statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
-  EXPECT_EQ(130u, statistics_proxy_->GetStats().qp_sum);
+  EXPECT_EQ(130u, statistics_proxy_->GetStats().substreams[ssrc].qp_sum);
 }
 
 TEST_F(SendStatisticsProxyTest, OnSendEncodedImageWithoutQpQpSumWontExist) {
   EncodedImage encoded_image;
   CodecSpecificInfo codec_info;
+  auto ssrc = config_.rtp.ssrcs[0];
   encoded_image.qp_ = -1;
-  EXPECT_EQ(absl::nullopt, statistics_proxy_->GetStats().qp_sum);
+  EXPECT_EQ(absl::nullopt,
+            statistics_proxy_->GetStats().substreams[ssrc].qp_sum);
   statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
-  EXPECT_EQ(absl::nullopt, statistics_proxy_->GetStats().qp_sum);
+  EXPECT_EQ(absl::nullopt,
+            statistics_proxy_->GetStats().substreams[ssrc].qp_sum);
 }
 
 TEST_F(SendStatisticsProxyTest, TotalEncodedBytesTargetFirstFrame) {
@@ -440,6 +445,29 @@ TEST_F(SendStatisticsProxyTest,
   uint64_t delta_encoded_bytes_target =
       stats.total_encoded_bytes_target - first_total_encoded_bytes_target;
   EXPECT_EQ(kTargetBytesPerSecond / 10, delta_encoded_bytes_target);
+}
+
+TEST_F(SendStatisticsProxyTest, EncodeFrameRateInSubStream) {
+  const int kInterframeDelayMs = 100;
+  auto ssrc = config_.rtp.ssrcs[0];
+  rtc::ScopedFakeClock fake_global_clock;
+  fake_global_clock.SetTime(
+      Timestamp::Millis(fake_clock_.TimeInMilliseconds()));
+
+  EncodedImage encoded_image;
+
+  // First frame
+  statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+  // Second frame
+  fake_clock_.AdvanceTimeMilliseconds(kInterframeDelayMs);
+  fake_global_clock.SetTime(
+      Timestamp::Millis(fake_clock_.TimeInMilliseconds()));
+  encoded_image.SetTimestamp(encoded_image.Timestamp() +
+                             90 * kInterframeDelayMs);
+  statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+
+  auto stats = statistics_proxy_->GetStats();
+  EXPECT_EQ(stats.substreams[ssrc].encode_frame_rate, 10);
 }
 
 TEST_F(SendStatisticsProxyTest, GetCpuAdaptationStats) {

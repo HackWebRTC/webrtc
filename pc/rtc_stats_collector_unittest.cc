@@ -519,6 +519,7 @@ class RTCStatsCollectorWrapper {
                     MediaStreamTrackInterface::kVideoKind);
 
       video_media_info.senders.push_back(video_sender_info);
+      video_media_info.aggregated_senders.push_back(video_sender_info);
       rtc::scoped_refptr<MockRtpSenderInternal> rtp_sender = CreateMockSender(
           cricket::MEDIA_TYPE_VIDEO,
           rtc::scoped_refptr<MediaStreamTrackInterface>(local_video_track),
@@ -641,6 +642,7 @@ class RTCStatsCollectorTest : public ::testing::Test {
         cricket::SsrcSenderInfo());
     video_media_info.senders[0].local_stats[0].ssrc = 3;
     video_media_info.senders[0].codec_payload_type = send_codec.payload_type;
+    video_media_info.aggregated_senders.push_back(video_media_info.senders[0]);
     // inbound-rtp
     graph.inbound_rtp_id = "RTCInboundRTPVideoStream_4";
     video_media_info.receivers.push_back(cricket::VideoReceiverInfo());
@@ -2014,7 +2016,12 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   video_media_info.senders[0].qp_sum = absl::nullopt;
   video_media_info.senders[0].content_type = VideoContentType::UNSPECIFIED;
   video_media_info.senders[0].encoder_implementation_name = "";
-
+  video_media_info.senders[0].send_frame_width = 200;
+  video_media_info.senders[0].send_frame_height = 100;
+  video_media_info.senders[0].framerate_sent = 10;
+  video_media_info.senders[0].frames_sent = 5;
+  video_media_info.senders[0].huge_frames_sent = 2;
+  video_media_info.aggregated_senders.push_back(video_media_info.senders[0]);
   RtpCodecParameters codec_parameters;
   codec_parameters.payload_type = 42;
   codec_parameters.kind = cricket::MEDIA_TYPE_AUDIO;
@@ -2062,6 +2069,13 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   expected_video.total_packet_send_delay = 10.0;
   expected_video.quality_limitation_reason = "bandwidth";
   expected_video.quality_limitation_resolution_changes = 56u;
+  if (pc_->GetConfiguration().enable_simulcast_stats) {
+    expected_video.frame_width = 200u;
+    expected_video.frame_height = 100u;
+    expected_video.frames_per_second = 10.0;
+    expected_video.frames_sent = 5;
+    expected_video.huge_frames_sent = 2;
+  }
   // |expected_video.content_type| should be undefined.
   // |expected_video.qp_sum| should be undefined.
   // |expected_video.encoder_implementation| should be undefined.
@@ -2077,6 +2091,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   video_media_info.senders[0].content_type = VideoContentType::SCREENSHARE;
   expected_video.content_type = "screenshare";
   video_media_info.senders[0].encoder_implementation_name = "libfooencoder";
+  video_media_info.aggregated_senders[0] = video_media_info.senders[0];
   expected_video.encoder_implementation = "libfooencoder";
   video_media_channel->SetStats(video_media_info);
 
@@ -2390,10 +2405,15 @@ TEST_F(RTCStatsCollectorTest, RTCVideoSourceStatsCollectedForSenderWithTrack) {
   const int kVideoSourceHeight = 34;
 
   cricket::VideoMediaInfo video_media_info;
+  video_media_info.aggregated_senders.push_back(cricket::VideoSenderInfo());
   video_media_info.senders.push_back(cricket::VideoSenderInfo());
   video_media_info.senders[0].local_stats.push_back(cricket::SsrcSenderInfo());
   video_media_info.senders[0].local_stats[0].ssrc = kSsrc;
   video_media_info.senders[0].framerate_input = 29;
+  video_media_info.aggregated_senders[0].local_stats.push_back(
+      cricket::SsrcSenderInfo());
+  video_media_info.aggregated_senders[0].local_stats[0].ssrc = kSsrc;
+  video_media_info.aggregated_senders[0].framerate_input = 29;
   auto* video_media_channel = pc_->AddVideoChannel("VideoMid", "TransportName");
   video_media_channel->SetStats(video_media_info);
 
@@ -2572,6 +2592,8 @@ class RTCStatsCollectorTestWithParamKind
         }
         video_media_info.senders[0].report_block_datas.push_back(
             report_block_data);
+        video_media_info.aggregated_senders.push_back(
+            video_media_info.senders[0]);
         auto* video_media_channel = pc_->AddVideoChannel("mid", transport_name);
         video_media_channel->SetStats(video_media_info);
         return;
