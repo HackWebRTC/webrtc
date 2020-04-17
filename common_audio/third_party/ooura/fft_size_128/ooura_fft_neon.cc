@@ -16,9 +16,9 @@
 
 #include <arm_neon.h>
 
-#include "modules/audio_processing/utility/ooura_fft.h"
-#include "modules/audio_processing/utility/ooura_fft_tables_common.h"
-#include "modules/audio_processing/utility/ooura_fft_tables_neon_sse2.h"
+#include "common_audio/third_party/ooura/fft_size_128/ooura_fft.h"
+#include "common_audio/third_party/ooura/fft_size_128/ooura_fft_tables_common.h"
+#include "common_audio/third_party/ooura/fft_size_128/ooura_fft_tables_neon_sse2.h"
 
 namespace webrtc {
 
