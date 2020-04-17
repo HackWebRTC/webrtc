@@ -16,8 +16,6 @@
 #include "absl/types/optional.h"
 #include "api/rtp_parameters.h"
 #include "api/video/video_adaptation_counters.h"
-#include "api/video/video_adaptation_reason.h"
-#include "call/adaptation/encoder_settings.h"
 #include "call/adaptation/resource.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "call/adaptation/video_stream_input_state.h"
@@ -26,9 +24,19 @@
 
 namespace webrtc {
 
+class VideoStreamAdapter;
+
 extern const int kMinFrameRateFps;
 
-class VideoStreamAdapter;
+VideoSourceRestrictions FilterRestrictionsByDegradationPreference(
+    VideoSourceRestrictions source_restrictions,
+    DegradationPreference degradation_preference);
+
+VideoAdaptationCounters FilterVideoAdaptationCountersByDegradationPreference(
+    VideoAdaptationCounters counters,
+    DegradationPreference degradation_preference);
+
+int GetHigherResolutionThan(int pixel_count);
 
 // Represents one step that the VideoStreamAdapter can take when adapting the
 // VideoSourceRestrictions up or down. Or, if adaptation is not valid, provides
@@ -45,23 +53,7 @@ class Adaptation final {
     // Cannot adapt. The resolution or frame rate requested by a recent
     // adaptation has not yet been reflected in the input resolution or frame
     // rate; adaptation is refused to avoid "double-adapting".
-    // TODO(hbos): Can this be rephrased as a resource usage measurement
-    // cooldown mechanism? In a multi-stream setup, we need to wait before
-    // adapting again across streams. The best way to achieve this is probably
-    // to not act on racy resource usage measurements, regardless of individual
-    // adapters. When this logic is moved or replaced then remove this enum
-    // value.
     kAwaitingPreviousAdaptation,
-    // Cannot adapt. The adaptation that would have been proposed by the adapter
-    // violates bitrate constraints and is therefore rejected.
-    // TODO(hbos): This is a version of being resource limited, except in order
-    // to know if we are constrained we need to have a proposed adaptation in
-    // mind, thus the resource alone cannot determine this in isolation.
-    // Proposal: ask resources for permission to apply a proposed adaptation.
-    // This allows rejecting a given resolution or frame rate based on bitrate
-    // limits without coupling it with the adapter's proposal logic. When this
-    // is done, remove this enum value.
-    kIsBitrateConstrained,
   };
 
   // The status of this Adaptation. To find out how this Adaptation affects
@@ -140,13 +132,11 @@ class VideoStreamAdapter {
   SetDegradationPreferenceResult SetDegradationPreference(
       DegradationPreference degradation_preference);
   // The adaptaiton logic depends on these inputs.
-  void SetInput(VideoStreamInputState input_state,
-                absl::optional<EncoderSettings> encoder_settings,
-                absl::optional<uint32_t> encoder_target_bitrate_bps);
+  void SetInput(VideoStreamInputState input_state);
 
   // Returns an adaptation that we are guaranteed to be able to apply, or a
   // status code indicating the reason why we cannot adapt.
-  Adaptation GetAdaptationUp(VideoAdaptationReason reason) const;
+  Adaptation GetAdaptationUp() const;
   Adaptation GetAdaptationDown() const;
   // Returns the restrictions that result from applying the adaptation, without
   // actually applying it. If the adaptation is not valid, current restrictions
@@ -189,8 +179,6 @@ class VideoStreamAdapter {
   // https://w3c.github.io/mst-content-hint/#dom-rtcdegradationpreference
   DegradationPreference degradation_preference_;
   VideoStreamInputState input_state_;
-  absl::optional<EncoderSettings> encoder_settings_;
-  absl::optional<uint32_t> encoder_target_bitrate_bps_;
   // The input frame rate, resolution and adaptation direction of the last
   // ApplyAdaptationTarget(). Used to avoid adapting twice if a recent
   // adaptation has not had an effect on the input frame rate or resolution yet.

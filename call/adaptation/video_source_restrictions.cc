@@ -65,4 +65,15 @@ void VideoSourceRestrictions::set_max_frame_rate(
   max_frame_rate_ = std::move(max_frame_rate);
 }
 
+bool DidIncreaseResolution(VideoSourceRestrictions restrictions_before,
+                           VideoSourceRestrictions restrictions_after) {
+  if (!restrictions_before.max_pixels_per_frame().has_value()) {
+    return false;
+  }
+  if (!restrictions_after.max_pixels_per_frame().has_value())
+    return true;
+  return restrictions_after.max_pixels_per_frame().value() >
+         restrictions_before.max_pixels_per_frame().value();
+}
+
 }  // namespace webrtc

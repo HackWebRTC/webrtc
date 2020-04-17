@@ -135,11 +135,12 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
 
   bool HasSufficientInputForAdaptation(
       const VideoStreamInputState& input_state) const;
+  VideoAdaptationReason GetReasonFromResource(const Resource& resource) const;
 
   // Performs the adaptation by getting the next target, applying it and
   // informing listeners of the new VideoSourceRestriction and adapt counters.
-  void OnResourceUnderuse(VideoAdaptationReason reason);
-  ResourceListenerResponse OnResourceOveruse(VideoAdaptationReason reason);
+  void OnResourceUnderuse(const Resource& reason_resource);
+  ResourceListenerResponse OnResourceOveruse(const Resource& reason_resource);
 
   CpuOveruseOptions GetCpuOveruseOptions() const;
   int LastInputFrameSizeOrDefault() const;
@@ -179,6 +180,73 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   void ResetActiveCounts();
   std::string ActiveCountsToString() const;
 
+  // Does not trigger adaptations, only prevents adapting up based on
+  // |active_counts_|.
+  class PreventAdaptUpDueToActiveCounts final : public Resource {
+   public:
+    explicit PreventAdaptUpDueToActiveCounts(
+        ResourceAdaptationProcessor* processor);
+    ~PreventAdaptUpDueToActiveCounts() override = default;
+
+    std::string name() const override {
+      return "PreventAdaptUpDueToActiveCounts";
+    }
+
+    bool IsAdaptationUpAllowed(
+        const VideoStreamInputState& input_state,
+        const VideoSourceRestrictions& restrictions_before,
+        const VideoSourceRestrictions& restrictions_after,
+        const Resource& reason_resource) const override;
+
+   private:
+    ResourceAdaptationProcessor* processor_;
+  } prevent_adapt_up_due_to_active_counts_;
+
+  // Does not trigger adaptations, only prevents adapting up resolution.
+  class PreventIncreaseResolutionDueToBitrateResource final : public Resource {
+   public:
+    explicit PreventIncreaseResolutionDueToBitrateResource(
+        ResourceAdaptationProcessor* processor);
+    ~PreventIncreaseResolutionDueToBitrateResource() override = default;
+
+    std::string name() const override {
+      return "PreventIncreaseResolutionDueToBitrateResource";
+    }
+
+    bool IsAdaptationUpAllowed(
+        const VideoStreamInputState& input_state,
+        const VideoSourceRestrictions& restrictions_before,
+        const VideoSourceRestrictions& restrictions_after,
+        const Resource& reason_resource) const override;
+
+   private:
+    ResourceAdaptationProcessor* processor_;
+  } prevent_increase_resolution_due_to_bitrate_resource_;
+
+  // Does not trigger adaptations, only prevents adapting up in BALANCED.
+  class PreventAdaptUpInBalancedResource final : public Resource {
+   public:
+    explicit PreventAdaptUpInBalancedResource(
+        ResourceAdaptationProcessor* processor);
+    ~PreventAdaptUpInBalancedResource() override = default;
+
+    std::string name() const override {
+      return "PreventAdaptUpInBalancedResource";
+    }
+
+    bool IsAdaptationUpAllowed(
+        const VideoStreamInputState& input_state,
+        const VideoSourceRestrictions& restrictions_before,
+        const VideoSourceRestrictions& restrictions_after,
+        const Resource& reason_resource) const override;
+
+   private:
+    ResourceAdaptationProcessor* processor_;
+  } prevent_adapt_up_in_balanced_resource_;
+
+  EncodeUsageResource encode_usage_resource_;
+  QualityScalerResource quality_scaler_resource_;
+
   VideoStreamInputStateProvider* const input_state_provider_;
   ResourceAdaptationProcessorListener* const adaptation_listener_;
   Clock* clock_;
@@ -190,8 +258,6 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   DegradationPreference effective_degradation_preference_;
   // Keeps track of source restrictions that this adaptation processor outputs.
   const std::unique_ptr<VideoStreamAdapter> stream_adapter_;
-  const std::unique_ptr<EncodeUsageResource> encode_usage_resource_;
-  const std::unique_ptr<QualityScalerResource> quality_scaler_resource_;
   const std::unique_ptr<InitialFrameDropper> initial_frame_dropper_;
   const bool quality_scaling_experiment_enabled_;
   // This is the last non-zero target bitrate for the encoder.

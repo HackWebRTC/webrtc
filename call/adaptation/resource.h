@@ -15,6 +15,8 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "call/adaptation/video_source_restrictions.h"
+#include "call/adaptation/video_stream_input_state.h"
 
 namespace webrtc {
 
@@ -83,6 +85,14 @@ class Resource {
   void UnregisterListener(ResourceListener* listener);
 
   ResourceUsageState usage_state() const;
+  // This method allows the Resource to reject a proposed adaptation in the "up"
+  // direction if it predicts this would cause overuse of this resource. The
+  // default implementation unconditionally returns true (= allowed).
+  virtual bool IsAdaptationUpAllowed(
+      const VideoStreamInputState& input_state,
+      const VideoSourceRestrictions& restrictions_before,
+      const VideoSourceRestrictions& restrictions_after,
+      const Resource& reason_resource) const;
 
   virtual std::string name() const = 0;
 

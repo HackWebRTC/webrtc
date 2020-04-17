@@ -65,6 +65,9 @@ class VideoSourceRestrictions {
   absl::optional<double> max_frame_rate_;
 };
 
+bool DidIncreaseResolution(VideoSourceRestrictions restrictions_before,
+                           VideoSourceRestrictions restrictions_after);
+
 }  // namespace webrtc
 
 #endif  // CALL_ADAPTATION_VIDEO_SOURCE_RESTRICTIONS_H_

@@ -41,6 +41,14 @@ ResourceUsageState Resource::usage_state() const {
   return usage_state_;
 }
 
+bool Resource::IsAdaptationUpAllowed(
+    const VideoStreamInputState& input_state,
+    const VideoSourceRestrictions& restrictions_before,
+    const VideoSourceRestrictions& restrictions_after,
+    const Resource& reason_resource) const {
+  return true;
+}
+
 ResourceListenerResponse Resource::OnResourceUsageStateMeasured(
     ResourceUsageState usage_state) {
   ResourceListenerResponse response = ResourceListenerResponse::kNothing;
