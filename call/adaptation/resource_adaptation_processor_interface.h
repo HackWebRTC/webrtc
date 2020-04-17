@@ -43,13 +43,29 @@ class ResourceAdaptationProcessorInterface {
  public:
   virtual ~ResourceAdaptationProcessorInterface();
 
-  virtual void StartResourceAdaptation(
-      ResourceAdaptationProcessorListener* adaptation_listener) = 0;
+  virtual DegradationPreference degradation_preference() const = 0;
+  // Reinterprets "balanced + screenshare" as "maintain-resolution".
+  // TODO(hbos): Don't do this. This is not what "balanced" means. If the
+  // application wants to maintain resolution it should set that degradation
+  // preference rather than depend on non-standard behaviors.
+  virtual DegradationPreference effective_degradation_preference() const = 0;
+
+  // Starts or stops listening to resources, effectively enabling or disabling
+  // processing.
+  // TODO(https://crbug.com/webrtc/11172): Automatically register and unregister
+  // with AddResource() and RemoveResource() instead. When the processor is
+  // multi-stream aware, stream-specific resouces will get added and removed
+  // over time.
+  virtual void StartResourceAdaptation() = 0;
   virtual void StopResourceAdaptation() = 0;
-  // The resource must out-live the module.
+  virtual void AddAdaptationListener(
+      ResourceAdaptationProcessorListener* adaptation_listener) = 0;
   virtual void AddResource(Resource* resource) = 0;
+
   virtual void SetDegradationPreference(
       DegradationPreference degradation_preference) = 0;
+  virtual void SetIsScreenshare(bool is_screenshare) = 0;
+  virtual void ResetVideoSourceRestrictions() = 0;
 };
 
 }  // namespace webrtc

@@ -35,6 +35,8 @@ class EncodeUsageResource : public Resource,
   explicit EncodeUsageResource(
       std::unique_ptr<OveruseFrameDetector> overuse_detector);
 
+  bool is_started() const { return is_started_; }
+
   void StartCheckForOveruse(CpuOveruseOptions options);
   void StopCheckForOveruse();
 

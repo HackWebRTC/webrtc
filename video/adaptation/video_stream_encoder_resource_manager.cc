@@ -157,7 +157,7 @@ bool VideoStreamEncoderResourceManager::PreventAdaptUpDueToActiveCounts::
   // have this catch-all reason- and stats-based approach.
   int num_downgrades = FilterVideoAdaptationCountersByDegradationPreference(
                            manager_->active_counts_[reason],
-                           manager_->effective_degradation_preference())
+                           manager_->effective_degradation_preference_)
                            .Total();
   RTC_DCHECK_GE(num_downgrades, 0);
   return num_downgrades > 0;
@@ -219,9 +219,9 @@ bool VideoStreamEncoderResourceManager::PreventAdaptUpInBalancedResource::
   // TODO(hbos): Why are we allowing violating balanced settings if adapting due
   // CPU? Shouldn't this condition be checked regardless of reason?
   if (reason == VideoAdaptationReason::kQuality &&
-      manager_->effective_degradation_preference() ==
+      manager_->effective_degradation_preference_ ==
           DegradationPreference::BALANCED &&
-      !manager_->stream_adapter_->balanced_settings().CanAdaptUp(
+      !manager_->balanced_settings_.CanAdaptUp(
           input_state.video_codec_type(),
           input_state.frame_size_pixels().value(),
           manager_->encoder_target_bitrate_bps_.value_or(0))) {
@@ -229,7 +229,7 @@ bool VideoStreamEncoderResourceManager::PreventAdaptUpInBalancedResource::
   }
   if (reason == VideoAdaptationReason::kQuality &&
       DidIncreaseResolution(restrictions_before, restrictions_after) &&
-      !manager_->stream_adapter_->balanced_settings().CanAdaptUpResolution(
+      !manager_->balanced_settings_.CanAdaptUpResolution(
           input_state.video_codec_type(),
           input_state.frame_size_pixels().value(),
           manager_->encoder_target_bitrate_bps_.value_or(0))) {
@@ -240,24 +240,24 @@ bool VideoStreamEncoderResourceManager::PreventAdaptUpInBalancedResource::
 
 VideoStreamEncoderResourceManager::VideoStreamEncoderResourceManager(
     VideoStreamInputStateProvider* input_state_provider,
+    ResourceAdaptationProcessor* adaptation_processor,
+    VideoStreamEncoderObserver* encoder_stats_observer,
     Clock* clock,
     bool experiment_cpu_load_estimator,
-    std::unique_ptr<OveruseFrameDetector> overuse_detector,
-    VideoStreamEncoderObserver* encoder_stats_observer,
-    ResourceAdaptationProcessorListener* adaptation_listener)
+    std::unique_ptr<OveruseFrameDetector> overuse_detector)
     : prevent_adapt_up_due_to_active_counts_(this),
       prevent_increase_resolution_due_to_bitrate_resource_(this),
       prevent_adapt_up_in_balanced_resource_(this),
       encode_usage_resource_(std::move(overuse_detector)),
       quality_scaler_resource_(),
       input_state_provider_(input_state_provider),
-      adaptation_listener_(adaptation_listener),
-      clock_(clock),
-      state_(State::kStopped),
-      experiment_cpu_load_estimator_(experiment_cpu_load_estimator),
+      adaptation_processor_(adaptation_processor),
+      encoder_stats_observer_(encoder_stats_observer),
       degradation_preference_(DegradationPreference::DISABLED),
       effective_degradation_preference_(DegradationPreference::DISABLED),
-      stream_adapter_(std::make_unique<VideoStreamAdapter>()),
+      video_source_restrictions_(),
+      clock_(clock),
+      experiment_cpu_load_estimator_(experiment_cpu_load_estimator),
       initial_frame_dropper_(
           std::make_unique<InitialFrameDropper>(&quality_scaler_resource_)),
       quality_scaling_experiment_enabled_(QualityScalingExperiment::Enabled()),
@@ -265,53 +265,43 @@ VideoStreamEncoderResourceManager::VideoStreamEncoderResourceManager(
       quality_rampup_done_(false),
       quality_rampup_experiment_(QualityRampupExperiment::ParseSettings()),
       encoder_settings_(absl::nullopt),
-      encoder_stats_observer_(encoder_stats_observer),
       active_counts_() {
-  RTC_DCHECK(adaptation_listener_);
   RTC_DCHECK(encoder_stats_observer_);
-  AddResource(&prevent_adapt_up_due_to_active_counts_,
-              VideoAdaptationReason::kQuality);
-  AddResource(&prevent_increase_resolution_due_to_bitrate_resource_,
-              VideoAdaptationReason::kQuality);
-  AddResource(&prevent_adapt_up_in_balanced_resource_,
-              VideoAdaptationReason::kQuality);
-  AddResource(&encode_usage_resource_, VideoAdaptationReason::kCpu);
-  AddResource(&quality_scaler_resource_, VideoAdaptationReason::kQuality);
+  MapResourceToReason(&prevent_adapt_up_due_to_active_counts_,
+                      VideoAdaptationReason::kQuality);
+  MapResourceToReason(&prevent_increase_resolution_due_to_bitrate_resource_,
+                      VideoAdaptationReason::kQuality);
+  MapResourceToReason(&prevent_adapt_up_in_balanced_resource_,
+                      VideoAdaptationReason::kQuality);
+  MapResourceToReason(&encode_usage_resource_, VideoAdaptationReason::kCpu);
+  MapResourceToReason(&quality_scaler_resource_,
+                      VideoAdaptationReason::kQuality);
 }
 
 VideoStreamEncoderResourceManager::~VideoStreamEncoderResourceManager() {
-  RTC_DCHECK_EQ(state_, State::kStopped);
+  RTC_DCHECK(!encode_usage_resource_.is_started());
 }
 
-void VideoStreamEncoderResourceManager::StartResourceAdaptation(
-    ResourceAdaptationProcessorListener* adaptation_listener) {
-  RTC_DCHECK_EQ(state_, State::kStopped);
+void VideoStreamEncoderResourceManager::SetDegradationPreferences(
+    DegradationPreference degradation_preference,
+    DegradationPreference effective_degradation_preference) {
+  degradation_preference_ = degradation_preference;
+  effective_degradation_preference_ = effective_degradation_preference;
+  UpdateStatsAdaptationSettings();
+}
+
+void VideoStreamEncoderResourceManager::StartEncodeUsageResource() {
+  RTC_DCHECK(!encode_usage_resource_.is_started());
   RTC_DCHECK(encoder_settings_.has_value());
-  // TODO(https://crbug.com/webrtc/11222): Rethink when the adaptation listener
-  // should be passed in and why. If resources are separated from modules then
-  // those resources may be started or stopped separately from the module.
-  RTC_DCHECK_EQ(adaptation_listener, adaptation_listener_);
   encode_usage_resource_.StartCheckForOveruse(GetCpuOveruseOptions());
-  for (auto& resource_and_reason : resources_) {
-    resource_and_reason.resource->RegisterListener(this);
-  }
-  state_ = State::kStarted;
 }
 
-void VideoStreamEncoderResourceManager::StopResourceAdaptation() {
+void VideoStreamEncoderResourceManager::StopManagedResources() {
   encode_usage_resource_.StopCheckForOveruse();
   quality_scaler_resource_.StopCheckForOveruse();
-  for (auto& resource_and_reason : resources_) {
-    resource_and_reason.resource->UnregisterListener(this);
-  }
-  state_ = State::kStopped;
 }
 
-void VideoStreamEncoderResourceManager::AddResource(Resource* resource) {
-  return AddResource(resource, VideoAdaptationReason::kCpu);
-}
-
-void VideoStreamEncoderResourceManager::AddResource(
+void VideoStreamEncoderResourceManager::MapResourceToReason(
     Resource* resource,
     VideoAdaptationReason reason) {
   RTC_DCHECK(resource);
@@ -323,17 +313,18 @@ void VideoStreamEncoderResourceManager::AddResource(
   resources_.emplace_back(resource, reason);
 }
 
-void VideoStreamEncoderResourceManager::SetDegradationPreference(
-    DegradationPreference degradation_preference) {
-  degradation_preference_ = degradation_preference;
-  UpdateStatsAdaptationSettings();
-  MaybeUpdateEffectiveDegradationPreference();
+std::vector<Resource*> VideoStreamEncoderResourceManager::MappedResources()
+    const {
+  std::vector<Resource*> resources;
+  for (auto const& resource_and_reason : resources_) {
+    resources.push_back(resource_and_reason.resource);
+  }
+  return resources;
 }
 
 void VideoStreamEncoderResourceManager::SetEncoderSettings(
     EncoderSettings encoder_settings) {
   encoder_settings_ = std::move(encoder_settings);
-  MaybeUpdateEffectiveDegradationPreference();
 
   quality_rampup_experiment_.SetMaxBitrate(
       LastInputFrameSizeOrDefault(),
@@ -362,25 +353,9 @@ void VideoStreamEncoderResourceManager::SetEncoderRates(
   encoder_rates_ = encoder_rates;
 }
 
-void VideoStreamEncoderResourceManager::ResetVideoSourceRestrictions() {
-  stream_adapter_->ClearRestrictions();
-  MaybeUpdateVideoSourceRestrictions(nullptr);
-}
-
 void VideoStreamEncoderResourceManager::OnFrameDroppedDueToSize() {
-  VideoAdaptationCounters counters_before =
-      stream_adapter_->adaptation_counters();
-  OnResourceOveruse(quality_scaler_resource_);
-  if (degradation_preference_ == DegradationPreference::BALANCED &&
-      stream_adapter_->adaptation_counters().fps_adaptations >
-          counters_before.fps_adaptations) {
-    // Adapt framerate in same step as resolution.
-    OnResourceOveruse(quality_scaler_resource_);
-  }
-  if (stream_adapter_->adaptation_counters().resolution_adaptations >
-      counters_before.resolution_adaptations) {
-    encoder_stats_observer_->OnInitialQualityResolutionAdaptDown();
-  }
+  adaptation_processor_->TriggerAdaptationDueToFrameDroppedDueToSize(
+      quality_scaler_resource_);
   initial_frame_dropper_->OnFrameDroppedDueToSize();
 }
 
@@ -461,7 +436,7 @@ void VideoStreamEncoderResourceManager::ConfigureQualityScaler(
   if (degradation_preference_ == DegradationPreference::BALANCED &&
       quality_scaler_resource_.is_started()) {
     absl::optional<VideoEncoder::QpThresholds> thresholds =
-        stream_adapter_->balanced_settings().GetQpThresholds(
+        balanced_settings_.GetQpThresholds(
             GetVideoCodecTypeOrGeneric(encoder_settings_),
             LastInputFrameSizeOrDefault());
     if (thresholds) {
@@ -469,30 +444,6 @@ void VideoStreamEncoderResourceManager::ConfigureQualityScaler(
     }
   }
   UpdateStatsAdaptationSettings();
-}
-
-ResourceListenerResponse
-VideoStreamEncoderResourceManager::OnResourceUsageStateMeasured(
-    const Resource& resource) {
-  switch (resource.usage_state()) {
-    case ResourceUsageState::kOveruse:
-      return OnResourceOveruse(resource);
-    case ResourceUsageState::kStable:
-      // Do nothing.
-      // TODO(https://crbug.com/webrtc/11172): Delete kStable in favor of null.
-      return ResourceListenerResponse::kNothing;
-    case ResourceUsageState::kUnderuse:
-      OnResourceUnderuse(resource);
-      return ResourceListenerResponse::kNothing;
-  }
-}
-
-bool VideoStreamEncoderResourceManager::HasSufficientInputForAdaptation(
-    const VideoStreamInputState& input_state) const {
-  return input_state.HasInputFrameSizeAndFramesPerSecond() &&
-         (effective_degradation_preference_ !=
-              DegradationPreference::MAINTAIN_RESOLUTION ||
-          input_state.frames_per_second() >= kMinFrameRateFps);
 }
 
 VideoAdaptationReason VideoStreamEncoderResourceManager::GetReasonFromResource(
@@ -504,67 +455,6 @@ VideoAdaptationReason VideoStreamEncoderResourceManager::GetReasonFromResource(
   RTC_DCHECK(registered_resource != resources_.end())
       << resource.name() << " not found.";
   return registered_resource->reason;
-}
-
-void VideoStreamEncoderResourceManager::OnResourceUnderuse(
-    const Resource& reason_resource) {
-  VideoStreamInputState input_state = input_state_provider_->InputState();
-  if (effective_degradation_preference_ == DegradationPreference::DISABLED ||
-      !HasSufficientInputForAdaptation(input_state)) {
-    return;
-  }
-  // Update video input states and encoder settings for accurate adaptation.
-  stream_adapter_->SetInput(input_state);
-  // How can this stream be adapted up?
-  Adaptation adaptation = stream_adapter_->GetAdaptationUp();
-  if (adaptation.status() != Adaptation::Status::kValid)
-    return;
-  // Are all resources OK with this adaptation being applied?
-  VideoSourceRestrictions restrictions_before =
-      stream_adapter_->source_restrictions();
-  VideoSourceRestrictions restrictions_after =
-      stream_adapter_->PeekNextRestrictions(adaptation);
-  if (!absl::c_all_of(resources_, [&input_state, &restrictions_before,
-                                   &restrictions_after, &reason_resource](
-                                      ResourceAndReason resource_and_reason) {
-        return resource_and_reason.resource->IsAdaptationUpAllowed(
-            input_state, restrictions_before, restrictions_after,
-            reason_resource);
-      })) {
-    return;
-  }
-  // Apply adaptation.
-  stream_adapter_->ApplyAdaptation(adaptation);
-  // Update VideoSourceRestrictions based on adaptation. This also informs the
-  // |adaptation_listener_|.
-  MaybeUpdateVideoSourceRestrictions(&reason_resource);
-}
-
-ResourceListenerResponse VideoStreamEncoderResourceManager::OnResourceOveruse(
-    const Resource& reason_resource) {
-  VideoStreamInputState input_state = input_state_provider_->InputState();
-  if (!input_state.has_input()) {
-    return ResourceListenerResponse::kQualityScalerShouldIncreaseFrequency;
-  }
-  if (effective_degradation_preference_ == DegradationPreference::DISABLED ||
-      !HasSufficientInputForAdaptation(input_state)) {
-    return ResourceListenerResponse::kNothing;
-  }
-  // Update video input states and encoder settings for accurate adaptation.
-  stream_adapter_->SetInput(input_state);
-  // How can this stream be adapted down?
-  Adaptation adaptation = stream_adapter_->GetAdaptationDown();
-  if (adaptation.min_pixel_limit_reached())
-    encoder_stats_observer_->OnMinPixelLimitReached();
-  if (adaptation.status() != Adaptation::Status::kValid)
-    return ResourceListenerResponse::kNothing;
-  // Apply adaptation.
-  ResourceListenerResponse response =
-      stream_adapter_->ApplyAdaptation(adaptation);
-  // Update VideoSourceRestrictions based on adaptation. This also informs the
-  // |adaptation_listener_|.
-  MaybeUpdateVideoSourceRestrictions(&reason_resource);
-  return response;
 }
 
 // TODO(pbos): Lower these thresholds (to closer to 100%) when we handle
@@ -594,43 +484,11 @@ int VideoStreamEncoderResourceManager::LastInputFrameSizeOrDefault() const {
       kDefaultInputPixelsWidth * kDefaultInputPixelsHeight);
 }
 
-void VideoStreamEncoderResourceManager::
-    MaybeUpdateEffectiveDegradationPreference() {
-  bool is_screenshare = encoder_settings_.has_value() &&
-                        encoder_settings_->encoder_config().content_type ==
-                            VideoEncoderConfig::ContentType::kScreen;
-  effective_degradation_preference_ =
-      (is_screenshare &&
-       degradation_preference_ == DegradationPreference::BALANCED)
-          ? DegradationPreference::MAINTAIN_RESOLUTION
-          : degradation_preference_;
-  stream_adapter_->SetDegradationPreference(effective_degradation_preference_);
-  MaybeUpdateVideoSourceRestrictions(nullptr);
-}
-
-void VideoStreamEncoderResourceManager::MaybeUpdateVideoSourceRestrictions(
-    const Resource* reason_resource) {
-  VideoSourceRestrictions new_restrictions =
-      FilterRestrictionsByDegradationPreference(
-          stream_adapter_->source_restrictions(), degradation_preference_);
-  if (video_source_restrictions_ != new_restrictions) {
-    video_source_restrictions_ = std::move(new_restrictions);
-    // TODO(https://crbug.com/webrtc/11172): Support multiple listeners and
-    // loop through them here instead of calling two hardcoded listeners (|this|
-    // and |adaptation_listener_|).
-    OnVideoSourceRestrictionsUpdated(video_source_restrictions_,
-                                     stream_adapter_->adaptation_counters(),
-                                     reason_resource);
-    adaptation_listener_->OnVideoSourceRestrictionsUpdated(
-        video_source_restrictions_, stream_adapter_->adaptation_counters(),
-        reason_resource);
-  }
-}
-
 void VideoStreamEncoderResourceManager::OnVideoSourceRestrictionsUpdated(
     VideoSourceRestrictions restrictions,
     const VideoAdaptationCounters& adaptation_counters,
     const Resource* reason) {
+  video_source_restrictions_ = restrictions;
   VideoAdaptationCounters previous_adaptation_counters =
       active_counts_[VideoAdaptationReason::kQuality] +
       active_counts_[VideoAdaptationReason::kCpu];
@@ -798,7 +656,7 @@ void VideoStreamEncoderResourceManager::MaybePerformQualityRampupExperiment() {
   if (try_quality_rampup && qp_counts.resolution_adaptations > 0 &&
       cpu_counts.Total() == 0) {
     RTC_LOG(LS_INFO) << "Reset quality limitations.";
-    ResetVideoSourceRestrictions();
+    adaptation_processor_->ResetVideoSourceRestrictions();
     quality_rampup_done_ = true;
   }
 }

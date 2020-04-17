@@ -14,6 +14,8 @@ rtc_library("resource_adaptation") {
     "encoder_settings.h",
     "resource.cc",
     "resource.h",
+    "resource_adaptation_processor.cc",
+    "resource_adaptation_processor.h",
     "resource_adaptation_processor_interface.cc",
     "resource_adaptation_processor_interface.h",
     "video_source_restrictions.cc",
