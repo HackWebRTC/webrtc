@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VIDEO_ADAPTATION_VIDEO_STREAM_ADAPTER_H_
-#define VIDEO_ADAPTATION_VIDEO_STREAM_ADAPTER_H_
+#ifndef CALL_ADAPTATION_VIDEO_STREAM_ADAPTER_H_
+#define CALL_ADAPTATION_VIDEO_STREAM_ADAPTER_H_
 
 #include <memory>
 
@@ -191,4 +191,4 @@ class VideoStreamAdapter {
 
 }  // namespace webrtc
 
-#endif  // VIDEO_ADAPTATION_VIDEO_STREAM_ADAPTER_H_
+#endif  // CALL_ADAPTATION_VIDEO_STREAM_ADAPTER_H_

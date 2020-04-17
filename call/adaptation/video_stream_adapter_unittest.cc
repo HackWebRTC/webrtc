@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video/adaptation/video_stream_adapter.h"
+#include "call/adaptation/video_stream_adapter.h"
 
 #include <string>
 #include <utility>

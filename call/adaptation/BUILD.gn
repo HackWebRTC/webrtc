@@ -18,6 +18,8 @@ rtc_library("resource_adaptation") {
     "resource_adaptation_processor_interface.h",
     "video_source_restrictions.cc",
     "video_source_restrictions.h",
+    "video_stream_adapter.cc",
+    "video_stream_adapter.h",
     "video_stream_input_state.cc",
     "video_stream_input_state.h",
     "video_stream_input_state_provider.cc",
@@ -25,11 +27,14 @@ rtc_library("resource_adaptation") {
   ]
   deps = [
     "../../api:rtp_parameters",
+    "../../api/video:video_adaptation",
     "../../api/video:video_frame",
     "../../api/video:video_stream_encoder",
     "../../api/video_codecs:video_codecs_api",
+    "../../modules/video_coding:video_coding_utility",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
+    "../../rtc_base/experiments:balanced_degradation_settings",
     "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -39,12 +44,19 @@ if (rtc_include_tests) {
   rtc_library("resource_adaptation_tests") {
     testonly = true
 
-    sources = [ "resource_unittest.cc" ]
+    sources = [
+      "resource_unittest.cc",
+      "video_stream_adapter_unittest.cc",
+    ]
     deps = [
       ":resource_adaptation",
       ":resource_adaptation_test_utilities",
+      "../../api/video:video_adaptation",
+      "../../api/video_codecs:video_codecs_api",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
+      "../../test:field_trial",
+      "../../test:rtc_expect_death",
       "../../test:test_support",
       "//third_party/abseil-cpp/absl/types:optional",
     ]

@@ -30,6 +30,7 @@
 #include "api/video_codecs/video_encoder_config.h"
 #include "call/adaptation/resource.h"
 #include "call/adaptation/resource_adaptation_processor_interface.h"
+#include "call/adaptation/video_stream_adapter.h"
 #include "call/adaptation/video_stream_input_state_provider.h"
 #include "rtc_base/experiments/quality_rampup_experiment.h"
 #include "rtc_base/experiments/quality_scaler_settings.h"
@@ -38,7 +39,6 @@
 #include "video/adaptation/encode_usage_resource.h"
 #include "video/adaptation/overuse_frame_detector.h"
 #include "video/adaptation/quality_scaler_resource.h"
-#include "video/adaptation/video_stream_adapter.h"
 
 namespace webrtc {
 
