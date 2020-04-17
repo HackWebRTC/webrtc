@@ -21,7 +21,7 @@
 
 #include "common_audio/include/audio_util.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "common_audio/third_party/fft4g/fft4g.h"
+#include "common_audio/third_party/ooura/fft_size_256/fft4g.h"
 #include "modules/audio_processing/transient/common.h"
 #include "modules/audio_processing/transient/transient_detector.h"
 #include "modules/audio_processing/transient/transient_suppressor.h"

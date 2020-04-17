@@ -11,7 +11,7 @@
 #ifndef MODULES_AUDIO_PROCESSING_UTILITY_OOURA_FFT_TABLES_COMMON_H_
 #define MODULES_AUDIO_PROCESSING_UTILITY_OOURA_FFT_TABLES_COMMON_H_
 
-#include "modules/audio_processing/utility/ooura_fft.h"
+#include "common_audio/third_party/ooura/fft_size_128/ooura_fft.h"
 
 namespace webrtc {
 

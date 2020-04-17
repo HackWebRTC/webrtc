@@ -1,4 +1,4 @@
-# Copyright (c) 2018 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2020 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the ../../../LICENSE file in the root of the source
@@ -6,7 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-import("../../../webrtc.gni")
+import("../../../../webrtc.gni")
 
 rtc_library("fft4g") {
   sources = [

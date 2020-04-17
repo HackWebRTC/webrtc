@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef COMMON_AUDIO_THIRD_PARTY_FFT4G_FFT4G_H_
-#define COMMON_AUDIO_THIRD_PARTY_FFT4G_FFT4G_H_
+#ifndef COMMON_AUDIO_THIRD_PARTY_OOURA_FFT_SIZE_256_FFT4G_H_
+#define COMMON_AUDIO_THIRD_PARTY_OOURA_FFT_SIZE_256_FFT4G_H_
 
 namespace webrtc {
 
@@ -18,4 +18,4 @@ void WebRtc_rdft(size_t n, int isgn, float* a, size_t* ip, float* w);
 
 }  // namespace webrtc
 
-#endif /* COMMON_AUDIO_THIRD_PARTY_FFT4G_FFT4G_H_ */
+#endif  // COMMON_AUDIO_THIRD_PARTY_OOURA_FFT_SIZE_256_FFT4G_H_

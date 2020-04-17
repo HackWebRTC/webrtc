@@ -15,9 +15,9 @@
 #include <vector>
 
 #include "api/array_view.h"
+#include "common_audio/third_party/ooura/fft_size_128/ooura_fft.h"
 #include "modules/audio_processing/agc2/down_sampler.h"
 #include "modules/audio_processing/agc2/noise_spectrum_estimator.h"
-#include "modules/audio_processing/utility/ooura_fft.h"
 #include "rtc_base/constructor_magic.h"
 
 namespace webrtc {

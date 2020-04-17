@@ -68,7 +68,7 @@ LIB_TO_LICENSES_DICT = {
     'fft': ['modules/third_party/fft/LICENSE'],
     'g711': ['modules/third_party/g711/LICENSE'],
     'g722': ['modules/third_party/g722/LICENSE'],
-    'fft4g': ['common_audio/third_party/fft4g/LICENSE'],
+    'ooura': ['common_audio/third_party/ooura/LICENSE'],
     'spl_sqrt_floor': ['common_audio/third_party/spl_sqrt_floor/LICENSE'],
 
     # TODO(bugs.webrtc.org/1110): Remove this hack. This is not a lib.

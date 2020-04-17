@@ -150,9 +150,9 @@ rtc_library("noise_level_estimator") {
     "..:audio_frame_view",
     "../../../api:array_view",
     "../../../common_audio",
+    "../../../common_audio/third_party/ooura/fft_size_128:ooura_fft",
     "../../../rtc_base:checks",
     "../../../rtc_base:macromagic",
-    "../utility:ooura_fft",
   ]
 
   configs += [ "..:apm_debug_dump" ]
