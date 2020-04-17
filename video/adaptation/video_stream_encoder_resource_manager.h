@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VIDEO_ADAPTATION_RESOURCE_ADAPTATION_PROCESSOR_H_
-#define VIDEO_ADAPTATION_RESOURCE_ADAPTATION_PROCESSOR_H_
+#ifndef VIDEO_ADAPTATION_VIDEO_STREAM_ENCODER_RESOURCE_MANAGER_H_
+#define VIDEO_ADAPTATION_VIDEO_STREAM_ENCODER_RESOURCE_MANAGER_H_
 
 #include <map>
 #include <memory>
@@ -58,20 +58,21 @@ extern const int kDefaultInputPixelsHeight;
 // TODO(hbos): Add unittests specific to this class, it is currently only tested
 // indirectly in video_stream_encoder_unittest.cc and other tests exercising
 // VideoStreamEncoder.
-class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
-                                    public ResourceListener,
-                                    public ResourceAdaptationProcessorListener {
+class VideoStreamEncoderResourceManager
+    : public ResourceAdaptationProcessorInterface,
+      public ResourceListener,
+      public ResourceAdaptationProcessorListener {
  public:
   // The processor can be constructed on any sequence, but must be initialized
   // and used on a single sequence, e.g. the encoder queue.
-  ResourceAdaptationProcessor(
+  VideoStreamEncoderResourceManager(
       VideoStreamInputStateProvider* input_state_provider,
       Clock* clock,
       bool experiment_cpu_load_estimator,
       std::unique_ptr<OveruseFrameDetector> overuse_detector,
       VideoStreamEncoderObserver* encoder_stats_observer,
       ResourceAdaptationProcessorListener* adaptation_listener);
-  ~ResourceAdaptationProcessor() override;
+  ~VideoStreamEncoderResourceManager() override;
 
   DegradationPreference degradation_preference() const {
     return degradation_preference_;
@@ -192,7 +193,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   class PreventAdaptUpDueToActiveCounts final : public Resource {
    public:
     explicit PreventAdaptUpDueToActiveCounts(
-        ResourceAdaptationProcessor* processor);
+        VideoStreamEncoderResourceManager* manager);
     ~PreventAdaptUpDueToActiveCounts() override = default;
 
     std::string name() const override {
@@ -206,14 +207,14 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
         const Resource& reason_resource) const override;
 
    private:
-    ResourceAdaptationProcessor* processor_;
+    VideoStreamEncoderResourceManager* manager_;
   } prevent_adapt_up_due_to_active_counts_;
 
   // Does not trigger adaptations, only prevents adapting up resolution.
   class PreventIncreaseResolutionDueToBitrateResource final : public Resource {
    public:
     explicit PreventIncreaseResolutionDueToBitrateResource(
-        ResourceAdaptationProcessor* processor);
+        VideoStreamEncoderResourceManager* manager);
     ~PreventIncreaseResolutionDueToBitrateResource() override = default;
 
     std::string name() const override {
@@ -227,14 +228,14 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
         const Resource& reason_resource) const override;
 
    private:
-    ResourceAdaptationProcessor* processor_;
+    VideoStreamEncoderResourceManager* manager_;
   } prevent_increase_resolution_due_to_bitrate_resource_;
 
   // Does not trigger adaptations, only prevents adapting up in BALANCED.
   class PreventAdaptUpInBalancedResource final : public Resource {
    public:
     explicit PreventAdaptUpInBalancedResource(
-        ResourceAdaptationProcessor* processor);
+        VideoStreamEncoderResourceManager* manager);
     ~PreventAdaptUpInBalancedResource() override = default;
 
     std::string name() const override {
@@ -248,7 +249,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
         const Resource& reason_resource) const override;
 
    private:
-    ResourceAdaptationProcessor* processor_;
+    VideoStreamEncoderResourceManager* manager_;
   } prevent_adapt_up_in_balanced_resource_;
 
   EncodeUsageResource encode_usage_resource_;
@@ -299,4 +300,4 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
 
 }  // namespace webrtc
 
-#endif  // VIDEO_ADAPTATION_RESOURCE_ADAPTATION_PROCESSOR_H_
+#endif  // VIDEO_ADAPTATION_VIDEO_STREAM_ENCODER_RESOURCE_MANAGER_H_

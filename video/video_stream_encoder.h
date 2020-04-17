@@ -39,7 +39,7 @@
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_queue.h"
 #include "system_wrappers/include/clock.h"
-#include "video/adaptation/resource_adaptation_processor.h"
+#include "video/adaptation/video_stream_encoder_resource_manager.h"
 #include "video/encoder_bitrate_adjuster.h"
 #include "video/frame_encode_metadata_writer.h"
 #include "video/video_source_sink_controller.h"
@@ -412,7 +412,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   std::unique_ptr<VideoSourceSinkController> video_source_sink_controller_;
   std::unique_ptr<VideoStreamInputStateProvider> input_state_provider_
       RTC_GUARDED_BY(&encoder_queue_);
-  std::unique_ptr<ResourceAdaptationProcessor> resource_adaptation_processor_
+  std::unique_ptr<VideoStreamEncoderResourceManager> stream_resource_manager_
       RTC_GUARDED_BY(&encoder_queue_);
 
   // All public methods are proxied to |encoder_queue_|. It must must be

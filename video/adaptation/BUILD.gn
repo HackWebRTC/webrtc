@@ -16,8 +16,8 @@ rtc_library("video_adaptation") {
     "overuse_frame_detector.h",
     "quality_scaler_resource.cc",
     "quality_scaler_resource.h",
-    "resource_adaptation_processor.cc",
-    "resource_adaptation_processor.h",
+    "video_stream_encoder_resource_manager.cc",
+    "video_stream_encoder_resource_manager.h",
   ]
 
   deps = [
@@ -57,7 +57,7 @@ if (rtc_include_tests) {
     defines = []
     sources = [
       "overuse_frame_detector_unittest.cc",
-      "resource_adaptation_processor_unittest.cc",
+      "video_stream_encoder_resource_manager_unittest.cc",
     ]
     deps = [
       ":video_adaptation",
