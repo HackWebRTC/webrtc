@@ -12,16 +12,10 @@ rtc_library("resource_adaptation") {
   sources = [
     "encoder_settings.cc",
     "encoder_settings.h",
-    "new_resource_adaptation_processor_poc.cc",
-    "new_resource_adaptation_processor_poc.h",
     "resource.cc",
     "resource.h",
     "resource_adaptation_processor_interface.cc",
     "resource_adaptation_processor_interface.h",
-    "resource_consumer.cc",
-    "resource_consumer.h",
-    "resource_consumer_configuration.cc",
-    "resource_consumer_configuration.h",
     "video_source_restrictions.cc",
     "video_source_restrictions.h",
   ]
@@ -40,10 +34,7 @@ if (rtc_include_tests) {
   rtc_library("resource_adaptation_tests") {
     testonly = true
 
-    sources = [
-      "new_resource_adaptation_processor_poc_unittest.cc",
-      "resource_unittest.cc",
-    ]
+    sources = [ "resource_unittest.cc" ]
     deps = [
       ":resource_adaptation",
       ":resource_adaptation_test_utilities",
@@ -60,8 +51,6 @@ if (rtc_include_tests) {
     sources = [
       "test/fake_resource.cc",
       "test/fake_resource.h",
-      "test/fake_resource_consumer_configuration.cc",
-      "test/fake_resource_consumer_configuration.h",
     ]
     deps = [
       ":resource_adaptation",
