@@ -73,6 +73,9 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   DegradationPreference degradation_preference() const {
     return degradation_preference_;
   }
+  DegradationPreference effective_degradation_preference() const {
+    return effective_degradation_preference_;
+  }
 
   // ResourceAdaptationProcessorInterface implementation.
   void StartResourceAdaptation(
@@ -140,8 +143,12 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
 
   CpuOveruseOptions GetCpuOveruseOptions() const;
   int LastInputFrameSizeOrDefault() const;
-  VideoStreamAdapter::VideoInputMode GetVideoInputMode() const;
 
+  // Reinterprets "balanced + screenshare" as "maintain-resolution".
+  // TODO(hbos): Don't do this. This is not what "balanced" means. If the
+  // application wants to maintain resolution it should set that degradation
+  // preference rather than depend on non-standard behaviors.
+  void MaybeUpdateEffectiveDegradationPreference();
   // Makes |video_source_restrictions_| up-to-date and informs the
   // |adaptation_listener_| if restrictions are changed, allowing the listener
   // to reconfigure the source accordingly.
@@ -175,12 +182,8 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   // The restrictions that |adaptation_listener_| is informed of.
   VideoSourceRestrictions video_source_restrictions_;
   bool has_input_video_;
-  // TODO(https://crbug.com/webrtc/11393): DegradationPreference has mostly
-  // moved to VideoStreamAdapter. Move it entirely and delete it from this
-  // class. If the responsibility of generating next steps for adaptations is
-  // owned by the adapter, this class has no buisness relying on implementation
-  // details of the adapter.
   DegradationPreference degradation_preference_;
+  DegradationPreference effective_degradation_preference_;
   // Keeps track of source restrictions that this adaptation processor outputs.
   const std::unique_ptr<VideoStreamAdapter> stream_adapter_;
   const std::unique_ptr<EncodeUsageResource> encode_usage_resource_;

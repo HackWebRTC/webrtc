@@ -197,6 +197,7 @@ ResourceAdaptationProcessor::ResourceAdaptationProcessor(
       experiment_cpu_load_estimator_(experiment_cpu_load_estimator),
       has_input_video_(false),
       degradation_preference_(DegradationPreference::DISABLED),
+      effective_degradation_preference_(DegradationPreference::DISABLED),
       stream_adapter_(std::make_unique<VideoStreamAdapter>()),
       encode_usage_resource_(
           std::make_unique<EncodeUsageResource>(std::move(overuse_detector))),
@@ -269,20 +270,13 @@ void ResourceAdaptationProcessor::SetHasInputVideo(bool has_input_video) {
 void ResourceAdaptationProcessor::SetDegradationPreference(
     DegradationPreference degradation_preference) {
   degradation_preference_ = degradation_preference;
-  UpdateStatsAdaptationSettings();
-
-  if (stream_adapter_->SetDegradationPreference(degradation_preference) ==
-      VideoStreamAdapter::SetDegradationPreferenceResult::
-          kRestrictionsCleared) {
-    ResetActiveCounts();
-    encoder_stats_observer_->ClearAdaptationStats();
-  }
-  MaybeUpdateVideoSourceRestrictions();
+  MaybeUpdateEffectiveDegradationPreference();
 }
 
 void ResourceAdaptationProcessor::SetEncoderSettings(
     EncoderSettings encoder_settings) {
   encoder_settings_ = std::move(encoder_settings);
+  MaybeUpdateEffectiveDegradationPreference();
 
   quality_rampup_experiment_.SetMaxBitrate(
       LastInputFrameSizeOrDefault(),
@@ -455,6 +449,8 @@ ResourceAdaptationProcessor::OnResourceUsageStateMeasured(
 
 void ResourceAdaptationProcessor::OnResourceUnderuse(
     VideoAdaptationReason reason) {
+  if (!has_input_video_)
+    return;
   // We can't adapt up if we're already at the highest setting.
   // Note that this only includes counts relevant to the current degradation
   // preference. e.g. we previously adapted resolution, now prefer adpating fps,
@@ -476,7 +472,7 @@ void ResourceAdaptationProcessor::OnResourceUnderuse(
   if (num_downgrades == 0)
     return;
   // Update video input states and encoder settings for accurate adaptation.
-  stream_adapter_->SetInput(GetVideoInputMode(), LastInputFrameSizeOrDefault(),
+  stream_adapter_->SetInput(LastInputFrameSizeOrDefault(),
                             encoder_stats_observer_->GetInputFrameRate(),
                             encoder_settings_, encoder_target_bitrate_bps_);
   // Should we adapt, and if so: how?
@@ -498,7 +494,7 @@ ResourceListenerResponse ResourceAdaptationProcessor::OnResourceOveruse(
   if (!has_input_video_)
     return ResourceListenerResponse::kQualityScalerShouldIncreaseFrequency;
   // Update video input states and encoder settings for accurate adaptation.
-  stream_adapter_->SetInput(GetVideoInputMode(), LastInputFrameSizeOrDefault(),
+  stream_adapter_->SetInput(LastInputFrameSizeOrDefault(),
                             encoder_stats_observer_->GetInputFrameRate(),
                             encoder_settings_, encoder_target_bitrate_bps_);
   // Should we adapt, and if so: how?
@@ -550,6 +546,25 @@ int ResourceAdaptationProcessor::LastInputFrameSizeOrDefault() const {
   // OnResourceOveruse() before OnFrame()) and deserves a standalone CL.
   return last_input_frame_size_.value_or(kDefaultInputPixelsWidth *
                                          kDefaultInputPixelsHeight);
+}
+
+void ResourceAdaptationProcessor::MaybeUpdateEffectiveDegradationPreference() {
+  bool is_screenshare = encoder_settings_.has_value() &&
+                        encoder_settings_->encoder_config().content_type ==
+                            VideoEncoderConfig::ContentType::kScreen;
+  effective_degradation_preference_ =
+      (is_screenshare &&
+       degradation_preference_ == DegradationPreference::BALANCED)
+          ? DegradationPreference::MAINTAIN_RESOLUTION
+          : degradation_preference_;
+  if (stream_adapter_->SetDegradationPreference(
+          effective_degradation_preference_) ==
+      VideoStreamAdapter::SetDegradationPreferenceResult::
+          kRestrictionsCleared) {
+    ResetActiveCounts();
+    encoder_stats_observer_->ClearAdaptationStats();
+  }
+  MaybeUpdateVideoSourceRestrictions();
 }
 
 void ResourceAdaptationProcessor::MaybeUpdateVideoSourceRestrictions() {
@@ -674,17 +689,6 @@ void ResourceAdaptationProcessor::UpdateStatsAdaptationSettings() const {
           : VideoStreamEncoderObserver::AdaptationSettings();
   encoder_stats_observer_->UpdateAdaptationSettings(cpu_settings,
                                                     quality_settings);
-}
-
-VideoStreamAdapter::VideoInputMode
-ResourceAdaptationProcessor::GetVideoInputMode() const {
-  if (!has_input_video_)
-    return VideoStreamAdapter::VideoInputMode::kNoVideo;
-  return (encoder_settings_.has_value() &&
-          encoder_settings_->encoder_config().content_type ==
-              VideoEncoderConfig::ContentType::kScreen)
-             ? VideoStreamAdapter::VideoInputMode::kScreenshareVideo
-             : VideoStreamAdapter::VideoInputMode::kNormalVideo;
 }
 
 void ResourceAdaptationProcessor::MaybePerformQualityRampupExperiment() {

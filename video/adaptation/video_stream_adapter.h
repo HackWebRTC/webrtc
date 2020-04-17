@@ -42,9 +42,9 @@ class Adaptation final {
     // TODO(hbos): Don't support DISABLED, it doesn't exist in the spec and it
     // causes all adaptation to be ignored, even QP-scaling.
     kAdaptationDisabled,
-    // Cannot adapt. Adaptation is refused because we don't have video, the
-    // input frame rate is not known yet or is less than the minimum allowed
-    // (below the limit).
+    // Cannot adapt. Adaptation is refused because we are attempting to adapt
+    // down while the input frame rate is either not known yet or is less than
+    // the minimum.
     kInsufficientInput,
     // Cannot adapt. The minimum or maximum adaptation has already been reached.
     // There are no more steps to take.
@@ -129,12 +129,6 @@ class VideoStreamAdapter {
     kRestrictionsCleared,
   };
 
-  enum class VideoInputMode {
-    kNoVideo,
-    kNormalVideo,
-    kScreenshareVideo,
-  };
-
   VideoStreamAdapter();
   ~VideoStreamAdapter();
 
@@ -153,8 +147,7 @@ class VideoStreamAdapter {
   SetDegradationPreferenceResult SetDegradationPreference(
       DegradationPreference degradation_preference);
   // The adaptaiton logic depends on these inputs.
-  void SetInput(VideoInputMode input_mode,
-                int input_pixels,
+  void SetInput(int input_pixels,
                 int input_fps,
                 absl::optional<EncoderSettings> encoder_settings,
                 absl::optional<uint32_t> encoder_target_bitrate_bps);
@@ -192,12 +185,6 @@ class VideoStreamAdapter {
     static Mode GetModeFromAdaptationAction(Adaptation::StepType step_type);
   };
 
-  // Reinterprets "balanced + screenshare" as "maintain-resolution".
-  // TODO(hbos): Don't do this. This is not what "balanced" means. If the
-  // application wants to maintain resolution it should set that degradation
-  // preference rather than depend on non-standard behaviors.
-  DegradationPreference EffectiveDegradationPreference() const;
-
   // Owner and modifier of the VideoSourceRestriction of this stream adaptor.
   const std::unique_ptr<VideoSourceRestrictor> source_restrictor_;
   // Decides the next adaptation target in DegradationPreference::BALANCED.
@@ -209,7 +196,6 @@ class VideoStreamAdapter {
   // depending on the DegradationPreference.
   // https://w3c.github.io/mst-content-hint/#dom-rtcdegradationpreference
   DegradationPreference degradation_preference_;
-  VideoInputMode input_mode_;
   int input_pixels_;
   int input_fps_;
   absl::optional<EncoderSettings> encoder_settings_;
