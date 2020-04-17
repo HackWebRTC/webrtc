@@ -101,13 +101,8 @@ void RtpParametersFromMediaDescription(
     bool is_stream_active,
     RtpParameters<Codec>* params) {
   params->is_stream_active = is_stream_active;
-  // TODO(pthatcher): Remove this once we're sure no one will give us
-  // a description without codecs. Currently the ORTC implementation is relying
-  // on this.
-  if (desc->has_codecs()) {
-    params->codecs = desc->codecs();
-  }
-  // TODO(pthatcher): See if we really need
+  params->codecs = desc->codecs();
+  // TODO(bugs.webrtc.org/11513): See if we really need
   // rtp_header_extensions_set() and remove it if we don't.
   if (desc->rtp_header_extensions_set()) {
     params->extensions = extensions;

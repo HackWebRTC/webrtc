@@ -291,10 +291,6 @@ class MediaContentDescription {
   virtual MediaContentDescription* CloneInternal() const = 0;
 };
 
-// TODO(bugs.webrtc.org/8620): Remove this alias once downstream projects have
-// updated.
-using ContentDescription = MediaContentDescription;
-
 template <class C>
 class MediaContentDescriptionImpl : public MediaContentDescription {
  public:
@@ -428,10 +424,6 @@ enum class MediaProtocolType {
   kSctp  // Section will use the SCTP protocol (e.g., for a data channel).
          // https://tools.ietf.org/html/rfc4960
 };
-
-// TODO(bugs.webrtc.org/8620): Remove once downstream projects have updated.
-constexpr MediaProtocolType NS_JINGLE_RTP = MediaProtocolType::kRtp;
-constexpr MediaProtocolType NS_JINGLE_DRAFT_SCTP = MediaProtocolType::kSctp;
 
 // Represents a session description section. Most information about the section
 // is stored in the description, which is a subclass of MediaContentDescription.
