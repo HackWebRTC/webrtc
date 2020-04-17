@@ -109,11 +109,6 @@ class Adaptation final {
 // 3. Modify the stream's restrictions in one of the valid ways.
 class VideoStreamAdapter {
  public:
-  enum class SetDegradationPreferenceResult {
-    kRestrictionsNotCleared,
-    kRestrictionsCleared,
-  };
-
   VideoStreamAdapter();
   ~VideoStreamAdapter();
 
@@ -129,8 +124,7 @@ class VideoStreamAdapter {
   // TODO(hbos): Setting the degradation preference should not clear
   // restrictions! This is not defined in the spec and is unexpected, there is a
   // tiny risk that people would discover and rely on this behavior.
-  SetDegradationPreferenceResult SetDegradationPreference(
-      DegradationPreference degradation_preference);
+  void SetDegradationPreference(DegradationPreference degradation_preference);
   // The adaptaiton logic depends on these inputs.
   void SetInput(VideoStreamInputState input_state);
 

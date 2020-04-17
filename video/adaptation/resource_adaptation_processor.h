@@ -59,7 +59,8 @@ extern const int kDefaultInputPixelsHeight;
 // indirectly in video_stream_encoder_unittest.cc and other tests exercising
 // VideoStreamEncoder.
 class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
-                                    public ResourceListener {
+                                    public ResourceListener,
+                                    public ResourceAdaptationProcessorListener {
  public:
   // The processor can be constructed on any sequence, but must be initialized
   // and used on a single sequence, e.g. the encoder queue.
@@ -83,7 +84,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   void StartResourceAdaptation(
       ResourceAdaptationProcessorListener* adaptation_listener) override;
   void StopResourceAdaptation() override;
-  // Uses a default AdaptReason of kCpu.
+  // Uses a default VideoAdaptationReason of kCpu.
   void AddResource(Resource* resource) override;
   void AddResource(Resource* resource, VideoAdaptationReason reason);
   void SetDegradationPreference(
@@ -115,6 +116,11 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   // ResourceUsageListener implementation.
   ResourceListenerResponse OnResourceUsageStateMeasured(
       const Resource& resource) override;
+
+  void OnVideoSourceRestrictionsUpdated(
+      VideoSourceRestrictions restrictions,
+      const VideoAdaptationCounters& adaptation_counters,
+      const Resource* reason) override;
 
   // For reasons of adaptation and statistics, we not only count the total
   // number of adaptations, but we also count the number of adaptations per
@@ -157,7 +163,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   // Makes |video_source_restrictions_| up-to-date and informs the
   // |adaptation_listener_| if restrictions are changed, allowing the listener
   // to reconfigure the source accordingly.
-  void MaybeUpdateVideoSourceRestrictions();
+  void MaybeUpdateVideoSourceRestrictions(const Resource* reason_resource);
   // Calculates an up-to-date value of the target frame rate and informs the
   // |encode_usage_resource_| of the new value.
   void MaybeUpdateTargetFrameRate();
@@ -166,7 +172,8 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   void UpdateQualityScalerSettings(
       absl::optional<VideoEncoder::QpThresholds> qp_thresholds);
 
-  void UpdateAdaptationStats(VideoAdaptationReason reason);
+  void UpdateAdaptationStats(const VideoAdaptationCounters& total_counts,
+                             VideoAdaptationReason reason);
   void UpdateStatsAdaptationSettings() const;
 
   // Checks to see if we should execute the quality rampup experiment. The

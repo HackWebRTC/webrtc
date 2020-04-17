@@ -1657,7 +1657,9 @@ bool VideoStreamEncoder::DropDueToSize(uint32_t pixel_count) const {
 }
 
 void VideoStreamEncoder::OnVideoSourceRestrictionsUpdated(
-    VideoSourceRestrictions restrictions) {
+    VideoSourceRestrictions restrictions,
+    const VideoAdaptationCounters& adaptation_counters,
+    const Resource* reason) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   video_source_sink_controller_->SetRestrictions(std::move(restrictions));
   video_source_sink_controller_->PushSourceSinkSettings();

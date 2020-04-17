@@ -588,18 +588,13 @@ TEST(VideoStreamAdapterTest, PeekNextRestrictions) {
 TEST(VideoStreamAdapterTest,
      SetDegradationPreferenceToOrFromBalancedClearsRestrictions) {
   VideoStreamAdapter adapter;
-  EXPECT_EQ(VideoStreamAdapter::SetDegradationPreferenceResult::
-                kRestrictionsNotCleared,
-            adapter.SetDegradationPreference(
-                DegradationPreference::MAINTAIN_FRAMERATE));
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
   adapter.SetInput(InputState(1280 * 720, 30, kDefaultMinPixelsPerFrame));
   adapter.ApplyAdaptation(adapter.GetAdaptationDown());
   EXPECT_NE(VideoSourceRestrictions(), adapter.source_restrictions());
   EXPECT_NE(0, adapter.adaptation_counters().Total());
   // Changing from non-balanced to balanced clears the restrictions.
-  EXPECT_EQ(
-      VideoStreamAdapter::SetDegradationPreferenceResult::kRestrictionsCleared,
-      adapter.SetDegradationPreference(DegradationPreference::BALANCED));
+  adapter.SetDegradationPreference(DegradationPreference::BALANCED);
   EXPECT_EQ(VideoSourceRestrictions(), adapter.source_restrictions());
   EXPECT_EQ(0, adapter.adaptation_counters().Total());
   // Apply adaptation again.
@@ -607,10 +602,7 @@ TEST(VideoStreamAdapterTest,
   EXPECT_NE(VideoSourceRestrictions(), adapter.source_restrictions());
   EXPECT_NE(0, adapter.adaptation_counters().Total());
   // Changing from balanced to non-balanced clears the restrictions.
-  EXPECT_EQ(
-      VideoStreamAdapter::SetDegradationPreferenceResult::kRestrictionsCleared,
-      adapter.SetDegradationPreference(
-          DegradationPreference::MAINTAIN_RESOLUTION));
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_RESOLUTION);
   EXPECT_EQ(VideoSourceRestrictions(), adapter.source_restrictions());
   EXPECT_EQ(0, adapter.adaptation_counters().Total());
 }

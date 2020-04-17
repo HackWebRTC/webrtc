@@ -108,7 +108,9 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   rtc::TaskQueue* encoder_queue() { return &encoder_queue_; }
 
   void OnVideoSourceRestrictionsUpdated(
-      VideoSourceRestrictions restrictions) override;
+      VideoSourceRestrictions restrictions,
+      const VideoAdaptationCounters& adaptation_counters,
+      const Resource* reason) override;
 
   // Used for injected test resources.
   // TODO(eshr): Move all adaptation tests out of VideoStreamEncoder tests.

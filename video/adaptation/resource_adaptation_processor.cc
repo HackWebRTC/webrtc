@@ -11,6 +11,7 @@
 #include "video/adaptation/resource_adaptation_processor.h"
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <string>
@@ -323,6 +324,7 @@ void ResourceAdaptationProcessor::AddResource(Resource* resource,
 void ResourceAdaptationProcessor::SetDegradationPreference(
     DegradationPreference degradation_preference) {
   degradation_preference_ = degradation_preference;
+  UpdateStatsAdaptationSettings();
   MaybeUpdateEffectiveDegradationPreference();
 }
 
@@ -358,9 +360,7 @@ void ResourceAdaptationProcessor::SetEncoderRates(
 
 void ResourceAdaptationProcessor::ResetVideoSourceRestrictions() {
   stream_adapter_->ClearRestrictions();
-  ResetActiveCounts();
-  encoder_stats_observer_->ClearAdaptationStats();
-  MaybeUpdateVideoSourceRestrictions();
+  MaybeUpdateVideoSourceRestrictions(nullptr);
 }
 
 void ResourceAdaptationProcessor::OnFrameDroppedDueToSize() {
@@ -533,10 +533,7 @@ void ResourceAdaptationProcessor::OnResourceUnderuse(
   stream_adapter_->ApplyAdaptation(adaptation);
   // Update VideoSourceRestrictions based on adaptation. This also informs the
   // |adaptation_listener_|.
-  MaybeUpdateVideoSourceRestrictions();
-  // Stats and logging.
-  UpdateAdaptationStats(GetReasonFromResource(reason_resource));
-  RTC_LOG(LS_INFO) << ActiveCountsToString();
+  MaybeUpdateVideoSourceRestrictions(&reason_resource);
 }
 
 ResourceListenerResponse ResourceAdaptationProcessor::OnResourceOveruse(
@@ -562,10 +559,7 @@ ResourceListenerResponse ResourceAdaptationProcessor::OnResourceOveruse(
       stream_adapter_->ApplyAdaptation(adaptation);
   // Update VideoSourceRestrictions based on adaptation. This also informs the
   // |adaptation_listener_|.
-  MaybeUpdateVideoSourceRestrictions();
-  // Stats and logging.
-  UpdateAdaptationStats(GetReasonFromResource(reason_resource));
-  RTC_LOG(INFO) << ActiveCountsToString();
+  MaybeUpdateVideoSourceRestrictions(&reason_resource);
   return response;
 }
 
@@ -604,26 +598,57 @@ void ResourceAdaptationProcessor::MaybeUpdateEffectiveDegradationPreference() {
        degradation_preference_ == DegradationPreference::BALANCED)
           ? DegradationPreference::MAINTAIN_RESOLUTION
           : degradation_preference_;
-  if (stream_adapter_->SetDegradationPreference(
-          effective_degradation_preference_) ==
-      VideoStreamAdapter::SetDegradationPreferenceResult::
-          kRestrictionsCleared) {
-    ResetActiveCounts();
-    encoder_stats_observer_->ClearAdaptationStats();
-  }
-  MaybeUpdateVideoSourceRestrictions();
+  stream_adapter_->SetDegradationPreference(effective_degradation_preference_);
+  MaybeUpdateVideoSourceRestrictions(nullptr);
 }
 
-void ResourceAdaptationProcessor::MaybeUpdateVideoSourceRestrictions() {
+void ResourceAdaptationProcessor::MaybeUpdateVideoSourceRestrictions(
+    const Resource* reason_resource) {
   VideoSourceRestrictions new_restrictions =
       FilterRestrictionsByDegradationPreference(
           stream_adapter_->source_restrictions(), degradation_preference_);
   if (video_source_restrictions_ != new_restrictions) {
     video_source_restrictions_ = std::move(new_restrictions);
+    // TODO(https://crbug.com/webrtc/11172): Support multiple listeners and
+    // loop through them here instead of calling two hardcoded listeners (|this|
+    // and |adaptation_listener_|).
+    OnVideoSourceRestrictionsUpdated(video_source_restrictions_,
+                                     stream_adapter_->adaptation_counters(),
+                                     reason_resource);
     adaptation_listener_->OnVideoSourceRestrictionsUpdated(
-        video_source_restrictions_);
-    MaybeUpdateTargetFrameRate();
+        video_source_restrictions_, stream_adapter_->adaptation_counters(),
+        reason_resource);
   }
+}
+
+void ResourceAdaptationProcessor::OnVideoSourceRestrictionsUpdated(
+    VideoSourceRestrictions restrictions,
+    const VideoAdaptationCounters& adaptation_counters,
+    const Resource* reason) {
+  VideoAdaptationCounters previous_adaptation_counters =
+      active_counts_[VideoAdaptationReason::kQuality] +
+      active_counts_[VideoAdaptationReason::kCpu];
+  int adaptation_counters_total_abs_diff = std::abs(
+      adaptation_counters.Total() - previous_adaptation_counters.Total());
+  if (reason) {
+    // A resource signal triggered this adaptation. The adaptation counters have
+    // to be updated every time the adaptation counter is incremented or
+    // decremented due to a resource.
+    RTC_DCHECK_EQ(adaptation_counters_total_abs_diff, 1);
+    VideoAdaptationReason reason_type = GetReasonFromResource(*reason);
+    UpdateAdaptationStats(adaptation_counters, reason_type);
+  } else if (adaptation_counters.Total() == 0) {
+    // Adaptation was manually reset - clear the per-reason counters too.
+    ResetActiveCounts();
+    encoder_stats_observer_->ClearAdaptationStats();
+  } else {
+    // If a reason did not increase or decrease the Total() by 1 and the
+    // restrictions were not just reset, the adaptation counters MUST not have
+    // been modified and there is nothing to do stats-wise.
+    RTC_DCHECK_EQ(adaptation_counters_total_abs_diff, 0);
+  }
+  RTC_LOG(LS_INFO) << ActiveCountsToString();
+  MaybeUpdateTargetFrameRate();
 }
 
 void ResourceAdaptationProcessor::MaybeUpdateTargetFrameRate() {
@@ -710,12 +735,11 @@ void ResourceAdaptationProcessor::OnAdaptationCountChanged(
 }
 
 void ResourceAdaptationProcessor::UpdateAdaptationStats(
+    const VideoAdaptationCounters& total_counts,
     VideoAdaptationReason reason) {
   // Update active counts
   VideoAdaptationCounters& active_count = active_counts_[reason];
   VideoAdaptationCounters& other_active = active_counts_[OtherReason(reason)];
-  const VideoAdaptationCounters total_counts =
-      stream_adapter_->adaptation_counters();
 
   OnAdaptationCountChanged(total_counts, &active_count, &other_active);
 

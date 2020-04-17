@@ -361,22 +361,17 @@ void VideoStreamAdapter::ClearRestrictions() {
   last_adaptation_request_.reset();
 }
 
-VideoStreamAdapter::SetDegradationPreferenceResult
-VideoStreamAdapter::SetDegradationPreference(
+void VideoStreamAdapter::SetDegradationPreference(
     DegradationPreference degradation_preference) {
   if (degradation_preference_ == degradation_preference)
-    return SetDegradationPreferenceResult::kRestrictionsNotCleared;
+    return;
   // Invalidate any previously returned Adaptation.
   ++adaptation_validation_id_;
-  bool did_clear = false;
   if (degradation_preference == DegradationPreference::BALANCED ||
       degradation_preference_ == DegradationPreference::BALANCED) {
     ClearRestrictions();
-    did_clear = true;
   }
   degradation_preference_ = degradation_preference;
-  return did_clear ? SetDegradationPreferenceResult::kRestrictionsCleared
-                   : SetDegradationPreferenceResult::kRestrictionsNotCleared;
 }
 
 void VideoStreamAdapter::SetInput(VideoStreamInputState input_state) {
