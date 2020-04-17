@@ -142,7 +142,7 @@ The instrumentation tests (like AppRTCMobileTest and
 libjingle_peerconnection_android_unittest) gets scripts generated in the same
 location as the native tests described in the previous section.
 
-[webrtc-prerequitite-sw]: https://webrtc.googlesource.com/src/+/refs/heads/master/docs/native-code/development/prerequisite-sw/index.md
+[webrtc-prerequisite-sw]: https://webrtc.googlesource.com/src/+/refs/heads/master/docs/native-code/development/prerequisite-sw/index.md
 [webrtc-jni-doc]: https://webrtc.googlesource.com/src/+/master/sdk/android/README
 [apprtc-doc]: https://webrtc.googlesource.com/src/+/master/examples/androidapp/README
 [ninja]: https://ninja-build.org/
