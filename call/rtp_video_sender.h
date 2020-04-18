@@ -22,6 +22,7 @@
 #include "api/fec_controller.h"
 #include "api/fec_controller_override.h"
 #include "api/rtc_event_log/rtc_event_log.h"
+#include "api/transport/field_trial_based_config.h"
 #include "api/video_codecs/video_encoder.h"
 #include "call/rtp_config.h"
 #include "call/rtp_payload_params.h"
@@ -160,6 +161,7 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   bool NackEnabled() const;
   uint32_t GetPacketizationOverheadRate() const;
 
+  const FieldTrialBasedConfig field_trials_;
   const bool send_side_bwe_with_overhead_;
   const bool account_for_packetization_overhead_;
   const bool use_early_loss_detection_;
