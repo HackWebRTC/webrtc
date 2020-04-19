@@ -188,12 +188,15 @@ void TaskQueuePacedSender::MaybeProcessPackets(
   // anyway and clear any schedule.
   Timestamp next_process_time = pacing_controller_.NextSendTime();
   const Timestamp now = clock_->CurrentTime();
-  if ((scheduled_process_time.IsFinite() &&
-       scheduled_process_time == next_process_time_) ||
+  const bool is_scheduled_call = next_process_time_ == scheduled_process_time;
+  if (is_scheduled_call) {
+    // Indicate no pending scheduled call.
+    next_process_time_ = Timestamp::MinusInfinity();
+  }
+  if (is_scheduled_call ||
       (now >= next_process_time && (next_process_time_.IsInfinite() ||
                                     next_process_time < next_process_time_))) {
     pacing_controller_.ProcessPackets();
-    next_process_time_ = Timestamp::MinusInfinity();
     next_process_time = pacing_controller_.NextSendTime();
   }
 
