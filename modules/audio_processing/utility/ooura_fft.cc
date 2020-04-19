@@ -21,9 +21,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "common_audio/third_party/ooura/fft_size_128/ooura_fft.h"
+#include "modules/audio_processing/utility/ooura_fft.h"
 
-#include "common_audio/third_party/ooura/fft_size_128/ooura_fft_tables_common.h"
+#include "modules/audio_processing/utility/ooura_fft_tables_common.h"
 #include "rtc_base/system/arch.h"
 #include "system_wrappers/include/cpu_features_wrapper.h"
 

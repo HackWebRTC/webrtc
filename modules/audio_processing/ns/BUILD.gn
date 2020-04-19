@@ -54,8 +54,7 @@ rtc_static_library("ns") {
     "..:high_pass_filter",
     "../../../api:array_view",
     "../../../common_audio:common_audio_c",
-    "../../../common_audio/third_party/ooura/fft_size_128:ooura_fft",
-    "../../../common_audio/third_party/ooura/fft_size_256:fft4g",
+    "../../../common_audio/third_party/fft4g",
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
     "../../../rtc_base:safe_minmax",
@@ -64,6 +63,7 @@ rtc_static_library("ns") {
     "../../../system_wrappers:field_trial",
     "../../../system_wrappers:metrics",
     "../utility:cascaded_biquad_filter",
+    "../utility:ooura_fft",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
