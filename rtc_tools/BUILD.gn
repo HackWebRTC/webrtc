@@ -132,7 +132,7 @@ rtc_executable("frame_analyzer") {
 
 # TODO(bugs.webrtc.org/11474): Enable this on win if needed. For now it
 # is only required for Linux and Android.
-if (!build_with_chromium && !build_with_mozilla && !is_win) {
+if (!build_with_chromium && !build_with_mozilla && !is_win && !is_ios) {
   action("frame_analyzer_host") {
     script = "//tools_webrtc/executable_host_build.py"
     outputs = [ "${root_out_dir}/frame_analyzer_host" ]
