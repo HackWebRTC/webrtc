@@ -159,12 +159,9 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
                                overuse_detector_proxy_ =
                                    new CpuOveruseDetectorProxy(stats_proxy)),
                            task_queue_factory),
-        fake_cpu_resource_(
-            std::make_unique<FakeResource>(ResourceUsageState::kStable,
-                                           "FakeResource[CPU]")),
+        fake_cpu_resource_(std::make_unique<FakeResource>("FakeResource[CPU]")),
         fake_quality_resource_(
-            std::make_unique<FakeResource>(ResourceUsageState::kStable,
-                                           "FakeResource[QP]")) {
+            std::make_unique<FakeResource>("FakeResource[QP]")) {
     InjectAdaptationResource(fake_quality_resource_.get(),
                              VideoAdaptationReason::kQuality);
     InjectAdaptationResource(fake_cpu_resource_.get(),

@@ -20,8 +20,7 @@ namespace webrtc {
 // Fake resource used for testing.
 class FakeResource : public Resource {
  public:
-  explicit FakeResource(ResourceUsageState usage_state);
-  FakeResource(ResourceUsageState usage_state, const std::string& name);
+  explicit FakeResource(std::string name);
   ~FakeResource() override;
 
   void set_usage_state(ResourceUsageState usage_state);

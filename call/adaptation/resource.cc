@@ -17,28 +17,23 @@ namespace webrtc {
 
 ResourceListener::~ResourceListener() {}
 
-Resource::Resource() : usage_state_(ResourceUsageState::kStable) {}
+Resource::Resource() : usage_state_(absl::nullopt), listener_(nullptr) {}
 
-Resource::~Resource() {
-  RTC_DCHECK(listeners_.empty());
+Resource::~Resource() {}
+
+void Resource::SetResourceListener(ResourceListener* listener) {
+  // If you want to change listener you need to unregister the old listener by
+  // setting it to null first.
+  RTC_DCHECK(!listener_ || !listener) << "A listener is already set";
+  listener_ = listener;
 }
 
-void Resource::RegisterListener(ResourceListener* listener) {
-  RTC_DCHECK(listener);
-  RTC_DCHECK(absl::c_find(listeners_, listener) == listeners_.end())
-      << "ResourceListener was added twice.";
-  listeners_.push_back(listener);
-}
-
-void Resource::UnregisterListener(ResourceListener* listener) {
-  RTC_DCHECK(listener);
-  auto it = absl::c_find(listeners_, listener);
-  if (it != listeners_.end())
-    listeners_.erase(it);
-}
-
-ResourceUsageState Resource::usage_state() const {
+absl::optional<ResourceUsageState> Resource::usage_state() const {
   return usage_state_;
+}
+
+void Resource::ClearUsageState() {
+  usage_state_ = absl::nullopt;
 }
 
 bool Resource::IsAdaptationUpAllowed(
@@ -51,15 +46,10 @@ bool Resource::IsAdaptationUpAllowed(
 
 ResourceListenerResponse Resource::OnResourceUsageStateMeasured(
     ResourceUsageState usage_state) {
-  ResourceListenerResponse response = ResourceListenerResponse::kNothing;
   usage_state_ = usage_state;
-  for (auto* listener : listeners_) {
-    ResourceListenerResponse listener_response =
-        listener->OnResourceUsageStateMeasured(*this);
-    if (listener_response != ResourceListenerResponse::kNothing)
-      response = listener_response;
-  }
-  return response;
+  if (!listener_)
+    return ResourceListenerResponse::kNothing;
+  return listener_->OnResourceUsageStateMeasured(*this);
 }
 
 }  // namespace webrtc

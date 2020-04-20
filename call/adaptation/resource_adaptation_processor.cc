@@ -42,13 +42,13 @@ ResourceAdaptationProcessor::effective_degradation_preference() const {
 
 void ResourceAdaptationProcessor::StartResourceAdaptation() {
   for (auto* resource : resources_) {
-    resource->RegisterListener(this);
+    resource->SetResourceListener(this);
   }
 }
 
 void ResourceAdaptationProcessor::StopResourceAdaptation() {
   for (auto* resource : resources_) {
-    resource->UnregisterListener(this);
+    resource->SetResourceListener(nullptr);
   }
 }
 
@@ -106,13 +106,10 @@ void ResourceAdaptationProcessor::MaybeUpdateVideoSourceRestrictions(
 ResourceListenerResponse
 ResourceAdaptationProcessor::OnResourceUsageStateMeasured(
     const Resource& resource) {
-  switch (resource.usage_state()) {
+  RTC_DCHECK(resource.usage_state().has_value());
+  switch (resource.usage_state().value()) {
     case ResourceUsageState::kOveruse:
       return OnResourceOveruse(resource);
-    case ResourceUsageState::kStable:
-      // TODO(https://crbug.com/webrtc/11172): Delete kStable in favor of null.
-      RTC_NOTREACHED();
-      return ResourceListenerResponse::kNothing;
     case ResourceUsageState::kUnderuse:
       OnResourceUnderuse(resource);
       return ResourceListenerResponse::kNothing;
@@ -129,6 +126,13 @@ bool ResourceAdaptationProcessor::HasSufficientInputForAdaptation(
 
 void ResourceAdaptationProcessor::OnResourceUnderuse(
     const Resource& reason_resource) {
+  // Clear all usage states. In order to re-run adaptation logic, resources need
+  // to provide new resource usage measurements.
+  // TODO(hbos): Support not unconditionally clearing usage states by having the
+  // ResourceAdaptationProcessor check in on its resources at certain intervals.
+  for (Resource* resource : resources_) {
+    resource->ClearUsageState();
+  }
   VideoStreamInputState input_state = input_state_provider_->InputState();
   if (effective_degradation_preference_ == DegradationPreference::DISABLED ||
       !HasSufficientInputForAdaptation(input_state)) {
@@ -163,6 +167,13 @@ void ResourceAdaptationProcessor::OnResourceUnderuse(
 
 ResourceListenerResponse ResourceAdaptationProcessor::OnResourceOveruse(
     const Resource& reason_resource) {
+  // Clear all usage states. In order to re-run adaptation logic, resources need
+  // to provide new resource usage measurements.
+  // TODO(hbos): Support not unconditionally clearing usage states by having the
+  // ResourceAdaptationProcessor check in on its resources at certain intervals.
+  for (Resource* resource : resources_) {
+    resource->ClearUsageState();
+  }
   VideoStreamInputState input_state = input_state_provider_->InputState();
   if (!input_state.has_input()) {
     return ResourceListenerResponse::kQualityScalerShouldIncreaseFrequency;

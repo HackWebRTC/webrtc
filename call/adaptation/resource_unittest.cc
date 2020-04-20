@@ -26,10 +26,10 @@ class MockResourceListener : public ResourceListener {
               (const Resource& resource));
 };
 
-TEST(ResourceTest, AddingListenerReceivesCallbacks) {
+TEST(ResourceTest, RegisteringListenerReceivesCallbacks) {
   StrictMock<MockResourceListener> resource_listener;
-  FakeResource fake_resource(ResourceUsageState::kStable);
-  fake_resource.RegisterListener(&resource_listener);
+  FakeResource fake_resource("FakeResource");
+  fake_resource.SetResourceListener(&resource_listener);
   EXPECT_CALL(resource_listener, OnResourceUsageStateMeasured(_))
       .Times(1)
       .WillOnce([](const Resource& resource) {
@@ -37,14 +37,14 @@ TEST(ResourceTest, AddingListenerReceivesCallbacks) {
         return ResourceListenerResponse::kNothing;
       });
   fake_resource.set_usage_state(ResourceUsageState::kOveruse);
-  fake_resource.UnregisterListener(&resource_listener);
+  fake_resource.SetResourceListener(nullptr);
 }
 
-TEST(ResourceTest, RemovingListenerStopsCallbacks) {
+TEST(ResourceTest, UnregisteringListenerStopsCallbacks) {
   StrictMock<MockResourceListener> resource_listener;
-  FakeResource fake_resource(ResourceUsageState::kStable);
-  fake_resource.RegisterListener(&resource_listener);
-  fake_resource.UnregisterListener(&resource_listener);
+  FakeResource fake_resource("FakeResource");
+  fake_resource.SetResourceListener(&resource_listener);
+  fake_resource.SetResourceListener(nullptr);
   EXPECT_CALL(resource_listener, OnResourceUsageStateMeasured(_)).Times(0);
   fake_resource.set_usage_state(ResourceUsageState::kOveruse);
 }
