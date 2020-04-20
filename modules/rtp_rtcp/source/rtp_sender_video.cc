@@ -19,6 +19,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "api/crypto/frame_encryptor_interface.h"
@@ -652,8 +653,11 @@ bool RTPSenderVideo::SendVideo(
 
   if (video_header.frame_type == VideoFrameType::kVideoFrameKey ||
       (IsBaseLayer(video_header) &&
-       !(video_header.generic.has_value() ? video_header.generic->discardable
-                                          : false))) {
+       !(video_header.generic.has_value()
+             ? absl::c_linear_search(
+                   video_header.generic->decode_target_indications,
+                   DecodeTargetIndication::kDiscardable)
+             : false))) {
     // This frame has guaranteed delivery, no need to populate playout
     // delay extensions until it changes again.
     playout_delay_pending_ = false;

@@ -53,7 +53,6 @@ struct RTPVideoHeader {
     int temporal_index = 0;
     absl::InlinedVector<DecodeTargetIndication, 10> decode_target_indications;
     absl::InlinedVector<int64_t, 5> dependencies;
-    bool discardable = false;
   };
 
   RTPVideoHeader();

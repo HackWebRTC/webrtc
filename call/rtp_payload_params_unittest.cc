@@ -398,7 +398,6 @@ TEST(RtpPayloadParamsTest, SetsGenericFromGenericFrameInfo) {
   EXPECT_THAT(key_header.generic->dependencies, IsEmpty());
   EXPECT_THAT(key_header.generic->decode_target_indications,
               ElementsAre(DecodeTargetIndication::kSwitch));
-  EXPECT_FALSE(key_header.generic->discardable);
 
   encoded_image._frameType = VideoFrameType::kVideoFrameDelta;
   codec_info.generic_frame_info =
@@ -415,7 +414,6 @@ TEST(RtpPayloadParamsTest, SetsGenericFromGenericFrameInfo) {
   EXPECT_THAT(delta_header.generic->dependencies, ElementsAre(1));
   EXPECT_THAT(delta_header.generic->decode_target_indications,
               ElementsAre(DecodeTargetIndication::kDiscardable));
-  EXPECT_TRUE(delta_header.generic->discardable);
 }
 
 class RtpPayloadParamsVp8ToGenericTest : public ::testing::Test {

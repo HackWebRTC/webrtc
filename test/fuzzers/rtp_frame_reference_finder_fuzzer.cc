@@ -78,7 +78,6 @@ GenerateGenericFrameDependencies(DataReader* reader) {
   result->frame_id = reader->GetNum<int32_t>();
   result->spatial_index = (flags & 0b0111'0000) >> 4;
   result->temporal_index = (flags & 0b0000'1110) >> 1;
-  result->discardable = (flags & 0b0000'0001);
 
   // Larger than supported by the RtpFrameReferenceFinder.
   int num_diffs = (reader->GetNum<uint8_t>() % 16);

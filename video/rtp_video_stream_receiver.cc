@@ -380,9 +380,6 @@ RtpVideoStreamReceiver::ParseGenericDependenciesExtension(
     }
     generic_descriptor_info.decode_target_indications =
         dependency_descriptor.frame_dependencies.decode_target_indications;
-    generic_descriptor_info.discardable =
-        absl::c_linear_search(generic_descriptor_info.decode_target_indications,
-                              DecodeTargetIndication::kDiscardable);
     if (dependency_descriptor.resolution) {
       video_header->width = dependency_descriptor.resolution->Width();
       video_header->height = dependency_descriptor.resolution->Height();
@@ -774,7 +771,9 @@ void RtpVideoStreamReceiver::OnAssembledFrame(
 
   if (loss_notification_controller_ && descriptor) {
     loss_notification_controller_->OnAssembledFrame(
-        frame->first_seq_num(), descriptor->frame_id, descriptor->discardable,
+        frame->first_seq_num(), descriptor->frame_id,
+        absl::c_linear_search(descriptor->decode_target_indications,
+                              DecodeTargetIndication::kDiscardable),
         descriptor->dependencies);
   }
 
