@@ -150,7 +150,7 @@ rtc_library("noise_level_estimator") {
     "..:audio_frame_view",
     "../../../api:array_view",
     "../../../common_audio",
-    "../../../common_audio/third_party/ooura/fft_size_128:ooura_fft",
+    "../../../common_audio/third_party/ooura:fft_size_128",
     "../../../rtc_base:checks",
     "../../../rtc_base:macromagic",
   ]
