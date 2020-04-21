@@ -107,7 +107,6 @@ constexpr char RtpExtension::kVideoContentTypeUri[];
 constexpr char RtpExtension::kVideoTimingUri[];
 constexpr char RtpExtension::kFrameMarkingUri[];
 constexpr char RtpExtension::kGenericFrameDescriptorUri00[];
-constexpr char RtpExtension::kGenericFrameDescriptorUri01[];
 constexpr char RtpExtension::kDependencyDescriptorUri[];
 constexpr char RtpExtension::kTransportSequenceNumberUri[];
 constexpr char RtpExtension::kTransportSequenceNumberV2Uri[];
@@ -147,7 +146,6 @@ bool RtpExtension::IsSupportedForVideo(absl::string_view uri) {
          uri == webrtc::RtpExtension::kMidUri ||
          uri == webrtc::RtpExtension::kFrameMarkingUri ||
          uri == webrtc::RtpExtension::kGenericFrameDescriptorUri00 ||
-         uri == webrtc::RtpExtension::kGenericFrameDescriptorUri01 ||
          uri == webrtc::RtpExtension::kDependencyDescriptorUri ||
          uri == webrtc::RtpExtension::kColorSpaceUri ||
          uri == webrtc::RtpExtension::kRidUri ||

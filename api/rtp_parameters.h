@@ -322,9 +322,6 @@ struct RTC_EXPORT RtpExtension {
   static constexpr char kGenericFrameDescriptorUri00[] =
       "http://www.webrtc.org/experiments/rtp-hdrext/"
       "generic-frame-descriptor-00";
-  static constexpr char kGenericFrameDescriptorUri01[] =
-      "http://www.webrtc.org/experiments/rtp-hdrext/"
-      "generic-frame-descriptor-01";
   static constexpr char kDependencyDescriptorUri[] =
       "https://aomediacodec.github.io/av1-rtp-spec/"
       "#dependency-descriptor-rtp-header-extension";
