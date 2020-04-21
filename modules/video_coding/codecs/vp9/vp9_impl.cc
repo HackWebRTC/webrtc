@@ -1756,7 +1756,6 @@ int VP9DecoderImpl::ReturnFrame(
   rtc::scoped_refptr<VideoFrameBuffer> img_wrapped_buffer;
   switch (img->bit_depth) {
     case 8:
-      RTC_DCHECK(img->fmt == VPX_IMG_FMT_I420 || img->fmt == VPX_IMG_FMT_I444);
       if (img->fmt == VPX_IMG_FMT_I420) {
         img_wrapped_buffer = WrapI420Buffer(
             img->d_w, img->d_h, img->planes[VPX_PLANE_Y],
