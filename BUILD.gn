@@ -684,6 +684,7 @@ if (rtc_include_tests) {
     testonly = true
     deps = [
       "audio/voip/test:audio_egress_unittests",
+      "audio/voip/test:audio_ingress_unittests",
       "test:test_main",
     ]
   }
