@@ -520,6 +520,10 @@ ChannelReceive::ChannelReceive(
 ChannelReceive::~ChannelReceive() {
   RTC_DCHECK(construction_thread_.IsCurrent());
 
+  // Resets the delegate's callback to ChannelReceive::OnReceivedPayloadData.
+  if (frame_transformer_delegate_)
+    frame_transformer_delegate_->Reset();
+
   StopPlayout();
 
   if (_moduleProcessThreadPtr)
