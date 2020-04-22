@@ -92,8 +92,10 @@ bool HasBweExtension(const RtpHeaderExtensionMap& extensions_map) {
 }
 
 double GetMaxPaddingSizeFactor(const WebRtcKeyValueConfig* field_trials) {
-  // Effectively no limit by default.
-  constexpr double kDefaultFactor = IP_PACKET_SIZE;
+  // Too low factor means RTX payload padding is rarely used and ineffective.
+  // Too high means we risk interrupting regular media packets.
+  // In practice, 3x seems to yield reasonable results.
+  constexpr double kDefaultFactor = 3.0;
   if (!field_trials) {
     return kDefaultFactor;
   }
