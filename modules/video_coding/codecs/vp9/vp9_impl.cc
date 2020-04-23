@@ -582,11 +582,10 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
 
   // External reference control is required for different frame rate on spatial
   // layers because libvpx generates rtp incompatible references in this case.
-  external_ref_control_ =
-      !field_trial::IsDisabled("WebRTC-Vp9ExternalRefCtrl") ||
-      (num_spatial_layers_ > 1 &&
-       codec_.mode == VideoCodecMode::kScreensharing) ||
-      inter_layer_pred_ == InterLayerPredMode::kOn;
+  external_ref_control_ = field_trial::IsEnabled("WebRTC-Vp9ExternalRefCtrl") ||
+                          (num_spatial_layers_ > 1 &&
+                           codec_.mode == VideoCodecMode::kScreensharing) ||
+                          inter_layer_pred_ == InterLayerPredMode::kOn;
 
   if (num_temporal_layers_ == 1) {
     gof_.SetGofInfoVP9(kTemporalStructureMode1);
