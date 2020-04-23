@@ -582,10 +582,18 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
 
   // External reference control is required for different frame rate on spatial
   // layers because libvpx generates rtp incompatible references in this case.
-  external_ref_control_ = field_trial::IsEnabled("WebRTC-Vp9ExternalRefCtrl") ||
-                          (num_spatial_layers_ > 1 &&
-                           codec_.mode == VideoCodecMode::kScreensharing) ||
-                          inter_layer_pred_ == InterLayerPredMode::kOn;
+  external_ref_control_ =
+      !field_trial::IsDisabled("WebRTC-Vp9ExternalRefCtrl") ||
+      (num_spatial_layers_ > 1 &&
+       codec_.mode == VideoCodecMode::kScreensharing) ||
+      inter_layer_pred_ == InterLayerPredMode::kOn;
+  // TODO(ilnik): Remove this workaround once external reference control works
+  // nicely with simulcast SVC mode.
+  // Simlucast SVC mode is currently only used in some tests and is impossible
+  // to trigger for users without using some field trials.
+  if (inter_layer_pred_ == InterLayerPredMode::kOff) {
+    external_ref_control_ = false;
+  }
 
   if (num_temporal_layers_ == 1) {
     gof_.SetGofInfoVP9(kTemporalStructureMode1);
