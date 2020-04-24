@@ -10,8 +10,11 @@
 
 package org.webrtc.audio;
 
-import android.media.AudioManager;
 import android.content.Context;
+import android.media.AudioDeviceInfo;
+import android.media.AudioManager;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import org.webrtc.JniCommon;
 import org.webrtc.Logging;
 
@@ -367,6 +370,18 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
   public void setMicrophoneMute(boolean mute) {
     Logging.d(TAG, "setMicrophoneMute: " + mute);
     audioInput.setMicrophoneMute(mute);
+  }
+
+  /**
+   * Start to prefer a specific {@link AudioDeviceInfo} device for recording. Typically this should
+   * only be used if a client gives an explicit option for choosing a physical device to record
+   * from. Otherwise the best-matching device for other parameters will be used. Calling after
+   * recording is started may cause a temporary interruption if the audio routing changes.
+   */
+  @RequiresApi(Build.VERSION_CODES.M)
+  public void setPreferredInputDevice(AudioDeviceInfo preferredInputDevice) {
+    Logging.d(TAG, "setPreferredInputDevice: " + preferredInputDevice);
+    audioInput.setPreferredDevice(preferredInputDevice);
   }
 
   private static native long nativeCreateAudioDeviceModule(Context context,
