@@ -174,8 +174,7 @@ P2PTransportChannel::P2PTransportChannel(
   ice_event_log_.set_event_log(event_log);
 
   IceControllerFactoryArgs args{
-      [this] { return GetState(); },
-      [this] { return GetIceRole(); },
+      [this] { return GetState(); }, [this] { return GetIceRole(); },
       [this](const Connection* connection) {
         // TODO(webrtc:10647/jonaso): Figure out a way to remove friendship
         // between P2PTransportChannel and Connection.
@@ -183,7 +182,7 @@ P2PTransportChannel::P2PTransportChannel(
                IsRemoteCandidatePruned(connection->remote_candidate());
       },
       &field_trials_,
-  };
+      webrtc::field_trial::FindFullName("WebRTC-IceControllerFieldTrials")};
   if (ice_controller_factory != nullptr) {
     ice_controller_ = ice_controller_factory->Create(args);
   } else {
