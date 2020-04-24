@@ -386,22 +386,11 @@ void PeerConnectionE2EQualityTest::OnTrackCallback(
     return;
   }
 
-  VideoConfig* video_config = nullptr;
-  for (auto& config : remote_video_configs) {
-    if (config.stream_label == stream_label) {
-      video_config = &config;
-      break;
-    }
-  }
-  RTC_CHECK(video_config);
-  test::VideoFrameWriter* writer = media_helper_->MaybeCreateVideoWriter(
-      video_config->output_dump_file_name, *video_config);
   // It is safe to cast here, because it is checked above that
   // track->kind() is kVideoKind.
   auto* video_track = static_cast<VideoTrackInterface*>(track.get());
   std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> video_sink =
-      video_quality_analyzer_injection_helper_->CreateVideoSink(*video_config,
-                                                                writer);
+      video_quality_analyzer_injection_helper_->CreateVideoSink();
   video_track->AddOrUpdateSink(video_sink.get(), rtc::VideoSinkWants());
   output_video_sinks_.push_back(std::move(video_sink));
 }

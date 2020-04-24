@@ -22,6 +22,7 @@
 #include "api/video/video_sink_interface.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
+#include "rtc_base/critical_section.h"
 #include "test/pc/e2e/analyzer/video/encoded_image_data_injector.h"
 #include "test/pc/e2e/analyzer/video/id_generator.h"
 #include "test/test_video_capturer.h"
@@ -55,17 +56,15 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
       std::unique_ptr<VideoDecoderFactory> delegate) const;
 
   // Creates VideoFrame preprocessor, that will allow video quality analyzer to
-  // get access to the captured frames. If |writer| in not nullptr, will dump
-  // captured frames with provided writer.
+  // get access to the captured frames. If provided config also specifies
+  // |input_dump_file_name|, video will be written into that file.
   std::unique_ptr<test::TestVideoCapturer::FramePreprocessor>
-  CreateFramePreprocessor(const VideoConfig& config,
-                          test::VideoFrameWriter* writer) const;
+  CreateFramePreprocessor(const VideoConfig& config);
   // Creates sink, that will allow video quality analyzer to get access to
-  // the rendered frames. If |writer| in not nullptr, will dump rendered
-  // frames with provided writer.
-  std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> CreateVideoSink(
-      const VideoConfig& config,
-      test::VideoFrameWriter* writer) const;
+  // the rendered frames. If corresponding video track has
+  // |output_dump_file_name| in its VideoConfig, then video also will be written
+  // into that file.
+  std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> CreateVideoSink();
 
   void Start(std::string test_case_name, int max_threads_count);
 
@@ -75,12 +74,40 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
                       const StatsReports& stats_reports) override;
 
   // Stops VideoQualityAnalyzerInterface to populate final data and metrics.
+  // Should be invoked after analyzed video tracks are disposed.
   void Stop();
 
  private:
+  class AnalyzingVideoSink final : public rtc::VideoSinkInterface<VideoFrame> {
+   public:
+    explicit AnalyzingVideoSink(VideoQualityAnalyzerInjectionHelper* helper)
+        : helper_(helper) {}
+    ~AnalyzingVideoSink() override = default;
+
+    void OnFrame(const VideoFrame& frame) override { helper_->OnFrame(frame); }
+
+   private:
+    VideoQualityAnalyzerInjectionHelper* const helper_;
+  };
+
+  test::VideoFrameWriter* MaybeCreateVideoWriter(
+      absl::optional<std::string> file_name,
+      const PeerConnectionE2EQualityTestFixture::VideoConfig& config);
+  void OnFrame(const VideoFrame& frame);
+  std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>*
+  PopulateSinks(const std::string& stream_label);
+
   std::unique_ptr<VideoQualityAnalyzerInterface> analyzer_;
   EncodedImageDataInjector* injector_;
   EncodedImageDataExtractor* extractor_;
+
+  std::vector<std::unique_ptr<test::VideoFrameWriter>> video_writers_;
+
+  rtc::CriticalSection lock_;
+  std::map<std::string, VideoConfig> known_video_configs_ RTC_GUARDED_BY(lock_);
+  std::map<std::string,
+           std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>>
+      sinks_ RTC_GUARDED_BY(lock_);
 
   std::unique_ptr<IdGenerator<int>> encoding_entities_id_generator_;
 };
