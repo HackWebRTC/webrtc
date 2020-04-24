@@ -21,6 +21,7 @@ import android.media.MediaRecorder.AudioSource;
 import android.os.Build;
 import android.os.Process;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import java.lang.System;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -87,6 +88,7 @@ class WebRtcAudioRecord {
 
   private @Nullable AudioRecord audioRecord;
   private @Nullable AudioRecordThread audioThread;
+  private @Nullable AudioDeviceInfo preferredDevice;
 
   private @Nullable ScheduledExecutorService executor;
   private @Nullable ScheduledFuture<String> future;
@@ -296,6 +298,9 @@ class WebRtcAudioRecord {
         // Throws IllegalArgumentException.
         audioRecord = createAudioRecordOnMOrHigher(
             audioSource, sampleRate, channelConfig, audioFormat, bufferSizeInBytes);
+        if (preferredDevice != null) {
+          setPreferredDevice(preferredDevice);
+        }
       } else {
         // Use the old AudioRecord constructor for API levels below 23.
         // Throws UnsupportedOperationException.
@@ -327,6 +332,23 @@ class WebRtcAudioRecord {
           TAG, "Potential microphone conflict. Active sessions: " + numActiveRecordingSessions);
     }
     return framesPerBuffer;
+  }
+
+  /**
+   * Prefer a specific {@link AudioDeviceInfo} device for recording. Calling after recording starts
+   * is valid but may cause a temporary interruption if the audio routing changes.
+   */
+  @RequiresApi(Build.VERSION_CODES.M)
+  @TargetApi(Build.VERSION_CODES.M)
+  void setPreferredDevice(@Nullable AudioDeviceInfo preferredDevice) {
+    Logging.d(
+        TAG, "setPreferredDevice " + (preferredDevice != null ? preferredDevice.getId() : null));
+    this.preferredDevice = preferredDevice;
+    if (audioRecord != null) {
+      if (!audioRecord.setPreferredDevice(preferredDevice)) {
+        Logging.e(TAG, "setPreferredDevice failed");
+      }
+    }
   }
 
   @CalledByNative
