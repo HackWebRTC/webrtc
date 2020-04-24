@@ -455,6 +455,7 @@ if (rtc_include_tests) {
   }
 
   rtc_library("stats_poller") {
+    visibility = [ "*" ]
     testonly = true
     sources = [
       "stats_poller.cc",
@@ -599,6 +600,7 @@ rtc_library("network_quality_metrics_reporter") {
 }
 
 rtc_library("sdp_changer") {
+  visibility = [ "*" ]
   testonly = true
   sources = [
     "sdp/sdp_changer.cc",
