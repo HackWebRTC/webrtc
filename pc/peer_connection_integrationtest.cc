@@ -36,6 +36,7 @@
 #include "media/engine/fake_webrtc_video_engine.h"
 #include "media/engine/webrtc_media_engine.h"
 #include "media/engine/webrtc_media_engine_defaults.h"
+#include "modules/audio_processing/test/audio_processing_builder_for_testing.h"
 #include "p2p/base/fake_ice_transport.h"
 #include "p2p/base/mock_async_resolver.h"
 #include "p2p/base/p2p_constants.h"
@@ -646,6 +647,12 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     }
     if (reset_decoder_factory) {
       media_deps.video_decoder_factory.reset();
+    }
+
+    if (!media_deps.audio_processing) {
+      // If the standard Creation method for APM returns a null pointer, instead
+      // use the builder for testing to create an APM object.
+      media_deps.audio_processing = AudioProcessingBuilderForTesting().Create();
     }
 
     pc_factory_dependencies.media_engine =

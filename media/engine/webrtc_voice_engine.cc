@@ -206,7 +206,6 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
   RTC_LOG(LS_INFO) << "WebRtcVoiceEngine::WebRtcVoiceEngine";
   RTC_DCHECK(decoder_factory);
   RTC_DCHECK(encoder_factory);
-  RTC_DCHECK(audio_processing);
   // The rest of our initialization will happen in Init.
 }
 
@@ -458,6 +457,14 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
         *options.audio_jitter_buffer_enable_rtx_handling;
   }
 
+  webrtc::AudioProcessing* ap = apm();
+  if (!ap) {
+    RTC_LOG(LS_INFO)
+        << "No audio processing module present. No software-provided effects "
+           "(AEC, NS, AGC, ...) are activated";
+    return true;
+  }
+
   webrtc::Config config;
 
   if (options.experimental_ns) {
@@ -469,7 +476,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
         new webrtc::ExperimentalNs(*experimental_ns_));
   }
 
-  webrtc::AudioProcessing::Config apm_config = apm()->GetConfig();
+  webrtc::AudioProcessing::Config apm_config = ap->GetConfig();
 
   if (options.echo_cancellation) {
     apm_config.echo_canceller.enabled = *options.echo_cancellation;
@@ -524,8 +531,8 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     apm_config.voice_detection.enabled = *options.typing_detection;
   }
 
-  apm()->SetExtraOptions(config);
-  apm()->ApplyConfig(apm_config);
+  ap->SetExtraOptions(config);
+  ap->ApplyConfig(apm_config);
   return true;
 }
 
@@ -571,18 +578,34 @@ void WebRtcVoiceEngine::UnregisterChannel(WebRtcVoiceMediaChannel* channel) {
 bool WebRtcVoiceEngine::StartAecDump(webrtc::FileWrapper file,
                                      int64_t max_size_bytes) {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
+
+  webrtc::AudioProcessing* ap = apm();
+  if (!ap) {
+    RTC_LOG(LS_WARNING)
+        << "Attempting to start aecdump when no audio processing module is "
+           "present, hence no aecdump is started.";
+    return false;
+  }
+
   auto aec_dump = webrtc::AecDumpFactory::Create(
       std::move(file), max_size_bytes, low_priority_worker_queue_.get());
   if (!aec_dump) {
     return false;
   }
-  apm()->AttachAecDump(std::move(aec_dump));
+
+  ap->AttachAecDump(std::move(aec_dump));
   return true;
 }
 
 void WebRtcVoiceEngine::StopAecDump() {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
-  apm()->DetachAecDump();
+  webrtc::AudioProcessing* ap = apm();
+  if (ap) {
+    ap->DetachAecDump();
+  } else {
+    RTC_LOG(LS_WARNING) << "Attempting to stop aecdump when no audio "
+                           "processing module is present";
+  }
 }
 
 webrtc::AudioDeviceModule* WebRtcVoiceEngine::adm() {
@@ -593,7 +616,6 @@ webrtc::AudioDeviceModule* WebRtcVoiceEngine::adm() {
 
 webrtc::AudioProcessing* WebRtcVoiceEngine::apm() const {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
-  RTC_DCHECK(apm_);
   return apm_.get();
 }
 
@@ -2141,7 +2163,10 @@ bool WebRtcVoiceMediaChannel::MuteStream(uint32_t ssrc, bool muted) {
   for (const auto& kv : send_streams_) {
     all_muted = all_muted && kv.second->muted();
   }
-  engine()->apm()->set_output_will_be_muted(all_muted);
+  webrtc::AudioProcessing* ap = engine()->apm();
+  if (ap) {
+    ap->set_output_will_be_muted(all_muted);
+  }
 
   return true;
 }

@@ -33,7 +33,11 @@ class TestPeer final : public PeerConnectionWrapper {
     return std::move(video_generators_[i]);
   }
 
-  void DetachAecDump() { audio_processing_->DetachAecDump(); }
+  void DetachAecDump() {
+    if (audio_processing_) {
+      audio_processing_->DetachAecDump();
+    }
+  }
 
   // Adds provided |candidates| to the owned peer connection.
   bool AddIceCandidates(

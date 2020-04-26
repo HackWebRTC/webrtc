@@ -685,19 +685,34 @@ class RTC_EXPORT AudioProcessingBuilder {
   ~AudioProcessingBuilder();
   // The AudioProcessingBuilder takes ownership of the echo_control_factory.
   AudioProcessingBuilder& SetEchoControlFactory(
-      std::unique_ptr<EchoControlFactory> echo_control_factory);
+      std::unique_ptr<EchoControlFactory> echo_control_factory) {
+    echo_control_factory_ = std::move(echo_control_factory);
+    return *this;
+  }
   // The AudioProcessingBuilder takes ownership of the capture_post_processing.
   AudioProcessingBuilder& SetCapturePostProcessing(
-      std::unique_ptr<CustomProcessing> capture_post_processing);
+      std::unique_ptr<CustomProcessing> capture_post_processing) {
+    capture_post_processing_ = std::move(capture_post_processing);
+    return *this;
+  }
   // The AudioProcessingBuilder takes ownership of the render_pre_processing.
   AudioProcessingBuilder& SetRenderPreProcessing(
-      std::unique_ptr<CustomProcessing> render_pre_processing);
+      std::unique_ptr<CustomProcessing> render_pre_processing) {
+    render_pre_processing_ = std::move(render_pre_processing);
+    return *this;
+  }
   // The AudioProcessingBuilder takes ownership of the echo_detector.
   AudioProcessingBuilder& SetEchoDetector(
-      rtc::scoped_refptr<EchoDetector> echo_detector);
+      rtc::scoped_refptr<EchoDetector> echo_detector) {
+    echo_detector_ = std::move(echo_detector);
+    return *this;
+  }
   // The AudioProcessingBuilder takes ownership of the capture_analyzer.
   AudioProcessingBuilder& SetCaptureAnalyzer(
-      std::unique_ptr<CustomAudioAnalyzer> capture_analyzer);
+      std::unique_ptr<CustomAudioAnalyzer> capture_analyzer) {
+    capture_analyzer_ = std::move(capture_analyzer);
+    return *this;
+  }
   // This creates an APM instance using the previously set components. Calling
   // the Create function resets the AudioProcessingBuilder to its initial state.
   AudioProcessing* Create();

@@ -15,6 +15,7 @@
 #include "modules/audio_processing/aec_dump/mock_aec_dump.h"
 #include "modules/audio_processing/audio_processing_impl.h"
 #include "modules/audio_processing/include/audio_processing.h"
+#include "modules/audio_processing/test/audio_processing_builder_for_testing.h"
 
 using ::testing::_;
 using ::testing::AtLeast;
@@ -25,7 +26,7 @@ namespace {
 std::unique_ptr<webrtc::AudioProcessing> CreateAudioProcessing() {
   webrtc::Config config;
   std::unique_ptr<webrtc::AudioProcessing> apm(
-      webrtc::AudioProcessingBuilder().Create(config));
+      webrtc::AudioProcessingBuilderForTesting().Create(config));
   RTC_DCHECK(apm);
   return apm;
 }

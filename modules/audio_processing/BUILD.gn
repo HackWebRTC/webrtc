@@ -116,6 +116,7 @@ rtc_library("audio_processing") {
   visibility = [ "*" ]
   configs += [ ":apm_debug_dump" ]
   sources = [
+    "audio_processing_builder_impl.cc",
     "audio_processing_impl.cc",
     "audio_processing_impl.h",
     "common.h",
@@ -169,6 +170,7 @@ rtc_library("audio_processing") {
     "../../rtc_base:deprecation",
     "../../rtc_base:gtest_prod",
     "../../rtc_base:ignore_wundef",
+    "../../rtc_base:refcount",
     "../../rtc_base:safe_minmax",
     "../../rtc_base:sanitizer",
     "../../rtc_base/system:rtc_export",
@@ -556,41 +558,6 @@ if (rtc_include_tests) {
     }  # audioproc_f_impl
   }
 
-  rtc_library("audioproc_test_utils") {
-    visibility = [ "*" ]
-    testonly = true
-    sources = [
-      "test/audio_buffer_tools.cc",
-      "test/audio_buffer_tools.h",
-      "test/bitexactness_tools.cc",
-      "test/bitexactness_tools.h",
-      "test/performance_timer.cc",
-      "test/performance_timer.h",
-      "test/simulator_buffers.cc",
-      "test/simulator_buffers.h",
-      "test/test_utils.cc",
-      "test/test_utils.h",
-    ]
-
-    deps = [
-      ":api",
-      ":audio_buffer",
-      ":audio_processing",
-      "../../api:array_view",
-      "../../api/audio:audio_frame_api",
-      "../../common_audio",
-      "../../rtc_base:checks",
-      "../../rtc_base:rtc_base_approved",
-      "../../rtc_base/system:arch",
-      "../../system_wrappers",
-      "../../test:fileutils",
-      "../../test:test_support",
-      "../audio_coding:neteq_input_audio_tools",
-      "//testing/gtest",
-      "//third_party/abseil-cpp/absl/types:optional",
-    ]
-  }
-
   if (rtc_enable_protobuf) {
     proto_library("audioproc_unittest_proto") {
       sources = [ "test/unittest.proto" ]
@@ -628,4 +595,43 @@ if (rtc_include_tests) {
       ]
     }
   }
+}
+
+rtc_library("audioproc_test_utils") {
+  visibility = [ "*" ]
+  testonly = true
+  sources = [
+    "test/audio_buffer_tools.cc",
+    "test/audio_buffer_tools.h",
+    "test/audio_processing_builder_for_testing.cc",
+    "test/audio_processing_builder_for_testing.h",
+    "test/bitexactness_tools.cc",
+    "test/bitexactness_tools.h",
+    "test/performance_timer.cc",
+    "test/performance_timer.h",
+    "test/simulator_buffers.cc",
+    "test/simulator_buffers.h",
+    "test/test_utils.cc",
+    "test/test_utils.h",
+  ]
+
+  configs += [ ":apm_debug_dump" ]
+
+  deps = [
+    ":api",
+    ":audio_buffer",
+    ":audio_processing",
+    "../../api:array_view",
+    "../../api/audio:audio_frame_api",
+    "../../common_audio",
+    "../../rtc_base:checks",
+    "../../rtc_base:rtc_base_approved",
+    "../../rtc_base/system:arch",
+    "../../system_wrappers",
+    "../../test:fileutils",
+    "../../test:test_support",
+    "../audio_coding:neteq_input_audio_tools",
+    "//testing/gtest",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
 }

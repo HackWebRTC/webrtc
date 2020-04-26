@@ -15,6 +15,7 @@
 
 #include "api/scoped_refptr.h"
 #include "modules/audio_processing/include/audio_processing.h"
+#include "modules/audio_processing/test/audio_processing_builder_for_testing.h"
 #include "modules/audio_processing/test/echo_control_mock.h"
 #include "modules/audio_processing/test/test_utils.h"
 #include "rtc_base/checks.h"
@@ -167,7 +168,8 @@ TEST(AudioProcessingImplTest, AudioParameterChangeTriggersInit) {
 }
 
 TEST(AudioProcessingImplTest, UpdateCapturePreGainRuntimeSetting) {
-  std::unique_ptr<AudioProcessing> apm(AudioProcessingBuilder().Create());
+  std::unique_ptr<AudioProcessing> apm(
+      AudioProcessingBuilderForTesting().Create());
   webrtc::AudioProcessing::Config apm_config;
   apm_config.pre_amplifier.enabled = true;
   apm_config.pre_amplifier.fixed_gain_factor = 1.f;
@@ -205,7 +207,7 @@ TEST(AudioProcessingImplTest,
   const auto* echo_control_factory_ptr = echo_control_factory.get();
 
   std::unique_ptr<AudioProcessing> apm(
-      AudioProcessingBuilder()
+      AudioProcessingBuilderForTesting()
           .SetEchoControlFactory(std::move(echo_control_factory))
           .Create());
   // Disable AGC.
@@ -248,7 +250,7 @@ TEST(AudioProcessingImplTest,
   const auto* echo_control_factory_ptr = echo_control_factory.get();
 
   std::unique_ptr<AudioProcessing> apm(
-      AudioProcessingBuilder()
+      AudioProcessingBuilderForTesting()
           .SetEchoControlFactory(std::move(echo_control_factory))
           .Create());
   webrtc::AudioProcessing::Config apm_config;
@@ -294,7 +296,7 @@ TEST(AudioProcessingImplTest, EchoControllerObservesPlayoutVolumeChange) {
   const auto* echo_control_factory_ptr = echo_control_factory.get();
 
   std::unique_ptr<AudioProcessing> apm(
-      AudioProcessingBuilder()
+      AudioProcessingBuilderForTesting()
           .SetEchoControlFactory(std::move(echo_control_factory))
           .Create());
   // Disable AGC.
@@ -353,7 +355,7 @@ TEST(AudioProcessingImplTest, RenderPreProcessorBeforeEchoDetector) {
       new TestRenderPreProcessor());
   // Create APM injecting the test echo detector and render pre-processor.
   std::unique_ptr<AudioProcessing> apm(
-      AudioProcessingBuilder()
+      AudioProcessingBuilderForTesting()
           .SetEchoDetector(test_echo_detector)
           .SetRenderPreProcessing(std::move(test_render_pre_processor))
           .Create());

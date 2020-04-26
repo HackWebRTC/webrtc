@@ -14,6 +14,7 @@
 
 #include "api/array_view.h"
 #include "modules/audio_processing/audio_processing_impl.h"
+#include "modules/audio_processing/test/audio_processing_builder_for_testing.h"
 #include "modules/audio_processing/test/test_utils.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
@@ -496,7 +497,7 @@ AudioProcessingImplLockTest::AudioProcessingImplLockTest()
                     this,
                     "stats",
                     rtc::kNormalPriority),
-      apm_(AudioProcessingBuilder().Create()),
+      apm_(AudioProcessingBuilderForTesting().Create()),
       render_thread_state_(kMaxFrameSize,
                            &rand_gen_,
                            &render_call_event_,

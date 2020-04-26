@@ -229,56 +229,6 @@ bool AudioProcessingImpl::SubmoduleStates::HighPassFilteringRequired() const {
          noise_suppressor_enabled_;
 }
 
-AudioProcessingBuilder::AudioProcessingBuilder() = default;
-AudioProcessingBuilder::~AudioProcessingBuilder() = default;
-
-AudioProcessingBuilder& AudioProcessingBuilder::SetCapturePostProcessing(
-    std::unique_ptr<CustomProcessing> capture_post_processing) {
-  capture_post_processing_ = std::move(capture_post_processing);
-  return *this;
-}
-
-AudioProcessingBuilder& AudioProcessingBuilder::SetRenderPreProcessing(
-    std::unique_ptr<CustomProcessing> render_pre_processing) {
-  render_pre_processing_ = std::move(render_pre_processing);
-  return *this;
-}
-
-AudioProcessingBuilder& AudioProcessingBuilder::SetCaptureAnalyzer(
-    std::unique_ptr<CustomAudioAnalyzer> capture_analyzer) {
-  capture_analyzer_ = std::move(capture_analyzer);
-  return *this;
-}
-
-AudioProcessingBuilder& AudioProcessingBuilder::SetEchoControlFactory(
-    std::unique_ptr<EchoControlFactory> echo_control_factory) {
-  echo_control_factory_ = std::move(echo_control_factory);
-  return *this;
-}
-
-AudioProcessingBuilder& AudioProcessingBuilder::SetEchoDetector(
-    rtc::scoped_refptr<EchoDetector> echo_detector) {
-  echo_detector_ = std::move(echo_detector);
-  return *this;
-}
-
-AudioProcessing* AudioProcessingBuilder::Create() {
-  webrtc::Config config;
-  return Create(config);
-}
-
-AudioProcessing* AudioProcessingBuilder::Create(const webrtc::Config& config) {
-  AudioProcessingImpl* apm = new rtc::RefCountedObject<AudioProcessingImpl>(
-      config, std::move(capture_post_processing_),
-      std::move(render_pre_processing_), std::move(echo_control_factory_),
-      std::move(echo_detector_), std::move(capture_analyzer_));
-  if (apm->Initialize() != AudioProcessing::kNoError) {
-    delete apm;
-    apm = nullptr;
-  }
-  return apm;
-}
-
 AudioProcessingImpl::AudioProcessingImpl(const webrtc::Config& config)
     : AudioProcessingImpl(config,
                           /*capture_post_processor=*/nullptr,

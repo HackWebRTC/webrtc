@@ -96,6 +96,9 @@ declare_args() {
   # should be generated.
   apm_debug_dump = false
 
+  # Selects whether the audio processing module should be excluded.
+  rtc_exclude_audio_processing_module = false
+
   # Set this to true to enable BWE test logging.
   rtc_enable_bwe_test_logging = false
 

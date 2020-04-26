@@ -49,13 +49,15 @@ void ProcessCaptureFrame(uint32_t delay_ms,
                          bool swap_stereo_channels,
                          AudioProcessing* audio_processing,
                          AudioFrame* audio_frame) {
-  RTC_DCHECK(audio_processing);
   RTC_DCHECK(audio_frame);
-  audio_processing->set_stream_delay_ms(delay_ms);
-  audio_processing->set_stream_key_pressed(key_pressed);
-  int error = ProcessAudioFrame(audio_processing, audio_frame);
+  if (audio_processing) {
+    audio_processing->set_stream_delay_ms(delay_ms);
+    audio_processing->set_stream_key_pressed(key_pressed);
+    int error = ProcessAudioFrame(audio_processing, audio_frame);
 
-  RTC_DCHECK_EQ(0, error) << "ProcessStream() error: " << error;
+    RTC_DCHECK_EQ(0, error) << "ProcessStream() error: " << error;
+  }
+
   if (swap_stereo_channels) {
     AudioFrameOperations::SwapStereoChannels(audio_frame);
   }
@@ -85,7 +87,6 @@ AudioTransportImpl::AudioTransportImpl(AudioMixer* mixer,
                                        AudioProcessing* audio_processing)
     : audio_processing_(audio_processing), mixer_(mixer) {
   RTC_DCHECK(mixer);
-  RTC_DCHECK(audio_processing);
 }
 
 AudioTransportImpl::~AudioTransportImpl() {}
@@ -137,7 +138,8 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
   // if we're using this feature or not.
   // TODO(solenberg): GetConfig() takes a lock. Work around that.
   bool typing_detected = false;
-  if (audio_processing_->GetConfig().voice_detection.enabled) {
+  if (audio_processing_ &&
+      audio_processing_->GetConfig().voice_detection.enabled) {
     if (audio_frame->vad_activity_ != AudioFrame::kVadUnknown) {
       bool vad_active = audio_frame->vad_activity_ == AudioFrame::kVadActive;
       typing_detected = typing_detection_.Process(key_pressed, vad_active);
@@ -192,8 +194,11 @@ int32_t AudioTransportImpl::NeedMorePlayData(const size_t nSamples,
   *elapsed_time_ms = mixed_frame_.elapsed_time_ms_;
   *ntp_time_ms = mixed_frame_.ntp_time_ms_;
 
-  const auto error = ProcessReverseAudioFrame(audio_processing_, &mixed_frame_);
-  RTC_DCHECK_EQ(error, AudioProcessing::kNoError);
+  if (audio_processing_) {
+    const auto error =
+        ProcessReverseAudioFrame(audio_processing_, &mixed_frame_);
+    RTC_DCHECK_EQ(error, AudioProcessing::kNoError);
+  }
 
   nSamplesOut = Resample(mixed_frame_, samplesPerSec, &render_resampler_,
                          static_cast<int16_t*>(audioSamples));
