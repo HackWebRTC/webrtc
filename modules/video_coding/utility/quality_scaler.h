@@ -17,45 +17,30 @@
 #include <memory>
 
 #include "absl/types/optional.h"
-#include "api/video/video_adaptation_reason.h"
+#include "api/scoped_refptr.h"
 #include "api/video_codecs/video_encoder.h"
 #include "rtc_base/experiments/quality_scaling_experiment.h"
 #include "rtc_base/numerics/moving_average.h"
+#include "rtc_base/ref_count.h"
+#include "rtc_base/ref_counted_object.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_queue.h"
-#include "rtc_base/task_utils/repeating_task.h"
 
 namespace webrtc {
 
-// An interface for signaling requests to limit or increase the resolution or
-// framerate of the captured video stream.
-// TODO(hbos): Can we remove AdaptationObserverInterface in favor of
-// ResourceUsageListener? If we need to adapt that is because of resource usage.
-// A multi-stream and multi-resource aware solution needs to sparate the notion
-// of being resource constrained from the decision to downgrade a specific
-// stream.
-class AdaptationObserverInterface {
- public:
-  // Called to signal that we can handle larger or more frequent frames.
-  virtual void AdaptUp(VideoAdaptationReason reason) = 0;
-  // Called to signal that the source should reduce the resolution or framerate.
-  // Returns false if a downgrade was requested but the request did not result
-  // in a new limiting resolution or fps.
-  virtual bool AdaptDown(VideoAdaptationReason reason) = 0;
-
- protected:
-  virtual ~AdaptationObserverInterface() {}
-};
+class QualityScalerQpUsageHandlerCallbackInterface;
+class QualityScalerQpUsageHandlerInterface;
 
 // QualityScaler runs asynchronously and monitors QP values of encoded frames.
-// It holds a reference to an AdaptationObserverInterface implementation to
-// signal an intent to scale up or down.
+// It holds a reference to a QualityScalerQpUsageHandlerInterface implementation
+// to signal an overuse or underuse of QP (which indicate a desire to scale the
+// video stream down or up).
 class QualityScaler {
  public:
-  // Construct a QualityScaler with given |thresholds| and |observer|.
+  // Construct a QualityScaler with given |thresholds| and |handler|.
   // This starts the quality scaler periodically checking what the average QP
   // has been recently.
-  QualityScaler(AdaptationObserverInterface* observer,
+  QualityScaler(QualityScalerQpUsageHandlerInterface* handler,
                 VideoEncoder::QpThresholds thresholds);
   virtual ~QualityScaler();
   // Should be called each time a frame is dropped at encoding.
@@ -69,21 +54,34 @@ class QualityScaler {
 
   // The following members declared protected for testing purposes.
  protected:
-  QualityScaler(AdaptationObserverInterface* observer,
+  QualityScaler(QualityScalerQpUsageHandlerInterface* handler,
                 VideoEncoder::QpThresholds thresholds,
                 int64_t sampling_period_ms);
 
  private:
   class QpSmoother;
+  class CheckQpTask;
+  class CheckQpTaskHandlerCallback;
 
-  void CheckQp();
+  enum class CheckQpResult {
+    kInsufficientSamples,
+    kNormalQp,
+    kHighQp,
+    kLowQp,
+  };
+
+  // Starts checking for QP in a delayed task. When the resulting CheckQpTask
+  // completes, it will invoke this method again, ensuring that we always
+  // periodically check for QP. See CheckQpTask for more details. We never run
+  // more than one CheckQpTask at a time.
+  void StartNextCheckQpTask();
+
+  CheckQpResult CheckQp() const;
   void ClearSamples();
-  void ReportQpLow();
-  void ReportQpHigh();
-  int64_t GetSamplingPeriodMs() const;
 
-  RepeatingTaskHandle check_qp_task_ RTC_GUARDED_BY(&task_checker_);
-  AdaptationObserverInterface* const observer_ RTC_GUARDED_BY(&task_checker_);
+  std::unique_ptr<CheckQpTask> pending_qp_task_ RTC_GUARDED_BY(&task_checker_);
+  QualityScalerQpUsageHandlerInterface* const handler_
+      RTC_GUARDED_BY(&task_checker_);
   SequenceChecker task_checker_;
 
   VideoEncoder::QpThresholds thresholds_ RTC_GUARDED_BY(&task_checker_);
@@ -99,14 +97,55 @@ class QualityScaler {
   QualityScalingExperiment::Config config_ RTC_GUARDED_BY(&task_checker_);
   std::unique_ptr<QpSmoother> qp_smoother_high_ RTC_GUARDED_BY(&task_checker_);
   std::unique_ptr<QpSmoother> qp_smoother_low_ RTC_GUARDED_BY(&task_checker_);
-  bool observed_enough_frames_ RTC_GUARDED_BY(&task_checker_);
 
   const size_t min_frames_needed_;
   const double initial_scale_factor_;
   const absl::optional<double> scale_factor_;
-  bool adapt_called_ RTC_GUARDED_BY(&task_checker_);
-  bool adapt_failed_ RTC_GUARDED_BY(&task_checker_);
 };
+
+// Reacts to QP being too high or too low. For best quality, when QP is high it
+// is desired to decrease the resolution or frame rate of the stream and when QP
+// is low it is desired to increase the resolution or frame rate of the stream.
+// Whether to reconfigure the stream is ultimately up to the handler, which is
+// able to respond asynchronously.
+class QualityScalerQpUsageHandlerInterface {
+ public:
+  virtual ~QualityScalerQpUsageHandlerInterface();
+
+  // Reacts to QP usage being too high or too low. The |callback| MUST be
+  // invoked when the handler is done, allowing the QualityScaler to resume
+  // checking for QP.
+  virtual void OnReportQpUsageHigh(
+      rtc::scoped_refptr<QualityScalerQpUsageHandlerCallbackInterface>
+          callback) = 0;
+  virtual void OnReportQpUsageLow(
+      rtc::scoped_refptr<QualityScalerQpUsageHandlerCallbackInterface>
+          callback) = 0;
+};
+
+// When QP is reported as high or low by the QualityScaler, it pauses checking
+// for QP until the QP usage has been handled. When OnQpUsageHandled() is
+// invoked, the QualityScaler resumes checking for QP. This ensures that if the
+// stream is reconfigured in response to QP usage we do not include QP samples
+// from before the reconfiguration the next time we check for QP.
+//
+// OnQpUsageHandled() MUST be invoked exactly once before this object is
+// destroyed.
+class QualityScalerQpUsageHandlerCallbackInterface
+    : public rtc::RefCountedObject<rtc::RefCountInterface> {
+ public:
+  virtual ~QualityScalerQpUsageHandlerCallbackInterface();
+
+  // If |clear_qp_samples| is true, existing QP samples are cleared before the
+  // next time QualityScaler checks for QP. This is usually a good idea when the
+  // stream is reconfigured. If |clear_qp_samples| is false, samples are not
+  // cleared and QualityScaler increases its frequency of checking for QP.
+  virtual void OnQpUsageHandled(bool clear_qp_samples) = 0;
+
+ protected:
+  QualityScalerQpUsageHandlerCallbackInterface();
+};
+
 }  // namespace webrtc
 
 #endif  // MODULES_VIDEO_CODING_UTILITY_QUALITY_SCALER_H_

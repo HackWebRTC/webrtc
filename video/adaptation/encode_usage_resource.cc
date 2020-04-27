@@ -66,15 +66,12 @@ void EncodeUsageResource::OnEncodeCompleted(
                                encode_duration_us);
 }
 
-void EncodeUsageResource::AdaptUp(VideoAdaptationReason reason) {
-  RTC_DCHECK_EQ(reason, VideoAdaptationReason::kCpu);
+void EncodeUsageResource::AdaptUp() {
   OnResourceUsageStateMeasured(ResourceUsageState::kUnderuse);
 }
 
-bool EncodeUsageResource::AdaptDown(VideoAdaptationReason reason) {
-  RTC_DCHECK_EQ(reason, VideoAdaptationReason::kCpu);
-  return OnResourceUsageStateMeasured(ResourceUsageState::kOveruse) !=
-         ResourceListenerResponse::kQualityScalerShouldIncreaseFrequency;
+void EncodeUsageResource::AdaptDown() {
+  OnResourceUsageStateMeasured(ResourceUsageState::kOveruse);
 }
 
 int EncodeUsageResource::TargetFrameRateAsInt() {

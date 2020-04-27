@@ -26,10 +26,8 @@ namespace webrtc {
 // indirectly by usage in the ResourceAdaptationProcessor (which is only tested
 // because of its usage in VideoStreamEncoder); all tests are currently in
 // video_stream_encoder_unittest.cc.
-// TODO(https://crbug.com/webrtc/11222): Move this class to the
-// video/adaptation/ subdirectory.
 class QualityScalerResource : public Resource,
-                              public AdaptationObserverInterface {
+                              public QualityScalerQpUsageHandlerInterface {
  public:
   QualityScalerResource();
 
@@ -44,11 +42,13 @@ class QualityScalerResource : public Resource,
                          int64_t time_sent_in_us);
   void OnFrameDropped(EncodedImageCallback::DropReason reason);
 
-  // AdaptationObserverInterface implementation.
-  // TODO(https://crbug.com/webrtc/11222, 11172): This resource also needs to
-  // signal when its stable to support multi-stream aware modules.
-  void AdaptUp(VideoAdaptationReason reason) override;
-  bool AdaptDown(VideoAdaptationReason reason) override;
+  // QualityScalerQpUsageHandlerInterface implementation.
+  void OnReportQpUsageHigh(
+      rtc::scoped_refptr<QualityScalerQpUsageHandlerCallbackInterface> callback)
+      override;
+  void OnReportQpUsageLow(
+      rtc::scoped_refptr<QualityScalerQpUsageHandlerCallbackInterface> callback)
+      override;
 
   std::string name() const override { return "QualityScalerResource"; }
 
