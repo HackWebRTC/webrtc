@@ -114,7 +114,6 @@ AudioSendStream::AudioSendStream(
                       rtp_transport,
                       bitrate_allocator,
                       event_log,
-                      rtcp_rtt_stats,
                       suspended_rtp_state,
                       voe::CreateChannelSend(clock,
                                              task_queue_factory,
@@ -138,7 +137,6 @@ AudioSendStream::AudioSendStream(
     RtpTransportControllerSendInterface* rtp_transport,
     BitrateAllocatorInterface* bitrate_allocator,
     RtcEventLog* event_log,
-    RtcpRttStats* rtcp_rtt_stats,
     const absl::optional<RtpState>& suspended_rtp_state,
     std::unique_ptr<voe::ChannelSendInterface> channel_send)
     : clock_(clock),

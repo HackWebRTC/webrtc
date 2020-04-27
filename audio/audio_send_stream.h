@@ -73,7 +73,6 @@ class AudioSendStream final : public webrtc::AudioSendStream,
                   RtpTransportControllerSendInterface* rtp_transport,
                   BitrateAllocatorInterface* bitrate_allocator,
                   RtcEventLog* event_log,
-                  RtcpRttStats* rtcp_rtt_stats,
                   const absl::optional<RtpState>& suspended_rtp_state,
                   std::unique_ptr<voe::ChannelSendInterface> channel_send);
   ~AudioSendStream() override;

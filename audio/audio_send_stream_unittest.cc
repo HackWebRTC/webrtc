@@ -29,7 +29,6 @@
 #include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
 #include "modules/rtp_rtcp/mocks/mock_rtcp_bandwidth_observer.h"
-#include "modules/rtp_rtcp/mocks/mock_rtcp_rtt_stats.h"
 #include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "system_wrappers/include/clock.h"
@@ -192,7 +191,7 @@ struct ConfigHelper {
         new internal::AudioSendStream(
             Clock::GetRealTimeClock(), stream_config_, audio_state_,
             task_queue_factory_.get(), &rtp_transport_, &bitrate_allocator_,
-            &event_log_, &rtcp_rtt_stats_, absl::nullopt,
+            &event_log_, absl::nullopt,
             std::unique_ptr<voe::ChannelSendInterface>(channel_send_)));
   }
 
@@ -331,7 +330,6 @@ struct ConfigHelper {
   ::testing::NiceMock<MockRtcEventLog> event_log_;
   ::testing::NiceMock<MockRtpTransportControllerSend> rtp_transport_;
   ::testing::NiceMock<MockRtpRtcp> rtp_rtcp_;
-  MockRtcpRttStats rtcp_rtt_stats_;
   ::testing::NiceMock<MockLimitObserver> limit_observer_;
   BitrateAllocator bitrate_allocator_;
   // |worker_queue| is defined last to ensure all pending tasks are cancelled
