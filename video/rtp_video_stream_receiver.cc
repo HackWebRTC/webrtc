@@ -84,7 +84,8 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
     ReceiveStatistics* receive_statistics,
     Transport* outgoing_transport,
     RtcpRttStats* rtt_stats,
-    ReceiveStatisticsProxy* rtcp_statistics_observer,
+    RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
+    RtcpCnameCallback* rtcp_cname_callback,
     uint32_t local_ssrc) {
   RtpRtcp::Configuration configuration;
   configuration.clock = clock;
@@ -93,8 +94,9 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
   configuration.receive_statistics = receive_statistics;
   configuration.outgoing_transport = outgoing_transport;
   configuration.rtt_stats = rtt_stats;
-  configuration.rtcp_packet_type_counter_observer = rtcp_statistics_observer;
-  configuration.rtcp_cname_callback = rtcp_statistics_observer;
+  configuration.rtcp_packet_type_counter_observer =
+      rtcp_packet_type_counter_observer;
+  configuration.rtcp_cname_callback = rtcp_cname_callback;
   configuration.local_media_ssrc = local_ssrc;
 
   std::unique_ptr<RtpRtcp> rtp_rtcp = RtpRtcp::Create(configuration);
@@ -184,6 +186,7 @@ void RtpVideoStreamReceiver::RtcpFeedbackBuffer::SendBufferedRtcpFeedback() {
   }
 }
 
+// DEPRECATED
 RtpVideoStreamReceiver::RtpVideoStreamReceiver(
     Clock* clock,
     Transport* transport,
@@ -192,6 +195,36 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
     const VideoReceiveStream::Config* config,
     ReceiveStatistics* rtp_receive_statistics,
     ReceiveStatisticsProxy* receive_stats_proxy,
+    ProcessThread* process_thread,
+    NackSender* nack_sender,
+    KeyFrameRequestSender* keyframe_request_sender,
+    video_coding::OnCompleteFrameCallback* complete_frame_callback,
+    rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
+    rtc::scoped_refptr<FrameTransformerInterface> frame_transformer)
+    : RtpVideoStreamReceiver(clock,
+                             transport,
+                             rtt_stats,
+                             packet_router,
+                             config,
+                             rtp_receive_statistics,
+                             receive_stats_proxy,
+                             receive_stats_proxy,
+                             process_thread,
+                             nack_sender,
+                             keyframe_request_sender,
+                             complete_frame_callback,
+                             frame_decryptor,
+                             frame_transformer) {}
+
+RtpVideoStreamReceiver::RtpVideoStreamReceiver(
+    Clock* clock,
+    Transport* transport,
+    RtcpRttStats* rtt_stats,
+    PacketRouter* packet_router,
+    const VideoReceiveStream::Config* config,
+    ReceiveStatistics* rtp_receive_statistics,
+    RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
+    RtcpCnameCallback* rtcp_cname_callback,
     ProcessThread* process_thread,
     NackSender* nack_sender,
     KeyFrameRequestSender* keyframe_request_sender,
@@ -214,7 +247,8 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
                                     rtp_receive_statistics_,
                                     transport,
                                     rtt_stats,
-                                    receive_stats_proxy,
+                                    rtcp_packet_type_counter_observer,
+                                    rtcp_cname_callback,
                                     config_.rtp.local_ssrc)),
       complete_frame_callback_(complete_frame_callback),
       keyframe_request_sender_(keyframe_request_sender),

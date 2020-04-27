@@ -167,7 +167,7 @@ class RtpVideoStreamReceiverTest : public ::testing::Test {
         ReceiveStatistics::Create(Clock::GetRealTimeClock());
     rtp_video_stream_receiver_ = std::make_unique<RtpVideoStreamReceiver>(
         Clock::GetRealTimeClock(), &mock_transport_, nullptr, nullptr, &config_,
-        rtp_receive_statistics_.get(), nullptr, process_thread_.get(),
+        rtp_receive_statistics_.get(), nullptr, nullptr, process_thread_.get(),
         &mock_nack_sender_, &mock_key_frame_request_sender_,
         &mock_on_complete_frame_callback_, nullptr, nullptr);
     VideoCodec codec;
@@ -1139,7 +1139,7 @@ TEST_F(RtpVideoStreamReceiverTest, TransformFrame) {
               RegisterTransformedFrameSinkCallback(_, config_.rtp.remote_ssrc));
   auto receiver = std::make_unique<RtpVideoStreamReceiver>(
       Clock::GetRealTimeClock(), &mock_transport_, nullptr, nullptr, &config_,
-      rtp_receive_statistics_.get(), nullptr, process_thread_.get(),
+      rtp_receive_statistics_.get(), nullptr, nullptr, process_thread_.get(),
       &mock_nack_sender_, nullptr, &mock_on_complete_frame_callback_, nullptr,
       mock_frame_transformer);
   VideoCodec video_codec;

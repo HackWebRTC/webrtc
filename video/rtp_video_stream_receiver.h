@@ -70,6 +70,7 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
                                public OnDecryptedFrameCallback,
                                public OnDecryptionStatusChangeCallback {
  public:
+  // DEPRECATED due to dependency on ReceiveStatisticsProxy.
   RtpVideoStreamReceiver(
       Clock* clock,
       Transport* transport,
@@ -81,6 +82,27 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
       const VideoReceiveStream::Config* config,
       ReceiveStatistics* rtp_receive_statistics,
       ReceiveStatisticsProxy* receive_stats_proxy,
+      ProcessThread* process_thread,
+      NackSender* nack_sender,
+      // The KeyFrameRequestSender is optional; if not provided, key frame
+      // requests are sent via the internal RtpRtcp module.
+      KeyFrameRequestSender* keyframe_request_sender,
+      video_coding::OnCompleteFrameCallback* complete_frame_callback,
+      rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
+      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer);
+
+  RtpVideoStreamReceiver(
+      Clock* clock,
+      Transport* transport,
+      RtcpRttStats* rtt_stats,
+      // The packet router is optional; if provided, the RtpRtcp module for this
+      // stream is registered as a candidate for sending REMB and transport
+      // feedback.
+      PacketRouter* packet_router,
+      const VideoReceiveStream::Config* config,
+      ReceiveStatistics* rtp_receive_statistics,
+      RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
+      RtcpCnameCallback* rtcp_cname_callback,
       ProcessThread* process_thread,
       NackSender* nack_sender,
       // The KeyFrameRequestSender is optional; if not provided, key frame
