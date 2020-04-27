@@ -30,6 +30,7 @@
 #include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "modules/audio_processing/level_estimator.h"
 #include "modules/audio_processing/ns/noise_suppressor.h"
+#include "modules/audio_processing/optionally_built_submodule_creators.h"
 #include "modules/audio_processing/render_queue_item_verifier.h"
 #include "modules/audio_processing/residual_echo_detector.h"
 #include "modules/audio_processing/rms_level.h"
@@ -141,6 +142,15 @@ class AudioProcessingImpl : public AudioProcessing {
   FRIEND_TEST_ALL_PREFIXES(ApmConfiguration, DefaultBehavior);
   FRIEND_TEST_ALL_PREFIXES(ApmConfiguration, ValidConfigBehavior);
   FRIEND_TEST_ALL_PREFIXES(ApmConfiguration, InValidConfigBehavior);
+  FRIEND_TEST_ALL_PREFIXES(ApmWithSubmodulesExcludedTest,
+                           ToggleTransientSuppressor);
+  FRIEND_TEST_ALL_PREFIXES(ApmWithSubmodulesExcludedTest,
+                           ReinitializeTransientSuppressor);
+  FRIEND_TEST_ALL_PREFIXES(ApmWithSubmodulesExcludedTest,
+                           BitexactWithDisabledModules);
+
+  void OverrideSubmoduleCreationForTesting(
+      const ApmSubmoduleCreationOverrides& overrides);
 
   // Class providing thread-safe message pipe functionality for
   // |runtime_settings_|.
@@ -330,6 +340,10 @@ class AudioProcessingImpl : public AudioProcessing {
 
   // Struct containing the Config specifying the behavior of APM.
   AudioProcessing::Config config_;
+
+  // Overrides for testing the exclusion of some submodules from the build.
+  ApmSubmoduleCreationOverrides submodule_creation_overrides_
+      RTC_GUARDED_BY(crit_capture_);
 
   // Class containing information about what submodules are active.
   SubmoduleStates submodule_states_;

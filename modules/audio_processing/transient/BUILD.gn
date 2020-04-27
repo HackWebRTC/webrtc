@@ -12,20 +12,9 @@ rtc_source_set("transient_suppressor_api") {
   sources = [ "transient_suppressor.h" ]
 }
 
-rtc_library("transient_suppressor_creator") {
-  sources = [
-    "transient_suppressor_creator.cc",
-    "transient_suppressor_creator.h",
-  ]
-  deps = [
-    ":transient_suppressor_api",
-    ":transient_suppressor_impl",
-  ]
-}
-
 rtc_library("transient_suppressor_impl") {
   visibility = [
-    ":transient_suppressor_creator",
+    "..:optionally_built_submodule_creators",
     ":transient_suppression_test",
     ":transient_suppression_unittests",
     ":click_annotate",

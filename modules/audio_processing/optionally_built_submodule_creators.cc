@@ -8,19 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_TRANSIENT_TRANSIENT_SUPPRESSOR_CREATOR_H_
-#define MODULES_AUDIO_PROCESSING_TRANSIENT_TRANSIENT_SUPPRESSOR_CREATOR_H_
+#include "modules/audio_processing/optionally_built_submodule_creators.h"
 
 #include <memory>
 
-#include "modules/audio_processing/transient/transient_suppressor.h"
+#include "modules/audio_processing/transient/transient_suppressor_impl.h"
 
 namespace webrtc {
 
-// Creates a transient suppressor.
-// Will return nullptr if WEBRTC_EXCLUDE_TRANSIENT_SUPPRESSOR is defined.
-std::unique_ptr<TransientSuppressor> CreateTransientSuppressor();
+std::unique_ptr<TransientSuppressor> CreateTransientSuppressor(
+    const ApmSubmoduleCreationOverrides& overrides) {
+#ifdef WEBRTC_EXCLUDE_TRANSIENT_SUPPRESSOR
+  return nullptr;
+#else
+  if (overrides.transient_suppression) {
+    return nullptr;
+  }
+  return std::make_unique<TransientSuppressorImpl>();
+#endif
+}
 
 }  // namespace webrtc
-
-#endif  // MODULES_AUDIO_PROCESSING_TRANSIENT_TRANSIENT_SUPPRESSOR_CREATOR_H_
