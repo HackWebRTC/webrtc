@@ -17,7 +17,9 @@
 #include "api/units/time_delta.h"
 #include "api/video/i420_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "rtc_base/cpu_time.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/time_utils.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
@@ -92,6 +94,7 @@ void DefaultVideoQualityAnalyzer::Start(std::string test_case_name,
     state_ = State::kActive;
     start_time_ = Now();
   }
+  StartMeasuringCpuProcessTime();
 }
 
 uint16_t DefaultVideoQualityAnalyzer::OnFrameCaptured(
@@ -336,6 +339,7 @@ void DefaultVideoQualityAnalyzer::OnDecoderError(uint16_t frame_id,
 }
 
 void DefaultVideoQualityAnalyzer::Stop() {
+  StopMeasuringCpuProcessTime();
   {
     rtc::CritScope crit(&lock_);
     if (state_ == State::kStopped) {
@@ -429,6 +433,7 @@ void DefaultVideoQualityAnalyzer::AddComparison(
     absl::optional<VideoFrame> rendered,
     bool dropped,
     FrameStats frame_stats) {
+  StartExcludingCpuThreadTime();
   rtc::CritScope crit(&comparison_lock_);
   analyzer_stats_.comparisons_queue_size.AddSample(comparisons_.size());
   // If there too many computations waiting in the queue, we won't provide
@@ -445,6 +450,7 @@ void DefaultVideoQualityAnalyzer::AddComparison(
                               frame_stats, overload_reason);
   }
   comparison_available_event_.Set();
+  StopExcludingCpuThreadTime();
 }
 
 void DefaultVideoQualityAnalyzer::ProcessComparisonsThread(void* obj) {
@@ -481,7 +487,9 @@ void DefaultVideoQualityAnalyzer::ProcessComparisons() {
       continue;
     }
 
+    StartExcludingCpuThreadTime();
     ProcessComparison(comparison.value());
+    StopExcludingCpuThreadTime();
   }
 }
 
@@ -565,12 +573,16 @@ void DefaultVideoQualityAnalyzer::ProcessComparison(
 }
 
 void DefaultVideoQualityAnalyzer::ReportResults() {
+  using ::webrtc::test::ImproveDirection;
+
   rtc::CritScope crit1(&lock_);
   rtc::CritScope crit2(&comparison_lock_);
   for (auto& item : stream_stats_) {
     ReportResults(GetTestCaseName(item.first), item.second,
                   stream_frame_counters_.at(item.first));
   }
+  test::PrintResult("cpu_usage", "", test_label_.c_str(), GetCpuUsagePercent(),
+                    "%", false, ImproveDirection::kSmallerIsBetter);
   LogFrameCounters("Global", frame_counters_);
   for (auto& item : stream_stats_) {
     LogFrameCounters(item.first, stream_frame_counters_.at(item.first));
@@ -700,6 +712,33 @@ std::string DefaultVideoQualityAnalyzer::GetTestCaseName(
 
 Timestamp DefaultVideoQualityAnalyzer::Now() {
   return clock_->CurrentTime();
+}
+
+void DefaultVideoQualityAnalyzer::StartMeasuringCpuProcessTime() {
+  rtc::CritScope lock(&cpu_measurement_lock_);
+  cpu_time_ -= rtc::GetProcessCpuTimeNanos();
+  wallclock_time_ -= rtc::SystemTimeNanos();
+}
+
+void DefaultVideoQualityAnalyzer::StopMeasuringCpuProcessTime() {
+  rtc::CritScope lock(&cpu_measurement_lock_);
+  cpu_time_ += rtc::GetProcessCpuTimeNanos();
+  wallclock_time_ += rtc::SystemTimeNanos();
+}
+
+void DefaultVideoQualityAnalyzer::StartExcludingCpuThreadTime() {
+  rtc::CritScope lock(&cpu_measurement_lock_);
+  cpu_time_ += rtc::GetThreadCpuTimeNanos();
+}
+
+void DefaultVideoQualityAnalyzer::StopExcludingCpuThreadTime() {
+  rtc::CritScope lock(&cpu_measurement_lock_);
+  cpu_time_ -= rtc::GetThreadCpuTimeNanos();
+}
+
+double DefaultVideoQualityAnalyzer::GetCpuUsagePercent() {
+  rtc::CritScope lock(&cpu_measurement_lock_);
+  return static_cast<double>(cpu_time_) / wallclock_time_ * 100.0;
 }
 
 DefaultVideoQualityAnalyzer::FrameStats::FrameStats(std::string stream_label,

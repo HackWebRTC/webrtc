@@ -293,6 +293,12 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   std::string GetTestCaseName(const std::string& stream_label) const;
   Timestamp Now();
 
+  void StartMeasuringCpuProcessTime();
+  void StopMeasuringCpuProcessTime();
+  void StartExcludingCpuThreadTime();
+  void StopExcludingCpuThreadTime();
+  double GetCpuUsagePercent();
+
   const bool heavy_metrics_computation_enabled_;
   const int max_frames_in_flight_per_stream_count_;
   webrtc::Clock* const clock_;
@@ -337,6 +343,10 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
 
   std::vector<std::unique_ptr<rtc::PlatformThread>> thread_pool_;
   rtc::Event comparison_available_event_;
+
+  rtc::CriticalSection cpu_measurement_lock_;
+  int64_t cpu_time_ RTC_GUARDED_BY(cpu_measurement_lock_) = 0;
+  int64_t wallclock_time_ RTC_GUARDED_BY(cpu_measurement_lock_) = 0;
 };
 
 }  // namespace webrtc_pc_e2e
