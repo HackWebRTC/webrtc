@@ -44,12 +44,17 @@ bool Resource::IsAdaptationUpAllowed(
   return true;
 }
 
-ResourceListenerResponse Resource::OnResourceUsageStateMeasured(
-    ResourceUsageState usage_state) {
+void Resource::OnAdaptationApplied(
+    const VideoStreamInputState& input_state,
+    const VideoSourceRestrictions& restrictions_before,
+    const VideoSourceRestrictions& restrictions_after,
+    const Resource& reason_resource) {}
+
+void Resource::OnResourceUsageStateMeasured(ResourceUsageState usage_state) {
   usage_state_ = usage_state;
   if (!listener_)
-    return ResourceListenerResponse::kNothing;
-  return listener_->OnResourceUsageStateMeasured(*this);
+    return;
+  listener_->OnResourceUsageStateMeasured(*this);
 }
 
 }  // namespace webrtc

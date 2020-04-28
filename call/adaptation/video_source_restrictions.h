@@ -68,6 +68,9 @@ class VideoSourceRestrictions {
 bool DidIncreaseResolution(VideoSourceRestrictions restrictions_before,
                            VideoSourceRestrictions restrictions_after);
 
+bool DidDecreaseFrameRate(VideoSourceRestrictions restrictions_before,
+                          VideoSourceRestrictions restrictions_after);
+
 }  // namespace webrtc
 
 #endif  // CALL_ADAPTATION_VIDEO_SOURCE_RESTRICTIONS_H_

@@ -67,13 +67,22 @@ void VideoSourceRestrictions::set_max_frame_rate(
 
 bool DidIncreaseResolution(VideoSourceRestrictions restrictions_before,
                            VideoSourceRestrictions restrictions_after) {
-  if (!restrictions_before.max_pixels_per_frame().has_value()) {
+  if (!restrictions_before.max_pixels_per_frame().has_value())
     return false;
-  }
   if (!restrictions_after.max_pixels_per_frame().has_value())
     return true;
   return restrictions_after.max_pixels_per_frame().value() >
          restrictions_before.max_pixels_per_frame().value();
+}
+
+bool DidDecreaseFrameRate(VideoSourceRestrictions restrictions_before,
+                          VideoSourceRestrictions restrictions_after) {
+  if (!restrictions_after.max_frame_rate().has_value())
+    return false;
+  if (!restrictions_before.max_frame_rate().has_value())
+    return true;
+  return restrictions_after.max_frame_rate().value() <
+         restrictions_before.max_frame_rate().value();
 }
 
 }  // namespace webrtc

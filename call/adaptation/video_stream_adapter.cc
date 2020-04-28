@@ -534,12 +534,10 @@ VideoSourceRestrictions VideoStreamAdapter::PeekNextRestrictions(
   return restrictor_copy.source_restrictions();
 }
 
-ResourceListenerResponse VideoStreamAdapter::ApplyAdaptation(
-    const Adaptation& adaptation) {
+void VideoStreamAdapter::ApplyAdaptation(const Adaptation& adaptation) {
   RTC_DCHECK_EQ(adaptation.validation_id_, adaptation_validation_id_);
-  if (adaptation.status() != Adaptation::Status::kValid) {
-    return ResourceListenerResponse::kNothing;
-  }
+  if (adaptation.status() != Adaptation::Status::kValid)
+    return;
   // Remember the input pixels and fps of this adaptation. Used to avoid
   // adapting again before this adaptation has had an effect.
   last_adaptation_request_.emplace(AdaptationRequest{
@@ -549,25 +547,6 @@ ResourceListenerResponse VideoStreamAdapter::ApplyAdaptation(
   // Adapt!
   source_restrictor_->ApplyAdaptationStep(adaptation.step(),
                                           degradation_preference_);
-  // In BALANCED, if requested FPS is higher or close to input FPS to the target
-  // we tell the QualityScaler to increase its frequency.
-  // TODO(hbos): Don't have QualityScaler-specific logic here. If the
-  // QualityScaler wants to add special logic depending on what effects
-  // adaptation had, it should listen to changes to the VideoSourceRestrictions
-  // instead.
-  if (degradation_preference_ == DegradationPreference::BALANCED &&
-      adaptation.step().type == Adaptation::StepType::kDecreaseFrameRate) {
-    absl::optional<int> min_diff =
-        balanced_settings_.MinFpsDiff(input_state_.frame_size_pixels().value());
-    if (min_diff && input_state_.frames_per_second().value() > 0) {
-      int fps_diff =
-          input_state_.frames_per_second().value() - adaptation.step().target;
-      if (fps_diff < min_diff.value()) {
-        return ResourceListenerResponse::kQualityScalerShouldIncreaseFrequency;
-      }
-    }
-  }
-  return ResourceListenerResponse::kNothing;
 }
 
 }  // namespace webrtc

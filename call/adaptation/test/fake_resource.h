@@ -25,14 +25,9 @@ class FakeResource : public Resource {
 
   void set_usage_state(ResourceUsageState usage_state);
 
-  absl::optional<ResourceListenerResponse> last_response() const {
-    return last_response_;
-  }
-
   std::string name() const override { return name_; }
 
  private:
-  absl::optional<ResourceListenerResponse> last_response_;
   const std::string name_;
 };
 

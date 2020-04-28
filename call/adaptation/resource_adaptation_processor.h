@@ -52,8 +52,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
 
   // ResourceListener implementation.
   // Triggers OnResourceUnderuse() or OnResourceOveruse().
-  ResourceListenerResponse OnResourceUsageStateMeasured(
-      const Resource& resource) override;
+  void OnResourceUsageStateMeasured(const Resource& resource) override;
 
   // May trigger 1-2 adaptations. It is meant to reduce resolution - useful if a
   // frame was dropped due to its size - but if you look at the implementation
@@ -72,7 +71,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   // informing listeners of the new VideoSourceRestriction and adaptation
   // counters.
   void OnResourceUnderuse(const Resource& reason_resource);
-  ResourceListenerResponse OnResourceOveruse(const Resource& reason_resource);
+  void OnResourceOveruse(const Resource& reason_resource);
 
   // Needs to be invoked any time |degradation_preference_| or |is_screenshare_|
   // changes to ensure |effective_degradation_preference_| is up-to-date.
@@ -93,6 +92,18 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   // Responsible for generating and applying possible adaptations.
   const std::unique_ptr<VideoStreamAdapter> stream_adapter_;
   VideoSourceRestrictions last_reported_source_restrictions_;
+  // Prevents recursion.
+  //
+  // This is used to prevent triggering resource adaptation in the process of
+  // already handling resouce adaptation, since that could cause the same states
+  // to be modified in unexpected ways. Example:
+  //
+  // Resource::OnResourceUsageStateMeasured() ->
+  // ResourceAdaptationProcessor::OnResourceOveruse() ->
+  // Resource::OnAdaptationApplied() ->
+  // Resource::OnResourceUsageStateMeasured() ->
+  // ResourceAdaptationProcessor::OnResourceOveruse() // Boom, not allowed.
+  bool processing_in_progress_;
 };
 
 }  // namespace webrtc

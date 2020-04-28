@@ -31,6 +31,7 @@
 #include "common_video/include/video_frame_buffer.h"
 #include "media/base/video_adapter.h"
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
+#include "modules/video_coding/utility/quality_scaler.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/logging.h"
@@ -49,7 +50,6 @@
 
 namespace webrtc {
 
-using ScaleReason = VideoAdaptationReason;
 using ::testing::_;
 using ::testing::AllOf;
 using ::testing::Field;
@@ -146,6 +146,25 @@ class CpuOveruseDetectorProxy : public OveruseFrameDetector {
   int last_target_framerate_fps_ RTC_GUARDED_BY(lock_);
 };
 
+class FakeQualityScalerQpUsageHandlerCallback
+    : public QualityScalerQpUsageHandlerCallbackInterface {
+ public:
+  FakeQualityScalerQpUsageHandlerCallback()
+      : QualityScalerQpUsageHandlerCallbackInterface() {}
+  ~FakeQualityScalerQpUsageHandlerCallback() override {}
+
+  void OnQpUsageHandled(bool clear_qp_samples) override {
+    clear_qp_samples_result_ = clear_qp_samples;
+  }
+
+  absl::optional<bool> clear_qp_samples_result() const {
+    return clear_qp_samples_result_;
+  }
+
+ private:
+  absl::optional<bool> clear_qp_samples_result_;
+};
+
 class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
  public:
   VideoStreamEncoderUnderTest(SendStatisticsProxy* stats_proxy,
@@ -168,47 +187,6 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
                              VideoAdaptationReason::kCpu);
   }
 
-  void PostTaskAndWait(bool down, VideoAdaptationReason reason) {
-    PostTaskAndWait(down, reason, /*expected_results=*/true);
-  }
-
-  void PostTaskAndWait(bool down,
-                       VideoAdaptationReason reason,
-                       bool expected_results) {
-    rtc::Event event;
-    encoder_queue()->PostTask([this, &event, reason, down, expected_results] {
-      ResourceUsageState usage_state =
-          down ? ResourceUsageState::kOveruse : ResourceUsageState::kUnderuse;
-
-      FakeResource* resource = nullptr;
-      switch (reason) {
-        case VideoAdaptationReason::kQuality:
-          resource = fake_quality_resource_.get();
-          break;
-        case VideoAdaptationReason::kCpu:
-          resource = fake_cpu_resource_.get();
-          break;
-        default:
-          RTC_NOTREACHED();
-      }
-
-      resource->set_usage_state(usage_state);
-      if (!expected_results) {
-        ASSERT_EQ(VideoAdaptationReason::kQuality, reason)
-            << "We can only assert adaptation result for quality resources";
-        EXPECT_EQ(
-            ResourceListenerResponse::kQualityScalerShouldIncreaseFrequency,
-            resource->last_response());
-      } else {
-        EXPECT_EQ(ResourceListenerResponse::kNothing,
-                  resource->last_response());
-      }
-
-      event.Set();
-    });
-    ASSERT_TRUE(event.Wait(5000));
-  }
-
   // This is used as a synchronisation mechanism, to make sure that the
   // encoder queue is not blocked before we start sending it frames.
   void WaitUntilTaskQueueIsIdle() {
@@ -217,25 +195,56 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
     ASSERT_TRUE(event.Wait(5000));
   }
 
+  // Triggers resource usage measurements on the fake CPU resource.
   void TriggerCpuOveruse() {
-    PostTaskAndWait(/*down=*/true, VideoAdaptationReason::kCpu);
+    rtc::Event event;
+    encoder_queue()->PostTask([this, &event] {
+      fake_cpu_resource_->set_usage_state(ResourceUsageState::kOveruse);
+      event.Set();
+    });
+    ASSERT_TRUE(event.Wait(5000));
+  }
+  void TriggerCpuUnderuse() {
+    rtc::Event event;
+    encoder_queue()->PostTask([this, &event] {
+      fake_cpu_resource_->set_usage_state(ResourceUsageState::kUnderuse);
+      event.Set();
+    });
+    ASSERT_TRUE(event.Wait(5000));
   }
 
-  void TriggerCpuNormalUsage() {
-    PostTaskAndWait(/*down=*/false, VideoAdaptationReason::kCpu);
-  }
-
+  // Triggers resource usage measurements on the fake quality resource.
   void TriggerQualityLow() {
-    PostTaskAndWait(/*down=*/true, VideoAdaptationReason::kQuality);
+    rtc::Event event;
+    encoder_queue()->PostTask([this, &event] {
+      fake_quality_resource_->set_usage_state(ResourceUsageState::kOveruse);
+      event.Set();
+    });
+    ASSERT_TRUE(event.Wait(5000));
   }
-
-  void TriggerQualityLowExpectFalse() {
-    PostTaskAndWait(/*down=*/true, VideoAdaptationReason::kQuality,
-                    /*expected_results=*/false);
-  }
-
   void TriggerQualityHigh() {
-    PostTaskAndWait(/*down=*/false, VideoAdaptationReason::kQuality);
+    rtc::Event event;
+    encoder_queue()->PostTask([this, &event] {
+      fake_quality_resource_->set_usage_state(ResourceUsageState::kUnderuse);
+      event.Set();
+    });
+    ASSERT_TRUE(event.Wait(5000));
+  }
+
+  // Fakes high QP resource usage measurements on the real
+  // QualityScalerResource. Returns whether or not QP samples would have been
+  // cleared if this had been a real signal from the QualityScaler.
+  bool TriggerQualityScalerHighQpAndReturnIfQpSamplesShouldBeCleared() {
+    rtc::Event event;
+    rtc::scoped_refptr<FakeQualityScalerQpUsageHandlerCallback> callback =
+        new FakeQualityScalerQpUsageHandlerCallback();
+    encoder_queue()->PostTask([this, &event, callback] {
+      quality_scaler_resource_for_testing()->OnReportQpUsageHigh(callback);
+      event.Set();
+    });
+    EXPECT_TRUE(event.Wait(5000));
+    EXPECT_TRUE(callback->clear_qp_samples_result().has_value());
+    return callback->clear_qp_samples_result().value();
   }
 
   CpuOveruseDetectorProxy* overuse_detector_proxy_;
@@ -1830,7 +1839,7 @@ TEST_F(VideoStreamEncoderTest, TestCpuDowngrades_BalancedMode) {
     sink_.WaitForEncodedFrame(t);
     t += frame_interval_ms;
 
-    video_stream_encoder_->TriggerCpuNormalUsage();
+    video_stream_encoder_->TriggerCpuUnderuse();
     VerifyBalancedModeFpsRange(
         video_source_.sink_wants(),
         *video_source_.last_sent_width() * *video_source_.last_sent_height());
@@ -2024,7 +2033,7 @@ TEST_F(VideoStreamEncoderTest, StatsTracksCpuAdaptationStats) {
   EXPECT_EQ(1, stats.number_of_cpu_adapt_changes);
 
   // Trigger CPU normal use.
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   video_source_.IncomingCapturedFrame(CreateFrame(3, kWidth, kHeight));
   WaitForEncodedFrame(3);
 
@@ -2095,7 +2104,7 @@ TEST_F(VideoStreamEncoderTest, SwitchingSourceKeepsCpuAdaptation) {
   EXPECT_EQ(1, stats.number_of_cpu_adapt_changes);
 
   // Trigger CPU normal use.
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   new_video_source.IncomingCapturedFrame(CreateFrame(6, kWidth, kHeight));
   WaitForEncodedFrame(6);
   stats = stats_proxy_->GetStats();
@@ -2397,7 +2406,7 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(2, stats.number_of_cpu_adapt_changes);
 
   // Trigger CPU normal usage.
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   video_source_.IncomingCapturedFrame(CreateFrame(sequence, kWidth, kHeight));
   WaitForEncodedFrame(sequence++);
   stats = stats_proxy_->GetStats();
@@ -2418,7 +2427,7 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(3, stats.number_of_cpu_adapt_changes);
 
   // Trigger CPU normal usage.
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   new_video_source.IncomingCapturedFrame(
       CreateFrame(sequence, kWidth, kHeight));
   WaitForEncodedFrame(sequence++);
@@ -2581,7 +2590,7 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(0, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
 
   // Trigger adapt up, expect no change.
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   VerifyFpsMaxResolutionMax(source.sink_wants());
   EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_resolution);
   EXPECT_EQ(0, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
@@ -2610,7 +2619,7 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(0, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
 
   // Trigger adapt up, expect no change.
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   VerifyFpsMaxResolutionMax(source.sink_wants());
   EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_framerate);
   EXPECT_EQ(0, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
@@ -2836,7 +2845,7 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(1, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
 
   // Trigger adapt up, expect no restriction.
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(kWidth, kHeight);
@@ -2854,7 +2863,7 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(3, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
 
   // Trigger adapt up, expect no restriction.
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   sink_.WaitForEncodedFrame(kWidth, kHeight);
@@ -3062,8 +3071,11 @@ TEST_F(BalancedDegradationTest, AdaptDownReturnsFalseIfFpsDiffLtThreshold) {
   VerifyFpsMaxResolutionMax(source_.sink_wants());
 
   // Trigger adapt down, expect scaled down framerate (640x360@24fps).
-  // Fps diff (input-requested:0) < threshold, expect AdaptDown to return false.
-  video_stream_encoder_->TriggerQualityLowExpectFalse();
+  // Fps diff (input-requested:0) < threshold, expect adapting down not to clear
+  // QP samples.
+  EXPECT_FALSE(
+      video_stream_encoder_
+          ->TriggerQualityScalerHighQpAndReturnIfQpSamplesShouldBeCleared());
   VerifyFpsEqResolutionMax(source_.sink_wants(), 24);
 
   video_stream_encoder_->Stop();
@@ -3085,8 +3097,11 @@ TEST_F(BalancedDegradationTest, AdaptDownReturnsTrueIfFpsDiffGeThreshold) {
   VerifyFpsMaxResolutionMax(source_.sink_wants());
 
   // Trigger adapt down, expect scaled down framerate (640x360@24fps).
-  // Fps diff (input-requested:1) == threshold, expect AdaptDown to return true.
-  video_stream_encoder_->TriggerQualityLow();
+  // Fps diff (input-requested:1) == threshold, expect adapting down to clear QP
+  // samples.
+  EXPECT_TRUE(
+      video_stream_encoder_
+          ->TriggerQualityScalerHighQpAndReturnIfQpSamplesShouldBeCleared());
   VerifyFpsEqResolutionMax(source_.sink_wants(), 24);
 
   video_stream_encoder_->Stop();
@@ -3387,7 +3402,7 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger cpu adapt up, expect upscaled resolution (480x270).
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(timestamp_ms);
@@ -3398,7 +3413,7 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger cpu adapt up, expect upscaled resolution (640x360).
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(timestamp_ms);
@@ -3409,7 +3424,7 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger cpu adapt up, expect upscaled resolution (960x540).
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(timestamp_ms);
@@ -3421,7 +3436,7 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger cpu adapt up, no cpu downgrades, expect no change (960x540).
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(timestamp_ms);
@@ -3670,7 +3685,7 @@ TEST_F(VideoStreamEncoderTest, OveruseDetectorUpdatedOnReconfigureAndAdaption) {
   stats = stats_proxy_->GetStats();
   stats.input_frame_rate = adapted_framerate / 2;
   stats_proxy_->SetMockStats(stats);
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   video_stream_encoder_->WaitUntilTaskQueueIsIdle();
   EXPECT_EQ(
       video_stream_encoder_->overuse_detector_proxy_->GetLastTargetFramerate(),
@@ -3737,7 +3752,7 @@ TEST_F(VideoStreamEncoderTest,
   stats = stats_proxy_->GetStats();
   stats.input_frame_rate = adapted_framerate;
   stats_proxy_->SetMockStats(stats);
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   video_stream_encoder_->WaitUntilTaskQueueIsIdle();
   EXPECT_EQ(
       video_stream_encoder_->overuse_detector_proxy_->GetLastTargetFramerate(),
@@ -4113,7 +4128,7 @@ TEST_F(VideoStreamEncoderTest,
   WaitForEncodedFrame((kFrameWidth * 3) / 4, (kFrameHeight * 3) / 4);
 
   // Trigger CPU normal use, return to original resolution.
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   video_source_.IncomingCapturedFrame(
       CreateFrame(3 * kFrameIntervalMs, kFrameWidth, kFrameHeight));
   WaitForEncodedFrame(kFrameWidth, kFrameHeight);
@@ -4187,7 +4202,7 @@ TEST_F(VideoStreamEncoderTest,
               kErrorMargin);
 
   // Go back up one step.
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   num_frames_dropped = 0;
   for (int i = 0; i < max_framerate_; ++i) {
     timestamp_ms += kFrameIntervalMs;
@@ -4203,7 +4218,7 @@ TEST_F(VideoStreamEncoderTest,
               kErrorMargin);
 
   // Go back up to original mode.
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   num_frames_dropped = 0;
   for (int i = 0; i < max_framerate_; ++i) {
     timestamp_ms += kFrameIntervalMs;
@@ -4515,7 +4530,7 @@ TEST_F(VideoStreamEncoderTest, AdaptWithTwoReasonsAndDifferentOrder_Framerate) {
   EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger cpu adapt up, expect increased fps (640x360@30fps).
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(timestamp_ms);
@@ -4541,7 +4556,7 @@ TEST_F(VideoStreamEncoderTest, AdaptWithTwoReasonsAndDifferentOrder_Framerate) {
   EXPECT_EQ(2, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger cpu adapt up,  expect no restriction (1280x720fps@30fps).
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(kWidth, kHeight);
@@ -4618,7 +4633,7 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger cpu adapt up, expect upscaled resolution (640x360@15fps).
-  video_stream_encoder_->TriggerCpuNormalUsage();
+  video_stream_encoder_->TriggerCpuUnderuse();
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(timestamp_ms);

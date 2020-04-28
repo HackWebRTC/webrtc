@@ -138,8 +138,7 @@ class VideoStreamAdapter {
   VideoSourceRestrictions PeekNextRestrictions(
       const Adaptation& adaptation) const;
   // Updates source_restrictions() based according to the Adaptation.
-  // TODO(hbos): Delete ResourceListenerResponse!
-  ResourceListenerResponse ApplyAdaptation(const Adaptation& adaptation);
+  void ApplyAdaptation(const Adaptation& adaptation);
 
  private:
   class VideoSourceRestrictor;

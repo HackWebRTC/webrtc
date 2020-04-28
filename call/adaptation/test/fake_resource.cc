@@ -20,7 +20,7 @@ FakeResource::FakeResource(std::string name)
 FakeResource::~FakeResource() {}
 
 void FakeResource::set_usage_state(ResourceUsageState usage_state) {
-  last_response_ = OnResourceUsageStateMeasured(usage_state);
+  OnResourceUsageStateMeasured(usage_state);
 }
 
 }  // namespace webrtc

@@ -106,6 +106,7 @@ class VideoStreamEncoderResourceManager
   // TODO(hbos): Can we get rid of this?
   void MapResourceToReason(Resource* resource, VideoAdaptationReason reason);
   std::vector<Resource*> MappedResources() const;
+  QualityScalerResource* quality_scaler_resource_for_testing();
   // If true, the VideoStreamEncoder should eexecute its logic to maybe drop
   // frames baseed on size and bitrate.
   bool DropInitialFrames() const;
@@ -133,11 +134,6 @@ class VideoStreamEncoderResourceManager
   class InitialFrameDropper;
 
   VideoAdaptationReason GetReasonFromResource(const Resource& resource) const;
-
-  // Performs the adaptation by getting the next target, applying it and
-  // informing listeners of the new VideoSourceRestriction and adapt counters.
-  void OnResourceUnderuse(const Resource& reason_resource);
-  ResourceListenerResponse OnResourceOveruse(const Resource& reason_resource);
 
   CpuOveruseOptions GetCpuOveruseOptions() const;
   int LastInputFrameSizeOrDefault() const;

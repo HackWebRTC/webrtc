@@ -21,6 +21,8 @@
 
 namespace webrtc {
 
+class ResourceAdaptationProcessor;
+
 // Handles interaction with the QualityScaler.
 // TODO(hbos): Add unittests specific to this class, it is currently only tested
 // indirectly by usage in the ResourceAdaptationProcessor (which is only tested
@@ -29,7 +31,8 @@ namespace webrtc {
 class QualityScalerResource : public Resource,
                               public QualityScalerQpUsageHandlerInterface {
  public:
-  QualityScalerResource();
+  explicit QualityScalerResource(
+      ResourceAdaptationProcessor* adaptation_processor);
 
   bool is_started() const;
 
@@ -52,8 +55,17 @@ class QualityScalerResource : public Resource,
 
   std::string name() const override { return "QualityScalerResource"; }
 
+  // Resource implementation.
+  void OnAdaptationApplied(const VideoStreamInputState& input_state,
+                           const VideoSourceRestrictions& restrictions_before,
+                           const VideoSourceRestrictions& restrictions_after,
+                           const Resource& reason_resource) override;
+
  private:
+  ResourceAdaptationProcessor* const adaptation_processor_;
   std::unique_ptr<QualityScaler> quality_scaler_;
+  rtc::scoped_refptr<QualityScalerQpUsageHandlerCallbackInterface>
+      pending_qp_usage_callback_;
 };
 
 }  // namespace webrtc

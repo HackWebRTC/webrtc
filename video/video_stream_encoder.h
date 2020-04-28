@@ -118,6 +118,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
                                 VideoAdaptationReason reason)
       RTC_RUN_ON(&encoder_queue_);
 
+  QualityScalerResource* quality_scaler_resource_for_testing();
+
  private:
   class VideoFrameInfo {
    public:

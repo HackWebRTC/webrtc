@@ -1950,4 +1950,10 @@ void VideoStreamEncoder::InjectAdaptationResource(
   resource_adaptation_processor_.AddResource(resource);
 }
 
+QualityScalerResource*
+VideoStreamEncoder::quality_scaler_resource_for_testing() {
+  RTC_DCHECK_RUN_ON(&encoder_queue_);
+  return stream_resource_manager_.quality_scaler_resource_for_testing();
+}
+
 }  // namespace webrtc
