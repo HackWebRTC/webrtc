@@ -35,6 +35,7 @@
 #include "test/pc/e2e/stats_poller.h"
 #include "test/pc/e2e/test_peer_factory.h"
 #include "test/testsupport/file_utils.h"
+#include "test/testsupport/perf_test.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
@@ -342,6 +343,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
     real_test_duration_ = end_time - start_time;
   }
 
+  ReportGeneralTestResults();
   audio_quality_analyzer_->Stop();
   video_quality_analyzer_injection_helper_->Stop();
   for (auto& reporter : quality_metrics_reporters_) {
@@ -537,9 +539,10 @@ void PeerConnectionE2EQualityTest::SetupCall(const RunParams& run_params) {
 
   ExchangeIceCandidates(&signaling_interceptor);
   // This means that ICE and DTLS are connected.
-  ASSERT_TRUE_WAIT(bob_->IsIceConnected(), kDefaultTimeoutMs);
-  ASSERT_TRUE_WAIT(alice_->IsIceConnected(), kDefaultTimeoutMs);
-  RTC_LOG(INFO) << "Call is started (all peers are connected).";
+  WAIT(bob_->IsIceConnected(), kDefaultTimeoutMs);
+  bob_connected_ = bob_->IsIceConnected();
+  WAIT(alice_->IsIceConnected(), kDefaultTimeoutMs);
+  alice_connected_ = alice_->IsIceConnected();
 }
 
 void PeerConnectionE2EQualityTest::ExchangeOfferAnswer(
@@ -633,6 +636,15 @@ void PeerConnectionE2EQualityTest::TearDownCall() {
   bob_.reset();
 
   media_helper_.reset();
+}
+
+void PeerConnectionE2EQualityTest::ReportGeneralTestResults() {
+  test::PrintResult(
+      "alice_connected", "", test_case_name_, alice_connected_, "unitless",
+      /*important=*/false, test::ImproveDirection::kBiggerIsBetter);
+  test::PrintResult(
+      "bob_connected", "", test_case_name_, bob_connected_, "unitless",
+      /*important=*/false, test::ImproveDirection::kBiggerIsBetter);
 }
 
 Timestamp PeerConnectionE2EQualityTest::Now() const {

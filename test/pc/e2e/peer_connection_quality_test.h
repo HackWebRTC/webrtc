@@ -95,6 +95,7 @@ class PeerConnectionE2EQualityTest
       const std::vector<rtc::scoped_refptr<TestVideoCapturerVideoTrackSource>>&
           sources);
   void TearDownCall();
+  void ReportGeneralTestResults();
   Timestamp Now() const;
 
   Clock* const clock_;
@@ -132,6 +133,9 @@ class PeerConnectionE2EQualityTest
   // This task queue will be created before call set up and will be destroyed
   // immediately before call tear down.
   std::unique_ptr<TaskQueueForTest> task_queue_;
+
+  bool alice_connected_ = false;
+  bool bob_connected_ = false;
 };
 
 }  // namespace webrtc_pc_e2e

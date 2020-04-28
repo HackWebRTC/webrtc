@@ -351,6 +351,7 @@ if (rtc_include_tests) {
       ":video_quality_metrics_reporter",
       "../..:field_trial",
       "../..:fileutils",
+      "../..:perf_test",
       "../../../api:audio_quality_analyzer_api",
       "../../../api:libjingle_peerconnection_api",
       "../../../api:media_stream_interface",
