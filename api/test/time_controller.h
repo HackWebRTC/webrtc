@@ -57,8 +57,9 @@ class TimeController {
   // for the given |duration|.
   virtual void AdvanceTime(TimeDelta duration) = 0;
 
-  // Waits until done() == true, polling done() in small time intervals.
-  bool Wait(const std::function<bool()>& done,
+  // Waits until condition() == true, polling condition() in small time
+  // intervals.
+  bool Wait(const std::function<bool()>& condition,
             TimeDelta max_duration = TimeDelta::Seconds(5));
 };
 
