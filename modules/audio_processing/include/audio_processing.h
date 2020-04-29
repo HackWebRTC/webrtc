@@ -884,8 +884,8 @@ class EchoDetector : public rtc::RefCountInterface {
                                     std::vector<float>* packed_buffer);
 
   struct Metrics {
-    double echo_likelihood;
-    double echo_likelihood_recent_max;
+    absl::optional<double> echo_likelihood;
+    absl::optional<double> echo_likelihood_recent_max;
   };
 
   // Collect current metrics from the echo detector.
