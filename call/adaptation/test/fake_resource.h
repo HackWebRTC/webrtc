@@ -24,11 +24,24 @@ class FakeResource : public Resource {
   ~FakeResource() override;
 
   void set_usage_state(ResourceUsageState usage_state);
+  void set_is_adaptation_up_allowed(bool is_adaptation_up_allowed);
+  size_t num_adaptations_applied() const;
 
+  // Resource implementation.
   std::string name() const override { return name_; }
+  bool IsAdaptationUpAllowed(const VideoStreamInputState& input_state,
+                             const VideoSourceRestrictions& restrictions_before,
+                             const VideoSourceRestrictions& restrictions_after,
+                             const Resource& reason_resource) const override;
+  void OnAdaptationApplied(const VideoStreamInputState& input_state,
+                           const VideoSourceRestrictions& restrictions_before,
+                           const VideoSourceRestrictions& restrictions_after,
+                           const Resource& reason_resource) override;
 
  private:
   const std::string name_;
+  bool is_adaptation_up_allowed_;
+  size_t num_adaptations_applied_;
 };
 
 }  // namespace webrtc

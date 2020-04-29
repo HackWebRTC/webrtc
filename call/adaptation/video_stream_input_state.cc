@@ -17,7 +17,7 @@ namespace webrtc {
 VideoStreamInputState::VideoStreamInputState()
     : has_input_(false),
       frame_size_pixels_(absl::nullopt),
-      frames_per_second_(absl::nullopt),
+      frames_per_second_(0),
       video_codec_type_(VideoCodecType::kVideoCodecGeneric),
       min_pixels_per_frame_(kDefaultMinPixelsPerFrame) {}
 
@@ -30,8 +30,7 @@ void VideoStreamInputState::set_frame_size_pixels(
   frame_size_pixels_ = frame_size_pixels;
 }
 
-void VideoStreamInputState::set_frames_per_second(
-    absl::optional<int> frames_per_second) {
+void VideoStreamInputState::set_frames_per_second(int frames_per_second) {
   frames_per_second_ = frames_per_second;
 }
 
@@ -52,7 +51,7 @@ absl::optional<int> VideoStreamInputState::frame_size_pixels() const {
   return frame_size_pixels_;
 }
 
-absl::optional<int> VideoStreamInputState::frames_per_second() const {
+int VideoStreamInputState::frames_per_second() const {
   return frames_per_second_;
 }
 
@@ -65,8 +64,7 @@ int VideoStreamInputState::min_pixels_per_frame() const {
 }
 
 bool VideoStreamInputState::HasInputFrameSizeAndFramesPerSecond() const {
-  return has_input_ && frame_size_pixels_.has_value() &&
-         frames_per_second_.has_value();
+  return has_input_ && frame_size_pixels_.has_value();
 }
 
 }  // namespace webrtc

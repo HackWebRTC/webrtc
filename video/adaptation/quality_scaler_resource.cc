@@ -116,8 +116,8 @@ void QualityScalerResource::OnAdaptationApplied(
       DidDecreaseFrameRate(restrictions_before, restrictions_after)) {
     absl::optional<int> min_diff = BalancedDegradationSettings().MinFpsDiff(
         input_state.frame_size_pixels().value());
-    if (min_diff && input_state.frames_per_second().value() > 0) {
-      int fps_diff = input_state.frames_per_second().value() -
+    if (min_diff && input_state.frames_per_second() > 0) {
+      int fps_diff = input_state.frames_per_second() -
                      restrictions_after.max_frame_rate().value();
       if (fps_diff < min_diff.value()) {
         clear_qp_samples = false;

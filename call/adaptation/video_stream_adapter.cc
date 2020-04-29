@@ -433,7 +433,7 @@ Adaptation VideoStreamAdapter::GetAdaptationUp() const {
     }
     case DegradationPreference::MAINTAIN_RESOLUTION: {
       // Scale up framerate.
-      int target_fps = input_state_.frames_per_second().value();
+      int target_fps = input_state_.frames_per_second();
       if (source_restrictor_->adaptation_counters().fps_adaptations == 1) {
         RTC_LOG(LS_INFO) << "Removing framerate down-scaling setting.";
         target_fps = std::numeric_limits<int>::max();
@@ -505,8 +505,7 @@ Adaptation VideoStreamAdapter::GetAdaptationDown() const {
           min_pixel_limit_reached);
     }
     case DegradationPreference::MAINTAIN_RESOLUTION: {
-      int target_fps =
-          GetLowerFrameRateThan(input_state_.frames_per_second().value());
+      int target_fps = GetLowerFrameRateThan(input_state_.frames_per_second());
       if (!source_restrictor_->CanDecreaseFrameRateTo(target_fps)) {
         return Adaptation(adaptation_validation_id_,
                           Adaptation::Status::kLimitReached);
@@ -542,7 +541,7 @@ void VideoStreamAdapter::ApplyAdaptation(const Adaptation& adaptation) {
   // adapting again before this adaptation has had an effect.
   last_adaptation_request_.emplace(AdaptationRequest{
       input_state_.frame_size_pixels().value(),
-      input_state_.frames_per_second().value(),
+      input_state_.frames_per_second(),
       AdaptationRequest::GetModeFromAdaptationAction(adaptation.step().type)});
   // Adapt!
   source_restrictor_->ApplyAdaptationStep(adaptation.step(),

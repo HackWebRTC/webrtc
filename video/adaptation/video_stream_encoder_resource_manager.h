@@ -164,6 +164,9 @@ class VideoStreamEncoderResourceManager
   void ResetActiveCounts();
   std::string ActiveCountsToString() const;
 
+  // TODO(hbos): Consider moving all of the manager's resources into separate
+  // files for testability.
+
   // Does not trigger adaptations, only prevents adapting up based on
   // |active_counts_|.
   class PreventAdaptUpDueToActiveCounts final : public Resource {

@@ -24,13 +24,13 @@ class VideoStreamInputState {
 
   void set_has_input(bool has_input);
   void set_frame_size_pixels(absl::optional<int> frame_size_pixels);
-  void set_frames_per_second(absl::optional<int> frames_per_second);
+  void set_frames_per_second(int frames_per_second);
   void set_video_codec_type(VideoCodecType video_codec_type);
   void set_min_pixels_per_frame(int min_pixels_per_frame);
 
   bool has_input() const;
   absl::optional<int> frame_size_pixels() const;
-  absl::optional<int> frames_per_second() const;
+  int frames_per_second() const;
   VideoCodecType video_codec_type() const;
   int min_pixels_per_frame() const;
 
@@ -39,7 +39,7 @@ class VideoStreamInputState {
  private:
   bool has_input_;
   absl::optional<int> frame_size_pixels_;
-  absl::optional<int> frames_per_second_;
+  int frames_per_second_;
   VideoCodecType video_codec_type_;
   int min_pixels_per_frame_;
 };
