@@ -172,6 +172,7 @@ class ScopedJavaGlobalRef : public JavaRef<T> {
  public:
   using JavaRef<T>::obj_;
 
+  ScopedJavaGlobalRef() = default;
   explicit constexpr ScopedJavaGlobalRef(std::nullptr_t) {}
   ScopedJavaGlobalRef(JNIEnv* env, const JavaRef<T>& other)
       : JavaRef<T>(static_cast<T>(env->NewGlobalRef(other.obj()))) {}
@@ -183,6 +184,21 @@ class ScopedJavaGlobalRef : public JavaRef<T> {
   ~ScopedJavaGlobalRef() {
     if (obj_ != nullptr)
       AttachCurrentThreadIfNeeded()->DeleteGlobalRef(obj_);
+  }
+
+  void operator=(const JavaRef<T>& other) {
+    JNIEnv* env = AttachCurrentThreadIfNeeded();
+    if (obj_ != nullptr) {
+      env->DeleteGlobalRef(obj_);
+    }
+    obj_ = other.is_null() ? nullptr : env->NewGlobalRef(other.obj());
+  }
+
+  void operator=(std::nullptr_t) {
+    if (obj_ != nullptr) {
+      AttachCurrentThreadIfNeeded()->DeleteGlobalRef(obj_);
+    }
+    obj_ = nullptr;
   }
 
   // Releases the reference to the caller. The caller *must* delete the
