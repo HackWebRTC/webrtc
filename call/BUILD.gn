@@ -429,6 +429,7 @@ if (rtc_include_tests) {
       "../test:encoder_settings",
       "../test:fake_video_codecs",
       "../test:field_trial",
+      "../test:mock_frame_transformer",
       "../test:mock_transport",
       "../test:test_common",
       "../test:test_support",

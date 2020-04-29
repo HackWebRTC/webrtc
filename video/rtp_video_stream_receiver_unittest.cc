@@ -36,6 +36,7 @@
 #include "test/field_trial.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/mock_frame_transformer.h"
 
 using ::testing::_;
 using ::testing::ElementsAre;
@@ -132,17 +133,6 @@ class MockOnCompleteFrameCallback
 class MockRtpPacketSink : public RtpPacketSinkInterface {
  public:
   MOCK_METHOD1(OnRtpPacket, void(const RtpPacketReceived&));
-};
-
-class MockFrameTransformer : public FrameTransformerInterface {
- public:
-  MOCK_METHOD3(TransformFrame,
-               void(std::unique_ptr<video_coding::EncodedFrame> frame,
-                    std::vector<uint8_t> additional_data,
-                    uint32_t ssrc));
-  MOCK_METHOD2(RegisterTransformedFrameSinkCallback,
-               void(rtc::scoped_refptr<TransformedFrameCallback>, uint32_t));
-  MOCK_METHOD1(UnregisterTransformedFrameSinkCallback, void(uint32_t));
 };
 
 constexpr uint32_t kSsrc = 111;
@@ -1126,7 +1116,7 @@ TEST_F(RtpVideoStreamReceiverTest, RepeatedSecondarySinkDisallowed) {
 
 TEST_F(RtpVideoStreamReceiverTest, TransformFrame) {
   rtc::scoped_refptr<MockFrameTransformer> mock_frame_transformer =
-      new rtc::RefCountedObject<MockFrameTransformer>();
+      new rtc::RefCountedObject<testing::NiceMock<MockFrameTransformer>>();
   EXPECT_CALL(*mock_frame_transformer,
               RegisterTransformedFrameSinkCallback(_, config_.rtp.remote_ssrc));
   auto receiver = std::make_unique<RtpVideoStreamReceiver>(

@@ -23,6 +23,7 @@
 #include "rtc_base/task_utils/to_queued_task.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/mock_frame_transformer.h"
 #include "video/rtp_video_stream_receiver.h"
 
 namespace webrtc {
@@ -108,25 +109,6 @@ class TestRtpVideoStreamReceiver : public TestRtpVideoStreamReceiverInitializer,
               (override));
 };
 
-class MockFrameTransformer : public FrameTransformerInterface {
- public:
-  ~MockFrameTransformer() override = default;
-  MOCK_METHOD(void,
-              TransformFrame,
-              (std::unique_ptr<video_coding::EncodedFrame>,
-               std::vector<uint8_t>,
-               uint32_t),
-              (override));
-  MOCK_METHOD(void,
-              RegisterTransformedFrameSinkCallback,
-              (rtc::scoped_refptr<TransformedFrameCallback>, uint32_t),
-              (override));
-  MOCK_METHOD(void,
-              UnregisterTransformedFrameSinkCallback,
-              (uint32_t),
-              (override));
-};
-
 TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
      RegisterTransformedFrameCallbackSinkOnInit) {
   TestRtpVideoStreamReceiver receiver;
@@ -157,7 +139,7 @@ TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
 TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest, TransformFrame) {
   TestRtpVideoStreamReceiver receiver;
   rtc::scoped_refptr<MockFrameTransformer> frame_transformer(
-      new rtc::RefCountedObject<MockFrameTransformer>());
+      new rtc::RefCountedObject<testing::NiceMock<MockFrameTransformer>>());
   rtc::scoped_refptr<RtpVideoStreamReceiverFrameTransformerDelegate> delegate(
       new rtc::RefCountedObject<RtpVideoStreamReceiverFrameTransformerDelegate>(
           &receiver, frame_transformer, rtc::Thread::Current(),

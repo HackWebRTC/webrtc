@@ -873,6 +873,16 @@ rtc_source_set("test_renderer") {
   }
 }
 
+rtc_library("mock_frame_transformer") {
+  visibility = [ "*" ]
+  testonly = true
+  sources = [ "mock_frame_transformer.h" ]
+  deps = [
+    "../api:frame_transformer_interface",
+    "../test:test_support",
+  ]
+}
+
 if (is_mac) {
   rtc_library("test_renderer_objc") {
     testonly = true

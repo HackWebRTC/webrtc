@@ -26,6 +26,7 @@
 #include "test/field_trial.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/mock_frame_transformer.h"
 #include "test/mock_transport.h"
 #include "test/scenario/scenario.h"
 #include "test/time_controller/simulated_time_controller.h"
@@ -825,17 +826,6 @@ TEST(RtpVideoSenderTest, CanSetZeroBitrateWithoutOverhead) {
 }
 
 TEST(RtpVideoSenderTest, SimulcastSenderRegistersFrameTransformers) {
-  class MockFrameTransformer : public FrameTransformerInterface {
-   public:
-    MOCK_METHOD3(TransformFrame,
-                 void(std::unique_ptr<video_coding::EncodedFrame> frame,
-                      std::vector<uint8_t> additional_data,
-                      uint32_t ssrc));
-    MOCK_METHOD2(RegisterTransformedFrameSinkCallback,
-                 void(rtc::scoped_refptr<TransformedFrameCallback>, uint32_t));
-    MOCK_METHOD1(UnregisterTransformedFrameSinkCallback, void(uint32_t));
-  };
-
   rtc::scoped_refptr<MockFrameTransformer> transformer =
       new rtc::RefCountedObject<MockFrameTransformer>();
 
