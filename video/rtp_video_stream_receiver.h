@@ -43,6 +43,7 @@
 #include "modules/video_coding/unique_timestamp_counter.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/thread_annotations.h"
@@ -299,6 +300,10 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   RemoteNtpTimeEstimator ntp_estimator_;
 
   RtpHeaderExtensionMap rtp_header_extensions_;
+  // Set by the field trial WebRTC-ForcePlayoutDelay to override any playout
+  // delay that is specified in the received packets.
+  FieldTrialOptional<int> forced_playout_delay_max_ms_;
+  FieldTrialOptional<int> forced_playout_delay_min_ms_;
   ReceiveStatistics* const rtp_receive_statistics_;
   std::unique_ptr<UlpfecReceiver> ulpfec_receiver_;
 

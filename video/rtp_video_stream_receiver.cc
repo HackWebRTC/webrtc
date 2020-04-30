@@ -237,6 +237,8 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
       process_thread_(process_thread),
       ntp_estimator_(clock),
       rtp_header_extensions_(config_.rtp.extensions),
+      forced_playout_delay_max_ms_("max_ms", absl::nullopt),
+      forced_playout_delay_min_ms_("min_ms", absl::nullopt),
       rtp_receive_statistics_(rtp_receive_statistics),
       ulpfec_receiver_(UlpfecReceiver::Create(config->rtp.remote_ssrc,
                                               this,
@@ -289,6 +291,10 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
   }
   if (config_.rtp.rtcp_xr.receiver_reference_time_report)
     rtp_rtcp_->SetRtcpXrRrtrStatus(true);
+
+  ParseFieldTrial(
+      {&forced_playout_delay_max_ms_, &forced_playout_delay_min_ms_},
+      field_trial::FindFullName("WebRTC-ForcePlayoutDelay"));
 
   process_thread_->RegisterModule(rtp_rtcp_.get(), RTC_FROM_HERE);
 
@@ -513,7 +519,12 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
   rtp_packet.GetExtension<VideoContentTypeExtension>(
       &video_header.content_type);
   rtp_packet.GetExtension<VideoTimingExtension>(&video_header.video_timing);
-  rtp_packet.GetExtension<PlayoutDelayLimits>(&video_header.playout_delay);
+  if (forced_playout_delay_max_ms_ && forced_playout_delay_min_ms_) {
+    video_header.playout_delay.max_ms = *forced_playout_delay_max_ms_;
+    video_header.playout_delay.min_ms = *forced_playout_delay_min_ms_;
+  } else {
+    rtp_packet.GetExtension<PlayoutDelayLimits>(&video_header.playout_delay);
+  }
   rtp_packet.GetExtension<FrameMarkingExtension>(&video_header.frame_marking);
 
   ParseGenericDependenciesResult generic_descriptor_state =
