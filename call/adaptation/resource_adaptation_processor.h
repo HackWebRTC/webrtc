@@ -54,14 +54,11 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   // Triggers OnResourceUnderuse() or OnResourceOveruse().
   void OnResourceUsageStateMeasured(const Resource& resource) override;
 
-  // May trigger 1-2 adaptations. It is meant to reduce resolution - useful if a
-  // frame was dropped due to its size - but if you look at the implementation
-  // you'll find that this is not guaranteed. It could adapt frame rate, which
-  // does not address the issue.
-  // TODO(hbos): Can we replace this by something which actually satisfies the
-  // resolution constraints, or get rid of it altogether?
+  // May trigger 1-2 adaptations. It is meant to reduce resolution but this is
+  // not guaranteed. It may adapt frame rate, which does not address the issue.
+  // TODO(hbos): Can we get rid of this?
   void TriggerAdaptationDueToFrameDroppedDueToSize(
-      const Resource& reason_resource);
+      const Resource& reason_resource) override;
 
  private:
   bool HasSufficientInputForAdaptation(

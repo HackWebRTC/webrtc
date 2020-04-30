@@ -404,8 +404,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
       RTC_GUARDED_BY(&encoder_queue_);
   // Responsible for adapting input resolution or frame rate to ensure resources
   // (e.g. CPU or bandwidth) are not overused.
-  ResourceAdaptationProcessor resource_adaptation_processor_
-      RTC_GUARDED_BY(&encoder_queue_);
+  std::unique_ptr<ResourceAdaptationProcessorInterface>
+      resource_adaptation_processor_ RTC_GUARDED_BY(&encoder_queue_);
   // Handles input, output and stats reporting related to VideoStreamEncoder
   // specific resources, such as "encode usage percent" measurements and "QP
   // scaling". Also involved with various mitigations such as inital frame

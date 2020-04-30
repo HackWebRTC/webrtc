@@ -66,6 +66,15 @@ class ResourceAdaptationProcessorInterface {
       DegradationPreference degradation_preference) = 0;
   virtual void SetIsScreenshare(bool is_screenshare) = 0;
   virtual void ResetVideoSourceRestrictions() = 0;
+
+  // May trigger one or more adaptations. It is meant to reduce resolution -
+  // useful if a frame was dropped due to its size - however, the implementation
+  // may not guarantee this (see resource_adaptation_processor.h).
+  // TODO(hbos): This is only part of the interface for backwards-compatiblity
+  // reasons. Can we replace this by something which actually satisfies the
+  // resolution constraints or get rid of it altogether?
+  virtual void TriggerAdaptationDueToFrameDroppedDueToSize(
+      const Resource& reason_resource) = 0;
 };
 
 }  // namespace webrtc

@@ -240,7 +240,7 @@ bool VideoStreamEncoderResourceManager::PreventAdaptUpInBalancedResource::
 
 VideoStreamEncoderResourceManager::VideoStreamEncoderResourceManager(
     VideoStreamInputStateProvider* input_state_provider,
-    ResourceAdaptationProcessor* adaptation_processor,
+    ResourceAdaptationProcessorInterface* adaptation_processor,
     VideoStreamEncoderObserver* encoder_stats_observer,
     Clock* clock,
     bool experiment_cpu_load_estimator,

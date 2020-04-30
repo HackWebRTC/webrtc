@@ -12,12 +12,12 @@
 
 #include <utility>
 
-#include "call/adaptation/resource_adaptation_processor.h"
+#include "rtc_base/experiments/balanced_degradation_settings.h"
 
 namespace webrtc {
 
 QualityScalerResource::QualityScalerResource(
-    ResourceAdaptationProcessor* adaptation_processor)
+    ResourceAdaptationProcessorInterface* adaptation_processor)
     : adaptation_processor_(adaptation_processor),
       quality_scaler_(nullptr),
       pending_qp_usage_callback_(nullptr) {}

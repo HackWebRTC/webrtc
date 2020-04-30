@@ -25,6 +25,7 @@
 #include "api/video/video_bitrate_allocator_factory.h"
 #include "api/video/video_codec_constants.h"
 #include "api/video_codecs/video_encoder.h"
+#include "call/adaptation/resource_adaptation_processor.h"
 #include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
 #include "modules/video_coding/include/video_codec_initializer.h"
 #include "rtc_base/arraysize.h"
@@ -256,10 +257,12 @@ VideoStreamEncoder::VideoStreamEncoder(
           ParseAutomatincAnimationDetectionFieldTrial()),
       encoder_switch_requested_(false),
       input_state_provider_(encoder_stats_observer),
-      resource_adaptation_processor_(&input_state_provider_,
-                                     encoder_stats_observer),
+      resource_adaptation_processor_(
+          std::make_unique<ResourceAdaptationProcessor>(
+              &input_state_provider_,
+              encoder_stats_observer)),
       stream_resource_manager_(&input_state_provider_,
-                               &resource_adaptation_processor_,
+                               resource_adaptation_processor_.get(),
                                encoder_stats_observer,
                                clock_,
                                settings_.experiment_cpu_load_estimator,
@@ -272,13 +275,13 @@ VideoStreamEncoder::VideoStreamEncoder(
   RTC_DCHECK(encoder_stats_observer);
   RTC_DCHECK_GE(number_of_cores, 1);
 
-  resource_adaptation_processor_.AddAdaptationListener(
+  resource_adaptation_processor_->AddAdaptationListener(
       &stream_resource_manager_);
-  resource_adaptation_processor_.AddAdaptationListener(this);
+  resource_adaptation_processor_->AddAdaptationListener(this);
 
   // Add the stream resource manager's resources to the processor.
   for (Resource* resource : stream_resource_manager_.MappedResources())
-    resource_adaptation_processor_.AddResource(resource);
+    resource_adaptation_processor_->AddResource(resource);
 
   for (auto& state : encoder_buffer_state_)
     state.fill(std::numeric_limits<int64_t>::max());
@@ -296,7 +299,7 @@ void VideoStreamEncoder::Stop() {
   encoder_queue_.PostTask([this] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     stream_resource_manager_.StopManagedResources();
-    resource_adaptation_processor_.StopResourceAdaptation();
+    resource_adaptation_processor_->StopResourceAdaptation();
     rate_allocator_ = nullptr;
     bitrate_observer_ = nullptr;
     ReleaseEncoder();
@@ -336,11 +339,11 @@ void VideoStreamEncoder::SetSource(
   encoder_queue_.PostTask([this, source, degradation_preference] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     input_state_provider_.OnHasInputChanged(source);
-    resource_adaptation_processor_.SetDegradationPreference(
+    resource_adaptation_processor_->SetDegradationPreference(
         degradation_preference);
     stream_resource_manager_.SetDegradationPreferences(
-        resource_adaptation_processor_.degradation_preference(),
-        resource_adaptation_processor_.effective_degradation_preference());
+        resource_adaptation_processor_->degradation_preference(),
+        resource_adaptation_processor_->effective_degradation_preference());
     if (encoder_) {
       stream_resource_manager_.ConfigureQualityScaler(
           encoder_->GetEncoderInfo());
@@ -668,9 +671,9 @@ void VideoStreamEncoder::ReconfigureEncoder() {
 
   if (pending_encoder_creation_) {
     stream_resource_manager_.StopManagedResources();
-    resource_adaptation_processor_.StopResourceAdaptation();
+    resource_adaptation_processor_->StopResourceAdaptation();
     stream_resource_manager_.StartEncodeUsageResource();
-    resource_adaptation_processor_.StartResourceAdaptation();
+    resource_adaptation_processor_->StartResourceAdaptation();
     pending_encoder_creation_ = false;
   }
 
@@ -749,11 +752,11 @@ void VideoStreamEncoder::ReconfigureEncoder() {
 void VideoStreamEncoder::OnEncoderSettingsChanged() {
   EncoderSettings encoder_settings(encoder_->GetEncoderInfo(),
                                    encoder_config_.Copy(), send_codec_);
-  resource_adaptation_processor_.SetIsScreenshare(
+  resource_adaptation_processor_->SetIsScreenshare(
       encoder_config_.content_type == VideoEncoderConfig::ContentType::kScreen);
   stream_resource_manager_.SetDegradationPreferences(
-      resource_adaptation_processor_.degradation_preference(),
-      resource_adaptation_processor_.effective_degradation_preference());
+      resource_adaptation_processor_->degradation_preference(),
+      resource_adaptation_processor_->effective_degradation_preference());
   input_state_provider_.OnEncoderSettingsChanged(encoder_settings);
   stream_resource_manager_.SetEncoderSettings(encoder_settings);
 }
@@ -1879,7 +1882,7 @@ void VideoStreamEncoder::CheckForAnimatedContent(
   if (!automatic_animation_detection_experiment_.enabled ||
       encoder_config_.content_type !=
           VideoEncoderConfig::ContentType::kScreen ||
-      resource_adaptation_processor_.degradation_preference() !=
+      resource_adaptation_processor_->degradation_preference() !=
           DegradationPreference::BALANCED) {
     return;
   }
@@ -1947,7 +1950,7 @@ void VideoStreamEncoder::InjectAdaptationResource(
     Resource* resource,
     VideoAdaptationReason reason) {
   stream_resource_manager_.MapResourceToReason(resource, reason);
-  resource_adaptation_processor_.AddResource(resource);
+  resource_adaptation_processor_->AddResource(resource);
 }
 
 QualityScalerResource*
