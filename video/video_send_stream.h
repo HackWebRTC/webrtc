@@ -58,7 +58,7 @@ class VideoSendStream : public webrtc::VideoSendStream {
       int num_cpu_cores,
       ProcessThread* module_process_thread,
       TaskQueueFactory* task_queue_factory,
-      CallStats* call_stats,
+      RtcpRttStats* call_stats,
       RtpTransportControllerSendInterface* transport,
       BitrateAllocatorInterface* bitrate_allocator,
       SendDelayStats* send_delay_stats,

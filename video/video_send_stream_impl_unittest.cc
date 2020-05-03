@@ -28,6 +28,7 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/mock_transport.h"
+#include "video/call_stats.h"
 #include "video/test/mock_video_stream_encoder.h"
 
 namespace webrtc {
