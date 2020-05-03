@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "api/task_queue/queued_task.h"
+#include "rtc_base/task_utils/pending_task_safety_flag.h"
 
 namespace webrtc {
 namespace webrtc_new_closure_impl {
@@ -33,6 +34,25 @@ class ClosureTask : public QueuedTask {
   }
 
   typename std::decay<Closure>::type closure_;
+};
+
+template <typename Closure>
+class SafetyClosureTask : public QueuedTask {
+ public:
+  explicit SafetyClosureTask(PendingTaskSafetyFlag::Pointer safety,
+                             Closure&& closure)
+      : closure_(std::forward<Closure>(closure)),
+        safety_flag_(std::move(safety)) {}
+
+ private:
+  bool Run() override {
+    if (safety_flag_->alive())
+      closure_();
+    return true;
+  }
+
+  typename std::decay<Closure>::type closure_;
+  PendingTaskSafetyFlag::Pointer safety_flag_;
 };
 
 // Extends ClosureTask to also allow specifying cleanup code.
@@ -58,6 +78,13 @@ template <typename Closure>
 std::unique_ptr<QueuedTask> ToQueuedTask(Closure&& closure) {
   return std::make_unique<webrtc_new_closure_impl::ClosureTask<Closure>>(
       std::forward<Closure>(closure));
+}
+
+template <typename Closure>
+std::unique_ptr<QueuedTask> ToQueuedTask(PendingTaskSafetyFlag::Pointer safety,
+                                         Closure&& closure) {
+  return std::make_unique<webrtc_new_closure_impl::SafetyClosureTask<Closure>>(
+      std::move(safety), std::forward<Closure>(closure));
 }
 
 template <typename Closure, typename Cleanup>
