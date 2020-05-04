@@ -883,6 +883,18 @@ rtc_library("mock_frame_transformer") {
   ]
 }
 
+rtc_library("mock_transformable_frame") {
+  visibility = [ "*" ]
+
+  testonly = true
+  sources = [ "mock_transformable_frame.h" ]
+
+  deps = [
+    "../api:frame_transformer_interface",
+    "../test:test_support",
+  ]
+}
+
 if (is_mac) {
   rtc_library("test_renderer_objc") {
     testonly = true
