@@ -44,9 +44,6 @@ class MediaHelper {
       std::unique_ptr<test::FrameGeneratorInterface> generator,
       std::unique_ptr<test::TestVideoCapturer::FramePreprocessor>
           frame_preprocessor);
-  std::unique_ptr<test::FrameGeneratorInterface>
-  CreateScreenShareFrameGenerator(
-      const PeerConnectionE2EQualityTestFixture::VideoConfig& video_config);
 
   Clock* const clock_;
   TaskQueueFactory* const task_queue_factory_;

@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "api/test/create_frame_generator.h"
+#include "api/test/create_peer_connection_quality_test_frame_generator.h"
 #include "test/frame_generator_capturer.h"
 #include "test/platform_video_capturer.h"
 #include "test/testsupport/file_utils.h"
@@ -135,7 +136,8 @@ std::unique_ptr<test::TestVideoCapturer> MediaHelper::CreateVideoCapturer(
         video_config.width, video_config.height, /*frame_repeat_count=*/1);
   }
   if (video_config.screen_share_config) {
-    frame_generator = CreateScreenShareFrameGenerator(video_config);
+    frame_generator = CreateScreenShareFrameGenerator(
+        video_config, *video_config.screen_share_config);
   }
   RTC_CHECK(frame_generator) << "Unsupported video_config input source";
 
@@ -145,48 +147,6 @@ std::unique_ptr<test::TestVideoCapturer> MediaHelper::CreateVideoCapturer(
   capturer->SetFramePreprocessor(std::move(frame_preprocessor));
   capturer->Init();
   return capturer;
-}
-
-std::unique_ptr<test::FrameGeneratorInterface>
-MediaHelper::CreateScreenShareFrameGenerator(const VideoConfig& video_config) {
-  RTC_CHECK(video_config.screen_share_config);
-  if (video_config.screen_share_config->generate_slides) {
-    return test::CreateSlideFrameGenerator(
-        video_config.width, video_config.height,
-        video_config.screen_share_config->slide_change_interval.seconds() *
-            video_config.fps);
-  }
-  std::vector<std::string> slides =
-      video_config.screen_share_config->slides_yuv_file_names;
-  if (slides.empty()) {
-    // If slides is empty we need to add default slides as source. In such case
-    // video width and height is validated to be equal to kDefaultSlidesWidth
-    // and kDefaultSlidesHeight.
-    slides.push_back(test::ResourcePath("web_screenshot_1850_1110", "yuv"));
-    slides.push_back(test::ResourcePath("presentation_1850_1110", "yuv"));
-    slides.push_back(test::ResourcePath("photo_1850_1110", "yuv"));
-    slides.push_back(test::ResourcePath("difficult_photo_1850_1110", "yuv"));
-  }
-  if (!video_config.screen_share_config->scrolling_params) {
-    // Cycle image every slide_change_interval seconds.
-    return test::CreateFromYuvFileFrameGenerator(
-        slides, video_config.width, video_config.height,
-        video_config.screen_share_config->slide_change_interval.seconds() *
-            video_config.fps);
-  }
-
-  // |pause_duration| is nonnegative. It is validated in ValidateParams(...).
-  TimeDelta pause_duration =
-      video_config.screen_share_config->slide_change_interval -
-      video_config.screen_share_config->scrolling_params->duration;
-
-  return test::CreateScrollingInputFromYuvFilesFrameGenerator(
-      clock_, slides,
-      video_config.screen_share_config->scrolling_params->source_width,
-      video_config.screen_share_config->scrolling_params->source_height,
-      video_config.width, video_config.height,
-      video_config.screen_share_config->scrolling_params->duration.ms(),
-      pause_duration.ms());
 }
 
 }  // namespace webrtc_pc_e2e

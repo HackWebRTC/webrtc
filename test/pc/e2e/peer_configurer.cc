@@ -12,6 +12,7 @@
 
 #include <set>
 
+#include "api/test/create_peer_connection_quality_test_frame_generator.h"
 #include "test/testsupport/file_utils.h"
 
 namespace webrtc {
@@ -134,34 +135,8 @@ void ValidateParams(
           video_config, (*peers[i]->video_generators())[j] != nullptr);
 
       if (video_config.screen_share_config) {
-        if (video_config.screen_share_config->slides_yuv_file_names.empty()) {
-          if (video_config.screen_share_config->scrolling_params) {
-            // If we have scrolling params, then its |source_width| and
-            // |source_heigh| will be used as width and height of video input,
-            // so we have to validate it against width and height of default
-            // input.
-            RTC_CHECK_EQ(video_config.screen_share_config->scrolling_params
-                             ->source_width,
-                         kDefaultSlidesWidth);
-            RTC_CHECK_EQ(video_config.screen_share_config->scrolling_params
-                             ->source_height,
-                         kDefaultSlidesHeight);
-          } else {
-            RTC_CHECK_EQ(video_config.width, kDefaultSlidesWidth);
-            RTC_CHECK_EQ(video_config.height, kDefaultSlidesHeight);
-          }
-        }
-        if (video_config.screen_share_config->scrolling_params) {
-          RTC_CHECK_LE(
-              video_config.screen_share_config->scrolling_params->duration,
-              video_config.screen_share_config->slide_change_interval);
-          RTC_CHECK_GE(
-              video_config.screen_share_config->scrolling_params->source_width,
-              video_config.width);
-          RTC_CHECK_GE(
-              video_config.screen_share_config->scrolling_params->source_height,
-              video_config.height);
-        }
+        ValidateScreenShareConfig(video_config,
+                                  *video_config.screen_share_config);
       }
       if (video_config.simulcast_config) {
         has_simulcast = true;
