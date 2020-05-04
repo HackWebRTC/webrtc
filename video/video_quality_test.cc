@@ -11,6 +11,10 @@
 
 #include <stdio.h>
 
+#if defined(WEBRTC_WIN)
+#include <conio.h>
+#endif
+
 #include <algorithm>
 #include <deque>
 #include <map>
@@ -43,7 +47,6 @@
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "test/platform_video_capturer.h"
-#include "test/run_loop.h"
 #include "test/testsupport/file_utils.h"
 #include "test/video_renderer.h"
 #include "video/frame_dumping_decoder.h"
@@ -269,6 +272,29 @@ class QualityTestVideoEncoder : public VideoEncoder,
   EncodedImageCallback* callback_ = nullptr;
   VideoCodec codec_settings_;
 };
+
+#if defined(WEBRTC_WIN) && !defined(WINUWP)
+void PressEnterToContinue(TaskQueueBase* task_queue) {
+  puts(">> Press ENTER to continue...");
+
+  while (!_kbhit() || _getch() != '\r') {
+    // Drive the message loop for the thread running the task_queue
+    SendTask(RTC_FROM_HERE, task_queue, [&]() {
+      MSG msg;
+      if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+      }
+    });
+  }
+}
+#else
+void PressEnterToContinue(TaskQueueBase* /*task_queue*/) {
+  puts(">> Press ENTER to continue...");
+  while (getc(stdin) != '\n' && !feof(stdin))
+    ;  // NOLINT
+}
+#endif
 
 }  // namespace
 
@@ -1570,7 +1596,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     Start();
   });
 
-  test::PressEnterToContinue(task_queue());
+  PressEnterToContinue(task_queue());
 
   SendTask(RTC_FROM_HERE, task_queue(), [&]() {
     Stop();

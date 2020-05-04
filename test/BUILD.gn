@@ -458,6 +458,7 @@ if (rtc_include_tests) {
       ":perf_test",
       ":rtc_expect_death",
       ":rtp_test_utils",
+      ":test_common",
       ":test_main",
       ":test_support",
       ":test_support_test_artifacts",
@@ -487,7 +488,9 @@ if (rtc_include_tests) {
       "../modules/video_coding:webrtc_vp9",
       "../rtc_base:criticalsection",
       "../rtc_base:rtc_event",
+      "../rtc_base:rtc_task_queue",
       "../rtc_base/system:file_wrapper",
+      "../rtc_base/task_utils:to_queued_task",
       "pc/e2e:e2e_unittests",
       "peer_scenario/tests",
       "scenario:scenario_unittests",
@@ -505,6 +508,7 @@ if (rtc_include_tests) {
       "frame_generator_unittest.cc",
       "rtp_file_reader_unittest.cc",
       "rtp_file_writer_unittest.cc",
+      "run_loop_unittest.cc",
       "testsupport/ivf_video_frame_generator_unittest.cc",
       "testsupport/perf_test_unittest.cc",
       "testsupport/test_artifacts_unittest.cc",
@@ -784,22 +788,11 @@ rtc_library("test_common") {
     "layer_filtering_transport.cc",
     "layer_filtering_transport.h",
     "rtp_rtcp_observer.h",
+    "run_loop.cc",
+    "run_loop.h",
     "video_decoder_proxy_factory.h",
     "video_encoder_proxy_factory.h",
   ]
-  if (current_os != "winuwp") {
-    # The filtering of *_win.cc is not done for WinUWP (intentionally) as
-    # most _win.cc files are compatible with WinUWP. However, the
-    # peek/dispatch Win32 runloops are entirely WinUWP incompatible thus
-    # WinUWP uses the generic runloop as defined for non-Windows targets.
-    sources += [ "win/run_loop_win.cc" ]
-  }
-  if (!is_win || current_os == "winuwp") {
-    sources += [
-      "run_loop.cc",
-      "run_loop.h",
-    ]
-  }
 
   deps = [
     ":direct_transport",
@@ -840,8 +833,10 @@ rtc_library("test_common") {
     "../modules/video_coding:codec_globals_headers",
     "../rtc_base:checks",
     "../rtc_base:criticalsection",
+    "../rtc_base:rtc_base",
     "../rtc_base:rtc_event",
     "../rtc_base:task_queue_for_test",
+    "../rtc_base/task_utils:to_queued_task",
     "../system_wrappers",
     "../system_wrappers:field_trial",
     "//third_party/abseil-cpp/absl/types:optional",
