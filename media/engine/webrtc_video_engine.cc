@@ -49,6 +49,19 @@ namespace {
 
 const int kMinLayerSize = 16;
 
+const char* StreamTypeToString(
+    webrtc::VideoSendStream::StreamStats::StreamType type) {
+  switch (type) {
+    case webrtc::VideoSendStream::StreamStats::StreamType::kMedia:
+      return "kMedia";
+    case webrtc::VideoSendStream::StreamStats::StreamType::kRtx:
+      return "kRtx";
+    case webrtc::VideoSendStream::StreamStats::StreamType::kFlexfec:
+      return "kFlexfec";
+  }
+  return nullptr;
+}
+
 // If this field trial is enabled, we will enable sending FlexFEC and disable
 // sending ULPFEC whenever the former has been negotiated in the SDPs.
 bool IsFlexfecFieldTrialEnabled() {
@@ -372,7 +385,14 @@ MergeInfoAboutOutboundRtpSubstreams(
         pair.second;
     RTC_DCHECK(associated_substream.referenced_media_ssrc.has_value());
     uint32_t media_ssrc = associated_substream.referenced_media_ssrc.value();
-    RTC_DCHECK(substreams.find(media_ssrc) != substreams.end());
+    if (substreams.find(media_ssrc) == substreams.end()) {
+      RTC_LOG(LS_WARNING) << "Substream [ssrc: " << pair.first << ", type: "
+                          << StreamTypeToString(associated_substream.type)
+                          << "] is associated with a media ssrc (" << media_ssrc
+                          << ") that does not have StreamStats. Ignoring its "
+                          << "RTP stats.";
+      continue;
+    }
     webrtc::VideoSendStream::StreamStats& rtp_substream =
         rtp_substreams[media_ssrc];
 
