@@ -20,24 +20,29 @@ NS_ASSUME_NONNULL_BEGIN
  webrtc::VideoEncoderFactory::VideoEncoderSelector.
  */
 RTC_OBJC_EXPORT
-@protocol RTCVideoEncoderSelector <NSObject>
+@protocol RTC_OBJC_TYPE
+(RTCVideoEncoderSelector)<NSObject>
 
-- (void)registerCurrentEncoderInfo:(RTCVideoCodecInfo *)info;
-- (nullable RTCVideoCodecInfo *)encoderForBitrate:(NSInteger)bitrate;
-- (nullable RTCVideoCodecInfo *)encoderForBrokenEncoder;
+    - (void)registerCurrentEncoderInfo : (RTC_OBJC_TYPE(RTCVideoCodecInfo) *)info;
+- (nullable RTC_OBJC_TYPE(RTCVideoCodecInfo) *)encoderForBitrate:(NSInteger)bitrate;
+- (nullable RTC_OBJC_TYPE(RTCVideoCodecInfo) *)encoderForBrokenEncoder;
 
 @end
 
-/** RTCVideoEncoderFactory is an Objective-C version of webrtc::VideoEncoderFactory. */
+/** RTCVideoEncoderFactory is an Objective-C version of webrtc::VideoEncoderFactory.
+ */
 RTC_OBJC_EXPORT
-@protocol RTCVideoEncoderFactory <NSObject>
+@protocol RTC_OBJC_TYPE
+(RTCVideoEncoderFactory)<NSObject>
 
-- (nullable id<RTCVideoEncoder>)createEncoder:(RTCVideoCodecInfo *)info;
-- (NSArray<RTCVideoCodecInfo *> *)supportedCodecs;  // TODO(andersc): "supportedFormats" instead?
+    - (nullable id<RTC_OBJC_TYPE(RTCVideoEncoder)>)createEncoder
+    : (RTC_OBJC_TYPE(RTCVideoCodecInfo) *)info;
+- (NSArray<RTC_OBJC_TYPE(RTCVideoCodecInfo) *> *)
+    supportedCodecs;  // TODO(andersc): "supportedFormats" instead?
 
 @optional
-- (NSArray<RTCVideoCodecInfo *> *)implementations;
-- (nullable id<RTCVideoEncoderSelector>)encoderSelector;
+- (NSArray<RTC_OBJC_TYPE(RTCVideoCodecInfo) *> *)implementations;
+- (nullable id<RTC_OBJC_TYPE(RTCVideoEncoderSelector)>)encoderSelector;
 
 @end
 

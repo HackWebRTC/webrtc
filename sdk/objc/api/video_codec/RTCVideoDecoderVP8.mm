@@ -16,9 +16,9 @@
 
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 
-@implementation RTCVideoDecoderVP8
+@implementation RTC_OBJC_TYPE (RTCVideoDecoderVP8)
 
-+ (id<RTCVideoDecoder>)vp8Decoder {
++ (id<RTC_OBJC_TYPE(RTCVideoDecoder)>)vp8Decoder {
   return [[RTCWrappedNativeVideoDecoder alloc]
       initWithNativeDecoder:std::unique_ptr<webrtc::VideoDecoder>(webrtc::VP8Decoder::Create())];
 }

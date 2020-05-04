@@ -16,9 +16,9 @@
 
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 
-@implementation RTCVideoEncoderVP9
+@implementation RTC_OBJC_TYPE (RTCVideoEncoderVP9)
 
-+ (id<RTCVideoEncoder>)vp9Encoder {
++ (id<RTC_OBJC_TYPE(RTCVideoEncoder)>)vp9Encoder {
   return [[RTCWrappedNativeVideoEncoder alloc]
       initWithNativeEncoder:std::unique_ptr<webrtc::VideoEncoder>(webrtc::VP9Encoder::Create())];
 }

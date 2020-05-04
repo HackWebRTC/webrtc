@@ -30,9 +30,8 @@
                    "fdff:2642:12a6:fe38:c001:beda:fcf9:51aa "
                    "59052 typ host generation 0";
 
-  RTCIceCandidate *candidate = [[RTCIceCandidate alloc] initWithSdp:sdp
-                                                      sdpMLineIndex:0
-                                                             sdpMid:@"audio"];
+  RTC_OBJC_TYPE(RTCIceCandidate) *candidate =
+      [[RTC_OBJC_TYPE(RTCIceCandidate) alloc] initWithSdp:sdp sdpMLineIndex:0 sdpMid:@"audio"];
 
   std::unique_ptr<webrtc::IceCandidateInterface> nativeCandidate =
       candidate.nativeCandidate;
@@ -51,8 +50,8 @@
   webrtc::IceCandidateInterface *nativeCandidate =
       webrtc::CreateIceCandidate("audio", 0, sdp, nullptr);
 
-  RTCIceCandidate *iceCandidate =
-      [[RTCIceCandidate alloc] initWithNativeCandidate:nativeCandidate];
+  RTC_OBJC_TYPE(RTCIceCandidate) *iceCandidate =
+      [[RTC_OBJC_TYPE(RTCIceCandidate) alloc] initWithNativeCandidate:nativeCandidate];
   EXPECT_TRUE([@"audio" isEqualToString:iceCandidate.sdpMid]);
   EXPECT_EQ(0, iceCandidate.sdpMLineIndex);
 

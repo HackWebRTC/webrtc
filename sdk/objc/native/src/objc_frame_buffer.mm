@@ -17,10 +17,10 @@ namespace webrtc {
 
 namespace {
 
-/** ObjCFrameBuffer that conforms to I420BufferInterface by wrapping RTCI420Buffer */
+/** ObjCFrameBuffer that conforms to I420BufferInterface by wrapping RTC_OBJC_TYPE(RTCI420Buffer) */
 class ObjCI420FrameBuffer : public I420BufferInterface {
  public:
-  explicit ObjCI420FrameBuffer(id<RTCI420Buffer> frame_buffer)
+  explicit ObjCI420FrameBuffer(id<RTC_OBJC_TYPE(RTCI420Buffer)> frame_buffer)
       : frame_buffer_(frame_buffer), width_(frame_buffer.width), height_(frame_buffer.height) {}
   ~ObjCI420FrameBuffer() override {}
 
@@ -41,14 +41,14 @@ class ObjCI420FrameBuffer : public I420BufferInterface {
   int StrideV() const override { return frame_buffer_.strideV; }
 
  private:
-  id<RTCI420Buffer> frame_buffer_;
+  id<RTC_OBJC_TYPE(RTCI420Buffer)> frame_buffer_;
   int width_;
   int height_;
 };
 
 }  // namespace
 
-ObjCFrameBuffer::ObjCFrameBuffer(id<RTCVideoFrameBuffer> frame_buffer)
+ObjCFrameBuffer::ObjCFrameBuffer(id<RTC_OBJC_TYPE(RTCVideoFrameBuffer)> frame_buffer)
     : frame_buffer_(frame_buffer), width_(frame_buffer.width), height_(frame_buffer.height) {}
 
 ObjCFrameBuffer::~ObjCFrameBuffer() {}
@@ -72,15 +72,16 @@ rtc::scoped_refptr<I420BufferInterface> ObjCFrameBuffer::ToI420() {
   return buffer;
 }
 
-id<RTCVideoFrameBuffer> ObjCFrameBuffer::wrapped_frame_buffer() const {
+id<RTC_OBJC_TYPE(RTCVideoFrameBuffer)> ObjCFrameBuffer::wrapped_frame_buffer() const {
   return frame_buffer_;
 }
 
-id<RTCVideoFrameBuffer> ToObjCVideoFrameBuffer(const rtc::scoped_refptr<VideoFrameBuffer>& buffer) {
+id<RTC_OBJC_TYPE(RTCVideoFrameBuffer)> ToObjCVideoFrameBuffer(
+    const rtc::scoped_refptr<VideoFrameBuffer>& buffer) {
   if (buffer->type() == VideoFrameBuffer::Type::kNative) {
     return static_cast<ObjCFrameBuffer*>(buffer.get())->wrapped_frame_buffer();
   } else {
-    return [[RTCI420Buffer alloc] initWithFrameBuffer:buffer->ToI420()];
+    return [[RTC_OBJC_TYPE(RTCI420Buffer) alloc] initWithFrameBuffer:buffer->ToI420()];
   }
 }
 

@@ -28,9 +28,9 @@
   NSDictionary *mandatory = @{@"key1": @"value1", @"key2": @"value2"};
   NSDictionary *optional = @{@"key3": @"value3", @"key4": @"value4"};
 
-  RTCMediaConstraints *constraints = [[RTCMediaConstraints alloc]
-      initWithMandatoryConstraints:mandatory
-               optionalConstraints:optional];
+  RTC_OBJC_TYPE(RTCMediaConstraints) *constraints =
+      [[RTC_OBJC_TYPE(RTCMediaConstraints) alloc] initWithMandatoryConstraints:mandatory
+                                                           optionalConstraints:optional];
   std::unique_ptr<webrtc::MediaConstraints> nativeConstraints =
       [constraints nativeConstraints];
 

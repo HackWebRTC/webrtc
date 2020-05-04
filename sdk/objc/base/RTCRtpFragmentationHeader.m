@@ -10,7 +10,7 @@
 
 #import "RTCRtpFragmentationHeader.h"
 
-@implementation RTCRtpFragmentationHeader
+@implementation RTC_OBJC_TYPE (RTCRtpFragmentationHeader)
 
 @synthesize fragmentationOffset = _fragmentationOffset;
 @synthesize fragmentationLength = _fragmentationLength;

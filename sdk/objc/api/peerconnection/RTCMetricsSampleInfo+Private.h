@@ -14,10 +14,11 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface RTCMetricsSampleInfo ()
+@interface RTC_OBJC_TYPE (RTCMetricsSampleInfo)
+()
 
-/** Initialize an RTCMetricsSampleInfo object from native SampleInfo. */
-- (instancetype)initWithNativeSampleInfo:(const webrtc::metrics::SampleInfo &)info;
+    /** Initialize an RTCMetricsSampleInfo object from native SampleInfo. */
+    - (instancetype)initWithNativeSampleInfo : (const webrtc::metrics::SampleInfo &)info;
 
 @end
 

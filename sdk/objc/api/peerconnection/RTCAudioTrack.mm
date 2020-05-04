@@ -17,12 +17,12 @@
 
 #include "rtc_base/checks.h"
 
-@implementation RTCAudioTrack
+@implementation RTC_OBJC_TYPE (RTCAudioTrack)
 
 @synthesize source = _source;
 
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
-                         source:(RTCAudioSource *)source
+- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
+                         source:(RTC_OBJC_TYPE(RTCAudioSource) *)source
                         trackId:(NSString *)trackId {
   RTC_DCHECK(factory);
   RTC_DCHECK(source);
@@ -37,7 +37,7 @@
   return self;
 }
 
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
                     nativeTrack:(rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack
                            type:(RTCMediaStreamTrackType)type {
   NSParameterAssert(factory);
@@ -46,14 +46,13 @@
   return [super initWithFactory:factory nativeTrack:nativeTrack type:type];
 }
 
-
-- (RTCAudioSource *)source {
+- (RTC_OBJC_TYPE(RTCAudioSource) *)source {
   if (!_source) {
     rtc::scoped_refptr<webrtc::AudioSourceInterface> source =
         self.nativeAudioTrack->GetSource();
     if (source) {
-      _source =
-          [[RTCAudioSource alloc] initWithFactory:self.factory nativeAudioSource:source.get()];
+      _source = [[RTC_OBJC_TYPE(RTCAudioSource) alloc] initWithFactory:self.factory
+                                                     nativeAudioSource:source.get()];
     }
   }
   return _source;

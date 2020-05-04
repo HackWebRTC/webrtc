@@ -39,7 +39,7 @@ extern "C" {
 @implementation RTCPeerConnectionFactoryBuilderTest
 
 - (void)testBuilder {
-  id factoryMock = OCMStrictClassMock([RTCPeerConnectionFactory class]);
+  id factoryMock = OCMStrictClassMock([RTC_OBJC_TYPE(RTCPeerConnectionFactory) class]);
   OCMExpect([factoryMock alloc]).andReturn(factoryMock);
 #ifdef HAVE_NO_MEDIA
   RTC_UNUSED([[[factoryMock expect] andReturn:factoryMock] initWithNoMedia]);
@@ -54,13 +54,14 @@ extern "C" {
                   mediaTransportFactory:nullptr]);
 #endif
   RTCPeerConnectionFactoryBuilder* builder = [[RTCPeerConnectionFactoryBuilder alloc] init];
-  RTCPeerConnectionFactory* peerConnectionFactory = [builder createPeerConnectionFactory];
+  RTC_OBJC_TYPE(RTCPeerConnectionFactory)* peerConnectionFactory =
+      [builder createPeerConnectionFactory];
   EXPECT_TRUE(peerConnectionFactory != nil);
   OCMVerifyAll(factoryMock);
 }
 
 - (void)testDefaultComponentsBuilder {
-  id factoryMock = OCMStrictClassMock([RTCPeerConnectionFactory class]);
+  id factoryMock = OCMStrictClassMock([RTC_OBJC_TYPE(RTCPeerConnectionFactory) class]);
   OCMExpect([factoryMock alloc]).andReturn(factoryMock);
 #ifdef HAVE_NO_MEDIA
   RTC_UNUSED([[[factoryMock expect] andReturn:factoryMock] initWithNoMedia]);
@@ -75,7 +76,8 @@ extern "C" {
                   mediaTransportFactory:nullptr]);
 #endif
   RTCPeerConnectionFactoryBuilder* builder = [RTCPeerConnectionFactoryBuilder defaultBuilder];
-  RTCPeerConnectionFactory* peerConnectionFactory = [builder createPeerConnectionFactory];
+  RTC_OBJC_TYPE(RTCPeerConnectionFactory)* peerConnectionFactory =
+      [builder createPeerConnectionFactory];
   EXPECT_TRUE(peerConnectionFactory != nil);
   OCMVerifyAll(factoryMock);
 }

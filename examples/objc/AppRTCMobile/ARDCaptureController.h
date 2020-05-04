@@ -15,7 +15,7 @@
 // Controls the camera. Handles starting the capture, switching cameras etc.
 @interface ARDCaptureController : NSObject
 
-- (instancetype)initWithCapturer:(RTCCameraVideoCapturer *)capturer
+- (instancetype)initWithCapturer:(RTC_OBJC_TYPE(RTCCameraVideoCapturer) *)capturer
                         settings:(ARDSettingsModel *)settings;
 - (void)startCapture;
 - (void)stopCapture;

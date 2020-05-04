@@ -12,9 +12,10 @@
 
 #import "helpers/NSString+StdString.h"
 
-@implementation RTCVideoEncoderSettings (Private)
+@implementation RTC_OBJC_TYPE (RTCVideoEncoderSettings)
+(Private)
 
-- (instancetype)initWithNativeVideoCodec:(const webrtc::VideoCodec *)videoCodec {
+    - (instancetype)initWithNativeVideoCodec : (const webrtc::VideoCodec *)videoCodec {
   if (self = [super init]) {
     if (videoCodec) {
       const char *codecName = CodecTypeToPayloadString(videoCodec->codecType);

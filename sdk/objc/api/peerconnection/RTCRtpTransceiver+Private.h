@@ -14,21 +14,23 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class RTCPeerConnectionFactory;
+@class RTC_OBJC_TYPE(RTCPeerConnectionFactory);
 
-@interface RTCRtpTransceiverInit ()
+@interface RTC_OBJC_TYPE (RTCRtpTransceiverInit)
+()
 
-@property(nonatomic, readonly) webrtc::RtpTransceiverInit nativeInit;
+    @property(nonatomic, readonly) webrtc::RtpTransceiverInit nativeInit;
 
 @end
 
-@interface RTCRtpTransceiver ()
+@interface RTC_OBJC_TYPE (RTCRtpTransceiver)
+()
 
-@property(nonatomic, readonly) rtc::scoped_refptr<webrtc::RtpTransceiverInterface>
-    nativeRtpTransceiver;
+    @property(nonatomic,
+              readonly) rtc::scoped_refptr<webrtc::RtpTransceiverInterface> nativeRtpTransceiver;
 
 /** Initialize an RTCRtpTransceiver with a native RtpTransceiverInterface. */
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory*)factory
+- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
            nativeRtpTransceiver:
                (rtc::scoped_refptr<webrtc::RtpTransceiverInterface>)nativeRtpTransceiver
     NS_DESIGNATED_INITIALIZER;

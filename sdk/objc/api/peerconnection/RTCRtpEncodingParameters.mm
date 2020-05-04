@@ -12,7 +12,7 @@
 
 #import "helpers/NSString+StdString.h"
 
-@implementation RTCRtpEncodingParameters
+@implementation RTC_OBJC_TYPE (RTCRtpEncodingParameters)
 
 @synthesize rid = _rid;
 @synthesize isActive = _isActive;
@@ -58,8 +58,8 @@
       _ssrc = [NSNumber numberWithUnsignedLong:*nativeParameters.ssrc];
     }
     _bitratePriority = nativeParameters.bitrate_priority;
-    _networkPriority =
-        [RTCRtpEncodingParameters priorityFromNativePriority:nativeParameters.network_priority];
+    _networkPriority = [RTC_OBJC_TYPE(RTCRtpEncodingParameters)
+        priorityFromNativePriority:nativeParameters.network_priority];
   }
   return self;
 }
@@ -91,7 +91,7 @@
   }
   parameters.bitrate_priority = _bitratePriority;
   parameters.network_priority =
-      [RTCRtpEncodingParameters nativePriorityFromPriority:_networkPriority];
+      [RTC_OBJC_TYPE(RTCRtpEncodingParameters) nativePriorityFromPriority:_networkPriority];
   return parameters;
 }
 

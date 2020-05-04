@@ -24,11 +24,11 @@ static webrtc::ObjCVideoTrackSource *getObjCVideoSource(
 // TODO(magjed): Refactor this class and target ObjCVideoTrackSource only once
 // RTCAVFoundationVideoSource is gone. See http://crbug/webrtc/7177 for more
 // info.
-@implementation RTCVideoSource {
+@implementation RTC_OBJC_TYPE (RTCVideoSource) {
   rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> _nativeVideoSource;
 }
 
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
               nativeVideoSource:
                   (rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>)nativeVideoSource {
   RTC_DCHECK(factory);
@@ -41,14 +41,14 @@ static webrtc::ObjCVideoTrackSource *getObjCVideoSource(
   return self;
 }
 
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
               nativeMediaSource:(rtc::scoped_refptr<webrtc::MediaSourceInterface>)nativeMediaSource
                            type:(RTCMediaSourceType)type {
   RTC_NOTREACHED();
   return nil;
 }
 
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
                 signalingThread:(rtc::Thread *)signalingThread
                    workerThread:(rtc::Thread *)workerThread {
   rtc::scoped_refptr<webrtc::ObjCVideoTrackSource> objCVideoTrackSource(
@@ -61,10 +61,11 @@ static webrtc::ObjCVideoTrackSource *getObjCVideoSource(
 
 - (NSString *)description {
   NSString *stateString = [[self class] stringForState:self.state];
-  return [NSString stringWithFormat:@"RTCVideoSource( %p ): %@", self, stateString];
+  return [NSString stringWithFormat:@"RTC_OBJC_TYPE(RTCVideoSource)( %p ): %@", self, stateString];
 }
 
-- (void)capturer:(RTCVideoCapturer *)capturer didCaptureVideoFrame:(RTCVideoFrame *)frame {
+- (void)capturer:(RTC_OBJC_TYPE(RTCVideoCapturer) *)capturer
+    didCaptureVideoFrame:(RTC_OBJC_TYPE(RTCVideoFrame) *)frame {
   getObjCVideoSource(_nativeVideoSource)->OnCapturedFrame(frame);
 }
 

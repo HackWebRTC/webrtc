@@ -28,8 +28,8 @@
 @implementation RTCIceServerTest
 
 - (void)testOneURLServer {
-  RTCIceServer *server = [[RTCIceServer alloc] initWithURLStrings:@[
-      @"stun:stun1.example.net" ]];
+  RTC_OBJC_TYPE(RTCIceServer) *server =
+      [[RTC_OBJC_TYPE(RTCIceServer) alloc] initWithURLStrings:@[ @"stun:stun1.example.net" ]];
 
   webrtc::PeerConnectionInterface::IceServer iceStruct = server.nativeServer;
   EXPECT_EQ(1u, iceStruct.urls.size());
@@ -39,8 +39,8 @@
 }
 
 - (void)testTwoURLServer {
-  RTCIceServer *server = [[RTCIceServer alloc] initWithURLStrings:@[
-      @"turn1:turn1.example.net", @"turn2:turn2.example.net" ]];
+  RTC_OBJC_TYPE(RTCIceServer) *server = [[RTC_OBJC_TYPE(RTCIceServer) alloc]
+      initWithURLStrings:@[ @"turn1:turn1.example.net", @"turn2:turn2.example.net" ]];
 
   webrtc::PeerConnectionInterface::IceServer iceStruct = server.nativeServer;
   EXPECT_EQ(2u, iceStruct.urls.size());
@@ -51,10 +51,10 @@
 }
 
 - (void)testPasswordCredential {
-  RTCIceServer *server = [[RTCIceServer alloc]
-      initWithURLStrings:@[ @"turn1:turn1.example.net" ]
-                username:@"username"
-              credential:@"credential"];
+  RTC_OBJC_TYPE(RTCIceServer) *server =
+      [[RTC_OBJC_TYPE(RTCIceServer) alloc] initWithURLStrings:@[ @"turn1:turn1.example.net" ]
+                                                     username:@"username"
+                                                   credential:@"credential"];
   webrtc::PeerConnectionInterface::IceServer iceStruct = server.nativeServer;
   EXPECT_EQ(1u, iceStruct.urls.size());
   EXPECT_EQ("turn1:turn1.example.net", iceStruct.urls.front());
@@ -63,11 +63,12 @@
 }
 
 - (void)testHostname {
-  RTCIceServer *server = [[RTCIceServer alloc] initWithURLStrings:@[ @"turn1:turn1.example.net" ]
-                                                         username:@"username"
-                                                       credential:@"credential"
-                                                    tlsCertPolicy:RTCTlsCertPolicySecure
-                                                         hostname:@"hostname"];
+  RTC_OBJC_TYPE(RTCIceServer) *server =
+      [[RTC_OBJC_TYPE(RTCIceServer) alloc] initWithURLStrings:@[ @"turn1:turn1.example.net" ]
+                                                     username:@"username"
+                                                   credential:@"credential"
+                                                tlsCertPolicy:RTCTlsCertPolicySecure
+                                                     hostname:@"hostname"];
   webrtc::PeerConnectionInterface::IceServer iceStruct = server.nativeServer;
   EXPECT_EQ(1u, iceStruct.urls.size());
   EXPECT_EQ("turn1:turn1.example.net", iceStruct.urls.front());
@@ -77,12 +78,13 @@
 }
 
 - (void)testTlsAlpnProtocols {
-  RTCIceServer *server = [[RTCIceServer alloc] initWithURLStrings:@[ @"turn1:turn1.example.net" ]
-                                                         username:@"username"
-                                                       credential:@"credential"
-                                                    tlsCertPolicy:RTCTlsCertPolicySecure
-                                                         hostname:@"hostname"
-                                                 tlsAlpnProtocols:@[ @"proto1", @"proto2" ]];
+  RTC_OBJC_TYPE(RTCIceServer) *server =
+      [[RTC_OBJC_TYPE(RTCIceServer) alloc] initWithURLStrings:@[ @"turn1:turn1.example.net" ]
+                                                     username:@"username"
+                                                   credential:@"credential"
+                                                tlsCertPolicy:RTCTlsCertPolicySecure
+                                                     hostname:@"hostname"
+                                             tlsAlpnProtocols:@[ @"proto1", @"proto2" ]];
   webrtc::PeerConnectionInterface::IceServer iceStruct = server.nativeServer;
   EXPECT_EQ(1u, iceStruct.urls.size());
   EXPECT_EQ("turn1:turn1.example.net", iceStruct.urls.front());
@@ -93,13 +95,14 @@
 }
 
 - (void)testTlsEllipticCurves {
-  RTCIceServer *server = [[RTCIceServer alloc] initWithURLStrings:@[ @"turn1:turn1.example.net" ]
-                                                         username:@"username"
-                                                       credential:@"credential"
-                                                    tlsCertPolicy:RTCTlsCertPolicySecure
-                                                         hostname:@"hostname"
-                                                 tlsAlpnProtocols:@[ @"proto1", @"proto2" ]
-                                                tlsEllipticCurves:@[ @"curve1", @"curve2" ]];
+  RTC_OBJC_TYPE(RTCIceServer) *server =
+      [[RTC_OBJC_TYPE(RTCIceServer) alloc] initWithURLStrings:@[ @"turn1:turn1.example.net" ]
+                                                     username:@"username"
+                                                   credential:@"credential"
+                                                tlsCertPolicy:RTCTlsCertPolicySecure
+                                                     hostname:@"hostname"
+                                             tlsAlpnProtocols:@[ @"proto1", @"proto2" ]
+                                            tlsEllipticCurves:@[ @"curve1", @"curve2" ]];
   webrtc::PeerConnectionInterface::IceServer iceStruct = server.nativeServer;
   EXPECT_EQ(1u, iceStruct.urls.size());
   EXPECT_EQ("turn1:turn1.example.net", iceStruct.urls.front());
@@ -121,8 +124,8 @@
   nativeServer.tls_elliptic_curves.push_back("curve1");
   nativeServer.tls_elliptic_curves.push_back("curve2");
 
-  RTCIceServer *iceServer =
-      [[RTCIceServer alloc] initWithNativeServer:nativeServer];
+  RTC_OBJC_TYPE(RTCIceServer) *iceServer =
+      [[RTC_OBJC_TYPE(RTCIceServer) alloc] initWithNativeServer:nativeServer];
   EXPECT_EQ(1u, iceServer.urlStrings.count);
   EXPECT_EQ("stun:stun.example.net",
       [NSString stdStringForString:iceServer.urlStrings.firstObject]);

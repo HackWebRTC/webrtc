@@ -56,9 +56,10 @@ class ObjCEncodedImageBuffer : public webrtc::EncodedImageBufferInterface {
 }
 @end
 
-@implementation RTCEncodedImage (Private)
+@implementation RTC_OBJC_TYPE (RTCEncodedImage)
+(Private)
 
-- (rtc::scoped_refptr<webrtc::EncodedImageBufferInterface>)encodedData {
+    - (rtc::scoped_refptr<webrtc::EncodedImageBufferInterface>)encodedData {
   RTCWrappedEncodedImageBuffer *wrappedBuffer =
       objc_getAssociatedObject(self, @selector(encodedData));
   return wrappedBuffer.buffer;

@@ -14,7 +14,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface RTCI420Buffer () {
+@interface RTC_OBJC_TYPE (RTCI420Buffer)
+() {
  @protected
   rtc::scoped_refptr<webrtc::I420BufferInterface> _i420Buffer;
 }

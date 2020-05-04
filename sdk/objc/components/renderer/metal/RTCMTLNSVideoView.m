@@ -17,13 +17,13 @@
 
 #import "RTCMTLI420Renderer.h"
 
-@interface RTCMTLNSVideoView ()<MTKViewDelegate>
-@property(nonatomic) id<RTCMTLRenderer> renderer;
+@interface RTC_OBJC_TYPE (RTCMTLNSVideoView)
+()<MTKViewDelegate> @property(nonatomic) id<RTCMTLRenderer> renderer;
 @property(nonatomic, strong) MTKView *metalView;
-@property(atomic, strong) RTCVideoFrame *videoFrame;
+@property(atomic, strong) RTC_OBJC_TYPE(RTCVideoFrame) * videoFrame;
 @end
 
-@implementation RTCMTLNSVideoView {
+@implementation RTC_OBJC_TYPE (RTCMTLNSVideoView) {
   id<RTCMTLRenderer> _renderer;
 }
 
@@ -102,7 +102,7 @@
 - (void)mtkView:(MTKView *)view drawableSizeWillChange:(CGSize)size {
 }
 
-#pragma mark - RTCVideoRenderer
+#pragma mark - RTC_OBJC_TYPE(RTCVideoRenderer)
 
 - (void)setSize:(CGSize)size {
   _metalView.drawableSize = size;
@@ -112,7 +112,7 @@
   [_metalView draw];
 }
 
-- (void)renderFrame:(nullable RTCVideoFrame *)frame {
+- (void)renderFrame:(nullable RTC_OBJC_TYPE(RTCVideoFrame) *)frame {
   if (frame == nil) {
     return;
   }

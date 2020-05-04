@@ -33,7 +33,7 @@ namespace webrtc {
 namespace {
 class ObjCVideoDecoder : public VideoDecoder {
  public:
-  ObjCVideoDecoder(id<RTCVideoDecoder> decoder)
+  ObjCVideoDecoder(id<RTC_OBJC_TYPE(RTCVideoDecoder)> decoder)
       : decoder_(decoder), implementation_name_([decoder implementationName].stdString) {}
 
   int32_t InitDecode(const VideoCodec *codec_settings, int32_t number_of_cores) override {
@@ -43,8 +43,8 @@ class ObjCVideoDecoder : public VideoDecoder {
   int32_t Decode(const EncodedImage &input_image,
                  bool missing_frames,
                  int64_t render_time_ms = -1) override {
-    RTCEncodedImage *encodedImage =
-        [[RTCEncodedImage alloc] initWithNativeEncodedImage:input_image];
+    RTC_OBJC_TYPE(RTCEncodedImage) *encodedImage =
+        [[RTC_OBJC_TYPE(RTCEncodedImage) alloc] initWithNativeEncodedImage:input_image];
 
     return [decoder_ decode:encodedImage
               missingFrames:missing_frames
@@ -53,7 +53,7 @@ class ObjCVideoDecoder : public VideoDecoder {
   }
 
   int32_t RegisterDecodeCompleteCallback(DecodedImageCallback *callback) override {
-    [decoder_ setCallback:^(RTCVideoFrame *frame) {
+    [decoder_ setCallback:^(RTC_OBJC_TYPE(RTCVideoFrame) * frame) {
       const rtc::scoped_refptr<VideoFrameBuffer> buffer =
           new rtc::RefCountedObject<ObjCFrameBuffer>(frame.buffer);
       VideoFrame videoFrame =
@@ -76,26 +76,27 @@ class ObjCVideoDecoder : public VideoDecoder {
   const char *ImplementationName() const override { return implementation_name_.c_str(); }
 
  private:
-  id<RTCVideoDecoder> decoder_;
+  id<RTC_OBJC_TYPE(RTCVideoDecoder)> decoder_;
   const std::string implementation_name_;
 };
 }  // namespace
 
-ObjCVideoDecoderFactory::ObjCVideoDecoderFactory(id<RTCVideoDecoderFactory> decoder_factory)
+ObjCVideoDecoderFactory::ObjCVideoDecoderFactory(
+    id<RTC_OBJC_TYPE(RTCVideoDecoderFactory)> decoder_factory)
     : decoder_factory_(decoder_factory) {}
 
 ObjCVideoDecoderFactory::~ObjCVideoDecoderFactory() {}
 
-id<RTCVideoDecoderFactory> ObjCVideoDecoderFactory::wrapped_decoder_factory() const {
+id<RTC_OBJC_TYPE(RTCVideoDecoderFactory)> ObjCVideoDecoderFactory::wrapped_decoder_factory() const {
   return decoder_factory_;
 }
 
 std::unique_ptr<VideoDecoder> ObjCVideoDecoderFactory::CreateVideoDecoder(
     const SdpVideoFormat &format) {
   NSString *codecName = [NSString stringWithUTF8String:format.name.c_str()];
-  for (RTCVideoCodecInfo *codecInfo in decoder_factory_.supportedCodecs) {
+  for (RTC_OBJC_TYPE(RTCVideoCodecInfo) * codecInfo in decoder_factory_.supportedCodecs) {
     if ([codecName isEqualToString:codecInfo.name]) {
-      id<RTCVideoDecoder> decoder = [decoder_factory_ createDecoder:codecInfo];
+      id<RTC_OBJC_TYPE(RTCVideoDecoder)> decoder = [decoder_factory_ createDecoder:codecInfo];
 
       if ([decoder isKindOfClass:[RTCWrappedNativeVideoDecoder class]]) {
         return [(RTCWrappedNativeVideoDecoder *)decoder releaseWrappedDecoder];
@@ -110,7 +111,7 @@ std::unique_ptr<VideoDecoder> ObjCVideoDecoderFactory::CreateVideoDecoder(
 
 std::vector<SdpVideoFormat> ObjCVideoDecoderFactory::GetSupportedFormats() const {
   std::vector<SdpVideoFormat> supported_formats;
-  for (RTCVideoCodecInfo *supportedCodec in decoder_factory_.supportedCodecs) {
+  for (RTC_OBJC_TYPE(RTCVideoCodecInfo) * supportedCodec in decoder_factory_.supportedCodecs) {
     SdpVideoFormat format = [supportedCodec nativeSdpVideoFormat];
     supported_formats.push_back(format);
   }

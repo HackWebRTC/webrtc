@@ -13,7 +13,7 @@
 static dispatch_queue_t kAudioSessionQueue = nil;
 static dispatch_queue_t kCaptureSessionQueue = nil;
 
-@implementation RTCDispatcher
+@implementation RTC_OBJC_TYPE (RTCDispatcher)
 
 + (void)initialize {
   static dispatch_once_t onceToken;

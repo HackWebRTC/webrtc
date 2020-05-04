@@ -15,7 +15,7 @@
 #import "base/RTCLogging.h"
 #import "helpers/NSString+StdString.h"
 
-@implementation RTCIceCandidate
+@implementation RTC_OBJC_TYPE (RTCIceCandidate)
 
 @synthesize sdpMid = _sdpMid;
 @synthesize sdpMLineIndex = _sdpMLineIndex;
@@ -35,7 +35,7 @@
 }
 
 - (NSString *)description {
-  return [NSString stringWithFormat:@"RTCIceCandidate:\n%@\n%d\n%@\n%@",
+  return [NSString stringWithFormat:@"RTC_OBJC_TYPE(RTCIceCandidate):\n%@\n%d\n%@\n%@",
                                     _sdpMid,
                                     _sdpMLineIndex,
                                     _sdp,
@@ -50,7 +50,7 @@
   std::string sdp;
   candidate->ToString(&sdp);
 
-  RTCIceCandidate *rtcCandidate =
+  RTC_OBJC_TYPE(RTCIceCandidate) *rtcCandidate =
       [self initWithSdp:[NSString stringForStdString:sdp]
           sdpMLineIndex:candidate->sdp_mline_index()
                  sdpMid:[NSString stringForStdString:candidate->sdp_mid()]];

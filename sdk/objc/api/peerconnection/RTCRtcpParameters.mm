@@ -12,7 +12,7 @@
 
 #import "helpers/NSString+StdString.h"
 
-@implementation RTCRtcpParameters
+@implementation RTC_OBJC_TYPE (RTCRtcpParameters)
 
 @synthesize cname = _cname;
 @synthesize isReducedSize = _isReducedSize;

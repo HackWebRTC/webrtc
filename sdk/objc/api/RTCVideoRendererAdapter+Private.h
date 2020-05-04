@@ -23,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
  * Calls made to the webrtc::VideoRenderInterface will be adapted and passed to
  * this video renderer.
  */
-@property(nonatomic, readonly) id<RTCVideoRenderer> videoRenderer;
+@property(nonatomic, readonly) id<RTC_OBJC_TYPE(RTCVideoRenderer)> videoRenderer;
 
 /**
  * The native VideoSinkInterface surface exposed by this adapter. Calls made
@@ -33,7 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly) rtc::VideoSinkInterface<webrtc::VideoFrame> *nativeVideoRenderer;
 
 /** Initialize an RTCVideoRendererAdapter with an RTCVideoRenderer. */
-- (instancetype)initWithNativeRenderer:(id<RTCVideoRenderer>)videoRenderer
+- (instancetype)initWithNativeRenderer:(id<RTC_OBJC_TYPE(RTCVideoRenderer)>)videoRenderer
     NS_DESIGNATED_INITIALIZER;
 
 @end

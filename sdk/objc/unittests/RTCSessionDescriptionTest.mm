@@ -24,19 +24,18 @@
 @implementation RTCSessionDescriptionTest
 
 /**
- * Test conversion of an Objective-C RTCSessionDescription to a native
+ * Test conversion of an Objective-C RTC_OBJC_TYPE(RTCSessionDescription) to a native
  * SessionDescriptionInterface (based on the types and SDP strings being equal).
  */
 - (void)testSessionDescriptionConversion {
-  RTCSessionDescription *description =
-      [[RTCSessionDescription alloc] initWithType:RTCSdpTypeAnswer
-                                              sdp:[self sdp]];
+  RTC_OBJC_TYPE(RTCSessionDescription) *description =
+      [[RTC_OBJC_TYPE(RTCSessionDescription) alloc] initWithType:RTCSdpTypeAnswer sdp:[self sdp]];
 
   webrtc::SessionDescriptionInterface *nativeDescription =
       description.nativeDescription;
 
   EXPECT_EQ(RTCSdpTypeAnswer,
-      [RTCSessionDescription typeForStdString:nativeDescription->type()]);
+            [RTC_OBJC_TYPE(RTCSessionDescription) typeForStdString:nativeDescription->type()]);
 
   std::string sdp;
   nativeDescription->ToString(&sdp);
@@ -51,11 +50,10 @@
       [self sdp].stdString,
       nullptr);
 
-  RTCSessionDescription *description =
-      [[RTCSessionDescription alloc] initWithNativeDescription:
-      nativeDescription];
+  RTC_OBJC_TYPE(RTCSessionDescription) *description =
+      [[RTC_OBJC_TYPE(RTCSessionDescription) alloc] initWithNativeDescription:nativeDescription];
   EXPECT_EQ(webrtc::SessionDescriptionInterface::kAnswer,
-      [RTCSessionDescription stdStringForType:description.type]);
+            [RTC_OBJC_TYPE(RTCSessionDescription) stdStringForType:description.type]);
   EXPECT_TRUE([[self sdp] isEqualToString:description.sdp]);
 }
 

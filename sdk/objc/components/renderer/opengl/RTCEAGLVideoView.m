@@ -21,7 +21,7 @@
 #import "base/RTCVideoFrameBuffer.h"
 #import "components/video_frame_buffer/RTCCVPixelBuffer.h"
 
-// RTCEAGLVideoView wraps a GLKView which is setup with
+// RTC_OBJC_TYPE(RTCEAGLVideoView) wraps a GLKView which is setup with
 // enableSetNeedsDisplay = NO for the purpose of gaining control of
 // exactly when to call -[GLKView display]. This need for extra
 // control is required to avoid triggering method calls on GLKView
@@ -30,23 +30,24 @@
 // error GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT. -[GLKView display] is
 // the method that will trigger the binding of the render
 // buffer. Because the standard behaviour of -[UIView setNeedsDisplay]
-// is disabled for the reasons above, the RTCEAGLVideoView maintains
+// is disabled for the reasons above, the RTC_OBJC_TYPE(RTCEAGLVideoView) maintains
 // its own |isDirty| flag.
 
-@interface RTCEAGLVideoView () <GLKViewDelegate>
-// |videoFrame| is set when we receive a frame from a worker thread and is read
-// from the display link callback so atomicity is required.
-@property(atomic, strong) RTCVideoFrame *videoFrame;
+@interface RTC_OBJC_TYPE (RTCEAGLVideoView)
+()<GLKViewDelegate>
+    // |videoFrame| is set when we receive a frame from a worker thread and is read
+    // from the display link callback so atomicity is required.
+    @property(atomic, strong) RTC_OBJC_TYPE(RTCVideoFrame) * videoFrame;
 @property(nonatomic, readonly) GLKView *glkView;
 @end
 
-@implementation RTCEAGLVideoView {
+@implementation RTC_OBJC_TYPE (RTCEAGLVideoView) {
   RTCDisplayLinkTimer *_timer;
   EAGLContext *_glContext;
   // This flag should only be set and read on the main thread (e.g. by
   // setNeedsDisplay)
   BOOL _isDirty;
-  id<RTCVideoViewShading> _shader;
+  id<RTC_OBJC_TYPE(RTCVideoViewShading)> _shader;
   RTCNV12TextureCache *_nv12TextureCache;
   RTCI420TextureCache *_i420TextureCache;
   // As timestamps should be unique between frames, will store last
@@ -67,7 +68,7 @@
   return [self initWithCoder:aDecoder shader:[[RTCDefaultShader alloc] init]];
 }
 
-- (instancetype)initWithFrame:(CGRect)frame shader:(id<RTCVideoViewShading>)shader {
+- (instancetype)initWithFrame:(CGRect)frame shader:(id<RTC_OBJC_TYPE(RTCVideoViewShading)>)shader {
   if (self = [super initWithFrame:frame]) {
     _shader = shader;
     if (![self configure]) {
@@ -77,7 +78,8 @@
   return self;
 }
 
-- (instancetype)initWithCoder:(NSCoder *)aDecoder shader:(id<RTCVideoViewShading>)shader {
+- (instancetype)initWithCoder:(NSCoder *)aDecoder
+                       shader:(id<RTC_OBJC_TYPE(RTCVideoViewShading)>)shader {
   if (self = [super initWithCoder:aDecoder]) {
     _shader = shader;
     if (![self configure]) {
@@ -127,11 +129,11 @@
   // Frames are received on a separate thread, so we poll for current frame
   // using a refresh rate proportional to screen refresh frequency. This
   // occurs on the main thread.
-  __weak RTCEAGLVideoView *weakSelf = self;
+  __weak RTC_OBJC_TYPE(RTCEAGLVideoView) *weakSelf = self;
   _timer = [[RTCDisplayLinkTimer alloc] initWithTimerHandler:^{
-      RTCEAGLVideoView *strongSelf = weakSelf;
-      [strongSelf displayLinkTimerDidFire];
-    }];
+    RTC_OBJC_TYPE(RTCEAGLVideoView) *strongSelf = weakSelf;
+    [strongSelf displayLinkTimerDidFire];
+  }];
   if ([[UIApplication sharedApplication] applicationState] == UIApplicationStateActive) {
     [self setupGL];
   }
@@ -182,7 +184,7 @@
 - (void)glkView:(GLKView *)view drawInRect:(CGRect)rect {
   // The renderer will draw the frame to the framebuffer corresponding to the
   // one used by |view|.
-  RTCVideoFrame *frame = self.videoFrame;
+  RTC_OBJC_TYPE(RTCVideoFrame) *frame = self.videoFrame;
   if (!frame || frame.timeStampNs == _lastDrawnFrameTimeStampNs) {
     return;
   }
@@ -192,7 +194,7 @@
   }
   [self ensureGLContext];
   glClear(GL_COLOR_BUFFER_BIT);
-  if ([frame.buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
+  if ([frame.buffer isKindOfClass:[RTC_OBJC_TYPE(RTCCVPixelBuffer) class]]) {
     if (!_nv12TextureCache) {
       _nv12TextureCache = [[RTCNV12TextureCache alloc] initWithContext:_glContext];
     }
@@ -223,18 +225,18 @@
   }
 }
 
-#pragma mark - RTCVideoRenderer
+#pragma mark - RTC_OBJC_TYPE(RTCVideoRenderer)
 
 // These methods may be called on non-main thread.
 - (void)setSize:(CGSize)size {
-  __weak RTCEAGLVideoView *weakSelf = self;
+  __weak RTC_OBJC_TYPE(RTCEAGLVideoView) *weakSelf = self;
   dispatch_async(dispatch_get_main_queue(), ^{
-    RTCEAGLVideoView *strongSelf = weakSelf;
+    RTC_OBJC_TYPE(RTCEAGLVideoView) *strongSelf = weakSelf;
     [strongSelf.delegate videoView:strongSelf didChangeVideoSize:size];
   });
 }
 
-- (void)renderFrame:(RTCVideoFrame *)frame {
+- (void)renderFrame:(RTC_OBJC_TYPE(RTCVideoFrame) *)frame {
   self.videoFrame = frame;
 }
 

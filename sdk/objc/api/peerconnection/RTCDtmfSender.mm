@@ -15,7 +15,7 @@
 
 #include "rtc_base/time_utils.h"
 
-@implementation RTCDtmfSender {
+@implementation RTC_OBJC_TYPE (RTCDtmfSender) {
   rtc::scoped_refptr<webrtc::DtmfSenderInterface> _nativeDtmfSender;
 }
 
@@ -48,12 +48,11 @@
 }
 
 - (NSString *)description {
-  return [NSString
-      stringWithFormat:
-          @"RTCDtmfSender {\n  remainingTones: %@\n  duration: %f sec\n  interToneGap: %f sec\n}",
-          [self remainingTones],
-          [self duration],
-          [self interToneGap]];
+  return [NSString stringWithFormat:@"RTC_OBJC_TYPE(RTCDtmfSender) {\n  remainingTones: %@\n  "
+                                    @"duration: %f sec\n  interToneGap: %f sec\n}",
+                                    [self remainingTones],
+                                    [self duration],
+                                    [self interToneGap]];
 }
 
 #pragma mark - Private
@@ -67,7 +66,8 @@
   NSParameterAssert(nativeDtmfSender);
   if (self = [super init]) {
     _nativeDtmfSender = nativeDtmfSender;
-    RTCLogInfo(@"RTCDtmfSender(%p): created DTMF sender: %@", self, self.description);
+    RTCLogInfo(
+        @"RTC_OBJC_TYPE(RTCDtmfSender)(%p): created DTMF sender: %@", self, self.description);
   }
   return self;
 }

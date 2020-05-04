@@ -14,7 +14,7 @@
 
 #include "api/video/i420_buffer.h"
 
-@implementation RTCMutableI420Buffer
+@implementation RTC_OBJC_TYPE (RTCMutableI420Buffer)
 
 - (uint8_t *)mutableDataY {
   return static_cast<webrtc::I420Buffer *>(_i420Buffer.get())->MutableDataY();

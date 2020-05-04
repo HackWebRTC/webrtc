@@ -13,6 +13,7 @@
 
 #include "sdk/objc/native/src/objc_video_decoder_factory.h"
 
+#import "base/RTCMacros.h"
 #import "base/RTCVideoDecoder.h"
 #import "base/RTCVideoDecoderFactory.h"
 #include "media/base/codec.h"
@@ -20,8 +21,8 @@
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/gunit.h"
 
-id<RTCVideoDecoderFactory> CreateDecoderFactoryReturning(int return_code) {
-  id decoderMock = OCMProtocolMock(@protocol(RTCVideoDecoder));
+id<RTC_OBJC_TYPE(RTCVideoDecoderFactory)> CreateDecoderFactoryReturning(int return_code) {
+  id decoderMock = OCMProtocolMock(@protocol(RTC_OBJC_TYPE(RTCVideoDecoder)));
   OCMStub([decoderMock startDecodeWithNumberOfCores:1]).andReturn(return_code);
   OCMStub([decoderMock decode:[OCMArg any]
                     missingFrames:NO
@@ -30,22 +31,24 @@ id<RTCVideoDecoderFactory> CreateDecoderFactoryReturning(int return_code) {
       .andReturn(return_code);
   OCMStub([decoderMock releaseDecoder]).andReturn(return_code);
 
-  id decoderFactoryMock = OCMProtocolMock(@protocol(RTCVideoDecoderFactory));
-  RTCVideoCodecInfo *supported = [[RTCVideoCodecInfo alloc] initWithName:@"H264" parameters:nil];
+  id decoderFactoryMock = OCMProtocolMock(@protocol(RTC_OBJC_TYPE(RTCVideoDecoderFactory)));
+  RTC_OBJC_TYPE(RTCVideoCodecInfo)* supported =
+      [[RTC_OBJC_TYPE(RTCVideoCodecInfo) alloc] initWithName:@"H264" parameters:nil];
   OCMStub([decoderFactoryMock supportedCodecs]).andReturn(@[ supported ]);
   OCMStub([decoderFactoryMock createDecoder:[OCMArg any]]).andReturn(decoderMock);
   return decoderFactoryMock;
 }
 
-id<RTCVideoDecoderFactory> CreateOKDecoderFactory() {
+id<RTC_OBJC_TYPE(RTCVideoDecoderFactory)> CreateOKDecoderFactory() {
   return CreateDecoderFactoryReturning(WEBRTC_VIDEO_CODEC_OK);
 }
 
-id<RTCVideoDecoderFactory> CreateErrorDecoderFactory() {
+id<RTC_OBJC_TYPE(RTCVideoDecoderFactory)> CreateErrorDecoderFactory() {
   return CreateDecoderFactoryReturning(WEBRTC_VIDEO_CODEC_ERROR);
 }
 
-std::unique_ptr<webrtc::VideoDecoder> GetObjCDecoder(id<RTCVideoDecoderFactory> factory) {
+std::unique_ptr<webrtc::VideoDecoder> GetObjCDecoder(
+    id<RTC_OBJC_TYPE(RTCVideoDecoderFactory)> factory) {
   webrtc::ObjCVideoDecoderFactory decoder_factory(factory);
   return decoder_factory.CreateVideoDecoder(webrtc::SdpVideoFormat(cricket::kH264CodecName));
 }

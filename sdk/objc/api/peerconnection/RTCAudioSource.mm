@@ -12,13 +12,13 @@
 
 #include "rtc_base/checks.h"
 
-@implementation RTCAudioSource {
+@implementation RTC_OBJC_TYPE (RTCAudioSource) {
 }
 
 @synthesize volume = _volume;
 @synthesize nativeAudioSource = _nativeAudioSource;
 
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
               nativeAudioSource:
                   (rtc::scoped_refptr<webrtc::AudioSourceInterface>)nativeAudioSource {
   RTC_DCHECK(factory);
@@ -32,7 +32,7 @@
   return self;
 }
 
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
               nativeMediaSource:(rtc::scoped_refptr<webrtc::MediaSourceInterface>)nativeMediaSource
                            type:(RTCMediaSourceType)type {
   RTC_NOTREACHED();
@@ -41,7 +41,7 @@
 
 - (NSString *)description {
   NSString *stateString = [[self class] stringForState:self.state];
-  return [NSString stringWithFormat:@"RTCAudioSource( %p ): %@", self, stateString];
+  return [NSString stringWithFormat:@"RTC_OBJC_TYPE(RTCAudioSource)( %p ): %@", self, stateString];
 }
 
 - (void)setVolume:(double)volume {

@@ -75,15 +75,16 @@ NSString *MaxSupportedProfileLevelConstrainedHigh() {
 
 }  // namespace
 
-@interface RTCH264ProfileLevelId ()
+@interface RTC_OBJC_TYPE (RTCH264ProfileLevelId)
+()
 
-@property(nonatomic, assign) RTCH264Profile profile;
+    @property(nonatomic, assign) RTCH264Profile profile;
 @property(nonatomic, assign) RTCH264Level level;
 @property(nonatomic, strong) NSString *hexString;
 
 @end
 
-@implementation RTCH264ProfileLevelId
+@implementation RTC_OBJC_TYPE (RTCH264ProfileLevelId)
 
 @synthesize profile = _profile;
 @synthesize level = _level;

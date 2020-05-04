@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface RTCMTLRenderer (Private)
 - (nullable id<MTLDevice>)currentMetalDevice;
 - (NSString *)shaderSource;
-- (BOOL)setupTexturesForFrame:(nonnull RTCVideoFrame *)frame;
+- (BOOL)setupTexturesForFrame:(nonnull RTC_OBJC_TYPE(RTCVideoFrame) *)frame;
 - (void)uploadTexturesToRenderEncoder:(id<MTLRenderCommandEncoder>)renderEncoder;
 - (void)getWidth:(nonnull int *)width
           height:(nonnull int *)height
@@ -27,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
       cropHeight:(nonnull int *)cropHeight
            cropX:(nonnull int *)cropX
            cropY:(nonnull int *)cropY
-         ofFrame:(nonnull RTCVideoFrame *)frame;
+         ofFrame:(nonnull RTC_OBJC_TYPE(RTCVideoFrame) *)frame;
 @end
 
 NS_ASSUME_NONNULL_END

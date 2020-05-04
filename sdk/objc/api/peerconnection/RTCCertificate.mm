@@ -16,7 +16,7 @@
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/ssl_identity.h"
 
-@implementation RTCCertificate
+@implementation RTC_OBJC_TYPE (RTCCertificate)
 
 @synthesize private_key = _private_key;
 @synthesize certificate = _certificate;
@@ -35,7 +35,7 @@
   return self;
 }
 
-+ (nullable RTCCertificate *)generateCertificateWithParams:(NSDictionary *)params {
++ (nullable RTC_OBJC_TYPE(RTCCertificate) *)generateCertificateWithParams:(NSDictionary *)params {
   rtc::KeyType keyType = rtc::KT_ECDSA;
   NSString *keyTypeString = [params valueForKey:@"name"];
   if (keyTypeString && [keyTypeString isEqualToString:@"RSASSA-PKCS1-v1_5"]) {
@@ -63,8 +63,9 @@
   RTC_LOG(LS_INFO) << "CERT PEM ";
   RTC_LOG(LS_INFO) << pem_certificate;
 
-  RTCCertificate *cert = [[RTCCertificate alloc] initWithPrivateKey:@(pem_private_key.c_str())
-                                                        certificate:@(pem_certificate.c_str())];
+  RTC_OBJC_TYPE(RTCCertificate) *cert =
+      [[RTC_OBJC_TYPE(RTCCertificate) alloc] initWithPrivateKey:@(pem_private_key.c_str())
+                                                    certificate:@(pem_certificate.c_str())];
   return cert;
 }
 

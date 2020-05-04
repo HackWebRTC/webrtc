@@ -16,14 +16,14 @@
 #import "api/RTCVideoRendererAdapter+Private.h"
 #import "helpers/NSString+StdString.h"
 
-@implementation RTCVideoTrack {
+@implementation RTC_OBJC_TYPE (RTCVideoTrack) {
   NSMutableArray *_adapters;
 }
 
 @synthesize source = _source;
 
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
-                         source:(RTCVideoSource *)source
+- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
+                         source:(RTC_OBJC_TYPE(RTCVideoSource) *)source
                         trackId:(NSString *)trackId {
   NSParameterAssert(factory);
   NSParameterAssert(source);
@@ -38,7 +38,7 @@
   return self;
 }
 
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
                     nativeTrack:
                         (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeMediaTrack
                            type:(RTCMediaStreamTrackType)type {
@@ -57,19 +57,19 @@
   }
 }
 
-- (RTCVideoSource *)source {
+- (RTC_OBJC_TYPE(RTCVideoSource) *)source {
   if (!_source) {
     rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> source =
         self.nativeVideoTrack->GetSource();
     if (source) {
-      _source =
-          [[RTCVideoSource alloc] initWithFactory:self.factory nativeVideoSource:source.get()];
+      _source = [[RTC_OBJC_TYPE(RTCVideoSource) alloc] initWithFactory:self.factory
+                                                     nativeVideoSource:source.get()];
     }
   }
   return _source;
 }
 
-- (void)addRenderer:(id<RTCVideoRenderer>)renderer {
+- (void)addRenderer:(id<RTC_OBJC_TYPE(RTCVideoRenderer)>)renderer {
   // Make sure we don't have this renderer yet.
   for (RTCVideoRendererAdapter *adapter in _adapters) {
     if (adapter.videoRenderer == renderer) {
@@ -85,7 +85,7 @@
                                          rtc::VideoSinkWants());
 }
 
-- (void)removeRenderer:(id<RTCVideoRenderer>)renderer {
+- (void)removeRenderer:(id<RTC_OBJC_TYPE(RTCVideoRenderer)>)renderer {
   __block NSUInteger indexToRemove = NSNotFound;
   [_adapters enumerateObjectsUsingBlock:^(RTCVideoRendererAdapter *adapter,
                                           NSUInteger idx,

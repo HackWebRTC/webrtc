@@ -10,7 +10,7 @@
 
 #import "RTCVideoEncoderSettings.h"
 
-@implementation RTCVideoEncoderSettings
+@implementation RTC_OBJC_TYPE (RTCVideoEncoderSettings)
 
 @synthesize name = _name;
 @synthesize width = _width;

@@ -29,38 +29,39 @@
 @implementation RTCCertificateTest
 
 - (void)testCertificateIsUsedInConfig {
-  RTCConfiguration *originalConfig = [[RTCConfiguration alloc] init];
+  RTC_OBJC_TYPE(RTCConfiguration) *originalConfig = [[RTC_OBJC_TYPE(RTCConfiguration) alloc] init];
 
   NSArray *urlStrings = @[ @"stun:stun1.example.net" ];
-  RTCIceServer *server = [[RTCIceServer alloc] initWithURLStrings:urlStrings];
+  RTC_OBJC_TYPE(RTCIceServer) *server =
+      [[RTC_OBJC_TYPE(RTCIceServer) alloc] initWithURLStrings:urlStrings];
   originalConfig.iceServers = @[ server ];
 
   // Generate a new certificate.
-  RTCCertificate *originalCertificate = [RTCCertificate generateCertificateWithParams:@{
-    @"expires" : @100000,
-    @"name" : @"RSASSA-PKCS1-v1_5"
-  }];
+  RTC_OBJC_TYPE(RTCCertificate) *originalCertificate = [RTC_OBJC_TYPE(RTCCertificate)
+      generateCertificateWithParams:@{@"expires" : @100000, @"name" : @"RSASSA-PKCS1-v1_5"}];
 
   // Store certificate in configuration.
   originalConfig.certificate = originalCertificate;
 
-  RTCMediaConstraints *contraints =
-      [[RTCMediaConstraints alloc] initWithMandatoryConstraints:@{} optionalConstraints:nil];
-  RTCPeerConnectionFactory *factory = [[RTCPeerConnectionFactory alloc] init];
+  RTC_OBJC_TYPE(RTCMediaConstraints) *contraints =
+      [[RTC_OBJC_TYPE(RTCMediaConstraints) alloc] initWithMandatoryConstraints:@{}
+                                                           optionalConstraints:nil];
+  RTC_OBJC_TYPE(RTCPeerConnectionFactory) *factory =
+      [[RTC_OBJC_TYPE(RTCPeerConnectionFactory) alloc] init];
 
   // Create PeerConnection with this certificate.
-  RTCPeerConnection *peerConnection =
+  RTC_OBJC_TYPE(RTCPeerConnection) *peerConnection =
       [factory peerConnectionWithConfiguration:originalConfig constraints:contraints delegate:nil];
 
   // Retrieve certificate from the configuration.
-  RTCConfiguration *retrievedConfig = peerConnection.configuration;
+  RTC_OBJC_TYPE(RTCConfiguration) *retrievedConfig = peerConnection.configuration;
 
   // Extract PEM strings from original certificate.
   std::string originalPrivateKeyField = [[originalCertificate private_key] UTF8String];
   std::string originalCertificateField = [[originalCertificate certificate] UTF8String];
 
   // Extract PEM strings from certificate retrieved from configuration.
-  RTCCertificate *retrievedCertificate = retrievedConfig.certificate;
+  RTC_OBJC_TYPE(RTCCertificate) *retrievedCertificate = retrievedConfig.certificate;
   std::string retrievedPrivateKeyField = [[retrievedCertificate private_key] UTF8String];
   std::string retrievedCertificateField = [[retrievedCertificate certificate] UTF8String];
 

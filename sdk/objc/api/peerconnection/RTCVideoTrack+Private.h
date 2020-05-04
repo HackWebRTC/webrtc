@@ -14,14 +14,15 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface RTCVideoTrack ()
+@interface RTC_OBJC_TYPE (RTCVideoTrack)
+()
 
-/** VideoTrackInterface created or passed in at construction. */
-@property(nonatomic, readonly) rtc::scoped_refptr<webrtc::VideoTrackInterface> nativeVideoTrack;
+    /** VideoTrackInterface created or passed in at construction. */
+    @property(nonatomic, readonly) rtc::scoped_refptr<webrtc::VideoTrackInterface> nativeVideoTrack;
 
 /** Initialize an RTCVideoTrack with its source and an id. */
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
-                         source:(RTCVideoSource *)source
+- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
+                         source:(RTC_OBJC_TYPE(RTCVideoSource) *)source
                         trackId:(NSString *)trackId;
 
 @end

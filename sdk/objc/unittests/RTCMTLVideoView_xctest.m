@@ -21,10 +21,11 @@
 #import "components/renderer/metal/RTCMTLNV12Renderer.h"
 #import "components/video_frame_buffer/RTCCVPixelBuffer.h"
 
-// Extension of RTCMTLVideoView for testing purposes.
-@interface RTCMTLVideoView (Testing)
+// Extension of RTC_OBJC_TYPE(RTCMTLVideoView) for testing purposes.
+@interface RTC_OBJC_TYPE (RTCMTLVideoView)
+(Testing)
 
-@property(nonatomic, readonly) MTKView *metalView;
+    @property(nonatomic, readonly) MTKView *metalView;
 
 + (BOOL)isMetalAvailable;
 + (UIView *)createMetalView:(CGRect)frame;
@@ -48,7 +49,7 @@
 @synthesize frameMock = _frameMock;
 
 - (void)setUp {
-  self.classMock = OCMClassMock([RTCMTLVideoView class]);
+  self.classMock = OCMClassMock([RTC_OBJC_TYPE(RTCMTLVideoView) class]);
   [self startMockingNilView];
 }
 
@@ -64,15 +65,16 @@
 }
 
 - (id)frameMockWithCVPixelBuffer:(BOOL)hasCVPixelBuffer {
-  id frameMock = OCMClassMock([RTCVideoFrame class]);
+  id frameMock = OCMClassMock([RTC_OBJC_TYPE(RTCVideoFrame) class]);
   if (hasCVPixelBuffer) {
     CVPixelBufferRef pixelBufferRef;
     CVPixelBufferCreate(
         kCFAllocatorDefault, 200, 200, kCVPixelFormatType_420YpCbCr8Planar, nil, &pixelBufferRef);
     OCMStub([frameMock buffer])
-        .andReturn([[RTCCVPixelBuffer alloc] initWithPixelBuffer:pixelBufferRef]);
+        .andReturn([[RTC_OBJC_TYPE(RTCCVPixelBuffer) alloc] initWithPixelBuffer:pixelBufferRef]);
   } else {
-    OCMStub([frameMock buffer]).andReturn([[RTCI420Buffer alloc] initWithWidth:200 height:200]);
+    OCMStub([frameMock buffer])
+        .andReturn([[RTC_OBJC_TYPE(RTCI420Buffer) alloc] initWithWidth:200 height:200]);
   }
   OCMStub([frameMock timeStampNs]).andReturn(arc4random_uniform(INT_MAX));
   return frameMock;
@@ -98,7 +100,8 @@
   // when
   BOOL asserts = NO;
   @try {
-    RTCMTLVideoView *realView = [[RTCMTLVideoView alloc] initWithFrame:CGRectZero];
+    RTC_OBJC_TYPE(RTCMTLVideoView) *realView =
+        [[RTC_OBJC_TYPE(RTCMTLVideoView) alloc] initWithFrame:CGRectZero];
     (void)realView;
   } @catch (NSException *ex) {
     asserts = YES;
@@ -111,8 +114,9 @@
   // given
   OCMStub([self.classMock isMetalAvailable]).andReturn(YES);
 
-  RTCMTLVideoView *realView = [[RTCMTLVideoView alloc] initWithFrame:CGRectMake(0, 0, 640, 480)];
-  self.frameMock = OCMClassMock([RTCVideoFrame class]);
+  RTC_OBJC_TYPE(RTCMTLVideoView) *realView =
+      [[RTC_OBJC_TYPE(RTCMTLVideoView) alloc] initWithFrame:CGRectMake(0, 0, 640, 480)];
+  self.frameMock = OCMClassMock([RTC_OBJC_TYPE(RTCVideoFrame) class]);
 
   [[self.frameMock reject] buffer];
   [[self.classMock reject] createNV12Renderer];
@@ -137,7 +141,8 @@
   OCMExpect([self.classMock createI420Renderer]).andReturn(self.rendererI420Mock);
   [[self.classMock reject] createNV12Renderer];
 
-  RTCMTLVideoView *realView = [[RTCMTLVideoView alloc] initWithFrame:CGRectMake(0, 0, 640, 480)];
+  RTC_OBJC_TYPE(RTCMTLVideoView) *realView =
+      [[RTC_OBJC_TYPE(RTCMTLVideoView) alloc] initWithFrame:CGRectMake(0, 0, 640, 480)];
 
   // when
   [realView renderFrame:self.frameMock];
@@ -158,7 +163,8 @@
   OCMExpect([self.classMock createNV12Renderer]).andReturn(self.rendererNV12Mock);
   [[self.classMock reject] createI420Renderer];
 
-  RTCMTLVideoView *realView = [[RTCMTLVideoView alloc] initWithFrame:CGRectMake(0, 0, 640, 480)];
+  RTC_OBJC_TYPE(RTCMTLVideoView) *realView =
+      [[RTC_OBJC_TYPE(RTCMTLVideoView) alloc] initWithFrame:CGRectMake(0, 0, 640, 480)];
 
   // when
   [realView renderFrame:self.frameMock];
@@ -178,7 +184,8 @@
   OCMExpect([self.classMock createNV12Renderer]).andReturn(self.rendererNV12Mock);
   [[self.classMock reject] createI420Renderer];
 
-  RTCMTLVideoView *realView = [[RTCMTLVideoView alloc] initWithFrame:CGRectMake(0, 0, 640, 480)];
+  RTC_OBJC_TYPE(RTCMTLVideoView) *realView =
+      [[RTC_OBJC_TYPE(RTCMTLVideoView) alloc] initWithFrame:CGRectMake(0, 0, 640, 480)];
 
   [realView renderFrame:self.frameMock];
   [realView drawInMTKView:realView.metalView];
@@ -186,7 +193,7 @@
   [self.classMock verify];
 
   // Recreate view.
-  realView = [[RTCMTLVideoView alloc] initWithFrame:CGRectMake(0, 0, 640, 480)];
+  realView = [[RTC_OBJC_TYPE(RTCMTLVideoView) alloc] initWithFrame:CGRectMake(0, 0, 640, 480)];
   OCMExpect([self.rendererNV12Mock drawFrame:self.frameMock]);
   // View hould reinit renderer.
   OCMExpect([self.classMock createNV12Renderer]).andReturn(self.rendererNV12Mock);
@@ -206,7 +213,8 @@
   OCMExpect([self.classMock createNV12Renderer]).andReturn(self.rendererNV12Mock);
   [[self.classMock reject] createI420Renderer];
 
-  RTCMTLVideoView *realView = [[RTCMTLVideoView alloc] initWithFrame:CGRectMake(0, 0, 640, 480)];
+  RTC_OBJC_TYPE(RTCMTLVideoView) *realView =
+      [[RTC_OBJC_TYPE(RTCMTLVideoView) alloc] initWithFrame:CGRectMake(0, 0, 640, 480)];
   [realView renderFrame:self.frameMock];
   [realView drawInMTKView:realView.metalView];
 
@@ -230,7 +238,8 @@
   OCMExpect([self.classMock createNV12Renderer]).andReturn(self.rendererNV12Mock);
   [[self.classMock reject] createI420Renderer];
 
-  RTCMTLVideoView *realView = [[RTCMTLVideoView alloc] initWithFrame:CGRectMake(0, 0, 640, 480)];
+  RTC_OBJC_TYPE(RTCMTLVideoView) *realView =
+      [[RTC_OBJC_TYPE(RTCMTLVideoView) alloc] initWithFrame:CGRectMake(0, 0, 640, 480)];
   [realView renderFrame:self.frameMock];
   [realView drawInMTKView:realView.metalView];
 
@@ -250,11 +259,12 @@
 - (void)testReportsSizeChangesToDelegate {
   OCMStub([self.classMock isMetalAvailable]).andReturn(YES);
 
-  id delegateMock = OCMProtocolMock(@protocol(RTCVideoViewDelegate));
+  id delegateMock = OCMProtocolMock(@protocol(RTC_OBJC_TYPE(RTCVideoViewDelegate)));
   CGSize size = CGSizeMake(640, 480);
   OCMExpect([delegateMock videoView:[OCMArg any] didChangeVideoSize:size]);
 
-  RTCMTLVideoView *realView = [[RTCMTLVideoView alloc] initWithFrame:CGRectMake(0, 0, 640, 480)];
+  RTC_OBJC_TYPE(RTCMTLVideoView) *realView =
+      [[RTC_OBJC_TYPE(RTCMTLVideoView) alloc] initWithFrame:CGRectMake(0, 0, 640, 480)];
   realView.delegate = delegateMock;
   [realView setSize:size];
 
@@ -269,7 +279,7 @@
       createMetalView:CGRectZero];
   OCMExpect([metalKitView setContentMode:UIViewContentModeScaleAspectFill]);
 
-  RTCMTLVideoView *realView = [[RTCMTLVideoView alloc] init];
+  RTC_OBJC_TYPE(RTCMTLVideoView) *realView = [[RTC_OBJC_TYPE(RTCMTLVideoView) alloc] init];
   [realView setVideoContentMode:UIViewContentModeScaleAspectFill];
 
   OCMVerify(metalKitView);

@@ -15,7 +15,7 @@
 
 #include "rtc_base/checks.h"
 
-@implementation RTCLegacyStatsReport
+@implementation RTC_OBJC_TYPE (RTCLegacyStatsReport)
 
 @synthesize timestamp = _timestamp;
 @synthesize type = _type;
@@ -23,7 +23,7 @@
 @synthesize values = _values;
 
 - (NSString *)description {
-  return [NSString stringWithFormat:@"RTCLegacyStatsReport:\n%@\n%@\n%f\n%@",
+  return [NSString stringWithFormat:@"RTC_OBJC_TYPE(RTCLegacyStatsReport):\n%@\n%@\n%f\n%@",
                                     _reportId,
                                     _type,
                                     _timestamp,

@@ -33,8 +33,9 @@
   return [[RTCPeerConnectionFactoryBuilder alloc] init];
 }
 
-- (RTCPeerConnectionFactory *)createPeerConnectionFactory {
-  RTCPeerConnectionFactory *factory = [RTCPeerConnectionFactory alloc];
+- (RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)createPeerConnectionFactory {
+  RTC_OBJC_TYPE(RTCPeerConnectionFactory) *factory =
+      [RTC_OBJC_TYPE(RTCPeerConnectionFactory) alloc];
   return [factory initWithNativeAudioEncoderFactory:_audioEncoderFactory
                           nativeAudioDecoderFactory:_audioDecoderFactory
                           nativeVideoEncoderFactory:std::move(_videoEncoderFactory)

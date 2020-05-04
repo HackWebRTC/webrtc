@@ -23,10 +23,12 @@
 #import "base/RTCLogging.h"
 #import "base/RTCVideoFrame.h"
 
-@interface RTCNSGLVideoView ()
-// |videoFrame| is set when we receive a frame from a worker thread and is read
-// from the display link callback so atomicity is required.
-@property(atomic, strong) RTCVideoFrame *videoFrame;
+@interface RTC_OBJC_TYPE (RTCNSGLVideoView)
+()
+    // |videoFrame| is set when we receive a frame from a worker thread and is read
+    // from the display link callback so atomicity is required.
+    @property(atomic, strong) RTC_OBJC_TYPE(RTCVideoFrame) *
+    videoFrame;
 @property(atomic, strong) RTCI420TextureCache *i420TextureCache;
 
 - (void)drawFrame;
@@ -38,15 +40,16 @@ static CVReturn OnDisplayLinkFired(CVDisplayLinkRef displayLink,
                                    CVOptionFlags flagsIn,
                                    CVOptionFlags *flagsOut,
                                    void *displayLinkContext) {
-  RTCNSGLVideoView *view = (__bridge RTCNSGLVideoView *)displayLinkContext;
+  RTC_OBJC_TYPE(RTCNSGLVideoView) *view =
+      (__bridge RTC_OBJC_TYPE(RTCNSGLVideoView) *)displayLinkContext;
   [view drawFrame];
   return kCVReturnSuccess;
 }
 
-@implementation RTCNSGLVideoView {
+@implementation RTC_OBJC_TYPE (RTCNSGLVideoView) {
   CVDisplayLinkRef _displayLink;
-  RTCVideoFrame *_lastDrawnFrame;
-  id<RTCVideoViewShading> _shader;
+  RTC_OBJC_TYPE(RTCVideoFrame) * _lastDrawnFrame;
+  id<RTC_OBJC_TYPE(RTCVideoViewShading)> _shader;
 }
 
 @synthesize delegate = _delegate;
@@ -59,7 +62,7 @@ static CVReturn OnDisplayLinkFired(CVDisplayLinkRef displayLink,
 
 - (instancetype)initWithFrame:(NSRect)frame
                   pixelFormat:(NSOpenGLPixelFormat *)format
-                       shader:(id<RTCVideoViewShading>)shader {
+                       shader:(id<RTC_OBJC_TYPE(RTCVideoViewShading)>)shader {
   if (self = [super initWithFrame:frame pixelFormat:format]) {
     _shader = shader;
   }
@@ -105,7 +108,7 @@ static CVReturn OnDisplayLinkFired(CVDisplayLinkRef displayLink,
   [super clearGLContext];
 }
 
-#pragma mark - RTCVideoRenderer
+#pragma mark - RTC_OBJC_TYPE(RTCVideoRenderer)
 
 // These methods may be called on non-main thread.
 - (void)setSize:(CGSize)size {
@@ -114,14 +117,14 @@ static CVReturn OnDisplayLinkFired(CVDisplayLinkRef displayLink,
   });
 }
 
-- (void)renderFrame:(RTCVideoFrame *)frame {
+- (void)renderFrame:(RTC_OBJC_TYPE(RTCVideoFrame) *)frame {
   self.videoFrame = frame;
 }
 
 #pragma mark - Private
 
 - (void)drawFrame {
-  RTCVideoFrame *frame = self.videoFrame;
+  RTC_OBJC_TYPE(RTCVideoFrame) *frame = self.videoFrame;
   if (!frame || frame == _lastDrawnFrame) {
     return;
   }

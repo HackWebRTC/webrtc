@@ -14,7 +14,7 @@
 #import "RTCCryptoOptions.h"
 #import "RTCMacros.h"
 
-@class RTCIceServer;
+@class RTC_OBJC_TYPE(RTCIceServer);
 
 /**
  * Represents the ice transport policy. This exposes the same states in C++,
@@ -70,7 +70,7 @@ typedef NS_ENUM(NSInteger, RTCSdpSemantics) {
 NS_ASSUME_NONNULL_BEGIN
 
 RTC_OBJC_EXPORT
-@interface RTCConfiguration : NSObject
+@interface RTC_OBJC_TYPE (RTCConfiguration) : NSObject
 
 /** If true, allows DSCP codes to be set on outgoing packets, configured using
  *  networkPriority field of RTCRtpEncodingParameters. Defaults to false.
@@ -78,10 +78,10 @@ RTC_OBJC_EXPORT
 @property(nonatomic, assign) BOOL enableDscp;
 
 /** An array of Ice Servers available to be used by ICE. */
-@property(nonatomic, copy) NSArray<RTCIceServer *> *iceServers;
+@property(nonatomic, copy) NSArray<RTC_OBJC_TYPE(RTCIceServer) *> *iceServers;
 
 /** An RTCCertificate for 're' use. */
-@property(nonatomic, nullable) RTCCertificate *certificate;
+@property(nonatomic, nullable) RTC_OBJC_TYPE(RTCCertificate) * certificate;
 
 /** Which candidates the ICE agent is allowed to use. The W3C calls it
  * |iceTransportPolicy|, while in C++ it is called |type|. */
@@ -173,9 +173,9 @@ RTC_OBJC_EXPORT
  *
  *  UnifiedPlan will cause RTCPeerConnection to create offers and answers with
  *  multiple m= sections where each m= section maps to one RTCRtpSender and one
- *  RTCRtpReceiver (an RTCRtpTransceiver), either both audio or both video. This
- *  will also cause RTCPeerConnection to ignore all but the first a=ssrc lines
- *  that form a Plan B stream.
+ *  RTCRtpReceiver (an RTCRtpTransceiver), either both audio or both
+ *  video. This will also cause RTCPeerConnection) to ignore all but the first a=ssrc
+ *  lines that form a Plan B stream.
  *
  *  For users who wish to send multiple audio/video streams and need to stay
  *  interoperable with legacy WebRTC implementations or use legacy APIs,
@@ -214,7 +214,7 @@ RTC_OBJC_EXPORT
  * frame encryption for native WebRTC. Setting this will overwrite any
  * options set through the PeerConnectionFactory (which is deprecated).
  */
-@property(nonatomic, nullable) RTCCryptoOptions *cryptoOptions;
+@property(nonatomic, nullable) RTC_OBJC_TYPE(RTCCryptoOptions) * cryptoOptions;
 
 /**
  * Time interval between audio RTCP reports.

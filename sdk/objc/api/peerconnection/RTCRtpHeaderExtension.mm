@@ -12,7 +12,7 @@
 
 #import "helpers/NSString+StdString.h"
 
-@implementation RTCRtpHeaderExtension
+@implementation RTC_OBJC_TYPE (RTCRtpHeaderExtension)
 
 @synthesize uri = _uri;
 @synthesize id = _id;

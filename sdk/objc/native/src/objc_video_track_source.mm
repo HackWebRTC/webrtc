@@ -25,7 +25,8 @@
 
 @synthesize objCVideoTrackSource = _objCVideoTrackSource;
 
-- (void)capturer:(RTCVideoCapturer *)capturer didCaptureVideoFrame:(RTCVideoFrame *)frame {
+- (void)capturer:(RTC_OBJC_TYPE(RTCVideoCapturer) *)capturer
+    didCaptureVideoFrame:(RTC_OBJC_TYPE(RTCVideoFrame) *)frame {
   _objCVideoTrackSource->OnCapturedFrame(frame);
 }
 
@@ -61,7 +62,7 @@ void ObjCVideoTrackSource::OnOutputFormatRequest(int width, int height, int fps)
   video_adapter()->OnOutputFormatRequest(format);
 }
 
-void ObjCVideoTrackSource::OnCapturedFrame(RTCVideoFrame *frame) {
+void ObjCVideoTrackSource::OnCapturedFrame(RTC_OBJC_TYPE(RTCVideoFrame) * frame) {
   const int64_t timestamp_us = frame.timeStampNs / rtc::kNumNanosecsPerMicrosec;
   const int64_t translated_timestamp_us =
       timestamp_aligner_.TranslateTimestamp(timestamp_us, rtc::TimeMicros());
@@ -88,10 +89,11 @@ void ObjCVideoTrackSource::OnCapturedFrame(RTCVideoFrame *frame) {
   if (adapted_width == frame.width && adapted_height == frame.height) {
     // No adaption - optimized path.
     buffer = new rtc::RefCountedObject<ObjCFrameBuffer>(frame.buffer);
-  } else if ([frame.buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
+  } else if ([frame.buffer isKindOfClass:[RTC_OBJC_TYPE(RTCCVPixelBuffer) class]]) {
     // Adapted CVPixelBuffer frame.
-    RTCCVPixelBuffer *rtcPixelBuffer = (RTCCVPixelBuffer *)frame.buffer;
-    buffer = new rtc::RefCountedObject<ObjCFrameBuffer>([[RTCCVPixelBuffer alloc]
+    RTC_OBJC_TYPE(RTCCVPixelBuffer) *rtcPixelBuffer =
+        (RTC_OBJC_TYPE(RTCCVPixelBuffer) *)frame.buffer;
+    buffer = new rtc::RefCountedObject<ObjCFrameBuffer>([[RTC_OBJC_TYPE(RTCCVPixelBuffer) alloc]
         initWithPixelBuffer:rtcPixelBuffer.pixelBuffer
                adaptedWidth:adapted_width
               adaptedHeight:adapted_height

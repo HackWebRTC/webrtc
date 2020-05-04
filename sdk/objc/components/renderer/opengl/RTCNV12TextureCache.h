@@ -10,7 +10,9 @@
 
 #import <GLKit/GLKit.h>
 
-@class RTCVideoFrame;
+#import "base/RTCMacros.h"
+
+@class RTC_OBJC_TYPE(RTCVideoFrame);
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -22,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)init NS_UNAVAILABLE;
 - (nullable instancetype)initWithContext:(EAGLContext *)context NS_DESIGNATED_INITIALIZER;
 
-- (BOOL)uploadFrameToTextures:(RTCVideoFrame *)frame;
+- (BOOL)uploadFrameToTextures:(RTC_OBJC_TYPE(RTCVideoFrame) *)frame;
 
 - (void)releaseTextures;
 

@@ -21,7 +21,7 @@
 namespace webrtc {
 
 std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> ObjCToNativeVideoRenderer(
-    id<RTCVideoRenderer> objc_video_renderer);
+    id<RTC_OBJC_TYPE(RTCVideoRenderer)> objc_video_renderer);
 
 }  // namespace webrtc
 

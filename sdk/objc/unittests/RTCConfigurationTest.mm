@@ -28,9 +28,10 @@
 
 - (void)testConversionToNativeConfiguration {
   NSArray *urlStrings = @[ @"stun:stun1.example.net" ];
-  RTCIceServer *server = [[RTCIceServer alloc] initWithURLStrings:urlStrings];
+  RTC_OBJC_TYPE(RTCIceServer) *server =
+      [[RTC_OBJC_TYPE(RTCIceServer) alloc] initWithURLStrings:urlStrings];
 
-  RTCConfiguration *config = [[RTCConfiguration alloc] init];
+  RTC_OBJC_TYPE(RTCConfiguration) *config = [[RTC_OBJC_TYPE(RTCConfiguration) alloc] init];
   config.iceServers = @[ server ];
   config.iceTransportPolicy = RTCIceTransportPolicyRelay;
   config.bundlePolicy = RTCBundlePolicyMaxBundle;
@@ -47,10 +48,11 @@
   config.continualGatheringPolicy =
       RTCContinualGatheringPolicyGatherContinually;
   config.shouldPruneTurnPorts = YES;
-  config.cryptoOptions = [[RTCCryptoOptions alloc] initWithSrtpEnableGcmCryptoSuites:YES
-                                                 srtpEnableAes128Sha1_32CryptoCipher:YES
-                                              srtpEnableEncryptedRtpHeaderExtensions:YES
-                                                        sframeRequireFrameEncryption:YES];
+  config.cryptoOptions =
+      [[RTC_OBJC_TYPE(RTCCryptoOptions) alloc] initWithSrtpEnableGcmCryptoSuites:YES
+                                             srtpEnableAes128Sha1_32CryptoCipher:YES
+                                          srtpEnableEncryptedRtpHeaderExtensions:YES
+                                                    sframeRequireFrameEncryption:YES];
   config.rtcpAudioReportIntervalMs = 2500;
   config.rtcpVideoReportIntervalMs = 3750;
 
@@ -89,9 +91,10 @@
 
 - (void)testNativeConversionToConfiguration {
   NSArray *urlStrings = @[ @"stun:stun1.example.net" ];
-  RTCIceServer *server = [[RTCIceServer alloc] initWithURLStrings:urlStrings];
+  RTC_OBJC_TYPE(RTCIceServer) *server =
+      [[RTC_OBJC_TYPE(RTCIceServer) alloc] initWithURLStrings:urlStrings];
 
-  RTCConfiguration *config = [[RTCConfiguration alloc] init];
+  RTC_OBJC_TYPE(RTCConfiguration) *config = [[RTC_OBJC_TYPE(RTCConfiguration) alloc] init];
   config.iceServers = @[ server ];
   config.iceTransportPolicy = RTCIceTransportPolicyRelay;
   config.bundlePolicy = RTCBundlePolicyMaxBundle;
@@ -108,20 +111,21 @@
   config.continualGatheringPolicy =
       RTCContinualGatheringPolicyGatherContinually;
   config.shouldPruneTurnPorts = YES;
-  config.cryptoOptions = [[RTCCryptoOptions alloc] initWithSrtpEnableGcmCryptoSuites:YES
-                                                 srtpEnableAes128Sha1_32CryptoCipher:NO
-                                              srtpEnableEncryptedRtpHeaderExtensions:NO
-                                                        sframeRequireFrameEncryption:NO];
+  config.cryptoOptions =
+      [[RTC_OBJC_TYPE(RTCCryptoOptions) alloc] initWithSrtpEnableGcmCryptoSuites:YES
+                                             srtpEnableAes128Sha1_32CryptoCipher:NO
+                                          srtpEnableEncryptedRtpHeaderExtensions:NO
+                                                    sframeRequireFrameEncryption:NO];
   config.rtcpAudioReportIntervalMs = 1500;
   config.rtcpVideoReportIntervalMs = 2150;
 
   webrtc::PeerConnectionInterface::RTCConfiguration *nativeConfig =
       [config createNativeConfiguration];
-  RTCConfiguration *newConfig = [[RTCConfiguration alloc]
-      initWithNativeConfiguration:*nativeConfig];
+  RTC_OBJC_TYPE(RTCConfiguration) *newConfig =
+      [[RTC_OBJC_TYPE(RTCConfiguration) alloc] initWithNativeConfiguration:*nativeConfig];
   EXPECT_EQ([config.iceServers count], newConfig.iceServers.count);
-  RTCIceServer *newServer = newConfig.iceServers[0];
-  RTCIceServer *origServer = config.iceServers[0];
+  RTC_OBJC_TYPE(RTCIceServer) *newServer = newConfig.iceServers[0];
+  RTC_OBJC_TYPE(RTCIceServer) *origServer = config.iceServers[0];
   EXPECT_EQ(origServer.urlStrings.count, server.urlStrings.count);
   std::string origUrl = origServer.urlStrings.firstObject.UTF8String;
   std::string url = newServer.urlStrings.firstObject.UTF8String;
@@ -152,7 +156,7 @@
 }
 
 - (void)testDefaultValues {
-  RTCConfiguration *config = [[RTCConfiguration alloc] init];
+  RTC_OBJC_TYPE(RTCConfiguration) *config = [[RTC_OBJC_TYPE(RTCConfiguration) alloc] init];
   EXPECT_EQ(config.cryptoOptions, nil);
 }
 

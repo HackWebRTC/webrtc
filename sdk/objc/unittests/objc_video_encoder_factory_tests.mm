@@ -25,8 +25,8 @@
 #include "rtc_base/gunit.h"
 #include "sdk/objc/native/src/objc_frame_buffer.h"
 
-id<RTCVideoEncoderFactory> CreateEncoderFactoryReturning(int return_code) {
-  id encoderMock = OCMProtocolMock(@protocol(RTCVideoEncoder));
+id<RTC_OBJC_TYPE(RTCVideoEncoderFactory)> CreateEncoderFactoryReturning(int return_code) {
+  id encoderMock = OCMProtocolMock(@protocol(RTC_OBJC_TYPE(RTCVideoEncoder)));
   OCMStub([encoderMock startEncodeWithSettings:[OCMArg any] numberOfCores:1])
       .andReturn(return_code);
   OCMStub([encoderMock encode:[OCMArg any] codecSpecificInfo:[OCMArg any] frameTypes:[OCMArg any]])
@@ -34,23 +34,25 @@ id<RTCVideoEncoderFactory> CreateEncoderFactoryReturning(int return_code) {
   OCMStub([encoderMock releaseEncoder]).andReturn(return_code);
   OCMStub([encoderMock setBitrate:0 framerate:0]).andReturn(return_code);
 
-  id encoderFactoryMock = OCMProtocolMock(@protocol(RTCVideoEncoderFactory));
-  RTCVideoCodecInfo *supported = [[RTCVideoCodecInfo alloc] initWithName:@"H264" parameters:nil];
+  id encoderFactoryMock = OCMProtocolMock(@protocol(RTC_OBJC_TYPE(RTCVideoEncoderFactory)));
+  RTC_OBJC_TYPE(RTCVideoCodecInfo)* supported =
+      [[RTC_OBJC_TYPE(RTCVideoCodecInfo) alloc] initWithName:@"H264" parameters:nil];
   OCMStub([encoderFactoryMock supportedCodecs]).andReturn(@[ supported ]);
   OCMStub([encoderFactoryMock implementations]).andReturn(@[ supported ]);
   OCMStub([encoderFactoryMock createEncoder:[OCMArg any]]).andReturn(encoderMock);
   return encoderFactoryMock;
 }
 
-id<RTCVideoEncoderFactory> CreateOKEncoderFactory() {
+id<RTC_OBJC_TYPE(RTCVideoEncoderFactory)> CreateOKEncoderFactory() {
   return CreateEncoderFactoryReturning(WEBRTC_VIDEO_CODEC_OK);
 }
 
-id<RTCVideoEncoderFactory> CreateErrorEncoderFactory() {
+id<RTC_OBJC_TYPE(RTCVideoEncoderFactory)> CreateErrorEncoderFactory() {
   return CreateEncoderFactoryReturning(WEBRTC_VIDEO_CODEC_ERROR);
 }
 
-std::unique_ptr<webrtc::VideoEncoder> GetObjCEncoder(id<RTCVideoEncoderFactory> factory) {
+std::unique_ptr<webrtc::VideoEncoder> GetObjCEncoder(
+    id<RTC_OBJC_TYPE(RTCVideoEncoderFactory)> factory) {
   webrtc::ObjCVideoEncoderFactory encoder_factory(factory);
   webrtc::SdpVideoFormat format("H264");
   return encoder_factory.CreateVideoEncoder(format);
@@ -83,7 +85,7 @@ TEST(ObjCVideoEncoderFactoryTest, EncodeReturnsOKOnSuccess) {
   CVPixelBufferCreate(kCFAllocatorDefault, 640, 480, kCVPixelFormatType_32ARGB, nil, &pixel_buffer);
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
       new rtc::RefCountedObject<webrtc::ObjCFrameBuffer>(
-          [[RTCCVPixelBuffer alloc] initWithPixelBuffer:pixel_buffer]);
+          [[RTC_OBJC_TYPE(RTCCVPixelBuffer) alloc] initWithPixelBuffer:pixel_buffer]);
   webrtc::VideoFrame frame = webrtc::VideoFrame::Builder()
                                  .set_video_frame_buffer(buffer)
                                  .set_rotation(webrtc::kVideoRotation_0)
@@ -101,7 +103,7 @@ TEST(ObjCVideoEncoderFactoryTest, EncodeReturnsErrorOnFail) {
   CVPixelBufferCreate(kCFAllocatorDefault, 640, 480, kCVPixelFormatType_32ARGB, nil, &pixel_buffer);
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
       new rtc::RefCountedObject<webrtc::ObjCFrameBuffer>(
-          [[RTCCVPixelBuffer alloc] initWithPixelBuffer:pixel_buffer]);
+          [[RTC_OBJC_TYPE(RTCCVPixelBuffer) alloc] initWithPixelBuffer:pixel_buffer]);
   webrtc::VideoFrame frame = webrtc::VideoFrame::Builder()
                                  .set_video_frame_buffer(buffer)
                                  .set_rotation(webrtc::kVideoRotation_0)

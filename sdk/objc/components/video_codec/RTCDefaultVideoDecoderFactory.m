@@ -19,31 +19,33 @@
 #import "api/video_codec/RTCVideoDecoderVP9.h"
 #endif
 
-@implementation RTCDefaultVideoDecoderFactory
+@implementation RTC_OBJC_TYPE (RTCDefaultVideoDecoderFactory)
 
-- (NSArray<RTCVideoCodecInfo *> *)supportedCodecs {
+- (NSArray<RTC_OBJC_TYPE(RTCVideoCodecInfo) *> *)supportedCodecs {
   NSDictionary<NSString *, NSString *> *constrainedHighParams = @{
     @"profile-level-id" : kRTCMaxSupportedH264ProfileLevelConstrainedHigh,
     @"level-asymmetry-allowed" : @"1",
     @"packetization-mode" : @"1",
   };
-  RTCVideoCodecInfo *constrainedHighInfo =
-      [[RTCVideoCodecInfo alloc] initWithName:kRTCVideoCodecH264Name
-                                   parameters:constrainedHighParams];
+  RTC_OBJC_TYPE(RTCVideoCodecInfo) *constrainedHighInfo =
+      [[RTC_OBJC_TYPE(RTCVideoCodecInfo) alloc] initWithName:kRTCVideoCodecH264Name
+                                                  parameters:constrainedHighParams];
 
   NSDictionary<NSString *, NSString *> *constrainedBaselineParams = @{
     @"profile-level-id" : kRTCMaxSupportedH264ProfileLevelConstrainedBaseline,
     @"level-asymmetry-allowed" : @"1",
     @"packetization-mode" : @"1",
   };
-  RTCVideoCodecInfo *constrainedBaselineInfo =
-      [[RTCVideoCodecInfo alloc] initWithName:kRTCVideoCodecH264Name
-                                   parameters:constrainedBaselineParams];
+  RTC_OBJC_TYPE(RTCVideoCodecInfo) *constrainedBaselineInfo =
+      [[RTC_OBJC_TYPE(RTCVideoCodecInfo) alloc] initWithName:kRTCVideoCodecH264Name
+                                                  parameters:constrainedBaselineParams];
 
-  RTCVideoCodecInfo *vp8Info = [[RTCVideoCodecInfo alloc] initWithName:kRTCVideoCodecVp8Name];
+  RTC_OBJC_TYPE(RTCVideoCodecInfo) *vp8Info =
+      [[RTC_OBJC_TYPE(RTCVideoCodecInfo) alloc] initWithName:kRTCVideoCodecVp8Name];
 
 #if defined(RTC_ENABLE_VP9)
-  RTCVideoCodecInfo *vp9Info = [[RTCVideoCodecInfo alloc] initWithName:kRTCVideoCodecVp9Name];
+  RTC_OBJC_TYPE(RTCVideoCodecInfo) *vp9Info =
+      [[RTC_OBJC_TYPE(RTCVideoCodecInfo) alloc] initWithName:kRTCVideoCodecVp9Name];
 #endif
 
   return @[
@@ -56,14 +58,14 @@
   ];
 }
 
-- (id<RTCVideoDecoder>)createDecoder:(RTCVideoCodecInfo *)info {
+- (id<RTC_OBJC_TYPE(RTCVideoDecoder)>)createDecoder:(RTC_OBJC_TYPE(RTCVideoCodecInfo) *)info {
   if ([info.name isEqualToString:kRTCVideoCodecH264Name]) {
-    return [[RTCVideoDecoderH264 alloc] init];
+    return [[RTC_OBJC_TYPE(RTCVideoDecoderH264) alloc] init];
   } else if ([info.name isEqualToString:kRTCVideoCodecVp8Name]) {
-    return [RTCVideoDecoderVP8 vp8Decoder];
+    return [RTC_OBJC_TYPE(RTCVideoDecoderVP8) vp8Decoder];
 #if defined(RTC_ENABLE_VP9)
   } else if ([info.name isEqualToString:kRTCVideoCodecVp9Name]) {
-    return [RTCVideoDecoderVP9 vp9Decoder];
+    return [RTC_OBJC_TYPE(RTCVideoDecoderVP9) vp9Decoder];
 #endif
   }
 

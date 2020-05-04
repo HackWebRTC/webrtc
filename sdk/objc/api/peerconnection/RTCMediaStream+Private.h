@@ -14,19 +14,22 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface RTCMediaStream ()
+@interface RTC_OBJC_TYPE (RTCMediaStream)
+()
 
-/**
- * MediaStreamInterface representation of this RTCMediaStream object. This is
- * needed to pass to the underlying C++ APIs.
- */
-@property(nonatomic, readonly) rtc::scoped_refptr<webrtc::MediaStreamInterface> nativeMediaStream;
+    /**
+     * MediaStreamInterface representation of this RTCMediaStream object. This is
+     * needed to pass to the underlying C++ APIs.
+     */
+    @property(nonatomic,
+              readonly) rtc::scoped_refptr<webrtc::MediaStreamInterface> nativeMediaStream;
 
 /** Initialize an RTCMediaStream with an id. */
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory streamId:(NSString *)streamId;
+- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
+                       streamId:(NSString *)streamId;
 
 /** Initialize an RTCMediaStream from a native MediaStreamInterface. */
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
               nativeMediaStream:(rtc::scoped_refptr<webrtc::MediaStreamInterface>)nativeMediaStream;
 
 @end

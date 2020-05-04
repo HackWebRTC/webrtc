@@ -76,10 +76,10 @@
   return YES;
 }
 
-- (BOOL)uploadFrameToTextures:(RTCVideoFrame *)frame {
-  NSAssert([frame.buffer isKindOfClass:[RTCCVPixelBuffer class]],
+- (BOOL)uploadFrameToTextures:(RTC_OBJC_TYPE(RTCVideoFrame) *)frame {
+  NSAssert([frame.buffer isKindOfClass:[RTC_OBJC_TYPE(RTCCVPixelBuffer) class]],
            @"frame must be CVPixelBuffer backed");
-  RTCCVPixelBuffer *rtcPixelBuffer = (RTCCVPixelBuffer *)frame.buffer;
+  RTC_OBJC_TYPE(RTCCVPixelBuffer) *rtcPixelBuffer = (RTC_OBJC_TYPE(RTCCVPixelBuffer) *)frame.buffer;
   CVPixelBufferRef pixelBuffer = rtcPixelBuffer.pixelBuffer;
   return [self loadTexture:&_yTextureRef
                pixelBuffer:pixelBuffer

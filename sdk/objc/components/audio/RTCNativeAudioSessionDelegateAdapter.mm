@@ -26,20 +26,20 @@
   return self;
 }
 
-#pragma mark - RTCAudioSessionDelegate
+#pragma mark - RTC_OBJC_TYPE(RTCAudioSessionDelegate)
 
-- (void)audioSessionDidBeginInterruption:(RTCAudioSession *)session {
+- (void)audioSessionDidBeginInterruption:(RTC_OBJC_TYPE(RTCAudioSession) *)session {
   _observer->OnInterruptionBegin();
 }
 
-- (void)audioSessionDidEndInterruption:(RTCAudioSession *)session
+- (void)audioSessionDidEndInterruption:(RTC_OBJC_TYPE(RTCAudioSession) *)session
                    shouldResumeSession:(BOOL)shouldResumeSession {
   _observer->OnInterruptionEnd();
 }
 
-- (void)audioSessionDidChangeRoute:(RTCAudioSession *)session
-           reason:(AVAudioSessionRouteChangeReason)reason
-    previousRoute:(AVAudioSessionRouteDescription *)previousRoute {
+- (void)audioSessionDidChangeRoute:(RTC_OBJC_TYPE(RTCAudioSession) *)session
+                            reason:(AVAudioSessionRouteChangeReason)reason
+                     previousRoute:(AVAudioSessionRouteDescription *)previousRoute {
   switch (reason) {
     case AVAudioSessionRouteChangeReasonUnknown:
     case AVAudioSessionRouteChangeReasonNewDeviceAvailable:
@@ -64,24 +64,24 @@
   }
 }
 
-- (void)audioSessionMediaServerTerminated:(RTCAudioSession *)session {
+- (void)audioSessionMediaServerTerminated:(RTC_OBJC_TYPE(RTCAudioSession) *)session {
 }
 
-- (void)audioSessionMediaServerReset:(RTCAudioSession *)session {
+- (void)audioSessionMediaServerReset:(RTC_OBJC_TYPE(RTCAudioSession) *)session {
 }
 
-- (void)audioSession:(RTCAudioSession *)session
+- (void)audioSession:(RTC_OBJC_TYPE(RTCAudioSession) *)session
     didChangeCanPlayOrRecord:(BOOL)canPlayOrRecord {
   _observer->OnCanPlayOrRecordChange(canPlayOrRecord);
 }
 
-- (void)audioSessionDidStartPlayOrRecord:(RTCAudioSession *)session {
+- (void)audioSessionDidStartPlayOrRecord:(RTC_OBJC_TYPE(RTCAudioSession) *)session {
 }
 
-- (void)audioSessionDidStopPlayOrRecord:(RTCAudioSession *)session {
+- (void)audioSessionDidStopPlayOrRecord:(RTC_OBJC_TYPE(RTCAudioSession) *)session {
 }
 
-- (void)audioSession:(RTCAudioSession *)audioSession
+- (void)audioSession:(RTC_OBJC_TYPE(RTCAudioSession) *)audioSession
     didChangeOutputVolume:(float)outputVolume {
   _observer->OnChangedOutputVolume();
 }

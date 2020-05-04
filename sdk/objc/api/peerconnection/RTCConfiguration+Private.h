@@ -14,10 +14,11 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface RTCConfiguration ()
+@interface RTC_OBJC_TYPE (RTCConfiguration)
+()
 
-+ (webrtc::PeerConnectionInterface::IceTransportsType)nativeTransportsTypeForTransportPolicy:
-        (RTCIceTransportPolicy)policy;
+    + (webrtc::PeerConnectionInterface::IceTransportsType)nativeTransportsTypeForTransportPolicy
+    : (RTCIceTransportPolicy)policy;
 
 + (RTCIceTransportPolicy)transportPolicyForTransportsType:
         (webrtc::PeerConnectionInterface::IceTransportsType)nativeType;
@@ -65,8 +66,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSString *)stringForSdpSemantics:(RTCSdpSemantics)sdpSemantics;
 
 /**
- * RTCConfiguration struct representation of this RTCConfiguration. This is
- * needed to pass to the underlying C++ APIs.
+ * RTCConfiguration struct representation of this RTCConfiguration.
+ * This is needed to pass to the underlying C++ APIs.
  */
 - (nullable webrtc::PeerConnectionInterface::RTCConfiguration *)createNativeConfiguration;
 

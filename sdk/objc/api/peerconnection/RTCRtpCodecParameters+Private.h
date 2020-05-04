@@ -14,10 +14,11 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface RTCRtpCodecParameters ()
+@interface RTC_OBJC_TYPE (RTCRtpCodecParameters)
+()
 
-/** Returns the equivalent native RtpCodecParameters structure. */
-@property(nonatomic, readonly) webrtc::RtpCodecParameters nativeParameters;
+    /** Returns the equivalent native RtpCodecParameters structure. */
+    @property(nonatomic, readonly) webrtc::RtpCodecParameters nativeParameters;
 
 /** Initialize the object with a native RtpCodecParameters structure. */
 - (instancetype)initWithNativeParameters:(const webrtc::RtpCodecParameters &)nativeParameters;

@@ -10,7 +10,7 @@
 
 #import "RTCCryptoOptions.h"
 
-@implementation RTCCryptoOptions
+@implementation RTC_OBJC_TYPE (RTCCryptoOptions)
 
 @synthesize srtpEnableGcmCryptoSuites = _srtpEnableGcmCryptoSuites;
 @synthesize srtpEnableAes128Sha1_32CryptoCipher = _srtpEnableAes128Sha1_32CryptoCipher;

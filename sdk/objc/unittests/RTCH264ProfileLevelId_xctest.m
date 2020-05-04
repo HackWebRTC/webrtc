@@ -22,24 +22,26 @@ static NSString *level31ConstrainedBaseline = @"42e01f";
 @implementation RTCH264ProfileLevelIdTests
 
 - (void)testInitWithString {
-  RTCH264ProfileLevelId *profileLevelId =
-      [[RTCH264ProfileLevelId alloc] initWithHexString:level31ConstrainedHigh];
+  RTC_OBJC_TYPE(RTCH264ProfileLevelId) *profileLevelId =
+      [[RTC_OBJC_TYPE(RTCH264ProfileLevelId) alloc] initWithHexString:level31ConstrainedHigh];
   XCTAssertEqual(profileLevelId.profile, RTCH264ProfileConstrainedHigh);
   XCTAssertEqual(profileLevelId.level, RTCH264Level3_1);
 
-  profileLevelId = [[RTCH264ProfileLevelId alloc] initWithHexString:level31ConstrainedBaseline];
+  profileLevelId =
+      [[RTC_OBJC_TYPE(RTCH264ProfileLevelId) alloc] initWithHexString:level31ConstrainedBaseline];
   XCTAssertEqual(profileLevelId.profile, RTCH264ProfileConstrainedBaseline);
   XCTAssertEqual(profileLevelId.level, RTCH264Level3_1);
 }
 
 - (void)testInitWithProfileAndLevel {
-  RTCH264ProfileLevelId *profileLevelId =
-      [[RTCH264ProfileLevelId alloc] initWithProfile:RTCH264ProfileConstrainedHigh
-                                               level:RTCH264Level3_1];
+  RTC_OBJC_TYPE(RTCH264ProfileLevelId) *profileLevelId =
+      [[RTC_OBJC_TYPE(RTCH264ProfileLevelId) alloc] initWithProfile:RTCH264ProfileConstrainedHigh
+                                                              level:RTCH264Level3_1];
   XCTAssertEqualObjects(profileLevelId.hexString, level31ConstrainedHigh);
 
-  profileLevelId = [[RTCH264ProfileLevelId alloc] initWithProfile:RTCH264ProfileConstrainedBaseline
-                                                            level:RTCH264Level3_1];
+  profileLevelId = [[RTC_OBJC_TYPE(RTCH264ProfileLevelId) alloc]
+      initWithProfile:RTCH264ProfileConstrainedBaseline
+                level:RTCH264Level3_1];
   XCTAssertEqualObjects(profileLevelId.hexString, level31ConstrainedBaseline);
 }
 

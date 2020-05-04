@@ -19,11 +19,13 @@ typedef NS_ENUM(NSInteger, RTCMediaStreamTrackType) {
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class RTCPeerConnectionFactory;
+@class RTC_OBJC_TYPE(RTCPeerConnectionFactory);
 
-@interface RTCMediaStreamTrack ()
+@interface RTC_OBJC_TYPE (RTCMediaStreamTrack)
+()
 
-@property(nonatomic, readonly) RTCPeerConnectionFactory *factory;
+        @property(nonatomic, readonly) RTC_OBJC_TYPE(RTCPeerConnectionFactory) *
+    factory;
 
 /**
  * The native MediaStreamTrackInterface passed in or created during
@@ -34,14 +36,14 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Initialize an RTCMediaStreamTrack from a native MediaStreamTrackInterface.
  */
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
                     nativeTrack:(rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack
                            type:(RTCMediaStreamTrackType)type NS_DESIGNATED_INITIALIZER;
 
-- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+- (instancetype)initWithFactory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory
                     nativeTrack:(rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack;
 
-- (BOOL)isEqualToTrack:(RTCMediaStreamTrack *)track;
+- (BOOL)isEqualToTrack:(RTC_OBJC_TYPE(RTCMediaStreamTrack) *)track;
 
 + (webrtc::MediaStreamTrackInterface::TrackState)nativeTrackStateForState:
         (RTCMediaStreamTrackState)state;
@@ -51,9 +53,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (NSString *)stringForState:(RTCMediaStreamTrackState)state;
 
-+ (RTCMediaStreamTrack *)mediaTrackForNativeTrack:
-                             (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack
-                                          factory:(RTCPeerConnectionFactory *)factory;
++ (RTC_OBJC_TYPE(RTCMediaStreamTrack) *)
+    mediaTrackForNativeTrack:(rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack
+                     factory:(RTC_OBJC_TYPE(RTCPeerConnectionFactory) *)factory;
 
 @end
 

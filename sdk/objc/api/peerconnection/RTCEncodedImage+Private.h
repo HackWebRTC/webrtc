@@ -15,9 +15,10 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /* Interfaces for converting to/from internal C++ formats. */
-@interface RTCEncodedImage (Private)
+@interface RTC_OBJC_TYPE (RTCEncodedImage)
+(Private)
 
-- (instancetype)initWithNativeEncodedImage:(const webrtc::EncodedImage &)encodedImage;
+    - (instancetype)initWithNativeEncodedImage : (const webrtc::EncodedImage &)encodedImage;
 - (webrtc::EncodedImage)nativeEncodedImage;
 
 @end

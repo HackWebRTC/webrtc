@@ -19,18 +19,19 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /** Callback block for decoder. */
-typedef void (^RTCVideoDecoderCallback)(RTCVideoFrame *frame);
+typedef void (^RTCVideoDecoderCallback)(RTC_OBJC_TYPE(RTCVideoFrame) * frame);
 
 /** Protocol for decoder implementations. */
 RTC_OBJC_EXPORT
-@protocol RTCVideoDecoder <NSObject>
+@protocol RTC_OBJC_TYPE
+(RTCVideoDecoder)<NSObject>
 
-- (void)setCallback:(RTCVideoDecoderCallback)callback;
+    - (void)setCallback : (RTCVideoDecoderCallback)callback;
 - (NSInteger)startDecodeWithNumberOfCores:(int)numberOfCores;
 - (NSInteger)releaseDecoder;
-- (NSInteger)decode:(RTCEncodedImage *)encodedImage
+- (NSInteger)decode:(RTC_OBJC_TYPE(RTCEncodedImage) *)encodedImage
         missingFrames:(BOOL)missingFrames
-    codecSpecificInfo:(nullable id<RTCCodecSpecificInfo>)info
+    codecSpecificInfo:(nullable id<RTC_OBJC_TYPE(RTCCodecSpecificInfo)>)info
          renderTimeMs:(int64_t)renderTimeMs;
 - (NSString *)implementationName;
 
