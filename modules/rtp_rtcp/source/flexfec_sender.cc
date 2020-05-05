@@ -193,7 +193,7 @@ DataRate FlexfecSender::CurrentFecRate() const {
       fec_bitrate_.Rate(clock_->TimeInMilliseconds()).value_or(0));
 }
 
-RtpState FlexfecSender::GetRtpState() {
+absl::optional<RtpState> FlexfecSender::GetRtpState() {
   RtpState rtp_state;
   rtp_state.sequence_number = seq_num_;
   rtp_state.start_timestamp = timestamp_offset_;

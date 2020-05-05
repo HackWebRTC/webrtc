@@ -1268,6 +1268,8 @@ TEST_P(RtpSenderTest, SendFlexfecPackets) {
   video_config.clock = &fake_clock_;
   video_config.rtp_sender = rtp_sender();
   video_config.fec_generator = &flexfec_sender;
+  video_config.fec_type = flexfec_sender.GetFecType();
+  video_config.fec_overhead_bytes = flexfec_sender.MaxPacketOverhead();
   video_config.field_trials = &field_trials;
   RTPSenderVideo rtp_sender_video(video_config);
 
@@ -1276,7 +1278,7 @@ TEST_P(RtpSenderTest, SendFlexfecPackets) {
   params.fec_rate = 15;
   params.max_fec_frames = 1;
   params.fec_mask_type = kFecMaskRandom;
-  rtp_sender_video.SetFecParameters(params, params);
+  flexfec_sender.SetProtectionParameters(params, params);
 
   uint16_t flexfec_seq_num;
   RTPVideoHeader video_header;
@@ -1352,6 +1354,8 @@ TEST_P(RtpSenderTestWithoutPacer, SendFlexfecPackets) {
   video_config.clock = &fake_clock_;
   video_config.rtp_sender = rtp_sender();
   video_config.fec_generator = &flexfec_sender;
+  video_config.fec_type = flexfec_sender.GetFecType();
+  video_config.fec_overhead_bytes = flexfec_sender_.MaxPacketOverhead();
   video_config.field_trials = &field_trials;
   RTPSenderVideo rtp_sender_video(video_config);
 
@@ -1360,7 +1364,7 @@ TEST_P(RtpSenderTestWithoutPacer, SendFlexfecPackets) {
   params.fec_rate = 15;
   params.max_fec_frames = 1;
   params.fec_mask_type = kFecMaskRandom;
-  rtp_sender_video.SetFecParameters(params, params);
+  flexfec_sender.SetProtectionParameters(params, params);
 
   EXPECT_CALL(mock_rtc_event_log_,
               LogProxy(SameRtcEventTypeAs(RtcEvent::Type::RtpPacketOutgoing)))
@@ -1684,6 +1688,8 @@ TEST_P(RtpSenderTest, FecOverheadRate) {
   video_config.clock = &fake_clock_;
   video_config.rtp_sender = rtp_sender();
   video_config.fec_generator = &flexfec_sender;
+  video_config.fec_type = flexfec_sender.GetFecType();
+  video_config.fec_overhead_bytes = flexfec_sender.MaxPacketOverhead();
   video_config.field_trials = &field_trials;
   RTPSenderVideo rtp_sender_video(video_config);
   // Parameters selected to generate a single FEC packet per media packet.
@@ -1691,7 +1697,7 @@ TEST_P(RtpSenderTest, FecOverheadRate) {
   params.fec_rate = 15;
   params.max_fec_frames = 1;
   params.fec_mask_type = kFecMaskRandom;
-  rtp_sender_video.SetFecParameters(params, params);
+  flexfec_sender.SetProtectionParameters(params, params);
 
   constexpr size_t kNumMediaPackets = 10;
   constexpr size_t kNumFecPackets = kNumMediaPackets;
@@ -1716,7 +1722,7 @@ TEST_P(RtpSenderTest, FecOverheadRate) {
                                    kGenericCodecHeaderLength + kPayloadLength;
   EXPECT_NEAR(kNumFecPackets * kPacketLength * 8 /
                   (kNumFecPackets * kTimeBetweenPacketsMs / 1000.0f),
-              rtp_sender_video.FecOverheadRate(), 500);
+              flexfec_sender.CurrentFecRate().bps<double>(), 500);
 }
 
 TEST_P(RtpSenderTest, BitrateCallbacks) {
@@ -1873,6 +1879,8 @@ TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacksUlpfec) {
   video_config.field_trials = &field_trials;
   video_config.red_payload_type = kRedPayloadType;
   video_config.fec_generator = &ulpfec_generator;
+  video_config.fec_type = ulpfec_generator.GetFecType();
+  video_config.fec_overhead_bytes = ulpfec_generator.MaxPacketOverhead();
   RTPSenderVideo rtp_sender_video(video_config);
   uint8_t payload[] = {47, 11, 32, 93, 89};
   rtp_sender_context_->packet_history_.SetStorePacketsStatus(
@@ -1887,7 +1895,7 @@ TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacksUlpfec) {
   fec_params.fec_mask_type = kFecMaskRandom;
   fec_params.fec_rate = 1;
   fec_params.max_fec_frames = 1;
-  rtp_sender_video.SetFecParameters(fec_params, fec_params);
+  ulpfec_generator.SetProtectionParameters(fec_params, fec_params);
   video_header.frame_type = VideoFrameType::kVideoFrameDelta;
   ASSERT_TRUE(rtp_sender_video.SendVideo(kPayloadType, kCodecType, 1234, 4321,
                                          payload, nullptr, video_header,

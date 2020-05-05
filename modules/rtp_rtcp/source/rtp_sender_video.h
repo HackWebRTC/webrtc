@@ -71,6 +71,10 @@ class RTPSenderVideo {
     RTPSender* rtp_sender = nullptr;
     FlexfecSender* flexfec_sender = nullptr;
     VideoFecGenerator* fec_generator = nullptr;
+    // Some FEC data is duplicated here in preparation of moving FEC to
+    // the egress stage.
+    absl::optional<VideoFecGenerator::FecType> fec_type;
+    size_t fec_overhead_bytes = 0;  // Per packet max FEC overhead.
     FrameEncryptorInterface* frame_encryptor = nullptr;
     bool require_frame_encryption = false;
     bool enable_retransmit_all_layers = false;
@@ -112,13 +116,7 @@ class RTPSenderVideo {
   void SetVideoStructureUnderLock(
       const FrameDependencyStructure* video_structure);
 
-  // FlexFEC/ULPFEC.
-  // Set FEC rates, max frames before FEC is sent, and type of FEC masks.
-  void SetFecParameters(const FecProtectionParams& delta_params,
-                        const FecProtectionParams& key_params);
-
   uint32_t VideoBitrateSent() const;
-  uint32_t FecOverheadRate() const;
 
   // Returns the current packetization overhead rate, in bps. Note that this is
   // the payload overhead, eg the VP8 payload headers, not the RTP headers
@@ -191,6 +189,8 @@ class RTPSenderVideo {
 
   const absl::optional<int> red_payload_type_;
   VideoFecGenerator* const fec_generator_;
+  absl::optional<VideoFecGenerator::FecType> fec_type_;
+  const size_t fec_overhead_bytes_;  // Per packet max FEC overhead.
 
   rtc::CriticalSection stats_crit_;
   // Bitrate used for video payload and RTP headers.

@@ -69,7 +69,7 @@ class FlexfecSender : public VideoFecGenerator {
   DataRate CurrentFecRate() const override;
 
   // Only called on the VideoSendStream queue, after operation has shut down.
-  RtpState GetRtpState();
+  absl::optional<RtpState> GetRtpState() override;
 
  private:
   // Utility.

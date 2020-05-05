@@ -57,6 +57,8 @@ class UlpfecGenerator : public VideoFecGenerator {
   // Current rate of FEC packets generated, including all RTP-level headers.
   DataRate CurrentFecRate() const override;
 
+  absl::optional<RtpState> GetRtpState() override { return absl::nullopt; }
+
  private:
   struct Params {
     Params();
