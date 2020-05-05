@@ -10,6 +10,7 @@
 
 #include "pc/track_media_info_map.h"
 
+#include <set>
 #include <string>
 #include <utility>
 
@@ -170,19 +171,36 @@ TrackMediaInfoMap::TrackMediaInfoMap(
   }
   if (video_media_info_) {
     for (auto& sender_info : video_media_info_->senders) {
-      VideoTrackInterface* associated_track =
-          FindValueOrNull(local_video_track_by_ssrc, sender_info.ssrc());
-      if (associated_track) {
-        // One sender is associated with at most one track.
-        // One track may be associated with multiple senders.
-        video_track_by_sender_info_[&sender_info] = associated_track;
-        video_infos_by_local_track_[associated_track].push_back(&sender_info);
+      std::set<uint32_t> ssrcs;
+      ssrcs.insert(sender_info.ssrc());
+      for (auto& ssrc_group : sender_info.ssrc_groups) {
+        for (auto ssrc : ssrc_group.ssrcs) {
+          ssrcs.insert(ssrc);
+        }
       }
+      for (auto ssrc : ssrcs) {
+        VideoTrackInterface* associated_track =
+            FindValueOrNull(local_video_track_by_ssrc, ssrc);
+        if (associated_track) {
+          // One sender is associated with at most one track.
+          // One track may be associated with multiple senders.
+          video_track_by_sender_info_[&sender_info] = associated_track;
+          video_infos_by_local_track_[associated_track].push_back(&sender_info);
+          break;
+        }
+      }
+    }
+    for (auto& sender_info : video_media_info_->aggregated_senders) {
       if (sender_info.ssrc() == 0)
         continue;  // Unconnected SSRC. bugs.webrtc.org/8673
       RTC_DCHECK(video_info_by_sender_ssrc_.count(sender_info.ssrc()) == 0)
           << "Duplicate video sender SSRC: " << sender_info.ssrc();
       video_info_by_sender_ssrc_[sender_info.ssrc()] = &sender_info;
+      VideoTrackInterface* associated_track =
+          FindValueOrNull(local_video_track_by_ssrc, sender_info.ssrc());
+      if (associated_track) {
+        video_track_by_sender_info_[&sender_info] = associated_track;
+      }
     }
     for (auto& receiver_info : video_media_info_->receivers) {
       VideoTrackInterface* associated_track =

@@ -189,4 +189,15 @@ uint32_t RtpConfig::GetMediaSsrcAssociatedWithFlexfecSsrc(
   return media_ssrc;
 }
 
+absl::optional<std::string> RtpConfig::GetRidForSsrc(uint32_t ssrc) const {
+  auto it = std::find(ssrcs.begin(), ssrcs.end(), ssrc);
+  if (it != ssrcs.end()) {
+    size_t ssrc_index = std::distance(ssrcs.begin(), it);
+    if (ssrc_index < rids.size()) {
+      return rids[ssrc_index];
+    }
+  }
+  return absl::nullopt;
+}
+
 }  // namespace webrtc

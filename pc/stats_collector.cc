@@ -1028,7 +1028,7 @@ class VideoMediaChannelStatsGatherer final : public MediaChannelStatsGatherer {
 
   void ExtractStats(StatsCollector* collector) const override {
     ExtractSenderReceiverStats(collector, video_media_info.receivers,
-                               video_media_info.senders);
+                               video_media_info.aggregated_senders);
   }
 
   bool HasRemoteAudio() const override { return false; }

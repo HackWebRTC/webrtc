@@ -469,6 +469,7 @@ class RTC_EXPORT RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
 
   RTCStatsMember<std::string> media_source_id;
   RTCStatsMember<std::string> remote_id;
+  RTCStatsMember<std::string> rid;
   RTCStatsMember<uint32_t> packets_sent;
   RTCStatsMember<uint64_t> retransmitted_packets_sent;
   RTCStatsMember<uint64_t> bytes_sent;
@@ -480,6 +481,11 @@ class RTC_EXPORT RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
   RTCStatsMember<uint32_t> key_frames_encoded;
   RTCStatsMember<double> total_encode_time;
   RTCStatsMember<uint64_t> total_encoded_bytes_target;
+  RTCStatsMember<uint32_t> frame_width;
+  RTCStatsMember<uint32_t> frame_height;
+  RTCStatsMember<double> frames_per_second;
+  RTCStatsMember<uint32_t> frames_sent;
+  RTCStatsMember<uint32_t> huge_frames_sent;
   // TODO(https://crbug.com/webrtc/10635): This is only implemented for video;
   // implement it for audio as well.
   RTCStatsMember<double> total_packet_send_delay;

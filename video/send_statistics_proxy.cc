@@ -958,7 +958,15 @@ void SendStatisticsProxy::OnSendEncodedImage(
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (!stats)
     return;
-
+  if (encoded_frame_rate_trackers_.count(simulcast_idx) == 0) {
+    encoded_frame_rate_trackers_[simulcast_idx] =
+        std::make_unique<rtc::RateTracker>(kBucketSizeMs, kBucketCount);
+  }
+  stats->encode_frame_rate =
+      encoded_frame_rate_trackers_[simulcast_idx]->ComputeRate();
+  stats->frames_encoded++;
+  stats->total_encode_time_ms += encoded_image.timing_.encode_finish_ms -
+                                 encoded_image.timing_.encode_start_ms;
   // Report resolution of top spatial layer in case of VP9 SVC.
   bool is_svc_low_spatial_layer =
       (codec_info && codec_info->codecType == kVideoCodecVP9)
@@ -975,9 +983,9 @@ void SendStatisticsProxy::OnSendEncodedImage(
                                          VideoFrameType::kVideoFrameKey);
 
   if (encoded_image.qp_ != -1) {
-    if (!stats_.qp_sum)
-      stats_.qp_sum = 0;
-    *stats_.qp_sum += encoded_image.qp_;
+    if (!stats->qp_sum)
+      stats->qp_sum = 0;
+    *stats->qp_sum += encoded_image.qp_;
 
     if (codec_info) {
       if (codec_info->codecType == kVideoCodecVP8) {
@@ -997,6 +1005,7 @@ void SendStatisticsProxy::OnSendEncodedImage(
   // as a single difficult input frame.
   // https://w3c.github.io/webrtc-stats/#dom-rtcvideosenderstats-hugeframessent
   if (encoded_image.timing_.flags & VideoSendTiming::kTriggeredBySize) {
+    ++stats->huge_frames_sent;
     if (!last_outlier_timestamp_ ||
         *last_outlier_timestamp_ < encoded_image.capture_time_ms_) {
       last_outlier_timestamp_.emplace(encoded_image.capture_time_ms_);
@@ -1007,6 +1016,7 @@ void SendStatisticsProxy::OnSendEncodedImage(
   media_byte_rate_tracker_.AddSamples(encoded_image.size());
 
   if (uma_container_->InsertEncodedFrame(encoded_image, simulcast_idx)) {
+    encoded_frame_rate_trackers_[simulcast_idx]->AddSamples(1);
     encoded_frame_rate_tracker_.AddSamples(1);
   }
 
