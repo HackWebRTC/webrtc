@@ -79,6 +79,14 @@ class RTC_EXPORT AdaptedVideoTrackSource
 
   void OnSinkWantsChanged(const rtc::VideoSinkWants& wants);
 
+  // Encoded sinks not implemented for AdaptedVideoTrackSource.
+  bool SupportsEncodedOutput() const override { return false; }
+  void GenerateKeyFrame() override {}
+  void AddEncodedSink(
+      rtc::VideoSinkInterface<webrtc::RecordableEncodedFrame>* sink) override {}
+  void RemoveEncodedSink(
+      rtc::VideoSinkInterface<webrtc::RecordableEncodedFrame>* sink) override {}
+
   cricket::VideoAdapter video_adapter_;
 
   rtc::CriticalSection stats_crit_;

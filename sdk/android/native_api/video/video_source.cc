@@ -89,6 +89,14 @@ class JavaVideoTrackSourceImpl : public JavaVideoTrackSourceInterface {
   }
 
  private:
+  // Encoded sinks not implemented for JavaVideoTrackSourceImpl.
+  bool SupportsEncodedOutput() const override { return false; }
+  void GenerateKeyFrame() override {}
+  void AddEncodedSink(
+      rtc::VideoSinkInterface<webrtc::RecordableEncodedFrame>* sink) override {}
+  void RemoveEncodedSink(
+      rtc::VideoSinkInterface<webrtc::RecordableEncodedFrame>* sink) override {}
+
   rtc::scoped_refptr<jni::AndroidVideoTrackSource> android_video_track_source_;
   ScopedJavaGlobalRef<jobject> native_capturer_observer_;
 };
