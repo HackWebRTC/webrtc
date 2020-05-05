@@ -59,13 +59,6 @@ webrtc::RTCError VerifyCandidate(const cricket::Candidate& cand) {
     }
   }
 
-  // Disallow ICE-TCP with a private IP address.
-  if (cand.protocol() == cricket::TCP_PROTOCOL_NAME &&
-      cand.address().IsPrivateIP()) {
-    return webrtc::RTCError(webrtc::RTCErrorType::INVALID_PARAMETER,
-                            "candidate is TCP and has a private IP address");
-  }
-
   return webrtc::RTCError::OK();
 }
 
