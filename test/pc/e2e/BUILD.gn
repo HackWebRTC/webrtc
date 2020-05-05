@@ -426,6 +426,7 @@ if (rtc_include_tests) {
       ":network_quality_metrics_reporter",
       "../../../api:callfactory_api",
       "../../../api:create_network_emulation_manager",
+      "../../../api:create_peer_connection_quality_test_frame_generator",
       "../../../api:create_peerconnection_quality_test_fixture",
       "../../../api:libjingle_peerconnection_api",
       "../../../api:network_emulation_manager_api",

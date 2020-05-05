@@ -112,9 +112,7 @@ std::unique_ptr<test::TestVideoCapturer> MediaHelper::CreateVideoCapturer(
   std::unique_ptr<test::FrameGeneratorInterface> frame_generator = nullptr;
   if (generator) {
     frame_generator = std::move(generator);
-  }
-
-  if (video_config.generator) {
+  } else if (video_config.generator) {
     absl::optional<test::FrameGeneratorInterface::OutputType>
         frame_generator_type = absl::nullopt;
     if (video_config.generator == VideoGeneratorType::kDefault) {
@@ -128,14 +126,12 @@ std::unique_ptr<test::TestVideoCapturer> MediaHelper::CreateVideoCapturer(
         test::CreateSquareFrameGenerator(static_cast<int>(video_config.width),
                                          static_cast<int>(video_config.height),
                                          frame_generator_type, absl::nullopt);
-  }
-  if (video_config.input_file_name) {
+  } else if (video_config.input_file_name) {
     frame_generator = test::CreateFromYuvFileFrameGenerator(
         std::vector<std::string>(/*count=*/1,
                                  video_config.input_file_name.value()),
         video_config.width, video_config.height, /*frame_repeat_count=*/1);
-  }
-  if (video_config.screen_share_config) {
+  } else if (video_config.screen_share_config) {
     frame_generator = CreateScreenShareFrameGenerator(
         video_config, *video_config.screen_share_config);
   }

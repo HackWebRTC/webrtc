@@ -172,11 +172,14 @@ class PeerConnectionE2EQualityTestFixture {
     absl::optional<std::string> stream_label;
     // You can specify one of |generator|, |input_file_name|,
     // |screen_share_config| and |capturing_device_index|.
-    // If none of them are specified:
-    // * If config is added to the PeerConfigurer without specifying any video
-    //   source, then |generator| will be set to VideoGeneratorType::kDefault.
-    // * If config is added with own video source implementation, then that
-    //   video source will be used.
+    // If none of them are specified and config is added to the PeerConfigurer
+    // without specifying any video source, then |generator| will be set to
+    // VideoGeneratorType::kDefault.
+    // If video source implementation is specified,
+    // then it will be used as video source regardless of other
+    // options. Please consider this way unless you are using
+    // |capturing_device_index| option, since the possibility of using other
+    // three is about to be removed.
 
     // If specified generator of this type will be used to produce input video.
     absl::optional<VideoGeneratorType> generator;

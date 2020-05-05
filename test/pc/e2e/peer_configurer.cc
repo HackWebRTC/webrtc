@@ -118,7 +118,12 @@ void ValidateParams(
           video_labels.insert(video_config.stream_label.value()).second;
       RTC_CHECK(inserted) << "Duplicate video_config.stream_label="
                           << video_config.stream_label.value();
+      bool user_provided_generator = false;
       int input_sources_count = 0;
+      if ((*peers[i]->video_generators())[j]) {
+        user_provided_generator = true;
+        ++input_sources_count;
+      }
       if (video_config.generator)
         ++input_sources_count;
       if (video_config.input_file_name)
@@ -127,12 +132,11 @@ void ValidateParams(
         ++input_sources_count;
       if (video_config.capturing_device_index)
         ++input_sources_count;
-      if ((*peers[i]->video_generators())[j])
-        ++input_sources_count;
 
-      // TODO(titovartem) handle video_generators case properly
-      RTC_CHECK_EQ(input_sources_count, 1) << VideoConfigSourcePresenceToString(
-          video_config, (*peers[i]->video_generators())[j] != nullptr);
+      RTC_CHECK(input_sources_count == 1 ||
+                (input_sources_count == 2 && user_provided_generator))
+          << VideoConfigSourcePresenceToString(video_config,
+                                               user_provided_generator);
 
       if (video_config.screen_share_config) {
         ValidateScreenShareConfig(video_config,
