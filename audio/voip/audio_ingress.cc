@@ -38,26 +38,17 @@ AudioCodingModule::Config CreateAcmConfig(
 AudioIngress::AudioIngress(
     RtpRtcp* rtp_rtcp,
     Clock* clock,
-    rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
-    std::unique_ptr<ReceiveStatistics> receive_statistics)
+    ReceiveStatistics* receive_statistics,
+    rtc::scoped_refptr<AudioDecoderFactory> decoder_factory)
     : playing_(false),
       remote_ssrc_(0),
       first_rtp_timestamp_(-1),
-      rtp_receive_statistics_(std::move(receive_statistics)),
+      rtp_receive_statistics_(receive_statistics),
       rtp_rtcp_(rtp_rtcp),
       acm_receiver_(CreateAcmConfig(decoder_factory)),
       ntp_estimator_(clock) {}
 
 AudioIngress::~AudioIngress() = default;
-
-void AudioIngress::StartPlay() {
-  playing_ = true;
-}
-
-void AudioIngress::StopPlay() {
-  playing_ = false;
-  output_audio_level_.ResetLevelFullRange();
-}
 
 AudioMixer::Source::AudioFrameInfo AudioIngress::GetAudioFrameWithInfo(
     int sampling_rate,
@@ -113,17 +104,6 @@ AudioMixer::Source::AudioFrameInfo AudioIngress::GetAudioFrameWithInfo(
                : AudioMixer::Source::AudioFrameInfo::kNormal;
 }
 
-int AudioIngress::Ssrc() const {
-  return rtc::dchecked_cast<int>(remote_ssrc_.load());
-}
-
-int AudioIngress::PreferredSampleRate() const {
-  // Return the bigger of playout and receive frequency in the ACM. Note that
-  // return 0 means anything higher shouldn't cause any quality loss.
-  return std::max(acm_receiver_.last_packet_sample_rate_hz().value_or(0),
-                  acm_receiver_.last_output_sample_rate_hz());
-}
-
 void AudioIngress::SetReceiveCodecs(
     const std::map<int, SdpAudioFormat>& codecs) {
   {
@@ -135,36 +115,37 @@ void AudioIngress::SetReceiveCodecs(
   acm_receiver_.SetCodecs(codecs);
 }
 
-void AudioIngress::ReceivedRTPPacket(const uint8_t* data, size_t length) {
-  if (!Playing()) {
+void AudioIngress::ReceivedRTPPacket(rtc::ArrayView<const uint8_t> rtp_packet) {
+  if (!IsPlaying()) {
     return;
   }
 
-  RtpPacketReceived rtp_packet;
-  rtp_packet.Parse(data, length);
+  RtpPacketReceived rtp_packet_received;
+  rtp_packet_received.Parse(rtp_packet.data(), rtp_packet.size());
 
   // Set payload type's sampling rate before we feed it into ReceiveStatistics.
   {
     rtc::CritScope lock(&lock_);
-    const auto& it = receive_codec_info_.find(rtp_packet.PayloadType());
+    const auto& it =
+        receive_codec_info_.find(rtp_packet_received.PayloadType());
     // If sampling rate info is not available in our received codec set, it
     // would mean that remote media endpoint is sending incorrect payload id
     // which can't be processed correctly especially on payload type id in
     // dynamic range.
     if (it == receive_codec_info_.end()) {
       RTC_DLOG(LS_WARNING) << "Unexpected payload id received: "
-                           << rtp_packet.PayloadType();
+                           << rtp_packet_received.PayloadType();
       return;
     }
-    rtp_packet.set_payload_type_frequency(it->second);
+    rtp_packet_received.set_payload_type_frequency(it->second);
   }
 
-  rtp_receive_statistics_->OnRtpPacket(rtp_packet);
+  rtp_receive_statistics_->OnRtpPacket(rtp_packet_received);
 
   RTPHeader header;
-  rtp_packet.GetHeader(&header);
+  rtp_packet_received.GetHeader(&header);
 
-  size_t packet_length = rtp_packet.size();
+  size_t packet_length = rtp_packet_received.size();
   if (packet_length < header.headerLength ||
       (packet_length - header.headerLength) < header.paddingLength) {
     RTC_DLOG(LS_ERROR) << "Packet length(" << packet_length << ") header("
@@ -173,7 +154,7 @@ void AudioIngress::ReceivedRTPPacket(const uint8_t* data, size_t length) {
     return;
   }
 
-  const uint8_t* payload = rtp_packet.data() + header.headerLength;
+  const uint8_t* payload = rtp_packet_received.data() + header.headerLength;
   size_t payload_length = packet_length - header.headerLength;
   size_t payload_data_length = payload_length - header.paddingLength;
   auto data_view = rtc::ArrayView<const uint8_t>(payload, payload_data_length);
@@ -185,9 +166,10 @@ void AudioIngress::ReceivedRTPPacket(const uint8_t* data, size_t length) {
   }
 }
 
-void AudioIngress::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
-  // Deliver RTCP packet to RTP/RTCP module for parsing
-  rtp_rtcp_->IncomingRtcpPacket(data, length);
+void AudioIngress::ReceivedRTCPPacket(
+    rtc::ArrayView<const uint8_t> rtcp_packet) {
+  // Deliver RTCP packet to RTP/RTCP module for parsing.
+  rtp_rtcp_->IncomingRtcpPacket(rtcp_packet.data(), rtcp_packet.size());
 
   int64_t rtt = GetRoundTripTime();
   if (rtt == -1) {
@@ -232,26 +214,6 @@ int64_t AudioIngress::GetRoundTripTime() {
   }
 
   return (block_data.has_rtt() ? block_data.last_rtt_ms() : -1);
-}
-
-int AudioIngress::GetSpeechOutputLevelFullRange() const {
-  return output_audio_level_.LevelFullRange();
-}
-
-bool AudioIngress::Playing() const {
-  return playing_;
-}
-
-NetworkStatistics AudioIngress::GetNetworkStatistics() const {
-  NetworkStatistics stats;
-  acm_receiver_.GetNetworkStatistics(&stats);
-  return stats;
-}
-
-AudioDecodingCallStats AudioIngress::GetDecodingStatistics() const {
-  AudioDecodingCallStats stats;
-  acm_receiver_.GetDecodingCallStatistics(&stats);
-  return stats;
 }
 
 }  // namespace webrtc

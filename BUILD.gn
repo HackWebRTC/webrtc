@@ -687,8 +687,11 @@ if (rtc_include_tests) {
   rtc_test("voip_unittests") {
     testonly = true
     deps = [
+      "api/voip:voip_engine_factory_unittests",
+      "audio/voip/test:audio_channel_unittests",
       "audio/voip/test:audio_egress_unittests",
       "audio/voip/test:audio_ingress_unittests",
+      "audio/voip/test:voip_core_unittests",
       "test:test_main",
     ]
   }

@@ -76,6 +76,7 @@ class AudioEgressTest : public ::testing::Test {
 
   // Make sure we have shut down rtp stack and reset egress for each test.
   void TearDown() override {
+    egress_->StopSend();
     rtp_rtcp_->SetSendingStatus(false);
     egress_.reset();
   }
@@ -99,10 +100,10 @@ class AudioEgressTest : public ::testing::Test {
   SimulatedClock fake_clock_;
   NiceMock<MockTransport> transport_;
   SineWaveGenerator wave_generator_;
-  std::unique_ptr<AudioEgress> egress_;
-  std::unique_ptr<TaskQueueFactory> task_queue_factory_;
   std::unique_ptr<RtpRtcp> rtp_rtcp_;
+  std::unique_ptr<TaskQueueFactory> task_queue_factory_;
   rtc::scoped_refptr<AudioEncoderFactory> encoder_factory_;
+  std::unique_ptr<AudioEgress> egress_;
 };
 
 TEST_F(AudioEgressTest, SendingStatusAfterStartAndStop) {

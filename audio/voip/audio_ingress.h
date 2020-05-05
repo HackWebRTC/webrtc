@@ -11,6 +11,7 @@
 #ifndef AUDIO_VOIP_AUDIO_INGRESS_H_
 #define AUDIO_VOIP_AUDIO_INGRESS_H_
 
+#include <algorithm>
 #include <atomic>
 #include <map>
 #include <memory>
@@ -45,47 +46,68 @@ class AudioIngress : public AudioMixer::Source {
  public:
   AudioIngress(RtpRtcp* rtp_rtcp,
                Clock* clock,
-               rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
-               std::unique_ptr<ReceiveStatistics> receive_statistics);
+               ReceiveStatistics* receive_statistics,
+               rtc::scoped_refptr<AudioDecoderFactory> decoder_factory);
   ~AudioIngress() override;
 
   // Start or stop receiving operation of AudioIngress.
-  void StartPlay();
-  void StopPlay();
+  void StartPlay() { playing_ = true; }
+  void StopPlay() {
+    playing_ = false;
+    output_audio_level_.ResetLevelFullRange();
+  }
 
   // Query the state of the AudioIngress.
-  bool Playing() const;
+  bool IsPlaying() const { return playing_; }
 
   // Set the decoder formats and payload type for AcmReceiver where the
   // key type (int) of the map is the payload type of SdpAudioFormat.
   void SetReceiveCodecs(const std::map<int, SdpAudioFormat>& codecs);
 
   // APIs to handle received RTP/RTCP packets from caller.
-  void ReceivedRTPPacket(const uint8_t* data, size_t length);
-  void ReceivedRTCPPacket(const uint8_t* data, size_t length);
+  void ReceivedRTPPacket(rtc::ArrayView<const uint8_t> rtp_packet);
+  void ReceivedRTCPPacket(rtc::ArrayView<const uint8_t> rtcp_packet);
 
   // Retrieve highest speech output level in last 100 ms.  Note that
   // this isn't RMS but absolute raw audio level on int16_t sample unit.
   // Therefore, the return value will vary between 0 ~ 0xFFFF. This type of
   // value may be useful to be used for measuring active speaker gauge.
-  int GetSpeechOutputLevelFullRange() const;
+  int GetSpeechOutputLevelFullRange() const {
+    return output_audio_level_.LevelFullRange();
+  }
 
   // Returns network round trip time (RTT) measued by RTCP exchange with
   // remote media endpoint. RTT value -1 indicates that it's not initialized.
   int64_t GetRoundTripTime();
 
-  NetworkStatistics GetNetworkStatistics() const;
-  AudioDecodingCallStats GetDecodingStatistics() const;
+  NetworkStatistics GetNetworkStatistics() const {
+    NetworkStatistics stats;
+    acm_receiver_.GetNetworkStatistics(&stats);
+    return stats;
+  }
+  AudioDecodingCallStats GetDecodingStatistics() const {
+    AudioDecodingCallStats stats;
+    acm_receiver_.GetDecodingCallStatistics(&stats);
+    return stats;
+  }
 
   // Implementation of AudioMixer::Source interface.
   AudioMixer::Source::AudioFrameInfo GetAudioFrameWithInfo(
       int sampling_rate,
       AudioFrame* audio_frame) override;
-  int Ssrc() const override;
-  int PreferredSampleRate() const override;
+  int Ssrc() const override {
+    return rtc::dchecked_cast<int>(remote_ssrc_.load());
+  }
+  int PreferredSampleRate() const override {
+    // If we haven't received any RTP packet from remote and thus
+    // last_packet_sampling_rate is not available then use NetEq's sampling
+    // rate as that would be what would be used for audio output sample.
+    return std::max(acm_receiver_.last_packet_sample_rate_hz().value_or(0),
+                    acm_receiver_.last_output_sample_rate_hz());
+  }
 
  private:
-  // Indicate AudioIngress status as caller invokes Start/StopPlaying.
+  // Indicates AudioIngress status as caller invokes Start/StopPlaying.
   // If not playing, incoming RTP data processing is skipped, thus
   // producing no data to output device.
   std::atomic<bool> playing_;
@@ -98,7 +120,7 @@ class AudioIngress : public AudioMixer::Source {
   std::atomic<int64_t> first_rtp_timestamp_;
 
   // Synchronizaton is handled internally by ReceiveStatistics.
-  const std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
+  ReceiveStatistics* const rtp_receive_statistics_;
 
   // Synchronizaton is handled internally by RtpRtcp.
   RtpRtcp* const rtp_rtcp_;
