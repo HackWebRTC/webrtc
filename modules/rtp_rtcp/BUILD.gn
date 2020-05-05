@@ -206,8 +206,6 @@ rtc_library("rtp_rtcp") {
     "source/time_util.h",
     "source/tmmbr_help.cc",
     "source/tmmbr_help.h",
-    "source/transformable_encoded_frame.cc",
-    "source/transformable_encoded_frame.h",
     "source/ulpfec_generator.cc",
     "source/ulpfec_generator.h",
     "source/ulpfec_header_reader_writer.cc",

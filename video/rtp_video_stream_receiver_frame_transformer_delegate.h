@@ -42,13 +42,10 @@ class RtpVideoStreamReceiverFrameTransformerDelegate
   // Implements TransformedFrameCallback. Can be called on any thread. Posts
   // the transformed frame to be managed on the |network_thread_|.
   void OnTransformedFrame(
-      std::unique_ptr<video_coding::EncodedFrame> frame) override;
-  void OnTransformedFrame(
       std::unique_ptr<TransformableFrameInterface> frame) override;
 
   // Delegates the call to RtpVideoReceiver::ManageFrame on the
   // |network_thread_|.
-  void ManageFrame(std::unique_ptr<video_coding::EncodedFrame> frame);
   void ManageFrame(std::unique_ptr<TransformableFrameInterface> frame);
 
  protected:

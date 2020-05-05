@@ -22,12 +22,6 @@ namespace webrtc {
 class MockFrameTransformer : public FrameTransformerInterface {
  public:
   MOCK_METHOD(void,
-              TransformFrame,
-              (std::unique_ptr<video_coding::EncodedFrame>,
-               std::vector<uint8_t>,
-               uint32_t),
-              (override));
-  MOCK_METHOD(void,
               Transform,
               (std::unique_ptr<TransformableFrameInterface>),
               (override));

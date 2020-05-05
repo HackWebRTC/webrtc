@@ -1137,9 +1137,7 @@ TEST_F(RtpVideoStreamReceiverTest, TransformFrame) {
       GetGenericVideoHeader(VideoFrameType::kVideoFrameKey);
   mock_on_complete_frame_callback_.AppendExpectedBitstream(data.data(),
                                                            data.size());
-  EXPECT_CALL(*mock_frame_transformer,
-              TransformFrame(_, RtpDescriptorAuthentication(video_header),
-                             config_.rtp.remote_ssrc));
+  EXPECT_CALL(*mock_frame_transformer, Transform(_));
   receiver->OnReceivedPayloadData(data, rtp_packet, video_header);
 
   EXPECT_CALL(*mock_frame_transformer,

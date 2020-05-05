@@ -16,7 +16,6 @@
 #include "absl/memory/memory.h"
 #include "modules/rtp_rtcp/source/rtp_descriptor_authentication.h"
 #include "modules/rtp_rtcp/source/rtp_sender_video.h"
-#include "modules/rtp_rtcp/source/transformable_encoded_frame.h"
 #include "rtc_base/task_utils/to_queued_task.h"
 
 namespace webrtc {
@@ -126,33 +125,10 @@ bool RTPSenderVideoFrameTransformerDelegate::TransformFrame(
     absl::optional<int64_t> expected_retransmission_time_ms) {
   if (!encoder_queue_)
     encoder_queue_ = TaskQueueBase::Current();
-  // TODO(bugs.webrtc.org/11380) remove once this version of TransformFrame() is
-  // deprecated.
-  frame_transformer_->TransformFrame(
-      std::make_unique<TransformableEncodedFrame>(
-          encoded_image.GetEncodedData(), video_header, payload_type,
-          codec_type, rtp_timestamp, encoded_image.capture_time_ms_,
-          fragmentation, expected_retransmission_time_ms),
-      RtpDescriptorAuthentication(video_header), ssrc_);
   frame_transformer_->Transform(std::make_unique<TransformableVideoSenderFrame>(
       encoded_image, video_header, payload_type, codec_type, rtp_timestamp,
       fragmentation, expected_retransmission_time_ms, ssrc_));
   return true;
-}
-
-void RTPSenderVideoFrameTransformerDelegate::OnTransformedFrame(
-    std::unique_ptr<video_coding::EncodedFrame> frame) {
-  rtc::CritScope lock(&sender_lock_);
-
-  // The encoder queue gets destroyed after the sender; as long as the sender is
-  // alive, it's safe to post.
-  if (!sender_)
-    return;
-  rtc::scoped_refptr<RTPSenderVideoFrameTransformerDelegate> delegate = this;
-  encoder_queue_->PostTask(ToQueuedTask(
-      [delegate = std::move(delegate), frame = std::move(frame)]() mutable {
-        delegate->SendVideo(std::move(frame));
-      }));
 }
 
 void RTPSenderVideoFrameTransformerDelegate::OnTransformedFrame(
@@ -168,23 +144,6 @@ void RTPSenderVideoFrameTransformerDelegate::OnTransformedFrame(
       [delegate = std::move(delegate), frame = std::move(frame)]() mutable {
         delegate->SendVideo(std::move(frame));
       }));
-}
-
-void RTPSenderVideoFrameTransformerDelegate::SendVideo(
-    std::unique_ptr<video_coding::EncodedFrame> frame) const {
-  RTC_CHECK(encoder_queue_->IsCurrent());
-  rtc::CritScope lock(&sender_lock_);
-  if (!sender_)
-    return;
-  auto* transformed_frame =
-      static_cast<TransformableEncodedFrame*>(frame.get());
-  sender_->SendVideo(
-      transformed_frame->PayloadType(), transformed_frame->codec_type(),
-      transformed_frame->Timestamp(), transformed_frame->capture_time_ms(),
-      transformed_frame->EncodedImage(),
-      transformed_frame->fragmentation_header(),
-      transformed_frame->video_header(),
-      transformed_frame->expected_retransmission_time_ms());
 }
 
 void RTPSenderVideoFrameTransformerDelegate::SendVideo(
