@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2018 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2020 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -37,7 +37,7 @@ constexpr int kMaxNumCachedBlockyFrames = 100;
 // TODO(ilnik): Add H264/HEVC thresholds.
 }  // namespace
 
-VideoQualityObserver::VideoQualityObserver(VideoContentType content_type)
+VideoQualityObserver::VideoQualityObserver()
     : last_frame_rendered_ms_(-1),
       num_frames_rendered_(0),
       first_frame_rendered_ms_(-1),
@@ -50,10 +50,12 @@ VideoQualityObserver::VideoQualityObserver(VideoContentType content_type)
       current_resolution_(Resolution::Low),
       num_resolution_downgrades_(0),
       time_in_blocky_video_ms_(0),
-      content_type_(content_type),
       is_paused_(false) {}
 
-void VideoQualityObserver::UpdateHistograms() {
+void VideoQualityObserver::UpdateHistograms(bool screenshare) {
+  // TODO(bugs.webrtc.org/11489): Called on the decoder thread - which _might_
+  // be the same as the construction thread.
+
   // Don't report anything on an empty video stream.
   if (num_frames_rendered_ == 0) {
     return;
@@ -67,9 +69,8 @@ void VideoQualityObserver::UpdateHistograms() {
                                    last_unfreeze_time_ms_);
   }
 
-  std::string uma_prefix = videocontenttypehelpers::IsScreenshare(content_type_)
-                               ? "WebRTC.Video.Screenshare"
-                               : "WebRTC.Video";
+  std::string uma_prefix =
+      screenshare ? "WebRTC.Video.Screenshare" : "WebRTC.Video";
 
   auto mean_time_between_freezes =
       smooth_playback_durations_.Avg(kMinRequiredSamples);

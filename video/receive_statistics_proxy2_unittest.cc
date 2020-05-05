@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 The WebRTC project authors. All Rights Reserved.
+ *  Copyright 2020 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -22,9 +22,12 @@
 #include "api/video/video_frame.h"
 #include "api/video/video_frame_buffer.h"
 #include "api/video/video_rotation.h"
+#include "rtc_base/task_utils/to_queued_task.h"
+#include "rtc_base/thread.h"
 #include "system_wrappers/include/metrics.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
+#include "test/run_loop.h"
 
 namespace webrtc {
 namespace internal {
@@ -40,15 +43,15 @@ const int kHeight = 720;
 // TODO(sakal): ReceiveStatisticsProxy is lacking unittesting.
 class ReceiveStatisticsProxy2Test : public ::testing::Test {
  public:
-  ReceiveStatisticsProxy2Test() : fake_clock_(1234), config_(GetTestConfig()) {}
-  virtual ~ReceiveStatisticsProxy2Test() {}
-
- protected:
-  virtual void SetUp() {
+  ReceiveStatisticsProxy2Test() : fake_clock_(1234), config_(GetTestConfig()) {
     metrics::Reset();
-    statistics_proxy_.reset(new ReceiveStatisticsProxy(&config_, &fake_clock_));
+    statistics_proxy_.reset(
+        new ReceiveStatisticsProxy(&config_, &fake_clock_, loop_.task_queue()));
   }
 
+  ~ReceiveStatisticsProxy2Test() override { statistics_proxy_.reset(); }
+
+ protected:
   VideoReceiveStream::Config GetTestConfig() {
     VideoReceiveStream::Config config(nullptr);
     config.rtp.local_ssrc = kLocalSsrc;
@@ -79,6 +82,7 @@ class ReceiveStatisticsProxy2Test : public ::testing::Test {
   SimulatedClock fake_clock_;
   const VideoReceiveStream::Config config_;
   std::unique_ptr<ReceiveStatisticsProxy> statistics_proxy_;
+  test::RunLoop loop_;
 };
 
 TEST_F(ReceiveStatisticsProxy2Test, OnDecodedFrameIncreasesFramesDecoded) {

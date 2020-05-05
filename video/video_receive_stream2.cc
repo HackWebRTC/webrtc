@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2020 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -181,6 +181,7 @@ constexpr int kInactiveStreamThresholdMs = 600000;  //  10 minutes.
 
 VideoReceiveStream2::VideoReceiveStream2(
     TaskQueueFactory* task_queue_factory,
+    TaskQueueBase* current_queue,
     RtpStreamReceiverControllerInterface* receiver_controller,
     int num_cpu_cores,
     PacketRouter* packet_router,
@@ -194,10 +195,11 @@ VideoReceiveStream2::VideoReceiveStream2(
       config_(std::move(config)),
       num_cpu_cores_(num_cpu_cores),
       process_thread_(process_thread),
+      worker_thread_(current_queue),
       clock_(clock),
       call_stats_(call_stats),
       source_tracker_(clock_),
-      stats_proxy_(&config_, clock_),
+      stats_proxy_(&config_, clock_, worker_thread_),
       rtp_receive_statistics_(ReceiveStatistics::Create(clock_)),
       timing_(timing),
       video_receiver_(clock_, timing_.get()),
@@ -227,6 +229,7 @@ VideoReceiveStream2::VideoReceiveStream2(
           TaskQueueFactory::Priority::HIGH)) {
   RTC_LOG(LS_INFO) << "VideoReceiveStream2: " << config_.ToString();
 
+  RTC_DCHECK(worker_thread_);
   RTC_DCHECK(config_.renderer);
   RTC_DCHECK(process_thread_);
   RTC_DCHECK(call_stats_);
@@ -265,25 +268,6 @@ VideoReceiveStream2::VideoReceiveStream2(
                                                        true);
   }
 }
-
-VideoReceiveStream2::VideoReceiveStream2(
-    TaskQueueFactory* task_queue_factory,
-    RtpStreamReceiverControllerInterface* receiver_controller,
-    int num_cpu_cores,
-    PacketRouter* packet_router,
-    VideoReceiveStream::Config config,
-    ProcessThread* process_thread,
-    CallStats* call_stats,
-    Clock* clock)
-    : VideoReceiveStream2(task_queue_factory,
-                          receiver_controller,
-                          num_cpu_cores,
-                          packet_router,
-                          std::move(config),
-                          process_thread,
-                          call_stats,
-                          clock,
-                          new VCMTiming(clock)) {}
 
 VideoReceiveStream2::~VideoReceiveStream2() {
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
@@ -437,7 +421,8 @@ void VideoReceiveStream2::Stop() {
 }
 
 VideoReceiveStream::Stats VideoReceiveStream2::GetStats() const {
-  VideoReceiveStream::Stats stats = stats_proxy_.GetStats();
+  RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
+  VideoReceiveStream2::Stats stats = stats_proxy_.GetStats();
   stats.total_bitrate_bps = 0;
   StreamStatistician* statistician =
       rtp_receive_statistics_->GetStatistician(stats.ssrc);
@@ -455,6 +440,7 @@ VideoReceiveStream::Stats VideoReceiveStream2::GetStats() const {
 }
 
 void VideoReceiveStream2::UpdateHistograms() {
+  RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
   absl::optional<int> fraction_lost;
   StreamDataCounters rtp_stats;
   StreamStatistician* statistician =
@@ -491,6 +477,7 @@ bool VideoReceiveStream2::SetBaseMinimumPlayoutDelayMs(int delay_ms) {
     return false;
   }
 
+  // TODO(bugs.webrtc.org/11489): Consider posting to worker.
   rtc::CritScope cs(&playout_delay_lock_);
   base_minimum_playout_delay_ms_ = delay_ms;
   UpdatePlayoutDelays();
@@ -504,19 +491,19 @@ int VideoReceiveStream2::GetBaseMinimumPlayoutDelayMs() const {
   return base_minimum_playout_delay_ms_;
 }
 
-// TODO(tommi): This method grabs a lock 6 times.
+// TODO(bugs.webrtc.org/11489): This method grabs a lock 6 times.
 void VideoReceiveStream2::OnFrame(const VideoFrame& video_frame) {
   int64_t video_playout_ntp_ms;
   int64_t sync_offset_ms;
   double estimated_freq_khz;
-  // TODO(tommi): GetStreamSyncOffsetInMs grabs three locks.  One inside the
-  // function itself, another in GetChannel() and a third in
+  // TODO(bugs.webrtc.org/11489): GetStreamSyncOffsetInMs grabs three locks. One
+  // inside the function itself, another in GetChannel() and a third in
   // GetPlayoutTimestamp.  Seems excessive.  Anyhow, I'm assuming the function
   // succeeds most of the time, which leads to grabbing a fourth lock.
   if (rtp_stream_sync_.GetStreamSyncOffsetInMs(
           video_frame.timestamp(), video_frame.render_time_ms(),
           &video_playout_ntp_ms, &sync_offset_ms, &estimated_freq_khz)) {
-    // TODO(tommi): OnSyncOffsetUpdated grabs a lock.
+    // TODO(bugs.webrtc.org/11489): OnSyncOffsetUpdated grabs a lock.
     stats_proxy_.OnSyncOffsetUpdated(video_playout_ntp_ms, sync_offset_ms,
                                      estimated_freq_khz);
   }
@@ -524,7 +511,7 @@ void VideoReceiveStream2::OnFrame(const VideoFrame& video_frame) {
 
   config_.renderer->OnFrame(video_frame);
 
-  // TODO(tommi): OnRenderFrame grabs a lock too.
+  // TODO(bugs.webrtc.org/11489): OnRenderFrame grabs a lock too.
   stats_proxy_.OnRenderedFrame(video_frame);
 }
 
@@ -562,6 +549,10 @@ void VideoReceiveStream2::OnCompleteFrame(
   }
   last_complete_frame_time_ms_ = time_now_ms;
 
+  // TODO(bugs.webrtc.org/11489): We grab the playout_delay_lock_ lock
+  // potentially twice. Consider checking both min/max and posting to worker if
+  // there's a change. If we always update playout delays on the worker, we
+  // don't need a lock.
   const PlayoutDelay& playout_delay = frame->EncodedImage().playout_delay_;
   if (playout_delay.min_ms >= 0) {
     rtc::CritScope cs(&playout_delay_lock_);
@@ -617,6 +608,7 @@ void VideoReceiveStream2::SetEstimatedPlayoutNtpTimestampMs(
 
 void VideoReceiveStream2::SetMinimumPlayoutDelay(int delay_ms) {
   RTC_DCHECK_RUN_ON(&module_process_sequence_checker_);
+  // TODO(bugs.webrtc.org/11489): Consider posting to worker.
   rtc::CritScope cs(&playout_delay_lock_);
   syncable_minimum_playout_delay_ms_ = delay_ms;
   UpdatePlayoutDelays();
@@ -651,6 +643,7 @@ void VideoReceiveStream2::StartNextDecode() {
 
 void VideoReceiveStream2::HandleEncodedFrame(
     std::unique_ptr<EncodedFrame> frame) {
+  // Running on |decode_queue_|.
   int64_t now_ms = clock_->TimeInMilliseconds();
 
   // Current OnPreDecode only cares about QP for VP8.
@@ -705,6 +698,7 @@ void VideoReceiveStream2::HandleKeyFrameGeneration(
 }
 
 void VideoReceiveStream2::HandleFrameBufferTimeout() {
+  // Running on |decode_queue_|.
   int64_t now_ms = clock_->TimeInMilliseconds();
   absl::optional<int64_t> last_packet_ms =
       rtp_video_stream_receiver_.LastReceivedPacketMs();

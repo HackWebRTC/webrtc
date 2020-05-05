@@ -57,6 +57,7 @@ class VideoReceiveStream2 : public webrtc::VideoReceiveStream,
   static constexpr int kMaxWaitForKeyFrameMs = 200;
 
   VideoReceiveStream2(TaskQueueFactory* task_queue_factory,
+                      TaskQueueBase* current_queue,
                       RtpStreamReceiverControllerInterface* receiver_controller,
                       int num_cpu_cores,
                       PacketRouter* packet_router,
@@ -65,14 +66,6 @@ class VideoReceiveStream2 : public webrtc::VideoReceiveStream,
                       CallStats* call_stats,
                       Clock* clock,
                       VCMTiming* timing);
-  VideoReceiveStream2(TaskQueueFactory* task_queue_factory,
-                      RtpStreamReceiverControllerInterface* receiver_controller,
-                      int num_cpu_cores,
-                      PacketRouter* packet_router,
-                      VideoReceiveStream::Config config,
-                      ProcessThread* process_thread,
-                      CallStats* call_stats,
-                      Clock* clock);
   ~VideoReceiveStream2() override;
 
   const Config& config() const { return config_; }
@@ -161,6 +154,7 @@ class VideoReceiveStream2 : public webrtc::VideoReceiveStream,
   const VideoReceiveStream::Config config_;
   const int num_cpu_cores_;
   ProcessThread* const process_thread_;
+  TaskQueueBase* const worker_thread_;
   Clock* const clock_;
 
   CallStats* const call_stats_;

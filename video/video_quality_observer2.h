@@ -32,7 +32,7 @@ class VideoQualityObserver {
  public:
   // Use either VideoQualityObserver::kBlockyQpThresholdVp8 or
   // VideoQualityObserver::kBlockyQpThresholdVp9.
-  explicit VideoQualityObserver(VideoContentType content_type);
+  VideoQualityObserver();
   ~VideoQualityObserver() = default;
 
   void OnDecodedFrame(const VideoFrame& frame,
@@ -50,7 +50,8 @@ class VideoQualityObserver {
   uint32_t TotalFramesDurationMs() const;
   double SumSquaredFrameDurationsSec() const;
 
-  void UpdateHistograms();
+  // Set |screenshare| to true if the last decoded frame was for screenshare.
+  void UpdateHistograms(bool screenshare);
 
   static const uint32_t kMinFrameSamplesToDetectFreeze;
   static const uint32_t kMinIncreaseForFreezeMs;
@@ -87,8 +88,6 @@ class VideoQualityObserver {
   int num_resolution_downgrades_;
   // Similar to resolution, time spent in high-QP video.
   int64_t time_in_blocky_video_ms_;
-  // Content type of the last decoded frame.
-  VideoContentType content_type_;
   bool is_paused_;
 
   // Set of decoded frames with high QP value.

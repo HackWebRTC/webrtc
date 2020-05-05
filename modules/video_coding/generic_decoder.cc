@@ -57,6 +57,8 @@ VCMReceiveCallback* VCMDecodedFrameCallback::UserReceiveCallback() {
 }
 
 int32_t VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage) {
+  // This function may be called on the decode TaskQueue, but may also be called
+  // on an OS provided queue such as on iOS (see e.g. b/153465112).
   return Decoded(decodedImage, -1);
 }
 

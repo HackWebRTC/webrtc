@@ -31,6 +31,7 @@
 #include "test/gtest.h"
 #include "test/mock_audio_decoder_factory.h"
 #include "test/mock_transport.h"
+#include "test/run_loop.h"
 
 namespace {
 
@@ -56,6 +57,7 @@ struct CallHelper {
   webrtc::Call* operator->() { return call_.get(); }
 
  private:
+  webrtc::test::RunLoop loop_;
   webrtc::RtcEventLogNull event_log_;
   webrtc::FieldTrialBasedConfig field_trials_;
   std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory_;
