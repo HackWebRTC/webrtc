@@ -131,7 +131,6 @@ class TrackMediaInfoMapTest : public ::testing::Test {
         video_sender_info.local_stats[i++].ssrc = ssrc;
       }
       video_media_info_->senders.push_back(video_sender_info);
-      video_media_info_->aggregated_senders.push_back(video_sender_info);
     }
   }
 

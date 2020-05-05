@@ -569,7 +569,6 @@ struct VideoSenderInfo : public MediaSenderInfo {
   int send_frame_height = 0;
   int framerate_input = 0;
   int framerate_sent = 0;
-  int aggregated_framerate_sent = 0;
   int nominal_bitrate = 0;
   int adapt_reason = 0;
   int adapt_changes = 0;
@@ -593,11 +592,8 @@ struct VideoSenderInfo : public MediaSenderInfo {
   bool has_entered_low_resolution = false;
   absl::optional<uint64_t> qp_sum;
   webrtc::VideoContentType content_type = webrtc::VideoContentType::UNSPECIFIED;
-  uint32_t frames_sent = 0;
   // https://w3c.github.io/webrtc-stats/#dom-rtcvideosenderstats-hugeframessent
   uint32_t huge_frames_sent = 0;
-  uint32_t aggregated_huge_frames_sent = 0;
-  absl::optional<std::string> rid;
 };
 
 struct VideoReceiverInfo : public MediaReceiverInfo {
@@ -717,20 +713,11 @@ struct VideoMediaInfo {
   ~VideoMediaInfo();
   void Clear() {
     senders.clear();
-    aggregated_senders.clear();
     receivers.clear();
     send_codecs.clear();
     receive_codecs.clear();
   }
-  // Each sender info represents one "outbound-rtp" stream.In non - simulcast,
-  // this means one info per RtpSender but if simulcast is used this means
-  // one info per simulcast layer.
   std::vector<VideoSenderInfo> senders;
-  // Used for legacy getStats() API's "ssrc" stats and modern getStats() API's
-  // "track" stats. If simulcast is used, instead of having one sender info per
-  // simulcast layer, the metrics of all layers of an RtpSender are aggregated
-  // into a single sender info per RtpSender.
-  std::vector<VideoSenderInfo> aggregated_senders;
   std::vector<VideoReceiverInfo> receivers;
   RtpCodecParametersMap send_codecs;
   RtpCodecParametersMap receive_codecs;

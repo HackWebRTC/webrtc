@@ -288,7 +288,6 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
     std::set<uintptr_t> opened_data_channels;
   };
   InternalRecord internal_record_;
-  bool enable_simulcast_stats_ = false;
 };
 
 const char* CandidateTypeToRTCIceCandidateTypeForTesting(
