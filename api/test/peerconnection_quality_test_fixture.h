@@ -310,6 +310,7 @@ class PeerConnectionE2EQualityTestFixture {
         std::unique_ptr<IceTransportFactory> factory) = 0;
 
     // Add new video stream to the call that will be sent from this peer.
+    // Default implementation of video frames generator will be used.
     virtual PeerConfigurer* AddVideoConfig(VideoConfig config) = 0;
     // Add new video stream to the call that will be sent from this peer with
     // provided own implementation of video frames generator.

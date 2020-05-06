@@ -20,6 +20,7 @@
 #include "api/fec_controller.h"
 #include "api/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "api/task_queue/task_queue_factory.h"
+#include "api/test/create_peer_connection_quality_test_frame_generator.h"
 #include "api/test/peerconnection_quality_test_fixture.h"
 #include "api/transport/media/media_transport_interface.h"
 #include "api/transport/network_control.h"
@@ -116,8 +117,9 @@ class PeerConfigurerImpl final
 
   PeerConfigurer* AddVideoConfig(
       PeerConnectionE2EQualityTestFixture::VideoConfig config) override {
+    video_generators_.push_back(
+        CreateSquareFrameGenerator(config, /*type=*/absl::nullopt));
     params_->video_configs.push_back(std::move(config));
-    video_generators_.push_back(nullptr);
     return this;
   }
   PeerConfigurer* AddVideoConfig(

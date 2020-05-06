@@ -150,8 +150,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
         VideoConfig video(640, 360, 30);
         video.stream_label = "alice-video";
         video.sync_group = "alice-media";
-        auto frame_generator = CreateSquareFrameGenerator(video, absl::nullopt);
-        alice->AddVideoConfig(std::move(video), std::move(frame_generator));
+        alice->AddVideoConfig(std::move(video));
 
         AudioConfig audio;
         audio.stream_label = "alice-audio";
@@ -166,8 +165,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
         VideoConfig video(640, 360, 30);
         video.stream_label = "bob-video";
         video.temporal_layers_count = 2;
-        auto frame_generator = CreateSquareFrameGenerator(video, absl::nullopt);
-        bob->AddVideoConfig(std::move(video), std::move(frame_generator));
+        bob->AddVideoConfig(std::move(video));
 
         VideoConfig screenshare(640, 360, 30);
         screenshare.stream_label = "bob-screenshare";
@@ -234,9 +232,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Simulcast) {
         VideoConfig simulcast(1280, 720, 30);
         simulcast.stream_label = "alice-simulcast";
         simulcast.simulcast_config = VideoSimulcastConfig(3, 0);
-        auto frame_generator =
-            CreateSquareFrameGenerator(simulcast, absl::nullopt);
-        alice->AddVideoConfig(std::move(simulcast), std::move(frame_generator));
+        alice->AddVideoConfig(std::move(simulcast));
 
         AudioConfig audio;
         audio.stream_label = "alice-audio";
@@ -248,8 +244,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Simulcast) {
       [](PeerConfigurer* bob) {
         VideoConfig video(640, 360, 30);
         video.stream_label = "bob-video";
-        auto frame_generator = CreateSquareFrameGenerator(video, absl::nullopt);
-        bob->AddVideoConfig(std::move(video), std::move(frame_generator));
+        bob->AddVideoConfig(std::move(video));
 
         AudioConfig audio;
         audio.stream_label = "bob-audio";
@@ -277,9 +272,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Svc) {
         // Because we have network with packets loss we can analyze only the
         // highest spatial layer in SVC mode.
         simulcast.simulcast_config = VideoSimulcastConfig(3, 2);
-        auto frame_generator =
-            CreateSquareFrameGenerator(simulcast, absl::nullopt);
-        alice->AddVideoConfig(std::move(simulcast), std::move(frame_generator));
+        alice->AddVideoConfig(std::move(simulcast));
 
         AudioConfig audio;
         audio.stream_label = "alice-audio";
@@ -291,8 +284,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Svc) {
       [](PeerConfigurer* bob) {
         VideoConfig video(640, 360, 30);
         video.stream_label = "bob-video";
-        auto frame_generator = CreateSquareFrameGenerator(video, absl::nullopt);
-        bob->AddVideoConfig(std::move(video), std::move(frame_generator));
+        bob->AddVideoConfig(std::move(video));
 
         AudioConfig audio;
         audio.stream_label = "bob-audio";
@@ -325,8 +317,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_HighBitrate) {
         video.stream_label = "alice-video";
         video.min_encode_bitrate_bps = 500'000;
         video.max_encode_bitrate_bps = 3'000'000;
-        auto frame_generator = CreateSquareFrameGenerator(video, absl::nullopt);
-        alice->AddVideoConfig(std::move(video), std::move(frame_generator));
+        alice->AddVideoConfig(std::move(video));
 
         AudioConfig audio;
         audio.stream_label = "alice-audio";
@@ -345,8 +336,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_HighBitrate) {
         video.stream_label = "bob-video";
         video.min_encode_bitrate_bps = 500'000;
         video.max_encode_bitrate_bps = 3'000'000;
-        auto frame_generator = CreateSquareFrameGenerator(video, absl::nullopt);
-        bob->AddVideoConfig(std::move(video), std::move(frame_generator));
+        bob->AddVideoConfig(std::move(video));
 
         AudioConfig audio;
         audio.stream_label = "bob-audio";

@@ -1625,8 +1625,7 @@ TEST(PCFullStackTest, MAYBE_SimulcastFullHdOveruse) {
         video.simulcast_config = VideoSimulcastConfig(3, 2);
         video.temporal_layers_count = 3;
         video.stream_label = "alice-video";
-        auto frame_generator = CreateSquareFrameGenerator(video, absl::nullopt);
-        alice->AddVideoConfig(std::move(video), std::move(frame_generator));
+        alice->AddVideoConfig(std::move(video));
       },
       [](PeerConfigurer* bob) {});
   RunParams run_params(TimeDelta::Seconds(kTestDurationSec));

@@ -12,7 +12,6 @@
 
 #include <set>
 
-#include "api/test/create_peer_connection_quality_test_frame_generator.h"
 #include "test/testsupport/file_utils.h"
 
 namespace webrtc {
