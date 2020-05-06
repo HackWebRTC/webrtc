@@ -202,7 +202,10 @@ std::unique_ptr<VideoEncoder> ObjCVideoEncoderFactory::CreateVideoEncoder(
 std::unique_ptr<VideoEncoderFactory::EncoderSelectorInterface>
     ObjCVideoEncoderFactory::GetEncoderSelector() const {
   if ([encoder_factory_ respondsToSelector:@selector(encoderSelector)]) {
-    return absl::make_unique<ObjcVideoEncoderSelector>([encoder_factory_ encoderSelector]);
+    id<RTC_OBJC_TYPE(RTCVideoEncoderSelector)> selector = [encoder_factory_ encoderSelector];
+    if (selector) {
+      return absl::make_unique<ObjcVideoEncoderSelector>(selector);
+    }
   }
   return nullptr;
 }
