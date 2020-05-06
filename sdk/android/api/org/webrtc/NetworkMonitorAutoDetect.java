@@ -50,6 +50,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     CONNECTION_UNKNOWN,
     CONNECTION_ETHERNET,
     CONNECTION_WIFI,
+    CONNECTION_5G,
     CONNECTION_4G,
     CONNECTION_3G,
     CONNECTION_2G,
@@ -798,6 +799,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
           case TelephonyManager.NETWORK_TYPE_CDMA:
           case TelephonyManager.NETWORK_TYPE_1xRTT:
           case TelephonyManager.NETWORK_TYPE_IDEN:
+          case TelephonyManager.NETWORK_TYPE_GSM:
             return ConnectionType.CONNECTION_2G;
           case TelephonyManager.NETWORK_TYPE_UMTS:
           case TelephonyManager.NETWORK_TYPE_EVDO_0:
@@ -808,9 +810,13 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
           case TelephonyManager.NETWORK_TYPE_EVDO_B:
           case TelephonyManager.NETWORK_TYPE_EHRPD:
           case TelephonyManager.NETWORK_TYPE_HSPAP:
+          case TelephonyManager.NETWORK_TYPE_TD_SCDMA:
             return ConnectionType.CONNECTION_3G;
           case TelephonyManager.NETWORK_TYPE_LTE:
+          case TelephonyManager.NETWORK_TYPE_IWLAN:
             return ConnectionType.CONNECTION_4G;
+          case TelephonyManager.NETWORK_TYPE_NR:
+            return ConnectionType.CONNECTION_5G;
           default:
             return ConnectionType.CONNECTION_UNKNOWN_CELLULAR;
         }

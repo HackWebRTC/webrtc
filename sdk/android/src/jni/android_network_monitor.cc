@@ -48,6 +48,9 @@ static NetworkType GetNetworkTypeFromJava(
   if (enum_name == "CONNECTION_WIFI") {
     return NetworkType::NETWORK_WIFI;
   }
+  if (enum_name == "CONNECTION_5G") {
+    return NetworkType::NETWORK_5G;
+  }
   if (enum_name == "CONNECTION_4G") {
     return NetworkType::NETWORK_4G;
   }
@@ -81,6 +84,7 @@ static rtc::AdapterType AdapterTypeFromNetworkType(NetworkType network_type) {
       return rtc::ADAPTER_TYPE_ETHERNET;
     case NETWORK_WIFI:
       return rtc::ADAPTER_TYPE_WIFI;
+    case NETWORK_5G:
     case NETWORK_4G:
     case NETWORK_3G:
     case NETWORK_2G:
