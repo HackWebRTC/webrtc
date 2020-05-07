@@ -274,7 +274,6 @@ if (rtc_include_tests) {
       "../..:platform_video_capturer",
       "../..:video_test_common",
       "../../../api:create_frame_generator",
-      "../../../api:create_peer_connection_quality_test_frame_generator",
       "../../../api:frame_generator_api",
       "../../../api:peer_connection_quality_test_fixture_api",
       "../../../api/video:video_frame",

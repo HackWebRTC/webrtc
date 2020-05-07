@@ -15,6 +15,7 @@
 
 #include "api/test/create_frame_generator.h"
 #include "api/test/peerconnection_quality_test_fixture.h"
+#include "rtc_base/checks.h"
 #include "test/testsupport/file_utils.h"
 
 namespace webrtc {
@@ -92,9 +93,9 @@ std::unique_ptr<test::FrameGeneratorInterface> CreateScreenShareFrameGenerator(
         screen_share_config.slide_change_interval.seconds() * video_config.fps);
   }
 
-  // |pause_duration| is nonnegative. It is validated in ValidateParams(...).
   TimeDelta pause_duration = screen_share_config.slide_change_interval -
                              screen_share_config.scrolling_params->duration;
+  RTC_DCHECK(pause_duration >= TimeDelta::Zero());
   return test::CreateScrollingInputFromYuvFilesFrameGenerator(
       Clock::GetRealTimeClock(), slides,
       screen_share_config.scrolling_params->source_width,

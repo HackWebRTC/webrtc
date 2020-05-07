@@ -20,16 +20,6 @@
 namespace webrtc {
 namespace webrtc_pc_e2e {
 
-// Validates that ScreeanShare frame generator can be created based on the
-// screen_share_config.
-// This function is temporarily added to the public interface and will be
-// removed from here after refactoring is done.
-// TODO(landrey) remove from the header file
-void ValidateScreenShareConfig(
-    const PeerConnectionE2EQualityTestFixture::VideoConfig& video_config,
-    const PeerConnectionE2EQualityTestFixture::ScreenShareConfig&
-        screen_share_config);
-
 // Creates a frame generator that produces frames with small squares that move
 // randomly towards the lower right corner. |type| has the default value
 // FrameGeneratorInterface::OutputType::I420. video_config specifies frame

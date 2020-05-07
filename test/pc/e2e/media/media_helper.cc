@@ -13,7 +13,6 @@
 #include <utility>
 
 #include "api/test/create_frame_generator.h"
-#include "api/test/create_peer_connection_quality_test_frame_generator.h"
 #include "test/frame_generator_capturer.h"
 #include "test/platform_video_capturer.h"
 #include "test/testsupport/file_utils.h"
@@ -109,37 +108,10 @@ std::unique_ptr<test::TestVideoCapturer> MediaHelper::CreateVideoCapturer(
     return capturer;
   }
 
-  std::unique_ptr<test::FrameGeneratorInterface> frame_generator = nullptr;
-  if (generator) {
-    frame_generator = std::move(generator);
-  } else if (video_config.generator) {
-    absl::optional<test::FrameGeneratorInterface::OutputType>
-        frame_generator_type = absl::nullopt;
-    if (video_config.generator == VideoGeneratorType::kDefault) {
-      frame_generator_type = test::FrameGeneratorInterface::OutputType::kI420;
-    } else if (video_config.generator == VideoGeneratorType::kI420A) {
-      frame_generator_type = test::FrameGeneratorInterface::OutputType::kI420A;
-    } else if (video_config.generator == VideoGeneratorType::kI010) {
-      frame_generator_type = test::FrameGeneratorInterface::OutputType::kI010;
-    }
-    frame_generator =
-        test::CreateSquareFrameGenerator(static_cast<int>(video_config.width),
-                                         static_cast<int>(video_config.height),
-                                         frame_generator_type, absl::nullopt);
-  } else if (video_config.input_file_name) {
-    frame_generator = test::CreateFromYuvFileFrameGenerator(
-        std::vector<std::string>(/*count=*/1,
-                                 video_config.input_file_name.value()),
-        video_config.width, video_config.height, /*frame_repeat_count=*/1);
-  } else if (video_config.screen_share_config) {
-    frame_generator = CreateScreenShareFrameGenerator(
-        video_config, *video_config.screen_share_config);
-  }
-  RTC_CHECK(frame_generator) << "Unsupported video_config input source";
+  RTC_CHECK(generator) << "No input source.";
 
   auto capturer = std::make_unique<test::FrameGeneratorCapturer>(
-      clock_, std::move(frame_generator), video_config.fps,
-      *task_queue_factory_);
+      clock_, std::move(generator), video_config.fps, *task_queue_factory_);
   capturer->SetFramePreprocessor(std::move(frame_preprocessor));
   capturer->Init();
   return capturer;

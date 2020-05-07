@@ -16,7 +16,6 @@
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
-namespace {
 
 using AudioConfig = PeerConnectionE2EQualityTestFixture::AudioConfig;
 using VideoConfig = PeerConnectionE2EQualityTestFixture::VideoConfig;
@@ -24,25 +23,6 @@ using RunParams = PeerConnectionE2EQualityTestFixture::RunParams;
 using VideoGeneratorType =
     PeerConnectionE2EQualityTestFixture::VideoGeneratorType;
 using VideoCodecConfig = PeerConnectionE2EQualityTestFixture::VideoCodecConfig;
-
-std::string VideoConfigSourcePresenceToString(
-    const VideoConfig& video_config,
-    bool has_user_provided_generator) {
-  char buf[1024];
-  rtc::SimpleStringBuilder builder(buf);
-  builder << "video_config.generator=" << video_config.generator.has_value()
-          << "; video_config.input_file_name="
-          << video_config.input_file_name.has_value()
-          << "; video_config.screen_share_config="
-          << video_config.screen_share_config.has_value()
-          << "; video_config.capturing_device_index="
-          << video_config.capturing_device_index.has_value()
-          << "; has_user_provided_generator=" << has_user_provided_generator
-          << ";";
-  return builder.str();
-}
-
-}  // namespace
 
 void SetDefaultValuesForMissingParams(
     RunParams* run_params,
@@ -54,15 +34,7 @@ void SetDefaultValuesForMissingParams(
   for (size_t i = 0; i < peers->size(); ++i) {
     auto* peer = peers->at(i).get();
     auto* p = peer->params();
-    for (size_t j = 0; j < p->video_configs.size(); ++j) {
-      VideoConfig& video_config = p->video_configs[j];
-      std::unique_ptr<test::FrameGeneratorInterface>& video_generator =
-          (*peer->video_generators())[j];
-      if (!video_config.generator && !video_config.input_file_name &&
-          !video_config.screen_share_config &&
-          !video_config.capturing_device_index && !video_generator) {
-        video_config.generator = VideoGeneratorType::kDefault;
-      }
+    for (VideoConfig& video_config : p->video_configs) {
       if (!video_config.stream_label) {
         std::string label;
         do {
@@ -107,40 +79,14 @@ void ValidateParams(
     }
     media_streams_count += p->video_configs.size();
 
-    // Validate that each video config has exactly one of |generator|,
-    // |input_file_name| or |screen_share_config| set. Also validate that all
-    // video stream labels are unique.
-    for (size_t j = 0; j < p->video_configs.size(); ++j) {
-      VideoConfig& video_config = p->video_configs[j];
+    // Validate that all video stream labels are unique.
+    for (const VideoConfig& video_config : p->video_configs) {
       RTC_CHECK(video_config.stream_label);
       bool inserted =
           video_labels.insert(video_config.stream_label.value()).second;
       RTC_CHECK(inserted) << "Duplicate video_config.stream_label="
                           << video_config.stream_label.value();
-      bool user_provided_generator = false;
-      int input_sources_count = 0;
-      if ((*peers[i]->video_generators())[j]) {
-        user_provided_generator = true;
-        ++input_sources_count;
-      }
-      if (video_config.generator)
-        ++input_sources_count;
-      if (video_config.input_file_name)
-        ++input_sources_count;
-      if (video_config.screen_share_config)
-        ++input_sources_count;
-      if (video_config.capturing_device_index)
-        ++input_sources_count;
 
-      RTC_CHECK(input_sources_count == 1 ||
-                (input_sources_count == 2 && user_provided_generator))
-          << VideoConfigSourcePresenceToString(video_config,
-                                               user_provided_generator);
-
-      if (video_config.screen_share_config) {
-        ValidateScreenShareConfig(video_config,
-                                  *video_config.screen_share_config);
-      }
       if (video_config.simulcast_config) {
         has_simulcast = true;
         RTC_CHECK(!video_config.max_encode_bitrate_bps)
