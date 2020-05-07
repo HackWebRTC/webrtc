@@ -11,6 +11,7 @@
 #ifndef CALL_ADAPTATION_RESOURCE_ADAPTATION_PROCESSOR_H_
 #define CALL_ADAPTATION_RESOURCE_ADAPTATION_PROCESSOR_H_
 
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -76,12 +77,24 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   // If the filtered source restrictions are different than
   // |last_reported_source_restrictions_|, inform the listeners.
   void MaybeUpdateVideoSourceRestrictions(const Resource* reason);
+  // Updates the number of times the resource has degraded based on the latest
+  // degradation applied.
+  void UpdateResourceDegradationCounts(const Resource* resource);
+  // Returns true if a Resource has been overused in the pass and is responsible
+  // for creating a VideoSourceRestriction. The current algorithm counts the
+  // number of times the resource caused an adaptation and allows adapting up
+  // if that number is non-zero. This is consistent with how adaptation has
+  // traditionally been handled.
+  // TODO(crbug.com/webrtc/11553) Change this algorithm to look at the resources
+  // restrictions rather than just the counters.
+  bool IsResourceAllowedToAdaptUp(const Resource* resource) const;
 
   // Input and output.
   VideoStreamInputStateProvider* const input_state_provider_;
   VideoStreamEncoderObserver* const encoder_stats_observer_;
   std::vector<ResourceAdaptationProcessorListener*> adaptation_listeners_;
   std::vector<Resource*> resources_;
+  std::map<const Resource*, int> adaptations_counts_by_resource_;
   // Adaptation strategy settings.
   DegradationPreference degradation_preference_;
   DegradationPreference effective_degradation_preference_;

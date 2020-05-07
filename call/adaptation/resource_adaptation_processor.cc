@@ -29,7 +29,7 @@ ResourceAdaptationProcessor::ResourceAdaptationProcessor(
       last_reported_source_restrictions_(),
       processing_in_progress_(false) {}
 
-ResourceAdaptationProcessor::~ResourceAdaptationProcessor() {}
+ResourceAdaptationProcessor::~ResourceAdaptationProcessor() = default;
 
 DegradationPreference ResourceAdaptationProcessor::degradation_preference()
     const {
@@ -85,21 +85,25 @@ void ResourceAdaptationProcessor::MaybeUpdateEffectiveDegradationPreference() {
 
 void ResourceAdaptationProcessor::ResetVideoSourceRestrictions() {
   stream_adapter_->ClearRestrictions();
+  adaptations_counts_by_resource_.clear();
   MaybeUpdateVideoSourceRestrictions(nullptr);
 }
 
 void ResourceAdaptationProcessor::MaybeUpdateVideoSourceRestrictions(
     const Resource* reason) {
-  VideoSourceRestrictions new_soure_restrictions =
+  VideoSourceRestrictions new_source_restrictions =
       FilterRestrictionsByDegradationPreference(
           stream_adapter_->source_restrictions(),
           effective_degradation_preference_);
-  if (last_reported_source_restrictions_ != new_soure_restrictions) {
-    last_reported_source_restrictions_ = std::move(new_soure_restrictions);
+  if (last_reported_source_restrictions_ != new_source_restrictions) {
+    last_reported_source_restrictions_ = std::move(new_source_restrictions);
     for (auto* adaptation_listener : adaptation_listeners_) {
       adaptation_listener->OnVideoSourceRestrictionsUpdated(
           last_reported_source_restrictions_,
           stream_adapter_->adaptation_counters(), reason);
+    }
+    if (reason) {
+      UpdateResourceDegradationCounts(reason);
     }
   }
 }
@@ -139,6 +143,10 @@ void ResourceAdaptationProcessor::OnResourceUnderuse(
   VideoStreamInputState input_state = input_state_provider_->InputState();
   if (effective_degradation_preference_ == DegradationPreference::DISABLED ||
       !HasSufficientInputForAdaptation(input_state)) {
+    processing_in_progress_ = false;
+    return;
+  }
+  if (!IsResourceAllowedToAdaptUp(&reason_resource)) {
     processing_in_progress_ = false;
     return;
   }
@@ -202,8 +210,9 @@ void ResourceAdaptationProcessor::OnResourceOveruse(
   stream_adapter_->SetInput(input_state);
   // How can this stream be adapted up?
   Adaptation adaptation = stream_adapter_->GetAdaptationDown();
-  if (adaptation.min_pixel_limit_reached())
+  if (adaptation.min_pixel_limit_reached()) {
     encoder_stats_observer_->OnMinPixelLimitReached();
+  }
   if (adaptation.status() != Adaptation::Status::kValid) {
     processing_in_progress_ = false;
     return;
@@ -240,6 +249,27 @@ void ResourceAdaptationProcessor::TriggerAdaptationDueToFrameDroppedDueToSize(
       counters_before.resolution_adaptations) {
     encoder_stats_observer_->OnInitialQualityResolutionAdaptDown();
   }
+}
+
+void ResourceAdaptationProcessor::UpdateResourceDegradationCounts(
+    const Resource* resource) {
+  RTC_DCHECK(resource);
+  int delta = stream_adapter_->adaptation_counters().Total();
+  for (const auto& adaptations : adaptations_counts_by_resource_) {
+    delta -= adaptations.second;
+  }
+
+  // Default value is 0, inserts the value if missing.
+  adaptations_counts_by_resource_[resource] += delta;
+  RTC_DCHECK_GE(adaptations_counts_by_resource_[resource], 0);
+}
+
+bool ResourceAdaptationProcessor::IsResourceAllowedToAdaptUp(
+    const Resource* resource) const {
+  RTC_DCHECK(resource);
+  const auto& adaptations = adaptations_counts_by_resource_.find(resource);
+  return adaptations != adaptations_counts_by_resource_.end() &&
+         adaptations->second > 0;
 }
 
 }  // namespace webrtc

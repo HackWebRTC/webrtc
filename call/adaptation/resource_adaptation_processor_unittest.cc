@@ -69,10 +69,12 @@ class ResourceAdaptationProcessorTest : public ::testing::Test {
       : frame_rate_provider_(),
         input_state_provider_(&frame_rate_provider_),
         resource_("FakeResource"),
+        other_resource_("OtherFakeResource"),
         processor_(&input_state_provider_,
                    /*encoder_stats_observer=*/&frame_rate_provider_) {
     processor_.AddAdaptationListener(&processor_listener_);
     processor_.AddResource(&resource_);
+    processor_.AddResource(&other_resource_);
   }
   ~ResourceAdaptationProcessorTest() override {
     processor_.StopResourceAdaptation();
@@ -96,6 +98,7 @@ class ResourceAdaptationProcessorTest : public ::testing::Test {
   FakeFrameRateProvider frame_rate_provider_;
   VideoStreamInputStateProvider input_state_provider_;
   FakeResource resource_;
+  FakeResource other_resource_;
   ResourceAdaptationProcessor processor_;
   ResourceAdaptationProcessorListenerForTesting processor_listener_;
 };
@@ -224,6 +227,74 @@ TEST_F(ResourceAdaptationProcessorTest, ResourcesCanPreventAdaptingUp) {
   resource_.set_is_adaptation_up_allowed(false);
   resource_.set_usage_state(ResourceUsageState::kUnderuse);
   EXPECT_EQ(1u, processor_listener_.restrictions_updated_count());
+}
+
+TEST_F(ResourceAdaptationProcessorTest,
+       ResourcesCanNotAdaptUpIfNeverAdaptedDown) {
+  processor_.SetDegradationPreference(
+      DegradationPreference::MAINTAIN_FRAMERATE);
+  processor_.StartResourceAdaptation();
+  SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
+  resource_.set_usage_state(ResourceUsageState::kOveruse);
+  EXPECT_EQ(1u, processor_listener_.restrictions_updated_count());
+  RestrictSource(processor_listener_.restrictions());
+
+  // Other resource signals under-use
+  other_resource_.set_usage_state(ResourceUsageState::kUnderuse);
+  EXPECT_EQ(1u, processor_listener_.restrictions_updated_count());
+}
+
+TEST_F(ResourceAdaptationProcessorTest,
+       ResourcesCanNotAdaptUpIfNotAdaptedDownAfterReset) {
+  processor_.SetDegradationPreference(
+      DegradationPreference::MAINTAIN_FRAMERATE);
+  processor_.StartResourceAdaptation();
+  SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
+  resource_.set_usage_state(ResourceUsageState::kOveruse);
+  EXPECT_EQ(1u, processor_listener_.restrictions_updated_count());
+
+  processor_.ResetVideoSourceRestrictions();
+  EXPECT_EQ(0, processor_listener_.adaptation_counters().Total());
+  other_resource_.set_usage_state(ResourceUsageState::kOveruse);
+  EXPECT_EQ(1, processor_listener_.adaptation_counters().Total());
+  RestrictSource(processor_listener_.restrictions());
+
+  // resource_ did not overuse after we reset the restrictions, so adapt up
+  // should be disallowed.
+  resource_.set_usage_state(ResourceUsageState::kUnderuse);
+  EXPECT_EQ(1, processor_listener_.adaptation_counters().Total());
+}
+
+TEST_F(ResourceAdaptationProcessorTest,
+       MultipleResourcesCanTriggerMultipleAdaptations) {
+  processor_.SetDegradationPreference(
+      DegradationPreference::MAINTAIN_FRAMERATE);
+  processor_.StartResourceAdaptation();
+  SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
+  resource_.set_usage_state(ResourceUsageState::kOveruse);
+  EXPECT_EQ(1, processor_listener_.adaptation_counters().Total());
+  RestrictSource(processor_listener_.restrictions());
+  other_resource_.set_usage_state(ResourceUsageState::kOveruse);
+  EXPECT_EQ(2, processor_listener_.adaptation_counters().Total());
+  RestrictSource(processor_listener_.restrictions());
+  other_resource_.set_usage_state(ResourceUsageState::kOveruse);
+  EXPECT_EQ(3, processor_listener_.adaptation_counters().Total());
+  RestrictSource(processor_listener_.restrictions());
+
+  resource_.set_usage_state(ResourceUsageState::kUnderuse);
+  EXPECT_EQ(2, processor_listener_.adaptation_counters().Total());
+  RestrictSource(processor_listener_.restrictions());
+  // Does not trigger adaptation since resource has no adaptations left.
+  resource_.set_usage_state(ResourceUsageState::kUnderuse);
+  EXPECT_EQ(2, processor_listener_.adaptation_counters().Total());
+  RestrictSource(processor_listener_.restrictions());
+
+  other_resource_.set_usage_state(ResourceUsageState::kUnderuse);
+  EXPECT_EQ(1, processor_listener_.adaptation_counters().Total());
+  RestrictSource(processor_listener_.restrictions());
+  other_resource_.set_usage_state(ResourceUsageState::kUnderuse);
+  EXPECT_EQ(0, processor_listener_.adaptation_counters().Total());
+  RestrictSource(processor_listener_.restrictions());
 }
 
 TEST_F(ResourceAdaptationProcessorTest, AdaptingTriggersOnAdaptationApplied) {
