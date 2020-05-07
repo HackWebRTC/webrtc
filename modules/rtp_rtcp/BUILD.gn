@@ -370,12 +370,6 @@ rtc_library("fec_test_helper") {
 
 rtc_library("mock_rtp_rtcp") {
   testonly = true
-  sources = [
-    "mocks/mock_recovered_packet_receiver.cc",
-    "mocks/mock_rtcp_bandwidth_observer.cc",
-    "mocks/mock_rtcp_rtt_stats.cc",
-    "mocks/mock_rtp_rtcp.cc",
-  ]
   public = [
     "mocks/mock_recovered_packet_receiver.h",
     "mocks/mock_rtcp_bandwidth_observer.h",
