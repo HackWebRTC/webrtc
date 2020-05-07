@@ -178,11 +178,6 @@ class MockTransportFeedbackObserver : public TransportFeedbackObserver {
   MOCK_METHOD1(OnTransportFeedback, void(const rtcp::TransportFeedback&));
 };
 
-class MockOverheadObserver : public OverheadObserver {
- public:
-  MOCK_METHOD1(OnOverheadChanged, void(size_t overhead_bytes_per_packet));
-};
-
 class StreamDataTestCallback : public StreamDataCountersCallback {
  public:
   StreamDataTestCallback()
@@ -535,8 +530,7 @@ TEST_P(RtpSenderTestWithoutPacer, AssignSequenceNumberSetPaddingTimestamps) {
 
 TEST_P(RtpSenderTestWithoutPacer,
        TransportFeedbackObserverGetsCorrectByteCount) {
-  constexpr int kRtpOverheadBytesPerPacket = 12 + 8;
-  NiceMock<MockOverheadObserver> mock_overhead_observer;
+  constexpr size_t kRtpOverheadBytesPerPacket = 12 + 8;
 
   RtpRtcp::Configuration config;
   config.clock = &fake_clock_;
@@ -545,7 +539,6 @@ TEST_P(RtpSenderTestWithoutPacer,
   config.transport_feedback_callback = &feedback_observer_;
   config.event_log = &mock_rtc_event_log_;
   config.retransmission_rate_limiter = &retransmission_rate_limiter_;
-  config.overhead_observer = &mock_overhead_observer;
   config.field_trials = &field_trials_;
   rtp_sender_context_ = std::make_unique<RtpSenderContext>(config);
 
@@ -568,9 +561,8 @@ TEST_P(RtpSenderTestWithoutPacer,
                   Field(&RtpPacketSendInfo::length, expected_bytes),
                   Field(&RtpPacketSendInfo::pacing_info, PacedPacketInfo()))))
       .Times(1);
-  EXPECT_CALL(mock_overhead_observer,
-              OnOverheadChanged(kRtpOverheadBytesPerPacket))
-      .Times(1);
+  EXPECT_EQ(rtp_sender()->ExpectedPerPacketOverhead(),
+            kRtpOverheadBytesPerPacket);
   SendGenericPacket();
 }
 
@@ -1978,42 +1970,66 @@ TEST_P(RtpSenderTestWithoutPacer, RespectsNackBitrateLimit) {
   EXPECT_EQ(kNumPackets * 2, transport_.packets_sent());
 }
 
-TEST_P(RtpSenderTest, OnOverheadChanged) {
-  MockOverheadObserver mock_overhead_observer;
+TEST_P(RtpSenderTest, UpdatingCsrcsUpdatedOverhead) {
   RtpRtcp::Configuration config;
   config.clock = &fake_clock_;
   config.outgoing_transport = &transport_;
   config.local_media_ssrc = kSsrc;
   config.retransmission_rate_limiter = &retransmission_rate_limiter_;
-  config.overhead_observer = &mock_overhead_observer;
   rtp_sender_context_ = std::make_unique<RtpSenderContext>(config);
 
-  // RTP overhead is 12B.
-  EXPECT_CALL(mock_overhead_observer, OnOverheadChanged(12)).Times(1);
-  SendGenericPacket();
+  // Base RTP overhead is 12B.
+  EXPECT_EQ(rtp_sender()->ExpectedPerPacketOverhead(), 12u);
+
+  // Adding two csrcs adds 2*4 bytes to the header.
+  rtp_sender()->SetCsrcs({1, 2});
+  EXPECT_EQ(rtp_sender()->ExpectedPerPacketOverhead(), 20u);
+}
+
+TEST_P(RtpSenderTest, OnOverheadChanged) {
+  RtpRtcp::Configuration config;
+  config.clock = &fake_clock_;
+  config.outgoing_transport = &transport_;
+  config.local_media_ssrc = kSsrc;
+  config.retransmission_rate_limiter = &retransmission_rate_limiter_;
+  rtp_sender_context_ = std::make_unique<RtpSenderContext>(config);
+
+  // Base RTP overhead is 12B.
+  EXPECT_EQ(rtp_sender()->ExpectedPerPacketOverhead(), 12u);
 
   rtp_sender()->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
                                            kTransmissionTimeOffsetExtensionId);
 
-  // TransmissionTimeOffset extension has a size of 8B.
-  // 12B + 8B = 20B
-  EXPECT_CALL(mock_overhead_observer, OnOverheadChanged(20)).Times(1);
-  SendGenericPacket();
+  // TransmissionTimeOffset extension has a size of 3B, but with the addition
+  // of header index and rounding to 4 byte boundary we end up with 20B total.
+  EXPECT_EQ(rtp_sender()->ExpectedPerPacketOverhead(), 20u);
 }
 
-TEST_P(RtpSenderTest, DoesNotUpdateOverheadOnEqualSize) {
-  MockOverheadObserver mock_overhead_observer;
+TEST_P(RtpSenderTest, CountMidOnlyUntilAcked) {
   RtpRtcp::Configuration config;
   config.clock = &fake_clock_;
   config.outgoing_transport = &transport_;
   config.local_media_ssrc = kSsrc;
   config.retransmission_rate_limiter = &retransmission_rate_limiter_;
-  config.overhead_observer = &mock_overhead_observer;
   rtp_sender_context_ = std::make_unique<RtpSenderContext>(config);
 
-  EXPECT_CALL(mock_overhead_observer, OnOverheadChanged(_)).Times(1);
-  SendGenericPacket();
-  SendGenericPacket();
+  // Base RTP overhead is 12B.
+  EXPECT_EQ(rtp_sender()->ExpectedPerPacketOverhead(), 12u);
+
+  rtp_sender()->RegisterRtpHeaderExtension(kRtpExtensionMid, kMidExtensionId);
+  rtp_sender()->RegisterRtpHeaderExtension(kRtpExtensionRtpStreamId,
+                                           kRidExtensionId);
+
+  // Counted only if set.
+  EXPECT_EQ(rtp_sender()->ExpectedPerPacketOverhead(), 12u);
+  rtp_sender()->SetMid("foo");
+  EXPECT_EQ(rtp_sender()->ExpectedPerPacketOverhead(), 36u);
+  rtp_sender()->SetRid("bar");
+  EXPECT_EQ(rtp_sender()->ExpectedPerPacketOverhead(), 52u);
+
+  // Ack received, mid/rid no longer sent.
+  rtp_sender()->OnReceivedAckOnSsrc(0);
+  EXPECT_EQ(rtp_sender()->ExpectedPerPacketOverhead(), 12u);
 }
 
 TEST_P(RtpSenderTest, SendPacketMatchesVideo) {

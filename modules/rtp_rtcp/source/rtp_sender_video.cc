@@ -206,7 +206,8 @@ size_t RTPSenderVideo::FecPacketOverhead() const {
       // This reason for the header extensions to be included here is that
       // from an FEC viewpoint, they are part of the payload to be protected.
       // (The base RTP header is already protected by the FEC header.)
-      overhead += rtp_sender_->RtpHeaderLength() - kRtpHeaderSize;
+      overhead +=
+          rtp_sender_->FecOrPaddingPacketMaxRtpHeaderLength() - kRtpHeaderSize;
     }
   }
   return overhead;

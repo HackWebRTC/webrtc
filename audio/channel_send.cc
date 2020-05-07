@@ -69,7 +69,6 @@ class ChannelSend : public ChannelSendInterface,
   ChannelSend(Clock* clock,
               TaskQueueFactory* task_queue_factory,
               ProcessThread* module_process_thread,
-              OverheadObserver* overhead_observer,
               Transport* rtp_transport,
               RtcpRttStats* rtcp_rtt_stats,
               RtcEventLog* rtc_event_log,
@@ -482,7 +481,6 @@ ChannelSend::ChannelSend(
     Clock* clock,
     TaskQueueFactory* task_queue_factory,
     ProcessThread* module_process_thread,
-    OverheadObserver* overhead_observer,
     Transport* rtp_transport,
     RtcpRttStats* rtcp_rtt_stats,
     RtcEventLog* rtc_event_log,
@@ -515,7 +513,6 @@ ChannelSend::ChannelSend(
   audio_coding_.reset(AudioCodingModule::Create(AudioCodingModule::Config()));
 
   RtpRtcp::Configuration configuration;
-  configuration.overhead_observer = overhead_observer;
   configuration.bandwidth_callback = rtcp_observer_.get();
   configuration.transport_feedback_callback = feedback_observer_proxy_.get();
   configuration.clock = (clock ? clock : Clock::GetRealTimeClock());
@@ -980,7 +977,6 @@ std::unique_ptr<ChannelSendInterface> CreateChannelSend(
     Clock* clock,
     TaskQueueFactory* task_queue_factory,
     ProcessThread* module_process_thread,
-    OverheadObserver* overhead_observer,
     Transport* rtp_transport,
     RtcpRttStats* rtcp_rtt_stats,
     RtcEventLog* rtc_event_log,
@@ -991,9 +987,9 @@ std::unique_ptr<ChannelSendInterface> CreateChannelSend(
     uint32_t ssrc,
     rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) {
   return std::make_unique<ChannelSend>(
-      clock, task_queue_factory, module_process_thread, overhead_observer,
-      rtp_transport, rtcp_rtt_stats, rtc_event_log, frame_encryptor,
-      crypto_options, extmap_allow_mixed, rtcp_report_interval_ms, ssrc,
+      clock, task_queue_factory, module_process_thread, rtp_transport,
+      rtcp_rtt_stats, rtc_event_log, frame_encryptor, crypto_options,
+      extmap_allow_mixed, rtcp_report_interval_ms, ssrc,
       std::move(frame_transformer));
 }
 

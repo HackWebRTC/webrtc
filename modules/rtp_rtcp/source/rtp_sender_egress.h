@@ -96,7 +96,6 @@ class RtpSenderEgress {
   bool SendPacketToNetwork(const RtpPacketToSend& packet,
                            const PacketOptions& options,
                            const PacedPacketInfo& pacing_info);
-  void UpdateRtpOverhead(const RtpPacketToSend& packet);
   void UpdateRtpStats(const RtpPacketToSend& packet)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
@@ -115,7 +114,6 @@ class RtpSenderEgress {
   TransportFeedbackObserver* const transport_feedback_observer_;
   SendSideDelayObserver* const send_side_delay_observer_;
   SendPacketObserver* const send_packet_observer_;
-  OverheadObserver* const overhead_observer_;
   StreamDataCountersCallback* const rtp_stats_callback_;
   BitrateStatisticsObserver* const bitrate_callback_;
 
@@ -129,7 +127,6 @@ class RtpSenderEgress {
   // The sum of delays over a kSendSideDelayWindowMs sliding window.
   int64_t sum_delays_ms_ RTC_GUARDED_BY(lock_);
   uint64_t total_packet_send_delay_ms_ RTC_GUARDED_BY(lock_);
-  size_t rtp_overhead_bytes_per_packet_ RTC_GUARDED_BY(lock_);
   StreamDataCounters rtp_stats_ RTC_GUARDED_BY(lock_);
   StreamDataCounters rtx_rtp_stats_ RTC_GUARDED_BY(lock_);
   RateStatistics total_bitrate_sent_ RTC_GUARDED_BY(lock_);

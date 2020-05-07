@@ -52,8 +52,7 @@ namespace internal {
 class AudioState;
 
 class AudioSendStream final : public webrtc::AudioSendStream,
-                              public webrtc::BitrateAllocatorObserver,
-                              public webrtc::OverheadObserver {
+                              public webrtc::BitrateAllocatorObserver {
  public:
   AudioSendStream(Clock* clock,
                   const webrtc::AudioSendStream::Config& config,
@@ -98,10 +97,6 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   uint32_t OnBitrateUpdated(BitrateAllocationUpdate update) override;
 
   void SetTransportOverhead(int transport_overhead_per_packet_bytes);
-
-  // OverheadObserver override reports audio packetization overhead from
-  // RTP/RTCP module or Media Transport.
-  void OnOverheadChanged(size_t overhead_bytes_per_packet_bytes) override;
 
   RtpState GetRtpState() const;
   const voe::ChannelSendInterface* GetChannel() const;
@@ -203,10 +198,6 @@ class AudioSendStream final : public webrtc::AudioSendStream,
 
   // Current transport overhead (ICE, TURN, etc.)
   size_t transport_overhead_per_packet_bytes_
-      RTC_GUARDED_BY(overhead_per_packet_lock_) = 0;
-
-  // Current audio packetization overhead (RTP or Media Transport).
-  size_t audio_overhead_per_packet_bytes_
       RTC_GUARDED_BY(overhead_per_packet_lock_) = 0;
 
   bool registered_with_allocator_ RTC_GUARDED_BY(worker_queue_) = false;

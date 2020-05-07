@@ -146,6 +146,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   std::vector<RtpSequenceNumberMap::Info> GetSentRtpPacketInfos(
       rtc::ArrayView<const uint16_t> sequence_numbers) const override;
 
+  size_t ExpectedPerPacketOverhead() const override;
+
   // RTCP part.
 
   // Get RTCP status.

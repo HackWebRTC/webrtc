@@ -71,7 +71,6 @@ RtpSenderEgress::RtpSenderEgress(const RtpRtcp::Configuration& config,
       transport_feedback_observer_(config.transport_feedback_callback),
       send_side_delay_observer_(config.send_side_delay_observer),
       send_packet_observer_(config.send_packet_observer),
-      overhead_observer_(config.overhead_observer),
       rtp_stats_callback_(config.rtp_stats_callback),
       bitrate_callback_(config.send_bitrate_observer),
       media_has_been_sent_(false),
@@ -80,7 +79,6 @@ RtpSenderEgress::RtpSenderEgress(const RtpRtcp::Configuration& config,
       max_delay_it_(send_delays_.end()),
       sum_delays_ms_(0),
       total_packet_send_delay_ms_(0),
-      rtp_overhead_bytes_per_packet_(0),
       total_bitrate_sent_(kBitrateStatisticsWindowMs,
                           RateStatistics::kBpsScale),
       nack_bitrate_sent_(kBitrateStatisticsWindowMs, RateStatistics::kBpsScale),
@@ -412,7 +410,6 @@ bool RtpSenderEgress::SendPacketToNetwork(const RtpPacketToSend& packet,
                                           const PacedPacketInfo& pacing_info) {
   int bytes_sent = -1;
   if (transport_) {
-    UpdateRtpOverhead(packet);
     bytes_sent = transport_->SendRtp(packet.data(), packet.size(), options)
                      ? static_cast<int>(packet.size())
                      : -1;
@@ -427,21 +424,6 @@ bool RtpSenderEgress::SendPacketToNetwork(const RtpPacketToSend& packet,
     return false;
   }
   return true;
-}
-
-void RtpSenderEgress::UpdateRtpOverhead(const RtpPacketToSend& packet) {
-  if (!overhead_observer_)
-    return;
-  size_t overhead_bytes_per_packet;
-  {
-    rtc::CritScope lock(&lock_);
-    if (rtp_overhead_bytes_per_packet_ == packet.headers_size()) {
-      return;
-    }
-    rtp_overhead_bytes_per_packet_ = packet.headers_size();
-    overhead_bytes_per_packet = rtp_overhead_bytes_per_packet_;
-  }
-  overhead_observer_->OnOverheadChanged(overhead_bytes_per_packet);
 }
 
 void RtpSenderEgress::UpdateRtpStats(const RtpPacketToSend& packet) {

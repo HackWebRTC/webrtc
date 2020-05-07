@@ -70,7 +70,6 @@ struct RtpStreamSender {
 // RtpVideoSender routes outgoing data to the correct sending RTP module, based
 // on the simulcast layer in RTPVideoHeader.
 class RtpVideoSender : public RtpVideoSenderInterface,
-                       public OverheadObserver,
                        public VCMProtectionCallback,
                        public StreamFeedbackObserver {
  public:
@@ -136,8 +135,6 @@ class RtpVideoSender : public RtpVideoSenderInterface,
 
   void OnTransportOverheadChanged(
       size_t transport_overhead_bytes_per_packet) override;
-  // Implements OverheadObserver.
-  void OnOverheadChanged(size_t overhead_bytes_per_packet) override;
   void OnBitrateUpdated(BitrateAllocationUpdate update, int framerate) override;
   uint32_t GetPayloadBitrateBps() const override;
   uint32_t GetProtectionBitrateBps() const override;
@@ -194,7 +191,6 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   std::vector<RtpPayloadParams> params_ RTC_GUARDED_BY(crit_);
 
   size_t transport_overhead_bytes_per_packet_ RTC_GUARDED_BY(crit_);
-  size_t overhead_bytes_per_packet_ RTC_GUARDED_BY(crit_);
   uint32_t protection_bitrate_bps_;
   uint32_t encoder_target_rate_bps_;
 

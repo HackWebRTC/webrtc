@@ -401,6 +401,13 @@ ModuleRtpRtcpImpl::GetSentRtpPacketInfos(
   return rtp_sender_->packet_sender.GetSentRtpPacketInfos(sequence_numbers);
 }
 
+size_t ModuleRtpRtcpImpl::ExpectedPerPacketOverhead() const {
+  if (!rtp_sender_) {
+    return 0;
+  }
+  return rtp_sender_->packet_generator.ExpectedPerPacketOverhead();
+}
+
 size_t ModuleRtpRtcpImpl::MaxRtpPacketSize() const {
   RTC_DCHECK(rtp_sender_);
   return rtp_sender_->packet_generator.MaxRtpPacketSize();

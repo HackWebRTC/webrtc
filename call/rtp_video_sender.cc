@@ -193,7 +193,6 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
     const std::map<uint32_t, RtpState>& suspended_ssrcs,
     RtcEventLog* event_log,
     RateLimiter* retransmission_rate_limiter,
-    OverheadObserver* overhead_observer,
     FrameEncryptorInterface* frame_encryptor,
     const CryptoOptions& crypto_options,
     rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
@@ -225,7 +224,6 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
   configuration.send_packet_observer = observers.send_packet_observer;
   configuration.event_log = event_log;
   configuration.retransmission_rate_limiter = retransmission_rate_limiter;
-  configuration.overhead_observer = overhead_observer;
   configuration.rtp_stats_callback = observers.rtp_stats;
   configuration.frame_encryptor = frame_encryptor;
   configuration.require_frame_encryption =
@@ -352,7 +350,6 @@ RtpVideoSender::RtpVideoSender(
                                           suspended_ssrcs_,
                                           event_log,
                                           retransmission_limiter,
-                                          this,
                                           frame_encryptor,
                                           crypto_options,
                                           std::move(frame_transformer),
@@ -361,7 +358,6 @@ RtpVideoSender::RtpVideoSender(
       codec_type_(GetVideoCodecType(rtp_config)),
       transport_(transport),
       transport_overhead_bytes_per_packet_(0),
-      overhead_bytes_per_packet_(0),
       encoder_target_rate_bps_(0),
       frame_counts_(rtp_config.ssrcs.size()),
       frame_count_observer_(observers.frame_count_observer) {
@@ -733,17 +729,24 @@ void RtpVideoSender::OnTransportOverheadChanged(
   }
 }
 
-void RtpVideoSender::OnOverheadChanged(size_t overhead_bytes_per_packet) {
-  rtc::CritScope lock(&crit_);
-  overhead_bytes_per_packet_ = overhead_bytes_per_packet;
-}
-
 void RtpVideoSender::OnBitrateUpdated(BitrateAllocationUpdate update,
                                       int framerate) {
   // Substract overhead from bitrate.
   rtc::CritScope lock(&crit_);
+  size_t num_active_streams = 0;
+  size_t overhead_bytes_per_packet = 0;
+  for (const auto& stream : rtp_streams_) {
+    if (stream.rtp_rtcp->SendingMedia()) {
+      overhead_bytes_per_packet += stream.rtp_rtcp->ExpectedPerPacketOverhead();
+      ++num_active_streams;
+    }
+  }
+  if (num_active_streams > 1) {
+    overhead_bytes_per_packet /= num_active_streams;
+  }
+
   DataSize packet_overhead = DataSize::Bytes(
-      overhead_bytes_per_packet_ + transport_overhead_bytes_per_packet_);
+      overhead_bytes_per_packet + transport_overhead_bytes_per_packet_);
   DataSize max_total_packet_size = DataSize::Bytes(
       rtp_config_.max_packet_size + transport_overhead_bytes_per_packet_);
   uint32_t payload_bitrate_bps = update.target_bitrate.bps();
@@ -790,7 +793,7 @@ void RtpVideoSender::OnBitrateUpdated(BitrateAllocationUpdate update,
     // calculations.
     DataRate encoder_overhead_rate = CalculateOverheadRate(
         DataRate::BitsPerSec(encoder_target_rate_bps_),
-        max_total_packet_size - DataSize::Bytes(overhead_bytes_per_packet_),
+        max_total_packet_size - DataSize::Bytes(overhead_bytes_per_packet),
         packet_overhead);
     encoder_overhead_rate_bps = std::min(
         encoder_overhead_rate.bps<uint32_t>(),
