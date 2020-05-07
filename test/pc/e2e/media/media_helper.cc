@@ -26,8 +26,6 @@ using VideoConfig =
     ::webrtc::webrtc_pc_e2e::PeerConnectionE2EQualityTestFixture::VideoConfig;
 using AudioConfig =
     ::webrtc::webrtc_pc_e2e::PeerConnectionE2EQualityTestFixture::AudioConfig;
-using VideoGeneratorType = ::webrtc::webrtc_pc_e2e::
-    PeerConnectionE2EQualityTestFixture::VideoGeneratorType;
 
 }  // namespace
 

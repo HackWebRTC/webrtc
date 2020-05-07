@@ -41,8 +41,6 @@ namespace webrtc_pc_e2e {
 class PeerConnectionE2EQualityTest
     : public PeerConnectionE2EQualityTestFixture {
  public:
-  using VideoGeneratorType =
-      PeerConnectionE2EQualityTestFixture::VideoGeneratorType;
   using RunParams = PeerConnectionE2EQualityTestFixture::RunParams;
   using VideoConfig = PeerConnectionE2EQualityTestFixture::VideoConfig;
   using VideoSimulcastConfig =

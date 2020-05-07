@@ -117,8 +117,6 @@ class PeerConnectionE2EQualityTestFixture {
     std::vector<std::string> slides_yuv_file_names;
   };
 
-  enum VideoGeneratorType { kDefault, kI420A, kI010 };
-
   // Config for Vp8 simulcast or Vp9 SVC testing.
   //
   // SVC support is limited:

@@ -23,8 +23,6 @@ namespace {
 using AudioConfig = PeerConnectionE2EQualityTestFixture::AudioConfig;
 using VideoConfig = PeerConnectionE2EQualityTestFixture::VideoConfig;
 using RunParams = PeerConnectionE2EQualityTestFixture::RunParams;
-using VideoGeneratorType =
-    PeerConnectionE2EQualityTestFixture::VideoGeneratorType;
 using VideoCodecConfig = PeerConnectionE2EQualityTestFixture::VideoCodecConfig;
 
 // List of default names of generic participants according to
