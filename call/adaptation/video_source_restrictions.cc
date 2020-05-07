@@ -65,6 +65,32 @@ void VideoSourceRestrictions::set_max_frame_rate(
   max_frame_rate_ = std::move(max_frame_rate);
 }
 
+bool DidRestrictionsIncrease(VideoSourceRestrictions before,
+                             VideoSourceRestrictions after) {
+  bool decreased_resolution = DidDecreaseResolution(before, after);
+  bool decreased_framerate = DidDecreaseFrameRate(before, after);
+  bool same_resolution =
+      before.max_pixels_per_frame() == after.max_pixels_per_frame();
+  bool same_framerate = before.max_frame_rate() == after.max_frame_rate();
+
+  return (decreased_resolution && decreased_framerate) ||
+         (decreased_resolution && same_framerate) ||
+         (same_resolution && decreased_framerate);
+}
+
+bool DidRestrictionsDecrease(VideoSourceRestrictions before,
+                             VideoSourceRestrictions after) {
+  bool increased_resolution = DidIncreaseResolution(before, after);
+  bool increased_framerate = DidIncreaseFrameRate(before, after);
+  bool same_resolution =
+      before.max_pixels_per_frame() == after.max_pixels_per_frame();
+  bool same_framerate = before.max_frame_rate() == after.max_frame_rate();
+
+  return (increased_resolution && increased_framerate) ||
+         (increased_resolution && same_framerate) ||
+         (same_resolution && increased_framerate);
+}
+
 bool DidIncreaseResolution(VideoSourceRestrictions restrictions_before,
                            VideoSourceRestrictions restrictions_after) {
   if (!restrictions_before.max_pixels_per_frame().has_value())
@@ -73,6 +99,26 @@ bool DidIncreaseResolution(VideoSourceRestrictions restrictions_before,
     return true;
   return restrictions_after.max_pixels_per_frame().value() >
          restrictions_before.max_pixels_per_frame().value();
+}
+
+bool DidDecreaseResolution(VideoSourceRestrictions restrictions_before,
+                           VideoSourceRestrictions restrictions_after) {
+  if (!restrictions_after.max_pixels_per_frame().has_value())
+    return false;
+  if (!restrictions_before.max_pixels_per_frame().has_value())
+    return true;
+  return restrictions_after.max_pixels_per_frame().value() <
+         restrictions_before.max_pixels_per_frame().value();
+}
+
+bool DidIncreaseFrameRate(VideoSourceRestrictions restrictions_before,
+                          VideoSourceRestrictions restrictions_after) {
+  if (!restrictions_before.max_frame_rate().has_value())
+    return false;
+  if (!restrictions_after.max_frame_rate().has_value())
+    return true;
+  return restrictions_after.max_frame_rate().value() >
+         restrictions_before.max_frame_rate().value();
 }
 
 bool DidDecreaseFrameRate(VideoSourceRestrictions restrictions_before,

@@ -65,9 +65,16 @@ class VideoSourceRestrictions {
   absl::optional<double> max_frame_rate_;
 };
 
+bool DidRestrictionsIncrease(VideoSourceRestrictions before,
+                             VideoSourceRestrictions after);
+bool DidRestrictionsDecrease(VideoSourceRestrictions before,
+                             VideoSourceRestrictions after);
 bool DidIncreaseResolution(VideoSourceRestrictions restrictions_before,
                            VideoSourceRestrictions restrictions_after);
-
+bool DidDecreaseResolution(VideoSourceRestrictions restrictions_before,
+                           VideoSourceRestrictions restrictions_after);
+bool DidIncreaseFrameRate(VideoSourceRestrictions restrictions_before,
+                          VideoSourceRestrictions restrictions_after);
 bool DidDecreaseFrameRate(VideoSourceRestrictions restrictions_before,
                           VideoSourceRestrictions restrictions_after);
 
