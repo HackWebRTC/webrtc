@@ -1556,17 +1556,6 @@ void AudioProcessingImpl::DetachAecDump() {
   }
 }
 
-void AudioProcessingImpl::AttachPlayoutAudioGenerator(
-    std::unique_ptr<AudioGenerator> audio_generator) {
-  // TODO(bugs.webrtc.org/8882) Stub.
-  // Reset internal audio generator with audio_generator.
-}
-
-void AudioProcessingImpl::DetachPlayoutAudioGenerator() {
-  // TODO(bugs.webrtc.org/8882) Stub.
-  // Delete audio generator, if one is attached.
-}
-
 void AudioProcessingImpl::MutateConfig(
     rtc::FunctionView<void(AudioProcessing::Config*)> mutator) {
   rtc::CritScope cs_render(&crit_render_);

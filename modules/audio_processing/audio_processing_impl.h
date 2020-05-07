@@ -72,10 +72,6 @@ class AudioProcessingImpl : public AudioProcessing {
   void SetExtraOptions(const webrtc::Config& config) override;
   void AttachAecDump(std::unique_ptr<AecDump> aec_dump) override;
   void DetachAecDump() override;
-  void AttachPlayoutAudioGenerator(
-      std::unique_ptr<AudioGenerator> audio_generator) override;
-  void DetachPlayoutAudioGenerator() override;
-
   void SetRuntimeSetting(RuntimeSetting setting) override;
 
   // Capture-side exclusive methods possibly running APM in a
