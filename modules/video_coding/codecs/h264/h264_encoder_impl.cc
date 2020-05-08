@@ -542,7 +542,9 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams(size_t i) const {
   encoder_params.iPicWidth = configurations_[i].width;
   encoder_params.iPicHeight = configurations_[i].height;
   encoder_params.iTargetBitrate = configurations_[i].target_bps;
-  encoder_params.iMaxBitrate = configurations_[i].max_bps;
+  // Keep unspecified. WebRTC's max codec bitrate is not the same setting
+  // as OpenH264's iMaxBitrate. More details in https://crbug.com/webrtc/11543
+  encoder_params.iMaxBitrate = UNSPECIFIED_BIT_RATE;
   // Rate Control mode
   encoder_params.iRCMode = RC_BITRATE_MODE;
   encoder_params.fMaxFrameRate = configurations_[i].max_frame_rate;
