@@ -64,16 +64,25 @@ rtc_library("libaom_av1_encoder") {
   }
 }
 
-rtc_library("video_coding_codecs_av1_tests") {
-  testonly = true
+if (rtc_include_tests) {
+  rtc_library("video_coding_codecs_av1_tests") {
+    testonly = true
 
-  if (enable_libaom) {
-    sources = [ "libaom_av1_encoder_unittest.cc" ]
-    deps = [
-      ":libaom_av1_encoder",
-      "../..:video_codec_interface",
-      "../../../../api/video_codecs:video_codecs_api",
-      "../../../../test:test_support",
-    ]
+    if (enable_libaom) {
+      sources = [
+        "libaom_av1_encoder_unittest.cc",
+        "libaom_av1_unittest.cc",
+      ]
+      deps = [
+        ":libaom_av1_decoder",
+        ":libaom_av1_encoder",
+        "../..:video_codec_interface",
+        "../../../../api:create_frame_generator",
+        "../../../../api:frame_generator_api",
+        "../../../../api/video_codecs:video_codecs_api",
+        "../../../../test:test_support",
+        "//third_party/abseil-cpp/absl/types:optional",
+      ]
+    }
   }
 }
