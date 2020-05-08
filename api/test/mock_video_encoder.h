@@ -20,25 +20,27 @@ namespace webrtc {
 
 class MockEncodedImageCallback : public EncodedImageCallback {
  public:
-  MockEncodedImageCallback();
-  ~MockEncodedImageCallback();
-  MOCK_METHOD3(OnEncodedImage,
-               Result(const EncodedImage& encodedImage,
-                      const CodecSpecificInfo* codecSpecificInfo,
-                      const RTPFragmentationHeader* fragmentation));
+  MOCK_METHOD(Result,
+              OnEncodedImage,
+              (const EncodedImage& encodedImage,
+               const CodecSpecificInfo* codecSpecificInfo,
+               const RTPFragmentationHeader* fragmentation),
+              (override));
+  MOCK_METHOD(void, OnDroppedFrame, (DropReason reason), (override));
 };
 
 class MockVideoEncoder : public VideoEncoder {
  public:
-  MockVideoEncoder();
-  ~MockVideoEncoder();
-  MOCK_METHOD1(SetFecControllerOverride,
-               void(FecControllerOverride* fec_controller_override));
-  MOCK_CONST_METHOD2(Version, int32_t(int8_t* version, int32_t length));
-  MOCK_METHOD3(InitEncode,
-               int32_t(const VideoCodec* codecSettings,
-                       int32_t numberOfCores,
-                       size_t maxPayloadSize));
+  MOCK_METHOD(void,
+              SetFecControllerOverride,
+              (FecControllerOverride * fec_controller_override),
+              (override));
+  MOCK_METHOD(int32_t,
+              InitEncode,
+              (const VideoCodec* codecSettings,
+               int32_t numberOfCores,
+               size_t maxPayloadSize),
+              (override));
   MOCK_METHOD2(InitEncode,
                int32_t(const VideoCodec* codecSettings,
                        const VideoEncoder::Settings& settings));

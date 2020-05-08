@@ -785,10 +785,7 @@ if (rtc_include_tests) {
 
   rtc_library("mock_frame_encryptor") {
     testonly = true
-    sources = [
-      "test/mock_frame_encryptor.cc",
-      "test/mock_frame_encryptor.h",
-    ]
+    sources = [ "test/mock_frame_encryptor.h" ]
     deps = [
       # For api/crypto/frame_encryptor_interface.h
       ":libjingle_peerconnection_api",
@@ -799,10 +796,7 @@ if (rtc_include_tests) {
 
   rtc_library("mock_frame_decryptor") {
     testonly = true
-    sources = [
-      "test/mock_frame_decryptor.cc",
-      "test/mock_frame_decryptor.h",
-    ]
+    sources = [ "test/mock_frame_decryptor.h" ]
     deps = [
       ":libjingle_peerconnection_api",
       "../test:test_support",
@@ -917,10 +911,7 @@ if (rtc_include_tests) {
     visibility = [ "*" ]
 
     testonly = true
-    sources = [
-      "test/mock_video_decoder.cc",
-      "test/mock_video_decoder.h",
-    ]
+    sources = [ "test/mock_video_decoder.h" ]
 
     deps = [
       "../api/video_codecs:video_codecs_api",
@@ -932,10 +923,7 @@ if (rtc_include_tests) {
     visibility = [ "*" ]
 
     testonly = true
-    sources = [
-      "test/mock_video_encoder.cc",
-      "test/mock_video_encoder.h",
-    ]
+    sources = [ "test/mock_video_encoder.h" ]
 
     deps = [
       "../api/video_codecs:video_codecs_api",

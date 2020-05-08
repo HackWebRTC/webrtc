@@ -19,11 +19,12 @@ namespace test {
 
 class MockAudioMixer : public AudioMixer {
  public:
-  MOCK_METHOD1(AddSource, bool(Source* audio_source));
-  MOCK_METHOD1(RemoveSource, void(Source* audio_source));
-  MOCK_METHOD2(Mix,
-               void(size_t number_of_channels,
-                    AudioFrame* audio_frame_for_mixing));
+  MOCK_METHOD(bool, AddSource, (Source * audio_source), (override));
+  MOCK_METHOD(void, RemoveSource, (Source * audio_source), (override));
+  MOCK_METHOD(void,
+              Mix,
+              (size_t number_of_channels, AudioFrame* audio_frame_for_mixing),
+              (override));
 };
 }  // namespace test
 }  // namespace webrtc
