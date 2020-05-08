@@ -371,6 +371,7 @@ if (rtc_include_tests) {
       "../api:create_peer_connection_quality_test_frame_generator",
       "../api:create_peerconnection_quality_test_fixture",
       "../api:frame_generator_api",
+      "../api:media_stream_interface",
       "../api:network_emulation_manager_api",
       "../api:peer_connection_quality_test_fixture_api",
       "../api:simulated_network_api",

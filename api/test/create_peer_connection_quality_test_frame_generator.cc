@@ -42,7 +42,7 @@ void ValidateScreenShareConfig(const VideoConfig& video_config,
       RTC_CHECK_EQ(video_config.height, kDefaultSlidesHeight);
     }
   }
-  if (video_config.screen_share_config->scrolling_params) {
+  if (screen_share_config.scrolling_params) {
     RTC_CHECK_LE(screen_share_config.scrolling_params->duration,
                  screen_share_config.slide_change_interval);
     RTC_CHECK_GE(screen_share_config.scrolling_params->source_width,

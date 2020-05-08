@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <memory>
 
+#include "api/media_stream_interface.h"
 #include "api/test/create_network_emulation_manager.h"
 #include "api/test/create_peer_connection_quality_test_frame_generator.h"
 #include "api/test/create_peerconnection_quality_test_fixture.h"
@@ -169,12 +170,13 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
 
         VideoConfig screenshare(640, 360, 30);
         screenshare.stream_label = "bob-screenshare";
-        screenshare.screen_share_config =
+        screenshare.content_hint = VideoTrackInterface::ContentHint::kText;
+        ScreenShareConfig screen_share_config =
             ScreenShareConfig(TimeDelta::Seconds(2));
-        screenshare.screen_share_config->scrolling_params = ScrollingParams(
+        screen_share_config.scrolling_params = ScrollingParams(
             TimeDelta::Millis(1800), kDefaultSlidesWidth, kDefaultSlidesHeight);
-        auto screen_share_frame_generator = CreateScreenShareFrameGenerator(
-            screenshare, *screenshare.screen_share_config);
+        auto screen_share_frame_generator =
+            CreateScreenShareFrameGenerator(screenshare, screen_share_config);
         bob->AddVideoConfig(std::move(screenshare),
                             std::move(screen_share_frame_generator));
 

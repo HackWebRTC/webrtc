@@ -12,6 +12,7 @@
 #include <string>
 #include <utility>
 
+#include "api/media_stream_interface.h"
 #include "api/test/create_frame_generator.h"
 #include "test/frame_generator_capturer.h"
 #include "test/platform_video_capturer.h"
@@ -57,20 +58,21 @@ MediaHelper::MaybeAddVideo(TestPeer* peer) {
         video_config, peer->ReleaseVideoGenerator(i),
         video_quality_analyzer_injection_helper_->CreateFramePreprocessor(
             video_config));
+    bool is_screencast =
+        video_config.content_hint == VideoTrackInterface::ContentHint::kText ||
+        video_config.content_hint ==
+            VideoTrackInterface::ContentHint::kDetailed;
     rtc::scoped_refptr<TestVideoCapturerVideoTrackSource> source =
         new rtc::RefCountedObject<TestVideoCapturerVideoTrackSource>(
-            std::move(capturer),
-            /*is_screencast=*/video_config.screen_share_config &&
-                video_config.screen_share_config->use_text_content_hint);
+            std::move(capturer), is_screencast);
     out.push_back(source);
     RTC_LOG(INFO) << "Adding video with video_config.stream_label="
                   << video_config.stream_label.value();
     rtc::scoped_refptr<VideoTrackInterface> track =
         peer->pc_factory()->CreateVideoTrack(video_config.stream_label.value(),
                                              source);
-    if (video_config.screen_share_config &&
-        video_config.screen_share_config->use_text_content_hint) {
-      track->set_content_hint(VideoTrackInterface::ContentHint::kText);
+    if (video_config.content_hint.has_value()) {
+      track->set_content_hint(video_config.content_hint.value());
     }
     std::string sync_group = video_config.sync_group
                                  ? video_config.sync_group.value()
