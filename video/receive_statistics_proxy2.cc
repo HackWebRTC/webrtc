@@ -589,7 +589,6 @@ void ReceiveStatisticsProxy::UpdateDecodeTimeHistograms(
     int width,
     int height,
     int decode_time_ms) const {
-  RTC_DCHECK_RUN_ON(&decode_queue_);
   // TODO(bugs.webrtc.org/11489): Consider posting the work to the worker
   // thread.
 
