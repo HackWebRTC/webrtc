@@ -21,6 +21,7 @@
 #include "modules/audio_device/include/test_audio_device.h"
 #include "rtc_base/task_queue.h"
 #include "test/pc/e2e/analyzer/video/video_quality_analyzer_injection_helper.h"
+#include "test/pc/e2e/peer_configurer.h"
 #include "test/pc/e2e/peer_connection_quality_test_params.h"
 #include "test/pc/e2e/test_peer.h"
 
@@ -55,6 +56,22 @@ class TestPeerFactory {
       std::unique_ptr<Params> params,
       std::vector<std::unique_ptr<test::FrameGeneratorInterface>>
           video_generators,
+      std::unique_ptr<MockPeerConnectionObserver> observer,
+      VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
+      rtc::Thread* signaling_thread,
+      absl::optional<RemotePeerAudioConfig> remote_audio_config,
+      double bitrate_multiplier,
+      absl::optional<PeerConnectionE2EQualityTestFixture::EchoEmulationConfig>
+          echo_emulation_config,
+      rtc::TaskQueue* task_queue);
+  // Setups all components, that should be provided to WebRTC
+  // PeerConnectionFactory and PeerConnection creation methods,
+  // also will setup dependencies, that are required for media analyzers
+  // injection.
+  //
+  // |signaling_thread| will be provided by test fixture implementation.
+  static std::unique_ptr<TestPeer> CreateTestPeer(
+      std::unique_ptr<PeerConfigurerImpl> configurer,
       std::unique_ptr<MockPeerConnectionObserver> observer,
       VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
       rtc::Thread* signaling_thread,

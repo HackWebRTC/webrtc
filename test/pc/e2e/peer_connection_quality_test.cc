@@ -160,23 +160,15 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   RTC_CHECK_EQ(peer_configurations_.size(), 2)
       << "Only peer to peer calls are allowed, please add 2 peers";
 
-  std::unique_ptr<Params> alice_params =
-      peer_configurations_[0]->ReleaseParams();
-  std::unique_ptr<InjectableComponents> alice_components =
-      peer_configurations_[0]->ReleaseComponents();
-  std::vector<std::unique_ptr<test::FrameGeneratorInterface>>
-      alice_video_generators =
-          peer_configurations_[0]->ReleaseVideoGenerators();
-  std::unique_ptr<Params> bob_params = peer_configurations_[1]->ReleaseParams();
-  std::unique_ptr<InjectableComponents> bob_components =
-      peer_configurations_[1]->ReleaseComponents();
-  std::vector<std::unique_ptr<test::FrameGeneratorInterface>>
-      bob_video_generators = peer_configurations_[1]->ReleaseVideoGenerators();
+  std::unique_ptr<PeerConfigurerImpl> alice_configurer =
+      std::move(peer_configurations_[0]);
+  std::unique_ptr<PeerConfigurerImpl> bob_configurer =
+      std::move(peer_configurations_[1]);
   peer_configurations_.clear();
 
-  for (size_t i = 0; i < bob_params->video_configs.size(); ++i) {
+  for (size_t i = 0; i < bob_configurer->params()->video_configs.size(); ++i) {
     // We support simulcast only from caller.
-    RTC_CHECK(!bob_params->video_configs[i].simulcast_config)
+    RTC_CHECK(!bob_configurer->params()->video_configs[i].simulcast_config)
         << "Only simulcast stream from first peer is supported";
   }
 
@@ -185,11 +177,11 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   // Print test summary
   RTC_LOG(INFO)
       << "Media quality test: Alice will make a call to Bob with media video="
-      << !alice_params->video_configs.empty()
-      << "; audio=" << alice_params->audio_config.has_value()
+      << !alice_configurer->params()->video_configs.empty()
+      << "; audio=" << alice_configurer->params()->audio_config.has_value()
       << ". Bob will respond with media video="
-      << !bob_params->video_configs.empty()
-      << "; audio=" << bob_params->audio_config.has_value();
+      << !bob_configurer->params()->video_configs.empty()
+      << "; audio=" << bob_configurer->params()->audio_config.has_value();
 
   const std::unique_ptr<rtc::Thread> signaling_thread = rtc::Thread::Create();
   signaling_thread->SetName(kSignalThreadName, nullptr);
@@ -206,16 +198,17 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   // catch output of Alice's stream, Alice's output_dump_file_name should be
   // passed to Bob's TestPeer setup as audio output file name.
   absl::optional<RemotePeerAudioConfig> alice_remote_audio_config =
-      RemotePeerAudioConfig::Create(bob_params->audio_config);
+      RemotePeerAudioConfig::Create(bob_configurer->params()->audio_config);
   absl::optional<RemotePeerAudioConfig> bob_remote_audio_config =
-      RemotePeerAudioConfig::Create(alice_params->audio_config);
+      RemotePeerAudioConfig::Create(alice_configurer->params()->audio_config);
   // Copy Alice and Bob video configs to correctly pass them into lambdas.
-  std::vector<VideoConfig> alice_video_configs = alice_params->video_configs;
-  std::vector<VideoConfig> bob_video_configs = bob_params->video_configs;
+  std::vector<VideoConfig> alice_video_configs =
+      alice_configurer->params()->video_configs;
+  std::vector<VideoConfig> bob_video_configs =
+      bob_configurer->params()->video_configs;
 
   alice_ = TestPeerFactory::CreateTestPeer(
-      std::move(alice_components), std::move(alice_params),
-      std::move(alice_video_generators),
+      std::move(alice_configurer),
       std::make_unique<FixturePeerConnectionObserver>(
           [this, bob_video_configs](
               rtc::scoped_refptr<RtpTransceiverInterface> transceiver) {
@@ -226,8 +219,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
       alice_remote_audio_config, run_params.video_encoder_bitrate_multiplier,
       run_params.echo_emulation_config, task_queue_.get());
   bob_ = TestPeerFactory::CreateTestPeer(
-      std::move(bob_components), std::move(bob_params),
-      std::move(bob_video_generators),
+      std::move(bob_configurer),
       std::make_unique<FixturePeerConnectionObserver>(
           [this, alice_video_configs](
               rtc::scoped_refptr<RtpTransceiverInterface> transceiver) {

@@ -240,6 +240,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":echo_emulation",
+      ":peer_configurer",
       ":peer_connection_quality_test_params",
       ":test_peer",
       ":video_quality_analyzer_injection_helper",

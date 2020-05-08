@@ -20,6 +20,7 @@
 #include "modules/audio_processing/aec_dump/aec_dump_factory.h"
 #include "p2p/client/basic_port_allocator.h"
 #include "test/pc/e2e/echo/echo_emulation.h"
+#include "test/pc/e2e/peer_configurer.h"
 #include "test/testsupport/copy_to_file_audio_capturer.h"
 
 namespace webrtc {
@@ -324,6 +325,23 @@ std::unique_ptr<TestPeer> TestPeerFactory::CreateTestPeer(
   return absl::WrapUnique(new TestPeer(
       peer_connection_factory, peer_connection, std::move(observer),
       std::move(params), std::move(video_generators), audio_processing));
+}
+
+std::unique_ptr<TestPeer> TestPeerFactory::CreateTestPeer(
+    std::unique_ptr<PeerConfigurerImpl> configurer,
+    std::unique_ptr<MockPeerConnectionObserver> observer,
+    VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
+    rtc::Thread* signaling_thread,
+    absl::optional<RemotePeerAudioConfig> remote_audio_config,
+    double bitrate_multiplier,
+    absl::optional<PeerConnectionE2EQualityTestFixture::EchoEmulationConfig>
+        echo_emulation_config,
+    rtc::TaskQueue* task_queue) {
+  return CreateTestPeer(
+      configurer->ReleaseComponents(), configurer->ReleaseParams(),
+      configurer->ReleaseVideoGenerators(), std::move(observer),
+      video_analyzer_helper, signaling_thread, remote_audio_config,
+      bitrate_multiplier, echo_emulation_config, task_queue);
 }
 
 }  // namespace webrtc_pc_e2e
