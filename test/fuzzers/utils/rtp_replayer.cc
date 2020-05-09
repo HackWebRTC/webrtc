@@ -24,6 +24,7 @@
 #include "test/fake_decoder.h"
 #include "test/rtp_file_reader.h"
 #include "test/rtp_header_parser.h"
+#include "test/run_loop.h"
 
 namespace webrtc {
 namespace test {
@@ -43,6 +44,7 @@ void RtpReplayer::Replay(
     std::vector<VideoReceiveStream::Config> receive_stream_configs,
     const uint8_t* rtp_dump_data,
     size_t rtp_dump_size) {
+  RunLoop loop;
   rtc::ScopedBaseFakeClock fake_clock;
 
   // Work around: webrtc calls webrtc::Random(clock.TimeInMicroseconds())
