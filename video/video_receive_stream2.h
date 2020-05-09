@@ -26,7 +26,6 @@
 #include "modules/video_coding/video_receiver2.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_queue.h"
-#include "rtc_base/task_utils/pending_task_safety_flag.h"
 #include "system_wrappers/include/clock.h"
 #include "video/receive_statistics_proxy2.h"
 #include "video/rtp_streams_synchronizer.h"
@@ -135,7 +134,8 @@ class VideoReceiveStream2 : public webrtc::VideoReceiveStream,
   void HandleEncodedFrame(std::unique_ptr<video_coding::EncodedFrame> frame)
       RTC_RUN_ON(decode_queue_);
   void HandleFrameBufferTimeout() RTC_RUN_ON(decode_queue_);
-  void UpdatePlayoutDelays() const;
+  void UpdatePlayoutDelays() const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(playout_delay_lock_);
   void RequestKeyFrame(int64_t timestamp_ms) RTC_RUN_ON(decode_queue_);
   void HandleKeyFrameGeneration(bool received_frame_is_keyframe, int64_t now_ms)
       RTC_RUN_ON(decode_queue_);
@@ -200,23 +200,22 @@ class VideoReceiveStream2 : public webrtc::VideoReceiveStream,
   const int max_wait_for_keyframe_ms_;
   const int max_wait_for_frame_ms_;
 
+  rtc::CriticalSection playout_delay_lock_;
+
   // All of them tries to change current min_playout_delay on |timing_| but
   // source of the change request is different in each case. Among them the
   // biggest delay is used. -1 means use default value from the |timing_|.
   //
   // Minimum delay as decided by the RTP playout delay extension.
-  int frame_minimum_playout_delay_ms_ RTC_GUARDED_BY(worker_sequence_checker_) =
-      -1;
+  int frame_minimum_playout_delay_ms_ RTC_GUARDED_BY(playout_delay_lock_) = -1;
   // Minimum delay as decided by the setLatency function in "webrtc/api".
-  int base_minimum_playout_delay_ms_ RTC_GUARDED_BY(worker_sequence_checker_) =
-      -1;
+  int base_minimum_playout_delay_ms_ RTC_GUARDED_BY(playout_delay_lock_) = -1;
   // Minimum delay as decided by the A/V synchronization feature.
-  int syncable_minimum_playout_delay_ms_
-      RTC_GUARDED_BY(worker_sequence_checker_) = -1;
+  int syncable_minimum_playout_delay_ms_ RTC_GUARDED_BY(playout_delay_lock_) =
+      -1;
 
   // Maximum delay as decided by the RTP playout delay extension.
-  int frame_maximum_playout_delay_ms_ RTC_GUARDED_BY(worker_sequence_checker_) =
-      -1;
+  int frame_maximum_playout_delay_ms_ RTC_GUARDED_BY(playout_delay_lock_) = -1;
 
   // Function that is triggered with encoded frames, if not empty.
   std::function<void(const RecordableEncodedFrame&)>
@@ -226,10 +225,6 @@ class VideoReceiveStream2 : public webrtc::VideoReceiveStream,
 
   // Defined last so they are destroyed before all other members.
   rtc::TaskQueue decode_queue_;
-
-  // Used to signal destruction to potentially pending tasks.
-  PendingTaskSafetyFlag::Pointer task_safety_flag_ =
-      PendingTaskSafetyFlag::Create();
 };
 }  // namespace internal
 }  // namespace webrtc
