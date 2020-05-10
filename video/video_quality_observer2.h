@@ -19,12 +19,13 @@
 #include "absl/types/optional.h"
 #include "api/video/video_codec_type.h"
 #include "api/video/video_content_type.h"
-#include "api/video/video_frame.h"
 #include "rtc_base/numerics/moving_average.h"
 #include "rtc_base/numerics/sample_counter.h"
 
 namespace webrtc {
 namespace internal {
+// Declared in video_receive_stream2.h.
+struct VideoFrameMetaData;
 
 // Calculates spatial and temporal quality metrics and reports them to UMA
 // stats.
@@ -35,11 +36,11 @@ class VideoQualityObserver {
   VideoQualityObserver();
   ~VideoQualityObserver() = default;
 
-  void OnDecodedFrame(const VideoFrame& frame,
+  void OnDecodedFrame(uint32_t rtp_frame_timestamp,
                       absl::optional<uint8_t> qp,
                       VideoCodecType codec);
 
-  void OnRenderedFrame(const VideoFrame& frame, int64_t now_ms);
+  void OnRenderedFrame(const VideoFrameMetaData& frame_meta);
 
   void OnStreamInactive();
 

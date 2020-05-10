@@ -74,6 +74,7 @@ rtc_library("video") {
     "../api/rtc_event_log",
     "../api/task_queue",
     "../api/transport/media:media_transport_interface",
+    "../api/units:timestamp",
     "../api/video:encoded_image",
     "../api/video:recordable_encoded_frame",
     "../api/video:video_bitrate_allocation",

@@ -274,6 +274,7 @@ VideoReceiveStream2::~VideoReceiveStream2() {
   RTC_LOG(LS_INFO) << "~VideoReceiveStream2: " << config_.ToString();
   Stop();
   process_thread_->DeRegisterModule(&rtp_stream_sync_);
+  task_safety_flag_->SetNotAlive();
 }
 
 void VideoReceiveStream2::SignalNetworkState(NetworkState state) {
@@ -491,28 +492,31 @@ int VideoReceiveStream2::GetBaseMinimumPlayoutDelayMs() const {
   return base_minimum_playout_delay_ms_;
 }
 
-// TODO(bugs.webrtc.org/11489): This method grabs a lock 6 times.
 void VideoReceiveStream2::OnFrame(const VideoFrame& video_frame) {
-  int64_t video_playout_ntp_ms;
-  int64_t sync_offset_ms;
-  double estimated_freq_khz;
-  // TODO(bugs.webrtc.org/11489): GetStreamSyncOffsetInMs grabs three locks. One
-  // inside the function itself, another in GetChannel() and a third in
-  // GetPlayoutTimestamp.  Seems excessive.  Anyhow, I'm assuming the function
-  // succeeds most of the time, which leads to grabbing a fourth lock.
-  if (rtp_stream_sync_.GetStreamSyncOffsetInMs(
-          video_frame.timestamp(), video_frame.render_time_ms(),
-          &video_playout_ntp_ms, &sync_offset_ms, &estimated_freq_khz)) {
-    // TODO(bugs.webrtc.org/11489): OnSyncOffsetUpdated grabs a lock.
-    stats_proxy_.OnSyncOffsetUpdated(video_playout_ntp_ms, sync_offset_ms,
-                                     estimated_freq_khz);
-  }
+  VideoFrameMetaData frame_meta(video_frame, clock_->CurrentTime());
+
+  worker_thread_->PostTask(
+      ToQueuedTask(task_safety_flag_, [frame_meta, this]() {
+        RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
+        int64_t video_playout_ntp_ms;
+        int64_t sync_offset_ms;
+        double estimated_freq_khz;
+        // TODO(bugs.webrtc.org/11489): GetStreamSyncOffsetInMs grabs three
+        // locks.  One inside the function itself, another in GetChannel() and a
+        // third in GetPlayoutTimestamp.  Seems excessive.  Anyhow, I'm assuming
+        // the function succeeds most of the time, which leads to grabbing a
+        // fourth lock.
+        if (rtp_stream_sync_.GetStreamSyncOffsetInMs(
+                frame_meta.rtp_timestamp, frame_meta.render_time_ms(),
+                &video_playout_ntp_ms, &sync_offset_ms, &estimated_freq_khz)) {
+          stats_proxy_.OnSyncOffsetUpdated(video_playout_ntp_ms, sync_offset_ms,
+                                           estimated_freq_khz);
+        }
+        stats_proxy_.OnRenderedFrame(frame_meta);
+      }));
+
   source_tracker_.OnFrameDelivered(video_frame.packet_infos());
-
   config_.renderer->OnFrame(video_frame);
-
-  // TODO(bugs.webrtc.org/11489): OnRenderFrame grabs a lock too.
-  stats_proxy_.OnRenderedFrame(video_frame);
 }
 
 void VideoReceiveStream2::SetFrameDecryptor(

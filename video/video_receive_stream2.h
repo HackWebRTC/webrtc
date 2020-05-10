@@ -16,6 +16,7 @@
 
 #include "api/task_queue/task_queue_factory.h"
 #include "api/transport/media/media_transport_interface.h"
+#include "api/units/timestamp.h"
 #include "api/video/recordable_encoded_frame.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "call/syncable.h"
@@ -44,6 +45,33 @@ class RtxReceiveStream;
 class VCMTiming;
 
 namespace internal {
+
+// Utility struct for grabbing metadata from a VideoFrame and processing it
+// asynchronously without needing the actual frame data.
+// Additionally the caller can bundle information from the current clock
+// when the metadata is captured, for accurate reporting and not needeing
+// multiple calls to clock->Now().
+struct VideoFrameMetaData {
+  VideoFrameMetaData(const webrtc::VideoFrame& frame, Timestamp now)
+      : rtp_timestamp(frame.timestamp()),
+        timestamp_us(frame.timestamp_us()),
+        ntp_time_ms(frame.ntp_time_ms()),
+        width(frame.width()),
+        height(frame.height()),
+        decode_timestamp(now) {}
+
+  int64_t render_time_ms() const {
+    return timestamp_us / rtc::kNumMicrosecsPerMillisec;
+  }
+
+  const uint32_t rtp_timestamp;
+  const int64_t timestamp_us;
+  const int64_t ntp_time_ms;
+  const int width;
+  const int height;
+
+  const Timestamp decode_timestamp;
+};
 
 class VideoReceiveStream2 : public webrtc::VideoReceiveStream,
                             public rtc::VideoSinkInterface<VideoFrame>,
@@ -225,6 +253,10 @@ class VideoReceiveStream2 : public webrtc::VideoReceiveStream,
 
   // Defined last so they are destroyed before all other members.
   rtc::TaskQueue decode_queue_;
+
+  // Used to signal destruction to potentially pending tasks.
+  PendingTaskSafetyFlag::Pointer task_safety_flag_ =
+      PendingTaskSafetyFlag::Create();
 };
 }  // namespace internal
 }  // namespace webrtc
