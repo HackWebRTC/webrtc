@@ -706,8 +706,12 @@ void VideoReceiveStream2::HandleFrameBufferTimeout() {
   // To avoid spamming keyframe requests for a stream that is not active we
   // check if we have received a packet within the last 5 seconds.
   bool stream_is_active = last_packet_ms && now_ms - *last_packet_ms < 5000;
-  if (!stream_is_active)
-    stats_proxy_.OnStreamInactive();
+  if (!stream_is_active) {
+    worker_thread_->PostTask(ToQueuedTask(task_safety_flag_, [this]() {
+      RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
+      stats_proxy_.OnStreamInactive();
+    }));
+  }
 
   if (stream_is_active && !IsReceivingKeyFrame(now_ms) &&
       (!config_.crypto_options.sframe.require_frame_encryption ||

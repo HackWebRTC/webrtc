@@ -61,6 +61,15 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
                       absl::optional<uint8_t> qp,
                       int32_t decode_time_ms,
                       VideoContentType content_type);
+
+  // Called asyncronously on the worker thread as a result of a call to the
+  // above OnDecodedFrame method, which is called back on the thread where
+  // the actual decoding happens.
+  void OnDecodedFrame(const VideoFrameMetaData& frame_meta,
+                      absl::optional<uint8_t> qp,
+                      int32_t decode_time_ms,
+                      VideoContentType content_type);
+
   void OnSyncOffsetUpdated(int64_t video_playout_ntp_ms,
                            int64_t sync_offset_ms,
                            double estimated_freq_khz);
@@ -136,8 +145,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   void QualitySample(Timestamp now) RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Removes info about old frames and then updates the framerate.
-  void UpdateFramerate(int64_t now_ms) const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void UpdateFramerate(int64_t now_ms) const;
 
   void UpdateDecodeTimeHistograms(int width,
                                   int height,
@@ -152,8 +160,9 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   const bool enable_decode_time_histograms_;
 
   rtc::CriticalSection crit_;
-  int64_t last_sample_time_ RTC_GUARDED_BY(crit_);
-  QualityThreshold fps_threshold_ RTC_GUARDED_BY(crit_);
+  int64_t last_sample_time_ RTC_GUARDED_BY(main_thread_);
+
+  QualityThreshold fps_threshold_ RTC_GUARDED_BY(main_thread_);
   QualityThreshold qp_threshold_ RTC_GUARDED_BY(crit_);
   QualityThreshold variance_threshold_ RTC_GUARDED_BY(crit_);
   rtc::SampleCounter qp_sample_ RTC_GUARDED_BY(crit_);
@@ -174,20 +183,21 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   rtc::SampleCounter current_delay_counter_ RTC_GUARDED_BY(crit_);
   rtc::SampleCounter delay_counter_ RTC_GUARDED_BY(crit_);
   std::unique_ptr<VideoQualityObserver> video_quality_observer_
-      RTC_GUARDED_BY(crit_);
+      RTC_GUARDED_BY(main_thread_);
   mutable rtc::MovingMaxCounter<int> interframe_delay_max_moving_
-      RTC_GUARDED_BY(crit_);
+      RTC_GUARDED_BY(main_thread_);
   std::map<VideoContentType, ContentSpecificStats> content_specific_stats_
       RTC_GUARDED_BY(crit_);
   MaxCounter freq_offset_counter_ RTC_GUARDED_BY(crit_);
   QpCounters qp_counters_ RTC_GUARDED_BY(decode_queue_);
   int64_t avg_rtt_ms_ RTC_GUARDED_BY(crit_);
-  mutable std::map<int64_t, size_t> frame_window_ RTC_GUARDED_BY(&crit_);
-  VideoContentType last_content_type_ RTC_GUARDED_BY(&crit_);
+  mutable std::map<int64_t, size_t> frame_window_ RTC_GUARDED_BY(main_thread_);
+  VideoContentType last_content_type_ RTC_GUARDED_BY(&main_thread_);
   VideoCodecType last_codec_type_ RTC_GUARDED_BY(&crit_);
   absl::optional<int64_t> first_frame_received_time_ms_ RTC_GUARDED_BY(&crit_);
   absl::optional<int64_t> first_decoded_frame_time_ms_ RTC_GUARDED_BY(&crit_);
-  absl::optional<int64_t> last_decoded_frame_time_ms_ RTC_GUARDED_BY(&crit_);
+  absl::optional<int64_t> last_decoded_frame_time_ms_
+      RTC_GUARDED_BY(main_thread_);
   size_t num_delayed_frames_rendered_ RTC_GUARDED_BY(&crit_);
   int64_t sum_missed_render_deadline_ms_ RTC_GUARDED_BY(&crit_);
   // Mutable because calling Max() on MovingMaxCounter is not const. Yet it is
