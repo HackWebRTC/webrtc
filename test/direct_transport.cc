@@ -55,7 +55,6 @@ DirectTransport::~DirectTransport() {
 }
 
 void DirectTransport::SetReceiver(PacketReceiver* receiver) {
-  rtc::CritScope cs(&process_lock_);
   fake_network_->SetReceiver(receiver);
 }
 
