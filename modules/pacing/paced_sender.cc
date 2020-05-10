@@ -196,17 +196,11 @@ void PacedSender::SetQueueTimeLimit(TimeDelta limit) {
 
 void PacedSender::SendRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
                                 const PacedPacketInfo& cluster_info) {
-  critsect_.Leave();
   packet_router_->SendPacket(std::move(packet), cluster_info);
-  critsect_.Enter();
 }
 
 std::vector<std::unique_ptr<RtpPacketToSend>> PacedSender::GeneratePadding(
     DataSize size) {
-  std::vector<std::unique_ptr<RtpPacketToSend>> padding_packets;
-  critsect_.Leave();
-  padding_packets = packet_router_->GeneratePadding(size.bytes());
-  critsect_.Enter();
-  return padding_packets;
+  return packet_router_->GeneratePadding(size.bytes());
 }
 }  // namespace webrtc
