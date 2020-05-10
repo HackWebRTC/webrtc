@@ -29,7 +29,7 @@
 #include "rtc_base/task_queue.h"
 #include "system_wrappers/include/clock.h"
 #include "video/receive_statistics_proxy2.h"
-#include "video/rtp_streams_synchronizer.h"
+#include "video/rtp_streams_synchronizer2.h"
 #include "video/rtp_video_stream_receiver.h"
 #include "video/transport_adapter.h"
 #include "video/video_stream_decoder2.h"
@@ -181,7 +181,6 @@ class VideoReceiveStream2 : public webrtc::VideoReceiveStream,
   TransportAdapter transport_adapter_;
   const VideoReceiveStream::Config config_;
   const int num_cpu_cores_;
-  ProcessThread* const process_thread_;
   TaskQueueBase* const worker_thread_;
   Clock* const clock_;
 

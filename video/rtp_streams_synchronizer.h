@@ -25,11 +25,7 @@ namespace webrtc {
 
 class Syncable;
 
-// TODO(bugs.webrtc.org/11489): Remove dependency on ProcessThread/Module.
-// Instead make this a single threaded class, constructed on a TQ and
-// post a 1 sec timer there. There shouldn't be a need for locking internally
-// and the callback from this class, should occur on the construction TQ
-// which in turn means that the callback doesn't need locking either.
+// DEPRECATED.
 class RtpStreamsSynchronizer : public Module {
  public:
   explicit RtpStreamsSynchronizer(Syncable* syncable_video);

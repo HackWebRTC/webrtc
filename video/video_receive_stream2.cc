@@ -32,7 +32,6 @@
 #include "call/rtx_receive_stream.h"
 #include "common_video/include/incoming_video_stream.h"
 #include "media/base/h264_profile_level_id.h"
-#include "modules/utility/include/process_thread.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/include/video_error_codes.h"
@@ -194,7 +193,6 @@ VideoReceiveStream2::VideoReceiveStream2(
       transport_adapter_(config.rtcp_send_transport),
       config_(std::move(config)),
       num_cpu_cores_(num_cpu_cores),
-      process_thread_(process_thread),
       worker_thread_(current_queue),
       clock_(clock),
       call_stats_(call_stats),
@@ -211,13 +209,13 @@ VideoReceiveStream2::VideoReceiveStream2(
                                  rtp_receive_statistics_.get(),
                                  &stats_proxy_,
                                  &stats_proxy_,
-                                 process_thread_,
+                                 process_thread,
                                  this,     // NackSender
                                  nullptr,  // Use default KeyFrameRequestSender
                                  this,     // OnCompleteFrameCallback
                                  config_.frame_decryptor,
                                  config_.frame_transformer),
-      rtp_stream_sync_(this),
+      rtp_stream_sync_(current_queue, this),
       max_wait_for_keyframe_ms_(KeyframeIntervalSettings::ParseFromFieldTrials()
                                     .MaxWaitForKeyframeMs()
                                     .value_or(kMaxWaitForKeyFrameMs)),
@@ -231,7 +229,6 @@ VideoReceiveStream2::VideoReceiveStream2(
 
   RTC_DCHECK(worker_thread_);
   RTC_DCHECK(config_.renderer);
-  RTC_DCHECK(process_thread_);
   RTC_DCHECK(call_stats_);
 
   module_process_sequence_checker_.Detach();
@@ -253,7 +250,6 @@ VideoReceiveStream2::VideoReceiveStream2(
   frame_buffer_.reset(
       new video_coding::FrameBuffer(clock_, timing_.get(), &stats_proxy_));
 
-  process_thread_->RegisterModule(&rtp_stream_sync_, RTC_FROM_HERE);
   // Register with RtpStreamReceiverController.
   media_receiver_ = receiver_controller->CreateReceiver(
       config_.rtp.remote_ssrc, &rtp_video_stream_receiver_);
@@ -273,7 +269,6 @@ VideoReceiveStream2::~VideoReceiveStream2() {
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
   RTC_LOG(LS_INFO) << "~VideoReceiveStream2: " << config_.ToString();
   Stop();
-  process_thread_->DeRegisterModule(&rtp_stream_sync_);
   task_safety_flag_->SetNotAlive();
 }
 
@@ -587,7 +582,7 @@ uint32_t VideoReceiveStream2::id() const {
 }
 
 absl::optional<Syncable::Info> VideoReceiveStream2::GetInfo() const {
-  RTC_DCHECK_RUN_ON(&module_process_sequence_checker_);
+  RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
   absl::optional<Syncable::Info> info =
       rtp_video_stream_receiver_.GetSyncInfo();
 
@@ -611,8 +606,9 @@ void VideoReceiveStream2::SetEstimatedPlayoutNtpTimestampMs(
 }
 
 void VideoReceiveStream2::SetMinimumPlayoutDelay(int delay_ms) {
-  RTC_DCHECK_RUN_ON(&module_process_sequence_checker_);
-  // TODO(bugs.webrtc.org/11489): Consider posting to worker.
+  RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
+  // TODO(bugs.webrtc.org/11489): See if we can't get rid of the
+  // |playout_delay_lock_|
   rtc::CritScope cs(&playout_delay_lock_);
   syncable_minimum_playout_delay_ms_ = delay_ms;
   UpdatePlayoutDelays();
