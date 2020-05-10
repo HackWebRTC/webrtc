@@ -14,6 +14,8 @@ rtc_library("video") {
     "buffered_frame_decryptor.h",
     "call_stats.cc",
     "call_stats.h",
+    "call_stats2.cc",
+    "call_stats2.h",
     "encoder_rtcp_feedback.cc",
     "encoder_rtcp_feedback.h",
     "quality_limitation_reason_tracker.cc",
@@ -492,6 +494,7 @@ if (rtc_include_tests) {
     defines = []
     sources = [
       "buffered_frame_decryptor_unittest.cc",
+      "call_stats2_unittest.cc",
       "call_stats_unittest.cc",
       "cpu_scaling_tests.cc",
       "encoder_bitrate_adjuster_unittest.cc",

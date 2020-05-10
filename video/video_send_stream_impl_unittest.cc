@@ -155,6 +155,7 @@ class VideoSendStreamImplTest : public ::testing::Test {
   SendDelayStats send_delay_stats_;
   TaskQueueForTest test_queue_;
   std::unique_ptr<ProcessThread> process_thread_;
+  // TODO(tommi): Use internal::CallStats
   CallStats call_stats_;
   SendStatisticsProxy stats_proxy_;
   PacketRouter packet_router_;

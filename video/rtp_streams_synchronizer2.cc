@@ -75,6 +75,15 @@ void RtpStreamsSynchronizer::QueueTimer() {
   timer_running_ = true;
   uint32_t delay = kSyncIntervalMs - (rtc::TimeNanos() - last_sync_time_) /
                                          rtc::kNumNanosecsPerMillisec;
+  if (delay > kSyncIntervalMs) {
+    // TODO(tommi): |linux_chromium_tsan_rel_ng| bot has shown a failure when
+    // running WebRtcBrowserTest.CallAndModifyStream, indicating that the
+    // underlying clock is not reliable. Possibly there's a fake clock being
+    // used as the tests are flaky. Look into and fix.
+    RTC_LOG(LS_ERROR) << "Unexpected timer value: " << delay;
+    delay = kSyncIntervalMs;
+  }
+
   RTC_DCHECK_LE(delay, kSyncIntervalMs);
   task_queue_->PostDelayedTask(ToQueuedTask([this, safety = task_safety_flag_] {
                                  if (!safety->alive())

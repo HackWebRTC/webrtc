@@ -196,6 +196,7 @@ class RtpVideoSenderTestFixture {
   const FieldTrialBasedConfig field_trials_;
   RtpTransportControllerSend transport_controller_;
   std::unique_ptr<ProcessThread> process_thread_;
+  // TODO(tommi): Use internal::CallStats.
   CallStats call_stats_;
   SendStatisticsProxy stats_proxy_;
   RateLimiter retransmission_rate_limiter_;

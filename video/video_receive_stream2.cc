@@ -47,7 +47,7 @@
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"
-#include "video/call_stats.h"
+#include "video/call_stats2.h"
 #include "video/frame_dumping_decoder.h"
 #include "video/receive_statistics_proxy.h"
 
@@ -203,7 +203,7 @@ VideoReceiveStream2::VideoReceiveStream2(
       video_receiver_(clock_, timing_.get()),
       rtp_video_stream_receiver_(clock_,
                                  &transport_adapter_,
-                                 call_stats,
+                                 call_stats->AsRtcpRttStats(),
                                  packet_router,
                                  &config_,
                                  rtp_receive_statistics_.get(),
@@ -364,8 +364,6 @@ void VideoReceiveStream2::Start() {
 
   // Make sure we register as a stats observer *after* we've prepared the
   // |video_stream_decoder_|.
-  // TODO(webrtc:11489): Make call_stats_ not depend on ProcessThread and
-  // make callbacks on the worker thread (TQ).
   call_stats_->RegisterStatsObserver(this);
 
   // Start decoding on task queue.
@@ -568,12 +566,10 @@ void VideoReceiveStream2::OnCompleteFrame(
 }
 
 void VideoReceiveStream2::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
-  RTC_DCHECK_RUN_ON(&module_process_sequence_checker_);
-  // TODO(webrtc:11489, webrtc:11490): Once call_stats_ does not depend on
-  // ProcessThread, this callback should happen on the worker thread. Then we
-  // can share the avg_rtt_ms with ReceiveStatisticsProxy.
+  RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
   frame_buffer_->UpdateRtt(max_rtt_ms);
   rtp_video_stream_receiver_.UpdateRtt(max_rtt_ms);
+  stats_proxy_.OnRttUpdate(avg_rtt_ms);
 }
 
 uint32_t VideoReceiveStream2::id() const {

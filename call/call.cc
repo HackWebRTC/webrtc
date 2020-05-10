@@ -58,7 +58,7 @@
 #include "system_wrappers/include/cpu_info.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
-#include "video/call_stats.h"
+#include "video/call_stats2.h"
 #include "video/send_delay_stats.h"
 #include "video/stats_counter.h"
 #include "video/video_receive_stream2.h"
@@ -155,6 +155,13 @@ std::unique_ptr<rtclog::StreamConfig> CreateRtcLogStreamConfig(
 bool IsRtcp(const uint8_t* packet, size_t length) {
   RtpUtility::RtpHeaderParser rtp_parser(packet, length);
   return rtp_parser.RTCP();
+}
+
+TaskQueueBase* GetCurrentTaskQueueOrThread() {
+  TaskQueueBase* current = TaskQueueBase::Current();
+  if (!current)
+    current = rtc::ThreadManager::Instance()->CurrentThread();
+  return current;
 }
 
 }  // namespace
@@ -440,7 +447,7 @@ Call::Call(Clock* clock,
       task_queue_factory_(task_queue_factory),
       num_cpu_cores_(CpuInfo::DetectNumberOfCores()),
       module_process_thread_(std::move(module_process_thread)),
-      call_stats_(new CallStats(clock_, module_process_thread_.get())),
+      call_stats_(new CallStats(clock_, GetCurrentTaskQueueOrThread())),
       bitrate_allocator_(new BitrateAllocator(this)),
       config_(config),
       audio_network_state_(kNetworkDown),
@@ -472,7 +479,6 @@ Call::Call(Clock* clock,
 
   module_process_thread_->RegisterModule(
       receive_side_cc_.GetRemoteBitrateEstimator(true), RTC_FROM_HERE);
-  module_process_thread_->RegisterModule(call_stats_.get(), RTC_FROM_HERE);
   module_process_thread_->RegisterModule(&receive_side_cc_, RTC_FROM_HERE);
 }
 
@@ -489,7 +495,6 @@ Call::~Call() {
   module_process_thread_->DeRegisterModule(
       receive_side_cc_.GetRemoteBitrateEstimator(true));
   module_process_thread_->DeRegisterModule(&receive_side_cc_);
-  module_process_thread_->DeRegisterModule(call_stats_.get());
   call_stats_->DeregisterStatsObserver(&receive_side_cc_);
 
   absl::optional<Timestamp> first_sent_packet_ms =
@@ -625,11 +630,11 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
     }
   }
 
-  AudioSendStream* send_stream =
-      new AudioSendStream(clock_, config, config_.audio_state,
-                          task_queue_factory_, module_process_thread_.get(),
-                          transport_send_ptr_, bitrate_allocator_.get(),
-                          event_log_, call_stats_.get(), suspended_rtp_state);
+  AudioSendStream* send_stream = new AudioSendStream(
+      clock_, config, config_.audio_state, task_queue_factory_,
+      module_process_thread_.get(), transport_send_ptr_,
+      bitrate_allocator_.get(), event_log_, call_stats_->AsRtcpRttStats(),
+      suspended_rtp_state);
   {
     WriteLockScoped write_lock(*send_crit_);
     RTC_DCHECK(audio_send_ssrcs_.find(config.rtp.ssrc) ==
@@ -757,9 +762,9 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
 
   VideoSendStream* send_stream = new VideoSendStream(
       clock_, num_cpu_cores_, module_process_thread_.get(), task_queue_factory_,
-      call_stats_.get(), transport_send_ptr_, bitrate_allocator_.get(),
-      video_send_delay_stats_.get(), event_log_, std::move(config),
-      std::move(encoder_config), suspended_video_send_ssrcs_,
+      call_stats_->AsRtcpRttStats(), transport_send_ptr_,
+      bitrate_allocator_.get(), video_send_delay_stats_.get(), event_log_,
+      std::move(config), std::move(encoder_config), suspended_video_send_ssrcs_,
       suspended_video_payload_states_, std::move(fec_controller));
 
   {
@@ -837,9 +842,7 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
 
   RegisterRateObserver();
 
-  TaskQueueBase* current = TaskQueueBase::Current();
-  if (!current)
-    current = rtc::ThreadManager::Instance()->CurrentThread();
+  TaskQueueBase* current = GetCurrentTaskQueueOrThread();
   RTC_CHECK(current);
   VideoReceiveStream2* receive_stream = new VideoReceiveStream2(
       task_queue_factory_, current, &video_receiver_controller_, num_cpu_cores_,
@@ -918,7 +921,7 @@ FlexfecReceiveStream* Call::CreateFlexfecReceiveStream(
     // this locked scope.
     receive_stream = new FlexfecReceiveStreamImpl(
         clock_, &video_receiver_controller_, config, recovered_packet_receiver,
-        call_stats_.get(), module_process_thread_.get());
+        call_stats_->AsRtcpRttStats(), module_process_thread_.get());
 
     RTC_DCHECK(receive_rtp_config_.find(config.remote_ssrc) ==
                receive_rtp_config_.end());
