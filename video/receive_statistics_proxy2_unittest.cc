@@ -469,12 +469,14 @@ TEST_F(ReceiveStatisticsProxy2Test, GetStatsReportsSsrc) {
 TEST_F(ReceiveStatisticsProxy2Test, GetStatsReportsIncomingPayloadType) {
   const int kPayloadType = 111;
   statistics_proxy_->OnIncomingPayloadType(kPayloadType);
+  loop_.Flush();
   EXPECT_EQ(kPayloadType, statistics_proxy_->GetStats().current_payload_type);
 }
 
 TEST_F(ReceiveStatisticsProxy2Test, GetStatsReportsDecoderImplementationName) {
   const char* kName = "decoderName";
   statistics_proxy_->OnDecoderImplementationName(kName);
+  loop_.Flush();
   EXPECT_STREQ(
       kName, statistics_proxy_->GetStats().decoder_implementation_name.c_str());
 }
@@ -495,7 +497,7 @@ TEST_F(ReceiveStatisticsProxy2Test, GetStatsReportsOnDroppedFrame) {
     statistics_proxy_->OnDroppedFrames(i);
     dropped_frames += i;
   }
-  VideoReceiveStream::Stats stats = statistics_proxy_->GetStats();
+  VideoReceiveStream::Stats stats = FlushAndGetStats();
   EXPECT_EQ(dropped_frames, stats.frames_dropped);
 }
 
@@ -507,11 +509,11 @@ TEST_F(ReceiveStatisticsProxy2Test, GetStatsReportsDecodeTimingStats) {
   const int kMinPlayoutDelayMs = 6;
   const int kRenderDelayMs = 7;
   const int64_t kRttMs = 8;
-  statistics_proxy_->OnRttUpdate(kRttMs, 0);
+  statistics_proxy_->OnRttUpdate(kRttMs);
   statistics_proxy_->OnFrameBufferTimingsUpdated(
       kMaxDecodeMs, kCurrentDelayMs, kTargetDelayMs, kJitterBufferMs,
       kMinPlayoutDelayMs, kRenderDelayMs);
-  VideoReceiveStream::Stats stats = statistics_proxy_->GetStats();
+  VideoReceiveStream::Stats stats = FlushAndGetStats();
   EXPECT_EQ(kMaxDecodeMs, stats.max_decode_ms);
   EXPECT_EQ(kCurrentDelayMs, stats.current_delay_ms);
   EXPECT_EQ(kTargetDelayMs, stats.target_delay_ms);
@@ -591,7 +593,7 @@ TEST_F(ReceiveStatisticsProxy2Test, ReportsLongestTimingFrameInfo) {
   info.capture_time_ms = 0;
   info.decode_finish_ms = kMedEndToEndDelay;
   statistics_proxy_->OnTimingFrameInfoUpdated(info);
-  result = statistics_proxy_->GetStats().timing_frame_info;
+  result = FlushAndGetStats().timing_frame_info;
   EXPECT_TRUE(result);
   EXPECT_EQ(kExpectedRtpTimestamp, result->rtp_timestamp);
 }
@@ -608,7 +610,7 @@ TEST_F(ReceiveStatisticsProxy2Test, RespectsReportingIntervalForTimingFrames) {
   info.decode_finish_ms = kShortEndToEndDelay;
   statistics_proxy_->OnTimingFrameInfoUpdated(info);
   fake_clock_.AdvanceTimeMilliseconds(kShortDelayMs);
-  result = statistics_proxy_->GetStats().timing_frame_info;
+  result = FlushAndGetStats().timing_frame_info;
   EXPECT_TRUE(result);
   EXPECT_EQ(kExpectedRtpTimestamp, result->rtp_timestamp);
   fake_clock_.AdvanceTimeMilliseconds(kLongDelayMs);
@@ -696,8 +698,7 @@ TEST_F(ReceiveStatisticsProxy2Test, GetStatsReportsPlayoutTimestamp) {
   EXPECT_EQ(absl::nullopt,
             statistics_proxy_->GetStats().estimated_playout_ntp_timestamp_ms);
   statistics_proxy_->OnSyncOffsetUpdated(kVideoNtpMs, kSyncOffsetMs, kFreqKhz);
-  EXPECT_EQ(kVideoNtpMs,
-            statistics_proxy_->GetStats().estimated_playout_ntp_timestamp_ms);
+  EXPECT_EQ(kVideoNtpMs, FlushAndGetStats().estimated_playout_ntp_timestamp_ms);
   fake_clock_.AdvanceTimeMilliseconds(13);
   EXPECT_EQ(kVideoNtpMs + 13,
             statistics_proxy_->GetStats().estimated_playout_ntp_timestamp_ms);
@@ -713,18 +714,18 @@ TEST_F(ReceiveStatisticsProxy2Test, GetStatsReportsAvSyncOffset) {
   EXPECT_EQ(std::numeric_limits<int>::max(),
             statistics_proxy_->GetStats().sync_offset_ms);
   statistics_proxy_->OnSyncOffsetUpdated(kVideoNtpMs, kSyncOffsetMs, kFreqKhz);
-  EXPECT_EQ(kSyncOffsetMs, statistics_proxy_->GetStats().sync_offset_ms);
+  EXPECT_EQ(kSyncOffsetMs, FlushAndGetStats().sync_offset_ms);
 }
 
 TEST_F(ReceiveStatisticsProxy2Test, AvSyncOffsetHistogramIsUpdated) {
   const int64_t kVideoNtpMs = 21;
   const int64_t kSyncOffsetMs = 22;
   const double kFreqKhz = 90.0;
-  for (int i = 0; i < kMinRequiredSamples; ++i)
+  for (int i = 0; i < kMinRequiredSamples; ++i) {
     statistics_proxy_->OnSyncOffsetUpdated(kVideoNtpMs, kSyncOffsetMs,
                                            kFreqKhz);
-  statistics_proxy_->UpdateHistograms(absl::nullopt, StreamDataCounters(),
-                                      nullptr);
+  }
+  FlushAndUpdateHistograms(absl::nullopt, StreamDataCounters(), nullptr);
   EXPECT_METRIC_EQ(1, metrics::NumSamples("WebRTC.Video.AVSyncOffsetInMs"));
   EXPECT_METRIC_EQ(
       1, metrics::NumEvents("WebRTC.Video.AVSyncOffsetInMs", kSyncOffsetMs));
@@ -737,6 +738,7 @@ TEST_F(ReceiveStatisticsProxy2Test, RtpToNtpFrequencyOffsetHistogramIsUpdated) {
   statistics_proxy_->OnSyncOffsetUpdated(kVideoNtpMs, kSyncOffsetMs, kFreqKhz);
   statistics_proxy_->OnSyncOffsetUpdated(kVideoNtpMs, kSyncOffsetMs,
                                          kFreqKhz + 2.2);
+  loop_.Flush();
   fake_clock_.AdvanceTimeMilliseconds(kFreqOffsetProcessIntervalInMs);
   // Process interval passed, max diff: 2.
   statistics_proxy_->OnSyncOffsetUpdated(kVideoNtpMs, kSyncOffsetMs,
@@ -745,11 +747,11 @@ TEST_F(ReceiveStatisticsProxy2Test, RtpToNtpFrequencyOffsetHistogramIsUpdated) {
                                          kFreqKhz - 4.2);
   statistics_proxy_->OnSyncOffsetUpdated(kVideoNtpMs, kSyncOffsetMs,
                                          kFreqKhz - 0.9);
+  loop_.Flush();
   fake_clock_.AdvanceTimeMilliseconds(kFreqOffsetProcessIntervalInMs);
   // Process interval passed, max diff: 4.
   statistics_proxy_->OnSyncOffsetUpdated(kVideoNtpMs, kSyncOffsetMs, kFreqKhz);
-  statistics_proxy_->UpdateHistograms(absl::nullopt, StreamDataCounters(),
-                                      nullptr);
+  FlushAndUpdateHistograms(absl::nullopt, StreamDataCounters(), nullptr);
   // Average reported: (2 + 4) / 2 = 3.
   EXPECT_METRIC_EQ(1,
                    metrics::NumSamples("WebRTC.Video.RtpToNtpFreqOffsetInKhz"));
@@ -763,8 +765,7 @@ TEST_F(ReceiveStatisticsProxy2Test, Vp8QpHistogramIsUpdated) {
   for (int i = 0; i < kMinRequiredSamples; ++i)
     statistics_proxy_->OnPreDecode(kVideoCodecVP8, kQp);
 
-  statistics_proxy_->UpdateHistograms(absl::nullopt, StreamDataCounters(),
-                                      nullptr);
+  FlushAndUpdateHistograms(absl::nullopt, StreamDataCounters(), nullptr);
   EXPECT_METRIC_EQ(1, metrics::NumSamples("WebRTC.Video.Decoded.Vp8.Qp"));
   EXPECT_METRIC_EQ(1, metrics::NumEvents("WebRTC.Video.Decoded.Vp8.Qp", kQp));
 }
@@ -893,8 +894,7 @@ TEST_F(ReceiveStatisticsProxy2Test, TimingHistogramsAreUpdated) {
         kMinPlayoutDelayMs, kRenderDelayMs);
   }
 
-  statistics_proxy_->UpdateHistograms(absl::nullopt, StreamDataCounters(),
-                                      nullptr);
+  FlushAndUpdateHistograms(absl::nullopt, StreamDataCounters(), nullptr);
   EXPECT_METRIC_EQ(1,
                    metrics::NumSamples("WebRTC.Video.JitterBufferDelayInMs"));
   EXPECT_METRIC_EQ(1, metrics::NumSamples("WebRTC.Video.TargetDelayInMs"));

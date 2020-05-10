@@ -25,6 +25,8 @@
 namespace webrtc {
 
 // CallStats keeps track of statistics for a call.
+// TODO(webrtc:11489): Make call_stats_ not depend on ProcessThread and
+// make callbacks on the worker thread (TQ).
 class CallStats : public Module, public RtcpRttStats {
  public:
   // Time interval for updating the observers.

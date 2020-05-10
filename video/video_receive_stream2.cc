@@ -364,6 +364,8 @@ void VideoReceiveStream2::Start() {
 
   // Make sure we register as a stats observer *after* we've prepared the
   // |video_stream_decoder_|.
+  // TODO(webrtc:11489): Make call_stats_ not depend on ProcessThread and
+  // make callbacks on the worker thread (TQ).
   call_stats_->RegisterStatsObserver(this);
 
   // Start decoding on task queue.
@@ -496,11 +498,6 @@ void VideoReceiveStream2::OnFrame(const VideoFrame& video_frame) {
         int64_t video_playout_ntp_ms;
         int64_t sync_offset_ms;
         double estimated_freq_khz;
-        // TODO(bugs.webrtc.org/11489): GetStreamSyncOffsetInMs grabs three
-        // locks.  One inside the function itself, another in GetChannel() and a
-        // third in GetPlayoutTimestamp.  Seems excessive.  Anyhow, I'm assuming
-        // the function succeeds most of the time, which leads to grabbing a
-        // fourth lock.
         if (rtp_stream_sync_.GetStreamSyncOffsetInMs(
                 frame_meta.rtp_timestamp, frame_meta.render_time_ms(),
                 &video_playout_ntp_ms, &sync_offset_ms, &estimated_freq_khz)) {
@@ -572,6 +569,9 @@ void VideoReceiveStream2::OnCompleteFrame(
 
 void VideoReceiveStream2::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
   RTC_DCHECK_RUN_ON(&module_process_sequence_checker_);
+  // TODO(webrtc:11489, webrtc:11490): Once call_stats_ does not depend on
+  // ProcessThread, this callback should happen on the worker thread. Then we
+  // can share the avg_rtt_ms with ReceiveStatisticsProxy.
   frame_buffer_->UpdateRtt(max_rtt_ms);
   rtp_video_stream_receiver_.UpdateRtt(max_rtt_ms);
 }
