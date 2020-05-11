@@ -31,6 +31,7 @@
 #include "api/video_codecs/video_encoder.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
+#include "media/base/media_constants.h"
 #include "media/engine/adm_helpers.h"
 #include "media/engine/encoder_simulcast_proxy.h"
 #include "media/engine/fake_video_codec_factory.h"
@@ -937,6 +938,10 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
                 VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
       } else if (params_.video[video_idx].codec == "H264") {
         // Quality scaling is always on for H.264.
+      } else if (params_.video[video_idx].codec == cricket::kAv1CodecName) {
+        // TODO(bugs.webrtc.org/11404): Propagate the flag to
+        // aom_codec_enc_cfg_t::rc_resize_mode in Av1 encoder wrapper.
+        // Until then do nothing, specially do not crash.
       } else {
         RTC_NOTREACHED() << "Automatic scaling not supported for codec "
                          << params_.video[video_idx].codec << ", stream "

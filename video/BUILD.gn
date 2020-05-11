@@ -303,6 +303,7 @@ if (rtc_include_tests) {
       "../media:rtc_audio_video",
       "../media:rtc_encoder_simulcast_proxy",
       "../media:rtc_internal_video_codecs",
+      "../media:rtc_media_base",
       "../modules/audio_device:audio_device_api",
       "../modules/audio_device:audio_device_module_from_input_and_output",
       "../modules/audio_device:windows_core_audio_utility",
