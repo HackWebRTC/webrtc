@@ -10,6 +10,7 @@
 
 #include "call/adaptation/resource.h"
 
+#include "api/scoped_refptr.h"
 #include "call/adaptation/test/fake_resource.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -21,29 +22,33 @@ using ::testing::StrictMock;
 
 class MockResourceListener : public ResourceListener {
  public:
-  MOCK_METHOD(void, OnResourceUsageStateMeasured, (const Resource& resource));
+  MOCK_METHOD(void,
+              OnResourceUsageStateMeasured,
+              (rtc::scoped_refptr<Resource> resource));
 };
 
 TEST(ResourceTest, RegisteringListenerReceivesCallbacks) {
   StrictMock<MockResourceListener> resource_listener;
-  FakeResource fake_resource("FakeResource");
-  fake_resource.SetResourceListener(&resource_listener);
+  rtc::scoped_refptr<FakeResource> fake_resource(
+      new FakeResource("FakeResource"));
+  fake_resource->SetResourceListener(&resource_listener);
   EXPECT_CALL(resource_listener, OnResourceUsageStateMeasured(_))
       .Times(1)
-      .WillOnce([](const Resource& resource) {
-        EXPECT_EQ(ResourceUsageState::kOveruse, resource.usage_state());
+      .WillOnce([](rtc::scoped_refptr<Resource> resource) {
+        EXPECT_EQ(ResourceUsageState::kOveruse, resource->usage_state());
       });
-  fake_resource.set_usage_state(ResourceUsageState::kOveruse);
-  fake_resource.SetResourceListener(nullptr);
+  fake_resource->set_usage_state(ResourceUsageState::kOveruse);
+  fake_resource->SetResourceListener(nullptr);
 }
 
 TEST(ResourceTest, UnregisteringListenerStopsCallbacks) {
   StrictMock<MockResourceListener> resource_listener;
-  FakeResource fake_resource("FakeResource");
-  fake_resource.SetResourceListener(&resource_listener);
-  fake_resource.SetResourceListener(nullptr);
+  rtc::scoped_refptr<FakeResource> fake_resource(
+      new FakeResource("FakeResource"));
+  fake_resource->SetResourceListener(&resource_listener);
+  fake_resource->SetResourceListener(nullptr);
   EXPECT_CALL(resource_listener, OnResourceUsageStateMeasured(_)).Times(0);
-  fake_resource.set_usage_state(ResourceUsageState::kOveruse);
+  fake_resource->set_usage_state(ResourceUsageState::kOveruse);
 }
 
 }  // namespace webrtc

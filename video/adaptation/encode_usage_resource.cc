@@ -20,13 +20,27 @@ namespace webrtc {
 
 EncodeUsageResource::EncodeUsageResource(
     std::unique_ptr<OveruseFrameDetector> overuse_detector)
-    : overuse_detector_(std::move(overuse_detector)),
+    : rtc::RefCountedObject<Resource>(),
+      encoder_queue_(nullptr),
+      overuse_detector_(std::move(overuse_detector)),
       is_started_(false),
       target_frame_rate_(absl::nullopt) {
   RTC_DCHECK(overuse_detector_);
 }
 
+void EncodeUsageResource::Initialize(rtc::TaskQueue* encoder_queue) {
+  RTC_DCHECK(!encoder_queue_);
+  RTC_DCHECK(encoder_queue);
+  encoder_queue_ = encoder_queue;
+}
+
+bool EncodeUsageResource::is_started() const {
+  RTC_DCHECK_RUN_ON(encoder_queue_);
+  return is_started_;
+}
+
 void EncodeUsageResource::StartCheckForOveruse(CpuOveruseOptions options) {
+  RTC_DCHECK_RUN_ON(encoder_queue_);
   RTC_DCHECK(!is_started_);
   overuse_detector_->StartCheckForOveruse(TaskQueueBase::Current(),
                                           std::move(options), this);
@@ -35,12 +49,14 @@ void EncodeUsageResource::StartCheckForOveruse(CpuOveruseOptions options) {
 }
 
 void EncodeUsageResource::StopCheckForOveruse() {
+  RTC_DCHECK_RUN_ON(encoder_queue_);
   overuse_detector_->StopCheckForOveruse();
   is_started_ = false;
 }
 
 void EncodeUsageResource::SetTargetFrameRate(
     absl::optional<double> target_frame_rate) {
+  RTC_DCHECK_RUN_ON(encoder_queue_);
   if (target_frame_rate == target_frame_rate_)
     return;
   target_frame_rate_ = target_frame_rate;
@@ -50,6 +66,7 @@ void EncodeUsageResource::SetTargetFrameRate(
 
 void EncodeUsageResource::OnEncodeStarted(const VideoFrame& cropped_frame,
                                           int64_t time_when_first_seen_us) {
+  RTC_DCHECK_RUN_ON(encoder_queue_);
   // TODO(hbos): Rename FrameCaptured() to something more appropriate (e.g.
   // "OnEncodeStarted"?) or revise usage.
   overuse_detector_->FrameCaptured(cropped_frame, time_when_first_seen_us);
@@ -60,6 +77,7 @@ void EncodeUsageResource::OnEncodeCompleted(
     int64_t time_sent_in_us,
     int64_t capture_time_us,
     absl::optional<int> encode_duration_us) {
+  RTC_DCHECK_RUN_ON(encoder_queue_);
   // TODO(hbos): Rename FrameSent() to something more appropriate (e.g.
   // "OnEncodeCompleted"?).
   overuse_detector_->FrameSent(timestamp, time_sent_in_us, capture_time_us,
@@ -67,14 +85,21 @@ void EncodeUsageResource::OnEncodeCompleted(
 }
 
 void EncodeUsageResource::AdaptUp() {
+  RTC_DCHECK_RUN_ON(encoder_queue_);
+  // TODO(https://crbug.com/webrtc/11542): When we have an adaptation queue,
+  // PostTask the resource usage measurements.
   OnResourceUsageStateMeasured(ResourceUsageState::kUnderuse);
 }
 
 void EncodeUsageResource::AdaptDown() {
+  RTC_DCHECK_RUN_ON(encoder_queue_);
+  // TODO(https://crbug.com/webrtc/11542): When we have an adaptation queue,
+  // PostTask the resource usage measurements.
   OnResourceUsageStateMeasured(ResourceUsageState::kOveruse);
 }
 
 int EncodeUsageResource::TargetFrameRateAsInt() {
+  RTC_DCHECK_RUN_ON(encoder_queue_);
   return target_frame_rate_.has_value()
              ? static_cast<int>(target_frame_rate_.value())
              : std::numeric_limits<int>::max();

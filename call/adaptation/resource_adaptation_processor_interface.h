@@ -13,11 +13,13 @@
 
 #include "absl/types/optional.h"
 #include "api/rtp_parameters.h"
+#include "api/scoped_refptr.h"
 #include "api/video/video_adaptation_counters.h"
 #include "api/video/video_frame.h"
 #include "call/adaptation/encoder_settings.h"
 #include "call/adaptation/resource.h"
 #include "call/adaptation/video_source_restrictions.h"
+#include "rtc_base/task_queue.h"
 
 namespace webrtc {
 
@@ -33,15 +35,18 @@ class ResourceAdaptationProcessorListener {
   virtual void OnVideoSourceRestrictionsUpdated(
       VideoSourceRestrictions restrictions,
       const VideoAdaptationCounters& adaptation_counters,
-      const Resource* reason) = 0;
+      rtc::scoped_refptr<Resource> reason) = 0;
 };
 
-// Responsible for reconfiguring encoded streams based on resource consumption,
-// such as scaling down resolution or frame rate when CPU is overused. This
-// interface is meant to be injectable into VideoStreamEncoder.
+// The Resource Adaptation Processor is responsible for reacting to resource
+// usage measurements (e.g. overusing or underusing CPU). When a resource is
+// overused the Processor is responsible for performing mitigations in order to
+// consume less resources.
 class ResourceAdaptationProcessorInterface {
  public:
   virtual ~ResourceAdaptationProcessorInterface();
+
+  virtual void InitializeOnResourceAdaptationQueue() = 0;
 
   virtual DegradationPreference degradation_preference() const = 0;
   // Reinterprets "balanced + screenshare" as "maintain-resolution".
@@ -60,7 +65,10 @@ class ResourceAdaptationProcessorInterface {
   virtual void StopResourceAdaptation() = 0;
   virtual void AddAdaptationListener(
       ResourceAdaptationProcessorListener* adaptation_listener) = 0;
-  virtual void AddResource(Resource* resource) = 0;
+  virtual void RemoveAdaptationListener(
+      ResourceAdaptationProcessorListener* adaptation_listener) = 0;
+  virtual void AddResource(rtc::scoped_refptr<Resource> resource) = 0;
+  virtual void RemoveResource(rtc::scoped_refptr<Resource> resource) = 0;
 
   virtual void SetDegradationPreference(
       DegradationPreference degradation_preference) = 0;
@@ -74,7 +82,7 @@ class ResourceAdaptationProcessorInterface {
   // reasons. Can we replace this by something which actually satisfies the
   // resolution constraints or get rid of it altogether?
   virtual void TriggerAdaptationDueToFrameDroppedDueToSize(
-      const Resource& reason_resource) = 0;
+      rtc::scoped_refptr<Resource> reason_resource) = 0;
 };
 
 }  // namespace webrtc

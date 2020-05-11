@@ -178,13 +178,11 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
                                overuse_detector_proxy_ =
                                    new CpuOveruseDetectorProxy(stats_proxy)),
                            task_queue_factory),
-        fake_cpu_resource_(std::make_unique<FakeResource>("FakeResource[CPU]")),
-        fake_quality_resource_(
-            std::make_unique<FakeResource>("FakeResource[QP]")) {
-    InjectAdaptationResource(fake_quality_resource_.get(),
+        fake_cpu_resource_(new FakeResource("FakeResource[CPU]")),
+        fake_quality_resource_(new FakeResource("FakeResource[QP]")) {
+    InjectAdaptationResource(fake_quality_resource_,
                              VideoAdaptationReason::kQuality);
-    InjectAdaptationResource(fake_cpu_resource_.get(),
-                             VideoAdaptationReason::kCpu);
+    InjectAdaptationResource(fake_cpu_resource_, VideoAdaptationReason::kCpu);
   }
 
   // This is used as a synchronisation mechanism, to make sure that the
@@ -248,8 +246,8 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
   }
 
   CpuOveruseDetectorProxy* overuse_detector_proxy_;
-  std::unique_ptr<FakeResource> fake_cpu_resource_;
-  std::unique_ptr<FakeResource> fake_quality_resource_;
+  rtc::scoped_refptr<FakeResource> fake_cpu_resource_;
+  rtc::scoped_refptr<FakeResource> fake_quality_resource_;
 };
 
 class VideoStreamFactory

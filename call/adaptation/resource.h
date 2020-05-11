@@ -15,8 +15,10 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/scoped_refptr.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "call/adaptation/video_stream_input_state.h"
+#include "rtc_base/ref_count.h"
 
 namespace webrtc {
 
@@ -34,15 +36,16 @@ class ResourceListener {
   virtual ~ResourceListener();
 
   // Informs the listener of a new measurement of resource usage. This means
-  // that |resource.usage_state()| is now up-to-date.
-  virtual void OnResourceUsageStateMeasured(const Resource& resource) = 0;
+  // that |resource->usage_state()| is now up-to-date.
+  virtual void OnResourceUsageStateMeasured(
+      rtc::scoped_refptr<Resource> resource) = 0;
 };
 
-class Resource {
+class Resource : public rtc::RefCountInterface {
  public:
   // By default, usage_state() is null until a measurement is made.
   Resource();
-  virtual ~Resource();
+  ~Resource() override;
 
   void SetResourceListener(ResourceListener* listener);
 
@@ -56,12 +59,12 @@ class Resource {
       const VideoStreamInputState& input_state,
       const VideoSourceRestrictions& restrictions_before,
       const VideoSourceRestrictions& restrictions_after,
-      const Resource& reason_resource) const;
+      rtc::scoped_refptr<Resource> reason_resource) const;
   virtual void OnAdaptationApplied(
       const VideoStreamInputState& input_state,
       const VideoSourceRestrictions& restrictions_before,
       const VideoSourceRestrictions& restrictions_after,
-      const Resource& reason_resource);
+      rtc::scoped_refptr<Resource> reason_resource);
 
   virtual std::string name() const = 0;
 

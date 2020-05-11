@@ -14,11 +14,12 @@
 #include <string>
 
 #include "call/adaptation/resource.h"
+#include "rtc_base/ref_counted_object.h"
 
 namespace webrtc {
 
 // Fake resource used for testing.
-class FakeResource : public Resource {
+class FakeResource : public rtc::RefCountedObject<Resource> {
  public:
   explicit FakeResource(std::string name);
   ~FakeResource() override;
@@ -29,14 +30,16 @@ class FakeResource : public Resource {
 
   // Resource implementation.
   std::string name() const override { return name_; }
-  bool IsAdaptationUpAllowed(const VideoStreamInputState& input_state,
-                             const VideoSourceRestrictions& restrictions_before,
-                             const VideoSourceRestrictions& restrictions_after,
-                             const Resource& reason_resource) const override;
-  void OnAdaptationApplied(const VideoStreamInputState& input_state,
-                           const VideoSourceRestrictions& restrictions_before,
-                           const VideoSourceRestrictions& restrictions_after,
-                           const Resource& reason_resource) override;
+  bool IsAdaptationUpAllowed(
+      const VideoStreamInputState& input_state,
+      const VideoSourceRestrictions& restrictions_before,
+      const VideoSourceRestrictions& restrictions_after,
+      rtc::scoped_refptr<Resource> reason_resource) const override;
+  void OnAdaptationApplied(
+      const VideoStreamInputState& input_state,
+      const VideoSourceRestrictions& restrictions_before,
+      const VideoSourceRestrictions& restrictions_after,
+      rtc::scoped_refptr<Resource> reason_resource) override;
 
  private:
   const std::string name_;

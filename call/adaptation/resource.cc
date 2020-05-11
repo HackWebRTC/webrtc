@@ -19,7 +19,10 @@ ResourceListener::~ResourceListener() {}
 
 Resource::Resource() : usage_state_(absl::nullopt), listener_(nullptr) {}
 
-Resource::~Resource() {}
+Resource::~Resource() {
+  RTC_DCHECK(!listener_)
+      << "There is a listener depending on a Resource being destroyed.";
+}
 
 void Resource::SetResourceListener(ResourceListener* listener) {
   // If you want to change listener you need to unregister the old listener by
@@ -40,7 +43,7 @@ bool Resource::IsAdaptationUpAllowed(
     const VideoStreamInputState& input_state,
     const VideoSourceRestrictions& restrictions_before,
     const VideoSourceRestrictions& restrictions_after,
-    const Resource& reason_resource) const {
+    rtc::scoped_refptr<Resource> reason_resource) const {
   return true;
 }
 
@@ -48,13 +51,13 @@ void Resource::OnAdaptationApplied(
     const VideoStreamInputState& input_state,
     const VideoSourceRestrictions& restrictions_before,
     const VideoSourceRestrictions& restrictions_after,
-    const Resource& reason_resource) {}
+    rtc::scoped_refptr<Resource> reason_resource) {}
 
 void Resource::OnResourceUsageStateMeasured(ResourceUsageState usage_state) {
   usage_state_ = usage_state;
   if (!listener_)
     return;
-  listener_->OnResourceUsageStateMeasured(*this);
+  listener_->OnResourceUsageStateMeasured(this);
 }
 
 }  // namespace webrtc

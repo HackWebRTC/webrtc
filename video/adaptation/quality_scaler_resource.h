@@ -19,6 +19,8 @@
 #include "call/adaptation/resource.h"
 #include "call/adaptation/resource_adaptation_processor_interface.h"
 #include "modules/video_coding/utility/quality_scaler.h"
+#include "rtc_base/ref_counted_object.h"
+#include "rtc_base/task_queue.h"
 
 namespace webrtc {
 
@@ -27,10 +29,16 @@ namespace webrtc {
 // indirectly by usage in the ResourceAdaptationProcessor (which is only tested
 // because of its usage in VideoStreamEncoder); all tests are currently in
 // video_stream_encoder_unittest.cc.
-class QualityScalerResource : public Resource,
+class QualityScalerResource : public rtc::RefCountedObject<Resource>,
                               public QualityScalerQpUsageHandlerInterface {
  public:
-  explicit QualityScalerResource(
+  QualityScalerResource();
+  ~QualityScalerResource() override;
+
+  // TODO(https://crbug.com/webrtc/11542): When we have an adaptation queue,
+  // pass it in here.
+  void Initialize(rtc::TaskQueue* encoder_queue);
+  void SetAdaptationProcessor(
       ResourceAdaptationProcessorInterface* adaptation_processor);
 
   bool is_started() const;
@@ -55,16 +63,21 @@ class QualityScalerResource : public Resource,
   std::string name() const override { return "QualityScalerResource"; }
 
   // Resource implementation.
-  void OnAdaptationApplied(const VideoStreamInputState& input_state,
-                           const VideoSourceRestrictions& restrictions_before,
-                           const VideoSourceRestrictions& restrictions_after,
-                           const Resource& reason_resource) override;
+  void OnAdaptationApplied(
+      const VideoStreamInputState& input_state,
+      const VideoSourceRestrictions& restrictions_before,
+      const VideoSourceRestrictions& restrictions_after,
+      rtc::scoped_refptr<Resource> reason_resource) override;
 
  private:
-  ResourceAdaptationProcessorInterface* const adaptation_processor_;
-  std::unique_ptr<QualityScaler> quality_scaler_;
+  rtc::TaskQueue* encoder_queue_;
+  // TODO(https://crbug.com/webrtc/11542): When we have an adaptation queue,
+  // guard the processor by it instead.
+  ResourceAdaptationProcessorInterface* adaptation_processor_
+      RTC_GUARDED_BY(encoder_queue_);
+  std::unique_ptr<QualityScaler> quality_scaler_ RTC_GUARDED_BY(encoder_queue_);
   rtc::scoped_refptr<QualityScalerQpUsageHandlerCallbackInterface>
-      pending_qp_usage_callback_;
+      pending_qp_usage_callback_ RTC_GUARDED_BY(encoder_queue_);
 };
 
 }  // namespace webrtc

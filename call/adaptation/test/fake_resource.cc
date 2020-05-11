@@ -15,7 +15,7 @@
 namespace webrtc {
 
 FakeResource::FakeResource(std::string name)
-    : Resource(),
+    : rtc::RefCountedObject<Resource>(),
       name_(std::move(name)),
       is_adaptation_up_allowed_(true),
       num_adaptations_applied_(0) {}
@@ -38,7 +38,7 @@ bool FakeResource::IsAdaptationUpAllowed(
     const VideoStreamInputState& input_state,
     const VideoSourceRestrictions& restrictions_before,
     const VideoSourceRestrictions& restrictions_after,
-    const Resource& reason_resource) const {
+    rtc::scoped_refptr<Resource> reason_resource) const {
   return is_adaptation_up_allowed_;
 }
 
@@ -46,7 +46,7 @@ void FakeResource::OnAdaptationApplied(
     const VideoStreamInputState& input_state,
     const VideoSourceRestrictions& restrictions_before,
     const VideoSourceRestrictions& restrictions_after,
-    const Resource& reason_resource) {
+    rtc::scoped_refptr<Resource> reason_resource) {
   ++num_adaptations_applied_;
 }
 

@@ -20,6 +20,7 @@
 
 #include "absl/types/optional.h"
 #include "api/rtp_parameters.h"
+#include "api/scoped_refptr.h"
 #include "api/video/video_adaptation_counters.h"
 #include "api/video/video_adaptation_reason.h"
 #include "api/video/video_frame.h"
@@ -35,6 +36,7 @@
 #include "rtc_base/experiments/quality_rampup_experiment.h"
 #include "rtc_base/experiments/quality_scaler_settings.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/task_queue.h"
 #include "system_wrappers/include/clock.h"
 #include "video/adaptation/encode_usage_resource.h"
 #include "video/adaptation/overuse_frame_detector.h"
@@ -61,16 +63,23 @@ class VideoStreamEncoderResourceManager
  public:
   VideoStreamEncoderResourceManager(
       VideoStreamInputStateProvider* input_state_provider,
-      ResourceAdaptationProcessorInterface* adaptation_processor,
       VideoStreamEncoderObserver* encoder_stats_observer,
       Clock* clock,
       bool experiment_cpu_load_estimator,
       std::unique_ptr<OveruseFrameDetector> overuse_detector);
   ~VideoStreamEncoderResourceManager() override;
 
-  void SetDegradationPreferences(
-      DegradationPreference degradation_preference,
-      DegradationPreference effective_degradation_preference);
+  // TODO(https://crbug.com/webrtc/11542): When we have an adaptation queue,
+  // pass it in here.
+  void Initialize(rtc::TaskQueue* encoder_queue);
+  void SetAdaptationProcessor(
+      ResourceAdaptationProcessorInterface* adaptation_processor);
+
+  // TODO(https://crbug.com/webrtc/11563): The degradation preference is a
+  // setting of the Processor, it does not belong to the Manager - can we get
+  // rid of this?
+  void SetDegradationPreferences(DegradationPreference degradation_preference);
+  DegradationPreference degradation_preference() const;
 
   // Starts the encode usage resource. The quality scaler resource is
   // automatically started on being configured.
@@ -103,9 +112,11 @@ class VideoStreamEncoderResourceManager
   // - Legacy getStats() purposes.
   // - Preventing adapting up in some circumstances (which may be questionable).
   // TODO(hbos): Can we get rid of this?
-  void MapResourceToReason(Resource* resource, VideoAdaptationReason reason);
-  std::vector<Resource*> MappedResources() const;
-  QualityScalerResource* quality_scaler_resource_for_testing();
+  void MapResourceToReason(rtc::scoped_refptr<Resource> resource,
+                           VideoAdaptationReason reason);
+  std::vector<rtc::scoped_refptr<Resource>> MappedResources() const;
+  rtc::scoped_refptr<QualityScalerResource>
+  quality_scaler_resource_for_testing();
   // If true, the VideoStreamEncoder should eexecute its logic to maybe drop
   // frames baseed on size and bitrate.
   bool DropInitialFrames() const;
@@ -115,7 +126,7 @@ class VideoStreamEncoderResourceManager
   void OnVideoSourceRestrictionsUpdated(
       VideoSourceRestrictions restrictions,
       const VideoAdaptationCounters& adaptation_counters,
-      const Resource* reason) override;
+      rtc::scoped_refptr<Resource> reason) override;
 
   // For reasons of adaptation and statistics, we not only count the total
   // number of adaptations, but we also count the number of adaptations per
@@ -132,15 +143,12 @@ class VideoStreamEncoderResourceManager
  private:
   class InitialFrameDropper;
 
-  VideoAdaptationReason GetReasonFromResource(const Resource& resource) const;
+  VideoAdaptationReason GetReasonFromResource(
+      rtc::scoped_refptr<Resource> resource) const;
 
   CpuOveruseOptions GetCpuOveruseOptions() const;
   int LastInputFrameSizeOrDefault() const;
 
-  // Makes |video_source_restrictions_| up-to-date and informs the
-  // |adaptation_listener_| if restrictions are changed, allowing the listener
-  // to reconfigure the source accordingly.
-  void MaybeUpdateVideoSourceRestrictions(const Resource* reason_resource);
   // Calculates an up-to-date value of the target frame rate and informs the
   // |encode_usage_resource_| of the new value.
   void MaybeUpdateTargetFrameRate();
@@ -168,7 +176,8 @@ class VideoStreamEncoderResourceManager
 
   // Does not trigger adaptations, only prevents adapting up based on
   // |active_counts_|.
-  class PreventAdaptUpDueToActiveCounts final : public Resource {
+  class PreventAdaptUpDueToActiveCounts final
+      : public rtc::RefCountedObject<Resource> {
    public:
     explicit PreventAdaptUpDueToActiveCounts(
         VideoStreamEncoderResourceManager* manager);
@@ -182,14 +191,15 @@ class VideoStreamEncoderResourceManager
         const VideoStreamInputState& input_state,
         const VideoSourceRestrictions& restrictions_before,
         const VideoSourceRestrictions& restrictions_after,
-        const Resource& reason_resource) const override;
+        rtc::scoped_refptr<Resource> reason_resource) const override;
 
    private:
     VideoStreamEncoderResourceManager* manager_;
-  } prevent_adapt_up_due_to_active_counts_;
+  };
 
   // Does not trigger adaptations, only prevents adapting up resolution.
-  class PreventIncreaseResolutionDueToBitrateResource final : public Resource {
+  class PreventIncreaseResolutionDueToBitrateResource final
+      : public rtc::RefCountedObject<Resource> {
    public:
     explicit PreventIncreaseResolutionDueToBitrateResource(
         VideoStreamEncoderResourceManager* manager);
@@ -203,14 +213,15 @@ class VideoStreamEncoderResourceManager
         const VideoStreamInputState& input_state,
         const VideoSourceRestrictions& restrictions_before,
         const VideoSourceRestrictions& restrictions_after,
-        const Resource& reason_resource) const override;
+        rtc::scoped_refptr<Resource> reason_resource) const override;
 
    private:
     VideoStreamEncoderResourceManager* manager_;
-  } prevent_increase_resolution_due_to_bitrate_resource_;
+  };
 
   // Does not trigger adaptations, only prevents adapting up in BALANCED.
-  class PreventAdaptUpInBalancedResource final : public Resource {
+  class PreventAdaptUpInBalancedResource final
+      : public rtc::RefCountedObject<Resource> {
    public:
     explicit PreventAdaptUpInBalancedResource(
         VideoStreamEncoderResourceManager* manager);
@@ -224,54 +235,74 @@ class VideoStreamEncoderResourceManager
         const VideoStreamInputState& input_state,
         const VideoSourceRestrictions& restrictions_before,
         const VideoSourceRestrictions& restrictions_after,
-        const Resource& reason_resource) const override;
+        rtc::scoped_refptr<Resource> reason_resource) const override;
 
    private:
     VideoStreamEncoderResourceManager* manager_;
-  } prevent_adapt_up_in_balanced_resource_;
+  };
 
-  EncodeUsageResource encode_usage_resource_;
-  QualityScalerResource quality_scaler_resource_;
+  const rtc::scoped_refptr<PreventAdaptUpDueToActiveCounts>
+      prevent_adapt_up_due_to_active_counts_;
+  const rtc::scoped_refptr<PreventIncreaseResolutionDueToBitrateResource>
+      prevent_increase_resolution_due_to_bitrate_resource_;
+  const rtc::scoped_refptr<PreventAdaptUpInBalancedResource>
+      prevent_adapt_up_in_balanced_resource_;
+  const rtc::scoped_refptr<EncodeUsageResource> encode_usage_resource_;
+  const rtc::scoped_refptr<QualityScalerResource> quality_scaler_resource_;
 
-  VideoStreamInputStateProvider* const input_state_provider_;
-  ResourceAdaptationProcessorInterface* const adaptation_processor_;
-  VideoStreamEncoderObserver* const encoder_stats_observer_;
+  rtc::TaskQueue* encoder_queue_;
+  VideoStreamInputStateProvider* const input_state_provider_
+      RTC_GUARDED_BY(encoder_queue_);
+  // TODO(https://crbug.com/webrtc/11542): When we have an adaptation queue,
+  // guard the processor by it instead.
+  ResourceAdaptationProcessorInterface* adaptation_processor_
+      RTC_GUARDED_BY(encoder_queue_);
+  VideoStreamEncoderObserver* const encoder_stats_observer_
+      RTC_GUARDED_BY(encoder_queue_);
 
-  DegradationPreference degradation_preference_;
-  DegradationPreference effective_degradation_preference_;
-  VideoSourceRestrictions video_source_restrictions_;
+  DegradationPreference degradation_preference_ RTC_GUARDED_BY(encoder_queue_);
+  VideoSourceRestrictions video_source_restrictions_
+      RTC_GUARDED_BY(encoder_queue_);
 
-  const BalancedDegradationSettings balanced_settings_;
-  Clock* clock_;
-  const bool experiment_cpu_load_estimator_;
-  const std::unique_ptr<InitialFrameDropper> initial_frame_dropper_;
-  const bool quality_scaling_experiment_enabled_;
-  absl::optional<uint32_t> encoder_target_bitrate_bps_;
-  absl::optional<VideoEncoder::RateControlParameters> encoder_rates_;
-  bool quality_rampup_done_;
-  QualityRampupExperiment quality_rampup_experiment_;
-  absl::optional<EncoderSettings> encoder_settings_;
+  const BalancedDegradationSettings balanced_settings_
+      RTC_GUARDED_BY(encoder_queue_);
+  Clock* clock_ RTC_GUARDED_BY(encoder_queue_);
+  const bool experiment_cpu_load_estimator_ RTC_GUARDED_BY(encoder_queue_);
+  const std::unique_ptr<InitialFrameDropper> initial_frame_dropper_
+      RTC_GUARDED_BY(encoder_queue_);
+  const bool quality_scaling_experiment_enabled_ RTC_GUARDED_BY(encoder_queue_);
+  absl::optional<uint32_t> encoder_target_bitrate_bps_
+      RTC_GUARDED_BY(encoder_queue_);
+  absl::optional<VideoEncoder::RateControlParameters> encoder_rates_
+      RTC_GUARDED_BY(encoder_queue_);
+  bool quality_rampup_done_ RTC_GUARDED_BY(encoder_queue_);
+  QualityRampupExperiment quality_rampup_experiment_
+      RTC_GUARDED_BY(encoder_queue_);
+  absl::optional<EncoderSettings> encoder_settings_
+      RTC_GUARDED_BY(encoder_queue_);
 
   // Ties a resource to a reason for statistical reporting. This AdaptReason is
   // also used by this module to make decisions about how to adapt up/down.
   struct ResourceAndReason {
-    ResourceAndReason(Resource* resource, VideoAdaptationReason reason)
+    ResourceAndReason(rtc::scoped_refptr<Resource> resource,
+                      VideoAdaptationReason reason)
         : resource(resource), reason(reason) {}
     virtual ~ResourceAndReason() = default;
 
-    Resource* const resource;
+    const rtc::scoped_refptr<Resource> resource;
     const VideoAdaptationReason reason;
   };
-  std::vector<ResourceAndReason> resources_;
+  rtc::CriticalSection resource_lock_;
+  std::vector<ResourceAndReason> resources_ RTC_GUARDED_BY(&resource_lock_);
   // One AdaptationCounter for each reason, tracking the number of times we have
   // adapted for each reason. The sum of active_counts_ MUST always equal the
   // total adaptation provided by the VideoSourceRestrictions.
-  // TODO(https://crbug.com/webrtc/11392): Move all active count logic to
-  // encoder_stats_observer_; Counters used for deciding if the video resolution
-  // or framerate is currently restricted, and if so, why, on a per degradation
-  // preference basis.
+  // TODO(https://crbug.com/webrtc/11542): When we have an adaptation queue,
+  // guard the activec counts by it instead. The |encoder_stats_observer_| is
+  // thread-safe anyway, and active counts are used by
+  // PreventAdaptUpDueToActiveCounts to make decisions.
   std::unordered_map<VideoAdaptationReason, VideoAdaptationCounters>
-      active_counts_;
+      active_counts_ RTC_GUARDED_BY(encoder_queue_);
 };
 
 }  // namespace webrtc
