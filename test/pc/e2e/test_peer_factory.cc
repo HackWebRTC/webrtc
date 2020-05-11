@@ -292,8 +292,8 @@ std::unique_ptr<TestPeer> TestPeerFactory::CreateTestPeer(
   rtc::scoped_refptr<AudioProcessing> audio_processing =
       webrtc::AudioProcessingBuilder().Create();
   if (params->aec_dump_path && audio_processing) {
-    audio_processing->AttachAecDump(
-        AecDumpFactory::Create(*params->aec_dump_path, -1, task_queue));
+    audio_processing->CreateAndAttachAecDump(*params->aec_dump_path, -1,
+                                             task_queue);
   }
   rtc::scoped_refptr<AudioDeviceModule> audio_device_module =
       CreateAudioDeviceModule(

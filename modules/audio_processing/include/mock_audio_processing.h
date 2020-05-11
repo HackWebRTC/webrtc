@@ -13,7 +13,6 @@
 
 #include <memory>
 
-#include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/include/aec_dump.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
@@ -128,8 +127,15 @@ class MockAudioProcessing : public ::testing::NiceMock<AudioProcessing> {
   MOCK_CONST_METHOD0(delay_offset_ms, int());
   MOCK_METHOD1(set_stream_analog_level, void(int));
   MOCK_CONST_METHOD0(recommended_stream_analog_level, int());
-
-  virtual void AttachAecDump(std::unique_ptr<AecDump> aec_dump) {}
+  MOCK_METHOD3(CreateAndAttachAecDump,
+               bool(const std::string& file_name,
+                    int64_t max_log_size_bytes,
+                    rtc::TaskQueue* worker_queue));
+  MOCK_METHOD3(CreateAndAttachAecDump,
+               bool(FILE* handle,
+                    int64_t max_log_size_bytes,
+                    rtc::TaskQueue* worker_queue));
+  MOCK_METHOD1(AttachAecDump, void(std::unique_ptr<AecDump>));
   MOCK_METHOD0(DetachAecDump, void());
 
   MOCK_METHOD0(GetStatistics, AudioProcessingStats());

@@ -22,6 +22,7 @@
 #include "api/audio/audio_frame.h"
 #include "common_audio/audio_converter.h"
 #include "common_audio/include/audio_util.h"
+#include "modules/audio_processing/aec_dump/aec_dump_factory.h"
 #include "modules/audio_processing/agc2/gain_applier.h"
 #include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/common.h"
@@ -1530,6 +1531,32 @@ int AudioProcessingImpl::recommended_stream_analog_level() const {
   } else {
     return capture_.cached_stream_analog_level_;
   }
+}
+
+bool AudioProcessingImpl::CreateAndAttachAecDump(const std::string& file_name,
+                                                 int64_t max_log_size_bytes,
+                                                 rtc::TaskQueue* worker_queue) {
+  std::unique_ptr<AecDump> aec_dump =
+      AecDumpFactory::Create(file_name, max_log_size_bytes, worker_queue);
+  if (!aec_dump) {
+    return false;
+  }
+
+  AttachAecDump(std::move(aec_dump));
+  return true;
+}
+
+bool AudioProcessingImpl::CreateAndAttachAecDump(FILE* handle,
+                                                 int64_t max_log_size_bytes,
+                                                 rtc::TaskQueue* worker_queue) {
+  std::unique_ptr<AecDump> aec_dump =
+      AecDumpFactory::Create(handle, max_log_size_bytes, worker_queue);
+  if (!aec_dump) {
+    return false;
+  }
+
+  AttachAecDump(std::move(aec_dump));
+  return true;
 }
 
 void AudioProcessingImpl::AttachAecDump(std::unique_ptr<AecDump> aec_dump) {

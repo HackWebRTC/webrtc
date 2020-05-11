@@ -587,14 +587,8 @@ bool WebRtcVoiceEngine::StartAecDump(webrtc::FileWrapper file,
     return false;
   }
 
-  auto aec_dump = webrtc::AecDumpFactory::Create(
-      std::move(file), max_size_bytes, low_priority_worker_queue_.get());
-  if (!aec_dump) {
-    return false;
-  }
-
-  ap->AttachAecDump(std::move(aec_dump));
-  return true;
+  return ap->CreateAndAttachAecDump(file.Release(), max_size_bytes,
+                                    low_priority_worker_queue_.get());
 }
 
 void WebRtcVoiceEngine::StopAecDump() {

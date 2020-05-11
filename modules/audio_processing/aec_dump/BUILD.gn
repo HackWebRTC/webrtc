@@ -13,7 +13,7 @@ rtc_source_set("aec_dump") {
   sources = [ "aec_dump_factory.h" ]
 
   deps = [
-    "../",
+    "..:aec_dump_interface",
     "../../../rtc_base:rtc_base_approved",
     "../../../rtc_base/system:file_wrapper",
     "../../../rtc_base/system:rtc_export",
@@ -29,6 +29,7 @@ if (rtc_include_tests) {
     ]
 
     deps = [
+      "..:aec_dump_interface",
       "..:audioproc_test_utils",
       "../",
       "../../../test:test_support",
@@ -64,7 +65,7 @@ if (rtc_enable_protobuf) {
 
     deps = [
       ":aec_dump",
-      "../",
+      "..:aec_dump_interface",
       "../../../api/audio:audio_frame_api",
       "../../../api/task_queue",
       "../../../rtc_base:checks",
@@ -104,6 +105,6 @@ rtc_library("null_aec_dump_factory") {
 
   deps = [
     ":aec_dump",
-    "../",
+    "..:aec_dump_interface",
   ]
 }
