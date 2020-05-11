@@ -836,16 +836,14 @@ int RtpVideoSender::ProtectionRequest(const FecProtectionParams* delta_params,
   *sent_nack_rate_bps = 0;
   *sent_fec_rate_bps = 0;
   for (const RtpStreamSender& stream : rtp_streams_) {
-    uint32_t not_used = 0;
-    uint32_t module_nack_rate = 0;
     if (stream.fec_generator) {
       stream.fec_generator->SetProtectionParameters(*delta_params, *key_params);
       *sent_fec_rate_bps += stream.fec_generator->CurrentFecRate().bps();
     }
     *sent_video_rate_bps += stream.sender_video->VideoBitrateSent();
-    stream.rtp_rtcp->BitrateSent(&not_used, /*video_rate=*/nullptr,
-                                 /*fec_rate=*/nullptr, &module_nack_rate);
-    *sent_nack_rate_bps += module_nack_rate;
+    *sent_nack_rate_bps +=
+        stream.rtp_rtcp->GetSendRates()[RtpPacketMediaType::kRetransmission]
+            .bps<uint32_t>();
   }
   return 0;
 }

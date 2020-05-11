@@ -17,6 +17,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -211,12 +212,15 @@ class RtcpBandwidthObserver {
   virtual ~RtcpBandwidthObserver() {}
 };
 
-enum class RtpPacketMediaType {
-  kAudio,                   // Audio media packets.
-  kVideo,                   // Video media packets.
-  kRetransmission,          // RTX (usually) packets send as response to NACK.
-  kForwardErrorCorrection,  // FEC packets.
-  kPadding                  // RTX or plain padding sent to maintain BWE.
+// NOTE! |kNumMediaTypes| must be kept in sync with RtpPacketMediaType!
+static constexpr size_t kNumMediaTypes = 5;
+enum class RtpPacketMediaType : size_t {
+  kAudio,                         // Audio media packets.
+  kVideo,                         // Video media packets.
+  kRetransmission,                // Retransmisions, sent as response to NACK.
+  kForwardErrorCorrection,        // FEC packets.
+  kPadding = kNumMediaTypes - 1,  // RTX or plain padding sent to maintain BWE.
+  // Again, don't forget to udate |kNumMediaTypes| if you add another value!
 };
 
 struct RtpPacketSendInfo {
@@ -380,6 +384,34 @@ struct StreamDataCounters {
   RtpPacketCounter transmitted;    // Number of transmitted packets/bytes.
   RtpPacketCounter retransmitted;  // Number of retransmitted packets/bytes.
   RtpPacketCounter fec;            // Number of redundancy packets/bytes.
+};
+
+class RtpSendRates {
+  template <std::size_t... Is>
+  constexpr std::array<DataRate, sizeof...(Is)> make_zero_array(
+      std::index_sequence<Is...>) {
+    return {{(static_cast<void>(Is), DataRate::Zero())...}};
+  }
+
+ public:
+  RtpSendRates()
+      : send_rates_(
+            make_zero_array(std::make_index_sequence<kNumMediaTypes>())) {}
+  RtpSendRates(const RtpSendRates& rhs) = default;
+  RtpSendRates& operator=(const RtpSendRates&) = default;
+
+  DataRate& operator[](RtpPacketMediaType type) {
+    return send_rates_[static_cast<size_t>(type)];
+  }
+  const DataRate& operator[](RtpPacketMediaType type) const {
+    return send_rates_[static_cast<size_t>(type)];
+  }
+  DataRate Sum() const {
+    return absl::c_accumulate(send_rates_, DataRate::Zero());
+  }
+
+ private:
+  std::array<DataRate, kNumMediaTypes> send_rates_;
 };
 
 // Callback, called whenever byte/packet counts have been updated.

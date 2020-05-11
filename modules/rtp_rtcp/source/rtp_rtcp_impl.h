@@ -264,6 +264,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
                    uint32_t* fec_rate,
                    uint32_t* nackRate) const override;
 
+  RtpSendRates GetSendRates() const override;
+
   void OnReceivedNack(
       const std::vector<uint16_t>& nack_sequence_numbers) override;
   void OnReceivedRtcpReportBlocks(
@@ -294,6 +296,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   Clock* clock() const { return clock_; }
 
+  // TODO(sprang): Remove when usage is gone.
   DataRate SendRate() const;
   DataRate NackOverheadRate() const;
 

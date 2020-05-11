@@ -95,6 +95,7 @@ class MockRtpRtcp : public RtpRtcp {
                uint32_t* fec_rate,
                uint32_t* nack_rate),
               (const override));
+  MOCK_METHOD(RtpSendRates, GetSendRates, (), (const override));
   MOCK_METHOD(int,
               EstimatedReceiveBandwidth,
               (uint32_t * available_bandwidth),
