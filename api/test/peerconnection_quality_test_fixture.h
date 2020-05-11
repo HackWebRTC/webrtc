@@ -26,6 +26,7 @@
 #include "api/media_stream_interface.h"
 #include "api/peer_connection_interface.h"
 #include "api/rtc_event_log/rtc_event_log_factory_interface.h"
+#include "api/rtp_parameters.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "api/test/audio_quality_analyzer_interface.h"
 #include "api/test/frame_generator_interface.h"
@@ -160,6 +161,14 @@ class PeerConnectionE2EQualityTestFixture {
     // It requires Selective Forwarding Unit (SFU) to be configured in the
     // network.
     absl::optional<int> target_spatial_index;
+
+    // Encoding parameters per simulcast layer. If not empty, |encoding_params|
+    // size have to be equal to |simulcast_streams_count|. Will be used to set
+    // transceiver send encoding params for simulcast layers. Applicable only
+    // for codecs that support simulcast (ex. Vp8) and will be ignored
+    // otherwise. RtpEncodingParameters::rid may be changed by fixture
+    // implementation to ensure signaling correctness.
+    std::vector<RtpEncodingParameters> encoding_params;
   };
 
   // Contains properties of single video stream.

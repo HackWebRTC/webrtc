@@ -365,6 +365,7 @@ rtc_source_set("peer_connection_quality_test_fixture_api") {
     ":media_stream_interface",
     ":network_state_predictor_api",
     ":packet_socket_factory",
+    ":rtp_parameters",
     ":simulated_network_api",
     ":stats_observer_interface",
     ":video_quality_analyzer_api",
