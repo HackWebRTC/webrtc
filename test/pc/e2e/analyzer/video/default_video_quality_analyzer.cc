@@ -198,7 +198,7 @@ void DefaultVideoQualityAnalyzer::OnFrameEncoded(
   }
   it->second.encoded_time = Now();
   it->second.encoded_image_size = encoded_image.size();
-  it->second.target_encode_bitrate = stats.target_encode_bitrate;
+  it->second.target_encode_bitrate += stats.target_encode_bitrate;
 }
 
 void DefaultVideoQualityAnalyzer::OnFrameDropped(

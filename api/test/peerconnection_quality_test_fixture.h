@@ -131,6 +131,10 @@ class PeerConnectionE2EQualityTestFixture {
   //    available layer and won't restore lower layers, so analyzer won't
   //    receive required data which will cause wrong results or test failures.
   struct VideoSimulcastConfig {
+    explicit VideoSimulcastConfig(int simulcast_streams_count)
+        : simulcast_streams_count(simulcast_streams_count) {
+      RTC_CHECK_GT(simulcast_streams_count, 1);
+    }
     VideoSimulcastConfig(int simulcast_streams_count, int target_spatial_index)
         : simulcast_streams_count(simulcast_streams_count),
           target_spatial_index(target_spatial_index) {
@@ -152,7 +156,10 @@ class PeerConnectionE2EQualityTestFixture {
     //    in such case |target_spatial_index| will specify the top interesting
     //    spatial layer and all layers below, including target one will be
     //    processed. All layers above target one will be dropped.
-    int target_spatial_index;
+    // If not specified than whatever stream will be received will be analyzed.
+    // It requires Selective Forwarding Unit (SFU) to be configured in the
+    // network.
+    absl::optional<int> target_spatial_index;
   };
 
   // Contains properties of single video stream.

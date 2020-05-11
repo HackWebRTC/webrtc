@@ -19,6 +19,7 @@
 #include "media/engine/webrtc_media_engine_defaults.h"
 #include "modules/audio_processing/aec_dump/aec_dump_factory.h"
 #include "p2p/client/basic_port_allocator.h"
+#include "test/pc/e2e/analyzer/video/quality_analyzing_video_encoder.h"
 #include "test/pc/e2e/echo/echo_emulation.h"
 #include "test/pc/e2e/peer_configurer.h"
 #include "test/testsupport/copy_to_file_audio_capturer.h"
@@ -60,6 +61,12 @@ void SetMandatoryEntities(InjectableComponents* components) {
   }
 }
 
+// Returns mapping from stream label to optional spatial index.
+// If we have stream label "Foo" and mapping contains
+// 1. |absl::nullopt| means "Foo" isn't simulcast/SVC stream
+// 2. |kAnalyzeAnySpatialStream| means all simulcast/SVC streams are required
+// 3. Concrete value means that particular simulcast/SVC stream have to be
+//    analyzed.
 std::map<std::string, absl::optional<int>>
 CalculateRequiredSpatialIndexPerStream(
     const std::vector<VideoConfig>& video_configs) {
@@ -70,6 +77,9 @@ CalculateRequiredSpatialIndexPerStream(
     absl::optional<int> spatial_index;
     if (video_config.simulcast_config) {
       spatial_index = video_config.simulcast_config->target_spatial_index;
+      if (!spatial_index) {
+        spatial_index = kAnalyzeAnySpatialStream;
+      }
     }
     bool res = out.insert({*video_config.stream_label, spatial_index}).second;
     RTC_DCHECK(res) << "Duplicate video_config.stream_label="

@@ -267,16 +267,14 @@ EncodedImageCallback::Result QualityAnalyzingVideoEncoder::OnEncodedImage(
 
     discard = ShouldDiscard(frame_id, encoded_image);
     if (!discard) {
-      std::string stream_label = analyzer_->GetStreamLabel(frame_id);
-      absl::optional<int> required_spatial_index =
-          stream_required_spatial_index_[stream_label];
       target_encode_bitrate = bitrate_allocation_.GetSpatialLayerSum(
-          required_spatial_index.value_or(0));
+          encoded_image.SpatialIndex().value_or(0));
     }
   }
 
   if (!discard) {
-    // Analyzer should see only encoded images, that weren't discarded.
+    // Analyzer should see only encoded images, that weren't discarded. But all
+    // not discarded layers have to be passed.
     VideoQualityAnalyzerInterface::EncoderStats stats;
     stats.target_encode_bitrate = target_encode_bitrate;
     analyzer_->OnFrameEncoded(frame_id, encoded_image, stats);
@@ -312,6 +310,9 @@ bool QualityAnalyzingVideoEncoder::ShouldDiscard(
   absl::optional<int> required_spatial_index =
       stream_required_spatial_index_[stream_label];
   if (required_spatial_index) {
+    if (*required_spatial_index == kAnalyzeAnySpatialStream) {
+      return false;
+    }
     absl::optional<int> cur_spatial_index = encoded_image.SpatialIndex();
     if (!cur_spatial_index) {
       cur_spatial_index = 0;

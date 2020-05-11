@@ -242,6 +242,7 @@ if (rtc_include_tests) {
       ":echo_emulation",
       ":peer_configurer",
       ":peer_connection_quality_test_params",
+      ":quality_analyzing_video_encoder",
       ":test_peer",
       ":video_quality_analyzer_injection_helper",
       "../..:copy_to_file_audio_capturer",

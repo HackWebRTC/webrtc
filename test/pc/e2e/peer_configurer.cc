@@ -135,6 +135,11 @@ void ValidateParams(
 
       if (video_config.simulcast_config) {
         has_simulcast = true;
+        if (video_config.simulcast_config->target_spatial_index) {
+          RTC_CHECK_GE(*video_config.simulcast_config->target_spatial_index, 0);
+          RTC_CHECK_LT(*video_config.simulcast_config->target_spatial_index,
+                       video_config.simulcast_config->simulcast_streams_count);
+        }
         RTC_CHECK(!video_config.max_encode_bitrate_bps)
             << "Setting max encode bitrate is not implemented for simulcast.";
         RTC_CHECK(!video_config.min_encode_bitrate_bps)

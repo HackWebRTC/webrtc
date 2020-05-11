@@ -29,6 +29,11 @@
 namespace webrtc {
 namespace webrtc_pc_e2e {
 
+// Tells QualityAnalyzingVideoEncoder that it shouldn't mark any spatial stream
+// as to be discarded. In such case the top stream will be passed to
+// VideoQualityAnalyzerInterface as a reference.
+constexpr int kAnalyzeAnySpatialStream = -1;
+
 // QualityAnalyzingVideoEncoder is used to wrap origin video encoder and inject
 // VideoQualityAnalyzerInterface before and after encoder.
 //
@@ -136,6 +141,12 @@ class QualityAnalyzingVideoEncoder : public VideoEncoder,
   const int id_;
   std::unique_ptr<VideoEncoder> delegate_;
   const double bitrate_multiplier_;
+  // Contains mapping from stream label to optional spatial index.
+  // If we have stream label "Foo" and mapping contains
+  // 1. |absl::nullopt| means "Foo" isn't simulcast/SVC stream
+  // 2. |kAnalyzeAnySpatialStream| means all simulcast/SVC streams are required
+  // 3. Concrete value means that particular simulcast/SVC stream have to be
+  //    analyzed.
   std::map<std::string, absl::optional<int>> stream_required_spatial_index_;
   EncodedImageDataInjector* const injector_;
   VideoQualityAnalyzerInterface* const analyzer_;
