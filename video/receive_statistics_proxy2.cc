@@ -1023,11 +1023,7 @@ void ReceiveStatisticsProxy::OnStreamInactive() {
 
 void ReceiveStatisticsProxy::OnRttUpdate(int64_t avg_rtt_ms) {
   RTC_DCHECK_RUN_ON(&main_thread_);
-  // TODO(bugs.webrtc.org/11489): Now that this method is being called, as part
-  // of fixing 11490, we can uncomment the below line. However, since it will
-  // affect stats, that change will be landed as a separate CL.
-
-  // avg_rtt_ms_ = avg_rtt_ms;
+  avg_rtt_ms_ = avg_rtt_ms;
 }
 
 void ReceiveStatisticsProxy::DecoderThreadStarting() {
