@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "api/rtc_event_log/rtc_event_log_factory.h"
 #include "api/test/peerconnection_quality_test_fixture.h"
 #include "modules/audio_device/include/test_audio_device.h"

@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "api/async_resolver_factory.h"
 #include "api/call/call_factory_interface.h"
 #include "api/fec_controller.h"
@@ -43,6 +44,11 @@ class PeerConfigurerImpl final
       : components_(std::make_unique<InjectableComponents>(network_thread,
                                                            network_manager)),
         params_(std::make_unique<Params>()) {}
+
+  PeerConfigurer* SetName(absl::string_view name) override {
+    params_->name = std::string(name);
+    return this;
+  }
 
   // Implementation of PeerConnectionE2EQualityTestFixture::PeerConfigurer.
   PeerConfigurer* SetTaskQueueFactory(

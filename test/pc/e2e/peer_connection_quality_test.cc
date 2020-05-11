@@ -175,13 +175,17 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   SetupRequiredFieldTrials(run_params);
 
   // Print test summary
-  RTC_LOG(INFO)
-      << "Media quality test: Alice will make a call to Bob with media video="
-      << !alice_configurer->params()->video_configs.empty()
-      << "; audio=" << alice_configurer->params()->audio_config.has_value()
-      << ". Bob will respond with media video="
-      << !bob_configurer->params()->video_configs.empty()
-      << "; audio=" << bob_configurer->params()->audio_config.has_value();
+  RTC_LOG(INFO) << "Media quality test: " << *alice_configurer->params()->name
+                << " will make a call to " << *bob_configurer->params()->name
+                << " with media video="
+                << !alice_configurer->params()->video_configs.empty()
+                << "; audio="
+                << alice_configurer->params()->audio_config.has_value() << ". "
+                << *bob_configurer->params()->name
+                << " will respond with media video="
+                << !bob_configurer->params()->video_configs.empty()
+                << "; audio="
+                << bob_configurer->params()->audio_config.has_value();
 
   const std::unique_ptr<rtc::Thread> signaling_thread = rtc::Thread::Create();
   signaling_thread->SetName(kSignalThreadName, nullptr);
@@ -273,7 +277,8 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
                                       return kAliveMessageLogInterval;
                                     });
 
-  RTC_LOG(INFO) << "Configuration is done. Now Alice is calling to Bob...";
+  RTC_LOG(INFO) << "Configuration is done. Now " << *alice_->params()->name
+                << " is calling to " << *bob_->params()->name << "...";
 
   // Setup stats poller.
   std::vector<StatsObserverInterface*> observers = {
@@ -282,8 +287,8 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   for (auto& reporter : quality_metrics_reporters_) {
     observers.push_back(reporter.get());
   }
-  StatsPoller stats_poller(observers,
-                           {{"alice", alice_.get()}, {"bob", bob_.get()}});
+  StatsPoller stats_poller(observers, {{*alice_->params()->name, alice_.get()},
+                                       {*bob_->params()->name, bob_.get()}});
   executor_->ScheduleActivity(TimeDelta::Zero(), kStatsUpdateInterval,
                               [&stats_poller](TimeDelta) {
                                 stats_poller.PollStatsAndNotifyObservers();
@@ -345,10 +350,8 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   // Reset |task_queue_| after test to cleanup.
   task_queue_.reset();
 
-  // Ensuring that TestPeers have been destroyed in order to correctly close
-  // Audio dumps.
-  RTC_CHECK(!alice_);
-  RTC_CHECK(!bob_);
+  alice_ = nullptr;
+  bob_ = nullptr;
   // Ensuring that TestVideoCapturerVideoTrackSource are destroyed on the right
   // thread.
   RTC_CHECK(alice_video_sources_.empty());
@@ -585,7 +588,8 @@ void PeerConnectionE2EQualityTest::ExchangeIceCandidates(
   for (auto& candidate : alice_candidates) {
     std::string candidate_str;
     RTC_CHECK(candidate->ToString(&candidate_str));
-    RTC_LOG(INFO) << "Alice ICE candidate(mid= " << candidate->sdp_mid()
+    RTC_LOG(INFO) << *alice_->params()->name
+                  << " ICE candidate(mid= " << candidate->sdp_mid()
                   << "): " << candidate_str;
   }
   ASSERT_TRUE(bob_->AddIceCandidates(std::move(alice_candidates)));
@@ -595,7 +599,8 @@ void PeerConnectionE2EQualityTest::ExchangeIceCandidates(
   for (auto& candidate : bob_candidates) {
     std::string candidate_str;
     RTC_CHECK(candidate->ToString(&candidate_str));
-    RTC_LOG(INFO) << "Bob ICE candidate(mid= " << candidate->sdp_mid()
+    RTC_LOG(INFO) << *bob_->params()->name
+                  << " ICE candidate(mid= " << candidate->sdp_mid()
                   << "): " << candidate_str;
   }
   ASSERT_TRUE(alice_->AddIceCandidates(std::move(bob_candidates)));
@@ -624,19 +629,19 @@ void PeerConnectionE2EQualityTest::TearDownCall() {
 
   alice_video_sources_.clear();
   bob_video_sources_.clear();
-  alice_.reset();
-  bob_.reset();
 
-  media_helper_.reset();
+  media_helper_ = nullptr;
 }
 
 void PeerConnectionE2EQualityTest::ReportGeneralTestResults() {
-  test::PrintResult(
-      "alice_connected", "", test_case_name_, alice_connected_, "unitless",
-      /*important=*/false, test::ImproveDirection::kBiggerIsBetter);
-  test::PrintResult(
-      "bob_connected", "", test_case_name_, bob_connected_, "unitless",
-      /*important=*/false, test::ImproveDirection::kBiggerIsBetter);
+  test::PrintResult(*alice_->params()->name + "_connected", "", test_case_name_,
+                    alice_connected_, "unitless",
+                    /*important=*/false,
+                    test::ImproveDirection::kBiggerIsBetter);
+  test::PrintResult(*bob_->params()->name + "_connected", "", test_case_name_,
+                    bob_connected_, "unitless",
+                    /*important=*/false,
+                    test::ImproveDirection::kBiggerIsBetter);
 }
 
 Timestamp PeerConnectionE2EQualityTest::Now() const {

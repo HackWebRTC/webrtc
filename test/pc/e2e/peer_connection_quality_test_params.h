@@ -100,6 +100,8 @@ struct InjectableComponents {
 // unlimited amount of video streams) and rtc configuration, that will be used
 // to set up peer connection.
 struct Params {
+  // Peer name. If empty - default one will be set by the fixture.
+  absl::optional<std::string> name;
   // If |video_configs| is empty - no video should be added to the test call.
   std::vector<PeerConnectionE2EQualityTestFixture::VideoConfig> video_configs;
   // If |audio_config| is set audio stream will be configured

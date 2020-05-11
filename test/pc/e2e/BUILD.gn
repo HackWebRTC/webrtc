@@ -257,6 +257,7 @@ if (rtc_include_tests) {
       "../../../p2p:rtc_p2p",
       "../../../rtc_base:rtc_task_queue",
       "//third_party/abseil-cpp/absl/memory",
+      "//third_party/abseil-cpp/absl/strings",
     ]
   }
 
@@ -304,6 +305,7 @@ if (rtc_include_tests) {
       "../../../api/transport/media:media_transport_interface",
       "../../../api/video_codecs:video_codecs_api",
       "../../../rtc_base",
+      "//third_party/abseil-cpp/absl/strings",
     ]
   }
 
