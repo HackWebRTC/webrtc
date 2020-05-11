@@ -50,8 +50,16 @@ bool QualityScalerResource::QpFastFilterLow() {
 
 void QualityScalerResource::OnEncodeCompleted(const EncodedImage& encoded_image,
                                               int64_t time_sent_in_us) {
-  if (quality_scaler_ && encoded_image.qp_ >= 0)
+  if (quality_scaler_ && encoded_image.qp_ >= 0) {
     quality_scaler_->ReportQp(encoded_image.qp_, time_sent_in_us);
+  } else if (!quality_scaler_) {
+    // TODO(webrtc:11553): this is a workaround to ensure that all quality
+    // scaler imposed limitations are removed once qualty scaler is disabled
+    // mid call.
+    // Instead it should be done at a higher layer in the same way for all
+    // resources.
+    OnResourceUsageStateMeasured(ResourceUsageState::kUnderuse);
+  }
 }
 
 void QualityScalerResource::OnFrameDropped(

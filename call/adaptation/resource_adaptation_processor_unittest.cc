@@ -325,4 +325,26 @@ TEST_F(ResourceAdaptationProcessorTest,
   EXPECT_FALSE(resource_.usage_state().has_value());
 }
 
+TEST_F(ResourceAdaptationProcessorTest,
+       AdaptsDownWhenOtherResourceIsAlwaysUnderused) {
+  processor_.SetDegradationPreference(
+      DegradationPreference::MAINTAIN_FRAMERATE);
+  processor_.StartResourceAdaptation();
+  SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
+  other_resource_.set_usage_state(ResourceUsageState::kUnderuse);
+  // Does not trigger adapataion because there's no restriction.
+  EXPECT_EQ(0, processor_listener_.adaptation_counters().Total());
+
+  RestrictSource(processor_listener_.restrictions());
+  resource_.set_usage_state(ResourceUsageState::kOveruse);
+  // Adapts down even if other resource asked for adapting up.
+  EXPECT_EQ(1, processor_listener_.adaptation_counters().Total());
+
+  RestrictSource(processor_listener_.restrictions());
+  other_resource_.set_usage_state(ResourceUsageState::kUnderuse);
+  // Doesn't adapt up because adaptation is due to another resource.
+  EXPECT_EQ(1, processor_listener_.adaptation_counters().Total());
+  RestrictSource(processor_listener_.restrictions());
+}
+
 }  // namespace webrtc
