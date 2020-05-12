@@ -413,6 +413,17 @@ static MediaSessionOptions CreatePlanBMediaSessionOptions() {
   return session_options;
 }
 
+// prefers GCM SDES crypto suites by removing non-GCM defaults.
+void PreferGcmCryptoParameters(CryptoParamsVec* cryptos) {
+  cryptos->erase(
+      std::remove_if(cryptos->begin(), cryptos->end(),
+                     [](const cricket::CryptoParams& crypto) {
+                       return crypto.cipher_suite != CS_AEAD_AES_256_GCM &&
+                              crypto.cipher_suite != CS_AEAD_AES_128_GCM;
+                     }),
+      cryptos->end());
+}
+
 // TODO(zhihuang): Most of these tests were written while MediaSessionOptions
 // was designed for Plan B SDP, where only one audio "m=" section and one video
 // "m=" section could be generated, and ordering couldn't be controlled. Many of
@@ -698,6 +709,13 @@ class MediaSessionDescriptionFactoryTest : public ::testing::Test {
     std::unique_ptr<SessionDescription> offer =
         f1_.CreateOffer(offer_opts, NULL);
     ASSERT_TRUE(offer.get() != NULL);
+    if (gcm_offer && gcm_answer) {
+      for (cricket::ContentInfo& content : offer->contents()) {
+        auto cryptos = content.media_description()->cryptos();
+        PreferGcmCryptoParameters(&cryptos);
+        content.media_description()->set_cryptos(cryptos);
+      }
+    }
     std::unique_ptr<SessionDescription> answer =
         f2_.CreateAnswer(offer.get(), answer_opts, NULL);
     const ContentInfo* ac = answer->GetContentByName("audio");
@@ -1237,6 +1255,11 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateAudioAnswerGcm) {
   opts.crypto_options.srtp.enable_gcm_crypto_suites = true;
   std::unique_ptr<SessionDescription> offer = f1_.CreateOffer(opts, NULL);
   ASSERT_TRUE(offer.get() != NULL);
+  for (cricket::ContentInfo& content : offer->contents()) {
+    auto cryptos = content.media_description()->cryptos();
+    PreferGcmCryptoParameters(&cryptos);
+    content.media_description()->set_cryptos(cryptos);
+  }
   std::unique_ptr<SessionDescription> answer =
       f2_.CreateAnswer(offer.get(), opts, NULL);
   const ContentInfo* ac = answer->GetContentByName("audio");
@@ -1343,6 +1366,11 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswerGcm) {
   f2_.set_secure(SEC_ENABLED);
   std::unique_ptr<SessionDescription> offer = f1_.CreateOffer(opts, NULL);
   ASSERT_TRUE(offer.get() != NULL);
+  for (cricket::ContentInfo& content : offer->contents()) {
+    auto cryptos = content.media_description()->cryptos();
+    PreferGcmCryptoParameters(&cryptos);
+    content.media_description()->set_cryptos(cryptos);
+  }
   std::unique_ptr<SessionDescription> answer =
       f2_.CreateAnswer(offer.get(), opts, NULL);
   const ContentInfo* ac = answer->GetContentByName("audio");

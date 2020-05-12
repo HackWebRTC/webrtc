@@ -182,14 +182,14 @@ bool FindMatchingCrypto(const CryptoParamsVec& cryptos,
 void GetSupportedAudioSdesCryptoSuites(
     const webrtc::CryptoOptions& crypto_options,
     std::vector<int>* crypto_suites) {
-  if (crypto_options.srtp.enable_gcm_crypto_suites) {
-    crypto_suites->push_back(rtc::SRTP_AEAD_AES_256_GCM);
-    crypto_suites->push_back(rtc::SRTP_AEAD_AES_128_GCM);
-  }
   if (crypto_options.srtp.enable_aes128_sha1_32_crypto_cipher) {
     crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_32);
   }
   crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_80);
+  if (crypto_options.srtp.enable_gcm_crypto_suites) {
+    crypto_suites->push_back(rtc::SRTP_AEAD_AES_256_GCM);
+    crypto_suites->push_back(rtc::SRTP_AEAD_AES_128_GCM);
+  }
 }
 
 void GetSupportedAudioSdesCryptoSuiteNames(
@@ -202,11 +202,11 @@ void GetSupportedAudioSdesCryptoSuiteNames(
 void GetSupportedVideoSdesCryptoSuites(
     const webrtc::CryptoOptions& crypto_options,
     std::vector<int>* crypto_suites) {
+  crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_80);
   if (crypto_options.srtp.enable_gcm_crypto_suites) {
     crypto_suites->push_back(rtc::SRTP_AEAD_AES_256_GCM);
     crypto_suites->push_back(rtc::SRTP_AEAD_AES_128_GCM);
   }
-  crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_80);
 }
 
 void GetSupportedVideoSdesCryptoSuiteNames(
@@ -219,11 +219,11 @@ void GetSupportedVideoSdesCryptoSuiteNames(
 void GetSupportedDataSdesCryptoSuites(
     const webrtc::CryptoOptions& crypto_options,
     std::vector<int>* crypto_suites) {
+  crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_80);
   if (crypto_options.srtp.enable_gcm_crypto_suites) {
     crypto_suites->push_back(rtc::SRTP_AEAD_AES_256_GCM);
     crypto_suites->push_back(rtc::SRTP_AEAD_AES_128_GCM);
   }
-  crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_80);
 }
 
 void GetSupportedDataSdesCryptoSuiteNames(
