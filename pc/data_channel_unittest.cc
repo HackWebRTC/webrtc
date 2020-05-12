@@ -630,9 +630,9 @@ TEST_F(SctpDataChannelTest, TransportDestroyedWhileDataBuffered) {
   EXPECT_EQ_WAIT(webrtc::DataChannelInterface::kClosed,
                  webrtc_data_channel_->state(), kDefaultTimeout);
   EXPECT_FALSE(webrtc_data_channel_->error().ok());
-  EXPECT_EQ(webrtc::RTCErrorType::NETWORK_ERROR,
+  EXPECT_EQ(webrtc::RTCErrorType::OPERATION_ERROR_WITH_DATA,
             webrtc_data_channel_->error().type());
-  EXPECT_EQ(webrtc::RTCErrorDetailType::NONE,
+  EXPECT_EQ(webrtc::RTCErrorDetailType::SCTP_FAILURE,
             webrtc_data_channel_->error().error_detail());
 }
 

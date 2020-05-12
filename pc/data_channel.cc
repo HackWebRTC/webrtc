@@ -370,10 +370,10 @@ void DataChannel::OnTransportChannelClosed() {
   // The SctpTransport is unusable (for example, because the SCTP m= section
   // was rejected, or because the DTLS transport closed), so we need to close
   // abruptly.
-  // Note: this needs to differentiate between normal close and error close.
-  // https://w3c.github.io/webrtc-pc/#announcing-a-data-channel-as-closed
-  CloseAbruptlyWithError(
-      RTCError(RTCErrorType::NETWORK_ERROR, "Transport channel closed"));
+  RTCError error = RTCError(RTCErrorType::OPERATION_ERROR_WITH_DATA,
+                            "Transport channel closed");
+  error.set_error_detail(RTCErrorDetailType::SCTP_FAILURE);
+  CloseAbruptlyWithError(std::move(error));
 }
 
 // The remote peer request that this channel shall be closed.
