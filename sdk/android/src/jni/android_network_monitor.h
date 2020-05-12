@@ -114,6 +114,7 @@ class AndroidNetworkMonitor : public rtc::NetworkMonitorBase,
   std::map<rtc::IPAddress, NetworkHandle> network_handle_by_address_;
   std::map<NetworkHandle, NetworkInformation> network_info_by_handle_;
   bool find_network_handle_without_ipv6_temporary_part_;
+  bool surface_cellular_types_;
 };
 
 class AndroidNetworkMonitorFactory : public rtc::NetworkMonitorFactory {
