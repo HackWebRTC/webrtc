@@ -68,11 +68,15 @@ class QualityScalerResourceTest : public ::testing::Test {
  public:
   QualityScalerResourceTest()
       : task_queue_factory_(CreateDefaultTaskQueueFactory()),
+        resource_adaptation_queue_(task_queue_factory_->CreateTaskQueue(
+            "ResourceAdaptationQueue",
+            TaskQueueFactory::Priority::NORMAL)),
         encoder_queue_(task_queue_factory_->CreateTaskQueue(
             "EncoderQueue",
             TaskQueueFactory::Priority::NORMAL)),
         quality_scaler_resource_(new QualityScalerResource()) {
-    quality_scaler_resource_->Initialize(&encoder_queue_);
+    quality_scaler_resource_->Initialize(&encoder_queue_,
+                                         &resource_adaptation_queue_);
     rtc::Event event;
     encoder_queue_.PostTask([this, &event] {
       quality_scaler_resource_->StartCheckForOveruse(
@@ -93,6 +97,7 @@ class QualityScalerResourceTest : public ::testing::Test {
 
  protected:
   const std::unique_ptr<TaskQueueFactory> task_queue_factory_;
+  rtc::TaskQueue resource_adaptation_queue_;
   rtc::TaskQueue encoder_queue_;
   rtc::scoped_refptr<QualityScalerResource> quality_scaler_resource_;
 };
@@ -115,9 +120,6 @@ TEST_F(QualityScalerResourceTest, ReportQpLow) {
   callback->qp_usage_handled_event()->Wait(kDefaultTimeout);
 }
 
-// TODO(https://crbug.com/webrtc/11542): Callbacks are currently resolved
-// immediately, but when we have an adaptation queue this test will ensure we
-// can have multiple callbacks pending at the same time.
 TEST_F(QualityScalerResourceTest, MultipleCallbacksInFlight) {
   rtc::scoped_refptr<FakeQualityScalerQpUsageHandlerCallback> callback1 =
       new FakeQualityScalerQpUsageHandlerCallback(&encoder_queue_);
@@ -135,9 +137,6 @@ TEST_F(QualityScalerResourceTest, MultipleCallbacksInFlight) {
   callback3->qp_usage_handled_event()->Wait(kDefaultTimeout);
 }
 
-// TODO(https://crbug.com/webrtc/11542): Callbacks are currently resolved
-// immediately, but when we have an adaptation queue this test will ensure we
-// can abort pending callbacks.
 TEST_F(QualityScalerResourceTest, AbortPendingCallbacksAndStartAgain) {
   rtc::scoped_refptr<FakeQualityScalerQpUsageHandlerCallback> callback1 =
       new FakeQualityScalerQpUsageHandlerCallback(&encoder_queue_);

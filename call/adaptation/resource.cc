@@ -17,14 +17,30 @@ namespace webrtc {
 
 ResourceListener::~ResourceListener() {}
 
-Resource::Resource() : usage_state_(absl::nullopt), listener_(nullptr) {}
+Resource::Resource()
+    : encoder_queue_(nullptr),
+      resource_adaptation_queue_(nullptr),
+      usage_state_(absl::nullopt),
+      listener_(nullptr) {}
 
 Resource::~Resource() {
   RTC_DCHECK(!listener_)
       << "There is a listener depending on a Resource being destroyed.";
 }
 
+void Resource::Initialize(rtc::TaskQueue* encoder_queue,
+                          rtc::TaskQueue* resource_adaptation_queue) {
+  RTC_DCHECK(!encoder_queue_);
+  RTC_DCHECK(encoder_queue);
+  RTC_DCHECK(!resource_adaptation_queue_);
+  RTC_DCHECK(resource_adaptation_queue);
+  encoder_queue_ = encoder_queue;
+  resource_adaptation_queue_ = resource_adaptation_queue;
+}
+
 void Resource::SetResourceListener(ResourceListener* listener) {
+  RTC_DCHECK(resource_adaptation_queue_);
+  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
   // If you want to change listener you need to unregister the old listener by
   // setting it to null first.
   RTC_DCHECK(!listener_ || !listener) << "A listener is already set";
@@ -32,10 +48,14 @@ void Resource::SetResourceListener(ResourceListener* listener) {
 }
 
 absl::optional<ResourceUsageState> Resource::usage_state() const {
+  RTC_DCHECK(resource_adaptation_queue_);
+  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
   return usage_state_;
 }
 
 void Resource::ClearUsageState() {
+  RTC_DCHECK(resource_adaptation_queue_);
+  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
   usage_state_ = absl::nullopt;
 }
 
@@ -53,7 +73,17 @@ void Resource::OnAdaptationApplied(
     const VideoSourceRestrictions& restrictions_after,
     rtc::scoped_refptr<Resource> reason_resource) {}
 
+rtc::TaskQueue* Resource::encoder_queue() const {
+  return encoder_queue_;
+}
+
+rtc::TaskQueue* Resource::resource_adaptation_queue() const {
+  return resource_adaptation_queue_;
+}
+
 void Resource::OnResourceUsageStateMeasured(ResourceUsageState usage_state) {
+  RTC_DCHECK(resource_adaptation_queue_);
+  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
   usage_state_ = usage_state;
   if (!listener_)
     return;

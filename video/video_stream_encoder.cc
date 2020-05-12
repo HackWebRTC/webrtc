@@ -268,19 +268,21 @@ VideoStreamEncoder::VideoStreamEncoder(
                                std::move(overuse_detector)),
       video_source_sink_controller_(/*sink=*/this,
                                     /*source=*/nullptr),
+      resource_adaptation_queue_(task_queue_factory->CreateTaskQueue(
+          "ResourceAdaptationQueue",
+          TaskQueueFactory::Priority::NORMAL)),
       encoder_queue_(task_queue_factory->CreateTaskQueue(
           "EncoderQueue",
           TaskQueueFactory::Priority::NORMAL)) {
   RTC_DCHECK(encoder_stats_observer);
   RTC_DCHECK_GE(number_of_cores, 1);
 
-  stream_resource_manager_.Initialize(&encoder_queue_);
+  stream_resource_manager_.Initialize(&encoder_queue_,
+                                      &resource_adaptation_queue_);
 
   rtc::Event initialize_processor_event;
-  encoder_queue_.PostTask([this, &initialize_processor_event] {
-    RTC_DCHECK_RUN_ON(&encoder_queue_);
-    // TODO(https://crbug.com/webrtc/11542): When we have an adaptation queue,
-    // initialize the processor on it instead.
+  resource_adaptation_queue_.PostTask([this, &initialize_processor_event] {
+    RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
     resource_adaptation_processor_->InitializeOnResourceAdaptationQueue();
     stream_resource_manager_.SetAdaptationProcessor(
         resource_adaptation_processor_.get());
@@ -307,10 +309,11 @@ VideoStreamEncoder::~VideoStreamEncoder() {
 void VideoStreamEncoder::Stop() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   video_source_sink_controller_.SetSource(nullptr);
-  encoder_queue_.PostTask([this] {
-    RTC_DCHECK_RUN_ON(&encoder_queue_);
-    // TODO(https://crbug.com/webrtc/11542): When we have an adaptation queue,
-    // destroy the processor on it instead.
+
+  rtc::Event shutdown_adaptation_processor_event;
+  resource_adaptation_queue_.PostTask([this,
+                                       &shutdown_adaptation_processor_event] {
+    RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
     if (resource_adaptation_processor_) {
       resource_adaptation_processor_->StopResourceAdaptation();
       for (Resource* resource : stream_resource_manager_.MappedResources()) {
@@ -322,6 +325,11 @@ void VideoStreamEncoder::Stop() {
       stream_resource_manager_.SetAdaptationProcessor(nullptr);
       resource_adaptation_processor_.reset();
     }
+    shutdown_adaptation_processor_event.Set();
+  });
+  shutdown_adaptation_processor_event.Wait(rtc::Event::kForever);
+  encoder_queue_.PostTask([this] {
+    RTC_DCHECK_RUN_ON(&encoder_queue_);
     stream_resource_manager_.StopManagedResources();
     rate_allocator_ = nullptr;
     bitrate_observer_ = nullptr;
@@ -359,8 +367,10 @@ void VideoStreamEncoder::SetSource(
   RTC_DCHECK_RUN_ON(&thread_checker_);
   video_source_sink_controller_.SetSource(source);
   input_state_provider_.OnHasInputChanged(source);
-  encoder_queue_.PostTask([this, degradation_preference] {
-    RTC_DCHECK_RUN_ON(&encoder_queue_);
+
+  // Set the degradation preference on the adaptation queue.
+  resource_adaptation_queue_.PostTask([this, degradation_preference] {
+    RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
     if (!resource_adaptation_processor_) {
       // The VideoStreamEncoder was stopped and the processor destroyed before
       // this task had a chance to execute. No action needed.
@@ -368,8 +378,11 @@ void VideoStreamEncoder::SetSource(
     }
     resource_adaptation_processor_->SetDegradationPreference(
         degradation_preference);
-    stream_resource_manager_.SetDegradationPreferences(
-        resource_adaptation_processor_->degradation_preference());
+  });
+  // This may trigger reconfiguring the QualityScaler on the encoder queue.
+  encoder_queue_.PostTask([this, degradation_preference] {
+    RTC_DCHECK_RUN_ON(&encoder_queue_);
+    stream_resource_manager_.SetDegradationPreferences(degradation_preference);
     if (encoder_) {
       stream_resource_manager_.ConfigureQualityScaler(
           encoder_->GetEncoderInfo());
@@ -702,12 +715,16 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     // invoked later in this method.)
     stream_resource_manager_.StopManagedResources();
     stream_resource_manager_.StartEncodeUsageResource();
-    // TODO(https://crbug.com/webrtc/11542): When we have an adaptation queue,
-    // PostTask ensuring it is started.
-    if (resource_adaptation_processor_) {
+    resource_adaptation_queue_.PostTask([this] {
+      RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
+      if (!resource_adaptation_processor_) {
+        // The VideoStreamEncoder was stopped and the processor destroyed before
+        // this task had a chance to execute. No action needed.
+        return;
+      }
       // Ensures started. If already started this is a NO-OP.
       resource_adaptation_processor_->StartResourceAdaptation();
-    }
+    });
     pending_encoder_creation_ = false;
   }
 
@@ -786,12 +803,19 @@ void VideoStreamEncoder::ReconfigureEncoder() {
 void VideoStreamEncoder::OnEncoderSettingsChanged() {
   EncoderSettings encoder_settings(encoder_->GetEncoderInfo(),
                                    encoder_config_.Copy(), send_codec_);
-  resource_adaptation_processor_->SetIsScreenshare(
-      encoder_config_.content_type == VideoEncoderConfig::ContentType::kScreen);
-  stream_resource_manager_.SetDegradationPreferences(
-      resource_adaptation_processor_->degradation_preference());
-  input_state_provider_.OnEncoderSettingsChanged(encoder_settings);
   stream_resource_manager_.SetEncoderSettings(encoder_settings);
+  input_state_provider_.OnEncoderSettingsChanged(encoder_settings);
+  bool is_screenshare = encoder_settings.encoder_config().content_type ==
+                        VideoEncoderConfig::ContentType::kScreen;
+  resource_adaptation_queue_.PostTask([this, is_screenshare] {
+    RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
+    if (!resource_adaptation_processor_) {
+      // The VideoStreamEncoder was stopped and the processor destroyed before
+      // this task had a chance to execute. No action needed.
+      return;
+    }
+    resource_adaptation_processor_->SetIsScreenshare(is_screenshare);
+  });
 }
 
 void VideoStreamEncoder::OnFrame(const VideoFrame& video_frame) {
@@ -1717,9 +1741,7 @@ void VideoStreamEncoder::OnVideoSourceRestrictionsUpdated(
     VideoSourceRestrictions restrictions,
     const VideoAdaptationCounters& adaptation_counters,
     rtc::scoped_refptr<Resource> reason) {
-  // TODO(https://crbug.com/webrtc/11542): When we have an adaptation queue,
-  // ensure that this is running on it instead.
-  RTC_DCHECK_RUN_ON(&encoder_queue_);
+  RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
   video_source_sink_controller_.SetRestrictions(std::move(restrictions));
   video_source_sink_controller_.PushSourceSinkSettings();
 }
@@ -1989,20 +2011,54 @@ void VideoStreamEncoder::CheckForAnimatedContent(
 void VideoStreamEncoder::InjectAdaptationResource(
     rtc::scoped_refptr<Resource> resource,
     VideoAdaptationReason reason) {
-  rtc::Event inject_resource_event;
-  encoder_queue_.PostTask([this, resource, reason, &inject_resource_event] {
+  rtc::Event map_resource_event;
+  encoder_queue_.PostTask([this, resource, reason, &map_resource_event] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     stream_resource_manager_.MapResourceToReason(resource, reason);
-    resource_adaptation_processor_->AddResource(resource);
-    inject_resource_event.Set();
+    map_resource_event.Set();
   });
-  inject_resource_event.Wait(rtc::Event::kForever);
+  map_resource_event.Wait(rtc::Event::kForever);
+
+  resource_adaptation_queue_.PostTask([this, resource] {
+    RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
+    if (!resource_adaptation_processor_) {
+      // The VideoStreamEncoder was stopped and the processor destroyed before
+      // this task had a chance to execute. No action needed.
+      return;
+    }
+    resource_adaptation_processor_->AddResource(resource);
+  });
 }
 
 rtc::scoped_refptr<QualityScalerResource>
 VideoStreamEncoder::quality_scaler_resource_for_testing() {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   return stream_resource_manager_.quality_scaler_resource_for_testing();
+}
+
+void VideoStreamEncoder::AddAdaptationListenerForTesting(
+    ResourceAdaptationProcessorListener* adaptation_listener) {
+  rtc::Event event;
+  resource_adaptation_queue_.PostTask([this, adaptation_listener, &event] {
+    RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
+    RTC_DCHECK(resource_adaptation_processor_);
+    resource_adaptation_processor_->AddAdaptationListener(adaptation_listener);
+    event.Set();
+  });
+  event.Wait(rtc::Event::kForever);
+}
+
+void VideoStreamEncoder::RemoveAdaptationListenerForTesting(
+    ResourceAdaptationProcessorListener* adaptation_listener) {
+  rtc::Event event;
+  resource_adaptation_queue_.PostTask([this, adaptation_listener, &event] {
+    RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
+    RTC_DCHECK(resource_adaptation_processor_);
+    resource_adaptation_processor_->RemoveAdaptationListener(
+        adaptation_listener);
+    event.Set();
+  });
+  event.Wait(rtc::Event::kForever);
 }
 
 }  // namespace webrtc

@@ -19,6 +19,7 @@
 #include "call/adaptation/video_source_restrictions.h"
 #include "call/adaptation/video_stream_input_state.h"
 #include "rtc_base/ref_count.h"
+#include "rtc_base/task_queue.h"
 
 namespace webrtc {
 
@@ -47,6 +48,9 @@ class Resource : public rtc::RefCountInterface {
   Resource();
   ~Resource() override;
 
+  void Initialize(rtc::TaskQueue* encoder_queue,
+                  rtc::TaskQueue* resource_adaptation_queue);
+
   void SetResourceListener(ResourceListener* listener);
 
   absl::optional<ResourceUsageState> usage_state() const;
@@ -69,12 +73,18 @@ class Resource : public rtc::RefCountInterface {
   virtual std::string name() const = 0;
 
  protected:
+  rtc::TaskQueue* encoder_queue() const;
+  rtc::TaskQueue* resource_adaptation_queue() const;
+
   // Updates the usage state and informs all registered listeners.
   void OnResourceUsageStateMeasured(ResourceUsageState usage_state);
 
  private:
-  absl::optional<ResourceUsageState> usage_state_;
-  ResourceListener* listener_;
+  rtc::TaskQueue* encoder_queue_;
+  rtc::TaskQueue* resource_adaptation_queue_;
+  absl::optional<ResourceUsageState> usage_state_
+      RTC_GUARDED_BY(resource_adaptation_queue_);
+  ResourceListener* listener_ RTC_GUARDED_BY(resource_adaptation_queue_);
 };
 
 }  // namespace webrtc
