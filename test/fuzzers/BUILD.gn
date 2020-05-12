@@ -373,7 +373,7 @@ webrtc_fuzzer_test("neteq_signal_fuzzer") {
 webrtc_fuzzer_test("residual_echo_detector_fuzzer") {
   sources = [ "residual_echo_detector_fuzzer.cc" ]
   deps = [
-    "../../modules/audio_processing",
+    "../../api/audio:echo_detector_creator",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
   ]

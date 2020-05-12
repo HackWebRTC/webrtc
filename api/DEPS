@@ -246,6 +246,10 @@ specific_include_rules = {
     "+modules/audio_processing/include/audio_processing.h",
   ],
 
+  "echo_detector_creator\.h": [
+    "+modules/audio_processing/include/audio_processing.h",
+  ],
+
   "fake_frame_decryptor\.h": [
     "+rtc_base/ref_counted_object.h",
   ],
