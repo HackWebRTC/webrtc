@@ -114,11 +114,6 @@ class VideoStreamAdapter {
 
   VideoSourceRestrictions source_restrictions() const;
   const VideoAdaptationCounters& adaptation_counters() const;
-  // TODO(hbos): Can we get rid of any external dependencies on
-  // BalancedDegradationPreference? How the adaptor generates possible next
-  // steps for adaptation should be an implementation detail. Can the relevant
-  // information be inferred from AdaptationTargetOrReason?
-  const BalancedDegradationSettings& balanced_settings() const;
   void ClearRestrictions();
 
   // TODO(hbos): Setting the degradation preference should not clear

@@ -349,11 +349,6 @@ const VideoAdaptationCounters& VideoStreamAdapter::adaptation_counters() const {
   return source_restrictor_->adaptation_counters();
 }
 
-const BalancedDegradationSettings& VideoStreamAdapter::balanced_settings()
-    const {
-  return balanced_settings_;
-}
-
 void VideoStreamAdapter::ClearRestrictions() {
   // Invalidate any previously returned Adaptation.
   ++adaptation_validation_id_;
