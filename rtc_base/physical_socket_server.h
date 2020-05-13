@@ -41,6 +41,9 @@ enum DispatcherEvent {
 };
 
 class Signaler;
+#if defined(WEBRTC_POSIX)
+class PosixSignalDispatcher;
+#endif
 
 class Dispatcher {
  public:
@@ -79,6 +82,23 @@ class RTC_EXPORT PhysicalSocketServer : public SocketServer {
   void Remove(Dispatcher* dispatcher);
   void Update(Dispatcher* dispatcher);
 
+#if defined(WEBRTC_POSIX)
+  // Sets the function to be executed in response to the specified POSIX signal.
+  // The function is executed from inside Wait() using the "self-pipe trick"--
+  // regardless of which thread receives the signal--and hence can safely
+  // manipulate user-level data structures.
+  // "handler" may be SIG_IGN, SIG_DFL, or a user-specified function, just like
+  // with signal(2).
+  // Only one PhysicalSocketServer should have user-level signal handlers.
+  // Dispatching signals on multiple PhysicalSocketServers is not reliable.
+  // The signal mask is not modified. It is the caller's responsibily to
+  // maintain it as desired.
+  virtual bool SetPosixSignalHandler(int signum, void (*handler)(int));
+
+ protected:
+  Dispatcher* signal_dispatcher();
+#endif
+
  private:
   typedef std::set<Dispatcher*> DispatcherSet;
 
@@ -86,6 +106,9 @@ class RTC_EXPORT PhysicalSocketServer : public SocketServer {
 
 #if defined(WEBRTC_POSIX)
   bool WaitSelect(int cms, bool process_io);
+  static bool InstallSignal(int signum, void (*handler)(int));
+
+  std::unique_ptr<PosixSignalDispatcher> signal_dispatcher_;
 #endif  // WEBRTC_POSIX
 #if defined(WEBRTC_USE_EPOLL)
   void AddEpoll(Dispatcher* dispatcher);

@@ -24,6 +24,7 @@
 // "poll" will be used to wait for the signal dispatcher.
 #include <poll.h>
 #endif
+#include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>
 #include <sys/time.h>
@@ -958,6 +959,181 @@ class EventDispatcher : public Dispatcher {
   CriticalSection crit_;
 };
 
+// These two classes use the self-pipe trick to deliver POSIX signals to our
+// select loop. This is the only safe, reliable, cross-platform way to do
+// non-trivial things with a POSIX signal in an event-driven program (until
+// proper pselect() implementations become ubiquitous).
+
+class PosixSignalHandler {
+ public:
+  // POSIX only specifies 32 signals, but in principle the system might have
+  // more and the programmer might choose to use them, so we size our array
+  // for 128.
+  static constexpr int kNumPosixSignals = 128;
+
+  // There is just a single global instance. (Signal handlers do not get any
+  // sort of user-defined void * parameter, so they can't access anything that
+  // isn't global.)
+  static PosixSignalHandler* Instance() {
+    static PosixSignalHandler* const instance = new PosixSignalHandler();
+    return instance;
+  }
+
+  // Returns true if the given signal number is set.
+  bool IsSignalSet(int signum) const {
+    RTC_DCHECK(signum < static_cast<int>(arraysize(received_signal_)));
+    if (signum < static_cast<int>(arraysize(received_signal_))) {
+      return received_signal_[signum];
+    } else {
+      return false;
+    }
+  }
+
+  // Clears the given signal number.
+  void ClearSignal(int signum) {
+    RTC_DCHECK(signum < static_cast<int>(arraysize(received_signal_)));
+    if (signum < static_cast<int>(arraysize(received_signal_))) {
+      received_signal_[signum] = false;
+    }
+  }
+
+  // Returns the file descriptor to monitor for signal events.
+  int GetDescriptor() const { return afd_[0]; }
+
+  // This is called directly from our real signal handler, so it must be
+  // signal-handler-safe. That means it cannot assume anything about the
+  // user-level state of the process, since the handler could be executed at any
+  // time on any thread.
+  void OnPosixSignalReceived(int signum) {
+    if (signum >= static_cast<int>(arraysize(received_signal_))) {
+      // We don't have space in our array for this.
+      return;
+    }
+    // Set a flag saying we've seen this signal.
+    received_signal_[signum] = true;
+    // Notify application code that we got a signal.
+    const uint8_t b[1] = {0};
+    if (-1 == write(afd_[1], b, sizeof(b))) {
+      // Nothing we can do here. If there's an error somehow then there's
+      // nothing we can safely do from a signal handler.
+      // No, we can't even safely log it.
+      // But, we still have to check the return value here. Otherwise,
+      // GCC 4.4.1 complains ignoring return value. Even (void) doesn't help.
+      return;
+    }
+  }
+
+ private:
+  PosixSignalHandler() {
+    if (pipe(afd_) < 0) {
+      RTC_LOG_ERR(LS_ERROR) << "pipe failed";
+      return;
+    }
+    if (fcntl(afd_[0], F_SETFL, O_NONBLOCK) < 0) {
+      RTC_LOG_ERR(LS_WARNING) << "fcntl #1 failed";
+    }
+    if (fcntl(afd_[1], F_SETFL, O_NONBLOCK) < 0) {
+      RTC_LOG_ERR(LS_WARNING) << "fcntl #2 failed";
+    }
+    memset(const_cast<void*>(static_cast<volatile void*>(received_signal_)), 0,
+           sizeof(received_signal_));
+  }
+
+  ~PosixSignalHandler() {
+    int fd1 = afd_[0];
+    int fd2 = afd_[1];
+    // We clobber the stored file descriptor numbers here or else in principle
+    // a signal that happens to be delivered during application termination
+    // could erroneously write a zero byte to an unrelated file handle in
+    // OnPosixSignalReceived() if some other file happens to be opened later
+    // during shutdown and happens to be given the same file descriptor number
+    // as our pipe had. Unfortunately even with this precaution there is still a
+    // race where that could occur if said signal happens to be handled
+    // concurrently with this code and happens to have already read the value of
+    // afd_[1] from memory before we clobber it, but that's unlikely.
+    afd_[0] = -1;
+    afd_[1] = -1;
+    close(fd1);
+    close(fd2);
+  }
+
+  int afd_[2];
+  // These are boolean flags that will be set in our signal handler and read
+  // and cleared from Wait(). There is a race involved in this, but it is
+  // benign. The signal handler sets the flag before signaling the pipe, so
+  // we'll never end up blocking in select() while a flag is still true.
+  // However, if two of the same signal arrive close to each other then it's
+  // possible that the second time the handler may set the flag while it's still
+  // true, meaning that signal will be missed. But the first occurrence of it
+  // will still be handled, so this isn't a problem.
+  // Volatile is not necessary here for correctness, but this data _is_ volatile
+  // so I've marked it as such.
+  volatile uint8_t received_signal_[kNumPosixSignals];
+};
+
+class PosixSignalDispatcher : public Dispatcher {
+ public:
+  PosixSignalDispatcher(PhysicalSocketServer* owner) : owner_(owner) {
+    owner_->Add(this);
+  }
+
+  ~PosixSignalDispatcher() override { owner_->Remove(this); }
+
+  uint32_t GetRequestedEvents() override { return DE_READ; }
+
+  void OnPreEvent(uint32_t ff) override {
+    // Events might get grouped if signals come very fast, so we read out up to
+    // 16 bytes to make sure we keep the pipe empty.
+    uint8_t b[16];
+    ssize_t ret = read(GetDescriptor(), b, sizeof(b));
+    if (ret < 0) {
+      RTC_LOG_ERR(LS_WARNING) << "Error in read()";
+    } else if (ret == 0) {
+      RTC_LOG(LS_WARNING) << "Should have read at least one byte";
+    }
+  }
+
+  void OnEvent(uint32_t ff, int err) override {
+    for (int signum = 0; signum < PosixSignalHandler::kNumPosixSignals;
+         ++signum) {
+      if (PosixSignalHandler::Instance()->IsSignalSet(signum)) {
+        PosixSignalHandler::Instance()->ClearSignal(signum);
+        HandlerMap::iterator i = handlers_.find(signum);
+        if (i == handlers_.end()) {
+          // This can happen if a signal is delivered to our process at around
+          // the same time as we unset our handler for it. It is not an error
+          // condition, but it's unusual enough to be worth logging.
+          RTC_LOG(LS_INFO) << "Received signal with no handler: " << signum;
+        } else {
+          // Otherwise, execute our handler.
+          (*i->second)(signum);
+        }
+      }
+    }
+  }
+
+  int GetDescriptor() override {
+    return PosixSignalHandler::Instance()->GetDescriptor();
+  }
+
+  bool IsDescriptorClosed() override { return false; }
+
+  void SetHandler(int signum, void (*handler)(int)) {
+    handlers_[signum] = handler;
+  }
+
+  void ClearHandler(int signum) { handlers_.erase(signum); }
+
+  bool HasHandlers() { return !handlers_.empty(); }
+
+ private:
+  typedef std::map<int, void (*)(int)> HandlerMap;
+
+  HandlerMap handlers_;
+  // Our owner.
+  PhysicalSocketServer* owner_;
+};
+
 #endif  // WEBRTC_POSIX
 
 #if defined(WEBRTC_WIN)
@@ -1050,6 +1226,9 @@ PhysicalSocketServer::PhysicalSocketServer() : fWait_(false) {
 PhysicalSocketServer::~PhysicalSocketServer() {
 #if defined(WEBRTC_WIN)
   WSACloseEvent(socket_ev_);
+#endif
+#if defined(WEBRTC_POSIX)
+  signal_dispatcher_.reset();
 #endif
   delete signal_wakeup_;
 #if defined(WEBRTC_USE_EPOLL)
@@ -1567,6 +1746,62 @@ bool PhysicalSocketServer::WaitPoll(int cmsWait, Dispatcher* dispatcher) {
 
 #endif  // WEBRTC_USE_EPOLL
 
+static void GlobalSignalHandler(int signum) {
+  PosixSignalHandler::Instance()->OnPosixSignalReceived(signum);
+}
+
+bool PhysicalSocketServer::SetPosixSignalHandler(int signum,
+                                                 void (*handler)(int)) {
+  // If handler is SIG_IGN or SIG_DFL then clear our user-level handler,
+  // otherwise set one.
+  if (handler == SIG_IGN || handler == SIG_DFL) {
+    if (!InstallSignal(signum, handler)) {
+      return false;
+    }
+    if (signal_dispatcher_) {
+      signal_dispatcher_->ClearHandler(signum);
+      if (!signal_dispatcher_->HasHandlers()) {
+        signal_dispatcher_.reset();
+      }
+    }
+  } else {
+    if (!signal_dispatcher_) {
+      signal_dispatcher_.reset(new PosixSignalDispatcher(this));
+    }
+    signal_dispatcher_->SetHandler(signum, handler);
+    if (!InstallSignal(signum, &GlobalSignalHandler)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+Dispatcher* PhysicalSocketServer::signal_dispatcher() {
+  return signal_dispatcher_.get();
+}
+
+bool PhysicalSocketServer::InstallSignal(int signum, void (*handler)(int)) {
+  struct sigaction act;
+  // It doesn't really matter what we set this mask to.
+  if (sigemptyset(&act.sa_mask) != 0) {
+    RTC_LOG_ERR(LS_ERROR) << "Couldn't set mask";
+    return false;
+  }
+  act.sa_handler = handler;
+#if !defined(__native_client__)
+  // Use SA_RESTART so that our syscalls don't get EINTR, since we don't need it
+  // and it's a nuisance. Though some syscalls still return EINTR and there's no
+  // real standard for which ones. :(
+  act.sa_flags = SA_RESTART;
+#else
+  act.sa_flags = 0;
+#endif
+  if (sigaction(signum, &act, nullptr) != 0) {
+    RTC_LOG_ERR(LS_ERROR) << "Couldn't set sigaction";
+    return false;
+  }
+  return true;
+}
 #endif  // WEBRTC_POSIX
 
 #if defined(WEBRTC_WIN)
