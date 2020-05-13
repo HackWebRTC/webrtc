@@ -552,6 +552,130 @@ TEST(VideoStreamAdapterTest, MaintainFramerate_AwaitingPreviousAdaptationUp) {
   }
 }
 
+TEST(VideoStreamAdapterTest,
+     MaintainResolution_AdaptsUpAfterSwitchingDegradationPreference) {
+  VideoStreamAdapter adapter;
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_RESOLUTION);
+  FakeVideoStream fake_stream(&adapter, 1280 * 720, 30,
+                              kDefaultMinPixelsPerFrame);
+  // Adapt down in fps for later.
+  fake_stream.ApplyAdaptation(adapter.GetAdaptationDown());
+  EXPECT_EQ(1, adapter.adaptation_counters().fps_adaptations);
+
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
+  fake_stream.ApplyAdaptation(adapter.GetAdaptationDown());
+  fake_stream.ApplyAdaptation(adapter.GetAdaptationUp());
+  EXPECT_EQ(1, adapter.adaptation_counters().fps_adaptations);
+  EXPECT_EQ(0, adapter.adaptation_counters().resolution_adaptations);
+
+  // We should be able to adapt in framerate one last time after the change of
+  // degradation preference.
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_RESOLUTION);
+  Adaptation adaptation = adapter.GetAdaptationUp();
+  EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
+  fake_stream.ApplyAdaptation(adapter.GetAdaptationUp());
+  EXPECT_EQ(0, adapter.adaptation_counters().fps_adaptations);
+}
+
+TEST(VideoStreamAdapterTest,
+     MaintainFramerate_AdaptsUpAfterSwitchingDegradationPreference) {
+  VideoStreamAdapter adapter;
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
+  FakeVideoStream fake_stream(&adapter, 1280 * 720, 30,
+                              kDefaultMinPixelsPerFrame);
+  // Adapt down in resolution for later.
+  fake_stream.ApplyAdaptation(adapter.GetAdaptationDown());
+  EXPECT_EQ(1, adapter.adaptation_counters().resolution_adaptations);
+
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_RESOLUTION);
+  fake_stream.ApplyAdaptation(adapter.GetAdaptationDown());
+  fake_stream.ApplyAdaptation(adapter.GetAdaptationUp());
+  EXPECT_EQ(1, adapter.adaptation_counters().resolution_adaptations);
+  EXPECT_EQ(0, adapter.adaptation_counters().fps_adaptations);
+
+  // We should be able to adapt in framerate one last time after the change of
+  // degradation preference.
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
+  Adaptation adaptation = adapter.GetAdaptationUp();
+  EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
+  fake_stream.ApplyAdaptation(adapter.GetAdaptationUp());
+  EXPECT_EQ(0, adapter.adaptation_counters().resolution_adaptations);
+}
+
+TEST(VideoStreamAdapterTest,
+     PendingResolutionIncreaseAllowsAdaptUpAfterSwitchToMaintainResolution) {
+  VideoStreamAdapter adapter;
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_RESOLUTION);
+  FakeVideoStream fake_stream(&adapter, 1280 * 720, 30,
+                              kDefaultMinPixelsPerFrame);
+  // Adapt fps down so we can adapt up later in the test.
+  fake_stream.ApplyAdaptation(adapter.GetAdaptationDown());
+
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
+  fake_stream.ApplyAdaptation(adapter.GetAdaptationDown());
+  // Apply adaptation up but don't update input.
+  adapter.ApplyAdaptation(adapter.GetAdaptationUp());
+  EXPECT_EQ(Adaptation::Status::kAwaitingPreviousAdaptation,
+            adapter.GetAdaptationUp().status());
+
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_RESOLUTION);
+  Adaptation adaptation = adapter.GetAdaptationUp();
+  EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
+}
+
+TEST(VideoStreamAdapterTest,
+     MaintainFramerate_AdaptsDownAfterSwitchingDegradationPreference) {
+  VideoStreamAdapter adapter;
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_RESOLUTION);
+  FakeVideoStream fake_stream(&adapter, 1280 * 720, 30,
+                              kDefaultMinPixelsPerFrame);
+  // Adapt down once, should change FPS.
+  fake_stream.ApplyAdaptation(adapter.GetAdaptationDown());
+  EXPECT_EQ(1, adapter.adaptation_counters().fps_adaptations);
+
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
+  // Adaptation down should apply after the degradation prefs change.
+  Adaptation adaptation = adapter.GetAdaptationDown();
+  EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
+  fake_stream.ApplyAdaptation(adaptation);
+  EXPECT_EQ(1, adapter.adaptation_counters().fps_adaptations);
+  EXPECT_EQ(1, adapter.adaptation_counters().resolution_adaptations);
+}
+
+TEST(VideoStreamAdapterTest,
+     MaintainResolution_AdaptsDownAfterSwitchingDegradationPreference) {
+  VideoStreamAdapter adapter;
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
+  FakeVideoStream fake_stream(&adapter, 1280 * 720, 30,
+                              kDefaultMinPixelsPerFrame);
+  // Adapt down once, should change FPS.
+  fake_stream.ApplyAdaptation(adapter.GetAdaptationDown());
+  EXPECT_EQ(1, adapter.adaptation_counters().resolution_adaptations);
+
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_RESOLUTION);
+  Adaptation adaptation = adapter.GetAdaptationDown();
+  EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
+  fake_stream.ApplyAdaptation(adaptation);
+
+  EXPECT_EQ(1, adapter.adaptation_counters().fps_adaptations);
+  EXPECT_EQ(1, adapter.adaptation_counters().resolution_adaptations);
+}
+
+TEST(VideoStreamAdapterTest,
+     PendingResolutionDecreaseAllowsAdaptDownAfterSwitchToMaintainResolution) {
+  VideoStreamAdapter adapter;
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
+  FakeVideoStream fake_stream(&adapter, 1280 * 720, 30,
+                              kDefaultMinPixelsPerFrame);
+  // Apply adaptation but don't update the input.
+  adapter.ApplyAdaptation(adapter.GetAdaptationDown());
+  EXPECT_EQ(Adaptation::Status::kAwaitingPreviousAdaptation,
+            adapter.GetAdaptationDown().status());
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_RESOLUTION);
+  Adaptation adaptation = adapter.GetAdaptationDown();
+  EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
+}
+
 TEST(VideoStreamAdapterTest, PeekNextRestrictions) {
   VideoStreamAdapter adapter;
   // Any non-disabled DegradationPreference will do.

@@ -147,12 +147,8 @@ class VideoStreamAdapter {
     int input_pixel_count_;
     // Framerate received from the source at the time of the adaptation.
     int framerate_fps_;
-    // Indicates if request was to adapt up or down.
-    enum class Mode { kAdaptUp, kAdaptDown } mode_;
-
-    // This is a static method rather than an anonymous namespace function due
-    // to namespace visiblity.
-    static Mode GetModeFromAdaptationAction(Adaptation::StepType step_type);
+    // Degradation preference for the request.
+    Adaptation::StepType step_type_;
   };
 
   // Owner and modifier of the VideoSourceRestriction of this stream adaptor.

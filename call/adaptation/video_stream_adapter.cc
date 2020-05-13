@@ -315,22 +315,6 @@ class VideoStreamAdapter::VideoSourceRestrictor {
   VideoAdaptationCounters adaptations_;
 };
 
-// static
-VideoStreamAdapter::AdaptationRequest::Mode
-VideoStreamAdapter::AdaptationRequest::GetModeFromAdaptationAction(
-    Adaptation::StepType step_type) {
-  switch (step_type) {
-    case Adaptation::StepType::kIncreaseResolution:
-      return AdaptationRequest::Mode::kAdaptUp;
-    case Adaptation::StepType::kDecreaseResolution:
-      return AdaptationRequest::Mode::kAdaptDown;
-    case Adaptation::StepType::kIncreaseFrameRate:
-      return AdaptationRequest::Mode::kAdaptUp;
-    case Adaptation::StepType::kDecreaseFrameRate:
-      return AdaptationRequest::Mode::kAdaptDown;
-  }
-}
-
 VideoStreamAdapter::VideoStreamAdapter()
     : source_restrictor_(std::make_unique<VideoSourceRestrictor>()),
       balanced_settings_(),
@@ -381,10 +365,10 @@ Adaptation VideoStreamAdapter::GetAdaptationUp() const {
   RTC_DCHECK_NE(degradation_preference_, DegradationPreference::DISABLED);
   RTC_DCHECK(input_state_.HasInputFrameSizeAndFramesPerSecond());
   // Don't adapt if we're awaiting a previous adaptation to have an effect.
-  bool last_adaptation_was_up =
-      last_adaptation_request_ &&
-      last_adaptation_request_->mode_ == AdaptationRequest::Mode::kAdaptUp;
-  if (last_adaptation_was_up &&
+  bool last_request_increased_resolution =
+      last_adaptation_request_ && last_adaptation_request_->step_type_ ==
+                                      Adaptation::StepType::kIncreaseResolution;
+  if (last_request_increased_resolution &&
       degradation_preference_ == DegradationPreference::MAINTAIN_FRAMERATE &&
       input_state_.frame_size_pixels().value() <=
           last_adaptation_request_->input_pixel_count_) {
@@ -453,12 +437,12 @@ Adaptation VideoStreamAdapter::GetAdaptationUp() const {
 Adaptation VideoStreamAdapter::GetAdaptationDown() const {
   RTC_DCHECK_NE(degradation_preference_, DegradationPreference::DISABLED);
   RTC_DCHECK(input_state_.HasInputFrameSizeAndFramesPerSecond());
-  // Don't adapt adaptation is disabled.
-  bool last_adaptation_was_down =
-      last_adaptation_request_ &&
-      last_adaptation_request_->mode_ == AdaptationRequest::Mode::kAdaptDown;
-  // Don't adapt if we're awaiting a previous adaptation to have an effect.
-  if (last_adaptation_was_down &&
+  // Don't adapt if we're awaiting a previous adaptation to have an effect or
+  // if we switched degradation preference.
+  bool last_request_decreased_resolution =
+      last_adaptation_request_ && last_adaptation_request_->step_type_ ==
+                                      Adaptation::StepType::kDecreaseResolution;
+  if (last_request_decreased_resolution &&
       degradation_preference_ == DegradationPreference::MAINTAIN_FRAMERATE &&
       input_state_.frame_size_pixels().value() >=
           last_adaptation_request_->input_pixel_count_) {
@@ -536,8 +520,7 @@ void VideoStreamAdapter::ApplyAdaptation(const Adaptation& adaptation) {
   // adapting again before this adaptation has had an effect.
   last_adaptation_request_.emplace(AdaptationRequest{
       input_state_.frame_size_pixels().value(),
-      input_state_.frames_per_second(),
-      AdaptationRequest::GetModeFromAdaptationAction(adaptation.step().type)});
+      input_state_.frames_per_second(), adaptation.step().type});
   // Adapt!
   source_restrictor_->ApplyAdaptationStep(adaptation.step(),
                                           degradation_preference_);
