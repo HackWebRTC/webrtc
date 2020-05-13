@@ -2032,6 +2032,30 @@ TEST_P(RtpSenderTest, CountMidOnlyUntilAcked) {
   EXPECT_EQ(rtp_sender()->ExpectedPerPacketOverhead(), 12u);
 }
 
+TEST_P(RtpSenderTest, DontCountVolatileExtensionsIntoOverhead) {
+  RtpRtcp::Configuration config;
+  config.clock = &fake_clock_;
+  config.outgoing_transport = &transport_;
+  config.local_media_ssrc = kSsrc;
+  config.retransmission_rate_limiter = &retransmission_rate_limiter_;
+  rtp_sender_context_ = std::make_unique<RtpSenderContext>(config);
+
+  // Base RTP overhead is 12B.
+  EXPECT_EQ(rtp_sender()->ExpectedPerPacketOverhead(), 12u);
+
+  rtp_sender()->RegisterRtpHeaderExtension(kRtpExtensionInbandComfortNoise, 1);
+  rtp_sender()->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteCaptureTime, 2);
+  rtp_sender()->RegisterRtpHeaderExtension(kRtpExtensionVideoRotation, 3);
+  rtp_sender()->RegisterRtpHeaderExtension(kRtpExtensionPlayoutDelay, 4);
+  rtp_sender()->RegisterRtpHeaderExtension(kRtpExtensionVideoContentType, 5);
+  rtp_sender()->RegisterRtpHeaderExtension(kRtpExtensionVideoTiming, 6);
+  rtp_sender()->RegisterRtpHeaderExtension(kRtpExtensionRepairedRtpStreamId, 7);
+  rtp_sender()->RegisterRtpHeaderExtension(kRtpExtensionColorSpace, 8);
+
+  // Still only 12B counted since can't count on above being sent.
+  EXPECT_EQ(rtp_sender()->ExpectedPerPacketOverhead(), 12u);
+}
+
 TEST_P(RtpSenderTest, SendPacketMatchesVideo) {
   std::unique_ptr<RtpPacketToSend> packet =
       BuildRtpPacket(kPayload, true, 0, fake_clock_.TimeInMilliseconds());
