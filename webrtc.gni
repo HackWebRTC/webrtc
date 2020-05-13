@@ -992,14 +992,6 @@ if (is_android) {
       # Treat warnings as errors.
       errorprone_args += [ "-Werror" ]
 
-      # WebRTC supports API level 16 while Chromium only supports 19.
-      # (the manifest defines minimum supported SDK version)
-      if (defined(invoker.min_sdk_version)) {
-        min_sdk_version = invoker.min_sdk_version
-      } else {
-        min_sdk_version = 16
-      }
-
       # Add any arguments defined by the invoker.
       if (defined(invoker.errorprone_args)) {
         errorprone_args += invoker.errorprone_args
