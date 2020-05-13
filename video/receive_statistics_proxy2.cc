@@ -19,6 +19,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/task_utils/to_queued_task.h"
+#include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"
@@ -79,6 +80,20 @@ std::string UmaSuffixForContentType(VideoContentType content_type) {
     ss << ".ExperimentGroup" << experiment_id - 1;
   }
   return ss.str();
+}
+
+// TODO(https://bugs.webrtc.org/11572): Workaround for an issue with some
+// rtc::Thread instances and/or implementations that don't register as the
+// current task queue.
+bool IsCurrentTaskQueueOrThread(TaskQueueBase* task_queue) {
+  if (task_queue->IsCurrent())
+    return true;
+
+  rtc::Thread* current_thread = rtc::ThreadManager::Instance()->CurrentThread();
+  if (!current_thread)
+    return false;
+
+  return static_cast<TaskQueueBase*>(current_thread) == task_queue;
 }
 
 }  // namespace
@@ -766,7 +781,7 @@ void ReceiveStatisticsProxy::RtcpPacketTypesCounterUpdated(
   if (ssrc != remote_ssrc_)
     return;
 
-  if (!worker_thread_->IsCurrent()) {
+  if (!IsCurrentTaskQueueOrThread(worker_thread_)) {
     // RtpRtcp::Configuration has a single RtcpPacketTypeCounterObserver and
     // that same configuration may be used for both receiver and sender
     // (see ModuleRtpRtcpImpl::ModuleRtpRtcpImpl).
