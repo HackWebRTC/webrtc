@@ -76,15 +76,12 @@ CallStats::CallStats(Clock* clock, TaskQueueBase* task_queue)
   RTC_DCHECK(task_queue_);
   process_thread_checker_.Detach();
   task_queue_->PostDelayedTask(
-      ToQueuedTask(task_safety_flag_, [this]() { RunTimer(); }),
-      kUpdateIntervalMs);
+      ToQueuedTask(task_safety_, [this]() { RunTimer(); }), kUpdateIntervalMs);
 }
 
 CallStats::~CallStats() {
   RTC_DCHECK_RUN_ON(&construction_thread_checker_);
   RTC_DCHECK(observers_.empty());
-
-  task_safety_flag_->SetNotAlive();
 
   UpdateHistograms();
 }
@@ -98,7 +95,7 @@ void CallStats::RunTimer() {
       last_process_time_ + kUpdateIntervalMs - clock_->TimeInMilliseconds();
 
   task_queue_->PostDelayedTask(
-      ToQueuedTask(task_safety_flag_, [this]() { RunTimer(); }), interval);
+      ToQueuedTask(task_safety_, [this]() { RunTimer(); }), interval);
 }
 
 void CallStats::UpdateAndReport() {
@@ -156,7 +153,7 @@ void CallStats::OnRttUpdate(int64_t rtt) {
   RTC_DCHECK_RUN_ON(&process_thread_checker_);
 
   int64_t now_ms = clock_->TimeInMilliseconds();
-  task_queue_->PostTask(ToQueuedTask(task_safety_flag_, [this, rtt, now_ms]() {
+  task_queue_->PostTask(ToQueuedTask(task_safety_, [this, rtt, now_ms]() {
     RTC_DCHECK_RUN_ON(&construction_thread_checker_);
     reports_.push_back(RttTime(rtt, now_ms));
     if (time_of_first_rtt_ms_ == -1)

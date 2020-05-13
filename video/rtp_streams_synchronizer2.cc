@@ -47,7 +47,6 @@ RtpStreamsSynchronizer::RtpStreamsSynchronizer(TaskQueueBase* main_queue,
 
 RtpStreamsSynchronizer::~RtpStreamsSynchronizer() {
   RTC_DCHECK_RUN_ON(&main_checker_);
-  task_safety_flag_->SetNotAlive();
 }
 
 void RtpStreamsSynchronizer::ConfigureSync(Syncable* syncable_audio) {
@@ -85,13 +84,12 @@ void RtpStreamsSynchronizer::QueueTimer() {
   }
 
   RTC_DCHECK_LE(delay, kSyncIntervalMs);
-  task_queue_->PostDelayedTask(ToQueuedTask([this, safety = task_safety_flag_] {
-                                 if (!safety->alive())
-                                   return;
-                                 RTC_DCHECK_RUN_ON(&main_checker_);
-                                 timer_running_ = false;
-                                 UpdateDelay();
-                               }),
+  task_queue_->PostDelayedTask(ToQueuedTask(task_safety_,
+                                            [this] {
+                                              RTC_DCHECK_RUN_ON(&main_checker_);
+                                              timer_running_ = false;
+                                              UpdateDelay();
+                                            }),
                                delay);
 }
 

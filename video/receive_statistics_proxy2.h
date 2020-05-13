@@ -211,8 +211,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   // methods are invoked on such as GetStats().
   TaskQueueBase* const worker_thread_;
 
-  PendingTaskSafetyFlag::Pointer task_safety_flag_ =
-      PendingTaskSafetyFlag::Create();
+  ScopedTaskSafety task_safety_;
 
   SequenceChecker decode_queue_;
   rtc::ThreadChecker main_thread_;

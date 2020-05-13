@@ -255,8 +255,7 @@ class VideoReceiveStream2 : public webrtc::VideoReceiveStream,
   rtc::TaskQueue decode_queue_;
 
   // Used to signal destruction to potentially pending tasks.
-  PendingTaskSafetyFlag::Pointer task_safety_flag_ =
-      PendingTaskSafetyFlag::Create();
+  ScopedTaskSafety task_safety_;
 };
 }  // namespace internal
 }  // namespace webrtc

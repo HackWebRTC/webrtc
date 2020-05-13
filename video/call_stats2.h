@@ -139,8 +139,7 @@ class CallStats {
   TaskQueueBase* const task_queue_;
 
   // Used to signal destruction to potentially pending tasks.
-  PendingTaskSafetyFlag::Pointer task_safety_flag_ =
-      PendingTaskSafetyFlag::Create();
+  ScopedTaskSafety task_safety_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(CallStats);
 };

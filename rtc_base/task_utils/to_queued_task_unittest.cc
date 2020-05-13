@@ -127,7 +127,8 @@ TEST(ToQueuedTaskTest, AcceptsMoveOnlyCleanup) {
 }
 
 TEST(ToQueuedTaskTest, PendingTaskSafetyFlag) {
-  PendingTaskSafetyFlag::Pointer flag(PendingTaskSafetyFlag::Create());
+  rtc::scoped_refptr<PendingTaskSafetyFlag> flag =
+      PendingTaskSafetyFlag::Create();
 
   int count = 0;
   // Create two identical tasks that increment the |count|.

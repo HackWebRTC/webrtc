@@ -29,7 +29,7 @@ using ::testing::Return;
 }  // namespace
 
 TEST(PendingTaskSafetyFlagTest, Basic) {
-  PendingTaskSafetyFlag::Pointer safety_flag;
+  rtc::scoped_refptr<PendingTaskSafetyFlag> safety_flag;
   {
     // Scope for the |owner| instance.
     class Owner {
@@ -37,12 +37,27 @@ TEST(PendingTaskSafetyFlagTest, Basic) {
       Owner() = default;
       ~Owner() { flag_->SetNotAlive(); }
 
-      PendingTaskSafetyFlag::Pointer flag_{PendingTaskSafetyFlag::Create()};
+      rtc::scoped_refptr<PendingTaskSafetyFlag> flag_ =
+          PendingTaskSafetyFlag::Create();
     } owner;
     EXPECT_TRUE(owner.flag_->alive());
     safety_flag = owner.flag_;
     EXPECT_TRUE(safety_flag->alive());
   }
+  // |owner| now out of scope.
+  EXPECT_FALSE(safety_flag->alive());
+}
+
+TEST(PendingTaskSafetyFlagTest, BasicScoped) {
+  rtc::scoped_refptr<PendingTaskSafetyFlag> safety_flag;
+  {
+    struct Owner {
+      ScopedTaskSafety safety;
+    } owner;
+    safety_flag = owner.safety.flag();
+    EXPECT_TRUE(safety_flag->alive());
+  }
+  // |owner| now out of scope.
   EXPECT_FALSE(safety_flag->alive());
 }
 
@@ -72,7 +87,8 @@ TEST(PendingTaskSafetyFlagTest, PendingTaskSuccess) {
    private:
     TaskQueueBase* const tq_main_;
     bool stuff_done_ = false;
-    PendingTaskSafetyFlag::Pointer flag_{PendingTaskSafetyFlag::Create()};
+    rtc::scoped_refptr<PendingTaskSafetyFlag> flag_{
+        PendingTaskSafetyFlag::Create()};
   };
 
   std::unique_ptr<Owner> owner;
@@ -106,22 +122,18 @@ TEST(PendingTaskSafetyFlagTest, PendingTaskDropped) {
     }
     ~Owner() {
       RTC_DCHECK(tq_main_->IsCurrent());
-      flag_->SetNotAlive();
     }
 
     void DoStuff() {
       RTC_DCHECK(!tq_main_->IsCurrent());
-      tq_main_->PostTask(ToQueuedTask([safe = flag_, this]() {
-        if (!safe->alive())
-          return;
-        *stuff_done_ = true;
-      }));
+      tq_main_->PostTask(
+          ToQueuedTask(safety_, [this]() { *stuff_done_ = true; }));
     }
 
    private:
     TaskQueueBase* const tq_main_;
     bool* const stuff_done_;
-    PendingTaskSafetyFlag::Pointer flag_{PendingTaskSafetyFlag::Create()};
+    ScopedTaskSafety safety_;
   };
 
   std::unique_ptr<Owner> owner;

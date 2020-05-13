@@ -70,8 +70,7 @@ class RtpStreamsSynchronizer {
   bool timer_running_ RTC_GUARDED_BY(main_checker_) = false;
 
   // Used to signal destruction to potentially pending tasks.
-  PendingTaskSafetyFlag::Pointer task_safety_flag_ =
-      PendingTaskSafetyFlag::Create();
+  ScopedTaskSafety task_safety_;
 };
 
 }  // namespace internal

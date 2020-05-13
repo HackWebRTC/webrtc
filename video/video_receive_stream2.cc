@@ -269,7 +269,6 @@ VideoReceiveStream2::~VideoReceiveStream2() {
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
   RTC_LOG(LS_INFO) << "~VideoReceiveStream2: " << config_.ToString();
   Stop();
-  task_safety_flag_->SetNotAlive();
 }
 
 void VideoReceiveStream2::SignalNetworkState(NetworkState state) {
@@ -491,7 +490,7 @@ void VideoReceiveStream2::OnFrame(const VideoFrame& video_frame) {
   VideoFrameMetaData frame_meta(video_frame, clock_->CurrentTime());
 
   worker_thread_->PostTask(
-      ToQueuedTask(task_safety_flag_, [frame_meta, this]() {
+      ToQueuedTask(task_safety_, [frame_meta, this]() {
         RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
         int64_t video_playout_ntp_ms;
         int64_t sync_offset_ms;
@@ -703,7 +702,7 @@ void VideoReceiveStream2::HandleFrameBufferTimeout() {
   // check if we have received a packet within the last 5 seconds.
   bool stream_is_active = last_packet_ms && now_ms - *last_packet_ms < 5000;
   if (!stream_is_active) {
-    worker_thread_->PostTask(ToQueuedTask(task_safety_flag_, [this]() {
+    worker_thread_->PostTask(ToQueuedTask(task_safety_, [this]() {
       RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
       stats_proxy_.OnStreamInactive();
     }));
