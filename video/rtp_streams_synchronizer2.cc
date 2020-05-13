@@ -23,7 +23,7 @@ namespace internal {
 namespace {
 // Time interval for logging stats.
 constexpr int64_t kStatsLogIntervalMs = 10000;
-constexpr uint32_t kSyncIntervalMs = 1000;
+constexpr TimeDelta kSyncInterval = TimeDelta::Millis(1000);
 
 bool UpdateMeasurements(StreamSynchronization::Measurements* stream,
                         const Syncable::Info& info) {
@@ -34,19 +34,20 @@ bool UpdateMeasurements(StreamSynchronization::Measurements* stream,
       info.capture_time_ntp_secs, info.capture_time_ntp_frac,
       info.capture_time_source_clock, &new_rtcp_sr);
 }
+
 }  // namespace
 
 RtpStreamsSynchronizer::RtpStreamsSynchronizer(TaskQueueBase* main_queue,
                                                Syncable* syncable_video)
     : task_queue_(main_queue),
       syncable_video_(syncable_video),
-      last_sync_time_(rtc::TimeNanos()),
       last_stats_log_ms_(rtc::TimeMillis()) {
   RTC_DCHECK(syncable_video);
 }
 
 RtpStreamsSynchronizer::~RtpStreamsSynchronizer() {
   RTC_DCHECK_RUN_ON(&main_checker_);
+  repeating_task_.Stop();
 }
 
 void RtpStreamsSynchronizer::ConfigureSync(Syncable* syncable_audio) {
@@ -58,51 +59,31 @@ void RtpStreamsSynchronizer::ConfigureSync(Syncable* syncable_audio) {
 
   syncable_audio_ = syncable_audio;
   sync_.reset(nullptr);
-  if (!syncable_audio_)
+  if (!syncable_audio_) {
+    repeating_task_.Stop();
     return;
+  }
 
   sync_.reset(
       new StreamSynchronization(syncable_video_->id(), syncable_audio_->id()));
-  QueueTimer();
-}
 
-void RtpStreamsSynchronizer::QueueTimer() {
-  RTC_DCHECK_RUN_ON(&main_checker_);
-  if (timer_running_)
+  if (repeating_task_.Running())
     return;
 
-  timer_running_ = true;
-  uint32_t delay = kSyncIntervalMs - (rtc::TimeNanos() - last_sync_time_) /
-                                         rtc::kNumNanosecsPerMillisec;
-  if (delay > kSyncIntervalMs) {
-    // TODO(tommi): |linux_chromium_tsan_rel_ng| bot has shown a failure when
-    // running WebRtcBrowserTest.CallAndModifyStream, indicating that the
-    // underlying clock is not reliable. Possibly there's a fake clock being
-    // used as the tests are flaky. Look into and fix.
-    RTC_LOG(LS_ERROR) << "Unexpected timer value: " << delay;
-    delay = kSyncIntervalMs;
-  }
-
-  RTC_DCHECK_LE(delay, kSyncIntervalMs);
-  task_queue_->PostDelayedTask(ToQueuedTask(task_safety_,
-                                            [this] {
-                                              RTC_DCHECK_RUN_ON(&main_checker_);
-                                              timer_running_ = false;
-                                              UpdateDelay();
-                                            }),
-                               delay);
+  repeating_task_ =
+      RepeatingTaskHandle::DelayedStart(task_queue_, kSyncInterval, [this]() {
+        UpdateDelay();
+        return kSyncInterval;
+      });
 }
 
 void RtpStreamsSynchronizer::UpdateDelay() {
   RTC_DCHECK_RUN_ON(&main_checker_);
-  last_sync_time_ = rtc::TimeNanos();
 
   if (!syncable_audio_)
     return;
 
   RTC_DCHECK(sync_.get());
-
-  QueueTimer();
 
   bool log_stats = false;
   const int64_t now_ms = rtc::TimeMillis();

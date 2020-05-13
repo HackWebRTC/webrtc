@@ -20,12 +20,14 @@ namespace webrtc_repeating_task_impl {
 RepeatingTaskBase::RepeatingTaskBase(TaskQueueBase* task_queue,
                                      TimeDelta first_delay)
     : task_queue_(task_queue),
-      next_run_time_(Timestamp::Micros(rtc::TimeMicros()) + first_delay) {}
+      next_run_time_(Timestamp::Micros(rtc::TimeMicros()) + first_delay) {
+  sequence_checker_.Detach();
+}
 
 RepeatingTaskBase::~RepeatingTaskBase() = default;
 
 bool RepeatingTaskBase::Run() {
-  RTC_DCHECK_RUN_ON(task_queue_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
   // Return true to tell the TaskQueue to destruct this object.
   if (next_run_time_.IsPlusInfinity())
     return true;
@@ -51,6 +53,7 @@ bool RepeatingTaskBase::Run() {
 }
 
 void RepeatingTaskBase::Stop() {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
   RTC_DCHECK(next_run_time_.IsFinite());
   next_run_time_ = Timestamp::PlusInfinity();
 }
@@ -75,7 +78,6 @@ RepeatingTaskHandle::RepeatingTaskHandle(
 
 void RepeatingTaskHandle::Stop() {
   if (repeating_task_) {
-    RTC_DCHECK_RUN_ON(repeating_task_->task_queue_);
     repeating_task_->Stop();
     repeating_task_ = nullptr;
   }

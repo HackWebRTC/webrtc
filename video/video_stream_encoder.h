@@ -38,12 +38,12 @@
 #include "rtc_base/rate_statistics.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_queue.h"
+#include "rtc_base/thread_checker.h"
 #include "system_wrappers/include/clock.h"
 #include "video/adaptation/video_stream_encoder_resource_manager.h"
 #include "video/encoder_bitrate_adjuster.h"
 #include "video/frame_encode_metadata_writer.h"
 #include "video/video_source_sink_controller.h"
-
 namespace webrtc {
 
 // VideoStreamEncoder represent a video encoder that accepts raw video frames as

@@ -14,6 +14,7 @@
 #include <list>
 #include <memory>
 
+#include "api/units/timestamp.h"
 #include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/constructor_magic.h"
@@ -21,6 +22,7 @@
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/task_utils/pending_task_safety_flag.h"
+#include "rtc_base/task_utils/repeating_task.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -29,7 +31,7 @@ namespace internal {
 class CallStats {
  public:
   // Time interval for updating the observers.
-  static constexpr int64_t kUpdateIntervalMs = 1000;
+  static constexpr TimeDelta kUpdateInterval = TimeDelta::Millis(1000);
 
   CallStats(Clock* clock, TaskQueueBase* task_queue);
   ~CallStats();
@@ -70,8 +72,6 @@ class CallStats {
   void OnRttUpdate(int64_t rtt);
   int64_t LastProcessedRttFromProcessThread() const;
 
-  void RunTimer();
-
   void UpdateAndReport();
 
   // This method must only be called when the process thread is not
@@ -102,8 +102,10 @@ class CallStats {
 
   Clock* const clock_;
 
-  // The last time 'Process' resulted in statistic update.
-  int64_t last_process_time_ RTC_GUARDED_BY(construction_thread_checker_);
+  // Used to regularly call UpdateAndReport().
+  RepeatingTaskHandle repeating_task_
+      RTC_GUARDED_BY(construction_thread_checker_);
+
   // The last RTT in the statistics update (zero if there is no valid estimate).
   int64_t max_rtt_ms_ RTC_GUARDED_BY(construction_thread_checker_);
 

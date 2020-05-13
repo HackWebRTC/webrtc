@@ -15,7 +15,7 @@
 
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_queue.h"
-#include "rtc_base/task_utils/pending_task_safety_flag.h"
+#include "rtc_base/task_utils/repeating_task.h"
 #include "video/stream_synchronization.h"
 
 namespace webrtc {
@@ -45,7 +45,6 @@ class RtpStreamsSynchronizer {
                                double* estimated_freq_khz) const;
 
  private:
-  void QueueTimer();
   void UpdateDelay();
 
   TaskQueueBase* const task_queue_;
@@ -65,12 +64,8 @@ class RtpStreamsSynchronizer {
       RTC_GUARDED_BY(main_checker_);
   StreamSynchronization::Measurements video_measurement_
       RTC_GUARDED_BY(main_checker_);
-  int64_t last_sync_time_ RTC_GUARDED_BY(&main_checker_);
+  RepeatingTaskHandle repeating_task_ RTC_GUARDED_BY(main_checker_);
   int64_t last_stats_log_ms_ RTC_GUARDED_BY(&main_checker_);
-  bool timer_running_ RTC_GUARDED_BY(main_checker_) = false;
-
-  // Used to signal destruction to potentially pending tasks.
-  ScopedTaskSafety task_safety_;
 };
 
 }  // namespace internal

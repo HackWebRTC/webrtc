@@ -96,12 +96,13 @@ TEST_F(CallStats2Test, ProcessTime) {
       .Times(2)
       .WillOnce(InvokeWithoutArgs([this] {
         // Advance clock and verify we get an update.
-        fake_clock_.AdvanceTimeMilliseconds(CallStats::kUpdateIntervalMs);
+        fake_clock_.AdvanceTimeMilliseconds(CallStats::kUpdateInterval.ms());
       }))
       .WillRepeatedly(InvokeWithoutArgs([this] {
         AsyncSimulateRttUpdate(kRtt2);
         // Advance clock just too little to get an update.
-        fake_clock_.AdvanceTimeMilliseconds(CallStats::kUpdateIntervalMs - 1);
+        fake_clock_.AdvanceTimeMilliseconds(CallStats::kUpdateInterval.ms() -
+                                            1);
       }));
 
   // In case you're reading this and wondering how this number is arrived at,
@@ -256,7 +257,7 @@ TEST_F(CallStats2Test, LastProcessedRtt) {
       .Times(AnyNumber())
       .WillOnce(InvokeWithoutArgs([this] {
         EXPECT_EQ(kAvgRtt1, call_stats_.LastProcessedRtt());
-        fake_clock_.AdvanceTimeMilliseconds(CallStats::kUpdateIntervalMs);
+        fake_clock_.AdvanceTimeMilliseconds(CallStats::kUpdateInterval.ms());
         AsyncSimulateRttUpdate(kRttLow);
         AsyncSimulateRttUpdate(kRttHigh);
       }))
@@ -272,7 +273,7 @@ TEST_F(CallStats2Test, LastProcessedRtt) {
 
   // Set a first values and verify that LastProcessedRtt initially returns the
   // average rtt.
-  fake_clock_.AdvanceTimeMilliseconds(CallStats::kUpdateIntervalMs);
+  fake_clock_.AdvanceTimeMilliseconds(CallStats::kUpdateInterval.ms());
   AsyncSimulateRttUpdate(kRttLow);
   loop_.Run();
   EXPECT_EQ(kAvgRtt2, call_stats_.LastProcessedRtt());
@@ -292,7 +293,7 @@ TEST_F(CallStats2Test, ProducesHistogramMetrics) {
   AsyncSimulateRttUpdate(kRtt);
   loop_.Run();
   fake_clock_.AdvanceTimeMilliseconds(metrics::kMinRunTimeInSeconds *
-                                      CallStats::kUpdateIntervalMs);
+                                      CallStats::kUpdateInterval.ms());
   AsyncSimulateRttUpdate(kRtt);
   loop_.Run();
 
