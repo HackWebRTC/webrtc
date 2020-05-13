@@ -156,18 +156,27 @@ class FakeQualityScalerQpUsageHandlerCallback
     : public QualityScalerQpUsageHandlerCallbackInterface {
  public:
   FakeQualityScalerQpUsageHandlerCallback()
-      : QualityScalerQpUsageHandlerCallbackInterface() {}
-  ~FakeQualityScalerQpUsageHandlerCallback() override {}
+      : QualityScalerQpUsageHandlerCallbackInterface(),
+        qp_usage_handled_event_(/*manual_reset=*/true,
+                                /*initially_signaled=*/false),
+        clear_qp_samples_result_(absl::nullopt) {}
+  ~FakeQualityScalerQpUsageHandlerCallback() override {
+    RTC_DCHECK(clear_qp_samples_result_.has_value());
+  }
 
   void OnQpUsageHandled(bool clear_qp_samples) override {
     clear_qp_samples_result_ = clear_qp_samples;
+    qp_usage_handled_event_.Set();
   }
+
+  bool WaitForQpUsageHandled() { return qp_usage_handled_event_.Wait(5000); }
 
   absl::optional<bool> clear_qp_samples_result() const {
     return clear_qp_samples_result_;
   }
 
  private:
+  rtc::Event qp_usage_handled_event_;
   absl::optional<bool> clear_qp_samples_result_;
 };
 
@@ -310,21 +319,14 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
   // QualityScalerResource. Returns whether or not QP samples would have been
   // cleared if this had been a real signal from the QualityScaler.
   bool TriggerQualityScalerHighQpAndReturnIfQpSamplesShouldBeCleared() {
-    rtc::Event event;
     rtc::scoped_refptr<FakeQualityScalerQpUsageHandlerCallback> callback =
         new FakeQualityScalerQpUsageHandlerCallback();
-    encoder_queue()->PostTask([this, &event, callback] {
-      // This should post a usage measurement to the adaptation processor.
+    encoder_queue()->PostTask([this, callback] {
+      // This will cause a "ping" between adaptation task queue and encoder
+      // queue. When we have the result, the |callback| will be notified.
       quality_scaler_resource_for_testing()->OnReportQpUsageHigh(callback);
-      // Give the processor a chance to react and trigger adaptation on the
-      // adaptation queue.
-      resource_adaptation_queue()->PostTask([this, &event] {
-        // Finally, give the QualityScalerResource time to resolve the callback
-        // on the encoder queue.
-        encoder_queue()->PostTask([&event] { event.Set(); });
-      });
     });
-    EXPECT_TRUE(event.Wait(5000));
+    EXPECT_TRUE(callback->WaitForQpUsageHandled());
     EXPECT_TRUE(callback->clear_qp_samples_result().has_value());
     return callback->clear_qp_samples_result().value();
   }
