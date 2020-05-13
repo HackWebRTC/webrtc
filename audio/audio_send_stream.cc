@@ -544,10 +544,12 @@ void AudioSendStream::SetTransportOverhead(
 }
 
 void AudioSendStream::UpdateOverheadForEncoder() {
-  const size_t overhead_per_packet_bytes = GetPerPacketOverheadBytes();
-  if (overhead_per_packet_bytes == 0) {
-    return;  // Overhead is not known yet, do not tell the encoder.
+  size_t overhead_per_packet_bytes = GetPerPacketOverheadBytes();
+  if (overhead_per_packet_ == overhead_per_packet_bytes) {
+    return;
   }
+  overhead_per_packet_ = overhead_per_packet_bytes;
+
   channel_send_->CallEncoder([&](AudioEncoder* encoder) {
     encoder->OnReceivedOverhead(overhead_per_packet_bytes);
   });

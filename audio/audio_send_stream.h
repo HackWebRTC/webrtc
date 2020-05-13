@@ -195,6 +195,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   static int TransportSeqNumId(const Config& config);
 
   rtc::CriticalSection overhead_per_packet_lock_;
+  size_t overhead_per_packet_ RTC_GUARDED_BY(overhead_per_packet_lock_) = 0;
 
   // Current transport overhead (ICE, TURN, etc.)
   size_t transport_overhead_per_packet_bytes_

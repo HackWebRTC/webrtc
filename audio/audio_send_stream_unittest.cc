@@ -794,13 +794,34 @@ TEST(AudioSendStreamTest, OnTransportOverheadChanged) {
     auto new_config = helper.config();
 
     // CallEncoder will be called on overhead change.
-    EXPECT_CALL(*helper.channel_send(), CallEncoder(::testing::_)).Times(1);
+    EXPECT_CALL(*helper.channel_send(), CallEncoder);
 
     const size_t transport_overhead_per_packet_bytes = 333;
     send_stream->SetTransportOverhead(transport_overhead_per_packet_bytes);
 
     EXPECT_EQ(transport_overhead_per_packet_bytes,
               send_stream->TestOnlyGetPerPacketOverheadBytes());
+  }
+}
+
+TEST(AudioSendStreamTest, DoesntCallEncoderWhenOverheadUnchanged) {
+  for (bool use_null_audio_processing : {false, true}) {
+    ConfigHelper helper(false, true, use_null_audio_processing);
+    auto send_stream = helper.CreateAudioSendStream();
+    auto new_config = helper.config();
+
+    // CallEncoder will be called on overhead change.
+    EXPECT_CALL(*helper.channel_send(), CallEncoder);
+    const size_t transport_overhead_per_packet_bytes = 333;
+    send_stream->SetTransportOverhead(transport_overhead_per_packet_bytes);
+
+    // Set the same overhead again, CallEncoder should not be called again.
+    EXPECT_CALL(*helper.channel_send(), CallEncoder).Times(0);
+    send_stream->SetTransportOverhead(transport_overhead_per_packet_bytes);
+
+    // New overhead, call CallEncoder again
+    EXPECT_CALL(*helper.channel_send(), CallEncoder);
+    send_stream->SetTransportOverhead(transport_overhead_per_packet_bytes + 1);
   }
 }
 
