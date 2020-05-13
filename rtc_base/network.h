@@ -462,6 +462,7 @@ class RTC_EXPORT Network {
   int preference_;
   bool active_ = true;
   uint16_t id_ = 0;
+  bool use_differentiated_cellular_costs_ = false;
 
   friend class NetworkManager;
 };
