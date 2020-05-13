@@ -18,6 +18,7 @@
 #include "api/test/peerconnection_quality_test_fixture.h"
 #include "test/pc/e2e/analyzer/video/video_quality_analyzer_injection_helper.h"
 #include "test/pc/e2e/media/test_video_capturer_video_track_source.h"
+#include "test/pc/e2e/peer_configurer.h"
 #include "test/pc/e2e/test_peer.h"
 
 namespace webrtc {
@@ -41,7 +42,7 @@ class MediaHelper {
  private:
   std::unique_ptr<test::TestVideoCapturer> CreateVideoCapturer(
       const PeerConnectionE2EQualityTestFixture::VideoConfig& video_config,
-      std::unique_ptr<test::FrameGeneratorInterface> generator,
+      PeerConfigurerImpl::VideoSource source,
       std::unique_ptr<test::TestVideoCapturer::FramePreprocessor>
           frame_preprocessor);
 

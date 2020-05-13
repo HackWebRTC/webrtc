@@ -15,8 +15,11 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/types/variant.h"
 #include "api/test/frame_generator_interface.h"
+#include "api/test/peerconnection_quality_test_fixture.h"
 #include "pc/peer_connection_wrapper.h"
+#include "test/pc/e2e/peer_configurer.h"
 #include "test/pc/e2e/peer_connection_quality_test_params.h"
 
 namespace webrtc {
@@ -28,9 +31,8 @@ class TestPeer final : public PeerConnectionWrapper {
   using PeerConnectionWrapper::PeerConnectionWrapper;
 
   Params* params() const { return params_.get(); }
-  std::unique_ptr<test::FrameGeneratorInterface> ReleaseVideoGenerator(
-      size_t i) {
-    return std::move(video_generators_[i]);
+  PeerConfigurerImpl::VideoSource ReleaseVideoSource(size_t i) {
+    return std::move(video_sources_[i]);
   }
 
   void DetachAecDump() {
@@ -49,13 +51,12 @@ class TestPeer final : public PeerConnectionWrapper {
            rtc::scoped_refptr<PeerConnectionInterface> pc,
            std::unique_ptr<MockPeerConnectionObserver> observer,
            std::unique_ptr<Params> params,
-           std::vector<std::unique_ptr<test::FrameGeneratorInterface>>
-               video_generators,
+           std::vector<PeerConfigurerImpl::VideoSource> video_sources,
            rtc::scoped_refptr<AudioProcessing> audio_processing);
 
  private:
   std::unique_ptr<Params> params_;
-  std::vector<std::unique_ptr<test::FrameGeneratorInterface>> video_generators_;
+  std::vector<PeerConfigurerImpl::VideoSource> video_sources_;
   rtc::scoped_refptr<AudioProcessing> audio_processing_;
 
   std::vector<std::unique_ptr<IceCandidateInterface>> remote_ice_candidates_;

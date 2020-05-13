@@ -222,12 +222,15 @@ if (rtc_include_tests) {
       "test_peer.h",
     ]
     deps = [
+      ":peer_configurer",
       ":peer_connection_quality_test_params",
       "../../../api:frame_generator_api",
+      "../../../api:peer_connection_quality_test_fixture_api",
       "../../../api:scoped_refptr",
       "../../../modules/audio_processing:api",
       "../../../pc:peerconnection_wrapper",
       "//third_party/abseil-cpp/absl/memory",
+      "//third_party/abseil-cpp/absl/types:variant",
     ]
   }
 
@@ -271,6 +274,7 @@ if (rtc_include_tests) {
       "media/test_video_capturer_video_track_source.h",
     ]
     deps = [
+      ":peer_configurer",
       ":test_peer",
       ":video_quality_analyzer_injection_helper",
       "../..:fileutils",
@@ -282,6 +286,7 @@ if (rtc_include_tests) {
       "../../../api:peer_connection_quality_test_fixture_api",
       "../../../api/video:video_frame",
       "../../../pc:peerconnection",
+      "//third_party/abseil-cpp/absl/types:variant",
     ]
   }
 

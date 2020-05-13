@@ -55,8 +55,7 @@ class TestPeerFactory {
   static std::unique_ptr<TestPeer> CreateTestPeer(
       std::unique_ptr<InjectableComponents> components,
       std::unique_ptr<Params> params,
-      std::vector<std::unique_ptr<test::FrameGeneratorInterface>>
-          video_generators,
+      std::vector<PeerConfigurerImpl::VideoSource> video_sources,
       std::unique_ptr<MockPeerConnectionObserver> observer,
       VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
       rtc::Thread* signaling_thread,

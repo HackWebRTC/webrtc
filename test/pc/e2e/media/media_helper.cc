@@ -12,6 +12,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/types/variant.h"
 #include "api/media_stream_interface.h"
 #include "api/test/create_frame_generator.h"
 #include "test/frame_generator_capturer.h"
@@ -26,6 +27,8 @@ using VideoConfig =
     ::webrtc::webrtc_pc_e2e::PeerConnectionE2EQualityTestFixture::VideoConfig;
 using AudioConfig =
     ::webrtc::webrtc_pc_e2e::PeerConnectionE2EQualityTestFixture::AudioConfig;
+using CapturingDeviceIndex = ::webrtc::webrtc_pc_e2e::
+    PeerConnectionE2EQualityTestFixture::CapturingDeviceIndex;
 
 }  // namespace
 
@@ -53,7 +56,7 @@ MediaHelper::MaybeAddVideo(TestPeer* peer) {
     auto video_config = params->video_configs[i];
     // Setup input video source into peer connection.
     std::unique_ptr<test::TestVideoCapturer> capturer = CreateVideoCapturer(
-        video_config, peer->ReleaseVideoGenerator(i),
+        video_config, peer->ReleaseVideoSource(i),
         video_quality_analyzer_injection_helper_->CreateFramePreprocessor(
             video_config));
     bool is_screencast =
@@ -93,25 +96,28 @@ MediaHelper::MaybeAddVideo(TestPeer* peer) {
 
 std::unique_ptr<test::TestVideoCapturer> MediaHelper::CreateVideoCapturer(
     const VideoConfig& video_config,
-    std::unique_ptr<test::FrameGeneratorInterface> generator,
+    PeerConfigurerImpl::VideoSource source,
     std::unique_ptr<test::TestVideoCapturer::FramePreprocessor>
         frame_preprocessor) {
-  if (video_config.capturing_device_index) {
+  CapturingDeviceIndex* capturing_device_index =
+      absl::get_if<CapturingDeviceIndex>(&source);
+  if (capturing_device_index != nullptr) {
     std::unique_ptr<test::TestVideoCapturer> capturer =
         test::CreateVideoCapturer(video_config.width, video_config.height,
                                   video_config.fps,
-                                  *video_config.capturing_device_index);
+                                  static_cast<size_t>(*capturing_device_index));
     RTC_CHECK(capturer)
         << "Failed to obtain input stream from capturing device #"
-        << *video_config.capturing_device_index;
+        << *capturing_device_index;
     capturer->SetFramePreprocessor(std::move(frame_preprocessor));
     return capturer;
   }
 
-  RTC_CHECK(generator) << "No input source.";
-
   auto capturer = std::make_unique<test::FrameGeneratorCapturer>(
-      clock_, std::move(generator), video_config.fps, *task_queue_factory_);
+      clock_,
+      absl::get<std::unique_ptr<test::FrameGeneratorInterface>>(
+          std::move(source)),
+      video_config.fps, *task_queue_factory_);
   capturer->SetFramePreprocessor(std::move(frame_preprocessor));
   capturer->Init();
   return capturer;

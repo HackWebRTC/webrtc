@@ -54,6 +54,12 @@ constexpr size_t kDefaultSlidesHeight = 1110;
 // API is in development. Can be changed/removed without notice.
 class PeerConnectionE2EQualityTestFixture {
  public:
+  // The index of required capturing device in OS provided list of video
+  // devices. On Linux and Windows the list will be obtained via
+  // webrtc::VideoCaptureModule::DeviceInfo, on Mac OS via
+  // [RTCCameraVideoCapturer captureDevices].
+  enum class CapturingDeviceIndex : size_t {};
+
   // Contains parameters for screen share scrolling.
   //
   // If scrolling is enabled, then it will be done by putting sliding window
@@ -185,12 +191,6 @@ class PeerConnectionE2EQualityTestFixture {
     // Will be set for current video track. If equals to kText or kDetailed -
     // screencast in on.
     absl::optional<VideoTrackInterface::ContentHint> content_hint;
-    // If specified this capturing device will be used to get input video. The
-    // |capturing_device_index| is the index of required capturing device in OS
-    // provided list of video devices. On Linux and Windows the list will be
-    // obtained via webrtc::VideoCaptureModule::DeviceInfo, on Mac OS via
-    // [RTCCameraVideoCapturer captureDevices].
-    absl::optional<size_t> capturing_device_index;
     // If presented video will be transfered in simulcast/SVC mode depending on
     // which encoder is used.
     //
@@ -319,6 +319,11 @@ class PeerConnectionE2EQualityTestFixture {
     virtual PeerConfigurer* AddVideoConfig(
         VideoConfig config,
         std::unique_ptr<test::FrameGeneratorInterface> generator) = 0;
+    // Add new video stream to the call that will be sent from this peer.
+    // Capturing device with specified index will be used to get input video.
+    virtual PeerConfigurer* AddVideoConfig(
+        VideoConfig config,
+        CapturingDeviceIndex capturing_device_index) = 0;
     // Set the audio stream for the call from this peer. If this method won't
     // be invoked, this peer will send no audio.
     virtual PeerConfigurer* SetAudioConfig(AudioConfig config) = 0;
