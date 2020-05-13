@@ -1205,22 +1205,26 @@ class Signaler : public EventDispatcher {
   bool* pf_;
 };
 
-PhysicalSocketServer::PhysicalSocketServer() : fWait_(false) {
+PhysicalSocketServer::PhysicalSocketServer()
+    :
 #if defined(WEBRTC_USE_EPOLL)
-  // Since Linux 2.6.8, the size argument is ignored, but must be greater than
-  // zero. Before that the size served as hint to the kernel for the amount of
-  // space to initially allocate in internal data structures.
-  epoll_fd_ = epoll_create(FD_SETSIZE);
+      // Since Linux 2.6.8, the size argument is ignored, but must be greater
+      // than zero. Before that the size served as hint to the kernel for the
+      // amount of space to initially allocate in internal data structures.
+      epoll_fd_(epoll_create(FD_SETSIZE)),
+#endif
+#if defined(WEBRTC_WIN)
+      socket_ev_(WSACreateEvent()),
+#endif
+      fWait_(false) {
+#if defined(WEBRTC_USE_EPOLL)
   if (epoll_fd_ == -1) {
     // Not an error, will fall back to "select" below.
     RTC_LOG_E(LS_WARNING, EN, errno) << "epoll_create";
-    epoll_fd_ = INVALID_SOCKET;
+    // Note that -1 == INVALID_SOCKET, the alias used by later checks.
   }
 #endif
   signal_wakeup_ = new Signaler(this, &fWait_);
-#if defined(WEBRTC_WIN)
-  socket_ev_ = WSACreateEvent();
-#endif
 }
 
 PhysicalSocketServer::~PhysicalSocketServer() {

@@ -117,7 +117,7 @@ class RTC_EXPORT PhysicalSocketServer : public SocketServer {
   bool WaitEpoll(int cms);
   bool WaitPoll(int cms, Dispatcher* dispatcher);
 
-  int epoll_fd_ = INVALID_SOCKET;
+  const int epoll_fd_ = INVALID_SOCKET;
   std::vector<struct epoll_event> epoll_events_;
 #endif  // WEBRTC_USE_EPOLL
   DispatcherSet dispatchers_;
@@ -126,10 +126,10 @@ class RTC_EXPORT PhysicalSocketServer : public SocketServer {
   bool processing_dispatchers_ = false;
   Signaler* signal_wakeup_;
   CriticalSection crit_;
-  bool fWait_;
 #if defined(WEBRTC_WIN)
-  WSAEVENT socket_ev_;
+  const WSAEVENT socket_ev_;
 #endif
+  bool fWait_;
 };
 
 class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
