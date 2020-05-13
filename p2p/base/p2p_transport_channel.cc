@@ -694,8 +694,17 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
       &field_trials_.send_ping_on_switch_ice_controlling,
       // Reply to nomination ASAP.
       "send_ping_on_nomination_ice_controlled",
-      &field_trials_.send_ping_on_nomination_ice_controlled)
+      &field_trials_.send_ping_on_nomination_ice_controlled,
+      // Allow connections to live untouched longer that 30s.
+      "dead_connection_timeout_ms", &field_trials_.dead_connection_timeout_ms)
       ->Parse(webrtc::field_trial::FindFullName("WebRTC-IceFieldTrials"));
+
+  if (field_trials_.dead_connection_timeout_ms < 30000) {
+    RTC_LOG(LS_WARNING) << "dead_connection_timeout_ms set to "
+                        << field_trials_.dead_connection_timeout_ms
+                        << " increasing it to 30000";
+    field_trials_.dead_connection_timeout_ms = 30000;
+  }
 
   if (field_trials_.skip_relay_to_non_relay_connections) {
     RTC_LOG(LS_INFO) << "Set skip_relay_to_non_relay_connections";

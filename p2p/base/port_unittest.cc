@@ -64,6 +64,7 @@
 #include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/virtual_socket_server.h"
+#include "test/field_trial.h"
 #include "test/gtest.h"
 
 using rtc::AsyncPacketSocket;
@@ -1295,6 +1296,77 @@ TEST_F(PortTest, TestConnectionDead) {
   rtc::Thread::Current()->ProcessMessages(100);
   EXPECT_TRUE(ch1.conn() != nullptr);
   conn->UpdateState(after_last_receiving + DEAD_CONNECTION_RECEIVE_TIMEOUT + 1);
+  EXPECT_TRUE_WAIT(ch1.conn() == nullptr, kDefaultTimeout);
+}
+
+TEST_F(PortTest, TestConnectionDeadWithDeadConnectionTimeout) {
+  TestChannel ch1(CreateUdpPort(kLocalAddr1));
+  TestChannel ch2(CreateUdpPort(kLocalAddr2));
+  // Acquire address.
+  ch1.Start();
+  ch2.Start();
+  ASSERT_EQ_WAIT(1, ch1.complete_count(), kDefaultTimeout);
+  ASSERT_EQ_WAIT(1, ch2.complete_count(), kDefaultTimeout);
+
+  // Note: set field trials manually since they are parsed by
+  // P2PTransportChannel but P2PTransportChannel is not used in this test.
+  IceFieldTrials field_trials;
+  field_trials.dead_connection_timeout_ms = 90000;
+
+  // Create a connection again and receive a ping.
+  ch1.CreateConnection(GetCandidate(ch2.port()));
+  auto conn = ch1.conn();
+  conn->SetIceFieldTrials(&field_trials);
+
+  ASSERT_NE(conn, nullptr);
+  int64_t before_last_receiving = rtc::TimeMillis();
+  conn->ReceivedPing();
+  int64_t after_last_receiving = rtc::TimeMillis();
+  // The connection will be dead after 90s
+  conn->UpdateState(before_last_receiving + 90000 - 1);
+  rtc::Thread::Current()->ProcessMessages(100);
+  EXPECT_TRUE(ch1.conn() != nullptr);
+  conn->UpdateState(after_last_receiving + 90000 + 1);
+  EXPECT_TRUE_WAIT(ch1.conn() == nullptr, kDefaultTimeout);
+}
+
+TEST_F(PortTest, TestConnectionDeadOutstandingPing) {
+  auto port1 = CreateUdpPort(kLocalAddr1);
+  port1->SetIceRole(cricket::ICEROLE_CONTROLLING);
+  port1->SetIceTiebreaker(kTiebreaker1);
+  auto port2 = CreateUdpPort(kLocalAddr2);
+  port2->SetIceRole(cricket::ICEROLE_CONTROLLED);
+  port2->SetIceTiebreaker(kTiebreaker2);
+
+  TestChannel ch1(std::move(port1));
+  TestChannel ch2(std::move(port2));
+  // Acquire address.
+  ch1.Start();
+  ch2.Start();
+  ASSERT_EQ_WAIT(1, ch1.complete_count(), kDefaultTimeout);
+  ASSERT_EQ_WAIT(1, ch2.complete_count(), kDefaultTimeout);
+
+  // Note: set field trials manually since they are parsed by
+  // P2PTransportChannel but P2PTransportChannel is not used in this test.
+  IceFieldTrials field_trials;
+  field_trials.dead_connection_timeout_ms = 360000;
+
+  // Create a connection again and receive a ping and then send
+  // a ping and keep it outstanding.
+  ch1.CreateConnection(GetCandidate(ch2.port()));
+  auto conn = ch1.conn();
+  conn->SetIceFieldTrials(&field_trials);
+
+  ASSERT_NE(conn, nullptr);
+  conn->ReceivedPing();
+  int64_t send_ping_timestamp = rtc::TimeMillis();
+  conn->Ping(send_ping_timestamp);
+
+  // The connection will be dead 30s after the ping was sent.
+  conn->UpdateState(send_ping_timestamp + DEAD_CONNECTION_RECEIVE_TIMEOUT - 1);
+  rtc::Thread::Current()->ProcessMessages(100);
+  EXPECT_TRUE(ch1.conn() != nullptr);
+  conn->UpdateState(send_ping_timestamp + DEAD_CONNECTION_RECEIVE_TIMEOUT + 1);
   EXPECT_TRUE_WAIT(ch1.conn() == nullptr, kDefaultTimeout);
 }
 

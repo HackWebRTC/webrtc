@@ -48,6 +48,10 @@ struct IceFieldTrials {
 
   // Sending a PING directly after a nomination on ICE_CONTROLLED-side.
   bool send_ping_on_nomination_ice_controlled = false;
+
+  // The timeout after which the connection will be considered dead if no
+  // traffic is received.
+  int dead_connection_timeout_ms = 30000;
 };
 
 }  // namespace cricket

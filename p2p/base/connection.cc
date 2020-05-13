@@ -918,12 +918,31 @@ void Connection::ReceivedPingResponse(
 
 bool Connection::dead(int64_t now) const {
   if (last_received() > 0) {
-    // If it has ever received anything, we keep it alive until it hasn't
-    // received anything for DEAD_CONNECTION_RECEIVE_TIMEOUT. This covers the
-    // normal case of a successfully used connection that stops working. This
-    // also allows a remote peer to continue pinging over a locally inactive
-    // (pruned) connection.
-    return (now > (last_received() + DEAD_CONNECTION_RECEIVE_TIMEOUT));
+    // If it has ever received anything, we keep it alive
+    // - if it has recevied last DEAD_CONNECTION_RECEIVE_TIMEOUT (30s)
+    // - if it has a ping outstanding shorter than
+    // DEAD_CONNECTION_RECEIVE_TIMEOUT (30s)
+    // - else if IDLE let it live field_trials_->dead_connection_timeout_ms
+    //
+    // This covers the normal case of a successfully used connection that stops
+    // working. This also allows a remote peer to continue pinging over a
+    // locally inactive (pruned) connection. This also allows the local agent to
+    // ping with longer interval than 30s as long as it shorter than
+    // |dead_connection_timeout_ms|.
+    if (now <= (last_received() + DEAD_CONNECTION_RECEIVE_TIMEOUT)) {
+      // Not dead since we have received the last 30s.
+      return false;
+    }
+    if (!pings_since_last_response_.empty()) {
+      // Outstanding pings: let it live until the ping is unreplied for
+      // DEAD_CONNECTION_RECEIVE_TIMEOUT.
+      return now > (pings_since_last_response_[0].sent_time +
+                    DEAD_CONNECTION_RECEIVE_TIMEOUT);
+    }
+
+    // No outstanding pings: let it live until
+    // field_trials_->dead_connection_timeout_ms has passed.
+    return now > (last_received() + field_trials_->dead_connection_timeout_ms);
   }
 
   if (active()) {
