@@ -37,7 +37,7 @@ using ::testing::NiceMock;
 
 class MockRtcpPacketSink : public RtcpPacketSinkInterface {
  public:
-  MOCK_METHOD1(OnRtcpPacket, void(rtc::ArrayView<const uint8_t>));
+  MOCK_METHOD(void, OnRtcpPacket, (rtc::ArrayView<const uint8_t>), (override));
 };
 
 class RtcpDemuxerTest : public ::testing::Test {

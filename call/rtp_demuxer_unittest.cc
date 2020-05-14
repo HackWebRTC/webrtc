@@ -37,14 +37,22 @@ using ::testing::NiceMock;
 
 class MockSsrcBindingObserver : public SsrcBindingObserver {
  public:
-  MOCK_METHOD2(OnSsrcBoundToRsid, void(const std::string& rsid, uint32_t ssrc));
-  MOCK_METHOD2(OnSsrcBoundToMid, void(const std::string& mid, uint32_t ssrc));
-  MOCK_METHOD3(OnSsrcBoundToMidRsid,
-               void(const std::string& mid,
-                    const std::string& rsid,
-                    uint32_t ssrc));
-  MOCK_METHOD2(OnSsrcBoundToPayloadType,
-               void(uint8_t payload_type, uint32_t ssrc));
+  MOCK_METHOD(void,
+              OnSsrcBoundToRsid,
+              (const std::string& rsid, uint32_t ssrc),
+              (override));
+  MOCK_METHOD(void,
+              OnSsrcBoundToMid,
+              (const std::string& mid, uint32_t ssrc),
+              (override));
+  MOCK_METHOD(void,
+              OnSsrcBoundToMidRsid,
+              (const std::string& mid, const std::string& rsid, uint32_t ssrc),
+              (override));
+  MOCK_METHOD(void,
+              OnSsrcBoundToPayloadType,
+              (uint8_t payload_type, uint32_t ssrc),
+              (override));
 };
 
 class RtpDemuxerTest : public ::testing::Test {

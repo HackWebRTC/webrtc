@@ -21,29 +21,41 @@ namespace webrtc {
 
 class MockVideoStreamEncoderObserver : public VideoStreamEncoderObserver {
  public:
-  MOCK_METHOD2(OnEncodedFrameTimeMeasured, void(int, int));
-  MOCK_METHOD2(OnIncomingFrame, void(int, int));
-  MOCK_METHOD2(OnSendEncodedImage,
-               void(const EncodedImage&, const CodecSpecificInfo*));
-  MOCK_METHOD1(OnEncoderImplementationChanged, void(const std::string&));
-  MOCK_METHOD1(OnFrameDropped, void(DropReason));
-  MOCK_METHOD2(OnEncoderReconfigured,
-               void(const VideoEncoderConfig&,
-                    const std::vector<VideoStream>&));
-  MOCK_METHOD3(OnAdaptationChanged,
-               void(VideoAdaptationReason,
-                    const VideoAdaptationCounters&,
-                    const VideoAdaptationCounters&));
-  MOCK_METHOD0(ClearAdaptationStats, void());
-  MOCK_METHOD2(UpdateAdaptationSettings,
-               void(AdaptationSettings, AdaptationSettings));
-  MOCK_METHOD0(OnMinPixelLimitReached, void());
-  MOCK_METHOD0(OnInitialQualityResolutionAdaptDown, void());
-  MOCK_METHOD1(OnSuspendChange, void(bool));
-  MOCK_METHOD2(OnBitrateAllocationUpdated,
-               void(const VideoCodec&, const VideoBitrateAllocation&));
-  MOCK_METHOD1(OnEncoderInternalScalerUpdate, void(bool));
-  MOCK_CONST_METHOD0(GetInputFrameRate, int());
+  MOCK_METHOD(void, OnEncodedFrameTimeMeasured, (int, int), (override));
+  MOCK_METHOD(void, OnIncomingFrame, (int, int), (override));
+  MOCK_METHOD(void,
+              OnSendEncodedImage,
+              (const EncodedImage&, const CodecSpecificInfo*),
+              (override));
+  MOCK_METHOD(void,
+              OnEncoderImplementationChanged,
+              (const std::string&),
+              (override));
+  MOCK_METHOD(void, OnFrameDropped, (DropReason), (override));
+  MOCK_METHOD(void,
+              OnEncoderReconfigured,
+              (const VideoEncoderConfig&, const std::vector<VideoStream>&),
+              (override));
+  MOCK_METHOD(void,
+              OnAdaptationChanged,
+              (VideoAdaptationReason,
+               const VideoAdaptationCounters&,
+               const VideoAdaptationCounters&),
+              (override));
+  MOCK_METHOD(void, ClearAdaptationStats, (), (override));
+  MOCK_METHOD(void,
+              UpdateAdaptationSettings,
+              (AdaptationSettings, AdaptationSettings),
+              (override));
+  MOCK_METHOD(void, OnMinPixelLimitReached, (), (override));
+  MOCK_METHOD(void, OnInitialQualityResolutionAdaptDown, (), (override));
+  MOCK_METHOD(void, OnSuspendChange, (bool), (override));
+  MOCK_METHOD(void,
+              OnBitrateAllocationUpdated,
+              (const VideoCodec&, const VideoBitrateAllocation&),
+              (override));
+  MOCK_METHOD(void, OnEncoderInternalScalerUpdate, (bool), (override));
+  MOCK_METHOD(int, GetInputFrameRate, (), (const, override));
 };
 
 class FakeFrameRateProvider : public MockVideoStreamEncoderObserver {

@@ -56,7 +56,7 @@ const int kDependencyDescriptorExtensionId = 8;
 
 class MockRtcpIntraFrameObserver : public RtcpIntraFrameObserver {
  public:
-  MOCK_METHOD1(OnReceivedIntraFrameRequest, void(uint32_t));
+  MOCK_METHOD(void, OnReceivedIntraFrameRequest, (uint32_t), (override));
 };
 
 RtpSenderObservers CreateObservers(
@@ -361,8 +361,10 @@ TEST(RtpVideoSenderTest, CreateWithPreviousStates) {
 TEST(RtpVideoSenderTest, FrameCountCallbacks) {
   class MockFrameCountObserver : public FrameCountObserver {
    public:
-    MOCK_METHOD2(FrameCountUpdated,
-                 void(const FrameCounts& frame_counts, uint32_t ssrc));
+    MOCK_METHOD(void,
+                FrameCountUpdated,
+                (const FrameCounts& frame_counts, uint32_t ssrc),
+                (override));
   } callback;
 
   RtpVideoSenderTestFixture test({kSsrc1}, {kRtxSsrc1}, kPayloadType, {},
