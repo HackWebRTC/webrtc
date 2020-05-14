@@ -145,8 +145,6 @@ VideoAdapter::VideoAdapter() : VideoAdapter(1) {}
 VideoAdapter::~VideoAdapter() {}
 
 bool VideoAdapter::KeepFrame(int64_t in_timestamp_ns) {
-  rtc::CritScope cs(&critical_section_);
-
   int max_fps = max_framerate_request_;
   if (max_fps_)
     max_fps = std::min(max_fps, *max_fps_);
