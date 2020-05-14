@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/test/mock_frame_encryptor.h"
 #include "api/transport/field_trial_based_config.h"
 #include "api/transport/rtp/dependency_descriptor.h"
@@ -1022,6 +1023,48 @@ TEST_F(RtpSenderVideoWithFrameTransformerTest, OnTransformedFrameSendsVideo) {
       RTC_FROM_HERE);
   encoder_queue.WaitForPreviouslyPostedTasks();
   EXPECT_EQ(transport_.packets_sent(), 1);
+}
+
+TEST_F(RtpSenderVideoWithFrameTransformerTest,
+       TransformableFrameMetadataHasCorrectValue) {
+  rtc::scoped_refptr<MockFrameTransformer> mock_frame_transformer =
+      new rtc::RefCountedObject<NiceMock<MockFrameTransformer>>();
+  std::unique_ptr<RTPSenderVideo> rtp_sender_video =
+      CreateSenderWithFrameTransformer(mock_frame_transformer);
+  auto encoded_image = CreateDefaultEncodedImage();
+  RTPVideoHeader video_header;
+  video_header.width = 1280u;
+  video_header.height = 720u;
+  RTPVideoHeader::GenericDescriptorInfo& generic =
+      video_header.generic.emplace();
+  generic.frame_id = 10;
+  generic.temporal_index = 3;
+  generic.spatial_index = 2;
+  generic.decode_target_indications = {DecodeTargetIndication::kSwitch};
+  generic.dependencies = {5};
+
+  // Check that the transformable frame passed to the frame transformer has the
+  // correct metadata.
+  EXPECT_CALL(*mock_frame_transformer, Transform)
+      .WillOnce(
+          [](std::unique_ptr<TransformableFrameInterface> transformable_frame) {
+            auto frame =
+                absl::WrapUnique(static_cast<TransformableVideoFrameInterface*>(
+                    transformable_frame.release()));
+            ASSERT_TRUE(frame);
+            auto metadata = frame->GetMetadata();
+            EXPECT_EQ(metadata.GetWidth(), 1280u);
+            EXPECT_EQ(metadata.GetHeight(), 720u);
+            EXPECT_EQ(metadata.GetFrameId(), 10);
+            EXPECT_EQ(metadata.GetTemporalIndex(), 3);
+            EXPECT_EQ(metadata.GetSpatialIndex(), 2);
+            EXPECT_THAT(metadata.GetFrameDependencies(), ElementsAre(5));
+            EXPECT_THAT(metadata.GetDecodeTargetIndications(),
+                        ElementsAre(DecodeTargetIndication::kSwitch));
+          });
+  rtp_sender_video->SendEncodedImage(kPayload, kType, kTimestamp,
+                                     *encoded_image, nullptr, video_header,
+                                     kDefaultExpectedRetransmissionTimeMs);
 }
 
 }  // namespace

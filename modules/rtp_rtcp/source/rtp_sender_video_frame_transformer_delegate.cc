@@ -43,6 +43,7 @@ class TransformableVideoSenderFrame : public TransformableVideoFrameInterface {
       uint32_t ssrc)
       : encoded_data_(encoded_image.GetEncodedData()),
         header_(video_header),
+        metadata_(header_),
         frame_type_(encoded_image._frameType),
         payload_type_(payload_type),
         codec_type_(codec_type),
@@ -75,6 +76,8 @@ class TransformableVideoSenderFrame : public TransformableVideoFrameInterface {
     return RtpDescriptorAuthentication(header_);
   }
 
+  const VideoFrameMetadata& GetMetadata() const override { return metadata_; }
+
   const RTPVideoHeader& GetHeader() const { return header_; }
   int GetPayloadType() const { return payload_type_; }
   absl::optional<VideoCodecType> GetCodecType() const { return codec_type_; }
@@ -91,6 +94,7 @@ class TransformableVideoSenderFrame : public TransformableVideoFrameInterface {
  private:
   rtc::scoped_refptr<EncodedImageBufferInterface> encoded_data_;
   const RTPVideoHeader header_;
+  const VideoFrameMetadata metadata_;
   const VideoFrameType frame_type_;
   const int payload_type_;
   const absl::optional<VideoCodecType> codec_type_ = absl::nullopt;

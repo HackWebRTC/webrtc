@@ -16,6 +16,7 @@
 
 #include "api/scoped_refptr.h"
 #include "api/video/encoded_frame.h"
+#include "api/video/video_frame_metadata.h"
 #include "rtc_base/ref_count.h"
 
 namespace webrtc {
@@ -48,6 +49,15 @@ class TransformableVideoFrameInterface : public TransformableFrameInterface {
   // TODO(bugs.webrtc.org/11380) remove from interface once
   // webrtc::RtpDescriptorAuthentication is exposed in api/.
   virtual std::vector<uint8_t> GetAdditionalData() const = 0;
+
+  // TODO(bugs.webrtc.org/11380) make pure virtual after implementating it
+  // downstream.
+  virtual const VideoFrameMetadata& GetMetadata() const { return metadata_; }
+
+ private:
+  // TODO(bugs.webrtc.org/11380) remove from interface once GetRtpVideoHeader is
+  // pure virtual.
+  VideoFrameMetadata metadata_;
 };
 
 // Extends the TransformableFrameInterface to expose audio-specific information.

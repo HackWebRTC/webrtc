@@ -28,7 +28,9 @@ class TransformableVideoReceiverFrame
   TransformableVideoReceiverFrame(
       std::unique_ptr<video_coding::RtpFrameObject> frame,
       uint32_t ssrc)
-      : frame_(std::move(frame)), ssrc_(ssrc) {}
+      : frame_(std::move(frame)),
+        metadata_(frame_->GetRtpVideoHeader()),
+        ssrc_(ssrc) {}
   ~TransformableVideoReceiverFrame() override = default;
 
   // Implements TransformableVideoFrameInterface.
@@ -52,12 +54,15 @@ class TransformableVideoReceiverFrame
     return RtpDescriptorAuthentication(frame_->GetRtpVideoHeader());
   }
 
+  const VideoFrameMetadata& GetMetadata() const override { return metadata_; }
+
   std::unique_ptr<video_coding::RtpFrameObject> ExtractFrame() && {
     return std::move(frame_);
   }
 
  private:
   std::unique_ptr<video_coding::RtpFrameObject> frame_;
+  const VideoFrameMetadata metadata_;
   const uint32_t ssrc_;
 };
 }  // namespace

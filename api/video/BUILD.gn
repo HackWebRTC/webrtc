@@ -264,6 +264,21 @@ rtc_source_set("video_stream_encoder") {
   ]
 }
 
+rtc_source_set("video_frame_metadata") {
+  visibility = [ "*" ]
+  sources = [
+    "video_frame_metadata.cc",
+    "video_frame_metadata.h",
+  ]
+  deps = [
+    "..:array_view",
+    "../../modules/rtp_rtcp:rtp_video_header",
+    "../transport/rtp:dependency_descriptor",
+    "//third_party/abseil-cpp/absl/container:inlined_vector",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
 rtc_library("video_stream_encoder_create") {
   visibility = [ "*" ]
   sources = [
@@ -306,9 +321,14 @@ rtc_library("builtin_video_bitrate_allocator_factory") {
 if (rtc_include_tests) {
   rtc_library("video_unittests") {
     testonly = true
-    sources = [ "video_stream_decoder_create_unittest.cc" ]
+    sources = [
+      "video_frame_metadata_unittest.cc",
+      "video_stream_decoder_create_unittest.cc",
+    ]
     deps = [
+      ":video_frame_metadata",
       ":video_stream_decoder_create",
+      "../../modules/rtp_rtcp:rtp_video_header",
       "../../test:test_support",
       "../task_queue:default_task_queue_factory",
       "../video_codecs:builtin_video_decoder_factory",
