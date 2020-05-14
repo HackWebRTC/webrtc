@@ -70,7 +70,7 @@ class SocketReader : public sigslot::has_slots<> {
 
 class MockReceiver : public EmulatedNetworkReceiverInterface {
  public:
-  MOCK_METHOD1(OnPacketReceived, void(EmulatedIpPacket packet));
+  MOCK_METHOD(void, OnPacketReceived, (EmulatedIpPacket packet), (override));
 };
 
 class NetworkEmulationManagerThreeNodesRoutingTest : public ::testing::Test {
