@@ -507,16 +507,24 @@ class MockableSendStatisticsProxy : public SendStatisticsProxy {
 
 class MockBitrateObserver : public VideoBitrateAllocationObserver {
  public:
-  MOCK_METHOD1(OnBitrateAllocationUpdated, void(const VideoBitrateAllocation&));
+  MOCK_METHOD(void,
+              OnBitrateAllocationUpdated,
+              (const VideoBitrateAllocation&),
+              (override));
 };
 
 class MockEncoderSelector
     : public VideoEncoderFactory::EncoderSelectorInterface {
  public:
-  MOCK_METHOD1(OnCurrentEncoder, void(const SdpVideoFormat& format));
-  MOCK_METHOD1(OnAvailableBitrate,
-               absl::optional<SdpVideoFormat>(const DataRate& rate));
-  MOCK_METHOD0(OnEncoderBroken, absl::optional<SdpVideoFormat>());
+  MOCK_METHOD(void,
+              OnCurrentEncoder,
+              (const SdpVideoFormat& format),
+              (override));
+  MOCK_METHOD(absl::optional<SdpVideoFormat>,
+              OnAvailableBitrate,
+              (const DataRate& rate),
+              (override));
+  MOCK_METHOD(absl::optional<SdpVideoFormat>, OnEncoderBroken, (), (override));
 };
 
 }  // namespace
@@ -5518,10 +5526,12 @@ TEST_F(VideoStreamEncoderTest, EncoderRatesPropagatedOnReconfigure) {
 }
 
 struct MockEncoderSwitchRequestCallback : public EncoderSwitchRequestCallback {
-  MOCK_METHOD0(RequestEncoderFallback, void());
-  MOCK_METHOD1(RequestEncoderSwitch, void(const Config& conf));
-  MOCK_METHOD1(RequestEncoderSwitch,
-               void(const webrtc::SdpVideoFormat& format));
+  MOCK_METHOD(void, RequestEncoderFallback, (), (override));
+  MOCK_METHOD(void, RequestEncoderSwitch, (const Config& conf), (override));
+  MOCK_METHOD(void,
+              RequestEncoderSwitch,
+              (const webrtc::SdpVideoFormat& format),
+              (override));
 };
 
 TEST_F(VideoStreamEncoderTest, BitrateEncoderSwitch) {

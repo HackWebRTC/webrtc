@@ -33,7 +33,7 @@ class MockStatsObserver : public CallStatsObserver {
   MockStatsObserver() {}
   virtual ~MockStatsObserver() {}
 
-  MOCK_METHOD2(OnRttUpdate, void(int64_t, int64_t));
+  MOCK_METHOD(void, OnRttUpdate, (int64_t, int64_t), (override));
 };
 
 class CallStats2Test : public ::testing::Test {

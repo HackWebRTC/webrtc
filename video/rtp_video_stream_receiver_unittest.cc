@@ -73,37 +73,45 @@ RTPVideoHeader GetGenericVideoHeader(VideoFrameType frame_type) {
 
 class MockTransport : public Transport {
  public:
-  MOCK_METHOD3(SendRtp,
-               bool(const uint8_t* packet,
-                    size_t length,
-                    const PacketOptions& options));
-  MOCK_METHOD2(SendRtcp, bool(const uint8_t* packet, size_t length));
+  MOCK_METHOD(bool,
+              SendRtp,
+              (const uint8_t*, size_t length, const PacketOptions& options),
+              (override));
+  MOCK_METHOD(bool, SendRtcp, (const uint8_t*, size_t length), (override));
 };
 
 class MockNackSender : public NackSender {
  public:
-  MOCK_METHOD1(SendNack, void(const std::vector<uint16_t>& sequence_numbers));
-  MOCK_METHOD2(SendNack,
-               void(const std::vector<uint16_t>& sequence_numbers,
-                    bool buffering_allowed));
+  MOCK_METHOD(void,
+              SendNack,
+              (const std::vector<uint16_t>& sequence_numbers,
+               bool buffering_allowed),
+              (override));
 };
 
 class MockKeyFrameRequestSender : public KeyFrameRequestSender {
  public:
-  MOCK_METHOD0(RequestKeyFrame, void());
+  MOCK_METHOD(void, RequestKeyFrame, (), (override));
 };
 
 class MockOnCompleteFrameCallback
     : public video_coding::OnCompleteFrameCallback {
  public:
-  MOCK_METHOD1(DoOnCompleteFrame, void(video_coding::EncodedFrame* frame));
-  MOCK_METHOD1(DoOnCompleteFrameFailNullptr,
-               void(video_coding::EncodedFrame* frame));
-  MOCK_METHOD1(DoOnCompleteFrameFailLength,
-               void(video_coding::EncodedFrame* frame));
-  MOCK_METHOD1(DoOnCompleteFrameFailBitstream,
-               void(video_coding::EncodedFrame* frame));
-  void OnCompleteFrame(std::unique_ptr<video_coding::EncodedFrame> frame) {
+  MOCK_METHOD(void, DoOnCompleteFrame, (video_coding::EncodedFrame*), ());
+  MOCK_METHOD(void,
+              DoOnCompleteFrameFailNullptr,
+              (video_coding::EncodedFrame*),
+              ());
+  MOCK_METHOD(void,
+              DoOnCompleteFrameFailLength,
+              (video_coding::EncodedFrame*),
+              ());
+  MOCK_METHOD(void,
+              DoOnCompleteFrameFailBitstream,
+              (video_coding::EncodedFrame*),
+              ());
+  void OnCompleteFrame(
+      std::unique_ptr<video_coding::EncodedFrame> frame) override {
     if (!frame) {
       DoOnCompleteFrameFailNullptr(nullptr);
       return;
@@ -132,7 +140,7 @@ class MockOnCompleteFrameCallback
 
 class MockRtpPacketSink : public RtpPacketSinkInterface {
  public:
-  MOCK_METHOD1(OnRtpPacket, void(const RtpPacketReceived&));
+  MOCK_METHOD(void, OnRtpPacket, (const RtpPacketReceived&), (override));
 };
 
 constexpr uint32_t kSsrc = 111;

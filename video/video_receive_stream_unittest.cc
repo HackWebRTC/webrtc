@@ -49,24 +49,30 @@ constexpr int kDefaultTimeOutMs = 50;
 
 class MockTransport : public Transport {
  public:
-  MOCK_METHOD3(SendRtp,
-               bool(const uint8_t* packet,
-                    size_t length,
-                    const PacketOptions& options));
-  MOCK_METHOD2(SendRtcp, bool(const uint8_t* packet, size_t length));
+  MOCK_METHOD(bool,
+              SendRtp,
+              (const uint8_t*, size_t length, const PacketOptions& options),
+              (override));
+  MOCK_METHOD(bool, SendRtcp, (const uint8_t*, size_t length), (override));
 };
 
 class MockVideoDecoder : public VideoDecoder {
  public:
-  MOCK_METHOD2(InitDecode,
-               int32_t(const VideoCodec* config, int32_t number_of_cores));
-  MOCK_METHOD3(Decode,
-               int32_t(const EncodedImage& input,
-                       bool missing_frames,
-                       int64_t render_time_ms));
-  MOCK_METHOD1(RegisterDecodeCompleteCallback,
-               int32_t(DecodedImageCallback* callback));
-  MOCK_METHOD0(Release, int32_t(void));
+  MOCK_METHOD(int32_t,
+              InitDecode,
+              (const VideoCodec*, int32_t number_of_cores),
+              (override));
+  MOCK_METHOD(int32_t,
+              Decode,
+              (const EncodedImage& input,
+               bool missing_frames,
+               int64_t render_time_ms),
+              (override));
+  MOCK_METHOD(int32_t,
+              RegisterDecodeCompleteCallback,
+              (DecodedImageCallback*),
+              (override));
+  MOCK_METHOD(int32_t, Release, (), (override));
   const char* ImplementationName() const { return "MockVideoDecoder"; }
 };
 

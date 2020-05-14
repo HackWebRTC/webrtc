@@ -41,8 +41,8 @@ class MockCpuOveruseObserver : public OveruseFrameDetectorObserverInterface {
   MockCpuOveruseObserver() {}
   virtual ~MockCpuOveruseObserver() {}
 
-  MOCK_METHOD0(AdaptUp, void());
-  MOCK_METHOD0(AdaptDown, void());
+  MOCK_METHOD(void, AdaptUp, (), (override));
+  MOCK_METHOD(void, AdaptDown, (), (override));
 };
 
 class CpuOveruseObserverImpl : public OveruseFrameDetectorObserverInterface {
