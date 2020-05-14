@@ -37,9 +37,11 @@ TEST_P(TaskQueueTest, PostAndCheckCurrent) {
   rtc::Event event;
   auto queue = CreateTaskQueue(factory, "PostAndCheckCurrent");
 
-  // We're not running a task, so there shouldn't be a current queue.
+  // We're not running a task, so |queue| shouldn't be current.
+  // Note that because rtc::Thread also supports the TQ interface and
+  // TestMainImpl::Init wraps the main test thread (bugs.webrtc.org/9714), that
+  // means that TaskQueueBase::Current() will still return a valid value.
   EXPECT_FALSE(queue->IsCurrent());
-  EXPECT_FALSE(TaskQueueBase::Current());
 
   queue->PostTask(ToQueuedTask([&event, &queue] {
     EXPECT_TRUE(queue->IsCurrent());
