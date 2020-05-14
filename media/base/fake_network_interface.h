@@ -43,13 +43,14 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
   // Conference mode is a mode where instead of simply forwarding the packets,
   // the transport will send multiple copies of the packet with the specified
   // SSRCs. This allows us to simulate receiving media from multiple sources.
-  void SetConferenceMode(bool conf, const std::vector<uint32_t>& ssrcs) {
+  void SetConferenceMode(bool conf, const std::vector<uint32_t>& ssrcs)
+      RTC_LOCKS_EXCLUDED(crit_) {
     rtc::CritScope cs(&crit_);
     conf_ = conf;
     conf_sent_ssrcs_ = ssrcs;
   }
 
-  int NumRtpBytes() {
+  int NumRtpBytes() RTC_LOCKS_EXCLUDED(crit_) {
     rtc::CritScope cs(&crit_);
     int bytes = 0;
     for (size_t i = 0; i < rtp_packets_.size(); ++i) {
@@ -58,48 +59,50 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
     return bytes;
   }
 
-  int NumRtpBytes(uint32_t ssrc) {
+  int NumRtpBytes(uint32_t ssrc) RTC_LOCKS_EXCLUDED(crit_) {
     rtc::CritScope cs(&crit_);
     int bytes = 0;
     GetNumRtpBytesAndPackets(ssrc, &bytes, NULL);
     return bytes;
   }
 
-  int NumRtpPackets() {
+  int NumRtpPackets() RTC_LOCKS_EXCLUDED(crit_) {
     rtc::CritScope cs(&crit_);
     return static_cast<int>(rtp_packets_.size());
   }
 
-  int NumRtpPackets(uint32_t ssrc) {
+  int NumRtpPackets(uint32_t ssrc) RTC_LOCKS_EXCLUDED(crit_) {
     rtc::CritScope cs(&crit_);
     int packets = 0;
     GetNumRtpBytesAndPackets(ssrc, NULL, &packets);
     return packets;
   }
 
-  int NumSentSsrcs() {
+  int NumSentSsrcs() RTC_LOCKS_EXCLUDED(crit_) {
     rtc::CritScope cs(&crit_);
     return static_cast<int>(sent_ssrcs_.size());
   }
 
   // Note: callers are responsible for deleting the returned buffer.
-  const rtc::CopyOnWriteBuffer* GetRtpPacket(int index) {
+  const rtc::CopyOnWriteBuffer* GetRtpPacket(int index)
+      RTC_LOCKS_EXCLUDED(crit_) {
     rtc::CritScope cs(&crit_);
-    if (index >= NumRtpPackets()) {
+    if (index >= static_cast<int>(rtp_packets_.size())) {
       return NULL;
     }
     return new rtc::CopyOnWriteBuffer(rtp_packets_[index]);
   }
 
-  int NumRtcpPackets() {
+  int NumRtcpPackets() RTC_LOCKS_EXCLUDED(crit_) {
     rtc::CritScope cs(&crit_);
     return static_cast<int>(rtcp_packets_.size());
   }
 
   // Note: callers are responsible for deleting the returned buffer.
-  const rtc::CopyOnWriteBuffer* GetRtcpPacket(int index) {
+  const rtc::CopyOnWriteBuffer* GetRtcpPacket(int index)
+      RTC_LOCKS_EXCLUDED(crit_) {
     rtc::CritScope cs(&crit_);
-    if (index >= NumRtcpPackets()) {
+    if (index >= static_cast<int>(rtcp_packets_.size())) {
       return NULL;
     }
     return new rtc::CopyOnWriteBuffer(rtcp_packets_[index]);
@@ -112,7 +115,8 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
 
  protected:
   virtual bool SendPacket(rtc::CopyOnWriteBuffer* packet,
-                          const rtc::PacketOptions& options) {
+                          const rtc::PacketOptions& options)
+      RTC_LOCKS_EXCLUDED(crit_) {
     rtc::CritScope cs(&crit_);
 
     uint32_t cur_ssrc = 0;
@@ -137,7 +141,8 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
   }
 
   virtual bool SendRtcp(rtc::CopyOnWriteBuffer* packet,
-                        const rtc::PacketOptions& options) {
+                        const rtc::PacketOptions& options)
+      RTC_LOCKS_EXCLUDED(crit_) {
     rtc::CritScope cs(&crit_);
     rtcp_packets_.push_back(*packet);
     options_ = options;
