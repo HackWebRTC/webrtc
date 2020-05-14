@@ -17,6 +17,7 @@
 namespace webrtc {
 
 TEST(RunLoopTest, TaskQueueOnThread) {
+  EXPECT_EQ(TaskQueueBase::Current(), nullptr);
   test::RunLoop loop;
   EXPECT_EQ(TaskQueueBase::Current(), loop.task_queue());
   EXPECT_TRUE(loop.task_queue()->IsCurrent());

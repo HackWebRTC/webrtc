@@ -1148,18 +1148,6 @@ TEST(ThreadPostDelayedTaskTest, InvokesInDelayOrder) {
   EXPECT_TRUE(fourth.Wait(0));
 }
 
-TEST(ThreadPostDelayedTaskTest, IsCurrentTaskQueue) {
-  auto current_tq = webrtc::TaskQueueBase::Current();
-  {
-    std::unique_ptr<rtc::Thread> thread(rtc::Thread::Create());
-    thread->WrapCurrent();
-    EXPECT_EQ(webrtc::TaskQueueBase::Current(),
-              static_cast<webrtc::TaskQueueBase*>(thread.get()));
-    thread->UnwrapCurrent();
-  }
-  EXPECT_EQ(webrtc::TaskQueueBase::Current(), current_tq);
-}
-
 class ThreadFactory : public webrtc::TaskQueueFactory {
  public:
   std::unique_ptr<webrtc::TaskQueueBase, webrtc::TaskQueueDeleter>

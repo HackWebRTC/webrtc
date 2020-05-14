@@ -551,12 +551,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   void InvokeInternal(const Location& posted_from,
                       rtc::FunctionView<void()> functor);
 
-  // Called by the ThreadManager when being set as the current thread.
-  void EnsureIsCurrentTaskQueue();
-
-  // Called by the ThreadManager when being unset as the current thread.
-  void ClearCurrentTaskQueue();
-
   // Returns a static-lifetime MessageHandler which runs message with
   // MessageLikeTask payload data.
   static MessageHandler* GetPostTaskMessageHandler();
@@ -601,8 +595,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
 
   // Runs webrtc::QueuedTask posted to the Thread.
   QueuedTaskHandler queued_task_handler_;
-  std::unique_ptr<TaskQueueBase::CurrentTaskQueueSetter>
-      task_queue_registration_;
 
   friend class ThreadManager;
 
