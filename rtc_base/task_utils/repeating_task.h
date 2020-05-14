@@ -19,6 +19,7 @@
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 
 namespace webrtc {
 
@@ -40,7 +41,14 @@ class RepeatingTaskBase : public QueuedTask {
   TaskQueueBase* const task_queue_;
   // This is always finite, except for the special case where it's PlusInfinity
   // to signal that the task should stop.
-  Timestamp next_run_time_ RTC_GUARDED_BY(task_queue_);
+  Timestamp next_run_time_ RTC_GUARDED_BY(sequence_checker_);
+  // We use a SequenceChecker to check for correct usage instead of using
+  // RTC_DCHECK_RUN_ON(task_queue_). This is to work around a compatibility
+  // issue with some TQ implementations such as rtc::Thread that don't
+  // consistently set themselves as the 'current' TQ when running tasks.
+  // The SequenceChecker detects those implementations differently but gives
+  // the same effect as far as thread safety goes.
+  SequenceChecker sequence_checker_;
 };
 
 // The template closure pattern is based on rtc::ClosureTask.
