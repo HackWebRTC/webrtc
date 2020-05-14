@@ -45,6 +45,7 @@ namespace webrtc {
 namespace {
 
 using ::testing::_;
+using ::testing::ContainerEq;
 using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
 using ::testing::IsEmpty;
@@ -604,6 +605,40 @@ TEST_P(RtpSenderVideoTest, SendsDependencyDescriptorWhenVideoStructureIsSet) {
             generic.decode_target_indications);
   EXPECT_THAT(descriptor_delta.frame_dependencies.frame_diffs,
               ElementsAre(1, 501));
+}
+
+TEST_P(RtpSenderVideoTest, PropagatesChainDiffsIntoDependencyDescriptor) {
+  const int64_t kFrameId = 100000;
+  uint8_t kFrame[100];
+  rtp_module_->RegisterRtpHeaderExtension(
+      RtpDependencyDescriptorExtension::kUri, kDependencyDescriptorId);
+  FrameDependencyStructure video_structure;
+  video_structure.num_decode_targets = 2;
+  video_structure.num_chains = 1;
+  // First decode target is protected by the only chain, second one - is not.
+  video_structure.decode_target_protected_by_chain = {0, 1};
+  video_structure.templates = {
+      GenericFrameInfo::Builder().S(0).T(0).Dtis("SS").ChainDiffs({1}).Build(),
+  };
+  rtp_sender_video_.SetVideoStructure(&video_structure);
+
+  RTPVideoHeader hdr;
+  RTPVideoHeader::GenericDescriptorInfo& generic = hdr.generic.emplace();
+  generic.frame_id = kFrameId;
+  generic.decode_target_indications = {DecodeTargetIndication::kSwitch,
+                                       DecodeTargetIndication::kSwitch};
+  generic.chain_diffs = {2};
+  hdr.frame_type = VideoFrameType::kVideoFrameKey;
+  rtp_sender_video_.SendVideo(kPayload, kType, kTimestamp, 0, kFrame, nullptr,
+                              hdr, kDefaultExpectedRetransmissionTimeMs);
+
+  ASSERT_EQ(transport_.packets_sent(), 1);
+  DependencyDescriptor descriptor_key;
+  ASSERT_TRUE(transport_.last_sent_packet()
+                  .GetExtension<RtpDependencyDescriptorExtension>(
+                      nullptr, &descriptor_key));
+  EXPECT_THAT(descriptor_key.frame_dependencies.chain_diffs,
+              ContainerEq(generic.chain_diffs));
 }
 
 TEST_P(RtpSenderVideoTest,

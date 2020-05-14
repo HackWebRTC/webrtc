@@ -71,8 +71,13 @@ GenericFrameInfo::Builder& GenericFrameInfo::Builder::Dtis(
 
 GenericFrameInfo::Builder& GenericFrameInfo::Builder::Fdiffs(
     std::initializer_list<int> frame_diffs) {
-  info_.frame_diffs.insert(info_.frame_diffs.end(), frame_diffs.begin(),
-                           frame_diffs.end());
+  info_.frame_diffs.assign(frame_diffs.begin(), frame_diffs.end());
+  return *this;
+}
+
+GenericFrameInfo::Builder& GenericFrameInfo::Builder::ChainDiffs(
+    std::initializer_list<int> chain_diffs) {
+  info_.chain_diffs.assign(chain_diffs.begin(), chain_diffs.end());
   return *this;
 }
 

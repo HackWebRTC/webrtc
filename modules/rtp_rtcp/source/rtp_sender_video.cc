@@ -251,8 +251,6 @@ void RTPSenderVideo::SetVideoStructureUnderLock(
   video_structure_ =
       std::make_unique<FrameDependencyStructure>(*video_structure);
   video_structure_->structure_id = structure_id;
-  // TODO(bugs.webrtc.org/10342): Support chains.
-  video_structure_->num_chains = 0;
 }
 
 void RTPSenderVideo::AddRtpHeaderExtensions(
@@ -336,6 +334,8 @@ void RTPSenderVideo::AddRtpHeaderExtensions(
         descriptor.frame_dependencies.frame_diffs.push_back(
             video_header.generic->frame_id - dep);
       }
+      descriptor.frame_dependencies.chain_diffs =
+          video_header.generic->chain_diffs;
       descriptor.frame_dependencies.decode_target_indications =
           video_header.generic->decode_target_indications;
       RTC_DCHECK_EQ(

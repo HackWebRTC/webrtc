@@ -23,7 +23,7 @@
 #include "api/video/video_frame_type.h"
 #include "api/video/video_rotation.h"
 #include "api/video/video_timing.h"
-#include "common_types.h"  // NOLINT(build/include)
+#include "common_types.h"  // NOLINT(build/include_directory)
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_globals.h"
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
@@ -53,6 +53,7 @@ struct RTPVideoHeader {
     int temporal_index = 0;
     absl::InlinedVector<DecodeTargetIndication, 10> decode_target_indications;
     absl::InlinedVector<int64_t, 5> dependencies;
+    absl::InlinedVector<int, 4> chain_diffs;
   };
 
   RTPVideoHeader();
