@@ -28,7 +28,8 @@ class StatsCollectorCallbackAdapter : public RTCStatsCollectorCallback {
 
   void OnStatsDelivered(const rtc::scoped_refptr<const RTCStatsReport> &report) override {
     RTC_DCHECK(completion_handler_);
-    RTCStatisticsReport *statisticsReport = [[RTCStatisticsReport alloc] initWithReport:*report];
+    RTC_OBJC_TYPE(RTCStatisticsReport) *statisticsReport =
+        [[RTC_OBJC_TYPE(RTCStatisticsReport) alloc] initWithReport:*report];
     completion_handler_(statisticsReport);
     completion_handler_ = nil;
   }

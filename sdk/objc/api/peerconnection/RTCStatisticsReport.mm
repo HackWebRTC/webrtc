@@ -100,7 +100,7 @@ NSObject *ValueFromStatsMember(const RTCStatsMemberInterface *member) {
 }
 }  // namespace webrtc
 
-@implementation RTCStatistics
+@implementation RTC_OBJC_TYPE (RTCStatistics)
 
 @synthesize id = _id;
 @synthesize timestamp_us = _timestamp_us;
@@ -139,7 +139,7 @@ NSObject *ValueFromStatsMember(const RTCStatsMemberInterface *member) {
 
 @end
 
-@implementation RTCStatisticsReport
+@implementation RTC_OBJC_TYPE (RTCStatisticsReport)
 
 @synthesize timestamp_us = _timestamp_us;
 @synthesize statistics = _statistics;
@@ -151,16 +151,17 @@ NSObject *ValueFromStatsMember(const RTCStatsMemberInterface *member) {
 
 @end
 
-@implementation RTCStatisticsReport (Private)
+@implementation RTC_OBJC_TYPE (RTCStatisticsReport) (Private)
 
-- (instancetype)initWithReport:(const webrtc::RTCStatsReport &)report {
+- (instancetype)initWithReport : (const webrtc::RTCStatsReport &)report {
   if (self = [super init]) {
     _timestamp_us = report.timestamp_us();
 
     NSMutableDictionary *statisticsById =
         [NSMutableDictionary dictionaryWithCapacity:report.size()];
     for (const auto &stat : report) {
-      RTCStatistics *statistics = [[RTCStatistics alloc] initWithStatistics:stat];
+      RTC_OBJC_TYPE(RTCStatistics) *statistics =
+          [[RTC_OBJC_TYPE(RTCStatistics) alloc] initWithStatistics:stat];
       statisticsById[statistics.id] = statistics;
     }
     _statistics = [statisticsById copy];

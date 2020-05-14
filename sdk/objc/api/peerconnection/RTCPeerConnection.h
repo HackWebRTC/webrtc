@@ -25,7 +25,7 @@
 @class RTC_OBJC_TYPE(RTCRtpTransceiver);
 @class RTC_OBJC_TYPE(RTCRtpTransceiverInit);
 @class RTC_OBJC_TYPE(RTCSessionDescription);
-@class RTCStatisticsReport;
+@class RTC_OBJC_TYPE(RTCStatisticsReport);
 @class RTC_OBJC_TYPE(RTCLegacyStatsReport);
 
 typedef NS_ENUM(NSInteger, RTCRtpMediaType);
@@ -341,7 +341,7 @@ RTC_OBJC_EXPORT
 
 @end
 
-typedef void (^RTCStatisticsCompletionHandler)(RTCStatisticsReport *);
+typedef void (^RTCStatisticsCompletionHandler)(RTC_OBJC_TYPE(RTCStatisticsReport) *);
 
 @interface RTC_OBJC_TYPE (RTCPeerConnection)
 (Stats)
