@@ -6173,6 +6173,35 @@ TEST_P(PeerConnectionIntegrationTest, OnIceCandidateError) {
   EXPECT_NE(caller()->error_event().address, "");
 }
 
+TEST_P(PeerConnectionIntegrationTest, OnIceCandidateErrorWithEmptyAddress) {
+  webrtc::PeerConnectionInterface::IceServer ice_server;
+  ice_server.urls.push_back("turn:127.0.0.1:3478?transport=tcp");
+  ice_server.username = "test";
+  ice_server.password = "test";
+
+  PeerConnectionInterface::RTCConfiguration caller_config;
+  caller_config.servers.push_back(ice_server);
+  caller_config.type = webrtc::PeerConnectionInterface::kRelay;
+  caller_config.continual_gathering_policy = PeerConnection::GATHER_CONTINUALLY;
+
+  PeerConnectionInterface::RTCConfiguration callee_config;
+  callee_config.servers.push_back(ice_server);
+  callee_config.type = webrtc::PeerConnectionInterface::kRelay;
+  callee_config.continual_gathering_policy = PeerConnection::GATHER_CONTINUALLY;
+
+  ASSERT_TRUE(
+      CreatePeerConnectionWrappersWithConfig(caller_config, callee_config));
+
+  // Do normal offer/answer and wait for ICE to complete.
+  ConnectFakeSignaling();
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  EXPECT_EQ_WAIT(701, caller()->error_event().error_code, kDefaultTimeout);
+  EXPECT_EQ(caller()->error_event().address, "");
+}
+
 TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
        AudioKeepsFlowingAfterImplicitRollback) {
   PeerConnectionInterface::RTCConfiguration config;

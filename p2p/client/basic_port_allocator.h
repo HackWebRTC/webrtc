@@ -269,6 +269,7 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession,
   std::vector<PortConfiguration*> configs_;
   std::vector<AllocationSequence*> sequences_;
   std::vector<PortData> ports_;
+  std::vector<IceCandidateErrorEvent> candidate_error_events_;
   uint32_t candidate_filter_ = CF_ALL;
   // Policy on how to prune turn ports, taken from the port allocator.
   webrtc::PortPrunePolicy turn_port_prune_policy_;
