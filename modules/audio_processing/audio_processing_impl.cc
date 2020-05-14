@@ -992,6 +992,10 @@ void AudioProcessingImpl::AllocateRenderQueue() {
 
 void AudioProcessingImpl::EmptyQueuedRenderAudio() {
   rtc::CritScope cs_capture(&crit_capture_);
+  EmptyQueuedRenderAudioLocked();
+}
+
+void AudioProcessingImpl::EmptyQueuedRenderAudioLocked() {
   if (submodules_.echo_control_mobile) {
     RTC_DCHECK(aecm_render_signal_queue_);
     while (aecm_render_signal_queue_->Remove(&aecm_capture_queue_buffer_)) {
@@ -1047,7 +1051,7 @@ int AudioProcessingImpl::ProcessStream(const int16_t* const src,
 }
 
 int AudioProcessingImpl::ProcessCaptureStreamLocked() {
-  EmptyQueuedRenderAudio();
+  EmptyQueuedRenderAudioLocked();
   HandleCaptureRuntimeSettings();
 
   // Ensure that not both the AEC and AECM are active at the same time.
@@ -1087,7 +1091,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
 
   if (submodules_.echo_controller) {
     // Detect and flag any change in the analog gain.
-    int analog_mic_level = recommended_stream_analog_level();
+    int analog_mic_level = recommended_stream_analog_level_locked();
     capture_.echo_path_gain_change =
         capture_.prev_analog_mic_level != analog_mic_level &&
         capture_.prev_analog_mic_level != -1;
@@ -1256,7 +1260,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
 
   if (submodules_.gain_controller2) {
     submodules_.gain_controller2->NotifyAnalogLevel(
-        recommended_stream_analog_level());
+        recommended_stream_analog_level_locked());
     submodules_.gain_controller2->Process(capture_buffer);
   }
 
@@ -1284,7 +1288,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   }
 
   if (submodules_.agc_manager) {
-    int level = recommended_stream_analog_level();
+    int level = recommended_stream_analog_level_locked();
     data_dumper_->DumpRaw("experimental_gain_control_stream_analog_level", 1,
                           &level);
   }
@@ -1524,6 +1528,10 @@ void AudioProcessingImpl::set_stream_analog_level(int level) {
 
 int AudioProcessingImpl::recommended_stream_analog_level() const {
   rtc::CritScope cs_capture(&crit_capture_);
+  return recommended_stream_analog_level_locked();
+}
+
+int AudioProcessingImpl::recommended_stream_analog_level_locked() const {
   if (submodules_.agc_manager) {
     return submodules_.agc_manager->stream_analog_level();
   } else if (submodules_.gain_control) {
@@ -2006,7 +2014,7 @@ void AudioProcessingImpl::RecordAudioProcessingState() {
   AecDump::AudioProcessingState audio_proc_state;
   audio_proc_state.delay = capture_nonlocked_.stream_delay_ms;
   audio_proc_state.drift = 0;
-  audio_proc_state.level = recommended_stream_analog_level();
+  audio_proc_state.level = recommended_stream_analog_level_locked();
   audio_proc_state.keypress = capture_.key_pressed;
   aec_dump_->AddAudioProcessingState(audio_proc_state);
 }

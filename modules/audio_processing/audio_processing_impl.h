@@ -100,7 +100,8 @@ class AudioProcessingImpl : public AudioProcessing {
   int set_stream_delay_ms(int delay) override;
   void set_stream_key_pressed(bool key_pressed) override;
   void set_stream_analog_level(int level) override;
-  int recommended_stream_analog_level() const override;
+  int recommended_stream_analog_level() const
+      RTC_LOCKS_EXCLUDED(crit_capture_) override;
 
   // Render-side exclusive methods possibly running APM in a
   // multi-threaded manner. Acquire the render lock.
@@ -154,6 +155,9 @@ class AudioProcessingImpl : public AudioProcessing {
                            ReinitializeTransientSuppressor);
   FRIEND_TEST_ALL_PREFIXES(ApmWithSubmodulesExcludedTest,
                            BitexactWithDisabledModules);
+
+  int recommended_stream_analog_level_locked() const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
   void OverrideSubmoduleCreationForTesting(
       const ApmSubmoduleCreationOverrides& overrides);
@@ -281,7 +285,9 @@ class AudioProcessingImpl : public AudioProcessing {
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void HandleRenderRuntimeSettings() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
-  void EmptyQueuedRenderAudio();
+  void EmptyQueuedRenderAudio() RTC_LOCKS_EXCLUDED(crit_capture_);
+  void EmptyQueuedRenderAudioLocked()
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void AllocateRenderQueue()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void QueueBandedRenderAudio(AudioBuffer* audio)
