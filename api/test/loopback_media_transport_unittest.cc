@@ -23,33 +23,41 @@ namespace {
 class MockMediaTransportAudioSinkInterface
     : public MediaTransportAudioSinkInterface {
  public:
-  MOCK_METHOD2(OnData, void(uint64_t, MediaTransportEncodedAudioFrame));
+  MOCK_METHOD(void,
+              OnData,
+              (uint64_t, MediaTransportEncodedAudioFrame),
+              (override));
 };
 
 class MockMediaTransportVideoSinkInterface
     : public MediaTransportVideoSinkInterface {
  public:
-  MOCK_METHOD2(OnData, void(uint64_t, MediaTransportEncodedVideoFrame));
+  MOCK_METHOD(void,
+              OnData,
+              (uint64_t, MediaTransportEncodedVideoFrame),
+              (override));
 };
 
 class MockMediaTransportKeyFrameRequestCallback
     : public MediaTransportKeyFrameRequestCallback {
  public:
-  MOCK_METHOD1(OnKeyFrameRequested, void(uint64_t));
+  MOCK_METHOD(void, OnKeyFrameRequested, (uint64_t), (override));
 };
 
 class MockDataChannelSink : public DataChannelSink {
  public:
-  MOCK_METHOD3(OnDataReceived,
-               void(int, DataMessageType, const rtc::CopyOnWriteBuffer&));
-  MOCK_METHOD1(OnChannelClosing, void(int));
-  MOCK_METHOD1(OnChannelClosed, void(int));
-  MOCK_METHOD0(OnReadyToSend, void());
+  MOCK_METHOD(void,
+              OnDataReceived,
+              (int, DataMessageType, const rtc::CopyOnWriteBuffer&),
+              (override));
+  MOCK_METHOD(void, OnChannelClosing, (int), (override));
+  MOCK_METHOD(void, OnChannelClosed, (int), (override));
+  MOCK_METHOD(void, OnReadyToSend, (), (override));
 };
 
 class MockStateCallback : public MediaTransportStateCallback {
  public:
-  MOCK_METHOD1(OnStateChanged, void(MediaTransportState));
+  MOCK_METHOD(void, OnStateChanged, (MediaTransportState), (override));
 };
 
 }  // namespace

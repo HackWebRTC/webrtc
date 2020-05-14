@@ -50,7 +50,7 @@ static std::string GetSSLProtocolName(const rtc::SSLMode& ssl_mode) {
 class MockCertVerifier : public rtc::SSLCertificateVerifier {
  public:
   virtual ~MockCertVerifier() = default;
-  MOCK_METHOD1(Verify, bool(const rtc::SSLCertificate&));
+  MOCK_METHOD(bool, Verify, (const rtc::SSLCertificate&), (override));
 };
 
 // TODO(benwright) - Move to using INSTANTIATE_TEST_SUITE_P instead of using

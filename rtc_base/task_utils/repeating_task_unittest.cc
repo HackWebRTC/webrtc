@@ -40,8 +40,8 @@ void Sleep(TimeDelta time_delta) {
 
 class MockClosure {
  public:
-  MOCK_METHOD0(Call, TimeDelta());
-  MOCK_METHOD0(Delete, void());
+  MOCK_METHOD(TimeDelta, Call, ());
+  MOCK_METHOD(void, Delete, ());
 };
 
 class MoveOnlyClosure {
