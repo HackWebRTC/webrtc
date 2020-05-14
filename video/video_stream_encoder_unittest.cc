@@ -1943,6 +1943,110 @@ TEST_F(VideoStreamEncoderTest, TestCpuDowngrades_BalancedMode) {
   video_stream_encoder_->Stop();
 }
 
+TEST_F(VideoStreamEncoderTest,
+       SinkWantsNotChangedByResourceLimitedBeforeDegradationPreferenceChange) {
+  video_stream_encoder_->OnBitrateUpdated(
+      DataRate::BitsPerSec(kTargetBitrateBps),
+      DataRate::BitsPerSec(kTargetBitrateBps),
+      DataRate::BitsPerSec(kTargetBitrateBps), 0, 0, 0);
+  VerifyNoLimitation(video_source_.sink_wants());
+
+  const int kFrameWidth = 1280;
+  const int kFrameHeight = 720;
+
+  int64_t ntp_time = kFrameIntervalMs;
+
+  // Force an input frame rate to be available, or the adaptation call won't
+  // know what framerate to adapt form.
+  const int kInputFps = 30;
+  VideoSendStream::Stats stats = stats_proxy_->GetStats();
+  stats.input_frame_rate = kInputFps;
+  stats_proxy_->SetMockStats(stats);
+
+  video_source_.set_adaptation_enabled(true);
+  video_stream_encoder_->SetSource(
+      &video_source_, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
+  VerifyNoLimitation(video_source_.sink_wants());
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(ntp_time, kFrameWidth, kFrameHeight));
+  sink_.WaitForEncodedFrame(ntp_time);
+  ntp_time += kFrameIntervalMs;
+
+  // Trigger CPU overuse.
+  video_stream_encoder_->TriggerCpuOveruse();
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(ntp_time, kFrameWidth, kFrameHeight));
+  sink_.WaitForEncodedFrame(ntp_time);
+  ntp_time += kFrameIntervalMs;
+
+  EXPECT_FALSE(video_source_.sink_wants().target_pixel_count);
+  EXPECT_EQ(std::numeric_limits<int>::max(),
+            video_source_.sink_wants().max_pixel_count);
+  // Some framerate constraint should be set.
+  int restricted_fps = video_source_.sink_wants().max_framerate_fps;
+  EXPECT_LT(restricted_fps, kInputFps);
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(ntp_time, kFrameWidth, kFrameHeight));
+  sink_.WaitForEncodedFrame(ntp_time);
+  ntp_time += 100;
+
+  video_stream_encoder_->SetSource(
+      &video_source_, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
+  // Give the encoder queue time to process the change in degradation preference
+  // by waiting for an encoded frame.
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(ntp_time, kFrameWidth, kFrameHeight));
+  sink_.WaitForEncodedFrame(ntp_time);
+  ntp_time += kFrameIntervalMs;
+
+  video_stream_encoder_->TriggerQualityLow();
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(ntp_time, kFrameWidth, kFrameHeight));
+  sink_.WaitForEncodedFrame(ntp_time);
+  ntp_time += kFrameIntervalMs;
+
+  // Some resolution constraint should be set.
+  EXPECT_FALSE(video_source_.sink_wants().target_pixel_count);
+  EXPECT_LT(video_source_.sink_wants().max_pixel_count,
+            kFrameWidth * kFrameHeight);
+  EXPECT_EQ(video_source_.sink_wants().max_framerate_fps, kInputFps);
+
+  int pixel_count = video_source_.sink_wants().max_pixel_count;
+  // Triggering a CPU underuse should not change the sink wants since it has
+  // not been overused for resolution since we changed degradation preference.
+  video_stream_encoder_->TriggerCpuUnderuse();
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(ntp_time, kFrameWidth, kFrameHeight));
+  sink_.WaitForEncodedFrame(ntp_time);
+  ntp_time += kFrameIntervalMs;
+  EXPECT_EQ(video_source_.sink_wants().max_pixel_count, pixel_count);
+  EXPECT_EQ(video_source_.sink_wants().max_framerate_fps, kInputFps);
+
+  // Change the degradation preference back. CPU underuse should now adapt.
+  video_stream_encoder_->SetSource(
+      &video_source_, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(ntp_time, kFrameWidth, kFrameHeight));
+  sink_.WaitForEncodedFrame(ntp_time);
+  ntp_time += 100;
+  // Resolution adaptations is gone after changing degradation preference.
+  EXPECT_FALSE(video_source_.sink_wants().target_pixel_count);
+  EXPECT_EQ(std::numeric_limits<int>::max(),
+            video_source_.sink_wants().max_pixel_count);
+  // The fps adaptation from above is now back.
+  EXPECT_EQ(video_source_.sink_wants().max_framerate_fps, restricted_fps);
+
+  // Trigger CPU underuse.
+  video_stream_encoder_->TriggerCpuUnderuse();
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(ntp_time, kFrameWidth, kFrameHeight));
+  sink_.WaitForEncodedFrame(ntp_time);
+  ntp_time += kFrameIntervalMs;
+  EXPECT_EQ(video_source_.sink_wants().max_framerate_fps, kInputFps);
+
+  video_stream_encoder_->Stop();
+}
+
 TEST_F(VideoStreamEncoderTest, SinkWantsStoredByDegradationPreference) {
   video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
       DataRate::BitsPerSec(kTargetBitrateBps),
