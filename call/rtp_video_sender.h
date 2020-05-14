@@ -96,61 +96,74 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   // |module_process_thread| was created (libjingle's worker thread).
   // TODO(perkj): Replace the use of |module_process_thread| with a TaskQueue,
   // maybe |worker_queue|.
-  void RegisterProcessThread(ProcessThread* module_process_thread) override;
-  void DeRegisterProcessThread() override;
+  void RegisterProcessThread(ProcessThread* module_process_thread)
+      RTC_LOCKS_EXCLUDED(crit_) override;
+  void DeRegisterProcessThread() RTC_LOCKS_EXCLUDED(crit_) override;
 
   // RtpVideoSender will only route packets if being active, all packets will be
   // dropped otherwise.
-  void SetActive(bool active) override;
+  void SetActive(bool active) RTC_LOCKS_EXCLUDED(crit_) override;
   // Sets the sending status of the rtp modules and appropriately sets the
   // payload router to active if any rtp modules are active.
-  void SetActiveModules(const std::vector<bool> active_modules) override;
-  bool IsActive() override;
+  void SetActiveModules(const std::vector<bool> active_modules)
+      RTC_LOCKS_EXCLUDED(crit_) override;
+  bool IsActive() RTC_LOCKS_EXCLUDED(crit_) override;
 
-  void OnNetworkAvailability(bool network_available) override;
-  std::map<uint32_t, RtpState> GetRtpStates() const override;
-  std::map<uint32_t, RtpPayloadState> GetRtpPayloadStates() const override;
+  void OnNetworkAvailability(bool network_available)
+      RTC_LOCKS_EXCLUDED(crit_) override;
+  std::map<uint32_t, RtpState> GetRtpStates() const
+      RTC_LOCKS_EXCLUDED(crit_) override;
+  std::map<uint32_t, RtpPayloadState> GetRtpPayloadStates() const
+      RTC_LOCKS_EXCLUDED(crit_) override;
 
-  void DeliverRtcp(const uint8_t* packet, size_t length) override;
+  void DeliverRtcp(const uint8_t* packet, size_t length)
+      RTC_LOCKS_EXCLUDED(crit_) override;
 
   // Implements webrtc::VCMProtectionCallback.
   int ProtectionRequest(const FecProtectionParams* delta_params,
                         const FecProtectionParams* key_params,
                         uint32_t* sent_video_rate_bps,
                         uint32_t* sent_nack_rate_bps,
-                        uint32_t* sent_fec_rate_bps) override;
+                        uint32_t* sent_fec_rate_bps)
+      RTC_LOCKS_EXCLUDED(crit_) override;
 
   // Implements FecControllerOverride.
-  void SetFecAllowed(bool fec_allowed) override;
+  void SetFecAllowed(bool fec_allowed) RTC_LOCKS_EXCLUDED(crit_) override;
 
   // Implements EncodedImageCallback.
   // Returns 0 if the packet was routed / sent, -1 otherwise.
   EncodedImageCallback::Result OnEncodedImage(
       const EncodedImage& encoded_image,
       const CodecSpecificInfo* codec_specific_info,
-      const RTPFragmentationHeader* fragmentation) override;
+      const RTPFragmentationHeader* fragmentation)
+      RTC_LOCKS_EXCLUDED(crit_) override;
 
-  void OnBitrateAllocationUpdated(
-      const VideoBitrateAllocation& bitrate) override;
+  void OnBitrateAllocationUpdated(const VideoBitrateAllocation& bitrate)
+      RTC_LOCKS_EXCLUDED(crit_) override;
 
-  void OnTransportOverheadChanged(
-      size_t transport_overhead_bytes_per_packet) override;
-  void OnBitrateUpdated(BitrateAllocationUpdate update, int framerate) override;
-  uint32_t GetPayloadBitrateBps() const override;
-  uint32_t GetProtectionBitrateBps() const override;
-  void SetEncodingData(size_t width,
-                       size_t height,
-                       size_t num_temporal_layers) override;
+  void OnTransportOverheadChanged(size_t transport_overhead_bytes_per_packet)
+      RTC_LOCKS_EXCLUDED(crit_) override;
+  void OnBitrateUpdated(BitrateAllocationUpdate update, int framerate)
+      RTC_LOCKS_EXCLUDED(crit_) override;
+  uint32_t GetPayloadBitrateBps() const RTC_LOCKS_EXCLUDED(crit_) override;
+  uint32_t GetProtectionBitrateBps() const RTC_LOCKS_EXCLUDED(crit_) override;
+  void SetEncodingData(size_t width, size_t height, size_t num_temporal_layers)
+      RTC_LOCKS_EXCLUDED(crit_) override;
 
   std::vector<RtpSequenceNumberMap::Info> GetSentRtpPacketInfos(
       uint32_t ssrc,
-      rtc::ArrayView<const uint16_t> sequence_numbers) const override;
+      rtc::ArrayView<const uint16_t> sequence_numbers) const
+      RTC_LOCKS_EXCLUDED(crit_) override;
 
   // From StreamFeedbackObserver.
   void OnPacketFeedbackVector(
-      std::vector<StreamPacketInfo> packet_feedback_vector) override;
+      std::vector<StreamPacketInfo> packet_feedback_vector)
+      RTC_LOCKS_EXCLUDED(crit_) override;
 
  private:
+  bool IsActiveLocked() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void SetActiveModulesLocked(const std::vector<bool> active_modules)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void UpdateModuleSendingState() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void ConfigureProtection();
   void ConfigureSsrcs();

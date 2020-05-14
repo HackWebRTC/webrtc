@@ -461,11 +461,16 @@ void RtpVideoSender::SetActive(bool active) {
   if (active_ == active)
     return;
   const std::vector<bool> active_modules(rtp_streams_.size(), active);
-  SetActiveModules(active_modules);
+  SetActiveModulesLocked(active_modules);
 }
 
 void RtpVideoSender::SetActiveModules(const std::vector<bool> active_modules) {
   rtc::CritScope lock(&crit_);
+  return SetActiveModulesLocked(active_modules);
+}
+
+void RtpVideoSender::SetActiveModulesLocked(
+    const std::vector<bool> active_modules) {
   RTC_DCHECK_EQ(rtp_streams_.size(), active_modules.size());
   active_ = false;
   for (size_t i = 0; i < active_modules.size(); ++i) {
@@ -481,6 +486,10 @@ void RtpVideoSender::SetActiveModules(const std::vector<bool> active_modules) {
 
 bool RtpVideoSender::IsActive() {
   rtc::CritScope lock(&crit_);
+  return IsActiveLocked();
+}
+
+bool RtpVideoSender::IsActiveLocked() {
   return active_ && !rtp_streams_.empty();
 }
 
@@ -565,7 +574,7 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
 void RtpVideoSender::OnBitrateAllocationUpdated(
     const VideoBitrateAllocation& bitrate) {
   rtc::CritScope lock(&crit_);
-  if (IsActive()) {
+  if (IsActiveLocked()) {
     if (rtp_streams_.size() == 1) {
       // If spatial scalability is enabled, it is covered by a single stream.
       rtp_streams_[0].rtp_rtcp->SetVideoBitrateAllocation(bitrate);
