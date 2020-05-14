@@ -341,17 +341,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // experiment group numbers incremented by 1.
   const std::array<uint8_t, 2> experiment_groups_;
 
-  // TODO(philipel): Remove this lock and run on |encoder_queue_| instead.
-  rtc::CriticalSection encoded_image_lock_;
-
-  int64_t next_frame_id_ RTC_GUARDED_BY(encoded_image_lock_);
-
-  // This array is used as a map from simulcast id to an encoder's buffer
-  // state. For every buffer of the encoder we keep track of the last frame id
-  // that updated that buffer.
-  std::array<std::array<int64_t, kMaxEncoderBuffers>, kMaxSimulcastStreams>
-      encoder_buffer_state_ RTC_GUARDED_BY(encoded_image_lock_);
-
   struct EncoderSwitchExperiment {
     struct Thresholds {
       absl::optional<DataRate> bitrate;

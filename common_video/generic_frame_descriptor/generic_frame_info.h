@@ -40,7 +40,6 @@ struct GenericFrameInfo : public FrameDependencyTemplate {
   GenericFrameInfo(const GenericFrameInfo&);
   ~GenericFrameInfo();
 
-  int64_t frame_id = 0;
   absl::InlinedVector<CodecBufferUsage, kMaxEncoderBuffers> encoder_buffers;
 };
 

@@ -251,7 +251,6 @@ VideoStreamEncoder::VideoStreamEncoder(
       next_frame_types_(1, VideoFrameType::kVideoFrameDelta),
       frame_encode_metadata_writer_(this),
       experiment_groups_(GetExperimentGroups()),
-      next_frame_id_(0),
       encoder_switch_experiment_(ParseEncoderSwitchFieldTrial()),
       automatic_animation_detection_experiment_(
           ParseAutomatincAnimationDetectionFieldTrial()),
@@ -295,9 +294,6 @@ VideoStreamEncoder::VideoStreamEncoder(
     initialize_processor_event.Set();
   });
   initialize_processor_event.Wait(rtc::Event::kForever);
-
-  for (auto& state : encoder_buffer_state_)
-    state.fill(std::numeric_limits<int64_t>::max());
 }
 
 VideoStreamEncoder::~VideoStreamEncoder() {
@@ -1499,48 +1495,8 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
     simulcast_id = encoded_image.SpatialIndex().value_or(0);
   }
 
-  std::unique_ptr<CodecSpecificInfo> codec_info_copy;
-  {
-    rtc::CritScope cs(&encoded_image_lock_);
-
-    if (codec_specific_info && codec_specific_info->generic_frame_info) {
-      codec_info_copy =
-          std::make_unique<CodecSpecificInfo>(*codec_specific_info);
-      GenericFrameInfo& generic_info = *codec_info_copy->generic_frame_info;
-      generic_info.frame_id = next_frame_id_++;
-
-      if (encoder_buffer_state_.size() <= static_cast<size_t>(simulcast_id)) {
-        RTC_LOG(LS_ERROR) << "At most " << encoder_buffer_state_.size()
-                          << " simulcast streams supported.";
-      } else {
-        std::array<int64_t, kMaxEncoderBuffers>& state =
-            encoder_buffer_state_[simulcast_id];
-        for (const CodecBufferUsage& buffer : generic_info.encoder_buffers) {
-          if (state.size() <= static_cast<size_t>(buffer.id)) {
-            RTC_LOG(LS_ERROR)
-                << "At most " << state.size() << " encoder buffers supported.";
-            break;
-          }
-
-          if (buffer.referenced) {
-            int64_t diff = generic_info.frame_id - state[buffer.id];
-            if (diff <= 0) {
-              RTC_LOG(LS_ERROR) << "Invalid frame diff: " << diff << ".";
-            } else if (absl::c_find(generic_info.frame_diffs, diff) ==
-                       generic_info.frame_diffs.end()) {
-              generic_info.frame_diffs.push_back(diff);
-            }
-          }
-
-          if (buffer.updated)
-            state[buffer.id] = generic_info.frame_id;
-        }
-      }
-    }
-  }
-
   EncodedImageCallback::Result result = sink_->OnEncodedImage(
-      image_copy, codec_info_copy ? codec_info_copy.get() : codec_specific_info,
+      image_copy, codec_specific_info,
       fragmentation_copy ? fragmentation_copy.get() : fragmentation);
 
   // We are only interested in propagating the meta-data about the image, not
