@@ -51,20 +51,23 @@ class RtpSenderEgress {
                   RtpPacketHistory* packet_history);
   ~RtpSenderEgress() = default;
 
-  void SendPacket(RtpPacketToSend* packet, const PacedPacketInfo& pacing_info);
+  void SendPacket(RtpPacketToSend* packet, const PacedPacketInfo& pacing_info)
+      RTC_LOCKS_EXCLUDED(lock_);
   uint32_t Ssrc() const { return ssrc_; }
   absl::optional<uint32_t> RtxSsrc() const { return rtx_ssrc_; }
   absl::optional<uint32_t> FlexFecSsrc() const { return flexfec_ssrc_; }
 
-  void ProcessBitrateAndNotifyObservers();
-  RtpSendRates GetSendRates() const;
+  void ProcessBitrateAndNotifyObservers() RTC_LOCKS_EXCLUDED(lock_);
+  RtpSendRates GetSendRates() const RTC_LOCKS_EXCLUDED(lock_);
   void GetDataCounters(StreamDataCounters* rtp_stats,
-                       StreamDataCounters* rtx_stats) const;
+                       StreamDataCounters* rtx_stats) const
+      RTC_LOCKS_EXCLUDED(lock_);
 
-  void ForceIncludeSendPacketsInAllocation(bool part_of_allocation);
-  bool MediaHasBeenSent() const;
-  void SetMediaHasBeenSent(bool media_sent);
-  void SetTimestampOffset(uint32_t timestamp);
+  void ForceIncludeSendPacketsInAllocation(bool part_of_allocation)
+      RTC_LOCKS_EXCLUDED(lock_);
+  bool MediaHasBeenSent() const RTC_LOCKS_EXCLUDED(lock_);
+  void SetMediaHasBeenSent(bool media_sent) RTC_LOCKS_EXCLUDED(lock_);
+  void SetTimestampOffset(uint32_t timestamp) RTC_LOCKS_EXCLUDED(lock_);
 
   // For each sequence number in |sequence_number|, recall the last RTP packet
   // which bore it - its timestamp and whether it was the first and/or last
@@ -72,7 +75,8 @@ class RtpSenderEgress {
   // recalled, return a vector with all of them (in corresponding order).
   // If any could not be recalled, return an empty vector.
   std::vector<RtpSequenceNumberMap::Info> GetSentRtpPacketInfos(
-      rtc::ArrayView<const uint16_t> sequence_numbers) const;
+      rtc::ArrayView<const uint16_t> sequence_numbers) const
+      RTC_LOCKS_EXCLUDED(lock_);
 
  private:
   // Maps capture time in milliseconds to send-side delay in milliseconds.
@@ -80,6 +84,7 @@ class RtpSenderEgress {
   // time.
   typedef std::map<int64_t, int> SendDelayMap;
 
+  RtpSendRates GetSendRatesLocked() const RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
   bool HasCorrectSsrc(const RtpPacketToSend& packet) const;
   void AddPacketToTransportFeedback(uint16_t packet_id,
                                     const RtpPacketToSend& packet,

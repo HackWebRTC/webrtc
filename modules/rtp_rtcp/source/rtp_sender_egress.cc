@@ -206,7 +206,7 @@ void RtpSenderEgress::ProcessBitrateAndNotifyObservers() {
     return;
 
   rtc::CritScope lock(&lock_);
-  RtpSendRates send_rates = GetSendRates();
+  RtpSendRates send_rates = GetSendRatesLocked();
   bitrate_callback_->Notify(
       send_rates.Sum().bps(),
       send_rates[RtpPacketMediaType::kRetransmission].bps(), ssrc_);
@@ -214,6 +214,10 @@ void RtpSenderEgress::ProcessBitrateAndNotifyObservers() {
 
 RtpSendRates RtpSenderEgress::GetSendRates() const {
   rtc::CritScope lock(&lock_);
+  return GetSendRatesLocked();
+}
+
+RtpSendRates RtpSenderEgress::GetSendRatesLocked() const {
   const int64_t now_ms = clock_->TimeInMilliseconds();
   RtpSendRates current_rates;
   for (size_t i = 0; i < kNumMediaTypes; ++i) {
