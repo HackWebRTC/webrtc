@@ -211,7 +211,10 @@ int32_t VCMGenericDecoder::InitDecode(const VideoCodec* settings,
   TRACE_EVENT0("webrtc", "VCMGenericDecoder::InitDecode");
   _codecType = settings->codecType;
 
-  return decoder_->InitDecode(settings, numberOfCores);
+  int err = decoder_->InitDecode(settings, numberOfCores);
+  implementation_name_ = decoder_->ImplementationName();
+  RTC_LOG(LS_INFO) << "Decoder implementation: " << implementation_name_;
+  return err;
 }
 
 int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, Timestamp now) {
@@ -239,8 +242,13 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, Timestamp now) {
   _nextFrameInfoIdx = (_nextFrameInfoIdx + 1) % kDecoderFrameMemoryLength;
   int32_t ret = decoder_->Decode(frame.EncodedImage(), frame.MissingFrame(),
                                  frame.RenderTimeMs());
-
-  _callback->OnDecoderImplementationName(decoder_->ImplementationName());
+  const char* new_implementation_name = decoder_->ImplementationName();
+  if (new_implementation_name != implementation_name_) {
+    implementation_name_ = new_implementation_name;
+    RTC_LOG(LS_INFO) << "Changed decoder implementation to: "
+                     << new_implementation_name;
+  }
+  _callback->OnDecoderImplementationName(implementation_name_.c_str());
   if (ret < WEBRTC_VIDEO_CODEC_OK) {
     RTC_LOG(LS_WARNING) << "Failed to decode frame with timestamp "
                         << frame.Timestamp() << ", error code: " << ret;

@@ -169,8 +169,10 @@ std::unique_ptr<VCMGenericDecoder> VCMDecoderDataBase::CreateAndInitDecoder(
     decoder_item->settings->width = frame.EncodedImage()._encodedWidth;
     decoder_item->settings->height = frame.EncodedImage()._encodedHeight;
   }
-  if (ptr_decoder->InitDecode(decoder_item->settings.get(),
-                              decoder_item->number_of_cores) < 0) {
+  int err = ptr_decoder->InitDecode(decoder_item->settings.get(),
+                                    decoder_item->number_of_cores);
+  if (err < 0) {
+    RTC_LOG(LS_ERROR) << "Failed to initialize decoder. Error code: " << err;
     return nullptr;
   }
   memcpy(new_codec, decoder_item->settings.get(), sizeof(VideoCodec));

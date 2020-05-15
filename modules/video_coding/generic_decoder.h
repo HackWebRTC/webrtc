@@ -12,6 +12,7 @@
 #define MODULES_VIDEO_CODING_GENERIC_DECODER_H_
 
 #include <memory>
+#include <string>
 
 #include "api/units/time_delta.h"
 #include "modules/video_coding/encoded_frame.h"
@@ -112,6 +113,7 @@ class VCMGenericDecoder {
   VideoCodecType _codecType;
   const bool _isExternal;
   VideoContentType _last_keyframe_content_type;
+  std::string implementation_name_;
 };
 
 }  // namespace webrtc
