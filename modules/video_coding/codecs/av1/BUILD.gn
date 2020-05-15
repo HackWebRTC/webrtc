@@ -36,11 +36,27 @@ rtc_library("libaom_av1_decoder") {
   }
 }
 
+rtc_source_set("scalable_video_controller") {
+  sources = [
+    "scalable_video_controller.h",
+    "scalable_video_controller_no_layering.cc",
+    "scalable_video_controller_no_layering.h",
+  ]
+  deps = [
+    "../../../../api/transport/rtp:dependency_descriptor",
+    "../../../../common_video/generic_frame_descriptor",
+    "../../../../rtc_base:checks",
+    "//third_party/abseil-cpp/absl/container:inlined_vector",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
 rtc_library("libaom_av1_encoder") {
   visibility = [ "*" ]
   poisonous = [ "software_video_codecs" ]
   public = [ "libaom_av1_encoder.h" ]
   deps = [
+    ":scalable_video_controller",
     "../../../../api/video_codecs:video_codecs_api",
     "//third_party/abseil-cpp/absl/base:core_headers",
   ]
@@ -79,6 +95,8 @@ if (rtc_include_tests) {
         "../..:video_codec_interface",
         "../../../../api:create_frame_generator",
         "../../../../api:frame_generator_api",
+        "../../../../api:mock_video_encoder",
+        "../../../../api/video:video_frame_i420",
         "../../../../api/video_codecs:video_codecs_api",
         "../../../../test:test_support",
         "//third_party/abseil-cpp/absl/types:optional",
