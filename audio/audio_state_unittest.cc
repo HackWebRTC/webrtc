@@ -60,8 +60,10 @@ class FakeAudioSource : public AudioMixer::Source {
 
   int PreferredSampleRate() const /*override*/ { return kSampleRate; }
 
-  MOCK_METHOD2(GetAudioFrameWithInfo,
-               AudioFrameInfo(int sample_rate_hz, AudioFrame* audio_frame));
+  MOCK_METHOD(AudioFrameInfo,
+              GetAudioFrameWithInfo,
+              (int sample_rate_hz, AudioFrame*),
+              (override));
 };
 
 std::vector<int16_t> Create10msTestData(int sample_rate_hz,

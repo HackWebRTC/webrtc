@@ -89,7 +89,10 @@ const DataRate kMaxOverheadRate = kOverheadPerPacket / kMinFrameLength;
 
 class MockLimitObserver : public BitrateAllocator::LimitObserver {
  public:
-  MOCK_METHOD1(OnAllocationLimitsChanged, void(BitrateAllocationLimits));
+  MOCK_METHOD(void,
+              OnAllocationLimitsChanged,
+              (BitrateAllocationLimits),
+              (override));
 };
 
 std::unique_ptr<MockAudioEncoder> SetupAudioEncoderMock(
@@ -247,12 +250,12 @@ struct ConfigHelper {
 
   void SetupMockForSetupSendCodec(bool expect_set_encoder_call) {
     if (expect_set_encoder_call) {
-      EXPECT_CALL(*channel_send_, SetEncoderForMock(_, _))
-          .WillOnce(Invoke(
-              [this](int payload_type, std::unique_ptr<AudioEncoder>* encoder) {
-                this->audio_encoder_ = std::move(*encoder);
+      EXPECT_CALL(*channel_send_, SetEncoder)
+          .WillOnce(
+              [this](int payload_type, std::unique_ptr<AudioEncoder> encoder) {
+                this->audio_encoder_ = std::move(encoder);
                 return true;
-              }));
+              });
     }
   }
 
@@ -473,7 +476,7 @@ TEST(AudioSendStreamTest, GetStatsAudioLevel) {
     ConfigHelper helper(false, true, use_null_audio_processing);
     auto send_stream = helper.CreateAudioSendStream();
     helper.SetupMockForGetStats(use_null_audio_processing);
-    EXPECT_CALL(*helper.channel_send(), ProcessAndEncodeAudioForMock(_))
+    EXPECT_CALL(*helper.channel_send(), ProcessAndEncodeAudio)
         .Times(AnyNumber());
 
     constexpr int kSampleRateHz = 48000;
@@ -558,15 +561,13 @@ TEST(AudioSendStreamTest, SendCodecCanApplyVad) {
     helper.config().send_codec_spec =
         AudioSendStream::Config::SendCodecSpec(9, kG722Format);
     helper.config().send_codec_spec->cng_payload_type = 105;
-    using ::testing::Invoke;
     std::unique_ptr<AudioEncoder> stolen_encoder;
-    EXPECT_CALL(*helper.channel_send(), SetEncoderForMock(_, _))
-        .WillOnce(
-            Invoke([&stolen_encoder](int payload_type,
-                                     std::unique_ptr<AudioEncoder>* encoder) {
-              stolen_encoder = std::move(*encoder);
-              return true;
-            }));
+    EXPECT_CALL(*helper.channel_send(), SetEncoder)
+        .WillOnce([&stolen_encoder](int payload_type,
+                                    std::unique_ptr<AudioEncoder> encoder) {
+          stolen_encoder = std::move(encoder);
+          return true;
+        });
     EXPECT_CALL(*helper.channel_send(), RegisterCngPayloadType(105, 8000));
 
     auto send_stream = helper.CreateAudioSendStream();
@@ -748,8 +749,7 @@ TEST(AudioSendStreamTest, DontRecreateEncoder) {
     // test to be correct, it's instead set-up manually here. Otherwise a simple
     // change to ConfigHelper (say to WillRepeatedly) would silently make this
     // test useless.
-    EXPECT_CALL(*helper.channel_send(), SetEncoderForMock(_, _))
-        .WillOnce(Return());
+    EXPECT_CALL(*helper.channel_send(), SetEncoder).WillOnce(Return());
 
     EXPECT_CALL(*helper.channel_send(), RegisterCngPayloadType(105, 8000));
 
