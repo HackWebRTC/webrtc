@@ -407,7 +407,7 @@ rtc_library("test_dependency_factory") {
   deps = [
     ":video_quality_test_fixture_api",
     "../rtc_base:checks",
-    "../rtc_base:thread_checker",
+    "../rtc_base:platform_thread_types",
   ]
 }
 
