@@ -876,6 +876,16 @@ if (rtc_include_tests) {
     ]
   }
 
+  rtc_source_set("mock_transformable_video_frame") {
+    testonly = true
+    sources = [ "test/mock_transformable_video_frame.h" ]
+
+    deps = [
+      ":frame_transformer_interface",
+      "../test:test_support",
+    ]
+  }
+
   rtc_source_set("mock_video_bitrate_allocator") {
     testonly = true
     sources = [ "test/mock_video_bitrate_allocator.h" ]
@@ -1042,6 +1052,7 @@ if (rtc_include_tests) {
       ":mock_frame_encryptor",
       ":mock_peerconnectioninterface",
       ":mock_rtp",
+      ":mock_transformable_video_frame",
       ":mock_video_bitrate_allocator",
       ":mock_video_bitrate_allocator_factory",
       ":mock_video_codec_factory",
