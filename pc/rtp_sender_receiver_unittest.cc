@@ -88,7 +88,7 @@ static const int kDefaultTimeout = 10000;  // 10 seconds.
 class MockSetStreamsObserver
     : public webrtc::RtpSenderBase::SetStreamsObserver {
  public:
-  MOCK_METHOD0(OnSetStreams, void());
+  MOCK_METHOD(void, OnSetStreams, (), (override));
 };
 
 }  // namespace

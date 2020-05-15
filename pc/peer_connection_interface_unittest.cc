@@ -627,7 +627,7 @@ class MockTrackObserver : public ObserverInterface {
     }
   }
 
-  MOCK_METHOD0(OnChanged, void());
+  MOCK_METHOD(void, OnChanged, (), (override));
 
  private:
   NotifierInterface* notifier_;

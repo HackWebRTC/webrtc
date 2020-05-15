@@ -43,13 +43,13 @@ class MockDataChannel : public rtc::RefCountedObject<DataChannel> {
     EXPECT_CALL(*this, bytes_received())
         .WillRepeatedly(::testing::Return(bytes_received));
   }
-  MOCK_CONST_METHOD0(id, int());
-  MOCK_CONST_METHOD0(state, DataState());
-  MOCK_CONST_METHOD0(protocol, std::string());
-  MOCK_CONST_METHOD0(messages_sent, uint32_t());
-  MOCK_CONST_METHOD0(bytes_sent, uint64_t());
-  MOCK_CONST_METHOD0(messages_received, uint32_t());
-  MOCK_CONST_METHOD0(bytes_received, uint64_t());
+  MOCK_METHOD(int, id, (), (const, override));
+  MOCK_METHOD(DataState, state, (), (const, override));
+  MOCK_METHOD(std::string, protocol, (), (const, override));
+  MOCK_METHOD(uint32_t, messages_sent, (), (const, override));
+  MOCK_METHOD(uint64_t, bytes_sent, (), (const, override));
+  MOCK_METHOD(uint32_t, messages_received, (), (const, override));
+  MOCK_METHOD(uint64_t, bytes_received, (), (const, override));
 };
 
 }  // namespace webrtc
