@@ -296,6 +296,21 @@ void ThreadManager::SetCurrentThread(Thread* thread) {
     RTC_DLOG(LS_ERROR) << "SetCurrentThread: Overwriting an existing value?";
   }
 #endif  // RTC_DLOG_IS_ON
+
+  if (thread) {
+    thread->EnsureIsCurrentTaskQueue();
+  } else {
+    Thread* current = CurrentThread();
+    if (current) {
+      // The current thread is being cleared, e.g. as a result of
+      // UnwrapCurrent() being called or when a thread is being stopped
+      // (see PreRun()). This signals that the Thread instance is being detached
+      // from the thread, which also means that TaskQueue::Current() must not
+      // return a pointer to the Thread instance.
+      current->ClearCurrentTaskQueue();
+    }
+  }
+
   SetCurrentThreadInternal(thread);
 }
 
@@ -824,7 +839,6 @@ void* Thread::PreRun(void* pv) {
   Thread* thread = static_cast<Thread*>(pv);
   ThreadManager::Instance()->SetCurrentThread(thread);
   rtc::SetCurrentThreadName(thread->name_.c_str());
-  CurrentTaskQueueSetter set_current_task_queue(thread);
 #if defined(WEBRTC_MAC)
   ScopedAutoReleasePool pool;
 #endif
@@ -933,6 +947,17 @@ void Thread::InvokeInternal(const Location& posted_from,
   } handler(functor);
 
   Send(posted_from, &handler);
+}
+
+// Called by the ThreadManager when being set as the current thread.
+void Thread::EnsureIsCurrentTaskQueue() {
+  task_queue_registration_ =
+      std::make_unique<TaskQueueBase::CurrentTaskQueueSetter>(this);
+}
+
+// Called by the ThreadManager when being set as the current thread.
+void Thread::ClearCurrentTaskQueue() {
+  task_queue_registration_.reset();
 }
 
 void Thread::QueuedTaskHandler::OnMessage(Message* msg) {
