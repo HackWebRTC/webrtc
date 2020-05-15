@@ -30,6 +30,8 @@ namespace webrtc {
 
 namespace {
 
+constexpr size_t kMaxConsequtiveHwErrors = 4;
+
 class VideoDecoderSoftwareFallbackWrapper final : public VideoDecoder {
  public:
   VideoDecoderSoftwareFallbackWrapper(
@@ -74,6 +76,7 @@ class VideoDecoderSoftwareFallbackWrapper final : public VideoDecoder {
   const std::string fallback_implementation_name_;
   DecodedImageCallback* callback_;
   int32_t hw_decoded_frames_since_last_fallback_;
+  size_t hw_consequtive_generic_errors_;
 };
 
 VideoDecoderSoftwareFallbackWrapper::VideoDecoderSoftwareFallbackWrapper(
@@ -86,7 +89,8 @@ VideoDecoderSoftwareFallbackWrapper::VideoDecoderSoftwareFallbackWrapper(
           std::string(fallback_decoder_->ImplementationName()) +
           " (fallback from: " + hw_decoder_->ImplementationName() + ")"),
       callback_(nullptr),
-      hw_decoded_frames_since_last_fallback_(0) {}
+      hw_decoded_frames_since_last_fallback_(0),
+      hw_consequtive_generic_errors_(0) {}
 VideoDecoderSoftwareFallbackWrapper::~VideoDecoderSoftwareFallbackWrapper() =
     default;
 
@@ -196,14 +200,24 @@ int32_t VideoDecoderSoftwareFallbackWrapper::Decode(
       int32_t ret = WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
       ret = hw_decoder_->Decode(input_image, missing_frames, render_time_ms);
       if (ret != WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE) {
-        if (ret == WEBRTC_VIDEO_CODEC_OK) {
+        if (ret != WEBRTC_VIDEO_CODEC_ERROR) {
           ++hw_decoded_frames_since_last_fallback_;
+          hw_consequtive_generic_errors_ = 0;
+          return ret;
         }
-        return ret;
+        if (input_image._frameType == VideoFrameType::kVideoFrameKey) {
+          // Only count errors on key-frames, since generic errors can happen
+          // with hw decoder due to many arbitrary reasons.
+          // However, requesting a key-frame is supposed to fix the issue.
+          ++hw_consequtive_generic_errors_;
+        }
+        if (hw_consequtive_generic_errors_ < kMaxConsequtiveHwErrors) {
+          return ret;
+        }
       }
 
       // HW decoder returned WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE or
-      // initialization failed, fallback to software.
+      // too many generic errors on key-frames encountered.
       if (!InitFallbackDecoder()) {
         return ret;
       }
