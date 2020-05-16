@@ -44,6 +44,9 @@ struct RtpDemuxerCriteria {
 
   // Will match packets with any of these payload types.
   std::set<uint8_t> payload_types;
+
+  // Return string representation of demux criteria to facilitate logging
+  std::string ToString() const;
 };
 
 // This class represents the RTP demuxing, for a single RTP session (i.e., one

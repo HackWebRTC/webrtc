@@ -24,6 +24,25 @@ namespace webrtc {
 RtpDemuxerCriteria::RtpDemuxerCriteria() = default;
 RtpDemuxerCriteria::~RtpDemuxerCriteria() = default;
 
+std::string RtpDemuxerCriteria::ToString() const {
+  rtc::StringBuilder sb;
+  sb << "{mid: " << (mid.empty() ? "<empty>" : mid)
+     << ", rsid: " << (rsid.empty() ? "<empty>" : rsid) << ", ssrcs: [";
+
+  for (auto ssrc : ssrcs) {
+    sb << ssrc << ", ";
+  }
+
+  sb << "], payload_types = [";
+
+  for (auto pt : payload_types) {
+    sb << pt << ", ";
+  }
+
+  sb << "]}";
+  return sb.Release();
+}
+
 // static
 std::string RtpDemuxer::DescribePacket(const RtpPacketReceived& packet) {
   rtc::StringBuilder sb;
@@ -66,6 +85,8 @@ bool RtpDemuxer::AddSink(const RtpDemuxerCriteria& criteria,
   // criteria because new sinks are created according to user-specified SDP and
   // we do not want to crash due to a data validation error.
   if (CriteriaWouldConflict(criteria)) {
+    RTC_LOG(LS_ERROR) << "Unable to add sink = " << sink
+                      << " due conflicting criteria " << criteria.ToString();
     return false;
   }
 
@@ -92,6 +113,9 @@ bool RtpDemuxer::AddSink(const RtpDemuxerCriteria& criteria,
 
   RefreshKnownMids();
 
+  RTC_LOG(LS_INFO) << "Added sink = " << sink << " for criteria "
+                   << criteria.ToString();
+
   return true;
 }
 
@@ -105,25 +129,40 @@ bool RtpDemuxer::CriteriaWouldConflict(
       // Adding this criteria would cause one of these rules to be shadowed, so
       // reject this new criteria.
       if (known_mids_.find(criteria.mid) != known_mids_.end()) {
+        RTC_LOG(LS_INFO) << criteria.ToString()
+                         << " would conflict with known mid";
         return true;
       }
     } else {
       // If the exact rule already exists, then reject this duplicate.
-      if (sink_by_mid_and_rsid_.find(std::make_pair(
-              criteria.mid, criteria.rsid)) != sink_by_mid_and_rsid_.end()) {
+      const auto sink_by_mid_and_rsid = sink_by_mid_and_rsid_.find(
+          std::make_pair(criteria.mid, criteria.rsid));
+      if (sink_by_mid_and_rsid != sink_by_mid_and_rsid_.end()) {
+        RTC_LOG(LS_INFO) << criteria.ToString()
+                         << " would conflict with existing sink = "
+                         << sink_by_mid_and_rsid->second
+                         << " by mid+rsid binding";
         return true;
       }
       // If there is already a sink registered for the bare MID, then this
       // criteria will never receive any packets because they will just be
       // directed to that MID sink, so reject this new criteria.
-      if (sink_by_mid_.find(criteria.mid) != sink_by_mid_.end()) {
+      const auto sink_by_mid = sink_by_mid_.find(criteria.mid);
+      if (sink_by_mid != sink_by_mid_.end()) {
+        RTC_LOG(LS_INFO) << criteria.ToString()
+                         << " would conflict with existing sink = "
+                         << sink_by_mid->second << " by mid binding";
         return true;
       }
     }
   }
 
   for (uint32_t ssrc : criteria.ssrcs) {
-    if (sink_by_ssrc_.find(ssrc) != sink_by_ssrc_.end()) {
+    const auto sink_by_ssrc = sink_by_ssrc_.find(ssrc);
+    if (sink_by_ssrc != sink_by_ssrc_.end()) {
+      RTC_LOG(LS_INFO) << criteria.ToString()
+                       << " would conflict with existing sink = "
+                       << sink_by_ssrc->second << " binding by SSRC=" << ssrc;
       return true;
     }
   }
@@ -168,7 +207,11 @@ bool RtpDemuxer::RemoveSink(const RtpPacketSinkInterface* sink) {
                        RemoveFromMapByValue(&sink_by_mid_and_rsid_, sink) +
                        RemoveFromMapByValue(&sink_by_rsid_, sink);
   RefreshKnownMids();
-  return num_removed > 0;
+  bool removed = num_removed > 0;
+  if (removed) {
+    RTC_LOG(LS_INFO) << "Removed sink = " << sink << " bindings";
+  }
+  return removed;
 }
 
 bool RtpDemuxer::OnRtpPacket(const RtpPacketReceived& packet) {
@@ -370,9 +413,13 @@ bool RtpDemuxer::AddSsrcSinkBinding(uint32_t ssrc,
   auto it = result.first;
   bool inserted = result.second;
   if (inserted) {
+    RTC_LOG(LS_INFO) << "Added sink = " << sink
+                     << " binding with SSRC=" << ssrc;
     return true;
   }
   if (it->second != sink) {
+    RTC_LOG(LS_INFO) << "Updated sink = " << sink
+                     << " binding with SSRC=" << ssrc;
     it->second = sink;
     return true;
   }
