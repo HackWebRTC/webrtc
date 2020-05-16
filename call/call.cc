@@ -275,7 +275,7 @@ class Call final : public webrtc::Call,
   const std::unique_ptr<BitrateAllocator> bitrate_allocator_;
   Call::Config config_;
   SequenceChecker configuration_sequence_checker_;
-  SequenceChecker worker_sequence_checker_;
+  SequenceChecker network_sequence_checker_;
 
   NetworkState audio_network_state_;
   NetworkState video_network_state_;
@@ -364,7 +364,7 @@ class Call final : public webrtc::Call,
   // OnNetworkChanged from multiple threads.
   rtc::CriticalSection bitrate_crit_;
   uint32_t min_allocated_send_bitrate_bps_
-      RTC_GUARDED_BY(&worker_sequence_checker_);
+      RTC_GUARDED_BY(&network_sequence_checker_);
   uint32_t configured_max_padding_bitrate_bps_ RTC_GUARDED_BY(&bitrate_crit_);
   AvgCounter estimated_send_bitrate_kbps_counter_
       RTC_GUARDED_BY(&bitrate_crit_);
@@ -473,7 +473,7 @@ Call::Call(Clock* clock,
       transport_send_(std::move(transport_send)) {
   RTC_DCHECK(config.event_log != nullptr);
   RTC_DCHECK(config.trials != nullptr);
-  worker_sequence_checker_.Detach();
+  network_sequence_checker_.Detach();
 
   call_stats_->RegisterStatsObserver(&receive_side_cc_);
 
@@ -1079,7 +1079,7 @@ void Call::OnStartRateUpdate(DataRate start_rate) {
 
 void Call::OnTargetTransferRate(TargetTransferRate msg) {
   RTC_DCHECK(network_queue()->IsCurrent());
-  RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
+  RTC_DCHECK_RUN_ON(&network_sequence_checker_);
   {
     rtc::CritScope cs(&last_bandwidth_bps_crit_);
     last_bandwidth_bps_ = msg.target_rate.bps();
@@ -1120,7 +1120,7 @@ void Call::OnTargetTransferRate(TargetTransferRate msg) {
 
 void Call::OnAllocationLimitsChanged(BitrateAllocationLimits limits) {
   RTC_DCHECK(network_queue()->IsCurrent());
-  RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
+  RTC_DCHECK_RUN_ON(&network_sequence_checker_);
 
   transport_send_ptr_->SetAllocatedSendBitrateLimits(limits);
 
