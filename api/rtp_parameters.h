@@ -20,6 +20,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "api/media_types.h"
+#include "api/priority.h"
 #include "api/rtp_transceiver_direction.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -92,14 +93,6 @@ enum class DegradationPreference {
 };
 
 RTC_EXPORT extern const double kDefaultBitratePriority;
-
-// GENERATED_JAVA_ENUM_PACKAGE: org.webrtc
-enum class Priority {
-  kVeryLow,
-  kLow,
-  kMedium,
-  kHigh,
-};
 
 struct RTC_EXPORT RtcpFeedback {
   RtcpFeedbackType type = RtcpFeedbackType::CCM;

@@ -17,6 +17,7 @@
 #include <string>
 
 #include "api/data_channel_interface.h"
+#include "api/priority.h"
 #include "api/proxy.h"
 #include "api/scoped_refptr.h"
 #include "media/base/media_channel.h"
@@ -142,6 +143,9 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   virtual std::string protocol() const { return config_.protocol; }
   virtual bool negotiated() const { return config_.negotiated; }
   virtual int id() const { return config_.id; }
+  virtual Priority priority() const {
+    return config_.priority ? *config_.priority : Priority::kLow;
+  }
   virtual int internal_id() const { return internal_id_; }
   virtual uint64_t buffered_amount() const;
   virtual void Close();
@@ -324,6 +328,7 @@ PROXY_CONSTMETHOD0(absl::optional<int>, maxPacketLifeTime)
 PROXY_CONSTMETHOD0(std::string, protocol)
 PROXY_CONSTMETHOD0(bool, negotiated)
 PROXY_CONSTMETHOD0(int, id)
+PROXY_CONSTMETHOD0(Priority, priority)
 PROXY_CONSTMETHOD0(DataState, state)
 PROXY_CONSTMETHOD0(RTCError, error)
 PROXY_CONSTMETHOD0(uint32_t, messages_sent)
