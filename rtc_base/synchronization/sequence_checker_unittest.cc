@@ -158,7 +158,8 @@ void TestAnnotationsOnWrongQueue() {
 }
 
 #if RTC_DCHECK_IS_ON
-TEST(SequenceCheckerTest, TestAnnotationsOnWrongQueueDebug) {
+// TODO(bugs.webrtc.org/11577): Fix flakiness.
+TEST(SequenceCheckerTest, DISABLED_TestAnnotationsOnWrongQueueDebug) {
   ASSERT_DEATH({ TestAnnotationsOnWrongQueue(); }, "");
 }
 #else
