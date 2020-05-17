@@ -17,6 +17,7 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 #include "absl/types/optional.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event_tracer.h"
@@ -109,26 +110,48 @@ class TestMainImpl : public TestMain {
     TestListener() = default;
 
    private:
+    bool IsDeathTest(const char* test_case_name, const char* test_name) {
+      // Workaround to avoid wrapping the main thread when we run death tests.
+      // The approach we take for detecting death tests is essentially the same
+      // as gtest does internally. Gtest does this:
+      //
+      // static const char kDeathTestCaseFilter[] = "*DeathTest:*DeathTest/*";
+      // ::testing::internal::UnitTestOptions::MatchesFilter(
+      //     test_case_name, kDeathTestCaseFilter);
+      //
+      // Our approach is a little more straight forward.
+      if (absl::EndsWith(test_case_name, "DeathTest"))
+        return true;
+
+      return absl::EndsWith(test_name, "DeathTest");
+    }
+
     void OnTestStart(const ::testing::TestInfo& test_info) override {
-      // Ensure that main thread gets wrapped as an rtc::Thread.
-      // TODO(bugs.webrtc.org/9714): It might be better to avoid wrapping the
-      // main thread, or leave it to individual tests that need it. But as long
-      // as we have automatic thread wrapping, we need this to avoid that some
-      // other random thread (which one depending on which tests are run) gets
-      // automatically wrapped.
-      thread_ = rtc::Thread::CreateWithSocketServer();
-      thread_->WrapCurrent();
-      RTC_DCHECK_EQ(rtc::Thread::Current(), thread_.get());
+      if (!IsDeathTest(test_info.test_suite_name(), test_info.name())) {
+        // Ensure that main thread gets wrapped as an rtc::Thread.
+        // TODO(bugs.webrtc.org/9714): It might be better to avoid wrapping the
+        // main thread, or leave it to individual tests that need it. But as
+        // long as we have automatic thread wrapping, we need this to avoid that
+        // some other random thread (which one depending on which tests are run)
+        // gets automatically wrapped.
+        thread_ = rtc::Thread::CreateWithSocketServer();
+        thread_->WrapCurrent();
+        RTC_DCHECK_EQ(rtc::Thread::Current(), thread_.get());
+      } else {
+        RTC_LOG(LS_INFO) << "No thread auto wrap for death test.";
+      }
     }
 
     void OnTestEnd(const ::testing::TestInfo& test_info) override {
       // Terminate the message loop. Note that if the test failed to clean
       // up pending messages, this may execute part of the test. Ideally we
       // should print a warning message here, or even fail the test if it leaks.
-      thread_->Quit();  // Signal quit.
-      thread_->Run();   // Flush + process Quit signal.
-      thread_->UnwrapCurrent();
-      thread_ = nullptr;
+      if (thread_) {
+        thread_->Quit();  // Signal quit.
+        thread_->Run();   // Flush + process Quit signal.
+        thread_->UnwrapCurrent();
+        thread_ = nullptr;
+      }
     }
 
     std::unique_ptr<rtc::Thread> thread_;

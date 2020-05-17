@@ -158,8 +158,12 @@ void TestAnnotationsOnWrongQueue() {
 }
 
 #if RTC_DCHECK_IS_ON
-// TODO(bugs.webrtc.org/11577): Fix flakiness.
-TEST(SequenceCheckerTest, DISABLED_TestAnnotationsOnWrongQueueDebug) {
+// Note: Ending the test suite name with 'DeathTest' is important as it causes
+// gtest to order this test before any other non-death-tests, to avoid potential
+// global process state pollution such as shared worker threads being started
+// (e.g. a side effect of calling InitCocoaMultiThreading() on Mac causes one or
+// two additional threads to be created).
+TEST(SequenceCheckerDeathTest, TestAnnotationsOnWrongQueueDebug) {
   ASSERT_DEATH({ TestAnnotationsOnWrongQueue(); }, "");
 }
 #else
