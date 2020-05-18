@@ -275,6 +275,9 @@ class BaseChannel : public ChannelInterface,
 
   bool RegisterRtpDemuxerSink();
 
+  // Return description of media channel to facilitate logging
+  std::string ToString() const;
+
   bool has_received_packet_ = false;
 
  private:
