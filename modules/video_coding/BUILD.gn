@@ -35,6 +35,20 @@ rtc_library("encoded_frame") {
   ]
 }
 
+rtc_library("chain_diff_calculator") {
+  sources = [
+    "chain_diff_calculator.cc",
+    "chain_diff_calculator.h",
+  ]
+
+  deps = [
+    "../../rtc_base:checks",
+    "../../rtc_base:logging",
+    "//third_party/abseil-cpp/absl/container:inlined_vector",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
 rtc_library("frame_dependencies_calculator") {
   sources = [
     "frame_dependencies_calculator.cc",
@@ -842,6 +856,7 @@ if (rtc_include_tests) {
     testonly = true
 
     sources = [
+      "chain_diff_calculator_unittest.cc",
       "codecs/test/videocodec_test_fixture_config_unittest.cc",
       "codecs/test/videocodec_test_stats_impl_unittest.cc",
       "codecs/test/videoprocessor_unittest.cc",
@@ -888,6 +903,7 @@ if (rtc_include_tests) {
     }
 
     deps = [
+      ":chain_diff_calculator",
       ":codec_globals_headers",
       ":encoded_frame",
       ":frame_dependencies_calculator",
