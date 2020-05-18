@@ -101,6 +101,7 @@ if (is_android) {
 
   rtc_android_library("AppRTCMobile_javalib") {
     testonly = true
+    android_manifest_for_lint = "androidapp/AndroidManifest.xml"
 
     sources = [
       "androidapp/src/org/appspot/apprtc/AppRTCAudioManager.java",
