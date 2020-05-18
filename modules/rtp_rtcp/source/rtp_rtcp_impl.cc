@@ -96,23 +96,34 @@ int64_t ModuleRtpRtcpImpl::TimeUntilNextProcess() {
 // Process any pending tasks such as timeouts (non time critical events).
 void ModuleRtpRtcpImpl::Process() {
   const int64_t now = clock_->TimeInMilliseconds();
+  // TODO(bugs.webrtc.org/11581): Figure out why we need to call Process() 200
+  // times a second.
   next_process_time_ = now + kRtpRtcpMaxIdleTimeProcessMs;
 
   if (rtp_sender_) {
     if (now >= last_bitrate_process_time_ + kRtpRtcpBitrateProcessTimeMs) {
       rtp_sender_->packet_sender.ProcessBitrateAndNotifyObservers();
       last_bitrate_process_time_ = now;
+      // TODO(bugs.webrtc.org/11581): Is this a bug? At the top of the function,
+      // next_process_time_ is incremented by 5ms, here we effectively do a
+      // std::min() of (now + 5ms, now + 10ms). Seems like this is a no-op?
       next_process_time_ =
           std::min(next_process_time_, now + kRtpRtcpBitrateProcessTimeMs);
     }
   }
 
+  // TODO(bugs.webrtc.org/11581): We update the RTT once a second, whereas other
+  // things that run in this method are updated much more frequently. Move the
+  // RTT checking over to the worker thread, which matches better with where the
+  // stats are maintained.
   bool process_rtt = now >= last_rtt_process_time_ + kRtpRtcpRttProcessTimeMs;
   if (rtcp_sender_.Sending()) {
     // Process RTT if we have received a report block and we haven't
     // processed RTT for at least |kRtpRtcpRttProcessTimeMs| milliseconds.
-    if (rtcp_receiver_.LastReceivedReportBlockMs() > last_rtt_process_time_ &&
-        process_rtt) {
+    // Note that LastReceivedReportBlockMs() grabs a lock, so check
+    // |process_rtt| first.
+    if (process_rtt &&
+        rtcp_receiver_.LastReceivedReportBlockMs() > last_rtt_process_time_) {
       std::vector<RTCPReportBlock> receive_blocks;
       rtcp_receiver_.StatisticsReceived(&receive_blocks);
       int64_t max_rtt = 0;
@@ -129,6 +140,12 @@ void ModuleRtpRtcpImpl::Process() {
 
     // Verify receiver reports are delivered and the reported sequence number
     // is increasing.
+    // TODO(bugs.webrtc.org/11581): The timeout value needs to be checked every
+    // few seconds (see internals of RtcpRrTimeout). Here, we may be polling it
+    // a couple of hundred times a second, which isn't great since it grabs a
+    // lock. Note also that LastReceivedReportBlockMs() (called above) and
+    // RtcpRrTimeout() both grab the same lock and check the same timer, so
+    // it should be possible to consolidate that work somehow.
     if (rtcp_receiver_.RtcpRrTimeout()) {
       RTC_LOG_F(LS_WARNING) << "Timeout: No RTCP RR received.";
     } else if (rtcp_receiver_.RtcpRrSequenceNumberTimeout()) {
@@ -159,6 +176,9 @@ void ModuleRtpRtcpImpl::Process() {
   // Get processed rtt.
   if (process_rtt) {
     last_rtt_process_time_ = now;
+    // TODO(bugs.webrtc.org/11581): Is this a bug? At the top of the function,
+    // next_process_time_ is incremented by 5ms, here we effectively do a
+    // std::min() of (now + 5ms, now + 1000ms). Seems like this is a no-op?
     next_process_time_ = std::min(
         next_process_time_, last_rtt_process_time_ + kRtpRtcpRttProcessTimeMs);
     if (rtt_stats_) {
