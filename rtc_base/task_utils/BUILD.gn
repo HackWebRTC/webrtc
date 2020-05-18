@@ -21,6 +21,7 @@ rtc_library("repeating_task") {
     "../../api/task_queue",
     "../../api/units:time_delta",
     "../../api/units:timestamp",
+    "../../system_wrappers:system_wrappers",
     "../synchronization:sequence_checker",
     "//third_party/abseil-cpp/absl/memory",
   ]
