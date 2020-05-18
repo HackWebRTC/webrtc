@@ -252,6 +252,9 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
   Clock* clock_;
 };
 
+class AudioCodingModuleTestOldApiDeathTest
+    : public AudioCodingModuleTestOldApi {};
+
 TEST_F(AudioCodingModuleTestOldApi, VerifyOutputFrame) {
   AudioFrame audio_frame;
   const int kSampleRateHz = 32000;
@@ -271,7 +274,7 @@ TEST_F(AudioCodingModuleTestOldApi, VerifyOutputFrame) {
 // http://crbug.com/615050
 #if !defined(WEBRTC_WIN) && defined(__clang__) && RTC_DCHECK_IS_ON && \
     GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
-TEST_F(AudioCodingModuleTestOldApi, FailOnZeroDesiredFrequency) {
+TEST_F(AudioCodingModuleTestOldApiDeathTest, FailOnZeroDesiredFrequency) {
   AudioFrame audio_frame;
   bool muted;
   RTC_EXPECT_DEATH(acm_->PlayoutData10Ms(0, &audio_frame, &muted),

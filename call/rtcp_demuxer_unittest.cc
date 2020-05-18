@@ -81,6 +81,8 @@ class RtcpDemuxerTest : public ::testing::Test {
   std::set<RtcpPacketSinkInterface*> broadcast_sinks_to_tear_down_;
 };
 
+class RtcpDemuxerDeathTest : public RtcpDemuxerTest {};
+
 // Produces a packet buffer representing an RTCP packet with a given SSRC,
 // as it would look when sent over the wire.
 // |distinguishing_string| allows different RTCP packets with the same SSRC
@@ -419,7 +421,7 @@ TEST_F(RtcpDemuxerTest, FirstResolutionOfRsidNotForgotten) {
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 
-TEST_F(RtcpDemuxerTest, RepeatedSsrcToSinkAssociationsDisallowed) {
+TEST_F(RtcpDemuxerDeathTest, RepeatedSsrcToSinkAssociationsDisallowed) {
   MockRtcpPacketSink sink;
 
   constexpr uint32_t ssrc = 101;
@@ -427,7 +429,7 @@ TEST_F(RtcpDemuxerTest, RepeatedSsrcToSinkAssociationsDisallowed) {
   EXPECT_DEATH(AddSsrcSink(ssrc, &sink), "");
 }
 
-TEST_F(RtcpDemuxerTest, RepeatedRsidToSinkAssociationsDisallowed) {
+TEST_F(RtcpDemuxerDeathTest, RepeatedRsidToSinkAssociationsDisallowed) {
   MockRtcpPacketSink sink;
 
   const std::string rsid = "z";
@@ -435,14 +437,14 @@ TEST_F(RtcpDemuxerTest, RepeatedRsidToSinkAssociationsDisallowed) {
   EXPECT_DEATH(AddRsidSink(rsid, &sink), "");
 }
 
-TEST_F(RtcpDemuxerTest, RepeatedBroadcastSinkRegistrationDisallowed) {
+TEST_F(RtcpDemuxerDeathTest, RepeatedBroadcastSinkRegistrationDisallowed) {
   MockRtcpPacketSink sink;
 
   AddBroadcastSink(&sink);
   EXPECT_DEATH(AddBroadcastSink(&sink), "");
 }
 
-TEST_F(RtcpDemuxerTest, SsrcSinkCannotAlsoBeRegisteredAsBroadcast) {
+TEST_F(RtcpDemuxerDeathTest, SsrcSinkCannotAlsoBeRegisteredAsBroadcast) {
   MockRtcpPacketSink sink;
 
   constexpr uint32_t ssrc = 101;
@@ -450,7 +452,7 @@ TEST_F(RtcpDemuxerTest, SsrcSinkCannotAlsoBeRegisteredAsBroadcast) {
   EXPECT_DEATH(AddBroadcastSink(&sink), "");
 }
 
-TEST_F(RtcpDemuxerTest, RsidSinkCannotAlsoBeRegisteredAsBroadcast) {
+TEST_F(RtcpDemuxerDeathTest, RsidSinkCannotAlsoBeRegisteredAsBroadcast) {
   MockRtcpPacketSink sink;
 
   const std::string rsid = "z";
@@ -458,7 +460,7 @@ TEST_F(RtcpDemuxerTest, RsidSinkCannotAlsoBeRegisteredAsBroadcast) {
   EXPECT_DEATH(AddBroadcastSink(&sink), "");
 }
 
-TEST_F(RtcpDemuxerTest, BroadcastSinkCannotAlsoBeRegisteredAsSsrcSink) {
+TEST_F(RtcpDemuxerDeathTest, BroadcastSinkCannotAlsoBeRegisteredAsSsrcSink) {
   MockRtcpPacketSink sink;
 
   AddBroadcastSink(&sink);
@@ -466,7 +468,7 @@ TEST_F(RtcpDemuxerTest, BroadcastSinkCannotAlsoBeRegisteredAsSsrcSink) {
   EXPECT_DEATH(AddSsrcSink(ssrc, &sink), "");
 }
 
-TEST_F(RtcpDemuxerTest, BroadcastSinkCannotAlsoBeRegisteredAsRsidSink) {
+TEST_F(RtcpDemuxerDeathTest, BroadcastSinkCannotAlsoBeRegisteredAsRsidSink) {
   MockRtcpPacketSink sink;
 
   AddBroadcastSink(&sink);
@@ -474,27 +476,27 @@ TEST_F(RtcpDemuxerTest, BroadcastSinkCannotAlsoBeRegisteredAsRsidSink) {
   EXPECT_DEATH(AddRsidSink(rsid, &sink), "");
 }
 
-TEST_F(RtcpDemuxerTest, MayNotCallRemoveSinkOnNeverAddedSink) {
+TEST_F(RtcpDemuxerDeathTest, MayNotCallRemoveSinkOnNeverAddedSink) {
   MockRtcpPacketSink sink;
   EXPECT_DEATH(RemoveSink(&sink), "");
 }
 
-TEST_F(RtcpDemuxerTest, MayNotCallRemoveBroadcastSinkOnNeverAddedSink) {
+TEST_F(RtcpDemuxerDeathTest, MayNotCallRemoveBroadcastSinkOnNeverAddedSink) {
   MockRtcpPacketSink sink;
   EXPECT_DEATH(RemoveBroadcastSink(&sink), "");
 }
 
-TEST_F(RtcpDemuxerTest, RsidMustBeNonEmpty) {
+TEST_F(RtcpDemuxerDeathTest, RsidMustBeNonEmpty) {
   MockRtcpPacketSink sink;
   EXPECT_DEATH(AddRsidSink("", &sink), "");
 }
 
-TEST_F(RtcpDemuxerTest, RsidMustBeAlphaNumeric) {
+TEST_F(RtcpDemuxerDeathTest, RsidMustBeAlphaNumeric) {
   MockRtcpPacketSink sink;
   EXPECT_DEATH(AddRsidSink("a_3", &sink), "");
 }
 
-TEST_F(RtcpDemuxerTest, RsidMustNotExceedMaximumLength) {
+TEST_F(RtcpDemuxerDeathTest, RsidMustNotExceedMaximumLength) {
   MockRtcpPacketSink sink;
   std::string rsid(BaseRtpStringExtension::kMaxValueSizeBytes + 1, 'a');
   EXPECT_DEATH(AddRsidSink(rsid, &sink), "");
