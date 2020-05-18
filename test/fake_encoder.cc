@@ -69,7 +69,7 @@ void FakeEncoder::SetMaxBitrate(int max_kbps) {
   RTC_DCHECK_GE(max_kbps, -1);  // max_kbps == -1 disables it.
   rtc::CritScope cs(&crit_sect_);
   max_target_bitrate_kbps_ = max_kbps;
-  SetRates(current_rate_settings_);
+  SetRatesLocked(current_rate_settings_);
 }
 
 void FakeEncoder::SetQp(int qp) {
@@ -243,6 +243,10 @@ int32_t FakeEncoder::Release() {
 
 void FakeEncoder::SetRates(const RateControlParameters& parameters) {
   rtc::CritScope cs(&crit_sect_);
+  SetRatesLocked(parameters);
+}
+
+void FakeEncoder::SetRatesLocked(const RateControlParameters& parameters) {
   current_rate_settings_ = parameters;
   int allocated_bitrate_kbps = parameters.bitrate.get_sum_kbps();
 

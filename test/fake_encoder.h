@@ -40,21 +40,23 @@ class FakeEncoder : public VideoEncoder {
   virtual ~FakeEncoder() = default;
 
   // Sets max bitrate. Not thread-safe, call before registering the encoder.
-  void SetMaxBitrate(int max_kbps);
-  void SetQp(int qp);
+  void SetMaxBitrate(int max_kbps) RTC_LOCKS_EXCLUDED(crit_sect_);
+  void SetQp(int qp) RTC_LOCKS_EXCLUDED(crit_sect_);
 
   void SetFecControllerOverride(
       FecControllerOverride* fec_controller_override) override;
 
-  int32_t InitEncode(const VideoCodec* config,
-                     const Settings& settings) override;
+  int32_t InitEncode(const VideoCodec* config, const Settings& settings)
+      RTC_LOCKS_EXCLUDED(crit_sect_) override;
   int32_t Encode(const VideoFrame& input_image,
-                 const std::vector<VideoFrameType>* frame_types) override;
-  int32_t RegisterEncodeCompleteCallback(
-      EncodedImageCallback* callback) override;
+                 const std::vector<VideoFrameType>* frame_types)
+      RTC_LOCKS_EXCLUDED(crit_sect_) override;
+  int32_t RegisterEncodeCompleteCallback(EncodedImageCallback* callback)
+      RTC_LOCKS_EXCLUDED(crit_sect_) override;
   int32_t Release() override;
-  void SetRates(const RateControlParameters& parameters) override;
-  int GetConfiguredInputFramerate() const;
+  void SetRates(const RateControlParameters& parameters)
+      RTC_LOCKS_EXCLUDED(crit_sect_) override;
+  int GetConfiguredInputFramerate() const RTC_LOCKS_EXCLUDED(crit_sect_);
   EncoderInfo GetEncoderInfo() const override;
 
   static const char* kImplementationName;
@@ -79,7 +81,7 @@ class FakeEncoder : public VideoEncoder {
                       uint8_t num_simulcast_streams,
                       const VideoBitrateAllocation& target_bitrate,
                       SimulcastStream simulcast_streams[kMaxSimulcastStreams],
-                      int framerate);
+                      int framerate) RTC_LOCKS_EXCLUDED(crit_sect_);
 
   // Called before the frame is passed to callback_->OnEncodedImage, to let
   // subclasses fill out codec_specific, possibly modify encodedImage.
@@ -87,6 +89,9 @@ class FakeEncoder : public VideoEncoder {
   virtual std::unique_ptr<RTPFragmentationHeader> EncodeHook(
       EncodedImage* encoded_image,
       CodecSpecificInfo* codec_specific);
+
+  void SetRatesLocked(const RateControlParameters& parameters)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   FrameInfo last_frame_info_ RTC_GUARDED_BY(crit_sect_);
   Clock* const clock_;
