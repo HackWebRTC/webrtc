@@ -27,6 +27,7 @@ struct RTPVideoHeader;
 class VideoFrameMetadata {
  public:
   explicit VideoFrameMetadata(const RTPVideoHeader& header);
+  VideoFrameMetadata() = default;
   VideoFrameMetadata(const VideoFrameMetadata&) = default;
   VideoFrameMetadata& operator=(const VideoFrameMetadata&) = default;
 
