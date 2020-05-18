@@ -47,7 +47,9 @@ FakeAudioCaptureModule::FakeAudioCaptureModule()
       current_mic_level_(kMaxVolume),
       started_(false),
       next_frame_time_(0),
-      frames_received_(0) {}
+      frames_received_(0) {
+  process_thread_checker_.Detach();
+}
 
 FakeAudioCaptureModule::~FakeAudioCaptureModule() {
   if (process_thread_) {
@@ -77,7 +79,7 @@ int32_t FakeAudioCaptureModule::ActiveAudioLayer(
 
 int32_t FakeAudioCaptureModule::RegisterAudioCallback(
     webrtc::AudioTransport* audio_callback) {
-  rtc::CritScope cs(&crit_callback_);
+  rtc::CritScope cs(&crit_);
   audio_callback_ = audio_callback;
   return 0;
 }
@@ -448,29 +450,34 @@ void FakeAudioCaptureModule::UpdateProcessing(bool start) {
     if (process_thread_) {
       process_thread_->Stop();
       process_thread_.reset(nullptr);
+      process_thread_checker_.Detach();
     }
+    rtc::CritScope lock(&crit_);
     started_ = false;
   }
 }
 
 void FakeAudioCaptureModule::StartProcessP() {
-  RTC_CHECK(process_thread_->IsCurrent());
-  if (started_) {
-    // Already started.
-    return;
+  RTC_DCHECK_RUN_ON(&process_thread_checker_);
+  {
+    rtc::CritScope lock(&crit_);
+    if (started_) {
+      // Already started.
+      return;
+    }
   }
   ProcessFrameP();
 }
 
 void FakeAudioCaptureModule::ProcessFrameP() {
-  RTC_CHECK(process_thread_->IsCurrent());
-  if (!started_) {
-    next_frame_time_ = rtc::TimeMillis();
-    started_ = true;
-  }
-
+  RTC_DCHECK_RUN_ON(&process_thread_checker_);
   {
     rtc::CritScope cs(&crit_);
+    if (!started_) {
+      next_frame_time_ = rtc::TimeMillis();
+      started_ = true;
+    }
+
     // Receive and send frames every kTimePerFrameMs.
     if (playing_) {
       ReceiveFrameP();
@@ -488,24 +495,22 @@ void FakeAudioCaptureModule::ProcessFrameP() {
 }
 
 void FakeAudioCaptureModule::ReceiveFrameP() {
-  RTC_CHECK(process_thread_->IsCurrent());
-  {
-    rtc::CritScope cs(&crit_callback_);
-    if (!audio_callback_) {
-      return;
-    }
-    ResetRecBuffer();
-    size_t nSamplesOut = 0;
-    int64_t elapsed_time_ms = 0;
-    int64_t ntp_time_ms = 0;
-    if (audio_callback_->NeedMorePlayData(
-            kNumberSamples, kNumberBytesPerSample, kNumberOfChannels,
-            kSamplesPerSecond, rec_buffer_, nSamplesOut, &elapsed_time_ms,
-            &ntp_time_ms) != 0) {
-      RTC_NOTREACHED();
-    }
-    RTC_CHECK(nSamplesOut == kNumberSamples);
+  RTC_DCHECK_RUN_ON(&process_thread_checker_);
+  if (!audio_callback_) {
+    return;
   }
+  ResetRecBuffer();
+  size_t nSamplesOut = 0;
+  int64_t elapsed_time_ms = 0;
+  int64_t ntp_time_ms = 0;
+  if (audio_callback_->NeedMorePlayData(kNumberSamples, kNumberBytesPerSample,
+                                        kNumberOfChannels, kSamplesPerSecond,
+                                        rec_buffer_, nSamplesOut,
+                                        &elapsed_time_ms, &ntp_time_ms) != 0) {
+    RTC_NOTREACHED();
+  }
+  RTC_CHECK(nSamplesOut == kNumberSamples);
+
   // The SetBuffer() function ensures that after decoding, the audio buffer
   // should contain samples of similar magnitude (there is likely to be some
   // distortion due to the audio pipeline). If one sample is detected to
@@ -513,25 +518,22 @@ void FakeAudioCaptureModule::ReceiveFrameP() {
   // has been received from the remote side (i.e. faked frames are not being
   // pulled).
   if (CheckRecBuffer(kHighSampleValue)) {
-    rtc::CritScope cs(&crit_);
     ++frames_received_;
   }
 }
 
 void FakeAudioCaptureModule::SendFrameP() {
-  RTC_CHECK(process_thread_->IsCurrent());
-  rtc::CritScope cs(&crit_callback_);
+  RTC_DCHECK_RUN_ON(&process_thread_checker_);
   if (!audio_callback_) {
     return;
   }
   bool key_pressed = false;
-  uint32_t current_mic_level = 0;
-  MicrophoneVolume(&current_mic_level);
+  uint32_t current_mic_level = current_mic_level_;
   if (audio_callback_->RecordedDataIsAvailable(
           send_buffer_, kNumberSamples, kNumberBytesPerSample,
           kNumberOfChannels, kSamplesPerSecond, kTotalDelayMs, kClockDriftMs,
           current_mic_level, key_pressed, current_mic_level) != 0) {
     RTC_NOTREACHED();
   }
-  SetMicrophoneVolume(current_mic_level);
+  current_mic_level_ = current_mic_level;
 }
