@@ -52,10 +52,10 @@ class MockAudioDecoder final : public AudioDecoder {
       : sample_rate_hz_(sample_rate_hz),
         num_channels_(num_channels),
         fec_enabled_(false) {}
-  ~MockAudioDecoder() /* override */ { Die(); }
-  MOCK_METHOD0(Die, void());
+  ~MockAudioDecoder() override { Die(); }
+  MOCK_METHOD(void, Die, ());
 
-  MOCK_METHOD0(Reset, void());
+  MOCK_METHOD(void, Reset, (), (override));
 
   class MockFrame : public AudioDecoder::EncodedAudioFrame {
    public:

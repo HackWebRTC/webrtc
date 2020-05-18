@@ -40,7 +40,7 @@ static const double kKernelInterpolationFactor = 0.5;
 // Helper class to ensure ChunkedResample() functions properly.
 class MockSource : public SincResamplerCallback {
  public:
-  MOCK_METHOD2(Run, void(size_t frames, float* destination));
+  MOCK_METHOD(void, Run, (size_t frames, float* destination), (override));
 };
 
 ACTION(ClearBuffer) {

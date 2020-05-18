@@ -37,13 +37,13 @@ class MockInitialize : public AudioProcessingImpl {
   explicit MockInitialize(const webrtc::Config& config)
       : AudioProcessingImpl(config) {}
 
-  MOCK_METHOD0(InitializeLocked, int());
+  MOCK_METHOD(int, InitializeLocked, (), (override));
   int RealInitializeLocked() RTC_NO_THREAD_SAFETY_ANALYSIS {
     return AudioProcessingImpl::InitializeLocked();
   }
 
-  MOCK_CONST_METHOD0(AddRef, void());
-  MOCK_CONST_METHOD0(Release, rtc::RefCountReleaseStatus());
+  MOCK_METHOD(void, AddRef, (), (const, override));
+  MOCK_METHOD(rtc::RefCountReleaseStatus, Release, (), (const, override));
 };
 
 // Creates MockEchoControl instances and provides a raw pointer access to
