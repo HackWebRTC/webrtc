@@ -463,6 +463,7 @@ if (rtc_include_tests) {
       "source/rtcp_sender_unittest.cc",
       "source/rtcp_transceiver_impl_unittest.cc",
       "source/rtcp_transceiver_unittest.cc",
+      "source/rtp_dependency_descriptor_extension_unittest.cc",
       "source/rtp_fec_unittest.cc",
       "source/rtp_format_h264_unittest.cc",
       "source/rtp_format_unittest.cc",

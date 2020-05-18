@@ -75,9 +75,12 @@ bool RtpDependencyDescriptorWriter::Write() {
     WriteFrameDependencyDefinition();
   }
   size_t remaining_bits = bit_writer_.RemainingBitCount();
-  if (remaining_bits > 0) {
-    // Zero remaining memory to avoid leaving it uninitialized.
-    WriteBits(/*val=*/0, remaining_bits);
+  // Zero remaining memory to avoid leaving it uninitialized.
+  if (remaining_bits % 64 != 0) {
+    WriteBits(/*val=*/0, remaining_bits % 64);
+  }
+  for (size_t i = 0; i < remaining_bits / 64; ++i) {
+    WriteBits(/*val=*/0, 64);
   }
   return !build_failed_;
 }
