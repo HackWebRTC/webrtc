@@ -99,12 +99,17 @@ class VideoAdapter {
   // Determine if frame should be dropped based on input fps and requested fps.
   bool KeepFrame(int64_t in_timestamp_ns);
 
-  int frames_in_;         // Number of input frames.
-  int frames_out_;        // Number of output frames.
-  int frames_scaled_;     // Number of frames scaled.
-  int adaption_changes_;  // Number of changes in scale factor.
-  int previous_width_;    // Previous adapter output width.
-  int previous_height_;   // Previous adapter output height.
+  int frames_in_ RTC_GUARDED_BY(critical_section_);  // Number of input frames.
+  int frames_out_
+      RTC_GUARDED_BY(critical_section_);  // Number of output frames.
+  int frames_scaled_
+      RTC_GUARDED_BY(critical_section_);  // Number of frames scaled.
+  int adaption_changes_
+      RTC_GUARDED_BY(critical_section_);  // Number of changes in scale factor.
+  int previous_width_
+      RTC_GUARDED_BY(critical_section_);  // Previous adapter output width.
+  int previous_height_
+      RTC_GUARDED_BY(critical_section_);  // Previous adapter output height.
   const bool variable_start_scale_factor_;
 
   // The fixed source resolution alignment requirement.
