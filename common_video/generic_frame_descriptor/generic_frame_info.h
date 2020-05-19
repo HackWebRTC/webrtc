@@ -12,6 +12,7 @@
 #define COMMON_VIDEO_GENERIC_FRAME_DESCRIPTOR_GENERIC_FRAME_INFO_H_
 
 #include <initializer_list>
+#include <vector>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/string_view.h"
@@ -41,6 +42,7 @@ struct GenericFrameInfo : public FrameDependencyTemplate {
   ~GenericFrameInfo();
 
   absl::InlinedVector<CodecBufferUsage, kMaxEncoderBuffers> encoder_buffers;
+  std::vector<bool> part_of_chain;
 };
 
 class GenericFrameInfo::Builder {

@@ -19,6 +19,7 @@
 #include "call/rtp_config.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
+#include "modules/video_coding/chain_diff_calculator.h"
 #include "modules/video_coding/frame_dependencies_calculator.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 
@@ -88,6 +89,7 @@ class RtpPayloadParams final {
                              RTPVideoHeader::GenericDescriptorInfo* generic);
 
   FrameDependenciesCalculator dependencies_calculator_;
+  ChainDiffCalculator chains_calculator_;
   // TODO(bugs.webrtc.org/10242): Remove once all encoder-wrappers are updated.
   // Holds the last shared frame id for a given (spatial, temporal) layer.
   std::array<std::array<int64_t, RtpGenericFrameDescriptor::kMaxTemporalLayers>,

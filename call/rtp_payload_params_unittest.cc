@@ -32,6 +32,7 @@
 
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
+using ::testing::SizeIs;
 
 namespace webrtc {
 namespace {
@@ -388,6 +389,7 @@ TEST(RtpPayloadParamsTest, SetsGenericFromGenericFrameInfo) {
       GenericFrameInfo::Builder().S(1).T(0).Dtis("S").Build();
   codec_info.generic_frame_info->encoder_buffers = {
       {/*id=*/0, /*referenced=*/false, /*updated=*/true}};
+  codec_info.generic_frame_info->part_of_chain = {true, false};
   RTPVideoHeader key_header =
       params.GetRtpVideoHeader(encoded_image, &codec_info, /*frame_id=*/1);
 
@@ -398,12 +400,14 @@ TEST(RtpPayloadParamsTest, SetsGenericFromGenericFrameInfo) {
   EXPECT_THAT(key_header.generic->dependencies, IsEmpty());
   EXPECT_THAT(key_header.generic->decode_target_indications,
               ElementsAre(DecodeTargetIndication::kSwitch));
+  EXPECT_THAT(key_header.generic->chain_diffs, SizeIs(2));
 
   encoded_image._frameType = VideoFrameType::kVideoFrameDelta;
   codec_info.generic_frame_info =
       GenericFrameInfo::Builder().S(2).T(3).Dtis("D").Build();
   codec_info.generic_frame_info->encoder_buffers = {
       {/*id=*/0, /*referenced=*/true, /*updated=*/false}};
+  codec_info.generic_frame_info->part_of_chain = {false, false};
   RTPVideoHeader delta_header =
       params.GetRtpVideoHeader(encoded_image, &codec_info, /*frame_id=*/3);
 
@@ -414,6 +418,7 @@ TEST(RtpPayloadParamsTest, SetsGenericFromGenericFrameInfo) {
   EXPECT_THAT(delta_header.generic->dependencies, ElementsAre(1));
   EXPECT_THAT(delta_header.generic->decode_target_indications,
               ElementsAre(DecodeTargetIndication::kDiscardable));
+  EXPECT_THAT(delta_header.generic->chain_diffs, SizeIs(2));
 }
 
 class RtpPayloadParamsVp8ToGenericTest : public ::testing::Test {
