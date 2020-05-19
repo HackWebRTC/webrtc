@@ -78,7 +78,7 @@ ABSL_FLAG(bool,
 
 ABSL_FLAG(bool,
           print_triage_alerts,
-          false,
+          true,
           "Print triage alerts, i.e. a list of potential problems.");
 
 ABSL_FLAG(bool,
