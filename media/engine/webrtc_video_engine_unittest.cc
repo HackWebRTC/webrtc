@@ -209,11 +209,15 @@ int GetMaxDefaultBitrateBps(size_t width, size_t height) {
 
 class MockVideoSource : public rtc::VideoSourceInterface<webrtc::VideoFrame> {
  public:
-  MOCK_METHOD2(AddOrUpdateSink,
-               void(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
-                    const rtc::VideoSinkWants& wants));
-  MOCK_METHOD1(RemoveSink,
-               void(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink));
+  MOCK_METHOD(void,
+              AddOrUpdateSink,
+              (rtc::VideoSinkInterface<webrtc::VideoFrame> * sink,
+               const rtc::VideoSinkWants& wants),
+              (override));
+  MOCK_METHOD(void,
+              RemoveSink,
+              (rtc::VideoSinkInterface<webrtc::VideoFrame> * sink),
+              (override));
 };
 
 }  // namespace

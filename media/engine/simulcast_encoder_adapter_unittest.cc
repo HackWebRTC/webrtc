@@ -199,8 +199,10 @@ class MockVideoEncoder : public VideoEncoder {
         video_format_("unknown"),
         callback_(nullptr) {}
 
-  MOCK_METHOD1(SetFecControllerOverride,
-               void(FecControllerOverride* fec_controller_override));
+  MOCK_METHOD(void,
+              SetFecControllerOverride,
+              (FecControllerOverride * fec_controller_override),
+              (override));
 
   // TODO(nisse): Valid overrides commented out, because the gmock
   // methods don't use any override declarations, and we want to avoid
@@ -212,10 +214,11 @@ class MockVideoEncoder : public VideoEncoder {
     return init_encode_return_value_;
   }
 
-  MOCK_METHOD2(
-      Encode,
-      int32_t(const VideoFrame& inputImage,
-              const std::vector<VideoFrameType>* frame_types) /* override */);
+  MOCK_METHOD(int32_t,
+              Encode,
+              (const VideoFrame& inputImage,
+               const std::vector<VideoFrameType>* frame_types),
+              (override));
 
   int32_t RegisterEncodeCompleteCallback(
       EncodedImageCallback* callback) override {
@@ -223,7 +226,7 @@ class MockVideoEncoder : public VideoEncoder {
     return 0;
   }
 
-  MOCK_METHOD0(Release, int32_t() /* override */);
+  MOCK_METHOD(int32_t, Release, (), (override));
 
   void SetRates(const RateControlParameters& parameters) {
     last_set_rates_ = parameters;
@@ -334,8 +337,7 @@ std::vector<SdpVideoFormat> MockVideoEncoderFactory::GetSupportedFormats()
 
 std::unique_ptr<VideoEncoder> MockVideoEncoderFactory::CreateVideoEncoder(
     const SdpVideoFormat& format) {
-  std::unique_ptr<MockVideoEncoder> encoder(
-      new ::testing::NiceMock<MockVideoEncoder>(this));
+  auto encoder = std::make_unique<::testing::NiceMock<MockVideoEncoder>>(this);
   encoder->set_init_encode_return_value(init_encode_return_value_);
   const char* encoder_name = encoder_names_.empty()
                                  ? "codec_implementation_name"

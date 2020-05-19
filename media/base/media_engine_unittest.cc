@@ -26,8 +26,10 @@ namespace {
 class MockRtpHeaderExtensionQueryInterface
     : public RtpHeaderExtensionQueryInterface {
  public:
-  MOCK_CONST_METHOD0(GetRtpHeaderExtensions,
-                     std::vector<RtpHeaderExtensionCapability>());
+  MOCK_METHOD(std::vector<RtpHeaderExtensionCapability>,
+              GetRtpHeaderExtensions,
+              (),
+              (const, override));
 };
 
 }  // namespace

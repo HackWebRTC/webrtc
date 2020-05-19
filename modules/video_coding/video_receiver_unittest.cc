@@ -26,8 +26,10 @@ namespace {
 
 class MockPacketRequestCallback : public VCMPacketRequestCallback {
  public:
-  MOCK_METHOD2(ResendPackets,
-               int32_t(const uint16_t* sequenceNumbers, uint16_t length));
+  MOCK_METHOD(int32_t,
+              ResendPackets,
+              (const uint16_t* sequenceNumbers, uint16_t length),
+              (override));
 };
 
 class MockVCMReceiveCallback : public VCMReceiveCallback {
@@ -35,11 +37,12 @@ class MockVCMReceiveCallback : public VCMReceiveCallback {
   MockVCMReceiveCallback() {}
   virtual ~MockVCMReceiveCallback() {}
 
-  MOCK_METHOD4(
-      FrameToRender,
-      int32_t(VideoFrame&, absl::optional<uint8_t>, int32_t, VideoContentType));
-  MOCK_METHOD1(OnIncomingPayloadType, void(int));
-  MOCK_METHOD1(OnDecoderImplementationName, void(const char*));
+  MOCK_METHOD(int32_t,
+              FrameToRender,
+              (VideoFrame&, absl::optional<uint8_t>, int32_t, VideoContentType),
+              (override));
+  MOCK_METHOD(void, OnIncomingPayloadType, (int), (override));
+  MOCK_METHOD(void, OnDecoderImplementationName, (const char*), (override));
 };
 
 class TestVideoReceiver : public ::testing::Test {
