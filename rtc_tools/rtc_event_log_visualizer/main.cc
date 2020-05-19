@@ -30,6 +30,7 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_tools/rtc_event_log_visualizer/alerts.h"
 #include "rtc_tools/rtc_event_log_visualizer/analyzer.h"
 #include "rtc_tools/rtc_event_log_visualizer/plot_base.h"
 #include "rtc_tools/rtc_event_log_visualizer/plot_protobuf.h"
@@ -194,9 +195,9 @@ int main(int argc, char* argv[]) {
       "A tool for visualizing WebRTC event logs.\n"
       "Example usage:\n"
       "./event_log_visualizer <logfile> | python\n");
-  absl::FlagsUsageConfig config;
-  config.contains_help_flags = &ContainsHelppackageFlags;
-  absl::SetFlagsUsageConfig(config);
+  absl::FlagsUsageConfig flag_config;
+  flag_config.contains_help_flags = &ContainsHelppackageFlags;
+  absl::SetFlagsUsageConfig(flag_config);
   std::vector<char*> args = absl::ParseCommandLine(argc, argv);
 
   // Print RTC_LOG warnings and errors even in release builds.
@@ -261,8 +262,20 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  webrtc::EventLogAnalyzer analyzer(parsed_log,
-                                    absl::GetFlag(FLAGS_normalize_time));
+  webrtc::AnalyzerConfig config;
+  config.window_duration_ = 250000;
+  config.step_ = 10000;
+  config.normalize_time_ = absl::GetFlag(FLAGS_normalize_time);
+  config.begin_time_ = parsed_log.first_timestamp();
+  config.end_time_ = parsed_log.last_timestamp();
+  if (config.end_time_ < config.begin_time_) {
+    RTC_LOG(LS_WARNING) << "Log end time " << config.end_time_
+                        << " not after begin time " << config.begin_time_
+                        << ". Nothing to analyze. Is the log broken?";
+    return -1;
+  }
+
+  webrtc::EventLogAnalyzer analyzer(parsed_log, config);
   std::unique_ptr<webrtc::PlotCollection> collection;
   if (absl::GetFlag(FLAGS_protobuf_output)) {
     collection.reset(new webrtc::ProtobufPlotCollection());
@@ -614,8 +627,9 @@ int main(int argc, char* argv[]) {
   collection->Draw();
 
   if (absl::GetFlag(FLAGS_print_triage_alerts)) {
-    analyzer.CreateTriageNotifications();
-    analyzer.PrintNotifications(stderr);
+    webrtc::TriageHelper triage_alerts(config);
+    triage_alerts.AnalyzeLog(parsed_log);
+    triage_alerts.Print(stderr);
   }
 
   return 0;

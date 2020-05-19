@@ -330,6 +330,20 @@ class ParsedRtcEventLog {
     PacketView<const LoggedRtpPacket> packet_view;
   };
 
+  class LogSegment {
+   public:
+    LogSegment(int64_t start_time_us, int64_t stop_time_us)
+        : start_time_us_(start_time_us), stop_time_us_(stop_time_us) {}
+    int64_t start_time_ms() const { return start_time_us_ / 1000; }
+    int64_t start_time_us() const { return start_time_us_; }
+    int64_t stop_time_ms() const { return stop_time_us_ / 1000; }
+    int64_t stop_time_us() const { return stop_time_us_; }
+
+   private:
+    int64_t start_time_us_;
+    int64_t stop_time_us_;
+  };
+
   static webrtc::RtpHeaderExtensionMap GetDefaultHeaderExtensionMap();
 
   explicit ParsedRtcEventLog(
@@ -597,6 +611,8 @@ class ParsedRtcEventLog {
   int64_t first_timestamp() const { return first_timestamp_; }
   int64_t last_timestamp() const { return last_timestamp_; }
 
+  const std::vector<LogSegment>& log_segments() const { return log_segments_; }
+
   std::vector<LoggedPacketInfo> GetPacketInfos(PacketDirection direction) const;
   std::vector<LoggedPacketInfo> GetIncomingPacketInfos() const {
     return GetPacketInfos(kIncomingPacket);
@@ -849,6 +865,9 @@ class ParsedRtcEventLog {
 
   int64_t first_timestamp_;
   int64_t last_timestamp_;
+
+  // Stores the start and end timestamp for each log segments.
+  std::vector<LogSegment> log_segments_;
 
   // The extension maps are mutable to allow us to insert the default
   // configuration when parsing an RTP header for an unconfigured stream.

@@ -465,31 +465,14 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log,
     config_.begin_time_ = config_.end_time_ = 0;
   }
 
-  const auto& log_start_events = parsed_log_.start_log_events();
-  const auto& log_end_events = parsed_log_.stop_log_events();
-  auto start_iter = log_start_events.begin();
-  auto end_iter = log_end_events.begin();
-  while (start_iter != log_start_events.end()) {
-    int64_t start = start_iter->log_time_us();
-    ++start_iter;
-    absl::optional<int64_t> next_start;
-    if (start_iter != log_start_events.end())
-      next_start.emplace(start_iter->log_time_us());
-    if (end_iter != log_end_events.end() &&
-        end_iter->log_time_us() <=
-            next_start.value_or(std::numeric_limits<int64_t>::max())) {
-      int64_t end = end_iter->log_time_us();
-      RTC_DCHECK_LE(start, end);
-      log_segments_.push_back(std::make_pair(start, end));
-      ++end_iter;
-    } else {
-      // we're missing an end event. Assume that it occurred just before the
-      // next start.
-      log_segments_.push_back(
-          std::make_pair(start, next_start.value_or(config_.end_time_)));
-    }
-  }
-  RTC_LOG(LS_INFO) << "Found " << log_segments_.size()
+  RTC_LOG(LS_INFO) << "Found " << parsed_log_.log_segments().size()
+                   << " (LOG_START, LOG_END) segments in log.";
+}
+
+EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log,
+                                   const AnalyzerConfig& config)
+    : parsed_log_(log), config_(config) {
+  RTC_LOG(LS_INFO) << "Found " << parsed_log_.log_segments().size()
                    << " (LOG_START, LOG_END) segments in log.";
 }
 
@@ -527,7 +510,7 @@ void EventLogAnalyzer::CreatePacketGraph(PacketDirection direction,
       continue;
     }
 
-    TimeSeries time_series(GetStreamName(direction, stream.ssrc),
+    TimeSeries time_series(GetStreamName(parsed_log_, direction, stream.ssrc),
                            LineStyle::kBar);
     auto GetPacketSize = [](const LoggedRtpPacket& packet) {
       return absl::optional<float>(packet.total_length);
@@ -597,8 +580,8 @@ void EventLogAnalyzer::CreateAccumulatedPacketsGraph(PacketDirection direction,
   for (const auto& stream : parsed_log_.rtp_packets_by_ssrc(direction)) {
     if (!MatchingSsrc(stream.ssrc, desired_ssrc_))
       continue;
-    std::string label =
-        std::string("RTP ") + GetStreamName(direction, stream.ssrc);
+    std::string label = std::string("RTP ") +
+                        GetStreamName(parsed_log_, direction, stream.ssrc);
     CreateAccumulatedPacketsTimeSeries(plot, stream.packet_view, label);
   }
   std::string label =
@@ -627,7 +610,8 @@ void EventLogAnalyzer::CreatePacketRateGraph(PacketDirection direction,
       continue;
     }
     TimeSeries time_series(
-        std::string("RTP ") + GetStreamName(direction, stream.ssrc),
+        std::string("RTP ") +
+            GetStreamName(parsed_log_, direction, stream.ssrc),
         LineStyle::kLine);
     MovingAverage<LoggedRtpPacket, double>(CountPackets, stream.packet_view,
                                            config_, &time_series);
@@ -736,9 +720,9 @@ void EventLogAnalyzer::CreatePlayoutGraph(Plot* plot) {
 void EventLogAnalyzer::CreateAudioLevelGraph(PacketDirection direction,
                                              Plot* plot) {
   for (const auto& stream : parsed_log_.rtp_packets_by_ssrc(direction)) {
-    if (!IsAudioSsrc(direction, stream.ssrc))
+    if (!IsAudioSsrc(parsed_log_, direction, stream.ssrc))
       continue;
-    TimeSeries time_series(GetStreamName(direction, stream.ssrc),
+    TimeSeries time_series(GetStreamName(parsed_log_, direction, stream.ssrc),
                            LineStyle::kLine);
     for (auto& packet : stream.packet_view) {
       if (packet.header.extension.hasAudioLevel) {
@@ -767,8 +751,9 @@ void EventLogAnalyzer::CreateSequenceNumberGraph(Plot* plot) {
       continue;
     }
 
-    TimeSeries time_series(GetStreamName(kIncomingPacket, stream.ssrc),
-                           LineStyle::kBar);
+    TimeSeries time_series(
+        GetStreamName(parsed_log_, kIncomingPacket, stream.ssrc),
+        LineStyle::kBar);
     auto GetSequenceNumberDiff = [](const LoggedRtpPacketIncoming& old_packet,
                                     const LoggedRtpPacketIncoming& new_packet) {
       int64_t diff =
@@ -801,8 +786,9 @@ void EventLogAnalyzer::CreateIncomingPacketLossGraph(Plot* plot) {
       continue;
     }
 
-    TimeSeries time_series(GetStreamName(kIncomingPacket, stream.ssrc),
-                           LineStyle::kLine, PointStyle::kHighlight);
+    TimeSeries time_series(
+        GetStreamName(parsed_log_, kIncomingPacket, stream.ssrc),
+        LineStyle::kLine, PointStyle::kHighlight);
     // TODO(terelius): Should the window and step size be read from the class
     // instead?
     const int64_t kWindowUs = 1000000;
@@ -855,7 +841,7 @@ void EventLogAnalyzer::CreateIncomingDelayGraph(Plot* plot) {
   for (const auto& stream : parsed_log_.incoming_rtp_packets_by_ssrc()) {
     // Filter on SSRC.
     if (!MatchingSsrc(stream.ssrc, desired_ssrc_) ||
-        IsRtxSsrc(kIncomingPacket, stream.ssrc)) {
+        IsRtxSsrc(parsed_log_, kIncomingPacket, stream.ssrc)) {
       continue;
     }
 
@@ -866,15 +852,17 @@ void EventLogAnalyzer::CreateIncomingDelayGraph(Plot* plot) {
                           << packets.size() << " packets in the stream.";
       continue;
     }
-    int64_t end_time_us = log_segments_.empty()
-                              ? std::numeric_limits<int64_t>::max()
-                              : log_segments_.front().second;
+    int64_t segment_end_us =
+        parsed_log_.log_segments().empty()
+            ? std::numeric_limits<int64_t>::max()
+            : parsed_log_.log_segments().front().stop_time_us();
     absl::optional<uint32_t> estimated_frequency =
-        EstimateRtpClockFrequency(packets, end_time_us);
+        EstimateRtpClockFrequency(packets, segment_end_us);
     if (!estimated_frequency)
       continue;
     const double frequency_hz = *estimated_frequency;
-    if (IsVideoSsrc(kIncomingPacket, stream.ssrc) && frequency_hz != 90000) {
+    if (IsVideoSsrc(parsed_log_, kIncomingPacket, stream.ssrc) &&
+        frequency_hz != 90000) {
       RTC_LOG(LS_WARNING)
           << "Video stream should use a 90 kHz clock but appears to use "
           << frequency_hz / 1000 << ". Discarding.";
@@ -891,14 +879,16 @@ void EventLogAnalyzer::CreateIncomingDelayGraph(Plot* plot) {
     };
 
     TimeSeries capture_time_data(
-        GetStreamName(kIncomingPacket, stream.ssrc) + " capture-time",
+        GetStreamName(parsed_log_, kIncomingPacket, stream.ssrc) +
+            " capture-time",
         LineStyle::kLine);
     AccumulatePairs<LoggedRtpPacketIncoming, double>(
         ToCallTime, ToNetworkDelay, packets, &capture_time_data);
     plot->AppendTimeSeries(std::move(capture_time_data));
 
     TimeSeries send_time_data(
-        GetStreamName(kIncomingPacket, stream.ssrc) + " abs-send-time",
+        GetStreamName(parsed_log_, kIncomingPacket, stream.ssrc) +
+            " abs-send-time",
         LineStyle::kLine);
     AccumulatePairs<LoggedRtpPacketIncoming, double>(
         ToCallTime, NetworkDelayDiff_AbsSendTime, packets, &send_time_data);
@@ -1191,7 +1181,7 @@ void EventLogAnalyzer::CreateStreamBitrateGraph(PacketDirection direction,
       continue;
     }
 
-    TimeSeries time_series(GetStreamName(direction, stream.ssrc),
+    TimeSeries time_series(GetStreamName(parsed_log_, direction, stream.ssrc),
                            LineStyle::kLine);
     auto GetPacketSizeKilobits = [](const LoggedRtpPacket& packet) {
       return packet.total_length * 8.0 / 1000.0;
@@ -1483,7 +1473,7 @@ void EventLogAnalyzer::CreateReceiveSideBweSimulationGraph(Plot* plot) {
   std::multimap<int64_t, const RtpPacketType*> incoming_rtp;
 
   for (const auto& stream : parsed_log_.incoming_rtp_packets_by_ssrc()) {
-    if (IsVideoSsrc(kIncomingPacket, stream.ssrc)) {
+    if (IsVideoSsrc(parsed_log_, kIncomingPacket, stream.ssrc)) {
       for (const auto& rtp_packet : stream.incoming_packets)
         incoming_rtp.insert(
             std::make_pair(rtp_packet.rtp.log_time_us(), &rtp_packet));
@@ -1586,7 +1576,7 @@ void EventLogAnalyzer::CreatePacerDelayGraph(Plot* plot) {
     const std::vector<LoggedRtpPacketOutgoing>& packets =
         stream.outgoing_packets;
 
-    if (IsRtxSsrc(kOutgoingPacket, stream.ssrc)) {
+    if (IsRtxSsrc(parsed_log_, kOutgoingPacket, stream.ssrc)) {
       continue;
     }
 
@@ -1596,14 +1586,15 @@ void EventLogAnalyzer::CreatePacerDelayGraph(Plot* plot) {
              "pacer delay with less than 2 packets in the stream";
       continue;
     }
-    int64_t end_time_us = log_segments_.empty()
-                              ? std::numeric_limits<int64_t>::max()
-                              : log_segments_.front().second;
+    int64_t segment_end_us =
+        parsed_log_.log_segments().empty()
+            ? std::numeric_limits<int64_t>::max()
+            : parsed_log_.log_segments().front().stop_time_us();
     absl::optional<uint32_t> estimated_frequency =
-        EstimateRtpClockFrequency(packets, end_time_us);
+        EstimateRtpClockFrequency(packets, segment_end_us);
     if (!estimated_frequency)
       continue;
-    if (IsVideoSsrc(kOutgoingPacket, stream.ssrc) &&
+    if (IsVideoSsrc(parsed_log_, kOutgoingPacket, stream.ssrc) &&
         *estimated_frequency != 90000) {
       RTC_LOG(LS_WARNING)
           << "Video stream should use a 90 kHz clock but appears to use "
@@ -1612,7 +1603,7 @@ void EventLogAnalyzer::CreatePacerDelayGraph(Plot* plot) {
     }
 
     TimeSeries pacer_delay_series(
-        GetStreamName(kOutgoingPacket, stream.ssrc) + "(" +
+        GetStreamName(parsed_log_, kOutgoingPacket, stream.ssrc) + "(" +
             std::to_string(*estimated_frequency / 1000) + " kHz)",
         LineStyle::kLine, PointStyle::kHighlight);
     SeqNumUnwrapper<uint32_t> timestamp_unwrapper;
@@ -1645,7 +1636,7 @@ void EventLogAnalyzer::CreateTimestampGraph(PacketDirection direction,
                                             Plot* plot) {
   for (const auto& stream : parsed_log_.rtp_packets_by_ssrc(direction)) {
     TimeSeries rtp_timestamps(
-        GetStreamName(direction, stream.ssrc) + " capture-time",
+        GetStreamName(parsed_log_, direction, stream.ssrc) + " capture-time",
         LineStyle::kLine, PointStyle::kHighlight);
     for (const auto& packet : stream.packet_view) {
       float x = config_.GetCallTimeSec(packet.log_time_us());
@@ -1655,7 +1646,8 @@ void EventLogAnalyzer::CreateTimestampGraph(PacketDirection direction,
     plot->AppendTimeSeries(std::move(rtp_timestamps));
 
     TimeSeries rtcp_timestamps(
-        GetStreamName(direction, stream.ssrc) + " rtcp capture-time",
+        GetStreamName(parsed_log_, direction, stream.ssrc) +
+            " rtcp capture-time",
         LineStyle::kLine, PointStyle::kHighlight);
     // TODO(terelius): Why only sender reports?
     const auto& sender_reports = parsed_log_.sender_reports(direction);
@@ -1692,7 +1684,8 @@ void EventLogAnalyzer::CreateSenderAndReceiverReportPlot(
       bool inserted;
       if (sr_report_it == sr_reports_by_ssrc.end()) {
         std::tie(sr_report_it, inserted) = sr_reports_by_ssrc.emplace(
-            ssrc, TimeSeries(GetStreamName(direction, ssrc) + " Sender Reports",
+            ssrc, TimeSeries(GetStreamName(parsed_log_, direction, ssrc) +
+                                 " Sender Reports",
                              LineStyle::kLine, PointStyle::kHighlight));
       }
       sr_report_it->second.points.emplace_back(x, y);
@@ -1713,9 +1706,9 @@ void EventLogAnalyzer::CreateSenderAndReceiverReportPlot(
       bool inserted;
       if (rr_report_it == rr_reports_by_ssrc.end()) {
         std::tie(rr_report_it, inserted) = rr_reports_by_ssrc.emplace(
-            ssrc,
-            TimeSeries(GetStreamName(direction, ssrc) + " Receiver Reports",
-                       LineStyle::kLine, PointStyle::kHighlight));
+            ssrc, TimeSeries(GetStreamName(parsed_log_, direction, ssrc) +
+                                 " Receiver Reports",
+                             LineStyle::kLine, PointStyle::kHighlight));
       }
       rr_report_it->second.points.emplace_back(x, y);
     }
@@ -2038,7 +2031,7 @@ EventLogAnalyzer::NetEqStatsGetterMap EventLogAnalyzer::SimulateNetEq(
 
   for (const auto& stream : parsed_log_.incoming_rtp_packets_by_ssrc()) {
     const uint32_t ssrc = stream.ssrc;
-    if (!IsAudioSsrc(kIncomingPacket, ssrc))
+    if (!IsAudioSsrc(parsed_log_, kIncomingPacket, ssrc))
       continue;
     const std::vector<LoggedRtpPacketIncoming>* audio_packets =
         &stream.incoming_packets;
@@ -2058,9 +2051,10 @@ EventLogAnalyzer::NetEqStatsGetterMap EventLogAnalyzer::SimulateNetEq(
     }
 
     absl::optional<int64_t> end_time_ms =
-        log_segments_.empty()
+        parsed_log_.log_segments().empty()
             ? absl::nullopt
-            : absl::optional<int64_t>(log_segments_.front().second / 1000);
+            : absl::optional<int64_t>(
+                  parsed_log_.log_segments().front().stop_time_ms());
 
     neteq_stats[ssrc] = CreateNetEqTestAndRun(
         audio_packets, &output_events_it->second, end_time_ms,
@@ -2124,7 +2118,8 @@ void EventLogAnalyzer::CreateAudioJitterBufferGraph(
                  "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 1, "Relative delay (ms)", kBottomMargin,
                           kTopMargin);
-  plot->SetTitle("NetEq timing for " + GetStreamName(kIncomingPacket, ssrc));
+  plot->SetTitle("NetEq timing for " +
+                 GetStreamName(parsed_log_, kIncomingPacket, ssrc));
 }
 
 template <typename NetEqStatsType>
@@ -2150,7 +2145,8 @@ void EventLogAnalyzer::CreateNetEqStatsGraphInternal(
   }
 
   for (auto& series : time_series) {
-    series.second.label = GetStreamName(kIncomingPacket, series.first);
+    series.second.label =
+        GetStreamName(parsed_log_, kIncomingPacket, series.first);
     series.second.line_style = LineStyle::kLine;
     plot->AppendTimeSeries(std::move(series.second));
   }
@@ -2324,183 +2320,6 @@ void EventLogAnalyzer::CreateDtlsWritableStateGraph(Plot* plot) {
                  "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 1, "Writable", kBottomMargin, kTopMargin);
   plot->SetTitle("DTLS Writable State");
-}
-
-void EventLogAnalyzer::PrintNotifications(FILE* file) {
-  fprintf(file, "========== TRIAGE NOTIFICATIONS ==========\n");
-  for (const auto& alert : incoming_rtp_recv_time_gaps_) {
-    fprintf(file, "%3.3lf s : %s\n", alert.Time(), alert.ToString().c_str());
-  }
-  for (const auto& alert : incoming_rtcp_recv_time_gaps_) {
-    fprintf(file, "%3.3lf s : %s\n", alert.Time(), alert.ToString().c_str());
-  }
-  for (const auto& alert : outgoing_rtp_send_time_gaps_) {
-    fprintf(file, "%3.3lf s : %s\n", alert.Time(), alert.ToString().c_str());
-  }
-  for (const auto& alert : outgoing_rtcp_send_time_gaps_) {
-    fprintf(file, "%3.3lf s : %s\n", alert.Time(), alert.ToString().c_str());
-  }
-  for (const auto& alert : incoming_seq_num_jumps_) {
-    fprintf(file, "%3.3lf s : %s\n", alert.Time(), alert.ToString().c_str());
-  }
-  for (const auto& alert : incoming_capture_time_jumps_) {
-    fprintf(file, "%3.3lf s : %s\n", alert.Time(), alert.ToString().c_str());
-  }
-  for (const auto& alert : outgoing_seq_num_jumps_) {
-    fprintf(file, "%3.3lf s : %s\n", alert.Time(), alert.ToString().c_str());
-  }
-  for (const auto& alert : outgoing_capture_time_jumps_) {
-    fprintf(file, "%3.3lf s : %s\n", alert.Time(), alert.ToString().c_str());
-  }
-  for (const auto& alert : outgoing_high_loss_alerts_) {
-    fprintf(file, "          : %s\n", alert.ToString().c_str());
-  }
-  fprintf(file, "========== END TRIAGE NOTIFICATIONS ==========\n");
-}
-
-void EventLogAnalyzer::CreateStreamGapAlerts(PacketDirection direction) {
-  // With 100 packets/s (~800kbps), false positives would require 10 s without
-  // data.
-  constexpr int64_t kMaxSeqNumJump = 1000;
-  // With a 90 kHz clock, false positives would require 10 s without data.
-  constexpr int64_t kMaxCaptureTimeJump = 900000;
-
-  int64_t end_time_us = log_segments_.empty()
-                            ? std::numeric_limits<int64_t>::max()
-                            : log_segments_.front().second;
-
-  SeqNumUnwrapper<uint16_t> seq_num_unwrapper;
-  absl::optional<int64_t> last_seq_num;
-  SeqNumUnwrapper<uint32_t> capture_time_unwrapper;
-  absl::optional<int64_t> last_capture_time;
-  // Check for gaps in sequence numbers and capture timestamps.
-  for (const auto& stream : parsed_log_.rtp_packets_by_ssrc(direction)) {
-    for (const auto& packet : stream.packet_view) {
-      if (packet.log_time_us() > end_time_us) {
-        // Only process the first (LOG_START, LOG_END) segment.
-        break;
-      }
-
-      int64_t seq_num = seq_num_unwrapper.Unwrap(packet.header.sequenceNumber);
-      if (last_seq_num.has_value() &&
-          std::abs(seq_num - last_seq_num.value()) > kMaxSeqNumJump) {
-        Alert_SeqNumJump(direction,
-                         config_.GetCallTimeSec(packet.log_time_us()),
-                         packet.header.ssrc);
-      }
-      last_seq_num.emplace(seq_num);
-
-      int64_t capture_time =
-          capture_time_unwrapper.Unwrap(packet.header.timestamp);
-      if (last_capture_time.has_value() &&
-          std::abs(capture_time - last_capture_time.value()) >
-              kMaxCaptureTimeJump) {
-        Alert_CaptureTimeJump(direction,
-                              config_.GetCallTimeSec(packet.log_time_us()),
-                              packet.header.ssrc);
-      }
-      last_capture_time.emplace(capture_time);
-    }
-  }
-}
-
-void EventLogAnalyzer::CreateTransmissionGapAlerts(PacketDirection direction) {
-  constexpr int64_t kMaxRtpTransmissionGap = 500000;
-  constexpr int64_t kMaxRtcpTransmissionGap = 2000000;
-  int64_t end_time_us = log_segments_.empty()
-                            ? std::numeric_limits<int64_t>::max()
-                            : log_segments_.front().second;
-
-  // TODO(terelius): The parser could provide a list of all packets, ordered
-  // by time, for each direction.
-  std::multimap<int64_t, const LoggedRtpPacket*> rtp_in_direction;
-  for (const auto& stream : parsed_log_.rtp_packets_by_ssrc(direction)) {
-    for (const LoggedRtpPacket& rtp_packet : stream.packet_view)
-      rtp_in_direction.emplace(rtp_packet.log_time_us(), &rtp_packet);
-  }
-  absl::optional<int64_t> last_rtp_time;
-  for (const auto& kv : rtp_in_direction) {
-    int64_t timestamp = kv.first;
-    if (timestamp > end_time_us) {
-      // Only process the first (LOG_START, LOG_END) segment.
-      break;
-    }
-    int64_t duration = timestamp - last_rtp_time.value_or(0);
-    if (last_rtp_time.has_value() && duration > kMaxRtpTransmissionGap) {
-      // No packet sent/received for more than 500 ms.
-      Alert_RtpLogTimeGap(direction, config_.GetCallTimeSec(timestamp),
-                          duration / 1000);
-    }
-    last_rtp_time.emplace(timestamp);
-  }
-
-  absl::optional<int64_t> last_rtcp_time;
-  if (direction == kIncomingPacket) {
-    for (const auto& rtcp : parsed_log_.incoming_rtcp_packets()) {
-      if (rtcp.log_time_us() > end_time_us) {
-        // Only process the first (LOG_START, LOG_END) segment.
-        break;
-      }
-      int64_t duration = rtcp.log_time_us() - last_rtcp_time.value_or(0);
-      if (last_rtcp_time.has_value() && duration > kMaxRtcpTransmissionGap) {
-        // No feedback sent/received for more than 2000 ms.
-        Alert_RtcpLogTimeGap(direction,
-                             config_.GetCallTimeSec(rtcp.log_time_us()),
-                             duration / 1000);
-      }
-      last_rtcp_time.emplace(rtcp.log_time_us());
-    }
-  } else {
-    for (const auto& rtcp : parsed_log_.outgoing_rtcp_packets()) {
-      if (rtcp.log_time_us() > end_time_us) {
-        // Only process the first (LOG_START, LOG_END) segment.
-        break;
-      }
-      int64_t duration = rtcp.log_time_us() - last_rtcp_time.value_or(0);
-      if (last_rtcp_time.has_value() && duration > kMaxRtcpTransmissionGap) {
-        // No feedback sent/received for more than 2000 ms.
-        Alert_RtcpLogTimeGap(direction,
-                             config_.GetCallTimeSec(rtcp.log_time_us()),
-                             duration / 1000);
-      }
-      last_rtcp_time.emplace(rtcp.log_time_us());
-    }
-  }
-}
-
-// TODO(terelius): Notifications could possibly be generated by the same code
-// that produces the graphs. There is some code duplication that could be
-// avoided, but that might be solved anyway when we move functionality from the
-// analyzer to the parser.
-void EventLogAnalyzer::CreateTriageNotifications() {
-  CreateStreamGapAlerts(kIncomingPacket);
-  CreateStreamGapAlerts(kOutgoingPacket);
-  CreateTransmissionGapAlerts(kIncomingPacket);
-  CreateTransmissionGapAlerts(kOutgoingPacket);
-
-  int64_t end_time_us = log_segments_.empty()
-                            ? std::numeric_limits<int64_t>::max()
-                            : log_segments_.front().second;
-
-  constexpr double kMaxLossFraction = 0.05;
-  // Loss feedback
-  int64_t total_lost_packets = 0;
-  int64_t total_expected_packets = 0;
-  for (auto& bwe_update : parsed_log_.bwe_loss_updates()) {
-    if (bwe_update.log_time_us() > end_time_us) {
-      // Only process the first (LOG_START, LOG_END) segment.
-      break;
-    }
-    int64_t lost_packets = static_cast<double>(bwe_update.fraction_lost) / 255 *
-                           bwe_update.expected_packets;
-    total_lost_packets += lost_packets;
-    total_expected_packets += bwe_update.expected_packets;
-  }
-  double avg_outgoing_loss =
-      static_cast<double>(total_lost_packets) / total_expected_packets;
-  if (avg_outgoing_loss > kMaxLossFraction) {
-    Alert_OutgoingHighLoss(avg_outgoing_loss);
-  }
 }
 
 }  // namespace webrtc
