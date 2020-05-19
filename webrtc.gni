@@ -1002,6 +1002,7 @@ if (is_android) {
       }
 
       no_build_hooks = true
+      not_needed(["android_manifest"])
     }
   }
 

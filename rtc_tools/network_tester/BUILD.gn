@@ -115,7 +115,7 @@ if (is_android) {
 
   rtc_android_library("NetworkTesterMobile_javalib") {
     testonly = true
-    android_manifest_for_lint = "androidapp/AndroidManifest.xml"
+    android_manifest = "androidapp/AndroidManifest.xml"
 
     sources = [
       "androidapp/src/com/google/media/networktester/MainActivity.java",
