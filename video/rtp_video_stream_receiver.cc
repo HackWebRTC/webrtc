@@ -136,7 +136,7 @@ void RtpVideoStreamReceiver::RtcpFeedbackBuffer::SendNack(
   if (!buffering_allowed) {
     // Note that while *buffering* is not allowed, *batching* is, meaning that
     // previously buffered messages may be sent along with the current message.
-    SendBufferedRtcpFeedback();
+    SendRtcpFeedback(ConsumeRtcpFeedbackLocked());
   }
 }
 
@@ -155,34 +155,44 @@ void RtpVideoStreamReceiver::RtcpFeedbackBuffer::SendLossNotification(
 }
 
 void RtpVideoStreamReceiver::RtcpFeedbackBuffer::SendBufferedRtcpFeedback() {
-  bool request_key_frame = false;
-  std::vector<uint16_t> nack_sequence_numbers;
-  absl::optional<LossNotificationState> lntf_state;
+  SendRtcpFeedback(ConsumeRtcpFeedback());
+}
 
-  {
-    rtc::CritScope lock(&cs_);
-    std::swap(request_key_frame, request_key_frame_);
-    std::swap(nack_sequence_numbers, nack_sequence_numbers_);
-    std::swap(lntf_state, lntf_state_);
-  }
+RtpVideoStreamReceiver::RtcpFeedbackBuffer::ConsumedRtcpFeedback
+RtpVideoStreamReceiver::RtcpFeedbackBuffer::ConsumeRtcpFeedback() {
+  rtc::CritScope lock(&cs_);
+  return ConsumeRtcpFeedbackLocked();
+}
 
-  if (lntf_state) {
+RtpVideoStreamReceiver::RtcpFeedbackBuffer::ConsumedRtcpFeedback
+RtpVideoStreamReceiver::RtcpFeedbackBuffer::ConsumeRtcpFeedbackLocked() {
+  ConsumedRtcpFeedback feedback;
+  std::swap(feedback.request_key_frame, request_key_frame_);
+  std::swap(feedback.nack_sequence_numbers, nack_sequence_numbers_);
+  std::swap(feedback.lntf_state, lntf_state_);
+  return feedback;
+}
+
+void RtpVideoStreamReceiver::RtcpFeedbackBuffer::SendRtcpFeedback(
+    ConsumedRtcpFeedback feedback) {
+  if (feedback.lntf_state) {
     // If either a NACK or a key frame request is sent, we should buffer
     // the LNTF and wait for them (NACK or key frame request) to trigger
     // the compound feedback message.
     // Otherwise, the LNTF should be sent out immediately.
     const bool buffering_allowed =
-        request_key_frame || !nack_sequence_numbers.empty();
+        feedback.request_key_frame || !feedback.nack_sequence_numbers.empty();
 
     loss_notification_sender_->SendLossNotification(
-        lntf_state->last_decoded_seq_num, lntf_state->last_received_seq_num,
-        lntf_state->decodability_flag, buffering_allowed);
+        feedback.lntf_state->last_decoded_seq_num,
+        feedback.lntf_state->last_received_seq_num,
+        feedback.lntf_state->decodability_flag, buffering_allowed);
   }
 
-  if (request_key_frame) {
+  if (feedback.request_key_frame) {
     key_frame_request_sender_->RequestKeyFrame();
-  } else if (!nack_sequence_numbers.empty()) {
-    nack_sender_->SendNack(nack_sequence_numbers, true);
+  } else if (!feedback.nack_sequence_numbers.empty()) {
+    nack_sender_->SendNack(feedback.nack_sequence_numbers, true);
   }
 }
 
