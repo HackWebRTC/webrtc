@@ -1002,7 +1002,8 @@ void ReceiveStatisticsProxy::OnCompleteFrame(bool is_keyframe,
 }
 
 void ReceiveStatisticsProxy::OnDroppedFrames(uint32_t frames_dropped) {
-  RTC_DCHECK_RUN_ON(&decode_queue_);
+  // Can be called on either the decode queue or the worker thread
+  // See FrameBuffer2 for more details.
   worker_thread_->PostTask(ToQueuedTask(task_safety_, [frames_dropped, this]() {
     RTC_DCHECK_RUN_ON(&main_thread_);
     stats_.frames_dropped += frames_dropped;

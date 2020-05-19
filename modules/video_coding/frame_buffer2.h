@@ -28,6 +28,7 @@
 #include "rtc_base/event.h"
 #include "rtc_base/experiments/rtt_mult_experiment.h"
 #include "rtc_base/numerics/sequence_number_util.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread_annotations.h"
@@ -158,6 +159,9 @@ class FrameBuffer {
   // return it. See bugs.webrtc.org/10064
   EncodedFrame* CombineAndDeleteFrames(
       const std::vector<EncodedFrame*>& frames) const;
+
+  SequenceChecker construction_checker_;
+  SequenceChecker callback_checker_;
 
   // Stores only undecoded frames.
   FrameMap frames_ RTC_GUARDED_BY(crit_);

@@ -63,19 +63,25 @@ FrameBuffer::FrameBuffer(Clock* clock,
       last_log_non_decoded_ms_(-kLogNonDecodedIntervalMs),
       add_rtt_to_playout_delay_(
           webrtc::field_trial::IsEnabled("WebRTC-AddRttToPlayoutDelay")),
-      rtt_mult_settings_(RttMultExperiment::GetRttMultValue()) {}
+      rtt_mult_settings_(RttMultExperiment::GetRttMultValue()) {
+  callback_checker_.Detach();
+}
 
-FrameBuffer::~FrameBuffer() {}
+FrameBuffer::~FrameBuffer() {
+  RTC_DCHECK_RUN_ON(&construction_checker_);
+}
 
 void FrameBuffer::NextFrame(
     int64_t max_wait_time_ms,
     bool keyframe_required,
     rtc::TaskQueue* callback_queue,
     std::function<void(std::unique_ptr<EncodedFrame>, ReturnReason)> handler) {
-  RTC_DCHECK_RUN_ON(callback_queue);
+  RTC_DCHECK_RUN_ON(&callback_checker_);
+  RTC_DCHECK(callback_queue->IsCurrent());
   TRACE_EVENT0("webrtc", "FrameBuffer::NextFrame");
   int64_t latest_return_time_ms =
       clock_->TimeInMilliseconds() + max_wait_time_ms;
+
   rtc::CritScope lock(&crit_);
   if (stopped_) {
     return;
@@ -93,6 +99,7 @@ void FrameBuffer::StartWaitForNextFrameOnQueue() {
   int64_t wait_ms = FindNextFrame(clock_->TimeInMilliseconds());
   callback_task_ = RepeatingTaskHandle::DelayedStart(
       callback_queue_->Get(), TimeDelta::Millis(wait_ms), [this] {
+        RTC_DCHECK_RUN_ON(&callback_checker_);
         // If this task has not been cancelled, we did not get any new frames
         // while waiting. Continue with frame delivery.
         rtc::CritScope lock(&crit_);
@@ -211,6 +218,7 @@ int64_t FrameBuffer::FindNextFrame(int64_t now_ms) {
 }
 
 EncodedFrame* FrameBuffer::GetNextFrame() {
+  RTC_DCHECK_RUN_ON(&callback_checker_);
   int64_t now_ms = clock_->TimeInMilliseconds();
   // TODO(ilnik): remove |frames_out| use frames_to_decode_ directly.
   std::vector<EncodedFrame*> frames_out;
@@ -334,7 +342,10 @@ void FrameBuffer::Start() {
 void FrameBuffer::Stop() {
   TRACE_EVENT0("webrtc", "FrameBuffer::Stop");
   rtc::CritScope lock(&crit_);
+  if (stopped_)
+    return;
   stopped_ = true;
+
   CancelCallback();
 }
 
@@ -366,9 +377,11 @@ bool FrameBuffer::ValidReferences(const EncodedFrame& frame) const {
 }
 
 void FrameBuffer::CancelCallback() {
+  // Called from the callback queue or from within Stop().
   frame_handler_ = {};
   callback_task_.Stop();
   callback_queue_ = nullptr;
+  callback_checker_.Detach();
 }
 
 bool FrameBuffer::IsCompleteSuperFrame(const EncodedFrame& frame) {
