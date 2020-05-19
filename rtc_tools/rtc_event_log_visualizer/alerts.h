@@ -41,7 +41,7 @@ enum class TriageAlertType {
 struct TriageAlert {
   TriageAlertType type = TriageAlertType::kUnknown;
   int count = 0;
-  float first_occurence = -1;
+  float first_occurrence = -1;
   std::string explanation;
 };
 
@@ -70,7 +70,7 @@ class TriageHelper {
     if (it == triage_alerts_.end()) {
       TriageAlert alert;
       alert.type = type;
-      alert.first_occurence = time_seconds;
+      alert.first_occurrence = time_seconds;
       alert.count = 1;
       alert.explanation = std::string(explanation);
       triage_alerts_.insert(std::make_pair(type, alert));

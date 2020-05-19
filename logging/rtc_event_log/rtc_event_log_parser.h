@@ -193,6 +193,8 @@ class PacketView {
 
   size_t size() const { return num_elements_; }
 
+  bool empty() const { return num_elements_ == 0; }
+
   T& operator[](size_t i) {
     auto elem_ptr = data_ + i * element_size_;
     return *reinterpret_cast<T*>(elem_ptr);

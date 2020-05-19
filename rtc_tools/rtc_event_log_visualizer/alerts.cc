@@ -29,8 +29,8 @@ namespace webrtc {
 void TriageHelper::Print(FILE* file) {
   fprintf(file, "========== TRIAGE NOTIFICATIONS ==========\n");
   for (const auto& alert : triage_alerts_) {
-    fprintf(file, "%d %s. First occurence at %3.3lf\n", alert.second.count,
-            alert.second.explanation.c_str(), alert.second.first_occurence);
+    fprintf(file, "%d %s. First occurrence at %3.3lf\n", alert.second.count,
+            alert.second.explanation.c_str(), alert.second.first_occurrence);
   }
   fprintf(file, "========== END TRIAGE NOTIFICATIONS ==========\n");
 }
@@ -41,7 +41,8 @@ void TriageHelper::AnalyzeStreamGaps(const ParsedRtcEventLog& parsed_log,
   // data.
   constexpr int64_t kMaxSeqNumJump = 1000;
   // With a 90 kHz clock, false positives would require 10 s without data.
-  constexpr int64_t kMaxCaptureTimeJump = 900000;
+  constexpr int64_t kTicksPerMillisec = 90;
+  constexpr int64_t kCaptureTimeGraceMs = 10000;
 
   std::string seq_num_explanation =
       direction == kIncomingPacket
@@ -71,33 +72,39 @@ void TriageHelper::AnalyzeStreamGaps(const ParsedRtcEventLog& parsed_log,
     if (IsRtxSsrc(parsed_log, direction, stream.ssrc)) {
       continue;
     }
+    auto packets = stream.packet_view;
+    if (packets.empty()) {
+      continue;
+    }
     SeqNumUnwrapper<uint16_t> seq_num_unwrapper;
-    absl::optional<int64_t> last_seq_num;
+    int64_t last_seq_num =
+        seq_num_unwrapper.Unwrap(packets[0].header.sequenceNumber);
     SeqNumUnwrapper<uint32_t> capture_time_unwrapper;
-    absl::optional<int64_t> last_capture_time;
-    for (const auto& packet : stream.packet_view) {
+    int64_t last_capture_time =
+        capture_time_unwrapper.Unwrap(packets[0].header.timestamp);
+    int64_t last_log_time_ms = packets[0].log_time_ms();
+    for (const auto& packet : packets) {
       if (packet.log_time_us() > segment_end_us) {
         // Only process the first (LOG_START, LOG_END) segment.
         break;
       }
 
       int64_t seq_num = seq_num_unwrapper.Unwrap(packet.header.sequenceNumber);
-      if (last_seq_num.has_value() &&
-          std::abs(seq_num - last_seq_num.value()) > kMaxSeqNumJump) {
+      if (std::abs(seq_num - last_seq_num) > kMaxSeqNumJump) {
         Alert(seq_num_alert, config_.GetCallTimeSec(packet.log_time_us()),
               seq_num_explanation);
       }
-      last_seq_num.emplace(seq_num);
+      last_seq_num = seq_num;
 
       int64_t capture_time =
           capture_time_unwrapper.Unwrap(packet.header.timestamp);
-      if (last_capture_time.has_value() &&
-          std::abs(capture_time - last_capture_time.value()) >
-              kMaxCaptureTimeJump) {
+      if (std::abs(capture_time - last_capture_time) >
+          kTicksPerMillisec *
+              (kCaptureTimeGraceMs + packet.log_time_ms() - last_log_time_ms)) {
         Alert(capture_time_alert, config_.GetCallTimeSec(packet.log_time_us()),
               capture_time_explanation);
       }
-      last_capture_time.emplace(capture_time);
+      last_capture_time = capture_time;
     }
   }
 }
@@ -105,7 +112,7 @@ void TriageHelper::AnalyzeStreamGaps(const ParsedRtcEventLog& parsed_log,
 void TriageHelper::AnalyzeTransmissionGaps(const ParsedRtcEventLog& parsed_log,
                                            PacketDirection direction) {
   constexpr int64_t kMaxRtpTransmissionGap = 500000;
-  constexpr int64_t kMaxRtcpTransmissionGap = 2000000;
+  constexpr int64_t kMaxRtcpTransmissionGap = 3000000;
   std::string rtp_explanation =
       direction == kIncomingPacket
           ? "No RTP packets received for more than 500ms. This indicates a "
@@ -115,9 +122,10 @@ void TriageHelper::AnalyzeTransmissionGaps(const ParsedRtcEventLog& parsed_log,
             "with the pacer.";
   std::string rtcp_explanation =
       direction == kIncomingPacket
-          ? "No RTCP packets received for more than 2 s. Could be a longer "
+          ? "No RTCP packets received for more than 3 s. Could be a longer "
             "connection outage"
-          : "No RTCP sent for more than 2 s. This is most likely a bug.";
+          : "No RTCP packets sent for more than 3 s. This is most likely a "
+            "bug.";
   TriageAlertType rtp_alert = direction == kIncomingPacket
                                   ? TriageAlertType::kIncomingRtpGap
                                   : TriageAlertType::kOutgoingRtpGap;
@@ -199,7 +207,7 @@ void TriageHelper::AnalyzeLog(const ParsedRtcEventLog& parsed_log) {
           ? std::numeric_limits<int64_t>::max()
           : parsed_log.log_segments().front().stop_time_us();
 
-  int64_t first_occurence = parsed_log.last_timestamp();
+  int64_t first_occurrence = parsed_log.last_timestamp();
   constexpr double kMaxLossFraction = 0.05;
   // Loss feedback
   int64_t total_lost_packets = 0;
@@ -214,13 +222,13 @@ void TriageHelper::AnalyzeLog(const ParsedRtcEventLog& parsed_log) {
     total_lost_packets += lost_packets;
     total_expected_packets += bwe_update.expected_packets;
     if (bwe_update.fraction_lost >= 255 * kMaxLossFraction) {
-      first_occurence = std::min(first_occurence, bwe_update.log_time_us());
+      first_occurrence = std::min(first_occurrence, bwe_update.log_time_us());
     }
   }
   double avg_outgoing_loss =
       static_cast<double>(total_lost_packets) / total_expected_packets;
   if (avg_outgoing_loss > kMaxLossFraction) {
-    Alert(TriageAlertType::kOutgoingHighLoss, first_occurence,
+    Alert(TriageAlertType::kOutgoingHighLoss, first_occurrence,
           "More than 5% of outgoing packets lost.");
   }
 }
