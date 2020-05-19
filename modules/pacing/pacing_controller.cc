@@ -193,6 +193,10 @@ bool PacingController::Congested() const {
   return false;
 }
 
+bool PacingController::IsProbing() const {
+  return prober_.is_probing();
+}
+
 Timestamp PacingController::CurrentTime() const {
   Timestamp time = clock_->CurrentTime();
   if (time < last_timestamp_) {

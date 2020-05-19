@@ -91,13 +91,16 @@ RtpTransportControllerSend::RtpTransportControllerSend(
                                                   event_log,
                                                   trials,
                                                   process_thread_.get())),
-      task_queue_pacer_(use_task_queue_pacer_
-                            ? new TaskQueuePacedSender(clock,
-                                                       &packet_router_,
-                                                       event_log,
-                                                       trials,
-                                                       task_queue_factory)
-                            : nullptr),
+      task_queue_pacer_(
+          use_task_queue_pacer_
+              ? new TaskQueuePacedSender(
+                    clock,
+                    &packet_router_,
+                    event_log,
+                    trials,
+                    task_queue_factory,
+                    /*hold_back_window = */ PacingController::kMinSleepTime)
+              : nullptr),
       observer_(nullptr),
       controller_factory_override_(controller_factory),
       controller_factory_fallback_(

@@ -146,6 +146,8 @@ class PacingController {
 
   bool Congested() const;
 
+  bool IsProbing() const;
+
  private:
   void EnqueuePacketInternal(std::unique_ptr<RtpPacketToSend> packet,
                              int priority);
