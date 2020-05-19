@@ -39,7 +39,6 @@ namespace {
 // Encoder configuration parameters
 constexpr int kQpMax = 56;
 constexpr int kQpMin = 10;
-constexpr int kDefaultEncSpeed = 7;  // Use values 6, 7, or 8 for RTC.
 constexpr int kUsageProfile = 1;     // 0 = good quality; 1 = real-time.
 constexpr int kMinQindex = 58;       // Min qindex threshold for QP scaling.
 constexpr int kMaxQindex = 180;      // Max qindex threshold for QP scaling.
@@ -47,6 +46,19 @@ constexpr int kBitDepth = 8;
 constexpr int kLagInFrames = 0;  // No look ahead.
 constexpr int kRtpTicksPerSecond = 90000;
 constexpr float kMinimumFrameRate = 1.0;
+
+// Only positive speeds, range for real-time coding currently is: 6 - 8.
+// Lower means slower/better quality, higher means fastest/lower quality.
+int GetCpuSpeed(int width, int height) {
+  // For smaller resolutions, use lower speed setting (get some coding gain at
+  // the cost of increased encoding complexity).
+  if (width * height <= 320 * 180)
+    return 6;
+  else if (width * height >= 1280 * 720)
+    return 8;
+  else
+    return 7;
+}
 
 class LibaomAv1Encoder final : public VideoEncoder {
  public:
@@ -189,7 +201,8 @@ int LibaomAv1Encoder::InitEncode(const VideoCodec* codec_settings,
   inited_ = true;
 
   // Set control parameters
-  ret = aom_codec_control(&ctx_, AOME_SET_CPUUSED, kDefaultEncSpeed);
+  ret = aom_codec_control(&ctx_, AOME_SET_CPUUSED,
+                          GetCpuSpeed(cfg_.g_w, cfg_.g_h));
   if (ret != AOM_CODEC_OK) {
     RTC_LOG(LS_WARNING) << "LibaomAv1Encoder::EncodeInit returned " << ret
                         << " on control AV1E_SET_CPUUSED.";
