@@ -107,6 +107,7 @@ const char kVp8CodecName[] = "VP8";
 const char kVp9CodecName[] = "VP9";
 const char kAv1CodecName[] = "AV1X";
 const char kH264CodecName[] = "H264";
+const char kHEVCCodecName[] = "H265X";
 
 // RFC 6184 RTP Payload Format for H.264 video
 const char kH264FmtpProfileLevelId[] = "profile-level-id";
