@@ -23,6 +23,7 @@ namespace test {
 class WavBasedSimulator final : public AudioProcessingSimulator {
  public:
   WavBasedSimulator(const SimulationSettings& settings,
+                    rtc::scoped_refptr<AudioProcessing> audio_processing,
                     std::unique_ptr<AudioProcessingBuilder> ap_builder);
   ~WavBasedSimulator() override;
 

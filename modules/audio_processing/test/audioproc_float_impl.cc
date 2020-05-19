@@ -457,7 +457,10 @@ void ReportConditionalErrorAndExit(bool condition, const std::string& message) {
   }
 }
 
-void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
+void PerformBasicParameterSanityChecks(
+    const SimulationSettings& settings,
+    bool pre_constructed_ap_provided,
+    bool pre_constructed_ap_builder_provided) {
   if (settings.input_filename || settings.reverse_input_filename) {
     ReportConditionalErrorAndExit(
         !!settings.aec_dump_input_filename,
@@ -624,21 +627,41 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
           settings.pre_amplifier_gain_factor.has_value(),
       "Error: --pre_amplifier_gain_factor needs --pre_amplifier to be "
       "specified and set.\n");
+
+  ReportConditionalErrorAndExit(
+      pre_constructed_ap_provided && pre_constructed_ap_builder_provided,
+      "Error: The AudioProcessing and the AudioProcessingBuilder cannot both "
+      "be specified at the same time.\n");
+
+  ReportConditionalErrorAndExit(
+      settings.aec_settings_filename && pre_constructed_ap_provided,
+      "Error: The aec_settings_filename cannot be specified when a "
+      "pre-constructed audio processing object is provided.\n");
+
+  ReportConditionalErrorAndExit(
+      settings.aec_settings_filename && pre_constructed_ap_provided,
+      "Error: The print_aec_parameter_values cannot be set when a "
+      "pre-constructed audio processing object is provided.\n");
+
+  if (settings.linear_aec_output_filename && pre_constructed_ap_provided) {
+    std::cout << "Warning: For the linear AEC output to be stored, this must "
+                 "be configured in the AEC that is part of the provided "
+                 "AudioProcessing object."
+              << std::endl;
+  }
 }
 
-}  // namespace
-
-int AudioprocFloatImpl(std::unique_ptr<AudioProcessingBuilder> ap_builder,
-                       int argc,
-                       char* argv[],
-                       absl::string_view input_aecdump,
-                       std::vector<float>* processed_capture_samples) {
+int RunSimulation(rtc::scoped_refptr<AudioProcessing> audio_processing,
+                  std::unique_ptr<AudioProcessingBuilder> ap_builder,
+                  int argc,
+                  char* argv[],
+                  absl::string_view input_aecdump,
+                  std::vector<float>* processed_capture_samples) {
   std::vector<char*> args = absl::ParseCommandLine(argc, argv);
   if (args.size() != 1) {
     printf("%s", kUsageDescription);
     return 1;
   }
-
   // InitFieldTrialsFromString stores the char*, so the char array must
   // outlive the application.
   const std::string field_trials = absl::GetFlag(FLAGS_force_fieldtrials);
@@ -650,13 +673,15 @@ int AudioprocFloatImpl(std::unique_ptr<AudioProcessingBuilder> ap_builder,
     settings.processed_capture_samples = processed_capture_samples;
     RTC_CHECK(settings.processed_capture_samples);
   }
-  PerformBasicParameterSanityChecks(settings);
+  PerformBasicParameterSanityChecks(settings, !!audio_processing, !!ap_builder);
   std::unique_ptr<AudioProcessingSimulator> processor;
 
   if (settings.aec_dump_input_filename || settings.aec_dump_input_string) {
-    processor.reset(new AecDumpBasedSimulator(settings, std::move(ap_builder)));
+    processor.reset(new AecDumpBasedSimulator(
+        settings, std::move(audio_processing), std::move(ap_builder)));
   } else {
-    processor.reset(new WavBasedSimulator(settings, std::move(ap_builder)));
+    processor.reset(new WavBasedSimulator(settings, std::move(audio_processing),
+                                          std::move(ap_builder)));
   }
 
   processor->Process();
@@ -678,6 +703,25 @@ int AudioprocFloatImpl(std::unique_ptr<AudioProcessingBuilder> ap_builder,
   }
 
   return 0;
+}
+
+}  // namespace
+
+int AudioprocFloatImpl(rtc::scoped_refptr<AudioProcessing> audio_processing,
+                       int argc,
+                       char* argv[]) {
+  return RunSimulation(
+      std::move(audio_processing), /*ap_builder=*/nullptr, argc, argv,
+      /*input_aecdump=*/"", /*processed_capture_samples=*/nullptr);
+}
+
+int AudioprocFloatImpl(std::unique_ptr<AudioProcessingBuilder> ap_builder,
+                       int argc,
+                       char* argv[],
+                       absl::string_view input_aecdump,
+                       std::vector<float>* processed_capture_samples) {
+  return RunSimulation(/*audio_processing=*/nullptr, std::move(ap_builder),
+                       argc, argv, input_aecdump, processed_capture_samples);
 }
 
 }  // namespace test

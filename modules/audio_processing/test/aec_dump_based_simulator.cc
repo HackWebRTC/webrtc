@@ -66,8 +66,11 @@ bool VerifyFloatBitExactness(const webrtc::audioproc::Stream& msg,
 
 AecDumpBasedSimulator::AecDumpBasedSimulator(
     const SimulationSettings& settings,
+    rtc::scoped_refptr<AudioProcessing> audio_processing,
     std::unique_ptr<AudioProcessingBuilder> ap_builder)
-    : AudioProcessingSimulator(settings, std::move(ap_builder)) {
+    : AudioProcessingSimulator(settings,
+                               std::move(audio_processing),
+                               std::move(ap_builder)) {
   MaybeOpenCallOrderFile();
 }
 
@@ -206,7 +209,8 @@ void AecDumpBasedSimulator::PrepareReverseProcessStreamCall(
 }
 
 void AecDumpBasedSimulator::Process() {
-  CreateAudioProcessor();
+  ConfigureAudioProcessor();
+
   if (settings_.artificial_nearend_filename) {
     std::unique_ptr<WavReader> artificial_nearend_file(
         new WavReader(settings_.artificial_nearend_filename->c_str()));
@@ -237,7 +241,7 @@ void AecDumpBasedSimulator::Process() {
     fclose(dump_input_file_);
   }
 
-  DestroyAudioProcessor();
+  DetachAecDump();
 }
 
 void AecDumpBasedSimulator::HandleEvent(

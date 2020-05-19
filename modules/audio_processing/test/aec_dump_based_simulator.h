@@ -33,6 +33,7 @@ namespace test {
 class AecDumpBasedSimulator final : public AudioProcessingSimulator {
  public:
   AecDumpBasedSimulator(const SimulationSettings& settings,
+                        rtc::scoped_refptr<AudioProcessing> audio_processing,
                         std::unique_ptr<AudioProcessingBuilder> ap_builder);
   ~AecDumpBasedSimulator() override;
 

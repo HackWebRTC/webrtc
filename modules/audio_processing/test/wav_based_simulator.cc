@@ -56,8 +56,18 @@ WavBasedSimulator::GetCustomEventChain(const std::string& filename) {
 
 WavBasedSimulator::WavBasedSimulator(
     const SimulationSettings& settings,
+    rtc::scoped_refptr<AudioProcessing> audio_processing,
     std::unique_ptr<AudioProcessingBuilder> ap_builder)
-    : AudioProcessingSimulator(settings, std::move(ap_builder)) {}
+    : AudioProcessingSimulator(settings,
+                               std::move(audio_processing),
+                               std::move(ap_builder)) {
+  if (settings_.call_order_input_filename) {
+    call_chain_ = WavBasedSimulator::GetCustomEventChain(
+        *settings_.call_order_input_filename);
+  } else {
+    call_chain_ = WavBasedSimulator::GetDefaultEventChain();
+  }
+}
 
 WavBasedSimulator::~WavBasedSimulator() = default;
 
@@ -89,13 +99,7 @@ void WavBasedSimulator::PrepareReverseProcessStreamCall() {
 }
 
 void WavBasedSimulator::Process() {
-  if (settings_.call_order_input_filename) {
-    call_chain_ = WavBasedSimulator::GetCustomEventChain(
-        *settings_.call_order_input_filename);
-  } else {
-    call_chain_ = WavBasedSimulator::GetDefaultEventChain();
-  }
-  CreateAudioProcessor();
+  ConfigureAudioProcessor();
 
   Initialize();
 
@@ -120,7 +124,7 @@ void WavBasedSimulator::Process() {
     call_chain_index = (call_chain_index + 1) % call_chain_.size();
   }
 
-  DestroyAudioProcessor();
+  DetachAecDump();
 }
 
 bool WavBasedSimulator::HandleProcessStreamCall() {
