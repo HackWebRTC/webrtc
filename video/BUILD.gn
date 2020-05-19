@@ -615,6 +615,7 @@ if (rtc_include_tests) {
       "../modules/video_coding:webrtc_vp9",
       "../rtc_base",
       "../rtc_base:checks",
+      "../rtc_base:gunit_helpers",
       "../rtc_base:rate_limiter",
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_base_tests_utils",

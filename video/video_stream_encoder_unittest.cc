@@ -34,6 +34,7 @@
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "rtc_base/fake_clock.h"
+#include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ref_counted_object.h"
 #include "system_wrappers/include/field_trial.h"
@@ -1998,7 +1999,7 @@ TEST_F(VideoStreamEncoderTest,
   sink_.WaitForEncodedFrame(ntp_time);
   ntp_time += 100;
 
-  video_stream_encoder_->SetSource(
+  video_stream_encoder_->SetSourceAndWaitForRestrictionsUpdated(
       &video_source_, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
   // Give the encoder queue time to process the change in degradation preference
   // by waiting for an encoded frame.
@@ -2031,7 +2032,7 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(video_source_.sink_wants().max_framerate_fps, kInputFps);
 
   // Change the degradation preference back. CPU underuse should now adapt.
-  video_stream_encoder_->SetSource(
+  video_stream_encoder_->SetSourceAndWaitForRestrictionsUpdated(
       &video_source_, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
   video_source_.IncomingCapturedFrame(
       CreateFrame(ntp_time, kFrameWidth, kFrameHeight));
@@ -2949,7 +2950,7 @@ TEST_F(VideoStreamEncoderTest,
 
   // Enable MAINTAIN_RESOLUTION preference.
   test::FrameForwarder new_video_source;
-  video_stream_encoder_->SetSource(
+  video_stream_encoder_->SetSourceAndWaitForRestrictionsUpdated(
       &new_video_source, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
   // Give the encoder queue time to process the change in degradation preference
   // by waiting for an encoded frame.
@@ -3206,7 +3207,7 @@ TEST_F(VideoStreamEncoderTest, DropFirstFramesIfBwEstimateIsTooLow) {
   int64_t timestamp_ms = kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, 1280, 720));
   ExpectDroppedFrame();
-  VerifyFpsMaxResolutionLt(source.sink_wants(), 1280 * 720);
+  EXPECT_TRUE_WAIT(source.sink_wants().max_pixel_count < 1280 * 720, 5000);
 
   // Insert 720p frame. It should be downscaled and encoded.
   timestamp_ms += kFrameIntervalMs;
@@ -4023,7 +4024,8 @@ TEST_F(VideoStreamEncoderTest, DropsFramesAndScalesWhenBitrateIsTooLow) {
   ExpectDroppedFrame();
 
   // Expect the sink_wants to specify a scaled frame.
-  EXPECT_LT(video_source_.sink_wants().max_pixel_count, kWidth * kHeight);
+  EXPECT_TRUE_WAIT(
+      video_source_.sink_wants().max_pixel_count < kWidth * kHeight, 5000);
 
   int last_pixel_count = video_source_.sink_wants().max_pixel_count;
 
@@ -4034,7 +4036,8 @@ TEST_F(VideoStreamEncoderTest, DropsFramesAndScalesWhenBitrateIsTooLow) {
   // Expect to drop this frame, the wait should time out.
   ExpectDroppedFrame();
 
-  EXPECT_LT(video_source_.sink_wants().max_pixel_count, last_pixel_count);
+  EXPECT_TRUE_WAIT(
+      video_source_.sink_wants().max_pixel_count < last_pixel_count, 5000);
 
   video_stream_encoder_->Stop();
 }
@@ -4149,7 +4152,8 @@ TEST_F(VideoStreamEncoderTest, InitialFrameDropActivatesWhenBweDrops) {
   ExpectDroppedFrame();
 
   // Expect the sink_wants to specify a scaled frame.
-  EXPECT_LT(video_source_.sink_wants().max_pixel_count, kWidth * kHeight);
+  EXPECT_TRUE_WAIT(
+      video_source_.sink_wants().max_pixel_count < kWidth * kHeight, 5000);
   video_stream_encoder_->Stop();
 }
 
@@ -4184,7 +4188,8 @@ TEST_F(VideoStreamEncoderTest, RampsUpInQualityWhenBwIsHigh) {
   int64_t timestamp_ms = kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   ExpectDroppedFrame();
-  EXPECT_LT(source.sink_wants().max_pixel_count, kWidth * kHeight);
+  EXPECT_TRUE_WAIT(source.sink_wants().max_pixel_count < kWidth * kHeight,
+                   5000);
 
   // Increase bitrate to encoder max.
   video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
