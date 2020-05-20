@@ -1698,6 +1698,9 @@ void VideoStreamEncoder::OnVideoSourceRestrictionsUpdated(
     const VideoAdaptationCounters& adaptation_counters,
     rtc::scoped_refptr<Resource> reason) {
   RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
+  std::string resource_name = reason ? reason->name() : "<null>";
+  RTC_LOG(INFO) << "Updating sink restrictions from " << resource_name << " to "
+                << restrictions.ToString();
   video_source_sink_controller_.SetRestrictions(std::move(restrictions));
   video_source_sink_controller_.PushSourceSinkSettings();
 }

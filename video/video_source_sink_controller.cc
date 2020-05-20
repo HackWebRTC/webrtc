@@ -14,9 +14,26 @@
 #include <limits>
 #include <utility>
 
+#include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 
 namespace webrtc {
+
+namespace {
+
+std::string WantsToString(const rtc::VideoSinkWants& wants) {
+  rtc::StringBuilder ss;
+
+  ss << "max_fps=" << wants.max_framerate_fps
+     << " max_pixel_count=" << wants.max_pixel_count << " target_pixel_count="
+     << (wants.target_pixel_count.has_value()
+             ? std::to_string(wants.target_pixel_count.value())
+             : "null");
+
+  return ss.Release();
+}
+
+}  // namespace
 
 VideoSourceSinkController::VideoSourceSinkController(
     rtc::VideoSinkInterface<VideoFrame>* sink,
@@ -46,7 +63,9 @@ void VideoSourceSinkController::PushSourceSinkSettings() {
   rtc::CritScope lock(&crit_);
   if (!source_)
     return;
-  source_->AddOrUpdateSink(sink_, CurrentSettingsToSinkWants());
+  rtc::VideoSinkWants wants = CurrentSettingsToSinkWants();
+  RTC_LOG(INFO) << "Pushing SourceSink restrictions: " << WantsToString(wants);
+  source_->AddOrUpdateSink(sink_, wants);
 }
 
 VideoSourceRestrictions VideoSourceSinkController::restrictions() const {

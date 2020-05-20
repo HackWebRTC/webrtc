@@ -11,6 +11,8 @@
 #ifndef VIDEO_VIDEO_SOURCE_SINK_CONTROLLER_H_
 #define VIDEO_VIDEO_SOURCE_SINK_CONTROLLER_H_
 
+#include <string>
+
 #include "absl/types/optional.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
