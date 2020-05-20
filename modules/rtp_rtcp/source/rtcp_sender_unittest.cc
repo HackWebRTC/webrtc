@@ -18,7 +18,7 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/bye.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
-#include "modules/rtp_rtcp/source/rtp_rtcp_impl.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "modules/rtp_rtcp/source/time_util.h"
 #include "rtc_base/rate_limiter.h"
 #include "test/gmock.h"
@@ -77,7 +77,7 @@ class RtcpSenderTest : public ::testing::Test {
         receive_statistics_(ReceiveStatistics::Create(&clock_)),
         retransmission_rate_limiter_(&clock_, 1000) {
     RtpRtcp::Configuration configuration = GetDefaultConfig();
-    rtp_rtcp_impl_.reset(new ModuleRtpRtcpImpl(configuration));
+    rtp_rtcp_impl_.reset(new ModuleRtpRtcpImpl2(configuration));
     rtcp_sender_.reset(new RTCPSender(configuration));
     rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
     rtcp_sender_->SetTimestampOffset(kStartRtpTimestamp);
@@ -115,7 +115,7 @@ class RtcpSenderTest : public ::testing::Test {
   SimulatedClock clock_;
   TestTransport test_transport_;
   std::unique_ptr<ReceiveStatistics> receive_statistics_;
-  std::unique_ptr<ModuleRtpRtcpImpl> rtp_rtcp_impl_;
+  std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp_impl_;
   std::unique_ptr<RTCPSender> rtcp_sender_;
   RateLimiter retransmission_rate_limiter_;
 };

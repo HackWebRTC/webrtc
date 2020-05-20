@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_RTP_RTCP_SOURCE_RTP_RTCP_IMPL_H_
-#define MODULES_RTP_RTCP_SOURCE_RTP_RTCP_IMPL_H_
+#ifndef MODULES_RTP_RTCP_SOURCE_RTP_RTCP_IMPL2_H_
+#define MODULES_RTP_RTCP_SOURCE_RTP_RTCP_IMPL2_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -35,6 +35,7 @@
 #include "modules/rtp_rtcp/source/rtp_sender_egress.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/gtest_prod_util.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 
 namespace webrtc {
 
@@ -42,11 +43,11 @@ class Clock;
 struct PacedPacketInfo;
 struct RTPVideoHeader;
 
-// DEPRECATED.
-class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
+class ModuleRtpRtcpImpl2 final : public RtpRtcp,
+                                 public RTCPReceiver::ModuleRtpRtcp {
  public:
-  explicit ModuleRtpRtcpImpl(const RtpRtcp::Configuration& configuration);
-  ~ModuleRtpRtcpImpl() override;
+  explicit ModuleRtpRtcpImpl2(const RtpRtcp::Configuration& configuration);
+  ~ModuleRtpRtcpImpl2() override;
 
   // Returns the number of milliseconds until the module want a worker thread to
   // call Process.
@@ -300,8 +301,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   DataRate NackOverheadRate() const;
 
  private:
-  FRIEND_TEST_ALL_PREFIXES(RtpRtcpImplTest, Rtt);
-  FRIEND_TEST_ALL_PREFIXES(RtpRtcpImplTest, RttForReceiverOnly);
+  FRIEND_TEST_ALL_PREFIXES(RtpRtcpImpl2Test, Rtt);
+  FRIEND_TEST_ALL_PREFIXES(RtpRtcpImpl2Test, RttForReceiverOnly);
 
   struct RtpSenderContext {
     explicit RtpSenderContext(const RtpRtcp::Configuration& config);
@@ -320,6 +321,9 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   int64_t rtt_ms() const;
 
   bool TimeToSendFullNackList(int64_t now) const;
+
+  SequenceChecker construction_thread_checker_;
+  SequenceChecker process_thread_checker_;
 
   std::unique_ptr<RtpSenderContext> rtp_sender_;
 
@@ -348,4 +352,4 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
 }  // namespace webrtc
 
-#endif  // MODULES_RTP_RTCP_SOURCE_RTP_RTCP_IMPL_H_
+#endif  // MODULES_RTP_RTCP_SOURCE_RTP_RTCP_IMPL2_H_

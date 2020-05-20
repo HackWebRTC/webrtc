@@ -53,8 +53,8 @@ class TransportFeedback;
 class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
  public:
   struct Configuration {
-    Configuration();
-    Configuration(Configuration&& rhs);
+    Configuration() = default;
+    Configuration(Configuration&& rhs) = default;
 
     // True for a audio version of the RTP/RTCP module object false will create
     // a video version.

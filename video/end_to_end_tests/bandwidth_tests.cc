@@ -205,8 +205,9 @@ TEST_F(BandwidthEndToEndTest, RembWithSendSideBwe) {
 
     ~BweObserver() override {
       // Block until all already posted tasks run to avoid races when such task
-      // accesses |this|.
-      SendTask(RTC_FROM_HERE, task_queue_, [] {});
+      // accesses |this|. Also make sure we free |rtp_rtcp_| on the correct
+      // thread/task queue.
+      SendTask(RTC_FROM_HERE, task_queue_, [this]() { rtp_rtcp_ = nullptr; });
     }
 
     std::unique_ptr<test::PacketTransport> CreateReceiveTransport(

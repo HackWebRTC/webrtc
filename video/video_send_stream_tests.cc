@@ -1627,11 +1627,17 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
   static const int kRembRespectedBitrateBps = 100000;
   class BitrateObserver : public test::SendTest {
    public:
-    BitrateObserver()
+    explicit BitrateObserver(TaskQueueBase* task_queue)
         : SendTest(kDefaultTimeoutMs),
+          task_queue_(task_queue),
           retranmission_rate_limiter_(Clock::GetRealTimeClock(), 1000),
           stream_(nullptr),
           bitrate_capped_(false) {}
+
+    ~BitrateObserver() override {
+      // Make sure we free |rtp_rtcp_| in the same context as we constructed it.
+      SendTask(RTC_FROM_HERE, task_queue_, [this]() { rtp_rtcp_ = nullptr; });
+    }
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -1690,12 +1696,13 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
           << "Timeout while waiting for low bitrate stats after REMB.";
     }
 
+    TaskQueueBase* const task_queue_;
     std::unique_ptr<RtpRtcp> rtp_rtcp_;
     std::unique_ptr<internal::TransportAdapter> feedback_transport_;
     RateLimiter retranmission_rate_limiter_;
     VideoSendStream* stream_;
     bool bitrate_capped_;
-  } test;
+  } test(task_queue());
 
   RunBaseTest(&test);
 }

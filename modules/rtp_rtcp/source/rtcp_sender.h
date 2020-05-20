@@ -38,10 +38,10 @@
 
 namespace webrtc {
 
-class ModuleRtpRtcpImpl;
+class RTCPReceiver;
 class RtcEventLog;
 
-class RTCPSender {
+class RTCPSender final {
  public:
   struct FeedbackState {
     FeedbackState();
@@ -61,7 +61,7 @@ class RTCPSender {
     std::vector<rtcp::ReceiveTimeInfo> last_xr_rtis;
 
     // Used when generating TMMBR.
-    ModuleRtpRtcpImpl* module;
+    RTCPReceiver* receiver;
   };
 
   explicit RTCPSender(const RtpRtcp::Configuration& config);

@@ -33,7 +33,7 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/tmmbn.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/tmmbr.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
-#include "modules/rtp_rtcp/source/rtp_rtcp_impl.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "modules/rtp_rtcp/source/time_util.h"
 #include "modules/rtp_rtcp/source/tmmbr_help.h"
 #include "rtc_base/checks.h"
@@ -123,7 +123,7 @@ RTCPSender::FeedbackState::FeedbackState()
       last_rr_ntp_secs(0),
       last_rr_ntp_frac(0),
       remote_sr(0),
-      module(nullptr) {}
+      receiver(nullptr) {}
 
 RTCPSender::FeedbackState::FeedbackState(const FeedbackState&) = default;
 
@@ -544,7 +544,7 @@ void RTCPSender::SetTargetBitrate(unsigned int target_bitrate) {
 
 std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildTMMBR(
     const RtcpContext& ctx) {
-  if (ctx.feedback_state_.module == nullptr)
+  if (ctx.feedback_state_.receiver == nullptr)
     return nullptr;
   // Before sending the TMMBR check the received TMMBN, only an owner is
   // allowed to raise the bitrate:
@@ -558,7 +558,7 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildTMMBR(
   // will accuire criticalSectionRTCPReceiver_ is a potental deadlock but
   // since RTCPreceiver is not doing the reverse we should be fine
   std::vector<rtcp::TmmbItem> candidates =
-      ctx.feedback_state_.module->BoundingSet(&tmmbr_owner);
+      ctx.feedback_state_.receiver->BoundingSet(&tmmbr_owner);
 
   if (!candidates.empty()) {
     for (const auto& candidate : candidates) {
