@@ -49,7 +49,7 @@
 #include "system_wrappers/include/field_trial.h"
 #include "video/call_stats2.h"
 #include "video/frame_dumping_decoder.h"
-#include "video/receive_statistics_proxy.h"
+#include "video/receive_statistics_proxy2.h"
 
 namespace webrtc {
 

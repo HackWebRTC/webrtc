@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VIDEO_RTP_VIDEO_STREAM_RECEIVER_H_
-#define VIDEO_RTP_VIDEO_STREAM_RECEIVER_H_
+#ifndef VIDEO_RTP_VIDEO_STREAM_RECEIVER2_H_
+#define VIDEO_RTP_VIDEO_STREAM_RECEIVER2_H_
 
 #include <atomic>
 #include <list>
@@ -53,47 +53,25 @@
 
 namespace webrtc {
 
-class NackModule;
+class NackModule2;
 class PacketRouter;
 class ProcessThread;
 class ReceiveStatistics;
-class ReceiveStatisticsProxy;
 class RtcpRttStats;
 class RtpPacketReceived;
 class Transport;
 class UlpfecReceiver;
 
-class RtpVideoStreamReceiver : public LossNotificationSender,
-                               public RecoveredPacketReceiver,
-                               public RtpPacketSinkInterface,
-                               public KeyFrameRequestSender,
-                               public video_coding::OnCompleteFrameCallback,
-                               public OnDecryptedFrameCallback,
-                               public OnDecryptionStatusChangeCallback,
-                               public RtpVideoFrameReceiver {
+class RtpVideoStreamReceiver2 : public LossNotificationSender,
+                                public RecoveredPacketReceiver,
+                                public RtpPacketSinkInterface,
+                                public KeyFrameRequestSender,
+                                public video_coding::OnCompleteFrameCallback,
+                                public OnDecryptedFrameCallback,
+                                public OnDecryptionStatusChangeCallback,
+                                public RtpVideoFrameReceiver {
  public:
-  // DEPRECATED due to dependency on ReceiveStatisticsProxy.
-  RtpVideoStreamReceiver(
-      Clock* clock,
-      Transport* transport,
-      RtcpRttStats* rtt_stats,
-      // The packet router is optional; if provided, the RtpRtcp module for this
-      // stream is registered as a candidate for sending REMB and transport
-      // feedback.
-      PacketRouter* packet_router,
-      const VideoReceiveStream::Config* config,
-      ReceiveStatistics* rtp_receive_statistics,
-      ReceiveStatisticsProxy* receive_stats_proxy,
-      ProcessThread* process_thread,
-      NackSender* nack_sender,
-      // The KeyFrameRequestSender is optional; if not provided, key frame
-      // requests are sent via the internal RtpRtcp module.
-      KeyFrameRequestSender* keyframe_request_sender,
-      video_coding::OnCompleteFrameCallback* complete_frame_callback,
-      rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
-      rtc::scoped_refptr<FrameTransformerInterface> frame_transformer);
-
-  RtpVideoStreamReceiver(
+  RtpVideoStreamReceiver2(
       Clock* clock,
       Transport* transport,
       RtcpRttStats* rtt_stats,
@@ -113,7 +91,7 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
       video_coding::OnCompleteFrameCallback* complete_frame_callback,
       rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
       rtc::scoped_refptr<FrameTransformerInterface> frame_transformer);
-  ~RtpVideoStreamReceiver() override;
+  ~RtpVideoStreamReceiver2() override;
 
   void AddReceiveCodec(const VideoCodec& video_codec,
                        const std::map<std::string, std::string>& codec_params,
@@ -333,7 +311,7 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   KeyFrameRequestSender* const keyframe_request_sender_;
 
   RtcpFeedbackBuffer rtcp_feedback_buffer_;
-  std::unique_ptr<NackModule> nack_module_;
+  std::unique_ptr<NackModule2> nack_module_;
   std::unique_ptr<LossNotificationController> loss_notification_controller_;
 
   video_coding::PacketBuffer packet_buffer_;
@@ -405,4 +383,4 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
 
 }  // namespace webrtc
 
-#endif  // VIDEO_RTP_VIDEO_STREAM_RECEIVER_H_
+#endif  // VIDEO_RTP_VIDEO_STREAM_RECEIVER2_H_

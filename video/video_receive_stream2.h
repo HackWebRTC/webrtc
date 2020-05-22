@@ -30,7 +30,7 @@
 #include "system_wrappers/include/clock.h"
 #include "video/receive_statistics_proxy2.h"
 #include "video/rtp_streams_synchronizer2.h"
-#include "video/rtp_video_stream_receiver.h"
+#include "video/rtp_video_stream_receiver2.h"
 #include "video/transport_adapter.h"
 #include "video/video_stream_decoder2.h"
 
@@ -199,7 +199,7 @@ class VideoReceiveStream2 : public webrtc::VideoReceiveStream,
   std::unique_ptr<VCMTiming> timing_;  // Jitter buffer experiment.
   VideoReceiver2 video_receiver_;
   std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> incoming_video_stream_;
-  RtpVideoStreamReceiver rtp_video_stream_receiver_;
+  RtpVideoStreamReceiver2 rtp_video_stream_receiver_;
   std::unique_ptr<VideoStreamDecoder> video_stream_decoder_;
   RtpStreamsSynchronizer rtp_stream_sync_;
 
