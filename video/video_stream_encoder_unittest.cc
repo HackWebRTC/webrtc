@@ -2461,7 +2461,7 @@ TEST_F(VideoStreamEncoderTest,
 
   // Set new degradation preference should clear restrictions since we changed
   // from BALANCED.
-  video_stream_encoder_->SetSource(
+  video_stream_encoder_->SetSourceAndWaitForRestrictionsUpdated(
       &source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
   source.IncomingCapturedFrame(CreateFrame(sequence, kWidth, kHeight));
   WaitForEncodedFrame(sequence++);
@@ -2485,8 +2485,8 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(2, stats.number_of_cpu_adapt_changes);
 
   // Back to BALANCED, should clear the restrictions again.
-  video_stream_encoder_->SetSource(&source,
-                                   webrtc::DegradationPreference::BALANCED);
+  video_stream_encoder_->SetSourceAndWaitForRestrictionsUpdated(
+      &source, webrtc::DegradationPreference::BALANCED);
   source.IncomingCapturedFrame(CreateFrame(sequence, kWidth, kHeight));
   WaitForEncodedFrame(sequence++);
   stats = stats_proxy_->GetStats();
