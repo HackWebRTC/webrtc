@@ -92,6 +92,7 @@ if (rtc_include_tests) {
       deps = [
         ":libaom_av1_decoder",
         ":libaom_av1_encoder",
+        ":scalable_video_controller",
         "../..:video_codec_interface",
         "../../../../api:create_frame_generator",
         "../../../../api:frame_generator_api",
