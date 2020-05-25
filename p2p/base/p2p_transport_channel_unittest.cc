@@ -177,14 +177,14 @@ cricket::BasicPortAllocator* CreateBasicPortAllocator(
 
 class MockIceControllerFactory : public cricket::IceControllerFactoryInterface {
  public:
-  ~MockIceControllerFactory() = default;
+  ~MockIceControllerFactory() override = default;
   std::unique_ptr<cricket::IceControllerInterface> Create(
-      const cricket::IceControllerFactoryArgs& args) {
+      const cricket::IceControllerFactoryArgs& args) override {
     RecordIceControllerCreated();
     return std::make_unique<cricket::BasicIceController>(args);
   }
 
-  MOCK_METHOD0(RecordIceControllerCreated, void());
+  MOCK_METHOD(void, RecordIceControllerCreated, ());
 };
 
 }  // namespace
@@ -5255,10 +5255,14 @@ TEST_F(P2PTransportChannelTest,
 
 class MockMdnsResponder : public webrtc::MdnsResponderInterface {
  public:
-  MOCK_METHOD2(CreateNameForAddress,
-               void(const rtc::IPAddress&, NameCreatedCallback));
-  MOCK_METHOD2(RemoveNameForAddress,
-               void(const rtc::IPAddress&, NameRemovedCallback));
+  MOCK_METHOD(void,
+              CreateNameForAddress,
+              (const rtc::IPAddress&, NameCreatedCallback),
+              (override));
+  MOCK_METHOD(void,
+              RemoveNameForAddress,
+              (const rtc::IPAddress&, NameRemovedCallback),
+              (override));
 };
 
 TEST_F(P2PTransportChannelTest,
