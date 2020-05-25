@@ -91,7 +91,8 @@ int64_t NetEqTest::Run() {
     simulation_time += step_result.simulation_step_ms;
   } while (!step_result.is_simulation_finished);
   if (callbacks_.simulation_ended_callback) {
-    callbacks_.simulation_ended_callback->SimulationEnded(simulation_time);
+    callbacks_.simulation_ended_callback->SimulationEnded(simulation_time,
+                                                          neteq_.get());
   }
   return simulation_time;
 }
