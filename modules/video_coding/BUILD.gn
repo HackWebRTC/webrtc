@@ -68,7 +68,6 @@ rtc_library("frame_dependencies_calculator") {
 }
 
 rtc_library("nack_module") {
-  visibility = [ "*" ]
   sources = [
     "histogram.cc",
     "histogram.h",
