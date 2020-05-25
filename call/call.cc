@@ -177,7 +177,7 @@ class Call final : public webrtc::Call,
   Call(Clock* clock,
        const Call::Config& config,
        std::unique_ptr<RtpTransportControllerSendInterface> transport_send,
-       std::unique_ptr<ProcessThread> module_process_thread,
+       rtc::scoped_refptr<SharedModuleThread> module_process_thread,
        TaskQueueFactory* task_queue_factory);
   ~Call() override;
 
@@ -270,7 +270,7 @@ class Call final : public webrtc::Call,
   TaskQueueFactory* const task_queue_factory_;
 
   const int num_cpu_cores_;
-  const std::unique_ptr<ProcessThread> module_process_thread_;
+  const rtc::scoped_refptr<SharedModuleThread> module_process_thread_;
   const std::unique_ptr<CallStats> call_stats_;
   const std::unique_ptr<BitrateAllocator> bitrate_allocator_;
   Call::Config config_;
@@ -407,14 +407,20 @@ std::string Call::Stats::ToString(int64_t time_ms) const {
 }
 
 Call* Call::Create(const Call::Config& config) {
-  return Create(config, Clock::GetRealTimeClock(),
-                ProcessThread::Create("ModuleProcessThread"),
+  rtc::scoped_refptr<SharedModuleThread> call_thread =
+      SharedModuleThread::Create("ModuleProcessThread", nullptr);
+  return Create(config, std::move(call_thread));
+}
+
+Call* Call::Create(const Call::Config& config,
+                   rtc::scoped_refptr<SharedModuleThread> call_thread) {
+  return Create(config, Clock::GetRealTimeClock(), std::move(call_thread),
                 ProcessThread::Create("PacerThread"));
 }
 
 Call* Call::Create(const Call::Config& config,
                    Clock* clock,
-                   std::unique_ptr<ProcessThread> call_thread,
+                   rtc::scoped_refptr<SharedModuleThread> call_thread,
                    std::unique_ptr<ProcessThread> pacer_thread) {
   RTC_DCHECK(config.task_queue_factory);
   return new internal::Call(
@@ -424,6 +430,104 @@ Call* Call::Create(const Call::Config& config,
           config.network_controller_factory, config.bitrate_config,
           std::move(pacer_thread), config.task_queue_factory, config.trials),
       std::move(call_thread), config.task_queue_factory);
+}
+
+class SharedModuleThread::Impl {
+ public:
+  Impl(std::unique_ptr<ProcessThread> process_thread,
+       std::function<void()> on_one_ref_remaining)
+      : module_thread_(std::move(process_thread)),
+        on_one_ref_remaining_(std::move(on_one_ref_remaining)) {}
+
+  void EnsureStarted() {
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
+    if (started_)
+      return;
+    started_ = true;
+    module_thread_->Start();
+  }
+
+  ProcessThread* process_thread() {
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
+    return module_thread_.get();
+  }
+
+  void AddRef() const {
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
+    ++ref_count_;
+  }
+
+  rtc::RefCountReleaseStatus Release() const {
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
+    --ref_count_;
+
+    if (ref_count_ == 0) {
+      module_thread_->Stop();
+      return rtc::RefCountReleaseStatus::kDroppedLastRef;
+    }
+
+    if (ref_count_ == 1 && on_one_ref_remaining_) {
+      auto moved_fn = std::move(on_one_ref_remaining_);
+      // NOTE: after this function returns, chances are that |this| has been
+      // deleted - do not touch any member variables.
+      // If the owner of the last reference implements a lambda that releases
+      // that last reference inside of the callback (which is legal according
+      // to this implementation), we will recursively enter Release() above,
+      // call Stop() and release the last reference.
+      moved_fn();
+    }
+
+    return rtc::RefCountReleaseStatus::kOtherRefsRemained;
+  }
+
+ private:
+  SequenceChecker sequence_checker_;
+  mutable int ref_count_ RTC_GUARDED_BY(sequence_checker_) = 0;
+  std::unique_ptr<ProcessThread> const module_thread_;
+  std::function<void()> const on_one_ref_remaining_;
+  bool started_ = false;
+};
+
+SharedModuleThread::SharedModuleThread(
+    std::unique_ptr<ProcessThread> process_thread,
+    std::function<void()> on_one_ref_remaining)
+    : impl_(std::make_unique<Impl>(std::move(process_thread),
+                                   std::move(on_one_ref_remaining))) {}
+
+SharedModuleThread::~SharedModuleThread() = default;
+
+// static
+rtc::scoped_refptr<SharedModuleThread> SharedModuleThread::Create(
+    const char* name,
+    std::function<void()> on_one_ref_remaining) {
+  return new SharedModuleThread(ProcessThread::Create(name),
+                                std::move(on_one_ref_remaining));
+}
+
+rtc::scoped_refptr<SharedModuleThread> SharedModuleThread::Create(
+    std::unique_ptr<ProcessThread> process_thread,
+    std::function<void()> on_one_ref_remaining) {
+  return new SharedModuleThread(std::move(process_thread),
+                                std::move(on_one_ref_remaining));
+}
+
+void SharedModuleThread::EnsureStarted() {
+  impl_->EnsureStarted();
+}
+
+ProcessThread* SharedModuleThread::process_thread() {
+  return impl_->process_thread();
+}
+
+void SharedModuleThread::AddRef() const {
+  impl_->AddRef();
+}
+
+rtc::RefCountReleaseStatus SharedModuleThread::Release() const {
+  auto ret = impl_->Release();
+  if (ret == rtc::RefCountReleaseStatus::kDroppedLastRef)
+    delete this;
+  return ret;
 }
 
 // This method here to avoid subclasses has to implement this method.
@@ -441,7 +545,7 @@ namespace internal {
 Call::Call(Clock* clock,
            const Call::Config& config,
            std::unique_ptr<RtpTransportControllerSendInterface> transport_send,
-           std::unique_ptr<ProcessThread> module_process_thread,
+           rtc::scoped_refptr<SharedModuleThread> module_process_thread,
            TaskQueueFactory* task_queue_factory)
     : clock_(clock),
       task_queue_factory_(task_queue_factory),
@@ -477,9 +581,10 @@ Call::Call(Clock* clock,
 
   call_stats_->RegisterStatsObserver(&receive_side_cc_);
 
-  module_process_thread_->RegisterModule(
+  module_process_thread_->process_thread()->RegisterModule(
       receive_side_cc_.GetRemoteBitrateEstimator(true), RTC_FROM_HERE);
-  module_process_thread_->RegisterModule(&receive_side_cc_, RTC_FROM_HERE);
+  module_process_thread_->process_thread()->RegisterModule(&receive_side_cc_,
+                                                           RTC_FROM_HERE);
 }
 
 Call::~Call() {
@@ -491,10 +596,9 @@ Call::~Call() {
   RTC_CHECK(audio_receive_streams_.empty());
   RTC_CHECK(video_receive_streams_.empty());
 
-  module_process_thread_->Stop();
-  module_process_thread_->DeRegisterModule(
+  module_process_thread_->process_thread()->DeRegisterModule(
       receive_side_cc_.GetRemoteBitrateEstimator(true));
-  module_process_thread_->DeRegisterModule(&receive_side_cc_);
+  module_process_thread_->process_thread()->DeRegisterModule(&receive_side_cc_);
   call_stats_->DeregisterStatsObserver(&receive_side_cc_);
 
   absl::optional<Timestamp> first_sent_packet_ms =
@@ -523,7 +627,7 @@ void Call::RegisterRateObserver() {
   // off being kicked off on request rather than in the ctor.
   transport_send_ptr_->RegisterTargetTransferRateObserver(this);
 
-  module_process_thread_->Start();
+  module_process_thread_->EnsureStarted();
 }
 
 void Call::SetClientBitratePreferences(const BitrateSettings& preferences) {
@@ -632,7 +736,7 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
 
   AudioSendStream* send_stream = new AudioSendStream(
       clock_, config, config_.audio_state, task_queue_factory_,
-      module_process_thread_.get(), transport_send_ptr_,
+      module_process_thread_->process_thread(), transport_send_ptr_,
       bitrate_allocator_.get(), event_log_, call_stats_->AsRtcpRttStats(),
       suspended_rtp_state);
   {
@@ -690,7 +794,7 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
       CreateRtcLogStreamConfig(config)));
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
       clock_, &audio_receiver_controller_, transport_send_ptr_->packet_router(),
-      module_process_thread_.get(), config_.neteq_factory, config,
+      module_process_thread_->process_thread(), config_.neteq_factory, config,
       config_.audio_state, event_log_);
   {
     WriteLockScoped write_lock(*receive_crit_);
@@ -761,8 +865,8 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   std::vector<uint32_t> ssrcs = config.rtp.ssrcs;
 
   VideoSendStream* send_stream = new VideoSendStream(
-      clock_, num_cpu_cores_, module_process_thread_.get(), task_queue_factory_,
-      call_stats_->AsRtcpRttStats(), transport_send_ptr_,
+      clock_, num_cpu_cores_, module_process_thread_->process_thread(),
+      task_queue_factory_, call_stats_->AsRtcpRttStats(), transport_send_ptr_,
       bitrate_allocator_.get(), video_send_delay_stats_.get(), event_log_,
       std::move(config), std::move(encoder_config), suspended_video_send_ssrcs_,
       suspended_video_payload_states_, std::move(fec_controller));
@@ -847,7 +951,7 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   VideoReceiveStream2* receive_stream = new VideoReceiveStream2(
       task_queue_factory_, current, &video_receiver_controller_, num_cpu_cores_,
       transport_send_ptr_->packet_router(), std::move(configuration),
-      module_process_thread_.get(), call_stats_.get(), clock_,
+      module_process_thread_->process_thread(), call_stats_.get(), clock_,
       new VCMTiming(clock_));
 
   const webrtc::VideoReceiveStream::Config& config = receive_stream->config();
@@ -921,7 +1025,8 @@ FlexfecReceiveStream* Call::CreateFlexfecReceiveStream(
     // this locked scope.
     receive_stream = new FlexfecReceiveStreamImpl(
         clock_, &video_receiver_controller_, config, recovered_packet_receiver,
-        call_stats_->AsRtcpRttStats(), module_process_thread_.get());
+        call_stats_->AsRtcpRttStats(),
+        module_process_thread_->process_thread());
 
     RTC_DCHECK(receive_rtp_config_.find(config.remote_ssrc) ==
                receive_rtp_config_.end());
