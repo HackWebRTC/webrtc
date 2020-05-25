@@ -167,7 +167,7 @@ void PacketRouter::SendPacket(std::unique_ptr<RtpPacketToSend> packet,
 }
 
 std::vector<std::unique_ptr<RtpPacketToSend>> PacketRouter::GeneratePadding(
-    size_t target_size_bytes) {
+    DataSize size) {
   rtc::CritScope cs(&modules_crit_);
   // First try on the last rtp module to have sent media. This increases the
   // the chance that any payload based padding will be useful as it will be
@@ -178,7 +178,7 @@ std::vector<std::unique_ptr<RtpPacketToSend>> PacketRouter::GeneratePadding(
   std::vector<std::unique_ptr<RtpPacketToSend>> padding_packets;
   if (last_send_module_ != nullptr &&
       last_send_module_->SupportsRtxPayloadPadding()) {
-    padding_packets = last_send_module_->GeneratePadding(target_size_bytes);
+    padding_packets = last_send_module_->GeneratePadding(size.bytes());
     if (!padding_packets.empty()) {
       return padding_packets;
     }
@@ -189,7 +189,7 @@ std::vector<std::unique_ptr<RtpPacketToSend>> PacketRouter::GeneratePadding(
   // be taken into account by the bandwidth estimator, e.g. in FF.
   for (RtpRtcp* rtp_module : send_modules_list_) {
     if (rtp_module->SupportsPadding()) {
-      padding_packets = rtp_module->GeneratePadding(target_size_bytes);
+      padding_packets = rtp_module->GeneratePadding(size.bytes());
       if (!padding_packets.empty()) {
         last_send_module_ = rtp_module;
         break;

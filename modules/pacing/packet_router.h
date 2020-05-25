@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "api/transport/network_types.h"
+#include "modules/pacing/pacing_controller.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet.h"
@@ -39,7 +40,8 @@ class RtpRtcp;
 // (receiver report). For the latter case, we also keep track of the
 // receive modules.
 class PacketRouter : public RemoteBitrateObserver,
-                     public TransportFeedbackSenderInterface {
+                     public TransportFeedbackSenderInterface,
+                     public PacingController::PacketSender {
  public:
   PacketRouter();
   explicit PacketRouter(uint16_t start_transport_seq);
@@ -52,11 +54,10 @@ class PacketRouter : public RemoteBitrateObserver,
                            bool remb_candidate);
   void RemoveReceiveRtpModule(RtcpFeedbackSenderInterface* rtcp_sender);
 
-  virtual void SendPacket(std::unique_ptr<RtpPacketToSend> packet,
-                          const PacedPacketInfo& cluster_info);
-
-  virtual std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
-      size_t target_size_bytes);
+  void SendPacket(std::unique_ptr<RtpPacketToSend> packet,
+                  const PacedPacketInfo& cluster_info) override;
+  std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
+      DataSize size) override;
 
   uint16_t CurrentTransportSequenceNumber() const;
 

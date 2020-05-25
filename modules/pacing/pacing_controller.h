@@ -55,8 +55,8 @@ class PacingController {
   class PacketSender {
    public:
     virtual ~PacketSender() = default;
-    virtual void SendRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
-                               const PacedPacketInfo& cluster_info) = 0;
+    virtual void SendPacket(std::unique_ptr<RtpPacketToSend> packet,
+                            const PacedPacketInfo& cluster_info) = 0;
     virtual std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
         DataSize size) = 0;
   };

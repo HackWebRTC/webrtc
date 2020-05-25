@@ -28,7 +28,8 @@ namespace webrtc {
 const int64_t PacedSender::kMaxQueueLengthMs = 2000;
 const float PacedSender::kDefaultPaceMultiplier = 2.5f;
 
-PacedSender::PacedSender(Clock* clock, PacketRouter* packet_router,
+PacedSender::PacedSender(Clock* clock,
+                         PacketRouter* packet_router,
                          RtcEventLog* event_log,
                          const WebRtcKeyValueConfig* field_trials,
                          ProcessThread* process_thread)
@@ -39,10 +40,11 @@ PacedSender::PacedSender(Clock* clock, PacketRouter* packet_router,
               ? PacingController::ProcessMode::kDynamic
               : PacingController::ProcessMode::kPeriodic),
       pacing_controller_(clock,
-                         static_cast<PacingController::PacketSender*>(this),
-                         event_log, field_trials, process_mode_),
+                         packet_router,
+                         event_log,
+                         field_trials,
+                         process_mode_),
       clock_(clock),
-      packet_router_(packet_router),
       process_thread_(process_thread) {
   if (process_thread_)
     process_thread_->RegisterModule(&module_proxy_, RTC_FROM_HERE);
@@ -194,13 +196,4 @@ void PacedSender::SetQueueTimeLimit(TimeDelta limit) {
   MaybeWakupProcessThread();
 }
 
-void PacedSender::SendRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
-                                const PacedPacketInfo& cluster_info) {
-  packet_router_->SendPacket(std::move(packet), cluster_info);
-}
-
-std::vector<std::unique_ptr<RtpPacketToSend>> PacedSender::GeneratePadding(
-    DataSize size) {
-  return packet_router_->GeneratePadding(size.bytes());
-}
 }  // namespace webrtc
