@@ -4844,10 +4844,13 @@ TEST_F(P2PTransportChannelTest,
 // address after the resolution completes.
 TEST_F(P2PTransportChannelTest,
        PeerReflexiveCandidateDuringResolvingHostCandidateWithMdnsName) {
-  NiceMock<rtc::MockAsyncResolver> mock_async_resolver;
+  auto mock_async_resolver = new NiceMock<rtc::MockAsyncResolver>();
+  ON_CALL(*mock_async_resolver, Destroy).WillByDefault([mock_async_resolver] {
+    delete mock_async_resolver;
+  });
   webrtc::MockAsyncResolverFactory mock_async_resolver_factory;
   EXPECT_CALL(mock_async_resolver_factory, Create())
-      .WillOnce(Return(&mock_async_resolver));
+      .WillOnce(Return(mock_async_resolver));
 
   // ep1 and ep2 will only gather host candidates with addresses
   // kPublicAddrs[0] and kPublicAddrs[1], respectively.
@@ -4874,7 +4877,7 @@ TEST_F(P2PTransportChannelTest,
   bool mock_async_resolver_started = false;
   // Not signaling done yet, and only make sure we are in the process of
   // resolution.
-  EXPECT_CALL(mock_async_resolver, Start(_))
+  EXPECT_CALL(*mock_async_resolver, Start(_))
       .WillOnce(InvokeWithoutArgs([&mock_async_resolver_started]() {
         mock_async_resolver_started = true;
       }));
@@ -4887,7 +4890,7 @@ TEST_F(P2PTransportChannelTest,
   ResumeCandidates(1);
   ASSERT_TRUE_WAIT(ep1_ch1()->selected_connection() != nullptr, kMediumTimeout);
   // Let the mock resolver of ep2 receives the correct resolution.
-  EXPECT_CALL(mock_async_resolver, GetResolvedAddress(_, _))
+  EXPECT_CALL(*mock_async_resolver, GetResolvedAddress(_, _))
       .WillOnce(DoAll(SetArgPointee<1>(local_address), Return(true)));
   // Upon receiving a ping from ep1, ep2 adds a prflx candidate from the
   // unknown address and establishes a connection.
@@ -4899,7 +4902,7 @@ TEST_F(P2PTransportChannelTest,
             ep2_ch1()->selected_connection()->remote_candidate().type());
   // ep2 should also be able resolve the hostname candidate. The resolved remote
   // host candidate should be merged with the prflx remote candidate.
-  mock_async_resolver.SignalDone(&mock_async_resolver);
+  mock_async_resolver->SignalDone(mock_async_resolver);
   EXPECT_EQ_WAIT(LOCAL_PORT_TYPE,
                  ep2_ch1()->selected_connection()->remote_candidate().type(),
                  kMediumTimeout);

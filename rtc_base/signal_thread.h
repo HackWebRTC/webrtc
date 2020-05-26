@@ -144,8 +144,9 @@ class SignalThread : public sigslot::has_slots<>, protected MessageHandler {
   Thread* main_;
   Worker worker_;
   CriticalSection cs_;
-  State state_;
-  int refcount_;
+  State state_ RTC_GUARDED_BY(cs_);
+  int refcount_ RTC_GUARDED_BY(cs_);
+  bool destroy_called_ RTC_GUARDED_BY(cs_) = false;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(SignalThread);
 };

@@ -30,6 +30,7 @@
 #include "rtc_base/net_helper.h"
 #include "rtc_base/net_helpers.h"
 #include "rtc_base/string_encode.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
@@ -1223,9 +1224,8 @@ void P2PTransportChannel::OnCandidateResolved(
   Candidate candidate = p->candidate_;
   resolvers_.erase(p);
   AddRemoteCandidateWithResolver(candidate, resolver);
-  invoker_.AsyncInvoke<void>(
-      RTC_FROM_HERE, thread(),
-      rtc::Bind(&rtc::AsyncResolverInterface::Destroy, resolver, false));
+  thread()->PostTask(
+      webrtc::ToQueuedTask([] {}, [resolver] { resolver->Destroy(false); }));
 }
 
 void P2PTransportChannel::AddRemoteCandidateWithResolver(

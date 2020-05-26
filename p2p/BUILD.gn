@@ -107,6 +107,7 @@ rtc_library("rtc_p2p") {
     "../rtc_base/memory:fifo_buffer",
     "../rtc_base/network:sent_packet",
     "../rtc_base/system:rtc_export",
+    "../rtc_base/task_utils:to_queued_task",
     "../rtc_base/third_party/base64",
     "../rtc_base/third_party/sigslot",
     "../system_wrappers:field_trial",

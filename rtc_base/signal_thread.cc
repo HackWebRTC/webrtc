@@ -31,11 +31,13 @@ SignalThread::SignalThread()
 }
 
 SignalThread::~SignalThread() {
+  rtc::CritScope lock(&cs_);
   RTC_DCHECK(refcount_ == 0);
 }
 
 bool SignalThread::SetName(const std::string& name, const void* obj) {
   EnterExit ee(this);
+  RTC_DCHECK(!destroy_called_);
   RTC_DCHECK(main_->IsCurrent());
   RTC_DCHECK(kInit == state_);
   return worker_.SetName(name, obj);
@@ -43,6 +45,7 @@ bool SignalThread::SetName(const std::string& name, const void* obj) {
 
 void SignalThread::Start() {
   EnterExit ee(this);
+  RTC_DCHECK(!destroy_called_);
   RTC_DCHECK(main_->IsCurrent());
   if (kInit == state_ || kComplete == state_) {
     state_ = kRunning;
@@ -55,7 +58,11 @@ void SignalThread::Start() {
 
 void SignalThread::Destroy(bool wait) {
   EnterExit ee(this);
-  RTC_DCHECK(main_->IsCurrent());
+  // Sometimes the caller can't guarantee which thread will call Destroy, only
+  // that it will be the last thing it does.
+  // RTC_DCHECK(main_->IsCurrent());
+  RTC_DCHECK(!destroy_called_);
+  destroy_called_ = true;
   if ((kInit == state_) || (kComplete == state_)) {
     refcount_--;
   } else if (kRunning == state_ || kReleasing == state_) {
@@ -78,6 +85,7 @@ void SignalThread::Destroy(bool wait) {
 
 void SignalThread::Release() {
   EnterExit ee(this);
+  RTC_DCHECK(!destroy_called_);
   RTC_DCHECK(main_->IsCurrent());
   if (kComplete == state_) {
     refcount_--;
@@ -91,6 +99,7 @@ void SignalThread::Release() {
 
 bool SignalThread::ContinueWork() {
   EnterExit ee(this);
+  RTC_DCHECK(!destroy_called_);
   RTC_DCHECK(worker_.IsCurrent());
   return worker_.ProcessMessages(0);
 }
