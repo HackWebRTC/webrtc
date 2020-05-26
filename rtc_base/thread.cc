@@ -168,8 +168,8 @@ void ThreadManager::RegisterSendAndCheckForCycles(Thread* source,
   // We check the pre-existing who-sends-to-who graph for any path from target
   // to source. This loop is guaranteed to terminate because per the send graph
   // invariant, there are no cycles in the graph.
-  for (auto it = all_targets.begin(); it != all_targets.end(); ++it) {
-    const auto& targets = send_graph_[*it];
+  for (size_t i = 0; i < all_targets.size(); i++) {
+    const auto& targets = send_graph_[all_targets[i]];
     all_targets.insert(all_targets.end(), targets.begin(), targets.end());
   }
   RTC_CHECK_EQ(absl::c_count(all_targets, source), 0)
