@@ -55,15 +55,17 @@ using ::webrtc::test::RtcpPacketParser;
 
 class MockReceiveStatisticsProvider : public webrtc::ReceiveStatisticsProvider {
  public:
-  MOCK_METHOD1(RtcpReportBlocks, std::vector<ReportBlock>(size_t));
+  MOCK_METHOD(std::vector<ReportBlock>, RtcpReportBlocks, (size_t), (override));
 };
 
 class MockMediaReceiverRtcpObserver : public webrtc::MediaReceiverRtcpObserver {
  public:
-  MOCK_METHOD3(OnSenderReport, void(uint32_t, NtpTime, uint32_t));
-  MOCK_METHOD1(OnBye, void(uint32_t));
-  MOCK_METHOD2(OnBitrateAllocation,
-               void(uint32_t, const VideoBitrateAllocation&));
+  MOCK_METHOD(void, OnSenderReport, (uint32_t, NtpTime, uint32_t), (override));
+  MOCK_METHOD(void, OnBye, (uint32_t), (override));
+  MOCK_METHOD(void,
+              OnBitrateAllocation,
+              (uint32_t, const VideoBitrateAllocation&),
+              (override));
 };
 
 // Since some tests will need to wait for this period, make it small to avoid

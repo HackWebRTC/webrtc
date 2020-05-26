@@ -83,8 +83,10 @@ namespace test {
 
 class MockStreamFeedbackObserver : public webrtc::StreamFeedbackObserver {
  public:
-  MOCK_METHOD1(OnPacketFeedbackVector,
-               void(std::vector<StreamPacketInfo> packet_feedback_vector));
+  MOCK_METHOD(void,
+              OnPacketFeedbackVector,
+              (std::vector<StreamPacketInfo> packet_feedback_vector),
+              (override));
 };
 
 class TransportFeedbackAdapterTest : public ::testing::Test {

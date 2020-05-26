@@ -90,24 +90,28 @@ class MockPacingControllerCallback : public PacingController::PacketSender {
     return ret;
   }
 
-  MOCK_METHOD5(SendPacket,
-               void(uint32_t ssrc,
-                    uint16_t sequence_number,
-                    int64_t capture_timestamp,
-                    bool retransmission,
-                    bool padding));
-  MOCK_METHOD1(SendPadding, size_t(size_t target_size));
+  MOCK_METHOD(void,
+              SendPacket,
+              (uint32_t ssrc,
+               uint16_t sequence_number,
+               int64_t capture_timestamp,
+               bool retransmission,
+               bool padding));
+  MOCK_METHOD(size_t, SendPadding, (size_t target_size));
 };
 
 // Mock callback implementing the raw api.
 class MockPacketSender : public PacingController::PacketSender {
  public:
-  MOCK_METHOD2(SendPacket,
-               void(std::unique_ptr<RtpPacketToSend> packet,
-                    const PacedPacketInfo& cluster_info));
-  MOCK_METHOD1(
-      GeneratePadding,
-      std::vector<std::unique_ptr<RtpPacketToSend>>(DataSize target_size));
+  MOCK_METHOD(void,
+              SendPacket,
+              (std::unique_ptr<RtpPacketToSend> packet,
+               const PacedPacketInfo& cluster_info),
+              (override));
+  MOCK_METHOD(std::vector<std::unique_ptr<RtpPacketToSend>>,
+              GeneratePadding,
+              (DataSize target_size),
+              (override));
 };
 
 class PacingControllerPadding : public PacingController::PacketSender {

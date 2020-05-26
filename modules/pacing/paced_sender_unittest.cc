@@ -39,12 +39,15 @@ constexpr size_t kDefaultPacketSize = 234;
 // Mock callback implementing the raw api.
 class MockCallback : public PacketRouter {
  public:
-  MOCK_METHOD2(SendPacket,
-               void(std::unique_ptr<RtpPacketToSend> packet,
-                    const PacedPacketInfo& cluster_info));
-  MOCK_METHOD1(
-      GeneratePadding,
-      std::vector<std::unique_ptr<RtpPacketToSend>>(DataSize target_size));
+  MOCK_METHOD(void,
+              SendPacket,
+              (std::unique_ptr<RtpPacketToSend> packet,
+               const PacedPacketInfo& cluster_info),
+              (override));
+  MOCK_METHOD(std::vector<std::unique_ptr<RtpPacketToSend>>,
+              GeneratePadding,
+              (DataSize target_size),
+              (override));
 };
 
 class ProcessModeTrials : public WebRtcKeyValueConfig {
