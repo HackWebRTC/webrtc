@@ -646,7 +646,7 @@ bool AudioSendStream::SetupSendCodec(const Config& new_config) {
     }
   }
 
-  // Wrap the encoder in a an AudioEncoderCNG, if VAD is enabled.
+  // Wrap the encoder in an AudioEncoderCNG, if VAD is enabled.
   if (spec.cng_payload_type) {
     AudioEncoderCngConfig cng_config;
     cng_config.num_channels = encoder->NumChannels();

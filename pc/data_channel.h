@@ -84,7 +84,7 @@ class SctpSidAllocator {
   std::set<int> used_sids_;
 };
 
-// DataChannel is a an implementation of the DataChannelInterface based on
+// DataChannel is an implementation of the DataChannelInterface based on
 // libjingle's data engine. It provides an implementation of unreliable or
 // reliabledata channels. Currently this class is specifically designed to use
 // both RtpDataChannel and SctpTransport.
