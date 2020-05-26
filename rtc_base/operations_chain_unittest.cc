@@ -369,14 +369,15 @@ TEST(OperationsChainTest, FunctorIsNotDestroyedWhileExecuting) {
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 
-TEST(OperationsChainTest, OperationNotInvokingCallbackShouldCrash) {
+TEST(OperationsChainDeathTest, OperationNotInvokingCallbackShouldCrash) {
   scoped_refptr<OperationsChain> operations_chain = OperationsChain::Create();
   EXPECT_DEATH(
       operations_chain->ChainOperation([](std::function<void()> callback) {}),
       "");
 }
 
-TEST(OperationsChainTest, OperationInvokingCallbackMultipleTimesShouldCrash) {
+TEST(OperationsChainDeathTest,
+     OperationInvokingCallbackMultipleTimesShouldCrash) {
   scoped_refptr<OperationsChain> operations_chain = OperationsChain::Create();
   EXPECT_DEATH(
       operations_chain->ChainOperation([](std::function<void()> callback) {

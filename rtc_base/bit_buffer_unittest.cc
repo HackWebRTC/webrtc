@@ -142,7 +142,7 @@ TEST(BitBufferTest, ReadBits) {
   EXPECT_FALSE(buffer.ReadBits(&val, 1));
 }
 
-TEST(BitBufferTest, SetOffsetValues) {
+TEST(BitBufferDeathTest, SetOffsetValues) {
   uint8_t bytes[4] = {0};
   BitBufferWriter buffer(bytes, 4);
 

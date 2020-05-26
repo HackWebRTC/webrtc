@@ -189,7 +189,7 @@ std::string ProduceDebugText(size_t num_render_channels,
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 
 // Verifies that the check for non data dumper works.
-TEST(Subtractor, NullDataDumper) {
+TEST(SubtractorDeathTest, NullDataDumper) {
   EXPECT_DEATH(
       Subtractor(EchoCanceller3Config(), 1, 1, nullptr, DetectOptimization()),
       "");

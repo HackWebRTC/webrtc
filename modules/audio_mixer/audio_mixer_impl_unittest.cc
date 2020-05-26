@@ -606,7 +606,7 @@ class HighOutputRateCalculator : public OutputRateCalculator {
 };
 const int HighOutputRateCalculator::kDefaultFrequency;
 
-TEST(AudioMixer, MultipleChannelsAndHighRate) {
+TEST(AudioMixerDeathTest, MultipleChannelsAndHighRate) {
   constexpr size_t kSamplesPerChannel =
       HighOutputRateCalculator::kDefaultFrequency / 100;
   // As many channels as an AudioFrame can fit:

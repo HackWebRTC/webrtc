@@ -44,12 +44,12 @@ TEST(FftData, TestOptimizations) {
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 
 // Verifies the check for null output in CopyToPackedArray.
-TEST(FftData, NonNullCopyToPackedArrayOutput) {
+TEST(FftDataDeathTest, NonNullCopyToPackedArrayOutput) {
   EXPECT_DEATH(FftData().CopyToPackedArray(nullptr), "");
 }
 
 // Verifies the check for null output in Spectrum.
-TEST(FftData, NonNullSpectrumOutput) {
+TEST(FftDataDeathTest, NonNullSpectrumOutput) {
   EXPECT_DEATH(FftData().Spectrum(Aec3Optimization::kNone, nullptr), "");
 }
 

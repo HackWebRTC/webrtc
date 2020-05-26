@@ -252,21 +252,21 @@ TEST(BlockProcessor, TestLongerCall) {
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 // TODO(gustaf): Re-enable the test once the issue with memory leaks during
 // DEATH tests on test bots has been fixed.
-TEST(BlockProcessor, DISABLED_VerifyRenderBlockSizeCheck) {
+TEST(BlockProcessorDeathTest, DISABLED_VerifyRenderBlockSizeCheck) {
   for (auto rate : {16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     RunRenderBlockSizeVerificationTest(rate);
   }
 }
 
-TEST(BlockProcessor, VerifyCaptureBlockSizeCheck) {
+TEST(BlockProcessorDeathTest, VerifyCaptureBlockSizeCheck) {
   for (auto rate : {16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     RunCaptureBlockSizeVerificationTest(rate);
   }
 }
 
-TEST(BlockProcessor, VerifyRenderNumBandsCheck) {
+TEST(BlockProcessorDeathTest, VerifyRenderNumBandsCheck) {
   for (auto rate : {16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     RunRenderNumBandsVerificationTest(rate);
@@ -275,7 +275,7 @@ TEST(BlockProcessor, VerifyRenderNumBandsCheck) {
 
 // TODO(peah): Verify the check for correct number of bands in the capture
 // signal.
-TEST(BlockProcessor, VerifyCaptureNumBandsCheck) {
+TEST(BlockProcessorDeathTest, VerifyCaptureNumBandsCheck) {
   for (auto rate : {16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     RunCaptureNumBandsVerificationTest(rate);
@@ -283,7 +283,7 @@ TEST(BlockProcessor, VerifyCaptureNumBandsCheck) {
 }
 
 // Verifiers that the verification for null ProcessCapture input works.
-TEST(BlockProcessor, NullProcessCaptureParameter) {
+TEST(BlockProcessorDeathTest, NullProcessCaptureParameter) {
   EXPECT_DEATH(std::unique_ptr<BlockProcessor>(
                    BlockProcessor::Create(EchoCanceller3Config(), 16000, 1, 1))
                    ->ProcessCapture(false, false, nullptr, nullptr),

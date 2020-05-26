@@ -406,7 +406,8 @@ TEST_F(PacketRouterTest, SendPacketAssignsTransportSequenceNumbers) {
 }
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
-TEST_F(PacketRouterTest, DoubleRegistrationOfSendModuleDisallowed) {
+using PacketRouterDeathTest = PacketRouterTest;
+TEST_F(PacketRouterDeathTest, DoubleRegistrationOfSendModuleDisallowed) {
   NiceMock<MockRtpRtcp> module;
 
   constexpr bool remb_candidate = false;  // Value irrelevant.
@@ -417,7 +418,7 @@ TEST_F(PacketRouterTest, DoubleRegistrationOfSendModuleDisallowed) {
   packet_router_.RemoveSendRtpModule(&module);
 }
 
-TEST_F(PacketRouterTest, DoubleRegistrationOfReceiveModuleDisallowed) {
+TEST_F(PacketRouterDeathTest, DoubleRegistrationOfReceiveModuleDisallowed) {
   NiceMock<MockRtpRtcp> module;
 
   constexpr bool remb_candidate = false;  // Value irrelevant.
@@ -428,13 +429,13 @@ TEST_F(PacketRouterTest, DoubleRegistrationOfReceiveModuleDisallowed) {
   packet_router_.RemoveReceiveRtpModule(&module);
 }
 
-TEST_F(PacketRouterTest, RemovalOfNeverAddedSendModuleDisallowed) {
+TEST_F(PacketRouterDeathTest, RemovalOfNeverAddedSendModuleDisallowed) {
   NiceMock<MockRtpRtcp> module;
 
   EXPECT_DEATH(packet_router_.RemoveSendRtpModule(&module), "");
 }
 
-TEST_F(PacketRouterTest, RemovalOfNeverAddedReceiveModuleDisallowed) {
+TEST_F(PacketRouterDeathTest, RemovalOfNeverAddedReceiveModuleDisallowed) {
   NiceMock<MockRtpRtcp> module;
 
   EXPECT_DEATH(packet_router_.RemoveReceiveRtpModule(&module), "");

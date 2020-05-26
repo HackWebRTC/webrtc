@@ -138,7 +138,7 @@ std::string ProduceDebugText(size_t delay, int filter_length_blocks) {
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 
 // Verifies that the check for non-null output gain parameter works.
-TEST(CoarseFilterUpdateGain, NullDataOutputGain) {
+TEST(CoarseFilterUpdateGainDeathTest, NullDataOutputGain) {
   ApmDataDumper data_dumper(42);
   FftBuffer fft_buffer(1, 1);
   RenderSignalAnalyzer analyzer(EchoCanceller3Config{});

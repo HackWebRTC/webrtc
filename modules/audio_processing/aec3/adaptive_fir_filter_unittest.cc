@@ -285,13 +285,13 @@ TEST_P(AdaptiveFirFilterOneTwoFourEightRenderChannels,
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 // Verifies that the check for non-null data dumper works.
-TEST(AdaptiveFirFilterTest, NullDataDumper) {
+TEST(AdaptiveFirFilterDeathTest, NullDataDumper) {
   EXPECT_DEATH(AdaptiveFirFilter(9, 9, 250, 1, DetectOptimization(), nullptr),
                "");
 }
 
 // Verifies that the check for non-null filter output works.
-TEST(AdaptiveFirFilterTest, NullFilterOutput) {
+TEST(AdaptiveFirFilterDeathTest, NullFilterOutput) {
   ApmDataDumper data_dumper(42);
   AdaptiveFirFilter filter(9, 9, 250, 1, DetectOptimization(), &data_dumper);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(

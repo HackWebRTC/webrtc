@@ -890,7 +890,7 @@ TEST(EchoCanceller3FieldTrials, Aec3SuppressorTuningOverrideOneParam) {
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 
-TEST(EchoCanceller3InputCheck, WrongCaptureNumBandsCheckVerification) {
+TEST(EchoCanceller3InputCheckDeathTest, WrongCaptureNumBandsCheckVerification) {
   for (auto rate : {16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     EchoCanceller3Tester(rate).RunProcessCaptureNumBandsCheckVerification();
@@ -899,7 +899,7 @@ TEST(EchoCanceller3InputCheck, WrongCaptureNumBandsCheckVerification) {
 
 // Verifiers that the verification for null input to the capture processing api
 // call works.
-TEST(EchoCanceller3InputCheck, NullCaptureProcessingParameter) {
+TEST(EchoCanceller3InputCheckDeathTest, NullCaptureProcessingParameter) {
   EXPECT_DEATH(EchoCanceller3(EchoCanceller3Config(), 16000, 1, 1)
                    .ProcessCapture(nullptr, false),
                "");
@@ -908,7 +908,7 @@ TEST(EchoCanceller3InputCheck, NullCaptureProcessingParameter) {
 // Verifies the check for correct sample rate.
 // TODO(peah): Re-enable the test once the issue with memory leaks during DEATH
 // tests on test bots has been fixed.
-TEST(EchoCanceller3InputCheck, DISABLED_WrongSampleRate) {
+TEST(EchoCanceller3InputCheckDeathTest, DISABLED_WrongSampleRate) {
   ApmDataDumper data_dumper(0);
   EXPECT_DEATH(EchoCanceller3(EchoCanceller3Config(), 8001, 1, 1), "");
 }

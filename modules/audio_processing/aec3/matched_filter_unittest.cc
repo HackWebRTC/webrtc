@@ -375,7 +375,7 @@ TEST(MatchedFilter, NumberOfLagEstimates) {
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 
 // Verifies the check for non-zero windows size.
-TEST(MatchedFilter, ZeroWindowSize) {
+TEST(MatchedFilterDeathTest, ZeroWindowSize) {
   ApmDataDumper data_dumper(0);
   EchoCanceller3Config config;
   EXPECT_DEATH(MatchedFilter(&data_dumper, DetectOptimization(), 16, 0, 1, 1,
@@ -385,7 +385,7 @@ TEST(MatchedFilter, ZeroWindowSize) {
 }
 
 // Verifies the check for non-null data dumper.
-TEST(MatchedFilter, NullDataDumper) {
+TEST(MatchedFilterDeathTest, NullDataDumper) {
   EchoCanceller3Config config;
   EXPECT_DEATH(MatchedFilter(nullptr, DetectOptimization(), 16, 1, 1, 1, 150,
                              config.delay.delay_estimate_smoothing,
@@ -395,7 +395,7 @@ TEST(MatchedFilter, NullDataDumper) {
 
 // Verifies the check for that the sub block size is a multiple of 4.
 // TODO(peah): Activate the unittest once the required code has been landed.
-TEST(MatchedFilter, DISABLED_BlockSizeMultipleOf4) {
+TEST(MatchedFilterDeathTest, DISABLED_BlockSizeMultipleOf4) {
   ApmDataDumper data_dumper(0);
   EchoCanceller3Config config;
   EXPECT_DEATH(MatchedFilter(&data_dumper, DetectOptimization(), 15, 1, 1, 1,
@@ -407,7 +407,7 @@ TEST(MatchedFilter, DISABLED_BlockSizeMultipleOf4) {
 // Verifies the check for that there is an integer number of sub blocks that add
 // up to a block size.
 // TODO(peah): Activate the unittest once the required code has been landed.
-TEST(MatchedFilter, DISABLED_SubBlockSizeAddsUpToBlockSize) {
+TEST(MatchedFilterDeathTest, DISABLED_SubBlockSizeAddsUpToBlockSize) {
   ApmDataDumper data_dumper(0);
   EchoCanceller3Config config;
   EXPECT_DEATH(MatchedFilter(&data_dumper, DetectOptimization(), 12, 1, 1, 1,

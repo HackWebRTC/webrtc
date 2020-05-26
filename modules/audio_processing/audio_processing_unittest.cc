@@ -962,49 +962,51 @@ TEST_F(ApmTest, GainControl) {
 }
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
-TEST_F(ApmTest, GainControlDiesOnTooLowTargetLevelDbfs) {
+using ApmDeathTest = ApmTest;
+
+TEST_F(ApmDeathTest, GainControlDiesOnTooLowTargetLevelDbfs) {
   auto config = apm_->GetConfig();
   config.gain_controller1.enabled = true;
   config.gain_controller1.target_level_dbfs = -1;
   EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
-TEST_F(ApmTest, GainControlDiesOnTooHighTargetLevelDbfs) {
+TEST_F(ApmDeathTest, GainControlDiesOnTooHighTargetLevelDbfs) {
   auto config = apm_->GetConfig();
   config.gain_controller1.enabled = true;
   config.gain_controller1.target_level_dbfs = 32;
   EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
-TEST_F(ApmTest, GainControlDiesOnTooLowCompressionGainDb) {
+TEST_F(ApmDeathTest, GainControlDiesOnTooLowCompressionGainDb) {
   auto config = apm_->GetConfig();
   config.gain_controller1.enabled = true;
   config.gain_controller1.compression_gain_db = -1;
   EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
-TEST_F(ApmTest, GainControlDiesOnTooHighCompressionGainDb) {
+TEST_F(ApmDeathTest, GainControlDiesOnTooHighCompressionGainDb) {
   auto config = apm_->GetConfig();
   config.gain_controller1.enabled = true;
   config.gain_controller1.compression_gain_db = 91;
   EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
-TEST_F(ApmTest, GainControlDiesOnTooLowAnalogLevelLowerLimit) {
+TEST_F(ApmDeathTest, GainControlDiesOnTooLowAnalogLevelLowerLimit) {
   auto config = apm_->GetConfig();
   config.gain_controller1.enabled = true;
   config.gain_controller1.analog_level_minimum = -1;
   EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
-TEST_F(ApmTest, GainControlDiesOnTooHighAnalogLevelUpperLimit) {
+TEST_F(ApmDeathTest, GainControlDiesOnTooHighAnalogLevelUpperLimit) {
   auto config = apm_->GetConfig();
   config.gain_controller1.enabled = true;
   config.gain_controller1.analog_level_maximum = 65536;
   EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
-TEST_F(ApmTest, GainControlDiesOnInvertedAnalogLevelLimits) {
+TEST_F(ApmDeathTest, GainControlDiesOnInvertedAnalogLevelLimits) {
   auto config = apm_->GetConfig();
   config.gain_controller1.enabled = true;
   config.gain_controller1.analog_level_minimum = 512;
@@ -1012,7 +1014,7 @@ TEST_F(ApmTest, GainControlDiesOnInvertedAnalogLevelLimits) {
   EXPECT_DEATH(apm_->ApplyConfig(config), "");
 }
 
-TEST_F(ApmTest, ApmDiesOnTooLowAnalogLevel) {
+TEST_F(ApmDeathTest, ApmDiesOnTooLowAnalogLevel) {
   auto config = apm_->GetConfig();
   config.gain_controller1.enabled = true;
   config.gain_controller1.analog_level_minimum = 255;
@@ -1021,7 +1023,7 @@ TEST_F(ApmTest, ApmDiesOnTooLowAnalogLevel) {
   EXPECT_DEATH(apm_->set_stream_analog_level(254), "");
 }
 
-TEST_F(ApmTest, ApmDiesOnTooHighAnalogLevel) {
+TEST_F(ApmDeathTest, ApmDiesOnTooHighAnalogLevel) {
   auto config = apm_->GetConfig();
   config.gain_controller1.enabled = true;
   config.gain_controller1.analog_level_minimum = 255;
@@ -2414,7 +2416,7 @@ TEST(RuntimeSettingTest, TestDefaultCtor) {
   EXPECT_EQ(AudioProcessing::RuntimeSetting::Type::kNotSpecified, s.type());
 }
 
-TEST(RuntimeSettingTest, TestCapturePreGain) {
+TEST(RuntimeSettingDeathTest, TestCapturePreGain) {
   using Type = AudioProcessing::RuntimeSetting::Type;
   {
     auto s = AudioProcessing::RuntimeSetting::CreateCapturePreGain(1.25f);
@@ -2429,7 +2431,7 @@ TEST(RuntimeSettingTest, TestCapturePreGain) {
 #endif
 }
 
-TEST(RuntimeSettingTest, TestCaptureFixedPostGain) {
+TEST(RuntimeSettingDeathTest, TestCaptureFixedPostGain) {
   using Type = AudioProcessing::RuntimeSetting::Type;
   {
     auto s = AudioProcessing::RuntimeSetting::CreateCaptureFixedPostGain(1.25f);

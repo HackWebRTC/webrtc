@@ -1110,7 +1110,8 @@ TEST_F(RtpVideoStreamReceiverDependencyDescriptorTest,
 }
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
-TEST_F(RtpVideoStreamReceiverTest, RepeatedSecondarySinkDisallowed) {
+using RtpVideoStreamReceiverDeathTest = RtpVideoStreamReceiverTest;
+TEST_F(RtpVideoStreamReceiverDeathTest, RepeatedSecondarySinkDisallowed) {
   MockRtpPacketSink secondary_sink;
 
   rtp_video_stream_receiver_->AddSecondarySink(&secondary_sink);
