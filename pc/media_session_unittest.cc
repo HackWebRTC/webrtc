@@ -4599,7 +4599,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestSetAudioCodecs) {
   // properly.
   send_codecs[1].channels = 0;
 
-  // Alther iLBC receive codec to be lowercase, to test that case conversions
+  // Alter iLBC receive codec to be lowercase, to test that case conversions
   // are handled properly.
   recv_codecs[2].name = "ilbc";
 
