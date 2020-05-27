@@ -51,99 +51,127 @@ class RTPSender {
 
   ~RTPSender();
 
-  void SetSendingMediaStatus(bool enabled);
-  bool SendingMedia() const;
-  bool IsAudioConfigured() const;
+  void SetSendingMediaStatus(bool enabled) RTC_LOCKS_EXCLUDED(send_critsect_);
+  bool SendingMedia() const RTC_LOCKS_EXCLUDED(send_critsect_);
+  bool IsAudioConfigured() const RTC_LOCKS_EXCLUDED(send_critsect_);
 
-  uint32_t TimestampOffset() const;
-  void SetTimestampOffset(uint32_t timestamp);
+  uint32_t TimestampOffset() const RTC_LOCKS_EXCLUDED(send_critsect_);
+  void SetTimestampOffset(uint32_t timestamp)
+      RTC_LOCKS_EXCLUDED(send_critsect_);
 
-  void SetRid(const std::string& rid);
+  void SetRid(const std::string& rid) RTC_LOCKS_EXCLUDED(send_critsect_);
 
-  void SetMid(const std::string& mid);
+  void SetMid(const std::string& mid) RTC_LOCKS_EXCLUDED(send_critsect_);
 
-  uint16_t SequenceNumber() const;
-  void SetSequenceNumber(uint16_t seq);
+  uint16_t SequenceNumber() const RTC_LOCKS_EXCLUDED(send_critsect_);
+  void SetSequenceNumber(uint16_t seq) RTC_LOCKS_EXCLUDED(send_critsect_);
 
-  void SetCsrcs(const std::vector<uint32_t>& csrcs);
+  void SetCsrcs(const std::vector<uint32_t>& csrcs)
+      RTC_LOCKS_EXCLUDED(send_critsect_);
 
-  void SetMaxRtpPacketSize(size_t max_packet_size);
+  void SetMaxRtpPacketSize(size_t max_packet_size)
+      RTC_LOCKS_EXCLUDED(send_critsect_);
 
-  void SetExtmapAllowMixed(bool extmap_allow_mixed);
+  void SetExtmapAllowMixed(bool extmap_allow_mixed)
+      RTC_LOCKS_EXCLUDED(send_critsect_);
 
   // RTP header extension
-  int32_t RegisterRtpHeaderExtension(RTPExtensionType type, uint8_t id);
-  bool RegisterRtpHeaderExtension(absl::string_view uri, int id);
-  bool IsRtpHeaderExtensionRegistered(RTPExtensionType type) const;
-  int32_t DeregisterRtpHeaderExtension(RTPExtensionType type);
-  void DeregisterRtpHeaderExtension(absl::string_view uri);
+  int32_t RegisterRtpHeaderExtension(RTPExtensionType type, uint8_t id)
+      RTC_LOCKS_EXCLUDED(send_critsect_);
+  bool RegisterRtpHeaderExtension(absl::string_view uri, int id)
+      RTC_LOCKS_EXCLUDED(send_critsect_);
+  bool IsRtpHeaderExtensionRegistered(RTPExtensionType type) const
+      RTC_LOCKS_EXCLUDED(send_critsect_);
+  int32_t DeregisterRtpHeaderExtension(RTPExtensionType type)
+      RTC_LOCKS_EXCLUDED(send_critsect_);
+  void DeregisterRtpHeaderExtension(absl::string_view uri)
+      RTC_LOCKS_EXCLUDED(send_critsect_);
 
-  bool SupportsPadding() const;
-  bool SupportsRtxPayloadPadding() const;
+  bool SupportsPadding() const RTC_LOCKS_EXCLUDED(send_critsect_);
+  bool SupportsRtxPayloadPadding() const RTC_LOCKS_EXCLUDED(send_critsect_);
 
   std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
       size_t target_size_bytes,
-      bool media_has_been_sent);
+      bool media_has_been_sent) RTC_LOCKS_EXCLUDED(send_critsect_);
 
   // NACK.
   void OnReceivedNack(const std::vector<uint16_t>& nack_sequence_numbers,
-                      int64_t avg_rtt);
+                      int64_t avg_rtt) RTC_LOCKS_EXCLUDED(send_critsect_);
 
-  int32_t ReSendPacket(uint16_t packet_id);
+  int32_t ReSendPacket(uint16_t packet_id) RTC_LOCKS_EXCLUDED(send_critsect_);
 
   // ACK.
-  void OnReceivedAckOnSsrc(int64_t extended_highest_sequence_number);
-  void OnReceivedAckOnRtxSsrc(int64_t extended_highest_sequence_number);
+  void OnReceivedAckOnSsrc(int64_t extended_highest_sequence_number)
+      RTC_LOCKS_EXCLUDED(send_critsect_);
+  void OnReceivedAckOnRtxSsrc(int64_t extended_highest_sequence_number)
+      RTC_LOCKS_EXCLUDED(send_critsect_);
 
   // RTX.
-  void SetRtxStatus(int mode);
-  int RtxStatus() const;
-  absl::optional<uint32_t> RtxSsrc() const { return rtx_ssrc_; }
+  void SetRtxStatus(int mode) RTC_LOCKS_EXCLUDED(send_critsect_);
+  int RtxStatus() const RTC_LOCKS_EXCLUDED(send_critsect_);
+  absl::optional<uint32_t> RtxSsrc() const RTC_LOCKS_EXCLUDED(send_critsect_) {
+    return rtx_ssrc_;
+  }
 
-  void SetRtxPayloadType(int payload_type, int associated_payload_type);
+  void SetRtxPayloadType(int payload_type, int associated_payload_type)
+      RTC_LOCKS_EXCLUDED(send_critsect_);
 
   // Size info for header extensions used by FEC packets.
-  static rtc::ArrayView<const RtpExtensionSize> FecExtensionSizes();
+  static rtc::ArrayView<const RtpExtensionSize> FecExtensionSizes()
+      RTC_LOCKS_EXCLUDED(send_critsect_);
 
   // Size info for header extensions used by video packets.
-  static rtc::ArrayView<const RtpExtensionSize> VideoExtensionSizes();
+  static rtc::ArrayView<const RtpExtensionSize> VideoExtensionSizes()
+      RTC_LOCKS_EXCLUDED(send_critsect_);
 
   // Size info for header extensions used by audio packets.
-  static rtc::ArrayView<const RtpExtensionSize> AudioExtensionSizes();
+  static rtc::ArrayView<const RtpExtensionSize> AudioExtensionSizes()
+      RTC_LOCKS_EXCLUDED(send_critsect_);
 
   // Create empty packet, fills ssrc, csrcs and reserve place for header
   // extensions RtpSender updates before sending.
-  std::unique_ptr<RtpPacketToSend> AllocatePacket() const;
+  std::unique_ptr<RtpPacketToSend> AllocatePacket() const
+      RTC_LOCKS_EXCLUDED(send_critsect_);
   // Allocate sequence number for provided packet.
   // Save packet's fields to generate padding that doesn't break media stream.
   // Return false if sending was turned off.
-  bool AssignSequenceNumber(RtpPacketToSend* packet);
+  bool AssignSequenceNumber(RtpPacketToSend* packet)
+      RTC_LOCKS_EXCLUDED(send_critsect_);
   // Maximum header overhead per fec/padding packet.
-  size_t FecOrPaddingPacketMaxRtpHeaderLength() const;
+  size_t FecOrPaddingPacketMaxRtpHeaderLength() const
+      RTC_LOCKS_EXCLUDED(send_critsect_);
   // Expected header overhead per media packet.
-  size_t ExpectedPerPacketOverhead() const;
-  uint16_t AllocateSequenceNumber(uint16_t packets_to_send);
+  size_t ExpectedPerPacketOverhead() const RTC_LOCKS_EXCLUDED(send_critsect_);
+  uint16_t AllocateSequenceNumber(uint16_t packets_to_send)
+      RTC_LOCKS_EXCLUDED(send_critsect_);
   // Including RTP headers.
-  size_t MaxRtpPacketSize() const;
+  size_t MaxRtpPacketSize() const RTC_LOCKS_EXCLUDED(send_critsect_);
 
-  uint32_t SSRC() const { return ssrc_; }
+  uint32_t SSRC() const RTC_LOCKS_EXCLUDED(send_critsect_) { return ssrc_; }
 
-  absl::optional<uint32_t> FlexfecSsrc() const { return flexfec_ssrc_; }
+  absl::optional<uint32_t> FlexfecSsrc() const
+      RTC_LOCKS_EXCLUDED(send_critsect_) {
+    return flexfec_ssrc_;
+  }
 
   // Sends packet to |transport_| or to the pacer, depending on configuration.
   // TODO(bugs.webrtc.org/XXX): Remove in favor of EnqueuePackets().
-  bool SendToNetwork(std::unique_ptr<RtpPacketToSend> packet);
+  bool SendToNetwork(std::unique_ptr<RtpPacketToSend> packet)
+      RTC_LOCKS_EXCLUDED(send_critsect_);
 
   // Pass a set of packets to RtpPacketSender instance, for paced or immediate
   // sending to the network.
-  void EnqueuePackets(std::vector<std::unique_ptr<RtpPacketToSend>> packets);
+  void EnqueuePackets(std::vector<std::unique_ptr<RtpPacketToSend>> packets)
+      RTC_LOCKS_EXCLUDED(send_critsect_);
 
-  void SetRtpState(const RtpState& rtp_state);
-  RtpState GetRtpState() const;
-  void SetRtxRtpState(const RtpState& rtp_state);
-  RtpState GetRtxRtpState() const;
+  void SetRtpState(const RtpState& rtp_state)
+      RTC_LOCKS_EXCLUDED(send_critsect_);
+  RtpState GetRtpState() const RTC_LOCKS_EXCLUDED(send_critsect_);
+  void SetRtxRtpState(const RtpState& rtp_state)
+      RTC_LOCKS_EXCLUDED(send_critsect_);
+  RtpState GetRtxRtpState() const RTC_LOCKS_EXCLUDED(send_critsect_);
 
-  int64_t LastTimestampTimeMs() const;
+  int64_t LastTimestampTimeMs() const RTC_LOCKS_EXCLUDED(send_critsect_);
 
  private:
   std::unique_ptr<RtpPacketToSend> BuildRtxPacket(

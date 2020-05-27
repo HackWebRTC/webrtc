@@ -431,7 +431,7 @@ std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
 
   size_t padding_bytes_in_packet;
   const size_t max_payload_size =
-      max_packet_size_ - FecOrPaddingPacketMaxRtpHeaderLength();
+      max_packet_size_ - max_padding_fec_packet_header_;
   if (audio_configured_) {
     // Allow smaller padding packets for audio.
     padding_bytes_in_packet = rtc::SafeClamp<size_t>(
