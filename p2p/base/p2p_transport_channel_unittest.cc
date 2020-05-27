@@ -5728,4 +5728,84 @@ TEST(P2PTransportChannel, InjectIceController) {
       /* event_log = */ nullptr, &factory);
 }
 
+TEST_F(P2PTransportChannelTest, DisableDnsLookupsWithTransportPolicyRelay) {
+  ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
+                     kDefaultPortAllocatorFlags);
+  auto* ep1 = GetEndpoint(0);
+  ep1->allocator_->SetCandidateFilter(CF_RELAY);
+
+  rtc::MockAsyncResolver mock_async_resolver;
+  webrtc::MockAsyncResolverFactory mock_async_resolver_factory;
+  ON_CALL(mock_async_resolver_factory, Create())
+      .WillByDefault(Return(&mock_async_resolver));
+  ep1->async_resolver_factory_ = &mock_async_resolver_factory;
+
+  bool lookup_started = false;
+  ON_CALL(mock_async_resolver, Start(_))
+      .WillByDefault(Assign(&lookup_started, true));
+
+  CreateChannels();
+
+  ep1_ch1()->AddRemoteCandidate(
+      CreateUdpCandidate(LOCAL_PORT_TYPE, "hostname.test", 1, 100));
+
+  EXPECT_FALSE(lookup_started);
+
+  DestroyChannels();
+}
+
+TEST_F(P2PTransportChannelTest, DisableDnsLookupsWithTransportPolicyNone) {
+  ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
+                     kDefaultPortAllocatorFlags);
+  auto* ep1 = GetEndpoint(0);
+  ep1->allocator_->SetCandidateFilter(CF_NONE);
+
+  rtc::MockAsyncResolver mock_async_resolver;
+  webrtc::MockAsyncResolverFactory mock_async_resolver_factory;
+  ON_CALL(mock_async_resolver_factory, Create())
+      .WillByDefault(Return(&mock_async_resolver));
+  ep1->async_resolver_factory_ = &mock_async_resolver_factory;
+
+  bool lookup_started = false;
+  ON_CALL(mock_async_resolver, Start(_))
+      .WillByDefault(Assign(&lookup_started, true));
+
+  CreateChannels();
+
+  ep1_ch1()->AddRemoteCandidate(
+      CreateUdpCandidate(LOCAL_PORT_TYPE, "hostname.test", 1, 100));
+
+  EXPECT_FALSE(lookup_started);
+
+  DestroyChannels();
+}
+
+TEST_F(P2PTransportChannelTest, EnableDnsLookupsWithTransportPolicyNoHost) {
+  ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
+                     kDefaultPortAllocatorFlags);
+  auto* ep1 = GetEndpoint(0);
+  ep1->allocator_->SetCandidateFilter(CF_ALL & ~CF_HOST);
+
+  rtc::MockAsyncResolver mock_async_resolver;
+  webrtc::MockAsyncResolverFactory mock_async_resolver_factory;
+  EXPECT_CALL(mock_async_resolver_factory, Create())
+      .WillOnce(Return(&mock_async_resolver));
+  EXPECT_CALL(mock_async_resolver, Destroy(_));
+
+  ep1->async_resolver_factory_ = &mock_async_resolver_factory;
+
+  bool lookup_started = false;
+  EXPECT_CALL(mock_async_resolver, Start(_))
+      .WillOnce(Assign(&lookup_started, true));
+
+  CreateChannels();
+
+  ep1_ch1()->AddRemoteCandidate(
+      CreateUdpCandidate(LOCAL_PORT_TYPE, "hostname.test", 1, 100));
+
+  EXPECT_TRUE(lookup_started);
+
+  DestroyChannels();
+}
+
 }  // namespace cricket
