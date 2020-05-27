@@ -25,6 +25,7 @@ namespace webrtc_pc_e2e {
 // During the test Alice will be caller and Bob will answer the call.
 // |test_case_name| is a name of test case, that will be used for all metrics
 // reporting.
+// Returns a non-null PeerConnectionE2EQualityTestFixture instance.
 std::unique_ptr<PeerConnectionE2EQualityTestFixture>
 CreatePeerConnectionE2EQualityTestFixture(
     std::string test_case_name,
