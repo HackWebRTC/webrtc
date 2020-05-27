@@ -690,6 +690,26 @@ class CreateSessionDescriptionObserverOperationWrapper
   std::function<void()> operation_complete_callback_;
 };
 
+// Check if the changes of IceTransportsType motives an ice restart.
+bool NeedIceRestart(bool surface_ice_candidates_on_ice_transport_type_changed,
+                    PeerConnectionInterface::IceTransportsType current,
+                    PeerConnectionInterface::IceTransportsType modified) {
+  if (current == modified) {
+    return false;
+  }
+
+  if (!surface_ice_candidates_on_ice_transport_type_changed) {
+    return true;
+  }
+
+  auto current_filter = ConvertIceTransportTypeToCandidateFilter(current);
+  auto modified_filter = ConvertIceTransportTypeToCandidateFilter(modified);
+
+  // If surface_ice_candidates_on_ice_transport_type_changed is true and we
+  // extend the filter, then no ice restart is needed.
+  return (current_filter & modified_filter) != current_filter;
+}
+
 }  // namespace
 
 // Used by parameterless SetLocalDescription() to create an offer or answer.
@@ -4089,7 +4109,9 @@ RTCError PeerConnection::SetConfiguration(
   // candidate policy must set a "needs-ice-restart" bit so that the next offer
   // triggers an ICE restart which will pick up the changes.
   if (modified_config.servers != configuration_.servers ||
-      modified_config.type != configuration_.type ||
+      NeedIceRestart(
+          configuration_.surface_ice_candidates_on_ice_transport_type_changed,
+          configuration_.type, modified_config.type) ||
       modified_config.GetTurnPortPrunePolicy() !=
           configuration_.GetTurnPortPrunePolicy()) {
     transport_controller_->SetNeedsIceRestartFlag();

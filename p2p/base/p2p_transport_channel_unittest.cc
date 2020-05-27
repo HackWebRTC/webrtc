@@ -5546,6 +5546,76 @@ TEST_F(P2PTransportChannelTest,
   DestroyChannels();
 }
 
+// Verify that things break unless
+// - both parties use the surface_ice_candidates_on_ice_transport_type_changed
+// - both parties loosen candidate filter at the same time (approx.).
+//
+// i.e surface_ice_candidates_on_ice_transport_type_changed requires
+// coordination outside of webrtc to function properly.
+TEST_F(P2PTransportChannelTest, SurfaceRequiresCoordination) {
+  webrtc::test::ScopedFieldTrials field_trials(
+      "WebRTC-IceFieldTrials/skip_relay_to_non_relay_connections:true/");
+  rtc::ScopedFakeClock clock;
+
+  ConfigureEndpoints(
+      OPEN, OPEN,
+      kDefaultPortAllocatorFlags | PORTALLOCATOR_ENABLE_SHARED_SOCKET,
+      kDefaultPortAllocatorFlags | PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  auto* ep1 = GetEndpoint(0);
+  auto* ep2 = GetEndpoint(1);
+  ep1->allocator_->SetCandidateFilter(CF_RELAY);
+  ep2->allocator_->SetCandidateFilter(CF_ALL);
+  // Enable continual gathering and also resurfacing gathered candidates upon
+  // the candidate filter changed in the ICE configuration.
+  IceConfig ice_config = CreateIceConfig(1000, GATHER_CONTINUALLY);
+  ice_config.surface_ice_candidates_on_ice_transport_type_changed = true;
+  // Pause candidates gathering so we can gather all types of candidates. See
+  // P2PTransportChannel::OnConnectionStateChange, where we would stop the
+  // gathering when we have a strongly connected candidate pair.
+  PauseCandidates(0);
+  PauseCandidates(1);
+  CreateChannels(ice_config, ice_config);
+
+  // On the caller we only have relay,
+  // on the callee we have host, srflx and relay.
+  EXPECT_TRUE_SIMULATED_WAIT(ep1->saved_candidates_.size() == 1u,
+                             kDefaultTimeout, clock);
+  EXPECT_TRUE_SIMULATED_WAIT(ep2->saved_candidates_.size() == 3u,
+                             kDefaultTimeout, clock);
+
+  ResumeCandidates(0);
+  ResumeCandidates(1);
+  ASSERT_TRUE_SIMULATED_WAIT(
+      ep1_ch1()->selected_connection() != nullptr &&
+          RELAY_PORT_TYPE ==
+              ep1_ch1()->selected_connection()->local_candidate().type() &&
+          ep2_ch1()->selected_connection() != nullptr &&
+          RELAY_PORT_TYPE ==
+              ep1_ch1()->selected_connection()->remote_candidate().type(),
+      kDefaultTimeout, clock);
+  ASSERT_TRUE_SIMULATED_WAIT(ep2_ch1()->selected_connection() != nullptr,
+                             kDefaultTimeout, clock);
+
+  // Wait until the callee discards it's candidates
+  // since they don't manage to connect.
+  SIMULATED_WAIT(false, 300000, clock);
+
+  // And then loosen caller candidate filter.
+  ep1->allocator_->SetCandidateFilter(CF_ALL);
+
+  SIMULATED_WAIT(false, kDefaultTimeout, clock);
+
+  // No p2p connection will be made, it will remain on relay.
+  EXPECT_TRUE(ep1_ch1()->selected_connection() != nullptr &&
+              RELAY_PORT_TYPE ==
+                  ep1_ch1()->selected_connection()->local_candidate().type() &&
+              ep2_ch1()->selected_connection() != nullptr &&
+              RELAY_PORT_TYPE ==
+                  ep1_ch1()->selected_connection()->remote_candidate().type());
+
+  DestroyChannels();
+}
+
 TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampening0) {
   webrtc::test::ScopedFieldTrials field_trials(
       "WebRTC-IceFieldTrials/initial_select_dampening:0/");

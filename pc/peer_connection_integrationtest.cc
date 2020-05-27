@@ -6134,6 +6134,23 @@ TEST_P(PeerConnectionIntegrationTest, RegatherAfterChangingIceTransportType) {
   callee()->pc()->SetConfiguration(callee_config);
   EXPECT_EQ_WAIT(cricket::LOCAL_PORT_TYPE,
                  callee()->last_candidate_gathered().type(), kDefaultTimeout);
+
+  // Create an offer and verify that it does not contain an ICE restart (i.e new
+  // ice credentials).
+  std::string caller_ufrag_pre_offer = caller()
+                                           ->pc()
+                                           ->local_description()
+                                           ->description()
+                                           ->transport_infos()[0]
+                                           .description.ice_ufrag;
+  caller()->CreateAndSetAndSignalOffer();
+  std::string caller_ufrag_post_offer = caller()
+                                            ->pc()
+                                            ->local_description()
+                                            ->description()
+                                            ->transport_infos()[0]
+                                            .description.ice_ufrag;
+  EXPECT_EQ(caller_ufrag_pre_offer, caller_ufrag_post_offer);
 }
 
 TEST_P(PeerConnectionIntegrationTest, OnIceCandidateError) {
