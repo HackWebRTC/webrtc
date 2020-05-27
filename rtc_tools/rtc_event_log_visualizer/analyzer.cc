@@ -465,15 +465,21 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log,
     config_.begin_time_ = config_.end_time_ = 0;
   }
 
-  RTC_LOG(LS_INFO) << "Found " << parsed_log_.log_segments().size()
-                   << " (LOG_START, LOG_END) segments in log.";
+  RTC_LOG(LS_INFO) << "Log is "
+                   << (parsed_log_.last_timestamp() -
+                       parsed_log_.first_timestamp()) /
+                          1000000
+                   << " seconds long.";
 }
 
 EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log,
                                    const AnalyzerConfig& config)
     : parsed_log_(log), config_(config) {
-  RTC_LOG(LS_INFO) << "Found " << parsed_log_.log_segments().size()
-                   << " (LOG_START, LOG_END) segments in log.";
+  RTC_LOG(LS_INFO) << "Log is "
+                   << (parsed_log_.last_timestamp() -
+                       parsed_log_.first_timestamp()) /
+                          1000000
+                   << " seconds long.";
 }
 
 class BitrateObserver : public RemoteBitrateObserver {
@@ -852,10 +858,7 @@ void EventLogAnalyzer::CreateIncomingDelayGraph(Plot* plot) {
                           << packets.size() << " packets in the stream.";
       continue;
     }
-    int64_t segment_end_us =
-        parsed_log_.log_segments().empty()
-            ? std::numeric_limits<int64_t>::max()
-            : parsed_log_.log_segments().front().stop_time_us();
+    int64_t segment_end_us = parsed_log_.first_log_segment().stop_time_us();
     absl::optional<uint32_t> estimated_frequency =
         EstimateRtpClockFrequency(packets, segment_end_us);
     if (!estimated_frequency)
@@ -1586,10 +1589,7 @@ void EventLogAnalyzer::CreatePacerDelayGraph(Plot* plot) {
              "pacer delay with less than 2 packets in the stream";
       continue;
     }
-    int64_t segment_end_us =
-        parsed_log_.log_segments().empty()
-            ? std::numeric_limits<int64_t>::max()
-            : parsed_log_.log_segments().front().stop_time_us();
+    int64_t segment_end_us = parsed_log_.first_log_segment().stop_time_us();
     absl::optional<uint32_t> estimated_frequency =
         EstimateRtpClockFrequency(packets, segment_end_us);
     if (!estimated_frequency)
@@ -2050,11 +2050,7 @@ EventLogAnalyzer::NetEqStatsGetterMap EventLogAnalyzer::SimulateNetEq(
       output_events_it = parsed_log_.audio_playout_events().cbegin();
     }
 
-    absl::optional<int64_t> end_time_ms =
-        parsed_log_.log_segments().empty()
-            ? absl::nullopt
-            : absl::optional<int64_t>(
-                  parsed_log_.log_segments().front().stop_time_ms());
+    int64_t end_time_ms = parsed_log_.first_log_segment().stop_time_ms();
 
     neteq_stats[ssrc] = CreateNetEqTestAndRun(
         audio_packets, &output_events_it->second, end_time_ms,

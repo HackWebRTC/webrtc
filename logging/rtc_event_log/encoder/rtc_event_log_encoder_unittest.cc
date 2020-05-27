@@ -675,13 +675,18 @@ TEST_P(RtcEventLogEncoderTest, RtcEventLoggingStarted) {
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventLoggingStopped) {
-  const int64_t timestamp_us = rtc::TimeMicros();
-  std::string encoded = encoder_->EncodeLogEnd(timestamp_us);
+  const int64_t start_timestamp_us = rtc::TimeMicros();
+  const int64_t start_utc_time_us = rtc::TimeUTCMicros();
+  std::string encoded =
+      encoder_->EncodeLogStart(start_timestamp_us, start_utc_time_us);
+
+  const int64_t stop_timestamp_us = rtc::TimeMicros();
+  encoded += encoder_->EncodeLogEnd(stop_timestamp_us);
   ASSERT_TRUE(parsed_log_.ParseString(encoded).ok());
   const auto& stop_log_events = parsed_log_.stop_log_events();
 
   ASSERT_EQ(stop_log_events.size(), 1u);
-  verifier_.VerifyLoggedStopEvent(timestamp_us, stop_log_events[0]);
+  verifier_.VerifyLoggedStopEvent(stop_timestamp_us, stop_log_events[0]);
 }
 
 // TODO(eladalon/terelius): Test with multiple events in the batch.

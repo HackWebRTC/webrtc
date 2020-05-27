@@ -11,6 +11,7 @@
 #define LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_PARSER_H_
 
 #include <iterator>
+#include <limits>
 #include <map>
 #include <set>
 #include <sstream>  // no-presubmit-check TODO(webrtc:8982)
@@ -613,7 +614,7 @@ class ParsedRtcEventLog {
   int64_t first_timestamp() const { return first_timestamp_; }
   int64_t last_timestamp() const { return last_timestamp_; }
 
-  const std::vector<LogSegment>& log_segments() const { return log_segments_; }
+  const LogSegment& first_log_segment() const { return first_log_segment_; }
 
   std::vector<LoggedPacketInfo> GetPacketInfos(PacketDirection direction) const;
   std::vector<LoggedPacketInfo> GetIncomingPacketInfos() const {
@@ -868,8 +869,8 @@ class ParsedRtcEventLog {
   int64_t first_timestamp_;
   int64_t last_timestamp_;
 
-  // Stores the start and end timestamp for each log segments.
-  std::vector<LogSegment> log_segments_;
+  LogSegment first_log_segment_ =
+      LogSegment(0, std::numeric_limits<int64_t>::max());
 
   // The extension maps are mutable to allow us to insert the default
   // configuration when parsing an RTP header for an unconfigured stream.
