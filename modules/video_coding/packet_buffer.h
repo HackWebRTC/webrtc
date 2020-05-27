@@ -82,18 +82,24 @@ class PacketBuffer {
   PacketBuffer(Clock* clock, size_t start_buffer_size, size_t max_buffer_size);
   ~PacketBuffer();
 
-  InsertResult InsertPacket(std::unique_ptr<Packet> packet)
-      ABSL_MUST_USE_RESULT;
-  InsertResult InsertPadding(uint16_t seq_num) ABSL_MUST_USE_RESULT;
-  void ClearTo(uint16_t seq_num);
-  void Clear();
+  InsertResult InsertPacket(std::unique_ptr<Packet> packet) ABSL_MUST_USE_RESULT
+      RTC_LOCKS_EXCLUDED(crit_);
+  InsertResult InsertPadding(uint16_t seq_num) ABSL_MUST_USE_RESULT
+      RTC_LOCKS_EXCLUDED(crit_);
+  void ClearTo(uint16_t seq_num) RTC_LOCKS_EXCLUDED(crit_);
+  void Clear() RTC_LOCKS_EXCLUDED(crit_);
 
   // Timestamp (not RTP timestamp) of the last received packet/keyframe packet.
-  absl::optional<int64_t> LastReceivedPacketMs() const;
-  absl::optional<int64_t> LastReceivedKeyframePacketMs() const;
+  absl::optional<int64_t> LastReceivedPacketMs() const
+      RTC_LOCKS_EXCLUDED(crit_);
+  absl::optional<int64_t> LastReceivedKeyframePacketMs() const
+      RTC_LOCKS_EXCLUDED(crit_);
 
  private:
   Clock* const clock_;
+
+  // Clears with |crit_| taken.
+  void ClearInternal() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Tries to expand the buffer.
   bool ExpandBufferSize() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);

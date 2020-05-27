@@ -112,7 +112,7 @@ PacketBuffer::InsertResult PacketBuffer::InsertPacket(
       // Clear the buffer, delete payload, and return false to signal that a
       // new keyframe is needed.
       RTC_LOG(LS_WARNING) << "Clear PacketBuffer and request key frame.";
-      Clear();
+      ClearInternal();
       result.buffer_cleared = true;
       return result;
     }
@@ -174,16 +174,7 @@ void PacketBuffer::ClearTo(uint16_t seq_num) {
 
 void PacketBuffer::Clear() {
   rtc::CritScope lock(&crit_);
-  for (auto& entry : buffer_) {
-    entry = nullptr;
-  }
-
-  first_packet_received_ = false;
-  is_cleared_to_first_seq_num_ = false;
-  last_received_packet_ms_.reset();
-  last_received_keyframe_packet_ms_.reset();
-  newest_inserted_seq_num_.reset();
-  missing_packets_.clear();
+  ClearInternal();
 }
 
 PacketBuffer::InsertResult PacketBuffer::InsertPadding(uint16_t seq_num) {
@@ -202,6 +193,19 @@ absl::optional<int64_t> PacketBuffer::LastReceivedPacketMs() const {
 absl::optional<int64_t> PacketBuffer::LastReceivedKeyframePacketMs() const {
   rtc::CritScope lock(&crit_);
   return last_received_keyframe_packet_ms_;
+}
+
+void PacketBuffer::ClearInternal() {
+  for (auto& entry : buffer_) {
+    entry = nullptr;
+  }
+
+  first_packet_received_ = false;
+  is_cleared_to_first_seq_num_ = false;
+  last_received_packet_ms_.reset();
+  last_received_keyframe_packet_ms_.reset();
+  newest_inserted_seq_num_.reset();
+  missing_packets_.clear();
 }
 
 bool PacketBuffer::ExpandBufferSize() {
