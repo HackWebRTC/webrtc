@@ -484,8 +484,11 @@ std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
         padding_packet->SetTimestamp(padding_packet->Timestamp() +
                                      (now_ms - last_timestamp_time_ms_) *
                                          kTimestampTicksPerMs);
-        padding_packet->set_capture_time_ms(padding_packet->capture_time_ms() +
-                                            (now_ms - last_timestamp_time_ms_));
+        if (padding_packet->capture_time_ms() > 0) {
+          padding_packet->set_capture_time_ms(
+              padding_packet->capture_time_ms() +
+              (now_ms - last_timestamp_time_ms_));
+        }
       }
       RTC_DCHECK(rtx_ssrc_);
       padding_packet->SetSsrc(*rtx_ssrc_);
