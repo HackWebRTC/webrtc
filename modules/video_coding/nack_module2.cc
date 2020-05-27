@@ -14,10 +14,10 @@
 #include <limits>
 
 #include "api/units/timestamp.h"
-#include "modules/utility/include/process_thread.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/task_queue.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
@@ -27,8 +27,6 @@ const int kMaxPacketAge = 10000;
 const int kMaxNackPackets = 1000;
 const int kDefaultRttMs = 100;
 const int kMaxNackRetries = 10;
-const int kProcessFrequency = 50;
-const int kProcessIntervalMs = 1000 / kProcessFrequency;
 const int kMaxReorderedPackets = 128;
 const int kNumReorderingBuckets = 10;
 const int kDefaultSendNackDelayMs = 0;
@@ -44,6 +42,8 @@ int64_t GetSendNackDelay() {
   return kDefaultSendNackDelayMs;
 }
 }  // namespace
+
+constexpr TimeDelta NackModule2::kUpdateInterval;
 
 NackModule2::NackInfo::NackInfo()
     : seq_num(0), send_at_seq_num(0), sent_at_time(-1), retries(0) {}
@@ -88,32 +88,58 @@ NackModule2::BackoffSettings::ParseFromFieldTrials() {
   return absl::nullopt;
 }
 
-NackModule2::NackModule2(Clock* clock,
+NackModule2::NackModule2(TaskQueueBase* current_queue,
+                         Clock* clock,
                          NackSender* nack_sender,
-                         KeyFrameRequestSender* keyframe_request_sender)
-    : clock_(clock),
+                         KeyFrameRequestSender* keyframe_request_sender,
+                         TimeDelta update_interval /*= kUpdateInterval*/)
+    : worker_thread_(current_queue),
+      update_interval_(update_interval),
+      clock_(clock),
       nack_sender_(nack_sender),
       keyframe_request_sender_(keyframe_request_sender),
       reordering_histogram_(kNumReorderingBuckets, kMaxReorderedPackets),
       initialized_(false),
       rtt_ms_(kDefaultRttMs),
       newest_seq_num_(0),
-      next_process_time_ms_(-1),
       send_nack_delay_ms_(GetSendNackDelay()),
       backoff_settings_(BackoffSettings::ParseFromFieldTrials()) {
   RTC_DCHECK(clock_);
   RTC_DCHECK(nack_sender_);
   RTC_DCHECK(keyframe_request_sender_);
+  RTC_DCHECK_GT(update_interval.ms(), 0);
+  RTC_DCHECK(worker_thread_);
+  RTC_DCHECK(worker_thread_->IsCurrent());
+
+  repeating_task_ = RepeatingTaskHandle::DelayedStart(
+      TaskQueueBase::Current(), update_interval_,
+      [this]() {
+        RTC_DCHECK_RUN_ON(worker_thread_);
+        std::vector<uint16_t> nack_batch = GetNackBatch(kTimeOnly);
+        if (!nack_batch.empty()) {
+          // This batch of NACKs is triggered externally; there is no external
+          // initiator who can batch them with other feedback messages.
+          nack_sender_->SendNack(nack_batch, /*buffering_allowed=*/false);
+        }
+        return update_interval_;
+      },
+      clock_);
+}
+
+NackModule2::~NackModule2() {
+  RTC_DCHECK_RUN_ON(worker_thread_);
+  repeating_task_.Stop();
 }
 
 int NackModule2::OnReceivedPacket(uint16_t seq_num, bool is_keyframe) {
+  RTC_DCHECK_RUN_ON(worker_thread_);
   return OnReceivedPacket(seq_num, is_keyframe, false);
 }
 
 int NackModule2::OnReceivedPacket(uint16_t seq_num,
                                   bool is_keyframe,
                                   bool is_recovered) {
-  rtc::CritScope lock(&crit_);
+  RTC_DCHECK_RUN_ON(worker_thread_);
   // TODO(philipel): When the packet includes information whether it is
   //                 retransmitted or not, use that value instead. For
   //                 now set it to true, which will cause the reordering
@@ -182,61 +208,24 @@ int NackModule2::OnReceivedPacket(uint16_t seq_num,
 }
 
 void NackModule2::ClearUpTo(uint16_t seq_num) {
-  rtc::CritScope lock(&crit_);
-  nack_list_.erase(nack_list_.begin(), nack_list_.lower_bound(seq_num));
-  keyframe_list_.erase(keyframe_list_.begin(),
-                       keyframe_list_.lower_bound(seq_num));
-  recovered_list_.erase(recovered_list_.begin(),
-                        recovered_list_.lower_bound(seq_num));
+  // Called via RtpVideoStreamReceiver2::FrameContinuous on the network thread.
+  worker_thread_->PostTask(ToQueuedTask(task_safety_, [seq_num, this]() {
+    RTC_DCHECK_RUN_ON(worker_thread_);
+    nack_list_.erase(nack_list_.begin(), nack_list_.lower_bound(seq_num));
+    keyframe_list_.erase(keyframe_list_.begin(),
+                         keyframe_list_.lower_bound(seq_num));
+    recovered_list_.erase(recovered_list_.begin(),
+                          recovered_list_.lower_bound(seq_num));
+  }));
 }
 
 void NackModule2::UpdateRtt(int64_t rtt_ms) {
-  rtc::CritScope lock(&crit_);
+  RTC_DCHECK_RUN_ON(worker_thread_);
   rtt_ms_ = rtt_ms;
 }
 
-void NackModule2::Clear() {
-  rtc::CritScope lock(&crit_);
-  nack_list_.clear();
-  keyframe_list_.clear();
-  recovered_list_.clear();
-}
-
-int64_t NackModule2::TimeUntilNextProcess() {
-  return std::max<int64_t>(next_process_time_ms_ - clock_->TimeInMilliseconds(),
-                           0);
-}
-
-void NackModule2::Process() {
-  if (nack_sender_) {
-    std::vector<uint16_t> nack_batch;
-    {
-      rtc::CritScope lock(&crit_);
-      nack_batch = GetNackBatch(kTimeOnly);
-    }
-
-    if (!nack_batch.empty()) {
-      // This batch of NACKs is triggered externally; there is no external
-      // initiator who can batch them with other feedback messages.
-      nack_sender_->SendNack(nack_batch, /*buffering_allowed=*/false);
-    }
-  }
-
-  // Update the next_process_time_ms_ in intervals to achieve
-  // the targeted frequency over time. Also add multiple intervals
-  // in case of a skip in time as to not make uneccessary
-  // calls to Process in order to catch up.
-  int64_t now_ms = clock_->TimeInMilliseconds();
-  if (next_process_time_ms_ == -1) {
-    next_process_time_ms_ = now_ms + kProcessIntervalMs;
-  } else {
-    next_process_time_ms_ = next_process_time_ms_ + kProcessIntervalMs +
-                            (now_ms - next_process_time_ms_) /
-                                kProcessIntervalMs * kProcessIntervalMs;
-  }
-}
-
 bool NackModule2::RemovePacketsUntilKeyFrame() {
+  // Called on worker_thread_.
   while (!keyframe_list_.empty()) {
     auto it = nack_list_.lower_bound(*keyframe_list_.begin());
 
@@ -256,6 +245,7 @@ bool NackModule2::RemovePacketsUntilKeyFrame() {
 
 void NackModule2::AddPacketsToNack(uint16_t seq_num_start,
                                    uint16_t seq_num_end) {
+  // Called on worker_thread_.
   // Remove old packets.
   auto it = nack_list_.lower_bound(seq_num_end - kMaxPacketAge);
   nack_list_.erase(nack_list_.begin(), it);
@@ -290,6 +280,8 @@ void NackModule2::AddPacketsToNack(uint16_t seq_num_start,
 }
 
 std::vector<uint16_t> NackModule2::GetNackBatch(NackFilterOptions options) {
+  // Called on worker_thread_.
+
   bool consider_seq_num = options != kTimeOnly;
   bool consider_timestamp = options != kSeqNumOnly;
   Timestamp now = clock_->CurrentTime();
@@ -335,12 +327,14 @@ std::vector<uint16_t> NackModule2::GetNackBatch(NackFilterOptions options) {
 }
 
 void NackModule2::UpdateReorderingStatistics(uint16_t seq_num) {
+  // Running on worker_thread_.
   RTC_DCHECK(AheadOf(newest_seq_num_, seq_num));
   uint16_t diff = ReverseDiff(newest_seq_num_, seq_num);
   reordering_histogram_.Add(diff);
 }
 
 int NackModule2::WaitNumberOfPackets(float probability) const {
+  // Called on worker_thread_;
   if (reordering_histogram_.NumValues() == 0)
     return 0;
   return reordering_histogram_.InverseCdf(probability);

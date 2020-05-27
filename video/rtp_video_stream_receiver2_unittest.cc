@@ -173,10 +173,11 @@ class RtpVideoStreamReceiver2Test : public ::testing::Test {
     rtp_receive_statistics_ =
         ReceiveStatistics::Create(Clock::GetRealTimeClock());
     rtp_video_stream_receiver_ = std::make_unique<RtpVideoStreamReceiver2>(
-        Clock::GetRealTimeClock(), &mock_transport_, nullptr, nullptr, &config_,
-        rtp_receive_statistics_.get(), nullptr, nullptr, process_thread_.get(),
-        &mock_nack_sender_, &mock_key_frame_request_sender_,
-        &mock_on_complete_frame_callback_, nullptr, nullptr);
+        TaskQueueBase::Current(), Clock::GetRealTimeClock(), &mock_transport_,
+        nullptr, nullptr, &config_, rtp_receive_statistics_.get(), nullptr,
+        nullptr, process_thread_.get(), &mock_nack_sender_,
+        &mock_key_frame_request_sender_, &mock_on_complete_frame_callback_,
+        nullptr, nullptr);
     VideoCodec codec;
     codec.plType = kPayloadType;
     codec.codecType = kVideoCodecGeneric;
@@ -1131,10 +1132,10 @@ TEST_F(RtpVideoStreamReceiver2Test, TransformFrame) {
   EXPECT_CALL(*mock_frame_transformer,
               RegisterTransformedFrameSinkCallback(_, config_.rtp.remote_ssrc));
   auto receiver = std::make_unique<RtpVideoStreamReceiver2>(
-      Clock::GetRealTimeClock(), &mock_transport_, nullptr, nullptr, &config_,
-      rtp_receive_statistics_.get(), nullptr, nullptr, process_thread_.get(),
-      &mock_nack_sender_, nullptr, &mock_on_complete_frame_callback_, nullptr,
-      mock_frame_transformer);
+      TaskQueueBase::Current(), Clock::GetRealTimeClock(), &mock_transport_,
+      nullptr, nullptr, &config_, rtp_receive_statistics_.get(), nullptr,
+      nullptr, process_thread_.get(), &mock_nack_sender_, nullptr,
+      &mock_on_complete_frame_callback_, nullptr, mock_frame_transformer);
   VideoCodec video_codec;
   video_codec.plType = kPayloadType;
   video_codec.codecType = kVideoCodecGeneric;
