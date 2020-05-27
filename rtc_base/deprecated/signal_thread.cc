@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/signal_thread.h"
+#include "rtc_base/deprecated/signal_thread.h"
 
 #include <memory>
 
@@ -23,19 +23,20 @@ namespace rtc {
 // SignalThread
 ///////////////////////////////////////////////////////////////////////////////
 
-SignalThread::SignalThread()
+DEPRECATED_SignalThread::DEPRECATED_SignalThread()
     : main_(Thread::Current()), worker_(this), state_(kInit), refcount_(1) {
-  main_->SignalQueueDestroyed.connect(this,
-                                      &SignalThread::OnMainThreadDestroyed);
+  main_->SignalQueueDestroyed.connect(
+      this, &DEPRECATED_SignalThread::OnMainThreadDestroyed);
   worker_.SetName("SignalThread", this);
 }
 
-SignalThread::~SignalThread() {
+DEPRECATED_SignalThread::~DEPRECATED_SignalThread() {
   rtc::CritScope lock(&cs_);
   RTC_DCHECK(refcount_ == 0);
 }
 
-bool SignalThread::SetName(const std::string& name, const void* obj) {
+bool DEPRECATED_SignalThread::SetName(const std::string& name,
+                                      const void* obj) {
   EnterExit ee(this);
   RTC_DCHECK(!destroy_called_);
   RTC_DCHECK(main_->IsCurrent());
@@ -43,7 +44,7 @@ bool SignalThread::SetName(const std::string& name, const void* obj) {
   return worker_.SetName(name, obj);
 }
 
-void SignalThread::Start() {
+void DEPRECATED_SignalThread::Start() {
   EnterExit ee(this);
   RTC_DCHECK(!destroy_called_);
   RTC_DCHECK(main_->IsCurrent());
@@ -56,7 +57,7 @@ void SignalThread::Start() {
   }
 }
 
-void SignalThread::Destroy(bool wait) {
+void DEPRECATED_SignalThread::Destroy(bool wait) {
   EnterExit ee(this);
   // Sometimes the caller can't guarantee which thread will call Destroy, only
   // that it will be the last thing it does.
@@ -83,7 +84,7 @@ void SignalThread::Destroy(bool wait) {
   }
 }
 
-void SignalThread::Release() {
+void DEPRECATED_SignalThread::Release() {
   EnterExit ee(this);
   RTC_DCHECK(!destroy_called_);
   RTC_DCHECK(main_->IsCurrent());
@@ -97,14 +98,14 @@ void SignalThread::Release() {
   }
 }
 
-bool SignalThread::ContinueWork() {
+bool DEPRECATED_SignalThread::ContinueWork() {
   EnterExit ee(this);
   RTC_DCHECK(!destroy_called_);
   RTC_DCHECK(worker_.IsCurrent());
   return worker_.ProcessMessages(0);
 }
 
-void SignalThread::OnMessage(Message* msg) {
+void DEPRECATED_SignalThread::OnMessage(Message* msg) {
   EnterExit ee(this);
   if (ST_MSG_WORKER_DONE == msg->message_id) {
     RTC_DCHECK(main_->IsCurrent());
@@ -135,21 +136,21 @@ void SignalThread::OnMessage(Message* msg) {
   }
 }
 
-SignalThread::Worker::Worker(SignalThread* parent)
+DEPRECATED_SignalThread::Worker::Worker(DEPRECATED_SignalThread* parent)
     : Thread(std::make_unique<NullSocketServer>(), /*do_init=*/false),
       parent_(parent) {
   DoInit();
 }
 
-SignalThread::Worker::~Worker() {
+DEPRECATED_SignalThread::Worker::~Worker() {
   Stop();
 }
 
-void SignalThread::Worker::Run() {
+void DEPRECATED_SignalThread::Worker::Run() {
   parent_->Run();
 }
 
-void SignalThread::Run() {
+void DEPRECATED_SignalThread::Run() {
   DoWork();
   {
     EnterExit ee(this);
@@ -159,12 +160,12 @@ void SignalThread::Run() {
   }
 }
 
-void SignalThread::OnMainThreadDestroyed() {
+void DEPRECATED_SignalThread::OnMainThreadDestroyed() {
   EnterExit ee(this);
   main_ = nullptr;
 }
 
-bool SignalThread::Worker::IsProcessingMessagesForTesting() {
+bool DEPRECATED_SignalThread::Worker::IsProcessingMessagesForTesting() {
   return false;
 }
 

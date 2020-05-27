@@ -28,9 +28,9 @@ static const int kTimeout = 10000;
 
 class SignalThreadTest : public ::testing::Test, public sigslot::has_slots<> {
  public:
-  class SlowSignalThread : public SignalThread {
+  class SlowSignalThread : public DEPRECATED_SignalThread {
    public:
-    SlowSignalThread(SignalThreadTest* harness) : harness_(harness) {}
+    explicit SlowSignalThread(SignalThreadTest* harness) : harness_(harness) {}
 
     ~SlowSignalThread() override {
       EXPECT_EQ(harness_->main_thread_, Thread::Current());
@@ -70,7 +70,7 @@ class SignalThreadTest : public ::testing::Test, public sigslot::has_slots<> {
     RTC_DISALLOW_COPY_AND_ASSIGN(SlowSignalThread);
   };
 
-  void OnWorkComplete(rtc::SignalThread* thread) {
+  void OnWorkComplete(rtc::DEPRECATED_SignalThread* thread) {
     SlowSignalThread* t = static_cast<SlowSignalThread*>(thread);
     EXPECT_EQ(t->harness(), this);
     EXPECT_EQ(main_thread_, Thread::Current());
@@ -157,7 +157,7 @@ class OwnerThread : public Thread, public sigslot::has_slots<> {
     rtc::CritScope cs(&crit_);
     return has_run_;
   }
-  void OnWorkDone(SignalThread* /*signal_thread*/) {
+  void OnWorkDone(DEPRECATED_SignalThread* /*signal_thread*/) {
     FAIL() << " This shouldn't get called.";
   }
 
