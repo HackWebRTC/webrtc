@@ -26,14 +26,22 @@ class FrameForwarder : public rtc::VideoSourceInterface<VideoFrame> {
   FrameForwarder();
   ~FrameForwarder() override;
   // Forwards |video_frame| to the registered |sink_|.
-  virtual void IncomingCapturedFrame(const VideoFrame& video_frame);
-  rtc::VideoSinkWants sink_wants() const;
-  bool has_sinks() const;
+  virtual void IncomingCapturedFrame(const VideoFrame& video_frame)
+      RTC_LOCKS_EXCLUDED(crit_);
+  rtc::VideoSinkWants sink_wants() const RTC_LOCKS_EXCLUDED(crit_);
+  bool has_sinks() const RTC_LOCKS_EXCLUDED(crit_);
 
  protected:
+  rtc::VideoSinkWants sink_wants_locked() const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
-                       const rtc::VideoSinkWants& wants) override;
-  void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override;
+                       const rtc::VideoSinkWants& wants)
+      RTC_LOCKS_EXCLUDED(crit_) override;
+  void AddOrUpdateSinkLocked(rtc::VideoSinkInterface<VideoFrame>* sink,
+                             const rtc::VideoSinkWants& wants)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink)
+      RTC_LOCKS_EXCLUDED(crit_) override;
 
   rtc::CriticalSection crit_;
   rtc::VideoSinkInterface<VideoFrame>* sink_ RTC_GUARDED_BY(crit_);

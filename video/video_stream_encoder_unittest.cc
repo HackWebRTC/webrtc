@@ -554,9 +554,9 @@ class AdaptingFrameForwarder : public test::FrameForwarder {
   void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override {
     rtc::CritScope cs(&crit_);
-    last_wants_ = sink_wants();
+    last_wants_ = sink_wants_locked();
     adapter_.OnSinkWants(wants);
-    test::FrameForwarder::AddOrUpdateSink(sink, wants);
+    test::FrameForwarder::AddOrUpdateSinkLocked(sink, wants);
   }
   cricket::VideoAdapter adapter_;
   bool adaptation_enabled_ RTC_GUARDED_BY(crit_);

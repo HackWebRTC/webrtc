@@ -26,6 +26,12 @@ void FrameForwarder::IncomingCapturedFrame(const VideoFrame& video_frame) {
 void FrameForwarder::AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
                                      const rtc::VideoSinkWants& wants) {
   rtc::CritScope lock(&crit_);
+  AddOrUpdateSinkLocked(sink, wants);
+}
+
+void FrameForwarder::AddOrUpdateSinkLocked(
+    rtc::VideoSinkInterface<VideoFrame>* sink,
+    const rtc::VideoSinkWants& wants) {
   RTC_DCHECK(!sink_ || sink_ == sink);
   sink_ = sink;
   sink_wants_ = wants;
@@ -39,6 +45,10 @@ void FrameForwarder::RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) {
 
 rtc::VideoSinkWants FrameForwarder::sink_wants() const {
   rtc::CritScope lock(&crit_);
+  return sink_wants_;
+}
+
+rtc::VideoSinkWants FrameForwarder::sink_wants_locked() const {
   return sink_wants_;
 }
 
