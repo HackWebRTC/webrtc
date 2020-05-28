@@ -22,6 +22,7 @@
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/time_utils.h"
+#include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -114,8 +115,15 @@ void PacedSender::SetPacingRates(DataRate pacing_rate, DataRate padding_rate) {
 void PacedSender::EnqueuePackets(
     std::vector<std::unique_ptr<RtpPacketToSend>> packets) {
   {
+    TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("webrtc"),
+                 "PacedSender::EnqueuePackets");
     rtc::CritScope cs(&critsect_);
     for (auto& packet : packets) {
+      TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("webrtc"),
+                   "PacedSender::EnqueuePackets::Loop", "sequence_number",
+                   packet->SequenceNumber(), "rtp_timestamp",
+                   packet->Timestamp());
+
       pacing_controller_.EnqueuePacket(std::move(packet));
     }
   }
