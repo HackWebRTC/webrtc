@@ -32,6 +32,8 @@ enum class ResourceUsageState {
   kUnderuse,
 };
 
+const char* ResourceUsageStateToString(ResourceUsageState usage_state);
+
 class ResourceListener {
  public:
   virtual ~ResourceListener();

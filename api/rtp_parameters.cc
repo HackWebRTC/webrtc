@@ -18,6 +18,20 @@
 
 namespace webrtc {
 
+const char* DegradationPreferenceToString(
+    DegradationPreference degradation_preference) {
+  switch (degradation_preference) {
+    case DegradationPreference::DISABLED:
+      return "disabled";
+    case DegradationPreference::MAINTAIN_FRAMERATE:
+      return "maintain-framerate";
+    case DegradationPreference::MAINTAIN_RESOLUTION:
+      return "maintain-resolution";
+    case DegradationPreference::BALANCED:
+      return "balanced";
+  }
+}
+
 const double kDefaultBitratePriority = 1.0;
 
 RtcpFeedback::RtcpFeedback() = default;

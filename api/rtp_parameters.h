@@ -92,6 +92,9 @@ enum class DegradationPreference {
   BALANCED,
 };
 
+RTC_EXPORT const char* DegradationPreferenceToString(
+    DegradationPreference degradation_preference);
+
 RTC_EXPORT extern const double kDefaultBitratePriority;
 
 struct RTC_EXPORT RtcpFeedback {

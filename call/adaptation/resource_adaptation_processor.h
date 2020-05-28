@@ -13,6 +13,7 @@
 
 #include <map>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "absl/types/optional.h"
@@ -89,11 +90,29 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   bool HasSufficientInputForAdaptation(
       const VideoStreamInputState& input_state) const;
 
+  enum class MitigationResult {
+    kDisabled,
+    kInsufficientInput,
+    kRejectedByAdaptationCounts,
+    kRejectedByAdapter,
+    kRejectedByResource,
+    kAdaptationApplied,
+  };
+
+  struct MitigationResultAndLogMessage {
+    MitigationResultAndLogMessage();
+    MitigationResultAndLogMessage(MitigationResult result, std::string message);
+    MitigationResult result;
+    std::string message;
+  };
+
   // Performs the adaptation by getting the next target, applying it and
   // informing listeners of the new VideoSourceRestriction and adaptation
   // counters.
-  void OnResourceUnderuse(rtc::scoped_refptr<Resource> reason_resource);
-  void OnResourceOveruse(rtc::scoped_refptr<Resource> reason_resource);
+  MitigationResultAndLogMessage OnResourceUnderuse(
+      rtc::scoped_refptr<Resource> reason_resource);
+  MitigationResultAndLogMessage OnResourceOveruse(
+      rtc::scoped_refptr<Resource> reason_resource);
 
   // Needs to be invoked any time |degradation_preference_| or |is_screenshare_|
   // changes to ensure |effective_degradation_preference_| is up-to-date.
@@ -137,6 +156,10 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   const std::unique_ptr<VideoStreamAdapter> stream_adapter_
       RTC_GUARDED_BY(sequence_checker_);
   VideoSourceRestrictions last_reported_source_restrictions_
+      RTC_GUARDED_BY(sequence_checker_);
+  // Keeps track of previous mitigation results per resource since the last
+  // successful adaptation. Used to avoid RTC_LOG spam.
+  std::map<Resource*, MitigationResult> previous_mitigation_results_
       RTC_GUARDED_BY(sequence_checker_);
   // Prevents recursion.
   //

@@ -15,6 +15,15 @@
 
 namespace webrtc {
 
+const char* ResourceUsageStateToString(ResourceUsageState usage_state) {
+  switch (usage_state) {
+    case ResourceUsageState::kOveruse:
+      return "kOveruse";
+    case ResourceUsageState::kUnderuse:
+      return "kUnderuse";
+  }
+}
+
 ResourceListener::~ResourceListener() {}
 
 Resource::Resource()

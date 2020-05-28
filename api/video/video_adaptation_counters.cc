@@ -10,6 +10,8 @@
 
 #include "api/video/video_adaptation_counters.h"
 
+#include "rtc_base/strings/string_builder.h"
+
 namespace webrtc {
 
 bool VideoAdaptationCounters::operator==(
@@ -28,6 +30,13 @@ VideoAdaptationCounters VideoAdaptationCounters::operator+(
   return VideoAdaptationCounters(
       resolution_adaptations + other.resolution_adaptations,
       fps_adaptations + other.fps_adaptations);
+}
+
+std::string VideoAdaptationCounters::ToString() const {
+  rtc::StringBuilder ss;
+  ss << "{ res=" << resolution_adaptations << " fps=" << fps_adaptations
+     << " }";
+  return ss.Release();
 }
 
 }  // namespace webrtc

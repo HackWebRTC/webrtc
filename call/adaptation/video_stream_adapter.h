@@ -56,6 +56,8 @@ class Adaptation final {
     kAwaitingPreviousAdaptation,
   };
 
+  static const char* StatusToString(Status status);
+
   // The status of this Adaptation. To find out how this Adaptation affects
   // VideoSourceRestrictions, see VideoStreamAdapter::PeekNextRestrictions().
   Status status() const;
