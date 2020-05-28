@@ -83,7 +83,7 @@ class PeerConnectionE2EQualityTestSmokeTest : public ::testing::Test {
     auto fixture = CreatePeerConnectionE2EQualityTestFixture(
         test_case_name, /*audio_quality_analyzer=*/nullptr,
         std::move(video_quality_analyzer));
-    fixture->ExecuteAt(TimeDelta::Seconds(3),
+    fixture->ExecuteAt(TimeDelta::Seconds(1),
                        [alice_network_behavior_ptr](TimeDelta) {
                          BuiltInNetworkBehaviorConfig config;
                          config.loss_percent = 5;
@@ -116,13 +116,13 @@ class PeerConnectionE2EQualityTestSmokeTest : public ::testing::Test {
       // On some devices the pipeline can be too slow, so we actually can't
       // force real constraints here. Lets just check, that at least 1
       // frame passed whole pipeline.
-      int64_t expected_min_fps = run_params.run_duration.seconds() * 30;
-      EXPECT_GE(stream_conters.captured, expected_min_fps);
-      EXPECT_GE(stream_conters.pre_encoded, 1);
-      EXPECT_GE(stream_conters.encoded, 1);
-      EXPECT_GE(stream_conters.received, 1);
-      EXPECT_GE(stream_conters.decoded, 1);
-      EXPECT_GE(stream_conters.rendered, 1);
+      int64_t expected_min_fps = run_params.run_duration.seconds() * 15;
+      EXPECT_GE(stream_conters.captured, expected_min_fps) << stream_label;
+      EXPECT_GE(stream_conters.pre_encoded, 1) << stream_label;
+      EXPECT_GE(stream_conters.encoded, 1) << stream_label;
+      EXPECT_GE(stream_conters.received, 1) << stream_label;
+      EXPECT_GE(stream_conters.decoded, 1) << stream_label;
+      EXPECT_GE(stream_conters.rendered, 1) << stream_label;
     }
   }
 };
@@ -136,7 +136,7 @@ class PeerConnectionE2EQualityTestSmokeTest : public ::testing::Test {
 #define MAYBE_Smoke Smoke
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
-  RunParams run_params(TimeDelta::Seconds(3));
+  RunParams run_params(TimeDelta::Seconds(2));
   run_params.video_codecs = {
       VideoCodecConfig(cricket::kVp9CodecName, {{"profile-id", "0"}})};
   run_params.use_flex_fec = true;
@@ -148,7 +148,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
   RunTest(
       "smoke", run_params,
       [](PeerConfigurer* alice) {
-        VideoConfig video(640, 360, 30);
+        VideoConfig video(160, 120, 15);
         video.stream_label = "alice-video";
         video.sync_group = "alice-media";
         alice->AddVideoConfig(std::move(video));
@@ -164,22 +164,10 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
       },
       [](PeerConfigurer* charlie) {
         charlie->SetName("charlie");
-        VideoConfig video(640, 360, 30);
+        VideoConfig video(160, 120, 15);
         video.stream_label = "charlie-video";
         video.temporal_layers_count = 2;
         charlie->AddVideoConfig(std::move(video));
-
-        VideoConfig screenshare(640, 360, 30);
-        screenshare.stream_label = "charlie-screenshare";
-        screenshare.content_hint = VideoTrackInterface::ContentHint::kText;
-        ScreenShareConfig screen_share_config =
-            ScreenShareConfig(TimeDelta::Seconds(3));
-        screen_share_config.scrolling_params = ScrollingParams(
-            TimeDelta::Millis(1800), kDefaultSlidesWidth, kDefaultSlidesHeight);
-        auto screen_share_frame_generator =
-            CreateScreenShareFrameGenerator(screenshare, screen_share_config);
-        charlie->AddVideoConfig(std::move(screenshare),
-                                std::move(screen_share_frame_generator));
 
         AudioConfig audio;
         audio.stream_label = "charlie-audio";
@@ -192,12 +180,41 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
 
 // IOS debug builds can be quite slow, disabling to avoid issues with timeouts.
 #if defined(WEBRTC_IOS) && defined(WEBRTC_ARCH_ARM64) && !defined(NDEBUG)
+#define MAYBE_Screenshare DISABLED_Screenshare
+#else
+#define MAYBE_Screenshare Screenshare
+#endif
+TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Screenshare) {
+  RunParams run_params(TimeDelta::Seconds(2));
+  test::ScopedFieldTrials field_trials(
+      std::string(field_trial::GetFieldTrialString()) +
+      "WebRTC-UseStandardBytesStats/Enabled/");
+  RunTest(
+      "screenshare", run_params,
+      [](PeerConfigurer* alice) {
+        VideoConfig screenshare(320, 180, 30);
+        screenshare.stream_label = "alice-screenshare";
+        screenshare.content_hint = VideoTrackInterface::ContentHint::kText;
+        ScreenShareConfig screen_share_config =
+            ScreenShareConfig(TimeDelta::Seconds(2));
+        screen_share_config.scrolling_params = ScrollingParams(
+            TimeDelta::Millis(1800), kDefaultSlidesWidth, kDefaultSlidesHeight);
+        auto screen_share_frame_generator =
+            CreateScreenShareFrameGenerator(screenshare, screen_share_config);
+        alice->AddVideoConfig(std::move(screenshare),
+                              std::move(screen_share_frame_generator));
+      },
+      [](PeerConfigurer* charlie) {});
+}
+
+// IOS debug builds can be quite slow, disabling to avoid issues with timeouts.
+#if defined(WEBRTC_IOS) && defined(WEBRTC_ARCH_ARM64) && !defined(NDEBUG)
 #define MAYBE_Echo DISABLED_Echo
 #else
 #define MAYBE_Echo Echo
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Echo) {
-  RunParams run_params(TimeDelta::Seconds(3));
+  RunParams run_params(TimeDelta::Seconds(2));
   run_params.echo_emulation_config = EchoEmulationConfig();
   RunTest(
       "smoke", run_params,
@@ -227,14 +244,14 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Echo) {
 #define MAYBE_Simulcast Simulcast
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Simulcast) {
-  RunParams run_params(TimeDelta::Seconds(3));
+  RunParams run_params(TimeDelta::Seconds(2));
   run_params.video_codecs = {VideoCodecConfig(cricket::kVp8CodecName)};
   RunTest(
       "simulcast", run_params,
       [](PeerConfigurer* alice) {
-        VideoConfig simulcast(1280, 720, 30);
+        VideoConfig simulcast(1280, 720, 15);
         simulcast.stream_label = "alice-simulcast";
-        simulcast.simulcast_config = VideoSimulcastConfig(3, 0);
+        simulcast.simulcast_config = VideoSimulcastConfig(2, 0);
         alice->AddVideoConfig(std::move(simulcast));
 
         AudioConfig audio;
@@ -244,18 +261,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Simulcast) {
             test::ResourcePath("pc_quality_smoke_test_alice_source", "wav");
         alice->SetAudioConfig(std::move(audio));
       },
-      [](PeerConfigurer* bob) {
-        VideoConfig video(640, 360, 30);
-        video.stream_label = "bob-video";
-        bob->AddVideoConfig(std::move(video));
-
-        AudioConfig audio;
-        audio.stream_label = "bob-audio";
-        audio.mode = AudioConfig::Mode::kFile;
-        audio.input_file_name =
-            test::ResourcePath("pc_quality_smoke_test_bob_source", "wav");
-        bob->SetAudioConfig(std::move(audio));
-      });
+      [](PeerConfigurer* bob) {});
 }
 
 // IOS debug builds can be quite slow, disabling to avoid issues with timeouts.
@@ -265,16 +271,16 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Simulcast) {
 #define MAYBE_Svc Svc
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Svc) {
-  RunParams run_params(TimeDelta::Seconds(3));
+  RunParams run_params(TimeDelta::Seconds(2));
   run_params.video_codecs = {VideoCodecConfig(cricket::kVp9CodecName)};
   RunTest(
       "simulcast", run_params,
       [](PeerConfigurer* alice) {
-        VideoConfig simulcast(1280, 720, 30);
+        VideoConfig simulcast(1280, 720, 15);
         simulcast.stream_label = "alice-svc";
         // Because we have network with packets loss we can analyze only the
         // highest spatial layer in SVC mode.
-        simulcast.simulcast_config = VideoSimulcastConfig(3, 2);
+        simulcast.simulcast_config = VideoSimulcastConfig(2, 1);
         alice->AddVideoConfig(std::move(simulcast));
 
         AudioConfig audio;
@@ -284,18 +290,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Svc) {
             test::ResourcePath("pc_quality_smoke_test_alice_source", "wav");
         alice->SetAudioConfig(std::move(audio));
       },
-      [](PeerConfigurer* bob) {
-        VideoConfig video(640, 360, 30);
-        video.stream_label = "bob-video";
-        bob->AddVideoConfig(std::move(video));
-
-        AudioConfig audio;
-        audio.stream_label = "bob-audio";
-        audio.mode = AudioConfig::Mode::kFile;
-        audio.input_file_name =
-            test::ResourcePath("pc_quality_smoke_test_bob_source", "wav");
-        bob->SetAudioConfig(std::move(audio));
-      });
+      [](PeerConfigurer* bob) {});
 }
 
 // IOS debug builds can be quite slow, disabling to avoid issues with timeouts.
@@ -305,7 +300,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Svc) {
 #define MAYBE_HighBitrate HighBitrate
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_HighBitrate) {
-  RunParams run_params(TimeDelta::Seconds(3));
+  RunParams run_params(TimeDelta::Seconds(2));
   run_params.video_codecs = {
       VideoCodecConfig(cricket::kVp9CodecName, {{"profile-id", "0"}})};
 
@@ -316,7 +311,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_HighBitrate) {
         bitrate_params.current_bitrate_bps = 3'000'000;
         bitrate_params.max_bitrate_bps = 3'000'000;
         alice->SetBitrateParameters(bitrate_params);
-        VideoConfig video(800, 600, 30);
+        VideoConfig video(800, 600, 15);
         video.stream_label = "alice-video";
         video.min_encode_bitrate_bps = 500'000;
         video.max_encode_bitrate_bps = 3'000'000;
@@ -330,24 +325,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_HighBitrate) {
         audio.sampling_frequency_in_hz = 48000;
         alice->SetAudioConfig(std::move(audio));
       },
-      [](PeerConfigurer* bob) {
-        PeerConnectionInterface::BitrateParameters bitrate_params;
-        bitrate_params.current_bitrate_bps = 3'000'000;
-        bitrate_params.max_bitrate_bps = 3'000'000;
-        bob->SetBitrateParameters(bitrate_params);
-        VideoConfig video(800, 600, 30);
-        video.stream_label = "bob-video";
-        video.min_encode_bitrate_bps = 500'000;
-        video.max_encode_bitrate_bps = 3'000'000;
-        bob->AddVideoConfig(std::move(video));
-
-        AudioConfig audio;
-        audio.stream_label = "bob-audio";
-        audio.mode = AudioConfig::Mode::kFile;
-        audio.input_file_name =
-            test::ResourcePath("pc_quality_smoke_test_bob_source", "wav");
-        bob->SetAudioConfig(std::move(audio));
-      });
+      [](PeerConfigurer* bob) {});
 }
 
 }  // namespace webrtc_pc_e2e
