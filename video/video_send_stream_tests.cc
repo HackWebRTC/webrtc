@@ -2483,29 +2483,34 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
           released_(false),
           encoder_factory_(this) {}
 
-    bool IsReleased() {
+    bool IsReleased() RTC_LOCKS_EXCLUDED(crit_) {
       rtc::CritScope lock(&crit_);
       return released_;
     }
 
-    bool IsReadyForEncode() {
+    bool IsReadyForEncode() RTC_LOCKS_EXCLUDED(crit_) {
       rtc::CritScope lock(&crit_);
-      return initialized_ && callback_registered_;
+      return IsReadyForEncodeLocked();
     }
 
-    size_t num_releases() {
+    size_t num_releases() RTC_LOCKS_EXCLUDED(crit_) {
       rtc::CritScope lock(&crit_);
       return num_releases_;
     }
 
    private:
+    bool IsReadyForEncodeLocked() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_) {
+      return initialized_ && callback_registered_;
+    }
+
     void SetFecControllerOverride(
         FecControllerOverride* fec_controller_override) override {
       // Ignored.
     }
 
     int32_t InitEncode(const VideoCodec* codecSettings,
-                       const Settings& settings) override {
+                       const Settings& settings) override
+        RTC_LOCKS_EXCLUDED(crit_) {
       rtc::CritScope lock(&crit_);
       EXPECT_FALSE(initialized_);
       initialized_ = true;
@@ -2522,16 +2527,16 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
     }
 
     int32_t RegisterEncodeCompleteCallback(
-        EncodedImageCallback* callback) override {
+        EncodedImageCallback* callback) override RTC_LOCKS_EXCLUDED(crit_) {
       rtc::CritScope lock(&crit_);
       EXPECT_TRUE(initialized_);
       callback_registered_ = true;
       return 0;
     }
 
-    int32_t Release() override {
+    int32_t Release() override RTC_LOCKS_EXCLUDED(crit_) {
       rtc::CritScope lock(&crit_);
-      EXPECT_TRUE(IsReadyForEncode());
+      EXPECT_TRUE(IsReadyForEncodeLocked());
       EXPECT_FALSE(released_);
       initialized_ = false;
       callback_registered_ = false;
