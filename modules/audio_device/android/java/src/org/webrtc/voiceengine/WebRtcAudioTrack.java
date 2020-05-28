@@ -433,6 +433,13 @@ public class WebRtcAudioTrack {
     }
   }
 
+  private int getBufferSizeInFrames() {
+    if (Build.VERSION.SDK_INT >= 23) {
+      return audioTrack.getBufferSizeInFrames();
+    }
+    return -1;
+  }
+
   private void logBufferCapacityInFrames() {
     if (Build.VERSION.SDK_INT >= 24) {
       Logging.d(TAG,

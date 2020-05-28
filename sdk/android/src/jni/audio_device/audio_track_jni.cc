@@ -20,6 +20,7 @@
 #include "sdk/android/generated_java_audio_device_module_native_jni/WebRtcAudioTrack_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "system_wrappers/include/field_trial.h"
+#include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
 
@@ -89,12 +90,33 @@ int32_t AudioTrackJni::InitPlayout() {
              nullptr);
   if (buffer_size_factor == 0)
     buffer_size_factor = 1.0;
-  if (!Java_WebRtcAudioTrack_initPlayout(
-          env_, j_audio_track_, audio_parameters_.sample_rate(),
-          static_cast<int>(audio_parameters_.channels()), buffer_size_factor)) {
+  int requested_buffer_size_bytes = Java_WebRtcAudioTrack_initPlayout(
+      env_, j_audio_track_, audio_parameters_.sample_rate(),
+      static_cast<int>(audio_parameters_.channels()), buffer_size_factor);
+  if (requested_buffer_size_bytes < 0) {
     RTC_LOG(LS_ERROR) << "InitPlayout failed";
     return -1;
   }
+  // Update UMA histograms for both the requested and actual buffer size.
+  // To avoid division by zero, we assume the sample rate is 48k if an invalid
+  // value is found.
+  const int sample_rate = audio_parameters_.sample_rate() <= 0
+                              ? 48000
+                              : audio_parameters_.sample_rate();
+  // This calculation assumes that audio is mono.
+  const int requested_buffer_size_ms =
+      (requested_buffer_size_bytes * 1000) / (2 * sample_rate);
+  RTC_HISTOGRAM_COUNTS("WebRTC.Audio.AndroidNativeRequestedAudioBufferSizeMs",
+                       requested_buffer_size_ms, 0, 1000, 100);
+  int actual_buffer_size_frames =
+      Java_WebRtcAudioTrack_getBufferSizeInFrames(env_, j_audio_track_);
+  if (actual_buffer_size_frames >= 0) {
+    const int actual_buffer_size_ms =
+        actual_buffer_size_frames * 1000 / sample_rate;
+    RTC_HISTOGRAM_COUNTS("WebRTC.Audio.AndroidNativeAudioBufferSizeMs",
+                         actual_buffer_size_ms, 0, 1000, 100);
+  }
+
   initialized_ = true;
   return 0;
 }
