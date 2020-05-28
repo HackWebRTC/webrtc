@@ -264,7 +264,7 @@ class Call final : public webrtc::Call,
 
   void RegisterRateObserver();
 
-  rtc::TaskQueue* network_queue() const {
+  rtc::TaskQueue* send_transport_queue() const {
     return transport_send_ptr_->GetWorkerQueue();
   }
 
@@ -277,7 +277,6 @@ class Call final : public webrtc::Call,
   const std::unique_ptr<CallStats> call_stats_;
   const std::unique_ptr<BitrateAllocator> bitrate_allocator_;
   Call::Config config_;
-  SequenceChecker network_sequence_checker_;
 
   NetworkState audio_network_state_;
   NetworkState video_network_state_;
@@ -577,7 +576,6 @@ Call::Call(Clock* clock,
   RTC_DCHECK(config.event_log != nullptr);
   RTC_DCHECK(config.trials != nullptr);
   RTC_DCHECK(worker_thread_->IsCurrent());
-  network_sequence_checker_.Detach();
 
   call_stats_->RegisterStatsObserver(&receive_side_cc_);
 
@@ -1033,14 +1031,6 @@ RtpTransportControllerSendInterface* Call::GetTransportControllerSend() {
 Call::Stats Call::GetStats() const {
   RTC_DCHECK_RUN_ON(worker_thread_);
 
-  // TODO(tommi): The following stats are managed on the process thread:
-  // - pacer_delay_ms (PacedSender::Process)
-  // - rtt_ms
-  // - recv_bandwidth_bps
-  // These are delivered on the network TQ:
-  // - send_bandwidth_bps (see OnTargetTransferRate)
-  // - max_padding_bitrate_bps (see OnAllocationLimitsChanged)
-
   Stats stats;
   // TODO(srte): It is unclear if we only want to report queues if network is
   // available.
@@ -1122,13 +1112,12 @@ void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {
 }
 
 void Call::OnStartRateUpdate(DataRate start_rate) {
-  RTC_DCHECK(network_queue()->IsCurrent());
+  RTC_DCHECK_RUN_ON(send_transport_queue());
   bitrate_allocator_->UpdateStartRate(start_rate.bps<uint32_t>());
 }
 
 void Call::OnTargetTransferRate(TargetTransferRate msg) {
-  RTC_DCHECK(network_queue()->IsCurrent());
-  RTC_DCHECK_RUN_ON(&network_sequence_checker_);
+  RTC_DCHECK_RUN_ON(send_transport_queue());
 
   uint32_t target_bitrate_bps = msg.target_rate.bps();
   // For controlling the rate of feedback messages.
@@ -1158,8 +1147,7 @@ void Call::OnTargetTransferRate(TargetTransferRate msg) {
 }
 
 void Call::OnAllocationLimitsChanged(BitrateAllocationLimits limits) {
-  RTC_DCHECK(network_queue()->IsCurrent());
-  RTC_DCHECK_RUN_ON(&network_sequence_checker_);
+  RTC_DCHECK_RUN_ON(send_transport_queue());
 
   transport_send_ptr_->SetAllocatedSendBitrateLimits(limits);
 
@@ -1350,6 +1338,7 @@ PacketReceiver::DeliveryStatus Call::DeliverPacket(
     rtc::CopyOnWriteBuffer packet,
     int64_t packet_time_us) {
   RTC_DCHECK_RUN_ON(worker_thread_);
+
   if (IsRtcp(packet.cdata(), packet.size()))
     return DeliverRtcp(media_type, packet.cdata(), packet.size());
 
