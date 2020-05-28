@@ -13,12 +13,20 @@
 #include <utility>
 
 #include "rtc_base/experiments/balanced_degradation_settings.h"
+#include "rtc_base/time_utils.h"
 
 namespace webrtc {
+
+namespace {
+
+const int64_t kUnderuseDueToDisabledCooldownMs = 1000;
+
+}  // namespace
 
 QualityScalerResource::QualityScalerResource()
     : rtc::RefCountedObject<Resource>(),
       quality_scaler_(nullptr),
+      last_underuse_due_to_disabled_timestamp_ms_(absl::nullopt),
       num_handled_callbacks_(0),
       pending_callbacks_(),
       adaptation_processor_(nullptr),
@@ -82,11 +90,18 @@ void QualityScalerResource::OnEncodeCompleted(const EncodedImage& encoded_image,
     // mid call.
     // Instead it should be done at a higher layer in the same way for all
     // resources.
-    resource_adaptation_queue()->PostTask(
-        [this_ref = rtc::scoped_refptr<QualityScalerResource>(this)] {
-          RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue());
-          this_ref->OnResourceUsageStateMeasured(ResourceUsageState::kUnderuse);
-        });
+    int64_t timestamp_ms = rtc::TimeMillis();
+    if (!last_underuse_due_to_disabled_timestamp_ms_.has_value() ||
+        timestamp_ms - last_underuse_due_to_disabled_timestamp_ms_.value() >=
+            kUnderuseDueToDisabledCooldownMs) {
+      last_underuse_due_to_disabled_timestamp_ms_ = timestamp_ms;
+      resource_adaptation_queue()->PostTask(
+          [this_ref = rtc::scoped_refptr<QualityScalerResource>(this)] {
+            RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue());
+            this_ref->OnResourceUsageStateMeasured(
+                ResourceUsageState::kUnderuse);
+          });
+    }
   }
 }
 

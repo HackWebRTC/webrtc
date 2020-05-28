@@ -15,6 +15,7 @@
 #include <queue>
 #include <string>
 
+#include "absl/types/optional.h"
 #include "api/video/video_adaptation_reason.h"
 #include "api/video_codecs/video_encoder.h"
 #include "call/adaptation/resource.h"
@@ -73,6 +74,11 @@ class QualityScalerResource : public rtc::RefCountedObject<Resource>,
 
   // Members accessed on the encoder queue.
   std::unique_ptr<QualityScaler> quality_scaler_
+      RTC_GUARDED_BY(encoder_queue());
+  // The timestamp of the last time we reported underuse because this resource
+  // was disabled in order to prevent getting stuck with QP adaptations. Used to
+  // make sure underuse reporting is not too spammy.
+  absl::optional<int64_t> last_underuse_due_to_disabled_timestamp_ms_
       RTC_GUARDED_BY(encoder_queue());
   // Every OnReportQpUsageHigh/Low() operation has a callback that MUST be
   // invoked on the |encoder_queue_|. Because usage measurements are reported on
