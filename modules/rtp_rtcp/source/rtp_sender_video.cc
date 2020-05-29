@@ -144,7 +144,8 @@ RTPSenderVideo::RTPSenderVideo(const Config& config)
                     RTPSenderVideoFrameTransformerDelegate>(
                     this,
                     config.frame_transformer,
-                    rtp_sender_->SSRC())
+                    rtp_sender_->SSRC(),
+                    config.worker_queue)
               : nullptr) {
   if (frame_transformer_delegate_)
     frame_transformer_delegate_->Init();

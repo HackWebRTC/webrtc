@@ -30,7 +30,8 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
   RTPSenderVideoFrameTransformerDelegate(
       RTPSenderVideo* sender,
       rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
-      uint32_t ssrc);
+      uint32_t ssrc,
+      TaskQueueBase* worker_queue);
 
   void Init();
 
@@ -69,6 +70,7 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
   rtc::scoped_refptr<FrameTransformerInterface> frame_transformer_;
   const uint32_t ssrc_;
   TaskQueueBase* encoder_queue_ = nullptr;
+  TaskQueueBase* worker_queue_;
 };
 
 }  // namespace webrtc
