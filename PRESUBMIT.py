@@ -47,10 +47,13 @@ CPPLINT_BLACKLIST = [
 # - build/c++11         : Rvalue ref checks are unreliable (false positives),
 #                         include file and feature blacklists are
 #                         google3-specific.
+# - runtime/references  : Mutable references are not banned by the Google
+#                         C++ style guide anymore (starting from May 2020).
 # - whitespace/operators: Same as above (doesn't seem sufficient to eliminate
 #                         all move-related errors).
 BLACKLIST_LINT_FILTERS = [
   '-build/c++11',
+  '-runtime/references',
   '-whitespace/operators',
 ]
 
