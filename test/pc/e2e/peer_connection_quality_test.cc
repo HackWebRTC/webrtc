@@ -14,6 +14,7 @@
 #include <set>
 #include <utility>
 
+#include "absl/strings/string_view.h"
 #include "api/jsep.h"
 #include "api/media_stream_interface.h"
 #include "api/peer_connection_interface.h"
@@ -205,18 +206,21 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
       RemotePeerAudioConfig::Create(bob_configurer->params()->audio_config);
   absl::optional<RemotePeerAudioConfig> bob_remote_audio_config =
       RemotePeerAudioConfig::Create(alice_configurer->params()->audio_config);
-  // Copy Alice and Bob video configs to correctly pass them into lambdas.
+  // Copy Alice and Bob video configs and names to correctly pass them into
+  // lambdas.
   std::vector<VideoConfig> alice_video_configs =
       alice_configurer->params()->video_configs;
+  std::string alice_name = alice_configurer->params()->name.value();
   std::vector<VideoConfig> bob_video_configs =
       bob_configurer->params()->video_configs;
+  std::string bob_name = bob_configurer->params()->name.value();
 
   alice_ = TestPeerFactory::CreateTestPeer(
       std::move(alice_configurer),
       std::make_unique<FixturePeerConnectionObserver>(
-          [this, bob_video_configs](
+          [this, bob_video_configs, alice_name](
               rtc::scoped_refptr<RtpTransceiverInterface> transceiver) {
-            OnTrackCallback(transceiver, bob_video_configs);
+            OnTrackCallback(alice_name, transceiver, bob_video_configs);
           },
           [this]() { StartVideo(alice_video_sources_); }),
       video_quality_analyzer_injection_helper_.get(), signaling_thread.get(),
@@ -225,9 +229,9 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   bob_ = TestPeerFactory::CreateTestPeer(
       std::move(bob_configurer),
       std::make_unique<FixturePeerConnectionObserver>(
-          [this, alice_video_configs](
-              rtc::scoped_refptr<RtpTransceiverInterface> transceiver) {
-            OnTrackCallback(transceiver, alice_video_configs);
+          [this, alice_video_configs,
+           bob_name](rtc::scoped_refptr<RtpTransceiverInterface> transceiver) {
+            OnTrackCallback(bob_name, transceiver, alice_video_configs);
           },
           [this]() { StartVideo(bob_video_sources_); }),
       video_quality_analyzer_injection_helper_.get(), signaling_thread.get(),
@@ -371,6 +375,7 @@ void PeerConnectionE2EQualityTest::SetupRequiredFieldTrials(
 }
 
 void PeerConnectionE2EQualityTest::OnTrackCallback(
+    absl::string_view peer_name,
     rtc::scoped_refptr<RtpTransceiverInterface> transceiver,
     std::vector<VideoConfig> remote_video_configs) {
   const rtc::scoped_refptr<MediaStreamTrackInterface>& track =
@@ -387,7 +392,7 @@ void PeerConnectionE2EQualityTest::OnTrackCallback(
   // track->kind() is kVideoKind.
   auto* video_track = static_cast<VideoTrackInterface*>(track.get());
   std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> video_sink =
-      video_quality_analyzer_injection_helper_->CreateVideoSink();
+      video_quality_analyzer_injection_helper_->CreateVideoSink(peer_name);
   video_track->AddOrUpdateSink(video_sink.get(), rtc::VideoSinkWants());
   output_video_sinks_.push_back(std::move(video_sink));
 }

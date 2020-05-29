@@ -14,6 +14,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/strings/string_view.h"
 #include "api/video/video_codec_type.h"
 #include "api/video_codecs/video_encoder.h"
 #include "modules/video_coding/include/video_error_codes.h"
@@ -54,12 +55,14 @@ std::pair<uint32_t, uint32_t> GetMinMaxBitratesBps(const VideoCodec& codec,
 
 QualityAnalyzingVideoEncoder::QualityAnalyzingVideoEncoder(
     int id,
+    absl::string_view peer_name,
     std::unique_ptr<VideoEncoder> delegate,
     double bitrate_multiplier,
     std::map<std::string, absl::optional<int>> stream_required_spatial_index,
     EncodedImageDataInjector* injector,
     VideoQualityAnalyzerInterface* analyzer)
     : id_(id),
+      peer_name_(peer_name),
       delegate_(std::move(delegate)),
       bitrate_multiplier_(bitrate_multiplier),
       stream_required_spatial_index_(std::move(stream_required_spatial_index)),
@@ -134,7 +137,7 @@ int32_t QualityAnalyzingVideoEncoder::Encode(
     // images from encoder. So it should be a bug in setup on in the encoder.
     RTC_DCHECK_LT(timestamp_to_frame_id_list_.size(), kMaxFrameInPipelineCount);
   }
-  analyzer_->OnFramePreEncode(frame);
+  analyzer_->OnFramePreEncode(peer_name_, frame);
   int32_t result = delegate_->Encode(frame, frame_types);
   if (result != WEBRTC_VIDEO_CODEC_OK) {
     // If origin encoder failed, then cleanup data for this frame.
@@ -152,7 +155,7 @@ int32_t QualityAnalyzingVideoEncoder::Encode(
         }
       }
     }
-    analyzer_->OnEncoderError(frame, result);
+    analyzer_->OnEncoderError(peer_name_, frame, result);
   }
   return result;
 }
@@ -277,7 +280,7 @@ EncodedImageCallback::Result QualityAnalyzingVideoEncoder::OnEncodedImage(
     // not discarded layers have to be passed.
     VideoQualityAnalyzerInterface::EncoderStats stats;
     stats.target_encode_bitrate = target_encode_bitrate;
-    analyzer_->OnFrameEncoded(frame_id, encoded_image, stats);
+    analyzer_->OnFrameEncoded(peer_name_, frame_id, encoded_image, stats);
   }
 
   // Image data injector injects frame id and discard flag into provided
@@ -298,7 +301,7 @@ EncodedImageCallback::Result QualityAnalyzingVideoEncoder::OnEncodedImage(
 void QualityAnalyzingVideoEncoder::OnDroppedFrame(
     EncodedImageCallback::DropReason reason) {
   rtc::CritScope crit(&lock_);
-  analyzer_->OnFrameDropped(reason);
+  analyzer_->OnFrameDropped(peer_name_, reason);
   RTC_DCHECK(delegate_callback_);
   delegate_callback_->OnDroppedFrame(reason);
 }
@@ -348,13 +351,15 @@ bool QualityAnalyzingVideoEncoder::ShouldDiscard(
 }
 
 QualityAnalyzingVideoEncoderFactory::QualityAnalyzingVideoEncoderFactory(
+    absl::string_view peer_name,
     std::unique_ptr<VideoEncoderFactory> delegate,
     double bitrate_multiplier,
     std::map<std::string, absl::optional<int>> stream_required_spatial_index,
     IdGenerator<int>* id_generator,
     EncodedImageDataInjector* injector,
     VideoQualityAnalyzerInterface* analyzer)
-    : delegate_(std::move(delegate)),
+    : peer_name_(peer_name),
+      delegate_(std::move(delegate)),
       bitrate_multiplier_(bitrate_multiplier),
       stream_required_spatial_index_(std::move(stream_required_spatial_index)),
       id_generator_(id_generator),
@@ -378,9 +383,9 @@ std::unique_ptr<VideoEncoder>
 QualityAnalyzingVideoEncoderFactory::CreateVideoEncoder(
     const SdpVideoFormat& format) {
   return std::make_unique<QualityAnalyzingVideoEncoder>(
-      id_generator_->GetNextId(), delegate_->CreateVideoEncoder(format),
-      bitrate_multiplier_, stream_required_spatial_index_, injector_,
-      analyzer_);
+      id_generator_->GetNextId(), peer_name_,
+      delegate_->CreateVideoEncoder(format), bitrate_multiplier_,
+      stream_required_spatial_index_, injector_, analyzer_);
 }
 
 }  // namespace webrtc_pc_e2e

@@ -22,6 +22,7 @@ void ExampleVideoQualityAnalyzer::Start(std::string test_case_name,
                                         int max_threads_count) {}
 
 uint16_t ExampleVideoQualityAnalyzer::OnFrameCaptured(
+    absl::string_view peer_name,
     const std::string& stream_label,
     const webrtc::VideoFrame& frame) {
   rtc::CritScope crit(&lock_);
@@ -45,12 +46,14 @@ uint16_t ExampleVideoQualityAnalyzer::OnFrameCaptured(
 }
 
 void ExampleVideoQualityAnalyzer::OnFramePreEncode(
+    absl::string_view peer_name,
     const webrtc::VideoFrame& frame) {
   rtc::CritScope crit(&lock_);
   ++frames_pre_encoded_;
 }
 
 void ExampleVideoQualityAnalyzer::OnFrameEncoded(
+    absl::string_view peer_name,
     uint16_t frame_id,
     const webrtc::EncodedImage& encoded_image,
     const EncoderStats& stats) {
@@ -59,6 +62,7 @@ void ExampleVideoQualityAnalyzer::OnFrameEncoded(
 }
 
 void ExampleVideoQualityAnalyzer::OnFrameDropped(
+    absl::string_view peer_name,
     webrtc::EncodedImageCallback::DropReason reason) {
   RTC_LOG(INFO) << "Frame dropped by encoder";
   rtc::CritScope crit(&lock_);
@@ -66,6 +70,7 @@ void ExampleVideoQualityAnalyzer::OnFrameDropped(
 }
 
 void ExampleVideoQualityAnalyzer::OnFramePreDecode(
+    absl::string_view peer_name,
     uint16_t frame_id,
     const webrtc::EncodedImage& encoded_image) {
   rtc::CritScope crit(&lock_);
@@ -73,6 +78,7 @@ void ExampleVideoQualityAnalyzer::OnFramePreDecode(
 }
 
 void ExampleVideoQualityAnalyzer::OnFrameDecoded(
+    absl::string_view peer_name,
     const webrtc::VideoFrame& frame,
     const DecoderStats& stats) {
   rtc::CritScope crit(&lock_);
@@ -80,6 +86,7 @@ void ExampleVideoQualityAnalyzer::OnFrameDecoded(
 }
 
 void ExampleVideoQualityAnalyzer::OnFrameRendered(
+    absl::string_view peer_name,
     const webrtc::VideoFrame& frame) {
   rtc::CritScope crit(&lock_);
   frames_in_flight_.erase(frame.id());
@@ -87,13 +94,15 @@ void ExampleVideoQualityAnalyzer::OnFrameRendered(
 }
 
 void ExampleVideoQualityAnalyzer::OnEncoderError(
+    absl::string_view peer_name,
     const webrtc::VideoFrame& frame,
     int32_t error_code) {
   RTC_LOG(LS_ERROR) << "Failed to encode frame " << frame.id()
                     << ". Code: " << error_code;
 }
 
-void ExampleVideoQualityAnalyzer::OnDecoderError(uint16_t frame_id,
+void ExampleVideoQualityAnalyzer::OnDecoderError(absl::string_view peer_name,
+                                                 uint16_t frame_id,
                                                  int32_t error_code) {
   RTC_LOG(LS_ERROR) << "Failed to decode frame " << frame_id
                     << ". Code: " << error_code;

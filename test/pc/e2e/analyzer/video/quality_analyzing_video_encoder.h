@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "api/test/video_quality_analyzer_interface.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/sdp_video_format.h"
@@ -59,6 +60,7 @@ class QualityAnalyzingVideoEncoder : public VideoEncoder,
   // EncodedImageDataInjector and EncodedImageIdExtracor.
   QualityAnalyzingVideoEncoder(
       int id,
+      absl::string_view peer_name,
       std::unique_ptr<VideoEncoder> delegate,
       double bitrate_multiplier,
       std::map<std::string, absl::optional<int>> stream_required_spatial_index,
@@ -139,6 +141,7 @@ class QualityAnalyzingVideoEncoder : public VideoEncoder,
       RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
   const int id_;
+  const std::string peer_name_;
   std::unique_ptr<VideoEncoder> delegate_;
   const double bitrate_multiplier_;
   // Contains mapping from stream label to optional spatial index.
@@ -170,6 +173,7 @@ class QualityAnalyzingVideoEncoder : public VideoEncoder,
 class QualityAnalyzingVideoEncoderFactory : public VideoEncoderFactory {
  public:
   QualityAnalyzingVideoEncoderFactory(
+      absl::string_view peer_name,
       std::unique_ptr<VideoEncoderFactory> delegate,
       double bitrate_multiplier,
       std::map<std::string, absl::optional<int>> stream_required_spatial_index,
@@ -186,6 +190,7 @@ class QualityAnalyzingVideoEncoderFactory : public VideoEncoderFactory {
       const SdpVideoFormat& format) override;
 
  private:
+  const std::string peer_name_;
   std::unique_ptr<VideoEncoderFactory> delegate_;
   const double bitrate_multiplier_;
   std::map<std::string, absl::optional<int>> stream_required_spatial_index_;

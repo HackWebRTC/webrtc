@@ -98,6 +98,7 @@ void DefaultVideoQualityAnalyzer::Start(std::string test_case_name,
 }
 
 uint16_t DefaultVideoQualityAnalyzer::OnFrameCaptured(
+    absl::string_view peer_name,
     const std::string& stream_label,
     const webrtc::VideoFrame& frame) {
   // |next_frame_id| is atomic, so we needn't lock here.
@@ -172,6 +173,7 @@ uint16_t DefaultVideoQualityAnalyzer::OnFrameCaptured(
 }
 
 void DefaultVideoQualityAnalyzer::OnFramePreEncode(
+    absl::string_view peer_name,
     const webrtc::VideoFrame& frame) {
   rtc::CritScope crit(&lock_);
   auto it = frame_stats_.find(frame.id());
@@ -183,6 +185,7 @@ void DefaultVideoQualityAnalyzer::OnFramePreEncode(
 }
 
 void DefaultVideoQualityAnalyzer::OnFrameEncoded(
+    absl::string_view peer_name,
     uint16_t frame_id,
     const webrtc::EncodedImage& encoded_image,
     const EncoderStats& stats) {
@@ -202,11 +205,13 @@ void DefaultVideoQualityAnalyzer::OnFrameEncoded(
 }
 
 void DefaultVideoQualityAnalyzer::OnFrameDropped(
+    absl::string_view peer_name,
     webrtc::EncodedImageCallback::DropReason reason) {
   // Here we do nothing, because we will see this drop on renderer side.
 }
 
 void DefaultVideoQualityAnalyzer::OnFramePreDecode(
+    absl::string_view peer_name,
     uint16_t frame_id,
     const webrtc::EncodedImage& input_image) {
   rtc::CritScope crit(&lock_);
@@ -231,6 +236,7 @@ void DefaultVideoQualityAnalyzer::OnFramePreDecode(
 }
 
 void DefaultVideoQualityAnalyzer::OnFrameDecoded(
+    absl::string_view peer_name,
     const webrtc::VideoFrame& frame,
     const DecoderStats& stats) {
   rtc::CritScope crit(&lock_);
@@ -242,6 +248,7 @@ void DefaultVideoQualityAnalyzer::OnFrameDecoded(
 }
 
 void DefaultVideoQualityAnalyzer::OnFrameRendered(
+    absl::string_view peer_name,
     const webrtc::VideoFrame& raw_frame) {
   // Copy entire video frame including video buffer to ensure that analyzer
   // won't hold any WebRTC internal buffers.
@@ -326,13 +333,15 @@ void DefaultVideoQualityAnalyzer::OnFrameRendered(
 }
 
 void DefaultVideoQualityAnalyzer::OnEncoderError(
+    absl::string_view peer_name,
     const webrtc::VideoFrame& frame,
     int32_t error_code) {
   RTC_LOG(LS_ERROR) << "Encoder error for frame.id=" << frame.id()
                     << ", code=" << error_code;
 }
 
-void DefaultVideoQualityAnalyzer::OnDecoderError(uint16_t frame_id,
+void DefaultVideoQualityAnalyzer::OnDecoderError(absl::string_view peer_name,
+                                                 uint16_t frame_id,
                                                  int32_t error_code) {
   RTC_LOG(LS_ERROR) << "Decoder error for frame_id=" << frame_id
                     << ", code=" << error_code;

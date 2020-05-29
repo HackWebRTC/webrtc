@@ -31,6 +31,8 @@ constexpr int kMaxFramesInFlightPerStream = 10;
 constexpr int kFrameWidth = 320;
 constexpr int kFrameHeight = 240;
 constexpr char kStreamLabel[] = "video-stream";
+constexpr char kSenderPeerName[] = "alice";
+constexpr char kReceiverPeerName[] = "bob";
 
 VideoFrame NextFrame(test::FrameGeneratorInterface* frame_generator,
                      int64_t timestamp_us) {
@@ -79,20 +81,22 @@ TEST(DefaultVideoQualityAnalyzerTest,
   std::vector<uint16_t> frames_order;
   for (int i = 0; i < kMaxFramesInFlightPerStream * 2; ++i) {
     VideoFrame frame = NextFrame(frame_generator.get(), i);
-    frame.set_id(analyzer.OnFrameCaptured(kStreamLabel, frame));
+    frame.set_id(
+        analyzer.OnFrameCaptured(kSenderPeerName, kStreamLabel, frame));
     frames_order.push_back(frame.id());
     captured_frames.insert({frame.id(), frame});
-    analyzer.OnFramePreEncode(frame);
-    analyzer.OnFrameEncoded(frame.id(), FakeEncode(frame),
+    analyzer.OnFramePreEncode(kSenderPeerName, frame);
+    analyzer.OnFrameEncoded(kSenderPeerName, frame.id(), FakeEncode(frame),
                             VideoQualityAnalyzerInterface::EncoderStats());
   }
 
   for (const uint16_t& frame_id : frames_order) {
     VideoFrame received_frame = DeepCopy(captured_frames.at(frame_id));
-    analyzer.OnFramePreDecode(received_frame.id(), FakeEncode(received_frame));
-    analyzer.OnFrameDecoded(received_frame,
+    analyzer.OnFramePreDecode(kReceiverPeerName, received_frame.id(),
+                              FakeEncode(received_frame));
+    analyzer.OnFrameDecoded(kReceiverPeerName, received_frame,
                             VideoQualityAnalyzerInterface::DecoderStats());
-    analyzer.OnFrameRendered(received_frame);
+    analyzer.OnFrameRendered(kReceiverPeerName, received_frame);
   }
 
   // Give analyzer some time to process frames on async thread. The computations
@@ -126,21 +130,23 @@ TEST(DefaultVideoQualityAnalyzerTest,
   std::vector<uint16_t> frames_order;
   for (int i = 0; i < kMaxFramesInFlightPerStream * 2; ++i) {
     VideoFrame frame = NextFrame(frame_generator.get(), i);
-    frame.set_id(analyzer.OnFrameCaptured(kStreamLabel, frame));
+    frame.set_id(
+        analyzer.OnFrameCaptured(kSenderPeerName, kStreamLabel, frame));
     frames_order.push_back(frame.id());
     captured_frames.insert({frame.id(), frame});
-    analyzer.OnFramePreEncode(frame);
-    analyzer.OnFrameEncoded(frame.id(), FakeEncode(frame),
+    analyzer.OnFramePreEncode(kSenderPeerName, frame);
+    analyzer.OnFrameEncoded(kSenderPeerName, frame.id(), FakeEncode(frame),
                             VideoQualityAnalyzerInterface::EncoderStats());
   }
 
   for (size_t i = kMaxFramesInFlightPerStream; i < frames_order.size(); ++i) {
     uint16_t frame_id = frames_order.at(i);
     VideoFrame received_frame = DeepCopy(captured_frames.at(frame_id));
-    analyzer.OnFramePreDecode(received_frame.id(), FakeEncode(received_frame));
-    analyzer.OnFrameDecoded(received_frame,
+    analyzer.OnFramePreDecode(kReceiverPeerName, received_frame.id(),
+                              FakeEncode(received_frame));
+    analyzer.OnFrameDecoded(kReceiverPeerName, received_frame,
                             VideoQualityAnalyzerInterface::DecoderStats());
-    analyzer.OnFrameRendered(received_frame);
+    analyzer.OnFrameRendered(kReceiverPeerName, received_frame);
   }
 
   // Give analyzer some time to process frames on async thread. The computations
@@ -172,21 +178,23 @@ TEST(DefaultVideoQualityAnalyzerTest, NormalScenario) {
   std::vector<uint16_t> frames_order;
   for (int i = 0; i < kMaxFramesInFlightPerStream; ++i) {
     VideoFrame frame = NextFrame(frame_generator.get(), i);
-    frame.set_id(analyzer.OnFrameCaptured(kStreamLabel, frame));
+    frame.set_id(
+        analyzer.OnFrameCaptured(kSenderPeerName, kStreamLabel, frame));
     frames_order.push_back(frame.id());
     captured_frames.insert({frame.id(), frame});
-    analyzer.OnFramePreEncode(frame);
-    analyzer.OnFrameEncoded(frame.id(), FakeEncode(frame),
+    analyzer.OnFramePreEncode(kSenderPeerName, frame);
+    analyzer.OnFrameEncoded(kSenderPeerName, frame.id(), FakeEncode(frame),
                             VideoQualityAnalyzerInterface::EncoderStats());
   }
 
   for (size_t i = 1; i < frames_order.size(); i += 2) {
     uint16_t frame_id = frames_order.at(i);
     VideoFrame received_frame = DeepCopy(captured_frames.at(frame_id));
-    analyzer.OnFramePreDecode(received_frame.id(), FakeEncode(received_frame));
-    analyzer.OnFrameDecoded(received_frame,
+    analyzer.OnFramePreDecode(kReceiverPeerName, received_frame.id(),
+                              FakeEncode(received_frame));
+    analyzer.OnFrameDecoded(kReceiverPeerName, received_frame,
                             VideoQualityAnalyzerInterface::DecoderStats());
-    analyzer.OnFrameRendered(received_frame);
+    analyzer.OnFrameRendered(kReceiverPeerName, received_frame);
   }
 
   // Give analyzer some time to process frames on async thread. The computations

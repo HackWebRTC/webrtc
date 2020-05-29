@@ -15,6 +15,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "api/test/peerconnection_quality_test_fixture.h"
 #include "api/test/stats_observer_interface.h"
 #include "api/test/video_quality_analyzer_interface.h"
@@ -46,6 +47,7 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
   // Wraps video encoder factory to give video quality analyzer access to frames
   // before encoding and encoded images after.
   std::unique_ptr<VideoEncoderFactory> WrapVideoEncoderFactory(
+      absl::string_view peer_name,
       std::unique_ptr<VideoEncoderFactory> delegate,
       double bitrate_multiplier,
       std::map<std::string, absl::optional<int>> stream_required_spatial_index)
@@ -53,18 +55,24 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
   // Wraps video decoder factory to give video quality analyzer access to
   // received encoded images and frames, that were decoded from them.
   std::unique_ptr<VideoDecoderFactory> WrapVideoDecoderFactory(
+      absl::string_view peer_name,
       std::unique_ptr<VideoDecoderFactory> delegate) const;
 
   // Creates VideoFrame preprocessor, that will allow video quality analyzer to
   // get access to the captured frames. If provided config also specifies
   // |input_dump_file_name|, video will be written into that file.
   std::unique_ptr<test::TestVideoCapturer::FramePreprocessor>
-  CreateFramePreprocessor(const VideoConfig& config);
+  CreateFramePreprocessor(absl::string_view peer_name,
+                          const VideoConfig& config);
   // Creates sink, that will allow video quality analyzer to get access to
   // the rendered frames. If corresponding video track has
   // |output_dump_file_name| in its VideoConfig, then video also will be written
   // into that file.
-  std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> CreateVideoSink();
+  std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> CreateVideoSink(
+      absl::string_view peer_name);
+  std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> CreateVideoSink() {
+    return CreateVideoSink("unknown");
+  }
 
   void Start(std::string test_case_name, int max_threads_count);
 
@@ -80,20 +88,24 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
  private:
   class AnalyzingVideoSink final : public rtc::VideoSinkInterface<VideoFrame> {
    public:
-    explicit AnalyzingVideoSink(VideoQualityAnalyzerInjectionHelper* helper)
-        : helper_(helper) {}
+    explicit AnalyzingVideoSink(absl::string_view peer_name,
+                                VideoQualityAnalyzerInjectionHelper* helper)
+        : peer_name_(peer_name), helper_(helper) {}
     ~AnalyzingVideoSink() override = default;
 
-    void OnFrame(const VideoFrame& frame) override { helper_->OnFrame(frame); }
+    void OnFrame(const VideoFrame& frame) override {
+      helper_->OnFrame(peer_name_, frame);
+    }
 
    private:
+    const std::string peer_name_;
     VideoQualityAnalyzerInjectionHelper* const helper_;
   };
 
   test::VideoFrameWriter* MaybeCreateVideoWriter(
       absl::optional<std::string> file_name,
       const PeerConnectionE2EQualityTestFixture::VideoConfig& config);
-  void OnFrame(const VideoFrame& frame);
+  void OnFrame(absl::string_view peer_name, const VideoFrame& frame);
   std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>*
   PopulateSinks(const std::string& stream_label);
 

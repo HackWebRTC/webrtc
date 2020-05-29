@@ -58,7 +58,7 @@ MediaHelper::MaybeAddVideo(TestPeer* peer) {
     std::unique_ptr<test::TestVideoCapturer> capturer = CreateVideoCapturer(
         video_config, peer->ReleaseVideoSource(i),
         video_quality_analyzer_injection_helper_->CreateFramePreprocessor(
-            video_config));
+            params->name.value(), video_config));
     bool is_screencast =
         video_config.content_hint == VideoTrackInterface::ContentHint::kText ||
         video_config.content_hint ==
