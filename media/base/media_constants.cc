@@ -98,9 +98,6 @@ const char kCodecParamMaxMessageSize[] = "x-google-max-message-size";
 const int kGoogleRtpDataCodecPlType = 109;
 const char kGoogleRtpDataCodecName[] = "google-data";
 
-const int kGoogleSctpDataCodecPlType = 108;
-const char kGoogleSctpDataCodecName[] = "google-sctp-data";
-
 const char kComfortNoiseCodecName[] = "CN";
 
 const char kVp8CodecName[] = "VP8";

@@ -270,9 +270,11 @@ static StreamParamsVec GetCurrentStreamParams(
 
 // Filters the data codecs for the data channel type.
 void FilterDataCodecs(std::vector<DataCodec>* codecs, bool sctp) {
-  // Filter RTP codec for SCTP and vice versa.
-  const char* codec_name =
-      sctp ? kGoogleRtpDataCodecName : kGoogleSctpDataCodecName;
+  // Filter RTP codec for SCTP. SCTP is not a codec.
+  if (!sctp) {
+    return;
+  }
+  const char* codec_name = kGoogleRtpDataCodecName;
   codecs->erase(std::remove_if(codecs->begin(), codecs->end(),
                                [&codec_name](const DataCodec& codec) {
                                  return absl::EqualsIgnoreCase(codec.name,

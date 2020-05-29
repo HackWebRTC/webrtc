@@ -124,12 +124,6 @@ extern const char kCodecParamMaxMessageSize[];
 extern const int kGoogleRtpDataCodecPlType;
 extern const char kGoogleRtpDataCodecName[];
 
-// TODO(pthatcher): Find an id that won't conflict with anything.  On
-// the other hand, it really shouldn't matter since the id won't be
-// used on the wire.
-extern const int kGoogleSctpDataCodecPlType;
-extern const char kGoogleSctpDataCodecName[];
-
 extern const char kComfortNoiseCodecName[];
 
 RTC_EXPORT extern const char kVp8CodecName[];
