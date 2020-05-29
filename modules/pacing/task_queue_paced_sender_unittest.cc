@@ -48,6 +48,38 @@ class MockPacketRouter : public PacketRouter {
               (DataSize target_size),
               (override));
 };
+
+class StatsUpdateObserver {
+ public:
+  StatsUpdateObserver() = default;
+  virtual ~StatsUpdateObserver() = default;
+
+  virtual void OnStatsUpdated() = 0;
+};
+
+class TaskQueuePacedSenderForTest : public TaskQueuePacedSender {
+ public:
+  TaskQueuePacedSenderForTest(
+      Clock* clock,
+      PacketRouter* packet_router,
+      RtcEventLog* event_log,
+      const WebRtcKeyValueConfig* field_trials,
+      TaskQueueFactory* task_queue_factory,
+      TimeDelta hold_back_window = PacingController::kMinSleepTime)
+      : TaskQueuePacedSender(clock,
+                             packet_router,
+                             event_log,
+                             field_trials,
+                             task_queue_factory,
+                             hold_back_window) {}
+
+  void OnStatsUpdated(const Stats& stats) override {
+    ++num_stats_updates_;
+    TaskQueuePacedSender::OnStatsUpdated(stats);
+  }
+
+  size_t num_stats_updates_ = 0;
+};
 }  // namespace
 
 namespace test {
@@ -88,11 +120,11 @@ namespace test {
   TEST(TaskQueuePacedSenderTest, PacesPackets) {
     GlobalSimulatedTimeController time_controller(Timestamp::Millis(1234));
     MockPacketRouter packet_router;
-    TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router,
-                               /*event_log=*/nullptr,
-                               /*field_trials=*/nullptr,
-                               time_controller.GetTaskQueueFactory(),
-                               PacingController::kMinSleepTime);
+    TaskQueuePacedSenderForTest pacer(
+        time_controller.GetClock(), &packet_router,
+        /*event_log=*/nullptr,
+        /*field_trials=*/nullptr, time_controller.GetTaskQueueFactory(),
+        PacingController::kMinSleepTime);
 
     // Insert a number of packets, covering one second.
     static constexpr size_t kPacketsToSend = 42;
@@ -127,11 +159,11 @@ namespace test {
   TEST(TaskQueuePacedSenderTest, ReschedulesProcessOnRateChange) {
     GlobalSimulatedTimeController time_controller(Timestamp::Millis(1234));
     MockPacketRouter packet_router;
-    TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router,
-                               /*event_log=*/nullptr,
-                               /*field_trials=*/nullptr,
-                               time_controller.GetTaskQueueFactory(),
-                               PacingController::kMinSleepTime);
+    TaskQueuePacedSenderForTest pacer(
+        time_controller.GetClock(), &packet_router,
+        /*event_log=*/nullptr,
+        /*field_trials=*/nullptr, time_controller.GetTaskQueueFactory(),
+        PacingController::kMinSleepTime);
 
     // Insert a number of packets to be sent 200ms apart.
     const size_t kPacketsPerSecond = 5;
@@ -178,11 +210,11 @@ namespace test {
   TEST(TaskQueuePacedSenderTest, SendsAudioImmediately) {
     GlobalSimulatedTimeController time_controller(Timestamp::Millis(1234));
     MockPacketRouter packet_router;
-    TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router,
-                               /*event_log=*/nullptr,
-                               /*field_trials=*/nullptr,
-                               time_controller.GetTaskQueueFactory(),
-                               PacingController::kMinSleepTime);
+    TaskQueuePacedSenderForTest pacer(
+        time_controller.GetClock(), &packet_router,
+        /*event_log=*/nullptr,
+        /*field_trials=*/nullptr, time_controller.GetTaskQueueFactory(),
+        PacingController::kMinSleepTime);
 
     const DataRate kPacingDataRate = DataRate::KilobitsPerSec(125);
     const DataSize kPacketSize = DataSize::Bytes(kDefaultPacketSize);
@@ -210,11 +242,11 @@ namespace test {
     const TimeDelta kCoalescingWindow = TimeDelta::Millis(5);
     GlobalSimulatedTimeController time_controller(Timestamp::Millis(1234));
     MockPacketRouter packet_router;
-    TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router,
-                               /*event_log=*/nullptr,
-                               /*field_trials=*/nullptr,
-                               time_controller.GetTaskQueueFactory(),
-                               kCoalescingWindow);
+    TaskQueuePacedSenderForTest pacer(
+        time_controller.GetClock(), &packet_router,
+        /*event_log=*/nullptr,
+        /*field_trials=*/nullptr, time_controller.GetTaskQueueFactory(),
+        kCoalescingWindow);
 
     // Set rates so one packet adds one ms of buffer level.
     const DataSize kPacketSize = DataSize::Bytes(kDefaultPacketSize);
@@ -246,11 +278,11 @@ namespace test {
     const TimeDelta kCoalescingWindow = TimeDelta::Millis(5);
     GlobalSimulatedTimeController time_controller(Timestamp::Millis(1234));
     MockPacketRouter packet_router;
-    TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router,
-                               /*event_log=*/nullptr,
-                               /*field_trials=*/nullptr,
-                               time_controller.GetTaskQueueFactory(),
-                               kCoalescingWindow);
+    TaskQueuePacedSenderForTest pacer(
+        time_controller.GetClock(), &packet_router,
+        /*event_log=*/nullptr,
+        /*field_trials=*/nullptr, time_controller.GetTaskQueueFactory(),
+        kCoalescingWindow);
 
     // Set rates so one packet adds one ms of buffer level.
     const DataSize kPacketSize = DataSize::Bytes(kDefaultPacketSize);
@@ -271,6 +303,103 @@ namespace test {
     // flying.
     EXPECT_CALL(packet_router, SendPacket).Times(AtLeast(1));
     time_controller.AdvanceTime(kCoalescingWindow - TimeDelta::Millis(1));
+  }
+
+  TEST(TaskQueuePacedSenderTest, RespectedMinTimeBetweenStatsUpdates) {
+    const TimeDelta kCoalescingWindow = TimeDelta::Millis(5);
+    GlobalSimulatedTimeController time_controller(Timestamp::Millis(1234));
+    MockPacketRouter packet_router;
+    TaskQueuePacedSenderForTest pacer(
+        time_controller.GetClock(), &packet_router,
+        /*event_log=*/nullptr,
+        /*field_trials=*/nullptr, time_controller.GetTaskQueueFactory(),
+        kCoalescingWindow);
+    const DataRate kPacingDataRate = DataRate::KilobitsPerSec(300);
+    pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+
+    const TimeDelta kMinTimeBetweenStatsUpdates = TimeDelta::Millis(1);
+
+    // Nothing inserted, no stats updates yet.
+    EXPECT_EQ(pacer.num_stats_updates_, 0u);
+
+    // Insert one packet, stats should be updated.
+    pacer.EnqueuePackets(GeneratePackets(RtpPacketMediaType::kVideo, 1));
+    time_controller.AdvanceTime(TimeDelta::Zero());
+    EXPECT_EQ(pacer.num_stats_updates_, 1u);
+
+    // Advance time half of the min stats update interval, and trigger a
+    // refresh - stats should not be updated yet.
+    time_controller.AdvanceTime(kMinTimeBetweenStatsUpdates / 2);
+    pacer.EnqueuePackets({});
+    time_controller.AdvanceTime(TimeDelta::Zero());
+    EXPECT_EQ(pacer.num_stats_updates_, 1u);
+
+    // Advance time the next half, now stats update is triggered.
+    time_controller.AdvanceTime(kMinTimeBetweenStatsUpdates / 2);
+    pacer.EnqueuePackets({});
+    time_controller.AdvanceTime(TimeDelta::Zero());
+    EXPECT_EQ(pacer.num_stats_updates_, 2u);
+  }
+
+  TEST(TaskQueuePacedSenderTest, ThrottlesStatsUpdates) {
+    const TimeDelta kCoalescingWindow = TimeDelta::Millis(5);
+    GlobalSimulatedTimeController time_controller(Timestamp::Millis(1234));
+    MockPacketRouter packet_router;
+    TaskQueuePacedSenderForTest pacer(
+        time_controller.GetClock(), &packet_router,
+        /*event_log=*/nullptr,
+        /*field_trials=*/nullptr, time_controller.GetTaskQueueFactory(),
+        kCoalescingWindow);
+
+    // Set rates so one packet adds 10ms of buffer level.
+    const DataSize kPacketSize = DataSize::Bytes(kDefaultPacketSize);
+    const TimeDelta kPacketPacingTime = TimeDelta::Millis(10);
+    const DataRate kPacingDataRate = kPacketSize / kPacketPacingTime;
+    const TimeDelta kMinTimeBetweenStatsUpdates = TimeDelta::Millis(1);
+    const TimeDelta kMaxTimeBetweenStatsUpdates = TimeDelta::Millis(33);
+
+    // Nothing inserted, no stats updates yet.
+    size_t num_expected_stats_updates = 0;
+    EXPECT_EQ(pacer.num_stats_updates_, num_expected_stats_updates);
+    pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+    time_controller.AdvanceTime(kMinTimeBetweenStatsUpdates);
+    // Updating pacing rates refreshes stats.
+    EXPECT_EQ(pacer.num_stats_updates_, ++num_expected_stats_updates);
+
+    // Record time when we insert first packet, this triggers the scheduled
+    // stats updating.
+    Clock* const clock = time_controller.GetClock();
+    const Timestamp start_time = clock->CurrentTime();
+
+    while (clock->CurrentTime() - start_time <=
+           kMaxTimeBetweenStatsUpdates - kPacketPacingTime) {
+      // Enqueue packet, expect stats update.
+      pacer.EnqueuePackets(GeneratePackets(RtpPacketMediaType::kVideo, 1));
+      time_controller.AdvanceTime(TimeDelta::Zero());
+      EXPECT_EQ(pacer.num_stats_updates_, ++num_expected_stats_updates);
+
+      // Advance time to halfway through pacing time, expect another stats
+      // update.
+      time_controller.AdvanceTime(kPacketPacingTime / 2);
+      pacer.EnqueuePackets({});
+      time_controller.AdvanceTime(TimeDelta::Zero());
+      EXPECT_EQ(pacer.num_stats_updates_, ++num_expected_stats_updates);
+
+      // Advance time the rest of the way.
+      time_controller.AdvanceTime(kPacketPacingTime / 2);
+    }
+
+    // At this point, the pace queue is drained so there is no more intersting
+    // update to be made - but there is still as schduled task that should run
+    // |kMaxTimeBetweenStatsUpdates| after the first update.
+    time_controller.AdvanceTime(start_time + kMaxTimeBetweenStatsUpdates -
+                                clock->CurrentTime());
+    EXPECT_EQ(pacer.num_stats_updates_, ++num_expected_stats_updates);
+
+    // Advance time a significant time - don't expect any more calls as stats
+    // updating does not happen when queue is drained.
+    time_controller.AdvanceTime(TimeDelta::Millis(400));
+    EXPECT_EQ(pacer.num_stats_updates_, num_expected_stats_updates);
   }
 
 }  // namespace test

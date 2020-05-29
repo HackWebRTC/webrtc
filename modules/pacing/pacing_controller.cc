@@ -403,7 +403,9 @@ void PacingController::ProcessPackets() {
     if (target_send_time.IsMinusInfinity()) {
       target_send_time = now;
     } else if (now < target_send_time) {
-      // We are too early, abort and regroup!
+      // We are too early, but if queue is empty still allow draining some debt.
+      TimeDelta elapsed_time = UpdateTimeAndGetElapsed(now);
+      UpdateBudgetWithElapsedTime(elapsed_time);
       return;
     }
 
