@@ -1541,7 +1541,7 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecs(
                           << old_codec.id << ")";
     }
     auto format = AudioCodecToSdpAudioFormat(codec);
-    if (!IsCodec(codec, "cn") && !IsCodec(codec, "telephone-event") &&
+    if (!IsCodec(codec, kCnCodecName) && !IsCodec(codec, kDtmfCodecName) &&
         !engine()->decoder_factory_->IsSupportedDecoder(format)) {
       RTC_LOG(LS_ERROR) << "Unsupported codec: " << rtc::ToString(format);
       return false;
