@@ -71,8 +71,6 @@ rtc_library("nack_module") {
   sources = [
     "histogram.cc",
     "histogram.h",
-    "nack_module.cc",
-    "nack_module.h",
     "nack_module2.cc",
     "nack_module2.h",
   ]
@@ -977,6 +975,7 @@ if (rtc_include_tests) {
       "../rtp_rtcp:rtp_rtcp_format",
       "../rtp_rtcp:rtp_video_header",
       "codecs/av1:video_coding_codecs_av1_tests",
+      "deprecated:nack_module",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
       "//third_party/abseil-cpp/absl/types:variant",

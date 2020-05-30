@@ -53,7 +53,7 @@
 
 namespace webrtc {
 
-class NackModule;
+class DEPRECATED_NackModule;
 class PacketRouter;
 class ProcessThread;
 class ReceiveStatistics;
@@ -333,7 +333,7 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   KeyFrameRequestSender* const keyframe_request_sender_;
 
   RtcpFeedbackBuffer rtcp_feedback_buffer_;
-  std::unique_ptr<NackModule> nack_module_;
+  std::unique_ptr<DEPRECATED_NackModule> nack_module_;
   std::unique_ptr<LossNotificationController> loss_notification_controller_;
 
   video_coding::PacketBuffer packet_buffer_;

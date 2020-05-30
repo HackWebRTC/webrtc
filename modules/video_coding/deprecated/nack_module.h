@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_VIDEO_CODING_NACK_MODULE_H_
-#define MODULES_VIDEO_CODING_NACK_MODULE_H_
+#ifndef MODULES_VIDEO_CODING_DEPRECATED_NACK_MODULE_H_
+#define MODULES_VIDEO_CODING_DEPRECATED_NACK_MODULE_H_
 
 #include <stdint.h>
 
@@ -22,17 +22,18 @@
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/histogram.h"
 #include "rtc_base/critical_section.h"
+#include "rtc_base/deprecation.h"
 #include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 
-class NackModule : public Module {
+class DEPRECATED_NackModule : public Module {
  public:
-  NackModule(Clock* clock,
-             NackSender* nack_sender,
-             KeyFrameRequestSender* keyframe_request_sender);
+  DEPRECATED_NackModule(Clock* clock,
+                        NackSender* nack_sender,
+                        KeyFrameRequestSender* keyframe_request_sender);
 
   int OnReceivedPacket(uint16_t seq_num, bool is_keyframe);
   int OnReceivedPacket(uint16_t seq_num, bool is_keyframe, bool is_recovered);
@@ -124,6 +125,8 @@ class NackModule : public Module {
   const absl::optional<BackoffSettings> backoff_settings_;
 };
 
+using NackModule = RTC_DEPRECATED DEPRECATED_NackModule;
+
 }  // namespace webrtc
 
-#endif  // MODULES_VIDEO_CODING_NACK_MODULE_H_
+#endif  // MODULES_VIDEO_CODING_DEPRECATED_NACK_MODULE_H_

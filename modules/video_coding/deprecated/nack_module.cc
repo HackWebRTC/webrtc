@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/nack_module.h"
+#include "modules/video_coding/deprecated/nack_module.h"
 
 #include <algorithm>
 #include <limits>
@@ -45,25 +45,25 @@ int64_t GetSendNackDelay() {
 }
 }  // namespace
 
-NackModule::NackInfo::NackInfo()
+DEPRECATED_NackModule::NackInfo::NackInfo()
     : seq_num(0), send_at_seq_num(0), sent_at_time(-1), retries(0) {}
 
-NackModule::NackInfo::NackInfo(uint16_t seq_num,
-                               uint16_t send_at_seq_num,
-                               int64_t created_at_time)
+DEPRECATED_NackModule::NackInfo::NackInfo(uint16_t seq_num,
+                                          uint16_t send_at_seq_num,
+                                          int64_t created_at_time)
     : seq_num(seq_num),
       send_at_seq_num(send_at_seq_num),
       created_at_time(created_at_time),
       sent_at_time(-1),
       retries(0) {}
 
-NackModule::BackoffSettings::BackoffSettings(TimeDelta min_retry,
-                                             TimeDelta max_rtt,
-                                             double base)
+DEPRECATED_NackModule::BackoffSettings::BackoffSettings(TimeDelta min_retry,
+                                                        TimeDelta max_rtt,
+                                                        double base)
     : min_retry_interval(min_retry), max_rtt(max_rtt), base(base) {}
 
-absl::optional<NackModule::BackoffSettings>
-NackModule::BackoffSettings::ParseFromFieldTrials() {
+absl::optional<DEPRECATED_NackModule::BackoffSettings>
+DEPRECATED_NackModule::BackoffSettings::ParseFromFieldTrials() {
   // Matches magic number in RTPSender::OnReceivedNack().
   const TimeDelta kDefaultMinRetryInterval = TimeDelta::Millis(5);
   // Upper bound on link-delay considered for exponential backoff.
@@ -82,15 +82,16 @@ NackModule::BackoffSettings::ParseFromFieldTrials() {
                   field_trial::FindFullName("WebRTC-ExponentialNackBackoff"));
 
   if (enabled) {
-    return NackModule::BackoffSettings(min_retry.Get(), max_rtt.Get(),
-                                       base.Get());
+    return DEPRECATED_NackModule::BackoffSettings(min_retry.Get(),
+                                                  max_rtt.Get(), base.Get());
   }
   return absl::nullopt;
 }
 
-NackModule::NackModule(Clock* clock,
-                       NackSender* nack_sender,
-                       KeyFrameRequestSender* keyframe_request_sender)
+DEPRECATED_NackModule::DEPRECATED_NackModule(
+    Clock* clock,
+    NackSender* nack_sender,
+    KeyFrameRequestSender* keyframe_request_sender)
     : clock_(clock),
       nack_sender_(nack_sender),
       keyframe_request_sender_(keyframe_request_sender),
@@ -106,13 +107,14 @@ NackModule::NackModule(Clock* clock,
   RTC_DCHECK(keyframe_request_sender_);
 }
 
-int NackModule::OnReceivedPacket(uint16_t seq_num, bool is_keyframe) {
+int DEPRECATED_NackModule::OnReceivedPacket(uint16_t seq_num,
+                                            bool is_keyframe) {
   return OnReceivedPacket(seq_num, is_keyframe, false);
 }
 
-int NackModule::OnReceivedPacket(uint16_t seq_num,
-                                 bool is_keyframe,
-                                 bool is_recovered) {
+int DEPRECATED_NackModule::OnReceivedPacket(uint16_t seq_num,
+                                            bool is_keyframe,
+                                            bool is_recovered) {
   rtc::CritScope lock(&crit_);
   // TODO(philipel): When the packet includes information whether it is
   //                 retransmitted or not, use that value instead. For
@@ -181,7 +183,7 @@ int NackModule::OnReceivedPacket(uint16_t seq_num,
   return 0;
 }
 
-void NackModule::ClearUpTo(uint16_t seq_num) {
+void DEPRECATED_NackModule::ClearUpTo(uint16_t seq_num) {
   rtc::CritScope lock(&crit_);
   nack_list_.erase(nack_list_.begin(), nack_list_.lower_bound(seq_num));
   keyframe_list_.erase(keyframe_list_.begin(),
@@ -190,24 +192,24 @@ void NackModule::ClearUpTo(uint16_t seq_num) {
                         recovered_list_.lower_bound(seq_num));
 }
 
-void NackModule::UpdateRtt(int64_t rtt_ms) {
+void DEPRECATED_NackModule::UpdateRtt(int64_t rtt_ms) {
   rtc::CritScope lock(&crit_);
   rtt_ms_ = rtt_ms;
 }
 
-void NackModule::Clear() {
+void DEPRECATED_NackModule::Clear() {
   rtc::CritScope lock(&crit_);
   nack_list_.clear();
   keyframe_list_.clear();
   recovered_list_.clear();
 }
 
-int64_t NackModule::TimeUntilNextProcess() {
+int64_t DEPRECATED_NackModule::TimeUntilNextProcess() {
   return std::max<int64_t>(next_process_time_ms_ - clock_->TimeInMilliseconds(),
                            0);
 }
 
-void NackModule::Process() {
+void DEPRECATED_NackModule::Process() {
   if (nack_sender_) {
     std::vector<uint16_t> nack_batch;
     {
@@ -236,7 +238,7 @@ void NackModule::Process() {
   }
 }
 
-bool NackModule::RemovePacketsUntilKeyFrame() {
+bool DEPRECATED_NackModule::RemovePacketsUntilKeyFrame() {
   while (!keyframe_list_.empty()) {
     auto it = nack_list_.lower_bound(*keyframe_list_.begin());
 
@@ -254,8 +256,8 @@ bool NackModule::RemovePacketsUntilKeyFrame() {
   return false;
 }
 
-void NackModule::AddPacketsToNack(uint16_t seq_num_start,
-                                  uint16_t seq_num_end) {
+void DEPRECATED_NackModule::AddPacketsToNack(uint16_t seq_num_start,
+                                             uint16_t seq_num_end) {
   // Remove old packets.
   auto it = nack_list_.lower_bound(seq_num_end - kMaxPacketAge);
   nack_list_.erase(nack_list_.begin(), it);
@@ -289,7 +291,8 @@ void NackModule::AddPacketsToNack(uint16_t seq_num_start,
   }
 }
 
-std::vector<uint16_t> NackModule::GetNackBatch(NackFilterOptions options) {
+std::vector<uint16_t> DEPRECATED_NackModule::GetNackBatch(
+    NackFilterOptions options) {
   bool consider_seq_num = options != kTimeOnly;
   bool consider_timestamp = options != kSeqNumOnly;
   Timestamp now = clock_->CurrentTime();
@@ -334,13 +337,13 @@ std::vector<uint16_t> NackModule::GetNackBatch(NackFilterOptions options) {
   return nack_batch;
 }
 
-void NackModule::UpdateReorderingStatistics(uint16_t seq_num) {
+void DEPRECATED_NackModule::UpdateReorderingStatistics(uint16_t seq_num) {
   RTC_DCHECK(AheadOf(newest_seq_num_, seq_num));
   uint16_t diff = ReverseDiff(newest_seq_num_, seq_num);
   reordering_histogram_.Add(diff);
 }
 
-int NackModule::WaitNumberOfPackets(float probability) const {
+int DEPRECATED_NackModule::WaitNumberOfPackets(float probability) const {
   if (reordering_histogram_.NumValues() == 0)
     return 0;
   return reordering_histogram_.InverseCdf(probability);

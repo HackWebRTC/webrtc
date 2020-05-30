@@ -113,6 +113,7 @@ rtc_library("video") {
     "../modules/video_coding:nack_module",
     "../modules/video_coding:video_codec_interface",
     "../modules/video_coding:video_coding_utility",
+    "../modules/video_coding/deprecated:nack_module",
     "../modules/video_processing",
     "../rtc_base:checks",
     "../rtc_base:rate_limiter",
