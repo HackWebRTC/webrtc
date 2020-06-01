@@ -19,13 +19,6 @@
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
-namespace {
-
-// Number of bytes from the beginning of the EncodedImage buffer that will be
-// used to store frame id and sub id.
-constexpr size_t kUsedBufferSize = 3;
-
-}  // namespace
 
 SingleProcessEncodedImageDataInjector::SingleProcessEncodedImageDataInjector() =
     default;
@@ -37,12 +30,13 @@ EncodedImage SingleProcessEncodedImageDataInjector::InjectData(
     bool discard,
     const EncodedImage& source,
     int coding_entity_id) {
-  RTC_CHECK(source.size() >= kUsedBufferSize);
+  RTC_CHECK(source.size() >= ExtractionInfo::kUsedBufferSize);
 
   ExtractionInfo info;
   info.discard = discard;
-  size_t insertion_pos = source.size() - kUsedBufferSize;
-  memcpy(info.origin_data, &source.data()[insertion_pos], kUsedBufferSize);
+  size_t insertion_pos = source.size() - ExtractionInfo::kUsedBufferSize;
+  memcpy(info.origin_data, &source.data()[insertion_pos],
+         ExtractionInfo::kUsedBufferSize);
   {
     rtc::CritScope crit(&lock_);
     // Will create new one if missed.
@@ -87,7 +81,8 @@ EncodedImageExtractionResult SingleProcessEncodedImageDataInjector::ExtractData(
   bool discard = true;
   std::vector<ExtractionInfo> extraction_infos;
   for (size_t frame_size : frame_sizes) {
-    size_t insertion_pos = prev_frames_size + frame_size - kUsedBufferSize;
+    size_t insertion_pos =
+        prev_frames_size + frame_size - ExtractionInfo::kUsedBufferSize;
     // Extract frame id from first 2 bytes starting from insertion pos.
     uint16_t next_id = buffer[insertion_pos] + (buffer[insertion_pos + 1] << 8);
     // Extract frame sub id from second 3 byte starting from insertion pos.
@@ -144,8 +139,8 @@ EncodedImageExtractionResult SingleProcessEncodedImageDataInjector::ExtractData(
       out.SetSpatialLayerFrameSize(frame_sl_index[frame_index], 0);
       size -= frame_size;
     } else {
-      memcpy(&buffer[pos + frame_size - kUsedBufferSize], info.origin_data,
-             kUsedBufferSize);
+      memcpy(&buffer[pos + frame_size - ExtractionInfo::kUsedBufferSize],
+             info.origin_data, ExtractionInfo::kUsedBufferSize);
       pos += frame_size;
     }
   }

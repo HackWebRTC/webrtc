@@ -57,13 +57,16 @@ class SingleProcessEncodedImageDataInjector : public EncodedImageDataInjector,
   // Contains data required to extract frame id from EncodedImage and restore
   // original buffer.
   struct ExtractionInfo {
+    // Number of bytes from the beginning of the EncodedImage buffer that will
+    // be used to store frame id and sub id.
+    const static size_t kUsedBufferSize = 3;
     // Frame sub id to distinguish encoded images for different spatial layers.
     uint8_t sub_id;
     // Flag to show is this encoded images should be discarded by analyzing
     // decoder because of not required spatial layer/simulcast stream.
     bool discard;
     // Data from first 3 bytes of origin encoded image's payload.
-    uint8_t origin_data[3];
+    uint8_t origin_data[ExtractionInfo::kUsedBufferSize];
   };
 
   struct ExtractionInfoVector {
