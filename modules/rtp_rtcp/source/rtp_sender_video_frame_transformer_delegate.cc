@@ -110,11 +110,11 @@ RTPSenderVideoFrameTransformerDelegate::RTPSenderVideoFrameTransformerDelegate(
     RTPSenderVideo* sender,
     rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
     uint32_t ssrc,
-    TaskQueueBase* worker_queue)
+    TaskQueueBase* send_transport_queue)
     : sender_(sender),
       frame_transformer_(std::move(frame_transformer)),
       ssrc_(ssrc),
-      worker_queue_(worker_queue) {}
+      send_transport_queue_(send_transport_queue) {}
 
 void RTPSenderVideoFrameTransformerDelegate::Init() {
   frame_transformer_->RegisterTransformedFrameSinkCallback(
@@ -133,9 +133,9 @@ bool RTPSenderVideoFrameTransformerDelegate::TransformFrame(
     // Save the current task queue to post the transformed frame for sending
     // once it is transformed. When there is no current task queue, i.e.
     // encoding is done on an external thread (for example in the case of
-    // hardware encoders), use the worker queue instead.
+    // hardware encoders), use the send transport queue instead.
     TaskQueueBase* current = TaskQueueBase::Current();
-    encoder_queue_ = current ? current : worker_queue_;
+    encoder_queue_ = current ? current : send_transport_queue_;
   }
   frame_transformer_->Transform(std::make_unique<TransformableVideoSenderFrame>(
       encoded_image, video_header, payload_type, codec_type, rtp_timestamp,

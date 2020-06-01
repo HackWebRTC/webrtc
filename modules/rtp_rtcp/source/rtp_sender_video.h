@@ -82,7 +82,7 @@ class RTPSenderVideo {
     absl::optional<int> red_payload_type;
     const WebRtcKeyValueConfig* field_trials = nullptr;
     rtc::scoped_refptr<FrameTransformerInterface> frame_transformer;
-    TaskQueueBase* worker_queue = nullptr;
+    TaskQueueBase* send_transport_queue = nullptr;
   };
 
   explicit RTPSenderVideo(const Config& config);
