@@ -24,6 +24,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/time_utils.h"
+#include "rtc_base/trace_event.h"
 
 namespace webrtc {
 namespace {
@@ -136,6 +137,10 @@ void PacketRouter::RemoveReceiveRtpModule(
 
 void PacketRouter::SendPacket(std::unique_ptr<RtpPacketToSend> packet,
                               const PacedPacketInfo& cluster_info) {
+  TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("webrtc"), "PacketRouter::SendPacket",
+               "sequence_number", packet->SequenceNumber(), "rtp_timestamp",
+               packet->Timestamp());
+
   rtc::CritScope cs(&modules_crit_);
   // With the new pacer code path, transport sequence numbers are only set here,
   // on the pacer thread. Therefore we don't need atomics/synchronization.
@@ -168,6 +173,9 @@ void PacketRouter::SendPacket(std::unique_ptr<RtpPacketToSend> packet,
 
 std::vector<std::unique_ptr<RtpPacketToSend>> PacketRouter::GeneratePadding(
     DataSize size) {
+  TRACE_EVENT1(TRACE_DISABLED_BY_DEFAULT("webrtc"),
+               "PacketRouter::GeneratePadding", "bytes", size.bytes());
+
   rtc::CritScope cs(&modules_crit_);
   // First try on the last rtp module to have sent media. This increases the
   // the chance that any payload based padding will be useful as it will be
@@ -179,23 +187,31 @@ std::vector<std::unique_ptr<RtpPacketToSend>> PacketRouter::GeneratePadding(
   if (last_send_module_ != nullptr &&
       last_send_module_->SupportsRtxPayloadPadding()) {
     padding_packets = last_send_module_->GeneratePadding(size.bytes());
-    if (!padding_packets.empty()) {
-      return padding_packets;
-    }
   }
 
-  // Iterate over all modules send module. Video modules will be at the front
-  // and so will be prioritized. This is important since audio packets may not
-  // be taken into account by the bandwidth estimator, e.g. in FF.
-  for (RtpRtcp* rtp_module : send_modules_list_) {
-    if (rtp_module->SupportsPadding()) {
-      padding_packets = rtp_module->GeneratePadding(size.bytes());
-      if (!padding_packets.empty()) {
-        last_send_module_ = rtp_module;
-        break;
+  if (padding_packets.empty()) {
+    // Iterate over all modules send module. Video modules will be at the front
+    // and so will be prioritized. This is important since audio packets may not
+    // be taken into account by the bandwidth estimator, e.g. in FF.
+    for (RtpRtcp* rtp_module : send_modules_list_) {
+      if (rtp_module->SupportsPadding()) {
+        padding_packets = rtp_module->GeneratePadding(size.bytes());
+        if (!padding_packets.empty()) {
+          last_send_module_ = rtp_module;
+          break;
+        }
       }
     }
   }
+
+#if RTC_TRACE_EVENTS_ENABLED
+  for (auto& packet : padding_packets) {
+    TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("webrtc"),
+                 "PacketRouter::GeneratePadding::Loop", "sequence_number",
+                 packet->SequenceNumber(), "rtp_timestamp",
+                 packet->Timestamp());
+  }
+#endif
 
   return padding_packets;
 }
