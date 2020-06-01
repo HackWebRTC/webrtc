@@ -15,11 +15,13 @@
 #include <string>
 
 #include "absl/types/optional.h"
+#include "api/scoped_refptr.h"
 #include "api/video/video_adaptation_reason.h"
 #include "call/adaptation/resource.h"
 #include "rtc_base/ref_counted_object.h"
 #include "rtc_base/task_queue.h"
 #include "video/adaptation/overuse_frame_detector.h"
+#include "video/adaptation/video_stream_encoder_resource.h"
 
 namespace webrtc {
 
@@ -28,11 +30,15 @@ namespace webrtc {
 // indirectly by usage in the ResourceAdaptationProcessor (which is only tested
 // because of its usage in VideoStreamEncoder); all tests are currently in
 // video_stream_encoder_unittest.cc.
-class EncodeUsageResource : public rtc::RefCountedObject<Resource>,
+class EncodeUsageResource : public VideoStreamEncoderResource,
                             public OveruseFrameDetectorObserverInterface {
  public:
+  static rtc::scoped_refptr<EncodeUsageResource> Create(
+      std::unique_ptr<OveruseFrameDetector> overuse_detector);
+
   explicit EncodeUsageResource(
       std::unique_ptr<OveruseFrameDetector> overuse_detector);
+  ~EncodeUsageResource() override;
 
   bool is_started() const;
 
@@ -50,8 +56,6 @@ class EncodeUsageResource : public rtc::RefCountedObject<Resource>,
   // OveruseFrameDetectorObserverInterface implementation.
   void AdaptUp() override;
   void AdaptDown() override;
-
-  std::string name() const override { return "EncoderUsageResource"; }
 
  private:
   int TargetFrameRateAsInt();

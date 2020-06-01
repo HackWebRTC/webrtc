@@ -30,6 +30,7 @@ rtc_library("resource_adaptation") {
   deps = [
     "../../api:rtp_parameters",
     "../../api:scoped_refptr",
+    "../../api/task_queue:task_queue",
     "../../api/video:video_adaptation",
     "../../api/video:video_frame",
     "../../api/video:video_stream_encoder",
@@ -86,9 +87,14 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":resource_adaptation",
+      "../../api:scoped_refptr",
+      "../../api/task_queue:task_queue",
       "../../api/video:video_stream_encoder",
       "../../rtc_base:rtc_base_approved",
+      "../../rtc_base/synchronization:sequence_checker",
+      "../../rtc_base/task_utils:to_queued_task",
       "../../test:test_support",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
 }

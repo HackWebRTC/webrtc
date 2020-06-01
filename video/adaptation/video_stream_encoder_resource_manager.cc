@@ -26,6 +26,7 @@
 #include "call/adaptation/video_source_restrictions.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "rtc_base/ref_counted_object.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/time_utils.h"
 
@@ -140,7 +141,8 @@ class VideoStreamEncoderResourceManager::InitialFrameDropper {
 
 VideoStreamEncoderResourceManager::PreventAdaptUpDueToActiveCounts::
     PreventAdaptUpDueToActiveCounts(VideoStreamEncoderResourceManager* manager)
-    : rtc::RefCountedObject<Resource>(),
+    : rtc::RefCountedObject<VideoStreamEncoderResource>(
+          "PreventAdaptUpDueToActiveCounts"),
       manager_(manager),
       adaptation_processor_(nullptr) {}
 
@@ -187,7 +189,8 @@ VideoStreamEncoderResourceManager::
     PreventIncreaseResolutionDueToBitrateResource::
         PreventIncreaseResolutionDueToBitrateResource(
             VideoStreamEncoderResourceManager* manager)
-    : rtc::RefCountedObject<Resource>(),
+    : rtc::RefCountedObject<VideoStreamEncoderResource>(
+          "PreventIncreaseResolutionDueToBitrateResource"),
       manager_(manager),
       encoder_settings_(absl::nullopt),
       encoder_target_bitrate_bps_(absl::nullopt) {}
@@ -196,7 +199,7 @@ void VideoStreamEncoderResourceManager::
     PreventIncreaseResolutionDueToBitrateResource::OnEncoderSettingsUpdated(
         absl::optional<EncoderSettings> encoder_settings) {
   RTC_DCHECK_RUN_ON(encoder_queue());
-  resource_adaptation_queue()->PostTask(
+  MaybePostTaskToResourceAdaptationQueue(
       [this_ref =
            rtc::scoped_refptr<PreventIncreaseResolutionDueToBitrateResource>(
                this),
@@ -211,7 +214,7 @@ void VideoStreamEncoderResourceManager::
         OnEncoderTargetBitrateUpdated(
             absl::optional<uint32_t> encoder_target_bitrate_bps) {
   RTC_DCHECK_RUN_ON(encoder_queue());
-  resource_adaptation_queue()->PostTask(
+  MaybePostTaskToResourceAdaptationQueue(
       [this_ref =
            rtc::scoped_refptr<PreventIncreaseResolutionDueToBitrateResource>(
                this),
@@ -258,7 +261,8 @@ bool VideoStreamEncoderResourceManager::
 
 VideoStreamEncoderResourceManager::PreventAdaptUpInBalancedResource::
     PreventAdaptUpInBalancedResource(VideoStreamEncoderResourceManager* manager)
-    : rtc::RefCountedObject<Resource>(),
+    : rtc::RefCountedObject<VideoStreamEncoderResource>(
+          "PreventAdaptUpInBalancedResource"),
       manager_(manager),
       adaptation_processor_(nullptr),
       encoder_target_bitrate_bps_(absl::nullopt) {}
@@ -274,7 +278,7 @@ void VideoStreamEncoderResourceManager::PreventAdaptUpInBalancedResource::
     OnEncoderTargetBitrateUpdated(
         absl::optional<uint32_t> encoder_target_bitrate_bps) {
   RTC_DCHECK_RUN_ON(encoder_queue());
-  resource_adaptation_queue()->PostTask(
+  MaybePostTaskToResourceAdaptationQueue(
       [this_ref = rtc::scoped_refptr<PreventAdaptUpInBalancedResource>(this),
        encoder_target_bitrate_bps] {
         RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue());
@@ -328,8 +332,8 @@ VideoStreamEncoderResourceManager::VideoStreamEncoderResourceManager(
       prevent_adapt_up_in_balanced_resource_(
           new PreventAdaptUpInBalancedResource(this)),
       encode_usage_resource_(
-          new EncodeUsageResource(std::move(overuse_detector))),
-      quality_scaler_resource_(new QualityScalerResource()),
+          EncodeUsageResource::Create(std::move(overuse_detector))),
+      quality_scaler_resource_(QualityScalerResource::Create()),
       encoder_queue_(nullptr),
       resource_adaptation_queue_(nullptr),
       input_state_provider_(input_state_provider),
@@ -370,16 +374,24 @@ void VideoStreamEncoderResourceManager::Initialize(
   RTC_DCHECK(resource_adaptation_queue);
   encoder_queue_ = encoder_queue;
   resource_adaptation_queue_ = resource_adaptation_queue;
-  prevent_adapt_up_due_to_active_counts_->Initialize(
-      encoder_queue_, resource_adaptation_queue_);
-  prevent_increase_resolution_due_to_bitrate_resource_->Initialize(
-      encoder_queue_, resource_adaptation_queue_);
-  prevent_adapt_up_in_balanced_resource_->Initialize(
-      encoder_queue_, resource_adaptation_queue_);
-  encode_usage_resource_->Initialize(encoder_queue_,
-                                     resource_adaptation_queue_);
-  quality_scaler_resource_->Initialize(encoder_queue_,
-                                       resource_adaptation_queue_);
+  prevent_adapt_up_due_to_active_counts_->RegisterEncoderTaskQueue(
+      encoder_queue_->Get());
+  prevent_adapt_up_due_to_active_counts_->RegisterAdaptationTaskQueue(
+      resource_adaptation_queue_->Get());
+  prevent_increase_resolution_due_to_bitrate_resource_
+      ->RegisterEncoderTaskQueue(encoder_queue_->Get());
+  prevent_increase_resolution_due_to_bitrate_resource_
+      ->RegisterAdaptationTaskQueue(resource_adaptation_queue_->Get());
+  prevent_adapt_up_in_balanced_resource_->RegisterEncoderTaskQueue(
+      encoder_queue_->Get());
+  prevent_adapt_up_in_balanced_resource_->RegisterAdaptationTaskQueue(
+      resource_adaptation_queue_->Get());
+  encode_usage_resource_->RegisterEncoderTaskQueue(encoder_queue_->Get());
+  encode_usage_resource_->RegisterAdaptationTaskQueue(
+      resource_adaptation_queue_->Get());
+  quality_scaler_resource_->RegisterEncoderTaskQueue(encoder_queue_->Get());
+  quality_scaler_resource_->RegisterAdaptationTaskQueue(
+      resource_adaptation_queue_->Get());
 }
 
 void VideoStreamEncoderResourceManager::SetAdaptationProcessor(
@@ -428,7 +440,7 @@ void VideoStreamEncoderResourceManager::MapResourceToReason(
                              [resource](const ResourceAndReason& r) {
                                return r.resource == resource;
                              }) == resources_.end())
-      << "Resource " << resource->name() << " already was inserted";
+      << "Resource " << resource->Name() << " already was inserted";
   resources_.emplace_back(resource, reason);
 }
 
@@ -616,7 +628,7 @@ VideoAdaptationReason VideoStreamEncoderResourceManager::GetReasonFromResource(
         return r.resource == resource;
       });
   RTC_DCHECK(registered_resource != resources_.end())
-      << resource->name() << " not found.";
+      << resource->Name() << " not found.";
   return registered_resource->reason;
 }
 

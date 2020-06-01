@@ -70,16 +70,16 @@ class ResourceAdaptationProcessorTest : public ::testing::Test {
  public:
   ResourceAdaptationProcessorTest()
       : resource_adaptation_queue_("ResourceAdaptationQueue"),
-        encoder_queue_("EncoderQueue"),
         frame_rate_provider_(),
         input_state_provider_(&frame_rate_provider_),
-        resource_(new FakeResource("FakeResource")),
-        other_resource_(new FakeResource("OtherFakeResource")),
+        resource_(FakeResource::Create("FakeResource")),
+        other_resource_(FakeResource::Create("OtherFakeResource")),
         processor_(std::make_unique<ResourceAdaptationProcessor>(
             &input_state_provider_,
             /*encoder_stats_observer=*/&frame_rate_provider_)) {
-    resource_->Initialize(&encoder_queue_, &resource_adaptation_queue_);
-    other_resource_->Initialize(&encoder_queue_, &resource_adaptation_queue_);
+    resource_->RegisterAdaptationTaskQueue(resource_adaptation_queue_.Get());
+    other_resource_->RegisterAdaptationTaskQueue(
+        resource_adaptation_queue_.Get());
     rtc::Event event;
     resource_adaptation_queue_.PostTask([this, &event] {
       processor_->InitializeOnResourceAdaptationQueue();
@@ -119,7 +119,6 @@ class ResourceAdaptationProcessorTest : public ::testing::Test {
 
  protected:
   TaskQueueForTest resource_adaptation_queue_;
-  TaskQueueForTest encoder_queue_;
   FakeFrameRateProvider frame_rate_provider_;
   VideoStreamInputStateProvider input_state_provider_;
   rtc::scoped_refptr<FakeResource> resource_;
@@ -397,7 +396,7 @@ TEST_F(ResourceAdaptationProcessorTest, AdaptingClearsResourceUsageState) {
         SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
         resource_->set_usage_state(ResourceUsageState::kOveruse);
         EXPECT_EQ(1u, processor_listener_.restrictions_updated_count());
-        EXPECT_FALSE(resource_->usage_state().has_value());
+        EXPECT_FALSE(resource_->UsageState().has_value());
       },
       RTC_FROM_HERE);
 }
@@ -410,7 +409,7 @@ TEST_F(ResourceAdaptationProcessorTest,
         processor_->StartResourceAdaptation();
         resource_->set_usage_state(ResourceUsageState::kOveruse);
         EXPECT_EQ(0u, processor_listener_.restrictions_updated_count());
-        EXPECT_FALSE(resource_->usage_state().has_value());
+        EXPECT_FALSE(resource_->UsageState().has_value());
       },
       RTC_FROM_HERE);
 }

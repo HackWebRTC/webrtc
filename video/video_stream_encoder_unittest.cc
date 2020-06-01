@@ -316,12 +316,12 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
                                overuse_detector_proxy_ =
                                    new CpuOveruseDetectorProxy(stats_proxy)),
                            task_queue_factory),
-        fake_cpu_resource_(new FakeResource("FakeResource[CPU]")),
-        fake_quality_resource_(new FakeResource("FakeResource[QP]")) {
-    fake_cpu_resource_->Initialize(encoder_queue(),
-                                   resource_adaptation_queue());
-    fake_quality_resource_->Initialize(encoder_queue(),
-                                       resource_adaptation_queue());
+        fake_cpu_resource_(FakeResource::Create("FakeResource[CPU]")),
+        fake_quality_resource_(FakeResource::Create("FakeResource[QP]")) {
+    fake_cpu_resource_->RegisterAdaptationTaskQueue(
+        resource_adaptation_queue()->Get());
+    fake_quality_resource_->RegisterAdaptationTaskQueue(
+        resource_adaptation_queue()->Get());
     InjectAdaptationResource(fake_quality_resource_,
                              VideoAdaptationReason::kQuality);
     InjectAdaptationResource(fake_cpu_resource_, VideoAdaptationReason::kCpu);

@@ -16,6 +16,7 @@
 #include <string>
 
 #include "absl/types/optional.h"
+#include "api/scoped_refptr.h"
 #include "api/video/video_adaptation_reason.h"
 #include "api/video_codecs/video_encoder.h"
 #include "call/adaptation/resource.h"
@@ -24,13 +25,16 @@
 #include "rtc_base/critical_section.h"
 #include "rtc_base/ref_counted_object.h"
 #include "rtc_base/task_queue.h"
+#include "video/adaptation/video_stream_encoder_resource.h"
 
 namespace webrtc {
 
 // Handles interaction with the QualityScaler.
-class QualityScalerResource : public rtc::RefCountedObject<Resource>,
+class QualityScalerResource : public VideoStreamEncoderResource,
                               public QualityScalerQpUsageHandlerInterface {
  public:
+  static rtc::scoped_refptr<QualityScalerResource> Create();
+
   QualityScalerResource();
   ~QualityScalerResource() override;
 
@@ -56,9 +60,7 @@ class QualityScalerResource : public rtc::RefCountedObject<Resource>,
       rtc::scoped_refptr<QualityScalerQpUsageHandlerCallbackInterface> callback)
       override;
 
-  std::string name() const override { return "QualityScalerResource"; }
-
-  // Resource implementation.
+  // VideoStreamEncoderResource implementation.
   void OnAdaptationApplied(
       const VideoStreamInputState& input_state,
       const VideoSourceRestrictions& restrictions_before,
@@ -81,9 +83,9 @@ class QualityScalerResource : public rtc::RefCountedObject<Resource>,
   absl::optional<int64_t> last_underuse_due_to_disabled_timestamp_ms_
       RTC_GUARDED_BY(encoder_queue());
   // Every OnReportQpUsageHigh/Low() operation has a callback that MUST be
-  // invoked on the |encoder_queue_|. Because usage measurements are reported on
-  // the |encoder_queue_| but handled by the processor on the the
-  // |resource_adaptation_queue_|, handling a measurement entails a task queue
+  // invoked on the encoder_queue(). Because usage measurements are reported on
+  // the encoder_queue() but handled by the processor on the the
+  // resource_adaptation_queue_(), handling a measurement entails a task queue
   // "ping" round-trip. Multiple callbacks in-flight is thus possible.
   size_t num_handled_callbacks_ RTC_GUARDED_BY(encoder_queue());
   std::queue<rtc::scoped_refptr<QualityScalerQpUsageHandlerCallbackInterface>>

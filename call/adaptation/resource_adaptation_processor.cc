@@ -195,8 +195,8 @@ void ResourceAdaptationProcessor::MaybeUpdateVideoSourceRestrictions(
 void ResourceAdaptationProcessor::OnResourceUsageStateMeasured(
     rtc::scoped_refptr<Resource> resource) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
-  RTC_DCHECK(resource->usage_state().has_value());
-  ResourceUsageState usage_state = resource->usage_state().value();
+  RTC_DCHECK(resource->UsageState().has_value());
+  ResourceUsageState usage_state = resource->UsageState().value();
   MitigationResultAndLogMessage result_and_message;
   switch (usage_state) {
     case ResourceUsageState::kOveruse:
@@ -214,7 +214,7 @@ void ResourceAdaptationProcessor::OnResourceUsageStateMeasured(
     // successfully adapted since - don't log to avoid spam.
     return;
   }
-  RTC_LOG(INFO) << "Resource \"" << resource->name() << "\" signalled "
+  RTC_LOG(INFO) << "Resource \"" << resource->Name() << "\" signalled "
                 << ResourceUsageStateToString(usage_state) << ". "
                 << result_and_message.message;
   if (result_and_message.result == MitigationResult::kAdaptationApplied) {
@@ -289,7 +289,7 @@ ResourceAdaptationProcessor::OnResourceUnderuse(
                                          restrictions_after, reason_resource)) {
       processing_in_progress_ = false;
       rtc::StringBuilder message;
-      message << "Not adapting up because resource \"" << resource->name()
+      message << "Not adapting up because resource \"" << resource->Name()
               << "\" disallowed it";
       return MitigationResultAndLogMessage(
           MitigationResult::kRejectedByResource, message.Release());

@@ -13,6 +13,8 @@
 #include <utility>
 
 #include "rtc_base/experiments/balanced_degradation_settings.h"
+#include "rtc_base/ref_counted_object.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/time_utils.h"
 
 namespace webrtc {
@@ -23,8 +25,13 @@ const int64_t kUnderuseDueToDisabledCooldownMs = 1000;
 
 }  // namespace
 
+// static
+rtc::scoped_refptr<QualityScalerResource> QualityScalerResource::Create() {
+  return new rtc::RefCountedObject<QualityScalerResource>();
+}
+
 QualityScalerResource::QualityScalerResource()
-    : rtc::RefCountedObject<Resource>(),
+    : VideoStreamEncoderResource("QualityScalerResource"),
       quality_scaler_(nullptr),
       last_underuse_due_to_disabled_timestamp_ms_(absl::nullopt),
       num_handled_callbacks_(0),
@@ -95,7 +102,7 @@ void QualityScalerResource::OnEncodeCompleted(const EncodedImage& encoded_image,
         timestamp_ms - last_underuse_due_to_disabled_timestamp_ms_.value() >=
             kUnderuseDueToDisabledCooldownMs) {
       last_underuse_due_to_disabled_timestamp_ms_ = timestamp_ms;
-      resource_adaptation_queue()->PostTask(
+      MaybePostTaskToResourceAdaptationQueue(
           [this_ref = rtc::scoped_refptr<QualityScalerResource>(this)] {
             RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue());
             this_ref->OnResourceUsageStateMeasured(
@@ -126,7 +133,7 @@ void QualityScalerResource::OnReportQpUsageHigh(
   size_t callback_id = QueuePendingCallback(callback);
   // Reference counting guarantees that this object is still alive by the time
   // the task is executed.
-  resource_adaptation_queue()->PostTask(
+  MaybePostTaskToResourceAdaptationQueue(
       [this_ref = rtc::scoped_refptr<QualityScalerResource>(this),
        callback_id] {
         RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue());
@@ -146,7 +153,7 @@ void QualityScalerResource::OnReportQpUsageLow(
   size_t callback_id = QueuePendingCallback(callback);
   // Reference counting guarantees that this object is still alive by the time
   // the task is executed.
-  resource_adaptation_queue()->PostTask(
+  MaybePostTaskToResourceAdaptationQueue(
       [this_ref = rtc::scoped_refptr<QualityScalerResource>(this),
        callback_id] {
         RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue());
@@ -206,8 +213,8 @@ void QualityScalerResource::HandlePendingCallback(size_t callback_id,
   // Reference counting guarantees that this object is still alive by the time
   // the task is executed.
   encoder_queue()->PostTask(
-      [this_ref = rtc::scoped_refptr<QualityScalerResource>(this), callback_id,
-       clear_qp_samples] {
+      ToQueuedTask([this_ref = rtc::scoped_refptr<QualityScalerResource>(this),
+                    callback_id, clear_qp_samples] {
         RTC_DCHECK_RUN_ON(this_ref->encoder_queue());
         if (this_ref->num_handled_callbacks_ >= callback_id) {
           // The callback with this ID has already been handled.
@@ -220,7 +227,7 @@ void QualityScalerResource::HandlePendingCallback(size_t callback_id,
             clear_qp_samples);
         ++this_ref->num_handled_callbacks_;
         this_ref->pending_callbacks_.pop();
-      });
+      }));
 }
 
 void QualityScalerResource::AbortPendingCallbacks() {

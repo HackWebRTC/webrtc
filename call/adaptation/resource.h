@@ -16,10 +16,10 @@
 
 #include "absl/types/optional.h"
 #include "api/scoped_refptr.h"
+#include "api/task_queue/task_queue_base.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "call/adaptation/video_stream_input_state.h"
 #include "rtc_base/ref_count.h"
-#include "rtc_base/task_queue.h"
 
 namespace webrtc {
 
@@ -44,49 +44,62 @@ class ResourceListener {
       rtc::scoped_refptr<Resource> resource) = 0;
 };
 
+// A Resource monitors an implementation-specific system resource. It may report
+// kOveruse or kUnderuse when resource usage is high or low enough that we
+// should perform some sort of mitigation to fulfil the resource's constraints.
+//
+// All methods defined in this interface, except RegisterAdaptationTaskQueue(),
+// MUST be invoked on the resource adaptation task queue.
+//
+// Usage measurements may be performed on an implementation-specific task queue.
+// The Resource is reference counted to prevent use-after-free when posting
+// between task queues. As such, the implementation MUST NOT make any
+// assumptions about which task queue Resource is destructed on.
 class Resource : public rtc::RefCountInterface {
  public:
-  // By default, usage_state() is null until a measurement is made.
   Resource();
+  // Destruction may happen on any task queue.
   ~Resource() override;
 
-  void Initialize(rtc::TaskQueue* encoder_queue,
-                  rtc::TaskQueue* resource_adaptation_queue);
+  // Provides a pointer to the adaptation task queue. After this call, all
+  // methods defined in this interface, including
+  // UnregisterAdaptationTaskQueue() MUST be invoked on the adaptation task
+  // queue. Registering the adaptation task queue may, however, happen off the
+  // adaptation task queue.
+  virtual void RegisterAdaptationTaskQueue(
+      TaskQueueBase* resource_adaptation_queue) = 0;
+  // Signals that the adaptation task queue is no longer safe to use. No
+  // assumptions must be made as to whether or not tasks in-flight will run.
+  virtual void UnregisterAdaptationTaskQueue() = 0;
 
-  void SetResourceListener(ResourceListener* listener);
+  // The listeners MUST be informed any time UsageState() changes.
+  virtual void SetResourceListener(ResourceListener* listener) = 0;
 
-  absl::optional<ResourceUsageState> usage_state() const;
-  void ClearUsageState();
+  virtual std::string Name() const = 0;
+  // Within a single task running on the adaptation task queue, UsageState()
+  // MUST return the same value every time it is called.
+  // TODO(https://crbug.com/webrtc/11618): Remove the UsageState() getter in
+  // favor of passing the use usage state directly to the ResourceListener. This
+  // gets rid of this strange requirement of having to return the same thing
+  // every time.
+  virtual absl::optional<ResourceUsageState> UsageState() const = 0;
+  // Invalidates current usage measurements, i.e. in response to the system load
+  // changing. Example: an adaptation was just applied.
+  virtual void ClearUsageState() = 0;
 
   // This method allows the Resource to reject a proposed adaptation in the "up"
-  // direction if it predicts this would cause overuse of this resource. The
-  // default implementation unconditionally returns true (= allowed).
+  // direction if it predicts this would cause overuse of this resource.
   virtual bool IsAdaptationUpAllowed(
       const VideoStreamInputState& input_state,
       const VideoSourceRestrictions& restrictions_before,
       const VideoSourceRestrictions& restrictions_after,
-      rtc::scoped_refptr<Resource> reason_resource) const;
+      rtc::scoped_refptr<Resource> reason_resource) const = 0;
+
   virtual void OnAdaptationApplied(
       const VideoStreamInputState& input_state,
       const VideoSourceRestrictions& restrictions_before,
       const VideoSourceRestrictions& restrictions_after,
-      rtc::scoped_refptr<Resource> reason_resource);
-
-  virtual std::string name() const = 0;
-
- protected:
-  rtc::TaskQueue* encoder_queue() const;
-  rtc::TaskQueue* resource_adaptation_queue() const;
-
-  // Updates the usage state and informs all registered listeners.
-  void OnResourceUsageStateMeasured(ResourceUsageState usage_state);
-
- private:
-  rtc::TaskQueue* encoder_queue_;
-  rtc::TaskQueue* resource_adaptation_queue_;
-  absl::optional<ResourceUsageState> usage_state_
-      RTC_GUARDED_BY(resource_adaptation_queue_);
-  ResourceListener* listener_ RTC_GUARDED_BY(resource_adaptation_queue_);
+      rtc::scoped_refptr<Resource> reason_resource) = 0;
 };
 
 }  // namespace webrtc

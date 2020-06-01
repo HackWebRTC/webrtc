@@ -16,6 +16,8 @@ rtc_library("video_adaptation") {
     "overuse_frame_detector.h",
     "quality_scaler_resource.cc",
     "quality_scaler_resource.h",
+    "video_stream_encoder_resource.cc",
+    "video_stream_encoder_resource.h",
     "video_stream_encoder_resource_manager.cc",
     "video_stream_encoder_resource_manager.h",
   ]
@@ -44,6 +46,7 @@ rtc_library("video_adaptation") {
     "../../rtc_base/experiments:quality_scaler_settings",
     "../../rtc_base/synchronization:sequence_checker",
     "../../rtc_base/task_utils:repeating_task",
+    "../../rtc_base/task_utils:to_queued_task",
     "../../system_wrappers:field_trial",
     "../../system_wrappers:system_wrappers",
     "//third_party/abseil-cpp/absl/algorithm:container",

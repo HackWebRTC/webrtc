@@ -74,9 +74,10 @@ class QualityScalerResourceTest : public ::testing::Test {
         encoder_queue_(task_queue_factory_->CreateTaskQueue(
             "EncoderQueue",
             TaskQueueFactory::Priority::NORMAL)),
-        quality_scaler_resource_(new QualityScalerResource()) {
-    quality_scaler_resource_->Initialize(&encoder_queue_,
-                                         &resource_adaptation_queue_);
+        quality_scaler_resource_(QualityScalerResource::Create()) {
+    quality_scaler_resource_->RegisterEncoderTaskQueue(encoder_queue_.Get());
+    quality_scaler_resource_->RegisterAdaptationTaskQueue(
+        resource_adaptation_queue_.Get());
     rtc::Event event;
     encoder_queue_.PostTask([this, &event] {
       quality_scaler_resource_->StartCheckForOveruse(

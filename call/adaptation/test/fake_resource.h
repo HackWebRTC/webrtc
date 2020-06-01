@@ -12,15 +12,22 @@
 #define CALL_ADAPTATION_TEST_FAKE_RESOURCE_H_
 
 #include <string>
+#include <vector>
 
+#include "absl/types/optional.h"
+#include "api/scoped_refptr.h"
+#include "api/task_queue/task_queue_base.h"
 #include "call/adaptation/resource.h"
-#include "rtc_base/ref_counted_object.h"
+#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 
 namespace webrtc {
 
 // Fake resource used for testing.
-class FakeResource : public rtc::RefCountedObject<Resource> {
+class FakeResource : public Resource {
  public:
+  static rtc::scoped_refptr<FakeResource> Create(std::string name);
+
   explicit FakeResource(std::string name);
   ~FakeResource() override;
 
@@ -29,7 +36,13 @@ class FakeResource : public rtc::RefCountedObject<Resource> {
   size_t num_adaptations_applied() const;
 
   // Resource implementation.
-  std::string name() const override { return name_; }
+  void RegisterAdaptationTaskQueue(
+      TaskQueueBase* resource_adaptation_queue) override;
+  void UnregisterAdaptationTaskQueue() override;
+  void SetResourceListener(ResourceListener* listener) override;
+  std::string Name() const override;
+  absl::optional<ResourceUsageState> UsageState() const override;
+  void ClearUsageState() override;
   bool IsAdaptationUpAllowed(
       const VideoStreamInputState& input_state,
       const VideoSourceRestrictions& restrictions_before,
@@ -42,9 +55,14 @@ class FakeResource : public rtc::RefCountedObject<Resource> {
       rtc::scoped_refptr<Resource> reason_resource) override;
 
  private:
+  rtc::CriticalSection lock_;
   const std::string name_;
-  bool is_adaptation_up_allowed_;
-  size_t num_adaptations_applied_;
+  TaskQueueBase* resource_adaptation_queue_;
+  bool is_adaptation_up_allowed_ RTC_GUARDED_BY(lock_);
+  size_t num_adaptations_applied_ RTC_GUARDED_BY(lock_);
+  absl::optional<ResourceUsageState> usage_state_
+      RTC_GUARDED_BY(resource_adaptation_queue_);
+  ResourceListener* listener_ RTC_GUARDED_BY(resource_adaptation_queue_);
 };
 
 }  // namespace webrtc
