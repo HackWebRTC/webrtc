@@ -44,6 +44,7 @@ TEST(SingleProcessEncodedImageDataInjector, InjectExtractDiscardFalse) {
   EXPECT_FALSE(out.discard);
   EXPECT_EQ(out.image.size(), 10ul);
   EXPECT_EQ(out.image.capacity(), 10ul);
+  EXPECT_EQ(out.image.SpatialLayerFrameSize(0).value_or(0), 0ul);
   for (int i = 0; i < 10; ++i) {
     EXPECT_EQ(out.image.data()[i], i + 1);
   }
@@ -63,6 +64,60 @@ TEST(SingleProcessEncodedImageDataInjector, InjectExtractDiscardTrue) {
   EXPECT_TRUE(out.discard);
   EXPECT_EQ(out.image.size(), 0ul);
   EXPECT_EQ(out.image.capacity(), 10ul);
+  EXPECT_EQ(out.image.SpatialLayerFrameSize(0).value_or(0), 0ul);
+}
+
+TEST(SingleProcessEncodedImageDataInjector, InjectWithUnsetSpatialLayerSizes) {
+  SingleProcessEncodedImageDataInjector injector;
+
+  rtc::Buffer buffer = CreateBufferOfSizeNFilledWithValuesFromX(10, 1);
+
+  EncodedImage source(buffer.data(), 10, 10);
+  source.SetTimestamp(123456789);
+
+  EncodedImage intermediate = injector.InjectData(512, false, source, 1);
+  intermediate.SetSpatialIndex(2);
+
+  EncodedImageExtractionResult out = injector.ExtractData(intermediate, 2);
+  EXPECT_EQ(out.id, 512);
+  EXPECT_FALSE(out.discard);
+  EXPECT_EQ(out.image.size(), 10ul);
+  EXPECT_EQ(out.image.capacity(), 10ul);
+  for (int i = 0; i < 10; ++i) {
+    EXPECT_EQ(out.image.data()[i], i + 1);
+  }
+  EXPECT_EQ(out.image.SpatialIndex().value_or(0), 2);
+  for (int i = 0; i < 3; ++i) {
+    EXPECT_EQ(out.image.SpatialLayerFrameSize(i).value_or(0), 0ul);
+  }
+}
+
+TEST(SingleProcessEncodedImageDataInjector, InjectWithZeroSpatialLayerSizes) {
+  SingleProcessEncodedImageDataInjector injector;
+
+  rtc::Buffer buffer = CreateBufferOfSizeNFilledWithValuesFromX(10, 1);
+
+  EncodedImage source(buffer.data(), 10, 10);
+  source.SetTimestamp(123456789);
+
+  EncodedImage intermediate = injector.InjectData(512, false, source, 1);
+  intermediate.SetSpatialIndex(2);
+  intermediate.SetSpatialLayerFrameSize(0, 0);
+  intermediate.SetSpatialLayerFrameSize(1, 0);
+  intermediate.SetSpatialLayerFrameSize(2, 0);
+
+  EncodedImageExtractionResult out = injector.ExtractData(intermediate, 2);
+  EXPECT_EQ(out.id, 512);
+  EXPECT_FALSE(out.discard);
+  EXPECT_EQ(out.image.size(), 10ul);
+  EXPECT_EQ(out.image.capacity(), 10ul);
+  for (int i = 0; i < 10; ++i) {
+    EXPECT_EQ(out.image.data()[i], i + 1);
+  }
+  EXPECT_EQ(out.image.SpatialIndex().value_or(0), 2);
+  for (int i = 0; i < 3; ++i) {
+    EXPECT_EQ(out.image.SpatialLayerFrameSize(i).value_or(0), 0ul);
+  }
 }
 
 TEST(SingleProcessEncodedImageDataInjector, Inject3Extract3) {
@@ -95,6 +150,7 @@ TEST(SingleProcessEncodedImageDataInjector, Inject3Extract3) {
   EXPECT_FALSE(out1.discard);
   EXPECT_EQ(out1.image.size(), 10ul);
   EXPECT_EQ(out1.image.capacity(), 10ul);
+  EXPECT_EQ(out1.image.SpatialLayerFrameSize(0).value_or(0), 0ul);
   for (int i = 0; i < 10; ++i) {
     EXPECT_EQ(out1.image.data()[i], i + 1);
   }
@@ -102,10 +158,12 @@ TEST(SingleProcessEncodedImageDataInjector, Inject3Extract3) {
   EXPECT_TRUE(out2.discard);
   EXPECT_EQ(out2.image.size(), 0ul);
   EXPECT_EQ(out2.image.capacity(), 10ul);
+  EXPECT_EQ(out2.image.SpatialLayerFrameSize(0).value_or(0), 0ul);
   EXPECT_EQ(out3.id, 520);
   EXPECT_FALSE(out3.discard);
   EXPECT_EQ(out3.image.size(), 10ul);
   EXPECT_EQ(out3.image.capacity(), 10ul);
+  EXPECT_EQ(out3.image.SpatialLayerFrameSize(0).value_or(0), 0ul);
   for (int i = 0; i < 10; ++i) {
     EXPECT_EQ(out3.image.data()[i], i + 21);
   }
@@ -140,6 +198,10 @@ TEST(SingleProcessEncodedImageDataInjector, InjectExtractFromConcatenated) {
   concatenated_buffer.AppendData(intermediate3.data(), intermediate3.size());
   EncodedImage concatenated(concatenated_buffer.data(), concatenated_length,
                             concatenated_length);
+  concatenated.SetSpatialIndex(2);
+  concatenated.SetSpatialLayerFrameSize(0, intermediate1.size());
+  concatenated.SetSpatialLayerFrameSize(1, intermediate2.size());
+  concatenated.SetSpatialLayerFrameSize(2, intermediate3.size());
 
   // Extract frame id from concatenated image
   EncodedImageExtractionResult out = injector.ExtractData(concatenated, 2);
@@ -152,6 +214,10 @@ TEST(SingleProcessEncodedImageDataInjector, InjectExtractFromConcatenated) {
     EXPECT_EQ(out.image.data()[i], i + 1);
     EXPECT_EQ(out.image.data()[i + 10], i + 21);
   }
+  EXPECT_EQ(out.image.SpatialIndex().value_or(0), 2);
+  EXPECT_EQ(out.image.SpatialLayerFrameSize(0).value_or(0), 10ul);
+  EXPECT_EQ(out.image.SpatialLayerFrameSize(1).value_or(0), 0ul);
+  EXPECT_EQ(out.image.SpatialLayerFrameSize(2).value_or(0), 10ul);
 }
 
 TEST(SingleProcessEncodedImageDataInjector,
@@ -184,6 +250,10 @@ TEST(SingleProcessEncodedImageDataInjector,
   concatenated_buffer.AppendData(intermediate3.data(), intermediate3.size());
   EncodedImage concatenated(concatenated_buffer.data(), concatenated_length,
                             concatenated_length);
+  concatenated.SetSpatialIndex(2);
+  concatenated.SetSpatialLayerFrameSize(0, intermediate1.size());
+  concatenated.SetSpatialLayerFrameSize(1, intermediate2.size());
+  concatenated.SetSpatialLayerFrameSize(2, intermediate3.size());
 
   // Extract frame id from concatenated image
   EncodedImageExtractionResult out = injector.ExtractData(concatenated, 2);
@@ -192,6 +262,10 @@ TEST(SingleProcessEncodedImageDataInjector,
   EXPECT_TRUE(out.discard);
   EXPECT_EQ(out.image.size(), 0ul);
   EXPECT_EQ(out.image.capacity(), 3 * 10ul);
+  EXPECT_EQ(out.image.SpatialIndex().value_or(0), 2);
+  for (int i = 0; i < 3; ++i) {
+    EXPECT_EQ(out.image.SpatialLayerFrameSize(i).value_or(0), 0ul);
+  }
 }
 
 }  // namespace webrtc_pc_e2e

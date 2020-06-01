@@ -59,8 +59,6 @@ class SingleProcessEncodedImageDataInjector : public EncodedImageDataInjector,
   struct ExtractionInfo {
     // Frame sub id to distinguish encoded images for different spatial layers.
     uint8_t sub_id;
-    // Length of the origin buffer encoded image.
-    size_t length;
     // Flag to show is this encoded images should be discarded by analyzing
     // decoder because of not required spatial layer/simulcast stream.
     bool discard;
