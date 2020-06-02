@@ -153,6 +153,7 @@ rtc_library("noise_level_estimator") {
     "../../../common_audio/third_party/ooura:fft_size_128",
     "../../../rtc_base:checks",
     "../../../rtc_base:macromagic",
+    "../../../system_wrappers:cpu_features_api",
   ]
 
   configs += [ "..:apm_debug_dump" ]
