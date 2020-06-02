@@ -28,7 +28,8 @@ class Aec3Fft {
  public:
   enum class Window { kRectangular, kHanning, kSqrtHanning };
 
-  Aec3Fft() = default;
+  Aec3Fft();
+
   // Computes the FFT. Note that both the input and output are modified.
   void Fft(std::array<float, kFftLength>* x, FftData* X) const {
     RTC_DCHECK(x);
