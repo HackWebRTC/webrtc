@@ -22,6 +22,9 @@
 #include "modules/video_coding/codecs/av1/libaom_av1_decoder.h"
 #include "modules/video_coding/codecs/av1/libaom_av1_encoder.h"
 #include "modules/video_coding/codecs/av1/scalability_structure_l1t2.h"
+#include "modules/video_coding/codecs/av1/scalability_structure_l2t1.h"
+#include "modules/video_coding/codecs/av1/scalability_structure_l2t1_key.h"
+#include "modules/video_coding/codecs/av1/scalability_structure_s2t1.h"
 #include "modules/video_coding/codecs/av1/scalable_video_controller.h"
 #include "modules/video_coding/codecs/av1/scalable_video_controller_no_layering.h"
 #include "modules/video_coding/include/video_codec_interface.h"
@@ -275,7 +278,13 @@ INSTANTIATE_TEST_SUITE_P(
     Values(SvcTestParam{std::make_unique<ScalableVideoControllerNoLayering>,
                         /*num_frames_to_generate=*/4},
            SvcTestParam{std::make_unique<ScalabilityStructureL1T2>,
-                        /*num_frames_to_generate=*/4}));
+                        /*num_frames_to_generate=*/4},
+           SvcTestParam{std::make_unique<ScalabilityStructureL2T1>,
+                        /*num_frames_to_generate=*/3},
+           SvcTestParam{std::make_unique<ScalabilityStructureL2T1Key>,
+                        /*num_frames_to_generate=*/3},
+           SvcTestParam{std::make_unique<ScalabilityStructureS2T1>,
+                        /*num_frames_to_generate=*/3}));
 
 }  // namespace
 }  // namespace webrtc
