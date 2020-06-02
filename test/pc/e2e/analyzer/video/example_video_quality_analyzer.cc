@@ -10,6 +10,7 @@
 
 #include "test/pc/e2e/analyzer/video/example_video_quality_analyzer.h"
 
+#include "api/array_view.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {
@@ -18,8 +19,10 @@ namespace webrtc_pc_e2e {
 ExampleVideoQualityAnalyzer::ExampleVideoQualityAnalyzer() = default;
 ExampleVideoQualityAnalyzer::~ExampleVideoQualityAnalyzer() = default;
 
-void ExampleVideoQualityAnalyzer::Start(std::string test_case_name,
-                                        int max_threads_count) {}
+void ExampleVideoQualityAnalyzer::Start(
+    std::string test_case_name,
+    rtc::ArrayView<const std::string> peer_names,
+    int max_threads_count) {}
 
 uint16_t ExampleVideoQualityAnalyzer::OnFrameCaptured(
     absl::string_view peer_name,

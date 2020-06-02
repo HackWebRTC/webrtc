@@ -14,6 +14,7 @@
 #include <memory>
 #include <utility>
 
+#include "api/array_view.h"
 #include "api/units/time_delta.h"
 #include "api/video/i420_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
@@ -76,8 +77,10 @@ DefaultVideoQualityAnalyzer::~DefaultVideoQualityAnalyzer() {
   Stop();
 }
 
-void DefaultVideoQualityAnalyzer::Start(std::string test_case_name,
-                                        int max_threads_count) {
+void DefaultVideoQualityAnalyzer::Start(
+    std::string test_case_name,
+    rtc::ArrayView<const std::string> peer_names,
+    int max_threads_count) {
   test_label_ = std::move(test_case_name);
   for (int i = 0; i < max_threads_count; i++) {
     auto thread = std::make_unique<rtc::PlatformThread>(

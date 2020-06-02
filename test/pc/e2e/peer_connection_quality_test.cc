@@ -252,8 +252,11 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   quality_metrics_reporters_.push_back(
       std::make_unique<VideoQualityMetricsReporter>());
 
-  video_quality_analyzer_injection_helper_->Start(test_case_name_,
-                                                  video_analyzer_threads);
+  video_quality_analyzer_injection_helper_->Start(
+      test_case_name_,
+      std::vector<std::string>{alice_->params()->name.value(),
+                               bob_->params()->name.value()},
+      video_analyzer_threads);
   audio_quality_analyzer_->Start(test_case_name_, &analyzer_helper_);
   for (auto& reporter : quality_metrics_reporters_) {
     reporter->Start(test_case_name_);

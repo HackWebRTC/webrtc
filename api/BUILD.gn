@@ -285,6 +285,7 @@ rtc_source_set("video_quality_analyzer_api") {
   sources = [ "test/video_quality_analyzer_interface.h" ]
 
   deps = [
+    ":array_view",
     ":stats_observer_interface",
     "video:encoded_image",
     "video:video_frame",

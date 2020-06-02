@@ -75,7 +75,9 @@ TEST(DefaultVideoQualityAnalyzerTest,
 
   DefaultVideoQualityAnalyzer analyzer(
       /*heavy_metrics_computation_enabled=*/false, kMaxFramesInFlightPerStream);
-  analyzer.Start("test_case", kAnalyzerMaxThreadsCount);
+  analyzer.Start("test_case",
+                 std::vector<std::string>{kSenderPeerName, kReceiverPeerName},
+                 kAnalyzerMaxThreadsCount);
 
   std::map<uint16_t, VideoFrame> captured_frames;
   std::vector<uint16_t> frames_order;
@@ -124,7 +126,9 @@ TEST(DefaultVideoQualityAnalyzerTest,
 
   DefaultVideoQualityAnalyzer analyzer(
       /*heavy_metrics_computation_enabled=*/false, kMaxFramesInFlightPerStream);
-  analyzer.Start("test_case", kAnalyzerMaxThreadsCount);
+  analyzer.Start("test_case",
+                 std::vector<std::string>{kSenderPeerName, kReceiverPeerName},
+                 kAnalyzerMaxThreadsCount);
 
   std::map<uint16_t, VideoFrame> captured_frames;
   std::vector<uint16_t> frames_order;
@@ -172,7 +176,9 @@ TEST(DefaultVideoQualityAnalyzerTest, NormalScenario) {
 
   DefaultVideoQualityAnalyzer analyzer(
       /*heavy_metrics_computation_enabled=*/false, kMaxFramesInFlightPerStream);
-  analyzer.Start("test_case", kAnalyzerMaxThreadsCount);
+  analyzer.Start("test_case",
+                 std::vector<std::string>{kSenderPeerName, kReceiverPeerName},
+                 kAnalyzerMaxThreadsCount);
 
   std::map<uint16_t, VideoFrame> captured_frames;
   std::vector<uint16_t> frames_order;

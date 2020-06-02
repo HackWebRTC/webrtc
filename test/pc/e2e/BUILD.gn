@@ -189,6 +189,7 @@ if (rtc_include_tests) {
       ":quality_analyzing_video_encoder",
       ":simulcast_dummy_buffer_helper",
       "../..:test_renderer",
+      "../../../api:array_view",
       "../../../api:peer_connection_quality_test_fixture_api",
       "../../../api:stats_observer_interface",
       "../../../api:video_quality_analyzer_api",
@@ -546,6 +547,7 @@ rtc_library("example_video_quality_analyzer") {
   ]
 
   deps = [
+    "../../../api:array_view",
     "../../../api:video_quality_analyzer_api",
     "../../../api/video:encoded_image",
     "../../../api/video:video_frame",
@@ -582,6 +584,7 @@ rtc_library("default_video_quality_analyzer") {
 
   deps = [
     "../..:perf_test",
+    "../../../api:array_view",
     "../../../api:video_quality_analyzer_api",
     "../../../api/units:time_delta",
     "../../../api/units:timestamp",

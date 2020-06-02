@@ -16,6 +16,7 @@
 #include <set>
 #include <string>
 
+#include "api/array_view.h"
 #include "api/test/video_quality_analyzer_interface.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_frame.h"
@@ -33,7 +34,9 @@ class ExampleVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   ExampleVideoQualityAnalyzer();
   ~ExampleVideoQualityAnalyzer() override;
 
-  void Start(std::string test_case_name, int max_threads_count) override;
+  void Start(std::string test_case_name,
+             rtc::ArrayView<const std::string> peer_names,
+             int max_threads_count) override;
   uint16_t OnFrameCaptured(absl::string_view peer_name,
                            const std::string& stream_label,
                            const VideoFrame& frame) override;

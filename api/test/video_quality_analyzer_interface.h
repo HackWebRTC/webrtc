@@ -16,6 +16,7 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "api/array_view.h"
 #include "api/test/stats_observer_interface.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_frame.h"
@@ -77,7 +78,9 @@ class VideoQualityAnalyzerInterface : public StatsObserverInterface {
   // calculations. Analyzer can perform simple calculations on the calling
   // thread in each method, but should remember, that it is the same thread,
   // that is used in video pipeline.
-  virtual void Start(std::string test_case_name, int max_threads_count) {}
+  virtual void Start(std::string test_case_name,
+                     rtc::ArrayView<const std::string> peer_names,
+                     int max_threads_count) {}
 
   // Will be called when frame was generated from the input stream.
   // |peer_name| is name of the peer on which side frame was captured.

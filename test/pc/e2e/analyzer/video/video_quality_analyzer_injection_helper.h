@@ -14,8 +14,10 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "absl/strings/string_view.h"
+#include "api/array_view.h"
 #include "api/test/peerconnection_quality_test_fixture.h"
 #include "api/test/stats_observer_interface.h"
 #include "api/test/video_quality_analyzer_interface.h"
@@ -70,11 +72,13 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
   // into that file.
   std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> CreateVideoSink(
       absl::string_view peer_name);
-  std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> CreateVideoSink() {
-    return CreateVideoSink("unknown");
-  }
 
-  void Start(std::string test_case_name, int max_threads_count);
+  void Start(std::string test_case_name,
+             rtc::ArrayView<const std::string> peer_names,
+             int max_threads_count);
+  void Start(std::string test_case_name, int max_threads_count) {
+    Start(test_case_name, std::vector<std::string>{}, max_threads_count);
+  }
 
   // Forwards |stats_reports| for Peer Connection |pc_label| to
   // |analyzer_|.

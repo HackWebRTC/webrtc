@@ -15,6 +15,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
+#include "api/array_view.h"
 #include "test/pc/e2e/analyzer/video/quality_analyzing_video_decoder.h"
 #include "test/pc/e2e/analyzer/video/quality_analyzing_video_encoder.h"
 #include "test/pc/e2e/analyzer/video/simulcast_dummy_buffer_helper.h"
@@ -143,9 +144,11 @@ VideoQualityAnalyzerInjectionHelper::CreateVideoSink(
   return std::make_unique<AnalyzingVideoSink>(peer_name, this);
 }
 
-void VideoQualityAnalyzerInjectionHelper::Start(std::string test_case_name,
-                                                int max_threads_count) {
-  analyzer_->Start(std::move(test_case_name), max_threads_count);
+void VideoQualityAnalyzerInjectionHelper::Start(
+    std::string test_case_name,
+    rtc::ArrayView<const std::string> peer_names,
+    int max_threads_count) {
+  analyzer_->Start(std::move(test_case_name), peer_names, max_threads_count);
 }
 
 void VideoQualityAnalyzerInjectionHelper::OnStatsReports(
