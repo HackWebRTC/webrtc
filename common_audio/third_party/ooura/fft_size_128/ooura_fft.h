@@ -38,6 +38,10 @@ void rftbsub_128_neon(float* a);
 
 class OouraFft {
  public:
+  // Ctor allowing the availability of SSE2 support to be specified.
+  explicit OouraFft(bool sse2_available);
+
+  // Deprecated: This Ctor will soon be removed.
   OouraFft();
   ~OouraFft();
   void Fft(float* a) const;
