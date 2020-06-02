@@ -139,26 +139,30 @@ class VideoStreamEncoderResourceManager::InitialFrameDropper {
   int initial_framedrop_;
 };
 
-VideoStreamEncoderResourceManager::PreventAdaptUpDueToActiveCounts::
-    PreventAdaptUpDueToActiveCounts(VideoStreamEncoderResourceManager* manager)
-    : rtc::RefCountedObject<VideoStreamEncoderResource>(
-          "PreventAdaptUpDueToActiveCounts"),
-      manager_(manager),
+VideoStreamEncoderResourceManager::ActiveCountsConstraint::
+    ActiveCountsConstraint(VideoStreamEncoderResourceManager* manager)
+    : manager_(manager),
+      resource_adaptation_queue_(nullptr),
       adaptation_processor_(nullptr) {}
 
-void VideoStreamEncoderResourceManager::PreventAdaptUpDueToActiveCounts::
+void VideoStreamEncoderResourceManager::ActiveCountsConstraint::
+    SetAdaptationQueue(TaskQueueBase* resource_adaptation_queue) {
+  resource_adaptation_queue_ = resource_adaptation_queue;
+}
+
+void VideoStreamEncoderResourceManager::ActiveCountsConstraint::
     SetAdaptationProcessor(
         ResourceAdaptationProcessorInterface* adaptation_processor) {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue());
+  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
   adaptation_processor_ = adaptation_processor;
 }
 
-bool VideoStreamEncoderResourceManager::PreventAdaptUpDueToActiveCounts::
+bool VideoStreamEncoderResourceManager::ActiveCountsConstraint::
     IsAdaptationUpAllowed(const VideoStreamInputState& input_state,
                           const VideoSourceRestrictions& restrictions_before,
                           const VideoSourceRestrictions& restrictions_after,
                           rtc::scoped_refptr<Resource> reason_resource) const {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue());
+  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
   RTC_DCHECK(adaptation_processor_);
   VideoAdaptationReason reason =
       manager_->GetReasonFromResource(reason_resource);
@@ -185,52 +189,47 @@ bool VideoStreamEncoderResourceManager::PreventAdaptUpDueToActiveCounts::
   }
 }
 
-VideoStreamEncoderResourceManager::
-    PreventIncreaseResolutionDueToBitrateResource::
-        PreventIncreaseResolutionDueToBitrateResource(
-            VideoStreamEncoderResourceManager* manager)
-    : rtc::RefCountedObject<VideoStreamEncoderResource>(
-          "PreventIncreaseResolutionDueToBitrateResource"),
-      manager_(manager),
+VideoStreamEncoderResourceManager::BitrateConstraint::BitrateConstraint(
+    VideoStreamEncoderResourceManager* manager)
+    : manager_(manager),
+      resource_adaptation_queue_(nullptr),
       encoder_settings_(absl::nullopt),
       encoder_target_bitrate_bps_(absl::nullopt) {}
 
-void VideoStreamEncoderResourceManager::
-    PreventIncreaseResolutionDueToBitrateResource::OnEncoderSettingsUpdated(
-        absl::optional<EncoderSettings> encoder_settings) {
-  RTC_DCHECK_RUN_ON(encoder_queue());
-  MaybePostTaskToResourceAdaptationQueue(
-      [this_ref =
-           rtc::scoped_refptr<PreventIncreaseResolutionDueToBitrateResource>(
-               this),
-       encoder_settings] {
-        RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue());
+void VideoStreamEncoderResourceManager::BitrateConstraint::SetAdaptationQueue(
+    TaskQueueBase* resource_adaptation_queue) {
+  resource_adaptation_queue_ = resource_adaptation_queue;
+}
+
+void VideoStreamEncoderResourceManager::BitrateConstraint::
+    OnEncoderSettingsUpdated(absl::optional<EncoderSettings> encoder_settings) {
+  RTC_DCHECK_RUN_ON(manager_->encoder_queue_);
+  resource_adaptation_queue_->PostTask(
+      ToQueuedTask([this_ref = rtc::scoped_refptr<BitrateConstraint>(this),
+                    encoder_settings] {
+        RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue_);
         this_ref->encoder_settings_ = std::move(encoder_settings);
-      });
+      }));
 }
 
-void VideoStreamEncoderResourceManager::
-    PreventIncreaseResolutionDueToBitrateResource::
-        OnEncoderTargetBitrateUpdated(
-            absl::optional<uint32_t> encoder_target_bitrate_bps) {
-  RTC_DCHECK_RUN_ON(encoder_queue());
-  MaybePostTaskToResourceAdaptationQueue(
-      [this_ref =
-           rtc::scoped_refptr<PreventIncreaseResolutionDueToBitrateResource>(
-               this),
-       encoder_target_bitrate_bps] {
-        RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue());
+void VideoStreamEncoderResourceManager::BitrateConstraint::
+    OnEncoderTargetBitrateUpdated(
+        absl::optional<uint32_t> encoder_target_bitrate_bps) {
+  RTC_DCHECK_RUN_ON(manager_->encoder_queue_);
+  resource_adaptation_queue_->PostTask(
+      ToQueuedTask([this_ref = rtc::scoped_refptr<BitrateConstraint>(this),
+                    encoder_target_bitrate_bps] {
+        RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue_);
         this_ref->encoder_target_bitrate_bps_ = encoder_target_bitrate_bps;
-      });
+      }));
 }
 
-bool VideoStreamEncoderResourceManager::
-    PreventIncreaseResolutionDueToBitrateResource::IsAdaptationUpAllowed(
-        const VideoStreamInputState& input_state,
-        const VideoSourceRestrictions& restrictions_before,
-        const VideoSourceRestrictions& restrictions_after,
-        rtc::scoped_refptr<Resource> reason_resource) const {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue());
+bool VideoStreamEncoderResourceManager::BitrateConstraint::
+    IsAdaptationUpAllowed(const VideoStreamInputState& input_state,
+                          const VideoSourceRestrictions& restrictions_before,
+                          const VideoSourceRestrictions& restrictions_after,
+                          rtc::scoped_refptr<Resource> reason_resource) const {
+  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
   VideoAdaptationReason reason =
       manager_->GetReasonFromResource(reason_resource);
   // If increasing resolution due to kQuality, make sure bitrate limits are not
@@ -259,39 +258,43 @@ bool VideoStreamEncoderResourceManager::
   return true;
 }
 
-VideoStreamEncoderResourceManager::PreventAdaptUpInBalancedResource::
-    PreventAdaptUpInBalancedResource(VideoStreamEncoderResourceManager* manager)
-    : rtc::RefCountedObject<VideoStreamEncoderResource>(
-          "PreventAdaptUpInBalancedResource"),
-      manager_(manager),
+VideoStreamEncoderResourceManager::BalancedConstraint::BalancedConstraint(
+    VideoStreamEncoderResourceManager* manager)
+    : manager_(manager),
+      resource_adaptation_queue_(nullptr),
       adaptation_processor_(nullptr),
       encoder_target_bitrate_bps_(absl::nullopt) {}
 
-void VideoStreamEncoderResourceManager::PreventAdaptUpInBalancedResource::
+void VideoStreamEncoderResourceManager::BalancedConstraint::SetAdaptationQueue(
+    TaskQueueBase* resource_adaptation_queue) {
+  resource_adaptation_queue_ = resource_adaptation_queue;
+}
+
+void VideoStreamEncoderResourceManager::BalancedConstraint::
     SetAdaptationProcessor(
         ResourceAdaptationProcessorInterface* adaptation_processor) {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue());
+  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
   adaptation_processor_ = adaptation_processor;
 }
 
-void VideoStreamEncoderResourceManager::PreventAdaptUpInBalancedResource::
+void VideoStreamEncoderResourceManager::BalancedConstraint::
     OnEncoderTargetBitrateUpdated(
         absl::optional<uint32_t> encoder_target_bitrate_bps) {
-  RTC_DCHECK_RUN_ON(encoder_queue());
-  MaybePostTaskToResourceAdaptationQueue(
-      [this_ref = rtc::scoped_refptr<PreventAdaptUpInBalancedResource>(this),
-       encoder_target_bitrate_bps] {
-        RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue());
+  RTC_DCHECK_RUN_ON(manager_->encoder_queue_);
+  resource_adaptation_queue_->PostTask(
+      ToQueuedTask([this_ref = rtc::scoped_refptr<BalancedConstraint>(this),
+                    encoder_target_bitrate_bps] {
+        RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue_);
         this_ref->encoder_target_bitrate_bps_ = encoder_target_bitrate_bps;
-      });
+      }));
 }
 
-bool VideoStreamEncoderResourceManager::PreventAdaptUpInBalancedResource::
+bool VideoStreamEncoderResourceManager::BalancedConstraint::
     IsAdaptationUpAllowed(const VideoStreamInputState& input_state,
                           const VideoSourceRestrictions& restrictions_before,
                           const VideoSourceRestrictions& restrictions_after,
                           rtc::scoped_refptr<Resource> reason_resource) const {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue());
+  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
   RTC_DCHECK(adaptation_processor_);
   VideoAdaptationReason reason =
       manager_->GetReasonFromResource(reason_resource);
@@ -325,12 +328,10 @@ VideoStreamEncoderResourceManager::VideoStreamEncoderResourceManager(
     Clock* clock,
     bool experiment_cpu_load_estimator,
     std::unique_ptr<OveruseFrameDetector> overuse_detector)
-    : prevent_adapt_up_due_to_active_counts_(
-          new PreventAdaptUpDueToActiveCounts(this)),
-      prevent_increase_resolution_due_to_bitrate_resource_(
-          new PreventIncreaseResolutionDueToBitrateResource(this)),
-      prevent_adapt_up_in_balanced_resource_(
-          new PreventAdaptUpInBalancedResource(this)),
+    : active_counts_constraint_(
+          new rtc::RefCountedObject<ActiveCountsConstraint>(this)),
+      bitrate_constraint_(new rtc::RefCountedObject<BitrateConstraint>(this)),
+      balanced_constraint_(new rtc::RefCountedObject<BalancedConstraint>(this)),
       encode_usage_resource_(
           EncodeUsageResource::Create(std::move(overuse_detector))),
       quality_scaler_resource_(QualityScalerResource::Create()),
@@ -352,12 +353,6 @@ VideoStreamEncoderResourceManager::VideoStreamEncoderResourceManager(
       encoder_settings_(absl::nullopt),
       active_counts_() {
   RTC_DCHECK(encoder_stats_observer_);
-  MapResourceToReason(prevent_adapt_up_due_to_active_counts_,
-                      VideoAdaptationReason::kQuality);
-  MapResourceToReason(prevent_increase_resolution_due_to_bitrate_resource_,
-                      VideoAdaptationReason::kQuality);
-  MapResourceToReason(prevent_adapt_up_in_balanced_resource_,
-                      VideoAdaptationReason::kQuality);
   MapResourceToReason(encode_usage_resource_, VideoAdaptationReason::kCpu);
   MapResourceToReason(quality_scaler_resource_,
                       VideoAdaptationReason::kQuality);
@@ -374,18 +369,10 @@ void VideoStreamEncoderResourceManager::Initialize(
   RTC_DCHECK(resource_adaptation_queue);
   encoder_queue_ = encoder_queue;
   resource_adaptation_queue_ = resource_adaptation_queue;
-  prevent_adapt_up_due_to_active_counts_->RegisterEncoderTaskQueue(
-      encoder_queue_->Get());
-  prevent_adapt_up_due_to_active_counts_->RegisterAdaptationTaskQueue(
+  active_counts_constraint_->SetAdaptationQueue(
       resource_adaptation_queue_->Get());
-  prevent_increase_resolution_due_to_bitrate_resource_
-      ->RegisterEncoderTaskQueue(encoder_queue_->Get());
-  prevent_increase_resolution_due_to_bitrate_resource_
-      ->RegisterAdaptationTaskQueue(resource_adaptation_queue_->Get());
-  prevent_adapt_up_in_balanced_resource_->RegisterEncoderTaskQueue(
-      encoder_queue_->Get());
-  prevent_adapt_up_in_balanced_resource_->RegisterAdaptationTaskQueue(
-      resource_adaptation_queue_->Get());
+  bitrate_constraint_->SetAdaptationQueue(resource_adaptation_queue_->Get());
+  balanced_constraint_->SetAdaptationQueue(resource_adaptation_queue_->Get());
   encode_usage_resource_->RegisterEncoderTaskQueue(encoder_queue_->Get());
   encode_usage_resource_->RegisterAdaptationTaskQueue(
       resource_adaptation_queue_->Get());
@@ -398,10 +385,8 @@ void VideoStreamEncoderResourceManager::SetAdaptationProcessor(
     ResourceAdaptationProcessorInterface* adaptation_processor) {
   RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
   adaptation_processor_ = adaptation_processor;
-  prevent_adapt_up_due_to_active_counts_->SetAdaptationProcessor(
-      adaptation_processor);
-  prevent_adapt_up_in_balanced_resource_->SetAdaptationProcessor(
-      adaptation_processor);
+  active_counts_constraint_->SetAdaptationProcessor(adaptation_processor);
+  balanced_constraint_->SetAdaptationProcessor(adaptation_processor);
   quality_scaler_resource_->SetAdaptationProcessor(adaptation_processor);
 }
 
@@ -454,6 +439,16 @@ VideoStreamEncoderResourceManager::MappedResources() const {
   return resources;
 }
 
+std::vector<AdaptationConstraint*>
+VideoStreamEncoderResourceManager::AdaptationConstraints() const {
+  return {active_counts_constraint_, bitrate_constraint_, balanced_constraint_};
+}
+
+std::vector<AdaptationListener*>
+VideoStreamEncoderResourceManager::AdaptationListeners() const {
+  return {quality_scaler_resource_};
+}
+
 rtc::scoped_refptr<QualityScalerResource>
 VideoStreamEncoderResourceManager::quality_scaler_resource_for_testing() {
   rtc::CritScope crit(&resource_lock_);
@@ -464,8 +459,7 @@ void VideoStreamEncoderResourceManager::SetEncoderSettings(
     EncoderSettings encoder_settings) {
   RTC_DCHECK_RUN_ON(encoder_queue_);
   encoder_settings_ = std::move(encoder_settings);
-  prevent_increase_resolution_due_to_bitrate_resource_
-      ->OnEncoderSettingsUpdated(encoder_settings_);
+  bitrate_constraint_->OnEncoderSettingsUpdated(encoder_settings_);
 
   quality_rampup_experiment_.SetMaxBitrate(
       LastInputFrameSizeOrDefault(),
@@ -478,9 +472,9 @@ void VideoStreamEncoderResourceManager::SetStartBitrate(
   RTC_DCHECK_RUN_ON(encoder_queue_);
   if (!start_bitrate.IsZero()) {
     encoder_target_bitrate_bps_ = start_bitrate.bps();
-    prevent_increase_resolution_due_to_bitrate_resource_
-        ->OnEncoderTargetBitrateUpdated(encoder_target_bitrate_bps_);
-    prevent_adapt_up_in_balanced_resource_->OnEncoderTargetBitrateUpdated(
+    bitrate_constraint_->OnEncoderTargetBitrateUpdated(
+        encoder_target_bitrate_bps_);
+    balanced_constraint_->OnEncoderTargetBitrateUpdated(
         encoder_target_bitrate_bps_);
   }
   initial_frame_dropper_->SetStartBitrate(start_bitrate,
@@ -492,9 +486,9 @@ void VideoStreamEncoderResourceManager::SetTargetBitrate(
   RTC_DCHECK_RUN_ON(encoder_queue_);
   if (!target_bitrate.IsZero()) {
     encoder_target_bitrate_bps_ = target_bitrate.bps();
-    prevent_increase_resolution_due_to_bitrate_resource_
-        ->OnEncoderTargetBitrateUpdated(encoder_target_bitrate_bps_);
-    prevent_adapt_up_in_balanced_resource_->OnEncoderTargetBitrateUpdated(
+    bitrate_constraint_->OnEncoderTargetBitrateUpdated(
+        encoder_target_bitrate_bps_);
+    balanced_constraint_->OnEncoderTargetBitrateUpdated(
         encoder_target_bitrate_bps_);
   }
   initial_frame_dropper_->SetTargetBitrate(target_bitrate,

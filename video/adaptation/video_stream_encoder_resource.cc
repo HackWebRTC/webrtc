@@ -75,20 +75,6 @@ void VideoStreamEncoderResource::ClearUsageState() {
   usage_state_ = absl::nullopt;
 }
 
-bool VideoStreamEncoderResource::IsAdaptationUpAllowed(
-    const VideoStreamInputState& input_state,
-    const VideoSourceRestrictions& restrictions_before,
-    const VideoSourceRestrictions& restrictions_after,
-    rtc::scoped_refptr<Resource> reason_resource) const {
-  return true;
-}
-
-void VideoStreamEncoderResource::OnAdaptationApplied(
-    const VideoStreamInputState& input_state,
-    const VideoSourceRestrictions& restrictions_before,
-    const VideoSourceRestrictions& restrictions_after,
-    rtc::scoped_refptr<Resource> reason_resource) {}
-
 void VideoStreamEncoderResource::OnResourceUsageStateMeasured(
     ResourceUsageState usage_state) {
   RTC_DCHECK_RUN_ON(resource_adaptation_queue());

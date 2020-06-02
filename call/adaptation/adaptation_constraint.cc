@@ -8,12 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "call/adaptation/resource_adaptation_processor_interface.h"
+#include "call/adaptation/adaptation_constraint.h"
 
 namespace webrtc {
 
-VideoSourceRestrictionsListener::~VideoSourceRestrictionsListener() {}
-
-ResourceAdaptationProcessorInterface::~ResourceAdaptationProcessorInterface() {}
+AdaptationConstraint::~AdaptationConstraint() {}
 
 }  // namespace webrtc

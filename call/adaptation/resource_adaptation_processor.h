@@ -21,6 +21,8 @@
 #include "api/scoped_refptr.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_stream_encoder_observer.h"
+#include "call/adaptation/adaptation_constraint.h"
+#include "call/adaptation/adaptation_listener.h"
 #include "call/adaptation/resource.h"
 #include "call/adaptation/resource_adaptation_processor_interface.h"
 #include "call/adaptation/video_source_restrictions.h"
@@ -63,12 +65,19 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
 
   void StartResourceAdaptation() override;
   void StopResourceAdaptation() override;
-  void AddAdaptationListener(
-      ResourceAdaptationProcessorListener* adaptation_listener) override;
-  void RemoveAdaptationListener(
-      ResourceAdaptationProcessorListener* adaptation_listener) override;
+  void AddRestrictionsListener(
+      VideoSourceRestrictionsListener* restrictions_listener) override;
+  void RemoveRestrictionsListener(
+      VideoSourceRestrictionsListener* restrictions_listener) override;
   void AddResource(rtc::scoped_refptr<Resource> resource) override;
   void RemoveResource(rtc::scoped_refptr<Resource> resource) override;
+  void AddAdaptationConstraint(
+      AdaptationConstraint* adaptation_constraint) override;
+  void RemoveAdaptationConstraint(
+      AdaptationConstraint* adaptation_constraint) override;
+  void AddAdaptationListener(AdaptationListener* adaptation_listener) override;
+  void RemoveAdaptationListener(
+      AdaptationListener* adaptation_listener) override;
 
   void SetDegradationPreference(
       DegradationPreference degradation_preference) override;
@@ -95,7 +104,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
     kInsufficientInput,
     kRejectedByAdaptationCounts,
     kRejectedByAdapter,
-    kRejectedByResource,
+    kRejectedByConstraint,
     kAdaptationApplied,
   };
 
@@ -139,9 +148,13 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
       RTC_GUARDED_BY(sequence_checker_);
   VideoStreamEncoderObserver* const encoder_stats_observer_
       RTC_GUARDED_BY(sequence_checker_);
-  std::vector<ResourceAdaptationProcessorListener*> adaptation_listeners_
+  std::vector<VideoSourceRestrictionsListener*> restrictions_listeners_
       RTC_GUARDED_BY(sequence_checker_);
   std::vector<rtc::scoped_refptr<Resource>> resources_
+      RTC_GUARDED_BY(sequence_checker_);
+  std::vector<AdaptationConstraint*> adaptation_constraints_
+      RTC_GUARDED_BY(sequence_checker_);
+  std::vector<AdaptationListener*> adaptation_listeners_
       RTC_GUARDED_BY(sequence_checker_);
   // Purely used for statistics, does not ensure mapped resources stay alive.
   std::map<const Resource*, int> adaptations_counts_by_resource_

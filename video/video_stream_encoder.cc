@@ -260,6 +260,8 @@ VideoStreamEncoder::VideoStreamEncoder(
           std::make_unique<ResourceAdaptationProcessor>(
               &input_state_provider_,
               encoder_stats_observer)),
+      adaptation_constraints_(),
+      adaptation_listeners_(),
       stream_resource_manager_(&input_state_provider_,
                                encoder_stats_observer,
                                clock_,
@@ -285,12 +287,22 @@ VideoStreamEncoder::VideoStreamEncoder(
     resource_adaptation_processor_->InitializeOnResourceAdaptationQueue();
     stream_resource_manager_.SetAdaptationProcessor(
         resource_adaptation_processor_.get());
-    resource_adaptation_processor_->AddAdaptationListener(
+    resource_adaptation_processor_->AddRestrictionsListener(
         &stream_resource_manager_);
-    resource_adaptation_processor_->AddAdaptationListener(this);
+    resource_adaptation_processor_->AddRestrictionsListener(this);
+
     // Add the stream resource manager's resources to the processor.
-    for (Resource* resource : stream_resource_manager_.MappedResources())
+    adaptation_constraints_ = stream_resource_manager_.AdaptationConstraints();
+    adaptation_listeners_ = stream_resource_manager_.AdaptationListeners();
+    for (auto& resource : stream_resource_manager_.MappedResources()) {
       resource_adaptation_processor_->AddResource(resource);
+    }
+    for (auto* constraint : adaptation_constraints_) {
+      resource_adaptation_processor_->AddAdaptationConstraint(constraint);
+    }
+    for (auto* listener : adaptation_listeners_) {
+      resource_adaptation_processor_->AddAdaptationListener(listener);
+    }
     initialize_processor_event.Set();
   });
   initialize_processor_event.Wait(rtc::Event::kForever);
@@ -312,11 +324,17 @@ void VideoStreamEncoder::Stop() {
     RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
     if (resource_adaptation_processor_) {
       resource_adaptation_processor_->StopResourceAdaptation();
-      for (Resource* resource : stream_resource_manager_.MappedResources()) {
+      for (auto& resource : stream_resource_manager_.MappedResources()) {
         resource_adaptation_processor_->RemoveResource(resource);
       }
-      resource_adaptation_processor_->RemoveAdaptationListener(this);
-      resource_adaptation_processor_->RemoveAdaptationListener(
+      for (auto* constraint : adaptation_constraints_) {
+        resource_adaptation_processor_->RemoveAdaptationConstraint(constraint);
+      }
+      for (auto* listener : adaptation_listeners_) {
+        resource_adaptation_processor_->RemoveAdaptationListener(listener);
+      }
+      resource_adaptation_processor_->RemoveRestrictionsListener(this);
+      resource_adaptation_processor_->RemoveRestrictionsListener(
           &stream_resource_manager_);
       stream_resource_manager_.SetAdaptationProcessor(nullptr);
       resource_adaptation_processor_.reset();
@@ -1978,7 +1996,8 @@ void VideoStreamEncoder::InjectAdaptationResource(
   });
   map_resource_event.Wait(rtc::Event::kForever);
 
-  resource_adaptation_queue_.PostTask([this, resource] {
+  rtc::Event add_resource_event;
+  resource_adaptation_queue_.PostTask([this, resource, &add_resource_event] {
     RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
     if (!resource_adaptation_processor_) {
       // The VideoStreamEncoder was stopped and the processor destroyed before
@@ -1986,7 +2005,44 @@ void VideoStreamEncoder::InjectAdaptationResource(
       return;
     }
     resource_adaptation_processor_->AddResource(resource);
+    add_resource_event.Set();
   });
+  add_resource_event.Wait(rtc::Event::kForever);
+}
+
+void VideoStreamEncoder::InjectAdaptationConstraint(
+    AdaptationConstraint* adaptation_constraint) {
+  rtc::Event event;
+  resource_adaptation_queue_.PostTask([this, adaptation_constraint, &event] {
+    RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
+    if (!resource_adaptation_processor_) {
+      // The VideoStreamEncoder was stopped and the processor destroyed before
+      // this task had a chance to execute. No action needed.
+      return;
+    }
+    adaptation_constraints_.push_back(adaptation_constraint);
+    resource_adaptation_processor_->AddAdaptationConstraint(
+        adaptation_constraint);
+    event.Set();
+  });
+  event.Wait(rtc::Event::kForever);
+}
+
+void VideoStreamEncoder::InjectAdaptationListener(
+    AdaptationListener* adaptation_listener) {
+  rtc::Event event;
+  resource_adaptation_queue_.PostTask([this, adaptation_listener, &event] {
+    RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
+    if (!resource_adaptation_processor_) {
+      // The VideoStreamEncoder was stopped and the processor destroyed before
+      // this task had a chance to execute. No action needed.
+      return;
+    }
+    adaptation_listeners_.push_back(adaptation_listener);
+    resource_adaptation_processor_->AddAdaptationListener(adaptation_listener);
+    event.Set();
+  });
+  event.Wait(rtc::Event::kForever);
 }
 
 rtc::scoped_refptr<QualityScalerResource>
@@ -1995,26 +2051,27 @@ VideoStreamEncoder::quality_scaler_resource_for_testing() {
   return stream_resource_manager_.quality_scaler_resource_for_testing();
 }
 
-void VideoStreamEncoder::AddAdaptationListenerForTesting(
-    ResourceAdaptationProcessorListener* adaptation_listener) {
+void VideoStreamEncoder::AddRestrictionsListenerForTesting(
+    VideoSourceRestrictionsListener* restrictions_listener) {
   rtc::Event event;
-  resource_adaptation_queue_.PostTask([this, adaptation_listener, &event] {
+  resource_adaptation_queue_.PostTask([this, restrictions_listener, &event] {
     RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
     RTC_DCHECK(resource_adaptation_processor_);
-    resource_adaptation_processor_->AddAdaptationListener(adaptation_listener);
+    resource_adaptation_processor_->AddRestrictionsListener(
+        restrictions_listener);
     event.Set();
   });
   event.Wait(rtc::Event::kForever);
 }
 
-void VideoStreamEncoder::RemoveAdaptationListenerForTesting(
-    ResourceAdaptationProcessorListener* adaptation_listener) {
+void VideoStreamEncoder::RemoveRestrictionsListenerForTesting(
+    VideoSourceRestrictionsListener* restrictions_listener) {
   rtc::Event event;
-  resource_adaptation_queue_.PostTask([this, adaptation_listener, &event] {
+  resource_adaptation_queue_.PostTask([this, restrictions_listener, &event] {
     RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
     RTC_DCHECK(resource_adaptation_processor_);
-    resource_adaptation_processor_->RemoveAdaptationListener(
-        adaptation_listener);
+    resource_adaptation_processor_->RemoveRestrictionsListener(
+        restrictions_listener);
     event.Set();
   });
   event.Wait(rtc::Event::kForever);

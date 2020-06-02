@@ -48,8 +48,8 @@ class ResourceListener {
 // kOveruse or kUnderuse when resource usage is high or low enough that we
 // should perform some sort of mitigation to fulfil the resource's constraints.
 //
-// All methods defined in this interface, except RegisterAdaptationTaskQueue(),
-// MUST be invoked on the resource adaptation task queue.
+// All methods defined in this interface, except SetResourceListener(), MUST be
+// invoked on the resource adaptation task queue.
 //
 // Usage measurements may be performed on an implementation-specific task queue.
 // The Resource is reference counted to prevent use-after-free when posting
@@ -61,21 +61,9 @@ class Resource : public rtc::RefCountInterface {
   // Destruction may happen on any task queue.
   ~Resource() override;
 
-  // Provides a pointer to the adaptation task queue. After this call, all
-  // methods defined in this interface, including
-  // UnregisterAdaptationTaskQueue() MUST be invoked on the adaptation task
-  // queue. Registering the adaptation task queue may, however, happen off the
-  // adaptation task queue.
-  virtual void RegisterAdaptationTaskQueue(
-      TaskQueueBase* resource_adaptation_queue) = 0;
-  // Signals that the adaptation task queue is no longer safe to use. No
-  // assumptions must be made as to whether or not tasks in-flight will run.
-  virtual void UnregisterAdaptationTaskQueue() = 0;
-
-  // The listeners MUST be informed any time UsageState() changes.
-  virtual void SetResourceListener(ResourceListener* listener) = 0;
-
   virtual std::string Name() const = 0;
+  // The listener MUST be informed any time UsageState() changes.
+  virtual void SetResourceListener(ResourceListener* listener) = 0;
   // Within a single task running on the adaptation task queue, UsageState()
   // MUST return the same value every time it is called.
   // TODO(https://crbug.com/webrtc/11618): Remove the UsageState() getter in
@@ -86,20 +74,6 @@ class Resource : public rtc::RefCountInterface {
   // Invalidates current usage measurements, i.e. in response to the system load
   // changing. Example: an adaptation was just applied.
   virtual void ClearUsageState() = 0;
-
-  // This method allows the Resource to reject a proposed adaptation in the "up"
-  // direction if it predicts this would cause overuse of this resource.
-  virtual bool IsAdaptationUpAllowed(
-      const VideoStreamInputState& input_state,
-      const VideoSourceRestrictions& restrictions_before,
-      const VideoSourceRestrictions& restrictions_after,
-      rtc::scoped_refptr<Resource> reason_resource) const = 0;
-
-  virtual void OnAdaptationApplied(
-      const VideoStreamInputState& input_state,
-      const VideoSourceRestrictions& restrictions_before,
-      const VideoSourceRestrictions& restrictions_after,
-      rtc::scoped_refptr<Resource> reason_resource) = 0;
 };
 
 }  // namespace webrtc

@@ -19,7 +19,7 @@
 #include "api/scoped_refptr.h"
 #include "api/video/video_adaptation_reason.h"
 #include "api/video_codecs/video_encoder.h"
-#include "call/adaptation/resource.h"
+#include "call/adaptation/adaptation_listener.h"
 #include "call/adaptation/resource_adaptation_processor_interface.h"
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "rtc_base/critical_section.h"
@@ -31,6 +31,7 @@ namespace webrtc {
 
 // Handles interaction with the QualityScaler.
 class QualityScalerResource : public VideoStreamEncoderResource,
+                              public AdaptationListener,
                               public QualityScalerQpUsageHandlerInterface {
  public:
   static rtc::scoped_refptr<QualityScalerResource> Create();
@@ -60,7 +61,7 @@ class QualityScalerResource : public VideoStreamEncoderResource,
       rtc::scoped_refptr<QualityScalerQpUsageHandlerCallbackInterface> callback)
       override;
 
-  // VideoStreamEncoderResource implementation.
+  // AdaptationListener implementation.
   void OnAdaptationApplied(
       const VideoStreamInputState& input_state,
       const VideoSourceRestrictions& restrictions_before,

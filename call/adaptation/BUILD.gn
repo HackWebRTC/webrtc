@@ -10,6 +10,10 @@ import("../../webrtc.gni")
 
 rtc_library("resource_adaptation") {
   sources = [
+    "adaptation_constraint.cc",
+    "adaptation_constraint.h",
+    "adaptation_listener.cc",
+    "adaptation_listener.h",
     "encoder_settings.cc",
     "encoder_settings.h",
     "resource.cc",
@@ -80,6 +84,10 @@ if (rtc_include_tests) {
     testonly = true
 
     sources = [
+      "test/fake_adaptation_constraint.cc",
+      "test/fake_adaptation_constraint.h",
+      "test/fake_adaptation_listener.cc",
+      "test/fake_adaptation_listener.h",
       "test/fake_frame_rate_provider.cc",
       "test/fake_frame_rate_provider.h",
       "test/fake_resource.cc",

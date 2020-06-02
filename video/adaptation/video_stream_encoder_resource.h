@@ -16,6 +16,8 @@
 
 #include "absl/types/optional.h"
 #include "api/task_queue/task_queue_base.h"
+#include "call/adaptation/adaptation_constraint.h"
+#include "call/adaptation/adaptation_listener.h"
 #include "call/adaptation/resource.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/synchronization/sequence_checker.h"
@@ -30,24 +32,20 @@ class VideoStreamEncoderResource : public Resource {
   void RegisterEncoderTaskQueue(TaskQueueBase* encoder_queue);
 
   // Resource implementation.
-  void RegisterAdaptationTaskQueue(
-      TaskQueueBase* resource_adaptation_queue) override;
-  void UnregisterAdaptationTaskQueue() override;
-  void SetResourceListener(ResourceListener* listener) override;
   std::string Name() const override;
+  void SetResourceListener(ResourceListener* listener) override;
   absl::optional<ResourceUsageState> UsageState() const override;
   void ClearUsageState() override;
-  // Default implementations, may be overriden again by child classes.
-  bool IsAdaptationUpAllowed(
-      const VideoStreamInputState& input_state,
-      const VideoSourceRestrictions& restrictions_before,
-      const VideoSourceRestrictions& restrictions_after,
-      rtc::scoped_refptr<Resource> reason_resource) const override;
-  void OnAdaptationApplied(
-      const VideoStreamInputState& input_state,
-      const VideoSourceRestrictions& restrictions_before,
-      const VideoSourceRestrictions& restrictions_after,
-      rtc::scoped_refptr<Resource> reason_resource) override;
+
+  // Provides a pointer to the adaptation task queue. After this call, all
+  // methods defined in this interface, including
+  // UnregisterAdaptationTaskQueue() MUST be invoked on the adaptation task
+  // queue. Registering the adaptation task queue may, however, happen off the
+  // adaptation task queue.
+  void RegisterAdaptationTaskQueue(TaskQueueBase* resource_adaptation_queue);
+  // Signals that the adaptation task queue is no longer safe to use. No
+  // assumptions must be made as to whether or not tasks in-flight will run.
+  void UnregisterAdaptationTaskQueue();
 
  protected:
   explicit VideoStreamEncoderResource(std::string name);
