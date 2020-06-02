@@ -32,7 +32,6 @@ TEST(LibaomAv1EncoderTest, InitAndRelease) {
   codec_settings.width = 1280;
   codec_settings.height = 720;
   codec_settings.maxFramerate = 30;
-  codec_settings.qpMax = 63;
   VideoEncoder::Capabilities capabilities(/*loss_notification=*/false);
   VideoEncoder::Settings encoder_settings(capabilities, /*number_of_cores=*/1,
                                           /*max_payload_size=*/1200);

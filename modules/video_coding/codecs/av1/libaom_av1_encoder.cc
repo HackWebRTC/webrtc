@@ -38,6 +38,7 @@ namespace webrtc {
 namespace {
 
 // Encoder configuration parameters
+constexpr int kQpMax = 56;
 constexpr int kQpMin = 10;
 constexpr int kUsageProfile = 1;     // 0 = good quality; 1 = real-time.
 constexpr int kMinQindex = 58;       // Min qindex threshold for QP scaling.
@@ -183,7 +184,7 @@ int LibaomAv1Encoder::InitEncode(const VideoCodec* codec_settings,
   cfg_.g_input_bit_depth = kBitDepth;
   cfg_.kf_mode = AOM_KF_DISABLED;
   cfg_.rc_min_quantizer = kQpMin;
-  cfg_.rc_max_quantizer = encoder_settings_.qpMax;
+  cfg_.rc_max_quantizer = kQpMax;
   cfg_.g_usage = kUsageProfile;
   if (svc_controller_->StreamConfig().num_spatial_layers > 1 ||
       svc_controller_->StreamConfig().num_temporal_layers > 1) {
@@ -283,7 +284,7 @@ bool LibaomAv1Encoder::SetSvcParams(
       svc_config.num_spatial_layers * svc_config.num_temporal_layers;
   for (int i = 0; i < num_layers; ++i) {
     svc_params.min_quantizers[i] = kQpMin;
-    svc_params.max_quantizers[i] = encoder_settings_.qpMax;
+    svc_params.max_quantizers[i] = kQpMax;
   }
 
   // Assume each temporal layer doubles framerate.
