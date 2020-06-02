@@ -1182,6 +1182,9 @@ void SctpTransport::OnNotificationAssocChange(const sctp_assoc_change& change) {
       max_outbound_streams_ = change.sac_outbound_streams;
       max_inbound_streams_ = change.sac_inbound_streams;
       SignalAssociationChangeCommunicationUp();
+      // In case someone tried to close a stream before communication
+      // came up, send any queued resets.
+      SendQueuedStreamResets();
       break;
     case SCTP_COMM_LOST:
       RTC_LOG(LS_INFO) << "Association change SCTP_COMM_LOST";

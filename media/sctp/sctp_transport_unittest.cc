@@ -605,6 +605,15 @@ TEST_F(SctpTransportTest, ClosesRemoteStream) {
   transport1()->ResetStream(1);
   EXPECT_TRUE_WAIT(transport2_observer.WasStreamClosed(1), kDefaultTimeout);
 }
+TEST_F(SctpTransportTest, ClosesRemoteStreamWithNoData) {
+  SetupConnectedTransportsWithTwoStreams();
+  SctpTransportObserver transport1_observer(transport1());
+  SctpTransportObserver transport2_observer(transport2());
+
+  // Close stream 1 on transport 1. Transport 2 should notify us.
+  transport1()->ResetStream(1);
+  EXPECT_TRUE_WAIT(transport2_observer.WasStreamClosed(1), kDefaultTimeout);
+}
 
 TEST_F(SctpTransportTest, ClosesTwoRemoteStreams) {
   SetupConnectedTransportsWithTwoStreams();
