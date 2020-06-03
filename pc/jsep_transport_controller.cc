@@ -654,7 +654,8 @@ RTCError JsepTransportController::ApplyDescription_n(
     if (IsBundled(content_info.name) && content_info.name != *bundled_mid()) {
       if (!HandleBundledContent(content_info)) {
         return RTCError(RTCErrorType::INVALID_PARAMETER,
-                        "Failed to process the bundled m= section.");
+                        "Failed to process the bundled m= section with mid='" +
+                            content_info.name + "'.");
       }
       continue;
     }
@@ -706,9 +707,10 @@ RTCError JsepTransportController::ApplyDescription_n(
     }
 
     if (!error.ok()) {
-      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
-                           "Failed to apply the description for " +
-                               content_info.name + ": " + error.message());
+      LOG_AND_RETURN_ERROR(
+          RTCErrorType::INVALID_PARAMETER,
+          "Failed to apply the description for m= section with mid='" +
+              content_info.name + "': " + error.message());
     }
   }
   if (type == SdpType::kAnswer) {
@@ -727,11 +729,11 @@ RTCError JsepTransportController::ValidateAndMaybeUpdateBundleGroup(
 
   // The BUNDLE group containing a MID that no m= section has is invalid.
   if (new_bundle_group) {
-    for (const auto& content_name : new_bundle_group->content_names()) {
+    for (const std::string& content_name : new_bundle_group->content_names()) {
       if (!description->GetContentByName(content_name)) {
         return RTCError(RTCErrorType::INVALID_PARAMETER,
-                        "The BUNDLE group contains MID:" + content_name +
-                            " matching no m= section.");
+                        "The BUNDLE group contains MID='" + content_name +
+                            "' matching no m= section.");
       }
     }
   }
@@ -743,18 +745,21 @@ RTCError JsepTransportController::ValidateAndMaybeUpdateBundleGroup(
 
     if (new_bundle_group) {
       // The BUNDLE group in answer should be a subset of offered group.
-      for (const auto& content_name : new_bundle_group->content_names()) {
+      for (const std::string& content_name :
+           new_bundle_group->content_names()) {
         if (!offered_bundle_group ||
             !offered_bundle_group->HasContentName(content_name)) {
           return RTCError(RTCErrorType::INVALID_PARAMETER,
-                          "The BUNDLE group in answer contains a MID that was "
-                          "not in the offered group.");
+                          "The BUNDLE group in answer contains a MID='" +
+                              content_name +
+                              "' that was "
+                              "not in the offered group.");
         }
       }
     }
 
     if (bundle_group_) {
-      for (const auto& content_name : bundle_group_->content_names()) {
+      for (const std::string& content_name : bundle_group_->content_names()) {
         // An answer that removes m= sections from pre-negotiated BUNDLE group
         // without rejecting it, is invalid.
         if (!new_bundle_group ||
@@ -762,8 +767,9 @@ RTCError JsepTransportController::ValidateAndMaybeUpdateBundleGroup(
           auto* content_info = description->GetContentByName(content_name);
           if (!content_info || !content_info->rejected) {
             return RTCError(RTCErrorType::INVALID_PARAMETER,
-                            "Answer cannot remove m= section  " + content_name +
-                                " from already-established BUNDLE group.");
+                            "Answer cannot remove m= section with mid='" +
+                                content_name +
+                                "' from already-established BUNDLE group.");
           }
         }
       }
@@ -798,9 +804,9 @@ RTCError JsepTransportController::ValidateAndMaybeUpdateBundleGroup(
     for (const auto& content_name : bundle_group_->content_names()) {
       auto other_content = description->GetContentByName(content_name);
       if (!other_content->rejected) {
-        return RTCError(
-            RTCErrorType::INVALID_PARAMETER,
-            "The m= section:" + content_name + " should be rejected.");
+        return RTCError(RTCErrorType::INVALID_PARAMETER,
+                        "The m= section with mid='" + content_name +
+                            "' should be rejected.");
       }
     }
   }
@@ -815,8 +821,8 @@ RTCError JsepTransportController::ValidateContent(
       content_info.type == cricket::MediaProtocolType::kRtp &&
       !content_info.media_description()->rtcp_mux()) {
     return RTCError(RTCErrorType::INVALID_PARAMETER,
-                    "The m= section:" + content_info.name +
-                        " is invalid. RTCP-MUX is not "
+                    "The m= section with mid='" + content_info.name +
+                        "' is invalid. RTCP-MUX is not "
                         "enabled when it is required.");
   }
   return RTCError::OK();

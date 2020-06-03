@@ -1118,10 +1118,11 @@ TEST_P(PeerConnectionMediaTest, MediaEngineErrorPropagatedToClients) {
   std::string error;
   ASSERT_FALSE(caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal(),
                                             &error));
-  EXPECT_EQ(
-      "Failed to set remote answer sdp: Failed to set remote video description "
-      "send parameters.",
-      error);
+  EXPECT_EQ(std::string("Failed to set remote answer sdp: Failed to set remote "
+                        "video description "
+                        "send parameters for m-section with mid='") +
+                (IsUnifiedPlan() ? "1" : "video") + "'.",
+            error);
 }
 
 // Tests that if the underlying video encoder fails once then subsequent
