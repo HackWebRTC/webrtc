@@ -63,16 +63,19 @@ int32_t AudioMixerManagerMac::Close() {
 
   rtc::CritScope lock(&_critSect);
 
-  CloseSpeaker();
-  CloseMicrophone();
+  CloseSpeakerLocked();
+  CloseMicrophoneLocked();
 
   return 0;
 }
 
 int32_t AudioMixerManagerMac::CloseSpeaker() {
-  RTC_LOG(LS_VERBOSE) << __FUNCTION__;
-
   rtc::CritScope lock(&_critSect);
+  return CloseSpeakerLocked();
+}
+
+int32_t AudioMixerManagerMac::CloseSpeakerLocked() {
+  RTC_LOG(LS_VERBOSE) << __FUNCTION__;
 
   _outputDeviceID = kAudioObjectUnknown;
   _noOutputChannels = 0;
@@ -81,9 +84,12 @@ int32_t AudioMixerManagerMac::CloseSpeaker() {
 }
 
 int32_t AudioMixerManagerMac::CloseMicrophone() {
-  RTC_LOG(LS_VERBOSE) << __FUNCTION__;
-
   rtc::CritScope lock(&_critSect);
+  return CloseMicrophoneLocked();
+}
+
+int32_t AudioMixerManagerMac::CloseMicrophoneLocked() {
+  RTC_LOG(LS_VERBOSE) << __FUNCTION__;
 
   _inputDeviceID = kAudioObjectUnknown;
   _noInputChannels = 0;

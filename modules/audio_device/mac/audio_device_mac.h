@@ -69,8 +69,8 @@ class AudioDeviceMac : public AudioDeviceGeneric {
       AudioDeviceModule::AudioLayer& audioLayer) const;
 
   // Main initializaton and termination
-  virtual InitStatus Init();
-  virtual int32_t Terminate();
+  virtual InitStatus Init() RTC_LOCKS_EXCLUDED(_critSect);
+  virtual int32_t Terminate() RTC_LOCKS_EXCLUDED(_critSect);
   virtual bool Initialized() const;
 
   // Device enumeration
@@ -84,7 +84,8 @@ class AudioDeviceMac : public AudioDeviceGeneric {
                                       char guid[kAdmMaxGuidSize]);
 
   // Device selection
-  virtual int32_t SetPlayoutDevice(uint16_t index);
+  virtual int32_t SetPlayoutDevice(uint16_t index)
+      RTC_LOCKS_EXCLUDED(_critSect);
   virtual int32_t SetPlayoutDevice(AudioDeviceModule::WindowsDeviceType device);
   virtual int32_t SetRecordingDevice(uint16_t index);
   virtual int32_t SetRecordingDevice(
@@ -92,24 +93,24 @@ class AudioDeviceMac : public AudioDeviceGeneric {
 
   // Audio transport initialization
   virtual int32_t PlayoutIsAvailable(bool& available);
-  virtual int32_t InitPlayout();
+  virtual int32_t InitPlayout() RTC_LOCKS_EXCLUDED(_critSect);
   virtual bool PlayoutIsInitialized() const;
   virtual int32_t RecordingIsAvailable(bool& available);
-  virtual int32_t InitRecording();
+  virtual int32_t InitRecording() RTC_LOCKS_EXCLUDED(_critSect);
   virtual bool RecordingIsInitialized() const;
 
   // Audio transport control
-  virtual int32_t StartPlayout();
-  virtual int32_t StopPlayout();
+  virtual int32_t StartPlayout() RTC_LOCKS_EXCLUDED(_critSect);
+  virtual int32_t StopPlayout() RTC_LOCKS_EXCLUDED(_critSect);
   virtual bool Playing() const;
-  virtual int32_t StartRecording();
-  virtual int32_t StopRecording();
+  virtual int32_t StartRecording() RTC_LOCKS_EXCLUDED(_critSect);
+  virtual int32_t StopRecording() RTC_LOCKS_EXCLUDED(_critSect);
   virtual bool Recording() const;
 
   // Audio mixer initialization
-  virtual int32_t InitSpeaker();
+  virtual int32_t InitSpeaker() RTC_LOCKS_EXCLUDED(_critSect);
   virtual bool SpeakerIsInitialized() const;
-  virtual int32_t InitMicrophone();
+  virtual int32_t InitMicrophone() RTC_LOCKS_EXCLUDED(_critSect);
   virtual bool MicrophoneIsInitialized() const;
 
   // Speaker volume controls
@@ -147,9 +148,13 @@ class AudioDeviceMac : public AudioDeviceGeneric {
   // Delay information and control
   virtual int32_t PlayoutDelay(uint16_t& delayMS) const;
 
-  virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
+  virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer)
+      RTC_LOCKS_EXCLUDED(_critSect);
 
  private:
+  int32_t InitSpeakerLocked() RTC_EXCLUSIVE_LOCKS_REQUIRED(_critSect);
+  int32_t InitMicrophoneLocked() RTC_EXCLUSIVE_LOCKS_REQUIRED(_critSect);
+
   virtual int32_t MicrophoneIsAvailable(bool& available);
   virtual int32_t SpeakerIsAvailable(bool& available);
 
@@ -229,13 +234,15 @@ class AudioDeviceMac : public AudioDeviceGeneric {
   OSStatus implDeviceIOProc(const AudioBufferList* inputData,
                             const AudioTimeStamp* inputTime,
                             AudioBufferList* outputData,
-                            const AudioTimeStamp* outputTime);
+                            const AudioTimeStamp* outputTime)
+      RTC_LOCKS_EXCLUDED(_critSect);
 
   OSStatus implOutConverterProc(UInt32* numberDataPackets,
                                 AudioBufferList* data);
 
   OSStatus implInDeviceIOProc(const AudioBufferList* inputData,
-                              const AudioTimeStamp* inputTime);
+                              const AudioTimeStamp* inputTime)
+      RTC_LOCKS_EXCLUDED(_critSect);
 
   OSStatus implInConverterProc(UInt32* numberDataPackets,
                                AudioBufferList* data);

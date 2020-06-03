@@ -21,29 +21,29 @@ namespace webrtc {
 
 class AudioMixerManagerMac {
  public:
-  int32_t OpenSpeaker(AudioDeviceID deviceID);
-  int32_t OpenMicrophone(AudioDeviceID deviceID);
-  int32_t SetSpeakerVolume(uint32_t volume);
+  int32_t OpenSpeaker(AudioDeviceID deviceID) RTC_LOCKS_EXCLUDED(_critSect);
+  int32_t OpenMicrophone(AudioDeviceID deviceID) RTC_LOCKS_EXCLUDED(_critSect);
+  int32_t SetSpeakerVolume(uint32_t volume) RTC_LOCKS_EXCLUDED(_critSect);
   int32_t SpeakerVolume(uint32_t& volume) const;
   int32_t MaxSpeakerVolume(uint32_t& maxVolume) const;
   int32_t MinSpeakerVolume(uint32_t& minVolume) const;
   int32_t SpeakerVolumeIsAvailable(bool& available);
   int32_t SpeakerMuteIsAvailable(bool& available);
-  int32_t SetSpeakerMute(bool enable);
+  int32_t SetSpeakerMute(bool enable) RTC_LOCKS_EXCLUDED(_critSect);
   int32_t SpeakerMute(bool& enabled) const;
   int32_t StereoPlayoutIsAvailable(bool& available);
   int32_t StereoRecordingIsAvailable(bool& available);
   int32_t MicrophoneMuteIsAvailable(bool& available);
-  int32_t SetMicrophoneMute(bool enable);
+  int32_t SetMicrophoneMute(bool enable) RTC_LOCKS_EXCLUDED(_critSect);
   int32_t MicrophoneMute(bool& enabled) const;
   int32_t MicrophoneVolumeIsAvailable(bool& available);
-  int32_t SetMicrophoneVolume(uint32_t volume);
+  int32_t SetMicrophoneVolume(uint32_t volume) RTC_LOCKS_EXCLUDED(_critSect);
   int32_t MicrophoneVolume(uint32_t& volume) const;
   int32_t MaxMicrophoneVolume(uint32_t& maxVolume) const;
   int32_t MinMicrophoneVolume(uint32_t& minVolume) const;
-  int32_t Close();
-  int32_t CloseSpeaker();
-  int32_t CloseMicrophone();
+  int32_t Close() RTC_LOCKS_EXCLUDED(_critSect);
+  int32_t CloseSpeaker() RTC_LOCKS_EXCLUDED(_critSect);
+  int32_t CloseMicrophone() RTC_LOCKS_EXCLUDED(_critSect);
   bool SpeakerIsInitialized() const;
   bool MicrophoneIsInitialized() const;
 
@@ -52,6 +52,8 @@ class AudioMixerManagerMac {
   ~AudioMixerManagerMac();
 
  private:
+  int32_t CloseSpeakerLocked() RTC_EXCLUSIVE_LOCKS_REQUIRED(_critSect);
+  int32_t CloseMicrophoneLocked() RTC_EXCLUSIVE_LOCKS_REQUIRED(_critSect);
   static void logCAMsg(const rtc::LoggingSeverity sev,
                        const char* msg,
                        const char* err);
