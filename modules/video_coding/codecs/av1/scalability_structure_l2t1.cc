@@ -52,7 +52,7 @@ FrameDependencyStructure ScalabilityStructureL2T1::DependencyStructure() const {
   structure.templates = {
       Builder().S(0).Dtis("SR").Fdiffs({2}).ChainDiffs({2, 1}).Build(),
       Builder().S(0).Dtis("SS").ChainDiffs({0, 0}).Build(),
-      Builder().S(1).Dtis("-R").Fdiffs({1, 2}).ChainDiffs({1, 2}).Build(),
+      Builder().S(1).Dtis("-R").Fdiffs({2, 1}).ChainDiffs({1, 1}).Build(),
       Builder().S(1).Dtis("-S").Fdiffs({1}).ChainDiffs({1, 1}).Build(),
   };
   return structure;

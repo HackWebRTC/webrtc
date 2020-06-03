@@ -110,6 +110,9 @@ if (rtc_include_tests) {
     deps = [
       ":scalability_structures",
       ":scalable_video_controller",
+      "../..:chain_diff_calculator",
+      "../..:frame_dependencies_calculator",
+      "../../../../api/video:video_frame_type",
       "../../../../test:test_support",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
