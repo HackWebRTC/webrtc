@@ -604,7 +604,8 @@ bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
     if (!media_channel()->RemoveSendStream(old_stream.first_ssrc())) {
       rtc::StringBuilder desc;
       desc << "Failed to remove send stream with ssrc "
-           << old_stream.first_ssrc() << ".";
+           << old_stream.first_ssrc() << " from m-section with mid='"
+           << content_name() << "'.";
       SafeSetError(desc.str(), error_desc);
       ret = false;
     }
@@ -630,7 +631,8 @@ bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
     if (new_stream.has_ssrcs() && new_stream.has_rids()) {
       rtc::StringBuilder desc;
       desc << "Failed to add send stream: " << new_stream.first_ssrc()
-           << ". Stream has both SSRCs and RIDs.";
+           << " into m-section with mid='" << content_name()
+           << "'. Stream has both SSRCs and RIDs.";
       SafeSetError(desc.str(), error_desc);
       ret = false;
       continue;
@@ -649,7 +651,8 @@ bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
                        << " into " << ToString();
     } else {
       rtc::StringBuilder desc;
-      desc << "Failed to add send stream ssrc: " << new_stream.first_ssrc();
+      desc << "Failed to add send stream ssrc: " << new_stream.first_ssrc()
+           << " into m-section with mid='" << content_name() << "'";
       SafeSetError(desc.str(), error_desc);
       ret = false;
     }
@@ -679,7 +682,8 @@ bool BaseChannel::UpdateRemoteStreams_w(
       } else {
         rtc::StringBuilder desc;
         desc << "Failed to remove remote stream with ssrc "
-             << old_stream.first_ssrc() << ".";
+             << old_stream.first_ssrc() << " from m-section with mid='"
+             << content_name() << "'.";
         SafeSetError(desc.str(), error_desc);
         ret = false;
       }
@@ -862,8 +866,11 @@ bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
       audio, rtp_header_extensions,
       webrtc::RtpTransceiverDirectionHasRecv(audio->direction()), &recv_params);
   if (!media_channel()->SetRecvParameters(recv_params)) {
-    SafeSetError("Failed to set local audio description recv parameters.",
-                 error_desc);
+    SafeSetError(
+        "Failed to set local audio description recv parameters for m-section "
+        "with mid='" +
+            content_name() + "'.",
+        error_desc);
     return false;
   }
 
@@ -885,7 +892,11 @@ bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
   // description too (without a remote description, we won't be able
   // to send them anyway).
   if (!UpdateLocalStreams_w(audio->streams(), type, error_desc)) {
-    SafeSetError("Failed to set local audio description streams.", error_desc);
+    SafeSetError(
+        "Failed to set local audio description streams for m-section with "
+        "mid='" +
+            content_name() + "'.",
+        error_desc);
     return false;
   }
 
@@ -920,8 +931,11 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
 
   bool parameters_applied = media_channel()->SetSendParameters(send_params);
   if (!parameters_applied) {
-    SafeSetError("Failed to set remote audio description send parameters.",
-                 error_desc);
+    SafeSetError(
+        "Failed to set remote audio description send parameters for m-section "
+        "with mid='" +
+            content_name() + "'.",
+        error_desc);
     return false;
   }
   last_send_params_ = send_params;
@@ -942,7 +956,11 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
   // description too (without a local description, we won't be able to
   // recv them anyway).
   if (!UpdateRemoteStreams_w(audio->streams(), type, error_desc)) {
-    SafeSetError("Failed to set remote audio description streams.", error_desc);
+    SafeSetError(
+        "Failed to set remote audio description streams for m-section with "
+        "mid='" +
+            content_name() + "'.",
+        error_desc);
     return false;
   }
 
@@ -1030,7 +1048,9 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
           needs_send_params_update = true;
         } else if (recv_codec->packetization != send_codec.packetization) {
           SafeSetError(
-              "Failed to set local answer due to invalid codec packetization.",
+              "Failed to set local answer due to invalid codec packetization "
+              "specified in m-section with mid='" +
+                  content_name() + "'.",
               error_desc);
           return false;
         }
@@ -1039,8 +1059,11 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
   }
 
   if (!media_channel()->SetRecvParameters(recv_params)) {
-    SafeSetError("Failed to set local video description recv parameters.",
-                 error_desc);
+    SafeSetError(
+        "Failed to set local video description recv parameters for m-section "
+        "with mid='" +
+            content_name() + "'.",
+        error_desc);
     return false;
   }
 
@@ -1059,7 +1082,9 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
 
   if (needs_send_params_update) {
     if (!media_channel()->SetSendParameters(send_params)) {
-      SafeSetError("Failed to set send parameters.", error_desc);
+      SafeSetError("Failed to set send parameters for m-section with mid='" +
+                       content_name() + "'.",
+                   error_desc);
       return false;
     }
     last_send_params_ = send_params;
@@ -1070,7 +1095,11 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
   // description too (without a remote description, we won't be able
   // to send them anyway).
   if (!UpdateLocalStreams_w(video->streams(), type, error_desc)) {
-    SafeSetError("Failed to set local video description streams.", error_desc);
+    SafeSetError(
+        "Failed to set local video description streams for m-section with "
+        "mid='" +
+            content_name() + "'.",
+        error_desc);
     return false;
   }
 
@@ -1118,7 +1147,9 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
           needs_recv_params_update = true;
         } else if (send_codec->packetization != recv_codec.packetization) {
           SafeSetError(
-              "Failed to set remote answer due to invalid codec packetization.",
+              "Failed to set remote answer due to invalid codec packetization "
+              "specifid in m-section with mid='" +
+                  content_name() + "'.",
               error_desc);
           return false;
         }
@@ -1127,15 +1158,20 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
   }
 
   if (!media_channel()->SetSendParameters(send_params)) {
-    SafeSetError("Failed to set remote video description send parameters.",
-                 error_desc);
+    SafeSetError(
+        "Failed to set remote video description send parameters for m-section "
+        "with mid='" +
+            content_name() + "'.",
+        error_desc);
     return false;
   }
   last_send_params_ = send_params;
 
   if (needs_recv_params_update) {
     if (!media_channel()->SetRecvParameters(recv_params)) {
-      SafeSetError("Failed to set recv parameters.", error_desc);
+      SafeSetError("Failed to set recv parameters for m-section with mid='" +
+                       content_name() + "'.",
+                   error_desc);
       return false;
     }
     last_recv_params_ = recv_params;
@@ -1157,7 +1193,11 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
   // description too (without a local description, we won't be able to
   // recv them anyway).
   if (!UpdateRemoteStreams_w(video->streams(), type, error_desc)) {
-    SafeSetError("Failed to set remote video description streams.", error_desc);
+    SafeSetError(
+        "Failed to set remote video description streams for m-section with "
+        "mid='" +
+            content_name() + "'.",
+        error_desc);
     return false;
   }
   set_remote_content_direction(content->direction());
@@ -1248,8 +1288,11 @@ bool RtpDataChannel::SetLocalContent_w(const MediaContentDescription* content,
       data, rtp_header_extensions,
       webrtc::RtpTransceiverDirectionHasRecv(data->direction()), &recv_params);
   if (!media_channel()->SetRecvParameters(recv_params)) {
-    SafeSetError("Failed to set remote data description recv parameters.",
-                 error_desc);
+    SafeSetError(
+        "Failed to set remote data description recv parameters for m-section "
+        "with mid='" +
+            content_name() + "'.",
+        error_desc);
     return false;
   }
   for (const DataCodec& codec : data->codecs()) {
@@ -1268,7 +1311,11 @@ bool RtpDataChannel::SetLocalContent_w(const MediaContentDescription* content,
   // description too (without a remote description, we won't be able
   // to send them anyway).
   if (!UpdateLocalStreams_w(data->streams(), type, error_desc)) {
-    SafeSetError("Failed to set local data description streams.", error_desc);
+    SafeSetError(
+        "Failed to set local data description streams for m-section with "
+        "mid='" +
+            content_name() + "'.",
+        error_desc);
     return false;
   }
 
@@ -1310,8 +1357,11 @@ bool RtpDataChannel::SetRemoteContent_w(const MediaContentDescription* content,
       data, rtp_header_extensions,
       webrtc::RtpTransceiverDirectionHasRecv(data->direction()), &send_params);
   if (!media_channel()->SetSendParameters(send_params)) {
-    SafeSetError("Failed to set remote data description send parameters.",
-                 error_desc);
+    SafeSetError(
+        "Failed to set remote data description send parameters for m-section "
+        "with mid='" +
+            content_name() + "'.",
+        error_desc);
     return false;
   }
   last_send_params_ = send_params;
@@ -1321,7 +1371,11 @@ bool RtpDataChannel::SetRemoteContent_w(const MediaContentDescription* content,
   // description too (without a local description, we won't be able to
   // recv them anyway).
   if (!UpdateRemoteStreams_w(data->streams(), type, error_desc)) {
-    SafeSetError("Failed to set remote data description streams.", error_desc);
+    SafeSetError(
+        "Failed to set remote data description streams for m-section with "
+        "mid='" +
+            content_name() + "'.",
+        error_desc);
     return false;
   }
 
