@@ -34,6 +34,7 @@
 #include "api/test/mock_audio_mixer.h"
 #include "api/test/mock_frame_decryptor.h"
 #include "api/test/mock_frame_encryptor.h"
+#include "api/test/mock_peer_connection_factory_interface.h"
 #include "api/test/mock_peerconnectioninterface.h"
 #include "api/test/mock_rtpreceiver.h"
 #include "api/test/mock_rtpsender.h"

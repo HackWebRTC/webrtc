@@ -872,6 +872,17 @@ if (rtc_include_tests) {
     ]
   }
 
+  rtc_source_set("mock_peer_connection_factory_interface") {
+    visibility = [ "*" ]
+    testonly = true
+    sources = [ "test/mock_peer_connection_factory_interface.h" ]
+
+    deps = [
+      ":libjingle_peerconnection_api",
+      "../test:test_support",
+    ]
+  }
+
   rtc_source_set("mock_rtp") {
     testonly = true
     sources = [
@@ -1059,6 +1070,7 @@ if (rtc_include_tests) {
       ":mock_audio_mixer",
       ":mock_frame_decryptor",
       ":mock_frame_encryptor",
+      ":mock_peer_connection_factory_interface",
       ":mock_peerconnectioninterface",
       ":mock_rtp",
       ":mock_transformable_video_frame",
