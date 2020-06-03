@@ -78,6 +78,7 @@ LIB_TO_LICENSES_DICT = {
     # Compile time dependencies, no license needed:
     'yasm': [],
     'ow2_asm': [],
+    'jdk': [],
 }
 
 # Third_party library _regex_ to licences mapping. Keys are regular expression
