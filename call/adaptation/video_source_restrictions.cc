@@ -13,6 +13,7 @@
 #include <limits>
 
 #include "rtc_base/checks.h"
+#include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
 
@@ -34,6 +35,19 @@ VideoSourceRestrictions::VideoSourceRestrictions(
   RTC_DCHECK(!max_frame_rate_.has_value() ||
              max_frame_rate_.value() < std::numeric_limits<int>::max());
   RTC_DCHECK(!max_frame_rate_.has_value() || max_frame_rate_.value() > 0.0);
+}
+
+std::string VideoSourceRestrictions::ToString() const {
+  rtc::StringBuilder ss;
+  ss << "{";
+  if (max_frame_rate_)
+    ss << " max_fps=" << max_frame_rate_.value();
+  if (max_pixels_per_frame_)
+    ss << " max_pixels_per_frame=" << max_pixels_per_frame_.value();
+  if (target_pixels_per_frame_)
+    ss << " target_pixels_per_frame=" << target_pixels_per_frame_.value();
+  ss << " }";
+  return ss.Release();
 }
 
 const absl::optional<size_t>& VideoSourceRestrictions::max_pixels_per_frame()

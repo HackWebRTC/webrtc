@@ -15,8 +15,8 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/adaptation/resource.h"
 #include "api/scoped_refptr.h"
-#include "call/adaptation/resource.h"
 
 namespace webrtc {
 

@@ -8,10 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "call/adaptation/resource.h"
-
-#include "absl/algorithm/container.h"
-#include "rtc_base/checks.h"
+#include "api/adaptation/resource.h"
 
 namespace webrtc {
 

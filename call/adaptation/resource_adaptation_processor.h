@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/adaptation/resource.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
 #include "api/task_queue/task_queue_base.h"
@@ -24,7 +25,6 @@
 #include "api/video/video_stream_encoder_observer.h"
 #include "call/adaptation/adaptation_constraint.h"
 #include "call/adaptation/adaptation_listener.h"
-#include "call/adaptation/resource.h"
 #include "call/adaptation/resource_adaptation_processor_interface.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "call/adaptation/video_stream_adapter.h"

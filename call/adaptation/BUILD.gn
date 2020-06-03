@@ -16,8 +16,6 @@ rtc_library("resource_adaptation") {
     "adaptation_listener.h",
     "encoder_settings.cc",
     "encoder_settings.h",
-    "resource.cc",
-    "resource.h",
     "resource_adaptation_processor.cc",
     "resource_adaptation_processor.h",
     "resource_adaptation_processor_interface.cc",
@@ -34,6 +32,7 @@ rtc_library("resource_adaptation") {
   deps = [
     "../../api:rtp_parameters",
     "../../api:scoped_refptr",
+    "../../api/adaptation:resource_adaptation_api",
     "../../api/task_queue:task_queue",
     "../../api/video:video_adaptation",
     "../../api/video:video_frame",
@@ -66,6 +65,7 @@ if (rtc_include_tests) {
       ":resource_adaptation",
       ":resource_adaptation_test_utilities",
       "../../api:scoped_refptr",
+      "../../api/adaptation:resource_adaptation_api",
       "../../api/task_queue:default_task_queue_factory",
       "../../api/task_queue:task_queue",
       "../../api/video:video_adaptation",
@@ -98,6 +98,7 @@ if (rtc_include_tests) {
     deps = [
       ":resource_adaptation",
       "../../api:scoped_refptr",
+      "../../api/adaptation:resource_adaptation_api",
       "../../api/task_queue:task_queue",
       "../../api/video:video_stream_encoder",
       "../../rtc_base:rtc_base_approved",

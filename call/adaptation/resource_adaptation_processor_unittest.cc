@@ -10,9 +10,9 @@
 
 #include "call/adaptation/resource_adaptation_processor.h"
 
+#include "api/adaptation/resource.h"
 #include "api/scoped_refptr.h"
 #include "api/video/video_adaptation_counters.h"
-#include "call/adaptation/resource.h"
 #include "call/adaptation/resource_adaptation_processor_interface.h"
 #include "call/adaptation/test/fake_adaptation_constraint.h"
 #include "call/adaptation/test/fake_adaptation_listener.h"

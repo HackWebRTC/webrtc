@@ -19,10 +19,10 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/base/macros.h"
+#include "api/adaptation/resource.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/video/video_adaptation_reason.h"
 #include "api/video/video_source_interface.h"
-#include "call/adaptation/resource.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
