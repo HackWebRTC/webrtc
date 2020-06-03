@@ -11,6 +11,33 @@ if (is_android) {
   import("//build/config/android/config.gni")
   import("//build/config/android/rules.gni")
 }
+import("//third_party/google_benchmark/buildconfig.gni")
+
+rtc_library("yield") {
+  sources = [
+    "yield.cc",
+    "yield.h",
+  ]
+  deps = []
+}
+
+rtc_library("mutex") {
+  sources = [
+    "mutex.cc",
+    "mutex.h",
+    "mutex_abseil.h",
+    "mutex_critical_section.h",
+    "mutex_pthread.h",
+  ]
+  deps = [
+    ":yield",
+    "..:checks",
+    "..:macromagic",
+    "../system:unused",
+    "//third_party/abseil-cpp/absl/base:core_headers",
+    "//third_party/abseil-cpp/absl/synchronization",
+  ]
+}
 
 rtc_library("rw_lock_wrapper") {
   public = [ "rw_lock_wrapper.h" ]
@@ -60,11 +87,29 @@ rtc_library("yield_policy") {
 if (rtc_include_tests) {
   rtc_library("synchronization_unittests") {
     testonly = true
-    sources = [ "yield_policy_unittest.cc" ]
+    sources = [
+      "mutex_unittest.cc",
+      "yield_policy_unittest.cc",
+    ]
     deps = [
+      ":mutex",
+      ":yield",
       ":yield_policy",
+      "..:checks",
+      "..:macromagic",
+      "..:rtc_base",
       "..:rtc_event",
       "../../test:test_support",
+      "//third_party/google_benchmark",
+    ]
+  }
+
+  rtc_library("mutex_benchmark") {
+    testonly = true
+    sources = [ "mutex_benchmark.cc" ]
+    deps = [
+      ":mutex",
+      "//third_party/google_benchmark",
     ]
   }
 

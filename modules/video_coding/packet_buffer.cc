@@ -78,7 +78,7 @@ PacketBuffer::~PacketBuffer() {
 PacketBuffer::InsertResult PacketBuffer::InsertPacket(
     std::unique_ptr<PacketBuffer::Packet> packet) {
   PacketBuffer::InsertResult result;
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
 
   uint16_t seq_num = packet->seq_num;
   size_t index = seq_num % buffer_.size();
@@ -136,7 +136,7 @@ PacketBuffer::InsertResult PacketBuffer::InsertPacket(
 }
 
 void PacketBuffer::ClearTo(uint16_t seq_num) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   // We have already cleared past this sequence number, no need to do anything.
   if (is_cleared_to_first_seq_num_ &&
       AheadOf<uint16_t>(first_seq_num_, seq_num)) {
@@ -173,25 +173,25 @@ void PacketBuffer::ClearTo(uint16_t seq_num) {
 }
 
 void PacketBuffer::Clear() {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   ClearInternal();
 }
 
 PacketBuffer::InsertResult PacketBuffer::InsertPadding(uint16_t seq_num) {
   PacketBuffer::InsertResult result;
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   UpdateMissingPackets(seq_num);
   result.packets = FindFrames(static_cast<uint16_t>(seq_num + 1));
   return result;
 }
 
 absl::optional<int64_t> PacketBuffer::LastReceivedPacketMs() const {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   return last_received_packet_ms_;
 }
 
 absl::optional<int64_t> PacketBuffer::LastReceivedKeyframePacketMs() const {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   return last_received_keyframe_packet_ms_;
 }
 

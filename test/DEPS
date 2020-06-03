@@ -72,5 +72,8 @@ specific_include_rules = {
   ],
   ".*test_video_capturer_video_track_source.h": [
     "+pc",
+  ],
+  "benchmark_main\.cc": [
+    "+benchmark",
   ]
 }

@@ -15,6 +15,7 @@
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/platform_thread_types.h"
+#include "rtc_base/synchronization/yield.h"
 #include "rtc_base/system/unused.h"
 
 // TODO(tommi): Split this file up to per-platform implementation files.
@@ -217,19 +218,8 @@ CritScope::~CritScope() {
 }
 
 void GlobalLock::Lock() {
-#if !defined(WEBRTC_WIN) && \
-    (!defined(WEBRTC_MAC) || RTC_USE_NATIVE_MUTEX_ON_MAC)
-  const struct timespec ts_null = {0};
-#endif
-
   while (AtomicOps::CompareAndSwap(&lock_acquired_, 0, 1)) {
-#if defined(WEBRTC_WIN)
-    ::Sleep(0);
-#elif defined(WEBRTC_MAC) && !RTC_USE_NATIVE_MUTEX_ON_MAC
-    sched_yield();
-#else
-    nanosleep(&ts_null, nullptr);
-#endif
+    webrtc::YieldCurrentThread();
   }
 }
 

@@ -414,6 +414,13 @@ if (rtc_include_tests) {
     ]
   }
 
+  rtc_library("benchmark_main") {
+    testonly = true
+    sources = [ "benchmark_main.cc" ]
+
+    deps = [ "//third_party/google_benchmark" ]
+  }
+
   rtc_library("test_support_test_artifacts") {
     testonly = true
     sources = [
