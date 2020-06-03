@@ -18,6 +18,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "modules/rtp_rtcp/source/time_util.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -67,7 +68,7 @@ class RtpSenderAudioTest : public ::testing::Test {
  public:
   RtpSenderAudioTest()
       : fake_clock_(kStartTime),
-        rtp_module_(RtpRtcp::Create([&] {
+        rtp_module_(ModuleRtpRtcpImpl2::Create([&] {
           RtpRtcp::Configuration config;
           config.audio = true;
           config.clock = &fake_clock_;

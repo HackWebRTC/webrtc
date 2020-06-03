@@ -22,8 +22,8 @@
 #include "call/rtp_stream_receiver_controller_interface.h"
 #include "modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
@@ -132,7 +132,7 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
   configuration.outgoing_transport = config.rtcp_send_transport;
   configuration.rtt_stats = rtt_stats;
   configuration.local_media_ssrc = config.local_ssrc;
-  return RtpRtcp::Create(configuration);
+  return ModuleRtpRtcpImpl2::Create(configuration);
 }
 
 }  // namespace

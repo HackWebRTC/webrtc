@@ -19,9 +19,9 @@
 #include "call/rtp_stream_receiver_controller.h"
 #include "call/rtx_receive_stream.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "rtc_base/rate_limiter.h"
 #include "test/gtest.h"
@@ -134,7 +134,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     configuration.retransmission_rate_limiter = &retransmission_rate_limiter_;
     configuration.local_media_ssrc = kTestSsrc;
     configuration.rtx_send_ssrc = kTestRtxSsrc;
-    rtp_rtcp_module_ = RtpRtcp::Create(configuration);
+    rtp_rtcp_module_ = ModuleRtpRtcpImpl2::Create(configuration);
     FieldTrialBasedConfig field_trials;
     RTPSenderVideo::Config video_config;
     video_config.clock = &fake_clock;

@@ -14,6 +14,7 @@
 #include "api/task_queue/default_task_queue_factory.h"
 #include "modules/audio_mixer/sine_wave_generator.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "rtc_base/event.h"
 #include "rtc_base/logging.h"
 #include "test/gmock.h"
@@ -36,7 +37,7 @@ std::unique_ptr<RtpRtcp> CreateRtpStack(Clock* clock,
   rtp_config.rtcp_report_interval_ms = 5000;
   rtp_config.outgoing_transport = transport;
   rtp_config.local_media_ssrc = remote_ssrc;
-  auto rtp_rtcp = RtpRtcp::Create(rtp_config);
+  auto rtp_rtcp = ModuleRtpRtcpImpl2::Create(rtp_config);
   rtp_rtcp->SetSendingMediaStatus(false);
   rtp_rtcp->SetRTCPStatus(RtcpMode::kCompound);
   return rtp_rtcp;

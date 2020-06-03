@@ -24,7 +24,6 @@
 #include "common_video/generic_frame_descriptor/generic_frame_info.h"
 #include "modules/rtp_rtcp/include/rtp_cvo.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_dependency_descriptor_extension.h"
 #include "modules/rtp_rtcp/source/rtp_descriptor_authentication.h"
@@ -33,6 +32,7 @@
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor_extension.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "modules/rtp_rtcp/source/time_util.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/rate_limiter.h"
@@ -169,7 +169,7 @@ class RtpSenderVideoTest : public ::testing::TestWithParam<bool> {
       : field_trials_(GetParam()),
         fake_clock_(kStartTime),
         retransmission_rate_limiter_(&fake_clock_, 1000),
-        rtp_module_(RtpRtcp::Create([&] {
+        rtp_module_(ModuleRtpRtcpImpl2::Create([&] {
           RtpRtcp::Configuration config;
           config.clock = &fake_clock_;
           config.outgoing_transport = &transport_;
@@ -920,7 +920,7 @@ class RtpSenderVideoWithFrameTransformerTest : public ::testing::Test {
   RtpSenderVideoWithFrameTransformerTest()
       : fake_clock_(kStartTime),
         retransmission_rate_limiter_(&fake_clock_, 1000),
-        rtp_module_(RtpRtcp::Create([&] {
+        rtp_module_(ModuleRtpRtcpImpl2::Create([&] {
           RtpRtcp::Configuration config;
           config.clock = &fake_clock_;
           config.outgoing_transport = &transport_;

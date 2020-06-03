@@ -16,6 +16,7 @@
 #include "api/audio_codecs/audio_format.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
@@ -51,7 +52,7 @@ AudioChannel::AudioChannel(
   rtp_config.outgoing_transport = transport;
   rtp_config.local_media_ssrc = local_ssrc;
 
-  rtp_rtcp_ = RtpRtcp::Create(rtp_config);
+  rtp_rtcp_ = ModuleRtpRtcpImpl2::Create(rtp_config);
 
   rtp_rtcp_->SetSendingMediaStatus(false);
   rtp_rtcp_->SetRTCPStatus(RtcpMode::kCompound);

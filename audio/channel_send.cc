@@ -29,6 +29,7 @@
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_processing/rms_level.h"
 #include "modules/pacing/packet_router.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
@@ -530,7 +531,7 @@ ChannelSend::ChannelSend(
 
   configuration.local_media_ssrc = ssrc;
 
-  _rtpRtcpModule = RtpRtcp::Create(configuration);
+  _rtpRtcpModule = ModuleRtpRtcpImpl2::Create(configuration);
   _rtpRtcpModule->SetSendingMediaStatus(false);
 
   rtp_sender_audio_ = std::make_unique<RTPSenderAudio>(

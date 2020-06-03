@@ -48,6 +48,14 @@ ModuleRtpRtcpImpl::RtpSenderContext::RtpSenderContext(
           &packet_history,
           config.paced_sender ? config.paced_sender : &non_paced_sender) {}
 
+std::unique_ptr<RtpRtcp> RtpRtcp::DEPRECATED_Create(
+    const Configuration& configuration) {
+  RTC_DCHECK(configuration.clock);
+  RTC_LOG(LS_ERROR)
+      << "*********** USING WebRTC INTERNAL IMPLEMENTATION DETAILS ***********";
+  return std::make_unique<ModuleRtpRtcpImpl>(configuration);
+}
+
 ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
     : rtcp_sender_(configuration),
       rtcp_receiver_(configuration, this),

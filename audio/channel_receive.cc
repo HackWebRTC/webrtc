@@ -33,11 +33,11 @@
 #include "modules/pacing/packet_router.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/absolute_capture_time_receiver.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/critical_section.h"
@@ -507,7 +507,7 @@ ChannelReceive::ChannelReceive(
   if (frame_transformer)
     InitFrameTransformerDelegate(std::move(frame_transformer));
 
-  _rtpRtcpModule = RtpRtcp::Create(configuration);
+  _rtpRtcpModule = ModuleRtpRtcpImpl2::Create(configuration);
   _rtpRtcpModule->SetSendingMediaStatus(false);
   _rtpRtcpModule->SetRemoteSSRC(remote_ssrc_);
 

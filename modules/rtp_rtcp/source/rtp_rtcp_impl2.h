@@ -24,13 +24,13 @@
 #include "api/video/video_bitrate_allocation.h"
 #include "modules/include/module_fec_types.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"  // RTCPPacketType
 #include "modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
 #include "modules/rtp_rtcp/source/rtcp_receiver.h"
 #include "modules/rtp_rtcp/source/rtcp_sender.h"
 #include "modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "modules/rtp_rtcp/source/rtp_sender_egress.h"
 #include "rtc_base/critical_section.h"
@@ -48,6 +48,14 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcp,
  public:
   explicit ModuleRtpRtcpImpl2(const RtpRtcp::Configuration& configuration);
   ~ModuleRtpRtcpImpl2() override;
+
+  // This method is provided to easy with migrating away from the
+  // RtpRtcp::Create factory method. Since this is an internal implementation
+  // detail though, creating an instance of ModuleRtpRtcpImpl2 directly should
+  // be fine.
+  static std::unique_ptr<RtpRtcp> Create(const Configuration& configuration);
+
+  // TODO(tommi): Make implementation private?
 
   // Returns the number of milliseconds until the module want a worker thread to
   // call Process.

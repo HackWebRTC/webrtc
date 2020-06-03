@@ -48,11 +48,6 @@ ModuleRtpRtcpImpl2::RtpSenderContext::RtpSenderContext(
           &packet_history,
           config.paced_sender ? config.paced_sender : &non_paced_sender) {}
 
-std::unique_ptr<RtpRtcp> RtpRtcp::Create(const Configuration& configuration) {
-  RTC_DCHECK(configuration.clock);
-  return std::make_unique<ModuleRtpRtcpImpl2>(configuration);
-}
-
 ModuleRtpRtcpImpl2::ModuleRtpRtcpImpl2(const Configuration& configuration)
     : rtcp_sender_(configuration),
       rtcp_receiver_(configuration, this),
@@ -84,6 +79,14 @@ ModuleRtpRtcpImpl2::ModuleRtpRtcpImpl2(const Configuration& configuration)
 
 ModuleRtpRtcpImpl2::~ModuleRtpRtcpImpl2() {
   RTC_DCHECK_RUN_ON(&construction_thread_checker_);
+}
+
+// static
+std::unique_ptr<RtpRtcp> ModuleRtpRtcpImpl2::Create(
+    const Configuration& configuration) {
+  RTC_DCHECK(configuration.clock);
+  RTC_DCHECK(TaskQueueBase::Current());
+  return std::make_unique<ModuleRtpRtcpImpl2>(configuration);
 }
 
 // Returns the number of milliseconds until the module want a worker thread

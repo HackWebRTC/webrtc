@@ -37,6 +37,7 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/mock_frame_transformer.h"
+#include "test/time_controller/simulated_task_queue.h"
 
 using ::testing::_;
 using ::testing::ElementsAre;
@@ -236,6 +237,9 @@ class RtpVideoStreamReceiver2Test : public ::testing::Test {
     config.rtp.red_payload_type = kRedPayloadType;
     return config;
   }
+
+  TokenTaskQueue task_queue_;
+  TokenTaskQueue::CurrentTaskQueueSetter task_queue_setter_{&task_queue_};
 
   const webrtc::test::ScopedFieldTrials override_field_trials_;
   VideoReceiveStream::Config config_;
