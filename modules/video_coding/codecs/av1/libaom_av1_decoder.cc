@@ -127,7 +127,7 @@ int32_t LibaomAv1Decoder::Decode(const EncodedImage& encoded_image,
 
     // Return decoded frame data.
     int qp;
-    ret = aom_codec_control_(&context_, AOMD_GET_LAST_QUANTIZER, &qp);
+    ret = aom_codec_control(&context_, AOMD_GET_LAST_QUANTIZER, &qp);
     if (ret != AOM_CODEC_OK) {
       RTC_LOG(LS_WARNING) << "LibaomAv1Decoder::Decode returned " << ret
                           << " on control AOME_GET_LAST_QUANTIZER.";
