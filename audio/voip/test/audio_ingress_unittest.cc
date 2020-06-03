@@ -39,7 +39,7 @@ class AudioIngressTest : public ::testing::Test {
       : fake_clock_(123456789), wave_generator_(1000.0, kAudioLevel) {
     receive_statistics_ = ReceiveStatistics::Create(&fake_clock_);
 
-    RtpRtcp::Configuration rtp_config;
+    RtpRtcpInterface::Configuration rtp_config;
     rtp_config.clock = &fake_clock_;
     rtp_config.audio = true;
     rtp_config.receive_statistics = receive_statistics_.get();
@@ -95,7 +95,7 @@ class AudioIngressTest : public ::testing::Test {
   SineWaveGenerator wave_generator_;
   NiceMock<MockTransport> transport_;
   std::unique_ptr<ReceiveStatistics> receive_statistics_;
-  std::unique_ptr<RtpRtcp> rtp_rtcp_;
+  std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp_;
   rtc::scoped_refptr<AudioEncoderFactory> encoder_factory_;
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
   std::unique_ptr<TaskQueueFactory> task_queue_factory_;

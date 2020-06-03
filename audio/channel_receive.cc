@@ -216,7 +216,7 @@ class ChannelReceive : public ChannelReceiveInterface {
   std::map<uint8_t, int> payload_type_frequencies_;
 
   std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
-  std::unique_ptr<RtpRtcp> _rtpRtcpModule;
+  std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp_;
   const uint32_t remote_ssrc_;
 
   // Info for GetSyncInfo is updated on network or worker thread, and queried on
@@ -297,7 +297,7 @@ void ChannelReceive::OnReceivedPayloadData(
   }
 
   int64_t round_trip_time = 0;
-  _rtpRtcpModule->RTT(remote_ssrc_, &round_trip_time, NULL, NULL, NULL);
+  rtp_rtcp_->RTT(remote_ssrc_, &round_trip_time, NULL, NULL, NULL);
 
   std::vector<uint16_t> nack_list = acm_receiver_.GetNackList(round_trip_time);
   if (!nack_list.empty()) {
@@ -495,7 +495,7 @@ ChannelReceive::ChannelReceive(
   _outputAudioLevel.ResetLevelFullRange();
 
   rtp_receive_statistics_->EnableRetransmitDetection(remote_ssrc_, true);
-  RtpRtcp::Configuration configuration;
+  RtpRtcpInterface::Configuration configuration;
   configuration.clock = clock;
   configuration.audio = true;
   configuration.receiver_only = true;
@@ -507,14 +507,14 @@ ChannelReceive::ChannelReceive(
   if (frame_transformer)
     InitFrameTransformerDelegate(std::move(frame_transformer));
 
-  _rtpRtcpModule = ModuleRtpRtcpImpl2::Create(configuration);
-  _rtpRtcpModule->SetSendingMediaStatus(false);
-  _rtpRtcpModule->SetRemoteSSRC(remote_ssrc_);
+  rtp_rtcp_ = ModuleRtpRtcpImpl2::Create(configuration);
+  rtp_rtcp_->SetSendingMediaStatus(false);
+  rtp_rtcp_->SetRemoteSSRC(remote_ssrc_);
 
-  _moduleProcessThreadPtr->RegisterModule(_rtpRtcpModule.get(), RTC_FROM_HERE);
+  _moduleProcessThreadPtr->RegisterModule(rtp_rtcp_.get(), RTC_FROM_HERE);
 
   // Ensure that RTCP is enabled for the created channel.
-  _rtpRtcpModule->SetRTCPStatus(RtcpMode::kCompound);
+  rtp_rtcp_->SetRTCPStatus(RtcpMode::kCompound);
 }
 
 ChannelReceive::~ChannelReceive() {
@@ -527,7 +527,7 @@ ChannelReceive::~ChannelReceive() {
   StopPlayout();
 
   if (_moduleProcessThreadPtr)
-    _moduleProcessThreadPtr->DeRegisterModule(_rtpRtcpModule.get());
+    _moduleProcessThreadPtr->DeRegisterModule(rtp_rtcp_.get());
 }
 
 void ChannelReceive::SetSink(AudioSinkInterface* sink) {
@@ -659,7 +659,7 @@ void ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   UpdatePlayoutTimestamp(true, rtc::TimeMillis());
 
   // Deliver RTCP packet to RTP/RTCP module for parsing
-  _rtpRtcpModule->IncomingRtcpPacket(data, length);
+  rtp_rtcp_->IncomingRtcpPacket(data, length);
 
   int64_t rtt = GetRTT();
   if (rtt == 0) {
@@ -670,8 +670,8 @@ void ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   uint32_t ntp_secs = 0;
   uint32_t ntp_frac = 0;
   uint32_t rtp_timestamp = 0;
-  if (0 != _rtpRtcpModule->RemoteNTP(&ntp_secs, &ntp_frac, NULL, NULL,
-                                     &rtp_timestamp)) {
+  if (0 !=
+      rtp_rtcp_->RemoteNTP(&ntp_secs, &ntp_frac, NULL, NULL, &rtp_timestamp)) {
     // Waiting for RTCP.
     return;
   }
@@ -709,14 +709,14 @@ void ChannelReceive::RegisterReceiverCongestionControlObjects(
   RTC_DCHECK(packet_router);
   RTC_DCHECK(!packet_router_);
   constexpr bool remb_candidate = false;
-  packet_router->AddReceiveRtpModule(_rtpRtcpModule.get(), remb_candidate);
+  packet_router->AddReceiveRtpModule(rtp_rtcp_.get(), remb_candidate);
   packet_router_ = packet_router;
 }
 
 void ChannelReceive::ResetReceiverCongestionControlObjects() {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
   RTC_DCHECK(packet_router_);
-  packet_router_->RemoveReceiveRtpModule(_rtpRtcpModule.get());
+  packet_router_->RemoveReceiveRtpModule(rtp_rtcp_.get());
   packet_router_ = nullptr;
 }
 
@@ -781,7 +781,7 @@ void ChannelReceive::SetNACKStatus(bool enable, int max_packets) {
 // Called when we are missing one or more packets.
 int ChannelReceive::ResendPackets(const uint16_t* sequence_numbers,
                                   int length) {
-  return _rtpRtcpModule->SendNACK(sequence_numbers, length);
+  return rtp_rtcp_->SendNACK(sequence_numbers, length);
 }
 
 void ChannelReceive::SetAssociatedSendChannel(
@@ -877,9 +877,9 @@ int ChannelReceive::GetBaseMinimumPlayoutDelayMs() const {
 absl::optional<Syncable::Info> ChannelReceive::GetSyncInfo() const {
   RTC_DCHECK(module_process_thread_checker_.IsCurrent());
   Syncable::Info info;
-  if (_rtpRtcpModule->RemoteNTP(&info.capture_time_ntp_secs,
-                                &info.capture_time_ntp_frac, nullptr, nullptr,
-                                &info.capture_time_source_clock) != 0) {
+  if (rtp_rtcp_->RemoteNTP(&info.capture_time_ntp_secs,
+                           &info.capture_time_ntp_frac, nullptr, nullptr,
+                           &info.capture_time_source_clock) != 0) {
     return absl::nullopt;
   }
   {
@@ -942,7 +942,7 @@ int ChannelReceive::GetRtpTimestampRateHz() const {
 
 int64_t ChannelReceive::GetRTT() const {
   std::vector<RTCPReportBlock> report_blocks;
-  _rtpRtcpModule->RemoteRTCPStat(&report_blocks);
+  rtp_rtcp_->RemoteRTCPStat(&report_blocks);
 
   // TODO(nisse): Could we check the return value from the ->RTT() call below,
   // instead of checking if we have any report blocks?
@@ -961,8 +961,7 @@ int64_t ChannelReceive::GetRTT() const {
   int64_t min_rtt = 0;
   // TODO(nisse): This method computes RTT based on sender reports, even though
   // a receive stream is not supposed to do that.
-  if (_rtpRtcpModule->RTT(remote_ssrc_, &rtt, &avg_rtt, &min_rtt, &max_rtt) !=
-      0) {
+  if (rtp_rtcp_->RTT(remote_ssrc_, &rtt, &avg_rtt, &min_rtt, &max_rtt) != 0) {
     return 0;
   }
   return rtt;

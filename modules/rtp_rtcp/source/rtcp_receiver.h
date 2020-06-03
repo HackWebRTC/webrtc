@@ -20,10 +20,10 @@
 #include "api/array_view.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/include/rtcp_statistics.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_nack_stats.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/ntp_time.h"
@@ -53,7 +53,8 @@ class RTCPReceiver final {
     virtual ~ModuleRtpRtcp() = default;
   };
 
-  RTCPReceiver(const RtpRtcp::Configuration& config, ModuleRtpRtcp* owner);
+  RTCPReceiver(const RtpRtcpInterface::Configuration& config,
+               ModuleRtpRtcp* owner);
   ~RTCPReceiver();
 
   void IncomingPacket(const uint8_t* packet, size_t packet_size) {

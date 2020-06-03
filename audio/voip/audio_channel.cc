@@ -44,7 +44,7 @@ AudioChannel::AudioChannel(
   Clock* clock = Clock::GetRealTimeClock();
   receive_statistics_ = ReceiveStatistics::Create(clock);
 
-  RtpRtcp::Configuration rtp_config;
+  RtpRtcpInterface::Configuration rtp_config;
   rtp_config.clock = clock;
   rtp_config.audio = true;
   rtp_config.receive_statistics = receive_statistics_.get();

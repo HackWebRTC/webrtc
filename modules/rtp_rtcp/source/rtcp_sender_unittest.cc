@@ -76,7 +76,7 @@ class RtcpSenderTest : public ::testing::Test {
       : clock_(1335900000),
         receive_statistics_(ReceiveStatistics::Create(&clock_)),
         retransmission_rate_limiter_(&clock_, 1000) {
-    RtpRtcp::Configuration configuration = GetDefaultConfig();
+    RtpRtcpInterface::Configuration configuration = GetDefaultConfig();
     rtp_rtcp_impl_.reset(new ModuleRtpRtcpImpl2(configuration));
     rtcp_sender_.reset(new RTCPSender(configuration));
     rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
@@ -85,8 +85,8 @@ class RtcpSenderTest : public ::testing::Test {
                                  /*payload_type=*/0);
   }
 
-  RtpRtcp::Configuration GetDefaultConfig() {
-    RtpRtcp::Configuration configuration;
+  RtpRtcpInterface::Configuration GetDefaultConfig() {
+    RtpRtcpInterface::Configuration configuration;
     configuration.audio = false;
     configuration.clock = &clock_;
     configuration.outgoing_transport = &test_transport_;
@@ -191,7 +191,7 @@ TEST_F(RtcpSenderTest, SendConsecutiveSrWithExactSlope) {
 }
 
 TEST_F(RtcpSenderTest, DoNotSendSrBeforeRtp) {
-  RtpRtcp::Configuration config;
+  RtpRtcpInterface::Configuration config;
   config.clock = &clock_;
   config.receive_statistics = receive_statistics_.get();
   config.outgoing_transport = &test_transport_;
@@ -213,7 +213,7 @@ TEST_F(RtcpSenderTest, DoNotSendSrBeforeRtp) {
 }
 
 TEST_F(RtcpSenderTest, DoNotSendCompundBeforeRtp) {
-  RtpRtcp::Configuration config;
+  RtpRtcpInterface::Configuration config;
   config.clock = &clock_;
   config.receive_statistics = receive_statistics_.get();
   config.outgoing_transport = &test_transport_;
@@ -563,7 +563,7 @@ TEST_F(RtcpSenderTest, TestNoXrRrtrSentIfNotEnabled) {
 
 TEST_F(RtcpSenderTest, TestRegisterRtcpPacketTypeObserver) {
   RtcpPacketTypeCounterObserverImpl observer;
-  RtpRtcp::Configuration config;
+  RtpRtcpInterface::Configuration config;
   config.clock = &clock_;
   config.receive_statistics = receive_statistics_.get();
   config.outgoing_transport = &test_transport_;
@@ -691,7 +691,7 @@ TEST_F(RtcpSenderTest, ByeMustBeLast) {
       }));
 
   // Re-configure rtcp_sender_ with mock_transport_
-  RtpRtcp::Configuration config;
+  RtpRtcpInterface::Configuration config;
   config.clock = &clock_;
   config.receive_statistics = receive_statistics_.get();
   config.outgoing_transport = &mock_transport;

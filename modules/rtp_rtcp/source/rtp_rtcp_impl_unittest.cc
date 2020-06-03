@@ -143,7 +143,7 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
 
  private:
   void CreateModuleImpl() {
-    RtpRtcp::Configuration config;
+    RtpRtcpInterface::Configuration config;
     config.audio = false;
     config.clock = clock_;
     config.outgoing_transport = &transport_;

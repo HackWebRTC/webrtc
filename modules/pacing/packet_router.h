@@ -32,7 +32,7 @@
 
 namespace webrtc {
 
-class RtpRtcp;
+class RtpRtcpInterface;
 
 // PacketRouter keeps track of rtp send modules to support the pacer.
 // In addition, it handles feedback messages, which are sent on a send
@@ -47,8 +47,8 @@ class PacketRouter : public RemoteBitrateObserver,
   explicit PacketRouter(uint16_t start_transport_seq);
   ~PacketRouter() override;
 
-  void AddSendRtpModule(RtpRtcp* rtp_module, bool remb_candidate);
-  void RemoveSendRtpModule(RtpRtcp* rtp_module);
+  void AddSendRtpModule(RtpRtcpInterface* rtp_module, bool remb_candidate);
+  void RemoveSendRtpModule(RtpRtcpInterface* rtp_module);
 
   void AddReceiveRtpModule(RtcpFeedbackSenderInterface* rtcp_sender,
                            bool remb_candidate);
@@ -89,18 +89,18 @@ class PacketRouter : public RemoteBitrateObserver,
       bool media_sender) RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
   void UnsetActiveRembModule() RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
   void DetermineActiveRembModule() RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
-  void AddSendRtpModuleToMap(RtpRtcp* rtp_module, uint32_t ssrc)
+  void AddSendRtpModuleToMap(RtpRtcpInterface* rtp_module, uint32_t ssrc)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
   void RemoveSendRtpModuleFromMap(uint32_t ssrc)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
 
   rtc::CriticalSection modules_crit_;
-  // Ssrc to RtpRtcp module;
-  std::unordered_map<uint32_t, RtpRtcp*> send_modules_map_
+  // Ssrc to RtpRtcpInterface module;
+  std::unordered_map<uint32_t, RtpRtcpInterface*> send_modules_map_
       RTC_GUARDED_BY(modules_crit_);
-  std::list<RtpRtcp*> send_modules_list_ RTC_GUARDED_BY(modules_crit_);
+  std::list<RtpRtcpInterface*> send_modules_list_ RTC_GUARDED_BY(modules_crit_);
   // The last module used to send media.
-  RtpRtcp* last_send_module_ RTC_GUARDED_BY(modules_crit_);
+  RtpRtcpInterface* last_send_module_ RTC_GUARDED_BY(modules_crit_);
   // Rtcp modules of the rtp receivers.
   std::vector<RtcpFeedbackSenderInterface*> rtcp_feedback_senders_
       RTC_GUARDED_BY(modules_crit_);

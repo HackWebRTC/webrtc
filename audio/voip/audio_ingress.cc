@@ -36,7 +36,7 @@ AudioCodingModule::Config CreateAcmConfig(
 }  // namespace
 
 AudioIngress::AudioIngress(
-    RtpRtcp* rtp_rtcp,
+    RtpRtcpInterface* rtp_rtcp,
     Clock* clock,
     ReceiveStatistics* receive_statistics,
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory)

@@ -22,7 +22,7 @@
 #include "api/function_view.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
 #include "modules/rtp_rtcp/source/rtp_sender_audio.h"
 
 namespace webrtc {
@@ -30,7 +30,6 @@ namespace webrtc {
 class FrameEncryptorInterface;
 class ProcessThread;
 class RtcEventLog;
-class RtpRtcp;
 class RtpTransportControllerSendInterface;
 
 struct CallSendStatistics {
@@ -97,7 +96,7 @@ class ChannelSendInterface {
 
   virtual void ProcessAndEncodeAudio(
       std::unique_ptr<AudioFrame> audio_frame) = 0;
-  virtual RtpRtcp* GetRtpRtcp() const = 0;
+  virtual RtpRtcpInterface* GetRtpRtcp() const = 0;
 
   // In RTP we currently rely on RTCP packets (|ReceivedRTCPPacket|) to inform
   // about RTT.

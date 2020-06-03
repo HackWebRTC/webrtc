@@ -161,8 +161,8 @@ struct ReceiverMocks {
   StrictMock<MockModuleRtpRtcp> rtp_rtcp_impl;
 };
 
-RtpRtcp::Configuration DefaultConfiguration(ReceiverMocks* mocks) {
-  RtpRtcp::Configuration config;
+RtpRtcpInterface::Configuration DefaultConfiguration(ReceiverMocks* mocks) {
+  RtpRtcpInterface::Configuration config;
   config.clock = &mocks->clock;
   config.receiver_only = false;
   config.rtcp_packet_type_counter_observer =
@@ -636,7 +636,7 @@ TEST(RtcpReceiverTest, InjectApp) {
 TEST(RtcpReceiverTest, InjectSdesWithOneChunk) {
   ReceiverMocks mocks;
   MockCnameCallbackImpl callback;
-  RtpRtcp::Configuration config = DefaultConfiguration(&mocks);
+  RtpRtcpInterface::Configuration config = DefaultConfiguration(&mocks);
   config.rtcp_cname_callback = &callback;
   RTCPReceiver receiver(config, &mocks.rtp_rtcp_impl);
   receiver.SetRemoteSSRC(kSenderSsrc);
@@ -1310,7 +1310,7 @@ TEST(RtcpReceiverTest, TmmbrThreeConstraintsTimeOut) {
 TEST(RtcpReceiverTest, Callbacks) {
   ReceiverMocks mocks;
   MockRtcpCallbackImpl callback;
-  RtpRtcp::Configuration config = DefaultConfiguration(&mocks);
+  RtpRtcpInterface::Configuration config = DefaultConfiguration(&mocks);
   config.rtcp_statistics_callback = &callback;
   RTCPReceiver receiver(config, &mocks.rtp_rtcp_impl);
   receiver.SetRemoteSSRC(kSenderSsrc);
@@ -1348,7 +1348,7 @@ TEST(RtcpReceiverTest,
      VerifyBlockAndTimestampObtainedFromReportBlockDataObserver) {
   ReceiverMocks mocks;
   MockReportBlockDataObserverImpl observer;
-  RtpRtcp::Configuration config = DefaultConfiguration(&mocks);
+  RtpRtcpInterface::Configuration config = DefaultConfiguration(&mocks);
   config.report_block_data_observer = &observer;
   RTCPReceiver receiver(config, &mocks.rtp_rtcp_impl);
   receiver.SetRemoteSSRC(kSenderSsrc);
@@ -1397,7 +1397,7 @@ TEST(RtcpReceiverTest,
 TEST(RtcpReceiverTest, VerifyRttObtainedFromReportBlockDataObserver) {
   ReceiverMocks mocks;
   MockReportBlockDataObserverImpl observer;
-  RtpRtcp::Configuration config = DefaultConfiguration(&mocks);
+  RtpRtcpInterface::Configuration config = DefaultConfiguration(&mocks);
   config.report_block_data_observer = &observer;
   RTCPReceiver receiver(config, &mocks.rtp_rtcp_impl);
   receiver.SetRemoteSSRC(kSenderSsrc);

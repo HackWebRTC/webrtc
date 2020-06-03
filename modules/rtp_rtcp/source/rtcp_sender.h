@@ -23,7 +23,6 @@
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_nack_stats.h"
 #include "modules/rtp_rtcp/source/rtcp_packet.h"
@@ -31,6 +30,7 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/random.h"
@@ -64,7 +64,7 @@ class RTCPSender final {
     RTCPReceiver* receiver;
   };
 
-  explicit RTCPSender(const RtpRtcp::Configuration& config);
+  explicit RTCPSender(const RtpRtcpInterface::Configuration& config);
   virtual ~RTCPSender();
 
   RtcpMode Status() const RTC_LOCKS_EXCLUDED(critical_section_rtcp_sender_);

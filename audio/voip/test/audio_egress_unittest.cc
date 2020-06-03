@@ -28,10 +28,10 @@ using ::testing::Invoke;
 using ::testing::NiceMock;
 using ::testing::Unused;
 
-std::unique_ptr<RtpRtcp> CreateRtpStack(Clock* clock,
-                                        Transport* transport,
-                                        uint32_t remote_ssrc) {
-  RtpRtcp::Configuration rtp_config;
+std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpStack(Clock* clock,
+                                                   Transport* transport,
+                                                   uint32_t remote_ssrc) {
+  RtpRtcpInterface::Configuration rtp_config;
   rtp_config.clock = clock;
   rtp_config.audio = true;
   rtp_config.rtcp_report_interval_ms = 5000;
@@ -101,7 +101,7 @@ class AudioEgressTest : public ::testing::Test {
   SimulatedClock fake_clock_;
   NiceMock<MockTransport> transport_;
   SineWaveGenerator wave_generator_;
-  std::unique_ptr<RtpRtcp> rtp_rtcp_;
+  std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp_;
   std::unique_ptr<TaskQueueFactory> task_queue_factory_;
   rtc::scoped_refptr<AudioEncoderFactory> encoder_factory_;
   std::unique_ptr<AudioEgress> egress_;

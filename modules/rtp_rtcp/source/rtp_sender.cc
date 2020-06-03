@@ -154,7 +154,7 @@ double GetMaxPaddingSizeFactor(const WebRtcKeyValueConfig* field_trials) {
 
 }  // namespace
 
-RTPSender::RTPSender(const RtpRtcp::Configuration& config,
+RTPSender::RTPSender(const RtpRtcpInterface::Configuration& config,
                      RtpPacketHistory* packet_history,
                      RtpPacketSender* packet_sender)
     : clock_(config.clock),

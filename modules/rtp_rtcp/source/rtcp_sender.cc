@@ -148,7 +148,7 @@ class RTCPSender::RtcpContext {
   const int64_t now_us_;
 };
 
-RTCPSender::RTCPSender(const RtpRtcp::Configuration& config)
+RTCPSender::RTCPSender(const RtpRtcpInterface::Configuration& config)
     : audio_(config.audio),
       ssrc_(config.local_media_ssrc),
       clock_(config.clock),

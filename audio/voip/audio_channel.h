@@ -20,7 +20,7 @@
 #include "api/voip/voip_base.h"
 #include "audio/voip/audio_egress.h"
 #include "audio/voip/audio_ingress.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/ref_count.h"
@@ -88,7 +88,7 @@ class AudioChannel : public rtc::RefCountInterface {
   // Listed in order for safe destruction of AudioChannel object.
   // Synchronization for these are handled internally.
   std::unique_ptr<ReceiveStatistics> receive_statistics_;
-  std::unique_ptr<RtpRtcp> rtp_rtcp_;
+  std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp_;
   std::unique_ptr<AudioIngress> ingress_;
   std::unique_ptr<AudioEgress> egress_;
 };

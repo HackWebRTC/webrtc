@@ -29,6 +29,7 @@
 #include "call/rtp_transport_controller_send_interface.h"
 #include "call/rtp_video_sender_interface.h"
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "modules/rtp_rtcp/source/rtp_sequence_number_map.h"
@@ -44,14 +45,13 @@ namespace webrtc {
 
 class FrameEncryptorInterface;
 class RTPFragmentationHeader;
-class RtpRtcp;
 class RtpTransportControllerSendInterface;
 
 namespace webrtc_internal_rtp_video_sender {
 // RTP state for a single simulcast stream. Internal to the implementation of
 // RtpVideoSender.
 struct RtpStreamSender {
-  RtpStreamSender(std::unique_ptr<RtpRtcp> rtp_rtcp,
+  RtpStreamSender(std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp,
                   std::unique_ptr<RTPSenderVideo> sender_video,
                   std::unique_ptr<VideoFecGenerator> fec_generator);
   ~RtpStreamSender();
@@ -60,7 +60,7 @@ struct RtpStreamSender {
   RtpStreamSender& operator=(RtpStreamSender&&) = default;
 
   // Note: Needs pointer stability.
-  std::unique_ptr<RtpRtcp> rtp_rtcp;
+  std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp;
   std::unique_ptr<RTPSenderVideo> sender_video;
   std::unique_ptr<VideoFecGenerator> fec_generator;
 };
@@ -215,7 +215,7 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   // Effectively const map from SSRC to RtpRtcp, for all media SSRCs.
   // This map is set at construction time and never changed, but it's
   // non-trivial to make it properly const.
-  std::map<uint32_t, RtpRtcp*> ssrc_to_rtp_module_;
+  std::map<uint32_t, RtpRtcpInterface*> ssrc_to_rtp_module_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpVideoSender);
 };

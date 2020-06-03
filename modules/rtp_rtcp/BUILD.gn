@@ -132,7 +132,7 @@ rtc_library("rtp_rtcp") {
     "include/flexfec_sender.h",
     "include/receive_statistics.h",
     "include/remote_ntp_time_estimator.h",
-    "include/rtp_rtcp.h",
+    "include/rtp_rtcp.h",  # deprecated
     "include/ulpfec_receiver.h",
     "source/absolute_capture_time_receiver.cc",
     "source/absolute_capture_time_receiver.h",
@@ -188,6 +188,7 @@ rtc_library("rtp_rtcp") {
     "source/rtp_rtcp_impl.h",
     "source/rtp_rtcp_impl2.cc",
     "source/rtp_rtcp_impl2.h",
+    "source/rtp_rtcp_interface.h",
     "source/rtp_sender.cc",
     "source/rtp_sender.h",
     "source/rtp_sender_audio.cc",

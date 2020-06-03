@@ -19,10 +19,10 @@
 #include "api/call/transport.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/units/data_rate.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
 #include "modules/rtp_rtcp/source/rtp_sequence_number_map.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/rate_statistics.h"
@@ -47,7 +47,7 @@ class RtpSenderEgress {
     RtpSenderEgress* const sender_;
   };
 
-  RtpSenderEgress(const RtpRtcp::Configuration& config,
+  RtpSenderEgress(const RtpRtcpInterface::Configuration& config,
                   RtpPacketHistory* packet_history);
   ~RtpSenderEgress() = default;
 

@@ -53,7 +53,7 @@ void RtpSenderEgress::NonPacedPacketSender::EnqueuePackets(
   }
 }
 
-RtpSenderEgress::RtpSenderEgress(const RtpRtcp::Configuration& config,
+RtpSenderEgress::RtpSenderEgress(const RtpRtcpInterface::Configuration& config,
                                  RtpPacketHistory* packet_history)
     : ssrc_(config.local_media_ssrc),
       rtx_ssrc_(config.rtx_send_ssrc),

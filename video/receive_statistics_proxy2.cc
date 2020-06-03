@@ -782,10 +782,10 @@ void ReceiveStatisticsProxy::RtcpPacketTypesCounterUpdated(
     return;
 
   if (!IsCurrentTaskQueueOrThread(worker_thread_)) {
-    // RtpRtcp::Configuration has a single RtcpPacketTypeCounterObserver and
-    // that same configuration may be used for both receiver and sender
-    // (see ModuleRtpRtcpImpl::ModuleRtpRtcpImpl).
-    // The RTCPSender implementation currently makes calls to this function on a
+    // RtpRtcpInterface::Configuration has a single
+    // RtcpPacketTypeCounterObserver and that same configuration may be used for
+    // both receiver and sender (see ModuleRtpRtcpImpl::ModuleRtpRtcpImpl). The
+    // RTCPSender implementation currently makes calls to this function on a
     // process thread whereas the RTCPReceiver implementation calls back on the
     // [main] worker thread.
     // So until the sender implementation has been updated, we work around this

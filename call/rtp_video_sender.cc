@@ -37,7 +37,7 @@ namespace webrtc {
 namespace webrtc_internal_rtp_video_sender {
 
 RtpStreamSender::RtpStreamSender(
-    std::unique_ptr<RtpRtcp> rtp_rtcp,
+    std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp,
     std::unique_ptr<RTPSenderVideo> sender_video,
     std::unique_ptr<VideoFecGenerator> fec_generator)
     : rtp_rtcp(std::move(rtp_rtcp)),
@@ -200,7 +200,7 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
     const WebRtcKeyValueConfig& trials) {
   RTC_DCHECK_GT(rtp_config.ssrcs.size(), 0);
 
-  RtpRtcp::Configuration configuration;
+  RtpRtcpInterface::Configuration configuration;
   configuration.clock = clock;
   configuration.audio = false;
   configuration.receiver_only = false;
@@ -253,7 +253,8 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
 
     configuration.need_rtp_packet_infos = rtp_config.lntf.enabled;
 
-    auto rtp_rtcp = ModuleRtpRtcpImpl2::Create(configuration);
+    std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp(
+        ModuleRtpRtcpImpl2::Create(configuration));
     rtp_rtcp->SetSendingStatus(false);
     rtp_rtcp->SetSendingMediaStatus(false);
     rtp_rtcp->SetRTCPStatus(RtcpMode::kCompound);
@@ -628,7 +629,7 @@ void RtpVideoSender::ConfigureSsrcs() {
   RTC_CHECK(ssrc_to_rtp_module_.empty());
   for (size_t i = 0; i < rtp_config_.ssrcs.size(); ++i) {
     uint32_t ssrc = rtp_config_.ssrcs[i];
-    RtpRtcp* const rtp_rtcp = rtp_streams_[i].rtp_rtcp.get();
+    RtpRtcpInterface* const rtp_rtcp = rtp_streams_[i].rtp_rtcp.get();
 
     // Restore RTP state if previous existed.
     auto it = suspended_ssrcs_.find(ssrc);
@@ -645,7 +646,7 @@ void RtpVideoSender::ConfigureSsrcs() {
   RTC_DCHECK_EQ(rtp_config_.rtx.ssrcs.size(), rtp_config_.ssrcs.size());
   for (size_t i = 0; i < rtp_config_.rtx.ssrcs.size(); ++i) {
     uint32_t ssrc = rtp_config_.rtx.ssrcs[i];
-    RtpRtcp* const rtp_rtcp = rtp_streams_[i].rtp_rtcp.get();
+    RtpRtcpInterface* const rtp_rtcp = rtp_streams_[i].rtp_rtcp.get();
     auto it = suspended_ssrcs_.find(ssrc);
     if (it != suspended_ssrcs_.end())
       rtp_rtcp->SetRtxState(it->second);

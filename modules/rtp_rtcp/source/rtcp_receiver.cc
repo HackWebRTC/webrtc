@@ -66,7 +66,8 @@ const size_t kMaxNumberOfStoredRrtrs = 300;
 constexpr int32_t kDefaultVideoReportInterval = 1000;
 constexpr int32_t kDefaultAudioReportInterval = 5000;
 
-std::set<uint32_t> GetRegisteredSsrcs(const RtpRtcp::Configuration& config) {
+std::set<uint32_t> GetRegisteredSsrcs(
+    const RtpRtcpInterface::Configuration& config) {
   std::set<uint32_t> ssrcs;
   ssrcs.insert(config.local_media_ssrc);
   if (config.rtx_send_ssrc) {
@@ -136,7 +137,7 @@ struct RTCPReceiver::LastFirStatus {
   uint8_t sequence_number;
 };
 
-RTCPReceiver::RTCPReceiver(const RtpRtcp::Configuration& config,
+RTCPReceiver::RTCPReceiver(const RtpRtcpInterface::Configuration& config,
                            ModuleRtpRtcp* owner)
     : clock_(config.clock),
       receiver_only_(config.receiver_only),

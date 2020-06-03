@@ -43,17 +43,20 @@ class Clock;
 struct PacedPacketInfo;
 struct RTPVideoHeader;
 
-class ModuleRtpRtcpImpl2 final : public RtpRtcp,
+class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
+                                 public Module,
                                  public RTCPReceiver::ModuleRtpRtcp {
  public:
-  explicit ModuleRtpRtcpImpl2(const RtpRtcp::Configuration& configuration);
+  explicit ModuleRtpRtcpImpl2(
+      const RtpRtcpInterface::Configuration& configuration);
   ~ModuleRtpRtcpImpl2() override;
 
   // This method is provided to easy with migrating away from the
   // RtpRtcp::Create factory method. Since this is an internal implementation
   // detail though, creating an instance of ModuleRtpRtcpImpl2 directly should
   // be fine.
-  static std::unique_ptr<RtpRtcp> Create(const Configuration& configuration);
+  static std::unique_ptr<ModuleRtpRtcpImpl2> Create(
+      const Configuration& configuration);
 
   // TODO(tommi): Make implementation private?
 
@@ -80,9 +83,6 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcp,
 
   void SetExtmapAllowMixed(bool extmap_allow_mixed) override;
 
-  // Register RTP header extension.
-  int32_t RegisterSendRtpHeaderExtension(RTPExtensionType type,
-                                         uint8_t id) override;
   void RegisterRtpHeaderExtension(absl::string_view uri, int id) override;
   int32_t DeregisterSendRtpHeaderExtension(RTPExtensionType type) override;
   void DeregisterSendRtpHeaderExtension(absl::string_view uri) override;
@@ -313,7 +313,7 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcp,
   FRIEND_TEST_ALL_PREFIXES(RtpRtcpImpl2Test, RttForReceiverOnly);
 
   struct RtpSenderContext {
-    explicit RtpSenderContext(const RtpRtcp::Configuration& config);
+    explicit RtpSenderContext(const RtpRtcpInterface::Configuration& config);
     // Storage of packets, for retransmissions and padding, if applicable.
     RtpPacketHistory packet_history;
     // Handles final time timestamping/stats/etc and handover to Transport.

@@ -17,7 +17,7 @@
 
 namespace webrtc {
 
-AudioEgress::AudioEgress(RtpRtcp* rtp_rtcp,
+AudioEgress::AudioEgress(RtpRtcpInterface* rtp_rtcp,
                          Clock* clock,
                          TaskQueueFactory* task_queue_factory)
     : rtp_rtcp_(rtp_rtcp),

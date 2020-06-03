@@ -17,10 +17,10 @@
 #include <utility>
 
 #include "absl/types/optional.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/time_utils.h"
@@ -53,7 +53,8 @@ PacketRouter::~PacketRouter() {
   RTC_DCHECK(active_remb_module_ == nullptr);
 }
 
-void PacketRouter::AddSendRtpModule(RtpRtcp* rtp_module, bool remb_candidate) {
+void PacketRouter::AddSendRtpModule(RtpRtcpInterface* rtp_module,
+                                    bool remb_candidate) {
   rtc::CritScope cs(&modules_crit_);
 
   AddSendRtpModuleToMap(rtp_module, rtp_module->SSRC());
@@ -73,7 +74,8 @@ void PacketRouter::AddSendRtpModule(RtpRtcp* rtp_module, bool remb_candidate) {
   }
 }
 
-void PacketRouter::AddSendRtpModuleToMap(RtpRtcp* rtp_module, uint32_t ssrc) {
+void PacketRouter::AddSendRtpModuleToMap(RtpRtcpInterface* rtp_module,
+                                         uint32_t ssrc) {
   RTC_DCHECK(send_modules_map_.find(ssrc) == send_modules_map_.end());
   // Always keep the audio modules at the back of the list, so that when we
   // iterate over the modules in order to find one that can send padding we
@@ -94,7 +96,7 @@ void PacketRouter::RemoveSendRtpModuleFromMap(uint32_t ssrc) {
   send_modules_map_.erase(kv);
 }
 
-void PacketRouter::RemoveSendRtpModule(RtpRtcp* rtp_module) {
+void PacketRouter::RemoveSendRtpModule(RtpRtcpInterface* rtp_module) {
   rtc::CritScope cs(&modules_crit_);
   MaybeRemoveRembModuleCandidate(rtp_module, /* media_sender = */ true);
 
@@ -158,7 +160,7 @@ void PacketRouter::SendPacket(std::unique_ptr<RtpPacketToSend> packet,
     return;
   }
 
-  RtpRtcp* rtp_module = kv->second;
+  RtpRtcpInterface* rtp_module = kv->second;
   if (!rtp_module->TrySendPacket(packet.get(), cluster_info)) {
     RTC_LOG(LS_WARNING) << "Failed to send packet, rejected by RTP module.";
     return;
@@ -193,7 +195,7 @@ std::vector<std::unique_ptr<RtpPacketToSend>> PacketRouter::GeneratePadding(
     // Iterate over all modules send module. Video modules will be at the front
     // and so will be prioritized. This is important since audio packets may not
     // be taken into account by the bandwidth estimator, e.g. in FF.
-    for (RtpRtcp* rtp_module : send_modules_list_) {
+    for (RtpRtcpInterface* rtp_module : send_modules_list_) {
       if (rtp_module->SupportsPadding()) {
         padding_packets = rtp_module->GeneratePadding(size.bytes());
         if (!padding_packets.empty()) {
@@ -296,7 +298,7 @@ bool PacketRouter::SendCombinedRtcpPacket(
   rtc::CritScope cs(&modules_crit_);
 
   // Prefer send modules.
-  for (RtpRtcp* rtp_module : send_modules_list_) {
+  for (RtpRtcpInterface* rtp_module : send_modules_list_) {
     if (rtp_module->RTCP() == RtcpMode::kOff) {
       continue;
     }

@@ -107,7 +107,7 @@ class ChannelSend : public ChannelSendInterface,
   ANAStats GetANAStatistics() const override;
 
   // Used by AudioSendStream.
-  RtpRtcp* GetRtpRtcp() const override;
+  RtpRtcpInterface* GetRtpRtcp() const override;
 
   void RegisterCngPayloadType(int payload_type, int payload_frequency) override;
 
@@ -192,7 +192,7 @@ class ChannelSend : public ChannelSendInterface,
 
   RtcEventLog* const event_log_;
 
-  std::unique_ptr<RtpRtcp> _rtpRtcpModule;
+  std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp_;
   std::unique_ptr<RTPSenderAudio> rtp_sender_audio_;
 
   std::unique_ptr<AudioCodingModule> audio_coding_;
@@ -389,9 +389,9 @@ int32_t ChannelSend::SendData(AudioFrameType frameType,
     // Asynchronously transform the payload before sending it. After the payload
     // is transformed, the delegate will call SendRtpAudio to send it.
     frame_transformer_delegate_->Transform(
-        frameType, payloadType, rtp_timestamp, _rtpRtcpModule->StartTimestamp(),
+        frameType, payloadType, rtp_timestamp, rtp_rtcp_->StartTimestamp(),
         payloadData, payloadSize, absolute_capture_timestamp_ms,
-        _rtpRtcpModule->SSRC());
+        rtp_rtcp_->SSRC());
     return 0;
   }
   return SendRtpAudio(frameType, payloadType, rtp_timestamp, payload,
@@ -428,7 +428,7 @@ int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
       // Encrypt the audio payload into the buffer.
       size_t bytes_written = 0;
       int encrypt_status = frame_encryptor_->Encrypt(
-          cricket::MEDIA_TYPE_AUDIO, _rtpRtcpModule->SSRC(),
+          cricket::MEDIA_TYPE_AUDIO, rtp_rtcp_->SSRC(),
           /*additional_data=*/nullptr, payload, encrypted_audio_payload,
           &bytes_written);
       if (encrypt_status != 0) {
@@ -450,12 +450,12 @@ int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
 
   // Push data from ACM to RTP/RTCP-module to deliver audio frame for
   // packetization.
-  if (!_rtpRtcpModule->OnSendingRtpFrame(rtp_timestamp,
-                                         // Leaving the time when this frame was
-                                         // received from the capture device as
-                                         // undefined for voice for now.
-                                         -1, payloadType,
-                                         /*force_sender_report=*/false)) {
+  if (!rtp_rtcp_->OnSendingRtpFrame(rtp_timestamp,
+                                    // Leaving the time when this frame was
+                                    // received from the capture device as
+                                    // undefined for voice for now.
+                                    -1, payloadType,
+                                    /*force_sender_report=*/false)) {
     return -1;
   }
 
@@ -467,9 +467,8 @@ int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
 
   // This call will trigger Transport::SendPacket() from the RTP/RTCP module.
   if (!rtp_sender_audio_->SendAudio(
-          frameType, payloadType,
-          rtp_timestamp + _rtpRtcpModule->StartTimestamp(), payload.data(),
-          payload.size(), absolute_capture_timestamp_ms)) {
+          frameType, payloadType, rtp_timestamp + rtp_rtcp_->StartTimestamp(),
+          payload.data(), payload.size(), absolute_capture_timestamp_ms)) {
     RTC_DLOG(LS_ERROR)
         << "ChannelSend::SendData() failed to send data to RTP/RTCP module";
     return -1;
@@ -513,7 +512,7 @@ ChannelSend::ChannelSend(
 
   audio_coding_.reset(AudioCodingModule::Create(AudioCodingModule::Config()));
 
-  RtpRtcp::Configuration configuration;
+  RtpRtcpInterface::Configuration configuration;
   configuration.bandwidth_callback = rtcp_observer_.get();
   configuration.transport_feedback_callback = feedback_observer_proxy_.get();
   configuration.clock = (clock ? clock : Clock::GetRealTimeClock());
@@ -531,16 +530,16 @@ ChannelSend::ChannelSend(
 
   configuration.local_media_ssrc = ssrc;
 
-  _rtpRtcpModule = ModuleRtpRtcpImpl2::Create(configuration);
-  _rtpRtcpModule->SetSendingMediaStatus(false);
+  rtp_rtcp_ = ModuleRtpRtcpImpl2::Create(configuration);
+  rtp_rtcp_->SetSendingMediaStatus(false);
 
-  rtp_sender_audio_ = std::make_unique<RTPSenderAudio>(
-      configuration.clock, _rtpRtcpModule->RtpSender());
+  rtp_sender_audio_ = std::make_unique<RTPSenderAudio>(configuration.clock,
+                                                       rtp_rtcp_->RtpSender());
 
-  _moduleProcessThreadPtr->RegisterModule(_rtpRtcpModule.get(), RTC_FROM_HERE);
+  _moduleProcessThreadPtr->RegisterModule(rtp_rtcp_.get(), RTC_FROM_HERE);
 
   // Ensure that RTCP is enabled by default for the created channel.
-  _rtpRtcpModule->SetRTCPStatus(RtcpMode::kCompound);
+  rtp_rtcp_->SetRTCPStatus(RtcpMode::kCompound);
 
   int error = audio_coding_->RegisterTransportCallback(this);
   RTC_DCHECK_EQ(0, error);
@@ -560,7 +559,7 @@ ChannelSend::~ChannelSend() {
   RTC_DCHECK_EQ(0, error);
 
   if (_moduleProcessThreadPtr)
-    _moduleProcessThreadPtr->DeRegisterModule(_rtpRtcpModule.get());
+    _moduleProcessThreadPtr->DeRegisterModule(rtp_rtcp_.get());
 }
 
 void ChannelSend::StartSend() {
@@ -568,8 +567,8 @@ void ChannelSend::StartSend() {
   RTC_DCHECK(!sending_);
   sending_ = true;
 
-  _rtpRtcpModule->SetSendingMediaStatus(true);
-  int ret = _rtpRtcpModule->SetSendingStatus(true);
+  rtp_rtcp_->SetSendingMediaStatus(true);
+  int ret = rtp_rtcp_->SetSendingStatus(true);
   RTC_DCHECK_EQ(0, ret);
   // It is now OK to start processing on the encoder task queue.
   encoder_queue_.PostTask([this] {
@@ -595,10 +594,10 @@ void ChannelSend::StopSend() {
 
   // Reset sending SSRC and sequence number and triggers direct transmission
   // of RTCP BYE
-  if (_rtpRtcpModule->SetSendingStatus(false) == -1) {
+  if (rtp_rtcp_->SetSendingStatus(false) == -1) {
     RTC_DLOG(LS_ERROR) << "StartSend() RTP/RTCP failed to stop sending";
   }
-  _rtpRtcpModule->SetSendingMediaStatus(false);
+  rtp_rtcp_->SetSendingMediaStatus(false);
 }
 
 void ChannelSend::SetEncoder(int payload_type,
@@ -609,8 +608,8 @@ void ChannelSend::SetEncoder(int payload_type,
 
   // The RTP/RTCP module needs to know the RTP timestamp rate (i.e. clockrate)
   // as well as some other things, so we collect this info and send it along.
-  _rtpRtcpModule->RegisterSendPayloadFrequency(payload_type,
-                                               encoder->RtpTimestampRateHz());
+  rtp_rtcp_->RegisterSendPayloadFrequency(payload_type,
+                                          encoder->RtpTimestampRateHz());
   rtp_sender_audio_->RegisterAudioPayload("audio", payload_type,
                                           encoder->RtpTimestampRateHz(),
                                           encoder->NumChannels(), 0);
@@ -665,7 +664,7 @@ void ChannelSend::OnUplinkPacketLossRate(float packet_loss_rate) {
 
 void ChannelSend::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   // Deliver RTCP packet to RTP/RTCP module for parsing
-  _rtpRtcpModule->IncomingRtcpPacket(data, length);
+  rtp_rtcp_->IncomingRtcpPacket(data, length);
 
   int64_t rtt = GetRTT();
   if (rtt == 0) {
@@ -714,7 +713,7 @@ bool ChannelSend::SendTelephoneEventOutband(int event, int duration_ms) {
 
 void ChannelSend::RegisterCngPayloadType(int payload_type,
                                          int payload_frequency) {
-  _rtpRtcpModule->RegisterSendPayloadFrequency(payload_type, payload_frequency);
+  rtp_rtcp_->RegisterSendPayloadFrequency(payload_type, payload_frequency);
   rtp_sender_audio_->RegisterAudioPayload("CN", payload_type, payload_frequency,
                                           1, 0);
 }
@@ -724,7 +723,7 @@ void ChannelSend::SetSendTelephoneEventPayloadType(int payload_type,
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   RTC_DCHECK_LE(0, payload_type);
   RTC_DCHECK_GE(127, payload_type);
-  _rtpRtcpModule->RegisterSendPayloadFrequency(payload_type, payload_frequency);
+  rtp_rtcp_->RegisterSendPayloadFrequency(payload_type, payload_frequency);
   rtp_sender_audio_->RegisterAudioPayload("telephone-event", payload_type,
                                           payload_frequency, 0, 0);
 }
@@ -733,9 +732,9 @@ void ChannelSend::SetSendAudioLevelIndicationStatus(bool enable, int id) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   _includeAudioLevelIndication = enable;
   if (enable) {
-    _rtpRtcpModule->RegisterRtpHeaderExtension(AudioLevel::kUri, id);
+    rtp_rtcp_->RegisterRtpHeaderExtension(AudioLevel::kUri, id);
   } else {
-    _rtpRtcpModule->DeregisterSendRtpHeaderExtension(AudioLevel::kUri);
+    rtp_rtcp_->DeregisterSendRtpHeaderExtension(AudioLevel::kUri);
   }
 }
 
@@ -756,19 +755,19 @@ void ChannelSend::RegisterSenderCongestionControlObjects(
   feedback_observer_proxy_->SetTransportFeedbackObserver(
       transport_feedback_observer);
   rtp_packet_pacer_proxy_->SetPacketPacer(rtp_packet_pacer);
-  _rtpRtcpModule->SetStorePacketsStatus(true, 600);
+  rtp_rtcp_->SetStorePacketsStatus(true, 600);
   constexpr bool remb_candidate = false;
-  packet_router->AddSendRtpModule(_rtpRtcpModule.get(), remb_candidate);
+  packet_router->AddSendRtpModule(rtp_rtcp_.get(), remb_candidate);
   packet_router_ = packet_router;
 }
 
 void ChannelSend::ResetSenderCongestionControlObjects() {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   RTC_DCHECK(packet_router_);
-  _rtpRtcpModule->SetStorePacketsStatus(false, 600);
+  rtp_rtcp_->SetStorePacketsStatus(false, 600);
   rtcp_observer_->SetBandwidthObserver(nullptr);
   feedback_observer_proxy_->SetTransportFeedbackObserver(nullptr);
-  packet_router_->RemoveSendRtpModule(_rtpRtcpModule.get());
+  packet_router_->RemoveSendRtpModule(rtp_rtcp_.get());
   packet_router_ = nullptr;
   rtp_packet_pacer_proxy_->SetPacketPacer(nullptr);
 }
@@ -777,7 +776,7 @@ void ChannelSend::SetRTCP_CNAME(absl::string_view c_name) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   // Note: SetCNAME() accepts a c string of length at most 255.
   const std::string c_name_limited(c_name.substr(0, 255));
-  int ret = _rtpRtcpModule->SetCNAME(c_name_limited.c_str()) != 0;
+  int ret = rtp_rtcp_->SetCNAME(c_name_limited.c_str()) != 0;
   RTC_DCHECK_EQ(0, ret) << "SetRTCP_CNAME() failed to set RTCP CNAME";
 }
 
@@ -788,7 +787,7 @@ std::vector<ReportBlock> ChannelSend::GetRemoteRTCPReportBlocks() const {
   // report block according to RFC 3550.
   std::vector<RTCPReportBlock> rtcp_report_blocks;
 
-  int ret = _rtpRtcpModule->RemoteRTCPStat(&rtcp_report_blocks);
+  int ret = rtp_rtcp_->RemoteRTCPStat(&rtcp_report_blocks);
   RTC_DCHECK_EQ(0, ret);
 
   std::vector<ReportBlock> report_blocks;
@@ -817,7 +816,7 @@ CallSendStatistics ChannelSend::GetRTCPStatistics() const {
 
   StreamDataCounters rtp_stats;
   StreamDataCounters rtx_stats;
-  _rtpRtcpModule->GetSendStreamDataCounters(&rtp_stats, &rtx_stats);
+  rtp_rtcp_->GetSendStreamDataCounters(&rtp_stats, &rtx_stats);
   stats.payload_bytes_sent =
       rtp_stats.transmitted.payload_bytes + rtx_stats.transmitted.payload_bytes;
   stats.header_and_padding_bytes_sent =
@@ -830,7 +829,7 @@ CallSendStatistics ChannelSend::GetRTCPStatistics() const {
   stats.packetsSent =
       rtp_stats.transmitted.packets + rtx_stats.transmitted.packets;
   stats.retransmitted_packets_sent = rtp_stats.retransmitted.packets;
-  stats.report_block_datas = _rtpRtcpModule->GetLatestReportBlockData();
+  stats.report_block_datas = rtp_rtcp_->GetLatestReportBlockData();
 
   return stats;
 }
@@ -895,14 +894,14 @@ ANAStats ChannelSend::GetANAStatistics() const {
   return audio_coding_->GetANAStats();
 }
 
-RtpRtcp* ChannelSend::GetRtpRtcp() const {
+RtpRtcpInterface* ChannelSend::GetRtpRtcp() const {
   RTC_DCHECK(module_process_thread_checker_.IsCurrent());
-  return _rtpRtcpModule.get();
+  return rtp_rtcp_.get();
 }
 
 int64_t ChannelSend::GetRTT() const {
   std::vector<RTCPReportBlock> report_blocks;
-  _rtpRtcpModule->RemoteRTCPStat(&report_blocks);
+  rtp_rtcp_->RemoteRTCPStat(&report_blocks);
 
   if (report_blocks.empty()) {
     return 0;
@@ -914,8 +913,8 @@ int64_t ChannelSend::GetRTT() const {
   int64_t min_rtt = 0;
   // We don't know in advance the remote ssrc used by the other end's receiver
   // reports, so use the SSRC of the first report block for calculating the RTT.
-  if (_rtpRtcpModule->RTT(report_blocks[0].sender_ssrc, &rtt, &avg_rtt,
-                          &min_rtt, &max_rtt) != 0) {
+  if (rtp_rtcp_->RTT(report_blocks[0].sender_ssrc, &rtt, &avg_rtt, &min_rtt,
+                     &max_rtt) != 0) {
     return 0;
   }
   return rtt;

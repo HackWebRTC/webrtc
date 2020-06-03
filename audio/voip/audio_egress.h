@@ -20,7 +20,7 @@
 #include "call/audio_sender.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
 #include "modules/rtp_rtcp/source/rtp_sender_audio.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_checker.h"
@@ -43,7 +43,7 @@ namespace webrtc {
 // smaller footprint.
 class AudioEgress : public AudioSender, public AudioPacketizationCallback {
  public:
-  AudioEgress(RtpRtcp* rtp_rtcp,
+  AudioEgress(RtpRtcpInterface* rtp_rtcp,
               Clock* clock,
               TaskQueueFactory* task_queue_factory);
   ~AudioEgress() override;
@@ -109,7 +109,7 @@ class AudioEgress : public AudioSender, public AudioPacketizationCallback {
   absl::optional<SdpAudioFormat> encoder_format_ RTC_GUARDED_BY(lock_);
 
   // Synchronization is handled internally by RtpRtcp.
-  RtpRtcp* const rtp_rtcp_;
+  RtpRtcpInterface* const rtp_rtcp_;
 
   // Synchronization is handled internally by RTPSenderAudio.
   RTPSenderAudio rtp_sender_audio_;

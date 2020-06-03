@@ -170,7 +170,7 @@ class RtpSenderVideoTest : public ::testing::TestWithParam<bool> {
         fake_clock_(kStartTime),
         retransmission_rate_limiter_(&fake_clock_, 1000),
         rtp_module_(ModuleRtpRtcpImpl2::Create([&] {
-          RtpRtcp::Configuration config;
+          RtpRtcpInterface::Configuration config;
           config.clock = &fake_clock_;
           config.outgoing_transport = &transport_;
           config.retransmission_rate_limiter = &retransmission_rate_limiter_;
@@ -190,12 +190,12 @@ class RtpSenderVideoTest : public ::testing::TestWithParam<bool> {
       int version);
 
  protected:
-  const RtpRtcp::Configuration config_;
+  const RtpRtcpInterface::Configuration config_;
   FieldTrials field_trials_;
   SimulatedClock fake_clock_;
   LoopbackTransportTest transport_;
   RateLimiter retransmission_rate_limiter_;
-  std::unique_ptr<RtpRtcp> rtp_module_;
+  std::unique_ptr<ModuleRtpRtcpImpl2> rtp_module_;
   TestRtpSenderVideo rtp_sender_video_;
 };
 
@@ -921,7 +921,7 @@ class RtpSenderVideoWithFrameTransformerTest : public ::testing::Test {
       : fake_clock_(kStartTime),
         retransmission_rate_limiter_(&fake_clock_, 1000),
         rtp_module_(ModuleRtpRtcpImpl2::Create([&] {
-          RtpRtcp::Configuration config;
+          RtpRtcpInterface::Configuration config;
           config.clock = &fake_clock_;
           config.outgoing_transport = &transport_;
           config.retransmission_rate_limiter = &retransmission_rate_limiter_;
@@ -948,7 +948,7 @@ class RtpSenderVideoWithFrameTransformerTest : public ::testing::Test {
   SimulatedClock fake_clock_;
   LoopbackTransportTest transport_;
   RateLimiter retransmission_rate_limiter_;
-  std::unique_ptr<RtpRtcp> rtp_module_;
+  std::unique_ptr<ModuleRtpRtcpImpl2> rtp_module_;
 };
 
 std::unique_ptr<EncodedImage> CreateDefaultEncodedImage() {

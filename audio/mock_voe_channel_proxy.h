@@ -152,7 +152,7 @@ class MockChannelSend : public voe::ChannelSendInterface {
               ProcessAndEncodeAudio,
               (std::unique_ptr<AudioFrame>),
               (override));
-  MOCK_METHOD(RtpRtcp*, GetRtpRtcp, (), (const, override));
+  MOCK_METHOD(RtpRtcpInterface*, GetRtpRtcp, (), (const, override));
   MOCK_METHOD(int, GetBitrate, (), (const, override));
   MOCK_METHOD(int64_t, GetRTT, (), (const, override));
   MOCK_METHOD(void, StartSend, (), (override));

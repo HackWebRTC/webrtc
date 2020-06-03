@@ -39,7 +39,7 @@ const int64_t kDefaultExpectedRetransmissionTimeMs = 125;
 }  // namespace
 
 ModuleRtpRtcpImpl2::RtpSenderContext::RtpSenderContext(
-    const RtpRtcp::Configuration& config)
+    const RtpRtcpInterface::Configuration& config)
     : packet_history(config.clock, config.enable_rtx_padding_prioritization),
       packet_sender(config, &packet_history),
       non_paced_sender(&packet_sender),
@@ -82,7 +82,7 @@ ModuleRtpRtcpImpl2::~ModuleRtpRtcpImpl2() {
 }
 
 // static
-std::unique_ptr<RtpRtcp> ModuleRtpRtcpImpl2::Create(
+std::unique_ptr<ModuleRtpRtcpImpl2> ModuleRtpRtcpImpl2::Create(
     const Configuration& configuration) {
   RTC_DCHECK(configuration.clock);
   RTC_DCHECK(TaskQueueBase::Current());
@@ -593,12 +593,6 @@ void ModuleRtpRtcpImpl2::UnsetRemb() {
 
 void ModuleRtpRtcpImpl2::SetExtmapAllowMixed(bool extmap_allow_mixed) {
   rtp_sender_->packet_generator.SetExtmapAllowMixed(extmap_allow_mixed);
-}
-
-int32_t ModuleRtpRtcpImpl2::RegisterSendRtpHeaderExtension(
-    const RTPExtensionType type,
-    const uint8_t id) {
-  return rtp_sender_->packet_generator.RegisterRtpHeaderExtension(type, id);
 }
 
 void ModuleRtpRtcpImpl2::RegisterRtpHeaderExtension(absl::string_view uri,
