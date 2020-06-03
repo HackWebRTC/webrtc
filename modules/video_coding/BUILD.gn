@@ -974,6 +974,7 @@ if (rtc_include_tests) {
       "../../test/time_controller:time_controller",
       "../rtp_rtcp:rtp_rtcp_format",
       "../rtp_rtcp:rtp_video_header",
+      "codecs/av1:scalability_structure_tests",
       "codecs/av1:video_coding_codecs_av1_tests",
       "deprecated:nack_module",
       "//third_party/abseil-cpp/absl/memory",

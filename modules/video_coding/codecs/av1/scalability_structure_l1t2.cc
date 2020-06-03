@@ -47,7 +47,7 @@ FrameDependencyStructure ScalabilityStructureL1T2::DependencyStructure() const {
   FrameDependencyStructure structure;
   structure.num_decode_targets = 2;
   structure.num_chains = 1;
-  structure.decode_target_protected_by_chain = {0};
+  structure.decode_target_protected_by_chain = {0, 0};
   structure.templates = {
       Builder().T(0).Dtis("SS").ChainDiffs({0}).Build(),
       Builder().T(0).Dtis("SS").ChainDiffs({2}).Fdiffs({2}).Build(),

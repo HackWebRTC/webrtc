@@ -104,6 +104,17 @@ rtc_library("libaom_av1_encoder") {
 }
 
 if (rtc_include_tests) {
+  rtc_library("scalability_structure_tests") {
+    testonly = true
+    sources = [ "scalability_structure_unittest.cc" ]
+    deps = [
+      ":scalability_structures",
+      ":scalable_video_controller",
+      "../../../../test:test_support",
+      "//third_party/abseil-cpp/absl/types:optional",
+    ]
+  }
+
   rtc_library("video_coding_codecs_av1_tests") {
     testonly = true
 
