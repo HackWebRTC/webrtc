@@ -815,11 +815,6 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
     }
 
     if (params_.call.generic_descriptor) {
-      // The generic descriptor is currently behind a field trial, so it needs
-      // to be set for this flag to have any effect.
-      // TODO(philipel): Remove this check when the experiment is removed.
-      RTC_CHECK(field_trial::IsEnabled("WebRTC-GenericDescriptor"));
-
       video_send_configs_[video_idx].rtp.extensions.emplace_back(
           RtpExtension::kGenericFrameDescriptorUri00,
           kGenericFrameDescriptorExtensionId00);

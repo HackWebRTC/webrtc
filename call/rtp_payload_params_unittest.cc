@@ -350,8 +350,6 @@ TEST(RtpPayloadParamsTest, PictureIdForOldGenericFormat) {
 }
 
 TEST(RtpPayloadParamsTest, GenericDescriptorForGenericCodec) {
-  test::ScopedFieldTrials generic_picture_id(
-      "WebRTC-GenericDescriptor/Enabled/");
   RtpPayloadState state{};
 
   EncodedImage encoded_image;
@@ -376,8 +374,6 @@ TEST(RtpPayloadParamsTest, GenericDescriptorForGenericCodec) {
 }
 
 TEST(RtpPayloadParamsTest, SetsGenericFromGenericFrameInfo) {
-  test::ScopedFieldTrials generic_picture_id(
-      "WebRTC-GenericDescriptor/Enabled/");
   RtpPayloadState state;
   EncodedImage encoded_image;
   CodecSpecificInfo codec_info;
@@ -426,9 +422,7 @@ class RtpPayloadParamsVp8ToGenericTest : public ::testing::Test {
   enum LayerSync { kNoSync, kSync };
 
   RtpPayloadParamsVp8ToGenericTest()
-      : generic_descriptor_field_trial_("WebRTC-GenericDescriptor/Enabled/"),
-        state_(),
-        params_(123, &state_, trials_config_) {}
+      : state_(), params_(123, &state_, trials_config_) {}
 
   void ConvertAndCheck(int temporal_index,
                        int64_t shared_frame_id,
@@ -464,7 +458,6 @@ class RtpPayloadParamsVp8ToGenericTest : public ::testing::Test {
   }
 
  protected:
-  test::ScopedFieldTrials generic_descriptor_field_trial_;
   FieldTrialBasedConfig trials_config_;
   RtpPayloadState state_;
   RtpPayloadParams params_;
@@ -523,9 +516,7 @@ class RtpPayloadParamsH264ToGenericTest : public ::testing::Test {
   enum LayerSync { kNoSync, kSync };
 
   RtpPayloadParamsH264ToGenericTest()
-      : generic_descriptor_field_trial_("WebRTC-GenericDescriptor/Enabled/"),
-        state_(),
-        params_(123, &state_, trials_config_) {}
+      : state_(), params_(123, &state_, trials_config_) {}
 
   void ConvertAndCheck(int temporal_index,
                        int64_t shared_frame_id,
@@ -561,7 +552,6 @@ class RtpPayloadParamsH264ToGenericTest : public ::testing::Test {
   }
 
  protected:
-  test::ScopedFieldTrials generic_descriptor_field_trial_;
   FieldTrialBasedConfig trials_config_;
   RtpPayloadState state_;
   RtpPayloadParams params_;

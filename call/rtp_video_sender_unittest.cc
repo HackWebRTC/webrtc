@@ -678,8 +678,6 @@ TEST(RtpVideoSenderTest, EarlyRetransmits) {
 }
 
 TEST(RtpVideoSenderTest, SupportsDependencyDescriptor) {
-  test::ScopedFieldTrials trials("WebRTC-GenericDescriptor/Enabled/");
-
   RtpVideoSenderTestFixture test({kSsrc1}, {}, kPayloadType, {});
   test.router()->SetActive(true);
 
@@ -744,8 +742,6 @@ TEST(RtpVideoSenderTest, SupportsDependencyDescriptor) {
 }
 
 TEST(RtpVideoSenderTest, SupportsStoppingUsingDependencyDescriptor) {
-  test::ScopedFieldTrials trials("WebRTC-GenericDescriptor/Enabled/");
-
   RtpVideoSenderTestFixture test({kSsrc1}, {}, kPayloadType, {});
   test.router()->SetActive(true);
 
