@@ -1344,9 +1344,16 @@ if (is_android) {
 
       deps = [
         ":base_java",
+        ":builtin_audio_codecs_java",
+        ":camera_java",
         ":default_video_codec_factory_java",
+        ":filevideo_java",
+        ":hwcodecs_java",
         ":libjingle_peerconnection_java",
         ":libjingle_peerconnection_metrics_default_java",
+        ":peerconnection_java",
+        ":surfaceviewrenderer_java",
+        ":swcodecs_java",
         ":video_api_java",
         ":video_java",
         "//base:base_java_test_support",
@@ -1354,6 +1361,7 @@ if (is_android) {
         "//third_party/android_support_test_runner:rules_java",
         "//third_party/android_support_test_runner:runner_java",
         "//third_party/google-truth:google_truth_java",
+        "//third_party/hamcrest:hamcrest_library_java",
         "//third_party/junit",
         "//third_party/mockito:mockito_java",
       ]
@@ -1508,7 +1516,13 @@ if (is_android) {
     ]
 
     deps = [
+      ":base_java",
+      ":camera_java",
+      ":hwcodecs_java",
       ":libjingle_peerconnection_java",
+      ":peerconnection_java",
+      ":video_api_java",
+      ":video_java",
       "//base:base_java_test_support",
       "//third_party/google-truth:google_truth_java",
     ]

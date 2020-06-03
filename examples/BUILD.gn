@@ -180,10 +180,10 @@ if (is_android) {
       "androidapp/res/layout/fragment_call.xml",
       "androidapp/res/layout/fragment_hud.xml",
       "androidapp/res/menu/connect_menu.xml",
-      "androidapp/res/values/arrays.xml",
-      "androidapp/res/values/strings.xml",
       "androidapp/res/values-v17/styles.xml",
       "androidapp/res/values-v21/styles.xml",
+      "androidapp/res/values/arrays.xml",
+      "androidapp/res/values/strings.xml",
       "androidapp/res/xml/preferences.xml",
     ]
     custom_package = "org.appspot.apprtc"
@@ -207,7 +207,10 @@ if (is_android) {
 
     deps = [
       ":AppRTCMobile_javalib",
+      "../sdk/android:camera_java",
       "../sdk/android:libjingle_peerconnection_java",
+      "../sdk/android:peerconnection_java",
+      "../sdk/android:video_api_java",
       "../sdk/android:video_java",
       "//third_party/android_support_test_runner:runner_java",
       "//third_party/junit",
@@ -379,14 +382,18 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     if (rtc_apprtcmobile_broadcast_extension) {
       bundle_data("AppRTCMobileBroadcastUpload_extension_bundle") {
         testonly = true
-        public_deps = [ ":AppRTCMobileBroadcastUpload" ]  # no-presubmit-check TODO(webrtc:8603)
+        public_deps = [  # no-presubmit-check TODO(webrtc:8603)
+          ":AppRTCMobileBroadcastUpload",  # prevent code format
+        ]
         sources = [ "$root_out_dir/AppRTCMobileBroadcastUpload.appex" ]
         outputs = [ "{{bundle_contents_dir}}/Plugins/{{source_file_part}}" ]
       }
 
       bundle_data("AppRTCMobileBroadcastSetupUI_extension_bundle") {
         testonly = true
-        public_deps = [ ":AppRTCMobileBroadcastSetupUI" ]  # no-presubmit-check TODO(webrtc:8603)
+        public_deps = [  # no-presubmit-check TODO(webrtc:8603)
+          ":AppRTCMobileBroadcastSetupUI",  # prevent code format
+        ]
         sources = [ "$root_out_dir/AppRTCMobileBroadcastSetupUI.appex" ]
         outputs = [ "{{bundle_contents_dir}}/Plugins/{{source_file_part}}" ]
       }
@@ -859,6 +866,7 @@ if (is_android) {
 
     deps = [
       ":AppRTCMobile_javalib",
+      "../sdk/android:peerconnection_java",
       "//base:base_java_test_support",
       "//third_party/google-truth:google_truth_java",
     ]
