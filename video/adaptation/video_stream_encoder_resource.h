@@ -34,8 +34,6 @@ class VideoStreamEncoderResource : public Resource {
   // Resource implementation.
   std::string Name() const override;
   void SetResourceListener(ResourceListener* listener) override;
-  absl::optional<ResourceUsageState> UsageState() const override;
-  void ClearUsageState() override;
 
   // Provides a pointer to the adaptation task queue. After this call, all
   // methods defined in this interface, including
@@ -74,8 +72,6 @@ class VideoStreamEncoderResource : public Resource {
   // Treated as const after initialization.
   TaskQueueBase* encoder_queue_;
   TaskQueueBase* resource_adaptation_queue_ RTC_GUARDED_BY(lock_);
-  absl::optional<ResourceUsageState> usage_state_
-      RTC_GUARDED_BY(resource_adaptation_queue());
   ResourceListener* listener_ RTC_GUARDED_BY(resource_adaptation_queue());
 };
 

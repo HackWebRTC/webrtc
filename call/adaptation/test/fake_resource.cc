@@ -23,17 +23,13 @@ rtc::scoped_refptr<FakeResource> FakeResource::Create(std::string name) {
 }
 
 FakeResource::FakeResource(std::string name)
-    : Resource(),
-      name_(std::move(name)),
-      listener_(nullptr),
-      usage_state_(absl::nullopt) {}
+    : Resource(), name_(std::move(name)), listener_(nullptr) {}
 
 FakeResource::~FakeResource() {}
 
 void FakeResource::SetUsageState(ResourceUsageState usage_state) {
-  usage_state_ = usage_state;
   if (listener_) {
-    listener_->OnResourceUsageStateMeasured(this);
+    listener_->OnResourceUsageStateMeasured(this, usage_state);
   }
 }
 
@@ -43,14 +39,6 @@ std::string FakeResource::Name() const {
 
 void FakeResource::SetResourceListener(ResourceListener* listener) {
   listener_ = listener;
-}
-
-absl::optional<ResourceUsageState> FakeResource::UsageState() const {
-  return usage_state_;
-}
-
-void FakeResource::ClearUsageState() {
-  usage_state_ = absl::nullopt;
 }
 
 }  // namespace webrtc

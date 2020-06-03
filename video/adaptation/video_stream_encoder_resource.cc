@@ -20,7 +20,6 @@ VideoStreamEncoderResource::VideoStreamEncoderResource(std::string name)
       name_(std::move(name)),
       encoder_queue_(nullptr),
       resource_adaptation_queue_(nullptr),
-      usage_state_(absl::nullopt),
       listener_(nullptr) {}
 
 VideoStreamEncoderResource::~VideoStreamEncoderResource() {
@@ -64,23 +63,11 @@ std::string VideoStreamEncoderResource::Name() const {
   return name_;
 }
 
-absl::optional<ResourceUsageState> VideoStreamEncoderResource::UsageState()
-    const {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue());
-  return usage_state_;
-}
-
-void VideoStreamEncoderResource::ClearUsageState() {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue());
-  usage_state_ = absl::nullopt;
-}
-
 void VideoStreamEncoderResource::OnResourceUsageStateMeasured(
     ResourceUsageState usage_state) {
   RTC_DCHECK_RUN_ON(resource_adaptation_queue());
-  usage_state_ = usage_state;
   if (listener_) {
-    listener_->OnResourceUsageStateMeasured(this);
+    listener_->OnResourceUsageStateMeasured(this, usage_state);
   }
 }
 

@@ -33,13 +33,10 @@ class FakeResource : public Resource {
   // Resource implementation.
   std::string Name() const override;
   void SetResourceListener(ResourceListener* listener) override;
-  absl::optional<ResourceUsageState> UsageState() const override;
-  void ClearUsageState() override;
 
  private:
   const std::string name_;
   ResourceListener* listener_;
-  absl::optional<ResourceUsageState> usage_state_;
 };
 
 }  // namespace webrtc

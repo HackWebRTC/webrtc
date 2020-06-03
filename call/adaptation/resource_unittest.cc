@@ -26,7 +26,8 @@ class MockResourceListener : public ResourceListener {
  public:
   MOCK_METHOD(void,
               OnResourceUsageStateMeasured,
-              (rtc::scoped_refptr<Resource> resource),
+              (rtc::scoped_refptr<Resource> resource,
+               ResourceUsageState usage_state),
               (override));
 };
 
@@ -41,10 +42,11 @@ class ResourceTest : public ::testing::Test {
 TEST_F(ResourceTest, RegisteringListenerReceivesCallbacks) {
   StrictMock<MockResourceListener> resource_listener;
   fake_resource_->SetResourceListener(&resource_listener);
-  EXPECT_CALL(resource_listener, OnResourceUsageStateMeasured(_))
+  EXPECT_CALL(resource_listener, OnResourceUsageStateMeasured(_, _))
       .Times(1)
-      .WillOnce([](rtc::scoped_refptr<Resource> resource) {
-        EXPECT_EQ(ResourceUsageState::kOveruse, resource->UsageState());
+      .WillOnce([](rtc::scoped_refptr<Resource> resource,
+                   ResourceUsageState usage_state) {
+        EXPECT_EQ(ResourceUsageState::kOveruse, usage_state);
       });
   fake_resource_->SetUsageState(ResourceUsageState::kOveruse);
   fake_resource_->SetResourceListener(nullptr);
@@ -54,7 +56,7 @@ TEST_F(ResourceTest, UnregisteringListenerStopsCallbacks) {
   StrictMock<MockResourceListener> resource_listener;
   fake_resource_->SetResourceListener(&resource_listener);
   fake_resource_->SetResourceListener(nullptr);
-  EXPECT_CALL(resource_listener, OnResourceUsageStateMeasured(_)).Times(0);
+  EXPECT_CALL(resource_listener, OnResourceUsageStateMeasured(_, _)).Times(0);
   fake_resource_->SetUsageState(ResourceUsageState::kOveruse);
 }
 

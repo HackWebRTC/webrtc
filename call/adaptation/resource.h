@@ -12,11 +12,8 @@
 #define CALL_ADAPTATION_RESOURCE_H_
 
 #include <string>
-#include <vector>
 
-#include "absl/types/optional.h"
 #include "api/scoped_refptr.h"
-#include "api/task_queue/task_queue_base.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "call/adaptation/video_stream_input_state.h"
 #include "rtc_base/ref_count.h"
@@ -38,20 +35,18 @@ class ResourceListener {
  public:
   virtual ~ResourceListener();
 
-  // Informs the listener of a new measurement of resource usage. This means
-  // that |resource->usage_state()| is now up-to-date.
   virtual void OnResourceUsageStateMeasured(
-      rtc::scoped_refptr<Resource> resource) = 0;
+      rtc::scoped_refptr<Resource> resource,
+      ResourceUsageState usage_state) = 0;
 };
 
-// A Resource monitors an implementation-specific system resource. It may report
+// A Resource monitors an implementation-specific resource. It may report
 // kOveruse or kUnderuse when resource usage is high or low enough that we
 // should perform some sort of mitigation to fulfil the resource's constraints.
 //
-// All methods defined in this interface, except SetResourceListener(), MUST be
-// invoked on the resource adaptation task queue.
+// The methods on this interface are invoked on the adaptation task queue.
+// Resource usage measurements may be performed on an any task queue.
 //
-// Usage measurements may be performed on an implementation-specific task queue.
 // The Resource is reference counted to prevent use-after-free when posting
 // between task queues. As such, the implementation MUST NOT make any
 // assumptions about which task queue Resource is destructed on.
@@ -62,18 +57,9 @@ class Resource : public rtc::RefCountInterface {
   ~Resource() override;
 
   virtual std::string Name() const = 0;
-  // The listener MUST be informed any time UsageState() changes.
+  // The |listener| may be informed of resource usage measurements on any task
+  // queue, but not after this method is invoked with the null argument.
   virtual void SetResourceListener(ResourceListener* listener) = 0;
-  // Within a single task running on the adaptation task queue, UsageState()
-  // MUST return the same value every time it is called.
-  // TODO(https://crbug.com/webrtc/11618): Remove the UsageState() getter in
-  // favor of passing the use usage state directly to the ResourceListener. This
-  // gets rid of this strange requirement of having to return the same thing
-  // every time.
-  virtual absl::optional<ResourceUsageState> UsageState() const = 0;
-  // Invalidates current usage measurements, i.e. in response to the system load
-  // changing. Example: an adaptation was just applied.
-  virtual void ClearUsageState() = 0;
 };
 
 }  // namespace webrtc

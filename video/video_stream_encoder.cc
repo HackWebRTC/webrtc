@@ -284,7 +284,8 @@ VideoStreamEncoder::VideoStreamEncoder(
   rtc::Event initialize_processor_event;
   resource_adaptation_queue_.PostTask([this, &initialize_processor_event] {
     RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
-    resource_adaptation_processor_->InitializeOnResourceAdaptationQueue();
+    resource_adaptation_processor_->SetResourceAdaptationQueue(
+        resource_adaptation_queue_.Get());
     stream_resource_manager_.SetAdaptationProcessor(
         resource_adaptation_processor_.get());
     resource_adaptation_processor_->AddRestrictionsListener(

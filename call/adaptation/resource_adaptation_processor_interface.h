@@ -14,6 +14,7 @@
 #include "absl/types/optional.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/video/video_adaptation_counters.h"
 #include "api/video/video_frame.h"
 #include "call/adaptation/adaptation_constraint.h"
@@ -21,7 +22,6 @@
 #include "call/adaptation/encoder_settings.h"
 #include "call/adaptation/resource.h"
 #include "call/adaptation/video_source_restrictions.h"
-#include "rtc_base/task_queue.h"
 
 namespace webrtc {
 
@@ -48,7 +48,8 @@ class ResourceAdaptationProcessorInterface {
  public:
   virtual ~ResourceAdaptationProcessorInterface();
 
-  virtual void InitializeOnResourceAdaptationQueue() = 0;
+  virtual void SetResourceAdaptationQueue(
+      TaskQueueBase* resource_adaptation_queue) = 0;
 
   virtual DegradationPreference degradation_preference() const = 0;
   // Reinterprets "balanced + screenshare" as "maintain-resolution".
