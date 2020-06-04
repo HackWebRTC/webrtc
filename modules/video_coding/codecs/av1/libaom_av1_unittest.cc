@@ -103,6 +103,7 @@ class TestAv1Encoder {
     codec_settings.height = kHeight;
     codec_settings.maxFramerate = kFramerate;
     codec_settings.maxBitrate = 1000;
+    codec_settings.qpMax = 63;
     VideoEncoder::Settings encoder_settings(
         VideoEncoder::Capabilities(/*loss_notification=*/false),
         /*number_of_cores=*/1, /*max_payload_size=*/1200);

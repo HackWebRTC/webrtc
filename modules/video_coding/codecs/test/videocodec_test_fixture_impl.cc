@@ -205,6 +205,9 @@ void VideoCodecTestFixtureImpl::Config::SetCodecSettings(
       codec_settings.VP9()->numberOfSpatialLayers =
           static_cast<uint8_t>(num_spatial_layers);
       break;
+    case kVideoCodecAV1:
+      codec_settings.qpMax = 63;
+      break;
     case kVideoCodecH264:
       codec_settings.H264()->frameDroppingOn = frame_dropper_on;
       codec_settings.H264()->keyFrameInterval = kBaseKeyFrameInterval;

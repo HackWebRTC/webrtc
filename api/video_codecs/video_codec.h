@@ -19,7 +19,7 @@
 #include "absl/types/optional.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_codec_type.h"
-#include "common_types.h"  // NOLINT(build/include)
+#include "common_types.h"  // NOLINT(build/include_directory)
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {

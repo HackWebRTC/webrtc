@@ -6,6 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import("//third_party/libaom/options.gni")
 import("../../webrtc.gni")
 
 rtc_library("encoded_frame") {
@@ -785,6 +786,11 @@ if (rtc_include_tests) {
       "codecs/vp8/test/vp8_impl_unittest.cc",
       "codecs/vp9/test/vp9_impl_unittest.cc",
     ]
+
+    # TODO(jianj): Fix crash on iOS and re-enable
+    if (enable_libaom && !is_ios) {
+      sources += [ "codecs/test/videocodec_test_libaom.cc" ]
+    }
     if (rtc_use_h264) {
       sources += [ "codecs/test/videocodec_test_openh264.cc" ]
     }
