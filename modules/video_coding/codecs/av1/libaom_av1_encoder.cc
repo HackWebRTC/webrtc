@@ -50,10 +50,10 @@ constexpr float kMinimumFrameRate = 1.0;
 
 // Only positive speeds, range for real-time coding currently is: 6 - 8.
 // Lower means slower/better quality, higher means fastest/lower quality.
-int GetCpuSpeed(int width, int height) {
+int GetCpuSpeed(int width, int height, int number_of_cores) {
   // For smaller resolutions, use lower speed setting (get some coding gain at
   // the cost of increased encoding complexity).
-  if (width * height <= 320 * 180)
+  if (number_of_cores > 2 && width * height <= 320 * 180)
     return 6;
   else if (width * height >= 1280 * 720)
     return 8;
@@ -214,8 +214,9 @@ int LibaomAv1Encoder::InitEncode(const VideoCodec* codec_settings,
   inited_ = true;
 
   // Set control parameters
-  ret = aom_codec_control(&ctx_, AOME_SET_CPUUSED,
-                          GetCpuSpeed(cfg_.g_w, cfg_.g_h));
+  ret = aom_codec_control(
+      &ctx_, AOME_SET_CPUUSED,
+      GetCpuSpeed(cfg_.g_w, cfg_.g_h, settings.number_of_cores));
   if (ret != AOM_CODEC_OK) {
     RTC_LOG(LS_WARNING) << "LibaomAv1Encoder::EncodeInit returned " << ret
                         << " on control AV1E_SET_CPUUSED.";
