@@ -22,6 +22,9 @@
 #include "modules/video_coding/codecs/av1/scalability_structure_l1t2.h"
 #include "modules/video_coding/codecs/av1/scalability_structure_l2t1.h"
 #include "modules/video_coding/codecs/av1/scalability_structure_l2t1_key.h"
+#include "modules/video_coding/codecs/av1/scalability_structure_l2t2.h"
+#include "modules/video_coding/codecs/av1/scalability_structure_l2t2_key.h"
+#include "modules/video_coding/codecs/av1/scalability_structure_l2t2_key_shift.h"
 #include "modules/video_coding/codecs/av1/scalability_structure_s2t1.h"
 #include "modules/video_coding/codecs/av1/scalable_video_controller.h"
 #include "modules/video_coding/frame_dependencies_calculator.h"
@@ -287,7 +290,15 @@ INSTANTIATE_TEST_SUITE_P(
                         std::make_unique<ScalabilityStructureL2T1Key>,
                         /*num_temporal_units=*/3},
            SvcTestParam{"S2T1", std::make_unique<ScalabilityStructureS2T1>,
-                        /*num_temporal_units=*/3}),
+                        /*num_temporal_units=*/3},
+           SvcTestParam{"L2T2", std::make_unique<ScalabilityStructureL2T2>,
+                        /*num_temporal_units=*/4},
+           SvcTestParam{"L2T2Key",
+                        std::make_unique<ScalabilityStructureL2T2Key>,
+                        /*num_temporal_units=*/4},
+           SvcTestParam{"L2T2KeyShift",
+                        std::make_unique<ScalabilityStructureL2T2KeyShift>,
+                        /*num_temporal_units=*/4}),
     [](const testing::TestParamInfo<SvcTestParam>& info) {
       return info.param.name;
     });
