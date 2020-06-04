@@ -1587,6 +1587,8 @@ void WebRtcVideoChannel::FillSenderStats(VideoMediaInfo* video_media_info,
            send_streams_.begin();
        it != send_streams_.end(); ++it) {
     auto infos = it->second->GetPerLayerVideoSenderInfos(log_stats);
+    if (infos.empty())
+      continue;
     video_media_info->aggregated_senders.push_back(
         it->second->GetAggregatedVideoSenderInfo(infos));
     for (auto&& info : infos) {
@@ -2594,7 +2596,7 @@ VideoSenderInfo
 WebRtcVideoChannel::WebRtcVideoSendStream::GetAggregatedVideoSenderInfo(
     const std::vector<VideoSenderInfo>& infos) const {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  RTC_DCHECK(!infos.empty());
+  RTC_CHECK(!infos.empty());
   if (infos.size() == 1) {
     return infos[0];
   }
