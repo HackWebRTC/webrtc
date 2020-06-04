@@ -33,11 +33,9 @@ class PerfTestData {
   int64_t my_counter_ = 0;
 };
 
-// TODO(bugs.webrtc.org/11630): remove NOLINT when linter supports mutable
-// references.
-void BM_LockWithMutex(benchmark::State& state) {  // NOLINT
+void BM_LockWithMutex(benchmark::State& state) {
   static PerfTestData test_data;
-  for (auto s : state) {
+  for (auto it = state.begin(); it != state.end(); ++it) {
     benchmark::DoNotOptimize(test_data.AddToCounter(2));
   }
 }
