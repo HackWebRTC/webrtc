@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "absl/flags/flag.h"
+#include "absl/flags/declare.h"
 #include "api/test/create_network_emulation_manager.h"
 #include "api/test/create_peerconnection_quality_test_fixture.h"
 #include "api/test/network_emulation_manager.h"
