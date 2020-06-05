@@ -97,14 +97,19 @@ LEGACY_API_DIRS = (
 API_DIRS = NATIVE_API_DIRS[:] + LEGACY_API_DIRS[:]
 
 # TARGET_RE matches a GN target, and extracts the target name and the contents.
-TARGET_RE = re.compile(r'(?P<indent>\s*)\w+\("(?P<target_name>\w+)"\) {'
-                       r'(?P<target_contents>.*?)'
-                       r'(?P=indent)}',
-                       re.MULTILINE | re.DOTALL)
+TARGET_RE = re.compile(
+  r'(?P<indent>\s*)(?P<target_type>\w+)\("(?P<target_name>\w+)"\) {'
+  r'(?P<target_contents>.*?)'
+  r'(?P=indent)}',
+  re.MULTILINE | re.DOTALL)
 
 # SOURCES_RE matches a block of sources inside a GN target.
 SOURCES_RE = re.compile(r'sources \+?= \[(?P<sources>.*?)\]',
                         re.MULTILINE | re.DOTALL)
+
+# DEPS_RE matches a block of sources inside a GN target.
+DEPS_RE = re.compile(r'\bdeps \+?= \[(?P<deps>.*?)\]',
+                     re.MULTILINE | re.DOTALL)
 
 # FILE_PATH_RE matchies a file path.
 FILE_PATH_RE = re.compile(r'"(?P<file_path>(\w|\/)+)(?P<extension>\.\w+)"')
@@ -339,6 +344,36 @@ def CheckNoSourcesAbove(input_api, gn_files, output_api):
         'Violating GN files:' % '\n'.join(violating_source_entries),
         items=violating_gn_files)]
   return []
+
+
+def CheckAbseilDependencies(input_api, gn_files, output_api):
+  """Checks that Abseil dependencies are declared in `absl_deps`."""
+  absl_re = re.compile(r'third_party/abseil-cpp', re.MULTILINE | re.DOTALL)
+  target_types_to_check = [
+    'rtc_library',
+    'rtc_source_set',
+    'rtc_static_library'
+  ]
+  error_msg = ('Abseil dependencies in target "%s" (file: %s) '
+              'should be moved to the "absl_deps" parameter.')
+  errors = []
+
+  for gn_file in gn_files:
+    gn_file_content = input_api.ReadFile(gn_file)
+    for target_match in TARGET_RE.finditer(gn_file_content):
+      target_type = target_match.group('target_type')
+      target_name = target_match.group('target_name')
+      target_contents = target_match.group('target_contents')
+      if target_type in target_types_to_check:
+        for deps_match in DEPS_RE.finditer(target_contents):
+          deps = deps_match.group('deps').splitlines()
+          for dep in deps:
+            if re.search(absl_re, dep):
+              errors.append(
+                output_api.PresubmitError(error_msg % (target_name,
+                                                       gn_file.LocalPath())))
+              break  # no need to warn more than once per target
+  return errors
 
 
 def CheckNoMixingSources(input_api, gn_files, output_api):
@@ -580,6 +615,7 @@ def CheckGnChanges(input_api, output_api):
   if gn_files:
     result.extend(CheckNoSourcesAbove(input_api, gn_files, output_api))
     result.extend(CheckNoMixingSources(input_api, gn_files, output_api))
+    result.extend(CheckAbseilDependencies(input_api, gn_files, output_api))
     result.extend(CheckNoPackageBoundaryViolations(input_api, gn_files,
                                                    output_api))
     result.extend(CheckPublicDepsIsNotUsed(gn_files, input_api, output_api))

@@ -63,3 +63,12 @@ has decided if they will change `absl::Span` to match.
 These are optimized for speed, not binary size. Even `StrCat` calls
 with a modest number of arguments can easily add several hundred bytes
 to the binary.
+
+## How to depend on Abseil
+
+For build targets `rtc_library`, `rtc_source_set` and `rtc_static_library`,
+dependencies on Abseil need to be listed in `absl_deps` instead of `deps`.
+
+This is needed in order to support the Abseil component build in Chromium. In
+such build mode, WebRTC will depend on a unique Abseil build target what will
+generate a shared library.

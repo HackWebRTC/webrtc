@@ -26,8 +26,8 @@ rtc_library("voip_core") {
     "../../modules/utility:utility",
     "../../rtc_base:criticalsection",
     "../../rtc_base:logging",
-    "//third_party/abseil-cpp/absl/types:optional",
   ]
+  absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
 }
 
 rtc_library("audio_channel") {

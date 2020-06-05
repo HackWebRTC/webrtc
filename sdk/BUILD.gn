@@ -35,8 +35,8 @@ rtc_library("media_constraints") {
   deps = [
     "../api:audio_options_api",
     "../api:libjingle_peerconnection_api",
-    "//third_party/abseil-cpp/absl/types:optional",
   ]
+  absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
 }
 
 rtc_library("sdk_tests") {
@@ -272,8 +272,8 @@ if (is_ios || is_mac) {
           "../rtc_base:checks",
           "../system_wrappers:field_trial",
           "../system_wrappers:metrics",
-          "//third_party/abseil-cpp/absl/base:core_headers",
         ]
+        absl_deps = [ "//third_party/abseil-cpp/absl/base:core_headers" ]
 
         libs = [ "AudioToolbox.framework" ]
       }
@@ -444,8 +444,8 @@ if (is_ios || is_mac) {
         "../media:rtc_media_base",
         "../rtc_base",
         "../rtc_base:checks",
-        "//third_party/abseil-cpp/absl/types:optional",
       ]
+      absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
 
       configs += [
         "..:common_objc",
@@ -1572,8 +1572,8 @@ if (is_ios || is_mac) {
         "../api/video_codecs:video_codecs_api",
         "../common_video",
         "../rtc_base",
-        "//third_party/abseil-cpp/absl/memory",
       ]
+      absl_deps = [ "//third_party/abseil-cpp/absl/memory" ]
     }
 
     rtc_library("native_video") {

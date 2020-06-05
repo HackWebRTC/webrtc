@@ -59,6 +59,8 @@ rtc_library("remote_bitrate_estimator") {
     "../../system_wrappers",
     "../../system_wrappers:field_trial",
     "../../system_wrappers:metrics",
+  ]
+  absl_deps = [
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -76,6 +78,8 @@ if (!build_with_chromium) {
       "../../rtc_base:rtc_base_approved",
       "../../test:rtp_test_utils",
       "../rtp_rtcp",
+    ]
+    absl_deps = [
       "//third_party/abseil-cpp/absl/flags:flag",
       "//third_party/abseil-cpp/absl/flags:parse",
     ]

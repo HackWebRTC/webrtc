@@ -60,9 +60,9 @@ rtc_library("common_video") {
     "../rtc_base:safe_minmax",
     "../rtc_base/system:rtc_export",
     "../system_wrappers:metrics",
-    "//third_party/abseil-cpp/absl/types:optional",
     "//third_party/libyuv",
   ]
+  absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
 }
 
 if (rtc_include_tests) {

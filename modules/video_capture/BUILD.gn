@@ -38,9 +38,9 @@ rtc_library("video_capture_module") {
     "../../rtc_base:stringutils",
     "../../rtc_base/synchronization:rw_lock_wrapper",
     "../../system_wrappers",
-    "//third_party/abseil-cpp/absl/strings",
     "//third_party/libyuv",
   ]
+  absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
 }
 
 if (!build_with_chromium) {
@@ -131,13 +131,13 @@ if (!build_with_chromium) {
         "../../rtc_base:rtc_base_approved",
         "../../system_wrappers",
         "../../test:frame_utils",
+        "../../test:test_main",
         "../../test:test_support",
         "../../test:video_test_common",
         "../utility",
         "//testing/gtest",
         "//third_party/abseil-cpp/absl/memory",
       ]
-      deps += [ "../../test:test_main" ]
     }
   }
 }

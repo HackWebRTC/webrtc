@@ -42,7 +42,8 @@ rtc_library("primitives") {
   ]
 
   if (!build_with_mozilla) {
-    deps += [ "../../rtc_base" ]  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
+    deps += [ "../../rtc_base" ]  # TODO(kjellander): Cleanup in
+                                  # bugs.webrtc.org/3806.
   }
 }
 
@@ -224,7 +225,8 @@ if (is_linux) {
 
 rtc_source_set("desktop_capture") {
   visibility = [ "*" ]
-  public_deps = [ ":desktop_capture_generic" ]  # no-presubmit-check TODO(webrtc:8603)
+  public_deps =  # no-presubmit-check TODO(webrtc:8603)
+      [ ":desktop_capture_generic" ]
   if (is_mac) {
     public_deps += [ ":desktop_capture_objc" ]
   }
@@ -480,6 +482,8 @@ rtc_library("desktop_capture_generic") {
     "../../system_wrappers",
     "../../system_wrappers:cpu_features_api",
     "../../system_wrappers:metrics",
+  ]
+  absl_deps = [
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",
   ]

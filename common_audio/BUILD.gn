@@ -56,8 +56,8 @@ rtc_library("common_audio") {
     "../system_wrappers",
     "../system_wrappers:cpu_features_api",
     "third_party/ooura:fft_size_256",
-    "//third_party/abseil-cpp/absl/types:optional",
   ]
+  absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
 
   defines = []
 

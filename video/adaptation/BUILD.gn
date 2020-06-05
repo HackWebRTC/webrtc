@@ -50,6 +50,8 @@ rtc_library("video_adaptation") {
     "../../rtc_base/task_utils:to_queued_task",
     "../../system_wrappers:field_trial",
     "../../system_wrappers:system_wrappers",
+  ]
+  absl_deps = [
     "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/types:optional",
@@ -89,7 +91,7 @@ if (rtc_include_tests) {
       "//test:rtc_expect_death",
       "//test:test_support",
       "//testing/gtest",
-      "//third_party/abseil-cpp/absl/types:optional",
     ]
+    absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
   }
 }

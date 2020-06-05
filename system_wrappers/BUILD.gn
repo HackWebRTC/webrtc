@@ -38,8 +38,8 @@ rtc_library("system_wrappers") {
     "../rtc_base/synchronization:rw_lock_wrapper",
     "../rtc_base/system:arch",
     "../rtc_base/system:rtc_export",
-    "//third_party/abseil-cpp/absl/types:optional",
   ]
+  absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
 
   if (is_android) {
     if (build_with_mozilla) {
@@ -92,8 +92,8 @@ rtc_library("field_trial") {
     "../rtc_base:checks",
     "../rtc_base:logging",
     "../rtc_base:stringutils",
-    "//third_party/abseil-cpp/absl/strings",
   ]
+  absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
 }
 
 rtc_library("metrics") {

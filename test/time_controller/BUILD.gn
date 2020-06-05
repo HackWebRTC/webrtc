@@ -41,8 +41,8 @@ rtc_library("time_controller") {
     "../../rtc_base/synchronization:yield_policy",
     "../../rtc_base/task_utils:to_queued_task",
     "../../system_wrappers",
-    "//third_party/abseil-cpp/absl/strings",
   ]
+  absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
 }
 
 if (rtc_include_tests) {

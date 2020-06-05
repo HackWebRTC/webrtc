@@ -536,6 +536,9 @@ template("rtc_source_set") {
     # converted to //third_party/abseil-cpp:absl if is_component_build=true
     # otherwise it just needs to be added to deps.
     if (absl_deps != []) {
+      if (!defined(deps)) {
+        deps = []
+      }
       if (is_component_build && build_with_chromium) {
         # TODO(crbug.com/1046390): Enable when the Abseil component will be
         # available.
@@ -625,6 +628,9 @@ template("rtc_static_library") {
     # converted to //third_party/abseil-cpp:absl if is_component_build=true
     # otherwise it just needs to be added to deps.
     if (absl_deps != []) {
+      if (!defined(deps)) {
+        deps = []
+      }
       if (is_component_build && build_with_chromium) {
         # TODO(crbug.com/1046390): Enable when the Abseil component will be
         # available.
@@ -751,6 +757,9 @@ template("rtc_library") {
     # converted to //third_party/abseil-cpp:absl if is_component_build=true
     # otherwise it just needs to be added to deps.
     if (absl_deps != []) {
+      if (!defined(deps)) {
+        deps = []
+      }
       if (is_component_build && build_with_chromium) {
         # TODO(crbug.com/1046390): Enable when the Abseil component will be
         # available.

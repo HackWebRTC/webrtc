@@ -33,8 +33,8 @@ rtc_library("control_handler") {
     "../../../rtc_base/synchronization:sequence_checker",
     "../../../system_wrappers:field_trial",
     "../../pacing",
-    "//third_party/abseil-cpp/absl/types:optional",
   ]
+  absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
 
   if (!build_with_mozilla) {
     deps += [ "../../../rtc_base" ]
@@ -61,6 +61,8 @@ rtc_library("transport_feedback") {
     "../../../system_wrappers",
     "../../../system_wrappers:field_trial",
     "../../rtp_rtcp:rtp_rtcp_format",
+  ]
+  absl_deps = [
     "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/types:optional",
   ]

@@ -29,8 +29,8 @@ rtc_library("media_transport_interface") {
     "../../../rtc_base:rtc_base_approved",
     "../../../rtc_base:stringutils",
     "../../units:data_rate",
-    "//third_party/abseil-cpp/absl/types:optional",
   ]
+  absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
 }
 
 rtc_library("audio_interfaces") {

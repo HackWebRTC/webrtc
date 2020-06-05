@@ -240,8 +240,8 @@ rtc_library("audio_decoder_fuzzer") {
     "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
-    "//third_party/abseil-cpp/absl/types:optional",
   ]
+  absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
 }
 
 webrtc_fuzzer_test("audio_decoder_ilbc_fuzzer") {
@@ -439,8 +439,8 @@ rtc_library("audio_processing_fuzzer_helper") {
     "../../modules/audio_processing:audio_frame_proxies",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
-    "//third_party/abseil-cpp/absl/types:optional",
   ]
+  absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
 }
 
 webrtc_fuzzer_test("audio_processing_fuzzer") {

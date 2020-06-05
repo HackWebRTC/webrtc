@@ -117,9 +117,9 @@ if (rtc_include_tests) {
       "../../../../rtc_base/system:arch",
       "../../../../test:test_support",
       "../../utility:pffft_wrapper",
-      "//third_party/abseil-cpp/absl/memory",
       "//third_party/rnnoise:rnn_vad",
     ]
+    absl_deps = [ "//third_party/abseil-cpp/absl/memory" ]
     data = unittest_resources
     if (is_ios) {
       deps += [ ":unittests_bundle_data" ]

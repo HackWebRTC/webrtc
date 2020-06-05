@@ -141,6 +141,8 @@ if (rtc_include_tests) {
       "../logging:log_writer",
       "../network:emulated_network",
       "../time_controller",
+    ]
+    absl_deps = [
       "//third_party/abseil-cpp/absl/flags:flag",
       "//third_party/abseil-cpp/absl/flags:parse",
       "//third_party/abseil-cpp/absl/memory",
