@@ -275,8 +275,7 @@ bool P2PTransportChannel::MaybeSwitchSelectedConnection(
   if (result.connection.has_value()) {
     RTC_LOG(LS_INFO) << "Switching selected connection due to: "
                      << reason.ToString();
-    SwitchSelectedConnection(const_cast<Connection*>(*result.connection),
-                             reason);
+    SwitchSelectedConnection(FromIceController(*result.connection), reason);
   }
 
   if (result.recheck_event.has_value()) {
@@ -289,6 +288,10 @@ bool P2PTransportChannel::MaybeSwitchSelectedConnection(
         rtc::Bind(&P2PTransportChannel::SortConnectionsAndUpdateState, this,
                   *result.recheck_event),
         result.recheck_event->recheck_delay_ms);
+  }
+
+  for (const auto* con : result.connections_to_forget_state_on) {
+    FromIceController(con)->ForgetLearnedState();
   }
 
   return result.connection.has_value();
@@ -1403,7 +1406,7 @@ bool P2PTransportChannel::CreateConnection(PortInterface* port,
   return false;
 }
 
-bool P2PTransportChannel::FindConnection(Connection* connection) const {
+bool P2PTransportChannel::FindConnection(const Connection* connection) const {
   RTC_DCHECK_RUN_ON(network_thread_);
   return absl::c_linear_search(connections(), connection);
 }
@@ -1709,7 +1712,7 @@ void P2PTransportChannel::PruneConnections() {
   std::vector<const Connection*> connections_to_prune =
       ice_controller_->PruneConnections();
   for (const Connection* conn : connections_to_prune) {
-    const_cast<Connection*>(conn)->Prune();
+    FromIceController(conn)->Prune();
   }
 }
 
@@ -1912,11 +1915,10 @@ void P2PTransportChannel::CheckAndPing() {
   UpdateConnectionStates();
 
   auto result = ice_controller_->SelectConnectionToPing(last_ping_sent_ms_);
-  Connection* conn =
-      const_cast<Connection*>(result.connection.value_or(nullptr));
   int delay = result.recheck_delay_ms;
 
-  if (conn) {
+  if (result.connection.value_or(nullptr)) {
+    Connection* conn = FromIceController(*result.connection);
     PingConnection(conn);
     MarkConnectionPinged(conn);
   }
@@ -1929,7 +1931,12 @@ void P2PTransportChannel::CheckAndPing() {
 // This method is only for unit testing.
 Connection* P2PTransportChannel::FindNextPingableConnection() {
   RTC_DCHECK_RUN_ON(network_thread_);
-  return const_cast<Connection*>(ice_controller_->FindNextPingableConnection());
+  auto* conn = ice_controller_->FindNextPingableConnection();
+  if (conn) {
+    return FromIceController(conn);
+  } else {
+    return nullptr;
+  }
 }
 
 // A connection is considered a backup connection if the channel state

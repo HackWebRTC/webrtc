@@ -5728,6 +5728,81 @@ TEST(P2PTransportChannel, InjectIceController) {
       /* event_log = */ nullptr, &factory);
 }
 
+class ForgetLearnedStateController : public cricket::BasicIceController {
+ public:
+  explicit ForgetLearnedStateController(
+      const cricket::IceControllerFactoryArgs& args)
+      : cricket::BasicIceController(args) {}
+
+  SwitchResult SortAndSwitchConnection(IceControllerEvent reason) override {
+    auto result = cricket::BasicIceController::SortAndSwitchConnection(reason);
+    if (forget_connnection_) {
+      result.connections_to_forget_state_on.push_back(forget_connnection_);
+      forget_connnection_ = nullptr;
+    }
+    result.recheck_event =
+        IceControllerEvent(IceControllerEvent::ICE_CONTROLLER_RECHECK);
+    result.recheck_event->recheck_delay_ms = 100;
+    return result;
+  }
+
+  void ForgetThisConnectionNextTimeSortAndSwitchConnectionIsCalled(
+      Connection* con) {
+    forget_connnection_ = con;
+  }
+
+ private:
+  Connection* forget_connnection_ = nullptr;
+};
+
+class ForgetLearnedStateControllerFactory
+    : public cricket::IceControllerFactoryInterface {
+ public:
+  std::unique_ptr<cricket::IceControllerInterface> Create(
+      const cricket::IceControllerFactoryArgs& args) override {
+    auto controller = std::make_unique<ForgetLearnedStateController>(args);
+    // Keep a pointer to allow modifying calls.
+    // Must not be used after the p2ptransportchannel has been destructed.
+    controller_ = controller.get();
+    return controller;
+  }
+  virtual ~ForgetLearnedStateControllerFactory() = default;
+
+  ForgetLearnedStateController* controller_;
+};
+
+TEST_F(P2PTransportChannelPingTest, TestForgetLearnedState) {
+  ForgetLearnedStateControllerFactory factory;
+  FakePortAllocator pa(rtc::Thread::Current(), nullptr);
+  P2PTransportChannel ch("ping sufficiently", 1, &pa, nullptr, nullptr,
+                         &factory);
+  PrepareChannel(&ch);
+  ch.MaybeStartGathering();
+  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));
+  ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 2));
+
+  Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
+  Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
+  ASSERT_TRUE(conn1 != nullptr);
+  ASSERT_TRUE(conn2 != nullptr);
+
+  // Wait for conn1 to be selected.
+  conn1->ReceivedPingResponse(LOW_RTT, "id");
+  EXPECT_EQ_WAIT(conn1, ch.selected_connection(), kMediumTimeout);
+
+  conn2->ReceivedPingResponse(LOW_RTT, "id");
+  EXPECT_TRUE(conn2->writable());
+
+  // Now let the ice controller signal to P2PTransportChannel that it
+  // should Forget conn2.
+  factory.controller_
+      ->ForgetThisConnectionNextTimeSortAndSwitchConnectionIsCalled(conn2);
+
+  // We don't have a mock Connection, so verify this by checking that it
+  // is no longer writable.
+  EXPECT_EQ_WAIT(false, conn2->writable(), kMediumTimeout);
+}
+
 TEST_F(P2PTransportChannelTest, DisableDnsLookupsWithTransportPolicyRelay) {
   ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
                      kDefaultPortAllocatorFlags);

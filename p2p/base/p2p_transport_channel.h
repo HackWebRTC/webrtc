@@ -245,7 +245,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   bool CreateConnection(PortInterface* port,
                         const Candidate& remote_candidate,
                         PortInterface* origin_port);
-  bool FindConnection(Connection* connection) const;
+  bool FindConnection(const Connection* connection) const;
 
   uint32_t GetRemoteCandidateGeneration(const Candidate& candidate);
   bool IsDuplicateRemoteCandidate(const Candidate& candidate);
@@ -347,6 +347,16 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   // 1. mDNS candidates are received.
   // 2. Peer-reflexive remote candidates.
   Candidate SanitizeRemoteCandidate(const Candidate& c) const;
+
+  // Cast a Connection returned from IceController and verify that it exists.
+  // (P2P owns all Connections, and only gives const pointers to IceController,
+  // see IceControllerInterface).
+  Connection* FromIceController(const Connection* conn) {
+    // Verify that IceController does not return a connection
+    // that we have destroyed.
+    RTC_DCHECK(FindConnection(conn));
+    return const_cast<Connection*>(conn);
+  }
 
   std::string transport_name_ RTC_GUARDED_BY(network_thread_);
   int component_ RTC_GUARDED_BY(network_thread_);
