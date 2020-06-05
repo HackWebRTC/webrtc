@@ -265,6 +265,10 @@ config("common_config") {
     defines += [ "WEBRTC_USE_H264" ]
   }
 
+  if (rtc_use_absl_mutex) {
+    defines += [ "WEBRTC_ABSL_MUTEX" ]
+  }
+
   if (rtc_disable_logging) {
     defines += [ "RTC_DISABLE_LOGGING" ]
   }

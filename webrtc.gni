@@ -155,6 +155,9 @@ declare_args() {
   rtc_use_h264 =
       proprietary_codecs && !is_android && !is_ios && !(is_win && !is_clang)
 
+  # Enable this flag to make webrtc::Mutex be implemented by absl::Mutex.
+  rtc_use_absl_mutex = false
+
   # By default, use normal platform audio support or dummy audio, but don't
   # use file-based audio playout and record.
   rtc_use_dummy_audio_file_devices = false

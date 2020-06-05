@@ -25,18 +25,23 @@ rtc_library("mutex") {
   sources = [
     "mutex.cc",
     "mutex.h",
-    "mutex_abseil.h",
     "mutex_critical_section.h",
     "mutex_pthread.h",
   ]
+  if (rtc_use_absl_mutex) {
+    sources += [ "mutex_abseil.h" ]
+  }
+
   deps = [
     ":yield",
     "..:checks",
     "..:macromagic",
     "../system:unused",
     "//third_party/abseil-cpp/absl/base:core_headers",
-    "//third_party/abseil-cpp/absl/synchronization",
   ]
+  if (rtc_use_absl_mutex) {
+    deps += [ "//third_party/abseil-cpp/absl/synchronization" ]
+  }
 }
 
 rtc_library("rw_lock_wrapper") {
