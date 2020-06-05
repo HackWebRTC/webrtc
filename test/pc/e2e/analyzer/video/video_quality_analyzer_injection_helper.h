@@ -76,9 +76,6 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
   void Start(std::string test_case_name,
              rtc::ArrayView<const std::string> peer_names,
              int max_threads_count);
-  void Start(std::string test_case_name, int max_threads_count) {
-    Start(test_case_name, std::vector<std::string>{}, max_threads_count);
-  }
 
   // Forwards |stats_reports| for Peer Connection |pc_label| to
   // |analyzer_|.
