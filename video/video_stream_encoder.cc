@@ -588,6 +588,13 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     RTC_LOG(LS_ERROR) << "Failed to create encoder configuration.";
   }
 
+  if (encoder_config_.codec_type == kVideoCodecVP9) {
+    // Spatial layers configuration might impose some parity restrictions,
+    // thus some cropping might be needed.
+    crop_width_ = last_frame_info_->width - codec.width;
+    crop_height_ = last_frame_info_->height - codec.height;
+  }
+
   char log_stream_buf[4 * 1024];
   rtc::SimpleStringBuilder log_stream(log_stream_buf);
   log_stream << "ReconfigureEncoder:\n";

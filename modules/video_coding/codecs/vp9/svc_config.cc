@@ -79,6 +79,11 @@ std::vector<SpatialLayer> ConfigureSvcNormalVideo(size_t input_width,
   // First active layer must be configured.
   num_spatial_layers = std::max(num_spatial_layers, first_active_layer + 1);
 
+  // Ensure top layer is even enough.
+  int required_divisiblity = 1 << num_spatial_layers;
+  input_width = input_width - input_width % required_divisiblity;
+  input_height = input_height - input_height % required_divisiblity;
+
   for (size_t sl_idx = first_active_layer; sl_idx < num_spatial_layers;
        ++sl_idx) {
     SpatialLayer spatial_layer = {0};

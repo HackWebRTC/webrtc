@@ -219,6 +219,14 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
         video_codec.spatialLayers[i] = spatial_layers[i];
       }
 
+      // The top spatial layer dimensions may not be equal to the input
+      // resolution because of the rounding or explicit configuration.
+      // This difference must be propagated to the stream configuration.
+      video_codec.width = spatial_layers.back().width;
+      video_codec.height = spatial_layers.back().height;
+      video_codec.simulcastStream[0].width = spatial_layers.back().width;
+      video_codec.simulcastStream[0].height = spatial_layers.back().height;
+
       // Update layering settings.
       video_codec.VP9()->numberOfSpatialLayers =
           static_cast<unsigned char>(spatial_layers.size());

@@ -5917,4 +5917,34 @@ TEST_F(VideoStreamEncoderTest, AutomaticAnimationDetection) {
   video_stream_encoder_->Stop();
 }
 
+TEST_F(VideoStreamEncoderTest, ConfiguresVp9SvcAtOddResolutions) {
+  const int kWidth = 720;  // 540p adapted down.
+  const int kHeight = 405;
+  const int kNumFrames = 3;
+  // Works on screenshare mode.
+  ResetEncoder("VP9", /*num_streams=*/1, /*num_temporal_layers=*/1,
+               /*num_spatial_layers=*/2, /*screenshare=*/true);
+
+  video_source_.set_adaptation_enabled(true);
+
+  video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
+      DataRate::BitsPerSec(kTargetBitrateBps),
+      DataRate::BitsPerSec(kTargetBitrateBps),
+      DataRate::BitsPerSec(kTargetBitrateBps), 0, 0, 0);
+
+  VideoFrame frame = CreateFrame(1, kWidth, kHeight);
+
+  // Pass enough frames with the full update to trigger animation detection.
+  for (int i = 0; i < kNumFrames; ++i) {
+    int64_t timestamp_ms =
+        fake_clock_.TimeNanos() / rtc::kNumNanosecsPerMillisec;
+    frame.set_ntp_time_ms(timestamp_ms);
+    frame.set_timestamp_us(timestamp_ms * 1000);
+    video_source_.IncomingCapturedFrame(frame);
+    WaitForEncodedFrame(timestamp_ms);
+  }
+
+  video_stream_encoder_->Stop();
+}
+
 }  // namespace webrtc
