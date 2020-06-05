@@ -1288,7 +1288,7 @@ void RTCStatsCollector::ProduceDataChannelStats_s(
             timestamp_us));
     data_channel_stats->label = data_channel->label();
     data_channel_stats->protocol = data_channel->protocol();
-    data_channel_stats->datachannelid = data_channel->id();
+    data_channel_stats->data_channel_identifier = data_channel->id();
     data_channel_stats->state =
         DataStateToRTCDataChannelState(data_channel->state());
     data_channel_stats->messages_sent = data_channel->messages_sent();

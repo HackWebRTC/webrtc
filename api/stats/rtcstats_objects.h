@@ -134,7 +134,7 @@ class RTC_EXPORT RTCDataChannelStats final : public RTCStats {
 
   RTCStatsMember<std::string> label;
   RTCStatsMember<std::string> protocol;
-  RTCStatsMember<int32_t> datachannelid;
+  RTCStatsMember<int32_t> data_channel_identifier;
   // TODO(hbos): Support enum types? "RTCStatsMember<RTCDataChannelState>"?
   RTCStatsMember<std::string> state;
   RTCStatsMember<uint32_t> messages_sent;

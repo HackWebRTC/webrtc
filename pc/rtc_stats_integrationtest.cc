@@ -461,7 +461,7 @@ class RTCStatsReportVerifier {
     RTCStatsVerifier verifier(report_, &data_channel);
     verifier.TestMemberIsDefined(data_channel.label);
     verifier.TestMemberIsDefined(data_channel.protocol);
-    verifier.TestMemberIsDefined(data_channel.datachannelid);
+    verifier.TestMemberIsDefined(data_channel.data_channel_identifier);
     verifier.TestMemberIsDefined(data_channel.state);
     verifier.TestMemberIsNonNegative<uint32_t>(data_channel.messages_sent);
     verifier.TestMemberIsNonNegative<uint64_t>(data_channel.bytes_sent);
