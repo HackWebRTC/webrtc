@@ -79,32 +79,6 @@ class EventLogAnalyzer {
       std::string yaxis_label,
       Plot* plot);
 
-  void CreateAudioEncoderTargetBitrateGraph(Plot* plot);
-  void CreateAudioEncoderFrameLengthGraph(Plot* plot);
-  void CreateAudioEncoderPacketLossGraph(Plot* plot);
-  void CreateAudioEncoderEnableFecGraph(Plot* plot);
-  void CreateAudioEncoderEnableDtxGraph(Plot* plot);
-  void CreateAudioEncoderNumChannelsGraph(Plot* plot);
-
-  using NetEqStatsGetterMap =
-      std::map<uint32_t, std::unique_ptr<test::NetEqStatsGetter>>;
-  NetEqStatsGetterMap SimulateNetEq(const std::string& replacement_file_name,
-                                    int file_sample_rate_hz) const;
-
-  void CreateAudioJitterBufferGraph(uint32_t ssrc,
-                                    const test::NetEqStatsGetter* stats_getter,
-                                    Plot* plot) const;
-  void CreateNetEqNetworkStatsGraph(
-      const NetEqStatsGetterMap& neteq_stats_getters,
-      rtc::FunctionView<float(const NetEqNetworkStatistics&)> stats_extractor,
-      const std::string& plot_name,
-      Plot* plot) const;
-  void CreateNetEqLifetimeStatsGraph(
-      const NetEqStatsGetterMap& neteq_stats_getters,
-      rtc::FunctionView<float(const NetEqLifetimeStatistics&)> stats_extractor,
-      const std::string& plot_name,
-      Plot* plot) const;
-
   void CreateIceCandidatePairConfigGraph(Plot* plot);
   void CreateIceConnectivityCheckGraph(Plot* plot);
 
@@ -115,15 +89,6 @@ class EventLogAnalyzer {
   void PrintNotifications(FILE* file);
 
  private:
-  template <typename NetEqStatsType>
-  void CreateNetEqStatsGraphInternal(
-      const NetEqStatsGetterMap& neteq_stats,
-      rtc::FunctionView<const std::vector<std::pair<int64_t, NetEqStatsType>>*(
-          const test::NetEqStatsGetter*)> data_extractor,
-      rtc::FunctionView<float(const NetEqStatsType&)> stats_extractor,
-      const std::string& plot_name,
-      Plot* plot) const;
-
   template <typename IterableType>
   void CreateAccumulatedPacketsTimeSeries(Plot* plot,
                                           const IterableType& packets,

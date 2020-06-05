@@ -31,6 +31,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_tools/rtc_event_log_visualizer/alerts.h"
+#include "rtc_tools/rtc_event_log_visualizer/analyze_audio.h"
 #include "rtc_tools/rtc_event_log_visualizer/analyzer.h"
 #include "rtc_tools/rtc_event_log_visualizer/plot_base.h"
 #include "rtc_tools/rtc_event_log_visualizer/plot_protobuf.h"
@@ -436,22 +437,22 @@ int main(int argc, char* argv[]) {
   plots.RegisterPlot("pacer_delay",
                      [&](Plot* plot) { analyzer.CreatePacerDelayGraph(plot); });
   plots.RegisterPlot("audio_encoder_bitrate", [&](Plot* plot) {
-    analyzer.CreateAudioEncoderTargetBitrateGraph(plot);
+    CreateAudioEncoderTargetBitrateGraph(parsed_log, config, plot);
   });
   plots.RegisterPlot("audio_encoder_frame_length", [&](Plot* plot) {
-    analyzer.CreateAudioEncoderFrameLengthGraph(plot);
+    CreateAudioEncoderFrameLengthGraph(parsed_log, config, plot);
   });
   plots.RegisterPlot("audio_encoder_packet_loss", [&](Plot* plot) {
-    analyzer.CreateAudioEncoderPacketLossGraph(plot);
+    CreateAudioEncoderPacketLossGraph(parsed_log, config, plot);
   });
   plots.RegisterPlot("audio_encoder_fec", [&](Plot* plot) {
-    analyzer.CreateAudioEncoderEnableFecGraph(plot);
+    CreateAudioEncoderEnableFecGraph(parsed_log, config, plot);
   });
   plots.RegisterPlot("audio_encoder_dtx", [&](Plot* plot) {
-    analyzer.CreateAudioEncoderEnableDtxGraph(plot);
+    CreateAudioEncoderEnableDtxGraph(parsed_log, config, plot);
   });
   plots.RegisterPlot("audio_encoder_num_channels", [&](Plot* plot) {
-    analyzer.CreateAudioEncoderNumChannelsGraph(plot);
+    CreateAudioEncoderNumChannelsGraph(parsed_log, config, plot);
   });
 
   plots.RegisterPlot("ice_candidate_pair_config", [&](Plot* plot) {
@@ -474,14 +475,14 @@ int main(int argc, char* argv[]) {
     wav_path = webrtc::test::ResourcePath(
         "audio_processing/conversational_speech/EN_script2_F_sp2_B1", "wav");
   }
-  absl::optional<webrtc::EventLogAnalyzer::NetEqStatsGetterMap> neteq_stats;
+  absl::optional<webrtc::NetEqStatsGetterMap> neteq_stats;
 
   plots.RegisterPlot("simulated_neteq_expand_rate", [&](Plot* plot) {
     if (!neteq_stats) {
-      neteq_stats = analyzer.SimulateNetEq(wav_path, 48000);
+      neteq_stats = webrtc::SimulateNetEq(parsed_log, config, wav_path, 48000);
     }
-    analyzer.CreateNetEqNetworkStatsGraph(
-        *neteq_stats,
+    webrtc::CreateNetEqNetworkStatsGraph(
+        parsed_log, config, *neteq_stats,
         [](const webrtc::NetEqNetworkStatistics& stats) {
           return stats.expand_rate / 16384.f;
         },
@@ -490,10 +491,10 @@ int main(int argc, char* argv[]) {
 
   plots.RegisterPlot("simulated_neteq_speech_expand_rate", [&](Plot* plot) {
     if (!neteq_stats) {
-      neteq_stats = analyzer.SimulateNetEq(wav_path, 48000);
+      neteq_stats = webrtc::SimulateNetEq(parsed_log, config, wav_path, 48000);
     }
-    analyzer.CreateNetEqNetworkStatsGraph(
-        *neteq_stats,
+    webrtc::CreateNetEqNetworkStatsGraph(
+        parsed_log, config, *neteq_stats,
         [](const webrtc::NetEqNetworkStatistics& stats) {
           return stats.speech_expand_rate / 16384.f;
         },
@@ -502,10 +503,10 @@ int main(int argc, char* argv[]) {
 
   plots.RegisterPlot("simulated_neteq_accelerate_rate", [&](Plot* plot) {
     if (!neteq_stats) {
-      neteq_stats = analyzer.SimulateNetEq(wav_path, 48000);
+      neteq_stats = webrtc::SimulateNetEq(parsed_log, config, wav_path, 48000);
     }
-    analyzer.CreateNetEqNetworkStatsGraph(
-        *neteq_stats,
+    webrtc::CreateNetEqNetworkStatsGraph(
+        parsed_log, config, *neteq_stats,
         [](const webrtc::NetEqNetworkStatistics& stats) {
           return stats.accelerate_rate / 16384.f;
         },
@@ -514,10 +515,10 @@ int main(int argc, char* argv[]) {
 
   plots.RegisterPlot("simulated_neteq_preemptive_rate", [&](Plot* plot) {
     if (!neteq_stats) {
-      neteq_stats = analyzer.SimulateNetEq(wav_path, 48000);
+      neteq_stats = webrtc::SimulateNetEq(parsed_log, config, wav_path, 48000);
     }
-    analyzer.CreateNetEqNetworkStatsGraph(
-        *neteq_stats,
+    webrtc::CreateNetEqNetworkStatsGraph(
+        parsed_log, config, *neteq_stats,
         [](const webrtc::NetEqNetworkStatistics& stats) {
           return stats.preemptive_rate / 16384.f;
         },
@@ -526,10 +527,10 @@ int main(int argc, char* argv[]) {
 
   plots.RegisterPlot("simulated_neteq_packet_loss_rate", [&](Plot* plot) {
     if (!neteq_stats) {
-      neteq_stats = analyzer.SimulateNetEq(wav_path, 48000);
+      neteq_stats = webrtc::SimulateNetEq(parsed_log, config, wav_path, 48000);
     }
-    analyzer.CreateNetEqNetworkStatsGraph(
-        *neteq_stats,
+    webrtc::CreateNetEqNetworkStatsGraph(
+        parsed_log, config, *neteq_stats,
         [](const webrtc::NetEqNetworkStatistics& stats) {
           return stats.packet_loss_rate / 16384.f;
         },
@@ -538,10 +539,10 @@ int main(int argc, char* argv[]) {
 
   plots.RegisterPlot("simulated_neteq_concealment_events", [&](Plot* plot) {
     if (!neteq_stats) {
-      neteq_stats = analyzer.SimulateNetEq(wav_path, 48000);
+      neteq_stats = webrtc::SimulateNetEq(parsed_log, config, wav_path, 48000);
     }
-    analyzer.CreateNetEqLifetimeStatsGraph(
-        *neteq_stats,
+    webrtc::CreateNetEqLifetimeStatsGraph(
+        parsed_log, config, *neteq_stats,
         [](const webrtc::NetEqLifetimeStatistics& stats) {
           return static_cast<float>(stats.concealment_events);
         },
@@ -550,10 +551,10 @@ int main(int argc, char* argv[]) {
 
   plots.RegisterPlot("simulated_neteq_preferred_buffer_size", [&](Plot* plot) {
     if (!neteq_stats) {
-      neteq_stats = analyzer.SimulateNetEq(wav_path, 48000);
+      neteq_stats = webrtc::SimulateNetEq(parsed_log, config, wav_path, 48000);
     }
-    analyzer.CreateNetEqNetworkStatsGraph(
-        *neteq_stats,
+    webrtc::CreateNetEqNetworkStatsGraph(
+        parsed_log, config, *neteq_stats,
         [](const webrtc::NetEqNetworkStatistics& stats) {
           return stats.preferred_buffer_size_ms;
         },
@@ -614,13 +615,13 @@ int main(int argc, char* argv[]) {
   if (absl::c_find(plot_flags, "simulated_neteq_jitter_buffer_delay") !=
       plot_flags.end()) {
     if (!neteq_stats) {
-      neteq_stats = analyzer.SimulateNetEq(wav_path, 48000);
+      neteq_stats = webrtc::SimulateNetEq(parsed_log, config, wav_path, 48000);
     }
-    for (webrtc::EventLogAnalyzer::NetEqStatsGetterMap::const_iterator it =
-             neteq_stats->cbegin();
+    for (webrtc::NetEqStatsGetterMap::const_iterator it = neteq_stats->cbegin();
          it != neteq_stats->cend(); ++it) {
-      analyzer.CreateAudioJitterBufferGraph(it->first, it->second.get(),
-                                            collection->AppendNewPlot());
+      webrtc::CreateAudioJitterBufferGraph(parsed_log, config, it->first,
+                                           it->second.get(),
+                                           collection->AppendNewPlot());
     }
   }
 

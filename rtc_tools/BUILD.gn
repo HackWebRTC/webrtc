@@ -325,6 +325,8 @@ if (!build_with_chromium) {
       sources = [
         "rtc_event_log_visualizer/alerts.cc",
         "rtc_event_log_visualizer/alerts.h",
+        "rtc_event_log_visualizer/analyze_audio.cc",
+        "rtc_event_log_visualizer/analyze_audio.h",
         "rtc_event_log_visualizer/analyzer.cc",
         "rtc_event_log_visualizer/analyzer.h",
         "rtc_event_log_visualizer/analyzer_common.cc",
@@ -371,6 +373,7 @@ if (!build_with_chromium) {
       absl_deps = [
         "//third_party/abseil-cpp/absl/algorithm:container",
         "//third_party/abseil-cpp/absl/strings",
+        "//third_party/abseil-cpp/absl/types:optional",
       ]
     }
   }
