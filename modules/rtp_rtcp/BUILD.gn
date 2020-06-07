@@ -140,6 +140,8 @@ rtc_library("rtp_rtcp") {
     "source/absolute_capture_time_sender.h",
     "source/create_video_rtp_depacketizer.cc",
     "source/create_video_rtp_depacketizer.h",
+    "source/deprecated/deprecated_rtp_sender_egress.cc",
+    "source/deprecated/deprecated_rtp_sender_egress.h",
     "source/dtmf_queue.cc",
     "source/dtmf_queue.h",
     "source/fec_private_tables_bursty.cc",

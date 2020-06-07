@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/rtp_rtcp/source/rtp_sender_egress.h"
+#include "modules/rtp_rtcp/source/deprecated/deprecated_rtp_sender_egress.h"
 
 #include <limits>
 #include <memory>
@@ -35,12 +35,13 @@ bool IsEnabled(absl::string_view name,
 }
 }  // namespace
 
-RtpSenderEgress::NonPacedPacketSender::NonPacedPacketSender(
-    RtpSenderEgress* sender)
+DEPRECATED_RtpSenderEgress::NonPacedPacketSender::NonPacedPacketSender(
+    DEPRECATED_RtpSenderEgress* sender)
     : transport_sequence_number_(0), sender_(sender) {}
-RtpSenderEgress::NonPacedPacketSender::~NonPacedPacketSender() = default;
+DEPRECATED_RtpSenderEgress::NonPacedPacketSender::~NonPacedPacketSender() =
+    default;
 
-void RtpSenderEgress::NonPacedPacketSender::EnqueuePackets(
+void DEPRECATED_RtpSenderEgress::NonPacedPacketSender::EnqueuePackets(
     std::vector<std::unique_ptr<RtpPacketToSend>> packets) {
   for (auto& packet : packets) {
     if (!packet->SetExtension<TransportSequenceNumber>(
@@ -53,8 +54,9 @@ void RtpSenderEgress::NonPacedPacketSender::EnqueuePackets(
   }
 }
 
-RtpSenderEgress::RtpSenderEgress(const RtpRtcpInterface::Configuration& config,
-                                 RtpPacketHistory* packet_history)
+DEPRECATED_RtpSenderEgress::DEPRECATED_RtpSenderEgress(
+    const RtpRtcpInterface::Configuration& config,
+    RtpPacketHistory* packet_history)
     : ssrc_(config.local_media_ssrc),
       rtx_ssrc_(config.rtx_send_ssrc),
       flexfec_ssrc_(config.fec_generator ? config.fec_generator->FecSsrc()
@@ -84,12 +86,11 @@ RtpSenderEgress::RtpSenderEgress(const RtpRtcpInterface::Configuration& config,
       rtp_sequence_number_map_(need_rtp_packet_infos_
                                    ? std::make_unique<RtpSequenceNumberMap>(
                                          kRtpSequenceNumberMapMaxEntries)
-                                   : nullptr) {
-  RTC_DCHECK(TaskQueueBase::Current());
-}
+                                   : nullptr) {}
 
-void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
-                                 const PacedPacketInfo& pacing_info) {
+void DEPRECATED_RtpSenderEgress::SendPacket(
+    RtpPacketToSend* packet,
+    const PacedPacketInfo& pacing_info) {
   RTC_DCHECK(packet);
 
   const uint32_t packet_ssrc = packet->Ssrc();
@@ -203,7 +204,7 @@ void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
   }
 }
 
-void RtpSenderEgress::ProcessBitrateAndNotifyObservers() {
+void DEPRECATED_RtpSenderEgress::ProcessBitrateAndNotifyObservers() {
   if (!bitrate_callback_)
     return;
 
@@ -214,12 +215,12 @@ void RtpSenderEgress::ProcessBitrateAndNotifyObservers() {
       send_rates[RtpPacketMediaType::kRetransmission].bps(), ssrc_);
 }
 
-RtpSendRates RtpSenderEgress::GetSendRates() const {
+RtpSendRates DEPRECATED_RtpSenderEgress::GetSendRates() const {
   rtc::CritScope lock(&lock_);
   return GetSendRatesLocked();
 }
 
-RtpSendRates RtpSenderEgress::GetSendRatesLocked() const {
+RtpSendRates DEPRECATED_RtpSenderEgress::GetSendRatesLocked() const {
   const int64_t now_ms = clock_->TimeInMilliseconds();
   RtpSendRates current_rates;
   for (size_t i = 0; i < kNumMediaTypes; ++i) {
@@ -230,35 +231,37 @@ RtpSendRates RtpSenderEgress::GetSendRatesLocked() const {
   return current_rates;
 }
 
-void RtpSenderEgress::GetDataCounters(StreamDataCounters* rtp_stats,
-                                      StreamDataCounters* rtx_stats) const {
+void DEPRECATED_RtpSenderEgress::GetDataCounters(
+    StreamDataCounters* rtp_stats,
+    StreamDataCounters* rtx_stats) const {
   rtc::CritScope lock(&lock_);
   *rtp_stats = rtp_stats_;
   *rtx_stats = rtx_rtp_stats_;
 }
 
-void RtpSenderEgress::ForceIncludeSendPacketsInAllocation(
+void DEPRECATED_RtpSenderEgress::ForceIncludeSendPacketsInAllocation(
     bool part_of_allocation) {
   rtc::CritScope lock(&lock_);
   force_part_of_allocation_ = part_of_allocation;
 }
 
-bool RtpSenderEgress::MediaHasBeenSent() const {
+bool DEPRECATED_RtpSenderEgress::MediaHasBeenSent() const {
   rtc::CritScope lock(&lock_);
   return media_has_been_sent_;
 }
 
-void RtpSenderEgress::SetMediaHasBeenSent(bool media_sent) {
+void DEPRECATED_RtpSenderEgress::SetMediaHasBeenSent(bool media_sent) {
   rtc::CritScope lock(&lock_);
   media_has_been_sent_ = media_sent;
 }
 
-void RtpSenderEgress::SetTimestampOffset(uint32_t timestamp) {
+void DEPRECATED_RtpSenderEgress::SetTimestampOffset(uint32_t timestamp) {
   rtc::CritScope lock(&lock_);
   timestamp_offset_ = timestamp;
 }
 
-std::vector<RtpSequenceNumberMap::Info> RtpSenderEgress::GetSentRtpPacketInfos(
+std::vector<RtpSequenceNumberMap::Info>
+DEPRECATED_RtpSenderEgress::GetSentRtpPacketInfos(
     rtc::ArrayView<const uint16_t> sequence_numbers) const {
   RTC_DCHECK(!sequence_numbers.empty());
   if (!need_rtp_packet_infos_) {
@@ -282,7 +285,8 @@ std::vector<RtpSequenceNumberMap::Info> RtpSenderEgress::GetSentRtpPacketInfos(
   return results;
 }
 
-bool RtpSenderEgress::HasCorrectSsrc(const RtpPacketToSend& packet) const {
+bool DEPRECATED_RtpSenderEgress::HasCorrectSsrc(
+    const RtpPacketToSend& packet) const {
   switch (*packet.packet_type()) {
     case RtpPacketMediaType::kAudio:
     case RtpPacketMediaType::kVideo:
@@ -299,7 +303,7 @@ bool RtpSenderEgress::HasCorrectSsrc(const RtpPacketToSend& packet) const {
   return false;
 }
 
-void RtpSenderEgress::AddPacketToTransportFeedback(
+void DEPRECATED_RtpSenderEgress::AddPacketToTransportFeedback(
     uint16_t packet_id,
     const RtpPacketToSend& packet,
     const PacedPacketInfo& pacing_info) {
@@ -320,9 +324,9 @@ void RtpSenderEgress::AddPacketToTransportFeedback(
   }
 }
 
-void RtpSenderEgress::UpdateDelayStatistics(int64_t capture_time_ms,
-                                            int64_t now_ms,
-                                            uint32_t ssrc) {
+void DEPRECATED_RtpSenderEgress::UpdateDelayStatistics(int64_t capture_time_ms,
+                                                       int64_t now_ms,
+                                                       uint32_t ssrc) {
   if (!send_side_delay_observer_ || capture_time_ms <= 0)
     return;
 
@@ -396,7 +400,7 @@ void RtpSenderEgress::UpdateDelayStatistics(int64_t capture_time_ms,
       avg_delay_ms, max_delay_ms, total_packet_send_delay_ms, ssrc);
 }
 
-void RtpSenderEgress::RecomputeMaxSendDelay() {
+void DEPRECATED_RtpSenderEgress::RecomputeMaxSendDelay() {
   max_delay_it_ = send_delays_.begin();
   for (auto it = send_delays_.begin(); it != send_delays_.end(); ++it) {
     if (it->second >= max_delay_it_->second) {
@@ -405,9 +409,9 @@ void RtpSenderEgress::RecomputeMaxSendDelay() {
   }
 }
 
-void RtpSenderEgress::UpdateOnSendPacket(int packet_id,
-                                         int64_t capture_time_ms,
-                                         uint32_t ssrc) {
+void DEPRECATED_RtpSenderEgress::UpdateOnSendPacket(int packet_id,
+                                                    int64_t capture_time_ms,
+                                                    uint32_t ssrc) {
   if (!send_packet_observer_ || capture_time_ms <= 0 || packet_id == -1) {
     return;
   }
@@ -415,9 +419,10 @@ void RtpSenderEgress::UpdateOnSendPacket(int packet_id,
   send_packet_observer_->OnSendPacket(packet_id, capture_time_ms, ssrc);
 }
 
-bool RtpSenderEgress::SendPacketToNetwork(const RtpPacketToSend& packet,
-                                          const PacketOptions& options,
-                                          const PacedPacketInfo& pacing_info) {
+bool DEPRECATED_RtpSenderEgress::SendPacketToNetwork(
+    const RtpPacketToSend& packet,
+    const PacketOptions& options,
+    const PacedPacketInfo& pacing_info) {
   int bytes_sent = -1;
   if (transport_) {
     bytes_sent = transport_->SendRtp(packet.data(), packet.size(), options)
@@ -436,7 +441,7 @@ bool RtpSenderEgress::SendPacketToNetwork(const RtpPacketToSend& packet,
   return true;
 }
 
-void RtpSenderEgress::UpdateRtpStats(const RtpPacketToSend& packet) {
+void DEPRECATED_RtpSenderEgress::UpdateRtpStats(const RtpPacketToSend& packet) {
   int64_t now_ms = clock_->TimeInMilliseconds();
 
   StreamDataCounters* counters =
