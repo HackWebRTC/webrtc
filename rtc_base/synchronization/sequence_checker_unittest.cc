@@ -31,7 +31,7 @@ class CompileTimeTestForGuardedBy {
   int CalledOnSequence() RTC_RUN_ON(sequence_checker_) { return guarded_; }
 
   void CallMeFromSequence() {
-    RTC_DCHECK_RUN_ON(&sequence_checker_) << "Should be called on sequence";
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
     guarded_ = 41;
   }
 

@@ -72,6 +72,7 @@ rtc_library("sequence_checker") {
     "..:criticalsection",
     "..:macromagic",
     "..:platform_thread_types",
+    "..:stringutils",
     "../../api/task_queue",
     "../system:rtc_export",
   ]
