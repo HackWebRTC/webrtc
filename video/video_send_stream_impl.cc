@@ -92,17 +92,26 @@ int CalculateMaxPadBitrateBps(const std::vector<VideoStream>& streams,
       const double hysteresis_factor =
           RateControlSettings::ParseFromFieldTrials()
               .GetSimulcastHysteresisFactor(content_type);
-      const size_t top_active_stream_idx = active_streams.size() - 1;
-      pad_up_to_bitrate_bps = std::min(
-          static_cast<int>(
-              hysteresis_factor *
-                  active_streams[top_active_stream_idx].min_bitrate_bps +
-              0.5),
-          active_streams[top_active_stream_idx].target_bitrate_bps);
+      if (is_svc) {
+        // For SVC, since there is only one "stream", the padding bitrate
+        // needed to enable the top spatial layer is stored in the
+        // |target_bitrate_bps| field.
+        // TODO(sprang): This behavior needs to die.
+        pad_up_to_bitrate_bps = static_cast<int>(
+            hysteresis_factor * active_streams[0].target_bitrate_bps + 0.5);
+      } else {
+        const size_t top_active_stream_idx = active_streams.size() - 1;
+        pad_up_to_bitrate_bps = std::min(
+            static_cast<int>(
+                hysteresis_factor *
+                    active_streams[top_active_stream_idx].min_bitrate_bps +
+                0.5),
+            active_streams[top_active_stream_idx].target_bitrate_bps);
 
-      // Add target_bitrate_bps of the lower active streams.
-      for (size_t i = 0; i < top_active_stream_idx; ++i) {
-        pad_up_to_bitrate_bps += active_streams[i].target_bitrate_bps;
+        // Add target_bitrate_bps of the lower active streams.
+        for (size_t i = 0; i < top_active_stream_idx; ++i) {
+          pad_up_to_bitrate_bps += active_streams[i].target_bitrate_bps;
+        }
       }
     }
   } else if (!active_streams.empty() && pad_to_min_bitrate) {
