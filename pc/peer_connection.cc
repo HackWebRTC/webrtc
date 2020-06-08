@@ -5006,21 +5006,21 @@ void PeerConnection::GetOptionsForPlanBOffer(
 
   // Add audio/video/data m= sections to the end if needed.
   if (!audio_index && offer_new_audio_description) {
-    session_options->media_description_options.push_back(
-        cricket::MediaDescriptionOptions(
-            cricket::MEDIA_TYPE_AUDIO, cricket::CN_AUDIO,
-            RtpTransceiverDirectionFromSendRecv(send_audio, recv_audio),
-            false));
-
+    cricket::MediaDescriptionOptions options(
+        cricket::MEDIA_TYPE_AUDIO, cricket::CN_AUDIO,
+        RtpTransceiverDirectionFromSendRecv(send_audio, recv_audio), false);
+    options.header_extensions =
+        channel_manager()->GetSupportedAudioRtpHeaderExtensions();
+    session_options->media_description_options.push_back(options);
     audio_index = session_options->media_description_options.size() - 1;
   }
   if (!video_index && offer_new_video_description) {
-    session_options->media_description_options.push_back(
-        cricket::MediaDescriptionOptions(
-            cricket::MEDIA_TYPE_VIDEO, cricket::CN_VIDEO,
-            RtpTransceiverDirectionFromSendRecv(send_video, recv_video),
-            false));
-
+    cricket::MediaDescriptionOptions options(
+        cricket::MEDIA_TYPE_VIDEO, cricket::CN_VIDEO,
+        RtpTransceiverDirectionFromSendRecv(send_video, recv_video), false);
+    options.header_extensions =
+        channel_manager()->GetSupportedVideoRtpHeaderExtensions();
+    session_options->media_description_options.push_back(options);
     video_index = session_options->media_description_options.size() - 1;
   }
   if (!data_index && offer_new_data_description) {
@@ -5052,6 +5052,8 @@ GetMediaDescriptionOptionsForTransceiver(
       transceiver->stopped());
   media_description_options.codec_preferences =
       transceiver->codec_preferences();
+  media_description_options.header_extensions =
+      transceiver->HeaderExtensionsToOffer();
   // This behavior is specified in JSEP. The gist is that:
   // 1. The MSID is included if the RtpTransceiver's direction is sendonly or
   //    sendrecv.
@@ -5383,6 +5385,8 @@ void PeerConnection::GenerateMediaDescriptionOptions(
                                              stopped));
         *audio_index = session_options->media_description_options.size() - 1;
       }
+      session_options->media_description_options.back().header_extensions =
+          channel_manager()->GetSupportedAudioRtpHeaderExtensions();
     } else if (IsVideoContent(&content)) {
       // If we already have an video m= section, reject this extra one.
       if (*video_index) {
@@ -5398,6 +5402,8 @@ void PeerConnection::GenerateMediaDescriptionOptions(
                                              stopped));
         *video_index = session_options->media_description_options.size() - 1;
       }
+      session_options->media_description_options.back().header_extensions =
+          channel_manager()->GetSupportedVideoRtpHeaderExtensions();
     } else {
       RTC_DCHECK(IsDataContent(&content));
       // If we already have an data m= section, reject this extra one.
