@@ -65,28 +65,18 @@ ScalabilityStructureL1T2::NextFrameConfig(bool restart) {
 
   switch (next_pattern_) {
     case kKeyFrame:
-      result[0].id = 0;
-      result[0].temporal_id = 0;
-      result[0].is_keyframe = true;
-      result[0].buffers = {{/*id=*/0, /*references=*/false, /*updates=*/true}};
+      result[0].Id(0).T(0).Keyframe().Update(0);
       next_pattern_ = kDeltaFrameT1;
       break;
     case kDeltaFrameT1:
-      result[0].id = 1;
-      result[0].temporal_id = 1;
-      result[0].is_keyframe = false;
-      result[0].buffers = {{/*id=*/0, /*references=*/true, /*updates=*/false}};
+      result[0].Id(1).T(1).Reference(0);
       next_pattern_ = kDeltaFrameT0;
       break;
     case kDeltaFrameT0:
-      result[0].id = 2;
-      result[0].temporal_id = 0;
-      result[0].is_keyframe = false;
-      result[0].buffers = {{/*id=*/0, /*references=*/true, /*updates=*/true}};
+      result[0].Id(2).T(0).ReferenceAndUpdate(0);
       next_pattern_ = kDeltaFrameT1;
       break;
   }
-  RTC_DCHECK(!result.empty());
   return result;
 }
 
@@ -94,21 +84,21 @@ absl::optional<GenericFrameInfo> ScalabilityStructureL1T2::OnEncodeDone(
     LayerFrameConfig config) {
   // Encoder may have generated a keyframe even when not asked for it. Treat
   // such frame same as requested keyframe, in particular restart the sequence.
-  if (config.is_keyframe) {
+  if (config.IsKeyframe()) {
     config = NextFrameConfig(/*restart=*/true).front();
   }
 
   absl::optional<GenericFrameInfo> frame_info;
-  if (config.id < 0 || config.id >= int{ABSL_ARRAYSIZE(kDtis)}) {
-    RTC_LOG(LS_ERROR) << "Unexpected config id " << config.id;
+  if (config.Id() < 0 || config.Id() >= int{ABSL_ARRAYSIZE(kDtis)}) {
+    RTC_LOG(LS_ERROR) << "Unexpected config id " << config.Id();
     return frame_info;
   }
   frame_info.emplace();
-  frame_info->temporal_id = config.temporal_id;
-  frame_info->encoder_buffers = std::move(config.buffers);
-  frame_info->decode_target_indications.assign(std::begin(kDtis[config.id]),
-                                               std::end(kDtis[config.id]));
-  frame_info->part_of_chain = {config.temporal_id == 0};
+  frame_info->temporal_id = config.TemporalId();
+  frame_info->encoder_buffers = config.Buffers();
+  frame_info->decode_target_indications.assign(std::begin(kDtis[config.Id()]),
+                                               std::end(kDtis[config.Id()]));
+  frame_info->part_of_chain = {config.TemporalId() == 0};
   return frame_info;
 }
 

@@ -78,13 +78,7 @@ FrameDependencyStructure ScalabilityStructureL2T2::DependencyStructure() const {
 
 ScalableVideoController::LayerFrameConfig
 ScalabilityStructureL2T2::KeyFrameConfig() const {
-  LayerFrameConfig result;
-  result.id = 0;
-  result.is_keyframe = true;
-  result.spatial_id = 0;
-  result.temporal_id = 0;
-  result.buffers = {{/*id=*/0, /*referenced=*/false, /*updated=*/true}};
-  return result;
+  return LayerFrameConfig().Id(0).Keyframe().S(0).T(0).Update(0);
 }
 
 std::vector<ScalableVideoController::LayerFrameConfig>
@@ -100,47 +94,17 @@ ScalabilityStructureL2T2::NextFrameConfig(bool restart) {
   switch (next_pattern_) {
     case kKey:
       result[0] = KeyFrameConfig();
-
-      result[1].id = 1;
-      result[1].is_keyframe = false;
-      result[1].spatial_id = 1;
-      result[1].temporal_id = 0;
-      result[1].buffers = {{/*id=*/0, /*referenced=*/true, /*updated=*/false},
-                           {/*id=*/1, /*referenced=*/false, /*updated=*/true}};
-
+      result[1].Id(1).S(1).T(0).Reference(0).Update(1);
       next_pattern_ = kDeltaT1;
       break;
     case kDeltaT1:
-      result[0].id = 2;
-      result[0].is_keyframe = false;
-      result[0].spatial_id = 0;
-      result[0].temporal_id = 1;
-      result[0].buffers = {{/*id=*/0, /*referenced=*/true, /*updated=*/false},
-                           {/*id=*/2, /*referenced=*/false, /*updated=*/true}};
-
-      result[1].id = 3;
-      result[1].is_keyframe = false;
-      result[1].spatial_id = 1;
-      result[1].temporal_id = 1;
-      result[1].buffers = {{/*id=*/2, /*referenced=*/true, /*updated=*/false},
-                           {/*id=*/1, /*referenced=*/true, /*updated=*/false}};
-
+      result[0].Id(2).S(0).T(1).Reference(0).Update(2);
+      result[1].Id(3).S(1).T(1).Reference(2).Reference(1);
       next_pattern_ = kDeltaT0;
       break;
     case kDeltaT0:
-      result[0].id = 4;
-      result[0].is_keyframe = false;
-      result[0].spatial_id = 0;
-      result[0].temporal_id = 0;
-      result[0].buffers = {{/*id=*/0, /*referenced=*/true, /*updated=*/true}};
-
-      result[1].id = 5;
-      result[1].is_keyframe = false;
-      result[1].spatial_id = 1;
-      result[1].temporal_id = 0;
-      result[1].buffers = {{/*id=*/0, /*referenced=*/true, /*updated=*/false},
-                           {/*id=*/1, /*referenced=*/true, /*updated=*/true}};
-
+      result[0].Id(4).S(0).T(0).ReferenceAndUpdate(0);
+      result[1].Id(5).S(1).T(0).Reference(0).ReferenceAndUpdate(1);
       next_pattern_ = kDeltaT1;
       break;
   }
@@ -149,23 +113,23 @@ ScalabilityStructureL2T2::NextFrameConfig(bool restart) {
 
 absl::optional<GenericFrameInfo> ScalabilityStructureL2T2::OnEncodeDone(
     LayerFrameConfig config) {
-  if (config.is_keyframe) {
+  if (config.IsKeyframe()) {
     config = KeyFrameConfig();
   }
 
   absl::optional<GenericFrameInfo> frame_info;
-  if (config.id < 0 || config.id >= int{ABSL_ARRAYSIZE(kDtis)}) {
-    RTC_LOG(LS_ERROR) << "Unexpected config id " << config.id;
+  if (config.Id() < 0 || config.Id() >= int{ABSL_ARRAYSIZE(kDtis)}) {
+    RTC_LOG(LS_ERROR) << "Unexpected config id " << config.Id();
     return frame_info;
   }
   frame_info.emplace();
-  frame_info->spatial_id = config.spatial_id;
-  frame_info->temporal_id = config.temporal_id;
-  frame_info->encoder_buffers = std::move(config.buffers);
-  frame_info->decode_target_indications.assign(std::begin(kDtis[config.id]),
-                                               std::end(kDtis[config.id]));
-  if (config.temporal_id == 0) {
-    frame_info->part_of_chain = {config.spatial_id == 0, true};
+  frame_info->spatial_id = config.SpatialId();
+  frame_info->temporal_id = config.TemporalId();
+  frame_info->encoder_buffers = config.Buffers();
+  frame_info->decode_target_indications.assign(std::begin(kDtis[config.Id()]),
+                                               std::end(kDtis[config.Id()]));
+  if (config.TemporalId() == 0) {
+    frame_info->part_of_chain = {config.SpatialId() == 0, true};
   } else {
     frame_info->part_of_chain = {false, false};
   }

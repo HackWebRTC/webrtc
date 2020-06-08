@@ -59,12 +59,7 @@ FrameDependencyStructure ScalabilityStructureL2T1Key::DependencyStructure()
 
 ScalableVideoController::LayerFrameConfig
 ScalabilityStructureL2T1Key::KeyFrameConfig() const {
-  LayerFrameConfig result;
-  result.id = 0;
-  result.spatial_id = 0;
-  result.is_keyframe = true;
-  result.buffers = {{/*id=*/0, /*references=*/false, /*updates=*/true}};
-  return result;
+  return LayerFrameConfig().Id(0).S(0).Keyframe().Update(0);
 }
 
 std::vector<ScalableVideoController::LayerFrameConfig>
@@ -74,25 +69,11 @@ ScalabilityStructureL2T1Key::NextFrameConfig(bool restart) {
   // Buffer0 keeps latest S0T0 frame, Buffer1 keeps latest S1T0 frame.
   if (restart || keyframe_) {
     result[0] = KeyFrameConfig();
-
-    result[1].id = 2;
-    result[1].spatial_id = 1;
-    result[1].is_keyframe = false;
-    result[1].buffers = {{/*id=*/0, /*references=*/true, /*updates=*/false},
-                         {/*id=*/1, /*references=*/false, /*updates=*/true}};
-
+    result[1].Id(2).S(1).Reference(0).Update(1);
     keyframe_ = false;
   } else {
-    result[0].id = 1;
-    result[0].spatial_id = 0;
-    result[0].is_keyframe = false;
-    result[0].buffers = {{/*id=*/0, /*references=*/true, /*updates=*/true}};
-
-    result[1].id = 2;
-    result[1].spatial_id = 1;
-    result[1].is_keyframe = false;
-    result[1].buffers = {{/*id=*/0, /*references=*/false, /*updates=*/false},
-                         {/*id=*/1, /*references=*/true, /*updates=*/true}};
+    result[0].Id(1).S(0).ReferenceAndUpdate(0);
+    result[1].Id(2).S(1).ReferenceAndUpdate(1);
   }
   return result;
 }
@@ -100,25 +81,25 @@ ScalabilityStructureL2T1Key::NextFrameConfig(bool restart) {
 absl::optional<GenericFrameInfo> ScalabilityStructureL2T1Key::OnEncodeDone(
     LayerFrameConfig config) {
   absl::optional<GenericFrameInfo> frame_info;
-  if (config.is_keyframe) {
+  if (config.IsKeyframe()) {
     config = KeyFrameConfig();
   }
 
-  if (config.id < 0 || config.id >= int{ABSL_ARRAYSIZE(kDtis)}) {
-    RTC_LOG(LS_ERROR) << "Unexpected config id " << config.id;
+  if (config.Id() < 0 || config.Id() >= int{ABSL_ARRAYSIZE(kDtis)}) {
+    RTC_LOG(LS_ERROR) << "Unexpected config id " << config.Id();
     return frame_info;
   }
   frame_info.emplace();
-  frame_info->spatial_id = config.spatial_id;
-  frame_info->temporal_id = config.temporal_id;
-  frame_info->encoder_buffers = std::move(config.buffers);
-  frame_info->decode_target_indications.assign(std::begin(kDtis[config.id]),
-                                               std::end(kDtis[config.id]));
-  if (config.is_keyframe) {
+  frame_info->spatial_id = config.SpatialId();
+  frame_info->temporal_id = config.TemporalId();
+  frame_info->encoder_buffers = std::move(config.Buffers());
+  frame_info->decode_target_indications.assign(std::begin(kDtis[config.Id()]),
+                                               std::end(kDtis[config.Id()]));
+  if (config.IsKeyframe()) {
     frame_info->part_of_chain = {true, true};
   } else {
-    frame_info->part_of_chain = {config.spatial_id == 0,
-                                 config.spatial_id == 1};
+    frame_info->part_of_chain = {config.SpatialId() == 0,
+                                 config.SpatialId() == 1};
   }
   return frame_info;
 }

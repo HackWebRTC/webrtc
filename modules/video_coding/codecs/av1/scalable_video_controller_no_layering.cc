@@ -40,24 +40,22 @@ ScalableVideoControllerNoLayering::DependencyStructure() const {
 
 std::vector<ScalableVideoController::LayerFrameConfig>
 ScalableVideoControllerNoLayering::NextFrameConfig(bool restart) {
-  if (restart) {
-    start_ = true;
-  }
   std::vector<LayerFrameConfig> result(1);
-  result[0].id = 0;
-  result[0].is_keyframe = start_;
-  result[0].buffers = {{/*id=*/0, /*references=*/!start_, /*updates=*/true}};
-
+  if (restart || start_) {
+    result[0].Id(0).Keyframe().Update(0);
+  } else {
+    result[0].Id(0).ReferenceAndUpdate(0);
+  }
   start_ = false;
   return result;
 }
 
 absl::optional<GenericFrameInfo>
 ScalableVideoControllerNoLayering::OnEncodeDone(LayerFrameConfig config) {
-  RTC_DCHECK_EQ(config.id, 0);
+  RTC_DCHECK_EQ(config.Id(), 0);
   absl::optional<GenericFrameInfo> frame_info(absl::in_place);
-  frame_info->encoder_buffers = std::move(config.buffers);
-  if (config.is_keyframe) {
+  frame_info->encoder_buffers = config.Buffers();
+  if (config.IsKeyframe()) {
     for (auto& buffer : frame_info->encoder_buffers) {
       buffer.referenced = false;
     }

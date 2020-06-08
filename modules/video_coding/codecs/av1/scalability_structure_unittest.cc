@@ -72,7 +72,7 @@ class ScalabilityStructureTest : public TestWithParam<SvcTestParam> {
       for (auto& layer_frame :
            structure_controller->NextFrameConfig(/*reset=*/false)) {
         int64_t frame_id = static_cast<int64_t>(frames.size());
-        bool is_keyframe = layer_frame.is_keyframe;
+        bool is_keyframe = layer_frame.IsKeyframe();
         absl::optional<GenericFrameInfo> frame_info =
             structure_controller->OnEncodeDone(std::move(layer_frame));
         EXPECT_TRUE(frame_info.has_value());

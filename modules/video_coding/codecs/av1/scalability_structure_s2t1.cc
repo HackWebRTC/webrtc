@@ -57,42 +57,36 @@ FrameDependencyStructure ScalabilityStructureS2T1::DependencyStructure() const {
 
 std::vector<ScalableVideoController::LayerFrameConfig>
 ScalabilityStructureS2T1::NextFrameConfig(bool restart) {
-  if (restart) {
-    keyframe_ = true;
-  }
   std::vector<LayerFrameConfig> result(2);
-
   // Buffer0 keeps latest S0T0 frame, Buffer1 keeps latest S1T0 frame.
-  result[0].spatial_id = 0;
-  result[0].is_keyframe = keyframe_;
-  result[0].buffers = {{/*id=*/0, /*references=*/!keyframe_, /*updates=*/true}};
-
-  result[1].spatial_id = 1;
-  result[1].is_keyframe = keyframe_;
-  result[1].buffers = {{/*id=*/1, /*references=*/!keyframe_, /*updates=*/true}};
-
-  keyframe_ = false;
+  if (restart || keyframe_) {
+    result[0].S(0).Keyframe().Update(0);
+    result[1].S(1).Keyframe().Update(1);
+    keyframe_ = false;
+  } else {
+    result[0].S(0).ReferenceAndUpdate(0);
+    result[1].S(1).ReferenceAndUpdate(1);
+  }
   return result;
 }
 
 absl::optional<GenericFrameInfo> ScalabilityStructureS2T1::OnEncodeDone(
     LayerFrameConfig config) {
   absl::optional<GenericFrameInfo> frame_info;
-  if (config.id != 0) {
-    RTC_LOG(LS_ERROR) << "Unexpected config id " << config.id;
-  }
-  if (config.spatial_id < 0 ||
-      config.spatial_id >= int{ABSL_ARRAYSIZE(kDtis)}) {
-    RTC_LOG(LS_ERROR) << "Unexpected spatial id " << config.spatial_id;
+  if (config.SpatialId() < 0 ||
+      config.SpatialId() >= int{ABSL_ARRAYSIZE(kDtis)}) {
+    RTC_LOG(LS_ERROR) << "Unexpected spatial id " << config.SpatialId();
     return frame_info;
   }
   frame_info.emplace();
-  frame_info->spatial_id = config.spatial_id;
-  frame_info->temporal_id = config.temporal_id;
-  frame_info->encoder_buffers = std::move(config.buffers);
+  frame_info->spatial_id = config.SpatialId();
+  frame_info->temporal_id = config.TemporalId();
+  frame_info->encoder_buffers = std::move(config.Buffers());
   frame_info->decode_target_indications.assign(
-      std::begin(kDtis[config.spatial_id]), std::end(kDtis[config.spatial_id]));
-  frame_info->part_of_chain = {config.spatial_id == 0, config.spatial_id == 1};
+      std::begin(kDtis[config.SpatialId()]),
+      std::end(kDtis[config.SpatialId()]));
+  frame_info->part_of_chain = {config.SpatialId() == 0,
+                               config.SpatialId() == 1};
   return frame_info;
 }
 
