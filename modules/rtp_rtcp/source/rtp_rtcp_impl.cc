@@ -523,7 +523,8 @@ int32_t ModuleRtpRtcpImpl::SetRTCPApplicationSpecificData(
     const uint32_t name,
     const uint8_t* data,
     const uint16_t length) {
-  return rtcp_sender_.SetApplicationSpecificData(sub_type, name, data, length);
+  RTC_NOTREACHED() << "Not implemented";
+  return -1;
 }
 
 void ModuleRtpRtcpImpl::SetRtcpXrRrtrStatus(bool enable) {

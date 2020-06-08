@@ -523,14 +523,6 @@ int32_t ModuleRtpRtcpImpl2::SendRTCP(RTCPPacketType packet_type) {
   return rtcp_sender_.SendRTCP(GetFeedbackState(), packet_type);
 }
 
-int32_t ModuleRtpRtcpImpl2::SetRTCPApplicationSpecificData(
-    const uint8_t sub_type,
-    const uint32_t name,
-    const uint8_t* data,
-    const uint16_t length) {
-  return rtcp_sender_.SetApplicationSpecificData(sub_type, name, data, length);
-}
-
 void ModuleRtpRtcpImpl2::SetRtcpXrRrtrStatus(bool enable) {
   rtcp_receiver_.SetRtcpXrRrtrStatus(enable);
   rtcp_sender_.SendRtcpXrReceiverReferenceTime(enable);

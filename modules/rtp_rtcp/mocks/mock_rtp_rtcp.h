@@ -160,11 +160,6 @@ class MockRtpRtcpInterface : public RtpRtcpInterface {
               GetLatestReportBlockData,
               (),
               (const, override));
-  MOCK_METHOD(
-      int32_t,
-      SetRTCPApplicationSpecificData,
-      (uint8_t sub_type, uint32_t name, const uint8_t* data, uint16_t length),
-      (override));
   MOCK_METHOD(void, SetRtcpXrRrtrStatus, (bool enable), (override));
   MOCK_METHOD(bool, RtcpXrRrtrStatus, (), (const, override));
   MOCK_METHOD(void,

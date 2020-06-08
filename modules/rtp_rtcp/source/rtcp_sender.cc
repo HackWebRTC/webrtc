@@ -176,11 +176,6 @@ RTCPSender::RTCPSender(const RtpRtcpInterface::Configuration& config)
       packet_oh_send_(0),
       max_packet_size_(IP_PACKET_SIZE - 28),  // IPv4 + UDP by default.
 
-      app_sub_type_(0),
-      app_name_(0),
-      app_data_(nullptr),
-      app_length_(0),
-
       xr_send_receiver_reference_time_enabled_(false),
       packet_type_counter_observer_(config.rtcp_packet_type_counter_observer),
       send_video_bitrate_allocation_(false),
@@ -194,7 +189,6 @@ RTCPSender::RTCPSender(const RtpRtcpInterface::Configuration& config)
   builders_[kRtcpFir] = &RTCPSender::BuildFIR;
   builders_[kRtcpRemb] = &RTCPSender::BuildREMB;
   builders_[kRtcpBye] = &RTCPSender::BuildBYE;
-  builders_[kRtcpApp] = &RTCPSender::BuildAPP;
   builders_[kRtcpLossNotification] = &RTCPSender::BuildLossNotification;
   builders_[kRtcpTmmbr] = &RTCPSender::BuildTMMBR;
   builders_[kRtcpTmmbn] = &RTCPSender::BuildTMMBN;
@@ -614,9 +608,6 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildTMMBN(
 std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildAPP(const RtcpContext& ctx) {
   rtcp::App* app = new rtcp::App();
   app->SetSenderSsrc(ssrc_);
-  app->SetSubType(app_sub_type_);
-  app->SetName(app_name_);
-  app->SetData(app_data_.get(), app_length_);
 
   return std::unique_ptr<rtcp::RtcpPacket>(app);
 }
@@ -783,24 +774,26 @@ absl::optional<int32_t> RTCPSender::ComputeCompoundRTCPPacket(
   auto it = report_flags_.begin();
   while (it != report_flags_.end()) {
     auto builder_it = builders_.find(it->type);
-    RTC_DCHECK(builder_it != builders_.end())
-        << "Could not find builder for packet type " << it->type;
     if (it->is_volatile) {
       report_flags_.erase(it++);
     } else {
       ++it;
     }
 
-    BuilderFunc func = builder_it->second;
-    std::unique_ptr<rtcp::RtcpPacket> packet = (this->*func)(context);
-    if (packet == nullptr)
-      return -1;
-    // If there is a BYE, don't append now - save it and append it
-    // at the end later.
-    if (builder_it->first == kRtcpBye) {
-      packet_bye = std::move(packet);
+    if (builder_it == builders_.end()) {
+      RTC_NOTREACHED() << "Could not find builder for packet type " << it->type;
     } else {
-      out_packet->Append(packet.release());
+      BuilderFunc func = builder_it->second;
+      std::unique_ptr<rtcp::RtcpPacket> packet = (this->*func)(context);
+      if (packet == nullptr)
+        return -1;
+      // If there is a BYE, don't append now - save it and append it
+      // at the end later.
+      if (builder_it->first == kRtcpBye) {
+        packet_bye = std::move(packet);
+      } else {
+        out_packet->Append(packet.release());
+      }
     }
   }
 
@@ -904,25 +897,6 @@ void RTCPSender::SetCsrcs(const std::vector<uint32_t>& csrcs) {
   RTC_DCHECK_LE(csrcs.size(), kRtpCsrcSize);
   rtc::CritScope lock(&critical_section_rtcp_sender_);
   csrcs_ = csrcs;
-}
-
-int32_t RTCPSender::SetApplicationSpecificData(uint8_t subType,
-                                               uint32_t name,
-                                               const uint8_t* data,
-                                               uint16_t length) {
-  if (length % 4 != 0) {
-    RTC_LOG(LS_ERROR) << "Failed to SetApplicationSpecificData.";
-    return -1;
-  }
-  rtc::CritScope lock(&critical_section_rtcp_sender_);
-
-  SetFlag(kRtcpApp, true);
-  app_sub_type_ = subType;
-  app_name_ = name;
-  app_data_.reset(new uint8_t[length]);
-  app_length_ = length;
-  memcpy(app_data_.get(), data, length);
-  return 0;
 }
 
 void RTCPSender::SendRtcpXrReceiverReferenceTime(bool enable) {

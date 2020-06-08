@@ -145,12 +145,6 @@ class RTCPSender final {
   void SetTmmbn(std::vector<rtcp::TmmbItem> bounding_set)
       RTC_LOCKS_EXCLUDED(critical_section_rtcp_sender_);
 
-  int32_t SetApplicationSpecificData(uint8_t subType,
-                                     uint32_t name,
-                                     const uint8_t* data,
-                                     uint16_t length)
-      RTC_LOCKS_EXCLUDED(critical_section_rtcp_sender_);
-
   void SendRtcpXrReceiverReferenceTime(bool enable)
       RTC_LOCKS_EXCLUDED(critical_section_rtcp_sender_);
 
@@ -277,13 +271,6 @@ class RTCPSender final {
   uint32_t tmmbr_send_bps_ RTC_GUARDED_BY(critical_section_rtcp_sender_);
   uint32_t packet_oh_send_ RTC_GUARDED_BY(critical_section_rtcp_sender_);
   size_t max_packet_size_ RTC_GUARDED_BY(critical_section_rtcp_sender_);
-
-  // APP
-  uint8_t app_sub_type_ RTC_GUARDED_BY(critical_section_rtcp_sender_);
-  uint32_t app_name_ RTC_GUARDED_BY(critical_section_rtcp_sender_);
-  std::unique_ptr<uint8_t[]> app_data_
-      RTC_GUARDED_BY(critical_section_rtcp_sender_);
-  uint16_t app_length_ RTC_GUARDED_BY(critical_section_rtcp_sender_);
 
   // True if sending of XR Receiver reference time report is enabled.
   bool xr_send_receiver_reference_time_enabled_

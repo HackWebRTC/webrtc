@@ -246,12 +246,6 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
   void SendCombinedRtcpPacket(
       std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets) override;
 
-  // (APP) Application specific data.
-  int32_t SetRTCPApplicationSpecificData(uint8_t sub_type,
-                                         uint32_t name,
-                                         const uint8_t* data,
-                                         uint16_t length) override;
-
   // (XR) Receiver reference time report.
   void SetRtcpXrRrtrStatus(bool enable) override;
 

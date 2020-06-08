@@ -315,47 +315,6 @@ TEST_F(RtcpSenderTest, StopSendingTriggersBye) {
   EXPECT_EQ(kSenderSsrc, parser()->bye()->sender_ssrc());
 }
 
-TEST_F(RtcpSenderTest, SendApp) {
-  const uint8_t kSubType = 30;
-  uint32_t name = 'n' << 24;
-  name += 'a' << 16;
-  name += 'm' << 8;
-  name += 'e';
-  const uint8_t kData[] = {'t', 'e', 's', 't', 'd', 'a', 't', 'a'};
-  EXPECT_EQ(0, rtcp_sender_->SetApplicationSpecificData(kSubType, name, kData,
-                                                        sizeof(kData)));
-  rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
-  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpApp));
-  EXPECT_EQ(1, parser()->app()->num_packets());
-  EXPECT_EQ(kSubType, parser()->app()->sub_type());
-  EXPECT_EQ(name, parser()->app()->name());
-  EXPECT_EQ(sizeof(kData), parser()->app()->data_size());
-  EXPECT_EQ(0, memcmp(kData, parser()->app()->data(), sizeof(kData)));
-}
-
-TEST_F(RtcpSenderTest, SendEmptyApp) {
-  const uint8_t kSubType = 30;
-  const uint32_t kName = 0x6E616D65;
-
-  EXPECT_EQ(
-      0, rtcp_sender_->SetApplicationSpecificData(kSubType, kName, nullptr, 0));
-
-  rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
-  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpApp));
-  EXPECT_EQ(1, parser()->app()->num_packets());
-  EXPECT_EQ(kSubType, parser()->app()->sub_type());
-  EXPECT_EQ(kName, parser()->app()->name());
-  EXPECT_EQ(0U, parser()->app()->data_size());
-}
-
-TEST_F(RtcpSenderTest, SetInvalidApplicationSpecificData) {
-  const uint8_t kData[] = {'t', 'e', 's', 't', 'd', 'a', 't'};
-  const uint16_t kInvalidDataLength = sizeof(kData) / sizeof(kData[0]);
-  EXPECT_EQ(-1,
-            rtcp_sender_->SetApplicationSpecificData(
-                0, 0, kData, kInvalidDataLength));  // Should by multiple of 4.
-}
-
 TEST_F(RtcpSenderTest, SendFir) {
   rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpFir));
