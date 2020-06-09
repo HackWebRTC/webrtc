@@ -34,8 +34,6 @@
 #include "rtc_tools/rtc_event_log_visualizer/analyze_audio.h"
 #include "rtc_tools/rtc_event_log_visualizer/analyzer.h"
 #include "rtc_tools/rtc_event_log_visualizer/plot_base.h"
-#include "rtc_tools/rtc_event_log_visualizer/plot_protobuf.h"
-#include "rtc_tools/rtc_event_log_visualizer/plot_python.h"
 #include "system_wrappers/include/field_trial.h"
 #include "test/field_trial.h"
 #include "test/testsupport/file_utils.h"
@@ -277,13 +275,7 @@ int main(int argc, char* argv[]) {
   }
 
   webrtc::EventLogAnalyzer analyzer(parsed_log, config);
-  std::unique_ptr<webrtc::PlotCollection> collection;
-  if (absl::GetFlag(FLAGS_protobuf_output)) {
-    collection.reset(new webrtc::ProtobufPlotCollection());
-  } else {
-    collection.reset(
-        new webrtc::PythonPlotCollection(absl::GetFlag(FLAGS_shared_xaxis)));
-  }
+  webrtc::PlotCollection collection;
 
   PlotMap plots;
   plots.RegisterPlot("incoming_packet_sizes", [&](Plot* plot) {
@@ -601,7 +593,7 @@ int main(int argc, char* argv[]) {
 
   for (const auto& plot : plots) {
     if (plot.enabled) {
-      Plot* output = collection->AppendNewPlot();
+      Plot* output = collection.AppendNewPlot();
       plot.plot_func(output);
       output->SetId(plot.label);
     }
@@ -621,11 +613,17 @@ int main(int argc, char* argv[]) {
          it != neteq_stats->cend(); ++it) {
       webrtc::CreateAudioJitterBufferGraph(parsed_log, config, it->first,
                                            it->second.get(),
-                                           collection->AppendNewPlot());
+                                           collection.AppendNewPlot());
     }
   }
 
-  collection->Draw();
+  if (absl::GetFlag(FLAGS_protobuf_output)) {
+    webrtc::analytics::ChartCollection proto_charts;
+    collection.ExportProtobuf(&proto_charts);
+    std::cout << proto_charts.SerializeAsString();
+  } else {
+    collection.PrintPythonCode(absl::GetFlag(FLAGS_shared_xaxis));
+  }
 
   if (absl::GetFlag(FLAGS_print_triage_alerts)) {
     webrtc::TriageHelper triage_alerts(config);

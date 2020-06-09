@@ -343,6 +343,7 @@ if (!build_with_chromium) {
       deps = [
         ":chart_proto",
         "../api:function_view",
+        "../rtc_base:deprecation",
         "../rtc_base:ignore_wundef",
 
         # TODO(kwiberg): Remove this dependency.
