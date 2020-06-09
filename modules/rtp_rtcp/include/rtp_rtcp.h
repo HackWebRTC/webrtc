@@ -33,6 +33,24 @@ class RtpRtcp : public Module, public RtpRtcpInterface {
   static std::unique_ptr<RtpRtcp> DEPRECATED_Create(
       const Configuration& configuration);
 
+  // (TMMBR) Temporary Max Media Bit Rate
+  RTC_DEPRECATED virtual bool TMMBR() const = 0;
+
+  RTC_DEPRECATED virtual void SetTMMBRStatus(bool enable) = 0;
+
+  // Returns -1 on failure else 0.
+  RTC_DEPRECATED virtual int32_t AddMixedCNAME(uint32_t ssrc,
+                                               const char* cname) = 0;
+
+  // Returns -1 on failure else 0.
+  RTC_DEPRECATED virtual int32_t RemoveMixedCNAME(uint32_t ssrc) = 0;
+
+  // Returns remote CName.
+  // Returns -1 on failure else 0.
+  RTC_DEPRECATED virtual int32_t RemoteCNAME(
+      uint32_t remote_ssrc,
+      char cname[RTCP_CNAME_SIZE]) const = 0;
+
   // (De)registers RTP header extension type and id.
   // Returns -1 on failure else 0.
   RTC_DEPRECATED virtual int32_t RegisterSendRtpHeaderExtension(
@@ -46,6 +64,12 @@ class RtpRtcp : public Module, public RtpRtcpInterface {
       uint32_t name,
       const uint8_t* data,
       uint16_t length) = 0;
+
+  // Returns statistics of the amount of data sent.
+  // Returns -1 on failure else 0.
+  RTC_DEPRECATED virtual int32_t DataCountersRTP(
+      size_t* bytes_sent,
+      uint32_t* packets_sent) const = 0;
 
   // Requests new key frame.
   // using PLI, https://tools.ietf.org/html/rfc4585#section-6.3.1.1

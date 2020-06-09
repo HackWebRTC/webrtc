@@ -324,11 +324,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   // Returns -1 on failure else 0.
   virtual int32_t SetCNAME(const char* cname) = 0;
 
-  // Returns remote CName.
-  // Returns -1 on failure else 0.
-  virtual int32_t RemoteCNAME(uint32_t remote_ssrc,
-                              char cname[RTCP_CNAME_SIZE]) const = 0;
-
   // Returns remote NTP.
   // Returns -1 on failure else 0.
   virtual int32_t RemoteNTP(uint32_t* received_ntp_secs,
@@ -336,12 +331,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
                             uint32_t* rtcp_arrival_time_secs,
                             uint32_t* rtcp_arrival_time_frac,
                             uint32_t* rtcp_timestamp) const = 0;
-
-  // Returns -1 on failure else 0.
-  virtual int32_t AddMixedCNAME(uint32_t ssrc, const char* cname) = 0;
-
-  // Returns -1 on failure else 0.
-  virtual int32_t RemoveMixedCNAME(uint32_t ssrc) = 0;
 
   // Returns current RTT (round-trip time) estimate.
   // Returns -1 on failure else 0.
@@ -358,11 +347,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   // process function.
   // Returns -1 on failure else 0.
   virtual int32_t SendRTCP(RTCPPacketType rtcp_packet_type) = 0;
-
-  // Returns statistics of the amount of data sent.
-  // Returns -1 on failure else 0.
-  virtual int32_t DataCountersRTP(size_t* bytes_sent,
-                                  uint32_t* packets_sent) const = 0;
 
   // Returns send statistics for the RTP and RTX stream.
   virtual void GetSendStreamDataCounters(
@@ -392,11 +376,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   void SetRemb(int64_t bitrate_bps, std::vector<uint32_t> ssrcs) override = 0;
   // Stops sending REMB on next and following sender/receiver reports.
   void UnsetRemb() override = 0;
-
-  // (TMMBR) Temporary Max Media Bit Rate
-  virtual bool TMMBR() const = 0;
-
-  virtual void SetTMMBRStatus(bool enable) = 0;
 
   // (NACK)
 

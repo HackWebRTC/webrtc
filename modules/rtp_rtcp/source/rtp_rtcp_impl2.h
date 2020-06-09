@@ -58,8 +58,6 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
   static std::unique_ptr<ModuleRtpRtcpImpl2> Create(
       const Configuration& configuration);
 
-  // TODO(tommi): Make implementation private?
-
   // Returns the number of milliseconds until the module want a worker thread to
   // call Process.
   int64_t TimeUntilNextProcess() override;
@@ -169,20 +167,12 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
   // Set RTCP CName.
   int32_t SetCNAME(const char* c_name) override;
 
-  // Get remote CName.
-  int32_t RemoteCNAME(uint32_t remote_ssrc,
-                      char c_name[RTCP_CNAME_SIZE]) const override;
-
   // Get remote NTP.
   int32_t RemoteNTP(uint32_t* received_ntp_secs,
                     uint32_t* received_ntp_frac,
                     uint32_t* rtcp_arrival_time_secs,
                     uint32_t* rtcp_arrival_time_frac,
                     uint32_t* rtcp_timestamp) const override;
-
-  int32_t AddMixedCNAME(uint32_t ssrc, const char* c_name) override;
-
-  int32_t RemoveMixedCNAME(uint32_t ssrc) override;
 
   // Get RoundTripTime.
   int32_t RTT(uint32_t remote_ssrc,
@@ -196,10 +186,6 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
   // Force a send of an RTCP packet.
   // Normal SR and RR are triggered via the process function.
   int32_t SendRTCP(RTCPPacketType rtcpPacketType) override;
-
-  // Statistics of the amount of data sent and received.
-  int32_t DataCountersRTP(size_t* bytes_sent,
-                          uint32_t* packets_sent) const override;
 
   void GetSendStreamDataCounters(
       StreamDataCounters* rtp_counters,
@@ -217,11 +203,6 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
   // (REMB) Receiver Estimated Max Bitrate.
   void SetRemb(int64_t bitrate_bps, std::vector<uint32_t> ssrcs) override;
   void UnsetRemb() override;
-
-  // (TMMBR) Temporary Max Media Bit Rate.
-  bool TMMBR() const override;
-
-  void SetTMMBRStatus(bool enable) override;
 
   void SetTmmbn(std::vector<rtcp::TmmbItem> bounding_set) override;
 

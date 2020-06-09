@@ -118,10 +118,6 @@ class MockRtpRtcpInterface : public RtpRtcpInterface {
               (const char cname[RTCP_CNAME_SIZE]),
               (override));
   MOCK_METHOD(int32_t,
-              RemoteCNAME,
-              (uint32_t remote_ssrc, char cname[RTCP_CNAME_SIZE]),
-              (const, override));
-  MOCK_METHOD(int32_t,
               RemoteNTP,
               (uint32_t * received_ntp_secs,
                uint32_t* received_ntp_frac,
@@ -129,11 +125,6 @@ class MockRtpRtcpInterface : public RtpRtcpInterface {
                uint32_t* rtcp_arrival_time_frac,
                uint32_t* rtcp_timestamp),
               (const, override));
-  MOCK_METHOD(int32_t,
-              AddMixedCNAME,
-              (uint32_t ssrc, const char cname[RTCP_CNAME_SIZE]),
-              (override));
-  MOCK_METHOD(int32_t, RemoveMixedCNAME, (uint32_t ssrc), (override));
   MOCK_METHOD(int32_t,
               RTT,
               (uint32_t remote_ssrc,
@@ -144,10 +135,6 @@ class MockRtpRtcpInterface : public RtpRtcpInterface {
               (const, override));
   MOCK_METHOD(int64_t, ExpectedRetransmissionTimeMs, (), (const, override));
   MOCK_METHOD(int32_t, SendRTCP, (RTCPPacketType packet_type), (override));
-  MOCK_METHOD(int32_t,
-              DataCountersRTP,
-              (size_t * bytes_sent, uint32_t* packets_sent),
-              (const, override));
   MOCK_METHOD(void,
               GetSendStreamDataCounters,
               (StreamDataCounters*, StreamDataCounters*),
@@ -167,8 +154,6 @@ class MockRtpRtcpInterface : public RtpRtcpInterface {
               (int64_t bitrate, std::vector<uint32_t> ssrcs),
               (override));
   MOCK_METHOD(void, UnsetRemb, (), (override));
-  MOCK_METHOD(bool, TMMBR, (), (const, override));
-  MOCK_METHOD(void, SetTMMBRStatus, (bool enable), (override));
   MOCK_METHOD(int32_t,
               SendNACK,
               (const uint16_t* nack_list, uint16_t size),
