@@ -271,5 +271,10 @@ TEST_P(TaskQueueTest, PostTwoWithSharedUnprotectedState) {
   EXPECT_TRUE(done.Wait(1000));
 }
 
+// TaskQueueTest is a set of tests for any implementation of the TaskQueueBase.
+// Tests are instantiated next to the concrete implementation(s).
+// https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#creating-value-parameterized-abstract-tests
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(TaskQueueTest);
+
 }  // namespace
 }  // namespace webrtc
