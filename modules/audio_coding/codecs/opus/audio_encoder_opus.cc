@@ -66,46 +66,7 @@ constexpr int kOpusSupportedFrameLengths[] = {10, 20, 40, 60};
 // PacketLossFractionSmoother uses an exponential filter with a time constant
 // of -1.0 / ln(0.9999) = 10000 ms.
 constexpr float kAlphaForPacketLossFractionSmoother = 0.9999f;
-
-// Optimize the loss rate to configure Opus. Basically, optimized loss rate is
-// the input loss rate rounded down to various levels, because a robustly good
-// audio quality is achieved by lowering the packet loss down.
-// Additionally, to prevent toggling, margins are used, i.e., when jumping to
-// a loss rate from below, a higher threshold is used than jumping to the same
-// level from above.
-float OptimizePacketLossRate(float new_loss_rate, float old_loss_rate) {
-  RTC_DCHECK_GE(new_loss_rate, 0.0f);
-  RTC_DCHECK_LE(new_loss_rate, 1.0f);
-  RTC_DCHECK_GE(old_loss_rate, 0.0f);
-  RTC_DCHECK_LE(old_loss_rate, 1.0f);
-  constexpr float kPacketLossRate20 = 0.20f;
-  constexpr float kPacketLossRate10 = 0.10f;
-  constexpr float kPacketLossRate5 = 0.05f;
-  constexpr float kPacketLossRate1 = 0.01f;
-  constexpr float kLossRate20Margin = 0.02f;
-  constexpr float kLossRate10Margin = 0.01f;
-  constexpr float kLossRate5Margin = 0.01f;
-  if (new_loss_rate >=
-      kPacketLossRate20 +
-          kLossRate20Margin *
-              (kPacketLossRate20 - old_loss_rate > 0 ? 1 : -1)) {
-    return kPacketLossRate20;
-  } else if (new_loss_rate >=
-             kPacketLossRate10 +
-                 kLossRate10Margin *
-                     (kPacketLossRate10 - old_loss_rate > 0 ? 1 : -1)) {
-    return kPacketLossRate10;
-  } else if (new_loss_rate >=
-             kPacketLossRate5 +
-                 kLossRate5Margin *
-                     (kPacketLossRate5 - old_loss_rate > 0 ? 1 : -1)) {
-    return kPacketLossRate5;
-  } else if (new_loss_rate >= kPacketLossRate1) {
-    return kPacketLossRate1;
-  } else {
-    return 0.0f;
-  }
-}
+constexpr float kMaxPacketLossFraction = 0.2f;
 
 int CalculateDefaultBitrate(int max_playback_rate, size_t num_channels) {
   const int bitrate = [&] {
@@ -199,35 +160,6 @@ void FindSupportedFrameLengths(int min_frame_length_ms,
 int GetBitrateBps(const AudioEncoderOpusConfig& config) {
   RTC_DCHECK(config.IsOk());
   return *config.bitrate_bps;
-}
-
-bool IsValidPacketLossRate(int value) {
-  return value >= 0 && value <= 100;
-}
-
-float ToFraction(int percent) {
-  return static_cast<float>(percent) / 100;
-}
-
-float GetMinPacketLossRate() {
-  constexpr char kPacketLossFieldTrial[] = "WebRTC-Audio-OpusMinPacketLossRate";
-  const bool use_opus_min_packet_loss_rate =
-      webrtc::field_trial::IsEnabled(kPacketLossFieldTrial);
-  if (use_opus_min_packet_loss_rate) {
-    const std::string field_trial_string =
-        webrtc::field_trial::FindFullName(kPacketLossFieldTrial);
-    constexpr int kDefaultMinPacketLossRate = 1;
-    int value = kDefaultMinPacketLossRate;
-    if (sscanf(field_trial_string.c_str(), "Enabled-%d", &value) == 1 &&
-        !IsValidPacketLossRate(value)) {
-      RTC_LOG(LS_WARNING) << "Invalid parameter for " << kPacketLossFieldTrial
-                          << ", using default value: "
-                          << kDefaultMinPacketLossRate;
-      value = kDefaultMinPacketLossRate;
-    }
-    return ToFraction(value);
-  }
-  return 0.0;
 }
 
 std::vector<float> GetBitrateMultipliers() {
@@ -432,7 +364,6 @@ AudioEncoderOpusImpl::AudioEncoderOpusImpl(
       bitrate_changed_(true),
       bitrate_multipliers_(GetBitrateMultipliers()),
       packet_loss_rate_(0.0),
-      min_packet_loss_rate_(GetMinPacketLossRate()),
       inst_(nullptr),
       packet_loss_fraction_smoother_(new PacketLossFractionSmoother()),
       audio_network_adaptor_creator_(audio_network_adaptor_creator),
@@ -789,8 +720,7 @@ void AudioEncoderOpusImpl::SetNumChannelsToEncode(
 }
 
 void AudioEncoderOpusImpl::SetProjectedPacketLossRate(float fraction) {
-  fraction = OptimizePacketLossRate(fraction, packet_loss_rate_);
-  fraction = std::max(fraction, min_packet_loss_rate_);
+  fraction = std::min(std::max(fraction, 0.0f), kMaxPacketLossFraction);
   if (packet_loss_rate_ != fraction) {
     packet_loss_rate_ = fraction;
     RTC_CHECK_EQ(
