@@ -1078,6 +1078,9 @@ if (is_android) {
       errorprone_args = []
       errorprone_args += [ "-Werror" ]
 
+      # Use WebRTC-specific android lint suppressions file.
+      lint_suppressions_file = "//tools_webrtc/android/suppressions.xml"
+
       if (!defined(deps)) {
         deps = []
       }
