@@ -9,10 +9,6 @@
  */
 #include "rtc_base/synchronization/sequence_checker.h"
 
-#include <cinttypes>
-#include <cstdint>
-#include <type_traits>
-
 #if defined(WEBRTC_MAC)
 #include <dispatch/dispatch.h>
 #endif
@@ -29,18 +25,6 @@ const void* GetSystemQueueRef() {
 #else
   return nullptr;
 #endif
-}
-
-template <class T,
-          typename std::enable_if<std::is_pointer<T>::value>::type* = nullptr>
-uintptr_t CastToUintPtr(T t) {
-  return reinterpret_cast<uintptr_t>(t);
-}
-
-template <class T,
-          typename std::enable_if<!std::is_pointer<T>::value>::type* = nullptr>
-uintptr_t CastToUintPtr(T t) {
-  return static_cast<uintptr_t>(t);
 }
 
 }  // namespace
@@ -97,25 +81,20 @@ std::string SequenceCheckerImpl::ExpectationToString() const {
   if (!attached_)
     return "Checker currently not attached.";
 
-  // NOTE: The format of thie string built here is meant to compliment the one
-  // we have inside of FatalLog() (checks.cc).
+  // The format of the string is meant to compliment the one we have inside of
+  // FatalLog() (checks.cc).  Example:
   //
-  // Example:
-  //
-  // Expectations vs Actual:
-  // # Exp: TQ: 0000000000000000 SysQ: 00007fff69541330 Thread: 0000000113aafdc0
-  // # Act: TQ: 00007fcde7a22210 SysQ: 00007fcde78553c0 Thread: 0000700005ddc000
+  // # Expected: TQ: 0x0 SysQ: 0x7fff69541330 Thread: 0x11dcf6dc0
+  // # Actual:   TQ: 0x7fa8f0604190 SysQ: 0x7fa8f0604a30 Thread: 0x700006f1a000
   // TaskQueue doesn't match
 
   rtc::StringBuilder message;
   message.AppendFormat(
-      "Expectations vs Actual:\n# Exp: "
-      "TQ: %016" PRIxPTR " SysQ: %016" PRIxPTR " Thread: %016" PRIxPTR
-      "\n# Act: "
-      "TQ: %016" PRIxPTR " SysQ: %016" PRIxPTR " Thread: %016" PRIxPTR "\n",
-      CastToUintPtr(valid_queue_), CastToUintPtr(valid_system_queue_),
-      CastToUintPtr(valid_thread_), CastToUintPtr(current_queue),
-      CastToUintPtr(current_system_queue), CastToUintPtr(current_thread));
+      "# Expected: TQ: %p SysQ: %p Thread: %p\n"
+      "# Actual:   TQ: %p SysQ: %p Thread: %p\n",
+      valid_queue_, valid_system_queue_,
+      reinterpret_cast<const void*>(valid_thread_), current_queue,
+      current_system_queue, reinterpret_cast<const void*>(current_thread));
 
   if ((valid_queue_ || current_queue) && valid_queue_ != current_queue) {
     message << "TaskQueue doesn't match\n";
