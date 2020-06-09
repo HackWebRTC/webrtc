@@ -10,6 +10,7 @@
 
 #include "benchmark/benchmark.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/system/unused.h"
 
 namespace webrtc {
 
@@ -35,7 +36,8 @@ class PerfTestData {
 
 void BM_LockWithMutex(benchmark::State& state) {
   static PerfTestData test_data;
-  for (auto it = state.begin(); it != state.end(); ++it) {
+  for (auto s : state) {
+    RTC_UNUSED(s);
     benchmark::DoNotOptimize(test_data.AddToCounter(2));
   }
 }

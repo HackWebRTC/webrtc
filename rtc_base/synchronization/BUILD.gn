@@ -36,6 +36,7 @@ rtc_library("mutex") {
     ":yield",
     "..:checks",
     "..:macromagic",
+    "..:platform_thread",
     "../system:unused",
   ]
   absl_deps = [ "//third_party/abseil-cpp/absl/base:core_headers" ]
@@ -115,6 +116,7 @@ if (rtc_include_tests) {
     sources = [ "mutex_benchmark.cc" ]
     deps = [
       ":mutex",
+      "../system:unused",
       "//third_party/google_benchmark",
     ]
   }
