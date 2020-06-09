@@ -55,6 +55,8 @@ rtc_source_set("scalability_structures") {
   sources = [
     "scalability_structure_l1t2.cc",
     "scalability_structure_l1t2.h",
+    "scalability_structure_l1t3.cc",
+    "scalability_structure_l1t3.h",
     "scalability_structure_l2t1.cc",
     "scalability_structure_l2t1.h",
     "scalability_structure_l2t1_key.cc",
@@ -65,6 +67,10 @@ rtc_source_set("scalability_structures") {
     "scalability_structure_l2t2_key.h",
     "scalability_structure_l2t2_key_shift.cc",
     "scalability_structure_l2t2_key_shift.h",
+    "scalability_structure_l3t1.cc",
+    "scalability_structure_l3t1.h",
+    "scalability_structure_l3t3.cc",
+    "scalability_structure_l3t3.h",
     "scalability_structure_s2t1.cc",
     "scalability_structure_s2t1.h",
   ]

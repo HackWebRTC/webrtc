@@ -22,11 +22,14 @@
 #include "modules/video_coding/codecs/av1/libaom_av1_decoder.h"
 #include "modules/video_coding/codecs/av1/libaom_av1_encoder.h"
 #include "modules/video_coding/codecs/av1/scalability_structure_l1t2.h"
+#include "modules/video_coding/codecs/av1/scalability_structure_l1t3.h"
 #include "modules/video_coding/codecs/av1/scalability_structure_l2t1.h"
 #include "modules/video_coding/codecs/av1/scalability_structure_l2t1_key.h"
 #include "modules/video_coding/codecs/av1/scalability_structure_l2t2.h"
 #include "modules/video_coding/codecs/av1/scalability_structure_l2t2_key.h"
 #include "modules/video_coding/codecs/av1/scalability_structure_l2t2_key_shift.h"
+#include "modules/video_coding/codecs/av1/scalability_structure_l3t1.h"
+#include "modules/video_coding/codecs/av1/scalability_structure_l3t3.h"
 #include "modules/video_coding/codecs/av1/scalability_structure_s2t1.h"
 #include "modules/video_coding/codecs/av1/scalable_video_controller.h"
 #include "modules/video_coding/codecs/av1/scalable_video_controller_no_layering.h"
@@ -283,10 +286,16 @@ INSTANTIATE_TEST_SUITE_P(
                         /*num_frames_to_generate=*/4},
            SvcTestParam{std::make_unique<ScalabilityStructureL1T2>,
                         /*num_frames_to_generate=*/4},
+           SvcTestParam{std::make_unique<ScalabilityStructureL1T3>,
+                        /*num_frames_to_generate=*/8},
            SvcTestParam{std::make_unique<ScalabilityStructureL2T1>,
                         /*num_frames_to_generate=*/3},
            SvcTestParam{std::make_unique<ScalabilityStructureL2T1Key>,
                         /*num_frames_to_generate=*/3},
+           SvcTestParam{std::make_unique<ScalabilityStructureL3T1>,
+                        /*num_frames_to_generate=*/3},
+           SvcTestParam{std::make_unique<ScalabilityStructureL3T3>,
+                        /*num_frames_to_generate=*/8},
            SvcTestParam{std::make_unique<ScalabilityStructureS2T1>,
                         /*num_frames_to_generate=*/3},
            SvcTestParam{std::make_unique<ScalabilityStructureL2T2>,
