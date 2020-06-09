@@ -280,6 +280,28 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
   RTPSender* RtpSender() override;
   const RTPSender* RtpSender() const override;
 
+ protected:
+  bool UpdateRTCPReceiveInformationTimers();
+
+  RTPSender* rtp_sender() {
+    return rtp_sender_ ? &rtp_sender_->packet_generator : nullptr;
+  }
+  const RTPSender* rtp_sender() const {
+    return rtp_sender_ ? &rtp_sender_->packet_generator : nullptr;
+  }
+
+  RTCPSender* rtcp_sender() { return &rtcp_sender_; }
+  const RTCPSender* rtcp_sender() const { return &rtcp_sender_; }
+
+  RTCPReceiver* rtcp_receiver() { return &rtcp_receiver_; }
+  const RTCPReceiver* rtcp_receiver() const { return &rtcp_receiver_; }
+
+  Clock* clock() const { return clock_; }
+
+  // TODO(sprang): Remove when usage is gone.
+  DataRate SendRate() const;
+  DataRate NackOverheadRate() const;
+
  private:
   FRIEND_TEST_ALL_PREFIXES(RtpRtcpImpl2Test, Rtt);
   FRIEND_TEST_ALL_PREFIXES(RtpRtcpImpl2Test, RttForReceiverOnly);

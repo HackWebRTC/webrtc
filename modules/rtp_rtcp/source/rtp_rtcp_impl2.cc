@@ -812,4 +812,15 @@ const RTPSender* ModuleRtpRtcpImpl2::RtpSender() const {
   return rtp_sender_ ? &rtp_sender_->packet_generator : nullptr;
 }
 
+DataRate ModuleRtpRtcpImpl2::SendRate() const {
+  RTC_DCHECK(rtp_sender_);
+  return rtp_sender_->packet_sender.GetSendRates().Sum();
+}
+
+DataRate ModuleRtpRtcpImpl2::NackOverheadRate() const {
+  RTC_DCHECK(rtp_sender_);
+  return rtp_sender_->packet_sender
+      .GetSendRates()[RtpPacketMediaType::kRetransmission];
+}
+
 }  // namespace webrtc
