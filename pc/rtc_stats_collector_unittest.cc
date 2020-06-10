@@ -2075,13 +2075,11 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   expected_video.total_packet_send_delay = 10.0;
   expected_video.quality_limitation_reason = "bandwidth";
   expected_video.quality_limitation_resolution_changes = 56u;
-  if (pc_->GetConfiguration().enable_simulcast_stats) {
-    expected_video.frame_width = 200u;
-    expected_video.frame_height = 100u;
-    expected_video.frames_per_second = 10.0;
-    expected_video.frames_sent = 5;
-    expected_video.huge_frames_sent = 2;
-  }
+  expected_video.frame_width = 200u;
+  expected_video.frame_height = 100u;
+  expected_video.frames_per_second = 10.0;
+  expected_video.frames_sent = 5;
+  expected_video.huge_frames_sent = 2;
   // |expected_video.content_type| should be undefined.
   // |expected_video.qp_sum| should be undefined.
   // |expected_video.encoder_implementation| should be undefined.

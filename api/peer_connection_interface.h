@@ -666,8 +666,6 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     // Whether network condition based codec switching is allowed.
     absl::optional<bool> allow_codec_switching;
 
-    bool enable_simulcast_stats = true;
-
     //
     // Don't forget to update operator== if adding something.
     //
