@@ -200,6 +200,8 @@ deps = {
       'url': 'https://chromium.googlesource.com/chromium/src/third_party/libunwindstack.git@046920fc491aba67c6f6a750b4be7b835cff4e5b',
       'condition': 'checkout_android',
   },
+  'src/third_party/perfetto':
+    'https://android.googlesource.com/platform/external/perfetto.git@60cf022c0223b4c28424509dca35e347872c4832',
   'src/third_party/libvpx/source/libvpx':
     'https://chromium.googlesource.com/webm/libvpx.git@c1765573149e2c0fe2acabc224c0f9085b9e7f2b',
   'src/third_party/libyuv':
