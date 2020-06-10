@@ -246,7 +246,7 @@ static void JNI_PeerConnectionFactory_ShutdownInternalTracer(JNIEnv* jni) {
 
 // Following parameters are optional:
 // |audio_device_module|, |jencoder_factory|, |jdecoder_factory|,
-// |audio_processor|, |media_transport_factory|, |fec_controller_factory|,
+// |audio_processor|, |fec_controller_factory|,
 // |network_state_predictor_factory|, |neteq_factory|.
 ScopedJavaLocalRef<jobject> CreatePeerConnectionFactoryForJava(
     JNIEnv* jni,
@@ -263,7 +263,6 @@ ScopedJavaLocalRef<jobject> CreatePeerConnectionFactoryForJava(
         network_controller_factory,
     std::unique_ptr<NetworkStatePredictorFactoryInterface>
         network_state_predictor_factory,
-    std::unique_ptr<MediaTransportFactory> media_transport_factory,
     std::unique_ptr<NetEqFactory> neteq_factory) {
   // talk/ assumes pretty widely that the current Thread is ThreadManager'd, but
   // ThreadManager only WrapCurrentThread()s the thread where it is first
@@ -310,7 +309,6 @@ ScopedJavaLocalRef<jobject> CreatePeerConnectionFactoryForJava(
       std::move(network_controller_factory);
   dependencies.network_state_predictor_factory =
       std::move(network_state_predictor_factory);
-  dependencies.media_transport_factory = std::move(media_transport_factory);
   dependencies.neteq_factory = std::move(neteq_factory);
 
   cricket::MediaEngineDependencies media_dependencies;
@@ -355,7 +353,6 @@ JNI_PeerConnectionFactory_CreatePeerConnectionFactory(
     jlong native_fec_controller_factory,
     jlong native_network_controller_factory,
     jlong native_network_state_predictor_factory,
-    jlong native_media_transport_factory,
     jlong native_neteq_factory) {
   rtc::scoped_refptr<AudioProcessing> audio_processor =
       reinterpret_cast<AudioProcessing*>(native_audio_processor);
@@ -372,8 +369,6 @@ JNI_PeerConnectionFactory_CreatePeerConnectionFactory(
           native_network_controller_factory),
       TakeOwnershipOfUniquePtr<NetworkStatePredictorFactoryInterface>(
           native_network_state_predictor_factory),
-      TakeOwnershipOfUniquePtr<MediaTransportFactory>(
-          native_media_transport_factory),
       TakeOwnershipOfUniquePtr<NetEqFactory>(native_neteq_factory));
 }
 

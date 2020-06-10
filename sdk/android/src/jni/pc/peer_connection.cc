@@ -264,11 +264,6 @@ void JavaToNativeRTCConfiguration(
   rtc_config->sdp_semantics = JavaToNativeSdpSemantics(jni, j_sdp_semantics);
   rtc_config->active_reset_srtp_params =
       Java_RTCConfiguration_getActiveResetSrtpParams(jni, j_rtc_config);
-  rtc_config->use_media_transport =
-      Java_RTCConfiguration_getUseMediaTransport(jni, j_rtc_config);
-  rtc_config->use_media_transport_for_data_channels =
-      Java_RTCConfiguration_getUseMediaTransportForDataChannels(jni,
-                                                                j_rtc_config);
   rtc_config->crypto_options =
       JavaToNativeOptionalCryptoOptions(jni, j_crypto_options);
 

@@ -175,7 +175,6 @@ public class PeerConnectionFactory {
     @Nullable private FecControllerFactoryFactoryInterface fecControllerFactoryFactory;
     @Nullable private NetworkControllerFactoryFactory networkControllerFactoryFactory;
     @Nullable private NetworkStatePredictorFactoryFactory networkStatePredictorFactoryFactory;
-    @Nullable private MediaTransportFactoryFactory mediaTransportFactoryFactory;
     @Nullable private NetEqFactoryFactory neteqFactoryFactory;
 
     private Builder() {}
@@ -247,13 +246,6 @@ public class PeerConnectionFactory {
       return this;
     }
 
-    /** Sets a MediaTransportFactoryFactory for a PeerConnectionFactory. */
-    public Builder setMediaTransportFactoryFactory(
-        MediaTransportFactoryFactory mediaTransportFactoryFactory) {
-      this.mediaTransportFactoryFactory = mediaTransportFactoryFactory;
-      return this;
-    }
-
     /**
      * Sets a NetEqFactoryFactory for the PeerConnectionFactory. When using a
      * custom NetEqFactoryFactory, the AudioDecoderFactoryFactory will be set
@@ -284,9 +276,6 @@ public class PeerConnectionFactory {
           networkStatePredictorFactoryFactory == null
               ? 0
               : networkStatePredictorFactoryFactory.createNativeNetworkStatePredictorFactory(),
-          mediaTransportFactoryFactory == null
-              ? 0
-              : mediaTransportFactoryFactory.createNativeMediaTransportFactory(),
           neteqFactoryFactory == null ? 0 : neteqFactoryFactory.createNativeNetEqFactory());
     }
   }
@@ -607,7 +596,7 @@ public class PeerConnectionFactory {
       long audioDecoderFactory, VideoEncoderFactory encoderFactory,
       VideoDecoderFactory decoderFactory, long nativeAudioProcessor,
       long nativeFecControllerFactory, long nativeNetworkControllerFactory,
-      long nativeNetworkStatePredictorFactory, long mediaTransportFactory, long neteqFactory);
+      long nativeNetworkStatePredictorFactory, long neteqFactory);
 
   private static native long nativeCreatePeerConnection(long factory,
       PeerConnection.RTCConfiguration rtcConfig, MediaConstraints constraints, long nativeObserver,

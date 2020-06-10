@@ -29,7 +29,6 @@
 
 #include "api/jsep_ice_candidate.h"
 #include "api/rtc_event_log_output_file.h"
-#include "api/transport/media/media_transport_interface.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"
 

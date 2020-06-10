@@ -272,7 +272,6 @@ if (is_android) {
       "api/org/webrtc/MediaSource.java",
       "api/org/webrtc/MediaStream.java",
       "api/org/webrtc/MediaStreamTrack.java",
-      "api/org/webrtc/MediaTransportFactoryFactory.java",
       "api/org/webrtc/NativeLibraryLoader.java",
       "api/org/webrtc/NativePeerConnectionFactory.java",
       "api/org/webrtc/NetEqFactoryFactory.java",

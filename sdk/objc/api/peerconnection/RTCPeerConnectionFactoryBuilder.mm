@@ -13,7 +13,6 @@
 
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder_factory.h"
-#include "api/transport/media/media_transport_interface.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "modules/audio_device/include/audio_device.h"
@@ -26,7 +25,6 @@
   rtc::scoped_refptr<webrtc::AudioDecoderFactory> _audioDecoderFactory;
   rtc::scoped_refptr<webrtc::AudioDeviceModule> _audioDeviceModule;
   rtc::scoped_refptr<webrtc::AudioProcessing> _audioProcessingModule;
-  std::unique_ptr<webrtc::MediaTransportFactory> _mediaTransportFactory;
 }
 
 + (RTCPeerConnectionFactoryBuilder *)builder {
@@ -41,8 +39,7 @@
                           nativeVideoEncoderFactory:std::move(_videoEncoderFactory)
                           nativeVideoDecoderFactory:std::move(_videoDecoderFactory)
                                   audioDeviceModule:_audioDeviceModule
-                              audioProcessingModule:_audioProcessingModule
-                              mediaTransportFactory:std::move(_mediaTransportFactory)];
+                              audioProcessingModule:_audioProcessingModule];
 }
 
 - (void)setVideoEncoderFactory:(std::unique_ptr<webrtc::VideoEncoderFactory>)videoEncoderFactory {

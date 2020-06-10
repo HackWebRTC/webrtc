@@ -536,18 +536,6 @@ public class PeerConnection {
     // Null indicates no change to currently configured value.
     @Nullable public Boolean allowCodecSwitching;
 
-    /*
-     * Experimental flag that enables a use of media transport. If this is true, the media transport
-     * factory MUST be provided to the PeerConnectionFactory.
-     */
-    public boolean useMediaTransport;
-
-    /*
-     * Experimental flag that enables a use of media transport for data channels. If this is true,
-     * the media transport factory MUST be provided to the PeerConnectionFactory.
-     */
-    public boolean useMediaTransportForDataChannels;
-
     /**
      * Defines advanced optional cryptographic settings related to SRTP and
      * frame encryption for native WebRTC. Setting this will overwrite any
@@ -602,8 +590,6 @@ public class PeerConnection {
       networkPreference = AdapterType.UNKNOWN;
       sdpSemantics = SdpSemantics.PLAN_B;
       activeResetSrtpParams = false;
-      useMediaTransport = false;
-      useMediaTransportForDataChannels = false;
       cryptoOptions = null;
       turnLoggingId = null;
       allowCodecSwitching = null;
@@ -814,16 +800,6 @@ public class PeerConnection {
     @CalledByNative("RTCConfiguration")
     Boolean getAllowCodecSwitching() {
       return allowCodecSwitching;
-    }
-
-    @CalledByNative("RTCConfiguration")
-    boolean getUseMediaTransport() {
-      return useMediaTransport;
-    }
-
-    @CalledByNative("RTCConfiguration")
-    boolean getUseMediaTransportForDataChannels() {
-      return useMediaTransportForDataChannels;
     }
 
     @Nullable
