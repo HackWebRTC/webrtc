@@ -54,6 +54,8 @@ class DataChannelProviderInterface {
   virtual ~DataChannelProviderInterface() {}
 };
 
+// TODO(tommi): Change to not inherit from DataChannelInit but to have it as
+// a const member. Block access to the 'id' member since it cannot be const.
 struct InternalDataChannelInit : public DataChannelInit {
   enum OpenHandshakeRole { kOpener, kAcker, kNone };
   // The default role is kOpener because the default |negotiated| is false.
@@ -229,7 +231,8 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   static void ResetInternalIdAllocatorForTesting(int new_value);
 
  protected:
-  DataChannel(DataChannelProviderInterface* client,
+  DataChannel(const InternalDataChannelInit& config,
+              DataChannelProviderInterface* client,
               cricket::DataChannelType dct,
               const std::string& label);
   virtual ~DataChannel();
@@ -266,7 +269,7 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
     kHandshakeReady
   };
 
-  bool Init(const InternalDataChannelInit& config);
+  bool Init();
   void UpdateState();
   void SetState(DataState state);
   void DisconnectFromProvider();
@@ -282,8 +285,8 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   bool SendControlMessage(const rtc::CopyOnWriteBuffer& buffer);
 
   const int internal_id_;
-  std::string label_;
-  InternalDataChannelInit config_;
+  const std::string label_;
+  const InternalDataChannelInit config_;
   DataChannelObserver* observer_;
   DataState state_;
   RTCError error_;
@@ -294,7 +297,7 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   // Number of bytes of data that have been queued using Send(). Increased
   // before each transport send and decreased after each successful send.
   uint64_t buffered_amount_;
-  cricket::DataChannelType data_channel_type_;
+  const cricket::DataChannelType data_channel_type_;
   DataChannelProviderInterface* provider_;
   HandshakeState handshake_state_;
   bool connected_to_provider_;
@@ -318,17 +321,18 @@ BEGIN_SIGNALING_PROXY_MAP(DataChannel)
 PROXY_SIGNALING_THREAD_DESTRUCTOR()
 PROXY_METHOD1(void, RegisterObserver, DataChannelObserver*)
 PROXY_METHOD0(void, UnregisterObserver)
-PROXY_CONSTMETHOD0(std::string, label)
-PROXY_CONSTMETHOD0(bool, reliable)
-PROXY_CONSTMETHOD0(bool, ordered)
-PROXY_CONSTMETHOD0(uint16_t, maxRetransmitTime)
-PROXY_CONSTMETHOD0(uint16_t, maxRetransmits)
-PROXY_CONSTMETHOD0(absl::optional<int>, maxRetransmitsOpt)
-PROXY_CONSTMETHOD0(absl::optional<int>, maxPacketLifeTime)
-PROXY_CONSTMETHOD0(std::string, protocol)
-PROXY_CONSTMETHOD0(bool, negotiated)
+BYPASS_PROXY_CONSTMETHOD0(std::string, label)
+BYPASS_PROXY_CONSTMETHOD0(bool, reliable)
+BYPASS_PROXY_CONSTMETHOD0(bool, ordered)
+BYPASS_PROXY_CONSTMETHOD0(uint16_t, maxRetransmitTime)
+BYPASS_PROXY_CONSTMETHOD0(uint16_t, maxRetransmits)
+BYPASS_PROXY_CONSTMETHOD0(absl::optional<int>, maxRetransmitsOpt)
+BYPASS_PROXY_CONSTMETHOD0(absl::optional<int>, maxPacketLifeTime)
+BYPASS_PROXY_CONSTMETHOD0(std::string, protocol)
+BYPASS_PROXY_CONSTMETHOD0(bool, negotiated)
+// Can't bypass the proxy since the id may change.
 PROXY_CONSTMETHOD0(int, id)
-PROXY_CONSTMETHOD0(Priority, priority)
+BYPASS_PROXY_CONSTMETHOD0(Priority, priority)
 PROXY_CONSTMETHOD0(DataState, state)
 PROXY_CONSTMETHOD0(RTCError, error)
 PROXY_CONSTMETHOD0(uint32_t, messages_sent)

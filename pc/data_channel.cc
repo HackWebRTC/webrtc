@@ -139,9 +139,9 @@ rtc::scoped_refptr<DataChannel> DataChannel::Create(
     const std::string& label,
     const InternalDataChannelInit& config) {
   rtc::scoped_refptr<DataChannel> channel(
-      new rtc::RefCountedObject<DataChannel>(provider, dct, label));
-  if (!channel->Init(config)) {
-    return NULL;
+      new rtc::RefCountedObject<DataChannel>(config, provider, dct, label));
+  if (!channel->Init()) {
+    return nullptr;
   }
   return channel;
 }
@@ -152,11 +152,13 @@ bool DataChannel::IsSctpLike(cricket::DataChannelType type) {
          type == cricket::DCT_DATA_CHANNEL_TRANSPORT_SCTP;
 }
 
-DataChannel::DataChannel(DataChannelProviderInterface* provider,
+DataChannel::DataChannel(const InternalDataChannelInit& config,
+                         DataChannelProviderInterface* provider,
                          cricket::DataChannelType dct,
                          const std::string& label)
     : internal_id_(GenerateUniqueId()),
       label_(label),
+      config_(config),
       observer_(nullptr),
       state_(kConnecting),
       messages_sent_(0),
@@ -174,29 +176,28 @@ DataChannel::DataChannel(DataChannelProviderInterface* provider,
       send_ssrc_(0),
       receive_ssrc_(0) {}
 
-bool DataChannel::Init(const InternalDataChannelInit& config) {
+bool DataChannel::Init() {
   if (data_channel_type_ == cricket::DCT_RTP) {
-    if (config.reliable || config.id != -1 || config.maxRetransmits ||
-        config.maxRetransmitTime) {
+    if (config_.reliable || config_.id != -1 || config_.maxRetransmits ||
+        config_.maxRetransmitTime) {
       RTC_LOG(LS_ERROR) << "Failed to initialize the RTP data channel due to "
                            "invalid DataChannelInit.";
       return false;
     }
     handshake_state_ = kHandshakeReady;
   } else if (IsSctpLike(data_channel_type_)) {
-    if (config.id < -1 ||
-        (config.maxRetransmits && *config.maxRetransmits < 0) ||
-        (config.maxRetransmitTime && *config.maxRetransmitTime < 0)) {
+    if (config_.id < -1 ||
+        (config_.maxRetransmits && *config_.maxRetransmits < 0) ||
+        (config_.maxRetransmitTime && *config_.maxRetransmitTime < 0)) {
       RTC_LOG(LS_ERROR) << "Failed to initialize the SCTP data channel due to "
                            "invalid DataChannelInit.";
       return false;
     }
-    if (config.maxRetransmits && config.maxRetransmitTime) {
+    if (config_.maxRetransmits && config_.maxRetransmitTime) {
       RTC_LOG(LS_ERROR)
           << "maxRetransmits and maxRetransmitTime should not be both set.";
       return false;
     }
-    config_ = config;
 
     switch (config_.open_handshake_role) {
       case webrtc::InternalDataChannelInit::kNone:  // pre-negotiated
@@ -323,7 +324,7 @@ void DataChannel::SetSctpSid(int sid) {
     return;
   }
 
-  config_.id = sid;
+  const_cast<InternalDataChannelInit&>(config_).id = sid;
   provider_->AddSctpDataStream(sid);
 }
 
