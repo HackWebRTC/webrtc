@@ -47,6 +47,7 @@ static const int kMaxLogLineSize = 1024 - 60;
 #include "rtc_base/string_encode.h"
 #include "rtc_base/string_utils.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/time_utils.h"
 
@@ -72,7 +73,9 @@ const char* FilenameFromPath(const char* file) {
 }
 
 // Global lock for log subsystem, only needed to serialize access to streams_.
-CriticalSection g_log_crit;
+// TODO(bugs.webrtc.org/11665): this is not currently constant initialized and
+// trivially destructible.
+webrtc::Mutex g_log_mutex_;
 }  // namespace
 
 /////////////////////////////////////////////////////////////////////////////
@@ -85,7 +88,7 @@ bool LogMessage::log_to_stderr_ = true;
 // Note: we explicitly do not clean this up, because of the uncertain ordering
 // of destructors at program exit.  Let the person who sets the stream trigger
 // cleanup by setting to null, or let it leak (safe at program exit).
-ABSL_CONST_INIT LogSink* LogMessage::streams_ RTC_GUARDED_BY(g_log_crit) =
+ABSL_CONST_INIT LogSink* LogMessage::streams_ RTC_GUARDED_BY(g_log_mutex_) =
     nullptr;
 
 // Boolean options default to false (0)
@@ -193,7 +196,7 @@ LogMessage::~LogMessage() {
 #endif
   }
 
-  CritScope cs(&g_log_crit);
+  webrtc::MutexLock lock(&g_log_mutex_);
   for (LogSink* entry = streams_; entry != nullptr; entry = entry->next_) {
     if (severity_ >= entry->min_severity_) {
 #if defined(WEBRTC_ANDROID)
@@ -242,7 +245,7 @@ void LogMessage::LogTimestamps(bool on) {
 
 void LogMessage::LogToDebug(LoggingSeverity min_sev) {
   g_dbg_sev = min_sev;
-  CritScope cs(&g_log_crit);
+  webrtc::MutexLock lock(&g_log_mutex_);
   UpdateMinLogSeverity();
 }
 
@@ -251,7 +254,7 @@ void LogMessage::SetLogToStderr(bool log_to_stderr) {
 }
 
 int LogMessage::GetLogToStream(LogSink* stream) {
-  CritScope cs(&g_log_crit);
+  webrtc::MutexLock lock(&g_log_mutex_);
   LoggingSeverity sev = LS_NONE;
   for (LogSink* entry = streams_; entry != nullptr; entry = entry->next_) {
     if (stream == nullptr || stream == entry) {
@@ -262,7 +265,7 @@ int LogMessage::GetLogToStream(LogSink* stream) {
 }
 
 void LogMessage::AddLogToStream(LogSink* stream, LoggingSeverity min_sev) {
-  CritScope cs(&g_log_crit);
+  webrtc::MutexLock lock(&g_log_mutex_);
   stream->min_severity_ = min_sev;
   stream->next_ = streams_;
   streams_ = stream;
@@ -270,7 +273,7 @@ void LogMessage::AddLogToStream(LogSink* stream, LoggingSeverity min_sev) {
 }
 
 void LogMessage::RemoveLogToStream(LogSink* stream) {
-  CritScope cs(&g_log_crit);
+  webrtc::MutexLock lock(&g_log_mutex_);
   for (LogSink** entry = &streams_; *entry != nullptr;
        entry = &(*entry)->next_) {
     if (*entry == stream) {
@@ -331,7 +334,7 @@ void LogMessage::ConfigureLogging(const char* params) {
 }
 
 void LogMessage::UpdateMinLogSeverity()
-    RTC_EXCLUSIVE_LOCKS_REQUIRED(g_log_crit) {
+    RTC_EXCLUSIVE_LOCKS_REQUIRED(g_log_mutex_) {
   LoggingSeverity min_sev = g_dbg_sev;
   for (LogSink* entry = streams_; entry != nullptr; entry = entry->next_) {
     min_sev = std::min(min_sev, entry->min_severity_);
@@ -439,7 +442,7 @@ bool LogMessage::IsNoop(LoggingSeverity severity) {
   // TODO(tommi): We're grabbing this lock for every LogMessage instance that
   // is going to be logged. This introduces unnecessary synchronization for
   // a feature that's mostly used for testing.
-  CritScope cs(&g_log_crit);
+  webrtc::MutexLock lock(&g_log_mutex_);
   return streams_ == nullptr;
 }
 

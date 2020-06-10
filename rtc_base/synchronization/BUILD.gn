@@ -36,7 +36,7 @@ rtc_library("mutex") {
     ":yield",
     "..:checks",
     "..:macromagic",
-    "..:platform_thread",
+    "..:platform_thread_types",
     "../system:unused",
   ]
   absl_deps = [ "//third_party/abseil-cpp/absl/base:core_headers" ]

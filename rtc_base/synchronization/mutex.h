@@ -15,7 +15,7 @@
 
 #include "absl/base/const_init.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/platform_thread.h"
+#include "rtc_base/platform_thread_types.h"
 #include "rtc_base/system/unused.h"
 #include "rtc_base/thread_annotations.h"
 
