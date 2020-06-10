@@ -95,6 +95,8 @@ EncodedImageExtractionResult SingleProcessEncodedImageDataInjector::ExtractData(
     {
       rtc::CritScope crit(&lock_);
       auto ext_vector_it = extraction_cache_.find(next_id);
+      // TODO(titovartem) add support for receiving single frame multiple times
+      // when in simulcast key frame for another spatial stream can be received.
       RTC_CHECK(ext_vector_it != extraction_cache_.end())
           << "Unknown frame_id=" << next_id;
 

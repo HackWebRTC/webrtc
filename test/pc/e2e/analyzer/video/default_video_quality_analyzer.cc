@@ -219,7 +219,14 @@ void DefaultVideoQualityAnalyzer::OnFramePreDecode(
     const webrtc::EncodedImage& input_image) {
   rtc::CritScope crit(&lock_);
   auto it = frame_stats_.find(frame_id);
-  RTC_DCHECK(it != frame_stats_.end());
+  if (it == frame_stats_.end()) {
+    // It means this frame was predecoded before, so we can skip it. It may
+    // happen when we have multiple simulcast streams in one track and received
+    // the same picture from two different streams because SFU can't reliably
+    // correlate two simulcast streams and started relaying the second stream
+    // from the same frame it has relayed right before for the first stream.
+    return;
+  }
   RTC_DCHECK(it->second.received_time.IsInfinite())
       << "Received multiple spatial layers for stream_label="
       << it->second.stream_label;
@@ -244,7 +251,14 @@ void DefaultVideoQualityAnalyzer::OnFrameDecoded(
     const DecoderStats& stats) {
   rtc::CritScope crit(&lock_);
   auto it = frame_stats_.find(frame.id());
-  RTC_DCHECK(it != frame_stats_.end());
+  if (it == frame_stats_.end()) {
+    // It means this frame was decoded before, so we can skip it. It may happen
+    // when we have multiple simulcast streams in one track and received
+    // the same picture from two different streams because SFU can't reliably
+    // correlate two simulcast streams and started relaying the second stream
+    // from the same frame it has relayed right before for the first stream.
+    return;
+  }
   frame_counters_.decoded++;
   stream_frame_counters_[it->second.stream_label].decoded++;
   it->second.decode_end_time = Now();
@@ -253,16 +267,24 @@ void DefaultVideoQualityAnalyzer::OnFrameDecoded(
 void DefaultVideoQualityAnalyzer::OnFrameRendered(
     absl::string_view peer_name,
     const webrtc::VideoFrame& raw_frame) {
+  rtc::CritScope crit(&lock_);
+  auto stats_it = frame_stats_.find(raw_frame.id());
+  if (stats_it == frame_stats_.end()) {
+    // It means this frame was rendered before, so we can skip it. It may happen
+    // when we have multiple simulcast streams in one track and received
+    // the same picture from two different streams because SFU can't reliably
+    // correlate two simulcast streams and started relaying the second stream
+    // from the same frame it has relayed right before for the first stream.
+    return;
+  }
+  FrameStats* frame_stats = &stats_it->second;
+
   // Copy entire video frame including video buffer to ensure that analyzer
   // won't hold any WebRTC internal buffers.
   VideoFrame frame = raw_frame;
   frame.set_video_frame_buffer(
       I420Buffer::Copy(*raw_frame.video_frame_buffer()->ToI420()));
 
-  rtc::CritScope crit(&lock_);
-  auto stats_it = frame_stats_.find(frame.id());
-  RTC_DCHECK(stats_it != frame_stats_.end());
-  FrameStats* frame_stats = &stats_it->second;
   // Update frames counters.
   frame_counters_.rendered++;
   stream_frame_counters_[frame_stats->stream_label].rendered++;
