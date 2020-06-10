@@ -53,6 +53,8 @@ class LibaomAv1Decoder final : public VideoDecoder {
 
   int32_t Release() override;
 
+  const char* ImplementationName() const override;
+
  private:
   aom_codec_ctx_t context_;
   bool inited_;
@@ -178,6 +180,10 @@ int32_t LibaomAv1Decoder::Release() {
   buffer_pool_.Release();
   inited_ = false;
   return WEBRTC_VIDEO_CODEC_OK;
+}
+
+const char* LibaomAv1Decoder::ImplementationName() const {
+  return "libaom";
 }
 
 }  // namespace
