@@ -913,8 +913,17 @@ class RTCStatsReportVerifier {
       verifier.MarkMemberTested(outbound_stream.content_type, true);
       verifier.TestMemberIsDefined(outbound_stream.encoder_implementation);
       if (enable_simulcast_stats) {
-        verifier.TestMemberIsNonNegative<double>(
-            outbound_stream.frames_per_second);
+        // Unless an implementation-specific amount of time has passed and at
+        // least one frame has been encoded, undefined is reported. Because it
+        // is hard to tell what is the case here, we treat FPS as optional.
+        // TODO(hbos): Update the tests to run until all implemented metrics
+        // should be populated.
+        if (outbound_stream.frames_per_second.is_defined()) {
+          verifier.TestMemberIsNonNegative<double>(
+              outbound_stream.frames_per_second);
+        } else {
+          verifier.TestMemberIsUndefined(outbound_stream.frames_per_second);
+        }
         verifier.TestMemberIsNonNegative<uint32_t>(
             outbound_stream.frame_height);
         verifier.TestMemberIsNonNegative<uint32_t>(outbound_stream.frame_width);
