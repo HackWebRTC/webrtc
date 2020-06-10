@@ -1253,5 +1253,35 @@ TEST(NetEqOutputDelayTest, RunTest) {
   }
 }
 
+// Tests the extra output delay functionality of NetEq when configured via
+// field trial.
+TEST(NetEqOutputDelayTest, RunTestWithFieldTrial) {
+  test::ScopedFieldTrials field_trial(
+      "WebRTC-Audio-NetEqExtraDelay/Enabled-50/");
+  constexpr int kExpectedDelayMs = 50;
+  std::vector<int16_t> output;
+  const auto result = DelayLineNetEqTest(0, &output);
+
+  // The base delay values are taken from the resuts of the non-delayed case in
+  // NetEqOutputDelayTest.RunTest above.
+  EXPECT_EQ(10 + kExpectedDelayMs, result.target_delay_ms);
+  EXPECT_EQ(24 + kExpectedDelayMs, result.filtered_current_delay_ms);
+}
+
+// Set a non-multiple-of-10 value in the field trial, and verify that we don't
+// crash, and that the result is rounded down.
+TEST(NetEqOutputDelayTest, RunTestWithFieldTrialOddValue) {
+  test::ScopedFieldTrials field_trial(
+      "WebRTC-Audio-NetEqExtraDelay/Enabled-103/");
+  constexpr int kRoundedDelayMs = 100;
+  std::vector<int16_t> output;
+  const auto result = DelayLineNetEqTest(0, &output);
+
+  // The base delay values are taken from the resuts of the non-delayed case in
+  // NetEqOutputDelayTest.RunTest above.
+  EXPECT_EQ(10 + kRoundedDelayMs, result.target_delay_ms);
+  EXPECT_EQ(24 + kRoundedDelayMs, result.filtered_current_delay_ms);
+}
+
 }  // namespace test
 }  // namespace webrtc

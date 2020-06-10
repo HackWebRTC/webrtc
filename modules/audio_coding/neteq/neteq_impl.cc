@@ -51,6 +51,7 @@
 #include "rtc_base/strings/audio_format_to_string.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace {
@@ -71,6 +72,24 @@ std::unique_ptr<NetEqController> CreateNetEqController(
   config.tick_timer = tick_timer;
   config.clock = clock;
   return controller_factory.CreateNetEqController(config);
+}
+
+int GetDelayChainLengthMs(int config_extra_delay_ms) {
+  constexpr char kExtraDelayFieldTrial[] = "WebRTC-Audio-NetEqExtraDelay";
+  if (webrtc::field_trial::IsEnabled(kExtraDelayFieldTrial)) {
+    const auto field_trial_string =
+        webrtc::field_trial::FindFullName(kExtraDelayFieldTrial);
+    int extra_delay_ms = -1;
+    if (sscanf(field_trial_string.c_str(), "Enabled-%d", &extra_delay_ms) ==
+            1 &&
+        extra_delay_ms >= 0 && extra_delay_ms <= 2000) {
+      RTC_LOG(LS_INFO) << "Delay chain length set to " << extra_delay_ms
+                       << " ms in field trial";
+      return (extra_delay_ms / 10) * 10;  // Rounding down to multiple of 10.
+    }
+  }
+  // Field trial not set, or invalid value read. Use value from config.
+  return config_extra_delay_ms;
 }
 
 }  // namespace
@@ -141,9 +160,9 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
                                 tick_timer_.get()),
       no_time_stretching_(config.for_test_no_time_stretching),
       enable_rtx_handling_(config.enable_rtx_handling),
-      output_delay_chain_(
-          rtc::CheckedDivExact(config.extra_output_delay_ms, 10)),
-      output_delay_chain_ms_(config.extra_output_delay_ms) {
+      output_delay_chain_ms_(
+          GetDelayChainLengthMs(config.extra_output_delay_ms)),
+      output_delay_chain_(rtc::CheckedDivExact(output_delay_chain_ms_, 10)) {
   RTC_LOG(LS_INFO) << "NetEq config: " << config.ToString();
   int fs = config.sample_rate_hz;
   if (fs != 8000 && fs != 16000 && fs != 32000 && fs != 48000) {
