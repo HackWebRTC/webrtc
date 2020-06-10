@@ -30,7 +30,6 @@
 #include "modules/pacing/rtp_packet_pacer.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "rtc_base/critical_section.h"
-#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"
@@ -156,8 +155,8 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   // never drain.
   bool is_shutdown_ RTC_GUARDED_BY(task_queue_);
 
-  mutable Mutex stats_mutex_;
-  Stats current_stats_ RTC_GUARDED_BY(stats_mutex_);
+  rtc::CriticalSection stats_crit_;
+  Stats current_stats_ RTC_GUARDED_BY(stats_crit_);
 
   rtc::TaskQueue task_queue_;
 };

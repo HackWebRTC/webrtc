@@ -55,7 +55,7 @@ PacketRouter::~PacketRouter() {
 
 void PacketRouter::AddSendRtpModule(RtpRtcpInterface* rtp_module,
                                     bool remb_candidate) {
-  MutexLock lock(&modules_mutex_);
+  rtc::CritScope cs(&modules_crit_);
 
   AddSendRtpModuleToMap(rtp_module, rtp_module->SSRC());
   if (absl::optional<uint32_t> rtx_ssrc = rtp_module->RtxSsrc()) {
@@ -97,7 +97,7 @@ void PacketRouter::RemoveSendRtpModuleFromMap(uint32_t ssrc) {
 }
 
 void PacketRouter::RemoveSendRtpModule(RtpRtcpInterface* rtp_module) {
-  MutexLock lock(&modules_mutex_);
+  rtc::CritScope cs(&modules_crit_);
   MaybeRemoveRembModuleCandidate(rtp_module, /* media_sender = */ true);
 
   RemoveSendRtpModuleFromMap(rtp_module->SSRC());
@@ -115,7 +115,7 @@ void PacketRouter::RemoveSendRtpModule(RtpRtcpInterface* rtp_module) {
 
 void PacketRouter::AddReceiveRtpModule(RtcpFeedbackSenderInterface* rtcp_sender,
                                        bool remb_candidate) {
-  MutexLock lock(&modules_mutex_);
+  rtc::CritScope cs(&modules_crit_);
   RTC_DCHECK(std::find(rtcp_feedback_senders_.begin(),
                        rtcp_feedback_senders_.end(),
                        rtcp_sender) == rtcp_feedback_senders_.end());
@@ -129,7 +129,7 @@ void PacketRouter::AddReceiveRtpModule(RtcpFeedbackSenderInterface* rtcp_sender,
 
 void PacketRouter::RemoveReceiveRtpModule(
     RtcpFeedbackSenderInterface* rtcp_sender) {
-  MutexLock lock(&modules_mutex_);
+  rtc::CritScope cs(&modules_crit_);
   MaybeRemoveRembModuleCandidate(rtcp_sender, /* media_sender = */ false);
   auto it = std::find(rtcp_feedback_senders_.begin(),
                       rtcp_feedback_senders_.end(), rtcp_sender);
@@ -143,7 +143,7 @@ void PacketRouter::SendPacket(std::unique_ptr<RtpPacketToSend> packet,
                "sequence_number", packet->SequenceNumber(), "rtp_timestamp",
                packet->Timestamp());
 
-  MutexLock lock(&modules_mutex_);
+  rtc::CritScope cs(&modules_crit_);
   // With the new pacer code path, transport sequence numbers are only set here,
   // on the pacer thread. Therefore we don't need atomics/synchronization.
   if (packet->HasExtension<TransportSequenceNumber>()) {
@@ -178,7 +178,7 @@ std::vector<std::unique_ptr<RtpPacketToSend>> PacketRouter::GeneratePadding(
   TRACE_EVENT1(TRACE_DISABLED_BY_DEFAULT("webrtc"),
                "PacketRouter::GeneratePadding", "bytes", size.bytes());
 
-  MutexLock lock(&modules_mutex_);
+  rtc::CritScope cs(&modules_crit_);
   // First try on the last rtp module to have sent media. This increases the
   // the chance that any payload based padding will be useful as it will be
   // somewhat distributed over modules according the packet rate, even if it
@@ -219,7 +219,7 @@ std::vector<std::unique_ptr<RtpPacketToSend>> PacketRouter::GeneratePadding(
 }
 
 uint16_t PacketRouter::CurrentTransportSequenceNumber() const {
-  MutexLock lock(&modules_mutex_);
+  rtc::CritScope lock(&modules_crit_);
   return transport_seq_ & 0xFFFF;
 }
 
@@ -233,7 +233,7 @@ void PacketRouter::OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
 
   int64_t now_ms = rtc::TimeMillis();
   {
-    MutexLock lock(&remb_mutex_);
+    rtc::CritScope lock(&remb_crit_);
 
     // If we already have an estimate, check if the new total estimate is below
     // kSendThresholdPercent of the previous estimate.
@@ -266,7 +266,7 @@ void PacketRouter::OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
 void PacketRouter::SetMaxDesiredReceiveBitrate(int64_t bitrate_bps) {
   RTC_DCHECK_GE(bitrate_bps, 0);
   {
-    MutexLock lock(&remb_mutex_);
+    rtc::CritScope lock(&remb_crit_);
     max_bitrate_bps_ = bitrate_bps;
     if (rtc::TimeMillis() - last_remb_time_ms_ < kRembSendIntervalMs &&
         last_send_bitrate_bps_ > 0 &&
@@ -280,7 +280,7 @@ void PacketRouter::SetMaxDesiredReceiveBitrate(int64_t bitrate_bps) {
 
 bool PacketRouter::SendRemb(int64_t bitrate_bps,
                             const std::vector<uint32_t>& ssrcs) {
-  MutexLock lock(&modules_mutex_);
+  rtc::CritScope lock(&modules_crit_);
 
   if (!active_remb_module_) {
     return false;
@@ -295,7 +295,7 @@ bool PacketRouter::SendRemb(int64_t bitrate_bps,
 
 bool PacketRouter::SendCombinedRtcpPacket(
     std::vector<std::unique_ptr<rtcp::RtcpPacket>> packets) {
-  MutexLock lock(&modules_mutex_);
+  rtc::CritScope cs(&modules_crit_);
 
   // Prefer send modules.
   for (RtpRtcpInterface* rtp_module : send_modules_list_) {

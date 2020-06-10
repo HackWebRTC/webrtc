@@ -188,7 +188,7 @@ TimeDelta TaskQueuePacedSender::OldestPacketWaitTime() const {
 }
 
 void TaskQueuePacedSender::OnStatsUpdated(const Stats& stats) {
-  MutexLock lock(&stats_mutex_);
+  rtc::CritScope cs(&stats_crit_);
   current_stats_ = stats;
 }
 
@@ -299,7 +299,7 @@ void TaskQueuePacedSender::MaybeUpdateStats(bool is_scheduled_call) {
 }
 
 TaskQueuePacedSender::Stats TaskQueuePacedSender::GetStats() const {
-  MutexLock lock(&stats_mutex_);
+  rtc::CritScope cs(&stats_crit_);
   return current_stats_;
 }
 
