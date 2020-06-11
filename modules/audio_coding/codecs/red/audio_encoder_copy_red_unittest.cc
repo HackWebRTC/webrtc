@@ -139,6 +139,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckImmediateEncode) {
 // new data, even if the RED codec is loaded with a secondary encoding.
 TEST_F(AudioEncoderCopyRedTest, CheckNoOutput) {
   static const size_t kEncodedSize = 17;
+  static const size_t kHeaderLenBytes = 5;
   {
     InSequence s;
     EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
@@ -160,7 +161,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckNoOutput) {
 
   // Final call to the speech encoder will produce output.
   Encode();
-  EXPECT_EQ(2 * kEncodedSize, encoded_info_.encoded_bytes);
+  EXPECT_EQ(2 * kEncodedSize + kHeaderLenBytes, encoded_info_.encoded_bytes);
   ASSERT_EQ(2u, encoded_info_.redundant.size());
 }
 
@@ -187,7 +188,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes) {
     ASSERT_EQ(2u, encoded_info_.redundant.size());
     EXPECT_EQ(i, encoded_info_.redundant[0].encoded_bytes);
     EXPECT_EQ(i - 1, encoded_info_.redundant[1].encoded_bytes);
-    EXPECT_EQ(i + i - 1, encoded_info_.encoded_bytes);
+    EXPECT_EQ(5 + i + i - 1, encoded_info_.encoded_bytes);
   }
 }
 
@@ -224,6 +225,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloads) {
   // Let the mock encoder write payloads with increasing values. The first
   // payload will have values 0, 1, 2, ..., kPayloadLenBytes - 1.
   static const size_t kPayloadLenBytes = 5;
+  static const size_t kHeaderLenBytes = 5;
   uint8_t payload[kPayloadLenBytes];
   for (uint8_t i = 0; i < kPayloadLenBytes; ++i) {
     payload[i] = i;
@@ -239,7 +241,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloads) {
     EXPECT_EQ(i, encoded_.data()[i]);
   }
 
-  for (int j = 0; j < 5; ++j) {
+  for (int j = 0; j < 1; ++j) {
     // Increment all values of the payload by 10.
     for (size_t i = 0; i < kPayloadLenBytes; ++i)
       payload[i] += 10;
@@ -249,16 +251,17 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloads) {
     EXPECT_EQ(kPayloadLenBytes, encoded_info_.redundant[0].encoded_bytes);
     EXPECT_EQ(kPayloadLenBytes, encoded_info_.redundant[1].encoded_bytes);
     for (size_t i = 0; i < kPayloadLenBytes; ++i) {
-      // Check primary payload.
-      EXPECT_EQ((j + 1) * 10 + i, encoded_.data()[i]);
       // Check secondary payload.
-      EXPECT_EQ(j * 10 + i, encoded_.data()[i + kPayloadLenBytes]);
+      EXPECT_EQ(j * 10 + i, encoded_.data()[kHeaderLenBytes + i]);
+
+      // Check primary payload.
+      EXPECT_EQ((j + 1) * 10 + i,
+                encoded_.data()[kHeaderLenBytes + i + kPayloadLenBytes]);
     }
   }
 }
 
 // Checks correct propagation of payload type.
-// Checks that the correct timestamps are returned.
 TEST_F(AudioEncoderCopyRedTest, CheckPayloadType) {
   const int primary_payload_type = red_payload_type_ + 1;
   AudioEncoder::EncodedInfo info;
@@ -272,7 +275,7 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadType) {
   Encode();
   ASSERT_EQ(1u, encoded_info_.redundant.size());
   EXPECT_EQ(primary_payload_type, encoded_info_.redundant[0].payload_type);
-  EXPECT_EQ(red_payload_type_, encoded_info_.payload_type);
+  EXPECT_EQ(primary_payload_type, encoded_info_.payload_type);
 
   const int secondary_payload_type = red_payload_type_ + 2;
   info.payload_type = secondary_payload_type;
@@ -284,6 +287,36 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadType) {
   EXPECT_EQ(secondary_payload_type, encoded_info_.redundant[0].payload_type);
   EXPECT_EQ(primary_payload_type, encoded_info_.redundant[1].payload_type);
   EXPECT_EQ(red_payload_type_, encoded_info_.payload_type);
+}
+
+TEST_F(AudioEncoderCopyRedTest, CheckRFC2198Header) {
+  const int primary_payload_type = red_payload_type_ + 1;
+  AudioEncoder::EncodedInfo info;
+  info.encoded_bytes = 10;
+  info.encoded_timestamp = timestamp_;
+  info.payload_type = primary_payload_type;
+
+  EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
+      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+  Encode();
+  info.encoded_timestamp = timestamp_;  // update timestamp.
+  EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
+      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+  Encode();  // Second call will produce a redundant encoding.
+
+  EXPECT_EQ(encoded_.size(),
+            5u + 2 * 10u);  // header size + two encoded payloads.
+  EXPECT_EQ(encoded_[0], primary_payload_type | 0x80);
+
+  uint32_t timestamp_delta = encoded_info_.encoded_timestamp -
+                             encoded_info_.redundant[1].encoded_timestamp;
+  // Timestamp delta is encoded as a 14 bit value.
+  EXPECT_EQ(encoded_[1], timestamp_delta >> 6);
+  EXPECT_EQ(static_cast<uint8_t>(encoded_[2] >> 2), timestamp_delta & 0x3f);
+  // Redundant length is encoded as 10 bit value.
+  EXPECT_EQ(encoded_[2] & 0x3u, encoded_info_.redundant[1].encoded_bytes >> 8);
+  EXPECT_EQ(encoded_[3], encoded_info_.redundant[1].encoded_bytes & 0xff);
+  EXPECT_EQ(encoded_[4], primary_payload_type);
 }
 
 #if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
