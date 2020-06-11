@@ -14,6 +14,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/types/optional.h"
@@ -124,7 +125,8 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   enum class MitigationResult {
     kDisabled,
     kInsufficientInput,
-    kRejectedByAdaptationCounts,
+    kNotMostLimitedResource,
+    kSharedMostLimitedResource,
     kRejectedByAdapter,
     kRejectedByConstraint,
     kAdaptationApplied,
@@ -151,17 +153,19 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   // If the filtered source restrictions are different than
   // |last_reported_source_restrictions_|, inform the listeners.
   void MaybeUpdateVideoSourceRestrictions(rtc::scoped_refptr<Resource> reason);
-  // Updates the number of times the resource has degraded based on the latest
-  // degradation applied.
-  void UpdateResourceDegradationCounts(rtc::scoped_refptr<Resource> resource);
-  // Returns true if a Resource has been overused in the pass and is responsible
-  // for creating a VideoSourceRestriction. The current algorithm counts the
-  // number of times the resource caused an adaptation and allows adapting up
-  // if that number is non-zero. This is consistent with how adaptation has
-  // traditionally been handled.
-  // TODO(crbug.com/webrtc/11553) Change this algorithm to look at the resources
-  // restrictions rather than just the counters.
-  bool IsResourceAllowedToAdaptUp(rtc::scoped_refptr<Resource> resource) const;
+
+  void UpdateResourceLimitations(
+      rtc::scoped_refptr<Resource> reason_resource,
+      const VideoStreamAdapter::RestrictionsWithCounters&
+          peek_next_restrictions) RTC_RUN_ON(resource_adaptation_queue_);
+
+  // Searches |adaptation_limits_by_resources_| for each resource with the
+  // highest total adaptation counts. Adaptation up may only occur if the
+  // resource performing the adaptation is the only most limited resource. This
+  // function returns the list of all most limited resources as well as the
+  // corresponding adaptation of that resource.
+  std::pair<std::vector<rtc::scoped_refptr<Resource>>, VideoAdaptationCounters>
+  FindMostLimitedResources() const RTC_RUN_ON(resource_adaptation_queue_);
 
   TaskQueueBase* resource_adaptation_queue_;
   rtc::scoped_refptr<ResourceListenerDelegate> resource_listener_delegate_;
@@ -181,8 +185,9 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   std::vector<AdaptationListener*> adaptation_listeners_
       RTC_GUARDED_BY(resource_adaptation_queue_);
   // Purely used for statistics, does not ensure mapped resources stay alive.
-  std::map<const Resource*, int> adaptations_counts_by_resource_
-      RTC_GUARDED_BY(resource_adaptation_queue_);
+  std::map<rtc::scoped_refptr<Resource>, VideoAdaptationCounters>
+      adaptation_limits_by_resources_
+          RTC_GUARDED_BY(resource_adaptation_queue_);
   // Adaptation strategy settings.
   DegradationPreference degradation_preference_
       RTC_GUARDED_BY(resource_adaptation_queue_);

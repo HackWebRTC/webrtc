@@ -12,8 +12,9 @@
 
 namespace webrtc {
 
-VideoSourceRestrictionsListener::~VideoSourceRestrictionsListener() {}
+VideoSourceRestrictionsListener::~VideoSourceRestrictionsListener() = default;
 
-ResourceAdaptationProcessorInterface::~ResourceAdaptationProcessorInterface() {}
+ResourceAdaptationProcessorInterface::~ResourceAdaptationProcessorInterface() =
+    default;
 
 }  // namespace webrtc

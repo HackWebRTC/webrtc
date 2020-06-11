@@ -2032,7 +2032,8 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(video_source_.sink_wants().max_pixel_count, pixel_count);
   EXPECT_EQ(video_source_.sink_wants().max_framerate_fps, kInputFps);
 
-  // Change the degradation preference back. CPU underuse should now adapt.
+  // Change the degradation preference back. CPU underuse should not adapt since
+  // QP is most limited.
   video_stream_encoder_->SetSourceAndWaitForRestrictionsUpdated(
       &video_source_, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
   video_source_.IncomingCapturedFrame(
@@ -2052,7 +2053,15 @@ TEST_F(VideoStreamEncoderTest,
       CreateFrame(ntp_time, kFrameWidth, kFrameHeight));
   sink_.WaitForEncodedFrame(ntp_time);
   ntp_time += kFrameIntervalMs;
-  EXPECT_EQ(video_source_.sink_wants().max_framerate_fps, kInputFps);
+  EXPECT_EQ(video_source_.sink_wants().max_framerate_fps, restricted_fps);
+
+  // Trigger QP underuse, fps should return to normal.
+  video_stream_encoder_->TriggerQualityHigh();
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(ntp_time, kFrameWidth, kFrameHeight));
+  sink_.WaitForEncodedFrame(ntp_time);
+  ntp_time += kFrameIntervalMs;
+  EXPECT_THAT(video_source_.sink_wants(), FpsMax());
 
   video_stream_encoder_->Stop();
 }
@@ -3610,8 +3619,21 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(3, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
   EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
-  // Trigger cpu adapt up, expect upscaled resolution (480x270).
+  // Trigger quality adapt up, expect upscaled resolution (480x270).
+  video_stream_encoder_->TriggerQualityHigh();
+  timestamp_ms += kFrameIntervalMs;
+  source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
+  WaitForEncodedFrame(timestamp_ms);
+  EXPECT_THAT(source.sink_wants(), FpsMaxResolutionGt(source.last_wants()));
+  EXPECT_TRUE(stats_proxy_->GetStats().cpu_limited_resolution);
+  EXPECT_TRUE(stats_proxy_->GetStats().bw_limited_resolution);
+  EXPECT_EQ(3, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
+  EXPECT_EQ(2, stats_proxy_->GetStats().number_of_quality_adapt_changes);
+
+  // Trigger quality and cpu adapt up since both are most limited, expect
+  // upscaled resolution (640x360).
   video_stream_encoder_->TriggerCpuUnderuse();
+  video_stream_encoder_->TriggerQualityHigh();
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(timestamp_ms);
@@ -3619,32 +3641,24 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_TRUE(stats_proxy_->GetStats().cpu_limited_resolution);
   EXPECT_TRUE(stats_proxy_->GetStats().bw_limited_resolution);
   EXPECT_EQ(4, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
-  EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
+  EXPECT_EQ(3, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
-  // Trigger cpu adapt up, expect upscaled resolution (640x360).
+  // Trigger quality and cpu adapt up since both are most limited, expect
+  // upscaled resolution (960x540).
   video_stream_encoder_->TriggerCpuUnderuse();
-  timestamp_ms += kFrameIntervalMs;
-  source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
-  WaitForEncodedFrame(timestamp_ms);
-  EXPECT_THAT(source.sink_wants(), FpsMaxResolutionGt(source.last_wants()));
-  EXPECT_TRUE(stats_proxy_->GetStats().cpu_limited_resolution);
-  EXPECT_TRUE(stats_proxy_->GetStats().bw_limited_resolution);
-  EXPECT_EQ(5, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
-  EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
-
-  // Trigger cpu adapt up, expect upscaled resolution (960x540).
-  video_stream_encoder_->TriggerCpuUnderuse();
+  video_stream_encoder_->TriggerQualityHigh();
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(timestamp_ms);
   EXPECT_THAT(source.sink_wants(), FpsMaxResolutionGt(source.last_wants()));
   last_wants = source.sink_wants();
-  EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_resolution);
+  EXPECT_TRUE(stats_proxy_->GetStats().cpu_limited_resolution);
   EXPECT_TRUE(stats_proxy_->GetStats().bw_limited_resolution);
-  EXPECT_EQ(6, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
-  EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
+  EXPECT_EQ(5, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
+  EXPECT_EQ(4, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
-  // Trigger cpu adapt up, no cpu downgrades, expect no change (960x540).
+  // Trigger cpu adapt up, expect no change since not most limited (960x540).
+  // However the stats will change since the CPU resource is no longer limited.
   video_stream_encoder_->TriggerCpuUnderuse();
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
@@ -3653,7 +3667,7 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_resolution);
   EXPECT_TRUE(stats_proxy_->GetStats().bw_limited_resolution);
   EXPECT_EQ(6, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
-  EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
+  EXPECT_EQ(4, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger quality adapt up, expect no restriction (1280x720).
   video_stream_encoder_->TriggerQualityHigh();
@@ -3665,7 +3679,7 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_resolution);
   EXPECT_FALSE(stats_proxy_->GetStats().bw_limited_resolution);
   EXPECT_EQ(6, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
-  EXPECT_EQ(2, stats_proxy_->GetStats().number_of_quality_adapt_changes);
+  EXPECT_EQ(5, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   video_stream_encoder_->Stop();
 }
@@ -4602,7 +4616,7 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_TRUE(stats_proxy_->GetStats().bw_limited_framerate);
   EXPECT_EQ(7, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
-  // Trigger adapt down, expect expect increased fps (320x180@10fps).
+  // Trigger adapt up, expect expect increased fps (320x180@10fps).
   video_stream_encoder_->TriggerQualityHigh();
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
@@ -4742,42 +4756,58 @@ TEST_F(VideoStreamEncoderTest, AdaptWithTwoReasonsAndDifferentOrder_Framerate) {
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(timestamp_ms);
   EXPECT_THAT(source.sink_wants(), FpsLtResolutionEq(source.last_wants()));
-  EXPECT_FALSE(stats_proxy_->GetStats().bw_limited_resolution);
+  EXPECT_TRUE(stats_proxy_->GetStats().bw_limited_resolution);
   EXPECT_TRUE(stats_proxy_->GetStats().bw_limited_framerate);
   EXPECT_TRUE(stats_proxy_->GetStats().cpu_limited_resolution);
   EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_framerate);
   EXPECT_EQ(2, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
   EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
-  // Trigger cpu adapt up, expect increased fps (640x360@30fps).
+  // Trigger cpu adapt up, expect no change since QP is most limited.
+  {
+    // Store current sink wants since we expect no change and if there is no
+    // change then last_wants() is not updated.
+    auto previous_sink_wants = source.sink_wants();
+    video_stream_encoder_->TriggerCpuUnderuse();
+    timestamp_ms += kFrameIntervalMs;
+    source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
+    WaitForEncodedFrame(timestamp_ms);
+    EXPECT_THAT(source.sink_wants(), FpsEqResolutionEqTo(previous_sink_wants));
+    EXPECT_EQ(2, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
+    EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
+  }
+
+  // Trigger quality adapt up, expect increased fps (640x360@30fps).
+  video_stream_encoder_->TriggerQualityHigh();
+  timestamp_ms += kFrameIntervalMs;
+  source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
+  WaitForEncodedFrame(timestamp_ms);
+  EXPECT_THAT(source.sink_wants(), FpsGtResolutionEq(source.last_wants()));
+  EXPECT_TRUE(stats_proxy_->GetStats().bw_limited_resolution);
+  EXPECT_FALSE(stats_proxy_->GetStats().bw_limited_framerate);
+  EXPECT_TRUE(stats_proxy_->GetStats().cpu_limited_resolution);
+  EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_framerate);
+  EXPECT_EQ(2, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
+  EXPECT_EQ(2, stats_proxy_->GetStats().number_of_quality_adapt_changes);
+
+  // Trigger quality adapt up and Cpu adapt up since both are most limited,
+  // expect increased resolution (960x540@30fps).
+  video_stream_encoder_->TriggerQualityHigh();
   video_stream_encoder_->TriggerCpuUnderuse();
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(timestamp_ms);
-  EXPECT_THAT(source.sink_wants(), FpsMax());
-  EXPECT_EQ(source.sink_wants().max_pixel_count,
-            source.last_wants().max_pixel_count);
+  EXPECT_THAT(source.sink_wants(), FpsMaxResolutionGt(source.last_wants()));
   EXPECT_TRUE(stats_proxy_->GetStats().bw_limited_resolution);
   EXPECT_FALSE(stats_proxy_->GetStats().bw_limited_framerate);
   EXPECT_TRUE(stats_proxy_->GetStats().cpu_limited_resolution);
   EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_framerate);
   EXPECT_EQ(3, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
-  EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
+  EXPECT_EQ(3, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
-  // Trigger quality adapt up, expect upscaled resolution (960x540@30fps).
+  // Trigger quality adapt up and Cpu adapt up since both are most limited,
+  // expect no restriction (1280x720fps@30fps).
   video_stream_encoder_->TriggerQualityHigh();
-  timestamp_ms += kFrameIntervalMs;
-  source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
-  WaitForEncodedFrame(timestamp_ms);
-  EXPECT_THAT(source.sink_wants(), FpsMaxResolutionGt(source.last_wants()));
-  EXPECT_FALSE(stats_proxy_->GetStats().bw_limited_resolution);
-  EXPECT_FALSE(stats_proxy_->GetStats().bw_limited_framerate);
-  EXPECT_TRUE(stats_proxy_->GetStats().cpu_limited_resolution);
-  EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_framerate);
-  EXPECT_EQ(3, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
-  EXPECT_EQ(2, stats_proxy_->GetStats().number_of_quality_adapt_changes);
-
-  // Trigger cpu adapt up,  expect no restriction (1280x720fps@30fps).
   video_stream_encoder_->TriggerCpuUnderuse();
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
@@ -4789,13 +4819,13 @@ TEST_F(VideoStreamEncoderTest, AdaptWithTwoReasonsAndDifferentOrder_Framerate) {
   EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_resolution);
   EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_framerate);
   EXPECT_EQ(4, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
-  EXPECT_EQ(2, stats_proxy_->GetStats().number_of_quality_adapt_changes);
+  EXPECT_EQ(4, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt up, expect no change.
   video_stream_encoder_->TriggerQualityHigh();
   EXPECT_THAT(source.sink_wants(), FpsMaxResolutionMax());
   EXPECT_EQ(4, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
-  EXPECT_EQ(2, stats_proxy_->GetStats().number_of_quality_adapt_changes);
+  EXPECT_EQ(4, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   video_stream_encoder_->Stop();
 }
@@ -4848,14 +4878,28 @@ TEST_F(VideoStreamEncoderTest,
   WaitForEncodedFrame(timestamp_ms);
   EXPECT_THAT(source.sink_wants(), FpsEqResolutionLt(source.last_wants()));
   EXPECT_TRUE(stats_proxy_->GetStats().bw_limited_resolution);
-  EXPECT_FALSE(stats_proxy_->GetStats().bw_limited_framerate);
+  EXPECT_TRUE(stats_proxy_->GetStats().bw_limited_framerate);
   EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_resolution);
   EXPECT_TRUE(stats_proxy_->GetStats().cpu_limited_framerate);
   EXPECT_EQ(1, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
   EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
-  // Trigger cpu adapt up, expect upscaled resolution (640x360@15fps).
-  video_stream_encoder_->TriggerCpuUnderuse();
+  // Trigger cpu adapt up, expect no change because quality is most limited.
+  {
+    auto previous_sink_wants = source.sink_wants();
+    // Store current sink wants since we expect no change ind if there is no
+    // change then last__wants() is not updated.
+    video_stream_encoder_->TriggerCpuUnderuse();
+    timestamp_ms += kFrameIntervalMs;
+    source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
+    WaitForEncodedFrame(timestamp_ms);
+    EXPECT_THAT(source.sink_wants(), FpsEqResolutionEqTo(previous_sink_wants));
+    EXPECT_EQ(1, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
+    EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
+  }
+
+  // Trigger quality adapt up, expect upscaled resolution (640x360@15fps).
+  video_stream_encoder_->TriggerQualityHigh();
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(timestamp_ms);
@@ -4863,12 +4907,13 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_FALSE(stats_proxy_->GetStats().bw_limited_resolution);
   EXPECT_TRUE(stats_proxy_->GetStats().bw_limited_framerate);
   EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_resolution);
-  EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_framerate);
-  EXPECT_EQ(2, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
-  EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
+  EXPECT_TRUE(stats_proxy_->GetStats().cpu_limited_framerate);
+  EXPECT_EQ(1, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
+  EXPECT_EQ(2, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
-  // Trigger quality adapt up, expect increased fps (640x360@30fps).
+  // Trigger quality and cpu adapt up, expect increased fps (640x360@30fps).
   video_stream_encoder_->TriggerQualityHigh();
+  video_stream_encoder_->TriggerCpuUnderuse();
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(timestamp_ms);
@@ -4878,13 +4923,13 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_resolution);
   EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_framerate);
   EXPECT_EQ(2, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
-  EXPECT_EQ(2, stats_proxy_->GetStats().number_of_quality_adapt_changes);
+  EXPECT_EQ(3, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt up, expect no change.
   video_stream_encoder_->TriggerQualityHigh();
   EXPECT_THAT(source.sink_wants(), FpsMaxResolutionMax());
   EXPECT_EQ(2, stats_proxy_->GetStats().number_of_cpu_adapt_changes);
-  EXPECT_EQ(2, stats_proxy_->GetStats().number_of_quality_adapt_changes);
+  EXPECT_EQ(3, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   video_stream_encoder_->Stop();
 }

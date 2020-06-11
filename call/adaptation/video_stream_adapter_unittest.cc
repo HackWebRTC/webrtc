@@ -686,26 +686,35 @@ TEST(VideoStreamAdapterTest, PeekNextRestrictions) {
   {
     Adaptation adaptation = adapter.GetAdaptationUp();
     EXPECT_EQ(Adaptation::Status::kLimitReached, adaptation.status());
-    EXPECT_EQ(adapter.PeekNextRestrictions(adaptation),
+    VideoStreamAdapter::RestrictionsWithCounters restrictions_with_counters =
+        adapter.PeekNextRestrictions(adaptation);
+    EXPECT_EQ(restrictions_with_counters.restrictions,
               adapter.source_restrictions());
+    EXPECT_EQ(0, restrictions_with_counters.adaptation_counters.Total());
   }
   // When we adapt down.
   {
     Adaptation adaptation = adapter.GetAdaptationDown();
     EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
-    VideoSourceRestrictions next_restrictions =
+    VideoStreamAdapter::RestrictionsWithCounters restrictions_with_counters =
         adapter.PeekNextRestrictions(adaptation);
     fake_stream.ApplyAdaptation(adaptation);
-    EXPECT_EQ(next_restrictions, adapter.source_restrictions());
+    EXPECT_EQ(restrictions_with_counters.restrictions,
+              adapter.source_restrictions());
+    EXPECT_EQ(restrictions_with_counters.adaptation_counters,
+              adapter.adaptation_counters());
   }
   // When we adapt up.
   {
     Adaptation adaptation = adapter.GetAdaptationUp();
     EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
-    VideoSourceRestrictions next_restrictions =
+    VideoStreamAdapter::RestrictionsWithCounters restrictions_with_counters =
         adapter.PeekNextRestrictions(adaptation);
     fake_stream.ApplyAdaptation(adaptation);
-    EXPECT_EQ(next_restrictions, adapter.source_restrictions());
+    EXPECT_EQ(restrictions_with_counters.restrictions,
+              adapter.source_restrictions());
+    EXPECT_EQ(restrictions_with_counters.adaptation_counters,
+              adapter.adaptation_counters());
   }
 }
 

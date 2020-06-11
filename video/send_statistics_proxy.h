@@ -240,6 +240,9 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
     void set_cpu_counts(const VideoAdaptationCounters& cpu_counts);
     void set_quality_counts(const VideoAdaptationCounters& quality_counts);
 
+    VideoAdaptationCounters cpu_counts() const;
+    VideoAdaptationCounters quality_counts() const;
+
     void UpdateMaskingSettings(AdaptationSettings cpu_settings,
                                AdaptationSettings quality_settings);
 
@@ -299,7 +302,7 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
   bool bw_limited_layers_ RTC_GUARDED_BY(crit_);
   // Indicastes if the encoder internally downscales input image.
   bool internal_encoder_scaler_ RTC_GUARDED_BY(crit_);
-  Adaptations adaptations_ RTC_GUARDED_BY(crit_);
+  Adaptations adaptation_limitations_ RTC_GUARDED_BY(crit_);
 
   struct EncoderChangeEvent {
     std::string previous_encoder_implementation;

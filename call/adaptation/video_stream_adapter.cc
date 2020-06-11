@@ -513,16 +513,18 @@ Adaptation VideoStreamAdapter::GetAdaptationDown() const {
   }
 }
 
-VideoSourceRestrictions VideoStreamAdapter::PeekNextRestrictions(
-    const Adaptation& adaptation) const {
+VideoStreamAdapter::RestrictionsWithCounters
+VideoStreamAdapter::PeekNextRestrictions(const Adaptation& adaptation) const {
   RTC_DCHECK_EQ(adaptation.validation_id_, adaptation_validation_id_);
   RTC_LOG(LS_INFO) << "PeekNextRestrictions called";
   if (adaptation.status() != Adaptation::Status::kValid)
-    return source_restrictor_->source_restrictions();
+    return {source_restrictor_->source_restrictions(),
+            source_restrictor_->adaptation_counters()};
   VideoSourceRestrictor restrictor_copy = *source_restrictor_;
   restrictor_copy.ApplyAdaptationStep(adaptation.step(),
                                       degradation_preference_);
-  return restrictor_copy.source_restrictions();
+  return {restrictor_copy.source_restrictions(),
+          restrictor_copy.adaptation_counters()};
 }
 
 void VideoStreamAdapter::ApplyAdaptation(const Adaptation& adaptation) {

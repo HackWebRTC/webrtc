@@ -66,7 +66,6 @@ if (rtc_include_tests) {
     sources = [
       "overuse_frame_detector_unittest.cc",
       "quality_scaler_resource_unittest.cc",
-      "video_stream_encoder_resource_manager_unittest.cc",
     ]
     deps = [
       ":video_adaptation",

@@ -129,10 +129,16 @@ class VideoStreamAdapter {
   // status code indicating the reason why we cannot adapt.
   Adaptation GetAdaptationUp() const;
   Adaptation GetAdaptationDown() const;
+
+  struct RestrictionsWithCounters {
+    VideoSourceRestrictions restrictions;
+    VideoAdaptationCounters adaptation_counters;
+  };
+
   // Returns the restrictions that result from applying the adaptation, without
   // actually applying it. If the adaptation is not valid, current restrictions
   // are returned.
-  VideoSourceRestrictions PeekNextRestrictions(
+  RestrictionsWithCounters PeekNextRestrictions(
       const Adaptation& adaptation) const;
   // Updates source_restrictions() based according to the Adaptation.
   void ApplyAdaptation(const Adaptation& adaptation);

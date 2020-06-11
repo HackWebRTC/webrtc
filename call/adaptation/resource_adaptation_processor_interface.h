@@ -11,6 +11,8 @@
 #ifndef CALL_ADAPTATION_RESOURCE_ADAPTATION_PROCESSOR_INTERFACE_H_
 #define CALL_ADAPTATION_RESOURCE_ADAPTATION_PROCESSOR_INTERFACE_H_
 
+#include <map>
+
 #include "absl/types/optional.h"
 #include "api/adaptation/resource.h"
 #include "api/rtp_parameters.h"
@@ -38,6 +40,13 @@ class VideoSourceRestrictionsListener {
       VideoSourceRestrictions restrictions,
       const VideoAdaptationCounters& adaptation_counters,
       rtc::scoped_refptr<Resource> reason) = 0;
+
+  // The limitations on a resource were changed. This does not mean the current
+  // video restrictions have changed.
+  virtual void OnResourceLimitationChanged(
+      rtc::scoped_refptr<Resource> resource,
+      const std::map<rtc::scoped_refptr<Resource>, VideoAdaptationCounters>&
+          resource_limitations) {}
 };
 
 // The Resource Adaptation Processor is responsible for reacting to resource
