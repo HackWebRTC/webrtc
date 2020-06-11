@@ -12,6 +12,7 @@
 #define CALL_ADAPTATION_RESOURCE_ADAPTATION_PROCESSOR_INTERFACE_H_
 
 #include <map>
+#include <vector>
 
 #include "absl/types/optional.h"
 #include "api/adaptation/resource.h"
@@ -80,6 +81,7 @@ class ResourceAdaptationProcessorInterface {
   virtual void RemoveRestrictionsListener(
       VideoSourceRestrictionsListener* restrictions_listener) = 0;
   virtual void AddResource(rtc::scoped_refptr<Resource> resource) = 0;
+  virtual std::vector<rtc::scoped_refptr<Resource>> GetResources() const = 0;
   virtual void RemoveResource(rtc::scoped_refptr<Resource> resource) = 0;
   virtual void AddAdaptationConstraint(
       AdaptationConstraint* adaptation_constraint) = 0;

@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "api/adaptation/resource.h"
 #include "api/media_types.h"
 #include "call/audio_receive_stream.h"
 #include "call/audio_send_stream.h"
@@ -124,6 +125,11 @@ class Call {
       const FlexfecReceiveStream::Config& config) = 0;
   virtual void DestroyFlexfecReceiveStream(
       FlexfecReceiveStream* receive_stream) = 0;
+
+  // When a resource is overused, the Call will try to reduce the load on the
+  // sysem, for example by reducing the resolution or frame rate of encoded
+  // streams.
+  virtual void AddAdaptationResource(rtc::scoped_refptr<Resource> resource) = 0;
 
   // All received RTP and RTCP packets for the call should be inserted to this
   // PacketReceiver. The PacketReceiver pointer is valid as long as the

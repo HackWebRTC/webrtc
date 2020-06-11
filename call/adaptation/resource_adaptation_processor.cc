@@ -172,6 +172,12 @@ void ResourceAdaptationProcessor::AddResource(
   resources_.push_back(resource);
 }
 
+std::vector<rtc::scoped_refptr<Resource>>
+ResourceAdaptationProcessor::GetResources() const {
+  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
+  return resources_;
+}
+
 void ResourceAdaptationProcessor::RemoveResource(
     rtc::scoped_refptr<Resource> resource) {
   RTC_DCHECK_RUN_ON(resource_adaptation_queue_);

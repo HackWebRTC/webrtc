@@ -245,6 +245,11 @@ void DegradedCall::DestroyFlexfecReceiveStream(
   call_->DestroyFlexfecReceiveStream(receive_stream);
 }
 
+void DegradedCall::AddAdaptationResource(
+    rtc::scoped_refptr<Resource> resource) {
+  call_->AddAdaptationResource(std::move(resource));
+}
+
 PacketReceiver* DegradedCall::Receiver() {
   if (receive_config_) {
     return this;

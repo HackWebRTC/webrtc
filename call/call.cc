@@ -212,6 +212,8 @@ class Call final : public webrtc::Call,
   void DestroyFlexfecReceiveStream(
       FlexfecReceiveStream* receive_stream) override;
 
+  void AddAdaptationResource(rtc::scoped_refptr<Resource> resource) override;
+
   RtpTransportControllerSendInterface* GetTransportControllerSend() override;
 
   Stats GetStats() const override;
@@ -332,6 +334,9 @@ class Call final : public webrtc::Call,
   std::map<uint32_t, VideoSendStream*> video_send_ssrcs_
       RTC_GUARDED_BY(worker_thread_);
   std::set<VideoSendStream*> video_send_streams_ RTC_GUARDED_BY(worker_thread_);
+
+  std::vector<rtc::scoped_refptr<Resource>> adaptation_resources_
+      RTC_GUARDED_BY(worker_thread_);
 
   using RtpStateMap = std::map<uint32_t, RtpState>;
   RtpStateMap suspended_audio_send_ssrcs_ RTC_GUARDED_BY(worker_thread_);
@@ -860,6 +865,10 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
     video_send_ssrcs_[ssrc] = send_stream;
   }
   video_send_streams_.insert(send_stream);
+  // Add resources that were previously added to the call to the new stream.
+  for (const auto& adaptation_resource : adaptation_resources_) {
+    send_stream->AddAdaptationResource(adaptation_resource);
+  }
 
   UpdateAggregateNetworkState();
 
@@ -1022,6 +1031,14 @@ void Call::DestroyFlexfecReceiveStream(FlexfecReceiveStream* receive_stream) {
       ->RemoveStream(ssrc);
 
   delete receive_stream;
+}
+
+void Call::AddAdaptationResource(rtc::scoped_refptr<Resource> resource) {
+  RTC_DCHECK_RUN_ON(worker_thread_);
+  adaptation_resources_.push_back(resource);
+  for (VideoSendStream* stream : video_send_streams_) {
+    stream->AddAdaptationResource(resource);
+  }
 }
 
 RtpTransportControllerSendInterface* Call::GetTransportControllerSend() {

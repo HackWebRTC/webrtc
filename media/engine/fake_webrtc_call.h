@@ -173,6 +173,10 @@ class FakeVideoSendStream final
       const std::vector<bool> active_layers) override;
   void Start() override;
   void Stop() override;
+  void AddAdaptationResource(
+      rtc::scoped_refptr<webrtc::Resource> resource) override;
+  std::vector<rtc::scoped_refptr<webrtc::Resource>> GetAdaptationResources()
+      override;
   void SetSource(
       rtc::VideoSourceInterface<webrtc::VideoFrame>* source,
       const webrtc::DegradationPreference& degradation_preference) override;
@@ -340,6 +344,9 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
       const webrtc::FlexfecReceiveStream::Config& config) override;
   void DestroyFlexfecReceiveStream(
       webrtc::FlexfecReceiveStream* receive_stream) override;
+
+  void AddAdaptationResource(
+      rtc::scoped_refptr<webrtc::Resource> resource) override;
 
   webrtc::PacketReceiver* Receiver() override;
 

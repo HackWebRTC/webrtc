@@ -376,6 +376,57 @@ void VideoStreamEncoder::SetFecControllerOverride(
   });
 }
 
+void VideoStreamEncoder::AddAdaptationResource(
+    rtc::scoped_refptr<Resource> resource) {
+  // Map any externally added resources as kCpu for the sake of stats reporting.
+  // TODO(hbos): Make the manager map any unknown resources to kCpu and get rid
+  // of this MapResourceToReason() call.
+  rtc::Event map_resource_event;
+  encoder_queue_.PostTask([this, resource, &map_resource_event] {
+    RTC_DCHECK_RUN_ON(&encoder_queue_);
+    stream_resource_manager_.MapResourceToReason(resource,
+                                                 VideoAdaptationReason::kCpu);
+    map_resource_event.Set();
+  });
+  map_resource_event.Wait(rtc::Event::kForever);
+
+  // Add the resource to the processor.
+  rtc::Event add_resource_event;
+  resource_adaptation_queue_.PostTask([this, resource, &add_resource_event] {
+    RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
+    if (!resource_adaptation_processor_) {
+      // The VideoStreamEncoder was stopped and the processor destroyed before
+      // this task had a chance to execute. No action needed.
+      return;
+    }
+    // TODO(hbos): When https://webrtc-review.googlesource.com/c/src/+/176406
+    // has landed, there is no need to Stop+Start when adding a resource.
+    resource_adaptation_processor_->StopResourceAdaptation();
+    resource_adaptation_processor_->AddResource(resource);
+    resource_adaptation_processor_->StartResourceAdaptation();
+    add_resource_event.Set();
+  });
+  add_resource_event.Wait(rtc::Event::kForever);
+}
+
+std::vector<rtc::scoped_refptr<Resource>>
+VideoStreamEncoder::GetAdaptationResources() {
+  std::vector<rtc::scoped_refptr<Resource>> resources;
+  rtc::Event event;
+  resource_adaptation_queue_.PostTask([this, &resources, &event] {
+    RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
+    if (!resource_adaptation_processor_) {
+      // The VideoStreamEncoder was stopped and the processor destroyed before
+      // this task had a chance to execute. No action needed.
+      return;
+    }
+    resources = resource_adaptation_processor_->GetResources();
+    event.Set();
+  });
+  event.Wait(rtc::Event::kForever);
+  return resources;
+}
+
 void VideoStreamEncoder::SetSource(
     rtc::VideoSourceInterface<VideoFrame>* source,
     const DegradationPreference& degradation_preference) {

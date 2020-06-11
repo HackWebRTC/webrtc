@@ -279,6 +279,14 @@ void FakeVideoSendStream::Stop() {
   sending_ = false;
 }
 
+void FakeVideoSendStream::AddAdaptationResource(
+    rtc::scoped_refptr<webrtc::Resource> resource) {}
+
+std::vector<rtc::scoped_refptr<webrtc::Resource>>
+FakeVideoSendStream::GetAdaptationResources() {
+  return {};
+}
+
 void FakeVideoSendStream::SetSource(
     rtc::VideoSourceInterface<webrtc::VideoFrame>* source,
     const webrtc::DegradationPreference& degradation_preference) {
@@ -569,6 +577,9 @@ void FakeCall::DestroyFlexfecReceiveStream(
     flexfec_receive_streams_.erase(it);
   }
 }
+
+void FakeCall::AddAdaptationResource(
+    rtc::scoped_refptr<webrtc::Resource> resource) {}
 
 webrtc::PacketReceiver* FakeCall::Receiver() {
   return this;

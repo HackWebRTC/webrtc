@@ -77,6 +77,8 @@ class DegradedCall : public Call, private PacketReceiver {
   void DestroyFlexfecReceiveStream(
       FlexfecReceiveStream* receive_stream) override;
 
+  void AddAdaptationResource(rtc::scoped_refptr<Resource> resource) override;
+
   PacketReceiver* Receiver() override;
 
   RtpTransportControllerSendInterface* GetTransportControllerSend() override;

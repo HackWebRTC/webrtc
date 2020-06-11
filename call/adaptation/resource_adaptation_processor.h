@@ -72,6 +72,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   void RemoveRestrictionsListener(
       VideoSourceRestrictionsListener* restrictions_listener) override;
   void AddResource(rtc::scoped_refptr<Resource> resource) override;
+  std::vector<rtc::scoped_refptr<Resource>> GetResources() const override;
   void RemoveResource(rtc::scoped_refptr<Resource> resource) override;
   void AddAdaptationConstraint(
       AdaptationConstraint* adaptation_constraint) override;

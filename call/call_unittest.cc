@@ -20,9 +20,12 @@
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/mock_audio_mixer.h"
+#include "api/test/video/function_video_encoder_factory.h"
 #include "api/transport/field_trial_based_config.h"
+#include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "audio/audio_receive_stream.h"
 #include "audio/audio_send_stream.h"
+#include "call/adaptation/test/fake_resource.h"
 #include "call/audio_state.h"
 #include "modules/audio_device/include/mock_audio_device.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
@@ -34,6 +37,8 @@
 #include "test/run_loop.h"
 
 namespace {
+
+using ::testing::Contains;
 
 struct CallHelper {
   explicit CallHelper(bool use_null_audio_processing) {
@@ -323,6 +328,59 @@ TEST(CallTest, RecreatingAudioStreamWithSameSsrcReusesRtpState) {
               rtp_state2.last_timestamp_time_ms);
     EXPECT_EQ(rtp_state1.media_has_been_sent, rtp_state2.media_has_been_sent);
   }
+}
+
+TEST(CallTest, AddAdaptationResourceAfterCreatingVideoSendStream) {
+  CallHelper call(true);
+  // Create a VideoSendStream.
+  test::FunctionVideoEncoderFactory fake_encoder_factory([]() {
+    return std::make_unique<test::FakeEncoder>(Clock::GetRealTimeClock());
+  });
+  auto bitrate_allocator_factory = CreateBuiltinVideoBitrateAllocatorFactory();
+  MockTransport send_transport;
+  VideoSendStream::Config config(&send_transport);
+  config.rtp.payload_type = 110;
+  config.rtp.ssrcs = {42};
+  config.encoder_settings.encoder_factory = &fake_encoder_factory;
+  config.encoder_settings.bitrate_allocator_factory =
+      bitrate_allocator_factory.get();
+  VideoEncoderConfig encoder_config;
+  encoder_config.max_bitrate_bps = 1337;
+  VideoSendStream* stream =
+      call->CreateVideoSendStream(std::move(config), std::move(encoder_config));
+  EXPECT_NE(stream, nullptr);
+  // Add a fake resource. It should get added to the stream.
+  auto fake_resource = FakeResource::Create("FakeResource");
+  call->AddAdaptationResource(fake_resource);
+  EXPECT_THAT(stream->GetAdaptationResources(), Contains(fake_resource));
+  call->DestroyVideoSendStream(stream);
+}
+
+TEST(CallTest, AddAdaptationResourceBeforeCreatingVideoSendStream) {
+  CallHelper call(true);
+  // Add a fake resource.
+  auto fake_resource = FakeResource::Create("FakeResource");
+  call->AddAdaptationResource(fake_resource);
+  // Create a VideoSendStream.
+  test::FunctionVideoEncoderFactory fake_encoder_factory([]() {
+    return std::make_unique<test::FakeEncoder>(Clock::GetRealTimeClock());
+  });
+  auto bitrate_allocator_factory = CreateBuiltinVideoBitrateAllocatorFactory();
+  MockTransport send_transport;
+  VideoSendStream::Config config(&send_transport);
+  config.rtp.payload_type = 110;
+  config.rtp.ssrcs = {42};
+  config.encoder_settings.encoder_factory = &fake_encoder_factory;
+  config.encoder_settings.bitrate_allocator_factory =
+      bitrate_allocator_factory.get();
+  VideoEncoderConfig encoder_config;
+  encoder_config.max_bitrate_bps = 1337;
+  VideoSendStream* stream =
+      call->CreateVideoSendStream(std::move(config), std::move(encoder_config));
+  EXPECT_NE(stream, nullptr);
+  // The fake resource should automatically get added to the stream.
+  EXPECT_THAT(stream->GetAdaptationResources(), Contains(fake_resource));
+  call->DestroyVideoSendStream(stream);
 }
 
 TEST(CallTest, SharedModuleThread) {

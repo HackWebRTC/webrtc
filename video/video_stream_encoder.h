@@ -70,6 +70,9 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
                      TaskQueueFactory* task_queue_factory);
   ~VideoStreamEncoder() override;
 
+  void AddAdaptationResource(rtc::scoped_refptr<Resource> resource) override;
+  std::vector<rtc::scoped_refptr<Resource>> GetAdaptationResources() override;
+
   void SetSource(rtc::VideoSourceInterface<VideoFrame>* source,
                  const DegradationPreference& degradation_preference) override;
 
