@@ -471,20 +471,9 @@ int32_t LibaomAv1Encoder::Encode(
                                  "one data packet for an input video frame.";
           Release();
         }
-        // TODO(bugs.webrtc.org/11174): Remove this hack when
-        // webrtc_pc_e2e::SingleProcessEncodedImageDataInjector not used or
-        // fixed not to assume that encoded image transfered as is.
-        const uint8_t* data = static_cast<const uint8_t*>(pkt->data.frame.buf);
-        size_t size = pkt->data.frame.sz;
-        if (size > 2 && data[0] == 0b0'0010'010 && data[1] == 0) {
-          // Typically frame starts with a Temporal Delimter OBU of size 0 that
-          // is not need by any component in webrtc and discarded during rtp
-          // packetization. Before discarded it confuses test framework that
-          // assumes received encoded frame is exactly same as sent frame.
-          data += 2;
-          size -= 2;
-        }
-        encoded_image.SetEncodedData(EncodedImageBuffer::Create(data, size));
+        encoded_image.SetEncodedData(EncodedImageBuffer::Create(
+            /*data=*/static_cast<const uint8_t*>(pkt->data.frame.buf),
+            /*size=*/pkt->data.frame.sz));
 
         if ((pkt->data.frame.flags & AOM_EFLAG_FORCE_KF) != 0) {
           layer_frame.Keyframe();
