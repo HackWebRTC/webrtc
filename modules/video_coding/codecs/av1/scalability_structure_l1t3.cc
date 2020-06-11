@@ -43,18 +43,16 @@ ScalabilityStructureL1T3::StreamConfig() const {
 }
 
 FrameDependencyStructure ScalabilityStructureL1T3::DependencyStructure() const {
-  using Builder = GenericFrameInfo::Builder;
   FrameDependencyStructure structure;
   structure.num_decode_targets = 3;
   structure.num_chains = 1;
   structure.decode_target_protected_by_chain = {0, 0, 0};
-  structure.templates = {
-      Builder().T(0).Dtis("SSS").ChainDiffs({0}).Build(),
-      Builder().T(0).Dtis("SSS").ChainDiffs({4}).Fdiffs({4}).Build(),
-      Builder().T(1).Dtis("-DS").ChainDiffs({2}).Fdiffs({2}).Build(),
-      Builder().T(2).Dtis("--D").ChainDiffs({1}).Fdiffs({1}).Build(),
-      Builder().T(2).Dtis("--D").ChainDiffs({3}).Fdiffs({1}).Build(),
-  };
+  structure.templates.resize(5);
+  structure.templates[0].T(0).Dtis("SSS").ChainDiffs({0});
+  structure.templates[1].T(0).Dtis("SSS").ChainDiffs({4}).FrameDiffs({4});
+  structure.templates[2].T(1).Dtis("-DS").ChainDiffs({2}).FrameDiffs({2});
+  structure.templates[3].T(2).Dtis("--D").ChainDiffs({1}).FrameDiffs({1});
+  structure.templates[4].T(2).Dtis("--D").ChainDiffs({3}).FrameDiffs({1});
   return structure;
 }
 

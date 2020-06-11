@@ -26,11 +26,8 @@ TEST(RtpDependencyDescriptorExtensionTest, Writer3BytesForPerfectTemplate) {
   FrameDependencyStructure structure;
   structure.num_decode_targets = 2;
   structure.num_chains = 2;
-  structure.templates = {GenericFrameInfo::Builder()
-                             .Dtis("SR")
-                             .Fdiffs({1})
-                             .ChainDiffs({2, 2})
-                             .Build()};
+  structure.templates = {
+      FrameDependencyTemplate().Dtis("SR").FrameDiffs({1}).ChainDiffs({2, 2})};
   DependencyDescriptor descriptor;
   descriptor.frame_dependencies = structure.templates[0];
 
@@ -46,11 +43,8 @@ TEST(RtpDependencyDescriptorExtensionTest, WriteZeroInUnusedBits) {
   FrameDependencyStructure structure;
   structure.num_decode_targets = 2;
   structure.num_chains = 2;
-  structure.templates = {GenericFrameInfo::Builder()
-                             .Dtis("SR")
-                             .Fdiffs({1})
-                             .ChainDiffs({1, 1})
-                             .Build()};
+  structure.templates = {
+      FrameDependencyTemplate().Dtis("SR").FrameDiffs({1}).ChainDiffs({1, 1})};
   DependencyDescriptor descriptor;
   descriptor.frame_dependencies = structure.templates[0];
   descriptor.frame_dependencies.frame_diffs = {2};

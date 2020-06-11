@@ -705,9 +705,9 @@ TEST(RtpVideoSenderTest, SupportsDependencyDescriptor) {
   codec_specific.template_structure.emplace();
   codec_specific.template_structure->num_decode_targets = 1;
   codec_specific.template_structure->templates = {
-      GenericFrameInfo::Builder().T(0).Dtis("S").Build(),
-      GenericFrameInfo::Builder().T(0).Dtis("S").Fdiffs({2}).Build(),
-      GenericFrameInfo::Builder().T(1).Dtis("D").Fdiffs({1}).Build(),
+      FrameDependencyTemplate().T(0).Dtis("S"),
+      FrameDependencyTemplate().T(0).Dtis("S").FrameDiffs({2}),
+      FrameDependencyTemplate().T(1).Dtis("D").FrameDiffs({1}),
   };
 
   // Send two tiny images, mapping to single RTP packets.
@@ -769,9 +769,9 @@ TEST(RtpVideoSenderTest, SupportsStoppingUsingDependencyDescriptor) {
   codec_specific.template_structure.emplace();
   codec_specific.template_structure->num_decode_targets = 1;
   codec_specific.template_structure->templates = {
-      GenericFrameInfo::Builder().T(0).Dtis("S").Build(),
-      GenericFrameInfo::Builder().T(0).Dtis("S").Fdiffs({2}).Build(),
-      GenericFrameInfo::Builder().T(1).Dtis("D").Fdiffs({1}).Build(),
+      FrameDependencyTemplate().T(0).Dtis("S"),
+      FrameDependencyTemplate().T(0).Dtis("S").FrameDiffs({2}),
+      FrameDependencyTemplate().T(1).Dtis("D").FrameDiffs({1}),
   };
 
   // Send two tiny images, mapping to single RTP packets.

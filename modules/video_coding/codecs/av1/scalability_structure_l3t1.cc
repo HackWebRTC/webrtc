@@ -45,19 +45,18 @@ ScalabilityStructureL3T1::StreamConfig() const {
 }
 
 FrameDependencyStructure ScalabilityStructureL3T1::DependencyStructure() const {
-  using Builder = GenericFrameInfo::Builder;
   FrameDependencyStructure structure;
   structure.num_decode_targets = 3;
   structure.num_chains = 3;
   structure.decode_target_protected_by_chain = {0, 1, 2};
-  structure.templates = {
-      Builder().S(0).Dtis("SRR").ChainDiffs({3, 2, 1}).Fdiffs({3}).Build(),
-      Builder().S(0).Dtis("SSS").ChainDiffs({0, 0, 0}).Build(),
-      Builder().S(1).Dtis("-SR").ChainDiffs({1, 1, 1}).Fdiffs({3, 1}).Build(),
-      Builder().S(1).Dtis("-SS").ChainDiffs({1, 1, 1}).Fdiffs({1}).Build(),
-      Builder().S(2).Dtis("--S").ChainDiffs({2, 1, 1}).Fdiffs({3, 1}).Build(),
-      Builder().S(2).Dtis("--S").ChainDiffs({2, 1, 1}).Fdiffs({1}).Build(),
-  };
+  auto& templates = structure.templates;
+  templates.resize(6);
+  templates[0].S(0).Dtis("SRR").ChainDiffs({3, 2, 1}).FrameDiffs({3});
+  templates[1].S(0).Dtis("SSS").ChainDiffs({0, 0, 0});
+  templates[2].S(1).Dtis("-SR").ChainDiffs({1, 1, 1}).FrameDiffs({3, 1});
+  templates[3].S(1).Dtis("-SS").ChainDiffs({1, 1, 1}).FrameDiffs({1});
+  templates[4].S(2).Dtis("--S").ChainDiffs({2, 1, 1}).FrameDiffs({3, 1});
+  templates[5].S(2).Dtis("--S").ChainDiffs({2, 1, 1}).FrameDiffs({1});
   return structure;
 }
 
