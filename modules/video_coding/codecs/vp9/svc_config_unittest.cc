@@ -41,6 +41,32 @@ TEST(SvcConfig, AlwaysSendsAtLeastOneLayer) {
   EXPECT_EQ(spatial_layers.back().width, kMinVp9SpatialLayerWidth);
 }
 
+TEST(SvcConfig, EnforcesMinimalRequiredParity) {
+  const size_t max_num_spatial_layers = 3;
+  const size_t kOddSize = 1023;
+
+  std::vector<SpatialLayer> spatial_layers =
+      GetSvcConfig(kOddSize, kOddSize, 30,
+                   /*first_active_layer=*/1, max_num_spatial_layers, 1, false);
+  // Since there are 2 layers total (1, 2), divisiblity by 2 is required.
+  EXPECT_EQ(spatial_layers.back().width, kOddSize - 1);
+  EXPECT_EQ(spatial_layers.back().width, kOddSize - 1);
+
+  spatial_layers =
+      GetSvcConfig(kOddSize, kOddSize, 30,
+                   /*first_active_layer=*/0, max_num_spatial_layers, 1, false);
+  // Since there are 3 layers total (0, 1, 2), divisiblity by 4 is required.
+  EXPECT_EQ(spatial_layers.back().width, kOddSize - 3);
+  EXPECT_EQ(spatial_layers.back().width, kOddSize - 3);
+
+  spatial_layers =
+      GetSvcConfig(kOddSize, kOddSize, 30,
+                   /*first_active_layer=*/2, max_num_spatial_layers, 1, false);
+  // Since there is only 1 layer active (2), divisiblity by 1 is required.
+  EXPECT_EQ(spatial_layers.back().width, kOddSize);
+  EXPECT_EQ(spatial_layers.back().width, kOddSize);
+}
+
 TEST(SvcConfig, SkipsInactiveLayers) {
   const size_t num_spatial_layers = 4;
   const size_t first_active_layer = 2;

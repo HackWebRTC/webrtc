@@ -16,6 +16,7 @@
 
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 
@@ -74,13 +75,20 @@ std::vector<SpatialLayer> ConfigureSvcNormalVideo(size_t input_width,
   const size_t num_layers_fit_vert = static_cast<size_t>(
       std::floor(1 + std::max(0.0f, std::log2(1.0f * input_height /
                                               kMinVp9SpatialLayerHeight))));
-  num_spatial_layers =
-      std::min({num_spatial_layers, num_layers_fit_horz, num_layers_fit_vert});
+  const size_t limited_num_spatial_layers =
+      std::min(num_layers_fit_horz, num_layers_fit_vert);
+  if (limited_num_spatial_layers < num_spatial_layers) {
+    RTC_LOG(LS_WARNING) << "Reducing number of spatial layers from "
+                        << num_spatial_layers << " to "
+                        << limited_num_spatial_layers
+                        << " due to low input resolution.";
+    num_spatial_layers = limited_num_spatial_layers;
+  }
   // First active layer must be configured.
   num_spatial_layers = std::max(num_spatial_layers, first_active_layer + 1);
 
   // Ensure top layer is even enough.
-  int required_divisiblity = 1 << num_spatial_layers;
+  int required_divisiblity = 1 << (num_spatial_layers - first_active_layer - 1);
   input_width = input_width - input_width % required_divisiblity;
   input_height = input_height - input_height % required_divisiblity;
 

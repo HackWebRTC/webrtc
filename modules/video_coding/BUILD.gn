@@ -536,6 +536,7 @@ rtc_library("webrtc_vp9_helpers") {
     "../../api/video_codecs:video_codecs_api",
     "../../common_video",
     "../../rtc_base:checks",
+    "../../rtc_base:logging",
     "../../rtc_base/experiments:stable_target_rate_experiment",
   ]
   absl_deps = [ "//third_party/abseil-cpp/absl/container:inlined_vector" ]
