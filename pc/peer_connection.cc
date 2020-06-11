@@ -4369,6 +4369,21 @@ PeerConnection::GetFirstAudioTransceiver() const {
   return nullptr;
 }
 
+void PeerConnection::AddAdaptationResource(
+    rtc::scoped_refptr<Resource> resource) {
+  if (!worker_thread()->IsCurrent()) {
+    return worker_thread()->Invoke<void>(RTC_FROM_HERE, [this, resource]() {
+      return AddAdaptationResource(resource);
+    });
+  }
+  RTC_DCHECK_RUN_ON(worker_thread());
+  if (!call_) {
+    // The PeerConnection has been closed.
+    return;
+  }
+  call_->AddAdaptationResource(resource);
+}
+
 bool PeerConnection::StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output,
                                       int64_t output_period_ms) {
   return worker_thread()->Invoke<bool>(

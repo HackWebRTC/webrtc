@@ -237,6 +237,8 @@ class PeerConnection : public PeerConnectionInternal,
 
   rtc::scoped_refptr<SctpTransportInterface> GetSctpTransport() const override;
 
+  void AddAdaptationResource(rtc::scoped_refptr<Resource> resource) override;
+
   bool StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output,
                         int64_t output_period_ms) override;
   bool StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output) override;

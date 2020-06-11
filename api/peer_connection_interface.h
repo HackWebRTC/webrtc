@@ -73,6 +73,7 @@
 #include <string>
 #include <vector>
 
+#include "api/adaptation/resource.h"
 #include "api/async_resolver_factory.h"
 #include "api/audio/audio_mixer.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
@@ -1115,6 +1116,14 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     // TODO(crbug.com/708484): Remove default implementation.
     return absl::nullopt;
   }
+
+  // When a resource is overused, the PeerConnection will try to reduce the load
+  // on the sysem, for example by reducing the resolution or frame rate of
+  // encoded streams. The Resource API allows injecting platform-specific usage
+  // measurements. The conditions to trigger kOveruse or kUnderuse are up to the
+  // implementation.
+  // TODO(hbos): Make pure virtual when implemented by downstream projects.
+  virtual void AddAdaptationResource(rtc::scoped_refptr<Resource> resource) {}
 
   // Start RtcEventLog using an existing output-sink. Takes ownership of
   // |output| and passes it on to Call, which will take the ownership. If the

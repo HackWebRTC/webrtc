@@ -173,6 +173,7 @@ rtc_library("libjingle_peerconnection_api") {
     ":rtp_parameters",
     ":rtp_transceiver_direction",
     ":scoped_refptr",
+    "adaptation:resource_adaptation_api",
     "audio:audio_mixer_api",
     "audio_codecs:audio_codecs_api",
     "crypto:frame_decryptor_interface",

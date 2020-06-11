@@ -16,6 +16,7 @@
 #include "api/video/video_source_interface.h"
 #include "media/base/fake_frame_source.h"
 #include "media/base/video_broadcaster.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/task_utils/repeating_task.h"
 
@@ -59,6 +60,11 @@ class FakePeriodicVideoSource final
     });
   }
 
+  rtc::VideoSinkWants wants() const {
+    rtc::CritScope cs(&crit_);
+    return wants_;
+  }
+
   void RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override {
     RTC_DCHECK(thread_checker_.IsCurrent());
     broadcaster_.RemoveSink(sink);
@@ -67,6 +73,10 @@ class FakePeriodicVideoSource final
   void AddOrUpdateSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override {
     RTC_DCHECK(thread_checker_.IsCurrent());
+    {
+      rtc::CritScope cs(&crit_);
+      wants_ = wants;
+    }
     broadcaster_.AddOrUpdateSink(sink, wants);
   }
 
@@ -80,6 +90,8 @@ class FakePeriodicVideoSource final
 
   rtc::VideoBroadcaster broadcaster_;
   cricket::FakeFrameSource frame_source_;
+  rtc::CriticalSection crit_;
+  rtc::VideoSinkWants wants_ RTC_GUARDED_BY(&crit_);
 
   std::unique_ptr<TaskQueueForTest> task_queue_;
 };
