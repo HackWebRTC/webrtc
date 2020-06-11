@@ -516,6 +516,11 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
       config_->g_profile = 0;
       config_->g_input_bit_depth = 8;
       break;
+    case VP9Profile::kProfile1:
+      // Encoding of profile 1 is not implemented. It would require extended
+      // support for I444, I422, and I440 buffers.
+      RTC_NOTREACHED();
+      break;
     case VP9Profile::kProfile2:
       img_fmt = VPX_IMG_FMT_I42016;
       bits_for_storage = 16;
@@ -971,6 +976,10 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
       raw_->stride[VPX_PLANE_Y] = i420_buffer->StrideY();
       raw_->stride[VPX_PLANE_U] = i420_buffer->StrideU();
       raw_->stride[VPX_PLANE_V] = i420_buffer->StrideV();
+      break;
+    }
+    case VP9Profile::kProfile1: {
+      RTC_NOTREACHED();
       break;
     }
     case VP9Profile::kProfile2: {
