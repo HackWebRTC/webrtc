@@ -22,13 +22,13 @@ group("test") {
     ":test_renderer",
     ":test_support",
     ":video_test_common",
-    "pc/e2e",
   ]
 
   if (rtc_include_tests) {
     deps += [
       ":test_main",
       ":test_support_unittests",
+      "pc/e2e",
     ]
   }
 }
@@ -234,10 +234,7 @@ rtc_library("perf_test") {
     "../rtc_base:logging",
     "../rtc_base:rtc_numerics",
   ]
-  absl_deps = [
-    "//third_party/abseil-cpp/absl/flags:flag",
-    "//third_party/abseil-cpp/absl/types:optional",
-  ]
+  absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
   if (rtc_enable_protobuf) {
     sources += [ "testsupport/perf_test_histogram_writer.cc" ]
     deps += [
@@ -375,6 +372,16 @@ rtc_library("video_test_support") {
 }
 
 if (rtc_include_tests) {
+  rtc_library("resources_dir_flag") {
+    testonly = true
+    visibility = [ "*" ]
+    sources = [
+      "testsupport/resources_dir_flag.cc",
+      "testsupport/resources_dir_flag.h",
+    ]
+    absl_deps = [ "//third_party/abseil-cpp/absl/flags:flag" ]
+  }
+
   rtc_library("test_main_lib") {
     visibility = [ "*" ]
     testonly = true
@@ -609,16 +616,6 @@ rtc_library("fileutils") {
   if (is_win) {
     deps += [ "../rtc_base" ]
   }
-}
-
-rtc_library("resources_dir_flag") {
-  testonly = true
-  visibility = [ "*" ]
-  sources = [
-    "testsupport/resources_dir_flag.cc",
-    "testsupport/resources_dir_flag.h",
-  ]
-  absl_deps = [ "//third_party/abseil-cpp/absl/flags:flag" ]
 }
 
 # We separate header into own target to make it possible for downstream

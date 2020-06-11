@@ -17,12 +17,12 @@ group("rtc_tools") {
   deps = [
     ":frame_analyzer",
     ":video_file_reader",
-    ":video_quality_analysis",
   ]
   if (!build_with_chromium) {
     deps += [
       ":psnr_ssim_analyzer",
       ":rgba_to_i420_converter",
+      ":video_quality_analysis",
     ]
     if (rtc_enable_protobuf) {
       deps += [ ":chart_proto" ]

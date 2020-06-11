@@ -539,11 +539,8 @@ template("rtc_source_set") {
       if (!defined(deps)) {
         deps = []
       }
-      if (is_component_build && build_with_chromium) {
-        # TODO(crbug.com/1046390): Enable when the Abseil component will be
-        # available.
-        # deps += [ "//third_party/abseil-cpp:absl" ]
-        deps += absl_deps  # Remove when the line above is enabled.
+      if (build_with_chromium) {
+        deps += [ "//third_party/abseil-cpp:absl" ]
       } else {
         deps += absl_deps
       }
@@ -631,11 +628,8 @@ template("rtc_static_library") {
       if (!defined(deps)) {
         deps = []
       }
-      if (is_component_build && build_with_chromium) {
-        # TODO(crbug.com/1046390): Enable when the Abseil component will be
-        # available.
-        # deps += [ "//third_party/abseil-cpp:absl" ]
-        deps += absl_deps  # Remove when the line above is enabled.
+      if (build_with_chromium) {
+        deps += [ "//third_party/abseil-cpp:absl" ]
       } else {
         deps += absl_deps
       }
@@ -760,11 +754,8 @@ template("rtc_library") {
       if (!defined(deps)) {
         deps = []
       }
-      if (is_component_build && build_with_chromium) {
-        # TODO(crbug.com/1046390): Enable when the Abseil component will be
-        # available.
-        # deps += [ "//third_party/abseil-cpp:absl" ]
-        deps += absl_deps  # Remove when the line above is enabled.
+      if (build_with_chromium) {
+        deps += [ "//third_party/abseil-cpp:absl" ]
       } else {
         deps += absl_deps
       }
