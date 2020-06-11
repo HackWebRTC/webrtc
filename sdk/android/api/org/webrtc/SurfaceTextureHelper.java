@@ -263,6 +263,17 @@ public class SurfaceTextureHelper {
     });
   }
 
+  /**
+   * Forces a frame to be produced. If no new frame is available, the last frame is sent to the
+   * listener again.
+   */
+  public void forceFrame() {
+    handler.post(() -> {
+      hasPendingTexture = true;
+      tryDeliverTextureFrame();
+    });
+  }
+
   /** Set the rotation of the delivered frames. */
   public void setFrameRotation(int rotation) {
     handler.post(() -> this.frameRotation = rotation);
