@@ -1671,10 +1671,16 @@ int VP9DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
   // We want to use multithreading when decoding high resolution videos. But not
   // too many in order to avoid overhead when many stream are decoded
   // concurrently.
-  // Set 1280x720 pixel count as target for one core, and then scale up linearly
+  // Set 2 thread as target for 1280x720 pixel count, and then scale up linearly
   // from there - but cap at physical core count.
-  // This results in 2 for 1080p, 4 for 1440p and 8 for 4K.
-  int num_threads = std::max(1, (inst->width * inst->height) / (1280 * 720));
+  // For common resolutions this results in:
+  // 1 for 360p
+  // 2 for 720p
+  // 4 for 1080p
+  // 8 for 1440p
+  // 18 for 4K
+  int num_threads =
+      std::max(1, 2 * (inst->width * inst->height) / (1280 * 720));
   cfg.threads = std::min(number_of_cores, num_threads);
 #endif
   current_codec_ = *inst;
