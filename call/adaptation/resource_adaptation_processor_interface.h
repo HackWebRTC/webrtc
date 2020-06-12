@@ -74,8 +74,6 @@ class ResourceAdaptationProcessorInterface {
   // with AddResource() and RemoveResource() instead. When the processor is
   // multi-stream aware, stream-specific resouces will get added and removed
   // over time.
-  virtual void StartResourceAdaptation() = 0;
-  virtual void StopResourceAdaptation() = 0;
   virtual void AddRestrictionsListener(
       VideoSourceRestrictionsListener* restrictions_listener) = 0;
   virtual void RemoveRestrictionsListener(

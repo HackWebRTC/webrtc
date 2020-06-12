@@ -65,8 +65,6 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   DegradationPreference degradation_preference() const override;
   DegradationPreference effective_degradation_preference() const override;
 
-  void StartResourceAdaptation() override;
-  void StopResourceAdaptation() override;
   void AddRestrictionsListener(
       VideoSourceRestrictionsListener* restrictions_listener) override;
   void RemoveRestrictionsListener(
@@ -165,13 +163,16 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   // resource performing the adaptation is the only most limited resource. This
   // function returns the list of all most limited resources as well as the
   // corresponding adaptation of that resource.
-  std::pair<std::vector<rtc::scoped_refptr<Resource>>, VideoAdaptationCounters>
+  std::pair<std::vector<rtc::scoped_refptr<Resource>>,
+            VideoStreamAdapter::RestrictionsWithCounters>
   FindMostLimitedResources() const RTC_RUN_ON(resource_adaptation_queue_);
+
+  void MaybeUpdateResourceLimitationsOnResourceRemoval(
+      VideoStreamAdapter::RestrictionsWithCounters removed_limitations)
+      RTC_RUN_ON(resource_adaptation_queue_);
 
   TaskQueueBase* resource_adaptation_queue_;
   rtc::scoped_refptr<ResourceListenerDelegate> resource_listener_delegate_;
-  bool is_resource_adaptation_enabled_
-      RTC_GUARDED_BY(resource_adaptation_queue_);
   // Input and output.
   VideoStreamInputStateProvider* const input_state_provider_
       RTC_GUARDED_BY(resource_adaptation_queue_);
@@ -186,7 +187,8 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   std::vector<AdaptationListener*> adaptation_listeners_
       RTC_GUARDED_BY(resource_adaptation_queue_);
   // Purely used for statistics, does not ensure mapped resources stay alive.
-  std::map<rtc::scoped_refptr<Resource>, VideoAdaptationCounters>
+  std::map<rtc::scoped_refptr<Resource>,
+           VideoStreamAdapter::RestrictionsWithCounters>
       adaptation_limits_by_resources_
           RTC_GUARDED_BY(resource_adaptation_queue_);
   // Adaptation strategy settings.

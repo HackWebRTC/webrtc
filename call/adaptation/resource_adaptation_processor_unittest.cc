@@ -45,19 +45,19 @@ class VideoSourceRestrictionsListenerForTesting
   ~VideoSourceRestrictionsListenerForTesting() override {}
 
   size_t restrictions_updated_count() const {
-    rtc::CritScope crit(&lock_);
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
     return restrictions_updated_count_;
   }
   VideoSourceRestrictions restrictions() const {
-    rtc::CritScope crit(&lock_);
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
     return restrictions_;
   }
   VideoAdaptationCounters adaptation_counters() const {
-    rtc::CritScope crit(&lock_);
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
     return adaptation_counters_;
   }
   rtc::scoped_refptr<Resource> reason() const {
-    rtc::CritScope crit(&lock_);
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
     return reason_;
   }
 
@@ -66,7 +66,7 @@ class VideoSourceRestrictionsListenerForTesting
       VideoSourceRestrictions restrictions,
       const VideoAdaptationCounters& adaptation_counters,
       rtc::scoped_refptr<Resource> reason) override {
-    rtc::CritScope crit(&lock_);
+    RTC_DCHECK_RUN_ON(&sequence_checker_);
     ++restrictions_updated_count_;
     restrictions_ = restrictions;
     adaptation_counters_ = adaptation_counters;
@@ -74,11 +74,12 @@ class VideoSourceRestrictionsListenerForTesting
   }
 
  private:
-  rtc::CriticalSection lock_;
-  size_t restrictions_updated_count_ RTC_GUARDED_BY(lock_);
-  VideoSourceRestrictions restrictions_ RTC_GUARDED_BY(lock_);
-  VideoAdaptationCounters adaptation_counters_ RTC_GUARDED_BY(lock_);
-  rtc::scoped_refptr<Resource> reason_ RTC_GUARDED_BY(lock_);
+  SequenceChecker sequence_checker_;
+  size_t restrictions_updated_count_ RTC_GUARDED_BY(&sequence_checker_);
+  VideoSourceRestrictions restrictions_ RTC_GUARDED_BY(&sequence_checker_);
+  VideoAdaptationCounters adaptation_counters_
+      RTC_GUARDED_BY(&sequence_checker_);
+  rtc::scoped_refptr<Resource> reason_ RTC_GUARDED_BY(&sequence_checker_);
 };
 
 class ResourceAdaptationProcessorTest : public ::testing::Test {
@@ -121,13 +122,20 @@ class ResourceAdaptationProcessorTest : public ::testing::Test {
   }
 
   void DestroyProcessor() {
-    processor_->StopResourceAdaptation();
     processor_->RemoveRestrictionsListener(&restrictions_listener_);
-    processor_->RemoveResource(resource_);
-    processor_->RemoveResource(other_resource_);
+    if (resource_) {
+      processor_->RemoveResource(resource_);
+    }
+    if (other_resource_) {
+      processor_->RemoveResource(other_resource_);
+    }
     processor_->RemoveAdaptationConstraint(&adaptation_constraint_);
     processor_->RemoveAdaptationListener(&adaptation_listener_);
     processor_.reset();
+  }
+
+  static void WaitUntilTaskQueueIdle() {
+    ASSERT_TRUE(rtc::Thread::Current()->ProcessMessages(0));
   }
 
  protected:
@@ -149,7 +157,6 @@ TEST_F(ResourceAdaptationProcessorTest, DisabledByDefault) {
   EXPECT_EQ(DegradationPreference::DISABLED,
             processor_->effective_degradation_preference());
   SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
-  processor_->StartResourceAdaptation();
   // Adaptation does not happen when disabled.
   resource_->SetUsageState(ResourceUsageState::kOveruse);
   EXPECT_EQ(0u, restrictions_listener_.restrictions_updated_count());
@@ -158,7 +165,6 @@ TEST_F(ResourceAdaptationProcessorTest, DisabledByDefault) {
 TEST_F(ResourceAdaptationProcessorTest, InsufficientInput) {
   processor_->SetDegradationPreference(
       DegradationPreference::MAINTAIN_FRAMERATE);
-  processor_->StartResourceAdaptation();
   // Adaptation does not happen if input is insufficient.
   // When frame size is missing (OnFrameSizeObserved not called yet).
   input_state_provider_.OnHasInputChanged(true);
@@ -179,7 +185,6 @@ TEST_F(ResourceAdaptationProcessorTest,
        OveruseTriggersRestrictingResolutionInMaintainFrameRate) {
   processor_->SetDegradationPreference(
       DegradationPreference::MAINTAIN_FRAMERATE);
-  processor_->StartResourceAdaptation();
   SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
   resource_->SetUsageState(ResourceUsageState::kOveruse);
   EXPECT_EQ(1u, restrictions_listener_.restrictions_updated_count());
@@ -191,7 +196,6 @@ TEST_F(ResourceAdaptationProcessorTest,
        OveruseTriggersRestrictingFrameRateInMaintainResolution) {
   processor_->SetDegradationPreference(
       DegradationPreference::MAINTAIN_RESOLUTION);
-  processor_->StartResourceAdaptation();
   SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
   resource_->SetUsageState(ResourceUsageState::kOveruse);
   EXPECT_EQ(1u, restrictions_listener_.restrictions_updated_count());
@@ -202,7 +206,6 @@ TEST_F(ResourceAdaptationProcessorTest,
 TEST_F(ResourceAdaptationProcessorTest,
        OveruseTriggersRestrictingFrameRateAndResolutionInBalanced) {
   processor_->SetDegradationPreference(DegradationPreference::BALANCED);
-  processor_->StartResourceAdaptation();
   SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
   // Adapting multiple times eventually resticts both frame rate and
   // resolution. Exactly many times we need to adapt depends on
@@ -222,7 +225,6 @@ TEST_F(ResourceAdaptationProcessorTest,
 TEST_F(ResourceAdaptationProcessorTest, AwaitingPreviousAdaptation) {
   processor_->SetDegradationPreference(
       DegradationPreference::MAINTAIN_FRAMERATE);
-  processor_->StartResourceAdaptation();
   SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
   resource_->SetUsageState(ResourceUsageState::kOveruse);
   EXPECT_EQ(1u, restrictions_listener_.restrictions_updated_count());
@@ -235,7 +237,6 @@ TEST_F(ResourceAdaptationProcessorTest, AwaitingPreviousAdaptation) {
 TEST_F(ResourceAdaptationProcessorTest, CannotAdaptUpWhenUnrestricted) {
   processor_->SetDegradationPreference(
       DegradationPreference::MAINTAIN_FRAMERATE);
-  processor_->StartResourceAdaptation();
   SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
   resource_->SetUsageState(ResourceUsageState::kUnderuse);
   EXPECT_EQ(0u, restrictions_listener_.restrictions_updated_count());
@@ -244,7 +245,6 @@ TEST_F(ResourceAdaptationProcessorTest, CannotAdaptUpWhenUnrestricted) {
 TEST_F(ResourceAdaptationProcessorTest, UnderuseTakesUsBackToUnrestricted) {
   processor_->SetDegradationPreference(
       DegradationPreference::MAINTAIN_FRAMERATE);
-  processor_->StartResourceAdaptation();
   SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
   resource_->SetUsageState(ResourceUsageState::kOveruse);
   EXPECT_EQ(1u, restrictions_listener_.restrictions_updated_count());
@@ -257,7 +257,6 @@ TEST_F(ResourceAdaptationProcessorTest, UnderuseTakesUsBackToUnrestricted) {
 TEST_F(ResourceAdaptationProcessorTest, ResourcesCanPreventAdaptingUp) {
   processor_->SetDegradationPreference(
       DegradationPreference::MAINTAIN_FRAMERATE);
-  processor_->StartResourceAdaptation();
   SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
   // Adapt down so that we can adapt up.
   resource_->SetUsageState(ResourceUsageState::kOveruse);
@@ -273,7 +272,6 @@ TEST_F(ResourceAdaptationProcessorTest,
        ResourcesCanNotAdaptUpIfNeverAdaptedDown) {
   processor_->SetDegradationPreference(
       DegradationPreference::MAINTAIN_FRAMERATE);
-  processor_->StartResourceAdaptation();
   SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
   resource_->SetUsageState(ResourceUsageState::kOveruse);
   EXPECT_EQ(1u, restrictions_listener_.restrictions_updated_count());
@@ -288,7 +286,6 @@ TEST_F(ResourceAdaptationProcessorTest,
        ResourcesCanNotAdaptUpIfNotAdaptedDownAfterReset) {
   processor_->SetDegradationPreference(
       DegradationPreference::MAINTAIN_FRAMERATE);
-  processor_->StartResourceAdaptation();
   SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
   resource_->SetUsageState(ResourceUsageState::kOveruse);
   EXPECT_EQ(1u, restrictions_listener_.restrictions_updated_count());
@@ -308,7 +305,6 @@ TEST_F(ResourceAdaptationProcessorTest,
 TEST_F(ResourceAdaptationProcessorTest, OnlyMostLimitedResourceMayAdaptUp) {
   processor_->SetDegradationPreference(
       DegradationPreference::MAINTAIN_FRAMERATE);
-  processor_->StartResourceAdaptation();
   SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
   resource_->SetUsageState(ResourceUsageState::kOveruse);
   EXPECT_EQ(1, restrictions_listener_.adaptation_counters().Total());
@@ -339,7 +335,6 @@ TEST_F(ResourceAdaptationProcessorTest,
        MultipleResourcesCanTriggerMultipleAdaptations) {
   processor_->SetDegradationPreference(
       DegradationPreference::MAINTAIN_FRAMERATE);
-  processor_->StartResourceAdaptation();
   SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
   resource_->SetUsageState(ResourceUsageState::kOveruse);
   EXPECT_EQ(1, restrictions_listener_.adaptation_counters().Total());
@@ -398,7 +393,6 @@ TEST_F(ResourceAdaptationProcessorTest,
        MostLimitedResourceAdaptationWorksAfterChangingDegradataionPreference) {
   processor_->SetDegradationPreference(
       DegradationPreference::MAINTAIN_FRAMERATE);
-  processor_->StartResourceAdaptation();
   SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
   // Adapt down until we can't anymore.
   resource_->SetUsageState(ResourceUsageState::kOveruse);
@@ -431,7 +425,6 @@ TEST_F(ResourceAdaptationProcessorTest,
 TEST_F(ResourceAdaptationProcessorTest, AdaptingTriggersOnAdaptationApplied) {
   processor_->SetDegradationPreference(
       DegradationPreference::MAINTAIN_FRAMERATE);
-  processor_->StartResourceAdaptation();
   SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
   resource_->SetUsageState(ResourceUsageState::kOveruse);
   EXPECT_EQ(1u, adaptation_listener_.num_adaptations_applied());
@@ -441,7 +434,6 @@ TEST_F(ResourceAdaptationProcessorTest,
        AdaptsDownWhenOtherResourceIsAlwaysUnderused) {
   processor_->SetDegradationPreference(
       DegradationPreference::MAINTAIN_FRAMERATE);
-  processor_->StartResourceAdaptation();
   SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
   other_resource_->SetUsageState(ResourceUsageState::kUnderuse);
   // Does not trigger adapataion because there's no restriction.
@@ -463,7 +455,6 @@ TEST_F(ResourceAdaptationProcessorTest,
        TriggerOveruseNotOnAdaptationTaskQueue) {
   processor_->SetDegradationPreference(
       DegradationPreference::MAINTAIN_FRAMERATE);
-  processor_->StartResourceAdaptation();
   SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
 
   TaskQueueForTest resource_task_queue("ResourceTaskQueue");
@@ -478,7 +469,6 @@ TEST_F(ResourceAdaptationProcessorTest,
        DestroyProcessorWhileResourceListenerDelegateHasTaskInFlight) {
   processor_->SetDegradationPreference(
       DegradationPreference::MAINTAIN_FRAMERATE);
-  processor_->StartResourceAdaptation();
   SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
 
   // Wait for |resource_| to signal oversue first so we know that the delegate
@@ -497,6 +487,254 @@ TEST_F(ResourceAdaptationProcessorTest,
   // Because the processor was destroyed by the time the delegate's task ran,
   // the overuse signal must not have been handled.
   EXPECT_EQ(0u, restrictions_listener_.restrictions_updated_count());
+}
+
+TEST_F(ResourceAdaptationProcessorTest,
+       ResourceOveruseIgnoredWhenSignalledDuringRemoval) {
+  processor_->SetDegradationPreference(
+      DegradationPreference::MAINTAIN_FRAMERATE);
+  SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
+
+  rtc::Event overuse_event;
+  TaskQueueForTest resource_task_queue("ResourceTaskQueue");
+  // Queues task for |resource_| overuse while |processor_| is still listening.
+  resource_task_queue.PostTask(ToQueuedTask([&]() {
+    resource_->SetUsageState(ResourceUsageState::kOveruse);
+    overuse_event.Set();
+  }));
+  EXPECT_TRUE(overuse_event.Wait(kDefaultTimeoutMs));
+  // Once we know the overuse task is queued, remove |resource_| so that
+  // |processor_| is not listening to it.
+  processor_->RemoveResource(resource_);
+
+  // Runs the queued task so |processor_| gets signalled kOveruse from
+  // |resource_| even though |processor_| was not listening.
+  WaitUntilTaskQueueIdle();
+
+  // No restrictions should change even though |resource_| signaled |kOveruse|.
+  EXPECT_EQ(0u, restrictions_listener_.restrictions_updated_count());
+
+  // Delete |resource_| for cleanup.
+  resource_ = nullptr;
+}
+
+TEST_F(ResourceAdaptationProcessorTest,
+       RemovingOnlyAdaptedResourceResetsAdaptation) {
+  processor_->SetDegradationPreference(
+      DegradationPreference::MAINTAIN_FRAMERATE);
+  SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
+
+  resource_->SetUsageState(ResourceUsageState::kOveruse);
+  EXPECT_EQ(1, restrictions_listener_.adaptation_counters().Total());
+  RestrictSource(restrictions_listener_.restrictions());
+
+  processor_->RemoveResource(resource_);
+  EXPECT_EQ(0, restrictions_listener_.adaptation_counters().Total());
+
+  // Delete |resource_| for cleanup.
+  resource_ = nullptr;
+}
+
+TEST_F(ResourceAdaptationProcessorTest,
+       RemovingMostLimitedResourceSetsAdaptationToNextLimitedLevel) {
+  processor_->SetDegradationPreference(DegradationPreference::BALANCED);
+  SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
+
+  other_resource_->SetUsageState(ResourceUsageState::kOveruse);
+  RestrictSource(restrictions_listener_.restrictions());
+  EXPECT_EQ(1, restrictions_listener_.adaptation_counters().Total());
+  VideoSourceRestrictions next_limited_restrictions =
+      restrictions_listener_.restrictions();
+  VideoAdaptationCounters next_limited_counters =
+      restrictions_listener_.adaptation_counters();
+
+  resource_->SetUsageState(ResourceUsageState::kOveruse);
+  RestrictSource(restrictions_listener_.restrictions());
+  EXPECT_EQ(2, restrictions_listener_.adaptation_counters().Total());
+
+  // Removing most limited |resource_| should revert us back to
+  processor_->RemoveResource(resource_);
+  EXPECT_EQ(1, restrictions_listener_.adaptation_counters().Total());
+  EXPECT_EQ(next_limited_restrictions, restrictions_listener_.restrictions());
+  EXPECT_EQ(next_limited_counters,
+            restrictions_listener_.adaptation_counters());
+
+  // Delete |resource_| for cleanup.
+  resource_ = nullptr;
+}
+
+TEST_F(ResourceAdaptationProcessorTest,
+       RemovingMostLimitedResourceSetsAdaptationIfInputStateUnchanged) {
+  processor_->SetDegradationPreference(
+      DegradationPreference::MAINTAIN_FRAMERATE);
+  SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
+
+  other_resource_->SetUsageState(ResourceUsageState::kOveruse);
+  RestrictSource(restrictions_listener_.restrictions());
+  EXPECT_EQ(1, restrictions_listener_.adaptation_counters().Total());
+  VideoSourceRestrictions next_limited_restrictions =
+      restrictions_listener_.restrictions();
+  VideoAdaptationCounters next_limited_counters =
+      restrictions_listener_.adaptation_counters();
+
+  // Overuse twice and underuse once. After the underuse we don't restrict the
+  // source. Normally this would block future underuses.
+  resource_->SetUsageState(ResourceUsageState::kOveruse);
+  RestrictSource(restrictions_listener_.restrictions());
+  resource_->SetUsageState(ResourceUsageState::kOveruse);
+  RestrictSource(restrictions_listener_.restrictions());
+  resource_->SetUsageState(ResourceUsageState::kUnderuse);
+  EXPECT_EQ(2, restrictions_listener_.adaptation_counters().Total());
+
+  // Removing most limited |resource_| should revert us back to, even though we
+  // did not call RestrictSource() after |resource_| was overused. Normally
+  // adaptation for MAINTAIN_FRAMERATE would be blocked here but for removal we
+  // allow this anyways.
+  processor_->RemoveResource(resource_);
+  EXPECT_EQ(1, restrictions_listener_.adaptation_counters().Total());
+  EXPECT_EQ(next_limited_restrictions, restrictions_listener_.restrictions());
+  EXPECT_EQ(next_limited_counters,
+            restrictions_listener_.adaptation_counters());
+
+  // Delete |resource_| for cleanup.
+  resource_ = nullptr;
+}
+
+TEST_F(ResourceAdaptationProcessorTest,
+       RemovingResourceNotMostLimitedHasNoEffectOnLimitations) {
+  processor_->SetDegradationPreference(DegradationPreference::BALANCED);
+  SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
+
+  other_resource_->SetUsageState(ResourceUsageState::kOveruse);
+  RestrictSource(restrictions_listener_.restrictions());
+  EXPECT_EQ(1, restrictions_listener_.adaptation_counters().Total());
+
+  resource_->SetUsageState(ResourceUsageState::kOveruse);
+  RestrictSource(restrictions_listener_.restrictions());
+  VideoSourceRestrictions current_restrictions =
+      restrictions_listener_.restrictions();
+  VideoAdaptationCounters current_counters =
+      restrictions_listener_.adaptation_counters();
+  EXPECT_EQ(2, restrictions_listener_.adaptation_counters().Total());
+
+  // Removing most limited |resource_| should revert us back to
+  processor_->RemoveResource(other_resource_);
+  EXPECT_EQ(current_restrictions, restrictions_listener_.restrictions());
+  EXPECT_EQ(current_counters, restrictions_listener_.adaptation_counters());
+
+  // Delete |other_resource_| for cleanup.
+  other_resource_ = nullptr;
+}
+
+TEST_F(ResourceAdaptationProcessorTest,
+       RemovingMostLimitedResourceAfterSwitchingDegradationPreferences) {
+  processor_->SetDegradationPreference(
+      DegradationPreference::MAINTAIN_FRAMERATE);
+  SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
+
+  other_resource_->SetUsageState(ResourceUsageState::kOveruse);
+  RestrictSource(restrictions_listener_.restrictions());
+  EXPECT_EQ(1, restrictions_listener_.adaptation_counters().Total());
+  VideoSourceRestrictions next_limited_restrictions =
+      restrictions_listener_.restrictions();
+  VideoAdaptationCounters next_limited_counters =
+      restrictions_listener_.adaptation_counters();
+
+  processor_->SetDegradationPreference(
+      DegradationPreference::MAINTAIN_RESOLUTION);
+  resource_->SetUsageState(ResourceUsageState::kOveruse);
+  RestrictSource(restrictions_listener_.restrictions());
+  EXPECT_EQ(2, restrictions_listener_.adaptation_counters().Total());
+
+  // Revert to |other_resource_| when removing |resource_| even though the
+  // degradation preference was different when it was overused.
+  processor_->RemoveResource(resource_);
+  EXPECT_EQ(next_limited_counters,
+            restrictions_listener_.adaptation_counters());
+
+  // After switching back to MAINTAIN_FRAMERATE, the next most limited settings
+  // are restored.
+  processor_->SetDegradationPreference(
+      DegradationPreference::MAINTAIN_FRAMERATE);
+  EXPECT_EQ(next_limited_restrictions, restrictions_listener_.restrictions());
+
+  // Delete |resource_| for cleanup.
+  resource_ = nullptr;
+}
+
+TEST_F(ResourceAdaptationProcessorTest,
+       RemovingMostLimitedResourceSetsNextLimitationsInDisabled) {
+  processor_->SetDegradationPreference(
+      DegradationPreference::MAINTAIN_FRAMERATE);
+  SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
+
+  other_resource_->SetUsageState(ResourceUsageState::kOveruse);
+  RestrictSource(restrictions_listener_.restrictions());
+  VideoSourceRestrictions next_limited_restrictions =
+      restrictions_listener_.restrictions();
+  VideoAdaptationCounters next_limited_counters =
+      restrictions_listener_.adaptation_counters();
+  EXPECT_EQ(1, restrictions_listener_.adaptation_counters().Total());
+  resource_->SetUsageState(ResourceUsageState::kOveruse);
+  RestrictSource(restrictions_listener_.restrictions());
+  EXPECT_EQ(2, restrictions_listener_.adaptation_counters().Total());
+
+  processor_->SetDegradationPreference(DegradationPreference::DISABLED);
+
+  // Revert to |other_resource_| when removing |resource_| even though the
+  // current degradataion preference is disabled.
+  processor_->RemoveResource(resource_);
+
+  // After switching back to MAINTAIN_FRAMERATE, the next most limited settings
+  // are restored.
+  processor_->SetDegradationPreference(
+      DegradationPreference::MAINTAIN_FRAMERATE);
+  EXPECT_EQ(next_limited_restrictions, restrictions_listener_.restrictions());
+  EXPECT_EQ(next_limited_counters,
+            restrictions_listener_.adaptation_counters());
+
+  // Delete |resource_| for cleanup.
+  resource_ = nullptr;
+}
+
+TEST_F(ResourceAdaptationProcessorTest,
+       RemovedResourceSignalsIgnoredByProcessor) {
+  processor_->SetDegradationPreference(
+      DegradationPreference::MAINTAIN_FRAMERATE);
+  SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
+
+  processor_->RemoveResource(resource_);
+  resource_->SetUsageState(ResourceUsageState::kOveruse);
+  EXPECT_EQ(0u, restrictions_listener_.restrictions_updated_count());
+
+  // Delete |resource_| for cleanup.
+  resource_ = nullptr;
+}
+
+TEST_F(ResourceAdaptationProcessorTest,
+       RemovingResourceWhenMultipleMostLimtedHasNoEffect) {
+  processor_->SetDegradationPreference(
+      DegradationPreference::MAINTAIN_FRAMERATE);
+  SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
+
+  other_resource_->SetUsageState(ResourceUsageState::kOveruse);
+  RestrictSource(restrictions_listener_.restrictions());
+  EXPECT_EQ(1, restrictions_listener_.adaptation_counters().Total());
+  // Adapt |resource_| up and then down so that both resource's are most
+  // limited at 1 adaptation.
+  resource_->SetUsageState(ResourceUsageState::kOveruse);
+  RestrictSource(restrictions_listener_.restrictions());
+  resource_->SetUsageState(ResourceUsageState::kUnderuse);
+  RestrictSource(restrictions_listener_.restrictions());
+  EXPECT_EQ(1, restrictions_listener_.adaptation_counters().Total());
+
+  // Removing |resource_| has no effect since both |resource_| and
+  // |other_resource_| are most limited.
+  processor_->RemoveResource(resource_);
+  EXPECT_EQ(1, restrictions_listener_.adaptation_counters().Total());
+
+  // Delete |resource_| for cleanup.
+  resource_ = nullptr;
 }
 
 }  // namespace webrtc

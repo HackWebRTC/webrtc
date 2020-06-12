@@ -123,8 +123,15 @@ const char* Adaptation::StatusToString(Adaptation::Status status) {
   }
 }
 
-Adaptation::Step::Step(StepType type, int target)
-    : type(type), target(target) {}
+Adaptation::Step::Step(StepType type, int target) : type(type), target(target) {
+  RTC_DCHECK_NE(type, Adaptation::StepType::kForce);
+}
+
+Adaptation::Step::Step(VideoSourceRestrictions restrictions,
+                       VideoAdaptationCounters counters)
+    : type(Adaptation::StepType::kForce),
+      restrictions(restrictions),
+      counters(counters) {}
 
 Adaptation::Adaptation(int validation_id, Step step)
     : validation_id_(validation_id),
@@ -188,6 +195,12 @@ class VideoStreamAdapter::VideoSourceRestrictor {
     adaptations_ = VideoAdaptationCounters();
   }
 
+  void ForceRestrictions(const VideoSourceRestrictions& restrictions,
+                         const VideoAdaptationCounters& counters) {
+    source_restrictions_ = restrictions;
+    adaptations_ = counters;
+  }
+
   void set_min_pixels_per_frame(int min_pixels_per_frame) {
     min_pixels_per_frame_ = min_pixels_per_frame;
   }
@@ -227,13 +240,16 @@ class VideoStreamAdapter::VideoSourceRestrictor {
                            DegradationPreference degradation_preference) {
     switch (step.type) {
       case Adaptation::StepType::kIncreaseResolution:
-        IncreaseResolutionTo(step.target);
+        RTC_DCHECK(step.target);
+        IncreaseResolutionTo(step.target.value());
         break;
       case Adaptation::StepType::kDecreaseResolution:
-        DecreaseResolutionTo(step.target);
+        RTC_DCHECK(step.target);
+        DecreaseResolutionTo(step.target.value());
         break;
       case Adaptation::StepType::kIncreaseFrameRate:
-        IncreaseFrameRateTo(step.target);
+        RTC_DCHECK(step.target);
+        IncreaseFrameRateTo(step.target.value());
         // TODO(https://crbug.com/webrtc/11222): Don't adapt in two steps.
         // GetAdaptationUp() should tell us the correct value, but BALANCED
         // logic in DecrementFramerate() makes it hard to predict whether this
@@ -247,7 +263,13 @@ class VideoStreamAdapter::VideoSourceRestrictor {
         }
         break;
       case Adaptation::StepType::kDecreaseFrameRate:
-        DecreaseFrameRateTo(step.target);
+        RTC_DCHECK(step.target);
+        DecreaseFrameRateTo(step.target.value());
+        break;
+      case Adaptation::StepType::kForce:
+        RTC_DCHECK(step.restrictions);
+        RTC_DCHECK(step.counters);
+        ForceRestrictions(step.restrictions.value(), step.counters.value());
         break;
     }
   }
@@ -540,6 +562,14 @@ void VideoStreamAdapter::ApplyAdaptation(const Adaptation& adaptation) {
   // Adapt!
   source_restrictor_->ApplyAdaptationStep(adaptation.step(),
                                           degradation_preference_);
+}
+
+Adaptation VideoStreamAdapter::GetAdaptationTo(
+    const VideoAdaptationCounters& counters,
+    const VideoSourceRestrictions& restrictions) const {
+  // Adapts up/down from the current levels so counters are equal.
+  return Adaptation(adaptation_validation_id_,
+                    Adaptation::Step(restrictions, counters));
 }
 
 }  // namespace webrtc
