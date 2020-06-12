@@ -28,22 +28,15 @@ constexpr int kStatsWaitTimeoutMs = 1000;
 constexpr char kUseStandardBytesStats[] = "WebRTC-UseStandardBytesStats";
 }
 
-NetworkQualityMetricsReporter::NetworkQualityMetricsReporter(
-    EmulatedNetworkManagerInterface* alice_network,
-    EmulatedNetworkManagerInterface* bob_network)
-    : networks_by_peer_({{"alice", alice_network}, {"bob", bob_network}}) {}
-
 void NetworkQualityMetricsReporter::Start(absl::string_view test_case_name) {
   test_case_name_ = std::string(test_case_name);
   // Check that network stats are clean before test execution.
-  for (const auto& entry : networks_by_peer_) {
-    EmulatedNetworkStats stats = PopulateStats(entry.second);
-    RTC_CHECK_EQ(stats.packets_sent, 0)
-        << "|packets_sent| for " << entry.first << " have to be 0 before test";
-    RTC_CHECK_EQ(stats.packets_received, 0)
-        << "|packets_received| for " << entry.first
-        << " have to be 0 before test";
-  }
+  EmulatedNetworkStats alice_stats = PopulateStats(alice_network_);
+  RTC_CHECK_EQ(alice_stats.packets_sent, 0);
+  RTC_CHECK_EQ(alice_stats.packets_received, 0);
+  EmulatedNetworkStats bob_stats = PopulateStats(bob_network_);
+  RTC_CHECK_EQ(bob_stats.packets_sent, 0);
+  RTC_CHECK_EQ(bob_stats.packets_received, 0);
 }
 
 void NetworkQualityMetricsReporter::OnStatsReports(
@@ -72,11 +65,12 @@ void NetworkQualityMetricsReporter::OnStatsReports(
 }
 
 void NetworkQualityMetricsReporter::StopAndReportResults() {
-  for (const auto& entry : networks_by_peer_) {
-    EmulatedNetworkStats stats = PopulateStats(entry.second);
-    ReportStats(entry.first, stats,
-                stats.packets_sent - stats.packets_received);
-  }
+  EmulatedNetworkStats alice_stats = PopulateStats(alice_network_);
+  EmulatedNetworkStats bob_stats = PopulateStats(bob_network_);
+  ReportStats("alice", alice_stats,
+              alice_stats.packets_sent - bob_stats.packets_received);
+  ReportStats("bob", bob_stats,
+              bob_stats.packets_sent - alice_stats.packets_received);
 
   if (!webrtc::field_trial::IsEnabled(kUseStandardBytesStats)) {
     RTC_LOG(LS_ERROR)

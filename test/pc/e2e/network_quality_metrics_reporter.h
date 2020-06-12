@@ -11,7 +11,6 @@
 #ifndef TEST_PC_E2E_NETWORK_QUALITY_METRICS_REPORTER_H_
 #define TEST_PC_E2E_NETWORK_QUALITY_METRICS_REPORTER_H_
 
-#include <map>
 #include <string>
 
 #include "api/test/network_emulation_manager.h"
@@ -24,19 +23,9 @@ namespace webrtc_pc_e2e {
 class NetworkQualityMetricsReporter
     : public PeerConnectionE2EQualityTestFixture::QualityMetricsReporter {
  public:
-  // Creates a network quality metrics reporter on specified
-  // EmulatedNetworkManagerInterface instances index by the labels. These labels
-  // will be used as prefix for the metric name.
-  // Instances of |EmulatedNetworkManagerInterface*| have to outlive
-  // NetworkQualityMetricsReporter.
-  explicit NetworkQualityMetricsReporter(
-      std::map<std::string, EmulatedNetworkManagerInterface*> networks_by_peer)
-      : networks_by_peer_(std::move(networks_by_peer)) {}
-  // Creates a network quality metrics reporter on specified for two network
-  // which will be labeled "alice" and "bob" respectively. Bot |alice_network|
-  // and |bob_network| have to outlive NetworkQualityMetricsReporter.
   NetworkQualityMetricsReporter(EmulatedNetworkManagerInterface* alice_network,
-                                EmulatedNetworkManagerInterface* bob_network);
+                                EmulatedNetworkManagerInterface* bob_network)
+      : alice_network_(alice_network), bob_network_(bob_network) {}
   ~NetworkQualityMetricsReporter() override = default;
 
   // Network stats must be empty when this method will be invoked.
@@ -67,7 +56,8 @@ class NetworkQualityMetricsReporter
 
   std::string test_case_name_;
 
-  std::map<std::string, EmulatedNetworkManagerInterface*> networks_by_peer_;
+  EmulatedNetworkManagerInterface* alice_network_;
+  EmulatedNetworkManagerInterface* bob_network_;
   rtc::CriticalSection lock_;
   std::map<std::string, PCStats> pc_stats_ RTC_GUARDED_BY(lock_);
 };
