@@ -29,8 +29,8 @@ template <typename T>
 class MultiHeadQueue {
  public:
   // Creates queue with exactly |readers_count| readers.
-  explicit MultiHeadQueue(int readers_count) {
-    for (int i = 0; i < readers_count; ++i) {
+  explicit MultiHeadQueue(size_t readers_count) {
+    for (size_t i = 0; i < readers_count; ++i) {
       queues_.push_back(std::deque<T>());
     }
   }
@@ -42,8 +42,8 @@ class MultiHeadQueue {
     }
   }
 
-  // Extract element from specified head. Complexity O(readers_count).
-  absl::optional<T> PopFront(int index) {
+  // Extract element from specified head. Complexity O(1).
+  absl::optional<T> PopFront(size_t index) {
     RTC_CHECK_LT(index, queues_.size());
     if (queues_[index].empty()) {
       return absl::nullopt;
@@ -53,8 +53,8 @@ class MultiHeadQueue {
     return out;
   }
 
-  // Returns element at specified head. Complexity O(readers_count).
-  absl::optional<T> Front(int index) const {
+  // Returns element at specified head. Complexity O(1).
+  absl::optional<T> Front(size_t index) const {
     RTC_CHECK_LT(index, queues_.size());
     if (queues_[index].empty()) {
       return absl::nullopt;
@@ -62,15 +62,11 @@ class MultiHeadQueue {
     return queues_[index].front();
   }
 
-  // Returns true if for all readers there are no elements in the queue or
-  // false otherwise. Complexity O(readers_count).
-  bool IsEmpty() const {
-    for (auto& queue : queues_) {
-      if (!queue.empty()) {
-        return false;
-      }
-    }
-    return true;
+  // Returns true if for specified head there are no more elements in the queue
+  // or false otherwise. Complexity O(1).
+  bool IsEmpty(size_t index) const {
+    RTC_CHECK_LT(index, queues_.size());
+    return queues_[index].empty();
   }
 
   // Returns size of the longest queue between all readers.
@@ -84,6 +80,14 @@ class MultiHeadQueue {
     }
     return size;
   }
+
+  // Returns size of the specified queue. Complexity O(1).
+  size_t size(size_t index) const {
+    RTC_CHECK_LT(index, queues_.size());
+    return queues_[index].size();
+  }
+
+  size_t readers_count() const { return queues_.size(); }
 
  private:
   std::vector<std::deque<T>> queues_;

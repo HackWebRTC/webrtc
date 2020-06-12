@@ -110,19 +110,20 @@ class PeerConnectionE2EQualityTestSmokeTest : public ::testing::Test {
     fixture->Run(run_params);
 
     EXPECT_GE(fixture->GetRealTestDuration(), run_params.run_duration);
-    for (auto stream_label : video_analyzer_ptr->GetKnownVideoStreams()) {
+    for (auto stream_key : video_analyzer_ptr->GetKnownVideoStreams()) {
       FrameCounters stream_conters =
-          video_analyzer_ptr->GetPerStreamCounters().at(stream_label);
+          video_analyzer_ptr->GetPerStreamCounters().at(stream_key);
       // On some devices the pipeline can be too slow, so we actually can't
       // force real constraints here. Lets just check, that at least 1
       // frame passed whole pipeline.
       int64_t expected_min_fps = run_params.run_duration.seconds() * 15;
-      EXPECT_GE(stream_conters.captured, expected_min_fps) << stream_label;
-      EXPECT_GE(stream_conters.pre_encoded, 1) << stream_label;
-      EXPECT_GE(stream_conters.encoded, 1) << stream_label;
-      EXPECT_GE(stream_conters.received, 1) << stream_label;
-      EXPECT_GE(stream_conters.decoded, 1) << stream_label;
-      EXPECT_GE(stream_conters.rendered, 1) << stream_label;
+      EXPECT_GE(stream_conters.captured, expected_min_fps)
+          << stream_key.ToString();
+      EXPECT_GE(stream_conters.pre_encoded, 1) << stream_key.ToString();
+      EXPECT_GE(stream_conters.encoded, 1) << stream_key.ToString();
+      EXPECT_GE(stream_conters.received, 1) << stream_key.ToString();
+      EXPECT_GE(stream_conters.decoded, 1) << stream_key.ToString();
+      EXPECT_GE(stream_conters.rendered, 1) << stream_key.ToString();
     }
   }
 };

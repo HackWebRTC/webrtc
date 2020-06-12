@@ -512,6 +512,7 @@ if (!build_with_chromium) {
         "../../../api/video:video_frame",
         "../../../api/video:video_frame_i420",
         "../../../modules/rtp_rtcp:rtp_rtcp_format",
+        "../../../rtc_base:stringutils",
         "../../../system_wrappers",
       ]
     }
@@ -605,6 +606,7 @@ if (!build_with_chromium) {
     ]
 
     deps = [
+      ":multi_head_queue",
       "../..:perf_test",
       "../../../api:array_view",
       "../../../api:video_quality_analyzer_api",

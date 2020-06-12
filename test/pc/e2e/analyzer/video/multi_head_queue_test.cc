@@ -18,7 +18,7 @@ namespace {
 
 TEST(MultiHeadQueueTest, GetOnEmpty) {
   MultiHeadQueue<int> queue = MultiHeadQueue<int>(10);
-  EXPECT_TRUE(queue.IsEmpty());
+  EXPECT_TRUE(queue.IsEmpty(0));
   for (int i = 0; i < 10; ++i) {
     EXPECT_FALSE(queue.PopFront(i).has_value());
     EXPECT_FALSE(queue.Front(i).has_value());
@@ -35,7 +35,7 @@ TEST(MultiHeadQueueTest, SingleHeadOneAddOneRemove) {
   EXPECT_TRUE(value.has_value());
   EXPECT_EQ(value.value(), 1);
   EXPECT_EQ(queue.size(), 0lu);
-  EXPECT_TRUE(queue.IsEmpty());
+  EXPECT_TRUE(queue.IsEmpty(0));
 }
 
 TEST(MultiHeadQueueTest, SingleHead) {
