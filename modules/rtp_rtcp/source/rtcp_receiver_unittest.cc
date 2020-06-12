@@ -230,7 +230,7 @@ TEST(RtcpReceiverTest, InjectSrPacketFromUnknownSender) {
   rtcp::SenderReport sr;
   sr.SetSenderSsrc(kUnknownSenderSsrc);
 
-  // The parser will handle report blocks in Sender Report from other than his
+  // The parser will handle report blocks in Sender Report from other than their
   // expected peer.
   EXPECT_CALL(mocks.rtp_rtcp_impl, OnReceivedRtcpReportBlocks);
   EXPECT_CALL(mocks.bandwidth_observer,

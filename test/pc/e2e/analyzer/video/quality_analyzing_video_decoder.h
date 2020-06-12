@@ -46,8 +46,8 @@ namespace webrtc_pc_e2e {
 // callback, where video analyzer will be called again and then decoded frame
 // will be passed to origin callback, provided by user.
 //
-// Quality decoder registers its own callback in origin decoder at the same
-// time, when user registers his callback in quality decoder.
+// Quality decoder registers its own callback in origin decoder, at the same
+// time the user registers their callback in quality decoder.
 class QualityAnalyzingVideoDecoder : public VideoDecoder {
  public:
   // Creates analyzing decoder. |id| is unique coding entity id, that will

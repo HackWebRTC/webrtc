@@ -231,7 +231,7 @@ Yes, you still have the right to redistribute and you still have a patent
 license for Google's patents that cover the code that Google released.
 
 
-### What if my competitor uses the code and brings patent litigation against me for something unrelated to the code. Does he or she still have a patent license?
+### What if my competitor uses the code and brings patent litigation against me for something unrelated to the code. Do they still have a patent license?
 
-Yes, he/she still has the right to redistribute and he/she still has a patent
+Yes, they still have the right to redistribute and they still have a patent
 license for Google's patents that cover the code that Google released.

@@ -69,7 +69,7 @@ RTC_NORETURN void rtc_FatalMessage(const char* file, int line, const char* msg);
 //   the reason that it's better to terminate might simply be that the error
 //   handling code isn't in place yet; in production, the reason might be that
 //   the author of the code truly believes that x will always be true, but that
-//   she recognizes that if she is wrong, abrupt and unpleasant process
+//   they recognizes that if they are wrong, abrupt and unpleasant process
 //   termination is still better than carrying on with the assumption violated.
 //
 //   RTC_CHECK always evaluates its argument, so it's OK for x to have side

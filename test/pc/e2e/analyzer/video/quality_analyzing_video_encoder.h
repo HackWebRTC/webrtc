@@ -50,8 +50,8 @@ constexpr int kAnalyzeAnySpatialStream = -1;
 // injected into EncodedImage with passed EncodedImageDataInjector. Then new
 // EncodedImage will be passed to origin callback, provided by user.
 //
-// Quality encoder registers its own callback in origin encoder at the same
-// time, when user registers his callback in quality encoder.
+// Quality encoder registers its own callback in origin encoder, at the same
+// time the user registers their callback in quality encoder.
 class QualityAnalyzingVideoEncoder : public VideoEncoder,
                                      public EncodedImageCallback {
  public:

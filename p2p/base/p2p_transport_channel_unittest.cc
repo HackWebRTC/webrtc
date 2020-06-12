@@ -1480,7 +1480,7 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {
   PauseCandidates(1);
 
   // Wait until the callee becomes writable to make sure that a ping request is
-  // received by the caller before his remote ICE credentials are set.
+  // received by the caller before their remote ICE credentials are set.
   ASSERT_TRUE_WAIT(ep2_ch1()->selected_connection() != nullptr, kMediumTimeout);
   // Add two sets of remote ICE credentials, so that the ones used by the
   // candidate will be generation 1 instead of 0.
@@ -1588,7 +1588,7 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignalingWithNAT) {
   PauseCandidates(1);
 
   // Wait until the callee becomes writable to make sure that a ping request is
-  // received by the caller before his remote ICE credentials are set.
+  // received by the caller before their remote ICE credentials are set.
   ASSERT_TRUE_WAIT(ep2_ch1()->selected_connection() != nullptr, kMediumTimeout);
   // Add two sets of remote ICE credentials, so that the ones used by the
   // candidate will be generation 1 instead of 0.
