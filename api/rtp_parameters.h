@@ -222,7 +222,7 @@ struct RTC_EXPORT RtpHeaderExtensionCapability {
   bool preferred_encrypt = false;
 
   // The direction of the extension. The kStopped value is only used with
-  // RtpTransceiverInterface::HeaderExtensionsToOffer() and
+  // RtpTransceiverInterface::header_extensions_offered() and
   // SetOfferedRtpHeaderExtensions().
   RtpTransceiverDirection direction = RtpTransceiverDirection::kSendRecv;
 
