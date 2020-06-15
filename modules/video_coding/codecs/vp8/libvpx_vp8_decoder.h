@@ -13,6 +13,7 @@
 
 #include <memory>
 
+#include "absl/types/optional.h"
 #include "api/video/encoded_image.h"
 #include "api/video_codecs/video_decoder.h"
 #include "common_video/include/i420_buffer_pool.h"
@@ -51,7 +52,7 @@ class LibvpxVp8Decoder : public VideoDecoder {
                   uint32_t timeStamp,
                   int qp,
                   const webrtc::ColorSpace* explicit_color_space);
-  const bool use_postproc_arm_;
+  const bool use_postproc_;
 
   I420BufferPool buffer_pool_;
   DecodedImageCallback* decode_complete_callback_;
@@ -61,7 +62,7 @@ class LibvpxVp8Decoder : public VideoDecoder {
   int last_frame_width_;
   int last_frame_height_;
   bool key_frame_required_;
-  DeblockParams deblock_;
+  const absl::optional<DeblockParams> deblock_params_;
   const std::unique_ptr<QpSmoother> qp_smoother_;
 };
 

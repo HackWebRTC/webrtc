@@ -44,26 +44,48 @@ constexpr int kVp8ErrorPropagationTh = 30;
 constexpr long kDecodeDeadlineRealtime = 1;  // NOLINT
 
 const char kVp8PostProcArmFieldTrial[] = "WebRTC-VP8-Postproc-Config-Arm";
+const char kVp8PostProcFieldTrial[] = "WebRTC-VP8-Postproc-Config";
 
-void GetPostProcParamsFromFieldTrialGroup(
-    LibvpxVp8Decoder::DeblockParams* deblock_params) {
-  std::string group =
-      webrtc::field_trial::FindFullName(kVp8PostProcArmFieldTrial);
-  if (group.empty())
-    return;
+#if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) || \
+    defined(WEBRTC_ANDROID)
+constexpr bool kIsArm = true;
+#else
+constexpr bool kIsArm = false;
+#endif
+
+absl::optional<LibvpxVp8Decoder::DeblockParams> DefaultDeblockParams() {
+  if (kIsArm) {
+    // For ARM, this is only called when deblocking is explicitly enabled, and
+    // the default strength is set by the ctor.
+    return LibvpxVp8Decoder::DeblockParams();
+  }
+  // For non-arm, don't use the explicit deblocking settings by default.
+  return absl::nullopt;
+}
+
+absl::optional<LibvpxVp8Decoder::DeblockParams>
+GetPostProcParamsFromFieldTrialGroup() {
+  std::string group = webrtc::field_trial::FindFullName(
+      kIsArm ? kVp8PostProcArmFieldTrial : kVp8PostProcFieldTrial);
+  if (group.empty()) {
+    return DefaultDeblockParams();
+  }
 
   LibvpxVp8Decoder::DeblockParams params;
   if (sscanf(group.c_str(), "Enabled-%d,%d,%d", &params.max_level,
-             &params.min_qp, &params.degrade_qp) != 3)
-    return;
+             &params.min_qp, &params.degrade_qp) != 3) {
+    return DefaultDeblockParams();
+  }
 
-  if (params.max_level < 0 || params.max_level > 16)
-    return;
+  if (params.max_level < 0 || params.max_level > 16) {
+    return DefaultDeblockParams();
+  }
 
-  if (params.min_qp < 0 || params.degrade_qp <= params.min_qp)
-    return;
+  if (params.min_qp < 0 || params.degrade_qp <= params.min_qp) {
+    return DefaultDeblockParams();
+  }
 
-  *deblock_params = params;
+  return params;
 }
 
 }  // namespace
@@ -97,8 +119,9 @@ class LibvpxVp8Decoder::QpSmoother {
 };
 
 LibvpxVp8Decoder::LibvpxVp8Decoder()
-    : use_postproc_arm_(
-          webrtc::field_trial::IsEnabled(kVp8PostProcArmFieldTrial)),
+    : use_postproc_(
+          kIsArm ? webrtc::field_trial::IsEnabled(kVp8PostProcArmFieldTrial)
+                 : true),
       buffer_pool_(false, 300 /* max_number_of_buffers*/),
       decode_complete_callback_(NULL),
       inited_(false),
@@ -107,10 +130,9 @@ LibvpxVp8Decoder::LibvpxVp8Decoder()
       last_frame_width_(0),
       last_frame_height_(0),
       key_frame_required_(true),
-      qp_smoother_(use_postproc_arm_ ? new QpSmoother() : nullptr) {
-  if (use_postproc_arm_)
-    GetPostProcParamsFromFieldTrialGroup(&deblock_);
-}
+      deblock_params_(use_postproc_ ? GetPostProcParamsFromFieldTrialGroup()
+                                    : absl::nullopt),
+      qp_smoother_(use_postproc_ ? new QpSmoother() : nullptr) {}
 
 LibvpxVp8Decoder::~LibvpxVp8Decoder() {
   inited_ = true;  // in order to do the actual release
@@ -131,12 +153,7 @@ int LibvpxVp8Decoder::InitDecode(const VideoCodec* inst, int number_of_cores) {
   cfg.threads = 1;
   cfg.h = cfg.w = 0;  // set after decode
 
-#if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) || \
-    defined(WEBRTC_ANDROID)
-  vpx_codec_flags_t flags = use_postproc_arm_ ? VPX_CODEC_USE_POSTPROC : 0;
-#else
-  vpx_codec_flags_t flags = VPX_CODEC_USE_POSTPROC;
-#endif
+  vpx_codec_flags_t flags = use_postproc_ ? VPX_CODEC_USE_POSTPROC : 0;
 
   if (vpx_codec_dec_init(decoder_, vpx_codec_vp8_dx(), &cfg, flags)) {
     delete decoder_;
@@ -174,43 +191,47 @@ int LibvpxVp8Decoder::Decode(const EncodedImage& input_image,
   }
 
 // Post process configurations.
-#if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) || \
-    defined(WEBRTC_ANDROID)
-  if (use_postproc_arm_) {
+  if (use_postproc_) {
     vp8_postproc_cfg_t ppcfg;
+    // MFQE enabled to reduce key frame popping.
     ppcfg.post_proc_flag = VP8_MFQE;
-    // For low resolutions, use stronger deblocking filter.
-    int last_width_x_height = last_frame_width_ * last_frame_height_;
-    if (last_width_x_height > 0 && last_width_x_height <= 320 * 240) {
-      // Enable the deblock and demacroblocker based on qp thresholds.
-      RTC_DCHECK(qp_smoother_);
-      int qp = qp_smoother_->GetAvg();
-      if (qp > deblock_.min_qp) {
-        int level = deblock_.max_level;
-        if (qp < deblock_.degrade_qp) {
-          // Use lower level.
-          level = deblock_.max_level * (qp - deblock_.min_qp) /
-                  (deblock_.degrade_qp - deblock_.min_qp);
-        }
-        // Deblocking level only affects VP8_DEMACROBLOCK.
-        ppcfg.deblocking_level = std::max(level, 1);
-        ppcfg.post_proc_flag |= VP8_DEBLOCK | VP8_DEMACROBLOCK;
-      }
+
+    if (kIsArm) {
+      RTC_DCHECK(deblock_params_.has_value());
     }
+    if (deblock_params_.has_value()) {
+      // For low resolutions, use stronger deblocking filter.
+      int last_width_x_height = last_frame_width_ * last_frame_height_;
+      if (last_width_x_height > 0 && last_width_x_height <= 320 * 240) {
+        // Enable the deblock and demacroblocker based on qp thresholds.
+        RTC_DCHECK(qp_smoother_);
+        int qp = qp_smoother_->GetAvg();
+        if (qp > deblock_params_->min_qp) {
+          int level = deblock_params_->max_level;
+          if (qp < deblock_params_->degrade_qp) {
+            // Use lower level.
+            level = deblock_params_->max_level *
+                    (qp - deblock_params_->min_qp) /
+                    (deblock_params_->degrade_qp - deblock_params_->min_qp);
+          }
+          // Deblocking level only affects VP8_DEMACROBLOCK.
+          ppcfg.deblocking_level = std::max(level, 1);
+          ppcfg.post_proc_flag |= VP8_DEBLOCK | VP8_DEMACROBLOCK;
+        }
+      }
+    } else {
+      // Non-arm with no explicit deblock params set.
+      ppcfg.post_proc_flag |= VP8_DEBLOCK;
+      // For VGA resolutions and lower, enable the demacroblocker postproc.
+      if (last_frame_width_ * last_frame_height_ <= 640 * 360) {
+        ppcfg.post_proc_flag |= VP8_DEMACROBLOCK;
+      }
+      // Strength of deblocking filter. Valid range:[0,16]
+      ppcfg.deblocking_level = 3;
+    }
+
     vpx_codec_control(decoder_, VP8_SET_POSTPROC, &ppcfg);
   }
-#else
-  vp8_postproc_cfg_t ppcfg;
-  // MFQE enabled to reduce key frame popping.
-  ppcfg.post_proc_flag = VP8_MFQE | VP8_DEBLOCK;
-  // For VGA resolutions and lower, enable the demacroblocker postproc.
-  if (last_frame_width_ * last_frame_height_ <= 640 * 360) {
-    ppcfg.post_proc_flag |= VP8_DEMACROBLOCK;
-  }
-  // Strength of deblocking filter. Valid range:[0,16]
-  ppcfg.deblocking_level = 3;
-  vpx_codec_control(decoder_, VP8_SET_POSTPROC, &ppcfg);
-#endif
 
   // Always start with a complete key frame.
   if (key_frame_required_) {
