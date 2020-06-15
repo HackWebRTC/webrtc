@@ -117,47 +117,51 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
       DataChannelProviderInterface* provider,
       cricket::DataChannelType dct,
       const std::string& label,
-      const InternalDataChannelInit& config);
+      const InternalDataChannelInit& config,
+      rtc::Thread* signaling_thread,
+      rtc::Thread* network_thread);
 
   static bool IsSctpLike(cricket::DataChannelType type);
 
-  virtual void RegisterObserver(DataChannelObserver* observer);
-  virtual void UnregisterObserver();
+  void RegisterObserver(DataChannelObserver* observer) override;
+  void UnregisterObserver() override;
 
-  virtual std::string label() const { return label_; }
-  virtual bool reliable() const;
-  virtual bool ordered() const { return config_.ordered; }
+  std::string label() const override { return label_; }
+  bool reliable() const override;
+  bool ordered() const override { return config_.ordered; }
   // Backwards compatible accessors
-  virtual uint16_t maxRetransmitTime() const {
+  uint16_t maxRetransmitTime() const override {
     return config_.maxRetransmitTime ? *config_.maxRetransmitTime
                                      : static_cast<uint16_t>(-1);
   }
-  virtual uint16_t maxRetransmits() const {
+  uint16_t maxRetransmits() const override {
     return config_.maxRetransmits ? *config_.maxRetransmits
                                   : static_cast<uint16_t>(-1);
   }
-  virtual absl::optional<int> maxPacketLifeTime() const {
+  absl::optional<int> maxPacketLifeTime() const override {
     return config_.maxRetransmitTime;
   }
-  virtual absl::optional<int> maxRetransmitsOpt() const {
+  absl::optional<int> maxRetransmitsOpt() const override {
     return config_.maxRetransmits;
   }
-  virtual std::string protocol() const { return config_.protocol; }
-  virtual bool negotiated() const { return config_.negotiated; }
-  virtual int id() const { return config_.id; }
-  virtual Priority priority() const {
+  std::string protocol() const override { return config_.protocol; }
+  bool negotiated() const override { return config_.negotiated; }
+  int id() const override { return config_.id; }
+  Priority priority() const override {
     return config_.priority ? *config_.priority : Priority::kLow;
   }
+
   virtual int internal_id() const { return internal_id_; }
-  virtual uint64_t buffered_amount() const;
-  virtual void Close();
-  virtual DataState state() const { return state_; }
-  virtual RTCError error() const;
-  virtual uint32_t messages_sent() const { return messages_sent_; }
-  virtual uint64_t bytes_sent() const { return bytes_sent_; }
-  virtual uint32_t messages_received() const { return messages_received_; }
-  virtual uint64_t bytes_received() const { return bytes_received_; }
-  virtual bool Send(const DataBuffer& buffer);
+
+  uint64_t buffered_amount() const override;
+  void Close() override;
+  DataState state() const override;
+  RTCError error() const override;
+  uint32_t messages_sent() const override;
+  uint64_t bytes_sent() const override;
+  uint32_t messages_received() const override;
+  uint64_t bytes_received() const override;
+  bool Send(const DataBuffer& buffer) override;
 
   // Close immediately, ignoring any queued data or closing procedure.
   // This is called for RTP data channels when SDP indicates a channel should
@@ -234,8 +238,10 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   DataChannel(const InternalDataChannelInit& config,
               DataChannelProviderInterface* client,
               cricket::DataChannelType dct,
-              const std::string& label);
-  virtual ~DataChannel();
+              const std::string& label,
+              rtc::Thread* signaling_thread,
+              rtc::Thread* network_thread);
+  ~DataChannel() override;
 
  private:
   // A packet queue which tracks the total queued bytes. Queued packets are
@@ -284,36 +290,38 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   void QueueControlMessage(const rtc::CopyOnWriteBuffer& buffer);
   bool SendControlMessage(const rtc::CopyOnWriteBuffer& buffer);
 
+  rtc::Thread* const signaling_thread_;
+  rtc::Thread* const network_thread_;
   const int internal_id_;
   const std::string label_;
   const InternalDataChannelInit config_;
-  DataChannelObserver* observer_;
-  DataState state_;
-  RTCError error_;
-  uint32_t messages_sent_;
-  uint64_t bytes_sent_;
-  uint32_t messages_received_;
-  uint64_t bytes_received_;
+  DataChannelObserver* observer_ RTC_GUARDED_BY(signaling_thread_);
+  DataState state_ RTC_GUARDED_BY(signaling_thread_);
+  RTCError error_ RTC_GUARDED_BY(signaling_thread_);
+  uint32_t messages_sent_ RTC_GUARDED_BY(signaling_thread_);
+  uint64_t bytes_sent_ RTC_GUARDED_BY(signaling_thread_);
+  uint32_t messages_received_ RTC_GUARDED_BY(signaling_thread_);
+  uint64_t bytes_received_ RTC_GUARDED_BY(signaling_thread_);
   // Number of bytes of data that have been queued using Send(). Increased
   // before each transport send and decreased after each successful send.
-  uint64_t buffered_amount_;
+  uint64_t buffered_amount_ RTC_GUARDED_BY(signaling_thread_);
   const cricket::DataChannelType data_channel_type_;
-  DataChannelProviderInterface* provider_;
-  HandshakeState handshake_state_;
-  bool connected_to_provider_;
-  bool send_ssrc_set_;
-  bool receive_ssrc_set_;
-  bool writable_;
+  DataChannelProviderInterface* const provider_;
+  HandshakeState handshake_state_ RTC_GUARDED_BY(signaling_thread_);
+  bool connected_to_provider_ RTC_GUARDED_BY(signaling_thread_);
+  bool send_ssrc_set_ RTC_GUARDED_BY(signaling_thread_);
+  bool receive_ssrc_set_ RTC_GUARDED_BY(signaling_thread_);
+  bool writable_ RTC_GUARDED_BY(signaling_thread_);
   // Did we already start the graceful SCTP closing procedure?
-  bool started_closing_procedure_ = false;
-  uint32_t send_ssrc_;
-  uint32_t receive_ssrc_;
+  bool started_closing_procedure_ RTC_GUARDED_BY(signaling_thread_) = false;
+  uint32_t send_ssrc_ RTC_GUARDED_BY(signaling_thread_);
+  uint32_t receive_ssrc_ RTC_GUARDED_BY(signaling_thread_);
   // Control messages that always have to get sent out before any queued
   // data.
-  PacketQueue queued_control_data_;
-  PacketQueue queued_received_data_;
-  PacketQueue queued_send_data_;
-  rtc::AsyncInvoker invoker_;
+  PacketQueue queued_control_data_ RTC_GUARDED_BY(signaling_thread_);
+  PacketQueue queued_received_data_ RTC_GUARDED_BY(signaling_thread_);
+  PacketQueue queued_send_data_ RTC_GUARDED_BY(signaling_thread_);
+  rtc::AsyncInvoker invoker_ RTC_GUARDED_BY(signaling_thread_);
 };
 
 // Define proxy for DataChannelInterface.
@@ -341,6 +349,7 @@ PROXY_CONSTMETHOD0(uint32_t, messages_received)
 PROXY_CONSTMETHOD0(uint64_t, bytes_received)
 PROXY_CONSTMETHOD0(uint64_t, buffered_amount)
 PROXY_METHOD0(void, Close)
+// TODO(bugs.webrtc.org/11547): Change to run on the network thread.
 PROXY_METHOD1(bool, Send, const DataBuffer&)
 END_PROXY_MAP()
 

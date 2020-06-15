@@ -64,6 +64,7 @@ class FakeDataChannelObserver : public webrtc::DataChannelObserver {
 // TODO(deadbeef): The fact that these tests use a fake provider makes them not
 // too valuable. Should rewrite using the
 // peerconnection_datachannel_unittest.cc infrastructure.
+// TODO(bugs.webrtc.org/11547): Incorporate a dedicated network thread.
 class SctpDataChannelTest : public ::testing::Test {
  protected:
   SctpDataChannelTest()
@@ -71,7 +72,9 @@ class SctpDataChannelTest : public ::testing::Test {
         webrtc_data_channel_(DataChannel::Create(provider_.get(),
                                                  cricket::DCT_SCTP,
                                                  "test",
-                                                 init_)) {}
+                                                 init_,
+                                                 rtc::Thread::Current(),
+                                                 rtc::Thread::Current())) {}
 
   void SetChannelReady() {
     provider_->set_transport_available(true);
@@ -111,7 +114,8 @@ class StateSignalsListener : public sigslot::has_slots<> {
 TEST_F(SctpDataChannelTest, ConnectedToTransportOnCreated) {
   provider_->set_transport_available(true);
   rtc::scoped_refptr<DataChannel> dc =
-      DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", init_);
+      DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", init_,
+                          rtc::Thread::Current(), rtc::Thread::Current());
 
   EXPECT_TRUE(provider_->IsConnected(dc.get()));
   // The sid is not set yet, so it should not have added the streams.
@@ -305,7 +309,8 @@ TEST_F(SctpDataChannelTest, LateCreatedChannelTransitionToOpen) {
   webrtc::InternalDataChannelInit init;
   init.id = 1;
   rtc::scoped_refptr<DataChannel> dc =
-      DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", init);
+      DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", init,
+                          rtc::Thread::Current(), rtc::Thread::Current());
   EXPECT_EQ(webrtc::DataChannelInterface::kConnecting, dc->state());
   EXPECT_TRUE_WAIT(webrtc::DataChannelInterface::kOpen == dc->state(), 1000);
 }
@@ -318,7 +323,8 @@ TEST_F(SctpDataChannelTest, SendUnorderedAfterReceivesOpenAck) {
   init.id = 1;
   init.ordered = false;
   rtc::scoped_refptr<DataChannel> dc =
-      DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", init);
+      DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", init,
+                          rtc::Thread::Current(), rtc::Thread::Current());
 
   EXPECT_EQ_WAIT(webrtc::DataChannelInterface::kOpen, dc->state(), 1000);
 
@@ -348,7 +354,8 @@ TEST_F(SctpDataChannelTest, SendUnorderedAfterReceiveData) {
   init.id = 1;
   init.ordered = false;
   rtc::scoped_refptr<DataChannel> dc =
-      DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", init);
+      DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", init,
+                          rtc::Thread::Current(), rtc::Thread::Current());
 
   EXPECT_EQ_WAIT(webrtc::DataChannelInterface::kOpen, dc->state(), 1000);
 
@@ -449,7 +456,8 @@ TEST_F(SctpDataChannelTest, NoMsgSentIfNegotiatedAndNotFromOpenMsg) {
 
   SetChannelReady();
   rtc::scoped_refptr<DataChannel> dc =
-      DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", config);
+      DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", config,
+                          rtc::Thread::Current(), rtc::Thread::Current());
 
   EXPECT_EQ_WAIT(webrtc::DataChannelInterface::kOpen, dc->state(), 1000);
   EXPECT_EQ(0U, provider_->last_send_data_params().ssrc);
@@ -512,7 +520,8 @@ TEST_F(SctpDataChannelTest, OpenAckSentIfCreatedFromOpenMessage) {
 
   SetChannelReady();
   rtc::scoped_refptr<DataChannel> dc =
-      DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", config);
+      DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", config,
+                          rtc::Thread::Current(), rtc::Thread::Current());
 
   EXPECT_EQ_WAIT(webrtc::DataChannelInterface::kOpen, dc->state(), 1000);
 

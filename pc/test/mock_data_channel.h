@@ -31,11 +31,15 @@ class MockDataChannel : public rtc::RefCountedObject<DataChannel> {
       uint64_t bytes_sent,
       uint32_t messages_received,
       uint64_t bytes_received,
-      const InternalDataChannelInit& config = InternalDataChannelInit())
+      const InternalDataChannelInit& config = InternalDataChannelInit(),
+      rtc::Thread* signaling_thread = rtc::Thread::Current(),
+      rtc::Thread* network_thread = rtc::Thread::Current())
       : rtc::RefCountedObject<DataChannel>(config,
                                            nullptr,
                                            cricket::DCT_NONE,
-                                           label) {
+                                           label,
+                                           signaling_thread,
+                                           network_thread) {
     EXPECT_CALL(*this, id()).WillRepeatedly(::testing::Return(id));
     EXPECT_CALL(*this, state()).WillRepeatedly(::testing::Return(state));
     EXPECT_CALL(*this, protocol()).WillRepeatedly(::testing::Return(protocol));

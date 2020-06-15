@@ -2211,6 +2211,7 @@ rtc::scoped_refptr<DataChannelInterface> PeerConnection::CreateDataChannel(
     UpdateNegotiationNeeded();
   }
   NoteUsageEvent(UsageEvent::DATA_ADDED);
+  // TODO(bugs.webrtc.org/11547): Inject the network thread as well.
   return DataChannelProxy::Create(signaling_thread(), channel.get());
 }
 
@@ -6714,6 +6715,8 @@ bool PeerConnection::CreateDataChannel(const std::string& mid) {
     case cricket::DCT_RTP:
     default:
       RtpTransportInternal* rtp_transport = GetRtpTransport(mid);
+      // TODO(bugs.webrtc.org/9987): set_rtp_data_channel() should be called on
+      // the network thread like set_data_channel_transport is.
       data_channel_controller_.set_rtp_data_channel(
           channel_manager()->CreateRtpDataChannel(
               configuration_.media_config, rtp_transport, signaling_thread(),
