@@ -210,8 +210,6 @@ class VP9DecoderImpl : public VP9Decoder {
   bool inited_;
   vpx_codec_ctx_t* decoder_;
   bool key_frame_required_;
-  VideoCodec current_codec_;
-  int num_cores_;
 };
 }  // namespace webrtc
 

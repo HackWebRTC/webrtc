@@ -25,7 +25,6 @@
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
-#include "modules/video_coding/utility/vp9_uncompressed_header_parser.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/keep_ref_until_done.h"
@@ -45,6 +44,8 @@ namespace {
 // maps work for 1,2 and 3 temporal layers with GOF length of 1,2 and 4 frames.
 uint8_t kRefBufIdx[4] = {0, 0, 0, 1};
 uint8_t kUpdBufIdx[4] = {0, 0, 1, 0};
+
+int kMaxNumTiles4kVideo = 8;
 
 // Maximum allowed PID difference for differnet per-layer frame-rate case.
 const int kMaxAllowedPidDiff = 30;
@@ -1667,18 +1668,13 @@ int VP9DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
   //    errors earlier than the multi-threads version.
   //  - Make peak CPU usage under control (not depending on input)
   cfg.threads = 1;
+  (void)kMaxNumTiles4kVideo;  // unused
 #else
-  // We want to use multithreading when decoding high resolution videos. But not
-  // too many in order to avoid overhead when many stream are decoded
-  // concurrently.
-  // Set 1280x720 pixel count as target for one core, and then scale up linearly
-  // from there - but cap at physical core count.
-  // This results in 2 for 1080p, 4 for 1440p and 8 for 4K.
-  int num_threads = std::max(1, (inst->width * inst->height) / (1280 * 720));
-  cfg.threads = std::min(number_of_cores, num_threads);
+  // We want to use multithreading when decoding high resolution videos. But,
+  // since we don't know resolution of input stream at this stage, we always
+  // enable it.
+  cfg.threads = std::min(number_of_cores, kMaxNumTiles4kVideo);
 #endif
-  current_codec_ = *inst;
-  num_cores_ = number_of_cores;
 
   vpx_codec_flags_t flags = 0;
   if (vpx_codec_dec_init(decoder_, vpx_codec_vp9_dx(), &cfg, flags)) {
@@ -1709,29 +1705,6 @@ int VP9DecoderImpl::Decode(const EncodedImage& input_image,
   if (decode_complete_callback_ == nullptr) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-
-  if (input_image._frameType == VideoFrameType::kVideoFrameKey) {
-    absl::optional<vp9::FrameInfo> frame_info =
-        vp9::ParseIntraFrameInfo(input_image.data(), input_image.size());
-    if (frame_info) {
-      if (frame_info->frame_width != current_codec_.width ||
-          frame_info->frame_height != current_codec_.height) {
-        // Resolution has changed, tear down and re-init a new decoder in
-        // order to get correct sizing.
-        Release();
-        current_codec_.width = frame_info->frame_width;
-        current_codec_.height = frame_info->frame_height;
-        int reinit_status = InitDecode(&current_codec_, num_cores_);
-        if (reinit_status != WEBRTC_VIDEO_CODEC_OK) {
-          RTC_LOG(LS_WARNING) << "Failed to re-init decoder.";
-          return reinit_status;
-        }
-      }
-    } else {
-      RTC_LOG(LS_WARNING) << "Failed to parse VP9 header from key-frame.";
-    }
-  }
-
   // Always start with a complete key frame.
   if (key_frame_required_) {
     if (input_image._frameType != VideoFrameType::kVideoFrameKey)
