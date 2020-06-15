@@ -108,7 +108,6 @@ bool IsNonVolatile(RTPExtensionType type) {
     case kRtpExtensionAbsoluteSendTime:
     case kRtpExtensionTransportSequenceNumber:
     case kRtpExtensionTransportSequenceNumber02:
-    case kRtpExtensionFrameMarking:
     case kRtpExtensionRtpStreamId:
     case kRtpExtensionMid:
     case kRtpExtensionGenericFrameDescriptor00:

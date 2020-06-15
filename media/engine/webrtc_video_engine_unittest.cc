@@ -347,10 +347,6 @@ TEST_F(WebRtcVideoEngineTest, SupportsVideoTimingHeaderExtension) {
   ExpectRtpCapabilitySupport(RtpExtension::kVideoTimingUri, true);
 }
 
-TEST_F(WebRtcVideoEngineTest, SupportsFrameMarkingHeaderExtension) {
-  ExpectRtpCapabilitySupport(RtpExtension::kFrameMarkingUri, true);
-}
-
 TEST_F(WebRtcVideoEngineTest, SupportsColorSpaceHeaderExtension) {
   ExpectRtpCapabilitySupport(RtpExtension::kColorSpaceUri, true);
 }

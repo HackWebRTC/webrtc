@@ -21,10 +21,9 @@
 #include "api/units/timestamp.h"
 #include "api/video/color_space.h"
 #include "api/video/video_content_type.h"
-#include "api/video/video_frame_marking.h"
 #include "api/video/video_rotation.h"
 #include "api/video/video_timing.h"
-#include "common_types.h"  // NOLINT(build/include)
+#include "common_types.h"  // NOLINT (build/include)
 
 namespace webrtc {
 
@@ -142,9 +141,6 @@ struct RTPHeaderExtension {
 
   bool has_video_timing;
   VideoSendTiming video_timing;
-
-  bool has_frame_marking;
-  FrameMarking frame_marking;
 
   PlayoutDelay playout_delay = {-1, -1};
 

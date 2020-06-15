@@ -129,9 +129,5 @@ const RTPVideoHeader& RtpFrameObject::GetRtpVideoHeader() const {
   return rtp_video_header_;
 }
 
-const FrameMarking& RtpFrameObject::GetFrameMarking() const {
-  return rtp_video_header_.frame_marking;
-}
-
 }  // namespace video_coding
 }  // namespace webrtc

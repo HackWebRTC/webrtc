@@ -132,7 +132,6 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
         break;
     }
 
-    reader.CopyTo(&video_header.frame_marking);
     video_header.generic = GenerateGenericFrameDependencies(&reader);
 
     // clang-format off

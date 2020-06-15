@@ -47,7 +47,6 @@ class RtpFrameObject : public EncodedFrame {
   int64_t RenderTime() const override;
   bool delayed_by_retransmission() const override;
   const RTPVideoHeader& GetRtpVideoHeader() const;
-  const FrameMarking& GetFrameMarking() const;
 
  private:
   RTPVideoHeader rtp_video_header_;

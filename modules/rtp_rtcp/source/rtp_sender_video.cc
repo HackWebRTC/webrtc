@@ -312,14 +312,6 @@ void RTPSenderVideo::AddRtpHeaderExtensions(
     packet->SetExtension<AbsoluteCaptureTimeExtension>(*absolute_capture_time);
   }
 
-  if (video_header.codec == kVideoCodecH264 &&
-      video_header.frame_marking.temporal_id != kNoTemporalIdx) {
-    FrameMarking frame_marking = video_header.frame_marking;
-    frame_marking.start_of_frame = first_packet;
-    frame_marking.end_of_frame = last_packet;
-    packet->SetExtension<FrameMarkingExtension>(frame_marking);
-  }
-
   if (video_header.generic) {
     bool extension_is_set = false;
     if (video_structure_ != nullptr) {
@@ -736,12 +728,7 @@ uint8_t RTPSenderVideo::GetTemporalId(const RTPVideoHeader& header) {
     }
     uint8_t operator()(const absl::monostate&) { return kNoTemporalIdx; }
   };
-  switch (header.codec) {
-    case kVideoCodecH264:
-      return header.frame_marking.temporal_id;
-    default:
-      return absl::visit(TemporalIdGetter(), header.video_type_header);
-  }
+  return absl::visit(TemporalIdGetter(), header.video_type_header);
 }
 
 bool RTPSenderVideo::UpdateConditionalRetransmit(

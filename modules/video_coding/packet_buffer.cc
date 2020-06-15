@@ -363,15 +363,10 @@ std::vector<std::unique_ptr<PacketBuffer::Packet>> PacketBuffer::FindFrames(
               VideoFrameType::kVideoFrameDelta;
         }
 
-        // With IPPP, if this is not a keyframe, make sure there are no gaps
-        // in the packet sequence numbers up until this point.
-        const uint8_t h264tid =
-            buffer_[start_index] != nullptr
-                ? buffer_[start_index]->video_header.frame_marking.temporal_id
-                : kNoTemporalIdx;
-        if (h264tid == kNoTemporalIdx && !is_h264_keyframe &&
-            missing_packets_.upper_bound(start_seq_num) !=
-                missing_packets_.begin()) {
+        // If this is not a keyframe, make sure there are no gaps in the packet
+        // sequence numbers up until this point.
+        if (!is_h264_keyframe && missing_packets_.upper_bound(start_seq_num) !=
+                                     missing_packets_.begin()) {
           return found_frames;
         }
       }

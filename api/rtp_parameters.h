@@ -310,10 +310,6 @@ struct RTC_EXPORT RtpExtension {
   static constexpr char kVideoTimingUri[] =
       "http://www.webrtc.org/experiments/rtp-hdrext/video-timing";
 
-  // Header extension for video frame marking.
-  static constexpr char kFrameMarkingUri[] =
-      "http://tools.ietf.org/html/draft-ietf-avtext-framemarking-07";
-
   // Experimental codec agnostic frame descriptor.
   static constexpr char kGenericFrameDescriptorUri00[] =
       "http://www.webrtc.org/experiments/rtp-hdrext/"

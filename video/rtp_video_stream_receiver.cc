@@ -517,7 +517,6 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
   video_header.content_type = VideoContentType::UNSPECIFIED;
   video_header.video_timing.flags = VideoSendTiming::kInvalid;
   video_header.is_last_packet_in_frame |= rtp_packet.Marker();
-  video_header.frame_marking.temporal_id = kNoTemporalIdx;
 
   if (const auto* vp9_header =
           absl::get_if<RTPVideoHeaderVP9>(&video_header.video_type_header)) {
@@ -535,7 +534,6 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
   } else {
     rtp_packet.GetExtension<PlayoutDelayLimits>(&video_header.playout_delay);
   }
-  rtp_packet.GetExtension<FrameMarkingExtension>(&video_header.frame_marking);
 
   ParseGenericDependenciesResult generic_descriptor_state =
       ParseGenericDependenciesExtension(rtp_packet, &video_header);
