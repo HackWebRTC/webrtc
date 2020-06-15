@@ -626,6 +626,25 @@ if (rtc_include_tests) {
     }
   }
 
+  rtc_library("encoded_video_frame_producer") {
+    testonly = true
+    sources = [
+      "codecs/test/encoded_video_frame_producer.cc",
+      "codecs/test/encoded_video_frame_producer.h",
+    ]
+    deps = [
+      ":video_codec_interface",
+      "../../api:create_frame_generator",
+      "../../api:frame_generator_api",
+      "../../api/transport/rtp:dependency_descriptor",
+      "../../api/video:encoded_image",
+      "../../api/video:video_frame",
+      "../../api/video:video_frame_type",
+      "../../api/video_codecs:video_codecs_api",
+      "../../rtc_base:checks",
+    ]
+  }
+
   rtc_library("simulcast_test_fixture_impl") {
     testonly = true
     sources = [
@@ -810,6 +829,7 @@ if (rtc_include_tests) {
     }
 
     deps = [
+      ":encoded_video_frame_producer",
       ":video_codec_interface",
       ":video_codecs_test_framework",
       ":video_coding_utility",
