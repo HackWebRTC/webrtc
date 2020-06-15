@@ -250,7 +250,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
       std::min(video_analyzer_threads, kMaxVideoAnalyzerThreads);
   RTC_LOG(INFO) << "video_analyzer_threads=" << video_analyzer_threads;
   quality_metrics_reporters_.push_back(
-      std::make_unique<VideoQualityMetricsReporter>());
+      std::make_unique<VideoQualityMetricsReporter>(clock_));
 
   video_quality_analyzer_injection_helper_->Start(
       test_case_name_,

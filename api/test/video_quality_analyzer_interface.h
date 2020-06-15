@@ -134,8 +134,9 @@ class VideoQualityAnalyzerInterface : public StatsObserverInterface {
                               int32_t error_code) {}
   // Will be called every time new stats reports are available for the
   // Peer Connection identified by |pc_label|.
-  void OnStatsReports(const std::string& pc_label,
-                      const StatsReports& stats_reports) override {}
+  void OnStatsReports(
+      absl::string_view pc_label,
+      const rtc::scoped_refptr<const RTCStatsReport>& report) override {}
 
   // Tells analyzer that analysis complete and it should calculate final
   // statistics.

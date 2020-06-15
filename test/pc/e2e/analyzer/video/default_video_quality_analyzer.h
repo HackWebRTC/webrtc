@@ -204,8 +204,9 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
                       int32_t error_code) override;
   void Stop() override;
   std::string GetStreamLabel(uint16_t frame_id) override;
-  void OnStatsReports(const std::string& pc_label,
-                      const StatsReports& stats_reports) override {}
+  void OnStatsReports(
+      absl::string_view pc_label,
+      const rtc::scoped_refptr<const RTCStatsReport>& report) override {}
 
   // Returns set of stream labels, that were met during test call.
   std::set<StatsKey> GetKnownVideoStreams() const;

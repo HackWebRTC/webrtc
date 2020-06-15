@@ -359,11 +359,9 @@ rtc_source_set("stats_observer_interface") {
   testonly = true
   sources = [ "test/stats_observer_interface.h" ]
 
-  deps = [
-    # For api/stats_types.h
-    ":libjingle_peerconnection_api",
-    ":rtp_parameters",
-  ]
+  deps = [ ":rtc_stats_api" ]
+
+  absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
 }
 
 rtc_source_set("peer_connection_quality_test_fixture_api") {

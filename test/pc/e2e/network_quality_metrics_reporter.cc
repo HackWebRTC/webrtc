@@ -11,7 +11,8 @@
 
 #include <utility>
 
-#include "api/stats_types.h"
+#include "api/stats/rtc_stats.h"
+#include "api/stats/rtcstats_objects.h"
 #include "rtc_base/event.h"
 #include "system_wrappers/include/field_trial.h"
 #include "test/testsupport/perf_test.h"
@@ -40,28 +41,29 @@ void NetworkQualityMetricsReporter::Start(absl::string_view test_case_name) {
 }
 
 void NetworkQualityMetricsReporter::OnStatsReports(
-    const std::string& pc_label,
-    const StatsReports& reports) {
-  rtc::CritScope cs(&lock_);
-  int64_t payload_bytes_received = 0;
-  int64_t payload_bytes_sent = 0;
-  for (const StatsReport* report : reports) {
-    if (report->type() == StatsReport::kStatsReportTypeSsrc) {
-      const auto* received =
-          report->FindValue(StatsReport::kStatsValueNameBytesReceived);
-      if (received) {
-        payload_bytes_received += received->int64_val();
-      }
-      const auto* sent =
-          report->FindValue(StatsReport::kStatsValueNameBytesSent);
-      if (sent) {
-        payload_bytes_sent += sent->int64_val();
-      }
-    }
+    absl::string_view pc_label,
+    const rtc::scoped_refptr<const RTCStatsReport>& report) {
+  DataSize payload_received = DataSize::Zero();
+  DataSize payload_sent = DataSize::Zero();
+
+  auto inbound_stats = report->GetStatsOfType<RTCInboundRTPStreamStats>();
+  for (const auto& stat : inbound_stats) {
+    payload_received +=
+        DataSize::Bytes(stat->bytes_received.ValueOrDefault(0ul) +
+                        stat->header_bytes_received.ValueOrDefault(0ul));
   }
-  PCStats& stats = pc_stats_[pc_label];
-  stats.payload_bytes_received = payload_bytes_received;
-  stats.payload_bytes_sent = payload_bytes_sent;
+
+  auto outbound_stats = report->GetStatsOfType<RTCOutboundRTPStreamStats>();
+  for (const auto& stat : outbound_stats) {
+    payload_sent +=
+        DataSize::Bytes(stat->bytes_sent.ValueOrDefault(0ul) +
+                        stat->header_bytes_sent.ValueOrDefault(0ul));
+  }
+
+  rtc::CritScope cs(&lock_);
+  PCStats& stats = pc_stats_[std::string(pc_label)];
+  stats.payload_received = payload_received;
+  stats.payload_sent = payload_sent;
 }
 
 void NetworkQualityMetricsReporter::StopAndReportResults() {
@@ -125,9 +127,9 @@ void NetworkQualityMetricsReporter::ReportStats(
 
 void NetworkQualityMetricsReporter::ReportPCStats(const std::string& pc_label,
                                                   const PCStats& stats) {
-  ReportResult("payload_bytes_received", pc_label, stats.payload_bytes_received,
-               "sizeInBytes");
-  ReportResult("payload_bytes_sent", pc_label, stats.payload_bytes_sent,
+  ReportResult("payload_bytes_received", pc_label,
+               stats.payload_received.bytes(), "sizeInBytes");
+  ReportResult("payload_bytes_sent", pc_label, stats.payload_sent.bytes(),
                "sizeInBytes");
 }
 

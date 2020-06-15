@@ -79,8 +79,9 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
 
   // Forwards |stats_reports| for Peer Connection |pc_label| to
   // |analyzer_|.
-  void OnStatsReports(const std::string& pc_label,
-                      const StatsReports& stats_reports) override;
+  void OnStatsReports(
+      absl::string_view pc_label,
+      const rtc::scoped_refptr<const RTCStatsReport>& report) override;
 
   // Stops VideoQualityAnalyzerInterface to populate final data and metrics.
   // Should be invoked after analyzed video tracks are disposed.
