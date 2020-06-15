@@ -11,7 +11,6 @@ if (is_android) {
   import("//build/config/android/config.gni")
   import("//build/config/android/rules.gni")
 }
-import("//third_party/google_benchmark/buildconfig.gni")
 
 rtc_library("yield") {
   sources = [
