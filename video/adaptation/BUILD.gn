@@ -14,6 +14,8 @@ rtc_library("video_adaptation") {
     "encode_usage_resource.h",
     "overuse_frame_detector.cc",
     "overuse_frame_detector.h",
+    "quality_rampup_experiment_helper.cc",
+    "quality_rampup_experiment_helper.h",
     "quality_scaler_resource.cc",
     "quality_scaler_resource.h",
     "video_stream_encoder_resource.cc",

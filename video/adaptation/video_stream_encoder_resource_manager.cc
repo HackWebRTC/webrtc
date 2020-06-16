@@ -285,10 +285,9 @@ VideoStreamEncoderResourceManager::VideoStreamEncoderResourceManager(
           std::make_unique<InitialFrameDropper>(quality_scaler_resource_)),
       quality_scaling_experiment_enabled_(QualityScalingExperiment::Enabled()),
       encoder_target_bitrate_bps_(absl::nullopt),
-      quality_rampup_done_(false),
-      quality_rampup_experiment_(QualityRampupExperiment::ParseSettings()),
-      encoder_settings_(absl::nullopt),
-      active_counts_() {
+      quality_rampup_experiment_(
+          QualityRampUpExperimentHelper::CreateIfEnabled(this, clock_)),
+      encoder_settings_(absl::nullopt) {
   RTC_DCHECK(encoder_stats_observer_);
   MapResourceToReason(encode_usage_resource_, VideoAdaptationReason::kCpu);
   MapResourceToReason(quality_scaler_resource_,
@@ -394,10 +393,6 @@ void VideoStreamEncoderResourceManager::SetEncoderSettings(
   RTC_DCHECK_RUN_ON(encoder_queue_);
   encoder_settings_ = std::move(encoder_settings);
   bitrate_constraint_->OnEncoderSettingsUpdated(encoder_settings_);
-
-  quality_rampup_experiment_.SetMaxBitrate(
-      LastInputFrameSizeOrDefault(),
-      encoder_settings_->video_codec().maxBitrate);
   MaybeUpdateTargetFrameRate();
 }
 
@@ -491,7 +486,16 @@ bool VideoStreamEncoderResourceManager::DropInitialFrames() const {
 void VideoStreamEncoderResourceManager::OnMaybeEncodeFrame() {
   RTC_DCHECK_RUN_ON(encoder_queue_);
   initial_frame_dropper_->OnMaybeEncodeFrame();
-  MaybePerformQualityRampupExperiment();
+  if (quality_rampup_experiment_) {
+    uint32_t bw_kbps = encoder_rates_.has_value()
+                           ? encoder_rates_.value().bandwidth_allocation.kbps()
+                           : 0;
+    quality_rampup_experiment_->PerformQualityRampupExperiment(
+        quality_scaler_resource_, bw_kbps,
+        encoder_target_bitrate_bps_.value_or(0),
+        encoder_settings_->video_codec().maxBitrate,
+        LastInputFrameSizeOrDefault());
+  }
 }
 
 void VideoStreamEncoderResourceManager::UpdateQualityScalerSettings(
@@ -597,7 +601,7 @@ void VideoStreamEncoderResourceManager::OnVideoSourceRestrictionsUpdated(
   // TODO(bugs.webrtc.org/11553) Remove reason parameter and add reset callback.
   if (!reason && adaptation_counters.Total() == 0) {
     // Adaptation was manually reset - clear the per-reason counters too.
-    ResetActiveCounts();
+    encoder_stats_observer_->ClearAdaptationStats();
   }
 
   // The VideoStreamEncoder makes the manager outlive the encoder queue. This
@@ -615,7 +619,7 @@ void VideoStreamEncoderResourceManager::OnResourceLimitationChanged(
         resource_limitations) {
   RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
   if (!resource) {
-    ResetActiveCounts();
+    encoder_stats_observer_->ClearAdaptationStats();
     return;
   }
 
@@ -631,13 +635,25 @@ void VideoStreamEncoderResourceManager::OnResourceLimitationChanged(
   }
 
   VideoAdaptationReason adaptation_reason = GetReasonFromResource(resource);
-  if (active_counts_[adaptation_reason] != limitations[adaptation_reason]) {
-    active_counts_[adaptation_reason] = limitations[adaptation_reason];
-    encoder_stats_observer_->OnAdaptationChanged(
-        adaptation_reason, active_counts_[VideoAdaptationReason::kCpu],
-        active_counts_[VideoAdaptationReason::kQuality]);
-  }
-  RTC_LOG(LS_INFO) << ActiveCountsToString();
+  encoder_stats_observer_->OnAdaptationChanged(
+      adaptation_reason, limitations[VideoAdaptationReason::kCpu],
+      limitations[VideoAdaptationReason::kQuality]);
+
+  encoder_queue_->PostTask(ToQueuedTask(
+      [cpu_limited = limitations.at(VideoAdaptationReason::kCpu).Total() > 0,
+       qp_resolution_adaptations =
+           limitations.at(VideoAdaptationReason::kQuality)
+               .resolution_adaptations,
+       this]() {
+        RTC_DCHECK_RUN_ON(encoder_queue_);
+        if (quality_rampup_experiment_) {
+          quality_rampup_experiment_->cpu_adapted(cpu_limited);
+          quality_rampup_experiment_->qp_resolution_adaptations(
+              qp_resolution_adaptations);
+        }
+      }));
+
+  RTC_LOG(LS_INFO) << ActiveCountsToString(limitations);
 }
 
 void VideoStreamEncoderResourceManager::MaybeUpdateTargetFrameRate() {
@@ -675,82 +691,43 @@ void VideoStreamEncoderResourceManager::UpdateStatsAdaptationSettings() const {
                                                     quality_settings);
 }
 
-void VideoStreamEncoderResourceManager::MaybePerformQualityRampupExperiment() {
-  RTC_DCHECK_RUN_ON(encoder_queue_);
-  if (!quality_scaler_resource_->is_started())
-    return;
-
-  if (quality_rampup_done_)
-    return;
-
-  int64_t now_ms = clock_->TimeInMilliseconds();
-  uint32_t bw_kbps = encoder_rates_.has_value()
-                         ? encoder_rates_.value().bandwidth_allocation.kbps()
-                         : 0;
-
-  bool try_quality_rampup = false;
-  if (quality_rampup_experiment_.BwHigh(now_ms, bw_kbps)) {
-    // Verify that encoder is at max bitrate and the QP is low.
-    if (encoder_settings_ &&
-        encoder_target_bitrate_bps_.value_or(0) ==
-            encoder_settings_->video_codec().maxBitrate * 1000 &&
-        quality_scaler_resource_->QpFastFilterLow()) {
-      try_quality_rampup = true;
-    }
-  }
-  if (try_quality_rampup) {
-    // The VideoStreamEncoder makes the manager outlive the adaptation queue.
-    // This means that if the task gets executed, |this| has not been freed yet.
-    // TODO(https://crbug.com/webrtc/11565): When the manager no longer outlives
-    // the adaptation queue, add logic to prevent use-after-free on |this|.
-    resource_adaptation_queue_->PostTask([this] {
-      RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-      if (!adaptation_processor_) {
-        // The processor nulled before this task had a chance to execute. This
-        // happens if the processor is destroyed. No action needed.
-        return;
-      }
-      // TODO(https://crbug.com/webrtc/11392): See if we can rely on the total
-      // counts or the stats, and not the active counts.
-      const VideoAdaptationCounters& qp_counts =
-          active_counts_[VideoAdaptationReason::kQuality];
-      const VideoAdaptationCounters& cpu_counts =
-          active_counts_[VideoAdaptationReason::kCpu];
-      if (!quality_rampup_done_ && qp_counts.resolution_adaptations > 0 &&
-          cpu_counts.Total() == 0) {
-        RTC_LOG(LS_INFO) << "Reset quality limitations.";
-        adaptation_processor_->ResetVideoSourceRestrictions();
-        quality_rampup_done_ = true;
-      }
-    });
-  }
-}
-
-void VideoStreamEncoderResourceManager::ResetActiveCounts() {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  active_counts_.clear();
-  active_counts_[VideoAdaptationReason::kCpu] = VideoAdaptationCounters();
-  active_counts_[VideoAdaptationReason::kQuality] = VideoAdaptationCounters();
-  encoder_stats_observer_->ClearAdaptationStats();
-}
-
-std::string VideoStreamEncoderResourceManager::ActiveCountsToString() const {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  RTC_DCHECK_EQ(2, active_counts_.size());
+// static
+std::string VideoStreamEncoderResourceManager::ActiveCountsToString(
+    const std::map<VideoAdaptationReason, VideoAdaptationCounters>&
+        active_counts) {
   rtc::StringBuilder ss;
 
   ss << "Downgrade counts: fps: {";
-  for (auto& reason_count : active_counts_) {
+  for (auto& reason_count : active_counts) {
     ss << ToString(reason_count.first) << ":";
     ss << reason_count.second.fps_adaptations;
   }
   ss << "}, resolution {";
-  for (auto& reason_count : active_counts_) {
+  for (auto& reason_count : active_counts) {
     ss << ToString(reason_count.first) << ":";
     ss << reason_count.second.resolution_adaptations;
   }
   ss << "}";
 
   return ss.Release();
+}
+
+void VideoStreamEncoderResourceManager::OnQualityRampUp() {
+  RTC_DCHECK_RUN_ON(encoder_queue_);
+  // The VideoStreamEncoder makes the manager outlive the adaptation queue.
+  // This means that if the task gets executed, |this| has not been freed yet.
+  // TODO(https://crbug.com/webrtc/11565): When the manager no longer outlives
+  // the adaptation queue, add logic to prevent use-after-free on |this|.
+  resource_adaptation_queue_->PostTask([this] {
+    RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
+    if (!adaptation_processor_) {
+      // The processor nulled before this task had a chance to execute. This
+      // happens if the processor is destroyed. No action needed.
+      return;
+    }
+    RTC_LOG(LS_INFO) << "Reset quality limitations.";
+    adaptation_processor_->ResetVideoSourceRestrictions();
+  });
+  quality_rampup_experiment_.reset();
 }
 }  // namespace webrtc

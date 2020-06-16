@@ -36,7 +36,6 @@
 #include "call/adaptation/video_stream_adapter.h"
 #include "call/adaptation/video_stream_input_state_provider.h"
 #include "rtc_base/critical_section.h"
-#include "rtc_base/experiments/quality_rampup_experiment.h"
 #include "rtc_base/experiments/quality_scaler_settings.h"
 #include "rtc_base/ref_count.h"
 #include "rtc_base/strings/string_builder.h"
@@ -44,6 +43,7 @@
 #include "system_wrappers/include/clock.h"
 #include "video/adaptation/encode_usage_resource.h"
 #include "video/adaptation/overuse_frame_detector.h"
+#include "video/adaptation/quality_rampup_experiment_helper.h"
 #include "video/adaptation/quality_scaler_resource.h"
 #include "video/adaptation/video_stream_encoder_resource.h"
 
@@ -64,7 +64,8 @@ extern const int kDefaultInputPixelsHeight;
 // The manager is also involved with various mitigations not part of the
 // ResourceAdaptationProcessor code such as the inital frame dropping.
 class VideoStreamEncoderResourceManager
-    : public VideoSourceRestrictionsListener {
+    : public VideoSourceRestrictionsListener,
+      public QualityRampUpExperimentListener {
  public:
   VideoStreamEncoderResourceManager(
       VideoStreamInputStateProvider* input_state_provider,
@@ -112,10 +113,7 @@ class VideoStreamEncoderResourceManager
   void OnFrameDropped(EncodedImageCallback::DropReason reason);
 
   // Resources need to be mapped to an AdaptReason (kCpu or kQuality) in order
-  // to be able to update |active_counts_|, which is used...
-  // - Legacy getStats() purposes.
-  // - Preventing adapting up in some circumstances (which may be questionable).
-  // TODO(hbos): Can we get rid of this?
+  // to update legacy getStats().
   void MapResourceToReason(rtc::scoped_refptr<Resource> resource,
                            VideoAdaptationReason reason);
   std::vector<rtc::scoped_refptr<Resource>> MappedResources() const;
@@ -128,7 +126,7 @@ class VideoStreamEncoderResourceManager
   bool DropInitialFrames() const;
 
   // VideoSourceRestrictionsListener implementation.
-  // Updates |video_source_restrictions_| and |active_counts_|.
+  // Updates |video_source_restrictions_|.
   void OnVideoSourceRestrictionsUpdated(
       VideoSourceRestrictions restrictions,
       const VideoAdaptationCounters& adaptation_counters,
@@ -137,6 +135,9 @@ class VideoStreamEncoderResourceManager
       rtc::scoped_refptr<Resource> resource,
       const std::map<rtc::scoped_refptr<Resource>, VideoAdaptationCounters>&
           resource_limitations) override;
+
+  // QualityRampUpExperimentListener implementation.
+  void OnQualityRampUp() override;
 
  private:
   class InitialFrameDropper;
@@ -157,15 +158,9 @@ class VideoStreamEncoderResourceManager
 
   void UpdateStatsAdaptationSettings() const;
 
-  // Checks to see if we should execute the quality rampup experiment. The
-  // experiment resets all video restrictions at the start of the call in the
-  // case the bandwidth estimate is high enough.
-  // TODO(https://crbug.com/webrtc/11222) Move experiment details into an inner
-  // class.
-  void MaybePerformQualityRampupExperiment();
-
-  void ResetActiveCounts();
-  std::string ActiveCountsToString() const;
+  static std::string ActiveCountsToString(
+      const std::map<VideoAdaptationReason, VideoAdaptationCounters>&
+          active_counts);
 
   // TODO(hbos): Add tests for manager's constraints.
   // Does not trigger adaptations, only prevents adapting up resolution.
@@ -260,9 +255,7 @@ class VideoStreamEncoderResourceManager
       RTC_GUARDED_BY(encoder_queue_);
   absl::optional<VideoEncoder::RateControlParameters> encoder_rates_
       RTC_GUARDED_BY(encoder_queue_);
-  // Used on both the encoder queue and resource adaptation queue.
-  std::atomic<bool> quality_rampup_done_;
-  QualityRampupExperiment quality_rampup_experiment_
+  std::unique_ptr<QualityRampUpExperimentHelper> quality_rampup_experiment_
       RTC_GUARDED_BY(encoder_queue_);
   absl::optional<EncoderSettings> encoder_settings_
       RTC_GUARDED_BY(encoder_queue_);
@@ -280,13 +273,6 @@ class VideoStreamEncoderResourceManager
   };
   rtc::CriticalSection resource_lock_;
   std::vector<ResourceAndReason> resources_ RTC_GUARDED_BY(&resource_lock_);
-  // One AdaptationCounter for each reason, tracking the number of times we have
-  // adapted for each reason. The sum of active_counts_ MUST always equal the
-  // total adaptation provided by the VideoSourceRestrictions.
-  // TODO(bugs.webrtc.org/11553) Remove active counts by computing them on the
-  // fly. This require changes to MaybePerformQualityRampupExperiment.
-  std::unordered_map<VideoAdaptationReason, VideoAdaptationCounters>
-      active_counts_ RTC_GUARDED_BY(resource_adaptation_queue_);
 };
 
 }  // namespace webrtc
