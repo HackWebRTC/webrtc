@@ -269,6 +269,11 @@ class SctpTransport::UsrSctpWrapper {
     // TODO(ldixon): Consider turning this on/off.
     usrsctp_sysctl_set_sctp_ecn_enable(0);
 
+    // WebRTC doesn't use these features, so disable them to reduce the
+    // potential attack surface.
+    usrsctp_sysctl_set_sctp_asconf_enable(0);
+    usrsctp_sysctl_set_sctp_auth_enable(0);
+
     // This is harmless, but we should find out when the library default
     // changes.
     int send_size = usrsctp_sysctl_get_sctp_sendspace();
