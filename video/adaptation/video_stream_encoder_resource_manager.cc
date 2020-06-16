@@ -487,13 +487,13 @@ void VideoStreamEncoderResourceManager::OnMaybeEncodeFrame() {
   RTC_DCHECK_RUN_ON(encoder_queue_);
   initial_frame_dropper_->OnMaybeEncodeFrame();
   if (quality_rampup_experiment_) {
-    uint32_t bw_kbps = encoder_rates_.has_value()
-                           ? encoder_rates_.value().bandwidth_allocation.kbps()
-                           : 0;
+    DataRate bandwidth = encoder_rates_.has_value()
+                             ? encoder_rates_->bandwidth_allocation
+                             : DataRate::Zero();
     quality_rampup_experiment_->PerformQualityRampupExperiment(
-        quality_scaler_resource_, bw_kbps,
-        encoder_target_bitrate_bps_.value_or(0),
-        encoder_settings_->video_codec().maxBitrate,
+        quality_scaler_resource_, bandwidth,
+        DataRate::BitsPerSec(encoder_target_bitrate_bps_.value_or(0)),
+        DataRate::KilobitsPerSec(encoder_settings_->video_codec().maxBitrate),
         LastInputFrameSizeOrDefault());
   }
 }

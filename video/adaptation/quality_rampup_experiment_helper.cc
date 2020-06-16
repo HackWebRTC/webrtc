@@ -45,20 +45,20 @@ QualityRampUpExperimentHelper::CreateIfEnabled(
 
 void QualityRampUpExperimentHelper::PerformQualityRampupExperiment(
     rtc::scoped_refptr<QualityScalerResource> quality_scaler_resource,
-    uint32_t bw_kbps,
-    uint32_t encoder_target_bitrate,
-    uint32_t max_bitrate_bps,
+    DataRate bandwidth,
+    DataRate encoder_target_bitrate,
+    DataRate max_bitrate,
     int pixels) {
   if (!quality_scaler_resource->is_started())
     return;
 
   int64_t now_ms = clock_->TimeInMilliseconds();
-  quality_rampup_experiment_.SetMaxBitrate(pixels, max_bitrate_bps);
+  quality_rampup_experiment_.SetMaxBitrate(pixels, max_bitrate.kbps());
 
   bool try_quality_rampup = false;
-  if (quality_rampup_experiment_.BwHigh(now_ms, bw_kbps)) {
+  if (quality_rampup_experiment_.BwHigh(now_ms, bandwidth.kbps())) {
     // Verify that encoder is at max bitrate and the QP is low.
-    if (encoder_target_bitrate == max_bitrate_bps * 1000 &&
+    if (encoder_target_bitrate == max_bitrate &&
         quality_scaler_resource->QpFastFilterLow()) {
       try_quality_rampup = true;
     }

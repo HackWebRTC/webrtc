@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "api/scoped_refptr.h"
+#include "api/units/data_rate.h"
 #include "rtc_base/experiments/quality_rampup_experiment.h"
 #include "system_wrappers/include/clock.h"
 #include "video/adaptation/quality_scaler_resource.h"
@@ -45,9 +46,9 @@ class QualityRampUpExperimentHelper {
 
   void PerformQualityRampupExperiment(
       rtc::scoped_refptr<QualityScalerResource> quality_scaler_resource,
-      uint32_t bw_kbps,
-      uint32_t encoder_target_bitrate,
-      uint32_t max_bitrate_bps,
+      DataRate bandwidth,
+      DataRate encoder_target_bitrate,
+      DataRate max_bitrate,
       int pixels);
 
  private:
