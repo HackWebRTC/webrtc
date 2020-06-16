@@ -254,11 +254,6 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
 
   cricket::RtpDataChannel* rtp_data_channel() const override { return nullptr; }
 
-  std::vector<rtc::scoped_refptr<DataChannel>> sctp_data_channels()
-      const override {
-    return {};
-  }
-
   absl::optional<std::string> sctp_transport_name() const override {
     return absl::nullopt;
   }

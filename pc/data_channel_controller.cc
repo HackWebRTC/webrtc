@@ -174,6 +174,11 @@ void DataChannelController::OnTransportClosed() {
 void DataChannelController::SetupDataChannelTransport_n() {
   RTC_DCHECK_RUN_ON(network_thread());
   data_channel_transport_invoker_ = std::make_unique<rtc::AsyncInvoker>();
+
+  // There's a new data channel transport.  This needs to be signaled to the
+  // |sctp_data_channels_| so that they can reopen and reconnect.  This is
+  // necessary when bundling is applied.
+  NotifyDataChannelsOfTransportCreated();
 }
 
 void DataChannelController::TeardownDataChannelTransport_n() {
@@ -200,15 +205,19 @@ void DataChannelController::OnTransportChanged(
       // There's a new data channel transport.  This needs to be signaled to the
       // |sctp_data_channels_| so that they can reopen and reconnect.  This is
       // necessary when bundling is applied.
-      data_channel_transport_invoker_->AsyncInvoke<void>(
-          RTC_FROM_HERE, signaling_thread(), [this] {
-            RTC_DCHECK_RUN_ON(signaling_thread());
-            for (const auto& channel : sctp_data_channels_) {
-              channel->OnTransportChannelCreated();
-            }
-          });
+      NotifyDataChannelsOfTransportCreated();
     }
   }
+}
+
+std::vector<DataChannel::Stats> DataChannelController::GetDataChannelStats()
+    const {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  std::vector<DataChannel::Stats> stats;
+  stats.reserve(sctp_data_channels_.size());
+  for (const auto& channel : sctp_data_channels_)
+    stats.push_back(channel->GetStats());
+  return stats;
 }
 
 bool DataChannelController::HandleOpenMessage_s(
@@ -463,12 +472,6 @@ DataChannelController::rtp_data_channels() const {
   return &rtp_data_channels_;
 }
 
-const std::vector<rtc::scoped_refptr<DataChannel>>*
-DataChannelController::sctp_data_channels() const {
-  RTC_DCHECK_RUN_ON(signaling_thread());
-  return &sctp_data_channels_;
-}
-
 void DataChannelController::UpdateClosingRtpDataChannels(
     const std::vector<std::string>& active_channels,
     bool is_local_update) {
@@ -547,6 +550,17 @@ bool DataChannelController::DataChannelSendData(
   }
   *result = cricket::SendDataResult::SDR_ERROR;
   return false;
+}
+
+void DataChannelController::NotifyDataChannelsOfTransportCreated() {
+  RTC_DCHECK_RUN_ON(network_thread());
+  data_channel_transport_invoker_->AsyncInvoke<void>(
+      RTC_FROM_HERE, signaling_thread(), [this] {
+        RTC_DCHECK_RUN_ON(signaling_thread());
+        for (const auto& channel : sctp_data_channels_) {
+          channel->OnTransportChannelCreated();
+        }
+      });
 }
 
 rtc::Thread* DataChannelController::network_thread() const {

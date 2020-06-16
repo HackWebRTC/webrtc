@@ -113,6 +113,18 @@ class SctpSidAllocator {
 //    callback and transition to kClosed.
 class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
  public:
+  struct Stats {
+    int internal_id;
+    int id;
+    std::string label;
+    std::string protocol;
+    DataState state;
+    uint32_t messages_sent;
+    uint32_t messages_received;
+    uint64_t bytes_sent;
+    uint64_t bytes_received;
+  };
+
   static rtc::scoped_refptr<DataChannel> Create(
       DataChannelProviderInterface* provider,
       cricket::DataChannelType dct,
@@ -204,6 +216,8 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   // This method makes sure the DataChannel is disconnected and changes state
   // to kClosed.
   void OnTransportChannelClosed();
+
+  Stats GetStats() const;
 
   /*******************************************
    * The following methods are for RTP only. *

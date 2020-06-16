@@ -46,8 +46,11 @@ class PeerConnectionInternal : public PeerConnectionInterface {
   // Only valid when using deprecated RTP data channels.
   virtual cricket::RtpDataChannel* rtp_data_channel() const = 0;
 
-  virtual std::vector<rtc::scoped_refptr<DataChannel>> sctp_data_channels()
-      const = 0;
+  // Call on the network thread to fetch stats for all the data channels.
+  // TODO(tommi): Make pure virtual after downstream updates.
+  virtual std::vector<DataChannel::Stats> GetDataChannelStats() const {
+    return {};
+  }
 
   virtual absl::optional<std::string> sctp_transport_name() const = 0;
 

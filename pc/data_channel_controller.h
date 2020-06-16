@@ -64,6 +64,9 @@ class DataChannelController : public DataChannelProviderInterface,
   void OnTransportChanged(
       DataChannelTransportInterface* data_channel_transport);
 
+  // Called from PeerConnection::GetDataChannelStats on the signaling thread.
+  std::vector<DataChannel::Stats> GetDataChannelStats() const;
+
   // Creates channel and adds it to the collection of DataChannels that will
   // be offered in a SessionDescription.
   rtc::scoped_refptr<DataChannel> InternalCreateDataChannel(
@@ -101,8 +104,6 @@ class DataChannelController : public DataChannelProviderInterface,
   void set_data_channel_transport(DataChannelTransportInterface* transport);
   const std::map<std::string, rtc::scoped_refptr<DataChannel>>*
   rtp_data_channels() const;
-  const std::vector<rtc::scoped_refptr<DataChannel>>* sctp_data_channels()
-      const;
 
   sigslot::signal1<DataChannel*>& SignalDataChannelCreated() {
     RTC_DCHECK_RUN_ON(signaling_thread());
@@ -136,6 +137,10 @@ class DataChannelController : public DataChannelProviderInterface,
   bool DataChannelSendData(const cricket::SendDataParams& params,
                            const rtc::CopyOnWriteBuffer& payload,
                            cricket::SendDataResult* result);
+
+  // Called when all data channels need to be notified of a transport channel
+  // (calls OnTransportChannelCreated on the signaling thread).
+  void NotifyDataChannelsOfTransportCreated();
 
   rtc::Thread* network_thread() const;
   rtc::Thread* signaling_thread() const;

@@ -315,7 +315,6 @@ bool DataChannel::Send(const DataBuffer& buffer) {
   // thread. Bring buffer management etc to the network thread and keep the
   // operational state management on the signaling thread.
 
-  buffered_amount_ += buffer.size();
   if (state_ != kOpen) {
     return false;
   }
@@ -326,6 +325,8 @@ bool DataChannel::Send(const DataBuffer& buffer) {
   if (buffer.size() == 0) {
     return true;
   }
+
+  buffered_amount_ += buffer.size();
 
   // If the queue is non-empty, we're waiting for SignalReadyToSend,
   // so just add to the end of the queue and keep waiting.
@@ -427,6 +428,14 @@ void DataChannel::OnTransportChannelClosed() {
                             "Transport channel closed");
   error.set_error_detail(RTCErrorDetailType::SCTP_FAILURE);
   CloseAbruptlyWithError(std::move(error));
+}
+
+DataChannel::Stats DataChannel::GetStats() const {
+  RTC_DCHECK_RUN_ON(signaling_thread_);
+  Stats stats{internal_id_,        id(),         label(),
+              protocol(),          state(),      messages_sent(),
+              messages_received(), bytes_sent(), bytes_received()};
+  return stats;
 }
 
 // The remote peer request that this channel shall be closed.

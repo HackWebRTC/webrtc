@@ -1275,22 +1275,21 @@ void RTCStatsCollector::ProduceCodecStats_n(
 void RTCStatsCollector::ProduceDataChannelStats_s(
     int64_t timestamp_us,
     RTCStatsReport* report) const {
-  RTC_DCHECK(signaling_thread_->IsCurrent());
-  for (const rtc::scoped_refptr<DataChannel>& data_channel :
-       pc_->sctp_data_channels()) {
+  RTC_DCHECK_RUN_ON(signaling_thread_);
+  std::vector<DataChannel::Stats> data_stats = pc_->GetDataChannelStats();
+  for (const auto& stats : data_stats) {
     std::unique_ptr<RTCDataChannelStats> data_channel_stats(
         new RTCDataChannelStats(
-            "RTCDataChannel_" + rtc::ToString(data_channel->internal_id()),
+            "RTCDataChannel_" + rtc::ToString(stats.internal_id),
             timestamp_us));
-    data_channel_stats->label = data_channel->label();
-    data_channel_stats->protocol = data_channel->protocol();
-    data_channel_stats->data_channel_identifier = data_channel->id();
-    data_channel_stats->state =
-        DataStateToRTCDataChannelState(data_channel->state());
-    data_channel_stats->messages_sent = data_channel->messages_sent();
-    data_channel_stats->bytes_sent = data_channel->bytes_sent();
-    data_channel_stats->messages_received = data_channel->messages_received();
-    data_channel_stats->bytes_received = data_channel->bytes_received();
+    data_channel_stats->label = std::move(stats.label);
+    data_channel_stats->protocol = std::move(stats.protocol);
+    data_channel_stats->data_channel_identifier = stats.id;
+    data_channel_stats->state = DataStateToRTCDataChannelState(stats.state);
+    data_channel_stats->messages_sent = stats.messages_sent;
+    data_channel_stats->bytes_sent = stats.bytes_sent;
+    data_channel_stats->messages_received = stats.messages_received;
+    data_channel_stats->bytes_received = stats.bytes_received;
     report->AddStats(std::move(data_channel_stats));
   }
 }

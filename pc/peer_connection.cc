@@ -6225,6 +6225,11 @@ cricket::IceConfig PeerConnection::ParseIceConfig(
   return ice_config;
 }
 
+std::vector<DataChannel::Stats> PeerConnection::GetDataChannelStats() const {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  return data_channel_controller_.GetDataChannelStats();
+}
+
 absl::optional<std::string> PeerConnection::sctp_transport_name() const {
   RTC_DCHECK_RUN_ON(signaling_thread());
   if (sctp_mid_s_ && transport_controller_) {
@@ -6704,12 +6709,6 @@ bool PeerConnection::CreateDataChannel(const std::string& mid) {
         sctp_mid_s_ = mid;
       } else {
         return false;
-      }
-
-      // All non-RTP data channels must initialize |sctp_data_channels_|.
-      for (const auto& channel :
-           *data_channel_controller_.sctp_data_channels()) {
-        channel->OnTransportChannelCreated();
       }
       return true;
     case cricket::DCT_RTP:
