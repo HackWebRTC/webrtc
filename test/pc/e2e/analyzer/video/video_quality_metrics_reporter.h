@@ -33,7 +33,6 @@ struct VideoBweStats {
 class VideoQualityMetricsReporter
     : public PeerConnectionE2EQualityTestFixture::QualityMetricsReporter {
  public:
-  VideoQualityMetricsReporter() : clock_(Clock::GetRealTimeClock()) {}
   VideoQualityMetricsReporter(Clock* const clock) : clock_(clock) {}
   ~VideoQualityMetricsReporter() override = default;
 
