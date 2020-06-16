@@ -2198,7 +2198,7 @@ rtc::scoped_refptr<DataChannelInterface> PeerConnection::CreateDataChannel(
   if (config) {
     internal_config.reset(new InternalDataChannelInit(*config));
   }
-  rtc::scoped_refptr<DataChannelInterface> channel(
+  rtc::scoped_refptr<DataChannel> channel(
       data_channel_controller_.InternalCreateDataChannel(
           label, internal_config.get()));
   if (!channel.get()) {
@@ -2211,8 +2211,7 @@ rtc::scoped_refptr<DataChannelInterface> PeerConnection::CreateDataChannel(
     UpdateNegotiationNeeded();
   }
   NoteUsageEvent(UsageEvent::DATA_ADDED);
-  // TODO(bugs.webrtc.org/11547): Inject the network thread as well.
-  return DataChannelProxy::Create(signaling_thread(), channel.get());
+  return DataChannel::CreateProxy(std::move(channel));
 }
 
 void PeerConnection::RestartIce() {

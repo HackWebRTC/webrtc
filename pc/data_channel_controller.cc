@@ -251,9 +251,8 @@ void DataChannelController::OnDataChannelOpenMessage(
     return;
   }
 
-  // TODO(bugs.webrtc.org/11547): Inject the network thread as well.
   rtc::scoped_refptr<DataChannelInterface> proxy_channel =
-      DataChannelProxy::Create(signaling_thread(), channel);
+      DataChannel::CreateProxy(std::move(channel));
   pc_->Observer()->OnDataChannel(std::move(proxy_channel));
   pc_->NoteDataAddedEvent();
 }
@@ -508,9 +507,8 @@ void DataChannelController::CreateRemoteRtpDataChannel(const std::string& label,
     return;
   }
   channel->SetReceiveSsrc(remote_ssrc);
-  // TODO(bugs.webrtc.org/11547): Inject the network thread as well.
   rtc::scoped_refptr<DataChannelInterface> proxy_channel =
-      DataChannelProxy::Create(signaling_thread(), channel);
+      DataChannel::CreateProxy(std::move(channel));
   pc_->Observer()->OnDataChannel(std::move(proxy_channel));
 }
 

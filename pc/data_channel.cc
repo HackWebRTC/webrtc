@@ -14,6 +14,7 @@
 #include <string>
 #include <utility>
 
+#include "api/proxy.h"
 #include "media/sctp/sctp_transport_internal.h"
 #include "pc/sctp_utils.h"
 #include "rtc_base/checks.h"
@@ -147,6 +148,46 @@ rtc::scoped_refptr<DataChannel> DataChannel::Create(
     return nullptr;
   }
   return channel;
+}
+
+// Define proxy for DataChannelInterface.
+BEGIN_SIGNALING_PROXY_MAP(DataChannel)
+PROXY_SIGNALING_THREAD_DESTRUCTOR()
+PROXY_METHOD1(void, RegisterObserver, DataChannelObserver*)
+PROXY_METHOD0(void, UnregisterObserver)
+BYPASS_PROXY_CONSTMETHOD0(std::string, label)
+BYPASS_PROXY_CONSTMETHOD0(bool, reliable)
+BYPASS_PROXY_CONSTMETHOD0(bool, ordered)
+BYPASS_PROXY_CONSTMETHOD0(uint16_t, maxRetransmitTime)
+BYPASS_PROXY_CONSTMETHOD0(uint16_t, maxRetransmits)
+BYPASS_PROXY_CONSTMETHOD0(absl::optional<int>, maxRetransmitsOpt)
+BYPASS_PROXY_CONSTMETHOD0(absl::optional<int>, maxPacketLifeTime)
+BYPASS_PROXY_CONSTMETHOD0(std::string, protocol)
+BYPASS_PROXY_CONSTMETHOD0(bool, negotiated)
+// Can't bypass the proxy since the id may change.
+PROXY_CONSTMETHOD0(int, id)
+BYPASS_PROXY_CONSTMETHOD0(Priority, priority)
+PROXY_CONSTMETHOD0(DataState, state)
+PROXY_CONSTMETHOD0(RTCError, error)
+PROXY_CONSTMETHOD0(uint32_t, messages_sent)
+PROXY_CONSTMETHOD0(uint64_t, bytes_sent)
+PROXY_CONSTMETHOD0(uint32_t, messages_received)
+PROXY_CONSTMETHOD0(uint64_t, bytes_received)
+PROXY_CONSTMETHOD0(uint64_t, buffered_amount)
+PROXY_METHOD0(void, Close)
+// TODO(bugs.webrtc.org/11547): Change to run on the network thread.
+PROXY_METHOD1(bool, Send, const DataBuffer&)
+END_PROXY_MAP()
+
+// static
+rtc::scoped_refptr<DataChannelInterface> DataChannel::CreateProxy(
+    rtc::scoped_refptr<DataChannel> channel) {
+  // TODO(bugs.webrtc.org/11547): incorporate the network thread in the proxy.
+  // Also, consider allowing the proxy object to own the reference (std::move).
+  // As is, the proxy has a raw pointer and no reference to the channel object
+  // and trusting that the lifetime management aligns with the
+  // sctp_data_channels_ array in DataChannelController.
+  return DataChannelProxy::Create(channel->signaling_thread_, channel.get());
 }
 
 bool DataChannel::IsSctpLike(cricket::DataChannelType type) {

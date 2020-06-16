@@ -18,7 +18,6 @@
 
 #include "api/data_channel_interface.h"
 #include "api/priority.h"
-#include "api/proxy.h"
 #include "api/scoped_refptr.h"
 #include "media/base/media_channel.h"
 #include "pc/channel.h"
@@ -132,6 +131,11 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
       const InternalDataChannelInit& config,
       rtc::Thread* signaling_thread,
       rtc::Thread* network_thread);
+
+  // Instantiates an API proxy for a DataChannel instance that will be handed
+  // out to external callers.
+  static rtc::scoped_refptr<DataChannelInterface> CreateProxy(
+      rtc::scoped_refptr<DataChannel> channel);
 
   static bool IsSctpLike(cricket::DataChannelType type);
 
@@ -337,35 +341,6 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   PacketQueue queued_send_data_ RTC_GUARDED_BY(signaling_thread_);
   rtc::AsyncInvoker invoker_ RTC_GUARDED_BY(signaling_thread_);
 };
-
-// Define proxy for DataChannelInterface.
-BEGIN_SIGNALING_PROXY_MAP(DataChannel)
-PROXY_SIGNALING_THREAD_DESTRUCTOR()
-PROXY_METHOD1(void, RegisterObserver, DataChannelObserver*)
-PROXY_METHOD0(void, UnregisterObserver)
-BYPASS_PROXY_CONSTMETHOD0(std::string, label)
-BYPASS_PROXY_CONSTMETHOD0(bool, reliable)
-BYPASS_PROXY_CONSTMETHOD0(bool, ordered)
-BYPASS_PROXY_CONSTMETHOD0(uint16_t, maxRetransmitTime)
-BYPASS_PROXY_CONSTMETHOD0(uint16_t, maxRetransmits)
-BYPASS_PROXY_CONSTMETHOD0(absl::optional<int>, maxRetransmitsOpt)
-BYPASS_PROXY_CONSTMETHOD0(absl::optional<int>, maxPacketLifeTime)
-BYPASS_PROXY_CONSTMETHOD0(std::string, protocol)
-BYPASS_PROXY_CONSTMETHOD0(bool, negotiated)
-// Can't bypass the proxy since the id may change.
-PROXY_CONSTMETHOD0(int, id)
-BYPASS_PROXY_CONSTMETHOD0(Priority, priority)
-PROXY_CONSTMETHOD0(DataState, state)
-PROXY_CONSTMETHOD0(RTCError, error)
-PROXY_CONSTMETHOD0(uint32_t, messages_sent)
-PROXY_CONSTMETHOD0(uint64_t, bytes_sent)
-PROXY_CONSTMETHOD0(uint32_t, messages_received)
-PROXY_CONSTMETHOD0(uint64_t, bytes_received)
-PROXY_CONSTMETHOD0(uint64_t, buffered_amount)
-PROXY_METHOD0(void, Close)
-// TODO(bugs.webrtc.org/11547): Change to run on the network thread.
-PROXY_METHOD1(bool, Send, const DataBuffer&)
-END_PROXY_MAP()
 
 }  // namespace webrtc
 
