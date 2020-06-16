@@ -29,8 +29,6 @@
 
 #include "api/test/fake_frame_decryptor.h"
 #include "api/test/fake_frame_encryptor.h"
-#include "api/test/fake_media_transport.h"
-#include "api/test/loopback_media_transport.h"
 #include "api/test/mock_audio_mixer.h"
 #include "api/test/mock_frame_decryptor.h"
 #include "api/test/mock_frame_encryptor.h"

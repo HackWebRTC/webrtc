@@ -18,7 +18,6 @@
 #include "api/media_stream_interface.h"
 #include "api/peer_connection_interface.h"
 #include "api/scoped_refptr.h"
-#include "api/transport/media/media_transport_interface.h"
 #include "media/sctp/sctp_transport_internal.h"
 #include "pc/channel_manager.h"
 #include "rtc_base/rtc_certificate_generator.h"
@@ -87,10 +86,6 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
 
   const Options& options() const { return options_; }
 
-  MediaTransportFactory* media_transport_factory() {
-    return media_transport_factory_.get();
-  }
-
  protected:
   // This structure allows simple management of all new dependencies being added
   // to the PeerConnectionFactory.
@@ -128,7 +123,6 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
       network_state_predictor_factory_;
   std::unique_ptr<NetworkControllerFactoryInterface>
       injected_network_controller_factory_;
-  std::unique_ptr<MediaTransportFactory> media_transport_factory_;
   std::unique_ptr<NetEqFactory> neteq_factory_;
   const std::unique_ptr<WebRtcKeyValueConfig> trials_;
 };

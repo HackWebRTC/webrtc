@@ -229,10 +229,6 @@ PeerConnectionFactoryDependencies CreatePCFDependencies(
     pcf_deps.network_controller_factory =
         std::move(pcf_dependencies->network_controller_factory);
   }
-  if (pcf_dependencies->media_transport_factory != nullptr) {
-    pcf_deps.media_transport_factory =
-        std::move(pcf_dependencies->media_transport_factory);
-  }
   if (pcf_dependencies->neteq_factory != nullptr) {
     pcf_deps.neteq_factory = std::move(pcf_dependencies->neteq_factory);
   }

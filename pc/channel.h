@@ -22,7 +22,6 @@
 #include "api/function_view.h"
 #include "api/jsep.h"
 #include "api/rtp_receiver_interface.h"
-#include "api/transport/media/media_transport_config.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
 #include "call/rtp_packet_sink_interface.h"
@@ -46,7 +45,6 @@
 
 namespace webrtc {
 class AudioSinkInterface;
-class MediaTransportInterface;
 }  // namespace webrtc
 
 namespace cricket {
@@ -92,9 +90,7 @@ class BaseChannel : public ChannelInterface,
               webrtc::CryptoOptions crypto_options,
               rtc::UniqueRandomIdGenerator* ssrc_generator);
   virtual ~BaseChannel();
-  virtual void Init_w(
-      webrtc::RtpTransportInternal* rtp_transport,
-      const webrtc::MediaTransportConfig& media_transport_config);
+  virtual void Init_w(webrtc::RtpTransportInternal* rtp_transport);
 
   // Deinit may be called multiple times and is simply ignored if it's already
   // done.
@@ -299,9 +295,6 @@ class BaseChannel : public ChannelInterface,
 
   webrtc::RtpTransportInternal* rtp_transport_ = nullptr;
 
-  // Optional media transport configuration (experimental).
-  webrtc::MediaTransportConfig media_transport_config_;
-
   std::vector<std::pair<rtc::Socket::Option, int> > socket_options_;
   std::vector<std::pair<rtc::Socket::Option, int> > rtcp_socket_options_;
   bool writable_ = false;
@@ -353,9 +346,7 @@ class VoiceChannel : public BaseChannel {
   cricket::MediaType media_type() const override {
     return cricket::MEDIA_TYPE_AUDIO;
   }
-  void Init_w(
-      webrtc::RtpTransportInternal* rtp_transport,
-      const webrtc::MediaTransportConfig& media_transport_config) override;
+  void Init_w(webrtc::RtpTransportInternal* rtp_transport) override;
 
  private:
   // overrides from BaseChannel
@@ -435,9 +426,7 @@ class RtpDataChannel : public BaseChannel {
               DtlsTransportInternal* rtcp_dtls_transport,
               rtc::PacketTransportInternal* rtp_packet_transport,
               rtc::PacketTransportInternal* rtcp_packet_transport);
-  void Init_w(
-      webrtc::RtpTransportInternal* rtp_transport,
-      const webrtc::MediaTransportConfig& media_transport_config) override;
+  void Init_w(webrtc::RtpTransportInternal* rtp_transport) override;
 
   virtual bool SendData(const SendDataParams& params,
                         const rtc::CopyOnWriteBuffer& payload,

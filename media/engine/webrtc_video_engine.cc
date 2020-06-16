@@ -20,7 +20,6 @@
 #include "absl/algorithm/container.h"
 #include "absl/strings/match.h"
 #include "api/media_stream_interface.h"
-#include "api/transport/datagram_transport_interface.h"
 #include "api/units/data_rate.h"
 #include "api/video/video_codec_constants.h"
 #include "api/video/video_codec_type.h"
@@ -1298,13 +1297,6 @@ bool WebRtcVideoChannel::AddSendStream(const StreamParams& sp) {
   config.rtp.extmap_allow_mixed = ExtmapAllowMixed();
   config.rtcp_report_interval_ms = video_config_.rtcp_report_interval_ms;
 
-  // If sending through Datagram Transport, limit packet size to maximum
-  // packet size supported by datagram_transport.
-  if (media_transport_config().rtp_max_packet_size) {
-    config.rtp.max_packet_size =
-        media_transport_config().rtp_max_packet_size.value();
-  }
-
   WebRtcVideoSendStream* stream = new WebRtcVideoSendStream(
       call_, sp, std::move(config), default_send_options_,
       video_config_.enable_cpu_adaptation, bitrate_config_.max_bitrate_bps,
@@ -1758,11 +1750,9 @@ void WebRtcVideoChannel::OnNetworkRouteChanged(
       network_route.packet_overhead);
 }
 
-void WebRtcVideoChannel::SetInterface(
-    NetworkInterface* iface,
-    const webrtc::MediaTransportConfig& media_transport_config) {
+void WebRtcVideoChannel::SetInterface(NetworkInterface* iface) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  MediaChannel::SetInterface(iface, media_transport_config);
+  MediaChannel::SetInterface(iface);
   // Set the RTP recv/send buffer to a bigger size.
 
   // The group should be a positive integer with an explicit size, in

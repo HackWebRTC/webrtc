@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "api/task_queue/task_queue_factory.h"
-#include "api/transport/media/media_transport_interface.h"
 #include "api/video/recordable_encoded_frame.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "call/syncable.h"

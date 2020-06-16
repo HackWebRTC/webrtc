@@ -33,7 +33,6 @@
 #include "api/test/simulated_network.h"
 #include "api/test/stats_observer_interface.h"
 #include "api/test/video_quality_analyzer_interface.h"
-#include "api/transport/media/media_transport_interface.h"
 #include "api/transport/network_control.h"
 #include "api/units/time_delta.h"
 #include "api/video_codecs/video_decoder_factory.h"
@@ -287,8 +286,6 @@ class PeerConnectionE2EQualityTestFixture {
     virtual PeerConfigurer* SetNetworkControllerFactory(
         std::unique_ptr<NetworkControllerFactoryInterface>
             network_controller_factory) = 0;
-    virtual PeerConfigurer* SetMediaTransportFactory(
-        std::unique_ptr<MediaTransportFactory> media_transport_factory) = 0;
     virtual PeerConfigurer* SetVideoEncoderFactory(
         std::unique_ptr<VideoEncoderFactory> video_encoder_factory) = 0;
     virtual PeerConfigurer* SetVideoDecoderFactory(

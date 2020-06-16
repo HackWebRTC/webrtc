@@ -13,7 +13,6 @@
 #include <memory>
 
 #include "api/rtc_error.h"
-#include "api/transport/media/media_transport_config.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "media/base/fake_media_engine.h"
 #include "media/base/test_utils.h"
@@ -73,20 +72,17 @@ class ChannelManagerTest : public ::testing::Test {
     return dtls_srtp_transport;
   }
 
-  void TestCreateDestroyChannels(
-      webrtc::RtpTransportInternal* rtp_transport,
-      webrtc::MediaTransportConfig media_transport_config) {
+  void TestCreateDestroyChannels(webrtc::RtpTransportInternal* rtp_transport) {
     cricket::VoiceChannel* voice_channel = cm_->CreateVoiceChannel(
         &fake_call_, cricket::MediaConfig(), rtp_transport,
-        media_transport_config, rtc::Thread::Current(), cricket::CN_AUDIO,
-        kDefaultSrtpRequired, webrtc::CryptoOptions(), &ssrc_generator_,
-        AudioOptions());
+        rtc::Thread::Current(), cricket::CN_AUDIO, kDefaultSrtpRequired,
+        webrtc::CryptoOptions(), &ssrc_generator_, AudioOptions());
     EXPECT_TRUE(voice_channel != nullptr);
     cricket::VideoChannel* video_channel = cm_->CreateVideoChannel(
         &fake_call_, cricket::MediaConfig(), rtp_transport,
-        media_transport_config, rtc::Thread::Current(), cricket::CN_VIDEO,
-        kDefaultSrtpRequired, webrtc::CryptoOptions(), &ssrc_generator_,
-        VideoOptions(), video_bitrate_allocator_factory_.get());
+        rtc::Thread::Current(), cricket::CN_VIDEO, kDefaultSrtpRequired,
+        webrtc::CryptoOptions(), &ssrc_generator_, VideoOptions(),
+        video_bitrate_allocator_factory_.get());
     EXPECT_TRUE(video_channel != nullptr);
     cricket::RtpDataChannel* rtp_data_channel = cm_->CreateRtpDataChannel(
         cricket::MediaConfig(), rtp_transport, rtc::Thread::Current(),
@@ -183,8 +179,7 @@ TEST_F(ChannelManagerTest, SetVideoRtxEnabled) {
 TEST_F(ChannelManagerTest, CreateDestroyChannels) {
   EXPECT_TRUE(cm_->Init());
   auto rtp_transport = CreateDtlsSrtpTransport();
-  TestCreateDestroyChannels(rtp_transport.get(),
-                            webrtc::MediaTransportConfig());
+  TestCreateDestroyChannels(rtp_transport.get());
 }
 
 TEST_F(ChannelManagerTest, CreateDestroyChannelsOnThread) {
@@ -194,8 +189,7 @@ TEST_F(ChannelManagerTest, CreateDestroyChannelsOnThread) {
   EXPECT_TRUE(cm_->set_network_thread(network_.get()));
   EXPECT_TRUE(cm_->Init());
   auto rtp_transport = CreateDtlsSrtpTransport();
-  TestCreateDestroyChannels(rtp_transport.get(),
-                            webrtc::MediaTransportConfig());
+  TestCreateDestroyChannels(rtp_transport.get());
 }
 
 }  // namespace cricket

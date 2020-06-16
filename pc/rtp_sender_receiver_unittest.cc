@@ -123,14 +123,13 @@ class RtpSenderReceiverTest
 
     voice_channel_ = channel_manager_.CreateVoiceChannel(
         &fake_call_, cricket::MediaConfig(), rtp_transport_.get(),
-        MediaTransportConfig(), rtc::Thread::Current(), cricket::CN_AUDIO,
-        srtp_required, webrtc::CryptoOptions(), &ssrc_generator_,
-        cricket::AudioOptions());
+        rtc::Thread::Current(), cricket::CN_AUDIO, srtp_required,
+        webrtc::CryptoOptions(), &ssrc_generator_, cricket::AudioOptions());
     video_channel_ = channel_manager_.CreateVideoChannel(
         &fake_call_, cricket::MediaConfig(), rtp_transport_.get(),
-        MediaTransportConfig(), rtc::Thread::Current(), cricket::CN_VIDEO,
-        srtp_required, webrtc::CryptoOptions(), &ssrc_generator_,
-        cricket::VideoOptions(), video_bitrate_allocator_factory_.get());
+        rtc::Thread::Current(), cricket::CN_VIDEO, srtp_required,
+        webrtc::CryptoOptions(), &ssrc_generator_, cricket::VideoOptions(),
+        video_bitrate_allocator_factory_.get());
     voice_channel_->Enable(true);
     video_channel_->Enable(true);
     voice_media_channel_ = media_engine_->GetVoiceChannel(0);

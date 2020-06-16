@@ -22,7 +22,6 @@
 #include "api/ice_transport_factory.h"
 #include "api/peer_connection_interface.h"
 #include "api/rtc_event_log/rtc_event_log.h"
-#include "api/transport/media/media_transport_config.h"
 #include "media/sctp/sctp_transport_internal.h"
 #include "p2p/base/dtls_transport.h"
 #include "p2p/base/dtls_transport_factory.h"
@@ -103,31 +102,6 @@ class JsepTransportController : public sigslot::has_slots<> {
 
     // Factory for SCTP transports.
     cricket::SctpTransportInternalFactory* sctp_factory = nullptr;
-
-    // Whether an RtpMediaTransport should be created as default, when no
-    // MediaTransportFactory is provided.
-    bool use_rtp_media_transport = false;
-
-    // Use encrypted datagram transport to send packets.
-    bool use_datagram_transport = false;
-
-    // Use datagram transport's implementation of data channels instead of SCTP.
-    bool use_datagram_transport_for_data_channels = false;
-
-    // Whether |use_datagram_transport_for_data_channels| applies to outgoing
-    // calls.  If true, |use_datagram_transport_for_data_channels| applies only
-    // to incoming calls.
-    bool use_datagram_transport_for_data_channels_receive_only = false;
-
-    // Optional media transport factory (experimental). If provided it will be
-    // used to create datagram_transport (as long as either
-    // |use_datagram_transport| or
-    // |use_datagram_transport_for_data_channels| is set to true). However,
-    // whether it will be used to send / receive audio and video frames instead
-    // of RTP is determined by |use_datagram_transport|. Note that currently
-    // datagram_transport co-exists with RTP / RTCP transports and may use the
-    // same underlying ICE transport.
-    MediaTransportFactory* media_transport_factory = nullptr;
   };
 
   // The ICE related events are signaled on the |signaling_thread|.
@@ -160,8 +134,6 @@ class JsepTransportController : public sigslot::has_slots<> {
       const std::string& mid);
   rtc::scoped_refptr<SctpTransport> GetSctpTransport(
       const std::string& mid) const;
-
-  MediaTransportConfig GetMediaTransportConfig(const std::string& mid) const;
 
   DataChannelTransportInterface* GetDataChannelTransport(
       const std::string& mid) const;
@@ -214,15 +186,6 @@ class JsepTransportController : public sigslot::has_slots<> {
   bool initial_offerer() const { return initial_offerer_ && *initial_offerer_; }
 
   void SetActiveResetSrtpParams(bool active_reset_srtp_params);
-
-  // Allows to overwrite the settings from config. You may set or reset the
-  // media transport configuration on the jsep transport controller, as long as
-  // you did not call 'GetMediaTransport' or 'MaybeCreateJsepTransport'. Once
-  // Jsep transport is created, you can't change this setting.
-  void SetMediaTransportSettings(
-      bool use_datagram_transport,
-      bool use_datagram_transport_for_data_channels,
-      bool use_datagram_transport_for_data_channels_receive_only);
 
   // For now the rollback only removes mid to transport mappings
   // and deletes unused transports, but doesn't consider anything more complex.
@@ -347,16 +310,6 @@ class JsepTransportController : public sigslot::has_slots<> {
       const cricket::ContentInfo& content_info,
       const cricket::SessionDescription& description);
 
-  // Creates datagram transport if config wants to use it, and a=x-mt line is
-  // present for the current media transport. Returned
-  // DatagramTransportInterface is not connected, and must be connected to ICE.
-  // You must call |GenerateOrGetLastMediaTransportOffer| on the caller before
-  // calling MaybeCreateDatagramTransport.
-  std::unique_ptr<webrtc::DatagramTransportInterface>
-  MaybeCreateDatagramTransport(const cricket::ContentInfo& content_info,
-                               const cricket::SessionDescription& description,
-                               bool local);
-
   void MaybeDestroyJsepTransport(const std::string& mid);
   void DestroyAllJsepTransports_n();
 
@@ -370,8 +323,7 @@ class JsepTransportController : public sigslot::has_slots<> {
 
   std::unique_ptr<cricket::DtlsTransportInternal> CreateDtlsTransport(
       const cricket::ContentInfo& content_info,
-      cricket::IceTransportInternal* ice,
-      DatagramTransportInterface* datagram_transport);
+      cricket::IceTransportInternal* ice);
   rtc::scoped_refptr<webrtc::IceTransportInterface> CreateIceTransport(
       const std::string& transport_name,
       bool rtcp);
@@ -445,17 +397,6 @@ class JsepTransportController : public sigslot::has_slots<> {
   cricket::IceGatheringState ice_gathering_state_ = cricket::kIceGatheringNew;
 
   Config config_;
-
-  // Early on in the call we don't know if datagram transport is going to be
-  // used, but we need to get the server-supported parameters to add to an SDP.
-  // This server datagram transport will be promoted to the used datagram
-  // transport after the local description is set, and the ownership will be
-  // transferred to the actual JsepTransport. This "offer" datagram transport is
-  // not created if it's done on the party that provides answer. This offer
-  // datagram transport is only created once at the beginning of the connection,
-  // and never again.
-  std::unique_ptr<DatagramTransportInterface> offer_datagram_transport_ =
-      nullptr;
 
   const cricket::SessionDescription* local_desc_ = nullptr;
   const cricket::SessionDescription* remote_desc_ = nullptr;

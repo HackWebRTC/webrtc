@@ -15,11 +15,8 @@
 
 #include "absl/algorithm/container.h"
 #include "api/ice_transport_factory.h"
-#include "api/transport/datagram_transport_interface.h"
-#include "api/transport/media/media_transport_interface.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/port.h"
-#include "pc/datagram_rtp_transport.h"
 #include "pc/srtp_filter.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
@@ -138,26 +135,6 @@ RtpTransportInternal* JsepTransportController::GetRtpTransport(
     return nullptr;
   }
   return jsep_transport->rtp_transport();
-}
-
-MediaTransportConfig JsepTransportController::GetMediaTransportConfig(
-    const std::string& mid) const {
-  auto jsep_transport = GetJsepTransportForMid(mid);
-  if (!jsep_transport) {
-    return MediaTransportConfig();
-  }
-
-  DatagramTransportInterface* datagram_transport = nullptr;
-  if (config_.use_datagram_transport) {
-    datagram_transport = jsep_transport->datagram_transport();
-  }
-
-  if (datagram_transport) {
-    return MediaTransportConfig(
-        /*rtp_max_packet_size=*/datagram_transport->GetLargestDatagramSize());
-  } else {
-    return MediaTransportConfig();
-  }
 }
 
 DataChannelTransportInterface* JsepTransportController::GetDataChannelTransport(
@@ -425,17 +402,6 @@ void JsepTransportController::SetActiveResetSrtpParams(
   }
 }
 
-void JsepTransportController::SetMediaTransportSettings(
-    bool use_datagram_transport,
-    bool use_datagram_transport_for_data_channels,
-    bool use_datagram_transport_for_data_channels_receive_only) {
-  config_.use_datagram_transport = use_datagram_transport;
-  config_.use_datagram_transport_for_data_channels =
-      use_datagram_transport_for_data_channels;
-  config_.use_datagram_transport_for_data_channels_receive_only =
-      use_datagram_transport_for_data_channels_receive_only;
-}
-
 void JsepTransportController::RollbackTransports() {
   if (!network_thread_->IsCurrent()) {
     network_thread_->Invoke<void>(RTC_FROM_HERE, [=] { RollbackTransports(); });
@@ -468,16 +434,12 @@ JsepTransportController::CreateIceTransport(const std::string& transport_name,
 std::unique_ptr<cricket::DtlsTransportInternal>
 JsepTransportController::CreateDtlsTransport(
     const cricket::ContentInfo& content_info,
-    cricket::IceTransportInternal* ice,
-    DatagramTransportInterface* datagram_transport) {
+    cricket::IceTransportInternal* ice) {
   RTC_DCHECK(network_thread_->IsCurrent());
 
   std::unique_ptr<cricket::DtlsTransportInternal> dtls;
 
-  if (datagram_transport) {
-    RTC_DCHECK(config_.use_datagram_transport ||
-               config_.use_datagram_transport_for_data_channels);
-  } else if (config_.dtls_transport_factory) {
+  if (config_.dtls_transport_factory) {
     dtls = config_.dtls_transport_factory->CreateDtlsTransport(
         ice, config_.crypto_options);
   } else {
@@ -1066,83 +1028,6 @@ cricket::JsepTransport* JsepTransportController::GetJsepTransportByName(
   return (it == jsep_transports_by_name_.end()) ? nullptr : it->second.get();
 }
 
-// TODO(sukhanov): Refactor to avoid code duplication for Media and Datagram
-// transports setup.
-std::unique_ptr<webrtc::DatagramTransportInterface>
-JsepTransportController::MaybeCreateDatagramTransport(
-    const cricket::ContentInfo& content_info,
-    const cricket::SessionDescription& description,
-    bool local) {
-  if (config_.media_transport_factory == nullptr) {
-    return nullptr;
-  }
-
-  if (!(config_.use_datagram_transport ||
-        config_.use_datagram_transport_for_data_channels)) {
-    return nullptr;
-  }
-
-  // Caller (offerer) datagram transport.
-  if (offer_datagram_transport_) {
-    RTC_DCHECK(local);
-    RTC_LOG(LS_INFO) << "Offered datagram transport has now been activated.";
-    return std::move(offer_datagram_transport_);
-  }
-
-  const cricket::TransportDescription* transport_description =
-      description.GetTransportDescriptionByName(content_info.mid());
-  RTC_DCHECK(transport_description)
-      << "Missing transport description for mid=" << content_info.mid();
-
-  if (!transport_description->opaque_parameters) {
-    RTC_LOG(LS_INFO)
-        << "No opaque transport parameters, not creating datagram transport";
-    return nullptr;
-  }
-
-  if (transport_description->opaque_parameters->protocol !=
-      config_.media_transport_factory->GetTransportName()) {
-    RTC_LOG(LS_INFO) << "Opaque transport parameters for protocol="
-                     << transport_description->opaque_parameters->protocol
-                     << ", which does not match supported protocol="
-                     << config_.media_transport_factory->GetTransportName();
-    return nullptr;
-  }
-
-  RTC_DCHECK(!local);
-  // When bundle is enabled, two JsepTransports are created, and then
-  // the second transport is destroyed (right away).
-  // For datagram transport, we don't want to create the second
-  // datagram transport in the first place.
-  RTC_LOG(LS_INFO) << "Returning new, client datagram transport.";
-
-  MediaTransportSettings settings;
-  settings.is_caller = local;
-  settings.remote_transport_parameters =
-      transport_description->opaque_parameters->parameters;
-  settings.event_log = config_.event_log;
-
-  auto datagram_transport_result =
-      config_.media_transport_factory->CreateDatagramTransport(network_thread_,
-                                                               settings);
-
-  if (!datagram_transport_result.ok()) {
-    // Datagram transport negotiation will fail and we'll fall back to RTP.
-    return nullptr;
-  }
-
-  if (!datagram_transport_result.value()
-           ->SetRemoteTransportParameters(
-               transport_description->opaque_parameters->parameters)
-           .ok()) {
-    // Datagram transport negotiation failed (parameters are incompatible).
-    // Fall back to RTP.
-    return nullptr;
-  }
-
-  return datagram_transport_result.MoveValue();
-}
-
 RTCError JsepTransportController::MaybeCreateJsepTransport(
     bool local,
     const cricket::ContentInfo& content_info,
@@ -1164,14 +1049,8 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
       CreateIceTransport(content_info.name, /*rtcp=*/false);
   RTC_DCHECK(ice);
 
-  std::unique_ptr<DatagramTransportInterface> datagram_transport =
-      MaybeCreateDatagramTransport(content_info, description, local);
-  if (datagram_transport) {
-    datagram_transport->Connect(ice->internal());
-  }
-
   std::unique_ptr<cricket::DtlsTransportInternal> rtp_dtls_transport =
-      CreateDtlsTransport(content_info, ice->internal(), nullptr);
+      CreateDtlsTransport(content_info, ice->internal());
 
   std::unique_ptr<cricket::DtlsTransportInternal> rtcp_dtls_transport;
   std::unique_ptr<RtpTransport> unencrypted_rtp_transport;
@@ -1183,29 +1062,9 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
   if (config_.rtcp_mux_policy !=
           PeerConnectionInterface::kRtcpMuxPolicyRequire &&
       content_info.type == cricket::MediaProtocolType::kRtp) {
-    RTC_DCHECK(datagram_transport == nullptr);
     rtcp_ice = CreateIceTransport(content_info.name, /*rtcp=*/true);
     rtcp_dtls_transport =
-        CreateDtlsTransport(content_info, rtcp_ice->internal(),
-                            /*datagram_transport=*/nullptr);
-  }
-
-  // Only create a datagram RTP transport if the datagram transport should be
-  // used for RTP.
-  if (datagram_transport && config_.use_datagram_transport) {
-    // TODO(sukhanov): We use unencrypted RTP transport over DatagramTransport,
-    // because MediaTransport encrypts. In the future we may want to
-    // implement our own version of RtpTransport over MediaTransport, because
-    // it will give us more control over things like:
-    // - Fusing
-    // - Rtp header compression
-    // - Handling Rtcp feedback.
-    RTC_LOG(LS_INFO) << "Creating UnencryptedRtpTransport, because datagram "
-                        "transport is used.";
-    RTC_DCHECK(!rtcp_dtls_transport);
-    datagram_rtp_transport = std::make_unique<DatagramRtpTransport>(
-        content_info.media_description()->rtp_header_extensions(),
-        ice->internal(), datagram_transport.get());
+        CreateDtlsTransport(content_info, rtcp_ice->internal());
   }
 
   if (config_.disable_encryption) {
@@ -1229,19 +1088,13 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
         config_.sctp_factory->CreateSctpTransport(rtp_dtls_transport.get());
   }
 
-  DataChannelTransportInterface* data_channel_transport = nullptr;
-  if (config_.use_datagram_transport_for_data_channels) {
-    data_channel_transport = datagram_transport.get();
-  }
-
   std::unique_ptr<cricket::JsepTransport> jsep_transport =
       std::make_unique<cricket::JsepTransport>(
           content_info.name, certificate_, std::move(ice), std::move(rtcp_ice),
           std::move(unencrypted_rtp_transport), std::move(sdes_transport),
           std::move(dtls_srtp_transport), std::move(datagram_rtp_transport),
           std::move(rtp_dtls_transport), std::move(rtcp_dtls_transport),
-          std::move(sctp_transport), std::move(datagram_transport),
-          data_channel_transport);
+          std::move(sctp_transport));
 
   jsep_transport->rtp_transport()->SignalRtcpPacketReceived.connect(
       this, &JsepTransportController::OnRtcpPacketReceived_n);
@@ -1643,54 +1496,10 @@ void JsepTransportController::OnDtlsHandshakeError(
   SignalDtlsHandshakeError(error);
 }
 
+// TODO(nisse): Delete
 absl::optional<cricket::OpaqueTransportParameters>
 JsepTransportController::GetTransportParameters(const std::string& mid) {
-  if (!(config_.use_datagram_transport ||
-        config_.use_datagram_transport_for_data_channels)) {
-    return absl::nullopt;
-  }
-
-  cricket::JsepTransport* transport = GetJsepTransportForMid(mid);
-  if (transport) {
-    absl::optional<cricket::OpaqueTransportParameters> params =
-        transport->GetTransportParameters();
-    if (params) {
-      params->protocol = config_.media_transport_factory->GetTransportName();
-    }
-    return params;
-  }
-
-  RTC_DCHECK(!local_desc_ && !remote_desc_)
-      << "JsepTransport should exist for every mid once any description is set";
-
-  if (config_.use_datagram_transport_for_data_channels_receive_only) {
-    return absl::nullopt;
-  }
-
-  // Need to generate a transport for the offer.
-  if (!offer_datagram_transport_) {
-    webrtc::MediaTransportSettings settings;
-    settings.is_caller = true;
-    settings.pre_shared_key = rtc::CreateRandomString(32);
-    settings.event_log = config_.event_log;
-    auto datagram_transport_or_error =
-        config_.media_transport_factory->CreateDatagramTransport(
-            network_thread_, settings);
-
-    if (datagram_transport_or_error.ok()) {
-      offer_datagram_transport_ =
-          std::move(datagram_transport_or_error.value());
-    } else {
-      RTC_LOG(LS_INFO) << "Unable to create datagram transport, error="
-                       << datagram_transport_or_error.error().message();
-    }
-  }
-
-  // We have prepared a transport for the offer, and can now use its parameters.
-  cricket::OpaqueTransportParameters params;
-  params.parameters = offer_datagram_transport_->GetTransportParameters();
-  params.protocol = config_.media_transport_factory->GetTransportName();
-  return params;
+  return absl::nullopt;
 }
 
 }  // namespace webrtc

@@ -16,7 +16,6 @@
 #include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "api/call/audio_sink.h"
-#include "api/transport/media/media_transport_config.h"
 #include "media/base/media_constants.h"
 #include "media/base/rtp_utils.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
@@ -195,24 +194,20 @@ void BaseChannel::DisconnectFromRtpTransport() {
   rtp_transport_->SignalSentPacket.disconnect(this);
 }
 
-void BaseChannel::Init_w(
-    webrtc::RtpTransportInternal* rtp_transport,
-    const webrtc::MediaTransportConfig& media_transport_config) {
+void BaseChannel::Init_w(webrtc::RtpTransportInternal* rtp_transport) {
   RTC_DCHECK_RUN_ON(worker_thread_);
-  media_transport_config_ = media_transport_config;
 
   network_thread_->Invoke<void>(
       RTC_FROM_HERE, [this, rtp_transport] { SetRtpTransport(rtp_transport); });
 
   // Both RTP and RTCP channels should be set, we can call SetInterface on
   // the media channel and it can set network options.
-  media_channel_->SetInterface(this, media_transport_config);
+  media_channel_->SetInterface(this);
 }
 
 void BaseChannel::Deinit() {
   RTC_DCHECK(worker_thread_->IsCurrent());
-  media_channel_->SetInterface(/*iface=*/nullptr,
-                               webrtc::MediaTransportConfig());
+  media_channel_->SetInterface(/*iface=*/nullptr);
   // Packets arrive on the network thread, processing packets calls virtual
   // functions, so need to stop this process in Deinit that is called in
   // derived classes destructor.
@@ -820,10 +815,8 @@ void BaseChannel::UpdateMediaSendRecvState() {
                              [this] { UpdateMediaSendRecvState_w(); });
 }
 
-void VoiceChannel::Init_w(
-    webrtc::RtpTransportInternal* rtp_transport,
-    const webrtc::MediaTransportConfig& media_transport_config) {
-  BaseChannel::Init_w(rtp_transport, media_transport_config);
+void VoiceChannel::Init_w(webrtc::RtpTransportInternal* rtp_transport) {
+  BaseChannel::Init_w(rtp_transport);
 }
 
 void VoiceChannel::UpdateMediaSendRecvState_w() {
@@ -1229,10 +1222,8 @@ RtpDataChannel::~RtpDataChannel() {
   Deinit();
 }
 
-void RtpDataChannel::Init_w(
-    webrtc::RtpTransportInternal* rtp_transport,
-    const webrtc::MediaTransportConfig& media_transport_config) {
-  BaseChannel::Init_w(rtp_transport, media_transport_config);
+void RtpDataChannel::Init_w(webrtc::RtpTransportInternal* rtp_transport) {
+  BaseChannel::Init_w(rtp_transport);
   media_channel()->SignalDataReceived.connect(this,
                                               &RtpDataChannel::OnDataReceived);
   media_channel()->SignalReadyToSend.connect(

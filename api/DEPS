@@ -115,11 +115,6 @@ specific_include_rules = {
     "+rtc_base/ref_count.h",
   ],
 
-  "media_transport_interface\.h": [
-    "+rtc_base/copy_on_write_buffer.h",  # As used by datachannelinterface.h
-    "+rtc_base/network_route.h",
-  ],
-
   "packet_socket_factory\.h": [
     "+rtc_base/proxy_info.h",
     "+rtc_base/async_packet_socket.h",
