@@ -439,15 +439,12 @@ static bool UpdateTransportInfoForBundle(const ContentGroup& bundle_group,
       selected_transport_info->description.ice_pwd;
   ConnectionRole selected_connection_role =
       selected_transport_info->description.connection_role;
-  const absl::optional<OpaqueTransportParameters>& selected_opaque_parameters =
-      selected_transport_info->description.opaque_parameters;
   for (TransportInfo& transport_info : sdesc->transport_infos()) {
     if (bundle_group.HasContentName(transport_info.content_name) &&
         transport_info.content_name != selected_content_name) {
       transport_info.description.ice_ufrag = selected_ufrag;
       transport_info.description.ice_pwd = selected_pwd;
       transport_info.description.connection_role = selected_connection_role;
-      transport_info.description.opaque_parameters = selected_opaque_parameters;
     }
   }
   return true;

@@ -191,13 +191,6 @@ class JsepTransportController : public sigslot::has_slots<> {
   // and deletes unused transports, but doesn't consider anything more complex.
   void RollbackTransports();
 
-  // Gets the transport parameters for the transport identified by |mid|.
-  // If |mid| is bundled, returns the parameters for the bundled transport.
-  // If the transport for |mid| has not been created yet, it may be allocated in
-  // order to generate transport parameters.
-  absl::optional<cricket::OpaqueTransportParameters> GetTransportParameters(
-      const std::string& mid);
-
   // All of these signals are fired on the signaling thread.
 
   // If any transport failed => failed,

@@ -230,9 +230,6 @@ static const char kApplicationSpecificMaximum[] = "AS";
 static const char kDefaultSctpmapProtocol[] = "webrtc-datachannel";
 
 // This is a non-standardized setting for plugin transports.
-static const char kOpaqueTransportParametersLine[] = "x-opaque";
-
-// This is a non-standardized setting for plugin transports.
 static const char kAltProtocolLine[] = "x-alt-protocol";
 
 // RTP payload type is in the 0-127 range. Use -1 to indicate "all" payload
@@ -521,17 +518,6 @@ static void InitLine(const char type,
 // Init |os| to "a=|attribute|".
 static void InitAttrLine(const std::string& attribute, rtc::StringBuilder* os) {
   InitLine(kLineTypeAttributes, attribute, os);
-}
-
-// Adds an x-otp SDP attribute line based on opaque transport parameters.
-static void AddOpaqueTransportLine(
-    const cricket::OpaqueTransportParameters params,
-    std::string* message) {
-  rtc::StringBuilder os;
-  InitAttrLine(kOpaqueTransportParametersLine, &os);
-  os << kSdpDelimiterColon << params.protocol << kSdpDelimiterColon
-     << rtc::Base64::Encode(params.parameters);
-  AddLine(os.str(), message);
 }
 
 static void AddAltProtocolLine(const std::string& protocol,
@@ -1532,11 +1518,6 @@ void BuildMediaDescription(const ContentInfo* content_info,
         AddLine(os.str(), message);
       }
     }
-
-    if (transport_info->description.opaque_parameters) {
-      AddOpaqueTransportLine(*transport_info->description.opaque_parameters,
-                             message);
-    }
   }
 
   if (media_desc->alt_protocol()) {
@@ -2101,26 +2082,6 @@ bool ParseConnectionData(const std::string& line,
         line,
         "Failed to parse the connection data. The address type is mismatching.",
         error);
-  }
-  return true;
-}
-
-bool ParseOpaqueTransportLine(const std::string& line,
-                              std::string* protocol,
-                              std::string* transport_parameters,
-                              SdpParseError* error) {
-  std::string value;
-  if (!GetValue(line, kOpaqueTransportParametersLine, &value, error)) {
-    return false;
-  }
-  std::string tmp_parameters;
-  if (!rtc::tokenize_first(value, kSdpDelimiterColonChar, protocol,
-                           &tmp_parameters)) {
-    return ParseFailedGetValue(line, kOpaqueTransportParametersLine, error);
-  }
-  if (!rtc::Base64::Decode(tmp_parameters, rtc::Base64::DO_STRICT,
-                           transport_parameters, nullptr)) {
-    return ParseFailedGetValue(line, kOpaqueTransportParametersLine, error);
   }
   return true;
 }
@@ -3135,13 +3096,6 @@ bool ParseContent(const std::string& message,
       }
     } else if (HasAttribute(line, kAttributeIceOption)) {
       if (!ParseIceOptions(line, &transport->transport_options, error)) {
-        return false;
-      }
-    } else if (HasAttribute(line, kOpaqueTransportParametersLine)) {
-      transport->opaque_parameters = cricket::OpaqueTransportParameters();
-      if (!ParseOpaqueTransportLine(
-              line, &transport->opaque_parameters->protocol,
-              &transport->opaque_parameters->parameters, error)) {
         return false;
       }
     } else if (HasAttribute(line, kAltProtocolLine)) {

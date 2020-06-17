@@ -1496,10 +1496,4 @@ void JsepTransportController::OnDtlsHandshakeError(
   SignalDtlsHandshakeError(error);
 }
 
-// TODO(nisse): Delete
-absl::optional<cricket::OpaqueTransportParameters>
-JsepTransportController::GetTransportParameters(const std::string& mid) {
-  return absl::nullopt;
-}
-
 }  // namespace webrtc
