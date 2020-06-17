@@ -56,10 +56,7 @@
 #include "rtc_base/rate_statistics.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_tools/rtc_event_log_visualizer/log_simulation.h"
-
-#ifndef BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
-#define BWE_TEST_LOGGING_COMPILE_TIME_ENABLE 0
-#endif  // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
+#include "test/explicit_key_value_config.h"
 
 namespace webrtc {
 
@@ -1212,10 +1209,13 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
 
   TimeSeries time_series("Delay-based estimate", LineStyle::kStep,
                          PointStyle::kHighlight);
-  TimeSeries acked_time_series("Acked bitrate", LineStyle::kLine,
+  TimeSeries acked_time_series("Raw acked bitrate", LineStyle::kLine,
                                PointStyle::kHighlight);
-  TimeSeries acked_estimate_time_series(
-      "Acked bitrate estimate", LineStyle::kLine, PointStyle::kHighlight);
+  TimeSeries robust_time_series("Robust throughput estimate", LineStyle::kLine,
+                                PointStyle::kHighlight);
+  TimeSeries acked_estimate_time_series("Ackednowledged bitrate estimate",
+                                        LineStyle::kLine,
+                                        PointStyle::kHighlight);
 
   auto rtp_iterator = outgoing_rtp.begin();
   auto rtcp_iterator = incoming_rtcp.begin();
@@ -1241,20 +1241,18 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
     return std::numeric_limits<int64_t>::max();
   };
 
-  RateStatistics acked_bitrate(250, 8000);
-#if !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
-  FieldTrialBasedConfig field_trial_config_;
-  // The event_log_visualizer should normally not be compiled with
-  // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE since the normal plots won't work.
-  // However, compiling with BWE_TEST_LOGGING, running with --plot=sendside_bwe
-  // and piping the output to plot_dynamics.py can be used as a hack to get the
-  // internal state of various BWE components. In this case, it is important
-  // we don't instantiate the AcknowledgedBitrateEstimator both here and in
-  // GoogCcNetworkController since that would lead to duplicate outputs.
+  RateStatistics acked_bitrate(750, 8000);
+  test::ExplicitKeyValueConfig throughput_config(
+      "WebRTC-Bwe-RobustThroughputEstimatorSettings/"
+      "enabled:true,reduce_bias:true,assume_shared_link:false,initial_packets:"
+      "10,min_packets:25,window_duration:750ms,unacked_weight:0.5/");
+  std::unique_ptr<AcknowledgedBitrateEstimatorInterface>
+      robust_throughput_estimator(
+          AcknowledgedBitrateEstimatorInterface::Create(&throughput_config));
+  FieldTrialBasedConfig field_trial_config;
   std::unique_ptr<AcknowledgedBitrateEstimatorInterface>
       acknowledged_bitrate_estimator(
-          AcknowledgedBitrateEstimatorInterface::Create(&field_trial_config_));
-#endif  // !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
+          AcknowledgedBitrateEstimatorInterface::Create(&field_trial_config));
   int64_t time_us =
       std::min({NextRtpTime(), NextRtcpTime(), NextProcessTime()});
   int64_t last_update_us = 0;
@@ -1264,24 +1262,40 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
       RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtpTime());
       const RtpPacketType& rtp_packet = *rtp_iterator->second;
       if (rtp_packet.rtp.header.extension.hasTransportSequenceNumber) {
-        RTC_DCHECK(rtp_packet.rtp.header.extension.hasTransportSequenceNumber);
         RtpPacketSendInfo packet_info;
         packet_info.ssrc = rtp_packet.rtp.header.ssrc;
         packet_info.transport_sequence_number =
             rtp_packet.rtp.header.extension.transportSequenceNumber;
         packet_info.rtp_sequence_number = rtp_packet.rtp.header.sequenceNumber;
         packet_info.length = rtp_packet.rtp.total_length;
+        if (IsRtxSsrc(parsed_log_, PacketDirection::kOutgoingPacket,
+                      rtp_packet.rtp.header.ssrc)) {
+          // Don't set the optional media type as we don't know if it is
+          // a retransmission, FEC or padding.
+        } else if (IsVideoSsrc(parsed_log_, PacketDirection::kOutgoingPacket,
+                               rtp_packet.rtp.header.ssrc)) {
+          packet_info.packet_type = RtpPacketMediaType::kVideo;
+        } else if (IsAudioSsrc(parsed_log_, PacketDirection::kOutgoingPacket,
+                               rtp_packet.rtp.header.ssrc)) {
+          packet_info.packet_type = RtpPacketMediaType::kAudio;
+        }
         transport_feedback.AddPacket(
             packet_info,
             0u,  // Per packet overhead bytes.
             Timestamp::Micros(rtp_packet.rtp.log_time_us()));
-        rtc::SentPacket sent_packet(
-            rtp_packet.rtp.header.extension.transportSequenceNumber,
-            rtp_packet.rtp.log_time_us() / 1000);
-        auto sent_msg = transport_feedback.ProcessSentPacket(sent_packet);
-        if (sent_msg)
-          observer.Update(goog_cc->OnSentPacket(*sent_msg));
       }
+      rtc::SentPacket sent_packet;
+      sent_packet.send_time_ms = rtp_packet.rtp.log_time_ms();
+      sent_packet.info.included_in_allocation = true;
+      sent_packet.info.packet_size_bytes = rtp_packet.rtp.total_length;
+      if (rtp_packet.rtp.header.extension.hasTransportSequenceNumber) {
+        sent_packet.packet_id =
+            rtp_packet.rtp.header.extension.transportSequenceNumber;
+        sent_packet.info.included_in_feedback = true;
+      }
+      auto sent_msg = transport_feedback.ProcessSentPacket(sent_packet);
+      if (sent_msg)
+        observer.Update(goog_cc->OnSentPacket(*sent_msg));
       ++rtp_iterator;
     }
     if (clock.TimeInMicroseconds() >= NextRtcpTime()) {
@@ -1296,13 +1310,13 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
         std::vector<PacketResult> feedback =
             feedback_msg->SortedByReceiveTime();
         if (!feedback.empty()) {
-#if !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
           acknowledged_bitrate_estimator->IncomingPacketFeedbackVector(
               feedback);
-#endif  // !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
-          for (const PacketResult& packet : feedback)
+          robust_throughput_estimator->IncomingPacketFeedbackVector(feedback);
+          for (const PacketResult& packet : feedback) {
             acked_bitrate.Update(packet.sent_packet.size.bytes(),
                                  packet.receive_time.ms());
+          }
           bitrate_bps = acked_bitrate.Rate(feedback.back().receive_time.ms());
         }
       }
@@ -1310,12 +1324,14 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
       float x = config_.GetCallTimeSec(clock.TimeInMicroseconds());
       float y = bitrate_bps.value_or(0) / 1000;
       acked_time_series.points.emplace_back(x, y);
-#if !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
+      y = robust_throughput_estimator->bitrate()
+              .value_or(DataRate::Zero())
+              .kbps();
+      robust_time_series.points.emplace_back(x, y);
       y = acknowledged_bitrate_estimator->bitrate()
               .value_or(DataRate::Zero())
               .kbps();
       acked_estimate_time_series.points.emplace_back(x, y);
-#endif  // !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
       ++rtcp_iterator;
     }
     if (clock.TimeInMicroseconds() >= NextProcessTime()) {
@@ -1336,6 +1352,7 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
   }
   // Add the data set to the plot.
   plot->AppendTimeSeries(std::move(time_series));
+  plot->AppendTimeSeries(std::move(robust_time_series));
   plot->AppendTimeSeries(std::move(acked_time_series));
   plot->AppendTimeSeriesIfNotEmpty(std::move(acked_estimate_time_series));
 

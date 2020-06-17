@@ -216,6 +216,20 @@ rtc_library("field_trial") {
   deps = [ "../system_wrappers:field_trial" ]
 }
 
+rtc_library("explicit_key_value_config") {
+  sources = [
+    "explicit_key_value_config.cc",
+    "explicit_key_value_config.h",
+  ]
+
+  deps = [
+    "../api/transport:webrtc_key_value_config",
+    "../rtc_base:checks",
+    "../system_wrappers:field_trial",
+  ]
+  absl_deps = [ "//third_party/abseil-cpp/absl/strings:strings" ]
+}
+
 rtc_library("perf_test") {
   visibility = [ "*" ]
   testonly = true
