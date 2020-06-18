@@ -645,8 +645,6 @@ static bool CreateContentOffer(
     }
   }
 
-  offer->set_alt_protocol(media_description_options.alt_protocol);
-
   if (secure_policy == SEC_REQUIRED && offer->cryptos().empty()) {
     return false;
   }
@@ -1202,9 +1200,6 @@ static bool CreateMediaContentAnswer(
   answer->set_direction(NegotiateRtpTransceiverDirection(
       offer->direction(), media_description_options.direction));
 
-  if (offer->alt_protocol() == media_description_options.alt_protocol) {
-    answer->set_alt_protocol(media_description_options.alt_protocol);
-  }
   return true;
 }
 

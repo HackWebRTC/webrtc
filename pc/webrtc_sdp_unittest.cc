@@ -1528,8 +1528,6 @@ class WebRtcSdpTest : public ::testing::Test {
       CompareSimulcastDescription(
           c1.media_description()->simulcast_description(),
           c2.media_description()->simulcast_description());
-      EXPECT_EQ(c1.media_description()->alt_protocol(),
-                c2.media_description()->alt_protocol());
     }
 
     // group
@@ -1675,14 +1673,6 @@ class WebRtcSdpTest : public ::testing::Test {
     transport_info.description.ice_ufrag = ice_ufrag;
     transport_info.description.ice_pwd = ice_pwd;
     desc_.AddTransportInfo(transport_info);
-  }
-
-  void AddAltProtocol(const std::string& content_name,
-                      const std::string& alt_protocol) {
-    ASSERT_TRUE(desc_.GetTransportInfoByName(content_name) != NULL);
-    cricket::MediaContentDescription* description =
-        desc_.GetContentDescriptionByName(content_name);
-    description->set_alt_protocol(alt_protocol);
   }
 
   void AddFingerprint() {
@@ -2225,22 +2215,6 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithIceOptions) {
   EXPECT_EQ(sdp_with_ice_options, message);
 }
 
-TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithAltProtocol) {
-  AddAltProtocol(kAudioContentName, "foo");
-  AddAltProtocol(kVideoContentName, "bar");
-
-  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
-                                jdesc_.session_version()));
-  std::string message = webrtc::SdpSerialize(jdesc_);
-
-  std::string sdp_with_alt_protocol = kSdpFullString;
-  InjectAfter(kAttributeIcePwdVoice, "a=x-alt-protocol:foo\r\n",
-              &sdp_with_alt_protocol);
-  InjectAfter(kAttributeIcePwdVideo, "a=x-alt-protocol:bar\r\n",
-              &sdp_with_alt_protocol);
-  EXPECT_EQ(message, sdp_with_alt_protocol);
-}
-
 TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithRecvOnlyContent) {
   EXPECT_TRUE(TestSerializeDirection(RtpTransceiverDirection::kRecvOnly));
 }
@@ -2651,24 +2625,6 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithIceOptions) {
   ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                 jdesc_.session_version()));
   EXPECT_TRUE(CompareSessionDescription(jdesc_, jdesc_with_ice_options));
-}
-
-TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithAltProtocol) {
-  std::string sdp_with_alt_protocol = kSdpFullString;
-  InjectAfter(kAttributeIcePwdVoice, "a=x-alt-protocol:foo\r\n",
-              &sdp_with_alt_protocol);
-  InjectAfter(kAttributeIcePwdVideo, "a=x-alt-protocol:bar\r\n",
-              &sdp_with_alt_protocol);
-
-  JsepSessionDescription jdesc_with_alt_protocol(kDummyType);
-  EXPECT_TRUE(SdpDeserialize(sdp_with_alt_protocol, &jdesc_with_alt_protocol));
-
-  AddAltProtocol(kAudioContentName, "foo");
-  AddAltProtocol(kVideoContentName, "bar");
-
-  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
-                                jdesc_.session_version()));
-  EXPECT_TRUE(CompareSessionDescription(jdesc_, jdesc_with_alt_protocol));
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithUfragPwd) {

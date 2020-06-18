@@ -38,16 +38,12 @@ JsepTransportDescription::JsepTransportDescription(
     const std::vector<CryptoParams>& cryptos,
     const std::vector<int>& encrypted_header_extension_ids,
     int rtp_abs_sendtime_extn_id,
-    const TransportDescription& transport_desc,
-    absl::optional<std::string> media_alt_protocol,
-    absl::optional<std::string> data_alt_protocol)
+    const TransportDescription& transport_desc)
     : rtcp_mux_enabled(rtcp_mux_enabled),
       cryptos(cryptos),
       encrypted_header_extension_ids(encrypted_header_extension_ids),
       rtp_abs_sendtime_extn_id(rtp_abs_sendtime_extn_id),
-      transport_desc(transport_desc),
-      media_alt_protocol(media_alt_protocol),
-      data_alt_protocol(data_alt_protocol) {}
+      transport_desc(transport_desc) {}
 
 JsepTransportDescription::JsepTransportDescription(
     const JsepTransportDescription& from)
@@ -55,9 +51,7 @@ JsepTransportDescription::JsepTransportDescription(
       cryptos(from.cryptos),
       encrypted_header_extension_ids(from.encrypted_header_extension_ids),
       rtp_abs_sendtime_extn_id(from.rtp_abs_sendtime_extn_id),
-      transport_desc(from.transport_desc),
-      media_alt_protocol(from.media_alt_protocol),
-      data_alt_protocol(from.data_alt_protocol) {}
+      transport_desc(from.transport_desc) {}
 
 JsepTransportDescription::~JsepTransportDescription() = default;
 
@@ -71,8 +65,6 @@ JsepTransportDescription& JsepTransportDescription::operator=(
   encrypted_header_extension_ids = from.encrypted_header_extension_ids;
   rtp_abs_sendtime_extn_id = from.rtp_abs_sendtime_extn_id;
   transport_desc = from.transport_desc;
-  media_alt_protocol = from.media_alt_protocol;
-  data_alt_protocol = from.data_alt_protocol;
 
   return *this;
 }
