@@ -882,6 +882,8 @@ rtc_library("audio_network_adaptor") {
     "audio_network_adaptor/fec_controller_plr_based.h",
     "audio_network_adaptor/frame_length_controller.cc",
     "audio_network_adaptor/frame_length_controller.h",
+    "audio_network_adaptor/frame_length_controller_v2.cc",
+    "audio_network_adaptor/frame_length_controller_v2.h",
     "audio_network_adaptor/include/audio_network_adaptor.h",
     "audio_network_adaptor/util/threshold_curve.h",
   ]
@@ -902,7 +904,10 @@ rtc_library("audio_network_adaptor") {
     "../../system_wrappers",
     "../../system_wrappers:field_trial",
   ]
-  absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
+  absl_deps = [
+    "//third_party/abseil-cpp/absl/algorithm:container",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
 
   if (rtc_enable_protobuf) {
     deps += [
@@ -1931,6 +1936,7 @@ if (rtc_include_tests) {
       "audio_network_adaptor/event_log_writer_unittest.cc",
       "audio_network_adaptor/fec_controller_plr_based_unittest.cc",
       "audio_network_adaptor/frame_length_controller_unittest.cc",
+      "audio_network_adaptor/frame_length_controller_v2_unittest.cc",
       "audio_network_adaptor/util/threshold_curve_unittest.cc",
       "codecs/builtin_audio_decoder_factory_unittest.cc",
       "codecs/builtin_audio_encoder_factory_unittest.cc",
