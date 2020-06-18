@@ -93,17 +93,13 @@ std::unique_ptr<AudioEncoderOpusStates> CreateCodec(int sample_rate_hz,
 AudioEncoderRuntimeConfig CreateEncoderRuntimeConfig() {
   constexpr int kBitrate = 40000;
   constexpr int kFrameLength = 60;
-  constexpr bool kEnableFec = true;
   constexpr bool kEnableDtx = false;
   constexpr size_t kNumChannels = 1;
-  constexpr float kPacketLossFraction = 0.1f;
   AudioEncoderRuntimeConfig config;
   config.bitrate_bps = kBitrate;
   config.frame_length_ms = kFrameLength;
-  config.enable_fec = kEnableFec;
   config.enable_dtx = kEnableDtx;
   config.num_channels = kNumChannels;
-  config.uplink_packet_loss_fraction = kPacketLossFraction;
   return config;
 }
 
@@ -111,7 +107,6 @@ void CheckEncoderRuntimeConfig(const AudioEncoderOpusImpl* encoder,
                                const AudioEncoderRuntimeConfig& config) {
   EXPECT_EQ(*config.bitrate_bps, encoder->GetTargetBitrate());
   EXPECT_EQ(*config.frame_length_ms, encoder->next_frame_length_ms());
-  EXPECT_EQ(*config.enable_fec, encoder->fec_enabled());
   EXPECT_EQ(*config.enable_dtx, encoder->GetDtx());
   EXPECT_EQ(*config.num_channels, encoder->num_channels_to_encode());
 }

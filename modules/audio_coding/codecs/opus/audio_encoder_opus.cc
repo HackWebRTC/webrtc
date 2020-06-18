@@ -472,14 +472,14 @@ void AudioEncoderOpusImpl::DisableAudioNetworkAdaptor() {
 
 void AudioEncoderOpusImpl::OnReceivedUplinkPacketLossFraction(
     float uplink_packet_loss_fraction) {
-  if (!audio_network_adaptor_) {
-    packet_loss_fraction_smoother_->AddSample(uplink_packet_loss_fraction);
-    float average_fraction_loss = packet_loss_fraction_smoother_->GetAverage();
-    return SetProjectedPacketLossRate(average_fraction_loss);
+  if (audio_network_adaptor_) {
+    audio_network_adaptor_->SetUplinkPacketLossFraction(
+        uplink_packet_loss_fraction);
+    ApplyAudioNetworkAdaptor();
   }
-  audio_network_adaptor_->SetUplinkPacketLossFraction(
-      uplink_packet_loss_fraction);
-  ApplyAudioNetworkAdaptor();
+  packet_loss_fraction_smoother_->AddSample(uplink_packet_loss_fraction);
+  float average_fraction_loss = packet_loss_fraction_smoother_->GetAverage();
+  SetProjectedPacketLossRate(average_fraction_loss);
 }
 
 void AudioEncoderOpusImpl::OnReceivedTargetAudioBitrate(
@@ -758,10 +758,6 @@ void AudioEncoderOpusImpl::ApplyAudioNetworkAdaptor() {
     SetTargetBitrate(*config.bitrate_bps);
   if (config.frame_length_ms)
     SetFrameLength(*config.frame_length_ms);
-  if (config.enable_fec)
-    SetFec(*config.enable_fec);
-  if (config.uplink_packet_loss_fraction)
-    SetProjectedPacketLossRate(*config.uplink_packet_loss_fraction);
   if (config.enable_dtx)
     SetDtx(*config.enable_dtx);
   if (config.num_channels)
