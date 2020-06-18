@@ -357,7 +357,7 @@ AudioEncoderOpusImpl::AudioEncoderOpusImpl(
     : payload_type_(payload_type),
       send_side_bwe_with_overhead_(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
-      use_stable_target_for_adaptation_(webrtc::field_trial::IsEnabled(
+      use_stable_target_for_adaptation_(!webrtc::field_trial::IsDisabled(
           "WebRTC-Audio-StableTargetAdaptation")),
       adjust_bandwidth_(
           webrtc::field_trial::IsEnabled("WebRTC-AdjustOpusBandwidth")),

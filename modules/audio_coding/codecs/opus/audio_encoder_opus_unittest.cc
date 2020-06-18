@@ -254,6 +254,8 @@ TEST_P(AudioEncoderOpusTest,
 
 TEST_P(AudioEncoderOpusTest,
        InvokeAudioNetworkAdaptorOnReceivedUplinkBandwidth) {
+  test::ScopedFieldTrials override_field_trials(
+      "WebRTC-Audio-StableTargetAdaptation/Disabled/");
   auto states = CreateCodec(sample_rate_hz_, 2);
   states->encoder->EnableAudioNetworkAdaptor("", nullptr);
 
@@ -271,6 +273,28 @@ TEST_P(AudioEncoderOpusTest,
   EXPECT_CALL(*states->mock_bitrate_smoother, AddSample(kTargetAudioBitrate));
   states->encoder->OnReceivedUplinkBandwidth(kTargetAudioBitrate,
                                              kProbingIntervalMs);
+
+  CheckEncoderRuntimeConfig(states->encoder.get(), config);
+}
+
+TEST_P(AudioEncoderOpusTest,
+       InvokeAudioNetworkAdaptorOnReceivedUplinkAllocation) {
+  auto states = CreateCodec(sample_rate_hz_, 2);
+  states->encoder->EnableAudioNetworkAdaptor("", nullptr);
+
+  auto config = CreateEncoderRuntimeConfig();
+  EXPECT_CALL(*states->mock_audio_network_adaptor, GetEncoderRuntimeConfig())
+      .WillOnce(Return(config));
+
+  BitrateAllocationUpdate update;
+  update.target_bitrate = DataRate::BitsPerSec(30000);
+  update.stable_target_bitrate = DataRate::BitsPerSec(20000);
+  update.bwe_period = TimeDelta::Millis(200);
+  EXPECT_CALL(*states->mock_audio_network_adaptor,
+              SetTargetAudioBitrate(update.target_bitrate.bps()));
+  EXPECT_CALL(*states->mock_audio_network_adaptor,
+              SetUplinkBandwidth(update.stable_target_bitrate.bps()));
+  states->encoder->OnReceivedUplinkAllocation(update);
 
   CheckEncoderRuntimeConfig(states->encoder.get(), config);
 }
@@ -501,6 +525,8 @@ TEST_P(AudioEncoderOpusTest, EmptyConfigDoesNotAffectEncoderSettings) {
 }
 
 TEST_P(AudioEncoderOpusTest, UpdateUplinkBandwidthInAudioNetworkAdaptor) {
+  test::ScopedFieldTrials override_field_trials(
+      "WebRTC-Audio-StableTargetAdaptation/Disabled/");
   auto states = CreateCodec(sample_rate_hz_, 2);
   states->encoder->EnableAudioNetworkAdaptor("", nullptr);
   const size_t opus_rate_khz = rtc::CheckedDivExact(sample_rate_hz_, 1000);
