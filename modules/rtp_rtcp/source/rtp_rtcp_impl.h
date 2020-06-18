@@ -294,6 +294,10 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   RTCPReceiver* rtcp_receiver() { return &rtcp_receiver_; }
   const RTCPReceiver* rtcp_receiver() const { return &rtcp_receiver_; }
 
+  void SetMediaHasBeenSent(bool media_has_been_sent) {
+    rtp_sender_->packet_sender.SetMediaHasBeenSent(media_has_been_sent);
+  }
+
   Clock* clock() const { return clock_; }
 
   // TODO(sprang): Remove when usage is gone.
