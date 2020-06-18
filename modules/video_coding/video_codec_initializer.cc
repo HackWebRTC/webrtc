@@ -75,7 +75,9 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
       static_cast<unsigned char>(streams.size());
   video_codec.minBitrate = streams[0].min_bitrate_bps / 1000;
   bool codec_active = false;
-  for (const VideoStream& stream : streams) {
+  // Active configuration might not be fully copied to |streams| for SVC yet.
+  // Therefore the |config| is checked here.
+  for (const VideoStream& stream : config.simulcast_layers) {
     if (stream.active) {
       codec_active = true;
       break;
@@ -205,7 +207,7 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
           spatial_layers.back().maxBitrate = video_codec.maxBitrate;
         }
 
-        for (size_t spatial_idx = 0;
+        for (size_t spatial_idx = first_active_layer;
              spatial_idx < config.simulcast_layers.size() &&
              spatial_idx < spatial_layers.size();
              ++spatial_idx) {

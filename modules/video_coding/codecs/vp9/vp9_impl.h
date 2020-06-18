@@ -175,6 +175,15 @@ class VP9EncoderImpl : public VP9Encoder {
   static VariableFramerateExperiment ParseVariableFramerateConfig(
       std::string group_name);
   FramerateController variable_framerate_controller_;
+
+  const struct QualityScalerExperiment {
+    int low_qp;
+    int high_qp;
+    bool enabled;
+  } quality_scaler_experiment_;
+  static QualityScalerExperiment ParseQualityScalerConfig(
+      std::string group_name);
+
   int num_steady_state_frames_;
   // Only set config when this flag is set.
   bool config_changed_;

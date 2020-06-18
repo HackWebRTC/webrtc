@@ -1730,7 +1730,8 @@ bool VideoStreamEncoder::DropDueToSize(uint32_t pixel_count) const {
   bool simulcast_or_svc =
       (send_codec_.codecType == VideoCodecType::kVideoCodecVP9 &&
        send_codec_.VP9().numberOfSpatialLayers > 1) ||
-      send_codec_.numberOfSimulcastStreams > 1;
+      send_codec_.numberOfSimulcastStreams > 1 ||
+      encoder_config_.simulcast_layers.size() > 1;
 
   if (simulcast_or_svc || !stream_resource_manager_.DropInitialFrames() ||
       !encoder_target_bitrate_bps_.has_value()) {

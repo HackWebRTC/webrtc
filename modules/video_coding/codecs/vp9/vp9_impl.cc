@@ -52,6 +52,15 @@ const int kMaxAllowedPidDiff = 30;
 constexpr double kLowRateFactor = 1.0;
 constexpr double kHighRateFactor = 2.0;
 
+// TODO(ilink): Tune these thresholds further.
+// Selected using ConverenceMotion_1280_720_50.yuv clip.
+// No toggling observed on any link capacity from 100-2000kbps.
+// HD was reached consistently when link capacity was 1500kbps.
+// Set resolutions are a bit more conservative than svc_config.cc sets, e.g.
+// for 300kbps resolution converged to 270p instead of 360p.
+constexpr int kLowVp9QpThreshold = 149;
+constexpr int kHighVp9QpThreshold = 205;
+
 // These settings correspond to the settings in vpx_codec_enc_cfg.
 struct Vp9RateSettings {
   uint32_t rc_undershoot_pct;
@@ -248,6 +257,8 @@ VP9EncoderImpl::VP9EncoderImpl(const cricket::VideoCodec& codec)
           "WebRTC-VP9VariableFramerateScreenshare")),
       variable_framerate_controller_(
           variable_framerate_experiment_.framerate_limit),
+      quality_scaler_experiment_(
+          ParseQualityScalerConfig("WebRTC-VP9QualityScaler")),
       num_steady_state_frames_(0),
       config_changed_(true) {
   codec_ = {};
@@ -398,7 +409,6 @@ bool VP9EncoderImpl::SetSvcRates(
       expect_no_more_active_layers = seen_active_layer;
     }
   }
-  RTC_DCHECK_GT(num_active_spatial_layers_, 0);
 
   if (higher_layers_enabled && !force_key_frame_) {
     // Prohibit drop of all layers for the next frame, so newly enabled
@@ -566,7 +576,13 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   // put some key-frames at will even in VPX_KF_DISABLED kf_mode.
   config_->kf_max_dist = inst->VP9().keyFrameInterval;
   config_->kf_min_dist = config_->kf_max_dist;
-  config_->rc_resize_allowed = inst->VP9().automaticResizeOn ? 1 : 0;
+  if (quality_scaler_experiment_.enabled) {
+    // In that experiment webrtc wide quality scaler is used instead of libvpx
+    // internal scaler.
+    config_->rc_resize_allowed = 0;
+  } else {
+    config_->rc_resize_allowed = inst->VP9().automaticResizeOn ? 1 : 0;
+  }
   // Determine number of threads based on the image size and #cores.
   config_->g_threads =
       NumberOfThreads(config_->g_w, config_->g_h, settings.number_of_cores);
@@ -1555,7 +1571,12 @@ VideoEncoder::EncoderInfo VP9EncoderImpl::GetEncoderInfo() const {
   EncoderInfo info;
   info.supports_native_handle = false;
   info.implementation_name = "libvpx";
-  info.scaling_settings = VideoEncoder::ScalingSettings::kOff;
+  if (quality_scaler_experiment_.enabled) {
+    info.scaling_settings = VideoEncoder::ScalingSettings(
+        quality_scaler_experiment_.low_qp, quality_scaler_experiment_.high_qp);
+  } else {
+    info.scaling_settings = VideoEncoder::ScalingSettings::kOff;
+  }
   info.has_trusted_rate_controller = trusted_rate_controller_;
   info.is_hardware_accelerated = false;
   info.has_internal_source = false;
@@ -1624,6 +1645,24 @@ VP9EncoderImpl::ParseVariableFramerateConfig(std::string group_name) {
   config.steady_state_qp = qp.Get();
   config.steady_state_undershoot_percentage = undershoot_percentage.Get();
   config.frames_before_steady_state = frames_before_steady_state.Get();
+
+  return config;
+}
+
+// static
+VP9EncoderImpl::QualityScalerExperiment
+VP9EncoderImpl::ParseQualityScalerConfig(std::string group_name) {
+  FieldTrialFlag disabled = FieldTrialFlag("Disabled");
+  FieldTrialParameter<int> low_qp("low_qp", kLowVp9QpThreshold);
+  FieldTrialParameter<int> high_qp("hihg_qp", kHighVp9QpThreshold);
+  ParseFieldTrial({&disabled, &low_qp, &high_qp},
+                  field_trial::FindFullName(group_name));
+  QualityScalerExperiment config;
+  config.enabled = !disabled.Get();
+  RTC_LOG(LS_INFO) << "Webrtc quality scaler for vp9 is "
+                   << (config.enabled ? "enabled." : "disabled");
+  config.low_qp = low_qp.Get();
+  config.high_qp = high_qp.Get();
 
   return config;
 }
