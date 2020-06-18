@@ -18,13 +18,6 @@
 #include "rtc_base/checks.h"
 
 namespace webrtc {
-namespace {
-
-constexpr int kMaxTemporalId = 7;
-constexpr int kMaxSpatialId = 3;
-constexpr int kMaxTemplates = 64;
-
-}  // namespace
 
 RtpDependencyDescriptorReader::RtpDependencyDescriptorReader(
     rtc::ArrayView<const uint8_t> raw_data,
@@ -95,7 +88,7 @@ void RtpDependencyDescriptorReader::ReadTemplateLayers() {
   int spatial_id = 0;
   NextLayerIdc next_layer_idc;
   do {
-    if (templates.size() == kMaxTemplates) {
+    if (templates.size() == DependencyDescriptor::kMaxTemplates) {
       parsing_failed_ = true;
       break;
     }
@@ -107,14 +100,14 @@ void RtpDependencyDescriptorReader::ReadTemplateLayers() {
     next_layer_idc = static_cast<NextLayerIdc>(ReadBits(2));
     if (next_layer_idc == kNextTemporalLayer) {
       temporal_id++;
-      if (temporal_id > kMaxTemporalId) {
+      if (temporal_id >= DependencyDescriptor::kMaxTemporalIds) {
         parsing_failed_ = true;
         break;
       }
     } else if (next_layer_idc == kNextSpatialLayer) {
       temporal_id = 0;
       spatial_id++;
-      if (spatial_id > kMaxSpatialId) {
+      if (spatial_id >= DependencyDescriptor::kMaxSpatialIds) {
         parsing_failed_ = true;
         break;
       }
@@ -198,9 +191,10 @@ void RtpDependencyDescriptorReader::ReadExtendedFields() {
 }
 
 void RtpDependencyDescriptorReader::ReadFrameDependencyDefinition() {
-  size_t template_index = (frame_dependency_template_id_ + kMaxTemplates -
-                           structure_->structure_id) %
-                          kMaxTemplates;
+  size_t template_index =
+      (frame_dependency_template_id_ + DependencyDescriptor::kMaxTemplates -
+       structure_->structure_id) %
+      DependencyDescriptor::kMaxTemplates;
 
   if (template_index >= structure_->templates.size()) {
     parsing_failed_ = true;

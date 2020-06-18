@@ -99,6 +99,11 @@ struct FrameDependencyStructure {
 };
 
 struct DependencyDescriptor {
+  static constexpr int kMaxSpatialIds = 4;
+  static constexpr int kMaxTemporalIds = 8;
+  static constexpr int kMaxDecodeTargets = 32;
+  static constexpr int kMaxTemplates = 64;
+
   bool first_packet_in_frame = true;
   bool last_packet_in_frame = true;
   int frame_number = 0;

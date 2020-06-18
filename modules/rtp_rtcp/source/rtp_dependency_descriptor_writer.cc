@@ -23,8 +23,6 @@
 namespace webrtc {
 namespace {
 
-constexpr int kMaxTemplates = 64;
-
 enum class NextLayerIdc : uint64_t {
   kSameLayer = 0,
   kNextTemporal = 1,
@@ -35,12 +33,8 @@ enum class NextLayerIdc : uint64_t {
 
 NextLayerIdc GetNextLayerIdc(const FrameDependencyTemplate& previous,
                              const FrameDependencyTemplate& next) {
-  // TODO(danilchap): Move these constants to header shared between reader and
-  // writer.
-  static constexpr int kMaxSpatialId = 3;
-  static constexpr int kMaxTemporalId = 7;
-  RTC_DCHECK_LE(next.spatial_id, kMaxSpatialId);
-  RTC_DCHECK_LE(next.temporal_id, kMaxTemporalId);
+  RTC_DCHECK_LT(next.spatial_id, DependencyDescriptor::kMaxSpatialIds);
+  RTC_DCHECK_LT(next.temporal_id, DependencyDescriptor::kMaxTemporalIds);
 
   if (next.spatial_id == previous.spatial_id &&
       next.temporal_id == previous.temporal_id) {
@@ -201,7 +195,7 @@ bool RtpDependencyDescriptorWriter::HasExtendedFields() const {
 uint64_t RtpDependencyDescriptorWriter::TemplateId() const {
   return (best_template_.template_position - structure_.templates.begin() +
           structure_.structure_id) %
-         kMaxTemplates;
+         DependencyDescriptor::kMaxTemplates;
 }
 
 void RtpDependencyDescriptorWriter::WriteBits(uint64_t val, size_t bit_count) {
@@ -217,9 +211,10 @@ void RtpDependencyDescriptorWriter::WriteNonSymmetric(uint32_t value,
 
 void RtpDependencyDescriptorWriter::WriteTemplateDependencyStructure() {
   RTC_DCHECK_GE(structure_.structure_id, 0);
-  RTC_DCHECK_LT(structure_.structure_id, kMaxTemplates);
+  RTC_DCHECK_LT(structure_.structure_id, DependencyDescriptor::kMaxTemplates);
   RTC_DCHECK_GT(structure_.num_decode_targets, 0);
-  RTC_DCHECK_LE(structure_.num_decode_targets, 1 << 5);
+  RTC_DCHECK_LE(structure_.num_decode_targets,
+                DependencyDescriptor::kMaxDecodeTargets);
 
   WriteBits(structure_.structure_id, 6);
   WriteBits(structure_.num_decode_targets - 1, 5);
@@ -236,7 +231,7 @@ void RtpDependencyDescriptorWriter::WriteTemplateDependencyStructure() {
 void RtpDependencyDescriptorWriter::WriteTemplateLayers() {
   const auto& templates = structure_.templates;
   RTC_DCHECK(!templates.empty());
-  RTC_DCHECK_LE(templates.size(), kMaxTemplates);
+  RTC_DCHECK_LE(templates.size(), DependencyDescriptor::kMaxTemplates);
   RTC_DCHECK_EQ(templates[0].spatial_id, 0);
   RTC_DCHECK_EQ(templates[0].temporal_id, 0);
 
