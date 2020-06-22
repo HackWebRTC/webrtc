@@ -39,6 +39,7 @@
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "media/base/media_constants.h"
+#include "rtc_base/deprecation.h"
 #include "rtc_base/network.h"
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/ssl_certificate.h"
@@ -334,6 +335,9 @@ class PeerConnectionE2EQualityTestFixture {
         PeerConnectionInterface::RTCConfiguration configuration) = 0;
     // Set bitrate parameters on PeerConnection. This constraints will be
     // applied to all summed RTP streams for this peer.
+    virtual PeerConfigurer* SetBitrateSettings(
+        BitrateSettings bitrate_settings) = 0;
+    RTC_DEPRECATED
     virtual PeerConfigurer* SetBitrateParameters(
         PeerConnectionInterface::BitrateParameters bitrate_params) = 0;
   };

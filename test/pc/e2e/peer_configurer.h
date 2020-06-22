@@ -165,7 +165,15 @@ class PeerConfigurerImpl final
   }
   PeerConfigurer* SetBitrateParameters(
       PeerConnectionInterface::BitrateParameters bitrate_params) override {
-    params_->bitrate_params = bitrate_params;
+    BitrateSettings bitrate_settings;
+    bitrate_settings.min_bitrate_bps = bitrate_params.min_bitrate_bps;
+    bitrate_settings.start_bitrate_bps = bitrate_params.current_bitrate_bps;
+    bitrate_settings.max_bitrate_bps = bitrate_params.max_bitrate_bps;
+    return SetBitrateSettings(bitrate_settings);
+  }
+  PeerConfigurer* SetBitrateSettings(
+      BitrateSettings bitrate_settings) override {
+    params_->bitrate_settings = bitrate_settings;
     return this;
   }
 

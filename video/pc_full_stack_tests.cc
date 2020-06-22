@@ -281,11 +281,11 @@ TEST(PCGenericDescriptorTest, ForemanCif30kbpsWithoutPacketLoss) {
             video, ClipNameToClipPath("foreman_cif"));
         alice->AddVideoConfig(std::move(video), std::move(frame_generator));
 
-        PeerConnectionInterface::BitrateParameters bitrate_params;
-        bitrate_params.min_bitrate_bps = 30000;
-        bitrate_params.current_bitrate_bps = 30000;
-        bitrate_params.max_bitrate_bps = 30000;
-        alice->SetBitrateParameters(bitrate_params);
+        BitrateSettings bitrate_settings;
+        bitrate_settings.min_bitrate_bps = 30000;
+        bitrate_settings.start_bitrate_bps = 30000;
+        bitrate_settings.max_bitrate_bps = 30000;
+        alice->SetBitrateSettings(bitrate_settings);
       },
       [](PeerConfigurer* bob) {});
   RunParams run_params(TimeDelta::Seconds(kTestDurationSec));
@@ -314,11 +314,11 @@ TEST(PCGenericDescriptorTest,
             video, ClipNameToClipPath("foreman_cif"));
         alice->AddVideoConfig(std::move(video), std::move(frame_generator));
 
-        PeerConnectionInterface::BitrateParameters bitrate_params;
-        bitrate_params.min_bitrate_bps = 30000;
-        bitrate_params.current_bitrate_bps = 30000;
-        bitrate_params.max_bitrate_bps = 30000;
-        alice->SetBitrateParameters(bitrate_params);
+        BitrateSettings bitrate_settings;
+        bitrate_settings.min_bitrate_bps = 30000;
+        bitrate_settings.start_bitrate_bps = 30000;
+        bitrate_settings.max_bitrate_bps = 30000;
+        alice->SetBitrateSettings(bitrate_settings);
       },
       [](PeerConfigurer* bob) {});
   RunParams run_params(TimeDelta::Seconds(kTestDurationSec));
@@ -619,11 +619,11 @@ TEST(PCFullStackTest, ForemanCif30kbpsWithoutPacketlossH264) {
             video, ClipNameToClipPath("foreman_cif"));
         alice->AddVideoConfig(std::move(video), std::move(frame_generator));
 
-        PeerConnectionInterface::BitrateParameters bitrate_params;
-        bitrate_params.min_bitrate_bps = 30000;
-        bitrate_params.current_bitrate_bps = 30000;
-        bitrate_params.max_bitrate_bps = 30000;
-        alice->SetBitrateParameters(bitrate_params);
+        BitrateSettings bitrate_settings;
+        bitrate_settings.min_bitrate_bps = 30000;
+        bitrate_settings.start_bitrate_bps = 30000;
+        bitrate_settings.max_bitrate_bps = 30000;
+        alice->SetBitrateSettings(bitrate_settings);
       },
       [](PeerConfigurer* bob) {});
   RunParams run_params(TimeDelta::Seconds(kTestDurationSec));

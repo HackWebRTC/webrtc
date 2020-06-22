@@ -308,10 +308,10 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_HighBitrate) {
   RunTest(
       "smoke", run_params,
       [](PeerConfigurer* alice) {
-        PeerConnectionInterface::BitrateParameters bitrate_params;
-        bitrate_params.current_bitrate_bps = 3'000'000;
-        bitrate_params.max_bitrate_bps = 3'000'000;
-        alice->SetBitrateParameters(bitrate_params);
+        BitrateSettings bitrate_settings;
+        bitrate_settings.start_bitrate_bps = 3'000'000;
+        bitrate_settings.max_bitrate_bps = 3'000'000;
+        alice->SetBitrateSettings(bitrate_settings);
         VideoConfig video(800, 600, 15);
         video.stream_label = "alice-video";
         video.min_encode_bitrate_bps = 500'000;

@@ -329,7 +329,7 @@ std::unique_ptr<TestPeer> TestPeerFactory::CreateTestPeer(
   rtc::scoped_refptr<PeerConnectionInterface> peer_connection =
       peer_connection_factory->CreatePeerConnection(params->rtc_configuration,
                                                     std::move(pc_deps));
-  peer_connection->SetBitrate(params->bitrate_params);
+  peer_connection->SetBitrate(params->bitrate_settings);
 
   return absl::WrapUnique(new TestPeer(
       peer_connection_factory, peer_connection, std::move(observer),
