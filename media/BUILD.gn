@@ -659,5 +659,14 @@ if (rtc_include_tests) {
     if (is_ios) {
       deps += [ ":rtc_media_unittests_bundle_data" ]
     }
+
+    if (rtc_enable_sctp && rtc_build_usrsctp) {
+      include_dirs = [
+        # TODO(jiayl): move this into the public_configs of
+        # //third_party/usrsctp/BUILD.gn.
+        "//third_party/usrsctp/usrsctplib",
+      ]
+      deps += [ "//third_party/usrsctp" ]
+    }
   }
 }
