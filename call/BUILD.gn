@@ -455,6 +455,7 @@ if (rtc_include_tests) {
       "//third_party/abseil-cpp/absl/container:inlined_vector",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
+      "//third_party/abseil-cpp/absl/types:variant",
     ]
   }
 

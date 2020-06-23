@@ -1454,6 +1454,7 @@ if (rtc_include_tests) {
     defines = audio_coding_defines
 
     deps = audio_coding_deps + [
+             "//third_party/abseil-cpp/absl/strings",
              "../../api/audio:audio_frame_api",
              "../../rtc_base:checks",
              ":audio_coding",
@@ -2077,6 +2078,7 @@ if (rtc_include_tests) {
     absl_deps = [
       "//third_party/abseil-cpp/absl/flags:flag",
       "//third_party/abseil-cpp/absl/memory",
+      "//third_party/abseil-cpp/absl/strings",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
 
