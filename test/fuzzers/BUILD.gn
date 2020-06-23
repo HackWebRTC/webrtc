@@ -40,6 +40,10 @@ rtc_library("fuzz_data_helper") {
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
 }
 
+set_defaults("webrtc_fuzzer_test") {
+  absl_deps = []
+}
+
 template("webrtc_fuzzer_test") {
   fuzzer_test(target_name) {
     forward_variables_from(invoker, "*")
@@ -47,6 +51,21 @@ template("webrtc_fuzzer_test") {
       ":fuzz_data_helper",
       ":webrtc_fuzzer_main",
     ]
+
+    # If absl_deps is [], no action is needed. If not [], then it needs to be
+    # converted to //third_party/abseil-cpp:absl when build_with_chromium=true
+    # otherwise it just needs to be added to deps.
+    if (absl_deps != []) {
+      if (!defined(deps)) {
+        deps = []
+      }
+      if (build_with_chromium) {
+        deps += [ "//third_party/abseil-cpp:absl" ]
+      } else {
+        deps += absl_deps
+      }
+    }
+
     if (!build_with_chromium && is_clang) {
       suppressed_configs = [ "//build/config/clang:find_bad_constructs" ]
     }
@@ -194,10 +213,8 @@ webrtc_fuzzer_test("rtcp_receiver_fuzzer") {
 
 webrtc_fuzzer_test("rtp_packet_fuzzer") {
   sources = [ "rtp_packet_fuzzer.cc" ]
-  deps = [
-    "../../modules/rtp_rtcp:rtp_rtcp_format",
-    "//third_party/abseil-cpp/absl/types:optional",
-  ]
+  deps = [ "../../modules/rtp_rtcp:rtp_rtcp_format" ]
+  absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
   seed_corpus = "corpora/rtp-corpus"
 }
 
@@ -461,8 +478,8 @@ webrtc_fuzzer_test("audio_processing_fuzzer") {
     "../../rtc_base:rtc_task_queue",
     "../../rtc_base:safe_minmax",
     "../../system_wrappers:field_trial",
-    "//third_party/abseil-cpp/absl/memory",
   ]
+  absl_deps = [ "//third_party/abseil-cpp/absl/memory" ]
   seed_corpus = "corpora/audio_processing-corpus"
 }
 

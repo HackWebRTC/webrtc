@@ -532,8 +532,8 @@ template("rtc_source_set") {
       public_configs += invoker.public_configs
     }
 
-    # If absl_deps if [], no action is needed. If not [], then if needs to be
-    # converted to //third_party/abseil-cpp:absl if is_component_build=true
+    # If absl_deps is [], no action is needed. If not [], then it needs to be
+    # converted to //third_party/abseil-cpp:absl when build_with_chromium=true
     # otherwise it just needs to be added to deps.
     if (absl_deps != []) {
       if (!defined(deps)) {
@@ -621,8 +621,8 @@ template("rtc_static_library") {
       public_configs += invoker.public_configs
     }
 
-    # If absl_deps if [], no action is needed. If not [], then if needs to be
-    # converted to //third_party/abseil-cpp:absl if is_component_build=true
+    # If absl_deps is [], no action is needed. If not [], then it needs to be
+    # converted to //third_party/abseil-cpp:absl when build_with_chromium=true
     # otherwise it just needs to be added to deps.
     if (absl_deps != []) {
       if (!defined(deps)) {
@@ -747,8 +747,8 @@ template("rtc_library") {
       public_configs += invoker.public_configs
     }
 
-    # If absl_deps if [], no action is needed. If not [], then if needs to be
-    # converted to //third_party/abseil-cpp:absl if is_component_build=true
+    # If absl_deps is [], no action is needed. If not [], then it needs to be
+    # converted to //third_party/abseil-cpp:absl when build_with_chromium=true
     # otherwise it just needs to be added to deps.
     if (absl_deps != []) {
       if (!defined(deps)) {

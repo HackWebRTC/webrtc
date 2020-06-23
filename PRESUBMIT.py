@@ -352,7 +352,8 @@ def CheckAbseilDependencies(input_api, gn_files, output_api):
   target_types_to_check = [
     'rtc_library',
     'rtc_source_set',
-    'rtc_static_library'
+    'rtc_static_library',
+    'webrtc_fuzzer_test',
   ]
   error_msg = ('Abseil dependencies in target "%s" (file: %s) '
               'should be moved to the "absl_deps" parameter.')
