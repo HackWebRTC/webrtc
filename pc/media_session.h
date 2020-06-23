@@ -78,6 +78,7 @@ struct MediaDescriptionOptions {
   // stream information goes in the local descriptions.
   std::vector<SenderOptions> sender_options;
   std::vector<webrtc::RtpCodecCapability> codec_preferences;
+  std::vector<webrtc::RtpHeaderExtensionCapability> header_extensions;
 
  private:
   // Doesn't DCHECK on |type|.
@@ -146,19 +147,13 @@ class MediaSessionDescriptionFactory {
   const AudioCodecs& audio_recv_codecs() const;
   void set_audio_codecs(const AudioCodecs& send_codecs,
                         const AudioCodecs& recv_codecs);
-  void set_audio_rtp_header_extensions(const RtpHeaderExtensions& extensions) {
-    audio_rtp_extensions_ = extensions;
-  }
-  RtpHeaderExtensions audio_rtp_header_extensions() const;
   const VideoCodecs& video_sendrecv_codecs() const;
   const VideoCodecs& video_send_codecs() const;
   const VideoCodecs& video_recv_codecs() const;
   void set_video_codecs(const VideoCodecs& send_codecs,
                         const VideoCodecs& recv_codecs);
-  void set_video_rtp_header_extensions(const RtpHeaderExtensions& extensions) {
-    video_rtp_extensions_ = extensions;
-  }
-  RtpHeaderExtensions video_rtp_header_extensions() const;
+  RtpHeaderExtensions filtered_rtp_header_extensions(
+      RtpHeaderExtensions extensions) const;
   const RtpDataCodecs& rtp_data_codecs() const { return rtp_data_codecs_; }
   void set_rtp_data_codecs(const RtpDataCodecs& codecs) {
     rtp_data_codecs_ = codecs;
@@ -183,6 +178,11 @@ class MediaSessionDescriptionFactory {
       const SessionDescription* current_description) const;
 
  private:
+  struct AudioVideoRtpHeaderExtensions {
+    RtpHeaderExtensions audio;
+    RtpHeaderExtensions video;
+  };
+
   const AudioCodecs& GetAudioCodecsForOffer(
       const webrtc::RtpTransceiverDirection& direction) const;
   const AudioCodecs& GetAudioCodecsForAnswer(
@@ -204,11 +204,11 @@ class MediaSessionDescriptionFactory {
       AudioCodecs* audio_codecs,
       VideoCodecs* video_codecs,
       RtpDataCodecs* rtp_data_codecs) const;
-  void GetRtpHdrExtsToOffer(
+  AudioVideoRtpHeaderExtensions GetOfferedRtpHeaderExtensionsWithIds(
       const std::vector<const ContentInfo*>& current_active_contents,
       bool extmap_allow_mixed,
-      RtpHeaderExtensions* audio_extensions,
-      RtpHeaderExtensions* video_extensions) const;
+      const std::vector<MediaDescriptionOptions>& media_description_options)
+      const;
   bool AddTransportOffer(const std::string& content_name,
                          const TransportOptions& transport_options,
                          const SessionDescription* current_desc,
@@ -292,6 +292,7 @@ class MediaSessionDescriptionFactory {
       const SessionDescription* current_description,
       const TransportInfo* bundle_transport,
       const AudioCodecs& audio_codecs,
+      const RtpHeaderExtensions& default_audio_rtp_header_extensions,
       StreamParamsVec* current_streams,
       SessionDescription* answer,
       IceCredentialsIterator* ice_credentials) const;
@@ -305,6 +306,7 @@ class MediaSessionDescriptionFactory {
       const SessionDescription* current_description,
       const TransportInfo* bundle_transport,
       const VideoCodecs& video_codecs,
+      const RtpHeaderExtensions& default_video_rtp_header_extensions,
       StreamParamsVec* current_streams,
       SessionDescription* answer,
       IceCredentialsIterator* ice_credentials) const;
@@ -333,14 +335,12 @@ class MediaSessionDescriptionFactory {
   AudioCodecs audio_sendrecv_codecs_;
   // Union of send and recv.
   AudioCodecs all_audio_codecs_;
-  RtpHeaderExtensions audio_rtp_extensions_;
   VideoCodecs video_send_codecs_;
   VideoCodecs video_recv_codecs_;
   // Intersection of send and recv.
   VideoCodecs video_sendrecv_codecs_;
   // Union of send and recv.
   VideoCodecs all_video_codecs_;
-  RtpHeaderExtensions video_rtp_extensions_;
   RtpDataCodecs rtp_data_codecs_;
   // This object is not owned by the channel so it must outlive it.
   rtc::UniqueRandomIdGenerator* const ssrc_generator_;

@@ -33,16 +33,31 @@ class PeerConnectionHeaderExtensionTest
     : public ::testing::TestWithParam<
           std::tuple<cricket::MediaType, SdpSemantics>> {
  protected:
+  PeerConnectionHeaderExtensionTest()
+      : extensions_(
+            {RtpHeaderExtensionCapability("uri1",
+                                          1,
+                                          RtpTransceiverDirection::kStopped),
+             RtpHeaderExtensionCapability("uri2",
+                                          2,
+                                          RtpTransceiverDirection::kSendOnly),
+             RtpHeaderExtensionCapability("uri3",
+                                          3,
+                                          RtpTransceiverDirection::kRecvOnly),
+             RtpHeaderExtensionCapability(
+                 "uri4",
+                 4,
+                 RtpTransceiverDirection::kSendRecv)}) {}
+
   std::unique_ptr<PeerConnectionWrapper> CreatePeerConnection(
       cricket::MediaType media_type,
-      absl::optional<SdpSemantics> semantics,
-      std::vector<RtpHeaderExtensionCapability> extensions) {
+      absl::optional<SdpSemantics> semantics) {
     auto voice = std::make_unique<cricket::FakeVoiceEngine>();
     auto video = std::make_unique<cricket::FakeVideoEngine>();
     if (media_type == cricket::MediaType::MEDIA_TYPE_AUDIO)
-      voice->SetRtpHeaderExtensions(extensions);
+      voice->SetRtpHeaderExtensions(extensions_);
     else
-      video->SetRtpHeaderExtensions(extensions);
+      video->SetRtpHeaderExtensions(extensions_);
     auto media_engine = std::make_unique<cricket::CompositeMediaEngine>(
         std::move(voice), std::move(video));
     PeerConnectionFactoryDependencies factory_dependencies;
@@ -71,6 +86,8 @@ class PeerConnectionHeaderExtensionTest
     return std::make_unique<PeerConnectionWrapper>(pc_factory, pc,
                                                    std::move(observer));
   }
+
+  std::vector<RtpHeaderExtensionCapability> extensions_;
 };
 
 TEST_P(PeerConnectionHeaderExtensionTest, TransceiverOffersHeaderExtensions) {
@@ -79,19 +96,10 @@ TEST_P(PeerConnectionHeaderExtensionTest, TransceiverOffersHeaderExtensions) {
   std::tie(media_type, semantics) = GetParam();
   if (semantics != SdpSemantics::kUnifiedPlan)
     return;
-  std::vector<RtpHeaderExtensionCapability> extensions(
-      {RtpHeaderExtensionCapability("uri1", 1,
-                                    RtpTransceiverDirection::kStopped),
-       RtpHeaderExtensionCapability("uri2", 2,
-                                    RtpTransceiverDirection::kSendOnly),
-       RtpHeaderExtensionCapability("uri3", 3,
-                                    RtpTransceiverDirection::kRecvOnly),
-       RtpHeaderExtensionCapability("uri4", 4,
-                                    RtpTransceiverDirection::kSendRecv)});
   std::unique_ptr<PeerConnectionWrapper> wrapper =
-      CreatePeerConnection(media_type, semantics, extensions);
+      CreatePeerConnection(media_type, semantics);
   auto transceiver = wrapper->AddTransceiver(media_type);
-  EXPECT_EQ(transceiver->HeaderExtensionsToOffer(), extensions);
+  EXPECT_EQ(transceiver->HeaderExtensionsToOffer(), extensions_);
 }
 
 TEST_P(PeerConnectionHeaderExtensionTest,
@@ -99,26 +107,63 @@ TEST_P(PeerConnectionHeaderExtensionTest,
   cricket::MediaType media_type;
   SdpSemantics semantics;
   std::tie(media_type, semantics) = GetParam();
-  std::unique_ptr<PeerConnectionWrapper> wrapper = CreatePeerConnection(
-      media_type, semantics,
-      std::vector<RtpHeaderExtensionCapability>(
-          {RtpHeaderExtensionCapability("uri1", 1,
-                                        RtpTransceiverDirection::kSendRecv),
-           RtpHeaderExtensionCapability("uri2", 2,
-                                        RtpTransceiverDirection::kStopped),
-           RtpHeaderExtensionCapability("uri3", 3,
-                                        RtpTransceiverDirection::kRecvOnly)}));
+  std::unique_ptr<PeerConnectionWrapper> wrapper =
+      CreatePeerConnection(media_type, semantics);
   EXPECT_THAT(wrapper->pc_factory()
                   ->GetRtpSenderCapabilities(media_type)
                   .header_extensions,
-              ElementsAre(Field(&RtpHeaderExtensionCapability::uri, "uri1"),
-                          Field(&RtpHeaderExtensionCapability::uri, "uri3")));
+              ElementsAre(Field(&RtpHeaderExtensionCapability::uri, "uri2"),
+                          Field(&RtpHeaderExtensionCapability::uri, "uri3"),
+                          Field(&RtpHeaderExtensionCapability::uri, "uri4")));
   EXPECT_EQ(wrapper->pc_factory()
                 ->GetRtpReceiverCapabilities(media_type)
                 .header_extensions,
             wrapper->pc_factory()
                 ->GetRtpSenderCapabilities(media_type)
                 .header_extensions);
+}
+
+TEST_P(PeerConnectionHeaderExtensionTest, OffersUnstoppedDefaultExtensions) {
+  cricket::MediaType media_type;
+  SdpSemantics semantics;
+  std::tie(media_type, semantics) = GetParam();
+  if (semantics != SdpSemantics::kUnifiedPlan)
+    return;
+  std::unique_ptr<PeerConnectionWrapper> wrapper =
+      CreatePeerConnection(media_type, semantics);
+  auto transceiver = wrapper->AddTransceiver(media_type);
+  auto session_description = wrapper->CreateOffer();
+  EXPECT_THAT(session_description->description()
+                  ->contents()[0]
+                  .media_description()
+                  ->rtp_header_extensions(),
+              ElementsAre(Field(&RtpExtension::uri, "uri2"),
+                          Field(&RtpExtension::uri, "uri3"),
+                          Field(&RtpExtension::uri, "uri4")));
+}
+
+TEST_P(PeerConnectionHeaderExtensionTest, OffersUnstoppedModifiedExtensions) {
+  cricket::MediaType media_type;
+  SdpSemantics semantics;
+  std::tie(media_type, semantics) = GetParam();
+  if (semantics != SdpSemantics::kUnifiedPlan)
+    return;
+  std::unique_ptr<PeerConnectionWrapper> wrapper =
+      CreatePeerConnection(media_type, semantics);
+  auto transceiver = wrapper->AddTransceiver(media_type);
+  auto modified_extensions = transceiver->HeaderExtensionsToOffer();
+  modified_extensions[0].direction = RtpTransceiverDirection::kSendRecv;
+  modified_extensions[3].direction = RtpTransceiverDirection::kStopped;
+  EXPECT_TRUE(
+      transceiver->SetOfferedRtpHeaderExtensions(modified_extensions).ok());
+  auto session_description = wrapper->CreateOffer();
+  EXPECT_THAT(session_description->description()
+                  ->contents()[0]
+                  .media_description()
+                  ->rtp_header_extensions(),
+              ElementsAre(Field(&RtpExtension::uri, "uri1"),
+                          Field(&RtpExtension::uri, "uri2"),
+                          Field(&RtpExtension::uri, "uri3")));
 }
 
 INSTANTIATE_TEST_SUITE_P(

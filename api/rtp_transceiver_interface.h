@@ -133,6 +133,13 @@ class RTC_EXPORT RtpTransceiverInterface : public rtc::RefCountInterface {
   virtual std::vector<RtpHeaderExtensionCapability> HeaderExtensionsToOffer()
       const;
 
+  // The SetOfferedRtpHeaderExtensions method modifies the next SDP negotiation
+  // so that it negotiates use of header extensions which are not kStopped.
+  // https://w3c.github.io/webrtc-extensions/#rtcrtptransceiver-interface
+  virtual webrtc::RTCError SetOfferedRtpHeaderExtensions(
+      rtc::ArrayView<const RtpHeaderExtensionCapability>
+          header_extensions_to_offer);
+
  protected:
   ~RtpTransceiverInterface() override = default;
 };
