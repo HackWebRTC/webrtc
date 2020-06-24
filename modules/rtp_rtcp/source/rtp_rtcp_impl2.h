@@ -145,11 +145,6 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
   bool TrySendPacket(RtpPacketToSend* packet,
                      const PacedPacketInfo& pacing_info) override;
 
-  void SetFecProtectionParams(const FecProtectionParams& delta_params,
-                              const FecProtectionParams& key_params) override;
-
-  std::vector<std::unique_ptr<RtpPacketToSend>> FetchFecPackets() override;
-
   void OnPacketsAcknowledged(
       rtc::ArrayView<const uint16_t> sequence_numbers) override;
 
@@ -270,9 +265,8 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
   FRIEND_TEST_ALL_PREFIXES(RtpRtcpImpl2Test, Rtt);
   FRIEND_TEST_ALL_PREFIXES(RtpRtcpImpl2Test, RttForReceiverOnly);
 
-  struct RtpSenderContext : public SequenceNumberAssigner {
+  struct RtpSenderContext {
     explicit RtpSenderContext(const RtpRtcpInterface::Configuration& config);
-    void AssignSequenceNumber(RtpPacketToSend* packet) override;
     // Storage of packets, for retransmissions and padding, if applicable.
     RtpPacketHistory packet_history;
     // Handles final time timestamping/stats/etc and handover to Transport.

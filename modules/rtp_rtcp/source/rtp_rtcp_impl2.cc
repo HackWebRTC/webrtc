@@ -42,15 +42,11 @@ ModuleRtpRtcpImpl2::RtpSenderContext::RtpSenderContext(
     const RtpRtcpInterface::Configuration& config)
     : packet_history(config.clock, config.enable_rtx_padding_prioritization),
       packet_sender(config, &packet_history),
-      non_paced_sender(&packet_sender, this),
+      non_paced_sender(&packet_sender),
       packet_generator(
           config,
           &packet_history,
           config.paced_sender ? config.paced_sender : &non_paced_sender) {}
-void ModuleRtpRtcpImpl2::RtpSenderContext::AssignSequenceNumber(
-    RtpPacketToSend* packet) {
-  packet_generator.AssignSequenceNumber(packet);
-}
 
 ModuleRtpRtcpImpl2::ModuleRtpRtcpImpl2(const Configuration& configuration)
     : rtcp_sender_(configuration),
@@ -398,31 +394,6 @@ bool ModuleRtpRtcpImpl2::TrySendPacket(RtpPacketToSend* packet,
   }
   rtp_sender_->packet_sender.SendPacket(packet, pacing_info);
   return true;
-}
-
-void ModuleRtpRtcpImpl2::SetFecProtectionParams(
-    const FecProtectionParams& delta_params,
-    const FecProtectionParams& key_params) {
-  RTC_DCHECK(rtp_sender_);
-  rtp_sender_->packet_sender.SetFecProtectionParameters(delta_params,
-                                                        key_params);
-}
-
-std::vector<std::unique_ptr<RtpPacketToSend>>
-ModuleRtpRtcpImpl2::FetchFecPackets() {
-  RTC_DCHECK(rtp_sender_);
-  auto fec_packets = rtp_sender_->packet_sender.FetchFecPackets();
-  if (!fec_packets.empty()) {
-    // Don't assign sequence numbers for FlexFEC packets.
-    const bool generate_sequence_numbers =
-        !rtp_sender_->packet_sender.FlexFecSsrc().has_value();
-    if (generate_sequence_numbers) {
-      for (auto& fec_packet : fec_packets) {
-        rtp_sender_->packet_generator.AssignSequenceNumber(fec_packet.get());
-      }
-    }
-  }
-  return fec_packets;
 }
 
 void ModuleRtpRtcpImpl2::OnPacketsAcknowledged(

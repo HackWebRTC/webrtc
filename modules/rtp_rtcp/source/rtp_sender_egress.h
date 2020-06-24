@@ -36,18 +36,15 @@ class RtpSenderEgress {
   // without passing through an actual paced sender.
   class NonPacedPacketSender : public RtpPacketSender {
    public:
-    NonPacedPacketSender(RtpSenderEgress* sender,
-                         SequenceNumberAssigner* sequence_number_assigner);
+    explicit NonPacedPacketSender(RtpSenderEgress* sender);
     virtual ~NonPacedPacketSender();
 
     void EnqueuePackets(
         std::vector<std::unique_ptr<RtpPacketToSend>> packets) override;
 
    private:
-    void PrepareForSend(RtpPacketToSend* packet);
     uint16_t transport_sequence_number_;
     RtpSenderEgress* const sender_;
-    SequenceNumberAssigner* sequence_number_assigner_;
   };
 
   RtpSenderEgress(const RtpRtcpInterface::Configuration& config,
@@ -80,10 +77,6 @@ class RtpSenderEgress {
   std::vector<RtpSequenceNumberMap::Info> GetSentRtpPacketInfos(
       rtc::ArrayView<const uint16_t> sequence_numbers) const
       RTC_LOCKS_EXCLUDED(lock_);
-
-  void SetFecProtectionParameters(const FecProtectionParams& delta_params,
-                                  const FecProtectionParams& key_params);
-  std::vector<std::unique_ptr<RtpPacketToSend>> FetchFecPackets();
 
  private:
   // Maps capture time in milliseconds to send-side delay in milliseconds.
@@ -121,7 +114,6 @@ class RtpSenderEgress {
   RtcEventLog* const event_log_;
   const bool is_audio_;
   const bool need_rtp_packet_infos_;
-  VideoFecGenerator* const fec_generator_ RTC_GUARDED_BY(lock_);
 
   TransportFeedbackObserver* const transport_feedback_observer_;
   SendSideDelayObserver* const send_side_delay_observer_;

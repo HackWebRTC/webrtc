@@ -57,8 +57,6 @@ class PacingController {
     virtual ~PacketSender() = default;
     virtual void SendPacket(std::unique_ptr<RtpPacketToSend> packet,
                             const PacedPacketInfo& cluster_info) = 0;
-    // Should be called after each call to SendPacket().
-    virtual std::vector<std::unique_ptr<RtpPacketToSend>> FetchFec() = 0;
     virtual std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
         DataSize size) = 0;
   };
