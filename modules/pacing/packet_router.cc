@@ -42,7 +42,9 @@ PacketRouter::PacketRouter(uint16_t start_transport_seq)
       bitrate_bps_(0),
       max_bitrate_bps_(std::numeric_limits<decltype(max_bitrate_bps_)>::max()),
       active_remb_module_(nullptr),
-      transport_seq_(start_transport_seq) {}
+      transport_seq_(start_transport_seq) {
+  send_thread_checker_.Detach();
+}
 
 PacketRouter::~PacketRouter() {
   RTC_DCHECK(send_modules_map_.empty());
@@ -139,6 +141,7 @@ void PacketRouter::RemoveReceiveRtpModule(
 
 void PacketRouter::SendPacket(std::unique_ptr<RtpPacketToSend> packet,
                               const PacedPacketInfo& cluster_info) {
+  RTC_DCHECK_RUN_ON(&send_thread_checker_);
   TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("webrtc"), "PacketRouter::SendPacket",
                "sequence_number", packet->SequenceNumber(), "rtp_timestamp",
                packet->Timestamp());
@@ -171,6 +174,18 @@ void PacketRouter::SendPacket(std::unique_ptr<RtpPacketToSend> packet,
     // properties needed for payload based padding. Cache it for later use.
     last_send_module_ = rtp_module;
   }
+
+  for (auto& packet : rtp_module->FetchFecPackets()) {
+    pending_fec_packets_.push_back(std::move(packet));
+  }
+}
+
+std::vector<std::unique_ptr<RtpPacketToSend>> PacketRouter::FetchFec() {
+  RTC_DCHECK_RUN_ON(&send_thread_checker_);
+  std::vector<std::unique_ptr<RtpPacketToSend>> fec_packets =
+      std::move(pending_fec_packets_);
+  pending_fec_packets_.clear();
+  return fec_packets;
 }
 
 std::vector<std::unique_ptr<RtpPacketToSend>> PacketRouter::GeneratePadding(
