@@ -75,6 +75,8 @@ std::string AudioSendStream::Config::SendCodecSpec::ToString() const {
   ss << ", transport_cc_enabled: " << (transport_cc_enabled ? "true" : "false");
   ss << ", cng_payload_type: "
      << (cng_payload_type ? rtc::ToString(*cng_payload_type) : "<unset>");
+  ss << ", red_payload_type: "
+     << (red_payload_type ? rtc::ToString(*red_payload_type) : "<unset>");
   ss << ", payload_type: " << payload_type;
   ss << ", format: " << rtc::ToString(format);
   ss << '}';

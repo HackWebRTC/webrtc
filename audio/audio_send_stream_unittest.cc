@@ -371,6 +371,7 @@ TEST(AudioSendStreamTest, ConfigToString) {
   config.send_codec_spec->nack_enabled = true;
   config.send_codec_spec->transport_cc_enabled = false;
   config.send_codec_spec->cng_payload_type = 42;
+  config.send_codec_spec->red_payload_type = 43;
   config.encoder_factory = MockAudioEncoderFactory::CreateUnusedFactory();
   config.rtp.extmap_allow_mixed = true;
   config.rtp.extensions.push_back(
@@ -383,7 +384,7 @@ TEST(AudioSendStreamTest, ConfigToString) {
       "send_transport: null, "
       "min_bitrate_bps: 12000, max_bitrate_bps: 34000, "
       "send_codec_spec: {nack_enabled: true, transport_cc_enabled: false, "
-      "cng_payload_type: 42, payload_type: 103, "
+      "cng_payload_type: 42, red_payload_type: 43, payload_type: 103, "
       "format: {name: isac, clockrate_hz: 16000, num_channels: 1, "
       "parameters: {}}}}",
       config.ToString());

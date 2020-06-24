@@ -59,6 +59,7 @@ const cricket::AudioCodec kG722CodecVoE(9, "G722", 16000, 64000, 1);
 const cricket::AudioCodec kG722CodecSdp(9, "G722", 8000, 64000, 1);
 const cricket::AudioCodec kCn8000Codec(13, "CN", 8000, 0, 1);
 const cricket::AudioCodec kCn16000Codec(105, "CN", 16000, 0, 1);
+const cricket::AudioCodec kRed48000Codec(112, "RED", 48000, 32000, 2);
 const cricket::AudioCodec kTelephoneEventCodec1(106,
                                                 "telephone-event",
                                                 8000,
@@ -1031,6 +1032,30 @@ TEST_P(WebRtcVoiceEngineTestFake, ChangeRecvCodecPayloadType) {
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
 }
 
+// Test that we set Opus/Red under the field trial.
+TEST_P(WebRtcVoiceEngineTestFake, RecvRed) {
+  webrtc::test::ScopedFieldTrials override_field_trials(
+      "WebRTC-Audio-Red-For-Opus/Enabled/");
+
+  EXPECT_TRUE(SetupRecvStream());
+  cricket::AudioRecvParameters parameters;
+  parameters.codecs.push_back(kOpusCodec);
+  parameters.codecs.push_back(kRed48000Codec);
+  EXPECT_TRUE(channel_->SetRecvParameters(parameters));
+  EXPECT_THAT(GetRecvStreamConfig(kSsrcX).decoder_map,
+              (ContainerEq<std::map<int, webrtc::SdpAudioFormat>>(
+                  {{111, {"opus", 48000, 2}}, {112, {"red", 48000, 2}}})));
+}
+
+// Test that we do not allow setting Opus/Red by default.
+TEST_P(WebRtcVoiceEngineTestFake, RecvRedDefault) {
+  EXPECT_TRUE(SetupRecvStream());
+  cricket::AudioRecvParameters parameters;
+  parameters.codecs.push_back(kOpusCodec);
+  parameters.codecs.push_back(kRed48000Codec);
+  EXPECT_FALSE(channel_->SetRecvParameters(parameters));
+}
+
 TEST_P(WebRtcVoiceEngineTestFake, SetSendBandwidthAuto) {
   EXPECT_TRUE(SetupSendStream());
 
@@ -1440,6 +1465,37 @@ TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecs) {
   EXPECT_NE(send_codec_spec.format.clockrate_hz, 8000);
   EXPECT_EQ(absl::nullopt, send_codec_spec.cng_payload_type);
   EXPECT_FALSE(channel_->CanInsertDtmf());
+}
+
+// Test that we set Opus/Red under the field trial.
+TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecsRed) {
+  webrtc::test::ScopedFieldTrials override_field_trials(
+      "WebRTC-Audio-Red-For-Opus/Enabled/");
+
+  EXPECT_TRUE(SetupSendStream());
+  cricket::AudioSendParameters parameters;
+  parameters.codecs.push_back(kOpusCodec);
+  parameters.codecs.push_back(kRed48000Codec);
+  parameters.codecs[0].id = 96;
+  SetSendParameters(parameters);
+  const auto& send_codec_spec = *GetSendStreamConfig(kSsrcX).send_codec_spec;
+  EXPECT_EQ(96, send_codec_spec.payload_type);
+  EXPECT_STRCASEEQ("opus", send_codec_spec.format.name.c_str());
+  EXPECT_EQ(112, send_codec_spec.red_payload_type);
+}
+
+// Test that we set do not interpret Opus/Red by default.
+TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecsRedDefault) {
+  EXPECT_TRUE(SetupSendStream());
+  cricket::AudioSendParameters parameters;
+  parameters.codecs.push_back(kOpusCodec);
+  parameters.codecs.push_back(kRed48000Codec);
+  parameters.codecs[0].id = 96;
+  SetSendParameters(parameters);
+  const auto& send_codec_spec = *GetSendStreamConfig(kSsrcX).send_codec_spec;
+  EXPECT_EQ(96, send_codec_spec.payload_type);
+  EXPECT_STRCASEEQ("opus", send_codec_spec.format.name.c_str());
+  EXPECT_EQ(absl::nullopt, send_codec_spec.red_payload_type);
 }
 
 // Test that WebRtcVoiceEngine reconfigures, rather than recreates its

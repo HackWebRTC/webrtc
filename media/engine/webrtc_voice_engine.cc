@@ -99,6 +99,12 @@ std::string ToString(const AudioCodec& codec) {
   return ss.Release();
 }
 
+// If this field trial is enabled, we will negotiate and use RFC 2198
+// redundancy for opus audio.
+bool IsAudioRedForOpusFieldTrialEnabled() {
+  return webrtc::field_trial::IsEnabled("WebRTC-Audio-Red-For-Opus");
+}
+
 bool IsCodec(const AudioCodec& codec, const char* ref_name) {
   return absl::EqualsIgnoreCase(codec.name, ref_name);
 }
@@ -680,6 +686,11 @@ std::vector<AudioCodec> WebRtcVoiceEngine::CollectCodecs(
     if (cn.second) {
       map_format({kCnCodecName, cn.first, 1}, &out);
     }
+  }
+
+  // Add red codec.
+  if (IsAudioRedForOpusFieldTrialEnabled()) {
+    map_format({kRedCodecName, 48000, 2}, &out);
   }
 
   // Add telephone-event codecs last.
@@ -1542,6 +1553,8 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecs(
     }
     auto format = AudioCodecToSdpAudioFormat(codec);
     if (!IsCodec(codec, kCnCodecName) && !IsCodec(codec, kDtmfCodecName) &&
+        (!IsAudioRedForOpusFieldTrialEnabled() ||
+         !IsCodec(codec, kRedCodecName)) &&
         !engine()->decoder_factory_->IsSupportedDecoder(format)) {
       RTC_LOG(LS_ERROR) << "Unsupported codec: " << rtc::ToString(format);
       return false;
@@ -1687,6 +1700,19 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
       if (dtmf_codec.clockrate == send_codec_spec->format.clockrate_hz) {
         dtmf_payload_type_ = dtmf_codec.id;
         dtmf_payload_freq_ = dtmf_codec.clockrate;
+        break;
+      }
+    }
+  }
+
+  if (IsAudioRedForOpusFieldTrialEnabled()) {
+    // Loop through the codecs to find the RED codec that matches opus
+    // with respect to clockrate and number of channels.
+    for (const AudioCodec& red_codec : codecs) {
+      if (IsCodec(red_codec, kRedCodecName) &&
+          red_codec.clockrate == send_codec_spec->format.clockrate_hz &&
+          red_codec.channels == send_codec_spec->format.num_channels) {
+        send_codec_spec->red_payload_type = red_codec.id;
         break;
       }
     }

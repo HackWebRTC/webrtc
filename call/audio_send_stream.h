@@ -140,6 +140,7 @@ class AudioSendStream : public AudioSender {
       bool nack_enabled = false;
       bool transport_cc_enabled = false;
       absl::optional<int> cng_payload_type;
+      absl::optional<int> red_payload_type;
       // If unset, use the encoder's default target bitrate.
       absl::optional<int> target_bitrate_bps;
     };
