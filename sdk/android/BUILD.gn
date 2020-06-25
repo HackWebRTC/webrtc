@@ -1306,7 +1306,7 @@ if (is_android) {
     rtc_instrumentation_test_apk("android_instrumentation_test_apk") {
       apk_name = "android_instrumentation_test_apk"
       android_manifest = "instrumentationtests/AndroidManifest.xml"
-      min_sdk_version = 16
+      min_sdk_version = 21
       target_sdk_version = 21
 
       sources = [

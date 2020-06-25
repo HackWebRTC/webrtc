@@ -10,3 +10,6 @@
 # Uninit in zlib. http://crbug.com/116277
 fun:*MOZ_Z_deflate*
 
+# Uninit in H264. http://crbug.com/webrtc/11702
+src:*/third_party/openh264/src/codec/processing/src/vaacalc/vaacalcfuncs.cpp
+

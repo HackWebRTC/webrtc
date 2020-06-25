@@ -46,3 +46,10 @@ if (host_os == "mac") {
              "hermetic toolchain if the minimum OS version is not met.")
   use_system_xcode = _result == 0
 }
+
+declare_args() {
+  # WebRTC doesn't depend on //base from production code but only for testing
+  # purposes. In any case, it doesn't depend on //third_party/perfetto which
+  # is used for base tracing, so this feature is disabled.
+  enable_base_tracing = false
+}
