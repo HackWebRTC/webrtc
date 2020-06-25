@@ -11,10 +11,15 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <map>
 #include <memory>
+#include <ostream>
+#include <tuple>
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/units/data_size.h"
+#include "api/units/time_delta.h"
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
 #include "modules/video_coding/codecs/av1/libaom_av1_decoder.h"
@@ -47,6 +52,7 @@ using ::testing::Ge;
 using ::testing::IsEmpty;
 using ::testing::Not;
 using ::testing::NotNull;
+using ::testing::Pointwise;
 using ::testing::SizeIs;
 using ::testing::Truly;
 using ::testing::Values;
@@ -156,9 +162,27 @@ TEST(LibaomAv1Test, EncodeDecode) {
   EXPECT_EQ(decoder.num_output_frames(), decoder.decoded_frame_ids().size());
 }
 
+struct LayerId {
+  friend bool operator==(const LayerId& lhs, const LayerId& rhs) {
+    return std::tie(lhs.spatial_id, lhs.temporal_id) ==
+           std::tie(rhs.spatial_id, rhs.temporal_id);
+  }
+  friend bool operator<(const LayerId& lhs, const LayerId& rhs) {
+    return std::tie(lhs.spatial_id, lhs.temporal_id) <
+           std::tie(rhs.spatial_id, rhs.temporal_id);
+  }
+  friend std::ostream& operator<<(std::ostream& s, const LayerId& layer) {
+    return s << "S" << layer.spatial_id << "T" << layer.temporal_id;
+  }
+
+  int spatial_id = 0;
+  int temporal_id = 0;
+};
+
 struct SvcTestParam {
   std::function<std::unique_ptr<ScalableVideoController>()> svc_factory;
   int num_frames_to_generate;
+  std::map<LayerId, DataRate> configured_bitrates;
 };
 
 class LibaomAv1SvcTest : public ::testing::TestWithParam<SvcTestParam> {};
@@ -213,17 +237,86 @@ TEST_P(LibaomAv1SvcTest, EncodeAndDecodeAllDecodeTargets) {
   }
 }
 
+MATCHER(SameLayerIdAndBitrateIsNear, "") {
+  // First check if layer id is the same.
+  return std::get<0>(arg).first == std::get<1>(arg).first &&
+         // check measured bitrate is not much lower than requested.
+         std::get<0>(arg).second >= std::get<1>(arg).second * 0.8 &&
+         // check measured bitrate is not much larger than requested.
+         std::get<0>(arg).second <= std::get<1>(arg).second * 1.1;
+}
+
+TEST_P(LibaomAv1SvcTest, SetRatesMatchMeasuredBitrate) {
+  const SvcTestParam param = GetParam();
+  if (param.configured_bitrates.empty()) {
+    // Rates are not configured for this particular structure, skip the test.
+    return;
+  }
+  constexpr TimeDelta kDuration = TimeDelta::Seconds(5);
+
+  VideoBitrateAllocation allocation;
+  for (const auto& kv : param.configured_bitrates) {
+    allocation.SetBitrate(kv.first.spatial_id, kv.first.temporal_id,
+                          kv.second.bps());
+  }
+
+  std::unique_ptr<VideoEncoder> encoder =
+      CreateLibaomAv1Encoder(param.svc_factory());
+  ASSERT_TRUE(encoder);
+  VideoCodec codec_settings = DefaultCodecSettings();
+  codec_settings.maxBitrate = allocation.get_sum_kbps();
+  codec_settings.maxFramerate = 30;
+  ASSERT_EQ(encoder->InitEncode(&codec_settings, DefaultEncoderSettings()),
+            WEBRTC_VIDEO_CODEC_OK);
+
+  encoder->SetRates(VideoEncoder::RateControlParameters(
+      allocation, codec_settings.maxFramerate));
+
+  std::vector<EncodedVideoFrameProducer::EncodedFrame> encoded_frames =
+      EncodedVideoFrameProducer(*encoder)
+          .SetNumInputFrames(codec_settings.maxFramerate * kDuration.seconds())
+          .SetResolution({codec_settings.width, codec_settings.height})
+          .SetFramerateFps(codec_settings.maxFramerate)
+          .Encode();
+
+  // Calculate size of each layer.
+  std::map<LayerId, DataSize> layer_size;
+  for (const auto& frame : encoded_frames) {
+    ASSERT_TRUE(frame.codec_specific_info.generic_frame_info);
+    const auto& layer = *frame.codec_specific_info.generic_frame_info;
+    LayerId layer_id = {layer.spatial_id, layer.temporal_id};
+    // This is almost same as
+    // layer_size[layer_id] += DataSize::Bytes(frame.encoded_image.size());
+    // but avoids calling deleted default constructor for DataSize.
+    layer_size.emplace(layer_id, DataSize::Zero()).first->second +=
+        DataSize::Bytes(frame.encoded_image.size());
+  }
+  // Convert size of the layer into bitrate of that layer.
+  std::vector<std::pair<LayerId, DataRate>> measured_bitrates;
+  for (const auto& kv : layer_size) {
+    measured_bitrates.emplace_back(kv.first, kv.second / kDuration);
+  }
+  EXPECT_THAT(measured_bitrates, Pointwise(SameLayerIdAndBitrateIsNear(),
+                                           param.configured_bitrates));
+}
+
 INSTANTIATE_TEST_SUITE_P(
     Svc,
     LibaomAv1SvcTest,
     Values(SvcTestParam{std::make_unique<ScalableVideoControllerNoLayering>,
                         /*num_frames_to_generate=*/4},
            SvcTestParam{std::make_unique<ScalabilityStructureL1T2>,
-                        /*num_frames_to_generate=*/4},
+                        /*num_frames_to_generate=*/4,
+                        /*configured_bitrates=*/
+                        {{{0, 0}, DataRate::KilobitsPerSec(60)},
+                         {{0, 1}, DataRate::KilobitsPerSec(40)}}},
            SvcTestParam{std::make_unique<ScalabilityStructureL1T3>,
                         /*num_frames_to_generate=*/8},
            SvcTestParam{std::make_unique<ScalabilityStructureL2T1>,
-                        /*num_frames_to_generate=*/3},
+                        /*num_frames_to_generate=*/3,
+                        /*configured_bitrates=*/
+                        {{{0, 0}, DataRate::KilobitsPerSec(30)},
+                         {{1, 0}, DataRate::KilobitsPerSec(70)}}},
            SvcTestParam{std::make_unique<ScalabilityStructureL2T1Key>,
                         /*num_frames_to_generate=*/3},
            SvcTestParam{std::make_unique<ScalabilityStructureL3T1>,
@@ -237,7 +330,12 @@ INSTANTIATE_TEST_SUITE_P(
            SvcTestParam{std::make_unique<ScalabilityStructureL2T2Key>,
                         /*num_frames_to_generate=*/4},
            SvcTestParam{std::make_unique<ScalabilityStructureL2T2KeyShift>,
-                        /*num_frames_to_generate=*/4}));
+                        /*num_frames_to_generate=*/4,
+                        /*configured_bitrates=*/
+                        {{{0, 0}, DataRate::KilobitsPerSec(70)},
+                         {{0, 1}, DataRate::KilobitsPerSec(30)},
+                         {{1, 0}, DataRate::KilobitsPerSec(140)},
+                         {{1, 1}, DataRate::KilobitsPerSec(80)}}}));
 
 }  // namespace
 }  // namespace webrtc

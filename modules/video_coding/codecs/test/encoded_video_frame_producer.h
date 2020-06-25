@@ -43,6 +43,8 @@ class EncodedVideoFrameProducer {
   // Resolution of the input frames.
   EncodedVideoFrameProducer& SetResolution(RenderResolution value);
 
+  EncodedVideoFrameProducer& SetFramerateFps(int value);
+
   // Generates input video frames and encodes them with `encoder` provided in
   // the constructor. Returns frame passed to the `OnEncodedImage` by wraping
   // `EncodedImageCallback` underneath.
@@ -67,6 +69,13 @@ inline EncodedVideoFrameProducer& EncodedVideoFrameProducer::SetNumInputFrames(
 inline EncodedVideoFrameProducer& EncodedVideoFrameProducer::SetResolution(
     RenderResolution value) {
   resolution_ = value;
+  return *this;
+}
+
+inline EncodedVideoFrameProducer& EncodedVideoFrameProducer::SetFramerateFps(
+    int value) {
+  RTC_DCHECK_GT(value, 0);
+  framerate_fps_ = value;
   return *this;
 }
 
