@@ -9,6 +9,7 @@
  */
 #include "modules/rtp_rtcp/source/rtp_dependency_descriptor_writer.h"
 
+#include <bitset>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
@@ -55,9 +56,11 @@ NextLayerIdc GetNextLayerIdc(const FrameDependencyTemplate& previous,
 RtpDependencyDescriptorWriter::RtpDependencyDescriptorWriter(
     rtc::ArrayView<uint8_t> data,
     const FrameDependencyStructure& structure,
+    std::bitset<32> active_chains,
     const DependencyDescriptor& descriptor)
     : descriptor_(descriptor),
       structure_(structure),
+      active_chains_(active_chains),
       bit_writer_(data.data(), data.size()) {
   FindBestTemplate();
 }
@@ -128,8 +131,14 @@ RtpDependencyDescriptorWriter::CalculateMatch(
   result.need_custom_dtis =
       descriptor_.frame_dependencies.decode_target_indications !=
       frame_template->decode_target_indications;
-  result.need_custom_chains =
-      descriptor_.frame_dependencies.chain_diffs != frame_template->chain_diffs;
+  result.need_custom_chains = false;
+  for (int i = 0; i < structure_.num_chains; ++i) {
+    if (active_chains_[i] && descriptor_.frame_dependencies.chain_diffs[i] !=
+                                 frame_template->chain_diffs[i]) {
+      result.need_custom_chains = true;
+      break;
+    }
+  }
 
   result.extra_size_bits = 0;
   if (result.need_custom_fdiffs) {
@@ -366,7 +375,9 @@ void RtpDependencyDescriptorWriter::WriteFrameFdiffs() {
 void RtpDependencyDescriptorWriter::WriteFrameChains() {
   RTC_DCHECK_EQ(descriptor_.frame_dependencies.chain_diffs.size(),
                 structure_.num_chains);
-  for (int chain_diff : descriptor_.frame_dependencies.chain_diffs) {
+  for (int i = 0; i < structure_.num_chains; ++i) {
+    int chain_diff =
+        active_chains_[i] ? descriptor_.frame_dependencies.chain_diffs[i] : 0;
     RTC_DCHECK_GE(chain_diff, 0);
     RTC_DCHECK_LT(chain_diff, 1 << 8);
     WriteBits(chain_diff, 8);

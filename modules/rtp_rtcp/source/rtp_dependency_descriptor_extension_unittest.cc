@@ -63,5 +63,57 @@ TEST(RtpDependencyDescriptorExtensionTest, WriteZeroInUnusedBits) {
   EXPECT_THAT(rtc::MakeArrayView(unused_bytes, num_unused_bytes), Each(0));
 }
 
+// In practice chain diff for inactive chain will grow uboundly because no
+// frames are produced for it, that shouldn't block writing the extension.
+TEST(RtpDependencyDescriptorExtensionTest,
+     TemplateMatchingSkipsInactiveChains) {
+  uint8_t buffer[3];
+  FrameDependencyStructure structure;
+  structure.num_decode_targets = 2;
+  structure.num_chains = 2;
+  structure.templates = {
+      FrameDependencyTemplate().Dtis("SR").ChainDiffs({2, 2})};
+  DependencyDescriptor descriptor;
+  descriptor.frame_dependencies = structure.templates[0];
+
+  // Set only 1st chain as active.
+  std::bitset<32> active_chains = 0b01;
+  descriptor.frame_dependencies.chain_diffs[1] = 1000;
+
+  // Expect perfect template match since the only difference is for an inactive
+  // chain. Pefect template match consumes 3 bytes.
+  EXPECT_EQ(RtpDependencyDescriptorExtension::ValueSize(
+                structure, active_chains, descriptor),
+            3u);
+  EXPECT_TRUE(RtpDependencyDescriptorExtension::Write(
+      buffer, structure, active_chains, descriptor));
+}
+
+TEST(RtpDependencyDescriptorExtensionTest,
+     AcceptsInvalidChainDiffForInactiveChainWhenChainsAreCustom) {
+  uint8_t buffer[256];
+  FrameDependencyStructure structure;
+  structure.num_decode_targets = 2;
+  structure.num_chains = 2;
+  structure.templates = {
+      FrameDependencyTemplate().Dtis("SR").ChainDiffs({2, 2})};
+  DependencyDescriptor descriptor;
+  descriptor.frame_dependencies = structure.templates[0];
+
+  // Set only 1st chain as active.
+  std::bitset<32> active_chains = 0b01;
+  // Set chain_diff different to the template to make it custom.
+  descriptor.frame_dependencies.chain_diffs[0] = 1;
+  // Set chain diff for inactive chain beyound limit of 255 max chain diff.
+  descriptor.frame_dependencies.chain_diffs[1] = 1000;
+
+  // Because chains are custom, should use more than base 3 bytes.
+  EXPECT_GT(RtpDependencyDescriptorExtension::ValueSize(
+                structure, active_chains, descriptor),
+            3u);
+  EXPECT_TRUE(RtpDependencyDescriptorExtension::Write(
+      buffer, structure, active_chains, descriptor));
+}
+
 }  // namespace
 }  // namespace webrtc
