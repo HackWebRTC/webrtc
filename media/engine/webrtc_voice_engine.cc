@@ -36,7 +36,9 @@
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/experiments/field_trial_units.h"
+#include "rtc_base/experiments/struct_parameters_parser.h"
 #include "rtc_base/helpers.h"
+#include "rtc_base/ignore_wundef.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/strings/audio_format_to_string.h"
@@ -45,6 +47,16 @@
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
+
+#if WEBRTC_ENABLE_PROTOBUF
+RTC_PUSH_IGNORING_WUNDEF()
+#ifdef WEBRTC_ANDROID_PLATFORM_BUILD
+#include "external/webrtc/webrtc/modules/audio_coding/audio_network_adaptor/config.pb.h"
+#else
+#include "modules/audio_coding/audio_network_adaptor/config.pb.h"
+#endif
+RTC_POP_IGNORING_WUNDEF()
+#endif
 
 namespace cricket {
 namespace {
@@ -190,6 +202,38 @@ absl::optional<int> ComputeSendBitrate(int max_send_bitrate_bps,
     return std::min(bps, spec.info.max_bitrate_bps);
   }
 }
+
+struct AdaptivePtimeConfig {
+  bool enabled = false;
+  webrtc::DataRate min_payload_bitrate = webrtc::DataRate::KilobitsPerSec(16);
+  webrtc::DataRate min_encoder_bitrate = webrtc::DataRate::KilobitsPerSec(12);
+  bool use_slow_adaptation = true;
+
+  absl::optional<std::string> audio_network_adaptor_config;
+
+  std::unique_ptr<webrtc::StructParametersParser> Parser() {
+    return webrtc::StructParametersParser::Create(    //
+        "enabled", &enabled,                          //
+        "min_payload_bitrate", &min_payload_bitrate,  //
+        "min_encoder_bitrate", &min_encoder_bitrate,  //
+        "use_slow_adaptation", &use_slow_adaptation);
+  }
+
+  AdaptivePtimeConfig() {
+    Parser()->Parse(
+        webrtc::field_trial::FindFullName("WebRTC-Audio-AdaptivePtime"));
+#if WEBRTC_ENABLE_PROTOBUF
+    webrtc::audio_network_adaptor::config::ControllerManager config;
+    auto* frame_length_controller =
+        config.add_controllers()->mutable_frame_length_controller_v2();
+    frame_length_controller->set_min_payload_bitrate_bps(
+        min_payload_bitrate.bps());
+    frame_length_controller->set_use_slow_adaptation(use_slow_adaptation);
+    config.add_controllers()->mutable_bitrate_controller();
+    audio_network_adaptor_config = config.SerializeAsString();
+#endif
+  }
+};
 
 }  // namespace
 
@@ -737,7 +781,6 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     config_.rtp.extensions = extensions;
     config_.has_dscp =
         rtp_parameters_.encodings[0].network_priority != webrtc::Priority::kLow;
-    config_.audio_network_adaptor_config = audio_network_adaptor_config;
     config_.encoder_factory = encoder_factory;
     config_.codec_pair_id = codec_pair_id;
     config_.track_id = track_id;
@@ -747,6 +790,9 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     rtp_parameters_.encodings[0].ssrc = ssrc;
     rtp_parameters_.rtcp.cname = c_name;
     rtp_parameters_.header_extensions = extensions;
+
+    audio_network_adaptor_config_from_options_ = audio_network_adaptor_config;
+    UpdateAudioNetworkAdaptorConfig();
 
     if (send_codec_spec) {
       UpdateSendCodecSpec(*send_codec_spec);
@@ -798,10 +844,12 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
   void SetAudioNetworkAdaptorConfig(
       const absl::optional<std::string>& audio_network_adaptor_config) {
     RTC_DCHECK(worker_thread_checker_.IsCurrent());
-    if (config_.audio_network_adaptor_config == audio_network_adaptor_config) {
+    if (audio_network_adaptor_config_from_options_ ==
+        audio_network_adaptor_config) {
       return;
     }
-    config_.audio_network_adaptor_config = audio_network_adaptor_config;
+    audio_network_adaptor_config_from_options_ = audio_network_adaptor_config;
+    UpdateAudioNetworkAdaptorConfig();
     UpdateAllowedBitrateRange();
     ReconfigureAudioSendStream();
   }
@@ -948,6 +996,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
         rtp_parameters_.encodings[0].max_bitrate_bps;
     double old_priority = rtp_parameters_.encodings[0].bitrate_priority;
     webrtc::Priority old_dscp = rtp_parameters_.encodings[0].network_priority;
+    bool old_adaptive_ptime = rtp_parameters_.encodings[0].adaptive_ptime;
     rtp_parameters_ = parameters;
     config_.bitrate_priority = rtp_parameters_.encodings[0].bitrate_priority;
     config_.has_dscp = (rtp_parameters_.encodings[0].network_priority !=
@@ -956,15 +1005,19 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     bool reconfigure_send_stream =
         (rtp_parameters_.encodings[0].max_bitrate_bps != old_rtp_max_bitrate) ||
         (rtp_parameters_.encodings[0].bitrate_priority != old_priority) ||
-        (rtp_parameters_.encodings[0].network_priority != old_dscp);
+        (rtp_parameters_.encodings[0].network_priority != old_dscp) ||
+        (rtp_parameters_.encodings[0].adaptive_ptime != old_adaptive_ptime);
     if (rtp_parameters_.encodings[0].max_bitrate_bps != old_rtp_max_bitrate) {
       // Update the bitrate range.
       if (send_rate) {
         config_.send_codec_spec->target_bitrate_bps = send_rate;
       }
-      UpdateAllowedBitrateRange();
     }
     if (reconfigure_send_stream) {
+      // Changing adaptive_ptime may update the audio network adaptor config
+      // used.
+      UpdateAudioNetworkAdaptorConfig();
+      UpdateAllowedBitrateRange();
       ReconfigureAudioSendStream();
     }
 
@@ -1000,6 +1053,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     // The order of precedence, from lowest to highest is:
     // - a reasonable default of 32kbps min/max
     // - fixed target bitrate from codec spec
+    // - lower min bitrate if adaptive ptime is enabled
     // - bitrate configured in the rtp_parameter encodings settings
     const int kDefaultBitrateBps = 32000;
     config_.min_bitrate_bps = kDefaultBitrateBps;
@@ -1009,6 +1063,12 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
         config_.send_codec_spec->target_bitrate_bps) {
       config_.min_bitrate_bps = *config_.send_codec_spec->target_bitrate_bps;
       config_.max_bitrate_bps = *config_.send_codec_spec->target_bitrate_bps;
+    }
+
+    if (rtp_parameters_.encodings[0].adaptive_ptime) {
+      config_.min_bitrate_bps = std::min(
+          config_.min_bitrate_bps,
+          static_cast<int>(adaptive_ptime_config_.min_encoder_bitrate.bps()));
     }
 
     if (rtp_parameters_.encodings[0].min_bitrate_bps) {
@@ -1044,12 +1104,24 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     UpdateAllowedBitrateRange();
   }
 
+  void UpdateAudioNetworkAdaptorConfig() {
+    if (adaptive_ptime_config_.enabled ||
+        rtp_parameters_.encodings[0].adaptive_ptime) {
+      config_.audio_network_adaptor_config =
+          adaptive_ptime_config_.audio_network_adaptor_config;
+      return;
+    }
+    config_.audio_network_adaptor_config =
+        audio_network_adaptor_config_from_options_;
+  }
+
   void ReconfigureAudioSendStream() {
     RTC_DCHECK(worker_thread_checker_.IsCurrent());
     RTC_DCHECK(stream_);
     stream_->Reconfigure(config_);
   }
 
+  const AdaptivePtimeConfig adaptive_ptime_config_;
   rtc::ThreadChecker worker_thread_checker_;
   rtc::RaceChecker audio_capture_race_checker_;
   webrtc::Call* call_ = nullptr;
@@ -1067,6 +1139,9 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
   int max_send_bitrate_bps_;
   webrtc::RtpParameters rtp_parameters_;
   absl::optional<webrtc::AudioCodecSpec> audio_codec_spec_;
+  // TODO(webrtc:11717): Remove this once audio_network_adaptor in AudioOptions
+  // has been removed.
+  absl::optional<std::string> audio_network_adaptor_config_from_options_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcAudioSendStream);
 };

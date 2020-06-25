@@ -1219,6 +1219,46 @@ TEST_P(WebRtcVoiceEngineTestFake, SetRtpParametersEncodingsActive) {
   EXPECT_TRUE(GetSendStream(kSsrcX).IsSending());
 }
 
+TEST_P(WebRtcVoiceEngineTestFake, SetRtpParametersAdaptivePtime) {
+  EXPECT_TRUE(SetupSendStream());
+  // Get current parameters and change "adaptive_ptime" to true.
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(kSsrcX);
+  ASSERT_EQ(1u, parameters.encodings.size());
+  ASSERT_FALSE(parameters.encodings[0].adaptive_ptime);
+  parameters.encodings[0].adaptive_ptime = true;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, parameters).ok());
+  EXPECT_TRUE(GetAudioNetworkAdaptorConfig(kSsrcX));
+  EXPECT_EQ(12000, GetSendStreamConfig(kSsrcX).min_bitrate_bps);
+
+  parameters.encodings[0].adaptive_ptime = false;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, parameters).ok());
+  EXPECT_FALSE(GetAudioNetworkAdaptorConfig(kSsrcX));
+  EXPECT_EQ(32000, GetSendStreamConfig(kSsrcX).min_bitrate_bps);
+}
+
+TEST_P(WebRtcVoiceEngineTestFake,
+       DisablingAdaptivePtimeDoesNotRemoveAudioNetworkAdaptorFromOptions) {
+  EXPECT_TRUE(SetupSendStream());
+  send_parameters_.options.audio_network_adaptor = true;
+  send_parameters_.options.audio_network_adaptor_config = {"1234"};
+  SetSendParameters(send_parameters_);
+  EXPECT_EQ(send_parameters_.options.audio_network_adaptor_config,
+            GetAudioNetworkAdaptorConfig(kSsrcX));
+
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(kSsrcX);
+  parameters.encodings[0].adaptive_ptime = false;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, parameters).ok());
+  EXPECT_EQ(send_parameters_.options.audio_network_adaptor_config,
+            GetAudioNetworkAdaptorConfig(kSsrcX));
+}
+
+TEST_P(WebRtcVoiceEngineTestFake, AdaptivePtimeFieldTrial) {
+  webrtc::test::ScopedFieldTrials override_field_trials(
+      "WebRTC-Audio-AdaptivePtime/enabled:true/");
+  EXPECT_TRUE(SetupSendStream());
+  EXPECT_TRUE(GetAudioNetworkAdaptorConfig(kSsrcX));
+}
+
 // Test that SetRtpSendParameters configures the correct encoding channel for
 // each SSRC.
 TEST_P(WebRtcVoiceEngineTestFake, RtpParametersArePerStream) {

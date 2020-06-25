@@ -317,6 +317,7 @@ rtc_library("rtc_audio_video") {
     "../rtc_base",
     "../rtc_base:audio_format_to_string",
     "../rtc_base:checks",
+    "../rtc_base:ignore_wundef",
     "../rtc_base:rtc_task_queue",
     "../rtc_base:stringutils",
     "../rtc_base/experiments:field_trial_parser",
@@ -359,7 +360,10 @@ rtc_library("rtc_audio_video") {
     deps += [ "../modules/video_capture:video_capture_internal_impl" ]
   }
   if (rtc_enable_protobuf) {
-    deps += [ "../modules/audio_processing/aec_dump:aec_dump_impl" ]
+    deps += [
+      "../modules/audio_coding:ana_config_proto",
+      "../modules/audio_processing/aec_dump:aec_dump_impl",
+    ]
   } else {
     deps += [ "../modules/audio_processing/aec_dump:null_aec_dump_factory" ]
   }
