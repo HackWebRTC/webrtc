@@ -56,8 +56,15 @@ FrameDependencyStructure ScalabilityStructureL1T2::DependencyStructure() const {
 
 std::vector<ScalableVideoController::LayerFrameConfig>
 ScalabilityStructureL1T2::NextFrameConfig(bool restart) {
+  if (!active_decode_targets_[0]) {
+    RTC_LOG(LS_WARNING) << "No bitrate allocated for temporal layer 0, yet "
+                           "frame is requested. No frame will be encoded.";
+    return {};
+  }
   if (restart) {
     next_pattern_ = kKeyFrame;
+  } else if (!active_decode_targets_[1]) {
+    next_pattern_ = kDeltaFrameT0;
   }
   std::vector<LayerFrameConfig> result(1);
 
@@ -97,7 +104,20 @@ absl::optional<GenericFrameInfo> ScalabilityStructureL1T2::OnEncodeDone(
   frame_info->decode_target_indications.assign(std::begin(kDtis[config.Id()]),
                                                std::end(kDtis[config.Id()]));
   frame_info->part_of_chain = {config.TemporalId() == 0};
+  frame_info->active_decode_targets = active_decode_targets_;
   return frame_info;
+}
+
+void ScalabilityStructureL1T2::OnRatesUpdated(
+    const VideoBitrateAllocation& bitrates) {
+  if (bitrates.GetBitrate(0, 0) == 0) {
+    // It is unclear what frame can be produced when base layer is disabled,
+    // so mark all decode targets as inactive to produce no frames.
+    active_decode_targets_.reset();
+    return;
+  }
+  active_decode_targets_.set(0, true);
+  active_decode_targets_.set(1, bitrates.GetBitrate(0, 1) > 0);
 }
 
 }  // namespace webrtc

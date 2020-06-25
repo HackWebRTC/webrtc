@@ -11,6 +11,7 @@
 #ifndef COMMON_VIDEO_GENERIC_FRAME_DESCRIPTOR_GENERIC_FRAME_INFO_H_
 #define COMMON_VIDEO_GENERIC_FRAME_DESCRIPTOR_GENERIC_FRAME_INFO_H_
 
+#include <bitset>
 #include <initializer_list>
 #include <vector>
 
@@ -40,6 +41,7 @@ struct GenericFrameInfo : public FrameDependencyTemplate {
 
   absl::InlinedVector<CodecBufferUsage, kMaxEncoderBuffers> encoder_buffers;
   std::vector<bool> part_of_chain;
+  std::bitset<32> active_decode_targets = ~uint32_t{0};
 };
 
 class GenericFrameInfo::Builder {

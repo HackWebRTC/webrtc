@@ -15,6 +15,7 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
 #include "api/transport/rtp/dependency_descriptor.h"
+#include "api/video/video_bitrate_allocation.h"
 #include "common_video/generic_frame_descriptor/generic_frame_info.h"
 
 namespace webrtc {
@@ -76,6 +77,13 @@ class ScalableVideoController {
   // Returns video structure description in format compatible with
   // dependency descriptor rtp header extension.
   virtual FrameDependencyStructure DependencyStructure() const = 0;
+
+  // Notifies Controller with updated bitrates per layer. In particular notifies
+  // when certain layers should be disabled.
+  // Controller shouldn't produce LayerFrameConfig for disabled layers.
+  // TODO(bugs.webrtc.org/11404): Make pure virtual when implemented by all
+  // structures.
+  virtual void OnRatesUpdated(const VideoBitrateAllocation& bitrates) {}
 
   // When `restart` is true, first `LayerFrameConfig` should have `is_keyframe`
   // set to true.

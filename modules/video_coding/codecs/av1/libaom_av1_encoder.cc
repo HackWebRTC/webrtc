@@ -544,6 +544,7 @@ void LibaomAv1Encoder::SetRates(const RateControlParameters& parameters) {
     RTC_DCHECK_LE(rc_target_bitrate_kbps, encoder_settings_.maxBitrate);
   RTC_DCHECK_GE(rc_target_bitrate_kbps, encoder_settings_.minBitrate);
 
+  svc_controller_->OnRatesUpdated(parameters.bitrate);
   // Set target bit rate.
   cfg_.rc_target_bitrate = rc_target_bitrate_kbps;
 

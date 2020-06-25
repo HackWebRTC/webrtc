@@ -10,6 +10,7 @@
 #ifndef MODULES_VIDEO_CODING_CODECS_AV1_SCALABILITY_STRUCTURE_L1T2_H_
 #define MODULES_VIDEO_CODING_CODECS_AV1_SCALABILITY_STRUCTURE_L1T2_H_
 
+#include <bitset>
 #include <vector>
 
 #include "api/transport/rtp/dependency_descriptor.h"
@@ -29,6 +30,8 @@ class ScalabilityStructureL1T2 : public ScalableVideoController {
   absl::optional<GenericFrameInfo> OnEncodeDone(
       LayerFrameConfig config) override;
 
+  void OnRatesUpdated(const VideoBitrateAllocation& bitrates) override;
+
  private:
   enum FramePattern {
     kKeyFrame,
@@ -37,6 +40,7 @@ class ScalabilityStructureL1T2 : public ScalableVideoController {
   };
 
   FramePattern next_pattern_ = kKeyFrame;
+  std::bitset<32> active_decode_targets_ = 0b11;
 };
 
 }  // namespace webrtc
