@@ -46,7 +46,7 @@ class MockCallback : public PacketRouter {
               (override));
   MOCK_METHOD(std::vector<std::unique_ptr<RtpPacketToSend>>,
               GeneratePadding,
-              (DataSize target_size),
+              (size_t target_size_bytes),
               (override));
 };
 

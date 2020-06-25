@@ -43,7 +43,8 @@ class RtcEventLog;
 // updating dependencies.
 class PacedSender : public Module,
                     public RtpPacketPacer,
-                    public RtpPacketSender {
+                    public RtpPacketSender,
+                    private PacingController::PacketSender {
  public:
   // Expected max pacer delay in ms. If ExpectedQueueTime() is higher than
   // this value, the packet producers should wait (eg drop frames rather than
@@ -139,6 +140,14 @@ class PacedSender : public Module,
   // In dynamic process mode, refreshes the next process time.
   void MaybeWakupProcessThread();
 
+  // Methods implementing PacedSenderController:PacketSender.
+  void SendRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
+                     const PacedPacketInfo& cluster_info) override
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+
+  std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
+      DataSize size) override RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+
   // Private implementation of Module to not expose those implementation details
   // publicly and control when the class is registered/deregistered.
   class ModuleProxy : public Module {
@@ -162,6 +171,7 @@ class PacedSender : public Module,
   PacingController pacing_controller_ RTC_GUARDED_BY(critsect_);
 
   Clock* const clock_;
+  PacketRouter* const packet_router_;
   ProcessThread* const process_thread_;
 };
 }  // namespace webrtc

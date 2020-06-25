@@ -39,8 +39,9 @@ TaskQueuePacedSender::TaskQueuePacedSender(
     TimeDelta hold_back_window)
     : clock_(clock),
       hold_back_window_(hold_back_window),
+      packet_router_(packet_router),
       pacing_controller_(clock,
-                         packet_router,
+                         static_cast<PacingController::PacketSender*>(this),
                          event_log,
                          field_trials,
                          PacingController::ProcessMode::kDynamic),
@@ -235,6 +236,17 @@ void TaskQueuePacedSender::MaybeProcessPackets(
   }
 
   MaybeUpdateStats(false);
+}
+
+std::vector<std::unique_ptr<RtpPacketToSend>>
+TaskQueuePacedSender::GeneratePadding(DataSize size) {
+  return packet_router_->GeneratePadding(size.bytes());
+}
+
+void TaskQueuePacedSender::SendRtpPacket(
+    std::unique_ptr<RtpPacketToSend> packet,
+    const PacedPacketInfo& cluster_info) {
+  packet_router_->SendPacket(std::move(packet), cluster_info);
 }
 
 void TaskQueuePacedSender::MaybeUpdateStats(bool is_scheduled_call) {
