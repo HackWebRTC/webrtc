@@ -2917,6 +2917,24 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithSctpColonPort) {
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
 }
 
+TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsButWrongMediaType) {
+  bool use_sctpmap = true;
+  AddSctpDataChannel(use_sctpmap);
+  JsepSessionDescription jdesc(kDummyType);
+  ASSERT_TRUE(jdesc.Initialize(desc_.Clone(), kSessionId, kSessionVersion));
+
+  std::string sdp = kSdpSessionString;
+  sdp += kSdpSctpDataChannelString;
+
+  const char needle[] = "m=application ";
+  sdp.replace(sdp.find(needle), strlen(needle), "m=application:bogus ");
+
+  JsepSessionDescription jdesc_output(kDummyType);
+  EXPECT_TRUE(SdpDeserialize(sdp, &jdesc_output));
+
+  EXPECT_EQ(0u, jdesc_output.description()->contents().size());
+}
+
 // Helper function to set the max-message-size parameter in the
 // SCTP data codec.
 void MutateJsepSctpMaxMessageSize(const SessionDescription& desc,
@@ -3265,6 +3283,7 @@ TEST_F(WebRtcSdpTest, DeserializeBrokenSdp) {
   // Broken media description
   ExpectParseFailure("m=audio", "c=IN IP4 74.125.224.39");
   ExpectParseFailure("m=video", kSdpDestroyer);
+  ExpectParseFailure("m=", "c=IN IP4 74.125.224.39");
 
   // Invalid lines
   ExpectParseFailure("a=candidate", kSdpEmptyType);
@@ -4615,4 +4634,24 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithoutCname) {
   ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                 jdesc_.session_version()));
   EXPECT_TRUE(CompareSessionDescription(jdesc_, new_jdesc));
+}
+
+TEST_F(WebRtcSdpTest, DeserializeSdpWithUnsupportedMediaType) {
+  bool use_sctpmap = true;
+  AddSctpDataChannel(use_sctpmap);
+  JsepSessionDescription jdesc(kDummyType);
+  ASSERT_TRUE(jdesc.Initialize(desc_.Clone(), kSessionId, kSessionVersion));
+
+  std::string sdp = kSdpSessionString;
+  sdp +=
+      "m=bogus 9 RTP/SAVPF 0 8\r\n"
+      "c=IN IP4 0.0.0.0\r\n";
+  sdp +=
+      "m=audio/something 9 RTP/SAVPF 0 8\r\n"
+      "c=IN IP4 0.0.0.0\r\n";
+
+  JsepSessionDescription jdesc_output(kDummyType);
+  EXPECT_TRUE(SdpDeserialize(sdp, &jdesc_output));
+
+  EXPECT_EQ(0u, jdesc_output.description()->contents().size());
 }
