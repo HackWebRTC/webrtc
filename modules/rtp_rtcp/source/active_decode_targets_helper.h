@@ -47,11 +47,14 @@ class ActiveDecodeTargetsHelper {
     return last_active_decode_targets_.to_ulong();
   }
 
+  std::bitset<32> ActiveChainsBitmask() const { return last_active_chains_; }
+
  private:
   // `unsent_on_chain_[i]` indicates last active decode
   // target bitmask wasn't attached to a packet on the chain with id `i`.
   std::bitset<32> unsent_on_chain_ = 0;
   std::bitset<32> last_active_decode_targets_ = 0;
+  std::bitset<32> last_active_chains_ = 0;
   int64_t last_frame_id_ = 0;
 };
 

@@ -10,6 +10,7 @@
 #ifndef MODULES_RTP_RTCP_SOURCE_RTP_VIDEO_HEADER_H_
 #define MODULES_RTP_RTCP_SOURCE_RTP_VIDEO_HEADER_H_
 
+#include <bitset>
 #include <cstdint>
 
 #include "absl/container/inlined_vector.h"
@@ -53,6 +54,7 @@ struct RTPVideoHeader {
     absl::InlinedVector<DecodeTargetIndication, 10> decode_target_indications;
     absl::InlinedVector<int64_t, 5> dependencies;
     absl::InlinedVector<int, 4> chain_diffs;
+    std::bitset<32> active_decode_targets = ~uint32_t{0};
   };
 
   RTPVideoHeader();

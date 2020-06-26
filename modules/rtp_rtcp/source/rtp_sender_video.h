@@ -27,6 +27,7 @@
 #include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/absolute_capture_time_sender.h"
+#include "modules/rtp_rtcp/source/active_decode_targets_helper.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "modules/rtp_rtcp/source/rtp_sender_video_frame_transformer_delegate.h"
@@ -214,6 +215,9 @@ class RTPSenderVideo {
   const bool generic_descriptor_auth_experiment_;
 
   AbsoluteCaptureTimeSender absolute_capture_time_sender_;
+  // Tracks updates to the active decode targets and decides when active decode
+  // targets bitmask should be attached to the dependency descriptor.
+  ActiveDecodeTargetsHelper active_decode_targets_tracker_;
 
   const rtc::scoped_refptr<RTPSenderVideoFrameTransformerDelegate>
       frame_transformer_delegate_;

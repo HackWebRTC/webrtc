@@ -93,6 +93,7 @@ void ActiveDecodeTargetsHelper::OnFrame(
   if (is_keyframe) {
     // Key frame resets the state.
     last_active_decode_targets_ = all_decode_targets;
+    last_active_chains_ = AllActive(num_chains);
     unsent_on_chain_.reset();
   } else {
     // Update state assuming previous frame was sent.
@@ -108,12 +109,12 @@ void ActiveDecodeTargetsHelper::OnFrame(
     return;
   }
   last_active_decode_targets_ = active_decode_targets;
-
+  last_active_chains_ = ActiveChains(decode_target_protected_by_chain,
+                                     num_chains, active_decode_targets);
   // Frames that are part of inactive chains might not be produced by the
   // encoder. Thus stop sending `active_decode_target` bitmask when it is sent
   // on all active chains rather than on all chains.
-  unsent_on_chain_ = ActiveChains(decode_target_protected_by_chain, num_chains,
-                                  active_decode_targets);
+  unsent_on_chain_ = last_active_chains_;
   if (unsent_on_chain_.none()) {
     // Active decode targets are not protected by any chains. To be on the
     // safe side always send the active_decode_targets_bitmask from now on.

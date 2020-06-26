@@ -245,6 +245,7 @@ RtpPayloadParams::GenericDescriptorFromFrameInfo(
   generic.spatial_index = frame_info.spatial_id;
   generic.temporal_index = frame_info.temporal_id;
   generic.decode_target_indications = frame_info.decode_target_indications;
+  generic.active_decode_targets = frame_info.active_decode_targets;
   return generic;
 }
 
