@@ -307,12 +307,6 @@ class JsepTransport : public sigslot::has_slots<> {
                          TransportStats* stats)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(accessor_lock_);
 
-  // Deactivates, signals removal, and deletes |composite_rtp_transport_| if the
-  // current state of negotiation is sufficient to determine which rtp_transport
-  // and data channel transport to use.
-  void NegotiateDatagramTransport(webrtc::SdpType type)
-      RTC_RUN_ON(network_thread_) RTC_LOCKS_EXCLUDED(accessor_lock_);
-
   // Returns the default (non-datagram) rtp transport, if any.
   webrtc::RtpTransportInternal* default_rtp_transport() const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(accessor_lock_) {
