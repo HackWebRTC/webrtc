@@ -18,6 +18,7 @@
 #include "absl/types/optional.h"
 #include "api/call/transport.h"
 #include "api/rtc_event_log/rtc_event_log.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/units/data_rate.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_history.h"
@@ -26,6 +27,8 @@
 #include "modules/rtp_rtcp/source/rtp_sequence_number_map.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/rate_statistics.h"
+#include "rtc_base/synchronization/sequence_checker.h"
+#include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
@@ -49,7 +52,7 @@ class RtpSenderEgress {
 
   RtpSenderEgress(const RtpRtcpInterface::Configuration& config,
                   RtpPacketHistory* packet_history);
-  ~RtpSenderEgress() = default;
+  ~RtpSenderEgress();
 
   void SendPacket(RtpPacketToSend* packet, const PacedPacketInfo& pacing_info)
       RTC_LOCKS_EXCLUDED(lock_);
@@ -57,7 +60,6 @@ class RtpSenderEgress {
   absl::optional<uint32_t> RtxSsrc() const { return rtx_ssrc_; }
   absl::optional<uint32_t> FlexFecSsrc() const { return flexfec_ssrc_; }
 
-  void ProcessBitrateAndNotifyObservers() RTC_LOCKS_EXCLUDED(lock_);
   RtpSendRates GetSendRates() const RTC_LOCKS_EXCLUDED(lock_);
   void GetDataCounters(StreamDataCounters* rtp_stats,
                        StreamDataCounters* rtx_stats) const
@@ -84,7 +86,8 @@ class RtpSenderEgress {
   // time.
   typedef std::map<int64_t, int> SendDelayMap;
 
-  RtpSendRates GetSendRatesLocked() const RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  RtpSendRates GetSendRatesLocked(int64_t now_ms) const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
   bool HasCorrectSsrc(const RtpPacketToSend& packet) const;
   void AddPacketToTransportFeedback(uint16_t packet_id,
                                     const RtpPacketToSend& packet,
@@ -100,9 +103,13 @@ class RtpSenderEgress {
   bool SendPacketToNetwork(const RtpPacketToSend& packet,
                            const PacketOptions& options,
                            const PacedPacketInfo& pacing_info);
-  void UpdateRtpStats(const RtpPacketToSend& packet)
+  void UpdateRtpStats(int64_t now_ms, const RtpPacketToSend& packet)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
+  // Called on a timer, once a second, on the worker_queue_.
+  void PeriodicUpdate();
+
+  TaskQueueBase* const worker_queue_;
   const uint32_t ssrc_;
   const absl::optional<uint32_t> rtx_ssrc_;
   const absl::optional<uint32_t> flexfec_ssrc_;
@@ -142,6 +149,8 @@ class RtpSenderEgress {
   // 3. Whether the packet was the last in its frame.
   const std::unique_ptr<RtpSequenceNumberMap> rtp_sequence_number_map_
       RTC_GUARDED_BY(lock_);
+
+  RepeatingTaskHandle update_task_ RTC_GUARDED_BY(worker_queue_);
 };
 
 }  // namespace webrtc

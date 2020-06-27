@@ -21,6 +21,7 @@
 
 #include "absl/types/optional.h"
 #include "api/rtp_headers.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "modules/include/module_fec_types.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
@@ -283,7 +284,7 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
 
   bool TimeToSendFullNackList(int64_t now) const;
 
-  SequenceChecker construction_thread_checker_;
+  TaskQueueBase* const worker_queue_;
   SequenceChecker process_thread_checker_;
 
   std::unique_ptr<RtpSenderContext> rtp_sender_;
@@ -293,7 +294,6 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
 
   Clock* const clock_;
 
-  int64_t last_bitrate_process_time_;
   int64_t last_rtt_process_time_;
   int64_t next_process_time_;
   uint16_t packet_overhead_;

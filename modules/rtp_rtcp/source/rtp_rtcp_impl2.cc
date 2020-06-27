@@ -34,7 +34,6 @@ namespace webrtc {
 namespace {
 const int64_t kRtpRtcpMaxIdleTimeProcessMs = 5;
 const int64_t kRtpRtcpRttProcessTimeMs = 1000;
-const int64_t kRtpRtcpBitrateProcessTimeMs = 10;
 const int64_t kDefaultExpectedRetransmissionTimeMs = 125;
 }  // namespace
 
@@ -49,10 +48,10 @@ ModuleRtpRtcpImpl2::RtpSenderContext::RtpSenderContext(
           config.paced_sender ? config.paced_sender : &non_paced_sender) {}
 
 ModuleRtpRtcpImpl2::ModuleRtpRtcpImpl2(const Configuration& configuration)
-    : rtcp_sender_(configuration),
+    : worker_queue_(TaskQueueBase::Current()),
+      rtcp_sender_(configuration),
       rtcp_receiver_(configuration, this),
       clock_(configuration.clock),
-      last_bitrate_process_time_(clock_->TimeInMilliseconds()),
       last_rtt_process_time_(clock_->TimeInMilliseconds()),
       next_process_time_(clock_->TimeInMilliseconds() +
                          kRtpRtcpMaxIdleTimeProcessMs),
@@ -62,6 +61,7 @@ ModuleRtpRtcpImpl2::ModuleRtpRtcpImpl2(const Configuration& configuration)
       remote_bitrate_(configuration.remote_bitrate_estimator),
       rtt_stats_(configuration.rtt_stats),
       rtt_ms_(0) {
+  RTC_DCHECK(worker_queue_);
   process_thread_checker_.Detach();
   if (!configuration.receiver_only) {
     rtp_sender_ = std::make_unique<RtpSenderContext>(configuration);
@@ -78,7 +78,7 @@ ModuleRtpRtcpImpl2::ModuleRtpRtcpImpl2(const Configuration& configuration)
 }
 
 ModuleRtpRtcpImpl2::~ModuleRtpRtcpImpl2() {
-  RTC_DCHECK_RUN_ON(&construction_thread_checker_);
+  RTC_DCHECK_RUN_ON(worker_queue_);
 }
 
 // static
@@ -104,18 +104,6 @@ void ModuleRtpRtcpImpl2::Process() {
   // TODO(bugs.webrtc.org/11581): Figure out why we need to call Process() 200
   // times a second.
   next_process_time_ = now + kRtpRtcpMaxIdleTimeProcessMs;
-
-  if (rtp_sender_) {
-    if (now >= last_bitrate_process_time_ + kRtpRtcpBitrateProcessTimeMs) {
-      rtp_sender_->packet_sender.ProcessBitrateAndNotifyObservers();
-      last_bitrate_process_time_ = now;
-      // TODO(bugs.webrtc.org/11581): Is this a bug? At the top of the function,
-      // next_process_time_ is incremented by 5ms, here we effectively do a
-      // std::min() of (now + 5ms, now + 10ms). Seems like this is a no-op?
-      next_process_time_ =
-          std::min(next_process_time_, now + kRtpRtcpBitrateProcessTimeMs);
-    }
-  }
 
   // TODO(bugs.webrtc.org/11581): We update the RTT once a second, whereas other
   // things that run in this method are updated much more frequently. Move the

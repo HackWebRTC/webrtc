@@ -26,6 +26,8 @@ constexpr uint32_t kTimestampTicksPerMs = 90;
 constexpr int kSendSideDelayWindowMs = 1000;
 constexpr int kBitrateStatisticsWindowMs = 1000;
 constexpr size_t kRtpSequenceNumberMapMaxEntries = 1 << 13;
+constexpr TimeDelta kUpdateInterval =
+    TimeDelta::Millis(kBitrateStatisticsWindowMs);
 
 bool IsEnabled(absl::string_view name,
                const WebRtcKeyValueConfig* field_trials) {
@@ -55,7 +57,8 @@ void RtpSenderEgress::NonPacedPacketSender::EnqueuePackets(
 
 RtpSenderEgress::RtpSenderEgress(const RtpRtcpInterface::Configuration& config,
                                  RtpPacketHistory* packet_history)
-    : ssrc_(config.local_media_ssrc),
+    : worker_queue_(TaskQueueBase::Current()),
+      ssrc_(config.local_media_ssrc),
       rtx_ssrc_(config.rtx_send_ssrc),
       flexfec_ssrc_(config.fec_generator ? config.fec_generator->FecSsrc()
                                          : absl::nullopt),
@@ -85,7 +88,19 @@ RtpSenderEgress::RtpSenderEgress(const RtpRtcpInterface::Configuration& config,
                                    ? std::make_unique<RtpSequenceNumberMap>(
                                          kRtpSequenceNumberMapMaxEntries)
                                    : nullptr) {
-  RTC_DCHECK(TaskQueueBase::Current());
+  RTC_DCHECK(worker_queue_);
+  if (bitrate_callback_) {
+    update_task_ = RepeatingTaskHandle::DelayedStart(worker_queue_,
+                                                     kUpdateInterval, [this]() {
+                                                       PeriodicUpdate();
+                                                       return kUpdateInterval;
+                                                     });
+  }
+}
+
+RtpSenderEgress::~RtpSenderEgress() {
+  RTC_DCHECK_RUN_ON(worker_queue_);
+  update_task_.Stop();
 }
 
 void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
@@ -198,29 +213,20 @@ void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
 
   if (send_success) {
     rtc::CritScope lock(&lock_);
-    UpdateRtpStats(*packet);
+    // TODO(bugs.webrtc.org/11581): Update the stats on the worker thread
+    // (PostTask).
+    UpdateRtpStats(now_ms, *packet);
     media_has_been_sent_ = true;
   }
 }
 
-void RtpSenderEgress::ProcessBitrateAndNotifyObservers() {
-  if (!bitrate_callback_)
-    return;
-
-  rtc::CritScope lock(&lock_);
-  RtpSendRates send_rates = GetSendRatesLocked();
-  bitrate_callback_->Notify(
-      send_rates.Sum().bps(),
-      send_rates[RtpPacketMediaType::kRetransmission].bps(), ssrc_);
-}
-
 RtpSendRates RtpSenderEgress::GetSendRates() const {
   rtc::CritScope lock(&lock_);
-  return GetSendRatesLocked();
+  const int64_t now_ms = clock_->TimeInMilliseconds();
+  return GetSendRatesLocked(now_ms);
 }
 
-RtpSendRates RtpSenderEgress::GetSendRatesLocked() const {
-  const int64_t now_ms = clock_->TimeInMilliseconds();
+RtpSendRates RtpSenderEgress::GetSendRatesLocked(int64_t now_ms) const {
   RtpSendRates current_rates;
   for (size_t i = 0; i < kNumMediaTypes; ++i) {
     RtpPacketMediaType type = static_cast<RtpPacketMediaType>(i);
@@ -232,6 +238,8 @@ RtpSendRates RtpSenderEgress::GetSendRatesLocked() const {
 
 void RtpSenderEgress::GetDataCounters(StreamDataCounters* rtp_stats,
                                       StreamDataCounters* rtx_stats) const {
+  // TODO(bugs.webrtc.org/11581): make sure rtx_rtp_stats_ and rtp_stats_ are
+  // only touched on the worker thread.
   rtc::CritScope lock(&lock_);
   *rtp_stats = rtp_stats_;
   *rtx_stats = rtx_rtp_stats_;
@@ -436,9 +444,10 @@ bool RtpSenderEgress::SendPacketToNetwork(const RtpPacketToSend& packet,
   return true;
 }
 
-void RtpSenderEgress::UpdateRtpStats(const RtpPacketToSend& packet) {
-  int64_t now_ms = clock_->TimeInMilliseconds();
-
+void RtpSenderEgress::UpdateRtpStats(int64_t now_ms,
+                                     const RtpPacketToSend& packet) {
+  // TODO(bugs.webrtc.org/11581): make sure rtx_rtp_stats_ and rtp_stats_ are
+  // only touched on the worker thread.
   StreamDataCounters* counters =
       packet.Ssrc() == rtx_ssrc_ ? &rtx_rtp_stats_ : &rtp_stats_;
 
@@ -456,12 +465,34 @@ void RtpSenderEgress::UpdateRtpStats(const RtpPacketToSend& packet) {
   counters->transmitted.AddPacket(packet);
 
   RTC_DCHECK(packet.packet_type().has_value());
+  // TODO(bugs.webrtc.org/11581): send_rates_ should be touched only on the
+  // worker thread.
   send_rates_[static_cast<size_t>(*packet.packet_type())].Update(packet.size(),
                                                                  now_ms);
 
+  // TODO(bugs.webrtc.org/11581): These (stats related) stat callbacks should be
+  // issued on the worker thread.
   if (rtp_stats_callback_) {
     rtp_stats_callback_->DataCountersUpdated(*counters, packet.Ssrc());
   }
+
+  // The bitrate_callback_ and rtp_stats_callback_ pointers in practice point
+  // to the same object, so these callbacks could be consolidated into one.
+  if (bitrate_callback_) {
+    RtpSendRates send_rates = GetSendRatesLocked(now_ms);
+    bitrate_callback_->Notify(
+        send_rates.Sum().bps(),
+        send_rates[RtpPacketMediaType::kRetransmission].bps(), ssrc_);
+  }
+}
+
+void RtpSenderEgress::PeriodicUpdate() {
+  RTC_DCHECK_RUN_ON(worker_queue_);
+  RTC_DCHECK(bitrate_callback_);
+  RtpSendRates send_rates = GetSendRates();
+  bitrate_callback_->Notify(
+      send_rates.Sum().bps(),
+      send_rates[RtpPacketMediaType::kRetransmission].bps(), ssrc_);
 }
 
 }  // namespace webrtc

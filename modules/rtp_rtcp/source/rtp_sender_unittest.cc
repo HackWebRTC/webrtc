@@ -1774,9 +1774,6 @@ TEST_P(RtpSenderTest, BitrateCallbacks) {
       RtpPacketHistory::StorageMode::kStoreAndCull, 1);
   uint32_t ssrc = rtp_sender()->SSRC();
 
-  // Initial process call so we get a new time window.
-  rtp_egress()->ProcessBitrateAndNotifyObservers();
-
   // Send a few frames.
   RTPVideoHeader video_header;
   for (uint32_t i = 0; i < kNumPackets; ++i) {
@@ -1787,15 +1784,13 @@ TEST_P(RtpSenderTest, BitrateCallbacks) {
     fake_clock_.AdvanceTimeMilliseconds(kPacketInterval);
   }
 
-  rtp_egress()->ProcessBitrateAndNotifyObservers();
-
   // We get one call for every stats updated, thus two calls since both the
   // stream stats and the retransmit stats are updated once.
-  EXPECT_EQ(2u, callback.num_calls_);
+  EXPECT_EQ(kNumPackets, callback.num_calls_);
   EXPECT_EQ(ssrc, callback.ssrc_);
   const uint32_t kTotalPacketSize = kPacketOverhead + sizeof(payload);
   // Bitrate measured over delta between last and first timestamp, plus one.
-  const uint32_t kExpectedWindowMs = kNumPackets * kPacketInterval + 1;
+  const uint32_t kExpectedWindowMs = (kNumPackets - 1) * kPacketInterval + 1;
   const uint32_t kExpectedBitsAccumulated = kTotalPacketSize * kNumPackets * 8;
   const uint32_t kExpectedRateBps =
       (kExpectedBitsAccumulated * 1000 + (kExpectedWindowMs / 2)) /
