@@ -326,7 +326,6 @@ TEST(CallTest, RecreatingAudioStreamWithSameSsrcReusesRtpState) {
     EXPECT_EQ(rtp_state1.capture_time_ms, rtp_state2.capture_time_ms);
     EXPECT_EQ(rtp_state1.last_timestamp_time_ms,
               rtp_state2.last_timestamp_time_ms);
-    EXPECT_EQ(rtp_state1.media_has_been_sent, rtp_state2.media_has_been_sent);
   }
 }
 

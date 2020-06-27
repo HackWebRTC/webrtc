@@ -251,7 +251,6 @@ void ModuleRtpRtcpImpl2::SetSequenceNumber(const uint16_t seq_num) {
 
 void ModuleRtpRtcpImpl2::SetRtpState(const RtpState& rtp_state) {
   rtp_sender_->packet_generator.SetRtpState(rtp_state);
-  rtp_sender_->packet_sender.SetMediaHasBeenSent(rtp_state.media_has_been_sent);
   rtcp_sender_.SetTimestampOffset(rtp_state.start_timestamp);
 }
 
@@ -261,7 +260,6 @@ void ModuleRtpRtcpImpl2::SetRtxState(const RtpState& rtp_state) {
 
 RtpState ModuleRtpRtcpImpl2::GetRtpState() const {
   RtpState state = rtp_sender_->packet_generator.GetRtpState();
-  state.media_has_been_sent = rtp_sender_->packet_sender.MediaHasBeenSent();
   return state;
 }
 
