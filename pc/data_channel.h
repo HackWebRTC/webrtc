@@ -296,6 +296,8 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
 
   bool Init();
   void UpdateState();
+  void UpdateRtpState();
+  void UpdateSctpLikeState();
   void SetState(DataState state);
   void DisconnectFromProvider();
 
