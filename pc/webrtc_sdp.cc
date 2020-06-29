@@ -2625,7 +2625,7 @@ bool ParseMediaDescription(
     if (!rtc::FromString<int>(fields[1], &port) || !IsValidPort(port)) {
       return ParseFailed(line, "The port number is invalid", error);
     }
-    std::string protocol = fields[2];
+    const std::string& protocol = fields[2];
 
     // <fmt>
     std::vector<int> payload_types;
@@ -2656,18 +2656,18 @@ bool ParseMediaDescription(
     std::string content_name;
     bool bundle_only = false;
     int section_msid_signaling = 0;
-    std::string mediaType = fields[0];
-    if (mediaType == kMediaTypeVideo) {
+    const std::string& media_type = fields[0];
+    if (media_type == kMediaTypeVideo) {
       content = ParseContentDescription<VideoContentDescription>(
           message, cricket::MEDIA_TYPE_VIDEO, mline_index, protocol,
           payload_types, pos, &content_name, &bundle_only,
           &section_msid_signaling, &transport, candidates, error);
-    } else if (mediaType == kMediaTypeAudio) {
+    } else if (media_type == kMediaTypeAudio) {
       content = ParseContentDescription<AudioContentDescription>(
           message, cricket::MEDIA_TYPE_AUDIO, mline_index, protocol,
           payload_types, pos, &content_name, &bundle_only,
           &section_msid_signaling, &transport, candidates, error);
-    } else if (mediaType == kMediaTypeData) {
+    } else if (media_type == kMediaTypeData) {
       if (cricket::IsDtlsSctp(protocol)) {
         // The draft-03 format is:
         // m=application <port> DTLS/SCTP <sctp-port>...
