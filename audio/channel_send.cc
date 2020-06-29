@@ -55,7 +55,6 @@ constexpr int64_t kMaxRetransmissionWindowMs = 1000;
 constexpr int64_t kMinRetransmissionWindowMs = 30;
 
 class RtpPacketSenderProxy;
-class TransportFeedbackProxy;
 class TransportSequenceNumberProxy;
 class VoERtcpObserver;
 
@@ -78,7 +77,8 @@ class ChannelSend : public ChannelSendInterface,
               bool extmap_allow_mixed,
               int rtcp_report_interval_ms,
               uint32_t ssrc,
-              rtc::scoped_refptr<FrameTransformerInterface> frame_transformer);
+              rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
+              TransportFeedbackObserver* feedback_observer);
 
   ~ChannelSend() override;
 
@@ -213,7 +213,7 @@ class ChannelSend : public ChannelSendInterface,
 
   PacketRouter* packet_router_ RTC_GUARDED_BY(&worker_thread_checker_) =
       nullptr;
-  const std::unique_ptr<TransportFeedbackProxy> feedback_observer_proxy_;
+  TransportFeedbackObserver* const feedback_observer_;
   const std::unique_ptr<RtpPacketSenderProxy> rtp_packet_pacer_proxy_;
   const std::unique_ptr<RateLimiter> retransmission_rate_limiter_;
 
@@ -243,43 +243,6 @@ class ChannelSend : public ChannelSendInterface,
 };
 
 const int kTelephoneEventAttenuationdB = 10;
-
-class TransportFeedbackProxy : public TransportFeedbackObserver {
- public:
-  TransportFeedbackProxy() : feedback_observer_(nullptr) {
-    pacer_thread_.Detach();
-    network_thread_.Detach();
-  }
-
-  void SetTransportFeedbackObserver(
-      TransportFeedbackObserver* feedback_observer) {
-    RTC_DCHECK(thread_checker_.IsCurrent());
-    rtc::CritScope lock(&crit_);
-    feedback_observer_ = feedback_observer;
-  }
-
-  // Implements TransportFeedbackObserver.
-  void OnAddPacket(const RtpPacketSendInfo& packet_info) override {
-    RTC_DCHECK(pacer_thread_.IsCurrent());
-    rtc::CritScope lock(&crit_);
-    if (feedback_observer_)
-      feedback_observer_->OnAddPacket(packet_info);
-  }
-
-  void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override {
-    RTC_DCHECK(network_thread_.IsCurrent());
-    rtc::CritScope lock(&crit_);
-    if (feedback_observer_)
-      feedback_observer_->OnTransportFeedback(feedback);
-  }
-
- private:
-  rtc::CriticalSection crit_;
-  rtc::ThreadChecker thread_checker_;
-  rtc::ThreadChecker pacer_thread_;
-  rtc::ThreadChecker network_thread_;
-  TransportFeedbackObserver* feedback_observer_ RTC_GUARDED_BY(&crit_);
-};
 
 class RtpPacketSenderProxy : public RtpPacketSender {
  public:
@@ -489,7 +452,8 @@ ChannelSend::ChannelSend(
     bool extmap_allow_mixed,
     int rtcp_report_interval_ms,
     uint32_t ssrc,
-    rtc::scoped_refptr<FrameTransformerInterface> frame_transformer)
+    rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
+    TransportFeedbackObserver* feedback_observer)
     : event_log_(rtc_event_log),
       _timeStamp(0),  // This is just an offset, RTP module will add it's own
                       // random offset
@@ -498,7 +462,7 @@ ChannelSend::ChannelSend(
       previous_frame_muted_(false),
       _includeAudioLevelIndication(false),
       rtcp_observer_(new VoERtcpObserver(this)),
-      feedback_observer_proxy_(new TransportFeedbackProxy()),
+      feedback_observer_(feedback_observer),
       rtp_packet_pacer_proxy_(new RtpPacketSenderProxy()),
       retransmission_rate_limiter_(
           new RateLimiter(clock, kMaxRetransmissionWindowMs)),
@@ -514,7 +478,7 @@ ChannelSend::ChannelSend(
 
   RtpRtcpInterface::Configuration configuration;
   configuration.bandwidth_callback = rtcp_observer_.get();
-  configuration.transport_feedback_callback = feedback_observer_proxy_.get();
+  configuration.transport_feedback_callback = feedback_observer_;
   configuration.clock = (clock ? clock : Clock::GetRealTimeClock());
   configuration.audio = true;
   configuration.outgoing_transport = rtp_transport;
@@ -663,6 +627,8 @@ void ChannelSend::OnUplinkPacketLossRate(float packet_loss_rate) {
 }
 
 void ChannelSend::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+
   // Deliver RTCP packet to RTP/RTCP module for parsing
   rtp_rtcp_->IncomingRtcpPacket(data, length);
 
@@ -743,17 +709,12 @@ void ChannelSend::RegisterSenderCongestionControlObjects(
     RtcpBandwidthObserver* bandwidth_observer) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   RtpPacketSender* rtp_packet_pacer = transport->packet_sender();
-  TransportFeedbackObserver* transport_feedback_observer =
-      transport->transport_feedback_observer();
   PacketRouter* packet_router = transport->packet_router();
 
   RTC_DCHECK(rtp_packet_pacer);
-  RTC_DCHECK(transport_feedback_observer);
   RTC_DCHECK(packet_router);
   RTC_DCHECK(!packet_router_);
   rtcp_observer_->SetBandwidthObserver(bandwidth_observer);
-  feedback_observer_proxy_->SetTransportFeedbackObserver(
-      transport_feedback_observer);
   rtp_packet_pacer_proxy_->SetPacketPacer(rtp_packet_pacer);
   rtp_rtcp_->SetStorePacketsStatus(true, 600);
   constexpr bool remb_candidate = false;
@@ -766,7 +727,6 @@ void ChannelSend::ResetSenderCongestionControlObjects() {
   RTC_DCHECK(packet_router_);
   rtp_rtcp_->SetStorePacketsStatus(false, 600);
   rtcp_observer_->SetBandwidthObserver(nullptr);
-  feedback_observer_proxy_->SetTransportFeedbackObserver(nullptr);
   packet_router_->RemoveSendRtpModule(rtp_rtcp_.get());
   packet_router_ = nullptr;
   rtp_packet_pacer_proxy_->SetPacketPacer(nullptr);
@@ -985,12 +945,13 @@ std::unique_ptr<ChannelSendInterface> CreateChannelSend(
     bool extmap_allow_mixed,
     int rtcp_report_interval_ms,
     uint32_t ssrc,
-    rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) {
+    rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
+    TransportFeedbackObserver* feedback_observer) {
   return std::make_unique<ChannelSend>(
       clock, task_queue_factory, module_process_thread, rtp_transport,
       rtcp_rtt_stats, rtc_event_log, frame_encryptor, crypto_options,
       extmap_allow_mixed, rtcp_report_interval_ms, ssrc,
-      std::move(frame_transformer));
+      std::move(frame_transformer), feedback_observer);
 }
 
 }  // namespace voe

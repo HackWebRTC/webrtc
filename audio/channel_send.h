@@ -135,7 +135,8 @@ std::unique_ptr<ChannelSendInterface> CreateChannelSend(
     bool extmap_allow_mixed,
     int rtcp_report_interval_ms,
     uint32_t ssrc,
-    rtc::scoped_refptr<FrameTransformerInterface> frame_transformer);
+    rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
+    TransportFeedbackObserver* feedback_observer);
 
 }  // namespace voe
 }  // namespace webrtc

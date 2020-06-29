@@ -116,18 +116,20 @@ AudioSendStream::AudioSendStream(
                       bitrate_allocator,
                       event_log,
                       suspended_rtp_state,
-                      voe::CreateChannelSend(clock,
-                                             task_queue_factory,
-                                             module_process_thread,
-                                             config.send_transport,
-                                             rtcp_rtt_stats,
-                                             event_log,
-                                             config.frame_encryptor,
-                                             config.crypto_options,
-                                             config.rtp.extmap_allow_mixed,
-                                             config.rtcp_report_interval_ms,
-                                             config.rtp.ssrc,
-                                             config.frame_transformer)) {}
+                      voe::CreateChannelSend(
+                          clock,
+                          task_queue_factory,
+                          module_process_thread,
+                          config.send_transport,
+                          rtcp_rtt_stats,
+                          event_log,
+                          config.frame_encryptor,
+                          config.crypto_options,
+                          config.rtp.extmap_allow_mixed,
+                          config.rtcp_report_interval_ms,
+                          config.rtp.ssrc,
+                          config.frame_transformer,
+                          rtp_transport->transport_feedback_observer())) {}
 
 AudioSendStream::AudioSendStream(
     Clock* clock,
@@ -506,10 +508,7 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
 }
 
 void AudioSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
-  // TODO(solenberg): Tests call this function on a network thread, libjingle
-  // calls on the worker thread. We should move towards always using a network
-  // thread. Then this check can be enabled.
-  // RTC_DCHECK(!worker_thread_checker_.IsCurrent());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   channel_send_->ReceivedRTCPPacket(packet, length);
   worker_queue_->PostTask([&]() {
     // Poll if overhead has changed, which it can do if ack triggers us to stop
