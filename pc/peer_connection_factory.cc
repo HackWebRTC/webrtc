@@ -10,6 +10,7 @@
 
 #include "pc/peer_connection_factory.h"
 
+#include <cstdio>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -107,6 +108,10 @@ PeerConnectionFactory::PeerConnectionFactory(
       wraps_current_thread_ = true;
     }
   }
+  signaling_thread_->AllowInvokesToThread(worker_thread_);
+  signaling_thread_->AllowInvokesToThread(network_thread_);
+  worker_thread_->AllowInvokesToThread(network_thread_);
+  network_thread_->DisallowAnyInvoke();
 }
 
 PeerConnectionFactory::~PeerConnectionFactory() {
