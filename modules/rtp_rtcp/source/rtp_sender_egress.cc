@@ -17,7 +17,6 @@
 #include "absl/strings/match.h"
 #include "api/transport/field_trial_based_config.h"
 #include "logging/rtc_event_log/events/rtc_event_rtp_packet_outgoing.h"
-#include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/task_utils/to_queued_task.h"
 
@@ -70,7 +69,9 @@ RtpSenderEgress::RtpSenderEgress(const RtpRtcpInterface::Configuration& config,
       packet_history_(packet_history),
       transport_(config.outgoing_transport),
       event_log_(config.event_log),
+#if BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
       is_audio_(config.audio),
+#endif
       need_rtp_packet_infos_(config.need_rtp_packet_infos),
       transport_feedback_observer_(config.transport_feedback_callback),
       send_side_delay_observer_(config.send_side_delay_observer),
@@ -110,30 +111,18 @@ void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
   RTC_DCHECK_RUN_ON(&pacer_checker_);
   RTC_DCHECK(packet);
 
-  const uint32_t packet_ssrc = packet->Ssrc();
   RTC_DCHECK(packet->packet_type().has_value());
   RTC_DCHECK(HasCorrectSsrc(*packet));
-  int64_t now_ms = clock_->TimeInMilliseconds();
 
-  if (is_audio_) {
+  const uint32_t packet_ssrc = packet->Ssrc();
+  const int64_t now_ms = clock_->TimeInMilliseconds();
+
 #if BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
-    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "AudioTotBitrate_kbps", now_ms,
-                                    GetSendRates().Sum().kbps(), packet_ssrc);
-    BWE_TEST_LOGGING_PLOT_WITH_SSRC(
-        1, "AudioNackBitrate_kbps", now_ms,
-        GetSendRates()[RtpPacketMediaType::kRetransmission].kbps(),
-        packet_ssrc);
+  worker_queue_->PostTask(
+      ToQueuedTask(task_safety_, [this, now_ms, packet_ssrc]() {
+        BweTestLoggingPlot(now_ms, packet_ssrc);
+      }));
 #endif
-  } else {
-#if BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
-    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoTotBitrate_kbps", now_ms,
-                                    GetSendRates().Sum().kbps(), packet_ssrc);
-    BWE_TEST_LOGGING_PLOT_WITH_SSRC(
-        1, "VideoNackBitrate_kbps", now_ms,
-        GetSendRates()[RtpPacketMediaType::kRetransmission].kbps(),
-        packet_ssrc);
-#endif
-  }
 
   if (need_rtp_packet_infos_ &&
       packet->packet_type() == RtpPacketToSend::Type::kVideo) {
@@ -226,11 +215,12 @@ void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
     RtpPacketMediaType packet_type = *packet->packet_type();
     RtpPacketCounter counter(*packet);
     size_t size = packet->size();
-    worker_queue_->PostTask(ToQueuedTask(
-        task_safety_, [this, now_ms, ssrc = packet->Ssrc(), packet_type,
-                       counter = std::move(counter), size]() {
+    worker_queue_->PostTask(
+        ToQueuedTask(task_safety_, [this, now_ms, packet_ssrc, packet_type,
+                                    counter = std::move(counter), size]() {
           RTC_DCHECK_RUN_ON(worker_queue_);
-          UpdateRtpStats(now_ms, ssrc, packet_type, std::move(counter), size);
+          UpdateRtpStats(now_ms, packet_ssrc, packet_type, std::move(counter),
+                         size);
         }));
   }
 }
@@ -515,5 +505,26 @@ void RtpSenderEgress::PeriodicUpdate() {
       send_rates.Sum().bps(),
       send_rates[RtpPacketMediaType::kRetransmission].bps(), ssrc_);
 }
+
+#if BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
+void RtpSenderEgress::BweTestLoggingPlot(int64_t now_ms, uint32_t packet_ssrc) {
+  RTC_DCHECK_RUN_ON(worker_queue_);
+
+  const auto rates = GetSendRates();
+  if (is_audio_) {
+    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "AudioTotBitrate_kbps", now_ms,
+                                    rates.Sum().kbps(), packet_ssrc);
+    BWE_TEST_LOGGING_PLOT_WITH_SSRC(
+        1, "AudioNackBitrate_kbps", now_ms,
+        rates[RtpPacketMediaType::kRetransmission].kbps(), packet_ssrc);
+  } else {
+    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoTotBitrate_kbps", now_ms,
+                                    rates.Sum().kbps(), packet_ssrc);
+    BWE_TEST_LOGGING_PLOT_WITH_SSRC(
+        1, "VideoNackBitrate_kbps", now_ms,
+        rates[RtpPacketMediaType::kRetransmission].kbps(), packet_ssrc);
+  }
+}
+#endif  // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
 
 }  // namespace webrtc

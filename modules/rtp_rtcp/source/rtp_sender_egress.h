@@ -20,6 +20,7 @@
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/data_rate.h"
+#include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
@@ -110,6 +111,9 @@ class RtpSenderEgress {
                       RtpPacketMediaType packet_type,
                       RtpPacketCounter counter,
                       size_t packet_size);
+#if BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
+  void BweTestLoggingPlot(int64_t now_ms, uint32_t packet_ssrc);
+#endif
 
   // Called on a timer, once a second, on the worker_queue_.
   void PeriodicUpdate();
@@ -125,7 +129,9 @@ class RtpSenderEgress {
   RtpPacketHistory* const packet_history_;
   Transport* const transport_;
   RtcEventLog* const event_log_;
+#if BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
   const bool is_audio_;
+#endif
   const bool need_rtp_packet_infos_;
 
   TransportFeedbackObserver* const transport_feedback_observer_;

@@ -289,6 +289,10 @@ void ModuleRtpRtcpImpl2::SetCsrcs(const std::vector<uint32_t>& csrcs) {
 // TODO(pbos): Handle media and RTX streams separately (separate RTCP
 // feedbacks).
 RTCPSender::FeedbackState ModuleRtpRtcpImpl2::GetFeedbackState() {
+  // TODO(bugs.webrtc.org/11581): Called by potentially multiple threads.
+  // "Send*" methods and on the ProcessThread. Make sure it's only called on the
+  // construction thread.
+
   RTCPSender::FeedbackState state;
   // This is called also when receiver_only is true. Hence below
   // checks that rtp_sender_ exists.
@@ -653,6 +657,7 @@ void ModuleRtpRtcpImpl2::BitrateSent(uint32_t* total_rate,
                                      uint32_t* video_rate,
                                      uint32_t* fec_rate,
                                      uint32_t* nack_rate) const {
+  RTC_DCHECK_RUN_ON(worker_queue_);
   RtpSendRates send_rates = rtp_sender_->packet_sender.GetSendRates();
   *total_rate = send_rates.Sum().bps<uint32_t>();
   if (video_rate)
@@ -663,6 +668,7 @@ void ModuleRtpRtcpImpl2::BitrateSent(uint32_t* total_rate,
 }
 
 RtpSendRates ModuleRtpRtcpImpl2::GetSendRates() const {
+  RTC_DCHECK_RUN_ON(worker_queue_);
   return rtp_sender_->packet_sender.GetSendRates();
 }
 
