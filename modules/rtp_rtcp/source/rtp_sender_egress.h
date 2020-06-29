@@ -28,6 +28,7 @@
 #include "rtc_base/critical_section.h"
 #include "rtc_base/rate_statistics.h"
 #include "rtc_base/synchronization/sequence_checker.h"
+#include "rtc_base/task_utils/pending_task_safety_flag.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -103,13 +104,18 @@ class RtpSenderEgress {
   bool SendPacketToNetwork(const RtpPacketToSend& packet,
                            const PacketOptions& options,
                            const PacedPacketInfo& pacing_info);
-  void UpdateRtpStats(int64_t now_ms, const RtpPacketToSend& packet)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+
+  void UpdateRtpStats(int64_t now_ms,
+                      uint32_t packet_ssrc,
+                      RtpPacketMediaType packet_type,
+                      RtpPacketCounter counter,
+                      size_t packet_size);
 
   // Called on a timer, once a second, on the worker_queue_.
   void PeriodicUpdate();
 
   TaskQueueBase* const worker_queue_;
+  SequenceChecker pacer_checker_;
   const uint32_t ssrc_;
   const absl::optional<uint32_t> rtx_ssrc_;
   const absl::optional<uint32_t> flexfec_ssrc_;
@@ -129,9 +135,9 @@ class RtpSenderEgress {
   BitrateStatisticsObserver* const bitrate_callback_;
 
   rtc::CriticalSection lock_;
-  bool media_has_been_sent_ RTC_GUARDED_BY(lock_);
+  bool media_has_been_sent_ RTC_GUARDED_BY(pacer_checker_);
   bool force_part_of_allocation_ RTC_GUARDED_BY(lock_);
-  uint32_t timestamp_offset_ RTC_GUARDED_BY(lock_);
+  uint32_t timestamp_offset_ RTC_GUARDED_BY(worker_queue_);
 
   SendDelayMap send_delays_ RTC_GUARDED_BY(lock_);
   SendDelayMap::const_iterator max_delay_it_ RTC_GUARDED_BY(lock_);
@@ -148,9 +154,9 @@ class RtpSenderEgress {
   // 2. Whether the packet was the first in its frame.
   // 3. Whether the packet was the last in its frame.
   const std::unique_ptr<RtpSequenceNumberMap> rtp_sequence_number_map_
-      RTC_GUARDED_BY(lock_);
-
+      RTC_GUARDED_BY(worker_queue_);
   RepeatingTaskHandle update_task_ RTC_GUARDED_BY(worker_queue_);
+  ScopedTaskSafety task_safety_;
 };
 
 }  // namespace webrtc

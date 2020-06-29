@@ -26,6 +26,7 @@
 #include "test/gtest.h"
 #include "test/rtcp_packet_parser.h"
 #include "test/rtp_header_parser.h"
+#include "test/run_loop.h"
 
 using ::testing::ElementsAre;
 
@@ -198,6 +199,7 @@ class RtpRtcpImpl2Test : public ::testing::Test {
     receiver_.transport_.SetRtpRtcpModule(sender_.impl_.get());
   }
 
+  test::RunLoop loop_;
   SimulatedClock clock_;
   RtpRtcpModule sender_;
   std::unique_ptr<RTPSenderVideo> sender_video_;
@@ -586,6 +588,7 @@ TEST_F(RtpRtcpImpl2Test, StoresPacketInfoForSentPackets) {
   packet.set_first_packet_of_frame(true);
   packet.SetMarker(true);
   sender_.impl_->TrySendPacket(&packet, pacing_info);
+  loop_.Flush();
 
   std::vector<RtpSequenceNumberMap::Info> seqno_info =
       sender_.impl_->GetSentRtpPacketInfos(std::vector<uint16_t>{1});
@@ -609,6 +612,8 @@ TEST_F(RtpRtcpImpl2Test, StoresPacketInfoForSentPackets) {
   packet.SetSequenceNumber(4);
   packet.SetMarker(true);
   sender_.impl_->TrySendPacket(&packet, pacing_info);
+
+  loop_.Flush();
 
   seqno_info =
       sender_.impl_->GetSentRtpPacketInfos(std::vector<uint16_t>{2, 3, 4});

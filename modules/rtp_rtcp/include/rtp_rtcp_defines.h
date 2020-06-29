@@ -295,6 +295,8 @@ struct RtpPacketCounter {
   RtpPacketCounter()
       : header_bytes(0), payload_bytes(0), padding_bytes(0), packets(0) {}
 
+  explicit RtpPacketCounter(const RtpPacket& packet);
+
   void Add(const RtpPacketCounter& other) {
     header_bytes += other.header_bytes;
     payload_bytes += other.payload_bytes;

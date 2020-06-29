@@ -19,6 +19,7 @@
 #include "logging/rtc_event_log/events/rtc_event_rtp_packet_outgoing.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 
 namespace webrtc {
 namespace {
@@ -89,6 +90,7 @@ RtpSenderEgress::RtpSenderEgress(const RtpRtcpInterface::Configuration& config,
                                          kRtpSequenceNumberMapMaxEntries)
                                    : nullptr) {
   RTC_DCHECK(worker_queue_);
+  pacer_checker_.Detach();
   if (bitrate_callback_) {
     update_task_ = RepeatingTaskHandle::DelayedStart(worker_queue_,
                                                      kUpdateInterval, [this]() {
@@ -105,6 +107,7 @@ RtpSenderEgress::~RtpSenderEgress() {
 
 void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
                                  const PacedPacketInfo& pacing_info) {
+  RTC_DCHECK_RUN_ON(&pacer_checker_);
   RTC_DCHECK(packet);
 
   const uint32_t packet_ssrc = packet->Ssrc();
@@ -132,24 +135,22 @@ void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
 #endif
   }
 
-  PacketOptions options;
-  {
-    rtc::CritScope lock(&lock_);
-    options.included_in_allocation = force_part_of_allocation_;
-
-    if (need_rtp_packet_infos_ &&
-        packet->packet_type() == RtpPacketToSend::Type::kVideo) {
-      RTC_DCHECK(rtp_sequence_number_map_);
-      // Last packet of a frame, add it to sequence number info map.
-      const uint32_t timestamp = packet->Timestamp() - timestamp_offset_;
-      bool is_first_packet_of_frame = packet->is_first_packet_of_frame();
-      bool is_last_packet_of_frame = packet->Marker();
-
-      rtp_sequence_number_map_->InsertPacket(
-          packet->SequenceNumber(),
-          RtpSequenceNumberMap::Info(timestamp, is_first_packet_of_frame,
-                                     is_last_packet_of_frame));
-    }
+  if (need_rtp_packet_infos_ &&
+      packet->packet_type() == RtpPacketToSend::Type::kVideo) {
+    worker_queue_->PostTask(ToQueuedTask(
+        task_safety_,
+        [this, packet_timestamp = packet->Timestamp(),
+         is_first_packet_of_frame = packet->is_first_packet_of_frame(),
+         is_last_packet_of_frame = packet->Marker(),
+         sequence_number = packet->SequenceNumber()]() {
+          RTC_DCHECK_RUN_ON(worker_queue_);
+          // Last packet of a frame, add it to sequence number info map.
+          const uint32_t timestamp = packet_timestamp - timestamp_offset_;
+          rtp_sequence_number_map_->InsertPacket(
+              sequence_number,
+              RtpSequenceNumberMap::Info(timestamp, is_first_packet_of_frame,
+                                         is_last_packet_of_frame));
+        }));
   }
 
   // Bug webrtc:7859. While FEC is invoked from rtp_sender_video, and not after
@@ -179,6 +180,12 @@ void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
 
   const bool is_media = packet->packet_type() == RtpPacketMediaType::kAudio ||
                         packet->packet_type() == RtpPacketMediaType::kVideo;
+
+  PacketOptions options;
+  {
+    rtc::CritScope lock(&lock_);
+    options.included_in_allocation = force_part_of_allocation_;
+  }
 
   // Downstream code actually uses this flag to distinguish between media and
   // everything else.
@@ -212,11 +219,19 @@ void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
   }
 
   if (send_success) {
-    rtc::CritScope lock(&lock_);
-    // TODO(bugs.webrtc.org/11581): Update the stats on the worker thread
-    // (PostTask).
-    UpdateRtpStats(now_ms, *packet);
+    // TODO(tommi): Is this assuming is_media is true?
     media_has_been_sent_ = true;
+
+    RTC_DCHECK(packet->packet_type().has_value());
+    RtpPacketMediaType packet_type = *packet->packet_type();
+    RtpPacketCounter counter(*packet);
+    size_t size = packet->size();
+    worker_queue_->PostTask(ToQueuedTask(
+        task_safety_, [this, now_ms, ssrc = packet->Ssrc(), packet_type,
+                       counter = std::move(counter), size]() {
+          RTC_DCHECK_RUN_ON(worker_queue_);
+          UpdateRtpStats(now_ms, ssrc, packet_type, std::move(counter), size);
+        }));
   }
 }
 
@@ -252,22 +267,23 @@ void RtpSenderEgress::ForceIncludeSendPacketsInAllocation(
 }
 
 bool RtpSenderEgress::MediaHasBeenSent() const {
-  rtc::CritScope lock(&lock_);
+  RTC_DCHECK_RUN_ON(&pacer_checker_);
   return media_has_been_sent_;
 }
 
 void RtpSenderEgress::SetMediaHasBeenSent(bool media_sent) {
-  rtc::CritScope lock(&lock_);
+  RTC_DCHECK_RUN_ON(&pacer_checker_);
   media_has_been_sent_ = media_sent;
 }
 
 void RtpSenderEgress::SetTimestampOffset(uint32_t timestamp) {
-  rtc::CritScope lock(&lock_);
+  RTC_DCHECK_RUN_ON(worker_queue_);
   timestamp_offset_ = timestamp;
 }
 
 std::vector<RtpSequenceNumberMap::Info> RtpSenderEgress::GetSentRtpPacketInfos(
     rtc::ArrayView<const uint16_t> sequence_numbers) const {
+  RTC_DCHECK_RUN_ON(worker_queue_);
   RTC_DCHECK(!sequence_numbers.empty());
   if (!need_rtp_packet_infos_) {
     return std::vector<RtpSequenceNumberMap::Info>();
@@ -276,7 +292,6 @@ std::vector<RtpSequenceNumberMap::Info> RtpSenderEgress::GetSentRtpPacketInfos(
   std::vector<RtpSequenceNumberMap::Info> results;
   results.reserve(sequence_numbers.size());
 
-  rtc::CritScope cs(&lock_);
   for (uint16_t sequence_number : sequence_numbers) {
     const auto& info = rtp_sequence_number_map_->Get(sequence_number);
     if (!info) {
@@ -445,41 +460,47 @@ bool RtpSenderEgress::SendPacketToNetwork(const RtpPacketToSend& packet,
 }
 
 void RtpSenderEgress::UpdateRtpStats(int64_t now_ms,
-                                     const RtpPacketToSend& packet) {
-  // TODO(bugs.webrtc.org/11581): make sure rtx_rtp_stats_ and rtp_stats_ are
-  // only touched on the worker thread.
-  StreamDataCounters* counters =
-      packet.Ssrc() == rtx_ssrc_ ? &rtx_rtp_stats_ : &rtp_stats_;
+                                     uint32_t packet_ssrc,
+                                     RtpPacketMediaType packet_type,
+                                     RtpPacketCounter counter,
+                                     size_t packet_size) {
+  RTC_DCHECK_RUN_ON(worker_queue_);
 
-  if (counters->first_packet_time_ms == -1) {
-    counters->first_packet_time_ms = now_ms;
-  }
-
-  if (packet.packet_type() == RtpPacketMediaType::kForwardErrorCorrection) {
-    counters->fec.AddPacket(packet);
-  }
-
-  if (packet.packet_type() == RtpPacketMediaType::kRetransmission) {
-    counters->retransmitted.AddPacket(packet);
-  }
-  counters->transmitted.AddPacket(packet);
-
-  RTC_DCHECK(packet.packet_type().has_value());
   // TODO(bugs.webrtc.org/11581): send_rates_ should be touched only on the
   // worker thread.
-  send_rates_[static_cast<size_t>(*packet.packet_type())].Update(packet.size(),
-                                                                 now_ms);
+  RtpSendRates send_rates;
+  {
+    rtc::CritScope lock(&lock_);
 
-  // TODO(bugs.webrtc.org/11581): These (stats related) stat callbacks should be
-  // issued on the worker thread.
-  if (rtp_stats_callback_) {
-    rtp_stats_callback_->DataCountersUpdated(*counters, packet.Ssrc());
+    // TODO(bugs.webrtc.org/11581): make sure rtx_rtp_stats_ and rtp_stats_ are
+    // only touched on the worker thread.
+    StreamDataCounters* counters =
+        packet_ssrc == rtx_ssrc_ ? &rtx_rtp_stats_ : &rtp_stats_;
+
+    if (counters->first_packet_time_ms == -1) {
+      counters->first_packet_time_ms = now_ms;
+    }
+
+    if (packet_type == RtpPacketMediaType::kForwardErrorCorrection) {
+      counters->fec.Add(counter);
+    } else if (packet_type == RtpPacketMediaType::kRetransmission) {
+      counters->retransmitted.Add(counter);
+    }
+    counters->transmitted.Add(counter);
+
+    send_rates_[static_cast<size_t>(packet_type)].Update(packet_size, now_ms);
+    if (bitrate_callback_) {
+      send_rates = GetSendRatesLocked(now_ms);
+    }
+
+    if (rtp_stats_callback_) {
+      rtp_stats_callback_->DataCountersUpdated(*counters, packet_ssrc);
+    }
   }
 
   // The bitrate_callback_ and rtp_stats_callback_ pointers in practice point
   // to the same object, so these callbacks could be consolidated into one.
   if (bitrate_callback_) {
-    RtpSendRates send_rates = GetSendRatesLocked(now_ms);
     bitrate_callback_->Notify(
         send_rates.Sum().bps(),
         send_rates[RtpPacketMediaType::kRetransmission].bps(), ssrc_);
