@@ -2631,12 +2631,6 @@ bool ParseMediaDescription(
     std::vector<int> payload_types;
     if (cricket::IsRtpProtocol(protocol)) {
       for (size_t j = 3; j < fields.size(); ++j) {
-        // TODO(wu): Remove when below bug is fixed.
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=996329
-        if (fields[j].empty() && j == fields.size() - 1) {
-          continue;
-        }
-
         int pl = 0;
         if (!GetPayloadTypeFromString(line, fields[j], &pl, error)) {
           return false;
