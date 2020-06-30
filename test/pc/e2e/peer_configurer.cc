@@ -107,6 +107,8 @@ void ValidateParams(
   std::set<std::string> peer_names;
   std::set<std::string> video_labels;
   std::set<std::string> audio_labels;
+  std::set<std::string> video_sync_groups;
+  std::set<std::string> audio_sync_groups;
   int media_streams_count = 0;
 
   for (size_t i = 0; i < peers.size(); ++i) {
@@ -123,13 +125,25 @@ void ValidateParams(
     }
     media_streams_count += p->video_configs.size();
 
-    // Validate that all video stream labels are unique.
+    // Validate that all video stream labels are unique and sync groups are
+    // valid.
     for (const VideoConfig& video_config : p->video_configs) {
       RTC_CHECK(video_config.stream_label);
       bool inserted =
           video_labels.insert(video_config.stream_label.value()).second;
       RTC_CHECK(inserted) << "Duplicate video_config.stream_label="
                           << video_config.stream_label.value();
+
+      // TODO(bugs.webrtc.org/4762): remove this check after synchronization of
+      // more than two streams is supported.
+      if (video_config.sync_group.has_value()) {
+        bool sync_group_inserted =
+            video_sync_groups.insert(video_config.sync_group.value()).second;
+        RTC_CHECK(sync_group_inserted)
+            << "Sync group shouldn't consist of more than two streams (one "
+               "video and one audio). Duplicate video_config.sync_group="
+            << video_config.sync_group.value();
+      }
 
       if (video_config.simulcast_config) {
         if (video_config.simulcast_config->target_spatial_index) {
@@ -158,6 +172,17 @@ void ValidateParams(
           audio_labels.insert(p->audio_config->stream_label.value()).second;
       RTC_CHECK(inserted) << "Duplicate audio_config.stream_label="
                           << p->audio_config->stream_label.value();
+      // TODO(bugs.webrtc.org/4762): remove this check after synchronization of
+      // more than two streams is supported.
+      if (p->audio_config->sync_group.has_value()) {
+        bool sync_group_inserted =
+            audio_sync_groups.insert(p->audio_config->sync_group.value())
+                .second;
+        RTC_CHECK(sync_group_inserted)
+            << "Sync group shouldn't consist of more than two streams (one "
+               "video and one audio). Duplicate audio_config.sync_group="
+            << p->audio_config->sync_group.value();
+      }
       // Check that if mode input file name specified only if mode is kFile.
       if (p->audio_config.value().mode == AudioConfig::Mode::kGenerated) {
         RTC_CHECK(!p->audio_config.value().input_file_name);

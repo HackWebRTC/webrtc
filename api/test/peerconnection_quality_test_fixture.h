@@ -229,8 +229,7 @@ class PeerConnectionE2EQualityTestFixture {
     bool show_on_screen = false;
     // If specified, determines a sync group to which this video stream belongs.
     // According to bugs.webrtc.org/4762 WebRTC supports synchronization only
-    // for pair of single audio and single video stream. Framework won't do any
-    // enforcements on this field.
+    // for pair of single audio and single video stream.
     absl::optional<std::string> sync_group;
   };
 
@@ -257,8 +256,7 @@ class PeerConnectionE2EQualityTestFixture {
     int sampling_frequency_in_hz = 48000;
     // If specified, determines a sync group to which this audio stream belongs.
     // According to bugs.webrtc.org/4762 WebRTC supports synchronization only
-    // for pair of single audio and single video stream. Framework won't do any
-    // enforcements on this field.
+    // for pair of single audio and single video stream.
     absl::optional<std::string> sync_group;
   };
 
