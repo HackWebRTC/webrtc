@@ -32,6 +32,7 @@
 #include "api/test/frame_generator_interface.h"
 #include "api/test/simulated_network.h"
 #include "api/test/stats_observer_interface.h"
+#include "api/test/track_id_stream_label_map.h"
 #include "api/test/video_quality_analyzer_interface.h"
 #include "api/transport/network_control.h"
 #include "api/units/time_delta.h"
@@ -411,7 +412,19 @@ class PeerConnectionE2EQualityTestFixture {
 
     // Invoked by framework after peer connection factory and peer connection
     // itself will be created but before offer/answer exchange will be started.
-    virtual void Start(absl::string_view test_case_name) = 0;
+    // |test_case_name| is name of test case, that should be used to report all
+    // metrics.
+    // |reporter_helper| is a pointer to a class that will allow track_id to
+    // stream_id matching. The caller is responsible for ensuring the
+    // TrackIdStreamLabelMap will be valid from Start() to
+    // StopAndReportResults().
+    virtual void Start(absl::string_view test_case_name,
+                       const TrackIdStreamLabelMap* reporter_helper) = 0;
+    // This method has been added for backwards compatibility with upstream
+    // project.
+    void Start(absl::string_view test_case_name) {
+      Start(test_case_name, nullptr);
+    }
 
     // Invoked by framework after call is ended and peer connection factory and
     // peer connection are destroyed.

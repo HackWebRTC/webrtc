@@ -19,7 +19,9 @@
 namespace webrtc {
 namespace webrtc_pc_e2e {
 
-void VideoQualityMetricsReporter::Start(absl::string_view test_case_name) {
+void VideoQualityMetricsReporter::Start(
+    absl::string_view test_case_name,
+    const TrackIdStreamLabelMap* /*reporter_helper*/) {
   test_case_name_ = std::string(test_case_name);
   start_time_ = Now();
 }

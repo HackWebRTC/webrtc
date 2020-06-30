@@ -15,6 +15,7 @@
 #include <string>
 
 #include "api/test/peerconnection_quality_test_fixture.h"
+#include "api/test/track_id_stream_label_map.h"
 #include "api/units/data_size.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/critical_section.h"
@@ -36,7 +37,8 @@ class VideoQualityMetricsReporter
   VideoQualityMetricsReporter(Clock* const clock) : clock_(clock) {}
   ~VideoQualityMetricsReporter() override = default;
 
-  void Start(absl::string_view test_case_name) override;
+  void Start(absl::string_view test_case_name,
+             const TrackIdStreamLabelMap* reporter_helper) override;
   void OnStatsReports(
       absl::string_view pc_label,
       const rtc::scoped_refptr<const RTCStatsReport>& report) override;

@@ -15,6 +15,7 @@
 
 #include "api/test/network_emulation_manager.h"
 #include "api/test/peerconnection_quality_test_fixture.h"
+#include "api/test/track_id_stream_label_map.h"
 #include "api/units/data_size.h"
 #include "rtc_base/critical_section.h"
 
@@ -30,7 +31,8 @@ class NetworkQualityMetricsReporter
   ~NetworkQualityMetricsReporter() override = default;
 
   // Network stats must be empty when this method will be invoked.
-  void Start(absl::string_view test_case_name) override;
+  void Start(absl::string_view test_case_name,
+             const TrackIdStreamLabelMap* reporter_helper) override;
   void OnStatsReports(
       absl::string_view pc_label,
       const rtc::scoped_refptr<const RTCStatsReport>& report) override;

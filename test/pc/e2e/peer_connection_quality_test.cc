@@ -259,7 +259,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
       video_analyzer_threads);
   audio_quality_analyzer_->Start(test_case_name_, &analyzer_helper_);
   for (auto& reporter : quality_metrics_reporters_) {
-    reporter->Start(test_case_name_);
+    reporter->Start(test_case_name_, &analyzer_helper_);
   }
 
   // Start RTCEventLog recording if requested.
