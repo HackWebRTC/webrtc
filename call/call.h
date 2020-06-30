@@ -47,11 +47,6 @@ class SharedModuleThread : public rtc::RefCountInterface {
   ~SharedModuleThread() override;
 
  public:
-  // Instantiates a default implementation of ProcessThread.
-  static rtc::scoped_refptr<SharedModuleThread> Create(
-      const char* name,
-      std::function<void()> on_one_ref_remaining);
-
   // Allows injection of an externally created process thread.
   static rtc::scoped_refptr<SharedModuleThread> Create(
       std::unique_ptr<ProcessThread> process_thread,

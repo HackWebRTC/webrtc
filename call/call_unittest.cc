@@ -418,8 +418,9 @@ TEST(CallTest, SharedModuleThread) {
   // the reference count goes back to 1 - meaning |shared| again is the only
   // reference, which means we can free the variable and deallocate the thread.
   rtc::scoped_refptr<SharedModuleThread> shared;
-  shared = SharedModuleThread::Create("MySharedProcessThread",
-                                      [&shared]() { shared = nullptr; });
+  shared =
+      SharedModuleThread::Create(ProcessThread::Create("MySharedProcessThread"),
+                                 [&shared]() { shared = nullptr; });
   ProcessThread* process_thread = shared->process_thread();
 
   ASSERT_TRUE(shared.get());

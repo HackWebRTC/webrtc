@@ -37,7 +37,8 @@ std::unique_ptr<CallFactoryInterface> CreateTimeControllerBasedCallFactory(
     Call* CreateCall(const Call::Config& config) override {
       if (!module_thread_) {
         module_thread_ = SharedModuleThread::Create(
-            "CallModules", [this]() { module_thread_ = nullptr; });
+            time_controller_->CreateProcessThread("CallModules"),
+            [this]() { module_thread_ = nullptr; });
       }
       return Call::Create(config, time_controller_->GetClock(), module_thread_,
                           time_controller_->CreateProcessThread("Pacer"));

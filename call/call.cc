@@ -412,7 +412,8 @@ std::string Call::Stats::ToString(int64_t time_ms) const {
 
 Call* Call::Create(const Call::Config& config) {
   rtc::scoped_refptr<SharedModuleThread> call_thread =
-      SharedModuleThread::Create("ModuleProcessThread", nullptr);
+      SharedModuleThread::Create(ProcessThread::Create("ModuleProcessThread"),
+                                 nullptr);
   return Create(config, std::move(call_thread));
 }
 
@@ -501,12 +502,6 @@ SharedModuleThread::SharedModuleThread(
 SharedModuleThread::~SharedModuleThread() = default;
 
 // static
-rtc::scoped_refptr<SharedModuleThread> SharedModuleThread::Create(
-    const char* name,
-    std::function<void()> on_one_ref_remaining) {
-  return new SharedModuleThread(ProcessThread::Create(name),
-                                std::move(on_one_ref_remaining));
-}
 
 rtc::scoped_refptr<SharedModuleThread> SharedModuleThread::Create(
     std::unique_ptr<ProcessThread> process_thread,

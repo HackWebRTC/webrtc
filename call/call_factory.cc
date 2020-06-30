@@ -88,10 +88,11 @@ Call* CallFactory::CreateCall(const Call::Config& config) {
   }
 
   if (!module_thread_) {
-    module_thread_ = SharedModuleThread::Create("SharedModThread", [this]() {
-      RTC_DCHECK_RUN_ON(&call_thread_);
-      module_thread_ = nullptr;
-    });
+    module_thread_ = SharedModuleThread::Create(
+        ProcessThread::Create("SharedModThread"), [this]() {
+          RTC_DCHECK_RUN_ON(&call_thread_);
+          module_thread_ = nullptr;
+        });
   }
 
   return Call::Create(config, module_thread_);
