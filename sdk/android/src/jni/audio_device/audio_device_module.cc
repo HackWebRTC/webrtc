@@ -516,7 +516,7 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
   }
 
   // Returns true if the device both supports built in AEC and the device
-  // is not blacklisted.
+  // is not blocklisted.
   // Currently, if OpenSL ES is used in both directions, this method will still
   // report the correct value and it has the correct effect. As an example:
   // a device supports built in AEC and this method returns true. Libjingle
@@ -544,7 +544,7 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
   }
 
   // Returns true if the device both supports built in NS and the device
-  // is not blacklisted.
+  // is not blocklisted.
   // TODO(henrika): add implementation for OpenSL ES based audio as well.
   // In addition, see comments for BuiltInAECIsAvailable().
   bool BuiltInNSIsAvailable() const override {
