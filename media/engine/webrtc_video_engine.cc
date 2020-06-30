@@ -245,7 +245,7 @@ static bool ValidateStreamParams(const StreamParams& sp) {
 }
 
 // Returns true if the given codec is disallowed from doing simulcast.
-bool IsCodecBlacklistedForSimulcast(const std::string& codec_name) {
+bool IsCodecDisabledForSimulcast(const std::string& codec_name) {
   return !webrtc::field_trial::IsDisabled("WebRTC-H264Simulcast")
              ? absl::EqualsIgnoreCase(codec_name, kVp9CodecName)
              : absl::EqualsIgnoreCase(codec_name, kH264CodecName) ||
@@ -2321,11 +2321,11 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   }
 
   // By default, the stream count for the codec configuration should match the
-  // number of negotiated ssrcs. But if the codec is blacklisted for simulcast
+  // number of negotiated ssrcs. But if the codec is disabled for simulcast
   // or a screencast (and not in simulcast screenshare experiment), only
   // configure a single stream.
   encoder_config.number_of_streams = parameters_.config.rtp.ssrcs.size();
-  if (IsCodecBlacklistedForSimulcast(codec.name)) {
+  if (IsCodecDisabledForSimulcast(codec.name)) {
     encoder_config.number_of_streams = 1;
   }
 
