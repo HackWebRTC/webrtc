@@ -584,15 +584,6 @@ webrtc_fuzzer_test("string_to_number_fuzzer") {
   seed_corpus = "corpora/string_to_number-corpus"
 }
 
-webrtc_fuzzer_test("rtp_rtcp_demuxer_helper_fuzzer") {
-  sources = [ "rtp_rtcp_demuxer_helper_fuzzer.cc" ]
-  deps = [
-    "../../api:array_view",
-    "../../call:rtp_receiver",
-  ]
-  seed_corpus = "corpora/rtcp-corpus"
-}
-
 webrtc_fuzzer_test("sctp_utils_fuzzer") {
   sources = [ "sctp_utils_fuzzer.cc" ]
   deps = [

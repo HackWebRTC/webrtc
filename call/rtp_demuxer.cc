@@ -11,7 +11,6 @@
 #include "call/rtp_demuxer.h"
 
 #include "call/rtp_packet_sink_interface.h"
-#include "call/rtp_rtcp_demuxer_helper.h"
 #include "call/ssrc_binding_observer.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
@@ -20,6 +19,42 @@
 #include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
+namespace {
+
+template <typename Container, typename Value>
+size_t RemoveFromMultimapByValue(Container* multimap, const Value& value) {
+  size_t count = 0;
+  for (auto it = multimap->begin(); it != multimap->end();) {
+    if (it->second == value) {
+      it = multimap->erase(it);
+      ++count;
+    } else {
+      ++it;
+    }
+  }
+  return count;
+}
+
+template <typename Map, typename Value>
+size_t RemoveFromMapByValue(Map* map, const Value& value) {
+  size_t count = 0;
+  for (auto it = map->begin(); it != map->end();) {
+    if (it->second == value) {
+      it = map->erase(it);
+      ++count;
+    } else {
+      ++it;
+    }
+  }
+  return count;
+}
+
+template <typename Container, typename Key>
+bool ContainerHasKey(const Container& c, const Key& k) {
+  return std::find(c.cbegin(), c.cend(), k) != c.cend();
+}
+
+}  // namespace
 
 RtpDemuxerCriteria::RtpDemuxerCriteria() = default;
 RtpDemuxerCriteria::~RtpDemuxerCriteria() = default;

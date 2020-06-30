@@ -81,7 +81,6 @@ rtc_library("rtp_interfaces") {
   # client code gets updated.
   visibility = [ "*" ]
   sources = [
-    "rtcp_packet_sink_interface.h",
     "rtp_config.cc",
     "rtp_config.h",
     "rtp_packet_sink_interface.h",
@@ -111,12 +110,8 @@ rtc_library("rtp_interfaces") {
 rtc_library("rtp_receiver") {
   visibility = [ "*" ]
   sources = [
-    "rtcp_demuxer.cc",
-    "rtcp_demuxer.h",
     "rtp_demuxer.cc",
     "rtp_demuxer.h",
-    "rtp_rtcp_demuxer_helper.cc",
-    "rtp_rtcp_demuxer_helper.h",
     "rtp_stream_receiver_controller.cc",
     "rtp_stream_receiver_controller.h",
     "rtx_receive_stream.cc",
@@ -387,11 +382,9 @@ if (rtc_include_tests) {
       "call_unittest.cc",
       "flexfec_receive_stream_unittest.cc",
       "receive_time_calculator_unittest.cc",
-      "rtcp_demuxer_unittest.cc",
       "rtp_bitrate_configurator_unittest.cc",
       "rtp_demuxer_unittest.cc",
       "rtp_payload_params_unittest.cc",
-      "rtp_rtcp_demuxer_helper_unittest.cc",
       "rtp_video_sender_unittest.cc",
       "rtx_receive_stream_unittest.cc",
     ]
