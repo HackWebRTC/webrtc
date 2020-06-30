@@ -96,12 +96,12 @@ class NATServer : public sigslot::has_slots<> {
     TransEntry(const SocketAddressPair& r, AsyncUDPSocket* s, NAT* nat);
     ~TransEntry();
 
-    void WhitelistInsert(const SocketAddress& addr);
-    bool WhitelistContains(const SocketAddress& ext_addr);
+    void AllowlistInsert(const SocketAddress& addr);
+    bool AllowlistContains(const SocketAddress& ext_addr);
 
     SocketAddressPair route;
     AsyncUDPSocket* socket;
-    AddressSet* whitelist;
+    AddressSet* allowlist;
     CriticalSection crit_;
   };
 
