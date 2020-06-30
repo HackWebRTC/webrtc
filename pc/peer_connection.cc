@@ -251,21 +251,23 @@ uint32_t ConvertIceTransportTypeToCandidateFilter(
   return cricket::CF_NONE;
 }
 
+// Map internal signaling state name to spec name:
+//  https://w3c.github.io/webrtc-pc/#rtcsignalingstate-enum
 std::string GetSignalingStateString(
     PeerConnectionInterface::SignalingState state) {
   switch (state) {
     case PeerConnectionInterface::kStable:
-      return "kStable";
+      return "stable";
     case PeerConnectionInterface::kHaveLocalOffer:
-      return "kHaveLocalOffer";
+      return "have-local-offer";
     case PeerConnectionInterface::kHaveLocalPrAnswer:
-      return "kHavePrAnswer";
+      return "have-local-pranswer";
     case PeerConnectionInterface::kHaveRemoteOffer:
-      return "kHaveRemoteOffer";
+      return "have-remote-offer";
     case PeerConnectionInterface::kHaveRemotePrAnswer:
-      return "kHaveRemotePrAnswer";
+      return "have-remote-pranswer";
     case PeerConnectionInterface::kClosed:
-      return "kClosed";
+      return "closed";
   }
   RTC_NOTREACHED();
   return "";
