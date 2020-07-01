@@ -385,8 +385,10 @@ void PeerConnectionE2EQualityTest::OnTrackCallback(
       transceiver->receiver()->track();
   RTC_CHECK_EQ(transceiver->receiver()->stream_ids().size(), 2)
       << "Expected 2 stream ids: 1st - sync group, 2nd - unique stream label";
+  std::string sync_group = transceiver->receiver()->stream_ids()[0];
   std::string stream_label = transceiver->receiver()->stream_ids()[1];
-  analyzer_helper_.AddTrackToStreamMapping(track->id(), stream_label);
+  analyzer_helper_.AddTrackToStreamMapping(track->id(), stream_label,
+                                           sync_group);
   if (track->kind() != MediaStreamTrackInterface::kVideoKind) {
     return;
   }

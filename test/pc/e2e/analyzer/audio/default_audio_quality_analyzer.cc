@@ -17,9 +17,8 @@
 namespace webrtc {
 namespace webrtc_pc_e2e {
 
-void DefaultAudioQualityAnalyzer::Start(
-    std::string test_case_name,
-    TrackIdStreamLabelMap* analyzer_helper) {
+void DefaultAudioQualityAnalyzer::Start(std::string test_case_name,
+                                        TrackIdStreamInfoMap* analyzer_helper) {
   test_case_name_ = std::move(test_case_name);
   analyzer_helper_ = analyzer_helper;
 }
@@ -53,8 +52,8 @@ void DefaultAudioQualityAnalyzer::OnStatsReports(
     sample.jitter_buffer_emitted_count =
         stat->jitter_buffer_emitted_count.ValueOrDefault(0ul);
 
-    const std::string& stream_label =
-        analyzer_helper_->GetStreamLabelFromTrackId(*stat->track_identifier);
+    const std::string stream_label = std::string(
+        analyzer_helper_->GetStreamLabelFromTrackId(*stat->track_identifier));
 
     rtc::CritScope crit(&lock_);
     StatsSample prev_sample = last_stats_sample_[stream_label];

@@ -534,10 +534,11 @@ if (!build_with_chromium) {
       "analyzer_helper.h",
     ]
     deps = [
-      "../../../api:track_id_stream_label_map",
+      "../../../api:track_id_stream_info_map",
       "../../../rtc_base:macromagic",
       "../../../rtc_base/synchronization:sequence_checker",
     ]
+    absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
   }
 
   rtc_library("default_audio_quality_analyzer") {
@@ -553,13 +554,14 @@ if (!build_with_chromium) {
       "../../../api:audio_quality_analyzer_api",
       "../../../api:rtc_stats_api",
       "../../../api:stats_observer_interface",
-      "../../../api:track_id_stream_label_map",
+      "../../../api:track_id_stream_info_map",
       "../../../api/units:time_delta",
       "../../../api/units:timestamp",
       "../../../rtc_base:criticalsection",
       "../../../rtc_base:logging",
       "../../../rtc_base:rtc_numerics",
     ]
+    absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
   }
 
   rtc_library("example_video_quality_analyzer") {
@@ -593,7 +595,7 @@ if (!build_with_chromium) {
       "../..:perf_test",
       "../../../api:peer_connection_quality_test_fixture_api",
       "../../../api:rtc_stats_api",
-      "../../../api:track_id_stream_label_map",
+      "../../../api:track_id_stream_info_map",
       "../../../api/units:data_rate",
       "../../../api/units:data_size",
       "../../../api/units:time_delta",
@@ -601,6 +603,7 @@ if (!build_with_chromium) {
       "../../../rtc_base:criticalsection",
       "../../../rtc_base:rtc_numerics",
     ]
+    absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
   }
 
   rtc_library("default_video_quality_analyzer") {
@@ -647,12 +650,13 @@ if (!build_with_chromium) {
       "../../../api:network_emulation_manager_api",
       "../../../api:peer_connection_quality_test_fixture_api",
       "../../../api:rtc_stats_api",
-      "../../../api:track_id_stream_label_map",
+      "../../../api:track_id_stream_info_map",
       "../../../api/units:data_size",
       "../../../rtc_base:criticalsection",
       "../../../rtc_base:rtc_event",
       "../../../system_wrappers:field_trial",
     ]
+    absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
   }
 
   rtc_library("sdp_changer") {

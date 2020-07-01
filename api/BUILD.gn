@@ -296,9 +296,10 @@ rtc_source_set("video_quality_analyzer_api") {
   ]
 }
 
-rtc_source_set("track_id_stream_label_map") {
+rtc_source_set("track_id_stream_info_map") {
   visibility = [ "*" ]
-  sources = [ "test/track_id_stream_label_map.h" ]
+  sources = [ "test/track_id_stream_info_map.h" ]
+  absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
 }
 
 rtc_source_set("rtp_transceiver_direction") {
@@ -345,7 +346,7 @@ rtc_source_set("audio_quality_analyzer_api") {
 
   deps = [
     ":stats_observer_interface",
-    ":track_id_stream_label_map",
+    ":track_id_stream_info_map",
   ]
 }
 
@@ -377,7 +378,7 @@ rtc_source_set("peer_connection_quality_test_fixture_api") {
     ":rtp_parameters",
     ":simulated_network_api",
     ":stats_observer_interface",
-    ":track_id_stream_label_map",
+    ":track_id_stream_info_map",
     ":video_quality_analyzer_api",
     "../media:rtc_media_base",
     "../rtc_base:deprecation",

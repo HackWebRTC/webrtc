@@ -14,8 +14,9 @@
 #include <map>
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "api/test/audio_quality_analyzer_interface.h"
-#include "api/test/track_id_stream_label_map.h"
+#include "api/test/track_id_stream_info_map.h"
 #include "api/units/time_delta.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/numerics/samples_stats_counter.h"
@@ -35,7 +36,7 @@ struct AudioStreamStats {
 class DefaultAudioQualityAnalyzer : public AudioQualityAnalyzerInterface {
  public:
   void Start(std::string test_case_name,
-             TrackIdStreamLabelMap* analyzer_helper) override;
+             TrackIdStreamInfoMap* analyzer_helper) override;
   void OnStatsReports(
       absl::string_view pc_label,
       const rtc::scoped_refptr<const RTCStatsReport>& report) override;
@@ -63,7 +64,7 @@ class DefaultAudioQualityAnalyzer : public AudioQualityAnalyzerInterface {
                     webrtc::test::ImproveDirection improve_direction) const;
 
   std::string test_case_name_;
-  TrackIdStreamLabelMap* analyzer_helper_;
+  TrackIdStreamInfoMap* analyzer_helper_;
 
   rtc::CriticalSection lock_;
   std::map<std::string, AudioStreamStats> streams_stats_ RTC_GUARDED_BY(lock_);

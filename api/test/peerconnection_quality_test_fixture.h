@@ -32,7 +32,7 @@
 #include "api/test/frame_generator_interface.h"
 #include "api/test/simulated_network.h"
 #include "api/test/stats_observer_interface.h"
-#include "api/test/track_id_stream_label_map.h"
+#include "api/test/track_id_stream_info_map.h"
 #include "api/test/video_quality_analyzer_interface.h"
 #include "api/transport/network_control.h"
 #include "api/units/time_delta.h"
@@ -416,10 +416,10 @@ class PeerConnectionE2EQualityTestFixture {
     // metrics.
     // |reporter_helper| is a pointer to a class that will allow track_id to
     // stream_id matching. The caller is responsible for ensuring the
-    // TrackIdStreamLabelMap will be valid from Start() to
+    // TrackIdStreamInfoMap will be valid from Start() to
     // StopAndReportResults().
     virtual void Start(absl::string_view test_case_name,
-                       const TrackIdStreamLabelMap* reporter_helper) = 0;
+                       const TrackIdStreamInfoMap* reporter_helper) = 0;
     // This method has been added for backwards compatibility with upstream
     // project.
     void Start(absl::string_view test_case_name) {
