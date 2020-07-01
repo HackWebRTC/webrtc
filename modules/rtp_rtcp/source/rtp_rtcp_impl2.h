@@ -37,6 +37,8 @@
 #include "rtc_base/critical_section.h"
 #include "rtc_base/gtest_prod_util.h"
 #include "rtc_base/synchronization/sequence_checker.h"
+#include "rtc_base/task_utils/pending_task_safety_flag.h"
+#include "rtc_base/task_utils/repeating_task.h"
 
 namespace webrtc {
 
@@ -284,6 +286,10 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
 
   bool TimeToSendFullNackList(int64_t now) const;
 
+  // Called on a timer, once a second, on the worker_queue_, to update the RTT,
+  // check if we need to send RTCP report, send TMMBR updates and fire events.
+  void PeriodicUpdate();
+
   TaskQueueBase* const worker_queue_;
   SequenceChecker process_thread_checker_;
 
@@ -305,6 +311,7 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
   RemoteBitrateEstimator* const remote_bitrate_;
 
   RtcpRttStats* const rtt_stats_;
+  RepeatingTaskHandle rtt_update_task_ RTC_GUARDED_BY(worker_queue_);
 
   // The processed RTT from RtcpRttStats.
   rtc::CriticalSection critical_section_rtt_;
