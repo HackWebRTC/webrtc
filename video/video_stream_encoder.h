@@ -120,7 +120,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   void OnVideoSourceRestrictionsUpdated(
       VideoSourceRestrictions restrictions,
       const VideoAdaptationCounters& adaptation_counters,
-      rtc::scoped_refptr<Resource> reason) override;
+      rtc::scoped_refptr<Resource> reason,
+      const VideoSourceRestrictions& unfiltered_restrictions) override;
 
   // Used for injected test resources.
   // TODO(eshr): Move all adaptation tests out of VideoStreamEncoder tests.
@@ -408,6 +409,9 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // Provies video stream input states: current resolution and frame rate.
   // This class is thread-safe.
   VideoStreamInputStateProvider input_state_provider_;
+
+  std::unique_ptr<VideoStreamAdapter> video_stream_adapter_
+      RTC_GUARDED_BY(&resource_adaptation_queue_);
   // Responsible for adapting input resolution or frame rate to ensure resources
   // (e.g. CPU or bandwidth) are not overused.
   // This class is single-threaded on the resource adaptation queue.

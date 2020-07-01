@@ -205,7 +205,8 @@ class FakeVideoSourceRestrictionsListener
   void OnVideoSourceRestrictionsUpdated(
       VideoSourceRestrictions restrictions,
       const VideoAdaptationCounters& adaptation_counters,
-      rtc::scoped_refptr<Resource> reason) override {
+      rtc::scoped_refptr<Resource> reason,
+      const VideoSourceRestrictions& unfiltered_restrictions) override {
     was_restrictions_updated_ = true;
     restrictions_updated_event_.Set();
   }

@@ -85,7 +85,7 @@ class FakeVideoStream {
   // Performs ApplyAdaptation() followed by SetInput() with input pixels and
   // frame rate adjusted according to the resulting restrictions.
   void ApplyAdaptation(Adaptation adaptation) {
-    adapter_->ApplyAdaptation(adaptation);
+    adapter_->ApplyAdaptation(adaptation, nullptr);
     // Update input pixels and fps according to the resulting restrictions.
     auto restrictions = adapter_->source_restrictions();
     if (restrictions.target_pixels_per_frame().has_value()) {
@@ -110,6 +110,28 @@ class FakeVideoStream {
   int min_pixels_per_frame_;
 };
 
+class FakeVideoStreamAdapterListner : public VideoSourceRestrictionsListener {
+ public:
+  void OnVideoSourceRestrictionsUpdated(
+      VideoSourceRestrictions restrictions,
+      const VideoAdaptationCounters& adaptation_counters,
+      rtc::scoped_refptr<Resource> reason,
+      const VideoSourceRestrictions& unfiltered_restrictions) {
+    calls_++;
+    last_restrictions_ = unfiltered_restrictions;
+  }
+
+  int calls() const { return calls_; }
+
+  VideoSourceRestrictions last_restrictions() const {
+    return last_restrictions_;
+  }
+
+ private:
+  int calls_ = 0;
+  VideoSourceRestrictions last_restrictions_;
+};
+
 }  // namespace
 
 TEST(VideoStreamAdapterTest, NoRestrictionsByDefault) {
@@ -126,7 +148,7 @@ TEST(VideoStreamAdapterTest, MaintainFramerate_DecreasesPixelsToThreeFifths) {
   Adaptation adaptation = adapter.GetAdaptationDown();
   EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
   EXPECT_FALSE(adaptation.min_pixel_limit_reached());
-  adapter.ApplyAdaptation(adaptation);
+  adapter.ApplyAdaptation(adaptation, nullptr);
   EXPECT_EQ(static_cast<size_t>((kInputPixels * 3) / 5),
             adapter.source_restrictions().max_pixels_per_frame());
   EXPECT_EQ(absl::nullopt,
@@ -195,7 +217,7 @@ TEST(VideoStreamAdapterTest, MaintainResolution_DecreasesFpsToTwoThirds) {
       InputState(1280 * 720, kInputFps, kDefaultMinPixelsPerFrame));
   Adaptation adaptation = adapter.GetAdaptationDown();
   EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
-  adapter.ApplyAdaptation(adaptation);
+  adapter.ApplyAdaptation(adaptation, nullptr);
   EXPECT_EQ(absl::nullopt,
             adapter.source_restrictions().max_pixels_per_frame());
   EXPECT_EQ(absl::nullopt,
@@ -275,7 +297,7 @@ TEST(VideoStreamAdapterTest, Balanced_DecreaseFrameRate) {
   // resolution: kBalancedMediumFrameRateFps.
   Adaptation adaptation = adapter.GetAdaptationDown();
   EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
-  adapter.ApplyAdaptation(adaptation);
+  adapter.ApplyAdaptation(adaptation, nullptr);
   EXPECT_EQ(absl::nullopt,
             adapter.source_restrictions().max_pixels_per_frame());
   EXPECT_EQ(absl::nullopt,
@@ -519,7 +541,7 @@ TEST(VideoStreamAdapterTest, MaintainFramerate_AwaitingPreviousAdaptationDown) {
   adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
   adapter.SetInput(InputState(1280 * 720, 30, kDefaultMinPixelsPerFrame));
   // Adapt down once, but don't update the input.
-  adapter.ApplyAdaptation(adapter.GetAdaptationDown());
+  adapter.ApplyAdaptation(adapter.GetAdaptationDown(), nullptr);
   EXPECT_EQ(1, adapter.adaptation_counters().resolution_adaptations);
   {
     // Having performed the adaptation, but not updated the input based on the
@@ -541,7 +563,7 @@ TEST(VideoStreamAdapterTest, MaintainFramerate_AwaitingPreviousAdaptationUp) {
   fake_stream.ApplyAdaptation(adapter.GetAdaptationDown());
   EXPECT_EQ(2, adapter.adaptation_counters().resolution_adaptations);
   // Adapt up once, but don't update the input.
-  adapter.ApplyAdaptation(adapter.GetAdaptationUp());
+  adapter.ApplyAdaptation(adapter.GetAdaptationUp(), nullptr);
   EXPECT_EQ(1, adapter.adaptation_counters().resolution_adaptations);
   {
     // Having performed the adaptation, but not updated the input based on the
@@ -614,7 +636,7 @@ TEST(VideoStreamAdapterTest,
   adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
   fake_stream.ApplyAdaptation(adapter.GetAdaptationDown());
   // Apply adaptation up but don't update input.
-  adapter.ApplyAdaptation(adapter.GetAdaptationUp());
+  adapter.ApplyAdaptation(adapter.GetAdaptationUp(), nullptr);
   EXPECT_EQ(Adaptation::Status::kAwaitingPreviousAdaptation,
             adapter.GetAdaptationUp().status());
 
@@ -668,12 +690,42 @@ TEST(VideoStreamAdapterTest,
   FakeVideoStream fake_stream(&adapter, 1280 * 720, 30,
                               kDefaultMinPixelsPerFrame);
   // Apply adaptation but don't update the input.
-  adapter.ApplyAdaptation(adapter.GetAdaptationDown());
+  adapter.ApplyAdaptation(adapter.GetAdaptationDown(), nullptr);
   EXPECT_EQ(Adaptation::Status::kAwaitingPreviousAdaptation,
             adapter.GetAdaptationDown().status());
   adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_RESOLUTION);
   Adaptation adaptation = adapter.GetAdaptationDown();
   EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
+}
+
+TEST(VideoStreamAdapterTest, RestrictionsBroadcasted) {
+  VideoStreamAdapter adapter;
+  FakeVideoStreamAdapterListner listener;
+  adapter.AddRestrictionsListener(&listener);
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
+  FakeVideoStream fake_stream(&adapter, 1280 * 720, 30,
+                              kDefaultMinPixelsPerFrame);
+  // Not broadcast on invalid ApplyAdaptation.
+  {
+    Adaptation adaptation = adapter.GetAdaptationUp();
+    adapter.ApplyAdaptation(adaptation, nullptr);
+    EXPECT_EQ(0, listener.calls());
+  }
+
+  // Broadcast on ApplyAdaptation.
+  {
+    Adaptation adaptation = adapter.GetAdaptationDown();
+    VideoStreamAdapter::RestrictionsWithCounters peek =
+        adapter.PeekNextRestrictions(adaptation);
+    fake_stream.ApplyAdaptation(adaptation);
+    EXPECT_EQ(1, listener.calls());
+    EXPECT_EQ(peek.restrictions, listener.last_restrictions());
+  }
+
+  // Broadcast on ClearRestrictions().
+  adapter.ClearRestrictions();
+  EXPECT_EQ(2, listener.calls());
+  EXPECT_EQ(VideoSourceRestrictions(), listener.last_restrictions());
 }
 
 TEST(VideoStreamAdapterTest, PeekNextRestrictions) {
@@ -718,12 +770,24 @@ TEST(VideoStreamAdapterTest, PeekNextRestrictions) {
   }
 }
 
+TEST(VideoStreamAdapterTest, PeekRestrictionsDoesNotBroadcast) {
+  VideoStreamAdapter adapter;
+  FakeVideoStreamAdapterListner listener;
+  adapter.AddRestrictionsListener(&listener);
+  adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
+  FakeVideoStream fake_stream(&adapter, 1280 * 720, 30,
+                              kDefaultMinPixelsPerFrame);
+  Adaptation adaptation = adapter.GetAdaptationDown();
+  adapter.PeekNextRestrictions(adaptation);
+  EXPECT_EQ(0, listener.calls());
+}
+
 TEST(VideoStreamAdapterTest,
      SetDegradationPreferenceToOrFromBalancedClearsRestrictions) {
   VideoStreamAdapter adapter;
   adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
   adapter.SetInput(InputState(1280 * 720, 30, kDefaultMinPixelsPerFrame));
-  adapter.ApplyAdaptation(adapter.GetAdaptationDown());
+  adapter.ApplyAdaptation(adapter.GetAdaptationDown(), nullptr);
   EXPECT_NE(VideoSourceRestrictions(), adapter.source_restrictions());
   EXPECT_NE(0, adapter.adaptation_counters().Total());
   // Changing from non-balanced to balanced clears the restrictions.
@@ -731,7 +795,7 @@ TEST(VideoStreamAdapterTest,
   EXPECT_EQ(VideoSourceRestrictions(), adapter.source_restrictions());
   EXPECT_EQ(0, adapter.adaptation_counters().Total());
   // Apply adaptation again.
-  adapter.ApplyAdaptation(adapter.GetAdaptationDown());
+  adapter.ApplyAdaptation(adapter.GetAdaptationDown(), nullptr);
   EXPECT_NE(VideoSourceRestrictions(), adapter.source_restrictions());
   EXPECT_NE(0, adapter.adaptation_counters().Total());
   // Changing from balanced to non-balanced clears the restrictions.
@@ -752,7 +816,7 @@ TEST(VideoStreamAdapterDeathTest,
   adapter.SetInput(InputState(1280 * 720, 30, kDefaultMinPixelsPerFrame));
   Adaptation adaptation = adapter.GetAdaptationDown();
   adapter.SetDegradationPreference(DegradationPreference::MAINTAIN_RESOLUTION);
-  EXPECT_DEATH(adapter.ApplyAdaptation(adaptation), "");
+  EXPECT_DEATH(adapter.ApplyAdaptation(adaptation, nullptr), "");
 }
 
 TEST(VideoStreamAdapterDeathTest, SetInputInvalidatesAdaptations) {

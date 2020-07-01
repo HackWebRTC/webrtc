@@ -28,26 +28,16 @@
 
 namespace webrtc {
 
-// The listener is responsible for carrying out the reconfiguration of the video
-// source such that the VideoSourceRestrictions are fulfilled.
-class VideoSourceRestrictionsListener {
+class ResourceLimitationsListener {
  public:
-  virtual ~VideoSourceRestrictionsListener();
-
-  // The |restrictions| are filtered by degradation preference but not the
-  // |adaptation_counters|, which are currently only reported for legacy stats
-  // calculation purposes.
-  virtual void OnVideoSourceRestrictionsUpdated(
-      VideoSourceRestrictions restrictions,
-      const VideoAdaptationCounters& adaptation_counters,
-      rtc::scoped_refptr<Resource> reason) = 0;
+  virtual ~ResourceLimitationsListener();
 
   // The limitations on a resource were changed. This does not mean the current
   // video restrictions have changed.
   virtual void OnResourceLimitationChanged(
       rtc::scoped_refptr<Resource> resource,
       const std::map<rtc::scoped_refptr<Resource>, VideoAdaptationCounters>&
-          resource_limitations) {}
+          resource_limitations) = 0;
 };
 
 // The Resource Adaptation Processor is responsible for reacting to resource
@@ -74,10 +64,10 @@ class ResourceAdaptationProcessorInterface {
   // with AddResource() and RemoveResource() instead. When the processor is
   // multi-stream aware, stream-specific resouces will get added and removed
   // over time.
-  virtual void AddRestrictionsListener(
-      VideoSourceRestrictionsListener* restrictions_listener) = 0;
-  virtual void RemoveRestrictionsListener(
-      VideoSourceRestrictionsListener* restrictions_listener) = 0;
+  virtual void AddResourceLimitationsListener(
+      ResourceLimitationsListener* limitations_listener) = 0;
+  virtual void RemoveResourceLimitationsListener(
+      ResourceLimitationsListener* limitations_listener) = 0;
   virtual void AddResource(rtc::scoped_refptr<Resource> resource) = 0;
   virtual std::vector<rtc::scoped_refptr<Resource>> GetResources() const = 0;
   virtual void RemoveResource(rtc::scoped_refptr<Resource> resource) = 0;
@@ -93,7 +83,6 @@ class ResourceAdaptationProcessorInterface {
   virtual void SetDegradationPreference(
       DegradationPreference degradation_preference) = 0;
   virtual void SetIsScreenshare(bool is_screenshare) = 0;
-  virtual void ResetVideoSourceRestrictions() = 0;
 
   // May trigger one or more adaptations. It is meant to reduce resolution -
   // useful if a frame was dropped due to its size - however, the implementation
