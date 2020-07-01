@@ -18,18 +18,9 @@ import java.util.Arrays;
 public class HardwareVideoDecoderFactory extends MediaCodecVideoDecoderFactory {
   private final static Predicate<MediaCodecInfo> defaultAllowedPredicate =
       new Predicate<MediaCodecInfo>() {
-        private String[] prefixBlocklist =
-            Arrays.copyOf(MediaCodecUtils.SOFTWARE_IMPLEMENTATION_PREFIXES,
-                MediaCodecUtils.SOFTWARE_IMPLEMENTATION_PREFIXES.length);
         @Override
         public boolean test(MediaCodecInfo arg) {
-          final String name = arg.getName();
-          for (String prefix : prefixBlocklist) {
-            if (name.startsWith(prefix)) {
-              return false;
-            }
-          }
-          return true;
+          return MediaCodecUtils.isHardwareAccelerated(arg);
         }
       };
 

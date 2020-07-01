@@ -10,6 +10,7 @@
 
 package org.webrtc;
 
+import android.annotation.TargetApi;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.os.Build;
@@ -28,7 +29,8 @@ class MediaCodecUtils {
   static final String INTEL_PREFIX = "OMX.Intel.";
   static final String NVIDIA_PREFIX = "OMX.Nvidia.";
   static final String QCOM_PREFIX = "OMX.qcom.";
-  static final String[] SOFTWARE_IMPLEMENTATION_PREFIXES = {"OMX.google.", "OMX.SEC."};
+  static final String[] SOFTWARE_IMPLEMENTATION_PREFIXES = {
+      "OMX.google.", "OMX.SEC.", "c2.android"};
 
   // NV12 color format supported by QCOM codec, but not declared in MediaCodec -
   // see /hardware/qcom/media/mm-core/inc/OMX_QCOMExtns.h
@@ -95,6 +97,36 @@ class MediaCodecUtils {
       default:
         throw new IllegalArgumentException("Unsupported codec: " + type);
     }
+  }
+
+  static boolean isHardwareAccelerated(MediaCodecInfo info) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      return isHardwareAcceleratedQOrHigher(info);
+    }
+    return !isSoftwareOnly(info);
+  }
+
+  @TargetApi(29)
+  private static boolean isHardwareAcceleratedQOrHigher(android.media.MediaCodecInfo codecInfo) {
+    return codecInfo.isHardwareAccelerated();
+  }
+
+  static boolean isSoftwareOnly(android.media.MediaCodecInfo codecInfo) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      return isSoftwareOnlyQOrHigher(codecInfo);
+    }
+    String name = codecInfo.getName();
+    for (String prefix : SOFTWARE_IMPLEMENTATION_PREFIXES) {
+      if (name.startsWith(prefix)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @TargetApi(29)
+  private static boolean isSoftwareOnlyQOrHigher(android.media.MediaCodecInfo codecInfo) {
+    return codecInfo.isSoftwareOnly();
   }
 
   private MediaCodecUtils() {
