@@ -62,7 +62,7 @@ ABSL_CONST_INIT rtc::GlobalLock g_usrsctp_lock_;
 // http://www.iana.org/assignments/sctp-parameters/sctp-parameters.xml
 // The value is not used by SCTP itself. It indicates the protocol running
 // on top of SCTP.
-enum {
+enum PayloadProtocolIdentifier {
   PPID_NONE = 0,  // No protocol is specified.
   // Matches the PPIDs in mozilla source and
   // https://datatracker.ietf.org/doc/draft-ietf-rtcweb-data-protocol Sec. 9
@@ -143,7 +143,7 @@ void DebugSctpPrintf(const char* format, ...) {
 }
 
 // Get the PPID to use for the terminating fragment of this type.
-uint32_t GetPpid(cricket::DataMessageType type) {
+PayloadProtocolIdentifier GetPpid(cricket::DataMessageType type) {
   switch (type) {
     default:
     case cricket::DMT_NONE:
@@ -157,7 +157,8 @@ uint32_t GetPpid(cricket::DataMessageType type) {
   }
 }
 
-bool GetDataMediaType(uint32_t ppid, cricket::DataMessageType* dest) {
+bool GetDataMediaType(PayloadProtocolIdentifier ppid,
+                      cricket::DataMessageType* dest) {
   RTC_DCHECK(dest != NULL);
   switch (ppid) {
     case PPID_BINARY_PARTIAL:
@@ -381,10 +382,77 @@ class SctpTransport::UsrSctpWrapper {
                                  int flags,
                                  void* ulp_info) {
     SctpTransport* transport = static_cast<SctpTransport*>(ulp_info);
-    int result =
-        transport->OnDataOrNotificationFromSctp(data, length, rcv, flags);
-    free(data);
-    return result;
+    // Post data to the transport's receiver thread (copying it).
+    // TODO(ldixon): Unclear if copy is needed as this method is responsible for
+    // memory cleanup. But this does simplify code.
+    const PayloadProtocolIdentifier ppid =
+        static_cast<PayloadProtocolIdentifier>(
+            rtc::NetworkToHost32(rcv.rcv_ppid));
+    DataMessageType type = DMT_NONE;
+    if (!GetDataMediaType(ppid, &type) && !(flags & MSG_NOTIFICATION)) {
+      // It's neither a notification nor a recognized data packet.  Drop it.
+      RTC_LOG(LS_ERROR) << "Received an unknown PPID " << ppid
+                        << " on an SCTP packet.  Dropping.";
+      free(data);
+    } else {
+      ReceiveDataParams params;
+
+      params.sid = rcv.rcv_sid;
+      params.seq_num = rcv.rcv_ssn;
+      params.timestamp = rcv.rcv_tsn;
+      params.type = type;
+
+      // Expect only continuation messages belonging to the same sid, the sctp
+      // stack should ensure this.
+      if ((transport->partial_incoming_message_.size() != 0) &&
+          (rcv.rcv_sid != transport->partial_params_.sid)) {
+        // A message with a new sid, but haven't seen the EOR for the
+        // previous message. Deliver the previous partial message to avoid
+        // merging messages from different sid's.
+        transport->invoker_.AsyncInvoke<void>(
+            RTC_FROM_HERE, transport->network_thread_,
+            rtc::Bind(&SctpTransport::OnInboundPacketFromSctpToTransport,
+                      transport, transport->partial_incoming_message_,
+                      transport->partial_params_, transport->partial_flags_));
+
+        transport->partial_incoming_message_.Clear();
+      }
+
+      transport->partial_incoming_message_.AppendData(
+          reinterpret_cast<uint8_t*>(data), length);
+      transport->partial_params_ = params;
+      transport->partial_flags_ = flags;
+
+      free(data);
+
+      // Merge partial messages until they exceed the maximum send buffer size.
+      // This enables messages from a single send to be delivered in a single
+      // callback. Larger messages (originating from other implementations) will
+      // still be delivered in chunks.
+      if (!(flags & MSG_EOR) &&
+          (transport->partial_incoming_message_.size() < kSctpSendBufferSize)) {
+        return 1;
+      }
+
+      if (!(flags & MSG_EOR)) {
+        // TODO(bugs.webrtc.org/7774): We currently chunk messages if they are
+        // >= kSctpSendBufferSize. The better thing to do here is buffer up to
+        // the size negotiated in the SDP, and if a larger message is received
+        // close the channel and report the error. See discussion in the bug.
+        RTC_LOG(LS_WARNING) << "Chunking SCTP message without the EOR bit set.";
+      }
+
+      // The ownership of the packet transfers to |invoker_|. Using
+      // CopyOnWriteBuffer is the most convenient way to do this.
+      transport->invoker_.AsyncInvoke<void>(
+          RTC_FROM_HERE, transport->network_thread_,
+          rtc::Bind(&SctpTransport::OnInboundPacketFromSctpToTransport,
+                    transport, transport->partial_incoming_message_, params,
+                    flags));
+
+      transport->partial_incoming_message_.Clear();
+    }
+    return 1;
   }
 
   static SctpTransport* GetTransportFromSocket(struct socket* sock) {
@@ -1064,120 +1132,31 @@ void SctpTransport::OnPacketFromSctpToNetwork(
                          rtc::PacketOptions(), PF_NORMAL);
 }
 
-int SctpTransport::InjectDataOrNotificationFromSctpForTesting(
-    void* data,
-    size_t length,
-    struct sctp_rcvinfo rcv,
+void SctpTransport::OnInboundPacketFromSctpToTransport(
+    const rtc::CopyOnWriteBuffer& buffer,
+    ReceiveDataParams params,
     int flags) {
-  return OnDataOrNotificationFromSctp(data, length, rcv, flags);
-}
-
-int SctpTransport::OnDataOrNotificationFromSctp(void* data,
-                                                size_t length,
-                                                struct sctp_rcvinfo rcv,
-                                                int flags) {
-  // If data is NULL, the SCTP association has been closed.
-  if (!data) {
-    RTC_LOG(LS_INFO) << debug_name_
-                     << "->OnSctpInboundPacket(...): "
-                        "No data, closing.";
-    return 1;
-  }
-
-  // Handle notifications early.
-  // Note: Notifications are never split into chunks, so they can and should
-  //       be handled early and entirely separate from the reassembly
-  //       process.
-  if (flags & MSG_NOTIFICATION) {
-    RTC_LOG(LS_VERBOSE) << debug_name_
-                        << "->OnSctpInboundPacket(...): SCTP notification"
-                        << " length=" << length;
-
-    // Copy and dispatch asynchronously
-    rtc::CopyOnWriteBuffer notification(reinterpret_cast<uint8_t*>(data),
-                                        length);
-    invoker_.AsyncInvoke<void>(
-        RTC_FROM_HERE, network_thread_,
-        rtc::Bind(&SctpTransport::OnNotificationFromSctp, this, notification));
-    return 1;
-  }
-
-  // Log data chunk
-  const uint32_t ppid = rtc::NetworkToHost32(rcv.rcv_ppid);
+  RTC_DCHECK_RUN_ON(network_thread_);
   RTC_LOG(LS_VERBOSE) << debug_name_
-                      << "->OnSctpInboundPacket(...): SCTP data chunk"
-                      << " length=" << length << ", sid=" << rcv.rcv_sid
-                      << ", ppid=" << ppid << ", ssn=" << rcv.rcv_ssn
-                      << ", cum-tsn=" << rcv.rcv_cumtsn
-                      << ", eor=" << ((flags & MSG_EOR) ? "y" : "n");
-
-  // Validate payload protocol identifier
-  DataMessageType type = DMT_NONE;
-  if (!GetDataMediaType(ppid, &type)) {
-    // Unexpected PPID, dropping
-    RTC_LOG(LS_ERROR) << "Received an unknown PPID " << ppid
-                      << " on an SCTP packet.  Dropping.";
-    return 1;
+                      << "->OnInboundPacketFromSctpToTransport(...): "
+                         "Received SCTP data:"
+                         " sid="
+                      << params.sid
+                      << " notification: " << (flags & MSG_NOTIFICATION)
+                      << " length=" << buffer.size();
+  // Sending a packet with data == NULL (no data) is SCTPs "close the
+  // connection" message. This sets sock_ = NULL;
+  if (!buffer.size() || !buffer.data()) {
+    RTC_LOG(LS_INFO) << debug_name_
+                     << "->OnInboundPacketFromSctpToTransport(...): "
+                        "No data, closing.";
+    return;
   }
-
-  // Expect only continuation messages belonging to the same SID. The SCTP
-  // stack is expected to ensure this as long as the User Message
-  // Interleaving extension (RFC 8260) is not explicitly enabled, so this
-  // merely acts as a safeguard.
-  if ((partial_incoming_message_.size() != 0) &&
-      (rcv.rcv_sid != partial_params_.sid)) {
-    RTC_LOG(LS_ERROR) << "Received a new SID without EOR in the previous"
-                      << " SCTP packet. Discarding the previous packet.";
-    partial_incoming_message_.Clear();
+  if (flags & MSG_NOTIFICATION) {
+    OnNotificationFromSctp(buffer);
+  } else {
+    OnDataFromSctpToTransport(params, buffer);
   }
-
-  // Copy metadata of interest
-  ReceiveDataParams params;
-  params.type = type;
-  params.sid = rcv.rcv_sid;
-  // Note that the SSN is identical for each chunk of the same message.
-  // Furthermore, it is increased per stream and not on the whole
-  // association.
-  params.seq_num = rcv.rcv_ssn;
-  // There is no timestamp field in the SCTP API
-  params.timestamp = 0;
-
-  // Append the chunk's data to the message buffer
-  partial_incoming_message_.AppendData(reinterpret_cast<uint8_t*>(data),
-                                       length);
-  partial_params_ = params;
-  partial_flags_ = flags;
-
-  // If the message is not yet complete...
-  if (!(flags & MSG_EOR)) {
-    if (partial_incoming_message_.size() < kSctpSendBufferSize) {
-      // We still have space in the buffer. Continue buffering chunks until
-      // the message is complete before handing it out.
-      return 1;
-    } else {
-      // The sender is exceeding the maximum message size that we announced.
-      // Spit out a warning but still hand out the partial message. Note that
-      // this behaviour is undesirable, see the discussion in issue 7774.
-      //
-      // TODO(lgrahl): Once sufficient time has passed and all supported
-      // browser versions obey the announced maximum message size, we should
-      // abort the SCTP association instead to prevent message integrity
-      // violation.
-      RTC_LOG(LS_ERROR) << "Handing out partial SCTP message.";
-    }
-  }
-
-  // Dispatch the complete message.
-  // The ownership of the packet transfers to |invoker_|. Using
-  // CopyOnWriteBuffer is the most convenient way to do this.
-  invoker_.AsyncInvoke<void>(
-      RTC_FROM_HERE, network_thread_,
-      rtc::Bind(&SctpTransport::OnDataFromSctpToTransport, this, params,
-                partial_incoming_message_));
-
-  // Reset the message buffer
-  partial_incoming_message_.Clear();
-  return 1;
 }
 
 void SctpTransport::OnDataFromSctpToTransport(

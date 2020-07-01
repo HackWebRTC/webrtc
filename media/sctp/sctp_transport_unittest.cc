@@ -25,7 +25,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
-#include "usrsctplib/usrsctp.h"
 
 namespace {
 static const int kDefaultTimeout = 10000;  // 10 seconds.
@@ -238,73 +237,6 @@ class SctpTransportTest : public ::testing::Test, public sigslot::has_slots<> {
   void OnChan1ReadyToSend() { ++transport1_ready_to_send_count_; }
   void OnChan2ReadyToSend() { ++transport2_ready_to_send_count_; }
 };
-
-TEST_F(SctpTransportTest, MessageInterleavedWithNotification) {
-  FakeDtlsTransport fake_dtls1("fake dtls 1", 0);
-  FakeDtlsTransport fake_dtls2("fake dtls 2", 0);
-  SctpFakeDataReceiver recv1;
-  SctpFakeDataReceiver recv2;
-  std::unique_ptr<SctpTransport> transport1(
-      CreateTransport(&fake_dtls1, &recv1));
-  std::unique_ptr<SctpTransport> transport2(
-      CreateTransport(&fake_dtls2, &recv2));
-
-  // Add a stream.
-  transport1->OpenStream(1);
-  transport2->OpenStream(1);
-
-  // Start SCTP transports.
-  transport1->Start(kSctpDefaultPort, kSctpDefaultPort, kSctpSendBufferSize);
-  transport2->Start(kSctpDefaultPort, kSctpDefaultPort, kSctpSendBufferSize);
-
-  // Connect the two fake DTLS transports.
-  fake_dtls1.SetDestination(&fake_dtls2, false);
-
-  // Ensure the SCTP association has been established
-  // Note: I'd rather watch for an assoc established state here but couldn't
-  //       find any exposed...
-  SendDataResult result;
-  ASSERT_TRUE(SendData(transport2.get(), 1, "meow", &result));
-  EXPECT_TRUE_WAIT(ReceivedData(&recv1, 1, "meow"), kDefaultTimeout);
-
-  // Detach the DTLS transport to ensure only we will inject packets from here
-  // on.
-  transport1->SetDtlsTransport(nullptr);
-
-  // Prepare chunk buffer and metadata
-  auto chunk = rtc::CopyOnWriteBuffer(32);
-  struct sctp_rcvinfo meta = {0};
-  meta.rcv_sid = 1;
-  meta.rcv_ssn = 1337;
-  meta.rcv_ppid = rtc::HostToNetwork32(51);  // text (complete)
-
-  // Inject chunk 1/2.
-  meta.rcv_tsn = 42;
-  meta.rcv_cumtsn = 42;
-  chunk.SetData("meow?", 5);
-  EXPECT_EQ(1, transport1->InjectDataOrNotificationFromSctpForTesting(
-                   chunk.data(), chunk.size(), meta, 0));
-
-  // Inject a notification in between chunks.
-  union sctp_notification notification;
-  memset(&notification, 0, sizeof(notification));
-  // Type chosen since it's not handled apart from being logged
-  notification.sn_header.sn_type = SCTP_PEER_ADDR_CHANGE;
-  notification.sn_header.sn_flags = 0;
-  notification.sn_header.sn_length = sizeof(notification);
-  EXPECT_EQ(1, transport1->InjectDataOrNotificationFromSctpForTesting(
-                   &notification, sizeof(notification), {0}, MSG_NOTIFICATION));
-
-  // Inject chunk 2/2
-  meta.rcv_tsn = 42;
-  meta.rcv_cumtsn = 43;
-  chunk.SetData(" rawr!", 6);
-  EXPECT_EQ(1, transport1->InjectDataOrNotificationFromSctpForTesting(
-                   chunk.data(), chunk.size(), meta, MSG_EOR));
-
-  // Expect the message to contain both chunks.
-  EXPECT_TRUE_WAIT(ReceivedData(&recv1, 1, "meow? rawr!"), kDefaultTimeout);
-}
 
 // Test that data can be sent end-to-end when an SCTP transport starts with one
 // transport (which is unwritable), and then switches to another transport. A
