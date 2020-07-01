@@ -291,6 +291,7 @@ rtc_library("call") {
     "../system_wrappers:field_trial",
     "../system_wrappers:metrics",
     "../video",
+    "adaptation:resource_adaptation",
   ]
   absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
 }

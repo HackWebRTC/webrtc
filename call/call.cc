@@ -25,6 +25,7 @@
 #include "audio/audio_receive_stream.h"
 #include "audio/audio_send_stream.h"
 #include "audio/audio_state.h"
+#include "call/adaptation/broadcast_resource_listener.h"
 #include "call/bitrate_allocator.h"
 #include "call/flexfec_receive_stream_impl.h"
 #include "call/receive_time_calculator.h"
@@ -167,6 +168,47 @@ TaskQueueBase* GetCurrentTaskQueueOrThread() {
 }  // namespace
 
 namespace internal {
+
+// Wraps an injected resource in a BroadcastResourceListener and handles adding
+// and removing adapter resources to individual VideoSendStreams.
+class ResourceVideoSendStreamForwarder {
+ public:
+  ResourceVideoSendStreamForwarder(
+      rtc::scoped_refptr<webrtc::Resource> resource)
+      : broadcast_resource_listener_(resource) {
+    broadcast_resource_listener_.StartListening();
+  }
+  ~ResourceVideoSendStreamForwarder() {
+    RTC_DCHECK(adapter_resources_.empty());
+    broadcast_resource_listener_.StopListening();
+  }
+
+  rtc::scoped_refptr<webrtc::Resource> Resource() const {
+    return broadcast_resource_listener_.SourceResource();
+  }
+
+  void OnCreateVideoSendStream(VideoSendStream* video_send_stream) {
+    RTC_DCHECK(adapter_resources_.find(video_send_stream) ==
+               adapter_resources_.end());
+    auto adapter_resource =
+        broadcast_resource_listener_.CreateAdapterResource();
+    video_send_stream->AddAdaptationResource(adapter_resource);
+    adapter_resources_.insert(
+        std::make_pair(video_send_stream, adapter_resource));
+  }
+
+  void OnDestroyVideoSendStream(VideoSendStream* video_send_stream) {
+    auto it = adapter_resources_.find(video_send_stream);
+    RTC_DCHECK(it != adapter_resources_.end());
+    broadcast_resource_listener_.RemoveAdapterResource(it->second);
+    adapter_resources_.erase(it);
+  }
+
+ private:
+  BroadcastResourceListener broadcast_resource_listener_;
+  std::map<VideoSendStream*, rtc::scoped_refptr<webrtc::Resource>>
+      adapter_resources_;
+};
 
 class Call final : public webrtc::Call,
                    public PacketReceiver,
@@ -335,8 +377,9 @@ class Call final : public webrtc::Call,
       RTC_GUARDED_BY(worker_thread_);
   std::set<VideoSendStream*> video_send_streams_ RTC_GUARDED_BY(worker_thread_);
 
-  std::vector<rtc::scoped_refptr<Resource>> adaptation_resources_
-      RTC_GUARDED_BY(worker_thread_);
+  // Each forwarder wraps an adaptation resource that was added to the call.
+  std::vector<std::unique_ptr<ResourceVideoSendStreamForwarder>>
+      adaptation_resource_forwarders_ RTC_GUARDED_BY(worker_thread_);
 
   using RtpStateMap = std::map<uint32_t, RtpState>;
   RtpStateMap suspended_audio_send_ssrcs_ RTC_GUARDED_BY(worker_thread_);
@@ -860,9 +903,9 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
     video_send_ssrcs_[ssrc] = send_stream;
   }
   video_send_streams_.insert(send_stream);
-  // Add resources that were previously added to the call to the new stream.
-  for (const auto& adaptation_resource : adaptation_resources_) {
-    send_stream->AddAdaptationResource(adaptation_resource);
+  // Forward resources that were previously added to the call to the new stream.
+  for (const auto& resource_forwarder : adaptation_resource_forwarders_) {
+    resource_forwarder->OnCreateVideoSendStream(send_stream);
   }
 
   UpdateAggregateNetworkState();
@@ -901,6 +944,10 @@ void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
     } else {
       ++it;
     }
+  }
+  // Stop forwarding resources to the stream being destroyed.
+  for (const auto& resource_forwarder : adaptation_resource_forwarders_) {
+    resource_forwarder->OnDestroyVideoSendStream(send_stream_impl);
   }
   video_send_streams_.erase(send_stream_impl);
 
@@ -1030,9 +1077,11 @@ void Call::DestroyFlexfecReceiveStream(FlexfecReceiveStream* receive_stream) {
 
 void Call::AddAdaptationResource(rtc::scoped_refptr<Resource> resource) {
   RTC_DCHECK_RUN_ON(worker_thread_);
-  adaptation_resources_.push_back(resource);
-  for (VideoSendStream* stream : video_send_streams_) {
-    stream->AddAdaptationResource(resource);
+  adaptation_resource_forwarders_.push_back(
+      std::make_unique<ResourceVideoSendStreamForwarder>(resource));
+  const auto& resource_forwarder = adaptation_resource_forwarders_.back();
+  for (VideoSendStream* send_stream : video_send_streams_) {
+    resource_forwarder->OnCreateVideoSendStream(send_stream);
   }
 }
 

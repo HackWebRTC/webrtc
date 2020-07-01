@@ -26,6 +26,7 @@
 #include "audio/audio_receive_stream.h"
 #include "audio/audio_send_stream.h"
 #include "call/adaptation/test/fake_resource.h"
+#include "call/adaptation/test/mock_resource_listener.h"
 #include "call/audio_state.h"
 #include "modules/audio_device/include/mock_audio_device.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
@@ -38,7 +39,9 @@
 
 namespace {
 
+using ::testing::_;
 using ::testing::Contains;
+using ::testing::StrictMock;
 
 struct CallHelper {
   explicit CallHelper(bool use_null_audio_processing) {
@@ -71,6 +74,20 @@ struct CallHelper {
 }  // namespace
 
 namespace webrtc {
+
+namespace {
+
+rtc::scoped_refptr<Resource> FindResourceWhoseNameContains(
+    const std::vector<rtc::scoped_refptr<Resource>>& resources,
+    const std::string& name_contains) {
+  for (const auto& resource : resources) {
+    if (resource->Name().find(name_contains) != std::string::npos)
+      return resource;
+  }
+  return nullptr;
+}
+
+}  // namespace
 
 TEST(CallTest, ConstructDestruct) {
   for (bool use_null_audio_processing : {false, true}) {
@@ -345,14 +362,50 @@ TEST(CallTest, AddAdaptationResourceAfterCreatingVideoSendStream) {
       bitrate_allocator_factory.get();
   VideoEncoderConfig encoder_config;
   encoder_config.max_bitrate_bps = 1337;
-  VideoSendStream* stream =
-      call->CreateVideoSendStream(std::move(config), std::move(encoder_config));
-  EXPECT_NE(stream, nullptr);
-  // Add a fake resource. It should get added to the stream.
+  VideoSendStream* stream1 =
+      call->CreateVideoSendStream(config.Copy(), encoder_config.Copy());
+  EXPECT_NE(stream1, nullptr);
+  config.rtp.ssrcs = {43};
+  VideoSendStream* stream2 =
+      call->CreateVideoSendStream(config.Copy(), encoder_config.Copy());
+  EXPECT_NE(stream2, nullptr);
+  // Add a fake resource.
   auto fake_resource = FakeResource::Create("FakeResource");
   call->AddAdaptationResource(fake_resource);
-  EXPECT_THAT(stream->GetAdaptationResources(), Contains(fake_resource));
-  call->DestroyVideoSendStream(stream);
+  // An adapter resource mirroring the |fake_resource| should now be present on
+  // both streams.
+  auto injected_resource1 = FindResourceWhoseNameContains(
+      stream1->GetAdaptationResources(), fake_resource->Name());
+  EXPECT_TRUE(injected_resource1);
+  auto injected_resource2 = FindResourceWhoseNameContains(
+      stream2->GetAdaptationResources(), fake_resource->Name());
+  EXPECT_TRUE(injected_resource2);
+  // Overwrite the real resource listeners with mock ones to verify the signal
+  // gets through.
+  injected_resource1->SetResourceListener(nullptr);
+  StrictMock<MockResourceListener> resource_listener1;
+  EXPECT_CALL(resource_listener1, OnResourceUsageStateMeasured(_, _))
+      .Times(1)
+      .WillOnce([injected_resource1](rtc::scoped_refptr<Resource> resource,
+                                     ResourceUsageState usage_state) {
+        EXPECT_EQ(injected_resource1, resource);
+        EXPECT_EQ(ResourceUsageState::kOveruse, usage_state);
+      });
+  injected_resource1->SetResourceListener(&resource_listener1);
+  injected_resource2->SetResourceListener(nullptr);
+  StrictMock<MockResourceListener> resource_listener2;
+  EXPECT_CALL(resource_listener2, OnResourceUsageStateMeasured(_, _))
+      .Times(1)
+      .WillOnce([injected_resource2](rtc::scoped_refptr<Resource> resource,
+                                     ResourceUsageState usage_state) {
+        EXPECT_EQ(injected_resource2, resource);
+        EXPECT_EQ(ResourceUsageState::kOveruse, usage_state);
+      });
+  injected_resource2->SetResourceListener(&resource_listener2);
+  // The kOveruse signal should get to our resource listeners.
+  fake_resource->SetUsageState(ResourceUsageState::kOveruse);
+  call->DestroyVideoSendStream(stream1);
+  call->DestroyVideoSendStream(stream2);
 }
 
 TEST(CallTest, AddAdaptationResourceBeforeCreatingVideoSendStream) {
@@ -374,12 +427,47 @@ TEST(CallTest, AddAdaptationResourceBeforeCreatingVideoSendStream) {
       bitrate_allocator_factory.get();
   VideoEncoderConfig encoder_config;
   encoder_config.max_bitrate_bps = 1337;
-  VideoSendStream* stream =
-      call->CreateVideoSendStream(std::move(config), std::move(encoder_config));
-  EXPECT_NE(stream, nullptr);
-  // The fake resource should automatically get added to the stream.
-  EXPECT_THAT(stream->GetAdaptationResources(), Contains(fake_resource));
-  call->DestroyVideoSendStream(stream);
+  VideoSendStream* stream1 =
+      call->CreateVideoSendStream(config.Copy(), encoder_config.Copy());
+  EXPECT_NE(stream1, nullptr);
+  config.rtp.ssrcs = {43};
+  VideoSendStream* stream2 =
+      call->CreateVideoSendStream(config.Copy(), encoder_config.Copy());
+  EXPECT_NE(stream2, nullptr);
+  // An adapter resource mirroring the |fake_resource| should be present on both
+  // streams.
+  auto injected_resource1 = FindResourceWhoseNameContains(
+      stream1->GetAdaptationResources(), fake_resource->Name());
+  EXPECT_TRUE(injected_resource1);
+  auto injected_resource2 = FindResourceWhoseNameContains(
+      stream2->GetAdaptationResources(), fake_resource->Name());
+  EXPECT_TRUE(injected_resource2);
+  // Overwrite the real resource listeners with mock ones to verify the signal
+  // gets through.
+  injected_resource1->SetResourceListener(nullptr);
+  StrictMock<MockResourceListener> resource_listener1;
+  EXPECT_CALL(resource_listener1, OnResourceUsageStateMeasured(_, _))
+      .Times(1)
+      .WillOnce([injected_resource1](rtc::scoped_refptr<Resource> resource,
+                                     ResourceUsageState usage_state) {
+        EXPECT_EQ(injected_resource1, resource);
+        EXPECT_EQ(ResourceUsageState::kUnderuse, usage_state);
+      });
+  injected_resource1->SetResourceListener(&resource_listener1);
+  injected_resource2->SetResourceListener(nullptr);
+  StrictMock<MockResourceListener> resource_listener2;
+  EXPECT_CALL(resource_listener2, OnResourceUsageStateMeasured(_, _))
+      .Times(1)
+      .WillOnce([injected_resource2](rtc::scoped_refptr<Resource> resource,
+                                     ResourceUsageState usage_state) {
+        EXPECT_EQ(injected_resource2, resource);
+        EXPECT_EQ(ResourceUsageState::kUnderuse, usage_state);
+      });
+  injected_resource2->SetResourceListener(&resource_listener2);
+  // The kUnderuse signal should get to our resource listeners.
+  fake_resource->SetUsageState(ResourceUsageState::kUnderuse);
+  call->DestroyVideoSendStream(stream1);
+  call->DestroyVideoSendStream(stream2);
 }
 
 TEST(CallTest, SharedModuleThread) {

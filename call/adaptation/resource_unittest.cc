@@ -14,6 +14,7 @@
 
 #include "api/scoped_refptr.h"
 #include "call/adaptation/test/fake_resource.h"
+#include "call/adaptation/test/mock_resource_listener.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -21,15 +22,6 @@ namespace webrtc {
 
 using ::testing::_;
 using ::testing::StrictMock;
-
-class MockResourceListener : public ResourceListener {
- public:
-  MOCK_METHOD(void,
-              OnResourceUsageStateMeasured,
-              (rtc::scoped_refptr<Resource> resource,
-               ResourceUsageState usage_state),
-              (override));
-};
 
 class ResourceTest : public ::testing::Test {
  public:
