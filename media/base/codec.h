@@ -67,6 +67,8 @@ struct RTC_EXPORT Codec {
   int id;
   std::string name;
   int clockrate;
+  // Non key-value parameters such as the telephone-event "0‐15" are
+  // represented using an empty string as key, i.e. {"": "0-15"}.
   CodecParameterMap params;
   FeedbackParams feedback_params;
 
