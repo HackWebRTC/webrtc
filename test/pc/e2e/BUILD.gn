@@ -361,6 +361,7 @@ if (!build_with_chromium) {
       ]
       deps = [
         ":analyzer_helper",
+        ":cross_media_metrics_reporter",
         ":default_audio_quality_analyzer",
         ":default_video_quality_analyzer",
         ":media_helper",
@@ -657,6 +658,31 @@ if (!build_with_chromium) {
       "../../../system_wrappers:field_trial",
     ]
     absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
+  }
+
+  rtc_library("cross_media_metrics_reporter") {
+    visibility = [ "*" ]
+    testonly = true
+    sources = [
+      "cross_media_metrics_reporter.cc",
+      "cross_media_metrics_reporter.h",
+    ]
+    deps = [
+      "../..:perf_test",
+      "../../../api:network_emulation_manager_api",
+      "../../../api:peer_connection_quality_test_fixture_api",
+      "../../../api:rtc_stats_api",
+      "../../../api:track_id_stream_info_map",
+      "../../../api/units:timestamp",
+      "../../../rtc_base:criticalsection",
+      "../../../rtc_base:rtc_event",
+      "../../../rtc_base:rtc_numerics",
+      "../../../system_wrappers:field_trial",
+    ]
+    absl_deps = [
+      "//third_party/abseil-cpp/absl/strings",
+      "//third_party/abseil-cpp/absl/types:optional",
+    ]
   }
 
   rtc_library("sdp_changer") {
