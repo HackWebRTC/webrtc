@@ -81,8 +81,8 @@ class PeerConnectionE2EQualityTestSmokeTest : public ::testing::Test {
         static_cast<DefaultVideoQualityAnalyzer*>(video_quality_analyzer.get());
 
     auto fixture = CreatePeerConnectionE2EQualityTestFixture(
-        test_case_name, /*audio_quality_analyzer=*/nullptr,
-        std::move(video_quality_analyzer));
+        test_case_name, *network_emulation_manager->time_controller(),
+        /*audio_quality_analyzer=*/nullptr, std::move(video_quality_analyzer));
     fixture->ExecuteAt(TimeDelta::Seconds(1),
                        [alice_network_behavior_ptr](TimeDelta) {
                          BuiltInNetworkBehaviorConfig config;

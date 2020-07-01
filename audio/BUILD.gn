@@ -205,6 +205,7 @@ if (rtc_include_tests) {
         "../api:network_emulation_manager_api",
         "../api:peer_connection_quality_test_fixture_api",
         "../api:simulated_network_api",
+        "../api:time_controller",
         "../call:simulated_network",
         "../common_audio",
         "../system_wrappers",

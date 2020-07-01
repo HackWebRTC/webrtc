@@ -465,6 +465,7 @@ if (rtc_include_tests) {
     deps = [
       ":audio_quality_analyzer_api",
       ":peer_connection_quality_test_fixture_api",
+      ":time_controller",
       ":video_quality_analyzer_api",
       "../test/pc/e2e:peerconnection_quality_test",
     ]
