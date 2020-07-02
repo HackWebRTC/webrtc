@@ -420,11 +420,6 @@ class PeerConnectionE2EQualityTestFixture {
     // StopAndReportResults().
     virtual void Start(absl::string_view test_case_name,
                        const TrackIdStreamInfoMap* reporter_helper) = 0;
-    // This method has been added for backwards compatibility with upstream
-    // project.
-    void Start(absl::string_view test_case_name) {
-      Start(test_case_name, nullptr);
-    }
 
     // Invoked by framework after call is ended and peer connection factory and
     // peer connection are destroyed.
