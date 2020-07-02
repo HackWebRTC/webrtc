@@ -85,6 +85,10 @@ ScalabilityStructureL3T3::StreamConfig() const {
   StreamLayersConfig result;
   result.num_spatial_layers = 3;
   result.num_temporal_layers = 3;
+  result.scaling_factor_num[0] = 1;
+  result.scaling_factor_den[0] = 4;
+  result.scaling_factor_num[1] = 1;
+  result.scaling_factor_den[1] = 2;
   return result;
 }
 

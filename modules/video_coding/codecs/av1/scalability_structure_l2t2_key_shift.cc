@@ -42,6 +42,8 @@ ScalabilityStructureL2T2KeyShift::StreamConfig() const {
   StreamLayersConfig result;
   result.num_spatial_layers = 2;
   result.num_temporal_layers = 2;
+  result.scaling_factor_num[0] = 1;
+  result.scaling_factor_den[0] = 2;
   return result;
 }
 

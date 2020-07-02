@@ -322,11 +322,9 @@ bool LibaomAv1Encoder::SetSvcParams(
         1 << (svc_config.num_temporal_layers - tid - 1);
   }
 
-  // TODO(danilchap): Add support for custom resolution factor.
   for (int sid = 0; sid < svc_config.num_spatial_layers; ++sid) {
-    svc_params.scaling_factor_num[sid] = 1;
-    svc_params.scaling_factor_den[sid] =
-        1 << (svc_config.num_spatial_layers - sid - 1);
+    svc_params.scaling_factor_num[sid] = svc_config.scaling_factor_num[sid];
+    svc_params.scaling_factor_den[sid] = svc_config.scaling_factor_den[sid];
   }
 
   return true;
@@ -517,6 +515,18 @@ int32_t LibaomAv1Encoder::Encode(
       if (is_keyframe && codec_specific_info.generic_frame_info) {
         codec_specific_info.template_structure =
             svc_controller_->DependencyStructure();
+        auto& resolutions = codec_specific_info.template_structure->resolutions;
+        if (SvcEnabled()) {
+          resolutions.resize(svc_params_->number_spatial_layers);
+          for (int sid = 0; sid < svc_params_->number_spatial_layers; ++sid) {
+            int n = svc_params_->scaling_factor_num[sid];
+            int d = svc_params_->scaling_factor_den[sid];
+            resolutions[sid] =
+                RenderResolution(cfg_.g_w * n / d, cfg_.g_h * n / d);
+          }
+        } else {
+          resolutions = {RenderResolution(cfg_.g_w, cfg_.g_h)};
+        }
       }
       encoded_image_callback_->OnEncodedImage(encoded_image,
                                               &codec_specific_info, nullptr);
