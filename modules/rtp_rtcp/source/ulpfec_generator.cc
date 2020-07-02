@@ -230,8 +230,6 @@ std::vector<std::unique_ptr<RtpPacketToSend>> UlpfecGenerator::GetFecPackets() {
     total_fec_size_bytes += red_packet->size();
     red_packet->set_packet_type(RtpPacketMediaType::kForwardErrorCorrection);
     red_packet->set_allow_retransmission(false);
-    red_packet->set_is_red(true);
-    red_packet->set_fec_protect_packet(false);
     fec_packets.push_back(std::move(red_packet));
   }
 

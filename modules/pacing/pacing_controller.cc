@@ -441,9 +441,6 @@ void PacingController::ProcessPackets() {
         keepalive_data_sent +=
             DataSize::Bytes(packet->payload_size() + packet->padding_size());
         packet_sender_->SendPacket(std::move(packet), PacedPacketInfo());
-        for (auto& packet : packet_sender_->FetchFec()) {
-          EnqueuePacket(std::move(packet));
-        }
       }
       OnPaddingSent(keepalive_data_sent);
     }
@@ -562,11 +559,8 @@ void PacingController::ProcessPackets() {
       packet_size += DataSize::Bytes(rtp_packet->headers_size()) +
                      transport_overhead_per_packet_;
     }
-
     packet_sender_->SendPacket(std::move(rtp_packet), pacing_info);
-    for (auto& packet : packet_sender_->FetchFec()) {
-      EnqueuePacket(std::move(packet));
-    }
+
     data_sent += packet_size;
 
     // Send done, update send/process time to the target send time.

@@ -33,7 +33,6 @@
 
 namespace webrtc {
 class RtpPacket;
-class RtpPacketToSend;
 namespace rtcp {
 class TransportFeedback;
 }
@@ -466,16 +465,6 @@ class SendPacketObserver {
   virtual void OnSendPacket(uint16_t packet_id,
                             int64_t capture_time_ms,
                             uint32_t ssrc) = 0;
-};
-
-// Interface for a class that can assign RTP sequence numbers for a packet
-// to be sent.
-class SequenceNumberAssigner {
- public:
-  SequenceNumberAssigner() = default;
-  virtual ~SequenceNumberAssigner() = default;
-
-  virtual void AssignSequenceNumber(RtpPacketToSend* packet) = 0;
 };
 }  // namespace webrtc
 #endif  // MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_DEFINES_H_

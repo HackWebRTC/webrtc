@@ -389,17 +389,6 @@ bool ModuleRtpRtcpImpl::TrySendPacket(RtpPacketToSend* packet,
   return true;
 }
 
-void ModuleRtpRtcpImpl::SetFecProtectionParams(const FecProtectionParams&,
-                                               const FecProtectionParams&) {
-  // Deferred FEC not supported in deprecated RTP module.
-}
-
-std::vector<std::unique_ptr<RtpPacketToSend>>
-ModuleRtpRtcpImpl::FetchFecPackets() {
-  // Deferred FEC not supported in deprecated RTP module.
-  return {};
-}
-
 void ModuleRtpRtcpImpl::OnPacketsAcknowledged(
     rtc::ArrayView<const uint16_t> sequence_numbers) {
   RTC_DCHECK(rtp_sender_);

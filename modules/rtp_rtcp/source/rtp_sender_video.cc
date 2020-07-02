@@ -598,8 +598,8 @@ bool RTPSenderVideo::SendVideo(
       if (fec_generator_) {
         fec_generator_->AddPacketAndGenerateFec(*packet);
       } else {
-        // Deferred FEC generation, just mark packet.
-        packet->set_fec_protect_packet(true);
+        // TODO(sprang): When deferred FEC generation is enabled, just mark the
+        // packet as protected here.
       }
     }
 
@@ -607,7 +607,6 @@ bool RTPSenderVideo::SendVideo(
       std::unique_ptr<RtpPacketToSend> red_packet(new RtpPacketToSend(*packet));
       BuildRedPayload(*packet, red_packet.get());
       red_packet->SetPayloadType(*red_payload_type_);
-      red_packet->set_is_red(true);
 
       // Send |red_packet| instead of |packet| for allocated sequence number.
       red_packet->set_packet_type(RtpPacketMediaType::kVideo);
