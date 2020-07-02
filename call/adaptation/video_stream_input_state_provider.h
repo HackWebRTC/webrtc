@@ -22,12 +22,13 @@ class VideoStreamInputStateProvider {
  public:
   VideoStreamInputStateProvider(
       VideoStreamEncoderObserver* frame_rate_provider);
+  virtual ~VideoStreamInputStateProvider();
 
   void OnHasInputChanged(bool has_input);
   void OnFrameSizeObserved(int frame_size_pixels);
   void OnEncoderSettingsChanged(EncoderSettings encoder_settings);
 
-  VideoStreamInputState InputState();
+  virtual VideoStreamInputState InputState();
 
  private:
   mutable rtc::CriticalSection crit_;

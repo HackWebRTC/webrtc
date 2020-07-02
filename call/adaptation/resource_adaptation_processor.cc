@@ -68,13 +68,11 @@ ResourceAdaptationProcessor::MitigationResultAndLogMessage::
     : result(result), message(std::move(message)) {}
 
 ResourceAdaptationProcessor::ResourceAdaptationProcessor(
-    VideoStreamInputStateProvider* input_state_provider,
     VideoStreamEncoderObserver* encoder_stats_observer,
     VideoStreamAdapter* stream_adapter)
     : resource_adaptation_queue_(nullptr),
       resource_listener_delegate_(
           new rtc::RefCountedObject<ResourceListenerDelegate>(this)),
-      input_state_provider_(input_state_provider),
       encoder_stats_observer_(encoder_stats_observer),
       resources_(),
       degradation_preference_(DegradationPreference::DISABLED),
@@ -279,15 +277,6 @@ void ResourceAdaptationProcessor::OnResourceUsageStateMeasured(
   }
 }
 
-bool ResourceAdaptationProcessor::HasSufficientInputForAdaptation(
-    const VideoStreamInputState& input_state) const {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  return input_state.HasInputFrameSizeAndFramesPerSecond() &&
-         (effective_degradation_preference_ !=
-              DegradationPreference::MAINTAIN_RESOLUTION ||
-          input_state.frames_per_second() >= kMinFrameRateFps);
-}
-
 ResourceAdaptationProcessor::MitigationResultAndLogMessage
 ResourceAdaptationProcessor::OnResourceUnderuse(
     rtc::scoped_refptr<Resource> reason_resource) {
@@ -300,15 +289,6 @@ ResourceAdaptationProcessor::OnResourceUnderuse(
         MitigationResult::kDisabled,
         "Not adapting up because DegradationPreference is disabled");
   }
-  VideoStreamInputState input_state = input_state_provider_->InputState();
-  if (!HasSufficientInputForAdaptation(input_state)) {
-    processing_in_progress_ = false;
-    return MitigationResultAndLogMessage(
-        MitigationResult::kInsufficientInput,
-        "Not adapting up because input is insufficient");
-  }
-  // Update video input states and encoder settings for accurate adaptation.
-  stream_adapter_->SetInput(input_state);
   // How can this stream be adapted up?
   Adaptation adaptation = stream_adapter_->GetAdaptationUp();
   if (adaptation.status() != Adaptation::Status::kValid) {
@@ -331,9 +311,9 @@ ResourceAdaptationProcessor::OnResourceUnderuse(
       FindMostLimitedResources();
 
   for (const auto* constraint : adaptation_constraints_) {
-    if (!constraint->IsAdaptationUpAllowed(input_state, restrictions_before,
-                                           restrictions_after,
-                                           reason_resource)) {
+    if (!constraint->IsAdaptationUpAllowed(
+            adaptation.input_state(), restrictions_before, restrictions_after,
+            reason_resource)) {
       processing_in_progress_ = false;
       rtc::StringBuilder message;
       message << "Not adapting up because constraint \"" << constraint->Name()
@@ -375,7 +355,8 @@ ResourceAdaptationProcessor::OnResourceUnderuse(
   stream_adapter_->ApplyAdaptation(adaptation, reason_resource);
   for (auto* adaptation_listener : adaptation_listeners_) {
     adaptation_listener->OnAdaptationApplied(
-        input_state, restrictions_before, restrictions_after, reason_resource);
+        adaptation.input_state(), restrictions_before, restrictions_after,
+        reason_resource);
   }
   processing_in_progress_ = false;
   rtc::StringBuilder message;
@@ -397,15 +378,6 @@ ResourceAdaptationProcessor::OnResourceOveruse(
         MitigationResult::kDisabled,
         "Not adapting down because DegradationPreference is disabled");
   }
-  VideoStreamInputState input_state = input_state_provider_->InputState();
-  if (!HasSufficientInputForAdaptation(input_state)) {
-    processing_in_progress_ = false;
-    return MitigationResultAndLogMessage(
-        MitigationResult::kInsufficientInput,
-        "Not adapting down because input is insufficient");
-  }
-  // Update video input states and encoder settings for accurate adaptation.
-  stream_adapter_->SetInput(input_state);
   // How can this stream be adapted up?
   Adaptation adaptation = stream_adapter_->GetAdaptationDown();
   if (adaptation.min_pixel_limit_reached()) {
@@ -429,7 +401,8 @@ ResourceAdaptationProcessor::OnResourceOveruse(
   stream_adapter_->ApplyAdaptation(adaptation, reason_resource);
   for (auto* adaptation_listener : adaptation_listeners_) {
     adaptation_listener->OnAdaptationApplied(
-        input_state, restrictions_before, restrictions_after, reason_resource);
+        adaptation.input_state(), restrictions_before, restrictions_after,
+        reason_resource);
   }
   processing_in_progress_ = false;
   rtc::StringBuilder message;
@@ -527,10 +500,9 @@ void ResourceAdaptationProcessor::
       most_limited.adaptation_counters, most_limited.restrictions);
   RTC_DCHECK_EQ(adapt_to.status(), Adaptation::Status::kValid);
   stream_adapter_->ApplyAdaptation(adapt_to, nullptr);
-  auto input_state = input_state_provider_->InputState();
   for (auto* adaptation_listener : adaptation_listeners_) {
     adaptation_listener->OnAdaptationApplied(
-        input_state, removed_limitations.restrictions,
+        adapt_to.input_state(), removed_limitations.restrictions,
         most_limited.restrictions, nullptr);
   }
 

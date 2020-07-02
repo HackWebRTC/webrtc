@@ -92,9 +92,9 @@ class ResourceAdaptationProcessorTest : public ::testing::Test {
         other_resource_(FakeResource::Create("OtherFakeResource")),
         adaptation_constraint_("FakeAdaptationConstraint"),
         adaptation_listener_(),
-        video_stream_adapter_(std::make_unique<VideoStreamAdapter>()),
+        video_stream_adapter_(
+            std::make_unique<VideoStreamAdapter>(&input_state_provider_)),
         processor_(std::make_unique<ResourceAdaptationProcessor>(
-            &input_state_provider_,
             /*encoder_stats_observer=*/&frame_rate_provider_,
             video_stream_adapter_.get())) {
     processor_->SetResourceAdaptationQueue(TaskQueueBase::Current());

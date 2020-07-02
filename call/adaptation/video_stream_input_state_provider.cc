@@ -16,6 +16,8 @@ VideoStreamInputStateProvider::VideoStreamInputStateProvider(
     VideoStreamEncoderObserver* frame_rate_provider)
     : frame_rate_provider_(frame_rate_provider) {}
 
+VideoStreamInputStateProvider::~VideoStreamInputStateProvider() {}
+
 void VideoStreamInputStateProvider::OnHasInputChanged(bool has_input) {
   rtc::CritScope lock(&crit_);
   input_state_.set_has_input(has_input);

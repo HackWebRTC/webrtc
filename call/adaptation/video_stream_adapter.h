@@ -20,6 +20,7 @@
 #include "api/video/video_adaptation_counters.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "call/adaptation/video_stream_input_state.h"
+#include "call/adaptation/video_stream_input_state_provider.h"
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "rtc_base/experiments/balanced_degradation_settings.h"
 
@@ -67,6 +68,8 @@ class Adaptation final {
     // adaptation has not yet been reflected in the input resolution or frame
     // rate; adaptation is refused to avoid "double-adapting".
     kAwaitingPreviousAdaptation,
+    // Not enough input.
+    kInsufficientInput,
   };
 
   static const char* StatusToString(Status status);
@@ -76,6 +79,8 @@ class Adaptation final {
   Status status() const;
   // Used for stats reporting.
   bool min_pixel_limit_reached() const;
+
+  const VideoStreamInputState& input_state() const;
 
  private:
   // The adapter needs to know about step type and step target in order to
@@ -107,12 +112,18 @@ class Adaptation final {
   };
 
   // Constructs with a valid adaptation Step. Status is kValid.
-  Adaptation(int validation_id, Step step);
-  Adaptation(int validation_id, Step step, bool min_pixel_limit_reached);
+  Adaptation(int validation_id, Step step, VideoStreamInputState input_state);
+  Adaptation(int validation_id,
+             Step step,
+             VideoStreamInputState input_state,
+             bool min_pixel_limit_reached);
   // Constructor when adaptation is not valid. Status MUST NOT be kValid.
-  Adaptation(int validation_id, Status invalid_status);
   Adaptation(int validation_id,
              Status invalid_status,
+             VideoStreamInputState input_state);
+  Adaptation(int validation_id,
+             Status invalid_status,
+             VideoStreamInputState input_state,
              bool min_pixel_limit_reached);
 
   const Step& step() const;  // Only callable if |status_| is kValid.
@@ -124,6 +135,8 @@ class Adaptation final {
   const Status status_;
   const absl::optional<Step> step_;  // Only present if |status_| is kValid.
   const bool min_pixel_limit_reached_;
+  // Input state when adaptation was made.
+  const VideoStreamInputState input_state_;
 };
 
 // Owns the VideoSourceRestriction for a single stream and is responsible for
@@ -134,7 +147,8 @@ class Adaptation final {
 // 3. Modify the stream's restrictions in one of the valid ways.
 class VideoStreamAdapter {
  public:
-  VideoStreamAdapter();
+  explicit VideoStreamAdapter(
+      VideoStreamInputStateProvider* input_state_provider);
   ~VideoStreamAdapter();
 
   VideoSourceRestrictions source_restrictions() const;
@@ -150,15 +164,13 @@ class VideoStreamAdapter {
   // restrictions! This is not defined in the spec and is unexpected, there is a
   // tiny risk that people would discover and rely on this behavior.
   void SetDegradationPreference(DegradationPreference degradation_preference);
-  // The adaptaiton logic depends on these inputs.
-  void SetInput(VideoStreamInputState input_state);
 
   // Returns an adaptation that we are guaranteed to be able to apply, or a
   // status code indicating the reason why we cannot adapt.
-  Adaptation GetAdaptationUp() const;
-  Adaptation GetAdaptationDown() const;
+  Adaptation GetAdaptationUp();
+  Adaptation GetAdaptationDown();
   Adaptation GetAdaptationTo(const VideoAdaptationCounters& counters,
-                             const VideoSourceRestrictions& restrictions) const;
+                             const VideoSourceRestrictions& restrictions);
 
   struct RestrictionsWithCounters {
     VideoSourceRestrictions restrictions;
@@ -192,6 +204,9 @@ class VideoStreamAdapter {
   void BroadcastVideoRestrictionsUpdate(
       const rtc::scoped_refptr<Resource>& resource);
 
+  bool HasSufficientInputForAdaptation(const VideoStreamInputState& input_state)
+      const RTC_RUN_ON(&sequence_checker_);
+
   // The input frame rate and resolution at the time of an adaptation in the
   // direction described by |mode_| (up or down).
   // TODO(https://crbug.com/webrtc/11393): Can this be renamed? Can this be
@@ -209,6 +224,9 @@ class VideoStreamAdapter {
   // Owner and modifier of the VideoSourceRestriction of this stream adaptor.
   const std::unique_ptr<VideoSourceRestrictor> source_restrictor_
       RTC_GUARDED_BY(&sequence_checker_);
+  // Gets the input state which is the basis of all adaptations.
+  // Thread safe.
+  VideoStreamInputStateProvider* input_state_provider_;
   // Decides the next adaptation target in DegradationPreference::BALANCED.
   const BalancedDegradationSettings balanced_settings_;
   // To guard against applying adaptations that have become invalidated, an
@@ -219,7 +237,6 @@ class VideoStreamAdapter {
   // https://w3c.github.io/mst-content-hint/#dom-rtcdegradationpreference
   DegradationPreference degradation_preference_
       RTC_GUARDED_BY(&sequence_checker_);
-  VideoStreamInputState input_state_ RTC_GUARDED_BY(&sequence_checker_);
   // The input frame rate, resolution and adaptation direction of the last
   // ApplyAdaptationTarget(). Used to avoid adapting twice if a recent
   // adaptation has not had an effect on the input frame rate or resolution yet.
