@@ -338,18 +338,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
     InvokeInternal(posted_from, functor);
   }
 
-  // Allows invoke to specified |thread|. Thread never will be dereferenced and
-  // will be used only for reference-based comparison, so instance can be safely
-  // deleted. If NDEBUG is defined and DCHECK_ALWAYS_ON is undefined do nothing.
-  void AllowInvokesToThread(Thread* thread);
-  // If NDEBUG is defined and DCHECK_ALWAYS_ON is undefined do nothing.
-  void DisallowAnyInvoke();
-  // Returns true if |target| was allowed by AllowInvokesToThread() or if no
-  // calls were made to AllowInvokesToThread and DisallowAnyInvoke. Otherwise
-  // returns false.
-  // If NDEBUG is defined and DCHECK_ALWAYS_ON is undefined always returns true.
-  bool IsInvokeToThreadAllowed(rtc::Thread* target);
-
   // Posts a task to invoke the functor on |this| thread asynchronously, i.e.
   // without blocking the thread that invoked PostTask(). Ownership of |functor|
   // is passed and (usually, see below) destroyed on |this| thread after it is
@@ -578,10 +566,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   MessageList messages_ RTC_GUARDED_BY(crit_);
   PriorityQueue delayed_messages_ RTC_GUARDED_BY(crit_);
   uint32_t delayed_next_num_ RTC_GUARDED_BY(crit_);
-#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
-  std::vector<Thread*> allowed_threads_ RTC_GUARDED_BY(this);
-  bool invoke_policy_enabled_ RTC_GUARDED_BY(this) = false;
-#endif
   CriticalSection crit_;
   bool fInitialized_;
   bool fDestroyed_;

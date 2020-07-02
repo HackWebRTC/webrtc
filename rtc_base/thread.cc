@@ -34,7 +34,6 @@
 #include "rtc_base/critical_section.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/null_socket_server.h"
-#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
@@ -893,7 +892,6 @@ void Thread::Send(const Location& posted_from,
   AutoThread thread;
   Thread* current_thread = Thread::Current();
   RTC_DCHECK(current_thread != nullptr);  // AutoThread ensures this
-  RTC_DCHECK(current_thread->IsInvokeToThreadAllowed(this));
 #if RTC_DCHECK_IS_ON
   ThreadManager::Instance()->RegisterSendAndCheckForCycles(current_thread,
                                                            this);
@@ -974,50 +972,6 @@ void Thread::QueuedTaskHandler::OnMessage(Message* msg) {
   // task. false means QueuedTask took the ownership.
   if (!task->Run())
     task.release();
-}
-
-void Thread::AllowInvokesToThread(Thread* thread) {
-#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
-  if (!IsCurrent()) {
-    PostTask(webrtc::ToQueuedTask(
-        [thread, this]() { AllowInvokesToThread(thread); }));
-    return;
-  }
-  RTC_DCHECK_RUN_ON(this);
-  allowed_threads_.push_back(thread);
-  invoke_policy_enabled_ = true;
-#endif
-}
-
-void Thread::DisallowAnyInvoke() {
-#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
-  if (!IsCurrent()) {
-    PostTask(webrtc::ToQueuedTask([this]() { DisallowAnyInvoke(); }));
-    return;
-  }
-  RTC_DCHECK_RUN_ON(this);
-  allowed_threads_.clear();
-  invoke_policy_enabled_ = true;
-#endif
-}
-
-// Returns true if no policies added or if there is at least one policy
-// that permits invocation to |target| thread.
-bool Thread::IsInvokeToThreadAllowed(rtc::Thread* target) {
-#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
-  RTC_DCHECK_RUN_ON(this);
-  if (!invoke_policy_enabled_) {
-    return true;
-  }
-  for (const auto* thread : allowed_threads_) {
-    if (thread == target) {
-      return true;
-    }
-  }
-  return false;
-#else
-  return true;
-#endif
 }
 
 void Thread::PostTask(std::unique_ptr<webrtc::QueuedTask> task) {
