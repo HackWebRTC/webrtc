@@ -9,6 +9,7 @@
  */
 #include <atomic>
 
+#include "test/field_trial.h"
 #include "test/gtest.h"
 #include "test/scenario/scenario.h"
 
@@ -153,6 +154,25 @@ TEST(VideoStreamTest, SendsFecWithUlpFec) {
   EXPECT_GT(video_stats.substreams.begin()->second.rtp_stats.fec.packets, 0u);
 }
 TEST(VideoStreamTest, SendsFecWithFlexFec) {
+  Scenario s;
+  auto route =
+      s.CreateRoutes(s.CreateClient("caller", CallClientConfig()),
+                     {s.CreateSimulationNode([](NetworkSimulationConfig* c) {
+                       c->loss_rate = 0.1;
+                       c->delay = TimeDelta::Millis(100);
+                     })},
+                     s.CreateClient("callee", CallClientConfig()),
+                     {s.CreateSimulationNode(NetworkSimulationConfig())});
+  auto video = s.CreateVideoStream(route->forward(), [&](VideoStreamConfig* c) {
+    c->stream.use_flexfec = true;
+  });
+  s.RunFor(TimeDelta::Seconds(5));
+  VideoSendStream::Stats video_stats = video->send()->GetStats();
+  EXPECT_GT(video_stats.substreams.begin()->second.rtp_stats.fec.packets, 0u);
+}
+
+TEST(VideoStreamTest, SendsFecWithDeferredFlexFec) {
+  ScopedFieldTrials trial("WebRTC-DeferredFecGeneration/Enabled/");
   Scenario s;
   auto route =
       s.CreateRoutes(s.CreateClient("caller", CallClientConfig()),

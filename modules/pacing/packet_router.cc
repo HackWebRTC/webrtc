@@ -171,6 +171,18 @@ void PacketRouter::SendPacket(std::unique_ptr<RtpPacketToSend> packet,
     // properties needed for payload based padding. Cache it for later use.
     last_send_module_ = rtp_module;
   }
+
+  for (auto& packet : rtp_module->FetchFecPackets()) {
+    pending_fec_packets_.push_back(std::move(packet));
+  }
+}
+
+std::vector<std::unique_ptr<RtpPacketToSend>> PacketRouter::FetchFec() {
+  MutexLock lock(&modules_mutex_);
+  std::vector<std::unique_ptr<RtpPacketToSend>> fec_packets =
+      std::move(pending_fec_packets_);
+  pending_fec_packets_.clear();
+  return fec_packets;
 }
 
 std::vector<std::unique_ptr<RtpPacketToSend>> PacketRouter::GeneratePadding(

@@ -10,6 +10,7 @@
 
 #include "modules/rtp_rtcp/source/rtp_sender_egress.h"
 
+#include <algorithm>
 #include <limits>
 #include <memory>
 #include <utility>
@@ -38,21 +39,45 @@ bool IsEnabled(absl::string_view name,
 }  // namespace
 
 RtpSenderEgress::NonPacedPacketSender::NonPacedPacketSender(
-    RtpSenderEgress* sender)
-    : transport_sequence_number_(0), sender_(sender) {}
+    RtpSenderEgress* sender,
+    SequenceNumberAssigner* sequence_number_assigner)
+    : transport_sequence_number_(0),
+      sender_(sender),
+      sequence_number_assigner_(sequence_number_assigner) {
+  RTC_DCHECK(sequence_number_assigner_);
+}
 RtpSenderEgress::NonPacedPacketSender::~NonPacedPacketSender() = default;
 
 void RtpSenderEgress::NonPacedPacketSender::EnqueuePackets(
     std::vector<std::unique_ptr<RtpPacketToSend>> packets) {
   for (auto& packet : packets) {
-    if (!packet->SetExtension<TransportSequenceNumber>(
-            ++transport_sequence_number_)) {
-      --transport_sequence_number_;
-    }
-    packet->ReserveExtension<TransmissionOffset>();
-    packet->ReserveExtension<AbsoluteSendTime>();
+    PrepareForSend(packet.get());
     sender_->SendPacket(packet.get(), PacedPacketInfo());
   }
+  auto fec_packets = sender_->FetchFecPackets();
+  if (!fec_packets.empty()) {
+    // Don't generate sequence numbers for flexfec, they are already running on
+    // an internally maintained sequence.
+    const bool generate_sequence_numbers = !sender_->FlexFecSsrc().has_value();
+
+    for (auto& packet : fec_packets) {
+      if (generate_sequence_numbers) {
+        sequence_number_assigner_->AssignSequenceNumber(packet.get());
+      }
+      PrepareForSend(packet.get());
+    }
+    EnqueuePackets(std::move(fec_packets));
+  }
+}
+
+void RtpSenderEgress::NonPacedPacketSender::PrepareForSend(
+    RtpPacketToSend* packet) {
+  if (!packet->SetExtension<TransportSequenceNumber>(
+          ++transport_sequence_number_)) {
+    --transport_sequence_number_;
+  }
+  packet->ReserveExtension<TransmissionOffset>();
+  packet->ReserveExtension<AbsoluteSendTime>();
 }
 
 RtpSenderEgress::RtpSenderEgress(const RtpRtcpInterface::Configuration& config,
@@ -73,6 +98,10 @@ RtpSenderEgress::RtpSenderEgress(const RtpRtcpInterface::Configuration& config,
       is_audio_(config.audio),
 #endif
       need_rtp_packet_infos_(config.need_rtp_packet_infos),
+      fec_generator_(
+          IsEnabled("WebRTC-DeferredFecGeneration", config.field_trials)
+              ? config.fec_generator
+              : nullptr),
       transport_feedback_observer_(config.transport_feedback_callback),
       send_side_delay_observer_(config.send_side_delay_observer),
       send_packet_observer_(config.send_packet_observer),
@@ -142,6 +171,41 @@ void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
         }));
   }
 
+  if (fec_generator_ && packet->fec_protect_packet()) {
+    // Deferred fec generation is used, add packet to generator.
+    RTC_DCHECK(fec_generator_);
+    RTC_DCHECK(packet->packet_type() == RtpPacketMediaType::kVideo);
+    absl::optional<std::pair<FecProtectionParams, FecProtectionParams>>
+        new_fec_params;
+    {
+      rtc::CritScope lock(&lock_);
+      new_fec_params.swap(pending_fec_params_);
+    }
+    if (new_fec_params) {
+      fec_generator_->SetProtectionParameters(new_fec_params->first,
+                                              new_fec_params->second);
+    }
+    if (packet->is_red()) {
+      RtpPacketToSend unpacked_packet(*packet);
+
+      const rtc::CopyOnWriteBuffer buffer = packet->Buffer();
+      // Grab media payload type from RED header.
+      const size_t headers_size = packet->headers_size();
+      unpacked_packet.SetPayloadType(buffer[headers_size]);
+
+      // Copy the media payload into the unpacked buffer.
+      uint8_t* payload_buffer =
+          unpacked_packet.SetPayloadSize(packet->payload_size() - 1);
+      std::copy(&packet->payload()[0] + 1,
+                &packet->payload()[0] + packet->payload_size(), payload_buffer);
+
+      fec_generator_->AddPacketAndGenerateFec(unpacked_packet);
+    } else {
+      // If not RED encapsulated - we can just insert packet directly.
+      fec_generator_->AddPacketAndGenerateFec(*packet);
+    }
+  }
+
   // Bug webrtc:7859. While FEC is invoked from rtp_sender_video, and not after
   // the pacer, these modifications of the header below are happening after the
   // FEC protection packets are calculated. This will corrupt recovered packets
@@ -208,8 +272,13 @@ void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
   }
 
   if (send_success) {
-    // TODO(tommi): Is this assuming is_media is true?
+    // |media_has_been_sent_| is used by RTPSender to figure out if it can send
+    // padding in the absence of transport-cc or abs-send-time.
+    // In those cases media must be sent first to set a reference timestamp.
     media_has_been_sent_ = true;
+
+    // TODO(sprang): Add support for FEC protecting all header extensions, add
+    // media packet to generator here instead.
 
     RTC_DCHECK(packet->packet_type().has_value());
     RtpPacketMediaType packet_type = *packet->packet_type();
@@ -293,6 +362,24 @@ std::vector<RtpSequenceNumberMap::Info> RtpSenderEgress::GetSentRtpPacketInfos(
   }
 
   return results;
+}
+
+void RtpSenderEgress::SetFecProtectionParameters(
+    const FecProtectionParams& delta_params,
+    const FecProtectionParams& key_params) {
+  // TODO(sprang): Post task to pacer queue instead, one pacer is fully
+  // migrated to a task queue.
+  rtc::CritScope lock(&lock_);
+  pending_fec_params_.emplace(delta_params, key_params);
+}
+
+std::vector<std::unique_ptr<RtpPacketToSend>>
+RtpSenderEgress::FetchFecPackets() {
+  RTC_DCHECK_RUN_ON(&pacer_checker_);
+  if (fec_generator_) {
+    return fec_generator_->GetFecPackets();
+  }
+  return {};
 }
 
 bool RtpSenderEgress::HasCorrectSsrc(const RtpPacketToSend& packet) const {

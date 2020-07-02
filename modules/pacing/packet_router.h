@@ -57,6 +57,7 @@ class PacketRouter : public RemoteBitrateObserver,
 
   void SendPacket(std::unique_ptr<RtpPacketToSend> packet,
                   const PacedPacketInfo& cluster_info) override;
+  std::vector<std::unique_ptr<RtpPacketToSend>> FetchFec() override;
   std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
       DataSize size) override;
 
@@ -127,6 +128,11 @@ class PacketRouter : public RemoteBitrateObserver,
       RTC_GUARDED_BY(modules_mutex_);
 
   uint64_t transport_seq_ RTC_GUARDED_BY(modules_mutex_);
+
+  // TODO(bugs.webrtc.org/10809): Replace lock with a sequence checker once the
+  // process thread is gone.
+  std::vector<std::unique_ptr<RtpPacketToSend>> pending_fec_packets_
+      RTC_GUARDED_BY(modules_mutex_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(PacketRouter);
 };
