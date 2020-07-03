@@ -154,7 +154,7 @@ if (is_ios || is_mac) {
       "../rtc_base:checks",
     ]
 
-    libs = [
+    frameworks = [
       "AVFoundation.framework",
       "CoreMedia.framework",
     ]
@@ -275,7 +275,7 @@ if (is_ios || is_mac) {
         ]
         absl_deps = [ "//third_party/abseil-cpp/absl/base:core_headers" ]
 
-        libs = [ "AudioToolbox.framework" ]
+        frameworks = [ "AudioToolbox.framework" ]
       }
 
       # This target exists to expose :audio_session_objc and
@@ -327,7 +327,7 @@ if (is_ios || is_mac) {
 
         public_configs = [ ":common_config_objc" ]
 
-        libs = [ "AVFoundation.framework" ]
+        frameworks = [ "AVFoundation.framework" ]
 
         deps = [
           ":base_objc",
@@ -394,7 +394,7 @@ if (is_ios || is_mac) {
         "..:common_objc",
         ":used_from_extension",
       ]
-      libs = [
+      frameworks = [
         "VideoToolbox.framework",
         "CoreGraphics.framework",
         "CoreVideo.framework",
@@ -412,19 +412,19 @@ if (is_ios || is_mac) {
         "objc/components/renderer/opengl/RTCShader.mm",
         "objc/components/renderer/opengl/RTCVideoViewShading.h",
       ]
-      libs = [ "CoreVideo.framework" ]
+      frameworks = [ "CoreVideo.framework" ]
       if (is_ios) {
         sources += [
           "objc/components/renderer/opengl/RTCNV12TextureCache.h",
           "objc/components/renderer/opengl/RTCNV12TextureCache.m",
         ]
-        libs += [
+        frameworks += [
           "GLKit.framework",
           "OpenGLES.framework",
           "QuartzCore.framework",
         ]
       } else if (is_mac) {
-        libs += [
+        frameworks += [
           "CoreMedia.framework",
           "OpenGL.framework",
         ]
@@ -504,7 +504,7 @@ if (is_ios || is_mac) {
             "objc/components/renderer/metal/RTCMTLVideoView.m",
           ]
         }
-        libs = [
+        frameworks = [
           "CoreVideo.framework",
           "Metal.framework",
           "MetalKit.framework",
@@ -514,7 +514,7 @@ if (is_ios || is_mac) {
             "objc/components/renderer/metal/RTCMTLNSVideoView.h",
             "objc/components/renderer/metal/RTCMTLNSVideoView.m",
           ]
-          libs += [ "AppKit.framework" ]
+          frameworks += [ "AppKit.framework" ]
         }
         deps = [
           ":base_objc",
@@ -559,7 +559,7 @@ if (is_ios || is_mac) {
           "objc/components/capturer/RTCFileVideoCapturer.m",
         ]
       }
-      libs = [
+      frameworks = [
         "AVFoundation.framework",
         "CoreVideo.framework",
       ]
@@ -1364,7 +1364,7 @@ if (is_ios || is_mac) {
           ]
         }
 
-        libs = [
+        frameworks = [
           "AVFoundation.framework",
           "CoreGraphics.framework",
           "CoreMedia.framework",
@@ -1497,7 +1497,7 @@ if (is_ios || is_mac) {
           ]
         }
 
-        libs = [
+        frameworks = [
           "AVFoundation.framework",
           "CoreGraphics.framework",
           "CoreMedia.framework",
@@ -1674,7 +1674,7 @@ if (is_ios || is_mac) {
         "//third_party/libyuv",
       ]
 
-      libs = [
+      frameworks = [
         "CoreFoundation.framework",
         "CoreMedia.framework",
         "CoreVideo.framework",

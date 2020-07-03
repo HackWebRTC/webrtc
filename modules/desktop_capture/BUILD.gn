@@ -262,7 +262,7 @@ if (is_mac) {
       "../../rtc_base/system:rtc_export",
       "../../sdk:helpers_objc",
     ]
-    libs = [
+    frameworks = [
       "AppKit.framework",
       "IOKit.framework",
       "IOSurface.framework",

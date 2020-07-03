@@ -306,7 +306,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     } else {
       deps += [ "../sdk:mac_framework_objc+link" ]
     }
-    libs = [
+    frameworks = [
       "CoreMedia.framework",
       "QuartzCore.framework",
     ]
@@ -348,7 +348,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "../sdk:ios_framework_bundle",
       ]
 
-      libs = [ "AVFoundation.framework" ]
+      frameworks = [ "AVFoundation.framework" ]
     }
 
     ios_app_bundle("AppRTCMobile") {
@@ -411,7 +411,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
           "../sdk:ios_framework_bundle",
         ]
 
-        libs = [ "ReplayKit.framework" ]
+        frameworks = [ "ReplayKit.framework" ]
       }
 
       ios_appex_bundle("AppRTCMobileBroadcastUpload") {
@@ -435,7 +435,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
 
         info_plist = "objc/AppRTCMobile/ios/broadcast_extension/BroadcastSetupUIInfo.plist"
 
-        libs = [ "ReplayKit.framework" ]
+        frameworks = [ "ReplayKit.framework" ]
 
         deps = [ ":AppRTCMobile_ios_bundle_data" ]
       }
@@ -549,7 +549,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
 
       info_plist = "objc/AppRTCMobile/mac/Info.plist"
 
-      libs = [ "AppKit.framework" ]
+      frameworks = [ "AppKit.framework" ]
 
       ldflags = [
         "-rpath",
@@ -594,10 +594,10 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     configs += [ ":socketrocket_warning_config" ]
     public_configs = [ ":socketrocket_include_config" ]
 
-    libs = [
+    libs = [ "icucore" ]
+    frameworks = [
       "CFNetwork.framework",
       "Security.framework",
-      "icucore",
     ]
   }
 

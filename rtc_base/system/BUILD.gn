@@ -58,7 +58,7 @@ if (is_mac || is_ios) {
       "cocoa_threading.mm",
     ]
     deps = [ "..:checks" ]
-    libs = [ "Foundation.framework" ]
+    frameworks = [ "Foundation.framework" ]
   }
 
   rtc_library("gcd_helpers") {

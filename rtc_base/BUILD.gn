@@ -270,7 +270,7 @@ rtc_library("logging") {
     deps += [ "system:inline" ]
 
     if (is_mac) {
-      libs += [ "Foundation.framework" ]
+      frameworks = [ "Foundation.framework" ]
     }
 
     # logging.h needs the deprecation header while downstream projects are
@@ -962,7 +962,7 @@ rtc_library("rtc_base") {
   }
 
   if (is_ios) {
-    libs += [
+    frameworks = [
       "CFNetwork.framework",
       "Foundation.framework",
       "Security.framework",
