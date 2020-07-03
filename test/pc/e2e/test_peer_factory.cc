@@ -280,16 +280,20 @@ absl::optional<RemotePeerAudioConfig> RemotePeerAudioConfig::Create(
 }
 
 std::unique_ptr<TestPeer> TestPeerFactory::CreateTestPeer(
-    std::unique_ptr<InjectableComponents> components,
-    std::unique_ptr<Params> params,
-    std::vector<PeerConfigurerImpl::VideoSource> video_sources,
+    std::unique_ptr<PeerConfigurerImpl> configurer,
     std::unique_ptr<MockPeerConnectionObserver> observer,
     VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
     rtc::Thread* signaling_thread,
     absl::optional<RemotePeerAudioConfig> remote_audio_config,
     double bitrate_multiplier,
-    absl::optional<EchoEmulationConfig> echo_emulation_config,
+    absl::optional<PeerConnectionE2EQualityTestFixture::EchoEmulationConfig>
+        echo_emulation_config,
     rtc::TaskQueue* task_queue) {
+  std::unique_ptr<InjectableComponents> components =
+      configurer->ReleaseComponents();
+  std::unique_ptr<Params> params = configurer->ReleaseParams();
+  std::vector<PeerConfigurerImpl::VideoSource> video_sources =
+      configurer->ReleaseVideoSources();
   RTC_DCHECK(components);
   RTC_DCHECK(params);
   RTC_DCHECK_EQ(params->video_configs.size(), video_sources.size());
@@ -339,18 +343,14 @@ std::unique_ptr<TestPeer> TestPeerFactory::CreateTestPeer(
 std::unique_ptr<TestPeer> TestPeerFactory::CreateTestPeer(
     std::unique_ptr<PeerConfigurerImpl> configurer,
     std::unique_ptr<MockPeerConnectionObserver> observer,
-    VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
-    rtc::Thread* signaling_thread,
     absl::optional<RemotePeerAudioConfig> remote_audio_config,
     double bitrate_multiplier,
     absl::optional<PeerConnectionE2EQualityTestFixture::EchoEmulationConfig>
-        echo_emulation_config,
-    rtc::TaskQueue* task_queue) {
-  return CreateTestPeer(
-      configurer->ReleaseComponents(), configurer->ReleaseParams(),
-      configurer->ReleaseVideoSources(), std::move(observer),
-      video_analyzer_helper, signaling_thread, remote_audio_config,
-      bitrate_multiplier, echo_emulation_config, task_queue);
+        echo_emulation_config) {
+  return CreateTestPeer(std::move(configurer), std::move(observer),
+                        video_analyzer_helper_, signaling_thread_,
+                        remote_audio_config, bitrate_multiplier,
+                        echo_emulation_config, task_queue_);
 }
 
 }  // namespace webrtc_pc_e2e
