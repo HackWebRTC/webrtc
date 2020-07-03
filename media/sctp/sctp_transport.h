@@ -34,6 +34,7 @@
 // Defined by "usrsctplib/usrsctp.h"
 struct sockaddr_conn;
 struct sctp_assoc_change;
+struct sctp_rcvinfo;
 struct sctp_stream_reset_event;
 struct sctp_sendv_spa;
 
@@ -58,8 +59,8 @@ struct SctpInboundPacket;
 //  8.  usrsctp_conninput(wrapped_data)
 // [network thread returns; sctp thread then calls the following]
 //  9.  OnSctpInboundData(data)
+//  10. SctpTransport::OnDataFromSctpToTransport(data)
 // [sctp thread returns having async invoked on the network thread]
-//  10. SctpTransport::OnInboundPacketFromSctpToTransport(inboundpacket)
 //  11. SctpTransport::OnDataFromSctpToTransport(data)
 //  12. SctpTransport::SignalDataReceived(data)
 // [from the same thread, methods registered/connected to
@@ -94,6 +95,10 @@ class SctpTransport : public SctpTransportInternal,
   void set_debug_name_for_testing(const char* debug_name) override {
     debug_name_ = debug_name;
   }
+  int InjectDataOrNotificationFromSctpForTesting(void* data,
+                                                 size_t length,
+                                                 struct sctp_rcvinfo rcv,
+                                                 int flags);
 
   // Exposed to allow Post call from c-callbacks.
   // TODO(deadbeef): Remove this or at least make it return a const pointer.
@@ -173,14 +178,17 @@ class SctpTransport : public SctpTransportInternal,
 
   // Called using |invoker_| to send packet on the network.
   void OnPacketFromSctpToNetwork(const rtc::CopyOnWriteBuffer& buffer);
-  // Called using |invoker_| to decide what to do with the packet.
-  // The |flags| parameter is used by SCTP to distinguish notification packets
-  // from other types of packets.
-  void OnInboundPacketFromSctpToTransport(const rtc::CopyOnWriteBuffer& buffer,
-                                          ReceiveDataParams params,
-                                          int flags);
+
+  // Called on the SCTP thread.
+  // Flags are standard socket API flags (RFC 6458).
+  int OnDataOrNotificationFromSctp(void* data,
+                                   size_t length,
+                                   struct sctp_rcvinfo rcv,
+                                   int flags);
+  // Called using |invoker_| to decide what to do with the data.
   void OnDataFromSctpToTransport(const ReceiveDataParams& params,
                                  const rtc::CopyOnWriteBuffer& buffer);
+  // Called using |invoker_| to decide what to do with the notification.
   void OnNotificationFromSctp(const rtc::CopyOnWriteBuffer& buffer);
   void OnNotificationAssocChange(const sctp_assoc_change& change);
 
