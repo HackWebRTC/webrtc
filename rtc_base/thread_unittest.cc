@@ -288,6 +288,63 @@ TEST(ThreadTest, Wrap) {
   ThreadManager::Instance()->SetCurrentThread(current_thread);
 }
 
+#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
+TEST(ThreadTest, InvokeToThreadAllowedReturnsTrueWithoutPolicies) {
+  // Create and start the thread.
+  auto thread1 = Thread::CreateWithSocketServer();
+  auto thread2 = Thread::CreateWithSocketServer();
+
+  thread1->PostTask(ToQueuedTask(
+      [&]() { EXPECT_TRUE(thread1->IsInvokeToThreadAllowed(thread2.get())); }));
+  Thread* th_main = Thread::Current();
+  th_main->ProcessMessages(100);
+}
+
+TEST(ThreadTest, InvokeAllowedWhenThreadsAdded) {
+  // Create and start the thread.
+  auto thread1 = Thread::CreateWithSocketServer();
+  auto thread2 = Thread::CreateWithSocketServer();
+  auto thread3 = Thread::CreateWithSocketServer();
+  auto thread4 = Thread::CreateWithSocketServer();
+
+  thread1->AllowInvokesToThread(thread2.get());
+  thread1->AllowInvokesToThread(thread3.get());
+
+  thread1->PostTask(ToQueuedTask([&]() {
+    EXPECT_TRUE(thread1->IsInvokeToThreadAllowed(thread2.get()));
+    EXPECT_TRUE(thread1->IsInvokeToThreadAllowed(thread3.get()));
+    EXPECT_FALSE(thread1->IsInvokeToThreadAllowed(thread4.get()));
+  }));
+  Thread* th_main = Thread::Current();
+  th_main->ProcessMessages(100);
+}
+
+TEST(ThreadTest, InvokesDisallowedWhenDisallowAllInvokes) {
+  // Create and start the thread.
+  auto thread1 = Thread::CreateWithSocketServer();
+  auto thread2 = Thread::CreateWithSocketServer();
+
+  thread1->DisallowAllInvokes();
+
+  thread1->PostTask(ToQueuedTask([&]() {
+    EXPECT_FALSE(thread1->IsInvokeToThreadAllowed(thread2.get()));
+  }));
+  Thread* th_main = Thread::Current();
+  th_main->ProcessMessages(100);
+}
+#endif  // (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
+
+TEST(ThreadTest, InvokesAllowedByDefault) {
+  // Create and start the thread.
+  auto thread1 = Thread::CreateWithSocketServer();
+  auto thread2 = Thread::CreateWithSocketServer();
+
+  thread1->PostTask(ToQueuedTask(
+      [&]() { EXPECT_TRUE(thread1->IsInvokeToThreadAllowed(thread2.get())); }));
+  Thread* th_main = Thread::Current();
+  th_main->ProcessMessages(100);
+}
+
 TEST(ThreadTest, Invoke) {
   // Create and start the thread.
   auto thread = Thread::CreateWithSocketServer();
