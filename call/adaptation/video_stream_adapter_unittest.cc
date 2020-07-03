@@ -719,11 +719,9 @@ TEST_F(VideoStreamAdapterTest, RestrictionBroadcasted) {
   // Broadcast on ApplyAdaptation.
   {
     Adaptation adaptation = adapter_.GetAdaptationDown();
-    VideoStreamAdapter::RestrictionsWithCounters peek =
-        adapter_.PeekNextRestrictions(adaptation);
     fake_stream.ApplyAdaptation(adaptation);
     EXPECT_EQ(1, listener.calls());
-    EXPECT_EQ(peek.restrictions, listener.last_restrictions());
+    EXPECT_EQ(adaptation.restrictions(), listener.last_restrictions());
   }
 
   // Broadcast on ClearRestrictions().
@@ -732,7 +730,7 @@ TEST_F(VideoStreamAdapterTest, RestrictionBroadcasted) {
   EXPECT_EQ(VideoSourceRestrictions(), listener.last_restrictions());
 }
 
-TEST_F(VideoStreamAdapterTest, PeekNextRestrictions) {
+TEST_F(VideoStreamAdapterTest, AdaptationHasNextRestrcitions) {
   // Any non-disabled DegradationPreference will do.
   adapter_.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
   FakeVideoStream fake_stream(&adapter_, &input_state_provider_, 1280 * 720, 30,
@@ -741,47 +739,25 @@ TEST_F(VideoStreamAdapterTest, PeekNextRestrictions) {
   {
     Adaptation adaptation = adapter_.GetAdaptationUp();
     EXPECT_EQ(Adaptation::Status::kLimitReached, adaptation.status());
-    VideoStreamAdapter::RestrictionsWithCounters restrictions_with_counters =
-        adapter_.PeekNextRestrictions(adaptation);
-    EXPECT_EQ(restrictions_with_counters.restrictions,
-              adapter_.source_restrictions());
-    EXPECT_EQ(0, restrictions_with_counters.adaptation_counters.Total());
+    EXPECT_EQ(adaptation.restrictions(), adapter_.source_restrictions());
+    EXPECT_EQ(0, adaptation.counters().Total());
   }
   // When we adapt down.
   {
     Adaptation adaptation = adapter_.GetAdaptationDown();
     EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
-    VideoStreamAdapter::RestrictionsWithCounters restrictions_with_counters =
-        adapter_.PeekNextRestrictions(adaptation);
     fake_stream.ApplyAdaptation(adaptation);
-    EXPECT_EQ(restrictions_with_counters.restrictions,
-              adapter_.source_restrictions());
-    EXPECT_EQ(restrictions_with_counters.adaptation_counters,
-              adapter_.adaptation_counters());
+    EXPECT_EQ(adaptation.restrictions(), adapter_.source_restrictions());
+    EXPECT_EQ(adaptation.counters(), adapter_.adaptation_counters());
   }
   // When we adapt up.
   {
     Adaptation adaptation = adapter_.GetAdaptationUp();
     EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
-    VideoStreamAdapter::RestrictionsWithCounters restrictions_with_counters =
-        adapter_.PeekNextRestrictions(adaptation);
     fake_stream.ApplyAdaptation(adaptation);
-    EXPECT_EQ(restrictions_with_counters.restrictions,
-              adapter_.source_restrictions());
-    EXPECT_EQ(restrictions_with_counters.adaptation_counters,
-              adapter_.adaptation_counters());
+    EXPECT_EQ(adaptation.restrictions(), adapter_.source_restrictions());
+    EXPECT_EQ(adaptation.counters(), adapter_.adaptation_counters());
   }
-}
-
-TEST_F(VideoStreamAdapterTest, PeekRestrictionsDoesNotBroadcast) {
-  FakeVideoStreamAdapterListner listener;
-  adapter_.AddRestrictionsListener(&listener);
-  adapter_.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
-  FakeVideoStream fake_stream(&adapter_, &input_state_provider_, 1280 * 720, 30,
-                              kDefaultMinPixelsPerFrame);
-  Adaptation adaptation = adapter_.GetAdaptationDown();
-  adapter_.PeekNextRestrictions(adaptation);
-  EXPECT_EQ(0, listener.calls());
 }
 
 TEST_F(VideoStreamAdapterTest,
@@ -829,7 +805,7 @@ TEST(VideoStreamAdapterDeathTest, AdaptDownInvalidatesAdaptations) {
   input_state_provider.SetInputState(1280 * 720, 30, kDefaultMinPixelsPerFrame);
   Adaptation adaptation = adapter.GetAdaptationDown();
   adapter.GetAdaptationDown();
-  EXPECT_DEATH(adapter.PeekNextRestrictions(adaptation), "");
+  EXPECT_DEATH(adapter.ApplyAdaptation(adaptation, nullptr), "");
 }
 
 #endif  // RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)

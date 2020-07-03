@@ -22,6 +22,7 @@
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
 #include "api/task_queue/task_queue_base.h"
+#include "api/video/video_adaptation_counters.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_stream_encoder_observer.h"
 #include "call/adaptation/adaptation_constraint.h"
@@ -151,10 +152,10 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   // changes to ensure |effective_degradation_preference_| is up-to-date.
   void MaybeUpdateEffectiveDegradationPreference();
 
-  void UpdateResourceLimitations(
-      rtc::scoped_refptr<Resource> reason_resource,
-      const VideoStreamAdapter::RestrictionsWithCounters&
-          peek_next_restrictions) RTC_RUN_ON(resource_adaptation_queue_);
+  void UpdateResourceLimitations(rtc::scoped_refptr<Resource> reason_resource,
+                                 const VideoSourceRestrictions& restrictions,
+                                 const VideoAdaptationCounters& counters)
+      RTC_RUN_ON(resource_adaptation_queue_);
 
   // Searches |adaptation_limits_by_resources_| for each resource with the
   // highest total adaptation counts. Adaptation up may only occur if the
