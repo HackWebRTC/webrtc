@@ -26,28 +26,27 @@ const int64_t kUnderuseDueToDisabledCooldownMs = 1000;
 }  // namespace
 
 // static
-rtc::scoped_refptr<QualityScalerResource> QualityScalerResource::Create() {
-  return new rtc::RefCountedObject<QualityScalerResource>();
+rtc::scoped_refptr<QualityScalerResource> QualityScalerResource::Create(
+    DegradationPreferenceProvider* degradation_preference_provider) {
+  return new rtc::RefCountedObject<QualityScalerResource>(
+      degradation_preference_provider);
 }
 
-QualityScalerResource::QualityScalerResource()
+QualityScalerResource::QualityScalerResource(
+    DegradationPreferenceProvider* degradation_preference_provider)
     : VideoStreamEncoderResource("QualityScalerResource"),
       quality_scaler_(nullptr),
       last_underuse_due_to_disabled_timestamp_ms_(absl::nullopt),
       num_handled_callbacks_(0),
       pending_callbacks_(),
-      adaptation_processor_(nullptr),
-      clear_qp_samples_(false) {}
+      degradation_preference_provider_(degradation_preference_provider),
+      clear_qp_samples_(false) {
+  RTC_CHECK(degradation_preference_provider_);
+}
 
 QualityScalerResource::~QualityScalerResource() {
   RTC_DCHECK(!quality_scaler_);
   RTC_DCHECK(pending_callbacks_.empty());
-}
-
-void QualityScalerResource::SetAdaptationProcessor(
-    ResourceAdaptationProcessorInterface* adaptation_processor) {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue());
-  adaptation_processor_ = adaptation_processor;
 }
 
 bool QualityScalerResource::is_started() const {
@@ -183,8 +182,7 @@ void QualityScalerResource::OnAdaptationApplied(
   // interval whose delay is calculated based on events such as these. Now there
   // is much dependency on a specific OnReportQpUsageHigh() event and "balanced"
   // but adaptations happening might not align with QualityScaler's CheckQpTask.
-  if (adaptation_processor_ &&
-      adaptation_processor_->effective_degradation_preference() ==
+  if (degradation_preference_provider_->degradation_preference() ==
           DegradationPreference::BALANCED &&
       DidDecreaseFrameRate(restrictions_before, restrictions_after)) {
     absl::optional<int> min_diff = BalancedDegradationSettings().MinFpsDiff(

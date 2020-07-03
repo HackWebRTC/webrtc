@@ -201,6 +201,72 @@ bool VideoStreamEncoder::EncoderRateSettings::operator!=(
   return !(*this == rhs);
 }
 
+class VideoStreamEncoder::DegradationPreferenceManager
+    : public DegradationPreferenceProvider {
+ public:
+  DegradationPreferenceManager()
+      : degradation_preference_(DegradationPreference::DISABLED),
+        is_screenshare_(false),
+        effective_degradation_preference_(DegradationPreference::DISABLED) {}
+
+  ~DegradationPreferenceManager() override { RTC_DCHECK(listeners_.empty()); }
+
+  DegradationPreference degradation_preference() const override {
+    rtc::CritScope crit(&lock_);
+    return effective_degradation_preference_;
+  }
+
+  void SetDegradationPreference(DegradationPreference degradation_preference) {
+    rtc::CritScope crit(&lock_);
+    degradation_preference_ = degradation_preference;
+    MaybeUpdateEffectiveDegradationPreference();
+  }
+
+  void SetIsScreenshare(bool is_screenshare) {
+    rtc::CritScope crit(&lock_);
+    is_screenshare_ = is_screenshare;
+    MaybeUpdateEffectiveDegradationPreference();
+  }
+
+  void AddListener(DegradationPreferenceListener* listener) {
+    rtc::CritScope crit(&lock_);
+    RTC_DCHECK(absl::c_find(listeners_, listener) == listeners_.end());
+    listeners_.push_back(listener);
+  }
+
+  void RemoveListener(DegradationPreferenceListener* listener) {
+    rtc::CritScope crit(&lock_);
+    auto it = absl::c_find(listeners_, listener);
+    RTC_DCHECK(it != listeners_.end());
+    listeners_.erase(it);
+  }
+
+ private:
+  void MaybeUpdateEffectiveDegradationPreference()
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(&lock_) {
+    DegradationPreference effective_degradation_preference =
+        (is_screenshare_ &&
+         degradation_preference_ == DegradationPreference::BALANCED)
+            ? DegradationPreference::MAINTAIN_RESOLUTION
+            : degradation_preference_;
+
+    if (effective_degradation_preference != effective_degradation_preference_) {
+      effective_degradation_preference_ = effective_degradation_preference;
+      for (auto& listener : listeners_) {
+        listener->OnDegradationPreferenceUpdated(
+            effective_degradation_preference_);
+      }
+    }
+  }
+
+  rtc::CriticalSection lock_;
+  DegradationPreference degradation_preference_ RTC_GUARDED_BY(&lock_);
+  bool is_screenshare_ RTC_GUARDED_BY(&lock_);
+  DegradationPreference effective_degradation_preference_
+      RTC_GUARDED_BY(&lock_);
+  std::vector<DegradationPreferenceListener*> listeners_ RTC_GUARDED_BY(&lock_);
+};
+
 VideoStreamEncoder::VideoStreamEncoder(
     Clock* clock,
     uint32_t number_of_cores,
@@ -262,13 +328,16 @@ VideoStreamEncoder::VideoStreamEncoder(
           std::make_unique<ResourceAdaptationProcessor>(
               encoder_stats_observer,
               video_stream_adapter_.get())),
+      degradation_preference_manager_(
+          std::make_unique<DegradationPreferenceManager>()),
       adaptation_constraints_(),
       adaptation_listeners_(),
       stream_resource_manager_(&input_state_provider_,
                                encoder_stats_observer,
                                clock_,
                                settings_.experiment_cpu_load_estimator,
-                               std::move(overuse_detector)),
+                               std::move(overuse_detector),
+                               degradation_preference_manager_.get()),
       video_source_sink_controller_(/*sink=*/this,
                                     /*source=*/nullptr),
       resource_adaptation_queue_(task_queue_factory->CreateTaskQueue(
@@ -294,6 +363,8 @@ VideoStreamEncoder::VideoStreamEncoder(
         &stream_resource_manager_);
     video_stream_adapter_->AddRestrictionsListener(&stream_resource_manager_);
     video_stream_adapter_->AddRestrictionsListener(this);
+    degradation_preference_manager_->AddListener(
+        resource_adaptation_processor_.get());
 
     // Add the stream resource manager's resources to the processor.
     adaptation_constraints_ = stream_resource_manager_.AdaptationConstraints();
@@ -342,6 +413,8 @@ void VideoStreamEncoder::Stop() {
       resource_adaptation_processor_->RemoveResourceLimitationsListener(
           &stream_resource_manager_);
       stream_resource_manager_.SetAdaptationProcessor(nullptr, nullptr);
+      degradation_preference_manager_->RemoveListener(
+          resource_adaptation_processor_.get());
       resource_adaptation_processor_.reset();
     }
     shutdown_adaptation_processor_event.Set();
@@ -434,17 +507,8 @@ void VideoStreamEncoder::SetSource(
   video_source_sink_controller_.SetSource(source);
   input_state_provider_.OnHasInputChanged(source);
 
-  // Set the degradation preference on the adaptation queue.
-  resource_adaptation_queue_.PostTask([this, degradation_preference] {
-    RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
-    if (!resource_adaptation_processor_) {
-      // The VideoStreamEncoder was stopped and the processor destroyed before
-      // this task had a chance to execute. No action needed.
-      return;
-    }
-    resource_adaptation_processor_->SetDegradationPreference(
-        degradation_preference);
-  });
+  degradation_preference_manager_->SetDegradationPreference(
+      degradation_preference);
   // This may trigger reconfiguring the QualityScaler on the encoder queue.
   encoder_queue_.PostTask([this, degradation_preference] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
@@ -870,15 +934,7 @@ void VideoStreamEncoder::OnEncoderSettingsChanged() {
   input_state_provider_.OnEncoderSettingsChanged(encoder_settings);
   bool is_screenshare = encoder_settings.encoder_config().content_type ==
                         VideoEncoderConfig::ContentType::kScreen;
-  resource_adaptation_queue_.PostTask([this, is_screenshare] {
-    RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
-    if (!resource_adaptation_processor_) {
-      // The VideoStreamEncoder was stopped and the processor destroyed before
-      // this task had a chance to execute. No action needed.
-      return;
-    }
-    resource_adaptation_processor_->SetIsScreenshare(is_screenshare);
-  });
+  degradation_preference_manager_->SetIsScreenshare(is_screenshare);
 }
 
 void VideoStreamEncoder::OnFrame(const VideoFrame& video_frame) {

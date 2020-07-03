@@ -26,6 +26,7 @@
 #include "api/video/video_stream_encoder_observer.h"
 #include "call/adaptation/adaptation_constraint.h"
 #include "call/adaptation/adaptation_listener.h"
+#include "call/adaptation/degradation_preference_listener.h"
 #include "call/adaptation/resource_adaptation_processor_interface.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "call/adaptation/video_stream_adapter.h"
@@ -52,7 +53,8 @@ namespace webrtc {
 // i.e. the "resource adaptation task queue".
 class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
                                     public VideoSourceRestrictionsListener,
-                                    public ResourceListener {
+                                    public ResourceListener,
+                                    public DegradationPreferenceListener {
  public:
   ResourceAdaptationProcessor(
       VideoStreamEncoderObserver* encoder_stats_observer,
@@ -63,9 +65,6 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
       TaskQueueBase* resource_adaptation_queue) override;
 
   // ResourceAdaptationProcessorInterface implementation.
-  DegradationPreference degradation_preference() const override;
-  DegradationPreference effective_degradation_preference() const override;
-
   void AddResourceLimitationsListener(
       ResourceLimitationsListener* limitations_listener) override;
   void RemoveResourceLimitationsListener(
@@ -81,10 +80,6 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   void RemoveAdaptationListener(
       AdaptationListener* adaptation_listener) override;
 
-  void SetDegradationPreference(
-      DegradationPreference degradation_preference) override;
-  void SetIsScreenshare(bool is_screenshare) override;
-
   // ResourceListener implementation.
   // Triggers OnResourceUnderuse() or OnResourceOveruse().
   void OnResourceUsageStateMeasured(rtc::scoped_refptr<Resource> resource,
@@ -96,6 +91,9 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
       const VideoAdaptationCounters& adaptation_counters,
       rtc::scoped_refptr<Resource> reason,
       const VideoSourceRestrictions& unfiltered_restrictions) override;
+  // DegradationPreferenceListener implementation.
+  void OnDegradationPreferenceUpdated(
+      DegradationPreference degradation_preference) override;
 
   // May trigger 1-2 adaptations. It is meant to reduce resolution but this is
   // not guaranteed. It may adapt frame rate, which does not address the issue.
@@ -190,11 +188,8 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
       adaptation_limits_by_resources_
           RTC_GUARDED_BY(resource_adaptation_queue_);
   // Adaptation strategy settings.
-  DegradationPreference degradation_preference_
-      RTC_GUARDED_BY(resource_adaptation_queue_);
   DegradationPreference effective_degradation_preference_
       RTC_GUARDED_BY(resource_adaptation_queue_);
-  bool is_screenshare_ RTC_GUARDED_BY(resource_adaptation_queue_);
   // Responsible for generating and applying possible adaptations.
   VideoStreamAdapter* const stream_adapter_
       RTC_GUARDED_BY(resource_adaptation_queue_);

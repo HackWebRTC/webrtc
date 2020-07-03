@@ -75,9 +75,7 @@ ResourceAdaptationProcessor::ResourceAdaptationProcessor(
           new rtc::RefCountedObject<ResourceListenerDelegate>(this)),
       encoder_stats_observer_(encoder_stats_observer),
       resources_(),
-      degradation_preference_(DegradationPreference::DISABLED),
       effective_degradation_preference_(DegradationPreference::DISABLED),
-      is_screenshare_(false),
       stream_adapter_(stream_adapter),
       last_reported_source_restrictions_(),
       previous_mitigation_results_(),
@@ -110,18 +108,6 @@ void ResourceAdaptationProcessor::SetResourceAdaptationQueue(
   RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
   // Now that we have the adaptation queue we can attach as adaptation listener.
   stream_adapter_->AddRestrictionsListener(this);
-}
-
-DegradationPreference ResourceAdaptationProcessor::degradation_preference()
-    const {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  return degradation_preference_;
-}
-
-DegradationPreference
-ResourceAdaptationProcessor::effective_degradation_preference() const {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  return effective_degradation_preference_;
 }
 
 void ResourceAdaptationProcessor::AddResourceLimitationsListener(
@@ -215,26 +201,20 @@ void ResourceAdaptationProcessor::RemoveAdaptationListener(
   adaptation_listeners_.erase(it);
 }
 
-void ResourceAdaptationProcessor::SetDegradationPreference(
+void ResourceAdaptationProcessor::OnDegradationPreferenceUpdated(
     DegradationPreference degradation_preference) {
+  if (!resource_adaptation_queue_->IsCurrent()) {
+    resource_adaptation_queue_->PostTask(
+        ToQueuedTask([this, degradation_preference]() {
+          OnDegradationPreferenceUpdated(degradation_preference);
+        }));
+    return;
+  }
   RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  degradation_preference_ = degradation_preference;
-  MaybeUpdateEffectiveDegradationPreference();
-}
-
-void ResourceAdaptationProcessor::SetIsScreenshare(bool is_screenshare) {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  is_screenshare_ = is_screenshare;
-  MaybeUpdateEffectiveDegradationPreference();
-}
-
-void ResourceAdaptationProcessor::MaybeUpdateEffectiveDegradationPreference() {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  effective_degradation_preference_ =
-      (is_screenshare_ &&
-       degradation_preference_ == DegradationPreference::BALANCED)
-          ? DegradationPreference::MAINTAIN_RESOLUTION
-          : degradation_preference_;
+  if (degradation_preference == effective_degradation_preference_) {
+    return;
+  }
+  effective_degradation_preference_ = degradation_preference;
   stream_adapter_->SetDegradationPreference(effective_degradation_preference_);
 }
 
@@ -419,7 +399,7 @@ void ResourceAdaptationProcessor::TriggerAdaptationDueToFrameDroppedDueToSize(
   VideoAdaptationCounters counters_before =
       stream_adapter_->adaptation_counters();
   OnResourceOveruse(reason_resource);
-  if (degradation_preference_ == DegradationPreference::BALANCED &&
+  if (effective_degradation_preference_ == DegradationPreference::BALANCED &&
       stream_adapter_->adaptation_counters().fps_adaptations >
           counters_before.fps_adaptations) {
     // Oops, we adapted frame rate. Adapt again, maybe it will adapt resolution!

@@ -62,6 +62,15 @@ class FakeQualityScalerQpUsageHandlerCallback
   absl::optional<bool> clear_qp_samples_result_;
 };
 
+class FakeDegradationPreferenceProvider : public DegradationPreferenceProvider {
+ public:
+  ~FakeDegradationPreferenceProvider() override {}
+
+  DegradationPreference degradation_preference() const override {
+    return DegradationPreference::MAINTAIN_FRAMERATE;
+  }
+};
+
 }  // namespace
 
 class QualityScalerResourceTest : public ::testing::Test {
@@ -74,7 +83,9 @@ class QualityScalerResourceTest : public ::testing::Test {
         encoder_queue_(task_queue_factory_->CreateTaskQueue(
             "EncoderQueue",
             TaskQueueFactory::Priority::NORMAL)),
-        quality_scaler_resource_(QualityScalerResource::Create()) {
+        degradation_preference_provider_(),
+        quality_scaler_resource_(
+            QualityScalerResource::Create(&degradation_preference_provider_)) {
     quality_scaler_resource_->RegisterEncoderTaskQueue(encoder_queue_.Get());
     quality_scaler_resource_->RegisterAdaptationTaskQueue(
         resource_adaptation_queue_.Get());
@@ -100,6 +111,7 @@ class QualityScalerResourceTest : public ::testing::Test {
   const std::unique_ptr<TaskQueueFactory> task_queue_factory_;
   rtc::TaskQueue resource_adaptation_queue_;
   rtc::TaskQueue encoder_queue_;
+  FakeDegradationPreferenceProvider degradation_preference_provider_;
   rtc::scoped_refptr<QualityScalerResource> quality_scaler_resource_;
 };
 

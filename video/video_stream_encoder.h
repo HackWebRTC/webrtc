@@ -29,6 +29,7 @@
 #include "api/video_codecs/video_encoder.h"
 #include "call/adaptation/adaptation_constraint.h"
 #include "call/adaptation/adaptation_listener.h"
+#include "call/adaptation/resource_adaptation_processor.h"
 #include "call/adaptation/resource_adaptation_processor_interface.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "call/adaptation/video_stream_input_state_provider.h"
@@ -169,6 +170,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
     DataRate encoder_target;
     DataRate stable_encoder_target;
   };
+
+  class DegradationPreferenceManager;
 
   void ReconfigureEncoder() RTC_RUN_ON(&encoder_queue_);
   void OnEncoderSettingsChanged() RTC_RUN_ON(&encoder_queue_);
@@ -415,9 +418,9 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // Responsible for adapting input resolution or frame rate to ensure resources
   // (e.g. CPU or bandwidth) are not overused.
   // This class is single-threaded on the resource adaptation queue.
-  std::unique_ptr<ResourceAdaptationProcessorInterface>
-      resource_adaptation_processor_
-          RTC_GUARDED_BY(&resource_adaptation_queue_);
+  std::unique_ptr<ResourceAdaptationProcessor> resource_adaptation_processor_
+      RTC_GUARDED_BY(&resource_adaptation_queue_);
+  std::unique_ptr<DegradationPreferenceManager> degradation_preference_manager_;
   std::vector<AdaptationConstraint*> adaptation_constraints_
       RTC_GUARDED_BY(&resource_adaptation_queue_);
   std::vector<AdaptationListener*> adaptation_listeners_
