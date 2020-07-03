@@ -183,12 +183,19 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes) {
   EXPECT_EQ(1u, encoded_info_.redundant.size());
   EXPECT_EQ(1u, encoded_info_.encoded_bytes);
 
-  for (size_t i = 2; i <= kNumPackets; ++i) {
+  // Second call is also special since it does not include a ternary
+  // payload.
+  Encode();
+  EXPECT_EQ(2u, encoded_info_.redundant.size());
+  EXPECT_EQ(8u, encoded_info_.encoded_bytes);
+
+  for (size_t i = 3; i <= kNumPackets; ++i) {
     Encode();
-    ASSERT_EQ(2u, encoded_info_.redundant.size());
+    ASSERT_EQ(3u, encoded_info_.redundant.size());
     EXPECT_EQ(i, encoded_info_.redundant[0].encoded_bytes);
     EXPECT_EQ(i - 1, encoded_info_.redundant[1].encoded_bytes);
-    EXPECT_EQ(5 + i + i - 1, encoded_info_.encoded_bytes);
+    EXPECT_EQ(i - 2, encoded_info_.redundant[2].encoded_bytes);
+    EXPECT_EQ(9 + i + (i - 1) + (i - 2), encoded_info_.encoded_bytes);
   }
 }
 
@@ -317,6 +324,35 @@ TEST_F(AudioEncoderCopyRedTest, CheckRFC2198Header) {
   EXPECT_EQ(encoded_[2] & 0x3u, encoded_info_.redundant[1].encoded_bytes >> 8);
   EXPECT_EQ(encoded_[3], encoded_info_.redundant[1].encoded_bytes & 0xff);
   EXPECT_EQ(encoded_[4], primary_payload_type);
+
+  EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
+      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+  Encode();  // Third call will produce a redundant encoding with double
+             // redundancy.
+
+  EXPECT_EQ(encoded_.size(),
+            9u + 3 * 10u);  // header size + two encoded payloads.
+  EXPECT_EQ(encoded_[0], primary_payload_type | 0x80);
+
+  timestamp_delta = encoded_info_.encoded_timestamp -
+                    encoded_info_.redundant[2].encoded_timestamp;
+  // Timestamp delta is encoded as a 14 bit value.
+  EXPECT_EQ(encoded_[1], timestamp_delta >> 6);
+  EXPECT_EQ(static_cast<uint8_t>(encoded_[2] >> 2), timestamp_delta & 0x3f);
+  // Redundant length is encoded as 10 bit value.
+  EXPECT_EQ(encoded_[2] & 0x3u, encoded_info_.redundant[2].encoded_bytes >> 8);
+  EXPECT_EQ(encoded_[3], encoded_info_.redundant[2].encoded_bytes & 0xff);
+
+  EXPECT_EQ(encoded_[4], primary_payload_type | 0x80);
+  timestamp_delta = encoded_info_.encoded_timestamp -
+                    encoded_info_.redundant[1].encoded_timestamp;
+  // Timestamp delta is encoded as a 14 bit value.
+  EXPECT_EQ(encoded_[5], timestamp_delta >> 6);
+  EXPECT_EQ(static_cast<uint8_t>(encoded_[6] >> 2), timestamp_delta & 0x3f);
+  // Redundant length is encoded as 10 bit value.
+  EXPECT_EQ(encoded_[6] & 0x3u, encoded_info_.redundant[2].encoded_bytes >> 8);
+  EXPECT_EQ(encoded_[7], encoded_info_.redundant[2].encoded_bytes & 0xff);
+  EXPECT_EQ(encoded_[8], primary_payload_type);
 }
 
 #if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)

@@ -71,10 +71,13 @@ class AudioEncoderCopyRed final : public AudioEncoder {
                          rtc::Buffer* encoded) override;
 
  private:
+  size_t CalculateHeaderLength() const;
   std::unique_ptr<AudioEncoder> speech_encoder_;
   int red_payload_type_;
   rtc::Buffer secondary_encoded_;
   EncodedInfoLeaf secondary_info_;
+  rtc::Buffer tertiary_encoded_;
+  EncodedInfoLeaf tertiary_info_;
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderCopyRed);
 };
 
