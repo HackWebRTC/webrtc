@@ -2563,44 +2563,46 @@ class RTCStatsCollectorTestWithParamKind
 
   // Adds a sender and channel of the appropriate kind, creating a sender info
   // with the report block's |source_ssrc| and report block data.
-  void AddSenderInfoAndMediaChannel(std::string transport_name,
-                                    ReportBlockData report_block_data,
-                                    absl::optional<RtpCodecParameters> codec) {
+  void AddSenderInfoAndMediaChannel(
+      std::string transport_name,
+      const std::vector<ReportBlockData>& report_block_datas,
+      absl::optional<RtpCodecParameters> codec) {
     switch (media_type_) {
       case cricket::MEDIA_TYPE_AUDIO: {
         cricket::VoiceMediaInfo voice_media_info;
-        voice_media_info.senders.push_back(cricket::VoiceSenderInfo());
-        voice_media_info.senders[0].local_stats.push_back(
-            cricket::SsrcSenderInfo());
-        voice_media_info.senders[0].local_stats[0].ssrc =
-            report_block_data.report_block().source_ssrc;
-        if (codec.has_value()) {
-          voice_media_info.senders[0].codec_payload_type = codec->payload_type;
-          voice_media_info.send_codecs.insert(
-              std::make_pair(codec->payload_type, *codec));
+        for (const auto& report_block_data : report_block_datas) {
+          cricket::VoiceSenderInfo sender;
+          sender.local_stats.push_back(cricket::SsrcSenderInfo());
+          sender.local_stats[0].ssrc =
+              report_block_data.report_block().source_ssrc;
+          if (codec.has_value()) {
+            sender.codec_payload_type = codec->payload_type;
+            voice_media_info.send_codecs.insert(
+                std::make_pair(codec->payload_type, *codec));
+          }
+          sender.report_block_datas.push_back(report_block_data);
+          voice_media_info.senders.push_back(sender);
         }
-        voice_media_info.senders[0].report_block_datas.push_back(
-            report_block_data);
         auto* voice_media_channel = pc_->AddVoiceChannel("mid", transport_name);
         voice_media_channel->SetStats(voice_media_info);
         return;
       }
       case cricket::MEDIA_TYPE_VIDEO: {
         cricket::VideoMediaInfo video_media_info;
-        video_media_info.senders.push_back(cricket::VideoSenderInfo());
-        video_media_info.senders[0].local_stats.push_back(
-            cricket::SsrcSenderInfo());
-        video_media_info.senders[0].local_stats[0].ssrc =
-            report_block_data.report_block().source_ssrc;
-        if (codec.has_value()) {
-          video_media_info.senders[0].codec_payload_type = codec->payload_type;
-          video_media_info.send_codecs.insert(
-              std::make_pair(codec->payload_type, *codec));
+        for (const auto& report_block_data : report_block_datas) {
+          cricket::VideoSenderInfo sender;
+          sender.local_stats.push_back(cricket::SsrcSenderInfo());
+          sender.local_stats[0].ssrc =
+              report_block_data.report_block().source_ssrc;
+          if (codec.has_value()) {
+            sender.codec_payload_type = codec->payload_type;
+            video_media_info.send_codecs.insert(
+                std::make_pair(codec->payload_type, *codec));
+          }
+          sender.report_block_datas.push_back(report_block_data);
+          video_media_info.aggregated_senders.push_back(sender);
+          video_media_info.senders.push_back(sender);
         }
-        video_media_info.senders[0].report_block_datas.push_back(
-            report_block_data);
-        video_media_info.aggregated_senders.push_back(
-            video_media_info.senders[0]);
         auto* video_media_channel = pc_->AddVideoChannel("mid", transport_name);
         video_media_channel->SetStats(video_media_info);
         return;
@@ -2625,49 +2627,55 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
   // The report block's timestamp cannot be from the future, set the fake clock
   // to match.
   fake_clock_.SetTime(Timestamp::Micros(kReportBlockTimestampUtcUs));
-
-  RTCPReportBlock report_block;
-  // The remote-inbound-rtp SSRC and the outbound-rtp SSRC is the same as the
-  // |source_ssrc|, "SSRC of the RTP packet sender".
-  report_block.source_ssrc = 12;
-  report_block.packets_lost = 7;
-  ReportBlockData report_block_data;
-  report_block_data.SetReportBlock(report_block, kReportBlockTimestampUtcUs);
-  report_block_data.AddRoundTripTimeSample(1234);
-  // Only the last sample should be exposed as the
-  // |RTCRemoteInboundRtpStreamStats::round_trip_time|.
-  report_block_data.AddRoundTripTimeSample(kRoundTripTimeMs);
-
-  AddSenderInfoAndMediaChannel("TransportName", report_block_data,
+  auto ssrcs = {12, 13};
+  std::vector<ReportBlockData> report_block_datas;
+  for (auto ssrc : ssrcs) {
+    RTCPReportBlock report_block;
+    // The remote-inbound-rtp SSRC and the outbound-rtp SSRC is the same as the
+    // |source_ssrc|, "SSRC of the RTP packet sender".
+    report_block.source_ssrc = ssrc;
+    report_block.packets_lost = 7;
+    ReportBlockData report_block_data;
+    report_block_data.SetReportBlock(report_block, kReportBlockTimestampUtcUs);
+    report_block_data.AddRoundTripTimeSample(1234);
+    // Only the last sample should be exposed as the
+    // |RTCRemoteInboundRtpStreamStats::round_trip_time|.
+    report_block_data.AddRoundTripTimeSample(kRoundTripTimeMs);
+    report_block_datas.push_back(report_block_data);
+  }
+  AddSenderInfoAndMediaChannel("TransportName", report_block_datas,
                                absl::nullopt);
 
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
+  for (auto ssrc : ssrcs) {
+    std::string stream_id = "Stream_" + std::to_string(ssrc);
+    RTCRemoteInboundRtpStreamStats expected_remote_inbound_rtp(
+        "RTCRemoteInboundRtp" + MediaTypeUpperCase() + stream_id,
+        kReportBlockTimestampUtcUs);
+    expected_remote_inbound_rtp.ssrc = ssrc;
+    expected_remote_inbound_rtp.kind = MediaTypeLowerCase();
+    expected_remote_inbound_rtp.transport_id =
+        "RTCTransport_TransportName_1";  // 1 for RTP (we have no RTCP
+                                         // transport)
+    expected_remote_inbound_rtp.packets_lost = 7;
+    expected_remote_inbound_rtp.local_id =
+        "RTCOutboundRTP" + MediaTypeUpperCase() + stream_id;
+    expected_remote_inbound_rtp.round_trip_time = kRoundTripTimeSeconds;
+    // This test does not set up RTCCodecStats, so |codec_id| and |jitter| are
+    // expected to be missing. These are tested separately.
 
-  RTCRemoteInboundRtpStreamStats expected_remote_inbound_rtp(
-      "RTCRemoteInboundRtp" + MediaTypeUpperCase() + "Stream_12",
-      kReportBlockTimestampUtcUs);
-  expected_remote_inbound_rtp.ssrc = 12;
-  expected_remote_inbound_rtp.kind = MediaTypeLowerCase();
-  expected_remote_inbound_rtp.transport_id =
-      "RTCTransport_TransportName_1";  // 1 for RTP (we have no RTCP transport)
-  expected_remote_inbound_rtp.packets_lost = 7;
-  expected_remote_inbound_rtp.local_id =
-      "RTCOutboundRTP" + MediaTypeUpperCase() + "Stream_12";
-  expected_remote_inbound_rtp.round_trip_time = kRoundTripTimeSeconds;
-  // This test does not set up RTCCodecStats, so |codec_id| and |jitter| are
-  // expected to be missing. These are tested separately.
-
-  ASSERT_TRUE(report->Get(expected_remote_inbound_rtp.id()));
-  EXPECT_EQ(report->Get(expected_remote_inbound_rtp.id())
-                ->cast_to<RTCRemoteInboundRtpStreamStats>(),
-            expected_remote_inbound_rtp);
-  EXPECT_TRUE(report->Get(*expected_remote_inbound_rtp.transport_id));
-  ASSERT_TRUE(report->Get(*expected_remote_inbound_rtp.local_id));
-  // Lookup works in both directions.
-  EXPECT_EQ(*report->Get(*expected_remote_inbound_rtp.local_id)
-                 ->cast_to<RTCOutboundRTPStreamStats>()
-                 .remote_id,
-            expected_remote_inbound_rtp.id());
+    ASSERT_TRUE(report->Get(expected_remote_inbound_rtp.id()));
+    EXPECT_EQ(report->Get(expected_remote_inbound_rtp.id())
+                  ->cast_to<RTCRemoteInboundRtpStreamStats>(),
+              expected_remote_inbound_rtp);
+    EXPECT_TRUE(report->Get(*expected_remote_inbound_rtp.transport_id));
+    ASSERT_TRUE(report->Get(*expected_remote_inbound_rtp.local_id));
+    // Lookup works in both directions.
+    EXPECT_EQ(*report->Get(*expected_remote_inbound_rtp.local_id)
+                   ->cast_to<RTCOutboundRTPStreamStats>()
+                   .remote_id,
+              expected_remote_inbound_rtp.id());
+  }
 }
 
 TEST_P(RTCStatsCollectorTestWithParamKind,
@@ -2682,7 +2690,7 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
   ReportBlockData report_block_data;
   report_block_data.SetReportBlock(report_block, kReportBlockTimestampUtcUs);
 
-  AddSenderInfoAndMediaChannel("TransportName", report_block_data,
+  AddSenderInfoAndMediaChannel("TransportName", {report_block_data},
                                absl::nullopt);
 
   // Advance time, it should be OK to have fresher reports than report blocks.
@@ -2720,7 +2728,7 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
   codec.kind = media_type_;
   codec.clock_rate = 1000;
 
-  AddSenderInfoAndMediaChannel("TransportName", report_block_data, codec);
+  AddSenderInfoAndMediaChannel("TransportName", {report_block_data}, codec);
 
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
@@ -2760,7 +2768,7 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
   rtcp_transport_channel_stats.dtls_state = cricket::DTLS_TRANSPORT_NEW;
   pc_->SetTransportStats("TransportName", {rtp_transport_channel_stats,
                                            rtcp_transport_channel_stats});
-  AddSenderInfoAndMediaChannel("TransportName", report_block_data,
+  AddSenderInfoAndMediaChannel("TransportName", {report_block_data},
                                absl::nullopt);
 
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
