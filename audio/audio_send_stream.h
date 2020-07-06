@@ -170,7 +170,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   mutable Mutex audio_level_lock_;
   // Keeps track of audio level, total audio energy and total samples duration.
   // https://w3c.github.io/webrtc-stats/#dom-rtcaudiohandlerstats-totalaudioenergy
-  webrtc::voe::AudioLevel audio_level_;
+  webrtc::voe::AudioLevel audio_level_ RTC_GUARDED_BY(audio_level_lock_);
 
   BitrateAllocatorInterface* const bitrate_allocator_
       RTC_GUARDED_BY(worker_queue_);
