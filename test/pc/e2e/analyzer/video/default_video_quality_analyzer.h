@@ -166,8 +166,24 @@ struct InternalStatsKey {
 bool operator<(const InternalStatsKey& a, const InternalStatsKey& b);
 bool operator==(const InternalStatsKey& a, const InternalStatsKey& b);
 
+struct DefaultVideoQualityAnalyzerOptions {
+  // Tells DefaultVideoQualityAnalyzer if heavy metrics like PSNR and SSIM have
+  // to be computed or not.
+  bool heavy_metrics_computation_enabled = true;
+  // Amount of frames that are queued in the DefaultVideoQualityAnalyzer from
+  // the point they were captured to the point they were rendered on all
+  // receivers per stream.
+  size_t max_frames_in_flight_per_stream_count =
+      kDefaultMaxFramesInFlightPerStream;
+};
+
 class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
  public:
+  explicit DefaultVideoQualityAnalyzer(
+      webrtc::Clock* clock,
+      DefaultVideoQualityAnalyzerOptions options =
+          DefaultVideoQualityAnalyzerOptions());
+  // Keep for backward compatibility during migration. Will be removed soon.
   explicit DefaultVideoQualityAnalyzer(
       bool heavy_metrics_computation_enabled = true,
       size_t max_frames_in_flight_per_stream_count =
@@ -483,8 +499,8 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   void StopExcludingCpuThreadTime();
   double GetCpuUsagePercent();
 
-  const bool heavy_metrics_computation_enabled_;
-  const size_t max_frames_in_flight_per_stream_count_;
+  // TODO(titovartem) restore const when old constructor will be removed.
+  DefaultVideoQualityAnalyzerOptions options_;
   webrtc::Clock* const clock_;
   std::atomic<uint16_t> next_frame_id_{0};
 

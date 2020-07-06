@@ -19,6 +19,7 @@
 #include "api/task_queue/task_queue_factory.h"
 #include "api/test/audio_quality_analyzer_interface.h"
 #include "api/test/peerconnection_quality_test_fixture.h"
+#include "api/test/time_controller.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/task_queue_for_test.h"
@@ -52,6 +53,7 @@ class PeerConnectionE2EQualityTest
 
   PeerConnectionE2EQualityTest(
       std::string test_case_name,
+      TimeController& time_controller,
       std::unique_ptr<AudioQualityAnalyzerInterface> audio_quality_analyzer,
       std::unique_ptr<VideoQualityAnalyzerInterface> video_quality_analyzer);
 
@@ -88,7 +90,10 @@ class PeerConnectionE2EQualityTest
   void SetupCallOnSignalingThread(const RunParams& run_params);
   void TearDownCallOnSignalingThread();
   void SetPeerCodecPreferences(TestPeer* peer, const RunParams& run_params);
-  void SetupCall(const RunParams& run_params);
+  std::unique_ptr<SignalingInterceptor> CreateSignalingInterceptor(
+      const RunParams& run_params);
+  void WaitUntilIceCandidatesGathered(rtc::Thread* signaling_thread);
+  void WaitUntilPeersAreConnected(rtc::Thread* signaling_thread);
   void ExchangeOfferAnswer(SignalingInterceptor* signaling_interceptor);
   void ExchangeIceCandidates(SignalingInterceptor* signaling_interceptor);
   void StartVideo(
@@ -98,7 +103,7 @@ class PeerConnectionE2EQualityTest
   void ReportGeneralTestResults();
   Timestamp Now() const;
 
-  Clock* const clock_;
+  TimeController& time_controller_;
   const std::unique_ptr<TaskQueueFactory> task_queue_factory_;
   std::string test_case_name_;
   std::unique_ptr<VideoQualityAnalyzerInjectionHelper>

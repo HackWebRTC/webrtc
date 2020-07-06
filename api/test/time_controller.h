@@ -46,6 +46,7 @@ class TimeController {
       const char* thread_name) = 0;
   // Creates an rtc::Thread instance. If |socket_server| is nullptr, a default
   // noop socket server is created.
+  // Returned thread is not null and started.
   virtual std::unique_ptr<rtc::Thread> CreateThread(
       const std::string& name,
       std::unique_ptr<rtc::SocketServer> socket_server = nullptr) = 0;

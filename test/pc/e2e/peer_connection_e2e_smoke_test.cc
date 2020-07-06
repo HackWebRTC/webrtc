@@ -74,7 +74,8 @@ class PeerConnectionE2EQualityTestSmokeTest : public ::testing::Test {
 
     // Create analyzers.
     std::unique_ptr<VideoQualityAnalyzerInterface> video_quality_analyzer =
-        std::make_unique<DefaultVideoQualityAnalyzer>();
+        std::make_unique<DefaultVideoQualityAnalyzer>(
+            network_emulation_manager->time_controller()->GetClock());
     // This is only done for the sake of smoke testing. In general there should
     // be no need to explicitly pull data from analyzers after the run.
     auto* video_analyzer_ptr =

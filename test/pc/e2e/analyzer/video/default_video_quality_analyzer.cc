@@ -121,12 +121,18 @@ bool operator==(const InternalStatsKey& a, const InternalStatsKey& b) {
 }
 
 DefaultVideoQualityAnalyzer::DefaultVideoQualityAnalyzer(
+    webrtc::Clock* clock,
+    DefaultVideoQualityAnalyzerOptions options)
+    : options_(options), clock_(clock) {}
+DefaultVideoQualityAnalyzer::DefaultVideoQualityAnalyzer(
     bool heavy_metrics_computation_enabled,
     size_t max_frames_in_flight_per_stream_count)
-    : heavy_metrics_computation_enabled_(heavy_metrics_computation_enabled),
-      max_frames_in_flight_per_stream_count_(
-          max_frames_in_flight_per_stream_count),
-      clock_(Clock::GetRealTimeClock()) {}
+    : clock_(Clock::GetRealTimeClock()) {
+  options_.heavy_metrics_computation_enabled =
+      heavy_metrics_computation_enabled;
+  options_.max_frames_in_flight_per_stream_count =
+      max_frames_in_flight_per_stream_count;
+}
 DefaultVideoQualityAnalyzer::~DefaultVideoQualityAnalyzer() {
   Stop();
 }
@@ -256,7 +262,8 @@ uint16_t DefaultVideoQualityAnalyzer::OnFrameCaptured(
 
     // If state has too many frames that are in flight => remove the oldest
     // queued frame in order to avoid to use too much memory.
-    if (state->GetAliveFramesCount() > max_frames_in_flight_per_stream_count_) {
+    if (state->GetAliveFramesCount() >
+        options_.max_frames_in_flight_per_stream_count) {
       uint16_t frame_id_to_remove = state->MarkNextAliveFrameAsDead();
       auto it = captured_frames_in_flight_.find(frame_id_to_remove);
       RTC_CHECK(it != captured_frames_in_flight_.end())
@@ -677,7 +684,7 @@ void DefaultVideoQualityAnalyzer::ProcessComparison(
   // Perform expensive psnr and ssim calculations while not holding lock.
   double psnr = -1.0;
   double ssim = -1.0;
-  if (heavy_metrics_computation_enabled_ && comparison.captured &&
+  if (options_.heavy_metrics_computation_enabled && comparison.captured &&
       !comparison.dropped) {
     psnr = I420PSNR(&*comparison.captured, &*comparison.rendered);
     ssim = I420SSIM(&*comparison.captured, &*comparison.rendered);

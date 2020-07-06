@@ -58,15 +58,7 @@ class TestPeerFactory {
                   VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
                   rtc::TaskQueue* task_queue)
       : signaling_thread_(signaling_thread),
-        video_analyzer_helper_(video_analyzer_helper),
-        task_queue_(task_queue) {}
-
-  // Same as previous. Created for keeping backward compatibility during
-  // migration. Will be removed soon.
-  TestPeerFactory(rtc::Thread* signaling_thread,
-                  VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
-                  rtc::TaskQueue* task_queue)
-      : signaling_thread_(signaling_thread),
+        time_controller_(time_controller),
         video_analyzer_helper_(video_analyzer_helper),
         task_queue_(task_queue) {}
 
@@ -74,19 +66,6 @@ class TestPeerFactory {
   // PeerConnectionFactory and PeerConnection creation methods,
   // also will setup dependencies, that are required for media analyzers
   // injection.
-  //
-  // |signaling_thread| will be provided by test fixture implementation.
-  static std::unique_ptr<TestPeer> CreateTestPeer(
-      std::unique_ptr<PeerConfigurerImpl> configurer,
-      std::unique_ptr<MockPeerConnectionObserver> observer,
-      VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
-      rtc::Thread* signaling_thread,
-      absl::optional<RemotePeerAudioConfig> remote_audio_config,
-      double bitrate_multiplier,
-      absl::optional<PeerConnectionE2EQualityTestFixture::EchoEmulationConfig>
-          echo_emulation_config,
-      rtc::TaskQueue* task_queue);
-
   std::unique_ptr<TestPeer> CreateTestPeer(
       std::unique_ptr<PeerConfigurerImpl> configurer,
       std::unique_ptr<MockPeerConnectionObserver> observer,
@@ -97,6 +76,7 @@ class TestPeerFactory {
 
  private:
   rtc::Thread* signaling_thread_;
+  TimeController& time_controller_;
   VideoQualityAnalyzerInjectionHelper* video_analyzer_helper_;
   rtc::TaskQueue* task_queue_;
 };

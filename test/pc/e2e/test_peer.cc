@@ -43,10 +43,12 @@ TestPeer::TestPeer(
     std::unique_ptr<MockPeerConnectionObserver> observer,
     std::unique_ptr<Params> params,
     std::vector<PeerConfigurerImpl::VideoSource> video_sources,
-    rtc::scoped_refptr<AudioProcessing> audio_processing)
-    : PeerConnectionWrapper::PeerConnectionWrapper(std::move(pc_factory),
-                                                   std::move(pc),
-                                                   std::move(observer)),
+    rtc::scoped_refptr<AudioProcessing> audio_processing,
+    std::unique_ptr<rtc::Thread> worker_thread)
+    : worker_thread_(std::move(worker_thread)),
+      wrapper_(std::make_unique<PeerConnectionWrapper>(std::move(pc_factory),
+                                                       std::move(pc),
+                                                       std::move(observer))),
       params_(std::move(params)),
       video_sources_(std::move(video_sources)),
       audio_processing_(audio_processing) {}
