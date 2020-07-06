@@ -40,12 +40,12 @@
 #include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/race_checker.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_checker.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/metrics.h"
@@ -188,7 +188,7 @@ class ChannelReceive : public ChannelReceiveInterface {
       rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer);
 
   bool Playing() const {
-    rtc::CritScope lock(&playing_lock_);
+    MutexLock lock(&playing_lock_);
     return playing_;
   }
 
@@ -204,10 +204,10 @@ class ChannelReceive : public ChannelReceiveInterface {
   // audio thread to another, but access is still sequential.
   rtc::RaceChecker audio_thread_race_checker_;
   rtc::RaceChecker video_capture_thread_race_checker_;
-  rtc::CriticalSection _callbackCritSect;
-  rtc::CriticalSection volume_settings_critsect_;
+  Mutex callback_mutex_;
+  Mutex volume_settings_mutex_;
 
-  rtc::CriticalSection playing_lock_;
+  mutable Mutex playing_lock_;
   bool playing_ RTC_GUARDED_BY(&playing_lock_) = false;
 
   RtcEventLog* const event_log_;
@@ -221,7 +221,7 @@ class ChannelReceive : public ChannelReceiveInterface {
 
   // Info for GetSyncInfo is updated on network or worker thread, and queried on
   // the worker thread.
-  rtc::CriticalSection sync_info_lock_;
+  mutable Mutex sync_info_lock_;
   absl::optional<uint32_t> last_received_rtp_timestamp_
       RTC_GUARDED_BY(&sync_info_lock_);
   absl::optional<int64_t> last_received_rtp_system_time_ms_
@@ -237,7 +237,7 @@ class ChannelReceive : public ChannelReceiveInterface {
   // Timestamp of the audio pulled from NetEq.
   absl::optional<uint32_t> jitter_buffer_playout_timestamp_;
 
-  rtc::CriticalSection video_sync_lock_;
+  mutable Mutex video_sync_lock_;
   uint32_t playout_timestamp_rtp_ RTC_GUARDED_BY(video_sync_lock_);
   absl::optional<int64_t> playout_timestamp_rtp_time_ms_
       RTC_GUARDED_BY(video_sync_lock_);
@@ -247,7 +247,7 @@ class ChannelReceive : public ChannelReceiveInterface {
   absl::optional<int64_t> playout_timestamp_ntp_time_ms_
       RTC_GUARDED_BY(video_sync_lock_);
 
-  rtc::CriticalSection ts_stats_lock_;
+  mutable Mutex ts_stats_lock_;
 
   std::unique_ptr<rtc::TimestampWrapAroundHandler> rtp_ts_wraparound_handler_;
   // The rtp timestamp of the first played out audio frame.
@@ -259,10 +259,10 @@ class ChannelReceive : public ChannelReceiveInterface {
   // uses
   ProcessThread* _moduleProcessThreadPtr;
   AudioDeviceModule* _audioDeviceModulePtr;
-  float _outputGain RTC_GUARDED_BY(volume_settings_critsect_);
+  float _outputGain RTC_GUARDED_BY(volume_settings_mutex_);
 
   // An associated send channel.
-  rtc::CriticalSection assoc_send_channel_lock_;
+  mutable Mutex assoc_send_channel_lock_;
   const ChannelSendInterface* associated_send_channel_
       RTC_GUARDED_BY(assoc_send_channel_lock_);
 
@@ -359,7 +359,7 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
     // scaling/panning, as that applies to the mix operation.
     // External recipients of the audio (e.g. via AudioTrack), will do their
     // own mixing/dynamic processing.
-    rtc::CritScope cs(&_callbackCritSect);
+    MutexLock lock(&callback_mutex_);
     if (audio_sink_) {
       AudioSinkInterface::Data data(
           audio_frame->data(), audio_frame->samples_per_channel_,
@@ -371,7 +371,7 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
 
   float output_gain = 1.0f;
   {
-    rtc::CritScope cs(&volume_settings_critsect_);
+    MutexLock lock(&volume_settings_mutex_);
     output_gain = _outputGain;
   }
 
@@ -403,7 +403,7 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
         (GetRtpTimestampRateHz() / 1000);
 
     {
-      rtc::CritScope lock(&ts_stats_lock_);
+      MutexLock lock(&ts_stats_lock_);
       // Compute ntp time.
       audio_frame->ntp_time_ms_ =
           ntp_estimator_.Estimate(audio_frame->timestamp_);
@@ -421,7 +421,7 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
     RTC_HISTOGRAM_COUNTS_1000("WebRTC.Audio.TargetJitterBufferDelayMs",
                               acm_receiver_.TargetDelayMs());
     const int jitter_buffer_delay = acm_receiver_.FilteredCurrentDelayMs();
-    rtc::CritScope lock(&video_sync_lock_);
+    MutexLock lock(&video_sync_lock_);
     RTC_HISTOGRAM_COUNTS_1000("WebRTC.Audio.ReceiverDelayEstimateMs",
                               jitter_buffer_delay + playout_delay_ms_);
     RTC_HISTOGRAM_COUNTS_1000("WebRTC.Audio.ReceiverJitterBufferDelayMs",
@@ -532,19 +532,19 @@ ChannelReceive::~ChannelReceive() {
 
 void ChannelReceive::SetSink(AudioSinkInterface* sink) {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
-  rtc::CritScope cs(&_callbackCritSect);
+  MutexLock lock(&callback_mutex_);
   audio_sink_ = sink;
 }
 
 void ChannelReceive::StartPlayout() {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
-  rtc::CritScope lock(&playing_lock_);
+  MutexLock lock(&playing_lock_);
   playing_ = true;
 }
 
 void ChannelReceive::StopPlayout() {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
-  rtc::CritScope lock(&playing_lock_);
+  MutexLock lock(&playing_lock_);
   playing_ = false;
   _outputAudioLevel.ResetLevelFullRange();
 }
@@ -570,7 +570,7 @@ void ChannelReceive::OnRtpPacket(const RtpPacketReceived& packet) {
   int64_t now_ms = rtc::TimeMillis();
 
   {
-    rtc::CritScope cs(&sync_info_lock_);
+    MutexLock lock(&sync_info_lock_);
     last_received_rtp_timestamp_ = packet.Timestamp();
     last_received_rtp_system_time_ms_ = now_ms;
   }
@@ -677,7 +677,7 @@ void ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   }
 
   {
-    rtc::CritScope lock(&ts_stats_lock_);
+    MutexLock lock(&ts_stats_lock_);
     ntp_estimator_.UpdateRtcpTimestamp(rtt, ntp_secs, ntp_frac, rtp_timestamp);
   }
 }
@@ -699,7 +699,7 @@ double ChannelReceive::GetTotalOutputDuration() const {
 
 void ChannelReceive::SetChannelOutputVolumeScaling(float scaling) {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
-  rtc::CritScope cs(&volume_settings_critsect_);
+  MutexLock lock(&volume_settings_mutex_);
   _outputGain = scaling;
 }
 
@@ -759,7 +759,7 @@ CallReceiveStatistics ChannelReceive::GetRTCPStatistics() const {
 
   // --- Timestamps
   {
-    rtc::CritScope lock(&ts_stats_lock_);
+    MutexLock lock(&ts_stats_lock_);
     stats.capture_start_ntp_time_ms_ = capture_start_ntp_time_ms_;
   }
   return stats;
@@ -787,7 +787,7 @@ int ChannelReceive::ResendPackets(const uint16_t* sequence_numbers,
 void ChannelReceive::SetAssociatedSendChannel(
     const ChannelSendInterface* channel) {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
-  rtc::CritScope lock(&assoc_send_channel_lock_);
+  MutexLock lock(&assoc_send_channel_lock_);
   associated_send_channel_ = channel;
 }
 
@@ -818,7 +818,7 @@ AudioDecodingCallStats ChannelReceive::GetDecodingCallStatistics() const {
 uint32_t ChannelReceive::GetDelayEstimate() const {
   RTC_DCHECK(worker_thread_checker_.IsCurrent() ||
              module_process_thread_checker_.IsCurrent());
-  rtc::CritScope lock(&video_sync_lock_);
+  MutexLock lock(&video_sync_lock_);
   return acm_receiver_.FilteredCurrentDelayMs() + playout_delay_ms_;
 }
 
@@ -838,7 +838,7 @@ bool ChannelReceive::GetPlayoutRtpTimestamp(uint32_t* rtp_timestamp,
                                             int64_t* time_ms) const {
   RTC_DCHECK_RUNS_SERIALIZED(&video_capture_thread_race_checker_);
   {
-    rtc::CritScope lock(&video_sync_lock_);
+    MutexLock lock(&video_sync_lock_);
     if (!playout_timestamp_rtp_time_ms_)
       return false;
     *rtp_timestamp = playout_timestamp_rtp_;
@@ -850,7 +850,7 @@ bool ChannelReceive::GetPlayoutRtpTimestamp(uint32_t* rtp_timestamp,
 void ChannelReceive::SetEstimatedPlayoutNtpTimestampMs(int64_t ntp_timestamp_ms,
                                                        int64_t time_ms) {
   RTC_DCHECK_RUNS_SERIALIZED(&video_capture_thread_race_checker_);
-  rtc::CritScope lock(&video_sync_lock_);
+  MutexLock lock(&video_sync_lock_);
   playout_timestamp_ntp_ = ntp_timestamp_ms;
   playout_timestamp_ntp_time_ms_ = time_ms;
 }
@@ -858,7 +858,7 @@ void ChannelReceive::SetEstimatedPlayoutNtpTimestampMs(int64_t ntp_timestamp_ms,
 absl::optional<int64_t>
 ChannelReceive::GetCurrentEstimatedPlayoutNtpTimestampMs(int64_t now_ms) const {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
-  rtc::CritScope lock(&video_sync_lock_);
+  MutexLock lock(&video_sync_lock_);
   if (!playout_timestamp_ntp_ || !playout_timestamp_ntp_time_ms_)
     return absl::nullopt;
 
@@ -883,7 +883,7 @@ absl::optional<Syncable::Info> ChannelReceive::GetSyncInfo() const {
     return absl::nullopt;
   }
   {
-    rtc::CritScope cs(&sync_info_lock_);
+    MutexLock lock(&sync_info_lock_);
     if (!last_received_rtp_timestamp_ || !last_received_rtp_system_time_ms_) {
       return absl::nullopt;
     }
@@ -917,7 +917,7 @@ void ChannelReceive::UpdatePlayoutTimestamp(bool rtcp, int64_t now_ms) {
   playout_timestamp -= (delay_ms * (GetRtpTimestampRateHz() / 1000));
 
   {
-    rtc::CritScope lock(&video_sync_lock_);
+    MutexLock lock(&video_sync_lock_);
     if (!rtcp && playout_timestamp != playout_timestamp_rtp_) {
       playout_timestamp_rtp_ = playout_timestamp;
       playout_timestamp_rtp_time_ms_ = now_ms;
@@ -947,7 +947,7 @@ int64_t ChannelReceive::GetRTT() const {
   // TODO(nisse): Could we check the return value from the ->RTT() call below,
   // instead of checking if we have any report blocks?
   if (report_blocks.empty()) {
-    rtc::CritScope lock(&assoc_send_channel_lock_);
+    MutexLock lock(&assoc_send_channel_lock_);
     // Tries to get RTT from an associated channel.
     if (!associated_send_channel_) {
       return 0;

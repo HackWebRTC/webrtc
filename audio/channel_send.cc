@@ -39,6 +39,7 @@
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/rate_limiter.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_checker.h"
 #include "rtc_base/time_utils.h"
@@ -186,7 +187,7 @@ class ChannelSend : public ChannelSendInterface,
   // audio thread to another, but access is still sequential.
   rtc::RaceChecker audio_thread_race_checker_;
 
-  rtc::CriticalSection volume_settings_critsect_;
+  mutable Mutex volume_settings_mutex_;
 
   bool sending_ RTC_GUARDED_BY(&worker_thread_checker_) = false;
 
@@ -201,7 +202,7 @@ class ChannelSend : public ChannelSendInterface,
   // uses
   ProcessThread* const _moduleProcessThreadPtr;
   RmsLevel rms_level_ RTC_GUARDED_BY(encoder_queue_);
-  bool input_mute_ RTC_GUARDED_BY(volume_settings_critsect_);
+  bool input_mute_ RTC_GUARDED_BY(volume_settings_mutex_);
   bool previous_frame_muted_ RTC_GUARDED_BY(encoder_queue_);
   // VoeRTP_RTCP
   // TODO(henrika): can today be accessed on the main thread and on the
@@ -234,8 +235,8 @@ class ChannelSend : public ChannelSendInterface,
   rtc::scoped_refptr<ChannelSendFrameTransformerDelegate>
       frame_transformer_delegate_ RTC_GUARDED_BY(encoder_queue_);
 
-  rtc::CriticalSection bitrate_crit_section_;
-  int configured_bitrate_bps_ RTC_GUARDED_BY(bitrate_crit_section_) = 0;
+  mutable Mutex bitrate_mutex_;
+  int configured_bitrate_bps_ RTC_GUARDED_BY(bitrate_mutex_) = 0;
 
   // Defined last to ensure that there are no running tasks when the other
   // members are destroyed.
@@ -250,20 +251,20 @@ class RtpPacketSenderProxy : public RtpPacketSender {
 
   void SetPacketPacer(RtpPacketSender* rtp_packet_pacer) {
     RTC_DCHECK(thread_checker_.IsCurrent());
-    rtc::CritScope lock(&crit_);
+    MutexLock lock(&mutex_);
     rtp_packet_pacer_ = rtp_packet_pacer;
   }
 
   void EnqueuePackets(
       std::vector<std::unique_ptr<RtpPacketToSend>> packets) override {
-    rtc::CritScope lock(&crit_);
+    MutexLock lock(&mutex_);
     rtp_packet_pacer_->EnqueuePackets(std::move(packets));
   }
 
  private:
   rtc::ThreadChecker thread_checker_;
-  rtc::CriticalSection crit_;
-  RtpPacketSender* rtp_packet_pacer_ RTC_GUARDED_BY(&crit_);
+  Mutex mutex_;
+  RtpPacketSender* rtp_packet_pacer_ RTC_GUARDED_BY(&mutex_);
 };
 
 class VoERtcpObserver : public RtcpBandwidthObserver {
@@ -273,12 +274,12 @@ class VoERtcpObserver : public RtcpBandwidthObserver {
   ~VoERtcpObserver() override {}
 
   void SetBandwidthObserver(RtcpBandwidthObserver* bandwidth_observer) {
-    rtc::CritScope lock(&crit_);
+    MutexLock lock(&mutex_);
     bandwidth_observer_ = bandwidth_observer;
   }
 
   void OnReceivedEstimatedBitrate(uint32_t bitrate) override {
-    rtc::CritScope lock(&crit_);
+    MutexLock lock(&mutex_);
     if (bandwidth_observer_) {
       bandwidth_observer_->OnReceivedEstimatedBitrate(bitrate);
     }
@@ -288,7 +289,7 @@ class VoERtcpObserver : public RtcpBandwidthObserver {
                                     int64_t rtt,
                                     int64_t now_ms) override {
     {
-      rtc::CritScope lock(&crit_);
+      MutexLock lock(&mutex_);
       if (bandwidth_observer_) {
         bandwidth_observer_->OnReceivedRtcpReceiverReport(report_blocks, rtt,
                                                           now_ms);
@@ -336,8 +337,8 @@ class VoERtcpObserver : public RtcpBandwidthObserver {
   ChannelSend* owner_;
   // Maps remote side ssrc to extended highest sequence number received.
   std::map<uint32_t, uint32_t> extended_max_sequence_number_;
-  rtc::CriticalSection crit_;
-  RtcpBandwidthObserver* bandwidth_observer_ RTC_GUARDED_BY(crit_);
+  Mutex mutex_;
+  RtcpBandwidthObserver* bandwidth_observer_ RTC_GUARDED_BY(mutex_);
 };
 
 int32_t ChannelSend::SendData(AudioFrameType frameType,
@@ -606,7 +607,7 @@ void ChannelSend::OnBitrateAllocation(BitrateAllocationUpdate update) {
   // rules.
   // RTC_DCHECK(worker_thread_checker_.IsCurrent() ||
   //            module_process_thread_checker_.IsCurrent());
-  rtc::CritScope lock(&bitrate_crit_section_);
+  MutexLock lock(&bitrate_mutex_);
 
   CallEncoder([&](AudioEncoder* encoder) {
     encoder->OnReceivedUplinkAllocation(update);
@@ -616,7 +617,7 @@ void ChannelSend::OnBitrateAllocation(BitrateAllocationUpdate update) {
 }
 
 int ChannelSend::GetBitrate() const {
-  rtc::CritScope lock(&bitrate_crit_section_);
+  MutexLock lock(&bitrate_mutex_);
   return configured_bitrate_bps_;
 }
 
@@ -651,12 +652,12 @@ void ChannelSend::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
 
 void ChannelSend::SetInputMute(bool enable) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  rtc::CritScope cs(&volume_settings_critsect_);
+  MutexLock lock(&volume_settings_mutex_);
   input_mute_ = enable;
 }
 
 bool ChannelSend::InputMute() const {
-  rtc::CritScope cs(&volume_settings_critsect_);
+  MutexLock lock(&volume_settings_mutex_);
   return input_mute_;
 }
 

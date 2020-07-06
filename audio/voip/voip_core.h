@@ -31,7 +31,7 @@
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/utility/include/process_thread.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 
 namespace webrtc {
 
@@ -123,7 +123,7 @@ class VoipCore : public VoipEngine,
   // Must be placed before |channels_| for proper destruction.
   std::unique_ptr<ProcessThread> process_thread_;
 
-  rtc::CriticalSection lock_;
+  Mutex lock_;
 
   // Member to track a next ChannelId for new AudioChannel.
   int next_channel_id_ RTC_GUARDED_BY(lock_) = 0;

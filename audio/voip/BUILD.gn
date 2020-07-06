@@ -26,6 +26,7 @@ rtc_library("voip_core") {
     "../../modules/utility:utility",
     "../../rtc_base:criticalsection",
     "../../rtc_base:logging",
+    "../../rtc_base/synchronization:mutex",
   ]
   absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
 }
@@ -74,6 +75,7 @@ rtc_library("audio_ingress") {
     "../../rtc_base:logging",
     "../../rtc_base:safe_minmax",
     "../../rtc_base:timeutils",
+    "../../rtc_base/synchronization:mutex",
     "../utility:audio_frame_operations",
   ]
 }
@@ -95,6 +97,7 @@ rtc_library("audio_egress") {
     "../../rtc_base:rtc_task_queue",
     "../../rtc_base:thread_checker",
     "../../rtc_base:timeutils",
+    "../../rtc_base/synchronization:mutex",
     "../utility:audio_frame_operations",
   ]
 }

@@ -20,7 +20,7 @@
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/typing_detection.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
@@ -71,7 +71,7 @@ class AudioTransportImpl : public AudioTransport {
   AudioProcessing* audio_processing_ = nullptr;
 
   // Capture side.
-  rtc::CriticalSection capture_lock_;
+  mutable Mutex capture_lock_;
   std::vector<AudioSender*> audio_senders_ RTC_GUARDED_BY(capture_lock_);
   int send_sample_rate_hz_ RTC_GUARDED_BY(capture_lock_) = 8000;
   size_t send_num_channels_ RTC_GUARDED_BY(capture_lock_) = 1;

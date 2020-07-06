@@ -347,7 +347,7 @@ void AudioSendStream::ConfigureStream(
 
   // Set currently known overhead (used in ANA, opus only).
   {
-    rtc::CritScope cs(&overhead_per_packet_lock_);
+    MutexLock lock(&overhead_per_packet_lock_);
     UpdateOverheadForEncoder();
   }
 
@@ -422,7 +422,7 @@ void AudioSendStream::SendAudioData(std::unique_ptr<AudioFrame> audio_frame) {
     // TODO(https://crbug.com/webrtc/10771): All "media-source" related stats
     // should move from send-streams to the local audio sources or tracks; a
     // send-stream should not be required to read the microphone audio levels.
-    rtc::CritScope cs(&audio_level_lock_);
+    MutexLock lock(&audio_level_lock_);
     audio_level_.ComputeLevel(*audio_frame, duration);
   }
   channel_send_->ProcessAndEncodeAudio(std::move(audio_frame));
@@ -488,7 +488,7 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
   }
 
   {
-    rtc::CritScope cs(&audio_level_lock_);
+    MutexLock lock(&audio_level_lock_);
     stats.audio_level = audio_level_.LevelFullRange();
     stats.total_input_energy = audio_level_.TotalEnergy();
     stats.total_input_duration = audio_level_.TotalDuration();
@@ -513,7 +513,7 @@ void AudioSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   worker_queue_->PostTask([&]() {
     // Poll if overhead has changed, which it can do if ack triggers us to stop
     // sending mid/rid.
-    rtc::CritScope cs(&overhead_per_packet_lock_);
+    MutexLock lock(&overhead_per_packet_lock_);
     UpdateOverheadForEncoder();
   });
 }
@@ -538,7 +538,7 @@ uint32_t AudioSendStream::OnBitrateUpdated(BitrateAllocationUpdate update) {
 void AudioSendStream::SetTransportOverhead(
     int transport_overhead_per_packet_bytes) {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
-  rtc::CritScope cs(&overhead_per_packet_lock_);
+  MutexLock lock(&overhead_per_packet_lock_);
   transport_overhead_per_packet_bytes_ = transport_overhead_per_packet_bytes;
   UpdateOverheadForEncoder();
 }
@@ -570,7 +570,7 @@ void AudioSendStream::UpdateOverheadForEncoder() {
 }
 
 size_t AudioSendStream::TestOnlyGetPerPacketOverheadBytes() const {
-  rtc::CritScope cs(&overhead_per_packet_lock_);
+  MutexLock lock(&overhead_per_packet_lock_);
   return GetPerPacketOverheadBytes();
 }
 
@@ -670,7 +670,7 @@ bool AudioSendStream::SetupSendCodec(const Config& new_config) {
   // Set currently known overhead (used in ANA, opus only).
   // If overhead changes later, it will be updated in UpdateOverheadForEncoder.
   {
-    rtc::CritScope cs(&overhead_per_packet_lock_);
+    MutexLock lock(&overhead_per_packet_lock_);
     size_t overhead = GetPerPacketOverheadBytes();
     if (overhead > 0) {
       encoder->OnReceivedOverhead(overhead);

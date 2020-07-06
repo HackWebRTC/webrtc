@@ -22,6 +22,7 @@
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
 #include "modules/rtp_rtcp/source/rtp_sender_audio.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_checker.h"
 #include "rtc_base/time_utils.h"
@@ -72,7 +73,7 @@ class AudioEgress : public AudioSender, public AudioPacketizationCallback {
   // Retrieve current encoder format info. This returns encoder format set
   // by SetEncoder() and if encoder is not set, this will return nullopt.
   absl::optional<SdpAudioFormat> GetEncoderFormat() const {
-    rtc::CritScope lock(&lock_);
+    MutexLock lock(&lock_);
     return encoder_format_;
   }
 
@@ -99,11 +100,11 @@ class AudioEgress : public AudioSender, public AudioPacketizationCallback {
 
  private:
   void SetEncoderFormat(const SdpAudioFormat& encoder_format) {
-    rtc::CritScope lock(&lock_);
+    MutexLock lock(&lock_);
     encoder_format_ = encoder_format;
   }
 
-  rtc::CriticalSection lock_;
+  mutable Mutex lock_;
 
   // Current encoder format selected by caller.
   absl::optional<SdpAudioFormat> encoder_format_ RTC_GUARDED_BY(lock_);

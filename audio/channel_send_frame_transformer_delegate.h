@@ -16,7 +16,7 @@
 #include "api/frame_transformer_interface.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "rtc_base/buffer.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_queue.h"
 
@@ -72,7 +72,7 @@ class ChannelSendFrameTransformerDelegate : public TransformedFrameCallback {
   ~ChannelSendFrameTransformerDelegate() override = default;
 
  private:
-  rtc::CriticalSection send_lock_;
+  mutable Mutex send_lock_;
   SendFrameCallback send_frame_callback_ RTC_GUARDED_BY(send_lock_);
   rtc::scoped_refptr<FrameTransformerInterface> frame_transformer_;
   rtc::TaskQueue* encoder_queue_ RTC_GUARDED_BY(send_lock_);
