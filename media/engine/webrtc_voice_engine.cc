@@ -722,6 +722,11 @@ std::vector<AudioCodec> WebRtcVoiceEngine::CollectCodecs(
       }
 
       out.push_back(codec);
+
+      if (codec.name == kOpusCodecName &&
+          IsAudioRedForOpusFieldTrialEnabled()) {
+        map_format({kRedCodecName, 48000, 2}, &out);
+      }
     }
   }
 
@@ -730,11 +735,6 @@ std::vector<AudioCodec> WebRtcVoiceEngine::CollectCodecs(
     if (cn.second) {
       map_format({kCnCodecName, cn.first, 1}, &out);
     }
-  }
-
-  // Add red codec.
-  if (IsAudioRedForOpusFieldTrialEnabled()) {
-    map_format({kRedCodecName, 48000, 2}, &out);
   }
 
   // Add telephone-event codecs last.
