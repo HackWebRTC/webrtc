@@ -619,7 +619,9 @@ class RTC_EXPORT RTCTransportStats final : public RTCStats {
   ~RTCTransportStats() override;
 
   RTCStatsMember<uint64_t> bytes_sent;
+  RTCStatsMember<uint64_t> packets_sent;
   RTCStatsMember<uint64_t> bytes_received;
+  RTCStatsMember<uint64_t> packets_received;
   RTCStatsMember<std::string> rtcp_transport_stats_id;
   // TODO(hbos): Support enum types? "RTCStatsMember<RTCDtlsTransportState>"?
   RTCStatsMember<std::string> dtls_state;

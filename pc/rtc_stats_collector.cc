@@ -1812,7 +1812,9 @@ void RTCStatsCollector::ProduceTransportStats_n(
                                     transport_name, channel_stats.component),
                                 timestamp_us));
       transport_stats->bytes_sent = 0;
+      transport_stats->packets_sent = 0;
       transport_stats->bytes_received = 0;
+      transport_stats->packets_received = 0;
       transport_stats->dtls_state =
           DtlsTransportStateToRTCDtlsTransportState(channel_stats.dtls_state);
       transport_stats->selected_candidate_pair_changes =
@@ -1820,7 +1822,10 @@ void RTCStatsCollector::ProduceTransportStats_n(
       for (const cricket::ConnectionInfo& info :
            channel_stats.ice_transport_stats.connection_infos) {
         *transport_stats->bytes_sent += info.sent_total_bytes;
+        *transport_stats->packets_sent +=
+            info.sent_total_packets - info.sent_discarded_packets;
         *transport_stats->bytes_received += info.recv_total_bytes;
+        *transport_stats->packets_received += info.packets_received;
         if (info.best_connection) {
           transport_stats->selected_candidate_pair_id =
               RTCIceCandidatePairStatsIDFromConnectionInfo(info);
