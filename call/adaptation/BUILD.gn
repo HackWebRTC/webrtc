@@ -49,6 +49,7 @@ rtc_library("resource_adaptation") {
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_task_queue",
     "../../rtc_base/experiments:balanced_degradation_settings",
+    "../../rtc_base/synchronization:mutex",
     "../../rtc_base/synchronization:sequence_checker",
     "../../rtc_base/task_utils:to_queued_task",
   ]
@@ -85,6 +86,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_task_queue",
       "../../rtc_base:task_queue_for_test",
+      "../../rtc_base/synchronization:mutex",
       "../../test:field_trial",
       "../../test:rtc_expect_death",
       "../../test:test_support",

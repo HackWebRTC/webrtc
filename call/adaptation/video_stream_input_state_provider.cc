@@ -19,19 +19,19 @@ VideoStreamInputStateProvider::VideoStreamInputStateProvider(
 VideoStreamInputStateProvider::~VideoStreamInputStateProvider() {}
 
 void VideoStreamInputStateProvider::OnHasInputChanged(bool has_input) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   input_state_.set_has_input(has_input);
 }
 
 void VideoStreamInputStateProvider::OnFrameSizeObserved(int frame_size_pixels) {
   RTC_DCHECK_GT(frame_size_pixels, 0);
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   input_state_.set_frame_size_pixels(frame_size_pixels);
 }
 
 void VideoStreamInputStateProvider::OnEncoderSettingsChanged(
     EncoderSettings encoder_settings) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   input_state_.set_video_codec_type(
       encoder_settings.encoder_config().codec_type);
   input_state_.set_min_pixels_per_frame(
@@ -41,7 +41,7 @@ void VideoStreamInputStateProvider::OnEncoderSettingsChanged(
 VideoStreamInputState VideoStreamInputStateProvider::InputState() {
   // GetInputFrameRate() is thread-safe.
   int input_fps = frame_rate_provider_->GetInputFrameRate();
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   input_state_.set_frames_per_second(input_fps);
   return input_state_;
 }

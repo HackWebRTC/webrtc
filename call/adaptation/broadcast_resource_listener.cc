@@ -15,8 +15,8 @@
 #include <utility>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/ref_counted_object.h"
+#include "rtc_base/synchronization/mutex.h"
 
 namespace webrtc {
 
@@ -29,7 +29,7 @@ class BroadcastResourceListener::AdapterResource : public Resource {
 
   // The parent is letting us know we have a usage neasurement.
   void OnResourceUsageStateMeasured(ResourceUsageState usage_state) {
-    rtc::CritScope crit(&lock_);
+    MutexLock lock(&lock_);
     if (!listener_)
       return;
     listener_->OnResourceUsageStateMeasured(this, usage_state);
@@ -38,14 +38,14 @@ class BroadcastResourceListener::AdapterResource : public Resource {
   // Resource implementation.
   std::string Name() const override { return name_; }
   void SetResourceListener(ResourceListener* listener) override {
-    rtc::CritScope crit(&lock_);
+    MutexLock lock(&lock_);
     RTC_DCHECK(!listener_ || !listener);
     listener_ = listener;
   }
 
  private:
   const std::string name_;
-  rtc::CriticalSection lock_;
+  Mutex lock_;
   ResourceListener* listener_ RTC_GUARDED_BY(lock_) = nullptr;
 };
 
@@ -64,14 +64,14 @@ rtc::scoped_refptr<Resource> BroadcastResourceListener::SourceResource() const {
 }
 
 void BroadcastResourceListener::StartListening() {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   RTC_DCHECK(!is_listening_);
   source_resource_->SetResourceListener(this);
   is_listening_ = true;
 }
 
 void BroadcastResourceListener::StopListening() {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   RTC_DCHECK(is_listening_);
   RTC_DCHECK(adapters_.empty());
   source_resource_->SetResourceListener(nullptr);
@@ -80,7 +80,7 @@ void BroadcastResourceListener::StopListening() {
 
 rtc::scoped_refptr<Resource>
 BroadcastResourceListener::CreateAdapterResource() {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   RTC_DCHECK(is_listening_);
   rtc::scoped_refptr<AdapterResource> adapter =
       new rtc::RefCountedObject<AdapterResource>(source_resource_->Name() +
@@ -91,7 +91,7 @@ BroadcastResourceListener::CreateAdapterResource() {
 
 void BroadcastResourceListener::RemoveAdapterResource(
     rtc::scoped_refptr<Resource> resource) {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   auto it = std::find(adapters_.begin(), adapters_.end(), resource);
   RTC_DCHECK(it != adapters_.end());
   adapters_.erase(it);
@@ -100,7 +100,7 @@ void BroadcastResourceListener::RemoveAdapterResource(
 std::vector<rtc::scoped_refptr<Resource>>
 BroadcastResourceListener::GetAdapterResources() {
   std::vector<rtc::scoped_refptr<Resource>> resources;
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   for (const auto& adapter : adapters_) {
     resources.push_back(adapter);
   }
@@ -111,7 +111,7 @@ void BroadcastResourceListener::OnResourceUsageStateMeasured(
     rtc::scoped_refptr<Resource> resource,
     ResourceUsageState usage_state) {
   RTC_DCHECK_EQ(resource, source_resource_);
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   for (const auto& adapter : adapters_) {
     adapter->OnResourceUsageStateMeasured(usage_state);
   }

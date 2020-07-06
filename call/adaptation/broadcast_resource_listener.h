@@ -15,7 +15,7 @@
 
 #include "api/adaptation/resource.h"
 #include "api/scoped_refptr.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 
 namespace webrtc {
 
@@ -62,7 +62,7 @@ class BroadcastResourceListener : public ResourceListener {
   friend class AdapterResource;
 
   const rtc::scoped_refptr<Resource> source_resource_;
-  rtc::CriticalSection lock_;
+  Mutex lock_;
   bool is_listening_ RTC_GUARDED_BY(lock_);
   // The AdapterResource unregisters itself prior to destruction, guaranteeing
   // that these pointers are safe to use.

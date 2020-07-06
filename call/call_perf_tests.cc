@@ -29,6 +29,7 @@
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/rtp_rtcp/source/rtp_packet.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
@@ -409,7 +410,7 @@ void CallPerfTest::TestCaptureNtpTime(
     }
 
     void OnFrame(const VideoFrame& video_frame) override {
-      rtc::CritScope lock(&crit_);
+      MutexLock lock(&mutex_);
       if (video_frame.ntp_time_ms() <= 0) {
         // Haven't got enough RTCP SR in order to calculate the capture ntp
         // time.
@@ -445,7 +446,7 @@ void CallPerfTest::TestCaptureNtpTime(
     }
 
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
-      rtc::CritScope lock(&crit_);
+      MutexLock lock(&mutex_);
       RtpPacket rtp_packet;
       EXPECT_TRUE(rtp_packet.Parse(packet, length));
 
@@ -488,7 +489,7 @@ void CallPerfTest::TestCaptureNtpTime(
                             time_offset_ms_list_, "ms", true);
     }
 
-    rtc::CriticalSection crit_;
+    Mutex mutex_;
     const BuiltInNetworkBehaviorConfig net_config_;
     Clock* const clock_;
     int threshold_ms_;
@@ -499,7 +500,7 @@ void CallPerfTest::TestCaptureNtpTime(
     bool rtp_start_timestamp_set_;
     uint32_t rtp_start_timestamp_;
     typedef std::map<uint32_t, uint32_t> FrameCaptureTimeList;
-    FrameCaptureTimeList capture_time_list_ RTC_GUARDED_BY(&crit_);
+    FrameCaptureTimeList capture_time_list_ RTC_GUARDED_BY(&mutex_);
     std::vector<double> time_offset_ms_list_;
   } test(net_config, threshold_ms, start_time_ms, run_time_ms);
 

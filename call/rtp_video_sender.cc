@@ -467,7 +467,7 @@ void RtpVideoSender::DeRegisterProcessThread() {
 }
 
 void RtpVideoSender::SetActive(bool active) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   if (active_ == active)
     return;
   const std::vector<bool> active_modules(rtp_streams_.size(), active);
@@ -475,7 +475,7 @@ void RtpVideoSender::SetActive(bool active) {
 }
 
 void RtpVideoSender::SetActiveModules(const std::vector<bool> active_modules) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   return SetActiveModulesLocked(active_modules);
 }
 
@@ -495,7 +495,7 @@ void RtpVideoSender::SetActiveModulesLocked(
 }
 
 bool RtpVideoSender::IsActive() {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   return IsActiveLocked();
 }
 
@@ -509,7 +509,7 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
     const RTPFragmentationHeader* fragmentation) {
   fec_controller_->UpdateWithEncodedData(encoded_image.size(),
                                          encoded_image._frameType);
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   RTC_DCHECK(!rtp_streams_.empty());
   if (!active_)
     return Result(Result::ERROR_SEND_FAILED);
@@ -583,7 +583,7 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
 
 void RtpVideoSender::OnBitrateAllocationUpdated(
     const VideoBitrateAllocation& bitrate) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   if (IsActiveLocked()) {
     if (rtp_streams_.size() == 1) {
       // If spatial scalability is enabled, it is covered by a single stream.
@@ -726,7 +726,7 @@ std::map<uint32_t, RtpState> RtpVideoSender::GetRtpStates() const {
 
 std::map<uint32_t, RtpPayloadState> RtpVideoSender::GetRtpPayloadStates()
     const {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   std::map<uint32_t, RtpPayloadState> payload_states;
   for (const auto& param : params_) {
     payload_states[param.ssrc()] = param.state();
@@ -737,7 +737,7 @@ std::map<uint32_t, RtpPayloadState> RtpVideoSender::GetRtpPayloadStates()
 
 void RtpVideoSender::OnTransportOverheadChanged(
     size_t transport_overhead_bytes_per_packet) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   transport_overhead_bytes_per_packet_ = transport_overhead_bytes_per_packet;
 
   size_t max_rtp_packet_size =
@@ -751,7 +751,7 @@ void RtpVideoSender::OnTransportOverheadChanged(
 void RtpVideoSender::OnBitrateUpdated(BitrateAllocationUpdate update,
                                       int framerate) {
   // Substract overhead from bitrate.
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   size_t num_active_streams = 0;
   size_t overhead_bytes_per_packet = 0;
   for (const auto& stream : rtp_streams_) {
@@ -880,14 +880,14 @@ int RtpVideoSender::ProtectionRequest(const FecProtectionParams* delta_params,
 }
 
 void RtpVideoSender::SetFecAllowed(bool fec_allowed) {
-  rtc::CritScope cs(&crit_);
+  MutexLock lock(&mutex_);
   fec_allowed_ = fec_allowed;
 }
 
 void RtpVideoSender::OnPacketFeedbackVector(
     std::vector<StreamPacketInfo> packet_feedback_vector) {
   if (fec_controller_->UseLossVectorMask()) {
-    rtc::CritScope cs(&crit_);
+    MutexLock lock(&mutex_);
     for (const StreamPacketInfo& packet : packet_feedback_vector) {
       loss_mask_vector_.push_back(!packet.received);
     }

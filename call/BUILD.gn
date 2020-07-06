@@ -183,6 +183,7 @@ rtc_library("rtp_sender") {
     "../rtc_base:rate_limiter",
     "../rtc_base:rtc_base_approved",
     "../rtc_base:rtc_task_queue",
+    "../rtc_base/synchronization:mutex",
     "../rtc_base/task_utils:repeating_task",
   ]
   absl_deps = [
@@ -341,6 +342,7 @@ rtc_library("simulated_network") {
     "../api/units:timestamp",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base/synchronization:mutex",
     "../rtc_base/synchronization:sequence_checker",
   ]
   absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
@@ -369,6 +371,7 @@ rtc_library("fake_network") {
     "../modules/utility",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base/synchronization:mutex",
     "../rtc_base/synchronization:sequence_checker",
     "../system_wrappers",
   ]
@@ -434,6 +437,7 @@ if (rtc_include_tests) {
       "../rtc_base:rate_limiter",
       "../rtc_base:rtc_base_approved",
       "../rtc_base:task_queue_for_test",
+      "../rtc_base/synchronization:mutex",
       "../system_wrappers",
       "../test:audio_codec_mocks",
       "../test:direct_transport",
@@ -493,6 +497,7 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_approved",
       "../rtc_base:task_queue_for_test",
       "../rtc_base:task_queue_for_test",
+      "../rtc_base/synchronization:mutex",
       "../rtc_base/task_utils:repeating_task",
       "../system_wrappers",
       "../system_wrappers:metrics",

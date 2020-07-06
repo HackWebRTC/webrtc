@@ -19,6 +19,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/thread_annotations.h"
 #include "test/call_test.h"
@@ -49,7 +50,7 @@ class LogObserver {
   class Callback : public rtc::LogSink {
    public:
     void OnLogMessage(const std::string& message) override {
-      rtc::CritScope lock(&crit_sect_);
+      MutexLock lock(&mutex_);
       // Ignore log lines that are due to missing AST extensions, these are
       // logged when we switch back from AST to TOF until the wrapping bitrate
       // estimator gives up on using AST.
@@ -78,15 +79,15 @@ class LogObserver {
     bool Wait() { return done_.Wait(test::CallTest::kDefaultTimeoutMs); }
 
     void PushExpectedLogLine(const std::string& expected_log_line) {
-      rtc::CritScope lock(&crit_sect_);
+      MutexLock lock(&mutex_);
       expected_log_lines_.push_back(expected_log_line);
     }
 
    private:
     typedef std::list<std::string> Strings;
-    rtc::CriticalSection crit_sect_;
-    Strings received_log_lines_ RTC_GUARDED_BY(crit_sect_);
-    Strings expected_log_lines_ RTC_GUARDED_BY(crit_sect_);
+    Mutex mutex_;
+    Strings received_log_lines_ RTC_GUARDED_BY(mutex_);
+    Strings expected_log_lines_ RTC_GUARDED_BY(mutex_);
     rtc::Event done_;
   };
 
