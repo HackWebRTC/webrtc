@@ -1284,6 +1284,7 @@ TEST_F(P2PTransportChannelTest, GetStats) {
                                  ep2_ch1()->receiving() &&
                                  ep2_ch1()->writable(),
                              kMediumTimeout, clock);
+  // Sends and receives 10 packets.
   TestSendRecv(&clock);
   IceTransportStats ice_transport_stats;
   ASSERT_TRUE(ep1_ch1()->GetStats(&ice_transport_stats));
@@ -1306,6 +1307,7 @@ TEST_F(P2PTransportChannelTest, GetStats) {
   EXPECT_EQ(0U, best_conn_info->sent_discarded_packets);
   EXPECT_EQ(10 * 36U, best_conn_info->sent_total_bytes);
   EXPECT_EQ(10 * 36U, best_conn_info->recv_total_bytes);
+  EXPECT_EQ(10U, best_conn_info->packets_received);
   DestroyChannels();
 }
 

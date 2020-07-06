@@ -461,6 +461,7 @@ void Connection::OnReadPacket(const char* data,
     last_data_received_ = rtc::TimeMillis();
     UpdateReceiving(last_data_received_);
     recv_rate_tracker_.AddSamples(size);
+    stats_.packets_received++;
     SignalReadPacket(this, data, size, packet_time_us);
 
     // If timed out sending writability checks, start up again
