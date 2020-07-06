@@ -1783,6 +1783,18 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
   voice_media_info.receivers[0].header_and_padding_bytes_rcvd = 4;
   voice_media_info.receivers[0].codec_payload_type = 42;
   voice_media_info.receivers[0].jitter_ms = 4500;
+  voice_media_info.receivers[0].jitter_buffer_delay_seconds = 1.0;
+  voice_media_info.receivers[0].jitter_buffer_emitted_count = 2;
+  voice_media_info.receivers[0].total_samples_received = 3;
+  voice_media_info.receivers[0].concealed_samples = 4;
+  voice_media_info.receivers[0].silent_concealed_samples = 5;
+  voice_media_info.receivers[0].concealment_events = 6;
+  voice_media_info.receivers[0].inserted_samples_for_deceleration = 7;
+  voice_media_info.receivers[0].removed_samples_for_acceleration = 8;
+  voice_media_info.receivers[0].audio_level = 9.0;
+  voice_media_info.receivers[0].total_output_energy = 10.0;
+  voice_media_info.receivers[0].total_output_duration = 11.0;
+
   voice_media_info.receivers[0].last_packet_received_timestamp_ms =
       absl::nullopt;
 
@@ -1821,6 +1833,18 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
   expected_audio.packets_lost = -1;
   // |expected_audio.last_packet_received_timestamp| should be undefined.
   expected_audio.jitter = 4.5;
+  expected_audio.jitter_buffer_delay = 1.0;
+  expected_audio.jitter_buffer_emitted_count = 2;
+  expected_audio.total_samples_received = 3;
+  expected_audio.concealed_samples = 4;
+  expected_audio.silent_concealed_samples = 5;
+  expected_audio.concealment_events = 6;
+  expected_audio.inserted_samples_for_deceleration = 7;
+  expected_audio.removed_samples_for_acceleration = 8;
+  expected_audio.audio_level = 9.0;
+  expected_audio.total_audio_energy = 10.0;
+  expected_audio.total_samples_duration = 11.0;
+
   ASSERT_TRUE(report->Get(expected_audio.id()));
   EXPECT_EQ(
       report->Get(expected_audio.id())->cast_to<RTCInboundRTPStreamStats>(),
@@ -1859,8 +1883,10 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   video_media_info.receivers[0].firs_sent = 5;
   video_media_info.receivers[0].plis_sent = 6;
   video_media_info.receivers[0].nacks_sent = 7;
-  video_media_info.receivers[0].frames_decoded = 8;
+  video_media_info.receivers[0].frames_received = 8;
+  video_media_info.receivers[0].frames_decoded = 9;
   video_media_info.receivers[0].key_frames_decoded = 3;
+  video_media_info.receivers[0].frames_dropped = 13;
   video_media_info.receivers[0].qp_sum = absl::nullopt;
   video_media_info.receivers[0].total_decode_time_ms = 9000;
   video_media_info.receivers[0].total_inter_frame_delay = 0.123;
@@ -1904,8 +1930,10 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   expected_video.bytes_received = 3;
   expected_video.header_bytes_received = 12;
   expected_video.packets_lost = 42;
-  expected_video.frames_decoded = 8;
+  expected_video.frames_received = 8;
+  expected_video.frames_decoded = 9;
   expected_video.key_frames_decoded = 3;
+  expected_video.frames_dropped = 13;
   // |expected_video.qp_sum| should be undefined.
   expected_video.total_decode_time = 9.0;
   expected_video.total_inter_frame_delay = 0.123;
