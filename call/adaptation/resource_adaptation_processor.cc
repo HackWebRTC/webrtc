@@ -390,26 +390,6 @@ ResourceAdaptationProcessor::OnResourceOveruse(
                                        message.Release());
 }
 
-void ResourceAdaptationProcessor::TriggerAdaptationDueToFrameDroppedDueToSize(
-    rtc::scoped_refptr<Resource> reason_resource) {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  RTC_LOG(INFO) << "TriggerAdaptationDueToFrameDroppedDueToSize called";
-  VideoAdaptationCounters counters_before =
-      stream_adapter_->adaptation_counters();
-  OnResourceOveruse(reason_resource);
-  if (effective_degradation_preference_ == DegradationPreference::BALANCED &&
-      stream_adapter_->adaptation_counters().fps_adaptations >
-          counters_before.fps_adaptations) {
-    // Oops, we adapted frame rate. Adapt again, maybe it will adapt resolution!
-    // Though this is not guaranteed...
-    OnResourceOveruse(reason_resource);
-  }
-  if (stream_adapter_->adaptation_counters().resolution_adaptations >
-      counters_before.resolution_adaptations) {
-    encoder_stats_observer_->OnInitialQualityResolutionAdaptDown();
-  }
-}
-
 std::pair<std::vector<rtc::scoped_refptr<Resource>>,
           VideoStreamAdapter::RestrictionsWithCounters>
 ResourceAdaptationProcessor::FindMostLimitedResources() const {

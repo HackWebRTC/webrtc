@@ -72,15 +72,6 @@ class ResourceAdaptationProcessorInterface {
       AdaptationListener* adaptation_listener) = 0;
   virtual void RemoveAdaptationListener(
       AdaptationListener* adaptation_listener) = 0;
-
-  // May trigger one or more adaptations. It is meant to reduce resolution -
-  // useful if a frame was dropped due to its size - however, the implementation
-  // may not guarantee this (see resource_adaptation_processor.h).
-  // TODO(hbos): This is only part of the interface for backwards-compatiblity
-  // reasons. Can we replace this by something which actually satisfies the
-  // resolution constraints or get rid of it altogether?
-  virtual void TriggerAdaptationDueToFrameDroppedDueToSize(
-      rtc::scoped_refptr<Resource> reason_resource) = 0;
 };
 
 }  // namespace webrtc

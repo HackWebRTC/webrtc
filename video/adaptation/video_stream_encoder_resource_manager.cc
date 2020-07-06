@@ -445,8 +445,11 @@ void VideoStreamEncoderResourceManager::OnFrameDroppedDueToSize() {
       // happens if the processor is destroyed. No action needed.
       return;
     }
-    adaptation_processor_->TriggerAdaptationDueToFrameDroppedDueToSize(
-        quality_scaler_resource_);
+    Adaptation reduce_resolution = stream_adapter_->GetAdaptDownResolution();
+    if (reduce_resolution.status() == Adaptation::Status::kValid) {
+      stream_adapter_->ApplyAdaptation(reduce_resolution,
+                                       quality_scaler_resource_);
+    }
   });
   initial_frame_dropper_->OnFrameDroppedDueToSize();
 }

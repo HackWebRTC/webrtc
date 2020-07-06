@@ -521,6 +521,49 @@ VideoStreamAdapter::RestrictionsOrState VideoStreamAdapter::IncreaseFramerate(
   return new_restrictions;
 }
 
+Adaptation VideoStreamAdapter::GetAdaptDownResolution() {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  VideoStreamInputState input_state = input_state_provider_->InputState();
+  switch (degradation_preference_) {
+    case DegradationPreference::DISABLED:
+    case DegradationPreference::MAINTAIN_RESOLUTION: {
+      return Adaptation(adaptation_validation_id_,
+                        Adaptation::Status::kLimitReached, input_state, false);
+    }
+    case DegradationPreference::MAINTAIN_FRAMERATE:
+      return GetAdaptationDown();
+    case DegradationPreference::BALANCED: {
+      return RestrictionsOrStateToAdaptation(
+          GetAdaptDownResolutionStepForBalanced(input_state), input_state);
+    }
+    default:
+      RTC_NOTREACHED();
+  }
+}
+
+VideoStreamAdapter::RestrictionsOrState
+VideoStreamAdapter::GetAdaptDownResolutionStepForBalanced(
+    const VideoStreamInputState& input_state) const {
+  // Adapt twice if the first adaptation did not decrease resolution.
+  auto first_step = GetAdaptationDownStep(input_state);
+  if (!absl::holds_alternative<RestrictionsWithCounters>(first_step)) {
+    return first_step;
+  }
+  auto first_restrictions = absl::get<RestrictionsWithCounters>(first_step);
+  if (first_restrictions.counters.resolution_adaptations >
+      current_restrictions_.counters.resolution_adaptations) {
+    return first_step;
+  }
+  // We didn't decrease resolution so force it; amend a resolution resuction
+  // to the existing framerate reduction in |first_restrictions|.
+  auto second_step = DecreaseResolution(input_state, first_restrictions);
+  if (absl::holds_alternative<RestrictionsWithCounters>(second_step)) {
+    return second_step;
+  }
+  // If the second step was not successful then settle for the first one.
+  return first_step;
+}
+
 void VideoStreamAdapter::ApplyAdaptation(
     const Adaptation& adaptation,
     rtc::scoped_refptr<Resource> resource) {

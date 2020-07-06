@@ -96,12 +96,6 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   void OnDegradationPreferenceUpdated(
       DegradationPreference degradation_preference) override;
 
-  // May trigger 1-2 adaptations. It is meant to reduce resolution but this is
-  // not guaranteed. It may adapt frame rate, which does not address the issue.
-  // TODO(hbos): Can we get rid of this?
-  void TriggerAdaptationDueToFrameDroppedDueToSize(
-      rtc::scoped_refptr<Resource> reason_resource) override;
-
  private:
   // If resource usage measurements happens off the adaptation task queue, this
   // class takes care of posting the measurement for the processor to handle it

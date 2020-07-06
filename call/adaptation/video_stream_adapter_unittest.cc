@@ -782,6 +782,82 @@ TEST_F(VideoStreamAdapterTest,
   EXPECT_EQ(0, adapter_.adaptation_counters().Total());
 }
 
+TEST_F(VideoStreamAdapterTest,
+       GetAdaptDownResolutionAdaptsResolutionInMaintainFramerate) {
+  adapter_.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
+  input_state_provider_.SetInputState(1280 * 720, 30,
+                                      kDefaultMinPixelsPerFrame);
+
+  auto adaptation = adapter_.GetAdaptDownResolution();
+  EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
+  EXPECT_EQ(1, adaptation.counters().resolution_adaptations);
+  EXPECT_EQ(0, adaptation.counters().fps_adaptations);
+}
+
+TEST_F(
+    VideoStreamAdapterTest,
+    GetAdaptDownResolutionReturnsLimitReachedInDisabledAndMaintainResolution) {
+  adapter_.SetDegradationPreference(DegradationPreference::DISABLED);
+  input_state_provider_.SetInputState(1280 * 720, 30,
+                                      kDefaultMinPixelsPerFrame);
+  EXPECT_EQ(Adaptation::Status::kLimitReached,
+            adapter_.GetAdaptDownResolution().status());
+  adapter_.SetDegradationPreference(DegradationPreference::DISABLED);
+  EXPECT_EQ(Adaptation::Status::kLimitReached,
+            adapter_.GetAdaptDownResolution().status());
+}
+
+TEST_F(VideoStreamAdapterTest,
+       GetAdaptDownResolutionAdaptsFpsAndResolutionInBalanced) {
+  // Note: This test depends on BALANCED implementation, but with current
+  // implementation and input state settings, BALANCED will adapt resolution and
+  // frame rate once.
+  adapter_.SetDegradationPreference(DegradationPreference::BALANCED);
+  input_state_provider_.SetInputState(1280 * 720, 30,
+                                      kDefaultMinPixelsPerFrame);
+
+  auto adaptation = adapter_.GetAdaptDownResolution();
+  EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
+  EXPECT_EQ(1, adaptation.counters().resolution_adaptations);
+  EXPECT_EQ(1, adaptation.counters().fps_adaptations);
+}
+
+TEST_F(
+    VideoStreamAdapterTest,
+    GetAdaptDownResolutionAdaptsOnlyResolutionIfFpsAlreadyAdapterInBalanced) {
+  // Note: This test depends on BALANCED implementation, but with current
+  // implementation and input state settings, BALANCED will adapt resolution
+  // only.
+  adapter_.SetDegradationPreference(DegradationPreference::BALANCED);
+  input_state_provider_.SetInputState(1280 * 720, 5, kDefaultMinPixelsPerFrame);
+  FakeVideoStream fake_stream(&adapter_, &input_state_provider_, 1280 * 720, 30,
+                              kDefaultMinPixelsPerFrame);
+
+  auto first_adaptation = adapter_.GetAdaptationDown();
+  fake_stream.ApplyAdaptation(first_adaptation);
+
+  auto adaptation = adapter_.GetAdaptDownResolution();
+  EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
+  EXPECT_EQ(1, adaptation.counters().resolution_adaptations);
+  EXPECT_EQ(first_adaptation.counters().fps_adaptations,
+            adaptation.counters().fps_adaptations);
+}
+
+TEST_F(VideoStreamAdapterTest,
+       GetAdaptDownResolutionAdaptsOnlyFpsIfResolutionLowInBalanced) {
+  // Note: This test depends on BALANCED implementation, but with current
+  // implementation and input state settings, BALANCED will adapt resolution
+  // only.
+  adapter_.SetDegradationPreference(DegradationPreference::BALANCED);
+  input_state_provider_.SetInputState(kDefaultMinPixelsPerFrame, 30,
+                                      kDefaultMinPixelsPerFrame);
+
+  auto adaptation = adapter_.GetAdaptDownResolution();
+  EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
+  EXPECT_EQ(0, adaptation.counters().resolution_adaptations);
+  EXPECT_EQ(1, adaptation.counters().fps_adaptations);
+}
+
 // Death tests.
 // Disabled on Android because death tests misbehave on Android, see
 // base/test/gtest_util.h.
