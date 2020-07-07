@@ -578,15 +578,18 @@ void PeerConnectionE2EQualityTest::WaitUntilIceCandidatesGathered(
 void PeerConnectionE2EQualityTest::WaitUntilPeersAreConnected(
     rtc::Thread* signaling_thread) {
   // This means that ICE and DTLS are connected.
-  time_controller_.Wait(
+  alice_connected_ = time_controller_.Wait(
       [&]() {
-        return signaling_thread->Invoke<bool>(RTC_FROM_HERE, [&]() {
-          return alice_->IsIceConnected() && bob_->IsIceConnected();
-        });
+        return signaling_thread->Invoke<bool>(
+            RTC_FROM_HERE, [&]() { return alice_->IsIceConnected(); });
       },
-      2 * kDefaultTimeout);
-  alice_connected_ = alice_->IsIceConnected();
-  bob_connected_ = bob_->IsIceConnected();
+      kDefaultTimeout);
+  bob_connected_ = time_controller_.Wait(
+      [&]() {
+        return signaling_thread->Invoke<bool>(
+            RTC_FROM_HERE, [&]() { return bob_->IsIceConnected(); });
+      },
+      kDefaultTimeout);
 }
 
 void PeerConnectionE2EQualityTest::ExchangeOfferAnswer(
