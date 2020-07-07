@@ -67,19 +67,19 @@ void FakeEncoder::SetFecControllerOverride(
 
 void FakeEncoder::SetMaxBitrate(int max_kbps) {
   RTC_DCHECK_GE(max_kbps, -1);  // max_kbps == -1 disables it.
-  rtc::CritScope cs(&crit_sect_);
+  MutexLock lock(&mutex_);
   max_target_bitrate_kbps_ = max_kbps;
   SetRatesLocked(current_rate_settings_);
 }
 
 void FakeEncoder::SetQp(int qp) {
-  rtc::CritScope cs(&crit_sect_);
+  MutexLock lock(&mutex_);
   qp_ = qp;
 }
 
 int32_t FakeEncoder::InitEncode(const VideoCodec* config,
                                 const Settings& settings) {
-  rtc::CritScope cs(&crit_sect_);
+  MutexLock lock(&mutex_);
   config_ = *config;
   current_rate_settings_.bitrate.SetBitrate(0, 0, config_.startBitrate * 1000);
   current_rate_settings_.framerate_fps = config_.maxFramerate;
@@ -100,7 +100,7 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
   uint32_t counter;
   absl::optional<int> qp;
   {
-    rtc::CritScope cs(&crit_sect_);
+    MutexLock lock(&mutex_);
     max_framerate = config_.maxFramerate;
     num_simulcast_streams = config_.numberOfSimulcastStreams;
     for (int i = 0; i < num_simulcast_streams; ++i) {
@@ -182,7 +182,7 @@ FakeEncoder::FrameInfo FakeEncoder::NextFrame(
     }
   }
 
-  rtc::CritScope cs(&crit_sect_);
+  MutexLock lock(&mutex_);
   for (uint8_t i = 0; i < num_simulcast_streams; ++i) {
     if (target_bitrate.GetBitrate(i, 0) > 0) {
       int temporal_id = last_frame_info_.layers.size() > i
@@ -232,7 +232,7 @@ FakeEncoder::FrameInfo FakeEncoder::NextFrame(
 
 int32_t FakeEncoder::RegisterEncodeCompleteCallback(
     EncodedImageCallback* callback) {
-  rtc::CritScope cs(&crit_sect_);
+  MutexLock lock(&mutex_);
   callback_ = callback;
   return 0;
 }
@@ -242,7 +242,7 @@ int32_t FakeEncoder::Release() {
 }
 
 void FakeEncoder::SetRates(const RateControlParameters& parameters) {
-  rtc::CritScope cs(&crit_sect_);
+  MutexLock lock(&mutex_);
   SetRatesLocked(parameters);
 }
 
@@ -280,7 +280,7 @@ VideoEncoder::EncoderInfo FakeEncoder::GetEncoderInfo() const {
 }
 
 int FakeEncoder::GetConfiguredInputFramerate() const {
-  rtc::CritScope cs(&crit_sect_);
+  MutexLock lock(&mutex_);
   return static_cast<int>(current_rate_settings_.framerate_fps + 0.5);
 }
 
@@ -295,7 +295,7 @@ std::unique_ptr<RTPFragmentationHeader> FakeH264Encoder::EncodeHook(
   const int kIdrFrequency = 10;
   int current_idr_counter;
   {
-    rtc::CritScope cs(&local_crit_sect_);
+    MutexLock lock(&local_mutex_);
     current_idr_counter = idr_counter_;
     ++idr_counter_;
   }

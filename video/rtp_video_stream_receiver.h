@@ -42,9 +42,9 @@
 #include "modules/video_coding/rtp_frame_reference_finder.h"
 #include "modules/video_coding/unique_timestamp_counter.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/numerics/sequence_number_util.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
@@ -275,7 +275,7 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
     LossNotificationSender* const loss_notification_sender_;
 
     // NACKs are accessible from two threads due to nack_module_ being a module.
-    rtc::CriticalSection cs_;
+    Mutex cs_;
 
     // Key-frame-request-related state.
     bool request_key_frame_ RTC_GUARDED_BY(cs_);
@@ -351,13 +351,13 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   absl::optional<int64_t> video_structure_frame_id_
       RTC_GUARDED_BY(worker_task_checker_);
 
-  rtc::CriticalSection reference_finder_lock_;
+  Mutex reference_finder_lock_;
   std::unique_ptr<video_coding::RtpFrameReferenceFinder> reference_finder_
       RTC_GUARDED_BY(reference_finder_lock_);
   absl::optional<VideoCodecType> current_codec_;
   uint32_t last_assembled_frame_rtp_timestamp_;
 
-  rtc::CriticalSection last_seq_num_cs_;
+  Mutex last_seq_num_cs_;
   std::map<int64_t, uint16_t> last_seq_num_for_pic_id_
       RTC_GUARDED_BY(last_seq_num_cs_);
   video_coding::H264SpsPpsTracker tracker_;
@@ -378,7 +378,7 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
 
   // Info for GetSyncInfo is updated on network or worker thread, and queried on
   // the worker thread.
-  rtc::CriticalSection sync_info_lock_;
+  mutable Mutex sync_info_lock_;
   absl::optional<uint32_t> last_received_rtp_timestamp_
       RTC_GUARDED_BY(sync_info_lock_);
   absl::optional<int64_t> last_received_rtp_system_time_ms_

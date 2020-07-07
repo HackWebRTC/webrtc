@@ -23,6 +23,7 @@
 #include "modules/rtp_rtcp/source/source_tracker.h"
 #include "modules/video_coding/frame_buffer2.h"
 #include "modules/video_coding/video_receiver2.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_queue.h"
 #include "system_wrappers/include/clock.h"
@@ -205,7 +206,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   const int max_wait_for_keyframe_ms_;
   const int max_wait_for_frame_ms_;
 
-  rtc::CriticalSection playout_delay_lock_;
+  mutable Mutex playout_delay_lock_;
 
   // All of them tries to change current min_playout_delay on |timing_| but
   // source of the change request is different in each case. Among them the
