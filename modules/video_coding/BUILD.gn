@@ -280,6 +280,7 @@ rtc_library("video_coding_legacy") {
     "../../rtc_base:logging",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_event",
+    "../../rtc_base/synchronization:mutex",
     "../../rtc_base/synchronization:sequence_checker",
     "../../system_wrappers",
     "../rtp_rtcp:rtp_rtcp_format",
@@ -437,6 +438,7 @@ rtc_library("webrtc_multiplex") {
     "../../media:rtc_media_base",
     "../../rtc_base",
     "../../rtc_base:checks",
+    "../../rtc_base/synchronization:mutex",
     "../rtp_rtcp:rtp_rtcp_format",
   ]
 }
@@ -572,6 +574,7 @@ rtc_library("webrtc_vp9") {
     "../../rtc_base",
     "../../rtc_base:checks",
     "../../rtc_base/experiments:rate_control_settings",
+    "../../rtc_base/synchronization:mutex",
     "../../system_wrappers:field_trial",
     "../rtp_rtcp:rtp_rtcp_format",
   ]
@@ -707,6 +710,7 @@ if (rtc_include_tests) {
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_task_queue",
+      "../../rtc_base/synchronization:mutex",
       "../../rtc_base/synchronization:sequence_checker",
       "../../rtc_base/task_utils:to_queued_task",
       "../../test:test_support",
@@ -1001,6 +1005,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_task_queue",
       "../../rtc_base:task_queue_for_test",
       "../../rtc_base/experiments:jitter_upper_bound_experiment",
+      "../../rtc_base/synchronization:mutex",
       "../../system_wrappers",
       "../../system_wrappers:field_trial",
       "../../system_wrappers:metrics",

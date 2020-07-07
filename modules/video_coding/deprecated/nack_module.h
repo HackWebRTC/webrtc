@@ -21,9 +21,9 @@
 #include "modules/include/module.h"
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/histogram.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/numerics/sequence_number_util.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
 
@@ -80,24 +80,24 @@ class DEPRECATED_NackModule : public Module {
   };
 
   void AddPacketsToNack(uint16_t seq_num_start, uint16_t seq_num_end)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   // Removes packets from the nack list until the next keyframe. Returns true
   // if packets were removed.
-  bool RemovePacketsUntilKeyFrame() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  bool RemovePacketsUntilKeyFrame() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   std::vector<uint16_t> GetNackBatch(NackFilterOptions options)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   // Update the reordering distribution.
   void UpdateReorderingStatistics(uint16_t seq_num)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   // Returns how many packets we have to wait in order to receive the packet
   // with probability |probabilty| or higher.
   int WaitNumberOfPackets(float probability) const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
-  rtc::CriticalSection crit_;
+  Mutex mutex_;
   Clock* const clock_;
   NackSender* const nack_sender_;
   KeyFrameRequestSender* const keyframe_request_sender_;
@@ -106,15 +106,15 @@ class DEPRECATED_NackModule : public Module {
   // known thread (e.g. see |initialized_|). Those probably do not need
   // synchronized access.
   std::map<uint16_t, NackInfo, DescendingSeqNumComp<uint16_t>> nack_list_
-      RTC_GUARDED_BY(crit_);
+      RTC_GUARDED_BY(mutex_);
   std::set<uint16_t, DescendingSeqNumComp<uint16_t>> keyframe_list_
-      RTC_GUARDED_BY(crit_);
+      RTC_GUARDED_BY(mutex_);
   std::set<uint16_t, DescendingSeqNumComp<uint16_t>> recovered_list_
-      RTC_GUARDED_BY(crit_);
-  video_coding::Histogram reordering_histogram_ RTC_GUARDED_BY(crit_);
-  bool initialized_ RTC_GUARDED_BY(crit_);
-  int64_t rtt_ms_ RTC_GUARDED_BY(crit_);
-  uint16_t newest_seq_num_ RTC_GUARDED_BY(crit_);
+      RTC_GUARDED_BY(mutex_);
+  video_coding::Histogram reordering_histogram_ RTC_GUARDED_BY(mutex_);
+  bool initialized_ RTC_GUARDED_BY(mutex_);
+  int64_t rtt_ms_ RTC_GUARDED_BY(mutex_);
+  uint16_t newest_seq_num_ RTC_GUARDED_BY(mutex_);
 
   // Only touched on the process thread.
   int64_t next_process_time_ms_;

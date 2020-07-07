@@ -31,7 +31,6 @@
 #include "modules/video_coding/timing.h"
 #include "modules/video_coding/video_coding_impl.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/one_time_event.h"
@@ -71,7 +70,7 @@ void VideoReceiver::Process() {
     _keyRequestTimer.Processed();
     bool request_key_frame = _frameTypeCallback != nullptr;
     if (request_key_frame) {
-      rtc::CritScope cs(&process_crit_);
+      MutexLock lock(&process_mutex_);
       request_key_frame = _scheduleKeyRequest;
     }
     if (request_key_frame)
@@ -94,7 +93,7 @@ void VideoReceiver::Process() {
         ret = RequestKeyFrame();
       }
       if (ret == VCM_OK && !nackList.empty()) {
-        rtc::CritScope cs(&process_crit_);
+        MutexLock lock(&process_mutex_);
         if (_packetRequestCallback != nullptr) {
           _packetRequestCallback->ResendPackets(&nackList[0], nackList.size());
         }
@@ -183,7 +182,7 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
 
   bool drop_frame = false;
   {
-    rtc::CritScope cs(&process_crit_);
+    MutexLock lock(&process_mutex_);
     if (drop_frames_until_keyframe_) {
       // Still getting delta frames, schedule another keyframe request as if
       // decode failed.
@@ -229,7 +228,7 @@ int32_t VideoReceiver::RequestKeyFrame() {
     if (ret < 0) {
       return ret;
     }
-    rtc::CritScope cs(&process_crit_);
+    MutexLock lock(&process_mutex_);
     _scheduleKeyRequest = false;
   } else {
     return VCM_MISSING_CALLBACK;
@@ -291,7 +290,7 @@ int32_t VideoReceiver::IncomingPacket(const uint8_t* incomingPayload,
   // request scheduling to throttle the requests.
   if (ret == VCM_FLUSH_INDICATOR) {
     {
-      rtc::CritScope cs(&process_crit_);
+      MutexLock lock(&process_mutex_);
       drop_frames_until_keyframe_ = true;
     }
     RequestKeyFrame();

@@ -21,7 +21,7 @@
 #include "api/video_codecs/video_encoder_factory.h"
 #include "modules/video_coding/codecs/multiplex/multiplex_encoded_image_packer.h"
 #include "modules/video_coding/include/video_codec_interface.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 
 namespace webrtc {
 
@@ -71,7 +71,7 @@ class MultiplexEncoderAdapter : public VideoEncoder {
   EncodedImageCallback* encoded_complete_callback_;
 
   std::map<uint32_t /* timestamp */, MultiplexImage> stashed_images_
-      RTC_GUARDED_BY(crit_);
+      RTC_GUARDED_BY(mutex_);
 
   uint16_t picture_index_ = 0;
   std::vector<uint8_t> multiplex_dummy_planes_;
@@ -79,7 +79,7 @@ class MultiplexEncoderAdapter : public VideoEncoder {
   int key_frame_interval_;
   EncodedImage combined_image_;
 
-  rtc::CriticalSection crit_;
+  Mutex mutex_;
 
   const bool supports_augmented_data_;
   int augmenting_data_size_ = 0;

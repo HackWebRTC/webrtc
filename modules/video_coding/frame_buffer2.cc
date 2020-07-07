@@ -82,7 +82,7 @@ void FrameBuffer::NextFrame(
   int64_t latest_return_time_ms =
       clock_->TimeInMilliseconds() + max_wait_time_ms;
 
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   if (stopped_) {
     return;
   }
@@ -102,7 +102,7 @@ void FrameBuffer::StartWaitForNextFrameOnQueue() {
         RTC_DCHECK_RUN_ON(&callback_checker_);
         // If this task has not been cancelled, we did not get any new frames
         // while waiting. Continue with frame delivery.
-        rtc::CritScope lock(&crit_);
+        MutexLock lock(&mutex_);
         if (!frames_to_decode_.empty()) {
           // We have frames, deliver!
           frame_handler_(absl::WrapUnique(GetNextFrame()), kFrameFound);
@@ -329,19 +329,19 @@ bool FrameBuffer::HasBadRenderTiming(const EncodedFrame& frame,
 
 void FrameBuffer::SetProtectionMode(VCMVideoProtection mode) {
   TRACE_EVENT0("webrtc", "FrameBuffer::SetProtectionMode");
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   protection_mode_ = mode;
 }
 
 void FrameBuffer::Start() {
   TRACE_EVENT0("webrtc", "FrameBuffer::Start");
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   stopped_ = false;
 }
 
 void FrameBuffer::Stop() {
   TRACE_EVENT0("webrtc", "FrameBuffer::Stop");
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   if (stopped_)
     return;
   stopped_ = true;
@@ -350,12 +350,12 @@ void FrameBuffer::Stop() {
 }
 
 void FrameBuffer::Clear() {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   ClearFramesAndHistory();
 }
 
 void FrameBuffer::UpdateRtt(int64_t rtt_ms) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   jitter_estimator_.UpdateRtt(rtt_ms);
 }
 
@@ -431,7 +431,7 @@ int64_t FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
   TRACE_EVENT0("webrtc", "FrameBuffer::InsertFrame");
   RTC_DCHECK(frame);
 
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
 
   const VideoLayerFrameId& id = frame->id;
   int64_t last_continuous_picture_id =
@@ -529,7 +529,7 @@ int64_t FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
     // to return from NextFrame.
     if (callback_queue_) {
       callback_queue_->PostTask([this] {
-        rtc::CritScope lock(&crit_);
+        MutexLock lock(&mutex_);
         if (!callback_task_.Running())
           return;
         RTC_CHECK(frame_handler_);

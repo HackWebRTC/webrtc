@@ -180,7 +180,7 @@ int MultiplexEncoderAdapter::Encode(
   }
 
   {
-    rtc::CritScope cs(&crit_);
+    MutexLock lock(&mutex_);
     stashed_images_.emplace(
         std::piecewise_construct,
         std::forward_as_tuple(input_image.timestamp()),
@@ -273,7 +273,7 @@ int MultiplexEncoderAdapter::Release() {
   }
   encoders_.clear();
   adapter_callbacks_.clear();
-  rtc::CritScope cs(&crit_);
+  MutexLock lock(&mutex_);
   stashed_images_.clear();
 
   return WEBRTC_VIDEO_CODEC_OK;
@@ -298,7 +298,7 @@ EncodedImageCallback::Result MultiplexEncoderAdapter::OnEncodedImage(
   // If we don't already own the buffer, make a copy.
   image_component.encoded_image.Retain();
 
-  rtc::CritScope cs(&crit_);
+  MutexLock lock(&mutex_);
   const auto& stashed_image_itr =
       stashed_images_.find(encodedImage.Timestamp());
   const auto& stashed_image_next_itr = std::next(stashed_image_itr, 1);

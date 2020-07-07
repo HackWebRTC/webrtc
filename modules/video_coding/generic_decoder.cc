@@ -86,7 +86,7 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
   // callbacks from one call to Decode().
   VCMFrameInformation* frameInfo;
   {
-    rtc::CritScope cs(&lock_);
+    MutexLock lock(&lock_);
     frameInfo = _timestampMap.Pop(decodedImage.timestamp());
   }
 
@@ -172,12 +172,12 @@ void VCMDecodedFrameCallback::OnDecoderImplementationName(
 
 void VCMDecodedFrameCallback::Map(uint32_t timestamp,
                                   VCMFrameInformation* frameInfo) {
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   _timestampMap.Add(timestamp, frameInfo);
 }
 
 int32_t VCMDecodedFrameCallback::Pop(uint32_t timestamp) {
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   if (_timestampMap.Pop(timestamp) == NULL) {
     return VCM_GENERAL_ERROR;
   }
