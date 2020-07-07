@@ -129,7 +129,7 @@
 #include <string>
 
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 
 #define BWE_TEST_LOGGING_GLOBAL_CONTEXT(name)                             \
   do {                                                                    \
@@ -345,7 +345,7 @@ class Logging {
                  bool enabled);
   void PopState();
 
-  rtc::CriticalSection crit_sect_;
+  Mutex mutex_;
   ThreadMap thread_map_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Logging);
