@@ -88,6 +88,7 @@ bool AudioSendStream::Config::SendCodecSpec::operator==(
   if (nack_enabled == rhs.nack_enabled &&
       transport_cc_enabled == rhs.transport_cc_enabled &&
       cng_payload_type == rhs.cng_payload_type &&
+      red_payload_type == rhs.red_payload_type &&
       payload_type == rhs.payload_type && format == rhs.format &&
       target_bitrate_bps == rhs.target_bitrate_bps) {
     return true;
