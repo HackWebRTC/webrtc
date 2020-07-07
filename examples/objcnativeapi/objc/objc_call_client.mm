@@ -68,7 +68,7 @@ void ObjCCallClient::Call(RTC_OBJC_TYPE(RTCVideoCapturer) * capturer,
                           id<RTC_OBJC_TYPE(RTCVideoRenderer)> remote_renderer) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
 
-  rtc::CritScope lock(&pc_mutex_);
+  webrtc::MutexLock lock(&pc_mutex_);
   if (call_started_) {
     RTC_LOG(LS_WARNING) << "Call already started.";
     return;
@@ -90,7 +90,7 @@ void ObjCCallClient::Hangup() {
   call_started_ = false;
 
   {
-    rtc::CritScope lock(&pc_mutex_);
+    webrtc::MutexLock lock(&pc_mutex_);
     if (pc_ != nullptr) {
       pc_->Close();
       pc_ = nullptr;
@@ -138,7 +138,7 @@ void ObjCCallClient::CreatePeerConnectionFactory() {
 }
 
 void ObjCCallClient::CreatePeerConnection() {
-  rtc::CritScope lock(&pc_mutex_);
+  webrtc::MutexLock lock(&pc_mutex_);
   webrtc::PeerConnectionInterface::RTCConfiguration config;
   config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
   // DTLS SRTP has to be disabled for loopback to work.
@@ -165,7 +165,7 @@ void ObjCCallClient::CreatePeerConnection() {
 }
 
 void ObjCCallClient::Connect() {
-  rtc::CritScope lock(&pc_mutex_);
+  webrtc::MutexLock lock(&pc_mutex_);
   pc_->CreateOffer(new rtc::RefCountedObject<CreateOfferObserver>(pc_),
                    webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
 }
@@ -198,7 +198,7 @@ void ObjCCallClient::PCObserver::OnIceGatheringChange(
 
 void ObjCCallClient::PCObserver::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
   RTC_LOG(LS_INFO) << "OnIceCandidate: " << candidate->server_url();
-  rtc::CritScope lock(&client_->pc_mutex_);
+  webrtc::MutexLock lock(&client_->pc_mutex_);
   RTC_DCHECK(client_->pc_ != nullptr);
   client_->pc_->AddIceCandidate(candidate);
 }

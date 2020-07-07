@@ -491,6 +491,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "../modules/audio_processing:api",
         "../pc:libjingle_peerconnection",
         "../rtc_base",
+        "../rtc_base/synchronization:mutex",
         "../sdk:base_objc",
         "../sdk:default_codec_factory_objc",
         "../sdk:helpers_objc",
