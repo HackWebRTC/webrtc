@@ -32,8 +32,8 @@
 #include "media/engine/constants.h"
 #include "media/engine/unhandled_packets_buffer.h"
 #include "rtc_base/async_invoker.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/network_route.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
 
@@ -516,7 +516,7 @@ class WebRtcVideoChannel : public VideoMediaChannel,
 
     webrtc::VideoDecoderFactory* const decoder_factory_;
 
-    rtc::CriticalSection sink_lock_;
+    webrtc::Mutex sink_lock_;
     rtc::VideoSinkInterface<webrtc::VideoFrame>* sink_
         RTC_GUARDED_BY(sink_lock_);
     // Expands remote RTP timestamps to int64_t to be able to estimate how long

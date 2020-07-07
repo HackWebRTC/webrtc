@@ -148,7 +148,7 @@ void FakeWebRtcVideoEncoder::SetFecControllerOverride(
 int32_t FakeWebRtcVideoEncoder::InitEncode(
     const webrtc::VideoCodec* codecSettings,
     const VideoEncoder::Settings& settings) {
-  rtc::CritScope lock(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   codec_settings_ = *codecSettings;
   init_encode_event_.Set();
   return WEBRTC_VIDEO_CODEC_OK;
@@ -157,7 +157,7 @@ int32_t FakeWebRtcVideoEncoder::InitEncode(
 int32_t FakeWebRtcVideoEncoder::Encode(
     const webrtc::VideoFrame& inputImage,
     const std::vector<webrtc::VideoFrameType>* frame_types) {
-  rtc::CritScope lock(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   ++num_frames_encoded_;
   init_encode_event_.Set();
   return WEBRTC_VIDEO_CODEC_OK;
@@ -188,12 +188,12 @@ bool FakeWebRtcVideoEncoder::WaitForInitEncode() {
 }
 
 webrtc::VideoCodec FakeWebRtcVideoEncoder::GetCodecSettings() {
-  rtc::CritScope lock(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   return codec_settings_;
 }
 
 int FakeWebRtcVideoEncoder::GetNumEncodedFrames() {
-  rtc::CritScope lock(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   return num_frames_encoded_;
 }
 
@@ -219,7 +219,7 @@ FakeWebRtcVideoEncoderFactory::GetSupportedFormats() const {
 std::unique_ptr<webrtc::VideoEncoder>
 FakeWebRtcVideoEncoderFactory::CreateVideoEncoder(
     const webrtc::SdpVideoFormat& format) {
-  rtc::CritScope lock(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   std::unique_ptr<webrtc::VideoEncoder> encoder;
   if (IsFormatSupported(formats_, format)) {
     if (absl::EqualsIgnoreCase(format.name, kVp8CodecName) &&
@@ -262,7 +262,7 @@ bool FakeWebRtcVideoEncoderFactory::WaitForCreatedVideoEncoders(
 
 void FakeWebRtcVideoEncoderFactory::EncoderDestroyed(
     FakeWebRtcVideoEncoder* encoder) {
-  rtc::CritScope lock(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   encoders_.erase(std::remove(encoders_.begin(), encoders_.end(), encoder),
                   encoders_.end());
 }
@@ -286,13 +286,13 @@ void FakeWebRtcVideoEncoderFactory::AddSupportedVideoCodecType(
 }
 
 int FakeWebRtcVideoEncoderFactory::GetNumCreatedEncoders() {
-  rtc::CritScope lock(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   return num_created_encoders_;
 }
 
 const std::vector<FakeWebRtcVideoEncoder*>
 FakeWebRtcVideoEncoderFactory::encoders() {
-  rtc::CritScope lock(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   return encoders_;
 }
 

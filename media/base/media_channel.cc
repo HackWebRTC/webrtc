@@ -24,7 +24,7 @@ MediaChannel::MediaChannel() : enable_dscp_(false) {}
 MediaChannel::~MediaChannel() {}
 
 void MediaChannel::SetInterface(NetworkInterface* iface) {
-  rtc::CritScope cs(&network_interface_crit_);
+  webrtc::MutexLock lock(&network_interface_mutex_);
   network_interface_ = iface;
   UpdateDscp();
 }
