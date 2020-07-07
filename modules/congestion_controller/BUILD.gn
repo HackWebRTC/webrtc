@@ -28,6 +28,7 @@ rtc_library("congestion_controller") {
     "..:module_api",
     "../../api/transport:field_trial_based_config",
     "../../api/transport:network_control",
+    "../../rtc_base/synchronization:mutex",
     "../pacing",
     "../remote_bitrate_estimator",
     "../rtp_rtcp:rtp_rtcp_format",

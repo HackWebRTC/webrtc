@@ -19,7 +19,7 @@
 #include "modules/include/module.h"
 #include "modules/remote_bitrate_estimator/remote_estimator_proxy.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 
 namespace webrtc {
 class RemoteBitrateEstimator;
@@ -87,11 +87,11 @@ class ReceiveSideCongestionController : public CallStatsObserver,
 
    private:
     void PickEstimatorFromHeader(const RTPHeader& header)
-        RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-    void PickEstimator() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+        RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+    void PickEstimator() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
     RemoteBitrateObserver* observer_;
     Clock* const clock_;
-    rtc::CriticalSection crit_sect_;
+    mutable Mutex mutex_;
     std::unique_ptr<RemoteBitrateEstimator> rbe_;
     bool using_absolute_send_time_;
     uint32_t packets_since_absolute_send_time_;
