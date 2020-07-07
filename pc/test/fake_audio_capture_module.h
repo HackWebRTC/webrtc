@@ -24,8 +24,8 @@
 
 #include "api/scoped_refptr.h"
 #include "modules/audio_device/include/audio_device.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/message_handler.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 
 namespace rtc {
@@ -48,13 +48,13 @@ class FakeAudioCaptureModule : public webrtc::AudioDeviceModule,
   // Returns the number of frames that have been successfully pulled by the
   // instance. Note that correctly detecting success can only be done if the
   // pulled frame was generated/pushed from a FakeAudioCaptureModule.
-  int frames_received() const RTC_LOCKS_EXCLUDED(crit_);
+  int frames_received() const RTC_LOCKS_EXCLUDED(mutex_);
 
   int32_t ActiveAudioLayer(AudioLayer* audio_layer) const override;
 
   // Note: Calling this method from a callback may result in deadlock.
   int32_t RegisterAudioCallback(webrtc::AudioTransport* audio_callback) override
-      RTC_LOCKS_EXCLUDED(crit_);
+      RTC_LOCKS_EXCLUDED(mutex_);
 
   int32_t Init() override;
   int32_t Terminate() override;
@@ -81,12 +81,12 @@ class FakeAudioCaptureModule : public webrtc::AudioDeviceModule,
   int32_t InitRecording() override;
   bool RecordingIsInitialized() const override;
 
-  int32_t StartPlayout() RTC_LOCKS_EXCLUDED(crit_) override;
-  int32_t StopPlayout() RTC_LOCKS_EXCLUDED(crit_) override;
-  bool Playing() const RTC_LOCKS_EXCLUDED(crit_) override;
-  int32_t StartRecording() RTC_LOCKS_EXCLUDED(crit_) override;
-  int32_t StopRecording() RTC_LOCKS_EXCLUDED(crit_) override;
-  bool Recording() const RTC_LOCKS_EXCLUDED(crit_) override;
+  int32_t StartPlayout() RTC_LOCKS_EXCLUDED(mutex_) override;
+  int32_t StopPlayout() RTC_LOCKS_EXCLUDED(mutex_) override;
+  bool Playing() const RTC_LOCKS_EXCLUDED(mutex_) override;
+  int32_t StartRecording() RTC_LOCKS_EXCLUDED(mutex_) override;
+  int32_t StopRecording() RTC_LOCKS_EXCLUDED(mutex_) override;
+  bool Recording() const RTC_LOCKS_EXCLUDED(mutex_) override;
 
   int32_t InitSpeaker() override;
   bool SpeakerIsInitialized() const override;
@@ -101,9 +101,9 @@ class FakeAudioCaptureModule : public webrtc::AudioDeviceModule,
 
   int32_t MicrophoneVolumeIsAvailable(bool* available) override;
   int32_t SetMicrophoneVolume(uint32_t volume)
-      RTC_LOCKS_EXCLUDED(crit_) override;
+      RTC_LOCKS_EXCLUDED(mutex_) override;
   int32_t MicrophoneVolume(uint32_t* volume) const
-      RTC_LOCKS_EXCLUDED(crit_) override;
+      RTC_LOCKS_EXCLUDED(mutex_) override;
   int32_t MaxMicrophoneVolume(uint32_t* max_volume) const override;
 
   int32_t MinMicrophoneVolume(uint32_t* min_volume) const override;
@@ -173,28 +173,28 @@ class FakeAudioCaptureModule : public webrtc::AudioDeviceModule,
 
   // Returns true/false depending on if recording or playback has been
   // enabled/started.
-  bool ShouldStartProcessing() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  bool ShouldStartProcessing() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   // Starts or stops the pushing and pulling of audio frames.
-  void UpdateProcessing(bool start) RTC_LOCKS_EXCLUDED(crit_);
+  void UpdateProcessing(bool start) RTC_LOCKS_EXCLUDED(mutex_);
 
   // Starts the periodic calling of ProcessFrame() in a thread safe way.
   void StartProcessP();
   // Periodcally called function that ensures that frames are pulled and pushed
   // periodically if enabled/started.
-  void ProcessFrameP() RTC_LOCKS_EXCLUDED(crit_);
+  void ProcessFrameP() RTC_LOCKS_EXCLUDED(mutex_);
   // Pulls frames from the registered webrtc::AudioTransport.
-  void ReceiveFrameP() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void ReceiveFrameP() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   // Pushes frames to the registered webrtc::AudioTransport.
-  void SendFrameP() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void SendFrameP() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   // Callback for playout and recording.
-  webrtc::AudioTransport* audio_callback_ RTC_GUARDED_BY(crit_);
+  webrtc::AudioTransport* audio_callback_ RTC_GUARDED_BY(mutex_);
 
   bool recording_ RTC_GUARDED_BY(
-      crit_);  // True when audio is being pushed from the instance.
+      mutex_);  // True when audio is being pushed from the instance.
   bool playing_ RTC_GUARDED_BY(
-      crit_);  // True when audio is being pulled by the instance.
+      mutex_);  // True when audio is being pulled by the instance.
 
   bool play_is_initialized_;  // True when the instance is ready to pull audio.
   bool rec_is_initialized_;   // True when the instance is ready to push audio.
@@ -202,12 +202,12 @@ class FakeAudioCaptureModule : public webrtc::AudioDeviceModule,
   // Input to and output from RecordedDataIsAvailable(..) makes it possible to
   // modify the current mic level. The implementation does not care about the
   // mic level so it just feeds back what it receives.
-  uint32_t current_mic_level_ RTC_GUARDED_BY(crit_);
+  uint32_t current_mic_level_ RTC_GUARDED_BY(mutex_);
 
   // next_frame_time_ is updated in a non-drifting manner to indicate the next
   // wall clock time the next frame should be generated and received. started_
   // ensures that next_frame_time_ can be initialized properly on first call.
-  bool started_ RTC_GUARDED_BY(crit_);
+  bool started_ RTC_GUARDED_BY(mutex_);
   int64_t next_frame_time_ RTC_GUARDED_BY(process_thread_checker_);
 
   std::unique_ptr<rtc::Thread> process_thread_;
@@ -224,7 +224,7 @@ class FakeAudioCaptureModule : public webrtc::AudioDeviceModule,
 
   // Protects variables that are accessed from process_thread_ and
   // the main thread.
-  rtc::CriticalSection crit_;
+  mutable webrtc::Mutex mutex_;
   webrtc::SequenceChecker process_thread_checker_;
 };
 

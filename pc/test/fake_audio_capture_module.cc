@@ -67,7 +67,7 @@ rtc::scoped_refptr<FakeAudioCaptureModule> FakeAudioCaptureModule::Create() {
 }
 
 int FakeAudioCaptureModule::frames_received() const {
-  rtc::CritScope cs(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   return frames_received_;
 }
 
@@ -79,7 +79,7 @@ int32_t FakeAudioCaptureModule::ActiveAudioLayer(
 
 int32_t FakeAudioCaptureModule::RegisterAudioCallback(
     webrtc::AudioTransport* audio_callback) {
-  rtc::CritScope cs(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   audio_callback_ = audio_callback;
   return 0;
 }
@@ -183,7 +183,7 @@ int32_t FakeAudioCaptureModule::StartPlayout() {
     return -1;
   }
   {
-    rtc::CritScope cs(&crit_);
+    webrtc::MutexLock lock(&mutex_);
     playing_ = true;
   }
   bool start = true;
@@ -194,7 +194,7 @@ int32_t FakeAudioCaptureModule::StartPlayout() {
 int32_t FakeAudioCaptureModule::StopPlayout() {
   bool start = false;
   {
-    rtc::CritScope cs(&crit_);
+    webrtc::MutexLock lock(&mutex_);
     playing_ = false;
     start = ShouldStartProcessing();
   }
@@ -203,7 +203,7 @@ int32_t FakeAudioCaptureModule::StopPlayout() {
 }
 
 bool FakeAudioCaptureModule::Playing() const {
-  rtc::CritScope cs(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   return playing_;
 }
 
@@ -212,7 +212,7 @@ int32_t FakeAudioCaptureModule::StartRecording() {
     return -1;
   }
   {
-    rtc::CritScope cs(&crit_);
+    webrtc::MutexLock lock(&mutex_);
     recording_ = true;
   }
   bool start = true;
@@ -223,7 +223,7 @@ int32_t FakeAudioCaptureModule::StartRecording() {
 int32_t FakeAudioCaptureModule::StopRecording() {
   bool start = false;
   {
-    rtc::CritScope cs(&crit_);
+    webrtc::MutexLock lock(&mutex_);
     recording_ = false;
     start = ShouldStartProcessing();
   }
@@ -232,7 +232,7 @@ int32_t FakeAudioCaptureModule::StopRecording() {
 }
 
 bool FakeAudioCaptureModule::Recording() const {
-  rtc::CritScope cs(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   return recording_;
 }
 
@@ -290,13 +290,13 @@ int32_t FakeAudioCaptureModule::MicrophoneVolumeIsAvailable(
 }
 
 int32_t FakeAudioCaptureModule::SetMicrophoneVolume(uint32_t volume) {
-  rtc::CritScope cs(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   current_mic_level_ = volume;
   return 0;
 }
 
 int32_t FakeAudioCaptureModule::MicrophoneVolume(uint32_t* volume) const {
-  rtc::CritScope cs(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   *volume = current_mic_level_;
   return 0;
 }
@@ -452,7 +452,7 @@ void FakeAudioCaptureModule::UpdateProcessing(bool start) {
       process_thread_.reset(nullptr);
       process_thread_checker_.Detach();
     }
-    rtc::CritScope lock(&crit_);
+    webrtc::MutexLock lock(&mutex_);
     started_ = false;
   }
 }
@@ -460,7 +460,7 @@ void FakeAudioCaptureModule::UpdateProcessing(bool start) {
 void FakeAudioCaptureModule::StartProcessP() {
   RTC_DCHECK_RUN_ON(&process_thread_checker_);
   {
-    rtc::CritScope lock(&crit_);
+    webrtc::MutexLock lock(&mutex_);
     if (started_) {
       // Already started.
       return;
@@ -472,7 +472,7 @@ void FakeAudioCaptureModule::StartProcessP() {
 void FakeAudioCaptureModule::ProcessFrameP() {
   RTC_DCHECK_RUN_ON(&process_thread_checker_);
   {
-    rtc::CritScope cs(&crit_);
+    webrtc::MutexLock lock(&mutex_);
     if (!started_) {
       next_frame_time_ = rtc::TimeMillis();
       started_ = true;

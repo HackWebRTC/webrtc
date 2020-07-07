@@ -43,6 +43,7 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/json.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/time_utils.h"
 
 using ::testing::AtLeast;
@@ -3000,7 +3001,7 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
   void OnStatsDelivered(
       const rtc::scoped_refptr<const RTCStatsReport>& report) override {
     EXPECT_TRUE(signaling_thread_->IsCurrent());
-    rtc::CritScope cs(&lock_);
+    MutexLock lock(&lock_);
     delivered_report_ = report;
   }
 
@@ -3011,7 +3012,7 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
 
   bool HasVerifiedResults() {
     EXPECT_TRUE(signaling_thread_->IsCurrent());
-    rtc::CritScope cs(&lock_);
+    MutexLock lock(&lock_);
     if (!delivered_report_)
       return false;
     EXPECT_EQ(produced_on_signaling_thread_, 1);
@@ -3038,7 +3039,7 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
       RTCStatsReport* partial_report) override {
     EXPECT_TRUE(signaling_thread_->IsCurrent());
     {
-      rtc::CritScope cs(&lock_);
+      MutexLock lock(&lock_);
       EXPECT_FALSE(delivered_report_);
       ++produced_on_signaling_thread_;
     }
@@ -3054,7 +3055,7 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
       RTCStatsReport* partial_report) override {
     EXPECT_TRUE(network_thread_->IsCurrent());
     {
-      rtc::CritScope cs(&lock_);
+      MutexLock lock(&lock_);
       EXPECT_FALSE(delivered_report_);
       ++produced_on_network_thread_;
     }
@@ -3068,7 +3069,7 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
 
-  rtc::CriticalSection lock_;
+  Mutex lock_;
   rtc::scoped_refptr<const RTCStatsReport> delivered_report_;
   int produced_on_signaling_thread_ = 0;
   int produced_on_network_thread_ = 0;

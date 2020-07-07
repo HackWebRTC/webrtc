@@ -24,7 +24,7 @@
 #include "media/base/audio_source.h"
 #include "media/base/media_channel.h"
 #include "pc/dtmf_sender.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 
 namespace webrtc {
 
@@ -237,7 +237,7 @@ class LocalAudioSinkAdapter : public AudioTrackSinkInterface,
 
   cricket::AudioSource::Sink* sink_;
   // Critical section protecting |sink_|.
-  rtc::CriticalSection lock_;
+  Mutex lock_;
 };
 
 class AudioRtpSender : public DtmfProviderInterface, public RtpSenderBase {

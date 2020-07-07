@@ -127,7 +127,7 @@ void RemoteAudioSource::AddSink(AudioTrackSinkInterface* sink) {
     return;
   }
 
-  rtc::CritScope lock(&sink_lock_);
+  MutexLock lock(&sink_lock_);
   RTC_DCHECK(!absl::c_linear_search(sinks_, sink));
   sinks_.push_back(sink);
 }
@@ -136,13 +136,13 @@ void RemoteAudioSource::RemoveSink(AudioTrackSinkInterface* sink) {
   RTC_DCHECK(main_thread_->IsCurrent());
   RTC_DCHECK(sink);
 
-  rtc::CritScope lock(&sink_lock_);
+  MutexLock lock(&sink_lock_);
   sinks_.remove(sink);
 }
 
 void RemoteAudioSource::OnData(const AudioSinkInterface::Data& audio) {
   // Called on the externally-owned audio callback thread, via/from webrtc.
-  rtc::CritScope lock(&sink_lock_);
+  MutexLock lock(&sink_lock_);
   for (auto* sink : sinks_) {
     // When peerconnection acts as an audio source, it should not provide
     // absolute capture timestamp.

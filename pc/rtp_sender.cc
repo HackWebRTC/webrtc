@@ -381,7 +381,7 @@ void RtpSenderBase::SetEncoderToPacketizerFrameTransformer(
 LocalAudioSinkAdapter::LocalAudioSinkAdapter() : sink_(nullptr) {}
 
 LocalAudioSinkAdapter::~LocalAudioSinkAdapter() {
-  rtc::CritScope lock(&lock_);
+  MutexLock lock(&lock_);
   if (sink_)
     sink_->OnClose();
 }
@@ -393,7 +393,7 @@ void LocalAudioSinkAdapter::OnData(
     size_t number_of_channels,
     size_t number_of_frames,
     absl::optional<int64_t> absolute_capture_timestamp_ms) {
-  rtc::CritScope lock(&lock_);
+  MutexLock lock(&lock_);
   if (sink_) {
     sink_->OnData(audio_data, bits_per_sample, sample_rate, number_of_channels,
                   number_of_frames, absolute_capture_timestamp_ms);
@@ -401,7 +401,7 @@ void LocalAudioSinkAdapter::OnData(
 }
 
 void LocalAudioSinkAdapter::SetSink(cricket::AudioSource::Sink* sink) {
-  rtc::CritScope lock(&lock_);
+  MutexLock lock(&lock_);
   RTC_DCHECK(!sink || !sink_);
   sink_ = sink;
 }
