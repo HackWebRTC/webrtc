@@ -20,7 +20,7 @@
 #include "api/function_view.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
@@ -193,7 +193,7 @@ class RtpPacketHistory {
 
   Clock* const clock_;
   const bool enable_padding_prio_;
-  rtc::CriticalSection lock_;
+  mutable Mutex lock_;
   size_t number_to_store_ RTC_GUARDED_BY(lock_);
   StorageMode mode_ RTC_GUARDED_BY(lock_);
   int64_t rtt_ms_ RTC_GUARDED_BY(lock_);

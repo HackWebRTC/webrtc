@@ -33,10 +33,10 @@
 #include "modules/rtp_rtcp/source/rtp_sender_video_frame_transformer_delegate.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "modules/rtp_rtcp/source/video_fec_generator.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/one_time_event.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/rate_statistics.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -162,7 +162,7 @@ class RTPSenderVideo {
 
   bool UpdateConditionalRetransmit(uint8_t temporal_id,
                                    int64_t expected_retransmission_time_ms)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(stats_crit_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(stats_mutex_);
 
   void MaybeUpdateCurrentPlayoutDelay(const RTPVideoHeader& header)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(send_checker_);
@@ -188,20 +188,20 @@ class RTPSenderVideo {
   bool playout_delay_pending_;
 
   // Should never be held when calling out of this class.
-  rtc::CriticalSection crit_;
+  Mutex mutex_;
 
   const absl::optional<int> red_payload_type_;
   VideoFecGenerator* const fec_generator_;
   absl::optional<VideoFecGenerator::FecType> fec_type_;
   const size_t fec_overhead_bytes_;  // Per packet max FEC overhead.
 
-  rtc::CriticalSection stats_crit_;
+  mutable Mutex stats_mutex_;
   // Bitrate used for video payload and RTP headers.
-  RateStatistics video_bitrate_ RTC_GUARDED_BY(stats_crit_);
-  RateStatistics packetization_overhead_bitrate_ RTC_GUARDED_BY(stats_crit_);
+  RateStatistics video_bitrate_ RTC_GUARDED_BY(stats_mutex_);
+  RateStatistics packetization_overhead_bitrate_ RTC_GUARDED_BY(stats_mutex_);
 
   std::map<int, TemporalLayerStats> frame_stats_by_temporal_layer_
-      RTC_GUARDED_BY(stats_crit_);
+      RTC_GUARDED_BY(stats_mutex_);
 
   OneTimeEvent first_frame_sent_;
 

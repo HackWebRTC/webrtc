@@ -175,7 +175,7 @@ void RTPSenderVideo::LogAndSendToNetwork(
 #endif
 
   {
-    rtc::CritScope cs(&stats_crit_);
+    MutexLock lock(&stats_mutex_);
     size_t packetized_payload_size = 0;
     for (const auto& packet : packets) {
       if (*packet->packet_type() == RtpPacketMediaType::kVideo) {
@@ -693,12 +693,12 @@ bool RTPSenderVideo::SendEncodedImage(
 }
 
 uint32_t RTPSenderVideo::VideoBitrateSent() const {
-  rtc::CritScope cs(&stats_crit_);
+  MutexLock lock(&stats_mutex_);
   return video_bitrate_.Rate(clock_->TimeInMilliseconds()).value_or(0);
 }
 
 uint32_t RTPSenderVideo::PacketizationOverheadBps() const {
-  rtc::CritScope cs(&stats_crit_);
+  MutexLock lock(&stats_mutex_);
   return packetization_overhead_bitrate_.Rate(clock_->TimeInMilliseconds())
       .value_or(0);
 }
@@ -710,7 +710,7 @@ bool RTPSenderVideo::AllowRetransmission(
   if (retransmission_settings == kRetransmitOff)
     return false;
 
-  rtc::CritScope cs(&stats_crit_);
+  MutexLock lock(&stats_mutex_);
   // Media packet storage.
   if ((retransmission_settings & kConditionallyRetransmitHigherLayers) &&
       UpdateConditionalRetransmit(temporal_id,

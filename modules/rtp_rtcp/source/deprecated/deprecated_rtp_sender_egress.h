@@ -24,8 +24,8 @@
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
 #include "modules/rtp_rtcp/source/rtp_sequence_number_map.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/rate_statistics.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
@@ -121,7 +121,7 @@ class DEPRECATED_RtpSenderEgress {
   StreamDataCountersCallback* const rtp_stats_callback_;
   BitrateStatisticsObserver* const bitrate_callback_;
 
-  rtc::CriticalSection lock_;
+  mutable Mutex lock_;
   bool media_has_been_sent_ RTC_GUARDED_BY(lock_);
   bool force_part_of_allocation_ RTC_GUARDED_BY(lock_);
   uint32_t timestamp_offset_ RTC_GUARDED_BY(lock_);

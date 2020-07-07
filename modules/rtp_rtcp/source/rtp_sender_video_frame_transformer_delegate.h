@@ -16,7 +16,7 @@
 #include "api/frame_transformer_interface.h"
 #include "api/scoped_refptr.h"
 #include "api/task_queue/task_queue_base.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 
 namespace webrtc {
 
@@ -65,7 +65,7 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
   ~RTPSenderVideoFrameTransformerDelegate() override = default;
 
  private:
-  rtc::CriticalSection sender_lock_;
+  mutable Mutex sender_lock_;
   RTPSenderVideo* sender_ RTC_GUARDED_BY(sender_lock_);
   rtc::scoped_refptr<FrameTransformerInterface> frame_transformer_;
   const uint32_t ssrc_;

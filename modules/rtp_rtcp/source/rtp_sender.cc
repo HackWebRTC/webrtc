@@ -223,13 +223,13 @@ rtc::ArrayView<const RtpExtensionSize> RTPSender::AudioExtensionSizes() {
 }
 
 void RTPSender::SetExtmapAllowMixed(bool extmap_allow_mixed) {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   rtp_header_extension_map_.SetExtmapAllowMixed(extmap_allow_mixed);
 }
 
 int32_t RTPSender::RegisterRtpHeaderExtension(RTPExtensionType type,
                                               uint8_t id) {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   bool registered = rtp_header_extension_map_.RegisterByType(id, type);
   supports_bwe_extension_ = HasBweExtension(rtp_header_extension_map_);
   UpdateHeaderSizes();
@@ -237,7 +237,7 @@ int32_t RTPSender::RegisterRtpHeaderExtension(RTPExtensionType type,
 }
 
 bool RTPSender::RegisterRtpHeaderExtension(absl::string_view uri, int id) {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   bool registered = rtp_header_extension_map_.RegisterByUri(id, uri);
   supports_bwe_extension_ = HasBweExtension(rtp_header_extension_map_);
   UpdateHeaderSizes();
@@ -245,12 +245,12 @@ bool RTPSender::RegisterRtpHeaderExtension(absl::string_view uri, int id) {
 }
 
 bool RTPSender::IsRtpHeaderExtensionRegistered(RTPExtensionType type) const {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   return rtp_header_extension_map_.IsRegistered(type);
 }
 
 int32_t RTPSender::DeregisterRtpHeaderExtension(RTPExtensionType type) {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   rtp_header_extension_map_.Deregister(type);
   supports_bwe_extension_ = HasBweExtension(rtp_header_extension_map_);
   UpdateHeaderSizes();
@@ -258,7 +258,7 @@ int32_t RTPSender::DeregisterRtpHeaderExtension(RTPExtensionType type) {
 }
 
 void RTPSender::DeregisterRtpHeaderExtension(absl::string_view uri) {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   rtp_header_extension_map_.Deregister(uri);
   supports_bwe_extension_ = HasBweExtension(rtp_header_extension_map_);
   UpdateHeaderSizes();
@@ -267,7 +267,7 @@ void RTPSender::DeregisterRtpHeaderExtension(absl::string_view uri) {
 void RTPSender::SetMaxRtpPacketSize(size_t max_packet_size) {
   RTC_DCHECK_GE(max_packet_size, 100);
   RTC_DCHECK_LE(max_packet_size, IP_PACKET_SIZE);
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   max_packet_size_ = max_packet_size;
 }
 
@@ -276,18 +276,18 @@ size_t RTPSender::MaxRtpPacketSize() const {
 }
 
 void RTPSender::SetRtxStatus(int mode) {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   rtx_ = mode;
 }
 
 int RTPSender::RtxStatus() const {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   return rtx_;
 }
 
 void RTPSender::SetRtxPayloadType(int payload_type,
                                   int associated_payload_type) {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   RTC_DCHECK_LE(payload_type, 127);
   RTC_DCHECK_LE(associated_payload_type, 127);
   if (payload_type < 0) {
@@ -346,7 +346,7 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
 }
 
 void RTPSender::OnReceivedAckOnSsrc(int64_t extended_highest_sequence_number) {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   bool update_required = !ssrc_has_acked_;
   ssrc_has_acked_ = true;
   if (update_required) {
@@ -356,7 +356,7 @@ void RTPSender::OnReceivedAckOnSsrc(int64_t extended_highest_sequence_number) {
 
 void RTPSender::OnReceivedAckOnRtxSsrc(
     int64_t extended_highest_sequence_number) {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   rtx_ssrc_has_acked_ = true;
 }
 
@@ -376,12 +376,12 @@ void RTPSender::OnReceivedNack(
 }
 
 bool RTPSender::SupportsPadding() const {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   return sending_media_ && supports_bwe_extension_;
 }
 
 bool RTPSender::SupportsRtxPayloadPadding() const {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   return sending_media_ && supports_bwe_extension_ &&
          (rtx_ & kRtxRedundantPayloads);
 }
@@ -423,7 +423,7 @@ std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
     }
   }
 
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   if (!sending_media_) {
     return {};
   }
@@ -546,24 +546,24 @@ void RTPSender::EnqueuePackets(
 }
 
 size_t RTPSender::FecOrPaddingPacketMaxRtpHeaderLength() const {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   return max_padding_fec_packet_header_;
 }
 
 size_t RTPSender::ExpectedPerPacketOverhead() const {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   return max_media_packet_header_;
 }
 
 uint16_t RTPSender::AllocateSequenceNumber(uint16_t packets_to_send) {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   uint16_t first_allocated_sequence_number = sequence_number_;
   sequence_number_ += packets_to_send;
   return first_allocated_sequence_number;
 }
 
 std::unique_ptr<RtpPacketToSend> RTPSender::AllocatePacket() const {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   // TODO(danilchap): Find better motivator and value for extra capacity.
   // RtpPacketizer might slightly miscalulate needed size,
   // SRTP may benefit from extra space in the buffer and do encryption in place
@@ -605,7 +605,7 @@ std::unique_ptr<RtpPacketToSend> RTPSender::AllocatePacket() const {
 }
 
 bool RTPSender::AssignSequenceNumber(RtpPacketToSend* packet) {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   if (!sending_media_)
     return false;
   RTC_DCHECK(packet->Ssrc() == ssrc_);
@@ -624,12 +624,12 @@ bool RTPSender::AssignSequenceNumber(RtpPacketToSend* packet) {
 }
 
 void RTPSender::SetSendingMediaStatus(bool enabled) {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   sending_media_ = enabled;
 }
 
 bool RTPSender::SendingMedia() const {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   return sending_media_;
 }
 
@@ -638,18 +638,18 @@ bool RTPSender::IsAudioConfigured() const {
 }
 
 void RTPSender::SetTimestampOffset(uint32_t timestamp) {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   timestamp_offset_ = timestamp;
 }
 
 uint32_t RTPSender::TimestampOffset() const {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   return timestamp_offset_;
 }
 
 void RTPSender::SetRid(const std::string& rid) {
   // RID is used in simulcast scenario when multiple layers share the same mid.
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   RTC_DCHECK_LE(rid.length(), RtpStreamId::kMaxValueSizeBytes);
   rid_ = rid;
   UpdateHeaderSizes();
@@ -657,7 +657,7 @@ void RTPSender::SetRid(const std::string& rid) {
 
 void RTPSender::SetMid(const std::string& mid) {
   // This is configured via the API.
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   RTC_DCHECK_LE(mid.length(), RtpMid::kMaxValueSizeBytes);
   mid_ = mid;
   UpdateHeaderSizes();
@@ -665,7 +665,7 @@ void RTPSender::SetMid(const std::string& mid) {
 
 void RTPSender::SetCsrcs(const std::vector<uint32_t>& csrcs) {
   RTC_DCHECK_LE(csrcs.size(), kRtpCsrcSize);
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   csrcs_ = csrcs;
   UpdateHeaderSizes();
 }
@@ -673,7 +673,7 @@ void RTPSender::SetCsrcs(const std::vector<uint32_t>& csrcs) {
 void RTPSender::SetSequenceNumber(uint16_t seq) {
   bool updated_sequence_number = false;
   {
-    rtc::CritScope lock(&send_critsect_);
+    MutexLock lock(&send_mutex_);
     sequence_number_forced_ = true;
     if (sequence_number_ != seq) {
       updated_sequence_number = true;
@@ -689,7 +689,7 @@ void RTPSender::SetSequenceNumber(uint16_t seq) {
 }
 
 uint16_t RTPSender::SequenceNumber() const {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   return sequence_number_;
 }
 
@@ -747,7 +747,7 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
 
   // Add original RTP header.
   {
-    rtc::CritScope lock(&send_critsect_);
+    MutexLock lock(&send_mutex_);
     if (!sending_media_)
       return nullptr;
 
@@ -813,7 +813,7 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
 }
 
 void RTPSender::SetRtpState(const RtpState& rtp_state) {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   sequence_number_ = rtp_state.sequence_number;
   sequence_number_forced_ = true;
   timestamp_offset_ = rtp_state.start_timestamp;
@@ -825,7 +825,7 @@ void RTPSender::SetRtpState(const RtpState& rtp_state) {
 }
 
 RtpState RTPSender::GetRtpState() const {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
 
   RtpState state;
   state.sequence_number = sequence_number_;
@@ -838,13 +838,13 @@ RtpState RTPSender::GetRtpState() const {
 }
 
 void RTPSender::SetRtxRtpState(const RtpState& rtp_state) {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   sequence_number_rtx_ = rtp_state.sequence_number;
   rtx_ssrc_has_acked_ = rtp_state.ssrc_has_acked;
 }
 
 RtpState RTPSender::GetRtxRtpState() const {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
 
   RtpState state;
   state.sequence_number = sequence_number_rtx_;
@@ -855,7 +855,7 @@ RtpState RTPSender::GetRtxRtpState() const {
 }
 
 int64_t RTPSender::LastTimestampTimeMs() const {
-  rtc::CritScope lock(&send_critsect_);
+  MutexLock lock(&send_mutex_);
   return last_timestamp_time_ms_;
 }
 

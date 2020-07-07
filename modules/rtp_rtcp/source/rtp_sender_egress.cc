@@ -178,7 +178,7 @@ void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
     absl::optional<std::pair<FecProtectionParams, FecProtectionParams>>
         new_fec_params;
     {
-      rtc::CritScope lock(&lock_);
+      MutexLock lock(&lock_);
       new_fec_params.swap(pending_fec_params_);
     }
     if (new_fec_params) {
@@ -236,7 +236,7 @@ void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
 
   PacketOptions options;
   {
-    rtc::CritScope lock(&lock_);
+    MutexLock lock(&lock_);
     options.included_in_allocation = force_part_of_allocation_;
   }
 
@@ -295,7 +295,7 @@ void RtpSenderEgress::SendPacket(RtpPacketToSend* packet,
 }
 
 RtpSendRates RtpSenderEgress::GetSendRates() const {
-  rtc::CritScope lock(&lock_);
+  MutexLock lock(&lock_);
   const int64_t now_ms = clock_->TimeInMilliseconds();
   return GetSendRatesLocked(now_ms);
 }
@@ -314,14 +314,14 @@ void RtpSenderEgress::GetDataCounters(StreamDataCounters* rtp_stats,
                                       StreamDataCounters* rtx_stats) const {
   // TODO(bugs.webrtc.org/11581): make sure rtx_rtp_stats_ and rtp_stats_ are
   // only touched on the worker thread.
-  rtc::CritScope lock(&lock_);
+  MutexLock lock(&lock_);
   *rtp_stats = rtp_stats_;
   *rtx_stats = rtx_rtp_stats_;
 }
 
 void RtpSenderEgress::ForceIncludeSendPacketsInAllocation(
     bool part_of_allocation) {
-  rtc::CritScope lock(&lock_);
+  MutexLock lock(&lock_);
   force_part_of_allocation_ = part_of_allocation;
 }
 
@@ -369,7 +369,7 @@ void RtpSenderEgress::SetFecProtectionParameters(
     const FecProtectionParams& key_params) {
   // TODO(sprang): Post task to pacer queue instead, one pacer is fully
   // migrated to a task queue.
-  rtc::CritScope lock(&lock_);
+  MutexLock lock(&lock_);
   pending_fec_params_.emplace(delta_params, key_params);
 }
 
@@ -430,7 +430,7 @@ void RtpSenderEgress::UpdateDelayStatistics(int64_t capture_time_ms,
   int max_delay_ms = 0;
   uint64_t total_packet_send_delay_ms = 0;
   {
-    rtc::CritScope cs(&lock_);
+    MutexLock lock(&lock_);
     // Compute the max and average of the recent capture-to-send delays.
     // The time complexity of the current approach depends on the distribution
     // of the delay values. This could be done more efficiently.
@@ -547,7 +547,7 @@ void RtpSenderEgress::UpdateRtpStats(int64_t now_ms,
   // worker thread.
   RtpSendRates send_rates;
   {
-    rtc::CritScope lock(&lock_);
+    MutexLock lock(&lock_);
 
     // TODO(bugs.webrtc.org/11581): make sure rtx_rtp_stats_ and rtp_stats_ are
     // only touched on the worker thread.

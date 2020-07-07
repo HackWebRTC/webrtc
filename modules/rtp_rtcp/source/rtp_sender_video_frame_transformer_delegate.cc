@@ -145,7 +145,7 @@ bool RTPSenderVideoFrameTransformerDelegate::TransformFrame(
 
 void RTPSenderVideoFrameTransformerDelegate::OnTransformedFrame(
     std::unique_ptr<TransformableFrameInterface> frame) {
-  rtc::CritScope lock(&sender_lock_);
+  MutexLock lock(&sender_lock_);
 
   // The encoder queue gets destroyed after the sender; as long as the sender is
   // alive, it's safe to post.
@@ -161,7 +161,7 @@ void RTPSenderVideoFrameTransformerDelegate::OnTransformedFrame(
 void RTPSenderVideoFrameTransformerDelegate::SendVideo(
     std::unique_ptr<TransformableFrameInterface> transformed_frame) const {
   RTC_CHECK(encoder_queue_->IsCurrent());
-  rtc::CritScope lock(&sender_lock_);
+  MutexLock lock(&sender_lock_);
   if (!sender_)
     return;
   auto* transformed_video_frame =
@@ -179,7 +179,7 @@ void RTPSenderVideoFrameTransformerDelegate::SendVideo(
 
 void RTPSenderVideoFrameTransformerDelegate::SetVideoStructureUnderLock(
     const FrameDependencyStructure* video_structure) {
-  rtc::CritScope lock(&sender_lock_);
+  MutexLock lock(&sender_lock_);
   RTC_CHECK(sender_);
   sender_->SetVideoStructureUnderLock(video_structure);
 }
@@ -188,7 +188,7 @@ void RTPSenderVideoFrameTransformerDelegate::Reset() {
   frame_transformer_->UnregisterTransformedFrameSinkCallback(ssrc_);
   frame_transformer_ = nullptr;
   {
-    rtc::CritScope lock(&sender_lock_);
+    MutexLock lock(&sender_lock_);
     sender_ = nullptr;
   }
 }

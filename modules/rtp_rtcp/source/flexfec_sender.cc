@@ -176,7 +176,7 @@ std::vector<std::unique_ptr<RtpPacketToSend>> FlexfecSender::GetFecPackets() {
     last_generated_packet_ms_ = now_ms;
   }
 
-  rtc::CritScope cs(&crit_);
+  MutexLock lock(&mutex_);
   fec_bitrate_.Update(total_fec_data_bytes, now_ms);
 
   return fec_packets_to_send;
@@ -188,7 +188,7 @@ size_t FlexfecSender::MaxPacketOverhead() const {
 }
 
 DataRate FlexfecSender::CurrentFecRate() const {
-  rtc::CritScope cs(&crit_);
+  MutexLock lock(&mutex_);
   return DataRate::BitsPerSec(
       fec_bitrate_.Rate(clock_->TimeInMilliseconds()).value_or(0));
 }

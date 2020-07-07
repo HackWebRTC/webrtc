@@ -24,7 +24,7 @@
 #include "modules/rtp_rtcp/source/rtcp_nack_stats.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/ntp_time.h"
 
@@ -235,7 +235,7 @@ class RTCPReceiver final {
   VideoBitrateAllocationObserver* const bitrate_allocation_observer_;
   const TimeDelta report_interval_;
 
-  rtc::CriticalSection rtcp_receiver_lock_;
+  mutable Mutex rtcp_receiver_lock_;
   uint32_t remote_ssrc_ RTC_GUARDED_BY(rtcp_receiver_lock_);
 
   // Received sender report.

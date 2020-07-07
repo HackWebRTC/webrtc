@@ -22,8 +22,8 @@
 #include "modules/rtp_rtcp/source/dtmf_queue.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/one_time_event.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
 
@@ -74,13 +74,13 @@ class RTPSenderAudio {
   Clock* const clock_ = nullptr;
   RTPSender* const rtp_sender_ = nullptr;
 
-  rtc::CriticalSection send_audio_critsect_;
+  Mutex send_audio_mutex_;
 
   // DTMF.
   bool dtmf_event_is_on_ = false;
   bool dtmf_event_first_packet_sent_ = false;
-  int8_t dtmf_payload_type_ RTC_GUARDED_BY(send_audio_critsect_) = -1;
-  uint32_t dtmf_payload_freq_ RTC_GUARDED_BY(send_audio_critsect_) = 8000;
+  int8_t dtmf_payload_type_ RTC_GUARDED_BY(send_audio_mutex_) = -1;
+  uint32_t dtmf_payload_freq_ RTC_GUARDED_BY(send_audio_mutex_) = 8000;
   uint32_t dtmf_timestamp_ = 0;
   uint32_t dtmf_length_samples_ = 0;
   int64_t dtmf_time_last_sent_ = 0;
@@ -89,20 +89,20 @@ class RTPSenderAudio {
   DtmfQueue dtmf_queue_;
 
   // VAD detection, used for marker bit.
-  bool inband_vad_active_ RTC_GUARDED_BY(send_audio_critsect_) = false;
-  int8_t cngnb_payload_type_ RTC_GUARDED_BY(send_audio_critsect_) = -1;
-  int8_t cngwb_payload_type_ RTC_GUARDED_BY(send_audio_critsect_) = -1;
-  int8_t cngswb_payload_type_ RTC_GUARDED_BY(send_audio_critsect_) = -1;
-  int8_t cngfb_payload_type_ RTC_GUARDED_BY(send_audio_critsect_) = -1;
-  int8_t last_payload_type_ RTC_GUARDED_BY(send_audio_critsect_) = -1;
+  bool inband_vad_active_ RTC_GUARDED_BY(send_audio_mutex_) = false;
+  int8_t cngnb_payload_type_ RTC_GUARDED_BY(send_audio_mutex_) = -1;
+  int8_t cngwb_payload_type_ RTC_GUARDED_BY(send_audio_mutex_) = -1;
+  int8_t cngswb_payload_type_ RTC_GUARDED_BY(send_audio_mutex_) = -1;
+  int8_t cngfb_payload_type_ RTC_GUARDED_BY(send_audio_mutex_) = -1;
+  int8_t last_payload_type_ RTC_GUARDED_BY(send_audio_mutex_) = -1;
 
   // Audio level indication.
   // (https://datatracker.ietf.org/doc/draft-lennox-avt-rtp-audio-level-exthdr/)
-  uint8_t audio_level_dbov_ RTC_GUARDED_BY(send_audio_critsect_) = 0;
+  uint8_t audio_level_dbov_ RTC_GUARDED_BY(send_audio_mutex_) = 0;
   OneTimeEvent first_packet_sent_;
 
   absl::optional<uint32_t> encoder_rtp_timestamp_frequency_
-      RTC_GUARDED_BY(send_audio_critsect_);
+      RTC_GUARDED_BY(send_audio_mutex_);
 
   AbsoluteCaptureTimeSender absolute_capture_time_sender_;
 

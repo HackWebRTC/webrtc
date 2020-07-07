@@ -22,7 +22,7 @@
 #include "modules/rtp_rtcp/source/forward_error_correction_internal.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 
 namespace webrtc {
 
@@ -103,7 +103,7 @@ void UlpfecGenerator::SetProtectionParameters(
   RTC_DCHECK_LE(key_params.fec_rate, 255);
   // Store the new params and apply them for the next set of FEC packets being
   // produced.
-  rtc::CritScope cs(&crit_);
+  MutexLock lock(&mutex_);
   pending_params_.emplace(delta_params, key_params);
 }
 
@@ -112,7 +112,7 @@ void UlpfecGenerator::AddPacketAndGenerateFec(const RtpPacketToSend& packet) {
   RTC_DCHECK(generated_fec_packets_.empty());
 
   if (media_packets_.empty()) {
-    rtc::CritScope cs(&crit_);
+    MutexLock lock(&mutex_);
     if (pending_params_) {
       current_params_ = *pending_params_;
       pending_params_.reset();
@@ -237,14 +237,14 @@ std::vector<std::unique_ptr<RtpPacketToSend>> UlpfecGenerator::GetFecPackets() {
 
   ResetState();
 
-  rtc::CritScope cs(&crit_);
+  MutexLock lock(&mutex_);
   fec_bitrate_.Update(total_fec_size_bytes, clock_->TimeInMilliseconds());
 
   return fec_packets;
 }
 
 DataRate UlpfecGenerator::CurrentFecRate() const {
-  rtc::CritScope cs(&crit_);
+  MutexLock lock(&mutex_);
   return DataRate::BitsPerSec(
       fec_bitrate_.Rate(clock_->TimeInMilliseconds()).value_or(0));
 }

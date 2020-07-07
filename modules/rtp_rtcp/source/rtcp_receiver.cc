@@ -203,19 +203,19 @@ void RTCPReceiver::IncomingPacket(rtc::ArrayView<const uint8_t> packet) {
 // This method is only used by test and legacy code, so we should be able to
 // remove it soon.
 int64_t RTCPReceiver::LastReceivedReportBlockMs() const {
-  rtc::CritScope lock(&rtcp_receiver_lock_);
+  MutexLock lock(&rtcp_receiver_lock_);
   return last_received_rb_.IsFinite() ? last_received_rb_.ms() : 0;
 }
 
 void RTCPReceiver::SetRemoteSSRC(uint32_t ssrc) {
-  rtc::CritScope lock(&rtcp_receiver_lock_);
+  MutexLock lock(&rtcp_receiver_lock_);
   // New SSRC reset old reports.
   last_received_sr_ntp_.Reset();
   remote_ssrc_ = ssrc;
 }
 
 uint32_t RTCPReceiver::RemoteSSRC() const {
-  rtc::CritScope lock(&rtcp_receiver_lock_);
+  MutexLock lock(&rtcp_receiver_lock_);
   return remote_ssrc_;
 }
 
@@ -224,7 +224,7 @@ int32_t RTCPReceiver::RTT(uint32_t remote_ssrc,
                           int64_t* avg_rtt_ms,
                           int64_t* min_rtt_ms,
                           int64_t* max_rtt_ms) const {
-  rtc::CritScope lock(&rtcp_receiver_lock_);
+  MutexLock lock(&rtcp_receiver_lock_);
 
   auto it = received_report_blocks_.find(main_ssrc_);
   if (it == received_report_blocks_.end())
@@ -257,13 +257,13 @@ int32_t RTCPReceiver::RTT(uint32_t remote_ssrc,
 }
 
 void RTCPReceiver::SetRtcpXrRrtrStatus(bool enable) {
-  rtc::CritScope lock(&rtcp_receiver_lock_);
+  MutexLock lock(&rtcp_receiver_lock_);
   xr_rrtr_status_ = enable;
 }
 
 bool RTCPReceiver::GetAndResetXrRrRtt(int64_t* rtt_ms) {
   RTC_DCHECK(rtt_ms);
-  rtc::CritScope lock(&rtcp_receiver_lock_);
+  MutexLock lock(&rtcp_receiver_lock_);
   if (xr_rr_rtt_ms_ == 0) {
     return false;
   }
@@ -282,7 +282,7 @@ absl::optional<TimeDelta> RTCPReceiver::OnPeriodicRttUpdate(
   if (sending) {
     // Check if we've received a report block within the last kRttUpdateInterval
     // amount of time.
-    rtc::CritScope lock(&rtcp_receiver_lock_);
+    MutexLock lock(&rtcp_receiver_lock_);
     if (last_received_rb_.IsInfinite() || last_received_rb_ > newer_than) {
       // Stow away the report block for the main ssrc. We'll use the associated
       // data map to look up each sender and check the last_rtt_ms().
@@ -331,7 +331,7 @@ bool RTCPReceiver::NTP(uint32_t* received_ntp_secs,
                        uint32_t* rtcp_arrival_time_secs,
                        uint32_t* rtcp_arrival_time_frac,
                        uint32_t* rtcp_timestamp) const {
-  rtc::CritScope lock(&rtcp_receiver_lock_);
+  MutexLock lock(&rtcp_receiver_lock_);
   if (!last_received_sr_ntp_.Valid())
     return false;
 
@@ -356,7 +356,7 @@ bool RTCPReceiver::NTP(uint32_t* received_ntp_secs,
 
 std::vector<rtcp::ReceiveTimeInfo>
 RTCPReceiver::ConsumeReceivedXrReferenceTimeInfo() {
-  rtc::CritScope lock(&rtcp_receiver_lock_);
+  MutexLock lock(&rtcp_receiver_lock_);
 
   const size_t last_xr_rtis_size = std::min(
       received_rrtrs_.size(), rtcp::ExtendedReports::kMaxNumberOfDlrrItems);
@@ -381,7 +381,7 @@ RTCPReceiver::ConsumeReceivedXrReferenceTimeInfo() {
 int32_t RTCPReceiver::StatisticsReceived(
     std::vector<RTCPReportBlock>* receive_blocks) const {
   RTC_DCHECK(receive_blocks);
-  rtc::CritScope lock(&rtcp_receiver_lock_);
+  MutexLock lock(&rtcp_receiver_lock_);
   for (const auto& reports_per_receiver : received_report_blocks_)
     for (const auto& report : reports_per_receiver.second)
       receive_blocks->push_back(report.second.report_block());
@@ -390,7 +390,7 @@ int32_t RTCPReceiver::StatisticsReceived(
 
 std::vector<ReportBlockData> RTCPReceiver::GetLatestReportBlockData() const {
   std::vector<ReportBlockData> result;
-  rtc::CritScope lock(&rtcp_receiver_lock_);
+  MutexLock lock(&rtcp_receiver_lock_);
   for (const auto& reports_per_receiver : received_report_blocks_)
     for (const auto& report : reports_per_receiver.second)
       result.push_back(report.second);
@@ -399,7 +399,7 @@ std::vector<ReportBlockData> RTCPReceiver::GetLatestReportBlockData() const {
 
 bool RTCPReceiver::ParseCompoundPacket(rtc::ArrayView<const uint8_t> packet,
                                        PacketInformation* packet_information) {
-  rtc::CritScope lock(&rtcp_receiver_lock_);
+  MutexLock lock(&rtcp_receiver_lock_);
 
   CommonHeader rtcp_block;
   for (const uint8_t* next_block = packet.begin(); next_block != packet.end();
@@ -654,17 +654,17 @@ RTCPReceiver::TmmbrInformation* RTCPReceiver::GetTmmbrInformation(
 // the methods and require that access to the locked variables only happens on
 // the worker thread and thus no locking is needed.
 bool RTCPReceiver::RtcpRrTimeout() {
-  rtc::CritScope lock(&rtcp_receiver_lock_);
+  MutexLock lock(&rtcp_receiver_lock_);
   return RtcpRrTimeoutLocked(clock_->CurrentTime());
 }
 
 bool RTCPReceiver::RtcpRrSequenceNumberTimeout() {
-  rtc::CritScope lock(&rtcp_receiver_lock_);
+  MutexLock lock(&rtcp_receiver_lock_);
   return RtcpRrSequenceNumberTimeoutLocked(clock_->CurrentTime());
 }
 
 bool RTCPReceiver::UpdateTmmbrTimers() {
-  rtc::CritScope lock(&rtcp_receiver_lock_);
+  MutexLock lock(&rtcp_receiver_lock_);
 
   int64_t now_ms = clock_->TimeInMilliseconds();
   int64_t timeout_ms = now_ms - kTmmbrTimeoutIntervalMs;
@@ -701,7 +701,7 @@ bool RTCPReceiver::UpdateTmmbrTimers() {
 }
 
 std::vector<rtcp::TmmbItem> RTCPReceiver::BoundingSet(bool* tmmbr_owner) {
-  rtc::CritScope lock(&rtcp_receiver_lock_);
+  MutexLock lock(&rtcp_receiver_lock_);
   TmmbrInformation* tmmbr_info = GetTmmbrInformation(remote_ssrc_);
   if (!tmmbr_info)
     return std::vector<rtcp::TmmbItem>();
@@ -1062,7 +1062,7 @@ void RTCPReceiver::TriggerCallbacksFromRtcpPacket(
   std::set<uint32_t> registered_ssrcs;
   {
     // We don't want to hold this critsect when triggering the callbacks below.
-    rtc::CritScope lock(&rtcp_receiver_lock_);
+    MutexLock lock(&rtcp_receiver_lock_);
     local_ssrc = main_ssrc_;
     registered_ssrcs = registered_ssrcs_;
   }
@@ -1178,7 +1178,7 @@ int32_t RTCPReceiver::CNAME(uint32_t remoteSSRC,
                             char cName[RTCP_CNAME_SIZE]) const {
   RTC_DCHECK(cName);
 
-  rtc::CritScope lock(&rtcp_receiver_lock_);
+  MutexLock lock(&rtcp_receiver_lock_);
   auto received_cname_it = received_cnames_.find(remoteSSRC);
   if (received_cname_it == received_cnames_.end())
     return -1;
@@ -1189,7 +1189,7 @@ int32_t RTCPReceiver::CNAME(uint32_t remoteSSRC,
 }
 
 std::vector<rtcp::TmmbItem> RTCPReceiver::TmmbrReceived() {
-  rtc::CritScope lock(&rtcp_receiver_lock_);
+  MutexLock lock(&rtcp_receiver_lock_);
   std::vector<rtcp::TmmbItem> candidates;
 
   int64_t now_ms = clock_->TimeInMilliseconds();
