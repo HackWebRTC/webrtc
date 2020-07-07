@@ -16,10 +16,10 @@
 #include "modules/audio_processing/audio_processing_impl.h"
 #include "modules/audio_processing/test/audio_processing_builder_for_testing.h"
 #include "modules/audio_processing/test/test_utils.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/random.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/gtest.h"
 
@@ -62,23 +62,23 @@ class RandomGenerator {
   RandomGenerator() : rand_gen_(42U) {}
 
   int RandInt(int min, int max) {
-    rtc::CritScope cs(&crit_);
+    MutexLock lock(&mutex_);
     return rand_gen_.Rand(min, max);
   }
 
   int RandInt(int max) {
-    rtc::CritScope cs(&crit_);
+    MutexLock lock(&mutex_);
     return rand_gen_.Rand(max);
   }
 
   float RandFloat() {
-    rtc::CritScope cs(&crit_);
+    MutexLock lock(&mutex_);
     return rand_gen_.Rand<float>();
   }
 
  private:
-  rtc::CriticalSection crit_;
-  Random rand_gen_ RTC_GUARDED_BY(crit_);
+  Mutex mutex_;
+  Random rand_gen_ RTC_GUARDED_BY(mutex_);
 };
 
 // Variables related to the audio data and formats.
@@ -258,27 +258,27 @@ struct TestConfig {
 class FrameCounters {
  public:
   void IncreaseRenderCounter() {
-    rtc::CritScope cs(&crit_);
+    MutexLock lock(&mutex_);
     render_count++;
   }
 
   void IncreaseCaptureCounter() {
-    rtc::CritScope cs(&crit_);
+    MutexLock lock(&mutex_);
     capture_count++;
   }
 
   int GetCaptureCounter() const {
-    rtc::CritScope cs(&crit_);
+    MutexLock lock(&mutex_);
     return capture_count;
   }
 
   int GetRenderCounter() const {
-    rtc::CritScope cs(&crit_);
+    MutexLock lock(&mutex_);
     return render_count;
   }
 
   int CaptureMinusRenderCounters() const {
-    rtc::CritScope cs(&crit_);
+    MutexLock lock(&mutex_);
     return capture_count - render_count;
   }
 
@@ -287,14 +287,14 @@ class FrameCounters {
   }
 
   bool BothCountersExceedeThreshold(int threshold) {
-    rtc::CritScope cs(&crit_);
+    MutexLock lock(&mutex_);
     return (render_count > threshold && capture_count > threshold);
   }
 
  private:
-  rtc::CriticalSection crit_;
-  int render_count RTC_GUARDED_BY(crit_) = 0;
-  int capture_count RTC_GUARDED_BY(crit_) = 0;
+  mutable Mutex mutex_;
+  int render_count RTC_GUARDED_BY(mutex_) = 0;
+  int capture_count RTC_GUARDED_BY(mutex_) = 0;
 };
 
 // Class for handling the capture side processing.

@@ -39,12 +39,12 @@
 #include "modules/audio_coding/neteq/tools/output_wav_file.h"
 #include "modules/audio_coding/neteq/tools/packet.h"
 #include "modules/audio_coding/neteq/tools/rtp_file_source.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "rtc_base/message_digest.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/ref_counted_object.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/system/arch.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
@@ -113,7 +113,7 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
                    const uint8_t* payload_data,
                    size_t payload_len_bytes,
                    int64_t absolute_capture_timestamp_ms) override {
-    rtc::CritScope lock(&crit_sect_);
+    MutexLock lock(&mutex_);
     ++num_calls_;
     last_frame_type_ = frame_type;
     last_payload_type_ = payload_type;
@@ -123,42 +123,42 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
   }
 
   int num_calls() const {
-    rtc::CritScope lock(&crit_sect_);
+    MutexLock lock(&mutex_);
     return num_calls_;
   }
 
   int last_payload_len_bytes() const {
-    rtc::CritScope lock(&crit_sect_);
+    MutexLock lock(&mutex_);
     return rtc::checked_cast<int>(last_payload_vec_.size());
   }
 
   AudioFrameType last_frame_type() const {
-    rtc::CritScope lock(&crit_sect_);
+    MutexLock lock(&mutex_);
     return last_frame_type_;
   }
 
   int last_payload_type() const {
-    rtc::CritScope lock(&crit_sect_);
+    MutexLock lock(&mutex_);
     return last_payload_type_;
   }
 
   uint32_t last_timestamp() const {
-    rtc::CritScope lock(&crit_sect_);
+    MutexLock lock(&mutex_);
     return last_timestamp_;
   }
 
   void SwapBuffers(std::vector<uint8_t>* payload) {
-    rtc::CritScope lock(&crit_sect_);
+    MutexLock lock(&mutex_);
     last_payload_vec_.swap(*payload);
   }
 
  private:
-  int num_calls_ RTC_GUARDED_BY(crit_sect_);
-  AudioFrameType last_frame_type_ RTC_GUARDED_BY(crit_sect_);
-  int last_payload_type_ RTC_GUARDED_BY(crit_sect_);
-  uint32_t last_timestamp_ RTC_GUARDED_BY(crit_sect_);
-  std::vector<uint8_t> last_payload_vec_ RTC_GUARDED_BY(crit_sect_);
-  rtc::CriticalSection crit_sect_;
+  int num_calls_ RTC_GUARDED_BY(mutex_);
+  AudioFrameType last_frame_type_ RTC_GUARDED_BY(mutex_);
+  int last_payload_type_ RTC_GUARDED_BY(mutex_);
+  uint32_t last_timestamp_ RTC_GUARDED_BY(mutex_);
+  std::vector<uint8_t> last_payload_vec_ RTC_GUARDED_BY(mutex_);
+  mutable Mutex mutex_;
 };
 
 class AudioCodingModuleTestOldApi : public ::testing::Test {
@@ -472,7 +472,7 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
 
   virtual bool TestDone() {
     if (packet_cb_.num_calls() > kNumPackets) {
-      rtc::CritScope lock(&crit_sect_);
+      MutexLock lock(&mutex_);
       if (pull_audio_count_ > kNumPullCalls) {
         // Both conditions for completion are met. End the test.
         return true;
@@ -515,7 +515,7 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
   void CbInsertPacketImpl() {
     SleepMs(1);
     {
-      rtc::CritScope lock(&crit_sect_);
+      MutexLock lock(&mutex_);
       if (clock_->TimeInMilliseconds() < next_insert_packet_time_ms_) {
         return;
       }
@@ -537,7 +537,7 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
   void CbPullAudioImpl() {
     SleepMs(1);
     {
-      rtc::CritScope lock(&crit_sect_);
+      MutexLock lock(&mutex_);
       // Don't let the insert thread fall behind.
       if (next_insert_packet_time_ms_ < clock_->TimeInMilliseconds()) {
         return;
@@ -558,9 +558,9 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
   rtc::Event test_complete_;
   int send_count_;
   int insert_packet_count_;
-  int pull_audio_count_ RTC_GUARDED_BY(crit_sect_);
-  rtc::CriticalSection crit_sect_;
-  int64_t next_insert_packet_time_ms_ RTC_GUARDED_BY(crit_sect_);
+  int pull_audio_count_ RTC_GUARDED_BY(mutex_);
+  Mutex mutex_;
+  int64_t next_insert_packet_time_ms_ RTC_GUARDED_BY(mutex_);
   std::unique_ptr<SimulatedClock> fake_clock_;
 };
 
@@ -658,7 +658,7 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
   // run).
   bool TestDone() override {
     if (packet_cb_.num_calls() > kNumPackets) {
-      rtc::CritScope lock(&crit_sect_);
+      MutexLock lock(&mutex_);
       if (pull_audio_count_ > kNumPullCalls) {
         // Both conditions for completion are met. End the test.
         return true;
@@ -758,7 +758,7 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
     rtc::Buffer encoded;
     AudioEncoder::EncodedInfo info;
     {
-      rtc::CritScope lock(&crit_sect_);
+      MutexLock lock(&mutex_);
       if (clock_->TimeInMilliseconds() < next_insert_packet_time_ms_) {
         return true;
       }
@@ -812,7 +812,7 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
       // End the test early if a fatal failure (ASSERT_*) has occurred.
       test_complete_.Set();
     }
-    rtc::CritScope lock(&crit_sect_);
+    MutexLock lock(&mutex_);
     if (!codec_registered_ &&
         receive_packet_count_ > kRegisterAfterNumPackets) {
       // Register the iSAC encoder.
@@ -831,10 +831,10 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
   std::atomic<bool> quit_;
 
   rtc::Event test_complete_;
-  rtc::CriticalSection crit_sect_;
-  bool codec_registered_ RTC_GUARDED_BY(crit_sect_);
-  int receive_packet_count_ RTC_GUARDED_BY(crit_sect_);
-  int64_t next_insert_packet_time_ms_ RTC_GUARDED_BY(crit_sect_);
+  Mutex mutex_;
+  bool codec_registered_ RTC_GUARDED_BY(mutex_);
+  int receive_packet_count_ RTC_GUARDED_BY(mutex_);
+  int64_t next_insert_packet_time_ms_ RTC_GUARDED_BY(mutex_);
   std::unique_ptr<AudioEncoderIsacFloatImpl> isac_encoder_;
   std::unique_ptr<SimulatedClock> fake_clock_;
   test::AudioLoop audio_loop_;

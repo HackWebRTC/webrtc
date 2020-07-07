@@ -86,7 +86,7 @@ int AcmReceiver::GetBaseMinimumDelayMs() const {
 }
 
 absl::optional<int> AcmReceiver::last_packet_sample_rate_hz() const {
-  rtc::CritScope lock(&crit_sect_);
+  MutexLock lock(&mutex_);
   if (!last_decoder_) {
     return absl::nullopt;
   }
@@ -118,7 +118,7 @@ int AcmReceiver::InsertPacket(const RTPHeader& rtp_header,
   }
 
   {
-    rtc::CritScope lock(&crit_sect_);
+    MutexLock lock(&mutex_);
     if (absl::EqualsIgnoreCase(format->sdp_format.name, "cn")) {
       if (last_decoder_ && last_decoder_->num_channels > 1) {
         // This is a CNG and the audio codec is not mono, so skip pushing in
@@ -131,7 +131,7 @@ int AcmReceiver::InsertPacket(const RTPHeader& rtp_header,
                                   /*num_channels=*/format->num_channels,
                                   /*sdp_format=*/std::move(format->sdp_format)};
     }
-  }  // |crit_sect_| is released.
+  }  // |mutex_| is released.
 
   if (neteq_->InsertPacket(rtp_header, incoming_payload) < 0) {
     RTC_LOG(LERROR) << "AcmReceiver::InsertPacket "
@@ -147,7 +147,7 @@ int AcmReceiver::GetAudio(int desired_freq_hz,
                           bool* muted) {
   RTC_DCHECK(muted);
   // Accessing members, take the lock.
-  rtc::CritScope lock(&crit_sect_);
+  MutexLock lock(&mutex_);
 
   if (neteq_->GetAudio(audio_frame, muted) != NetEq::kOK) {
     RTC_LOG(LERROR) << "AcmReceiver::GetAudio - NetEq Failed.";
@@ -217,7 +217,7 @@ void AcmReceiver::FlushBuffers() {
 }
 
 void AcmReceiver::RemoveAllCodecs() {
-  rtc::CritScope lock(&crit_sect_);
+  MutexLock lock(&mutex_);
   neteq_->RemoveAllPayloadTypes();
   last_decoder_ = absl::nullopt;
 }
@@ -236,7 +236,7 @@ int AcmReceiver::TargetDelayMs() const {
 
 absl::optional<std::pair<int, SdpAudioFormat>> AcmReceiver::LastDecoder()
     const {
-  rtc::CritScope lock(&crit_sect_);
+  MutexLock lock(&mutex_);
   if (!last_decoder_) {
     return absl::nullopt;
   }
@@ -327,7 +327,7 @@ uint32_t AcmReceiver::NowInTimestamp(int decoder_sampling_rate) const {
 
 void AcmReceiver::GetDecodingCallStatistics(
     AudioDecodingCallStats* stats) const {
-  rtc::CritScope lock(&crit_sect_);
+  MutexLock lock(&mutex_);
   *stats = call_stats_.GetDecodingStatistics();
 }
 
