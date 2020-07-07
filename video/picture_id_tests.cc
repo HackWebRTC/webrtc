@@ -22,7 +22,6 @@
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/numerics/sequence_number_util.h"
-#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "test/call_test.h"
 
@@ -50,12 +49,12 @@ class PictureIdObserver : public test::RtpRtcpObserver {
         num_ssrcs_to_observe_(1) {}
 
   void SetExpectedSsrcs(size_t num_expected_ssrcs) {
-    MutexLock lock(&mutex_);
+    rtc::CritScope lock(&crit_);
     num_ssrcs_to_observe_ = num_expected_ssrcs;
   }
 
   void ResetObservedSsrcs() {
-    MutexLock lock(&mutex_);
+    rtc::CritScope lock(&crit_);
     // Do not clear the timestamp and picture_id, to ensure that we check
     // consistency between reinits and recreations.
     num_packets_sent_.clear();
@@ -63,7 +62,7 @@ class PictureIdObserver : public test::RtpRtcpObserver {
   }
 
   void SetMaxExpectedPictureIdGap(int max_expected_picture_id_gap) {
-    MutexLock lock(&mutex_);
+    rtc::CritScope lock(&crit_);
     max_expected_picture_id_gap_ = max_expected_picture_id_gap;
     // Expect smaller gap for |tl0_pic_idx| (running index for temporal_idx 0).
     max_expected_tl0_idx_gap_ = max_expected_picture_id_gap_ / 2;
@@ -121,7 +120,7 @@ class PictureIdObserver : public test::RtpRtcpObserver {
   // Verify continuity and monotonicity of picture_id sequence.
   void VerifyPictureId(const ParsedPacket& current,
                        const ParsedPacket& last) const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(&mutex_) {
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(&crit_) {
     if (current.timestamp == last.timestamp) {
       EXPECT_EQ(last.picture_id, current.picture_id);
       return;  // Same frame.
@@ -144,7 +143,7 @@ class PictureIdObserver : public test::RtpRtcpObserver {
   }
 
   void VerifyTl0Idx(const ParsedPacket& current, const ParsedPacket& last) const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(&mutex_) {
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(&crit_) {
     if (current.tl0_pic_idx == kNoTl0PicIdx ||
         current.temporal_idx == kNoTemporalIdx) {
       return;  // No temporal layers.
@@ -170,7 +169,7 @@ class PictureIdObserver : public test::RtpRtcpObserver {
   }
 
   Action OnSendRtp(const uint8_t* packet, size_t length) override {
-    MutexLock lock(&mutex_);
+    rtc::CritScope lock(&crit_);
 
     ParsedPacket parsed;
     if (!ParsePayload(packet, length, &parsed))
@@ -197,14 +196,14 @@ class PictureIdObserver : public test::RtpRtcpObserver {
     return SEND_PACKET;
   }
 
-  Mutex mutex_;
+  rtc::CriticalSection crit_;
   const std::unique_ptr<VideoRtpDepacketizer> depacketizer_;
-  std::map<uint32_t, ParsedPacket> last_observed_packet_ RTC_GUARDED_BY(mutex_);
-  std::map<uint32_t, size_t> num_packets_sent_ RTC_GUARDED_BY(mutex_);
-  int max_expected_picture_id_gap_ RTC_GUARDED_BY(mutex_);
-  int max_expected_tl0_idx_gap_ RTC_GUARDED_BY(mutex_);
-  size_t num_ssrcs_to_observe_ RTC_GUARDED_BY(mutex_);
-  std::set<uint32_t> observed_ssrcs_ RTC_GUARDED_BY(mutex_);
+  std::map<uint32_t, ParsedPacket> last_observed_packet_ RTC_GUARDED_BY(crit_);
+  std::map<uint32_t, size_t> num_packets_sent_ RTC_GUARDED_BY(crit_);
+  int max_expected_picture_id_gap_ RTC_GUARDED_BY(crit_);
+  int max_expected_tl0_idx_gap_ RTC_GUARDED_BY(crit_);
+  size_t num_ssrcs_to_observe_ RTC_GUARDED_BY(crit_);
+  std::set<uint32_t> observed_ssrcs_ RTC_GUARDED_BY(crit_);
 };
 
 class PictureIdTest : public test::CallTest,

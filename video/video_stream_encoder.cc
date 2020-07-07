@@ -39,7 +39,6 @@
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
-#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/time_utils.h"
@@ -221,18 +220,18 @@ class VideoStreamEncoder::DegradationPreferenceManager
   }
 
   DegradationPreference degradation_preference() const override {
-    MutexLock lock(&lock_);
+    rtc::CritScope crit(&lock_);
     return effective_degradation_preference_;
   }
 
   void SetDegradationPreference(DegradationPreference degradation_preference) {
-    MutexLock lock(&lock_);
+    rtc::CritScope crit(&lock_);
     degradation_preference_ = degradation_preference;
     MaybeUpdateEffectiveDegradationPreference();
   }
 
   void SetIsScreenshare(bool is_screenshare) {
-    MutexLock lock(&lock_);
+    rtc::CritScope crit(&lock_);
     is_screenshare_ = is_screenshare;
     MaybeUpdateEffectiveDegradationPreference();
   }
@@ -274,7 +273,7 @@ class VideoStreamEncoder::DegradationPreferenceManager
     }
   }
 
-  mutable Mutex lock_;
+  rtc::CriticalSection lock_;
   DegradationPreference degradation_preference_ RTC_GUARDED_BY(&lock_);
   bool is_screenshare_ RTC_GUARDED_BY(&lock_);
   DegradationPreference effective_degradation_preference_

@@ -20,7 +20,7 @@
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
 #include "modules/video_coding/include/video_codec_interface.h"
-#include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/critical_section.h"
 
 namespace webrtc {
 
@@ -69,7 +69,7 @@ class FrameEncodeMetadataWriter {
     std::list<FrameMetadata> frames;
   };
 
-  Mutex lock_;
+  rtc::CriticalSection lock_;
   EncodedImageCallback* const frame_drop_callback_;
   VideoCodec codec_settings_ RTC_GUARDED_BY(&lock_);
   bool internal_source_ RTC_GUARDED_BY(&lock_);

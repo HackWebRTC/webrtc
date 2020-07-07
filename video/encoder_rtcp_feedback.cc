@@ -56,7 +56,7 @@ void EncoderRtcpFeedback::OnReceivedIntraFrameRequest(uint32_t ssrc) {
   RTC_DCHECK(HasSsrc(ssrc));
   {
     int64_t now_ms = clock_->TimeInMilliseconds();
-    MutexLock lock(&mutex_);
+    rtc::CritScope lock(&crit_);
     if (time_last_intra_request_ms_ + min_keyframe_send_interval_ms_ > now_ms) {
       return;
     }

@@ -121,7 +121,7 @@ RtpVideoStreamReceiver::RtcpFeedbackBuffer::RtcpFeedbackBuffer(
 }
 
 void RtpVideoStreamReceiver::RtcpFeedbackBuffer::RequestKeyFrame() {
-  MutexLock lock(&cs_);
+  rtc::CritScope lock(&cs_);
   request_key_frame_ = true;
 }
 
@@ -129,7 +129,7 @@ void RtpVideoStreamReceiver::RtcpFeedbackBuffer::SendNack(
     const std::vector<uint16_t>& sequence_numbers,
     bool buffering_allowed) {
   RTC_DCHECK(!sequence_numbers.empty());
-  MutexLock lock(&cs_);
+  rtc::CritScope lock(&cs_);
   nack_sequence_numbers_.insert(nack_sequence_numbers_.end(),
                                 sequence_numbers.cbegin(),
                                 sequence_numbers.cend());
@@ -146,7 +146,7 @@ void RtpVideoStreamReceiver::RtcpFeedbackBuffer::SendLossNotification(
     bool decodability_flag,
     bool buffering_allowed) {
   RTC_DCHECK(buffering_allowed);
-  MutexLock lock(&cs_);
+  rtc::CritScope lock(&cs_);
   RTC_DCHECK(!lntf_state_)
       << "SendLossNotification() called twice in a row with no call to "
          "SendBufferedRtcpFeedback() in between.";
@@ -160,7 +160,7 @@ void RtpVideoStreamReceiver::RtcpFeedbackBuffer::SendBufferedRtcpFeedback() {
 
 RtpVideoStreamReceiver::RtcpFeedbackBuffer::ConsumedRtcpFeedback
 RtpVideoStreamReceiver::RtcpFeedbackBuffer::ConsumeRtcpFeedback() {
-  MutexLock lock(&cs_);
+  rtc::CritScope lock(&cs_);
   return ConsumeRtcpFeedbackLocked();
 }
 
@@ -376,7 +376,7 @@ absl::optional<Syncable::Info> RtpVideoStreamReceiver::GetSyncInfo() const {
     return absl::nullopt;
   }
   {
-    MutexLock lock(&sync_info_lock_);
+    rtc::CritScope lock(&sync_info_lock_);
     if (!last_received_rtp_timestamp_ || !last_received_rtp_system_time_ms_) {
       return absl::nullopt;
     }
@@ -667,7 +667,7 @@ void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
     // TODO(nisse): Exclude out-of-order packets?
     int64_t now_ms = clock_->TimeInMilliseconds();
     {
-      MutexLock lock(&sync_info_lock_);
+      rtc::CritScope cs(&sync_info_lock_);
       last_received_rtp_timestamp_ = packet.Timestamp();
       last_received_rtp_system_time_ms_ = now_ms;
     }
@@ -844,7 +844,7 @@ void RtpVideoStreamReceiver::OnAssembledFrame(
     has_received_frame_ = true;
   }
 
-  MutexLock lock(&reference_finder_lock_);
+  rtc::CritScope lock(&reference_finder_lock_);
   // Reset |reference_finder_| if |frame| is new and the codec have changed.
   if (current_codec_) {
     bool frame_is_newer =
@@ -887,7 +887,7 @@ void RtpVideoStreamReceiver::OnAssembledFrame(
 void RtpVideoStreamReceiver::OnCompleteFrame(
     std::unique_ptr<video_coding::EncodedFrame> frame) {
   {
-    MutexLock lock(&last_seq_num_cs_);
+    rtc::CritScope lock(&last_seq_num_cs_);
     video_coding::RtpFrameObject* rtp_frame =
         static_cast<video_coding::RtpFrameObject*>(frame.get());
     last_seq_num_for_pic_id_[rtp_frame->id.picture_id] =
@@ -900,7 +900,7 @@ void RtpVideoStreamReceiver::OnCompleteFrame(
 
 void RtpVideoStreamReceiver::OnDecryptedFrame(
     std::unique_ptr<video_coding::RtpFrameObject> frame) {
-  MutexLock lock(&reference_finder_lock_);
+  rtc::CritScope lock(&reference_finder_lock_);
   reference_finder_->ManageFrame(std::move(frame));
 }
 
@@ -967,7 +967,7 @@ void RtpVideoStreamReceiver::RemoveSecondarySink(
 
 void RtpVideoStreamReceiver::ManageFrame(
     std::unique_ptr<video_coding::RtpFrameObject> frame) {
-  MutexLock lock(&reference_finder_lock_);
+  rtc::CritScope lock(&reference_finder_lock_);
   reference_finder_->ManageFrame(std::move(frame));
 }
 
@@ -1022,7 +1022,7 @@ void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(
 // correctly calculate frame references.
 void RtpVideoStreamReceiver::NotifyReceiverOfEmptyPacket(uint16_t seq_num) {
   {
-    MutexLock lock(&reference_finder_lock_);
+    rtc::CritScope lock(&reference_finder_lock_);
     reference_finder_->PaddingReceived(seq_num);
   }
   OnInsertedPacket(packet_buffer_.InsertPadding(seq_num));
@@ -1086,7 +1086,7 @@ void RtpVideoStreamReceiver::FrameContinuous(int64_t picture_id) {
 
   int seq_num = -1;
   {
-    MutexLock lock(&last_seq_num_cs_);
+    rtc::CritScope lock(&last_seq_num_cs_);
     auto seq_num_it = last_seq_num_for_pic_id_.find(picture_id);
     if (seq_num_it != last_seq_num_for_pic_id_.end())
       seq_num = seq_num_it->second;
@@ -1098,7 +1098,7 @@ void RtpVideoStreamReceiver::FrameContinuous(int64_t picture_id) {
 void RtpVideoStreamReceiver::FrameDecoded(int64_t picture_id) {
   int seq_num = -1;
   {
-    MutexLock lock(&last_seq_num_cs_);
+    rtc::CritScope lock(&last_seq_num_cs_);
     auto seq_num_it = last_seq_num_for_pic_id_.find(picture_id);
     if (seq_num_it != last_seq_num_for_pic_id_.end()) {
       seq_num = seq_num_it->second;
@@ -1108,7 +1108,7 @@ void RtpVideoStreamReceiver::FrameDecoded(int64_t picture_id) {
   }
   if (seq_num != -1) {
     packet_buffer_.ClearTo(seq_num);
-    MutexLock lock(&reference_finder_lock_);
+    rtc::CritScope lock(&reference_finder_lock_);
     reference_finder_->ClearTo(seq_num);
   }
 }
