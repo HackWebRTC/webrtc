@@ -19,6 +19,8 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/types/optional.h"
+#include "api/task_queue/queued_task.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/video/encoded_image.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_adaptation_reason.h"
@@ -26,15 +28,19 @@
 #include "api/video/video_codec_constants.h"
 #include "api/video_codecs/video_encoder.h"
 #include "call/adaptation/resource_adaptation_processor.h"
+#include "call/adaptation/video_stream_adapter.h"
 #include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
 #include "modules/video_coding/include/video_codec_initializer.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/experiments/alr_experiment.h"
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/synchronization/sequence_checker.h"
+#include "rtc_base/thread_annotations.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
@@ -209,7 +215,9 @@ class VideoStreamEncoder::DegradationPreferenceManager
         is_screenshare_(false),
         effective_degradation_preference_(DegradationPreference::DISABLED) {}
 
-  ~DegradationPreferenceManager() override { RTC_DCHECK(listeners_.empty()); }
+  ~DegradationPreferenceManager() override {
+    RTC_DCHECK(!video_stream_adapter_);
+  }
 
   DegradationPreference degradation_preference() const override {
     rtc::CritScope crit(&lock_);
@@ -228,17 +236,17 @@ class VideoStreamEncoder::DegradationPreferenceManager
     MaybeUpdateEffectiveDegradationPreference();
   }
 
-  void AddListener(DegradationPreferenceListener* listener) {
-    rtc::CritScope crit(&lock_);
-    RTC_DCHECK(absl::c_find(listeners_, listener) == listeners_.end());
-    listeners_.push_back(listener);
+  void SetVideoStreamAdapterQueue(
+      TaskQueueBase* video_stream_adapter_task_queue) {
+    RTC_DCHECK(!video_stream_adapter_task_queue_);
+    RTC_DCHECK(video_stream_adapter_task_queue);
+    RTC_DCHECK_RUN_ON(video_stream_adapter_task_queue);
+    video_stream_adapter_task_queue_ = video_stream_adapter_task_queue;
   }
 
-  void RemoveListener(DegradationPreferenceListener* listener) {
-    rtc::CritScope crit(&lock_);
-    auto it = absl::c_find(listeners_, listener);
-    RTC_DCHECK(it != listeners_.end());
-    listeners_.erase(it);
+  void SetVideoStreamAdapter(VideoStreamAdapter* video_stream_adapter) {
+    RTC_DCHECK_RUN_ON(video_stream_adapter_task_queue_);
+    video_stream_adapter_ = video_stream_adapter;
   }
 
  private:
@@ -252,9 +260,15 @@ class VideoStreamEncoder::DegradationPreferenceManager
 
     if (effective_degradation_preference != effective_degradation_preference_) {
       effective_degradation_preference_ = effective_degradation_preference;
-      for (auto& listener : listeners_) {
-        listener->OnDegradationPreferenceUpdated(
-            effective_degradation_preference_);
+      if (video_stream_adapter_task_queue_) {
+        video_stream_adapter_task_queue_->PostTask(
+            ToQueuedTask([this, effective_degradation_preference]() {
+              RTC_DCHECK_RUN_ON(video_stream_adapter_task_queue_);
+              if (video_stream_adapter_) {
+                video_stream_adapter_->SetDegradationPreference(
+                    effective_degradation_preference);
+              }
+            }));
       }
     }
   }
@@ -264,7 +278,9 @@ class VideoStreamEncoder::DegradationPreferenceManager
   bool is_screenshare_ RTC_GUARDED_BY(&lock_);
   DegradationPreference effective_degradation_preference_
       RTC_GUARDED_BY(&lock_);
-  std::vector<DegradationPreferenceListener*> listeners_ RTC_GUARDED_BY(&lock_);
+  TaskQueueBase* video_stream_adapter_task_queue_ = nullptr;
+  VideoStreamAdapter* video_stream_adapter_
+      RTC_GUARDED_BY(&video_stream_adapter_task_queue_);
 };
 
 VideoStreamEncoder::VideoStreamEncoder(
@@ -363,8 +379,10 @@ VideoStreamEncoder::VideoStreamEncoder(
         &stream_resource_manager_);
     video_stream_adapter_->AddRestrictionsListener(&stream_resource_manager_);
     video_stream_adapter_->AddRestrictionsListener(this);
-    degradation_preference_manager_->AddListener(
-        resource_adaptation_processor_.get());
+    degradation_preference_manager_->SetVideoStreamAdapterQueue(
+        resource_adaptation_queue_.Get());
+    degradation_preference_manager_->SetVideoStreamAdapter(
+        video_stream_adapter_.get());
 
     // Add the stream resource manager's resources to the processor.
     adaptation_constraints_ = stream_resource_manager_.AdaptationConstraints();
@@ -413,8 +431,7 @@ void VideoStreamEncoder::Stop() {
       resource_adaptation_processor_->RemoveResourceLimitationsListener(
           &stream_resource_manager_);
       stream_resource_manager_.SetAdaptationProcessor(nullptr, nullptr);
-      degradation_preference_manager_->RemoveListener(
-          resource_adaptation_processor_.get());
+      degradation_preference_manager_->SetVideoStreamAdapter(nullptr);
       resource_adaptation_processor_.reset();
     }
     shutdown_adaptation_processor_event.Set();

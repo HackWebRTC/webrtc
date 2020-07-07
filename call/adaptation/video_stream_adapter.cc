@@ -151,6 +151,8 @@ const char* Adaptation::StatusToString(Adaptation::Status status) {
       return "kAwaitingPreviousAdaptation";
     case Status::kInsufficientInput:
       return "kInsufficientInput";
+    case Status::kAdaptationDisabled:
+      return "kAdaptationDisabled";
   }
 }
 
@@ -305,7 +307,6 @@ Adaptation VideoStreamAdapter::GetAdaptationUp(
 
 Adaptation VideoStreamAdapter::GetAdaptationUp() {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
-  RTC_DCHECK_NE(degradation_preference_, DegradationPreference::DISABLED);
   VideoStreamInputState input_state = input_state_provider_->InputState();
   ++adaptation_validation_id_;
   Adaptation adaptation = GetAdaptationUp(input_state);
@@ -348,14 +349,12 @@ VideoStreamAdapter::RestrictionsOrState VideoStreamAdapter::GetAdaptationUpStep(
       return IncreaseFramerate(input_state, current_restrictions_);
     }
     case DegradationPreference::DISABLED:
-      RTC_NOTREACHED();
-      return Adaptation::Status::kLimitReached;
+      return Adaptation::Status::kAdaptationDisabled;
   }
 }
 
 Adaptation VideoStreamAdapter::GetAdaptationDown() {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
-  RTC_DCHECK_NE(degradation_preference_, DegradationPreference::DISABLED);
   VideoStreamInputState input_state = input_state_provider_->InputState();
   ++adaptation_validation_id_;
   return RestrictionsOrStateToAdaptation(GetAdaptationDownStep(input_state),
@@ -397,8 +396,7 @@ VideoStreamAdapter::GetAdaptationDownStep(
       return DecreaseFramerate(input_state, current_restrictions_);
     }
     case DegradationPreference::DISABLED:
-      RTC_NOTREACHED();
-      return Adaptation::Status::kLimitReached;
+      return Adaptation::Status::kAdaptationDisabled;
   }
 }
 
@@ -526,10 +524,11 @@ Adaptation VideoStreamAdapter::GetAdaptDownResolution() {
   VideoStreamInputState input_state = input_state_provider_->InputState();
   switch (degradation_preference_) {
     case DegradationPreference::DISABLED:
-    case DegradationPreference::MAINTAIN_RESOLUTION: {
-      return Adaptation(adaptation_validation_id_,
-                        Adaptation::Status::kLimitReached, input_state, false);
-    }
+      return RestrictionsOrStateToAdaptation(
+          Adaptation::Status::kAdaptationDisabled, input_state);
+    case DegradationPreference::MAINTAIN_RESOLUTION:
+      return RestrictionsOrStateToAdaptation(Adaptation::Status::kLimitReached,
+                                             input_state);
     case DegradationPreference::MAINTAIN_FRAMERATE:
       return GetAdaptationDown();
     case DegradationPreference::BALANCED: {

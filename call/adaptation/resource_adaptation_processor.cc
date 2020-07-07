@@ -75,7 +75,6 @@ ResourceAdaptationProcessor::ResourceAdaptationProcessor(
           new rtc::RefCountedObject<ResourceListenerDelegate>(this)),
       encoder_stats_observer_(encoder_stats_observer),
       resources_(),
-      effective_degradation_preference_(DegradationPreference::DISABLED),
       stream_adapter_(stream_adapter),
       last_reported_source_restrictions_(),
       previous_mitigation_results_(),
@@ -201,23 +200,6 @@ void ResourceAdaptationProcessor::RemoveAdaptationListener(
   adaptation_listeners_.erase(it);
 }
 
-void ResourceAdaptationProcessor::OnDegradationPreferenceUpdated(
-    DegradationPreference degradation_preference) {
-  if (!resource_adaptation_queue_->IsCurrent()) {
-    resource_adaptation_queue_->PostTask(
-        ToQueuedTask([this, degradation_preference]() {
-          OnDegradationPreferenceUpdated(degradation_preference);
-        }));
-    return;
-  }
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  if (degradation_preference == effective_degradation_preference_) {
-    return;
-  }
-  effective_degradation_preference_ = degradation_preference;
-  stream_adapter_->SetDegradationPreference(effective_degradation_preference_);
-}
-
 void ResourceAdaptationProcessor::OnResourceUsageStateMeasured(
     rtc::scoped_refptr<Resource> resource,
     ResourceUsageState usage_state) {
@@ -263,12 +245,6 @@ ResourceAdaptationProcessor::OnResourceUnderuse(
   RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
   RTC_DCHECK(!processing_in_progress_);
   processing_in_progress_ = true;
-  if (effective_degradation_preference_ == DegradationPreference::DISABLED) {
-    processing_in_progress_ = false;
-    return MitigationResultAndLogMessage(
-        MitigationResult::kDisabled,
-        "Not adapting up because DegradationPreference is disabled");
-  }
   // How can this stream be adapted up?
   Adaptation adaptation = stream_adapter_->GetAdaptationUp();
   if (adaptation.status() != Adaptation::Status::kValid) {
@@ -351,12 +327,6 @@ ResourceAdaptationProcessor::OnResourceOveruse(
   RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
   RTC_DCHECK(!processing_in_progress_);
   processing_in_progress_ = true;
-  if (effective_degradation_preference_ == DegradationPreference::DISABLED) {
-    processing_in_progress_ = false;
-    return MitigationResultAndLogMessage(
-        MitigationResult::kDisabled,
-        "Not adapting down because DegradationPreference is disabled");
-  }
   // How can this stream be adapted up?
   Adaptation adaptation = stream_adapter_->GetAdaptationDown();
   if (adaptation.min_pixel_limit_reached()) {

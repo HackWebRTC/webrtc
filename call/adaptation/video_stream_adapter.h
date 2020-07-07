@@ -74,6 +74,8 @@ class Adaptation final {
     kAwaitingPreviousAdaptation,
     // Not enough input.
     kInsufficientInput,
+    // Adaptation disabled via degradation preference.
+    kAdaptationDisabled,
   };
 
   static const char* StatusToString(Status status);

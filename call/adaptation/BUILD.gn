@@ -16,8 +16,6 @@ rtc_library("resource_adaptation") {
     "adaptation_listener.h",
     "broadcast_resource_listener.cc",
     "broadcast_resource_listener.h",
-    "degradation_preference_listener.cc",
-    "degradation_preference_listener.h",
     "degradation_preference_provider.cc",
     "degradation_preference_provider.h",
     "encoder_settings.cc",

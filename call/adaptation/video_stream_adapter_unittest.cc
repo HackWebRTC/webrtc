@@ -794,15 +794,14 @@ TEST_F(VideoStreamAdapterTest,
   EXPECT_EQ(0, adaptation.counters().fps_adaptations);
 }
 
-TEST_F(
-    VideoStreamAdapterTest,
-    GetAdaptDownResolutionReturnsLimitReachedInDisabledAndMaintainResolution) {
+TEST_F(VideoStreamAdapterTest,
+       GetAdaptDownResolutionReturnsWithStatusInDisabledAndMaintainResolution) {
   adapter_.SetDegradationPreference(DegradationPreference::DISABLED);
   input_state_provider_.SetInputState(1280 * 720, 30,
                                       kDefaultMinPixelsPerFrame);
-  EXPECT_EQ(Adaptation::Status::kLimitReached,
+  EXPECT_EQ(Adaptation::Status::kAdaptationDisabled,
             adapter_.GetAdaptDownResolution().status());
-  adapter_.SetDegradationPreference(DegradationPreference::DISABLED);
+  adapter_.SetDegradationPreference(DegradationPreference::MAINTAIN_RESOLUTION);
   EXPECT_EQ(Adaptation::Status::kLimitReached,
             adapter_.GetAdaptDownResolution().status());
 }
@@ -856,6 +855,19 @@ TEST_F(VideoStreamAdapterTest,
   EXPECT_EQ(Adaptation::Status::kValid, adaptation.status());
   EXPECT_EQ(0, adaptation.counters().resolution_adaptations);
   EXPECT_EQ(1, adaptation.counters().fps_adaptations);
+}
+
+TEST_F(VideoStreamAdapterTest,
+       AdaptationDisabledStatusAlwaysWhenDegradationPreferenceDisabled) {
+  adapter_.SetDegradationPreference(DegradationPreference::DISABLED);
+  input_state_provider_.SetInputState(1280 * 720, 30,
+                                      kDefaultMinPixelsPerFrame);
+  EXPECT_EQ(Adaptation::Status::kAdaptationDisabled,
+            adapter_.GetAdaptationDown().status());
+  EXPECT_EQ(Adaptation::Status::kAdaptationDisabled,
+            adapter_.GetAdaptationUp().status());
+  EXPECT_EQ(Adaptation::Status::kAdaptationDisabled,
+            adapter_.GetAdaptDownResolution().status());
 }
 
 // Death tests.
