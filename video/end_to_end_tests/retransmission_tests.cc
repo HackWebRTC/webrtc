@@ -19,6 +19,7 @@
 #include "modules/rtp_rtcp/source/rtp_packet.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "rtc_base/event.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "test/call_test.h"
 #include "test/field_trial.h"
@@ -58,7 +59,7 @@ TEST_F(RetransmissionEndToEndTest, ReceivesAndRetransmitsNack) {
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
-      rtc::CritScope lock(&crit_);
+      MutexLock lock(&mutex_);
       RtpPacket rtp_packet;
       EXPECT_TRUE(rtp_packet.Parse(packet, length));
 
@@ -95,7 +96,7 @@ TEST_F(RetransmissionEndToEndTest, ReceivesAndRetransmitsNack) {
     }
 
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
-      rtc::CritScope lock(&crit_);
+      MutexLock lock(&mutex_);
       test::RtcpPacketParser parser;
       EXPECT_TRUE(parser.Parse(packet, length));
       nacks_left_ -= parser.nack()->num_packets();
@@ -116,12 +117,12 @@ TEST_F(RetransmissionEndToEndTest, ReceivesAndRetransmitsNack) {
              "rendered.";
     }
 
-    rtc::CriticalSection crit_;
+    Mutex mutex_;
     std::set<uint16_t> dropped_packets_;
     std::set<uint16_t> retransmitted_packets_;
     uint64_t sent_rtp_packets_;
     int packets_left_to_drop_;
-    int nacks_left_ RTC_GUARDED_BY(&crit_);
+    int nacks_left_ RTC_GUARDED_BY(&mutex_);
   } test;
 
   RunBaseTest(&test);
@@ -290,7 +291,7 @@ void RetransmissionEndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
-      rtc::CritScope lock(&crit_);
+      MutexLock lock(&mutex_);
       RtpPacket rtp_packet;
       EXPECT_TRUE(rtp_packet.Parse(packet, length));
 
@@ -308,7 +309,7 @@ void RetransmissionEndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
     }
 
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
-      rtc::CritScope lock(&crit_);
+      MutexLock lock(&mutex_);
       test::RtcpPacketParser parser;
       EXPECT_TRUE(parser.Parse(packet, length));
       if (!nack_enabled_)
@@ -319,7 +320,7 @@ void RetransmissionEndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
     }
 
     void OnFrame(const VideoFrame& video_frame) override {
-      rtc::CritScope lock(&crit_);
+      MutexLock lock(&mutex_);
       if (received_pli_ &&
           video_frame.timestamp() > highest_dropped_timestamp_) {
         observation_complete_.Set();
@@ -343,12 +344,12 @@ void RetransmissionEndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
                              "rendered afterwards.";
     }
 
-    rtc::CriticalSection crit_;
+    Mutex mutex_;
     int rtp_history_ms_;
     bool nack_enabled_;
-    uint32_t highest_dropped_timestamp_ RTC_GUARDED_BY(&crit_);
-    int frames_to_drop_ RTC_GUARDED_BY(&crit_);
-    bool received_pli_ RTC_GUARDED_BY(&crit_);
+    uint32_t highest_dropped_timestamp_ RTC_GUARDED_BY(&mutex_);
+    int frames_to_drop_ RTC_GUARDED_BY(&mutex_);
+    bool received_pli_ RTC_GUARDED_BY(&mutex_);
   } test(rtp_history_ms);
 
   RunBaseTest(&test);
@@ -382,7 +383,7 @@ void RetransmissionEndToEndTest::DecodesRetransmittedFrame(bool enable_rtx,
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
-      rtc::CritScope lock(&crit_);
+      MutexLock lock(&mutex_);
       RtpPacket rtp_packet;
       EXPECT_TRUE(rtp_packet.Parse(packet, length));
 
@@ -427,7 +428,7 @@ void RetransmissionEndToEndTest::DecodesRetransmittedFrame(bool enable_rtx,
     void OnFrame(const VideoFrame& frame) override {
       EXPECT_EQ(kVideoRotation_90, frame.rotation());
       {
-        rtc::CritScope lock(&crit_);
+        MutexLock lock(&mutex_);
         if (frame.timestamp() == retransmitted_timestamp_)
           observation_complete_.Set();
         rendered_timestamps_.push_back(frame.timestamp());
@@ -502,7 +503,7 @@ void RetransmissionEndToEndTest::DecodesRetransmittedFrame(bool enable_rtx,
       return kFakeVideoSendPayloadType;
     }
 
-    rtc::CriticalSection crit_;
+    Mutex mutex_;
     rtc::VideoSinkInterface<VideoFrame>* orig_renderer_ = nullptr;
     const int payload_type_;
     const uint32_t retransmission_ssrc_;
@@ -510,8 +511,8 @@ void RetransmissionEndToEndTest::DecodesRetransmittedFrame(bool enable_rtx,
     test::FunctionVideoEncoderFactory encoder_factory_;
     const std::string payload_name_;
     int marker_bits_observed_;
-    uint32_t retransmitted_timestamp_ RTC_GUARDED_BY(&crit_);
-    std::vector<uint32_t> rendered_timestamps_ RTC_GUARDED_BY(&crit_);
+    uint32_t retransmitted_timestamp_ RTC_GUARDED_BY(&mutex_);
+    std::vector<uint32_t> rendered_timestamps_ RTC_GUARDED_BY(&mutex_);
   } test(enable_rtx, enable_red);
 
   RunBaseTest(&test);

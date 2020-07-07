@@ -35,10 +35,10 @@
 #include "call/adaptation/resource_adaptation_processor_interface.h"
 #include "call/adaptation/video_stream_adapter.h"
 #include "call/adaptation/video_stream_input_state_provider.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/experiments/quality_scaler_settings.h"
 #include "rtc_base/ref_count.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_queue.h"
 #include "system_wrappers/include/clock.h"
 #include "video/adaptation/encode_usage_resource.h"
@@ -277,7 +277,7 @@ class VideoStreamEncoderResourceManager
     const rtc::scoped_refptr<Resource> resource;
     const VideoAdaptationReason reason;
   };
-  rtc::CriticalSection resource_lock_;
+  mutable Mutex resource_lock_;
   std::vector<ResourceAndReason> resources_ RTC_GUARDED_BY(&resource_lock_);
 };
 

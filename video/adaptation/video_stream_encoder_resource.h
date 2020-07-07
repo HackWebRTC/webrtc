@@ -19,7 +19,7 @@
 #include "api/task_queue/task_queue_base.h"
 #include "call/adaptation/adaptation_constraint.h"
 #include "call/adaptation/adaptation_listener.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 
 namespace webrtc {
@@ -60,14 +60,14 @@ class VideoStreamEncoderResource : public Resource {
   TaskQueueBase* resource_adaptation_queue() const;
   template <typename Closure>
   void MaybePostTaskToResourceAdaptationQueue(Closure&& closure) {
-    rtc::CritScope crit(&lock_);
+    MutexLock lock(&lock_);
     if (!resource_adaptation_queue_)
       return;
     resource_adaptation_queue_->PostTask(ToQueuedTask(closure));
   }
 
  private:
-  rtc::CriticalSection lock_;
+  mutable Mutex lock_;
   const std::string name_;
   // Treated as const after initialization.
   TaskQueueBase* encoder_queue_;

@@ -18,6 +18,7 @@
 #include "call/simulated_network.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "rtc_base/rate_limiter.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/task_utils/to_queued_task.h"
 #include "system_wrappers/include/sleep.h"
@@ -353,7 +354,7 @@ TEST_F(BandwidthEndToEndTest, ReportsSetEncoderRates) {
       // Make sure not to trigger on any default zero bitrates.
       if (parameters.bitrate.get_sum_bps() == 0)
         return;
-      rtc::CritScope lock(&crit_);
+      MutexLock lock(&mutex_);
       bitrate_kbps_ = parameters.bitrate.get_sum_kbps();
       observation_complete_.Set();
     }
@@ -375,7 +376,7 @@ TEST_F(BandwidthEndToEndTest, ReportsSetEncoderRates) {
       for (int i = 0; i < kDefaultTimeoutMs; ++i) {
         VideoSendStream::Stats stats = send_stream_->GetStats();
         {
-          rtc::CritScope lock(&crit_);
+          MutexLock lock(&mutex_);
           if ((stats.target_media_bitrate_bps + 500) / 1000 ==
               static_cast<int>(bitrate_kbps_)) {
             return;
@@ -399,11 +400,11 @@ TEST_F(BandwidthEndToEndTest, ReportsSetEncoderRates) {
 
    private:
     TaskQueueBase* const task_queue_;
-    rtc::CriticalSection crit_;
+    Mutex mutex_;
     VideoSendStream* send_stream_;
     test::VideoEncoderProxyFactory encoder_factory_;
     std::unique_ptr<VideoBitrateAllocatorFactory> bitrate_allocator_factory_;
-    uint32_t bitrate_kbps_ RTC_GUARDED_BY(crit_);
+    uint32_t bitrate_kbps_ RTC_GUARDED_BY(mutex_);
   } test(task_queue());
 
   RunBaseTest(&test);

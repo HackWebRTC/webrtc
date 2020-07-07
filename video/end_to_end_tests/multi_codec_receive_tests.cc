@@ -19,6 +19,7 @@
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "test/call_test.h"
 #include "test/gmock.h"
@@ -65,7 +66,7 @@ class FrameObserver : public test::RtpRtcpObserver,
   FrameObserver() : test::RtpRtcpObserver(test::CallTest::kDefaultTimeoutMs) {}
 
   void Reset(uint8_t expected_payload_type) {
-    rtc::CritScope lock(&crit_);
+    MutexLock lock(&mutex_);
     num_sent_frames_ = 0;
     num_rendered_frames_ = 0;
     expected_payload_type_ = expected_payload_type;
@@ -74,7 +75,7 @@ class FrameObserver : public test::RtpRtcpObserver,
  private:
   // Sends kFramesToObserve.
   Action OnSendRtp(const uint8_t* packet, size_t length) override {
-    rtc::CritScope lock(&crit_);
+    MutexLock lock(&mutex_);
 
     RtpPacket rtp_packet;
     EXPECT_TRUE(rtp_packet.Parse(packet, length));
@@ -103,7 +104,7 @@ class FrameObserver : public test::RtpRtcpObserver,
 
   // Verifies that all sent frames are decoded and rendered.
   void OnFrame(const VideoFrame& rendered_frame) override {
-    rtc::CritScope lock(&crit_);
+    MutexLock lock(&mutex_);
     EXPECT_THAT(sent_timestamps_, Contains(rendered_frame.timestamp()));
 
     // Remove old timestamps too, only the newest decoded frame is rendered.
@@ -116,12 +117,12 @@ class FrameObserver : public test::RtpRtcpObserver,
     }
   }
 
-  rtc::CriticalSection crit_;
+  Mutex mutex_;
   absl::optional<uint32_t> last_timestamp_;  // Only accessed from pacer thread.
-  absl::optional<uint8_t> expected_payload_type_ RTC_GUARDED_BY(crit_);
-  int num_sent_frames_ RTC_GUARDED_BY(crit_) = 0;
-  int num_rendered_frames_ RTC_GUARDED_BY(crit_) = 0;
-  std::vector<uint32_t> sent_timestamps_ RTC_GUARDED_BY(crit_);
+  absl::optional<uint8_t> expected_payload_type_ RTC_GUARDED_BY(mutex_);
+  int num_sent_frames_ RTC_GUARDED_BY(mutex_) = 0;
+  int num_rendered_frames_ RTC_GUARDED_BY(mutex_) = 0;
+  std::vector<uint32_t> sent_timestamps_ RTC_GUARDED_BY(mutex_);
 };
 }  // namespace
 

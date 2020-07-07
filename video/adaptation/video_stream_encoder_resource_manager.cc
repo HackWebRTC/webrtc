@@ -354,7 +354,7 @@ void VideoStreamEncoderResourceManager::StopManagedResources() {
 void VideoStreamEncoderResourceManager::MapResourceToReason(
     rtc::scoped_refptr<Resource> resource,
     VideoAdaptationReason reason) {
-  rtc::CritScope crit(&resource_lock_);
+  MutexLock lock(&resource_lock_);
   RTC_DCHECK(resource);
   RTC_DCHECK(absl::c_find_if(resources_,
                              [resource](const ResourceAndReason& r) {
@@ -366,7 +366,7 @@ void VideoStreamEncoderResourceManager::MapResourceToReason(
 
 std::vector<rtc::scoped_refptr<Resource>>
 VideoStreamEncoderResourceManager::MappedResources() const {
-  rtc::CritScope crit(&resource_lock_);
+  MutexLock lock(&resource_lock_);
   std::vector<rtc::scoped_refptr<Resource>> resources;
   for (auto const& resource_and_reason : resources_) {
     resources.push_back(resource_and_reason.resource);
@@ -386,7 +386,7 @@ VideoStreamEncoderResourceManager::AdaptationListeners() const {
 
 rtc::scoped_refptr<QualityScalerResource>
 VideoStreamEncoderResourceManager::quality_scaler_resource_for_testing() {
-  rtc::CritScope crit(&resource_lock_);
+  MutexLock lock(&resource_lock_);
   return quality_scaler_resource_;
 }
 
@@ -559,7 +559,7 @@ void VideoStreamEncoderResourceManager::ConfigureQualityScaler(
 
 VideoAdaptationReason VideoStreamEncoderResourceManager::GetReasonFromResource(
     rtc::scoped_refptr<Resource> resource) const {
-  rtc::CritScope crit(&resource_lock_);
+  MutexLock lock(&resource_lock_);
   const auto& registered_resource =
       absl::c_find_if(resources_, [&resource](const ResourceAndReason& r) {
         return r.resource == resource;

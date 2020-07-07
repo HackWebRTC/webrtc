@@ -20,6 +20,7 @@
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "system_wrappers/include/metrics.h"
 #include "system_wrappers/include/sleep.h"
@@ -479,7 +480,7 @@ TEST_F(StatsEndToEndTest, MAYBE_ContentTypeSwitches) {
       if (video_frame.ntp_time_ms() > 0 &&
           Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() >=
               video_frame.ntp_time_ms()) {
-        rtc::CritScope lock(&crit_);
+        MutexLock lock(&mutex_);
         ++num_frames_received_;
       }
     }
@@ -493,7 +494,7 @@ TEST_F(StatsEndToEndTest, MAYBE_ContentTypeSwitches) {
     bool MinNumberOfFramesReceived() const {
       // Have some room for frames with wrong content type during switch.
       const int kMinRequiredHistogramSamples = 200 + 50;
-      rtc::CritScope lock(&crit_);
+      MutexLock lock(&mutex_);
       return num_frames_received_ > kMinRequiredHistogramSamples;
     }
 
@@ -502,13 +503,13 @@ TEST_F(StatsEndToEndTest, MAYBE_ContentTypeSwitches) {
       EXPECT_TRUE(Wait()) << "Timed out waiting for enough packets.";
       // Reset frame counter so next PerformTest() call will do something.
       {
-        rtc::CritScope lock(&crit_);
+        MutexLock lock(&mutex_);
         num_frames_received_ = 0;
       }
     }
 
-    rtc::CriticalSection crit_;
-    int num_frames_received_ RTC_GUARDED_BY(&crit_);
+    mutable Mutex mutex_;
+    int num_frames_received_ RTC_GUARDED_BY(&mutex_);
   } test;
 
   metrics::Reset();
@@ -609,7 +610,7 @@ TEST_F(StatsEndToEndTest, VerifyNackStats) {
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
-      rtc::CritScope lock(&crit_);
+      MutexLock lock(&mutex_);
       if (++sent_rtp_packets_ == kPacketNumberToDrop) {
         std::unique_ptr<RtpHeaderParser> parser(
             RtpHeaderParser::CreateForTest());
@@ -623,7 +624,7 @@ TEST_F(StatsEndToEndTest, VerifyNackStats) {
     }
 
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
-      rtc::CritScope lock(&crit_);
+      MutexLock lock(&mutex_);
       test::RtcpPacketParser rtcp_parser;
       rtcp_parser.Parse(packet, length);
       const std::vector<uint16_t>& nacks = rtcp_parser.nack()->packet_ids();
@@ -633,7 +634,7 @@ TEST_F(StatsEndToEndTest, VerifyNackStats) {
       return SEND_PACKET;
     }
 
-    void VerifyStats() RTC_EXCLUSIVE_LOCKS_REQUIRED(&crit_) {
+    void VerifyStats() RTC_EXCLUSIVE_LOCKS_REQUIRED(&mutex_) {
       if (!dropped_rtp_packet_requested_)
         return;
       int send_stream_nack_packets = 0;
@@ -684,7 +685,7 @@ TEST_F(StatsEndToEndTest, VerifyNackStats) {
     }
 
     bool Run() override {
-      rtc::CritScope lock(&crit_);
+      MutexLock lock(&mutex_);
       VerifyStats();
       return false;
     }
@@ -694,10 +695,10 @@ TEST_F(StatsEndToEndTest, VerifyNackStats) {
     }
 
     test::FakeVideoRenderer fake_renderer_;
-    rtc::CriticalSection crit_;
+    Mutex mutex_;
     uint64_t sent_rtp_packets_;
-    uint16_t dropped_rtp_packet_ RTC_GUARDED_BY(&crit_);
-    bool dropped_rtp_packet_requested_ RTC_GUARDED_BY(&crit_);
+    uint16_t dropped_rtp_packet_ RTC_GUARDED_BY(&mutex_);
+    bool dropped_rtp_packet_requested_ RTC_GUARDED_BY(&mutex_);
     std::vector<VideoReceiveStream*> receive_streams_;
     VideoSendStream* send_stream_;
     absl::optional<int64_t> start_runtime_ms_;
