@@ -83,9 +83,9 @@ class VideoAnalyzer : public PacketReceiver,
 
   void StartMeasuringCpuProcessTime();
   void StopMeasuringCpuProcessTime();
-  void StartExcludingCpuThreadTime();
-  void StopExcludingCpuThreadTime();
-  double GetCpuUsagePercent();
+  void StartExcludingCpuThreadTime() RTC_LOCKS_EXCLUDED(cpu_measurement_lock_);
+  void StopExcludingCpuThreadTime() RTC_LOCKS_EXCLUDED(cpu_measurement_lock_);
+  double GetCpuUsagePercent() RTC_LOCKS_EXCLUDED(cpu_measurement_lock_);
 
   test::LayerFilteringTransport* const transport_;
   PacketReceiver* receiver_;
@@ -153,14 +153,17 @@ class VideoAnalyzer : public PacketReceiver,
     void SetSource(rtc::VideoSourceInterface<VideoFrame>* video_source);
 
    private:
-    void OnFrame(const VideoFrame& video_frame) override;
+    void OnFrame(const VideoFrame& video_frame)
+        RTC_LOCKS_EXCLUDED(crit_) override;
 
     // Called when |send_stream_.SetSource()| is called.
     void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
-                         const rtc::VideoSinkWants& wants) override;
+                         const rtc::VideoSinkWants& wants)
+        RTC_LOCKS_EXCLUDED(crit_) override;
 
     // Called by |send_stream_| when |send_stream_.SetSource()| is called.
-    void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override;
+    void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink)
+        RTC_LOCKS_EXCLUDED(crit_) override;
 
     VideoAnalyzer* const analyzer_;
     rtc::CriticalSection crit_;
@@ -186,19 +189,21 @@ class VideoAnalyzer : public PacketReceiver,
                           int64_t render_time_ms)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  void PollStats();
+  void PollStats() RTC_LOCKS_EXCLUDED(comparison_lock_);
   static void FrameComparisonThread(void* obj);
   bool CompareFrames();
   bool PopComparison(FrameComparison* comparison);
   // Increment counter for number of frames received for comparison.
-  void FrameRecorded();
+  void FrameRecorded() RTC_EXCLUSIVE_LOCKS_REQUIRED(comparison_lock_);
   // Returns true if all frames to be compared have been taken from the queue.
-  bool AllFramesRecorded();
+  bool AllFramesRecorded() RTC_LOCKS_EXCLUDED(comparison_lock_);
+  bool AllFramesRecordedLocked() RTC_EXCLUSIVE_LOCKS_REQUIRED(comparison_lock_);
   // Increase count of number of frames processed. Returns true if this was the
   // last frame to be processed.
-  bool FrameProcessed();
-  void PrintResults();
-  void PerformFrameComparison(const FrameComparison& comparison);
+  bool FrameProcessed() RTC_LOCKS_EXCLUDED(comparison_lock_);
+  void PrintResults() RTC_LOCKS_EXCLUDED(crit_, comparison_lock_);
+  void PerformFrameComparison(const FrameComparison& comparison)
+      RTC_LOCKS_EXCLUDED(comparison_lock_);
   void PrintResult(const char* result_type,
                    Statistics stats,
                    const char* unit,
@@ -209,8 +214,9 @@ class VideoAnalyzer : public PacketReceiver,
       Statistics stats,
       const char* unit,
       webrtc::test::ImproveDirection improve_direction);
-  void PrintSamplesToFile(void);
-  void AddCapturedFrameForComparison(const VideoFrame& video_frame);
+  void PrintSamplesToFile(void) RTC_LOCKS_EXCLUDED(comparison_lock_);
+  void AddCapturedFrameForComparison(const VideoFrame& video_frame)
+      RTC_LOCKS_EXCLUDED(crit_, comparison_lock_);
 
   Call* call_;
   VideoSendStream* send_stream_;
@@ -264,7 +270,8 @@ class VideoAnalyzer : public PacketReceiver,
 
   size_t last_fec_bytes_;
 
-  rtc::CriticalSection crit_;
+  rtc::CriticalSection crit_ RTC_ACQUIRED_BEFORE(comparison_lock_)
+      RTC_ACQUIRED_BEFORE(cpu_measurement_lock_);
   const int frames_to_process_;
   const Timestamp test_end_;
   int frames_recorded_ RTC_GUARDED_BY(comparison_lock_);

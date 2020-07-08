@@ -570,7 +570,7 @@ bool VideoAnalyzer::PopComparison(VideoAnalyzer::FrameComparison* comparison) {
   // for this thread to be done. frames_processed_ might still be lower if
   // all comparisons are not done, but those frames are currently being
   // worked on by other threads.
-  if (comparisons_.empty() || AllFramesRecorded())
+  if (comparisons_.empty() || AllFramesRecordedLocked())
     return false;
 
   *comparison = comparisons_.front();
@@ -581,12 +581,15 @@ bool VideoAnalyzer::PopComparison(VideoAnalyzer::FrameComparison* comparison) {
 }
 
 void VideoAnalyzer::FrameRecorded() {
-  rtc::CritScope crit(&comparison_lock_);
   ++frames_recorded_;
 }
 
 bool VideoAnalyzer::AllFramesRecorded() {
   rtc::CritScope crit(&comparison_lock_);
+  return AllFramesRecordedLocked();
+}
+
+bool VideoAnalyzer::AllFramesRecordedLocked() {
   RTC_DCHECK(frames_recorded_ <= frames_to_process_);
   return frames_recorded_ == frames_to_process_ ||
          (clock_->CurrentTime() > test_end_ && comparisons_.empty()) || quit_;
