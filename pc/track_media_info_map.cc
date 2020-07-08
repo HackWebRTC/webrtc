@@ -14,6 +14,8 @@
 #include <string>
 #include <utility>
 
+#include "rtc_base/thread.h"
+
 namespace webrtc {
 
 namespace {
@@ -43,20 +45,12 @@ void GetAudioAndVideoTrackBySsrc(
   RTC_DCHECK(local_video_track_by_ssrc->empty());
   RTC_DCHECK(remote_audio_track_by_ssrc->empty());
   RTC_DCHECK(remote_video_track_by_ssrc->empty());
-  // TODO(hbos): RTP senders/receivers uses a proxy to the signaling thread, and
-  // our sender/receiver implementations invokes on the worker thread. (This
-  // means one thread jump if on signaling thread and two thread jumps if on any
-  // other threads). Is there a way to avoid thread jump(s) on a per
-  // sender/receiver, per method basis?
   for (const auto& rtp_sender : rtp_senders) {
     cricket::MediaType media_type = rtp_sender->media_type();
     MediaStreamTrackInterface* track = rtp_sender->track();
     if (!track) {
       continue;
     }
-    RTC_DCHECK_EQ(track->kind(), media_type == cricket::MEDIA_TYPE_AUDIO
-                                     ? MediaStreamTrackInterface::kAudioKind
-                                     : MediaStreamTrackInterface::kVideoKind);
     // TODO(deadbeef): |ssrc| should be removed in favor of |GetParameters|.
     uint32_t ssrc = rtp_sender->ssrc();
     if (ssrc != 0) {
@@ -77,9 +71,6 @@ void GetAudioAndVideoTrackBySsrc(
     cricket::MediaType media_type = rtp_receiver->media_type();
     MediaStreamTrackInterface* track = rtp_receiver->track();
     RTC_DCHECK(track);
-    RTC_DCHECK_EQ(track->kind(), media_type == cricket::MEDIA_TYPE_AUDIO
-                                     ? MediaStreamTrackInterface::kAudioKind
-                                     : MediaStreamTrackInterface::kVideoKind);
     RtpParameters params = rtp_receiver->GetParameters();
     for (const RtpEncodingParameters& encoding : params.encodings) {
       if (!encoding.ssrc) {
@@ -115,6 +106,8 @@ TrackMediaInfoMap::TrackMediaInfoMap(
     const std::vector<rtc::scoped_refptr<RtpReceiverInternal>>& rtp_receivers)
     : voice_media_info_(std::move(voice_media_info)),
       video_media_info_(std::move(video_media_info)) {
+  rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
+
   std::map<uint32_t, AudioTrackInterface*> local_audio_track_by_ssrc;
   std::map<uint32_t, VideoTrackInterface*> local_video_track_by_ssrc;
   std::map<uint32_t, AudioTrackInterface*> remote_audio_track_by_ssrc;

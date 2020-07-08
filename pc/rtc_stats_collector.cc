@@ -1868,9 +1868,12 @@ RTCStatsCollector::PrepareTransceiverStatsInfos_s() const {
     }
   }
 
-  // Call GetStats for all media channels together on the worker thread in one
-  // hop.
+  // We jump to the worker thread and call GetStats() on each media channel. At
+  // the same time we construct the TrackMediaInfoMaps, which also needs info
+  // from the worker thread. This minimizes the number of thread jumps.
   worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+    rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
+
     for (const auto& entry : voice_stats) {
       if (!entry.first->GetStats(entry.second.get())) {
         RTC_LOG(LS_WARNING) << "Failed to get voice stats.";
@@ -1881,41 +1884,41 @@ RTCStatsCollector::PrepareTransceiverStatsInfos_s() const {
         RTC_LOG(LS_WARNING) << "Failed to get video stats.";
       }
     }
-  });
 
-  // Create the TrackMediaInfoMap for each transceiver stats object.
-  for (auto& stats : transceiver_stats_infos) {
-    auto transceiver = stats.transceiver;
-    std::unique_ptr<cricket::VoiceMediaInfo> voice_media_info;
-    std::unique_ptr<cricket::VideoMediaInfo> video_media_info;
-    if (transceiver->channel()) {
-      cricket::MediaType media_type = transceiver->media_type();
-      if (media_type == cricket::MEDIA_TYPE_AUDIO) {
-        auto* voice_channel =
-            static_cast<cricket::VoiceChannel*>(transceiver->channel());
-        RTC_DCHECK(voice_stats[voice_channel->media_channel()]);
-        voice_media_info =
-            std::move(voice_stats[voice_channel->media_channel()]);
-      } else if (media_type == cricket::MEDIA_TYPE_VIDEO) {
-        auto* video_channel =
-            static_cast<cricket::VideoChannel*>(transceiver->channel());
-        RTC_DCHECK(video_stats[video_channel->media_channel()]);
-        video_media_info =
-            std::move(video_stats[video_channel->media_channel()]);
+    // Create the TrackMediaInfoMap for each transceiver stats object.
+    for (auto& stats : transceiver_stats_infos) {
+      auto transceiver = stats.transceiver;
+      std::unique_ptr<cricket::VoiceMediaInfo> voice_media_info;
+      std::unique_ptr<cricket::VideoMediaInfo> video_media_info;
+      if (transceiver->channel()) {
+        cricket::MediaType media_type = transceiver->media_type();
+        if (media_type == cricket::MEDIA_TYPE_AUDIO) {
+          auto* voice_channel =
+              static_cast<cricket::VoiceChannel*>(transceiver->channel());
+          RTC_DCHECK(voice_stats[voice_channel->media_channel()]);
+          voice_media_info =
+              std::move(voice_stats[voice_channel->media_channel()]);
+        } else if (media_type == cricket::MEDIA_TYPE_VIDEO) {
+          auto* video_channel =
+              static_cast<cricket::VideoChannel*>(transceiver->channel());
+          RTC_DCHECK(video_stats[video_channel->media_channel()]);
+          video_media_info =
+              std::move(video_stats[video_channel->media_channel()]);
+        }
       }
+      std::vector<rtc::scoped_refptr<RtpSenderInternal>> senders;
+      for (const auto& sender : transceiver->senders()) {
+        senders.push_back(sender->internal());
+      }
+      std::vector<rtc::scoped_refptr<RtpReceiverInternal>> receivers;
+      for (const auto& receiver : transceiver->receivers()) {
+        receivers.push_back(receiver->internal());
+      }
+      stats.track_media_info_map = std::make_unique<TrackMediaInfoMap>(
+          std::move(voice_media_info), std::move(video_media_info), senders,
+          receivers);
     }
-    std::vector<rtc::scoped_refptr<RtpSenderInternal>> senders;
-    for (const auto& sender : transceiver->senders()) {
-      senders.push_back(sender->internal());
-    }
-    std::vector<rtc::scoped_refptr<RtpReceiverInternal>> receivers;
-    for (const auto& receiver : transceiver->receivers()) {
-      receivers.push_back(receiver->internal());
-    }
-    stats.track_media_info_map = std::make_unique<TrackMediaInfoMap>(
-        std::move(voice_media_info), std::move(video_media_info), senders,
-        receivers);
-  }
+  });
 
   return transceiver_stats_infos;
 }
