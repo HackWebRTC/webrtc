@@ -18,7 +18,7 @@
 
 #include "rtc_base/buffer.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace rtc {
@@ -52,9 +52,9 @@ class BufferQueue {
  private:
   size_t capacity_;
   size_t default_size_;
-  CriticalSection crit_;
-  std::deque<Buffer*> queue_ RTC_GUARDED_BY(crit_);
-  std::vector<Buffer*> free_list_ RTC_GUARDED_BY(crit_);
+  mutable webrtc::Mutex mutex_;
+  std::deque<Buffer*> queue_ RTC_GUARDED_BY(mutex_);
+  std::vector<Buffer*> free_list_ RTC_GUARDED_BY(mutex_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(BufferQueue);
 };

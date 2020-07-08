@@ -12,11 +12,13 @@
 #define SDK_ANDROID_SRC_JNI_VIDEO_DECODER_WRAPPER_H_
 
 #include <jni.h>
+
 #include <atomic>
 #include <deque>
 
 #include "api/video_codecs/video_decoder.h"
 #include "common_video/h264/h264_bitstream_parser.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/thread_checker.h"
 #include "sdk/android/src/jni/jni_helpers.h"

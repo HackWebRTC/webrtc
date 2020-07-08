@@ -13,8 +13,8 @@
 #include <type_traits>
 
 #include "api/task_queue/task_queue_base.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/platform_thread_types.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -42,7 +42,7 @@ class RTC_EXPORT SequenceCheckerImpl {
   std::string ExpectationToString() const;
 
  private:
-  rtc::CriticalSection lock_;
+  mutable Mutex lock_;
   // These are mutable so that IsCurrent can set them.
   mutable bool attached_ RTC_GUARDED_BY(lock_);
   mutable rtc::PlatformThreadRef valid_thread_ RTC_GUARDED_BY(lock_);

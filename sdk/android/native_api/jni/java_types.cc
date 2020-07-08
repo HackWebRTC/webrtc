@@ -10,6 +10,7 @@
 
 #include "sdk/android/native_api/jni/java_types.h"
 
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -51,14 +52,15 @@ Iterable::Iterator::Iterator(JNIEnv* jni, const JavaRef<jobject>& iterable)
 Iterable::Iterator::Iterator(Iterator&& other)
     : jni_(std::move(other.jni_)),
       iterator_(std::move(other.iterator_)),
-      value_(std::move(other.value_)),
-      thread_checker_(std::move(other.thread_checker_)) {}
+      value_(std::move(other.value_)) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+}
 
 Iterable::Iterator::~Iterator() = default;
 
 // Advances the iterator one step.
 Iterable::Iterator& Iterable::Iterator::operator++() {
-  RTC_CHECK(thread_checker_.IsCurrent());
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   if (AtEnd()) {
     // Can't move past the end.
     return *this;
@@ -93,7 +95,7 @@ ScopedJavaLocalRef<jobject>& Iterable::Iterator::operator*() {
 }
 
 bool Iterable::Iterator::AtEnd() const {
-  RTC_CHECK(thread_checker_.IsCurrent());
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   return jni_ == nullptr || IsNull(jni_, iterator_);
 }
 

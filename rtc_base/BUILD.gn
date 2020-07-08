@@ -55,6 +55,7 @@ rtc_library("rtc_base_approved") {
     ":type_traits",
     "../api:array_view",
     "../api:scoped_refptr",
+    "synchronization:mutex",
     "system:arch",
     "system:rtc_export",
     "system:unused",
@@ -325,6 +326,7 @@ rtc_library("rate_limiter") {
   deps = [
     ":rtc_base_approved",
     "../system_wrappers",
+    "synchronization:mutex",
   ]
   absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
 }
@@ -479,6 +481,7 @@ if (rtc_enable_libevent) {
       ":safe_conversions",
       ":timeutils",
       "../api/task_queue",
+      "synchronization:mutex",
     ]
     absl_deps = [
       "//third_party/abseil-cpp/absl/container:inlined_vector",
@@ -501,6 +504,7 @@ if (is_mac || is_ios) {
       ":checks",
       ":logging",
       "../api/task_queue",
+      "synchronization:mutex",
       "system:gcd_helpers",
     ]
     absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
@@ -524,6 +528,7 @@ if (is_win) {
       ":safe_conversions",
       ":timeutils",
       "../api/task_queue",
+      "synchronization:mutex",
     ]
     absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
   }
@@ -544,6 +549,7 @@ rtc_library("rtc_task_queue_stdlib") {
     ":safe_conversions",
     ":timeutils",
     "../api/task_queue",
+    "synchronization:mutex",
   ]
   absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
 }
@@ -782,6 +788,7 @@ rtc_library("rtc_base") {
     "../api/task_queue",
     "../system_wrappers:field_trial",
     "network:sent_packet",
+    "synchronization:mutex",
     "synchronization:sequence_checker",
     "system:file_wrapper",
     "system:inline",
@@ -1037,6 +1044,7 @@ rtc_library("testclient") {
     ":rtc_base",
     ":rtc_base_tests_utils",
     ":timeutils",
+    "synchronization:mutex",
   ]
 }
 
@@ -1085,6 +1093,7 @@ rtc_library("rtc_base_tests_utils") {
     "../api/units:time_delta",
     "../api/units:timestamp",
     "memory:fifo_buffer",
+    "synchronization:mutex",
     "third_party/sigslot",
   ]
   absl_deps = [
@@ -1122,6 +1131,7 @@ if (rtc_include_tests) {
       ":rtc_base",
       ":rtc_base_tests_utils",
       "../test:test_support",
+      "synchronization:mutex",
       "third_party/sigslot",
     ]
   }
@@ -1230,6 +1240,7 @@ if (rtc_include_tests) {
       "../test:test_main",
       "../test:test_support",
       "memory:unittests",
+      "synchronization:mutex",
       "task_utils:to_queued_task",
       "third_party/base64",
       "third_party/sigslot",

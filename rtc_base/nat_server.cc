@@ -243,12 +243,12 @@ NATServer::TransEntry::~TransEntry() {
 }
 
 void NATServer::TransEntry::AllowlistInsert(const SocketAddress& addr) {
-  CritScope cs(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   allowlist->insert(addr);
 }
 
 bool NATServer::TransEntry::AllowlistContains(const SocketAddress& ext_addr) {
-  CritScope cs(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   return allowlist->find(ext_addr) == allowlist->end();
 }
 

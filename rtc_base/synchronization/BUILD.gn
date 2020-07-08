@@ -68,6 +68,7 @@ rtc_library("sequence_checker") {
     "sequence_checker.h",
   ]
   deps = [
+    ":mutex",
     "..:checks",
     "..:criticalsection",
     "..:macromagic",

@@ -48,7 +48,7 @@ bool SequenceCheckerImpl::IsCurrent() const {
   const TaskQueueBase* const current_queue = TaskQueueBase::Current();
   const rtc::PlatformThreadRef current_thread = rtc::CurrentThreadRef();
   const void* const current_system_queue = GetSystemQueueRef();
-  rtc::CritScope scoped_lock(&lock_);
+  MutexLock scoped_lock(&lock_);
   if (!attached_) {  // Previously detached.
     attached_ = true;
     valid_thread_ = current_thread;
@@ -66,7 +66,7 @@ bool SequenceCheckerImpl::IsCurrent() const {
 }
 
 void SequenceCheckerImpl::Detach() {
-  rtc::CritScope scoped_lock(&lock_);
+  MutexLock scoped_lock(&lock_);
   attached_ = false;
   // We don't need to touch the other members here, they will be
   // reset on the next call to IsCurrent().
@@ -77,7 +77,7 @@ std::string SequenceCheckerImpl::ExpectationToString() const {
   const TaskQueueBase* const current_queue = TaskQueueBase::Current();
   const rtc::PlatformThreadRef current_thread = rtc::CurrentThreadRef();
   const void* const current_system_queue = GetSystemQueueRef();
-  rtc::CritScope scoped_lock(&lock_);
+  MutexLock scoped_lock(&lock_);
   if (!attached_)
     return "Checker currently not attached.";
 

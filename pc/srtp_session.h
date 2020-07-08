@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "api/scoped_refptr.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/thread_checker.h"
 
 // Forward declaration to avoid pulling in libsrtp headers here

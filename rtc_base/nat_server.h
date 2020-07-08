@@ -20,6 +20,7 @@
 #include "rtc_base/proxy_server.h"
 #include "rtc_base/socket_address_pair.h"
 #include "rtc_base/socket_factory.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread.h"
 
 namespace rtc {
@@ -102,7 +103,7 @@ class NATServer : public sigslot::has_slots<> {
     SocketAddressPair route;
     AsyncUDPSocket* socket;
     AddressSet* allowlist;
-    CriticalSection crit_;
+    webrtc::Mutex mutex_;
   };
 
   typedef std::map<SocketAddressPair, TransEntry*, RouteCmp> InternalMap;

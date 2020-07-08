@@ -15,8 +15,8 @@
 #include <stdint.h>
 
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/rate_statistics.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
@@ -45,7 +45,7 @@ class RateLimiter {
 
  private:
   Clock* const clock_;
-  rtc::CriticalSection lock_;
+  Mutex lock_;
   RateStatistics current_rate_ RTC_GUARDED_BY(lock_);
   int64_t window_size_ms_ RTC_GUARDED_BY(lock_);
   uint32_t max_rate_bps_ RTC_GUARDED_BY(lock_);

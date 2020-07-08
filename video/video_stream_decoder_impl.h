@@ -19,6 +19,7 @@
 #include "api/video/video_stream_decoder.h"
 #include "modules/video_coding/frame_buffer2.h"
 #include "modules/video_coding/timing.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_checker.h"

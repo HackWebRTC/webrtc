@@ -21,7 +21,7 @@ BufferQueue::BufferQueue(size_t capacity, size_t default_size)
     : capacity_(capacity), default_size_(default_size) {}
 
 BufferQueue::~BufferQueue() {
-  CritScope cs(&crit_);
+  webrtc::MutexLock lock(&mutex_);
 
   for (Buffer* buffer : queue_) {
     delete buffer;
@@ -32,12 +32,12 @@ BufferQueue::~BufferQueue() {
 }
 
 size_t BufferQueue::size() const {
-  CritScope cs(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   return queue_.size();
 }
 
 void BufferQueue::Clear() {
-  CritScope cs(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   while (!queue_.empty()) {
     free_list_.push_back(queue_.front());
     queue_.pop_front();
@@ -45,7 +45,7 @@ void BufferQueue::Clear() {
 }
 
 bool BufferQueue::ReadFront(void* buffer, size_t bytes, size_t* bytes_read) {
-  CritScope cs(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   if (queue_.empty()) {
     return false;
   }
@@ -69,7 +69,7 @@ bool BufferQueue::ReadFront(void* buffer, size_t bytes, size_t* bytes_read) {
 bool BufferQueue::WriteBack(const void* buffer,
                             size_t bytes,
                             size_t* bytes_written) {
-  CritScope cs(&crit_);
+  webrtc::MutexLock lock(&mutex_);
   if (queue_.size() == capacity_) {
     return false;
   }
