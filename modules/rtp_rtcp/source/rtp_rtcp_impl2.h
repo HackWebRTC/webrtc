@@ -34,8 +34,8 @@
 #include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "modules/rtp_rtcp/source/rtp_sender_egress.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/gtest_prod_util.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_utils/pending_task_safety_flag.h"
 #include "rtc_base/task_utils/repeating_task.h"
@@ -320,7 +320,7 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
   RepeatingTaskHandle rtt_update_task_ RTC_GUARDED_BY(worker_queue_);
 
   // The processed RTT from RtcpRttStats.
-  rtc::CriticalSection critical_section_rtt_;
+  mutable Mutex mutex_rtt_;
   int64_t rtt_ms_;
 };
 

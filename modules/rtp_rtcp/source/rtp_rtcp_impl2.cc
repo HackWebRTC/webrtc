@@ -712,7 +712,7 @@ bool ModuleRtpRtcpImpl2::LastReceivedNTP(
 void ModuleRtpRtcpImpl2::set_rtt_ms(int64_t rtt_ms) {
   RTC_DCHECK_RUN_ON(worker_queue_);
   {
-    rtc::CritScope cs(&critical_section_rtt_);
+    MutexLock lock(&mutex_rtt_);
     rtt_ms_ = rtt_ms;
   }
   if (rtp_sender_) {
@@ -721,7 +721,7 @@ void ModuleRtpRtcpImpl2::set_rtt_ms(int64_t rtt_ms) {
 }
 
 int64_t ModuleRtpRtcpImpl2::rtt_ms() const {
-  rtc::CritScope cs(&critical_section_rtt_);
+  MutexLock lock(&mutex_rtt_);
   return rtt_ms_;
 }
 

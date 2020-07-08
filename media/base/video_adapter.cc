@@ -190,7 +190,7 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
                                         int* cropped_height,
                                         int* out_width,
                                         int* out_height) {
-  rtc::CritScope cs(&critical_section_);
+  webrtc::MutexLock lock(&mutex_);
   ++frames_in_;
 
   // The max output pixel count is the minimum of the requests from
@@ -329,7 +329,7 @@ void VideoAdapter::OnOutputFormatRequest(
     const absl::optional<std::pair<int, int>>& target_portrait_aspect_ratio,
     const absl::optional<int>& max_portrait_pixel_count,
     const absl::optional<int>& max_fps) {
-  rtc::CritScope cs(&critical_section_);
+  webrtc::MutexLock lock(&mutex_);
   target_landscape_aspect_ratio_ = target_landscape_aspect_ratio;
   max_landscape_pixel_count_ = max_landscape_pixel_count;
   target_portrait_aspect_ratio_ = target_portrait_aspect_ratio;
@@ -339,7 +339,7 @@ void VideoAdapter::OnOutputFormatRequest(
 }
 
 void VideoAdapter::OnSinkWants(const rtc::VideoSinkWants& sink_wants) {
-  rtc::CritScope cs(&critical_section_);
+  webrtc::MutexLock lock(&mutex_);
   resolution_request_max_pixel_count_ = sink_wants.max_pixel_count;
   resolution_request_target_pixel_count_ =
       sink_wants.target_pixel_count.value_or(

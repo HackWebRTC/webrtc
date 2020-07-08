@@ -804,7 +804,7 @@ bool ModuleRtpRtcpImpl::LastReceivedNTP(
 
 void ModuleRtpRtcpImpl::set_rtt_ms(int64_t rtt_ms) {
   {
-    rtc::CritScope cs(&critical_section_rtt_);
+    MutexLock lock(&mutex_rtt_);
     rtt_ms_ = rtt_ms;
   }
   if (rtp_sender_) {
@@ -813,7 +813,7 @@ void ModuleRtpRtcpImpl::set_rtt_ms(int64_t rtt_ms) {
 }
 
 int64_t ModuleRtpRtcpImpl::rtt_ms() const {
-  rtc::CritScope cs(&critical_section_rtt_);
+  MutexLock lock(&mutex_rtt_);
   return rtt_ms_;
 }
 

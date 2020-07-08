@@ -19,7 +19,7 @@
 #include "api/video/video_source_interface.h"
 #include "media/base/video_common.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace cricket {
@@ -46,8 +46,7 @@ class VideoAdapter {
                             int* cropped_width,
                             int* cropped_height,
                             int* out_width,
-                            int* out_height)
-      RTC_LOCKS_EXCLUDED(critical_section_);
+                            int* out_height) RTC_LOCKS_EXCLUDED(mutex_);
 
   // DEPRECATED. Please use OnOutputFormatRequest below.
   // TODO(asapersson): Remove this once it is no longer used.
@@ -59,7 +58,7 @@ class VideoAdapter {
   // 720x1280 is requested.
   // Note: Should be called from the source only.
   void OnOutputFormatRequest(const absl::optional<VideoFormat>& format)
-      RTC_LOCKS_EXCLUDED(critical_section_);
+      RTC_LOCKS_EXCLUDED(mutex_);
 
   // Requests output frame size and frame interval from |AdaptFrameResolution|.
   // |target_aspect_ratio|: The input frame size will be cropped to match the
@@ -72,7 +71,7 @@ class VideoAdapter {
   void OnOutputFormatRequest(
       const absl::optional<std::pair<int, int>>& target_aspect_ratio,
       const absl::optional<int>& max_pixel_count,
-      const absl::optional<int>& max_fps) RTC_LOCKS_EXCLUDED(critical_section_);
+      const absl::optional<int>& max_fps) RTC_LOCKS_EXCLUDED(mutex_);
 
   // Same as above, but allows setting two different target aspect ratios
   // depending on incoming frame orientation. This gives more fine-grained
@@ -83,7 +82,7 @@ class VideoAdapter {
       const absl::optional<int>& max_landscape_pixel_count,
       const absl::optional<std::pair<int, int>>& target_portrait_aspect_ratio,
       const absl::optional<int>& max_portrait_pixel_count,
-      const absl::optional<int>& max_fps) RTC_LOCKS_EXCLUDED(critical_section_);
+      const absl::optional<int>& max_fps) RTC_LOCKS_EXCLUDED(mutex_);
 
   // Requests the output frame size from |AdaptFrameResolution| to have as close
   // as possible to |sink_wants.target_pixel_count| pixels (if set)
@@ -96,24 +95,20 @@ class VideoAdapter {
   // |sink_wants.resolution_alignment|.
   // Note: Should be called from the sink only.
   void OnSinkWants(const rtc::VideoSinkWants& sink_wants)
-      RTC_LOCKS_EXCLUDED(critical_section_);
+      RTC_LOCKS_EXCLUDED(mutex_);
 
  private:
   // Determine if frame should be dropped based on input fps and requested fps.
-  bool KeepFrame(int64_t in_timestamp_ns)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(critical_section_);
+  bool KeepFrame(int64_t in_timestamp_ns) RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
-  int frames_in_ RTC_GUARDED_BY(critical_section_);  // Number of input frames.
-  int frames_out_
-      RTC_GUARDED_BY(critical_section_);  // Number of output frames.
-  int frames_scaled_
-      RTC_GUARDED_BY(critical_section_);  // Number of frames scaled.
+  int frames_in_ RTC_GUARDED_BY(mutex_);      // Number of input frames.
+  int frames_out_ RTC_GUARDED_BY(mutex_);     // Number of output frames.
+  int frames_scaled_ RTC_GUARDED_BY(mutex_);  // Number of frames scaled.
   int adaption_changes_
-      RTC_GUARDED_BY(critical_section_);  // Number of changes in scale factor.
-  int previous_width_
-      RTC_GUARDED_BY(critical_section_);  // Previous adapter output width.
+      RTC_GUARDED_BY(mutex_);  // Number of changes in scale factor.
+  int previous_width_ RTC_GUARDED_BY(mutex_);  // Previous adapter output width.
   int previous_height_
-      RTC_GUARDED_BY(critical_section_);  // Previous adapter output height.
+      RTC_GUARDED_BY(mutex_);  // Previous adapter output height.
   const bool variable_start_scale_factor_;
 
   // The fixed source resolution alignment requirement.
@@ -121,30 +116,27 @@ class VideoAdapter {
   // The currently applied resolution alignment, as given by the requirements:
   //  - the fixed |source_resolution_alignment_|; and
   //  - the latest |sink_wants.resolution_alignment|.
-  int resolution_alignment_ RTC_GUARDED_BY(critical_section_);
+  int resolution_alignment_ RTC_GUARDED_BY(mutex_);
 
   // The target timestamp for the next frame based on requested format.
-  absl::optional<int64_t> next_frame_timestamp_ns_
-      RTC_GUARDED_BY(critical_section_);
+  absl::optional<int64_t> next_frame_timestamp_ns_ RTC_GUARDED_BY(mutex_);
 
   // Max number of pixels/fps requested via calls to OnOutputFormatRequest,
   // OnResolutionFramerateRequest respectively.
   // The adapted output format is the minimum of these.
   absl::optional<std::pair<int, int>> target_landscape_aspect_ratio_
-      RTC_GUARDED_BY(critical_section_);
-  absl::optional<int> max_landscape_pixel_count_
-      RTC_GUARDED_BY(critical_section_);
+      RTC_GUARDED_BY(mutex_);
+  absl::optional<int> max_landscape_pixel_count_ RTC_GUARDED_BY(mutex_);
   absl::optional<std::pair<int, int>> target_portrait_aspect_ratio_
-      RTC_GUARDED_BY(critical_section_);
-  absl::optional<int> max_portrait_pixel_count_
-      RTC_GUARDED_BY(critical_section_);
-  absl::optional<int> max_fps_ RTC_GUARDED_BY(critical_section_);
-  int resolution_request_target_pixel_count_ RTC_GUARDED_BY(critical_section_);
-  int resolution_request_max_pixel_count_ RTC_GUARDED_BY(critical_section_);
-  int max_framerate_request_ RTC_GUARDED_BY(critical_section_);
+      RTC_GUARDED_BY(mutex_);
+  absl::optional<int> max_portrait_pixel_count_ RTC_GUARDED_BY(mutex_);
+  absl::optional<int> max_fps_ RTC_GUARDED_BY(mutex_);
+  int resolution_request_target_pixel_count_ RTC_GUARDED_BY(mutex_);
+  int resolution_request_max_pixel_count_ RTC_GUARDED_BY(mutex_);
+  int max_framerate_request_ RTC_GUARDED_BY(mutex_);
 
   // The critical section to protect the above variables.
-  rtc::CriticalSection critical_section_;
+  webrtc::Mutex mutex_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(VideoAdapter);
 };
