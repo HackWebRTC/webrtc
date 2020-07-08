@@ -59,7 +59,7 @@ void SimulatedThread::RunReady(Timestamp at_time) {
   CurrentThreadSetter set_current(this);
   ProcessMessages(0);
   int delay_ms = GetDelay();
-  rtc::CritScope lock(&lock_);
+  MutexLock lock(&lock_);
   if (delay_ms == kForever) {
     next_run_time_ = Timestamp::PlusInfinity();
   } else {
@@ -95,7 +95,7 @@ void SimulatedThread::Post(const rtc::Location& posted_from,
                            rtc::MessageData* pdata,
                            bool time_sensitive) {
   rtc::Thread::Post(posted_from, phandler, id, pdata, time_sensitive);
-  rtc::CritScope lock(&lock_);
+  MutexLock lock(&lock_);
   next_run_time_ = Timestamp::MinusInfinity();
 }
 
@@ -105,7 +105,7 @@ void SimulatedThread::PostDelayed(const rtc::Location& posted_from,
                                   uint32_t id,
                                   rtc::MessageData* pdata) {
   rtc::Thread::PostDelayed(posted_from, delay_ms, phandler, id, pdata);
-  rtc::CritScope lock(&lock_);
+  MutexLock lock(&lock_);
   next_run_time_ =
       std::min(next_run_time_, Timestamp::Millis(rtc::TimeMillis() + delay_ms));
 }
@@ -116,7 +116,7 @@ void SimulatedThread::PostAt(const rtc::Location& posted_from,
                              uint32_t id,
                              rtc::MessageData* pdata) {
   rtc::Thread::PostAt(posted_from, target_time_ms, phandler, id, pdata);
-  rtc::CritScope lock(&lock_);
+  MutexLock lock(&lock_);
   next_run_time_ = std::min(next_run_time_, Timestamp::Millis(target_time_ms));
 }
 
