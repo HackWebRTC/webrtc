@@ -6557,6 +6557,7 @@ Call::Stats PeerConnection::GetCallStats() {
         RTC_FROM_HERE, rtc::Bind(&PeerConnection::GetCallStats, this));
   }
   RTC_DCHECK_RUN_ON(worker_thread());
+  rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
   if (call_) {
     return call_->GetStats();
   } else {
