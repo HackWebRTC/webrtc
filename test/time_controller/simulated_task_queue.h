@@ -15,7 +15,6 @@
 #include <memory>
 #include <vector>
 
-#include "rtc_base/synchronization/mutex.h"
 #include "test/time_controller/simulated_time_controller.h"
 
 namespace webrtc {
@@ -31,7 +30,7 @@ class SimulatedTaskQueue : public TaskQueueBase,
   void RunReady(Timestamp at_time) override;
 
   Timestamp GetNextRunTime() const override {
-    MutexLock lock(&lock_);
+    rtc::CritScope lock(&lock_);
     return next_run_time_;
   }
   TaskQueueBase* GetAsTaskQueue() override { return this; }
@@ -47,7 +46,7 @@ class SimulatedTaskQueue : public TaskQueueBase,
   // Using char* to be debugger friendly.
   char* name_;
 
-  mutable Mutex lock_;
+  rtc::CriticalSection lock_;
 
   std::deque<std::unique_ptr<QueuedTask>> ready_tasks_ RTC_GUARDED_BY(lock_);
   std::map<Timestamp, std::vector<std::unique_ptr<QueuedTask>>> delayed_tasks_

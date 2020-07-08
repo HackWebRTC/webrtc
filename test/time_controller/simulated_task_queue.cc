@@ -28,7 +28,7 @@ SimulatedTaskQueue::~SimulatedTaskQueue() {
 
 void SimulatedTaskQueue::Delete() {
   {
-    MutexLock lock(&lock_);
+    rtc::CritScope lock(&lock_);
     ready_tasks_.clear();
     delayed_tasks_.clear();
   }
@@ -36,7 +36,7 @@ void SimulatedTaskQueue::Delete() {
 }
 
 void SimulatedTaskQueue::RunReady(Timestamp at_time) {
-  MutexLock lock(&lock_);
+  rtc::CritScope lock(&lock_);
   for (auto it = delayed_tasks_.begin();
        it != delayed_tasks_.end() && it->first <= at_time;
        it = delayed_tasks_.erase(it)) {
@@ -48,14 +48,14 @@ void SimulatedTaskQueue::RunReady(Timestamp at_time) {
   while (!ready_tasks_.empty()) {
     std::unique_ptr<QueuedTask> ready = std::move(ready_tasks_.front());
     ready_tasks_.pop_front();
-    lock_.Unlock();
+    lock_.Leave();
     bool delete_task = ready->Run();
     if (delete_task) {
       ready.reset();
     } else {
       ready.release();
     }
-    lock_.Lock();
+    lock_.Enter();
   }
   if (!delayed_tasks_.empty()) {
     next_run_time_ = delayed_tasks_.begin()->first;
@@ -65,14 +65,14 @@ void SimulatedTaskQueue::RunReady(Timestamp at_time) {
 }
 
 void SimulatedTaskQueue::PostTask(std::unique_ptr<QueuedTask> task) {
-  MutexLock lock(&lock_);
+  rtc::CritScope lock(&lock_);
   ready_tasks_.emplace_back(std::move(task));
   next_run_time_ = Timestamp::MinusInfinity();
 }
 
 void SimulatedTaskQueue::PostDelayedTask(std::unique_ptr<QueuedTask> task,
                                          uint32_t milliseconds) {
-  MutexLock lock(&lock_);
+  rtc::CritScope lock(&lock_);
   Timestamp target_time =
       handler_->CurrentTime() + TimeDelta::Millis(milliseconds);
   delayed_tasks_[target_time].push_back(std::move(task));
