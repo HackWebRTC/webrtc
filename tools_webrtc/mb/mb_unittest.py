@@ -243,7 +243,7 @@ class UnitTest(unittest.TestCase):
                mbw=mbw, ret=0)
     self.assertEqual(
         mbw.files['/fake_src/out/Debug/args.gn'],
-        'import("//build/args/bots/fake_master/fake_args_bot.gn")\n')
+        'import("//build/args/bots/fake_master/fake_args_bot.gn")\n\n')
 
 
   def test_gen_fails(self):
