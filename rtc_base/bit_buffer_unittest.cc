@@ -254,6 +254,28 @@ TEST(BitBufferWriterTest, NonSymmetricReadsMatchesWrites) {
   EXPECT_THAT(values, ElementsAre(0, 1, 2, 3, 4, 5));
 }
 
+TEST(BitBufferTest, ReadNonSymmetricOnlyValueConsumesNoBits) {
+  const uint8_t bytes[2] = {};
+  BitBuffer reader(bytes, 2);
+  uint32_t value = 0xFFFFFFFF;
+  ASSERT_EQ(reader.RemainingBitCount(), 16u);
+
+  EXPECT_TRUE(reader.ReadNonSymmetric(&value, /*num_values=*/1));
+
+  EXPECT_EQ(value, 0u);
+  EXPECT_EQ(reader.RemainingBitCount(), 16u);
+}
+
+TEST(BitBufferWriterTest, WriteNonSymmetricOnlyValueConsumesNoBits) {
+  uint8_t bytes[2] = {};
+  BitBufferWriter writer(bytes, 2);
+  ASSERT_EQ(writer.RemainingBitCount(), 16u);
+
+  EXPECT_TRUE(writer.WriteNonSymmetric(0, /*num_values=*/1));
+
+  EXPECT_EQ(writer.RemainingBitCount(), 16u);
+}
+
 uint64_t GolombEncoded(uint32_t val) {
   val++;
   uint32_t bit_counter = val;
