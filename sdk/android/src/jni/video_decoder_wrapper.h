@@ -18,8 +18,8 @@
 
 #include "api/video_codecs/video_decoder.h"
 #include "common_video/h264/h264_bitstream_parser.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/race_checker.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_checker.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
@@ -105,7 +105,7 @@ class VideoDecoderWrapper : public VideoDecoder {
 
   // Accessed both on the decoder thread and the callback thread.
   std::atomic<bool> qp_parsing_enabled_;
-  rtc::CriticalSection frame_extra_infos_lock_;
+  Mutex frame_extra_infos_lock_;
   std::deque<FrameExtraInfo> frame_extra_infos_
       RTC_GUARDED_BY(frame_extra_infos_lock_);
 };

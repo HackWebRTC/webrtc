@@ -16,12 +16,12 @@
 #include <memory>
 #include <vector>
 
-#include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/string_utils.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/system/inline.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/gtest.h"
@@ -118,15 +118,15 @@ class RtcEventDeadlock : public DeadlockInterface {
 class RtcCriticalSectionDeadlock : public DeadlockInterface {
  public:
   RtcCriticalSectionDeadlock()
-      : critscope_(std::make_unique<rtc::CritScope>(&crit_)) {}
+      : mutex_lock_(std::make_unique<MutexLock>(&mutex_)) {}
 
  private:
-  void Deadlock() override { rtc::CritScope lock(&crit_); }
+  void Deadlock() override { MutexLock lock(&mutex_); }
 
-  void Release() override { critscope_.reset(); }
+  void Release() override { mutex_lock_.reset(); }
 
-  rtc::CriticalSection crit_;
-  std::unique_ptr<rtc::CritScope> critscope_;
+  Mutex mutex_;
+  std::unique_ptr<MutexLock> mutex_lock_;
 };
 
 class SpinDeadlock : public DeadlockInterface {

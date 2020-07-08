@@ -35,6 +35,7 @@ rtc_library("system_wrappers") {
     "../api/units:timestamp",
     "../modules:module_api_public",
     "../rtc_base:checks",
+    "../rtc_base/synchronization:mutex",
     "../rtc_base/synchronization:rw_lock_wrapper",
     "../rtc_base/system:arch",
     "../rtc_base/system:rtc_export",
@@ -106,6 +107,7 @@ rtc_library("metrics") {
   deps = [
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base/synchronization:mutex",
   ]
 }
 
