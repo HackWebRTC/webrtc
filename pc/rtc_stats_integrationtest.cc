@@ -1014,9 +1014,7 @@ class RTCStatsReportVerifier {
   bool VerifyRTCTransportStats(const RTCTransportStats& transport) {
     RTCStatsVerifier verifier(report_, &transport);
     verifier.TestMemberIsNonNegative<uint64_t>(transport.bytes_sent);
-    verifier.TestMemberIsNonNegative<uint64_t>(transport.packets_sent);
     verifier.TestMemberIsNonNegative<uint64_t>(transport.bytes_received);
-    verifier.TestMemberIsNonNegative<uint64_t>(transport.packets_received);
     verifier.TestMemberIsOptionalIDReference(transport.rtcp_transport_stats_id,
                                              RTCTransportStats::kType);
     verifier.TestMemberIsDefined(transport.dtls_state);
