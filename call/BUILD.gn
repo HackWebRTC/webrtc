@@ -116,7 +116,6 @@ rtc_library("rtp_receiver") {
     "rtp_stream_receiver_controller.h",
     "rtx_receive_stream.cc",
     "rtx_receive_stream.h",
-    "ssrc_binding_observer.h",
   ]
   deps = [
     ":rtp_interfaces",
