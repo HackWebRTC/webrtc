@@ -10,7 +10,7 @@ vars = {
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
-  'chromium_revision': 'b5359525fc2fb2fa887959445b59bbf12ad5250d',
+  'chromium_revision': 'a69b9c614cc78d52f21795ab71645919beaf1b2e',
 
   # This can be overridden, e.g. with custom_vars, to download a nonstandard
   # Xcode version in build/mac_toolchain.py
@@ -22,9 +22,9 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    'https://chromium.googlesource.com/chromium/src/base@bec643a43e61370da2eaaf7a75241a7486432739',
+    'https://chromium.googlesource.com/chromium/src/base@9183ce544be05f5538ef59ef005a6816ff9cba58',
   'src/build':
-    'https://chromium.googlesource.com/chromium/src/build@111571fbf8927a8daaef39db1898db2a1aea18bc',
+    'https://chromium.googlesource.com/chromium/src/build@18e5f25087341073cc6f4669bc73cbf1356f181f',
   'src/buildtools':
     'https://chromium.googlesource.com/chromium/src/buildtools@eb3987ec709b39469423100c1e77f0446890e059',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
@@ -33,13 +33,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': 'https://chromium.googlesource.com/chromium/src/ios@34cd3a96103679a99c7b9b8b892708c03511d37e',
+    'url': 'https://chromium.googlesource.com/chromium/src/ios@2ea69251b84ca5c46a41225546df34eeed423bca',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    'https://chromium.googlesource.com/chromium/src/testing@93eb285f57a59d953791efb0125bf61cf601bb7c',
+    'https://chromium.googlesource.com/chromium/src/testing@778d425fe0354be22e93b17e57ceb68b370f05e3',
   'src/third_party':
-    'https://chromium.googlesource.com/chromium/src/third_party@3e5507bb0cbbc6d0574b6e9b2b4b28d6fb113fa8',
+    'https://chromium.googlesource.com/chromium/src/third_party@5d8b53995814cab3dd053ed7ec1730e46a70b007',
 
   'src/buildtools/linux64': {
     'packages': [
@@ -130,14 +130,14 @@ deps = {
   'src/third_party/breakpad/breakpad':
     'https://chromium.googlesource.com/breakpad/breakpad.git@2757a2c9c819fcae3784576aef0c8400c7ad06d7',
   'src/third_party/catapult':
-    'https://chromium.googlesource.com/catapult.git@1b843e7903f8438ff93c1e6b8b44d373967accbf',
+    'https://chromium.googlesource.com/catapult.git@7cbda52a2db80a9f73057da38f30a6657a74b458',
   'src/third_party/ced/src': {
     'url': 'https://chromium.googlesource.com/external/github.com/google/compact_enc_det.git@ba412eaaacd3186085babcd901679a48863c7dd5',
   },
   'src/third_party/colorama/src':
     'https://chromium.googlesource.com/external/colorama.git@799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
   'src/third_party/depot_tools':
-    'https://chromium.googlesource.com/chromium/tools/depot_tools.git@ce1375c5f0442553dfcb5986d6eff396d475fc3e',
+    'https://chromium.googlesource.com/chromium/tools/depot_tools.git@e62496bafc47822c8cd9dd9b63a2732af2904e28',
   'src/third_party/ffmpeg':
     'https://chromium.googlesource.com/chromium/third_party/ffmpeg.git@15f6cfec63d094ad7852d57d71b548067c32bd7b',
   'src/third_party/findbugs': {
@@ -150,7 +150,7 @@ deps = {
       'condition': 'checkout_linux',
   },
   'src/third_party/freetype/src':
-    'https://chromium.googlesource.com/chromium/src/third_party/freetype2.git@3bb512bc9f621e1329927292d9ee7ba764549cae',
+    'https://chromium.googlesource.com/chromium/src/third_party/freetype2.git@0f35b042e02e23cc6fb29d805d25aa85679274eb',
   'src/third_party/harfbuzz-ng/src':
     'https://chromium.googlesource.com/external/github.com/harfbuzz/harfbuzz.git@e3af529e511ca492284cdd9f4584666b88a9e00f',
   'src/third_party/google_benchmark/src': {
@@ -202,15 +202,15 @@ deps = {
   'src/third_party/libsrtp':
     'https://chromium.googlesource.com/chromium/deps/libsrtp.git@650611720ecc23e0e6b32b0e3100f8b4df91696c',
   'src/third_party/libaom/source/libaom':
-    'https://aomedia.googlesource.com/aom.git@e1ebb418ebdcc5202ed6a3bea38547fd6ed4b7ca',
+    'https://aomedia.googlesource.com/aom.git@0a7c8715d79222adf6cfc4c1cdc3fcb8fb3951f3',
   'src/third_party/libunwindstack': {
       'url': 'https://chromium.googlesource.com/chromium/src/third_party/libunwindstack.git@11659d420a71e7323b379ea8781f07c6f384bc7e',
       'condition': 'checkout_android',
   },
   'src/third_party/perfetto':
-    'https://android.googlesource.com/platform/external/perfetto.git@509812647060893522be508e0ab5b6c62dec03bd',
+    'https://android.googlesource.com/platform/external/perfetto.git@faef2531ecbb961d93df1bc13cf163bac6ba368f',
   'src/third_party/libvpx/source/libvpx':
-    'https://chromium.googlesource.com/webm/libvpx.git@de4aedaec33c6c29f882f99a740713596713a1f9',
+    'https://chromium.googlesource.com/webm/libvpx.git@a1cee8dc919df1980d802e1a9bce1259ec34cba8',
   'src/third_party/libyuv':
     'https://chromium.googlesource.com/libyuv/libyuv.git@6afd9becdf58822b1da6770598d8597c583ccfad',
   'src/third_party/lss': {
@@ -265,7 +265,7 @@ deps = {
     'condition': 'checkout_win',
   },
   'src/tools':
-    'https://chromium.googlesource.com/chromium/src/tools@c4831b8507df128fe93dfb80706c8c1b6dae0add',
+    'https://chromium.googlesource.com/chromium/src/tools@af8d53c7e3ddbdcda42de533ab1fcdfb837e5570',
   'src/tools/swarming_client':
     'https://chromium.googlesource.com/infra/luci/client-py.git@4c095d04179dc725a300085ae21fe3b79900d072',
 
@@ -783,6 +783,17 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/android_deps/libs/androidx_drawerlayout_drawerlayout',
+              'version': 'version:1.0.0-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/android_deps/libs/androidx_exifinterface_exifinterface': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/android_deps/libs/androidx_exifinterface_exifinterface',
               'version': 'version:1.0.0-cr0',
           },
       ],
