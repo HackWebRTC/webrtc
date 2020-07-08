@@ -38,7 +38,7 @@ EncodedImage SingleProcessEncodedImageDataInjector::InjectData(
   memcpy(info.origin_data, &source.data()[insertion_pos],
          ExtractionInfo::kUsedBufferSize);
   {
-    rtc::CritScope crit(&lock_);
+    MutexLock lock(&lock_);
     // Will create new one if missed.
     ExtractionInfoVector& ev = extraction_cache_[id];
     info.sub_id = ev.next_sub_id++;
@@ -93,7 +93,7 @@ EncodedImageExtractionResult SingleProcessEncodedImageDataInjector::ExtractData(
     id = next_id;
     ExtractionInfo info;
     {
-      rtc::CritScope crit(&lock_);
+      MutexLock lock(&lock_);
       auto ext_vector_it = extraction_cache_.find(next_id);
       // TODO(titovartem) add support for receiving single frame multiple times
       // when in simulcast key frame for another spatial stream can be received.

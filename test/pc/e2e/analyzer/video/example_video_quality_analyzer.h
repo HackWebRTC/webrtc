@@ -20,7 +20,7 @@
 #include "api/test/video_quality_analyzer_interface.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_frame.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
@@ -79,7 +79,7 @@ class ExampleVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   // when it will be received in peer B, so we need to guard it with lock.
   // Also because analyzer will serve for all video streams it can be called
   // from different threads inside one peer.
-  rtc::CriticalSection lock_;
+  mutable Mutex lock_;
   // Stores frame ids, that are currently going from one peer to another. We
   // need to keep them to correctly determine dropped frames and also correctly
   // process frame id overlap.

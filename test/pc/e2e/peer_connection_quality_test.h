@@ -22,6 +22,7 @@
 #include "api/test/time_controller.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
@@ -74,7 +75,7 @@ class PeerConnectionE2EQualityTest
   void Run(RunParams run_params) override;
 
   TimeDelta GetRealTestDuration() const override {
-    rtc::CritScope crit(&lock_);
+    MutexLock lock(&lock_);
     RTC_CHECK_NE(real_test_duration_, TimeDelta::Zero());
     return real_test_duration_;
   }
@@ -131,7 +132,7 @@ class PeerConnectionE2EQualityTest
       output_video_sinks_;
   AnalyzerHelper analyzer_helper_;
 
-  rtc::CriticalSection lock_;
+  mutable Mutex lock_;
   TimeDelta real_test_duration_ RTC_GUARDED_BY(lock_) = TimeDelta::Zero();
 
   // Task queue, that is used for running activities during test call.

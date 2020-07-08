@@ -130,7 +130,7 @@ VideoQualityAnalyzerInjectionHelper::CreateFramePreprocessor(
                                     config.width, config.height)));
   }
   {
-    rtc::CritScope crit(&lock_);
+    MutexLock lock(&lock_);
     known_video_configs_.insert({*config.stream_label, config});
   }
   return std::make_unique<AnalyzingFramePreprocessor>(
@@ -203,7 +203,7 @@ void VideoQualityAnalyzerInjectionHelper::OnFrame(absl::string_view peer_name,
 std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>*
 VideoQualityAnalyzerInjectionHelper::PopulateSinks(
     const std::string& stream_label) {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   auto sinks_it = sinks_.find(stream_label);
   if (sinks_it != sinks_.end()) {
     return &sinks_it->second;

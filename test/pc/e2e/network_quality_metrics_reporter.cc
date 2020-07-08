@@ -62,7 +62,7 @@ void NetworkQualityMetricsReporter::OnStatsReports(
                         stat->header_bytes_sent.ValueOrDefault(0ul));
   }
 
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   PCStats& stats = pc_stats_[std::string(pc_label)];
   stats.payload_received = payload_received;
   stats.payload_sent = payload_sent;
@@ -81,7 +81,7 @@ void NetworkQualityMetricsReporter::StopAndReportResults() {
         << "Non-standard GetStats; \"payload\" counts include RTP headers";
   }
 
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   for (const auto& pair : pc_stats_) {
     ReportPCStats(pair.first, pair.second);
   }

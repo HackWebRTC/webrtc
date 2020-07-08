@@ -24,10 +24,10 @@
 #include "api/units/timestamp.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_frame.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "rtc_base/numerics/samples_stats_counter.h"
 #include "rtc_base/platform_thread.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "system_wrappers/include/clock.h"
 #include "test/pc/e2e/analyzer/video/multi_head_queue.h"
 #include "test/testsupport/perf_test.h"
@@ -507,7 +507,7 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   std::string test_label_;
   std::unique_ptr<NamesCollection> peers_;
 
-  rtc::CriticalSection lock_;
+  mutable Mutex lock_;
   State state_ RTC_GUARDED_BY(lock_) = State::kNew;
   Timestamp start_time_ RTC_GUARDED_BY(lock_) = Timestamp::MinusInfinity();
   // Mapping from stream label to unique size_t value to use in stats and avoid
@@ -539,7 +539,7 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   std::map<size_t, std::set<uint16_t>> stream_to_frame_id_history_
       RTC_GUARDED_BY(lock_);
 
-  rtc::CriticalSection comparison_lock_;
+  mutable Mutex comparison_lock_;
   std::map<InternalStatsKey, StreamStats> stream_stats_
       RTC_GUARDED_BY(comparison_lock_);
   std::map<InternalStatsKey, Timestamp> stream_last_freeze_end_time_
@@ -550,7 +550,7 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   std::vector<std::unique_ptr<rtc::PlatformThread>> thread_pool_;
   rtc::Event comparison_available_event_;
 
-  rtc::CriticalSection cpu_measurement_lock_;
+  Mutex cpu_measurement_lock_;
   int64_t cpu_time_ RTC_GUARDED_BY(cpu_measurement_lock_) = 0;
   int64_t wallclock_time_ RTC_GUARDED_BY(cpu_measurement_lock_) = 0;
 };

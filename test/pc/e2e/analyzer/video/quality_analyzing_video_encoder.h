@@ -23,7 +23,7 @@
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "test/pc/e2e/analyzer/video/encoded_image_data_injector.h"
 #include "test/pc/e2e/analyzer/video/id_generator.h"
 
@@ -157,7 +157,7 @@ class QualityAnalyzingVideoEncoder : public VideoEncoder,
   // VideoEncoder interface assumes async delivery of encoded images.
   // This lock is used to protect shared state, that have to be propagated
   // from received VideoFrame to resulted EncodedImage.
-  rtc::CriticalSection lock_;
+  Mutex lock_;
 
   VideoCodec codec_settings_;
   SimulcastMode mode_ RTC_GUARDED_BY(lock_);

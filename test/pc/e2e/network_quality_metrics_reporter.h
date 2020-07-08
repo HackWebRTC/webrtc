@@ -18,7 +18,7 @@
 #include "api/test/peerconnection_quality_test_fixture.h"
 #include "api/test/track_id_stream_info_map.h"
 #include "api/units/data_size.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
@@ -63,7 +63,7 @@ class NetworkQualityMetricsReporter
 
   EmulatedNetworkManagerInterface* alice_network_;
   EmulatedNetworkManagerInterface* bob_network_;
-  rtc::CriticalSection lock_;
+  Mutex lock_;
   std::map<std::string, PCStats> pc_stats_ RTC_GUARDED_BY(lock_);
 };
 

@@ -24,7 +24,7 @@ namespace webrtc_pc_e2e {
 void TestActivitiesExecutor::Start(TaskQueueForTest* task_queue) {
   RTC_DCHECK(task_queue);
   task_queue_ = task_queue;
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   start_time_ = Now();
   while (!scheduled_activities_.empty()) {
     PostActivity(std::move(scheduled_activities_.front()));
@@ -39,7 +39,7 @@ void TestActivitiesExecutor::Stop() {
   }
   task_queue_->SendTask(
       [this]() {
-        rtc::CritScope crit(&lock_);
+        MutexLock lock(&lock_);
         for (auto& handle : repeating_task_handles_) {
           handle.Stop();
         }
@@ -56,7 +56,7 @@ void TestActivitiesExecutor::ScheduleActivity(
             initial_delay_since_start >= TimeDelta::Zero());
   RTC_CHECK(!interval ||
             (interval->IsFinite() && *interval > TimeDelta::Zero()));
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   ScheduledActivity activity(initial_delay_since_start, interval, func);
   if (start_time_.IsInfinite()) {
     scheduled_activities_.push(std::move(activity));

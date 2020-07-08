@@ -45,7 +45,7 @@ void CrossMediaMetricsReporter::OnStatsReports(
     }
   }
 
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&mutex_);
   for (const auto& pair : sync_group_stats) {
     // If there is less than two streams, it is not a sync group.
     if (pair.second.size() < 2) {
@@ -95,7 +95,7 @@ void CrossMediaMetricsReporter::OnStatsReports(
 }
 
 void CrossMediaMetricsReporter::StopAndReportResults() {
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&mutex_);
   for (const auto& pair : stats_info_) {
     const std::string& sync_group = pair.first;
     ReportResult("audio_ahead_ms",

@@ -367,7 +367,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   Timestamp end_time = Now();
   RTC_LOG(INFO) << "All peers are disconnected.";
   {
-    rtc::CritScope crit(&lock_);
+    MutexLock lock(&lock_);
     real_test_duration_ = end_time - start_time;
   }
 

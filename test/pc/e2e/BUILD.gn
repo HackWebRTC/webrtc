@@ -101,6 +101,7 @@ if (!build_with_chromium) {
       "../../../api/video:encoded_image",
       "../../../rtc_base:checks",
       "../../../rtc_base:criticalsection",
+      "../../../rtc_base/synchronization:mutex",
     ]
     absl_deps = [ "//third_party/abseil-cpp/absl/memory" ]
   }
@@ -148,6 +149,7 @@ if (!build_with_chromium) {
       "../../../modules/video_coding:video_codec_interface",
       "../../../rtc_base:criticalsection",
       "../../../rtc_base:logging",
+      "../../../rtc_base/synchronization:mutex",
     ]
     absl_deps = [
       "//third_party/abseil-cpp/absl/strings",
@@ -173,6 +175,7 @@ if (!build_with_chromium) {
       "../../../modules/video_coding:video_codec_interface",
       "../../../rtc_base:criticalsection",
       "../../../rtc_base:logging",
+      "../../../rtc_base/synchronization:mutex",
     ]
     absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
   }
@@ -200,6 +203,7 @@ if (!build_with_chromium) {
         "../../../api/video:video_rtp_headers",
         "../../../api/video_codecs:video_codecs_api",
         "../../../rtc_base:criticalsection",
+        "../../../rtc_base/synchronization:mutex",
         "../../../test:video_test_common",
         "../../../test:video_test_support",
       ]
@@ -344,6 +348,7 @@ if (!build_with_chromium) {
         "../../../rtc_base:logging",
         "../../../rtc_base:rtc_base_approved",
         "../../../rtc_base:task_queue_for_test",
+        "../../../rtc_base/synchronization:mutex",
         "../../../rtc_base/task_utils:repeating_task",
         "../../../system_wrappers",
       ]
@@ -401,6 +406,7 @@ if (!build_with_chromium) {
         "../../../rtc_base:rtc_base_approved",
         "../../../rtc_base:safe_conversions",
         "../../../rtc_base:task_queue_for_test",
+        "../../../rtc_base/synchronization:mutex",
         "../../../system_wrappers",
         "../../../system_wrappers:field_trial",
       ]
@@ -564,6 +570,7 @@ if (!build_with_chromium) {
       "../../../rtc_base:criticalsection",
       "../../../rtc_base:logging",
       "../../../rtc_base:rtc_numerics",
+      "../../../rtc_base/synchronization:mutex",
     ]
     absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
   }
@@ -584,6 +591,7 @@ if (!build_with_chromium) {
       "../../../api/video:video_rtp_headers",
       "../../../rtc_base:criticalsection",
       "../../../rtc_base:logging",
+      "../../../rtc_base/synchronization:mutex",
     ]
   }
 
@@ -606,6 +614,7 @@ if (!build_with_chromium) {
       "../../../api/units:timestamp",
       "../../../rtc_base:criticalsection",
       "../../../rtc_base:rtc_numerics",
+      "../../../rtc_base/synchronization:mutex",
     ]
     absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
   }
@@ -638,6 +647,7 @@ if (!build_with_chromium) {
       "../../../rtc_base:rtc_event",
       "../../../rtc_base:rtc_numerics",
       "../../../rtc_base:timeutils",
+      "../../../rtc_base/synchronization:mutex",
       "../../../system_wrappers",
     ]
   }
@@ -658,6 +668,7 @@ if (!build_with_chromium) {
       "../../../api/units:data_size",
       "../../../rtc_base:criticalsection",
       "../../../rtc_base:rtc_event",
+      "../../../rtc_base/synchronization:mutex",
       "../../../system_wrappers:field_trial",
     ]
     absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
@@ -680,6 +691,7 @@ if (!build_with_chromium) {
       "../../../rtc_base:criticalsection",
       "../../../rtc_base:rtc_event",
       "../../../rtc_base:rtc_numerics",
+      "../../../rtc_base/synchronization:mutex",
       "../../../system_wrappers:field_trial",
     ]
     absl_deps = [

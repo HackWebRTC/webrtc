@@ -28,7 +28,7 @@ uint16_t ExampleVideoQualityAnalyzer::OnFrameCaptured(
     absl::string_view peer_name,
     const std::string& stream_label,
     const webrtc::VideoFrame& frame) {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   uint16_t frame_id = next_frame_id_++;
   auto it = frames_in_flight_.find(frame_id);
   if (it == frames_in_flight_.end()) {
@@ -51,7 +51,7 @@ uint16_t ExampleVideoQualityAnalyzer::OnFrameCaptured(
 void ExampleVideoQualityAnalyzer::OnFramePreEncode(
     absl::string_view peer_name,
     const webrtc::VideoFrame& frame) {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   ++frames_pre_encoded_;
 }
 
@@ -60,7 +60,7 @@ void ExampleVideoQualityAnalyzer::OnFrameEncoded(
     uint16_t frame_id,
     const webrtc::EncodedImage& encoded_image,
     const EncoderStats& stats) {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   ++frames_encoded_;
 }
 
@@ -68,7 +68,7 @@ void ExampleVideoQualityAnalyzer::OnFrameDropped(
     absl::string_view peer_name,
     webrtc::EncodedImageCallback::DropReason reason) {
   RTC_LOG(INFO) << "Frame dropped by encoder";
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   ++frames_dropped_;
 }
 
@@ -76,7 +76,7 @@ void ExampleVideoQualityAnalyzer::OnFramePreDecode(
     absl::string_view peer_name,
     uint16_t frame_id,
     const webrtc::EncodedImage& encoded_image) {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   ++frames_received_;
 }
 
@@ -84,14 +84,14 @@ void ExampleVideoQualityAnalyzer::OnFrameDecoded(
     absl::string_view peer_name,
     const webrtc::VideoFrame& frame,
     const DecoderStats& stats) {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   ++frames_decoded_;
 }
 
 void ExampleVideoQualityAnalyzer::OnFrameRendered(
     absl::string_view peer_name,
     const webrtc::VideoFrame& frame) {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   frames_in_flight_.erase(frame.id());
   ++frames_rendered_;
 }
@@ -112,14 +112,14 @@ void ExampleVideoQualityAnalyzer::OnDecoderError(absl::string_view peer_name,
 }
 
 void ExampleVideoQualityAnalyzer::Stop() {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   RTC_LOG(INFO) << "There are " << frames_in_flight_.size()
                 << " frames in flight, assuming all of them are dropped";
   frames_dropped_ += frames_in_flight_.size();
 }
 
 std::string ExampleVideoQualityAnalyzer::GetStreamLabel(uint16_t frame_id) {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   auto it = frames_to_stream_label_.find(frame_id);
   RTC_DCHECK(it != frames_to_stream_label_.end())
       << "Unknown frame_id=" << frame_id;
@@ -127,37 +127,37 @@ std::string ExampleVideoQualityAnalyzer::GetStreamLabel(uint16_t frame_id) {
 }
 
 uint64_t ExampleVideoQualityAnalyzer::frames_captured() const {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   return frames_captured_;
 }
 
 uint64_t ExampleVideoQualityAnalyzer::frames_pre_encoded() const {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   return frames_pre_encoded_;
 }
 
 uint64_t ExampleVideoQualityAnalyzer::frames_encoded() const {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   return frames_encoded_;
 }
 
 uint64_t ExampleVideoQualityAnalyzer::frames_received() const {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   return frames_received_;
 }
 
 uint64_t ExampleVideoQualityAnalyzer::frames_decoded() const {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   return frames_decoded_;
 }
 
 uint64_t ExampleVideoQualityAnalyzer::frames_rendered() const {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   return frames_rendered_;
 }
 
 uint64_t ExampleVideoQualityAnalyzer::frames_dropped() const {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   return frames_dropped_;
 }
 

@@ -55,7 +55,7 @@ void DefaultAudioQualityAnalyzer::OnStatsReports(
     const std::string stream_label = std::string(
         analyzer_helper_->GetStreamLabelFromTrackId(*stat->track_identifier));
 
-    rtc::CritScope crit(&lock_);
+    MutexLock lock(&lock_);
     StatsSample prev_sample = last_stats_sample_[stream_label];
     RTC_CHECK_GE(sample.total_samples_received,
                  prev_sample.total_samples_received);
@@ -109,7 +109,7 @@ std::string DefaultAudioQualityAnalyzer::GetTestCaseName(
 
 void DefaultAudioQualityAnalyzer::Stop() {
   using ::webrtc::test::ImproveDirection;
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   for (auto& item : streams_stats_) {
     ReportResult("expand_rate", item.first, item.second.expand_rate, "unitless",
                  ImproveDirection::kSmallerIsBetter);
@@ -128,7 +128,7 @@ void DefaultAudioQualityAnalyzer::Stop() {
 
 std::map<std::string, AudioStreamStats>
 DefaultAudioQualityAnalyzer::GetAudioStreamsStats() const {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   return streams_stats_;
 }
 

@@ -18,7 +18,6 @@
 #include "api/video/video_codec_type.h"
 #include "api/video_codecs/video_encoder.h"
 #include "modules/video_coding/include/video_error_codes.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {
@@ -80,7 +79,7 @@ void QualityAnalyzingVideoEncoder::SetFecControllerOverride(
 int32_t QualityAnalyzingVideoEncoder::InitEncode(
     const VideoCodec* codec_settings,
     const Settings& settings) {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   codec_settings_ = *codec_settings;
   mode_ = SimulcastMode::kNormal;
   if (codec_settings->codecType == kVideoCodecVP9) {
@@ -111,7 +110,7 @@ int32_t QualityAnalyzingVideoEncoder::RegisterEncodeCompleteCallback(
     EncodedImageCallback* callback) {
   // We need to get a lock here because delegate_callback can be hypothetically
   // accessed from different thread (encoder one) concurrently.
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   delegate_callback_ = callback;
   return delegate_->RegisterEncodeCompleteCallback(this);
 }
@@ -121,7 +120,7 @@ int32_t QualityAnalyzingVideoEncoder::Release() {
   // frames, so we don't take a lock to prevent deadlock.
   int32_t result = delegate_->Release();
 
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   delegate_callback_ = nullptr;
   return result;
 }
@@ -130,7 +129,7 @@ int32_t QualityAnalyzingVideoEncoder::Encode(
     const VideoFrame& frame,
     const std::vector<VideoFrameType>* frame_types) {
   {
-    rtc::CritScope crit(&lock_);
+    MutexLock lock(&lock_);
     // Store id to be able to retrieve it in analyzing callback.
     timestamp_to_frame_id_list_.push_back({frame.timestamp(), frame.id()});
     // If this list is growing, it means that we are not receiving new encoded
@@ -142,7 +141,7 @@ int32_t QualityAnalyzingVideoEncoder::Encode(
   if (result != WEBRTC_VIDEO_CODEC_OK) {
     // If origin encoder failed, then cleanup data for this frame.
     {
-      rtc::CritScope crit(&lock_);
+      MutexLock lock(&lock_);
       // The timestamp-frame_id pair can be not the last one, so we need to
       // find it first and then remove. We will search from the end, because
       // usually it will be the last or close to the last one.
@@ -165,7 +164,7 @@ void QualityAnalyzingVideoEncoder::SetRates(
   RTC_DCHECK_GT(bitrate_multiplier_, 0.0);
   if (fabs(bitrate_multiplier_ - kNoMultiplier) < kEps) {
     {
-      rtc::CritScope crit(&lock_);
+      MutexLock lock(&lock_);
       bitrate_allocation_ = parameters.bitrate;
     }
     return delegate_->SetRates(parameters);
@@ -208,7 +207,7 @@ void QualityAnalyzingVideoEncoder::SetRates(
   RateControlParameters adjusted_params = parameters;
   adjusted_params.bitrate = multiplied_allocation;
   {
-    rtc::CritScope crit(&lock_);
+    MutexLock lock(&lock_);
     bitrate_allocation_ = adjusted_params.bitrate;
   }
   return delegate_->SetRates(adjusted_params);
@@ -239,7 +238,7 @@ EncodedImageCallback::Result QualityAnalyzingVideoEncoder::OnEncodedImage(
   bool discard = false;
   uint32_t target_encode_bitrate = 0;
   {
-    rtc::CritScope crit(&lock_);
+    MutexLock lock(&lock_);
     std::pair<uint32_t, uint16_t> timestamp_frame_id;
     while (!timestamp_to_frame_id_list_.empty()) {
       timestamp_frame_id = timestamp_to_frame_id_list_.front();
@@ -291,7 +290,7 @@ EncodedImageCallback::Result QualityAnalyzingVideoEncoder::OnEncodedImage(
   const EncodedImage& image =
       injector_->InjectData(frame_id, discard, encoded_image, id_);
   {
-    rtc::CritScope crit(&lock_);
+    MutexLock lock(&lock_);
     RTC_DCHECK(delegate_callback_);
     return delegate_callback_->OnEncodedImage(image, codec_specific_info,
                                               fragmentation);
@@ -300,7 +299,7 @@ EncodedImageCallback::Result QualityAnalyzingVideoEncoder::OnEncodedImage(
 
 void QualityAnalyzingVideoEncoder::OnDroppedFrame(
     EncodedImageCallback::DropReason reason) {
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   analyzer_->OnFrameDropped(peer_name_, reason);
   RTC_DCHECK(delegate_callback_);
   delegate_callback_->OnDroppedFrame(reason);

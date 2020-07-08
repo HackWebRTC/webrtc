@@ -79,7 +79,7 @@ int32_t QualityAnalyzingVideoDecoder::Decode(const EncodedImage& input_image,
 
   EncodedImage* origin_image;
   {
-    rtc::CritScope crit(&lock_);
+    MutexLock lock(&lock_);
     // Store id to be able to retrieve it in analyzing callback.
     timestamp_to_frame_id_.insert({input_image.Timestamp(), out.id});
     // Store encoded image to prevent its destruction while it is used in
@@ -96,7 +96,7 @@ int32_t QualityAnalyzingVideoDecoder::Decode(const EncodedImage& input_image,
   if (result != WEBRTC_VIDEO_CODEC_OK) {
     // If delegate decoder failed, then cleanup data for this image.
     {
-      rtc::CritScope crit(&lock_);
+      MutexLock lock(&lock_);
       timestamp_to_frame_id_.erase(input_image.Timestamp());
       decoding_images_.erase(out.id);
     }
@@ -116,7 +116,7 @@ int32_t QualityAnalyzingVideoDecoder::Release() {
   // frames, so we don't take a lock to prevent deadlock.
   int32_t result = delegate_->Release();
 
-  rtc::CritScope crit(&lock_);
+  MutexLock lock(&lock_);
   analyzing_callback_->SetDelegateCallback(nullptr);
   timestamp_to_frame_id_.clear();
   decoding_images_.clear();
@@ -138,7 +138,7 @@ QualityAnalyzingVideoDecoder::DecoderCallback::~DecoderCallback() = default;
 
 void QualityAnalyzingVideoDecoder::DecoderCallback::SetDelegateCallback(
     DecodedImageCallback* delegate) {
-  rtc::CritScope crit(&callback_lock_);
+  MutexLock lock(&callback_lock_);
   delegate_callback_ = delegate;
 }
 
@@ -150,7 +150,7 @@ int32_t QualityAnalyzingVideoDecoder::DecoderCallback::Decoded(
   decoder_->OnFrameDecoded(&decodedImage, /*decode_time_ms=*/absl::nullopt,
                            /*qp=*/absl::nullopt);
 
-  rtc::CritScope crit(&callback_lock_);
+  MutexLock lock(&callback_lock_);
   RTC_DCHECK(delegate_callback_);
   return delegate_callback_->Decoded(decodedImage);
 }
@@ -160,7 +160,7 @@ int32_t QualityAnalyzingVideoDecoder::DecoderCallback::Decoded(
     int64_t decode_time_ms) {
   decoder_->OnFrameDecoded(&decodedImage, decode_time_ms, /*qp=*/absl::nullopt);
 
-  rtc::CritScope crit(&callback_lock_);
+  MutexLock lock(&callback_lock_);
   RTC_DCHECK(delegate_callback_);
   return delegate_callback_->Decoded(decodedImage, decode_time_ms);
 }
@@ -171,7 +171,7 @@ void QualityAnalyzingVideoDecoder::DecoderCallback::Decoded(
     absl::optional<uint8_t> qp) {
   decoder_->OnFrameDecoded(&decodedImage, decode_time_ms, qp);
 
-  rtc::CritScope crit(&callback_lock_);
+  MutexLock lock(&callback_lock_);
   RTC_DCHECK(delegate_callback_);
   delegate_callback_->Decoded(decodedImage, decode_time_ms, qp);
 }
@@ -186,7 +186,7 @@ QualityAnalyzingVideoDecoder::DecoderCallback::IrrelevantSimulcastStreamDecoded(
           .set_timestamp_rtp(timestamp_ms)
           .set_id(frame_id)
           .build();
-  rtc::CritScope crit(&callback_lock_);
+  MutexLock lock(&callback_lock_);
   RTC_DCHECK(delegate_callback_);
   delegate_callback_->Decoded(dummy_frame, absl::nullopt, absl::nullopt);
   return WEBRTC_VIDEO_CODEC_OK;
@@ -207,7 +207,7 @@ void QualityAnalyzingVideoDecoder::OnFrameDecoded(
     absl::optional<uint8_t> qp) {
   uint16_t frame_id;
   {
-    rtc::CritScope crit(&lock_);
+    MutexLock lock(&lock_);
     auto it = timestamp_to_frame_id_.find(frame->timestamp());
     if (it == timestamp_to_frame_id_.end()) {
       // Ensure, that we have info about this frame. It can happen that for some

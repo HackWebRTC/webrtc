@@ -19,8 +19,8 @@
 #include "api/test/peerconnection_quality_test_fixture.h"
 #include "api/test/track_id_stream_info_map.h"
 #include "api/units/timestamp.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/numerics/samples_stats_counter.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "test/testsupport/perf_test.h"
 
 namespace webrtc {
@@ -60,8 +60,8 @@ class CrossMediaMetricsReporter
   std::string test_case_name_;
   const TrackIdStreamInfoMap* reporter_helper_;
 
-  rtc::CriticalSection lock_;
-  std::map<std::string, StatsInfo> stats_info_ RTC_GUARDED_BY(lock_);
+  Mutex mutex_;
+  std::map<std::string, StatsInfo> stats_info_ RTC_GUARDED_BY(mutex_);
 };
 
 }  // namespace webrtc_pc_e2e

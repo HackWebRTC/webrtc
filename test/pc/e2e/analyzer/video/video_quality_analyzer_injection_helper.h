@@ -25,7 +25,7 @@
 #include "api/video/video_sink_interface.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "test/pc/e2e/analyzer/video/encoded_image_data_injector.h"
 #include "test/pc/e2e/analyzer/video/id_generator.h"
 #include "test/test_video_capturer.h"
@@ -117,7 +117,7 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
 
   std::vector<std::unique_ptr<test::VideoFrameWriter>> video_writers_;
 
-  rtc::CriticalSection lock_;
+  Mutex lock_;
   std::map<std::string, VideoConfig> known_video_configs_ RTC_GUARDED_BY(lock_);
   std::map<std::string,
            std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>>

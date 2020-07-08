@@ -63,7 +63,7 @@ void VideoQualityMetricsReporter::OnStatsReports(
         DataSize::Bytes(s->header_bytes_sent.ValueOrDefault(0ul));
   }
 
-  rtc::CritScope crit(&video_bwe_stats_lock_);
+  MutexLock lock(&video_bwe_stats_lock_);
   VideoBweStats& video_bwe_stats = video_bwe_stats_[std::string(pc_label)];
   if (ice_candidate_pair_stats.available_outgoing_bitrate.is_defined()) {
     video_bwe_stats.available_send_bandwidth.AddSample(
@@ -97,7 +97,7 @@ void VideoQualityMetricsReporter::OnStatsReports(
 }
 
 void VideoQualityMetricsReporter::StopAndReportResults() {
-  rtc::CritScope video_bwe_crit(&video_bwe_stats_lock_);
+  MutexLock video_bwemutex_(&video_bwe_stats_lock_);
   for (const auto& item : video_bwe_stats_) {
     ReportVideoBweResults(GetTestCaseName(item.first), item.second);
   }

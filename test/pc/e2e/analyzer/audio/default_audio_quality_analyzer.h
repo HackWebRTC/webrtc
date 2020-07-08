@@ -18,8 +18,8 @@
 #include "api/test/audio_quality_analyzer_interface.h"
 #include "api/test/track_id_stream_info_map.h"
 #include "api/units/time_delta.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/numerics/samples_stats_counter.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "test/testsupport/perf_test.h"
 
 namespace webrtc {
@@ -66,7 +66,7 @@ class DefaultAudioQualityAnalyzer : public AudioQualityAnalyzerInterface {
   std::string test_case_name_;
   TrackIdStreamInfoMap* analyzer_helper_;
 
-  rtc::CriticalSection lock_;
+  mutable Mutex lock_;
   std::map<std::string, AudioStreamStats> streams_stats_ RTC_GUARDED_BY(lock_);
   std::map<std::string, StatsSample> last_stats_sample_ RTC_GUARDED_BY(lock_);
 };

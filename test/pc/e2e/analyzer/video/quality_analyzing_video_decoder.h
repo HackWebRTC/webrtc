@@ -23,7 +23,7 @@
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_decoder.h"
 #include "api/video_codecs/video_decoder_factory.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "test/pc/e2e/analyzer/video/encoded_image_data_injector.h"
 #include "test/pc/e2e/analyzer/video/id_generator.h"
 
@@ -97,7 +97,7 @@ class QualityAnalyzingVideoDecoder : public VideoDecoder {
 
     rtc::scoped_refptr<webrtc::VideoFrameBuffer> dummy_frame_buffer_;
 
-    rtc::CriticalSection callback_lock_;
+    Mutex callback_lock_;
     DecodedImageCallback* delegate_callback_ RTC_GUARDED_BY(callback_lock_);
   };
 
@@ -116,7 +116,7 @@ class QualityAnalyzingVideoDecoder : public VideoDecoder {
   // VideoDecoder interface assumes async delivery of decoded video frames.
   // This lock is used to protect shared state, that have to be propagated
   // from received EncodedImage to resulted VideoFrame.
-  rtc::CriticalSection lock_;
+  Mutex lock_;
 
   std::map<uint32_t, uint16_t> timestamp_to_frame_id_ RTC_GUARDED_BY(lock_);
   // Stores currently being decoded images by frame id. Because
