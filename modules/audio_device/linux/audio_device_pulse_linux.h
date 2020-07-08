@@ -19,9 +19,9 @@
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "modules/audio_device/linux/audio_mixer_manager_pulse_linux.h"
 #include "modules/audio_device/linux/pulseaudiosymboltable_linux.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "rtc_base/platform_thread.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
 
@@ -197,8 +197,8 @@ class AudioDeviceLinuxPulse : public AudioDeviceGeneric {
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 
  private:
-  void Lock() RTC_EXCLUSIVE_LOCK_FUNCTION(_critSect) { _critSect.Enter(); }
-  void UnLock() RTC_UNLOCK_FUNCTION(_critSect) { _critSect.Leave(); }
+  void Lock() RTC_EXCLUSIVE_LOCK_FUNCTION(mutex_) { mutex_.Lock(); }
+  void UnLock() RTC_UNLOCK_FUNCTION(mutex_) { mutex_.Unlock(); }
   void WaitForOperationCompletion(pa_operation* paOperation) const;
   void WaitForSuccess(pa_operation* paOperation) const;
 
@@ -261,7 +261,7 @@ class AudioDeviceLinuxPulse : public AudioDeviceGeneric {
 
   AudioDeviceBuffer* _ptrAudioBuffer;
 
-  rtc::CriticalSection _critSect;
+  mutable Mutex mutex_;
   rtc::Event _timeEventRec;
   rtc::Event _timeEventPlay;
   rtc::Event _recStartEvent;
@@ -296,9 +296,9 @@ class AudioDeviceLinuxPulse : public AudioDeviceGeneric {
   bool _startRec;
   bool _startPlay;
   bool update_speaker_volume_at_startup_;
-  bool quit_ RTC_GUARDED_BY(&_critSect);
+  bool quit_ RTC_GUARDED_BY(&mutex_);
 
-  uint32_t _sndCardPlayDelay RTC_GUARDED_BY(&_critSect);
+  uint32_t _sndCardPlayDelay RTC_GUARDED_BY(&mutex_);
 
   int32_t _writeErrors;
 

@@ -15,7 +15,7 @@
 
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_device/linux/alsasymboltable_linux.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 
 namespace webrtc {
 
@@ -55,7 +55,7 @@ class AudioMixerManagerLinuxALSA {
   void GetControlName(char* controlName, char* deviceName) const;
 
  private:
-  rtc::CriticalSection _critSect;
+  Mutex mutex_;
   mutable snd_mixer_t* _outputMixerHandle;
   char _outputMixerStr[kAdmMaxDeviceNameSize];
   mutable snd_mixer_t* _inputMixerHandle;

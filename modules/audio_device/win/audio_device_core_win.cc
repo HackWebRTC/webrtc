@@ -579,7 +579,7 @@ int32_t AudioDeviceWindowsCore::ActiveAudioLayer(
 // ----------------------------------------------------------------------------
 
 AudioDeviceGeneric::InitStatus AudioDeviceWindowsCore::Init() {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   if (_initialized) {
     return InitStatus::OK;
@@ -601,7 +601,7 @@ AudioDeviceGeneric::InitStatus AudioDeviceWindowsCore::Init() {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsCore::Terminate() {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   if (!_initialized) {
     return 0;
@@ -640,7 +640,7 @@ bool AudioDeviceWindowsCore::Initialized() const {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsCore::InitSpeaker() {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   if (_playing) {
     return -1;
@@ -709,7 +709,7 @@ int32_t AudioDeviceWindowsCore::InitSpeaker() {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsCore::InitMicrophone() {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   if (_recording) {
     return -1;
@@ -784,7 +784,7 @@ bool AudioDeviceWindowsCore::MicrophoneIsInitialized() const {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsCore::SpeakerVolumeIsAvailable(bool& available) {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   if (_ptrDeviceOut == NULL) {
     return -1;
@@ -826,7 +826,7 @@ Exit:
 
 int32_t AudioDeviceWindowsCore::SetSpeakerVolume(uint32_t volume) {
   {
-    rtc::CritScope lock(&_critSect);
+    MutexLock lock(&mutex_);
 
     if (!_speakerIsInitialized) {
       return -1;
@@ -846,9 +846,9 @@ int32_t AudioDeviceWindowsCore::SetSpeakerVolume(uint32_t volume) {
 
   // scale input volume to valid range (0.0 to 1.0)
   const float fLevel = (float)volume / MAX_CORE_SPEAKER_VOLUME;
-  _volumeMutex.Enter();
+  volume_mutex_.Lock();
   hr = _ptrRenderSimpleVolume->SetMasterVolume(fLevel, NULL);
-  _volumeMutex.Leave();
+  volume_mutex_.Unlock();
   EXIT_ON_ERROR(hr);
 
   return 0;
@@ -864,7 +864,7 @@ Exit:
 
 int32_t AudioDeviceWindowsCore::SpeakerVolume(uint32_t& volume) const {
   {
-    rtc::CritScope lock(&_critSect);
+    MutexLock lock(&mutex_);
 
     if (!_speakerIsInitialized) {
       return -1;
@@ -878,9 +878,9 @@ int32_t AudioDeviceWindowsCore::SpeakerVolume(uint32_t& volume) const {
   HRESULT hr = S_OK;
   float fLevel(0.0f);
 
-  _volumeMutex.Enter();
+  volume_mutex_.Lock();
   hr = _ptrRenderSimpleVolume->GetMasterVolume(&fLevel);
-  _volumeMutex.Leave();
+  volume_mutex_.Unlock();
   EXIT_ON_ERROR(hr);
 
   // scale input volume range [0.0,1.0] to valid output range
@@ -931,7 +931,7 @@ int32_t AudioDeviceWindowsCore::MinSpeakerVolume(uint32_t& minVolume) const {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsCore::SpeakerMuteIsAvailable(bool& available) {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   if (_ptrDeviceOut == NULL) {
     return -1;
@@ -967,7 +967,7 @@ Exit:
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsCore::SetSpeakerMute(bool enable) {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   if (!_speakerIsInitialized) {
     return -1;
@@ -1041,7 +1041,7 @@ Exit:
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsCore::MicrophoneMuteIsAvailable(bool& available) {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   if (_ptrDeviceIn == NULL) {
     return -1;
@@ -1151,7 +1151,7 @@ int32_t AudioDeviceWindowsCore::StereoRecordingIsAvailable(bool& available) {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsCore::SetStereoRecording(bool enable) {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   if (enable) {
     _recChannelsPrioList[0] = 2;  // try stereo first
@@ -1193,7 +1193,7 @@ int32_t AudioDeviceWindowsCore::StereoPlayoutIsAvailable(bool& available) {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsCore::SetStereoPlayout(bool enable) {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   if (enable) {
     _playChannelsPrioList[0] = 2;  // try stereo first
@@ -1226,7 +1226,7 @@ int32_t AudioDeviceWindowsCore::StereoPlayout(bool& enabled) const {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsCore::MicrophoneVolumeIsAvailable(bool& available) {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   if (_ptrDeviceIn == NULL) {
     return -1;
@@ -1264,7 +1264,7 @@ int32_t AudioDeviceWindowsCore::SetMicrophoneVolume(uint32_t volume) {
                       << volume << ")";
 
   {
-    rtc::CritScope lock(&_critSect);
+    MutexLock lock(&mutex_);
 
     if (!_microphoneIsInitialized) {
       return -1;
@@ -1283,9 +1283,9 @@ int32_t AudioDeviceWindowsCore::SetMicrophoneVolume(uint32_t volume) {
   HRESULT hr = S_OK;
   // scale input volume to valid range (0.0 to 1.0)
   const float fLevel = static_cast<float>(volume) / MAX_CORE_MICROPHONE_VOLUME;
-  _volumeMutex.Enter();
+  volume_mutex_.Lock();
   _ptrCaptureVolume->SetMasterVolumeLevelScalar(fLevel, NULL);
-  _volumeMutex.Leave();
+  volume_mutex_.Unlock();
   EXIT_ON_ERROR(hr);
 
   return 0;
@@ -1301,7 +1301,7 @@ Exit:
 
 int32_t AudioDeviceWindowsCore::MicrophoneVolume(uint32_t& volume) const {
   {
-    rtc::CritScope lock(&_critSect);
+    MutexLock lock(&mutex_);
 
     if (!_microphoneIsInitialized) {
       return -1;
@@ -1315,9 +1315,9 @@ int32_t AudioDeviceWindowsCore::MicrophoneVolume(uint32_t& volume) const {
   HRESULT hr = S_OK;
   float fLevel(0.0f);
   volume = 0;
-  _volumeMutex.Enter();
+  volume_mutex_.Lock();
   hr = _ptrCaptureVolume->GetMasterVolumeLevelScalar(&fLevel);
-  _volumeMutex.Leave();
+  volume_mutex_.Unlock();
   EXIT_ON_ERROR(hr);
 
   // scale input volume range [0.0,1.0] to valid output range
@@ -1370,7 +1370,7 @@ int32_t AudioDeviceWindowsCore::MinMicrophoneVolume(uint32_t& minVolume) const {
 // ----------------------------------------------------------------------------
 
 int16_t AudioDeviceWindowsCore::PlayoutDevices() {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   if (_RefreshDeviceList(eRender) != -1) {
     return (_DeviceListCount(eRender));
@@ -1398,7 +1398,7 @@ int32_t AudioDeviceWindowsCore::SetPlayoutDevice(uint16_t index) {
     return -1;
   }
 
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   HRESULT hr(S_OK);
 
@@ -1445,7 +1445,7 @@ int32_t AudioDeviceWindowsCore::SetPlayoutDevice(
     role = eCommunications;
   }
 
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   // Refresh the list of rendering endpoint devices
   _RefreshDeviceList(eRender);
@@ -1506,7 +1506,7 @@ int32_t AudioDeviceWindowsCore::PlayoutDeviceName(
     memset(guid, 0, kAdmMaxGuidSize);
   }
 
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   int32_t ret(-1);
   WCHAR szDeviceName[MAX_PATH];
@@ -1582,7 +1582,7 @@ int32_t AudioDeviceWindowsCore::RecordingDeviceName(
     memset(guid, 0, kAdmMaxGuidSize);
   }
 
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   int32_t ret(-1);
   WCHAR szDeviceName[MAX_PATH];
@@ -1633,7 +1633,7 @@ int32_t AudioDeviceWindowsCore::RecordingDeviceName(
 // ----------------------------------------------------------------------------
 
 int16_t AudioDeviceWindowsCore::RecordingDevices() {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   if (_RefreshDeviceList(eCapture) != -1) {
     return (_DeviceListCount(eCapture));
@@ -1661,7 +1661,7 @@ int32_t AudioDeviceWindowsCore::SetRecordingDevice(uint16_t index) {
     return -1;
   }
 
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   HRESULT hr(S_OK);
 
@@ -1708,7 +1708,7 @@ int32_t AudioDeviceWindowsCore::SetRecordingDevice(
     role = eCommunications;
   }
 
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   // Refresh the list of capture endpoint devices
   _RefreshDeviceList(eCapture);
@@ -1785,7 +1785,7 @@ int32_t AudioDeviceWindowsCore::RecordingIsAvailable(bool& available) {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsCore::InitPlayout() {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   if (_playing) {
     return -1;
@@ -2099,7 +2099,7 @@ int32_t AudioDeviceWindowsCore::InitRecordingDMO() {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsCore::InitRecording() {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   if (_recording) {
     return -1;
@@ -2326,7 +2326,7 @@ int32_t AudioDeviceWindowsCore::StartRecording() {
   }
 
   {
-    rtc::CritScope critScoped(&_critSect);
+    MutexLock lockScoped(&mutex_);
 
     // Create thread which will drive the capturing
     LPTHREAD_START_ROUTINE lpStartAddress = WSAPICaptureThread;
@@ -2479,7 +2479,7 @@ int32_t AudioDeviceWindowsCore::StartPlayout() {
   }
 
   {
-    rtc::CritScope critScoped(&_critSect);
+    MutexLock lockScoped(&mutex_);
 
     // Create thread which will drive the rendering.
     assert(_hPlayThread == NULL);
@@ -2515,7 +2515,7 @@ int32_t AudioDeviceWindowsCore::StopPlayout() {
   }
 
   {
-    rtc::CritScope critScoped(&_critSect);
+    MutexLock lockScoped(&mutex_);
 
     if (_hPlayThread == NULL) {
       RTC_LOG(LS_VERBOSE)
@@ -2545,7 +2545,7 @@ int32_t AudioDeviceWindowsCore::StopPlayout() {
   }
 
   {
-    rtc::CritScope critScoped(&_critSect);
+    MutexLock lockScoped(&mutex_);
     RTC_LOG(LS_VERBOSE) << "webrtc_core_audio_render_thread is now closed";
 
     // to reset this event manually at each time we finish with it,
@@ -2587,7 +2587,7 @@ int32_t AudioDeviceWindowsCore::StopPlayout() {
 // ----------------------------------------------------------------------------
 
 int32_t AudioDeviceWindowsCore::PlayoutDelay(uint16_t& delayMS) const {
-  rtc::CritScope critScoped(&_critSect);
+  MutexLock lockScoped(&mutex_);
   delayMS = static_cast<uint16_t>(_sndCardPlayDelay);
   return 0;
 }
@@ -2981,7 +2981,7 @@ DWORD AudioDeviceWindowsCore::DoCaptureThreadPollDMO() {
     }
 
     while (keepRecording) {
-      rtc::CritScope critScoped(&_critSect);
+      MutexLock lockScoped(&mutex_);
 
       DWORD dwStatus = 0;
       {
@@ -3357,11 +3357,11 @@ int32_t AudioDeviceWindowsCore::EnableBuiltInAEC(bool enable) {
 }
 
 void AudioDeviceWindowsCore::_Lock() RTC_NO_THREAD_SAFETY_ANALYSIS {
-  _critSect.Enter();
+  mutex_.Lock();
 }
 
 void AudioDeviceWindowsCore::_UnLock() RTC_NO_THREAD_SAFETY_ANALYSIS {
-  _critSect.Leave();
+  mutex_.Unlock();
 }
 
 int AudioDeviceWindowsCore::SetDMOProperties() {

@@ -122,7 +122,7 @@ AudioDeviceLinuxALSA::~AudioDeviceLinuxALSA() {
 }
 
 void AudioDeviceLinuxALSA::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   _ptrAudioBuffer = audioBuffer;
 
@@ -142,7 +142,7 @@ int32_t AudioDeviceLinuxALSA::ActiveAudioLayer(
 }
 
 AudioDeviceGeneric::InitStatus AudioDeviceLinuxALSA::Init() {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   // Load libasound
   if (!GetAlsaSymbolTable()->Load()) {
@@ -173,30 +173,30 @@ int32_t AudioDeviceLinuxALSA::Terminate() {
     return 0;
   }
 
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   _mixerManager.Close();
 
   // RECORDING
   if (_ptrThreadRec) {
     rtc::PlatformThread* tmpThread = _ptrThreadRec.release();
-    _critSect.Leave();
+    mutex_.Unlock();
 
     tmpThread->Stop();
     delete tmpThread;
 
-    _critSect.Enter();
+    mutex_.Lock();
   }
 
   // PLAYOUT
   if (_ptrThreadPlay) {
     rtc::PlatformThread* tmpThread = _ptrThreadPlay.release();
-    _critSect.Leave();
+    mutex_.Unlock();
 
     tmpThread->Stop();
     delete tmpThread;
 
-    _critSect.Enter();
+    mutex_.Lock();
   }
 #if defined(WEBRTC_USE_X11)
   if (_XDisplay) {
@@ -216,7 +216,7 @@ bool AudioDeviceLinuxALSA::Initialized() const {
 }
 
 int32_t AudioDeviceLinuxALSA::InitSpeaker() {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   if (_playing) {
     return -1;
@@ -228,7 +228,7 @@ int32_t AudioDeviceLinuxALSA::InitSpeaker() {
 }
 
 int32_t AudioDeviceLinuxALSA::InitMicrophone() {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   if (_recording) {
     return -1;
@@ -404,7 +404,7 @@ int32_t AudioDeviceLinuxALSA::MicrophoneMute(bool& enabled) const {
 }
 
 int32_t AudioDeviceLinuxALSA::StereoRecordingIsAvailable(bool& available) {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   // If we already have initialized in stereo it's obviously available
   if (_recIsInitialized && (2 == _recChannels)) {
@@ -464,7 +464,7 @@ int32_t AudioDeviceLinuxALSA::StereoRecording(bool& enabled) const {
 }
 
 int32_t AudioDeviceLinuxALSA::StereoPlayoutIsAvailable(bool& available) {
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   // If we already have initialized in stereo it's obviously available
   if (_playIsInitialized && (2 == _playChannels)) {
@@ -747,7 +747,7 @@ int32_t AudioDeviceLinuxALSA::RecordingIsAvailable(bool& available) {
 int32_t AudioDeviceLinuxALSA::InitPlayout() {
   int errVal = 0;
 
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
   if (_playing) {
     return -1;
   }
@@ -866,7 +866,7 @@ int32_t AudioDeviceLinuxALSA::InitPlayout() {
 int32_t AudioDeviceLinuxALSA::InitRecording() {
   int errVal = 0;
 
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   if (_recording) {
     return -1;
@@ -1059,7 +1059,7 @@ int32_t AudioDeviceLinuxALSA::StartRecording() {
 
 int32_t AudioDeviceLinuxALSA::StopRecording() {
   {
-    rtc::CritScope lock(&_critSect);
+    MutexLock lock(&mutex_);
 
     if (!_recIsInitialized) {
       return 0;
@@ -1079,7 +1079,7 @@ int32_t AudioDeviceLinuxALSA::StopRecording() {
     _ptrThreadRec.reset();
   }
 
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
   _recordingFramesLeft = 0;
   if (_recordingBuffer) {
     delete[] _recordingBuffer;
@@ -1163,7 +1163,7 @@ int32_t AudioDeviceLinuxALSA::StartPlayout() {
 
 int32_t AudioDeviceLinuxALSA::StopPlayout() {
   {
-    rtc::CritScope lock(&_critSect);
+    MutexLock lock(&mutex_);
 
     if (!_playIsInitialized) {
       return 0;
@@ -1182,7 +1182,7 @@ int32_t AudioDeviceLinuxALSA::StopPlayout() {
     _ptrThreadPlay.reset();
   }
 
-  rtc::CritScope lock(&_critSect);
+  MutexLock lock(&mutex_);
 
   _playoutFramesLeft = 0;
   delete[] _playoutBuffer;

@@ -27,7 +27,7 @@
 #include <mmdeviceapi.h>  // MMDevice
 
 #include "api/scoped_refptr.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 
 // Use Multimedia Class Scheduler Service (MMCSS) to boost the thread priority
 #pragma comment(lib, "avrt.lib")
@@ -237,8 +237,8 @@ class AudioDeviceWindowsCore : public AudioDeviceGeneric {
 
   ScopedCOMInitializer _comInit;
   AudioDeviceBuffer* _ptrAudioBuffer;
-  rtc::CriticalSection _critSect;
-  rtc::CriticalSection _volumeMutex;
+  mutable Mutex mutex_;
+  mutable Mutex volume_mutex_;
 
   IMMDeviceEnumerator* _ptrEnumerator;
   IMMDeviceCollection* _ptrRenderCollection;

@@ -15,8 +15,8 @@
 
 #include "modules/audio_device/audio_device_generic.h"
 #include "modules/audio_device/linux/audio_mixer_manager_alsa_linux.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/platform_thread.h"
+#include "rtc_base/synchronization/mutex.h"
 
 #if defined(WEBRTC_USE_X11)
 #include <X11/Xlib.h>
@@ -131,8 +131,8 @@ class AudioDeviceLinuxALSA : public AudioDeviceGeneric {
 
   bool KeyPressed() const;
 
-  void Lock() RTC_EXCLUSIVE_LOCK_FUNCTION(_critSect) { _critSect.Enter(); }
-  void UnLock() RTC_UNLOCK_FUNCTION(_critSect) { _critSect.Leave(); }
+  void Lock() RTC_EXCLUSIVE_LOCK_FUNCTION(mutex_) { mutex_.Lock(); }
+  void UnLock() RTC_UNLOCK_FUNCTION(mutex_) { mutex_.Unlock(); }
 
   inline int32_t InputSanityCheckAfterUnlockedPeriod() const;
   inline int32_t OutputSanityCheckAfterUnlockedPeriod() const;
@@ -144,7 +144,7 @@ class AudioDeviceLinuxALSA : public AudioDeviceGeneric {
 
   AudioDeviceBuffer* _ptrAudioBuffer;
 
-  rtc::CriticalSection _critSect;
+  Mutex mutex_;
 
   // TODO(pbos): Make plain members and start/stop instead of resetting these
   // pointers. A thread can be reused.
