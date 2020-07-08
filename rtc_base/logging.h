@@ -46,6 +46,7 @@
 
 #include <errno.h>
 
+#include <atomic>
 #include <sstream>  // no-presubmit-check TODO(webrtc:8982)
 #include <string>
 #include <utility>
@@ -556,6 +557,12 @@ class LogMessage {
 
   // The output streams and their associated severities
   static LogSink* streams_;
+
+  // Holds true with high probability if |streams_| is empty, false with high
+  // probability otherwise. Operated on with std::memory_order_relaxed because
+  // it's ok to loose or log some additional statements near the instant streams
+  // are added/removed.
+  static std::atomic<bool> streams_empty_;
 
   // Flags for formatting options
   static bool thread_, timestamp_;

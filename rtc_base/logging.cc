@@ -90,6 +90,7 @@ bool LogMessage::log_to_stderr_ = true;
 // cleanup by setting to null, or let it leak (safe at program exit).
 ABSL_CONST_INIT LogSink* LogMessage::streams_ RTC_GUARDED_BY(g_log_mutex_) =
     nullptr;
+ABSL_CONST_INIT std::atomic<bool> LogMessage::streams_empty_ = {true};
 
 // Boolean options default to false (0)
 bool LogMessage::thread_, LogMessage::timestamp_;
@@ -269,6 +270,7 @@ void LogMessage::AddLogToStream(LogSink* stream, LoggingSeverity min_sev) {
   stream->min_severity_ = min_sev;
   stream->next_ = streams_;
   streams_ = stream;
+  streams_empty_.store(false, std::memory_order_relaxed);
   UpdateMinLogSeverity();
 }
 
@@ -281,6 +283,7 @@ void LogMessage::RemoveLogToStream(LogSink* stream) {
       break;
     }
   }
+  streams_empty_.store(streams_ == nullptr, std::memory_order_relaxed);
   UpdateMinLogSeverity();
 }
 
@@ -438,12 +441,7 @@ void LogMessage::OutputToDebug(const std::string& str,
 bool LogMessage::IsNoop(LoggingSeverity severity) {
   if (severity >= g_dbg_sev || severity >= g_min_sev)
     return false;
-
-  // TODO(tommi): We're grabbing this lock for every LogMessage instance that
-  // is going to be logged. This introduces unnecessary synchronization for
-  // a feature that's mostly used for testing.
-  webrtc::MutexLock lock(&g_log_mutex_);
-  return streams_ == nullptr;
+  return streams_empty_.load(std::memory_order_relaxed);
 }
 
 void LogMessage::FinishPrintStream() {
