@@ -1507,8 +1507,25 @@ TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecs) {
   EXPECT_FALSE(channel_->CanInsertDtmf());
 }
 
-// Test that we set Opus/Red under the field trial.
+// Test that we use Opus/Red under the field trial when it is
+// listed as the first codec.
 TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecsRed) {
+  webrtc::test::ScopedFieldTrials override_field_trials(
+      "WebRTC-Audio-Red-For-Opus/Enabled/");
+
+  EXPECT_TRUE(SetupSendStream());
+  cricket::AudioSendParameters parameters;
+  parameters.codecs.push_back(kRed48000Codec);
+  parameters.codecs.push_back(kOpusCodec);
+  SetSendParameters(parameters);
+  const auto& send_codec_spec = *GetSendStreamConfig(kSsrcX).send_codec_spec;
+  EXPECT_EQ(111, send_codec_spec.payload_type);
+  EXPECT_STRCASEEQ("opus", send_codec_spec.format.name.c_str());
+  EXPECT_EQ(112, send_codec_spec.red_payload_type);
+}
+
+// Test that we do not use Opus/Red under the field trial by default.
+TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecsRedDefault) {
   webrtc::test::ScopedFieldTrials override_field_trials(
       "WebRTC-Audio-Red-For-Opus/Enabled/");
 
@@ -1516,24 +1533,9 @@ TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecsRed) {
   cricket::AudioSendParameters parameters;
   parameters.codecs.push_back(kOpusCodec);
   parameters.codecs.push_back(kRed48000Codec);
-  parameters.codecs[0].id = 96;
   SetSendParameters(parameters);
   const auto& send_codec_spec = *GetSendStreamConfig(kSsrcX).send_codec_spec;
-  EXPECT_EQ(96, send_codec_spec.payload_type);
-  EXPECT_STRCASEEQ("opus", send_codec_spec.format.name.c_str());
-  EXPECT_EQ(112, send_codec_spec.red_payload_type);
-}
-
-// Test that we set do not interpret Opus/Red by default.
-TEST_P(WebRtcVoiceEngineTestFake, SetSendCodecsRedDefault) {
-  EXPECT_TRUE(SetupSendStream());
-  cricket::AudioSendParameters parameters;
-  parameters.codecs.push_back(kOpusCodec);
-  parameters.codecs.push_back(kRed48000Codec);
-  parameters.codecs[0].id = 96;
-  SetSendParameters(parameters);
-  const auto& send_codec_spec = *GetSendStreamConfig(kSsrcX).send_codec_spec;
-  EXPECT_EQ(96, send_codec_spec.payload_type);
+  EXPECT_EQ(111, send_codec_spec.payload_type);
   EXPECT_STRCASEEQ("opus", send_codec_spec.format.name.c_str());
   EXPECT_EQ(absl::nullopt, send_codec_spec.red_payload_type);
 }

@@ -1719,6 +1719,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
       send_codec_spec;
   webrtc::BitrateConstraints bitrate_config;
   absl::optional<webrtc::AudioCodecInfo> voice_codec_info;
+  size_t send_codec_position = 0;
   for (const AudioCodec& voice_codec : codecs) {
     if (!(IsCodec(voice_codec, kCnCodecName) ||
           IsCodec(voice_codec, kDtmfCodecName) ||
@@ -1742,6 +1743,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
       bitrate_config = GetBitrateConfigForCodec(voice_codec);
       break;
     }
+    send_codec_position++;
   }
 
   if (!send_codec_spec) {
@@ -1783,13 +1785,16 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   if (IsAudioRedForOpusFieldTrialEnabled()) {
     // Loop through the codecs to find the RED codec that matches opus
     // with respect to clockrate and number of channels.
+    size_t red_codec_position = 0;
     for (const AudioCodec& red_codec : codecs) {
-      if (IsCodec(red_codec, kRedCodecName) &&
+      if (red_codec_position < send_codec_position &&
+          IsCodec(red_codec, kRedCodecName) &&
           red_codec.clockrate == send_codec_spec->format.clockrate_hz &&
           red_codec.channels == send_codec_spec->format.num_channels) {
         send_codec_spec->red_payload_type = red_codec.id;
         break;
       }
+      red_codec_position++;
     }
   }
 
