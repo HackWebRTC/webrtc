@@ -60,7 +60,7 @@ FrameEncodeMetadataWriter::~FrameEncodeMetadataWriter() {}
 
 void FrameEncodeMetadataWriter::OnEncoderInit(const VideoCodec& codec,
                                               bool internal_source) {
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   codec_settings_ = codec;
   internal_source_ = internal_source;
 }
@@ -68,7 +68,7 @@ void FrameEncodeMetadataWriter::OnEncoderInit(const VideoCodec& codec,
 void FrameEncodeMetadataWriter::OnSetRates(
     const VideoBitrateAllocation& bitrate_allocation,
     uint32_t framerate_fps) {
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   framerate_fps_ = framerate_fps;
   const size_t num_spatial_layers = NumSpatialLayers();
   if (timing_frames_info_.size() < num_spatial_layers) {
@@ -81,7 +81,7 @@ void FrameEncodeMetadataWriter::OnSetRates(
 }
 
 void FrameEncodeMetadataWriter::OnEncodeStarted(const VideoFrame& frame) {
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   if (internal_source_) {
     return;
   }
@@ -128,7 +128,7 @@ void FrameEncodeMetadataWriter::OnEncodeStarted(const VideoFrame& frame) {
 
 void FrameEncodeMetadataWriter::FillTimingInfo(size_t simulcast_svc_idx,
                                                EncodedImage* encoded_image) {
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   absl::optional<size_t> outlier_frame_size;
   absl::optional<int64_t> encode_start_ms;
   uint8_t timing_flags = VideoSendTiming::kNotTriggered;
@@ -235,7 +235,7 @@ FrameEncodeMetadataWriter::UpdateBitstream(
 }
 
 void FrameEncodeMetadataWriter::Reset() {
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   for (auto& info : timing_frames_info_) {
     info.frames.clear();
   }

@@ -48,7 +48,7 @@ void VideoSourceSinkController::SetSource(
   rtc::VideoSourceInterface<VideoFrame>* old_source;
   rtc::VideoSinkWants wants;
   {
-    rtc::CritScope lock(&crit_);
+    MutexLock lock(&mutex_);
     old_source = source_;
     source_ = source;
     wants = CurrentSettingsToSinkWants();
@@ -61,7 +61,7 @@ void VideoSourceSinkController::SetSource(
 }
 
 void VideoSourceSinkController::PushSourceSinkSettings() {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   if (!source_)
     return;
   rtc::VideoSinkWants wants = CurrentSettingsToSinkWants();
@@ -70,62 +70,62 @@ void VideoSourceSinkController::PushSourceSinkSettings() {
 }
 
 VideoSourceRestrictions VideoSourceSinkController::restrictions() const {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   return restrictions_;
 }
 
 absl::optional<size_t> VideoSourceSinkController::pixels_per_frame_upper_limit()
     const {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   return pixels_per_frame_upper_limit_;
 }
 
 absl::optional<double> VideoSourceSinkController::frame_rate_upper_limit()
     const {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   return frame_rate_upper_limit_;
 }
 
 bool VideoSourceSinkController::rotation_applied() const {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   return rotation_applied_;
 }
 
 int VideoSourceSinkController::resolution_alignment() const {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   return resolution_alignment_;
 }
 
 void VideoSourceSinkController::SetRestrictions(
     VideoSourceRestrictions restrictions) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   restrictions_ = std::move(restrictions);
 }
 
 void VideoSourceSinkController::SetPixelsPerFrameUpperLimit(
     absl::optional<size_t> pixels_per_frame_upper_limit) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   pixels_per_frame_upper_limit_ = std::move(pixels_per_frame_upper_limit);
 }
 
 void VideoSourceSinkController::SetFrameRateUpperLimit(
     absl::optional<double> frame_rate_upper_limit) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   frame_rate_upper_limit_ = std::move(frame_rate_upper_limit);
 }
 
 void VideoSourceSinkController::SetRotationApplied(bool rotation_applied) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   rotation_applied_ = rotation_applied;
 }
 
 void VideoSourceSinkController::SetResolutionAlignment(
     int resolution_alignment) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   resolution_alignment_ = resolution_alignment;
 }
 
-// RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_)
+// RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_)
 rtc::VideoSinkWants VideoSourceSinkController::CurrentSettingsToSinkWants()
     const {
   rtc::VideoSinkWants wants;

@@ -151,7 +151,7 @@ VideoAnalyzer::VideoAnalyzer(test::LayerFilteringTransport* transport,
 
 VideoAnalyzer::~VideoAnalyzer() {
   {
-    rtc::CritScope crit(&comparison_lock_);
+    MutexLock lock(&comparison_lock_);
     quit_ = true;
   }
   for (rtc::PlatformThread* thread : comparison_thread_pool_) {
@@ -174,25 +174,25 @@ void VideoAnalyzer::SetSource(
 }
 
 void VideoAnalyzer::SetCall(Call* call) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&lock_);
   RTC_DCHECK(!call_);
   call_ = call;
 }
 
 void VideoAnalyzer::SetSendStream(VideoSendStream* stream) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&lock_);
   RTC_DCHECK(!send_stream_);
   send_stream_ = stream;
 }
 
 void VideoAnalyzer::SetReceiveStream(VideoReceiveStream* stream) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&lock_);
   RTC_DCHECK(!receive_stream_);
   receive_stream_ = stream;
 }
 
 void VideoAnalyzer::SetAudioReceiveStream(AudioReceiveStream* recv_stream) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&lock_);
   RTC_CHECK(!audio_receive_stream_);
   audio_receive_stream_ = recv_stream;
 }
@@ -234,7 +234,7 @@ PacketReceiver::DeliveryStatus VideoAnalyzer::DeliverPacket(
     // (FlexFEC and media are sent on different SSRCs, which have different
     // timestamps spaces.)
     // Also ignore packets from wrong SSRC, but include retransmits.
-    rtc::CritScope lock(&crit_);
+    MutexLock lock(&lock_);
     int64_t timestamp =
         wrap_handler_.Unwrap(rtp_packet.Timestamp() - rtp_timestamp_delta_);
     recv_times_[timestamp] = clock_->CurrentNtpInMilliseconds();
@@ -245,7 +245,7 @@ PacketReceiver::DeliveryStatus VideoAnalyzer::DeliverPacket(
 }
 
 void VideoAnalyzer::PreEncodeOnFrame(const VideoFrame& video_frame) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&lock_);
   if (!first_encoded_timestamp_) {
     while (frames_.front().timestamp() != video_frame.timestamp()) {
       ++dropped_frames_before_first_encode_;
@@ -257,7 +257,7 @@ void VideoAnalyzer::PreEncodeOnFrame(const VideoFrame& video_frame) {
 }
 
 void VideoAnalyzer::PostEncodeOnFrame(size_t stream_id, uint32_t timestamp) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&lock_);
   if (!first_sent_timestamp_ && stream_id == selected_stream_) {
     first_sent_timestamp_ = timestamp;
   }
@@ -273,7 +273,7 @@ bool VideoAnalyzer::SendRtp(const uint8_t* packet,
 
   bool result = transport_->SendRtp(packet, length, options);
   {
-    rtc::CritScope lock(&crit_);
+    MutexLock lock(&lock_);
     if (rtp_timestamp_delta_ == 0 && rtp_packet.Ssrc() == ssrc_to_analyze_) {
       RTC_CHECK(static_cast<bool>(first_sent_timestamp_));
       rtp_timestamp_delta_ = rtp_packet.Timestamp() - *first_sent_timestamp_;
@@ -304,7 +304,7 @@ bool VideoAnalyzer::SendRtcp(const uint8_t* packet, size_t length) {
 void VideoAnalyzer::OnFrame(const VideoFrame& video_frame) {
   int64_t render_time_ms = clock_->CurrentNtpInMilliseconds();
 
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&lock_);
 
   StartExcludingCpuThreadTime();
 
@@ -361,7 +361,7 @@ void VideoAnalyzer::Wait() {
     int frames_processed;
     int frames_captured;
     {
-      rtc::CritScope crit(&comparison_lock_);
+      MutexLock lock(&comparison_lock_);
       frames_processed = frames_processed_;
       frames_captured = captured_frames_;
     }
@@ -401,29 +401,29 @@ void VideoAnalyzer::Wait() {
 }
 
 void VideoAnalyzer::StartMeasuringCpuProcessTime() {
-  rtc::CritScope lock(&cpu_measurement_lock_);
+  MutexLock lock(&cpu_measurement_lock_);
   cpu_time_ -= rtc::GetProcessCpuTimeNanos();
   wallclock_time_ -= rtc::SystemTimeNanos();
 }
 
 void VideoAnalyzer::StopMeasuringCpuProcessTime() {
-  rtc::CritScope lock(&cpu_measurement_lock_);
+  MutexLock lock(&cpu_measurement_lock_);
   cpu_time_ += rtc::GetProcessCpuTimeNanos();
   wallclock_time_ += rtc::SystemTimeNanos();
 }
 
 void VideoAnalyzer::StartExcludingCpuThreadTime() {
-  rtc::CritScope lock(&cpu_measurement_lock_);
+  MutexLock lock(&cpu_measurement_lock_);
   cpu_time_ += rtc::GetThreadCpuTimeNanos();
 }
 
 void VideoAnalyzer::StopExcludingCpuThreadTime() {
-  rtc::CritScope lock(&cpu_measurement_lock_);
+  MutexLock lock(&cpu_measurement_lock_);
   cpu_time_ -= rtc::GetThreadCpuTimeNanos();
 }
 
 double VideoAnalyzer::GetCpuUsagePercent() {
-  rtc::CritScope lock(&cpu_measurement_lock_);
+  MutexLock lock(&cpu_measurement_lock_);
   return static_cast<double>(cpu_time_) / wallclock_time_ * 100.0;
 }
 
@@ -456,7 +456,7 @@ bool VideoAnalyzer::IsInSelectedSpatialAndTemporalLayer(
 }
 
 void VideoAnalyzer::PollStats() {
-  rtc::CritScope crit(&comparison_lock_);
+  MutexLock lock(&comparison_lock_);
 
   Call::Stats call_stats = call_->GetStats();
   send_bandwidth_bps_.AddSample(call_stats.send_bandwidth_bps);
@@ -564,7 +564,7 @@ bool VideoAnalyzer::CompareFrames() {
 }
 
 bool VideoAnalyzer::PopComparison(VideoAnalyzer::FrameComparison* comparison) {
-  rtc::CritScope crit(&comparison_lock_);
+  MutexLock lock(&comparison_lock_);
   // If AllFramesRecorded() is true, it means we have already popped
   // frames_to_process_ frames from comparisons_, so there is no more work
   // for this thread to be done. frames_processed_ might still be lower if
@@ -585,7 +585,7 @@ void VideoAnalyzer::FrameRecorded() {
 }
 
 bool VideoAnalyzer::AllFramesRecorded() {
-  rtc::CritScope crit(&comparison_lock_);
+  MutexLock lock(&comparison_lock_);
   return AllFramesRecordedLocked();
 }
 
@@ -596,7 +596,7 @@ bool VideoAnalyzer::AllFramesRecordedLocked() {
 }
 
 bool VideoAnalyzer::FrameProcessed() {
-  rtc::CritScope crit(&comparison_lock_);
+  MutexLock lock(&comparison_lock_);
   ++frames_processed_;
   assert(frames_processed_ <= frames_to_process_);
   return frames_processed_ == frames_to_process_ ||
@@ -609,11 +609,11 @@ void VideoAnalyzer::PrintResults() {
   StopMeasuringCpuProcessTime();
   int dropped_frames_diff;
   {
-    rtc::CritScope crit(&crit_);
+    MutexLock lock(&lock_);
     dropped_frames_diff = dropped_frames_before_first_encode_ +
                           dropped_frames_before_rendering_ + frames_.size();
   }
-  rtc::CritScope crit(&comparison_lock_);
+  MutexLock lock(&comparison_lock_);
   PrintResult("psnr", psnr_, "dB", ImproveDirection::kBiggerIsBetter);
   PrintResult("ssim", ssim_, "unitless", ImproveDirection::kBiggerIsBetter);
   PrintResult("sender_time", sender_time_, "ms",
@@ -756,7 +756,7 @@ void VideoAnalyzer::PerformFrameComparison(
     ssim = I420SSIM(&*comparison.reference, &*comparison.render);
   }
 
-  rtc::CritScope crit(&comparison_lock_);
+  MutexLock lock(&comparison_lock_);
 
   if (psnr >= 0.0 && (!worst_frame_ || worst_frame_->psnr > psnr)) {
     worst_frame_.emplace(FrameWithPsnr{psnr, *comparison.render});
@@ -845,7 +845,7 @@ void VideoAnalyzer::PrintResultWithExternalMean(
 
 void VideoAnalyzer::PrintSamplesToFile() {
   FILE* out = graph_data_output_file_;
-  rtc::CritScope crit(&comparison_lock_);
+  MutexLock lock(&comparison_lock_);
   absl::c_sort(samples_, [](const Sample& A, const Sample& B) -> bool {
     return A.input_time_ms < B.input_time_ms;
   });
@@ -876,14 +876,14 @@ void VideoAnalyzer::AddCapturedFrameForComparison(
     const VideoFrame& video_frame) {
   bool must_capture = false;
   {
-    rtc::CritScope lock(&comparison_lock_);
+    MutexLock lock(&comparison_lock_);
     must_capture = captured_frames_ < frames_to_process_;
     if (must_capture) {
       ++captured_frames_;
     }
   }
   if (must_capture) {
-    rtc::CritScope lock(&crit_);
+    MutexLock lock(&lock_);
     frames_.push_back(video_frame);
   }
 }
@@ -906,7 +906,7 @@ void VideoAnalyzer::AddFrameComparison(const VideoFrame& reference,
   if (it != encoded_frame_sizes_.end())
     encoded_frame_sizes_.erase(it);
 
-  rtc::CritScope crit(&comparison_lock_);
+  MutexLock lock(&comparison_lock_);
   if (comparisons_.size() < kMaxComparisons) {
     comparisons_.push_back(FrameComparison(
         reference, render, dropped, reference.ntp_time_ms(), send_time_ms,
@@ -1002,7 +1002,7 @@ void VideoAnalyzer::CapturedFrameForwarder::OnFrame(
     copy.set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
   copy.set_timestamp(copy.ntp_time_ms() * 90);
   analyzer_->AddCapturedFrameForComparison(copy);
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&lock_);
   ++captured_frames_;
   if (send_stream_input_ && clock_->CurrentTime() <= test_end_ &&
       captured_frames_ <= frames_to_capture_) {
@@ -1014,7 +1014,7 @@ void VideoAnalyzer::CapturedFrameForwarder::AddOrUpdateSink(
     rtc::VideoSinkInterface<VideoFrame>* sink,
     const rtc::VideoSinkWants& wants) {
   {
-    rtc::CritScope lock(&crit_);
+    MutexLock lock(&lock_);
     RTC_DCHECK(!send_stream_input_ || send_stream_input_ == sink);
     send_stream_input_ = sink;
   }
@@ -1025,7 +1025,7 @@ void VideoAnalyzer::CapturedFrameForwarder::AddOrUpdateSink(
 
 void VideoAnalyzer::CapturedFrameForwarder::RemoveSink(
     rtc::VideoSinkInterface<VideoFrame>* sink) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&lock_);
   RTC_DCHECK(sink == send_stream_input_);
   send_stream_input_ = nullptr;
 }

@@ -125,6 +125,7 @@ rtc_library("video_test_common") {
     "../rtc_base:rtc_base_approved",
     "../rtc_base:rtc_task_queue",
     "../rtc_base:timeutils",
+    "../rtc_base/synchronization:mutex",
     "../rtc_base/task_utils:repeating_task",
     "../system_wrappers",
   ]
@@ -763,6 +764,7 @@ rtc_library("fake_video_codecs") {
     "../rtc_base:macromagic",
     "../rtc_base:rtc_task_queue",
     "../rtc_base:timeutils",
+    "../rtc_base/synchronization:mutex",
     "../rtc_base/synchronization:sequence_checker",
     "../system_wrappers",
   ]

@@ -154,7 +154,7 @@ SendStatisticsProxy::SendStatisticsProxy(
 }
 
 SendStatisticsProxy::~SendStatisticsProxy() {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   uma_container_->UpdateHistograms(rtp_config_, stats_);
 
   int64_t elapsed_sec = (clock_->TimeInMilliseconds() - start_ms_) / 1000;
@@ -670,7 +670,7 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
 void SendStatisticsProxy::OnEncoderReconfigured(
     const VideoEncoderConfig& config,
     const std::vector<VideoStream>& streams) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
 
   if (content_type_ != config.content_type) {
     uma_container_->UpdateHistograms(rtp_config_, stats_);
@@ -687,7 +687,7 @@ void SendStatisticsProxy::OnEncoderReconfigured(
 void SendStatisticsProxy::OnEncodedFrameTimeMeasured(int encode_time_ms,
                                                      int encode_usage_percent) {
   RTC_DCHECK_GE(encode_time_ms, 0);
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   uma_container_->encode_time_counter_.Add(encode_time_ms);
   encode_time_.Apply(1.0f, encode_time_ms);
   stats_.avg_encode_time_ms = std::round(encode_time_.filtered());
@@ -697,7 +697,7 @@ void SendStatisticsProxy::OnEncodedFrameTimeMeasured(int encode_time_ms,
 
 void SendStatisticsProxy::OnSuspendChange(bool is_suspended) {
   int64_t now_ms = clock_->TimeInMilliseconds();
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   stats_.suspended = is_suspended;
   if (is_suspended) {
     // Pause framerate (add min pause time since there may be frames/packets
@@ -733,7 +733,7 @@ void SendStatisticsProxy::OnSuspendChange(bool is_suspended) {
 }
 
 VideoSendStream::Stats SendStatisticsProxy::GetStats() {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   PurgeOldStats();
   stats_.input_frame_rate =
       round(uma_container_->input_frame_rate_tracker_.ComputeRate());
@@ -803,7 +803,7 @@ VideoSendStream::StreamStats* SendStatisticsProxy::GetStatsEntry(
 }
 
 void SendStatisticsProxy::OnInactiveSsrc(uint32_t ssrc) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (!stats)
     return;
@@ -815,7 +815,7 @@ void SendStatisticsProxy::OnInactiveSsrc(uint32_t ssrc) {
 }
 
 void SendStatisticsProxy::OnSetEncoderTargetRate(uint32_t bitrate_bps) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   if (uma_container_->target_rate_updates_.last_ms == -1 && bitrate_bps == 0)
     return;  // Start on first non-zero bitrate, may initially be zero.
 
@@ -914,7 +914,7 @@ void SendStatisticsProxy::UpdateFallbackDisabledStats(
 }
 
 void SendStatisticsProxy::OnMinPixelLimitReached() {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   uma_container_->fallback_info_disabled_.min_pixel_limit_reached = true;
 }
 
@@ -929,7 +929,7 @@ void SendStatisticsProxy::OnSendEncodedImage(
           ? encoded_image.SpatialIndex().value_or(0)
           : 0;
 
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   ++stats_.frames_encoded;
   // The current encode frame rate is based on previously encoded frames.
   double encode_frame_rate = encoded_frame_rate_tracker_.ComputeRate();
@@ -1036,24 +1036,24 @@ void SendStatisticsProxy::OnSendEncodedImage(
 
 void SendStatisticsProxy::OnEncoderImplementationChanged(
     const std::string& implementation_name) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   encoder_changed_ = EncoderChangeEvent{stats_.encoder_implementation_name,
                                         implementation_name};
   stats_.encoder_implementation_name = implementation_name;
 }
 
 int SendStatisticsProxy::GetInputFrameRate() const {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   return round(uma_container_->input_frame_rate_tracker_.ComputeRate());
 }
 
 int SendStatisticsProxy::GetSendFrameRate() const {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   return round(encoded_frame_rate_tracker_.ComputeRate());
 }
 
 void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   uma_container_->input_frame_rate_tracker_.AddSamples(1);
   uma_container_->input_fps_counter_.Add(1);
   uma_container_->input_width_counter_.Add(width);
@@ -1071,7 +1071,7 @@ void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
 }
 
 void SendStatisticsProxy::OnFrameDropped(DropReason reason) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   switch (reason) {
     case DropReason::kSource:
       ++stats_.frames_dropped_by_capturer;
@@ -1092,7 +1092,7 @@ void SendStatisticsProxy::OnFrameDropped(DropReason reason) {
 }
 
 void SendStatisticsProxy::ClearAdaptationStats() {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   adaptation_limitations_.set_cpu_counts(VideoAdaptationCounters());
   adaptation_limitations_.set_quality_counts(VideoAdaptationCounters());
   UpdateAdaptationStats();
@@ -1101,7 +1101,7 @@ void SendStatisticsProxy::ClearAdaptationStats() {
 void SendStatisticsProxy::UpdateAdaptationSettings(
     VideoStreamEncoderObserver::AdaptationSettings cpu_settings,
     VideoStreamEncoderObserver::AdaptationSettings quality_settings) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   adaptation_limitations_.UpdateMaskingSettings(cpu_settings, quality_settings);
   SetAdaptTimer(adaptation_limitations_.MaskedCpuCounts(),
                 &uma_container_->cpu_adapt_timer_);
@@ -1114,7 +1114,7 @@ void SendStatisticsProxy::OnAdaptationChanged(
     VideoAdaptationReason reason,
     const VideoAdaptationCounters& cpu_counters,
     const VideoAdaptationCounters& quality_counters) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
 
   MaskedAdaptationCounts receiver =
       adaptation_limitations_.MaskedQualityCounts();
@@ -1208,7 +1208,7 @@ void SendStatisticsProxy::OnBitrateAllocationUpdated(
     spatial_layers[i] = (allocation.GetSpatialLayerSum(i) > 0);
   }
 
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
 
   bw_limited_layers_ = allocation.is_bw_limited();
   UpdateAdaptationStats();
@@ -1231,14 +1231,14 @@ void SendStatisticsProxy::OnBitrateAllocationUpdated(
 // resolution or not. |is_scaled| is a flag indicating if the video is scaled
 // down.
 void SendStatisticsProxy::OnEncoderInternalScalerUpdate(bool is_scaled) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   internal_encoder_scaler_ = is_scaled;
   UpdateAdaptationStats();
 }
 
 // TODO(asapersson): Include fps changes.
 void SendStatisticsProxy::OnInitialQualityResolutionAdaptDown() {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   ++uma_container_->initial_quality_changes_.down;
 }
 
@@ -1274,7 +1274,7 @@ void SendStatisticsProxy::SetAdaptTimer(const MaskedAdaptationCounts& counts,
 void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(
     uint32_t ssrc,
     const RtcpPacketTypeCounter& packet_counter) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (!stats)
     return;
@@ -1286,7 +1286,7 @@ void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(
 
 void SendStatisticsProxy::StatisticsUpdated(const RtcpStatistics& statistics,
                                             uint32_t ssrc) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (!stats)
     return;
@@ -1297,7 +1297,7 @@ void SendStatisticsProxy::StatisticsUpdated(const RtcpStatistics& statistics,
 
 void SendStatisticsProxy::OnReportBlockDataUpdated(
     ReportBlockData report_block_data) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   VideoSendStream::StreamStats* stats =
       GetStatsEntry(report_block_data.report_block().source_ssrc);
   if (!stats)
@@ -1308,7 +1308,7 @@ void SendStatisticsProxy::OnReportBlockDataUpdated(
 void SendStatisticsProxy::DataCountersUpdated(
     const StreamDataCounters& counters,
     uint32_t ssrc) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   RTC_DCHECK(stats) << "DataCountersUpdated reported for unknown ssrc " << ssrc;
 
@@ -1350,7 +1350,7 @@ void SendStatisticsProxy::DataCountersUpdated(
 void SendStatisticsProxy::Notify(uint32_t total_bitrate_bps,
                                  uint32_t retransmit_bitrate_bps,
                                  uint32_t ssrc) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (!stats)
     return;
@@ -1361,7 +1361,7 @@ void SendStatisticsProxy::Notify(uint32_t total_bitrate_bps,
 
 void SendStatisticsProxy::FrameCountUpdated(const FrameCounts& frame_counts,
                                             uint32_t ssrc) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (!stats)
     return;
@@ -1373,7 +1373,7 @@ void SendStatisticsProxy::SendSideDelayUpdated(int avg_delay_ms,
                                                int max_delay_ms,
                                                uint64_t total_delay_ms,
                                                uint32_t ssrc) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   if (!stats)
     return;
