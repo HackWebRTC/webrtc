@@ -373,7 +373,7 @@ SendVideoStream::SendVideoStream(CallClient* sender,
     case Encoder::Implementation::kFake:
       encoder_factory_ =
           std::make_unique<FunctionVideoEncoderFactory>([this]() {
-            rtc::CritScope cs(&crit_);
+            MutexLock lock(&mutex_);
             std::unique_ptr<FakeEncoder> encoder;
             if (config_.encoder.codec == Codec::kVideoCodecVP8) {
               encoder = std::make_unique<test::FakeVp8Encoder>(sender_->clock_);
@@ -452,7 +452,7 @@ void SendVideoStream::Stop() {
 void SendVideoStream::UpdateConfig(
     std::function<void(VideoStreamConfig*)> modifier) {
   sender_->SendTask([&] {
-    rtc::CritScope cs(&crit_);
+    MutexLock lock(&mutex_);
     VideoStreamConfig prior_config = config_;
     modifier(&config_);
     if (prior_config.encoder.fake.max_rate != config_.encoder.fake.max_rate) {
@@ -473,7 +473,7 @@ void SendVideoStream::UpdateConfig(
 
 void SendVideoStream::UpdateActiveLayers(std::vector<bool> active_layers) {
   sender_->task_queue_.PostTask([=] {
-    rtc::CritScope cs(&crit_);
+    MutexLock lock(&mutex_);
     if (config_.encoder.codec ==
         VideoStreamConfig::Encoder::Codec::kVideoCodecVP8) {
       send_stream_->UpdateActiveSimulcastLayers(active_layers);

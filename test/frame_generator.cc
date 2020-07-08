@@ -46,7 +46,7 @@ SquareGenerator::SquareGenerator(int width,
 }
 
 void SquareGenerator::ChangeResolution(size_t width, size_t height) {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
   width_ = static_cast<int>(width);
   height_ = static_cast<int>(height);
   RTC_CHECK(width_ > 0);
@@ -65,7 +65,7 @@ rtc::scoped_refptr<I420Buffer> SquareGenerator::CreateI420Buffer(int width,
 }
 
 FrameGeneratorInterface::VideoFrameData SquareGenerator::NextFrame() {
-  rtc::CritScope lock(&crit_);
+  MutexLock lock(&mutex_);
 
   rtc::scoped_refptr<VideoFrameBuffer> buffer = nullptr;
   switch (type_) {

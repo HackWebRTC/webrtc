@@ -20,7 +20,6 @@
 #include "absl/strings/match.h"
 #include "api/test/create_frame_generator.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/time_utils.h"
@@ -150,13 +149,13 @@ std::unique_ptr<FrameGeneratorCapturer> FrameGeneratorCapturer::Create(
 }
 
 void FrameGeneratorCapturer::SetFakeRotation(VideoRotation rotation) {
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   fake_rotation_ = rotation;
 }
 
 void FrameGeneratorCapturer::SetFakeColorSpace(
     absl::optional<ColorSpace> color_space) {
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   fake_color_space_ = color_space;
 }
 
@@ -176,7 +175,7 @@ bool FrameGeneratorCapturer::Init() {
 }
 
 void FrameGeneratorCapturer::InsertFrame() {
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   if (sending_) {
     FrameGeneratorInterface::VideoFrameData frame_data =
         frame_generator_->NextFrame();
@@ -205,7 +204,7 @@ void FrameGeneratorCapturer::InsertFrame() {
 
 void FrameGeneratorCapturer::Start() {
   {
-    rtc::CritScope cs(&lock_);
+    MutexLock lock(&lock_);
     sending_ = true;
   }
   if (!frame_task_.Running()) {
@@ -217,17 +216,17 @@ void FrameGeneratorCapturer::Start() {
 }
 
 void FrameGeneratorCapturer::Stop() {
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   sending_ = false;
 }
 
 void FrameGeneratorCapturer::ChangeResolution(size_t width, size_t height) {
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   frame_generator_->ChangeResolution(width, height);
 }
 
 void FrameGeneratorCapturer::ChangeFramerate(int target_framerate) {
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   RTC_CHECK(target_capture_fps_ > 0);
   if (target_framerate > source_fps_)
     RTC_LOG(LS_WARNING) << "Target framerate clamped from " << target_framerate
@@ -245,7 +244,7 @@ void FrameGeneratorCapturer::ChangeFramerate(int target_framerate) {
 }
 
 void FrameGeneratorCapturer::SetSinkWantsObserver(SinkWantsObserver* observer) {
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   RTC_DCHECK(!sink_wants_observer_);
   sink_wants_observer_ = observer;
 }
@@ -254,7 +253,7 @@ void FrameGeneratorCapturer::AddOrUpdateSink(
     rtc::VideoSinkInterface<VideoFrame>* sink,
     const rtc::VideoSinkWants& wants) {
   TestVideoCapturer::AddOrUpdateSink(sink, wants);
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   if (sink_wants_observer_) {
     // Tests need to observe unmodified sink wants.
     sink_wants_observer_->OnSinkWantsChanged(sink, wants);
@@ -266,7 +265,7 @@ void FrameGeneratorCapturer::RemoveSink(
     rtc::VideoSinkInterface<VideoFrame>* sink) {
   TestVideoCapturer::RemoveSink(sink);
 
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   UpdateFps(GetSinkWants().max_framerate_fps);
 }
 
@@ -284,7 +283,7 @@ void FrameGeneratorCapturer::ForceFrame() {
 }
 
 int FrameGeneratorCapturer::GetCurrentConfiguredFramerate() {
-  rtc::CritScope cs(&lock_);
+  MutexLock lock(&lock_);
   if (wanted_fps_ && *wanted_fps_ < target_capture_fps_)
     return *wanted_fps_;
   return target_capture_fps_;

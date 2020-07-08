@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "test/testsupport/perf_test_histogram_writer.h"
 
 namespace webrtc {
@@ -60,7 +60,7 @@ class PlottableCounterPrinter {
   PlottableCounterPrinter() : output_(stdout) {}
 
   void SetOutput(FILE* output) {
-    rtc::CritScope lock(&crit_);
+    MutexLock lock(&mutex_);
     output_ = output;
   }
 
@@ -68,14 +68,14 @@ class PlottableCounterPrinter {
                   const std::string& trace_name,
                   const webrtc::SamplesStatsCounter& counter,
                   const std::string& units) {
-    rtc::CritScope lock(&crit_);
+    MutexLock lock(&mutex_);
     plottable_counters_.push_back({graph_name, trace_name, counter, units});
   }
 
   void Print(const std::vector<std::string>& desired_graphs_raw) const {
     std::set<std::string> desired_graphs(desired_graphs_raw.begin(),
                                          desired_graphs_raw.end());
-    rtc::CritScope lock(&crit_);
+    MutexLock lock(&mutex_);
     for (auto& counter : plottable_counters_) {
       if (!desired_graphs.empty()) {
         auto it = desired_graphs.find(counter.graph_name);
@@ -108,9 +108,9 @@ class PlottableCounterPrinter {
   }
 
  private:
-  rtc::CriticalSection crit_;
-  std::vector<PlottableCounter> plottable_counters_ RTC_GUARDED_BY(&crit_);
-  FILE* output_ RTC_GUARDED_BY(&crit_);
+  mutable Mutex mutex_;
+  std::vector<PlottableCounter> plottable_counters_ RTC_GUARDED_BY(&mutex_);
+  FILE* output_ RTC_GUARDED_BY(&mutex_);
 };
 
 PlottableCounterPrinter& GetPlottableCounterPrinter() {
@@ -123,7 +123,7 @@ class ResultsLinePrinter {
   ResultsLinePrinter() : output_(stdout) {}
 
   void SetOutput(FILE* output) {
-    rtc::CritScope lock(&crit_);
+    MutexLock lock(&mutex_);
     output_ = output;
   }
 
@@ -177,7 +177,7 @@ class ResultsLinePrinter {
                        const std::string& suffix,
                        const std::string& units,
                        bool important) {
-    rtc::CritScope lock(&crit_);
+    MutexLock lock(&mutex_);
     // <*>RESULT <graph_name>: <trace_name>= <value> <units>
     // <*>RESULT <graph_name>: <trace_name>= {<mean>, <std deviation>} <units>
     // <*>RESULT <graph_name>: <trace_name>= [<value>,value,value,...,] <units>
@@ -186,8 +186,8 @@ class ResultsLinePrinter {
             values.c_str(), suffix.c_str(), units.c_str());
   }
 
-  rtc::CriticalSection crit_;
-  FILE* output_ RTC_GUARDED_BY(&crit_);
+  Mutex mutex_;
+  FILE* output_ RTC_GUARDED_BY(&mutex_);
 };
 
 ResultsLinePrinter& GetResultsLinePrinter() {

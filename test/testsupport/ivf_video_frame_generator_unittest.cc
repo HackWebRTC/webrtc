@@ -25,7 +25,6 @@
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
@@ -34,6 +33,8 @@
 
 #if defined(WEBRTC_USE_H264)
 #include "modules/video_coding/codecs/h264/include/h264.h"
+#include "rtc_base/synchronization/mutex.h"
+
 #endif
 
 namespace webrtc {
@@ -71,7 +72,7 @@ class IvfFileWriterEncodedCallback : public EncodedImageCallback {
                         const RTPFragmentationHeader* fragmentation) override {
     EXPECT_TRUE(file_writer_->WriteFrame(encoded_image, video_codec_type_));
 
-    rtc::CritScope crit(&lock_);
+    MutexLock lock(&lock_);
     received_frames_count_++;
     RTC_CHECK_LE(received_frames_count_, expected_frames_count_);
     if (received_frames_count_ == expected_frames_count_) {
@@ -89,7 +90,7 @@ class IvfFileWriterEncodedCallback : public EncodedImageCallback {
   const VideoCodecType video_codec_type_;
   const int expected_frames_count_;
 
-  rtc::CriticalSection lock_;
+  Mutex lock_;
   int received_frames_count_ RTC_GUARDED_BY(lock_) = 0;
   rtc::Event expected_frames_count_received_;
 };
