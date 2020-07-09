@@ -19,8 +19,9 @@
 
 #include "api/peer_connection_interface.h"
 #include "call/call.h"
-#include "pc/data_channel.h"
+#include "pc/rtp_data_channel.h"
 #include "pc/rtp_transceiver.h"
+#include "pc/sctp_data_channel.h"
 
 namespace webrtc {
 
@@ -41,14 +42,16 @@ class PeerConnectionInternal : public PeerConnectionInterface {
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
   GetTransceiversInternal() const = 0;
 
-  virtual sigslot::signal1<DataChannel*>& SignalDataChannelCreated() = 0;
+  virtual sigslot::signal1<RtpDataChannel*>& SignalRtpDataChannelCreated() = 0;
+  virtual sigslot::signal1<SctpDataChannel*>&
+  SignalSctpDataChannelCreated() = 0;
 
   // Only valid when using deprecated RTP data channels.
   virtual cricket::RtpDataChannel* rtp_data_channel() const = 0;
 
   // Call on the network thread to fetch stats for all the data channels.
   // TODO(tommi): Make pure virtual after downstream updates.
-  virtual std::vector<DataChannel::Stats> GetDataChannelStats() const {
+  virtual std::vector<DataChannelStats> GetDataChannelStats() const {
     return {};
   }
 

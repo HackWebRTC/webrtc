@@ -1146,7 +1146,7 @@ void StatsCollector::ExtractDataInfo() {
 
   rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
 
-  std::vector<DataChannel::Stats> data_stats = pc_->GetDataChannelStats();
+  std::vector<DataChannelStats> data_stats = pc_->GetDataChannelStats();
   for (const auto& stats : data_stats) {
     StatsReport::Id id(StatsReport::NewTypedIntId(
         StatsReport::kStatsReportTypeDataChannel, stats.id));

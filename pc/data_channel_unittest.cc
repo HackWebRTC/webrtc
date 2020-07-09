@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/data_channel.h"
-
 #include <string.h>
 
 #include <memory>
 #include <vector>
 
+#include "pc/sctp_data_channel.h"
 #include "pc/sctp_utils.h"
 #include "pc/test/fake_data_channel_provider.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "test/gtest.h"
 
-using webrtc::DataChannel;
+using webrtc::DataChannelInterface;
+using webrtc::SctpDataChannel;
 using webrtc::SctpSidAllocator;
 
 static constexpr int kDefaultTimeout = 10000;
@@ -69,12 +69,11 @@ class SctpDataChannelTest : public ::testing::Test {
  protected:
   SctpDataChannelTest()
       : provider_(new FakeDataChannelProvider()),
-        webrtc_data_channel_(DataChannel::Create(provider_.get(),
-                                                 cricket::DCT_SCTP,
-                                                 "test",
-                                                 init_,
-                                                 rtc::Thread::Current(),
-                                                 rtc::Thread::Current())) {}
+        webrtc_data_channel_(SctpDataChannel::Create(provider_.get(),
+                                                     "test",
+                                                     init_,
+                                                     rtc::Thread::Current(),
+                                                     rtc::Thread::Current())) {}
 
   void SetChannelReady() {
     provider_->set_transport_available(true);
@@ -93,7 +92,7 @@ class SctpDataChannelTest : public ::testing::Test {
   webrtc::InternalDataChannelInit init_;
   std::unique_ptr<FakeDataChannelProvider> provider_;
   std::unique_ptr<FakeDataChannelObserver> observer_;
-  rtc::scoped_refptr<DataChannel> webrtc_data_channel_;
+  rtc::scoped_refptr<SctpDataChannel> webrtc_data_channel_;
 };
 
 class StateSignalsListener : public sigslot::has_slots<> {
@@ -101,9 +100,9 @@ class StateSignalsListener : public sigslot::has_slots<> {
   int opened_count() const { return opened_count_; }
   int closed_count() const { return closed_count_; }
 
-  void OnSignalOpened(DataChannel* data_channel) { ++opened_count_; }
+  void OnSignalOpened(DataChannelInterface* data_channel) { ++opened_count_; }
 
-  void OnSignalClosed(DataChannel* data_channel) { ++closed_count_; }
+  void OnSignalClosed(DataChannelInterface* data_channel) { ++closed_count_; }
 
  private:
   int opened_count_ = 0;
@@ -113,9 +112,9 @@ class StateSignalsListener : public sigslot::has_slots<> {
 // Verifies that the data channel is connected to the transport after creation.
 TEST_F(SctpDataChannelTest, ConnectedToTransportOnCreated) {
   provider_->set_transport_available(true);
-  rtc::scoped_refptr<DataChannel> dc =
-      DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", init_,
-                          rtc::Thread::Current(), rtc::Thread::Current());
+  rtc::scoped_refptr<SctpDataChannel> dc =
+      SctpDataChannel::Create(provider_.get(), "test1", init_,
+                              rtc::Thread::Current(), rtc::Thread::Current());
 
   EXPECT_TRUE(provider_->IsConnected(dc.get()));
   // The sid is not set yet, so it should not have added the streams.
@@ -308,9 +307,9 @@ TEST_F(SctpDataChannelTest, LateCreatedChannelTransitionToOpen) {
   SetChannelReady();
   webrtc::InternalDataChannelInit init;
   init.id = 1;
-  rtc::scoped_refptr<DataChannel> dc =
-      DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", init,
-                          rtc::Thread::Current(), rtc::Thread::Current());
+  rtc::scoped_refptr<SctpDataChannel> dc =
+      SctpDataChannel::Create(provider_.get(), "test1", init,
+                              rtc::Thread::Current(), rtc::Thread::Current());
   EXPECT_EQ(webrtc::DataChannelInterface::kConnecting, dc->state());
   EXPECT_TRUE_WAIT(webrtc::DataChannelInterface::kOpen == dc->state(), 1000);
 }
@@ -322,9 +321,9 @@ TEST_F(SctpDataChannelTest, SendUnorderedAfterReceivesOpenAck) {
   webrtc::InternalDataChannelInit init;
   init.id = 1;
   init.ordered = false;
-  rtc::scoped_refptr<DataChannel> dc =
-      DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", init,
-                          rtc::Thread::Current(), rtc::Thread::Current());
+  rtc::scoped_refptr<SctpDataChannel> dc =
+      SctpDataChannel::Create(provider_.get(), "test1", init,
+                              rtc::Thread::Current(), rtc::Thread::Current());
 
   EXPECT_EQ_WAIT(webrtc::DataChannelInterface::kOpen, dc->state(), 1000);
 
@@ -353,9 +352,9 @@ TEST_F(SctpDataChannelTest, SendUnorderedAfterReceiveData) {
   webrtc::InternalDataChannelInit init;
   init.id = 1;
   init.ordered = false;
-  rtc::scoped_refptr<DataChannel> dc =
-      DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", init,
-                          rtc::Thread::Current(), rtc::Thread::Current());
+  rtc::scoped_refptr<SctpDataChannel> dc =
+      SctpDataChannel::Create(provider_.get(), "test1", init,
+                              rtc::Thread::Current(), rtc::Thread::Current());
 
   EXPECT_EQ_WAIT(webrtc::DataChannelInterface::kOpen, dc->state(), 1000);
 
@@ -455,9 +454,9 @@ TEST_F(SctpDataChannelTest, NoMsgSentIfNegotiatedAndNotFromOpenMsg) {
   config.open_handshake_role = webrtc::InternalDataChannelInit::kNone;
 
   SetChannelReady();
-  rtc::scoped_refptr<DataChannel> dc =
-      DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", config,
-                          rtc::Thread::Current(), rtc::Thread::Current());
+  rtc::scoped_refptr<SctpDataChannel> dc =
+      SctpDataChannel::Create(provider_.get(), "test1", config,
+                              rtc::Thread::Current(), rtc::Thread::Current());
 
   EXPECT_EQ_WAIT(webrtc::DataChannelInterface::kOpen, dc->state(), 1000);
   EXPECT_EQ(0U, provider_->last_send_data_params().ssrc);
@@ -519,9 +518,9 @@ TEST_F(SctpDataChannelTest, OpenAckSentIfCreatedFromOpenMessage) {
   config.open_handshake_role = webrtc::InternalDataChannelInit::kAcker;
 
   SetChannelReady();
-  rtc::scoped_refptr<DataChannel> dc =
-      DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", config,
-                          rtc::Thread::Current(), rtc::Thread::Current());
+  rtc::scoped_refptr<SctpDataChannel> dc =
+      SctpDataChannel::Create(provider_.get(), "test1", config,
+                              rtc::Thread::Current(), rtc::Thread::Current());
 
   EXPECT_EQ_WAIT(webrtc::DataChannelInterface::kOpen, dc->state(), 1000);
 

@@ -272,15 +272,19 @@ class PeerConnection : public PeerConnectionInternal,
     return transceivers_;
   }
 
-  sigslot::signal1<DataChannel*>& SignalDataChannelCreated() override {
-    return data_channel_controller_.SignalDataChannelCreated();
+  sigslot::signal1<RtpDataChannel*>& SignalRtpDataChannelCreated() override {
+    return data_channel_controller_.SignalRtpDataChannelCreated();
+  }
+
+  sigslot::signal1<SctpDataChannel*>& SignalSctpDataChannelCreated() override {
+    return data_channel_controller_.SignalSctpDataChannelCreated();
   }
 
   cricket::RtpDataChannel* rtp_data_channel() const override {
     return data_channel_controller_.rtp_data_channel();
   }
 
-  std::vector<DataChannel::Stats> GetDataChannelStats() const override;
+  std::vector<DataChannelStats> GetDataChannelStats() const override;
 
   absl::optional<std::string> sctp_transport_name() const override;
 
@@ -310,7 +314,7 @@ class PeerConnection : public PeerConnectionInternal,
   // Get current SSL role used by SCTP's underlying transport.
   bool GetSctpSslRole(rtc::SSLRole* role);
   // Handler for the "channel closed" signal
-  void OnSctpDataChannelClosed(DataChannel* channel);
+  void OnSctpDataChannelClosed(DataChannelInterface* channel);
 
   // Functions made public for testing.
   void ReturnHistogramVeryQuicklyForTesting() {
@@ -835,7 +839,7 @@ class PeerConnection : public PeerConnectionInternal,
 
   // Returns the specified SCTP DataChannel in sctp_data_channels_,
   // or nullptr if not found.
-  DataChannel* FindDataChannelBySid(int sid) const
+  SctpDataChannel* FindDataChannelBySid(int sid) const
       RTC_RUN_ON(signaling_thread());
 
   // Called when first configuring the port allocator.

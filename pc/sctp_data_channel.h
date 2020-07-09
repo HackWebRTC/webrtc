@@ -1,5 +1,5 @@
 /*
- *  Copyright 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright 2020 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,10 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_DATA_CHANNEL_H_
-#define PC_DATA_CHANNEL_H_
+#ifndef PC_SCTP_DATA_CHANNEL_H_
+#define PC_SCTP_DATA_CHANNEL_H_
 
-#include <deque>
 #include <memory>
 #include <set>
 #include <string>
@@ -21,27 +20,27 @@
 #include "api/scoped_refptr.h"
 #include "api/transport/data_channel_transport_interface.h"
 #include "media/base/media_channel.h"
-#include "pc/channel.h"
+#include "pc/data_channel_utils.h"
 #include "rtc_base/async_invoker.h"
+#include "rtc_base/ssl_stream_adapter.h"  // For SSLRole
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace webrtc {
 
-class DataChannel;
+class SctpDataChannel;
 
-// TODO(deadbeef): Once RTP data channels go away, get rid of this and have
-// DataChannel depend on SctpTransportInternal (pure virtual SctpTransport
-// interface) instead.
-class DataChannelProviderInterface {
+// TODO(deadbeef): Get rid of this and have SctpDataChannel depend on
+// SctpTransportInternal (pure virtual SctpTransport interface) instead.
+class SctpDataChannelProviderInterface {
  public:
   // Sends the data to the transport.
   virtual bool SendData(const cricket::SendDataParams& params,
                         const rtc::CopyOnWriteBuffer& payload,
                         cricket::SendDataResult* result) = 0;
   // Connects to the transport signals.
-  virtual bool ConnectDataChannel(DataChannel* data_channel) = 0;
+  virtual bool ConnectDataChannel(SctpDataChannel* data_channel) = 0;
   // Disconnects from the transport signals.
-  virtual void DisconnectDataChannel(DataChannel* data_channel) = 0;
+  virtual void DisconnectDataChannel(SctpDataChannel* data_channel) = 0;
   // Adds the data channel SID to the transport for SCTP.
   virtual void AddSctpDataStream(int sid) = 0;
   // Begins the closing procedure by sending an outgoing stream reset. Still
@@ -51,7 +50,7 @@ class DataChannelProviderInterface {
   virtual bool ReadyToSendData() const = 0;
 
  protected:
-  virtual ~DataChannelProviderInterface() {}
+  virtual ~SctpDataChannelProviderInterface() {}
 };
 
 // TODO(tommi): Change to not inherit from DataChannelInit but to have it as
@@ -64,7 +63,7 @@ struct InternalDataChannelInit : public DataChannelInit {
   OpenHandshakeRole open_handshake_role;
 };
 
-// Helper class to allocate unique IDs for SCTP DataChannels
+// Helper class to allocate unique IDs for SCTP DataChannels.
 class SctpSidAllocator {
  public:
   // Gets the first unused odd/even id based on the DTLS role. If |role| is
@@ -86,21 +85,20 @@ class SctpSidAllocator {
   std::set<int> used_sids_;
 };
 
-// DataChannel is an implementation of the DataChannelInterface based on
-// libjingle's data engine. It provides an implementation of unreliable or
-// reliabledata channels. Currently this class is specifically designed to use
-// both RtpDataChannel and SctpTransport.
+// SctpDataChannel is an implementation of the DataChannelInterface based on
+// SctpTransport. It provides an implementation of unreliable or
+// reliabledata channels.
 
 // DataChannel states:
 // kConnecting: The channel has been created the transport might not yet be
 //              ready.
-// kOpen: The channel have a local SSRC set by a call to UpdateSendSsrc
-//        and a remote SSRC set by call to UpdateReceiveSsrc and the transport
-//        has been writable once.
-// kClosing: DataChannelInterface::Close has been called or UpdateReceiveSsrc
-//           has been called with SSRC==0
-// kClosed: Both UpdateReceiveSsrc and UpdateSendSsrc has been called with
-//          SSRC==0.
+// kOpen: The open handshake has been performed (if relevant) and the data
+//        channel is able to send messages.
+// kClosing: DataChannelInterface::Close has been called, or the remote side
+//           initiated the closing procedure, but the closing procedure has not
+//           yet finished.
+// kClosed: The closing handshake is finished (possibly initiated from this,
+//          side, possibly from the peer).
 //
 // How the closing procedure works for SCTP:
 // 1. Alice calls Close(), state changes to kClosing.
@@ -108,37 +106,23 @@ class SctpSidAllocator {
 // 3. Alice calls RemoveSctpDataStream, sends outgoing stream reset.
 // 4. Bob receives incoming stream reset; OnClosingProcedureStartedRemotely
 //    called.
-// 5. Bob sends outgoing stream reset. 6. Alice receives incoming reset,
-//    Bob receives acknowledgement. Both receive OnClosingProcedureComplete
-//    callback and transition to kClosed.
-class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
+// 5. Bob sends outgoing stream reset.
+// 6. Alice receives incoming reset, Bob receives acknowledgement. Both receive
+//    OnClosingProcedureComplete callback and transition to kClosed.
+class SctpDataChannel : public DataChannelInterface,
+                        public sigslot::has_slots<> {
  public:
-  struct Stats {
-    int internal_id;
-    int id;
-    std::string label;
-    std::string protocol;
-    DataState state;
-    uint32_t messages_sent;
-    uint32_t messages_received;
-    uint64_t bytes_sent;
-    uint64_t bytes_received;
-  };
-
-  static rtc::scoped_refptr<DataChannel> Create(
-      DataChannelProviderInterface* provider,
-      cricket::DataChannelType dct,
+  static rtc::scoped_refptr<SctpDataChannel> Create(
+      SctpDataChannelProviderInterface* provider,
       const std::string& label,
       const InternalDataChannelInit& config,
       rtc::Thread* signaling_thread,
       rtc::Thread* network_thread);
 
-  // Instantiates an API proxy for a DataChannel instance that will be handed
-  // out to external callers.
+  // Instantiates an API proxy for a SctpDataChannel instance that will be
+  // handed out to external callers.
   static rtc::scoped_refptr<DataChannelInterface> CreateProxy(
-      rtc::scoped_refptr<DataChannel> channel);
-
-  static bool IsSctpLike(cricket::DataChannelType type);
+      rtc::scoped_refptr<SctpDataChannel> channel);
 
   void RegisterObserver(DataChannelObserver* observer) override;
   void UnregisterObserver() override;
@@ -181,9 +165,7 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   bool Send(const DataBuffer& buffer) override;
 
   // Close immediately, ignoring any queued data or closing procedure.
-  // This is called for RTP data channels when SDP indicates a channel should
-  // be removed, or SCTP data channels when the underlying SctpTransport is
-  // being destroyed.
+  // This is called when the underlying SctpTransport is being destroyed.
   // It is also called by the PeerConnection if SCTP ID assignment fails.
   void CloseAbruptlyWithError(RTCError error);
   // Specializations of CloseAbruptlyWithError
@@ -191,18 +173,18 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   void CloseAbruptlyWithSctpCauseCode(const std::string& message,
                                       uint16_t cause_code);
 
-  // Called when the channel's ready to use.  That can happen when the
-  // underlying DataMediaChannel becomes ready, or when this channel is a new
-  // stream on an existing DataMediaChannel, and we've finished negotiation.
-  void OnChannelReady(bool writable);
-
   // Slots for provider to connect signals to.
+  //
+  // TODO(deadbeef): Make these private once we're hooking up signals ourselves,
+  // instead of relying on SctpDataChannelProviderInterface.
+
+  // Called when the SctpTransport's ready to use. That can happen when we've
+  // finished negotiation, or if the channel was created after negotiation has
+  // already finished.
+  void OnTransportReady(bool writable);
+
   void OnDataReceived(const cricket::ReceiveDataParams& params,
                       const rtc::CopyOnWriteBuffer& payload);
-
-  /********************************************
-   * The following methods are for SCTP only. *
-   ********************************************/
 
   // Sets the SCTP sid and adds to transport layer if not set yet. Should only
   // be called once.
@@ -222,69 +204,27 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   // to kClosed.
   void OnTransportChannelClosed();
 
-  Stats GetStats() const;
-
-  /*******************************************
-   * The following methods are for RTP only. *
-   *******************************************/
-
-  // The remote peer requested that this channel should be closed.
-  void RemotePeerRequestClose();
-  // Set the SSRC this channel should use to send data on the
-  // underlying data engine. |send_ssrc| == 0 means that the channel is no
-  // longer part of the session negotiation.
-  void SetSendSsrc(uint32_t send_ssrc);
-  // Set the SSRC this channel should use to receive data from the
-  // underlying data engine.
-  void SetReceiveSsrc(uint32_t receive_ssrc);
-
-  cricket::DataChannelType data_channel_type() const {
-    return data_channel_type_;
-  }
+  DataChannelStats GetStats() const;
 
   // Emitted when state transitions to kOpen.
-  sigslot::signal1<DataChannel*> SignalOpened;
+  sigslot::signal1<DataChannelInterface*> SignalOpened;
   // Emitted when state transitions to kClosed.
-  // In the case of SCTP channels, this signal can be used to tell when the
-  // channel's sid is free.
-  sigslot::signal1<DataChannel*> SignalClosed;
+  // This signal can be used to tell when the channel's sid is free.
+  sigslot::signal1<DataChannelInterface*> SignalClosed;
 
   // Reset the allocator for internal ID values for testing, so that
   // the internal IDs generated are predictable. Test only.
   static void ResetInternalIdAllocatorForTesting(int new_value);
 
  protected:
-  DataChannel(const InternalDataChannelInit& config,
-              DataChannelProviderInterface* client,
-              cricket::DataChannelType dct,
-              const std::string& label,
-              rtc::Thread* signaling_thread,
-              rtc::Thread* network_thread);
-  ~DataChannel() override;
+  SctpDataChannel(const InternalDataChannelInit& config,
+                  SctpDataChannelProviderInterface* client,
+                  const std::string& label,
+                  rtc::Thread* signaling_thread,
+                  rtc::Thread* network_thread);
+  ~SctpDataChannel() override;
 
  private:
-  // A packet queue which tracks the total queued bytes. Queued packets are
-  // owned by this class.
-  class PacketQueue final {
-   public:
-    size_t byte_count() const { return byte_count_; }
-
-    bool Empty() const;
-
-    std::unique_ptr<DataBuffer> PopFront();
-
-    void PushFront(std::unique_ptr<DataBuffer> packet);
-    void PushBack(std::unique_ptr<DataBuffer> packet);
-
-    void Clear();
-
-    void Swap(PacketQueue* other);
-
-   private:
-    std::deque<std::unique_ptr<DataBuffer>> packets_;
-    size_t byte_count_ = 0;
-  };
-
   // The OPEN(_ACK) signaling state.
   enum HandshakeState {
     kHandshakeInit,
@@ -296,8 +236,6 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
 
   bool Init();
   void UpdateState();
-  void UpdateRtpState();
-  void UpdateSctpLikeState();
   void SetState(DataState state);
   void DisconnectFromProvider();
 
@@ -316,27 +254,24 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   const int internal_id_;
   const std::string label_;
   const InternalDataChannelInit config_;
-  DataChannelObserver* observer_ RTC_GUARDED_BY(signaling_thread_);
-  DataState state_ RTC_GUARDED_BY(signaling_thread_);
+  DataChannelObserver* observer_ RTC_GUARDED_BY(signaling_thread_) = nullptr;
+  DataState state_ RTC_GUARDED_BY(signaling_thread_) = kConnecting;
   RTCError error_ RTC_GUARDED_BY(signaling_thread_);
-  uint32_t messages_sent_ RTC_GUARDED_BY(signaling_thread_);
-  uint64_t bytes_sent_ RTC_GUARDED_BY(signaling_thread_);
-  uint32_t messages_received_ RTC_GUARDED_BY(signaling_thread_);
-  uint64_t bytes_received_ RTC_GUARDED_BY(signaling_thread_);
+  uint32_t messages_sent_ RTC_GUARDED_BY(signaling_thread_) = 0;
+  uint64_t bytes_sent_ RTC_GUARDED_BY(signaling_thread_) = 0;
+  uint32_t messages_received_ RTC_GUARDED_BY(signaling_thread_) = 0;
+  uint64_t bytes_received_ RTC_GUARDED_BY(signaling_thread_) = 0;
   // Number of bytes of data that have been queued using Send(). Increased
   // before each transport send and decreased after each successful send.
-  uint64_t buffered_amount_ RTC_GUARDED_BY(signaling_thread_);
-  const cricket::DataChannelType data_channel_type_;
-  DataChannelProviderInterface* const provider_;
-  HandshakeState handshake_state_ RTC_GUARDED_BY(signaling_thread_);
-  bool connected_to_provider_ RTC_GUARDED_BY(signaling_thread_);
-  bool send_ssrc_set_ RTC_GUARDED_BY(signaling_thread_);
-  bool receive_ssrc_set_ RTC_GUARDED_BY(signaling_thread_);
-  bool writable_ RTC_GUARDED_BY(signaling_thread_);
+  uint64_t buffered_amount_ RTC_GUARDED_BY(signaling_thread_) = 0;
+  SctpDataChannelProviderInterface* const provider_
+      RTC_GUARDED_BY(signaling_thread_);
+  HandshakeState handshake_state_ RTC_GUARDED_BY(signaling_thread_) =
+      kHandshakeInit;
+  bool connected_to_provider_ RTC_GUARDED_BY(signaling_thread_) = false;
+  bool writable_ RTC_GUARDED_BY(signaling_thread_) = false;
   // Did we already start the graceful SCTP closing procedure?
   bool started_closing_procedure_ RTC_GUARDED_BY(signaling_thread_) = false;
-  uint32_t send_ssrc_ RTC_GUARDED_BY(signaling_thread_);
-  uint32_t receive_ssrc_ RTC_GUARDED_BY(signaling_thread_);
   // Control messages that always have to get sent out before any queued
   // data.
   PacketQueue queued_control_data_ RTC_GUARDED_BY(signaling_thread_);
@@ -347,4 +282,4 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
 
 }  // namespace webrtc
 
-#endif  // PC_DATA_CHANNEL_H_
+#endif  // PC_SCTP_DATA_CHANNEL_H_

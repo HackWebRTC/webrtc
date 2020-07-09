@@ -24,7 +24,7 @@
 #include "api/stats/rtcstats_objects.h"
 #include "call/call.h"
 #include "media/base/media_channel.h"
-#include "pc/data_channel.h"
+#include "pc/data_channel_utils.h"
 #include "pc/peer_connection_internal.h"
 #include "pc/track_media_info_map.h"
 #include "rtc_base/event.h"
@@ -226,10 +226,11 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   void MergeNetworkReport_s();
 
   // Slots for signals (sigslot) that are wired up to |pc_|.
-  void OnDataChannelCreated(DataChannel* channel);
+  void OnRtpDataChannelCreated(RtpDataChannel* channel);
+  void OnSctpDataChannelCreated(SctpDataChannel* channel);
   // Slots for signals (sigslot) that are wired up to |channel|.
-  void OnDataChannelOpened(DataChannel* channel);
-  void OnDataChannelClosed(DataChannel* channel);
+  void OnDataChannelOpened(DataChannelInterface* channel);
+  void OnDataChannelClosed(DataChannelInterface* channel);
 
   PeerConnectionInternal* const pc_;
   rtc::Thread* const signaling_thread_;
