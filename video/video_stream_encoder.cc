@@ -348,7 +348,6 @@ VideoStreamEncoder::VideoStreamEncoder(
       degradation_preference_manager_(
           std::make_unique<DegradationPreferenceManager>()),
       adaptation_constraints_(),
-      adaptation_listeners_(),
       stream_resource_manager_(&input_state_provider_,
                                encoder_stats_observer,
                                clock_,
@@ -387,15 +386,14 @@ VideoStreamEncoder::VideoStreamEncoder(
 
     // Add the stream resource manager's resources to the processor.
     adaptation_constraints_ = stream_resource_manager_.AdaptationConstraints();
-    adaptation_listeners_ = stream_resource_manager_.AdaptationListeners();
     for (auto& resource : stream_resource_manager_.MappedResources()) {
       resource_adaptation_processor_->AddResource(resource);
     }
     for (auto* constraint : adaptation_constraints_) {
       resource_adaptation_processor_->AddAdaptationConstraint(constraint);
     }
-    for (auto* listener : adaptation_listeners_) {
-      resource_adaptation_processor_->AddAdaptationListener(listener);
+    for (auto* listener : stream_resource_manager_.AdaptationListeners()) {
+      video_stream_adapter_->AddAdaptationListener(listener);
     }
     initialize_processor_event.Set();
   });
@@ -423,8 +421,8 @@ void VideoStreamEncoder::Stop() {
       for (auto* constraint : adaptation_constraints_) {
         resource_adaptation_processor_->RemoveAdaptationConstraint(constraint);
       }
-      for (auto* listener : adaptation_listeners_) {
-        resource_adaptation_processor_->RemoveAdaptationListener(listener);
+      for (auto* listener : stream_resource_manager_.AdaptationListeners()) {
+        video_stream_adapter_->RemoveAdaptationListener(listener);
       }
       video_stream_adapter_->RemoveRestrictionsListener(this);
       video_stream_adapter_->RemoveRestrictionsListener(
@@ -2148,23 +2146,6 @@ void VideoStreamEncoder::InjectAdaptationConstraint(
     adaptation_constraints_.push_back(adaptation_constraint);
     resource_adaptation_processor_->AddAdaptationConstraint(
         adaptation_constraint);
-    event.Set();
-  });
-  event.Wait(rtc::Event::kForever);
-}
-
-void VideoStreamEncoder::InjectAdaptationListener(
-    AdaptationListener* adaptation_listener) {
-  rtc::Event event;
-  resource_adaptation_queue_.PostTask([this, adaptation_listener, &event] {
-    RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
-    if (!resource_adaptation_processor_) {
-      // The VideoStreamEncoder was stopped and the processor destroyed before
-      // this task had a chance to execute. No action needed.
-      return;
-    }
-    adaptation_listeners_.push_back(adaptation_listener);
-    resource_adaptation_processor_->AddAdaptationListener(adaptation_listener);
     event.Set();
   });
   event.Wait(rtc::Event::kForever);

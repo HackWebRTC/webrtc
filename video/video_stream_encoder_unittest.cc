@@ -322,13 +322,11 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
                            task_queue_factory),
         fake_cpu_resource_(FakeResource::Create("FakeResource[CPU]")),
         fake_quality_resource_(FakeResource::Create("FakeResource[QP]")),
-        fake_adaptation_constraint_("FakeAdaptationConstraint"),
-        fake_adaptation_listener_() {
+        fake_adaptation_constraint_("FakeAdaptationConstraint") {
     InjectAdaptationResource(fake_quality_resource_,
                              VideoAdaptationReason::kQuality);
     InjectAdaptationResource(fake_cpu_resource_, VideoAdaptationReason::kCpu);
     InjectAdaptationConstraint(&fake_adaptation_constraint_);
-    InjectAdaptationListener(&fake_adaptation_listener_);
   }
 
   void SetSourceAndWaitForRestrictionsUpdated(
@@ -435,7 +433,6 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
   rtc::scoped_refptr<FakeResource> fake_cpu_resource_;
   rtc::scoped_refptr<FakeResource> fake_quality_resource_;
   FakeAdaptationConstraint fake_adaptation_constraint_;
-  FakeAdaptationListener fake_adaptation_listener_;
 };
 
 class VideoStreamFactory

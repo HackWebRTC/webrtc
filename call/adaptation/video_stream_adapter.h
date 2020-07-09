@@ -20,6 +20,7 @@
 #include "api/adaptation/resource.h"
 #include "api/rtp_parameters.h"
 #include "api/video/video_adaptation_counters.h"
+#include "call/adaptation/adaptation_listener.h"
 #include "call/adaptation/degradation_preference_provider.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "call/adaptation/video_stream_input_state.h"
@@ -135,6 +136,8 @@ class VideoStreamAdapter {
       VideoSourceRestrictionsListener* restrictions_listener);
   void RemoveRestrictionsListener(
       VideoSourceRestrictionsListener* restrictions_listener);
+  void AddAdaptationListener(AdaptationListener* adaptation_listener);
+  void RemoveAdaptationListener(AdaptationListener* adaptation_listener);
 
   // TODO(hbos): Setting the degradation preference should not clear
   // restrictions! This is not defined in the spec and is unexpected, there is a
@@ -164,6 +167,7 @@ class VideoStreamAdapter {
 
  private:
   void BroadcastVideoRestrictionsUpdate(
+      const VideoStreamInputState& input_state,
       const rtc::scoped_refptr<Resource>& resource);
 
   bool HasSufficientInputForAdaptation(const VideoStreamInputState& input_state)
@@ -243,6 +247,8 @@ class VideoStreamAdapter {
       RTC_GUARDED_BY(&sequence_checker_);
 
   std::vector<VideoSourceRestrictionsListener*> restrictions_listeners_
+      RTC_GUARDED_BY(&sequence_checker_);
+  std::vector<AdaptationListener*> adaptation_listeners_
       RTC_GUARDED_BY(&sequence_checker_);
 
   RestrictionsWithCounters current_restrictions_

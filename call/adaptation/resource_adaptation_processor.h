@@ -26,7 +26,6 @@
 #include "api/video/video_frame.h"
 #include "api/video/video_stream_encoder_observer.h"
 #include "call/adaptation/adaptation_constraint.h"
-#include "call/adaptation/adaptation_listener.h"
 #include "call/adaptation/resource_adaptation_processor_interface.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "call/adaptation/video_stream_adapter.h"
@@ -75,9 +74,6 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
       AdaptationConstraint* adaptation_constraint) override;
   void RemoveAdaptationConstraint(
       AdaptationConstraint* adaptation_constraint) override;
-  void AddAdaptationListener(AdaptationListener* adaptation_listener) override;
-  void RemoveAdaptationListener(
-      AdaptationListener* adaptation_listener) override;
 
   // ResourceListener implementation.
   // Triggers OnResourceUnderuse() or OnResourceOveruse().
@@ -164,8 +160,6 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   std::vector<rtc::scoped_refptr<Resource>> resources_
       RTC_GUARDED_BY(resource_adaptation_queue_);
   std::vector<AdaptationConstraint*> adaptation_constraints_
-      RTC_GUARDED_BY(resource_adaptation_queue_);
-  std::vector<AdaptationListener*> adaptation_listeners_
       RTC_GUARDED_BY(resource_adaptation_queue_);
   // Purely used for statistics, does not ensure mapped resources stay alive.
   std::map<rtc::scoped_refptr<Resource>,

@@ -129,7 +129,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   void InjectAdaptationResource(rtc::scoped_refptr<Resource> resource,
                                 VideoAdaptationReason reason);
   void InjectAdaptationConstraint(AdaptationConstraint* adaptation_constraint);
-  void InjectAdaptationListener(AdaptationListener* adaptation_listener);
 
   rtc::scoped_refptr<QualityScalerResource>
   quality_scaler_resource_for_testing();
@@ -422,8 +421,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
       RTC_GUARDED_BY(&resource_adaptation_queue_);
   std::unique_ptr<DegradationPreferenceManager> degradation_preference_manager_;
   std::vector<AdaptationConstraint*> adaptation_constraints_
-      RTC_GUARDED_BY(&resource_adaptation_queue_);
-  std::vector<AdaptationListener*> adaptation_listeners_
       RTC_GUARDED_BY(&resource_adaptation_queue_);
   // Handles input, output and stats reporting related to VideoStreamEncoder
   // specific resources, such as "encode usage percent" measurements and "QP

@@ -68,10 +68,6 @@ class ResourceAdaptationProcessorInterface {
       AdaptationConstraint* adaptation_constraint) = 0;
   virtual void RemoveAdaptationConstraint(
       AdaptationConstraint* adaptation_constraint) = 0;
-  virtual void AddAdaptationListener(
-      AdaptationListener* adaptation_listener) = 0;
-  virtual void RemoveAdaptationListener(
-      AdaptationListener* adaptation_listener) = 0;
 };
 
 }  // namespace webrtc

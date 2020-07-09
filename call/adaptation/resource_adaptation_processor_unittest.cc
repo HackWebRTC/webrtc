@@ -102,7 +102,7 @@ class ResourceAdaptationProcessorTest : public ::testing::Test {
     processor_->AddResource(resource_);
     processor_->AddResource(other_resource_);
     processor_->AddAdaptationConstraint(&adaptation_constraint_);
-    processor_->AddAdaptationListener(&adaptation_listener_);
+    video_stream_adapter_->AddAdaptationListener(&adaptation_listener_);
   }
   ~ResourceAdaptationProcessorTest() override {
     if (processor_) {
@@ -132,7 +132,7 @@ class ResourceAdaptationProcessorTest : public ::testing::Test {
       processor_->RemoveResource(other_resource_);
     }
     processor_->RemoveAdaptationConstraint(&adaptation_constraint_);
-    processor_->RemoveAdaptationListener(&adaptation_listener_);
+    video_stream_adapter_->RemoveAdaptationListener(&adaptation_listener_);
     video_stream_adapter_->RemoveRestrictionsListener(&restrictions_listener_);
     processor_.reset();
   }

@@ -90,9 +90,6 @@ ResourceAdaptationProcessor::~ResourceAdaptationProcessor() {
   RTC_DCHECK(adaptation_constraints_.empty())
       << "There are constaint(s) attached to a ResourceAdaptationProcessor "
       << "being destroyed.";
-  RTC_DCHECK(adaptation_listeners_.empty())
-      << "There are listener(s) attached to a ResourceAdaptationProcessor "
-      << "being destroyed.";
   stream_adapter_->RemoveRestrictionsListener(this);
   resource_listener_delegate_->OnProcessorDestroyed();
 }
@@ -180,24 +177,6 @@ void ResourceAdaptationProcessor::RemoveAdaptationConstraint(
                       adaptation_constraints_.end(), adaptation_constraint);
   RTC_DCHECK(it != adaptation_constraints_.end());
   adaptation_constraints_.erase(it);
-}
-
-void ResourceAdaptationProcessor::AddAdaptationListener(
-    AdaptationListener* adaptation_listener) {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  RTC_DCHECK(std::find(adaptation_listeners_.begin(),
-                       adaptation_listeners_.end(),
-                       adaptation_listener) == adaptation_listeners_.end());
-  adaptation_listeners_.push_back(adaptation_listener);
-}
-
-void ResourceAdaptationProcessor::RemoveAdaptationListener(
-    AdaptationListener* adaptation_listener) {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  auto it = std::find(adaptation_listeners_.begin(),
-                      adaptation_listeners_.end(), adaptation_listener);
-  RTC_DCHECK(it != adaptation_listeners_.end());
-  adaptation_listeners_.erase(it);
 }
 
 void ResourceAdaptationProcessor::OnResourceUsageStateMeasured(
@@ -308,11 +287,6 @@ ResourceAdaptationProcessor::OnResourceUnderuse(
   }
   // Apply adaptation.
   stream_adapter_->ApplyAdaptation(adaptation, reason_resource);
-  for (auto* adaptation_listener : adaptation_listeners_) {
-    adaptation_listener->OnAdaptationApplied(
-        adaptation.input_state(), restrictions_before, restrictions_after,
-        reason_resource);
-  }
   processing_in_progress_ = false;
   rtc::StringBuilder message;
   message << "Adapted up successfully. Unfiltered adaptations: "
@@ -341,17 +315,9 @@ ResourceAdaptationProcessor::OnResourceOveruse(
                                          message.Release());
   }
   // Apply adaptation.
-  VideoSourceRestrictions restrictions_before =
-      stream_adapter_->source_restrictions();
-  VideoSourceRestrictions restrictions_after = adaptation.restrictions();
   UpdateResourceLimitations(reason_resource, adaptation.restrictions(),
                             adaptation.counters());
-  stream_adapter_->ApplyAdaptation(adaptation, nullptr);
-  for (auto* adaptation_listener : adaptation_listeners_) {
-    adaptation_listener->OnAdaptationApplied(
-        adaptation.input_state(), restrictions_before, restrictions_after,
-        reason_resource);
-  }
+  stream_adapter_->ApplyAdaptation(adaptation, reason_resource);
   processing_in_progress_ = false;
   rtc::StringBuilder message;
   message << "Adapted down successfully. Unfiltered adaptations: "
@@ -429,11 +395,6 @@ void ResourceAdaptationProcessor::
       most_limited.counters, most_limited.restrictions);
   RTC_DCHECK_EQ(adapt_to.status(), Adaptation::Status::kValid);
   stream_adapter_->ApplyAdaptation(adapt_to, nullptr);
-  for (auto* adaptation_listener : adaptation_listeners_) {
-    adaptation_listener->OnAdaptationApplied(
-        adapt_to.input_state(), removed_limitations.restrictions,
-        most_limited.restrictions, nullptr);
-  }
 
   RTC_LOG(INFO) << "Most limited resource removed. Restoring restrictions to "
                    "next most limited restrictions: "

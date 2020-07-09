@@ -210,7 +210,11 @@ VideoStreamAdapter::VideoStreamAdapter(
   sequence_checker_.Detach();
 }
 
-VideoStreamAdapter::~VideoStreamAdapter() {}
+VideoStreamAdapter::~VideoStreamAdapter() {
+  RTC_DCHECK(adaptation_listeners_.empty())
+      << "There are listener(s) attached to a VideoStreamAdapter being "
+         "destroyed.";
+}
 
 VideoSourceRestrictions VideoStreamAdapter::source_restrictions() const {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
@@ -230,7 +234,8 @@ void VideoStreamAdapter::ClearRestrictions() {
   current_restrictions_ = {VideoSourceRestrictions(),
                            VideoAdaptationCounters()};
   awaiting_frame_size_change_ = absl::nullopt;
-  BroadcastVideoRestrictionsUpdate(nullptr);
+  BroadcastVideoRestrictionsUpdate(input_state_provider_->InputState(),
+                                   nullptr);
 }
 
 void VideoStreamAdapter::AddRestrictionsListener(
@@ -251,6 +256,24 @@ void VideoStreamAdapter::RemoveRestrictionsListener(
   restrictions_listeners_.erase(it);
 }
 
+void VideoStreamAdapter::AddAdaptationListener(
+    AdaptationListener* adaptation_listener) {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  RTC_DCHECK(std::find(adaptation_listeners_.begin(),
+                       adaptation_listeners_.end(),
+                       adaptation_listener) == adaptation_listeners_.end());
+  adaptation_listeners_.push_back(adaptation_listener);
+}
+
+void VideoStreamAdapter::RemoveAdaptationListener(
+    AdaptationListener* adaptation_listener) {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  auto it = std::find(adaptation_listeners_.begin(),
+                      adaptation_listeners_.end(), adaptation_listener);
+  RTC_DCHECK(it != adaptation_listeners_.end());
+  adaptation_listeners_.erase(it);
+}
+
 void VideoStreamAdapter::SetDegradationPreference(
     DegradationPreference degradation_preference) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
@@ -266,7 +289,8 @@ void VideoStreamAdapter::SetDegradationPreference(
     // ClearRestrictions() calls BroadcastVideoRestrictionsUpdate(nullptr).
     ClearRestrictions();
   } else {
-    BroadcastVideoRestrictionsUpdate(nullptr);
+    BroadcastVideoRestrictionsUpdate(input_state_provider_->InputState(),
+                                     nullptr);
   }
 }
 
@@ -584,7 +608,7 @@ void VideoStreamAdapter::ApplyAdaptation(
     awaiting_frame_size_change_ = absl::nullopt;
   }
   current_restrictions_ = {adaptation.restrictions(), adaptation.counters()};
-  BroadcastVideoRestrictionsUpdate(resource);
+  BroadcastVideoRestrictionsUpdate(adaptation.input_state(), resource);
 }
 
 Adaptation VideoStreamAdapter::GetAdaptationTo(
@@ -598,6 +622,7 @@ Adaptation VideoStreamAdapter::GetAdaptationTo(
 }
 
 void VideoStreamAdapter::BroadcastVideoRestrictionsUpdate(
+    const VideoStreamInputState& input_state,
     const rtc::scoped_refptr<Resource>& resource) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   VideoSourceRestrictions filtered = FilterRestrictionsByDegradationPreference(
@@ -609,6 +634,11 @@ void VideoStreamAdapter::BroadcastVideoRestrictionsUpdate(
     restrictions_listener->OnVideoSourceRestrictionsUpdated(
         filtered, current_restrictions_.counters, resource,
         source_restrictions());
+  }
+  for (auto* adaptation_listener : adaptation_listeners_) {
+    adaptation_listener->OnAdaptationApplied(
+        input_state, last_video_source_restrictions_,
+        current_restrictions_.restrictions, resource);
   }
   last_video_source_restrictions_ = current_restrictions_.restrictions;
   last_filtered_restrictions_ = filtered;
