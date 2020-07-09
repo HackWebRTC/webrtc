@@ -72,7 +72,8 @@ class VideoStreamEncoderResource : public Resource {
   // Treated as const after initialization.
   TaskQueueBase* encoder_queue_;
   TaskQueueBase* resource_adaptation_queue_ RTC_GUARDED_BY(lock_);
-  ResourceListener* listener_ RTC_GUARDED_BY(resource_adaptation_queue());
+  mutable Mutex listener_lock_;
+  ResourceListener* listener_ RTC_GUARDED_BY(listener_lock_);
 };
 
 }  // namespace webrtc

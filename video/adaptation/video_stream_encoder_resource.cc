@@ -52,9 +52,9 @@ void VideoStreamEncoderResource::UnregisterAdaptationTaskQueue() {
 
 void VideoStreamEncoderResource::SetResourceListener(
     ResourceListener* listener) {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue());
   // If you want to change listener you need to unregister the old listener by
   // setting it to null first.
+  MutexLock crit(&listener_lock_);
   RTC_DCHECK(!listener_ || !listener) << "A listener is already set";
   listener_ = listener;
 }
@@ -65,7 +65,7 @@ std::string VideoStreamEncoderResource::Name() const {
 
 void VideoStreamEncoderResource::OnResourceUsageStateMeasured(
     ResourceUsageState usage_state) {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue());
+  MutexLock crit(&listener_lock_);
   if (listener_) {
     listener_->OnResourceUsageStateMeasured(this, usage_state);
   }

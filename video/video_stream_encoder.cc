@@ -410,14 +410,19 @@ void VideoStreamEncoder::Stop() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   video_source_sink_controller_.SetSource(nullptr);
 
+  if (resource_adaptation_processor_) {
+    for (auto& resource : stream_resource_manager_.MappedResources()) {
+      resource_adaptation_processor_->RemoveResource(resource);
+    }
+  }
   rtc::Event shutdown_adaptation_processor_event;
   resource_adaptation_queue_.PostTask([this,
                                        &shutdown_adaptation_processor_event] {
     RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
     if (resource_adaptation_processor_) {
-      for (auto& resource : stream_resource_manager_.MappedResources()) {
-        resource_adaptation_processor_->RemoveResource(resource);
-      }
+      // Removed on the resource_adaptaiton_processor_ queue because the
+      // adaptation_constraints_ and adaptation_listeners_ fields are guarded by
+      // this queue.
       for (auto* constraint : adaptation_constraints_) {
         resource_adaptation_processor_->RemoveAdaptationConstraint(constraint);
       }
@@ -479,41 +484,15 @@ void VideoStreamEncoder::AddAdaptationResource(
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     stream_resource_manager_.MapResourceToReason(resource,
                                                  VideoAdaptationReason::kCpu);
+    resource_adaptation_processor_->AddResource(resource);
     map_resource_event.Set();
   });
   map_resource_event.Wait(rtc::Event::kForever);
-
-  // Add the resource to the processor.
-  rtc::Event add_resource_event;
-  resource_adaptation_queue_.PostTask([this, resource, &add_resource_event] {
-    RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
-    if (!resource_adaptation_processor_) {
-      // The VideoStreamEncoder was stopped and the processor destroyed before
-      // this task had a chance to execute. No action needed.
-      return;
-    }
-    resource_adaptation_processor_->AddResource(resource);
-    add_resource_event.Set();
-  });
-  add_resource_event.Wait(rtc::Event::kForever);
 }
 
 std::vector<rtc::scoped_refptr<Resource>>
 VideoStreamEncoder::GetAdaptationResources() {
-  std::vector<rtc::scoped_refptr<Resource>> resources;
-  rtc::Event event;
-  resource_adaptation_queue_.PostTask([this, &resources, &event] {
-    RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
-    if (!resource_adaptation_processor_) {
-      // The VideoStreamEncoder was stopped and the processor destroyed before
-      // this task had a chance to execute. No action needed.
-      return;
-    }
-    resources = resource_adaptation_processor_->GetResources();
-    event.Set();
-  });
-  event.Wait(rtc::Event::kForever);
-  return resources;
+  return resource_adaptation_processor_->GetResources();
 }
 
 void VideoStreamEncoder::SetSource(
@@ -2115,22 +2094,10 @@ void VideoStreamEncoder::InjectAdaptationResource(
   encoder_queue_.PostTask([this, resource, reason, &map_resource_event] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     stream_resource_manager_.MapResourceToReason(resource, reason);
+    resource_adaptation_processor_->AddResource(resource);
     map_resource_event.Set();
   });
   map_resource_event.Wait(rtc::Event::kForever);
-
-  rtc::Event add_resource_event;
-  resource_adaptation_queue_.PostTask([this, resource, &add_resource_event] {
-    RTC_DCHECK_RUN_ON(&resource_adaptation_queue_);
-    if (!resource_adaptation_processor_) {
-      // The VideoStreamEncoder was stopped and the processor destroyed before
-      // this task had a chance to execute. No action needed.
-      return;
-    }
-    resource_adaptation_processor_->AddResource(resource);
-    add_resource_event.Set();
-  });
-  add_resource_event.Wait(rtc::Event::kForever);
 }
 
 void VideoStreamEncoder::InjectAdaptationConstraint(

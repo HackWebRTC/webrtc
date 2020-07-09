@@ -49,7 +49,8 @@ namespace webrtc {
 //
 // The ResourceAdaptationProcessor is single-threaded. It may be constructed on
 // any thread but MUST subsequently be used and destroyed on a single sequence,
-// i.e. the "resource adaptation task queue".
+// i.e. the "resource adaptation task queue". Resources can be added and removed
+// from any thread.
 class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
                                     public VideoSourceRestrictionsListener,
                                     public ResourceListener {
@@ -146,18 +147,18 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
             VideoStreamAdapter::RestrictionsWithCounters>
   FindMostLimitedResources() const RTC_RUN_ON(resource_adaptation_queue_);
 
-  void MaybeUpdateResourceLimitationsOnResourceRemoval(
-      VideoStreamAdapter::RestrictionsWithCounters removed_limitations)
-      RTC_RUN_ON(resource_adaptation_queue_);
+  void RemoveLimitationsImposedByResource(
+      rtc::scoped_refptr<Resource> resource);
 
   TaskQueueBase* resource_adaptation_queue_;
   rtc::scoped_refptr<ResourceListenerDelegate> resource_listener_delegate_;
   // Input and output.
   VideoStreamEncoderObserver* const encoder_stats_observer_
       RTC_GUARDED_BY(resource_adaptation_queue_);
-  std::vector<ResourceLimitationsListener*> resource_limitations_listeners_
-      RTC_GUARDED_BY(resource_adaptation_queue_);
+  mutable Mutex resources_lock_;
   std::vector<rtc::scoped_refptr<Resource>> resources_
+      RTC_GUARDED_BY(resources_lock_);
+  std::vector<ResourceLimitationsListener*> resource_limitations_listeners_
       RTC_GUARDED_BY(resource_adaptation_queue_);
   std::vector<AdaptationConstraint*> adaptation_constraints_
       RTC_GUARDED_BY(resource_adaptation_queue_);

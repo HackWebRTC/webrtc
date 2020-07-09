@@ -51,16 +51,16 @@ class ResourceAdaptationProcessorInterface {
   virtual void SetResourceAdaptationQueue(
       TaskQueueBase* resource_adaptation_queue) = 0;
 
-  // Starts or stops listening to resources, effectively enabling or disabling
-  // processing.
-  // TODO(https://crbug.com/webrtc/11172): Automatically register and unregister
-  // with AddResource() and RemoveResource() instead. When the processor is
-  // multi-stream aware, stream-specific resouces will get added and removed
-  // over time.
   virtual void AddResourceLimitationsListener(
       ResourceLimitationsListener* limitations_listener) = 0;
   virtual void RemoveResourceLimitationsListener(
       ResourceLimitationsListener* limitations_listener) = 0;
+  // Starts or stops listening to resources, effectively enabling or disabling
+  // processing. May be called from anywhere.
+  // TODO(https://crbug.com/webrtc/11172): Automatically register and unregister
+  // with AddResource() and RemoveResource() instead. When the processor is
+  // multi-stream aware, stream-specific resouces will get added and removed
+  // over time.
   virtual void AddResource(rtc::scoped_refptr<Resource> resource) = 0;
   virtual std::vector<rtc::scoped_refptr<Resource>> GetResources() const = 0;
   virtual void RemoveResource(rtc::scoped_refptr<Resource> resource) = 0;
