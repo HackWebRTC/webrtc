@@ -65,7 +65,7 @@ declare_args() {
   rtc_builtin_ssl_root_certificates = true
 
   # Include the iLBC audio codec?
-  rtc_include_ilbc = false
+  rtc_include_ilbc = true
 
   # Disable this to avoid building the Opus audio codec.
   rtc_include_opus = true
