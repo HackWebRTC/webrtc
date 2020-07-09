@@ -20,6 +20,7 @@
 #include "api/adaptation/resource.h"
 #include "api/rtp_parameters.h"
 #include "api/video/video_adaptation_counters.h"
+#include "call/adaptation/adaptation_constraint.h"
 #include "call/adaptation/adaptation_listener.h"
 #include "call/adaptation/degradation_preference_provider.h"
 #include "call/adaptation/video_source_restrictions.h"
@@ -77,6 +78,8 @@ class Adaptation final {
     kInsufficientInput,
     // Adaptation disabled via degradation preference.
     kAdaptationDisabled,
+    // Adaptation up was rejected by a VideoAdaptationConstraint.
+    kRejectedByConstraint,
   };
 
   static const char* StatusToString(Status status);
@@ -138,6 +141,8 @@ class VideoStreamAdapter {
       VideoSourceRestrictionsListener* restrictions_listener);
   void AddAdaptationListener(AdaptationListener* adaptation_listener);
   void RemoveAdaptationListener(AdaptationListener* adaptation_listener);
+  void AddAdaptationConstraint(AdaptationConstraint* adaptation_constraint);
+  void RemoveAdaptationConstraint(AdaptationConstraint* adaptation_constraint);
 
   // TODO(hbos): Setting the degradation preference should not clear
   // restrictions! This is not defined in the spec and is unexpected, there is a
@@ -146,7 +151,9 @@ class VideoStreamAdapter {
 
   // Returns an adaptation that we are guaranteed to be able to apply, or a
   // status code indicating the reason why we cannot adapt.
-  Adaptation GetAdaptationUp();
+  // TODO(https://crbug.com/webrtc/11771) |resource| is needed by the
+  // AdaptationConstraint resources. Remove this parameter when it's removed.
+  Adaptation GetAdaptationUp(rtc::scoped_refptr<Resource> resource);
   Adaptation GetAdaptationDown();
   Adaptation GetAdaptationTo(const VideoAdaptationCounters& counters,
                              const VideoSourceRestrictions& restrictions);
@@ -185,7 +192,10 @@ class VideoStreamAdapter {
       const VideoStreamInputState& input_state) const
       RTC_RUN_ON(&sequence_checker_);
 
-  Adaptation GetAdaptationUp(const VideoStreamInputState& input_state) const
+  // TODO(https://crbug.com/webrtc/11771) |resource| is needed by the
+  // AdaptationConstraint resources. Remove this parameter when it's removed.
+  Adaptation GetAdaptationUp(const VideoStreamInputState& input_state,
+                             rtc::scoped_refptr<Resource> resource) const
       RTC_RUN_ON(&sequence_checker_);
   Adaptation GetAdaptationDown(const VideoStreamInputState& input_state) const
       RTC_RUN_ON(&sequence_checker_);
@@ -249,6 +259,8 @@ class VideoStreamAdapter {
   std::vector<VideoSourceRestrictionsListener*> restrictions_listeners_
       RTC_GUARDED_BY(&sequence_checker_);
   std::vector<AdaptationListener*> adaptation_listeners_
+      RTC_GUARDED_BY(&sequence_checker_);
+  std::vector<AdaptationConstraint*> adaptation_constraints_
       RTC_GUARDED_BY(&sequence_checker_);
 
   RestrictionsWithCounters current_restrictions_

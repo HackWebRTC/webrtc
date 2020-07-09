@@ -88,9 +88,6 @@ ResourceAdaptationProcessor::~ResourceAdaptationProcessor() {
   RTC_DCHECK(resources_.empty())
       << "There are resource(s) attached to a ResourceAdaptationProcessor "
       << "being destroyed.";
-  RTC_DCHECK(adaptation_constraints_.empty())
-      << "There are constaint(s) attached to a ResourceAdaptationProcessor "
-      << "being destroyed.";
   stream_adapter_->RemoveRestrictionsListener(this);
   resource_listener_delegate_->OnProcessorDestroyed();
 }
@@ -201,24 +198,6 @@ void ResourceAdaptationProcessor::RemoveLimitationsImposedByResource(
   }
 }
 
-void ResourceAdaptationProcessor::AddAdaptationConstraint(
-    AdaptationConstraint* adaptation_constraint) {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  RTC_DCHECK(std::find(adaptation_constraints_.begin(),
-                       adaptation_constraints_.end(),
-                       adaptation_constraint) == adaptation_constraints_.end());
-  adaptation_constraints_.push_back(adaptation_constraint);
-}
-
-void ResourceAdaptationProcessor::RemoveAdaptationConstraint(
-    AdaptationConstraint* adaptation_constraint) {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  auto it = std::find(adaptation_constraints_.begin(),
-                      adaptation_constraints_.end(), adaptation_constraint);
-  RTC_DCHECK(it != adaptation_constraints_.end());
-  adaptation_constraints_.erase(it);
-}
-
 void ResourceAdaptationProcessor::OnResourceUsageStateMeasured(
     rtc::scoped_refptr<Resource> resource,
     ResourceUsageState usage_state) {
@@ -268,7 +247,7 @@ ResourceAdaptationProcessor::OnResourceUnderuse(
   RTC_DCHECK(!processing_in_progress_);
   processing_in_progress_ = true;
   // How can this stream be adapted up?
-  Adaptation adaptation = stream_adapter_->GetAdaptationUp();
+  Adaptation adaptation = stream_adapter_->GetAdaptationUp(reason_resource);
   if (adaptation.status() != Adaptation::Status::kValid) {
     processing_in_progress_ = false;
     rtc::StringBuilder message;
@@ -277,27 +256,12 @@ ResourceAdaptationProcessor::OnResourceUnderuse(
     return MitigationResultAndLogMessage(MitigationResult::kRejectedByAdapter,
                                          message.Release());
   }
-  VideoSourceRestrictions restrictions_before =
-      stream_adapter_->source_restrictions();
-  VideoSourceRestrictions restrictions_after = adaptation.restrictions();
-  // Check that resource is most limited...
+  // Check that resource is most limited.
   std::vector<rtc::scoped_refptr<Resource>> most_limited_resources;
   VideoStreamAdapter::RestrictionsWithCounters most_limited_restrictions;
   std::tie(most_limited_resources, most_limited_restrictions) =
       FindMostLimitedResources();
 
-  for (const auto* constraint : adaptation_constraints_) {
-    if (!constraint->IsAdaptationUpAllowed(
-            adaptation.input_state(), restrictions_before, restrictions_after,
-            reason_resource)) {
-      processing_in_progress_ = false;
-      rtc::StringBuilder message;
-      message << "Not adapting up because constraint \"" << constraint->Name()
-              << "\" disallowed it";
-      return MitigationResultAndLogMessage(
-          MitigationResult::kRejectedByConstraint, message.Release());
-    }
-  }
   // If the most restricted resource is less limited than current restrictions
   // then proceed with adapting up.
   if (!most_limited_resources.empty() &&

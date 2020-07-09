@@ -390,7 +390,7 @@ VideoStreamEncoder::VideoStreamEncoder(
       resource_adaptation_processor_->AddResource(resource);
     }
     for (auto* constraint : adaptation_constraints_) {
-      resource_adaptation_processor_->AddAdaptationConstraint(constraint);
+      video_stream_adapter_->AddAdaptationConstraint(constraint);
     }
     for (auto* listener : stream_resource_manager_.AdaptationListeners()) {
       video_stream_adapter_->AddAdaptationListener(listener);
@@ -424,7 +424,7 @@ void VideoStreamEncoder::Stop() {
       // adaptation_constraints_ and adaptation_listeners_ fields are guarded by
       // this queue.
       for (auto* constraint : adaptation_constraints_) {
-        resource_adaptation_processor_->RemoveAdaptationConstraint(constraint);
+        video_stream_adapter_->RemoveAdaptationConstraint(constraint);
       }
       for (auto* listener : stream_resource_manager_.AdaptationListeners()) {
         video_stream_adapter_->RemoveAdaptationListener(listener);
@@ -2111,8 +2111,7 @@ void VideoStreamEncoder::InjectAdaptationConstraint(
       return;
     }
     adaptation_constraints_.push_back(adaptation_constraint);
-    resource_adaptation_processor_->AddAdaptationConstraint(
-        adaptation_constraint);
+    video_stream_adapter_->AddAdaptationConstraint(adaptation_constraint);
     event.Set();
   });
   event.Wait(rtc::Event::kForever);

@@ -64,10 +64,6 @@ class ResourceAdaptationProcessorInterface {
   virtual void AddResource(rtc::scoped_refptr<Resource> resource) = 0;
   virtual std::vector<rtc::scoped_refptr<Resource>> GetResources() const = 0;
   virtual void RemoveResource(rtc::scoped_refptr<Resource> resource) = 0;
-  virtual void AddAdaptationConstraint(
-      AdaptationConstraint* adaptation_constraint) = 0;
-  virtual void RemoveAdaptationConstraint(
-      AdaptationConstraint* adaptation_constraint) = 0;
 };
 
 }  // namespace webrtc

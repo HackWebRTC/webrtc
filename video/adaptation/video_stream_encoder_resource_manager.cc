@@ -173,8 +173,9 @@ bool VideoStreamEncoderResourceManager::BitrateConstraint::
       manager_->GetReasonFromResource(reason_resource);
   // If increasing resolution due to kQuality, make sure bitrate limits are not
   // violated.
-  // TODO(hbos): Why are we allowing violating bitrate constraints if adapting
-  // due to CPU? Shouldn't this condition be checked regardless of reason?
+  // TODO(https://crbug.com/webrtc/11771): Why are we allowing violating bitrate
+  // constraints if adapting due to CPU? Shouldn't this condition be checked
+  // regardless of reason?
   if (reason == VideoAdaptationReason::kQuality &&
       DidIncreaseResolution(restrictions_before, restrictions_after)) {
     uint32_t bitrate_bps = encoder_target_bitrate_bps_.value_or(0);
@@ -235,8 +236,9 @@ bool VideoStreamEncoderResourceManager::BalancedConstraint::
       manager_->GetReasonFromResource(reason_resource);
   // Don't adapt if BalancedDegradationSettings applies and determines this will
   // exceed bitrate constraints.
-  // TODO(hbos): Why are we allowing violating balanced settings if adapting due
-  // CPU? Shouldn't this condition be checked regardless of reason?
+  // TODO(https://crbug.com/webrtc/11771): Why are we allowing violating
+  // balanced settings if adapting due CPU? Shouldn't this condition be checked
+  // regardless of reason?
   if (reason == VideoAdaptationReason::kQuality &&
       degradation_preference_provider_->degradation_preference() ==
           DegradationPreference::BALANCED &&

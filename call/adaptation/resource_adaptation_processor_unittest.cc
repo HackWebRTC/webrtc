@@ -14,7 +14,6 @@
 #include "api/scoped_refptr.h"
 #include "api/video/video_adaptation_counters.h"
 #include "call/adaptation/resource_adaptation_processor_interface.h"
-#include "call/adaptation/test/fake_adaptation_constraint.h"
 #include "call/adaptation/test/fake_adaptation_listener.h"
 #include "call/adaptation/test/fake_frame_rate_provider.h"
 #include "call/adaptation/test/fake_resource.h"
@@ -90,7 +89,6 @@ class ResourceAdaptationProcessorTest : public ::testing::Test {
         input_state_provider_(&frame_rate_provider_),
         resource_(FakeResource::Create("FakeResource")),
         other_resource_(FakeResource::Create("OtherFakeResource")),
-        adaptation_constraint_("FakeAdaptationConstraint"),
         adaptation_listener_(),
         video_stream_adapter_(
             std::make_unique<VideoStreamAdapter>(&input_state_provider_)),
@@ -101,7 +99,6 @@ class ResourceAdaptationProcessorTest : public ::testing::Test {
     video_stream_adapter_->AddRestrictionsListener(&restrictions_listener_);
     processor_->AddResource(resource_);
     processor_->AddResource(other_resource_);
-    processor_->AddAdaptationConstraint(&adaptation_constraint_);
     video_stream_adapter_->AddAdaptationListener(&adaptation_listener_);
   }
   ~ResourceAdaptationProcessorTest() override {
@@ -131,7 +128,6 @@ class ResourceAdaptationProcessorTest : public ::testing::Test {
     if (other_resource_) {
       processor_->RemoveResource(other_resource_);
     }
-    processor_->RemoveAdaptationConstraint(&adaptation_constraint_);
     video_stream_adapter_->RemoveAdaptationListener(&adaptation_listener_);
     video_stream_adapter_->RemoveRestrictionsListener(&restrictions_listener_);
     processor_.reset();
@@ -146,7 +142,6 @@ class ResourceAdaptationProcessorTest : public ::testing::Test {
   VideoStreamInputStateProvider input_state_provider_;
   rtc::scoped_refptr<FakeResource> resource_;
   rtc::scoped_refptr<FakeResource> other_resource_;
-  FakeAdaptationConstraint adaptation_constraint_;
   FakeAdaptationListener adaptation_listener_;
   std::unique_ptr<VideoStreamAdapter> video_stream_adapter_;
   std::unique_ptr<ResourceAdaptationProcessor> processor_;
@@ -253,20 +248,6 @@ TEST_F(ResourceAdaptationProcessorTest, UnderuseTakesUsBackToUnrestricted) {
   resource_->SetUsageState(ResourceUsageState::kUnderuse);
   EXPECT_EQ(2u, restrictions_listener_.restrictions_updated_count());
   EXPECT_EQ(VideoSourceRestrictions(), restrictions_listener_.restrictions());
-}
-
-TEST_F(ResourceAdaptationProcessorTest, ResourcesCanPreventAdaptingUp) {
-  video_stream_adapter_->SetDegradationPreference(
-      DegradationPreference::MAINTAIN_FRAMERATE);
-  SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
-  // Adapt down so that we can adapt up.
-  resource_->SetUsageState(ResourceUsageState::kOveruse);
-  EXPECT_EQ(1u, restrictions_listener_.restrictions_updated_count());
-  RestrictSource(restrictions_listener_.restrictions());
-  // Adapting up is prevented.
-  adaptation_constraint_.set_is_adaptation_up_allowed(false);
-  resource_->SetUsageState(ResourceUsageState::kUnderuse);
-  EXPECT_EQ(1u, restrictions_listener_.restrictions_updated_count());
 }
 
 TEST_F(ResourceAdaptationProcessorTest,
