@@ -291,24 +291,6 @@ void SetInboundRTPStreamStatsFromVoiceReceiverInfo(
   }
   inbound_audio->jitter = static_cast<double>(voice_receiver_info.jitter_ms) /
                           rtc::kNumMillisecsPerSec;
-  inbound_audio->jitter_buffer_delay =
-      voice_receiver_info.jitter_buffer_delay_seconds;
-  inbound_audio->jitter_buffer_emitted_count =
-      voice_receiver_info.jitter_buffer_emitted_count;
-  inbound_audio->total_samples_received =
-      voice_receiver_info.total_samples_received;
-  inbound_audio->concealed_samples = voice_receiver_info.concealed_samples;
-  inbound_audio->silent_concealed_samples =
-      voice_receiver_info.silent_concealed_samples;
-  inbound_audio->concealment_events = voice_receiver_info.concealment_events;
-  inbound_audio->inserted_samples_for_deceleration =
-      voice_receiver_info.inserted_samples_for_deceleration;
-  inbound_audio->removed_samples_for_acceleration =
-      voice_receiver_info.removed_samples_for_acceleration;
-  inbound_audio->audio_level = voice_receiver_info.audio_level;
-  inbound_audio->total_audio_energy = voice_receiver_info.total_output_energy;
-  inbound_audio->total_samples_duration =
-      voice_receiver_info.total_output_duration;
   // |fir_count|, |pli_count| and |sli_count| are only valid for video and are
   // purposefully left undefined for audio.
   if (voice_receiver_info.last_packet_received_timestamp_ms) {
@@ -345,21 +327,8 @@ void SetInboundRTPStreamStatsFromVideoReceiverInfo(
       static_cast<uint32_t>(video_receiver_info.plis_sent);
   inbound_video->nack_count =
       static_cast<uint32_t>(video_receiver_info.nacks_sent);
-  inbound_video->frames_received = video_receiver_info.frames_received;
   inbound_video->frames_decoded = video_receiver_info.frames_decoded;
-  inbound_video->frames_dropped = video_receiver_info.frames_dropped;
   inbound_video->key_frames_decoded = video_receiver_info.key_frames_decoded;
-  if (video_receiver_info.frame_width > 0) {
-    inbound_video->frame_width =
-        static_cast<uint32_t>(video_receiver_info.frame_width);
-  }
-  if (video_receiver_info.frame_height > 0) {
-    inbound_video->frame_height =
-        static_cast<uint32_t>(video_receiver_info.frame_height);
-  }
-  if (video_receiver_info.framerate_rcvd > 0) {
-    inbound_video->frames_per_second = video_receiver_info.framerate_rcvd;
-  }
   if (video_receiver_info.qp_sum)
     inbound_video->qp_sum = *video_receiver_info.qp_sum;
   inbound_video->total_decode_time =
