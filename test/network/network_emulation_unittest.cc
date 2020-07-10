@@ -19,6 +19,7 @@
 #include "call/simulated_network.h"
 #include "rtc_base/event.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -48,12 +49,12 @@ class SocketReader : public sigslot::has_slots<> {
     int64_t timestamp;
     len_ = socket_->Recv(buf_, size_, &timestamp);
 
-    rtc::CritScope crit(&lock_);
+    MutexLock lock(&lock_);
     received_count_++;
   }
 
   int ReceivedCount() {
-    rtc::CritScope crit(&lock_);
+    MutexLock lock(&lock_);
     return received_count_;
   }
 
@@ -64,7 +65,7 @@ class SocketReader : public sigslot::has_slots<> {
   size_t size_;
   int len_;
 
-  rtc::CriticalSection lock_;
+  Mutex lock_;
   int received_count_ RTC_GUARDED_BY(lock_) = 0;
 };
 

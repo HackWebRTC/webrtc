@@ -1388,6 +1388,7 @@ if (rtc_include_tests) {
       "../test:test_main",
       "../test:test_support",
       "memory:fifo_buffer",
+      "synchronization:mutex",
       "synchronization:synchronization_unittests",
       "task_utils:to_queued_task",
       "third_party/sigslot",

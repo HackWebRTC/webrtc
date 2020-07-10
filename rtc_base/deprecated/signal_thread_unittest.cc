@@ -13,9 +13,9 @@
 #include <memory>
 
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/null_socket_server.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
 #include "test/gtest.h"
@@ -148,13 +148,13 @@ class OwnerThread : public Thread, public sigslot::has_slots<> {
     // Delete |signal_thread|.
     signal_thread->Destroy(true);
     {
-      rtc::CritScope cs(&crit_);
+      webrtc::MutexLock lock(&mutex_);
       has_run_ = true;
     }
   }
 
   bool has_run() {
-    rtc::CritScope cs(&crit_);
+    webrtc::MutexLock lock(&mutex_);
     return has_run_;
   }
   void OnWorkDone(DEPRECATED_SignalThread* /*signal_thread*/) {
@@ -162,9 +162,9 @@ class OwnerThread : public Thread, public sigslot::has_slots<> {
   }
 
  private:
-  rtc::CriticalSection crit_;
+  webrtc::Mutex mutex_;
   SignalThreadTest* harness_;
-  bool has_run_ RTC_GUARDED_BY(crit_);
+  bool has_run_ RTC_GUARDED_BY(mutex_);
   RTC_DISALLOW_COPY_AND_ASSIGN(OwnerThread);
 };
 
