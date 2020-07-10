@@ -90,25 +90,28 @@ void RTPFragmentationHeader::CopyFrom(const RTPFragmentationHeader& src) {
 void RTPFragmentationHeader::Resize(size_t size) {
   const uint16_t size16 = rtc::dchecked_cast<uint16_t>(size);
   if (fragmentationVectorSize < size16) {
-    uint16_t oldVectorSize = fragmentationVectorSize;
-    {
-      // offset
-      size_t* oldOffsets = fragmentationOffset;
-      fragmentationOffset = new size_t[size16];
-      memset(fragmentationOffset + oldVectorSize, 0,
-             sizeof(size_t) * (size16 - oldVectorSize));
-      // copy old values
-      memcpy(fragmentationOffset, oldOffsets, sizeof(size_t) * oldVectorSize);
-      delete[] oldOffsets;
-    }
-    // length
-    {
-      size_t* oldLengths = fragmentationLength;
-      fragmentationLength = new size_t[size16];
-      memset(fragmentationLength + oldVectorSize, 0,
-             sizeof(size_t) * (size16 - oldVectorSize));
-      memcpy(fragmentationLength, oldLengths, sizeof(size_t) * oldVectorSize);
-      delete[] oldLengths;
+    uint16_t old_vector_size = fragmentationVectorSize;
+    size_t* old_offsets = fragmentationOffset;
+    fragmentationOffset = new size_t[size16];
+    memset(fragmentationOffset + old_vector_size, 0,
+           sizeof(size_t) * (size16 - old_vector_size));
+    size_t* old_lengths = fragmentationLength;
+    fragmentationLength = new size_t[size16];
+    memset(fragmentationLength + old_vector_size, 0,
+           sizeof(size_t) * (size16 - old_vector_size));
+
+    // copy old values
+    if (old_vector_size > 0) {
+      if (old_offsets != nullptr) {
+        memcpy(fragmentationOffset, old_offsets,
+               sizeof(size_t) * old_vector_size);
+        delete[] old_offsets;
+      }
+      if (old_lengths != nullptr) {
+        memcpy(fragmentationLength, old_lengths,
+               sizeof(size_t) * old_vector_size);
+        delete[] old_lengths;
+      }
     }
     fragmentationVectorSize = size16;
   }
