@@ -25,7 +25,7 @@
 #include "modules/video_capture/video_capture.h"
 #include "modules/video_capture/video_capture_config.h"
 #include "modules/video_capture/video_capture_defines.h"
-#include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/critical_section.h"
 
 namespace webrtc {
 
@@ -78,7 +78,7 @@ class VideoCaptureImpl : public VideoCaptureModule {
   ~VideoCaptureImpl() override;
 
   char* _deviceUniqueId;  // current Device unique name;
-  Mutex api_lock_;
+  rtc::CriticalSection _apiCs;
   VideoCaptureCapability _requestedCapability;  // Should be set by platform
                                                 // dependent code in
                                                 // StartCapture.

@@ -115,7 +115,7 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
     }
   }
 
-  MutexLock lock(&capture_lock_);
+  rtc::CritScope cs(&_captureCritSect);
   // first open /dev/video device
   char device[20];
   sprintf(device, "/dev/video%d", (int)_deviceId);
@@ -264,7 +264,7 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
 int32_t VideoCaptureModuleV4L2::StopCapture() {
   if (_captureThread) {
     {
-      MutexLock lock(&capture_lock_);
+      rtc::CritScope cs(&_captureCritSect);
       quit_ = true;
     }
     // Make sure the capture thread stop stop using the critsect.
@@ -272,7 +272,7 @@ int32_t VideoCaptureModuleV4L2::StopCapture() {
     _captureThread.reset();
   }
 
-  MutexLock lock(&capture_lock_);
+  rtc::CritScope cs(&_captureCritSect);
   if (_captureStarted) {
     _captureStarted = false;
 
@@ -387,7 +387,7 @@ bool VideoCaptureModuleV4L2::CaptureProcess() {
   }
 
   {
-    MutexLock lock(&capture_lock_);
+    rtc::CritScope cs(&_captureCritSect);
 
     if (quit_) {
       return false;

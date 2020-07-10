@@ -21,7 +21,7 @@ DesktopConfigurationMonitor::DesktopConfigurationMonitor() {
       DesktopConfigurationMonitor::DisplaysReconfiguredCallback, this);
   if (err != kCGErrorSuccess)
     RTC_LOG(LS_ERROR) << "CGDisplayRegisterReconfigurationCallback " << err;
-  MutexLock lock(&desktop_configuration_lock_);
+  rtc::CritScope cs(&desktop_configuration_lock_);
   desktop_configuration_ = MacDesktopConfiguration::GetCurrent(
       MacDesktopConfiguration::TopLeftOrigin);
 }
@@ -34,7 +34,7 @@ DesktopConfigurationMonitor::~DesktopConfigurationMonitor() {
 }
 
 MacDesktopConfiguration DesktopConfigurationMonitor::desktop_configuration() {
-  MutexLock lock(&desktop_configuration_lock_);
+  rtc::CritScope crit(&desktop_configuration_lock_);
   return desktop_configuration_;
 }
 
@@ -64,7 +64,7 @@ void DesktopConfigurationMonitor::DisplaysReconfigured(
 
   reconfiguring_displays_.erase(display);
   if (reconfiguring_displays_.empty()) {
-    MutexLock lock(&desktop_configuration_lock_);
+    rtc::CritScope cs(&desktop_configuration_lock_);
     desktop_configuration_ = MacDesktopConfiguration::GetCurrent(
         MacDesktopConfiguration::TopLeftOrigin);
   }

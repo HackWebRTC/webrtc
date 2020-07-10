@@ -130,7 +130,7 @@ int32_t VideoCaptureDS::Init(const char* deviceUniqueIdUTF8) {
 }
 
 int32_t VideoCaptureDS::StartCapture(const VideoCaptureCapability& capability) {
-  MutexLock lock(&api_lock_);
+  rtc::CritScope cs(&_apiCs);
 
   if (capability != _requestedCapability) {
     DisconnectGraph();
@@ -148,7 +148,7 @@ int32_t VideoCaptureDS::StartCapture(const VideoCaptureCapability& capability) {
 }
 
 int32_t VideoCaptureDS::StopCapture() {
-  MutexLock lock(&api_lock_);
+  rtc::CritScope cs(&_apiCs);
 
   HRESULT hr = _mediaControl->Pause();
   if (FAILED(hr)) {
