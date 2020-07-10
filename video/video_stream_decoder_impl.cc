@@ -47,7 +47,7 @@ VideoStreamDecoderImpl::VideoStreamDecoderImpl(
 }
 
 VideoStreamDecoderImpl::~VideoStreamDecoderImpl() {
-  rtc::CritScope lock(&shut_down_crit_);
+  MutexLock lock(&shut_down_mutex_);
   shut_down_ = true;
 }
 
@@ -157,7 +157,7 @@ void VideoStreamDecoderImpl::OnNextFrameCallback(
       RTC_DCHECK(frame);
       SaveFrameTimestamps(*frame);
 
-      rtc::CritScope lock(&shut_down_crit_);
+      MutexLock lock(&shut_down_mutex_);
       if (shut_down_) {
         return;
       }

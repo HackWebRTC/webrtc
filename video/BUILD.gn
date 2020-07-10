@@ -170,6 +170,7 @@ rtc_library("video_stream_decoder_impl") {
     "../modules/video_coding",
     "../rtc_base:rtc_base_approved",
     "../rtc_base:rtc_task_queue",
+    "../rtc_base/synchronization:mutex",
     "../system_wrappers",
   ]
   absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
