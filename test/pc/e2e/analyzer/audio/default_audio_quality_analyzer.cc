@@ -47,6 +47,8 @@ void DefaultAudioQualityAnalyzer::OnStatsReports(
         stat->inserted_samples_for_deceleration.ValueOrDefault(0ul);
     sample.silent_concealed_samples =
         stat->silent_concealed_samples.ValueOrDefault(0ul);
+    sample.jitter_buffer_delay =
+        TimeDelta::Seconds(stat->jitter_buffer_delay.ValueOrDefault(0.));
     sample.jitter_buffer_target_delay =
         TimeDelta::Seconds(stat->jitter_buffer_target_delay.ValueOrDefault(0.));
     sample.jitter_buffer_emitted_count =
@@ -90,9 +92,14 @@ void DefaultAudioQualityAnalyzer::OnStatsReports(
         sample.jitter_buffer_emitted_count -
         prev_sample.jitter_buffer_emitted_count;
     if (jitter_buffer_emitted_count_diff > 0) {
+      TimeDelta jitter_buffer_delay_diff =
+          sample.jitter_buffer_delay - prev_sample.jitter_buffer_delay;
       TimeDelta jitter_buffer_target_delay_diff =
           sample.jitter_buffer_target_delay -
           prev_sample.jitter_buffer_target_delay;
+      audio_stream_stats.average_jitter_buffer_delay_ms.AddSample(
+          jitter_buffer_delay_diff.ms<double>() /
+          jitter_buffer_emitted_count_diff);
       audio_stream_stats.preferred_buffer_size_ms.AddSample(
           jitter_buffer_target_delay_diff.ms<double>() /
           jitter_buffer_emitted_count_diff);
@@ -120,6 +127,9 @@ void DefaultAudioQualityAnalyzer::Stop() {
     ReportResult("speech_expand_rate", item.first,
                  item.second.speech_expand_rate, "unitless",
                  ImproveDirection::kSmallerIsBetter);
+    ReportResult("average_jitter_buffer_delay_ms", item.first,
+                 item.second.average_jitter_buffer_delay_ms, "ms",
+                 ImproveDirection::kNone);
     ReportResult("preferred_buffer_size_ms", item.first,
                  item.second.preferred_buffer_size_ms, "ms",
                  ImproveDirection::kNone);

@@ -30,6 +30,7 @@ struct AudioStreamStats {
   SamplesStatsCounter accelerate_rate;
   SamplesStatsCounter preemptive_rate;
   SamplesStatsCounter speech_expand_rate;
+  SamplesStatsCounter average_jitter_buffer_delay_ms;
   SamplesStatsCounter preferred_buffer_size_ms;
 };
 
@@ -52,6 +53,7 @@ class DefaultAudioQualityAnalyzer : public AudioQualityAnalyzerInterface {
     uint64_t removed_samples_for_acceleration = 0;
     uint64_t inserted_samples_for_deceleration = 0;
     uint64_t silent_concealed_samples = 0;
+    TimeDelta jitter_buffer_delay = TimeDelta::Zero();
     TimeDelta jitter_buffer_target_delay = TimeDelta::Zero();
     uint64_t jitter_buffer_emitted_count = 0;
   };
