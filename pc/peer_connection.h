@@ -810,10 +810,6 @@ class PeerConnection : public PeerConnectionInternal,
   void FillInMissingRemoteMids(cricket::SessionDescription* remote_description)
       RTC_RUN_ON(signaling_thread());
 
-  // Is there an RtpSender of the given type?
-  bool HasRtpSender(cricket::MediaType type) const
-      RTC_RUN_ON(signaling_thread());
-
   // Return the RtpSender with the given track attached.
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>
   FindSenderForTrack(MediaStreamTrackInterface* track) const

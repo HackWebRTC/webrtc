@@ -4810,8 +4810,8 @@ void PeerConnection::GetOptionsForPlanBOffer(
     const PeerConnectionInterface::RTCOfferAnswerOptions& offer_answer_options,
     cricket::MediaSessionOptions* session_options) {
   // Figure out transceiver directional preferences.
-  bool send_audio = HasRtpSender(cricket::MEDIA_TYPE_AUDIO);
-  bool send_video = HasRtpSender(cricket::MEDIA_TYPE_VIDEO);
+  bool send_audio = !GetAudioTransceiver()->internal()->senders().empty();
+  bool send_video = !GetVideoTransceiver()->internal()->senders().empty();
 
   // By default, generate sendrecv/recvonly m= sections.
   bool recv_audio = true;
@@ -5112,8 +5112,8 @@ void PeerConnection::GetOptionsForPlanBAnswer(
     const PeerConnectionInterface::RTCOfferAnswerOptions& offer_answer_options,
     cricket::MediaSessionOptions* session_options) {
   // Figure out transceiver directional preferences.
-  bool send_audio = HasRtpSender(cricket::MEDIA_TYPE_AUDIO);
-  bool send_video = HasRtpSender(cricket::MEDIA_TYPE_VIDEO);
+  bool send_audio = !GetAudioTransceiver()->internal()->senders().empty();
+  bool send_video = !GetVideoTransceiver()->internal()->senders().empty();
 
   // By default, generate sendrecv/recvonly m= sections. The direction is also
   // restricted by the direction in the offer.
@@ -5574,21 +5574,6 @@ PeerConnection::GetVideoTransceiver() const {
   }
   RTC_NOTREACHED();
   return nullptr;
-}
-
-// TODO(bugs.webrtc.org/7600): Remove this when multiple transceivers with
-// individual transceiver directions are supported.
-bool PeerConnection::HasRtpSender(cricket::MediaType type) const {
-  switch (type) {
-    case cricket::MEDIA_TYPE_AUDIO:
-      return !GetAudioTransceiver()->internal()->senders().empty();
-    case cricket::MEDIA_TYPE_VIDEO:
-      return !GetVideoTransceiver()->internal()->senders().empty();
-    case cricket::MEDIA_TYPE_DATA:
-      return false;
-  }
-  RTC_NOTREACHED();
-  return false;
 }
 
 rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>
