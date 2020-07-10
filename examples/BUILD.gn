@@ -207,6 +207,7 @@ if (is_android) {
 
     deps = [
       ":AppRTCMobile_javalib",
+      "../sdk/android:base_java",
       "../sdk/android:camera_java",
       "../sdk/android:libjingle_peerconnection_java",
       "../sdk/android:peerconnection_java",
@@ -837,6 +838,7 @@ if (is_android) {
       "../sdk/android:camera_java",
       "../sdk/android:libjingle_peerconnection_java",
       "../sdk/android:peerconnection_java",
+      "../sdk/android:video_api_java",
       "../sdk/android:video_java",
       "//third_party/android_deps:com_android_support_support_annotations_java",
     ]
