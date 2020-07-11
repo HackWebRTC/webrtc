@@ -134,6 +134,7 @@ static NSString *const loopbackLaunchProcessArgument = @"loopback";
                                              delegate:self];
   videoCallViewController.modalTransitionStyle =
       UIModalTransitionStyleCrossDissolve;
+  videoCallViewController.modalPresentationStyle = UIModalPresentationFullScreen;
   [self presentViewController:videoCallViewController
                      animated:YES
                    completion:nil];
