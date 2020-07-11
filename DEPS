@@ -3231,7 +3231,7 @@ include_rules = [
   "+test",
   "+rtc_tools",
 
-  # Abseil whitelist. Keep this in sync with abseil-in-webrtc.md.
+  # Abseil allowlist. Keep this in sync with abseil-in-webrtc.md.
   "+absl/algorithm/algorithm.h",
   "+absl/algorithm/container.h",
   "+absl/base/attributes.h",
