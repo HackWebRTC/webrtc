@@ -713,8 +713,7 @@ def main():
     logging.info('Uploading CL...')
     if not opts.dry_run:
       _UploadCL(commit_queue_mode)
-
-  raise Exception('Test')
+  return 0
 
 
 if __name__ == '__main__':
