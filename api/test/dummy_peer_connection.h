@@ -194,10 +194,6 @@ class DummyPeerConnection : public PeerConnectionInterface {
     return RTCError(RTCErrorType::UNSUPPORTED_OPERATION, "Not implemented");
   }
 
-  RTCError SetBitrate(const BitrateParameters& bitrate_parameters) override {
-    return RTCError(RTCErrorType::UNSUPPORTED_OPERATION, "Not implemented");
-  }
-
   void SetAudioPlayout(bool playout) override { FATAL() << "Not implemented"; }
   void SetAudioRecording(bool recording) override {
     FATAL() << "Not implemented";
