@@ -167,7 +167,6 @@ class MockPeerConnectionInterface
               (const std::vector<cricket::Candidate>&),
               (override));
   MOCK_METHOD(RTCError, SetBitrate, (const BitrateSettings&), (override));
-  MOCK_METHOD(RTCError, SetBitrate, (const BitrateParameters&), (override));
   MOCK_METHOD(void, SetAudioPlayout, (bool), (override));
   MOCK_METHOD(void, SetAudioRecording, (bool), (override));
   MOCK_METHOD(rtc::scoped_refptr<DtlsTransportInterface>,
