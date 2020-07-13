@@ -758,9 +758,9 @@ static jboolean JNI_PeerConnection_SetBitrate(
     const JavaParamRef<jobject>& j_min,
     const JavaParamRef<jobject>& j_current,
     const JavaParamRef<jobject>& j_max) {
-  BitrateSettings params;
+  PeerConnectionInterface::BitrateParameters params;
   params.min_bitrate_bps = JavaToNativeOptionalInt(jni, j_min);
-  params.start_bitrate_bps = JavaToNativeOptionalInt(jni, j_current);
+  params.current_bitrate_bps = JavaToNativeOptionalInt(jni, j_current);
   params.max_bitrate_bps = JavaToNativeOptionalInt(jni, j_max);
   return ExtractNativePC(jni, j_pc)->SetBitrate(params).ok();
 }

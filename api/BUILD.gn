@@ -381,6 +381,7 @@ rtc_source_set("peer_connection_quality_test_fixture_api") {
     ":track_id_stream_info_map",
     ":video_quality_analyzer_api",
     "../media:rtc_media_base",
+    "../rtc_base:deprecation",
     "../rtc_base:rtc_base",
     "rtc_event_log",
     "task_queue",

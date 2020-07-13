@@ -3615,44 +3615,44 @@ TEST_P(PeerConnectionInterfaceTest,
 
 TEST_P(PeerConnectionInterfaceTest, SetBitrateWithoutMinSucceeds) {
   CreatePeerConnection();
-  BitrateSettings bitrate;
-  bitrate.start_bitrate_bps = 100000;
+  PeerConnectionInterface::BitrateParameters bitrate;
+  bitrate.current_bitrate_bps = 100000;
   EXPECT_TRUE(pc_->SetBitrate(bitrate).ok());
 }
 
 TEST_P(PeerConnectionInterfaceTest, SetBitrateNegativeMinFails) {
   CreatePeerConnection();
-  BitrateSettings bitrate;
+  PeerConnectionInterface::BitrateParameters bitrate;
   bitrate.min_bitrate_bps = -1;
   EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
 }
 
 TEST_P(PeerConnectionInterfaceTest, SetBitrateCurrentLessThanMinFails) {
   CreatePeerConnection();
-  BitrateSettings bitrate;
+  PeerConnectionInterface::BitrateParameters bitrate;
   bitrate.min_bitrate_bps = 5;
-  bitrate.start_bitrate_bps = 3;
+  bitrate.current_bitrate_bps = 3;
   EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
 }
 
 TEST_P(PeerConnectionInterfaceTest, SetBitrateCurrentNegativeFails) {
   CreatePeerConnection();
-  BitrateSettings bitrate;
-  bitrate.start_bitrate_bps = -1;
+  PeerConnectionInterface::BitrateParameters bitrate;
+  bitrate.current_bitrate_bps = -1;
   EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
 }
 
 TEST_P(PeerConnectionInterfaceTest, SetBitrateMaxLessThanCurrentFails) {
   CreatePeerConnection();
-  BitrateSettings bitrate;
-  bitrate.start_bitrate_bps = 10;
+  PeerConnectionInterface::BitrateParameters bitrate;
+  bitrate.current_bitrate_bps = 10;
   bitrate.max_bitrate_bps = 8;
   EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
 }
 
 TEST_P(PeerConnectionInterfaceTest, SetBitrateMaxLessThanMinFails) {
   CreatePeerConnection();
-  BitrateSettings bitrate;
+  PeerConnectionInterface::BitrateParameters bitrate;
   bitrate.min_bitrate_bps = 10;
   bitrate.max_bitrate_bps = 8;
   EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
@@ -3660,7 +3660,7 @@ TEST_P(PeerConnectionInterfaceTest, SetBitrateMaxLessThanMinFails) {
 
 TEST_P(PeerConnectionInterfaceTest, SetBitrateMaxNegativeFails) {
   CreatePeerConnection();
-  BitrateSettings bitrate;
+  PeerConnectionInterface::BitrateParameters bitrate;
   bitrate.max_bitrate_bps = -1;
   EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
 }
@@ -3671,8 +3671,8 @@ TEST_P(PeerConnectionInterfaceTest, SetBitrateMaxNegativeFails) {
 // be clamped succeeds.
 TEST_P(PeerConnectionInterfaceTest, SetBitrateCurrentLessThanImplicitMin) {
   CreatePeerConnection();
-  BitrateSettings bitrate;
-  bitrate.start_bitrate_bps = 1;
+  PeerConnectionInterface::BitrateParameters bitrate;
+  bitrate.current_bitrate_bps = 1;
   EXPECT_TRUE(pc_->SetBitrate(bitrate).ok());
 }
 

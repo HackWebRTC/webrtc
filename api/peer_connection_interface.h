@@ -1015,13 +1015,28 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
   virtual bool RemoveIceCandidates(
       const std::vector<cricket::Candidate>& candidates) = 0;
 
+  // 0 <= min <= current <= max should hold for set parameters.
+  struct BitrateParameters {
+    BitrateParameters();
+    ~BitrateParameters();
+
+    absl::optional<int> min_bitrate_bps;
+    absl::optional<int> current_bitrate_bps;
+    absl::optional<int> max_bitrate_bps;
+  };
+
   // SetBitrate limits the bandwidth allocated for all RTP streams sent by
   // this PeerConnection. Other limitations might affect these limits and
   // are respected (for example "b=AS" in SDP).
   //
   // Setting |current_bitrate_bps| will reset the current bitrate estimate
   // to the provided value.
-  virtual RTCError SetBitrate(const BitrateSettings& bitrate) = 0;
+  virtual RTCError SetBitrate(const BitrateSettings& bitrate);
+
+  // TODO(nisse): Deprecated - use version above. These two default
+  // implementations require subclasses to implement one or the other
+  // of the methods.
+  virtual RTCError SetBitrate(const BitrateParameters& bitrate_parameters);
 
   // Enable/disable playout of received audio streams. Enabled by default. Note
   // that even if playout is enabled, streams will only be played out if the
