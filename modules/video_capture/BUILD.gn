@@ -36,6 +36,7 @@ rtc_library("video_capture_module") {
     "../../media:rtc_media_base",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:stringutils",
+    "../../rtc_base/synchronization:mutex",
     "../../rtc_base/synchronization:rw_lock_wrapper",
     "../../system_wrappers",
     "//third_party/libyuv",
@@ -51,6 +52,7 @@ if (!build_with_chromium) {
       "../../api:scoped_refptr",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
+      "../../rtc_base/synchronization:mutex",
       "../../system_wrappers",
     ]
 
@@ -129,6 +131,7 @@ if (!build_with_chromium) {
         "../../api/video:video_rtp_headers",
         "../../common_video",
         "../../rtc_base:rtc_base_approved",
+        "../../rtc_base/synchronization:mutex",
         "../../system_wrappers",
         "../../test:frame_utils",
         "../../test:test_main",
