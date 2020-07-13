@@ -10,7 +10,7 @@ vars = {
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
-  'chromium_revision': '432e660d6dfd657683f385808380bf1ddfd2aca2',
+  'chromium_revision': '3e578a0ddfb9d31aac6d1636d29fcb8a73bd9c4d',
 
   # This can be overridden, e.g. with custom_vars, to download a nonstandard
   # Xcode version in build/mac_toolchain.py
@@ -22,9 +22,9 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    'https://chromium.googlesource.com/chromium/src/base@f0eb30876db4ac3c590090ad92b3537032afe0bb',
+    'https://chromium.googlesource.com/chromium/src/base@58be4be20523bd4e6bafe8aa819a3cf150c9587b',
   'src/build':
-    'https://chromium.googlesource.com/chromium/src/build@67bfb6e074189ed2d2d019c14a480d011b90cd78',
+    'https://chromium.googlesource.com/chromium/src/build@9e0406939effb2fdf7b4cdaa5987bf39bca0ca45',
   'src/buildtools':
     'https://chromium.googlesource.com/chromium/src/buildtools@eb3987ec709b39469423100c1e77f0446890e059',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
@@ -33,13 +33,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': 'https://chromium.googlesource.com/chromium/src/ios@7b3dd6953af3246db9a76d4b7a8cd02de3159c37',
+    'url': 'https://chromium.googlesource.com/chromium/src/ios@9ea7e555b7115ea46392030a775f923c6462c167',
     'condition': 'checkout_ios',
   },
   'src/testing':
     'https://chromium.googlesource.com/chromium/src/testing@99f302a3dd969fbaa5bc535175f156d3f2152964',
   'src/third_party':
-    'https://chromium.googlesource.com/chromium/src/third_party@0cbb97ee80c4b1cf859d1f09a0a3b23e9ce25197',
+    'https://chromium.googlesource.com/chromium/src/third_party@75e5acda2a148c0f6bd5d14f60cca65de6ed4d4e',
 
   'src/buildtools/linux64': {
     'packages': [
@@ -130,7 +130,7 @@ deps = {
   'src/third_party/breakpad/breakpad':
     'https://chromium.googlesource.com/breakpad/breakpad.git@2757a2c9c819fcae3784576aef0c8400c7ad06d7',
   'src/third_party/catapult':
-    'https://chromium.googlesource.com/catapult.git@570934c3dab2753d075f3f4912a53a377537eb91',
+    'https://chromium.googlesource.com/catapult.git@c4187c19b8f83d2f71e63bfa00b8ffba90691517',
   'src/third_party/ced/src': {
     'url': 'https://chromium.googlesource.com/external/github.com/google/compact_enc_det.git@ba412eaaacd3186085babcd901679a48863c7dd5',
   },
@@ -150,7 +150,7 @@ deps = {
       'condition': 'checkout_linux',
   },
   'src/third_party/freetype/src':
-    'https://chromium.googlesource.com/chromium/src/third_party/freetype2.git@b1286b32a9f2bcba3f22c9857ba6df30733b7845',
+    'https://chromium.googlesource.com/chromium/src/third_party/freetype2.git@c922ffa5d2fe359d5e0d788f3a0850a59da4ae20',
   'src/third_party/harfbuzz-ng/src':
     'https://chromium.googlesource.com/external/github.com/harfbuzz/harfbuzz.git@e3af529e511ca492284cdd9f4584666b88a9e00f',
   'src/third_party/google_benchmark/src': {
@@ -208,7 +208,7 @@ deps = {
       'condition': 'checkout_android',
   },
   'src/third_party/perfetto':
-    'https://android.googlesource.com/platform/external/perfetto.git@7d22cca0b49fb57933e504aed51f2fa600d4006e',
+    'https://android.googlesource.com/platform/external/perfetto.git@85cf057d6c800c6722161c2e190ee082f0262adb',
   'src/third_party/libvpx/source/libvpx':
     'https://chromium.googlesource.com/webm/libvpx.git@a1cee8dc919df1980d802e1a9bce1259ec34cba8',
   'src/third_party/libyuv':
@@ -265,7 +265,7 @@ deps = {
     'condition': 'checkout_win',
   },
   'src/tools':
-    'https://chromium.googlesource.com/chromium/src/tools@d1d0f247b244dcd170582f8746866ae9f5a8e279',
+    'https://chromium.googlesource.com/chromium/src/tools@462ec1061796ec5d2a3fac1852750ff48e304113',
   'src/tools/swarming_client':
     'https://chromium.googlesource.com/infra/luci/client-py.git@4c095d04179dc725a300085ae21fe3b79900d072',
 
