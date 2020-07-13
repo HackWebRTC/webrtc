@@ -10,8 +10,6 @@
 
 #include "modules/desktop_capture/win/window_capturer_win_gdi.h"
 
-#include <assert.h>
-
 #include <map>
 #include <memory>
 #include <utility>
@@ -27,61 +25,9 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/string_utils.h"
 #include "rtc_base/trace_event.h"
+#include "rtc_base/win32.h"
 
 namespace webrtc {
-
-BOOL CALLBACK WindowsEnumerationHandler(HWND hwnd, LPARAM param) {
-  DesktopCapturer::SourceList* list =
-      reinterpret_cast<DesktopCapturer::SourceList*>(param);
-
-  // Skip windows that are invisible, minimized, have no title, or are owned,
-  // unless they have the app window style set.
-  int len = GetWindowTextLength(hwnd);
-  HWND owner = GetWindow(hwnd, GW_OWNER);
-  LONG exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-  if (len == 0 || IsIconic(hwnd) || !IsWindowVisible(hwnd) ||
-      (owner && !(exstyle & WS_EX_APPWINDOW))) {
-    return TRUE;
-  }
-  // Skip unresponsive windows. Set timout with 50ms, in case system is under
-  // heavy load, the check can wait longer but wont' be too long to delay the
-  // the enumeration.
-  const UINT uTimeout = 50;  // ms
-  if (!SendMessageTimeout(hwnd, WM_NULL, 0, 0, SMTO_ABORTIFHUNG, uTimeout,
-                          nullptr)) {
-    return TRUE;
-  }
-
-  // Skip the Program Manager window and the Start button.
-  const size_t kClassLength = 256;
-  WCHAR class_name[kClassLength];
-  const int class_name_length = GetClassNameW(hwnd, class_name, kClassLength);
-  if (class_name_length < 1)
-    return TRUE;
-
-  // Skip Program Manager window and the Start button. This is the same logic
-  // that's used in Win32WindowPicker in libjingle. Consider filtering other
-  // windows as well (e.g. toolbars).
-  if (wcscmp(class_name, L"Progman") == 0 || wcscmp(class_name, L"Button") == 0)
-    return TRUE;
-
-  DesktopCapturer::Source window;
-  window.id = reinterpret_cast<WindowId>(hwnd);
-
-  const size_t kTitleLength = 500;
-  WCHAR window_title[kTitleLength];
-  // Truncate the title if it's longer than kTitleLength.
-  GetWindowTextW(hwnd, window_title, kTitleLength);
-  window.title = rtc::ToUtf8(window_title);
-
-  // Skip windows when we failed to convert the title or it is empty.
-  if (window.title.empty())
-    return TRUE;
-
-  list->push_back(window);
-
-  return TRUE;
-}
 
 // Used to pass input/output data during the EnumWindows call to collect
 // owned/pop-up windows that should be captured.
@@ -144,25 +90,12 @@ BOOL CALLBACK OwnedWindowCollector(HWND hwnd, LPARAM param) {
   return TRUE;
 }
 
-WindowCapturerGdi::WindowCapturerGdi() {}
-WindowCapturerGdi::~WindowCapturerGdi() {}
+WindowCapturerWinGdi::WindowCapturerWinGdi() {}
+WindowCapturerWinGdi::~WindowCapturerWinGdi() {}
 
-bool WindowCapturerGdi::GetSourceList(SourceList* sources) {
-  SourceList result;
-  LPARAM param = reinterpret_cast<LPARAM>(&result);
-  // EnumWindows only enumerates root windows.
-  if (!EnumWindows(&WindowsEnumerationHandler, param))
+bool WindowCapturerWinGdi::GetSourceList(SourceList* sources) {
+  if (!window_capture_helper_.EnumerateCapturableWindows(sources))
     return false;
-
-  for (auto it = result.begin(); it != result.end();) {
-    if (!window_capture_helper_.IsWindowVisibleOnCurrentDesktop(
-            reinterpret_cast<HWND>(it->id))) {
-      it = result.erase(it);
-    } else {
-      ++it;
-    }
-  }
-  sources->swap(result);
 
   std::map<HWND, DesktopSize> new_map;
   for (const auto& item : *sources) {
@@ -174,10 +107,11 @@ bool WindowCapturerGdi::GetSourceList(SourceList* sources) {
   return true;
 }
 
-bool WindowCapturerGdi::SelectSource(SourceId id) {
+bool WindowCapturerWinGdi::SelectSource(SourceId id) {
   HWND window = reinterpret_cast<HWND>(id);
-  if (!IsWindow(window) || !IsWindowVisible(window) || IsIconic(window))
+  if (!IsWindowValidAndVisible(window))
     return false;
+
   window_ = window;
   // When a window is not in the map, window_size_map_[window] will create an
   // item with DesktopSize (0, 0).
@@ -185,18 +119,17 @@ bool WindowCapturerGdi::SelectSource(SourceId id) {
   return true;
 }
 
-bool WindowCapturerGdi::FocusOnSelectedSource() {
+bool WindowCapturerWinGdi::FocusOnSelectedSource() {
   if (!window_)
     return false;
 
-  if (!IsWindow(window_) || !IsWindowVisible(window_) || IsIconic(window_))
+  if (!IsWindowValidAndVisible(window_))
     return false;
 
-  return BringWindowToTop(window_) != FALSE &&
-         SetForegroundWindow(window_) != FALSE;
+  return BringWindowToTop(window_) && SetForegroundWindow(window_);
 }
 
-bool WindowCapturerGdi::IsOccluded(const DesktopVector& pos) {
+bool WindowCapturerWinGdi::IsOccluded(const DesktopVector& pos) {
   DesktopVector sys_pos = pos.add(GetFullscreenRect().top_left());
   HWND hwnd =
       reinterpret_cast<HWND>(window_finder_.GetWindowUnderPoint(sys_pos));
@@ -206,22 +139,23 @@ bool WindowCapturerGdi::IsOccluded(const DesktopVector& pos) {
              owned_windows_.end();
 }
 
-void WindowCapturerGdi::Start(Callback* callback) {
-  assert(!callback_);
-  assert(callback);
+void WindowCapturerWinGdi::Start(Callback* callback) {
+  RTC_DCHECK(!callback_);
+  RTC_DCHECK(callback);
 
   callback_ = callback;
 }
 
-void WindowCapturerGdi::CaptureFrame() {
-  CaptureResults results = CaptureFrame(/*capture_owned_windows*/ true);
+void WindowCapturerWinGdi::CaptureFrame() {
+  RTC_DCHECK(callback_);
 
+  CaptureResults results = CaptureFrame(/*capture_owned_windows*/ true);
   callback_->OnCaptureResult(results.result, std::move(results.frame));
 }
 
-WindowCapturerGdi::CaptureResults WindowCapturerGdi::CaptureFrame(
+WindowCapturerWinGdi::CaptureResults WindowCapturerWinGdi::CaptureFrame(
     bool capture_owned_windows) {
-  TRACE_EVENT0("webrtc", "WindowCapturerGdi::CaptureFrame");
+  TRACE_EVENT0("webrtc", "WindowCapturerWinGdi::CaptureFrame");
 
   if (!window_) {
     RTC_LOG(LS_ERROR) << "Window hasn't been selected: " << GetLastError();
@@ -230,7 +164,7 @@ WindowCapturerGdi::CaptureResults WindowCapturerGdi::CaptureFrame(
 
   // Stop capturing if the window has been closed.
   if (!IsWindow(window_)) {
-    RTC_LOG(LS_ERROR) << "target window has been closed";
+    RTC_LOG(LS_ERROR) << "Target window has been closed.";
     return {Result::ERROR_PERMANENT, nullptr};
   }
 
@@ -388,7 +322,7 @@ WindowCapturerGdi::CaptureResults WindowCapturerGdi::CaptureFrame(
 
       if (!owned_windows_.empty()) {
         if (!owned_window_capturer_) {
-          owned_window_capturer_ = std::make_unique<WindowCapturerGdi>();
+          owned_window_capturer_ = std::make_unique<WindowCapturerWinGdi>();
         }
 
         // Owned windows are stored in top-down z-order, so this iterates in
@@ -425,9 +359,9 @@ WindowCapturerGdi::CaptureResults WindowCapturerGdi::CaptureFrame(
 }
 
 // static
-std::unique_ptr<DesktopCapturer> WindowCapturerGdi::CreateRawWindowCapturer(
+std::unique_ptr<DesktopCapturer> WindowCapturerWinGdi::CreateRawWindowCapturer(
     const DesktopCaptureOptions& options) {
-  return std::unique_ptr<DesktopCapturer>(new WindowCapturerGdi());
+  return std::unique_ptr<DesktopCapturer>(new WindowCapturerWinGdi());
 }
 
 }  // namespace webrtc

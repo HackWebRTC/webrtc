@@ -15,18 +15,19 @@
 
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capturer.h"
+#include "modules/desktop_capture/win/window_capture_utils.h"
 
 namespace webrtc {
 
-class WindowCapturerWgc : public DesktopCapturer {
+class WindowCapturerWinWgc : public DesktopCapturer {
  public:
-  WindowCapturerWgc();
+  WindowCapturerWinWgc();
 
   // Disallow copy and assign
-  WindowCapturerWgc(const WindowCapturerWgc&) = delete;
-  WindowCapturerWgc& operator=(const WindowCapturerWgc&) = delete;
+  WindowCapturerWinWgc(const WindowCapturerWinWgc&) = delete;
+  WindowCapturerWinWgc& operator=(const WindowCapturerWinWgc&) = delete;
 
-  ~WindowCapturerWgc() override;
+  ~WindowCapturerWinWgc() override;
 
   static std::unique_ptr<DesktopCapturer> CreateRawWindowCapturer(
       const DesktopCaptureOptions& options);
@@ -39,6 +40,11 @@ class WindowCapturerWgc : public DesktopCapturer {
 
  private:
   Callback* callback_ = nullptr;
+
+  // HWND for the currently selected window or nullptr if window is not
+  // selected.
+  HWND window_ = nullptr;
+  WindowCaptureHelperWin window_capture_helper_;
 };
 
 }  // namespace webrtc

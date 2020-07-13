@@ -19,15 +19,18 @@
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/win/window_capture_utils.h"
 #include "modules/desktop_capture/window_finder_win.h"
-#include "rtc_base/constructor_magic.h"
-#include "rtc_base/win32.h"
 
 namespace webrtc {
 
-class WindowCapturerGdi : public DesktopCapturer {
+class WindowCapturerWinGdi : public DesktopCapturer {
  public:
-  WindowCapturerGdi();
-  ~WindowCapturerGdi() override;
+  WindowCapturerWinGdi();
+
+  // Disallow copy and assign
+  WindowCapturerWinGdi(const WindowCapturerWinGdi&) = delete;
+  WindowCapturerWinGdi& operator=(const WindowCapturerWinGdi&) = delete;
+
+  ~WindowCapturerWinGdi() override;
 
   static std::unique_ptr<DesktopCapturer> CreateRawWindowCapturer(
       const DesktopCaptureOptions& options);
@@ -65,9 +68,7 @@ class WindowCapturerGdi : public DesktopCapturer {
   WindowFinderWin window_finder_;
 
   std::vector<HWND> owned_windows_;
-  std::unique_ptr<WindowCapturerGdi> owned_window_capturer_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(WindowCapturerGdi);
+  std::unique_ptr<WindowCapturerWinGdi> owned_window_capturer_;
 };
 
 }  // namespace webrtc

@@ -22,9 +22,9 @@ std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawWindowCapturer(
   // mechanism) and Windows version check here that leads to use of the WGC
   // capturer once it is fully implemented.
   if (true) {
-    return WindowCapturerGdi::CreateRawWindowCapturer(options);
+    return WindowCapturerWinGdi::CreateRawWindowCapturer(options);
   } else {
-    return WindowCapturerWgc::CreateRawWindowCapturer(options);
+    return WindowCapturerWinWgc::CreateRawWindowCapturer(options);
   }
 }
 
