@@ -111,8 +111,8 @@ int RtpDependencyDescriptorWriter::StructureSizeBits() const {
       structure_.num_chains, structure_.num_decode_targets + 1);
   if (structure_.num_chains > 0) {
     for (int protected_by : structure_.decode_target_protected_by_chain) {
-      bits += rtc::BitBufferWriter::SizeNonSymmetricBits(
-          protected_by, structure_.num_chains + 1);
+      bits += rtc::BitBufferWriter::SizeNonSymmetricBits(protected_by,
+                                                         structure_.num_chains);
     }
     bits += 4 * structure_.templates.size() * structure_.num_chains;
   }
@@ -288,8 +288,8 @@ void RtpDependencyDescriptorWriter::WriteTemplateChains() {
                 structure_.num_decode_targets);
   for (int protected_by : structure_.decode_target_protected_by_chain) {
     RTC_DCHECK_GE(protected_by, 0);
-    RTC_DCHECK_LE(protected_by, structure_.num_chains);
-    WriteNonSymmetric(protected_by, structure_.num_chains + 1);
+    RTC_DCHECK_LT(protected_by, structure_.num_chains);
+    WriteNonSymmetric(protected_by, structure_.num_chains);
   }
   for (const auto& frame_template : structure_.templates) {
     RTC_DCHECK_EQ(frame_template.chain_diffs.size(), structure_.num_chains);

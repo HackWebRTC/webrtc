@@ -241,29 +241,6 @@ TEST(ActiveDecodeTargetsHelperTest, ReturnsNulloptWhenChainsAreNotUsed) {
   EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), absl::nullopt);
 }
 
-TEST(ActiveDecodeTargetsHelperTest,
-     KeepReturningBitmaskWhenAllChainsAreInactive) {
-  // Two decode targets, but single chain.
-  // 2nd decode target is not protected by any chain.
-  constexpr int kDecodeTargetProtectedByChain[] = {0, 1};
-
-  ActiveDecodeTargetsHelper helper;
-  int chain_diffs_key[] = {0};
-  helper.OnFrame(kDecodeTargetProtectedByChain, /*active_decode_targets=*/0b10,
-                 /*is_keyframe=*/true,
-                 /*frame_id=*/0, chain_diffs_key);
-  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), 0b10u);
-
-  // Even though previous frame is part of the only chain, that inactive chain
-  // doesn't provide guaranted delivery.
-  int chain_diffs_delta[] = {1};
-  helper.OnFrame(kDecodeTargetProtectedByChain,
-                 /*active_decode_targets=*/0b10,
-                 /*is_keyframe=*/false,
-                 /*frame_id=*/1, chain_diffs_delta);
-  EXPECT_EQ(helper.ActiveDecodeTargetsBitmask(), 0b10u);
-}
-
 TEST(ActiveDecodeTargetsHelperTest, Supports32DecodeTargets) {
   std::bitset<32> some;
   std::vector<int> decode_target_protected_by_chain(32);

@@ -567,8 +567,7 @@ TEST_P(RtpSenderVideoTest, PropagatesChainDiffsIntoDependencyDescriptor) {
   FrameDependencyStructure video_structure;
   video_structure.num_decode_targets = 2;
   video_structure.num_chains = 1;
-  // First decode target is protected by the only chain, second one - is not.
-  video_structure.decode_target_protected_by_chain = {0, 1};
+  video_structure.decode_target_protected_by_chain = {0, 0};
   video_structure.templates = {
       FrameDependencyTemplate().S(0).T(0).Dtis("SS").ChainDiffs({1}),
   };

@@ -104,7 +104,7 @@ TEST_P(ScalabilityStructureTest,
   } else {
     EXPECT_THAT(structure.decode_target_protected_by_chain,
                 AllOf(SizeIs(structure.num_decode_targets), Each(Ge(0)),
-                      Each(Le(structure.num_chains))));
+                      Each(Lt(structure.num_chains))));
   }
   EXPECT_THAT(structure.templates,
               SizeIs(Lt(size_t{DependencyDescriptor::kMaxTemplates})));
