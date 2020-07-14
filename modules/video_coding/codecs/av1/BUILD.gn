@@ -54,6 +54,8 @@ rtc_source_set("scalable_video_controller") {
 
 rtc_source_set("scalability_structures") {
   sources = [
+    "create_scalability_structure.cc",
+    "create_scalability_structure.h",
     "scalability_structure_l1t2.cc",
     "scalability_structure_l1t2.h",
     "scalability_structure_l1t3.cc",
@@ -86,6 +88,7 @@ rtc_source_set("scalability_structures") {
   ]
   absl_deps = [
     "//third_party/abseil-cpp/absl/base:core_headers",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }

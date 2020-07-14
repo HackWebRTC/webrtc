@@ -22,19 +22,9 @@
 #include "api/units/time_delta.h"
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
+#include "modules/video_coding/codecs/av1/create_scalability_structure.h"
 #include "modules/video_coding/codecs/av1/libaom_av1_decoder.h"
 #include "modules/video_coding/codecs/av1/libaom_av1_encoder.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l1t2.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l1t3.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l2t1.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l2t1_key.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l2t1h.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l2t2.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l2t2_key.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l2t2_key_shift.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l3t1.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l3t3.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_s2t1.h"
 #include "modules/video_coding/codecs/av1/scalable_video_controller.h"
 #include "modules/video_coding/codecs/av1/scalable_video_controller_no_layering.h"
 #include "modules/video_coding/codecs/test/encoded_video_frame_producer.h"
@@ -181,7 +171,7 @@ struct LayerId {
 };
 
 struct SvcTestParam {
-  std::function<std::unique_ptr<ScalableVideoController>()> svc_factory;
+  std::string name;
   int num_frames_to_generate;
   std::map<LayerId, DataRate> configured_bitrates;
 };
@@ -190,7 +180,7 @@ class LibaomAv1SvcTest : public ::testing::TestWithParam<SvcTestParam> {};
 
 TEST_P(LibaomAv1SvcTest, EncodeAndDecodeAllDecodeTargets) {
   std::unique_ptr<ScalableVideoController> svc_controller =
-      GetParam().svc_factory();
+      CreateScalabilityStructure(GetParam().name);
   size_t num_decode_targets =
       svc_controller->DependencyStructure().num_decode_targets;
 
@@ -262,7 +252,7 @@ TEST_P(LibaomAv1SvcTest, SetRatesMatchMeasuredBitrate) {
   }
 
   std::unique_ptr<VideoEncoder> encoder =
-      CreateLibaomAv1Encoder(param.svc_factory());
+      CreateLibaomAv1Encoder(CreateScalabilityStructure(param.name));
   ASSERT_TRUE(encoder);
   VideoCodec codec_settings = DefaultCodecSettings();
   codec_settings.maxBitrate = allocation.get_sum_kbps();
@@ -304,44 +294,39 @@ TEST_P(LibaomAv1SvcTest, SetRatesMatchMeasuredBitrate) {
 INSTANTIATE_TEST_SUITE_P(
     Svc,
     LibaomAv1SvcTest,
-    Values(SvcTestParam{std::make_unique<ScalableVideoControllerNoLayering>,
-                        /*num_frames_to_generate=*/4},
-           SvcTestParam{std::make_unique<ScalabilityStructureL1T2>,
+    Values(SvcTestParam{"NONE", /*num_frames_to_generate=*/4},
+           SvcTestParam{"L1T2",
                         /*num_frames_to_generate=*/4,
                         /*configured_bitrates=*/
                         {{{0, 0}, DataRate::KilobitsPerSec(60)},
                          {{0, 1}, DataRate::KilobitsPerSec(40)}}},
-           SvcTestParam{std::make_unique<ScalabilityStructureL1T3>,
-                        /*num_frames_to_generate=*/8},
-           SvcTestParam{std::make_unique<ScalabilityStructureL2T1>,
+           SvcTestParam{"L1T3", /*num_frames_to_generate=*/8},
+           SvcTestParam{"L2T1",
                         /*num_frames_to_generate=*/3,
                         /*configured_bitrates=*/
                         {{{0, 0}, DataRate::KilobitsPerSec(30)},
                          {{1, 0}, DataRate::KilobitsPerSec(70)}}},
-           SvcTestParam{std::make_unique<ScalabilityStructureL2T1h>,
+           SvcTestParam{"L2T1h",
                         /*num_frames_to_generate=*/3,
                         /*configured_bitrates=*/
                         {{{0, 0}, DataRate::KilobitsPerSec(30)},
                          {{1, 0}, DataRate::KilobitsPerSec(70)}}},
-           SvcTestParam{std::make_unique<ScalabilityStructureL2T1Key>,
-                        /*num_frames_to_generate=*/3},
-           SvcTestParam{std::make_unique<ScalabilityStructureL3T1>,
-                        /*num_frames_to_generate=*/3},
-           SvcTestParam{std::make_unique<ScalabilityStructureL3T3>,
-                        /*num_frames_to_generate=*/8},
-           SvcTestParam{std::make_unique<ScalabilityStructureS2T1>,
-                        /*num_frames_to_generate=*/3},
-           SvcTestParam{std::make_unique<ScalabilityStructureL2T2>,
-                        /*num_frames_to_generate=*/4},
-           SvcTestParam{std::make_unique<ScalabilityStructureL2T2Key>,
-                        /*num_frames_to_generate=*/4},
-           SvcTestParam{std::make_unique<ScalabilityStructureL2T2KeyShift>,
+           SvcTestParam{"L2T1_KEY", /*num_frames_to_generate=*/3},
+           SvcTestParam{"L3T1", /*num_frames_to_generate=*/3},
+           SvcTestParam{"L3T3", /*num_frames_to_generate=*/8},
+           SvcTestParam{"S2T1", /*num_frames_to_generate=*/3},
+           SvcTestParam{"L2T2", /*num_frames_to_generate=*/4},
+           SvcTestParam{"L2T2_KEY", /*num_frames_to_generate=*/4},
+           SvcTestParam{"L2T2_KEY_SHIFT",
                         /*num_frames_to_generate=*/4,
                         /*configured_bitrates=*/
                         {{{0, 0}, DataRate::KilobitsPerSec(70)},
                          {{0, 1}, DataRate::KilobitsPerSec(30)},
                          {{1, 0}, DataRate::KilobitsPerSec(140)},
-                         {{1, 1}, DataRate::KilobitsPerSec(80)}}}));
+                         {{1, 1}, DataRate::KilobitsPerSec(80)}}}),
+    [](const testing::TestParamInfo<SvcTestParam>& info) {
+      return info.param.name;
+    });
 
 }  // namespace
 }  // namespace webrtc

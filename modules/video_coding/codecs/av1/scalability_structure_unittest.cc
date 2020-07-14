@@ -11,7 +11,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <functional>
 #include <memory>
 #include <ostream>
 #include <string>
@@ -20,16 +19,7 @@
 #include "api/transport/rtp/dependency_descriptor.h"
 #include "api/video/video_frame_type.h"
 #include "modules/video_coding/chain_diff_calculator.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l1t2.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l1t3.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l2t1.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l2t1_key.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l2t2.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l2t2_key.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l2t2_key_shift.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l3t1.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_l3t3.h"
-#include "modules/video_coding/codecs/av1/scalability_structure_s2t1.h"
+#include "modules/video_coding/codecs/av1/create_scalability_structure.h"
 #include "modules/video_coding/codecs/av1/scalable_video_controller.h"
 #include "modules/video_coding/frame_dependencies_calculator.h"
 #include "test/gmock.h"
@@ -57,7 +47,6 @@ struct SvcTestParam {
   }
 
   std::string name;
-  std::function<std::unique_ptr<ScalableVideoController>()> svc_factory;
   int num_temporal_units;
 };
 
@@ -69,7 +58,7 @@ class ScalabilityStructureTest : public TestWithParam<SvcTestParam> {
     FrameDependenciesCalculator frame_deps_calculator;
     ChainDiffCalculator chain_diff_calculator;
     std::unique_ptr<ScalableVideoController> structure_controller =
-        GetParam().svc_factory();
+        CreateScalabilityStructure(GetParam().name);
     FrameDependencyStructure structure =
         structure_controller->DependencyStructure();
     for (int i = 0; i < GetParam().num_temporal_units; ++i) {
@@ -104,7 +93,7 @@ class ScalabilityStructureTest : public TestWithParam<SvcTestParam> {
 TEST_P(ScalabilityStructureTest,
        NumberOfDecodeTargetsAndChainsAreInRangeAndConsistent) {
   FrameDependencyStructure structure =
-      GetParam().svc_factory()->DependencyStructure();
+      CreateScalabilityStructure(GetParam().name)->DependencyStructure();
   EXPECT_GT(structure.num_decode_targets, 0);
   EXPECT_LE(structure.num_decode_targets,
             DependencyDescriptor::kMaxDecodeTargets);
@@ -123,7 +112,7 @@ TEST_P(ScalabilityStructureTest,
 
 TEST_P(ScalabilityStructureTest, TemplatesAreSortedByLayerId) {
   FrameDependencyStructure structure =
-      GetParam().svc_factory()->DependencyStructure();
+      CreateScalabilityStructure(GetParam().name)->DependencyStructure();
   ASSERT_THAT(structure.templates, Not(IsEmpty()));
   const auto& first_templates = structure.templates.front();
   EXPECT_EQ(first_templates.spatial_id, 0);
@@ -154,7 +143,7 @@ TEST_P(ScalabilityStructureTest, TemplatesAreSortedByLayerId) {
 
 TEST_P(ScalabilityStructureTest, TemplatesMatchNumberOfDecodeTargetsAndChains) {
   FrameDependencyStructure structure =
-      GetParam().svc_factory()->DependencyStructure();
+      CreateScalabilityStructure(GetParam().name)->DependencyStructure();
   EXPECT_THAT(
       structure.templates,
       Each(AllOf(Field(&FrameDependencyTemplate::decode_target_indications,
@@ -165,7 +154,7 @@ TEST_P(ScalabilityStructureTest, TemplatesMatchNumberOfDecodeTargetsAndChains) {
 
 TEST_P(ScalabilityStructureTest, FrameInfoMatchesFrameDependencyStructure) {
   FrameDependencyStructure structure =
-      GetParam().svc_factory()->DependencyStructure();
+      CreateScalabilityStructure(GetParam().name)->DependencyStructure();
   std::vector<GenericFrameInfo> frame_infos = GenerateAllFrames();
   for (size_t frame_id = 0; frame_id < frame_infos.size(); ++frame_id) {
     const auto& frame = frame_infos[frame_id];
@@ -181,7 +170,7 @@ TEST_P(ScalabilityStructureTest, FrameInfoMatchesFrameDependencyStructure) {
 
 TEST_P(ScalabilityStructureTest, ThereIsAPerfectTemplateForEachFrame) {
   FrameDependencyStructure structure =
-      GetParam().svc_factory()->DependencyStructure();
+      CreateScalabilityStructure(GetParam().name)->DependencyStructure();
   std::vector<GenericFrameInfo> frame_infos = GenerateAllFrames();
   for (size_t frame_id = 0; frame_id < frame_infos.size(); ++frame_id) {
     EXPECT_THAT(structure.templates, Contains(frame_infos[frame_id]))
@@ -210,7 +199,7 @@ TEST_P(ScalabilityStructureTest, NoFrameDependsOnDiscardableOrNotPresent) {
   std::vector<GenericFrameInfo> frame_infos = GenerateAllFrames();
   int64_t num_frames = frame_infos.size();
   FrameDependencyStructure structure =
-      GetParam().svc_factory()->DependencyStructure();
+      CreateScalabilityStructure(GetParam().name)->DependencyStructure();
 
   for (int dt = 0; dt < structure.num_decode_targets; ++dt) {
     for (int64_t frame_id = 0; frame_id < num_frames; ++frame_id) {
@@ -237,7 +226,7 @@ TEST_P(ScalabilityStructureTest, NoFrameDependsOnDiscardableOrNotPresent) {
 
 TEST_P(ScalabilityStructureTest, NoFrameDependsThroughSwitchIndication) {
   FrameDependencyStructure structure =
-      GetParam().svc_factory()->DependencyStructure();
+      CreateScalabilityStructure(GetParam().name)->DependencyStructure();
   std::vector<GenericFrameInfo> frame_infos = GenerateAllFrames();
   int64_t num_frames = frame_infos.size();
   std::vector<std::set<int64_t>> full_deps(num_frames);
@@ -288,29 +277,16 @@ TEST_P(ScalabilityStructureTest, NoFrameDependsThroughSwitchIndication) {
 INSTANTIATE_TEST_SUITE_P(
     Svc,
     ScalabilityStructureTest,
-    Values(SvcTestParam{"L1T2", std::make_unique<ScalabilityStructureL1T2>,
-                        /*num_temporal_units=*/4},
-           SvcTestParam{"L1T3", std::make_unique<ScalabilityStructureL1T3>,
-                        /*num_temporal_units=*/8},
-           SvcTestParam{"L2T1", std::make_unique<ScalabilityStructureL2T1>,
-                        /*num_temporal_units=*/3},
-           SvcTestParam{"L2T1Key",
-                        std::make_unique<ScalabilityStructureL2T1Key>,
-                        /*num_temporal_units=*/3},
-           SvcTestParam{"L3T1", std::make_unique<ScalabilityStructureL3T1>,
-                        /*num_temporal_units=*/3},
-           SvcTestParam{"L3T3", std::make_unique<ScalabilityStructureL3T3>,
-                        /*num_temporal_units=*/8},
-           SvcTestParam{"S2T1", std::make_unique<ScalabilityStructureS2T1>,
-                        /*num_temporal_units=*/3},
-           SvcTestParam{"L2T2", std::make_unique<ScalabilityStructureL2T2>,
-                        /*num_temporal_units=*/4},
-           SvcTestParam{"L2T2Key",
-                        std::make_unique<ScalabilityStructureL2T2Key>,
-                        /*num_temporal_units=*/4},
-           SvcTestParam{"L2T2KeyShift",
-                        std::make_unique<ScalabilityStructureL2T2KeyShift>,
-                        /*num_temporal_units=*/4}),
+    Values(SvcTestParam{"L1T2", /*num_temporal_units=*/4},
+           SvcTestParam{"L1T3", /*num_temporal_units=*/8},
+           SvcTestParam{"L2T1", /*num_temporal_units=*/3},
+           SvcTestParam{"L2T1_KEY", /*num_temporal_units=*/3},
+           SvcTestParam{"L3T1", /*num_temporal_units=*/3},
+           SvcTestParam{"L3T3", /*num_temporal_units=*/8},
+           SvcTestParam{"S2T1", /*num_temporal_units=*/3},
+           SvcTestParam{"L2T2", /*num_temporal_units=*/4},
+           SvcTestParam{"L2T2_KEY", /*num_temporal_units=*/4},
+           SvcTestParam{"L2T2_KEY_SHIFT", /*num_temporal_units=*/4}),
     [](const testing::TestParamInfo<SvcTestParam>& info) {
       return info.param.name;
     });
