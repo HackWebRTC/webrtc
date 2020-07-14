@@ -707,6 +707,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
     if (payload_name == "VP9") {
       VideoCodecVP9 vp9_settings = VideoEncoder::GetDefaultVp9Settings();
       vp9_settings.numberOfSpatialLayers = num_spatial_layers;
+      vp9_settings.automaticResizeOn = num_spatial_layers <= 1;
       video_encoder_config.encoder_specific_settings =
           new rtc::RefCountedObject<
               VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
@@ -943,12 +944,10 @@ class VideoStreamEncoderTest : public ::testing::Test {
       encoded_image_callback_->OnEncodedImage(image, nullptr, nullptr);
     }
 
-    void InjectEncodedImage(const EncodedImage& image,
-                            const CodecSpecificInfo* codec_specific_info,
-                            const RTPFragmentationHeader* fragmentation) {
+    void SetEncodedImageData(
+        rtc::scoped_refptr<EncodedImageBufferInterface> encoded_image_data) {
       MutexLock lock(&local_mutex_);
-      encoded_image_callback_->OnEncodedImage(image, codec_specific_info,
-                                              fragmentation);
+      encoded_image_data_ = encoded_image_data;
     }
 
     void ExpectNullFrame() {
@@ -1003,6 +1002,27 @@ class VideoStreamEncoderTest : public ::testing::Test {
       if (block_encode)
         EXPECT_TRUE(continue_encode_event_.Wait(kDefaultTimeoutMs));
       return result;
+    }
+
+    std::unique_ptr<RTPFragmentationHeader> EncodeHook(
+        EncodedImage* encoded_image,
+        CodecSpecificInfo* codec_specific) override {
+      {
+        MutexLock lock(&mutex_);
+        codec_specific->codecType = config_.codecType;
+      }
+      MutexLock lock(&local_mutex_);
+      if (encoded_image_data_) {
+        encoded_image->SetEncodedData(encoded_image_data_);
+        if (codec_specific->codecType == kVideoCodecH264) {
+          auto fragmentation = std::make_unique<RTPFragmentationHeader>();
+          fragmentation->VerifyAndAllocateFragmentationHeader(1);
+          fragmentation->fragmentationOffset[0] = 4;
+          fragmentation->fragmentationLength[0] = encoded_image->size() - 4;
+          return fragmentation;
+        }
+      }
+      return nullptr;
     }
 
     int32_t InitEncode(const VideoCodec* config,
@@ -1073,6 +1093,8 @@ class VideoStreamEncoderTest : public ::testing::Test {
     bool quality_scaling_ RTC_GUARDED_BY(local_mutex_) = true;
     int requested_resolution_alignment_ RTC_GUARDED_BY(local_mutex_) = 1;
     bool is_hardware_accelerated_ RTC_GUARDED_BY(local_mutex_) = false;
+    rtc::scoped_refptr<EncodedImageBufferInterface> encoded_image_data_
+        RTC_GUARDED_BY(local_mutex_);
     std::unique_ptr<Vp8FrameBufferController> frame_buffer_controller_
         RTC_GUARDED_BY(local_mutex_);
     absl::optional<bool>
@@ -5404,23 +5426,22 @@ TEST_F(VideoStreamEncoderTest, AdjustsTimestampInternalSource) {
 }
 
 TEST_F(VideoStreamEncoderTest, DoesNotRewriteH264BitstreamWithOptimalSps) {
-  // Configure internal source factory and setup test again.
-  encoder_factory_.SetHasInternalSource(true);
+  // SPS contains VUI with restrictions on the maximum number of reordered
+  // pictures, there is no need to rewrite the bitstream to enable faster
+  // decoding.
   ResetEncoder("H264", 1, 1, 1, false);
 
-  EncodedImage image(optimal_sps, sizeof(optimal_sps), sizeof(optimal_sps));
-  image._frameType = VideoFrameType::kVideoFrameKey;
+  video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
+      DataRate::BitsPerSec(kTargetBitrateBps),
+      DataRate::BitsPerSec(kTargetBitrateBps),
+      DataRate::BitsPerSec(kTargetBitrateBps), 0, 0, 0);
+  video_stream_encoder_->WaitUntilTaskQueueIsIdle();
 
-  CodecSpecificInfo codec_specific_info;
-  codec_specific_info.codecType = kVideoCodecH264;
+  fake_encoder_.SetEncodedImageData(
+      EncodedImageBuffer::Create(optimal_sps, sizeof(optimal_sps)));
 
-  RTPFragmentationHeader fragmentation;
-  fragmentation.VerifyAndAllocateFragmentationHeader(1);
-  fragmentation.fragmentationOffset[0] = 4;
-  fragmentation.fragmentationLength[0] = sizeof(optimal_sps) - 4;
-
-  fake_encoder_.InjectEncodedImage(image, &codec_specific_info, &fragmentation);
-  EXPECT_TRUE(sink_.WaitForFrame(kDefaultTimeoutMs));
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
+  WaitForEncodedFrame(1);
 
   EXPECT_THAT(sink_.GetLastEncodedImageData(),
               testing::ElementsAreArray(optimal_sps));
@@ -5433,27 +5454,25 @@ TEST_F(VideoStreamEncoderTest, DoesNotRewriteH264BitstreamWithOptimalSps) {
 }
 
 TEST_F(VideoStreamEncoderTest, RewritesH264BitstreamWithNonOptimalSps) {
+  // SPS does not contain VUI, the bitstream is will be rewritten with added
+  // VUI with restrictions on the maximum number of reordered pictures to
+  // enable faster decoding.
   uint8_t original_sps[] = {0,    0,    0,    1,    H264::NaluType::kSps,
                             0x00, 0x00, 0x03, 0x03, 0xF4,
                             0x05, 0x03, 0xC7, 0xC0};
-
-  // Configure internal source factory and setup test again.
-  encoder_factory_.SetHasInternalSource(true);
   ResetEncoder("H264", 1, 1, 1, false);
 
-  EncodedImage image(original_sps, sizeof(original_sps), sizeof(original_sps));
-  image._frameType = VideoFrameType::kVideoFrameKey;
+  video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
+      DataRate::BitsPerSec(kTargetBitrateBps),
+      DataRate::BitsPerSec(kTargetBitrateBps),
+      DataRate::BitsPerSec(kTargetBitrateBps), 0, 0, 0);
+  video_stream_encoder_->WaitUntilTaskQueueIsIdle();
 
-  CodecSpecificInfo codec_specific_info;
-  codec_specific_info.codecType = kVideoCodecH264;
+  fake_encoder_.SetEncodedImageData(
+      EncodedImageBuffer::Create(original_sps, sizeof(original_sps)));
 
-  RTPFragmentationHeader fragmentation;
-  fragmentation.VerifyAndAllocateFragmentationHeader(1);
-  fragmentation.fragmentationOffset[0] = 4;
-  fragmentation.fragmentationLength[0] = sizeof(original_sps) - 4;
-
-  fake_encoder_.InjectEncodedImage(image, &codec_specific_info, &fragmentation);
-  EXPECT_TRUE(sink_.WaitForFrame(kDefaultTimeoutMs));
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
+  WaitForEncodedFrame(1);
 
   EXPECT_THAT(sink_.GetLastEncodedImageData(),
               testing::ElementsAreArray(optimal_sps));
