@@ -134,13 +134,6 @@ JsepTransport::JsepTransport(
         std::vector<webrtc::RtpTransportInternal*>{
             datagram_rtp_transport_.get(), default_rtp_transport()});
   }
-
-  if (data_channel_transport_ && sctp_data_channel_transport_) {
-    composite_data_channel_transport_ =
-        std::make_unique<webrtc::CompositeDataChannelTransport>(
-            std::vector<webrtc::DataChannelTransportInterface*>{
-                data_channel_transport_, sctp_data_channel_transport_.get()});
-  }
 }
 
 JsepTransport::~JsepTransport() {
