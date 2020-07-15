@@ -5280,8 +5280,6 @@ absl::optional<std::string> PeerConnection::GetDataMid() const {
       }
       return data_channel_controller_.rtp_data_channel()->content_name();
     case cricket::DCT_SCTP:
-    case cricket::DCT_DATA_CHANNEL_TRANSPORT:
-    case cricket::DCT_DATA_CHANNEL_TRANSPORT_SCTP:
       return sctp_mid_s_;
     default:
       return absl::nullopt;
@@ -6501,8 +6499,6 @@ cricket::VideoChannel* PeerConnection::CreateVideoChannel(
 bool PeerConnection::CreateDataChannel(const std::string& mid) {
   switch (data_channel_type()) {
     case cricket::DCT_SCTP:
-    case cricket::DCT_DATA_CHANNEL_TRANSPORT_SCTP:
-    case cricket::DCT_DATA_CHANNEL_TRANSPORT:
       if (network_thread()->Invoke<bool>(
               RTC_FROM_HERE,
               rtc::Bind(&PeerConnection::SetupDataChannelTransport_n, this,

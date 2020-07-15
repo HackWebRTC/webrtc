@@ -2392,9 +2392,7 @@ bool MediaSessionDescriptionFactory::AddDataContentForOffer(
     StreamParamsVec* current_streams,
     SessionDescription* desc,
     IceCredentialsIterator* ice_credentials) const {
-  bool is_sctp =
-      (session_options.data_channel_type == DCT_SCTP ||
-       session_options.data_channel_type == DCT_DATA_CHANNEL_TRANSPORT_SCTP);
+  bool is_sctp = (session_options.data_channel_type == DCT_SCTP);
   // If the DataChannel type is not specified, use the DataChannel type in
   // the current description.
   if (session_options.data_channel_type == DCT_NONE && current_content) {

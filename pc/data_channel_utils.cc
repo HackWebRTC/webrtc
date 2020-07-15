@@ -48,9 +48,7 @@ void PacketQueue::Swap(PacketQueue* other) {
 }
 
 bool IsSctpLike(cricket::DataChannelType type) {
-  return type == cricket::DCT_SCTP || type == cricket::DCT_MEDIA_TRANSPORT ||
-         type == cricket::DCT_DATA_CHANNEL_TRANSPORT ||
-         type == cricket::DCT_DATA_CHANNEL_TRANSPORT_SCTP;
+  return type == cricket::DCT_SCTP;
 }
 
 }  // namespace webrtc
