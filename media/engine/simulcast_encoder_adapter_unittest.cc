@@ -204,10 +204,6 @@ class MockVideoEncoder : public VideoEncoder {
               (FecControllerOverride * fec_controller_override),
               (override));
 
-  // TODO(nisse): Valid overrides commented out, because the gmock
-  // methods don't use any override declarations, and we want to avoid
-  // warnings from -Winconsistent-missing-override. See
-  // http://crbug.com/428099.
   int32_t InitEncode(const VideoCodec* codecSettings,
                      const VideoEncoder::Settings& settings) override {
     codec_ = *codecSettings;

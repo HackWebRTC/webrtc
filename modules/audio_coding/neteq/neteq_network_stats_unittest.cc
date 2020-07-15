@@ -42,10 +42,6 @@ using ::testing::SetArgPointee;
 
 class MockAudioDecoder final : public AudioDecoder {
  public:
-  // TODO(nisse): Valid overrides commented out, because the gmock
-  // methods don't use any override declarations, and we want to avoid
-  // warnings from -Winconsistent-missing-override. See
-  // http://crbug.com/428099.
   static const int kPacketDuration = 960;  // 48 kHz * 20 ms
 
   MockAudioDecoder(int sample_rate_hz, size_t num_channels)
@@ -83,7 +79,7 @@ class MockAudioDecoder final : public AudioDecoder {
   };
 
   std::vector<ParseResult> ParsePayload(rtc::Buffer&& payload,
-                                        uint32_t timestamp) /* override */ {
+                                        uint32_t timestamp) override {
     std::vector<ParseResult> results;
     if (fec_enabled_) {
       std::unique_ptr<MockFrame> fec_frame(new MockFrame(num_channels_));
@@ -96,23 +92,22 @@ class MockAudioDecoder final : public AudioDecoder {
     return results;
   }
 
-  int PacketDuration(const uint8_t* encoded, size_t encoded_len) const
-  /* override */ {
+  int PacketDuration(const uint8_t* encoded,
+                     size_t encoded_len) const override {
     ADD_FAILURE() << "Since going through ParsePayload, PacketDuration should "
                      "never get called.";
     return kPacketDuration;
   }
 
-  bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const
-  /* override */ {
+  bool PacketHasFec(const uint8_t* encoded, size_t encoded_len) const override {
     ADD_FAILURE() << "Since going through ParsePayload, PacketHasFec should "
                      "never get called.";
     return fec_enabled_;
   }
 
-  int SampleRateHz() const /* override */ { return sample_rate_hz_; }
+  int SampleRateHz() const override { return sample_rate_hz_; }
 
-  size_t Channels() const /* override */ { return num_channels_; }
+  size_t Channels() const override { return num_channels_; }
 
   void set_fec_enabled(bool enable_fec) { fec_enabled_ = enable_fec; }
 
@@ -123,7 +118,7 @@ class MockAudioDecoder final : public AudioDecoder {
                      size_t encoded_len,
                      int sample_rate_hz,
                      int16_t* decoded,
-                     SpeechType* speech_type) /* override */ {
+                     SpeechType* speech_type) override {
     ADD_FAILURE() << "Since going through ParsePayload, DecodeInternal should "
                      "never get called.";
     return -1;
