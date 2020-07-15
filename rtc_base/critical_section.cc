@@ -217,23 +217,4 @@ CritScope::~CritScope() {
   cs_->Leave();
 }
 
-void GlobalLock::Lock() {
-  while (AtomicOps::CompareAndSwap(&lock_acquired_, 0, 1)) {
-    webrtc::YieldCurrentThread();
-  }
-}
-
-void GlobalLock::Unlock() {
-  int old_value = AtomicOps::CompareAndSwap(&lock_acquired_, 1, 0);
-  RTC_DCHECK_EQ(1, old_value) << "Unlock called without calling Lock first";
-}
-
-GlobalLockScope::GlobalLockScope(GlobalLock* lock) : lock_(lock) {
-  lock_->Lock();
-}
-
-GlobalLockScope::~GlobalLockScope() {
-  lock_->Unlock();
-}
-
 }  // namespace rtc

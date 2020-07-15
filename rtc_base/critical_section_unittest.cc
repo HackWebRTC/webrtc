@@ -282,25 +282,6 @@ TEST(AtomicOpsTest, CompareAndSwap) {
   EXPECT_EQ(1, runner.shared_value());
 }
 
-TEST(GlobalLockTest, CanHaveStaticStorageDuration) {
-  static_assert(std::is_trivially_destructible<GlobalLock>::value, "");
-  ABSL_CONST_INIT static GlobalLock global_lock;
-  global_lock.Lock();
-  global_lock.Unlock();
-}
-
-TEST(GlobalLockTest, Basic) {
-  // Create and start lots of threads.
-  LockRunner<GlobalLock> runner;
-  std::vector<std::unique_ptr<Thread>> threads;
-  StartThreads(&threads, &runner);
-  runner.SetExpectedThreadCount(kNumThreads);
-
-  // Release the hounds!
-  EXPECT_TRUE(runner.Run());
-  EXPECT_EQ(0, runner.shared_value());
-}
-
 TEST(CriticalSectionTest, Basic) {
   // Create and start lots of threads.
   LockRunner<CriticalSectionLock> runner;

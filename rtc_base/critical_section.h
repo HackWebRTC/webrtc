@@ -95,29 +95,6 @@ class RTC_SCOPED_LOCKABLE CritScope {
   RTC_DISALLOW_COPY_AND_ASSIGN(CritScope);
 };
 
-// A lock used to protect global variables. Do NOT use for other purposes.
-class RTC_LOCKABLE GlobalLock {
- public:
-  constexpr GlobalLock() : lock_acquired_(0) {}
-
-  void Lock() RTC_EXCLUSIVE_LOCK_FUNCTION();
-  void Unlock() RTC_UNLOCK_FUNCTION();
-
- private:
-  volatile int lock_acquired_;
-};
-
-// GlobalLockScope, for serializing execution through a scope.
-class RTC_SCOPED_LOCKABLE GlobalLockScope {
- public:
-  explicit GlobalLockScope(GlobalLock* lock) RTC_EXCLUSIVE_LOCK_FUNCTION(lock);
-  ~GlobalLockScope() RTC_UNLOCK_FUNCTION();
-
- private:
-  GlobalLock* const lock_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(GlobalLockScope);
-};
-
 }  // namespace rtc
 
 #endif  // RTC_BASE_CRITICAL_SECTION_H_
