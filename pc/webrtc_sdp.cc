@@ -225,7 +225,8 @@ static const char kMediaPortRejected[] = "0";
 static const char kDummyAddress[] = "0.0.0.0";
 static const char kDummyPort[] = "9";
 // RFC 3556
-static const char kApplicationSpecificMaximum[] = "AS";
+static const char kApplicationSpecificBandwidth[] = "AS";
+static const char kTransportSpecificBandwidth[] = "TIAS";
 
 static const char kDefaultSctpmapProtocol[] = "webrtc-datachannel";
 
@@ -1437,9 +1438,14 @@ void BuildMediaDescription(const ContentInfo* content_info,
 
   // RFC 4566
   // b=AS:<bandwidth>
-  if (media_desc->bandwidth() >= 1000) {
-    InitLine(kLineTypeSessionBandwidth, kApplicationSpecificMaximum, &os);
-    os << kSdpDelimiterColon << (media_desc->bandwidth() / 1000);
+  int bandwidth = media_desc->bandwidth();
+  if (bandwidth >= 1000) {
+    std::string bandwidth_type = media_desc->bandwidth_type();
+    InitLine(kLineTypeSessionBandwidth, bandwidth_type, &os);
+    if (bandwidth_type == kApplicationSpecificBandwidth) {
+      bandwidth /= 1000;
+    }
+    os << kSdpDelimiterColon << bandwidth;
     AddLine(os.str(), message);
   }
 
@@ -2983,46 +2989,60 @@ bool ParseContent(const std::string& message,
     // b=* (zero or more bandwidth information lines)
     if (IsLineType(line, kLineTypeSessionBandwidth)) {
       std::string bandwidth;
-      if (HasAttribute(line, kApplicationSpecificMaximum)) {
-        if (!GetValue(line, kApplicationSpecificMaximum, &bandwidth, error)) {
+      std::string bandwidth_type;
+      if (HasAttribute(line, kApplicationSpecificBandwidth)) {
+        if (!GetValue(line, kApplicationSpecificBandwidth, &bandwidth, error)) {
           return false;
-        } else {
-          int b = 0;
-          if (!GetValueFromString(line, bandwidth, &b, error)) {
-            return false;
-          }
-          // TODO(deadbeef): Historically, applications may be setting a value
-          // of -1 to mean "unset any previously set bandwidth limit", even
-          // though ommitting the "b=AS" entirely will do just that. Once we've
-          // transitioned applications to doing the right thing, it would be
-          // better to treat this as a hard error instead of just ignoring it.
-          if (b == -1) {
-            RTC_LOG(LS_WARNING)
-                << "Ignoring \"b=AS:-1\"; will be treated as \"no "
-                   "bandwidth limit\".";
-            continue;
-          }
-          if (b < 0) {
-            return ParseFailed(line, "b=AS value can't be negative.", error);
-          }
-          // We should never use more than the default bandwidth for RTP-based
-          // data channels. Don't allow SDP to set the bandwidth, because
-          // that would give JS the opportunity to "break the Internet".
-          // See: https://code.google.com/p/chromium/issues/detail?id=280726
-          if (media_type == cricket::MEDIA_TYPE_DATA &&
-              cricket::IsRtpProtocol(protocol) &&
-              b > cricket::kDataMaxBandwidth / 1000) {
-            rtc::StringBuilder description;
-            description << "RTP-based data channels may not send more than "
-                        << cricket::kDataMaxBandwidth / 1000 << "kbps.";
-            return ParseFailed(line, description.str(), error);
-          }
-          // Prevent integer overflow.
-          b = std::min(b, INT_MAX / 1000);
-          media_desc->set_bandwidth(b * 1000);
         }
+        bandwidth_type = kApplicationSpecificBandwidth;
+      } else if (HasAttribute(line, kTransportSpecificBandwidth)) {
+        if (!GetValue(line, kTransportSpecificBandwidth, &bandwidth, error)) {
+          return false;
+        }
+        bandwidth_type = kTransportSpecificBandwidth;
+      } else {
+        continue;
       }
-      continue;
+      int b = 0;
+      if (!GetValueFromString(line, bandwidth, &b, error)) {
+        return false;
+      }
+      // TODO(deadbeef): Historically, applications may be setting a value
+      // of -1 to mean "unset any previously set bandwidth limit", even
+      // though ommitting the "b=AS" entirely will do just that. Once we've
+      // transitioned applications to doing the right thing, it would be
+      // better to treat this as a hard error instead of just ignoring it.
+      if (bandwidth_type == kApplicationSpecificBandwidth && b == -1) {
+        RTC_LOG(LS_WARNING) << "Ignoring \"b=AS:-1\"; will be treated as \"no "
+                               "bandwidth limit\".";
+        continue;
+      }
+      if (b < 0) {
+        return ParseFailed(
+            line, "b=" + bandwidth_type + " value can't be negative.", error);
+      }
+      // We should never use more than the default bandwidth for RTP-based
+      // data channels. Don't allow SDP to set the bandwidth, because
+      // that would give JS the opportunity to "break the Internet".
+      // See: https://code.google.com/p/chromium/issues/detail?id=280726
+      // Disallow TIAS since that is not generated for this.
+      if (media_type == cricket::MEDIA_TYPE_DATA &&
+          cricket::IsRtpProtocol(protocol) &&
+          (b > cricket::kDataMaxBandwidth / 1000 ||
+           bandwidth_type == kTransportSpecificBandwidth)) {
+        rtc::StringBuilder description;
+        description << "RTP-based data channels may not send more than "
+                    << cricket::kDataMaxBandwidth / 1000 << "kbps.";
+        return ParseFailed(line, description.str(), error);
+      }
+      // Convert values. Prevent integer overflow.
+      if (bandwidth_type == kApplicationSpecificBandwidth) {
+        b = std::min(b, INT_MAX / 1000) * 1000;
+      } else {
+        b = std::min(b, INT_MAX);
+      }
+      media_desc->set_bandwidth(b);
+      media_desc->set_bandwidth_type(bandwidth_type);
     }
 
     // Parse the media level connection data.
