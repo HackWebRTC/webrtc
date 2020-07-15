@@ -58,7 +58,7 @@ static constexpr size_t kSctpMtu = 1200;
 
 // Set the initial value of the static SCTP Data Engines reference count.
 ABSL_CONST_INIT int g_usrsctp_usage_count = 0;
-ABSL_CONST_INIT rtc::GlobalLock g_usrsctp_lock_;
+ABSL_CONST_INIT webrtc::GlobalMutex g_usrsctp_lock_(absl::kConstInit);
 
 // DataMessageType is used for the SCTP "Payload Protocol Identifier", as
 // defined in http://tools.ietf.org/html/rfc4960#section-14.4
@@ -330,7 +330,7 @@ class SctpTransport::UsrSctpWrapper {
   }
 
   static void IncrementUsrSctpUsageCount() {
-    rtc::GlobalLockScope lock(&g_usrsctp_lock_);
+    webrtc::GlobalMutexLock lock(&g_usrsctp_lock_);
     if (!g_usrsctp_usage_count) {
       InitializeUsrSctp();
     }
@@ -338,7 +338,7 @@ class SctpTransport::UsrSctpWrapper {
   }
 
   static void DecrementUsrSctpUsageCount() {
-    rtc::GlobalLockScope lock(&g_usrsctp_lock_);
+    webrtc::GlobalMutexLock lock(&g_usrsctp_lock_);
     --g_usrsctp_usage_count;
     if (!g_usrsctp_usage_count) {
       UninitializeUsrSctp();

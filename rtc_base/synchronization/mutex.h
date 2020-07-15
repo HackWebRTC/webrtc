@@ -132,7 +132,8 @@ class RTC_SCOPED_LOCKABLE GlobalMutexLock final {
   GlobalMutexLock(const GlobalMutexLock&) = delete;
   GlobalMutexLock& operator=(const GlobalMutexLock&) = delete;
 
-  explicit GlobalMutexLock(GlobalMutex* mutex) RTC_EXCLUSIVE_LOCK_FUNCTION();
+  explicit GlobalMutexLock(GlobalMutex* mutex)
+      RTC_EXCLUSIVE_LOCK_FUNCTION(mutex_);
   ~GlobalMutexLock() RTC_UNLOCK_FUNCTION();
 
  private:

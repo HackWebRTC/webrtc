@@ -27,9 +27,9 @@
 #endif
 
 #include "absl/base/attributes.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/synchronization/mutex.h"
 
 namespace webrtc {
 
@@ -92,7 +92,7 @@ struct SignalHandlerOutputState {
 };
 
 // Global lock to ensure only one thread gets interrupted at a time.
-ABSL_CONST_INIT rtc::GlobalLock g_signal_handler_lock;
+ABSL_CONST_INIT GlobalMutex g_signal_handler_lock(absl::kConstInit);
 // Argument passed to the ThreadSignalHandler() from the sampling thread to the
 // sampled (stopped) thread. This value is set just before sending signal to the
 // thread and reset when handler is done.
@@ -153,7 +153,7 @@ const char* CaptureRawStacktrace(int pid,
   act.sa_flags = SA_RESTART | SA_SIGINFO;
   sigemptyset(&act.sa_mask);
 
-  rtc::GlobalLockScope ls(&g_signal_handler_lock);
+  GlobalMutexLock ls(&g_signal_handler_lock);
   g_signal_handler_output_state = params;
 
   if (sigaction(kSignal, &act, &old_act) != 0)
