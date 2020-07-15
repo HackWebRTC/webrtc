@@ -1026,8 +1026,6 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
 
   jsep_transport->SignalRtcpMuxActive.connect(
       this, &JsepTransportController::UpdateAggregateStates_n);
-  jsep_transport->SignalDataChannelTransportNegotiated.connect(
-      this, &JsepTransportController::OnDataChannelTransportNegotiated_n);
   SetTransportForMid(content_info.name, jsep_transport.get());
 
   jsep_transports_by_name_[content_info.name] = std::move(jsep_transport);
@@ -1206,18 +1204,6 @@ void JsepTransportController::OnTransportStateChanged_n(
                    << transport->component()
                    << " state changed. Check if state is complete.";
   UpdateAggregateStates_n();
-}
-
-void JsepTransportController::OnDataChannelTransportNegotiated_n(
-    cricket::JsepTransport* transport,
-    DataChannelTransportInterface* data_channel_transport) {
-  for (const auto& it : mid_to_transport_) {
-    if (it.second == transport) {
-      config_.transport_observer->OnTransportChanged(
-          it.first, transport->rtp_transport(), transport->RtpDtlsTransport(),
-          data_channel_transport);
-    }
-  }
 }
 
 void JsepTransportController::UpdateAggregateStates_n() {

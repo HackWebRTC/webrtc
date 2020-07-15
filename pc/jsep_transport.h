@@ -234,15 +234,6 @@ class JsepTransport : public sigslot::has_slots<> {
   // handle the signal and update the aggregate transport states.
   sigslot::signal<> SignalRtcpMuxActive;
 
-  // Signals that a data channel transport was negotiated and may be used to
-  // send data.  The first parameter is |this|.  The second parameter is the
-  // transport that was negotiated, or null if negotiation rejected the data
-  // channel transport.  The third parameter (bool) indicates whether the
-  // negotiation was provisional or final.  If true, it is provisional, if
-  // false, it is final.
-  sigslot::signal2<JsepTransport*, webrtc::DataChannelTransportInterface*>
-      SignalDataChannelTransportNegotiated;
-
   // TODO(deadbeef): The methods below are only public for testing. Should make
   // them utility functions or objects so they can be tested independently from
   // this class.

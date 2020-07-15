@@ -346,10 +346,6 @@ class JsepTransportController : public sigslot::has_slots<> {
   void OnTransportStateChanged_n(cricket::IceTransportInternal* transport);
   void OnTransportCandidatePairChanged_n(
       const cricket::CandidatePairChangeEvent& event);
-  void OnDataChannelTransportNegotiated_n(
-      cricket::JsepTransport* transport,
-      DataChannelTransportInterface* data_channel_transport);
-
   void UpdateAggregateStates_n();
 
   void OnRtcpPacketReceived_n(rtc::CopyOnWriteBuffer* packet,
