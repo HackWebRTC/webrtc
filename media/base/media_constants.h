@@ -138,6 +138,7 @@ RTC_EXPORT extern const char kH264FmtpLevelAsymmetryAllowed[];
 RTC_EXPORT extern const char kH264FmtpPacketizationMode[];
 extern const char kH264FmtpSpropParameterSets[];
 extern const char kH264ProfileLevelConstrainedBaseline[];
+extern const char kH264ProfileLevelConstrainedHigh[];
 
 extern const int kDefaultVideoMaxFramerate;
 
