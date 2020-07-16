@@ -1555,7 +1555,6 @@ bool WebRtcVideoChannel::GetStats(VideoMediaInfo* info) {
   FillSendAndReceiveCodecStats(info);
   // TODO(holmer): We should either have rtt available as a metric on
   // VideoSend/ReceiveStreams, or we should remove rtt from VideoSenderInfo.
-  // TODO(nisse): Arrange to get correct RTT also when using MediaTransport.
   webrtc::Call::Stats stats = call_->GetStats();
   if (stats.rtt_ms != -1) {
     for (size_t i = 0; i < info->senders.size(); ++i) {
