@@ -28,8 +28,7 @@ class VideoEncoderFactory {
  public:
   // TODO(magjed): Try to get rid of this struct.
   struct CodecInfo {
-    // |is_hardware_accelerated| is true if the encoders created by this factory
-    // of the given codec will use hardware support.
+    // TODO(nisse): Unused in webrtc, delete as soon as downstream use is fixed.
     bool is_hardware_accelerated = false;
     // |has_internal_source| is true if encoders created by this factory of the
     // given codec will use internal camera sources, meaning that they don't
@@ -73,8 +72,13 @@ class VideoEncoderFactory {
 
   // Returns information about how this format will be encoded. The specified
   // format must be one of the supported formats by this factory.
-  // TODO(magjed): Try to get rid of this method.
-  virtual CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const = 0;
+
+  // TODO(magjed): Try to get rid of this method. Since is_hardware_accelerated
+  // is unused, only factories producing internal source encoders (in itself a
+  // deprecated feature) needs to override this method.
+  virtual CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const {
+    return CodecInfo();
+  }
 
   // Creates a VideoEncoder for the specified format.
   virtual std::unique_ptr<VideoEncoder> CreateVideoEncoder(

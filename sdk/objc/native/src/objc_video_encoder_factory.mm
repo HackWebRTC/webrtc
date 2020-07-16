@@ -174,19 +174,6 @@ std::vector<SdpVideoFormat> ObjCVideoEncoderFactory::GetImplementations() const 
   return GetSupportedFormats();
 }
 
-VideoEncoderFactory::CodecInfo ObjCVideoEncoderFactory::QueryVideoEncoder(
-    const SdpVideoFormat &format) const {
-  // TODO(andersc): This is a hack until we figure out how this should be done properly.
-  NSString *formatName = [NSString stringForStdString:format.name];
-  NSSet *wrappedSoftwareFormats =
-      [NSSet setWithObjects:kRTCVideoCodecVp8Name, kRTCVideoCodecVp9Name, nil];
-
-  CodecInfo codec_info;
-  codec_info.is_hardware_accelerated = ![wrappedSoftwareFormats containsObject:formatName];
-  codec_info.has_internal_source = false;
-  return codec_info;
-}
-
 std::unique_ptr<VideoEncoder> ObjCVideoEncoderFactory::CreateVideoEncoder(
     const SdpVideoFormat &format) {
   RTC_OBJC_TYPE(RTCVideoCodecInfo) *info =

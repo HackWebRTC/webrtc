@@ -41,14 +41,6 @@ std::vector<SdpVideoFormat> InternalEncoderFactory::GetSupportedFormats()
   return SupportedFormats();
 }
 
-VideoEncoderFactory::CodecInfo InternalEncoderFactory::QueryVideoEncoder(
-    const SdpVideoFormat& format) const {
-  CodecInfo info;
-  info.is_hardware_accelerated = false;
-  info.has_internal_source = false;
-  return info;
-}
-
 std::unique_ptr<VideoEncoder> InternalEncoderFactory::CreateVideoEncoder(
     const SdpVideoFormat& format) {
   if (absl::EqualsIgnoreCase(format.name, cricket::kVp8CodecName))

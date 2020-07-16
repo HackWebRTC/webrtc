@@ -44,11 +44,6 @@ std::vector<SdpVideoFormat> FakeVideoEncoderFactory::GetSupportedFormats()
       1, SdpVideoFormat(kFakeCodecFactoryCodecName));
 }
 
-VideoEncoderFactory::CodecInfo FakeVideoEncoderFactory::QueryVideoEncoder(
-    const SdpVideoFormat& format) const {
-  return VideoEncoderFactory::CodecInfo{false, false};
-}
-
 std::unique_ptr<VideoEncoder> FakeVideoEncoderFactory::CreateVideoEncoder(
     const SdpVideoFormat& format) {
   return std::make_unique<test::FakeEncoder>(Clock::GetRealTimeClock());

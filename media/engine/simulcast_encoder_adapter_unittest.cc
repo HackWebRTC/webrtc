@@ -167,8 +167,6 @@ class MockVideoEncoderFactory : public VideoEncoderFactory {
   std::unique_ptr<VideoEncoder> CreateVideoEncoder(
       const SdpVideoFormat& format) override;
 
-  CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override;
-
   const std::vector<MockVideoEncoder*>& encoders() const;
   void SetEncoderNames(const std::vector<const char*>& encoder_names);
   void set_init_encode_return_value(int32_t value);
@@ -355,11 +353,6 @@ void MockVideoEncoderFactory::DestroyVideoEncoder(VideoEncoder* encoder) {
       break;
     }
   }
-}
-
-VideoEncoderFactory::CodecInfo MockVideoEncoderFactory::QueryVideoEncoder(
-    const SdpVideoFormat& format) const {
-  return CodecInfo();
 }
 
 const std::vector<MockVideoEncoder*>& MockVideoEncoderFactory::encoders()

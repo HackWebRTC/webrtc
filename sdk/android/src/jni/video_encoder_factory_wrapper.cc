@@ -101,21 +101,6 @@ std::vector<SdpVideoFormat> VideoEncoderFactoryWrapper::GetImplementations()
   return implementations_;
 }
 
-VideoEncoderFactory::CodecInfo VideoEncoderFactoryWrapper::QueryVideoEncoder(
-    const SdpVideoFormat& format) const {
-  JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  ScopedJavaLocalRef<jobject> j_codec_info =
-      SdpVideoFormatToVideoCodecInfo(jni, format);
-  ScopedJavaLocalRef<jobject> encoder = Java_VideoEncoderFactory_createEncoder(
-      jni, encoder_factory_, j_codec_info);
-
-  CodecInfo codec_info;
-  // Check if this is a wrapped native software encoder implementation.
-  codec_info.is_hardware_accelerated = IsHardwareVideoEncoder(jni, encoder);
-  codec_info.has_internal_source = false;
-  return codec_info;
-}
-
 std::unique_ptr<VideoEncoderFactory::EncoderSelectorInterface>
 VideoEncoderFactoryWrapper::GetEncoderSelector() const {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();

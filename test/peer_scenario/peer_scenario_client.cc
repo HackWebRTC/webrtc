@@ -125,8 +125,6 @@ class FakeVideoEncoderFactory : public VideoEncoderFactory {
   CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override {
     RTC_CHECK_EQ(format.name, "VP8");
     CodecInfo info;
-    info.has_internal_source = false;
-    info.is_hardware_accelerated = false;
     return info;
   }
   std::unique_ptr<VideoEncoder> CreateVideoEncoder(

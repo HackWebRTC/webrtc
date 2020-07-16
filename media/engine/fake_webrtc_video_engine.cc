@@ -244,7 +244,6 @@ FakeWebRtcVideoEncoderFactory::QueryVideoEncoder(
     const webrtc::SdpVideoFormat& format) const {
   webrtc::VideoEncoderFactory::CodecInfo info;
   info.has_internal_source = encoders_have_internal_sources_;
-  info.is_hardware_accelerated = true;
   return info;
 }
 
