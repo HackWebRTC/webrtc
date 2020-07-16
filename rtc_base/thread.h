@@ -82,9 +82,6 @@ class RTC_EXPORT ThreadManager {
   static void Remove(Thread* message_queue);
   static void Clear(MessageHandler* handler);
 
-  // TODO(nisse): Delete alias, as soon as downstream code is updated.
-  static void ProcessAllMessageQueues() { ProcessAllMessageQueuesForTesting(); }
-
   // For testing purposes, for use with a simulated clock.
   // Ensures that all message queues have processed delayed messages
   // up until the current point in time.
