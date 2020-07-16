@@ -170,8 +170,8 @@ rtc_source_set("refcount") {
 
 rtc_library("criticalsection") {
   sources = [
-    "critical_section.cc",
-    "critical_section.h",
+    "deprecated/recursive_critical_section.cc",
+    "deprecated/recursive_critical_section.h",
   ]
   deps = [
     ":atomicops",
@@ -179,7 +179,6 @@ rtc_library("criticalsection") {
     ":macromagic",
     ":platform_thread_types",
     "synchronization:yield",
-    "system:rtc_export",
     "system:unused",
   ]
 }
@@ -1181,7 +1180,7 @@ if (rtc_include_tests) {
       "byte_order_unittest.cc",
       "checks_unittest.cc",
       "copy_on_write_buffer_unittest.cc",
-      "critical_section_unittest.cc",
+      "deprecated/recursive_critical_section_unittest.cc",
       "event_tracer_unittest.cc",
       "event_unittest.cc",
       "logging_unittest.cc",

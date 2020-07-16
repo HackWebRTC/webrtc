@@ -316,7 +316,7 @@ class JsepTransport : public sigslot::has_slots<> {
   const rtc::Thread* const network_thread_;
   // Critical scope for fields accessed off-thread
   // TODO(https://bugs.webrtc.org/10300): Stop doing this.
-  rtc::CriticalSection accessor_lock_;
+  rtc::RecursiveCriticalSection accessor_lock_;
   const std::string mid_;
   // needs-ice-restart bit as described in JSEP.
   bool needs_ice_restart_ RTC_GUARDED_BY(accessor_lock_) = false;

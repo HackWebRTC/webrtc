@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/critical_section.h"
+#include "rtc_base/deprecated/recursive_critical_section.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -124,7 +124,7 @@ class RTC_LOCKABLE CriticalSectionLock {
   void Unlock() RTC_UNLOCK_FUNCTION() { cs_.Leave(); }
 
  private:
-  CriticalSection cs_;
+  RecursiveCriticalSection cs_;
 };
 
 template <class Lock>
@@ -183,7 +183,7 @@ class AtomicOpRunner : public RunnerBase {
   }
 
  private:
-  CriticalSection all_values_crit_;
+  RecursiveCriticalSection all_values_crit_;
   Verifier verifier_;
 };
 
@@ -282,7 +282,7 @@ TEST(AtomicOpsTest, CompareAndSwap) {
   EXPECT_EQ(1, runner.shared_value());
 }
 
-TEST(CriticalSectionTest, Basic) {
+TEST(RecursiveCriticalSectionTest, Basic) {
   // Create and start lots of threads.
   LockRunner<CriticalSectionLock> runner;
   std::vector<std::unique_ptr<Thread>> threads;
@@ -320,7 +320,7 @@ class PerfTestData {
 
  private:
   uint8_t cache_line_barrier_1_[64];
-  CriticalSection lock_;
+  RecursiveCriticalSection lock_;
   uint8_t cache_line_barrier_2_[64];
   int64_t my_counter_ = 0;
   const int expected_count_;
@@ -372,7 +372,7 @@ class PerfTestThread {
 // user    1m20.575s
 // sys     3m48.872s
 // Unit test output:
-// [       OK ] CriticalSectionTest.Performance (294375 ms)
+// [       OK ] RecursiveCriticalSectionTest.Performance (294375 ms)
 //
 // Native mutex implementation using first fit policy (current macOS default):
 // Approximate CPU usage:
@@ -380,7 +380,7 @@ class PerfTestThread {
 // user    0m12.738s
 // sys     0m31.207s
 // Unit test output:
-// [       OK ] CriticalSectionTest.Performance (11444 ms)
+// [       OK ] RecursiveCriticalSectionTest.Performance (11444 ms)
 //
 // Special partially spin lock based implementation:
 // Approximate CPU usage:
@@ -388,10 +388,10 @@ class PerfTestThread {
 // user    0m3.014s
 // sys     0m4.495s
 // Unit test output:
-// [       OK ] CriticalSectionTest.Performance (1885 ms)
+// [       OK ] RecursiveCriticalSectionTest.Performance (1885 ms)
 //
 // The test is disabled by default to avoid unecessarily loading the bots.
-TEST(CriticalSectionTest, DISABLED_Performance) {
+TEST(RecursiveCriticalSectionTest, DISABLED_Performance) {
   PerfTestThread threads[8];
   Event event;
 

@@ -955,7 +955,7 @@ class EventDispatcher : public Dispatcher {
   PhysicalSocketServer* ss_;
   int afd_[2];
   bool fSignaled_;
-  CriticalSection crit_;
+  RecursiveCriticalSection crit_;
 };
 
 #endif  // WEBRTC_POSIX

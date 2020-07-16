@@ -31,7 +31,7 @@
 #include "absl/algorithm/container.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/deprecated/recursive_critical_section.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/null_socket_server.h"
 #include "rtc_base/synchronization/sequence_checker.h"
@@ -88,8 +88,8 @@ class MessageHandlerWithTask final : public MessageHandler {
 
 class RTC_SCOPED_LOCKABLE MarkProcessingCritScope {
  public:
-  MarkProcessingCritScope(const CriticalSection* cs, size_t* processing)
-      RTC_EXCLUSIVE_LOCK_FUNCTION(cs)
+  MarkProcessingCritScope(const RecursiveCriticalSection* cs,
+                          size_t* processing) RTC_EXCLUSIVE_LOCK_FUNCTION(cs)
       : cs_(cs), processing_(processing) {
     cs_->Enter();
     *processing_ += 1;
@@ -101,7 +101,7 @@ class RTC_SCOPED_LOCKABLE MarkProcessingCritScope {
   }
 
  private:
-  const CriticalSection* const cs_;
+  const RecursiveCriticalSection* const cs_;
   size_t* processing_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(MarkProcessingCritScope);

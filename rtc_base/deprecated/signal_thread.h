@@ -15,7 +15,7 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/deprecated/recursive_critical_section.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/message_handler.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
@@ -149,7 +149,7 @@ class DEPRECATED_SignalThread : public sigslot::has_slots<>,
 
   Thread* main_;
   Worker worker_;
-  CriticalSection cs_;
+  RecursiveCriticalSection cs_;
   State state_ RTC_GUARDED_BY(cs_);
   int refcount_ RTC_GUARDED_BY(cs_);
   bool destroy_called_ RTC_GUARDED_BY(cs_) = false;

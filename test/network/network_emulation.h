@@ -168,7 +168,7 @@ class EmulatedEndpointImpl : public EmulatedEndpoint {
   uint16_t NextPort() RTC_EXCLUSIVE_LOCKS_REQUIRED(receiver_lock_);
   void UpdateReceiveStats(const EmulatedIpPacket& packet);
 
-  rtc::CriticalSection receiver_lock_;
+  rtc::RecursiveCriticalSection receiver_lock_;
   rtc::ThreadChecker enabled_state_checker_;
 
   uint64_t id_;

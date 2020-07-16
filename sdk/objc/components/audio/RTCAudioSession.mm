@@ -16,7 +16,7 @@
 
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/deprecated/recursive_critical_section.h"
 
 #import "RTCAudioSessionConfiguration.h"
 #import "base/RTCLogging.h"
@@ -35,7 +35,7 @@ NSString * const kRTCAudioSessionOutputVolumeSelector = @"outputVolume";
 // TODO(tkchin): Consider more granular locking. We're not expecting a lot of
 // lock contention so coarse locks should be fine for now.
 @implementation RTC_OBJC_TYPE (RTCAudioSession) {
-  rtc::CriticalSection _crit;
+  rtc::RecursiveCriticalSection _crit;
   AVAudioSession *_session;
   volatile int _activationCount;
   volatile int _lockRecursionCount;
