@@ -941,6 +941,8 @@ def CommonChecks(input_api, output_api):
       input_api, output_api, non_third_party_sources))
   results.extend(CheckBannedAbslMakeUnique(
       input_api, output_api, non_third_party_sources))
+  results.extend(CheckObjcApiSymbols(
+      input_api, output_api, non_third_party_sources))
   return results
 
 
@@ -1014,6 +1016,35 @@ def CheckBannedAbslMakeUnique(input_api, output_api, source_file_filter):
     return [output_api.PresubmitError(
         'Please use std::make_unique instead of absl::make_unique.\n'
         'Affected files:',
+        files)]
+  return []
+
+def CheckObjcApiSymbols(input_api, output_api, source_file_filter):
+  rtc_objc_export = re.compile(r'RTC_OBJC_EXPORT(.|\n){26}',
+                               re.MULTILINE | re.DOTALL)
+  file_filter = lambda f: (f.LocalPath().endswith(('.h'))
+                           and source_file_filter(f))
+
+  files = []
+  file_filter = lambda x: (input_api.FilterSourceFile(x)
+                           and source_file_filter(x))
+  for f in input_api.AffectedSourceFiles(file_filter):
+    if not f.LocalPath().endswith('.h') or not 'sdk/objc' in f.LocalPath():
+      continue
+    contents = input_api.ReadFile(f)
+    for match in rtc_objc_export.finditer(contents):
+      export_block = match.group(0)
+      if 'RTC_OBJC_TYPE' not in export_block:
+        files.append(f.LocalPath())
+
+  if len(files):
+    return [output_api.PresubmitError(
+        'RTC_OBJC_EXPORT types must be wrapped into an RTC_OBJC_TYPE() ' +
+        'macro.\n\n' +
+        'For example:\n' +
+        'RTC_OBJC_EXPORT @protocol RTC_OBJC_TYPE(RtcFoo)\n\n' +
+        'RTC_OBJC_EXPORT @interface RTC_OBJC_TYPE(RtcFoo)\n\n' +
+        'Please fix the following files:',
         files)]
   return []
 
