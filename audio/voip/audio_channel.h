@@ -22,7 +22,6 @@
 #include "audio/voip/audio_ingress.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
 #include "modules/utility/include/process_thread.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/ref_count.h"
 
 namespace webrtc {

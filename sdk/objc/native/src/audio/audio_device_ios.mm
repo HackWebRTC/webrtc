@@ -21,7 +21,6 @@
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"

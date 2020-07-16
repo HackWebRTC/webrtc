@@ -19,7 +19,6 @@
 #include "audio/null_audio_poller.h"
 #include "call/audio_state.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/ref_count.h"
 #include "rtc_base/thread_checker.h"
 

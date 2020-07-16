@@ -19,7 +19,6 @@
 #include "api/transport/network_types.h"
 #include "modules/include/module_common_types_public.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/network_route.h"
 #include "rtc_base/thread_annotations.h"

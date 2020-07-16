@@ -32,7 +32,6 @@ extern "C" {
 #include "common_video/include/video_frame_buffer.h"
 #include "modules/video_coding/codecs/h264/h264_color_space.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/keep_ref_until_done.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/field_trial.h"

@@ -25,7 +25,6 @@
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "modules/utility/include/process_thread.h"
 #include "modules/video_coding/encoded_frame.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "system_wrappers/include/clock.h"
 #include "test/fake_decoder.h"

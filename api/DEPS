@@ -258,7 +258,6 @@ specific_include_rules = {
   ],
 
   "simulated_network\.h": [
-    "+rtc_base/critical_section.h",
     "+rtc_base/random.h",
     "+rtc_base/thread_annotations.h",
   ],

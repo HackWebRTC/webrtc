@@ -16,7 +16,6 @@
 
 #include "api/test/network_emulation_manager.h"
 #include "api/test/time_controller.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/ip_address.h"
 #include "rtc_base/network.h"
 #include "rtc_base/socket_server.h"

@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "api/video/encoded_image.h"
-#include "rtc_base/critical_section.h"
 #include "test/pc/e2e/analyzer/video/encoded_image_data_injector.h"
 
 namespace webrtc {

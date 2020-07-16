@@ -16,7 +16,6 @@
 #include "api/video/encoded_image.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/timing.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/thread_checker.h"
 #include "system_wrappers/include/clock.h"
 

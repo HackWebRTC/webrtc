@@ -38,7 +38,6 @@
 #include "pc/srtp_transport.h"
 #include "rtc_base/async_invoker.h"
 #include "rtc_base/async_udp_socket.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/network.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/unique_id_generator.h"

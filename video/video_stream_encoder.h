@@ -34,7 +34,6 @@
 #include "call/adaptation/video_source_restrictions.h"
 #include "call/adaptation/video_stream_input_state_provider.h"
 #include "modules/video_coding/utility/frame_dropper.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/numerics/exp_filter.h"

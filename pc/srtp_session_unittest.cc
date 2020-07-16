@@ -17,7 +17,6 @@
 #include "media/base/fake_rtp.h"
 #include "pc/test/srtp_test_util.h"
 #include "rtc_base/byte_order.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/ssl_stream_adapter.h"  // For rtc::SRTP_*
 #include "system_wrappers/include/metrics.h"
 #include "test/gmock.h"

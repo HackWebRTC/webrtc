@@ -42,7 +42,6 @@ static const int kMaxLogLineSize = 1024 - 60;
 
 #include "absl/base/attributes.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/platform_thread_types.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/string_utils.h"
