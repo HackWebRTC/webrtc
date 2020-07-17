@@ -21,7 +21,6 @@
 #include "api/scoped_refptr.h"
 #include "api/video/color_space.h"
 #include "api/video/video_codec_constants.h"
-#include "api/video/video_codec_type.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_frame_type.h"
 #include "api/video/video_rotation.h"
