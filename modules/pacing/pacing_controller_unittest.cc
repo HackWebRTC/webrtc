@@ -20,6 +20,7 @@
 #include "api/units/data_rate.h"
 #include "modules/pacing/packet_router.h"
 #include "system_wrappers/include/clock.h"
+#include "test/explicit_key_value_config.h"
 #include "test/field_trial.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -169,6 +170,7 @@ class PacingControllerProbing : public PacingController::PacketSender {
     if (packet->packet_type() != RtpPacketMediaType::kPadding) {
       ++packets_sent_;
     }
+    last_pacing_info_ = pacing_info;
   }
 
   std::vector<std::unique_ptr<RtpPacketToSend>> FetchFec() override {
@@ -194,12 +196,14 @@ class PacingControllerProbing : public PacingController::PacketSender {
   }
 
   int packets_sent() const { return packets_sent_; }
-
   int padding_sent() const { return padding_sent_; }
+  int total_packets_sent() const { return packets_sent_ + padding_sent_; }
+  PacedPacketInfo last_pacing_info() const { return last_pacing_info_; }
 
  private:
   int packets_sent_;
   int padding_sent_;
+  PacedPacketInfo last_pacing_info_;
 };
 
 class PacingControllerTest
@@ -1443,63 +1447,119 @@ TEST_P(PacingControllerTest, ProbingWithInsertedPackets) {
 TEST_P(PacingControllerTest, SkipsProbesWhenProcessIntervalTooLarge) {
   const size_t kPacketSize = 1200;
   const int kInitialBitrateBps = 300000;
-  uint32_t ssrc = 12346;
-  uint16_t sequence_number = 1234;
+  const uint32_t ssrc = 12346;
+  const int kProbeClusterId = 3;
 
-  PacingControllerProbing packet_sender;
-  pacer_ = std::make_unique<PacingController>(&clock_, &packet_sender, nullptr,
-                                              nullptr, GetParam());
-  pacer_->SetPacingRates(
-      DataRate::BitsPerSec(kInitialBitrateBps * kPaceMultiplier),
-      DataRate::Zero());
+  // Test with both legacy and new probe discard modes.
+  // TODO(bugs.webrtc.org/11780): Clean up when legacy is gone.
+  for (bool abort_delayed_probes : {false, true}) {
+    uint16_t sequence_number = 1234;
 
-  for (int i = 0; i < 10; ++i) {
+    PacingControllerProbing packet_sender;
+
+    const test::ExplicitKeyValueConfig trials(
+        abort_delayed_probes ? "WebRTC-Bwe-ProbingBehavior/"
+                               "abort_delayed_probes:1,max_probe_delay:2ms/"
+                             : "WebRTC-Bwe-ProbingBehavior/"
+                               "abort_delayed_probes:0,max_probe_delay:2ms/");
+    pacer_ = std::make_unique<PacingController>(&clock_, &packet_sender,
+                                                nullptr, &trials, GetParam());
+    pacer_->SetPacingRates(
+        DataRate::BitsPerSec(kInitialBitrateBps * kPaceMultiplier),
+        DataRate::BitsPerSec(kInitialBitrateBps));
+
+    for (int i = 0; i < 10; ++i) {
+      Send(RtpPacketMediaType::kVideo, ssrc, sequence_number++,
+           clock_.TimeInMilliseconds(), kPacketSize);
+    }
+    while (pacer_->QueueSizePackets() > 0) {
+      clock_.AdvanceTime(TimeUntilNextProcess());
+      pacer_->ProcessPackets();
+    }
+
+    // Probe at a very high rate.
+    pacer_->CreateProbeCluster(DataRate::KilobitsPerSec(10000),  // 10 Mbps.
+                               /*cluster_id=*/kProbeClusterId);
+    // We need one packet to start the probe.
     Send(RtpPacketMediaType::kVideo, ssrc, sequence_number++,
          clock_.TimeInMilliseconds(), kPacketSize);
-  }
-  while (pacer_->QueueSizePackets() > 0) {
+    const int packets_sent_before_probe = packet_sender.packets_sent();
     clock_.AdvanceTime(TimeUntilNextProcess());
     pacer_->ProcessPackets();
+    EXPECT_EQ(packet_sender.packets_sent(), packets_sent_before_probe + 1);
+
+    // Figure out how long between probe packets.
+    Timestamp start_time = clock_.CurrentTime();
+    clock_.AdvanceTime(TimeUntilNextProcess());
+    TimeDelta time_between_probes = clock_.CurrentTime() - start_time;
+    // Advance that distance again + 1ms.
+    clock_.AdvanceTime(time_between_probes);
+
+    // Send second probe packet.
+    Send(RtpPacketMediaType::kVideo, ssrc, sequence_number++,
+         clock_.TimeInMilliseconds(), kPacketSize);
+    pacer_->ProcessPackets();
+    EXPECT_EQ(packet_sender.packets_sent(), packets_sent_before_probe + 2);
+    PacedPacketInfo last_pacing_info = packet_sender.last_pacing_info();
+    EXPECT_EQ(last_pacing_info.probe_cluster_id, kProbeClusterId);
+
+    // We're exactly where we should be for the next probe.
+    const Timestamp probe_time = clock_.CurrentTime();
+    EXPECT_EQ(pacer_->NextSendTime(), clock_.CurrentTime());
+
+    BitrateProberConfig probing_config(&trials);
+    EXPECT_GT(probing_config.max_probe_delay.Get(), TimeDelta::Zero());
+    // Advance to within max probe delay, should still return same target.
+    clock_.AdvanceTime(probing_config.max_probe_delay.Get());
+    EXPECT_EQ(pacer_->NextSendTime(), probe_time);
+
+    // Too high probe delay, drop it!
+    clock_.AdvanceTime(TimeDelta::Micros(1));
+
+    int packets_sent_before_timeout = packet_sender.total_packets_sent();
+    if (abort_delayed_probes) {
+      // Expected next process time is unchanged, but calling should not
+      // generate new packets.
+      EXPECT_EQ(pacer_->NextSendTime(), probe_time);
+      pacer_->ProcessPackets();
+      EXPECT_EQ(packet_sender.total_packets_sent(),
+                packets_sent_before_timeout);
+
+      // Next packet sent is not part of probe.
+      if (PeriodicProcess()) {
+        do {
+          AdvanceTimeAndProcess();
+        } while (packet_sender.total_packets_sent() ==
+                 packets_sent_before_timeout);
+      } else {
+        AdvanceTimeAndProcess();
+      }
+      const int expected_probe_id = PacedPacketInfo::kNotAProbe;
+      EXPECT_EQ(packet_sender.last_pacing_info().probe_cluster_id,
+                expected_probe_id);
+    } else {
+      // Legacy behaviour, probe "aborted" so send time moved back. Next call to
+      // ProcessPackets() still results in packets being marked as part of probe
+      // cluster.
+      EXPECT_GT(pacer_->NextSendTime(), probe_time);
+      AdvanceTimeAndProcess();
+      EXPECT_GT(packet_sender.total_packets_sent(),
+                packets_sent_before_timeout);
+      const int expected_probe_id = last_pacing_info.probe_cluster_id;
+      EXPECT_EQ(packet_sender.last_pacing_info().probe_cluster_id,
+                expected_probe_id);
+
+      // Time between sent packets keeps being too large, but we still mark the
+      // packets as being part of the cluster.
+      Timestamp a = clock_.CurrentTime();
+      AdvanceTimeAndProcess();
+      EXPECT_GT(packet_sender.total_packets_sent(),
+                packets_sent_before_timeout);
+      EXPECT_EQ(packet_sender.last_pacing_info().probe_cluster_id,
+                expected_probe_id);
+      EXPECT_GT(clock_.CurrentTime() - a, time_between_probes);
+    }
   }
-
-  // Probe at a very high rate.
-  pacer_->CreateProbeCluster(DataRate::KilobitsPerSec(10000),  // 10 Mbps.
-                             /*cluster_id=*/3);
-  // We need one packet to start the probe.
-  Send(RtpPacketMediaType::kVideo, ssrc, sequence_number++,
-       clock_.TimeInMilliseconds(), kPacketSize);
-  const int packets_sent_before_probe = packet_sender.packets_sent();
-  clock_.AdvanceTime(TimeUntilNextProcess());
-  pacer_->ProcessPackets();
-  EXPECT_EQ(packet_sender.packets_sent(), packets_sent_before_probe + 1);
-
-  // Figure out how long between probe packets.
-  Timestamp start_time = clock_.CurrentTime();
-  clock_.AdvanceTime(TimeUntilNextProcess());
-  TimeDelta time_between_probes = clock_.CurrentTime() - start_time;
-  // Advance that distance again + 1ms.
-  clock_.AdvanceTime(time_between_probes);
-
-  // Send second probe packet.
-  Send(RtpPacketMediaType::kVideo, ssrc, sequence_number++,
-       clock_.TimeInMilliseconds(), kPacketSize);
-  pacer_->ProcessPackets();
-  EXPECT_EQ(packet_sender.packets_sent(), packets_sent_before_probe + 2);
-
-  // We're exactly where we should be for the next probe.
-  const Timestamp probe_time = clock_.CurrentTime();
-  EXPECT_EQ(pacer_->NextSendTime(), clock_.CurrentTime());
-
-  FieldTrialBasedConfig field_trial_config;
-  BitrateProberConfig probing_config(&field_trial_config);
-  EXPECT_GT(probing_config.max_probe_delay.Get(), TimeDelta::Zero());
-  // Advance to within max probe delay, should still return same target.
-  clock_.AdvanceTime(probing_config.max_probe_delay.Get());
-  EXPECT_EQ(pacer_->NextSendTime(), probe_time);
-
-  // Too high probe delay, drop it!
-  clock_.AdvanceTime(TimeDelta::Micros(1));
-  EXPECT_GT(pacer_->NextSendTime(), probe_time);
 }
 
 TEST_P(PacingControllerTest, ProbingWithPaddingSupport) {
