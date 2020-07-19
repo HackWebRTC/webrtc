@@ -93,6 +93,7 @@ if (rtc_include_tests) {
     deps = [
       ":interval_budget",
       ":pacing",
+      "../../api/transport:network_control",
       "../../api/units:data_rate",
       "../../api/units:time_delta",
       "../../modules/utility:mock_process_thread",

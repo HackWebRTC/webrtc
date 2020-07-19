@@ -39,6 +39,11 @@ constexpr TimeDelta kMaxElapsedTime = TimeDelta::Seconds(2);
 // time. Applies only to periodic mode.
 constexpr TimeDelta kMaxProcessingInterval = TimeDelta::Millis(30);
 
+// Allow probes to be processed slightly ahead of inteded send time. Currently
+// set to 1ms as this is intended to allow times be rounded down to the nearest
+// millisecond.
+constexpr TimeDelta kMaxEarlyProbeProcessing = TimeDelta::Millis(1);
+
 constexpr int kFirstPriority = 0;
 
 bool IsDisabled(const WebRtcKeyValueConfig& field_trials,
@@ -306,7 +311,9 @@ void PacingController::EnqueuePacketInternal(
 }
 
 TimeDelta PacingController::UpdateTimeAndGetElapsed(Timestamp now) {
-  if (last_process_time_.IsMinusInfinity()) {
+  // If no previous processing, or last process was "in the future" because of
+  // early probe processing, then there is no elapsed time to add budget for.
+  if (last_process_time_.IsMinusInfinity() || now < last_process_time_) {
     return TimeDelta::Zero();
   }
   RTC_DCHECK_GE(now, last_process_time_);
@@ -400,10 +407,13 @@ void PacingController::ProcessPackets() {
   Timestamp target_send_time = now;
   if (mode_ == ProcessMode::kDynamic) {
     target_send_time = NextSendTime();
+    TimeDelta early_execute_margin =
+        prober_.is_probing() ? kMaxEarlyProbeProcessing : TimeDelta::Zero();
     if (target_send_time.IsMinusInfinity()) {
       target_send_time = now;
-    } else if (now < target_send_time) {
+    } else if (now < target_send_time - early_execute_margin) {
       // We are too early, but if queue is empty still allow draining some debt.
+      // Probing is allowed to be sent up to kMinSleepTime early.
       TimeDelta elapsed_time = UpdateTimeAndGetElapsed(now);
       UpdateBudgetWithElapsedTime(elapsed_time);
       return;
@@ -582,7 +592,7 @@ void PacingController::ProcessPackets() {
 
     // If we are currently probing, we need to stop the send loop when we have
     // reached the send target.
-    if (is_probing && data_sent > recommended_probe_size) {
+    if (is_probing && data_sent >= recommended_probe_size) {
       break;
     }
 
@@ -703,8 +713,9 @@ void PacingController::OnPaddingSent(DataSize data_sent) {
   if (data_sent > DataSize::Zero()) {
     UpdateBudgetWithSentData(data_sent);
   }
-  last_send_time_ = CurrentTime();
-  last_process_time_ = CurrentTime();
+  Timestamp now = CurrentTime();
+  last_send_time_ = now;
+  last_process_time_ = now;
 }
 
 void PacingController::UpdateBudgetWithElapsedTime(TimeDelta delta) {
