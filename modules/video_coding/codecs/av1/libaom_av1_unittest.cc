@@ -322,7 +322,7 @@ INSTANTIATE_TEST_SUITE_P(
                         /*configured_bitrates=*/
                         {{{0, 0}, DataRate::KilobitsPerSec(70)},
                          {{0, 1}, DataRate::KilobitsPerSec(30)},
-                         {{1, 0}, DataRate::KilobitsPerSec(140)},
+                         {{1, 0}, DataRate::KilobitsPerSec(110)},
                          {{1, 1}, DataRate::KilobitsPerSec(80)}}}),
     [](const testing::TestParamInfo<SvcTestParam>& info) {
       return info.param.name;

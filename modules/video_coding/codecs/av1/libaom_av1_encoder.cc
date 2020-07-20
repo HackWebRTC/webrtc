@@ -190,9 +190,7 @@ int LibaomAv1Encoder::InitEncode(const VideoCodec* codec_settings,
   cfg_.rc_min_quantizer = kQpMin;
   cfg_.rc_max_quantizer = encoder_settings_.qpMax;
   cfg_.g_usage = kUsageProfile;
-  if (SvcEnabled()) {
-    cfg_.g_error_resilient = 1;
-  }
+  cfg_.g_error_resilient = 0;
   // Low-latency settings.
   cfg_.rc_end_usage = AOM_CBR;          // Constant Bit Rate (CBR) mode
   cfg_.g_pass = AOM_RC_ONE_PASS;        // One-pass rate control
