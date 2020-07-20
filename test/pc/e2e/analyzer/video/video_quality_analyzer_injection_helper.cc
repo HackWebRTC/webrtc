@@ -184,11 +184,18 @@ VideoQualityAnalyzerInjectionHelper::MaybeCreateVideoWriter(
 
 void VideoQualityAnalyzerInjectionHelper::OnFrame(absl::string_view peer_name,
                                                   const VideoFrame& frame) {
-  if (IsDummyFrameBuffer(frame.video_frame_buffer()->ToI420())) {
+  rtc::scoped_refptr<I420BufferInterface> i420_buffer =
+      frame.video_frame_buffer()->ToI420();
+  if (IsDummyFrameBuffer(i420_buffer)) {
     // This is dummy frame, so we  don't need to process it further.
     return;
   }
-  analyzer_->OnFrameRendered(peer_name, frame);
+  // Copy entire video frame including video buffer to ensure that analyzer
+  // won't hold any WebRTC internal buffers.
+  VideoFrame frame_copy = frame;
+  frame_copy.set_video_frame_buffer(I420Buffer::Copy(*i420_buffer));
+  analyzer_->OnFrameRendered(peer_name, frame_copy);
+
   std::string stream_label = analyzer_->GetStreamLabel(frame.id());
   std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>* sinks =
       PopulateSinks(stream_label);

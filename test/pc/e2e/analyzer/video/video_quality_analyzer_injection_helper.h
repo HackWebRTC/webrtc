@@ -107,6 +107,8 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
   test::VideoFrameWriter* MaybeCreateVideoWriter(
       absl::optional<std::string> file_name,
       const PeerConnectionE2EQualityTestFixture::VideoConfig& config);
+  // Creates a deep copy of the frame and passes it to the video analyzer, while
+  // passing real frame to the sinks
   void OnFrame(absl::string_view peer_name, const VideoFrame& frame);
   std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>*
   PopulateSinks(const std::string& stream_label);

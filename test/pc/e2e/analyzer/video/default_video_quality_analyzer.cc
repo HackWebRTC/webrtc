@@ -390,11 +390,11 @@ void DefaultVideoQualityAnalyzer::OnFrameDecoded(
 
 void DefaultVideoQualityAnalyzer::OnFrameRendered(
     absl::string_view peer_name,
-    const webrtc::VideoFrame& raw_frame) {
+    const webrtc::VideoFrame& frame) {
   MutexLock lock(&lock_);
   size_t peer_index = peers_->index(peer_name);
 
-  auto frame_it = captured_frames_in_flight_.find(raw_frame.id());
+  auto frame_it = captured_frames_in_flight_.find(frame.id());
   if (frame_it == captured_frames_in_flight_.end() ||
       frame_it->second.HasRenderedTime(peer_index)) {
     // It means this frame was rendered before, so we can skip it. It may happen
@@ -404,12 +404,6 @@ void DefaultVideoQualityAnalyzer::OnFrameRendered(
     // from the same frame it has relayed right before for the first stream.
     return;
   }
-
-  // Copy entire video frame including video buffer to ensure that analyzer
-  // won't hold any WebRTC internal buffers.
-  VideoFrame frame = raw_frame;
-  frame.set_video_frame_buffer(
-      I420Buffer::Copy(*raw_frame.video_frame_buffer()->ToI420()));
 
   // Find corresponding captured frame.
   FrameInFlight* frame_in_flight = &frame_it->second;
