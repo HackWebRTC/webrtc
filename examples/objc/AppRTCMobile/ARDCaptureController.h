@@ -18,7 +18,9 @@
 - (instancetype)initWithCapturer:(RTC_OBJC_TYPE(RTCCameraVideoCapturer) *)capturer
                         settings:(ARDSettingsModel *)settings;
 - (void)startCapture;
+- (void)startCapture:(void (^)(NSError *))completion;
 - (void)stopCapture;
 - (void)switchCamera;
+- (void)switchCamera:(void (^)(NSError *))completion;
 
 @end

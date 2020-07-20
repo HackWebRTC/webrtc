@@ -19,10 +19,12 @@
 @protocol ARDVideoCallViewDelegate <NSObject>
 
 // Called when the camera switch button is pressed.
-- (void)videoCallViewDidSwitchCamera:(ARDVideoCallView *)view;
+- (void)videoCallView:(ARDVideoCallView *)view
+    shouldSwitchCameraWithCompletion:(void (^)(NSError *))completion;
 
 // Called when the route change button is pressed.
-- (void)videoCallViewDidChangeRoute:(ARDVideoCallView *)view;
+- (void)videoCallView:(ARDVideoCallView *)view
+    shouldChangeRouteWithCompletion:(void (^)(void))completion;
 
 // Called when the hangup button is pressed.
 - (void)videoCallViewDidHangup:(ARDVideoCallView *)view;

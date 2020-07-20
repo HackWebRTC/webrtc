@@ -63,10 +63,11 @@ static CGFloat const kStatusBarHeight = 20;
     [self addSubview:_statsView];
 
     _routeChangeButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    _routeChangeButton.backgroundColor = [UIColor whiteColor];
+    _routeChangeButton.backgroundColor = [UIColor grayColor];
     _routeChangeButton.layer.cornerRadius = kButtonSize / 2;
     _routeChangeButton.layer.masksToBounds = YES;
-    UIImage *image = [UIImage imageNamed:@"ic_surround_sound_black_24dp.png"];
+    UIImage *image = [UIImage imageForName:@"ic_surround_sound_black_24dp.png"
+                                     color:[UIColor whiteColor]];
     [_routeChangeButton setImage:image forState:UIControlStateNormal];
     [_routeChangeButton addTarget:self
                            action:@selector(onRouteChange:)
@@ -75,10 +76,10 @@ static CGFloat const kStatusBarHeight = 20;
 
     // TODO(tkchin): don't display this if we can't actually do camera switch.
     _cameraSwitchButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    _cameraSwitchButton.backgroundColor = [UIColor whiteColor];
+    _cameraSwitchButton.backgroundColor = [UIColor grayColor];
     _cameraSwitchButton.layer.cornerRadius = kButtonSize / 2;
     _cameraSwitchButton.layer.masksToBounds = YES;
-    image = [UIImage imageNamed:@"ic_switch_video_black_24dp.png"];
+    image = [UIImage imageForName:@"ic_switch_video_black_24dp.png" color:[UIColor whiteColor]];
     [_cameraSwitchButton setImage:image forState:UIControlStateNormal];
     [_cameraSwitchButton addTarget:self
                       action:@selector(onCameraSwitch:)
@@ -187,12 +188,28 @@ static CGFloat const kStatusBarHeight = 20;
 
 #pragma mark - Private
 
-- (void)onCameraSwitch:(id)sender {
-  [_delegate videoCallViewDidSwitchCamera:self];
+- (void)onCameraSwitch:(UIButton *)sender {
+  sender.enabled = false;
+  [_delegate videoCallView:self
+      shouldSwitchCameraWithCompletion:^(NSError *error) {
+        dispatch_async(dispatch_get_main_queue(), ^(void) {
+          sender.enabled = true;
+        });
+      }];
 }
 
-- (void)onRouteChange:(id)sender {
-  [_delegate videoCallViewDidChangeRoute:self];
+- (void)onRouteChange:(UIButton *)sender {
+  sender.enabled = false;
+  __weak ARDVideoCallView *weakSelf = self;
+  [_delegate videoCallView:self
+      shouldChangeRouteWithCompletion:^(void) {
+        ARDVideoCallView *strongSelf = weakSelf;
+        if (strongSelf) {
+          dispatch_async(dispatch_get_main_queue(), ^(void) {
+            sender.enabled = true;
+          });
+        }
+      }];
 }
 
 - (void)onHangup:(id)sender {
