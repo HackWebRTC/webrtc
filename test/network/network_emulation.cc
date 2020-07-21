@@ -196,6 +196,7 @@ EmulatedEndpointImpl::EmulatedEndpointImpl(uint64_t id,
   network_->AddIP(ip);
 
   enabled_state_checker_.Detach();
+  stats_.local_addresses.push_back(peer_local_addr_);
 }
 EmulatedEndpointImpl::~EmulatedEndpointImpl() = default;
 
@@ -388,6 +389,9 @@ EmulatedNetworkStats EndpointsContainer::GetStats() const {
     }
     if (stats.last_packet_sent_time < endpoint_stats.last_packet_sent_time) {
       stats.last_packet_sent_time = endpoint_stats.last_packet_sent_time;
+    }
+    for (const rtc::IPAddress& addr : endpoint_stats.local_addresses) {
+      stats.local_addresses.push_back(addr);
     }
     for (auto& entry : endpoint_stats.incoming_stats_per_source) {
       const EmulatedNetworkIncomingStats& source = entry.second;

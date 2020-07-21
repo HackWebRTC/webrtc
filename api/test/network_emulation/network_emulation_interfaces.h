@@ -11,6 +11,7 @@
 #define API_TEST_NETWORK_EMULATION_NETWORK_EMULATION_INTERFACES_H_
 
 #include <map>
+#include <vector>
 
 #include "absl/types/optional.h"
 #include "api/units/data_rate.h"
@@ -92,6 +93,10 @@ struct EmulatedNetworkStats {
   DataSize first_sent_packet_size = DataSize::Zero();
   Timestamp first_packet_sent_time = Timestamp::PlusInfinity();
   Timestamp last_packet_sent_time = Timestamp::MinusInfinity();
+
+  // List of IP addresses that were used to send data considered in this stats
+  // object.
+  std::vector<rtc::IPAddress> local_addresses;
 
   std::map<rtc::IPAddress, EmulatedNetworkIncomingStats>
       incoming_stats_per_source;

@@ -29,6 +29,8 @@ namespace webrtc {
 namespace test {
 namespace {
 
+using ::testing::ElementsAreArray;
+
 constexpr TimeDelta kNetworkPacketWaitTimeout = TimeDelta::Millis(100);
 constexpr TimeDelta kStatsWaitTimeout = TimeDelta::Seconds(1);
 constexpr int kOverheadIpv4Udp = 20 + 8;
@@ -248,6 +250,8 @@ TEST(NetworkEmulationManagerTest, Run) {
   nt1->GetStats([&](EmulatedNetworkStats st) {
     EXPECT_EQ(st.packets_sent, 2000l);
     EXPECT_EQ(st.bytes_sent.bytes(), single_packet_size * 2000l);
+    EXPECT_THAT(st.local_addresses,
+                ElementsAreArray({alice_endpoint->GetPeerLocalAddress()}));
     EXPECT_EQ(st.PacketsReceived(), 2000l);
     EXPECT_EQ(st.BytesReceived().bytes(), single_packet_size * 2000l);
     EXPECT_EQ(st.PacketsDropped(), 0l);
@@ -270,6 +274,8 @@ TEST(NetworkEmulationManagerTest, Run) {
   nt2->GetStats([&](EmulatedNetworkStats st) {
     EXPECT_EQ(st.packets_sent, 2000l);
     EXPECT_EQ(st.bytes_sent.bytes(), single_packet_size * 2000l);
+    EXPECT_THAT(st.local_addresses,
+                ElementsAreArray({bob_endpoint->GetPeerLocalAddress()}));
     EXPECT_EQ(st.PacketsReceived(), 2000l);
     EXPECT_EQ(st.BytesReceived().bytes(), single_packet_size * 2000l);
     EXPECT_EQ(st.PacketsDropped(), 0l);
