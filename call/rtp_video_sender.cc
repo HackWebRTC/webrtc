@@ -506,7 +506,7 @@ bool RtpVideoSender::IsActiveLocked() {
 EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
     const EncodedImage& encoded_image,
     const CodecSpecificInfo* codec_specific_info,
-    const RTPFragmentationHeader* fragmentation) {
+    const RTPFragmentationHeader* /*fragmentation*/) {
   fec_controller_->UpdateWithEncodedData(encoded_image.size(),
                                          encoded_image._frameType);
   MutexLock lock(&mutex_);
@@ -559,7 +559,6 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
 
   bool send_result = rtp_streams_[stream_index].sender_video->SendEncodedImage(
       rtp_config_.payload_type, codec_type_, rtp_timestamp, encoded_image,
-      fragmentation,
       params_[stream_index].GetRtpVideoHeader(
           encoded_image, codec_specific_info, shared_frame_id_),
       expected_retransmission_time_ms);

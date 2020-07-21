@@ -24,7 +24,6 @@
 #include "api/transport/rtp/dependency_descriptor.h"
 #include "api/video/video_codec_type.h"
 #include "api/video/video_frame_type.h"
-#include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/absolute_capture_time_sender.h"
 #include "modules/rtp_rtcp/source/active_decode_targets_helper.h"
@@ -33,6 +32,7 @@
 #include "modules/rtp_rtcp/source/rtp_sender_video_frame_transformer_delegate.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "modules/rtp_rtcp/source/video_fec_generator.h"
+#include "rtc_base/deprecation.h"
 #include "rtc_base/one_time_event.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/rate_statistics.h"
@@ -42,6 +42,7 @@
 
 namespace webrtc {
 
+class RTPFragmentationHeader;
 class FrameEncryptorInterface;
 class RtpPacketizer;
 class RtpPacketToSend;
@@ -90,6 +91,19 @@ class RTPSenderVideo {
 
   virtual ~RTPSenderVideo();
 
+  RTC_DEPRECATED
+  bool SendVideo(int payload_type,
+                 absl::optional<VideoCodecType> codec_type,
+                 uint32_t rtp_timestamp,
+                 int64_t capture_time_ms,
+                 rtc::ArrayView<const uint8_t> payload,
+                 const RTPFragmentationHeader* /*fragmentation*/,
+                 RTPVideoHeader video_header,
+                 absl::optional<int64_t> expected_retransmission_time_ms) {
+    return SendVideo(payload_type, codec_type, rtp_timestamp, capture_time_ms,
+                     payload, video_header, expected_retransmission_time_ms);
+  }
+
   // expected_retransmission_time_ms.has_value() -> retransmission allowed.
   // Calls to this method is assumed to be externally serialized.
   bool SendVideo(int payload_type,
@@ -97,7 +111,6 @@ class RTPSenderVideo {
                  uint32_t rtp_timestamp,
                  int64_t capture_time_ms,
                  rtc::ArrayView<const uint8_t> payload,
-                 const RTPFragmentationHeader* fragmentation,
                  RTPVideoHeader video_header,
                  absl::optional<int64_t> expected_retransmission_time_ms);
 
@@ -106,7 +119,6 @@ class RTPSenderVideo {
       absl::optional<VideoCodecType> codec_type,
       uint32_t rtp_timestamp,
       const EncodedImage& encoded_image,
-      const RTPFragmentationHeader* fragmentation,
       RTPVideoHeader video_header,
       absl::optional<int64_t> expected_retransmission_time_ms);
 

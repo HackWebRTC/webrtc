@@ -30,8 +30,7 @@ std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
     rtc::ArrayView<const uint8_t> payload,
     PayloadSizeLimits limits,
     // Codec-specific details.
-    const RTPVideoHeader& rtp_video_header,
-    const RTPFragmentationHeader* /*fragmentation*/) {
+    const RTPVideoHeader& rtp_video_header) {
   if (!type) {
     // Use raw packetizer.
     return std::make_unique<RtpPacketizerGeneric>(payload, limits);

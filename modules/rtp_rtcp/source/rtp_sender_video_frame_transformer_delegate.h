@@ -40,7 +40,6 @@ class RTPSenderVideoFrameTransformerDelegate : public TransformedFrameCallback {
                       absl::optional<VideoCodecType> codec_type,
                       uint32_t rtp_timestamp,
                       const EncodedImage& encoded_image,
-                      const RTPFragmentationHeader* fragmentation,
                       RTPVideoHeader video_header,
                       absl::optional<int64_t> expected_retransmission_time_ms);
 

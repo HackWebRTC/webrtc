@@ -769,7 +769,7 @@ TEST_P(RtpSenderTestWithoutPacer, OnSendSideDelayUpdated) {
   video_header.frame_type = VideoFrameType::kVideoFrameKey;
   EXPECT_TRUE(rtp_sender_video.SendVideo(
       kPayloadType, kCodecType, capture_time_ms * kCaptureTimeMsToRtpTimestamp,
-      capture_time_ms, kPayloadData, nullptr, video_header,
+      capture_time_ms, kPayloadData, video_header,
       kDefaultExpectedRetransmissionTimeMs));
 
   // Send another packet with 20 ms delay. The average, max and total should be
@@ -781,7 +781,7 @@ TEST_P(RtpSenderTestWithoutPacer, OnSendSideDelayUpdated) {
   video_header.frame_type = VideoFrameType::kVideoFrameKey;
   EXPECT_TRUE(rtp_sender_video.SendVideo(
       kPayloadType, kCodecType, capture_time_ms * kCaptureTimeMsToRtpTimestamp,
-      capture_time_ms, kPayloadData, nullptr, video_header,
+      capture_time_ms, kPayloadData, video_header,
       kDefaultExpectedRetransmissionTimeMs));
 
   // Send another packet at the same time, which replaces the last packet.
@@ -794,7 +794,7 @@ TEST_P(RtpSenderTestWithoutPacer, OnSendSideDelayUpdated) {
   video_header.frame_type = VideoFrameType::kVideoFrameKey;
   EXPECT_TRUE(rtp_sender_video.SendVideo(
       kPayloadType, kCodecType, capture_time_ms * kCaptureTimeMsToRtpTimestamp,
-      capture_time_ms, kPayloadData, nullptr, video_header,
+      capture_time_ms, kPayloadData, video_header,
       kDefaultExpectedRetransmissionTimeMs));
 
   // Send a packet 1 second later. The earlier packets should have timed
@@ -808,7 +808,7 @@ TEST_P(RtpSenderTestWithoutPacer, OnSendSideDelayUpdated) {
   video_header.frame_type = VideoFrameType::kVideoFrameKey;
   EXPECT_TRUE(rtp_sender_video.SendVideo(
       kPayloadType, kCodecType, capture_time_ms * kCaptureTimeMsToRtpTimestamp,
-      capture_time_ms, kPayloadData, nullptr, video_header,
+      capture_time_ms, kPayloadData, video_header,
       kDefaultExpectedRetransmissionTimeMs));
 }
 
@@ -1258,7 +1258,7 @@ TEST_P(RtpSenderTestWithoutPacer, SendGenericVideo) {
   RTPVideoHeader video_header;
   video_header.frame_type = VideoFrameType::kVideoFrameKey;
   ASSERT_TRUE(rtp_sender_video.SendVideo(kPayloadType, kCodecType, 1234, 4321,
-                                         payload, nullptr, video_header,
+                                         payload, video_header,
                                          kDefaultExpectedRetransmissionTimeMs));
 
   auto sent_payload = transport_.last_sent_packet().payload();
@@ -1274,7 +1274,7 @@ TEST_P(RtpSenderTestWithoutPacer, SendGenericVideo) {
 
   video_header.frame_type = VideoFrameType::kVideoFrameDelta;
   ASSERT_TRUE(rtp_sender_video.SendVideo(kPayloadType, kCodecType, 1234, 4321,
-                                         payload, nullptr, video_header,
+                                         payload, video_header,
                                          kDefaultExpectedRetransmissionTimeMs));
 
   sent_payload = transport_.last_sent_packet().payload();
@@ -1299,7 +1299,7 @@ TEST_P(RtpSenderTestWithoutPacer, SendRawVideo) {
   RTPVideoHeader video_header;
   video_header.frame_type = VideoFrameType::kVideoFrameKey;
   ASSERT_TRUE(rtp_sender_video.SendVideo(kPayloadType, absl::nullopt, 1234,
-                                         4321, payload, nullptr, video_header,
+                                         4321, payload, video_header,
                                          kDefaultExpectedRetransmissionTimeMs));
 
   auto sent_payload = transport_.last_sent_packet().payload();
@@ -1391,8 +1391,7 @@ TEST_P(RtpSenderTest, SendFlexfecPackets) {
   video_header.frame_type = VideoFrameType::kVideoFrameKey;
   EXPECT_TRUE(rtp_sender_video.SendVideo(
       kMediaPayloadType, kCodecType, kTimestamp, clock_->TimeInMilliseconds(),
-      kPayloadData, nullptr, video_header,
-      kDefaultExpectedRetransmissionTimeMs));
+      kPayloadData, video_header, kDefaultExpectedRetransmissionTimeMs));
   ASSERT_TRUE(media_packet != nullptr);
   ASSERT_TRUE(fec_packet != nullptr);
 
@@ -1467,8 +1466,7 @@ TEST_P(RtpSenderTestWithoutPacer, SendFlexfecPackets) {
   video_header.frame_type = VideoFrameType::kVideoFrameKey;
   EXPECT_TRUE(rtp_sender_video.SendVideo(
       kMediaPayloadType, kCodecType, kTimestamp, clock_->TimeInMilliseconds(),
-      kPayloadData, nullptr, video_header,
-      kDefaultExpectedRetransmissionTimeMs));
+      kPayloadData, video_header, kDefaultExpectedRetransmissionTimeMs));
 
   ASSERT_EQ(2, transport_.packets_sent());
   const RtpPacketReceived& media_packet = transport_.sent_packets_[0];
@@ -1797,8 +1795,7 @@ TEST_P(RtpSenderTest, FecOverheadRate) {
     video_header.frame_type = VideoFrameType::kVideoFrameKey;
     EXPECT_TRUE(rtp_sender_video.SendVideo(
         kMediaPayloadType, kCodecType, kTimestamp, clock_->TimeInMilliseconds(),
-        kPayloadData, nullptr, video_header,
-        kDefaultExpectedRetransmissionTimeMs));
+        kPayloadData, video_header, kDefaultExpectedRetransmissionTimeMs));
 
     time_controller_.AdvanceTime(TimeDelta::Millis(kTimeBetweenPacketsMs));
   }
@@ -1888,7 +1885,7 @@ TEST_P(RtpSenderTest, BitrateCallbacks) {
   for (uint32_t i = 0; i < kNumPackets; ++i) {
     video_header.frame_type = VideoFrameType::kVideoFrameKey;
     ASSERT_TRUE(rtp_sender_video.SendVideo(
-        kPayloadType, kCodecType, 1234, 4321, payload, nullptr, video_header,
+        kPayloadType, kCodecType, 1234, 4321, payload, video_header,
         kDefaultExpectedRetransmissionTimeMs));
     time_controller_.AdvanceTime(TimeDelta::Millis(kPacketInterval));
   }
@@ -1925,7 +1922,7 @@ TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
   RTPVideoHeader video_header;
   video_header.frame_type = VideoFrameType::kVideoFrameKey;
   ASSERT_TRUE(rtp_sender_video.SendVideo(kPayloadType, kCodecType, 1234, 4321,
-                                         payload, nullptr, video_header,
+                                         payload, video_header,
                                          kDefaultExpectedRetransmissionTimeMs));
   StreamDataCounters expected;
   expected.transmitted.payload_bytes = 6;
@@ -1999,7 +1996,7 @@ TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacksUlpfec) {
   }
   video_header.frame_type = VideoFrameType::kVideoFrameDelta;
   ASSERT_TRUE(rtp_sender_video.SendVideo(kPayloadType, kCodecType, 1234, 4321,
-                                         payload, nullptr, video_header,
+                                         payload, video_header,
                                          kDefaultExpectedRetransmissionTimeMs));
   expected.transmitted.payload_bytes = 28;
   expected.transmitted.header_bytes = 24;
