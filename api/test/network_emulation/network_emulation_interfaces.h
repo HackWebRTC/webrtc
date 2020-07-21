@@ -10,6 +10,8 @@
 #ifndef API_TEST_NETWORK_EMULATION_NETWORK_EMULATION_INTERFACES_H_
 #define API_TEST_NETWORK_EMULATION_NETWORK_EMULATION_INTERFACES_H_
 
+#include <map>
+
 #include "absl/types/optional.h"
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
@@ -56,9 +58,7 @@ class EmulatedNetworkReceiverInterface {
   virtual void OnPacketReceived(EmulatedIpPacket packet) = 0;
 };
 
-struct EmulatedNetworkStats {
-  int64_t packets_sent = 0;
-  DataSize bytes_sent = DataSize::Zero();
+struct EmulatedNetworkIncomingStats {
   // Total amount of packets received with or without destination.
   int64_t packets_received = 0;
   // Total amount of bytes in received packets.
@@ -69,22 +69,118 @@ struct EmulatedNetworkStats {
   DataSize bytes_dropped = DataSize::Zero();
 
   DataSize first_received_packet_size = DataSize::Zero();
-  DataSize first_sent_packet_size = DataSize::Zero();
 
-  Timestamp first_packet_sent_time = Timestamp::PlusInfinity();
-  Timestamp last_packet_sent_time = Timestamp::PlusInfinity();
+  // Timestamps are initialized to different infinities for simplifying
+  // computations. Client have to assume that it is some infinite value
+  // if unset. Client mustn't consider sign of infinit value.
   Timestamp first_packet_received_time = Timestamp::PlusInfinity();
-  Timestamp last_packet_received_time = Timestamp::PlusInfinity();
+  Timestamp last_packet_received_time = Timestamp::MinusInfinity();
+
+  DataRate AverageReceiveRate() const {
+    RTC_DCHECK_GE(packets_received, 2);
+    RTC_DCHECK(first_packet_received_time.IsFinite());
+    RTC_DCHECK(last_packet_received_time.IsFinite());
+    return (bytes_received - first_received_packet_size) /
+           (last_packet_received_time - first_packet_received_time);
+  }
+};
+
+struct EmulatedNetworkStats {
+  int64_t packets_sent = 0;
+  DataSize bytes_sent = DataSize::Zero();
+
+  DataSize first_sent_packet_size = DataSize::Zero();
+  Timestamp first_packet_sent_time = Timestamp::PlusInfinity();
+  Timestamp last_packet_sent_time = Timestamp::MinusInfinity();
+
+  std::map<rtc::IPAddress, EmulatedNetworkIncomingStats>
+      incoming_stats_per_source;
 
   DataRate AverageSendRate() const {
     RTC_DCHECK_GE(packets_sent, 2);
     return (bytes_sent - first_sent_packet_size) /
            (last_packet_sent_time - first_packet_sent_time);
   }
+
+  // Total amount of packets received regardless of the destination address.
+  int64_t PacketsReceived() const {
+    int64_t packets_received = 0;
+    for (const auto& incoming_stats : incoming_stats_per_source) {
+      packets_received += incoming_stats.second.packets_received;
+    }
+    return packets_received;
+  }
+
+  // Total amount of bytes in received packets.
+  DataSize BytesReceived() const {
+    DataSize bytes_received = DataSize::Zero();
+    for (const auto& incoming_stats : incoming_stats_per_source) {
+      bytes_received += incoming_stats.second.bytes_received;
+    }
+    return bytes_received;
+  }
+
+  // Total amount of packets that were received, but no destination was found.
+  int64_t PacketsDropped() const {
+    int64_t packets_dropped = 0;
+    for (const auto& incoming_stats : incoming_stats_per_source) {
+      packets_dropped += incoming_stats.second.packets_dropped;
+    }
+    return packets_dropped;
+  }
+
+  // Total amount of bytes in dropped packets.
+  DataSize BytesDropped() const {
+    DataSize bytes_dropped = DataSize::Zero();
+    for (const auto& incoming_stats : incoming_stats_per_source) {
+      bytes_dropped += incoming_stats.second.bytes_dropped;
+    }
+    return bytes_dropped;
+  }
+
+  DataSize FirstReceivedPacketSize() const {
+    Timestamp first_packet_received_time = Timestamp::PlusInfinity();
+    DataSize first_received_packet_size = DataSize::Zero();
+    for (const auto& incoming_stats : incoming_stats_per_source) {
+      if (first_packet_received_time >
+          incoming_stats.second.first_packet_received_time) {
+        first_packet_received_time =
+            incoming_stats.second.first_packet_received_time;
+        first_received_packet_size =
+            incoming_stats.second.first_received_packet_size;
+      }
+    }
+    return first_received_packet_size;
+  }
+
+  Timestamp FirstPacketReceivedTime() const {
+    Timestamp first_packet_received_time = Timestamp::PlusInfinity();
+    for (const auto& incoming_stats : incoming_stats_per_source) {
+      if (first_packet_received_time >
+          incoming_stats.second.first_packet_received_time) {
+        first_packet_received_time =
+            incoming_stats.second.first_packet_received_time;
+      }
+    }
+    return first_packet_received_time;
+  }
+
+  Timestamp LastPacketReceivedTime() const {
+    Timestamp last_packet_received_time = Timestamp::MinusInfinity();
+    for (const auto& incoming_stats : incoming_stats_per_source) {
+      if (last_packet_received_time <
+          incoming_stats.second.last_packet_received_time) {
+        last_packet_received_time =
+            incoming_stats.second.last_packet_received_time;
+      }
+    }
+    return last_packet_received_time;
+  }
+
   DataRate AverageReceiveRate() const {
-    RTC_DCHECK_GE(packets_received, 2);
-    return (bytes_received - first_received_packet_size) /
-           (last_packet_received_time - first_packet_received_time);
+    RTC_DCHECK_GE(PacketsReceived(), 2);
+    return (BytesReceived() - FirstReceivedPacketSize()) /
+           (LastPacketReceivedTime() - FirstPacketReceivedTime());
   }
 };
 

@@ -200,6 +200,7 @@ class EmulatedRoute {
   EmulatedEndpointImpl* to;
   bool active;
 };
+
 class EndpointsContainer {
  public:
   explicit EndpointsContainer(

@@ -36,10 +36,10 @@ void NetworkQualityMetricsReporter::Start(
   // Check that network stats are clean before test execution.
   EmulatedNetworkStats alice_stats = PopulateStats(alice_network_);
   RTC_CHECK_EQ(alice_stats.packets_sent, 0);
-  RTC_CHECK_EQ(alice_stats.packets_received, 0);
+  RTC_CHECK_EQ(alice_stats.PacketsReceived(), 0);
   EmulatedNetworkStats bob_stats = PopulateStats(bob_network_);
   RTC_CHECK_EQ(bob_stats.packets_sent, 0);
-  RTC_CHECK_EQ(bob_stats.packets_received, 0);
+  RTC_CHECK_EQ(bob_stats.PacketsReceived(), 0);
 }
 
 void NetworkQualityMetricsReporter::OnStatsReports(
@@ -72,9 +72,9 @@ void NetworkQualityMetricsReporter::StopAndReportResults() {
   EmulatedNetworkStats alice_stats = PopulateStats(alice_network_);
   EmulatedNetworkStats bob_stats = PopulateStats(bob_network_);
   ReportStats("alice", alice_stats,
-              alice_stats.packets_sent - bob_stats.packets_received);
+              alice_stats.packets_sent - bob_stats.PacketsReceived());
   ReportStats("bob", bob_stats,
-              bob_stats.packets_sent - alice_stats.packets_received);
+              bob_stats.packets_sent - alice_stats.PacketsReceived());
 
   if (!webrtc::field_trial::IsEnabled(kUseStandardBytesStats)) {
     RTC_LOG(LS_ERROR)
@@ -111,16 +111,16 @@ void NetworkQualityMetricsReporter::ReportStats(
       "average_send_rate", network_label,
       stats.packets_sent >= 2 ? stats.AverageSendRate().bytes_per_sec() : 0,
       "bytesPerSecond");
-  ReportResult("bytes_dropped", network_label, stats.bytes_dropped.bytes(),
+  ReportResult("bytes_dropped", network_label, stats.BytesDropped().bytes(),
                "sizeInBytes");
-  ReportResult("packets_dropped", network_label, stats.packets_dropped,
+  ReportResult("packets_dropped", network_label, stats.PacketsDropped(),
                "unitless");
-  ReportResult("bytes_received", network_label, stats.bytes_received.bytes(),
+  ReportResult("bytes_received", network_label, stats.BytesReceived().bytes(),
                "sizeInBytes");
-  ReportResult("packets_received", network_label, stats.packets_received,
+  ReportResult("packets_received", network_label, stats.PacketsReceived(),
                "unitless");
   ReportResult("average_receive_rate", network_label,
-               stats.packets_received >= 2
+               stats.PacketsReceived() >= 2
                    ? stats.AverageReceiveRate().bytes_per_sec()
                    : 0,
                "bytesPerSecond");
