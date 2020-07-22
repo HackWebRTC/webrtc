@@ -52,6 +52,7 @@ declare_args() {
   # purposes. In any case, it doesn't depend on //third_party/perfetto which
   # is used for base tracing, so this feature is disabled.
   enable_base_tracing = false
+  use_perfetto_client_library = false
 
   # If true, it assumes that //third_party/abseil-cpp is an available
   # dependency for googletest.
