@@ -176,7 +176,7 @@ def CheckNativeApiHeaderChanges(input_api, output_api):
   """Checks to remind proper changing of native APIs."""
   files = []
   source_file_filter = lambda x: input_api.FilterSourceFile(
-      x, allow_list=[r'.+\.(gn|gni|h)$'])
+      x, files_to_check=[r'.+\.(gn|gni|h)$'])
   for f in input_api.AffectedSourceFiles(source_file_filter):
     for path in API_DIRS:
       dn = os.path.dirname(f.LocalPath())
@@ -605,8 +605,8 @@ def CheckCheckIncludesIsNotUsed(gn_files, input_api, output_api):
 
 def CheckGnChanges(input_api, output_api):
   file_filter = lambda x: (input_api.FilterSourceFile(
-      x, allow_list=(r'.+\.(gn|gni)$',),
-      block_list=(r'.*/presubmit_checks_lib/testdata/.*',)))
+      x, files_to_check=(r'.+\.(gn|gni)$',),
+      files_to_skip=(r'.*/presubmit_checks_lib/testdata/.*',)))
 
   gn_files = []
   for f in input_api.AffectedSourceFiles(file_filter):
@@ -850,7 +850,7 @@ def CommonChecks(input_api, output_api):
   results = []
   # Filter out files that are in objc or ios dirs from being cpplint-ed since
   # they do not follow C++ lint rules.
-  exception_list = input_api.DEFAULT_BLACK_LIST + (
+  exception_list = input_api.DEFAULT_FILES_TO_SKIP + (
     r".*\bobjc[\\\/].*",
     r".*objc\.[hcm]+$",
   )
@@ -861,18 +861,18 @@ def CommonChecks(input_api, output_api):
   results.extend(input_api.canned_checks.CheckLicense(
       input_api, output_api, _LicenseHeader(input_api)))
   results.extend(input_api.canned_checks.RunPylint(input_api, output_api,
-      block_list=(r'^base[\\\/].*\.py$',
-                  r'^build[\\\/].*\.py$',
-                  r'^buildtools[\\\/].*\.py$',
-                  r'^infra[\\\/].*\.py$',
-                  r'^ios[\\\/].*\.py$',
-                  r'^out.*[\\\/].*\.py$',
-                  r'^testing[\\\/].*\.py$',
-                  r'^third_party[\\\/].*\.py$',
-                  r'^tools[\\\/].*\.py$',
-                  # TODO(phoglund): should arguably be checked.
-                  r'^tools_webrtc[\\\/]mb[\\\/].*\.py$',
-                  r'^xcodebuild.*[\\\/].*\.py$',),
+      files_to_skip=(r'^base[\\\/].*\.py$',
+                     r'^build[\\\/].*\.py$',
+                     r'^buildtools[\\\/].*\.py$',
+                     r'^infra[\\\/].*\.py$',
+                     r'^ios[\\\/].*\.py$',
+                     r'^out.*[\\\/].*\.py$',
+                     r'^testing[\\\/].*\.py$',
+                     r'^third_party[\\\/].*\.py$',
+                     r'^tools[\\\/].*\.py$',
+                     # TODO(phoglund): should arguably be checked.
+                     r'^tools_webrtc[\\\/]mb[\\\/].*\.py$',
+                     r'^xcodebuild.*[\\\/].*\.py$',),
       pylintrc='pylintrc'))
 
   # TODO(nisse): talk/ is no more, so make below checks simpler?
@@ -888,12 +888,12 @@ def CommonChecks(input_api, output_api):
   # Also we will skip most checks for third_party directory.
   third_party_filter_list = (r'^third_party[\\\/].+',)
   eighty_char_sources = lambda x: input_api.FilterSourceFile(x,
-      block_list=build_file_filter_list + objc_filter_list +
+      files_to_skip=build_file_filter_list + objc_filter_list +
                  third_party_filter_list)
   hundred_char_sources = lambda x: input_api.FilterSourceFile(x,
-      allow_list=objc_filter_list)
+      files_to_check=objc_filter_list)
   non_third_party_sources = lambda x: input_api.FilterSourceFile(x,
-      block_list=third_party_filter_list)
+      files_to_skip=third_party_filter_list)
 
   results.extend(input_api.canned_checks.CheckLongLines(
       input_api, output_api, maxlen=80, source_file_filter=eighty_char_sources))
@@ -1114,7 +1114,7 @@ def CheckOrphanHeaders(input_api, output_api, source_file_filter):
     from check_orphan_headers import IsHeaderInBuildGn
 
   file_filter = lambda x: input_api.FilterSourceFile(
-      x, block_list=exempt_paths) and source_file_filter(x)
+      x, files_to_skip=exempt_paths) and source_file_filter(x)
   for f in input_api.AffectedSourceFiles(file_filter):
     if f.LocalPath().endswith('.h'):
       file_path = os.path.abspath(f.LocalPath())
@@ -1133,7 +1133,7 @@ def CheckNewlineAtTheEndOfProtoFiles(input_api, output_api, source_file_filter):
   error_msg = 'File {} must end with exactly one newline.'
   results = []
   file_filter = lambda x: input_api.FilterSourceFile(
-      x, allow_list=(r'.+\.proto$',)) and source_file_filter(x)
+      x, files_to_check=(r'.+\.proto$',)) and source_file_filter(x)
   for f in input_api.AffectedSourceFiles(file_filter):
     file_path = f.LocalPath()
     with open(file_path) as f:
