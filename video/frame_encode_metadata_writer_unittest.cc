@@ -463,13 +463,10 @@ TEST(FrameEncodeMetadataWriterTest, CopiesPacketInfos) {
 TEST(FrameEncodeMetadataWriterTest, DoesNotRewriteBitstreamWithoutCodecInfo) {
   uint8_t buffer[] = {1, 2, 3};
   EncodedImage image(buffer, sizeof(buffer), sizeof(buffer));
-  const RTPFragmentationHeader fragmentation;
 
   FakeEncodedImageCallback sink;
   FrameEncodeMetadataWriter encode_metadata_writer(&sink);
-  EXPECT_EQ(
-      encode_metadata_writer.UpdateBitstream(nullptr, &fragmentation, &image),
-      nullptr);
+  encode_metadata_writer.UpdateBitstream(nullptr, &image);
   EXPECT_EQ(image.data(), buffer);
   EXPECT_EQ(image.size(), sizeof(buffer));
 }
@@ -479,29 +476,10 @@ TEST(FrameEncodeMetadataWriterTest, DoesNotRewriteVp8Bitstream) {
   EncodedImage image(buffer, sizeof(buffer), sizeof(buffer));
   CodecSpecificInfo codec_specific_info;
   codec_specific_info.codecType = kVideoCodecVP8;
-  const RTPFragmentationHeader fragmentation;
 
   FakeEncodedImageCallback sink;
   FrameEncodeMetadataWriter encode_metadata_writer(&sink);
-  EXPECT_EQ(encode_metadata_writer.UpdateBitstream(&codec_specific_info,
-                                                   &fragmentation, &image),
-            nullptr);
-  EXPECT_EQ(image.data(), buffer);
-  EXPECT_EQ(image.size(), sizeof(buffer));
-}
-
-TEST(FrameEncodeMetadataWriterTest,
-     DoesNotRewriteH264BitstreamWithoutFragmentation) {
-  uint8_t buffer[] = {1, 2, 3};
-  EncodedImage image(buffer, sizeof(buffer), sizeof(buffer));
-  CodecSpecificInfo codec_specific_info;
-  codec_specific_info.codecType = kVideoCodecH264;
-
-  FakeEncodedImageCallback sink;
-  FrameEncodeMetadataWriter encode_metadata_writer(&sink);
-  EXPECT_EQ(encode_metadata_writer.UpdateBitstream(&codec_specific_info,
-                                                   nullptr, &image),
-            nullptr);
+  encode_metadata_writer.UpdateBitstream(&codec_specific_info, &image);
   EXPECT_EQ(image.data(), buffer);
   EXPECT_EQ(image.size(), sizeof(buffer));
 }
@@ -521,24 +499,12 @@ TEST(FrameEncodeMetadataWriterTest, RewritesH264BitstreamWithNonOptimalSps) {
   CodecSpecificInfo codec_specific_info;
   codec_specific_info.codecType = kVideoCodecH264;
 
-  RTPFragmentationHeader fragmentation;
-  fragmentation.VerifyAndAllocateFragmentationHeader(1);
-  fragmentation.fragmentationOffset[0] = 4;
-  fragmentation.fragmentationLength[0] = sizeof(original_sps) - 4;
-
   FakeEncodedImageCallback sink;
   FrameEncodeMetadataWriter encode_metadata_writer(&sink);
-  std::unique_ptr<RTPFragmentationHeader> modified_fragmentation =
-      encode_metadata_writer.UpdateBitstream(&codec_specific_info,
-                                             &fragmentation, &image);
+  encode_metadata_writer.UpdateBitstream(&codec_specific_info, &image);
 
-  ASSERT_NE(modified_fragmentation, nullptr);
   EXPECT_THAT(std::vector<uint8_t>(image.data(), image.data() + image.size()),
               testing::ElementsAreArray(kRewrittenSps));
-  ASSERT_THAT(modified_fragmentation->fragmentationVectorSize, 1U);
-  EXPECT_EQ(modified_fragmentation->fragmentationOffset[0], 4U);
-  EXPECT_EQ(modified_fragmentation->fragmentationLength[0],
-            sizeof(kRewrittenSps) - 4);
 }
 
 }  // namespace test

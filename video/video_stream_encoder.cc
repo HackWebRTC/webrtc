@@ -1537,7 +1537,7 @@ void VideoStreamEncoder::OnLossNotification(
 EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
     const EncodedImage& encoded_image,
     const CodecSpecificInfo* codec_specific_info,
-    const RTPFragmentationHeader* fragmentation) {
+    const RTPFragmentationHeader* /*fragmentation*/) {
   TRACE_EVENT_INSTANT1("webrtc", "VCMEncodedFrameCallback::Encoded",
                        "timestamp", encoded_image.Timestamp());
   const size_t spatial_idx = encoded_image.SpatialIndex().value_or(0);
@@ -1545,9 +1545,8 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
 
   frame_encode_metadata_writer_.FillTimingInfo(spatial_idx, &image_copy);
 
-  std::unique_ptr<RTPFragmentationHeader> fragmentation_copy =
-      frame_encode_metadata_writer_.UpdateBitstream(codec_specific_info,
-                                                    fragmentation, &image_copy);
+  frame_encode_metadata_writer_.UpdateBitstream(codec_specific_info,
+                                                &image_copy);
 
   // Piggyback ALR experiment group id and simulcast id into the content type.
   const uint8_t experiment_id =
@@ -1613,9 +1612,8 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
     simulcast_id = encoded_image.SpatialIndex().value_or(0);
   }
 
-  EncodedImageCallback::Result result = sink_->OnEncodedImage(
-      image_copy, codec_specific_info,
-      fragmentation_copy ? fragmentation_copy.get() : fragmentation);
+  EncodedImageCallback::Result result =
+      sink_->OnEncodedImage(image_copy, codec_specific_info, nullptr);
 
   // We are only interested in propagating the meta-data about the image, not
   // encoded data itself, to the post encode function. Since we cannot be sure
