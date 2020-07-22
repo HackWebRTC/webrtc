@@ -24,6 +24,20 @@ int GetCPUInfoNoASM(CPUFeature feature) {
 }
 
 #if defined(WEBRTC_ARCH_X86_FAMILY)
+
+// xgetbv returns the value of an Intel Extended Control Register (XCR).
+// Currently only XCR0 is defined by Intel so |xcr| should always be zero.
+uint64_t xgetbv(uint32_t xcr) {
+#if defined(_MSC_VER)
+  return _xgetbv(xcr);
+#else
+  uint32_t eax, edx;
+
+  __asm__ volatile("xgetbv" : "=a"(eax), "=d"(edx) : "c"(xcr));
+  return (static_cast<uint64_t>(edx) << 32) | eax;
+#endif  // _MSC_VER
+}
+
 #ifndef _MSC_VER
 // Intrinsic for "cpuid".
 #if defined(__pic__) && defined(__i386__)
@@ -41,7 +55,7 @@ static inline void __cpuid(int cpu_info[4], int info_type) {
   __asm__ volatile("cpuid\n"
                    : "=a"(cpu_info[0]), "=b"(cpu_info[1]), "=c"(cpu_info[2]),
                      "=d"(cpu_info[3])
-                   : "a"(info_type));
+                   : "a"(info_type), "c"(0));
 }
 #endif
 #endif  // _MSC_VER
@@ -51,12 +65,31 @@ static inline void __cpuid(int cpu_info[4], int info_type) {
 // Actual feature detection for x86.
 static int GetCPUInfo(CPUFeature feature) {
   int cpu_info[4];
+  __cpuid(cpu_info, 0);
+  int num_ids = cpu_info[0];
   __cpuid(cpu_info, 1);
   if (feature == kSSE2) {
     return 0 != (cpu_info[3] & 0x04000000);
   }
   if (feature == kSSE3) {
     return 0 != (cpu_info[2] & 0x00000001);
+  }
+  if (feature == kAVX2) {
+    // Interpret CPU feature information.
+    int cpu_info7[4] = {-1};
+    if (num_ids >= 7) {
+      __cpuid(cpu_info7, 7);
+    }
+
+#if defined(WEBRTC_ENABLE_AVX2)
+    return (cpu_info[2] & 0x10000000) != 0 &&
+           (cpu_info[2] & 0x04000000) != 0 /* XSAVE */ &&
+           (cpu_info[2] & 0x08000000) != 0 /* OSXSAVE */ &&
+           (xgetbv(0) & 0x00000006) == 6 /* XSAVE enabled by kernel */ &&
+           (cpu_info7[1] & 0x00000020) != 0;
+#else
+    return 0;
+#endif  // WEBRTC_ENABLE_AVX2
   }
   return 0;
 }

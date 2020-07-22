@@ -116,17 +116,9 @@ TEST(SincResamplerTest, DISABLED_SetRatioBench) {
   printf("SetRatio() took %.2fms.\n", total_time_c_us / 1000);
 }
 
-// Define platform independent function name for Convolve* tests.
-#if defined(WEBRTC_ARCH_X86_FAMILY)
-#define CONVOLVE_FUNC Convolve_SSE
-#elif defined(WEBRTC_ARCH_ARM_V7)
-#define CONVOLVE_FUNC Convolve_NEON
-#endif
-
 // Ensure various optimized Convolve() methods return the same value.  Only run
 // this test if other optimized methods exist, otherwise the default Convolve()
 // will be tested by the parameterized SincResampler tests below.
-#if defined(CONVOLVE_FUNC)
 TEST(SincResamplerTest, Convolve) {
 #if defined(WEBRTC_ARCH_X86_FAMILY)
   ASSERT_TRUE(WebRtc_GetCPUInfo(kSSE2));
@@ -148,7 +140,7 @@ TEST(SincResamplerTest, Convolve) {
   double result = resampler.Convolve_C(
       resampler.kernel_storage_.get(), resampler.kernel_storage_.get(),
       resampler.kernel_storage_.get(), kKernelInterpolationFactor);
-  double result2 = resampler.CONVOLVE_FUNC(
+  double result2 = resampler.convolve_proc_(
       resampler.kernel_storage_.get(), resampler.kernel_storage_.get(),
       resampler.kernel_storage_.get(), kKernelInterpolationFactor);
   EXPECT_NEAR(result2, result, kEpsilon);
@@ -157,12 +149,11 @@ TEST(SincResamplerTest, Convolve) {
   result = resampler.Convolve_C(
       resampler.kernel_storage_.get() + 1, resampler.kernel_storage_.get(),
       resampler.kernel_storage_.get(), kKernelInterpolationFactor);
-  result2 = resampler.CONVOLVE_FUNC(
+  result2 = resampler.convolve_proc_(
       resampler.kernel_storage_.get() + 1, resampler.kernel_storage_.get(),
       resampler.kernel_storage_.get(), kKernelInterpolationFactor);
   EXPECT_NEAR(result2, result, kEpsilon);
 }
-#endif
 
 // Benchmark for the various Convolve() methods.  Make sure to build with
 // branding=Chrome so that RTC_DCHECKs are compiled out when benchmarking.
@@ -190,7 +181,6 @@ TEST(SincResamplerTest, ConvolveBenchmark) {
       (rtc::TimeNanos() - start) / rtc::kNumNanosecsPerMicrosec;
   printf("Convolve_C took %.2fms.\n", total_time_c_us / 1000);
 
-#if defined(CONVOLVE_FUNC)
 #if defined(WEBRTC_ARCH_X86_FAMILY)
   ASSERT_TRUE(WebRtc_GetCPUInfo(kSSE2));
 #elif defined(WEBRTC_ARCH_ARM_V7)
@@ -200,35 +190,32 @@ TEST(SincResamplerTest, ConvolveBenchmark) {
   // Benchmark with unaligned input pointer.
   start = rtc::TimeNanos();
   for (int j = 0; j < kConvolveIterations; ++j) {
-    resampler.CONVOLVE_FUNC(
+    resampler.convolve_proc_(
         resampler.kernel_storage_.get() + 1, resampler.kernel_storage_.get(),
         resampler.kernel_storage_.get(), kKernelInterpolationFactor);
   }
   double total_time_optimized_unaligned_us =
       (rtc::TimeNanos() - start) / rtc::kNumNanosecsPerMicrosec;
-  printf(STRINGIZE(CONVOLVE_FUNC) "(unaligned) took %.2fms; which is %.2fx "
+  printf(STRINGIZE(convolve_proc_) "(unaligned) took %.2fms; which is %.2fx "
          "faster than Convolve_C.\n", total_time_optimized_unaligned_us / 1000,
          total_time_c_us / total_time_optimized_unaligned_us);
 
   // Benchmark with aligned input pointer.
   start = rtc::TimeNanos();
   for (int j = 0; j < kConvolveIterations; ++j) {
-    resampler.CONVOLVE_FUNC(
+    resampler.convolve_proc_(
         resampler.kernel_storage_.get(), resampler.kernel_storage_.get(),
         resampler.kernel_storage_.get(), kKernelInterpolationFactor);
   }
   double total_time_optimized_aligned_us =
       (rtc::TimeNanos() - start) / rtc::kNumNanosecsPerMicrosec;
-  printf(STRINGIZE(CONVOLVE_FUNC) " (aligned) took %.2fms; which is %.2fx "
+  printf(STRINGIZE(convolve_proc_) " (aligned) took %.2fms; which is %.2fx "
          "faster than Convolve_C and %.2fx faster than "
-         STRINGIZE(CONVOLVE_FUNC) " (unaligned).\n",
+         STRINGIZE(convolve_proc_) " (unaligned).\n",
          total_time_optimized_aligned_us / 1000,
          total_time_c_us / total_time_optimized_aligned_us,
          total_time_optimized_unaligned_us / total_time_optimized_aligned_us);
-#endif
 }
-
-#undef CONVOLVE_FUNC
 
 typedef std::tuple<int, int, double, double> SincResamplerTestData;
 class SincResamplerTest
@@ -352,7 +339,7 @@ INSTANTIATE_TEST_SUITE_P(
         std::make_tuple(16000, 44100, kResamplingRMSError, -62.54),
         std::make_tuple(22050, 44100, kResamplingRMSError, -73.53),
         std::make_tuple(32000, 44100, kResamplingRMSError, -63.32),
-        std::make_tuple(44100, 44100, kResamplingRMSError, -73.53),
+        std::make_tuple(44100, 44100, kResamplingRMSError, -73.52),
         std::make_tuple(48000, 44100, -15.01, -64.04),
         std::make_tuple(96000, 44100, -18.49, -25.51),
         std::make_tuple(192000, 44100, -20.50, -13.31),
@@ -360,7 +347,7 @@ INSTANTIATE_TEST_SUITE_P(
         // To 48kHz
         std::make_tuple(8000, 48000, kResamplingRMSError, -63.43),
         std::make_tuple(11025, 48000, kResamplingRMSError, -62.61),
-        std::make_tuple(16000, 48000, kResamplingRMSError, -63.96),
+        std::make_tuple(16000, 48000, kResamplingRMSError, -63.95),
         std::make_tuple(22050, 48000, kResamplingRMSError, -62.42),
         std::make_tuple(32000, 48000, kResamplingRMSError, -64.04),
         std::make_tuple(44100, 48000, kResamplingRMSError, -62.63),
