@@ -98,8 +98,7 @@ class VideoReceiveStream2Test : public ::testing::Test {
         task_queue_factory_(CreateDefaultTaskQueueFactory()),
         config_(&mock_transport_),
         call_stats_(Clock::GetRealTimeClock(), loop_.task_queue()),
-        h264_decoder_factory_(&mock_h264_video_decoder_),
-        null_decoder_factory_(&mock_null_video_decoder_) {}
+        h264_decoder_factory_(&mock_h264_video_decoder_) {}
 
   void SetUp() {
     constexpr int kDefaultNumCpuCores = 2;
@@ -113,11 +112,6 @@ class VideoReceiveStream2Test : public ::testing::Test {
         {"sprop-parameter-sets", "Z0IACpZTBYmI,aMljiA=="});
     h264_decoder.decoder_factory = &h264_decoder_factory_;
     config_.decoders.push_back(h264_decoder);
-    VideoReceiveStream::Decoder null_decoder;
-    null_decoder.payload_type = 98;
-    null_decoder.video_format = SdpVideoFormat("null");
-    null_decoder.decoder_factory = &null_decoder_factory_;
-    config_.decoders.push_back(null_decoder);
 
     clock_ = Clock::GetRealTimeClock();
     timing_ = new VCMTiming(clock_);
@@ -137,9 +131,7 @@ class VideoReceiveStream2Test : public ::testing::Test {
   VideoReceiveStream::Config config_;
   internal::CallStats call_stats_;
   MockVideoDecoder mock_h264_video_decoder_;
-  MockVideoDecoder mock_null_video_decoder_;
   test::VideoDecoderProxyFactory h264_decoder_factory_;
-  test::VideoDecoderProxyFactory null_decoder_factory_;
   cricket::FakeVideoRenderer fake_renderer_;
   MockTransport mock_transport_;
   PacketRouter packet_router_;
