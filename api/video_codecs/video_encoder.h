@@ -73,10 +73,16 @@ class EncodedImageCallback {
   };
 
   // Callback function which is called when an image has been encoded.
-  virtual Result OnEncodedImage(
-      const EncodedImage& encoded_image,
-      const CodecSpecificInfo* codec_specific_info,
-      const RTPFragmentationHeader* fragmentation) = 0;
+  // Deprecated, use OnEncodedImage below instead, see bugs.webrtc.org/6471
+  virtual Result OnEncodedImage(const EncodedImage& encoded_image,
+                                const CodecSpecificInfo* codec_specific_info,
+                                const RTPFragmentationHeader* fragmentation);
+
+  // Callback function which is called when an image has been encoded.
+  // TODO(bugs.webrtc.org/6471): Make pure virtual
+  // when OnEncodedImage above is deleted.
+  virtual Result OnEncodedImage(const EncodedImage& encoded_image,
+                                const CodecSpecificInfo* codec_specific_info);
 
   virtual void OnDroppedFrame(DropReason reason) {}
 };
