@@ -11,9 +11,11 @@
 #define API_TEST_NETWORK_EMULATION_NETWORK_EMULATION_INTERFACES_H_
 
 #include <map>
+#include <memory>
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/array_view.h"
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
 #include "api/units/timestamp.h"
@@ -86,107 +88,48 @@ struct EmulatedNetworkIncomingStats {
   }
 };
 
-struct EmulatedNetworkStats {
-  int64_t packets_sent = 0;
-  DataSize bytes_sent = DataSize::Zero();
+class EmulatedNetworkStats {
+ public:
+  virtual ~EmulatedNetworkStats() = default;
 
-  DataSize first_sent_packet_size = DataSize::Zero();
-  Timestamp first_packet_sent_time = Timestamp::PlusInfinity();
-  Timestamp last_packet_sent_time = Timestamp::MinusInfinity();
+  virtual int64_t PacketsSent() const = 0;
+
+  virtual DataSize BytesSent() const = 0;
 
   // List of IP addresses that were used to send data considered in this stats
   // object.
-  std::vector<rtc::IPAddress> local_addresses;
+  virtual std::vector<rtc::IPAddress> LocalAddresses() const = 0;
 
-  std::map<rtc::IPAddress, EmulatedNetworkIncomingStats>
-      incoming_stats_per_source;
+  virtual DataSize FirstSentPacketSize() const = 0;
+  // Returns time of the first packet sent or infinite value if no packets were
+  // sent.
+  virtual Timestamp FirstPacketSentTime() const = 0;
+  // Returns time of the last packet sent or infinite value if no packets were
+  // sent.
+  virtual Timestamp LastPacketSentTime() const = 0;
 
-  DataRate AverageSendRate() const {
-    RTC_DCHECK_GE(packets_sent, 2);
-    return (bytes_sent - first_sent_packet_size) /
-           (last_packet_sent_time - first_packet_sent_time);
-  }
-
+  virtual DataRate AverageSendRate() const = 0;
   // Total amount of packets received regardless of the destination address.
-  int64_t PacketsReceived() const {
-    int64_t packets_received = 0;
-    for (const auto& incoming_stats : incoming_stats_per_source) {
-      packets_received += incoming_stats.second.packets_received;
-    }
-    return packets_received;
-  }
-
+  virtual int64_t PacketsReceived() const = 0;
   // Total amount of bytes in received packets.
-  DataSize BytesReceived() const {
-    DataSize bytes_received = DataSize::Zero();
-    for (const auto& incoming_stats : incoming_stats_per_source) {
-      bytes_received += incoming_stats.second.bytes_received;
-    }
-    return bytes_received;
-  }
-
+  virtual DataSize BytesReceived() const = 0;
   // Total amount of packets that were received, but no destination was found.
-  int64_t PacketsDropped() const {
-    int64_t packets_dropped = 0;
-    for (const auto& incoming_stats : incoming_stats_per_source) {
-      packets_dropped += incoming_stats.second.packets_dropped;
-    }
-    return packets_dropped;
-  }
-
+  virtual int64_t PacketsDropped() const = 0;
   // Total amount of bytes in dropped packets.
-  DataSize BytesDropped() const {
-    DataSize bytes_dropped = DataSize::Zero();
-    for (const auto& incoming_stats : incoming_stats_per_source) {
-      bytes_dropped += incoming_stats.second.bytes_dropped;
-    }
-    return bytes_dropped;
-  }
+  virtual DataSize BytesDropped() const = 0;
 
-  DataSize FirstReceivedPacketSize() const {
-    Timestamp first_packet_received_time = Timestamp::PlusInfinity();
-    DataSize first_received_packet_size = DataSize::Zero();
-    for (const auto& incoming_stats : incoming_stats_per_source) {
-      if (first_packet_received_time >
-          incoming_stats.second.first_packet_received_time) {
-        first_packet_received_time =
-            incoming_stats.second.first_packet_received_time;
-        first_received_packet_size =
-            incoming_stats.second.first_received_packet_size;
-      }
-    }
-    return first_received_packet_size;
-  }
+  virtual DataSize FirstReceivedPacketSize() const = 0;
+  // Returns time of the first packet received or infinite value if no packets
+  // were received.
+  virtual Timestamp FirstPacketReceivedTime() const = 0;
+  // Returns time of the last packet received or infinite value if no packets
+  // were received.
+  virtual Timestamp LastPacketReceivedTime() const = 0;
 
-  Timestamp FirstPacketReceivedTime() const {
-    Timestamp first_packet_received_time = Timestamp::PlusInfinity();
-    for (const auto& incoming_stats : incoming_stats_per_source) {
-      if (first_packet_received_time >
-          incoming_stats.second.first_packet_received_time) {
-        first_packet_received_time =
-            incoming_stats.second.first_packet_received_time;
-      }
-    }
-    return first_packet_received_time;
-  }
+  virtual DataRate AverageReceiveRate() const = 0;
 
-  Timestamp LastPacketReceivedTime() const {
-    Timestamp last_packet_received_time = Timestamp::MinusInfinity();
-    for (const auto& incoming_stats : incoming_stats_per_source) {
-      if (last_packet_received_time <
-          incoming_stats.second.last_packet_received_time) {
-        last_packet_received_time =
-            incoming_stats.second.last_packet_received_time;
-      }
-    }
-    return last_packet_received_time;
-  }
-
-  DataRate AverageReceiveRate() const {
-    RTC_DCHECK_GE(PacketsReceived(), 2);
-    return (BytesReceived() - FirstReceivedPacketSize()) /
-           (LastPacketReceivedTime() - FirstPacketReceivedTime());
-  }
+  virtual std::map<rtc::IPAddress, EmulatedNetworkIncomingStats>
+  IncomingStatsPerSource() const = 0;
 };
 
 // EmulatedEndpoint is an abstraction for network interface on device. Instances
@@ -218,7 +161,7 @@ class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
   virtual void UnbindReceiver(uint16_t port) = 0;
   virtual rtc::IPAddress GetPeerLocalAddress() const = 0;
 
-  virtual EmulatedNetworkStats stats() = 0;
+  virtual std::unique_ptr<EmulatedNetworkStats> stats() const = 0;
 
  private:
   // Ensure that there can be no other subclass than EmulatedEndpointImpl. This

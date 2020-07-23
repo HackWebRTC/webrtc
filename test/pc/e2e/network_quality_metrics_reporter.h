@@ -11,6 +11,7 @@
 #ifndef TEST_PC_E2E_NETWORK_QUALITY_METRICS_REPORTER_H_
 #define TEST_PC_E2E_NETWORK_QUALITY_METRICS_REPORTER_H_
 
+#include <memory>
 #include <string>
 
 #include "absl/strings/string_view.h"
@@ -47,10 +48,10 @@ class NetworkQualityMetricsReporter
     DataSize payload_sent = DataSize::Zero();
   };
 
-  static EmulatedNetworkStats PopulateStats(
+  static std::unique_ptr<EmulatedNetworkStats> PopulateStats(
       EmulatedNetworkManagerInterface* network);
   void ReportStats(const std::string& network_label,
-                   const EmulatedNetworkStats& stats,
+                   std::unique_ptr<EmulatedNetworkStats> stats,
                    int64_t packet_loss);
   void ReportPCStats(const std::string& pc_label, const PCStats& stats);
   void ReportResult(const std::string& metric_name,

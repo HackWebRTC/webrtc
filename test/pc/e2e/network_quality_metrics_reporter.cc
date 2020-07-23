@@ -34,12 +34,13 @@ void NetworkQualityMetricsReporter::Start(
     const TrackIdStreamInfoMap* /*reporter_helper*/) {
   test_case_name_ = std::string(test_case_name);
   // Check that network stats are clean before test execution.
-  EmulatedNetworkStats alice_stats = PopulateStats(alice_network_);
-  RTC_CHECK_EQ(alice_stats.packets_sent, 0);
-  RTC_CHECK_EQ(alice_stats.PacketsReceived(), 0);
-  EmulatedNetworkStats bob_stats = PopulateStats(bob_network_);
-  RTC_CHECK_EQ(bob_stats.packets_sent, 0);
-  RTC_CHECK_EQ(bob_stats.PacketsReceived(), 0);
+  std::unique_ptr<EmulatedNetworkStats> alice_stats =
+      PopulateStats(alice_network_);
+  RTC_CHECK_EQ(alice_stats->PacketsSent(), 0);
+  RTC_CHECK_EQ(alice_stats->PacketsReceived(), 0);
+  std::unique_ptr<EmulatedNetworkStats> bob_stats = PopulateStats(bob_network_);
+  RTC_CHECK_EQ(bob_stats->PacketsSent(), 0);
+  RTC_CHECK_EQ(bob_stats->PacketsReceived(), 0);
 }
 
 void NetworkQualityMetricsReporter::OnStatsReports(
@@ -69,12 +70,15 @@ void NetworkQualityMetricsReporter::OnStatsReports(
 }
 
 void NetworkQualityMetricsReporter::StopAndReportResults() {
-  EmulatedNetworkStats alice_stats = PopulateStats(alice_network_);
-  EmulatedNetworkStats bob_stats = PopulateStats(bob_network_);
-  ReportStats("alice", alice_stats,
-              alice_stats.packets_sent - bob_stats.PacketsReceived());
-  ReportStats("bob", bob_stats,
-              bob_stats.packets_sent - alice_stats.PacketsReceived());
+  std::unique_ptr<EmulatedNetworkStats> alice_stats =
+      PopulateStats(alice_network_);
+  std::unique_ptr<EmulatedNetworkStats> bob_stats = PopulateStats(bob_network_);
+  int64_t alice_packets_loss =
+      alice_stats->PacketsSent() - bob_stats->PacketsReceived();
+  int64_t bob_packets_loss =
+      bob_stats->PacketsSent() - alice_stats->PacketsReceived();
+  ReportStats("alice", std::move(alice_stats), alice_packets_loss);
+  ReportStats("bob", std::move(bob_stats), bob_packets_loss);
 
   if (!webrtc::field_trial::IsEnabled(kUseStandardBytesStats)) {
     RTC_LOG(LS_ERROR)
@@ -87,12 +91,13 @@ void NetworkQualityMetricsReporter::StopAndReportResults() {
   }
 }
 
-EmulatedNetworkStats NetworkQualityMetricsReporter::PopulateStats(
+std::unique_ptr<EmulatedNetworkStats>
+NetworkQualityMetricsReporter::PopulateStats(
     EmulatedNetworkManagerInterface* network) {
   rtc::Event wait;
-  EmulatedNetworkStats stats;
-  network->GetStats([&](const EmulatedNetworkStats& s) {
-    stats = s;
+  std::unique_ptr<EmulatedNetworkStats> stats;
+  network->GetStats([&](std::unique_ptr<EmulatedNetworkStats> s) {
+    stats = std::move(s);
     wait.Set();
   });
   bool stats_received = wait.Wait(kStatsWaitTimeoutMs);
@@ -102,26 +107,26 @@ EmulatedNetworkStats NetworkQualityMetricsReporter::PopulateStats(
 
 void NetworkQualityMetricsReporter::ReportStats(
     const std::string& network_label,
-    const EmulatedNetworkStats& stats,
+    std::unique_ptr<EmulatedNetworkStats> stats,
     int64_t packet_loss) {
-  ReportResult("bytes_sent", network_label, stats.bytes_sent.bytes(),
+  ReportResult("bytes_sent", network_label, stats->BytesSent().bytes(),
                "sizeInBytes");
-  ReportResult("packets_sent", network_label, stats.packets_sent, "unitless");
+  ReportResult("packets_sent", network_label, stats->PacketsSent(), "unitless");
   ReportResult(
       "average_send_rate", network_label,
-      stats.packets_sent >= 2 ? stats.AverageSendRate().bytes_per_sec() : 0,
+      stats->PacketsSent() >= 2 ? stats->AverageSendRate().bytes_per_sec() : 0,
       "bytesPerSecond");
-  ReportResult("bytes_dropped", network_label, stats.BytesDropped().bytes(),
+  ReportResult("bytes_dropped", network_label, stats->BytesDropped().bytes(),
                "sizeInBytes");
-  ReportResult("packets_dropped", network_label, stats.PacketsDropped(),
+  ReportResult("packets_dropped", network_label, stats->PacketsDropped(),
                "unitless");
-  ReportResult("bytes_received", network_label, stats.BytesReceived().bytes(),
+  ReportResult("bytes_received", network_label, stats->BytesReceived().bytes(),
                "sizeInBytes");
-  ReportResult("packets_received", network_label, stats.PacketsReceived(),
+  ReportResult("packets_received", network_label, stats->PacketsReceived(),
                "unitless");
   ReportResult("average_receive_rate", network_label,
-               stats.PacketsReceived() >= 2
-                   ? stats.AverageReceiveRate().bytes_per_sec()
+               stats->PacketsReceived() >= 2
+                   ? stats->AverageReceiveRate().bytes_per_sec()
                    : 0,
                "bytesPerSecond");
   ReportResult("sent_packets_loss", network_label, packet_loss, "unitless");

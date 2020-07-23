@@ -35,6 +35,7 @@ rtc_library("emulated_network") {
     "traffic_route.h",
   ]
   deps = [
+    "../../api:array_view",
     "../../api:network_emulation_manager_api",
     "../../api:simulated_network_api",
     "../../api:time_controller",
