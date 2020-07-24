@@ -780,6 +780,8 @@ void VideoStreamEncoder::ReconfigureEncoder() {
 
   rate_allocator_ =
       settings_.bitrate_allocator_factory->CreateVideoBitrateAllocator(codec);
+  rate_allocator_->SetLegacyConferenceMode(
+      encoder_config_.legacy_conference_mode);
 
   // Reset (release existing encoder) if one exists and anything except
   // start bitrate or max framerate has changed.

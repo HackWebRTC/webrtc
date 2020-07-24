@@ -879,7 +879,7 @@ size_t LibvpxVp8Encoder::SteadyStateSize(int sid, int tid) {
   const int encoder_id = encoders_.size() - 1 - sid;
   size_t bitrate_bps;
   float fps;
-  if (SimulcastUtility::IsConferenceModeScreenshare(codec_) ||
+  if ((SimulcastUtility::IsConferenceModeScreenshare(codec_) && sid == 0) ||
       vpx_configs_[encoder_id].ts_number_layers <= 1) {
     // In conference screenshare there's no defined per temporal layer bitrate
     // and framerate.

@@ -55,7 +55,8 @@ VideoEncoderConfig::VideoEncoderConfig()
       min_transmit_bitrate_bps(0),
       max_bitrate_bps(0),
       bitrate_priority(1.0),
-      number_of_streams(0) {}
+      number_of_streams(0),
+      legacy_conference_mode(false) {}
 
 VideoEncoderConfig::VideoEncoderConfig(VideoEncoderConfig&&) = default;
 

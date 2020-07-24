@@ -176,6 +176,9 @@ class VideoEncoderConfig {
   // Max number of encoded VideoStreams to produce.
   size_t number_of_streams;
 
+  // Legacy Google conference mode flag for simulcast screenshare
+  bool legacy_conference_mode;
+
  private:
   // Access to the copy constructor is private to force use of the Copy()
   // method for those exceptional cases where we do use it.

@@ -88,8 +88,9 @@ class SimulcastRateAllocatorTest : public ::testing::TestWithParam<bool> {
     EXPECT_EQ(sum, actual.get_sum_bps());
   }
 
-  void CreateAllocator() {
+  void CreateAllocator(bool legacy_conference_mode = false) {
     allocator_.reset(new SimulcastRateAllocator(codec_));
+    allocator_->SetLegacyConferenceMode(legacy_conference_mode);
   }
 
   void SetupCodec3SL3TL(const std::vector<bool>& active_streams) {
@@ -669,9 +670,9 @@ INSTANTIATE_TEST_SUITE_P(ScreenshareTest,
                          ScreenshareRateAllocationTest,
                          ::testing::Bool());
 
-TEST_P(ScreenshareRateAllocationTest, BitrateBelowTl0) {
+TEST_P(ScreenshareRateAllocationTest, ConferenceBitrateBelowTl0) {
   SetupConferenceScreenshare(GetParam());
-  CreateAllocator();
+  CreateAllocator(true);
 
   VideoBitrateAllocation allocation =
       allocator_->Allocate(VideoBitrateAllocationParameters(
@@ -684,9 +685,9 @@ TEST_P(ScreenshareRateAllocationTest, BitrateBelowTl0) {
   EXPECT_EQ(allocation.is_bw_limited(), GetParam());
 }
 
-TEST_P(ScreenshareRateAllocationTest, BitrateAboveTl0) {
+TEST_P(ScreenshareRateAllocationTest, ConferenceBitrateAboveTl0) {
   SetupConferenceScreenshare(GetParam());
-  CreateAllocator();
+  CreateAllocator(true);
 
   uint32_t target_bitrate_kbps =
       (kLegacyScreenshareTargetBitrateKbps + kLegacyScreenshareMaxBitrateKbps) /
@@ -704,10 +705,10 @@ TEST_P(ScreenshareRateAllocationTest, BitrateAboveTl0) {
   EXPECT_EQ(allocation.is_bw_limited(), GetParam());
 }
 
-TEST_F(ScreenshareRateAllocationTest, BitrateAboveTl1) {
+TEST_F(ScreenshareRateAllocationTest, ConferenceBitrateAboveTl1) {
   // This test is only for the non-simulcast case.
   SetupConferenceScreenshare(false);
-  CreateAllocator();
+  CreateAllocator(true);
 
   VideoBitrateAllocation allocation =
       allocator_->Allocate(VideoBitrateAllocationParameters(

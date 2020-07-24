@@ -146,6 +146,9 @@ class RTC_EXPORT VideoCodec {
     uint16_t outlier_ratio_percent;
   } timing_frame_thresholds;
 
+  // Legacy Google conference mode flag for simulcast screenshare
+  bool legacy_conference_mode;
+
   bool operator==(const VideoCodec& other) const = delete;
   bool operator!=(const VideoCodec& other) const = delete;
 

@@ -619,6 +619,10 @@ void SimulcastEncoderAdapter::PopulateStreamCodec(
   // TODO(ronghuawu): what to do with targetBitrate.
 
   stream_codec->startBitrate = start_bitrate_kbps;
+
+  // Legacy screenshare mode is only enabled for the first simulcast layer
+  stream_codec->legacy_conference_mode =
+      inst.legacy_conference_mode && stream_index == 0;
 }
 
 bool SimulcastEncoderAdapter::Initialized() const {
