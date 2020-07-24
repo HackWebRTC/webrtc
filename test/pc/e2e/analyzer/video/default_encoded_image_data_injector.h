@@ -63,6 +63,8 @@ class DefaultEncodedImageDataInjector : public EncodedImageDataInjector,
                           bool discard,
                           const EncodedImage& source,
                           int /*coding_entity_id*/) override;
+
+  void Start(int expected_receivers_count) override {}
   EncodedImageExtractionResult ExtractData(const EncodedImage& source,
                                            int coding_entity_id) override;
 };

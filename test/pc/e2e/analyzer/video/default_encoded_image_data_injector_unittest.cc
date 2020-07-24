@@ -32,6 +32,7 @@ rtc::Buffer CreateBufferOfSizeNFilledWithValuesFromX(size_t n, uint8_t x) {
 
 TEST(DefaultEncodedImageDataInjector, InjectExtractDiscardFalse) {
   DefaultEncodedImageDataInjector injector;
+  injector.Start(1);
 
   rtc::Buffer buffer = CreateBufferOfSizeNFilledWithValuesFromX(10, 1);
 
@@ -50,6 +51,7 @@ TEST(DefaultEncodedImageDataInjector, InjectExtractDiscardFalse) {
 
 TEST(DefaultEncodedImageDataInjector, InjectExtractDiscardTrue) {
   DefaultEncodedImageDataInjector injector;
+  injector.Start(1);
 
   rtc::Buffer buffer = CreateBufferOfSizeNFilledWithValuesFromX(10, 1);
 
@@ -65,6 +67,7 @@ TEST(DefaultEncodedImageDataInjector, InjectExtractDiscardTrue) {
 
 TEST(DefaultEncodedImageDataInjector, Inject3Extract3) {
   DefaultEncodedImageDataInjector injector;
+  injector.Start(1);
 
   rtc::Buffer buffer1 = CreateBufferOfSizeNFilledWithValuesFromX(10, 1);
   rtc::Buffer buffer2 = CreateBufferOfSizeNFilledWithValuesFromX(10, 11);
@@ -108,6 +111,7 @@ TEST(DefaultEncodedImageDataInjector, Inject3Extract3) {
 
 TEST(DefaultEncodedImageDataInjector, InjectExtractFromConcatenated) {
   DefaultEncodedImageDataInjector injector;
+  injector.Start(1);
 
   rtc::Buffer buffer1 = CreateBufferOfSizeNFilledWithValuesFromX(10, 1);
   rtc::Buffer buffer2 = CreateBufferOfSizeNFilledWithValuesFromX(10, 11);
@@ -151,6 +155,7 @@ TEST(DefaultEncodedImageDataInjector, InjectExtractFromConcatenated) {
 TEST(DefaultEncodedImageDataInjector,
      InjectExtractFromConcatenatedAllDiscarded) {
   DefaultEncodedImageDataInjector injector;
+  injector.Start(1);
 
   rtc::Buffer buffer1 = CreateBufferOfSizeNFilledWithValuesFromX(10, 1);
   rtc::Buffer buffer2 = CreateBufferOfSizeNFilledWithValuesFromX(10, 11);

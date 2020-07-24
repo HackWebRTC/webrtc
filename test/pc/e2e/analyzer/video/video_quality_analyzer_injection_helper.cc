@@ -149,6 +149,7 @@ void VideoQualityAnalyzerInjectionHelper::Start(
     rtc::ArrayView<const std::string> peer_names,
     int max_threads_count) {
   analyzer_->Start(std::move(test_case_name), peer_names, max_threads_count);
+  extractor_->Start(peer_names.size());
 }
 
 void VideoQualityAnalyzerInjectionHelper::OnStatsReports(
