@@ -124,15 +124,6 @@ DefaultVideoQualityAnalyzer::DefaultVideoQualityAnalyzer(
     webrtc::Clock* clock,
     DefaultVideoQualityAnalyzerOptions options)
     : options_(options), clock_(clock) {}
-DefaultVideoQualityAnalyzer::DefaultVideoQualityAnalyzer(
-    bool heavy_metrics_computation_enabled,
-    size_t max_frames_in_flight_per_stream_count)
-    : clock_(Clock::GetRealTimeClock()) {
-  options_.heavy_metrics_computation_enabled =
-      heavy_metrics_computation_enabled;
-  options_.max_frames_in_flight_per_stream_count =
-      max_frames_in_flight_per_stream_count;
-}
 DefaultVideoQualityAnalyzer::~DefaultVideoQualityAnalyzer() {
   Stop();
 }

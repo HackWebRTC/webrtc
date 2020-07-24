@@ -183,11 +183,6 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
       webrtc::Clock* clock,
       DefaultVideoQualityAnalyzerOptions options =
           DefaultVideoQualityAnalyzerOptions());
-  // Keep for backward compatibility during migration. Will be removed soon.
-  explicit DefaultVideoQualityAnalyzer(
-      bool heavy_metrics_computation_enabled = true,
-      size_t max_frames_in_flight_per_stream_count =
-          kDefaultMaxFramesInFlightPerStream);
   ~DefaultVideoQualityAnalyzer() override;
 
   void Start(std::string test_case_name,
