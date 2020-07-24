@@ -52,13 +52,19 @@ if (rtc_include_tests) {
     sources = [
       "external_time_controller_unittest.cc",
       "simulated_time_controller_unittest.cc",
+      "time_controller_conformance_test.cc",
     ]
     deps = [
       ":time_controller",
       "../:test_support",
+      "../../api:time_controller",
+      "../../api/units:time_delta",
+      "../../rtc_base",
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_task_queue",
+      "../../rtc_base/synchronization:mutex",
       "../../rtc_base/task_utils:repeating_task",
+      "../../rtc_base/task_utils:to_queued_task",
     ]
   }
 }
