@@ -170,6 +170,14 @@ struct DefaultVideoQualityAnalyzerOptions {
   // Tells DefaultVideoQualityAnalyzer if heavy metrics like PSNR and SSIM have
   // to be computed or not.
   bool heavy_metrics_computation_enabled = true;
+  // If true DefaultVideoQualityAnalyzer will try to adjust frames before
+  // computing PSNR and SSIM for them. In some cases picture may be shifted by
+  // a few pixels after the encode/decode step. Those difference is invisible
+  // for a human eye, but it affects the metrics. So the adjustment is used to
+  // get metrics that are closer to how human persepts the video. This feature
+  // significantly slows down the comparison, so turn it on only when it is
+  // needed.
+  bool adjust_cropping_before_comparing_frames = false;
   // Amount of frames that are queued in the DefaultVideoQualityAnalyzer from
   // the point they were captured to the point they were rendered on all
   // receivers per stream.

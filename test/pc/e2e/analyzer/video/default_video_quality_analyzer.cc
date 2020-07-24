@@ -22,6 +22,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/time_utils.h"
+#include "rtc_tools/frame_analyzer/video_geometry_aligner.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
@@ -671,8 +672,18 @@ void DefaultVideoQualityAnalyzer::ProcessComparison(
   double ssim = -1.0;
   if (options_.heavy_metrics_computation_enabled && comparison.captured &&
       !comparison.dropped) {
-    psnr = I420PSNR(&*comparison.captured, &*comparison.rendered);
-    ssim = I420SSIM(&*comparison.captured, &*comparison.rendered);
+    rtc::scoped_refptr<I420BufferInterface> reference_buffer =
+        comparison.captured->video_frame_buffer()->ToI420();
+    rtc::scoped_refptr<I420BufferInterface> test_buffer =
+        comparison.rendered->video_frame_buffer()->ToI420();
+    if (options_.adjust_cropping_before_comparing_frames) {
+      test_buffer =
+          ScaleVideoFrameBuffer(*test_buffer.get(), reference_buffer->width(),
+                                reference_buffer->height());
+      reference_buffer = test::AdjustCropping(reference_buffer, test_buffer);
+    }
+    psnr = I420PSNR(*reference_buffer.get(), *test_buffer.get());
+    ssim = I420SSIM(*reference_buffer.get(), *test_buffer.get());
   }
 
   const FrameStats& frame_stats = comparison.frame_stats;
