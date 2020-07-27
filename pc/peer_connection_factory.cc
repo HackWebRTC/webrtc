@@ -262,13 +262,9 @@ PeerConnectionFactory::CreatePeerConnection(
     else
       packet_socket_factory = default_socket_factory_.get();
 
-    network_thread_->Invoke<void>(RTC_FROM_HERE, [this, &configuration,
-                                                  &dependencies,
-                                                  &packet_socket_factory]() {
-      dependencies.allocator = std::make_unique<cricket::BasicPortAllocator>(
-          default_network_manager_.get(), packet_socket_factory,
-          configuration.turn_customizer);
-    });
+    dependencies.allocator = std::make_unique<cricket::BasicPortAllocator>(
+        default_network_manager_.get(), packet_socket_factory,
+        configuration.turn_customizer);
   }
 
   if (!dependencies.async_resolver_factory) {
@@ -281,10 +277,7 @@ PeerConnectionFactory::CreatePeerConnection(
         std::make_unique<DefaultIceTransportFactory>();
   }
 
-  network_thread_->Invoke<void>(
-      RTC_FROM_HERE,
-      rtc::Bind(&cricket::PortAllocator::SetNetworkIgnoreMask,
-                dependencies.allocator.get(), options_.network_ignore_mask));
+  dependencies.allocator->SetNetworkIgnoreMask(options_.network_ignore_mask);
 
   std::unique_ptr<RtcEventLog> event_log =
       worker_thread_->Invoke<std::unique_ptr<RtcEventLog>>(
