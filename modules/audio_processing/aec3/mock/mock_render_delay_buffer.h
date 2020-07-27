@@ -32,6 +32,7 @@ class MockRenderDelayBuffer : public RenderDelayBuffer {
               Insert,
               (const std::vector<std::vector<std::vector<float>>>& block),
               (override));
+  MOCK_METHOD(void, HandleSkippedCaptureProcessing, (), (override));
   MOCK_METHOD(RenderDelayBuffer::BufferingEvent,
               PrepareCaptureProcessing,
               (),
