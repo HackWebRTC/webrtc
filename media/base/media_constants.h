@@ -145,6 +145,9 @@ extern const int kDefaultVideoMaxFramerate;
 extern const size_t kConferenceMaxNumSpatialLayers;
 extern const size_t kConferenceMaxNumTemporalLayers;
 extern const size_t kConferenceDefaultNumTemporalLayers;
+
+extern const char kApplicationSpecificBandwidth[];
+extern const char kTransportSpecificBandwidth[];
 }  // namespace cricket
 
 #endif  // MEDIA_BASE_MEDIA_CONSTANTS_H_

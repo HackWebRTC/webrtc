@@ -2189,16 +2189,31 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithBundle) {
 
 TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithBandwidth) {
   VideoContentDescription* vcd = GetFirstVideoContentDescription(&desc_);
-  vcd->set_bandwidth(100 * 1000);
+  vcd->set_bandwidth(100 * 1000 + 755);  // Integer division will drop the 755.
+  vcd->set_bandwidth_type("AS");
   AudioContentDescription* acd = GetFirstAudioContentDescription(&desc_);
-  acd->set_bandwidth(50 * 1000);
+  acd->set_bandwidth(555);
+  acd->set_bandwidth_type("TIAS");
   ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                 jdesc_.session_version()));
   std::string message = webrtc::SdpSerialize(jdesc_);
   std::string sdp_with_bandwidth = kSdpFullString;
   InjectAfter("c=IN IP4 74.125.224.39\r\n", "b=AS:100\r\n",
               &sdp_with_bandwidth);
-  InjectAfter("c=IN IP4 74.125.127.126\r\n", "b=AS:50\r\n",
+  InjectAfter("c=IN IP4 74.125.127.126\r\n", "b=TIAS:555\r\n",
+              &sdp_with_bandwidth);
+  EXPECT_EQ(sdp_with_bandwidth, message);
+}
+
+// Should default to b=AS if bandwidth_type isn't set.
+TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithMissingBandwidthType) {
+  VideoContentDescription* vcd = GetFirstVideoContentDescription(&desc_);
+  vcd->set_bandwidth(100 * 1000);
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
+                                jdesc_.session_version()));
+  std::string message = webrtc::SdpSerialize(jdesc_);
+  std::string sdp_with_bandwidth = kSdpFullString;
+  InjectAfter("c=IN IP4 74.125.224.39\r\n", "b=AS:100\r\n",
               &sdp_with_bandwidth);
   EXPECT_EQ(sdp_with_bandwidth, message);
 }
@@ -2309,6 +2324,7 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithDataChannelAndBandwidth) {
   JsepSessionDescription jsep_desc(kDummyType);
   AddRtpDataChannel();
   data_desc_->set_bandwidth(100 * 1000);
+  data_desc_->set_bandwidth_type("AS");
   MakeDescriptionWithoutCandidates(&jsep_desc);
   std::string message = webrtc::SdpSerialize(jsep_desc);
 
@@ -2601,6 +2617,23 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithBandwidth) {
   InjectAfter("a=mid:video_content_name\r\na=sendrecv\r\n", "b=AS:100\r\n",
               &sdp_with_bandwidth);
   InjectAfter("a=mid:audio_content_name\r\na=sendrecv\r\n", "b=AS:50\r\n",
+              &sdp_with_bandwidth);
+  EXPECT_TRUE(SdpDeserialize(sdp_with_bandwidth, &jdesc_with_bandwidth));
+  VideoContentDescription* vcd = GetFirstVideoContentDescription(&desc_);
+  vcd->set_bandwidth(100 * 1000);
+  AudioContentDescription* acd = GetFirstAudioContentDescription(&desc_);
+  acd->set_bandwidth(50 * 1000);
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
+                                jdesc_.session_version()));
+  EXPECT_TRUE(CompareSessionDescription(jdesc_, jdesc_with_bandwidth));
+}
+
+TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithTiasBandwidth) {
+  JsepSessionDescription jdesc_with_bandwidth(kDummyType);
+  std::string sdp_with_bandwidth = kSdpFullString;
+  InjectAfter("a=mid:video_content_name\r\na=sendrecv\r\n", "b=TIAS:100000\r\n",
+              &sdp_with_bandwidth);
+  InjectAfter("a=mid:audio_content_name\r\na=sendrecv\r\n", "b=TIAS:50000\r\n",
               &sdp_with_bandwidth);
   EXPECT_TRUE(SdpDeserialize(sdp_with_bandwidth, &jdesc_with_bandwidth));
   VideoContentDescription* vcd = GetFirstVideoContentDescription(&desc_);
