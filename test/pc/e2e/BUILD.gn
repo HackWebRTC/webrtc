@@ -520,8 +520,10 @@ if (!build_with_chromium) {
         "../../../api/video:encoded_image",
         "../../../api/video:video_frame",
         "../../../api/video:video_frame_i420",
+        "../../../common_video",
         "../../../modules/rtp_rtcp:rtp_rtcp_format",
         "../../../rtc_base:stringutils",
+        "../../../rtc_tools:video_quality_analysis",
         "../../../system_wrappers",
       ]
     }

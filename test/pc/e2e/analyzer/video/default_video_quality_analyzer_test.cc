@@ -18,7 +18,9 @@
 #include "api/video/encoded_image.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_tools/frame_analyzer/video_geometry_aligner.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/gtest.h"
 #include "test/pc/e2e/analyzer/video/default_video_quality_analyzer.h"
@@ -33,6 +35,7 @@ constexpr int kAnalyzerMaxThreadsCount = 1;
 constexpr int kMaxFramesInFlightPerStream = 10;
 constexpr int kFrameWidth = 320;
 constexpr int kFrameHeight = 240;
+constexpr double kMaxSsim = 1;
 constexpr char kStreamLabel[] = "video-stream";
 constexpr char kSenderPeerName[] = "alice";
 constexpr char kReceiverPeerName[] = "bob";
@@ -40,6 +43,7 @@ constexpr char kReceiverPeerName[] = "bob";
 DefaultVideoQualityAnalyzerOptions AnalyzerOptionsForTest() {
   DefaultVideoQualityAnalyzerOptions options;
   options.heavy_metrics_computation_enabled = false;
+  options.adjust_cropping_before_comparing_frames = false;
   options.max_frames_in_flight_per_stream_count = kMaxFramesInFlightPerStream;
   return options;
 }
@@ -558,6 +562,129 @@ TEST(DefaultVideoQualityAnalyzerTest, OneFrameReceivedTwiceWith2Receivers) {
   EXPECT_EQ(frame_counters.decoded, 1);
   EXPECT_EQ(frame_counters.rendered, 1);
   EXPECT_EQ(frame_counters.dropped, 0);
+}
+
+TEST(DefaultVideoQualityAnalyzerTest, HeavyQualityMetricsFromEqualFrames) {
+  std::unique_ptr<test::FrameGeneratorInterface> frame_generator =
+      test::CreateSquareFrameGenerator(kFrameWidth, kFrameHeight,
+                                       /*type=*/absl::nullopt,
+                                       /*num_squares=*/absl::nullopt);
+
+  DefaultVideoQualityAnalyzerOptions analyzer_options;
+  analyzer_options.heavy_metrics_computation_enabled = true;
+  analyzer_options.adjust_cropping_before_comparing_frames = false;
+  analyzer_options.max_frames_in_flight_per_stream_count =
+      kMaxFramesInFlightPerStream;
+  DefaultVideoQualityAnalyzer analyzer(Clock::GetRealTimeClock(),
+                                       analyzer_options);
+  analyzer.Start("test_case",
+                 std::vector<std::string>{kSenderPeerName, kReceiverPeerName},
+                 kAnalyzerMaxThreadsCount);
+
+  for (int i = 0; i < kMaxFramesInFlightPerStream; ++i) {
+    VideoFrame frame = NextFrame(frame_generator.get(), i);
+    frame.set_id(
+        analyzer.OnFrameCaptured(kSenderPeerName, kStreamLabel, frame));
+    analyzer.OnFramePreEncode(kSenderPeerName, frame);
+    analyzer.OnFrameEncoded(kSenderPeerName, frame.id(), FakeEncode(frame),
+                            VideoQualityAnalyzerInterface::EncoderStats());
+
+    VideoFrame received_frame = DeepCopy(frame);
+    analyzer.OnFramePreDecode(kReceiverPeerName, received_frame.id(),
+                              FakeEncode(received_frame));
+    analyzer.OnFrameDecoded(kReceiverPeerName, received_frame,
+                            VideoQualityAnalyzerInterface::DecoderStats());
+    analyzer.OnFrameRendered(kReceiverPeerName, received_frame);
+  }
+
+  // Give analyzer some time to process frames on async thread. Heavy metrics
+  // computation is turned on, so giving some extra time to be sure that
+  // computatio have ended.
+  SleepMs(500);
+  analyzer.Stop();
+
+  AnalyzerStats stats = analyzer.GetAnalyzerStats();
+  EXPECT_EQ(stats.memory_overloaded_comparisons_done, 0);
+  EXPECT_EQ(stats.comparisons_done, kMaxFramesInFlightPerStream);
+
+  std::vector<StatsSample> frames_in_flight_sizes =
+      GetSortedSamples(stats.frames_in_flight_left_count);
+  EXPECT_EQ(frames_in_flight_sizes.back().value, 0)
+      << ToString(frames_in_flight_sizes);
+
+  std::map<StatsKey, StreamStats> stream_stats = analyzer.GetStats();
+  const StatsKey kAliceBobStats(kStreamLabel, kSenderPeerName,
+                                kReceiverPeerName);
+  EXPECT_EQ(stream_stats.size(), 1lu);
+
+  auto it = stream_stats.find(kAliceBobStats);
+  EXPECT_GE(it->second.psnr.GetMin(), kPerfectPSNR);
+  EXPECT_GE(it->second.ssim.GetMin(), kMaxSsim);
+}
+
+TEST(DefaultVideoQualityAnalyzerTest,
+     HeavyQualityMetricsFromShiftedFramesWithAdjustment) {
+  std::unique_ptr<test::FrameGeneratorInterface> frame_generator =
+      test::CreateSquareFrameGenerator(kFrameWidth, kFrameHeight,
+                                       /*type=*/absl::nullopt,
+                                       /*num_squares=*/absl::nullopt);
+
+  DefaultVideoQualityAnalyzerOptions analyzer_options;
+  analyzer_options.heavy_metrics_computation_enabled = true;
+  analyzer_options.adjust_cropping_before_comparing_frames = true;
+  analyzer_options.max_frames_in_flight_per_stream_count =
+      kMaxFramesInFlightPerStream;
+  DefaultVideoQualityAnalyzer analyzer(Clock::GetRealTimeClock(),
+                                       analyzer_options);
+  analyzer.Start("test_case",
+                 std::vector<std::string>{kSenderPeerName, kReceiverPeerName},
+                 kAnalyzerMaxThreadsCount);
+
+  for (int i = 0; i < kMaxFramesInFlightPerStream; ++i) {
+    VideoFrame frame = NextFrame(frame_generator.get(), i);
+    frame.set_id(
+        analyzer.OnFrameCaptured(kSenderPeerName, kStreamLabel, frame));
+    analyzer.OnFramePreEncode(kSenderPeerName, frame);
+    analyzer.OnFrameEncoded(kSenderPeerName, frame.id(), FakeEncode(frame),
+                            VideoQualityAnalyzerInterface::EncoderStats());
+
+    VideoFrame received_frame = frame;
+    // Shift frame by a few pixels.
+    test::CropRegion crop_region{0, 1, 3, 0};
+    rtc::scoped_refptr<VideoFrameBuffer> cropped_buffer =
+        CropAndZoom(crop_region, received_frame.video_frame_buffer()->ToI420());
+    received_frame.set_video_frame_buffer(cropped_buffer);
+
+    analyzer.OnFramePreDecode(kReceiverPeerName, received_frame.id(),
+                              FakeEncode(received_frame));
+    analyzer.OnFrameDecoded(kReceiverPeerName, received_frame,
+                            VideoQualityAnalyzerInterface::DecoderStats());
+    analyzer.OnFrameRendered(kReceiverPeerName, received_frame);
+  }
+
+  // Give analyzer some time to process frames on async thread. Heavy metrics
+  // computation is turned on, so giving some extra time to be sure that
+  // computatio have ended.
+  SleepMs(500);
+  analyzer.Stop();
+
+  AnalyzerStats stats = analyzer.GetAnalyzerStats();
+  EXPECT_EQ(stats.memory_overloaded_comparisons_done, 0);
+  EXPECT_EQ(stats.comparisons_done, kMaxFramesInFlightPerStream);
+
+  std::vector<StatsSample> frames_in_flight_sizes =
+      GetSortedSamples(stats.frames_in_flight_left_count);
+  EXPECT_EQ(frames_in_flight_sizes.back().value, 0)
+      << ToString(frames_in_flight_sizes);
+
+  std::map<StatsKey, StreamStats> stream_stats = analyzer.GetStats();
+  const StatsKey kAliceBobStats(kStreamLabel, kSenderPeerName,
+                                kReceiverPeerName);
+  EXPECT_EQ(stream_stats.size(), 1lu);
+
+  auto it = stream_stats.find(kAliceBobStats);
+  EXPECT_GE(it->second.psnr.GetMin(), kPerfectPSNR);
+  EXPECT_GE(it->second.ssim.GetMin(), kMaxSsim);
 }
 
 }  // namespace
