@@ -314,7 +314,8 @@ void VideoReceiveStream2::Start() {
 
   for (const Decoder& decoder : config_.decoders) {
     std::unique_ptr<VideoDecoder> video_decoder =
-        decoder.decoder_factory->CreateVideoDecoder(decoder.video_format);
+        decoder.decoder_factory->LegacyCreateVideoDecoder(decoder.video_format,
+                                                          config_.stream_id);
     // If we still have no valid decoder, we have to create a "Null" decoder
     // that ignores all calls. The reason we can get into this state is that the
     // old decoder factory interface doesn't have a way to query supported
