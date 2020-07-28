@@ -19,21 +19,26 @@ namespace webrtc {
 
 class CpuSpeedExperiment {
  public:
-  struct Config {
-    bool operator==(const Config& o) const {
-      return pixels == o.pixels && cpu_speed == o.cpu_speed;
-    }
+  CpuSpeedExperiment();
+  ~CpuSpeedExperiment();
 
-    int pixels;     // The video frame size.
-    int cpu_speed;  // The |cpu_speed| to be used if the frame size is less
-                    // than or equal to |pixels|.
+  // Example:
+  // WebRTC-VP8-CpuSpeed-Arm/pixels:100|200|300,cpu_speed:-1|-2|-3/
+  // pixels <= 100 -> cpu speed: -1
+  // pixels <= 200 -> cpu speed: -2
+  // pixels <= 300 -> cpu speed: -3
+
+  struct Config {
+    int pixels = 0;     // The video frame size.
+    int cpu_speed = 0;  // The |cpu_speed| to be used if the frame size is less
+                        // than or equal to |pixels|.
   };
 
-  // Returns the configurations from field trial on success.
-  static absl::optional<std::vector<Config>> GetConfigs();
+  // Gets the cpu speed based on |pixels|.
+  absl::optional<int> GetValue(int pixels) const;
 
-  // Gets the cpu speed from the |configs| based on |pixels|.
-  static int GetValue(int pixels, const std::vector<Config>& configs);
+ private:
+  std::vector<Config> configs_;
 };
 
 }  // namespace webrtc

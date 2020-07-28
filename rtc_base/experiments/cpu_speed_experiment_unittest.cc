@@ -16,70 +16,67 @@
 
 namespace webrtc {
 
-TEST(CpuSpeedExperimentTest, GetConfigsFailsIfNotEnabled) {
-  EXPECT_FALSE(CpuSpeedExperiment::GetConfigs());
-}
-
-TEST(CpuSpeedExperimentTest, GetConfigsFailsForTooFewParameters) {
-  webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-VP8-CpuSpeed-Arm/Enabled-1000,-1,2000,-10,3000/");
-  EXPECT_FALSE(CpuSpeedExperiment::GetConfigs());
-}
-
-TEST(CpuSpeedExperimentTest, GetConfigs) {
-  webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-VP8-CpuSpeed-Arm/Enabled-1000,-1,2000,-10,3000,-16/");
-
-  const absl::optional<std::vector<CpuSpeedExperiment::Config>> kConfigs =
-      CpuSpeedExperiment::GetConfigs();
-  ASSERT_TRUE(kConfigs);
-  EXPECT_THAT(*kConfigs,
-              ::testing::ElementsAre(CpuSpeedExperiment::Config{1000, -1},
-                                     CpuSpeedExperiment::Config{2000, -10},
-                                     CpuSpeedExperiment::Config{3000, -16}));
+TEST(CpuSpeedExperimentTest, NoValueIfNotEnabled) {
+  CpuSpeedExperiment cpu_speed_config;
+  EXPECT_FALSE(cpu_speed_config.GetValue(1));
 }
 
 TEST(CpuSpeedExperimentTest, GetValue) {
   webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-VP8-CpuSpeed-Arm/Enabled-1000,-5,2000,-10,3000,-12/");
+      "WebRTC-VP8-CpuSpeed-Arm/pixels:1000,cpu_speed:-12/");
 
-  const absl::optional<std::vector<CpuSpeedExperiment::Config>> kConfigs =
-      CpuSpeedExperiment::GetConfigs();
-  ASSERT_TRUE(kConfigs);
-  ASSERT_EQ(3u, (*kConfigs).size());
-  EXPECT_EQ(-5, CpuSpeedExperiment::GetValue(1, *kConfigs));
-  EXPECT_EQ(-5, CpuSpeedExperiment::GetValue(1000, *kConfigs));
-  EXPECT_EQ(-10, CpuSpeedExperiment::GetValue(1000 + 1, *kConfigs));
-  EXPECT_EQ(-10, CpuSpeedExperiment::GetValue(2000, *kConfigs));
-  EXPECT_EQ(-12, CpuSpeedExperiment::GetValue(2000 + 1, *kConfigs));
-  EXPECT_EQ(-12, CpuSpeedExperiment::GetValue(3000, *kConfigs));
-  EXPECT_EQ(-16, CpuSpeedExperiment::GetValue(3000 + 1, *kConfigs));
+  CpuSpeedExperiment cpu_speed_config;
+  EXPECT_EQ(-12, cpu_speed_config.GetValue(1));
+  EXPECT_EQ(-12, cpu_speed_config.GetValue(1000));
+  EXPECT_EQ(-16, cpu_speed_config.GetValue(1001));
 }
 
-TEST(CpuSpeedExperimentTest, GetConfigsFailsForTooSmallValue) {
+TEST(CpuSpeedExperimentTest, GetValueWithList) {
+  webrtc::test::ScopedFieldTrials field_trials(
+      "WebRTC-VP8-CpuSpeed-Arm/pixels:1000|2000|3000,cpu_speed:-1|-10|-16/");
+
+  CpuSpeedExperiment cpu_speed_config;
+  EXPECT_EQ(-1, cpu_speed_config.GetValue(1));
+  EXPECT_EQ(-1, cpu_speed_config.GetValue(1000));
+  EXPECT_EQ(-10, cpu_speed_config.GetValue(1001));
+  EXPECT_EQ(-10, cpu_speed_config.GetValue(2000));
+  EXPECT_EQ(-16, cpu_speed_config.GetValue(2001));
+  EXPECT_EQ(-16, cpu_speed_config.GetValue(3000));
+  EXPECT_EQ(-16, cpu_speed_config.GetValue(3001));
+}
+
+TEST(CpuSpeedExperimentTest, GetValueFailsForTooSmallValue) {
   // Supported range: [-16, -1].
   webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-VP8-CpuSpeed-Arm/Enabled-1000,-1,2000,-10,3000,-17/");
-  EXPECT_FALSE(CpuSpeedExperiment::GetConfigs());
+      "WebRTC-VP8-CpuSpeed-Arm/pixels:1000|2000|3000,cpu_speed:-1|-10|-17/");
+
+  CpuSpeedExperiment cpu_speed_config;
+  EXPECT_FALSE(cpu_speed_config.GetValue(1));
 }
 
-TEST(CpuSpeedExperimentTest, GetConfigsFailsForTooLargeValue) {
+TEST(CpuSpeedExperimentTest, GetValueFailsForTooLargeValue) {
   // Supported range: [-16, -1].
   webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-VP8-CpuSpeed-Arm/Enabled-1000,0,2000,-10,3000,-16/");
-  EXPECT_FALSE(CpuSpeedExperiment::GetConfigs());
+      "WebRTC-VP8-CpuSpeed-Arm/pixels:1000|2000|3000,cpu_speed:0|-10|-16/");
+
+  CpuSpeedExperiment cpu_speed_config;
+  EXPECT_FALSE(cpu_speed_config.GetValue(1));
 }
 
-TEST(CpuSpeedExperimentTest, GetConfigsFailsIfPixelsDecreasing) {
+TEST(CpuSpeedExperimentTest, GetValueFailsIfPixelsDecreases) {
   webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-VP8-CpuSpeed-Arm/Enabled-1000,-5,999,-10,3000,-16/");
-  EXPECT_FALSE(CpuSpeedExperiment::GetConfigs());
+      "WebRTC-VP8-CpuSpeed-Arm/pixels:1000|999|3000,cpu_speed:-5|-10|-16/");
+
+  CpuSpeedExperiment cpu_speed_config;
+  EXPECT_FALSE(cpu_speed_config.GetValue(1));
 }
 
-TEST(CpuSpeedExperimentTest, GetConfigsFailsIfCpuSpeedIncreasing) {
+TEST(CpuSpeedExperimentTest, GetValueFailsIfCpuSpeedIncreases) {
   webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-VP8-CpuSpeed-Arm/Enabled-1000,-5,2000,-4,3000,-16/");
-  EXPECT_FALSE(CpuSpeedExperiment::GetConfigs());
+      "WebRTC-VP8-CpuSpeed-Arm/pixels:1000|2000|3000,cpu_speed:-5|-4|-16/");
+
+  CpuSpeedExperiment cpu_speed_config;
+  EXPECT_FALSE(cpu_speed_config.GetValue(1));
 }
 
 }  // namespace webrtc

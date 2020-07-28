@@ -123,6 +123,7 @@ rtc_library("cpu_speed_experiment") {
     "cpu_speed_experiment.h",
   ]
   deps = [
+    ":field_trial_parser",
     "../:rtc_base_approved",
     "../../system_wrappers:field_trial",
   ]
