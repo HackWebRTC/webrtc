@@ -112,6 +112,8 @@ rtc_source_set("windows_core_audio_utility") {
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
     ]
+
+    libs = [ "oleaut32.lib" ]
   }
 }
 
@@ -313,6 +315,7 @@ rtc_library("audio_device_impl") {
           "wmcodecdspuuid.lib",
           "amstrmid.lib",
           "msdmo.lib",
+          "oleaut32.lib",
         ]
       }
       configs += [ ":audio_device_warnings_config" ]

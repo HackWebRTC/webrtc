@@ -78,7 +78,10 @@ if (!build_with_chromium) {
         "windows/video_capture_factory_windows.cc",
       ]
 
-      libs = [ "strmiids.lib" ]
+      libs = [
+        "oleaut32.lib",
+        "strmiids.lib",
+      ]
 
       if (build_with_mozilla) {
         sources += [
