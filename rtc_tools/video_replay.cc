@@ -521,6 +521,7 @@ int main(int argc, char* argv[]) {
       absl::GetFlag(FLAGS_transmission_offset_id)));
   RTC_CHECK(ValidateInputFilenameNotEmpty(absl::GetFlag(FLAGS_input_file)));
 
+  rtc::ThreadManager::Instance()->WrapCurrentThread();
   webrtc::test::RunTest(webrtc::RtpReplay);
   return 0;
 }
