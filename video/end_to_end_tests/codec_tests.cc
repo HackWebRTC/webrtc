@@ -84,7 +84,7 @@ class CodecObserver : public test::EndToEndTest,
         send_config->rtp.payload_type;
     (*receive_configs)[0].decoders[0].video_format =
         SdpVideoFormat(send_config->rtp.payload_name);
-    (*receive_configs)[0].decoders[0].decoder_factory = decoder_factory_;
+    (*receive_configs)[0].decoder_factory = decoder_factory_;
   }
 
   void OnFrame(const VideoFrame& video_frame) override {

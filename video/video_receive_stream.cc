@@ -238,9 +238,9 @@ VideoReceiveStream::VideoReceiveStream(
   network_sequence_checker_.Detach();
 
   RTC_DCHECK(!config_.decoders.empty());
+  RTC_CHECK(config_.decoder_factory);
   std::set<int> decoder_payload_types;
   for (const Decoder& decoder : config_.decoders) {
-    RTC_CHECK(decoder.decoder_factory);
     RTC_CHECK(decoder_payload_types.find(decoder.payload_type) ==
               decoder_payload_types.end())
         << "Duplicate payload type (" << decoder.payload_type
@@ -336,7 +336,7 @@ void VideoReceiveStream::Start() {
 
   for (const Decoder& decoder : config_.decoders) {
     std::unique_ptr<VideoDecoder> video_decoder =
-        decoder.decoder_factory->LegacyCreateVideoDecoder(decoder.video_format,
+        config_.decoder_factory->LegacyCreateVideoDecoder(decoder.video_format,
                                                           config_.stream_id);
     // If we still have no valid decoder, we have to create a "Null" decoder
     // that ignores all calls. The reason we can get into this state is that the

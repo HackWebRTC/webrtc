@@ -120,7 +120,7 @@ TEST_F(FecEndToEndTest, ReceivesUlpfec) {
       encoder_config->codec_type = kVideoCodecVP8;
       VideoReceiveStream::Decoder decoder =
           test::CreateMatchingDecoder(*send_config);
-      decoder.decoder_factory = &decoder_factory_;
+      (*receive_configs)[0].decoder_factory = &decoder_factory_;
       (*receive_configs)[0].decoders.clear();
       (*receive_configs)[0].decoders.push_back(decoder);
 
@@ -487,7 +487,7 @@ TEST_F(FecEndToEndTest, ReceivedUlpfecPacketsNotNacked) {
           send_config->rtp.payload_type;
       (*receive_configs)[0].decoders[0].video_format =
           SdpVideoFormat(send_config->rtp.payload_name);
-      (*receive_configs)[0].decoders[0].decoder_factory = &decoder_factory_;
+      (*receive_configs)[0].decoder_factory = &decoder_factory_;
     }
 
     void PerformTest() override {

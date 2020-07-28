@@ -70,10 +70,6 @@ class VideoReceiveStream {
     ~Decoder();
     std::string ToString() const;
 
-    // Ownership stays with WebrtcVideoEngine (delegated from PeerConnection).
-    // TODO(nisse): Move one level out, to VideoReceiveStream::Config, and later
-    // to the configuration of VideoStreamDecoder.
-    VideoDecoderFactory* decoder_factory = nullptr;
     SdpVideoFormat video_format;
 
     // Received RTP packets with this payload type will be sent to this decoder
@@ -172,6 +168,9 @@ class VideoReceiveStream {
 
     // Decoders for every payload that we can receive.
     std::vector<Decoder> decoders;
+
+    // Ownership stays with WebrtcVideoEngine (delegated from PeerConnection).
+    VideoDecoderFactory* decoder_factory = nullptr;
 
     // Receive-stream specific RTP settings.
     struct Rtp {

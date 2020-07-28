@@ -2769,12 +2769,12 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::ConfigureCodecs(
   config_.decoders.clear();
   config_.rtp.rtx_associated_payload_types.clear();
   config_.rtp.raw_payload_types.clear();
+  config_.decoder_factory = decoder_factory_;
   for (const auto& recv_codec : recv_codecs) {
     webrtc::SdpVideoFormat video_format(recv_codec.codec.name,
                                         recv_codec.codec.params);
 
     webrtc::VideoReceiveStream::Decoder decoder;
-    decoder.decoder_factory = decoder_factory_;
     decoder.video_format = video_format;
     decoder.payload_type = recv_codec.codec.id;
     decoder.video_format =
