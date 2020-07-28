@@ -592,6 +592,7 @@ rtc_source_set("network_emulation_manager_api") {
     "test/network_emulation_manager.h",
   ]
   deps = [
+    ":array_view",
     ":simulated_network_api",
     ":time_controller",
     "../call:simulated_network",

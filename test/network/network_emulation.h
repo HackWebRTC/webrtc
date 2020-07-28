@@ -349,6 +349,7 @@ class EndpointsContainer {
   // Returns list of networks for enabled endpoints. Caller takes ownership of
   // returned rtc::Network objects.
   std::vector<std::unique_ptr<rtc::Network>> GetEnabledNetworks() const;
+  std::vector<EmulatedEndpoint*> endpoints() const;
   std::unique_ptr<EmulatedNetworkStats> GetStats() const;
 
  private:

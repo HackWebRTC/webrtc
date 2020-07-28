@@ -50,6 +50,9 @@ class EmulatedNetworkManager : public rtc::NetworkManagerBase,
   // EmulatedNetworkManagerInterface API
   rtc::Thread* network_thread() override { return network_thread_.get(); }
   rtc::NetworkManager* network_manager() override { return this; }
+  std::vector<EmulatedEndpoint*> endpoints() const override {
+    return endpoints_container_->endpoints();
+  }
   void GetStats(std::function<void(std::unique_ptr<EmulatedNetworkStats>)>
                     stats_callback) const override;
 
