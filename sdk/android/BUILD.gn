@@ -569,7 +569,6 @@ if (current_os == "linux" || is_android) {
 
     deps = [
       ":base_jni",
-      ":builtin_audio_codecs_jni",
       "../../modules/audio_processing",
       "../../modules/audio_processing:api",
       "../../rtc_base:rtc_base_approved",
