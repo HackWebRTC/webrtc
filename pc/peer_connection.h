@@ -207,15 +207,29 @@ class PeerConnection : public PeerConnectionInternal,
                    const RTCOfferAnswerOptions& options) override;
   void CreateAnswer(CreateSessionDescriptionObserver* observer,
                     const RTCOfferAnswerOptions& options) override;
+
+  void SetLocalDescription(
+      std::unique_ptr<SessionDescriptionInterface> desc,
+      rtc::scoped_refptr<SetLocalDescriptionObserverInterface> observer)
+      override;
+  void SetLocalDescription(
+      rtc::scoped_refptr<SetLocalDescriptionObserverInterface> observer)
+      override;
+  // TODO(https://crbug.com/webrtc/11798): Delete these methods in favor of the
+  // ones taking SetLocalDescriptionObserverInterface as argument.
   void SetLocalDescription(SetSessionDescriptionObserver* observer,
                            SessionDescriptionInterface* desc) override;
   void SetLocalDescription(SetSessionDescriptionObserver* observer) override;
-  void SetRemoteDescription(SetSessionDescriptionObserver* observer,
-                            SessionDescriptionInterface* desc) override;
+
   void SetRemoteDescription(
       std::unique_ptr<SessionDescriptionInterface> desc,
       rtc::scoped_refptr<SetRemoteDescriptionObserverInterface> observer)
       override;
+  // TODO(https://crbug.com/webrtc/11798): Delete this methods in favor of the
+  // ones taking SetRemoteDescriptionObserverInterface as argument.
+  void SetRemoteDescription(SetSessionDescriptionObserver* observer,
+                            SessionDescriptionInterface* desc) override;
+
   PeerConnectionInterface::RTCConfiguration GetConfiguration() override;
   RTCError SetConfiguration(
       const PeerConnectionInterface::RTCConfiguration& configuration) override;
@@ -333,8 +347,8 @@ class PeerConnection : public PeerConnectionInternal,
  private:
   class ImplicitCreateSessionDescriptionObserver;
   friend class ImplicitCreateSessionDescriptionObserver;
-  class SetRemoteDescriptionObserverAdapter;
-  friend class SetRemoteDescriptionObserverAdapter;
+  class SetSessionDescriptionObserverAdapter;
+  friend class SetSessionDescriptionObserverAdapter;
 
   // Represents the [[LocalIceCredentialsToReplace]] internal slot in the spec.
   // It makes the next CreateOffer() produce new ICE credentials even if
@@ -428,7 +442,7 @@ class PeerConnection : public PeerConnectionInternal,
       rtc::scoped_refptr<CreateSessionDescriptionObserver> observer);
   void DoSetLocalDescription(
       std::unique_ptr<SessionDescriptionInterface> desc,
-      rtc::scoped_refptr<SetSessionDescriptionObserver> observer);
+      rtc::scoped_refptr<SetLocalDescriptionObserverInterface> observer);
   void DoSetRemoteDescription(
       std::unique_ptr<SessionDescriptionInterface> desc,
       rtc::scoped_refptr<SetRemoteDescriptionObserverInterface> observer);
