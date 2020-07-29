@@ -708,17 +708,12 @@ bool NeedIceRestart(bool surface_ice_candidates_on_ice_transport_type_changed,
 // Used by parameterless SetLocalDescription() to create an offer or answer.
 // Upon completion of creating the session description, SetLocalDescription() is
 // invoked with the result.
-// For consistency with DoSetLocalDescription(), if the PeerConnection is
-// destroyed midst operation, we DO NOT inform the
-// |set_local_description_observer| that the operation failed.
-// TODO(hbos): If/when we process SLD messages in ~PeerConnection, the
-// consistent thing would be to inform the observer here.
 class PeerConnection::ImplicitCreateSessionDescriptionObserver
     : public CreateSessionDescriptionObserver {
  public:
   ImplicitCreateSessionDescriptionObserver(
       rtc::WeakPtr<PeerConnection> pc,
-      rtc::scoped_refptr<SetSessionDescriptionObserver>
+      rtc::scoped_refptr<SetLocalDescriptionObserverInterface>
           set_local_description_observer)
       : pc_(std::move(pc)),
         set_local_description_observer_(
@@ -744,42 +739,27 @@ class PeerConnection::ImplicitCreateSessionDescriptionObserver
       operation_complete_callback_();
       return;
     }
-    // DoSetLocalDescription() is currently implemented as a synchronous
-    // operation but where the |set_local_description_observer_|'s callbacks are
-    // invoked asynchronously in a post to PeerConnection::OnMessage().
+    // DoSetLocalDescription() is a synchronous operation that invokes
+    // |set_local_description_observer_| with the result.
     pc_->DoSetLocalDescription(std::move(desc),
                                std::move(set_local_description_observer_));
-    // For backwards-compatability reasons, we declare the operation as
-    // completed here (rather than in PeerConnection::OnMessage()). This ensures
-    // that subsequent offer/answer operations can start immediately (without
-    // waiting for OnMessage()).
     operation_complete_callback_();
   }
 
   void OnFailure(RTCError error) override {
     RTC_DCHECK(!was_called_);
     was_called_ = true;
-
-    // Abort early if |pc_| is no longer valid.
-    if (!pc_) {
-      operation_complete_callback_();
-      return;
-    }
-    // DoSetLocalDescription() reports its failures in a post. We do the
-    // same thing here for consistency.
-    pc_->PostSetSessionDescriptionFailure(
-        set_local_description_observer_,
-        RTCError(error.type(),
-                 std::string("SetLocalDescription failed to create "
-                             "session description - ") +
-                     error.message()));
+    set_local_description_observer_->OnSetLocalDescriptionComplete(RTCError(
+        error.type(), std::string("SetLocalDescription failed to create "
+                                  "session description - ") +
+                          error.message()));
     operation_complete_callback_();
   }
 
  private:
   bool was_called_ = false;
   rtc::WeakPtr<PeerConnection> pc_;
-  rtc::scoped_refptr<SetSessionDescriptionObserver>
+  rtc::scoped_refptr<SetLocalDescriptionObserverInterface>
       set_local_description_observer_;
   std::function<void()> operation_complete_callback_;
 };
@@ -833,33 +813,45 @@ class PeerConnection::LocalIceCredentialsToReplace {
   std::set<std::pair<std::string, std::string>> ice_credentials_;
 };
 
-// Upon completion, posts a task to execute the callback of the
-// SetSessionDescriptionObserver asynchronously on the same thread. At this
-// point, the state of the peer connection might no longer reflect the effects
-// of the SetRemoteDescription operation, as the peer connection could have been
-// modified during the post.
-// TODO(hbos): Remove this class once we remove the version of
-// PeerConnectionInterface::SetRemoteDescription() that takes a
-// SetSessionDescriptionObserver as an argument.
-class PeerConnection::SetRemoteDescriptionObserverAdapter
-    : public rtc::RefCountedObject<SetRemoteDescriptionObserverInterface> {
+// Wrapper for SetSessionDescriptionObserver that invokes the success or failure
+// callback in a posted message handled by the peer connection. This introduces
+// a delay that prevents recursive API calls by the observer, but this also
+// means that the PeerConnection can be modified before the observer sees the
+// result of the operation. This is ill-advised for synchronizing states.
+//
+// Implements both the SetLocalDescriptionObserverInterface and the
+// SetRemoteDescriptionObserverInterface.
+class PeerConnection::SetSessionDescriptionObserverAdapter
+    : public SetLocalDescriptionObserverInterface,
+      public SetRemoteDescriptionObserverInterface {
  public:
-  SetRemoteDescriptionObserverAdapter(
-      rtc::scoped_refptr<PeerConnection> pc,
-      rtc::scoped_refptr<SetSessionDescriptionObserver> wrapper)
-      : pc_(std::move(pc)), wrapper_(std::move(wrapper)) {}
+  SetSessionDescriptionObserverAdapter(
+      rtc::WeakPtr<PeerConnection> pc,
+      rtc::scoped_refptr<SetSessionDescriptionObserver> inner_observer)
+      : pc_(std::move(pc)), inner_observer_(std::move(inner_observer)) {}
 
+  // SetLocalDescriptionObserverInterface implementation.
+  void OnSetLocalDescriptionComplete(RTCError error) override {
+    OnSetDescriptionComplete(std::move(error));
+  }
   // SetRemoteDescriptionObserverInterface implementation.
   void OnSetRemoteDescriptionComplete(RTCError error) override {
-    if (error.ok())
-      pc_->PostSetSessionDescriptionSuccess(wrapper_);
-    else
-      pc_->PostSetSessionDescriptionFailure(wrapper_, std::move(error));
+    OnSetDescriptionComplete(std::move(error));
   }
 
  private:
-  rtc::scoped_refptr<PeerConnection> pc_;
-  rtc::scoped_refptr<SetSessionDescriptionObserver> wrapper_;
+  void OnSetDescriptionComplete(RTCError error) {
+    if (!pc_)
+      return;
+    if (error.ok()) {
+      pc_->PostSetSessionDescriptionSuccess(inner_observer_);
+    } else {
+      pc_->PostSetSessionDescriptionFailure(inner_observer_, std::move(error));
+    }
+  }
+
+  rtc::WeakPtr<PeerConnection> pc_;
+  rtc::scoped_refptr<SetSessionDescriptionObserver> inner_observer_;
 };
 
 bool PeerConnectionInterface::RTCConfiguration::operator==(
@@ -2407,22 +2399,51 @@ void PeerConnection::SetLocalDescription(
           std::function<void()> operations_chain_callback) mutable {
         // Abort early if |this_weak_ptr| is no longer valid.
         if (!this_weak_ptr) {
-          // For consistency with DoSetLocalDescription(), we DO NOT inform the
-          // |observer_refptr| that the operation failed in this case.
-          // TODO(hbos): If/when we process SLD messages in ~PeerConnection,
-          // the consistent thing would be to inform the observer here.
+          // For consistency with SetSessionDescriptionObserverAdapter whose
+          // posted messages doesn't get processed when the PC is destroyed, we
+          // do not inform |observer_refptr| that the operation failed.
           operations_chain_callback();
           return;
         }
-        this_weak_ptr->DoSetLocalDescription(std::move(desc),
-                                             std::move(observer_refptr));
-        // DoSetLocalDescription() is currently implemented as a synchronous
-        // operation but where the |observer|'s callbacks are invoked
-        // asynchronously in a post to OnMessage().
+        // SetSessionDescriptionObserverAdapter takes care of making sure the
+        // |observer_refptr| is invoked in a posted message.
+        this_weak_ptr->DoSetLocalDescription(
+            std::move(desc),
+            rtc::scoped_refptr<SetLocalDescriptionObserverInterface>(
+                new rtc::RefCountedObject<SetSessionDescriptionObserverAdapter>(
+                    this_weak_ptr, observer_refptr)));
         // For backwards-compatability reasons, we declare the operation as
-        // completed here (rather than in OnMessage()). This ensures that
-        // subsequent offer/answer operations can start immediately (without
-        // waiting for OnMessage()).
+        // completed here (rather than in a post), so that the operation chain
+        // is not blocked by this operation when the observer is invoked. This
+        // allows the observer to trigger subsequent offer/answer operations
+        // synchronously if the operation chain is now empty.
+        operations_chain_callback();
+      });
+}
+
+void PeerConnection::SetLocalDescription(
+    std::unique_ptr<SessionDescriptionInterface> desc,
+    rtc::scoped_refptr<SetLocalDescriptionObserverInterface> observer) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  // Chain this operation. If asynchronous operations are pending on the chain,
+  // this operation will be queued to be invoked, otherwise the contents of the
+  // lambda will execute immediately.
+  operations_chain_->ChainOperation(
+      [this_weak_ptr = weak_ptr_factory_.GetWeakPtr(), observer,
+       desc = std::move(desc)](
+          std::function<void()> operations_chain_callback) mutable {
+        // Abort early if |this_weak_ptr| is no longer valid.
+        if (!this_weak_ptr) {
+          observer->OnSetLocalDescriptionComplete(RTCError(
+              RTCErrorType::INTERNAL_ERROR,
+              "SetLocalDescription failed because the session was shut down"));
+          operations_chain_callback();
+          return;
+        }
+        this_weak_ptr->DoSetLocalDescription(std::move(desc), observer);
+        // DoSetLocalDescription() is implemented as a synchronous operation.
+        // The |observer| will already have been informed that it completed, and
+        // we can mark this operation as complete without any loose ends.
         operations_chain_callback();
       });
 }
@@ -2430,13 +2451,20 @@ void PeerConnection::SetLocalDescription(
 void PeerConnection::SetLocalDescription(
     SetSessionDescriptionObserver* observer) {
   RTC_DCHECK_RUN_ON(signaling_thread());
+  SetLocalDescription(
+      new rtc::RefCountedObject<SetSessionDescriptionObserverAdapter>(
+          weak_ptr_factory_.GetWeakPtr(), observer));
+}
+
+void PeerConnection::SetLocalDescription(
+    rtc::scoped_refptr<SetLocalDescriptionObserverInterface> observer) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   // The |create_sdp_observer| handles performing DoSetLocalDescription() with
   // the resulting description as well as completing the operation.
   rtc::scoped_refptr<ImplicitCreateSessionDescriptionObserver>
       create_sdp_observer(
           new rtc::RefCountedObject<ImplicitCreateSessionDescriptionObserver>(
-              weak_ptr_factory_.GetWeakPtr(),
-              rtc::scoped_refptr<SetSessionDescriptionObserver>(observer)));
+              weak_ptr_factory_.GetWeakPtr(), observer));
   // Chain this operation. If asynchronous operations are pending on the chain,
   // this operation will be queued to be invoked, otherwise the contents of the
   // lambda will execute immediately.
@@ -2484,7 +2512,7 @@ void PeerConnection::SetLocalDescription(
 
 void PeerConnection::DoSetLocalDescription(
     std::unique_ptr<SessionDescriptionInterface> desc,
-    rtc::scoped_refptr<SetSessionDescriptionObserver> observer) {
+    rtc::scoped_refptr<SetLocalDescriptionObserverInterface> observer) {
   RTC_DCHECK_RUN_ON(signaling_thread());
   TRACE_EVENT0("webrtc", "PeerConnection::DoSetLocalDescription");
 
@@ -2494,8 +2522,7 @@ void PeerConnection::DoSetLocalDescription(
   }
 
   if (!desc) {
-    PostSetSessionDescriptionFailure(
-        observer,
+    observer->OnSetLocalDescriptionComplete(
         RTCError(RTCErrorType::INTERNAL_ERROR, "SessionDescription is NULL."));
     return;
   }
@@ -2505,8 +2532,7 @@ void PeerConnection::DoSetLocalDescription(
   if (session_error() != SessionError::kNone) {
     std::string error_message = GetSessionErrorMsg();
     RTC_LOG(LS_ERROR) << "SetLocalDescription: " << error_message;
-    PostSetSessionDescriptionFailure(
-        observer,
+    observer->OnSetLocalDescriptionComplete(
         RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error_message)));
     return;
   }
@@ -2514,16 +2540,11 @@ void PeerConnection::DoSetLocalDescription(
   // For SLD we support only explicit rollback.
   if (desc->GetType() == SdpType::kRollback) {
     if (IsUnifiedPlan()) {
-      RTCError error = Rollback(desc->GetType());
-      if (error.ok()) {
-        PostSetSessionDescriptionSuccess(observer);
-      } else {
-        PostSetSessionDescriptionFailure(observer, std::move(error));
-      }
+      observer->OnSetLocalDescriptionComplete(Rollback(desc->GetType()));
     } else {
-      PostSetSessionDescriptionFailure(
-          observer, RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
-                             "Rollback not supported in Plan B"));
+      observer->OnSetLocalDescriptionComplete(
+          RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
+                   "Rollback not supported in Plan B"));
     }
     return;
   }
@@ -2533,8 +2554,7 @@ void PeerConnection::DoSetLocalDescription(
     std::string error_message = GetSetDescriptionErrorMessage(
         cricket::CS_LOCAL, desc->GetType(), error);
     RTC_LOG(LS_ERROR) << error_message;
-    PostSetSessionDescriptionFailure(
-        observer,
+    observer->OnSetLocalDescriptionComplete(
         RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error_message)));
     return;
   }
@@ -2554,19 +2574,11 @@ void PeerConnection::DoSetLocalDescription(
     std::string error_message =
         GetSetDescriptionErrorMessage(cricket::CS_LOCAL, type, error);
     RTC_LOG(LS_ERROR) << error_message;
-    PostSetSessionDescriptionFailure(
-        observer,
+    observer->OnSetLocalDescriptionComplete(
         RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error_message)));
     return;
   }
   RTC_DCHECK(local_description());
-
-  PostSetSessionDescriptionSuccess(observer);
-
-  // MaybeStartGathering needs to be called after posting
-  // MSG_SET_SESSIONDESCRIPTION_SUCCESS, so that we don't signal any candidates
-  // before signaling that SetLocalDescription completed.
-  transport_controller_->MaybeStartGathering();
 
   if (local_description()->GetType() == SdpType::kAnswer) {
     // TODO(deadbeef): We already had to hop to the network thread for
@@ -2587,7 +2599,13 @@ void PeerConnection::DoSetLocalDescription(
     }
   }
 
+  observer->OnSetLocalDescriptionComplete(RTCError::OK());
   NoteUsageEvent(UsageEvent::SET_LOCAL_DESCRIPTION_SUCCEEDED);
+
+  // MaybeStartGathering needs to be called after informing the observer so that
+  // we don't signal any candidates before signaling that SetLocalDescription
+  // completed.
+  transport_controller_->MaybeStartGathering();
 }
 
 RTCError PeerConnection::ApplyLocalDescription(
@@ -2881,27 +2899,24 @@ void PeerConnection::SetRemoteDescription(
           std::function<void()> operations_chain_callback) mutable {
         // Abort early if |this_weak_ptr| is no longer valid.
         if (!this_weak_ptr) {
-          // For consistency with SetRemoteDescriptionObserverAdapter, we DO NOT
-          // inform the |observer_refptr| that the operation failed in this
-          // case.
-          // TODO(hbos): If/when we process SRD messages in ~PeerConnection,
-          // the consistent thing would be to inform the observer here.
+          // For consistency with SetSessionDescriptionObserverAdapter whose
+          // posted messages doesn't get processed when the PC is destroyed, we
+          // do not inform |observer_refptr| that the operation failed.
           operations_chain_callback();
           return;
         }
+        // SetSessionDescriptionObserverAdapter takes care of making sure the
+        // |observer_refptr| is invoked in a posted message.
         this_weak_ptr->DoSetRemoteDescription(
             std::move(desc),
             rtc::scoped_refptr<SetRemoteDescriptionObserverInterface>(
-                new SetRemoteDescriptionObserverAdapter(
-                    this_weak_ptr.get(), std::move(observer_refptr))));
-        // DoSetRemoteDescription() is currently implemented as a synchronous
-        // operation but where SetRemoteDescriptionObserverAdapter ensures that
-        // the |observer|'s callbacks are invoked asynchronously in a post to
-        // OnMessage().
+                new rtc::RefCountedObject<SetSessionDescriptionObserverAdapter>(
+                    this_weak_ptr, observer_refptr)));
         // For backwards-compatability reasons, we declare the operation as
-        // completed here (rather than in OnMessage()). This ensures that
-        // subsequent offer/answer operations can start immediately (without
-        // waiting for OnMessage()).
+        // completed here (rather than in a post), so that the operation chain
+        // is not blocked by this operation when the observer is invoked. This
+        // allows the observer to trigger subsequent offer/answer operations
+        // synchronously if the operation chain is now empty.
         operations_chain_callback();
       });
 }
@@ -2919,21 +2934,17 @@ void PeerConnection::SetRemoteDescription(
           std::function<void()> operations_chain_callback) mutable {
         // Abort early if |this_weak_ptr| is no longer valid.
         if (!this_weak_ptr) {
-          // For consistency with DoSetRemoteDescription(), we DO inform the
-          // |observer| that the operation failed in this case.
           observer->OnSetRemoteDescriptionComplete(RTCError(
-              RTCErrorType::INVALID_STATE,
-              "Failed to set remote offer sdp: failed because the session was "
-              "shut down"));
+              RTCErrorType::INTERNAL_ERROR,
+              "SetRemoteDescription failed because the session was shut down"));
           operations_chain_callback();
           return;
         }
         this_weak_ptr->DoSetRemoteDescription(std::move(desc),
                                               std::move(observer));
-        // DoSetRemoteDescription() is currently implemented as a synchronous
-        // operation. The |observer| will already have been informed that it
-        // completed, and we can mark this operation as complete without any
-        // loose ends.
+        // DoSetRemoteDescription() is implemented as a synchronous operation.
+        // The |observer| will already have been informed that it completed, and
+        // we can mark this operation as complete without any loose ends.
         operations_chain_callback();
       });
 }
