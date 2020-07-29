@@ -19,6 +19,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/net_helpers.h"
 #include "rtc_base/network_monitor.h"
+#include "rtc_base/network_monitor_factory.h"
 #if defined(WEBRTC_POSIX)
 #include <net/if.h>
 #include <sys/types.h>
@@ -100,18 +101,27 @@ class NetworkTest : public ::testing::Test, public sigslot::has_slots<> {
 
   bool IsIgnoredNetwork(BasicNetworkManager& network_manager,
                         const Network& network) {
+    RTC_DCHECK_RUN_ON(network_manager.thread_);
     return network_manager.IsIgnoredNetwork(network);
+  }
+
+  IPAddress QueryDefaultLocalAddress(BasicNetworkManager& network_manager,
+                                     int family) {
+    RTC_DCHECK_RUN_ON(network_manager.thread_);
+    return network_manager.QueryDefaultLocalAddress(family);
   }
 
   NetworkManager::NetworkList GetNetworks(
       const BasicNetworkManager& network_manager,
       bool include_ignored) {
+    RTC_DCHECK_RUN_ON(network_manager.thread_);
     NetworkManager::NetworkList list;
     network_manager.CreateNetworks(include_ignored, &list);
     return list;
   }
 
   FakeNetworkMonitor* GetNetworkMonitor(BasicNetworkManager& network_manager) {
+    RTC_DCHECK_RUN_ON(network_manager.thread_);
     return static_cast<FakeNetworkMonitor*>(
         network_manager.network_monitor_.get());
   }
@@ -136,6 +146,7 @@ class NetworkTest : public ::testing::Test, public sigslot::has_slots<> {
                                  struct ifaddrs* interfaces,
                                  bool include_ignored,
                                  NetworkManager::NetworkList* networks) {
+    RTC_DCHECK_RUN_ON(network_manager.thread_);
     // Use the base IfAddrsConverter for test cases.
     std::unique_ptr<IfAddrsConverter> ifaddrs_converter(new IfAddrsConverter());
     network_manager.ConvertIfAddrs(interfaces, ifaddrs_converter.get(),
@@ -247,6 +258,8 @@ class NetworkTest : public ::testing::Test, public sigslot::has_slots<> {
 
 class TestBasicNetworkManager : public BasicNetworkManager {
  public:
+  TestBasicNetworkManager(NetworkMonitorFactory* network_monitor_factory)
+      : BasicNetworkManager(network_monitor_factory) {}
   using BasicNetworkManager::QueryDefaultLocalAddress;
   using BasicNetworkManager::set_default_local_addresses;
 };
@@ -268,6 +281,7 @@ TEST_F(NetworkTest, TestIsIgnoredNetworkIgnoresIPsStartingWith0) {
   Network ipv4_network2("test_eth1", "Test Network Adapter 2",
                         IPAddress(0x010000U), 24, ADAPTER_TYPE_ETHERNET);
   BasicNetworkManager network_manager;
+  network_manager.StartUpdating();
   EXPECT_FALSE(IsIgnoredNetwork(network_manager, ipv4_network1));
   EXPECT_TRUE(IsIgnoredNetwork(network_manager, ipv4_network2));
 }
@@ -278,14 +292,18 @@ TEST_F(NetworkTest, TestIgnoreList) {
                     24);
   Network include_me("include_me", "Include me please!", IPAddress(0x12345600U),
                      24);
-  BasicNetworkManager network_manager;
-  EXPECT_FALSE(IsIgnoredNetwork(network_manager, ignore_me));
-  EXPECT_FALSE(IsIgnoredNetwork(network_manager, include_me));
+  BasicNetworkManager default_network_manager;
+  default_network_manager.StartUpdating();
+  EXPECT_FALSE(IsIgnoredNetwork(default_network_manager, ignore_me));
+  EXPECT_FALSE(IsIgnoredNetwork(default_network_manager, include_me));
+
+  BasicNetworkManager ignoring_network_manager;
   std::vector<std::string> ignore_list;
   ignore_list.push_back("ignore_me");
-  network_manager.set_network_ignore_list(ignore_list);
-  EXPECT_TRUE(IsIgnoredNetwork(network_manager, ignore_me));
-  EXPECT_FALSE(IsIgnoredNetwork(network_manager, include_me));
+  ignoring_network_manager.set_network_ignore_list(ignore_list);
+  ignoring_network_manager.StartUpdating();
+  EXPECT_TRUE(IsIgnoredNetwork(ignoring_network_manager, ignore_me));
+  EXPECT_FALSE(IsIgnoredNetwork(ignoring_network_manager, include_me));
 }
 
 // Test is failing on Windows opt: b/11288214
@@ -649,6 +667,7 @@ TEST_F(NetworkTest, TestMultiplePublicNetworksOnOneInterfaceMerge) {
 // Test that DumpNetworks does not crash.
 TEST_F(NetworkTest, TestCreateAndDumpNetworks) {
   BasicNetworkManager manager;
+  manager.StartUpdating();
   NetworkManager::NetworkList list = GetNetworks(manager, true);
   bool changed;
   MergeNetworkList(manager, list, &changed);
@@ -657,6 +676,7 @@ TEST_F(NetworkTest, TestCreateAndDumpNetworks) {
 
 TEST_F(NetworkTest, TestIPv6Toggle) {
   BasicNetworkManager manager;
+  manager.StartUpdating();
   bool ipv6_found = false;
   NetworkManager::NetworkList list;
   list = GetNetworks(manager, true);
@@ -753,6 +773,7 @@ TEST_F(NetworkTest, TestConvertIfAddrsNoAddress) {
 
   NetworkManager::NetworkList result;
   BasicNetworkManager manager;
+  manager.StartUpdating();
   CallConvertIfAddrs(manager, &list, true, &result);
   EXPECT_TRUE(result.empty());
 }
@@ -768,6 +789,7 @@ TEST_F(NetworkTest, TestConvertIfAddrsMultiAddressesOnOneInterface) {
                         "FFFF:FFFF:FFFF:FFFF::", 0);
   NetworkManager::NetworkList result;
   BasicNetworkManager manager;
+  manager.StartUpdating();
   CallConvertIfAddrs(manager, list, true, &result);
   EXPECT_EQ(1U, result.size());
   bool changed;
@@ -787,46 +809,35 @@ TEST_F(NetworkTest, TestConvertIfAddrsNotRunning) {
 
   NetworkManager::NetworkList result;
   BasicNetworkManager manager;
+  manager.StartUpdating();
   CallConvertIfAddrs(manager, &list, true, &result);
   EXPECT_TRUE(result.empty());
 }
 
-// Tests that the network type can be updated after the network monitor is
-// started.
+// Tests that the network type can be determined from the network monitor when
+// it would otherwise be unknown.
 TEST_F(NetworkTest, TestGetAdapterTypeFromNetworkMonitor) {
-  char if_name1[20] = "wifi0";
-  std::string ipv6_address1 = "1000:2000:3000:4000:0:0:0:1";
-  std::string ipv6_address2 = "1000:2000:3000:8000:0:0:0:1";
+  char if_name[20] = "wifi0";
+  std::string ipv6_address = "1000:2000:3000:4000:0:0:0:1";
   std::string ipv6_mask = "FFFF:FFFF:FFFF:FFFF::";
-  BasicNetworkManager manager;
-  // A network created before the network monitor is started will get
-  // UNKNOWN type.
-  ifaddrs* addr_list =
-      InstallIpv6Network(if_name1, ipv6_address1, ipv6_mask, manager);
-  EXPECT_EQ(ADAPTER_TYPE_UNKNOWN, GetAdapterType(manager));
+  BasicNetworkManager manager_without_monitor;
+  manager_without_monitor.StartUpdating();
+  // A network created without a network monitor will get UNKNOWN type.
+  ifaddrs* addr_list = InstallIpv6Network(if_name, ipv6_address, ipv6_mask,
+                                          manager_without_monitor);
+  EXPECT_EQ(ADAPTER_TYPE_UNKNOWN, GetAdapterType(manager_without_monitor));
   ReleaseIfAddrs(addr_list);
-  // Note: Do not call ClearNetworks here in order to test that the type
-  // of an existing network can be changed after the network monitor starts
-  // and detects the network type correctly.
 
-  // After the network monitor starts, the type will be updated.
-  FakeNetworkMonitorFactory* factory = new FakeNetworkMonitorFactory();
-  NetworkMonitorFactory::SetFactory(factory);
-  // This brings up the hook with the network monitor.
-  manager.StartUpdating();
+  // With the fake network monitor the type should be correctly determined.
+  FakeNetworkMonitorFactory factory;
+  BasicNetworkManager manager_with_monitor(&factory);
+  manager_with_monitor.StartUpdating();
   // Add the same ipv6 address as before but it has the right network type
   // detected by the network monitor now.
-  addr_list = InstallIpv6Network(if_name1, ipv6_address1, ipv6_mask, manager);
-  EXPECT_EQ(ADAPTER_TYPE_WIFI, GetAdapterType(manager));
+  addr_list = InstallIpv6Network(if_name, ipv6_address, ipv6_mask,
+                                 manager_with_monitor);
+  EXPECT_EQ(ADAPTER_TYPE_WIFI, GetAdapterType(manager_with_monitor));
   ReleaseIfAddrs(addr_list);
-  ClearNetworks(manager);
-
-  // Add another network with the type inferred from the network monitor.
-  char if_name2[20] = "cellular0";
-  addr_list = InstallIpv6Network(if_name2, ipv6_address2, ipv6_mask, manager);
-  EXPECT_EQ(ADAPTER_TYPE_CELLULAR, GetAdapterType(manager));
-  ReleaseIfAddrs(addr_list);
-  ClearNetworks(manager);
 }
 
 // Test that the network type can be determined based on name matching in
@@ -839,6 +850,7 @@ TEST_F(NetworkTest, TestGetAdapterTypeFromNameMatching) {
   std::string ipv6_address2 = "1000:2000:3000:8000:0:0:0:1";
   std::string ipv6_mask = "FFFF:FFFF:FFFF:FFFF::";
   BasicNetworkManager manager;
+  manager.StartUpdating();
 
   // IPSec interface; name is in form "ipsec<index>".
   char if_name[20] = "ipsec11";
@@ -1022,11 +1034,10 @@ TEST_F(NetworkTest, TestIPv6Selection) {
 }
 
 TEST_F(NetworkTest, TestNetworkMonitoring) {
-  BasicNetworkManager manager;
+  FakeNetworkMonitorFactory factory;
+  BasicNetworkManager manager(&factory);
   manager.SignalNetworksChanged.connect(static_cast<NetworkTest*>(this),
                                         &NetworkTest::OnNetworksChanged);
-  FakeNetworkMonitorFactory* factory = new FakeNetworkMonitorFactory();
-  NetworkMonitorFactory::SetFactory(factory);
   manager.StartUpdating();
   FakeNetworkMonitor* network_monitor = GetNetworkMonitor(manager);
   EXPECT_TRUE(network_monitor && network_monitor->started());
@@ -1043,8 +1054,6 @@ TEST_F(NetworkTest, TestNetworkMonitoring) {
   // Network manager is stopped.
   manager.StopUpdating();
   EXPECT_FALSE(GetNetworkMonitor(manager)->started());
-
-  NetworkMonitorFactory::ReleaseFactory(factory);
 }
 
 // Fails on Android: https://bugs.chromium.org/p/webrtc/issues/detail?id=4364.
@@ -1055,11 +1064,10 @@ TEST_F(NetworkTest, TestNetworkMonitoring) {
 #endif
 TEST_F(NetworkTest, MAYBE_DefaultLocalAddress) {
   IPAddress ip;
-  TestBasicNetworkManager manager;
+  FakeNetworkMonitorFactory factory;
+  TestBasicNetworkManager manager(&factory);
   manager.SignalNetworksChanged.connect(static_cast<NetworkTest*>(this),
                                         &NetworkTest::OnNetworksChanged);
-  FakeNetworkMonitorFactory* factory = new FakeNetworkMonitorFactory();
-  NetworkMonitorFactory::SetFactory(factory);
   manager.StartUpdating();
   EXPECT_TRUE_WAIT(callback_called_, 1000);
 
@@ -1070,12 +1078,12 @@ TEST_F(NetworkTest, MAYBE_DefaultLocalAddress) {
   EXPECT_TRUE(!networks.empty());
   for (const auto* network : networks) {
     if (network->GetBestIP().family() == AF_INET) {
-      EXPECT_TRUE(manager.QueryDefaultLocalAddress(AF_INET) != IPAddress());
+      EXPECT_TRUE(QueryDefaultLocalAddress(manager, AF_INET) != IPAddress());
     } else if (network->GetBestIP().family() == AF_INET6 &&
                !IPIsLoopback(network->GetBestIP())) {
       // Existence of an IPv6 loopback address doesn't mean it has IPv6 network
       // enabled.
-      EXPECT_TRUE(manager.QueryDefaultLocalAddress(AF_INET6) != IPAddress());
+      EXPECT_TRUE(QueryDefaultLocalAddress(manager, AF_INET6) != IPAddress());
     }
   }
 

@@ -470,12 +470,16 @@ Network* NetworkManagerBase::GetNetworkFromAddress(
   return nullptr;
 }
 
-BasicNetworkManager::BasicNetworkManager()
-    : thread_(nullptr), sent_first_update_(false), start_count_(0) {}
+BasicNetworkManager::BasicNetworkManager() {}
+
+BasicNetworkManager::BasicNetworkManager(
+    NetworkMonitorFactory* network_monitor_factory)
+    : network_monitor_factory_(network_monitor_factory) {}
 
 BasicNetworkManager::~BasicNetworkManager() {}
 
 void BasicNetworkManager::OnNetworksChanged() {
+  RTC_DCHECK_RUN_ON(thread_);
   RTC_LOG(LS_INFO) << "Network change was observed";
   UpdateNetworksOnce();
 }
@@ -799,6 +803,8 @@ bool BasicNetworkManager::IsIgnoredNetwork(const Network& network) const {
 
 void BasicNetworkManager::StartUpdating() {
   thread_ = Thread::Current();
+  // Redundant but necessary for thread annotations.
+  RTC_DCHECK_RUN_ON(thread_);
   if (start_count_) {
     // If network interfaces are already discovered and signal is sent,
     // we should trigger network signal immediately for the new clients
@@ -813,7 +819,7 @@ void BasicNetworkManager::StartUpdating() {
 }
 
 void BasicNetworkManager::StopUpdating() {
-  RTC_DCHECK(Thread::Current() == thread_);
+  RTC_DCHECK_RUN_ON(thread_);
   if (!start_count_)
     return;
 
@@ -826,12 +832,11 @@ void BasicNetworkManager::StopUpdating() {
 }
 
 void BasicNetworkManager::StartNetworkMonitor() {
-  NetworkMonitorFactory* factory = NetworkMonitorFactory::GetFactory();
-  if (factory == nullptr) {
+  if (network_monitor_factory_ == nullptr) {
     return;
   }
   if (!network_monitor_) {
-    network_monitor_.reset(factory->CreateNetworkMonitor());
+    network_monitor_.reset(network_monitor_factory_->CreateNetworkMonitor());
     if (!network_monitor_) {
       return;
     }
@@ -849,6 +854,7 @@ void BasicNetworkManager::StopNetworkMonitor() {
 }
 
 void BasicNetworkManager::OnMessage(Message* msg) {
+  RTC_DCHECK_RUN_ON(thread_);
   switch (msg->message_id) {
     case kUpdateNetworksMessage: {
       UpdateNetworksContinually();
@@ -864,7 +870,6 @@ void BasicNetworkManager::OnMessage(Message* msg) {
 }
 
 IPAddress BasicNetworkManager::QueryDefaultLocalAddress(int family) const {
-  RTC_DCHECK(thread_ == Thread::Current());
   RTC_DCHECK(thread_->socketserver() != nullptr);
   RTC_DCHECK(family == AF_INET || family == AF_INET6);
 
@@ -893,8 +898,6 @@ void BasicNetworkManager::UpdateNetworksOnce() {
   if (!start_count_)
     return;
 
-  RTC_DCHECK(Thread::Current() == thread_);
-
   NetworkList list;
   if (!CreateNetworks(false, &list)) {
     SignalError();
@@ -918,6 +921,7 @@ void BasicNetworkManager::UpdateNetworksContinually() {
 }
 
 void BasicNetworkManager::DumpNetworks() {
+  RTC_DCHECK_RUN_ON(thread_);
   NetworkList list;
   GetNetworks(&list);
   RTC_LOG(LS_INFO) << "NetworkManager detected " << list.size() << " networks:";

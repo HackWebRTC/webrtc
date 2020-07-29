@@ -100,7 +100,7 @@ TEST(PeerConnectionFactoryTest, NativeToJavaPeerConnectionFactory) {
 
   jobject java_factory = NativeToJavaPeerConnectionFactory(
       jni, factory, std::move(network_thread), std::move(worker_thread),
-      std::move(signaling_thread), nullptr /* network_monitor_factory */);
+      std::move(signaling_thread));
 
   RTC_LOG(INFO) << java_factory;
 
