@@ -18,6 +18,7 @@
 
 #include "absl/types/optional.h"
 #include "rtc_base/network_monitor.h"
+#include "rtc_base/network_monitor_factory.h"
 #include "rtc_base/thread_checker.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
