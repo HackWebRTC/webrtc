@@ -97,7 +97,6 @@
 #include "api/rtp_sender_interface.h"
 #include "api/rtp_transceiver_interface.h"
 #include "api/sctp_transport_interface.h"
-#include "api/set_local_description_observer_interface.h"
 #include "api/set_remote_description_observer_interface.h"
 #include "api/stats/rtc_stats_collector_callback.h"
 #include "api/stats_types.h"
@@ -948,56 +947,26 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
                             const RTCOfferAnswerOptions& options) = 0;
 
   // Sets the local session description.
-  //
-  // According to spec, the local session description MUST be the same as was
-  // returned by CreateOffer() or CreateAnswer() or else the operation should
-  // fail. Our implementation however allows some amount of "SDP munging", but
-  // please note that this is HIGHLY DISCOURAGED. If you do not intent to munge
-  // SDP, the method below that doesn't take |desc| as an argument will create
-  // the offer or answer for you.
-  //
-  // The observer is invoked as soon as the operation completes, which could be
-  // before or after the SetLocalDescription() method has exited.
-  virtual void SetLocalDescription(
-      std::unique_ptr<SessionDescriptionInterface> desc,
-      rtc::scoped_refptr<SetLocalDescriptionObserverInterface> observer) {}
-  // Creates an offer or answer (depending on current signaling state) and sets
-  // it as the local session description.
-  //
-  // The observer is invoked as soon as the operation completes, which could be
-  // before or after the SetLocalDescription() method has exited.
-  virtual void SetLocalDescription(
-      rtc::scoped_refptr<SetLocalDescriptionObserverInterface> observer) {}
-  // Like SetLocalDescription() above, but the observer is invoked with a delay
-  // after the operation completes. This helps avoid recursive calls by the
-  // observer but also makes it possible for states to change in-between the
-  // operation completing and the observer getting called. This makes them racy
-  // for synchronizing peer connection states to the application.
-  // TODO(https://crbug.com/webrtc/11798): Delete these methods in favor of the
-  // ones taking SetLocalDescriptionObserverInterface as argument.
+  // The PeerConnection takes the ownership of |desc| even if it fails.
+  // The |observer| callback will be called when done.
+  // TODO(deadbeef): Change |desc| to be a unique_ptr, to make it clear
+  // that this method always takes ownership of it.
   virtual void SetLocalDescription(SetSessionDescriptionObserver* observer,
                                    SessionDescriptionInterface* desc) = 0;
+  // Implicitly creates an offer or answer (depending on the current signaling
+  // state) and performs SetLocalDescription() with the newly generated session
+  // description.
+  // TODO(hbos): Make pure virtual when implemented by downstream projects.
   virtual void SetLocalDescription(SetSessionDescriptionObserver* observer) {}
-
   // Sets the remote session description.
-  //
-  // (Unlike "SDP munging" before SetLocalDescription(), modifying a remote
-  // offer or answer is allowed by the spec.)
-  //
-  // The observer is invoked as soon as the operation completes, which could be
-  // before or after the SetRemoteDescription() method has exited.
+  // The PeerConnection takes the ownership of |desc| even if it fails.
+  // The |observer| callback will be called when done.
+  // TODO(hbos): Remove when Chrome implements the new signature.
+  virtual void SetRemoteDescription(SetSessionDescriptionObserver* observer,
+                                    SessionDescriptionInterface* desc) {}
   virtual void SetRemoteDescription(
       std::unique_ptr<SessionDescriptionInterface> desc,
       rtc::scoped_refptr<SetRemoteDescriptionObserverInterface> observer) = 0;
-  // Like SetRemoteDescription() above, but the observer is invoked with a delay
-  // after the operation completes. This helps avoid recursive calls by the
-  // observer but also makes it possible for states to change in-between the
-  // operation completing and the observer getting called. This makes them racy
-  // for synchronizing peer connection states to the application.
-  // TODO(https://crbug.com/webrtc/11798): Delete this method in favor of the
-  // ones taking SetRemoteDescriptionObserverInterface as argument.
-  virtual void SetRemoteDescription(SetSessionDescriptionObserver* observer,
-                                    SessionDescriptionInterface* desc) {}
 
   virtual PeerConnectionInterface::RTCConfiguration GetConfiguration() = 0;
 

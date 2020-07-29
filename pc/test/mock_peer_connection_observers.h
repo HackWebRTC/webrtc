@@ -297,26 +297,7 @@ class MockSetSessionDescriptionObserver
   std::string error_;
 };
 
-class FakeSetLocalDescriptionObserver
-    : public rtc::RefCountedObject<SetLocalDescriptionObserverInterface> {
- public:
-  bool called() const { return error_.has_value(); }
-  RTCError& error() {
-    RTC_DCHECK(error_.has_value());
-    return *error_;
-  }
-
-  // SetLocalDescriptionObserverInterface implementation.
-  void OnSetLocalDescriptionComplete(RTCError error) override {
-    error_ = std::move(error);
-  }
-
- private:
-  // Set on complete, on success this is set to an RTCError::OK() error.
-  absl::optional<RTCError> error_;
-};
-
-class FakeSetRemoteDescriptionObserver
+class MockSetRemoteDescriptionObserver
     : public rtc::RefCountedObject<SetRemoteDescriptionObserverInterface> {
  public:
   bool called() const { return error_.has_value(); }
