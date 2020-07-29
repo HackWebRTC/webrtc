@@ -434,9 +434,9 @@ bool BaseChannel::SendPacket(bool rtcp,
     }
 
     std::string packet_type = rtcp ? "RTCP" : "RTP";
-    RTC_LOG(LS_WARNING) << "Sending an " << packet_type
-                        << " packet without encryption for " << ToString()
-                        << ".";
+    RTC_DLOG(LS_WARNING) << "Sending an " << packet_type
+                         << " packet without encryption for " << ToString()
+                         << ".";
   }
 
   // Bon voyage.
