@@ -456,9 +456,15 @@ bool VideoAnalyzer::IsInSelectedSpatialAndTemporalLayer(
 }
 
 void VideoAnalyzer::PollStats() {
+  // Do not grab |comparison_lock_|, before |GetStats()| completes.
+  // Otherwise a deadlock may occur:
+  // 1) |comparison_lock_| is acquired after |lock_|
+  // 2) |lock_| is acquired after internal pacer lock in SendRtp()
+  // 3) internal pacer lock is acquired by GetStats().
+  Call::Stats call_stats = call_->GetStats();
+
   MutexLock lock(&comparison_lock_);
 
-  Call::Stats call_stats = call_->GetStats();
   send_bandwidth_bps_.AddSample(call_stats.send_bandwidth_bps);
 
   VideoSendStream::Stats send_stats = send_stream_->GetStats();
