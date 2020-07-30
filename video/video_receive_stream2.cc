@@ -295,8 +295,6 @@ void VideoReceiveStream2::Start() {
   const bool protected_by_fec = config_.rtp.protected_by_flexfec ||
                                 rtp_video_stream_receiver_.IsUlpfecEnabled();
 
-  frame_buffer_->Start();
-
   if (rtp_video_stream_receiver_.IsRetransmissionsEnabled() &&
       protected_by_fec) {
     frame_buffer_->SetProtectionMode(kProtectionNackFEC);
