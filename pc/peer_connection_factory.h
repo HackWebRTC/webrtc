@@ -113,7 +113,6 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   const std::unique_ptr<TaskQueueFactory> task_queue_factory_;
   Options options_;
   std::unique_ptr<cricket::ChannelManager> channel_manager_;
-  const std::unique_ptr<rtc::NetworkMonitorFactory> network_monitor_factory_;
   std::unique_ptr<rtc::BasicNetworkManager> default_network_manager_;
   std::unique_ptr<rtc::BasicPacketSocketFactory> default_socket_factory_;
   std::unique_ptr<cricket::MediaEngineInterface> media_engine_;
