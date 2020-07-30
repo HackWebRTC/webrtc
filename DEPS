@@ -10,7 +10,7 @@ vars = {
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
-  'chromium_revision': 'f4c74ea1a4536a76aaa9de7db703432abaeea5d0',
+  'chromium_revision': '88f89d7a7d9b9de5bbf75bd3be3efacd736ea30f',
 
   # This can be overridden, e.g. with custom_vars, to download a nonstandard
   # Xcode version in build/mac_toolchain.py
@@ -22,9 +22,9 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    'https://chromium.googlesource.com/chromium/src/base@77a7bb4ce7802260e29aa965ba997d851012a433',
+    'https://chromium.googlesource.com/chromium/src/base@c5605625648216dd25b77b0967a3de0caf65207e',
   'src/build':
-    'https://chromium.googlesource.com/chromium/src/build@c92da04791142dcb13472f0b49d3299835979ae0',
+    'https://chromium.googlesource.com/chromium/src/build@f1439400c640da0011d7667f73393eec6cde1cd4',
   'src/buildtools':
     'https://chromium.googlesource.com/chromium/src/buildtools@9e121212d42be62a7cce38072f925f8398d11e49',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
@@ -33,13 +33,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': 'https://chromium.googlesource.com/chromium/src/ios@8c162257706f6451e6db6dabad7e6bbdc36b3dd8',
+    'url': 'https://chromium.googlesource.com/chromium/src/ios@6f6045fc51dc1f7bea228772f85ae9f0a14797cd',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    'https://chromium.googlesource.com/chromium/src/testing@8c2ec4e948776fef03d12528a1fc70db4dfc6e82',
+    'https://chromium.googlesource.com/chromium/src/testing@c0f4b658c2b9a991a9b850d09521334068dc5195',
   'src/third_party':
-    'https://chromium.googlesource.com/chromium/src/third_party@8dadff67624e553443d3ab39bd88a0f9a2d8d137',
+    'https://chromium.googlesource.com/chromium/src/third_party@280bd1b3437089f956d60502de281d3ef2f193bc',
 
   'src/buildtools/linux64': {
     'packages': [
@@ -126,18 +126,18 @@ deps = {
   },
 
   'src/third_party/boringssl/src':
-    'https://boringssl.googlesource.com/boringssl.git@eda849d2e6e6a15a5a4dc728568ec12f21ebfb6d',
+    'https://boringssl.googlesource.com/boringssl.git@70fee172042c9727f98ea2e6659eb77336e0dc7f',
   'src/third_party/breakpad/breakpad':
-    'https://chromium.googlesource.com/breakpad/breakpad.git@2757a2c9c819fcae3784576aef0c8400c7ad06d7',
+    'https://chromium.googlesource.com/breakpad/breakpad.git@a740aa2625df2c0ed21ed7118bd8ab5faec375b8',
   'src/third_party/catapult':
-    'https://chromium.googlesource.com/catapult.git@14ca9390e34a03dc5723e202d330978635666c95',
+    'https://chromium.googlesource.com/catapult.git@0138877b7594bc4169aecf8dc94adea8b2a2403d',
   'src/third_party/ced/src': {
     'url': 'https://chromium.googlesource.com/external/github.com/google/compact_enc_det.git@ba412eaaacd3186085babcd901679a48863c7dd5',
   },
   'src/third_party/colorama/src':
     'https://chromium.googlesource.com/external/colorama.git@799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
   'src/third_party/depot_tools':
-    'https://chromium.googlesource.com/chromium/tools/depot_tools.git@7291750ae258773233f671ae7c93a5bc4a388831',
+    'https://chromium.googlesource.com/chromium/tools/depot_tools.git@343f63643b432ace2d2d4c253c6c327bb18c03ea',
   'src/third_party/ffmpeg':
     'https://chromium.googlesource.com/chromium/third_party/ffmpeg.git@d2dd36c03501e995e8ce2d792d834392b2e62bfe',
   'src/third_party/findbugs': {
@@ -150,7 +150,7 @@ deps = {
       'condition': 'checkout_linux',
   },
   'src/third_party/freetype/src':
-    'https://chromium.googlesource.com/chromium/src/third_party/freetype2.git@3273521f408938e0088258bda62d280d6e5967eb',
+    'https://chromium.googlesource.com/chromium/src/third_party/freetype2.git@986a340dd52825ceaa142ae19473de0ee52d57f2',
   'src/third_party/harfbuzz-ng/src':
     'https://chromium.googlesource.com/external/github.com/harfbuzz/harfbuzz.git@e3af529e511ca492284cdd9f4584666b88a9e00f',
   'src/third_party/google_benchmark/src': {
@@ -208,7 +208,7 @@ deps = {
       'condition': 'checkout_android',
   },
   'src/third_party/perfetto':
-    'https://android.googlesource.com/platform/external/perfetto.git@a307488e3859710bb6d71f0b1462fdcb2b2da4d2',
+    'https://android.googlesource.com/platform/external/perfetto.git@23b75a4d658c40ebc2aa51d447f43bc132868fc1',
   'src/third_party/libvpx/source/libvpx':
     'https://chromium.googlesource.com/webm/libvpx.git@a1cee8dc919df1980d802e1a9bce1259ec34cba8',
   'src/third_party/libyuv':
@@ -265,7 +265,7 @@ deps = {
     'condition': 'checkout_win',
   },
   'src/tools':
-    'https://chromium.googlesource.com/chromium/src/tools@6f9fee879f97548f1b4f6cea3600f64911273a79',
+    'https://chromium.googlesource.com/chromium/src/tools@63b96f52faadee2e7d7a724d496127cbc509ca5c',
   'src/tools/swarming_client':
     'https://chromium.googlesource.com/infra/luci/client-py.git@4c095d04179dc725a300085ae21fe3b79900d072',
 
