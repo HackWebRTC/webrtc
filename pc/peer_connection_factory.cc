@@ -74,6 +74,7 @@ PeerConnectionFactory::PeerConnectionFactory(
       worker_thread_(dependencies.worker_thread),
       signaling_thread_(dependencies.signaling_thread),
       task_queue_factory_(std::move(dependencies.task_queue_factory)),
+      network_monitor_factory_(std::move(dependencies.network_monitor_factory)),
       media_engine_(std::move(dependencies.media_engine)),
       call_factory_(std::move(dependencies.call_factory)),
       event_log_factory_(std::move(dependencies.event_log_factory)),
@@ -131,7 +132,10 @@ bool PeerConnectionFactory::Initialize() {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::InitRandom(rtc::Time32());
 
-  default_network_manager_.reset(new rtc::BasicNetworkManager());
+  // If network_monitor_factory_ is non-null, it will be used to create a
+  // network monitor while on the network thread.
+  default_network_manager_.reset(
+      new rtc::BasicNetworkManager(network_monitor_factory_.get()));
   if (!default_network_manager_) {
     return false;
   }

@@ -12,6 +12,9 @@
 #define RTC_BASE_NETWORK_MONITOR_H_
 
 #include "rtc_base/network_constants.h"
+// TODO(deadbeef): Remove this include when downstream code stops using
+// NetworkMonitorFactory::SetFactory.
+#include "rtc_base/network_monitor_factory.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 
@@ -96,26 +99,6 @@ class NetworkMonitorBase : public NetworkMonitorInterface,
 
  private:
   Thread* worker_thread_;
-};
-
-/*
- * NetworkMonitorFactory creates NetworkMonitors.
- */
-class NetworkMonitorFactory {
- public:
-  // This is not thread-safe; it should be called once (or once per audio/video
-  // call) during the call initialization.
-  static void SetFactory(NetworkMonitorFactory* factory);
-
-  static void ReleaseFactory(NetworkMonitorFactory* factory);
-  static NetworkMonitorFactory* GetFactory();
-
-  virtual NetworkMonitorInterface* CreateNetworkMonitor() = 0;
-
-  virtual ~NetworkMonitorFactory();
-
- protected:
-  NetworkMonitorFactory();
 };
 
 }  // namespace rtc

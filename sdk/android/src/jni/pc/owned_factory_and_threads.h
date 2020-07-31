@@ -33,25 +33,19 @@ class OwnedFactoryAndThreads {
       std::unique_ptr<rtc::Thread> network_thread,
       std::unique_ptr<rtc::Thread> worker_thread,
       std::unique_ptr<rtc::Thread> signaling_thread,
-      rtc::NetworkMonitorFactory* network_monitor_factory,
       const rtc::scoped_refptr<PeerConnectionFactoryInterface>& factory);
 
-  ~OwnedFactoryAndThreads();
+  ~OwnedFactoryAndThreads() = default;
 
   PeerConnectionFactoryInterface* factory() { return factory_.get(); }
   rtc::Thread* network_thread() { return network_thread_.get(); }
   rtc::Thread* signaling_thread() { return signaling_thread_.get(); }
   rtc::Thread* worker_thread() { return worker_thread_.get(); }
-  rtc::NetworkMonitorFactory* network_monitor_factory() {
-    return network_monitor_factory_;
-  }
-  void clear_network_monitor_factory() { network_monitor_factory_ = nullptr; }
 
  private:
   const std::unique_ptr<rtc::Thread> network_thread_;
   const std::unique_ptr<rtc::Thread> worker_thread_;
   const std::unique_ptr<rtc::Thread> signaling_thread_;
-  rtc::NetworkMonitorFactory* network_monitor_factory_;
   const rtc::scoped_refptr<PeerConnectionFactoryInterface> factory_;
 };
 

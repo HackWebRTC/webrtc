@@ -26,8 +26,7 @@ jobject NativeToJavaPeerConnectionFactory(
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pcf,
     std::unique_ptr<rtc::Thread> network_thread,
     std::unique_ptr<rtc::Thread> worker_thread,
-    std::unique_ptr<rtc::Thread> signaling_thread,
-    rtc::NetworkMonitorFactory* network_monitor_factory = nullptr);
+    std::unique_ptr<rtc::Thread> signaling_thread);
 
 }  // namespace webrtc
 
