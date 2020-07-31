@@ -20,37 +20,66 @@
 
 namespace webrtc {
 
-EmulatedNetworkIncomingStats EmulatedNetworkStatsImpl::GetOverallIncomingStats()
-    const {
-  EmulatedNetworkIncomingStats stats;
-  for (const auto& entry : incoming_stats_per_source_) {
-    const EmulatedNetworkIncomingStats& source = entry.second;
-    stats.packets_received += source.packets_received;
-    stats.bytes_received += source.bytes_received;
-    stats.packets_dropped += source.packets_dropped;
-    stats.bytes_dropped += source.bytes_dropped;
-    if (stats.first_packet_received_time > source.first_packet_received_time) {
-      stats.first_packet_received_time = source.first_packet_received_time;
-      stats.first_received_packet_size = source.first_received_packet_size;
-    }
-    if (stats.last_packet_received_time < source.last_packet_received_time) {
-      stats.last_packet_received_time = source.last_packet_received_time;
-    }
+DataRate EmulatedNetworkOutgoingStatsImpl::AverageSendRate() const {
+  RTC_DCHECK_GE(packets_sent_, 2);
+  RTC_DCHECK(first_packet_sent_time_.IsFinite());
+  RTC_DCHECK(last_packet_sent_time_.IsFinite());
+  return (bytes_sent_ - first_sent_packet_size_) /
+         (last_packet_sent_time_ - first_packet_sent_time_);
+}
+
+DataRate EmulatedNetworkIncomingStatsImpl::AverageReceiveRate() const {
+  RTC_DCHECK_GE(packets_received_, 2);
+  RTC_DCHECK(first_packet_received_time_.IsFinite());
+  RTC_DCHECK(last_packet_received_time_.IsFinite());
+  return (bytes_received_ - first_received_packet_size_) /
+         (last_packet_received_time_ - first_packet_received_time_);
+}
+
+std::map<rtc::IPAddress, std::unique_ptr<EmulatedNetworkOutgoingStats>>
+EmulatedNetworkStatsImpl::OutgoingStatsPerDestination() const {
+  std::map<rtc::IPAddress, std::unique_ptr<EmulatedNetworkOutgoingStats>> out;
+  for (const auto& entry : outgoing_stats_per_destination_) {
+    out.emplace(entry.first, std::make_unique<EmulatedNetworkOutgoingStatsImpl>(
+                                 *entry.second));
   }
-  return stats;
+  return out;
 }
 
-EmulatedNetworkStatsBuilder::EmulatedNetworkStatsBuilder() {
-  sequence_checker_.Detach();
+std::map<rtc::IPAddress, std::unique_ptr<EmulatedNetworkIncomingStats>>
+EmulatedNetworkStatsImpl::IncomingStatsPerSource() const {
+  std::map<rtc::IPAddress, std::unique_ptr<EmulatedNetworkIncomingStats>> out;
+  for (const auto& entry : incoming_stats_per_source_) {
+    out.emplace(entry.first, std::make_unique<EmulatedNetworkIncomingStatsImpl>(
+                                 *entry.second));
+  }
+  return out;
 }
-EmulatedNetworkStatsBuilder::EmulatedNetworkStatsBuilder(
-    rtc::IPAddress local_ip) {
-  local_addresses_.push_back(local_ip);
+
+std::unique_ptr<EmulatedNetworkOutgoingStats>
+EmulatedNetworkStatsImpl::GetOverallOutgoingStats() const {
+  EmulatedNetworkOutgoingStatsBuilder builder;
+  for (const auto& entry : outgoing_stats_per_destination_) {
+    builder.AddOutgoingStats(*entry.second);
+  }
+  return builder.Build();
+}
+
+std::unique_ptr<EmulatedNetworkIncomingStats>
+EmulatedNetworkStatsImpl::GetOverallIncomingStats() const {
+  EmulatedNetworkIncomingStatsBuilder builder;
+  for (const auto& entry : incoming_stats_per_source_) {
+    builder.AddIncomingStats(*entry.second);
+  }
+  return builder.Build();
+}
+
+EmulatedNetworkOutgoingStatsBuilder::EmulatedNetworkOutgoingStatsBuilder() {
   sequence_checker_.Detach();
 }
 
-void EmulatedNetworkStatsBuilder::OnPacketSent(Timestamp sent_time,
-                                               DataSize packet_size) {
+void EmulatedNetworkOutgoingStatsBuilder::OnPacketSent(Timestamp sent_time,
+                                                       DataSize packet_size) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   RTC_CHECK_GE(packet_size, DataSize::Zero());
   if (first_packet_sent_time_.IsInfinite()) {
@@ -62,77 +91,150 @@ void EmulatedNetworkStatsBuilder::OnPacketSent(Timestamp sent_time,
   bytes_sent_ += packet_size;
 }
 
+void EmulatedNetworkOutgoingStatsBuilder::AddOutgoingStats(
+    const EmulatedNetworkOutgoingStats& stats) {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  packets_sent_ += stats.PacketsSent();
+  bytes_sent_ += stats.BytesSent();
+  if (first_packet_sent_time_ > stats.FirstPacketSentTime()) {
+    first_packet_sent_time_ = stats.FirstPacketSentTime();
+    first_sent_packet_size_ = stats.FirstSentPacketSize();
+  }
+  if (last_packet_sent_time_ < stats.LastPacketSentTime()) {
+    last_packet_sent_time_ = stats.LastPacketSentTime();
+  }
+}
+
+std::unique_ptr<EmulatedNetworkOutgoingStats>
+EmulatedNetworkOutgoingStatsBuilder::Build() const {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  return std::make_unique<EmulatedNetworkOutgoingStatsImpl>(
+      packets_sent_, bytes_sent_, first_sent_packet_size_,
+      first_packet_sent_time_, last_packet_sent_time_);
+}
+
+EmulatedNetworkIncomingStatsBuilder::EmulatedNetworkIncomingStatsBuilder() {
+  sequence_checker_.Detach();
+}
+
+void EmulatedNetworkIncomingStatsBuilder::OnPacketDropped(
+    DataSize packet_size) {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  packets_dropped_++;
+  bytes_dropped_ += packet_size;
+}
+
+void EmulatedNetworkIncomingStatsBuilder::OnPacketReceived(
+    Timestamp received_time,
+    DataSize packet_size) {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  RTC_CHECK_GE(packet_size, DataSize::Zero());
+  if (first_packet_received_time_.IsInfinite()) {
+    first_packet_received_time_ = received_time;
+    first_received_packet_size_ = packet_size;
+  }
+  last_packet_received_time_ = received_time;
+  packets_received_++;
+  bytes_received_ += packet_size;
+}
+
+void EmulatedNetworkIncomingStatsBuilder::AddIncomingStats(
+    const EmulatedNetworkIncomingStats& stats) {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  packets_received_ += stats.PacketsReceived();
+  bytes_received_ += stats.BytesReceived();
+  packets_dropped_ += stats.PacketsDropped();
+  bytes_dropped_ += stats.BytesDropped();
+  if (first_packet_received_time_ > stats.FirstPacketReceivedTime()) {
+    first_packet_received_time_ = stats.FirstPacketReceivedTime();
+    first_received_packet_size_ = stats.FirstReceivedPacketSize();
+  }
+  if (last_packet_received_time_ < stats.LastPacketReceivedTime()) {
+    last_packet_received_time_ = stats.LastPacketReceivedTime();
+  }
+}
+
+std::unique_ptr<EmulatedNetworkIncomingStats>
+EmulatedNetworkIncomingStatsBuilder::Build() const {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  return std::make_unique<EmulatedNetworkIncomingStatsImpl>(
+      packets_received_, bytes_received_, packets_dropped_, bytes_dropped_,
+      first_received_packet_size_, first_packet_received_time_,
+      last_packet_received_time_);
+}
+
+EmulatedNetworkStatsBuilder::EmulatedNetworkStatsBuilder() {
+  sequence_checker_.Detach();
+}
+
+EmulatedNetworkStatsBuilder::EmulatedNetworkStatsBuilder(
+    rtc::IPAddress local_ip) {
+  local_addresses_.push_back(local_ip);
+  sequence_checker_.Detach();
+}
+
+void EmulatedNetworkStatsBuilder::OnPacketSent(Timestamp sent_time,
+                                               rtc::IPAddress destination_ip,
+                                               DataSize packet_size) {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  outgoing_stats_per_destination_[destination_ip].OnPacketSent(sent_time,
+                                                               packet_size);
+}
+
 void EmulatedNetworkStatsBuilder::OnPacketDropped(rtc::IPAddress source_ip,
                                                   DataSize packet_size) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
-  RTC_CHECK_GE(packet_size, DataSize::Zero());
-  EmulatedNetworkIncomingStats& source_stats =
-      incoming_stats_per_source_[source_ip];
-  source_stats.packets_dropped++;
-  source_stats.bytes_dropped += packet_size;
+  incoming_stats_per_source_[source_ip].OnPacketDropped(packet_size);
 }
 
 void EmulatedNetworkStatsBuilder::OnPacketReceived(Timestamp received_time,
                                                    rtc::IPAddress source_ip,
                                                    DataSize packet_size) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
-  RTC_CHECK_GE(packet_size, DataSize::Zero());
-  EmulatedNetworkIncomingStats& source_stats =
-      incoming_stats_per_source_[source_ip];
-  if (source_stats.first_packet_received_time.IsInfinite()) {
-    source_stats.first_packet_received_time = received_time;
-    source_stats.first_received_packet_size = packet_size;
-  }
-  source_stats.last_packet_received_time = received_time;
-  source_stats.packets_received++;
-  source_stats.bytes_received += packet_size;
+  incoming_stats_per_source_[source_ip].OnPacketReceived(received_time,
+                                                         packet_size);
 }
 
-void EmulatedNetworkStatsBuilder::AppendEmulatedNetworkStats(
-    std::unique_ptr<EmulatedNetworkStats> stats) {
+void EmulatedNetworkStatsBuilder::AddEmulatedNetworkStats(
+    const EmulatedNetworkStats& stats) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
-  RTC_CHECK(stats);
-  packets_sent_ += stats->PacketsSent();
-  bytes_sent_ += stats->BytesSent();
-  if (first_packet_sent_time_ > stats->FirstPacketSentTime()) {
-    first_packet_sent_time_ = stats->FirstPacketSentTime();
-    first_sent_packet_size_ = stats->FirstSentPacketSize();
-  }
-  if (last_packet_sent_time_ < stats->LastPacketSentTime()) {
-    last_packet_sent_time_ = stats->LastPacketSentTime();
-  }
-  for (const rtc::IPAddress& addr : stats->LocalAddresses()) {
+
+  // Append IPs from other endpoints stats to the builder.
+  for (const rtc::IPAddress& addr : stats.LocalAddresses()) {
     local_addresses_.push_back(addr);
   }
 
-  const std::map<rtc::IPAddress, EmulatedNetworkIncomingStats>
-      incoming_stats_per_source = stats->IncomingStatsPerSource();
+  // Add outgoing stats from other endpoints to the builder.
+  const std::map<rtc::IPAddress, std::unique_ptr<EmulatedNetworkOutgoingStats>>
+      outgoing_stats_per_destination = stats.OutgoingStatsPerDestination();
+  for (const auto& entry : outgoing_stats_per_destination) {
+    outgoing_stats_per_destination_[entry.first].AddOutgoingStats(
+        *entry.second);
+  }
+
+  // Add incoming stats from other endpoints to the builder.
+  const std::map<rtc::IPAddress, std::unique_ptr<EmulatedNetworkIncomingStats>>
+      incoming_stats_per_source = stats.IncomingStatsPerSource();
   for (const auto& entry : incoming_stats_per_source) {
-    const EmulatedNetworkIncomingStats& source = entry.second;
-    EmulatedNetworkIncomingStats& in_stats =
-        incoming_stats_per_source_[entry.first];
-    in_stats.packets_received += source.packets_received;
-    in_stats.bytes_received += source.bytes_received;
-    in_stats.packets_dropped += source.packets_dropped;
-    in_stats.bytes_dropped += source.bytes_dropped;
-    if (in_stats.first_packet_received_time >
-        source.first_packet_received_time) {
-      in_stats.first_packet_received_time = source.first_packet_received_time;
-      in_stats.first_received_packet_size = source.first_received_packet_size;
-    }
-    if (in_stats.last_packet_received_time < source.last_packet_received_time) {
-      in_stats.last_packet_received_time = source.last_packet_received_time;
-    }
+    incoming_stats_per_source_[entry.first].AddIncomingStats(*entry.second);
   }
 }
 
 std::unique_ptr<EmulatedNetworkStats> EmulatedNetworkStatsBuilder::Build()
     const {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
+  std::map<rtc::IPAddress, std::unique_ptr<EmulatedNetworkOutgoingStats>>
+      outgoing_stats;
+  for (const auto& entry : outgoing_stats_per_destination_) {
+    outgoing_stats.emplace(entry.first, entry.second.Build());
+  }
+  std::map<rtc::IPAddress, std::unique_ptr<EmulatedNetworkIncomingStats>>
+      incoming_stats;
+  for (const auto& entry : incoming_stats_per_source_) {
+    incoming_stats.emplace(entry.first, entry.second.Build());
+  }
   return std::make_unique<EmulatedNetworkStatsImpl>(
-      packets_sent_, bytes_sent_, local_addresses_, first_sent_packet_size_,
-      first_packet_sent_time_, last_packet_sent_time_,
-      incoming_stats_per_source_);
+      local_addresses_, std::move(outgoing_stats), std::move(incoming_stats));
 }
 
 void LinkEmulation::OnPacketReceived(EmulatedIpPacket packet) {
@@ -328,7 +430,7 @@ void EmulatedEndpointImpl::SendPacket(const rtc::SocketAddress& from,
                           clock_->CurrentTime(), application_overhead);
   task_queue_->PostTask([this, packet = std::move(packet)]() mutable {
     RTC_DCHECK_RUN_ON(task_queue_);
-    stats_builder_.OnPacketSent(clock_->CurrentTime(),
+    stats_builder_.OnPacketSent(clock_->CurrentTime(), packet.to.ipaddr(),
                                 DataSize::Bytes(packet.ip_packet_size()));
 
     router_.OnPacketReceived(std::move(packet));
@@ -476,7 +578,7 @@ std::vector<EmulatedEndpoint*> EndpointsContainer::endpoints() const {
 std::unique_ptr<EmulatedNetworkStats> EndpointsContainer::GetStats() const {
   EmulatedNetworkStatsBuilder stats_builder;
   for (auto* endpoint : endpoints_) {
-    stats_builder.AppendEmulatedNetworkStats(endpoint->stats());
+    stats_builder.AddEmulatedNetworkStats(*endpoint->stats());
   }
   return stats_builder.Build();
 }

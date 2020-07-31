@@ -301,7 +301,7 @@ void NetworkEmulationManagerImpl::GetStats(
   task_queue_.PostTask([endpoints, stats_callback]() {
     EmulatedNetworkStatsBuilder stats_builder;
     for (auto* endpoint : endpoints) {
-      stats_builder.AppendEmulatedNetworkStats(endpoint->stats());
+      stats_builder.AddEmulatedNetworkStats(*endpoint->stats());
     }
     stats_callback(stats_builder.Build());
   });
