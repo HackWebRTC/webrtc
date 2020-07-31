@@ -2645,6 +2645,24 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithTiasBandwidth) {
   EXPECT_TRUE(CompareSessionDescription(jdesc_, jdesc_with_bandwidth));
 }
 
+TEST_F(WebRtcSdpTest,
+       DeserializeSessionDescriptionWithUnknownBandwidthModifier) {
+  JsepSessionDescription jdesc_with_bandwidth(kDummyType);
+  std::string sdp_with_bandwidth = kSdpFullString;
+  InjectAfter("a=mid:video_content_name\r\na=sendrecv\r\n",
+              "b=unknown:100000\r\n", &sdp_with_bandwidth);
+  InjectAfter("a=mid:audio_content_name\r\na=sendrecv\r\n",
+              "b=unknown:50000\r\n", &sdp_with_bandwidth);
+  EXPECT_TRUE(SdpDeserialize(sdp_with_bandwidth, &jdesc_with_bandwidth));
+  VideoContentDescription* vcd = GetFirstVideoContentDescription(&desc_);
+  vcd->set_bandwidth(-1);
+  AudioContentDescription* acd = GetFirstAudioContentDescription(&desc_);
+  acd->set_bandwidth(-1);
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
+                                jdesc_.session_version()));
+  EXPECT_TRUE(CompareSessionDescription(jdesc_, jdesc_with_bandwidth));
+}
+
 TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithIceOptions) {
   JsepSessionDescription jdesc_with_ice_options(kDummyType);
   std::string sdp_with_ice_options = kSdpFullString;
@@ -3369,6 +3387,13 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithInvalidAttributeValue) {
   // bandwidth
   ExpectParseFailureWithNewLines("a=mid:video_content_name\r\n",
                                  "b=AS:badvalue\r\n", "b=AS:badvalue");
+  ExpectParseFailureWithNewLines("a=mid:video_content_name\r\n", "b=AS\r\n",
+                                 "b=AS");
+  ExpectParseFailureWithNewLines("a=mid:video_content_name\r\n", "b=AS:\r\n",
+                                 "b=AS:");
+  ExpectParseFailureWithNewLines("a=mid:video_content_name\r\n",
+                                 "b=AS:12:34\r\n", "b=AS:12:34");
+
   // rtcp-fb
   ExpectParseFailureWithNewLines("a=mid:video_content_name\r\n",
                                  "a=rtcp-fb:badvalue nack\r\n",
