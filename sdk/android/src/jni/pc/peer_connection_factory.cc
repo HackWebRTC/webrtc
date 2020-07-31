@@ -138,10 +138,11 @@ ScopedJavaLocalRef<jobject> NativeToScopedJavaPeerConnectionFactory(
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pcf,
     std::unique_ptr<rtc::Thread> network_thread,
     std::unique_ptr<rtc::Thread> worker_thread,
-    std::unique_ptr<rtc::Thread> signaling_thread) {
+    std::unique_ptr<rtc::Thread> signaling_thread,
+    rtc::NetworkMonitorFactory* network_monitor_factory) {
   OwnedFactoryAndThreads* owned_factory = new OwnedFactoryAndThreads(
       std::move(network_thread), std::move(worker_thread),
-      std::move(signaling_thread), pcf);
+      std::move(signaling_thread), network_monitor_factory, pcf);
 
   ScopedJavaLocalRef<jobject> j_pcf = Java_PeerConnectionFactory_Constructor(
       env, NativeToJavaPointer(owned_factory));
@@ -171,15 +172,17 @@ PeerConnectionFactoryInterface* PeerConnectionFactoryFromJava(jlong j_p) {
 // Set in PeerConnectionFactory_initializeAndroidGlobals().
 static bool factory_static_initialized = false;
 
+
 jobject NativeToJavaPeerConnectionFactory(
     JNIEnv* jni,
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pcf,
     std::unique_ptr<rtc::Thread> network_thread,
     std::unique_ptr<rtc::Thread> worker_thread,
-    std::unique_ptr<rtc::Thread> signaling_thread) {
+    std::unique_ptr<rtc::Thread> signaling_thread,
+    rtc::NetworkMonitorFactory* network_monitor_factory) {
   return NativeToScopedJavaPeerConnectionFactory(
              jni, pcf, std::move(network_thread), std::move(worker_thread),
-             std::move(signaling_thread))
+             std::move(signaling_thread), network_monitor_factory)
       .Release();
 }
 
@@ -281,8 +284,17 @@ ScopedJavaLocalRef<jobject> CreatePeerConnectionFactoryForJava(
   signaling_thread->SetName("signaling_thread", NULL);
   RTC_CHECK(signaling_thread->Start()) << "Failed to start thread";
 
+  rtc::NetworkMonitorFactory* network_monitor_factory = nullptr;
+
   const absl::optional<PeerConnectionFactoryInterface::Options> options =
       JavaToNativePeerConnectionFactoryOptions(jni, joptions);
+
+  // Do not create network_monitor_factory only if the options are
+  // provided and disable_network_monitor therein is set to true.
+  if (!(options && options->disable_network_monitor)) {
+    network_monitor_factory = new AndroidNetworkMonitorFactory();
+    rtc::NetworkMonitorFactory::SetFactory(network_monitor_factory);
+  }
 
   PeerConnectionFactoryDependencies dependencies;
   dependencies.network_thread = network_thread.get();
@@ -298,10 +310,6 @@ ScopedJavaLocalRef<jobject> CreatePeerConnectionFactoryForJava(
   dependencies.network_state_predictor_factory =
       std::move(network_state_predictor_factory);
   dependencies.neteq_factory = std::move(neteq_factory);
-  if (!(options && options->disable_network_monitor)) {
-    dependencies.network_monitor_factory =
-        std::make_unique<AndroidNetworkMonitorFactory>();
-  }
 
   cricket::MediaEngineDependencies media_dependencies;
   media_dependencies.task_queue_factory = dependencies.task_queue_factory.get();
@@ -328,7 +336,7 @@ ScopedJavaLocalRef<jobject> CreatePeerConnectionFactoryForJava(
 
   return NativeToScopedJavaPeerConnectionFactory(
       jni, factory, std::move(network_thread), std::move(worker_thread),
-      std::move(signaling_thread));
+      std::move(signaling_thread), network_monitor_factory);
 }
 
 static ScopedJavaLocalRef<jobject>

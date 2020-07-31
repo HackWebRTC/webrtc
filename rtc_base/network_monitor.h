@@ -98,6 +98,26 @@ class NetworkMonitorBase : public NetworkMonitorInterface,
   Thread* worker_thread_;
 };
 
+/*
+ * NetworkMonitorFactory creates NetworkMonitors.
+ */
+class NetworkMonitorFactory {
+ public:
+  // This is not thread-safe; it should be called once (or once per audio/video
+  // call) during the call initialization.
+  static void SetFactory(NetworkMonitorFactory* factory);
+
+  static void ReleaseFactory(NetworkMonitorFactory* factory);
+  static NetworkMonitorFactory* GetFactory();
+
+  virtual NetworkMonitorInterface* CreateNetworkMonitor() = 0;
+
+  virtual ~NetworkMonitorFactory();
+
+ protected:
+  NetworkMonitorFactory();
+};
+
 }  // namespace rtc
 
 #endif  // RTC_BASE_NETWORK_MONITOR_H_

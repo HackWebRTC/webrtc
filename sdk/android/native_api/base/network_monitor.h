@@ -15,7 +15,7 @@
 
 #include <memory>
 
-#include "rtc_base/network_monitor_factory.h"
+#include "rtc_base/network_monitor.h"
 
 namespace webrtc {
 
