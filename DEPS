@@ -10,7 +10,7 @@ vars = {
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
-  'chromium_revision': '88f89d7a7d9b9de5bbf75bd3be3efacd736ea30f',
+  'chromium_revision': '4d0815dcb4156a37579a7062c765d6613343ee96',
 
   # This can be overridden, e.g. with custom_vars, to download a nonstandard
   # Xcode version in build/mac_toolchain.py
@@ -22,24 +22,24 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    'https://chromium.googlesource.com/chromium/src/base@c5605625648216dd25b77b0967a3de0caf65207e',
+    'https://chromium.googlesource.com/chromium/src/base@143f2bf322df108dabcb6e8a96720aa6332f88c0',
   'src/build':
-    'https://chromium.googlesource.com/chromium/src/build@f1439400c640da0011d7667f73393eec6cde1cd4',
+    'https://chromium.googlesource.com/chromium/src/build@af38c5df814f377e916da8a2b139d9bdc566e0f7',
   'src/buildtools':
-    'https://chromium.googlesource.com/chromium/src/buildtools@9e121212d42be62a7cce38072f925f8398d11e49',
+    'https://chromium.googlesource.com/chromium/src/buildtools@42e94619588fd2f0ceb6cc29785592640703e6a1',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
   'src/examples/androidtests/third_party/gradle': {
     'url': 'https://chromium.googlesource.com/external/github.com/gradle/gradle.git@89af43c4d0506f69980f00dde78c97b2f81437f8',
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': 'https://chromium.googlesource.com/chromium/src/ios@6f6045fc51dc1f7bea228772f85ae9f0a14797cd',
+    'url': 'https://chromium.googlesource.com/chromium/src/ios@52cafcd0643b745db6a28fbdc2d64023ad111175',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    'https://chromium.googlesource.com/chromium/src/testing@c0f4b658c2b9a991a9b850d09521334068dc5195',
+    'https://chromium.googlesource.com/chromium/src/testing@5501fd11e61c7184ac1d467eeadc889bf9783537',
   'src/third_party':
-    'https://chromium.googlesource.com/chromium/src/third_party@280bd1b3437089f956d60502de281d3ef2f193bc',
+    'https://chromium.googlesource.com/chromium/src/third_party@cbac85ebcfded08916c35acf40968ac60c4d9f69',
 
   'src/buildtools/linux64': {
     'packages': [
@@ -126,11 +126,11 @@ deps = {
   },
 
   'src/third_party/boringssl/src':
-    'https://boringssl.googlesource.com/boringssl.git@70fee172042c9727f98ea2e6659eb77336e0dc7f',
+    'https://boringssl.googlesource.com/boringssl.git@74161f485b5d54fe963cbd3d081b718ec84d2e00',
   'src/third_party/breakpad/breakpad':
     'https://chromium.googlesource.com/breakpad/breakpad.git@a740aa2625df2c0ed21ed7118bd8ab5faec375b8',
   'src/third_party/catapult':
-    'https://chromium.googlesource.com/catapult.git@0138877b7594bc4169aecf8dc94adea8b2a2403d',
+    'https://chromium.googlesource.com/catapult.git@26d2e8aa289bffcc75aff7598285c3720148985d',
   'src/third_party/ced/src': {
     'url': 'https://chromium.googlesource.com/external/github.com/google/compact_enc_det.git@ba412eaaacd3186085babcd901679a48863c7dd5',
   },
@@ -208,7 +208,7 @@ deps = {
       'condition': 'checkout_android',
   },
   'src/third_party/perfetto':
-    'https://android.googlesource.com/platform/external/perfetto.git@23b75a4d658c40ebc2aa51d447f43bc132868fc1',
+    'https://android.googlesource.com/platform/external/perfetto.git@f6c424bb59238a75fbb10d4d802b5ad31107a3a3',
   'src/third_party/libvpx/source/libvpx':
     'https://chromium.googlesource.com/webm/libvpx.git@a1cee8dc919df1980d802e1a9bce1259ec34cba8',
   'src/third_party/libyuv':
@@ -265,7 +265,7 @@ deps = {
     'condition': 'checkout_win',
   },
   'src/tools':
-    'https://chromium.googlesource.com/chromium/src/tools@63b96f52faadee2e7d7a724d496127cbc509ca5c',
+    'https://chromium.googlesource.com/chromium/src/tools@1e881a2fdaecdb103bf107817c02e2811ada292e',
   'src/tools/swarming_client':
     'https://chromium.googlesource.com/infra/luci/client-py.git@4c095d04179dc725a300085ae21fe3b79900d072',
 
@@ -439,17 +439,6 @@ deps = {
           {
               'package': 'chromium/third_party/robolectric',
               'version': 'iC6RDM5EH3GEAzR-1shW_Mg0FeeNE5shq1okkFfuuNQC',
-          },
-      ],
-      'condition': 'checkout_android',
-      'dep_type': 'cipd',
-  },
-
-  'src/third_party/androidx': {
-      'packages': [
-          {
-              'package': 'chromium/third_party/androidx',
-              'version': 'BgU0HKOH7unGo87kXkIKJlPMmaSOCFhvUKcIr9aborwC',
           },
       ],
       'condition': 'checkout_android',
