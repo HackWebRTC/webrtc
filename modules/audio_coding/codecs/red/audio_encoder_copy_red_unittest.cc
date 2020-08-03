@@ -355,6 +355,32 @@ TEST_F(AudioEncoderCopyRedTest, CheckRFC2198Header) {
   EXPECT_EQ(encoded_[8], primary_payload_type);
 }
 
+TEST_F(AudioEncoderCopyRedTest, RespectsPayloadMTU) {
+  const int primary_payload_type = red_payload_type_ + 1;
+  AudioEncoder::EncodedInfo info;
+  info.encoded_bytes = 600;
+  info.encoded_timestamp = timestamp_;
+  info.payload_type = primary_payload_type;
+
+  EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
+      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+  Encode();
+  info.encoded_timestamp = timestamp_;  // update timestamp.
+  info.encoded_bytes = 500;
+  EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
+      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+  Encode();  // Second call will produce a redundant encoding.
+
+  EXPECT_EQ(encoded_.size(), 5u + 600u + 500u);
+
+  info.encoded_timestamp = timestamp_;  // update timestamp.
+  info.encoded_bytes = 400;
+  EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
+      .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(info)));
+  Encode();  // Third call will drop the oldest packet.
+  EXPECT_EQ(encoded_.size(), 5u + 500u + 400u);
+}
+
 #if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 
 // This test fixture tests various error conditions that makes the
