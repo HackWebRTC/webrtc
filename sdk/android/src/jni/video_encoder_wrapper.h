@@ -67,8 +67,6 @@ class VideoEncoderWrapper : public VideoEncoder {
                            const JavaRef<jobject>& j_value,
                            const char* method_name);
 
-  RTPFragmentationHeader ParseFragmentationHeader(
-      rtc::ArrayView<const uint8_t> buffer);
   int ParseQp(rtc::ArrayView<const uint8_t> buffer);
   CodecSpecificInfo ParseCodecSpecificInfo(const EncodedImage& frame);
   ScopedJavaLocalRef<jobject> ToJavaBitrateAllocation(
