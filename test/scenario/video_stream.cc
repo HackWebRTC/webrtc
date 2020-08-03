@@ -323,7 +323,6 @@ std::unique_ptr<FrameGeneratorInterface> CreateFrameGenerator(
 VideoReceiveStream::Config CreateVideoReceiveStreamConfig(
     VideoStreamConfig config,
     Transport* feedback_transport,
-    VideoDecoderFactory* decoder_factory,
     VideoReceiveStream::Decoder decoder,
     rtc::VideoSinkInterface<VideoFrame>* renderer,
     uint32_t local_ssrc,
@@ -339,7 +338,6 @@ VideoReceiveStream::Config CreateVideoReceiveStreamConfig(
   recv.rtp.nack.rtp_history_ms = config.stream.nack_history_time.ms();
   recv.rtp.protected_by_flexfec = config.stream.use_flexfec;
   recv.rtp.remote_ssrc = ssrc;
-  recv.decoder_factory = decoder_factory;
   recv.decoders.push_back(decoder);
   recv.renderer = renderer;
   if (config.stream.use_rtx) {
@@ -551,6 +549,7 @@ ReceiveVideoStream::ReceiveVideoStream(CallClient* receiver,
   VideoReceiveStream::Decoder decoder =
       CreateMatchingDecoder(CodecTypeToPayloadType(config.encoder.codec),
                             CodecTypeToPayloadString(config.encoder.codec));
+  decoder.decoder_factory = decoder_factory_.get();
   size_t num_streams = 1;
   if (config.encoder.codec == VideoStreamConfig::Encoder::Codec::kVideoCodecVP8)
     num_streams = config.encoder.layers.spatial;
@@ -562,7 +561,7 @@ ReceiveVideoStream::ReceiveVideoStream(CallClient* receiver,
       renderer = render_taps_.back().get();
     }
     auto recv_config = CreateVideoReceiveStreamConfig(
-        config, feedback_transport, decoder_factory_.get(), decoder, renderer,
+        config, feedback_transport, decoder, renderer,
         receiver_->GetNextVideoLocalSsrc(), send_stream->ssrcs_[i],
         send_stream->rtx_ssrcs_[i]);
     if (config.stream.use_flexfec) {
