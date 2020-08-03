@@ -388,9 +388,9 @@ void CallTest::AddMatchingVideoReceiveConfigs(
     decoder.video_format = SdpVideoFormat(video_send_config.rtp.payload_name);
     // Force fake decoders on non-selected simulcast streams.
     if (!decode_sub_stream || i == *decode_sub_stream) {
-      decoder.decoder_factory = decoder_factory;
+      video_recv_config.decoder_factory = decoder_factory;
     } else {
-      decoder.decoder_factory = &fake_decoder_factory_;
+      video_recv_config.decoder_factory = &fake_decoder_factory_;
     }
     video_recv_config.decoders.push_back(decoder);
     receive_configs->emplace_back(std::move(video_recv_config));

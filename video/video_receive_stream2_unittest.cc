@@ -105,12 +105,12 @@ class VideoReceiveStream2Test : public ::testing::Test {
     config_.rtp.remote_ssrc = 1111;
     config_.rtp.local_ssrc = 2222;
     config_.renderer = &fake_renderer_;
+    config_.decoder_factory = &h264_decoder_factory_;
     VideoReceiveStream::Decoder h264_decoder;
     h264_decoder.payload_type = 99;
     h264_decoder.video_format = SdpVideoFormat("H264");
     h264_decoder.video_format.parameters.insert(
         {"sprop-parameter-sets", "Z0IACpZTBYmI,aMljiA=="});
-    h264_decoder.decoder_factory = &h264_decoder_factory_;
     config_.decoders.push_back(h264_decoder);
 
     clock_ = Clock::GetRealTimeClock();
@@ -244,10 +244,10 @@ class VideoReceiveStream2TestWithFakeDecoder : public ::testing::Test {
     config_.rtp.remote_ssrc = 1111;
     config_.rtp.local_ssrc = 2222;
     config_.renderer = &fake_renderer_;
+    config_.decoder_factory = &fake_decoder_factory_;
     VideoReceiveStream::Decoder fake_decoder;
     fake_decoder.payload_type = 99;
     fake_decoder.video_format = SdpVideoFormat("VP8");
-    fake_decoder.decoder_factory = &fake_decoder_factory_;
     config_.decoders.push_back(fake_decoder);
     clock_ = Clock::GetRealTimeClock();
     ReCreateReceiveStream(VideoReceiveStream::RecordingState());
@@ -467,10 +467,10 @@ class VideoReceiveStream2TestWithSimulatedClock : public ::testing::Test {
     config.rtp.remote_ssrc = 1111;
     config.rtp.local_ssrc = 2222;
     config.renderer = renderer;
+    config.decoder_factory = decoder_factory;
     VideoReceiveStream::Decoder fake_decoder;
     fake_decoder.payload_type = 99;
     fake_decoder.video_format = SdpVideoFormat("VP8");
-    fake_decoder.decoder_factory = decoder_factory;
     config.decoders.push_back(fake_decoder);
     return config;
   }

@@ -182,12 +182,12 @@ void MultiCodecReceiveTest::ConfigureDecoders(
     VideoDecoderFactory* decoder_factory) {
   video_receive_configs_[0].decoders.clear();
   // Placing the payload names in a std::set retains the unique names only.
+  video_receive_configs_[0].decoder_factory = decoder_factory;
   std::set<std::string> unique_payload_names;
   for (const auto& config : configs)
     if (unique_payload_names.insert(config.payload_name).second) {
       VideoReceiveStream::Decoder decoder = test::CreateMatchingDecoder(
           PayloadNameToPayloadType(config.payload_name), config.payload_name);
-      decoder.decoder_factory = decoder_factory;
 
       video_receive_configs_[0].decoders.push_back(decoder);
     }

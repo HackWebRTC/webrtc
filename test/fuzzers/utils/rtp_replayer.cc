@@ -113,7 +113,6 @@ void RtpReplayer::SetupVideoStreams(
     for (auto& decoder : receive_config.decoders) {
       decoder = test::CreateMatchingDecoder(decoder.payload_type,
                                             decoder.video_format.name);
-      decoder.decoder_factory = stream_state->decoder_factory.get();
     }
 
     // Create the window to display the rendered video.
@@ -121,6 +120,7 @@ void RtpReplayer::SetupVideoStreams(
         test::VideoRenderer::Create("Fuzzing WebRTC Video Config", 640, 480));
     // Create a receive stream for this config.
     receive_config.renderer = stream_state->sinks.back().get();
+    receive_config.decoder_factory = stream_state->decoder_factory.get();
     stream_state->receive_streams.emplace_back(
         call->CreateVideoReceiveStream(std::move(receive_config)));
   }
