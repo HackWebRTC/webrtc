@@ -781,7 +781,10 @@ bool SctpTransport::OpenSctpSocket() {
   // If kSctpSendBufferSize isn't reflective of reality, we log an error, but we
   // still have to do something reasonable here.  Look up what the buffer's real
   // size is and set our threshold to something reasonable.
-  static const int kSendThreshold = usrsctp_sysctl_get_sctp_sendspace() / 2;
+  // TODO(bugs.webrtc.org/11824): That was previously set to 50%, not 25%, but
+  // it was reduced to a recent usrsctp regression. Can return to 50% when the
+  // root cause is fixed.
+  static const int kSendThreshold = usrsctp_sysctl_get_sctp_sendspace() / 4;
 
   sock_ = usrsctp_socket(
       AF_CONN, SOCK_STREAM, IPPROTO_SCTP, &UsrSctpWrapper::OnSctpInboundPacket,
