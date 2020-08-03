@@ -382,12 +382,17 @@ bool AudioDeviceMac::Initialized() const {
 }
 
 int32_t AudioDeviceMac::SpeakerIsAvailable(bool& available) {
+  MutexLock lock(&mutex_);
+  return SpeakerIsAvailableLocked(available);
+}
+
+int32_t AudioDeviceMac::SpeakerIsAvailableLocked(bool& available) {
   bool wasInitialized = _mixerManager.SpeakerIsInitialized();
 
   // Make an attempt to open up the
   // output mixer corresponding to the currently selected output device.
   //
-  if (!wasInitialized && InitSpeaker() == -1) {
+  if (!wasInitialized && InitSpeakerLocked() == -1) {
     available = false;
     return 0;
   }
@@ -433,12 +438,17 @@ int32_t AudioDeviceMac::InitSpeakerLocked() {
 }
 
 int32_t AudioDeviceMac::MicrophoneIsAvailable(bool& available) {
+  MutexLock lock(&mutex_);
+  return MicrophoneIsAvailableLocked(available);
+}
+
+int32_t AudioDeviceMac::MicrophoneIsAvailableLocked(bool& available) {
   bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
 
   // Make an attempt to open up the
   // input mixer corresponding to the currently selected output device.
   //
-  if (!wasInitialized && InitMicrophone() == -1) {
+  if (!wasInitialized && InitMicrophoneLocked() == -1) {
     available = false;
     return 0;
   }
@@ -971,7 +981,7 @@ int32_t AudioDeviceMac::InitPlayout() {
     // Make this call to check if we are using
     // one or two devices (_twoDevices)
     bool available = false;
-    if (MicrophoneIsAvailable(available) == -1) {
+    if (MicrophoneIsAvailableLocked(available) == -1) {
       RTC_LOG(LS_WARNING) << "MicrophoneIsAvailable() failed";
     }
   }
@@ -1109,7 +1119,7 @@ int32_t AudioDeviceMac::InitRecording() {
     // Make this call to check if we are using
     // one or two devices (_twoDevices)
     bool available = false;
-    if (SpeakerIsAvailable(available) == -1) {
+    if (SpeakerIsAvailableLocked(available) == -1) {
       RTC_LOG(LS_WARNING) << "SpeakerIsAvailable() failed";
     }
   }
