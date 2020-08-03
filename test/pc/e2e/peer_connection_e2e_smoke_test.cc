@@ -23,7 +23,7 @@
 #include "test/gtest.h"
 #include "test/pc/e2e/analyzer/audio/default_audio_quality_analyzer.h"
 #include "test/pc/e2e/analyzer/video/default_video_quality_analyzer.h"
-#include "test/pc/e2e/network_quality_metrics_reporter.h"
+#include "test/pc/e2e/stats_based_network_quality_metrics_reporter.h"
 #include "test/testsupport/file_utils.h"
 
 namespace webrtc {
@@ -163,8 +163,11 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
     charlie->SetAudioConfig(std::move(audio));
   });
   fixture()->AddQualityMetricsReporter(
-      std::make_unique<NetworkQualityMetricsReporter>(network_links.first,
-                                                      network_links.second));
+      std::make_unique<StatsBasedNetworkQualityMetricsReporter>(
+          std::map<std::string, std::vector<EmulatedEndpoint*>>(
+              {{"alice", network_links.first->endpoints()},
+               {"charlie", network_links.second->endpoints()}}),
+          network_emulation()));
   RunParams run_params(TimeDelta::Seconds(2));
   run_params.video_codecs = {
       VideoCodecConfig(cricket::kVp9CodecName, {{"profile-id", "0"}})};
@@ -217,8 +220,11 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_ChangeNetworkConditions) {
   });
   AddPeer(bob_network, [](PeerConfigurer* bob) {});
   fixture()->AddQualityMetricsReporter(
-      std::make_unique<NetworkQualityMetricsReporter>(alice_network,
-                                                      bob_network));
+      std::make_unique<StatsBasedNetworkQualityMetricsReporter>(
+          std::map<std::string, std::vector<EmulatedEndpoint*>>(
+              {{"alice", alice_network->endpoints()},
+               {"bob", bob_network->endpoints()}}),
+          network_emulation()));
 
   fixture()->ExecuteAt(TimeDelta::Seconds(1), [alice_node](TimeDelta) {
     BuiltInNetworkBehaviorConfig config;

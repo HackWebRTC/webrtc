@@ -458,6 +458,7 @@ if (!build_with_chromium) {
         ":default_audio_quality_analyzer",
         ":default_video_quality_analyzer",
         ":network_quality_metrics_reporter",
+        ":stats_based_network_quality_metrics_reporter",
         "../../../api:callfactory_api",
         "../../../api:create_network_emulation_manager",
         "../../../api:create_peer_connection_quality_test_frame_generator",
@@ -671,6 +672,33 @@ if (!build_with_chromium) {
       "../../../api/units:data_size",
       "../../../rtc_base:criticalsection",
       "../../../rtc_base:rtc_event",
+      "../../../rtc_base/synchronization:mutex",
+      "../../../system_wrappers:field_trial",
+    ]
+    absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
+  }
+
+  rtc_library("stats_based_network_quality_metrics_reporter") {
+    visibility = [ "*" ]
+    testonly = true
+    sources = [
+      "stats_based_network_quality_metrics_reporter.cc",
+      "stats_based_network_quality_metrics_reporter.h",
+    ]
+    deps = [
+      "../..:perf_test",
+      "../../../api:array_view",
+      "../../../api:network_emulation_manager_api",
+      "../../../api:peer_connection_quality_test_fixture_api",
+      "../../../api:rtc_stats_api",
+      "../../../api:scoped_refptr",
+      "../../../api/test/network_emulation",
+      "../../../api/units:data_rate",
+      "../../../api/units:data_size",
+      "../../../api/units:timestamp",
+      "../../../rtc_base",
+      "../../../rtc_base:rtc_event",
+      "../../../rtc_base:stringutils",
       "../../../rtc_base/synchronization:mutex",
       "../../../system_wrappers:field_trial",
     ]
