@@ -274,8 +274,6 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
     }
   }
 
-  video_codec.legacy_conference_mode = config.legacy_conference_mode;
-
   return video_codec;
 }
 

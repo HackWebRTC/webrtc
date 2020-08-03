@@ -49,6 +49,4 @@ VideoBitrateAllocation VideoBitrateAllocator::Allocate(
   return GetAllocation(parameters.total_bitrate.bps(), parameters.framerate);
 }
 
-void VideoBitrateAllocator::SetLegacyConferenceMode(bool enabled) {}
-
 }  // namespace webrtc

@@ -661,7 +661,7 @@ class EncoderStreamFactory
       const absl::optional<webrtc::DataRate>& experimental_min_bitrate) const;
 
   std::vector<webrtc::VideoStream>
-  CreateSimulcastOrConferenceModeScreenshareStreams(
+  CreateSimulcastOrConfereceModeScreenshareStreams(
       int width,
       int height,
       const webrtc::VideoEncoderConfig& encoder_config,

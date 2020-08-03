@@ -2399,8 +2399,6 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
     }
   }
 
-  encoder_config.legacy_conference_mode = parameters_.conference_mode;
-
   int max_qp = kDefaultQpMax;
   codec.GetParam(kCodecParamMaxQuantization, &max_qp);
   encoder_config.video_stream_factory =
@@ -3396,7 +3394,7 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
       ((absl::EqualsIgnoreCase(codec_name_, kVp8CodecName) ||
         absl::EqualsIgnoreCase(codec_name_, kH264CodecName)) &&
        is_screenshare_ && conference_mode_)) {
-    return CreateSimulcastOrConferenceModeScreenshareStreams(
+    return CreateSimulcastOrConfereceModeScreenshareStreams(
         width, height, encoder_config, experimental_min_bitrate);
   }
 
@@ -3485,7 +3483,7 @@ EncoderStreamFactory::CreateDefaultVideoStreams(
 }
 
 std::vector<webrtc::VideoStream>
-EncoderStreamFactory::CreateSimulcastOrConferenceModeScreenshareStreams(
+EncoderStreamFactory::CreateSimulcastOrConfereceModeScreenshareStreams(
     int width,
     int height,
     const webrtc::VideoEncoderConfig& encoder_config,

@@ -61,8 +61,7 @@ float SimulcastRateAllocator::GetTemporalRateAllocation(
 SimulcastRateAllocator::SimulcastRateAllocator(const VideoCodec& codec)
     : codec_(codec),
       stable_rate_settings_(StableTargetRateExperiment::ParseFromFieldTrials()),
-      rate_control_settings_(RateControlSettings::ParseFromFieldTrials()),
-      legacy_conference_mode_(false) {}
+      rate_control_settings_(RateControlSettings::ParseFromFieldTrials()) {}
 
 SimulcastRateAllocator::~SimulcastRateAllocator() = default;
 
@@ -229,7 +228,12 @@ void SimulcastRateAllocator::DistributeAllocationToTemporalLayers(
     uint32_t max_bitrate_kbps;
     // Legacy temporal-layered only screenshare, or simulcast screenshare
     // with legacy mode for simulcast stream 0.
-    if (legacy_conference_mode_ && simulcast_id == 0) {
+    const bool conference_screenshare_mode =
+        codec_.mode == VideoCodecMode::kScreensharing &&
+        ((num_spatial_streams == 1 && num_temporal_streams == 2) ||  // Legacy.
+         (num_spatial_streams > 1 && simulcast_id == 0 &&
+          num_temporal_streams == 2));  // Simulcast.
+    if (conference_screenshare_mode) {
       // TODO(holmer): This is a "temporary" hack for screensharing, where we
       // interpret the startBitrate as the encoder target bitrate. This is
       // to allow for a different max bitrate, so if the codec can't meet
@@ -249,7 +253,7 @@ void SimulcastRateAllocator::DistributeAllocationToTemporalLayers(
     if (num_temporal_streams == 1) {
       tl_allocation.push_back(target_bitrate_kbps);
     } else {
-      if (legacy_conference_mode_ && simulcast_id == 0) {
+      if (conference_screenshare_mode) {
         tl_allocation = ScreenshareTemporalLayerAllocation(
             target_bitrate_kbps, max_bitrate_kbps, simulcast_id);
       } else {
@@ -332,10 +336,6 @@ int SimulcastRateAllocator::NumTemporalStreams(size_t simulcast_id) const {
       codec_.codecType == kVideoCodecVP8 && codec_.numberOfSimulcastStreams == 0
           ? codec_.VP8().numberOfTemporalLayers
           : codec_.simulcastStream[simulcast_id].numberOfTemporalLayers);
-}
-
-void SimulcastRateAllocator::SetLegacyConferenceMode(bool enabled) {
-  legacy_conference_mode_ = enabled;
 }
 
 }  // namespace webrtc
