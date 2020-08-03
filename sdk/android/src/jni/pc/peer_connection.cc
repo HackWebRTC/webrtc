@@ -478,17 +478,39 @@ static jlong JNI_PeerConnection_GetNativePeerConnection(
 static ScopedJavaLocalRef<jobject> JNI_PeerConnection_GetLocalDescription(
     JNIEnv* jni,
     const JavaParamRef<jobject>& j_pc) {
-  const SessionDescriptionInterface* sdp =
-      ExtractNativePC(jni, j_pc)->local_description();
-  return sdp ? NativeToJavaSessionDescription(jni, sdp) : nullptr;
+  PeerConnectionInterface* pc = ExtractNativePC(jni, j_pc);
+  // It's only safe to operate on SessionDescriptionInterface on the
+  // signaling thread, but |jni| may only be used on the current thread, so we
+  // must do this odd dance.
+  std::string sdp;
+  std::string type;
+  pc->signaling_thread()->Invoke<void>(RTC_FROM_HERE, [pc, &sdp, &type] {
+    const SessionDescriptionInterface* desc = pc->local_description();
+    if (desc) {
+      RTC_CHECK(desc->ToString(&sdp)) << "got so far: " << sdp;
+      type = desc->type();
+    }
+  });
+  return sdp.empty() ? nullptr : NativeToJavaSessionDescription(jni, sdp, type);
 }
 
 static ScopedJavaLocalRef<jobject> JNI_PeerConnection_GetRemoteDescription(
     JNIEnv* jni,
     const JavaParamRef<jobject>& j_pc) {
-  const SessionDescriptionInterface* sdp =
-      ExtractNativePC(jni, j_pc)->remote_description();
-  return sdp ? NativeToJavaSessionDescription(jni, sdp) : nullptr;
+  PeerConnectionInterface* pc = ExtractNativePC(jni, j_pc);
+  // It's only safe to operate on SessionDescriptionInterface on the
+  // signaling thread, but |jni| may only be used on the current thread, so we
+  // must do this odd dance.
+  std::string sdp;
+  std::string type;
+  pc->signaling_thread()->Invoke<void>(RTC_FROM_HERE, [pc, &sdp, &type] {
+    const SessionDescriptionInterface* desc = pc->remote_description();
+    if (desc) {
+      RTC_CHECK(desc->ToString(&sdp)) << "got so far: " << sdp;
+      type = desc->type();
+    }
+  });
+  return sdp.empty() ? nullptr : NativeToJavaSessionDescription(jni, sdp, type);
 }
 
 static ScopedJavaLocalRef<jobject> JNI_PeerConnection_GetCertificate(

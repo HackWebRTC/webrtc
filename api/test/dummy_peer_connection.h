@@ -237,7 +237,11 @@ class DummyPeerConnection : public PeerConnectionInterface {
 
   void StopRtcEventLog() { FATAL() << "Not implemented"; }
 
-  void Close() {}
+  void Close() override {}
+
+  rtc::Thread* signaling_thread() const override {
+    return rtc::Thread::Current();
+  }
 };
 
 static_assert(

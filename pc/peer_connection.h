@@ -260,14 +260,15 @@ class PeerConnection : public PeerConnectionInternal,
 
   void Close() override;
 
+  rtc::Thread* signaling_thread() const final {
+    return factory_->signaling_thread();
+  }
+
   // PeerConnectionInternal implementation.
   rtc::Thread* network_thread() const final {
     return factory_->network_thread();
   }
   rtc::Thread* worker_thread() const final { return factory_->worker_thread(); }
-  rtc::Thread* signaling_thread() const final {
-    return factory_->signaling_thread();
-  }
 
   std::string session_id() const override {
     RTC_DCHECK_RUN_ON(signaling_thread());

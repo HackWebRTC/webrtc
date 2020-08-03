@@ -31,8 +31,11 @@ CreateSdpObserverJni::~CreateSdpObserverJni() = default;
 
 void CreateSdpObserverJni::OnSuccess(SessionDescriptionInterface* desc) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
-  Java_SdpObserver_onCreateSuccess(env, j_observer_global_,
-                                   NativeToJavaSessionDescription(env, desc));
+  std::string sdp;
+  RTC_CHECK(desc->ToString(&sdp)) << "got so far: " << sdp;
+  Java_SdpObserver_onCreateSuccess(
+      env, j_observer_global_,
+      NativeToJavaSessionDescription(env, sdp, desc->type()));
   // OnSuccess transfers ownership of the description (there's a TODO to make
   // it use unique_ptr...).
   delete desc;

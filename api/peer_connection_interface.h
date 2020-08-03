@@ -909,6 +909,10 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
       const std::string& label,
       const DataChannelInit* config) = 0;
 
+  // NOTE: For the following 6 methods, it's only safe to dereference the
+  // SessionDescriptionInterface on signaling_thread() (for example, calling
+  // ToString).
+
   // Returns the more recently applied description; "pending" if it exists, and
   // otherwise "current". See below.
   virtual const SessionDescriptionInterface* local_description() const = 0;
@@ -1135,6 +1139,14 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
   // use the PeerConnectionObserver interface passed in on construction, and
   // thus the observer object can be safely destroyed.
   virtual void Close() = 0;
+
+  // The thread on which all PeerConnectionObserver callbacks will be invoked,
+  // as well as callbacks for other classes such as DataChannelObserver.
+  //
+  // Also the only thread on which it's safe to use SessionDescriptionInterface
+  // pointers.
+  // TODO(deadbeef): Make pure virtual when all subclasses implement it.
+  virtual rtc::Thread* signaling_thread() const { return nullptr; }
 
  protected:
   // Dtor protected as objects shouldn't be deleted via this interface.

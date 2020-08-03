@@ -37,12 +37,10 @@ std::unique_ptr<SessionDescriptionInterface> JavaToNativeSessionDescription(
 
 ScopedJavaLocalRef<jobject> NativeToJavaSessionDescription(
     JNIEnv* jni,
-    const SessionDescriptionInterface* desc) {
-  std::string sdp;
-  RTC_CHECK(desc->ToString(&sdp)) << "got so far: " << sdp;
+    const std::string& sdp,
+    const std::string& type) {
   return Java_SessionDescription_Constructor(
-      jni,
-      Java_Type_fromCanonicalForm(jni, NativeToJavaString(jni, desc->type())),
+      jni, Java_Type_fromCanonicalForm(jni, NativeToJavaString(jni, type)),
       NativeToJavaString(jni, sdp));
 }
 

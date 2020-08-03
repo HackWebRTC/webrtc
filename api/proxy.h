@@ -400,11 +400,13 @@ class ConstMethodCall : public rtc::Message, public rtc::MessageHandler {
 // For use when returning purely const state (set during construction).
 // Use with caution. This method should only be used when the return value will
 // always be the same.
-#define BYPASS_PROXY_CONSTMETHOD0(r, method)                            \
-  r method() const override {                                           \
-    static_assert(!std::is_pointer<r>::value, "Type is a pointer");     \
-    static_assert(!std::is_reference<r>::value, "Type is a reference"); \
-    return c_->method();                                                \
+#define BYPASS_PROXY_CONSTMETHOD0(r, method)                                \
+  r method() const override {                                               \
+    static_assert(                                                          \
+        std::is_same<r, rtc::Thread*>::value || !std::is_pointer<r>::value, \
+        "Type is a pointer");                                               \
+    static_assert(!std::is_reference<r>::value, "Type is a reference");     \
+    return c_->method();                                                    \
   }
 
 }  // namespace webrtc

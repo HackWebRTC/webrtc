@@ -30,7 +30,6 @@ class PeerConnectionInternal : public PeerConnectionInterface {
  public:
   virtual rtc::Thread* network_thread() const = 0;
   virtual rtc::Thread* worker_thread() const = 0;
-  virtual rtc::Thread* signaling_thread() const = 0;
 
   // The SDP session ID as defined by RFC 3264.
   virtual std::string session_id() const = 0;
