@@ -187,8 +187,6 @@ class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
   virtual void UnbindReceiver(uint16_t port) = 0;
   virtual rtc::IPAddress GetPeerLocalAddress() const = 0;
 
-  virtual std::unique_ptr<EmulatedNetworkStats> stats() const = 0;
-
  private:
   // Ensure that there can be no other subclass than EmulatedEndpointImpl. This
   // means that it's always safe to downcast EmulatedEndpoint instances to

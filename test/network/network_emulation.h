@@ -447,7 +447,7 @@ class EmulatedEndpointImpl : public EmulatedEndpoint {
 
   const rtc::Network& network() const { return *network_.get(); }
 
-  std::unique_ptr<EmulatedNetworkStats> stats() const override;
+  std::unique_ptr<EmulatedNetworkStats> stats() const;
 
  private:
   static constexpr uint16_t kFirstEphemeralPort = 49152;

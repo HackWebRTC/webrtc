@@ -301,7 +301,11 @@ void NetworkEmulationManagerImpl::GetStats(
   task_queue_.PostTask([endpoints, stats_callback]() {
     EmulatedNetworkStatsBuilder stats_builder;
     for (auto* endpoint : endpoints) {
-      stats_builder.AddEmulatedNetworkStats(*endpoint->stats());
+      // It's safe to cast here because EmulatedEndpointImpl can be the only
+      // implementation of EmulatedEndpoint, because only it has access to
+      // EmulatedEndpoint constructor.
+      auto endpoint_impl = static_cast<EmulatedEndpointImpl*>(endpoint);
+      stats_builder.AddEmulatedNetworkStats(*endpoint_impl->stats());
     }
     stats_callback(stats_builder.Build());
   });
