@@ -79,7 +79,8 @@ class EmulatedNetworkManagerInterface {
   virtual std::vector<EmulatedEndpoint*> endpoints() const = 0;
 
   // Passes summarized network stats for endpoints for this manager into
-  // specified |stats_callback|.
+  // specified |stats_callback|. Callback will be executed on network emulation
+  // internal task queue.
   virtual void GetStats(
       std::function<void(std::unique_ptr<EmulatedNetworkStats>)> stats_callback)
       const = 0;
@@ -194,8 +195,9 @@ class NetworkEmulationManager {
   CreateEmulatedNetworkManagerInterface(
       const std::vector<EmulatedEndpoint*>& endpoints) = 0;
 
-  // Passes summarized network stats for specified |endpoints| into specifield
-  // |stats_callback|.
+  // Passes summarized network stats for specified |endpoints| into specified
+  // |stats_callback|. Callback will be executed on network emulation
+  // internal task queue.
   virtual void GetStats(
       rtc::ArrayView<EmulatedEndpoint*> endpoints,
       std::function<void(std::unique_ptr<EmulatedNetworkStats>)>

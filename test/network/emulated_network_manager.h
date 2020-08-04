@@ -51,7 +51,7 @@ class EmulatedNetworkManager : public rtc::NetworkManagerBase,
   rtc::Thread* network_thread() override { return network_thread_.get(); }
   rtc::NetworkManager* network_manager() override { return this; }
   std::vector<EmulatedEndpoint*> endpoints() const override {
-    return endpoints_container_->endpoints();
+    return endpoints_container_->GetEndpoints();
   }
   void GetStats(std::function<void(std::unique_ptr<EmulatedNetworkStats>)>
                     stats_callback) const override;
@@ -61,7 +61,7 @@ class EmulatedNetworkManager : public rtc::NetworkManagerBase,
   void MaybeSignalNetworksChanged();
 
   TaskQueueForTest* const task_queue_;
-  EndpointsContainer* const endpoints_container_;
+  const EndpointsContainer* const endpoints_container_;
   std::unique_ptr<rtc::Thread> network_thread_;
 
   bool sent_first_update_ RTC_GUARDED_BY(network_thread_);

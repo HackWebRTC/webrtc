@@ -571,7 +571,7 @@ EndpointsContainer::GetEnabledNetworks() const {
   return networks;
 }
 
-std::vector<EmulatedEndpoint*> EndpointsContainer::endpoints() const {
+std::vector<EmulatedEndpoint*> EndpointsContainer::GetEndpoints() const {
   return std::vector<EmulatedEndpoint*>(endpoints_.begin(), endpoints_.end());
 }
 

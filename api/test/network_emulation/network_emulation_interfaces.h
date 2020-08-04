@@ -159,7 +159,8 @@ class EmulatedNetworkStats {
 };
 
 // EmulatedEndpoint is an abstraction for network interface on device. Instances
-// of this are created by NetworkEmulationManager::CreateEndpoint.
+// of this are created by NetworkEmulationManager::CreateEndpoint and
+// thread safe.
 class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
  public:
   // Send packet into network.
