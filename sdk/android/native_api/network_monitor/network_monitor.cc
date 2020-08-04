@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/native_api/base/network_monitor.h"
+#include "sdk/android/native_api/network_monitor/network_monitor.h"
 
 #include <memory>
 

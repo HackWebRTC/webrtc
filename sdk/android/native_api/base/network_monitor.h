@@ -11,26 +11,8 @@
 #ifndef SDK_ANDROID_NATIVE_API_BASE_NETWORK_MONITOR_H_
 #define SDK_ANDROID_NATIVE_API_BASE_NETWORK_MONITOR_H_
 
-#include <jni.h>
-
-#include <memory>
-
-#include "rtc_base/network_monitor_factory.h"
-
-namespace webrtc {
-
-// Creates an Android-specific network monitor, which is capable of detecting
-// network changes as soon as they occur, requesting a cellular interface
-// (dependent on permissions), and binding sockets to network interfaces (more
-// reliable than binding to IP addresses on Android).
-std::unique_ptr<rtc::NetworkMonitorFactory> CreateAndroidNetworkMonitorFactory(
-    JNIEnv* env,
-    jobject application_context);
-
-// Deprecated. Pass in application context instead.
-std::unique_ptr<rtc::NetworkMonitorFactory>
-CreateAndroidNetworkMonitorFactory();
-
-}  // namespace webrtc
+// TODO(deadbeef): Remove this forwarding header once clients switch to the
+// new one.
+#include "sdk/android/native_api/network_monitor/network_monitor.h"
 
 #endif  // SDK_ANDROID_NATIVE_API_BASE_NETWORK_MONITOR_H_
