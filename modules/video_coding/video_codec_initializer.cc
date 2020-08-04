@@ -68,6 +68,10 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
       break;
   }
 
+  video_codec.legacy_conference_mode =
+      config.content_type == VideoEncoderConfig::ContentType::kScreen &&
+      config.legacy_conference_mode;
+
   // TODO(nisse): The plType field should be deleted. Luckily, our
   // callers don't need it.
   video_codec.plType = 0;
