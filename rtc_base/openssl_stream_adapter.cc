@@ -881,12 +881,13 @@ int OpenSSLStreamAdapter::ContinueSSL() {
 
     case SSL_ERROR_ZERO_RETURN:
     default:
-      RTC_LOG(LS_VERBOSE) << " -- error " << code;
       SSLHandshakeError ssl_handshake_err = SSLHandshakeError::UNKNOWN;
       int err_code = ERR_peek_last_error();
       if (err_code != 0 && ERR_GET_REASON(err_code) == SSL_R_NO_SHARED_CIPHER) {
         ssl_handshake_err = SSLHandshakeError::INCOMPATIBLE_CIPHERSUITE;
       }
+      RTC_LOG(LS_VERBOSE) << " -- error " << code << ", " << err_code << ", "
+                          << ERR_GET_REASON(err_code);
       SignalSSLHandshakeError(ssl_handshake_err);
       return (ssl_error != 0) ? ssl_error : -1;
   }
