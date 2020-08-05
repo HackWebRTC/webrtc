@@ -99,6 +99,9 @@ class LibvpxVp8Encoder : public VideoEncoder {
       experimental_cpu_speed_config_arm_;
   const RateControlSettings rate_control_settings_;
 
+  // EncoderInfo::requested_resolution_alignment override from field trial.
+  const absl::optional<int> requested_resolution_alignment_override_;
+
   EncodedImageCallback* encoded_complete_callback_ = nullptr;
   VideoCodec codec_;
   bool inited_ = false;

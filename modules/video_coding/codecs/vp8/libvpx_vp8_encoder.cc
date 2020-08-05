@@ -44,12 +44,17 @@
 namespace webrtc {
 namespace {
 #if defined(WEBRTC_IOS)
-const char kVP8IosMaxNumberOfThreadFieldTrial[] =
+constexpr char kVP8IosMaxNumberOfThreadFieldTrial[] =
     "WebRTC-VP8IosMaxNumberOfThread";
-const char kVP8IosMaxNumberOfThreadFieldTrialParameter[] = "max_thread";
+constexpr char kVP8IosMaxNumberOfThreadFieldTrialParameter[] = "max_thread";
 #endif
 
-const char kVp8ForcePartitionResilience[] =
+constexpr char kVp8GetEncoderInfoOverrideFieldTrial[] =
+    "WebRTC-VP8-GetEncoderInfoOverride";
+constexpr char kVp8RequestedResolutionAlignmentFieldTrialParameter[] =
+    "requested_resolution_alignment";
+
+constexpr char kVp8ForcePartitionResilience[] =
     "WebRTC-VP8-ForcePartitionResilience";
 
 // QP is obtained from VP8-bitstream for HW, so the QP corresponds to the
@@ -222,6 +227,15 @@ void ApplyVp8EncoderConfigToVpxConfig(const Vp8EncoderConfig& encoder_config,
   }
 }
 
+absl::optional<int> GetRequestedResolutionAlignmentOverride() {
+  const std::string trial_string =
+      field_trial::FindFullName(kVp8GetEncoderInfoOverrideFieldTrial);
+  FieldTrialOptional<int> requested_resolution_alignment(
+      kVp8RequestedResolutionAlignmentFieldTrialParameter);
+  ParseFieldTrial({&requested_resolution_alignment}, trial_string);
+  return requested_resolution_alignment.GetOptional();
+}
+
 }  // namespace
 
 std::unique_ptr<VideoEncoder> VP8Encoder::Create() {
@@ -279,6 +293,8 @@ LibvpxVp8Encoder::LibvpxVp8Encoder(std::unique_ptr<LibvpxInterface> interface,
     : libvpx_(std::move(interface)),
       experimental_cpu_speed_config_arm_(CpuSpeedExperiment::GetConfigs()),
       rate_control_settings_(RateControlSettings::ParseFromFieldTrials()),
+      requested_resolution_alignment_override_(
+          GetRequestedResolutionAlignmentOverride()),
       frame_buffer_controller_factory_(
           std::move(settings.frame_buffer_controller_factory)),
       resolution_bitrate_limits_(std::move(settings.resolution_bitrate_limits)),
@@ -1232,6 +1248,10 @@ VideoEncoder::EncoderInfo LibvpxVp8Encoder::GetEncoderInfo() const {
   info.supports_simulcast = true;
   if (!resolution_bitrate_limits_.empty()) {
     info.resolution_bitrate_limits = resolution_bitrate_limits_;
+  }
+  if (requested_resolution_alignment_override_) {
+    info.requested_resolution_alignment =
+        *requested_resolution_alignment_override_;
   }
 
   const bool enable_scaling =

@@ -565,6 +565,19 @@ TEST(LibvpxVp8EncoderTest, GetEncoderInfoReturnsStaticInformation) {
   EXPECT_FALSE(info.has_internal_source);
   EXPECT_TRUE(info.supports_simulcast);
   EXPECT_EQ(info.implementation_name, "libvpx");
+  EXPECT_EQ(info.requested_resolution_alignment, 1);
+}
+
+TEST(LibvpxVp8EncoderTest, RequestedResolutionAlignmentFromFieldTrial) {
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-VP8-GetEncoderInfoOverride/"
+      "requested_resolution_alignment:10/");
+
+  auto* const vpx = new NiceMock<MockLibvpxVp8Interface>();
+  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)),
+                           VP8Encoder::Settings());
+
+  EXPECT_EQ(encoder.GetEncoderInfo().requested_resolution_alignment, 10);
 }
 
 TEST(LibvpxVp8EncoderTest,
