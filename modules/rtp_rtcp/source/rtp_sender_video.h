@@ -32,7 +32,6 @@
 #include "modules/rtp_rtcp/source/rtp_sender_video_frame_transformer_delegate.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "modules/rtp_rtcp/source/video_fec_generator.h"
-#include "rtc_base/deprecation.h"
 #include "rtc_base/one_time_event.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/rate_statistics.h"
@@ -42,7 +41,6 @@
 
 namespace webrtc {
 
-class RTPFragmentationHeader;
 class FrameEncryptorInterface;
 class RtpPacketizer;
 class RtpPacketToSend;
@@ -90,19 +88,6 @@ class RTPSenderVideo {
   explicit RTPSenderVideo(const Config& config);
 
   virtual ~RTPSenderVideo();
-
-  RTC_DEPRECATED
-  bool SendVideo(int payload_type,
-                 absl::optional<VideoCodecType> codec_type,
-                 uint32_t rtp_timestamp,
-                 int64_t capture_time_ms,
-                 rtc::ArrayView<const uint8_t> payload,
-                 const RTPFragmentationHeader* /*fragmentation*/,
-                 RTPVideoHeader video_header,
-                 absl::optional<int64_t> expected_retransmission_time_ms) {
-    return SendVideo(payload_type, codec_type, rtp_timestamp, capture_time_ms,
-                     payload, video_header, expected_retransmission_time_ms);
-  }
 
   // expected_retransmission_time_ms.has_value() -> retransmission allowed.
   // Calls to this method is assumed to be externally serialized.
