@@ -69,6 +69,7 @@ struct EventCounts {
   size_t bwe_delay_events = 0;
   size_t dtls_transport_states = 0;
   size_t dtls_writable_states = 0;
+  size_t frame_decoded_events = 0;
   size_t probe_creations = 0;
   size_t probe_successes = 0;
   size_t probe_failures = 0;
@@ -85,9 +86,9 @@ struct EventCounts {
   size_t total_nonconfig_events() const {
     return alr_states + route_changes + audio_playouts + ana_configs +
            bwe_loss_events + bwe_delay_events + dtls_transport_states +
-           dtls_writable_states + probe_creations + probe_successes +
-           probe_failures + ice_configs + ice_events + incoming_rtp_packets +
-           outgoing_rtp_packets + incoming_rtcp_packets +
+           dtls_writable_states + frame_decoded_events + probe_creations +
+           probe_successes + probe_failures + ice_configs + ice_events +
+           incoming_rtp_packets + outgoing_rtp_packets + incoming_rtcp_packets +
            outgoing_rtcp_packets + generic_packets_sent +
            generic_packets_received + generic_acks_received;
   }
@@ -165,6 +166,7 @@ class RtcEventLogSession
       dtls_transport_state_list_;
   std::vector<std::unique_ptr<RtcEventDtlsWritableState>>
       dtls_writable_state_list_;
+  std::vector<std::unique_ptr<RtcEventFrameDecoded>> frame_decoded_event_list_;
   std::vector<std::unique_ptr<RtcEventGenericAckReceived>>
       generic_acks_received_;
   std::vector<std::unique_ptr<RtcEventGenericPacketReceived>>
@@ -444,6 +446,15 @@ void RtcEventLogSession::WriteLog(EventCounts count,
     }
     selection -= count.dtls_writable_states;
 
+    if (selection < count.frame_decoded_events) {
+      auto event = gen_.NewFrameDecodedEvent();
+      event_log->Log(event->Copy());
+      frame_decoded_event_list_.push_back(std::move(event));
+      count.frame_decoded_events--;
+      continue;
+    }
+    selection -= count.frame_decoded_events;
+
     if (selection < count.ice_configs) {
       auto event = gen_.NewIceCandidatePairConfig();
       event_log->Log(event->Copy());
@@ -629,6 +640,14 @@ void RtcEventLogSession::ReadAndVerifyLog() {
         *probe_success_list_[i], parsed_bwe_probe_success_events[i]);
   }
 
+  auto& parsed_frame_decoded_events = parsed_log.decoded_frames();
+  ASSERT_EQ(parsed_frame_decoded_events.size(),
+            frame_decoded_event_list_.size());
+  for (size_t i = 0; i < parsed_frame_decoded_events.size(); i++) {
+    verifier_.VerifyLoggedFrameDecoded(*frame_decoded_event_list_[i],
+                                       parsed_frame_decoded_events[i]);
+  }
+
   auto& parsed_ice_candidate_pair_configs =
       parsed_log.ice_candidate_pair_configs();
   ASSERT_EQ(parsed_ice_candidate_pair_configs.size(), ice_config_list_.size());
@@ -761,8 +780,6 @@ TEST_P(RtcEventLogSession, StartLoggingFromBeginning) {
   count.ana_configs = 3;
   count.bwe_loss_events = 20;
   count.bwe_delay_events = 20;
-  count.dtls_transport_states = 4;
-  count.dtls_writable_states = 2;
   count.probe_creations = 4;
   count.probe_successes = 2;
   count.probe_failures = 2;
@@ -773,10 +790,13 @@ TEST_P(RtcEventLogSession, StartLoggingFromBeginning) {
   count.incoming_rtcp_packets = 20;
   count.outgoing_rtcp_packets = 20;
   if (IsNewFormat()) {
-    count.route_changes = 4;
+    count.dtls_transport_states = 4;
+    count.dtls_writable_states = 2;
+    count.frame_decoded_events = 50;
     count.generic_packets_sent = 100;
     count.generic_packets_received = 100;
     count.generic_acks_received = 20;
+    count.route_changes = 4;
   }
 
   WriteLog(count, 0);
@@ -794,8 +814,6 @@ TEST_P(RtcEventLogSession, StartLoggingInTheMiddle) {
   count.ana_configs = 10;
   count.bwe_loss_events = 50;
   count.bwe_delay_events = 50;
-  count.dtls_transport_states = 4;
-  count.dtls_writable_states = 5;
   count.probe_creations = 10;
   count.probe_successes = 5;
   count.probe_failures = 5;
@@ -806,10 +824,13 @@ TEST_P(RtcEventLogSession, StartLoggingInTheMiddle) {
   count.incoming_rtcp_packets = 50;
   count.outgoing_rtcp_packets = 50;
   if (IsNewFormat()) {
-    count.route_changes = 10;
+    count.dtls_transport_states = 4;
+    count.dtls_writable_states = 5;
+    count.frame_decoded_events = 250;
     count.generic_packets_sent = 500;
     count.generic_packets_received = 500;
     count.generic_acks_received = 50;
+    count.route_changes = 10;
   }
 
   WriteLog(count, 500);

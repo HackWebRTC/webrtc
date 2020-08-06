@@ -24,6 +24,7 @@
 #include "logging/rtc_event_log/events/rtc_event_bwe_update_loss_based.h"
 #include "logging/rtc_event_log/events/rtc_event_dtls_transport_state.h"
 #include "logging/rtc_event_log/events/rtc_event_dtls_writable_state.h"
+#include "logging/rtc_event_log/events/rtc_event_frame_decoded.h"
 #include "logging/rtc_event_log/events/rtc_event_generic_ack_received.h"
 #include "logging/rtc_event_log/events/rtc_event_generic_packet_received.h"
 #include "logging/rtc_event_log/events/rtc_event_generic_packet_sent.h"
@@ -89,6 +90,26 @@ rtclog2::DelayBasedBweUpdates::DetectorState ConvertToProtoFormat(
   }
   RTC_NOTREACHED();
   return rtclog2::DelayBasedBweUpdates::BWE_UNKNOWN_STATE;
+}
+
+rtclog2::FrameDecodedEvents::Codec ConvertToProtoFormat(VideoCodecType codec) {
+  switch (codec) {
+    case VideoCodecType::kVideoCodecGeneric:
+      return rtclog2::FrameDecodedEvents::CODEC_GENERIC;
+    case VideoCodecType::kVideoCodecVP8:
+      return rtclog2::FrameDecodedEvents::CODEC_VP8;
+    case VideoCodecType::kVideoCodecVP9:
+      return rtclog2::FrameDecodedEvents::CODEC_VP9;
+    case VideoCodecType::kVideoCodecAV1:
+      return rtclog2::FrameDecodedEvents::CODEC_AV1;
+    case VideoCodecType::kVideoCodecH264:
+      return rtclog2::FrameDecodedEvents::CODEC_H264;
+    case VideoCodecType::kVideoCodecMultiplex:
+      // This codec type is afaik not used.
+      return rtclog2::FrameDecodedEvents::CODEC_UNKNOWN;
+  }
+  RTC_NOTREACHED();
+  return rtclog2::FrameDecodedEvents::CODEC_UNKNOWN;
 }
 
 rtclog2::BweProbeResultFailure::FailureReason ConvertToProtoFormat(
@@ -677,6 +698,7 @@ std::string RtcEventLogEncoderNewFormat::EncodeBatch(
     std::vector<const RtcEventBweUpdateLossBased*> bwe_loss_based_updates;
     std::vector<const RtcEventDtlsTransportState*> dtls_transport_states;
     std::vector<const RtcEventDtlsWritableState*> dtls_writable_states;
+    std::vector<const RtcEventFrameDecoded*> frames_decoded;
     std::vector<const RtcEventGenericAckReceived*> generic_acks_received;
     std::vector<const RtcEventGenericPacketReceived*> generic_packets_received;
     std::vector<const RtcEventGenericPacketSent*> generic_packets_sent;
@@ -859,6 +881,13 @@ std::string RtcEventLogEncoderNewFormat::EncodeBatch(
           generic_acks_received.push_back(rtc_event);
           break;
         }
+        case RtcEvent::Type::FrameDecoded: {
+          auto* rtc_event =
+              static_cast<const RtcEventFrameDecoded* const>(it->get());
+          // TODO(terelius):  Group by SSRC
+          frames_decoded.push_back(rtc_event);
+          break;
+        }
       }
     }
 
@@ -872,6 +901,7 @@ std::string RtcEventLogEncoderNewFormat::EncodeBatch(
     EncodeBweUpdateLossBased(bwe_loss_based_updates, &event_stream);
     EncodeDtlsTransportState(dtls_transport_states, &event_stream);
     EncodeDtlsWritableState(dtls_writable_states, &event_stream);
+    EncodeFramesDecoded(frames_decoded, &event_stream);
     EncodeGenericAcksReceived(generic_acks_received, &event_stream);
     EncodeGenericPacketsReceived(generic_packets_received, &event_stream);
     EncodeGenericPacketsSent(generic_packets_sent, &event_stream);
@@ -1428,6 +1458,105 @@ void RtcEventLogEncoderNewFormat::EncodeRtpPacketIncoming(
   for (const auto& it : batch) {
     RTC_DCHECK(!it.second.empty());
     EncodeRtpPacket(it.second, event_stream->add_incoming_rtp_packets());
+  }
+}
+
+void RtcEventLogEncoderNewFormat::EncodeFramesDecoded(
+    rtc::ArrayView<const RtcEventFrameDecoded*> batch,
+    rtclog2::EventStream* event_stream) {
+  if (batch.empty()) {
+    return;
+  }
+  const RtcEventFrameDecoded* const base_event = batch[0];
+  rtclog2::FrameDecodedEvents* proto_batch =
+      event_stream->add_frame_decoded_events();
+  proto_batch->set_timestamp_ms(base_event->timestamp_ms());
+  proto_batch->set_ssrc(base_event->ssrc());
+  proto_batch->set_render_time_ms(base_event->render_time_ms());
+  proto_batch->set_width(base_event->width());
+  proto_batch->set_height(base_event->height());
+  proto_batch->set_codec(ConvertToProtoFormat(base_event->codec()));
+  proto_batch->set_qp(base_event->qp());
+
+  if (batch.size() == 1) {
+    return;
+  }
+
+  // Delta encoding
+  proto_batch->set_number_of_deltas(batch.size() - 1);
+  std::vector<absl::optional<uint64_t>> values(batch.size() - 1);
+  std::string encoded_deltas;
+
+  // timestamp_ms
+  for (size_t i = 0; i < values.size(); ++i) {
+    const RtcEventFrameDecoded* event = batch[i + 1];
+    values[i] = ToUnsigned(event->timestamp_ms());
+  }
+  encoded_deltas = EncodeDeltas(ToUnsigned(base_event->timestamp_ms()), values);
+  if (!encoded_deltas.empty()) {
+    proto_batch->set_timestamp_ms_deltas(encoded_deltas);
+  }
+
+  // SSRC
+  for (size_t i = 0; i < values.size(); ++i) {
+    const RtcEventFrameDecoded* event = batch[i + 1];
+    values[i] = event->ssrc();
+  }
+  encoded_deltas = EncodeDeltas(base_event->ssrc(), values);
+  if (!encoded_deltas.empty()) {
+    proto_batch->set_ssrc_deltas(encoded_deltas);
+  }
+
+  // render_time_ms
+  for (size_t i = 0; i < values.size(); ++i) {
+    const RtcEventFrameDecoded* event = batch[i + 1];
+    values[i] = ToUnsigned(event->render_time_ms());
+  }
+  encoded_deltas =
+      EncodeDeltas(ToUnsigned(base_event->render_time_ms()), values);
+  if (!encoded_deltas.empty()) {
+    proto_batch->set_render_time_ms_deltas(encoded_deltas);
+  }
+
+  // width
+  for (size_t i = 0; i < values.size(); ++i) {
+    const RtcEventFrameDecoded* event = batch[i + 1];
+    values[i] = ToUnsigned(event->width());
+  }
+  encoded_deltas = EncodeDeltas(ToUnsigned(base_event->width()), values);
+  if (!encoded_deltas.empty()) {
+    proto_batch->set_width_deltas(encoded_deltas);
+  }
+
+  // height
+  for (size_t i = 0; i < values.size(); ++i) {
+    const RtcEventFrameDecoded* event = batch[i + 1];
+    values[i] = ToUnsigned(event->height());
+  }
+  encoded_deltas = EncodeDeltas(ToUnsigned(base_event->height()), values);
+  if (!encoded_deltas.empty()) {
+    proto_batch->set_height_deltas(encoded_deltas);
+  }
+
+  // codec
+  for (size_t i = 0; i < values.size(); ++i) {
+    const RtcEventFrameDecoded* event = batch[i + 1];
+    values[i] = static_cast<uint64_t>(ConvertToProtoFormat(event->codec()));
+  }
+  encoded_deltas = EncodeDeltas(
+      static_cast<uint64_t>(ConvertToProtoFormat(base_event->codec())), values);
+  if (!encoded_deltas.empty()) {
+    proto_batch->set_codec_deltas(encoded_deltas);
+  }
+
+  // qp
+  for (size_t i = 0; i < values.size(); ++i) {
+    const RtcEventFrameDecoded* event = batch[i + 1];
+    values[i] = event->qp();
+  }
+  encoded_deltas = EncodeDeltas(base_event->qp(), values);
+  if (!encoded_deltas.empty()) {
+    proto_batch->set_qp_deltas(encoded_deltas);
   }
 }
 

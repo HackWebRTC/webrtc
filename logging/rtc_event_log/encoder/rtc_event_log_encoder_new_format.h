@@ -51,6 +51,7 @@ class RtcEventVideoSendStreamConfig;
 class RtcEventIceCandidatePairConfig;
 class RtcEventIceCandidatePair;
 class RtpPacket;
+class RtcEventFrameDecoded;
 class RtcEventGenericAckReceived;
 class RtcEventGenericPacketReceived;
 class RtcEventGenericPacketSent;
@@ -94,6 +95,8 @@ class RtcEventLogEncoderNewFormat final : public RtcEventLogEncoder {
   void EncodeDtlsWritableState(
       rtc::ArrayView<const RtcEventDtlsWritableState*> batch,
       rtclog2::EventStream* event_stream);
+  void EncodeFramesDecoded(rtc::ArrayView<const RtcEventFrameDecoded*> batch,
+                           rtclog2::EventStream* event_stream);
   void EncodeGenericAcksReceived(
       rtc::ArrayView<const RtcEventGenericAckReceived*> batch,
       rtclog2::EventStream* event_stream);

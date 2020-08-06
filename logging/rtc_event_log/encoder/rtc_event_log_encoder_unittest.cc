@@ -630,6 +630,35 @@ TEST_P(RtcEventLogEncoderTest, RtcEventDtlsWritableState) {
   }
 }
 
+TEST_P(RtcEventLogEncoderTest, RtcEventFrameDecoded) {
+  std::vector<std::unique_ptr<RtcEventFrameDecoded>> events(event_count_);
+  for (size_t i = 0; i < event_count_; ++i) {
+    events[i] = (i == 0 || !force_repeated_fields_)
+                    ? gen_.NewFrameDecodedEvent()
+                    : events[0]->Copy();
+    history_.push_back(events[i]->Copy());
+  }
+
+  const std::string encoded =
+      encoder_->EncodeBatch(history_.begin(), history_.end());
+  auto status = parsed_log_.ParseString(encoded);
+  if (!status.ok())
+    RTC_LOG(LS_ERROR) << status.message();
+  ASSERT_TRUE(status.ok());
+
+  const auto& decoded_frames = parsed_log_.decoded_frames();
+  if (!new_encoding_) {
+    ASSERT_EQ(decoded_frames.size(), 0u);
+    return;
+  }
+
+  ASSERT_EQ(decoded_frames.size(), event_count_);
+
+  for (size_t i = 0; i < event_count_; ++i) {
+    verifier_.VerifyLoggedFrameDecoded(*events[i], decoded_frames[i]);
+  }
+}
+
 // TODO(eladalon/terelius): Test with multiple events in the batch.
 TEST_P(RtcEventLogEncoderTest, RtcEventIceCandidatePairConfig) {
   std::unique_ptr<RtcEventIceCandidatePairConfig> event =
