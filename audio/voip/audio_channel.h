@@ -45,9 +45,11 @@ class AudioChannel : public rtc::RefCountInterface {
   ChannelId GetId() const { return id_; }
 
   // APIs to start/stop audio channel on each direction.
-  void StartSend();
+  // StartSend/StartPlay returns false if encoder/decoders
+  // have not been set, respectively.
+  bool StartSend();
   void StopSend();
-  void StartPlay();
+  bool StartPlay();
   void StopPlay();
 
   // APIs relayed to AudioEgress.

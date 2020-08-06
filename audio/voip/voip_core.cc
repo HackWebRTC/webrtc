@@ -238,11 +238,9 @@ bool VoipCore::UpdateAudioTransportWithSenders() {
 
 bool VoipCore::StartSend(ChannelId channel) {
   auto audio_channel = GetChannel(channel);
-  if (!audio_channel) {
+  if (!audio_channel || !audio_channel->StartSend()) {
     return false;
   }
-
-  audio_channel->StartSend();
 
   return UpdateAudioTransportWithSenders();
 }
@@ -260,11 +258,9 @@ bool VoipCore::StopSend(ChannelId channel) {
 
 bool VoipCore::StartPlayout(ChannelId channel) {
   auto audio_channel = GetChannel(channel);
-  if (!audio_channel) {
+  if (!audio_channel || !audio_channel->StartPlay()) {
     return false;
   }
-
-  audio_channel->StartPlay();
 
   if (!audio_device_module_->Playing()) {
     if (audio_device_module_->InitPlayout() != 0) {

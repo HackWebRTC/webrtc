@@ -59,8 +59,9 @@ class AudioEgress : public AudioSender, public AudioPacketizationCallback {
 
   // Start or stop sending operation of AudioEgress. This will start/stop
   // the RTP stack also causes encoder queue thread to start/stop
-  // processing input audio samples.
-  void StartSend();
+  // processing input audio samples. StartSend will return false if
+  // a send codec has not been set.
+  bool StartSend();
   void StopSend();
 
   // Query the state of the RTP stack. This returns true if StartSend()

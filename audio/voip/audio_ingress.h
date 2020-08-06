@@ -51,7 +51,7 @@ class AudioIngress : public AudioMixer::Source {
   ~AudioIngress() override;
 
   // Start or stop receiving operation of AudioIngress.
-  void StartPlay() { playing_ = true; }
+  bool StartPlay();
   void StopPlay() {
     playing_ = false;
     output_audio_level_.ResetLevelFullRange();

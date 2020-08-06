@@ -96,5 +96,33 @@ TEST_F(VoipCoreTest, ExpectFailToUseReleasedChannelId) {
   EXPECT_FALSE(voip_core_->StartPlayout(*channel));
 }
 
+TEST_F(VoipCoreTest, StartSendAndPlayoutWithoutSettingCodec) {
+  auto channel = voip_core_->CreateChannel(&transport_, 0xdeadc0de);
+  EXPECT_TRUE(channel);
+
+  // Call StartSend and StartPlayout without setting send/receive
+  // codec. Code should see that codecs aren't set and return false.
+  EXPECT_FALSE(voip_core_->StartSend(*channel));
+  EXPECT_FALSE(voip_core_->StartPlayout(*channel));
+
+  voip_core_->ReleaseChannel(*channel);
+}
+
+TEST_F(VoipCoreTest, StopSendAndPlayoutWithoutStarting) {
+  auto channel = voip_core_->CreateChannel(&transport_, 0xdeadc0de);
+  EXPECT_TRUE(channel);
+
+  voip_core_->SetSendCodec(*channel, kPcmuPayload, kPcmuFormat);
+  voip_core_->SetReceiveCodecs(*channel, {{kPcmuPayload, kPcmuFormat}});
+
+  // Call StopSend and StopPlayout without starting them in
+  // the first place. Should see that it is already in the
+  // stopped state and return true.
+  EXPECT_TRUE(voip_core_->StopSend(*channel));
+  EXPECT_TRUE(voip_core_->StopPlayout(*channel));
+
+  voip_core_->ReleaseChannel(*channel);
+}
+
 }  // namespace
 }  // namespace webrtc

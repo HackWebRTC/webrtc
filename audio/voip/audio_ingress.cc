@@ -103,6 +103,18 @@ AudioMixer::Source::AudioFrameInfo AudioIngress::GetAudioFrameWithInfo(
                : AudioMixer::Source::AudioFrameInfo::kNormal;
 }
 
+bool AudioIngress::StartPlay() {
+  {
+    MutexLock lock(&lock_);
+    if (receive_codec_info_.empty()) {
+      RTC_DLOG(LS_WARNING) << "Receive codecs have not been set yet";
+      return false;
+    }
+  }
+  playing_ = true;
+  return true;
+}
+
 void AudioIngress::SetReceiveCodecs(
     const std::map<int, SdpAudioFormat>& codecs) {
   {
