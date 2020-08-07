@@ -427,10 +427,12 @@ WebRtcVideoChannel::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
     const VideoCodec& codec) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   bool is_screencast = parameters_.options.is_screencast.value_or(false);
-  // No automatic resizing when using simulcast or screencast.
-  bool automatic_resize =
-      !is_screencast && (parameters_.config.rtp.ssrcs.size() == 1 ||
-                         NumActiveStreams(rtp_parameters_) == 1);
+  // No automatic resizing when using simulcast or screencast, or when
+  // disabled by field trial flag.
+  bool automatic_resize = !disable_automatic_resize_ && !is_screencast &&
+                          (parameters_.config.rtp.ssrcs.size() == 1 ||
+                           NumActiveStreams(rtp_parameters_) == 1);
+
   bool frame_dropping = !is_screencast;
   bool denoising;
   bool codec_default_denoising = false;
@@ -1946,7 +1948,9 @@ WebRtcVideoChannel::WebRtcVideoSendStream::WebRtcVideoSendStream(
       encoder_sink_(nullptr),
       parameters_(std::move(config), options, max_bitrate_bps, codec_settings),
       rtp_parameters_(CreateRtpParametersWithEncodings(sp)),
-      sending_(false) {
+      sending_(false),
+      disable_automatic_resize_(webrtc::field_trial::IsEnabled(
+          "WebRTC-Video-DisableAutomaticResize")) {
   // Maximum packet size may come in RtpConfig from external transport, for
   // example from QuicTransportInterface implementation, so do not exceed
   // given max_packet_size.
