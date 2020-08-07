@@ -361,6 +361,10 @@ void RtpVideoStreamReceiver::AddReceiveCodec(
     const VideoCodec& video_codec,
     const std::map<std::string, std::string>& codec_params,
     bool raw_payload) {
+  if (codec_params.count(cricket::kH264FmtpSpsPpsIdrInKeyframe) ||
+      field_trial::IsEnabled("WebRTC-SpsPpsIdrIsH264Keyframe")) {
+    packet_buffer_.ForceSpsPpsIdrIsH264Keyframe();
+  }
   payload_type_map_.emplace(
       video_codec.plType,
       raw_payload ? std::make_unique<VideoRtpDepacketizerRaw>()

@@ -94,6 +94,7 @@ class PacketBuffer {
       RTC_LOCKS_EXCLUDED(mutex_);
   absl::optional<int64_t> LastReceivedKeyframePacketMs() const
       RTC_LOCKS_EXCLUDED(mutex_);
+  void ForceSpsPpsIdrIsH264Keyframe();
 
  private:
   Clock* const clock_;
@@ -147,7 +148,7 @@ class PacketBuffer {
 
   // Indicates if we should require SPS, PPS, and IDR for a particular
   // RTP timestamp to treat the corresponding frame as a keyframe.
-  const bool sps_pps_idr_is_h264_keyframe_;
+  bool sps_pps_idr_is_h264_keyframe_;
 };
 
 }  // namespace video_coding

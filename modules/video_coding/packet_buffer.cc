@@ -31,7 +31,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/mod_ops.h"
 #include "system_wrappers/include/clock.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace video_coding {
@@ -63,8 +62,7 @@ PacketBuffer::PacketBuffer(Clock* clock,
       first_packet_received_(false),
       is_cleared_to_first_seq_num_(false),
       buffer_(start_buffer_size),
-      sps_pps_idr_is_h264_keyframe_(
-          field_trial::IsEnabled("WebRTC-SpsPpsIdrIsH264Keyframe")) {
+      sps_pps_idr_is_h264_keyframe_(false) {
   RTC_DCHECK_LE(start_buffer_size, max_buffer_size);
   // Buffer size must always be a power of 2.
   RTC_DCHECK((start_buffer_size & (start_buffer_size - 1)) == 0);
@@ -194,7 +192,9 @@ absl::optional<int64_t> PacketBuffer::LastReceivedKeyframePacketMs() const {
   MutexLock lock(&mutex_);
   return last_received_keyframe_packet_ms_;
 }
-
+void PacketBuffer::ForceSpsPpsIdrIsH264Keyframe() {
+  sps_pps_idr_is_h264_keyframe_ = true;
+}
 void PacketBuffer::ClearInternal() {
   for (auto& entry : buffer_) {
     entry = nullptr;

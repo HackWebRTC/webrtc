@@ -100,9 +100,8 @@ void PrintTo(const PacketBufferInsertResult& result, std::ostream* os) {
 
 class PacketBufferTest : public ::testing::Test {
  protected:
-  explicit PacketBufferTest(std::string field_trials = "")
-      : scoped_field_trials_(field_trials),
-        rand_(0x7732213),
+  PacketBufferTest()
+      : rand_(0x7732213),
         clock_(0),
         packet_buffer_(&clock_, kStartSize, kMaxSize) {}
 
@@ -133,7 +132,6 @@ class PacketBufferTest : public ::testing::Test {
         packet_buffer_.InsertPacket(std::move(packet)));
   }
 
-  const test::ScopedFieldTrials scoped_field_trials_;
   Random rand_;
   SimulatedClock clock_;
   PacketBuffer packet_buffer_;
@@ -391,10 +389,11 @@ TEST_F(PacketBufferTest, InsertPacketAfterSequenceNumberWrapAround) {
 class PacketBufferH264Test : public PacketBufferTest {
  protected:
   explicit PacketBufferH264Test(bool sps_pps_idr_is_keyframe)
-      : PacketBufferTest(sps_pps_idr_is_keyframe
-                             ? "WebRTC-SpsPpsIdrIsH264Keyframe/Enabled/"
-                             : ""),
-        sps_pps_idr_is_keyframe_(sps_pps_idr_is_keyframe) {}
+      : PacketBufferTest(), sps_pps_idr_is_keyframe_(sps_pps_idr_is_keyframe) {
+    if (sps_pps_idr_is_keyframe) {
+      packet_buffer_.ForceSpsPpsIdrIsH264Keyframe();
+    }
+  }
 
   PacketBufferInsertResult InsertH264(
       uint16_t seq_num,     // packet sequence number
