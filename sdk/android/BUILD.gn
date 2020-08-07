@@ -276,12 +276,13 @@ if (is_android) {
       "api/org/webrtc/NativeLibraryLoader.java",
       "api/org/webrtc/NativePeerConnectionFactory.java",
       "api/org/webrtc/NetEqFactoryFactory.java",
+      "api/org/webrtc/NetworkChangeDetector.java",
+      "api/org/webrtc/NetworkChangeDetectorFactory.java",
       "api/org/webrtc/NetworkControllerFactoryFactory.java",
-      "api/org/webrtc/NetworkMonitor.java",  # TODO(sakal): Break dependencies
-                                             # and move to base_java.
-      "api/org/webrtc/NetworkMonitorAutoDetect.java",  # TODO(sakal): Break
-                                                       # dependencies and move
-                                                       # to base_java.
+
+      # TODO(sakal): Break dependencies and move to base_java.
+      "api/org/webrtc/NetworkMonitor.java",
+      "api/org/webrtc/NetworkMonitorAutoDetect.java",
       "api/org/webrtc/NetworkStatePredictorFactoryFactory.java",
       "api/org/webrtc/PeerConnection.java",
       "api/org/webrtc/PeerConnectionDependencies.java",
@@ -328,6 +329,7 @@ if (is_android) {
     srcjar_deps = [
       "//api:priority_enums",
       "//api/video:video_frame_enums",
+      "//rtc_base:network_monitor_enums",
     ]
   }
 
@@ -1171,8 +1173,8 @@ if (current_os == "linux" || is_android) {
 
   generate_jni("generated_base_jni") {
     sources = [
+      "api/org/webrtc/NetworkChangeDetector.java",
       "api/org/webrtc/NetworkMonitor.java",
-      "api/org/webrtc/NetworkMonitorAutoDetect.java",
       "api/org/webrtc/RefCounted.java",
       "src/java/org/webrtc/Histogram.java",
       "src/java/org/webrtc/JniCommon.java",

@@ -21,7 +21,7 @@
 #include "rtc_base/ip_address.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
-#include "sdk/android/generated_base_jni/NetworkMonitorAutoDetect_jni.h"
+#include "sdk/android/generated_base_jni/NetworkChangeDetector_jni.h"
 #include "sdk/android/generated_base_jni/NetworkMonitor_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
@@ -413,6 +413,17 @@ void AndroidNetworkMonitor::OnNetworkDisconnected_w(NetworkHandle handle) {
   }
 }
 
+void AndroidNetworkMonitor::OnNetworkPreference(
+    NetworkType type,
+    rtc::NetworkPreference preference) {
+  worker_thread()->Invoke<void>(RTC_FROM_HERE, [&] {
+    auto adapter_type =
+        AdapterTypeFromNetworkType(type, surface_cellular_types_);
+    network_preference_by_adapter_type_[adapter_type] = preference;
+  });
+  OnNetworksChanged();
+}
+
 void AndroidNetworkMonitor::SetNetworkInfos(
     const std::vector<NetworkInformation>& network_infos) {
   RTC_CHECK(thread_checker_.IsCurrent());
@@ -444,6 +455,29 @@ rtc::AdapterType AndroidNetworkMonitor::GetVpnUnderlyingAdapterType(
                               ? rtc::ADAPTER_TYPE_UNKNOWN
                               : iter->second;
   return type;
+}
+
+rtc::NetworkPreference AndroidNetworkMonitor::GetNetworkPreference(
+    const std::string& if_name) {
+  auto iter = adapter_type_by_name_.find(if_name);
+  if (iter == adapter_type_by_name_.end()) {
+    return rtc::NetworkPreference::NEUTRAL;
+  }
+
+  rtc::AdapterType adapter_type = iter->second;
+  if (adapter_type == rtc::ADAPTER_TYPE_VPN) {
+    auto iter2 = vpn_underlying_adapter_type_by_name_.find(if_name);
+    if (iter2 != vpn_underlying_adapter_type_by_name_.end()) {
+      adapter_type = iter2->second;
+    }
+  }
+
+  auto preference_iter = network_preference_by_adapter_type_.find(adapter_type);
+  if (preference_iter == network_preference_by_adapter_type_.end()) {
+    return rtc::NetworkPreference::NEUTRAL;
+  }
+
+  return preference_iter->second;
 }
 
 AndroidNetworkMonitorFactory::AndroidNetworkMonitorFactory()
@@ -492,6 +526,17 @@ void AndroidNetworkMonitor::NotifyOfNetworkDisconnect(
     const JavaRef<jobject>& j_caller,
     jlong network_handle) {
   OnNetworkDisconnected(static_cast<NetworkHandle>(network_handle));
+}
+
+void AndroidNetworkMonitor::NotifyOfNetworkPreference(
+    JNIEnv* env,
+    const JavaRef<jobject>& j_caller,
+    const JavaRef<jobject>& j_connection_type,
+    jint jpreference) {
+  NetworkType type = GetNetworkTypeFromJava(env, j_connection_type);
+  rtc::NetworkPreference preference =
+      static_cast<rtc::NetworkPreference>(jpreference);
+  OnNetworkPreference(type, preference);
 }
 
 }  // namespace jni

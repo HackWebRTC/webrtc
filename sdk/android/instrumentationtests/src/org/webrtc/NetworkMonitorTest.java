@@ -15,7 +15,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.webrtc.NetworkMonitorAutoDetect.INVALID_NET_ID;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -31,14 +30,15 @@ import android.support.test.annotation.UiThreadTest;
 import android.support.test.filters.MediumTest;
 import android.support.test.filters.SmallTest;
 import android.support.test.rule.UiThreadTestRule;
+import java.util.List;
 import org.chromium.base.test.BaseJUnit4ClassRunner;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.webrtc.NetworkMonitorAutoDetect.ConnectionType;
+import org.webrtc.NetworkChangeDetector.ConnectionType;
+import org.webrtc.NetworkChangeDetector.NetworkInformation;
 import org.webrtc.NetworkMonitorAutoDetect.ConnectivityManagerDelegate;
-import org.webrtc.NetworkMonitorAutoDetect.NetworkInformation;
 import org.webrtc.NetworkMonitorAutoDetect.NetworkState;
 
 /**
@@ -52,6 +52,9 @@ import org.webrtc.NetworkMonitorAutoDetect.NetworkState;
 @RunWith(BaseJUnit4ClassRunner.class)
 public class NetworkMonitorTest {
   @Rule public UiThreadTestRule uiThreadTestRule = new UiThreadTestRule();
+
+  private static final long INVALID_NET_ID = -1;
+  private NetworkChangeDetector detector;
 
   /**
    * Listens for alerts fired by the NetworkMonitor when network status changes.
@@ -155,6 +158,10 @@ public class NetworkMonitorTest {
 
     @Override
     public void onNetworkDisconnect(long networkHandle) {}
+
+    @Override
+    public void onNetworkPreference(List<ConnectionType> types, @NetworkPreference int preference) {
+    }
   }
 
   private static final Object lock = new Object();
@@ -179,6 +186,17 @@ public class NetworkMonitorTest {
    */
   private void createTestMonitor() {
     Context context = InstrumentationRegistry.getTargetContext();
+
+    NetworkMonitor.getInstance().setNetworkChangeDetectorFactory(
+        new NetworkChangeDetectorFactory() {
+          @Override
+          public NetworkChangeDetector create(
+              NetworkChangeDetector.Observer observer, Context context) {
+            detector = new NetworkMonitorAutoDetect(observer, context);
+            return detector;
+          }
+        });
+
     receiver = NetworkMonitor.createAndSetAutoDetectForTest(context);
     assertNotNull(receiver);
 
@@ -311,9 +329,9 @@ public class NetworkMonitorTest {
     Context context = ContextUtils.getApplicationContext();
     networkMonitor.startMonitoring(context);
     assertEquals(1, networkMonitor.getNumObservers());
-    assertNotNull(networkMonitor.getNetworkMonitorAutoDetect());
+    assertEquals(detector, networkMonitor.getNetworkChangeDetector());
     networkMonitor.stopMonitoring();
     assertEquals(0, networkMonitor.getNumObservers());
-    assertNull(networkMonitor.getNetworkMonitorAutoDetect());
+    assertNull(networkMonitor.getNetworkChangeDetector());
   }
 }

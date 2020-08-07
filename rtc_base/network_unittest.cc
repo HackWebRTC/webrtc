@@ -57,6 +57,9 @@ class FakeNetworkMonitor : public NetworkMonitorBase {
     }
     return ADAPTER_TYPE_UNKNOWN;
   }
+  NetworkPreference GetNetworkPreference(const std::string& if_name) override {
+    return NetworkPreference::NEUTRAL;
+  }
 
  private:
   bool started_ = false;

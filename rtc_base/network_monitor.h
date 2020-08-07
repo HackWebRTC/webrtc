@@ -30,6 +30,14 @@ enum class NetworkBindingResult {
   NETWORK_CHANGED = -4
 };
 
+// NetworkPreference property set by operating system/firmware that has
+// information about connection strength to e.g WIFI router or CELL base towers.
+// GENERATED_JAVA_ENUM_PACKAGE: org.webrtc
+enum class NetworkPreference {
+  NEUTRAL = 0,
+  NOT_PREFERRED = -1,
+};
+
 class NetworkBinderInterface {
  public:
   // Binds a socket to the network that is attached to |address| so that all
@@ -77,6 +85,8 @@ class NetworkMonitorInterface {
 
   virtual AdapterType GetAdapterType(const std::string& interface_name) = 0;
   virtual AdapterType GetVpnUnderlyingAdapterType(
+      const std::string& interface_name) = 0;
+  virtual NetworkPreference GetNetworkPreference(
       const std::string& interface_name) = 0;
 };
 
