@@ -57,10 +57,8 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   void Process() override { receiver_.Process(); }
 
   int32_t RegisterReceiveCodec(const VideoCodec* receiveCodec,
-                               int32_t numberOfCores,
-                               bool requireKeyFrame) override {
-    return receiver_.RegisterReceiveCodec(receiveCodec, numberOfCores,
-                                          requireKeyFrame);
+                               int32_t numberOfCores) override {
+    return receiver_.RegisterReceiveCodec(receiveCodec, numberOfCores);
   }
 
   void RegisterExternalDecoder(VideoDecoder* externalDecoder,

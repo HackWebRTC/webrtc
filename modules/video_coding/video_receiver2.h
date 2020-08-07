@@ -31,8 +31,7 @@ class VideoReceiver2 {
   ~VideoReceiver2();
 
   int32_t RegisterReceiveCodec(const VideoCodec* receiveCodec,
-                               int32_t numberOfCores,
-                               bool requireKeyFrame);
+                               int32_t numberOfCores);
 
   void RegisterExternalDecoder(VideoDecoder* externalDecoder,
                                uint8_t payloadType);

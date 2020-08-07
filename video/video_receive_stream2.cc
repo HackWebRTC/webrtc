@@ -351,8 +351,8 @@ void VideoReceiveStream2::Start() {
         config_.rtp.raw_payload_types.count(codec.plType) > 0;
     rtp_video_stream_receiver_.AddReceiveCodec(
         codec, decoder.video_format.parameters, raw_payload);
-    RTC_CHECK_EQ(VCM_OK, video_receiver_.RegisterReceiveCodec(
-                             &codec, num_cpu_cores_, false));
+    RTC_CHECK_EQ(VCM_OK,
+                 video_receiver_.RegisterReceiveCodec(&codec, num_cpu_cores_));
   }
 
   RTC_DCHECK(renderer != nullptr);

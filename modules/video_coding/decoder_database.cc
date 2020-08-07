@@ -15,12 +15,8 @@
 
 namespace webrtc {
 
-VCMDecoderMapItem::VCMDecoderMapItem(VideoCodec* settings,
-                                     int number_of_cores,
-                                     bool require_key_frame)
-    : settings(settings),
-      number_of_cores(number_of_cores),
-      require_key_frame(require_key_frame) {
+VCMDecoderMapItem::VCMDecoderMapItem(VideoCodec* settings, int number_of_cores)
+    : settings(settings), number_of_cores(number_of_cores) {
   RTC_DCHECK_GE(number_of_cores, 0);
 }
 
@@ -75,16 +71,15 @@ void VCMDecoderDataBase::RegisterExternalDecoder(VideoDecoder* external_decoder,
 }
 
 bool VCMDecoderDataBase::RegisterReceiveCodec(const VideoCodec* receive_codec,
-                                              int number_of_cores,
-                                              bool require_key_frame) {
+                                              int number_of_cores) {
   if (number_of_cores < 0) {
     return false;
   }
   // If payload value already exists, erase old and insert new.
   DeregisterReceiveCodec(receive_codec->plType);
   VideoCodec* new_receive_codec = new VideoCodec(*receive_codec);
-  dec_map_[receive_codec->plType] = new VCMDecoderMapItem(
-      new_receive_codec, number_of_cores, require_key_frame);
+  dec_map_[receive_codec->plType] =
+      new VCMDecoderMapItem(new_receive_codec, number_of_cores);
   return true;
 }
 

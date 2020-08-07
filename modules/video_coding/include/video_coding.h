@@ -53,8 +53,7 @@ class VideoCodingModule : public Module {
   // Return value      : VCM_OK, on success.
   //                     < 0,    on error.
   virtual int32_t RegisterReceiveCodec(const VideoCodec* receiveCodec,
-                                       int32_t numberOfCores,
-                                       bool requireKeyFrame = false) = 0;
+                                       int32_t numberOfCores) = 0;
 
   // Register an external decoder object.
   //
