@@ -640,6 +640,22 @@ void RtcEventLogSession::ReadAndVerifyLog() {
         *probe_success_list_[i], parsed_bwe_probe_success_events[i]);
   }
 
+  auto& parsed_dtls_transport_states = parsed_log.dtls_transport_states();
+  ASSERT_EQ(parsed_dtls_transport_states.size(),
+            dtls_transport_state_list_.size());
+  for (size_t i = 0; i < parsed_dtls_transport_states.size(); i++) {
+    verifier_.VerifyLoggedDtlsTransportState(*dtls_transport_state_list_[i],
+                                             parsed_dtls_transport_states[i]);
+  }
+
+  auto& parsed_dtls_writable_states = parsed_log.dtls_writable_states();
+  ASSERT_EQ(parsed_dtls_writable_states.size(),
+            dtls_writable_state_list_.size());
+  for (size_t i = 0; i < parsed_dtls_writable_states.size(); i++) {
+    verifier_.VerifyLoggedDtlsWritableState(*dtls_writable_state_list_[i],
+                                            parsed_dtls_writable_states[i]);
+  }
+
   auto& parsed_frame_decoded_events = parsed_log.decoded_frames();
   ASSERT_EQ(parsed_frame_decoded_events.size(),
             frame_decoded_event_list_.size());
