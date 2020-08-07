@@ -10,7 +10,7 @@ vars = {
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
-  'chromium_revision': '61491ae4219d6ab2da337ef3ec059dce19911268',
+  'chromium_revision': 'cfbe56f17a3d7a3397a09d091252db6e3470223d',
 
   # This can be overridden, e.g. with custom_vars, to download a nonstandard
   # Xcode version in build/mac_toolchain.py
@@ -22,30 +22,30 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    'https://chromium.googlesource.com/chromium/src/base@e2b6b12932bbc08e98f60d84c5fbab8b5c37d103',
+    'https://chromium.googlesource.com/chromium/src/base@79ecefbaa639a277367347d05b1b214a7daba505',
   'src/build':
-    'https://chromium.googlesource.com/chromium/src/build@f18c647e5db6a67277e29528d2a9f1a9498c9157',
+    'https://chromium.googlesource.com/chromium/src/build@d48c1d06dd6810f12bf4fa4d4c03af495186d252',
   'src/buildtools':
-    'https://chromium.googlesource.com/chromium/src/buildtools@1ecfe3ce669a34f8c76ffe5895d95b3ea3b549fd',
+    'https://chromium.googlesource.com/chromium/src/buildtools@b00ad0af636401e5eb4b5d0ab01b65164dca1914',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
   'src/examples/androidtests/third_party/gradle': {
     'url': 'https://chromium.googlesource.com/external/github.com/gradle/gradle.git@89af43c4d0506f69980f00dde78c97b2f81437f8',
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': 'https://chromium.googlesource.com/chromium/src/ios@122db580da080d7d4f1c91f9e62bc862a6926c81',
+    'url': 'https://chromium.googlesource.com/chromium/src/ios@b80fbf30ef148ff64ac1e69fbc2a2ac1cab4f0bb',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    'https://chromium.googlesource.com/chromium/src/testing@3ddb59f131ea3778a67da7f41468e186014e6ac0',
+    'https://chromium.googlesource.com/chromium/src/testing@3270a2f48ebd6ddac936ef5b213221928e1595ef',
   'src/third_party':
-    'https://chromium.googlesource.com/chromium/src/third_party@18a17bf047cdda2a5da46bcac2446691f19b692f',
+    'https://chromium.googlesource.com/chromium/src/third_party@aa6cdf5f8e38e3ce2ee9508029d24c653eb2cfbd',
 
   'src/buildtools/linux64': {
     'packages': [
       {
         'package': 'gn/gn/linux-amd64',
-        'version': 'git_revision:3028c6a426a4aaf6da91c4ebafe716ae370225fe',
+        'version': 'git_revision:e327ffdc503815916db2543ec000226a8df45163',
       }
     ],
     'dep_type': 'cipd',
@@ -55,7 +55,7 @@ deps = {
     'packages': [
       {
         'package': 'gn/gn/mac-amd64',
-        'version': 'git_revision:3028c6a426a4aaf6da91c4ebafe716ae370225fe',
+        'version': 'git_revision:e327ffdc503815916db2543ec000226a8df45163',
       }
     ],
     'dep_type': 'cipd',
@@ -65,7 +65,7 @@ deps = {
     'packages': [
       {
         'package': 'gn/gn/windows-amd64',
-        'version': 'git_revision:3028c6a426a4aaf6da91c4ebafe716ae370225fe',
+        'version': 'git_revision:e327ffdc503815916db2543ec000226a8df45163',
       }
     ],
     'dep_type': 'cipd',
@@ -208,7 +208,7 @@ deps = {
       'condition': 'checkout_android',
   },
   'src/third_party/perfetto':
-    'https://android.googlesource.com/platform/external/perfetto.git@56f14dabfe991afdf09f35a56418657dbcb81791',
+    'https://android.googlesource.com/platform/external/perfetto.git@a4cba6578f09d606d32fe32bb0a0c6283ea6d198',
   'src/third_party/libvpx/source/libvpx':
     'https://chromium.googlesource.com/webm/libvpx.git@a1cee8dc919df1980d802e1a9bce1259ec34cba8',
   'src/third_party/libyuv':
@@ -265,7 +265,7 @@ deps = {
     'condition': 'checkout_win',
   },
   'src/tools':
-    'https://chromium.googlesource.com/chromium/src/tools@9c4f505ab9653b0fc6377aaa7c55feb4526b02b8',
+    'https://chromium.googlesource.com/chromium/src/tools@ea5b4d010a6642c1467413c965911141b28ec2cb',
   'src/tools/swarming_client':
     'https://chromium.googlesource.com/infra/luci/client-py.git@4c095d04179dc725a300085ae21fe3b79900d072',
 
