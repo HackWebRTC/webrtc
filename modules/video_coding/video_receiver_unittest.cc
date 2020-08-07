@@ -58,7 +58,8 @@ class TestVideoReceiver : public ::testing::Test {
     receiver_.RegisterExternalDecoder(&decoder_, kUnusedPayloadType);
     webrtc::test::CodecSettings(kVideoCodecVP8, &settings_);
     settings_.plType = kUnusedPayloadType;
-    EXPECT_EQ(0, receiver_.RegisterReceiveCodec(&settings_, 1));
+    EXPECT_EQ(
+        0, receiver_.RegisterReceiveCodec(kUnusedPayloadType, &settings_, 1));
 
     // Set protection mode.
     const size_t kMaxNackListSize = 250;

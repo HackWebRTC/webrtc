@@ -70,15 +70,16 @@ void VCMDecoderDataBase::RegisterExternalDecoder(VideoDecoder* external_decoder,
   dec_external_map_[payload_type] = ext_decoder;
 }
 
-bool VCMDecoderDataBase::RegisterReceiveCodec(const VideoCodec* receive_codec,
+bool VCMDecoderDataBase::RegisterReceiveCodec(uint8_t payload_type,
+                                              const VideoCodec* receive_codec,
                                               int number_of_cores) {
   if (number_of_cores < 0) {
     return false;
   }
   // If payload value already exists, erase old and insert new.
-  DeregisterReceiveCodec(receive_codec->plType);
+  DeregisterReceiveCodec(payload_type);
   VideoCodec* new_receive_codec = new VideoCodec(*receive_codec);
-  dec_map_[receive_codec->plType] =
+  dec_map_[payload_type] =
       new VCMDecoderMapItem(new_receive_codec, number_of_cores);
   return true;
 }

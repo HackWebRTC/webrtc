@@ -45,7 +45,8 @@ class VCMDecoderDataBase {
   void RegisterExternalDecoder(VideoDecoder* external_decoder,
                                uint8_t payload_type);
 
-  bool RegisterReceiveCodec(const VideoCodec* receive_codec,
+  bool RegisterReceiveCodec(uint8_t payload_type,
+                            const VideoCodec* receive_codec,
                             int number_of_cores);
   bool DeregisterReceiveCodec(uint8_t payload_type);
 

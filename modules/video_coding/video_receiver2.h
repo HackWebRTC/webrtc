@@ -30,7 +30,8 @@ class VideoReceiver2 {
   VideoReceiver2(Clock* clock, VCMTiming* timing);
   ~VideoReceiver2();
 
-  int32_t RegisterReceiveCodec(const VideoCodec* receiveCodec,
+  int32_t RegisterReceiveCodec(uint8_t payload_type,
+                               const VideoCodec* receiveCodec,
                                int32_t numberOfCores);
 
   void RegisterExternalDecoder(VideoDecoder* externalDecoder,
