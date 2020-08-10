@@ -20,9 +20,7 @@
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_config.h"
 #include "call/adaptation/adaptation_constraint.h"
-#include "call/adaptation/adaptation_listener.h"
 #include "call/adaptation/encoder_settings.h"
-#include "call/adaptation/test/fake_adaptation_listener.h"
 #include "call/adaptation/test/fake_resource.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "call/adaptation/video_stream_input_state.h"
@@ -153,17 +151,6 @@ class FakeVideoStreamAdapterListner : public VideoSourceRestrictionsListener {
  private:
   int calls_ = 0;
   VideoSourceRestrictions last_restrictions_;
-};
-
-class MockAdaptationListener : public AdaptationListener {
- public:
-  MOCK_METHOD(void,
-              OnAdaptationApplied,
-              (const VideoStreamInputState& input_state,
-               const VideoSourceRestrictions& restrictions_before,
-               const VideoSourceRestrictions& restrictions_after,
-               rtc::scoped_refptr<Resource> reason_resource),
-              (override));
 };
 
 class MockAdaptationConstraint : public AdaptationConstraint {
@@ -905,26 +892,6 @@ TEST_F(VideoStreamAdapterTest,
             adapter_.GetAdaptationUp(resource_).status());
   EXPECT_EQ(Adaptation::Status::kAdaptationDisabled,
             adapter_.GetAdaptDownResolution().status());
-}
-
-TEST_F(VideoStreamAdapterTest, AdaptationListenerReceivesSignalOnAdaptation) {
-  testing::StrictMock<MockAdaptationListener> adaptation_listener;
-  adapter_.SetDegradationPreference(DegradationPreference::MAINTAIN_FRAMERATE);
-  adapter_.AddAdaptationListener(&adaptation_listener);
-  input_state_provider_.SetInputState(1280 * 720, 30,
-                                      kDefaultMinPixelsPerFrame);
-  VideoSourceRestrictions restrictions_before;
-  VideoSourceRestrictions restrictions_after;
-  EXPECT_CALL(adaptation_listener, OnAdaptationApplied)
-      .WillOnce(DoAll(SaveArg<1>(&restrictions_before),
-                      SaveArg<2>(&restrictions_after)));
-  auto adaptation = adapter_.GetAdaptationDown();
-  adapter_.ApplyAdaptation(adaptation, nullptr);
-  EXPECT_EQ(VideoSourceRestrictions(), restrictions_before);
-  EXPECT_EQ(adaptation.restrictions(), restrictions_after);
-
-  // Clean up.
-  adapter_.RemoveAdaptationListener(&adaptation_listener);
 }
 
 TEST_F(VideoStreamAdapterTest, AdaptationConstraintAllowsAdaptationsUp) {

@@ -213,9 +213,6 @@ VideoStreamAdapter::VideoStreamAdapter(
 }
 
 VideoStreamAdapter::~VideoStreamAdapter() {
-  RTC_DCHECK(adaptation_listeners_.empty())
-      << "There are listener(s) attached to a VideoStreamAdapter being "
-         "destroyed.";
   RTC_DCHECK(adaptation_constraints_.empty())
       << "There are constaint(s) attached to a VideoStreamAdapter being "
          "destroyed.";
@@ -259,24 +256,6 @@ void VideoStreamAdapter::RemoveRestrictionsListener(
                       restrictions_listeners_.end(), restrictions_listener);
   RTC_DCHECK(it != restrictions_listeners_.end());
   restrictions_listeners_.erase(it);
-}
-
-void VideoStreamAdapter::AddAdaptationListener(
-    AdaptationListener* adaptation_listener) {
-  RTC_DCHECK_RUN_ON(&sequence_checker_);
-  RTC_DCHECK(std::find(adaptation_listeners_.begin(),
-                       adaptation_listeners_.end(),
-                       adaptation_listener) == adaptation_listeners_.end());
-  adaptation_listeners_.push_back(adaptation_listener);
-}
-
-void VideoStreamAdapter::RemoveAdaptationListener(
-    AdaptationListener* adaptation_listener) {
-  RTC_DCHECK_RUN_ON(&sequence_checker_);
-  auto it = std::find(adaptation_listeners_.begin(),
-                      adaptation_listeners_.end(), adaptation_listener);
-  RTC_DCHECK(it != adaptation_listeners_.end());
-  adaptation_listeners_.erase(it);
 }
 
 void VideoStreamAdapter::AddAdaptationConstraint(
@@ -704,11 +683,6 @@ void VideoStreamAdapter::BroadcastVideoRestrictionsUpdate(
     restrictions_listener->OnVideoSourceRestrictionsUpdated(
         filtered, current_restrictions_.counters, resource,
         source_restrictions());
-  }
-  for (auto* adaptation_listener : adaptation_listeners_) {
-    adaptation_listener->OnAdaptationApplied(
-        input_state, last_video_source_restrictions_,
-        current_restrictions_.restrictions, resource);
   }
   last_video_source_restrictions_ = current_restrictions_.restrictions;
   last_filtered_restrictions_ = filtered;

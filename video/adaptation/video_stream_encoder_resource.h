@@ -18,7 +18,6 @@
 #include "api/adaptation/resource.h"
 #include "api/task_queue/task_queue_base.h"
 #include "call/adaptation/adaptation_constraint.h"
-#include "call/adaptation/adaptation_listener.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 

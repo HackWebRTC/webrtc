@@ -19,7 +19,6 @@
 #include "api/scoped_refptr.h"
 #include "api/video/video_adaptation_reason.h"
 #include "api/video_codecs/video_encoder.h"
-#include "call/adaptation/adaptation_listener.h"
 #include "call/adaptation/degradation_preference_provider.h"
 #include "call/adaptation/resource_adaptation_processor_interface.h"
 #include "modules/video_coding/utility/quality_scaler.h"
