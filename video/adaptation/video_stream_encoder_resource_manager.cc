@@ -312,11 +312,7 @@ void VideoStreamEncoderResourceManager::Initialize(
   bitrate_constraint_->SetAdaptationQueue(resource_adaptation_queue_->Get());
   balanced_constraint_->SetAdaptationQueue(resource_adaptation_queue_->Get());
   encode_usage_resource_->RegisterEncoderTaskQueue(encoder_queue_->Get());
-  encode_usage_resource_->RegisterAdaptationTaskQueue(
-      resource_adaptation_queue_->Get());
   quality_scaler_resource_->RegisterEncoderTaskQueue(encoder_queue_->Get());
-  quality_scaler_resource_->RegisterAdaptationTaskQueue(
-      resource_adaptation_queue_->Get());
 }
 
 void VideoStreamEncoderResourceManager::SetAdaptationProcessor(

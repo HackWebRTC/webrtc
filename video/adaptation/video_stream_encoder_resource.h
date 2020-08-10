@@ -34,16 +34,6 @@ class VideoStreamEncoderResource : public Resource {
   std::string Name() const override;
   void SetResourceListener(ResourceListener* listener) override;
 
-  // Provides a pointer to the adaptation task queue. After this call, all
-  // methods defined in this interface, including
-  // UnregisterAdaptationTaskQueue() MUST be invoked on the adaptation task
-  // queue. Registering the adaptation task queue may, however, happen off the
-  // adaptation task queue.
-  void RegisterAdaptationTaskQueue(TaskQueueBase* resource_adaptation_queue);
-  // Signals that the adaptation task queue is no longer safe to use. No
-  // assumptions must be made as to whether or not tasks in-flight will run.
-  void UnregisterAdaptationTaskQueue();
-
  protected:
   explicit VideoStreamEncoderResource(std::string name);
 
@@ -51,28 +41,13 @@ class VideoStreamEncoderResource : public Resource {
 
   // The caller is responsible for ensuring the task queue is still valid.
   TaskQueueBase* encoder_queue() const;
-  // Validity of returned pointer is ensured by only allowing this method to be
-  // called on the adaptation task queue. Designed for use with RTC_GUARDED_BY.
-  // For posting from a different queue, use
-  // MaybePostTaskToResourceAdaptationQueue() instead, which only posts if the
-  // task queue is currently registered.
-  TaskQueueBase* resource_adaptation_queue() const;
-  template <typename Closure>
-  void MaybePostTaskToResourceAdaptationQueue(Closure&& closure) {
-    MutexLock lock(&lock_);
-    if (!resource_adaptation_queue_)
-      return;
-    resource_adaptation_queue_->PostTask(ToQueuedTask(closure));
-  }
 
  private:
   mutable Mutex lock_;
   const std::string name_;
   // Treated as const after initialization.
   TaskQueueBase* encoder_queue_;
-  TaskQueueBase* resource_adaptation_queue_ RTC_GUARDED_BY(lock_);
-  mutable Mutex listener_lock_;
-  ResourceListener* listener_ RTC_GUARDED_BY(listener_lock_);
+  ResourceListener* listener_ RTC_GUARDED_BY(lock_);
 };
 
 }  // namespace webrtc

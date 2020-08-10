@@ -96,12 +96,7 @@ void QualityScalerResource::OnEncodeCompleted(const EncodedImage& encoded_image,
         timestamp_ms - last_underuse_due_to_disabled_timestamp_ms_.value() >=
             kUnderuseDueToDisabledCooldownMs) {
       last_underuse_due_to_disabled_timestamp_ms_ = timestamp_ms;
-      MaybePostTaskToResourceAdaptationQueue(
-          [this_ref = rtc::scoped_refptr<QualityScalerResource>(this)] {
-            RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue());
-            this_ref->OnResourceUsageStateMeasured(
-                ResourceUsageState::kUnderuse);
-          });
+      OnResourceUsageStateMeasured(ResourceUsageState::kUnderuse);
     }
   }
 }
@@ -122,28 +117,11 @@ void QualityScalerResource::OnFrameDropped(
 }
 
 void QualityScalerResource::OnReportQpUsageHigh() {
-  RTC_DCHECK_RUN_ON(encoder_queue());
-  // Reference counting guarantees that this object is still alive by the time
-  // the task is executed.
-  MaybePostTaskToResourceAdaptationQueue(
-      [this_ref = rtc::scoped_refptr<QualityScalerResource>(this)] {
-        RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue());
-        // If this OnResourceUsageStateMeasured() triggers an adaptation,
-        // OnAdaptationApplied() will occur between this line and the next. This
-        // allows modifying |clear_qp_samples_| based on the adaptation.
-        this_ref->OnResourceUsageStateMeasured(ResourceUsageState::kOveruse);
-      });
+  OnResourceUsageStateMeasured(ResourceUsageState::kOveruse);
 }
 
 void QualityScalerResource::OnReportQpUsageLow() {
-  RTC_DCHECK_RUN_ON(encoder_queue());
-  // Reference counting guarantees that this object is still alive by the time
-  // the task is executed.
-  MaybePostTaskToResourceAdaptationQueue(
-      [this_ref = rtc::scoped_refptr<QualityScalerResource>(this)] {
-        RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue());
-        this_ref->OnResourceUsageStateMeasured(ResourceUsageState::kUnderuse);
-      });
+  OnResourceUsageStateMeasured(ResourceUsageState::kUnderuse);
 }
 
 }  // namespace webrtc

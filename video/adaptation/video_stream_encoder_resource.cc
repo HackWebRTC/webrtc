@@ -19,7 +19,6 @@ VideoStreamEncoderResource::VideoStreamEncoderResource(std::string name)
     : lock_(),
       name_(std::move(name)),
       encoder_queue_(nullptr),
-      resource_adaptation_queue_(nullptr),
       listener_(nullptr) {}
 
 VideoStreamEncoderResource::~VideoStreamEncoderResource() {
@@ -35,26 +34,11 @@ void VideoStreamEncoderResource::RegisterEncoderTaskQueue(
   encoder_queue_ = encoder_queue;
 }
 
-void VideoStreamEncoderResource::RegisterAdaptationTaskQueue(
-    TaskQueueBase* resource_adaptation_queue) {
-  MutexLock lock(&lock_);
-  RTC_DCHECK(!resource_adaptation_queue_);
-  RTC_DCHECK(resource_adaptation_queue);
-  resource_adaptation_queue_ = resource_adaptation_queue;
-}
-
-void VideoStreamEncoderResource::UnregisterAdaptationTaskQueue() {
-  MutexLock lock(&lock_);
-  RTC_DCHECK(resource_adaptation_queue_);
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  resource_adaptation_queue_ = nullptr;
-}
-
 void VideoStreamEncoderResource::SetResourceListener(
     ResourceListener* listener) {
   // If you want to change listener you need to unregister the old listener by
   // setting it to null first.
-  MutexLock crit(&listener_lock_);
+  MutexLock crit(&lock_);
   RTC_DCHECK(!listener_ || !listener) << "A listener is already set";
   listener_ = listener;
 }
@@ -65,7 +49,7 @@ std::string VideoStreamEncoderResource::Name() const {
 
 void VideoStreamEncoderResource::OnResourceUsageStateMeasured(
     ResourceUsageState usage_state) {
-  MutexLock crit(&listener_lock_);
+  MutexLock crit(&lock_);
   if (listener_) {
     listener_->OnResourceUsageStateMeasured(this, usage_state);
   }
@@ -73,13 +57,6 @@ void VideoStreamEncoderResource::OnResourceUsageStateMeasured(
 
 TaskQueueBase* VideoStreamEncoderResource::encoder_queue() const {
   return encoder_queue_;
-}
-
-TaskQueueBase* VideoStreamEncoderResource::resource_adaptation_queue() const {
-  MutexLock lock(&lock_);
-  RTC_DCHECK(resource_adaptation_queue_);
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  return resource_adaptation_queue_;
 }
 
 }  // namespace webrtc
