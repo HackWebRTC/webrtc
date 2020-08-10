@@ -421,13 +421,43 @@ Adaptation VideoStreamAdapter::GetAdaptationDown() {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   VideoStreamInputState input_state = input_state_provider_->InputState();
   ++adaptation_validation_id_;
-  return RestrictionsOrStateToAdaptation(GetAdaptationDownStep(input_state),
-                                         input_state);
+  RestrictionsOrState restrictions_or_state =
+      GetAdaptationDownStep(input_state, current_restrictions_);
+
+  // Check for min_fps
+  if (degradation_preference_ == DegradationPreference::BALANCED &&
+      absl::holds_alternative<RestrictionsWithCounters>(
+          restrictions_or_state)) {
+    restrictions_or_state = AdaptIfFpsDiffInsufficient(
+        input_state,
+        absl::get<RestrictionsWithCounters>(restrictions_or_state));
+  }
+  return RestrictionsOrStateToAdaptation(restrictions_or_state, input_state);
+}
+
+VideoStreamAdapter::RestrictionsOrState
+VideoStreamAdapter::AdaptIfFpsDiffInsufficient(
+    const VideoStreamInputState& input_state,
+    const RestrictionsWithCounters& restrictions) const {
+  RTC_DCHECK_EQ(degradation_preference_, DegradationPreference::BALANCED);
+  absl::optional<int> min_fps_diff =
+      balanced_settings_.MinFpsDiff(input_state.frame_size_pixels().value());
+  if (current_restrictions_.counters.fps_adaptations <
+          restrictions.counters.fps_adaptations &&
+      min_fps_diff && input_state.frames_per_second() > 0) {
+    int fps_diff = input_state.frames_per_second() -
+                   restrictions.restrictions.max_frame_rate().value();
+    if (fps_diff < min_fps_diff.value()) {
+      return GetAdaptationDownStep(input_state, restrictions);
+    }
+  }
+  return restrictions;
 }
 
 VideoStreamAdapter::RestrictionsOrState
 VideoStreamAdapter::GetAdaptationDownStep(
-    const VideoStreamInputState& input_state) const {
+    const VideoStreamInputState& input_state,
+    const RestrictionsWithCounters& current_restrictions) const {
   if (!HasSufficientInputForAdaptation(input_state)) {
     return Adaptation::Status::kInsufficientInput;
   }
@@ -445,7 +475,7 @@ VideoStreamAdapter::GetAdaptationDownStep(
     case DegradationPreference::BALANCED: {
       // Try scale down framerate, if lower.
       RestrictionsOrState decrease_frame_rate =
-          DecreaseFramerate(input_state, current_restrictions_);
+          DecreaseFramerate(input_state, current_restrictions);
       if (absl::holds_alternative<RestrictionsWithCounters>(
               decrease_frame_rate)) {
         return decrease_frame_rate;
@@ -454,10 +484,10 @@ VideoStreamAdapter::GetAdaptationDownStep(
       ABSL_FALLTHROUGH_INTENDED;
     }
     case DegradationPreference::MAINTAIN_FRAMERATE: {
-      return DecreaseResolution(input_state, current_restrictions_);
+      return DecreaseResolution(input_state, current_restrictions);
     }
     case DegradationPreference::MAINTAIN_RESOLUTION: {
-      return DecreaseFramerate(input_state, current_restrictions_);
+      return DecreaseFramerate(input_state, current_restrictions);
     }
     case DegradationPreference::DISABLED:
       return Adaptation::Status::kAdaptationDisabled;
@@ -608,7 +638,7 @@ VideoStreamAdapter::RestrictionsOrState
 VideoStreamAdapter::GetAdaptDownResolutionStepForBalanced(
     const VideoStreamInputState& input_state) const {
   // Adapt twice if the first adaptation did not decrease resolution.
-  auto first_step = GetAdaptationDownStep(input_state);
+  auto first_step = GetAdaptationDownStep(input_state, current_restrictions_);
   if (!absl::holds_alternative<RestrictionsWithCounters>(first_step)) {
     return first_step;
   }

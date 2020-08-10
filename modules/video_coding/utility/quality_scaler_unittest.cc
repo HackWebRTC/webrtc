@@ -28,37 +28,24 @@ static const int kMinFramesNeededToScale = 60;  // From quality_scaler.cc.
 static const size_t kDefaultTimeoutMs = 150;
 }  // namespace
 
-class MockQpUsageHandler : public QualityScalerQpUsageHandlerInterface {
+class FakeQpUsageHandler : public QualityScalerQpUsageHandlerInterface {
  public:
-  virtual ~MockQpUsageHandler() {}
+  ~FakeQpUsageHandler() override = default;
 
   // QualityScalerQpUsageHandlerInterface implementation.
-  void OnReportQpUsageHigh(
-      rtc::scoped_refptr<QualityScalerQpUsageHandlerCallbackInterface> callback)
-      override {
-    callback_ = callback;
+  void OnReportQpUsageHigh() override {
     adapt_down_events_++;
     event.Set();
-    if (synchronously_invoke_callback)
-      callback_->OnQpUsageHandled(true);
   }
 
-  void OnReportQpUsageLow(
-      rtc::scoped_refptr<QualityScalerQpUsageHandlerCallbackInterface> callback)
-      override {
-    callback_ = callback;
+  void OnReportQpUsageLow() override {
     adapt_up_events_++;
     event.Set();
-    if (synchronously_invoke_callback)
-      callback_->OnQpUsageHandled(true);
   }
 
   rtc::Event event;
   int adapt_up_events_ = 0;
   int adapt_down_events_ = 0;
-  bool synchronously_invoke_callback = true;
-  rtc::scoped_refptr<QualityScalerQpUsageHandlerCallbackInterface> callback_ =
-      nullptr;
 };
 
 // Pass a lower sampling period to speed up the tests.
@@ -83,7 +70,7 @@ class QualityScalerTest : public ::testing::Test,
   QualityScalerTest()
       : scoped_field_trial_(GetParam()),
         task_queue_("QualityScalerTestQueue"),
-        handler_(new MockQpUsageHandler()) {
+        handler_(std::make_unique<FakeQpUsageHandler>()) {
     task_queue_.SendTask(
         [this] {
           qs_ = std::unique_ptr<QualityScaler>(new QualityScalerUnderTest(
@@ -92,7 +79,7 @@ class QualityScalerTest : public ::testing::Test,
         RTC_FROM_HERE);
   }
 
-  ~QualityScalerTest() {
+  ~QualityScalerTest() override {
     task_queue_.SendTask([this] { qs_ = nullptr; }, RTC_FROM_HERE);
   }
 
@@ -121,7 +108,7 @@ class QualityScalerTest : public ::testing::Test,
   test::ScopedFieldTrials scoped_field_trial_;
   TaskQueueForTest task_queue_;
   std::unique_ptr<QualityScaler> qs_;
-  std::unique_ptr<MockQpUsageHandler> handler_;
+  std::unique_ptr<FakeQpUsageHandler> handler_;
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -280,36 +267,6 @@ TEST_P(QualityScalerTest, ScalesDownAndBackUpWithMinFramesNeeded) {
   EXPECT_TRUE(handler_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(1, handler_->adapt_down_events_);
   EXPECT_EQ(1, handler_->adapt_up_events_);
-}
-
-TEST_P(QualityScalerTest, CheckingQpAgainRequiresResolvingCallback) {
-  handler_->synchronously_invoke_callback = false;
-  task_queue_.SendTask([this] { TriggerScale(kScaleDown); }, RTC_FROM_HERE);
-  EXPECT_TRUE(handler_->event.Wait(kDefaultTimeoutMs));
-  EXPECT_EQ(1, handler_->adapt_down_events_);
-  // Without invoking the callback, another downscale should not happen.
-  handler_->event.Reset();
-  rtc::Event event;
-  task_queue_.SendTask(
-      [this, &event] {
-        TriggerScale(kScaleDown);
-        event.Set();
-      },
-      RTC_FROM_HERE);
-  EXPECT_TRUE(event.Wait(kDefaultTimeoutMs));
-  EXPECT_FALSE(handler_->event.Wait(0));
-  EXPECT_EQ(1, handler_->adapt_down_events_);
-  // Resume checking for QP again by invoking the callback.
-  task_queue_.SendTask(
-      [this] {
-        handler_->callback_->OnQpUsageHandled(true);
-        TriggerScale(kScaleDown);
-      },
-      RTC_FROM_HERE);
-  EXPECT_TRUE(handler_->event.Wait(kDefaultTimeoutMs));
-  EXPECT_EQ(2, handler_->adapt_down_events_);
-  task_queue_.SendTask([this] { handler_->callback_->OnQpUsageHandled(true); },
-                       RTC_FROM_HERE);
 }
 
 }  // namespace webrtc

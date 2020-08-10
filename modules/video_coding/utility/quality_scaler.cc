@@ -86,7 +86,6 @@ class QualityScaler::CheckQpTask {
   struct Result {
     bool observed_enough_frames = false;
     bool qp_usage_reported = false;
-    bool clear_qp_samples = false;
   };
 
   CheckQpTask(QualityScaler* quality_scaler, Result previous_task_result)
@@ -110,47 +109,34 @@ class QualityScaler::CheckQpTask {
             case QualityScaler::CheckQpResult::kInsufficientSamples: {
               result_.observed_enough_frames = false;
               // After this line, |this| may be deleted.
-              DoCompleteTask();
-              return;
+              break;
             }
             case QualityScaler::CheckQpResult::kNormalQp: {
               result_.observed_enough_frames = true;
-              // After this line, |this| may be deleted.
-              DoCompleteTask();
-              return;
+              break;
             }
             case QualityScaler::CheckQpResult::kHighQp: {
               result_.observed_enough_frames = true;
               result_.qp_usage_reported = true;
-              state_ = State::kAwaitingQpUsageHandled;
-              rtc::scoped_refptr<QualityScalerQpUsageHandlerCallbackInterface>
-                  callback = ConstructCallback();
               quality_scaler_->fast_rampup_ = false;
-              // After this line, |this| may be deleted.
-              quality_scaler_->handler_->OnReportQpUsageHigh(callback);
-              return;
+              quality_scaler_->handler_->OnReportQpUsageHigh();
+              quality_scaler_->ClearSamples();
+              break;
             }
             case QualityScaler::CheckQpResult::kLowQp: {
               result_.observed_enough_frames = true;
               result_.qp_usage_reported = true;
-              state_ = State::kAwaitingQpUsageHandled;
-              rtc::scoped_refptr<QualityScalerQpUsageHandlerCallbackInterface>
-                  callback = ConstructCallback();
-              // After this line, |this| may be deleted.
-              quality_scaler_->handler_->OnReportQpUsageLow(callback);
-              return;
+              quality_scaler_->handler_->OnReportQpUsageLow();
+              quality_scaler_->ClearSamples();
+              break;
             }
           }
+          state_ = State::kCompleted;
+          // Starting the next task deletes the pending task. After this line,
+          // |this| has been deleted.
+          quality_scaler_->StartNextCheckQpTask();
         }),
         GetCheckingQpDelayMs());
-  }
-
-  void OnQpUsageHandled(bool clear_qp_samples) {
-    RTC_DCHECK_EQ(state_, State::kAwaitingQpUsageHandled);
-    result_.clear_qp_samples = clear_qp_samples;
-    if (clear_qp_samples)
-      quality_scaler_->ClearSamples();
-    DoCompleteTask();
   }
 
   bool HasCompletedTask() const { return state_ == State::kCompleted; }
@@ -164,14 +150,8 @@ class QualityScaler::CheckQpTask {
   enum class State {
     kNotStarted,
     kCheckingQp,
-    kAwaitingQpUsageHandled,
     kCompleted,
   };
-
-  // Defined after the definition of QualityScaler::CheckQpTaskHandlerCallback.
-  // Gets around a forward declaration issue.
-  rtc::scoped_refptr<QualityScaler::CheckQpTaskHandlerCallback>
-  ConstructCallback();
 
   // Determines the sampling period of CheckQpTasks.
   int64_t GetCheckingQpDelayMs() const {
@@ -184,10 +164,6 @@ class QualityScaler::CheckQpTask {
       // Use half the interval while waiting for enough frames.
       return quality_scaler_->sampling_period_ms_ / 2;
     }
-    if (!previous_task_result_.clear_qp_samples) {
-      // Check shortly again.
-      return quality_scaler_->sampling_period_ms_ / 8;
-    }
     if (quality_scaler_->scale_factor_ &&
         !previous_task_result_.qp_usage_reported) {
       // Last CheckQp did not call AdaptDown/Up, possibly reduce interval.
@@ -198,15 +174,6 @@ class QualityScaler::CheckQpTask {
            quality_scaler_->initial_scale_factor_;
   }
 
-  void DoCompleteTask() {
-    RTC_DCHECK(state_ == State::kCheckingQp ||
-               state_ == State::kAwaitingQpUsageHandled);
-    state_ = State::kCompleted;
-    // Starting the next task deletes the pending task. After this line, |this|
-    // has been deleted.
-    quality_scaler_->StartNextCheckQpTask();
-  }
-
   QualityScaler* const quality_scaler_;
   State state_;
   const Result previous_task_result_;
@@ -214,39 +181,6 @@ class QualityScaler::CheckQpTask {
 
   rtc::WeakPtrFactory<CheckQpTask> weak_ptr_factory_;
 };
-
-class QualityScaler::CheckQpTaskHandlerCallback
-    : public QualityScalerQpUsageHandlerCallbackInterface {
- public:
-  CheckQpTaskHandlerCallback(
-      rtc::WeakPtr<QualityScaler::CheckQpTask> check_qp_task)
-      : QualityScalerQpUsageHandlerCallbackInterface(),
-        check_qp_task_(std::move(check_qp_task)),
-        was_handled_(false) {}
-
-  ~CheckQpTaskHandlerCallback() { RTC_DCHECK(was_handled_); }
-
-  void OnQpUsageHandled(bool clear_qp_samples) {
-    RTC_DCHECK(!was_handled_);
-    was_handled_ = true;
-    if (!check_qp_task_) {
-      // The task has been cancelled through destruction; the result of the
-      // operation is ignored.
-      return;
-    }
-    check_qp_task_->OnQpUsageHandled(clear_qp_samples);
-  }
-
- private:
-  // The callback may outlive the QualityScaler and its task.
-  rtc::WeakPtr<QualityScaler::CheckQpTask> const check_qp_task_;
-  bool was_handled_;
-};
-
-rtc::scoped_refptr<QualityScaler::CheckQpTaskHandlerCallback>
-QualityScaler::CheckQpTask::ConstructCallback() {
-  return new CheckQpTaskHandlerCallback(weak_ptr_factory_.GetWeakPtr());
-}
 
 QualityScaler::QualityScaler(QualityScalerQpUsageHandlerInterface* handler,
                              VideoEncoder::QpThresholds thresholds)
@@ -400,11 +334,5 @@ void QualityScaler::ClearSamples() {
 }
 
 QualityScalerQpUsageHandlerInterface::~QualityScalerQpUsageHandlerInterface() {}
-
-QualityScalerQpUsageHandlerCallbackInterface::
-    QualityScalerQpUsageHandlerCallbackInterface() {}
-
-QualityScalerQpUsageHandlerCallbackInterface::
-    ~QualityScalerQpUsageHandlerCallbackInterface() {}
 
 }  // namespace webrtc

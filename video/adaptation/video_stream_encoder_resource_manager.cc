@@ -381,11 +381,6 @@ VideoStreamEncoderResourceManager::AdaptationConstraints() const {
   return {bitrate_constraint_, balanced_constraint_};
 }
 
-std::vector<AdaptationListener*>
-VideoStreamEncoderResourceManager::AdaptationListeners() const {
-  return {quality_scaler_resource_};
-}
-
 rtc::scoped_refptr<QualityScalerResource>
 VideoStreamEncoderResourceManager::quality_scaler_resource_for_testing() {
   MutexLock lock(&resource_lock_);
