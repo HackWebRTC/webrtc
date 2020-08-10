@@ -1568,6 +1568,8 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
   // RFC 3264
   // a=sendrecv || a=sendonly || a=sendrecv || a=inactive
   switch (media_desc->direction()) {
+    // Special case that for sdp purposes should be treated same as inactive.
+    case RtpTransceiverDirection::kStopped:
     case RtpTransceiverDirection::kInactive:
       InitAttrLine(kAttributeInactive, &os);
       break;
@@ -1580,9 +1582,7 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
     case RtpTransceiverDirection::kSendRecv:
       InitAttrLine(kAttributeSendRecv, &os);
       break;
-    case RtpTransceiverDirection::kStopped:
     default:
-      // kStopped shouldn't be used in signalling.
       RTC_NOTREACHED();
       InitAttrLine(kAttributeSendRecv, &os);
       break;

@@ -2668,23 +2668,24 @@ TEST_P(PeerConnectionInterfaceTest, CloseAndTestStreamsAndStates) {
     EXPECT_EQ(1u, pc_->local_streams()->count());
     EXPECT_EQ(1u, pc_->remote_streams()->count());
   } else {
-    // Verify that the RtpTransceivers are still present but all stopped.
-    EXPECT_EQ(2u, pc_->GetTransceivers().size());
-    for (const auto& transceiver : pc_->GetTransceivers()) {
-      EXPECT_TRUE(transceiver->stopped());
-    }
+    // Verify that the RtpTransceivers are no longer returned.
+    EXPECT_EQ(0u, pc_->GetTransceivers().size());
   }
 
   auto audio_receiver = GetFirstReceiverOfType(cricket::MEDIA_TYPE_AUDIO);
-  ASSERT_TRUE(audio_receiver);
   auto video_receiver = GetFirstReceiverOfType(cricket::MEDIA_TYPE_VIDEO);
-  ASSERT_TRUE(video_receiver);
-
-  // Track state may be updated asynchronously.
-  EXPECT_EQ_WAIT(MediaStreamTrackInterface::kEnded,
-                 audio_receiver->track()->state(), kTimeout);
-  EXPECT_EQ_WAIT(MediaStreamTrackInterface::kEnded,
-                 video_receiver->track()->state(), kTimeout);
+  if (sdp_semantics_ == SdpSemantics::kPlanB) {
+    ASSERT_TRUE(audio_receiver);
+    ASSERT_TRUE(video_receiver);
+    // Track state may be updated asynchronously.
+    EXPECT_EQ_WAIT(MediaStreamTrackInterface::kEnded,
+                   audio_receiver->track()->state(), kTimeout);
+    EXPECT_EQ_WAIT(MediaStreamTrackInterface::kEnded,
+                   video_receiver->track()->state(), kTimeout);
+  } else {
+    ASSERT_FALSE(audio_receiver);
+    ASSERT_FALSE(video_receiver);
+  }
 }
 
 // Test that PeerConnection methods fails gracefully after

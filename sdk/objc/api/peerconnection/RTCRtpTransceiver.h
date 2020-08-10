@@ -117,7 +117,7 @@ RTC_OBJC_EXPORT
  *  this transceiver will no longer send, the receiver will no longer receive.
  *  https://w3c.github.io/webrtc-pc/#dom-rtcrtptransceiver-stop
  */
-- (void)stop;
+- (void)stopInternal;
 
 @end
 
