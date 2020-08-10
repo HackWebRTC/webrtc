@@ -4863,8 +4863,7 @@ void TestAudioCodecsAnswer(RtpTransceiverDirection offer_direction,
                                             kResultSendrecv_SendrecvCodecs);
         }
         break;
-      case RtpTransceiverDirection::kStopped:
-        // This does not happen in any current test.
+      default:
         RTC_NOTREACHED();
     }
 

@@ -173,10 +173,6 @@ class RtpTransceiver final
     return has_ever_been_used_to_send_;
   }
 
-  // Informs the transceiver that its owning
-  // PeerConnection is closed.
-  void SetPeerConnectionClosed();
-
   // Fired when the RtpTransceiver state changes such that negotiation is now
   // needed (e.g., in response to a direction change).
   sigslot::signal0<> SignalNegotiationNeeded;
@@ -187,15 +183,11 @@ class RtpTransceiver final
   rtc::scoped_refptr<RtpSenderInterface> sender() const override;
   rtc::scoped_refptr<RtpReceiverInterface> receiver() const override;
   bool stopped() const override;
-  bool stopping() const override;
   RtpTransceiverDirection direction() const override;
   void SetDirection(RtpTransceiverDirection new_direction) override;
-  RTCError SetDirectionWithError(
-      RtpTransceiverDirection new_direction) override;
   absl::optional<RtpTransceiverDirection> current_direction() const override;
   absl::optional<RtpTransceiverDirection> fired_direction() const override;
-  RTCError StopStandard() override;
-  void StopInternal() override;
+  void Stop() override;
   RTCError SetCodecPreferences(
       rtc::ArrayView<RtpCodecCapability> codecs) override;
   std::vector<RtpCodecCapability> codec_preferences() const override {
@@ -209,10 +201,7 @@ class RtpTransceiver final
 
  private:
   void OnFirstPacketReceived(cricket::ChannelInterface* channel);
-  void StopSendingAndReceiving();
 
-  // Enforce that this object is created, used and destroyed on one thread.
-  const TaskQueueBase* thread_;
   const bool unified_plan_;
   const cricket::MediaType media_type_;
   std::vector<rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>>
@@ -222,8 +211,6 @@ class RtpTransceiver final
       receivers_;
 
   bool stopped_ = false;
-  bool stopping_ RTC_GUARDED_BY(thread_) = false;
-  bool is_pc_closed_ = false;
   RtpTransceiverDirection direction_ = RtpTransceiverDirection::kInactive;
   absl::optional<RtpTransceiverDirection> current_direction_;
   absl::optional<RtpTransceiverDirection> fired_direction_;
@@ -246,14 +233,11 @@ PROXY_CONSTMETHOD0(absl::optional<std::string>, mid)
 PROXY_CONSTMETHOD0(rtc::scoped_refptr<RtpSenderInterface>, sender)
 PROXY_CONSTMETHOD0(rtc::scoped_refptr<RtpReceiverInterface>, receiver)
 PROXY_CONSTMETHOD0(bool, stopped)
-PROXY_CONSTMETHOD0(bool, stopping)
 PROXY_CONSTMETHOD0(RtpTransceiverDirection, direction)
 PROXY_METHOD1(void, SetDirection, RtpTransceiverDirection)
-PROXY_METHOD1(webrtc::RTCError, SetDirectionWithError, RtpTransceiverDirection)
 PROXY_CONSTMETHOD0(absl::optional<RtpTransceiverDirection>, current_direction)
 PROXY_CONSTMETHOD0(absl::optional<RtpTransceiverDirection>, fired_direction)
-PROXY_METHOD0(webrtc::RTCError, StopStandard)
-PROXY_METHOD0(void, StopInternal)
+PROXY_METHOD0(void, Stop)
 PROXY_METHOD1(webrtc::RTCError,
               SetCodecPreferences,
               rtc::ArrayView<RtpCodecCapability>)

@@ -42,7 +42,6 @@ RtpTransceiverDirection RtpTransceiverDirectionReversed(
   switch (direction) {
     case RtpTransceiverDirection::kSendRecv:
     case RtpTransceiverDirection::kInactive:
-    case RtpTransceiverDirection::kStopped:
       return direction;
     case RtpTransceiverDirection::kSendOnly:
       return RtpTransceiverDirection::kRecvOnly;

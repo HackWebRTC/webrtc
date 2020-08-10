@@ -1048,7 +1048,7 @@ PeerConnection::~PeerConnection() {
   // AudioRtpSender has a reference to the StatsCollector it will update when
   // stopping.
   for (const auto& transceiver : transceivers_) {
-    transceiver->StopInternal();
+    transceiver->Stop();
   }
 
   stats_.reset(nullptr);
@@ -1535,11 +1535,6 @@ PeerConnection::AddTrackUnifiedPlan(
     RTC_LOG(LS_INFO) << "Reusing an existing "
                      << cricket::MediaTypeToString(transceiver->media_type())
                      << " transceiver for AddTrack.";
-    if (transceiver->stopping()) {
-      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
-                           "The existing transceiver is stopping.");
-    }
-
     if (transceiver->direction() == RtpTransceiverDirection::kRecvOnly) {
       transceiver->internal()->set_direction(
           RtpTransceiverDirection::kSendRecv);
@@ -1938,9 +1933,6 @@ PeerConnection::GetSendersInternal() const {
   std::vector<rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>>
       all_senders;
   for (const auto& transceiver : transceivers_) {
-    if (IsUnifiedPlan() && transceiver->internal()->stopped())
-      continue;
-
     auto senders = transceiver->internal()->senders();
     all_senders.insert(all_senders.end(), senders.begin(), senders.end());
   }
@@ -1964,9 +1956,6 @@ PeerConnection::GetReceiversInternal() const {
       rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>>
       all_receivers;
   for (const auto& transceiver : transceivers_) {
-    if (IsUnifiedPlan() && transceiver->internal()->stopped())
-      continue;
-
     auto receivers = transceiver->internal()->receivers();
     all_receivers.insert(all_receivers.end(), receivers.begin(),
                          receivers.end());
@@ -1981,13 +1970,7 @@ PeerConnection::GetTransceivers() const {
       << "GetTransceivers is only supported with Unified Plan SdpSemantics.";
   std::vector<rtc::scoped_refptr<RtpTransceiverInterface>> all_transceivers;
   for (const auto& transceiver : transceivers_) {
-    // Temporary fix: Do not show stopped transceivers.
-    // The long term fix is to remove them from transceivers_, but this
-    // turns out to cause issues with audio channel lifetimes.
-    // TODO(https://crbug.com/webrtc/11840): Fix issue.
-    if (!transceiver->stopped()) {
-      all_transceivers.push_back(transceiver);
-    }
+    all_transceivers.push_back(transceiver);
   }
   return all_transceivers;
 }
@@ -2598,35 +2581,6 @@ void PeerConnection::DoSetLocalDescription(
   RTC_DCHECK(local_description());
 
   if (local_description()->GetType() == SdpType::kAnswer) {
-    // 3.2.10.1: For each transceiver in the connection's set of transceivers
-    //           run the following steps:
-    if (IsUnifiedPlan()) {
-      for (auto it = transceivers_.begin(); it != transceivers_.end();) {
-        const auto& transceiver = *it;
-        // 3.2.10.1.1: If transceiver is stopped, associated with an m= section
-        //             and the associated m= section is rejected in
-        //             connection.[[CurrentLocalDescription]] or
-        //             connection.[[CurrentRemoteDescription]], remove the
-        //             transceiver from the connection's set of transceivers.
-        if (transceiver->stopped()) {
-          const ContentInfo* content =
-              FindMediaSectionForTransceiver(transceiver, local_description());
-
-          if (content && content->rejected) {
-            RTC_LOG(LS_INFO) << "Dissociating transceiver"
-                             << " since the media section is being recycled.";
-            (*it)->internal()->set_mid(absl::nullopt);
-            (*it)->internal()->set_mline_index(absl::nullopt);
-            it = transceivers_.erase(it);
-          } else {
-            ++it;
-          }
-        } else {
-          ++it;
-        }
-      }
-    }
-
     // TODO(deadbeef): We already had to hop to the network thread for
     // MaybeStartGathering...
     network_thread()->Invoke<void>(
@@ -2716,10 +2670,6 @@ RTCError PeerConnection::ApplyLocalDescription(
     std::vector<rtc::scoped_refptr<RtpTransceiverInterface>> remove_list;
     std::vector<rtc::scoped_refptr<MediaStreamInterface>> removed_streams;
     for (const auto& transceiver : transceivers_) {
-      if (transceiver->stopped()) {
-        continue;
-      }
-
       // 2.2.7.1.1.(6-9): Set sender and receiver's transport slots.
       // Note that code paths that don't set MID won't be able to use
       // information about DTLS transports.
@@ -2805,9 +2755,6 @@ RTCError PeerConnection::ApplyLocalDescription(
 
   if (IsUnifiedPlan()) {
     for (const auto& transceiver : transceivers_) {
-      if (transceiver->stopped()) {
-        continue;
-      }
       const ContentInfo* content =
           FindMediaSectionForTransceiver(transceiver, local_description());
       if (!content) {
@@ -3316,7 +3263,7 @@ RTCError PeerConnection::ApplyRemoteDescription(
       if (content->rejected && !transceiver->stopped()) {
         RTC_LOG(LS_INFO) << "Stopping transceiver for MID=" << content->name
                          << " since the media section was rejected.";
-        transceiver->StopInternal();
+        transceiver->Stop();
       }
       if (!content->rejected &&
           RtpTransceiverDirectionHasRecv(local_direction)) {
@@ -4392,9 +4339,7 @@ void PeerConnection::Close() {
   NoteUsageEvent(UsageEvent::CLOSE_CALLED);
 
   for (const auto& transceiver : transceivers_) {
-    transceiver->internal()->SetPeerConnectionClosed();
-    if (!transceiver->stopped())
-      transceiver->StopInternal();
+    transceiver->Stop();
   }
 
   // Ensure that all asynchronous stats requests are completed before destroying
@@ -4960,15 +4905,10 @@ static cricket::MediaDescriptionOptions
 GetMediaDescriptionOptionsForTransceiver(
     rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
         transceiver,
-    const std::string& mid,
-    bool is_create_offer) {
-  // NOTE: a stopping transceiver should be treated as a stopped one in
-  // createOffer as specified in
-  // https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnection-createoffer.
-  bool stopped =
-      is_create_offer ? transceiver->stopping() : transceiver->stopped();
+    const std::string& mid) {
   cricket::MediaDescriptionOptions media_description_options(
-      transceiver->media_type(), mid, transceiver->direction(), stopped);
+      transceiver->media_type(), mid, transceiver->direction(),
+      transceiver->stopped());
   media_description_options.codec_preferences =
       transceiver->codec_preferences();
   media_description_options.header_extensions =
@@ -4978,8 +4918,9 @@ GetMediaDescriptionOptionsForTransceiver(
   //    sendrecv.
   // 2. If the MSID is included, then it must be included in any subsequent
   //    offer/answer exactly the same until the RtpTransceiver is stopped.
-  if (stopped || (!RtpTransceiverDirectionHasSend(transceiver->direction()) &&
-                  !transceiver->internal()->has_ever_been_used_to_send())) {
+  if (transceiver->stopped() ||
+      (!RtpTransceiverDirectionHasSend(transceiver->direction()) &&
+       !transceiver->internal()->has_ever_been_used_to_send())) {
     return media_description_options;
   }
 
@@ -5073,39 +5014,25 @@ void PeerConnection::GetOptionsForUnifiedPlanOffer(
                        : remote_content->media_description()->type());
     if (media_type == cricket::MEDIA_TYPE_AUDIO ||
         media_type == cricket::MEDIA_TYPE_VIDEO) {
+      auto transceiver = GetAssociatedTransceiver(mid);
+      RTC_CHECK(transceiver);
       // A media section is considered eligible for recycling if it is marked as
       // rejected in either the current local or current remote description.
-      auto transceiver = GetAssociatedTransceiver(mid);
-      if (!transceiver) {
-        // No associated transceiver. The media section has been stopped.
-        recycleable_mline_indices.push(i);
+      if (had_been_rejected && transceiver->stopped()) {
         session_options->media_description_options.push_back(
-            cricket::MediaDescriptionOptions(media_type, mid,
+            cricket::MediaDescriptionOptions(transceiver->media_type(), mid,
                                              RtpTransceiverDirection::kInactive,
                                              /*stopped=*/true));
+        recycleable_mline_indices.push(i);
       } else {
-        // NOTE: a stopping transceiver should be treated as a stopped one in
-        // createOffer as specified in
-        // https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnection-createoffer.
-        if (had_been_rejected && transceiver->stopping()) {
-          session_options->media_description_options.push_back(
-              cricket::MediaDescriptionOptions(
-                  transceiver->media_type(), mid,
-                  RtpTransceiverDirection::kInactive,
-                  /*stopped=*/true));
-          recycleable_mline_indices.push(i);
-        } else {
-          session_options->media_description_options.push_back(
-              GetMediaDescriptionOptionsForTransceiver(
-                  transceiver, mid,
-                  /*is_create_offer=*/true));
-          // CreateOffer shouldn't really cause any state changes in
-          // PeerConnection, but we need a way to match new transceivers to new
-          // media sections in SetLocalDescription and JSEP specifies this is
-          // done by recording the index of the media section generated for the
-          // transceiver in the offer.
-          transceiver->internal()->set_mline_index(i);
-        }
+        session_options->media_description_options.push_back(
+            GetMediaDescriptionOptionsForTransceiver(transceiver, mid));
+        // CreateOffer shouldn't really cause any state changes in
+        // PeerConnection, but we need a way to match new transceivers to new
+        // media sections in SetLocalDescription and JSEP specifies this is done
+        // by recording the index of the media section generated for the
+        // transceiver in the offer.
+        transceiver->internal()->set_mline_index(i);
       }
     } else {
       RTC_CHECK_EQ(cricket::MEDIA_TYPE_DATA, media_type);
@@ -5130,7 +5057,7 @@ void PeerConnection::GetOptionsForUnifiedPlanOffer(
   // otherwise append to the end of the offer. New media sections should be
   // added in the order they were added to the PeerConnection.
   for (const auto& transceiver : transceivers_) {
-    if (transceiver->mid() || transceiver->stopping()) {
+    if (transceiver->mid() || transceiver->stopped()) {
       continue;
     }
     size_t mline_index;
@@ -5138,13 +5065,13 @@ void PeerConnection::GetOptionsForUnifiedPlanOffer(
       mline_index = recycleable_mline_indices.front();
       recycleable_mline_indices.pop();
       session_options->media_description_options[mline_index] =
-          GetMediaDescriptionOptionsForTransceiver(
-              transceiver, mid_generator_(), /*is_create_offer=*/true);
+          GetMediaDescriptionOptionsForTransceiver(transceiver,
+                                                   mid_generator_());
     } else {
       mline_index = session_options->media_description_options.size();
       session_options->media_description_options.push_back(
-          GetMediaDescriptionOptionsForTransceiver(
-              transceiver, mid_generator_(), /*is_create_offer=*/true));
+          GetMediaDescriptionOptionsForTransceiver(transceiver,
+                                                   mid_generator_()));
     }
     // See comment above for why CreateOffer changes the transceiver's state.
     transceiver->internal()->set_mline_index(mline_index);
@@ -5255,8 +5182,7 @@ void PeerConnection::GetOptionsForUnifiedPlanAnswer(
       auto transceiver = GetAssociatedTransceiver(content.name);
       RTC_CHECK(transceiver);
       session_options->media_description_options.push_back(
-          GetMediaDescriptionOptionsForTransceiver(transceiver, content.name,
-                                                   /*is_create_offer=*/false));
+          GetMediaDescriptionOptionsForTransceiver(transceiver, content.name));
     } else {
       RTC_CHECK_EQ(cricket::MEDIA_TYPE_DATA, media_type);
       // Reject all data sections if data channels are disabled.
@@ -7347,8 +7273,7 @@ bool PeerConnection::CheckIfNegotiationIsNeeded() {
   // 1. If any implementation-specific negotiation is required, as described at
   // the start of this section, return true.
 
-  // 2. If connection.[[LocalIceCredentialsToReplace]] is not empty, return
-  // true.
+  // 2. If connection's [[RestartIce]] internal slot is true, return true.
   if (local_ice_credentials_to_replace_->HasIceCredentials()) {
     return true;
   }
@@ -7374,12 +7299,11 @@ bool PeerConnection::CheckIfNegotiationIsNeeded() {
     const ContentInfo* current_remote_msection = FindTransceiverMSection(
         transceiver.get(), current_remote_description());
 
-    // 5.4 If transceiver is stopped and is associated with an m= section,
+    // 5.3 If transceiver is stopped and is associated with an m= section,
     // but the associated m= section is not yet rejected in
     // connection.[[CurrentLocalDescription]] or
     // connection.[[CurrentRemoteDescription]], return true.
     if (transceiver->stopped()) {
-      RTC_DCHECK(transceiver->stopping());
       if (current_local_msection && !current_local_msection->rejected &&
           ((current_remote_msection && !current_remote_msection->rejected) ||
            !current_remote_msection)) {
@@ -7388,22 +7312,17 @@ bool PeerConnection::CheckIfNegotiationIsNeeded() {
       continue;
     }
 
-    // 5.1 If transceiver.[[Stopping]] is true and transceiver.[[Stopped]] is
-    // false, return true.
-    if (transceiver->stopping() && !transceiver->stopped())
-      return true;
-
-    // 5.2 If transceiver isn't stopped and isn't yet associated with an m=
+    // 5.1 If transceiver isn't stopped and isn't yet associated with an m=
     // section in description, return true.
     if (!current_local_msection)
       return true;
 
     const MediaContentDescription* current_local_media_description =
         current_local_msection->media_description();
-    // 5.3 If transceiver isn't stopped and is associated with an m= section
+    // 5.2 If transceiver isn't stopped and is associated with an m= section
     // in description then perform the following checks:
 
-    // 5.3.1 If transceiver.[[Direction]] is "sendrecv" or "sendonly", and the
+    // 5.2.1 If transceiver.[[Direction]] is "sendrecv" or "sendonly", and the
     // associated m= section in description either doesn't contain a single
     // "a=msid" line, or the number of MSIDs from the "a=msid" lines in this
     // m= section, or the MSID values themselves, differ from what is in
@@ -7429,7 +7348,7 @@ bool PeerConnection::CheckIfNegotiationIsNeeded() {
         return true;
     }
 
-    // 5.3.2 If description is of type "offer", and the direction of the
+    // 5.2.2 If description is of type "offer", and the direction of the
     // associated m= section in neither connection.[[CurrentLocalDescription]]
     // nor connection.[[CurrentRemoteDescription]] matches
     // transceiver.[[Direction]], return true.
@@ -7451,7 +7370,7 @@ bool PeerConnection::CheckIfNegotiationIsNeeded() {
       }
     }
 
-    // 5.3.3 If description is of type "answer", and the direction of the
+    // 5.2.3 If description is of type "answer", and the direction of the
     // associated m= section in the description does not match
     // transceiver.[[Direction]] intersected with the offered direction (as
     // described in [JSEP] (section 5.3.1.)), return true.

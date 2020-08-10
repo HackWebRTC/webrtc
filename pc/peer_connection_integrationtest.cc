@@ -799,7 +799,9 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     EXPECT_TRUE(desc->ToString(&sdp));
     RTC_LOG(LS_INFO) << debug_name_ << ": local SDP contents=\n" << sdp;
     pc()->SetLocalDescription(observer, desc.release());
-    RemoveUnusedVideoRenderers();
+    if (sdp_semantics_ == SdpSemantics::kUnifiedPlan) {
+      RemoveUnusedVideoRenderers();
+    }
     // As mentioned above, we need to send the message immediately after
     // SetLocalDescription.
     SendSdpMessage(type, sdp);
@@ -812,7 +814,9 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
         new rtc::RefCountedObject<MockSetSessionDescriptionObserver>());
     RTC_LOG(LS_INFO) << debug_name_ << ": SetRemoteDescription";
     pc()->SetRemoteDescription(observer, desc.release());
-    RemoveUnusedVideoRenderers();
+    if (sdp_semantics_ == SdpSemantics::kUnifiedPlan) {
+      RemoveUnusedVideoRenderers();
+    }
     EXPECT_TRUE_WAIT(observer->called(), kDefaultTimeout);
     return observer->result();
   }
@@ -820,26 +824,29 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   // This is a work around to remove unused fake_video_renderers from
   // transceivers that have either stopped or are no longer receiving.
   void RemoveUnusedVideoRenderers() {
-    if (sdp_semantics_ != SdpSemantics::kUnifiedPlan) {
-      return;
-    }
     auto transceivers = pc()->GetTransceivers();
-    std::set<std::string> active_renderers;
     for (auto& transceiver : transceivers) {
-      // Note - we don't check for direction here. This function is called
-      // before direction is set, and in that case, we should not remove
-      // the renderer.
-      if (transceiver->receiver()->media_type() == cricket::MEDIA_TYPE_VIDEO) {
-        active_renderers.insert(transceiver->receiver()->track()->id());
+      if (transceiver->receiver()->media_type() != cricket::MEDIA_TYPE_VIDEO) {
+        continue;
       }
-    }
-    for (auto it = fake_video_renderers_.begin();
-         it != fake_video_renderers_.end();) {
-      // Remove fake video renderers belonging to any non-active transceivers.
-      if (!active_renderers.count(it->first)) {
-        it = fake_video_renderers_.erase(it);
-      } else {
-        it++;
+      // Remove fake video renderers from any stopped transceivers.
+      if (transceiver->stopped()) {
+        auto it =
+            fake_video_renderers_.find(transceiver->receiver()->track()->id());
+        if (it != fake_video_renderers_.end()) {
+          fake_video_renderers_.erase(it);
+        }
+      }
+      // Remove fake video renderers from any transceivers that are no longer
+      // receiving.
+      if ((transceiver->current_direction() &&
+           !webrtc::RtpTransceiverDirectionHasRecv(
+               *transceiver->current_direction()))) {
+        auto it =
+            fake_video_renderers_.find(transceiver->receiver()->track()->id());
+        if (it != fake_video_renderers_.end()) {
+          fake_video_renderers_.erase(it);
+        }
       }
     }
   }
@@ -929,11 +936,8 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
       rtc::scoped_refptr<RtpReceiverInterface> receiver) override {
     if (receiver->media_type() == cricket::MEDIA_TYPE_VIDEO) {
       auto it = fake_video_renderers_.find(receiver->track()->id());
-      if (it != fake_video_renderers_.end()) {
-        fake_video_renderers_.erase(it);
-      } else {
-        RTC_LOG(LS_ERROR) << "OnRemoveTrack called for non-active renderer";
-      }
+      RTC_DCHECK(it != fake_video_renderers_.end());
+      fake_video_renderers_.erase(it);
     }
   }
   void OnRenegotiationNeeded() override {}
@@ -1557,9 +1561,6 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
   // |media_expectations|. Returns false if any of the expectations were
   // not met.
   bool ExpectNewFrames(const MediaExpectations& media_expectations) {
-    // Make sure there are no bogus tracks confusing the issue.
-    caller()->RemoveUnusedVideoRenderers();
-    callee()->RemoveUnusedVideoRenderers();
     // First initialize the expected frame counts based upon the current
     // frame count.
     int total_caller_audio_frames_expected = caller()->audio_frames_received();
@@ -2236,9 +2237,7 @@ TEST_P(PeerConnectionIntegrationTest, AudioToVideoUpgrade) {
     callee()->SetOfferAnswerOptions(options);
   } else {
     callee()->SetRemoteOfferHandler([this] {
-      callee()
-          ->GetFirstTransceiverOfType(cricket::MEDIA_TYPE_VIDEO)
-          ->StopInternal();
+      callee()->GetFirstTransceiverOfType(cricket::MEDIA_TYPE_VIDEO)->Stop();
     });
   }
   // Do offer/answer and make sure audio is still received end-to-end.
@@ -2270,12 +2269,11 @@ TEST_P(PeerConnectionIntegrationTest, AudioToVideoUpgrade) {
       // The caller creates a new transceiver to receive video on when receiving
       // the offer, but by default it is send only.
       auto transceivers = caller()->pc()->GetTransceivers();
-      ASSERT_EQ(2U, transceivers.size());
+      ASSERT_EQ(3U, transceivers.size());
       ASSERT_EQ(cricket::MEDIA_TYPE_VIDEO,
-                transceivers[1]->receiver()->media_type());
-      transceivers[1]->sender()->SetTrack(caller()->CreateLocalVideoTrack());
-      transceivers[1]->SetDirectionWithError(
-          RtpTransceiverDirection::kSendRecv);
+                transceivers[2]->receiver()->media_type());
+      transceivers[2]->sender()->SetTrack(caller()->CreateLocalVideoTrack());
+      transceivers[2]->SetDirection(RtpTransceiverDirection::kSendRecv);
     });
   }
   callee()->CreateAndSetAndSignalOffer();
@@ -2487,9 +2485,7 @@ TEST_P(PeerConnectionIntegrationTest, AnswererRejectsAudioSection) {
     // Stopping the audio RtpTransceiver will cause the media section to be
     // rejected in the answer.
     callee()->SetRemoteOfferHandler([this] {
-      callee()
-          ->GetFirstTransceiverOfType(cricket::MEDIA_TYPE_AUDIO)
-          ->StopInternal();
+      callee()->GetFirstTransceiverOfType(cricket::MEDIA_TYPE_AUDIO)->Stop();
     });
   }
   callee()->AddTrack(callee()->CreateLocalVideoTrack());
@@ -2508,10 +2504,10 @@ TEST_P(PeerConnectionIntegrationTest, AnswererRejectsAudioSection) {
   ASSERT_NE(nullptr, callee_audio_content);
   EXPECT_TRUE(callee_audio_content->rejected);
   if (sdp_semantics_ == SdpSemantics::kUnifiedPlan) {
-    // The caller's transceiver should have stopped after receiving the answer,
-    // and thus no longer listed in transceivers.
-    EXPECT_EQ(nullptr,
-              caller()->GetFirstTransceiverOfType(cricket::MEDIA_TYPE_AUDIO));
+    // The caller's transceiver should have stopped after receiving the answer.
+    EXPECT_TRUE(caller()
+                    ->GetFirstTransceiverOfType(cricket::MEDIA_TYPE_AUDIO)
+                    ->stopped());
   }
 }
 
@@ -2531,9 +2527,7 @@ TEST_P(PeerConnectionIntegrationTest, AnswererRejectsVideoSection) {
     // Stopping the video RtpTransceiver will cause the media section to be
     // rejected in the answer.
     callee()->SetRemoteOfferHandler([this] {
-      callee()
-          ->GetFirstTransceiverOfType(cricket::MEDIA_TYPE_VIDEO)
-          ->StopInternal();
+      callee()->GetFirstTransceiverOfType(cricket::MEDIA_TYPE_VIDEO)->Stop();
     });
   }
   callee()->AddTrack(callee()->CreateLocalAudioTrack());
@@ -2552,10 +2546,10 @@ TEST_P(PeerConnectionIntegrationTest, AnswererRejectsVideoSection) {
   ASSERT_NE(nullptr, callee_video_content);
   EXPECT_TRUE(callee_video_content->rejected);
   if (sdp_semantics_ == SdpSemantics::kUnifiedPlan) {
-    // The caller's transceiver should have stopped after receiving the answer,
-    // and thus is no longer present.
-    EXPECT_EQ(nullptr,
-              caller()->GetFirstTransceiverOfType(cricket::MEDIA_TYPE_VIDEO));
+    // The caller's transceiver should have stopped after receiving the answer.
+    EXPECT_TRUE(caller()
+                    ->GetFirstTransceiverOfType(cricket::MEDIA_TYPE_VIDEO)
+                    ->stopped());
   }
 }
 
@@ -2579,7 +2573,7 @@ TEST_P(PeerConnectionIntegrationTest, AnswererRejectsAudioAndVideoSections) {
     callee()->SetRemoteOfferHandler([this] {
       // Stopping all transceivers will cause all media sections to be rejected.
       for (const auto& transceiver : callee()->pc()->GetTransceivers()) {
-        transceiver->StopInternal();
+        transceiver->Stop();
       }
     });
   }
@@ -2626,9 +2620,7 @@ TEST_P(PeerConnectionIntegrationTest, VideoRejectedInSubsequentOffer) {
           }
         });
   } else {
-    caller()
-        ->GetFirstTransceiverOfType(cricket::MEDIA_TYPE_VIDEO)
-        ->StopInternal();
+    caller()->GetFirstTransceiverOfType(cricket::MEDIA_TYPE_VIDEO)->Stop();
   }
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kMaxWaitForActivationMs);
@@ -2743,7 +2735,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
 
   // Add receive direction.
-  video_sender->SetDirectionWithError(RtpTransceiverDirection::kSendRecv);
+  video_sender->SetDirection(RtpTransceiverDirection::kSendRecv);
 
   rtc::scoped_refptr<webrtc::VideoTrackInterface> callee_track =
       callee()->CreateLocalVideoTrack();
@@ -4353,9 +4345,7 @@ TEST_P(PeerConnectionIntegrationTest,
     callee()->SetOfferAnswerOptions(options);
   } else {
     callee()->SetRemoteOfferHandler([this] {
-      callee()
-          ->GetFirstTransceiverOfType(cricket::MEDIA_TYPE_VIDEO)
-          ->StopInternal();
+      callee()->GetFirstTransceiverOfType(cricket::MEDIA_TYPE_VIDEO)->Stop();
     });
   }
   caller()->CreateAndSetAndSignalOffer();
@@ -4376,7 +4366,7 @@ TEST_P(PeerConnectionIntegrationTest,
     // The caller's transceiver is stopped, so we need to add another track.
     auto caller_transceiver =
         caller()->GetFirstTransceiverOfType(cricket::MEDIA_TYPE_VIDEO);
-    EXPECT_EQ(nullptr, caller_transceiver.get());
+    EXPECT_TRUE(caller_transceiver->stopped());
     caller()->AddVideoTrack();
   }
   callee()->AddVideoTrack();
@@ -4439,9 +4429,9 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   auto caller_video_sender = video_result.MoveValue()->sender();
   callee()->SetRemoteOfferHandler([this] {
     ASSERT_EQ(2u, callee()->pc()->GetTransceivers().size());
-    callee()->pc()->GetTransceivers()[0]->SetDirectionWithError(
+    callee()->pc()->GetTransceivers()[0]->SetDirection(
         RtpTransceiverDirection::kSendRecv);
-    callee()->pc()->GetTransceivers()[1]->SetDirectionWithError(
+    callee()->pc()->GetTransceivers()[1]->SetDirection(
         RtpTransceiverDirection::kSendRecv);
   });
   caller()->CreateAndSetAndSignalOffer();
@@ -5562,7 +5552,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
     ASSERT_TRUE(ExpectNewFrames(media_expectations));
   }
 
-  audio_transceiver->StopInternal();
+  audio_transceiver->Stop();
   caller()->pc()->AddTransceiver(caller()->CreateLocalVideoTrack());
 
   caller()->CreateAndSetAndSignalOffer();

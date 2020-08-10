@@ -25,23 +25,6 @@ RtpTransceiverInterface::fired_direction() const {
   return absl::nullopt;
 }
 
-bool RtpTransceiverInterface::stopping() const {
-  return false;
-}
-
-void RtpTransceiverInterface::Stop() {
-  StopInternal();
-}
-
-RTCError RtpTransceiverInterface::StopStandard() {
-  RTC_NOTREACHED() << "DEBUG: RtpTransceiverInterface::StopStandard called";
-  return RTCError::OK();
-}
-
-void RtpTransceiverInterface::StopInternal() {
-  RTC_NOTREACHED() << "DEBUG: RtpTransceiverInterface::StopInternal called";
-}
-
 RTCError RtpTransceiverInterface::SetCodecPreferences(
     rtc::ArrayView<RtpCodecCapability>) {
   RTC_NOTREACHED() << "Not implemented";
@@ -62,19 +45,6 @@ webrtc::RTCError RtpTransceiverInterface::SetOfferedRtpHeaderExtensions(
     rtc::ArrayView<const RtpHeaderExtensionCapability>
         header_extensions_to_offer) {
   return webrtc::RTCError(webrtc::RTCErrorType::UNSUPPORTED_OPERATION);
-}
-
-// TODO(bugs.webrtc.org/11839) Remove default implementations when clients
-// are updated.
-void RtpTransceiverInterface::SetDirection(
-    RtpTransceiverDirection new_direction) {
-  SetDirectionWithError(new_direction);
-}
-
-RTCError RtpTransceiverInterface::SetDirectionWithError(
-    RtpTransceiverDirection new_direction) {
-  RTC_NOTREACHED() << "Default implementation called";
-  return RTCError::OK();
 }
 
 }  // namespace webrtc

@@ -290,8 +290,8 @@ TEST_F(PeerConnectionMediaTestUnifiedPlan,
   // Stop both audio and video transceivers on the caller.
   auto transceivers = caller->pc()->GetTransceivers();
   ASSERT_EQ(2u, transceivers.size());
-  transceivers[0]->StopInternal();
-  transceivers[1]->StopInternal();
+  transceivers[0]->Stop();
+  transceivers[1]->Stop();
 
   ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
 
@@ -388,8 +388,8 @@ TEST_F(PeerConnectionMediaTestUnifiedPlan,
   // Stop both audio and video transceivers on the callee.
   auto transceivers = callee->pc()->GetTransceivers();
   ASSERT_EQ(2u, transceivers.size());
-  transceivers[0]->StopInternal();
-  transceivers[1]->StopInternal();
+  transceivers[0]->Stop();
+  transceivers[1]->Stop();
 
   ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
 

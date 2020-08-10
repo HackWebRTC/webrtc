@@ -370,25 +370,19 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan, SetDirectionCallsOnTrack) {
   auto callee = CreatePeerConnection();
 
   auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
-  EXPECT_TRUE(
-      transceiver->SetDirectionWithError(RtpTransceiverDirection::kInactive)
-          .ok());
+  transceiver->SetDirection(RtpTransceiverDirection::kInactive);
   ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
   EXPECT_EQ(0u, caller->observer()->on_track_transceivers_.size());
   EXPECT_EQ(0u, callee->observer()->on_track_transceivers_.size());
 
-  EXPECT_TRUE(
-      transceiver->SetDirectionWithError(RtpTransceiverDirection::kSendOnly)
-          .ok());
+  transceiver->SetDirection(RtpTransceiverDirection::kSendOnly);
   ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
   EXPECT_EQ(0u, caller->observer()->on_track_transceivers_.size());
   EXPECT_EQ(1u, callee->observer()->on_track_transceivers_.size());
 
   // If the direction changes but it is still receiving on the remote side, then
   // OnTrack should not be fired again.
-  EXPECT_TRUE(
-      transceiver->SetDirectionWithError(RtpTransceiverDirection::kSendRecv)
-          .ok());
+  transceiver->SetDirection(RtpTransceiverDirection::kSendRecv);
   ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
   EXPECT_EQ(0u, caller->observer()->on_track_transceivers_.size());
   EXPECT_EQ(1u, callee->observer()->on_track_transceivers_.size());
@@ -407,10 +401,8 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan, SetDirectionHoldCallsOnTrackTwice) {
   EXPECT_EQ(1u, callee->observer()->on_track_transceivers_.size());
 
   // Put the call on hold by no longer receiving the track.
-  EXPECT_TRUE(callee->pc()
-                  ->GetTransceivers()[0]
-                  ->SetDirectionWithError(RtpTransceiverDirection::kInactive)
-                  .ok());
+  callee->pc()->GetTransceivers()[0]->SetDirection(
+      RtpTransceiverDirection::kInactive);
 
   ASSERT_TRUE(callee->ExchangeOfferAnswerWith(caller.get()));
   EXPECT_EQ(0u, caller->observer()->on_track_transceivers_.size());
@@ -418,10 +410,8 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan, SetDirectionHoldCallsOnTrackTwice) {
 
   // Resume the call by changing the direction to recvonly. This should call
   // OnTrack again on the callee side.
-  EXPECT_TRUE(callee->pc()
-                  ->GetTransceivers()[0]
-                  ->SetDirectionWithError(RtpTransceiverDirection::kRecvOnly)
-                  .ok());
+  callee->pc()->GetTransceivers()[0]->SetDirection(
+      RtpTransceiverDirection::kRecvOnly);
 
   ASSERT_TRUE(callee->ExchangeOfferAnswerWith(caller.get()));
   EXPECT_EQ(0u, caller->observer()->on_track_transceivers_.size());
@@ -480,9 +470,7 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
   EXPECT_EQ(0u, callee->observer()->remove_track_events_.size());
 
   auto callee_transceiver = callee->pc()->GetTransceivers()[0];
-  EXPECT_TRUE(callee_transceiver
-                  ->SetDirectionWithError(RtpTransceiverDirection::kSendOnly)
-                  .ok());
+  callee_transceiver->SetDirection(RtpTransceiverDirection::kSendOnly);
 
   ASSERT_TRUE(callee->SetLocalDescription(callee->CreateAnswer()));
   EXPECT_EQ(1u, callee->observer()->add_track_events_.size());
@@ -1421,7 +1409,7 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
   ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
   caller->observer()->clear_negotiation_needed();
 
-  transceiver->SetDirectionWithError(RtpTransceiverDirection::kInactive);
+  transceiver->SetDirection(RtpTransceiverDirection::kInactive);
   EXPECT_TRUE(caller->observer()->negotiation_needed());
 }
 
@@ -1434,7 +1422,7 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
   auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
 
   caller->observer()->clear_negotiation_needed();
-  transceiver->SetDirectionWithError(transceiver->direction());
+  transceiver->SetDirection(transceiver->direction());
   EXPECT_FALSE(caller->observer()->negotiation_needed());
 }
 
@@ -1445,69 +1433,11 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
   auto caller = CreatePeerConnection();
 
   auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
-  transceiver->StopInternal();
+  transceiver->Stop();
 
   caller->observer()->clear_negotiation_needed();
-  transceiver->SetDirectionWithError(RtpTransceiverDirection::kInactive);
+  transceiver->SetDirection(RtpTransceiverDirection::kInactive);
   EXPECT_FALSE(caller->observer()->negotiation_needed());
-}
-
-// Test that currentDirection returnes "stopped" if the transceiver was stopped.
-TEST_F(PeerConnectionRtpTestUnifiedPlan,
-       CheckStoppedCurrentDirectionOnStoppedTransceiver) {
-  auto caller = CreatePeerConnection();
-
-  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
-  transceiver->StopInternal();
-
-  EXPECT_TRUE(transceiver->stopping());
-  EXPECT_TRUE(transceiver->stopped());
-  EXPECT_EQ(RtpTransceiverDirection::kStopped,
-            transceiver->current_direction());
-}
-
-// Test that InvalidState is thrown on a stopping transceiver.
-TEST_F(PeerConnectionRtpTestUnifiedPlan,
-       CheckForInvalidStateOnStoppingTransceiver) {
-  auto caller = CreatePeerConnection();
-
-  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
-  transceiver->StopStandard();
-
-  EXPECT_TRUE(transceiver->stopping());
-  EXPECT_FALSE(transceiver->stopped());
-  EXPECT_EQ(
-      RTCErrorType::INVALID_STATE,
-      transceiver->SetDirectionWithError(RtpTransceiverDirection::kInactive)
-          .type());
-}
-
-// Test that InvalidState is thrown on a stopped transceiver.
-TEST_F(PeerConnectionRtpTestUnifiedPlan,
-       CheckForInvalidStateOnStoppedTransceiver) {
-  auto caller = CreatePeerConnection();
-
-  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
-  transceiver->StopInternal();
-
-  EXPECT_TRUE(transceiver->stopping());
-  EXPECT_TRUE(transceiver->stopped());
-  EXPECT_EQ(
-      RTCErrorType::INVALID_STATE,
-      transceiver->SetDirectionWithError(RtpTransceiverDirection::kInactive)
-          .type());
-}
-
-// Test that TypeError is thrown if the direction is set to "stopped".
-TEST_F(PeerConnectionRtpTestUnifiedPlan,
-       CheckForTypeErrorForStoppedOnTransceiver) {
-  auto caller = CreatePeerConnection();
-
-  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
-  EXPECT_EQ(
-      RTCErrorType::INVALID_PARAMETER,
-      transceiver->SetDirectionWithError(RtpTransceiverDirection::kStopped)
-          .type());
 }
 
 // Test that AddTransceiver fails if trying to use unimplemented RTP encoding

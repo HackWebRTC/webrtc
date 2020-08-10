@@ -90,8 +90,8 @@
   }
 }
 
-- (void)stopInternal {
-  _nativeRtpTransceiver->StopInternal();
+- (void)stop {
+  _nativeRtpTransceiver->Stop();
 }
 
 - (NSString *)description {

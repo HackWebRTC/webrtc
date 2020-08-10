@@ -873,7 +873,7 @@ TEST_F(PeerConnectionBundleTestUnifiedPlan,
 
   // Stop all transceivers, causing all m= sections to be rejected.
   for (const auto& transceiver : callee->pc()->GetTransceivers()) {
-    transceiver->StopInternal();
+    transceiver->Stop();
   }
   EXPECT_TRUE(
       caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal()));
