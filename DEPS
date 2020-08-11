@@ -10,7 +10,7 @@ vars = {
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
-  'chromium_revision': '5246cdb214b31c12eebcc7146a755c13aba32a00',
+  'chromium_revision': 'c0ac7e513e4f7ece5f99154f08d39651333c55d4',
 
   # This can be overridden, e.g. with custom_vars, to download a nonstandard
   # Xcode version in build/mac_toolchain.py
@@ -24,7 +24,7 @@ deps = {
   'src/base':
     'https://chromium.googlesource.com/chromium/src/base@515567c27aa911fa692809b1e83a6338e34638c7',
   'src/build':
-    'https://chromium.googlesource.com/chromium/src/build@113076662015f18c72ca5cb5b03517fdf2e7d2a6',
+    'https://chromium.googlesource.com/chromium/src/build@47c5a94aa48b3cc37c5ae08d64b4d703a0ecd560',
   'src/buildtools':
     'https://chromium.googlesource.com/chromium/src/buildtools@b00ad0af636401e5eb4b5d0ab01b65164dca1914',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
@@ -33,13 +33,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': 'https://chromium.googlesource.com/chromium/src/ios@470280a6e70d7d5c79db8eb8292ff387c8ad46b5',
+    'url': 'https://chromium.googlesource.com/chromium/src/ios@1494bde86f1280ba4d01769a36cced87c050922f',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    'https://chromium.googlesource.com/chromium/src/testing@bc61ceeaf73c2e62fa0f97fd401e54a560076a0c',
+    'https://chromium.googlesource.com/chromium/src/testing@d2c7868556ffe36b0ba3e1a14b3ed21d7bfa32ac',
   'src/third_party':
-    'https://chromium.googlesource.com/chromium/src/third_party@981971d9297c6de5ba4cefffe0b4dd0664d2ac46',
+    'https://chromium.googlesource.com/chromium/src/third_party@f489138872d17d47495e1f3716f3de3f8237b4b5',
 
   'src/buildtools/linux64': {
     'packages': [
@@ -137,7 +137,7 @@ deps = {
   'src/third_party/colorama/src':
     'https://chromium.googlesource.com/external/colorama.git@799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
   'src/third_party/depot_tools':
-    'https://chromium.googlesource.com/chromium/tools/depot_tools.git@531d992f00bbd6861b45ebff44c73f66fa172d5f',
+    'https://chromium.googlesource.com/chromium/tools/depot_tools.git@97adc5795ed2d186d4e15eb5ede4e97bb1a0c6b1',
   'src/third_party/ffmpeg':
     'https://chromium.googlesource.com/chromium/third_party/ffmpeg.git@d2dd36c03501e995e8ce2d792d834392b2e62bfe',
   'src/third_party/findbugs': {
@@ -198,7 +198,7 @@ deps = {
   'src/third_party/libFuzzer/src':
     'https://chromium.googlesource.com/chromium/llvm-project/compiler-rt/lib/fuzzer.git@debe7d2d1982e540fbd6bd78604bf001753f9e74',
   'src/third_party/libjpeg_turbo':
-    'https://chromium.googlesource.com/chromium/deps/libjpeg_turbo.git@0241a1304fd183ee24fbdfe6891f18fdedea38f9',
+    'https://chromium.googlesource.com/chromium/deps/libjpeg_turbo.git@9d4f8005bc6c888e66b00fd00188531ee9bd3344',
   'src/third_party/libsrtp':
     'https://chromium.googlesource.com/chromium/deps/libsrtp.git@650611720ecc23e0e6b32b0e3100f8b4df91696c',
   'src/third_party/libaom/source/libaom':
@@ -208,7 +208,7 @@ deps = {
       'condition': 'checkout_android',
   },
   'src/third_party/perfetto':
-    'https://android.googlesource.com/platform/external/perfetto.git@01e0ccdc9b8b4697a343b8ef49f53fd489d79a41',
+    'https://android.googlesource.com/platform/external/perfetto.git@dc4568899168e48a2721fa971994386eda1f7e63',
   'src/third_party/libvpx/source/libvpx':
     'https://chromium.googlesource.com/webm/libvpx.git@a1cee8dc919df1980d802e1a9bce1259ec34cba8',
   'src/third_party/libyuv':
@@ -265,7 +265,7 @@ deps = {
     'condition': 'checkout_win',
   },
   'src/tools':
-    'https://chromium.googlesource.com/chromium/src/tools@0bfa1534d393ac1661649ec58fe8b4ab4f58b2bc',
+    'https://chromium.googlesource.com/chromium/src/tools@949cb0bf71f20724d5c0863d69b4cf83705008f3',
   'src/tools/swarming_client':
     'https://chromium.googlesource.com/infra/luci/client-py.git@4c095d04179dc725a300085ae21fe3b79900d072',
 
