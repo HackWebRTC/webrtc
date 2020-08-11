@@ -168,18 +168,6 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   // successful adaptation. Used to avoid RTC_LOG spam.
   std::map<Resource*, MitigationResult> previous_mitigation_results_
       RTC_GUARDED_BY(resource_adaptation_queue_);
-  // Prevents recursion.
-  //
-  // This is used to prevent triggering resource adaptation in the process of
-  // already handling resouce adaptation, since that could cause the same states
-  // to be modified in unexpected ways. Example:
-  //
-  // Resource::OnResourceUsageStateMeasured() ->
-  // ResourceAdaptationProcessor::OnResourceOveruse() ->
-  // Resource::OnAdaptationApplied() ->
-  // Resource::OnResourceUsageStateMeasured() ->
-  // ResourceAdaptationProcessor::OnResourceOveruse() // Boom, not allowed.
-  bool processing_in_progress_ RTC_GUARDED_BY(resource_adaptation_queue_);
 };
 
 }  // namespace webrtc

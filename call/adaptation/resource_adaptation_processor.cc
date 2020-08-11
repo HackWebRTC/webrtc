@@ -78,8 +78,7 @@ ResourceAdaptationProcessor::ResourceAdaptationProcessor(
       resources_(),
       stream_adapter_(stream_adapter),
       last_reported_source_restrictions_(),
-      previous_mitigation_results_(),
-      processing_in_progress_(false) {
+      previous_mitigation_results_() {
   RTC_DCHECK(stream_adapter_);
 }
 
@@ -244,12 +243,9 @@ ResourceAdaptationProcessor::MitigationResultAndLogMessage
 ResourceAdaptationProcessor::OnResourceUnderuse(
     rtc::scoped_refptr<Resource> reason_resource) {
   RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  RTC_DCHECK(!processing_in_progress_);
-  processing_in_progress_ = true;
   // How can this stream be adapted up?
   Adaptation adaptation = stream_adapter_->GetAdaptationUp(reason_resource);
   if (adaptation.status() != Adaptation::Status::kValid) {
-    processing_in_progress_ = false;
     rtc::StringBuilder message;
     message << "Not adapting up because VideoStreamAdapter returned "
             << Adaptation::StatusToString(adaptation.status());
@@ -271,7 +267,6 @@ ResourceAdaptationProcessor::OnResourceUnderuse(
     // adaptation.
     if (absl::c_find(most_limited_resources, reason_resource) ==
         most_limited_resources.end()) {
-      processing_in_progress_ = false;
       rtc::StringBuilder message;
       message << "Resource \"" << reason_resource->Name()
               << "\" was not the most limited resource.";
@@ -284,7 +279,6 @@ ResourceAdaptationProcessor::OnResourceUnderuse(
       // before the adaptation is applied.
       UpdateResourceLimitations(reason_resource, adaptation.restrictions(),
                                 adaptation.counters());
-      processing_in_progress_ = false;
       rtc::StringBuilder message;
       message << "Resource \"" << reason_resource->Name()
               << "\" was not the only most limited resource.";
@@ -294,7 +288,6 @@ ResourceAdaptationProcessor::OnResourceUnderuse(
   }
   // Apply adaptation.
   stream_adapter_->ApplyAdaptation(adaptation, reason_resource);
-  processing_in_progress_ = false;
   rtc::StringBuilder message;
   message << "Adapted up successfully. Unfiltered adaptations: "
           << stream_adapter_->adaptation_counters().ToString();
@@ -306,15 +299,12 @@ ResourceAdaptationProcessor::MitigationResultAndLogMessage
 ResourceAdaptationProcessor::OnResourceOveruse(
     rtc::scoped_refptr<Resource> reason_resource) {
   RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  RTC_DCHECK(!processing_in_progress_);
-  processing_in_progress_ = true;
   // How can this stream be adapted up?
   Adaptation adaptation = stream_adapter_->GetAdaptationDown();
   if (adaptation.min_pixel_limit_reached()) {
     encoder_stats_observer_->OnMinPixelLimitReached();
   }
   if (adaptation.status() != Adaptation::Status::kValid) {
-    processing_in_progress_ = false;
     rtc::StringBuilder message;
     message << "Not adapting down because VideoStreamAdapter returned "
             << Adaptation::StatusToString(adaptation.status());
@@ -325,7 +315,6 @@ ResourceAdaptationProcessor::OnResourceOveruse(
   UpdateResourceLimitations(reason_resource, adaptation.restrictions(),
                             adaptation.counters());
   stream_adapter_->ApplyAdaptation(adaptation, reason_resource);
-  processing_in_progress_ = false;
   rtc::StringBuilder message;
   message << "Adapted down successfully. Unfiltered adaptations: "
           << stream_adapter_->adaptation_counters().ToString();
