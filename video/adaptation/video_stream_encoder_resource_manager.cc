@@ -336,10 +336,12 @@ VideoStreamEncoderResourceManager::degradation_preference() const {
   return degradation_preference_;
 }
 
-void VideoStreamEncoderResourceManager::StartEncodeUsageResource() {
+void VideoStreamEncoderResourceManager::EnsureEncodeUsageResourceStarted() {
   RTC_DCHECK_RUN_ON(encoder_queue_);
-  RTC_DCHECK(!encode_usage_resource_->is_started());
   RTC_DCHECK(encoder_settings_.has_value());
+  if (encode_usage_resource_->is_started()) {
+    encode_usage_resource_->StopCheckForOveruse();
+  }
   encode_usage_resource_->StartCheckForOveruse(GetCpuOveruseOptions());
 }
 

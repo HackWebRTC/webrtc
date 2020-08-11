@@ -841,8 +841,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     // We may be able to change this to "EnsureStarted()" if it took care of
     // reconfiguring the QualityScaler as well. (ConfigureQualityScaler() is
     // invoked later in this method.)
-    stream_resource_manager_.StopManagedResources();
-    stream_resource_manager_.StartEncodeUsageResource();
+    stream_resource_manager_.EnsureEncodeUsageResourceStarted();
     pending_encoder_creation_ = false;
   }
 

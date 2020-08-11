@@ -89,9 +89,7 @@ class VideoStreamEncoderResourceManager
   void SetDegradationPreferences(DegradationPreference degradation_preference);
   DegradationPreference degradation_preference() const;
 
-  // Starts the encode usage resource. The quality scaler resource is
-  // automatically started on being configured.
-  void StartEncodeUsageResource();
+  void EnsureEncodeUsageResourceStarted();
   // Stops the encode usage and quality scaler resources if not already stopped.
   void StopManagedResources();
 
