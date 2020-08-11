@@ -223,8 +223,6 @@ void SimulcastTestFixtureImpl::DefaultSettings(
   RTC_CHECK(settings);
   memset(settings, 0, sizeof(VideoCodec));
   settings->codecType = codec_type;
-  // 96 to 127 dynamic payload types for video codecs
-  settings->plType = 120;
   settings->startBitrate = 300;
   settings->minBitrate = 30;
   settings->maxBitrate = 0;

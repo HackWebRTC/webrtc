@@ -76,6 +76,7 @@ class VCMDecoderDataBase {
   const VCMExtDecoderMapItem* FindExternalDecoderItem(
       uint8_t payload_type) const;
 
+  uint8_t current_payload_type_;  // Corresponding to receive_codec_.
   VideoCodec receive_codec_;
   std::unique_ptr<VCMGenericDecoder> ptr_decoder_;
   DecoderMap dec_map_;

@@ -72,9 +72,6 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
       config.content_type == VideoEncoderConfig::ContentType::kScreen &&
       config.legacy_conference_mode;
 
-  // TODO(nisse): The plType field should be deleted. Luckily, our
-  // callers don't need it.
-  video_codec.plType = 0;
   video_codec.numberOfSimulcastStreams =
       static_cast<unsigned char>(streams.size());
   video_codec.minBitrate = streams[0].min_bitrate_bps / 1000;

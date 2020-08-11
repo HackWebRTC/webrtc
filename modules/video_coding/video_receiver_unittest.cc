@@ -57,7 +57,6 @@ class TestVideoReceiver : public ::testing::Test {
     // Register decoder.
     receiver_.RegisterExternalDecoder(&decoder_, kUnusedPayloadType);
     webrtc::test::CodecSettings(kVideoCodecVP8, &settings_);
-    settings_.plType = kUnusedPayloadType;
     EXPECT_EQ(
         0, receiver_.RegisterReceiveCodec(kUnusedPayloadType, &settings_, 1));
 
