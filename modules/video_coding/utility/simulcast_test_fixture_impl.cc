@@ -75,8 +75,7 @@ class SimulcastTestFixtureImpl::TestEncodedImageCallback
   }
 
   Result OnEncodedImage(const EncodedImage& encoded_image,
-                        const CodecSpecificInfo* codec_specific_info,
-                        const RTPFragmentationHeader* fragmentation) override {
+                        const CodecSpecificInfo* codec_specific_info) override {
     bool is_vp8 = (codec_specific_info->codecType == kVideoCodecVP8);
     bool is_h264 = (codec_specific_info->codecType == kVideoCodecH264);
     // Only store the base layer.
@@ -352,7 +351,7 @@ void SimulcastTestFixtureImpl::ExpectStreams(
             AllOf(Field(&EncodedImage::_frameType, frame_type),
                   Field(&EncodedImage::_encodedWidth, kDefaultWidth / 4),
                   Field(&EncodedImage::_encodedHeight, kDefaultHeight / 4)),
-            _, _))
+            _))
         .Times(1)
         .WillRepeatedly(Return(
             EncodedImageCallback::Result(EncodedImageCallback::Result::OK, 0)));
@@ -364,7 +363,7 @@ void SimulcastTestFixtureImpl::ExpectStreams(
             AllOf(Field(&EncodedImage::_frameType, frame_type),
                   Field(&EncodedImage::_encodedWidth, kDefaultWidth / 2),
                   Field(&EncodedImage::_encodedHeight, kDefaultHeight / 2)),
-            _, _))
+            _))
         .Times(1)
         .WillRepeatedly(Return(
             EncodedImageCallback::Result(EncodedImageCallback::Result::OK, 0)));
@@ -375,7 +374,7 @@ void SimulcastTestFixtureImpl::ExpectStreams(
                     AllOf(Field(&EncodedImage::_frameType, frame_type),
                           Field(&EncodedImage::_encodedWidth, kDefaultWidth),
                           Field(&EncodedImage::_encodedHeight, kDefaultHeight)),
-                    _, _))
+                    _))
         .Times(1)
         .WillRepeatedly(Return(
             EncodedImageCallback::Result(EncodedImageCallback::Result::OK, 0)));
@@ -643,7 +642,7 @@ void SimulcastTestFixtureImpl::SwitchingToOneStream(int width, int height) {
                                  VideoFrameType::kVideoFrameKey),
                            Field(&EncodedImage::_encodedWidth, width),
                            Field(&EncodedImage::_encodedHeight, height)),
-                     _, _))
+                     _))
       .Times(1)
       .WillRepeatedly(Return(
           EncodedImageCallback::Result(EncodedImageCallback::Result::OK, 0)));
@@ -866,12 +865,11 @@ void SimulcastTestFixtureImpl::TestDecodeWidthHeightSet() {
   encoder_->RegisterEncodeCompleteCallback(&encoder_callback);
   decoder_->RegisterDecodeCompleteCallback(&decoder_callback);
 
-  EXPECT_CALL(encoder_callback, OnEncodedImage(_, _, _))
+  EXPECT_CALL(encoder_callback, OnEncodedImage(_, _))
       .Times(3)
       .WillRepeatedly(
           ::testing::Invoke([&](const EncodedImage& encoded_image,
-                                const CodecSpecificInfo* codec_specific_info,
-                                const RTPFragmentationHeader* fragmentation) {
+                                const CodecSpecificInfo* codec_specific_info) {
             EXPECT_EQ(encoded_image._frameType, VideoFrameType::kVideoFrameKey);
 
             size_t index = encoded_image.SpatialIndex().value_or(0);
