@@ -366,6 +366,7 @@ TEST(AudioSendStreamTest, ConfigToString) {
   config.rtp.c_name = kCName;
   config.min_bitrate_bps = 12000;
   config.max_bitrate_bps = 34000;
+  config.has_dscp = true;
   config.send_codec_spec =
       AudioSendStream::Config::SendCodecSpec(kIsacPayloadType, kIsacFormat);
   config.send_codec_spec->nack_enabled = true;
@@ -382,7 +383,8 @@ TEST(AudioSendStreamTest, ConfigToString) {
       "urn:ietf:params:rtp-hdrext:ssrc-audio-level, id: 2}], "
       "c_name: foo_name}, rtcp_report_interval_ms: 2500, "
       "send_transport: null, "
-      "min_bitrate_bps: 12000, max_bitrate_bps: 34000, "
+      "min_bitrate_bps: 12000, max_bitrate_bps: 34000, has "
+      "audio_network_adaptor_config: false, has_dscp: true, "
       "send_codec_spec: {nack_enabled: true, transport_cc_enabled: false, "
       "cng_payload_type: 42, red_payload_type: 43, payload_type: 103, "
       "format: {name: isac, clockrate_hz: 16000, num_channels: 1, "

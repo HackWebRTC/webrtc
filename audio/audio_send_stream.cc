@@ -638,11 +638,11 @@ bool AudioSendStream::SetupSendCodec(const Config& new_config) {
   if (new_config.audio_network_adaptor_config) {
     if (encoder->EnableAudioNetworkAdaptor(
             *new_config.audio_network_adaptor_config, event_log_)) {
-      RTC_DLOG(LS_INFO) << "Audio network adaptor enabled on SSRC "
-                        << new_config.rtp.ssrc;
+      RTC_LOG(LS_INFO) << "Audio network adaptor enabled on SSRC "
+                       << new_config.rtp.ssrc;
     } else {
-      RTC_DLOG(LS_INFO) << "Failed to enable Audio network adaptor on SSRC "
-                        << new_config.rtp.ssrc;
+      RTC_LOG(LS_INFO) << "Failed to enable Audio network adaptor on SSRC "
+                       << new_config.rtp.ssrc;
     }
   }
 
@@ -737,18 +737,18 @@ void AudioSendStream::ReconfigureANA(const Config& new_config) {
     channel_send_->CallEncoder([&](AudioEncoder* encoder) {
       if (encoder->EnableAudioNetworkAdaptor(
               *new_config.audio_network_adaptor_config, event_log_)) {
-        RTC_DLOG(LS_INFO) << "Audio network adaptor enabled on SSRC "
-                          << new_config.rtp.ssrc;
+        RTC_LOG(LS_INFO) << "Audio network adaptor enabled on SSRC "
+                         << new_config.rtp.ssrc;
       } else {
-        RTC_DLOG(LS_INFO) << "Failed to enable Audio network adaptor on SSRC "
-                          << new_config.rtp.ssrc;
+        RTC_LOG(LS_INFO) << "Failed to enable Audio network adaptor on SSRC "
+                         << new_config.rtp.ssrc;
       }
     });
   } else {
     channel_send_->CallEncoder(
         [&](AudioEncoder* encoder) { encoder->DisableAudioNetworkAdaptor(); });
-    RTC_DLOG(LS_INFO) << "Audio network adaptor disabled on SSRC "
-                      << new_config.rtp.ssrc;
+    RTC_LOG(LS_INFO) << "Audio network adaptor disabled on SSRC "
+                     << new_config.rtp.ssrc;
   }
 }
 
