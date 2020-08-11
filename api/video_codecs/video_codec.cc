@@ -68,7 +68,6 @@ bool SpatialLayer::operator==(const SpatialLayer& other) const {
 
 VideoCodec::VideoCodec()
     : codecType(kVideoCodecGeneric),
-      plType(0),
       width(0),
       height(0),
       startBitrate(0),
