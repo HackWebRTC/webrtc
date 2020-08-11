@@ -69,6 +69,8 @@ class RtpSenderInternal : public RtpSenderInterface {
   // If the specified list is empty, this is a no-op.
   virtual RTCError DisableEncodingLayers(
       const std::vector<std::string>& rid) = 0;
+
+  virtual void SetTransceiverAsStopped() = 0;
 };
 
 // Shared implementation for RtpSenderInternal interface.
@@ -152,6 +154,8 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   void SetEncoderToPacketizerFrameTransformer(
       rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) override;
 
+  void SetTransceiverAsStopped() override { is_transceiver_stopped_ = true; }
+
  protected:
   // If |set_streams_observer| is not null, it is invoked when SetStreams()
   // is called. |set_streams_observer| is not owned by this object. If not
@@ -180,6 +184,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   rtc::Thread* worker_thread_;
   uint32_t ssrc_ = 0;
   bool stopped_ = false;
+  bool is_transceiver_stopped_ = false;
   int attachment_id_ = 0;
   const std::string id_;
 

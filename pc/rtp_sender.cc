@@ -184,6 +184,15 @@ RTCError RtpSenderBase::SetParametersInternal(const RtpParameters& parameters) {
 
 RTCError RtpSenderBase::SetParameters(const RtpParameters& parameters) {
   TRACE_EVENT0("webrtc", "RtpSenderBase::SetParameters");
+  if (is_transceiver_stopped_) {
+    LOG_AND_RETURN_ERROR(
+        RTCErrorType::INVALID_STATE,
+        "Cannot set parameters on sender of a stopped transceiver.");
+  }
+  if (stopped_) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_STATE,
+                         "Cannot set parameters on a stopped sender.");
+  }
   if (stopped_) {
     LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_STATE,
                          "Cannot set parameters on a stopped sender.");
