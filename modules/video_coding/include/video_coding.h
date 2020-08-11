@@ -49,10 +49,6 @@ class VideoCodingModule : public Module {
   //
   // Return value      : VCM_OK, on success.
   //                     < 0,    on error.
-  // TODO(nisse): Method without explicit payload type is deprecated.
-  virtual int32_t RegisterReceiveCodec(const VideoCodec* receiveCodec,
-                                       int32_t numberOfCores) = 0;
-
   virtual int32_t RegisterReceiveCodec(uint8_t payload_type,
                                        const VideoCodec* receiveCodec,
                                        int32_t numberOfCores) = 0;
