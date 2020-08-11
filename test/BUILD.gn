@@ -422,7 +422,6 @@ if (rtc_include_tests) {
     ]
     absl_deps = [
       "//third_party/abseil-cpp/absl/flags:flag",
-      "//third_party/abseil-cpp/absl/flags:parse",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/strings:strings",
       "//third_party/abseil-cpp/absl/types:optional",
@@ -434,10 +433,15 @@ if (rtc_include_tests) {
     testonly = true
     sources = [ "test_main.cc" ]
 
-    deps = [ ":test_main_lib" ]
+    deps = [
+      ":test_main_lib",
+      ":test_support",
+    ]
+
     absl_deps = [
       "//third_party/abseil-cpp/absl/debugging:failure_signal_handler",
       "//third_party/abseil-cpp/absl/debugging:symbolize",
+      "//third_party/abseil-cpp/absl/flags:parse",
     ]
   }
 
