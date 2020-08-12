@@ -705,6 +705,7 @@ void AudioProcessingImpl::SetRuntimeSetting(RuntimeSetting setting) {
     case RuntimeSetting::Type::kCapturePreGain:
     case RuntimeSetting::Type::kCaptureCompressionGain:
     case RuntimeSetting::Type::kCaptureFixedPostGain:
+    case RuntimeSetting::Type::kCaptureOutputUsed:
       capture_runtime_settings_enqueuer_.Enqueue(setting);
       return;
     case RuntimeSetting::Type::kPlayoutVolumeChange:
@@ -865,6 +866,10 @@ void AudioProcessingImpl::HandleCaptureRuntimeSettings() {
       case RuntimeSetting::Type::kNotSpecified:
         RTC_NOTREACHED();
         break;
+      case RuntimeSetting::Type::kCaptureOutputUsed:
+        // TODO(b/154437967): Add support for reducing complexity when it is
+        // known that the capture output will not be used.
+        break;
     }
   }
 }
@@ -886,6 +891,7 @@ void AudioProcessingImpl::HandleRenderRuntimeSettings() {
       case RuntimeSetting::Type::kCapturePreGain:          // fall-through
       case RuntimeSetting::Type::kCaptureCompressionGain:  // fall-through
       case RuntimeSetting::Type::kCaptureFixedPostGain:    // fall-through
+      case RuntimeSetting::Type::kCaptureOutputUsed:       // fall-through
       case RuntimeSetting::Type::kNotSpecified:
         RTC_NOTREACHED();
         break;
