@@ -35,19 +35,6 @@ class FrameCountObserver {
 // Video specific types
 // ==================================================================
 
-// TODO(magjed): Move this and other H264 related classes out to their own file.
-namespace H264 {
-
-enum Profile {
-  kProfileConstrainedBaseline,
-  kProfileBaseline,
-  kProfileMain,
-  kProfileConstrainedHigh,
-  kProfileHigh,
-};
-
-}  // namespace H264
-
 struct SpatialLayer {
   bool operator==(const SpatialLayer& other) const;
   bool operator!=(const SpatialLayer& other) const { return !(*this == other); }

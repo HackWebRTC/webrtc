@@ -12,7 +12,6 @@
 
 #include <tuple>
 
-#include "common_types.h"  // NOLINT(build/include)
 #include "media/base/h264_profile_level_id.h"
 #include "media/base/vp9_profile.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
