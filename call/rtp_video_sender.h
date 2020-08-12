@@ -44,7 +44,6 @@
 namespace webrtc {
 
 class FrameEncryptorInterface;
-class RTPFragmentationHeader;
 class RtpTransportControllerSendInterface;
 
 namespace webrtc_internal_rtp_video_sender {
@@ -134,8 +133,7 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   // Returns 0 if the packet was routed / sent, -1 otherwise.
   EncodedImageCallback::Result OnEncodedImage(
       const EncodedImage& encoded_image,
-      const CodecSpecificInfo* codec_specific_info,
-      const RTPFragmentationHeader* fragmentation)
+      const CodecSpecificInfo* codec_specific_info)
       RTC_LOCKS_EXCLUDED(mutex_) override;
 
   void OnBitrateAllocationUpdated(const VideoBitrateAllocation& bitrate)
