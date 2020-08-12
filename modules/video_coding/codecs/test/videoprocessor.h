@@ -91,8 +91,7 @@ class VideoProcessor {
 
     Result OnEncodedImage(
         const webrtc::EncodedImage& encoded_image,
-        const webrtc::CodecSpecificInfo* codec_specific_info,
-        const webrtc::RTPFragmentationHeader* fragmentation) override {
+        const webrtc::CodecSpecificInfo* codec_specific_info) override {
       RTC_CHECK(codec_specific_info);
 
       // Post the callback to the right task queue, if needed.

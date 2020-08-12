@@ -232,8 +232,7 @@ VideoEncoder::EncoderInfo QualityAnalyzingVideoEncoder::GetEncoderInfo() const {
 //     pair - remove the front pair and got to the step 1.
 EncodedImageCallback::Result QualityAnalyzingVideoEncoder::OnEncodedImage(
     const EncodedImage& encoded_image,
-    const CodecSpecificInfo* codec_specific_info,
-    const RTPFragmentationHeader* fragmentation) {
+    const CodecSpecificInfo* codec_specific_info) {
   uint16_t frame_id;
   bool discard = false;
   uint32_t target_encode_bitrate = 0;
@@ -292,8 +291,7 @@ EncodedImageCallback::Result QualityAnalyzingVideoEncoder::OnEncodedImage(
   {
     MutexLock lock(&lock_);
     RTC_DCHECK(delegate_callback_);
-    return delegate_callback_->OnEncodedImage(image, codec_specific_info,
-                                              fragmentation);
+    return delegate_callback_->OnEncodedImage(image, codec_specific_info);
   }
 }
 

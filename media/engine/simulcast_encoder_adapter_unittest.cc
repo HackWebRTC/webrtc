@@ -251,7 +251,7 @@ class MockVideoEncoder : public VideoEncoder {
     image._encodedHeight = height;
     CodecSpecificInfo codec_specific_info;
     codec_specific_info.codecType = webrtc::kVideoCodecVP8;
-    callback_->OnEncodedImage(image, &codec_specific_info, nullptr);
+    callback_->OnEncodedImage(image, &codec_specific_info);
   }
 
   void set_supports_native_handle(bool enabled) {
@@ -422,8 +422,7 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
   }
 
   Result OnEncodedImage(const EncodedImage& encoded_image,
-                        const CodecSpecificInfo* codec_specific_info,
-                        const RTPFragmentationHeader* fragmentation) override {
+                        const CodecSpecificInfo* codec_specific_info) override {
     last_encoded_image_width_ = encoded_image._encodedWidth;
     last_encoded_image_height_ = encoded_image._encodedHeight;
     last_encoded_image_simulcast_index_ =

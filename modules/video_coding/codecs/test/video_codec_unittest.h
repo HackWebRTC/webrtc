@@ -42,8 +42,7 @@ class VideoCodecUnitTest : public ::testing::Test {
         : test_(test) {}
 
     Result OnEncodedImage(const EncodedImage& frame,
-                          const CodecSpecificInfo* codec_specific_info,
-                          const RTPFragmentationHeader* fragmentation);
+                          const CodecSpecificInfo* codec_specific_info);
 
    private:
     VideoCodecUnitTest* const test_;

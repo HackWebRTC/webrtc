@@ -35,8 +35,7 @@ const VideoEncoder::Capabilities kCapabilities(false);
 EncodedImageCallback::Result
 VideoCodecUnitTest::FakeEncodeCompleteCallback::OnEncodedImage(
     const EncodedImage& frame,
-    const CodecSpecificInfo* codec_specific_info,
-    const RTPFragmentationHeader* fragmentation) {
+    const CodecSpecificInfo* codec_specific_info) {
   MutexLock lock(&test_->encoded_frame_section_);
   test_->encoded_frames_.push_back(frame);
   RTC_DCHECK(codec_specific_info);

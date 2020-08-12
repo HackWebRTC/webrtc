@@ -68,8 +68,7 @@ class IvfFileWriterEncodedCallback : public EncodedImageCallback {
   ~IvfFileWriterEncodedCallback() { EXPECT_TRUE(file_writer_->Close()); }
 
   Result OnEncodedImage(const EncodedImage& encoded_image,
-                        const CodecSpecificInfo* codec_specific_info,
-                        const RTPFragmentationHeader* fragmentation) override {
+                        const CodecSpecificInfo* codec_specific_info) override {
     EXPECT_TRUE(file_writer_->WriteFrame(encoded_image, video_codec_type_));
 
     MutexLock lock(&lock_);

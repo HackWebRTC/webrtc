@@ -98,7 +98,6 @@ rtc_library("rtp_rtcp_format") {
   ]
 
   deps = [
-    "..:module_api",
     "..:module_api_public",
     "../../api:array_view",
     "../../api:function_view",
@@ -380,7 +379,6 @@ rtc_library("fec_test_helper") {
   deps = [
     ":rtp_rtcp",
     ":rtp_rtcp_format",
-    "..:module_api",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
   ]
@@ -522,7 +520,6 @@ if (rtc_include_tests) {
       ":rtcp_transceiver",
       ":rtp_rtcp",
       ":rtp_rtcp_format",
-      "..:module_api",
       "../..:webrtc_common",
       "../../api:array_view",
       "../../api:libjingle_peerconnection_api",

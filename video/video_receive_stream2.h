@@ -37,7 +37,6 @@
 namespace webrtc {
 
 class ProcessThread;
-class RTPFragmentationHeader;
 class RtpStreamReceiverInterface;
 class RtpStreamReceiverControllerInterface;
 class RtxReceiveStream;

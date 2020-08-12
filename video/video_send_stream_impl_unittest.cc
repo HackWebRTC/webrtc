@@ -82,9 +82,7 @@ class MockRtpVideoSender : public RtpVideoSenderInterface {
               (override));
   MOCK_METHOD(EncodedImageCallback::Result,
               OnEncodedImage,
-              (const EncodedImage&,
-               const CodecSpecificInfo*,
-               const RTPFragmentationHeader*),
+              (const EncodedImage&, const CodecSpecificInfo*),
               (override));
   MOCK_METHOD(void, OnTransportOverheadChanged, (size_t), (override));
   MOCK_METHOD(void,
@@ -609,7 +607,7 @@ TEST_F(VideoSendStreamImplTest, ForwardsVideoBitrateAllocationAfterTimeout) {
 
         EncodedImage encoded_image;
         CodecSpecificInfo codec_specific;
-        EXPECT_CALL(rtp_video_sender_, OnEncodedImage(_, _, _))
+        EXPECT_CALL(rtp_video_sender_, OnEncodedImage)
             .WillRepeatedly(Return(EncodedImageCallback::Result(
                 EncodedImageCallback::Result::OK)));
 
@@ -651,7 +649,7 @@ TEST_F(VideoSendStreamImplTest, ForwardsVideoBitrateAllocationAfterTimeout) {
           EXPECT_CALL(rtp_video_sender_, OnBitrateAllocationUpdated(alloc))
               .Times(0);
           static_cast<EncodedImageCallback*>(vss_impl.get())
-              ->OnEncodedImage(encoded_image, &codec_specific, nullptr);
+              ->OnEncodedImage(encoded_image, &codec_specific);
         }
 
         {
@@ -661,7 +659,7 @@ TEST_F(VideoSendStreamImplTest, ForwardsVideoBitrateAllocationAfterTimeout) {
           EXPECT_CALL(rtp_video_sender_, OnBitrateAllocationUpdated(alloc))
               .Times(1);
           static_cast<EncodedImageCallback*>(vss_impl.get())
-              ->OnEncodedImage(encoded_image, &codec_specific, nullptr);
+              ->OnEncodedImage(encoded_image, &codec_specific);
         }
 
         {
@@ -671,7 +669,7 @@ TEST_F(VideoSendStreamImplTest, ForwardsVideoBitrateAllocationAfterTimeout) {
           EXPECT_CALL(rtp_video_sender_, OnBitrateAllocationUpdated(alloc))
               .Times(0);
           static_cast<EncodedImageCallback*>(vss_impl.get())
-              ->OnEncodedImage(encoded_image, &codec_specific, nullptr);
+              ->OnEncodedImage(encoded_image, &codec_specific);
         }
 
         vss_impl->Stop();
@@ -804,7 +802,7 @@ TEST_F(VideoSendStreamImplTest, DisablesPaddingOnPausedEncoder) {
             .WillRepeatedly(Invoke(
                 [&](BitrateAllocatorObserver*) { padding_bitrate = 0; }));
 
-        EXPECT_CALL(rtp_video_sender_, OnEncodedImage(_, _, _))
+        EXPECT_CALL(rtp_video_sender_, OnEncodedImage)
             .WillRepeatedly(Return(EncodedImageCallback::Result(
                 EncodedImageCallback::Result::OK)));
         const bool kSuspend = false;
@@ -852,7 +850,7 @@ TEST_F(VideoSendStreamImplTest, DisablesPaddingOnPausedEncoder) {
         EncodedImage encoded_image;
         CodecSpecificInfo codec_specific;
         static_cast<EncodedImageCallback*>(vss_impl.get())
-            ->OnEncodedImage(encoded_image, &codec_specific, nullptr);
+            ->OnEncodedImage(encoded_image, &codec_specific);
         // Only after actual frame is encoded are we enabling the padding.
         EXPECT_GT(padding_bitrate, 0);
       },
@@ -1011,7 +1009,7 @@ TEST_F(VideoSendStreamImplTest, ConfiguresBitratesForSvc) {
                         Field(&MediaStreamAllocationConfig::enforce_min_bitrate,
                               !kSuspend))));
           static_cast<EncodedImageCallback*>(vss_impl.get())
-              ->OnEncodedImage(encoded_image, &codec_specific, nullptr);
+              ->OnEncodedImage(encoded_image, &codec_specific);
           ::testing::Mock::VerifyAndClearExpectations(&bitrate_allocator_);
 
           vss_impl->Stop();

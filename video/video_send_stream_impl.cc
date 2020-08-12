@@ -558,8 +558,7 @@ void VideoSendStreamImpl::OnEncoderConfigurationChanged(
 
 EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
     const EncodedImage& encoded_image,
-    const CodecSpecificInfo* codec_specific_info,
-    const RTPFragmentationHeader* fragmentation) {
+    const CodecSpecificInfo* codec_specific_info) {
   // Encoded is called on whatever thread the real encoder implementation run
   // on. In the case of hardware encoders, there might be several encoders
   // running in parallel on different threads.
@@ -582,8 +581,8 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
   }
 
   EncodedImageCallback::Result result(EncodedImageCallback::Result::OK);
-  result = rtp_video_sender_->OnEncodedImage(encoded_image, codec_specific_info,
-                                             fragmentation);
+  result =
+      rtp_video_sender_->OnEncodedImage(encoded_image, codec_specific_info);
   // Check if there's a throttled VideoBitrateAllocation that we should try
   // sending.
   rtc::WeakPtr<VideoSendStreamImpl> send_stream = weak_ptr_;

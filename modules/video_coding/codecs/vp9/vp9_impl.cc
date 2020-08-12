@@ -1525,15 +1525,8 @@ void VP9EncoderImpl::DeliverBufferedFrame(bool end_of_picture) {
 
     codec_specific_.codecSpecific.VP9.end_of_picture = end_of_picture;
 
-    // No data partitioning in VP9, so 1 partition only.
-    int part_idx = 0;
-    RTPFragmentationHeader frag_info;
-    frag_info.VerifyAndAllocateFragmentationHeader(1);
-    frag_info.fragmentationOffset[part_idx] = 0;
-    frag_info.fragmentationLength[part_idx] = encoded_image_.size();
-
-    encoded_complete_callback_->OnEncodedImage(encoded_image_, &codec_specific_,
-                                               &frag_info);
+    encoded_complete_callback_->OnEncodedImage(encoded_image_,
+                                               &codec_specific_);
 
     if (codec_.mode == VideoCodecMode::kScreensharing) {
       const uint8_t spatial_idx = encoded_image_.SpatialIndex().value_or(0);

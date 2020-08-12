@@ -1531,8 +1531,7 @@ void VideoStreamEncoder::OnLossNotification(
 
 EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
     const EncodedImage& encoded_image,
-    const CodecSpecificInfo* codec_specific_info,
-    const RTPFragmentationHeader* /*fragmentation*/) {
+    const CodecSpecificInfo* codec_specific_info) {
   TRACE_EVENT_INSTANT1("webrtc", "VCMEncodedFrameCallback::Encoded",
                        "timestamp", encoded_image.Timestamp());
   const size_t spatial_idx = encoded_image.SpatialIndex().value_or(0);
@@ -1608,7 +1607,7 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
   }
 
   EncodedImageCallback::Result result =
-      sink_->OnEncodedImage(image_copy, codec_specific_info, nullptr);
+      sink_->OnEncodedImage(image_copy, codec_specific_info);
 
   // We are only interested in propagating the meta-data about the image, not
   // encoded data itself, to the post encode function. Since we cannot be sure

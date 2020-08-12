@@ -17,7 +17,6 @@
 #include <utility>
 
 #include "api/video/encoded_image.h"
-#include "modules/include/module_common_types.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
@@ -59,10 +58,9 @@ int32_t ConfigurableFrameSizeEncoder::Encode(
   encodedImage._frameType = VideoFrameType::kVideoFrameKey;
   encodedImage.SetTimestamp(inputImage.timestamp());
   encodedImage.capture_time_ms_ = inputImage.render_time_ms();
-  RTPFragmentationHeader* fragmentation = NULL;
   CodecSpecificInfo specific{};
   specific.codecType = codec_type_;
-  callback_->OnEncodedImage(encodedImage, &specific, fragmentation);
+  callback_->OnEncodedImage(encodedImage, &specific);
   if (post_encode_callback_) {
     (*post_encode_callback_)();
   }

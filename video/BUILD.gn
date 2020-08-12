@@ -619,7 +619,6 @@ if (rtc_include_tests) {
       "../media:rtc_media_base",
       "../media:rtc_media_tests_utils",
       "../media:rtc_simulcast_encoder_adapter",
-      "../modules:module_api",
       "../modules:module_api_public",
       "../modules/pacing",
       "../modules/rtp_rtcp",

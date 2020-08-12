@@ -896,7 +896,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
 
     void InjectEncodedImage(const EncodedImage& image) {
       MutexLock lock(&local_mutex_);
-      encoded_image_callback_->OnEncodedImage(image, nullptr, nullptr);
+      encoded_image_callback_->OnEncodedImage(image, nullptr);
     }
 
     void SetEncodedImageData(
@@ -959,25 +959,17 @@ class VideoStreamEncoderTest : public ::testing::Test {
       return result;
     }
 
-    std::unique_ptr<RTPFragmentationHeader> EncodeHook(
-        EncodedImage* encoded_image,
-        CodecSpecificInfo* codec_specific) override {
+    CodecSpecificInfo EncodeHook(EncodedImage& encoded_image) override {
+      CodecSpecificInfo codec_specific;
       {
         MutexLock lock(&mutex_);
-        codec_specific->codecType = config_.codecType;
+        codec_specific.codecType = config_.codecType;
       }
       MutexLock lock(&local_mutex_);
       if (encoded_image_data_) {
-        encoded_image->SetEncodedData(encoded_image_data_);
-        if (codec_specific->codecType == kVideoCodecH264) {
-          auto fragmentation = std::make_unique<RTPFragmentationHeader>();
-          fragmentation->VerifyAndAllocateFragmentationHeader(1);
-          fragmentation->fragmentationOffset[0] = 4;
-          fragmentation->fragmentationLength[0] = encoded_image->size() - 4;
-          return fragmentation;
-        }
+        encoded_image.SetEncodedData(encoded_image_data_);
       }
-      return nullptr;
+      return codec_specific;
     }
 
     int32_t InitEncode(const VideoCodec* config,
@@ -1175,8 +1167,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
    private:
     Result OnEncodedImage(
         const EncodedImage& encoded_image,
-        const CodecSpecificInfo* codec_specific_info,
-        const RTPFragmentationHeader* /*fragmentation*/) override {
+        const CodecSpecificInfo* codec_specific_info) override {
       MutexLock lock(&mutex_);
       EXPECT_TRUE(expect_frames_);
       last_encoded_image_data_ = std::vector<uint8_t>(

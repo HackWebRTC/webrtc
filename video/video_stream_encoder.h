@@ -189,8 +189,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // Implements EncodedImageCallback.
   EncodedImageCallback::Result OnEncodedImage(
       const EncodedImage& encoded_image,
-      const CodecSpecificInfo* codec_specific_info,
-      const RTPFragmentationHeader* fragmentation) override;
+      const CodecSpecificInfo* codec_specific_info) override;
 
   void OnDroppedFrame(EncodedImageCallback::DropReason reason) override;
 

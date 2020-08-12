@@ -238,8 +238,7 @@ class QualityTestVideoEncoder : public VideoEncoder,
  private:
   // Implement EncodedImageCallback
   Result OnEncodedImage(const EncodedImage& encoded_image,
-                        const CodecSpecificInfo* codec_specific_info,
-                        const RTPFragmentationHeader* fragmentation) override {
+                        const CodecSpecificInfo* codec_specific_info) override {
     if (codec_specific_info) {
       int simulcast_index;
       if (codec_specific_info->codecType == kVideoCodecVP9) {
@@ -258,8 +257,7 @@ class QualityTestVideoEncoder : public VideoEncoder,
       }
     }
 
-    return callback_->OnEncodedImage(encoded_image, codec_specific_info,
-                                     fragmentation);
+    return callback_->OnEncodedImage(encoded_image, codec_specific_info);
   }
 
   void OnDroppedFrame(DropReason reason) override {

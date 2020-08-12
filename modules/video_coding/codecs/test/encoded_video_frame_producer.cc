@@ -33,10 +33,8 @@ class EncoderCallback : public EncodedImageCallback {
       : output_frames_(output_frames) {}
 
  private:
-  Result OnEncodedImage(
-      const EncodedImage& encoded_image,
-      const CodecSpecificInfo* codec_specific_info,
-      const RTPFragmentationHeader* /*fragmentation*/) override {
+  Result OnEncodedImage(const EncodedImage& encoded_image,
+                        const CodecSpecificInfo* codec_specific_info) override {
     output_frames_.push_back({encoded_image, *codec_specific_info});
     return Result(Result::Error::OK);
   }

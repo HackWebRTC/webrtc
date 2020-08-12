@@ -764,7 +764,6 @@ rtc_library("fake_video_codecs") {
     "../api/video:video_rtp_headers",
     "../api/video_codecs:video_codecs_api",
     "../api/video_codecs:vp8_temporal_layers_factory",
-    "../modules:module_api",
     "../modules/video_coding:codec_globals_headers",
     "../modules/video_coding:video_codec_interface",
     "../modules/video_coding:video_coding_utility",

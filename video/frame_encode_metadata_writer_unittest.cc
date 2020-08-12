@@ -40,8 +40,7 @@ class FakeEncodedImageCallback : public EncodedImageCallback {
  public:
   FakeEncodedImageCallback() : num_frames_dropped_(0) {}
   Result OnEncodedImage(const EncodedImage& encoded_image,
-                        const CodecSpecificInfo* codec_specific_info,
-                        const RTPFragmentationHeader* fragmentation) override {
+                        const CodecSpecificInfo* codec_specific_info) override {
     return Result(Result::OK);
   }
   void OnDroppedFrame(DropReason reason) override { ++num_frames_dropped_; }

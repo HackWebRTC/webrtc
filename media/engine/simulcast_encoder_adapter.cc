@@ -120,10 +120,9 @@ class AdapterEncodedImageCallback : public webrtc::EncodedImageCallback {
 
   EncodedImageCallback::Result OnEncodedImage(
       const webrtc::EncodedImage& encoded_image,
-      const webrtc::CodecSpecificInfo* codec_specific_info,
-      const webrtc::RTPFragmentationHeader* fragmentation) override {
+      const webrtc::CodecSpecificInfo* codec_specific_info) override {
     return adapter_->OnEncodedImage(stream_idx_, encoded_image,
-                                    codec_specific_info, fragmentation);
+                                    codec_specific_info);
   }
 
  private:
@@ -559,15 +558,14 @@ void SimulcastEncoderAdapter::OnLossNotification(
 EncodedImageCallback::Result SimulcastEncoderAdapter::OnEncodedImage(
     size_t stream_idx,
     const EncodedImage& encodedImage,
-    const CodecSpecificInfo* codecSpecificInfo,
-    const RTPFragmentationHeader* fragmentation) {
+    const CodecSpecificInfo* codecSpecificInfo) {
   EncodedImage stream_image(encodedImage);
   CodecSpecificInfo stream_codec_specific = *codecSpecificInfo;
 
   stream_image.SetSpatialIndex(stream_idx);
 
-  return encoded_complete_callback_->OnEncodedImage(
-      stream_image, &stream_codec_specific, fragmentation);
+  return encoded_complete_callback_->OnEncodedImage(stream_image,
+                                                    &stream_codec_specific);
 }
 
 void SimulcastEncoderAdapter::PopulateStreamCodec(
