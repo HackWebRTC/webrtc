@@ -12,9 +12,6 @@
 #define RTC_BASE_NETWORK_MONITOR_H_
 
 #include "rtc_base/network_constants.h"
-// TODO(deadbeef): Remove this include when downstream code stops using
-// NetworkMonitorFactory::SetFactory.
-#include "rtc_base/network_monitor_factory.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 
@@ -64,8 +61,7 @@ class NetworkBinderInterface {
  *
  * Memory consideration:
  * NetworkMonitor is owned by the caller (NetworkManager). The global network
- * monitor factory is owned by the factory itself but needs to be released from
- * the factory creator.
+ * monitor factory is owned by the PeerConnectionFactory.
  */
 // Generic network monitor interface. It starts and stops monitoring network
 // changes, and fires the SignalNetworksChanged event when networks change.

@@ -849,16 +849,11 @@ if (current_os == "linux" || is_android) {
     sources = [
       "native_api/base/init.cc",
       "native_api/base/init.h",
-      "native_api/base/network_monitor.h",
     ]
 
     deps = [
       ":base_jni",
       ":native_api_jni",
-
-      # TODO(deadbeef): Remove this once clients start depending on
-      # native_network_monitor directly.
-      ":native_api_network_monitor",
       "//rtc_base",
       "//rtc_base:checks",
     ]

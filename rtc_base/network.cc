@@ -845,15 +845,11 @@ void BasicNetworkManager::StopUpdating() {
 }
 
 void BasicNetworkManager::StartNetworkMonitor() {
-  NetworkMonitorFactory* factory = network_monitor_factory_;
-  if (factory == nullptr) {
-    factory = NetworkMonitorFactory::GetFactory();
-    if (factory == nullptr) {
-      return;
-    }
+  if (network_monitor_factory_ == nullptr) {
+    return;
   }
   if (!network_monitor_) {
-    network_monitor_.reset(factory->CreateNetworkMonitor());
+    network_monitor_.reset(network_monitor_factory_->CreateNetworkMonitor());
     if (!network_monitor_) {
       return;
     }
