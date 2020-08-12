@@ -544,6 +544,10 @@ void AecDumpBasedSimulator::HandleMessage(
         AudioProcessing::RuntimeSetting::CreatePlayoutAudioDeviceChange(
             {msg.playout_audio_device_change().id(),
              msg.playout_audio_device_change().max_volume()}));
+  } else if (msg.has_capture_output_used()) {
+    ap_->SetRuntimeSetting(
+        AudioProcessing::RuntimeSetting::CreateCaptureOutputUsedSetting(
+            msg.capture_output_used()));
   }
 }
 
