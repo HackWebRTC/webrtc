@@ -326,17 +326,16 @@ Adaptation VideoStreamAdapter::RestrictionsOrStateToAdaptation(
 }
 
 Adaptation VideoStreamAdapter::GetAdaptationUp(
-    const VideoStreamInputState& input_state,
-    rtc::scoped_refptr<Resource> resource) const {
+    const VideoStreamInputState& input_state) const {
   RestrictionsOrState step = GetAdaptationUpStep(input_state);
   // If an adaptation proposed, check with the constraints that it is ok.
   if (absl::holds_alternative<RestrictionsWithCounters>(step)) {
     RestrictionsWithCounters restrictions =
         absl::get<RestrictionsWithCounters>(step);
     for (const auto* constraint : adaptation_constraints_) {
-      if (!constraint->IsAdaptationUpAllowed(
-              input_state, current_restrictions_.restrictions,
-              restrictions.restrictions, resource)) {
+      if (!constraint->IsAdaptationUpAllowed(input_state,
+                                             current_restrictions_.restrictions,
+                                             restrictions.restrictions)) {
         RTC_LOG(INFO) << "Not adapting up because constraint \""
                       << constraint->Name() << "\" disallowed it";
         step = Adaptation::Status::kRejectedByConstraint;
@@ -346,13 +345,11 @@ Adaptation VideoStreamAdapter::GetAdaptationUp(
   return RestrictionsOrStateToAdaptation(step, input_state);
 }
 
-Adaptation VideoStreamAdapter::GetAdaptationUp(
-    rtc::scoped_refptr<Resource> resource) {
+Adaptation VideoStreamAdapter::GetAdaptationUp() {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
-  RTC_DCHECK(resource);
   VideoStreamInputState input_state = input_state_provider_->InputState();
   ++adaptation_validation_id_;
-  Adaptation adaptation = GetAdaptationUp(input_state, resource);
+  Adaptation adaptation = GetAdaptationUp(input_state);
   return adaptation;
 }
 

@@ -245,7 +245,7 @@ ResourceAdaptationProcessor::OnResourceUnderuse(
     rtc::scoped_refptr<Resource> reason_resource) {
   RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
   // How can this stream be adapted up?
-  Adaptation adaptation = stream_adapter_->GetAdaptationUp(reason_resource);
+  Adaptation adaptation = stream_adapter_->GetAdaptationUp();
   if (adaptation.status() != Adaptation::Status::kValid) {
     rtc::StringBuilder message;
     message << "Not adapting up because VideoStreamAdapter returned "

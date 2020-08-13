@@ -181,8 +181,7 @@ class VideoStreamEncoderResourceManager
     bool IsAdaptationUpAllowed(
         const VideoStreamInputState& input_state,
         const VideoSourceRestrictions& restrictions_before,
-        const VideoSourceRestrictions& restrictions_after,
-        rtc::scoped_refptr<Resource> reason_resource) const override;
+        const VideoSourceRestrictions& restrictions_after) const override;
 
    private:
     // The |manager_| must be alive as long as this resource is added to the
@@ -213,8 +212,7 @@ class VideoStreamEncoderResourceManager
     bool IsAdaptationUpAllowed(
         const VideoStreamInputState& input_state,
         const VideoSourceRestrictions& restrictions_before,
-        const VideoSourceRestrictions& restrictions_after,
-        rtc::scoped_refptr<Resource> reason_resource) const override;
+        const VideoSourceRestrictions& restrictions_after) const override;
 
    private:
     // The |manager_| must be alive as long as this resource is added to the

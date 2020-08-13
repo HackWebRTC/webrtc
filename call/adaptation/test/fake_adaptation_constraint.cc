@@ -17,7 +17,7 @@ namespace webrtc {
 FakeAdaptationConstraint::FakeAdaptationConstraint(std::string name)
     : name_(std::move(name)), is_adaptation_up_allowed_(true) {}
 
-FakeAdaptationConstraint::~FakeAdaptationConstraint() {}
+FakeAdaptationConstraint::~FakeAdaptationConstraint() = default;
 
 void FakeAdaptationConstraint::set_is_adaptation_up_allowed(
     bool is_adaptation_up_allowed) {
@@ -31,8 +31,7 @@ std::string FakeAdaptationConstraint::Name() const {
 bool FakeAdaptationConstraint::IsAdaptationUpAllowed(
     const VideoStreamInputState& input_state,
     const VideoSourceRestrictions& restrictions_before,
-    const VideoSourceRestrictions& restrictions_after,
-    rtc::scoped_refptr<Resource> reason_resource) const {
+    const VideoSourceRestrictions& restrictions_after) const {
   return is_adaptation_up_allowed_;
 }
 

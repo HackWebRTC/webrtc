@@ -167,20 +167,13 @@ void VideoStreamEncoderResourceManager::BitrateConstraint::
 }
 
 bool VideoStreamEncoderResourceManager::BitrateConstraint::
-    IsAdaptationUpAllowed(const VideoStreamInputState& input_state,
-                          const VideoSourceRestrictions& restrictions_before,
-                          const VideoSourceRestrictions& restrictions_after,
-                          rtc::scoped_refptr<Resource> reason_resource) const {
+    IsAdaptationUpAllowed(
+        const VideoStreamInputState& input_state,
+        const VideoSourceRestrictions& restrictions_before,
+        const VideoSourceRestrictions& restrictions_after) const {
   RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  VideoAdaptationReason reason =
-      manager_->GetReasonFromResource(reason_resource);
-  // If increasing resolution due to kQuality, make sure bitrate limits are not
-  // violated.
-  // TODO(https://crbug.com/webrtc/11771): Why are we allowing violating bitrate
-  // constraints if adapting due to CPU? Shouldn't this condition be checked
-  // regardless of reason?
-  if (reason == VideoAdaptationReason::kQuality &&
-      DidIncreaseResolution(restrictions_before, restrictions_after)) {
+  // Make sure bitrate limits are not violated.
+  if (DidIncreaseResolution(restrictions_before, restrictions_after)) {
     uint32_t bitrate_bps = encoder_target_bitrate_bps_.value_or(0);
     absl::optional<VideoEncoder::ResolutionBitrateLimits> bitrate_limits =
         encoder_settings_.has_value()
@@ -230,20 +223,14 @@ void VideoStreamEncoderResourceManager::BalancedConstraint::
 }
 
 bool VideoStreamEncoderResourceManager::BalancedConstraint::
-    IsAdaptationUpAllowed(const VideoStreamInputState& input_state,
-                          const VideoSourceRestrictions& restrictions_before,
-                          const VideoSourceRestrictions& restrictions_after,
-                          rtc::scoped_refptr<Resource> reason_resource) const {
+    IsAdaptationUpAllowed(
+        const VideoStreamInputState& input_state,
+        const VideoSourceRestrictions& restrictions_before,
+        const VideoSourceRestrictions& restrictions_after) const {
   RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  VideoAdaptationReason reason =
-      manager_->GetReasonFromResource(reason_resource);
   // Don't adapt if BalancedDegradationSettings applies and determines this will
   // exceed bitrate constraints.
-  // TODO(https://crbug.com/webrtc/11771): Why are we allowing violating
-  // balanced settings if adapting due CPU? Shouldn't this condition be checked
-  // regardless of reason?
-  if (reason == VideoAdaptationReason::kQuality &&
-      degradation_preference_provider_->degradation_preference() ==
+  if (degradation_preference_provider_->degradation_preference() ==
           DegradationPreference::BALANCED &&
       !manager_->balanced_settings_.CanAdaptUp(
           input_state.video_codec_type(),
@@ -251,8 +238,7 @@ bool VideoStreamEncoderResourceManager::BalancedConstraint::
           encoder_target_bitrate_bps_.value_or(0))) {
     return false;
   }
-  if (reason == VideoAdaptationReason::kQuality &&
-      DidIncreaseResolution(restrictions_before, restrictions_after) &&
+  if (DidIncreaseResolution(restrictions_before, restrictions_after) &&
       !manager_->balanced_settings_.CanAdaptUpResolution(
           input_state.video_codec_type(),
           input_state.frame_size_pixels().value(),

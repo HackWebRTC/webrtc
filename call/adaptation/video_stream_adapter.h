@@ -148,9 +148,7 @@ class VideoStreamAdapter {
 
   // Returns an adaptation that we are guaranteed to be able to apply, or a
   // status code indicating the reason why we cannot adapt.
-  // TODO(https://crbug.com/webrtc/11771) |resource| is needed by the
-  // AdaptationConstraint resources. Remove this parameter when it's removed.
-  Adaptation GetAdaptationUp(rtc::scoped_refptr<Resource> resource);
+  Adaptation GetAdaptationUp();
   Adaptation GetAdaptationDown();
   Adaptation GetAdaptationTo(const VideoAdaptationCounters& counters,
                              const VideoSourceRestrictions& restrictions);
@@ -194,10 +192,7 @@ class VideoStreamAdapter {
       const RestrictionsWithCounters& restrictions) const
       RTC_RUN_ON(&sequence_checker_);
 
-  // TODO(https://crbug.com/webrtc/11771) |resource| is needed by the
-  // AdaptationConstraint resources. Remove this parameter when it's removed.
-  Adaptation GetAdaptationUp(const VideoStreamInputState& input_state,
-                             rtc::scoped_refptr<Resource> resource) const
+  Adaptation GetAdaptationUp(const VideoStreamInputState& input_state) const
       RTC_RUN_ON(&sequence_checker_);
   Adaptation GetAdaptationDown(const VideoStreamInputState& input_state) const
       RTC_RUN_ON(&sequence_checker_);

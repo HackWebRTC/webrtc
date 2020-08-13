@@ -34,8 +34,7 @@ class AdaptationConstraint {
   virtual bool IsAdaptationUpAllowed(
       const VideoStreamInputState& input_state,
       const VideoSourceRestrictions& restrictions_before,
-      const VideoSourceRestrictions& restrictions_after,
-      rtc::scoped_refptr<Resource> reason_resource) const = 0;
+      const VideoSourceRestrictions& restrictions_after) const = 0;
 };
 
 }  // namespace webrtc
