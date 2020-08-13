@@ -10,6 +10,10 @@ import("../../webrtc.gni")
 
 rtc_library("video_adaptation") {
   sources = [
+    "balanced_constraint.cc",
+    "balanced_constraint.h",
+    "bitrate_constraint.cc",
+    "bitrate_constraint.h",
     "encode_usage_resource.cc",
     "encode_usage_resource.h",
     "overuse_frame_detector.cc",

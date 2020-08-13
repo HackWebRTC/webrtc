@@ -131,123 +131,6 @@ class VideoStreamEncoderResourceManager::InitialFrameDropper {
   int initial_framedrop_;
 };
 
-VideoStreamEncoderResourceManager::BitrateConstraint::BitrateConstraint(
-    VideoStreamEncoderResourceManager* manager)
-    : manager_(manager),
-      resource_adaptation_queue_(nullptr),
-      encoder_settings_(absl::nullopt),
-      encoder_target_bitrate_bps_(absl::nullopt) {}
-
-void VideoStreamEncoderResourceManager::BitrateConstraint::SetAdaptationQueue(
-    TaskQueueBase* resource_adaptation_queue) {
-  resource_adaptation_queue_ = resource_adaptation_queue;
-}
-
-void VideoStreamEncoderResourceManager::BitrateConstraint::
-    OnEncoderSettingsUpdated(absl::optional<EncoderSettings> encoder_settings) {
-  RTC_DCHECK_RUN_ON(manager_->encoder_queue_);
-  resource_adaptation_queue_->PostTask(
-      ToQueuedTask([this_ref = rtc::scoped_refptr<BitrateConstraint>(this),
-                    encoder_settings] {
-        RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue_);
-        this_ref->encoder_settings_ = std::move(encoder_settings);
-      }));
-}
-
-void VideoStreamEncoderResourceManager::BitrateConstraint::
-    OnEncoderTargetBitrateUpdated(
-        absl::optional<uint32_t> encoder_target_bitrate_bps) {
-  RTC_DCHECK_RUN_ON(manager_->encoder_queue_);
-  resource_adaptation_queue_->PostTask(
-      ToQueuedTask([this_ref = rtc::scoped_refptr<BitrateConstraint>(this),
-                    encoder_target_bitrate_bps] {
-        RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue_);
-        this_ref->encoder_target_bitrate_bps_ = encoder_target_bitrate_bps;
-      }));
-}
-
-bool VideoStreamEncoderResourceManager::BitrateConstraint::
-    IsAdaptationUpAllowed(
-        const VideoStreamInputState& input_state,
-        const VideoSourceRestrictions& restrictions_before,
-        const VideoSourceRestrictions& restrictions_after) const {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  // Make sure bitrate limits are not violated.
-  if (DidIncreaseResolution(restrictions_before, restrictions_after)) {
-    uint32_t bitrate_bps = encoder_target_bitrate_bps_.value_or(0);
-    absl::optional<VideoEncoder::ResolutionBitrateLimits> bitrate_limits =
-        encoder_settings_.has_value()
-            ? encoder_settings_->encoder_info()
-                  .GetEncoderBitrateLimitsForResolution(
-                      // Need some sort of expected resulting pixels to be used
-                      // instead of unrestricted.
-                      GetHigherResolutionThan(
-                          input_state.frame_size_pixels().value()))
-            : absl::nullopt;
-    if (bitrate_limits.has_value() && bitrate_bps != 0) {
-      RTC_DCHECK_GE(bitrate_limits->frame_size_pixels,
-                    input_state.frame_size_pixels().value());
-      return bitrate_bps >=
-             static_cast<uint32_t>(bitrate_limits->min_start_bitrate_bps);
-    }
-  }
-  return true;
-}
-
-VideoStreamEncoderResourceManager::BalancedConstraint::BalancedConstraint(
-    VideoStreamEncoderResourceManager* manager,
-    DegradationPreferenceProvider* degradation_preference_provider)
-    : manager_(manager),
-      resource_adaptation_queue_(nullptr),
-      encoder_target_bitrate_bps_(absl::nullopt),
-      degradation_preference_provider_(degradation_preference_provider) {
-  RTC_DCHECK(manager_);
-  RTC_DCHECK(degradation_preference_provider_);
-}
-
-void VideoStreamEncoderResourceManager::BalancedConstraint::SetAdaptationQueue(
-    TaskQueueBase* resource_adaptation_queue) {
-  resource_adaptation_queue_ = resource_adaptation_queue;
-}
-
-void VideoStreamEncoderResourceManager::BalancedConstraint::
-    OnEncoderTargetBitrateUpdated(
-        absl::optional<uint32_t> encoder_target_bitrate_bps) {
-  RTC_DCHECK_RUN_ON(manager_->encoder_queue_);
-  resource_adaptation_queue_->PostTask(
-      ToQueuedTask([this_ref = rtc::scoped_refptr<BalancedConstraint>(this),
-                    encoder_target_bitrate_bps] {
-        RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue_);
-        this_ref->encoder_target_bitrate_bps_ = encoder_target_bitrate_bps;
-      }));
-}
-
-bool VideoStreamEncoderResourceManager::BalancedConstraint::
-    IsAdaptationUpAllowed(
-        const VideoStreamInputState& input_state,
-        const VideoSourceRestrictions& restrictions_before,
-        const VideoSourceRestrictions& restrictions_after) const {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
-  // Don't adapt if BalancedDegradationSettings applies and determines this will
-  // exceed bitrate constraints.
-  if (degradation_preference_provider_->degradation_preference() ==
-          DegradationPreference::BALANCED &&
-      !manager_->balanced_settings_.CanAdaptUp(
-          input_state.video_codec_type(),
-          input_state.frame_size_pixels().value(),
-          encoder_target_bitrate_bps_.value_or(0))) {
-    return false;
-  }
-  if (DidIncreaseResolution(restrictions_before, restrictions_after) &&
-      !manager_->balanced_settings_.CanAdaptUpResolution(
-          input_state.video_codec_type(),
-          input_state.frame_size_pixels().value(),
-          encoder_target_bitrate_bps_.value_or(0))) {
-    return false;
-  }
-  return true;
-}
-
 VideoStreamEncoderResourceManager::VideoStreamEncoderResourceManager(
     VideoStreamInputStateProvider* input_state_provider,
     VideoStreamEncoderObserver* encoder_stats_observer,
@@ -256,9 +139,8 @@ VideoStreamEncoderResourceManager::VideoStreamEncoderResourceManager(
     std::unique_ptr<OveruseFrameDetector> overuse_detector,
     DegradationPreferenceProvider* degradation_preference_provider)
     : degradation_preference_provider_(degradation_preference_provider),
-      bitrate_constraint_(new rtc::RefCountedObject<BitrateConstraint>(this)),
+      bitrate_constraint_(new rtc::RefCountedObject<BitrateConstraint>()),
       balanced_constraint_(new rtc::RefCountedObject<BalancedConstraint>(
-          this,
           degradation_preference_provider_)),
       encode_usage_resource_(
           EncodeUsageResource::Create(std::move(overuse_detector))),
