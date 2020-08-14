@@ -739,6 +739,11 @@ void AudioSendStream::ReconfigureANA(const Config& new_config) {
               *new_config.audio_network_adaptor_config, event_log_)) {
         RTC_LOG(LS_INFO) << "Audio network adaptor enabled on SSRC "
                          << new_config.rtp.ssrc;
+        MutexLock lock(&overhead_per_packet_lock_);
+        size_t overhead = GetPerPacketOverheadBytes();
+        if (overhead > 0) {
+          encoder->OnReceivedOverhead(overhead);
+        }
       } else {
         RTC_LOG(LS_INFO) << "Failed to enable Audio network adaptor on SSRC "
                          << new_config.rtp.ssrc;
