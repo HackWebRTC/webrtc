@@ -92,7 +92,7 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
                             const std::vector<VideoFrameType>* frame_types) {
   unsigned char max_framerate;
   unsigned char num_simulcast_streams;
-  SimulcastStream simulcast_streams[kMaxSimulcastStreams];
+  SpatialLayer simulcast_streams[kMaxSimulcastStreams];
   EncodedImageCallback* callback;
   RateControlParameters rates;
   VideoCodecMode mode;
@@ -168,7 +168,7 @@ FakeEncoder::FrameInfo FakeEncoder::NextFrame(
     bool keyframe,
     uint8_t num_simulcast_streams,
     const VideoBitrateAllocation& target_bitrate,
-    SimulcastStream simulcast_streams[kMaxSimulcastStreams],
+    SpatialLayer simulcast_streams[kMaxSimulcastStreams],
     int framerate) {
   FrameInfo frame_info;
   frame_info.keyframe = keyframe;

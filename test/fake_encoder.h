@@ -80,7 +80,7 @@ class FakeEncoder : public VideoEncoder {
                       bool keyframe,
                       uint8_t num_simulcast_streams,
                       const VideoBitrateAllocation& target_bitrate,
-                      SimulcastStream simulcast_streams[kMaxSimulcastStreams],
+                      SpatialLayer simulcast_streams[kMaxSimulcastStreams],
                       int framerate) RTC_LOCKS_EXCLUDED(mutex_);
 
   // Called before the frame is passed to callback_->OnEncodedImage, to let

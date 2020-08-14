@@ -67,7 +67,7 @@ void ConfigureSimulcast(VideoCodec* codec_settings) {
       /* is_screenshare = */ false, true);
 
   for (size_t i = 0; i < streams.size(); ++i) {
-    SimulcastStream* ss = &codec_settings->simulcastStream[i];
+    SpatialLayer* ss = &codec_settings->simulcastStream[i];
     ss->width = static_cast<uint16_t>(streams[i].width);
     ss->height = static_cast<uint16_t>(streams[i].height);
     ss->numberOfTemporalLayers =
@@ -277,8 +277,7 @@ std::string VideoCodecTestFixtureImpl::Config::ToString() const {
   if (codec_settings.numberOfSimulcastStreams > 1) {
     for (int i = 0; i < codec_settings.numberOfSimulcastStreams; ++i) {
       ss << "\n\n--> codec_settings.simulcastStream[" << i << "]";
-      const SimulcastStream& simulcast_stream =
-          codec_settings.simulcastStream[i];
+      const SpatialLayer& simulcast_stream = codec_settings.simulcastStream[i];
       ss << "\nwidth: " << simulcast_stream.width;
       ss << "\nheight: " << simulcast_stream.height;
       ss << "\nnum_temporal_layers: "

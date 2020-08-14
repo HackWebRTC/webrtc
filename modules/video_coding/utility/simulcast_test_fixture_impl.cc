@@ -196,7 +196,7 @@ void ConfigureStream(int width,
                      int min_bitrate,
                      int target_bitrate,
                      float max_framerate,
-                     SimulcastStream* stream,
+                     SpatialLayer* stream,
                      int num_temporal_layers) {
   assert(stream);
   stream->width = width;

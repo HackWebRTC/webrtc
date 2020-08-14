@@ -56,16 +56,6 @@ bool VideoCodecH264::operator==(const VideoCodecH264& other) const {
           numberOfTemporalLayers == other.numberOfTemporalLayers);
 }
 
-bool SpatialLayer::operator==(const SpatialLayer& other) const {
-  return (width == other.width && height == other.height &&
-          maxFramerate == other.maxFramerate &&
-          numberOfTemporalLayers == other.numberOfTemporalLayers &&
-          maxBitrate == other.maxBitrate &&
-          targetBitrate == other.targetBitrate &&
-          minBitrate == other.minBitrate && qpMax == other.qpMax &&
-          active == other.active);
-}
-
 VideoCodec::VideoCodec()
     : codecType(kVideoCodecGeneric),
       width(0),

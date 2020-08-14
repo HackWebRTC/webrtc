@@ -17,6 +17,8 @@ rtc_library("video_codecs_api") {
   sources = [
     "sdp_video_format.cc",
     "sdp_video_format.h",
+    "spatial_layer.cc",
+    "spatial_layer.h",
     "video_codec.cc",
     "video_codec.h",
     "video_decoder.cc",

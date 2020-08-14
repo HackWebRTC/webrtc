@@ -103,8 +103,8 @@ int VerifyCodec(const webrtc::VideoCodec* inst) {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-bool StreamResolutionCompare(const webrtc::SimulcastStream& a,
-                             const webrtc::SimulcastStream& b) {
+bool StreamResolutionCompare(const webrtc::SpatialLayer& a,
+                             const webrtc::SpatialLayer& b) {
   return std::tie(a.height, a.width, a.maxBitrate, a.maxFramerate) <
          std::tie(b.height, b.width, b.maxBitrate, b.maxFramerate);
 }

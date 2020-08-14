@@ -31,29 +31,6 @@ class FrameCountObserver {
                                  uint32_t ssrc) = 0;
 };
 
-// ==================================================================
-// Video specific types
-// ==================================================================
-
-struct SpatialLayer {
-  bool operator==(const SpatialLayer& other) const;
-  bool operator!=(const SpatialLayer& other) const { return !(*this == other); }
-
-  unsigned short width;
-  unsigned short height;
-  float maxFramerate;  // fps.
-  unsigned char numberOfTemporalLayers;
-  unsigned int maxBitrate;     // kilobits/sec.
-  unsigned int targetBitrate;  // kilobits/sec.
-  unsigned int minBitrate;     // kilobits/sec.
-  unsigned int qpMax;          // minimum quality
-  bool active;                 // encoded and sent.
-};
-
-// Simulcast is when the same stream is encoded multiple times with different
-// settings such as resolution.
-typedef SpatialLayer SimulcastStream;
-
 // Minimum and maximum playout delay values from capture to render.
 // These are best effort values.
 //
