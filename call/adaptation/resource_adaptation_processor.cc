@@ -305,6 +305,13 @@ ResourceAdaptationProcessor::OnResourceOveruse(
   if (adaptation.min_pixel_limit_reached()) {
     encoder_stats_observer_->OnMinPixelLimitReached();
   }
+  if (adaptation.status() == Adaptation::Status::kLimitReached) {
+    // Add resource as most limited.
+    VideoStreamAdapter::RestrictionsWithCounters restrictions;
+    std::tie(std::ignore, restrictions) = FindMostLimitedResources();
+    UpdateResourceLimitations(reason_resource, restrictions.restrictions,
+                              restrictions.counters);
+  }
   if (adaptation.status() != Adaptation::Status::kValid) {
     rtc::StringBuilder message;
     message << "Not adapting down because VideoStreamAdapter returned "

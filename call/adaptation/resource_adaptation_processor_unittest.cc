@@ -709,4 +709,29 @@ TEST_F(ResourceAdaptationProcessorTest,
   resource_ = nullptr;
 }
 
+TEST_F(ResourceAdaptationProcessorTest,
+       ResourceOverusedAtLimitReachedWillShareMostLimited) {
+  video_stream_adapter_->SetDegradationPreference(
+      DegradationPreference::MAINTAIN_FRAMERATE);
+  SetInputStates(true, kDefaultFrameRate, kDefaultFrameSize);
+
+  bool has_reached_min_pixels = false;
+  ON_CALL(frame_rate_provider_, OnMinPixelLimitReached())
+      .WillByDefault(testing::Assign(&has_reached_min_pixels, true));
+
+  // Adapt 10 times, which should make us hit the limit.
+  for (int i = 0; i < 10; ++i) {
+    resource_->SetUsageState(ResourceUsageState::kOveruse);
+    RestrictSource(restrictions_listener_.restrictions());
+  }
+  EXPECT_TRUE(has_reached_min_pixels);
+  auto last_update_count = restrictions_listener_.restrictions_updated_count();
+  other_resource_->SetUsageState(ResourceUsageState::kOveruse);
+  // Now both |resource_| and |other_resource_| are most limited. Underuse of
+  // |resource_| will not adapt up.
+  resource_->SetUsageState(ResourceUsageState::kUnderuse);
+  EXPECT_EQ(last_update_count,
+            restrictions_listener_.restrictions_updated_count());
+}
+
 }  // namespace webrtc
