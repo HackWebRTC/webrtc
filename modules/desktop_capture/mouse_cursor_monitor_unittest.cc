@@ -52,9 +52,7 @@ class MouseCursorMonitorTest : public ::testing::Test,
 //
 // Disabled on Windows due to flake, see:
 // https://code.google.com/p/webrtc/issues/detail?id=3408
-// Disabled on Linux due to flake, see:
-// https://code.google.com/p/webrtc/issues/detail?id=3245
-#if !defined(WEBRTC_MAC) && !defined(WEBRTC_WIN) && !defined(WEBRTC_LINUX)
+#if !defined(WEBRTC_MAC) && !defined(WEBRTC_WIN)
 #define MAYBE(x) x
 #else
 #define MAYBE(x) DISABLED_##x
