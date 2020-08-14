@@ -86,6 +86,7 @@ class VideoStreamEncoderResourceManager::InitialFrameDropper {
 
   void SetTargetBitrate(DataRate target_bitrate, int64_t now_ms) {
     if (set_start_bitrate_ > DataRate::Zero() && !has_seen_first_bwe_drop_ &&
+        quality_scaler_resource_->is_started() &&
         quality_scaler_settings_.InitialBitrateIntervalMs() &&
         quality_scaler_settings_.InitialBitrateFactor()) {
       int64_t diff_ms = now_ms - set_start_bitrate_time_ms_;
