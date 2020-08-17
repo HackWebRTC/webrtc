@@ -341,10 +341,10 @@ VideoStreamEncoder::VideoStreamEncoder(
       encoder_switch_requested_(false),
       input_state_provider_(encoder_stats_observer),
       video_stream_adapter_(
-          std::make_unique<VideoStreamAdapter>(&input_state_provider_)),
+          std::make_unique<VideoStreamAdapter>(&input_state_provider_,
+                                               encoder_stats_observer)),
       resource_adaptation_processor_(
           std::make_unique<ResourceAdaptationProcessor>(
-              encoder_stats_observer,
               video_stream_adapter_.get())),
       degradation_preference_manager_(
           std::make_unique<DegradationPreferenceManager>()),

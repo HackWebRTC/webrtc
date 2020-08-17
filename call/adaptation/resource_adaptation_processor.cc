@@ -69,12 +69,10 @@ ResourceAdaptationProcessor::MitigationResultAndLogMessage::
     : result(result), message(std::move(message)) {}
 
 ResourceAdaptationProcessor::ResourceAdaptationProcessor(
-    VideoStreamEncoderObserver* encoder_stats_observer,
     VideoStreamAdapter* stream_adapter)
     : resource_adaptation_queue_(nullptr),
       resource_listener_delegate_(
           new rtc::RefCountedObject<ResourceListenerDelegate>(this)),
-      encoder_stats_observer_(encoder_stats_observer),
       resources_(),
       stream_adapter_(stream_adapter),
       last_reported_source_restrictions_(),
@@ -302,9 +300,6 @@ ResourceAdaptationProcessor::OnResourceOveruse(
   RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
   // How can this stream be adapted up?
   Adaptation adaptation = stream_adapter_->GetAdaptationDown();
-  if (adaptation.min_pixel_limit_reached()) {
-    encoder_stats_observer_->OnMinPixelLimitReached();
-  }
   if (adaptation.status() == Adaptation::Status::kLimitReached) {
     // Add resource as most limited.
     VideoStreamAdapter::RestrictionsWithCounters restrictions;

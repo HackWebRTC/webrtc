@@ -54,8 +54,7 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
                                     public VideoSourceRestrictionsListener,
                                     public ResourceListener {
  public:
-  ResourceAdaptationProcessor(
-      VideoStreamEncoderObserver* encoder_stats_observer,
+  explicit ResourceAdaptationProcessor(
       VideoStreamAdapter* video_stream_adapter);
   ~ResourceAdaptationProcessor() override;
 
@@ -147,8 +146,6 @@ class ResourceAdaptationProcessor : public ResourceAdaptationProcessorInterface,
   TaskQueueBase* resource_adaptation_queue_;
   rtc::scoped_refptr<ResourceListenerDelegate> resource_listener_delegate_;
   // Input and output.
-  VideoStreamEncoderObserver* const encoder_stats_observer_
-      RTC_GUARDED_BY(resource_adaptation_queue_);
   mutable Mutex resources_lock_;
   std::vector<rtc::scoped_refptr<Resource>> resources_
       RTC_GUARDED_BY(resources_lock_);
