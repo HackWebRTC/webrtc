@@ -219,10 +219,12 @@ public class MainActivity extends Activity implements OnVoipClientTaskCompleted 
   }
 
   private void showToast(String message) {
-    toast.cancel();
-    toast = Toast.makeText(this, message, Toast.LENGTH_SHORT);
-    toast.setGravity(Gravity.TOP, 0, 200);
-    toast.show();
+    if (toast != null) {
+      toast.cancel();
+      toast = Toast.makeText(this, message, Toast.LENGTH_SHORT);
+      toast.setGravity(Gravity.TOP, 0, 200);
+      toast.show();
+    }
   }
 
   @Override

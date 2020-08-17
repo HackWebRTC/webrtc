@@ -15,26 +15,15 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import java.util.ArrayList;
 import java.util.List;
+import org.webrtc.CalledByNative;
 
 public class VoipClient {
-  private static final String TAG = "VoipClient";
-
-  private final HandlerThread thread;
-  private final Handler handler;
-
   private long nativeClient;
   private OnVoipClientTaskCompleted listener;
 
   public VoipClient(Context applicationContext, OnVoipClientTaskCompleted listener) {
     this.listener = listener;
-    thread = new HandlerThread(TAG + "Thread");
-    thread.start();
-    handler = new Handler(thread.getLooper());
-
-    handler.post(() -> {
-      nativeClient = nativeCreateClient(applicationContext);
-      listener.onVoipClientInitializationCompleted(/* isSuccessful */ nativeClient != 0);
-    });
+    nativeClient = nativeCreateClient(applicationContext, this);
   }
 
   private boolean isInitialized() {
@@ -42,147 +31,161 @@ public class VoipClient {
   }
 
   public void getAndSetUpSupportedCodecs() {
-    handler.post(() -> {
-      if (isInitialized()) {
-        listener.onGetSupportedCodecsCompleted(nativeGetSupportedCodecs(nativeClient));
-      } else {
-        listener.onUninitializedVoipClient();
-      }
-    });
+    if (isInitialized()) {
+      nativeGetSupportedCodecs(nativeClient);
+    } else {
+      listener.onUninitializedVoipClient();
+    }
   }
 
   public void getAndSetUpLocalIPAddress() {
-    handler.post(() -> {
-      if (isInitialized()) {
-        listener.onGetLocalIPAddressCompleted(nativeGetLocalIPAddress(nativeClient));
-      } else {
-        listener.onUninitializedVoipClient();
-      }
-    });
+    if (isInitialized()) {
+      nativeGetLocalIPAddress(nativeClient);
+    } else {
+      listener.onUninitializedVoipClient();
+    }
   }
 
   public void setEncoder(String encoder) {
-    handler.post(() -> {
-      if (isInitialized()) {
-        nativeSetEncoder(nativeClient, encoder);
-      } else {
-        listener.onUninitializedVoipClient();
-      }
-    });
+    if (isInitialized()) {
+      nativeSetEncoder(nativeClient, encoder);
+    } else {
+      listener.onUninitializedVoipClient();
+    }
   }
 
   public void setDecoders(List<String> decoders) {
-    handler.post(() -> {
-      if (isInitialized()) {
-        nativeSetDecoders(nativeClient, decoders);
-      } else {
-        listener.onUninitializedVoipClient();
-      }
-    });
+    if (isInitialized()) {
+      nativeSetDecoders(nativeClient, decoders);
+    } else {
+      listener.onUninitializedVoipClient();
+    }
   }
 
   public void setLocalAddress(String ipAddress, int portNumber) {
-    handler.post(() -> {
-      if (isInitialized()) {
-        nativeSetLocalAddress(nativeClient, ipAddress, portNumber);
-      } else {
-        listener.onUninitializedVoipClient();
-      }
-    });
+    if (isInitialized()) {
+      nativeSetLocalAddress(nativeClient, ipAddress, portNumber);
+    } else {
+      listener.onUninitializedVoipClient();
+    }
   }
 
   public void setRemoteAddress(String ipAddress, int portNumber) {
-    handler.post(() -> {
-      if (isInitialized()) {
-        nativeSetRemoteAddress(nativeClient, ipAddress, portNumber);
-      } else {
-        listener.onUninitializedVoipClient();
-      }
-    });
+    if (isInitialized()) {
+      nativeSetRemoteAddress(nativeClient, ipAddress, portNumber);
+    } else {
+      listener.onUninitializedVoipClient();
+    }
   }
 
   public void startSession() {
-    handler.post(() -> {
-      if (isInitialized()) {
-        listener.onStartSessionCompleted(nativeStartSession(nativeClient));
-      } else {
-        listener.onUninitializedVoipClient();
-      }
-    });
+    if (isInitialized()) {
+      nativeStartSession(nativeClient);
+    } else {
+      listener.onUninitializedVoipClient();
+    }
   }
 
   public void stopSession() {
-    handler.post(() -> {
-      if (isInitialized()) {
-        listener.onStopSessionCompleted(nativeStopSession(nativeClient));
-      } else {
-        listener.onUninitializedVoipClient();
-      }
-    });
+    if (isInitialized()) {
+      nativeStopSession(nativeClient);
+    } else {
+      listener.onUninitializedVoipClient();
+    }
   }
 
   public void startSend() {
-    handler.post(() -> {
-      if (isInitialized()) {
-        listener.onStartSendCompleted(nativeStartSend(nativeClient));
-      } else {
-        listener.onUninitializedVoipClient();
-      }
-    });
+    if (isInitialized()) {
+      nativeStartSend(nativeClient);
+    } else {
+      listener.onUninitializedVoipClient();
+    }
   }
 
   public void stopSend() {
-    handler.post(() -> {
-      if (isInitialized()) {
-        listener.onStopSendCompleted(nativeStopSend(nativeClient));
-      } else {
-        listener.onUninitializedVoipClient();
-      }
-    });
+    if (isInitialized()) {
+      nativeStopSend(nativeClient);
+    } else {
+      listener.onUninitializedVoipClient();
+    }
   }
 
   public void startPlayout() {
-    handler.post(() -> {
-      if (isInitialized()) {
-        listener.onStartPlayoutCompleted(nativeStartPlayout(nativeClient));
-      } else {
-        listener.onUninitializedVoipClient();
-      }
-    });
+    if (isInitialized()) {
+      nativeStartPlayout(nativeClient);
+    } else {
+      listener.onUninitializedVoipClient();
+    }
   }
 
   public void stopPlayout() {
-    handler.post(() -> {
-      if (isInitialized()) {
-        listener.onStopPlayoutCompleted(nativeStopPlayout(nativeClient));
-      } else {
-        listener.onUninitializedVoipClient();
-      }
-    });
+    if (isInitialized()) {
+      nativeStopPlayout(nativeClient);
+    } else {
+      listener.onUninitializedVoipClient();
+    }
   }
 
   public void close() {
-    handler.post(() -> {
-      nativeDelete(nativeClient);
-      nativeClient = 0;
-    });
-    thread.quitSafely();
+    nativeDelete(nativeClient);
+    nativeClient = 0;
   }
 
-  private static native long nativeCreateClient(Context applicationContext);
-  private static native List<String> nativeGetSupportedCodecs(long nativeAndroidVoipClient);
-  private static native String nativeGetLocalIPAddress(long nativeAndroidVoipClient);
+  @CalledByNative
+  public void onGetLocalIPAddressCompleted(String localIPAddress) {
+    listener.onGetLocalIPAddressCompleted(localIPAddress);
+  }
+
+  @CalledByNative
+  public void onGetSupportedCodecsCompleted(List<String> supportedCodecs) {
+    listener.onGetSupportedCodecsCompleted(supportedCodecs);
+  }
+
+  @CalledByNative
+  public void onStartSessionCompleted(boolean isSuccessful) {
+    listener.onStartSessionCompleted(isSuccessful);
+  }
+
+  @CalledByNative
+  public void onStopSessionCompleted(boolean isSuccessful) {
+    listener.onStopSessionCompleted(isSuccessful);
+  }
+
+  @CalledByNative
+  public void onStartSendCompleted(boolean isSuccessful) {
+    listener.onStartSendCompleted(isSuccessful);
+  }
+
+  @CalledByNative
+  public void onStopSendCompleted(boolean isSuccessful) {
+    listener.onStopSendCompleted(isSuccessful);
+  }
+
+  @CalledByNative
+  public void onStartPlayoutCompleted(boolean isSuccessful) {
+    listener.onStartPlayoutCompleted(isSuccessful);
+  }
+
+  @CalledByNative
+  public void onStopPlayoutCompleted(boolean isSuccessful) {
+    listener.onStopPlayoutCompleted(isSuccessful);
+  }
+
+  private static native long nativeCreateClient(
+      Context applicationContext, VoipClient javaVoipClient);
+  private static native void nativeGetSupportedCodecs(long nativeAndroidVoipClient);
+  private static native void nativeGetLocalIPAddress(long nativeAndroidVoipClient);
   private static native void nativeSetEncoder(long nativeAndroidVoipClient, String encoder);
   private static native void nativeSetDecoders(long nativeAndroidVoipClient, List<String> decoders);
   private static native void nativeSetLocalAddress(
       long nativeAndroidVoipClient, String ipAddress, int portNumber);
   private static native void nativeSetRemoteAddress(
       long nativeAndroidVoipClient, String ipAddress, int portNumber);
-  private static native boolean nativeStartSession(long nativeAndroidVoipClient);
-  private static native boolean nativeStopSession(long nativeAndroidVoipClient);
-  private static native boolean nativeStartSend(long nativeAndroidVoipClient);
-  private static native boolean nativeStopSend(long nativeAndroidVoipClient);
-  private static native boolean nativeStartPlayout(long nativeAndroidVoipClient);
-  private static native boolean nativeStopPlayout(long nativeAndroidVoipClient);
+  private static native void nativeStartSession(long nativeAndroidVoipClient);
+  private static native void nativeStopSession(long nativeAndroidVoipClient);
+  private static native void nativeStartSend(long nativeAndroidVoipClient);
+  private static native void nativeStopSend(long nativeAndroidVoipClient);
+  private static native void nativeStartPlayout(long nativeAndroidVoipClient);
+  private static native void nativeStopPlayout(long nativeAndroidVoipClient);
   private static native void nativeDelete(long nativeAndroidVoipClient);
 }
