@@ -299,10 +299,6 @@ RtpTransceiverDirection RtpTransceiver::direction() const {
   return direction_;
 }
 
-void RtpTransceiver::SetDirection(RtpTransceiverDirection new_direction) {
-  SetDirectionWithError(new_direction);
-}
-
 RTCError RtpTransceiver::SetDirectionWithError(
     RtpTransceiverDirection new_direction) {
   if (unified_plan_ && stopping()) {

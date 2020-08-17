@@ -17,6 +17,8 @@
 #import "base/RTCLogging.h"
 #import "helpers/NSString+StdString.h"
 
+NSString *const kRTCRtpTransceiverErrorDomain = @"org.webrtc.RTCRtpTranceiver";
+
 @implementation RTC_OBJC_TYPE (RTCRtpTransceiverInit)
 
 @synthesize direction = _direction;
@@ -75,9 +77,18 @@
       rtpTransceiverDirectionFromNativeDirection:_nativeRtpTransceiver->direction()];
 }
 
-- (void)setDirection:(RTCRtpTransceiverDirection)direction {
-  _nativeRtpTransceiver->SetDirection(
+- (void)setDirection:(RTCRtpTransceiverDirection)direction error:(NSError **)error {
+  webrtc::RTCError nativeError = _nativeRtpTransceiver->SetDirectionWithError(
       [RTC_OBJC_TYPE(RTCRtpTransceiver) nativeRtpTransceiverDirectionFromDirection:direction]);
+
+  if (!nativeError.ok() && error) {
+    *error = [NSError errorWithDomain:kRTCRtpTransceiverErrorDomain
+                                 code:static_cast<int>(nativeError.type())
+                             userInfo:@{
+                               @"message" : [NSString stringWithCString:nativeError.message()
+                                                               encoding:NSUTF8StringEncoding]
+                             }];
+  }
 }
 
 - (BOOL)currentDirection:(RTCRtpTransceiverDirection *)currentDirectionOut {

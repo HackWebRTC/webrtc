@@ -189,7 +189,6 @@ class RtpTransceiver final
   bool stopped() const override;
   bool stopping() const override;
   RtpTransceiverDirection direction() const override;
-  void SetDirection(RtpTransceiverDirection new_direction) override;
   RTCError SetDirectionWithError(
       RtpTransceiverDirection new_direction) override;
   absl::optional<RtpTransceiverDirection> current_direction() const override;
@@ -248,7 +247,6 @@ PROXY_CONSTMETHOD0(rtc::scoped_refptr<RtpReceiverInterface>, receiver)
 PROXY_CONSTMETHOD0(bool, stopped)
 PROXY_CONSTMETHOD0(bool, stopping)
 PROXY_CONSTMETHOD0(RtpTransceiverDirection, direction)
-PROXY_METHOD1(void, SetDirection, RtpTransceiverDirection)
 PROXY_METHOD1(webrtc::RTCError, SetDirectionWithError, RtpTransceiverDirection)
 PROXY_CONSTMETHOD0(absl::optional<RtpTransceiverDirection>, current_direction)
 PROXY_CONSTMETHOD0(absl::optional<RtpTransceiverDirection>, fired_direction)
