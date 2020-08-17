@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 // List of features in x86.
-typedef enum { kSSE2, kSSE3 } CPUFeature;
+typedef enum { kSSE2, kSSE3, kAVX2 } CPUFeature;
 
 // List of features in ARM.
 enum {

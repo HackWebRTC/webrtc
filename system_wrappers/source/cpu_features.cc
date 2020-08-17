@@ -24,6 +24,22 @@ int GetCPUInfoNoASM(CPUFeature feature) {
 }
 
 #if defined(WEBRTC_ARCH_X86_FAMILY)
+
+#if defined(WEBRTC_ENABLE_AVX2)
+// xgetbv returns the value of an Intel Extended Control Register (XCR).
+// Currently only XCR0 is defined by Intel so |xcr| should always be zero.
+static uint64_t xgetbv(uint32_t xcr) {
+#if defined(_MSC_VER)
+  return _xgetbv(xcr);
+#else
+  uint32_t eax, edx;
+
+  __asm__ volatile("xgetbv" : "=a"(eax), "=d"(edx) : "c"(xcr));
+  return (static_cast<uint64_t>(edx) << 32) | eax;
+#endif  // _MSC_VER
+}
+#endif  // WEBRTC_ENABLE_AVX2
+
 #ifndef _MSC_VER
 // Intrinsic for "cpuid".
 #if defined(__pic__) && defined(__i386__)
@@ -41,7 +57,7 @@ static inline void __cpuid(int cpu_info[4], int info_type) {
   __asm__ volatile("cpuid\n"
                    : "=a"(cpu_info[0]), "=b"(cpu_info[1]), "=c"(cpu_info[2]),
                      "=d"(cpu_info[3])
-                   : "a"(info_type));
+                   : "a"(info_type), "c"(0));
 }
 #endif
 #endif  // _MSC_VER
@@ -58,6 +74,30 @@ static int GetCPUInfo(CPUFeature feature) {
   if (feature == kSSE3) {
     return 0 != (cpu_info[2] & 0x00000001);
   }
+#if defined(WEBRTC_ENABLE_AVX2)
+  if (feature == kAVX2) {
+    int cpu_info7[4];
+    __cpuid(cpu_info7, 0);
+    int num_ids = cpu_info7[0];
+    if (num_ids < 7) {
+      return 0;
+    }
+    // Interpret CPU feature information.
+    __cpuid(cpu_info7, 7);
+
+    // AVX instructions can be used when
+    //     a) AVX are supported by the CPU,
+    //     b) XSAVE is supported by the CPU,
+    //     c) XSAVE is enabled by the kernel.
+    // See http://software.intel.com/en-us/blogs/2011/04/14/is-avx-enabled
+    // AVX2 support needs (avx_support && (cpu_info7[1] & 0x00000020) != 0;).
+    return (cpu_info[2] & 0x10000000) != 0 &&
+           (cpu_info[2] & 0x04000000) != 0 /* XSAVE */ &&
+           (cpu_info[2] & 0x08000000) != 0 /* OSXSAVE */ &&
+           (xgetbv(0) & 0x00000006) == 6 /* XSAVE enabled by kernel */ &&
+           (cpu_info7[1] & 0x00000020) != 0;
+  }
+#endif  // WEBRTC_ENABLE_AVX2
   return 0;
 }
 #else
