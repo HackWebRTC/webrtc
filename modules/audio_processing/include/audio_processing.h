@@ -384,8 +384,7 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
       kCaptureFixedPostGain,
       kPlayoutVolumeChange,
       kCustomRenderProcessingRuntimeSetting,
-      kPlayoutAudioDeviceChange,
-      kCaptureOutputUsed
+      kPlayoutAudioDeviceChange
     };
 
     // Play-out audio device properties.
@@ -435,10 +434,6 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
       return {Type::kCustomRenderProcessingRuntimeSetting, payload};
     }
 
-    static RuntimeSetting CreateCaptureOutputUsedSetting(bool payload) {
-      return {Type::kCaptureOutputUsed, payload};
-    }
-
     Type type() const { return type_; }
     // Getters do not return a value but instead modify the argument to protect
     // from implicit casting.
@@ -449,10 +444,6 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
     void GetInt(int* value) const {
       RTC_DCHECK(value);
       *value = value_.int_value;
-    }
-    void GetBool(bool* value) const {
-      RTC_DCHECK(value);
-      *value = value_.bool_value;
     }
     void GetPlayoutAudioDeviceInfo(PlayoutAudioDeviceInfo* value) const {
       RTC_DCHECK(value);
@@ -472,7 +463,6 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
       U(PlayoutAudioDeviceInfo value) : playout_audio_device_info(value) {}
       float float_value;
       int int_value;
-      bool bool_value;
       PlayoutAudioDeviceInfo playout_audio_device_info;
     } value_;
   };
