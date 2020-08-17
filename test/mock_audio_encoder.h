@@ -48,10 +48,6 @@ class MockAudioEncoder : public AudioEncoder {
               OnReceivedUplinkPacketLossFraction,
               (float uplink_packet_loss_fraction),
               (override));
-  MOCK_METHOD(void,
-              OnReceivedOverhead,
-              (size_t overhead_bytes_per_packet),
-              (override));
 
   MOCK_METHOD(bool,
               EnableAudioNetworkAdaptor,
