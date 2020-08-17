@@ -40,7 +40,6 @@
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_queue.h"
-#include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
 #include "video/adaptation/balanced_constraint.h"
 #include "video/adaptation/bitrate_constraint.h"
@@ -118,10 +117,12 @@ class VideoStreamEncoderResourceManager
 
   // Resources need to be mapped to an AdaptReason (kCpu or kQuality) in order
   // to update legacy getStats().
-  void AddResource(rtc::scoped_refptr<Resource> resource,
-                   VideoAdaptationReason reason);
-  void RemoveResource(rtc::scoped_refptr<Resource> resource);
+  void MapResourceToReason(rtc::scoped_refptr<Resource> resource,
+                           VideoAdaptationReason reason);
+  std::vector<rtc::scoped_refptr<Resource>> MappedResources() const;
   std::vector<AdaptationConstraint*> AdaptationConstraints() const;
+  rtc::scoped_refptr<QualityScalerResource>
+  quality_scaler_resource_for_testing();
   // If true, the VideoStreamEncoder should eexecute its logic to maybe drop
   // frames baseed on size and bitrate.
   bool DropInitialFrames() const;
@@ -174,7 +175,8 @@ class VideoStreamEncoderResourceManager
   rtc::TaskQueue* resource_adaptation_queue_;
   VideoStreamInputStateProvider* const input_state_provider_
       RTC_GUARDED_BY(encoder_queue_);
-  ResourceAdaptationProcessorInterface* adaptation_processor_;
+  ResourceAdaptationProcessorInterface* adaptation_processor_
+      RTC_GUARDED_BY(resource_adaptation_queue_);
   VideoStreamAdapter* stream_adapter_
       RTC_GUARDED_BY(resource_adaptation_queue_);
   // Thread-safe.
@@ -199,11 +201,19 @@ class VideoStreamEncoderResourceManager
   absl::optional<EncoderSettings> encoder_settings_
       RTC_GUARDED_BY(encoder_queue_);
 
-  mutable Mutex resource_lock_;
   // Ties a resource to a reason for statistical reporting. This AdaptReason is
   // also used by this module to make decisions about how to adapt up/down.
-  std::map<rtc::scoped_refptr<Resource>, VideoAdaptationReason> resources_
-      RTC_GUARDED_BY(&resource_lock_);
+  struct ResourceAndReason {
+    ResourceAndReason(rtc::scoped_refptr<Resource> resource,
+                      VideoAdaptationReason reason)
+        : resource(resource), reason(reason) {}
+    virtual ~ResourceAndReason() = default;
+
+    const rtc::scoped_refptr<Resource> resource;
+    const VideoAdaptationReason reason;
+  };
+  mutable Mutex resource_lock_;
+  std::vector<ResourceAndReason> resources_ RTC_GUARDED_BY(&resource_lock_);
 };
 
 }  // namespace webrtc
