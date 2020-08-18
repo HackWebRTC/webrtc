@@ -13,6 +13,7 @@ rtc_source_set("voip_api") {
   sources = [
     "voip_base.h",
     "voip_codec.h",
+    "voip_dtmf.h",
     "voip_engine.h",
     "voip_network.h",
   ]

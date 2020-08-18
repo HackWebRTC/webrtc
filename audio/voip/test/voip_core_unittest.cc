@@ -24,6 +24,9 @@ using ::testing::NiceMock;
 using ::testing::Return;
 
 constexpr int kPcmuPayload = 0;
+constexpr int kPcmuSampleRateHz = 8000;
+constexpr int kDtmfEventDurationMs = 1000;
+constexpr DtmfEvent kDtmfEventCode = DtmfEvent::kDigitZero;
 
 class VoipCoreTest : public ::testing::Test {
  public:
@@ -68,6 +71,12 @@ TEST_F(VoipCoreTest, BasicVoipCoreOperation) {
   EXPECT_TRUE(voip_core_->StartSend(*channel));
   EXPECT_TRUE(voip_core_->StartPlayout(*channel));
 
+  voip_core_->RegisterTelephoneEventType(*channel, kPcmuPayload,
+                                         kPcmuSampleRateHz);
+
+  EXPECT_TRUE(voip_core_->SendDtmfEvent(*channel, kDtmfEventCode,
+                                        kDtmfEventDurationMs));
+
   // Program mock as operational that is ready to be stopped.
   EXPECT_CALL(*audio_device_, Recording()).WillOnce(Return(true));
   EXPECT_CALL(*audio_device_, Playing()).WillOnce(Return(true));
@@ -91,9 +100,52 @@ TEST_F(VoipCoreTest, ExpectFailToUseReleasedChannelId) {
   // These should be no-op.
   voip_core_->SetSendCodec(*channel, kPcmuPayload, kPcmuFormat);
   voip_core_->SetReceiveCodecs(*channel, {{kPcmuPayload, kPcmuFormat}});
+  voip_core_->RegisterTelephoneEventType(*channel, kPcmuPayload,
+                                         kPcmuSampleRateHz);
 
   EXPECT_FALSE(voip_core_->StartSend(*channel));
   EXPECT_FALSE(voip_core_->StartPlayout(*channel));
+  EXPECT_FALSE(voip_core_->SendDtmfEvent(*channel, kDtmfEventCode,
+                                         kDtmfEventDurationMs));
+}
+
+TEST_F(VoipCoreTest, SendDtmfEventWithoutRegistering) {
+  // Program mock as non-operational and ready to start send.
+  EXPECT_CALL(*audio_device_, Recording()).WillOnce(Return(false));
+  EXPECT_CALL(*audio_device_, InitRecording()).WillOnce(Return(0));
+  EXPECT_CALL(*audio_device_, StartRecording()).WillOnce(Return(0));
+
+  auto channel = voip_core_->CreateChannel(&transport_, 0xdeadc0de);
+  EXPECT_TRUE(channel);
+
+  voip_core_->SetSendCodec(*channel, kPcmuPayload, kPcmuFormat);
+
+  EXPECT_TRUE(voip_core_->StartSend(*channel));
+  // Send Dtmf event without registering beforehand, thus payload
+  // type is not set and false is expected.
+  EXPECT_FALSE(voip_core_->SendDtmfEvent(*channel, kDtmfEventCode,
+                                         kDtmfEventDurationMs));
+
+  // Program mock as sending and is ready to be stopped.
+  EXPECT_CALL(*audio_device_, Recording()).WillOnce(Return(true));
+  EXPECT_CALL(*audio_device_, StopRecording()).WillOnce(Return(0));
+
+  EXPECT_TRUE(voip_core_->StopSend(*channel));
+  voip_core_->ReleaseChannel(*channel);
+}
+
+TEST_F(VoipCoreTest, SendDtmfEventWithoutStartSend) {
+  auto channel = voip_core_->CreateChannel(&transport_, 0xdeadc0de);
+  EXPECT_TRUE(channel);
+
+  voip_core_->RegisterTelephoneEventType(*channel, kPcmuPayload,
+                                         kPcmuSampleRateHz);
+  // Send Dtmf event without calling StartSend beforehand, thus
+  // Dtmf events cannot be sent and false is expected.
+  EXPECT_FALSE(voip_core_->SendDtmfEvent(*channel, kDtmfEventCode,
+                                         kDtmfEventDurationMs));
+
+  voip_core_->ReleaseChannel(*channel);
 }
 
 TEST_F(VoipCoreTest, StartSendAndPlayoutWithoutSettingCodec) {

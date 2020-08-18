@@ -23,6 +23,7 @@
 #include "api/task_queue/task_queue_factory.h"
 #include "api/voip/voip_base.h"
 #include "api/voip/voip_codec.h"
+#include "api/voip/voip_dtmf.h"
 #include "api/voip/voip_engine.h"
 #include "api/voip/voip_network.h"
 #include "audio/audio_transport_impl.h"
@@ -45,7 +46,8 @@ namespace webrtc {
 class VoipCore : public VoipEngine,
                  public VoipBase,
                  public VoipNetwork,
-                 public VoipCodec {
+                 public VoipCodec,
+                 public VoipDtmf {
  public:
   ~VoipCore() override = default;
 
@@ -63,6 +65,7 @@ class VoipCore : public VoipEngine,
   VoipBase& Base() override { return *this; }
   VoipNetwork& Network() override { return *this; }
   VoipCodec& Codec() override { return *this; }
+  VoipDtmf& Dtmf() override { return *this; }
 
   // Implements VoipBase interfaces.
   absl::optional<ChannelId> CreateChannel(
@@ -87,6 +90,14 @@ class VoipCore : public VoipEngine,
   void SetReceiveCodecs(
       ChannelId channel,
       const std::map<int, SdpAudioFormat>& decoder_specs) override;
+
+  // Implements VoipDtmf interfaces.
+  void RegisterTelephoneEventType(ChannelId channel,
+                                  int rtp_payload_type,
+                                  int sample_rate_hz) override;
+  bool SendDtmfEvent(ChannelId channel,
+                     DtmfEvent dtmf_event,
+                     int duration_ms) override;
 
  private:
   // Fetches the corresponding AudioChannel assigned with given |channel|.

@@ -340,4 +340,24 @@ void VoipCore::SetReceiveCodecs(
   }
 }
 
+void VoipCore::RegisterTelephoneEventType(ChannelId channel,
+                                          int rtp_payload_type,
+                                          int sample_rate_hz) {
+  // Failure to locate channel is logged internally in GetChannel.
+  if (auto audio_channel = GetChannel(channel)) {
+    audio_channel->RegisterTelephoneEventType(rtp_payload_type, sample_rate_hz);
+  }
+}
+
+bool VoipCore::SendDtmfEvent(ChannelId channel,
+                             DtmfEvent dtmf_event,
+                             int duration_ms) {
+  // Failure to locate channel is logged internally in GetChannel.
+  if (auto audio_channel = GetChannel(channel)) {
+    return audio_channel->SendTelephoneEvent(static_cast<int>(dtmf_event),
+                                             duration_ms);
+  }
+  return false;
+}
+
 }  // namespace webrtc

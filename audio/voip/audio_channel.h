@@ -63,6 +63,12 @@ class AudioChannel : public rtc::RefCountInterface {
   absl::optional<SdpAudioFormat> GetEncoderFormat() const {
     return egress_->GetEncoderFormat();
   }
+  void RegisterTelephoneEventType(int rtp_payload_type, int sample_rate_hz) {
+    egress_->RegisterTelephoneEventType(rtp_payload_type, sample_rate_hz);
+  }
+  bool SendTelephoneEvent(int dtmf_event, int duration_ms) {
+    return egress_->SendTelephoneEvent(dtmf_event, duration_ms);
+  }
 
   // APIs relayed to AudioIngress.
   bool IsPlaying() const { return ingress_->IsPlaying(); }
