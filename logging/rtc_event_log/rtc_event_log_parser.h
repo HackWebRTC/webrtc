@@ -612,7 +612,8 @@ class ParsedRtcEventLog {
   }
 
   // Media
-  const std::vector<LoggedFrameDecoded>& decoded_frames() const {
+  const std::map<uint32_t, std::vector<LoggedFrameDecoded>>& decoded_frames()
+      const {
     return decoded_frames_;
   }
 
@@ -855,7 +856,7 @@ class ParsedRtcEventLog {
   std::vector<LoggedDtlsTransportState> dtls_transport_states_;
   std::vector<LoggedDtlsWritableState> dtls_writable_states_;
 
-  std::vector<LoggedFrameDecoded> decoded_frames_;
+  std::map<uint32_t, std::vector<LoggedFrameDecoded>> decoded_frames_;
 
   std::vector<LoggedIceCandidatePairConfig> ice_candidate_pair_configs_;
   std::vector<LoggedIceCandidatePairEvent> ice_candidate_pair_events_;

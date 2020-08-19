@@ -72,7 +72,7 @@ class EventGenerator {
   std::unique_ptr<RtcEventBweUpdateLossBased> NewBweUpdateLossBased();
   std::unique_ptr<RtcEventDtlsTransportState> NewDtlsTransportState();
   std::unique_ptr<RtcEventDtlsWritableState> NewDtlsWritableState();
-  std::unique_ptr<RtcEventFrameDecoded> NewFrameDecodedEvent();
+  std::unique_ptr<RtcEventFrameDecoded> NewFrameDecodedEvent(uint32_t ssrc);
   std::unique_ptr<RtcEventGenericAckReceived> NewGenericAckReceived();
   std::unique_ptr<RtcEventGenericPacketReceived> NewGenericPacketReceived();
   std::unique_ptr<RtcEventGenericPacketSent> NewGenericPacketSent();

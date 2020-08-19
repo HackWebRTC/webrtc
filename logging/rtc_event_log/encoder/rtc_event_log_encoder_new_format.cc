@@ -698,7 +698,8 @@ std::string RtcEventLogEncoderNewFormat::EncodeBatch(
     std::vector<const RtcEventBweUpdateLossBased*> bwe_loss_based_updates;
     std::vector<const RtcEventDtlsTransportState*> dtls_transport_states;
     std::vector<const RtcEventDtlsWritableState*> dtls_writable_states;
-    std::vector<const RtcEventFrameDecoded*> frames_decoded;
+    std::map<uint32_t /* SSRC */, std::vector<const RtcEventFrameDecoded*>>
+        frames_decoded;
     std::vector<const RtcEventGenericAckReceived*> generic_acks_received;
     std::vector<const RtcEventGenericPacketReceived*> generic_packets_received;
     std::vector<const RtcEventGenericPacketSent*> generic_packets_sent;
@@ -884,8 +885,7 @@ std::string RtcEventLogEncoderNewFormat::EncodeBatch(
         case RtcEvent::Type::FrameDecoded: {
           auto* rtc_event =
               static_cast<const RtcEventFrameDecoded* const>(it->get());
-          // TODO(terelius):  Group by SSRC
-          frames_decoded.push_back(rtc_event);
+          frames_decoded[rtc_event->ssrc()].emplace_back(rtc_event);
           break;
         }
       }
@@ -901,7 +901,9 @@ std::string RtcEventLogEncoderNewFormat::EncodeBatch(
     EncodeBweUpdateLossBased(bwe_loss_based_updates, &event_stream);
     EncodeDtlsTransportState(dtls_transport_states, &event_stream);
     EncodeDtlsWritableState(dtls_writable_states, &event_stream);
-    EncodeFramesDecoded(frames_decoded, &event_stream);
+    for (const auto& kv : frames_decoded) {
+      EncodeFramesDecoded(kv.second, &event_stream);
+    }
     EncodeGenericAcksReceived(generic_acks_received, &event_stream);
     EncodeGenericPacketsReceived(generic_packets_received, &event_stream);
     EncodeGenericPacketsSent(generic_packets_sent, &event_stream);
@@ -1462,7 +1464,7 @@ void RtcEventLogEncoderNewFormat::EncodeRtpPacketIncoming(
 }
 
 void RtcEventLogEncoderNewFormat::EncodeFramesDecoded(
-    rtc::ArrayView<const RtcEventFrameDecoded*> batch,
+    rtc::ArrayView<const RtcEventFrameDecoded* const> batch,
     rtclog2::EventStream* event_stream) {
   if (batch.empty()) {
     return;

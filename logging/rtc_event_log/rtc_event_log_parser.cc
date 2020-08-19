@@ -1222,7 +1222,9 @@ ParsedRtcEventLog::ParseStatus ParsedRtcEventLog::ParseStream(
   StoreFirstAndLastTimestamp(bwe_probe_success_events());
   StoreFirstAndLastTimestamp(bwe_delay_updates());
   StoreFirstAndLastTimestamp(bwe_loss_updates());
-  StoreFirstAndLastTimestamp(decoded_frames());
+  for (const auto& frame_stream : decoded_frames()) {
+    StoreFirstAndLastTimestamp(frame_stream.second);
+  }
   StoreFirstAndLastTimestamp(dtls_transport_states());
   StoreFirstAndLastTimestamp(dtls_writable_states());
   StoreFirstAndLastTimestamp(ice_candidate_pair_configs());
@@ -2811,7 +2813,7 @@ ParsedRtcEventLog::ParseStatus ParsedRtcEventLog::StoreFrameDecodedEvents(
   RTC_PARSE_CHECK_OR_RETURN_LE(proto.qp(), 255);
   base_frame.qp = static_cast<uint8_t>(proto.qp());
 
-  decoded_frames_.push_back(base_frame);
+  decoded_frames_[base_frame.ssrc].push_back(base_frame);
 
   const size_t number_of_deltas =
       proto.has_number_of_deltas() ? proto.number_of_deltas() : 0u;
@@ -2892,7 +2894,7 @@ ParsedRtcEventLog::ParseStatus ParsedRtcEventLog::StoreFrameDecodedEvents(
                                  std::numeric_limits<uint8_t>::max());
     frame.qp = static_cast<uint8_t>(qp_values[i].value());
 
-    decoded_frames_.push_back(frame);
+    decoded_frames_[frame.ssrc].push_back(frame);
   }
   return ParseStatus::Success();
 }

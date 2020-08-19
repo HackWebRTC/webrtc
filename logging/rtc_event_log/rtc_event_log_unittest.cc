@@ -166,7 +166,8 @@ class RtcEventLogSession
       dtls_transport_state_list_;
   std::vector<std::unique_ptr<RtcEventDtlsWritableState>>
       dtls_writable_state_list_;
-  std::vector<std::unique_ptr<RtcEventFrameDecoded>> frame_decoded_event_list_;
+  std::map<uint32_t, std::vector<std::unique_ptr<RtcEventFrameDecoded>>>
+      frame_decoded_event_map_;
   std::vector<std::unique_ptr<RtcEventGenericAckReceived>>
       generic_acks_received_;
   std::vector<std::unique_ptr<RtcEventGenericPacketReceived>>
@@ -447,9 +448,12 @@ void RtcEventLogSession::WriteLog(EventCounts count,
     selection -= count.dtls_writable_states;
 
     if (selection < count.frame_decoded_events) {
-      auto event = gen_.NewFrameDecodedEvent();
+      size_t stream = prng_.Rand(incoming_extensions_.size() - 1);
+      // This might be an audio SSRC, but that won't affect the parser.
+      uint32_t ssrc = incoming_extensions_[stream].first;
+      auto event = gen_.NewFrameDecodedEvent(ssrc);
       event_log->Log(event->Copy());
-      frame_decoded_event_list_.push_back(std::move(event));
+      frame_decoded_event_map_[ssrc].push_back(std::move(event));
       count.frame_decoded_events--;
       continue;
     }
@@ -588,7 +592,7 @@ void RtcEventLogSession::ReadAndVerifyLog() {
     const auto& parsed_audio_playout_stream = kv.second;
     const auto& audio_playout_stream = audio_playout_map_[ssrc];
     ASSERT_EQ(parsed_audio_playout_stream.size(), audio_playout_stream.size());
-    for (size_t i = 0; i < parsed_audio_playout_map.size(); i++) {
+    for (size_t i = 0; i < audio_playout_stream.size(); i++) {
       verifier_.VerifyLoggedAudioPlayoutEvent(*audio_playout_stream[i],
                                               parsed_audio_playout_stream[i]);
     }
@@ -656,12 +660,17 @@ void RtcEventLogSession::ReadAndVerifyLog() {
                                             parsed_dtls_writable_states[i]);
   }
 
-  auto& parsed_frame_decoded_events = parsed_log.decoded_frames();
-  ASSERT_EQ(parsed_frame_decoded_events.size(),
-            frame_decoded_event_list_.size());
-  for (size_t i = 0; i < parsed_frame_decoded_events.size(); i++) {
-    verifier_.VerifyLoggedFrameDecoded(*frame_decoded_event_list_[i],
-                                       parsed_frame_decoded_events[i]);
+  const auto& parsed_frame_decoded_map = parsed_log.decoded_frames();
+  ASSERT_EQ(parsed_frame_decoded_map.size(), frame_decoded_event_map_.size());
+  for (const auto& kv : parsed_frame_decoded_map) {
+    uint32_t ssrc = kv.first;
+    const auto& parsed_decoded_frames = kv.second;
+    const auto& decoded_frames = frame_decoded_event_map_[ssrc];
+    ASSERT_EQ(parsed_decoded_frames.size(), decoded_frames.size());
+    for (size_t i = 0; i < decoded_frames.size(); i++) {
+      verifier_.VerifyLoggedFrameDecoded(*decoded_frames[i],
+                                         parsed_decoded_frames[i]);
+    }
   }
 
   auto& parsed_ice_candidate_pair_configs =

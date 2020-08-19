@@ -631,12 +631,23 @@ TEST_P(RtcEventLogEncoderTest, RtcEventDtlsWritableState) {
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventFrameDecoded) {
-  std::vector<std::unique_ptr<RtcEventFrameDecoded>> events(event_count_);
+  // SSRCs will be randomly assigned out of this small pool, significant only
+  // in that it also covers such edge cases as SSRC = 0 and SSRC = 0xffffffff.
+  // The pool is intentionally small, so as to produce collisions.
+  const std::vector<uint32_t> kSsrcPool = {0x00000000, 0x12345678, 0xabcdef01,
+                                           0xffffffff, 0x20171024, 0x19840730,
+                                           0x19831230};
+
+  std::map<uint32_t, std::vector<std::unique_ptr<RtcEventFrameDecoded>>>
+      original_events_by_ssrc;
   for (size_t i = 0; i < event_count_; ++i) {
-    events[i] = (i == 0 || !force_repeated_fields_)
-                    ? gen_.NewFrameDecodedEvent()
-                    : events[0]->Copy();
-    history_.push_back(events[i]->Copy());
+    const uint32_t ssrc = kSsrcPool[prng_.Rand(kSsrcPool.size() - 1)];
+    std::unique_ptr<RtcEventFrameDecoded> event =
+        (original_events_by_ssrc[ssrc].empty() || !force_repeated_fields_)
+            ? gen_.NewFrameDecodedEvent(ssrc)
+            : original_events_by_ssrc[ssrc][0]->Copy();
+    history_.push_back(event->Copy());
+    original_events_by_ssrc[ssrc].push_back(std::move(event));
   }
 
   const std::string encoded =
@@ -646,16 +657,31 @@ TEST_P(RtcEventLogEncoderTest, RtcEventFrameDecoded) {
     RTC_LOG(LS_ERROR) << status.message();
   ASSERT_TRUE(status.ok());
 
-  const auto& decoded_frames = parsed_log_.decoded_frames();
+  const auto& decoded_frames_by_ssrc = parsed_log_.decoded_frames();
   if (!new_encoding_) {
-    ASSERT_EQ(decoded_frames.size(), 0u);
+    ASSERT_EQ(decoded_frames_by_ssrc.size(), 0u);
     return;
   }
 
-  ASSERT_EQ(decoded_frames.size(), event_count_);
+  // Same number of distinct SSRCs.
+  ASSERT_EQ(decoded_frames_by_ssrc.size(), original_events_by_ssrc.size());
 
-  for (size_t i = 0; i < event_count_; ++i) {
-    verifier_.VerifyLoggedFrameDecoded(*events[i], decoded_frames[i]);
+  for (const auto& original_event_it : original_events_by_ssrc) {
+    const uint32_t ssrc = original_event_it.first;
+    const std::vector<std::unique_ptr<RtcEventFrameDecoded>>& original_frames =
+        original_event_it.second;
+
+    const auto& parsed_event_it = decoded_frames_by_ssrc.find(ssrc);
+    ASSERT_TRUE(parsed_event_it != decoded_frames_by_ssrc.end());
+    const std::vector<LoggedFrameDecoded>& parsed_frames =
+        parsed_event_it->second;
+
+    // Same number events for the SSRC under examination.
+    ASSERT_EQ(original_frames.size(), parsed_frames.size());
+
+    for (size_t i = 0; i < original_frames.size(); ++i) {
+      verifier_.VerifyLoggedFrameDecoded(*original_frames[i], parsed_frames[i]);
+    }
   }
 }
 
