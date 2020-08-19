@@ -419,7 +419,9 @@ void LibvpxVp8Encoder::SetRates(const RateControlParameters& parameters) {
     vpx_codec_err_t err =
         libvpx_->codec_enc_config_set(&encoders_[i], &vpx_configs_[i]);
     if (err != VPX_CODEC_OK) {
-      RTC_LOG(LS_WARNING) << "Error configuring codec, error code: " << err;
+      RTC_LOG(LS_WARNING) << "Error configuring codec, error code: " << err
+                          << ", details: "
+                          << libvpx_->codec_error_detail(&encoders_[i]);
     }
   }
 }

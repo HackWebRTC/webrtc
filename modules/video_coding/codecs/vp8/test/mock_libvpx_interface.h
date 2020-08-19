@@ -99,6 +99,10 @@ class MockLibvpxVp8Interface : public LibvpxInterface {
               codec_get_cx_data,
               (vpx_codec_ctx_t*, vpx_codec_iter_t*),
               (const, override));
+  MOCK_METHOD(const char*,
+              codec_error_detail,
+              (vpx_codec_ctx_t*),
+              (const, override));
 };
 
 }  // namespace webrtc
