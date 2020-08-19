@@ -25,6 +25,9 @@
 #import "base/RTCVideoDecoderFactory.h"
 #import "base/RTCVideoEncoderFactory.h"
 #import "helpers/NSString+StdString.h"
+#include "sdk/objc/native/api/network_monitor_factory.h"
+#include "system_wrappers/include/field_trial.h"
+
 #ifndef HAVE_NO_MEDIA
 #import "components/video_codec/RTCVideoDecoderFactoryH264.h"
 #import "components/video_codec/RTCVideoEncoderFactoryH264.h"
@@ -135,6 +138,9 @@
     dependencies.network_thread = _networkThread.get();
     dependencies.worker_thread = _workerThread.get();
     dependencies.signaling_thread = _signalingThread.get();
+    if (webrtc::field_trial::IsEnabled("WebRTC-Network-UseNWPathMonitor")) {
+      dependencies.network_monitor_factory = webrtc::CreateNetworkMonitorFactory();
+    }
     _nativeFactory = webrtc::CreateModularPeerConnectionFactory(std::move(dependencies));
     NSAssert(_nativeFactory, @"Failed to initialize PeerConnectionFactory!");
   }
@@ -179,6 +185,9 @@
     dependencies.network_thread = _networkThread.get();
     dependencies.worker_thread = _workerThread.get();
     dependencies.signaling_thread = _signalingThread.get();
+    if (webrtc::field_trial::IsEnabled("WebRTC-Network-UseNWPathMonitor")) {
+      dependencies.network_monitor_factory = webrtc::CreateNetworkMonitorFactory();
+    }
 #ifndef HAVE_NO_MEDIA
     dependencies.task_queue_factory = webrtc::CreateDefaultTaskQueueFactory();
     cricket::MediaEngineDependencies media_deps;

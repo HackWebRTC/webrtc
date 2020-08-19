@@ -12,9 +12,11 @@
 
 #include <stdlib.h>
 
+#include <algorithm>
 #include <memory>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/strings/match.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/net_helpers.h"
@@ -61,8 +63,18 @@ class FakeNetworkMonitor : public NetworkMonitorBase {
     return NetworkPreference::NEUTRAL;
   }
 
+  bool IsAdapterAvailable(const std::string& if_name) override {
+    return absl::c_count(unavailable_adapters_, if_name) == 0;
+  }
+
+  // Used to test IsAdapterAvailable.
+  void set_unavailable_adapters(std::vector<std::string> unavailable_adapters) {
+    unavailable_adapters_ = unavailable_adapters;
+  }
+
  private:
   bool started_ = false;
+  std::vector<std::string> unavailable_adapters_;
 };
 
 class FakeNetworkMonitorFactory : public NetworkMonitorFactory {
@@ -914,6 +926,41 @@ TEST_F(NetworkTest, TestGetAdapterTypeFromNameMatching) {
   ReleaseIfAddrs(addr_list);
 #endif
 }
+
+// Test that an adapter won't be included in the network list if there's a
+// network monitor that says it's unavailable.
+TEST_F(NetworkTest, TestNetworkMonitorIsAdapterAvailable) {
+  char if_name1[20] = "pdp_ip0";
+  char if_name2[20] = "pdp_ip1";
+  ifaddrs* list = nullptr;
+  list = AddIpv6Address(list, if_name1, "1000:2000:3000:4000:0:0:0:1",
+                        "FFFF:FFFF:FFFF:FFFF::", 0);
+  list = AddIpv6Address(list, if_name2, "1000:2000:3000:4000:0:0:0:2",
+                        "FFFF:FFFF:FFFF:FFFF::", 0);
+  NetworkManager::NetworkList result;
+
+  // Sanity check that both interfaces are included by default.
+  FakeNetworkMonitorFactory factory;
+  BasicNetworkManager manager(&factory);
+  manager.StartUpdating();
+  CallConvertIfAddrs(manager, list, /*include_ignored=*/false, &result);
+  EXPECT_EQ(2u, result.size());
+  bool changed;
+  // This ensures we release the objects created in CallConvertIfAddrs.
+  MergeNetworkList(manager, result, &changed);
+  result.clear();
+
+  // Now simulate one interface being unavailable.
+  FakeNetworkMonitor* network_monitor = GetNetworkMonitor(manager);
+  network_monitor->set_unavailable_adapters({if_name1});
+  CallConvertIfAddrs(manager, list, /*include_ignored=*/false, &result);
+  EXPECT_EQ(1u, result.size());
+  EXPECT_EQ(if_name2, result[0]->name());
+
+  MergeNetworkList(manager, result, &changed);
+  ReleaseIfAddrs(list);
+}
+
 #endif  // defined(WEBRTC_POSIX)
 
 // Test MergeNetworkList successfully combines all IPs for the same

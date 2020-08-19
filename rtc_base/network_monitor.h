@@ -77,15 +77,34 @@ class NetworkMonitorInterface {
 
   // Implementations should call this method on the base when networks change,
   // and the base will fire SignalNetworksChanged on the right thread.
+  // TODO(deadbeef): This is an implementation detail of NetworkMonitorBase,
+  // it doesn't belong here.
   virtual void OnNetworksChanged() = 0;
 
   virtual AdapterType GetAdapterType(const std::string& interface_name) = 0;
   virtual AdapterType GetVpnUnderlyingAdapterType(
       const std::string& interface_name) = 0;
+
   virtual NetworkPreference GetNetworkPreference(
       const std::string& interface_name) = 0;
+
+  // Is this interface available to use? WebRTC shouldn't attempt to use it if
+  // this returns false.
+  //
+  // It's possible for this status to change, in which case
+  // SignalNetworksChanged will be fired.
+  //
+  // These specific use case this was added for was a phone with two SIM cards,
+  // where attempting to use all interfaces returned from getifaddrs caused the
+  // connection to be dropped.
+  virtual bool IsAdapterAvailable(const std::string& interface_name) {
+    return true;
+  }
 };
 
+// TODO(deadbeef): This class has marginal value, all it does is post a task
+// to call SignalNetworksChanged on the worker thread. Should fold it into
+// AndroidNetworkMonitor.
 class NetworkMonitorBase : public NetworkMonitorInterface,
                            public MessageHandler,
                            public sigslot::has_slots<> {

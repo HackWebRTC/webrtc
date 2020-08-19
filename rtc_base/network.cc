@@ -806,6 +806,11 @@ bool BasicNetworkManager::IsIgnoredNetwork(const Network& network) const {
   }
 #endif
 
+  if (network_monitor_ &&
+      !network_monitor_->IsAdapterAvailable(network.name())) {
+    return true;
+  }
+
   // Ignore any networks with a 0.x.y.z IP
   if (network.prefix().family() == AF_INET) {
     return (network.prefix().v4AddressAsHostOrderInteger() < 0x01000000);
