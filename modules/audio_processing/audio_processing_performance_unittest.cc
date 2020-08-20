@@ -497,7 +497,6 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
         apm_.reset(AudioProcessingBuilderForTesting().Create(config));
         ASSERT_TRUE(!!apm_);
         set_default_desktop_apm_runtime_settings(apm_.get());
-        apm_->SetExtraOptions(config);
         break;
       }
       case SettingsType::kAllSubmodulesTurnedOff: {
@@ -511,7 +510,6 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
         apm_.reset(AudioProcessingBuilderForTesting().Create(config));
         ASSERT_TRUE(!!apm_);
         set_default_desktop_apm_runtime_settings(apm_.get());
-        apm_->SetExtraOptions(config);
         break;
       }
       case SettingsType::kDefaultApmDesktopWithoutExtendedFilter: {
@@ -519,7 +517,6 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
         apm_.reset(AudioProcessingBuilderForTesting().Create(config));
         ASSERT_TRUE(!!apm_);
         set_default_desktop_apm_runtime_settings(apm_.get());
-        apm_->SetExtraOptions(config);
         break;
       }
     }

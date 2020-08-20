@@ -155,7 +155,6 @@ TEST(WebRtcVoiceEngineTestStubLibrary, StartupShutdown) {
     if (!use_null_apm) {
       EXPECT_CALL(*apm, GetConfig()).WillRepeatedly(ReturnPointee(&apm_config));
       EXPECT_CALL(*apm, ApplyConfig(_)).WillRepeatedly(SaveArg<0>(&apm_config));
-      EXPECT_CALL(*apm, SetExtraOptions(::testing::_));
       EXPECT_CALL(*apm, DetachAecDump());
     }
     {
@@ -200,7 +199,6 @@ class WebRtcVoiceEngineTestFake : public ::testing::TestWithParam<bool> {
           .WillRepeatedly(ReturnPointee(&apm_config_));
       EXPECT_CALL(*apm_, ApplyConfig(_))
           .WillRepeatedly(SaveArg<0>(&apm_config_));
-      EXPECT_CALL(*apm_, SetExtraOptions(::testing::_));
       EXPECT_CALL(*apm_, DetachAecDump());
     }
 
@@ -230,9 +228,6 @@ class WebRtcVoiceEngineTestFake : public ::testing::TestWithParam<bool> {
   }
 
   bool SetupChannel() {
-    if (!use_null_apm_) {
-      EXPECT_CALL(*apm_, SetExtraOptions(::testing::_));
-    }
     channel_ = engine_->CreateMediaChannel(&call_, cricket::MediaConfig(),
                                            cricket::AudioOptions(),
                                            webrtc::CryptoOptions());
@@ -310,17 +305,11 @@ class WebRtcVoiceEngineTestFake : public ::testing::TestWithParam<bool> {
       EXPECT_CALL(*adm_, RecordingIsInitialized()).WillOnce(Return(false));
       EXPECT_CALL(*adm_, Recording()).WillOnce(Return(false));
       EXPECT_CALL(*adm_, InitRecording()).WillOnce(Return(0));
-      if (!use_null_apm_) {
-        EXPECT_CALL(*apm_, SetExtraOptions(::testing::_));
-      }
     }
     channel_->SetSend(enable);
   }
 
   void SetSendParameters(const cricket::AudioSendParameters& params) {
-    if (!use_null_apm_) {
-      EXPECT_CALL(*apm_, SetExtraOptions(::testing::_));
-    }
     ASSERT_TRUE(channel_);
     EXPECT_TRUE(channel_->SetSendParameters(params));
   }
@@ -332,9 +321,6 @@ class WebRtcVoiceEngineTestFake : public ::testing::TestWithParam<bool> {
     ASSERT_TRUE(channel_);
     if (!use_null_apm_) {
       EXPECT_CALL(*apm_, set_output_will_be_muted(!enable));
-      if (enable && options) {
-        EXPECT_CALL(*apm_, SetExtraOptions(::testing::_));
-      }
     }
     EXPECT_TRUE(channel_->SetAudioSend(ssrc, enable, options, source));
   }
@@ -3071,9 +3057,6 @@ TEST_P(WebRtcVoiceEngineTestFake, SetOptionOverridesViaChannels) {
 
   EXPECT_CALL(*adm_, Recording()).Times(2).WillRepeatedly(Return(false));
   EXPECT_CALL(*adm_, InitRecording()).Times(2).WillRepeatedly(Return(0));
-  if (!use_null_apm_) {
-    EXPECT_CALL(*apm_, SetExtraOptions(::testing::_)).Times(10);
-  }
 
   std::unique_ptr<cricket::WebRtcVoiceMediaChannel> channel1(
       static_cast<cricket::WebRtcVoiceMediaChannel*>(
@@ -3192,10 +3175,6 @@ TEST_P(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
   cricket::MediaConfig config;
   std::unique_ptr<cricket::WebRtcVoiceMediaChannel> channel;
   webrtc::RtpParameters parameters;
-
-  if (!use_null_apm_) {
-    EXPECT_CALL(*apm_, SetExtraOptions(::testing::_)).Times(3);
-  }
 
   channel.reset(static_cast<cricket::WebRtcVoiceMediaChannel*>(
       engine_->CreateMediaChannel(&call_, config, cricket::AudioOptions(),

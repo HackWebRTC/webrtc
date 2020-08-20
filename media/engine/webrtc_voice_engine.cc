@@ -581,7 +581,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     apm_config.voice_detection.enabled = *options.typing_detection;
   }
 
-  ap->SetExtraOptions(config);
   ap->ApplyConfig(apm_config);
   return true;
 }
