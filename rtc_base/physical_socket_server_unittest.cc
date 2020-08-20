@@ -381,6 +381,15 @@ TEST_F(PhysicalSocketTest, TestCloseInClosedCallbackIPv6) {
   SocketTest::TestCloseInClosedCallbackIPv6();
 }
 
+TEST_F(PhysicalSocketTest, TestDeleteInReadCallbackIPv4) {
+  MAYBE_SKIP_IPV4;
+  SocketTest::TestDeleteInReadCallbackIPv4();
+}
+
+TEST_F(PhysicalSocketTest, TestDeleteInReadCallbackIPv6) {
+  SocketTest::TestDeleteInReadCallbackIPv6();
+}
+
 TEST_F(PhysicalSocketTest, TestSocketServerWaitIPv4) {
   MAYBE_SKIP_IPV4;
   SocketTest::TestSocketServerWaitIPv4();
