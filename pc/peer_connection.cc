@@ -7024,6 +7024,11 @@ void PeerConnection::OnTransportControllerGatheringState(
     OnIceGatheringChange(PeerConnectionInterface::kIceGatheringGathering);
   } else if (state == cricket::kIceGatheringComplete) {
     OnIceGatheringChange(PeerConnectionInterface::kIceGatheringComplete);
+  } else if (state == cricket::kIceGatheringNew) {
+    OnIceGatheringChange(PeerConnectionInterface::kIceGatheringNew);
+  } else {
+    RTC_LOG(LS_ERROR) << "Unknown state received: " << state;
+    RTC_NOTREACHED();
   }
 }
 

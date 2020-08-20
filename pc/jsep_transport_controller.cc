@@ -1381,7 +1381,10 @@ void JsepTransportController::UpdateAggregateStates_n() {
                                });
   }
 
-  if (all_done_gathering) {
+  // Compute the gathering state.
+  if (dtls_transports.empty()) {
+    new_gathering_state = cricket::kIceGatheringNew;
+  } else if (all_done_gathering) {
     new_gathering_state = cricket::kIceGatheringComplete;
   } else if (any_gathering) {
     new_gathering_state = cricket::kIceGatheringGathering;
