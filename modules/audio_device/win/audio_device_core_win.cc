@@ -641,7 +641,10 @@ bool AudioDeviceWindowsCore::Initialized() const {
 
 int32_t AudioDeviceWindowsCore::InitSpeaker() {
   MutexLock lock(&mutex_);
+  return InitSpeakerLocked();
+}
 
+int32_t AudioDeviceWindowsCore::InitSpeakerLocked() {
   if (_playing) {
     return -1;
   }
@@ -651,7 +654,7 @@ int32_t AudioDeviceWindowsCore::InitSpeaker() {
   }
 
   if (_usingOutputDeviceIndex) {
-    int16_t nDevices = PlayoutDevices();
+    int16_t nDevices = PlayoutDevicesLocked();
     if (_outputDeviceIndex > (nDevices - 1)) {
       RTC_LOG(LS_ERROR) << "current device selection is invalid => unable to"
                            " initialize";
@@ -710,7 +713,10 @@ int32_t AudioDeviceWindowsCore::InitSpeaker() {
 
 int32_t AudioDeviceWindowsCore::InitMicrophone() {
   MutexLock lock(&mutex_);
+  return InitMicrophoneLocked();
+}
 
+int32_t AudioDeviceWindowsCore::InitMicrophoneLocked() {
   if (_recording) {
     return -1;
   }
@@ -720,7 +726,7 @@ int32_t AudioDeviceWindowsCore::InitMicrophone() {
   }
 
   if (_usingInputDeviceIndex) {
-    int16_t nDevices = RecordingDevices();
+    int16_t nDevices = RecordingDevicesLocked();
     if (_inputDeviceIndex > (nDevices - 1)) {
       RTC_LOG(LS_ERROR) << "current device selection is invalid => unable to"
                            " initialize";
@@ -1368,10 +1374,12 @@ int32_t AudioDeviceWindowsCore::MinMicrophoneVolume(uint32_t& minVolume) const {
 // ----------------------------------------------------------------------------
 //  PlayoutDevices
 // ----------------------------------------------------------------------------
-
 int16_t AudioDeviceWindowsCore::PlayoutDevices() {
   MutexLock lock(&mutex_);
+  return PlayoutDevicesLocked();
+}
 
+int16_t AudioDeviceWindowsCore::PlayoutDevicesLocked() {
   if (_RefreshDeviceList(eRender) != -1) {
     return (_DeviceListCount(eRender));
   }
@@ -1634,7 +1642,10 @@ int32_t AudioDeviceWindowsCore::RecordingDeviceName(
 
 int16_t AudioDeviceWindowsCore::RecordingDevices() {
   MutexLock lock(&mutex_);
+  return RecordingDevicesLocked();
+}
 
+int16_t AudioDeviceWindowsCore::RecordingDevicesLocked() {
   if (_RefreshDeviceList(eCapture) != -1) {
     return (_DeviceListCount(eCapture));
   }
@@ -1800,7 +1811,7 @@ int32_t AudioDeviceWindowsCore::InitPlayout() {
   }
 
   // Initialize the speaker (devices might have been added or removed)
-  if (InitSpeaker() == -1) {
+  if (InitSpeakerLocked() == -1) {
     RTC_LOG(LS_WARNING) << "InitSpeaker() failed";
   }
 
@@ -2119,7 +2130,7 @@ int32_t AudioDeviceWindowsCore::InitRecording() {
   }
 
   // Initialize the microphone (devices might have been added or removed)
-  if (InitMicrophone() == -1) {
+  if (InitMicrophoneLocked() == -1) {
     RTC_LOG(LS_WARNING) << "InitMicrophone() failed";
   }
 
