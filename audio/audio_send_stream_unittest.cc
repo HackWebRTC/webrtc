@@ -45,6 +45,7 @@ using ::testing::_;
 using ::testing::AnyNumber;
 using ::testing::Eq;
 using ::testing::Field;
+using ::testing::InSequence;
 using ::testing::Invoke;
 using ::testing::Ne;
 using ::testing::Return;
@@ -551,6 +552,48 @@ TEST(AudioSendStreamTest, SendCodecAppliesAudioNetworkAdaptor) {
 
     auto stream_config = helper.config();
     stream_config.audio_network_adaptor_config = kAnaReconfigString;
+
+    send_stream->Reconfigure(stream_config);
+  }
+}
+
+TEST(AudioSendStreamTest, AudioNetworkAdaptorReceivesOverhead) {
+  for (bool use_null_audio_processing : {false, true}) {
+    ConfigHelper helper(false, true, use_null_audio_processing);
+    helper.config().send_codec_spec =
+        AudioSendStream::Config::SendCodecSpec(0, kOpusFormat);
+    const std::string kAnaConfigString = "abcde";
+    helper.config().rtp.extensions.push_back(RtpExtension(
+        RtpExtension::kTransportSequenceNumberUri, kTransportSequenceNumberId));
+
+    EXPECT_CALL(helper.mock_encoder_factory(), MakeAudioEncoderMock(_, _, _, _))
+        .WillOnce(Invoke(
+            [&kAnaConfigString](int payload_type, const SdpAudioFormat& format,
+                                absl::optional<AudioCodecPairId> codec_pair_id,
+                                std::unique_ptr<AudioEncoder>* return_value) {
+              auto mock_encoder = SetupAudioEncoderMock(payload_type, format);
+              InSequence s;
+              EXPECT_CALL(
+                  *mock_encoder,
+                  OnReceivedOverhead(Eq(kOverheadPerPacket.bytes<size_t>())))
+                  .Times(2);
+              EXPECT_CALL(*mock_encoder,
+                          EnableAudioNetworkAdaptor(StrEq(kAnaConfigString), _))
+                  .WillOnce(Return(true));
+              // Note: Overhead is received AFTER ANA has been enabled.
+              EXPECT_CALL(
+                  *mock_encoder,
+                  OnReceivedOverhead(Eq(kOverheadPerPacket.bytes<size_t>())))
+                  .WillOnce(Return());
+              *return_value = std::move(mock_encoder);
+            }));
+    EXPECT_CALL(*helper.rtp_rtcp(), ExpectedPerPacketOverhead)
+        .WillRepeatedly(Return(kOverheadPerPacket.bytes<size_t>()));
+
+    auto send_stream = helper.CreateAudioSendStream();
+
+    auto stream_config = helper.config();
+    stream_config.audio_network_adaptor_config = kAnaConfigString;
 
     send_stream->Reconfigure(stream_config);
   }
