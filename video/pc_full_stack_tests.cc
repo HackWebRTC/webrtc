@@ -1230,40 +1230,6 @@ TEST(PCFullStackTest, ScreenshareSlidesVP8_2TL_Simulcast) {
 #if !defined(WEBRTC_MAC)
 // TODO(bugs.webrtc.org/9840): Investigate why is this test flaky on Win/Mac.
 #if !defined(WEBRTC_WIN)
-const char kScreenshareSimulcastVariableFramerateExperiment[] =
-    "WebRTC-VP8VariableFramerateScreenshare/"
-    "Enabled,min_fps:5.0,min_qp:15,undershoot:30/";
-// TODO(bugs.webrtc.org/10639) requires simulcast/SVC support in PC framework
-TEST(PCFullStackTest, ScreenshareSlidesVP8_2TL_Simulcast_Variable_Framerate) {
-  test::ScopedFieldTrials field_trial(
-      AppendFieldTrials(kScreenshareSimulcastVariableFramerateExperiment));
-  auto fixture = CreateVideoQualityTestFixture();
-  ParamsWithLogging screenshare;
-  screenshare.call.send_side_bwe = true;
-  screenshare.screenshare[0] = {true, false, 10};
-  screenshare.video[0] = {true,    1850,  1110,  30, 800000, 2500000,
-                          2500000, false, "VP8", 2,  1,      400000,
-                          false,   false, false, ""};
-  screenshare.analyzer = {"screenshare_slides_simulcast_variable_framerate",
-                          0.0, 0.0, kTestDurationSec};
-  ParamsWithLogging screenshare_params_high;
-  screenshare_params_high.video[0] = {
-      true,  1850, 1110, 60,     600000, 1250000, 1250000, false,
-      "VP8", 2,    0,    400000, false,  false,   false,   ""};
-  VideoQualityTest::Params screenshare_params_low;
-  screenshare_params_low.video[0] = {true,    1850,  1110,  5, 30000, 200000,
-                                     1000000, false, "VP8", 2, 0,     400000,
-                                     false,   false, false, ""};
-
-  std::vector<VideoStream> streams = {
-      VideoQualityTest::DefaultVideoStream(screenshare_params_low, 0),
-      VideoQualityTest::DefaultVideoStream(screenshare_params_high, 0)};
-  screenshare.ss[0] = {
-      streams, 1, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
-      false};
-  fixture->RunWithAnalyzer(screenshare);
-}
-
 // TODO(bugs.webrtc.org/10639) requires simulcast/SVC support in PC framework
 TEST(PCFullStackTest, ScreenshareSlidesVP8_2TL_Simulcast_low) {
   auto fixture = CreateVideoQualityTestFixture();

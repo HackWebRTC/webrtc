@@ -1310,14 +1310,14 @@ int LibvpxVp8Encoder::RegisterEncodeCompleteCallback(
 // static
 LibvpxVp8Encoder::VariableFramerateExperiment
 LibvpxVp8Encoder::ParseVariableFramerateConfig(std::string group_name) {
-  FieldTrialFlag enabled = FieldTrialFlag("Enabled");
+  FieldTrialFlag disabled = FieldTrialFlag("Disabled");
   FieldTrialParameter<double> framerate_limit("min_fps", 5.0);
   FieldTrialParameter<int> qp("min_qp", 15);
   FieldTrialParameter<int> undershoot_percentage("undershoot", 30);
-  ParseFieldTrial({&enabled, &framerate_limit, &qp, &undershoot_percentage},
+  ParseFieldTrial({&disabled, &framerate_limit, &qp, &undershoot_percentage},
                   field_trial::FindFullName(group_name));
   VariableFramerateExperiment config;
-  config.enabled = enabled.Get();
+  config.enabled = !disabled.Get();
   config.framerate_limit = framerate_limit.Get();
   config.steady_state_qp = qp.Get();
   config.steady_state_undershoot_percentage = undershoot_percentage.Get();
