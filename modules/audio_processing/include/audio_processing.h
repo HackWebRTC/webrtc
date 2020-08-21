@@ -518,7 +518,7 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
 
   // Pass down additional options which don't have explicit setters. This
   // ensures the options are applied immediately.
-  virtual void SetExtraOptions(const webrtc::Config& config) = 0;
+  virtual void SetExtraOptions(const webrtc::Config& config) {}
 
   // TODO(ajm): Only intended for internal use. Make private and friend the
   // necessary classes?
