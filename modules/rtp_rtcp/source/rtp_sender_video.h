@@ -91,13 +91,19 @@ class RTPSenderVideo {
 
   // expected_retransmission_time_ms.has_value() -> retransmission allowed.
   // Calls to this method is assumed to be externally serialized.
+  // |estimated_capture_clock_offset_ms| is an estimated clock offset between
+  // this sender and the original capturer, for this video packet. See
+  // http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time for more
+  // details. If the sender and the capture has the same clock, it is supposed
+  // to be zero valued, which is given as the default.
   bool SendVideo(int payload_type,
                  absl::optional<VideoCodecType> codec_type,
                  uint32_t rtp_timestamp,
                  int64_t capture_time_ms,
                  rtc::ArrayView<const uint8_t> payload,
                  RTPVideoHeader video_header,
-                 absl::optional<int64_t> expected_retransmission_time_ms);
+                 absl::optional<int64_t> expected_retransmission_time_ms,
+                 absl::optional<int64_t> estimated_capture_clock_offset_ms = 0);
 
   bool SendEncodedImage(
       int payload_type,

@@ -399,7 +399,8 @@ bool RTPSenderVideo::SendVideo(
     int64_t capture_time_ms,
     rtc::ArrayView<const uint8_t> payload,
     RTPVideoHeader video_header,
-    absl::optional<int64_t> expected_retransmission_time_ms) {
+    absl::optional<int64_t> expected_retransmission_time_ms,
+    absl::optional<int64_t> estimated_capture_clock_offset_ms) {
 #if RTC_TRACE_EVENTS_ENABLED
   TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", capture_time_ms, "Send", "type",
                           FrameTypeToString(video_header.frame_type));
@@ -452,7 +453,7 @@ bool RTPSenderVideo::SendVideo(
           single_packet->Timestamp(), kVideoPayloadTypeFrequency,
           Int64MsToUQ32x32(single_packet->capture_time_ms() + NtpOffsetMs()),
           /*estimated_capture_clock_offset=*/
-          include_capture_clock_offset_ ? absl::make_optional(0)
+          include_capture_clock_offset_ ? estimated_capture_clock_offset_ms
                                         : absl::nullopt);
 
   auto first_packet = std::make_unique<RtpPacketToSend>(*single_packet);

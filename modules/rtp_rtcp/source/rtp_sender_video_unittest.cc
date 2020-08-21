@@ -867,10 +867,12 @@ TEST_P(RtpSenderVideoTest, AbsoluteCaptureTimeWithCaptureClockOffset) {
                                           kAbsoluteCaptureTimeExtensionId);
 
   RTPVideoHeader hdr;
+  const absl::optional<int64_t> kExpectedCaptureClockOffset =
+      absl::make_optional(1234);
   hdr.frame_type = VideoFrameType::kVideoFrameKey;
-  rtp_sender_video_->SendVideo(kPayload, kType, kTimestamp,
-                               kAbsoluteCaptureTimestampMs, kFrame, hdr,
-                               kDefaultExpectedRetransmissionTimeMs);
+  rtp_sender_video_->SendVideo(
+      kPayload, kType, kTimestamp, kAbsoluteCaptureTimestampMs, kFrame, hdr,
+      kDefaultExpectedRetransmissionTimeMs, kExpectedCaptureClockOffset);
 
   // It is expected that one and only one of the packets sent on this video
   // frame has absolute capture time header extension. And it includes capture
@@ -883,9 +885,8 @@ TEST_P(RtpSenderVideoTest, AbsoluteCaptureTimeWithCaptureClockOffset) {
       ++packets_with_abs_capture_time;
       EXPECT_EQ(absolute_capture_time->absolute_capture_timestamp,
                 Int64MsToUQ32x32(kAbsoluteCaptureTimestampMs + NtpOffsetMs()));
-      EXPECT_TRUE(
-          absolute_capture_time->estimated_capture_clock_offset.has_value());
-      EXPECT_EQ(0, *absolute_capture_time->estimated_capture_clock_offset);
+      EXPECT_EQ(kExpectedCaptureClockOffset,
+                absolute_capture_time->estimated_capture_clock_offset);
     }
   }
   EXPECT_EQ(packets_with_abs_capture_time, 1);
