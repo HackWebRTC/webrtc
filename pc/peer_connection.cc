@@ -4077,9 +4077,14 @@ RTCError PeerConnection::SetConfiguration(
   }
 
   if (modified_config.allow_codec_switching.has_value()) {
-    cricket::VideoMediaChannel* video_channel = video_media_channel();
-    if (video_channel) {
-      video_channel->SetVideoCodecSwitchingEnabled(
+    for (const auto& transceiver : transceivers_) {
+      if (transceiver->media_type() != cricket::MEDIA_TYPE_VIDEO ||
+          !transceiver->internal()->channel()) {
+        continue;
+      }
+      auto* video_channel = static_cast<cricket::VideoChannel*>(
+          transceiver->internal()->channel());
+      video_channel->media_channel()->SetVideoCodecSwitchingEnabled(
           *modified_config.allow_codec_switching);
     }
   }
