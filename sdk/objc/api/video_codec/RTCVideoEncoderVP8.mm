@@ -11,6 +11,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import "RTCMacros.h"
 #import "RTCVideoEncoderVP8.h"
 #import "RTCWrappedNativeVideoEncoder.h"
 
@@ -19,7 +20,7 @@
 @implementation RTC_OBJC_TYPE (RTCVideoEncoderVP8)
 
 + (id<RTC_OBJC_TYPE(RTCVideoEncoder)>)vp8Encoder {
-  return [[RTCWrappedNativeVideoEncoder alloc]
+  return [[RTC_OBJC_TYPE(RTCWrappedNativeVideoEncoder) alloc]
       initWithNativeEncoder:std::unique_ptr<webrtc::VideoEncoder>(webrtc::VP8Encoder::Create())];
 }
 

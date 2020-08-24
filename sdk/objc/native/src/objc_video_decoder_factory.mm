@@ -10,6 +10,7 @@
 
 #include "sdk/objc/native/src/objc_video_decoder_factory.h"
 
+#import "base/RTCMacros.h"
 #import "base/RTCVideoDecoder.h"
 #import "base/RTCVideoDecoderFactory.h"
 #import "base/RTCVideoFrame.h"
@@ -98,8 +99,8 @@ std::unique_ptr<VideoDecoder> ObjCVideoDecoderFactory::CreateVideoDecoder(
     if ([codecName isEqualToString:codecInfo.name]) {
       id<RTC_OBJC_TYPE(RTCVideoDecoder)> decoder = [decoder_factory_ createDecoder:codecInfo];
 
-      if ([decoder isKindOfClass:[RTCWrappedNativeVideoDecoder class]]) {
-        return [(RTCWrappedNativeVideoDecoder *)decoder releaseWrappedDecoder];
+      if ([decoder isKindOfClass:[RTC_OBJC_TYPE(RTCWrappedNativeVideoDecoder) class]]) {
+        return [(RTC_OBJC_TYPE(RTCWrappedNativeVideoDecoder) *)decoder releaseWrappedDecoder];
       } else {
         return std::unique_ptr<ObjCVideoDecoder>(new ObjCVideoDecoder(decoder));
       }

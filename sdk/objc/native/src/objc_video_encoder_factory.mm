@@ -175,8 +175,8 @@ std::unique_ptr<VideoEncoder> ObjCVideoEncoderFactory::CreateVideoEncoder(
   RTC_OBJC_TYPE(RTCVideoCodecInfo) *info =
       [[RTC_OBJC_TYPE(RTCVideoCodecInfo) alloc] initWithNativeSdpVideoFormat:format];
   id<RTC_OBJC_TYPE(RTCVideoEncoder)> encoder = [encoder_factory_ createEncoder:info];
-  if ([encoder isKindOfClass:[RTCWrappedNativeVideoEncoder class]]) {
-    return [(RTCWrappedNativeVideoEncoder *)encoder releaseWrappedEncoder];
+  if ([encoder isKindOfClass:[RTC_OBJC_TYPE(RTCWrappedNativeVideoEncoder) class]]) {
+    return [(RTC_OBJC_TYPE(RTCWrappedNativeVideoEncoder) *)encoder releaseWrappedEncoder];
   } else {
     return std::unique_ptr<ObjCVideoEncoder>(new ObjCVideoEncoder(encoder));
   }

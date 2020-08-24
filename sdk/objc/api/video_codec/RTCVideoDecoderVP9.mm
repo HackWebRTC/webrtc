@@ -11,6 +11,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import "RTCMacros.h"
 #import "RTCVideoDecoderVP9.h"
 #import "RTCWrappedNativeVideoDecoder.h"
 
@@ -19,7 +20,7 @@
 @implementation RTC_OBJC_TYPE (RTCVideoDecoderVP9)
 
 + (id<RTC_OBJC_TYPE(RTCVideoDecoder)>)vp9Decoder {
-  return [[RTCWrappedNativeVideoDecoder alloc]
+  return [[RTC_OBJC_TYPE(RTCWrappedNativeVideoDecoder) alloc]
       initWithNativeDecoder:std::unique_ptr<webrtc::VideoDecoder>(webrtc::VP9Decoder::Create())];
 }
 
