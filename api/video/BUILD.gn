@@ -314,7 +314,6 @@ rtc_library("builtin_video_bitrate_allocator_factory") {
     ":video_bitrate_allocation",
     ":video_bitrate_allocator",
     ":video_bitrate_allocator_factory",
-    "../../:webrtc_common",
     "../../api:scoped_refptr",
     "../../media:rtc_media_base",
     "../../modules/video_coding:video_coding_utility",

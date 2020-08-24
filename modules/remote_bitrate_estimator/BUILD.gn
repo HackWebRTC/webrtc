@@ -116,7 +116,6 @@ if (rtc_include_tests) {
     deps = [
       ":remote_bitrate_estimator",
       "..:module_api_public",
-      "../..:webrtc_common",
       "../../api/transport:field_trial_based_config",
       "../../api/transport:mock_network_control",
       "../../api/transport:network_control",

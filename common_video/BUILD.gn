@@ -94,7 +94,6 @@ if (rtc_include_tests) {
 
     deps = [
       ":common_video",
-      "../:webrtc_common",
       "../api:scoped_refptr",
       "../api/units:time_delta",
       "../api/video:video_frame",

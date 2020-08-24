@@ -538,7 +538,6 @@ if (rtc_include_tests) {
     testonly = true
 
     deps = [
-      ":webrtc_common",
       "api:compile_all_headers",
       "api:rtc_api_unittests",
       "api/audio/test:audio_api_unittests",
