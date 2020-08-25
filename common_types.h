@@ -11,25 +11,7 @@
 #ifndef COMMON_TYPES_H_
 #define COMMON_TYPES_H_
 
-#include <stddef.h>  // For size_t
-
-#include <cstdint>
-
 namespace webrtc {
-
-struct FrameCounts {
-  FrameCounts() : key_frames(0), delta_frames(0) {}
-  int key_frames;
-  int delta_frames;
-};
-
-// Callback, used to notify an observer whenever frame counts have been updated.
-class FrameCountObserver {
- public:
-  virtual ~FrameCountObserver() {}
-  virtual void FrameCountUpdated(const FrameCounts& frame_counts,
-                                 uint32_t ssrc) = 0;
-};
 
 // Minimum and maximum playout delay values from capture to render.
 // These are best effort values.
