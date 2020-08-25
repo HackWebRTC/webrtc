@@ -18,6 +18,7 @@
 
 #include "rtc_base/bind.h"
 #include "rtc_base/event.h"
+#include "rtc_base/gunit.h"
 #include "rtc_base/thread.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -25,6 +26,12 @@
 namespace rtc {
 
 using ::testing::ElementsAre;
+
+namespace {
+
+constexpr int kDefaultTimeout = 3000;
+
+}  // namespace
 
 class OperationTracker {
  public:
@@ -409,7 +416,7 @@ TEST(OperationsChainTest, OnChainEmptyCallback) {
   // Completing the operation empties the chain, invoking the callback.
   unblock_async_operation_event0.Set();
   async_operation_completed_event0->Wait(Event::kForever);
-  EXPECT_EQ(1u, on_empty_callback_counter);
+  EXPECT_TRUE_WAIT(1u == on_empty_callback_counter, kDefaultTimeout);
 
   // Chain multiple events.
   Event unblock_async_operation_event1;
@@ -421,16 +428,16 @@ TEST(OperationsChainTest, OnChainEmptyCallback) {
       operation_tracker_proxy.PostAsynchronousOperation(
           &unblock_async_operation_event2);
   // Again, the callback is not invoked until the operation has completed.
-  EXPECT_EQ(1u, on_empty_callback_counter);
+  EXPECT_TRUE_WAIT(1u == on_empty_callback_counter, kDefaultTimeout);
   // Upon completing the first event, the chain is still not empty, so the
   // callback must not be invoked yet.
   unblock_async_operation_event1.Set();
   async_operation_completed_event1->Wait(Event::kForever);
-  EXPECT_EQ(1u, on_empty_callback_counter);
+  EXPECT_TRUE_WAIT(1u == on_empty_callback_counter, kDefaultTimeout);
   // Completing the last evenet empties the chain, invoking the callback.
   unblock_async_operation_event2.Set();
   async_operation_completed_event2->Wait(Event::kForever);
-  EXPECT_EQ(2u, on_empty_callback_counter);
+  EXPECT_TRUE_WAIT(2u == on_empty_callback_counter, kDefaultTimeout);
 }
 
 TEST(OperationsChainTest,

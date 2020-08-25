@@ -1276,6 +1276,7 @@ if (rtc_include_tests) {
 
     sources = [ "operations_chain_unittest.cc" ]
     deps = [
+      ":gunit_helpers",
       ":rtc_base",
       ":rtc_base_approved",
       ":rtc_event",
