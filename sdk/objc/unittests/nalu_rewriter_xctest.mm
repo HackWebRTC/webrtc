@@ -276,14 +276,12 @@ static const uint8_t SPS_PPS_BUFFER[] = {
   // clang-format on
 
   rtc::Buffer annexb_buffer(arraysize(cmsample_data));
-  std::unique_ptr<webrtc::RTPFragmentationHeader> out_header_ptr;
   CMSampleBufferRef sample_buffer =
       [self createCMSampleBufferRef:(void*)cmsample_data cmsampleSize:arraysize(cmsample_data)];
 
   Boolean result = webrtc::H264CMSampleBufferToAnnexBBuffer(sample_buffer,
                                                             /* is_keyframe */ false,
-                                                            &annexb_buffer,
-                                                            &out_header_ptr);
+                                                            &annexb_buffer);
 
   XCTAssertTrue(result);
 
@@ -293,16 +291,6 @@ static const uint8_t SPS_PPS_BUFFER[] = {
       memcmp(expected_annex_b_data, annexb_buffer.data(), arraysize(expected_annex_b_data));
 
   XCTAssertEqual(0, data_comparison_result);
-
-  webrtc::RTPFragmentationHeader* out_header = out_header_ptr.get();
-
-  XCTAssertEqual(2, (int)out_header->Size());
-
-  XCTAssertEqual(4, (int)out_header->Offset(0));
-  XCTAssertEqual(4, (int)out_header->Length(0));
-
-  XCTAssertEqual(12, (int)out_header->Offset(1));
-  XCTAssertEqual(2, (int)out_header->Length(1));
 }
 
 - (void)testH264CMSampleBufferToAnnexBBufferWithKeyframe {
@@ -321,14 +309,12 @@ static const uint8_t SPS_PPS_BUFFER[] = {
   // clang-format on
 
   rtc::Buffer annexb_buffer(arraysize(cmsample_data));
-  std::unique_ptr<webrtc::RTPFragmentationHeader> out_header_ptr;
   CMSampleBufferRef sample_buffer =
       [self createCMSampleBufferRef:(void*)cmsample_data cmsampleSize:arraysize(cmsample_data)];
 
   Boolean result = webrtc::H264CMSampleBufferToAnnexBBuffer(sample_buffer,
                                                             /* is_keyframe */ true,
-                                                            &annexb_buffer,
-                                                            &out_header_ptr);
+                                                            &annexb_buffer);
 
   XCTAssertTrue(result);
 
@@ -341,22 +327,6 @@ static const uint8_t SPS_PPS_BUFFER[] = {
                  memcmp(expected_annex_b_data,
                         annexb_buffer.data() + arraysize(SPS_PPS_BUFFER),
                         arraysize(expected_annex_b_data)));
-
-  webrtc::RTPFragmentationHeader* out_header = out_header_ptr.get();
-
-  XCTAssertEqual(4, (int)out_header->Size());
-
-  XCTAssertEqual(4, (int)out_header->Offset(0));
-  XCTAssertEqual(14, (int)out_header->Length(0));
-
-  XCTAssertEqual(22, (int)out_header->Offset(1));
-  XCTAssertEqual(4, (int)out_header->Length(1));
-
-  XCTAssertEqual(30, (int)out_header->Offset(2));
-  XCTAssertEqual(4, (int)out_header->Length(2));
-
-  XCTAssertEqual(38, (int)out_header->Offset(3));
-  XCTAssertEqual(2, (int)out_header->Length(3));
 }
 
 - (CMVideoFormatDescriptionRef)createDescription {

@@ -805,8 +805,6 @@ if (is_ios || is_mac) {
       sources = [
         "objc/api/peerconnection/RTCEncodedImage+Private.h",
         "objc/api/peerconnection/RTCEncodedImage+Private.mm",
-        "objc/api/peerconnection/RTCRtpFragmentationHeader+Private.h",
-        "objc/api/peerconnection/RTCRtpFragmentationHeader+Private.mm",
         "objc/api/peerconnection/RTCVideoCodecInfo+Private.h",
         "objc/api/peerconnection/RTCVideoCodecInfo+Private.mm",
         "objc/api/peerconnection/RTCVideoEncoderSettings+Private.h",
