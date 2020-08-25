@@ -1409,7 +1409,7 @@ void RtcEventLogEncoderNewFormat::EncodeRemoteEstimate(
   // link_capacity_lower_kbps
   for (size_t i = 0; i < values.size(); ++i) {
     const auto* event = batch[i + 1];
-    if (base_event->link_capacity_lower_.IsFinite()) {
+    if (event->link_capacity_lower_.IsFinite()) {
       values[i] = event->link_capacity_lower_.kbps<uint32_t>();
     } else {
       values[i].reset();
@@ -1423,7 +1423,7 @@ void RtcEventLogEncoderNewFormat::EncodeRemoteEstimate(
   // link_capacity_upper_kbps
   for (size_t i = 0; i < values.size(); ++i) {
     const auto* event = batch[i + 1];
-    if (base_event->link_capacity_upper_.IsFinite()) {
+    if (event->link_capacity_upper_.IsFinite()) {
       values[i] = event->link_capacity_upper_.kbps<uint32_t>();
     } else {
       values[i].reset();
