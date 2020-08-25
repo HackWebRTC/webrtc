@@ -93,7 +93,7 @@ class ResourceAdaptationProcessorTest : public ::testing::Test {
                                                  &frame_rate_provider_)),
         processor_(std::make_unique<ResourceAdaptationProcessor>(
             video_stream_adapter_.get())) {
-    processor_->SetResourceAdaptationQueue(TaskQueueBase::Current());
+    processor_->SetTaskQueue(TaskQueueBase::Current());
     video_stream_adapter_->AddRestrictionsListener(&restrictions_listener_);
     processor_->AddResource(resource_);
     processor_->AddResource(other_resource_);

@@ -9,7 +9,9 @@
  */
 
 #include <string>
+#include <utility>
 
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_utils/to_queued_task.h"
 #include "video/adaptation/balanced_constraint.h"
 
@@ -17,32 +19,23 @@ namespace webrtc {
 
 BalancedConstraint::BalancedConstraint(
     DegradationPreferenceProvider* degradation_preference_provider)
-    : resource_adaptation_queue_(nullptr),
-      encoder_target_bitrate_bps_(absl::nullopt),
+    : encoder_target_bitrate_bps_(absl::nullopt),
       degradation_preference_provider_(degradation_preference_provider) {
   RTC_DCHECK(degradation_preference_provider_);
-}
-
-void BalancedConstraint::SetAdaptationQueue(
-    TaskQueueBase* resource_adaptation_queue) {
-  resource_adaptation_queue_ = resource_adaptation_queue;
+  sequence_checker_.Detach();
 }
 
 void BalancedConstraint::OnEncoderTargetBitrateUpdated(
     absl::optional<uint32_t> encoder_target_bitrate_bps) {
-  resource_adaptation_queue_->PostTask(
-      ToQueuedTask([this_ref = rtc::scoped_refptr<BalancedConstraint>(this),
-                    encoder_target_bitrate_bps] {
-        RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue_);
-        this_ref->encoder_target_bitrate_bps_ = encoder_target_bitrate_bps;
-      }));
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  encoder_target_bitrate_bps_ = std::move(encoder_target_bitrate_bps);
 }
 
 bool BalancedConstraint::IsAdaptationUpAllowed(
     const VideoStreamInputState& input_state,
     const VideoSourceRestrictions& restrictions_before,
     const VideoSourceRestrictions& restrictions_after) const {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
   // Don't adapt if BalancedDegradationSettings applies and determines this will
   // exceed bitrate constraints.
   if (degradation_preference_provider_->degradation_preference() ==

@@ -14,7 +14,6 @@
 #include <string>
 
 #include "api/adaptation/resource.h"
-#include "api/scoped_refptr.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "call/adaptation/video_stream_input_state.h"
 

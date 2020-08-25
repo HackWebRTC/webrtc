@@ -12,46 +12,34 @@
 #include <utility>
 
 #include "call/adaptation/video_stream_adapter.h"
-#include "rtc_base/task_utils/to_queued_task.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "video/adaptation/bitrate_constraint.h"
 
 namespace webrtc {
 
 BitrateConstraint::BitrateConstraint()
-    : resource_adaptation_queue_(nullptr),
-      encoder_settings_(absl::nullopt),
-      encoder_target_bitrate_bps_(absl::nullopt) {}
-
-void BitrateConstraint::SetAdaptationQueue(
-    TaskQueueBase* resource_adaptation_queue) {
-  resource_adaptation_queue_ = resource_adaptation_queue;
+    : encoder_settings_(absl::nullopt),
+      encoder_target_bitrate_bps_(absl::nullopt) {
+  sequence_checker_.Detach();
 }
 
 void BitrateConstraint::OnEncoderSettingsUpdated(
     absl::optional<EncoderSettings> encoder_settings) {
-  resource_adaptation_queue_->PostTask(
-      ToQueuedTask([this_ref = rtc::scoped_refptr<BitrateConstraint>(this),
-                    encoder_settings] {
-        RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue_);
-        this_ref->encoder_settings_ = std::move(encoder_settings);
-      }));
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  encoder_settings_ = std::move(encoder_settings);
 }
 
 void BitrateConstraint::OnEncoderTargetBitrateUpdated(
     absl::optional<uint32_t> encoder_target_bitrate_bps) {
-  resource_adaptation_queue_->PostTask(
-      ToQueuedTask([this_ref = rtc::scoped_refptr<BitrateConstraint>(this),
-                    encoder_target_bitrate_bps] {
-        RTC_DCHECK_RUN_ON(this_ref->resource_adaptation_queue_);
-        this_ref->encoder_target_bitrate_bps_ = encoder_target_bitrate_bps;
-      }));
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+  encoder_target_bitrate_bps_ = std::move(encoder_target_bitrate_bps);
 }
 
 bool BitrateConstraint::IsAdaptationUpAllowed(
     const VideoStreamInputState& input_state,
     const VideoSourceRestrictions& restrictions_before,
     const VideoSourceRestrictions& restrictions_after) const {
-  RTC_DCHECK_RUN_ON(resource_adaptation_queue_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
   // Make sure bitrate limits are not violated.
   if (DidIncreaseResolution(restrictions_before, restrictions_after)) {
     uint32_t bitrate_bps = encoder_target_bitrate_bps_.value_or(0);

@@ -14,21 +14,19 @@
 #include <string>
 
 #include "absl/types/optional.h"
-#include "api/task_queue/task_queue_base.h"
 #include "call/adaptation/adaptation_constraint.h"
 #include "call/adaptation/encoder_settings.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "call/adaptation/video_stream_input_state.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 
 namespace webrtc {
 
-class BitrateConstraint : public rtc::RefCountInterface,
-                          public AdaptationConstraint {
+class BitrateConstraint : public AdaptationConstraint {
  public:
   BitrateConstraint();
   ~BitrateConstraint() override = default;
 
-  void SetAdaptationQueue(TaskQueueBase* resource_adaptation_queue);
   void OnEncoderSettingsUpdated(
       absl::optional<EncoderSettings> encoder_settings);
   void OnEncoderTargetBitrateUpdated(
@@ -42,13 +40,11 @@ class BitrateConstraint : public rtc::RefCountInterface,
       const VideoSourceRestrictions& restrictions_after) const override;
 
  private:
-  // The |manager_| must be alive as long as this resource is added to the
-  // ResourceAdaptationProcessor, i.e. when IsAdaptationUpAllowed() is called.
-  TaskQueueBase* resource_adaptation_queue_;
+  SequenceChecker sequence_checker_;
   absl::optional<EncoderSettings> encoder_settings_
-      RTC_GUARDED_BY(resource_adaptation_queue_);
+      RTC_GUARDED_BY(&sequence_checker_);
   absl::optional<uint32_t> encoder_target_bitrate_bps_
-      RTC_GUARDED_BY(resource_adaptation_queue_);
+      RTC_GUARDED_BY(&sequence_checker_);
 };
 
 }  // namespace webrtc

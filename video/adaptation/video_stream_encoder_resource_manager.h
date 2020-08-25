@@ -40,6 +40,7 @@
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_queue.h"
+#include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
 #include "video/adaptation/balanced_constraint.h"
 #include "video/adaptation/bitrate_constraint.h"
@@ -79,8 +80,7 @@ class VideoStreamEncoderResourceManager
       DegradationPreferenceProvider* degradation_preference_provider);
   ~VideoStreamEncoderResourceManager() override;
 
-  void Initialize(rtc::TaskQueue* encoder_queue,
-                  rtc::TaskQueue* resource_adaptation_queue);
+  void Initialize(rtc::TaskQueue* encoder_queue);
   void SetAdaptationProcessor(
       ResourceAdaptationProcessorInterface* adaptation_processor,
       VideoStreamAdapter* stream_adapter);
@@ -166,19 +166,19 @@ class VideoStreamEncoderResourceManager
           active_counts);
 
   DegradationPreferenceProvider* const degradation_preference_provider_;
-  const rtc::scoped_refptr<BitrateConstraint> bitrate_constraint_;
-  const rtc::scoped_refptr<BalancedConstraint> balanced_constraint_;
+  std::unique_ptr<BitrateConstraint> bitrate_constraint_
+      RTC_GUARDED_BY(encoder_queue_);
+  const std::unique_ptr<BalancedConstraint> balanced_constraint_
+      RTC_GUARDED_BY(encoder_queue_);
   const rtc::scoped_refptr<EncodeUsageResource> encode_usage_resource_;
   const rtc::scoped_refptr<QualityScalerResource> quality_scaler_resource_;
 
   rtc::TaskQueue* encoder_queue_;
-  rtc::TaskQueue* resource_adaptation_queue_;
   VideoStreamInputStateProvider* const input_state_provider_
       RTC_GUARDED_BY(encoder_queue_);
   ResourceAdaptationProcessorInterface* adaptation_processor_
-      RTC_GUARDED_BY(resource_adaptation_queue_);
-  VideoStreamAdapter* stream_adapter_
-      RTC_GUARDED_BY(resource_adaptation_queue_);
+      RTC_GUARDED_BY(encoder_queue_);
+  VideoStreamAdapter* stream_adapter_ RTC_GUARDED_BY(encoder_queue_);
   // Thread-safe.
   VideoStreamEncoderObserver* const encoder_stats_observer_;
 
@@ -212,8 +212,7 @@ class VideoStreamEncoderResourceManager
     const rtc::scoped_refptr<Resource> resource;
     const VideoAdaptationReason reason;
   };
-  mutable Mutex resource_lock_;
-  std::vector<ResourceAndReason> resources_ RTC_GUARDED_BY(&resource_lock_);
+  std::vector<ResourceAndReason> resources_ RTC_GUARDED_BY(encoder_queue_);
 };
 
 }  // namespace webrtc

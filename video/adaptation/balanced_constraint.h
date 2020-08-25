@@ -14,21 +14,19 @@
 #include <string>
 
 #include "absl/types/optional.h"
-#include "api/task_queue/task_queue_base.h"
 #include "call/adaptation/adaptation_constraint.h"
 #include "call/adaptation/degradation_preference_provider.h"
 #include "rtc_base/experiments/balanced_degradation_settings.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 
 namespace webrtc {
 
-class BalancedConstraint : public rtc::RefCountInterface,
-                           public AdaptationConstraint {
+class BalancedConstraint : public AdaptationConstraint {
  public:
   explicit BalancedConstraint(
       DegradationPreferenceProvider* degradation_preference_provider);
   ~BalancedConstraint() override = default;
 
-  void SetAdaptationQueue(TaskQueueBase* resource_adaptation_queue);
   void OnEncoderTargetBitrateUpdated(
       absl::optional<uint32_t> encoder_target_bitrate_bps);
 
@@ -40,11 +38,11 @@ class BalancedConstraint : public rtc::RefCountInterface,
       const VideoSourceRestrictions& restrictions_after) const override;
 
  private:
-  TaskQueueBase* resource_adaptation_queue_;
+  SequenceChecker sequence_checker_;
   absl::optional<uint32_t> encoder_target_bitrate_bps_
-      RTC_GUARDED_BY(resource_adaptation_queue_);
-  BalancedDegradationSettings balanced_settings_;
-  DegradationPreferenceProvider* degradation_preference_provider_;
+      RTC_GUARDED_BY(&sequence_checker_);
+  const BalancedDegradationSettings balanced_settings_;
+  const DegradationPreferenceProvider* degradation_preference_provider_;
 };
 
 }  // namespace webrtc
