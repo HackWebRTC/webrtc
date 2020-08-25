@@ -34,6 +34,7 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/event.h"
 #include "rtc_base/experiments/alr_experiment.h"
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/location.h"
@@ -359,9 +360,6 @@ VideoStreamEncoder::VideoStreamEncoder(
 
     // Add the stream resource manager's resources to the processor.
     adaptation_constraints_ = stream_resource_manager_.AdaptationConstraints();
-    for (auto& resource : stream_resource_manager_.MappedResources()) {
-      resource_adaptation_processor_->AddResource(resource);
-    }
     for (auto* constraint : adaptation_constraints_) {
       video_stream_adapter_->AddAdaptationConstraint(constraint);
     }
@@ -383,12 +381,14 @@ void VideoStreamEncoder::Stop() {
   encoder_queue_.PostTask([this] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     if (resource_adaptation_processor_) {
-      for (auto& resource : stream_resource_manager_.MappedResources()) {
-        resource_adaptation_processor_->RemoveResource(resource);
-      }
+      stream_resource_manager_.StopManagedResources();
       for (auto* constraint : adaptation_constraints_) {
         video_stream_adapter_->RemoveAdaptationConstraint(constraint);
       }
+      for (auto& resource : additional_resources_) {
+        stream_resource_manager_.RemoveResource(resource);
+      }
+      additional_resources_.clear();
       video_stream_adapter_->RemoveRestrictionsListener(this);
       video_stream_adapter_->RemoveRestrictionsListener(
           &stream_resource_manager_);
@@ -397,7 +397,6 @@ void VideoStreamEncoder::Stop() {
       stream_resource_manager_.SetAdaptationProcessor(nullptr, nullptr);
       resource_adaptation_processor_.reset();
     }
-    stream_resource_manager_.StopManagedResources();
     rate_allocator_ = nullptr;
     bitrate_observer_ = nullptr;
     ReleaseEncoder();
@@ -436,9 +435,8 @@ void VideoStreamEncoder::AddAdaptationResource(
   rtc::Event map_resource_event;
   encoder_queue_.PostTask([this, resource, &map_resource_event] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
-    stream_resource_manager_.MapResourceToReason(resource,
-                                                 VideoAdaptationReason::kCpu);
-    resource_adaptation_processor_->AddResource(resource);
+    additional_resources_.push_back(resource);
+    stream_resource_manager_.AddResource(resource, VideoAdaptationReason::kCpu);
     map_resource_event.Set();
   });
   map_resource_event.Wait(rtc::Event::kForever);
@@ -797,10 +795,6 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   }
 
   if (pending_encoder_creation_) {
-    // TODO(hbos): Stopping and restarting for backwards compatibility reasons.
-    // We may be able to change this to "EnsureStarted()" if it took care of
-    // reconfiguring the QualityScaler as well. (ConfigureQualityScaler() is
-    // invoked later in this method.)
     stream_resource_manager_.EnsureEncodeUsageResourceStarted();
     pending_encoder_creation_ = false;
   }
@@ -2045,8 +2039,8 @@ void VideoStreamEncoder::InjectAdaptationResource(
   rtc::Event map_resource_event;
   encoder_queue_.PostTask([this, resource, reason, &map_resource_event] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
-    stream_resource_manager_.MapResourceToReason(resource, reason);
-    resource_adaptation_processor_->AddResource(resource);
+    additional_resources_.push_back(resource);
+    stream_resource_manager_.AddResource(resource, reason);
     map_resource_event.Set();
   });
   map_resource_event.Wait(rtc::Event::kForever);
@@ -2067,12 +2061,6 @@ void VideoStreamEncoder::InjectAdaptationConstraint(
     event.Set();
   });
   event.Wait(rtc::Event::kForever);
-}
-
-rtc::scoped_refptr<QualityScalerResource>
-VideoStreamEncoder::quality_scaler_resource_for_testing() {
-  RTC_DCHECK_RUN_ON(&encoder_queue_);
-  return stream_resource_manager_.quality_scaler_resource_for_testing();
 }
 
 void VideoStreamEncoder::AddRestrictionsListenerForTesting(

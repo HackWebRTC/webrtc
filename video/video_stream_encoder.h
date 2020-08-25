@@ -126,9 +126,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
                                 VideoAdaptationReason reason);
   void InjectAdaptationConstraint(AdaptationConstraint* adaptation_constraint);
 
-  rtc::scoped_refptr<QualityScalerResource>
-  quality_scaler_resource_for_testing();
-
   void AddRestrictionsListenerForTesting(
       VideoSourceRestrictionsListener* restrictions_listener);
   void RemoveRestrictionsListenerForTesting(
@@ -211,6 +208,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
                      DataSize frame_size);
   bool HasInternalSource() const RTC_RUN_ON(&encoder_queue_);
   void ReleaseEncoder() RTC_RUN_ON(&encoder_queue_);
+  // After calling this function |resource_adaptation_processor_| will be null.
+  void ShutdownResourceAdaptationQueue();
 
   void CheckForAnimatedContent(const VideoFrame& frame,
                                int64_t time_when_posted_in_ms)
@@ -423,8 +422,11 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // scaling". Also involved with various mitigations such as inital frame
   // dropping.
   // The manager primarily operates on the |encoder_queue_| but its lifetime is
-  // tied to the VideoStreamEncoder (which is destroyed off the encoder queue).
+  // tied to the VideoStreamEncoder (which is destroyed off the encoder queue)
+  // and its resource list is accessible from any thread.
   VideoStreamEncoderResourceManager stream_resource_manager_
+      RTC_GUARDED_BY(&encoder_queue_);
+  std::vector<rtc::scoped_refptr<Resource>> additional_resources_
       RTC_GUARDED_BY(&encoder_queue_);
   // Carries out the VideoSourceRestrictions provided by the
   // ResourceAdaptationProcessor, i.e. reconfigures the source of video frames
