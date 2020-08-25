@@ -1038,7 +1038,14 @@ PeerConnection::PeerConnection(PeerConnectionFactory* factory,
       call_ptr_(call_.get()),
       local_ice_credentials_to_replace_(new LocalIceCredentialsToReplace()),
       data_channel_controller_(this),
-      weak_ptr_factory_(this) {}
+      weak_ptr_factory_(this) {
+  operations_chain_->SetOnChainEmptyCallback(
+      [this_weak_ptr = weak_ptr_factory_.GetWeakPtr()]() {
+        if (!this_weak_ptr)
+          return;
+        this_weak_ptr->OnOperationsChainEmpty();
+      });
+}
 
 PeerConnection::~PeerConnection() {
   TRACE_EVENT0("webrtc", "PeerConnection::~PeerConnection");
@@ -2638,17 +2645,23 @@ void PeerConnection::DoSetLocalDescription(
     ReportNegotiatedSdpSemantics(*local_description());
   }
 
+  observer->OnSetLocalDescriptionComplete(RTCError::OK());
+  NoteUsageEvent(UsageEvent::SET_LOCAL_DESCRIPTION_SUCCEEDED);
+
+  // Check if negotiation is needed. We must do this after informing the
+  // observer that SetLocalDescription() has completed to ensure negotiation is
+  // not needed prior to the promise resolving.
   if (IsUnifiedPlan()) {
     bool was_negotiation_needed = is_negotiation_needed_;
     UpdateNegotiationNeeded();
     if (signaling_state() == kStable && was_negotiation_needed &&
         is_negotiation_needed_) {
+      // Legacy version.
       Observer()->OnRenegotiationNeeded();
+      // Spec-compliant version; the event may get invalidated before firing.
+      GenerateNegotiationNeededEvent();
     }
   }
-
-  observer->OnSetLocalDescriptionComplete(RTCError::OK());
-  NoteUsageEvent(UsageEvent::SET_LOCAL_DESCRIPTION_SUCCEEDED);
 
   // MaybeStartGathering needs to be called after informing the observer so that
   // we don't signal any candidates before signaling that SetLocalDescription
@@ -3098,17 +3111,23 @@ void PeerConnection::DoSetRemoteDescription(
     ReportNegotiatedSdpSemantics(*remote_description());
   }
 
+  observer->OnSetRemoteDescriptionComplete(RTCError::OK());
+  NoteUsageEvent(UsageEvent::SET_REMOTE_DESCRIPTION_SUCCEEDED);
+
+  // Check if negotiation is needed. We must do this after informing the
+  // observer that SetRemoteDescription() has completed to ensure negotiation is
+  // not needed prior to the promise resolving.
   if (IsUnifiedPlan()) {
     bool was_negotiation_needed = is_negotiation_needed_;
     UpdateNegotiationNeeded();
     if (signaling_state() == kStable && was_negotiation_needed &&
         is_negotiation_needed_) {
+      // Legacy version.
       Observer()->OnRenegotiationNeeded();
+      // Spec-compliant version; the event may get invalidated before firing.
+      GenerateNegotiationNeededEvent();
     }
   }
-
-  observer->OnSetRemoteDescriptionComplete(RTCError::OK());
-  NoteUsageEvent(UsageEvent::SET_REMOTE_DESCRIPTION_SUCCEEDED);
 }
 
 RTCError PeerConnection::ApplyRemoteDescription(
@@ -7310,8 +7329,21 @@ void PeerConnection::UpdateNegotiationNeeded() {
   RTC_DCHECK_RUN_ON(signaling_thread());
   if (!IsUnifiedPlan()) {
     Observer()->OnRenegotiationNeeded();
+    GenerateNegotiationNeededEvent();
     return;
   }
+
+  // In the spec, a task is queued here to run the following steps - this is
+  // meant to ensure we do not fire onnegotiationneeded prematurely if multiple
+  // changes are being made at once. In order to support Chromium's
+  // implementation where the JavaScript representation of the PeerConnection
+  // lives on a separate thread though, the queuing of a task is instead
+  // performed by the PeerConnectionObserver posting from the signaling thread
+  // to the JavaScript main thread that negotiation is needed. And because the
+  // Operations Chain lives on the WebRTC signaling thread,
+  // ShouldFireNegotiationNeededEvent() must be called before firing the event
+  // to ensure the Operations Chain is still empty and the event has not been
+  // invalidated.
 
   // If connection's [[IsClosed]] slot is true, abort these steps.
   if (IsClosed())
@@ -7331,6 +7363,9 @@ void PeerConnection::UpdateNegotiationNeeded() {
   bool is_negotiation_needed = CheckIfNegotiationIsNeeded();
   if (!is_negotiation_needed) {
     is_negotiation_needed_ = false;
+    // Invalidate any negotiation needed event that may previosuly have been
+    // generated.
+    ++negotiation_needed_event_id_;
     return;
   }
 
@@ -7347,6 +7382,10 @@ void PeerConnection::UpdateNegotiationNeeded() {
   // If connection's [[NegotiationNeeded]] slot is false, abort these steps.
   // Fire an event named negotiationneeded at connection.
   Observer()->OnRenegotiationNeeded();
+  // Fire the spec-compliant version; when ShouldFireNegotiationNeededEvent() is
+  // used in the task queued by the observer, this event will only fire when the
+  // chain is empty.
+  GenerateNegotiationNeededEvent();
 }
 
 bool PeerConnection::CheckIfNegotiationIsNeeded() {
@@ -7488,6 +7527,59 @@ bool PeerConnection::CheckIfNegotiationIsNeeded() {
   return false;
 }
 
+void PeerConnection::OnOperationsChainEmpty() {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  if (IsClosed() || !update_negotiation_needed_on_empty_chain_)
+    return;
+  update_negotiation_needed_on_empty_chain_ = false;
+  // Firing when chain is empty is only supported in Unified Plan to avoid Plan
+  // B regressions. (In Plan B, onnegotiationneeded is already broken anyway, so
+  // firing it even more might just be confusing.)
+  if (IsUnifiedPlan()) {
+    UpdateNegotiationNeeded();
+  }
+}
+
+bool PeerConnection::ShouldFireNegotiationNeededEvent(uint32_t event_id) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  // Plan B? Always fire to conform with useless legacy behavior.
+  if (!IsUnifiedPlan()) {
+    return true;
+  }
+  // The event ID has been invalidated. Either negotiation is no longer needed
+  // or a newer negotiation needed event has been generated.
+  if (event_id != negotiation_needed_event_id_) {
+    return false;
+  }
+  // The chain is no longer empty, update negotiation needed when it becomes
+  // empty. This should generate a newer negotiation needed event, making this
+  // one obsolete.
+  if (!operations_chain_->IsEmpty()) {
+    // Since we just suppressed an event that would have been fired, if
+    // negotiation is still needed by the time the chain becomes empty again, we
+    // must make sure to generate another event if negotiation is needed then.
+    // This happens when |is_negotiation_needed_| goes from false to true, so we
+    // set it to false until UpdateNegotiationNeeded() is called.
+    is_negotiation_needed_ = false;
+    update_negotiation_needed_on_empty_chain_ = true;
+    return false;
+  }
+  // We must not fire if the signaling state is no longer "stable". If
+  // negotiation is still needed when we return to "stable", a new negotiation
+  // needed event will be generated, so this one can safely be suppressed.
+  if (signaling_state_ != PeerConnectionInterface::kStable) {
+    return false;
+  }
+  // All checks have passed - please fire "negotiationneeded" now!
+  return true;
+}
+
+void PeerConnection::GenerateNegotiationNeededEvent() {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  ++negotiation_needed_event_id_;
+  Observer()->OnNegotiationNeededEvent(negotiation_needed_event_id_);
+}
+
 RTCError PeerConnection::Rollback(SdpType sdp_type) {
   auto state = signaling_state();
   if (state != PeerConnectionInterface::kHaveLocalOffer &&
@@ -7574,7 +7666,10 @@ RTCError PeerConnection::Rollback(SdpType sdp_type) {
   if (sdp_type == SdpType::kRollback) {
     UpdateNegotiationNeeded();
     if (is_negotiation_needed_) {
+      // Legacy version.
       Observer()->OnRenegotiationNeeded();
+      // Spec-compliant version; the event may get invalidated before firing.
+      GenerateNegotiationNeededEvent();
     }
   }
   return RTCError::OK();

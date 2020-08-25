@@ -331,6 +331,8 @@ class PeerConnection : public PeerConnectionInternal,
   // Handler for the "channel closed" signal
   void OnSctpDataChannelClosed(DataChannelInterface* channel);
 
+  bool ShouldFireNegotiationNeededEvent(uint32_t event_id) override;
+
   // Functions made public for testing.
   void ReturnHistogramVeryQuicklyForTesting() {
     RTC_DCHECK_RUN_ON(signaling_thread());
@@ -1134,6 +1136,8 @@ class PeerConnection : public PeerConnectionInternal,
 
   void UpdateNegotiationNeeded();
   bool CheckIfNegotiationIsNeeded();
+  void OnOperationsChainEmpty();
+  void GenerateNegotiationNeededEvent();
 
   // | sdp_type | is the type of the SDP that caused the rollback.
   RTCError Rollback(SdpType sdp_type);
@@ -1332,6 +1336,9 @@ class PeerConnection : public PeerConnectionInternal,
   std::unique_ptr<LocalIceCredentialsToReplace>
       local_ice_credentials_to_replace_ RTC_GUARDED_BY(signaling_thread());
   bool is_negotiation_needed_ RTC_GUARDED_BY(signaling_thread()) = false;
+  bool update_negotiation_needed_on_empty_chain_
+      RTC_GUARDED_BY(signaling_thread()) = false;
+  uint32_t negotiation_needed_event_id_ = 0;
 
   DataChannelController data_channel_controller_;
   rtc::WeakPtrFactory<PeerConnection> weak_ptr_factory_

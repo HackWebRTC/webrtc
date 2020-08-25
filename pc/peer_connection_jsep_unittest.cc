@@ -1791,7 +1791,8 @@ TEST_F(PeerConnectionJsepTest, RollbackImplicitly) {
   EXPECT_EQ(callee->signaling_state(),
             PeerConnectionInterface::kHaveRemoteOffer);
   EXPECT_TRUE(callee->CreateAnswerAndSetAsLocal());
-  EXPECT_FALSE(callee->observer()->negotiation_needed());
+  EXPECT_FALSE(callee->observer()->legacy_renegotiation_needed());
+  EXPECT_FALSE(callee->observer()->has_negotiation_needed_event());
 }
 
 TEST_F(PeerConnectionJsepTest, RollbackImplicitlyNegotatiationNotNeeded) {
@@ -1803,13 +1804,15 @@ TEST_F(PeerConnectionJsepTest, RollbackImplicitlyNegotatiationNotNeeded) {
   caller->AddAudioTrack("a");
   callee->AddAudioTrack("b");
   EXPECT_TRUE(callee->CreateOfferAndSetAsLocal());
-  callee->observer()->clear_negotiation_needed();
+  callee->observer()->clear_legacy_renegotiation_needed();
+  callee->observer()->clear_latest_negotiation_needed_event();
   EXPECT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
   EXPECT_EQ(callee->signaling_state(),
             PeerConnectionInterface::kHaveRemoteOffer);
   EXPECT_TRUE(callee->CreateAnswerAndSetAsLocal());
   // No negotiation needed as track got attached in the answer.
-  EXPECT_FALSE(callee->observer()->negotiation_needed());
+  EXPECT_FALSE(callee->observer()->legacy_renegotiation_needed());
+  EXPECT_FALSE(callee->observer()->has_negotiation_needed_event());
   EXPECT_EQ(callee->observer()->remove_track_events_.size(), 0u);
 }
 
@@ -1821,13 +1824,16 @@ TEST_F(PeerConnectionJsepTest, RollbackImplicitlyAndNegotiationNeeded) {
   auto callee = CreatePeerConnection(config);
   callee->AddAudioTrack("a");
   EXPECT_TRUE(callee->CreateOfferAndSetAsLocal());
-  callee->observer()->clear_negotiation_needed();
+  callee->observer()->clear_legacy_renegotiation_needed();
+  callee->observer()->clear_latest_negotiation_needed_event();
   EXPECT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
   EXPECT_EQ(callee->signaling_state(),
             PeerConnectionInterface::kHaveRemoteOffer);
-  EXPECT_FALSE(callee->observer()->negotiation_needed());
+  EXPECT_FALSE(callee->observer()->legacy_renegotiation_needed());
+  EXPECT_FALSE(callee->observer()->has_negotiation_needed_event());
   EXPECT_TRUE(callee->CreateAnswerAndSetAsLocal());
-  EXPECT_TRUE(callee->observer()->negotiation_needed());
+  EXPECT_TRUE(callee->observer()->legacy_renegotiation_needed());
+  EXPECT_TRUE(callee->observer()->has_negotiation_needed_event());
   EXPECT_EQ(callee->observer()->remove_track_events_.size(), 0u);
 }
 
@@ -1938,7 +1944,8 @@ TEST_F(PeerConnectionJsepTest, RollbackHasNoEffectOnStableTransceivers) {
   EXPECT_TRUE(
       caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal()));
   // In stable don't add or remove anything.
-  callee->observer()->clear_negotiation_needed();
+  callee->observer()->clear_legacy_renegotiation_needed();
+  callee->observer()->clear_latest_negotiation_needed_event();
   size_t transceiver_count = callee->pc()->GetTransceivers().size();
   auto mid_0 = callee->pc()->GetTransceivers()[0]->mid();
   auto mid_1 = callee->pc()->GetTransceivers()[1]->mid();
@@ -1948,7 +1955,8 @@ TEST_F(PeerConnectionJsepTest, RollbackHasNoEffectOnStableTransceivers) {
   EXPECT_EQ(callee->pc()->GetTransceivers()[0]->mid(), mid_0);
   EXPECT_EQ(callee->pc()->GetTransceivers()[1]->mid(), mid_1);
   EXPECT_EQ(callee->observer()->remove_track_events_.size(), 0u);
-  EXPECT_FALSE(callee->observer()->negotiation_needed());
+  EXPECT_FALSE(callee->observer()->legacy_renegotiation_needed());
+  EXPECT_FALSE(callee->observer()->has_negotiation_needed_event());
 }
 
 TEST_F(PeerConnectionJsepTest, ImplicitlyRollbackTransceiversWithSameMids) {
@@ -2083,9 +2091,11 @@ TEST_F(PeerConnectionJsepTest, RollbackAfterMultipleSLD) {
   EXPECT_TRUE(callee->CreateOfferAndSetAsLocal());
   callee->AddTransceiver(cricket::MEDIA_TYPE_VIDEO);
   EXPECT_TRUE(callee->CreateOfferAndSetAsLocal());
-  callee->observer()->clear_negotiation_needed();
+  callee->observer()->clear_legacy_renegotiation_needed();
+  callee->observer()->clear_latest_negotiation_needed_event();
   EXPECT_TRUE(callee->SetRemoteDescription(callee->CreateRollback()));
-  EXPECT_TRUE(callee->observer()->negotiation_needed());
+  EXPECT_TRUE(callee->observer()->legacy_renegotiation_needed());
+  EXPECT_TRUE(callee->observer()->has_negotiation_needed_event());
   EXPECT_EQ(callee->pc()->GetTransceivers().size(), 2u);
   EXPECT_EQ(callee->pc()->GetTransceivers()[0]->mid(), absl::nullopt);
   EXPECT_EQ(callee->pc()->GetTransceivers()[1]->mid(), absl::nullopt);
@@ -2134,7 +2144,8 @@ TEST_F(PeerConnectionJsepTest, DataChannelImplicitRollback) {
   EXPECT_TRUE(callee->CreateOfferAndSetAsLocal());
   EXPECT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
   EXPECT_TRUE(callee->CreateAnswerAndSetAsLocal());
-  EXPECT_TRUE(callee->observer()->negotiation_needed());
+  EXPECT_TRUE(callee->observer()->legacy_renegotiation_needed());
+  EXPECT_TRUE(callee->observer()->has_negotiation_needed_event());
   EXPECT_TRUE(callee->CreateOfferAndSetAsLocal());
 }
 

@@ -18,6 +18,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/types/optional.h"
 #include "api/scoped_refptr.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
@@ -112,6 +113,9 @@ class OperationsChain final : public RefCountedObject<RefCountInterface> {
   static scoped_refptr<OperationsChain> Create();
   ~OperationsChain();
 
+  void SetOnChainEmptyCallback(std::function<void()> on_chain_empty_callback);
+  bool IsEmpty() const;
+
   // Chains an operation. Chained operations are executed in FIFO order. The
   // operation starts when |functor| is executed by the OperationsChain and is
   // contractually obligated to invoke the callback passed to it when the
@@ -181,6 +185,8 @@ class OperationsChain final : public RefCountedObject<RefCountInterface> {
   // to it.
   std::queue<std::unique_ptr<rtc_operations_chain_internal::Operation>>
       chained_operations_ RTC_GUARDED_BY(sequence_checker_);
+  absl::optional<std::function<void()>> on_chain_empty_callback_
+      RTC_GUARDED_BY(sequence_checker_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(OperationsChain);
 };

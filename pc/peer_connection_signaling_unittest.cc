@@ -976,4 +976,68 @@ TEST_F(PeerConnectionSignalingUnifiedPlanTest,
   ASSERT_EQ(SignalingState::kStable, caller->signaling_state());
 }
 
+TEST_F(PeerConnectionSignalingUnifiedPlanTest,
+       ShouldFireNegotiationNeededWhenNoChangesArePending) {
+  auto caller = CreatePeerConnection();
+  EXPECT_FALSE(caller->observer()->has_negotiation_needed_event());
+  auto transceiver =
+      caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO, RtpTransceiverInit());
+  EXPECT_TRUE(caller->observer()->has_negotiation_needed_event());
+  EXPECT_TRUE(caller->pc()->ShouldFireNegotiationNeededEvent(
+      caller->observer()->latest_negotiation_needed_event()));
+}
+
+TEST_F(PeerConnectionSignalingUnifiedPlanTest,
+       SuppressNegotiationNeededWhenOperationChainIsNotEmpty) {
+  auto caller = CreatePeerConnection();
+  EXPECT_FALSE(caller->observer()->has_negotiation_needed_event());
+  auto transceiver =
+      caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO, RtpTransceiverInit());
+  EXPECT_TRUE(caller->observer()->has_negotiation_needed_event());
+
+  rtc::scoped_refptr<MockCreateSessionDescriptionObserver> observer =
+      new rtc::RefCountedObject<MockCreateSessionDescriptionObserver>();
+  caller->pc()->CreateOffer(observer, RTCOfferAnswerOptions());
+  // For this test to work, the operation has to be pending, i.e. the observer
+  // has not yet been invoked.
+  EXPECT_FALSE(observer->called());
+  // Because the Operations Chain is not empty, the event is now suppressed.
+  EXPECT_FALSE(caller->pc()->ShouldFireNegotiationNeededEvent(
+      caller->observer()->latest_negotiation_needed_event()));
+  caller->observer()->clear_latest_negotiation_needed_event();
+
+  // When the Operations Chain becomes empty again, a new negotiation needed
+  // event will be generated that is not suppressed.
+  EXPECT_TRUE_WAIT(observer->called(), kWaitTimeout);
+  EXPECT_TRUE(caller->observer()->has_negotiation_needed_event());
+  EXPECT_TRUE(caller->pc()->ShouldFireNegotiationNeededEvent(
+      caller->observer()->latest_negotiation_needed_event()));
+}
+
+TEST_F(PeerConnectionSignalingUnifiedPlanTest,
+       SuppressNegotiationNeededWhenSignalingStateIsNotStable) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+  auto offer = caller->CreateOffer(RTCOfferAnswerOptions());
+
+  EXPECT_FALSE(caller->observer()->has_negotiation_needed_event());
+  auto transceiver =
+      callee->AddTransceiver(cricket::MEDIA_TYPE_AUDIO, RtpTransceiverInit());
+  EXPECT_TRUE(callee->observer()->has_negotiation_needed_event());
+
+  // Change signaling state (to "have-remote-offer") by setting a remote offer.
+  callee->SetRemoteDescription(std::move(offer));
+  // Because the signaling state is not "stable", the event is now suppressed.
+  EXPECT_FALSE(callee->pc()->ShouldFireNegotiationNeededEvent(
+      callee->observer()->latest_negotiation_needed_event()));
+  callee->observer()->clear_latest_negotiation_needed_event();
+
+  // Upon rolling back to "stable", a new negotiation needed event will be
+  // generated that is not suppressed.
+  callee->SetLocalDescription(CreateSessionDescription(SdpType::kRollback, ""));
+  EXPECT_TRUE(callee->observer()->has_negotiation_needed_event());
+  EXPECT_TRUE(callee->pc()->ShouldFireNegotiationNeededEvent(
+      callee->observer()->latest_negotiation_needed_event()));
+}
+
 }  // namespace webrtc
