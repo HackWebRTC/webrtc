@@ -79,6 +79,40 @@ TEST(RtpTransceiverTest, CanUnsetChannelOnStoppedTransceiver) {
   EXPECT_EQ(nullptr, transceiver.channel());
 }
 
+class RtpTransceiverUnifiedPlanTest : public ::testing::Test {
+ public:
+  RtpTransceiverUnifiedPlanTest()
+      : channel_manager_(std::make_unique<cricket::FakeMediaEngine>(),
+                         std::make_unique<cricket::FakeDataEngine>(),
+                         rtc::Thread::Current(),
+                         rtc::Thread::Current()),
+        transceiver_(RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
+                         rtc::Thread::Current(),
+                         new rtc::RefCountedObject<MockRtpSenderInternal>()),
+                     RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
+                         rtc::Thread::Current(),
+                         new rtc::RefCountedObject<MockRtpReceiverInternal>()),
+                     &channel_manager_,
+                     channel_manager_.GetSupportedAudioRtpHeaderExtensions()) {}
+
+  cricket::ChannelManager channel_manager_;
+  RtpTransceiver transceiver_;
+};
+
+// Basic tests for Stop()
+TEST_F(RtpTransceiverUnifiedPlanTest, StopSetsDirection) {
+  EXPECT_EQ(RtpTransceiverDirection::kInactive, transceiver_.direction());
+  EXPECT_FALSE(transceiver_.current_direction());
+  transceiver_.StopStandard();
+  EXPECT_EQ(RtpTransceiverDirection::kStopped, transceiver_.direction());
+  EXPECT_FALSE(transceiver_.current_direction());
+  transceiver_.StopTransceiverProcedure();
+  EXPECT_TRUE(transceiver_.current_direction());
+  EXPECT_EQ(RtpTransceiverDirection::kStopped, transceiver_.direction());
+  EXPECT_EQ(RtpTransceiverDirection::kStopped,
+            *transceiver_.current_direction());
+}
+
 class RtpTransceiverTestForHeaderExtensions : public ::testing::Test {
  public:
   RtpTransceiverTestForHeaderExtensions()

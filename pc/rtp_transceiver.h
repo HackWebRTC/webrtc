@@ -177,6 +177,10 @@ class RtpTransceiver final
   // PeerConnection is closed.
   void SetPeerConnectionClosed();
 
+  // Executes the "stop the RTCRtpTransceiver" procedure from
+  // the webrtc-pc specification, described under the stop() method.
+  void StopTransceiverProcedure();
+
   // Fired when the RtpTransceiver state changes such that negotiation is now
   // needed (e.g., in response to a direction change).
   sigslot::signal0<> SignalNegotiationNeeded;

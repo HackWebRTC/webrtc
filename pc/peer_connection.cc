@@ -3337,7 +3337,7 @@ RTCError PeerConnection::ApplyRemoteDescription(
       if (content->rejected && !transceiver->stopped()) {
         RTC_LOG(LS_INFO) << "Stopping transceiver for MID=" << content->name
                          << " since the media section was rejected.";
-        transceiver->StopInternal();
+        transceiver->internal()->StopTransceiverProcedure();
       }
       if (!content->rejected &&
           RtpTransceiverDirectionHasRecv(local_direction)) {

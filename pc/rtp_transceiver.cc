@@ -321,7 +321,7 @@ RTCError RtpTransceiver::SetDirectionWithError(
 
 absl::optional<RtpTransceiverDirection> RtpTransceiver::current_direction()
     const {
-  if (unified_plan_ && stopping())
+  if (unified_plan_ && stopped())
     return webrtc::RtpTransceiverDirection::kStopped;
 
   return current_direction_;
@@ -354,7 +354,11 @@ void RtpTransceiver::StopSendingAndReceiving() {
 
 RTCError RtpTransceiver::StopStandard() {
   RTC_DCHECK_RUN_ON(thread_);
-  RTC_DCHECK(unified_plan_);
+  // If we're on Plan B, do what Stop() used to do there.
+  if (!unified_plan_) {
+    StopInternal();
+    return RTCError::OK();
+  }
   // 1. Let transceiver be the RTCRtpTransceiver object on which the method is
   // invoked.
   //
@@ -380,7 +384,12 @@ RTCError RtpTransceiver::StopStandard() {
 }
 
 void RtpTransceiver::StopInternal() {
+  StopTransceiverProcedure();
+}
+
+void RtpTransceiver::StopTransceiverProcedure() {
   RTC_DCHECK_RUN_ON(thread_);
+  // As specified in the "Stop the RTCRtpTransceiver" procedure
   // 1. If transceiver.[[Stopping]] is false, stop sending and receiving given
   // transceiver.
   if (!stopping_)
