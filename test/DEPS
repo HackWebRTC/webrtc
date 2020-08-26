@@ -6,6 +6,7 @@ include_rules = [
   "+common_video",
   "+logging/rtc_event_log",
   "+media/base",
+  "+media/sctp",
   "+media/engine",
   "+modules/audio_coding",
   "+modules/congestion_controller",
