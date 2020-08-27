@@ -696,6 +696,9 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
       // Make sure that nomination reaching ICE controlled asap.
       "send_ping_on_switch_ice_controlling",
       &field_trials_.send_ping_on_switch_ice_controlling,
+      // Make sure that nomination reaching ICE controlled asap.
+      "send_ping_on_selected_ice_controlling",
+      &field_trials_.send_ping_on_selected_ice_controlling,
       // Reply to nomination ASAP.
       "send_ping_on_nomination_ice_controlled",
       &field_trials_.send_ping_on_nomination_ice_controlled,
@@ -1768,9 +1771,10 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn,
     RTC_LOG(LS_INFO) << ToString() << ": No selected connection";
   }
 
-  if (field_trials_.send_ping_on_switch_ice_controlling &&
-      ice_role_ == ICEROLE_CONTROLLING && old_selected_connection != nullptr &&
-      conn != nullptr) {
+  if (conn != nullptr && ice_role_ == ICEROLE_CONTROLLING &&
+      ((field_trials_.send_ping_on_switch_ice_controlling &&
+        old_selected_connection != nullptr) ||
+       field_trials_.send_ping_on_selected_ice_controlling)) {
     PingConnection(conn);
     MarkConnectionPinged(conn);
   }
