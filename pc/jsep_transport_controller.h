@@ -101,7 +101,7 @@ class JsepTransportController : public sigslot::has_slots<> {
     RtcEventLog* event_log = nullptr;
 
     // Factory for SCTP transports.
-    SctpTransportFactoryInterface* sctp_factory = nullptr;
+    cricket::SctpTransportInternalFactory* sctp_factory = nullptr;
   };
 
   // The ICE related events are signaled on the |signaling_thread|.

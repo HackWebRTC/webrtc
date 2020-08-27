@@ -185,7 +185,6 @@ rtc_library("libjingle_peerconnection_api") {
     "transport:bitrate_settings",
     "transport:enums",
     "transport:network_control",
-    "transport:sctp_transport_factory_interface",
     "transport:webrtc_key_value_config",
     "transport/rtp:rtp_source",
     "units:data_rate",

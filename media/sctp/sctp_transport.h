@@ -21,7 +21,6 @@
 #include <vector>
 
 #include "absl/types/optional.h"
-#include "api/transport/sctp_transport_factory_interface.h"
 #include "rtc_base/async_invoker.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/constructor_magic.h"
@@ -284,7 +283,7 @@ class SctpTransport : public SctpTransportInternal,
   RTC_DISALLOW_COPY_AND_ASSIGN(SctpTransport);
 };
 
-class SctpTransportFactory : public webrtc::SctpTransportFactoryInterface {
+class SctpTransportFactory : public SctpTransportInternalFactory {
  public:
   explicit SctpTransportFactory(rtc::Thread* network_thread)
       : network_thread_(network_thread) {}

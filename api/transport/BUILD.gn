@@ -93,11 +93,6 @@ rtc_library("goog_cc") {
   ]
 }
 
-rtc_source_set("sctp_transport_factory_interface") {
-  visibility = [ "*" ]
-  sources = [ "sctp_transport_factory_interface.h" ]
-}
-
 rtc_source_set("stun_types") {
   visibility = [ "*" ]
   sources = [

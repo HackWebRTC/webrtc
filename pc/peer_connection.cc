@@ -1073,6 +1073,7 @@ PeerConnection::~PeerConnection() {
   RTC_LOG(LS_INFO) << "Session: " << session_id() << " is destroyed.";
 
   webrtc_session_desc_factory_.reset();
+  sctp_factory_.reset();
   transport_controller_.reset();
 
   // port_allocator_ lives on the network thread and should be destroyed there.
@@ -1261,6 +1262,8 @@ bool PeerConnection::Initialize(
     }
   }
 
+  sctp_factory_ = factory_->CreateSctpTransportInternalFactory();
+
   if (configuration.enable_rtp_data_channel) {
     // Enable creation of RTP data channels if the kEnableRtpDataChannels is
     // set. It takes precendence over the disable_sctp_data_channels
@@ -1270,7 +1273,7 @@ bool PeerConnection::Initialize(
     // DTLS has to be enabled to use SCTP.
     if (!options.disable_sctp_data_channels && dtls_enabled_) {
       data_channel_controller_.set_data_channel_type(cricket::DCT_SCTP);
-      config.sctp_factory = factory_->sctp_transport_factory();
+      config.sctp_factory = sctp_factory_.get();
     }
   }
 

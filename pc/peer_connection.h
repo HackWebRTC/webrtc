@@ -1274,6 +1274,9 @@ class PeerConnection : public PeerConnectionInternal,
   std::unique_ptr<JsepTransportController>
       transport_controller_;  // TODO(bugs.webrtc.org/9987): Accessed on both
                               // signaling and network thread.
+  std::unique_ptr<cricket::SctpTransportInternalFactory>
+      sctp_factory_;  // TODO(bugs.webrtc.org/9987): Accessed on both
+                      // signaling and network thread.
 
   // |sctp_mid_| is the content name (MID) in SDP.
   // Note: this is used as the data channel MID by both SCTP and data channel
