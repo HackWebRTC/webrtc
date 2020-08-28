@@ -84,6 +84,7 @@ PeerConnectionFactory::PeerConnectionFactory(
       injected_network_controller_factory_(
           std::move(dependencies.network_controller_factory)),
       neteq_factory_(std::move(dependencies.neteq_factory)),
+      sctp_factory_(std::move(dependencies.sctp_factory)),
       trials_(dependencies.trials ? std::move(dependencies.trials)
                                   : std::make_unique<FieldTrialBasedConfig>()) {
   if (!network_thread_) {
@@ -113,6 +114,13 @@ PeerConnectionFactory::PeerConnectionFactory(
   signaling_thread_->AllowInvokesToThread(network_thread_);
   worker_thread_->AllowInvokesToThread(network_thread_);
   network_thread_->DisallowAllInvokes();
+
+#ifdef HAVE_SCTP
+  if (!sctp_factory_) {
+    sctp_factory_ =
+        std::make_unique<cricket::SctpTransportFactory>(network_thread_);
+  }
+#endif
 }
 
 PeerConnectionFactory::~PeerConnectionFactory() {
@@ -324,15 +332,6 @@ rtc::scoped_refptr<AudioTrackInterface> PeerConnectionFactory::CreateAudioTrack(
   RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::scoped_refptr<AudioTrackInterface> track(AudioTrack::Create(id, source));
   return AudioTrackProxy::Create(signaling_thread_, track);
-}
-
-std::unique_ptr<cricket::SctpTransportInternalFactory>
-PeerConnectionFactory::CreateSctpTransportInternalFactory() {
-#ifdef HAVE_SCTP
-  return std::make_unique<cricket::SctpTransportFactory>(network_thread());
-#else
-  return nullptr;
-#endif
 }
 
 cricket::ChannelManager* PeerConnectionFactory::channel_manager() {

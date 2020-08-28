@@ -21,10 +21,10 @@
 #include "pc/test/android_test_initializer.h"
 #endif
 #include "pc/test/fake_audio_capture_module.h"
-#include "pc/test/fake_sctp_transport.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/virtual_socket_server.h"
 #include "test/gmock.h"
+#include "test/pc/sctp/fake_sctp_transport.h"
 
 // This file contains tests that ensure the PeerConnection's implementation of
 // CreateOffer/CreateAnswer/SetLocalDescription/SetRemoteDescription conform
@@ -41,30 +41,21 @@ using ::testing::ElementsAre;
 using ::testing::UnorderedElementsAre;
 using ::testing::Values;
 
-class PeerConnectionFactoryForJsepTest : public PeerConnectionFactory {
- public:
-  PeerConnectionFactoryForJsepTest()
-      : PeerConnectionFactory([] {
-          PeerConnectionFactoryDependencies dependencies;
-          dependencies.worker_thread = rtc::Thread::Current();
-          dependencies.network_thread = rtc::Thread::Current();
-          dependencies.signaling_thread = rtc::Thread::Current();
-          dependencies.task_queue_factory = CreateDefaultTaskQueueFactory();
-          cricket::MediaEngineDependencies media_deps;
-          media_deps.task_queue_factory = dependencies.task_queue_factory.get();
-          media_deps.adm = FakeAudioCaptureModule::Create();
-          SetMediaEngineDefaults(&media_deps);
-          dependencies.media_engine =
-              cricket::CreateMediaEngine(std::move(media_deps));
-          dependencies.call_factory = CreateCallFactory();
-          return dependencies;
-        }()) {}
-
-  std::unique_ptr<cricket::SctpTransportInternalFactory>
-  CreateSctpTransportInternalFactory() {
-    return std::make_unique<FakeSctpTransportFactory>();
-  }
-};
+PeerConnectionFactoryDependencies CreatePeerConnectionFactoryDependencies() {
+  PeerConnectionFactoryDependencies dependencies;
+  dependencies.worker_thread = rtc::Thread::Current();
+  dependencies.network_thread = rtc::Thread::Current();
+  dependencies.signaling_thread = rtc::Thread::Current();
+  dependencies.task_queue_factory = CreateDefaultTaskQueueFactory();
+  cricket::MediaEngineDependencies media_deps;
+  media_deps.task_queue_factory = dependencies.task_queue_factory.get();
+  media_deps.adm = FakeAudioCaptureModule::Create();
+  SetMediaEngineDefaults(&media_deps);
+  dependencies.media_engine = cricket::CreateMediaEngine(std::move(media_deps));
+  dependencies.call_factory = CreateCallFactory();
+  dependencies.sctp_factory = std::make_unique<FakeSctpTransportFactory>();
+  return dependencies;
+}
 
 class PeerConnectionJsepTest : public ::testing::Test {
  protected:
@@ -84,9 +75,9 @@ class PeerConnectionJsepTest : public ::testing::Test {
   }
 
   WrapperPtr CreatePeerConnection(const RTCConfiguration& config) {
-    rtc::scoped_refptr<PeerConnectionFactory> pc_factory(
-        new rtc::RefCountedObject<PeerConnectionFactoryForJsepTest>());
-    RTC_CHECK(pc_factory->Initialize());
+    rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory =
+        CreateModularPeerConnectionFactory(
+            CreatePeerConnectionFactoryDependencies());
     auto observer = std::make_unique<MockPeerConnectionObserver>();
     auto pc = pc_factory->CreatePeerConnection(config, nullptr, nullptr,
                                                observer.get());

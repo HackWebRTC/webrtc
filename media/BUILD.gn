@@ -426,7 +426,10 @@ rtc_library("rtc_data") {
   }
 
   if (rtc_enable_sctp && rtc_build_usrsctp) {
-    deps += [ "//third_party/usrsctp" ]
+    deps += [
+      "../api/transport:sctp_transport_factory_interface",
+      "//third_party/usrsctp",
+    ]
   }
 }
 
