@@ -246,6 +246,81 @@ TEST_P(AdaptiveFirFilterOneTwoFourEightRenderChannels,
   }
 }
 
+// Verifies that the optimized methods for filter adaptation are bitexact to
+// their reference counterparts.
+TEST_P(AdaptiveFirFilterOneTwoFourEightRenderChannels,
+       FilterAdaptationAvx2Optimizations) {
+  const size_t num_render_channels = GetParam();
+  constexpr int kSampleRateHz = 48000;
+  constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
+
+  bool use_avx2 = (WebRtc_GetCPUInfo(kAVX2) != 0);
+  if (use_avx2) {
+    for (size_t num_partitions : {2, 5, 12, 30, 50}) {
+      std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
+          RenderDelayBuffer::Create(EchoCanceller3Config(), kSampleRateHz,
+                                    num_render_channels));
+      Random random_generator(42U);
+      std::vector<std::vector<std::vector<float>>> x(
+          kNumBands,
+          std::vector<std::vector<float>>(num_render_channels,
+                                          std::vector<float>(kBlockSize, 0.f)));
+      FftData S_C;
+      FftData S_Avx2;
+      FftData G;
+      Aec3Fft fft;
+      std::vector<std::vector<FftData>> H_C(
+          num_partitions, std::vector<FftData>(num_render_channels));
+      std::vector<std::vector<FftData>> H_Avx2(
+          num_partitions, std::vector<FftData>(num_render_channels));
+      for (size_t p = 0; p < num_partitions; ++p) {
+        for (size_t ch = 0; ch < num_render_channels; ++ch) {
+          H_C[p][ch].Clear();
+          H_Avx2[p][ch].Clear();
+        }
+      }
+
+      for (size_t k = 0; k < 500; ++k) {
+        for (size_t band = 0; band < x.size(); ++band) {
+          for (size_t ch = 0; ch < x[band].size(); ++ch) {
+            RandomizeSampleVector(&random_generator, x[band][ch]);
+          }
+        }
+        render_delay_buffer->Insert(x);
+        if (k == 0) {
+          render_delay_buffer->Reset();
+        }
+        render_delay_buffer->PrepareCaptureProcessing();
+        auto* const render_buffer = render_delay_buffer->GetRenderBuffer();
+
+        ApplyFilter_Avx2(*render_buffer, num_partitions, H_Avx2, &S_Avx2);
+        ApplyFilter(*render_buffer, num_partitions, H_C, &S_C);
+        for (size_t j = 0; j < S_C.re.size(); ++j) {
+          EXPECT_FLOAT_EQ(S_C.re[j], S_Avx2.re[j]);
+          EXPECT_FLOAT_EQ(S_C.im[j], S_Avx2.im[j]);
+        }
+
+        std::for_each(G.re.begin(), G.re.end(),
+                      [&](float& a) { a = random_generator.Rand<float>(); });
+        std::for_each(G.im.begin(), G.im.end(),
+                      [&](float& a) { a = random_generator.Rand<float>(); });
+
+        AdaptPartitions_Avx2(*render_buffer, G, num_partitions, &H_Avx2);
+        AdaptPartitions(*render_buffer, G, num_partitions, &H_C);
+
+        for (size_t p = 0; p < num_partitions; ++p) {
+          for (size_t ch = 0; ch < num_render_channels; ++ch) {
+            for (size_t j = 0; j < H_C[p][ch].re.size(); ++j) {
+              EXPECT_FLOAT_EQ(H_C[p][ch].re[j], H_Avx2[p][ch].re[j]);
+              EXPECT_FLOAT_EQ(H_C[p][ch].im[j], H_Avx2[p][ch].im[j]);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 // Verifies that the optimized method for frequency response computation is
 // bitexact to the reference counterpart.
 TEST_P(AdaptiveFirFilterOneTwoFourEightRenderChannels,
@@ -275,6 +350,41 @@ TEST_P(AdaptiveFirFilterOneTwoFourEightRenderChannels,
       for (size_t p = 0; p < num_partitions; ++p) {
         for (size_t k = 0; k < H2[p].size(); ++k) {
           EXPECT_FLOAT_EQ(H2[p][k], H2_Sse2[p][k]);
+        }
+      }
+    }
+  }
+}
+
+// Verifies that the optimized method for frequency response computation is
+// bitexact to the reference counterpart.
+TEST_P(AdaptiveFirFilterOneTwoFourEightRenderChannels,
+       ComputeFrequencyResponseAvx2Optimization) {
+  const size_t num_render_channels = GetParam();
+  bool use_avx2 = (WebRtc_GetCPUInfo(kAVX2) != 0);
+  if (use_avx2) {
+    for (size_t num_partitions : {2, 5, 12, 30, 50}) {
+      std::vector<std::vector<FftData>> H(
+          num_partitions, std::vector<FftData>(num_render_channels));
+      std::vector<std::array<float, kFftLengthBy2Plus1>> H2(num_partitions);
+      std::vector<std::array<float, kFftLengthBy2Plus1>> H2_Avx2(
+          num_partitions);
+
+      for (size_t p = 0; p < num_partitions; ++p) {
+        for (size_t ch = 0; ch < num_render_channels; ++ch) {
+          for (size_t k = 0; k < H[p][ch].re.size(); ++k) {
+            H[p][ch].re[k] = k + p / 3.f + ch;
+            H[p][ch].im[k] = p + k / 7.f - ch;
+          }
+        }
+      }
+
+      ComputeFrequencyResponse(num_partitions, H, &H2);
+      ComputeFrequencyResponse_Avx2(num_partitions, H, &H2_Avx2);
+
+      for (size_t p = 0; p < num_partitions; ++p) {
+        for (size_t k = 0; k < H2[p].size(); ++k) {
+          EXPECT_FLOAT_EQ(H2[p][k], H2_Avx2[p][k]);
         }
       }
     }

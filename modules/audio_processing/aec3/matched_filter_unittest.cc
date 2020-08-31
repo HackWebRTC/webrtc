@@ -133,6 +133,47 @@ TEST(MatchedFilter, TestSse2Optimizations) {
   }
 }
 
+TEST(MatchedFilter, TestAvx2Optimizations) {
+  bool use_avx2 = (WebRtc_GetCPUInfo(kAVX2) != 0);
+  if (use_avx2) {
+    Random random_generator(42U);
+    constexpr float kSmoothing = 0.7f;
+    for (auto down_sampling_factor : kDownSamplingFactors) {
+      const size_t sub_block_size = kBlockSize / down_sampling_factor;
+      std::vector<float> x(2000);
+      RandomizeSampleVector(&random_generator, x);
+      std::vector<float> y(sub_block_size);
+      std::vector<float> h_AVX2(512);
+      std::vector<float> h(512);
+      int x_index = 0;
+      for (int k = 0; k < 1000; ++k) {
+        RandomizeSampleVector(&random_generator, y);
+
+        bool filters_updated = false;
+        float error_sum = 0.f;
+        bool filters_updated_AVX2 = false;
+        float error_sum_AVX2 = 0.f;
+
+        MatchedFilterCore_AVX2(x_index, h.size() * 150.f * 150.f, kSmoothing, x,
+                               y, h_AVX2, &filters_updated_AVX2,
+                               &error_sum_AVX2);
+
+        MatchedFilterCore(x_index, h.size() * 150.f * 150.f, kSmoothing, x, y,
+                          h, &filters_updated, &error_sum);
+
+        EXPECT_EQ(filters_updated, filters_updated_AVX2);
+        EXPECT_NEAR(error_sum, error_sum_AVX2, error_sum / 100000.f);
+
+        for (size_t j = 0; j < h.size(); ++j) {
+          EXPECT_NEAR(h[j], h_AVX2[j], 0.00001f);
+        }
+
+        x_index = (x_index + sub_block_size) % x.size();
+      }
+    }
+  }
+}
+
 #endif
 
 // Verifies that the matched filter produces proper lag estimates for

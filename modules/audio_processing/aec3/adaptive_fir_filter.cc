@@ -556,6 +556,9 @@ void AdaptiveFirFilter::Filter(const RenderBuffer& render_buffer,
     case Aec3Optimization::kSse2:
       aec3::ApplyFilter_Sse2(render_buffer, current_size_partitions_, H_, S);
       break;
+    case Aec3Optimization::kAvx2:
+      aec3::ApplyFilter_Avx2(render_buffer, current_size_partitions_, H_, S);
+      break;
 #endif
 #if defined(WEBRTC_HAS_NEON)
     case Aec3Optimization::kNeon:
@@ -597,6 +600,9 @@ void AdaptiveFirFilter::ComputeFrequencyResponse(
     case Aec3Optimization::kSse2:
       aec3::ComputeFrequencyResponse_Sse2(current_size_partitions_, H_, H2);
       break;
+    case Aec3Optimization::kAvx2:
+      aec3::ComputeFrequencyResponse_Avx2(current_size_partitions_, H_, H2);
+      break;
 #endif
 #if defined(WEBRTC_HAS_NEON)
     case Aec3Optimization::kNeon:
@@ -618,6 +624,10 @@ void AdaptiveFirFilter::AdaptAndUpdateSize(const RenderBuffer& render_buffer,
 #if defined(WEBRTC_ARCH_X86_FAMILY)
     case Aec3Optimization::kSse2:
       aec3::AdaptPartitions_Sse2(render_buffer, G, current_size_partitions_,
+                                 &H_);
+      break;
+    case Aec3Optimization::kAvx2:
+      aec3::AdaptPartitions_Avx2(render_buffer, G, current_size_partitions_,
                                  &H_);
       break;
 #endif

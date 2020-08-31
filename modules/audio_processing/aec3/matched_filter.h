@@ -53,6 +53,16 @@ void MatchedFilterCore_SSE2(size_t x_start_index,
                             bool* filters_updated,
                             float* error_sum);
 
+// Filter core for the matched filter that is optimized for AVX2.
+void MatchedFilterCore_AVX2(size_t x_start_index,
+                            float x2_sum_threshold,
+                            float smoothing,
+                            rtc::ArrayView<const float> x,
+                            rtc::ArrayView<const float> y,
+                            rtc::ArrayView<float> h,
+                            bool* filters_updated,
+                            float* error_sum);
+
 #endif
 
 // Filter core for the matched filter.
