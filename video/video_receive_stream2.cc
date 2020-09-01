@@ -132,8 +132,19 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
     return associated_codec;
   }
 
-  codec.width = 320;
-  codec.height = 180;
+  FieldTrialOptional<int> width("w");
+  FieldTrialOptional<int> height("h");
+  ParseFieldTrial(
+      {&width, &height},
+      field_trial::FindFullName("WebRTC-Video-InitialDecoderResolution"));
+  if (width && height) {
+    codec.width = width.Value();
+    codec.height = height.Value();
+  } else {
+    codec.width = 320;
+    codec.height = 180;
+  }
+
   const int kDefaultStartBitrate = 300;
   codec.startBitrate = codec.minBitrate = codec.maxBitrate =
       kDefaultStartBitrate;
