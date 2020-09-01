@@ -307,6 +307,8 @@ AudioProcessingImpl::AudioProcessingImpl(
   config_.gain_controller1.analog_gain_controller.enable_digital_adaptive =
       !config.Get<ExperimentalAgc>().digital_adaptive_disabled;
 #endif
+
+  Initialize();
 }
 
 AudioProcessingImpl::~AudioProcessingImpl() = default;
@@ -315,7 +317,8 @@ int AudioProcessingImpl::Initialize() {
   // Run in a single-threaded manner during initialization.
   MutexLock lock_render(&mutex_render_);
   MutexLock lock_capture(&mutex_capture_);
-  return InitializeLocked();
+  InitializeLocked();
+  return kNoError;
 }
 
 int AudioProcessingImpl::Initialize(int capture_input_sample_rate_hz,
@@ -356,7 +359,7 @@ int AudioProcessingImpl::MaybeInitializeRender(
   return InitializeLocked(processing_config);
 }
 
-int AudioProcessingImpl::InitializeLocked() {
+void AudioProcessingImpl::InitializeLocked() {
   UpdateActiveSubmoduleStates();
 
   const int render_audiobuffer_sample_rate_hz =
@@ -425,7 +428,6 @@ int AudioProcessingImpl::InitializeLocked() {
   if (aec_dump_) {
     aec_dump_->WriteInitMessage(formats_.api_format, rtc::TimeUTCMillis());
   }
-  return kNoError;
 }
 
 int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
@@ -519,7 +521,8 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
         capture_nonlocked_.capture_processing_format.sample_rate_hz();
   }
 
-  return InitializeLocked();
+  InitializeLocked();
+  return kNoError;
 }
 
 void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {

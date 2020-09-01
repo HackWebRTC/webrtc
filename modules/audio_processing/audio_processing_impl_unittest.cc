@@ -37,9 +37,9 @@ class MockInitialize : public AudioProcessingImpl {
   explicit MockInitialize(const webrtc::Config& config)
       : AudioProcessingImpl(config) {}
 
-  MOCK_METHOD(int, InitializeLocked, (), (override));
-  int RealInitializeLocked() RTC_NO_THREAD_SAFETY_ANALYSIS {
-    return AudioProcessingImpl::InitializeLocked();
+  MOCK_METHOD(void, InitializeLocked, (), (override));
+  void RealInitializeLocked() RTC_NO_THREAD_SAFETY_ANALYSIS {
+    AudioProcessingImpl::InitializeLocked();
   }
 
   MOCK_METHOD(void, AddRef, (), (const, override));

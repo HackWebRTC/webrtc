@@ -140,7 +140,7 @@ class AudioProcessingImpl : public AudioProcessing {
 
  protected:
   // Overridden in a mock.
-  virtual int InitializeLocked()
+  virtual void InitializeLocked()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_render_, mutex_capture_);
 
  private:

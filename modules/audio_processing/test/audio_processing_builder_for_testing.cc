@@ -30,13 +30,10 @@ AudioProcessing* AudioProcessingBuilderForTesting::Create() {
 
 AudioProcessing* AudioProcessingBuilderForTesting::Create(
     const webrtc::Config& config) {
-  AudioProcessingImpl* apm = new rtc::RefCountedObject<AudioProcessingImpl>(
+  return new rtc::RefCountedObject<AudioProcessingImpl>(
       config, std::move(capture_post_processing_),
       std::move(render_pre_processing_), std::move(echo_control_factory_),
       std::move(echo_detector_), std::move(capture_analyzer_));
-  int error = apm->Initialize();
-  RTC_CHECK_EQ(error, AudioProcessing::kNoError);
-  return apm;
 }
 
 #else

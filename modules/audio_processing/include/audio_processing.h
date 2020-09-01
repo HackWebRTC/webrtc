@@ -488,6 +488,7 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
   // rate and number of channels) have changed. Passing updated parameters
   // directly to |ProcessStream()| and |ProcessReverseStream()| is permissible.
   // If the parameters are known at init-time though, they may be provided.
+  // TODO(webrtc:5298): Change to return void.
   virtual int Initialize() = 0;
 
   // The int16 interfaces require:
