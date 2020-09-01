@@ -130,6 +130,7 @@ if (is_android) {
       "androidapp/src/org/appspot/apprtc/util/AsyncHttpURLConnection.java",
     ]
 
+    resources_package = "org.appspot.apprtc"
     deps = [
       ":AppRTCMobile_resources",
       "../rtc_base:base_java",
@@ -187,9 +188,10 @@ if (is_android) {
       "androidapp/res/values/strings.xml",
       "androidapp/res/xml/preferences.xml",
     ]
-    custom_package = "org.appspot.apprtc"
+    create_srcjar = false
 
     # Needed for Bazel converter.
+    custom_package = "org.appspot.apprtc"
     resource_dirs = [ "androidapp/res" ]
     assert(resource_dirs != [])  # Mark as used.
   }

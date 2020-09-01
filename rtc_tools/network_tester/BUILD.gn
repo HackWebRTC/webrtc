@@ -123,6 +123,7 @@ if (is_android) {
       "androidapp/src/com/google/media/networktester/NetworkTester.java",
     ]
 
+    resources_package = "com.google.media.networktester"
     deps = [
       ":NetworkTesterMobile_resources",
       "../../rtc_base:base_java",
@@ -132,6 +133,7 @@ if (is_android) {
   android_resources("NetworkTesterMobile_resources") {
     testonly = true
     custom_package = "com.google.media.networktester"
+    create_srcjar = false
     sources = [
       "androidapp/res/layout/activity_main.xml",
       "androidapp/res/mipmap-hdpi/ic_launcher.png",
