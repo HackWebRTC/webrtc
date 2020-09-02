@@ -2262,6 +2262,8 @@ TEST_F(WebRtcVideoChannelBaseTest, TwoStreamsSendAndReceive) {
   TwoStreamsSendAndReceive(codec);
 }
 
+#if defined(RTC_ENABLE_VP9)
+
 TEST_F(WebRtcVideoChannelBaseTest, RequestEncoderFallback) {
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(GetEngineCodec("VP9"));
@@ -2397,6 +2399,8 @@ TEST_F(WebRtcVideoChannelBaseTest,
   EXPECT_THAT(codec.name, Eq("VP8"));
   EXPECT_THAT(codec.params, Contains(Pair(kParam, kPing)));
 }
+
+#endif  // defined(RTC_ENABLE_VP9)
 
 class WebRtcVideoChannelTest : public WebRtcVideoEngineTest {
  public:
