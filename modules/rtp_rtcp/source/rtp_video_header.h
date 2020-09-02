@@ -23,7 +23,6 @@
 #include "api/video/video_frame_type.h"
 #include "api/video/video_rotation.h"
 #include "api/video/video_timing.h"
-#include "common_types.h"  // NOLINT(build/include_directory)
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_globals.h"
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
@@ -74,7 +73,7 @@ struct RTPVideoHeader {
   uint8_t simulcastIdx = 0;
   VideoCodecType codec = VideoCodecType::kVideoCodecGeneric;
 
-  PlayoutDelay playout_delay = {-1, -1};
+  VideoPlayoutDelay playout_delay;
   VideoSendTiming video_timing;
   absl::optional<ColorSpace> color_space;
   RTPVideoTypeHeader video_type_header;

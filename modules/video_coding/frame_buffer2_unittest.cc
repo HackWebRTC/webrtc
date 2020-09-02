@@ -280,7 +280,7 @@ TEST_F(TestFrameBuffer2, ZeroPlayoutDelay) {
   VCMTiming timing(time_controller_.GetClock());
   buffer_.reset(
       new FrameBuffer(time_controller_.GetClock(), &timing, &stats_callback_));
-  const PlayoutDelay kPlayoutDelayMs = {0, 0};
+  const VideoPlayoutDelay kPlayoutDelayMs = {0, 0};
   std::unique_ptr<FrameObjectFake> test_frame(new FrameObjectFake());
   test_frame->id.picture_id = 0;
   test_frame->SetPlayoutDelay(kPlayoutDelayMs);

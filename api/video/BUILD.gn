@@ -135,7 +135,6 @@ rtc_library("encoded_image") {
     "..:refcountedbase",
     "..:rtp_packet_info",
     "..:scoped_refptr",
-    "../..:webrtc_common",
     "../../rtc_base:checks",
     "../../rtc_base:deprecation",
     "../../rtc_base:rtc_base_approved",

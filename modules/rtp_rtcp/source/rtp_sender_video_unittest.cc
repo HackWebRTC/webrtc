@@ -898,7 +898,7 @@ TEST_P(RtpSenderVideoTest, PopulatesPlayoutDelay) {
   uint8_t kFrame[kPacketSize];
   rtp_module_->RegisterRtpHeaderExtension(PlayoutDelayLimits::kUri,
                                           kPlayoutDelayExtensionId);
-  const PlayoutDelay kExpectedDelay = {10, 20};
+  const VideoPlayoutDelay kExpectedDelay = {10, 20};
 
   // Send initial key-frame without playout delay.
   RTPVideoHeader hdr;
@@ -918,14 +918,14 @@ TEST_P(RtpSenderVideoTest, PopulatesPlayoutDelay) {
   vp8_header.temporalIdx = 1;
   rtp_sender_video_->SendVideo(kPayload, kType, kTimestamp, 0, kFrame, hdr,
                                kDefaultExpectedRetransmissionTimeMs);
-  PlayoutDelay received_delay = PlayoutDelay::Noop();
+  VideoPlayoutDelay received_delay = VideoPlayoutDelay();
   ASSERT_TRUE(transport_.last_sent_packet().GetExtension<PlayoutDelayLimits>(
       &received_delay));
   EXPECT_EQ(received_delay, kExpectedDelay);
 
   // Set playout delay on a non-discardable frame, the extension should still
   // be populated since dilvery wasn't guaranteed on the last one.
-  hdr.playout_delay = PlayoutDelay::Noop();  // Inidcates "no change".
+  hdr.playout_delay = VideoPlayoutDelay();  // Indicates "no change".
   vp8_header.temporalIdx = 0;
   rtp_sender_video_->SendVideo(kPayload, kType, kTimestamp, 0, kFrame, hdr,
                                kDefaultExpectedRetransmissionTimeMs);

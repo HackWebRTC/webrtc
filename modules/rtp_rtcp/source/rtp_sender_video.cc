@@ -111,7 +111,7 @@ const char* FrameTypeToString(VideoFrameType frame_type) {
 }
 #endif
 
-bool IsNoopDelay(const PlayoutDelay& delay) {
+bool IsNoopDelay(const VideoPlayoutDelay& delay) {
   return delay.min_ms == -1 && delay.max_ms == -1;
 }
 
@@ -794,7 +794,7 @@ void RTPSenderVideo::MaybeUpdateCurrentPlayoutDelay(
     return;
   }
 
-  PlayoutDelay requested_delay = header.playout_delay;
+  VideoPlayoutDelay requested_delay = header.playout_delay;
 
   if (requested_delay.min_ms > PlayoutDelayLimits::kMaxMs ||
       requested_delay.max_ms > PlayoutDelayLimits::kMaxMs) {

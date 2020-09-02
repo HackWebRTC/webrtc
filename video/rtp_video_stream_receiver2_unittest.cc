@@ -1159,11 +1159,11 @@ TEST_F(RtpVideoStreamReceiver2Test, TransformFrame) {
 }
 
 // Test default behavior and when playout delay is overridden by field trial.
-const PlayoutDelay kTransmittedPlayoutDelay = {100, 200};
-const PlayoutDelay kForcedPlayoutDelay = {70, 90};
+const VideoPlayoutDelay kTransmittedPlayoutDelay = {100, 200};
+const VideoPlayoutDelay kForcedPlayoutDelay = {70, 90};
 struct PlayoutDelayOptions {
   std::string field_trial;
-  PlayoutDelay expected_delay;
+  VideoPlayoutDelay expected_delay;
 };
 const PlayoutDelayOptions kDefaultBehavior = {
     /*field_trial=*/"", /*expected_delay=*/kTransmittedPlayoutDelay};

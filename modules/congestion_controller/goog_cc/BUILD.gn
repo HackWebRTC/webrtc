@@ -31,7 +31,6 @@ rtc_library("goog_cc") {
     ":probe_controller",
     ":pushback_controller",
     "../..:module_api",
-    "../../..:webrtc_common",
     "../../../api:network_state_predictor_api",
     "../../../api/rtc_event_log",
     "../../../api/transport:field_trial_based_config",

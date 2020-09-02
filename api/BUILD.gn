@@ -68,7 +68,6 @@ rtc_library("rtp_headers") {
   ]
   deps = [
     ":array_view",
-    "..:webrtc_common",
     "units:timestamp",
     "video:video_rtp_headers",
   ]

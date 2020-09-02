@@ -170,7 +170,7 @@ TEST_F(VideoReceiveStream2Test, CreateFrameFromH264FmtpSpropAndIdr) {
 }
 
 TEST_F(VideoReceiveStream2Test, PlayoutDelay) {
-  const PlayoutDelay kPlayoutDelayMs = {123, 321};
+  const VideoPlayoutDelay kPlayoutDelayMs = {123, 321};
   std::unique_ptr<FrameObjectFake> test_frame(new FrameObjectFake());
   test_frame->id.picture_id = 0;
   test_frame->SetPlayoutDelay(kPlayoutDelayMs);
@@ -200,7 +200,7 @@ TEST_F(VideoReceiveStream2Test, PlayoutDelay) {
 
 TEST_F(VideoReceiveStream2Test, PlayoutDelayPreservesDefaultMaxValue) {
   const int default_max_playout_latency = timing_->max_playout_delay();
-  const PlayoutDelay kPlayoutDelayMs = {123, -1};
+  const VideoPlayoutDelay kPlayoutDelayMs = {123, -1};
 
   std::unique_ptr<FrameObjectFake> test_frame(new FrameObjectFake());
   test_frame->id.picture_id = 0;
@@ -216,7 +216,7 @@ TEST_F(VideoReceiveStream2Test, PlayoutDelayPreservesDefaultMaxValue) {
 
 TEST_F(VideoReceiveStream2Test, PlayoutDelayPreservesDefaultMinValue) {
   const int default_min_playout_latency = timing_->min_playout_delay();
-  const PlayoutDelay kPlayoutDelayMs = {-1, 321};
+  const VideoPlayoutDelay kPlayoutDelayMs = {-1, 321};
 
   std::unique_ptr<FrameObjectFake> test_frame(new FrameObjectFake());
   test_frame->id.picture_id = 0;

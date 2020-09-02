@@ -555,7 +555,7 @@ void VideoReceiveStream2::OnCompleteFrame(
   }
   last_complete_frame_time_ms_ = time_now_ms;
 
-  const PlayoutDelay& playout_delay = frame->EncodedImage().playout_delay_;
+  const VideoPlayoutDelay& playout_delay = frame->EncodedImage().playout_delay_;
   if (playout_delay.min_ms >= 0) {
     frame_minimum_playout_delay_ms_ = playout_delay.min_ms;
     UpdatePlayoutDelays();

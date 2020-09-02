@@ -25,7 +25,6 @@
 #include "api/video/video_frame_type.h"
 #include "api/video/video_rotation.h"
 #include "api/video/video_timing.h"
-#include "common_types.h"  // NOLINT(build/include_directory)
 #include "rtc_base/checks.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/ref_count.h"
@@ -183,7 +182,7 @@ class RTC_EXPORT EncodedImage {
   // When an application indicates non-zero values here, it is taken as an
   // indication that all future frames will be constrained with those limits
   // until the application indicates a change again.
-  PlayoutDelay playout_delay_ = {-1, -1};
+  VideoPlayoutDelay playout_delay_;
 
   struct Timing {
     uint8_t flags = VideoSendTiming::kInvalid;
