@@ -204,7 +204,8 @@ class MediaChannel : public sigslot::has_slots<> {
   // ssrc must be the first SSRC of the media stream if the stream uses
   // multiple SSRCs.
   virtual bool RemoveRecvStream(uint32_t ssrc) = 0;
-  // Resets any cached StreamParams for an unsignaled RecvStream.
+  // Resets any cached StreamParams for an unsignaled RecvStream, and removes
+  // any existing unsignaled streams.
   virtual void ResetUnsignaledRecvStream() = 0;
   // Returns the absoulte sendtime extension id value from media channel.
   virtual int GetRtpSendTimeExtnId() const;

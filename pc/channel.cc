@@ -30,6 +30,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/network_route.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/trace_event.h"
 
 namespace cricket {
@@ -206,7 +207,7 @@ void BaseChannel::Init_w(webrtc::RtpTransportInternal* rtp_transport) {
 }
 
 void BaseChannel::Deinit() {
-  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK_RUN_ON(worker_thread());
   media_channel_->SetInterface(/*iface=*/nullptr);
   // Packets arrive on the network thread, processing packets calls virtual
   // functions, so need to stop this process in Deinit that is called in
@@ -289,6 +290,13 @@ bool BaseChannel::SetRemoteContent(const MediaContentDescription* content,
       Bind(&BaseChannel::SetRemoteContent_w, this, content, type, error_desc));
 }
 
+void BaseChannel::SetPayloadTypeDemuxingEnabled(bool enabled) {
+  TRACE_EVENT0("webrtc", "BaseChannel::SetPayloadTypeDemuxingEnabled");
+  InvokeOnWorker<void>(
+      RTC_FROM_HERE,
+      Bind(&BaseChannel::SetPayloadTypeDemuxingEnabled_w, this, enabled));
+}
+
 bool BaseChannel::IsReadyToReceiveMedia_w() const {
   // Receive data if we are enabled and have local content,
   return enabled() &&
@@ -330,7 +338,7 @@ int BaseChannel::SetOption(SocketType type,
 int BaseChannel::SetOption_n(SocketType type,
                              rtc::Socket::Option opt,
                              int value) {
-  RTC_DCHECK(network_thread_->IsCurrent());
+  RTC_DCHECK_RUN_ON(network_thread());
   RTC_DCHECK(rtp_transport_);
   switch (type) {
     case ST_RTP:
@@ -346,7 +354,7 @@ int BaseChannel::SetOption_n(SocketType type,
 }
 
 void BaseChannel::OnWritableState(bool writable) {
-  RTC_DCHECK(network_thread_->IsCurrent());
+  RTC_DCHECK_RUN_ON(network_thread());
   if (writable) {
     ChannelWritable_n();
   } else {
@@ -358,7 +366,7 @@ void BaseChannel::OnNetworkRouteChanged(
     absl::optional<rtc::NetworkRoute> network_route) {
   RTC_LOG(LS_INFO) << "Network route for " << ToString() << " was changed.";
 
-  RTC_DCHECK(network_thread_->IsCurrent());
+  RTC_DCHECK_RUN_ON(network_thread());
   rtc::NetworkRoute new_route;
   if (network_route) {
     new_route = *(network_route);
@@ -479,7 +487,7 @@ void BaseChannel::OnRtpPacket(const webrtc::RtpPacketReceived& parsed_packet) {
 
   invoker_.AsyncInvoke<void>(
       RTC_FROM_HERE, worker_thread_, [this, packet_buffer, packet_time_us] {
-        RTC_DCHECK(worker_thread_->IsCurrent());
+        RTC_DCHECK_RUN_ON(worker_thread());
         media_channel_->OnPacketReceived(packet_buffer, packet_time_us);
       });
 }
@@ -537,7 +545,7 @@ void BaseChannel::UpdateWritableState_n() {
 }
 
 void BaseChannel::ChannelWritable_n() {
-  RTC_DCHECK(network_thread_->IsCurrent());
+  RTC_DCHECK_RUN_ON(network_thread());
   if (writable_) {
     return;
   }
@@ -551,7 +559,7 @@ void BaseChannel::ChannelWritable_n() {
 }
 
 void BaseChannel::ChannelNotWritable_n() {
-  RTC_DCHECK(network_thread_->IsCurrent());
+  RTC_DCHECK_RUN_ON(network_thread());
   if (!writable_)
     return;
 
@@ -573,6 +581,24 @@ bool BaseChannel::RemoveRecvStream_w(uint32_t ssrc) {
 void BaseChannel::ResetUnsignaledRecvStream_w() {
   RTC_DCHECK(worker_thread() == rtc::Thread::Current());
   media_channel()->ResetUnsignaledRecvStream();
+}
+
+void BaseChannel::SetPayloadTypeDemuxingEnabled_w(bool enabled) {
+  RTC_DCHECK_RUN_ON(worker_thread());
+  if (enabled == payload_type_demuxing_enabled_) {
+    return;
+  }
+  if (!enabled) {
+    // TODO(crbug.com/11477): This will remove *all* unsignaled streams (those
+    // without an explicitly signaled SSRC), which may include streams that
+    // were matched to this channel by MID or RID. Ideally we'd remove only the
+    // streams that were matched based on payload type alone, but currently
+    // there is no straightforward way to identify those streams.
+    media_channel()->ResetUnsignaledRecvStream();
+    ClearHandledPayloadTypes();
+    RegisterRtpDemuxerSink();
+  }
+  payload_type_demuxing_enabled_ = enabled;
 }
 
 bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
@@ -741,7 +767,7 @@ void BaseChannel::OnMessage(rtc::Message* pmsg) {
   switch (pmsg->message_id) {
     case MSG_SEND_RTP_PACKET:
     case MSG_SEND_RTCP_PACKET: {
-      RTC_DCHECK(network_thread_->IsCurrent());
+      RTC_DCHECK_RUN_ON(network_thread());
       SendPacketMessageData* data =
           static_cast<SendPacketMessageData*>(pmsg->pdata);
       bool rtcp = pmsg->message_id == MSG_SEND_RTCP_PACKET;
@@ -756,8 +782,10 @@ void BaseChannel::OnMessage(rtc::Message* pmsg) {
   }
 }
 
-void BaseChannel::AddHandledPayloadType(int payload_type) {
-  demuxer_criteria_.payload_types.insert(static_cast<uint8_t>(payload_type));
+void BaseChannel::MaybeAddHandledPayloadType(int payload_type) {
+  if (payload_type_demuxing_enabled_) {
+    demuxer_criteria_.payload_types.insert(static_cast<uint8_t>(payload_type));
+  }
 }
 
 void BaseChannel::ClearHandledPayloadTypes() {
@@ -767,7 +795,7 @@ void BaseChannel::ClearHandledPayloadTypes() {
 void BaseChannel::FlushRtcpMessages_n() {
   // Flush all remaining RTCP messages. This should only be called in
   // destructor.
-  RTC_DCHECK(network_thread_->IsCurrent());
+  RTC_DCHECK_RUN_ON(network_thread());
   rtc::MessageList rtcp_messages;
   network_thread_->Clear(this, MSG_SEND_RTCP_PACKET, &rtcp_messages);
   for (const auto& message : rtcp_messages) {
@@ -777,10 +805,10 @@ void BaseChannel::FlushRtcpMessages_n() {
 }
 
 void BaseChannel::SignalSentPacket_n(const rtc::SentPacket& sent_packet) {
-  RTC_DCHECK(network_thread_->IsCurrent());
+  RTC_DCHECK_RUN_ON(network_thread());
   invoker_.AsyncInvoke<void>(RTC_FROM_HERE, worker_thread_,
                              [this, sent_packet] {
-                               RTC_DCHECK(worker_thread_->IsCurrent());
+                               RTC_DCHECK_RUN_ON(worker_thread());
                                SignalSentPacket(sent_packet);
                              });
 }
@@ -810,7 +838,7 @@ VoiceChannel::~VoiceChannel() {
 }
 
 void BaseChannel::UpdateMediaSendRecvState() {
-  RTC_DCHECK(network_thread_->IsCurrent());
+  RTC_DCHECK_RUN_ON(network_thread());
   invoker_.AsyncInvoke<void>(RTC_FROM_HERE, worker_thread_,
                              [this] { UpdateMediaSendRecvState_w(); });
 }
@@ -869,7 +897,7 @@ bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
 
   if (webrtc::RtpTransceiverDirectionHasRecv(audio->direction())) {
     for (const AudioCodec& codec : audio->codecs()) {
-      AddHandledPayloadType(codec.id);
+      MaybeAddHandledPayloadType(codec.id);
     }
     // Need to re-register the sink to update the handled payload.
     if (!RegisterRtpDemuxerSink()) {
@@ -1062,7 +1090,7 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
 
   if (webrtc::RtpTransceiverDirectionHasRecv(video->direction())) {
     for (const VideoCodec& codec : video->codecs()) {
-      AddHandledPayloadType(codec.id);
+      MaybeAddHandledPayloadType(codec.id);
     }
     // Need to re-register the sink to update the handled payload.
     if (!RegisterRtpDemuxerSink()) {
@@ -1287,7 +1315,7 @@ bool RtpDataChannel::SetLocalContent_w(const MediaContentDescription* content,
     return false;
   }
   for (const DataCodec& codec : data->codecs()) {
-    AddHandledPayloadType(codec.id);
+    MaybeAddHandledPayloadType(codec.id);
   }
   // Need to re-register the sink to update the handled payload.
   if (!RegisterRtpDemuxerSink()) {

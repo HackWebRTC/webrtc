@@ -228,6 +228,9 @@ PeerScenarioClient::PeerScenarioClient(
   pcf_deps.network_state_predictor_factory = nullptr;
 
   pc_factory_ = CreateModularPeerConnectionFactory(std::move(pcf_deps));
+  PeerConnectionFactoryInterface::Options pc_options;
+  pc_options.disable_encryption = config.disable_encryption;
+  pc_factory_->SetOptions(pc_options);
 
   PeerConnectionDependencies pc_deps(observer_.get());
   pc_deps.allocator =
@@ -285,14 +288,17 @@ void PeerScenarioClient::AddVideoReceiveSink(
 }
 
 void PeerScenarioClient::CreateAndSetSdp(
+    std::function<void(SessionDescriptionInterface*)> munge_offer,
     std::function<void(std::string)> offer_handler) {
   RTC_DCHECK_RUN_ON(signaling_thread_);
   peer_connection_->CreateOffer(
       SdpCreateObserver([=](SessionDescriptionInterface* offer) {
         RTC_DCHECK_RUN_ON(signaling_thread_);
+        if (munge_offer) {
+          munge_offer(offer);
+        }
         std::string sdp_offer;
-        offer->ToString(&sdp_offer);
-        RTC_LOG(LS_INFO) << sdp_offer;
+        RTC_CHECK(offer->ToString(&sdp_offer));
         peer_connection_->SetLocalDescription(
             SdpSetObserver(
                 [sdp_offer, offer_handler]() { offer_handler(sdp_offer); }),

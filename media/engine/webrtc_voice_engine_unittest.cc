@@ -2722,6 +2722,30 @@ TEST_P(WebRtcVoiceEngineTestFake, RecvUnsignaledSsrcWithSignaledStreamId) {
   EXPECT_TRUE(GetRecvStream(kSsrc1).GetConfig().sync_group.empty());
 }
 
+TEST_P(WebRtcVoiceEngineTestFake,
+       ResetUnsignaledRecvStreamDeletesAllDefaultStreams) {
+  ASSERT_TRUE(SetupChannel());
+  // No receive streams to start with.
+  ASSERT_TRUE(call_.GetAudioReceiveStreams().empty());
+
+  // Deliver a couple packets with unsignaled SSRCs.
+  unsigned char packet[sizeof(kPcmuFrame)];
+  memcpy(packet, kPcmuFrame, sizeof(kPcmuFrame));
+  rtc::SetBE32(&packet[8], 0x1234);
+  DeliverPacket(packet, sizeof(packet));
+  rtc::SetBE32(&packet[8], 0x5678);
+  DeliverPacket(packet, sizeof(packet));
+
+  // Verify that the receive streams were created.
+  const auto& receivers1 = call_.GetAudioReceiveStreams();
+  ASSERT_EQ(receivers1.size(), 2u);
+
+  // Should remove all default streams.
+  channel_->ResetUnsignaledRecvStream();
+  const auto& receivers2 = call_.GetAudioReceiveStreams();
+  EXPECT_EQ(0u, receivers2.size());
+}
+
 // Test that receiving N unsignaled stream works (streams will be created), and
 // that packets are forwarded to them all.
 TEST_P(WebRtcVoiceEngineTestFake, RecvMultipleUnsignaled) {

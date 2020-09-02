@@ -2028,6 +2028,11 @@ void WebRtcVoiceMediaChannel::ResetUnsignaledRecvStream() {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
   RTC_LOG(LS_INFO) << "ResetUnsignaledRecvStream.";
   unsignaled_stream_params_ = StreamParams();
+  // Create a copy since RemoveRecvStream will modify |unsignaled_recv_ssrcs_|.
+  std::vector<uint32_t> to_remove = unsignaled_recv_ssrcs_;
+  for (uint32_t ssrc : to_remove) {
+    RemoveRecvStream(ssrc);
+  }
 }
 
 bool WebRtcVoiceMediaChannel::SetLocalSource(uint32_t ssrc,

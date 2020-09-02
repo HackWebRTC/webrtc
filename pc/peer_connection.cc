@@ -5982,6 +5982,87 @@ RTCError PeerConnection::UpdateSessionState(
   return RTCError::OK();
 }
 
+void PeerConnection::UpdatePayloadTypeDemuxingState(
+    cricket::ContentSource source) {
+  // We may need to delete any created default streams and disable creation of
+  // new ones on the basis of payload type. This is needed to avoid SSRC
+  // collisions in Call's RtpDemuxer, in the case that a transceiver has
+  // created a default stream, and then some other channel gets the SSRC
+  // signaled in the corresponding Unified Plan "m=" section. For more context
+  // see https://bugs.chromium.org/p/webrtc/issues/detail?id=11477
+  const SessionDescriptionInterface* sdesc =
+      (source == cricket::CS_LOCAL ? local_description()
+                                   : remote_description());
+  size_t num_receiving_video_transceivers = 0;
+  size_t num_receiving_audio_transceivers = 0;
+  for (auto& content_info : sdesc->description()->contents()) {
+    if (content_info.rejected ||
+        (source == cricket::ContentSource::CS_LOCAL &&
+         !RtpTransceiverDirectionHasRecv(
+             content_info.media_description()->direction())) ||
+        (source == cricket::ContentSource::CS_REMOTE &&
+         !RtpTransceiverDirectionHasSend(
+             content_info.media_description()->direction()))) {
+      // Ignore transceivers that are not receiving.
+      continue;
+    }
+    switch (content_info.media_description()->type()) {
+      case cricket::MediaType::MEDIA_TYPE_AUDIO:
+        ++num_receiving_audio_transceivers;
+        break;
+      case cricket::MediaType::MEDIA_TYPE_VIDEO:
+        ++num_receiving_video_transceivers;
+        break;
+      default:
+        // Ignore data channels.
+        continue;
+    }
+  }
+  bool pt_demuxing_enabled_video = num_receiving_video_transceivers <= 1;
+  bool pt_demuxing_enabled_audio = num_receiving_audio_transceivers <= 1;
+
+  // Gather all updates ahead of time so that all channels can be updated in a
+  // single Invoke; necessary due to thread guards.
+  std::vector<std::pair<RtpTransceiverDirection, cricket::ChannelInterface*>>
+      channels_to_update;
+  for (const auto& transceiver : transceivers_) {
+    cricket::ChannelInterface* channel = transceiver->internal()->channel();
+    const ContentInfo* content =
+        FindMediaSectionForTransceiver(transceiver, sdesc);
+    if (!channel || !content) {
+      continue;
+    }
+    RtpTransceiverDirection local_direction =
+        content->media_description()->direction();
+    if (source == cricket::CS_REMOTE) {
+      local_direction = RtpTransceiverDirectionReversed(local_direction);
+    }
+    channels_to_update.emplace_back(local_direction,
+                                    transceiver->internal()->channel());
+  }
+
+  if (!channels_to_update.empty()) {
+    worker_thread()->Invoke<void>(
+        RTC_FROM_HERE, [&channels_to_update, pt_demuxing_enabled_audio,
+                        pt_demuxing_enabled_video]() {
+          for (const auto& it : channels_to_update) {
+            RtpTransceiverDirection local_direction = it.first;
+            cricket::ChannelInterface* channel = it.second;
+            cricket::MediaType media_type = channel->media_type();
+            if (media_type == cricket::MediaType::MEDIA_TYPE_AUDIO) {
+              channel->SetPayloadTypeDemuxingEnabled(
+                  pt_demuxing_enabled_audio &&
+                  RtpTransceiverDirectionHasRecv(local_direction));
+            } else if (media_type == cricket::MediaType::MEDIA_TYPE_VIDEO) {
+              channel->SetPayloadTypeDemuxingEnabled(
+                  pt_demuxing_enabled_video &&
+                  RtpTransceiverDirectionHasRecv(local_direction));
+            }
+          }
+        });
+  }
+}
+
 RTCError PeerConnection::PushdownMediaDescription(
     SdpType type,
     cricket::ContentSource source) {
@@ -5989,6 +6070,8 @@ RTCError PeerConnection::PushdownMediaDescription(
       (source == cricket::CS_LOCAL ? local_description()
                                    : remote_description());
   RTC_DCHECK(sdesc);
+
+  UpdatePayloadTypeDemuxingState(source);
 
   // Push down the new SDP media section for each audio/video transceiver.
   for (const auto& transceiver : transceivers_) {
