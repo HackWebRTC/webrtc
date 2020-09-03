@@ -28,13 +28,6 @@ class MediaHelper {
  public:
   MediaHelper(VideoQualityAnalyzerInjectionHelper*
                   video_quality_analyzer_injection_helper,
-              TaskQueueFactory* task_queue_factory)
-      : MediaHelper(video_quality_analyzer_injection_helper,
-                    task_queue_factory,
-                    Clock::GetRealTimeClock()) {}
-
-  MediaHelper(VideoQualityAnalyzerInjectionHelper*
-                  video_quality_analyzer_injection_helper,
               TaskQueueFactory* task_queue_factory,
               Clock* clock)
       : clock_(clock),
