@@ -104,7 +104,7 @@ struct ExperimentalAgc {
 // AudioProcessing::Config::TransientSuppression.
 //
 // Use to enable experimental noise suppression. It can be set in the
-// constructor or using AudioProcessing::SetExtraOptions().
+// constructor.
 // TODO(webrtc:5298): Remove.
 struct ExperimentalNs {
   ExperimentalNs() : enabled(false) {}
@@ -515,10 +515,6 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
   // TODO(peah): This method is a temporary solution used to take control
   // over the parameters in the audio processing module and is likely to change.
   virtual void ApplyConfig(const Config& config) = 0;
-
-  // Pass down additional options which don't have explicit setters. This
-  // ensures the options are applied immediately.
-  virtual void SetExtraOptions(const webrtc::Config& config) {}
 
   // TODO(ajm): Only intended for internal use. Make private and friend the
   // necessary classes?

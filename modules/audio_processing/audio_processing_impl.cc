@@ -641,9 +641,6 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
   }
 }
 
-// TODO(webrtc:5298): Remove.
-void AudioProcessingImpl::SetExtraOptions(const webrtc::Config& config) {}
-
 void AudioProcessingImpl::OverrideSubmoduleCreationForTesting(
     const ApmSubmoduleCreationOverrides& overrides) {
   MutexLock lock(&mutex_capture_);

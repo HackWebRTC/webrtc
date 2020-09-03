@@ -72,7 +72,6 @@ class AudioProcessingImpl : public AudioProcessing {
                  ChannelLayout render_input_layout) override;
   int Initialize(const ProcessingConfig& processing_config) override;
   void ApplyConfig(const AudioProcessing::Config& config) override;
-  void SetExtraOptions(const webrtc::Config& config) override;
   bool CreateAndAttachAecDump(const std::string& file_name,
                               int64_t max_log_size_bytes,
                               rtc::TaskQueue* worker_queue) override;

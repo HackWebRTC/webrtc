@@ -119,8 +119,7 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
   bool initialized_ = false;
 
   // Cache experimental_ns and apply in case they are missing in the audio
-  // options. We need to do this because SetExtraOptions() will revert to
-  // defaults for options which are not provided.
+  // options.
   absl::optional<bool> experimental_ns_;
   // Jitter buffer settings for new streams.
   size_t audio_jitter_buffer_max_packets_ = 200;
