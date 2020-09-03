@@ -16,7 +16,7 @@
 
 // It was generated with the following command line:
 // > python tools/sslroots/generate_sslroots.py
-//    https://pki.google.com/roots.pem
+//    https://pki.goog/roots.pem
 
 // clang-format off
 // Don't bother formatting generated code,
