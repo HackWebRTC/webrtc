@@ -196,8 +196,8 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   const std::unique_ptr<rtc::Thread> signaling_thread =
       time_controller_.CreateThread(kSignalThreadName);
   media_helper_ = std::make_unique<MediaHelper>(
-      video_quality_analyzer_injection_helper_.get(),
-      task_queue_factory_.get());
+      video_quality_analyzer_injection_helper_.get(), task_queue_factory_.get(),
+      time_controller_.GetClock());
 
   // Create a |task_queue_|.
   task_queue_ = std::make_unique<webrtc::TaskQueueForTest>(
