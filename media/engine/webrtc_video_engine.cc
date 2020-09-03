@@ -1759,13 +1759,14 @@ void WebRtcVideoChannel::SetInterface(NetworkInterface* iface) {
   // The group should be a positive integer with an explicit size, in
   // which case that is used as UDP recevie buffer size. All other values shall
   // result in the default value being used.
-  const std::string group_name =
+  const std::string group_name_recv_buf_size =
       webrtc::field_trial::FindFullName("WebRTC-IncreasedReceivebuffers");
   int recv_buffer_size = kVideoRtpRecvBufferSize;
-  if (!group_name.empty() &&
-      (sscanf(group_name.c_str(), "%d", &recv_buffer_size) != 1 ||
+  if (!group_name_recv_buf_size.empty() &&
+      (sscanf(group_name_recv_buf_size.c_str(), "%d", &recv_buffer_size) != 1 ||
        recv_buffer_size <= 0)) {
-    RTC_LOG(LS_WARNING) << "Invalid receive buffer size: " << group_name;
+    RTC_LOG(LS_WARNING) << "Invalid receive buffer size: "
+                        << group_name_recv_buf_size;
     recv_buffer_size = kVideoRtpRecvBufferSize;
   }
 
@@ -1776,8 +1777,19 @@ void WebRtcVideoChannel::SetInterface(NetworkInterface* iface) {
   // In b/15152257, we are seeing a significant number of packets discarded
   // due to lack of socket buffer space, although it's not yet clear what the
   // ideal value should be.
+  const std::string group_name_send_buf_size =
+      webrtc::field_trial::FindFullName("WebRTC-SendBufferSizeBytes");
+  int send_buffer_size = kVideoRtpSendBufferSize;
+  if (!group_name_send_buf_size.empty() &&
+      (sscanf(group_name_send_buf_size.c_str(), "%d", &send_buffer_size) != 1 ||
+       send_buffer_size <= 0)) {
+    RTC_LOG(LS_WARNING) << "Invalid send buffer size: "
+                        << group_name_send_buf_size;
+    send_buffer_size = kVideoRtpSendBufferSize;
+  }
+
   MediaChannel::SetOption(NetworkInterface::ST_RTP, rtc::Socket::OPT_SNDBUF,
-                          kVideoRtpSendBufferSize);
+                          send_buffer_size);
 }
 
 void WebRtcVideoChannel::SetFrameDecryptor(
