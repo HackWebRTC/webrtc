@@ -11,10 +11,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <features.h>
-#ifndef __GLIBC_PREREQ
-#define __GLIBC_PREREQ(a, b) 0
+
+#ifdef __GLIBC_PREREQ
+#define WEBRTC_GLIBC_PREREQ(a, b) __GLIBC_PREREQ(a, b)
+#else
+#define WEBRTC_GLIBC_PREREQ(a, b) 0
 #endif
-#if __GLIBC_PREREQ(2, 16)
+
+#if WEBRTC_GLIBC_PREREQ(2, 16)
 #include <sys/auxv.h>
 #else
 #include <fcntl.h>
@@ -22,6 +26,7 @@
 #include <errno.h>
 #include <link.h>
 #endif
+
 #include "rtc_base/system/arch.h"
 #include "system_wrappers/include/cpu_features_wrapper.h"
 
@@ -33,7 +38,7 @@ uint64_t WebRtc_GetCPUFeaturesARM(void) {
   int architecture = 0;
   unsigned long hwcap = 0;
   const char* platform = NULL;
-#if __GLIBC_PREREQ(2, 16)
+#if WEBRTC_GLIBC_PREREQ(2, 16)
   hwcap = getauxval(AT_HWCAP);
   platform = (const char*)getauxval(AT_PLATFORM);
 #else
@@ -57,7 +62,7 @@ uint64_t WebRtc_GetCPUFeaturesARM(void) {
     }
     close(fd);
   }
-#endif  // __GLIBC_PREREQ(2,16)
+#endif  // WEBRTC_GLIBC_PREREQ(2, 16)
 #if defined(__aarch64__)
   architecture = 8;
   if ((hwcap & HWCAP_FP) != 0)
