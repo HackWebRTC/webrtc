@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <features.h>
 #include <stdlib.h>
 #include <string.h>
-#include <features.h>
 
 #ifdef __GLIBC_PREREQ
 #define WEBRTC_GLIBC_PREREQ(a, b) __GLIBC_PREREQ(a, b)
@@ -21,10 +21,10 @@
 #if WEBRTC_GLIBC_PREREQ(2, 16)
 #include <sys/auxv.h>
 #else
-#include <fcntl.h>
-#include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <link.h>
+#include <unistd.h>
 #endif
 
 #include "rtc_base/system/arch.h"
@@ -36,7 +36,7 @@
 uint64_t WebRtc_GetCPUFeaturesARM(void) {
   uint64_t result = 0;
   int architecture = 0;
-  unsigned long hwcap = 0;
+  uint64_t hwcap = 0;
   const char* platform = NULL;
 #if WEBRTC_GLIBC_PREREQ(2, 16)
   hwcap = getauxval(AT_HWCAP);
