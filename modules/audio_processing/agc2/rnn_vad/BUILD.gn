@@ -48,7 +48,7 @@ rtc_library("rnn_vad") {
     "../../../../rtc_base:checks",
     "../../../../rtc_base:rtc_base_approved",
     "../../../../rtc_base/system:arch",
-    "../../../../system_wrappers:cpu_features_api",
+    "../../../../system_wrappers",
     "../../utility:pffft_wrapper",
     "//third_party/rnnoise:rnn_vad",
   ]
@@ -67,7 +67,7 @@ if (rtc_include_tests) {
       "../../../../api:scoped_refptr",
       "../../../../rtc_base:checks",
       "../../../../rtc_base/system:arch",
-      "../../../../system_wrappers:cpu_features_api",
+      "../../../../system_wrappers",
       "../../../../test:fileutils",
       "../../../../test:test_support",
     ]

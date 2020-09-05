@@ -115,7 +115,7 @@ if (rtc_include_tests) {
       ":primitives",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:cpu_features_api",
+      "../../system_wrappers",
       "../../test:test_support",
     ]
     if (rtc_desktop_capture_supported) {
@@ -486,7 +486,6 @@ rtc_library("desktop_capture_generic") {
     "../../rtc_base/system:arch",
     "../../rtc_base/system:rtc_export",
     "../../system_wrappers",
-    "../../system_wrappers:cpu_features_api",
     "../../system_wrappers:metrics",
   ]
   absl_deps = [
