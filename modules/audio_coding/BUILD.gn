@@ -609,7 +609,7 @@ rtc_library("isac_fix_c") {
     "../../rtc_base:compile_assert_c",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:sanitizer",
-    "../../system_wrappers",
+    "../../system_wrappers:cpu_features_api",
     "../third_party/fft",
   ]
 
@@ -2067,6 +2067,7 @@ if (rtc_include_tests) {
       "../../rtc_base/synchronization:mutex",
       "../../rtc_base/system:arch",
       "../../system_wrappers",
+      "../../system_wrappers:cpu_features_api",
       "../../test:audio_codec_mocks",
       "../../test:field_trial",
       "../../test:fileutils",

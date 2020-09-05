@@ -78,7 +78,7 @@ rtc_library("legacy_agc") {
     "../../../common_audio/third_party/ooura:fft_size_256",
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
-    "../../../system_wrappers",
+    "../../../system_wrappers:cpu_features_api",
   ]
 
   if (rtc_build_with_neon) {

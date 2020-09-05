@@ -13,6 +13,10 @@
 
 #include <stdint.h>
 
+#if defined(__cplusplus) || defined(c_plusplus)
+extern "C" {
+#endif
+
 // List of features in x86.
 typedef enum { kSSE2, kSSE3, kAVX2 } CPUFeature;
 
@@ -36,5 +40,9 @@ extern WebRtc_CPUInfo WebRtc_GetCPUInfoNoASM;
 // It detects the features in the hardware platform, and returns supported
 // values in the above enum definition as a bitmask.
 extern uint64_t WebRtc_GetCPUFeaturesARM(void);
+
+#if defined(__cplusplus) || defined(c_plusplus)
+}  // extern "C"
+#endif
 
 #endif  // SYSTEM_WRAPPERS_INCLUDE_CPU_FEATURES_WRAPPER_H_
