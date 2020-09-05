@@ -45,7 +45,7 @@ namespace rtc {
 ///////////////////////////////////////////////////////////////////////////////
 
 class DEPRECATED_SignalThread : public sigslot::has_slots<>,
-                                protected MessageHandler {
+                                protected MessageHandlerAutoCleanup {
  public:
   DEPRECATED_SignalThread();
 

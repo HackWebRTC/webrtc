@@ -160,7 +160,7 @@ typedef std::set<rtc::SocketAddress> ServerAddresses;
 // connections to similar mechanisms of the other client.  Subclasses of this
 // one add support for specific mechanisms like local UDP ports.
 class Port : public PortInterface,
-             public rtc::MessageHandler,
+             public rtc::MessageHandlerAutoCleanup,
              public sigslot::has_slots<> {
  public:
   // INIT: The state when a port is just created.

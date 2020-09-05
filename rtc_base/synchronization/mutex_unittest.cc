@@ -77,7 +77,7 @@ class MutexLockLocker {
 };
 
 template <class MutexType, class MutexLocker>
-class LockRunner : public MessageHandler {
+class LockRunner : public rtc::MessageHandlerAutoCleanup {
  public:
   template <typename... Args>
   explicit LockRunner(Args... args)

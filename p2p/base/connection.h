@@ -71,7 +71,7 @@ class ConnectionRequest : public StunRequest {
 // Represents a communication link between a port on the local client and a
 // port on the remote client.
 class Connection : public CandidatePairInterface,
-                   public rtc::MessageHandler,
+                   public rtc::MessageHandlerAutoCleanup,
                    public sigslot::has_slots<> {
  public:
   struct SentPing {

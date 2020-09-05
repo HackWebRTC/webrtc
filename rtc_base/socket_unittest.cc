@@ -696,7 +696,7 @@ void SocketTest::DeleteInReadCallbackInternal(const IPAddress& loopback) {
   EXPECT_TRUE_WAIT(deleter.deleted(), kTimeout);
 }
 
-class Sleeper : public MessageHandler {
+class Sleeper : public MessageHandlerAutoCleanup {
  public:
   void OnMessage(Message* msg) override { Thread::Current()->SleepMs(500); }
 };

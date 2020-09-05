@@ -25,8 +25,11 @@ NetworkMonitorInterface::NetworkMonitorInterface() {}
 
 NetworkMonitorInterface::~NetworkMonitorInterface() {}
 
-NetworkMonitorBase::NetworkMonitorBase() : worker_thread_(Thread::Current()) {}
-NetworkMonitorBase::~NetworkMonitorBase() {}
+NetworkMonitorBase::NetworkMonitorBase()
+    : MessageHandler(false), worker_thread_(Thread::Current()) {}
+NetworkMonitorBase::~NetworkMonitorBase() {
+  worker_thread_->Clear(this);
+}
 
 void NetworkMonitorBase::OnNetworksChanged() {
   RTC_LOG(LS_VERBOSE) << "Network change is received at the network monitor";

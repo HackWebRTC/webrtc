@@ -78,7 +78,7 @@ class CompareAndSwapVerifier {
   int zero_count_;
 };
 
-class RunnerBase : public MessageHandler {
+class RunnerBase : public MessageHandlerAutoCleanup {
  public:
   explicit RunnerBase(int value)
       : threads_active_(0),

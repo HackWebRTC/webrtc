@@ -15,7 +15,18 @@
 namespace rtc {
 
 MessageHandler::~MessageHandler() {
-  ThreadManager::Clear(this);
+  if (auto_cleanup_) {
+    // Note that even though this clears currently pending messages for the
+    // message handler, it's still racy since it doesn't prevent threads that
+    // might be in the process of posting new messages with would-be dangling
+    // pointers.
+    // This is related to the design of Message having a raw pointer.
+    // We could consider whether it would be safer to require message handlers
+    // to be reference counted (as some are).
+    ThreadManager::Clear(this);
+  }
 }
+
+MessageHandlerAutoCleanup::~MessageHandlerAutoCleanup() {}
 
 }  // namespace rtc

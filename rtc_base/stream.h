@@ -53,7 +53,7 @@ struct StreamEventData : public MessageData {
   StreamEventData(int ev, int er) : events(ev), error(er) {}
 };
 
-class RTC_EXPORT StreamInterface : public MessageHandler {
+class RTC_EXPORT StreamInterface : public MessageHandlerAutoCleanup {
  public:
   enum { MSG_POST_EVENT = 0xF1F1, MSG_MAX = MSG_POST_EVENT };
 

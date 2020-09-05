@@ -1027,7 +1027,8 @@ void ExtractSharedMediaSessionOptions(
 PeerConnection::PeerConnection(PeerConnectionFactory* factory,
                                std::unique_ptr<RtcEventLog> event_log,
                                std::unique_ptr<Call> call)
-    : factory_(factory),
+    : MessageHandler(false),
+      factory_(factory),
       event_log_(std::move(event_log)),
       event_log_ptr_(event_log_.get()),
       operations_chain_(rtc::OperationsChain::Create()),

@@ -71,7 +71,7 @@ struct CryptoParams;
 // NetworkInterface.
 
 class BaseChannel : public ChannelInterface,
-                    public rtc::MessageHandler,
+                    public rtc::MessageHandlerAutoCleanup,
                     public sigslot::has_slots<>,
                     public MediaChannel::NetworkInterface,
                     public webrtc::RtpPacketSinkInterface {

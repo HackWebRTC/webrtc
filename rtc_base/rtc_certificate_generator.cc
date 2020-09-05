@@ -40,7 +40,7 @@ enum {
 // request. We are using a separate helper class so that a generation request
 // can outlive the |RTCCertificateGenerator| that spawned it.
 class RTCCertificateGenerationTask : public RefCountInterface,
-                                     public MessageHandler {
+                                     public MessageHandlerAutoCleanup {
  public:
   RTCCertificateGenerationTask(
       Thread* signaling_thread,

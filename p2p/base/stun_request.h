@@ -85,7 +85,7 @@ class StunRequestManager {
 
 // Represents an individual request to be sent.  The STUN message can either be
 // constructed beforehand or built on demand.
-class StunRequest : public rtc::MessageHandler {
+class StunRequest : public rtc::MessageHandlerAutoCleanup {
  public:
   StunRequest();
   explicit StunRequest(StunMessage* request);

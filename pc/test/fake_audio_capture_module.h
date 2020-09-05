@@ -33,7 +33,7 @@ class Thread;
 }  // namespace rtc
 
 class FakeAudioCaptureModule : public webrtc::AudioDeviceModule,
-                               public rtc::MessageHandler {
+                               public rtc::MessageHandlerAutoCleanup {
  public:
   typedef uint16_t Sample;
 

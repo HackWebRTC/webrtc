@@ -43,9 +43,15 @@ rtc::AsyncSocket* CreateClientSocket(int family) {
 }  // namespace
 
 PeerConnectionClient::PeerConnectionClient()
-    : callback_(NULL), resolver_(NULL), state_(NOT_CONNECTED), my_id_(-1) {}
+    : MessageHandler(false),
+      callback_(NULL),
+      resolver_(NULL),
+      state_(NOT_CONNECTED),
+      my_id_(-1) {}
 
-PeerConnectionClient::~PeerConnectionClient() {}
+PeerConnectionClient::~PeerConnectionClient() {
+  rtc::Thread::Current()->Clear(this);
+}
 
 void PeerConnectionClient::InitSocketSignals() {
   RTC_DCHECK(control_socket_.get() != NULL);

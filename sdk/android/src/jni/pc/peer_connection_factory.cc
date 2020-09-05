@@ -82,7 +82,9 @@ void PostJavaCallback(JNIEnv* env,
     JavaAsyncCallback(JNIEnv* env,
                       const JavaRef<jobject>& j_object,
                       JavaMethodPointer java_method_pointer)
-        : j_object_(env, j_object), java_method_pointer_(java_method_pointer) {}
+        : rtc::MessageHandler(false),
+          j_object_(env, j_object),
+          java_method_pointer_(java_method_pointer) {}
 
     void OnMessage(rtc::Message*) override {
       java_method_pointer_(AttachCurrentThreadIfNeeded(), j_object_);
