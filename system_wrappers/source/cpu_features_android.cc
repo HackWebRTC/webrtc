@@ -10,6 +10,10 @@
 
 #include <cpu-features.h>
 
-uint64_t WebRtc_GetCPUFeaturesARM(void) {
+namespace webrtc {
+
+uint64_t GetCPUFeaturesARM(void) {
   return android_getCpuFeatures();
 }
+
+}  // namespace webrtc

@@ -33,7 +33,9 @@
 #if defined(WEBRTC_ARCH_ARM_FAMILY)
 #include <asm/hwcap.h>
 
-uint64_t WebRtc_GetCPUFeaturesARM(void) {
+namespace webrtc {
+
+uint64_t GetCPUFeaturesARM(void) {
   uint64_t result = 0;
   int architecture = 0;
   uint64_t hwcap = 0;
@@ -89,4 +91,6 @@ uint64_t WebRtc_GetCPUFeaturesARM(void) {
     result |= kCPUFeatureLDREXSTREX;
   return result;
 }
+
+}  // namespace webrtc
 #endif  // WEBRTC_ARCH_ARM_FAMILY

@@ -93,7 +93,7 @@ TEST(MatchedFilter, TestNeonOptimizations) {
 // Verifies that the optimized methods for SSE2 are bitexact to their reference
 // counterparts.
 TEST(MatchedFilter, TestSse2Optimizations) {
-  bool use_sse2 = (WebRtc_GetCPUInfo(kSSE2) != 0);
+  bool use_sse2 = (GetCPUInfo(kSSE2) != 0);
   if (use_sse2) {
     Random random_generator(42U);
     constexpr float kSmoothing = 0.7f;
@@ -134,7 +134,7 @@ TEST(MatchedFilter, TestSse2Optimizations) {
 }
 
 TEST(MatchedFilter, TestAvx2Optimizations) {
-  bool use_avx2 = (WebRtc_GetCPUInfo(kAVX2) != 0);
+  bool use_avx2 = (GetCPUInfo(kAVX2) != 0);
   if (use_avx2) {
     Random random_generator(42U);
     constexpr float kSmoothing = 0.7f;

@@ -17,6 +17,8 @@
 #include <intrin.h>
 #endif
 
+namespace webrtc {
+
 // No CPU feature is available => straight C path.
 int GetCPUInfoNoASM(CPUFeature feature) {
   (void)feature;
@@ -65,7 +67,7 @@ static inline void __cpuid(int cpu_info[4], int info_type) {
 
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 // Actual feature detection for x86.
-static int GetCPUInfo(CPUFeature feature) {
+int GetCPUInfo(CPUFeature feature) {
   int cpu_info[4];
   __cpuid(cpu_info, 1);
   if (feature == kSSE2) {
@@ -102,11 +104,10 @@ static int GetCPUInfo(CPUFeature feature) {
 }
 #else
 // Default to straight C for other platforms.
-static int GetCPUInfo(CPUFeature feature) {
+int GetCPUInfo(CPUFeature feature) {
   (void)feature;
   return 0;
 }
 #endif
 
-WebRtc_CPUInfo WebRtc_GetCPUInfo = GetCPUInfo;
-WebRtc_CPUInfo WebRtc_GetCPUInfoNoASM = GetCPUInfoNoASM;
+}  // namespace webrtc

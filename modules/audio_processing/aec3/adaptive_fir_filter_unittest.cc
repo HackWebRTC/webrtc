@@ -179,7 +179,7 @@ TEST_P(AdaptiveFirFilterOneTwoFourEightRenderChannels,
   constexpr int kSampleRateHz = 48000;
   constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
 
-  bool use_sse2 = (WebRtc_GetCPUInfo(kSSE2) != 0);
+  bool use_sse2 = (GetCPUInfo(kSSE2) != 0);
   if (use_sse2) {
     for (size_t num_partitions : {2, 5, 12, 30, 50}) {
       std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
@@ -254,7 +254,7 @@ TEST_P(AdaptiveFirFilterOneTwoFourEightRenderChannels,
   constexpr int kSampleRateHz = 48000;
   constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
 
-  bool use_avx2 = (WebRtc_GetCPUInfo(kAVX2) != 0);
+  bool use_avx2 = (GetCPUInfo(kAVX2) != 0);
   if (use_avx2) {
     for (size_t num_partitions : {2, 5, 12, 30, 50}) {
       std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
@@ -326,7 +326,7 @@ TEST_P(AdaptiveFirFilterOneTwoFourEightRenderChannels,
 TEST_P(AdaptiveFirFilterOneTwoFourEightRenderChannels,
        ComputeFrequencyResponseSse2Optimization) {
   const size_t num_render_channels = GetParam();
-  bool use_sse2 = (WebRtc_GetCPUInfo(kSSE2) != 0);
+  bool use_sse2 = (GetCPUInfo(kSSE2) != 0);
   if (use_sse2) {
     for (size_t num_partitions : {2, 5, 12, 30, 50}) {
       std::vector<std::vector<FftData>> H(
@@ -361,7 +361,7 @@ TEST_P(AdaptiveFirFilterOneTwoFourEightRenderChannels,
 TEST_P(AdaptiveFirFilterOneTwoFourEightRenderChannels,
        ComputeFrequencyResponseAvx2Optimization) {
   const size_t num_render_channels = GetParam();
-  bool use_avx2 = (WebRtc_GetCPUInfo(kAVX2) != 0);
+  bool use_avx2 = (GetCPUInfo(kAVX2) != 0);
   if (use_avx2) {
     for (size_t num_partitions : {2, 5, 12, 30, 50}) {
       std::vector<std::vector<FftData>> H(

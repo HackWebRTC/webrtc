@@ -20,7 +20,7 @@ namespace webrtc {
 // Verifies that the optimized methods are bitexact to their reference
 // counterparts.
 TEST(FftData, TestSse2Optimizations) {
-  if (WebRtc_GetCPUInfo(kSSE2) != 0) {
+  if (GetCPUInfo(kSSE2) != 0) {
     FftData x;
 
     for (size_t k = 0; k < x.re.size(); ++k) {
@@ -43,7 +43,7 @@ TEST(FftData, TestSse2Optimizations) {
 // Verifies that the optimized methods are bitexact to their reference
 // counterparts.
 TEST(FftData, TestAvx2Optimizations) {
-  if (WebRtc_GetCPUInfo(kAVX2) != 0) {
+  if (GetCPUInfo(kAVX2) != 0) {
     FftData x;
 
     for (size_t k = 0; k < x.re.size(); ++k) {

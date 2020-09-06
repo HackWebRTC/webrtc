@@ -121,9 +121,9 @@ TEST(SincResamplerTest, DISABLED_SetRatioBench) {
 // will be tested by the parameterized SincResampler tests below.
 TEST(SincResamplerTest, Convolve) {
 #if defined(WEBRTC_ARCH_X86_FAMILY)
-  ASSERT_TRUE(WebRtc_GetCPUInfo(kSSE2));
+  ASSERT_TRUE(GetCPUInfo(kSSE2));
 #elif defined(WEBRTC_ARCH_ARM_V7)
-  ASSERT_TRUE(WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON);
+  ASSERT_TRUE(GetCPUFeaturesARM() & kCPUFeatureNEON);
 #endif
 
   // Initialize a dummy resampler.
@@ -182,9 +182,9 @@ TEST(SincResamplerTest, ConvolveBenchmark) {
   printf("Convolve_C took %.2fms.\n", total_time_c_us / 1000);
 
 #if defined(WEBRTC_ARCH_X86_FAMILY)
-  ASSERT_TRUE(WebRtc_GetCPUInfo(kSSE2));
+  ASSERT_TRUE(GetCPUInfo(kSSE2));
 #elif defined(WEBRTC_ARCH_ARM_V7)
-  ASSERT_TRUE(WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON);
+  ASSERT_TRUE(GetCPUFeaturesARM() & kCPUFeatureNEON);
 #endif
 
   // Benchmark with unaligned input pointer.

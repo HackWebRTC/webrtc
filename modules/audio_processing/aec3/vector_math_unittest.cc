@@ -80,7 +80,7 @@ TEST(VectorMath, Accumulate) {
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 
 TEST(VectorMath, Sse2Sqrt) {
-  if (WebRtc_GetCPUInfo(kSSE2) != 0) {
+  if (GetCPUInfo(kSSE2) != 0) {
     std::array<float, kFftLengthBy2Plus1> x;
     std::array<float, kFftLengthBy2Plus1> z;
     std::array<float, kFftLengthBy2Plus1> z_sse2;
@@ -102,7 +102,7 @@ TEST(VectorMath, Sse2Sqrt) {
 }
 
 TEST(VectorMath, Avx2Sqrt) {
-  if (WebRtc_GetCPUInfo(kAVX2) != 0) {
+  if (GetCPUInfo(kAVX2) != 0) {
     std::array<float, kFftLengthBy2Plus1> x;
     std::array<float, kFftLengthBy2Plus1> z;
     std::array<float, kFftLengthBy2Plus1> z_avx2;
@@ -124,7 +124,7 @@ TEST(VectorMath, Avx2Sqrt) {
 }
 
 TEST(VectorMath, Sse2Multiply) {
-  if (WebRtc_GetCPUInfo(kSSE2) != 0) {
+  if (GetCPUInfo(kSSE2) != 0) {
     std::array<float, kFftLengthBy2Plus1> x;
     std::array<float, kFftLengthBy2Plus1> y;
     std::array<float, kFftLengthBy2Plus1> z;
@@ -145,7 +145,7 @@ TEST(VectorMath, Sse2Multiply) {
 }
 
 TEST(VectorMath, Avx2Multiply) {
-  if (WebRtc_GetCPUInfo(kAVX2) != 0) {
+  if (GetCPUInfo(kAVX2) != 0) {
     std::array<float, kFftLengthBy2Plus1> x;
     std::array<float, kFftLengthBy2Plus1> y;
     std::array<float, kFftLengthBy2Plus1> z;
@@ -166,7 +166,7 @@ TEST(VectorMath, Avx2Multiply) {
 }
 
 TEST(VectorMath, Sse2Accumulate) {
-  if (WebRtc_GetCPUInfo(kSSE2) != 0) {
+  if (GetCPUInfo(kSSE2) != 0) {
     std::array<float, kFftLengthBy2Plus1> x;
     std::array<float, kFftLengthBy2Plus1> z;
     std::array<float, kFftLengthBy2Plus1> z_sse2;
@@ -186,7 +186,7 @@ TEST(VectorMath, Sse2Accumulate) {
 }
 
 TEST(VectorMath, Avx2Accumulate) {
-  if (WebRtc_GetCPUInfo(kAVX2) != 0) {
+  if (GetCPUInfo(kAVX2) != 0) {
     std::array<float, kFftLengthBy2Plus1> x;
     std::array<float, kFftLengthBy2Plus1> z;
     std::array<float, kFftLengthBy2Plus1> z_avx2;
