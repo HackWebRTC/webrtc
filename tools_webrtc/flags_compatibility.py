@@ -24,7 +24,9 @@ def main():
   if args.isolated_script_test_perf_output:
     # TODO(bugs.webrtc.org/11895): Move this code somewhere else because
     # flags_compatibility.py shouldn't create output directories.
-    os.makedirs(os.path.dirname(args.isolated_script_test_perf_output))
+    output_dirname = os.path.dirname(args.isolated_script_test_perf_output)
+    if not os.path.exists(output_dirname):
+      os.makedirs(output_dirname)
     test_command += ['--isolated_script_test_perf_output=' +
                      args.isolated_script_test_perf_output]
   logging.info('Running %r', test_command)
