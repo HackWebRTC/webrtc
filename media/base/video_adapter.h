@@ -20,6 +20,7 @@
 #include "media/base/video_common.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace cricket {
@@ -28,7 +29,7 @@ namespace cricket {
 // specified input and output formats. The adaptation includes dropping frames
 // to reduce frame rate and scaling frames.
 // VideoAdapter is thread safe.
-class VideoAdapter {
+class RTC_EXPORT VideoAdapter {
  public:
   VideoAdapter();
   // The source requests output frames whose width and height are divisible
