@@ -796,7 +796,7 @@ def RunPythonTests(input_api, output_api):
           input_api,
           output_api,
           directory,
-          allowlist=[r'.+_test\.py$']))
+          files_to_check=[r'.+_test\.py$']))
   return input_api.RunTests(tests, parallel=True)
 
 
@@ -905,7 +905,7 @@ def CommonChecks(input_api, output_api):
   results.extend(input_api.canned_checks.CheckChangeHasNoStrayWhitespace(
       input_api, output_api, source_file_filter=non_third_party_sources))
   results.extend(input_api.canned_checks.CheckAuthorizedAuthor(
-      input_api, output_api, bot_whitelist=[
+      input_api, output_api, bot_allowlist=[
           'chromium-webrtc-autoroll@webrtc-ci.iam.gserviceaccount.com'
       ]))
   results.extend(input_api.canned_checks.CheckChangeTodoHasOwner(
