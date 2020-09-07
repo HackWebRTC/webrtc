@@ -62,9 +62,6 @@ class StatisticsCalculator {
   // Reports that |num_samples| samples were removed through accelerate.
   void AcceleratedSamples(size_t num_samples);
 
-  // Reports that |num_samples| zeros were inserted into the output.
-  void AddZeros(size_t num_samples);
-
   // Reports that |num_packets| packets were discarded.
   virtual void PacketsDiscarded(size_t num_packets);
 
@@ -196,11 +193,9 @@ class StatisticsCalculator {
   size_t silent_concealed_samples_correction_ = 0;
   size_t preemptive_samples_;
   size_t accelerate_samples_;
-  size_t added_zero_samples_;
   size_t expanded_speech_samples_;
   size_t expanded_noise_samples_;
   size_t concealed_samples_at_event_end_ = 0;
-  size_t discarded_packets_;
   size_t lost_timestamps_;
   uint32_t timestamps_since_last_report_;
   std::deque<int> waiting_times_;

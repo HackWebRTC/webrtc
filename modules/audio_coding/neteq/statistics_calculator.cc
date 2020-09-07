@@ -115,10 +115,8 @@ void StatisticsCalculator::PeriodicUmaAverage::Reset() {
 StatisticsCalculator::StatisticsCalculator()
     : preemptive_samples_(0),
       accelerate_samples_(0),
-      added_zero_samples_(0),
       expanded_speech_samples_(0),
       expanded_noise_samples_(0),
-      discarded_packets_(0),
       lost_timestamps_(0),
       timestamps_since_last_report_(0),
       secondary_decoded_samples_(0),
@@ -139,7 +137,6 @@ StatisticsCalculator::~StatisticsCalculator() = default;
 void StatisticsCalculator::Reset() {
   preemptive_samples_ = 0;
   accelerate_samples_ = 0;
-  added_zero_samples_ = 0;
   expanded_speech_samples_ = 0;
   expanded_noise_samples_ = 0;
   secondary_decoded_samples_ = 0;
@@ -148,7 +145,6 @@ void StatisticsCalculator::Reset() {
 }
 
 void StatisticsCalculator::ResetMcu() {
-  discarded_packets_ = 0;
   lost_timestamps_ = 0;
   timestamps_since_last_report_ = 0;
 }
@@ -237,10 +233,6 @@ void StatisticsCalculator::AcceleratedSamples(size_t num_samples) {
   lifetime_stats_.removed_samples_for_acceleration += num_samples;
 }
 
-void StatisticsCalculator::AddZeros(size_t num_samples) {
-  added_zero_samples_ += num_samples;
-}
-
 void StatisticsCalculator::PacketsDiscarded(size_t num_packets) {
   operations_and_state_.discarded_primary_packets += num_packets;
 }
@@ -269,7 +261,6 @@ void StatisticsCalculator::IncreaseCounter(size_t num_samples, int fs_hz) {
       static_cast<uint32_t>(fs_hz * kMaxReportPeriod)) {
     lost_timestamps_ = 0;
     timestamps_since_last_report_ = 0;
-    discarded_packets_ = 0;
   }
   lifetime_stats_.total_samples_received += num_samples;
 }
@@ -328,7 +319,7 @@ void StatisticsCalculator::GetNetworkStatistics(int fs_hz,
   RTC_DCHECK_GT(fs_hz, 0);
   RTC_DCHECK(stats);
 
-  stats->added_zero_samples = added_zero_samples_;
+  stats->added_zero_samples = 0;
   stats->current_buffer_size_ms =
       static_cast<uint16_t>(num_samples_in_buffers * 1000 / fs_hz);
 
