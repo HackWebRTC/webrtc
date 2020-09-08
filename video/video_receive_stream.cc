@@ -615,11 +615,12 @@ void VideoReceiveStream::SetEstimatedPlayoutNtpTimestampMs(
   RTC_NOTREACHED();
 }
 
-void VideoReceiveStream::SetMinimumPlayoutDelay(int delay_ms) {
+bool VideoReceiveStream::SetMinimumPlayoutDelay(int delay_ms) {
   RTC_DCHECK_RUN_ON(&module_process_sequence_checker_);
   MutexLock lock(&playout_delay_lock_);
   syncable_minimum_playout_delay_ms_ = delay_ms;
   UpdatePlayoutDelays();
+  return true;
 }
 
 int64_t VideoReceiveStream::GetWaitMs() const {

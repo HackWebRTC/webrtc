@@ -76,7 +76,7 @@ class MockChannelReceive : public voe::ChannelReceiveInterface {
               GetSyncInfo,
               (),
               (const, override));
-  MOCK_METHOD(void, SetMinimumPlayoutDelay, (int delay_ms), (override));
+  MOCK_METHOD(bool, SetMinimumPlayoutDelay, (int delay_ms), (override));
   MOCK_METHOD(bool, SetBaseMinimumPlayoutDelayMs, (int delay_ms), (override));
   MOCK_METHOD(int, GetBaseMinimumPlayoutDelayMs, (), (const, override));
   MOCK_METHOD((absl::optional<std::pair<int, SdpAudioFormat>>),

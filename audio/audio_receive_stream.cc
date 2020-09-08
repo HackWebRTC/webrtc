@@ -329,7 +329,7 @@ void AudioReceiveStream::SetEstimatedPlayoutNtpTimestampMs(
                                                       time_ms);
 }
 
-void AudioReceiveStream::SetMinimumPlayoutDelay(int delay_ms) {
+bool AudioReceiveStream::SetMinimumPlayoutDelay(int delay_ms) {
   RTC_DCHECK_RUN_ON(&module_process_thread_checker_);
   return channel_receive_->SetMinimumPlayoutDelay(delay_ms);
 }

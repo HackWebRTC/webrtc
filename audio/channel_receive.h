@@ -104,7 +104,7 @@ class ChannelReceiveInterface : public RtpPacketSinkInterface {
 
   // Audio+Video Sync.
   virtual uint32_t GetDelayEstimate() const = 0;
-  virtual void SetMinimumPlayoutDelay(int delay_ms) = 0;
+  virtual bool SetMinimumPlayoutDelay(int delay_ms) = 0;
   virtual bool GetPlayoutRtpTimestamp(uint32_t* rtp_timestamp,
                                       int64_t* time_ms) const = 0;
   virtual void SetEstimatedPlayoutNtpTimestampMs(int64_t ntp_timestamp_ms,

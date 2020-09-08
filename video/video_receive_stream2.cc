@@ -607,10 +607,11 @@ void VideoReceiveStream2::SetEstimatedPlayoutNtpTimestampMs(
   RTC_NOTREACHED();
 }
 
-void VideoReceiveStream2::SetMinimumPlayoutDelay(int delay_ms) {
+bool VideoReceiveStream2::SetMinimumPlayoutDelay(int delay_ms) {
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
   syncable_minimum_playout_delay_ms_ = delay_ms;
   UpdatePlayoutDelays();
+  return true;
 }
 
 int64_t VideoReceiveStream2::GetMaxWaitMs() const {

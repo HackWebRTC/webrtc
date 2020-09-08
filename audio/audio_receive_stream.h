@@ -87,7 +87,7 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
                               int64_t* time_ms) const override;
   void SetEstimatedPlayoutNtpTimestampMs(int64_t ntp_timestamp_ms,
                                          int64_t time_ms) override;
-  void SetMinimumPlayoutDelay(int delay_ms) override;
+  bool SetMinimumPlayoutDelay(int delay_ms) override;
 
   void AssociateSendStream(AudioSendStream* send_stream);
   void DeliverRtcp(const uint8_t* packet, size_t length);
