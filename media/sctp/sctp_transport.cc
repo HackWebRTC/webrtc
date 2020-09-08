@@ -393,6 +393,10 @@ class SctpTransport::UsrSctpWrapper {
                                  struct sctp_rcvinfo rcv,
                                  int flags,
                                  void* ulp_info) {
+    // Sanity check that both methods of getting the SctpTransport pointer
+    // yield the same result.
+    RTC_CHECK_EQ(static_cast<SctpTransport*>(ulp_info),
+                 GetTransportFromSocket(sock));
     SctpTransport* transport = static_cast<SctpTransport*>(ulp_info);
     int result =
         transport->OnDataOrNotificationFromSctp(data, length, rcv, flags);
@@ -426,6 +430,8 @@ class SctpTransport::UsrSctpWrapper {
     return transport;
   }
 
+  // TODO(crbug.com/webrtc/11899): This is a legacy callback signature, remove
+  // when usrsctp is updated.
   static int SendThresholdCallback(struct socket* sock, uint32_t sb_free) {
     // Fired on our I/O thread. SctpTransport::OnPacketReceived() gets
     // a packet containing acknowledgments, which goes into usrsctp_conninput,
@@ -437,6 +443,21 @@ class SctpTransport::UsrSctpWrapper {
           << sock;
       return 0;
     }
+    transport->OnSendThresholdCallback();
+    return 0;
+  }
+
+  static int SendThresholdCallback(struct socket* sock,
+                                   uint32_t sb_free,
+                                   void* ulp_info) {
+    // Sanity check that both methods of getting the SctpTransport pointer
+    // yield the same result.
+    RTC_CHECK_EQ(static_cast<SctpTransport*>(ulp_info),
+                 GetTransportFromSocket(sock));
+    // Fired on our I/O thread. SctpTransport::OnPacketReceived() gets
+    // a packet containing acknowledgments, which goes into usrsctp_conninput,
+    // and then back here.
+    SctpTransport* transport = static_cast<SctpTransport*>(ulp_info);
     transport->OnSendThresholdCallback();
     return 0;
   }
