@@ -83,6 +83,8 @@
       return webrtc::SessionDescriptionInterface::kPrAnswer;
     case RTCSdpTypeAnswer:
       return webrtc::SessionDescriptionInterface::kAnswer;
+    case RTCSdpTypeRollback:
+      return webrtc::SessionDescriptionInterface::kRollback;
   }
 }
 
@@ -93,6 +95,8 @@
     return RTCSdpTypePrAnswer;
   } else if (string == webrtc::SessionDescriptionInterface::kAnswer) {
     return RTCSdpTypeAnswer;
+  } else if (string == webrtc::SessionDescriptionInterface::kRollback) {
+    return RTCSdpTypeRollback;
   } else {
     RTC_NOTREACHED();
     return RTCSdpTypeOffer;

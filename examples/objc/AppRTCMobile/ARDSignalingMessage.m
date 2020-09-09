@@ -125,6 +125,7 @@ static NSString * const kARDTypeValueRemoveCandidates = @"remove-candidates";
       messageType = kARDSignalingMessageTypeAnswer;
       break;
     case RTCSdpTypePrAnswer:
+    case RTCSdpTypeRollback:
       NSAssert(
           NO, @"Unexpected type: %@", [RTC_OBJC_TYPE(RTCSessionDescription) stringForType:sdpType]);
       break;
