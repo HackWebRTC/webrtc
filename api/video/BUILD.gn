@@ -121,6 +121,24 @@ rtc_library("video_frame_i010") {
   ]
 }
 
+rtc_library("video_frame_nv12") {
+  visibility = [ "*" ]
+  sources = [
+    "nv12_buffer.cc",
+    "nv12_buffer.h",
+  ]
+  deps = [
+    ":video_frame",
+    ":video_frame_i420",
+    "..:scoped_refptr",
+    "../../rtc_base",
+    "../../rtc_base:checks",
+    "../../rtc_base/memory:aligned_malloc",
+    "../../rtc_base/system:rtc_export",
+    "//third_party/libyuv",
+  ]
+}
+
 rtc_library("encoded_image") {
   visibility = [ "*" ]
   sources = [
