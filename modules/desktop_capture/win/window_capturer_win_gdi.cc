@@ -10,6 +10,7 @@
 
 #include "modules/desktop_capture/win/window_capturer_win_gdi.h"
 
+#include <cmath>
 #include <map>
 #include <memory>
 #include <utility>
@@ -222,12 +223,22 @@ WindowCapturerWinGdi::CaptureResults WindowCapturerWinGdi::CaptureFrame(
 
     // If |window_dc_size| is smaller than |window_rect|, let's resize both
     // |original_rect| and |cropped_rect| according to the scaling factor.
+    // This will adjust the width and height of the two rects.
     horizontal_scale =
         static_cast<double>(window_dc_size.width()) / original_rect.width();
     vertical_scale =
         static_cast<double>(window_dc_size.height()) / original_rect.height();
     original_rect.Scale(horizontal_scale, vertical_scale);
     cropped_rect.Scale(horizontal_scale, vertical_scale);
+
+    // Translate |cropped_rect| to the left so that its position within
+    // |original_rect| remains accurate after scaling.
+    // See crbug.com/1083527 for more info.
+    int translate_left = static_cast<int>(std::round(
+        (cropped_rect.left() - original_rect.left()) * (horizontal_scale - 1)));
+    int translate_top = static_cast<int>(std::round(
+        (cropped_rect.top() - original_rect.top()) * (vertical_scale - 1)));
+    cropped_rect.Translate(translate_left, translate_top);
   }
 
   std::unique_ptr<DesktopFrameWin> frame(
