@@ -222,6 +222,7 @@ rtc_source_set("video_stream_decoder") {
   deps = [
     ":encoded_frame",
     ":video_frame",
+    ":video_rtp_headers",
     "../task_queue",
     "../units:time_delta",
     "../video_codecs:video_codecs_api",
