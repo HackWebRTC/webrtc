@@ -1143,8 +1143,8 @@ class PeerConnection : public PeerConnectionInternal,
   void OnOperationsChainEmpty();
   void GenerateNegotiationNeededEvent();
 
-  // | sdp_type | is the type of the SDP that caused the rollback.
-  RTCError Rollback(SdpType sdp_type);
+  // | desc_type | is the type of the description that caused the rollback.
+  RTCError Rollback(SdpType desc_type);
 
   // Storing the factory as a scoped reference pointer ensures that the memory
   // in the PeerConnectionFactoryImpl remains available as long as the
