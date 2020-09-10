@@ -244,7 +244,7 @@ class RtpTransceiver final
 
 BEGIN_SIGNALING_PROXY_MAP(RtpTransceiver)
 PROXY_SIGNALING_THREAD_DESTRUCTOR()
-PROXY_CONSTMETHOD0(cricket::MediaType, media_type)
+BYPASS_PROXY_CONSTMETHOD0(cricket::MediaType, media_type)
 PROXY_CONSTMETHOD0(absl::optional<std::string>, mid)
 PROXY_CONSTMETHOD0(rtc::scoped_refptr<RtpSenderInterface>, sender)
 PROXY_CONSTMETHOD0(rtc::scoped_refptr<RtpReceiverInterface>, receiver)

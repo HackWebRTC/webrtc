@@ -53,7 +53,7 @@ class MediaStreamTrack : public Notifier<T> {
 
  private:
   bool enabled_;
-  std::string id_;
+  const std::string id_;
   MediaStreamTrackInterface::TrackState state_;
 };
 
