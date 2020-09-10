@@ -152,7 +152,15 @@ class NetEqController {
   virtual void AddSampleMemory(int32_t value) = 0;
 
   // Returns the target buffer level in ms.
-  virtual int TargetLevelMs() = 0;
+  // TODO(bugs.webrtc.org/11622): Delete the non-const version and default
+  // implementation, once downstream code is updated.
+  virtual int TargetLevelMs() {
+    return const_cast<const NetEqController*>(this)->TargetLevelMs();
+  }
+
+  virtual int TargetLevelMs() const {
+    return const_cast<NetEqController*>(this)->TargetLevelMs();
+  }
 
   // Notify the NetEqController that a packet has arrived. Returns the relative
   // arrival delay, if it can be computed.
