@@ -483,7 +483,7 @@ rtc_library("isac_c") {
     "codecs/isac/main/source/transform.c",
   ]
 
-  if (is_linux) {
+  if (is_linux || is_chromeos) {
     libs = [ "m" ]
   }
 

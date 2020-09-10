@@ -966,7 +966,7 @@ rtc_library("rtc_base") {
     deps += [ "system:cocoa_threading" ]
   }
 
-  if (is_linux) {
+  if (is_linux || is_chromeos) {
     libs += [
       "dl",
       "rt",

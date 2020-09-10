@@ -966,17 +966,17 @@ rtc_library("test_renderer_generic") {
     ]
     deps += [ "../api:scoped_refptr" ]
   }
-  if (!(is_linux && rtc_use_x11) && !is_mac && !is_win) {
+  if (!((is_linux || is_chromeos) && rtc_use_x11) && !is_mac && !is_win) {
     sources += [ "null_platform_renderer.cc" ]
   }
-  if ((is_linux && rtc_use_x11) || is_mac) {
+  if (((is_linux || is_chromeos) && rtc_use_x11) || is_mac) {
     sources += [
       "gl/gl_renderer.cc",
       "gl/gl_renderer.h",
     ]
   }
 
-  if (is_linux && rtc_use_x11) {
+  if ((is_linux || is_chromeos) && rtc_use_x11) {
     sources += [
       "linux/glx_renderer.cc",
       "linux/glx_renderer.h",

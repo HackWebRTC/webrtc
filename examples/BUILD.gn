@@ -45,7 +45,7 @@ group("examples") {
     deps += [ ":AppRTCMobile" ]
   }
 
-  if (is_linux || is_win) {
+  if (is_linux || is_chromeos || is_win) {
     deps += [
       ":peerconnection_server",
       ":stunserver",
@@ -647,7 +647,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
   }
 }
 
-if (is_linux || is_win) {
+if (is_linux || is_chromeos || is_win) {
   rtc_executable("peerconnection_client") {
     testonly = true
     sources = [
@@ -691,7 +691,7 @@ if (is_linux || is_win) {
       configs += [ "//build/config/win:windowed" ]
       deps += [ "../media:rtc_media_base" ]
     }
-    if (is_linux) {
+    if (is_linux || is_chromeos) {
       sources += [
         "peerconnection/client/linux/main.cc",
         "peerconnection/client/linux/main_wnd.cc",

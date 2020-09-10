@@ -173,7 +173,7 @@ config("common_inherited_config") {
       "WEBRTC_IOS",
     ]
   }
-  if (is_linux) {
+  if (is_linux || is_chromeos) {
     defines += [ "WEBRTC_LINUX" ]
   }
   if (is_mac) {

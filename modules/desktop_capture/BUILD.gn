@@ -140,7 +140,7 @@ if (rtc_include_tests) {
       "screen_drawer.h",
     ]
 
-    if (is_linux) {
+    if (is_linux || is_chromeos) {
       sources += [ "screen_drawer_linux.cc" ]
     }
 
@@ -186,7 +186,7 @@ if (rtc_include_tests) {
   }
 }
 
-if (is_linux) {
+if (is_linux || is_chromeos) {
   if (rtc_use_pipewire) {
     pkg_config("gio") {
       packages = [
@@ -357,7 +357,7 @@ rtc_library("desktop_capture_generic") {
       "window_capturer_linux.cc",
     ]
 
-    if (build_with_mozilla && is_linux) {
+    if (build_with_mozilla && (is_linux || is_chromeos)) {
       sources += [
         "app_capturer_linux.cc",
         "linux/app_capturer_x11.cc",

@@ -56,7 +56,7 @@ if (!build_with_chromium) {
       "../../system_wrappers",
     ]
 
-    if (is_linux) {
+    if (is_linux || is_chromeos) {
       sources = [
         "linux/device_info_linux.cc",
         "linux/device_info_linux.h",
@@ -113,13 +113,13 @@ if (!build_with_chromium) {
     rtc_test("video_capture_tests") {
       sources = [ "test/video_capture_unittest.cc" ]
       ldflags = []
-      if (is_linux || is_mac) {
+      if (is_linux || is_chromeos || is_mac) {
         ldflags += [
           "-lpthread",
           "-lm",
         ]
       }
-      if (is_linux) {
+      if (is_linux || is_chromeos) {
         ldflags += [
           "-lrt",
           "-lXext",
