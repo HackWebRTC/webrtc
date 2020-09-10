@@ -37,7 +37,7 @@
   },
   "apprtcmobile_tests": {
     "label": "//examples:apprtcmobile_tests",
-    "type": "raw",
+    "type": "console_test_launcher",
   },
   "audio_decoder_unittests": {
     "label": "//modules/audio_coding:audio_decoder_unittests",
@@ -108,11 +108,11 @@
   },
   "sdk_framework_unittests": {
     "label": "//sdk:sdk_framework_unittests",
-    "type": "raw",
+    "type": "console_test_launcher",
   },
   "sdk_unittests": {
     "label": "//sdk:sdk_unittests",
-    "type": "raw",
+    "type": "console_test_launcher",
   },
   "slow_tests": {
     "label": "//:slow_tests",
