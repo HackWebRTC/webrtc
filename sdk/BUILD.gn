@@ -6,9 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-import("//testing/test.gni")
 import("../webrtc.gni")
-
 if (is_ios) {
   import("//build/config/ios/ios_sdk.gni")
   import("//build/config/ios/rules.gni")
@@ -1167,7 +1165,7 @@ if (is_ios || is_mac) {
         }
 
         # These tests use static linking.
-        test("sdk_unittests") {
+        rtc_ios_xctest_test("sdk_unittests") {
           info_plist = "//test/ios/Info.plist"
           sources = [ "objc/unittests/main.mm" ]
 
@@ -1183,9 +1181,8 @@ if (is_ios || is_mac) {
         }
 
         # These tests link to the framework.
-        test("sdk_framework_unittests") {
+        rtc_ios_xctest_test("sdk_framework_unittests") {
           info_plist = "//test/ios/Info.plist"
-          cflags_objc = [ "-Wno-objc-property-no-attribute" ]
           sources = [
             "objc/unittests/RTCDoNotPutCPlusPlusInFrameworkHeaders_xctest.m",
             "objc/unittests/main.mm",

@@ -879,6 +879,35 @@ template("rtc_shared_library") {
 }
 
 if (is_ios) {
+  set_defaults("rtc_ios_xctest_test") {
+    configs = rtc_add_configs
+    suppressed_configs = []
+  }
+
+  template("rtc_ios_xctest_test") {
+    ios_xctest_test(target_name) {
+      forward_variables_from(invoker,
+                             "*",
+                             [
+                               "configs",
+                               "public_configs",
+                               "suppressed_configs",
+                               "visibility",
+                             ])
+      forward_variables_from(invoker, [ "visibility" ])
+      if (!defined(visibility)) {
+        visibility = webrtc_default_visibility
+      }
+      configs += invoker.configs
+      configs -= rtc_remove_configs
+      configs -= invoker.suppressed_configs
+      public_configs = [ rtc_common_inherited_config ]
+      if (defined(invoker.public_configs)) {
+        public_configs += invoker.public_configs
+      }
+    }
+  }
+
   # TODO: Generate module.modulemap file to enable use in Swift
   # projects. See "mac_framework_bundle_with_umbrella_header".
   template("ios_framework_bundle_with_umbrella_header") {
