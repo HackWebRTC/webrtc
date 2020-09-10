@@ -337,27 +337,29 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
       ToQueuedTask([to_delete = observer.release()]() { delete to_delete; }));
 }
 
-TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithoutClockDrift) {
+TEST_F(CallPerfTest, Synchronization_PlaysOutAudioAndVideoWithoutClockDrift) {
   TestAudioVideoSync(FecMode::kOff, CreateOrder::kAudioFirst,
                      DriftingClock::kNoDrift, DriftingClock::kNoDrift,
                      DriftingClock::kNoDrift, "_video_no_drift");
 }
 
-TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithVideoNtpDrift) {
+TEST_F(CallPerfTest, Synchronization_PlaysOutAudioAndVideoWithVideoNtpDrift) {
   TestAudioVideoSync(FecMode::kOff, CreateOrder::kAudioFirst,
                      DriftingClock::PercentsFaster(10.0f),
                      DriftingClock::kNoDrift, DriftingClock::kNoDrift,
                      "_video_ntp_drift");
 }
 
-TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithAudioFasterThanVideoDrift) {
+TEST_F(CallPerfTest,
+       Synchronization_PlaysOutAudioAndVideoWithAudioFasterThanVideoDrift) {
   TestAudioVideoSync(FecMode::kOff, CreateOrder::kAudioFirst,
                      DriftingClock::kNoDrift,
                      DriftingClock::PercentsSlower(30.0f),
                      DriftingClock::PercentsFaster(30.0f), "_audio_faster");
 }
 
-TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithVideoFasterThanAudioDrift) {
+TEST_F(CallPerfTest,
+       Synchronization_PlaysOutAudioAndVideoWithVideoFasterThanAudioDrift) {
   TestAudioVideoSync(FecMode::kOn, CreateOrder::kVideoFirst,
                      DriftingClock::kNoDrift,
                      DriftingClock::PercentsFaster(30.0f),
@@ -509,7 +511,7 @@ void CallPerfTest::TestCaptureNtpTime(
 
 // Flaky tests, disabled on Mac and Windows due to webrtc:8291.
 #if !(defined(WEBRTC_MAC) || defined(WEBRTC_WIN))
-TEST_F(CallPerfTest, CaptureNtpTimeWithNetworkDelay) {
+TEST_F(CallPerfTest, Real_Estimated_CaptureNtpTimeWithNetworkDelay) {
   BuiltInNetworkBehaviorConfig net_config;
   net_config.queue_delay_ms = 100;
   // TODO(wu): lower the threshold as the calculation/estimatation becomes more
@@ -520,7 +522,7 @@ TEST_F(CallPerfTest, CaptureNtpTimeWithNetworkDelay) {
   TestCaptureNtpTime(net_config, kThresholdMs, kStartTimeMs, kRunTimeMs);
 }
 
-TEST_F(CallPerfTest, CaptureNtpTimeWithNetworkJitter) {
+TEST_F(CallPerfTest, Real_Estimated_CaptureNtpTimeWithNetworkJitter) {
   BuiltInNetworkBehaviorConfig net_config;
   net_config.queue_delay_ms = 100;
   net_config.delay_standard_deviation_ms = 10;
@@ -710,11 +712,11 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
   RunBaseTest(&test);
 }
 
-TEST_F(CallPerfTest, PadsToMinTransmitBitrate) {
+TEST_F(CallPerfTest, Bitrate_Kbps_PadsToMinTransmitBitrate) {
   TestMinTransmitBitrate(true);
 }
 
-TEST_F(CallPerfTest, NoPadWithoutMinTransmitBitrate) {
+TEST_F(CallPerfTest, Bitrate_Kbps_NoPadWithoutMinTransmitBitrate) {
   TestMinTransmitBitrate(false);
 }
 
@@ -1003,11 +1005,11 @@ void CallPerfTest::TestMinAudioVideoBitrate(int test_bitrate_from,
 
 // TODO(bugs.webrtc.org/8878)
 #if defined(WEBRTC_MAC)
-#define MAYBE_MinVideoAndAudioBitrate DISABLED_MinVideoAndAudioBitrate
+#define MAYBE_Min_Bitrate_VideoAndAudio DISABLED_Min_Bitrate_VideoAndAudio
 #else
-#define MAYBE_MinVideoAndAudioBitrate MinVideoAndAudioBitrate
+#define MAYBE_Min_Bitrate_VideoAndAudio Min_Bitrate_VideoAndAudio
 #endif
-TEST_F(CallPerfTest, MAYBE_MinVideoAndAudioBitrate) {
+TEST_F(CallPerfTest, MAYBE_Min_Bitrate_VideoAndAudio) {
   TestMinAudioVideoBitrate(110, 40, -10, 10000, 70000, 200000);
 }
 
