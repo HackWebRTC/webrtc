@@ -42,10 +42,6 @@ class ObjCNetworkMonitor : public rtc::NetworkMonitorInterface,
   void Start() override;
   void Stop() override;
 
-  // TODO(deadbeef): Remove this once it's been removed from
-  // NetworkMonitorInterface.
-  void OnNetworksChanged() override {}
-
   rtc::AdapterType GetAdapterType(const std::string& interface_name) override;
   rtc::AdapterType GetVpnUnderlyingAdapterType(
       const std::string& interface_name) override;

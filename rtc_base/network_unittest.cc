@@ -43,7 +43,7 @@ namespace rtc {
 
 namespace {
 
-class FakeNetworkMonitor : public NetworkMonitorBase {
+class FakeNetworkMonitor : public NetworkMonitorInterface {
  public:
   void Start() override { started_ = true; }
   void Stop() override { started_ = false; }
@@ -57,6 +57,9 @@ class FakeNetworkMonitor : public NetworkMonitorBase {
     if (absl::StartsWith(if_name, "cellular")) {
       return ADAPTER_TYPE_CELLULAR;
     }
+    return ADAPTER_TYPE_UNKNOWN;
+  }
+  AdapterType GetVpnUnderlyingAdapterType(const std::string& if_name) override {
     return ADAPTER_TYPE_UNKNOWN;
   }
   NetworkPreference GetNetworkPreference(const std::string& if_name) override {
@@ -1098,7 +1101,7 @@ TEST_F(NetworkTest, TestNetworkMonitoring) {
   ClearNetworks(manager);
   // Network manager is started, so the callback is called when the network
   // monitor fires the network-change event.
-  network_monitor->OnNetworksChanged();
+  network_monitor->SignalNetworksChanged();
   EXPECT_TRUE_WAIT(callback_called_, 1000);
 
   // Network manager is stopped.
