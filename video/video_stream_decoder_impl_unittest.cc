@@ -32,12 +32,12 @@ class MockVideoStreamDecoderCallbacks
               OnContinuousUntil,
               (const video_coding::VideoLayerFrameId& key),
               (override));
-  MOCK_METHOD(void,
-              OnDecodedFrame,
-              (VideoFrame decodedImage,
-               absl::optional<int> decode_time_ms,
-               absl::optional<int> qp),
-              (override));
+  MOCK_METHOD(
+      void,
+      OnDecodedFrame,
+      (VideoFrame frame,
+       const VideoStreamDecoderInterface::Callbacks::FrameInfo& frame_info),
+      (override));
 };
 
 class StubVideoDecoder : public VideoDecoder {

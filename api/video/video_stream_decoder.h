@@ -43,16 +43,8 @@ class VideoStreamDecoderInterface {
     virtual void OnContinuousUntil(
         const video_coding::VideoLayerFrameId& key) = 0;
 
-    // Called with the decoded frame.
     virtual void OnDecodedFrame(VideoFrame frame,
-                                absl::optional<int> decode_time_ms,
-                                absl::optional<int> qp) {}
-
-    // TODO(philipel): Make pure virtual and remove old function above when
-    //                 it is no longer used.
-    virtual void OnDecodedFrame(VideoFrame frame, const FrameInfo& meta_info) {
-      OnDecodedFrame(std::move(frame), meta_info.decode_time_ms, meta_info.qp);
-    }
+                                const FrameInfo& frame_info) = 0;
   };
 
   virtual ~VideoStreamDecoderInterface() = default;
