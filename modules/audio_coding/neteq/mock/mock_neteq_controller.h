@@ -41,7 +41,7 @@ class MockNetEqController : public NetEqController {
   MOCK_METHOD(void, SetCngOff, (), (override));
   MOCK_METHOD(void, ExpandDecision, (NetEq::Operation operation), (override));
   MOCK_METHOD(void, AddSampleMemory, (int32_t value), (override));
-  MOCK_METHOD(int, TargetLevelMs, (), (override));
+  MOCK_METHOD(int, TargetLevelMs, (), (const, override));
   MOCK_METHOD(absl::optional<int>,
               PacketArrived,
               (bool last_cng_or_dtmf,
