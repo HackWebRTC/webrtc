@@ -37,14 +37,11 @@ class RTC_EXPORT MessageHandler {
   virtual void OnMessage(Message* msg) = 0;
 
  protected:
-  // TODO(bugs.webrtc.org/11908): The |auto_cleanup| parameter needs to have a
-  // backwards compatible default value while external code is being updated.
-  explicit MessageHandler(bool auto_cleanup = true)
-      : auto_cleanup_(auto_cleanup) {}
+  // TODO(bugs.webrtc.org/11908): Remove this ctor.
+  explicit MessageHandler(bool auto_cleanup);
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(MessageHandler);
-  const bool auto_cleanup_;
 };
 
 class RTC_EXPORT MessageHandlerAutoCleanup : public MessageHandler {
@@ -52,7 +49,7 @@ class RTC_EXPORT MessageHandlerAutoCleanup : public MessageHandler {
   ~MessageHandlerAutoCleanup() override;
 
  protected:
-  MessageHandlerAutoCleanup() : MessageHandler(true) {}
+  MessageHandlerAutoCleanup();
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(MessageHandlerAutoCleanup);
