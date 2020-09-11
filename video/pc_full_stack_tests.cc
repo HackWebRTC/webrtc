@@ -276,7 +276,7 @@ TEST(PCGenericDescriptorTest,
 }
 
 TEST(PCGenericDescriptorTest,
-     Pc_Foreman_Cif_30Kbps_Net_Delay_0_0_Plr_0_Generic_Descriptor) {
+     Pc_Foreman_Cif_30kbps_Net_Delay_0_0_Plr_0_Generic_Descriptor) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
@@ -307,7 +307,7 @@ TEST(PCGenericDescriptorTest,
 
 // TODO(webrtc:9722): Remove when experiment is cleaned up.
 TEST(PCGenericDescriptorTest,
-     Pc_Foreman_Cif_30Kbps_Net_Delay_0_0_Plr_0_Trusted_Rate_Ctrl) {
+     Pc_Foreman_Cif_30kbps_Net_Delay_0_0_Plr_0_Trusted_Rate_Ctrl) {
   test::ScopedFieldTrials override_field_trials(
       AppendFieldTrials(kVp8TrustedRateControllerFieldTrial));
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
@@ -340,7 +340,7 @@ TEST(PCGenericDescriptorTest,
 }
 
 // Link capacity below default start rate.
-TEST(PCFullStackTest, Pc_Foreman_Cif_Link_150Kbps_Net_Delay_0_0_Plr_0) {
+TEST(PCFullStackTest, Pc_Foreman_Cif_Link_150kbps_Net_Delay_0_0_Plr_0) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
@@ -364,7 +364,7 @@ TEST(PCFullStackTest, Pc_Foreman_Cif_Link_150Kbps_Net_Delay_0_0_Plr_0) {
   fixture->Run(std::move(run_params));
 }
 
-TEST(PCFullStackTest, Pc_Foreman_Cif_Link_130Kbps_Delay100ms_Loss1_Ulpfec) {
+TEST(PCFullStackTest, Pc_Foreman_Cif_Link_130kbps_Delay100ms_Loss1_Ulpfec) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
@@ -390,7 +390,7 @@ TEST(PCFullStackTest, Pc_Foreman_Cif_Link_130Kbps_Delay100ms_Loss1_Ulpfec) {
   fixture->Run(std::move(run_params));
 }
 
-TEST(PCFullStackTest, Pc_Foreman_Cif_Link_50Kbps_Delay100ms_Loss1_Ulpfec) {
+TEST(PCFullStackTest, Pc_Foreman_Cif_Link_50kbps_Delay100ms_Loss1_Ulpfec) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
@@ -418,7 +418,7 @@ TEST(PCFullStackTest, Pc_Foreman_Cif_Link_50Kbps_Delay100ms_Loss1_Ulpfec) {
 
 // Restricted network and encoder overproducing by 30%.
 TEST(PCFullStackTest,
-     Pc_Foreman_Cif_Link_150Kbps_Delay100ms_30Pkts_Queue_Overshoot30) {
+     Pc_Foreman_Cif_Link_150kbps_Delay100ms_30pkts_Queue_Overshoot30) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
@@ -449,7 +449,7 @@ TEST(PCFullStackTest,
 // Packet rate and loss are low enough that loss will happen with ~3s interval.
 // This triggers protection overhead to toggle between zero and non-zero.
 // Link queue is restrictive enough to trigger loss on probes.
-TEST(PCFullStackTest, Pc_Foreman_Cif_Link_250Kbps_Delay100ms_10Pkts_Loss1) {
+TEST(PCFullStackTest, Pc_Foreman_Cif_Link_250kbps_Delay100ms_10pkts_Loss1) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
@@ -554,7 +554,7 @@ TEST(PCFullStackTest, Pc_Foreman_Cif_Delay_50_0_Plr_5_Flexfec) {
   fixture->Run(std::move(run_params));
 }
 
-TEST(PCFullStackTest, Pc_Foreman_Cif_500Kbps_Delay_50_0_Plr_3_Flexfec) {
+TEST(PCFullStackTest, Pc_Foreman_Cif_500kbps_Delay_50_0_Plr_3_Flexfec) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
@@ -580,7 +580,7 @@ TEST(PCFullStackTest, Pc_Foreman_Cif_500Kbps_Delay_50_0_Plr_3_Flexfec) {
   fixture->Run(std::move(run_params));
 }
 
-TEST(PCFullStackTest, Pc_Foreman_Cif_500Kbps_Delay_50_0_Plr_3_Ulpfec) {
+TEST(PCFullStackTest, Pc_Foreman_Cif_500kbps_Delay_50_0_Plr_3_Ulpfec) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
@@ -630,7 +630,7 @@ TEST(PCFullStackTest, Pc_Foreman_Cif_Net_Delay_0_0_Plr_0_H264) {
   fixture->Run(std::move(run_params));
 }
 
-TEST(PCFullStackTest, Pc_Foreman_Cif_30Kbps_Net_Delay_0_0_Plr_0_H264) {
+TEST(PCFullStackTest, Pc_Foreman_Cif_30kbps_Net_Delay_0_0_Plr_0_H264) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
@@ -766,7 +766,7 @@ TEST(PCFullStackTest, DISABLED_Pc_Foreman_Cif_Delay_50_0_Plr_5_H264_Ulpfec) {
 }
 #endif  // defined(WEBRTC_USE_H264)
 
-TEST(PCFullStackTest, Pc_Foreman_Cif_500Kbps) {
+TEST(PCFullStackTest, Pc_Foreman_Cif_500kbps) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
@@ -791,7 +791,7 @@ TEST(PCFullStackTest, Pc_Foreman_Cif_500Kbps) {
   fixture->Run(std::move(run_params));
 }
 
-TEST(PCFullStackTest, Pc_Foreman_Cif_500Kbps_32Pkts_Queue) {
+TEST(PCFullStackTest, Pc_Foreman_Cif_500kbps_32pkts_Queue) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
@@ -817,7 +817,7 @@ TEST(PCFullStackTest, Pc_Foreman_Cif_500Kbps_32Pkts_Queue) {
   fixture->Run(std::move(run_params));
 }
 
-TEST(PCFullStackTest, Pc_Foreman_Cif_500Kbps_100Ms) {
+TEST(PCFullStackTest, Pc_Foreman_Cif_500kbps_100ms) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
@@ -844,7 +844,7 @@ TEST(PCFullStackTest, Pc_Foreman_Cif_500Kbps_100Ms) {
 }
 
 TEST(PCGenericDescriptorTest,
-     Pc_Foreman_Cif_500Kbps_100Ms_32Pkts_Queue_Generic_Descriptor) {
+     Pc_Foreman_Cif_500kbps_100ms_32pkts_Queue_Generic_Descriptor) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
@@ -891,7 +891,7 @@ TEST(PCFullStackTest, ForemanCif500kbps100msLimitedQueueRecvBwe) {
 }
 */
 
-TEST(PCFullStackTest, Pc_Foreman_Cif_1000Kbps_100Ms_32Pkts_Queue) {
+TEST(PCFullStackTest, Pc_Foreman_Cif_1000kbps_100ms_32pkts_Queue) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
@@ -918,7 +918,7 @@ TEST(PCFullStackTest, Pc_Foreman_Cif_1000Kbps_100Ms_32Pkts_Queue) {
 }
 
 // TODO(sprang): Remove this if we have the similar ModerateLimits below?
-TEST(PCFullStackTest, Pc_Conference_Motion_Hd_2000Kbps_100Ms_32Pkts_Queue) {
+TEST(PCFullStackTest, Pc_Conference_Motion_Hd_2000kbps_100ms_32pkts_Queue) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
@@ -946,7 +946,7 @@ TEST(PCFullStackTest, Pc_Conference_Motion_Hd_2000Kbps_100Ms_32Pkts_Queue) {
 
 // TODO(webrtc:9722): Remove when experiment is cleaned up.
 TEST(PCFullStackTest,
-     Pc_Conference_Motion_Hd_1Tl_Moderate_Limits_Trusted_Rate_Ctrl) {
+     Pc_Conference_Motion_Hd_1tl_Moderate_Limits_Trusted_Rate_Ctrl) {
   test::ScopedFieldTrials override_field_trials(
       AppendFieldTrials(kVp8TrustedRateControllerFieldTrial));
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
@@ -1102,7 +1102,7 @@ TEST(PCFullStackTest,
 */
 
 #if defined(RTC_ENABLE_VP9)
-TEST(PCFullStackTest, Pc_Conference_Motion_Hd_2000Kbps_100Ms_32Pkts_Queue_Vp9) {
+TEST(PCFullStackTest, Pc_Conference_Motion_Hd_2000kbps_100ms_32pkts_Queue_Vp9) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
@@ -1412,7 +1412,7 @@ ParamsWithLogging::Video SimulcastVp8VideoLow() {
 
 #if defined(RTC_ENABLE_VP9)
 
-TEST(PCFullStackTest, Pc_Screenshare_Slides_Vp9_3Sl_High_Fps) {
+TEST(PCFullStackTest, Pc_Screenshare_Slides_Vp9_3sl_High_Fps) {
   webrtc::test::ScopedFieldTrials override_trials(
       AppendFieldTrials("WebRTC-Vp9InterLayerPred/"
                         "Enabled,inter_layer_pred_mode:on/"));
@@ -1442,7 +1442,7 @@ TEST(PCFullStackTest, Pc_Screenshare_Slides_Vp9_3Sl_High_Fps) {
   fixture->Run(std::move(run_params));
 }
 
-TEST(PCFullStackTest, Pc_Vp9svc_3Sl_High) {
+TEST(PCFullStackTest, Pc_Vp9svc_3sl_High) {
   webrtc::test::ScopedFieldTrials override_trials(
       AppendFieldTrials("WebRTC-Vp9InterLayerPred/"
                         "Enabled,inter_layer_pred_mode:on/"));
@@ -1471,7 +1471,7 @@ TEST(PCFullStackTest, Pc_Vp9svc_3Sl_High) {
   fixture->Run(std::move(run_params));
 }
 
-TEST(PCFullStackTest, Pc_Vp9svc_3Sl_Low) {
+TEST(PCFullStackTest, Pc_Vp9svc_3sl_Low) {
   webrtc::test::ScopedFieldTrials override_trials(
       AppendFieldTrials("WebRTC-Vp9InterLayerPred/"
                         "Enabled,inter_layer_pred_mode:on/"));
@@ -1626,7 +1626,7 @@ TEST(PCFullStackTest, MAYBE_Pc_Simulcast_HD_High) {
   fixture->Run(std::move(run_params));
 }
 
-TEST(PCFullStackTest, Pc_Simulcast_Vp8_3Sl_High) {
+TEST(PCFullStackTest, Pc_Simulcast_Vp8_3sl_High) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
@@ -1652,7 +1652,7 @@ TEST(PCFullStackTest, Pc_Simulcast_Vp8_3Sl_High) {
   fixture->Run(std::move(run_params));
 }
 
-TEST(PCFullStackTest, Pc_Simulcast_Vp8_3Sl_Low) {
+TEST(PCFullStackTest, Pc_Simulcast_Vp8_3sl_Low) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
