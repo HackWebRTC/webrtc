@@ -10,6 +10,8 @@
 
 #include "modules/rtp_rtcp/source/rtcp_transceiver_impl.h"
 
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include "absl/memory/memory.h"
@@ -677,12 +679,12 @@ TEST(RtcpTransceiverImplTest, CallsObserverOnByeBehindSenderReport) {
   rtcp_transceiver.AddMediaReceiverRtcpObserver(kRemoteSsrc, &observer);
 
   CompoundPacket compound;
-  SenderReport sr;
-  sr.SetSenderSsrc(kRemoteSsrc);
-  compound.Append(&sr);
-  Bye bye;
-  bye.SetSenderSsrc(kRemoteSsrc);
-  compound.Append(&bye);
+  auto sr = std::make_unique<SenderReport>();
+  sr->SetSenderSsrc(kRemoteSsrc);
+  compound.Append(std::move(sr));
+  auto bye = std::make_unique<Bye>();
+  bye->SetSenderSsrc(kRemoteSsrc);
+  compound.Append(std::move(bye));
   auto raw_packet = compound.Build();
 
   EXPECT_CALL(observer, OnBye(kRemoteSsrc));
@@ -698,11 +700,11 @@ TEST(RtcpTransceiverImplTest, CallsObserverOnByeBehindUnknownRtcpPacket) {
 
   CompoundPacket compound;
   // Use Application-Defined rtcp packet as unknown.
-  webrtc::rtcp::App app;
-  compound.Append(&app);
-  Bye bye;
-  bye.SetSenderSsrc(kRemoteSsrc);
-  compound.Append(&bye);
+  auto app = std::make_unique<webrtc::rtcp::App>();
+  compound.Append(std::move(app));
+  auto bye = std::make_unique<Bye>();
+  bye->SetSenderSsrc(kRemoteSsrc);
+  compound.Append(std::move(bye));
   auto raw_packet = compound.Build();
 
   EXPECT_CALL(observer, OnBye(kRemoteSsrc));

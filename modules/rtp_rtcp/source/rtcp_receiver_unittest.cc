@@ -11,6 +11,7 @@
 #include "modules/rtp_rtcp/source/rtcp_receiver.h"
 
 #include <memory>
+#include <utility>
 
 #include "api/array_view.h"
 #include "api/units/timestamp.h"
@@ -1200,14 +1201,14 @@ TEST(RtcpReceiverTest, TmmbrPacketAccepted) {
   receiver.SetRemoteSSRC(kSenderSsrc);
 
   const uint32_t kBitrateBps = 30000;
-  rtcp::Tmmbr tmmbr;
-  tmmbr.SetSenderSsrc(kSenderSsrc);
-  tmmbr.AddTmmbr(rtcp::TmmbItem(kReceiverMainSsrc, kBitrateBps, 0));
-  rtcp::SenderReport sr;
-  sr.SetSenderSsrc(kSenderSsrc);
+  auto tmmbr = std::make_unique<rtcp::Tmmbr>();
+  tmmbr->SetSenderSsrc(kSenderSsrc);
+  tmmbr->AddTmmbr(rtcp::TmmbItem(kReceiverMainSsrc, kBitrateBps, 0));
+  auto sr = std::make_unique<rtcp::SenderReport>();
+  sr->SetSenderSsrc(kSenderSsrc);
   rtcp::CompoundPacket compound;
-  compound.Append(&sr);
-  compound.Append(&tmmbr);
+  compound.Append(std::move(sr));
+  compound.Append(std::move(tmmbr));
 
   EXPECT_CALL(mocks.rtp_rtcp_impl, OnReceivedRtcpReportBlocks);
   EXPECT_CALL(mocks.rtp_rtcp_impl, SetTmmbn(SizeIs(1)));
@@ -1228,15 +1229,15 @@ TEST(RtcpReceiverTest, TmmbrPacketNotForUsIgnored) {
   receiver.SetRemoteSSRC(kSenderSsrc);
 
   const uint32_t kBitrateBps = 30000;
-  rtcp::Tmmbr tmmbr;
-  tmmbr.SetSenderSsrc(kSenderSsrc);
-  tmmbr.AddTmmbr(rtcp::TmmbItem(kNotToUsSsrc, kBitrateBps, 0));
+  auto tmmbr = std::make_unique<rtcp::Tmmbr>();
+  tmmbr->SetSenderSsrc(kSenderSsrc);
+  tmmbr->AddTmmbr(rtcp::TmmbItem(kNotToUsSsrc, kBitrateBps, 0));
 
-  rtcp::SenderReport sr;
-  sr.SetSenderSsrc(kSenderSsrc);
+  auto sr = std::make_unique<rtcp::SenderReport>();
+  sr->SetSenderSsrc(kSenderSsrc);
   rtcp::CompoundPacket compound;
-  compound.Append(&sr);
-  compound.Append(&tmmbr);
+  compound.Append(std::move(sr));
+  compound.Append(std::move(tmmbr));
 
   EXPECT_CALL(mocks.rtp_rtcp_impl, OnReceivedRtcpReportBlocks);
   EXPECT_CALL(mocks.bandwidth_observer, OnReceivedRtcpReceiverReport);
@@ -1251,14 +1252,14 @@ TEST(RtcpReceiverTest, TmmbrPacketZeroRateIgnored) {
   RTCPReceiver receiver(DefaultConfiguration(&mocks), &mocks.rtp_rtcp_impl);
   receiver.SetRemoteSSRC(kSenderSsrc);
 
-  rtcp::Tmmbr tmmbr;
-  tmmbr.SetSenderSsrc(kSenderSsrc);
-  tmmbr.AddTmmbr(rtcp::TmmbItem(kReceiverMainSsrc, 0, 0));
-  rtcp::SenderReport sr;
-  sr.SetSenderSsrc(kSenderSsrc);
+  auto tmmbr = std::make_unique<rtcp::Tmmbr>();
+  tmmbr->SetSenderSsrc(kSenderSsrc);
+  tmmbr->AddTmmbr(rtcp::TmmbItem(kReceiverMainSsrc, 0, 0));
+  auto sr = std::make_unique<rtcp::SenderReport>();
+  sr->SetSenderSsrc(kSenderSsrc);
   rtcp::CompoundPacket compound;
-  compound.Append(&sr);
-  compound.Append(&tmmbr);
+  compound.Append(std::move(sr));
+  compound.Append(std::move(tmmbr));
 
   EXPECT_CALL(mocks.rtp_rtcp_impl, OnReceivedRtcpReportBlocks);
   EXPECT_CALL(mocks.bandwidth_observer, OnReceivedRtcpReceiverReport);
@@ -1276,14 +1277,14 @@ TEST(RtcpReceiverTest, TmmbrThreeConstraintsTimeOut) {
   // Inject 3 packets "from" kSenderSsrc, kSenderSsrc+1, kSenderSsrc+2.
   // The times of arrival are starttime + 0, starttime + 5 and starttime + 10.
   for (uint32_t ssrc = kSenderSsrc; ssrc < kSenderSsrc + 3; ++ssrc) {
-    rtcp::Tmmbr tmmbr;
-    tmmbr.SetSenderSsrc(ssrc);
-    tmmbr.AddTmmbr(rtcp::TmmbItem(kReceiverMainSsrc, 30000, 0));
-    rtcp::SenderReport sr;
-    sr.SetSenderSsrc(ssrc);
+    auto tmmbr = std::make_unique<rtcp::Tmmbr>();
+    tmmbr->SetSenderSsrc(ssrc);
+    tmmbr->AddTmmbr(rtcp::TmmbItem(kReceiverMainSsrc, 30000, 0));
+    auto sr = std::make_unique<rtcp::SenderReport>();
+    sr->SetSenderSsrc(ssrc);
     rtcp::CompoundPacket compound;
-    compound.Append(&sr);
-    compound.Append(&tmmbr);
+    compound.Append(std::move(sr));
+    compound.Append(std::move(tmmbr));
 
     EXPECT_CALL(mocks.rtp_rtcp_impl, OnReceivedRtcpReportBlocks);
     EXPECT_CALL(mocks.rtp_rtcp_impl, SetTmmbn);
@@ -1598,19 +1599,19 @@ TEST(RtcpReceiverTest, HandlesInvalidTransportFeedback) {
   receiver.SetRemoteSSRC(kSenderSsrc);
 
   // Send a compound packet with a TransportFeedback followed by something else.
-  rtcp::TransportFeedback packet;
-  packet.SetMediaSsrc(kReceiverMainSsrc);
-  packet.SetSenderSsrc(kSenderSsrc);
-  packet.SetBase(1, 1000);
-  packet.AddReceivedPacket(1, 1000);
+  auto packet = std::make_unique<rtcp::TransportFeedback>();
+  packet->SetMediaSsrc(kReceiverMainSsrc);
+  packet->SetSenderSsrc(kSenderSsrc);
+  packet->SetBase(1, 1000);
+  packet->AddReceivedPacket(1, 1000);
 
   static uint32_t kBitrateBps = 50000;
-  rtcp::Remb remb;
-  remb.SetSenderSsrc(kSenderSsrc);
-  remb.SetBitrateBps(kBitrateBps);
+  auto remb = std::make_unique<rtcp::Remb>();
+  remb->SetSenderSsrc(kSenderSsrc);
+  remb->SetBitrateBps(kBitrateBps);
   rtcp::CompoundPacket compound;
-  compound.Append(&packet);
-  compound.Append(&remb);
+  compound.Append(std::move(packet));
+  compound.Append(std::move(remb));
   rtc::Buffer built_packet = compound.Build();
 
   // Modify the TransportFeedback packet so that it is invalid.
@@ -1639,10 +1640,10 @@ TEST(RtcpReceiverTest, Nack) {
   nack_set.insert(std::begin(kNackList1), std::end(kNackList1));
   nack_set.insert(std::begin(kNackList23), std::end(kNackList23));
 
-  rtcp::Nack nack1;
-  nack1.SetSenderSsrc(kSenderSsrc);
-  nack1.SetMediaSsrc(kReceiverMainSsrc);
-  nack1.SetPacketIds(kNackList1, arraysize(kNackList1));
+  auto nack1 = std::make_unique<rtcp::Nack>();
+  nack1->SetSenderSsrc(kSenderSsrc);
+  nack1->SetMediaSsrc(kReceiverMainSsrc);
+  nack1->SetPacketIds(kNackList1, arraysize(kNackList1));
 
   EXPECT_CALL(mocks.rtp_rtcp_impl,
               OnReceivedNack(ElementsAreArray(kNackList1)));
@@ -1653,21 +1654,21 @@ TEST(RtcpReceiverTest, Nack) {
                               arraysize(kNackList1)),
                         Field(&RtcpPacketTypeCounter::unique_nack_requests,
                               arraysize(kNackList1)))));
-  receiver.IncomingPacket(nack1.Build());
+  receiver.IncomingPacket(nack1->Build());
 
-  rtcp::Nack nack2;
-  nack2.SetSenderSsrc(kSenderSsrc);
-  nack2.SetMediaSsrc(kReceiverMainSsrc);
-  nack2.SetPacketIds(kNackList23, kNackListLength2);
+  auto nack2 = std::make_unique<rtcp::Nack>();
+  nack2->SetSenderSsrc(kSenderSsrc);
+  nack2->SetMediaSsrc(kReceiverMainSsrc);
+  nack2->SetPacketIds(kNackList23, kNackListLength2);
 
-  rtcp::Nack nack3;
-  nack3.SetSenderSsrc(kSenderSsrc);
-  nack3.SetMediaSsrc(kReceiverMainSsrc);
-  nack3.SetPacketIds(kNackList23 + kNackListLength2, kNackListLength3);
+  auto nack3 = std::make_unique<rtcp::Nack>();
+  nack3->SetSenderSsrc(kSenderSsrc);
+  nack3->SetMediaSsrc(kReceiverMainSsrc);
+  nack3->SetPacketIds(kNackList23 + kNackListLength2, kNackListLength3);
 
   rtcp::CompoundPacket two_nacks;
-  two_nacks.Append(&nack2);
-  two_nacks.Append(&nack3);
+  two_nacks.Append(std::move(nack2));
+  two_nacks.Append(std::move(nack3));
 
   EXPECT_CALL(mocks.rtp_rtcp_impl,
               OnReceivedNack(ElementsAreArray(kNackList23)));

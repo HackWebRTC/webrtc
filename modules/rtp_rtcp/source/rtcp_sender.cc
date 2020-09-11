@@ -55,10 +55,6 @@ class PacketContainer : public rtcp::CompoundPacket {
  public:
   PacketContainer(Transport* transport, RtcEventLog* event_log)
       : transport_(transport), event_log_(event_log) {}
-  ~PacketContainer() override {
-    for (RtcpPacket* packet : appended_packets_)
-      delete packet;
-  }
 
   size_t SendPackets(size_t max_payload_length) {
     size_t bytes_sent = 0;
@@ -792,14 +788,14 @@ absl::optional<int32_t> RTCPSender::ComputeCompoundRTCPPacket(
       if (builder_it->first == kRtcpBye) {
         packet_bye = std::move(packet);
       } else {
-        out_packet->Append(packet.release());
+        out_packet->Append(std::move(packet));
       }
     }
   }
 
   // Append the BYE now at the end
   if (packet_bye) {
-    out_packet->Append(packet_bye.release());
+    out_packet->Append(std::move(packet_bye));
   }
 
   if (packet_type_counter_observer_ != nullptr) {
