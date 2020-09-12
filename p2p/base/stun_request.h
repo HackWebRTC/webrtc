@@ -76,7 +76,7 @@ class StunRequestManager {
  private:
   typedef std::map<std::string, StunRequest*> RequestMap;
 
-  rtc::Thread* thread_;
+  rtc::Thread* const thread_;
   RequestMap requests_;
   std::string origin_;
 
@@ -85,7 +85,7 @@ class StunRequestManager {
 
 // Represents an individual request to be sent.  The STUN message can either be
 // constructed beforehand or built on demand.
-class StunRequest : public rtc::MessageHandlerAutoCleanup {
+class StunRequest : public rtc::MessageHandler {
  public:
   StunRequest();
   explicit StunRequest(StunMessage* request);

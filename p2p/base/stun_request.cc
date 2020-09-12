@@ -174,7 +174,8 @@ bool StunRequestManager::CheckResponse(const char* data, size_t size) {
 }
 
 StunRequest::StunRequest()
-    : count_(0),
+    : rtc::MessageHandler(false),
+      count_(0),
       timeout_(false),
       manager_(0),
       msg_(new StunMessage()),
@@ -183,7 +184,12 @@ StunRequest::StunRequest()
 }
 
 StunRequest::StunRequest(StunMessage* request)
-    : count_(0), timeout_(false), manager_(0), msg_(request), tstamp_(0) {
+    : rtc::MessageHandler(false),
+      count_(0),
+      timeout_(false),
+      manager_(0),
+      msg_(request),
+      tstamp_(0) {
   msg_->SetTransactionID(rtc::CreateRandomString(kStunTransactionIdLength));
 }
 

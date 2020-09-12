@@ -65,7 +65,7 @@ class ConnectionRequest : public StunRequest {
   int resend_delay() override;
 
  private:
-  Connection* connection_;
+  Connection* const connection_;
 };
 
 // Represents a communication link between a port on the local client and a
