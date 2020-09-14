@@ -173,7 +173,8 @@ void AudioReceiveStream::Stop() {
   audio_state()->RemoveReceivingStream(this);
 }
 
-webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
+webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats(
+    bool get_and_clear_legacy_stats) const {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   webrtc::AudioReceiveStream::Stats stats;
   stats.remote_ssrc = config_.rtp.remote_ssrc;
@@ -210,7 +211,7 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
           rtc::TimeMillis());
 
   // Get jitter buffer and total delay (alg + jitter + playout) stats.
-  auto ns = channel_receive_->GetNetworkStatistics();
+  auto ns = channel_receive_->GetNetworkStatistics(get_and_clear_legacy_stats);
   stats.fec_packets_received = ns.fecPacketsReceived;
   stats.fec_packets_discarded = ns.fecPacketsDiscarded;
   stats.jitter_buffer_ms = ns.currentBufferSize;

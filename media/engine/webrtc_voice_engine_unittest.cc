@@ -2346,7 +2346,8 @@ TEST_P(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
   {
     EXPECT_CALL(*adm_, GetPlayoutUnderrunCount()).WillOnce(Return(0));
     cricket::VoiceMediaInfo info;
-    EXPECT_EQ(true, channel_->GetStats(&info));
+    EXPECT_EQ(true,
+              channel_->GetStats(&info, /*get_and_clear_legacy_stats=*/true));
 
     // We have added 4 send streams. We should see empty stats for all.
     EXPECT_EQ(static_cast<size_t>(arraysize(kSsrcs4)), info.senders.size());
@@ -2365,7 +2366,8 @@ TEST_P(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
     cricket::VoiceMediaInfo info;
     EXPECT_TRUE(channel_->RemoveRecvStream(kSsrcY));
     EXPECT_CALL(*adm_, GetPlayoutUnderrunCount()).WillOnce(Return(0));
-    EXPECT_EQ(true, channel_->GetStats(&info));
+    EXPECT_EQ(true,
+              channel_->GetStats(&info, /*get_and_clear_legacy_stats=*/true));
     EXPECT_EQ(static_cast<size_t>(arraysize(kSsrcs4)), info.senders.size());
     EXPECT_EQ(0u, info.receivers.size());
   }
@@ -2377,7 +2379,8 @@ TEST_P(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
     DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
     SetAudioReceiveStreamStats();
     EXPECT_CALL(*adm_, GetPlayoutUnderrunCount()).WillOnce(Return(0));
-    EXPECT_EQ(true, channel_->GetStats(&info));
+    EXPECT_EQ(true,
+              channel_->GetStats(&info, /*get_and_clear_legacy_stats=*/true));
     EXPECT_EQ(static_cast<size_t>(arraysize(kSsrcs4)), info.senders.size());
     EXPECT_EQ(1u, info.receivers.size());
     VerifyVoiceReceiverInfo(info.receivers[0]);
@@ -2550,7 +2553,8 @@ TEST_P(WebRtcVoiceEngineTestFake, GetStats) {
   {
     EXPECT_CALL(*adm_, GetPlayoutUnderrunCount()).WillOnce(Return(0));
     cricket::VoiceMediaInfo info;
-    EXPECT_EQ(true, channel_->GetStats(&info));
+    EXPECT_EQ(true,
+              channel_->GetStats(&info, /*get_and_clear_legacy_stats=*/true));
 
     // We have added one send stream. We should see the stats we've set.
     EXPECT_EQ(1u, info.senders.size());
@@ -2565,7 +2569,8 @@ TEST_P(WebRtcVoiceEngineTestFake, GetStats) {
     cricket::VoiceMediaInfo info;
     SetSend(true);
     EXPECT_CALL(*adm_, GetPlayoutUnderrunCount()).WillOnce(Return(0));
-    EXPECT_EQ(true, channel_->GetStats(&info));
+    EXPECT_EQ(true,
+              channel_->GetStats(&info, /*get_and_clear_legacy_stats=*/true));
     VerifyVoiceSenderInfo(info.senders[0], true);
     VerifyVoiceSendRecvCodecs(info);
   }
@@ -2575,7 +2580,8 @@ TEST_P(WebRtcVoiceEngineTestFake, GetStats) {
     cricket::VoiceMediaInfo info;
     EXPECT_TRUE(channel_->RemoveRecvStream(kSsrcY));
     EXPECT_CALL(*adm_, GetPlayoutUnderrunCount()).WillOnce(Return(0));
-    EXPECT_EQ(true, channel_->GetStats(&info));
+    EXPECT_EQ(true,
+              channel_->GetStats(&info, /*get_and_clear_legacy_stats=*/true));
     EXPECT_EQ(1u, info.senders.size());
     EXPECT_EQ(0u, info.receivers.size());
   }
@@ -2587,7 +2593,8 @@ TEST_P(WebRtcVoiceEngineTestFake, GetStats) {
     DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
     SetAudioReceiveStreamStats();
     EXPECT_CALL(*adm_, GetPlayoutUnderrunCount()).WillOnce(Return(0));
-    EXPECT_EQ(true, channel_->GetStats(&info));
+    EXPECT_EQ(true,
+              channel_->GetStats(&info, /*get_and_clear_legacy_stats=*/true));
     EXPECT_EQ(1u, info.senders.size());
     EXPECT_EQ(1u, info.receivers.size());
     VerifyVoiceReceiverInfo(info.receivers[0]);

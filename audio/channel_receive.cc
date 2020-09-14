@@ -128,7 +128,8 @@ class ChannelReceive : public ChannelReceiveInterface {
   double GetTotalOutputDuration() const override;
 
   // Stats.
-  NetworkStatistics GetNetworkStatistics() const override;
+  NetworkStatistics GetNetworkStatistics(
+      bool get_and_clear_legacy_stats) const override;
   AudioDecodingCallStats GetDecodingCallStatistics() const override;
 
   // Audio+Video Sync.
@@ -801,10 +802,11 @@ void ChannelReceive::SetDepacketizerToDecoderFrameTransformer(
   InitFrameTransformerDelegate(std::move(frame_transformer));
 }
 
-NetworkStatistics ChannelReceive::GetNetworkStatistics() const {
+NetworkStatistics ChannelReceive::GetNetworkStatistics(
+    bool get_and_clear_legacy_stats) const {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
   NetworkStatistics stats;
-  acm_receiver_.GetNetworkStatistics(&stats);
+  acm_receiver_.GetNetworkStatistics(&stats, get_and_clear_legacy_stats);
   return stats;
 }
 

@@ -104,7 +104,8 @@ class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
   void Start() override { started_ = true; }
   void Stop() override { started_ = false; }
 
-  webrtc::AudioReceiveStream::Stats GetStats() const override;
+  webrtc::AudioReceiveStream::Stats GetStats(
+      bool get_and_clear_legacy_stats) const override;
   void SetSink(webrtc::AudioSinkInterface* sink) override;
   void SetGain(float gain) override;
   bool SetBaseMinimumPlayoutDelayMs(int delay_ms) override {

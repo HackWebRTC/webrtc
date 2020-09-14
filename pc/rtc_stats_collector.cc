@@ -1955,7 +1955,8 @@ RTCStatsCollector::PrepareTransceiverStatsInfos_s_w() const {
     rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
 
     for (const auto& entry : voice_stats) {
-      if (!entry.first->GetStats(entry.second.get())) {
+      if (!entry.first->GetStats(entry.second.get(),
+                                 /*get_and_clear_legacy_stats=*/false)) {
         RTC_LOG(LS_WARNING) << "Failed to get voice stats.";
       }
     }

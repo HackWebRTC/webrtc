@@ -35,7 +35,10 @@ class MockChannelReceive : public voe::ChannelReceiveInterface {
               (override));
   MOCK_METHOD(void, ResetReceiverCongestionControlObjects, (), (override));
   MOCK_METHOD(CallReceiveStatistics, GetRTCPStatistics, (), (const, override));
-  MOCK_METHOD(NetworkStatistics, GetNetworkStatistics, (), (const, override));
+  MOCK_METHOD(NetworkStatistics,
+              GetNetworkStatistics,
+              (bool),
+              (const, override));
   MOCK_METHOD(AudioDecodingCallStats,
               GetDecodingCallStatistics,
               (),

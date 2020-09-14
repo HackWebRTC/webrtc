@@ -146,7 +146,7 @@ struct ConfigHelper {
         .WillOnce(Return(kTotalOutputEnergy));
     EXPECT_CALL(*channel_receive_, GetTotalOutputDuration())
         .WillOnce(Return(kTotalOutputDuration));
-    EXPECT_CALL(*channel_receive_, GetNetworkStatistics())
+    EXPECT_CALL(*channel_receive_, GetNetworkStatistics(_))
         .WillOnce(Return(kNetworkStats));
     EXPECT_CALL(*channel_receive_, GetDecodingCallStatistics())
         .WillOnce(Return(kAudioDecodeStats));
@@ -219,7 +219,8 @@ TEST(AudioReceiveStreamTest, GetStats) {
     ConfigHelper helper(use_null_audio_processing);
     auto recv_stream = helper.CreateAudioReceiveStream();
     helper.SetupMockForGetStats();
-    AudioReceiveStream::Stats stats = recv_stream->GetStats();
+    AudioReceiveStream::Stats stats =
+        recv_stream->GetStats(/*get_and_clear_legacy_stats=*/true);
     EXPECT_EQ(kRemoteSsrc, stats.remote_ssrc);
     EXPECT_EQ(kCallStats.payload_bytes_rcvd, stats.payload_bytes_rcvd);
     EXPECT_EQ(kCallStats.header_and_padding_bytes_rcvd,

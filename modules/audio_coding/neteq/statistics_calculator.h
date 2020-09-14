@@ -104,15 +104,11 @@ class StatisticsCalculator {
   // period caused not by an actual packet loss, but by a delayed packet.
   virtual void LogDelayedPacketOutageEvent(int num_samples, int fs_hz);
 
-  // Returns the current network statistics in |stats|. The current sample rate
-  // is |fs_hz|, the total number of samples in packet buffer and sync buffer
-  // yet to play out is |num_samples_in_buffers|, and the number of samples per
-  // packet is |samples_per_packet|. The method does not populate
+  // Returns the current network statistics in |stats|. The number of samples
+  // per packet is |samples_per_packet|. The method does not populate
   // |preferred_buffer_size_ms|, |jitter_peaks_found| or |clockdrift_ppm|; use
   // the PopulateDelayManagerStats method for those.
-  void GetNetworkStatistics(int fs_hz,
-                            size_t num_samples_in_buffers,
-                            size_t samples_per_packet,
+  void GetNetworkStatistics(size_t samples_per_packet,
                             NetEqNetworkStatistics* stats);
 
   // Returns a copy of this class's lifetime statistics. These statistics are

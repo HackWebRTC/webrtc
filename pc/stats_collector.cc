@@ -991,7 +991,8 @@ class VoiceMediaChannelStatsGatherer final : public MediaChannelStatsGatherer {
   }
 
   bool GetStatsOnWorkerThread() override {
-    return voice_media_channel_->GetStats(&voice_media_info);
+    return voice_media_channel_->GetStats(&voice_media_info,
+                                          /*get_and_clear_legacy_stats=*/true);
   }
 
   void ExtractStats(StatsCollector* collector) const override {

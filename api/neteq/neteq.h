@@ -274,6 +274,9 @@ class NetEq {
   // after the call.
   virtual int NetworkStatistics(NetEqNetworkStatistics* stats) = 0;
 
+  // Current values only, not resetting any state.
+  virtual NetEqNetworkStatistics CurrentNetworkStatistics() const = 0;
+
   // Returns a copy of this class's lifetime statistics. These statistics are
   // never reset.
   virtual NetEqLifetimeStatistics GetLifetimeStatistics() const = 0;
