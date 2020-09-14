@@ -143,6 +143,7 @@ class RtpVideoSenderTestFixture {
                      VideoEncoderConfig::ContentType::kRealtimeVideo),
         retransmission_rate_limiter_(time_controller_.GetClock(),
                                      kRetransmitWindowSizeMs) {
+    transport_controller_.EnsureStarted();
     std::map<uint32_t, RtpState> suspended_ssrcs;
     router_ = std::make_unique<RtpVideoSender>(
         time_controller_.GetClock(), suspended_ssrcs, suspended_payload_states,
