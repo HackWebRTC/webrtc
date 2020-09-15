@@ -19,6 +19,7 @@
 #import "api/peerconnection/RTCRtpReceiver.h"
 #import "api/peerconnection/RTCRtpSender.h"
 #import "api/peerconnection/RTCRtpTransceiver.h"
+#import "api/peerconnection/RTCSessionDescription.h"
 #import "api/peerconnection/RTCVideoSource.h"
 
 #import <XCTest/XCTest.h>
@@ -268,6 +269,56 @@
   }
 
   XCTAssertTrue(true, "Expect test does not crash");
+}
+
+- (void)testRollback {
+  @autoreleasepool {
+    RTC_OBJC_TYPE(RTCConfiguration) *config = [[RTC_OBJC_TYPE(RTCConfiguration) alloc] init];
+    config.sdpSemantics = RTCSdpSemanticsUnifiedPlan;
+    RTC_OBJC_TYPE(RTCMediaConstraints) *constraints =
+        [[RTC_OBJC_TYPE(RTCMediaConstraints) alloc] initWithMandatoryConstraints:@{
+          kRTCMediaConstraintsOfferToReceiveAudio : kRTCMediaConstraintsValueTrue
+        }
+                                                             optionalConstraints:nil];
+
+    __block RTC_OBJC_TYPE(RTCPeerConnectionFactory) * factory;
+    __block RTC_OBJC_TYPE(RTCPeerConnection) * pc1;
+    RTCSessionDescription *rollback = [[RTCSessionDescription alloc] initWithType:RTCSdpTypeRollback
+                                                                              sdp:@""];
+
+    @autoreleasepool {
+      factory = [[RTC_OBJC_TYPE(RTCPeerConnectionFactory) alloc] init];
+      pc1 = [factory peerConnectionWithConfiguration:config constraints:constraints delegate:nil];
+      dispatch_semaphore_t negotiatedSem = dispatch_semaphore_create(0);
+      [pc1 offerForConstraints:constraints
+             completionHandler:^(RTC_OBJC_TYPE(RTCSessionDescription) * offer, NSError * error) {
+               XCTAssertNil(error);
+               XCTAssertNotNil(offer);
+
+               __weak RTC_OBJC_TYPE(RTCPeerConnection) *weakPC1 = pc1;
+               [pc1 setLocalDescription:offer
+                      completionHandler:^(NSError *error) {
+                        XCTAssertNil(error);
+                        [weakPC1 setLocalDescription:rollback
+                                   completionHandler:^(NSError *error) {
+                                     XCTAssertNil(error);
+                                   }];
+                      }];
+               NSTimeInterval negotiationTimeout = 15;
+               dispatch_semaphore_wait(
+                   negotiatedSem,
+                   dispatch_time(DISPATCH_TIME_NOW, (int64_t)(negotiationTimeout * NSEC_PER_SEC)));
+
+               XCTAssertEqual(pc1.signalingState, RTCSignalingStateStable);
+
+               [pc1 close];
+               pc1 = nil;
+               factory = nil;
+             }];
+    }
+
+    XCTAssertTrue(true, "Expect test does not crash");
+  }
 }
 
 - (bool)negotiatePeerConnection:(RTC_OBJC_TYPE(RTCPeerConnection) *)pc1
