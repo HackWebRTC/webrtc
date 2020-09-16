@@ -3566,6 +3566,13 @@ RTCError PeerConnection::UpdateTransceiversAndDataChannels(
         old_remote_content =
             &old_remote_description->description()->contents()[i];
       }
+      // In the case where an m-section has completed its rejection,
+      // and is not being reused, we do not expect a transceiver.
+      if (old_local_content && old_local_content->rejected &&
+          old_remote_content && old_remote_content->rejected &&
+          new_content.rejected) {
+        continue;
+      }
       auto transceiver_or_error =
           AssociateTransceiver(source, new_session.GetType(), i, new_content,
                                old_local_content, old_remote_content);
@@ -5277,10 +5284,19 @@ void PeerConnection::GetOptionsForUnifiedPlanAnswer(
     if (media_type == cricket::MEDIA_TYPE_AUDIO ||
         media_type == cricket::MEDIA_TYPE_VIDEO) {
       auto transceiver = GetAssociatedTransceiver(content.name);
-      RTC_CHECK(transceiver);
-      session_options->media_description_options.push_back(
-          GetMediaDescriptionOptionsForTransceiver(transceiver, content.name,
-                                                   /*is_create_offer=*/false));
+      if (transceiver) {
+        session_options->media_description_options.push_back(
+            GetMediaDescriptionOptionsForTransceiver(
+                transceiver, content.name,
+                /*is_create_offer=*/false));
+      } else {
+        // This should only happen with rejected transceivers.
+        RTC_DCHECK(content.rejected);
+        session_options->media_description_options.push_back(
+            cricket::MediaDescriptionOptions(media_type, content.name,
+                                             RtpTransceiverDirection::kInactive,
+                                             /*stopped=*/true));
+      }
     } else {
       RTC_CHECK_EQ(cricket::MEDIA_TYPE_DATA, media_type);
       // Reject all data sections if data channels are disabled.
