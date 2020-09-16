@@ -1165,7 +1165,8 @@ if (is_ios || is_mac) {
         }
 
         # These tests use static linking.
-        rtc_ios_xctest_test("sdk_unittests") {
+        rtc_test("sdk_unittests") {
+          is_xctest = true
           info_plist = "//test/ios/Info.plist"
           sources = [ "objc/unittests/main.mm" ]
 
@@ -1181,7 +1182,8 @@ if (is_ios || is_mac) {
         }
 
         # These tests link to the framework.
-        rtc_ios_xctest_test("sdk_framework_unittests") {
+        rtc_test("sdk_framework_unittests") {
+          is_xctest = true
           info_plist = "//test/ios/Info.plist"
           sources = [
             "objc/unittests/RTCDoNotPutCPlusPlusInFrameworkHeaders_xctest.m",
@@ -1669,8 +1671,8 @@ if (is_ios || is_mac) {
 
     rtc_library("video_toolbox_cc") {
       visibility = [
-        ":videotoolbox_objc",
         ":sdk_unittests_sources",
+        ":videotoolbox_objc",
       ]
       sources = [
         "objc/components/video_codec/helpers.cc",
