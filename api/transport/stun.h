@@ -667,11 +667,16 @@ enum IceAttributeType {
   STUN_ATTR_NOMINATION = 0xC001,  // UInt32
   // UInt32. The higher 16 bits are the network ID. The lower 16 bits are the
   // network cost.
-  STUN_ATTR_NETWORK_INFO = 0xC057,
+  STUN_ATTR_GOOG_NETWORK_INFO = 0xC057,
   // Experimental: Transaction ID of the last connectivity check received.
-  STUN_ATTR_LAST_ICE_CHECK_RECEIVED = 0xC058,
+  STUN_ATTR_GOOG_LAST_ICE_CHECK_RECEIVED = 0xC058,
   // Uint16List. Miscellaneous attributes for future extension.
   STUN_ATTR_GOOG_MISC_INFO = 0xC059,
+  // Obsolete.
+  STUN_ATTR_GOOG_OBSOLETE_1 = 0xC05A,
+  STUN_ATTR_GOOG_CONNECTION_ID = 0xC05B,  // Not yet implemented.
+  STUN_ATTR_GOOG_DELTA = 0xC05C,          // Not yet implemented.
+  STUN_ATTR_GOOG_DELTA_ACK = 0xC05D,      // Not yet implemented.
   // MESSAGE-INTEGRITY truncated to 32-bit.
   STUN_ATTR_GOOG_MESSAGE_INTEGRITY_32 = 0xC060,
 };

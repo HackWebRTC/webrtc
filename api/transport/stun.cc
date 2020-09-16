@@ -555,7 +555,7 @@ StunAttributeValueType StunMessage::GetAttributeValueType(int type) const {
       return STUN_VALUE_BYTE_STRING;
     case STUN_ATTR_RETRANSMIT_COUNT:
       return STUN_VALUE_UINT32;
-    case STUN_ATTR_LAST_ICE_CHECK_RECEIVED:
+    case STUN_ATTR_GOOG_LAST_ICE_CHECK_RECEIVED:
       return STUN_VALUE_BYTE_STRING;
     case STUN_ATTR_GOOG_MISC_INFO:
       return STUN_VALUE_UINT16_LIST;
@@ -1309,7 +1309,7 @@ StunMessage* TurnMessage::CreateNew() const {
 StunAttributeValueType IceMessage::GetAttributeValueType(int type) const {
   switch (type) {
     case STUN_ATTR_PRIORITY:
-    case STUN_ATTR_NETWORK_INFO:
+    case STUN_ATTR_GOOG_NETWORK_INFO:
     case STUN_ATTR_NOMINATION:
       return STUN_VALUE_UINT32;
     case STUN_ATTR_USE_CANDIDATE:

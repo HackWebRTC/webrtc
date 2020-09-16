@@ -1016,7 +1016,7 @@ void P2PTransportChannel::OnUnknownAddress(PortInterface* port,
     uint16_t network_id = 0;
     uint16_t network_cost = 0;
     const StunUInt32Attribute* network_attr =
-        stun_msg->GetUInt32(STUN_ATTR_NETWORK_INFO);
+        stun_msg->GetUInt32(STUN_ATTR_GOOG_NETWORK_INFO);
     if (network_attr) {
       uint32_t network_info = network_attr->value();
       network_id = static_cast<uint16_t>(network_info >> 16);

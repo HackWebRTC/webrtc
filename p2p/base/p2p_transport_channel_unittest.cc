@@ -3202,7 +3202,7 @@ class P2PTransportChannelPingTest : public ::testing::Test,
     }
     if (piggyback_ping_id) {
       msg.AddAttribute(std::make_unique<StunByteStringAttribute>(
-          STUN_ATTR_LAST_ICE_CHECK_RECEIVED, piggyback_ping_id.value()));
+          STUN_ATTR_GOOG_LAST_ICE_CHECK_RECEIVED, piggyback_ping_id.value()));
     }
     msg.SetTransactionID(rtc::CreateRandomString(kStunTransactionIdLength));
     msg.AddMessageIntegrity(conn->local_candidate().password());
