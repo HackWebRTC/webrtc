@@ -1540,6 +1540,21 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
           .type());
 }
 
+// Test that you can do createOffer/setLocalDescription with a stopped
+// media section.
+TEST_F(PeerConnectionRtpTestUnifiedPlan,
+       SetLocalDescriptionWithStoppedMediaSection) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  callee->pc()->GetTransceivers()[0]->StopStandard();
+  ASSERT_TRUE(callee->ExchangeOfferAnswerWith(caller.get()));
+  EXPECT_EQ(RtpTransceiverDirection::kStopped,
+            transceiver->current_direction());
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+}
+
 // Test that AddTransceiver fails if trying to use unimplemented RTP encoding
 // parameters with the send_encodings parameters.
 TEST_F(PeerConnectionRtpTestUnifiedPlan,
