@@ -1070,6 +1070,19 @@ rtc_library("testclient") {
   ]
 }
 
+rtc_library("cancer_stick_castle_unittests") {
+  testonly = true
+
+  sources = [ "cancer_stick_castle_unittest.cc" ]
+  deps = [
+    ":cancer_stick_castle",
+    ":gunit_helpers",
+    ":rtc_base",
+    "../api:function_view",
+    "../test:test_support",
+  ]
+}
+
 rtc_library("rtc_base_tests_utils") {
   testonly = true
   sources = [
