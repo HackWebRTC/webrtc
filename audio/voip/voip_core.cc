@@ -46,16 +46,10 @@ bool VoipCore::Init(rtc::scoped_refptr<AudioEncoderFactory> encoder_factory,
   decoder_factory_ = std::move(decoder_factory);
   task_queue_factory_ = std::move(task_queue_factory);
   audio_device_module_ = std::move(audio_device_module);
+  audio_processing_ = std::move(audio_processing);
 
   process_thread_ = ProcessThread::Create("ModuleProcessThread");
   audio_mixer_ = AudioMixerImpl::Create();
-
-  if (audio_processing) {
-    audio_processing_ = std::move(audio_processing);
-    AudioProcessing::Config apm_config = audio_processing_->GetConfig();
-    apm_config.echo_canceller.enabled = true;
-    audio_processing_->ApplyConfig(apm_config);
-  }
 
   // AudioTransportImpl depends on audio mixer and audio processing instances.
   audio_transport_ = std::make_unique<AudioTransportImpl>(
