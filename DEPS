@@ -10,7 +10,7 @@ vars = {
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
-  'chromium_revision': '303ad9b2288ff35c5e52e69a78bbef43bc3e6d18',
+  'chromium_revision': 'eeb9e4d54c3d90b583895d7199872b776d6bf6d6',
 
   # This can be overridden, e.g. with custom_vars, to download a nonstandard
   # Xcode version in build/mac_toolchain.py
@@ -22,9 +22,9 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    'https://chromium.googlesource.com/chromium/src/base@1b0f4ed356fb072c92db4331d29dad024967026d',
+    'https://chromium.googlesource.com/chromium/src/base@1d662473edd08b2419b091d826e1b9a42af8a1ed',
   'src/build':
-    'https://chromium.googlesource.com/chromium/src/build@0ad7911146f400c4270625f25566c9a76ff58491',
+    'https://chromium.googlesource.com/chromium/src/build@ff7b48da95bfa48abe8dc30eb5e8f4510b186944',
   'src/buildtools':
     'https://chromium.googlesource.com/chromium/src/buildtools@3ff4f5027b4b81a6c9c36d64d71444f2709a4896',
   # Gradle 6.6.1. Used for testing Android Studio project generation for WebRTC.
@@ -33,13 +33,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': 'https://chromium.googlesource.com/chromium/src/ios@d7a11fd35f40491f095eb9ec6bd4d73562981280',
+    'url': 'https://chromium.googlesource.com/chromium/src/ios@9fe7adf0c97b4b5e72285b1b6d6f944cbb2ed151',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    'https://chromium.googlesource.com/chromium/src/testing@3cd2795fcc89322b51a579d4b03e43ae73854705',
+    'https://chromium.googlesource.com/chromium/src/testing@f2a394c808e58c7148fe9a0572c89637c22e42b1',
   'src/third_party':
-    'https://chromium.googlesource.com/chromium/src/third_party@0a5d6145f11d2d79d64839ad4ee8f6fb26a13f9d',
+    'https://chromium.googlesource.com/chromium/src/third_party@dad971ce9f4cac701d39872806f7d2b7cffee320',
 
   'src/buildtools/linux64': {
     'packages': [
@@ -130,7 +130,7 @@ deps = {
   'src/third_party/breakpad/breakpad':
     'https://chromium.googlesource.com/breakpad/breakpad.git@e3a62dc5502dec6ab451061769d7efaf5b7ffba8',
   'src/third_party/catapult':
-    'https://chromium.googlesource.com/catapult.git@1d8e2d5acaf5b4ba121351def96d69fb7a52724f',
+    'https://chromium.googlesource.com/catapult.git@249019878c55d92e9c53a0b7a3f9ef188d8c29f7',
   'src/third_party/ced/src': {
     'url': 'https://chromium.googlesource.com/external/github.com/google/compact_enc_det.git@ba412eaaacd3186085babcd901679a48863c7dd5',
   },
@@ -172,7 +172,7 @@ deps = {
   'src/third_party/googletest/src':
     'https://chromium.googlesource.com/external/github.com/google/googletest.git@4fe018038f87675c083d0cfb6a6b57c274fb1753',
   'src/third_party/icu': {
-    'url': 'https://chromium.googlesource.com/chromium/deps/icu.git@d7eebbfb276a1b5c90edc26eeaf5fd43d6ccc2a1',
+    'url': 'https://chromium.googlesource.com/chromium/deps/icu.git@79326efe26e5440f530963704c3c0ff965b3a4ac',
   },
   'src/third_party/jdk': {
       'packages': [
@@ -208,7 +208,7 @@ deps = {
       'condition': 'checkout_android',
   },
   'src/third_party/perfetto':
-    'https://android.googlesource.com/platform/external/perfetto.git@a2ba0ce189cafa1aeae385f57826b155d9b5192c',
+    'https://android.googlesource.com/platform/external/perfetto.git@d62add52c69b711093bf5c92197d30badb000851',
   'src/third_party/libvpx/source/libvpx':
     'https://chromium.googlesource.com/webm/libvpx.git@97356acb50e212fcfb7c91715718ec70953f780c',
   'src/third_party/libyuv':
@@ -265,7 +265,7 @@ deps = {
     'condition': 'checkout_win',
   },
   'src/tools':
-    'https://chromium.googlesource.com/chromium/src/tools@2252904851e885c14e7cb979052830aeb225a3e5',
+    'https://chromium.googlesource.com/chromium/src/tools@a01f8aca6023f918b654cfcb7dc2357217b34143',
   'src/tools/swarming_client':
     'https://chromium.googlesource.com/infra/luci/client-py.git@44c13d73156581ea09b9389001e58c23a4b8d70a',
 
