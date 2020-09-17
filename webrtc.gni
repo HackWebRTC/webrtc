@@ -120,8 +120,8 @@ declare_args() {
   # Enable to use the Mozilla internal settings.
   build_with_mozilla = false
 
-  # Enable use of Android AAudio which requires Android SDK 26 or above and
-  # NDK r16 or above.
+  # Experimental: enable use of Android AAudio which requires Android SDK 26 or above
+  # and NDK r16 or above.
   rtc_enable_android_aaudio = false
 
   # Set to "func", "block", "edge" for coverage generation.
