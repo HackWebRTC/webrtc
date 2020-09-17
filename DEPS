@@ -3105,7 +3105,8 @@ hooks = [
     'name': 'mac_toolchain',
     'pattern': '.',
     'condition': 'checkout_mac',
-    'action': ['python', 'src/build/mac_toolchain.py'],
+    'action': ['python', 'src/build/mac_toolchain.py',
+               '--xcode-version', Var('mac_xcode_version')],
   },
   {
     # Note: On Win, this should run after win_toolchain, as it may use it.
