@@ -20,7 +20,6 @@
 #include "absl/strings/match.h"
 #include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/call/audio_sink.h"
-#include "api/transport/webrtc_key_value_config.h"
 #include "media/base/audio_source.h"
 #include "media/base/media_constants.h"
 #include "media/base/stream_params.h"
@@ -46,6 +45,7 @@
 #include "rtc_base/strings/string_format.h"
 #include "rtc_base/third_party/base64/base64.h"
 #include "rtc_base/trace_event.h"
+#include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 
 #if WEBRTC_ENABLE_PROTOBUF
@@ -109,6 +109,12 @@ std::string ToString(const AudioCodec& codec) {
   }
   ss << " (" << codec.id << ")";
   return ss.Release();
+}
+
+// If this field trial is enabled, we will negotiate and use RFC 2198
+// redundancy for opus audio.
+bool IsAudioRedForOpusFieldTrialEnabled() {
+  return webrtc::field_trial::IsEnabled("WebRTC-Audio-Red-For-Opus");
 }
 
 bool IsCodec(const AudioCodec& codec, const char* ref_name) {
@@ -197,11 +203,6 @@ absl::optional<int> ComputeSendBitrate(int max_send_bitrate_bps,
   }
 }
 
-bool IsEnabled(const webrtc::WebRtcKeyValueConfig& config,
-               absl::string_view trial) {
-  return absl::StartsWith(config.Lookup(trial), "Enabled");
-}
-
 struct AdaptivePtimeConfig {
   bool enabled = false;
   webrtc::DataRate min_payload_bitrate = webrtc::DataRate::KilobitsPerSec(16);
@@ -218,8 +219,9 @@ struct AdaptivePtimeConfig {
         "use_slow_adaptation", &use_slow_adaptation);
   }
 
-  explicit AdaptivePtimeConfig(const webrtc::WebRtcKeyValueConfig& trials) {
-    Parser()->Parse(trials.Lookup("WebRTC-Audio-AdaptivePtime"));
+  AdaptivePtimeConfig() {
+    Parser()->Parse(
+        webrtc::field_trial::FindFullName("WebRTC-Audio-AdaptivePtime"));
 #if WEBRTC_ENABLE_PROTOBUF
     webrtc::audio_network_adaptor::config::ControllerManager config;
     auto* frame_length_controller =
@@ -241,18 +243,13 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
     const rtc::scoped_refptr<webrtc::AudioEncoderFactory>& encoder_factory,
     const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
     rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
-    rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing,
-    const webrtc::WebRtcKeyValueConfig& trials)
+    rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing)
     : task_queue_factory_(task_queue_factory),
       adm_(adm),
       encoder_factory_(encoder_factory),
       decoder_factory_(decoder_factory),
       audio_mixer_(audio_mixer),
-      apm_(audio_processing),
-      audio_red_for_opus_trial_enabled_(
-          IsEnabled(trials, "WebRTC-Audio-Red-For-Opus")),
-      minimized_remsampling_on_mobile_trial_enabled_(
-          IsEnabled(trials, "WebRTC-Audio-MinimizeResamplingOnMobile")) {
+      apm_(audio_processing) {
   // This may be called from any thread, so detach thread checkers.
   worker_thread_checker_.Detach();
   signal_thread_checker_.Detach();
@@ -418,7 +415,8 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   // performed inside the audio processing module on mobile platforms by
   // whenever possible turning off the fixed AGC mode and the high-pass filter.
   // (https://bugs.chromium.org/p/webrtc/issues/detail?id=6181).
-  if (minimized_remsampling_on_mobile_trial_enabled_) {
+  if (webrtc::field_trial::IsEnabled(
+          "WebRTC-Audio-MinimizeResamplingOnMobile")) {
     options.auto_gain_control = false;
     RTC_LOG(LS_INFO) << "Disable AGC according to field trial.";
     if (!(options.noise_suppression.value_or(false) ||
@@ -724,7 +722,8 @@ std::vector<AudioCodec> WebRtcVoiceEngine::CollectCodecs(
 
       out.push_back(codec);
 
-      if (codec.name == kOpusCodecName && audio_red_for_opus_trial_enabled_) {
+      if (codec.name == kOpusCodecName &&
+          IsAudioRedForOpusFieldTrialEnabled()) {
         map_format({kRedCodecName, 48000, 2}, &out);
       }
     }
@@ -768,8 +767,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
       const absl::optional<webrtc::AudioCodecPairId> codec_pair_id,
       rtc::scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor,
       const webrtc::CryptoOptions& crypto_options)
-      : adaptive_ptime_config_(call->trials()),
-        call_(call),
+      : call_(call),
         config_(send_transport),
         max_send_bitrate_bps_(max_send_bitrate_bps),
         rtp_parameters_(CreateRtpParametersWithOneEncoding()) {
@@ -1370,9 +1368,7 @@ WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel(
       engine_(engine),
       call_(call),
       audio_config_(config.audio),
-      crypto_options_(crypto_options),
-      audio_red_for_opus_trial_enabled_(
-          IsEnabled(call->trials(), "WebRTC-Audio-Red-For-Opus")) {
+      crypto_options_(crypto_options) {
   RTC_LOG(LS_VERBOSE) << "WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel";
   RTC_DCHECK(call);
   engine->RegisterChannel(this);
@@ -1419,8 +1415,7 @@ bool WebRtcVoiceMediaChannel::SetSendParameters(
   }
 
   std::vector<webrtc::RtpExtension> filtered_extensions = FilterRtpExtensions(
-      params.extensions, webrtc::RtpExtension::IsSupportedForAudio, true,
-      call_->trials());
+      params.extensions, webrtc::RtpExtension::IsSupportedForAudio, true);
   if (send_rtp_extensions_ != filtered_extensions) {
     send_rtp_extensions_.swap(filtered_extensions);
     for (auto& it : send_streams_) {
@@ -1457,8 +1452,7 @@ bool WebRtcVoiceMediaChannel::SetRecvParameters(
     return false;
   }
   std::vector<webrtc::RtpExtension> filtered_extensions = FilterRtpExtensions(
-      params.extensions, webrtc::RtpExtension::IsSupportedForAudio, false,
-      call_->trials());
+      params.extensions, webrtc::RtpExtension::IsSupportedForAudio, false);
   if (recv_rtp_extensions_ != filtered_extensions) {
     recv_rtp_extensions_.swap(filtered_extensions);
     for (auto& it : recv_streams_) {
@@ -1634,7 +1628,7 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecs(
     }
     auto format = AudioCodecToSdpAudioFormat(codec);
     if (!IsCodec(codec, kCnCodecName) && !IsCodec(codec, kDtmfCodecName) &&
-        (!audio_red_for_opus_trial_enabled_ ||
+        (!IsAudioRedForOpusFieldTrialEnabled() ||
          !IsCodec(codec, kRedCodecName)) &&
         !engine()->decoder_factory_->IsSupportedDecoder(format)) {
       RTC_LOG(LS_ERROR) << "Unsupported codec: " << rtc::ToString(format);
@@ -1788,7 +1782,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
     }
   }
 
-  if (audio_red_for_opus_trial_enabled_) {
+  if (IsAudioRedForOpusFieldTrialEnabled()) {
     // Loop through the codecs to find the RED codec that matches opus
     // with respect to clockrate and number of channels.
     size_t red_codec_position = 0;

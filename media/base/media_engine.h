@@ -19,7 +19,6 @@
 #include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/crypto/crypto_options.h"
 #include "api/rtp_parameters.h"
-#include "api/transport/webrtc_key_value_config.h"
 #include "api/video/video_bitrate_allocator_factory.h"
 #include "call/audio_state.h"
 #include "media/base/codec.h"
@@ -132,12 +131,8 @@ class MediaEngineInterface {
 
 // CompositeMediaEngine constructs a MediaEngine from separate
 // voice and video engine classes.
-// Optionally owns a WebRtcKeyValueConfig trials map.
 class CompositeMediaEngine : public MediaEngineInterface {
  public:
-  CompositeMediaEngine(std::unique_ptr<webrtc::WebRtcKeyValueConfig> trials,
-                       std::unique_ptr<VoiceEngineInterface> audio_engine,
-                       std::unique_ptr<VideoEngineInterface> video_engine);
   CompositeMediaEngine(std::unique_ptr<VoiceEngineInterface> audio_engine,
                        std::unique_ptr<VideoEngineInterface> video_engine);
   ~CompositeMediaEngine() override;
@@ -149,7 +144,6 @@ class CompositeMediaEngine : public MediaEngineInterface {
   const VideoEngineInterface& video() const override;
 
  private:
-  const std::unique_ptr<webrtc::WebRtcKeyValueConfig> trials_;
   std::unique_ptr<VoiceEngineInterface> voice_engine_;
   std::unique_ptr<VideoEngineInterface> video_engine_;
 };

@@ -16,7 +16,6 @@
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/create_time_controller.h"
 #include "api/test/time_controller.h"
-#include "api/transport/field_trial_based_config.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "media/engine/webrtc_media_engine.h"
@@ -64,10 +63,6 @@ void SetMandatoryEntities(InjectableComponents* components,
     components->pcf_dependencies->event_log_factory =
         std::make_unique<RtcEventLogFactory>(
             components->pcf_dependencies->task_queue_factory.get());
-  }
-  if (!components->pcf_dependencies->trials) {
-    components->pcf_dependencies->trials =
-        std::make_unique<FieldTrialBasedConfig>();
   }
 }
 
@@ -178,9 +173,6 @@ std::unique_ptr<cricket::MediaEngineInterface> CreateMediaEngine(
   media_deps.video_decoder_factory =
       std::move(pcf_dependencies->video_decoder_factory);
   webrtc::SetMediaEngineDefaults(&media_deps);
-  RTC_DCHECK(pcf_dependencies->trials);
-  media_deps.trials = pcf_dependencies->trials.get();
-
   return cricket::CreateMediaEngine(std::move(media_deps));
 }
 
@@ -245,9 +237,6 @@ PeerConnectionFactoryDependencies CreatePCFDependencies(
   }
   if (pcf_dependencies->neteq_factory != nullptr) {
     pcf_deps.neteq_factory = std::move(pcf_dependencies->neteq_factory);
-  }
-  if (pcf_dependencies->trials != nullptr) {
-    pcf_deps.trials = std::move(pcf_dependencies->trials);
   }
 
   return pcf_deps;
