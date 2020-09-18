@@ -43,21 +43,25 @@
 
 namespace webrtc {
 class RtcEventLogEncoderTest
-    : public ::testing::TestWithParam<std::tuple<int, bool, size_t, bool>> {
+    : public ::testing::TestWithParam<
+          std::tuple<int, RtcEventLog::EncodingType, size_t, bool>> {
  protected:
   RtcEventLogEncoderTest()
       : seed_(std::get<0>(GetParam())),
         prng_(seed_),
-        new_encoding_(std::get<1>(GetParam())),
+        encoding_(std::get<1>(GetParam())),
         event_count_(std::get<2>(GetParam())),
         force_repeated_fields_(std::get<3>(GetParam())),
         gen_(seed_ * 880001UL),
-        verifier_(new_encoding_ ? RtcEventLog::EncodingType::NewFormat
-                                : RtcEventLog::EncodingType::Legacy) {
-    if (new_encoding_)
-      encoder_ = std::make_unique<RtcEventLogEncoderNewFormat>();
-    else
-      encoder_ = std::make_unique<RtcEventLogEncoderLegacy>();
+        verifier_(encoding_) {
+    switch (encoding_) {
+      case RtcEventLog::EncodingType::Legacy:
+        encoder_ = std::make_unique<RtcEventLogEncoderLegacy>();
+        break;
+      case RtcEventLog::EncodingType::NewFormat:
+        encoder_ = std::make_unique<RtcEventLogEncoderNewFormat>();
+        break;
+    }
   }
   ~RtcEventLogEncoderTest() override = default;
 
@@ -85,7 +89,7 @@ class RtcEventLogEncoderTest
   ParsedRtcEventLog parsed_log_;
   const uint64_t seed_;
   Random prng_;
-  const bool new_encoding_;
+  const RtcEventLog::EncodingType encoding_;
   const size_t event_count_;
   const bool force_repeated_fields_;
   test::EventGenerator gen_;
@@ -163,7 +167,7 @@ void RtcEventLogEncoderTest::TestRtpPackets() {
 
   // TODO(terelius): Test extensions for legacy encoding, too.
   RtpHeaderExtensionMap extension_map;
-  if (new_encoding_) {
+  if (encoding_ != RtcEventLog::EncodingType::Legacy) {
     extension_map = gen_.NewRtpHeaderExtensionMap(true);
   }
 
@@ -219,7 +223,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAlrState) {
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventRouteChange) {
-  if (!new_encoding_) {
+  if (encoding_ == RtcEventLog::EncodingType::Legacy) {
     return;
   }
   std::vector<std::unique_ptr<RtcEventRouteChange>> events(event_count_);
@@ -240,7 +244,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventRouteChange) {
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventRemoteEstimate) {
-  if (!new_encoding_) {
+  if (encoding_ == RtcEventLog::EncodingType::Legacy) {
     return;
   }
   std::vector<std::unique_ptr<RtcEventRemoteEstimate>> events(event_count_);
@@ -507,7 +511,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventBweUpdateLossBased) {
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventGenericPacketReceived) {
-  if (!new_encoding_) {
+  if (encoding_ == RtcEventLog::EncodingType::Legacy) {
     return;
   }
   std::vector<std::unique_ptr<RtcEventGenericPacketReceived>> events(
@@ -532,7 +536,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventGenericPacketReceived) {
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventGenericPacketSent) {
-  if (!new_encoding_) {
+  if (encoding_ == RtcEventLog::EncodingType::Legacy) {
     return;
   }
   std::vector<std::unique_ptr<RtcEventGenericPacketSent>> events(event_count_);
@@ -555,7 +559,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventGenericPacketSent) {
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventGenericAcksReceived) {
-  if (!new_encoding_) {
+  if (encoding_ == RtcEventLog::EncodingType::Legacy) {
     return;
   }
   std::vector<std::unique_ptr<RtcEventGenericAckReceived>> events(event_count_);
@@ -591,7 +595,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventDtlsTransportState) {
   ASSERT_TRUE(parsed_log_.ParseString(encoded).ok());
 
   const auto& dtls_transport_states = parsed_log_.dtls_transport_states();
-  if (!new_encoding_) {
+  if (encoding_ == RtcEventLog::EncodingType::Legacy) {
     ASSERT_EQ(dtls_transport_states.size(), 0u);
     return;
   }
@@ -617,7 +621,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventDtlsWritableState) {
   ASSERT_TRUE(parsed_log_.ParseString(encoded).ok());
 
   const auto& dtls_writable_states = parsed_log_.dtls_writable_states();
-  if (!new_encoding_) {
+  if (encoding_ == RtcEventLog::EncodingType::Legacy) {
     ASSERT_EQ(dtls_writable_states.size(), 0u);
     return;
   }
@@ -658,7 +662,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventFrameDecoded) {
   ASSERT_TRUE(status.ok());
 
   const auto& decoded_frames_by_ssrc = parsed_log_.decoded_frames();
-  if (!new_encoding_) {
+  if (encoding_ == RtcEventLog::EncodingType::Legacy) {
     ASSERT_EQ(decoded_frames_by_ssrc.size(), 0u);
     return;
   }
@@ -1232,7 +1236,9 @@ INSTANTIATE_TEST_SUITE_P(
     RandomSeeds,
     RtcEventLogEncoderTest,
     ::testing::Combine(/* Random seed*: */ ::testing::Values(1, 2, 3, 4, 5),
-                       /* Encoding: */ ::testing::Bool(),
+                       /* Encoding: */
+                       ::testing::Values(RtcEventLog::EncodingType::Legacy,
+                                         RtcEventLog::EncodingType::NewFormat),
                        /* Event count: */ ::testing::Values(1, 2, 10, 100),
                        /* Repeated fields: */ ::testing::Bool()));
 
