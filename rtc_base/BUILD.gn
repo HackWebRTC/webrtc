@@ -204,8 +204,8 @@ rtc_library("platform_thread") {
   visibility = [
     ":rtc_base_approved",
     ":rtc_task_queue_libevent",
-    ":rtc_task_queue_win",
     ":rtc_task_queue_stdlib",
+    ":rtc_task_queue_win",
     "synchronization:mutex",
     "synchronization:sequence_checker",
   ]
@@ -587,8 +587,6 @@ rtc_library("rtc_numerics") {
   sources = [
     "numerics/event_based_exponential_moving_average.cc",
     "numerics/event_based_exponential_moving_average.h",
-    "numerics/event_rate_counter.cc",
-    "numerics/event_rate_counter.h",
     "numerics/exp_filter.cc",
     "numerics/exp_filter.h",
     "numerics/math_utils.h",
@@ -597,25 +595,30 @@ rtc_library("rtc_numerics") {
     "numerics/moving_median_filter.h",
     "numerics/percentile_filter.h",
     "numerics/running_statistics.h",
-    "numerics/sample_stats.cc",
-    "numerics/sample_stats.h",
-    "numerics/samples_stats_counter.cc",
-    "numerics/samples_stats_counter.h",
     "numerics/sequence_number_util.h",
   ]
   deps = [
     ":checks",
+    ":macromagic",
     ":rtc_base_approved",
-    ":safe_compare",
-    "../api:array_view",
+  ]
+  absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
+}
+
+rtc_library("rtc_stats_counters") {
+  sources = [
+    "numerics/event_rate_counter.cc",
+    "numerics/event_rate_counter.h",
+    "numerics/sample_stats.cc",
+    "numerics/sample_stats.h",
+  ]
+  deps = [
+    "../api/numerics",
     "../api/units:data_rate",
     "../api/units:time_delta",
     "../api/units:timestamp",
   ]
-  absl_deps = [
-    "//third_party/abseil-cpp/absl/algorithm:container",
-    "//third_party/abseil-cpp/absl/types:optional",
-  ]
+  absl_deps = []
 }
 
 config("rtc_json_suppressions") {
@@ -804,6 +807,7 @@ rtc_library("rtc_base") {
     "../api:array_view",
     "../api:function_view",
     "../api:scoped_refptr",
+    "../api/numerics",
     "../api/task_queue",
     "../system_wrappers:field_trial",
     "network:sent_packet",
@@ -942,7 +946,6 @@ rtc_library("rtc_base") {
       "callback.h",
       "log_sinks.cc",
       "log_sinks.h",
-      "numerics/math_utils.h",
       "rolling_accumulator.h",
       "ssl_roots.h",
     ]
@@ -1270,6 +1273,7 @@ if (rtc_include_tests) {
       ":rtc_base",
       ":rtc_base_approved",
       ":rtc_base_tests_utils",
+      ":rtc_numerics",
       ":rtc_task_queue",
       ":safe_compare",
       ":safe_minmax",
@@ -1278,6 +1282,7 @@ if (rtc_include_tests) {
       ":testclient",
       "../api:array_view",
       "../api:scoped_refptr",
+      "../api/numerics",
       "../api/units:time_delta",
       "../system_wrappers",
       "../test:fileutils",
@@ -1351,7 +1356,6 @@ if (rtc_include_tests) {
       "numerics/moving_median_filter_unittest.cc",
       "numerics/percentile_filter_unittest.cc",
       "numerics/running_statistics_unittest.cc",
-      "numerics/samples_stats_counter_unittest.cc",
       "numerics/sequence_number_util_unittest.cc",
     ]
     deps = [

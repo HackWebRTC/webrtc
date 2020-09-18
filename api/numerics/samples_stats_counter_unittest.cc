@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/numerics/samples_stats_counter.h"
+#include "api/numerics/samples_stats_counter.h"
 
 #include <math.h>
 

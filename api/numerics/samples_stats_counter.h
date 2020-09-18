@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_NUMERICS_SAMPLES_STATS_COUNTER_H_
-#define RTC_BASE_NUMERICS_SAMPLES_STATS_COUNTER_H_
+#ifndef API_NUMERICS_SAMPLES_STATS_COUNTER_H_
+#define API_NUMERICS_SAMPLES_STATS_COUNTER_H_
 
 #include <vector>
 
@@ -98,7 +98,7 @@ class SamplesStatsCounter {
   }
 
  private:
-  RunningStatistics<double> stats_;
+  webrtc_impl::RunningStatistics<double> stats_;
   std::vector<StatsSample> samples_;
   bool sorted_ = false;
 };
@@ -116,4 +116,4 @@ SamplesStatsCounter operator/(const SamplesStatsCounter& counter, double value);
 
 }  // namespace webrtc
 
-#endif  // RTC_BASE_NUMERICS_SAMPLES_STATS_COUNTER_H_
+#endif  // API_NUMERICS_SAMPLES_STATS_COUNTER_H_

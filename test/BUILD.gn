@@ -35,8 +35,8 @@ group("test") {
 
 rtc_library("frame_generator_impl") {
   visibility = [
-    "../api:create_frame_generator",
     ":*",
+    "../api:create_frame_generator",
   ]
   testonly = true
   sources = [
@@ -246,6 +246,7 @@ rtc_library("perf_test") {
   ]
   deps = [
     "../api:array_view",
+    "../api/numerics",
     "../rtc_base:checks",
     "../rtc_base:criticalsection",
     "../rtc_base:logging",

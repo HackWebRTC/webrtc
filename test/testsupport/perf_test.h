@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "api/array_view.h"
-#include "rtc_base/numerics/samples_stats_counter.h"
+#include "api/numerics/samples_stats_counter.h"
 
 namespace webrtc {
 namespace test {
