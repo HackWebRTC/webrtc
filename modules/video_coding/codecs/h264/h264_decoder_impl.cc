@@ -103,7 +103,7 @@ int H264DecoderImpl::AVGetBuffer2(AVCodecContext* context,
   // TODO(nisse): Delete that feature from the video pool, instead add
   // an explicit call to InitializeData here.
   rtc::scoped_refptr<I420Buffer> frame_buffer =
-      decoder->pool_.CreateBuffer(width, height);
+      decoder->pool_.CreateI420Buffer(width, height);
 
   int y_size = width * height;
   int uv_size = frame_buffer->ChromaWidth() * frame_buffer->ChromaHeight();

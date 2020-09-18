@@ -329,7 +329,8 @@ int LibvpxVp8Decoder::ReturnFrame(
   last_frame_height_ = img->d_h;
   // Allocate memory for decoded image.
   rtc::scoped_refptr<I420Buffer> buffer =
-      buffer_pool_.CreateBuffer(img->d_w, img->d_h);
+      buffer_pool_.CreateI420Buffer(img->d_w, img->d_h);
+
   if (!buffer.get()) {
     // Pool has too many pending frames.
     RTC_HISTOGRAM_BOOLEAN("WebRTC.Video.LibvpxVp8Decoder.TooManyPendingFrames",

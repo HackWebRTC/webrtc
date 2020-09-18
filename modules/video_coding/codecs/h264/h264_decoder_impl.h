@@ -44,7 +44,7 @@ extern "C" {
 }  // extern "C"
 
 #include "common_video/h264/h264_bitstream_parser.h"
-#include "common_video/include/i420_buffer_pool.h"
+#include "common_video/include/video_frame_buffer_pool.h"
 
 namespace webrtc {
 
@@ -92,7 +92,7 @@ class H264DecoderImpl : public H264Decoder {
   void ReportInit();
   void ReportError();
 
-  I420BufferPool pool_;
+  VideoFrameBufferPool pool_;
   std::unique_ptr<AVCodecContext, AVCodecContextDeleter> av_context_;
   std::unique_ptr<AVFrame, AVFrameDeleter> av_frame_;
 

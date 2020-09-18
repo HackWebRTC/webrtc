@@ -105,4 +105,8 @@ size_t NV12Buffer::UVOffset() const {
   return stride_y_ * height_;
 }
 
+void NV12Buffer::InitializeData() {
+  memset(data_.get(), 0, NV12DataSize(height_, stride_y_, stride_uv_));
+}
+
 }  // namespace webrtc
