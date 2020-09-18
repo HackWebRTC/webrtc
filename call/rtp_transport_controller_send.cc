@@ -131,7 +131,7 @@ RtpTransportControllerSend::RtpTransportControllerSend(
   pacer()->SetPacingRates(
       DataRate::BitsPerSec(bitrate_config.start_bitrate_bps), DataRate::Zero());
 
-  if (!absl::StartsWith(trials->Lookup("WebRTC-LazyPacerStart"), "Disabled")) {
+  if (absl::StartsWith(trials->Lookup("WebRTC-LazyPacerStart"), "Disabled")) {
     EnsureStarted();
   }
 }
