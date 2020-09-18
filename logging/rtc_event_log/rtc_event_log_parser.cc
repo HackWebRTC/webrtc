@@ -2160,7 +2160,7 @@ std::vector<LoggedPacketInfo> ParsedRtcEventLog::GetPacketInfos(
 
       // Add an offset to avoid |capture_ticks| to become negative in the case
       // of reordering.
-      constexpr int64_t kStartingCaptureTimeTicks = 90 * 48 * 1000;
+      constexpr int64_t kStartingCaptureTimeTicks = 90 * 48 * 10000;
       int64_t capture_ticks =
           kStartingCaptureTimeTicks +
           stream->unwrap_capture_ticks.Unwrap(rtp.header.timestamp);
