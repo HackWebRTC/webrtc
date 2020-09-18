@@ -15,8 +15,8 @@
 #include <vector>
 
 #include "api/function_view.h"
-#include "rtc_base/function.h"
 #include "rtc_base/system/assume.h"
+#include "rtc_base/untyped_function.h"
 
 namespace webrtc {
 namespace cancer_stick_castle_impl {

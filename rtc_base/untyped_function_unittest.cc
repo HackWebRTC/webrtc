@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/function.h"
+#include "rtc_base/untyped_function.h"
 
 #include <memory>
 #include <vector>

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_FUNCTION_H_
-#define RTC_BASE_FUNCTION_H_
+#ifndef RTC_BASE_UNTYPED_FUNCTION_H_
+#define RTC_BASE_UNTYPED_FUNCTION_H_
 
 #include <memory>
 #include <type_traits>
@@ -220,4 +220,4 @@ class UntypedFunction final {
 
 }  // namespace webrtc
 
-#endif  // RTC_BASE_FUNCTION_H_
+#endif  // RTC_BASE_UNTYPED_FUNCTION_H_
