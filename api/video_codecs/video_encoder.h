@@ -174,6 +174,15 @@ class RTC_EXPORT VideoEncoder {
     // requirements the encoder has on the incoming video frame buffers.
     int requested_resolution_alignment;
 
+    // Same as above but if true, each simulcast layer should also be divisible
+    // by |requested_resolution_alignment|.
+    // Note that scale factors |scale_resolution_down_by| may be adjusted so a
+    // common multiple is not too large to avoid largely cropped frames and
+    // possibly with an aspect ratio far from the original.
+    // Warning: large values of scale_resolution_down_by could be changed
+    // considerably, especially if |requested_resolution_alignment| is large.
+    bool apply_alignment_to_all_simulcast_layers;
+
     // If true, encoder supports working with a native handle (e.g. texture
     // handle for hw codecs) rather than requiring a raw I420 buffer.
     bool supports_native_handle;

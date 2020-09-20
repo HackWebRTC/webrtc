@@ -201,6 +201,8 @@ rtc_library("video_stream_encoder_impl") {
 
   # visibility = [ "../api/video:video_stream_encoder_create" ]
   sources = [
+    "alignment_adjuster.cc",
+    "alignment_adjuster.h",
     "encoder_bitrate_adjuster.cc",
     "encoder_bitrate_adjuster.h",
     "encoder_overshoot_detector.cc",
@@ -515,6 +517,7 @@ if (rtc_include_tests) {
 
     defines = []
     sources = [
+      "alignment_adjuster_unittest.cc",
       "buffered_frame_decryptor_unittest.cc",
       "call_stats2_unittest.cc",
       "call_stats_unittest.cc",

@@ -47,6 +47,7 @@
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
 #include "video/adaptation/video_stream_encoder_resource_manager.h"
+#include "video/alignment_adjuster.h"
 
 namespace webrtc {
 
@@ -541,6 +542,36 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     encoder_switch_requested_ = true;
   }
 
+  bool encoder_reset_required = false;
+  if (pending_encoder_creation_) {
+    // Destroy existing encoder instance before creating a new one. Otherwise
+    // attempt to create another instance will fail if encoder factory
+    // supports only single instance of encoder of given type.
+    encoder_.reset();
+
+    encoder_ = settings_.encoder_factory->CreateVideoEncoder(
+        encoder_config_.video_format);
+    // TODO(nisse): What to do if creating the encoder fails? Crash,
+    // or just discard incoming frames?
+    RTC_CHECK(encoder_);
+
+    if (encoder_selector_) {
+      encoder_selector_->OnCurrentEncoder(encoder_config_.video_format);
+    }
+
+    encoder_->SetFecControllerOverride(fec_controller_override_);
+
+    codec_info_ = settings_.encoder_factory->QueryVideoEncoder(
+        encoder_config_.video_format);
+
+    encoder_reset_required = true;
+  }
+
+  // Possibly adjusts scale_resolution_down_by in |encoder_config_| to limit the
+  // alignment value.
+  int alignment = AlignmentAdjuster::GetAlignmentAndMaybeAdjustScaleFactors(
+      encoder_->GetEncoderInfo(), &encoder_config_);
+
   std::vector<VideoStream> streams =
       encoder_config_.video_stream_factory->CreateEncoderStreams(
           last_frame_info_->width, last_frame_info_->height, encoder_config_);
@@ -572,31 +603,6 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   RTC_CHECK_GE(last_frame_info_->height, highest_stream_height);
   crop_width_ = last_frame_info_->width - highest_stream_width;
   crop_height_ = last_frame_info_->height - highest_stream_height;
-
-  bool encoder_reset_required = false;
-  if (pending_encoder_creation_) {
-    // Destroy existing encoder instance before creating a new one. Otherwise
-    // attempt to create another instance will fail if encoder factory
-    // supports only single instance of encoder of given type.
-    encoder_.reset();
-
-    encoder_ = settings_.encoder_factory->CreateVideoEncoder(
-        encoder_config_.video_format);
-    // TODO(nisse): What to do if creating the encoder fails? Crash,
-    // or just discard incoming frames?
-    RTC_CHECK(encoder_);
-
-    if (encoder_selector_) {
-      encoder_selector_->OnCurrentEncoder(encoder_config_.video_format);
-    }
-
-    encoder_->SetFecControllerOverride(fec_controller_override_);
-
-    codec_info_ = settings_.encoder_factory->QueryVideoEncoder(
-        encoder_config_.video_format);
-
-    encoder_reset_required = true;
-  }
 
   encoder_bitrate_limits_ =
       encoder_->GetEncoderInfo().GetEncoderBitrateLimitsForResolution(
@@ -705,7 +711,6 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   for (const auto& stream : streams) {
     max_framerate = std::max(stream.max_framerate, max_framerate);
   }
-  int alignment = encoder_->GetEncoderInfo().requested_resolution_alignment;
   if (max_framerate != video_source_sink_controller_.frame_rate_upper_limit() ||
       alignment != video_source_sink_controller_.resolution_alignment()) {
     video_source_sink_controller_.SetFrameRateUpperLimit(max_framerate);

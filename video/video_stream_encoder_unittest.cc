@@ -31,6 +31,7 @@
 #include "common_video/h264/h264_common.h"
 #include "common_video/include/video_frame_buffer.h"
 #include "media/base/video_adapter.h"
+#include "media/engine/webrtc_video_engine.h"
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
@@ -234,7 +235,7 @@ auto FpsInRangeForPixelsInBalanced(int last_frame_pixels) {
 
   if (last_frame_pixels <= 320 * 240) {
     fps_range_matcher = AllOf(Ge(7), Le(10));
-  } else if (last_frame_pixels <= 480 * 270) {
+  } else if (last_frame_pixels <= 480 * 360) {
     fps_range_matcher = AllOf(Ge(10), Le(15));
   } else if (last_frame_pixels <= 640 * 480) {
     fps_range_matcher = Ge(15);
@@ -803,6 +804,8 @@ class VideoStreamEncoderTest : public ::testing::Test {
 
       info.resolution_bitrate_limits = resolution_bitrate_limits_;
       info.requested_resolution_alignment = requested_resolution_alignment_;
+      info.apply_alignment_to_all_simulcast_layers =
+          apply_alignment_to_all_simulcast_layers_;
       return info;
     }
 
@@ -830,6 +833,11 @@ class VideoStreamEncoderTest : public ::testing::Test {
     void SetRequestedResolutionAlignment(int requested_resolution_alignment) {
       MutexLock lock(&local_mutex_);
       requested_resolution_alignment_ = requested_resolution_alignment;
+    }
+
+    void SetApplyAlignmentToAllSimulcastLayers(bool b) {
+      MutexLock lock(&local_mutex_);
+      apply_alignment_to_all_simulcast_layers_ = b;
     }
 
     void SetIsHardwareAccelerated(bool is_hardware_accelerated) {
@@ -918,6 +926,11 @@ class VideoStreamEncoderTest : public ::testing::Test {
       return num_set_rates_;
     }
 
+    VideoCodec video_codec() const {
+      MutexLock lock(&local_mutex_);
+      return video_codec_;
+    }
+
    private:
     int32_t Encode(const VideoFrame& input_image,
                    const std::vector<VideoFrameType>* frame_types) override {
@@ -971,6 +984,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
       EXPECT_EQ(initialized_, EncoderState::kUninitialized);
 
       ++num_encoder_initializations_;
+      video_codec_ = *config;
 
       if (config->codecType == kVideoCodecVP8) {
         // Simulate setting up temporal layers, in order to validate the life
@@ -1030,6 +1044,8 @@ class VideoStreamEncoderTest : public ::testing::Test {
     int last_input_height_ RTC_GUARDED_BY(local_mutex_) = 0;
     bool quality_scaling_ RTC_GUARDED_BY(local_mutex_) = true;
     int requested_resolution_alignment_ RTC_GUARDED_BY(local_mutex_) = 1;
+    bool apply_alignment_to_all_simulcast_layers_ RTC_GUARDED_BY(local_mutex_) =
+        false;
     bool is_hardware_accelerated_ RTC_GUARDED_BY(local_mutex_) = false;
     rtc::scoped_refptr<EncodedImageBufferInterface> encoded_image_data_
         RTC_GUARDED_BY(local_mutex_);
@@ -1054,6 +1070,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
     std::vector<ResolutionBitrateLimits> resolution_bitrate_limits_
         RTC_GUARDED_BY(local_mutex_);
     int num_set_rates_ RTC_GUARDED_BY(local_mutex_) = 0;
+    VideoCodec video_codec_ RTC_GUARDED_BY(local_mutex_);
   };
 
   class TestSink : public VideoStreamEncoder::EncoderSink {
@@ -1096,18 +1113,6 @@ class VideoStreamEncoderTest : public ::testing::Test {
       }
       EXPECT_EQ(expected_height, height);
       EXPECT_EQ(expected_width, width);
-    }
-
-    void CheckLastFrameSizeIsMultipleOf(int resolution_alignment) {
-      int width = 0;
-      int height = 0;
-      {
-        MutexLock lock(&mutex_);
-        width = last_width_;
-        height = last_height_;
-      }
-      EXPECT_EQ(width % resolution_alignment, 0);
-      EXPECT_EQ(height % resolution_alignment, 0);
     }
 
     void CheckLastFrameRotationMatches(VideoRotation expected_rotation) {
@@ -1776,30 +1781,88 @@ TEST_F(VideoStreamEncoderTest, SinkWantsRotationApplied) {
   video_stream_encoder_->Stop();
 }
 
-TEST_F(VideoStreamEncoderTest, SinkWantsResolutionAlignment) {
-  constexpr int kRequestedResolutionAlignment = 7;
+class ResolutionAlignmentTest
+    : public VideoStreamEncoderTest,
+      public ::testing::WithParamInterface<
+          ::testing::tuple<int, std::vector<double>>> {
+ public:
+  ResolutionAlignmentTest()
+      : requested_alignment_(::testing::get<0>(GetParam())),
+        scale_factors_(::testing::get<1>(GetParam())) {}
+
+ protected:
+  const int requested_alignment_;
+  const std::vector<double> scale_factors_;
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    AlignmentAndScaleFactors,
+    ResolutionAlignmentTest,
+    ::testing::Combine(
+        ::testing::Values(1, 2, 3, 4, 5, 6, 16, 22),  // requested_alignment_
+        ::testing::Values(std::vector<double>{-1.0},  // scale_factors_
+                          std::vector<double>{-1.0, -1.0},
+                          std::vector<double>{-1.0, -1.0, -1.0},
+                          std::vector<double>{4.0, 2.0, 1.0},
+                          std::vector<double>{9999.0, -1.0, 1.0},
+                          std::vector<double>{3.99, 2.01, 1.0},
+                          std::vector<double>{4.9, 1.7, 1.25},
+                          std::vector<double>{10.0, 4.0, 3.0},
+                          std::vector<double>{1.75, 3.5},
+                          std::vector<double>{1.5, 2.5},
+                          std::vector<double>{1.3, 1.0})));
+
+TEST_P(ResolutionAlignmentTest, SinkWantsAlignmentApplied) {
+  // Set requested resolution alignment.
   video_source_.set_adaptation_enabled(true);
-  fake_encoder_.SetRequestedResolutionAlignment(kRequestedResolutionAlignment);
+  fake_encoder_.SetRequestedResolutionAlignment(requested_alignment_);
+  fake_encoder_.SetApplyAlignmentToAllSimulcastLayers(true);
+
+  // Fill config with the scaling factor by which to reduce encoding size.
+  const int num_streams = scale_factors_.size();
+  VideoEncoderConfig config;
+  test::FillEncoderConfiguration(kVideoCodecVP8, num_streams, &config);
+  for (int i = 0; i < num_streams; ++i) {
+    config.simulcast_layers[i].scale_resolution_down_by = scale_factors_[i];
+  }
+  config.video_stream_factory =
+      new rtc::RefCountedObject<cricket::EncoderStreamFactory>(
+          "VP8", /*max qp*/ 56, /*screencast*/ false,
+          /*screenshare enabled*/ false);
+  video_stream_encoder_->ConfigureEncoder(std::move(config), kMaxPayloadLength);
+
   video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
-      DataRate::BitsPerSec(kTargetBitrateBps),
-      DataRate::BitsPerSec(kTargetBitrateBps),
-      DataRate::BitsPerSec(kTargetBitrateBps), 0, 0, 0);
+      DataRate::BitsPerSec(kSimulcastTargetBitrateBps),
+      DataRate::BitsPerSec(kSimulcastTargetBitrateBps),
+      DataRate::BitsPerSec(kSimulcastTargetBitrateBps), 0, 0, 0);
+  // Wait for all layers before triggering event.
+  sink_.SetNumExpectedLayers(num_streams);
 
   // On the 1st frame, we should have initialized the encoder and
   // asked for its resolution requirements.
-  video_source_.IncomingCapturedFrame(
-      CreateFrame(1, codec_width_, codec_height_));
-  WaitForEncodedFrame(1);
-  EXPECT_EQ(video_source_.sink_wants().resolution_alignment,
-            kRequestedResolutionAlignment);
+  int64_t timestamp_ms = kFrameIntervalMs;
+  video_source_.IncomingCapturedFrame(CreateFrame(timestamp_ms, 1280, 720));
+  WaitForEncodedFrame(timestamp_ms);
+  EXPECT_EQ(1, fake_encoder_.GetNumEncoderInitializations());
 
   // On the 2nd frame, we should be receiving a correctly aligned resolution.
   // (It's up the to the encoder to potentially drop the previous frame,
   // to avoid coding back-to-back keyframes.)
-  video_source_.IncomingCapturedFrame(
-      CreateFrame(2, codec_width_, codec_height_));
-  WaitForEncodedFrame(2);
-  sink_.CheckLastFrameSizeIsMultipleOf(kRequestedResolutionAlignment);
+  timestamp_ms += kFrameIntervalMs;
+  video_source_.IncomingCapturedFrame(CreateFrame(timestamp_ms, 1280, 720));
+  WaitForEncodedFrame(timestamp_ms);
+  EXPECT_GE(fake_encoder_.GetNumEncoderInitializations(), 1);
+
+  VideoCodec codec = fake_encoder_.video_codec();
+  EXPECT_EQ(codec.numberOfSimulcastStreams, num_streams);
+  // Frame size should be a multiple of the requested alignment.
+  for (int i = 0; i < codec.numberOfSimulcastStreams; ++i) {
+    EXPECT_EQ(codec.simulcastStream[i].width % requested_alignment_, 0);
+    EXPECT_EQ(codec.simulcastStream[i].height % requested_alignment_, 0);
+    // Aspect ratio should match.
+    EXPECT_EQ(codec.width * codec.simulcastStream[i].height,
+              codec.height * codec.simulcastStream[i].width);
+  }
 
   video_stream_encoder_->Stop();
 }

@@ -101,6 +101,7 @@ int MultiplexEncoderAdapter::InitEncode(
   encoder_info_ = EncoderInfo();
   encoder_info_.implementation_name = "MultiplexEncoderAdapter (";
   encoder_info_.requested_resolution_alignment = 1;
+  encoder_info_.apply_alignment_to_all_simulcast_layers = false;
   // This needs to be false so that we can do the split in Encode().
   encoder_info_.supports_native_handle = false;
 
@@ -136,6 +137,10 @@ int MultiplexEncoderAdapter::InitEncode(
     encoder_info_.requested_resolution_alignment = cricket::LeastCommonMultiple(
         encoder_info_.requested_resolution_alignment,
         encoder_impl_info.requested_resolution_alignment);
+
+    if (encoder_impl_info.apply_alignment_to_all_simulcast_layers) {
+      encoder_info_.apply_alignment_to_all_simulcast_layers = true;
+    }
 
     encoder_info_.has_internal_source = false;
 

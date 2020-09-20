@@ -35,6 +35,7 @@
 #include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/experiments/field_trial_units.h"
 #include "rtc_base/experiments/min_video_bitrate_experiment.h"
+#include "rtc_base/experiments/normalize_simulcast_size_experiment.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/strings/string_builder.h"
@@ -75,6 +76,20 @@ bool IsFlexfecFieldTrialEnabled() {
 // SDP.
 bool IsFlexfecAdvertisedFieldTrialEnabled() {
   return webrtc::field_trial::IsEnabled("WebRTC-FlexFEC-03-Advertised");
+}
+
+bool PowerOfTwo(int value) {
+  return (value > 0) && ((value & (value - 1)) == 0);
+}
+
+bool IsScaleFactorsPowerOfTwo(const webrtc::VideoEncoderConfig& config) {
+  for (const auto& layer : config.simulcast_layers) {
+    double scale = std::max(layer.scale_resolution_down_by, 1.0);
+    if (std::round(scale) != scale || !PowerOfTwo(scale)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void AddDefaultFeedbackParams(VideoCodec* codec) {
@@ -3530,10 +3545,22 @@ EncoderStreamFactory::CreateSimulcastOrConferenceModeScreenshareStreams(
       encoder_config.simulcast_layers, [](const webrtc::VideoStream& layer) {
         return layer.scale_resolution_down_by != -1.;
       });
+
+  bool default_scale_factors_used = true;
+  if (has_scale_resolution_down_by) {
+    default_scale_factors_used = IsScaleFactorsPowerOfTwo(encoder_config);
+  }
+  const bool norm_size_configured =
+      webrtc::NormalizeSimulcastSizeExperiment::GetBase2Exponent().has_value();
   const int normalized_width =
-      NormalizeSimulcastSize(width, encoder_config.number_of_streams);
+      (default_scale_factors_used || norm_size_configured)
+          ? NormalizeSimulcastSize(width, encoder_config.number_of_streams)
+          : width;
   const int normalized_height =
-      NormalizeSimulcastSize(height, encoder_config.number_of_streams);
+      (default_scale_factors_used || norm_size_configured)
+          ? NormalizeSimulcastSize(height, encoder_config.number_of_streams)
+          : height;
+
   for (size_t i = 0; i < layers.size(); ++i) {
     layers[i].active = encoder_config.simulcast_layers[i].active;
     // Update with configured num temporal layers if supported by codec.

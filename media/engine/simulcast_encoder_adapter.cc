@@ -642,6 +642,7 @@ VideoEncoder::EncoderInfo SimulcastEncoderAdapter::GetEncoderInfo() const {
   VideoEncoder::EncoderInfo encoder_info;
   encoder_info.implementation_name = "SimulcastEncoderAdapter";
   encoder_info.requested_resolution_alignment = 1;
+  encoder_info.apply_alignment_to_all_simulcast_layers = false;
   encoder_info.supports_native_handle = true;
   encoder_info.scaling_settings.thresholds = absl::nullopt;
   if (streaminfos_.empty()) {
@@ -693,6 +694,9 @@ VideoEncoder::EncoderInfo SimulcastEncoderAdapter::GetEncoderInfo() const {
     encoder_info.requested_resolution_alignment = cricket::LeastCommonMultiple(
         encoder_info.requested_resolution_alignment,
         encoder_impl_info.requested_resolution_alignment);
+    if (encoder_impl_info.apply_alignment_to_all_simulcast_layers) {
+      encoder_info.apply_alignment_to_all_simulcast_layers = true;
+    }
     if (num_active_streams == 1 && codec_.simulcastStream[i].active) {
       encoder_info.scaling_settings = encoder_impl_info.scaling_settings;
     }
