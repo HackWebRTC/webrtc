@@ -252,7 +252,6 @@ void AcmReceiver::GetNetworkStatistics(
     // NetEq function always returns zero, so we don't check the return value.
     neteq_->NetworkStatistics(&neteq_stat);
 
-    acm_stat->currentPacketLossRate = neteq_stat.packet_loss_rate;
     acm_stat->currentExpandRate = neteq_stat.expand_rate;
     acm_stat->currentSpeechExpandRate = neteq_stat.speech_expand_rate;
     acm_stat->currentPreemptiveRate = neteq_stat.preemptive_rate;
@@ -260,21 +259,18 @@ void AcmReceiver::GetNetworkStatistics(
     acm_stat->currentSecondaryDecodedRate = neteq_stat.secondary_decoded_rate;
     acm_stat->currentSecondaryDiscardedRate =
         neteq_stat.secondary_discarded_rate;
-    acm_stat->addedSamples = neteq_stat.added_zero_samples;
     acm_stat->meanWaitingTimeMs = neteq_stat.mean_waiting_time_ms;
     acm_stat->medianWaitingTimeMs = neteq_stat.median_waiting_time_ms;
     acm_stat->minWaitingTimeMs = neteq_stat.min_waiting_time_ms;
     acm_stat->maxWaitingTimeMs = neteq_stat.max_waiting_time_ms;
   } else {
     neteq_stat = neteq_->CurrentNetworkStatistics();
-    acm_stat->currentPacketLossRate = 0;
     acm_stat->currentExpandRate = 0;
     acm_stat->currentSpeechExpandRate = 0;
     acm_stat->currentPreemptiveRate = 0;
     acm_stat->currentAccelerateRate = 0;
     acm_stat->currentSecondaryDecodedRate = 0;
     acm_stat->currentSecondaryDiscardedRate = 0;
-    acm_stat->addedSamples = 0;
     acm_stat->meanWaitingTimeMs = -1;
     acm_stat->medianWaitingTimeMs = -1;
     acm_stat->minWaitingTimeMs = -1;

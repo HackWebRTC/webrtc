@@ -1326,13 +1326,6 @@ int NetEqImpl::GetDecision(Operation* operation,
   int extracted_samples = 0;
   if (packet) {
     sync_buffer_->IncreaseEndTimestamp(packet->timestamp - end_timestamp);
-    if (controller_->CngOff()) {
-      // Adjustment of timestamp only corresponds to an actual packet loss
-      // if comfort noise is not played. If comfort noise was just played,
-      // this adjustment of timestamp is only done to get back in sync with the
-      // stream timestamp; no loss to report.
-      stats_->LostSamples(packet->timestamp - end_timestamp);
-    }
 
     if (*operation != Operation::kRfc3389Cng) {
       // We are about to decode and use a non-CNG packet.

@@ -517,18 +517,6 @@ int main(int argc, char* argv[]) {
         "Preemptive rate", plot);
   });
 
-  plots.RegisterPlot("simulated_neteq_packet_loss_rate", [&](Plot* plot) {
-    if (!neteq_stats) {
-      neteq_stats = webrtc::SimulateNetEq(parsed_log, config, wav_path, 48000);
-    }
-    webrtc::CreateNetEqNetworkStatsGraph(
-        parsed_log, config, *neteq_stats,
-        [](const webrtc::NetEqNetworkStatistics& stats) {
-          return stats.packet_loss_rate / 16384.f;
-        },
-        "Packet loss rate", plot);
-  });
-
   plots.RegisterPlot("simulated_neteq_concealment_events", [&](Plot* plot) {
     if (!neteq_stats) {
       neteq_stats = webrtc::SimulateNetEq(parsed_log, config, wav_path, 48000);

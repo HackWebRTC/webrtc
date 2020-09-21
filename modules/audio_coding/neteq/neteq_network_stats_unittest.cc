@@ -215,14 +215,12 @@ class NetEqNetworkStatsTest {
     CHECK_NETEQ_NETWORK_STATS(current_buffer_size_ms);
     CHECK_NETEQ_NETWORK_STATS(preferred_buffer_size_ms);
     CHECK_NETEQ_NETWORK_STATS(jitter_peaks_found);
-    CHECK_NETEQ_NETWORK_STATS(packet_loss_rate);
     CHECK_NETEQ_NETWORK_STATS(expand_rate);
     CHECK_NETEQ_NETWORK_STATS(speech_expand_rate);
     CHECK_NETEQ_NETWORK_STATS(preemptive_rate);
     CHECK_NETEQ_NETWORK_STATS(accelerate_rate);
     CHECK_NETEQ_NETWORK_STATS(secondary_decoded_rate);
     CHECK_NETEQ_NETWORK_STATS(secondary_discarded_rate);
-    CHECK_NETEQ_NETWORK_STATS(added_zero_samples);
 
 #undef CHECK_NETEQ_NETWORK_STATS
   }
@@ -276,14 +274,12 @@ class NetEqNetworkStatsTest {
 
     // Next we introduce packet losses.
     SetPacketLossRate(0.1);
-    expects.stats_ref.packet_loss_rate = 1337;
     expects.stats_ref.expand_rate = expects.stats_ref.speech_expand_rate = 1065;
     RunTest(50, expects);
 
     // Next we enable FEC.
     decoder_->set_fec_enabled(true);
     // If FEC fills in the lost packets, no packet loss will be counted.
-    expects.stats_ref.packet_loss_rate = 0;
     expects.stats_ref.expand_rate = expects.stats_ref.speech_expand_rate = 0;
     expects.stats_ref.secondary_decoded_rate = 2006;
     expects.stats_ref.secondary_discarded_rate = 14336;

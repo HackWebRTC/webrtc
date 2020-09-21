@@ -71,9 +71,6 @@ class StatisticsCalculator {
   // Reports that |num_packets| secondary (FEC) packets were received.
   virtual void SecondaryPacketsReceived(size_t num_packets);
 
-  // Reports that |num_samples| were lost.
-  void LostSamples(size_t num_samples);
-
   // Increases the report interval counter with |num_samples| at a sample rate
   // of |fs_hz|. This is how the StatisticsCalculator gets notified that current
   // time is increasing.
@@ -192,7 +189,6 @@ class StatisticsCalculator {
   size_t expanded_speech_samples_;
   size_t expanded_noise_samples_;
   size_t concealed_samples_at_event_end_ = 0;
-  size_t lost_timestamps_;
   uint32_t timestamps_since_last_report_;
   std::deque<int> waiting_times_;
   uint32_t secondary_decoded_samples_;
