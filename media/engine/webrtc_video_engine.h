@@ -429,11 +429,6 @@ class WebRtcVideoChannel : public VideoMediaChannel,
 
     bool sending_ RTC_GUARDED_BY(&thread_checker_);
 
-    // In order for the |invoker_| to protect other members from being
-    // destructed as they are used in asynchronous tasks it has to be destructed
-    // first.
-    rtc::AsyncInvoker invoker_;
-
     // TODO(asapersson): investigate why setting
     // DegrationPreferences::MAINTAIN_RESOLUTION isn't sufficient to disable
     // downscaling everywhere in the pipeline.

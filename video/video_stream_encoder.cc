@@ -40,10 +40,8 @@
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
-#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/thread_annotations.h"
-#include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
 #include "video/adaptation/video_stream_encoder_resource_manager.h"
@@ -274,7 +272,7 @@ VideoStreamEncoder::VideoStreamEncoder(
     const VideoStreamEncoderSettings& settings,
     std::unique_ptr<OveruseFrameDetector> overuse_detector,
     TaskQueueFactory* task_queue_factory)
-    : shutdown_event_(true /* manual_reset */, false),
+    : main_queue_(TaskQueueBase::Current()),
       number_of_cores_(number_of_cores),
       quality_scaling_experiment_enabled_(QualityScalingExperiment::Enabled()),
       sink_(nullptr),
@@ -343,6 +341,7 @@ VideoStreamEncoder::VideoStreamEncoder(
       encoder_queue_(task_queue_factory->CreateTaskQueue(
           "EncoderQueue",
           TaskQueueFactory::Priority::NORMAL)) {
+  RTC_DCHECK(main_queue_);
   RTC_DCHECK(encoder_stats_observer);
   RTC_DCHECK_GE(number_of_cores, 1);
 
@@ -370,16 +369,18 @@ VideoStreamEncoder::VideoStreamEncoder(
 }
 
 VideoStreamEncoder::~VideoStreamEncoder() {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  RTC_DCHECK(shutdown_event_.Wait(0))
+  RTC_DCHECK_RUN_ON(main_queue_);
+  RTC_DCHECK(!video_source_sink_controller_.HasSource())
       << "Must call ::Stop() before destruction.";
 }
 
 void VideoStreamEncoder::Stop() {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_DCHECK_RUN_ON(main_queue_);
   video_source_sink_controller_.SetSource(nullptr);
 
-  encoder_queue_.PostTask([this] {
+  rtc::Event shutdown_event;
+
+  encoder_queue_.PostTask([this, &shutdown_event] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     if (resource_adaptation_processor_) {
       stream_resource_manager_.StopManagedResources();
@@ -401,14 +402,14 @@ void VideoStreamEncoder::Stop() {
     rate_allocator_ = nullptr;
     bitrate_observer_ = nullptr;
     ReleaseEncoder();
-    shutdown_event_.Set();
+    shutdown_event.Set();
   });
-  shutdown_event_.Wait(rtc::Event::kForever);
+  shutdown_event.Wait(rtc::Event::kForever);
 }
 
 void VideoStreamEncoder::SetBitrateAllocationObserver(
     VideoBitrateAllocationObserver* bitrate_observer) {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_DCHECK_RUN_ON(main_queue_);
   encoder_queue_.PostTask([this, bitrate_observer] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     RTC_DCHECK(!bitrate_observer_);
@@ -430,6 +431,7 @@ void VideoStreamEncoder::SetFecControllerOverride(
 
 void VideoStreamEncoder::AddAdaptationResource(
     rtc::scoped_refptr<Resource> resource) {
+  RTC_DCHECK_RUN_ON(main_queue_);
   // Map any externally added resources as kCpu for the sake of stats reporting.
   // TODO(hbos): Make the manager map any unknown resources to kCpu and get rid
   // of this MapResourceToReason() call.
@@ -445,13 +447,14 @@ void VideoStreamEncoder::AddAdaptationResource(
 
 std::vector<rtc::scoped_refptr<Resource>>
 VideoStreamEncoder::GetAdaptationResources() {
+  RTC_DCHECK_RUN_ON(main_queue_);
   return resource_adaptation_processor_->GetResources();
 }
 
 void VideoStreamEncoder::SetSource(
     rtc::VideoSourceInterface<VideoFrame>* source,
     const DegradationPreference& degradation_preference) {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_DCHECK_RUN_ON(main_queue_);
   video_source_sink_controller_.SetSource(source);
   input_state_provider_.OnHasInputChanged(source);
 
@@ -469,8 +472,10 @@ void VideoStreamEncoder::SetSource(
 }
 
 void VideoStreamEncoder::SetSink(EncoderSink* sink, bool rotation_applied) {
+  RTC_DCHECK_RUN_ON(main_queue_);
   video_source_sink_controller_.SetRotationApplied(rotation_applied);
   video_source_sink_controller_.PushSourceSinkSettings();
+
   encoder_queue_.PostTask([this, sink] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     sink_ = sink;
@@ -527,6 +532,7 @@ void VideoStreamEncoder::ConfigureEncoder(VideoEncoderConfig config,
 // the VideoBitrateAllocator and call OnEncoderConfigurationChanged with a
 // "soft" reconfiguration.
 void VideoStreamEncoder::ReconfigureEncoder() {
+  // Running on the encoder queue.
   RTC_DCHECK(pending_encoder_reconfiguration_);
 
   if (!encoder_selector_ &&
@@ -711,12 +717,18 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   for (const auto& stream : streams) {
     max_framerate = std::max(stream.max_framerate, max_framerate);
   }
-  if (max_framerate != video_source_sink_controller_.frame_rate_upper_limit() ||
-      alignment != video_source_sink_controller_.resolution_alignment()) {
-    video_source_sink_controller_.SetFrameRateUpperLimit(max_framerate);
-    video_source_sink_controller_.SetResolutionAlignment(alignment);
-    video_source_sink_controller_.PushSourceSinkSettings();
-  }
+
+  main_queue_->PostTask(
+      ToQueuedTask(task_safety_, [this, max_framerate, alignment]() {
+        RTC_DCHECK_RUN_ON(main_queue_);
+        if (max_framerate !=
+                video_source_sink_controller_.frame_rate_upper_limit() ||
+            alignment != video_source_sink_controller_.resolution_alignment()) {
+          video_source_sink_controller_.SetFrameRateUpperLimit(max_framerate);
+          video_source_sink_controller_.SetResolutionAlignment(alignment);
+          video_source_sink_controller_.PushSourceSinkSettings();
+        }
+      }));
 
   if (codec.maxBitrate == 0) {
     // max is one bit per pixel
@@ -891,14 +903,14 @@ void VideoStreamEncoder::OnFrame(const VideoFrame& video_frame) {
   VideoFrame incoming_frame = video_frame;
 
   // Local time in webrtc time base.
-  int64_t current_time_us = clock_->TimeInMicroseconds();
-  int64_t current_time_ms = current_time_us / rtc::kNumMicrosecsPerMillisec;
+  Timestamp now = clock_->CurrentTime();
+
   // In some cases, e.g., when the frame from decoder is fed to encoder,
   // the timestamp may be set to the future. As the encoding pipeline assumes
   // capture time to be less than present time, we should reset the capture
   // timestamps here. Otherwise there may be issues with RTP send stream.
-  if (incoming_frame.timestamp_us() > current_time_us)
-    incoming_frame.set_timestamp_us(current_time_us);
+  if (incoming_frame.timestamp_us() > now.us())
+    incoming_frame.set_timestamp_us(now.us());
 
   // Capture time may come from clock with an offset and drift from clock_.
   int64_t capture_ntp_time_ms;
@@ -907,7 +919,7 @@ void VideoStreamEncoder::OnFrame(const VideoFrame& video_frame) {
   } else if (video_frame.render_time_ms() != 0) {
     capture_ntp_time_ms = video_frame.render_time_ms() + delta_ntp_internal_ms_;
   } else {
-    capture_ntp_time_ms = current_time_ms + delta_ntp_internal_ms_;
+    capture_ntp_time_ms = now.ms() + delta_ntp_internal_ms_;
   }
   incoming_frame.set_ntp_time_ms(capture_ntp_time_ms);
 
@@ -931,14 +943,14 @@ void VideoStreamEncoder::OnFrame(const VideoFrame& video_frame) {
   }
 
   bool log_stats = false;
-  if (current_time_ms - last_frame_log_ms_ > kFrameLogIntervalMs) {
-    last_frame_log_ms_ = current_time_ms;
+  if (now.ms() - last_frame_log_ms_ > kFrameLogIntervalMs) {
+    last_frame_log_ms_ = now.ms();
     log_stats = true;
   }
 
   last_captured_timestamp_ = incoming_frame.ntp_time_ms();
 
-  int64_t post_time_us = rtc::TimeMicros();
+  int64_t post_time_us = clock_->CurrentTime().us();
   ++posted_frames_waiting_for_encode_;
 
   encoder_queue_.PostTask(
@@ -1586,7 +1598,8 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
     temporal_index = 0;
   }
 
-  RunPostEncode(image_copy, rtc::TimeMicros(), temporal_index, frame_size);
+  RunPostEncode(image_copy, clock_->CurrentTime().us(), temporal_index,
+                frame_size);
 
   if (result.error == Result::OK) {
     // In case of an internal encoder running on a separate thread, the
@@ -1726,7 +1739,8 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
   }
   if (video_suspension_changed && !video_is_suspended && pending_frame_ &&
       !DropDueToSize(pending_frame_->size())) {
-    int64_t pending_time_us = rtc::TimeMicros() - pending_frame_post_time_us_;
+    int64_t pending_time_us =
+        clock_->CurrentTime().us() - pending_frame_post_time_us_;
     if (pending_time_us < kPendingFrameTimeoutMs * 1000)
       EncodeVideoFrame(*pending_frame_, pending_frame_post_time_us_);
     pending_frame_.reset();
@@ -1769,11 +1783,15 @@ void VideoStreamEncoder::OnVideoSourceRestrictionsUpdated(
     rtc::scoped_refptr<Resource> reason,
     const VideoSourceRestrictions& unfiltered_restrictions) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
-  std::string resource_name = reason ? reason->Name() : "<null>";
-  RTC_LOG(INFO) << "Updating sink restrictions from " << resource_name << " to "
+  RTC_LOG(INFO) << "Updating sink restrictions from "
+                << (reason ? reason->Name() : std::string("<null>")) << " to "
                 << restrictions.ToString();
-  video_source_sink_controller_.SetRestrictions(std::move(restrictions));
-  video_source_sink_controller_.PushSourceSinkSettings();
+  main_queue_->PostTask(ToQueuedTask(
+      task_safety_, [this, restrictions = std::move(restrictions)]() {
+        RTC_DCHECK_RUN_ON(main_queue_);
+        video_source_sink_controller_.SetRestrictions(std::move(restrictions));
+        video_source_sink_controller_.PushSourceSinkSettings();
+      }));
 }
 
 void VideoStreamEncoder::RunPostEncode(const EncodedImage& encoded_image,
@@ -1794,9 +1812,9 @@ void VideoStreamEncoder::RunPostEncode(const EncodedImage& encoded_image,
   if (encoded_image.timing_.flags != VideoSendTiming::kInvalid) {
     encode_duration_us =
         // TODO(nisse): Maybe use capture_time_ms_ rather than encode_start_ms_?
-        rtc::kNumMicrosecsPerMillisec *
-        (encoded_image.timing_.encode_finish_ms -
-         encoded_image.timing_.encode_start_ms);
+        TimeDelta::Millis(encoded_image.timing_.encode_finish_ms -
+                          encoded_image.timing_.encode_start_ms)
+            .us();
   }
 
   // Run post encode tasks, such as overuse detection and frame rate/drop
@@ -2032,10 +2050,14 @@ void VideoStreamEncoder::CheckForAnimatedContent(
       RTC_LOG(LS_INFO) << "Removing resolution cap due to no consistent "
                           "animation detection.";
     }
-    video_source_sink_controller_.SetPixelsPerFrameUpperLimit(
-        should_cap_resolution ? absl::optional<size_t>(kMaxAnimationPixels)
-                              : absl::nullopt);
-    video_source_sink_controller_.PushSourceSinkSettings();
+    main_queue_->PostTask(ToQueuedTask(task_safety_, [this,
+                                                      should_cap_resolution]() {
+      RTC_DCHECK_RUN_ON(main_queue_);
+      video_source_sink_controller_.SetPixelsPerFrameUpperLimit(
+          should_cap_resolution ? absl::optional<size_t>(kMaxAnimationPixels)
+                                : absl::nullopt);
+      video_source_sink_controller_.PushSourceSinkSettings();
+    }));
   }
 }
 void VideoStreamEncoder::InjectAdaptationResource(

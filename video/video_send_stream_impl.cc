@@ -300,17 +300,6 @@ VideoSendStreamImpl::VideoSendStreamImpl(
 
   video_stream_encoder_->SetStartBitrate(
       bitrate_allocator_->GetStartBitrate(this));
-
-  // Only request rotation at the source when we positively know that the remote
-  // side doesn't support the rotation extension. This allows us to prepare the
-  // encoder in the expectation that rotation is supported - which is the common
-  // case.
-  bool rotation_applied = absl::c_none_of(
-      config_->rtp.extensions, [](const RtpExtension& extension) {
-        return extension.uri == RtpExtension::kVideoRotationUri;
-      });
-
-  video_stream_encoder_->SetSink(this, rotation_applied);
 }
 
 VideoSendStreamImpl::~VideoSendStreamImpl() {
@@ -323,6 +312,21 @@ VideoSendStreamImpl::~VideoSendStreamImpl() {
 
 void VideoSendStreamImpl::RegisterProcessThread(
     ProcessThread* module_process_thread) {
+  // Called on libjingle's worker thread (not worker_queue_), as part of the
+  // initialization steps. That's also the correct thread/queue for setting the
+  // state for |video_stream_encoder_|.
+
+  // Only request rotation at the source when we positively know that the remote
+  // side doesn't support the rotation extension. This allows us to prepare the
+  // encoder in the expectation that rotation is supported - which is the common
+  // case.
+  bool rotation_applied = absl::c_none_of(
+      config_->rtp.extensions, [](const RtpExtension& extension) {
+        return extension.uri == RtpExtension::kVideoRotationUri;
+      });
+
+  video_stream_encoder_->SetSink(this, rotation_applied);
+
   rtp_video_sender_->RegisterProcessThread(module_process_thread);
 }
 

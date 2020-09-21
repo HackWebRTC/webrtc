@@ -2483,27 +2483,13 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::RemoveSink(
 void WebRtcVideoChannel::WebRtcVideoSendStream::AddOrUpdateSink(
     rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
     const rtc::VideoSinkWants& wants) {
-  if (worker_thread_ == rtc::Thread::Current()) {
-    // AddOrUpdateSink is called on |worker_thread_| if this is the first
-    // registration of |sink|.
-    RTC_DCHECK_RUN_ON(&thread_checker_);
-    encoder_sink_ = sink;
-    source_->AddOrUpdateSink(encoder_sink_, wants);
-  } else {
-    // Subsequent calls to AddOrUpdateSink will happen on the encoder task
-    // queue.
-    invoker_.AsyncInvoke<void>(
-        RTC_FROM_HERE, worker_thread_, [this, sink, wants] {
-          RTC_DCHECK_RUN_ON(&thread_checker_);
-          // |sink| may be invalidated after this task was posted since
-          // RemoveSink is called on the worker thread.
-          bool encoder_sink_valid = (sink == encoder_sink_);
-          if (source_ && encoder_sink_valid) {
-            source_->AddOrUpdateSink(encoder_sink_, wants);
-          }
-        });
-  }
+  // AddOrUpdateSink is called on |worker_thread_| if this is the first
+  // registration of |sink|.
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  encoder_sink_ = sink;
+  source_->AddOrUpdateSink(encoder_sink_, wants);
 }
+
 std::vector<VideoSenderInfo>
 WebRtcVideoChannel::WebRtcVideoSendStream::GetPerLayerVideoSenderInfos(
     bool log_stats) {
