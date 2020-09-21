@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_CANCER_STICK_CASTLE_H_
-#define RTC_BASE_CANCER_STICK_CASTLE_H_
+#ifndef RTC_BASE_ROBO_CALLER_H_
+#define RTC_BASE_ROBO_CALLER_H_
 
 #include <utility>
 #include <vector>
@@ -19,17 +19,16 @@
 #include "rtc_base/untyped_function.h"
 
 namespace webrtc {
-namespace cancer_stick_castle_impl {
+namespace robo_caller_impl {
 
-class CancerStickCastleReceivers {
+class RoboCallerReceivers {
  public:
-  CancerStickCastleReceivers();
-  CancerStickCastleReceivers(const CancerStickCastleReceivers&) = delete;
-  CancerStickCastleReceivers& operator=(const CancerStickCastleReceivers&) =
-      delete;
-  CancerStickCastleReceivers(CancerStickCastleReceivers&&) = delete;
-  CancerStickCastleReceivers& operator=(CancerStickCastleReceivers&&) = delete;
-  ~CancerStickCastleReceivers();
+  RoboCallerReceivers();
+  RoboCallerReceivers(const RoboCallerReceivers&) = delete;
+  RoboCallerReceivers& operator=(const RoboCallerReceivers&) = delete;
+  RoboCallerReceivers(RoboCallerReceivers&&) = delete;
+  RoboCallerReceivers& operator=(RoboCallerReceivers&&) = delete;
+  ~RoboCallerReceivers();
 
   void AddReceiver(UntypedFunction&& f) {
     AddReceiverImpl(&f);
@@ -45,7 +44,7 @@ class CancerStickCastleReceivers {
   std::vector<UntypedFunction> receivers_;
 };
 
-}  // namespace cancer_stick_castle_impl
+}  // namespace robo_caller_impl
 
 // A collection of receivers (callable objects) that can be called all at once.
 // Optimized for minimal binary size.
@@ -58,13 +57,13 @@ class CancerStickCastleReceivers {
 // if they wish to stay in the CSC and another value if they wish to be removed.
 // It depends on what's convenient for the callers...
 template <typename... ArgT>
-class CancerStickCastle {
+class RoboCaller {
  public:
-  CancerStickCastle() = default;
-  CancerStickCastle(const CancerStickCastle&) = delete;
-  CancerStickCastle& operator=(const CancerStickCastle&) = delete;
-  CancerStickCastle(CancerStickCastle&&) = delete;
-  CancerStickCastle& operator=(CancerStickCastle&&) = delete;
+  RoboCaller() = default;
+  RoboCaller(const RoboCaller&) = delete;
+  RoboCaller& operator=(const RoboCaller&) = delete;
+  RoboCaller(RoboCaller&&) = delete;
+  RoboCaller& operator=(RoboCaller&&) = delete;
 
   // Adds a new receiver. The receiver (a callable object or a function pointer)
   // must be movable, but need not be copyable. Its call signature should be
@@ -83,9 +82,9 @@ class CancerStickCastle {
   }
 
  private:
-  cancer_stick_castle_impl::CancerStickCastleReceivers receivers_;
+  robo_caller_impl::RoboCallerReceivers receivers_;
 };
 
 }  // namespace webrtc
 
-#endif  // RTC_BASE_CANCER_STICK_CASTLE_H_
+#endif  // RTC_BASE_ROBO_CALLER_H_

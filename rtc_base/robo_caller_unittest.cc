@@ -12,21 +12,21 @@
 
 #include "api/function_view.h"
 #include "rtc_base/bind.h"
-#include "rtc_base/cancer_stick_castle.h"
+#include "rtc_base/robo_caller.h"
 #include "test/gtest.h"
 
 namespace webrtc {
 namespace {
 
-TEST(CancerStickCastle, NoRecieverSingleMessageTest) {
-  CancerStickCastle<std::string> c;
+TEST(RoboCaller, NoRecieverSingleMessageTest) {
+  RoboCaller<std::string> c;
 
   c.Send("message");
 }
 
-TEST(CancerStickCastle, MultipleParameterMessageTest) {
-  CancerStickCastle<const std::string&, std::string, std::string&&, int, int*,
-                    std::string&>
+TEST(RoboCaller, MultipleParameterMessageTest) {
+  RoboCaller<const std::string&, std::string, std::string&&, int, int*,
+             std::string&>
       c;
   std::string str = "messege";
   int i = 10;
@@ -34,14 +34,14 @@ TEST(CancerStickCastle, MultipleParameterMessageTest) {
   c.Send(str, "message1", "message0", 123, &i, str);
 }
 
-TEST(CancerStickCastle, NoParameterMessageTest) {
-  CancerStickCastle<> c;
+TEST(RoboCaller, NoParameterMessageTest) {
+  RoboCaller<> c;
 
   c.Send();
 }
 
-TEST(CancerStickCastle, ReferenceTest) {
-  CancerStickCastle<int&> c;
+TEST(RoboCaller, ReferenceTest) {
+  RoboCaller<int&> c;
   int index = 1;
 
   c.AddReceiver([](int& index) { index++; });
@@ -50,8 +50,8 @@ TEST(CancerStickCastle, ReferenceTest) {
   EXPECT_EQ(index, 2);
 }
 
-TEST(CancerStickCastle, ConstReferenceTest) {
-  CancerStickCastle<int&> c;
+TEST(RoboCaller, ConstReferenceTest) {
+  RoboCaller<int&> c;
   int i = 0;
   int index = 1;
 
@@ -61,8 +61,8 @@ TEST(CancerStickCastle, ConstReferenceTest) {
   EXPECT_EQ(i, 1);
 }
 
-TEST(CancerStickCastle, PointerTest) {
-  CancerStickCastle<int*> c;
+TEST(RoboCaller, PointerTest) {
+  RoboCaller<int*> c;
   int index = 1;
 
   c.AddReceiver([](int* index) { (*index)++; });
@@ -75,8 +75,8 @@ void PlusOne(int& a) {
   a++;
 }
 
-TEST(CancerStickCastle, FunctionPtrTest) {
-  CancerStickCastle<int&> c;
+TEST(RoboCaller, FunctionPtrTest) {
+  RoboCaller<int&> c;
   int index = 1;
 
   c.AddReceiver(PlusOne);
@@ -95,8 +95,8 @@ struct LargeNonTrivial {
   void operator()(int& a) { a = 1; }
 };
 
-TEST(CancerStickCastle, LargeNonTrivialTest) {
-  CancerStickCastle<int&> c;
+TEST(RoboCaller, LargeNonTrivialTest) {
+  RoboCaller<int&> c;
   int i = 0;
   static_assert(sizeof(LargeNonTrivial) > 16, "");
   c.AddReceiver(LargeNonTrivial());
@@ -112,8 +112,8 @@ struct LargeTrivial {
   void operator()(int& x) { x = 1; }
 };
 
-TEST(CancerStickCastle, LargeTrivial) {
-  CancerStickCastle<int&> c;
+TEST(RoboCaller, LargeTrivial) {
+  RoboCaller<int&> c;
   LargeTrivial lt;
   int i = 0;
 
@@ -131,8 +131,8 @@ struct OnlyNonTriviallyConstructible {
   void operator()(int& a) { a = 1; }
 };
 
-TEST(CancerStickCastle, OnlyNonTriviallyMoveConstructible) {
-  CancerStickCastle<int&> c;
+TEST(RoboCaller, OnlyNonTriviallyMoveConstructible) {
+  RoboCaller<int&> c;
   int i = 0;
 
   c.AddReceiver(OnlyNonTriviallyConstructible());
@@ -141,8 +141,8 @@ TEST(CancerStickCastle, OnlyNonTriviallyMoveConstructible) {
   EXPECT_EQ(i, 1);
 }
 
-TEST(CancerStickCastle, MultipleReceiverSendTest) {
-  CancerStickCastle<int&> c;
+TEST(RoboCaller, MultipleReceiverSendTest) {
+  RoboCaller<int&> c;
   std::function<void(int&)> plus = PlusOne;
   int index = 1;
 
