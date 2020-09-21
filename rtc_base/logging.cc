@@ -486,11 +486,6 @@ void Log(const LogArgType* fmt, ...) {
     }
   }
 
-  if (LogMessage::IsNoop(meta.meta.Severity())) {
-    va_end(args);
-    return;
-  }
-
   LogMessage log_message(meta.meta.File(), meta.meta.Line(),
                          meta.meta.Severity(), meta.err_ctx, meta.err);
   if (tag) {
