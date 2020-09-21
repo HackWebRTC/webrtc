@@ -4082,16 +4082,24 @@ RTCError PeerConnection::SetConfiguration(
   }
 
   if (modified_config.allow_codec_switching.has_value()) {
+    std::vector<cricket::VideoMediaChannel*> channels;
     for (const auto& transceiver : transceivers_) {
-      if (transceiver->media_type() != cricket::MEDIA_TYPE_VIDEO ||
-          !transceiver->internal()->channel()) {
+      if (transceiver->media_type() != cricket::MEDIA_TYPE_VIDEO)
         continue;
-      }
+
       auto* video_channel = static_cast<cricket::VideoChannel*>(
           transceiver->internal()->channel());
-      video_channel->media_channel()->SetVideoCodecSwitchingEnabled(
-          *modified_config.allow_codec_switching);
+      if (video_channel)
+        channels.push_back(video_channel->media_channel());
     }
+
+    worker_thread()->Invoke<void>(
+        RTC_FROM_HERE,
+        [channels = std::move(channels),
+         allow_codec_switching = *modified_config.allow_codec_switching]() {
+          for (auto* ch : channels)
+            ch->SetVideoCodecSwitchingEnabled(allow_codec_switching);
+        });
   }
 
   configuration_ = modified_config;

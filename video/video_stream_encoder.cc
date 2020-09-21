@@ -543,7 +543,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     conf.codec_name = encoder_switch_experiment_.to_codec;
     conf.param = encoder_switch_experiment_.to_param;
     conf.value = encoder_switch_experiment_.to_value;
-    settings_.encoder_switch_request_callback->RequestEncoderSwitch(conf);
+    QueueRequestEncoderSwitch(conf);
 
     encoder_switch_requested_ = true;
   }
@@ -1425,12 +1425,14 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
       if (settings_.encoder_switch_request_callback) {
         if (encoder_selector_) {
           if (auto encoder = encoder_selector_->OnEncoderBroken()) {
-            settings_.encoder_switch_request_callback->RequestEncoderSwitch(
-                *encoder);
+            QueueRequestEncoderSwitch(*encoder);
           }
         } else {
           encoder_failed_ = true;
-          settings_.encoder_switch_request_callback->RequestEncoderFallback();
+          main_queue_->PostTask(ToQueuedTask(task_safety_, [this]() {
+            RTC_DCHECK_RUN_ON(main_queue_);
+            settings_.encoder_switch_request_callback->RequestEncoderFallback();
+          }));
         }
       } else {
         RTC_LOG(LS_ERROR)
@@ -1690,8 +1692,7 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
     if (encoder_selector_) {
       if (auto encoder =
               encoder_selector_->OnAvailableBitrate(link_allocation)) {
-        settings_.encoder_switch_request_callback->RequestEncoderSwitch(
-            *encoder);
+        QueueRequestEncoderSwitch(*encoder);
       }
     } else if (encoder_switch_experiment_.IsBitrateBelowThreshold(
                    target_bitrate) &&
@@ -1700,7 +1701,7 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
       conf.codec_name = encoder_switch_experiment_.to_codec;
       conf.param = encoder_switch_experiment_.to_param;
       conf.value = encoder_switch_experiment_.to_value;
-      settings_.encoder_switch_request_callback->RequestEncoderSwitch(conf);
+      QueueRequestEncoderSwitch(conf);
 
       encoder_switch_requested_ = true;
     }
@@ -2060,6 +2061,25 @@ void VideoStreamEncoder::CheckForAnimatedContent(
     }));
   }
 }
+
+// RTC_RUN_ON(&encoder_queue_)
+void VideoStreamEncoder::QueueRequestEncoderSwitch(
+    const EncoderSwitchRequestCallback::Config& conf) {
+  main_queue_->PostTask(ToQueuedTask(task_safety_, [this, conf]() {
+    RTC_DCHECK_RUN_ON(main_queue_);
+    settings_.encoder_switch_request_callback->RequestEncoderSwitch(conf);
+  }));
+}
+
+// RTC_RUN_ON(&encoder_queue_)
+void VideoStreamEncoder::QueueRequestEncoderSwitch(
+    const webrtc::SdpVideoFormat& format) {
+  main_queue_->PostTask(ToQueuedTask(task_safety_, [this, format]() {
+    RTC_DCHECK_RUN_ON(main_queue_);
+    settings_.encoder_switch_request_callback->RequestEncoderSwitch(format);
+  }));
+}
+
 void VideoStreamEncoder::InjectAdaptationResource(
     rtc::scoped_refptr<Resource> resource,
     VideoAdaptationReason reason) {
