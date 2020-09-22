@@ -487,6 +487,12 @@ class LogMessage {
   // |streams_| collection is empty, the LogMessage will be considered a noop
   // LogMessage.
   static bool IsNoop(LoggingSeverity severity);
+  // Version of IsNoop that uses fewer instructions at the call site, since the
+  // caller doesn't have to pass an argument.
+  template <LoggingSeverity S>
+  RTC_NO_INLINE static bool IsNoop() {
+    return IsNoop(S);
+  }
 #else
   // Next methods do nothing; no one will call these functions.
   LogMessage(const char* file, int line, LoggingSeverity sev) {}
@@ -526,6 +532,10 @@ class LogMessage {
   inline static int GetMinLogSeverity() { return 0; }
   inline static void ConfigureLogging(const char* params) {}
   static constexpr bool IsNoop(LoggingSeverity severity) { return true; }
+  template <LoggingSeverity S>
+  static constexpr bool IsNoop() {
+    return IsNoop(S);
+  }
 #endif  // RTC_LOG_ENABLED()
 
  private:
@@ -598,16 +608,18 @@ class LogMessage {
 // Logging Helpers
 //////////////////////////////////////////////////////////////////////
 
-#define RTC_LOG_FILE_LINE(sev, file, line)            \
-  !rtc::LogMessage::IsNoop(sev) &&                    \
-      ::rtc::webrtc_logging_impl::LogCall() &         \
-          ::rtc::webrtc_logging_impl::LogStreamer<>() \
-              << ::rtc::webrtc_logging_impl::LogMetadata(file, line, sev)
+#define RTC_LOG_FILE_LINE(sev, file, line)        \
+  ::rtc::webrtc_logging_impl::LogCall() &         \
+      ::rtc::webrtc_logging_impl::LogStreamer<>() \
+          << ::rtc::webrtc_logging_impl::LogMetadata(file, line, sev)
 
-#define RTC_LOG(sev) RTC_LOG_FILE_LINE(::rtc::sev, __FILE__, __LINE__)
+#define RTC_LOG(sev)                        \
+  !rtc::LogMessage::IsNoop<::rtc::sev>() && \
+      RTC_LOG_FILE_LINE(::rtc::sev, __FILE__, __LINE__)
 
 // The _V version is for when a variable is passed in.
-#define RTC_LOG_V(sev) RTC_LOG_FILE_LINE(sev, __FILE__, __LINE__)
+#define RTC_LOG_V(sev) \
+  !rtc::LogMessage::IsNoop(sev) && RTC_LOG_FILE_LINE(sev, __FILE__, __LINE__)
 
 // The _F version prefixes the message with the current function name.
 #if (defined(__GNUC__) && !defined(NDEBUG)) || defined(WANT_PRETTY_LOG_F)
