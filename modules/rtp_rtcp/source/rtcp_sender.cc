@@ -37,7 +37,6 @@
 #include "modules/rtp_rtcp/source/time_util.h"
 #include "modules/rtp_rtcp/source/tmmbr_help.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/trace_event.h"
@@ -56,6 +55,10 @@ class PacketContainer : public rtcp::CompoundPacket {
   PacketContainer(Transport* transport, RtcEventLog* event_log)
       : transport_(transport), event_log_(event_log) {}
 
+  PacketContainer() = delete;
+  PacketContainer(const PacketContainer&) = delete;
+  PacketContainer& operator=(const PacketContainer&) = delete;
+
   size_t SendPackets(size_t max_payload_length) {
     size_t bytes_sent = 0;
     Build(max_payload_length, [&](rtc::ArrayView<const uint8_t> packet) {
@@ -72,8 +75,6 @@ class PacketContainer : public rtcp::CompoundPacket {
  private:
   Transport* transport_;
   RtcEventLog* const event_log_;
-
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(PacketContainer);
 };
 
 // Helper to put several RTCP packets into lower layer datagram RTCP packet.

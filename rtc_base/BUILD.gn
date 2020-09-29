@@ -599,7 +599,6 @@ rtc_library("rtc_numerics") {
   ]
   deps = [
     ":checks",
-    ":macromagic",
     ":rtc_base_approved",
   ]
   absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
@@ -1066,7 +1065,6 @@ rtc_library("testclient") {
   deps = [
     ":criticalsection",
     ":gunit_helpers",
-    ":macromagic",
     ":rtc_base",
     ":rtc_base_tests_utils",
     ":timeutils",
@@ -1150,7 +1148,6 @@ rtc_library("task_queue_for_test") {
   ]
   deps = [
     ":checks",
-    ":macromagic",
     ":rtc_base_approved",
     ":rtc_event",
     ":rtc_task_queue",
