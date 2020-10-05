@@ -97,9 +97,6 @@ max-line-length=80
 # Maximum number of lines in a module
 max-module-lines=1000
 
-# We use two spaces for indents, instead of the usual four spaces or tab.
-indent-string='  '
-
 
 [BASIC]
 
@@ -116,24 +113,6 @@ const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))$
 # Regular expression which should only match correct class names
 # (CapWords)
 class-rgx=[A-Z_][a-zA-Z0-9]+$
-
-# Regular expression which should only match correct function names
-# The Chromium standard is different than PEP-8, so we need to redefine this to
-# only allow:
-# - CapWords
-# - main: Standard for main function.
-function-rgx=([A-Z_][a-zA-Z0-9]{2,60}|main)$
-
-# Regular expression which should only match correct method names
-# The Chromium standard is different than PEP-8, so we need to redefine this to
-# only allow:
-# - CapWords, starting with a capital letter.  No underscores in function
-#   names.  Can also have a "_" prefix (private method) or a "test" prefix
-#   (unit test).
-# - Methods that look like __xyz__, which are used to do things like
-#   __init__, __del__, etc.
-# - setUp, tearDown: For unit tests.
-method-rgx=((_|test)?[A-Z][a-zA-Z0-9]{2,60}|__[a-z]+__|setUp|tearDown)$
 
 # Regular expression which should only match correct instance attribute names
 attr-rgx=[a-z_][a-z0-9_]{2,30}$
