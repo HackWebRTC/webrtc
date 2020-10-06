@@ -35,6 +35,9 @@ DesktopCaptureOptions DesktopCaptureOptions::CreateDefault() {
 #if defined(WEBRTC_USE_X11)
   result.set_x_display(SharedXDisplay::CreateDefault());
 #endif
+#if defined(WEBRTC_USE_PIPEWIRE)
+  result.set_xdp_base(XdgDesktopPortalBase::CreateDefault());
+#endif
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
   result.set_configuration_monitor(new DesktopConfigurationMonitor());
   result.set_full_screen_window_detector(
