@@ -10,7 +10,6 @@
 #ifndef MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURE_OPTIONS_H_
 #define MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURE_OPTIONS_H_
 
-#include "absl/types/optional.h"
 #include "api/scoped_refptr.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -23,10 +22,6 @@
 #endif
 
 #include "modules/desktop_capture/full_screen_window_detector.h"
-
-#if defined(WEBRTC_USE_PIPEWIRE)
-#include "modules/desktop_capture/linux/xdg_desktop_portal_base.h"
-#endif
 
 namespace webrtc {
 
@@ -136,68 +131,13 @@ class RTC_EXPORT DesktopCaptureOptions {
 #if defined(WEBRTC_USE_PIPEWIRE)
   bool allow_pipewire() const { return allow_pipewire_; }
   void set_allow_pipewire(bool allow) { allow_pipewire_ = allow; }
-
-  // Provides a way how to identify portal call for a sharing request
-  // made by the client. This allows to go through the preview dialog
-  // and to the web page itself with just one xdg-desktop-portal call.
-  // Client is supposed to:
-  // 1) Call start_request(id) to tell us an identificator for the current
-  // request
-  // 2) Call close_request(id) in case the preview dialog was cancelled
-  // or user picked a web page to be shared
-  // Note: In case the current request is not finalized, we will close it for
-  // safety reasons and client will need to ask the portal again
-  // This was done primarily for chromium support as there was no way how to
-  // identify a portal call made for the preview and later on continue with the
-  // same content on the web page itself.
-
-  void start_request(int32_t request_id) {
-    // In case we get a duplicit start_request call, which might happen when a
-    // browser requests both screen and window sharing, we don't want to do
-    // anything.
-    if (request_id == xdp_base_->CurrentConnectionId()) {
-      return;
-    }
-
-    // In case we are about to start a new request and the previous one is not
-    // finalized and not stream to the web page itself we will just close it.
-    if (!xdp_base_->IsConnectionStreamingOnWeb(absl::nullopt) &&
-        xdp_base_->IsConnectionInitialized(absl::nullopt)) {
-      xdp_base_->CloseConnection(absl::nullopt);
-    }
-
-    xdp_base_->SetCurrentConnectionId(request_id);
-  }
-
-  void close_request(int32_t request_id) {
-    xdp_base_->CloseConnection(request_id);
-    xdp_base_->SetCurrentConnectionId(absl::nullopt);
-  }
-
-  absl::optional<int32_t> request_id() {
-    // Reset request_id in case the connection is in final state, which means it
-    // is streaming content to the web page itself and nobody should be asking
-    // again for this ID.
-    if (xdp_base_->IsConnectionStreamingOnWeb(absl::nullopt)) {
-      xdp_base_->SetCurrentConnectionId(absl::nullopt);
-    }
-
-    return xdp_base_->CurrentConnectionId();
-  }
-
-  XdgDesktopPortalBase* xdp_base() const { return xdp_base_; }
-  void set_xdp_base(rtc::scoped_refptr<XdgDesktopPortalBase> xdp_base) {
-    xdp_base_ = std::move(xdp_base);
-  }
 #endif
 
  private:
 #if defined(WEBRTC_USE_X11)
   rtc::scoped_refptr<SharedXDisplay> x_display_;
 #endif
-#if defined(WEBRTC_USE_PIPEWIRE)
-  rtc::scoped_refptr<XdgDesktopPortalBase> xdp_base_;
-#endif
+
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
   rtc::scoped_refptr<DesktopConfigurationMonitor> configuration_monitor_;
   bool allow_iosurface_ = false;
