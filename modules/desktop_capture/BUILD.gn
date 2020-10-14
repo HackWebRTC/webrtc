@@ -76,19 +76,6 @@ if (rtc_include_tests) {
         "window_finder_unittest.cc",
       ]
       public_configs = [ ":x11_config" ]
-      if (rtc_use_pipewire) {
-        public_configs += [ ":pipewire_config" ]
-        configs += [
-          ":pipewire_config",
-          ":gio",
-        ]
-
-        if (rtc_link_pipewire) {
-          configs += [ ":pipewire" ]
-        } else {
-          deps += [ ":pipewire_stubs" ]
-        }
-      }
       if (is_win) {
         deps += [ "../../rtc_base:win32" ]
       }
@@ -145,19 +132,6 @@ if (rtc_include_tests) {
       }
       deps += [ ":desktop_capture_mock" ]
       public_configs = [ ":x11_config" ]
-      if (rtc_use_pipewire) {
-        public_configs += [ ":pipewire_config" ]
-        configs += [
-          ":pipewire_config",
-          ":gio",
-        ]
-
-        if (rtc_link_pipewire) {
-          configs += [ ":pipewire" ]
-        } else {
-          deps += [ ":pipewire_stubs" ]
-        }
-      }
     }
   }
 
@@ -522,7 +496,6 @@ rtc_library("desktop_capture_generic") {
   absl_deps = [
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",
-    "//third_party/abseil-cpp/absl/types:optional",
   ]
 
   if (rtc_use_x11_extensions) {
@@ -543,10 +516,10 @@ rtc_library("desktop_capture_generic") {
     sources += [
       "linux/base_capturer_pipewire.cc",
       "linux/base_capturer_pipewire.h",
-      "linux/pipewire_base.cc",
-      "linux/pipewire_base.h",
-      "linux/xdg_desktop_portal_base.cc",
-      "linux/xdg_desktop_portal_base.h",
+      "linux/screen_capturer_pipewire.cc",
+      "linux/screen_capturer_pipewire.h",
+      "linux/window_capturer_pipewire.cc",
+      "linux/window_capturer_pipewire.h",
     ]
 
     configs += [
