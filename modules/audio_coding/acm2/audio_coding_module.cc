@@ -99,6 +99,10 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
 
   ANAStats GetANAStats() const override;
 
+#ifndef DISABLE_RECORDER
+  void InjectRecorder(Recorder* recorder) override;
+#endif
+
  private:
   struct InputData {
     InputData() : buffer(kInitialInputDataBufferSize) {}
@@ -187,6 +191,11 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
       RTC_GUARDED_BY(callback_crit_sect_);
   ACMVADCallback* vad_callback_ RTC_GUARDED_BY(callback_crit_sect_);
 
+#ifndef DISABLE_RECORDER
+  rtc::CriticalSection recorder_lock_;
+  Recorder* recorder_ RTC_GUARDED_BY(recorder_lock_);
+#endif
+
   int codec_histogram_bins_log_[static_cast<size_t>(
       AudioEncoder::CodecType::kMaxLoggedAudioCodecTypes)];
   int number_of_consecutive_empty_packets_;
@@ -221,6 +230,9 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
       first_frame_(true),
       packetization_callback_(NULL),
       vad_callback_(NULL),
+#ifndef DISABLE_RECORDER
+      recorder_(nullptr),
+#endif
       codec_histogram_bins_log_(),
       number_of_consecutive_empty_packets_(0) {
   if (InitializeReceiverSafe() < 0) {
@@ -297,6 +309,19 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
     frame_type = encoded_info.speech ? AudioFrameType::kAudioFrameSpeech
                                      : AudioFrameType::kAudioFrameCN;
   }
+
+#ifndef DISABLE_RECORDER
+  {
+    rtc::CritScope lock(&recorder_lock_);
+    if (encode_buffer_.size() > 0 && recorder_) {
+      recorder_->AddAudioFrame(encoder_stack_->SampleRateHz(),
+                               encoder_stack_->NumChannels(),
+                               encode_buffer_.data(),
+                               encode_buffer_.size(),
+                               encoded_info.encoder_type);
+    }
+  }
+#endif
 
   {
     rtc::CritScope lock(&callback_crit_sect_);
@@ -610,6 +635,16 @@ ANAStats AudioCodingModuleImpl::GetANAStats() const {
   // If no encoder is set, return default stats.
   return ANAStats();
 }
+
+#ifndef DISABLE_RECORDER
+void AudioCodingModuleImpl::InjectRecorder(Recorder* recorder) {
+  char log_buf[16];
+  snprintf(log_buf, sizeof(log_buf) - 1, "%p", recorder);
+  RTC_LOG(LS_INFO) << "AudioCodingModuleImpl::InjectRecorder " << log_buf;
+  rtc::CritScope lock(&recorder_lock_);
+  recorder_ = recorder;
+}
+#endif
 
 }  // namespace
 

@@ -160,6 +160,10 @@ class ChannelReceive : public ChannelReceiveInterface {
   // Used for obtaining RTT for a receive-only channel.
   void SetAssociatedSendChannel(const ChannelSendInterface* channel) override;
 
+#ifndef DISABLE_RECORDER
+  void InjectRecorder(Recorder* recorder) override;
+#endif
+
  private:
   void ReceivePacket(const uint8_t* packet,
                      size_t packet_length,
@@ -728,6 +732,12 @@ void ChannelReceive::SetAssociatedSendChannel(
   rtc::CritScope lock(&assoc_send_channel_lock_);
   associated_send_channel_ = channel;
 }
+
+#ifndef DISABLE_RECORDER
+void ChannelReceive::InjectRecorder(Recorder* recorder) {
+  acm_receiver_.InjectRecorder(recorder);
+}
+#endif
 
 NetworkStatistics ChannelReceive::GetNetworkStatistics() const {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());

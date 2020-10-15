@@ -215,6 +215,9 @@ VideoSendStreamImpl::VideoSendStreamImpl(
           event_log,
           std::move(fec_controller),
           CreateFrameEncryptionConfig(config_))),
+#ifndef DISABLE_RECORDER
+      recorder_(nullptr),
+#endif
       weak_ptr_factory_(this) {
   video_stream_encoder->SetFecControllerOverride(rtp_video_sender_);
   RTC_DCHECK_RUN_ON(worker_queue_);
@@ -382,6 +385,24 @@ void VideoSendStreamImpl::Stop() {
   rtp_video_sender_->SetActive(false);
   StopVideoSendStream();
 }
+
+#ifndef DISABLE_RECORDER
+void VideoSendStreamImpl::InjectRecorder(Recorder* recorder) {
+  char log_buf[16];
+  snprintf(log_buf, sizeof(log_buf) - 1, "%p", recorder);
+  RTC_LOG(LS_INFO) << "VideoSendStream::InjectRecorder " << log_buf;
+  {
+    rtc::CritScope lock(&recorder_lock_);
+    recorder_ = recorder;
+  }
+
+  if (recorder) {
+    worker_queue_->PostTask([=] {
+      video_stream_encoder_->SendKeyFrame();
+    });
+  }
+}
+#endif
 
 void VideoSendStreamImpl::StopVideoSendStream() {
   bitrate_allocator_->RemoveObserver(this);
@@ -567,6 +588,15 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
   } else {
     enable_padding_task();
   }
+
+#ifndef DISABLE_RECORDER
+  {
+    rtc::CritScope lock(&recorder_lock_);
+    if (recorder_) {
+      recorder_->AddVideoFrame(&encoded_image, codec_specific_info->codecType);
+    }
+  }
+#endif
 
   EncodedImageCallback::Result result(EncodedImageCallback::Result::OK);
   result = rtp_video_sender_->OnEncodedImage(encoded_image, codec_specific_info,

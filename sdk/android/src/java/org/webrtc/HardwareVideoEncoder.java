@@ -563,7 +563,7 @@ class HardwareVideoEncoder implements VideoEncoder {
         }
 
         final ByteBuffer frameBuffer;
-        if (isKeyFrame && codecType == VideoCodecType.H264) {
+        if (isKeyFrame && (codecType == VideoCodecType.H264 || codecType == VideoCodecType.H265)) {
           Logging.d(TAG,
               "Prepending config frame of size " + configBuffer.capacity()
                   + " to output buffer with offset " + info.offset + ", size " + info.size);

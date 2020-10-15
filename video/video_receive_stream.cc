@@ -133,6 +133,10 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
     VideoCodec associated_codec = CreateDecoderVideoCodec(associated_decoder);
     associated_codec.codecType = kVideoCodecMultiplex;
     return associated_codec;
+#ifndef DISABLE_H265
+  } else if (codec.codecType == kVideoCodecH265) {
+    *(codec.H265()) = VideoEncoder::GetDefaultH265Settings();
+#endif
   }
 
   codec.width = 320;
@@ -223,6 +227,9 @@ VideoReceiveStream::VideoReceiveStream(
       max_wait_for_frame_ms_(KeyframeIntervalSettings::ParseFromFieldTrials()
                                  .MaxWaitForFrameMs()
                                  .value_or(kMaxWaitForFrameMs)),
+#ifndef DISABLE_RECORDER
+      recorder_(nullptr),
+#endif
       decode_queue_(task_queue_factory_->CreateTaskQueue(
           "DecodingQueue",
           TaskQueueFactory::Priority::HIGH)) {
@@ -647,6 +654,16 @@ void VideoReceiveStream::HandleEncodedFrame(
     std::unique_ptr<EncodedFrame> frame) {
   int64_t now_ms = clock_->TimeInMilliseconds();
 
+#ifndef DISABLE_RECORDER
+  {
+    rtc::CritScope lock(&recorder_lock_);
+    if (recorder_) {
+      EncodedImage image = frame->EncodedImage();
+      recorder_->AddVideoFrame(&image, frame->CodecSpecific()->codecType);
+    }
+  }
+#endif
+
   // Current OnPreDecode only cares about QP for VP8.
   int qp = -1;
   if (frame->CodecSpecific()->codecType == kVideoCodecVP8) {
@@ -784,6 +801,22 @@ void VideoReceiveStream::GenerateKeyFrame() {
     keyframe_generation_requested_ = true;
   });
 }
+
+#ifndef DISABLE_RECORDER
+void VideoReceiveStream::InjectRecorder(Recorder* recorder) {
+  char log_buf[16];
+  snprintf(log_buf, sizeof(log_buf) - 1, "%p", recorder);
+  RTC_LOG(LS_INFO) << "VideoReceiveStream::InjectRecorder " << log_buf;
+  {
+    rtc::CritScope lock(&recorder_lock_);
+    recorder_ = recorder;
+  }
+
+  if (recorder) {
+    GenerateKeyFrame();
+  }
+}
+#endif
 
 }  // namespace internal
 }  // namespace webrtc

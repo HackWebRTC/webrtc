@@ -13,6 +13,9 @@
 #include <algorithm>
 #include <memory>
 #include <utility>
+#include <chrono>
+#include <inttypes.h>
+#include <sys/stat.h>
 
 #include "audio/remix_resample.h"
 #include "audio/utility/audio_frame_operations.h"
@@ -81,12 +84,42 @@ int Resample(const AudioFrame& frame,
 
 AudioTransportImpl::AudioTransportImpl(AudioMixer* mixer,
                                        AudioProcessing* audio_processing)
-    : audio_processing_(audio_processing), mixer_(mixer) {
+    : audio_processing_(audio_processing), mixer_(mixer),
+      pre_deliver_callback_(nullptr),
+      pre_deliver_callback_opaque_(nullptr) {
   RTC_DCHECK(mixer);
   RTC_DCHECK(audio_processing);
+#if defined(AVCONF_DUMP_RECORD_AUDIO)
+  mkdir("/sdcard/avconf/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+  int64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now().time_since_epoch())
+                    .count();
+  char dump_name[1024];
+  snprintf(dump_name, 1023, "/sdcard/avconf/cap_%" PRId64 ".pcm", now);
+  dump_cap_ = fopen(dump_name, "wb");
+  snprintf(dump_name, 1023, "/sdcard/avconf/proc_%" PRId64 ".pcm", now);
+  dump_proc_ = fopen(dump_name, "wb");
+  snprintf(dump_name, 1023, "/sdcard/avconf/mixed_%" PRId64 ".pcm", now);
+  dump_mixed_ = fopen(dump_name, "wb");
+#endif
 }
 
-AudioTransportImpl::~AudioTransportImpl() {}
+AudioTransportImpl::~AudioTransportImpl() {
+#if defined(AVCONF_DUMP_RECORD_AUDIO)
+  if (dump_cap_) {
+    fclose(dump_cap_);
+    dump_cap_ = nullptr;
+  }
+  if (dump_proc_) {
+    fclose(dump_proc_);
+    dump_proc_ = nullptr;
+  }
+  if (dump_mixed_) {
+    fclose(dump_mixed_);
+    dump_mixed_ = nullptr;
+  }
+#endif
+}
 
 // Not used in Chromium. Process captured audio and distribute to all sending
 // streams, and try to do this at the lowest possible sample rate.
@@ -121,6 +154,14 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
     swap_stereo_channels = swap_stereo_channels_;
   }
 
+#if defined(AVCONF_DUMP_RECORD_AUDIO)
+  if (dump_cap_) {
+      fwrite(audio_data, 1,
+             number_of_channels * number_of_frames * bytes_per_sample,
+             dump_cap_);
+  }
+#endif
+
   std::unique_ptr<AudioFrame> audio_frame(new AudioFrame());
   InitializeCaptureFrame(sample_rate, send_sample_rate_hz, number_of_channels,
                          send_num_channels, audio_frame.get());
@@ -130,6 +171,15 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
   ProcessCaptureFrame(audio_delay_milliseconds, key_pressed,
                       swap_stereo_channels, audio_processing_,
                       audio_frame.get());
+
+#if defined(AVCONF_DUMP_RECORD_AUDIO)
+  if (dump_proc_) {
+      fwrite(audio_frame->data(), 1,
+             audio_frame->num_channels() * audio_frame->samples_per_channel() *
+                 bytes_per_sample,
+             dump_proc_);
+  }
+#endif
 
   // Typing detection (utilizes the APM/VAD decision). We let the VAD determine
   // if we're using this feature or not.
@@ -141,6 +191,23 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
       typing_detected = typing_detection_.Process(key_pressed, vad_active);
     }
   }
+
+  if (pre_deliver_callback_) {
+      pre_deliver_callback_(pre_deliver_callback_opaque_,
+                            audio_frame->mutable_data(),
+                            audio_frame->samples_per_channel(),
+                            bytes_per_sample, audio_frame->num_channels(),
+                            audio_frame->sample_rate_hz());
+  }
+
+#if defined(AVCONF_DUMP_RECORD_AUDIO)
+  if (dump_mixed_) {
+      fwrite(audio_frame->data(), 1,
+             audio_frame->num_channels() * audio_frame->samples_per_channel() *
+                 bytes_per_sample,
+             dump_mixed_);
+  }
+#endif
 
   // Copy frame and push to each sending stream. The copy is required since an
   // encoding task will be posted internally to each stream.
@@ -244,5 +311,14 @@ void AudioTransportImpl::SetStereoChannelSwapping(bool enable) {
 bool AudioTransportImpl::typing_noise_detected() const {
   rtc::CritScope lock(&capture_lock_);
   return typing_noise_detected_;
+}
+
+void AudioTransportImpl::AddPlaybackSource(AudioMixer::Source* source) {
+  mixer_->AddSource(source);
+}
+
+void AudioTransportImpl::RemovePlaybackSource(AudioMixer::Source* source) {
+  mixer_->RemoveSource(source);
+  delete source;
 }
 }  // namespace webrtc

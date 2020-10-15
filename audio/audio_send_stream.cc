@@ -470,6 +470,12 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
   return stats;
 }
 
+#ifndef DISABLE_RECORDER
+void AudioSendStream::InjectRecorder(Recorder* recorder) {
+  channel_send_->InjectRecorder(recorder);
+}
+#endif
+
 void AudioSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   // TODO(solenberg): Tests call this function on a network thread, libjingle
   // calls on the worker thread. We should move towards always using a network

@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.4.1)
+
+set(ENABLE_STATIC TRUE)
+
+add_subdirectory(abseil-cpp)
+add_subdirectory(boringssl)
+#add_subdirectory(jsoncpp)
+add_subdirectory(libevent)
+add_subdirectory(libsrtp)
+add_subdirectory(libvpx)
+add_subdirectory(libyuv)
+add_subdirectory(opus)
+add_subdirectory(pffft)
+add_subdirectory(protobuf)
+add_subdirectory(rnnoise)
+add_subdirectory(usrsctp)

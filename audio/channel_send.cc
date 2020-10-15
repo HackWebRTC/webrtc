@@ -142,6 +142,10 @@ class ChannelSend : public ChannelSendInterface,
   void SetFrameEncryptor(
       rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor) override;
 
+#ifndef DISABLE_RECORDER
+  void InjectRecorder(Recorder* recorder) override;
+#endif
+
  private:
   // From AudioPacketizationCallback in the ACM
   int32_t SendData(AudioFrameType frameType,
@@ -897,6 +901,12 @@ void ChannelSend::SetFrameEncryptor(
     frame_encryptor_ = std::move(frame_encryptor);
   });
 }
+
+#ifndef DISABLE_RECORDER
+void ChannelSend::InjectRecorder(Recorder* recorder) {
+  audio_coding_->InjectRecorder(recorder);
+}
+#endif
 
 void ChannelSend::OnReceivedRtt(int64_t rtt_ms) {
   // Invoke audio encoders OnReceivedRtt().

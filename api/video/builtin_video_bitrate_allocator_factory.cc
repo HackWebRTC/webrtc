@@ -41,6 +41,7 @@ class BuiltinVideoBitrateAllocatorFactory
       case kVideoCodecVP9:
         rate_allocator.reset(new SvcRateAllocator(codec));
         break;
+      // TODO: add an allocator here for H.265
       default:
         rate_allocator.reset(new DefaultVideoBitrateAllocator(codec));
     }

@@ -148,6 +148,41 @@ if (is_android) {
       "../../pc:libjingle_peerconnection",
       "../../rtc_base",
     ]
+
+    if (rtc_use_recorder) {
+      libs = [
+        "z",
+      ]
+      if (target_cpu == "arm") {
+        libs += [
+          "//sdk/libs/ffmpeg/lib/Android/armeabi-v7a/libswresample.a",
+          "//sdk/libs/ffmpeg/lib/Android/armeabi-v7a/libavformat.a",
+          "//sdk/libs/ffmpeg/lib/Android/armeabi-v7a/libavcodec.a",
+          "//sdk/libs/ffmpeg/lib/Android/armeabi-v7a/libavutil.a",
+        ]
+      } if (target_cpu == "arm64") {
+        libs += [
+          "//sdk/libs/ffmpeg/lib/Android/arm64-v8a/libswresample.a",
+          "//sdk/libs/ffmpeg/lib/Android/arm64-v8a/libavformat.a",
+          "//sdk/libs/ffmpeg/lib/Android/arm64-v8a/libavcodec.a",
+          "//sdk/libs/ffmpeg/lib/Android/arm64-v8a/libavutil.a",
+        ]
+      } if (target_cpu == "x86") {
+        libs += [
+          "//sdk/libs/ffmpeg/lib/Android/x86/libswresample.a",
+          "//sdk/libs/ffmpeg/lib/Android/x86/libavformat.a",
+          "//sdk/libs/ffmpeg/lib/Android/x86/libavcodec.a",
+          "//sdk/libs/ffmpeg/lib/Android/x86/libavutil.a",
+        ]
+      } if (target_cpu == "x64") {
+        libs += [
+          "//sdk/libs/ffmpeg/lib/Android/x86_64/libswresample.a",
+          "//sdk/libs/ffmpeg/lib/Android/x86_64/libavformat.a",
+          "//sdk/libs/ffmpeg/lib/Android/x86_64/libavcodec.a",
+          "//sdk/libs/ffmpeg/lib/Android/x86_64/libavutil.a",
+        ]
+      }
+    }
     output_extension = "so"
   }
 
@@ -852,6 +887,11 @@ if (current_os == "linux" || is_android) {
       "src/jni/jni_generator_helper.cc",
       "src/jni/jni_generator_helper.h",
     ]
+    if (rtc_use_bt_mixer) {
+      sources += [
+        "src/jni/audio_mixer_jni.cc",
+      ]
+    }
 
     public = [
       "native_api/jni/class_loader.h",
@@ -870,6 +910,11 @@ if (current_os == "linux" || is_android) {
       "//rtc_base:rtc_base_approved",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
+    if (rtc_use_bt_mixer) {
+      deps += [
+        "//modules/backing_track:backing_track",
+      ]
+    }
   }
 
   rtc_library("native_api_base") {

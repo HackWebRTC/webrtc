@@ -572,6 +572,14 @@ void PeerConnectionDelegateAdapter::OnRemoveTrack(
   _hasStartedRtcEventLog = NO;
 }
 
+- (int32_t)startRecorder:(int32_t)dir path:(NSString*)path {
+  return _peerConnection->StartRecorder(dir, [path UTF8String]);
+}
+
+- (int32_t)stopRecorder:(int32_t)dir {
+  return _peerConnection->StopRecorder(dir);
+}
+
 - (RTCRtpSender *)senderWithKind:(NSString *)kind
                         streamId:(NSString *)streamId {
   std::string nativeKind = [NSString stdStringForString:kind];

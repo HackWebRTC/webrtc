@@ -47,6 +47,10 @@ class FakeEncodedFrame : public AudioDecoder::EncodedAudioFrame {
     return original_payload_size_bytes <= 2;
   }
 
+  AudioEncoder::CodecType CodecType() override { return AudioEncoder::CodecType::kOther; }
+  int PayloadSize() { return 0; }
+  const uint8_t* PayloadData() { return nullptr; }
+
  private:
   AudioDecoder* const decoder_;
   const rtc::Buffer payload_;
