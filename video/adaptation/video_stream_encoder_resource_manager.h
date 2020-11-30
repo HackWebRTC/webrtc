@@ -121,9 +121,10 @@ class VideoStreamEncoderResourceManager
                    VideoAdaptationReason reason);
   void RemoveResource(rtc::scoped_refptr<Resource> resource);
   std::vector<AdaptationConstraint*> AdaptationConstraints() const;
-  // If true, the VideoStreamEncoder should eexecute its logic to maybe drop
-  // frames baseed on size and bitrate.
+  // If true, the VideoStreamEncoder should execute its logic to maybe drop
+  // frames based on size and bitrate.
   bool DropInitialFrames() const;
+  absl::optional<uint32_t> SingleActiveStreamPixels() const;
 
   // VideoSourceRestrictionsListener implementation.
   // Updates |video_source_restrictions_|.
@@ -181,6 +182,9 @@ class VideoStreamEncoderResourceManager
 
   DegradationPreference degradation_preference_ RTC_GUARDED_BY(encoder_queue_);
   VideoSourceRestrictions video_source_restrictions_
+      RTC_GUARDED_BY(encoder_queue_);
+
+  VideoAdaptationCounters current_adaptation_counters_
       RTC_GUARDED_BY(encoder_queue_);
 
   const BalancedDegradationSettings balanced_settings_;
