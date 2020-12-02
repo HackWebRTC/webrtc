@@ -523,10 +523,11 @@ TEST_F(RtcpSenderTest, SendXrWithMultipleDlrrSubBlocks) {
 }
 
 TEST_F(RtcpSenderTest, SendXrWithRrtr) {
-  auto rtcp_sender = CreateRtcpSender(GetDefaultConfig());
+  RtpRtcpInterface::Configuration config = GetDefaultConfig();
+  config.non_sender_rtt_measurement = true;
+  auto rtcp_sender = CreateRtcpSender(config);
   rtcp_sender->SetRTCPStatus(RtcpMode::kCompound);
   EXPECT_EQ(0, rtcp_sender->SetSendingStatus(feedback_state(), false));
-  rtcp_sender->SendRtcpXrReceiverReferenceTime(true);
   NtpTime ntp = TimeMicrosToNtp(clock_.TimeInMicroseconds());
   EXPECT_EQ(0, rtcp_sender->SendRTCP(feedback_state(), kRtcpReport));
   EXPECT_EQ(1, parser()->xr()->num_packets());
@@ -537,19 +538,21 @@ TEST_F(RtcpSenderTest, SendXrWithRrtr) {
 }
 
 TEST_F(RtcpSenderTest, TestNoXrRrtrSentIfSending) {
-  auto rtcp_sender = CreateRtcpSender(GetDefaultConfig());
+  RtpRtcpInterface::Configuration config = GetDefaultConfig();
+  config.non_sender_rtt_measurement = true;
+  auto rtcp_sender = CreateRtcpSender(config);
   rtcp_sender->SetRTCPStatus(RtcpMode::kCompound);
   EXPECT_EQ(0, rtcp_sender->SetSendingStatus(feedback_state(), true));
-  rtcp_sender->SendRtcpXrReceiverReferenceTime(true);
   EXPECT_EQ(0, rtcp_sender->SendRTCP(feedback_state(), kRtcpReport));
   EXPECT_EQ(0, parser()->xr()->num_packets());
 }
 
 TEST_F(RtcpSenderTest, TestNoXrRrtrSentIfNotEnabled) {
-  auto rtcp_sender = CreateRtcpSender(GetDefaultConfig());
+  RtpRtcpInterface::Configuration config = GetDefaultConfig();
+  config.non_sender_rtt_measurement = false;
+  auto rtcp_sender = CreateRtcpSender(config);
   rtcp_sender->SetRTCPStatus(RtcpMode::kCompound);
   EXPECT_EQ(0, rtcp_sender->SetSendingStatus(feedback_state(), false));
-  rtcp_sender->SendRtcpXrReceiverReferenceTime(false);
   EXPECT_EQ(0, rtcp_sender->SendRTCP(feedback_state(), kRtcpReport));
   EXPECT_EQ(0, parser()->xr()->num_packets());
 }

@@ -174,7 +174,7 @@ RTCPReceiver::RTCPReceiver(const RtpRtcpInterface::Configuration& config,
       // TODO(bugs.webrtc.org/10774): Remove fallback.
       remote_ssrc_(0),
       remote_sender_rtp_time_(0),
-      xr_rrtr_status_(false),
+      xr_rrtr_status_(config.non_sender_rtt_measurement),
       xr_rr_rtt_ms_(0),
       oldest_tmmbr_info_ms_(0),
       stats_callback_(config.rtcp_statistics_callback),
@@ -254,11 +254,6 @@ int32_t RTCPReceiver::RTT(uint32_t remote_ssrc,
     *max_rtt_ms = report_block_data->max_rtt_ms();
 
   return 0;
-}
-
-void RTCPReceiver::SetRtcpXrRrtrStatus(bool enable) {
-  MutexLock lock(&rtcp_receiver_lock_);
-  xr_rrtr_status_ = enable;
 }
 
 bool RTCPReceiver::GetAndResetXrRrRtt(int64_t* rtt_ms) {
