@@ -10,15 +10,16 @@
 
 #ifndef MODULES_DESKTOP_CAPTURE_LINUX_BASE_CAPTURER_PIPEWIRE_H_
 #define MODULES_DESKTOP_CAPTURE_LINUX_BASE_CAPTURER_PIPEWIRE_H_
-
 #include <gio/gio.h>
 #define typeof __typeof__
 #include <pipewire/pipewire.h>
 #include <spa/param/video/format-utils.h>
 
+#include "absl/types/optional.h"
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/synchronization/mutex.h"
 
 namespace webrtc {
 
@@ -32,10 +33,20 @@ class PipeWireType {
 
 class BaseCapturerPipeWire : public DesktopCapturer {
  public:
-  enum CaptureSourceType { Screen = 1, Window };
+  // Values are set based on source type property in
+  // xdg-desktop-portal/screencast
+  // https://github.com/flatpak/xdg-desktop-portal/blob/master/data/org.freedesktop.portal.ScreenCast.xml
+  enum class CaptureSourceType : uint32_t {
+    kScreen = 0b01,
+    kWindow = 0b10,
+    kAny = 0b11
+  };
 
   explicit BaseCapturerPipeWire(CaptureSourceType source_type);
   ~BaseCapturerPipeWire() override;
+
+  static std::unique_ptr<DesktopCapturer> CreateRawCapturer(
+      const DesktopCaptureOptions& options);
 
   // DesktopCapturer interface.
   void Start(Callback* delegate) override;
@@ -61,10 +72,11 @@ class BaseCapturerPipeWire : public DesktopCapturer {
 
   spa_video_info_raw* spa_video_format_ = nullptr;
 
+  guint32 pw_stream_node_id_ = 0;
   gint32 pw_fd_ = -1;
 
   CaptureSourceType capture_source_type_ =
-      BaseCapturerPipeWire::CaptureSourceType::Screen;
+      BaseCapturerPipeWire::CaptureSourceType::kScreen;
 
   // <-- end of PipeWire types
 
@@ -79,10 +91,12 @@ class BaseCapturerPipeWire : public DesktopCapturer {
   guint sources_request_signal_id_ = 0;
   guint start_request_signal_id_ = 0;
 
+  DesktopSize video_size_;
   DesktopSize desktop_size_ = {};
   DesktopCaptureOptions options_ = {};
 
-  uint8_t* current_frame_ = nullptr;
+  webrtc::Mutex current_frame_lock_;
+  std::unique_ptr<uint8_t[]> current_frame_;
   Callback* callback_ = nullptr;
 
   bool portal_init_failed_ = false;
