@@ -11,6 +11,11 @@ import("//build/config/ui.gni")
 import("//tools/generate_stubs/rules.gni")
 import("../../webrtc.gni")
 
+if (rtc_use_pipewire) {
+  assert(rtc_pipewire_version == "0.2" || rtc_pipewire_version == "0.3",
+         "Unsupported PipeWire version")
+}
+
 use_desktop_capture_differ_sse2 = current_cpu == "x86" || current_cpu == "x64"
 
 config("x11_config") {
@@ -206,22 +211,41 @@ if (is_linux || is_chromeos) {
       ]
     }
 
-    if (rtc_link_pipewire) {
+    if (rtc_pipewire_version == "0.3") {
       pkg_config("pipewire") {
-        packages = [ "libpipewire-0.2" ]
+        packages = [ "libpipewire-0.3" ]
+        if (!rtc_link_pipewire) {
+          ignore_libs = true
+        }
       }
     } else {
+      pkg_config("pipewire") {
+        packages = [ "libpipewire-0.2" ]
+        if (!rtc_link_pipewire) {
+          ignore_libs = true
+        }
+      }
+    }
+
+    if (!rtc_link_pipewire) {
       # When libpipewire is not directly linked, use stubs to allow for dlopening of
       # the binary.
       generate_stubs("pipewire_stubs") {
-        configs = [ "../../:common_config" ]
+        configs = [
+          "../../:common_config",
+          ":pipewire",
+        ]
         deps = [ "../../rtc_base" ]
         extra_header = "linux/pipewire_stub_header.fragment"
         logging_function = "RTC_LOG(LS_VERBOSE)"
         logging_include = "rtc_base/logging.h"
         output_name = "linux/pipewire_stubs"
         path_from_source = "modules/desktop_capture/linux"
-        sigs = [ "linux/pipewire.sigs" ]
+        if (rtc_pipewire_version == "0.3") {
+          sigs = [ "linux/pipewire03.sigs" ]
+        } else {
+          sigs = [ "linux/pipewire02.sigs" ]
+        }
       }
     }
 
@@ -526,11 +550,10 @@ rtc_library("desktop_capture_generic") {
     configs += [
       ":pipewire_config",
       ":gio",
+      ":pipewire",
     ]
 
-    if (rtc_link_pipewire) {
-      configs += [ ":pipewire" ]
-    } else {
+    if (!rtc_link_pipewire) {
       deps += [ ":pipewire_stubs" ]
     }
   }

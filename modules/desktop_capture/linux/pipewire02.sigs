@@ -26,6 +26,7 @@ void pw_remote_add_listener(pw_remote *remote, spa_hook *listener, const pw_remo
 int pw_remote_connect_fd(pw_remote *remote, int fd);
 void pw_remote_destroy(pw_remote *remote);
 pw_remote * pw_remote_new(pw_core *core, pw_properties *properties, size_t user_data_size);
+enum pw_remote_state pw_remote_get_state(pw_remote *remote, const char **error);
 
 // stream.h
 void pw_stream_add_listener(pw_stream *stream, spa_hook *listener, const pw_stream_events *events, void *data);

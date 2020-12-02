@@ -117,6 +117,10 @@ declare_args() {
   # Set this to link PipeWire directly instead of using the dlopen.
   rtc_link_pipewire = false
 
+  # Set this to use certain PipeWire version
+  # Currently we support PipeWire 0.2 (default) and PipeWire 0.3
+  rtc_pipewire_version = "0.2"
+
   # Enable to use the Mozilla internal settings.
   build_with_mozilla = false
 
