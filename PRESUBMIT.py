@@ -975,7 +975,8 @@ def CommonChecks(input_api, output_api):
             input_api,
             output_api,
             bot_allowlist=[
-                'chromium-webrtc-autoroll@webrtc-ci.iam.gserviceaccount.com'
+                'chromium-webrtc-autoroll@webrtc-ci.iam.gserviceaccount.com',
+                'webrtc-version-updater@webrtc-ci.iam.gserviceaccount.com',
             ]))
     results.extend(
         input_api.canned_checks.CheckChangeTodoHasOwner(
