@@ -97,8 +97,9 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
   configuration.rtcp_cname_callback = rtcp_cname_callback;
   configuration.local_media_ssrc = local_ssrc;
   configuration.non_sender_rtt_measurement = non_sender_rtt_measurement;
-  configuration.task_queue = TaskQueueBase::Current();
-  auto rtp_rtcp = std::make_unique<ModuleRtpRtcpImpl2>(configuration);
+
+  std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp =
+      ModuleRtpRtcpImpl2::Create(configuration);
   rtp_rtcp->SetRTCPStatus(RtcpMode::kCompound);
 
   return rtp_rtcp;
