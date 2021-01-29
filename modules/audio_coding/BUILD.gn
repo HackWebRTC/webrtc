@@ -1454,7 +1454,6 @@ if (rtc_include_tests) {
     defines = audio_coding_defines
 
     deps = audio_coding_deps + [
-             "//third_party/abseil-cpp/absl/strings",
              "../../api/audio:audio_frame_api",
              "../../rtc_base:checks",
              ":audio_coding",
@@ -1466,6 +1465,8 @@ if (rtc_include_tests) {
              "../../test:test_support",
              "//testing/gtest",
            ]
+
+    absl_deps = [ "//third_party/abseil-cpp/absl/strings" ]
   }
 
   audio_decoder_unittests_resources =
@@ -1657,8 +1658,6 @@ if (rtc_include_tests) {
     testonly = true
 
     deps = audio_coding_deps + [
-             "//third_party/abseil-cpp/absl/flags:flag",
-             "//third_party/abseil-cpp/absl/flags:parse",
              ":audio_coding",
              ":audio_encoder_cng",
              ":neteq_input_audio_tools",
@@ -1670,6 +1669,8 @@ if (rtc_include_tests) {
              "../../api/audio_codecs/isac:audio_encoder_isac",
              "../../api/audio_codecs/opus:audio_encoder_opus",
              "../../rtc_base:safe_conversions",
+             "//third_party/abseil-cpp/absl/flags:flag",
+             "//third_party/abseil-cpp/absl/flags:parse",
              "//third_party/abseil-cpp/absl/memory",
            ]
 
