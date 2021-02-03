@@ -1167,7 +1167,7 @@ int LibvpxVp9Encoder::Encode(const VideoFrame& input_image,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-void LibvpxVp9Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
+bool LibvpxVp9Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                                              absl::optional<int>* spatial_idx,
                                              const vpx_codec_cx_pkt& pkt,
                                              uint32_t timestamp) {
@@ -1287,10 +1287,15 @@ void LibvpxVp9Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
     auto it = absl::c_find_if(
         layer_frames_,
         [&](const ScalableVideoController::LayerFrameConfig& config) {
-          return config.SpatialId() == spatial_idx->value_or(0);
+          return config.SpatialId() == layer_id.spatial_layer_id;
         });
-    RTC_CHECK(it != layer_frames_.end())
-        << "Failed to find spatial id " << spatial_idx->value_or(0);
+    if (it == layer_frames_.end()) {
+      RTC_LOG(LS_ERROR) << "Encoder produced a frame for layer S"
+                        << layer_id.spatial_layer_id << "T"
+                        << layer_id.temporal_layer_id
+                        << " that wasn't requested.";
+      return false;
+    }
     codec_specific->generic_frame_info = svc_controller_->OnEncodeDone(*it);
     if (is_key_frame) {
       codec_specific->template_structure =
@@ -1306,6 +1311,7 @@ void LibvpxVp9Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
       }
     }
   }
+  return true;
 }
 
 void LibvpxVp9Encoder::FillReferenceIndices(const vpx_codec_cx_pkt& pkt,
@@ -1563,12 +1569,12 @@ vpx_svc_ref_frame_config_t LibvpxVp9Encoder::SetReferences(
   return ref_config;
 }
 
-int LibvpxVp9Encoder::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
+void LibvpxVp9Encoder::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   RTC_DCHECK_EQ(pkt->kind, VPX_CODEC_CX_FRAME_PKT);
 
   if (pkt->data.frame.sz == 0) {
     // Ignore dropped frame.
-    return WEBRTC_VIDEO_CODEC_OK;
+    return;
   }
 
   vpx_svc_layer_id_t layer_id = {0};
@@ -1599,8 +1605,12 @@ int LibvpxVp9Encoder::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
 
   codec_specific_ = {};
   absl::optional<int> spatial_index;
-  PopulateCodecSpecific(&codec_specific_, &spatial_index, *pkt,
-                        input_image_->timestamp());
+  if (!PopulateCodecSpecific(&codec_specific_, &spatial_index, *pkt,
+                             input_image_->timestamp())) {
+    // Drop the frame.
+    encoded_image_.set_size(0);
+    return;
+  }
   encoded_image_.SetSpatialIndex(spatial_index);
 
   UpdateReferenceBuffers(*pkt, pics_since_key_);
@@ -1620,8 +1630,6 @@ int LibvpxVp9Encoder::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
                                 num_active_spatial_layers_;
     DeliverBufferedFrame(end_of_picture);
   }
-
-  return WEBRTC_VIDEO_CODEC_OK;
 }
 
 void LibvpxVp9Encoder::DeliverBufferedFrame(bool end_of_picture) {
