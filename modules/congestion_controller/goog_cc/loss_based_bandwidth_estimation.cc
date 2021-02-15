@@ -22,6 +22,10 @@ namespace webrtc {
 namespace {
 const char kBweLossBasedControl[] = "WebRTC-Bwe-LossBasedControl";
 
+// Expecting RTCP feedback to be sent with roughly 1s intervals, a 5s gap
+// indicates a channel outage.
+constexpr TimeDelta kMaxRtcpFeedbackInterval = TimeDelta::Millis(5000);
+
 // Increase slower when RTT is high.
 double GetIncreaseFactor(const LossBasedControlConfig& config, TimeDelta rtt) {
   // Clamp the RTT
@@ -94,6 +98,8 @@ LossBasedControlConfig::LossBasedControlConfig(
                                       DataRate::KilobitsPerSec(0.5)),
       loss_bandwidth_balance_decrease("balance_decr",
                                       DataRate::KilobitsPerSec(4)),
+      loss_bandwidth_balance_reset("balance_reset",
+                                   DataRate::KilobitsPerSec(0.1)),
       loss_bandwidth_balance_exponent("exponent", 0.5),
       allow_resets("resets", false),
       decrease_interval("decr_intvl", TimeDelta::Millis(300)),
@@ -103,8 +109,8 @@ LossBasedControlConfig::LossBasedControlConfig(
        &increase_high_rtt, &decrease_factor, &loss_window, &loss_max_window,
        &acknowledged_rate_max_window, &increase_offset,
        &loss_bandwidth_balance_increase, &loss_bandwidth_balance_decrease,
-       &loss_bandwidth_balance_exponent, &allow_resets, &decrease_interval,
-       &loss_report_timeout},
+       &loss_bandwidth_balance_reset, &loss_bandwidth_balance_exponent,
+       &allow_resets, &decrease_interval, &loss_report_timeout},
       key_value_config->Lookup(kBweLossBasedControl));
 }
 LossBasedControlConfig::LossBasedControlConfig(const LossBasedControlConfig&) =
@@ -170,9 +176,14 @@ void LossBasedBandwidthEstimation::UpdateAcknowledgedBitrate(
   }
 }
 
-void LossBasedBandwidthEstimation::Update(Timestamp at_time,
-                                          DataRate min_bitrate,
-                                          TimeDelta last_round_trip_time) {
+DataRate LossBasedBandwidthEstimation::Update(Timestamp at_time,
+                                              DataRate min_bitrate,
+                                              DataRate wanted_bitrate,
+                                              TimeDelta last_round_trip_time) {
+  if (loss_based_bitrate_.IsZero()) {
+    loss_based_bitrate_ = wanted_bitrate;
+  }
+
   // Only increase if loss has been low for some time.
   const double loss_estimate_for_increase = average_loss_max_;
   // Avoid multiple decreases from averaging over one loss spike.
@@ -182,8 +193,15 @@ void LossBasedBandwidthEstimation::Update(Timestamp at_time,
       !has_decreased_since_last_loss_report_ &&
       (at_time - time_last_decrease_ >=
        last_round_trip_time + config_.decrease_interval);
+  // If packet lost reports are too old, dont increase bitrate.
+  const bool loss_report_valid =
+      at_time - last_loss_packet_report_ < 1.2 * kMaxRtcpFeedbackInterval;
 
-  if (loss_estimate_for_increase < loss_increase_threshold()) {
+  if (loss_report_valid && config_.allow_resets &&
+      loss_estimate_for_increase < loss_reset_threshold()) {
+    loss_based_bitrate_ = wanted_bitrate;
+  } else if (loss_report_valid &&
+             loss_estimate_for_increase < loss_increase_threshold()) {
     // Increase bitrate by RTT-adaptive ratio.
     DataRate new_increased_bitrate =
         min_bitrate * GetIncreaseFactor(config_, last_round_trip_time) +
@@ -209,12 +227,19 @@ void LossBasedBandwidthEstimation::Update(Timestamp at_time,
       loss_based_bitrate_ = new_decreased_bitrate;
     }
   }
+  return loss_based_bitrate_;
 }
 
-void LossBasedBandwidthEstimation::Reset(DataRate bitrate) {
+void LossBasedBandwidthEstimation::Initialize(DataRate bitrate) {
   loss_based_bitrate_ = bitrate;
   average_loss_ = 0;
   average_loss_max_ = 0;
+}
+
+double LossBasedBandwidthEstimation::loss_reset_threshold() const {
+  return LossFromBitrate(loss_based_bitrate_,
+                         config_.loss_bandwidth_balance_reset,
+                         config_.loss_bandwidth_balance_exponent);
 }
 
 double LossBasedBandwidthEstimation::loss_increase_threshold() const {
@@ -232,14 +257,4 @@ double LossBasedBandwidthEstimation::loss_decrease_threshold() const {
 DataRate LossBasedBandwidthEstimation::decreased_bitrate() const {
   return config_.decrease_factor * acknowledged_bitrate_max_;
 }
-
-void LossBasedBandwidthEstimation::MaybeReset(DataRate bitrate) {
-  if (config_.allow_resets)
-    Reset(bitrate);
-}
-
-void LossBasedBandwidthEstimation::SetInitialBitrate(DataRate bitrate) {
-  Reset(bitrate);
-}
-
 }  // namespace webrtc
