@@ -16,6 +16,7 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/system/rtc_export.h"
+#include "rtc_base/system_time.h"
 
 namespace rtc {
 
@@ -65,7 +66,6 @@ void SyncWithNtp(int64_t time_from_ntp_server_ms);
 
 // Returns the actual system time, even if a clock is set for testing.
 // Useful for timeouts while using a test clock, or for logging.
-int64_t SystemTimeNanos();
 int64_t SystemTimeMillis();
 
 // Returns the current time in milliseconds in 32 bits.
