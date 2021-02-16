@@ -67,9 +67,6 @@ class RTCPReceiver final {
   void SetRemoteSSRC(uint32_t ssrc);
   uint32_t RemoteSSRC() const;
 
-  // Get received cname.
-  int32_t CNAME(uint32_t remote_ssrc, char cname[RTCP_CNAME_SIZE]) const;
-
   // Get received NTP.
   bool NTP(uint32_t* received_ntp_secs,
            uint32_t* received_ntp_frac,
@@ -261,8 +258,6 @@ class RTCPReceiver final {
 
   ReportBlockMap received_report_blocks_ RTC_GUARDED_BY(rtcp_receiver_lock_);
   std::map<uint32_t, LastFirStatus> last_fir_
-      RTC_GUARDED_BY(rtcp_receiver_lock_);
-  std::map<uint32_t, std::string> received_cnames_
       RTC_GUARDED_BY(rtcp_receiver_lock_);
 
   // The last time we received an RTCP Report block for this module.
