@@ -157,7 +157,7 @@ API_CHANGE_MSG = """
 You seem to be changing native API header files. Please make sure that you:
   1. Make compatible changes that don't break existing clients. Usually
      this is done by keeping the existing method signatures unchanged.
-  2. Mark the old stuff as deprecated (see RTC_DEPRECATED macro).
+  2. Mark the old stuff as deprecated (use the ABSL_DEPRECATED macro).
   3. Create a timeline and plan for when the deprecated stuff will be
      removed. (The amount of time we give users to change their code
      should be informed by how much work it is for them. If they just
