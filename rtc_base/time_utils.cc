@@ -133,6 +133,10 @@ void SyncWithNtp(int64_t time_from_ntp_server_ms) {
   TimeHelper::SyncWithNtp(time_from_ntp_server_ms);
 }
 
+int64_t WinUwpSystemTimeNanos() {
+  return TimeHelper::TicksNs();
+}
+
 #endif  // defined(WINUWP)
 
 int64_t SystemTimeMillis() {

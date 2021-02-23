@@ -63,7 +63,7 @@ int64_t SystemTimeNanos() {
   ticks = kNumNanosecsPerSec * static_cast<int64_t>(ts.tv_sec) +
           static_cast<int64_t>(ts.tv_nsec);
 #elif defined(WINUWP)
-  ticks = TimeHelper::TicksNs();
+  ticks = WinUwpSystemTimeNanos();
 #elif defined(WEBRTC_WIN)
   static volatile LONG last_timegettime = 0;
   static volatile int64_t num_wrap_timegettime = 0;

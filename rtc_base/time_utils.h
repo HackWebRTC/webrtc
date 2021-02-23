@@ -62,6 +62,12 @@ RTC_EXPORT ClockInterface* GetClockForTesting();
 // Synchronizes the current clock based upon an NTP server's epoch in
 // milliseconds.
 void SyncWithNtp(int64_t time_from_ntp_server_ms);
+
+// Returns the current time in nanoseconds. The clock is synchonized with the
+// system wall clock time upon instatiation. It may also be synchronized using
+// the SyncWithNtp() function above. Please note that the clock will most likely
+// drift away from the system wall clock time as time goes by.
+int64_t WinUwpSystemTimeNanos();
 #endif  // defined(WINUWP)
 
 // Returns the actual system time, even if a clock is set for testing.
