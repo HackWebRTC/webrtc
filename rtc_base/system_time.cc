@@ -8,10 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// If WEBRTC_EXCLUDE_SYSTEM_TIME is set, an implementation of
-// rtc::SystemTimeNanos() must be provided externally.
-#ifndef WEBRTC_EXCLUDE_SYSTEM_TIME
-
 #include <stdint.h>
 
 #include <limits>
@@ -94,4 +90,3 @@ int64_t SystemTimeNanos() {
 }
 
 }  // namespace rtc
-#endif  // WEBRTC_EXCLUDE_SYSTEM_TIME

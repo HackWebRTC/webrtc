@@ -407,10 +407,6 @@ rtc_library("timeutils") {
     ":stringutils",
     "system:rtc_export",
   ]
-  if (rtc_exclude_system_time) {
-    defines = [ "WEBRTC_EXCLUDE_SYSTEM_TIME" ]
-  }
-
   libs = []
   if (is_win) {
     libs += [ "winmm.lib" ]

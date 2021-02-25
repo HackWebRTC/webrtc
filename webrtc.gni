@@ -63,7 +63,7 @@ declare_args() {
   # will tell the pre-processor to remove the default definition of the
   # SystemTimeNanos() which is defined in rtc_base/system_time.cc. In
   # that case a new implementation needs to be provided.
-  rtc_exclude_system_time = build_with_chromium
+  rtc_exclude_system_time = false
 
   # Setting this to false will require the API user to pass in their own
   # SSLCertificateVerifier to verify the certificates presented from a
