@@ -266,7 +266,10 @@ RTCPSender::FeedbackState ModuleRtpRtcpImpl2::GetFeedbackState() {
   if (rtcp_receiver_.NTP(&received_ntp_secs, &received_ntp_frac,
                          /*rtcp_arrival_time_secs=*/&state.last_rr_ntp_secs,
                          /*rtcp_arrival_time_frac=*/&state.last_rr_ntp_frac,
-                         /*rtcp_timestamp=*/nullptr)) {
+                         /*rtcp_timestamp=*/nullptr,
+                         /*remote_sender_packet_count=*/nullptr,
+                         /*remote_sender_octet_count=*/nullptr,
+                         /*remote_sender_reports_count=*/nullptr)) {
     state.remote_sr = ((received_ntp_secs & 0x0000ffff) << 16) +
                       ((received_ntp_frac & 0xffff0000) >> 16);
   }
@@ -444,7 +447,10 @@ int32_t ModuleRtpRtcpImpl2::RemoteNTP(uint32_t* received_ntpsecs,
                                       uint32_t* rtcp_timestamp) const {
   return rtcp_receiver_.NTP(received_ntpsecs, received_ntpfrac,
                             rtcp_arrival_time_secs, rtcp_arrival_time_frac,
-                            rtcp_timestamp)
+                            rtcp_timestamp,
+                            /*remote_sender_packet_count=*/nullptr,
+                            /*remote_sender_octet_count=*/nullptr,
+                            /*remote_sender_reports_count=*/nullptr)
              ? 0
              : -1;
 }
