@@ -312,8 +312,16 @@ RTCPSender::FeedbackState ModuleRtpRtcpImpl::GetFeedbackState() {
   }
   state.receiver = &rtcp_receiver_;
 
-  LastReceivedNTP(&state.last_rr_ntp_secs, &state.last_rr_ntp_frac,
-                  &state.remote_sr);
+  uint32_t received_ntp_secs = 0;
+  uint32_t received_ntp_frac = 0;
+  state.remote_sr = 0;
+  if (rtcp_receiver_.NTP(&received_ntp_secs, &received_ntp_frac,
+                         /*rtcp_arrival_time_secs=*/&state.last_rr_ntp_secs,
+                         /*rtcp_arrival_time_frac=*/&state.last_rr_ntp_frac,
+                         /*rtcp_timestamp=*/nullptr)) {
+    state.remote_sr = ((received_ntp_secs & 0x0000ffff) << 16) +
+                      ((received_ntp_frac & 0xffff0000) >> 16);
+  }
 
   state.last_xr_rtis = rtcp_receiver_.ConsumeReceivedXrReferenceTimeInfo();
 
@@ -700,23 +708,6 @@ void ModuleRtpRtcpImpl::OnReceivedRtcpReportBlocks(
       }
     }
   }
-}
-
-bool ModuleRtpRtcpImpl::LastReceivedNTP(
-    uint32_t* rtcp_arrival_time_secs,  // When we got the last report.
-    uint32_t* rtcp_arrival_time_frac,
-    uint32_t* remote_sr) const {
-  // Remote SR: NTP inside the last received (mid 16 bits from sec and frac).
-  uint32_t ntp_secs = 0;
-  uint32_t ntp_frac = 0;
-
-  if (!rtcp_receiver_.NTP(&ntp_secs, &ntp_frac, rtcp_arrival_time_secs,
-                          rtcp_arrival_time_frac, NULL)) {
-    return false;
-  }
-  *remote_sr =
-      ((ntp_secs & 0x0000ffff) << 16) + ((ntp_frac & 0xffff0000) >> 16);
-  return true;
 }
 
 void ModuleRtpRtcpImpl::set_rtt_ms(int64_t rtt_ms) {

@@ -240,10 +240,6 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
                                bool decodability_flag,
                                bool buffering_allowed) override;
 
-  bool LastReceivedNTP(uint32_t* NTPsecs,
-                       uint32_t* NTPfrac,
-                       uint32_t* remote_sr) const;
-
   RtpSendRates GetSendRates() const override;
 
   void OnReceivedNack(
