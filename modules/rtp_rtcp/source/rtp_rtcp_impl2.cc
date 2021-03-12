@@ -24,6 +24,7 @@
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "system_wrappers/include/ntp_time.h"
 
 #ifdef _WIN32
 // Disable warning C4355: 'this' : used in base member initializer list.
@@ -508,6 +509,26 @@ int32_t ModuleRtpRtcpImpl2::RemoteRTCPStat(
 std::vector<ReportBlockData> ModuleRtpRtcpImpl2::GetLatestReportBlockData()
     const {
   return rtcp_receiver_.GetLatestReportBlockData();
+}
+
+absl::optional<RtpRtcpInterface::SenderReportStats>
+ModuleRtpRtcpImpl2::GetSenderReportStats() const {
+  SenderReportStats stats;
+  uint32_t remote_timestamp_secs;
+  uint32_t remote_timestamp_frac;
+  uint32_t arrival_timestamp_secs;
+  uint32_t arrival_timestamp_frac;
+  if (rtcp_receiver_.NTP(&remote_timestamp_secs, &remote_timestamp_frac,
+                         &arrival_timestamp_secs, &arrival_timestamp_frac,
+                         /*rtcp_timestamp=*/nullptr, &stats.packets_sent,
+                         &stats.bytes_sent, &stats.reports_count)) {
+    stats.last_remote_timestamp.Set(remote_timestamp_secs,
+                                    remote_timestamp_frac);
+    stats.last_arrival_timestamp.Set(arrival_timestamp_secs,
+                                     arrival_timestamp_frac);
+    return stats;
+  }
+  return absl::nullopt;
 }
 
 // (REMB) Receiver Estimated Max Bitrate.
