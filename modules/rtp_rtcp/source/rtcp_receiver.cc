@@ -385,17 +385,6 @@ RTCPReceiver::ConsumeReceivedXrReferenceTimeInfo() {
   return last_xr_rtis;
 }
 
-// We can get multiple receive reports when we receive the report from a CE.
-int32_t RTCPReceiver::StatisticsReceived(
-    std::vector<RTCPReportBlock>* receive_blocks) const {
-  RTC_DCHECK(receive_blocks);
-  MutexLock lock(&rtcp_receiver_lock_);
-  for (const auto& reports_per_receiver : received_report_blocks_)
-    for (const auto& report : reports_per_receiver.second)
-      receive_blocks->push_back(report.second.report_block());
-  return 0;
-}
-
 std::vector<ReportBlockData> RTCPReceiver::GetLatestReportBlockData() const {
   std::vector<ReportBlockData> result;
   MutexLock lock(&rtcp_receiver_lock_);
