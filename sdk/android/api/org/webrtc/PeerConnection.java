@@ -867,6 +867,13 @@ public class PeerConnection {
   }
 
   /**
+   * Tells the PeerConnection that ICE should be restarted.
+   */
+  public void restartIce() {
+    nativeRestartIce();
+  }
+
+  /**
    * Enables/disables playout of received audio streams. Enabled by default.
    *
    * Note that even if playout is enabled, streams will only be played out if
@@ -1242,6 +1249,7 @@ public class PeerConnection {
   private native void nativeCreateAnswer(SdpObserver observer, MediaConstraints constraints);
   private native void nativeSetLocalDescription(SdpObserver observer, SessionDescription sdp);
   private native void nativeSetRemoteDescription(SdpObserver observer, SessionDescription sdp);
+  private native void nativeRestartIce();
   private native void nativeSetAudioPlayout(boolean playout);
   private native void nativeSetAudioRecording(boolean recording);
   private native boolean nativeSetBitrate(Integer min, Integer current, Integer max);
