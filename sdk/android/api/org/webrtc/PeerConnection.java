@@ -883,6 +883,10 @@ public class PeerConnection {
     nativeCreateAnswer(observer, constraints);
   }
 
+  public void setLocalDescription(SdpObserver observer) {
+    nativeSetLocalDescriptionAutomatically(observer);
+  }
+
   public void setLocalDescription(SdpObserver observer, SessionDescription sdp) {
     nativeSetLocalDescription(observer, sdp);
   }
@@ -1272,6 +1276,7 @@ public class PeerConnection {
   private native DataChannel nativeCreateDataChannel(String label, DataChannel.Init init);
   private native void nativeCreateOffer(SdpObserver observer, MediaConstraints constraints);
   private native void nativeCreateAnswer(SdpObserver observer, MediaConstraints constraints);
+  private native void nativeSetLocalDescriptionAutomatically(SdpObserver observer);
   private native void nativeSetLocalDescription(SdpObserver observer, SessionDescription sdp);
   private native void nativeSetRemoteDescription(SdpObserver observer, SessionDescription sdp);
   private native void nativeRestartIce();
