@@ -63,7 +63,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
                                 public RecoveredPacketReceiver,
                                 public RtpPacketSinkInterface,
                                 public KeyFrameRequestSender,
-                                public video_coding::OnCompleteFrameCallback,
+                                public OnCompleteFrameCallback,
                                 public OnDecryptedFrameCallback,
                                 public OnDecryptionStatusChangeCallback,
                                 public RtpVideoFrameReceiver {
@@ -86,7 +86,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
       // The KeyFrameRequestSender is optional; if not provided, key frame
       // requests are sent via the internal RtpRtcp module.
       KeyFrameRequestSender* keyframe_request_sender,
-      video_coding::OnCompleteFrameCallback* complete_frame_callback,
+      OnCompleteFrameCallback* complete_frame_callback,
       rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
       rtc::scoped_refptr<FrameTransformerInterface> frame_transformer);
   ~RtpVideoStreamReceiver2() override;
@@ -286,7 +286,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
 
   const std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp_;
 
-  video_coding::OnCompleteFrameCallback* complete_frame_callback_;
+  OnCompleteFrameCallback* complete_frame_callback_;
   KeyFrameRequestSender* const keyframe_request_sender_;
 
   RtcpFeedbackBuffer rtcp_feedback_buffer_;
@@ -308,7 +308,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   absl::optional<int64_t> video_structure_frame_id_
       RTC_GUARDED_BY(worker_task_checker_);
 
-  std::unique_ptr<video_coding::RtpFrameReferenceFinder> reference_finder_
+  std::unique_ptr<RtpFrameReferenceFinder> reference_finder_
       RTC_GUARDED_BY(worker_task_checker_);
   absl::optional<VideoCodecType> current_codec_
       RTC_GUARDED_BY(worker_task_checker_);
