@@ -794,7 +794,7 @@ void RtpVideoStreamReceiver::OnInsertedPacket(
       }
 
       const video_coding::PacketBuffer::Packet& last_packet = *packet;
-      OnAssembledFrame(std::make_unique<video_coding::RtpFrameObject>(
+      OnAssembledFrame(std::make_unique<RtpFrameObject>(
           first_packet->seq_num,                             //
           last_packet.seq_num,                               //
           last_packet.marker_bit,                            //
@@ -821,7 +821,7 @@ void RtpVideoStreamReceiver::OnInsertedPacket(
 }
 
 void RtpVideoStreamReceiver::OnAssembledFrame(
-    std::unique_ptr<video_coding::RtpFrameObject> frame) {
+    std::unique_ptr<RtpFrameObject> frame) {
   RTC_DCHECK_RUN_ON(&network_tc_);
   RTC_DCHECK(frame);
 
@@ -890,11 +890,10 @@ void RtpVideoStreamReceiver::OnAssembledFrame(
 }
 
 void RtpVideoStreamReceiver::OnCompleteFrame(
-    std::unique_ptr<video_coding::EncodedFrame> frame) {
+    std::unique_ptr<EncodedFrame> frame) {
   {
     MutexLock lock(&last_seq_num_mutex_);
-    video_coding::RtpFrameObject* rtp_frame =
-        static_cast<video_coding::RtpFrameObject*>(frame.get());
+    RtpFrameObject* rtp_frame = static_cast<RtpFrameObject*>(frame.get());
     last_seq_num_for_pic_id_[rtp_frame->Id()] = rtp_frame->last_seq_num();
   }
   last_completed_picture_id_ =
@@ -903,7 +902,7 @@ void RtpVideoStreamReceiver::OnCompleteFrame(
 }
 
 void RtpVideoStreamReceiver::OnDecryptedFrame(
-    std::unique_ptr<video_coding::RtpFrameObject> frame) {
+    std::unique_ptr<RtpFrameObject> frame) {
   MutexLock lock(&reference_finder_lock_);
   reference_finder_->ManageFrame(std::move(frame));
 }
@@ -970,7 +969,7 @@ void RtpVideoStreamReceiver::RemoveSecondarySink(
 }
 
 void RtpVideoStreamReceiver::ManageFrame(
-    std::unique_ptr<video_coding::RtpFrameObject> frame) {
+    std::unique_ptr<RtpFrameObject> frame) {
   MutexLock lock(&reference_finder_lock_);
   reference_finder_->ManageFrame(std::move(frame));
 }

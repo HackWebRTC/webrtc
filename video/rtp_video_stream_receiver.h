@@ -172,12 +172,10 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   void RequestPacketRetransmit(const std::vector<uint16_t>& sequence_numbers);
 
   // Implements OnCompleteFrameCallback.
-  void OnCompleteFrame(
-      std::unique_ptr<video_coding::EncodedFrame> frame) override;
+  void OnCompleteFrame(std::unique_ptr<EncodedFrame> frame) override;
 
   // Implements OnDecryptedFrameCallback.
-  void OnDecryptedFrame(
-      std::unique_ptr<video_coding::RtpFrameObject> frame) override;
+  void OnDecryptedFrame(std::unique_ptr<RtpFrameObject> frame) override;
 
   // Implements OnDecryptionStatusChangeCallback.
   void OnDecryptionStatusChange(
@@ -208,8 +206,7 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
 
  private:
   // Implements RtpVideoFrameReceiver.
-  void ManageFrame(
-      std::unique_ptr<video_coding::RtpFrameObject> frame) override;
+  void ManageFrame(std::unique_ptr<RtpFrameObject> frame) override;
 
   // Used for buffering RTCP feedback messages and sending them all together.
   // Note:
@@ -305,7 +302,7 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   ParseGenericDependenciesResult ParseGenericDependenciesExtension(
       const RtpPacketReceived& rtp_packet,
       RTPVideoHeader* video_header) RTC_RUN_ON(worker_task_checker_);
-  void OnAssembledFrame(std::unique_ptr<video_coding::RtpFrameObject> frame);
+  void OnAssembledFrame(std::unique_ptr<RtpFrameObject> frame);
 
   Clock* const clock_;
   // Ownership of this object lies with VideoReceiveStream, which owns |this|.
