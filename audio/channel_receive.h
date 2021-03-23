@@ -58,7 +58,7 @@ struct CallReceiveStatistics {
   int64_t payload_bytes_rcvd = 0;
   int64_t header_and_padding_bytes_rcvd = 0;
   int packetsReceived;
-  // The capture ntp time (in local timebase) of the first played out audio
+  // The capture NTP time (in local timebase) of the first played out audio
   // frame.
   int64_t capture_start_ntp_time_ms_;
   // The timestamp at which the last packet was received, i.e. the time of the
@@ -66,6 +66,8 @@ struct CallReceiveStatistics {
   // https://w3c.github.io/webrtc-stats/#dom-rtcinboundrtpstreamstats-lastpacketreceivedtimestamp
   absl::optional<int64_t> last_packet_received_timestamp_ms;
   // Remote outbound stats derived by the received RTCP sender reports.
+  // Note that the timestamps below correspond to the time elapsed since the
+  // Unix epoch.
   // https://w3c.github.io/webrtc-stats/#remoteoutboundrtpstats-dict*
   absl::optional<int64_t> last_sender_report_timestamp_ms;
   absl::optional<int64_t> last_sender_report_remote_timestamp_ms;
