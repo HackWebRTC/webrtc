@@ -265,10 +265,8 @@ class ChannelReceive : public ChannelReceiveInterface {
   AudioDeviceModule* _audioDeviceModulePtr;
   float _outputGain RTC_GUARDED_BY(volume_settings_mutex_);
 
-  // An associated send channel.
-  mutable Mutex assoc_send_channel_lock_;
   const ChannelSendInterface* associated_send_channel_
-      RTC_GUARDED_BY(assoc_send_channel_lock_);
+      RTC_GUARDED_BY(worker_thread_checker_);
 
   PacketRouter* packet_router_ = nullptr;
 
@@ -590,8 +588,8 @@ void ChannelReceive::SetReceiveCodecs(
   acm_receiver_.SetCodecs(codecs);
 }
 
-// May be called on either worker thread or network thread.
 void ChannelReceive::OnRtpPacket(const RtpPacketReceived& packet) {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   // TODO(bugs.webrtc.org/11993): Expect to be called exclusively on the
   // network thread. Once that's done, the same applies to
   // UpdatePlayoutTimestamp and
@@ -681,8 +679,8 @@ void ChannelReceive::ReceivePacket(const uint8_t* packet,
   }
 }
 
-// May be called on either worker thread or network thread.
 void ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   // TODO(bugs.webrtc.org/11993): Expect to be called exclusively on the
   // network thread.
 
@@ -842,7 +840,6 @@ void ChannelReceive::SetAssociatedSendChannel(
     const ChannelSendInterface* channel) {
   // TODO(bugs.webrtc.org/11993): Expect to be called on the network thread.
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  MutexLock lock(&assoc_send_channel_lock_);
   associated_send_channel_ = channel;
 }
 
@@ -1023,12 +1020,12 @@ int ChannelReceive::GetRtpTimestampRateHz() const {
 }
 
 int64_t ChannelReceive::GetRTT() const {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   std::vector<ReportBlockData> report_blocks =
       rtp_rtcp_->GetLatestReportBlockData();
 
   if (report_blocks.empty()) {
-    MutexLock lock(&assoc_send_channel_lock_);
-    // Tries to get RTT from an associated channel.
+    // Try fall back on an RTT from an associated channel.
     if (!associated_send_channel_) {
       return 0;
     }
