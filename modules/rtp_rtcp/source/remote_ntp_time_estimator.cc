@@ -15,6 +15,7 @@
 #include "modules/rtp_rtcp/source/time_util.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
+#include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
 
@@ -53,7 +54,7 @@ bool RemoteNtpTimeEstimator::UpdateRtcpTimestamp(int64_t rtt,
   // The extrapolator assumes the ntp time.
   int64_t receiver_arrival_time_ms =
       clock_->TimeInMilliseconds() + NtpOffsetMs();
-  int64_t sender_send_time_ms = Clock::NtpToMs(ntp_secs, ntp_frac);
+  int64_t sender_send_time_ms = NtpTime(ntp_secs, ntp_frac).ToMs();
   int64_t sender_arrival_time_ms = sender_send_time_ms + rtt / 2;
   int64_t remote_to_local_clocks_offset =
       receiver_arrival_time_ms - sender_arrival_time_ms;

@@ -45,11 +45,6 @@ class RTC_EXPORT Clock {
   // Retrieve an NTP absolute timestamp in milliseconds.
   virtual int64_t CurrentNtpInMilliseconds() = 0;
 
-  // Converts an NTP timestamp to a millisecond timestamp.
-  static int64_t NtpToMs(uint32_t seconds, uint32_t fractions) {
-    return NtpTime(seconds, fractions).ToMs();
-  }
-
   // Returns an instance of the real-time system clock implementation.
   static Clock* GetRealTimeClock();
 };
