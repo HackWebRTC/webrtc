@@ -21,7 +21,7 @@ CPPLINT_EXCEPTIONS = [
     'examples/objc',
     'media/base/stream_params.h',
     'media/base/video_common.h',
-    'media/sctp/sctp_transport.cc',
+    'media/sctp/usrsctp_transport.cc',
     'modules/audio_coding',
     'modules/audio_device',
     'modules/audio_processing',
