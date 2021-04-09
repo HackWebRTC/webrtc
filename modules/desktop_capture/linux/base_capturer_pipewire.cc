@@ -1026,6 +1026,23 @@ void BaseCapturerPipeWire::SourcesRequest() {
   // We don't want to allow selection of multiple sources.
   g_variant_builder_add(&builder, "{sv}", "multiple",
                         g_variant_new_boolean(false));
+
+  Scoped<GVariant> variant(
+      g_dbus_proxy_get_cached_property(proxy_, "AvailableCursorModes"));
+  if (variant.get()) {
+    uint32_t modes = 0;
+    g_variant_get(variant.get(), "u", &modes);
+    // Request mouse cursor to be embedded as part of the stream, otherwise it
+    // is hidden by default. Make request only if this mode is advertised by
+    // the portal implementation.
+    if (modes &
+        static_cast<uint32_t>(BaseCapturerPipeWire::CursorMode::kEmbedded)) {
+      g_variant_builder_add(&builder, "{sv}", "cursor_mode",
+                            g_variant_new_uint32(static_cast<uint32_t>(
+                                BaseCapturerPipeWire::CursorMode::kEmbedded)));
+    }
+  }
+
   variant_string = g_strdup_printf("webrtc%d", g_random_int_range(0, G_MAXINT));
   g_variant_builder_add(&builder, "{sv}", "handle_token",
                         g_variant_new_string(variant_string.get()));

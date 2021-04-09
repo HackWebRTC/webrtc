@@ -47,6 +47,12 @@ class BaseCapturerPipeWire : public DesktopCapturer {
     kAny = 0b11
   };
 
+  enum class CursorMode : uint32_t {
+    kHidden = 0b01,
+    kEmbedded = 0b10,
+    kMetadata = 0b100
+  };
+
   explicit BaseCapturerPipeWire(CaptureSourceType source_type);
   ~BaseCapturerPipeWire() override;
 
