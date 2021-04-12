@@ -250,7 +250,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
                                             clock_,
                                             &rtcp_feedback_buffer_,
                                             &rtcp_feedback_buffer_)),
-      packet_buffer_(clock_, kPacketBufferStartSize, PacketBufferMaxSize()),
+      packet_buffer_(kPacketBufferStartSize, PacketBufferMaxSize()),
       has_received_frame_(false),
       frames_decryptable_(false),
       absolute_capture_time_receiver_(clock) {
@@ -353,11 +353,11 @@ absl::optional<Syncable::Info> RtpVideoStreamReceiver2::GetSyncInfo() const {
     return absl::nullopt;
   }
 
-  if (!last_received_rtp_timestamp_ || !last_received_rtp_system_time_ms_) {
+  if (!last_received_rtp_timestamp_ || !last_received_rtp_system_time_) {
     return absl::nullopt;
   }
   info.latest_received_capture_timestamp = *last_received_rtp_timestamp_;
-  info.latest_receive_time_ms = *last_received_rtp_system_time_ms_;
+  info.latest_receive_time_ms = last_received_rtp_system_time_->ms();
 
   // Leaves info.current_delay_ms uninitialized.
   return info;
@@ -511,6 +511,12 @@ void RtpVideoStreamReceiver2::OnReceivedPayloadData(
 
   ParseGenericDependenciesResult generic_descriptor_state =
       ParseGenericDependenciesExtension(rtp_packet, &video_header);
+
+  if (!rtp_packet.recovered()) {
+    UpdatePacketReceiveTimestamps(
+        rtp_packet, video_header.frame_type == VideoFrameType::kVideoFrameKey);
+  }
+
   if (generic_descriptor_state == kDropPacket)
     return;
 
@@ -637,34 +643,6 @@ void RtpVideoStreamReceiver2::OnRtpPacket(const RtpPacketReceived& packet) {
 
   if (!receiving_) {
     return;
-  }
-
-  if (!packet.recovered()) {
-    // TODO(nisse): Exclude out-of-order packets?
-    int64_t now_ms = clock_->TimeInMilliseconds();
-
-    last_received_rtp_timestamp_ = packet.Timestamp();
-    last_received_rtp_system_time_ms_ = now_ms;
-
-    // Periodically log the RTP header of incoming packets.
-    if (now_ms - last_packet_log_ms_ > kPacketLogIntervalMs) {
-      rtc::StringBuilder ss;
-      ss << "Packet received on SSRC: " << packet.Ssrc()
-         << " with payload type: " << static_cast<int>(packet.PayloadType())
-         << ", timestamp: " << packet.Timestamp()
-         << ", sequence number: " << packet.SequenceNumber()
-         << ", arrival time: " << packet.arrival_time_ms();
-      int32_t time_offset;
-      if (packet.GetExtension<TransmissionOffset>(&time_offset)) {
-        ss << ", toffset: " << time_offset;
-      }
-      uint32_t send_time;
-      if (packet.GetExtension<AbsoluteSendTime>(&send_time)) {
-        ss << ", abs send time: " << send_time;
-      }
-      RTC_LOG(LS_INFO) << ss.str();
-      last_packet_log_ms_ = now_ms;
-    }
   }
 
   ReceivePacket(packet);
@@ -915,12 +893,20 @@ void RtpVideoStreamReceiver2::UpdateRtt(int64_t max_rtt_ms) {
 
 absl::optional<int64_t> RtpVideoStreamReceiver2::LastReceivedPacketMs() const {
   RTC_DCHECK_RUN_ON(&worker_task_checker_);
-  return last_received_rtp_system_time_ms_;
+  if (last_received_rtp_system_time_) {
+    return absl::optional<int64_t>(last_received_rtp_system_time_->ms());
+  }
+  return absl::nullopt;
 }
 
 absl::optional<int64_t> RtpVideoStreamReceiver2::LastReceivedKeyframePacketMs()
     const {
-  return packet_buffer_.LastReceivedKeyframePacketMs();
+  RTC_DCHECK_RUN_ON(&worker_task_checker_);
+  if (last_received_keyframe_rtp_system_time_) {
+    return absl::optional<int64_t>(
+        last_received_keyframe_rtp_system_time_->ms());
+  }
+  return absl::nullopt;
 }
 
 void RtpVideoStreamReceiver2::ManageFrame(
@@ -1135,6 +1121,37 @@ void RtpVideoStreamReceiver2::InsertSpsPpsIntoTracker(uint8_t payload_type) {
 
   tracker_.InsertSpsPpsNalus(sprop_decoder.sps_nalu(),
                              sprop_decoder.pps_nalu());
+}
+
+void RtpVideoStreamReceiver2::UpdatePacketReceiveTimestamps(
+    const RtpPacketReceived& packet,
+    bool is_keyframe) {
+  Timestamp now = clock_->CurrentTime();
+  if (is_keyframe) {
+    last_received_keyframe_rtp_system_time_ = now;
+  }
+  last_received_rtp_system_time_ = now;
+  last_received_rtp_timestamp_ = packet.Timestamp();
+
+  // Periodically log the RTP header of incoming packets.
+  if (now.ms() - last_packet_log_ms_ > kPacketLogIntervalMs) {
+    rtc::StringBuilder ss;
+    ss << "Packet received on SSRC: " << packet.Ssrc()
+       << " with payload type: " << static_cast<int>(packet.PayloadType())
+       << ", timestamp: " << packet.Timestamp()
+       << ", sequence number: " << packet.SequenceNumber()
+       << ", arrival time: " << packet.arrival_time_ms();
+    int32_t time_offset;
+    if (packet.GetExtension<TransmissionOffset>(&time_offset)) {
+      ss << ", toffset: " << time_offset;
+    }
+    uint32_t send_time;
+    if (packet.GetExtension<AbsoluteSendTime>(&send_time)) {
+      ss << ", abs send time: " << send_time;
+    }
+    RTC_LOG(LS_INFO) << ss.str();
+    last_packet_log_ms_ = now.ms();
+  }
 }
 
 }  // namespace webrtc
