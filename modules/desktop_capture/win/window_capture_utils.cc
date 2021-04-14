@@ -27,12 +27,16 @@ namespace webrtc {
 namespace {
 
 struct GetWindowListParams {
-  GetWindowListParams(int flags, DesktopCapturer::SourceList* result)
-      : ignoreUntitled(flags & GetWindowListFlags::kIgnoreUntitled),
-        ignoreUnresponsive(flags & GetWindowListFlags::kIgnoreUnresponsive),
+  GetWindowListParams(int flags,
+                      LONG ex_style_filters,
+                      DesktopCapturer::SourceList* result)
+      : ignore_untitled(flags & GetWindowListFlags::kIgnoreUntitled),
+        ignore_unresponsive(flags & GetWindowListFlags::kIgnoreUnresponsive),
+        ex_style_filters(ex_style_filters),
         result(result) {}
-  const bool ignoreUntitled;
-  const bool ignoreUnresponsive;
+  const bool ignore_untitled;
+  const bool ignore_unresponsive;
+  const LONG ex_style_filters;
   DesktopCapturer::SourceList* const result;
 };
 
@@ -67,7 +71,13 @@ BOOL CALLBACK GetWindowListHandler(HWND hwnd, LPARAM param) {
     return TRUE;
   }
 
-  if (params->ignoreUnresponsive && !IsWindowResponding(hwnd)) {
+  // Filter out windows that match the extended styles the caller has specified,
+  // e.g. WS_EX_TOOLWINDOW for capturers that don't support overlay windows.
+  if (exstyle & params->ex_style_filters) {
+    return TRUE;
+  }
+
+  if (params->ignore_unresponsive && !IsWindowResponding(hwnd)) {
     return TRUE;
   }
 
@@ -79,7 +89,7 @@ BOOL CALLBACK GetWindowListHandler(HWND hwnd, LPARAM param) {
   // pump is waiting on this thread. If we've filtered out unresponsive
   // windows, this is not a concern, but otherwise we need to check if we can
   // safely make blocking calls.
-  if (params->ignoreUnresponsive || CanSafelyMakeBlockingCalls(hwnd)) {
+  if (params->ignore_unresponsive || CanSafelyMakeBlockingCalls(hwnd)) {
     const size_t kTitleLength = 500;
     WCHAR window_title[kTitleLength] = L"";
     if (GetWindowTextLength(hwnd) != 0 &&
@@ -89,7 +99,7 @@ BOOL CALLBACK GetWindowListHandler(HWND hwnd, LPARAM param) {
   }
 
   // Skip windows when we failed to convert the title or it is empty.
-  if (params->ignoreUntitled && window.title.empty())
+  if (params->ignore_untitled && window.title.empty())
     return TRUE;
 
   // Capture the window class name, to allow specific window classes to be
@@ -271,8 +281,10 @@ bool IsWindowResponding(HWND window) {
                             nullptr);
 }
 
-bool GetWindowList(int flags, DesktopCapturer::SourceList* windows) {
-  GetWindowListParams params(flags, windows);
+bool GetWindowList(int flags,
+                   DesktopCapturer::SourceList* windows,
+                   LONG ex_style_filters) {
+  GetWindowListParams params(flags, ex_style_filters, windows);
   return ::EnumWindows(&GetWindowListHandler,
                        reinterpret_cast<LPARAM>(&params)) != 0;
 }
@@ -432,10 +444,11 @@ bool WindowCaptureHelperWin::IsWindowCloaked(HWND hwnd) {
 }
 
 bool WindowCaptureHelperWin::EnumerateCapturableWindows(
-    DesktopCapturer::SourceList* results) {
+    DesktopCapturer::SourceList* results,
+    LONG ex_style_filters) {
   if (!webrtc::GetWindowList((GetWindowListFlags::kIgnoreUntitled |
                               GetWindowListFlags::kIgnoreUnresponsive),
-                             results)) {
+                             results, ex_style_filters)) {
     return false;
   }
 
