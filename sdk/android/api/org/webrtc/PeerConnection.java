@@ -514,7 +514,6 @@ public class PeerConnection {
     public boolean disableIpv6;
     public boolean enableDscp;
     public boolean enableCpuOveruseDetection;
-    public boolean enableRtpDataChannel;
     public boolean suspendBelowMinBitrate;
     @Nullable public Integer screencastMinBitrate;
     @Nullable public Boolean combinedAudioVideoBwe;
@@ -595,7 +594,6 @@ public class PeerConnection {
       disableIpv6 = false;
       enableDscp = false;
       enableCpuOveruseDetection = true;
-      enableRtpDataChannel = false;
       suspendBelowMinBitrate = false;
       screencastMinBitrate = null;
       combinedAudioVideoBwe = null;
@@ -766,11 +764,6 @@ public class PeerConnection {
     @CalledByNative("RTCConfiguration")
     boolean getEnableCpuOveruseDetection() {
       return enableCpuOveruseDetection;
-    }
-
-    @CalledByNative("RTCConfiguration")
-    boolean getEnableRtpDataChannel() {
-      return enableRtpDataChannel;
     }
 
     @CalledByNative("RTCConfiguration")
