@@ -294,7 +294,8 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   const std::unique_ptr<NackModule2> nack_module_;
   std::unique_ptr<LossNotificationController> loss_notification_controller_;
 
-  video_coding::PacketBuffer packet_buffer_;
+  video_coding::PacketBuffer packet_buffer_
+      RTC_GUARDED_BY(worker_task_checker_);
   UniqueTimestampCounter frame_counter_ RTC_GUARDED_BY(worker_task_checker_);
   SeqNumUnwrapper<uint16_t> frame_id_unwrapper_
       RTC_GUARDED_BY(worker_task_checker_);

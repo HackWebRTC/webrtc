@@ -364,6 +364,7 @@ void RtpVideoStreamReceiver::AddReceiveCodec(
     bool raw_payload) {
   if (codec_params.count(cricket::kH264FmtpSpsPpsIdrInKeyframe) ||
       field_trial::IsEnabled("WebRTC-SpsPpsIdrIsH264Keyframe")) {
+    MutexLock lock(&packet_buffer_lock_);
     packet_buffer_.ForceSpsPpsIdrIsH264Keyframe();
   }
   payload_type_map_.emplace(
@@ -644,7 +645,12 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
 
   rtcp_feedback_buffer_.SendBufferedRtcpFeedback();
   frame_counter_.Add(packet->timestamp);
-  OnInsertedPacket(packet_buffer_.InsertPacket(std::move(packet)));
+  video_coding::PacketBuffer::InsertResult insert_result;
+  {
+    MutexLock lock(&packet_buffer_lock_);
+    insert_result = packet_buffer_.InsertPacket(std::move(packet));
+  }
+  OnInsertedPacket(std::move(insert_result));
 }
 
 void RtpVideoStreamReceiver::OnRecoveredPacket(const uint8_t* rtp_packet,
@@ -1016,7 +1022,12 @@ void RtpVideoStreamReceiver::NotifyReceiverOfEmptyPacket(uint16_t seq_num) {
     MutexLock lock(&reference_finder_lock_);
     reference_finder_->PaddingReceived(seq_num);
   }
-  OnInsertedPacket(packet_buffer_.InsertPadding(seq_num));
+  video_coding::PacketBuffer::InsertResult insert_result;
+  {
+    MutexLock lock(&packet_buffer_lock_);
+    insert_result = packet_buffer_.InsertPadding(seq_num);
+  }
+  OnInsertedPacket(std::move(insert_result));
   if (nack_module_) {
     nack_module_->OnReceivedPacket(seq_num, /* is_keyframe = */ false,
                                    /* is _recovered = */ false);
@@ -1098,7 +1109,10 @@ void RtpVideoStreamReceiver::FrameDecoded(int64_t picture_id) {
     }
   }
   if (seq_num != -1) {
-    packet_buffer_.ClearTo(seq_num);
+    {
+      MutexLock lock(&packet_buffer_lock_);
+      packet_buffer_.ClearTo(seq_num);
+    }
     MutexLock lock(&reference_finder_lock_);
     reference_finder_->ClearTo(seq_num);
   }
