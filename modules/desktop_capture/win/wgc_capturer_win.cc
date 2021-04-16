@@ -77,6 +77,13 @@ bool WgcCapturerWin::SelectSource(DesktopCapturer::SourceId id) {
   return capture_source_->IsCapturable();
 }
 
+bool WgcCapturerWin::FocusOnSelectedSource() {
+  if (!capture_source_)
+    return false;
+
+  return capture_source_->FocusOnSource();
+}
+
 void WgcCapturerWin::Start(Callback* callback) {
   RTC_DCHECK(!callback_);
   RTC_DCHECK(callback);
