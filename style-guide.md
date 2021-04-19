@@ -124,42 +124,28 @@ See [the source](api/array_view.h) for more detailed docs.
 
 ### sigslot
 
-sigslot is a lightweight library that adds a signal/slot language
-construct to C++, making it easy to implement the observer pattern
-with minimal boilerplate code.
+SIGSLOT IS DEPRECATED.
 
-When adding a signal to a pure interface, **prefer to add a pure
-virtual method that returns a reference to a signal**:
+Prefer webrtc::CallbackList, and manage thread safety yourself.
 
-```
-sigslot::signal<int>& SignalFoo() = 0;
-```
+### Smart pointers
 
-As opposed to making it a public member variable, as a lot of legacy
-code does:
+The following smart pointer types are recommended:
 
-```
-sigslot::signal<int> SignalFoo;
-```
+   * std::unique_ptr for all singly-owned objects
+   * rtc::scoped_refptr for all objects with shared ownership
 
-The virtual method approach has the advantage that it keeps the
-interface stateless, and gives the subclass more flexibility in how it
-implements the signal. It may:
+Use of std::shared_ptr is *not permitted*. It is
+[banned](https://chromium-cpp.appspot.com/#library-blocklist) in the Chromium
+style guide (overriding the Google style guide), and offers no compelling
+advantage over rtc::scoped_refptr (which is cloned from the corresponding
+Chromium type).
 
-* Have its own signal as a member variable.
-* Use a `sigslot::repeater`, to repeat a signal of another object:
-
-  ```
-  sigslot::repeater<int> foo_;
-  /* ... */
-  foo_.repeat(bar_.SignalFoo());
-  ```
-* Just return another object's signal directly, if the other object's
-  lifetime is the same as its own.
-
-  ```
-  sigslot::signal<int>& SignalFoo() { return bar_.SignalFoo(); }
-  ```
+In most cases, one will want to explicitly control lifetimes, and therefore
+use std::unique_ptr, but in some cases, for instance  where references have
+to exist both from the API users and internally, with no way to
+invalidate pointers held by the API user, rtc::scoped_refptr can be
+appropriate.
 
 ### std::bind
 
