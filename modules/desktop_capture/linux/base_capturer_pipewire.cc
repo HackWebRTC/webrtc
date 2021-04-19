@@ -772,37 +772,27 @@ void BaseCapturerPipeWire::HandleBuffer(pw_buffer* buffer) {
 
   // Use video metadata when video size from metadata is set and smaller than
   // video stream size, so we need to adjust it.
-  bool video_is_full_width = true;
-  bool video_is_full_height = true;
+  bool video_metadata_use = false;
+
 #if PW_CHECK_VERSION(0, 3, 0)
-  if (video_metadata && video_metadata->region.size.width != 0 &&
-      video_metadata->region.size.height != 0) {
-    if (video_metadata->region.size.width <
-        static_cast<uint32_t>(desktop_size_.width())) {
-      video_is_full_width = false;
-    } else if (video_metadata->region.size.height <
-               static_cast<uint32_t>(desktop_size_.height())) {
-      video_is_full_height = false;
-    }
-  }
+  const struct spa_rectangle* video_metadata_size =
+      video_metadata ? &video_metadata->region.size : nullptr;
 #else
-  if (video_metadata && video_metadata->width != 0 &&
-      video_metadata->height != 0) {
-    if (video_metadata->width < desktop_size_.width()) {
-    } else if (video_metadata->height < desktop_size_.height()) {
-      video_is_full_height = false;
-    }
-  }
+  const struct spa_meta_video_crop* video_metadata_size = video_metadata;
 #endif
 
+  if (video_metadata_size && video_metadata_size->width != 0 &&
+      video_metadata_size->height != 0 &&
+      (static_cast<int>(video_metadata_size->width) < desktop_size_.width() ||
+       static_cast<int>(video_metadata_size->height) <
+           desktop_size_.height())) {
+    video_metadata_use = true;
+  }
+
   DesktopSize video_size_prev = video_size_;
-  if (!video_is_full_height || !video_is_full_width) {
-#if PW_CHECK_VERSION(0, 3, 0)
-    video_size_ = DesktopSize(video_metadata->region.size.width,
-                              video_metadata->region.size.height);
-#else
-    video_size_ = DesktopSize(video_metadata->width, video_metadata->height);
-#endif
+  if (video_metadata_use) {
+    video_size_ =
+        DesktopSize(video_metadata_size->width, video_metadata_size->height);
   } else {
     video_size_ = desktop_size_;
   }
@@ -827,25 +817,25 @@ void BaseCapturerPipeWire::HandleBuffer(pw_buffer* buffer) {
 
   // Adjust source content based on metadata video position
 #if PW_CHECK_VERSION(0, 3, 0)
-  if (!video_is_full_height &&
+  if (video_metadata_use &&
       (video_metadata->region.position.y + video_size_.height() <=
        desktop_size_.height())) {
     src += src_stride * video_metadata->region.position.y;
   }
   const int x_offset =
-      !video_is_full_width &&
+      video_metadata_use &&
               (video_metadata->region.position.x + video_size_.width() <=
                desktop_size_.width())
           ? video_metadata->region.position.x * kBytesPerPixel
           : 0;
 #else
-  if (!video_is_full_height &&
+  if (video_metadata_use &&
       (video_metadata->y + video_size_.height() <= desktop_size_.height())) {
     src += src_stride * video_metadata->y;
   }
 
   const int x_offset =
-      !video_is_full_width &&
+      video_metadata_use &&
               (video_metadata->x + video_size_.width() <= desktop_size_.width())
           ? video_metadata->x * kBytesPerPixel
           : 0;
