@@ -139,7 +139,7 @@ TEST_F(RtcpSenderTest, SetRtcpStatus) {
 TEST_F(RtcpSenderTest, SetSendingStatus) {
   auto rtcp_sender = CreateRtcpSender(GetDefaultConfig());
   EXPECT_FALSE(rtcp_sender->Sending());
-  EXPECT_EQ(0, rtcp_sender->SetSendingStatus(feedback_state(), true));
+  rtcp_sender->SetSendingStatus(feedback_state(), true);
   EXPECT_TRUE(rtcp_sender->Sending());
 }
 
@@ -315,8 +315,8 @@ TEST_F(RtcpSenderTest, SendBye) {
 TEST_F(RtcpSenderTest, StopSendingTriggersBye) {
   auto rtcp_sender = CreateRtcpSender(GetDefaultConfig());
   rtcp_sender->SetRTCPStatus(RtcpMode::kReducedSize);
-  EXPECT_EQ(0, rtcp_sender->SetSendingStatus(feedback_state(), true));
-  EXPECT_EQ(0, rtcp_sender->SetSendingStatus(feedback_state(), false));
+  rtcp_sender->SetSendingStatus(feedback_state(), true);
+  rtcp_sender->SetSendingStatus(feedback_state(), false);
   EXPECT_EQ(1, parser()->bye()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser()->bye()->sender_ssrc());
 }
@@ -513,7 +513,7 @@ TEST_F(RtcpSenderTest, SendXrWithRrtr) {
   config.non_sender_rtt_measurement = true;
   auto rtcp_sender = CreateRtcpSender(config);
   rtcp_sender->SetRTCPStatus(RtcpMode::kCompound);
-  EXPECT_EQ(0, rtcp_sender->SetSendingStatus(feedback_state(), false));
+  rtcp_sender->SetSendingStatus(feedback_state(), false);
   NtpTime ntp = TimeMicrosToNtp(clock_.TimeInMicroseconds());
   EXPECT_EQ(0, rtcp_sender->SendRTCP(feedback_state(), kRtcpReport));
   EXPECT_EQ(1, parser()->xr()->num_packets());
@@ -528,7 +528,7 @@ TEST_F(RtcpSenderTest, TestNoXrRrtrSentIfSending) {
   config.non_sender_rtt_measurement = true;
   auto rtcp_sender = CreateRtcpSender(config);
   rtcp_sender->SetRTCPStatus(RtcpMode::kCompound);
-  EXPECT_EQ(0, rtcp_sender->SetSendingStatus(feedback_state(), true));
+  rtcp_sender->SetSendingStatus(feedback_state(), true);
   EXPECT_EQ(0, rtcp_sender->SendRTCP(feedback_state(), kRtcpReport));
   EXPECT_EQ(0, parser()->xr()->num_packets());
 }
@@ -538,7 +538,7 @@ TEST_F(RtcpSenderTest, TestNoXrRrtrSentIfNotEnabled) {
   config.non_sender_rtt_measurement = false;
   auto rtcp_sender = CreateRtcpSender(config);
   rtcp_sender->SetRTCPStatus(RtcpMode::kCompound);
-  EXPECT_EQ(0, rtcp_sender->SetSendingStatus(feedback_state(), false));
+  rtcp_sender->SetSendingStatus(feedback_state(), false);
   EXPECT_EQ(0, rtcp_sender->SendRTCP(feedback_state(), kRtcpReport));
   EXPECT_EQ(0, parser()->xr()->num_packets());
 }
