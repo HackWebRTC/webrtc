@@ -1435,9 +1435,9 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
       packet_time_us = receive_time_calculator_->ReconcileReceiveTimes(
           packet_time_us, rtc::TimeUTCMicros(), clock_->TimeInMicroseconds());
     }
-    parsed_packet.set_arrival_time_ms((packet_time_us + 500) / 1000);
+    parsed_packet.set_arrival_time(Timestamp::Micros(packet_time_us));
   } else {
-    parsed_packet.set_arrival_time_ms(clock_->TimeInMilliseconds());
+    parsed_packet.set_arrival_time(clock_->CurrentTime());
   }
 
   // We might get RTP keep-alive packets in accordance with RFC6263 section 4.6.
@@ -1473,7 +1473,7 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
       received_audio_bytes_per_second_counter_.Add(length);
       event_log_->Log(
           std::make_unique<RtcEventRtpPacketIncoming>(parsed_packet));
-      const int64_t arrival_time_ms = parsed_packet.arrival_time_ms();
+      const int64_t arrival_time_ms = parsed_packet.arrival_time().ms();
       if (!first_received_rtp_audio_ms_) {
         first_received_rtp_audio_ms_.emplace(arrival_time_ms);
       }
@@ -1487,7 +1487,7 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
       received_video_bytes_per_second_counter_.Add(length);
       event_log_->Log(
           std::make_unique<RtcEventRtpPacketIncoming>(parsed_packet));
-      const int64_t arrival_time_ms = parsed_packet.arrival_time_ms();
+      const int64_t arrival_time_ms = parsed_packet.arrival_time().ms();
       if (!first_received_rtp_video_ms_) {
         first_received_rtp_video_ms_.emplace(arrival_time_ms);
       }
@@ -1575,7 +1575,7 @@ void Call::NotifyBweOfReceivedPacket(const RtpPacketReceived& packet,
 
   ReceivedPacket packet_msg;
   packet_msg.size = DataSize::Bytes(packet.payload_size());
-  packet_msg.receive_time = Timestamp::Millis(packet.arrival_time_ms());
+  packet_msg.receive_time = packet.arrival_time();
   if (header.extension.hasAbsoluteSendTime) {
     packet_msg.send_time = header.extension.GetAbsoluteSendTimestamp();
   }
@@ -1595,8 +1595,8 @@ void Call::NotifyBweOfReceivedPacket(const RtpPacketReceived& packet,
   if (media_type == MediaType::VIDEO ||
       (use_send_side_bwe && header.extension.hasTransportSequenceNumber)) {
     receive_side_cc_.OnReceivedPacket(
-        packet.arrival_time_ms(), packet.payload_size() + packet.padding_size(),
-        header);
+        packet.arrival_time().ms(),
+        packet.payload_size() + packet.padding_size(), header);
   }
 }
 
