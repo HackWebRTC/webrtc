@@ -166,8 +166,8 @@ AudioDeviceMac::~AudioDeviceMac() {
     Terminate();
   }
 
-  RTC_DCHECK(capture_worker_thread_.empty());
-  RTC_DCHECK(render_worker_thread_.empty());
+  RTC_DCHECK(!capture_worker_thread_.get());
+  RTC_DCHECK(!render_worker_thread_.get());
 
   if (_paRenderBuffer) {
     delete _paRenderBuffer;
@@ -1308,14 +1308,12 @@ int32_t AudioDeviceMac::StartRecording() {
     return -1;
   }
 
-  RTC_DCHECK(capture_worker_thread_.empty());
-  capture_worker_thread_ = rtc::PlatformThread::SpawnJoinable(
-      [this] {
-        while (CaptureWorkerThread()) {
-        }
-      },
-      "CaptureWorkerThread",
-      rtc::ThreadAttributes().SetPriority(rtc::ThreadPriority::kRealtime));
+  RTC_DCHECK(!capture_worker_thread_.get());
+  capture_worker_thread_.reset(new rtc::PlatformThread(
+      RunCapture, this, "CaptureWorkerThread",
+      rtc::ThreadAttributes().SetPriority(rtc::kRealtimePriority)));
+  RTC_DCHECK(capture_worker_thread_.get());
+  capture_worker_thread_->Start();
 
   OSStatus err = noErr;
   if (_twoDevices) {
@@ -1397,9 +1395,10 @@ int32_t AudioDeviceMac::StopRecording() {
   // Setting this signal will allow the worker thread to be stopped.
   AtomicSet32(&_captureDeviceIsAlive, 0);
 
-  if (!capture_worker_thread_.empty()) {
+  if (capture_worker_thread_.get()) {
     mutex_.Unlock();
-    capture_worker_thread_.Finalize();
+    capture_worker_thread_->Stop();
+    capture_worker_thread_.reset();
     mutex_.Lock();
   }
 
@@ -1445,14 +1444,11 @@ int32_t AudioDeviceMac::StartPlayout() {
     return 0;
   }
 
-  RTC_DCHECK(render_worker_thread_.empty());
-  render_worker_thread_ = rtc::PlatformThread::SpawnJoinable(
-      [this] {
-        while (RenderWorkerThread()) {
-        }
-      },
-      "RenderWorkerThread",
-      rtc::ThreadAttributes().SetPriority(rtc::ThreadPriority::kRealtime));
+  RTC_DCHECK(!render_worker_thread_.get());
+  render_worker_thread_.reset(new rtc::PlatformThread(
+      RunRender, this, "RenderWorkerThread",
+      rtc::ThreadAttributes().SetPriority(rtc::kRealtimePriority)));
+  render_worker_thread_->Start();
 
   if (_twoDevices || !_recording) {
     OSStatus err = noErr;
@@ -1510,9 +1506,10 @@ int32_t AudioDeviceMac::StopPlayout() {
 
   // Setting this signal will allow the worker thread to be stopped.
   AtomicSet32(&_renderDeviceIsAlive, 0);
-  if (!render_worker_thread_.empty()) {
+  if (render_worker_thread_.get()) {
     mutex_.Unlock();
-    render_worker_thread_.Finalize();
+    render_worker_thread_->Stop();
+    render_worker_thread_.reset();
     mutex_.Lock();
   }
 
@@ -2374,6 +2371,12 @@ OSStatus AudioDeviceMac::implInConverterProc(UInt32* numberDataPackets,
   return 0;
 }
 
+void AudioDeviceMac::RunRender(void* ptrThis) {
+  AudioDeviceMac* device = static_cast<AudioDeviceMac*>(ptrThis);
+  while (device->RenderWorkerThread()) {
+  }
+}
+
 bool AudioDeviceMac::RenderWorkerThread() {
   PaRingBufferSize numSamples =
       ENGINE_PLAY_BUF_SIZE_IN_SAMPLES * _outDesiredFormat.mChannelsPerFrame;
@@ -2437,6 +2440,12 @@ bool AudioDeviceMac::RenderWorkerThread() {
   PaUtil_WriteRingBuffer(_paRenderBuffer, pPlayBuffer, nOutSamples);
 
   return true;
+}
+
+void AudioDeviceMac::RunCapture(void* ptrThis) {
+  AudioDeviceMac* device = static_cast<AudioDeviceMac*>(ptrThis);
+  while (device->CaptureWorkerThread()) {
+  }
 }
 
 bool AudioDeviceMac::CaptureWorkerThread() {

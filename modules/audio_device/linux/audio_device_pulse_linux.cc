@@ -15,7 +15,6 @@
 #include "modules/audio_device/linux/latebindingsymboltable_linux.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/platform_thread.h"
 
 WebRTCPulseSymbolTable* GetPulseSymbolTable() {
   static WebRTCPulseSymbolTable* pulse_symbol_table =
@@ -159,22 +158,18 @@ AudioDeviceGeneric::InitStatus AudioDeviceLinuxPulse::Init() {
 #endif
 
   // RECORDING
-  const auto attributes =
-      rtc::ThreadAttributes().SetPriority(rtc::ThreadPriority::kRealtime);
-  _ptrThreadRec = rtc::PlatformThread::SpawnJoinable(
-      [this] {
-        while (RecThreadProcess()) {
-        }
-      },
-      "webrtc_audio_module_rec_thread", attributes);
+  _ptrThreadRec.reset(new rtc::PlatformThread(
+      RecThreadFunc, this, "webrtc_audio_module_rec_thread",
+      rtc::ThreadAttributes().SetPriority(rtc::kRealtimePriority)));
+
+  _ptrThreadRec->Start();
 
   // PLAYOUT
-  _ptrThreadPlay = rtc::PlatformThread::SpawnJoinable(
-      [this] {
-        while (PlayThreadProcess()) {
-        }
-      },
-      "webrtc_audio_module_play_thread", attributes);
+  _ptrThreadPlay.reset(new rtc::PlatformThread(
+      PlayThreadFunc, this, "webrtc_audio_module_play_thread",
+      rtc::ThreadAttributes().SetPriority(rtc::kRealtimePriority)));
+  _ptrThreadPlay->Start();
+
   _initialized = true;
 
   return InitStatus::OK;
@@ -192,12 +187,22 @@ int32_t AudioDeviceLinuxPulse::Terminate() {
   _mixerManager.Close();
 
   // RECORDING
-  _timeEventRec.Set();
-  _ptrThreadRec.Finalize();
+  if (_ptrThreadRec) {
+    rtc::PlatformThread* tmpThread = _ptrThreadRec.release();
+
+    _timeEventRec.Set();
+    tmpThread->Stop();
+    delete tmpThread;
+  }
 
   // PLAYOUT
-  _timeEventPlay.Set();
-  _ptrThreadPlay.Finalize();
+  if (_ptrThreadPlay) {
+    rtc::PlatformThread* tmpThread = _ptrThreadPlay.release();
+
+    _timeEventPlay.Set();
+    tmpThread->Stop();
+    delete tmpThread;
+  }
 
   // Terminate PulseAudio
   if (TerminatePulseAudio() < 0) {
@@ -1974,6 +1979,18 @@ int32_t AudioDeviceLinuxPulse::ProcessRecordedData(int8_t* bufferData,
   }
 
   return 0;
+}
+
+void AudioDeviceLinuxPulse::PlayThreadFunc(void* pThis) {
+  AudioDeviceLinuxPulse* device = static_cast<AudioDeviceLinuxPulse*>(pThis);
+  while (device->PlayThreadProcess()) {
+  }
+}
+
+void AudioDeviceLinuxPulse::RecThreadFunc(void* pThis) {
+  AudioDeviceLinuxPulse* device = static_cast<AudioDeviceLinuxPulse*>(pThis);
+  while (device->RecThreadProcess()) {
+  }
 }
 
 bool AudioDeviceLinuxPulse::PlayThreadProcess() {

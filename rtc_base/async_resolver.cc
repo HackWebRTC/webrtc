@@ -123,7 +123,7 @@ void AsyncResolver::Start(const SocketAddress& addr) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   RTC_DCHECK(!destroy_called_);
   addr_ = addr;
-  PlatformThread::SpawnDetached(
+  auto thread_function =
       [this, addr, caller_task_queue = webrtc::TaskQueueBase::Current(),
        state = state_] {
         std::vector<IPAddress> addresses;
@@ -146,8 +146,14 @@ void AsyncResolver::Start(const SocketAddress& addr) {
                 }
               }));
         }
-      },
-      "AsyncResolver");
+      };
+  PlatformThread thread(RunResolution,
+                        new std::function<void()>(std::move(thread_function)),
+                        "NameResolution", ThreadAttributes().SetDetached());
+  thread.Start();
+  // Although |thread| is detached, the PlatformThread contract mandates to call
+  // Stop() before destruction. The call doesn't actually stop anything.
+  thread.Stop();
 }
 
 bool AsyncResolver::GetResolvedAddress(int family, SocketAddress* addr) const {
