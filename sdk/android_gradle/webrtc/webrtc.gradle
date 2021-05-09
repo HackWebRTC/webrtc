@@ -1,0 +1,320 @@
+def webrtc_repo = rootProject.property("webrtc_repo")
+def webrtc_build_dir = rootProject.property("webrtc_build_dir")
+
+def android_jar = rootProject.property("android_jar")
+
+def py2 = rootProject.property("py2")
+def protoc = rootProject.property("protoc")
+
+android {
+    ndkVersion '21.3.6528147'
+
+    defaultConfig {
+        versionCode rootProject.ext.releaseVersionCode
+        versionName rootProject.ext.releaseVersionName
+
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_TOOLCHAIN=clang', '-DANDROID_STL=c++_shared',
+                        "-DWEBRTC_REPO=${rootProject.property("webrtc_repo")}",
+                        "-DWEBRTC_BUILD_DIR=${rootProject.property("webrtc_build_dir")}"
+                cppFlags '-std=c++14'
+                abiFilters 'arm64-v8a' //, 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+                //targets "protobuf_lite", "absl_base", "absl_optional", "absl_variant", "yuv", "ssl", "crypto", "event", "json", "srtp", "vpx", "opus", "rnnoise", "usrsctp"
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            version "3.18.1"
+            path 'CMakeLists.txt'
+        }
+    }
+}
+
+task genWebrtcSrc(type: Exec) {
+    if (!new File(webrtc_repo).exists()) {
+        throw new IllegalArgumentException("webrtc_repo doesn't exist: ${webrtc_repo}")
+    }
+    if (!new File("${webrtc_repo}/${android_jar}").exists()) {
+        throw new IllegalArgumentException("android_jar doesn't exist: ${webrtc_repo}")
+    }
+    if (!new File(py2).exists()) {
+        throw new IllegalArgumentException("py2 doesn't exist: ${webrtc_repo}")
+    }
+    if (!new File(protoc).exists()) {
+        throw new IllegalArgumentException("protoc doesn't exist: ${webrtc_repo}")
+    }
+
+    def buildDirFile = new File("${webrtc_repo}/${webrtc_build_dir}")
+
+    workingDir webrtc_repo
+
+    def createBuildDir = "mkdir -p ${webrtc_repo}/${webrtc_build_dir}"
+
+    def genBuildFlags =
+            "mkdir -p ${webrtc_build_dir}/gen/base/debug/ ; " +
+                    "rspfile=${webrtc_build_dir}/gen/" +
+                    "__base_debugging_buildflags___build_toolchain_mac_clang_x64__rule.rsp && " +
+                    "echo \"--flags ENABLE_LOCATION_SOURCE=true ENABLE_PROFILING=false " +
+                    "CAN_UNWIND_WITH_FRAME_POINTERS=true UNSAFE_DEVELOPER_BUILD=true " +
+                    "CAN_UNWIND_WITH_CFI_TABLE=false\" > \${rspfile} && " +
+                    "${py2} build/write_buildflag_header.py --output base/debug/debugging_buildflags.h " +
+                    "--rulename //base\$:debugging_buildflags --gen-dir ${webrtc_build_dir}/gen " +
+                    "--definitions \${rspfile} && " +
+                    "mkdir -p ${webrtc_build_dir}/gen/base/allocator/ ; " +
+                    "rspfile=${webrtc_build_dir}/gen/" +
+                    "__base_allocator_buildflags___build_toolchain_mac_clang_x64__rule.rsp && " +
+                    "echo \"--flags USE_ALLOCATOR_SHIM=true USE_NEW_TCMALLOC=false\" > \${rspfile} && " +
+                    "${py2} build/write_buildflag_header.py --output base/allocator/buildflags.h " +
+                    "--rulename //base/allocator\$:buildflags " +
+                    "--gen-dir ${webrtc_build_dir}/gen --definitions \${rspfile}"
+
+    def genProtoSrc =
+            "mkdir -p ${webrtc_build_dir}/gen/logging/rtc_event_log ; " +
+                    "${py2} tools/protoc_wrapper/protoc_wrapper.py rtc_event_log.proto " +
+                    "--protoc ${protoc} --proto-in-dir logging/rtc_event_log " +
+                    "--cc-out-dir ${webrtc_build_dir}/gen/logging/rtc_event_log && " +
+                    "${py2} tools/protoc_wrapper/protoc_wrapper.py rtc_event_log2.proto " +
+                    "--protoc ${protoc} --proto-in-dir logging/rtc_event_log " +
+                    "--cc-out-dir ${webrtc_build_dir}/gen/logging/rtc_event_log && " +
+                    "mkdir -p ${webrtc_build_dir}/gen/modules/audio_coding/audio_network_adaptor ; " +
+                    "${py2} tools/protoc_wrapper/protoc_wrapper.py config.proto " +
+                    "--protoc ${protoc} --proto-in-dir modules/audio_coding/audio_network_adaptor " +
+                    "--cc-out-dir ${webrtc_build_dir}/gen/modules/audio_coding/audio_network_adaptor && " +
+                    "${py2} tools/protoc_wrapper/protoc_wrapper.py debug_dump.proto " +
+                    "--protoc ${protoc} --proto-in-dir modules/audio_coding/audio_network_adaptor " +
+                    "--cc-out-dir ${webrtc_build_dir}/gen/modules/audio_coding/audio_network_adaptor && " +
+                    "mkdir -p ${webrtc_build_dir}/gen/modules/audio_processing ; " +
+                    "${py2} tools/protoc_wrapper/protoc_wrapper.py debug.proto " +
+                    "--protoc ${protoc} --proto-in-dir modules/audio_processing " +
+                    "--cc-out-dir ${webrtc_build_dir}/gen/modules/audio_processing"
+
+    def genJni =
+            "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_audio_device_module_base_jni ; " +
+                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_audio_device_module_base_jni/WebRtcAudioManager_jni.h " +
+                    "--input_file sdk/android/src/java/org/webrtc/audio/WebRtcAudioManager.java" +
+                    " && " +
+
+                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_base_jni ; " +
+                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_base_jni/NetworkMonitor_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_base_jni/NetworkMonitorAutoDetect_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_base_jni/RefCounted_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_base_jni/Histogram_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_base_jni/JniCommon_jni.h " +
+                    "--input_file sdk/android/api/org/webrtc/NetworkMonitor.java " +
+                    "--input_file sdk/android/api/org/webrtc/NetworkMonitorAutoDetect.java " +
+                    "--input_file sdk/android/api/org/webrtc/RefCounted.java " +
+                    "--input_file sdk/android/src/java/org/webrtc/Histogram.java " +
+                    "--input_file sdk/android/src/java/org/webrtc/JniCommon.java" +
+                    " && " +
+
+                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_builtin_audio_codecs_jni ; " +
+                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_builtin_audio_codecs_jni/BuiltinAudioDecoderFactoryFactory_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_builtin_audio_codecs_jni/BuiltinAudioEncoderFactoryFactory_jni.h " +
+                    "--input_file sdk/android/api/org/webrtc/BuiltinAudioDecoderFactoryFactory.java " +
+                    "--input_file sdk/android/api/org/webrtc/BuiltinAudioEncoderFactoryFactory.java " +
+                    " && " +
+
+                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni ; " +
+                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --jar_file ${android_jar} " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/Integer_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/Double_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/Long_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/Iterable_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/Iterator_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/Boolean_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/BigInteger_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/Map_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/LinkedHashMap_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/ArrayList_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/Enum_jni.h " +
+                    "--input_file java/lang/Integer.class " +
+                    "--input_file java/lang/Double.class " +
+                    "--input_file java/lang/Long.class " +
+                    "--input_file java/lang/Iterable.class " +
+                    "--input_file java/util/Iterator.class " +
+                    "--input_file java/lang/Boolean.class " +
+                    "--input_file java/math/BigInteger.class " +
+                    "--input_file java/util/Map.class " +
+                    "--input_file java/util/LinkedHashMap.class " +
+                    "--input_file java/util/ArrayList.class " +
+                    "--input_file java/lang/Enum.class " +
+                    " && " +
+
+                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_java_audio_device_module_native_jni ; " +
+                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_java_audio_device_module_native_jni/WebRtcAudioRecord_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_java_audio_device_module_native_jni/WebRtcAudioTrack_jni.h " +
+                    "--input_file sdk/android/src/java/org/webrtc/audio/WebRtcAudioRecord.java " +
+                    "--input_file sdk/android/src/java/org/webrtc/audio/WebRtcAudioTrack.java " +
+                    " && " +
+
+                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_java_audio_jni ; " +
+                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_java_audio_jni/JavaAudioDeviceModule_jni.h " +
+                    "--input_file sdk/android/api/org/webrtc/audio/JavaAudioDeviceModule.java " +
+                    " && " +
+
+                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_libvpx_vp8_jni ; " +
+                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_libvpx_vp8_jni/LibvpxVp8Decoder_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_libvpx_vp8_jni/LibvpxVp8Encoder_jni.h " +
+                    "--input_file sdk/android/api/org/webrtc/LibvpxVp8Decoder.java " +
+                    "--input_file sdk/android/api/org/webrtc/LibvpxVp8Encoder.java " +
+                    " && " +
+
+                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_libvpx_vp9_jni ; " +
+                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_libvpx_vp9_jni/LibvpxVp9Decoder_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_libvpx_vp9_jni/LibvpxVp9Encoder_jni.h " +
+                    "--input_file sdk/android/api/org/webrtc/LibvpxVp9Decoder.java " +
+                    "--input_file sdk/android/api/org/webrtc/LibvpxVp9Encoder.java " +
+                    " && " +
+
+                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_logging_jni ; " +
+                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_logging_jni/JNILogging_jni.h " +
+                    "--input_file sdk/android/src/java/org/webrtc/JNILogging.java " +
+                    " && " +
+
+                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_metrics_jni ; " +
+                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_metrics_jni/Metrics_jni.h " +
+                    "--input_file sdk/android/api/org/webrtc/Metrics.java " +
+                    " && " +
+
+                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_native_api_jni ; " +
+                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_native_api_jni/JniHelper_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_native_api_jni/WebRtcClassLoader_jni.h " +
+                    "--input_file sdk/android/src/java/org/webrtc/JniHelper.java " +
+                    "--input_file sdk/android/src/java/org/webrtc/WebRtcClassLoader.java " +
+                    " && " +
+
+                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni ; " +
+                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/AudioTrack_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/CallSessionFileRotatingLogSink_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/CandidatePairChangeEvent_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/CryptoOptions_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/DataChannel_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/DtmfSender_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/IceCandidate_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/MediaConstraints_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/MediaSource_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/MediaStream_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/MediaStreamTrack_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/PeerConnection_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/PeerConnectionFactory_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/RTCStats_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/RTCStatsCollectorCallback_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/RTCStatsReport_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/RtcCertificatePem_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/RtpParameters_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/RtpReceiver_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/RtpSender_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/RtpTransceiver_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/SSLCertificateVerifier_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/SdpObserver_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/SessionDescription_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/StatsObserver_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/StatsReport_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/TurnCustomizer_jni.h " +
+                    "--input_file sdk/android/api/org/webrtc/AudioTrack.java " +
+                    "--input_file sdk/android/api/org/webrtc/CallSessionFileRotatingLogSink.java " +
+                    "--input_file sdk/android/api/org/webrtc/CandidatePairChangeEvent.java " +
+                    "--input_file sdk/android/api/org/webrtc/CryptoOptions.java " +
+                    "--input_file sdk/android/api/org/webrtc/DataChannel.java " +
+                    "--input_file sdk/android/api/org/webrtc/DtmfSender.java " +
+                    "--input_file sdk/android/api/org/webrtc/IceCandidate.java " +
+                    "--input_file sdk/android/api/org/webrtc/MediaConstraints.java " +
+                    "--input_file sdk/android/api/org/webrtc/MediaSource.java " +
+                    "--input_file sdk/android/api/org/webrtc/MediaStream.java " +
+                    "--input_file sdk/android/api/org/webrtc/MediaStreamTrack.java " +
+                    "--input_file sdk/android/api/org/webrtc/PeerConnection.java " +
+                    "--input_file sdk/android/api/org/webrtc/PeerConnectionFactory.java " +
+                    "--input_file sdk/android/api/org/webrtc/RTCStats.java " +
+                    "--input_file sdk/android/api/org/webrtc/RTCStatsCollectorCallback.java " +
+                    "--input_file sdk/android/api/org/webrtc/RTCStatsReport.java " +
+                    "--input_file sdk/android/api/org/webrtc/RtcCertificatePem.java " +
+                    "--input_file sdk/android/api/org/webrtc/RtpParameters.java " +
+                    "--input_file sdk/android/api/org/webrtc/RtpReceiver.java " +
+                    "--input_file sdk/android/api/org/webrtc/RtpSender.java " +
+                    "--input_file sdk/android/api/org/webrtc/RtpTransceiver.java " +
+                    "--input_file sdk/android/api/org/webrtc/SSLCertificateVerifier.java " +
+                    "--input_file sdk/android/api/org/webrtc/SdpObserver.java " +
+                    "--input_file sdk/android/api/org/webrtc/SessionDescription.java " +
+                    "--input_file sdk/android/api/org/webrtc/StatsObserver.java " +
+                    "--input_file sdk/android/api/org/webrtc/StatsReport.java " +
+                    "--input_file sdk/android/api/org/webrtc/TurnCustomizer.java " +
+                    " && " +
+
+                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_video_jni ; " +
+                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/EncodedImage_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/JavaI420Buffer_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/MediaCodecVideoDecoder_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/MediaCodecVideoEncoder_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/TimestampAligner_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoCodecInfo_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoCodecStatus_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoDecoder_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoDecoderFactory_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoDecoderFallback_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoEncoder_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoEncoderFactory_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoEncoderFallback_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoFrame_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoSink_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoTrack_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/YuvHelper_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/H264Utils_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/NV12Buffer_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/NV21Buffer_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/NativeAndroidVideoTrackSource_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/NativeCapturerObserver_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoDecoderWrapper_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoEncoderWrapper_jni.h " +
+                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/WrappedNativeI420Buffer_jni.h " +
+                    "--input_file sdk/android/api/org/webrtc/EncodedImage.java " +
+                    "--input_file sdk/android/api/org/webrtc/JavaI420Buffer.java " +
+                    "--input_file sdk/android/api/org/webrtc/MediaCodecVideoDecoder.java " +
+                    "--input_file sdk/android/api/org/webrtc/MediaCodecVideoEncoder.java " +
+                    "--input_file sdk/android/api/org/webrtc/TimestampAligner.java " +
+                    "--input_file sdk/android/api/org/webrtc/VideoCodecInfo.java " +
+                    "--input_file sdk/android/api/org/webrtc/VideoCodecStatus.java " +
+                    "--input_file sdk/android/api/org/webrtc/VideoDecoder.java " +
+                    "--input_file sdk/android/api/org/webrtc/VideoDecoderFactory.java " +
+                    "--input_file sdk/android/api/org/webrtc/VideoDecoderFallback.java " +
+                    "--input_file sdk/android/api/org/webrtc/VideoEncoder.java " +
+                    "--input_file sdk/android/api/org/webrtc/VideoEncoderFactory.java " +
+                    "--input_file sdk/android/api/org/webrtc/VideoEncoderFallback.java " +
+                    "--input_file sdk/android/api/org/webrtc/VideoFrame.java " +
+                    "--input_file sdk/android/api/org/webrtc/VideoSink.java " +
+                    "--input_file sdk/android/api/org/webrtc/VideoTrack.java " +
+                    "--input_file sdk/android/api/org/webrtc/YuvHelper.java " +
+                    "--input_file sdk/android/src/java/org/webrtc/H264Utils.java " +
+                    "--input_file sdk/android/src/java/org/webrtc/NV12Buffer.java " +
+                    "--input_file sdk/android/src/java/org/webrtc/NV21Buffer.java " +
+                    "--input_file sdk/android/src/java/org/webrtc/NativeAndroidVideoTrackSource.java " +
+                    "--input_file sdk/android/src/java/org/webrtc/NativeCapturerObserver.java " +
+                    "--input_file sdk/android/src/java/org/webrtc/VideoDecoderWrapper.java " +
+                    "--input_file sdk/android/src/java/org/webrtc/VideoEncoderWrapper.java " +
+                    "--input_file sdk/android/src/java/org/webrtc/WrappedNativeI420Buffer.java "
+
+    def cmd = ['echo', 'already generated']
+    if (!buildDirFile.exists()) {
+        cmd = ['sh', '-c', "${createBuildDir} && ${genBuildFlags} && ${genProtoSrc} && ${genJni}"]
+    }
+    commandLine cmd
+}
+
+afterEvaluate {
+    externalNativeBuildDebug.dependsOn(genWebrtcSrc)
+    externalNativeBuildRelease.dependsOn(genWebrtcSrc)
+}

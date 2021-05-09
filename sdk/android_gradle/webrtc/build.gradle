@@ -1,0 +1,47 @@
+apply plugin: 'com.android.library'
+
+def compileNativeCode = "true" == rootProject.findProperty("compile_native_code")
+
+android {
+    compileSdkVersion rootProject.ext.androidCompileSdkVersion
+    buildToolsVersion rootProject.ext.androidBuildToolsVersion
+
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode rootProject.ext.releaseVersionCode
+        versionName rootProject.ext.releaseVersionName
+
+        sourceSets.main.java.srcDirs = [
+                "$rootProject.rootDir/webrtc/src/main/java",
+                "$rootProject.rootDir/../android/api",
+                "$rootProject.rootDir/../android/src/java",
+                "$rootProject.rootDir/../../rtc_base/java/src",
+                "$rootProject.rootDir/../../modules/audio_device/android/java/src",
+        ]
+
+        if (!compileNativeCode) {
+            sourceSets.main.jniLibs.srcDirs = ['prebuilt_libs']
+            ndk.abiFilters = rootProject.ext.abiFilters
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+if (compileNativeCode) {
+    apply from: 'webrtc.gradle'
+}
+
+dependencies {
+    api 'com.google.code.findbugs:jsr305:3.0.2'
+    api 'androidx.annotation:annotation:1.5.0'
+}
