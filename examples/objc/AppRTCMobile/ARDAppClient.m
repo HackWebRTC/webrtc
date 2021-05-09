@@ -10,6 +10,7 @@
 
 #import "ARDAppClient+Internal.h"
 
+#if !defined(BUILD_WITHOUT_NINJA)
 #import "sdk/objc/api/peerconnection/RTCAudioTrack.h"
 #import "sdk/objc/api/peerconnection/RTCConfiguration.h"
 #import "sdk/objc/api/peerconnection/RTCFileLogger.h"
@@ -28,6 +29,7 @@
 #import "sdk/objc/components/capturer/RTCFileVideoCapturer.h"
 #import "sdk/objc/components/video_codec/RTCDefaultVideoDecoderFactory.h"
 #import "sdk/objc/components/video_codec/RTCDefaultVideoEncoderFactory.h"
+#endif
 
 #import "ARDAppEngineClient.h"
 #import "ARDExternalSampleCapturer.h"
@@ -41,7 +43,7 @@
 #import "RTCIceCandidate+JSON.h"
 #import "RTCSessionDescription+JSON.h"
 
-static NSString * const kARDIceServerRequestUrl = @"https://appr.tc/params";
+static NSString * const kARDIceServerRequestUrl = @"http://" SIGNAL_SERVER_IP @":3033/iceconfig";
 
 static NSString * const kARDAppClientErrorDomain = @"ARDAppClient";
 static NSInteger const kARDAppClientErrorUnknown = -1;

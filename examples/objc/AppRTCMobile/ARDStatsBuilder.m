@@ -10,8 +10,10 @@
 
 #import "ARDStatsBuilder.h"
 
+#if !defined(BUILD_WITHOUT_NINJA)
 #import "sdk/objc/api/peerconnection/RTCLegacyStatsReport.h"
 #import "sdk/objc/base/RTCMacros.h"
+#endif
 
 #import "ARDUtilities.h"
 

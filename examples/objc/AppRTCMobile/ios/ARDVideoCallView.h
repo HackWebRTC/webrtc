@@ -10,8 +10,12 @@
 
 #import <UIKit/UIKit.h>
 
+#if defined(BUILD_WITHOUT_NINJA)
+@import WebRTC;
+#else
 #import "sdk/objc/base/RTCVideoRenderer.h"
 #import "sdk/objc/helpers/RTCCameraPreviewView.h"
+#endif
 
 #import "ARDStatsView.h"
 

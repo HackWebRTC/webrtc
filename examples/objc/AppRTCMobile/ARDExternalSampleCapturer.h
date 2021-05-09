@@ -8,7 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#if defined(BUILD_WITHOUT_NINJA)
+@import WebRTC;
+#else
 #import "sdk/objc/base/RTCVideoCapturer.h"
+#endif
 
 @protocol ARDExternalSampleDelegate <NSObject>
 - (void)didCaptureSampleBuffer:(CMSampleBufferRef)sampleBuffer;

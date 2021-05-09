@@ -10,7 +10,9 @@
 
 #import "ARDFileCaptureController.h"
 
+#if !defined(BUILD_WITHOUT_NINJA)
 #import "sdk/objc/components/capturer/RTCFileVideoCapturer.h"
+#endif
 
 @interface ARDFileCaptureController ()
 

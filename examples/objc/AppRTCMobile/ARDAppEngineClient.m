@@ -10,7 +10,13 @@
 
 #import "ARDAppEngineClient.h"
 
+#import "ARDAppClient+Internal.h"
+
+#if defined(BUILD_WITHOUT_NINJA)
+@import WebRTC;
+#else
 #import "sdk/objc/base/RTCLogging.h"
+#endif
 
 #import "ARDJoinResponse.h"
 #import "ARDMessageResponse.h"
@@ -19,15 +25,15 @@
 
 // TODO(tkchin): move these to a configuration object.
 static NSString * const kARDRoomServerHostUrl =
-    @"https://appr.tc";
+    @"http://" SIGNAL_SERVER_IP @":8080";
 static NSString * const kARDRoomServerJoinFormat =
-    @"https://appr.tc/join/%@";
+    @"http://" SIGNAL_SERVER_IP @":8080/join/%@";
 static NSString * const kARDRoomServerJoinFormatLoopback =
-    @"https://appr.tc/join/%@?debug=loopback";
+    @"http://" SIGNAL_SERVER_IP @":8080/join/%@?debug=loopback";
 static NSString * const kARDRoomServerMessageFormat =
-    @"https://appr.tc/message/%@/%@";
+    @"http://" SIGNAL_SERVER_IP @":8080/message/%@/%@";
 static NSString * const kARDRoomServerLeaveFormat =
-    @"https://appr.tc/leave/%@/%@";
+    @"http://" SIGNAL_SERVER_IP @":8080/leave/%@/%@";
 
 static NSString * const kARDAppEngineClientErrorDomain = @"ARDAppEngineClient";
 static NSInteger const kARDAppEngineClientErrorBadResponse = -1;

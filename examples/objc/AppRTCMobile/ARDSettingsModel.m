@@ -11,9 +11,11 @@
 #import "ARDSettingsModel+Private.h"
 #import "ARDSettingsStore.h"
 
+#if !defined(BUILD_WITHOUT_NINJA)
 #import "sdk/objc/api/peerconnection/RTCMediaConstraints.h"
 #import "sdk/objc/components/capturer/RTCCameraVideoCapturer.h"
 #import "sdk/objc/components/video_codec/RTCDefaultVideoEncoderFactory.h"
+#endif
 
 NS_ASSUME_NONNULL_BEGIN
 

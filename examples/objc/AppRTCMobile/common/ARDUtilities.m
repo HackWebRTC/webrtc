@@ -12,7 +12,11 @@
 
 #import <mach/mach.h>
 
+#if defined(BUILD_WITHOUT_NINJA)
+@import WebRTC;
+#else
 #import "sdk/objc/base/RTCLogging.h"
+#endif
 
 @implementation NSDictionary (ARDUtilites)
 

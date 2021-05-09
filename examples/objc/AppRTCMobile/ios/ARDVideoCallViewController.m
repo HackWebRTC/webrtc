@@ -10,11 +10,15 @@
 
 #import "ARDVideoCallViewController.h"
 
+#if defined(BUILD_WITHOUT_NINJA)
+@import WebRTC;
+#else
 #import "sdk/objc/api/peerconnection/RTCMediaConstraints.h"
 #import "sdk/objc/base/RTCLogging.h"
 #import "sdk/objc/components/audio/RTCAudioSession.h"
 #import "sdk/objc/components/capturer/RTCCameraVideoCapturer.h"
 #import "sdk/objc/helpers/RTCDispatcher.h"
+#endif
 
 #import "ARDAppClient.h"
 #import "ARDCaptureController.h"

@@ -12,10 +12,14 @@
 
 #import <AVFoundation/AVFoundation.h>
 
+#if defined(BUILD_WITHOUT_NINJA)
+@import WebRTC;
+#else
 #import "sdk/objc/base/RTCLogging.h"
 #import "sdk/objc/components/audio/RTCAudioSession.h"
 #import "sdk/objc/components/audio/RTCAudioSessionConfiguration.h"
 #import "sdk/objc/helpers/RTCDispatcher.h"
+#endif
 
 #import "ARDAppClient.h"
 #import "ARDMainView.h"
