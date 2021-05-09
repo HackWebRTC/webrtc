@@ -12,9 +12,11 @@
 
 #import <AVFoundation/AVFoundation.h>
 
+#if !defined(BUILD_WITHOUT_NINJA)
 #import "sdk/objc/components/renderer/opengl/RTCEAGLVideoView.h"
 #if defined(RTC_SUPPORTS_METAL)
 #import "sdk/objc/components/renderer/metal/RTCMTLVideoView.h"  // nogncheck
+#endif
 #endif
 
 #import "UIImage+ARDUtilities.h"

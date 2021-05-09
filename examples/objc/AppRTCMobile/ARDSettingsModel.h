@@ -10,7 +10,11 @@
 
 #import <Foundation/Foundation.h>
 
+#if defined(BUILD_WITHOUT_NINJA)
+@import WebRTC;
+#else
 #import "sdk/objc/base/RTCVideoCodecInfo.h"
+#endif
 
 NS_ASSUME_NONNULL_BEGIN
 

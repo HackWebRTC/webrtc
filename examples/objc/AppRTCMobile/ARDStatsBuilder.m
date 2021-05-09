@@ -10,8 +10,10 @@
 
 #import "ARDStatsBuilder.h"
 
+#if !defined(BUILD_WITHOUT_NINJA)
 #import "sdk/objc/api/peerconnection/RTCLegacyStatsReport.h"
 #import "sdk/objc/base/RTCMacros.h"
+#endif
 
 #import "ARDBitrateTracker.h"
 #import "ARDUtilities.h"
@@ -56,6 +58,7 @@
   NSString *_videoRecvFps;
   NSString *_videoRecvHeight;
   NSString *_videoRecvWidth;
+  NSString *_videoRecvCodec;
 
   // Audio send stats.
   NSString *_audioSendBitrate;
@@ -120,13 +123,13 @@
 
   // Video receive stats.
   NSString *videoReceiveFormat =
-      @"VR (recv) %@x%@@%@fps | (decoded)%@ | (output)%@fps | %@/%@ | %@ms\n";
+      @"VR (recv) %@x%@@%@fps | (decoded)%@ | (output)%@fps | %@/%@ | %@ms | %@\n";
   [result appendString:[NSString stringWithFormat:videoReceiveFormat,
       _videoRecvWidth, _videoRecvHeight, _videoRecvFps,
       _videoDecodedFps,
       _videoOutputFps,
       _videoRecvBitrate, _availableRecvBw,
-      _videoDecodeMs]];
+      _videoDecodeMs, _videoRecvCodec]];
 
   // Audio send stats.
   NSString *audioSendFormat = @"AS %@ | %@\n";
@@ -332,6 +335,8 @@
     NSInteger byteCount = value.integerValue;
     [_videoRecvBitrateTracker updateBitrateWithCurrentByteCount:byteCount];
     _videoRecvBitrate = _videoRecvBitrateTracker.bitrateString;
+  } else if ([key isEqualToString:@"googCodecName"]) {
+    _videoRecvCodec = value;
   }
 }
 

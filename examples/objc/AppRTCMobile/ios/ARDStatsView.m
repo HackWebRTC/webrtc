@@ -10,7 +10,11 @@
 
 #import "ARDStatsView.h"
 
+#if defined(BUILD_WITHOUT_NINJA)
+@import WebRTC;
+#else
 #import "sdk/objc/api/peerconnection/RTCLegacyStatsReport.h"
+#endif
 
 #import "ARDStatsBuilder.h"
 

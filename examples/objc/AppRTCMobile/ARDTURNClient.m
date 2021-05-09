@@ -40,10 +40,23 @@ static NSInteger kARDTURNClientErrorBadResponse = -1;
         completionHandler(nil, error);
         return;
       }
-      NSDictionary *responseDict = [NSDictionary dictionaryWithJSONData:data];
-      NSString *iceServerUrl = responseDict[@"ice_server_url"];
-      [self makeTurnServerRequestToURL:[NSURL URLWithString:iceServerUrl]
-                 WithCompletionHandler:completionHandler];
+      NSDictionary *turnResponseDict = [NSDictionary dictionaryWithJSONData:data];
+      NSMutableArray *turnServers = [NSMutableArray array];
+      [turnResponseDict[@"iceServers"] enumerateObjectsUsingBlock:
+                         ^(NSDictionary *obj, NSUInteger idx, BOOL *stop){
+          [turnServers addObject:[RTCIceServer serverFromJSONDictionary:obj]];
+        }];
+      if (!turnServers) {
+        NSError *responseError =
+          [[NSError alloc] initWithDomain:kARDTURNClientErrorDomain
+                                     code:kARDTURNClientErrorBadResponse
+                                 userInfo:@{
+            NSLocalizedDescriptionKey: @"Bad TURN response.",
+            }];
+        completionHandler(nil, responseError);
+        return;
+      }
+      completionHandler(turnServers, nil);
     }];
 }
 

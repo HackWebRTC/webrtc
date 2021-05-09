@@ -10,7 +10,11 @@
 
 #import "ARDAppClient.h"
 
+#define SIGNAL_SERVER_IP @"172.16.11.36"
+
+#if !defined(BUILD_WITHOUT_NINJA)
 #import "sdk/objc/api/peerconnection/RTCPeerConnection.h"
+#endif
 
 #import "ARDRoomServerClient.h"
 #import "ARDSignalingChannel.h"

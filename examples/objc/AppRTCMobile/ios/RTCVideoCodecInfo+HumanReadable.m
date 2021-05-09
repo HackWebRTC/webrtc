@@ -10,7 +10,9 @@
 
 #import "RTCVideoCodecInfo+HumanReadable.h"
 
+#if !defined(BUILD_WITHOUT_NINJA)
 #import "sdk/objc/components/video_codec/RTCH264ProfileLevelId.h"
+#endif
 
 @implementation RTC_OBJC_TYPE (RTCVideoCodecInfo)
 (HumanReadable)
