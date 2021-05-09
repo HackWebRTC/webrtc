@@ -41,12 +41,13 @@ DefaultIceTransport::~DefaultIceTransport() {
 rtc::scoped_refptr<IceTransportInterface>
 DefaultIceTransportFactory::CreateIceTransport(
     const std::string& transport_name,
+    cricket::MediaType media_type,
     int component,
     IceTransportInit init) {
   BasicIceControllerFactory factory;
   return new rtc::RefCountedObject<DefaultIceTransport>(
       std::make_unique<cricket::P2PTransportChannel>(
-          transport_name, component, init.port_allocator(),
+          transport_name, media_type, component, init.port_allocator(),
           init.async_resolver_factory(), init.event_log(), &factory));
 }
 

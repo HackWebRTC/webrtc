@@ -49,6 +49,7 @@ class DefaultIceTransportFactory : public IceTransportFactory {
   // Must be called on the network thread and returns a DefaultIceTransport.
   rtc::scoped_refptr<IceTransportInterface> CreateIceTransport(
       const std::string& transport_name,
+      cricket::MediaType media_type,
       int component,
       IceTransportInit init) override;
 };

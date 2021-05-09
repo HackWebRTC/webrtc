@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "api/media_types.h"
 #include "absl/types/optional.h"
 #include "p2p/base/port.h"
 #include "rtc_base/async_packet_socket.h"
@@ -29,6 +30,8 @@ struct SentPacket;
 class RTC_EXPORT PacketTransportInternal : public sigslot::has_slots<> {
  public:
   virtual const std::string& transport_name() const = 0;
+
+  virtual cricket::MediaType media_type() const = 0;
 
   // The transport has been established.
   virtual bool writable() const = 0;

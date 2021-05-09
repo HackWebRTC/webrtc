@@ -122,9 +122,11 @@ bool IceCredentialsChanged(const std::string& old_ufrag,
 }
 
 P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
+                                         cricket::MediaType media_type,
                                          int component,
                                          PortAllocator* allocator)
     : P2PTransportChannel(transport_name,
+                          media_type,
                           component,
                           allocator,
                           nullptr,
@@ -132,12 +134,14 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
 
 P2PTransportChannel::P2PTransportChannel(
     const std::string& transport_name,
+    cricket::MediaType media_type,
     int component,
     PortAllocator* allocator,
     webrtc::AsyncResolverFactory* async_resolver_factory,
     webrtc::RtcEventLog* event_log,
     IceControllerFactoryInterface* ice_controller_factory)
     : transport_name_(transport_name),
+      media_type_(media_type),
       component_(component),
       allocator_(allocator),
       async_resolver_factory_(async_resolver_factory),
@@ -341,6 +345,11 @@ webrtc::IceTransportState P2PTransportChannel::GetIceTransportState() const {
 const std::string& P2PTransportChannel::transport_name() const {
   RTC_DCHECK_RUN_ON(network_thread_);
   return transport_name_;
+}
+
+cricket::MediaType P2PTransportChannel::media_type() const {
+  RTC_DCHECK_RUN_ON(network_thread_);
+  return media_type_;
 }
 
 int P2PTransportChannel::component() const {
@@ -858,7 +867,7 @@ void P2PTransportChannel::MaybeStartGathering() {
       }
     } else {
       AddAllocatorSession(allocator_->CreateSession(
-          transport_name(), component(), ice_parameters_.ufrag,
+          transport_name(), media_type(), component(), ice_parameters_.ufrag,
           ice_parameters_.pwd));
       allocator_sessions_.back()->StartGettingPorts();
     }

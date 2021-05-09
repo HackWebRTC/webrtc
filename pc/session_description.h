@@ -211,6 +211,9 @@ class MediaContentDescription {
   virtual void set_conference_mode(bool enable) { conference_mode_ = enable; }
   virtual bool conference_mode() const { return conference_mode_; }
 
+  virtual void set_quality(int quality) { quality_ = quality; }
+  virtual int quality() const { return quality_; }
+
   // https://tools.ietf.org/html/rfc4566#section-5.7
   // May be present at the media or session level of SDP. If present at both
   // levels, the media-level attribute overwrites the session-level one.
@@ -263,6 +266,7 @@ class MediaContentDescription {
   bool remote_estimate_ = false;
   int bandwidth_ = kAutoBandwidth;
   std::string bandwidth_type_ = kApplicationSpecificBandwidth;
+  int quality_ = 5;
   std::string protocol_;
   std::vector<CryptoParams> cryptos_;
   std::vector<webrtc::RtpExtension> rtp_header_extensions_;

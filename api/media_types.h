@@ -24,12 +24,14 @@ enum MediaType {
   MEDIA_TYPE_AUDIO,
   MEDIA_TYPE_VIDEO,
   MEDIA_TYPE_DATA,
+  MEDIA_TYPE_SCREEN,
   MEDIA_TYPE_UNSUPPORTED
 };
 
 extern const char kMediaTypeAudio[];
 extern const char kMediaTypeVideo[];
 extern const char kMediaTypeData[];
+extern const char kMediaTypeScreen[];
 
 RTC_EXPORT std::string MediaTypeToString(MediaType type);
 

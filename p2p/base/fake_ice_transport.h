@@ -28,9 +28,11 @@ namespace cricket {
 class FakeIceTransport : public IceTransportInternal {
  public:
   explicit FakeIceTransport(const std::string& name,
+                            cricket::MediaType media_type,
                             int component,
                             rtc::Thread* network_thread = nullptr)
       : name_(name),
+        media_type_(media_type),
         component_(component),
         network_thread_(network_thread ? network_thread
                                        : rtc::Thread::Current()) {}
@@ -109,6 +111,7 @@ class FakeIceTransport : public IceTransportInternal {
 
   // Fake IceTransportInternal implementation.
   const std::string& transport_name() const override { return name_; }
+  cricket::MediaType media_type() const override { return media_type_; }
   int component() const override { return component_; }
   uint64_t IceTiebreaker() const { return tiebreaker_; }
   IceMode remote_ice_mode() const { return remote_ice_mode_; }
@@ -310,6 +313,7 @@ class FakeIceTransport : public IceTransportInternal {
 
   rtc::AsyncInvoker invoker_;
   std::string name_;
+  cricket::MediaType media_type_;
   int component_;
   FakeIceTransport* dest_ = nullptr;
   bool async_ = false;

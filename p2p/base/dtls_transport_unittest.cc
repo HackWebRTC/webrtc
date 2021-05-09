@@ -76,7 +76,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
   }
   // Set up fake ICE transport and real DTLS transport under test.
   void SetupTransports(IceRole role, int async_delay_ms = 0) {
-    fake_ice_transport_.reset(new FakeIceTransport("fake", 0));
+    fake_ice_transport_.reset(new FakeIceTransport("fake", cricket::MEDIA_TYPE_VIDEO, 0));
     fake_ice_transport_->SetAsync(true);
     fake_ice_transport_->SetAsyncDelay(async_delay_ms);
     fake_ice_transport_->SetIceRole(role);

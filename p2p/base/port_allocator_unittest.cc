@@ -48,13 +48,14 @@ class PortAllocatorTest : public ::testing::Test, public sigslot::has_slots<> {
 
   std::unique_ptr<cricket::FakePortAllocatorSession> CreateSession(
       const std::string& content_name,
+	  cricket::MediaType media_type,
       int component,
       const std::string& ice_ufrag,
       const std::string& ice_pwd) {
     return std::unique_ptr<cricket::FakePortAllocatorSession>(
         static_cast<cricket::FakePortAllocatorSession*>(
             allocator_
-                ->CreateSession(content_name, component, ice_ufrag, ice_pwd)
+                ->CreateSession(content_name, media_type, component, ice_ufrag, ice_pwd)
                 .release()));
   }
 
@@ -102,7 +103,7 @@ TEST_F(PortAllocatorTest, TestDefaults) {
 // candidate filter are applied as expected.
 TEST_F(PortAllocatorTest, CreateSession) {
   allocator_->SetCandidateFilter(cricket::CF_RELAY);
-  auto session = CreateSession(kContentName, 1, kIceUfrag, kIcePwd);
+  auto session = CreateSession(kContentName, cricket::MEDIA_TYPE_VIDEO, 1, kIceUfrag, kIcePwd);
   ASSERT_NE(nullptr, session);
   EXPECT_EQ(cricket::CF_RELAY, session->candidate_filter());
   EXPECT_EQ(kContentName, session->content_name());

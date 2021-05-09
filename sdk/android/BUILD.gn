@@ -394,6 +394,7 @@ if (is_android) {
   rtc_android_library("hwcodecs_java") {
     visibility = [ "*" ]
     sources = [
+      "api/org/webrtc/VideoCapabilityParser.java",
       "api/org/webrtc/HardwareVideoDecoderFactory.java",
       "api/org/webrtc/HardwareVideoEncoderFactory.java",
       "api/org/webrtc/PlatformSoftwareVideoDecoderFactory.java",

@@ -238,13 +238,13 @@ class EventVerifier {
                   "specializations of VerifyLoggedRtpPacket");
   }
 
-  template <>
+  template <typename EventType, typename ParsedType, class Dummy=int>
   void VerifyLoggedRtpPacket(const RtcEventRtpPacketIncoming& original_event,
                              const LoggedRtpPacketIncoming& logged_event) {
     VerifyLoggedRtpPacketIncoming(original_event, logged_event);
   }
 
-  template <>
+  template <typename EventType, typename ParsedType, class Dummy=int>
   void VerifyLoggedRtpPacket(const RtcEventRtpPacketOutgoing& original_event,
                              const LoggedRtpPacketOutgoing& logged_event) {
     VerifyLoggedRtpPacketOutgoing(original_event, logged_event);

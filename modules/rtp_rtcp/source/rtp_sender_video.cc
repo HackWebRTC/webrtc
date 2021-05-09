@@ -773,6 +773,9 @@ uint8_t RTPSenderVideo::GetTemporalId(const RTPVideoHeader& header) {
     uint8_t operator()(const RTPVideoHeaderLegacyGeneric&) {
       return kNoTemporalIdx;
     }
+#ifndef DISABLE_H265
+    uint8_t operator()(const RTPVideoHeaderH265&) { return kNoTemporalIdx; }
+#endif
     uint8_t operator()(const absl::monostate&) { return kNoTemporalIdx; }
   };
   return absl::visit(TemporalIdGetter(), header.video_type_header);

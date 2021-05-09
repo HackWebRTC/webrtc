@@ -401,6 +401,8 @@ const char* StatsReport::Value::display_name() const {
       return "datachannelid";
     case kStatsValueNameFramesDecoded:
       return "framesDecoded";
+    case kStatsValueNameFramesRendered:
+      return "framesRendered";
     case kStatsValueNameFramesEncoded:
       return "framesEncoded";
     case kStatsValueNameJitterBufferDelay:

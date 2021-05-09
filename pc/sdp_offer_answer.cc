@@ -568,6 +568,8 @@ static absl::string_view GetDefaultMidForPlanB(cricket::MediaType media_type) {
       return cricket::CN_VIDEO;
     case cricket::MEDIA_TYPE_DATA:
       return cricket::CN_DATA;
+    case cricket::MEDIA_TYPE_SCREEN:
+      return cricket::CN_VIDEO;
     case cricket::MEDIA_TYPE_UNSUPPORTED:
       return "not supported";
   }

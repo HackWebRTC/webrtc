@@ -628,7 +628,33 @@ void RtpVideoStreamReceiver::OnReceivedPayloadData(
         packet->video_payload = std::move(fixed.bitstream);
         break;
     }
+#ifndef DISABLE_H265
+  } else if (packet->codec() == kVideoCodecH265) {
+    // Only when we start to receive packets will we know what payload type
+    // that will be used. When we know the payload type insert the correct
+    // sps/pps into the tracker.
+    if (packet->payload_type != last_payload_type_) {
+      last_payload_type_ = packet->payload_type;
+      InsertSpsPpsIntoTracker(packet->payload_type);
+    }
 
+    video_coding::H265VpsSpsPpsTracker::FixedBitstream fixed =
+        h265_tracker_.CopyAndFixBitstream(
+            rtc::MakeArrayView(codec_payload.cdata(), codec_payload.size()),
+            &packet->video_header);
+
+    switch (fixed.action) {
+      case video_coding::H265VpsSpsPpsTracker::kRequestKeyframe:
+        rtcp_feedback_buffer_.RequestKeyFrame();
+        rtcp_feedback_buffer_.SendBufferedRtcpFeedback();
+        ABSL_FALLTHROUGH_INTENDED;
+      case video_coding::H265VpsSpsPpsTracker::kDrop:
+        return;
+      case video_coding::H265VpsSpsPpsTracker::kInsert:
+        packet->video_payload = std::move(fixed.bitstream);
+        break;
+    }
+#endif
   } else {
     packet->video_payload = std::move(codec_payload);
   }

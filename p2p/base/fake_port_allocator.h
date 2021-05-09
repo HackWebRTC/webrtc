@@ -79,10 +79,12 @@ class FakePortAllocatorSession : public PortAllocatorSession {
                            rtc::Thread* network_thread,
                            rtc::PacketSocketFactory* factory,
                            const std::string& content_name,
+						   cricket::MediaType media_type,
                            int component,
                            const std::string& ice_ufrag,
                            const std::string& ice_pwd)
       : PortAllocatorSession(content_name,
+                             media_type,
                              component,
                              ice_ufrag,
                              ice_pwd,
@@ -231,11 +233,12 @@ class FakePortAllocator : public cricket::PortAllocator {
 
   cricket::PortAllocatorSession* CreateSessionInternal(
       const std::string& content_name,
+      cricket::MediaType media_type,
       int component,
       const std::string& ice_ufrag,
       const std::string& ice_pwd) override {
     return new FakePortAllocatorSession(this, network_thread_, factory_,
-                                        content_name, component, ice_ufrag,
+                                        content_name, media_type, component, ice_ufrag,
                                         ice_pwd);
   }
 

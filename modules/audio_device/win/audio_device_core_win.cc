@@ -169,10 +169,40 @@ class MediaBufferImpl final : public IMediaBuffer {
 //                              Static Methods
 // ============================================================================
 
+HRESULT __stdcall AudioDeviceWindowsCore::OnDefaultDeviceChanged(
+   EDataFlow flow,
+   ERole role,
+   LPCWSTR pwstrDefaultDeviceId) {
+  if (flow != eRender || role != eCommunications)
+    SetEvent(_hDeviceRestartEvent);
+  return S_OK;
+}
+
+ULONG AudioDeviceWindowsCore::AddRef() {
+  ULONG new_ref = InterlockedIncrement(&ref_count_);
+  return new_ref;
+}
+
+ULONG AudioDeviceWindowsCore::Release() {
+  ULONG new_ref = InterlockedDecrement(&ref_count_);
+  return new_ref;
+}
+
+HRESULT AudioDeviceWindowsCore::QueryInterface(REFIID iid, void** object) {
+  if (object == nullptr) {
+    return E_POINTER;
+  }
+  if (iid == IID_IUnknown || iid == __uuidof(IMMNotificationClient)) {
+    *object = static_cast<IMMNotificationClient*>(this);
+    return S_OK;
+  };
+  *object = nullptr;
+  return E_NOINTERFACE;
+}
+
 // ----------------------------------------------------------------------------
 //  CoreAudioIsSupported
 // ----------------------------------------------------------------------------
-
 bool AudioDeviceWindowsCore::CoreAudioIsSupported() {
   RTC_LOG(LS_VERBOSE) << __FUNCTION__;
 
@@ -370,6 +400,7 @@ AudioDeviceWindowsCore::AudioDeviceWindowsCore()
       _hRecThread(NULL),
       _hCaptureStartedEvent(NULL),
       _hShutdownCaptureEvent(NULL),
+      _hDeviceRestartEvent(NULL),
       _hMmTask(NULL),
       _playAudioFrameSize(0),
       _playSampleRate(0),
@@ -445,6 +476,7 @@ AudioDeviceWindowsCore::AudioDeviceWindowsCore()
   _hShutdownCaptureEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
   _hRenderStartedEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
   _hCaptureStartedEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+  _hDeviceRestartEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
   _perfCounterFreq.QuadPart = 1;
   _perfCounterFactor = 0.0;
@@ -471,6 +503,7 @@ AudioDeviceWindowsCore::AudioDeviceWindowsCore()
                    reinterpret_cast<void**>(&_ptrEnumerator));
   assert(NULL != _ptrEnumerator);
 
+  _ptrEnumerator->RegisterEndpointNotificationCallback(this);
   // DMO initialization for built-in WASAPI AEC.
   {
     IMediaObject* ptrDMO = NULL;
@@ -498,6 +531,9 @@ AudioDeviceWindowsCore::~AudioDeviceWindowsCore() {
 
   // The IMMDeviceEnumerator is created during construction. Must release
   // it here and not in Terminate() since we don't recreate it in Init().
+  if (_ptrEnumerator) {
+    _ptrEnumerator->UnregisterEndpointNotificationCallback(this);
+  }
   SAFE_RELEASE(_ptrEnumerator);
 
   _ptrAudioBuffer = NULL;
@@ -530,6 +566,11 @@ AudioDeviceWindowsCore::~AudioDeviceWindowsCore() {
   if (NULL != _hShutdownCaptureEvent) {
     CloseHandle(_hShutdownCaptureEvent);
     _hShutdownCaptureEvent = NULL;
+  }
+
+  if (NULL != _hDeviceRestartEvent) {
+    CloseHandle(_hDeviceRestartEvent);
+    _hDeviceRestartEvent = NULL;
   }
 
   if (_avrtLibrary) {
@@ -2646,7 +2687,7 @@ DWORD WINAPI AudioDeviceWindowsCore::WSAPICaptureThreadPollDMO(LPVOID context) {
 
 DWORD AudioDeviceWindowsCore::DoRenderThread() {
   bool keepPlaying = true;
-  HANDLE waitArray[2] = {_hShutdownRenderEvent, _hRenderSamplesReadyEvent};
+  HANDLE waitArray[3] = {_hShutdownRenderEvent, _hRenderSamplesReadyEvent, _hDeviceRestartEvent};
   HRESULT hr = S_OK;
   HANDLE hMmTask = NULL;
 
@@ -2763,12 +2804,16 @@ DWORD AudioDeviceWindowsCore::DoRenderThread() {
 
   while (keepPlaying) {
     // Wait for a render notification event or a shutdown event
-    DWORD waitResult = WaitForMultipleObjects(2, waitArray, FALSE, 500);
+    DWORD waitResult = WaitForMultipleObjects(3, waitArray, FALSE, 500);
     switch (waitResult) {
       case WAIT_OBJECT_0 + 0:  // _hShutdownRenderEvent
         keepPlaying = false;
         break;
       case WAIT_OBJECT_0 + 1:  // _hRenderSamplesReadyEvent
+        break;
+      case WAIT_OBJECT_0 + 2:  // _hDeviceRestartEvent
+        // TODO: if we're going to switch back to this platform specific impl,
+        // We should restart the playout session here.
         break;
       case WAIT_TIMEOUT:  // timeout notification
         RTC_LOG(LS_WARNING) << "render event timed out after 0.5 seconds";

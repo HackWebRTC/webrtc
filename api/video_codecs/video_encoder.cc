@@ -39,7 +39,7 @@ VideoCodecVP9 VideoEncoder::GetDefaultVp9Settings() {
   vp9_settings.numberOfTemporalLayers = 1;
   vp9_settings.denoisingOn = true;
   vp9_settings.frameDroppingOn = true;
-  vp9_settings.keyFrameInterval = 3000;
+  vp9_settings.keyFrameInterval = 60;
   vp9_settings.adaptiveQpMode = true;
   vp9_settings.automaticResizeOn = true;
   vp9_settings.numberOfSpatialLayers = 1;
@@ -59,6 +59,23 @@ VideoCodecH264 VideoEncoder::GetDefaultH264Settings() {
 
   return h264_settings;
 }
+
+#ifndef DISABLE_H265
+VideoCodecH265 VideoEncoder::GetDefaultH265Settings() {
+  VideoCodecH265 h265_settings;
+  memset(&h265_settings, 0, sizeof(h265_settings));
+
+  // h265_settings.profile = kProfileBase;
+  h265_settings.frameDroppingOn = true;
+  h265_settings.keyFrameInterval = 3000;
+  h265_settings.spsData = nullptr;
+  h265_settings.spsLen = 0;
+  h265_settings.ppsData = nullptr;
+  h265_settings.ppsLen = 0;
+
+  return h265_settings;
+}
+#endif
 
 VideoEncoder::ScalingSettings::ScalingSettings() = default;
 

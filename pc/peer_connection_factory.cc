@@ -136,6 +136,13 @@ RtpCapabilities PeerConnectionFactory::GetRtpSenderCapabilities(
           cricket_codecs,
           channel_manager()->GetDefaultEnabledVideoRtpHeaderExtensions());
     }
+    case cricket::MEDIA_TYPE_SCREEN: {
+      cricket::VideoCodecs cricket_codecs;
+      channel_manager()->GetSupportedVideoSendCodecs(&cricket_codecs);
+      return ToRtpCapabilities(
+          cricket_codecs,
+          channel_manager()->GetDefaultEnabledVideoRtpHeaderExtensions());
+    }
     case cricket::MEDIA_TYPE_DATA:
       return RtpCapabilities();
     case cricket::MEDIA_TYPE_UNSUPPORTED:
@@ -156,6 +163,13 @@ RtpCapabilities PeerConnectionFactory::GetRtpReceiverCapabilities(
           channel_manager()->GetDefaultEnabledAudioRtpHeaderExtensions());
     }
     case cricket::MEDIA_TYPE_VIDEO: {
+      cricket::VideoCodecs cricket_codecs;
+      channel_manager()->GetSupportedVideoReceiveCodecs(&cricket_codecs);
+      return ToRtpCapabilities(
+          cricket_codecs,
+          channel_manager()->GetDefaultEnabledVideoRtpHeaderExtensions());
+    }
+    case cricket::MEDIA_TYPE_SCREEN: {
       cricket::VideoCodecs cricket_codecs;
       channel_manager()->GetSupportedVideoReceiveCodecs(&cricket_codecs);
       return ToRtpCapabilities(

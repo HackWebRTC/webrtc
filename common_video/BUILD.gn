@@ -21,6 +21,8 @@ rtc_library("common_video") {
     "h264/h264_common.h",
     "h264/pps_parser.cc",
     "h264/pps_parser.h",
+    "h264/prefix_parser.cc",
+    "h264/prefix_parser.h",
     "h264/profile_level_id.h",
     "h264/sps_parser.cc",
     "h264/sps_parser.h",
@@ -39,6 +41,21 @@ rtc_library("common_video") {
     "video_render_frames.cc",
     "video_render_frames.h",
   ]
+
+  if (rtc_use_h265) {
+    sources += [
+      "h265/h265_bitstream_parser.cc",
+      "h265/h265_bitstream_parser.h",
+      "h265/h265_common.cc",
+      "h265/h265_common.h",
+      "h265/h265_pps_parser.cc",
+      "h265/h265_pps_parser.h",
+      "h265/h265_sps_parser.cc",
+      "h265/h265_sps_parser.h",
+      "h265/h265_vps_parser.cc",
+      "h265/h265_vps_parser.h",
+    ]
+  }
 
   deps = [
     "../api:scoped_refptr",

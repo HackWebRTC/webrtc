@@ -410,10 +410,10 @@ bool CoreAudioOutput::HandleStreamDisconnected() {
   if (InitPlayout() != 0) {
     return false;
   }
+
   if (StartPlayout() != 0) {
     return false;
   }
-
   RTC_DLOG(INFO) << __FUNCTION__ << " --->>>";
   return true;
 }

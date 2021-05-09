@@ -73,7 +73,7 @@ class RegatheringControllerTest : public ::testing::Test,
     allocator_->SetConfiguration(stun_servers, turn_servers, 0 /* pool size */,
                                  webrtc::NO_PRUNE);
     allocator_session_ = allocator_->CreateSession(
-        "test", cricket::ICE_CANDIDATE_COMPONENT_RTP, kIceUfrag, kIcePwd);
+        "test", cricket::MEDIA_TYPE_VIDEO, cricket::ICE_CANDIDATE_COMPONENT_RTP, kIceUfrag, kIcePwd);
     // The gathering will take place on the current thread and the following
     // call of StartGettingPorts is blocking. We will not ClearGettingPorts
     // prematurely.
