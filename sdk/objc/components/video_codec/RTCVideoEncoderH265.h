@@ -10,14 +10,12 @@
 
 #import <Foundation/Foundation.h>
 
-#import "RTCMacros.h"
-#import "RTCVideoCodecInfo.h"
-#import "RTCVideoEncoder.h"
+#import "RTCVideoEncoderH264.h"
 
 RTC_OBJC_EXPORT
 API_AVAILABLE(ios(11.0))
-@interface RTCVideoEncoderH265 : NSObject <RTCVideoEncoder>
+@interface RTC_OBJC_TYPE (RTCVideoEncoderH265) : RTC_OBJC_TYPE(RTCVideoEncoderH264)
 
-- (instancetype)initWithCodecInfo:(RTCVideoCodecInfo *)codecInfo;
++ (bool)supported;
 
 @end

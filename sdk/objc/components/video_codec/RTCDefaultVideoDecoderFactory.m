@@ -53,7 +53,19 @@
 #endif
 
 #if !defined(DISABLE_H265)
-  RTCVideoCodecInfo *h265Info = [[RTCVideoCodecInfo alloc] initWithName:kRTCVideoCodecH265Name];
+  if (@available(iOS 11, *)) {
+    if ([RTCVideoDecoderH265 supported]) {
+      return @[
+        constrainedHighInfo,
+        constrainedBaselineInfo,
+        vp8Info,
+#if defined(RTC_ENABLE_VP9)
+        vp9Info,
+#endif
+        [[RTC_OBJC_TYPE(RTCVideoCodecInfo) alloc] initWithName:kRTCVideoCodecH265Name],
+      ];
+    }
+  }
 #endif
 
   return @[
@@ -63,15 +75,12 @@
 #if defined(RTC_ENABLE_VP9)
     vp9Info,
 #endif
-#if !defined(DISABLE_H265)
-    h265Info,
-#endif
   ];
 }
 
 - (id<RTC_OBJC_TYPE(RTCVideoDecoder)>)createDecoder:(RTC_OBJC_TYPE(RTCVideoCodecInfo) *)info {
   if ([info.name isEqualToString:kRTCVideoCodecH264Name]) {
-    return [[RTC_OBJC_TYPE(RTCVideoDecoderH264) alloc] init];
+    return [[RTC_OBJC_TYPE(RTCVideoDecoderH264) alloc] initWithCodecInfo:info];
   } else if ([info.name isEqualToString:kRTCVideoCodecVp8Name]) {
     return [RTC_OBJC_TYPE(RTCVideoDecoderVP8) vp8Decoder];
 #if defined(RTC_ENABLE_VP9)
@@ -81,7 +90,7 @@
 #if !defined(DISABLE_H265)
   } else if (@available(iOS 11, *)) {
     if ([info.name isEqualToString:kRTCVideoCodecH265Name]) {
-      return [[RTCVideoDecoderH265 alloc] init];
+      return [[RTC_OBJC_TYPE(RTCVideoDecoderH265) alloc] initWithCodecInfo:info];
     }
 #endif
   }
