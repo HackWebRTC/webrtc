@@ -10,10 +10,14 @@
 
 #import "ARDAppDelegate.h"
 
+#if defined(BUILD_WITHOUT_NINJA)
+@import WebRTC;
+#else
 #import "sdk/objc/api/peerconnection/RTCFieldTrials.h"
 #import "sdk/objc/api/peerconnection/RTCSSLAdapter.h"
 #import "sdk/objc/api/peerconnection/RTCTracing.h"
 #import "sdk/objc/base/RTCLogging.h"
+#endif
 
 #import "ARDMainViewController.h"
 

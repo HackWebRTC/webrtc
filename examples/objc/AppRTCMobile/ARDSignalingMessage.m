@@ -10,7 +10,9 @@
 
 #import "ARDSignalingMessage.h"
 
+#if !defined(BUILD_WITHOUT_NINJA)
 #import "sdk/objc/base/RTCLogging.h"
+#endif
 
 #import "ARDUtilities.h"
 #import "RTCIceCandidate+JSON.h"

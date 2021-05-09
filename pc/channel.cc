@@ -433,9 +433,9 @@ bool BaseChannel::SendPacket(bool rtcp,
       return false;
     }
 
-    RTC_DLOG(LS_WARNING) << "Sending an " << (rtcp ? "RTCP" : "RTP")
-                         << " packet without encryption for " << ToString()
-                         << ".";
+    // RTC_DLOG(LS_WARNING) << "Sending an " << (rtcp ? "RTCP" : "RTP")
+    //                      << " packet without encryption for " << ToString()
+    //                      << ".";
   }
 
   if (on_first_packet_sent_ && options.info_signaled_after_sent.is_media) {

@@ -10,7 +10,11 @@
 
 #import <UIKit/UIKit.h>
 
+#if defined(BUILD_WITHOUT_NINJA)
+@import WebRTC;
+#else
 #import "sdk/objc/base/RTCMacros.h"
+#endif
 
 @class RTC_OBJC_TYPE(RTCStatisticsReport);
 

@@ -10,7 +10,9 @@
 
 #import "ARDCaptureController.h"
 
+#if !defined(BUILD_WITHOUT_NINJA)
 #import "sdk/objc/base/RTCLogging.h"
+#endif
 
 #import "ARDSettingsModel.h"
 

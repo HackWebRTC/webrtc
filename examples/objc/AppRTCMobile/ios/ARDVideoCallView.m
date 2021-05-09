@@ -12,7 +12,9 @@
 
 #import <AVFoundation/AVFoundation.h>
 
+#if !defined(BUILD_WITHOUT_NINJA)
 #import "sdk/objc/components/renderer/metal/RTCMTLVideoView.h"
+#endif
 
 #import "UIImage+ARDUtilities.h"
 

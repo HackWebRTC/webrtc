@@ -10,8 +10,12 @@
 
 #import <Foundation/Foundation.h>
 
+#if defined(BUILD_WITHOUT_NINJA)
+@import WebRTC;
+#else
 #import "sdk/objc/api/peerconnection/RTCIceCandidate.h"
 #import "sdk/objc/api/peerconnection/RTCSessionDescription.h"
+#endif
 
 typedef enum {
   kARDSignalingMessageTypeCandidate,

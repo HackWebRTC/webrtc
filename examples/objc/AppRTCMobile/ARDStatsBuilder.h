@@ -10,8 +10,12 @@
 
 #import <Foundation/Foundation.h>
 
+#if defined(BUILD_WITHOUT_NINJA)
+@import WebRTC;
+#else
 #import "sdk/objc/api/peerconnection/RTCStatisticsReport.h"
 #import "sdk/objc/base/RTCMacros.h"
+#endif
 
 /** Class used to accumulate stats information into a single displayable string.
  */

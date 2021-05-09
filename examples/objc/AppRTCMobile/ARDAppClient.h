@@ -10,8 +10,12 @@
 
 #import <Foundation/Foundation.h>
 
+#if defined(BUILD_WITHOUT_NINJA)
+@import WebRTC;
+#else
 #import "sdk/objc/api/peerconnection/RTCPeerConnection.h"
 #import "sdk/objc/api/peerconnection/RTCVideoTrack.h"
+#endif
 
 typedef NS_ENUM(NSInteger, ARDAppClientState) {
   // Disconnected from servers.

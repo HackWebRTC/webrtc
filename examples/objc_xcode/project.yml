@@ -1,0 +1,29 @@
+name: AppRTCMobile
+targets:
+  AppRTCMobile:
+    type: application
+    platform: iOS
+    deploymentTarget: "12.0"
+    sources:
+      - path: AppRTCMobile
+      - path: ../objc/AppRTCMobile
+        excludes:
+          - ios/broadcast_extension
+          - mac
+          - tests
+    dependencies:
+      - framework: ../../out/xcode_ios_arm64/WebRTC.framework
+        embed: true
+    settings:
+      LIBRARY_SEARCH_PATHS: "$(inherited)"
+      OTHER_LDFLAGS: "$(inherited)"
+      FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/../../out/xcode_ios_arm64/"
+      CLANG_WARN_DOCUMENTATION_COMMENTS: "NO"
+      GCC_PREPROCESSOR_DEFINITIONS: "BUILD_WITHOUT_NINJA=1"
+      TARGETED_DEVICE_FAMILY: "1,2"
+      ASSETCATALOG_COMPILER_APPICON_NAME: "AppIcon"
+      ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME: "LaunchImage"
+      ENABLE_BITCODE: "NO"
+      DEVELOPMENT_TEAM: "32VR5PEEGQ"
+      ONLY_ACTIVE_ARCH: "NO"
+      VALID_ARCHS: "arm64"
