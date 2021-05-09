@@ -13,6 +13,7 @@ package org.appspot.apprtc;
 import android.content.Context;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
+import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.Nullable;
 import java.io.File;
@@ -755,6 +756,7 @@ public class PeerConnectionClient {
     peerConnection.getStats(new RTCStatsCollectorCallback() {
       @Override
       public void onStatsDelivered(RTCStatsReport report) {
+        Log.d("XXPXX", "onStatsDelivered " + report);
         events.onPeerConnectionStatsReady(report);
       }
     });
@@ -858,10 +860,12 @@ public class PeerConnectionClient {
       }
       String sdp = desc.description;
       if (preferIsac) {
-        sdp = preferCodec(sdp, AUDIO_CODEC_ISAC, true);
+        sdp = preferCodec(sdp, AUDIO_CODEC_ISAC, true,
+            peerConnectionParameters.loopback);
       }
       if (isVideoCallEnabled()) {
-        sdp = preferCodec(sdp, getSdpVideoCodecName(peerConnectionParameters), false);
+        sdp = preferCodec(sdp, getSdpVideoCodecName(peerConnectionParameters), false,
+            peerConnectionParameters.loopback);
       }
       if (peerConnectionParameters.audioStartBitrate > 0) {
         sdp = setStartBitrate(
@@ -1120,7 +1124,7 @@ public class PeerConnectionClient {
     return joinString(newLineParts, " ", false /* delimiterAtEnd */);
   }
 
-  private static String preferCodec(String sdp, String codec, boolean isAudio) {
+  private static String preferCodec(String sdp, String codec, boolean isAudio, boolean isLoopback) {
     final String[] lines = sdp.split("\r\n");
     final int mLineIndex = findMediaDescriptionLine(isAudio, lines);
     if (mLineIndex == -1) {
@@ -1149,7 +1153,46 @@ public class PeerConnectionClient {
     }
     Log.d(TAG, "Change media description from: " + lines[mLineIndex] + " to " + newMLine);
     lines[mLineIndex] = newMLine;
-    return joinString(Arrays.asList(lines), "\r\n", true /* delimiterAtEnd */);
+
+    List<String> finalLines = new ArrayList<>();
+    if (isLoopback) {
+      boolean isDcSection = false;
+      String dcMid = "";
+      for (String line : lines) {
+        if (line.startsWith("m=application")) {
+          isDcSection = true;
+        } else if (line.startsWith("m=")) {
+          isDcSection = false;
+        }
+        if (isDcSection && line.startsWith("a=mid:")) {
+          dcMid = line.split(":")[1];
+        }
+      }
+
+      isDcSection = false;
+      for (String line : lines) {
+        if (line.startsWith("m=application")) {
+          isDcSection = true;
+        } else if (line.startsWith("m=")) {
+          isDcSection = false;
+        }
+        if (line.startsWith("a=group:BUNDLE")) {
+          List<String> parts = new ArrayList<>();
+          for (String part : line.split(" ")) {
+            if (!TextUtils.equals(part, dcMid)) {
+              parts.add(part);
+            }
+          }
+          finalLines.add(joinString(parts, " ", false));
+        } else if (!isDcSection) {
+          finalLines.add(line);
+        }
+      }
+    } else {
+      finalLines.addAll(Arrays.asList(lines));
+    }
+
+    return joinString(finalLines, "\r\n", true /* delimiterAtEnd */);
   }
 
   private void drainCandidates() {
@@ -1335,10 +1378,12 @@ public class PeerConnectionClient {
       }
       String sdp = desc.description;
       if (preferIsac) {
-        sdp = preferCodec(sdp, AUDIO_CODEC_ISAC, true);
+        sdp = preferCodec(sdp, AUDIO_CODEC_ISAC, true,
+            peerConnectionParameters.loopback);
       }
       if (isVideoCallEnabled()) {
-        sdp = preferCodec(sdp, getSdpVideoCodecName(peerConnectionParameters), false);
+        sdp = preferCodec(sdp, getSdpVideoCodecName(peerConnectionParameters), false,
+            peerConnectionParameters.loopback);
       }
       final SessionDescription newDesc = new SessionDescription(desc.type, sdp);
       localDescription = newDesc;

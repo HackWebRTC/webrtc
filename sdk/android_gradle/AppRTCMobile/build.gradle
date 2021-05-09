@@ -1,0 +1,42 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace "org.appspot.apprtc"
+    compileSdk rootProject.ext.androidCompileSdkVersion
+
+    defaultConfig {
+        minSdk rootProject.ext.minSdkVersion
+        targetSdk 22
+        versionCode rootProject.ext.releaseVersionCode
+        versionName rootProject.ext.releaseVersionName
+        applicationId "org.appspot.apprtc"
+        multiDexEnabled true
+
+        ndk.abiFilters = rootProject.ext.abiFilters
+
+        sourceSets.main {
+            manifest.srcFile "$rootProject.rootDir/../../examples/androidapp/AndroidManifest.xml"
+            res.srcDirs "$rootProject.rootDir/../../examples/androidapp/res"
+            java.srcDirs "$rootProject.rootDir/../../examples/androidapp/src"
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    packagingOptions {
+        exclude 'META-INF/MANIFEST.MF'
+    }
+}
+
+dependencies {
+    implementation (name:'autobanh', ext:'jar')
+
+    implementation project(':webrtc')
+}
