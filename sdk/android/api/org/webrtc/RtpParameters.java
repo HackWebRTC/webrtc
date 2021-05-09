@@ -62,7 +62,8 @@ public class RtpParameters {
     // The relative DiffServ Code Point priority for this encoding, allowing
     // packets to be marked relatively higher or lower without affecting
     // bandwidth allocations.
-    @Priority public int networkPriority = Priority.LOW;
+    //@Priority public int networkPriority = Priority.LOW;
+    public int networkPriority = 1;
     // If non-null, this represents the Transport Independent Application
     // Specific maximum bandwidth defined in RFC3890. If null, there is no
     // maximum bitrate.
@@ -88,7 +89,7 @@ public class RtpParameters {
     }
 
     @CalledByNative("Encoding")
-    Encoding(String rid, boolean active, double bitratePriority, @Priority int networkPriority,
+    Encoding(String rid, boolean active, double bitratePriority, /*@Priority*/ int networkPriority,
         Integer maxBitrateBps, Integer minBitrateBps, Integer maxFramerate,
         Integer numTemporalLayers, Double scaleResolutionDownBy, Long ssrc) {
       this.rid = rid;
@@ -120,7 +121,7 @@ public class RtpParameters {
     }
 
     @CalledByNative("Encoding")
-    @Priority
+    //@Priority
     int getNetworkPriority() {
       return networkPriority;
     }

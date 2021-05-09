@@ -103,7 +103,7 @@ public interface NetworkChangeDetector {
      * <p>note: |types| is a list of ConnectionTypes, so that all cellular types can be modified in
      * one call.
      */
-    public void onNetworkPreference(List<ConnectionType> types, @NetworkPreference int preference);
+    public void onNetworkPreference(List<ConnectionType> types, /*@NetworkPreference*/ int preference);
   }
 
   public ConnectionType getCurrentConnectionType();
