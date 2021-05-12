@@ -22,6 +22,7 @@ will generate a shared library.
 
 ## **Allowed**
 
+* `absl::bind_front`
 * `absl::InlinedVector`
 * `absl::WrapUnique`
 * `absl::optional` and related stuff from `absl/types/optional.h`.
