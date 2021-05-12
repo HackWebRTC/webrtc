@@ -1,5 +1,8 @@
 # WebRTC coding style guide
 
+<?% config.freshness.owner = 'danilchap' %?>
+<?% config.freshness.reviewed = '2021-05-12' %?>
+
 ## General advice
 
 Some older parts of the code violate the style guide in various ways.
