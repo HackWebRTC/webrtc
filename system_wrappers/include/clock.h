@@ -34,22 +34,13 @@ class RTC_EXPORT Clock {
   virtual ~Clock() {}
 
   // Return a timestamp relative to an unspecified epoch.
-  // TODO(bugs.webrtc.org/11327): Make this a pure virtual function.
-  virtual Timestamp CurrentTime() {
-    return Timestamp::Micros(TimeInMicroseconds());
-  }
-
-  // TODO(bugs.webrtc.org/11327): Make the following two methods non-virtual
-  // or completely remove them.
-  virtual int64_t TimeInMilliseconds() { return CurrentTime().ms(); }
-  virtual int64_t TimeInMicroseconds() { return CurrentTime().us(); }
+  virtual Timestamp CurrentTime() = 0;
+  int64_t TimeInMilliseconds() { return CurrentTime().ms(); }
+  int64_t TimeInMicroseconds() { return CurrentTime().us(); }
 
   // Retrieve an NTP absolute timestamp (with an epoch of Jan 1, 1900).
   virtual NtpTime CurrentNtpTime() = 0;
-
-  // TODO(bugs.webrtc.org/11327): Make the following method non-virtual
-  // or completely remove it.
-  virtual int64_t CurrentNtpInMilliseconds() { return CurrentNtpTime().ToMs(); }
+  int64_t CurrentNtpInMilliseconds() { return CurrentNtpTime().ToMs(); }
 
   // Returns an instance of the real-time system clock implementation.
   static Clock* GetRealTimeClock();
