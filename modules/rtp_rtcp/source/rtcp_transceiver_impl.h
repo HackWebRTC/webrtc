@@ -49,11 +49,6 @@ class RtcpTransceiverImpl {
 
   void SetReadyToSend(bool ready);
 
-  // ABSL_DEPRECATED("bugs.webrtc.org/11327"): Remove this flavor once
-  // downstream projects migrate.
-  void ReceivePacket(rtc::ArrayView<const uint8_t> packet, int64_t now_us) {
-    ReceivePacket(packet, Timestamp::Micros(now_us));
-  }
   void ReceivePacket(rtc::ArrayView<const uint8_t> packet, Timestamp now);
 
   void SendCompoundPacket();
