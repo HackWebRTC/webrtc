@@ -47,11 +47,7 @@ class RTC_EXPORT Clock {
   int64_t CurrentNtpInMilliseconds() { return CurrentNtpTime().ToMs(); }
 
   // Converts between a relative timestamp returned by this clock, to NTP time.
-  // TODO(bugs.webrtc.org/11327): Make this method pure virtual,
-  // and delete default dummy implementation.
-  virtual NtpTime ConvertTimestampToNtpTime(Timestamp timestamp) {
-    return NtpTime();
-  }
+  virtual NtpTime ConvertTimestampToNtpTime(Timestamp timestamp) = 0;
   int64_t ConvertTimestampToNtpTimeInMilliseconds(int64_t timestamp_ms) {
     return ConvertTimestampToNtpTime(Timestamp::Millis(timestamp_ms)).ToMs();
   }
