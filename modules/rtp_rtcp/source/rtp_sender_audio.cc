@@ -287,7 +287,8 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
         // Replace missing value with 0 (invalid frequency), this will trigger
         // absolute capture time sending.
         encoder_rtp_timestamp_frequency.value_or(0),
-        Int64MsToUQ32x32(absolute_capture_timestamp_ms + NtpOffsetMs()),
+        Int64MsToUQ32x32(clock_->ConvertTimestampToNtpTimeInMilliseconds(
+            absolute_capture_timestamp_ms)),
         /*estimated_capture_clock_offset=*/
         include_capture_clock_offset_ ? absl::make_optional(0) : absl::nullopt);
     if (absolute_capture_time) {
