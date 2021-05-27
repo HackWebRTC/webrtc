@@ -343,6 +343,10 @@ rtc_library("call") {
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
+
+  if (rtc_use_recorder) {
+    deps += [ "../modules/recording:recording" ]
+  }
 }
 
 rtc_source_set("receive_stream_interface") {

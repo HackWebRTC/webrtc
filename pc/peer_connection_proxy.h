@@ -156,6 +156,8 @@ PROXY_METHOD2(bool,
               int64_t)
 PROXY_METHOD1(bool, StartRtcEventLog, std::unique_ptr<RtcEventLogOutput>)
 PROXY_METHOD0(void, StopRtcEventLog)
+PROXY_METHOD2(int32_t, StartRecorder, int32_t, std::string)
+PROXY_METHOD1(int32_t, StopRecorder, int32_t)
 PROXY_METHOD0(void, Close)
 BYPASS_PROXY_CONSTMETHOD0(rtc::Thread*, signaling_thread)
 END_PROXY_MAP(PeerConnection)

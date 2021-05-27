@@ -313,6 +313,14 @@ void DegradedCall::DestroyVideoReceiveStream(
   call_->DestroyVideoReceiveStream(receive_stream);
 }
 
+int32_t DegradedCall::StartRecorder(int32_t dir, std::string path) {
+  return -1;
+}
+
+int32_t DegradedCall::StopRecorder(int32_t dir) {
+  return -1;
+}
+
 FlexfecReceiveStream* DegradedCall::CreateFlexfecReceiveStream(
     const FlexfecReceiveStream::Config config) {
   return call_->CreateFlexfecReceiveStream(std::move(config));

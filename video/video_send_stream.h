@@ -90,6 +90,10 @@ class VideoSendStream : public webrtc::VideoSendStream {
   void ReconfigureVideoEncoder(VideoEncoderConfig) override;
   Stats GetStats() override;
 
+#ifndef DISABLE_RECORDER
+  void InjectRecorder(Recorder* recorder) override;
+#endif
+
   void StopPermanentlyAndGetRtpStates(RtpStateMap* rtp_state_map,
                                       RtpPayloadStateMap* payload_state_map);
 

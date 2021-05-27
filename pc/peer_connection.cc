@@ -2261,6 +2261,26 @@ bool PeerConnection::GetSslRole(const std::string& content_name,
   return false;
 }
 
+int32_t PeerConnection::StartRecorder(int32_t dir, std::string path) {
+  if (!worker_thread()->IsCurrent()) {
+    return worker_thread()->BlockingCall(
+        [this, dir, path]() { return StartRecorder(dir, path); });
+  }
+  RTC_DCHECK_RUN_ON(worker_thread());
+  RTC_DCHECK(call_);
+  return call_->StartRecorder(dir, path);
+}
+
+int32_t PeerConnection::StopRecorder(int32_t dir) {
+  if (!worker_thread()->IsCurrent()) {
+    return worker_thread()->BlockingCall(
+        [this, dir]() { return StopRecorder(dir); });
+  }
+  RTC_DCHECK_RUN_ON(worker_thread());
+  RTC_DCHECK(call_);
+  return call_->StopRecorder(dir);
+}
+
 bool PeerConnection::GetTransportDescription(
     const SessionDescription* description,
     const std::string& content_name,

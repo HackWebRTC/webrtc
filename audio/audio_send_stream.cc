@@ -491,6 +491,12 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
   return stats;
 }
 
+#ifndef DISABLE_RECORDER
+void AudioSendStream::InjectRecorder(Recorder* recorder) {
+  channel_send_->InjectRecorder(recorder);
+}
+#endif
+
 void AudioSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   channel_send_->ReceivedRTCPPacket(packet, length);

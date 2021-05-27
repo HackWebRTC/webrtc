@@ -35,6 +35,8 @@ class AudioDecoderPcm16B final : public AudioDecoder {
   int SampleRateHz() const override;
   size_t Channels() const override;
 
+  AudioEncoder::CodecType CodecType() override { return AudioEncoder::CodecType::kOther; }
+
  protected:
   int DecodeInternal(const uint8_t* encoded,
                      size_t encoded_len,

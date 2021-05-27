@@ -98,6 +98,10 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   webrtc::AudioSendStream::Stats GetStats(
       bool has_remote_tracks) const override;
 
+#ifndef DISABLE_RECORDER
+  void InjectRecorder(Recorder* recorder) override;
+#endif
+
   void DeliverRtcp(const uint8_t* packet, size_t length);
 
   // Implements BitrateAllocatorObserver.

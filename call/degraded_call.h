@@ -80,6 +80,9 @@ class DegradedCall : public Call, private PacketReceiver {
   void DestroyVideoReceiveStream(
       VideoReceiveStreamInterface* receive_stream) override;
 
+  int32_t StartRecorder(int32_t dir, std::string path) override;
+  int32_t StopRecorder(int32_t dir) override;
+
   FlexfecReceiveStream* CreateFlexfecReceiveStream(
       const FlexfecReceiveStream::Config config) override;
   void DestroyFlexfecReceiveStream(

@@ -46,6 +46,8 @@ class AudioDecoderMultiChannelOpusImpl final : public AudioDecoder {
   int SampleRateHz() const override;
   size_t Channels() const override;
 
+  AudioEncoder::CodecType CodecType() override { return AudioEncoder::CodecType::kOpus; }
+
   static absl::optional<AudioDecoderMultiChannelOpusConfig> SdpToConfig(
       const SdpAudioFormat& format);
 

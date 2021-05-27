@@ -1,0 +1,220 @@
+From 120f0073e1e3a3e31c4609aa11ccfd97e80c45aa Mon Sep 17 00:00:00 2001
+From: Piasy <xz4215@gmail.com>
+Date: Sat, 23 Sep 2023 11:59:37 +0800
+Subject: [PATCH] Support build for iOS
+
+---
+ BUILD.gn                         | 17 +++++++++
+ chromium/scripts/build_ffmpeg.py | 62 ++++++++++++++++++++++++++------
+ chromium/scripts/copy_config.sh  |  2 +-
+ chromium/scripts/generate_gn.py  |  5 +--
+ 4 files changed, 72 insertions(+), 14 deletions(-)
+
+diff --git a/BUILD.gn b/BUILD.gn
+index 5ea4e37336..32e7631320 100755
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -213,6 +213,12 @@ target(link_target_type, "ffmpeg_internal") {
+     "PIC",
+     "FFMPEG_CONFIGURATION=NULL",
+   ]
++  if (is_ios) {
++    defines -= [
++      "_POSIX_C_SOURCE=200112",
++      "_XOPEN_SOURCE=600",
++    ]
++  }
+ 
+   if (is_component_ffmpeg) {
+     configs += [ "//build/config/sanitizers:cfi_icall_disable" ]
+@@ -289,6 +295,14 @@ target(link_target_type, "ffmpeg_internal") {
+       # ffmpeg uses its own deprecated functions.
+       "-Wno-deprecated-declarations",
+     ]
++    if (is_ios) {
++      cflags += [
++        "-Wno-error=misleading-indentation",
++        "-Wno-pointer-bool-conversion",
++        "-Wno-error=implicit-const-int-float-conversion",
++        "-Wno-error=macro-redefined",
++      ]
++    }
+ 
+     if (!(is_android && use_call_graph)) {
+       # Remove default stack frames config so we can force -fomit-frame-pointer.
+@@ -351,6 +365,9 @@ target(link_target_type, "ffmpeg_internal") {
+         "z",
+         "rt",
+       ]
++      if (is_ios) {
++        libs -= ["rt"]
++      }
+     }
+     if (is_component_ffmpeg) {
+       # Export all symbols when building as component.
+diff --git a/chromium/scripts/build_ffmpeg.py b/chromium/scripts/build_ffmpeg.py
+index e7d4e42fc3..4b57abf4bd 100755
+--- a/chromium/scripts/build_ffmpeg.py
++++ b/chromium/scripts/build_ffmpeg.py
+@@ -43,6 +43,7 @@ ARCH_MAP = {
+         'ia32', 'x64', 'noasm-x64', 'arm', 'arm-neon', 'arm64'
+     ],
+     'mac': ['x64', 'arm64'],
++    'ios': ['x64', 'arm64'],
+     'win': ['ia32', 'x64', 'arm64'],
+ }
+ 
+@@ -151,7 +152,7 @@ def DetermineHostOsAndArch():
+ def GetDsoName(target_os, dso_name, dso_version):
+   if target_os in ('linux', 'linux-noasm', 'android'):
+     return 'lib%s.so.%s' % (dso_name, dso_version)
+-  elif target_os == 'mac':
++  elif target_os in ('mac', 'ios'):
+     return 'lib%s.%s.dylib' % (dso_name, dso_version)
+   elif target_os == 'win':
+     return '%s-%s.dll' % (dso_name, dso_version)
+@@ -545,7 +546,7 @@ def BuildFFmpeg(target_os, target_arch, host_os, host_arch, parallel_jobs,
+         r'LD=' + os.path.join(SCRIPTS_DIR, 'fake_linker.py'))])
+ 
+   if target_os in (host_os, host_os + '-noasm', 'android',
+-                   'win', 'mac') and not config_only:
++                   'win', 'mac', 'ios') and not config_only:
+     PrintAndCheckCall(
+         ['make', '-j%d' % parallel_jobs], cwd=config_dir)
+   elif config_only:
+@@ -610,7 +611,7 @@ def main(argv):
+   configure_args = args[2:]
+ 
+ 
+-  if target_os not in ('android', 'linux', 'linux-noasm', 'mac', 'win', 'all'):
++  if target_os not in ('android', 'linux', 'linux-noasm', 'mac', 'ios', 'win', 'all'):
+     parser.print_help()
+     return 1
+ 
+@@ -623,7 +624,7 @@ def main(argv):
+   parallel_jobs = 8
+ 
+   if target_os.split('-', 1)[0] != host_os and (host_os != 'linux' or
+-                                                host_arch != 'x64'):
++                                                host_arch != 'x64') and target_os != 'ios':
+     print('Cross compilation can only be done from a linux x64 host.')
+     return 1
+ 
+@@ -907,18 +908,23 @@ def ConfigureAndBuild(target_arch, target_os, host_os, host_arch, parallel_jobs,
+     ])
+ 
+   if 'win' not in target_os and 'android' not in target_os:
+-    configure_flags['Common'].extend([
+-        '--enable-pic',
+-        '--cc=clang',
+-        '--cxx=clang++',
+-        '--ld=clang',
+-    ])
++    if target_os == 'ios':
++      configure_flags['Common'].extend([
++          '--enable-pic',
++      ])
++    else:
++      configure_flags['Common'].extend([
++          '--enable-pic',
++          '--cc=clang',
++          '--cxx=clang++',
++          '--ld=clang',
++      ])
+ 
+     # Clang Linux will use the first 'ld' it finds on the path, which will
+     # typically be the system one, so explicitly configure use of Clang's
+     # ld.lld, to ensure that things like cross-compilation and LTO work.
+     # This does not work for ia32 and is always used on mac.
+-    if target_arch != 'ia32' and target_os != 'mac':
++    if target_arch != 'ia32' and target_os != 'mac' and target_os != 'ios':
+       configure_flags['Common'].append('--extra-ldflags=-fuse-ld=lld')
+ 
+   # Should be run on Mac, unless we're cross-compiling on Linux.
+@@ -959,6 +965,40 @@ def ConfigureAndBuild(target_arch, target_os, host_os, host_arch, parallel_jobs,
+                                                                target_os),
+           file=sys.stderr)
+ 
++  if target_os == 'ios':
++    if host_os != 'mac':
++      print(
++          'Script should be run on a Mac host.\n',
++          file=sys.stderr)
++      return 1
++
++    configure_flags['Common'].extend([
++        '--enable-cross-compile',
++        '--target-os=darwin',
++    ])
++
++    if target_arch == 'x64':
++      configure_flags['Common'].extend([
++          '--arch=x86_64',
++          '--cc=xcrun -sdk iphonesimulator clang',
++          '--as=gas-preprocessor.pl -- xcrun -sdk iphonesimulator clang',
++          '--extra-cflags=-arch x86_64 -mios-simulator-version-min=10.0',
++          '--extra-ldflags=-arch x86_64 -mios-simulator-version-min=10.0',
++      ])
++    elif target_arch == 'arm64':
++      configure_flags['Common'].extend([
++          '--arch=arm64',
++          '--cc=xcrun -sdk iphoneos clang',
++          '--as=gas-preprocessor.pl -arch aarch64 -- xcrun -sdk iphoneos clang',
++          '--extra-cflags=-arch arm64 -mios-version-min=10.0 -fembed-bitcode',
++          '--extra-ldflags=-arch arm64 -mios-version-min=10.0 -fembed-bitcode',
++      ])
++    else:
++      print(
++          'Error: Unknown target arch %r for target OS %r!' % (target_arch,
++                                                               target_os),
++          file=sys.stderr)
++
+   # Should be run on Windows.
+   if target_os == 'win':
+     configure_flags['Common'].extend([
+diff --git a/chromium/scripts/copy_config.sh b/chromium/scripts/copy_config.sh
+index 4db59d2081..d1ae3fbb29 100755
+--- a/chromium/scripts/copy_config.sh
++++ b/chromium/scripts/copy_config.sh
+@@ -5,7 +5,7 @@
+ # found in the LICENSE file.
+ 
+ # Use this to copy all config files into the tree.
+-for os in android linux linux-noasm mac win; do
++for os in android linux linux-noasm mac ios win; do
+   for target in Chromium Chrome ChromeOS; do
+     # Copy config files for various architectures:
+     #   - ia32/x64 have config.asm, config.h
+diff --git a/chromium/scripts/generate_gn.py b/chromium/scripts/generate_gn.py
+index e86c7e0b6f..0043e7e6ea 100755
+--- a/chromium/scripts/generate_gn.py
++++ b/chromium/scripts/generate_gn.py
+@@ -82,7 +82,7 @@ SUPPORT_MATRIX = {
+     Attr.TARGET:
+         set(['Chromium', 'Chrome', 'ChromeOS']),
+     Attr.PLATFORM:
+-        set(['android', 'linux', 'win', 'mac'])
++        set(['android', 'linux', 'win', 'mac', 'ios'])
+ }
+ 
+ 
+@@ -119,7 +119,7 @@ def CleanObjectFiles(object_files):
+       'libavformat/sdp.o',
+       'libavutil/adler32.o',
+       'libavutil/avsscanf.o',
+-      'libavutil/audio_fifo.o',
++      #'libavutil/audio_fifo.o', needed by bt_audio_mixer
+       'libavutil/blowfish.o',
+       'libavutil/cast5.o',
+       'libavutil/des.o',
+@@ -676,6 +676,7 @@ MUST_BE_MISSING_INCLUDE_FILES = [
+ ALLOWED_LICENSES = [
+     'BSD (3 clause) LGPL (v2.1 or later)',
+     'BSL (v1) LGPL (v2.1 or later)',
++    'BSL LGPL (v2.1 or later) GENERATED FILE',
+     'ISC GENERATED FILE',
+     'LGPL (v2.1 or later)',
+     'LGPL (v2.1 or later) GENERATED FILE',
+-- 
+2.41.0
+

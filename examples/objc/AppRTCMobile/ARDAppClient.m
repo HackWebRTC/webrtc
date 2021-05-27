@@ -334,6 +334,10 @@ static int const kKbpsMultiplier = 1000;
 #endif
 }
 
+- (RTCPeerConnection*)pc {
+  return _peerConnection;
+}
+
 #pragma mark - ARDSignalingChannelDelegate
 
 - (void)channel:(id<ARDSignalingChannel>)channel

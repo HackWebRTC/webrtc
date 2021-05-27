@@ -142,6 +142,12 @@ if (is_android) {
       "../../pc:libjingle_peerconnection",
       "../../rtc_base",
     ]
+
+    if (rtc_use_recorder) {
+      deps += [
+        "//third_party/ffmpeg",
+      ]
+    }
     output_extension = "so"
   }
 

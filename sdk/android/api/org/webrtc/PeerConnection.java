@@ -1205,6 +1205,14 @@ public class PeerConnection {
     nativeStopRtcEventLog();
   }
 
+  public int startRecorder(int dir, String path) {
+    return nativeStartRecorder(dir, path);
+  }
+
+  public int stopRecorder(int dir) {
+    return nativeStopRecorder(dir);
+  }
+
   // TODO(fischman): add support for DTMF-related methods once that API
   // stabilizes.
   public SignalingState signalingState() {
@@ -1322,4 +1330,6 @@ public class PeerConnection {
       MediaStreamTrack.MediaType mediaType, RtpTransceiver.RtpTransceiverInit init);
   private native boolean nativeStartRtcEventLog(int file_descriptor, int max_size_bytes);
   private native void nativeStopRtcEventLog();
+  private native int nativeStartRecorder(int dir, String path);
+  private native int nativeStopRecorder(int dir);
 }

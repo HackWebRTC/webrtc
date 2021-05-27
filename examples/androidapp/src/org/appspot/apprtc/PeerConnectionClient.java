@@ -1230,8 +1230,25 @@ public class PeerConnectionClient {
     }
   }
 
+  private boolean recording = false;
+
   public void switchCamera() {
-    executor.execute(this ::switchCameraInternal);
+    if (false) {
+      executor.execute(this ::switchCameraInternal);
+    } else if (true) {
+      executor.execute(() -> {
+        if (peerConnection == null) {
+          return;
+        }
+
+        recording = !recording;
+        if (recording) {
+          peerConnection.startRecorder(RtpTransceiver.RtpTransceiverDirection.SEND_ONLY.ordinal(), "/sdcard/send.mkv");
+        } else {
+          peerConnection.stopRecorder(RtpTransceiver.RtpTransceiverDirection.SEND_ONLY.ordinal());
+        }
+      });
+    }
   }
 
   public void changeCaptureFormat(final int width, final int height, final int framerate) {

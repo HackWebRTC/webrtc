@@ -319,6 +319,15 @@ VideoSendStream::Stats VideoSendStream::GetStats() {
   return stats_proxy_.GetStats();
 }
 
+#ifndef DISABLE_RECORDER
+void VideoSendStream::InjectRecorder(Recorder* recorder) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  rtp_transport_queue_->PostTask([recorder, this] {
+    send_stream_.InjectRecorder(recorder);
+  });
+}
+#endif
+
 absl::optional<float> VideoSendStream::GetPacingFactorOverride() const {
   return send_stream_.configured_pacing_factor();
 }

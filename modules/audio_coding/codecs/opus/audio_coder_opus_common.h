@@ -58,6 +58,10 @@ class OpusFrame : public AudioDecoder::EncodedAudioFrame {
 
   bool IsDtxPacket() const override { return payload_.size() <= 2; }
 
+  AudioEncoder::CodecType CodecType() override { return AudioEncoder::CodecType::kOpus; }
+  int PayloadSize() override { return payload_.size(); }
+  const uint8_t* PayloadData() override { return payload_.data(); }
+
   absl::optional<DecodeResult> Decode(
       rtc::ArrayView<int16_t> decoded) const override {
     AudioDecoder::SpeechType speech_type = AudioDecoder::kSpeech;

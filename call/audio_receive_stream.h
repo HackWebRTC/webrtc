@@ -23,6 +23,9 @@
 #include "api/rtp_parameters.h"
 #include "call/receive_stream.h"
 #include "call/rtp_config.h"
+#ifndef DISABLE_RECORDER
+#include "modules/recording/recorder.h"
+#endif
 
 namespace webrtc {
 class AudioSinkInterface;
@@ -203,6 +206,10 @@ class AudioReceiveStreamInterface : public MediaReceiveStreamInterface {
   // TODO(tommi): This is currently only called from
   // `WebRtcAudioReceiveStream::GetRtpParameters()`. See if we can remove it.
   virtual const std::vector<RtpExtension>& GetRtpExtensions() const = 0;
+
+#ifndef DISABLE_RECORDER
+  virtual void InjectRecorder(Recorder* recorder) = 0;
+#endif
 
  protected:
   virtual ~AudioReceiveStreamInterface() {}

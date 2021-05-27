@@ -879,6 +879,22 @@ static void JNI_PeerConnection_StopRtcEventLog(
   ExtractNativePC(jni, j_pc)->StopRtcEventLog();
 }
 
+static int JNI_PeerConnection_StartRecorder(
+    JNIEnv* jni,
+    const JavaParamRef<jobject>& j_pc,
+    int dir,
+    const JavaParamRef<jstring>& j_path) {
+  std::string path = JavaToNativeString(jni, j_path);
+  return ExtractNativePC(jni, j_pc)->StartRecorder(dir, path);
+}
+
+static int JNI_PeerConnection_StopRecorder(
+    JNIEnv* jni,
+    const JavaParamRef<jobject>& j_pc,
+    int dir) {
+  return ExtractNativePC(jni, j_pc)->StopRecorder(dir);
+}
+
 static ScopedJavaLocalRef<jobject> JNI_PeerConnection_SignalingState(
     JNIEnv* env,
     const JavaParamRef<jobject>& j_pc) {

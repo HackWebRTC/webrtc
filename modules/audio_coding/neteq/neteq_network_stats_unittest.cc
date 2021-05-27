@@ -58,6 +58,10 @@ class MockAudioDecoder final : public AudioDecoder {
 
     size_t Duration() const override { return kPacketDuration; }
 
+    AudioEncoder::CodecType CodecType() override { return AudioEncoder::CodecType::kOther; }
+    int PayloadSize() { return 0; }
+    const uint8_t* PayloadData() { return nullptr; }
+
     absl::optional<DecodeResult> Decode(
         rtc::ArrayView<int16_t> decoded) const override {
       const size_t output_size =

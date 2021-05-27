@@ -303,6 +303,9 @@ class PeerConnection : public PeerConnectionInternal,
   bool NeedsIceRestart(const std::string& content_name) const override;
   bool GetSslRole(const std::string& content_name, rtc::SSLRole* role) override;
 
+  int32_t StartRecorder(int32_t dir, std::string path) override;
+  int32_t StopRecorder(int32_t dir) override;
+
   // Functions needed by DataChannelController
   void NoteDataAddedEvent() override { NoteUsageEvent(UsageEvent::DATA_ADDED); }
   // Returns the observer. Will crash on CHECK if the observer is removed.

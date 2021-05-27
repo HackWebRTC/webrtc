@@ -29,6 +29,9 @@
 #include "call/syncable.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/rtp_rtcp/source/source_tracker.h"
+#ifndef DISABLE_RECORDER
+#include "modules/recording/recorder.h"
+#endif
 #include "system_wrappers/include/clock.h"
 
 // TODO(solenberg, nisse): This file contains a few NOLINT marks, to silence
@@ -168,6 +171,10 @@ class ChannelReceiveInterface : public RtpPacketSinkInterface {
 
   virtual void OnLocalSsrcChange(uint32_t local_ssrc) = 0;
   virtual uint32_t GetLocalSsrc() const = 0;
+
+#ifndef DISABLE_RECORDER
+  virtual void InjectRecorder(Recorder* recorder) = 0;
+#endif
 };
 
 std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(

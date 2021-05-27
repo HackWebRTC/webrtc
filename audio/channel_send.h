@@ -22,6 +22,9 @@
 #include "api/frame_transformer_interface.h"
 #include "api/function_view.h"
 #include "api/task_queue/task_queue_factory.h"
+#ifndef DISABLE_RECORDER
+#include "modules/recording/recorder.h"
+#endif
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
 #include "modules/rtp_rtcp/source/rtp_sender_audio.h"
@@ -122,6 +125,10 @@ class ChannelSendInterface {
   virtual void SetEncoderToPacketizerFrameTransformer(
       rtc::scoped_refptr<webrtc::FrameTransformerInterface>
           frame_transformer) = 0;
+
+#ifndef DISABLE_RECORDER
+  virtual void InjectRecorder(Recorder* recorder) = 0;
+#endif
 };
 
 std::unique_ptr<ChannelSendInterface> CreateChannelSend(

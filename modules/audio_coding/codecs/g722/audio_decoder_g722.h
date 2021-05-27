@@ -33,6 +33,8 @@ class AudioDecoderG722Impl final : public AudioDecoder {
   int SampleRateHz() const override;
   size_t Channels() const override;
 
+  AudioEncoder::CodecType CodecType() override { return AudioEncoder::CodecType::kG722; }
+
  protected:
   int DecodeInternal(const uint8_t* encoded,
                      size_t encoded_len,
@@ -59,6 +61,8 @@ class AudioDecoderG722StereoImpl final : public AudioDecoder {
   int SampleRateHz() const override;
   int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
   size_t Channels() const override;
+
+  AudioEncoder::CodecType CodecType() override { return AudioEncoder::CodecType::kG722; }
 
  protected:
   int DecodeInternal(const uint8_t* encoded,

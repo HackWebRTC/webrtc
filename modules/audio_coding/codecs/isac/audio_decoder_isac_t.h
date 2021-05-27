@@ -38,6 +38,7 @@ class AudioDecoderIsacT final : public AudioDecoder {
   int ErrorCode() override;
   int SampleRateHz() const override;
   size_t Channels() const override;
+  AudioEncoder::CodecType CodecType() override { return AudioEncoder::CodecType::kIsac; }
   int DecodeInternal(const uint8_t* encoded,
                      size_t encoded_len,
                      int sample_rate_hz,

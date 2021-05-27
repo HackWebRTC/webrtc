@@ -1,0 +1,33 @@
+From 139a7c7ea4f2110f441d7c564cb1703ea327108d Mon Sep 17 00:00:00 2001
+From: Piasy <xz4215@gmail.com>
+Date: Sat, 23 Sep 2023 12:24:25 +0800
+Subject: [PATCH] Support build for Android
+
+---
+ chromium/scripts/generate_gn.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/chromium/scripts/generate_gn.py b/chromium/scripts/generate_gn.py
+index e86c7e0b6f..4778e98740 100755
+--- a/chromium/scripts/generate_gn.py
++++ b/chromium/scripts/generate_gn.py
+@@ -119,7 +119,7 @@ def CleanObjectFiles(object_files):
+       'libavformat/sdp.o',
+       'libavutil/adler32.o',
+       'libavutil/avsscanf.o',
+-      'libavutil/audio_fifo.o',
++      #'libavutil/audio_fifo.o', needed by bt_audio_mixer
+       'libavutil/blowfish.o',
+       'libavutil/cast5.o',
+       'libavutil/des.o',
+@@ -676,6 +676,7 @@ MUST_BE_MISSING_INCLUDE_FILES = [
+ ALLOWED_LICENSES = [
+     'BSD (3 clause) LGPL (v2.1 or later)',
+     'BSL (v1) LGPL (v2.1 or later)',
++    'BSL LGPL (v2.1 or later) GENERATED FILE',
+     'ISC GENERATED FILE',
+     'LGPL (v2.1 or later)',
+     'LGPL (v2.1 or later) GENERATED FILE',
+-- 
+2.41.0
+

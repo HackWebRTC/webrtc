@@ -18,6 +18,7 @@ android {
                 "$rootProject.rootDir/../android/src/java",
                 "$rootProject.rootDir/../../rtc_base/java/src",
                 "$rootProject.rootDir/../../modules/audio_device/android/java/src",
+                "$rootProject.rootDir/webrtc/src/main/java",
         ]
 
         if (!compileNativeCode) {

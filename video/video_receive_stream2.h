@@ -195,6 +195,10 @@ class VideoReceiveStream2
                                          bool generate_key_frame) override;
   void GenerateKeyFrame() override;
 
+#ifndef DISABLE_RECORDER
+  void InjectRecorder(Recorder* recorder) override;
+#endif
+
  private:
   // FrameSchedulingReceiver implementation.
   // Called on packet sequence.
@@ -338,6 +342,11 @@ class VideoReceiveStream2
   // determines the maximum number of decoders that are created up front before
   // any video frame has been received.
   FieldTrialParameter<int> maximum_pre_stream_decoders_;
+
+#ifndef DISABLE_RECORDER
+  mutable webrtc::Mutex recorder_mutex_;
+  Recorder* recorder_ RTC_GUARDED_BY(recorder_mutex_);
+#endif
 
   // Defined last so they are destroyed before all other members.
   rtc::TaskQueue decode_queue_;

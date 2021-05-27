@@ -241,6 +241,9 @@ config("common_inherited_config") {
   if (!rtc_use_h265) {
     defines += [ "DISABLE_H265" ]
   }
+  if (!rtc_use_recorder) {
+    defines += [ "DISABLE_RECORDER" ]
+  }
 }
 
 # TODO(bugs.webrtc.org/9693): Remove the possibility to suppress this warning

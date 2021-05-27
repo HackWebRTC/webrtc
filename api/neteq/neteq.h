@@ -30,6 +30,9 @@ namespace webrtc {
 class AudioFrame;
 class AudioDecoderFactory;
 class Clock;
+#ifndef DISABLE_RECORDER
+class Recorder;
+#endif
 
 struct NetEqNetworkStatistics {
   uint16_t current_buffer_size_ms;    // Current jitter buffer size in ms.
@@ -316,6 +319,10 @@ class NetEq {
   // Returns the length of the audio yet to play in the sync buffer.
   // Mainly intended for testing.
   virtual int SyncBufferSizeMs() const = 0;
+
+#ifndef DISABLE_RECORDER
+  virtual void InjectRecorder(Recorder* recorder) = 0;
+#endif
 };
 
 }  // namespace webrtc

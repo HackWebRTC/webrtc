@@ -38,6 +38,12 @@ if (is_win || is_ios || is_android) {
   rtc_use_h265 = false
 }
 
+if (is_ios || is_android) {
+  rtc_use_recorder = true
+} else {
+  rtc_use_recorder = false
+}
+
 # Use bundled hermetic Xcode installation maintainted by Chromium,
 # except for local iOS builds where it's unsupported.
 # Allow for mac cross compile on linux machines.

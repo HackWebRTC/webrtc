@@ -44,6 +44,10 @@ class OldStyleEncodedFrame final : public AudioDecoder::EncodedAudioFrame {
                          {static_cast<size_t>(ret), speech_type});
   }
 
+  AudioEncoder::CodecType CodecType() override { return decoder_->CodecType(); }
+  int PayloadSize() override { return payload_.size(); }
+  const uint8_t* PayloadData() override { return payload_.data(); }
+
  private:
   AudioDecoder* const decoder_;
   const rtc::Buffer payload_;

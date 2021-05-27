@@ -228,6 +228,9 @@ VideoReceiveStream2::VideoReceiveStream2(
           TimeDelta::Millis(config_.rtp.nack.rtp_history_ms),
           false)),
       maximum_pre_stream_decoders_("max", kDefaultMaximumPreStreamDecoders),
+#ifndef DISABLE_RECORDER
+      recorder_(nullptr),
+#endif
       decode_queue_(task_queue_factory_->CreateTaskQueue(
           "DecodingQueue",
           TaskQueueFactory::Priority::HIGH)) {
@@ -813,6 +816,16 @@ void VideoReceiveStream2::OnEncodedFrame(std::unique_ptr<EncodedFrame> frame) {
   const bool received_frame_is_keyframe =
       frame->FrameType() == VideoFrameType::kVideoFrameKey;
 
+#ifndef DISABLE_RECORDER
+  {
+    webrtc::MutexLock lock(&recorder_mutex_);
+    if (recorder_) {
+      EncodedImage image = frame->EncodedImage();
+      recorder_->AddVideoFrame(&image, frame->CodecSpecific()->codecType);
+    }
+  }
+#endif
+
   // Current OnPreDecode only cares about QP for VP8.
   int qp = -1;
   if (frame->CodecSpecific()->codecType == kVideoCodecVP8) {
@@ -1124,6 +1137,22 @@ void VideoReceiveStream2::GenerateKeyFrame() {
   RequestKeyFrame(clock_->CurrentTime());
   keyframe_generation_requested_ = true;
 }
+
+#ifndef DISABLE_RECORDER
+void VideoReceiveStream2::InjectRecorder(Recorder* recorder) {
+  char log_buf[16];
+  snprintf(log_buf, sizeof(log_buf) - 1, "%p", recorder);
+  RTC_LOG(LS_INFO) << "VideoReceiveStream::InjectRecorder " << log_buf;
+  {
+    webrtc::MutexLock lock(&recorder_mutex_);
+    recorder_ = recorder;
+  }
+
+  if (recorder) {
+    GenerateKeyFrame();
+  }
+}
+#endif
 
 }  // namespace internal
 }  // namespace webrtc

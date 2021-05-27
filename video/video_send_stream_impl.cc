@@ -236,6 +236,9 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       video_stream_encoder_(video_stream_encoder),
       bandwidth_observer_(transport->GetBandwidthObserver()),
       rtp_video_sender_(rtp_video_sender),
+#ifndef DISABLE_RECORDER
+      recorder_(nullptr),
+#endif
       configured_pacing_factor_(
           GetConfiguredPacingFactor(*config_, content_type, pacing_config_)) {
   RTC_DCHECK_GE(config_->rtp.payload_type, 0);
@@ -376,6 +379,24 @@ void VideoSendStreamImpl::Stop() {
   rtp_video_sender_->SetActive(false);
   StopVideoSendStream();
 }
+
+#ifndef DISABLE_RECORDER
+void VideoSendStreamImpl::InjectRecorder(Recorder* recorder) {
+  char log_buf[16];
+  snprintf(log_buf, sizeof(log_buf) - 1, "%p", recorder);
+  RTC_LOG(LS_INFO) << "VideoSendStream::InjectRecorder " << log_buf;
+  {
+    webrtc::MutexLock lock(&recorder_mutex_);
+    recorder_ = recorder;
+  }
+
+  if (recorder) {
+    rtp_transport_queue_->PostTask([=] {
+      video_stream_encoder_->SendKeyFrame();
+    });
+  }
+}
+#endif
 
 void VideoSendStreamImpl::StopVideoSendStream() {
   RTC_DCHECK_RUN_ON(rtp_transport_queue_);
@@ -562,6 +583,15 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
   } else {
     enable_padding_task();
   }
+
+#ifndef DISABLE_RECORDER
+  {
+    webrtc::MutexLock lock(&recorder_mutex_);
+    if (recorder_) {
+      recorder_->AddVideoFrame(&encoded_image, codec_specific_info->codecType);
+    }
+  }
+#endif
 
   EncodedImageCallback::Result result(EncodedImageCallback::Result::OK);
   result =
