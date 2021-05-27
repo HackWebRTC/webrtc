@@ -37,6 +37,9 @@
 #include "call/receive_stream.h"
 #include "call/rtp_config.h"
 #include "common_video/frame_counts.h"
+#ifndef DISABLE_RECORDER
+#include "modules/recording/recorder.h"
+#endif
 #include "modules/rtp_rtcp/include/rtcp_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
@@ -345,6 +348,10 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
       std::map<int, int> associated_payload_types) = 0;
 
   virtual void UpdateRtxSsrc(uint32_t ssrc) = 0;
+
+#ifndef DISABLE_RECORDER
+  virtual void InjectRecorder(Recorder* recorder) = 0;
+#endif
 
  protected:
   virtual ~VideoReceiveStreamInterface() {}

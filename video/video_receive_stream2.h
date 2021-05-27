@@ -199,6 +199,10 @@ class VideoReceiveStream2
 
   void UpdateRtxSsrc(uint32_t ssrc) override;
 
+#ifndef DISABLE_RECORDER
+  void InjectRecorder(Recorder* recorder) override;
+#endif
+
  private:
   // FrameSchedulingReceiver implementation.
   // Called on packet sequence.
@@ -348,6 +352,11 @@ class VideoReceiveStream2
   // Buffered encoded frames held while waiting for decoded resolution.
   std::vector<std::unique_ptr<EncodedFrame>> buffered_encoded_frames_
       RTC_GUARDED_BY(decode_sequence_checker_);
+
+#ifndef DISABLE_RECORDER
+  webrtc::Mutex recorder_mutex_;
+  Recorder* recorder_ RTC_GUARDED_BY(recorder_mutex_);
+#endif
 
   // Used to signal destruction to potentially pending tasks.
   ScopedTaskSafety task_safety_;

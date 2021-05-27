@@ -74,6 +74,10 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
 
   int GetTargetBitrate() const override;
 
+#ifndef DISABLE_RECORDER
+  void InjectRecorder(Recorder* recorder) override;
+#endif
+
  private:
   struct InputData {
     InputData() : buffer(kInitialInputDataBufferSize) {}
@@ -161,6 +165,11 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   AudioPacketizationCallback* packetization_callback_
       RTC_GUARDED_BY(callback_mutex_);
 
+#ifndef DISABLE_RECORDER
+  mutable webrtc::Mutex recorder_mutex_;
+  Recorder* recorder_ RTC_GUARDED_BY(recorder_mutex_);
+#endif
+
   int codec_histogram_bins_log_[static_cast<size_t>(
       AudioEncoder::CodecType::kMaxLoggedAudioCodecTypes)];
   int number_of_consecutive_empty_packets_;
@@ -191,6 +200,9 @@ AudioCodingModuleImpl::AudioCodingModuleImpl()
       first_10ms_data_(false),
       first_frame_(true),
       packetization_callback_(NULL),
+#ifndef DISABLE_RECORDER
+      recorder_(nullptr),
+#endif
       codec_histogram_bins_log_(),
       number_of_consecutive_empty_packets_(0) {
   RTC_LOG(LS_INFO) << "Created";
@@ -272,6 +284,19 @@ int32_t AudioCodingModuleImpl::Encode(
     frame_type = encoded_info.speech ? AudioFrameType::kAudioFrameSpeech
                                      : AudioFrameType::kAudioFrameCN;
   }
+
+#ifndef DISABLE_RECORDER
+  {
+    webrtc::MutexLock lock(&recorder_mutex_);
+    if (encode_buffer_.size() > 0 && recorder_) {
+      recorder_->AddAudioFrame(encoder_stack_->SampleRateHz(),
+                               encoder_stack_->NumChannels(),
+                               encode_buffer_.data(),
+                               encode_buffer_.size(),
+                               encoded_info.encoder_type);
+    }
+  }
+#endif
 
   {
     MutexLock lock(&callback_mutex_);
@@ -539,6 +564,15 @@ int AudioCodingModuleImpl::GetTargetBitrate() const {
   }
   return encoder_stack_->GetTargetBitrate();
 }
+
+#ifndef DISABLE_RECORDER
+void AudioCodingModuleImpl::InjectRecorder(Recorder* recorder) {
+  RTC_LOG(LS_INFO) << "AudioCodingModuleImpl::InjectRecorder "
+    << static_cast<void*>(recorder);
+  webrtc::MutexLock lock(&recorder_mutex_);
+  recorder_ = recorder;
+}
+#endif
 
 }  // namespace
 

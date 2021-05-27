@@ -33,6 +33,9 @@
 #include "call/rtp_transport_controller_send_interface.h"
 #include "call/rtp_video_sender_interface.h"
 #include "call/video_send_stream.h"
+#ifndef DISABLE_RECORDER
+#include "modules/recording/recorder.h"
+#endif
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/experiments/field_trial_parser.h"
@@ -111,6 +114,10 @@ class VideoSendStreamImpl : public webrtc::VideoSendStream,
   void StopPermanentlyAndGetRtpStates(RtpStateMap* rtp_state_map,
                                       RtpPayloadStateMap* payload_state_map);
   void GenerateKeyFrame(const std::vector<std::string>& rids) override;
+
+#ifndef DISABLE_RECORDER
+  void InjectRecorder(Recorder* recorder) override;
+#endif
 
   // TODO(holmer): Move these to RtpTransportControllerSend.
   std::map<uint32_t, RtpState> GetRtpStates() const;
@@ -224,6 +231,11 @@ class VideoSendStreamImpl : public webrtc::VideoSendStream,
       RTC_GUARDED_BY(thread_checker_);
 
   ScopedTaskSafety worker_queue_safety_;
+
+#ifndef DISABLE_RECORDER
+  webrtc::Mutex recorder_mutex_;
+  Recorder* recorder_ RTC_GUARDED_BY(recorder_mutex_);
+#endif
 
   // Context for the most recent and last sent video bitrate allocation. Used to
   // throttle sending of similar bitrate allocations.

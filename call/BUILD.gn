@@ -408,6 +408,10 @@ rtc_source_set("payload_type") {
     "../media:codec",
     "../rtc_base:strong_alias",
   ]
+
+  if (rtc_use_recorder) {
+    deps += [ "../modules/recording:recording" ]
+  }
 }
 
 rtc_source_set("receive_stream_interface") {

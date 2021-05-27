@@ -204,6 +204,10 @@ class ChannelSend : public ChannelSendInterface,
     bitrate_accountant_.RegisterPacketOverhead(packet_byte_overhead);
   }
 
+#ifndef DISABLE_RECORDER
+  void InjectRecorder(Recorder* recorder) override;
+#endif
+
  private:
   // From AudioPacketizationCallback in the ACM
   int32_t SendData(AudioFrameType frameType,
@@ -921,6 +925,12 @@ void ChannelSend::SetEncoderToPacketizerFrameTransformer(
         InitFrameTransformerDelegate(std::move(frame_transformer));
       });
 }
+
+#ifndef DISABLE_RECORDER
+void ChannelSend::InjectRecorder(Recorder* recorder) {
+  audio_coding_->InjectRecorder(recorder);
+}
+#endif
 
 void ChannelSend::OnReceivedRtt(int64_t rtt_ms) {
   // Invoke audio encoders OnReceivedRtt().

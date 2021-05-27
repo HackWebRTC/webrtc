@@ -100,6 +100,10 @@ class AudioReceiveStreamImpl final : public webrtc::AudioReceiveStreamInterface,
   int GetBaseMinimumPlayoutDelayMs() const override;
   std::vector<webrtc::RtpSource> GetSources() const override;
 
+#ifndef DISABLE_RECORDER
+  void InjectRecorder(Recorder* recorder) override;
+#endif
+
   // AudioMixer::Source
   AudioFrameInfo GetAudioFrameWithInfo(int sample_rate_hz,
                                        AudioFrame* audio_frame) override;

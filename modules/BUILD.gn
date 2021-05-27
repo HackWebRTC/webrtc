@@ -26,6 +26,10 @@ group("modules") {
   if (rtc_desktop_capture_supported) {
     deps += [ "desktop_capture" ]
   }
+
+  if (rtc_use_recorder) {
+    deps += [ "recording" ]
+  }
 }
 
 rtc_source_set("module_api_public") {

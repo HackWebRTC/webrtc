@@ -137,6 +137,10 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
                      bool create_components)
     : env_(deps.env),
       tick_timer_(std::move(deps.tick_timer)),
+#ifndef DISABLE_RECORDER
+      recorder_(nullptr),
+      channel_num_(0),
+#endif
       decoder_database_(std::move(deps.decoder_database)),
       dtmf_buffer_(std::move(deps.dtmf_buffer)),
       dtmf_tone_generator_(std::move(deps.dtmf_tone_generator)),
@@ -440,6 +444,15 @@ int NetEqImpl::SyncBufferSizeMs() const {
   return rtc::dchecked_cast<int>(sync_buffer_->FutureLength() /
                                  rtc::CheckedDivExact(fs_hz_, 1000));
 }
+
+#ifndef DISABLE_RECORDER
+void NetEqImpl::InjectRecorder(Recorder* recorder) {
+  RTC_LOG(LS_INFO) << "NetEqImpl::InjectRecorder "
+    << static_cast<void*>(recorder);
+  MutexLock lock(&recorder_mutex_);
+  recorder_ = recorder;
+}
+#endif
 
 const SyncBuffer* NetEqImpl::sync_buffer_for_test() const {
   MutexLock lock(&mutex_);
@@ -1425,6 +1438,18 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list,
                operation == Operation::kMerge ||
                operation == Operation::kPreemptiveExpand);
 
+#ifndef DISABLE_RECORDER
+    {
+      MutexLock lock(&recorder_mutex_);
+      if (packet_list->front().frame->PayloadSize() > 0 && recorder_) {
+        recorder_->AddAudioFrame(fs_hz_, channel_num_,
+                                 packet_list->front().frame->PayloadData(),
+                                 packet_list->front().frame->PayloadSize(),
+                                 packet_list->front().frame->CodecType());
+      }
+    }
+#endif
+
     auto opt_result = packet_list->front().frame->Decode(
         rtc::ArrayView<int16_t>(&decoded_buffer_[*decoded_length],
                                 decoded_buffer_length_ - *decoded_length));
@@ -2013,6 +2038,9 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   fs_mult_ = fs_hz / 8000;
   output_size_samples_ = static_cast<size_t>(kOutputSizeMs * 8 * fs_mult_);
   decoder_frame_length_ = 3 * output_size_samples_;  // Initialize to 30ms.
+#ifndef DISABLE_RECORDER
+  channel_num_ = channels;
+#endif
 
   last_mode_ = Mode::kNormal;
 

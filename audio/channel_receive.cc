@@ -223,6 +223,10 @@ class ChannelReceive : public ChannelReceiveInterface,
       uint32_t ssrc,
       const RtcpPacketTypeCounter& packet_counter) override;
 
+#ifndef DISABLE_RECORDER
+  void InjectRecorder(Recorder* recorder) override;
+#endif
+
  private:
   void ReceivePacket(const uint8_t* packet,
                      size_t packet_length,
@@ -999,6 +1003,12 @@ uint32_t ChannelReceive::GetLocalSsrc() const {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   return rtp_rtcp_->local_media_ssrc();
 }
+
+#ifndef DISABLE_RECORDER
+void ChannelReceive::InjectRecorder(Recorder* recorder) {
+  neteq_->InjectRecorder(recorder);
+}
+#endif
 
 NetworkStatistics ChannelReceive::GetNetworkStatistics(
     bool get_and_clear_legacy_stats) const {

@@ -30,6 +30,9 @@
 #include "api/units/timestamp.h"
 #include "call/receive_stream.h"
 #include "call/rtp_config.h"
+#ifndef DISABLE_RECORDER
+#include "modules/recording/recorder.h"
+#endif
 
 namespace webrtc {
 class AudioSinkInterface;
@@ -209,6 +212,10 @@ class AudioReceiveStreamInterface : public MediaReceiveStreamInterface {
   // This member will not change mid-stream and can be assumed to be const
   // post initialization.
   virtual uint32_t remote_ssrc() const = 0;
+
+#ifndef DISABLE_RECORDER
+  virtual void InjectRecorder(Recorder* recorder) = 0;
+#endif
 
  protected:
   virtual ~AudioReceiveStreamInterface() {}

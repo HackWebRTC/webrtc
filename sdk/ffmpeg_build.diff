@@ -1,0 +1,38 @@
+From 82650c415f5a4fc18fbc8e1544c49ac004bfe841 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=E6=9E=97=E5=8F=AF?= <linke.r@bytedance.com>
+Date: Sun, 19 Jan 2025 19:13:33 +0800
+Subject: [PATCH] build in-tree ffmpeg
+
+---
+ BUILD.gn                        | 1 +
+ chromium/scripts/copy_config.sh | 2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/BUILD.gn b/BUILD.gn
+index 0ac39bfbd0..b861786e79 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -210,6 +210,7 @@ target(link_target_type, "ffmpeg_internal") {
+   include_dirs = [
+     platform_config_root,
+     ".",
++    "libavcodec",
+   ]
+   defines = [
+     "HAVE_AV_CONFIG_H",
+diff --git a/chromium/scripts/copy_config.sh b/chromium/scripts/copy_config.sh
+index a18048cf04..88342ba413 100755
+--- a/chromium/scripts/copy_config.sh
++++ b/chromium/scripts/copy_config.sh
+@@ -5,7 +5,7 @@
+ # found in the LICENSE file.
+ 
+ # Use this to copy all config files into the tree.
+-for os in android linux linux-noasm mac win; do
++for os in android linux linux-noasm mac ios win; do
+   for target in Chromium Chrome ChromeOS; do
+     # Copy config files for various architectures:
+     #   - ia32/x64 have config.asm, config.h
+-- 
+2.27.0
+

@@ -1373,6 +1373,7 @@ if (is_ios || is_mac) {
           "objc/api/video_frame_buffer/RTCNativeMutableI420Buffer.h",
           "objc/avconf/CFRPCapturer.h",
           "objc/avconf/CFVideoProcessor.h",
+          "objc/avconf/CFHijackCapturerDelegate.h",
         ]
 
         if (!build_with_chromium) {
@@ -1418,6 +1419,12 @@ if (is_ios || is_mac) {
           "Foundation.framework",
           "UIKit.framework",
         ]
+
+        if (rtc_use_recorder) {
+          deps += [
+            "//third_party/ffmpeg",
+          ]
+        }
 
         configs = [
           "..:common_objc",
@@ -1527,6 +1534,9 @@ if (is_ios || is_mac) {
           "objc/components/video_codec/RTCVideoEncoderH265.h",
           "objc/components/video_frame_buffer/RTCCVPixelBuffer.h",
           "objc/helpers/RTCDispatcher.h",
+          "objc/avconf/CFRPCapturer.h",
+          "objc/avconf/CFVideoProcessor.h",
+          "objc/avconf/CFHijackCapturerDelegate.h",
         ]
         if (!build_with_chromium) {
           sources += [
@@ -1798,6 +1808,8 @@ if (is_ios || is_mac) {
         "objc/avconf/CFRPCapturer.h",
         "objc/avconf/CFRPCapturer.m",
         "objc/avconf/CFVideoProcessor.h",
+        "objc/avconf/CFHijackCapturerDelegate.h",
+        "objc/avconf/CFHijackCapturerDelegate.mm",
       ]
 
       deps = [

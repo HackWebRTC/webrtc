@@ -457,6 +457,9 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       encoder_av1_priority_bitrate_override_bps_(
           GetEncoderPriorityBitrate(config_.rtp.payload_name,
                                     env_.field_trials())),
+#ifndef DISABLE_RECORDER
+      recorder_(nullptr),
+#endif
       configured_pacing_factor_(
           GetConfiguredPacingFactor(config_,
                                     content_type_,
@@ -689,6 +692,23 @@ void VideoSendStreamImpl::Stop() {
   }
 }
 
+#ifndef DISABLE_RECORDER
+void VideoSendStreamImpl::InjectRecorder(Recorder* recorder) {
+  RTC_LOG(LS_INFO) << "VideoSendStream::InjectRecorder "
+    << static_cast<void*>(recorder);
+  {
+    webrtc::MutexLock lock(&recorder_mutex_);
+    recorder_ = recorder;
+  }
+
+  if (recorder) {
+    worker_queue_->PostTask([this] {
+      video_stream_encoder_->SendKeyFrame();
+    });
+  }
+}
+#endif
+
 void VideoSendStreamImpl::StopVideoSendStream() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   bitrate_allocator_->RemoveObserver(this);
@@ -866,6 +886,15 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
   // Indicate that there still is activity going on.
   activity_ = true;
   RTC_DCHECK(!worker_queue_->IsCurrent());
+
+#ifndef DISABLE_RECORDER
+  {
+    webrtc::MutexLock lock(&recorder_mutex_);
+    if (recorder_) {
+      recorder_->AddVideoFrame(&encoded_image, codec_specific_info->codecType);
+    }
+  }
+#endif
 
   auto task_to_run_on_worker = [this]() {
     RTC_DCHECK_RUN_ON(&thread_checker_);

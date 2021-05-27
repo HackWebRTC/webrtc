@@ -40,6 +40,8 @@ class AudioDecoderPcmU final : public AudioDecoder {
   int SampleRateHz() const override;
   size_t Channels() const override;
 
+  AudioEncoder::CodecType CodecType() override { return AudioEncoder::CodecType::kPcmU; }
+
  protected:
   int DecodeInternal(const uint8_t* encoded,
                      size_t encoded_len,
@@ -68,6 +70,8 @@ class AudioDecoderPcmA final : public AudioDecoder {
                               size_t encoded_len) const override;
   int SampleRateHz() const override;
   size_t Channels() const override;
+
+  AudioEncoder::CodecType CodecType() override { return AudioEncoder::CodecType::kPcmA; }
 
  protected:
   int DecodeInternal(const uint8_t* encoded,

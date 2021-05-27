@@ -144,6 +144,12 @@ if (is_android) {
       "../../rtc_base:ssl_adapter",
       "//third_party/jni_zero",
     ]
+
+    if (rtc_use_recorder) {
+      deps += [
+        "//third_party/ffmpeg",
+      ]
+    }
     output_extension = "so"
   }
 

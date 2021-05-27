@@ -21,6 +21,9 @@
 #include "api/environment/environment.h"
 #include "api/frame_transformer_interface.h"
 #include "api/function_view.h"
+#ifndef DISABLE_RECORDER
+#include "modules/recording/recorder.h"
+#endif
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
 #include "modules/rtp_rtcp/source/rtp_sender_audio.h"
@@ -116,6 +119,10 @@ class ChannelSendInterface {
 
   // Registers per packet byte overhead.
   virtual void RegisterPacketOverhead(int packet_byte_overhead) = 0;
+
+#ifndef DISABLE_RECORDER
+  virtual void InjectRecorder(Recorder* recorder) = 0;
+#endif
 };
 
 std::unique_ptr<ChannelSendInterface> CreateChannelSend(

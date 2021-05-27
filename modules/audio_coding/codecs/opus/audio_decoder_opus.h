@@ -46,6 +46,8 @@ class AudioDecoderOpusImpl final : public AudioDecoder {
   void GeneratePlc(size_t requested_samples_per_channel,
                    rtc::BufferT<int16_t>* concealment_audio) override;
 
+  AudioEncoder::CodecType CodecType() override { return AudioEncoder::CodecType::kOpus; }
+
  protected:
   int DecodeInternal(const uint8_t* encoded,
                      size_t encoded_len,

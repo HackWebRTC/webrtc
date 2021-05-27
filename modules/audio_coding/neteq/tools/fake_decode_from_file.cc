@@ -45,6 +45,10 @@ class FakeEncodedFrame : public AudioDecoder::EncodedAudioFrame {
 
   bool IsDtxPacket() const override { return is_dtx_; }
 
+  AudioEncoder::CodecType CodecType() override { return AudioEncoder::CodecType::kOther; }
+  int PayloadSize() { return 0; }
+  const uint8_t* PayloadData() { return nullptr; }
+
  private:
   FakeDecodeFromFile* const decoder_;
   const uint32_t timestamp_;
