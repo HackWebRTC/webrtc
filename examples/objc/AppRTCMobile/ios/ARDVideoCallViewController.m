@@ -158,7 +158,23 @@
 
 - (void)videoCallView:(ARDVideoCallView *)view
     shouldSwitchCameraWithCompletion:(void (^)(NSError *))completion {
+#if 0
   [_captureController switchCamera:completion];
+#elif 1
+    static bool recorded = false;
+    recorded = !recorded;
+    if (recorded) {
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(
+            NSDocumentDirectory, NSUserDomainMask, YES);
+        NSString *documentsDirPath = paths.firstObject;
+        NSString *filePath =
+            [documentsDirPath stringByAppendingPathComponent:@"send.mkv"];
+        [[_client pc] startRecorder:RTCRtpTransceiverDirectionSendOnly path:filePath];
+    } else {
+        [[_client pc] stopRecorder:RTCRtpTransceiverDirectionSendOnly];
+    }
+    completion(nil);
+#endif
 }
 
 - (void)videoCallView:(ARDVideoCallView *)view

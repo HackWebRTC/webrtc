@@ -32,6 +32,9 @@
 #include "call/rtp_transport_controller_send_interface.h"
 #include "call/rtp_video_sender_interface.h"
 #include "modules/include/module_common_types.h"
+#ifndef DISABLE_RECORDER
+#include "modules/recording/recorder.h"
+#endif
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/utility/include/process_thread.h"
 #include "modules/video_coding/include/video_codec_interface.h"
@@ -100,6 +103,10 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   void UpdateActiveSimulcastLayers(const std::vector<bool> active_layers);
   void Start();
   void Stop();
+
+#ifndef DISABLE_RECORDER
+  void InjectRecorder(Recorder* recorder);
+#endif
 
   // TODO(holmer): Move these to RtpTransportControllerSend.
   std::map<uint32_t, RtpState> GetRtpStates() const;
@@ -179,6 +186,11 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
 
   RtcpBandwidthObserver* const bandwidth_observer_;
   RtpVideoSenderInterface* const rtp_video_sender_;
+
+#ifndef DISABLE_RECORDER
+  mutable webrtc::Mutex recorder_mutex_;
+  Recorder* recorder_ RTC_GUARDED_BY(recorder_mutex_);
+#endif
 
   // |weak_ptr_| to our self. This is used since we can not call
   // |weak_ptr_factory_.GetWeakPtr| from multiple sequences but it is ok to copy

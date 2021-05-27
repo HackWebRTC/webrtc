@@ -1,0 +1,228 @@
+From 789b54582de1ac2e339d0e1a24a6f5be1b3924f5 Mon Sep 17 00:00:00 2001
+From: Piasy <xz4215@gmail.com>
+Date: Thu, 27 May 2021 23:43:31 +0800
+Subject: [PATCH] Support build on iOS
+
+---
+ BUILD.gn                         | 19 ++++++++++
+ chromium/scripts/build_ffmpeg.py | 62 ++++++++++++++++++++++++++------
+ chromium/scripts/copy_config.sh  |  2 +-
+ chromium/scripts/generate_gn.py  |  2 +-
+ configure                        |  4 +--
+ 5 files changed, 74 insertions(+), 15 deletions(-)
+
+diff --git a/BUILD.gn b/BUILD.gn
+index f7f34ea414..2e9bb892bd 100755
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -210,6 +210,12 @@ target(link_target_type, "ffmpeg_internal") {
+     "PIC",
+     "FFMPEG_CONFIGURATION=NULL",
+   ]
++  if (is_ios) {
++    defines -= [
++      "_POSIX_C_SOURCE=200112",
++      "_XOPEN_SOURCE=600",
++    ]
++  }
+ 
+   if (is_component_ffmpeg) {
+     configs += [ "//build/config/sanitizers:cfi_icall_disable" ]
+@@ -286,6 +292,14 @@ target(link_target_type, "ffmpeg_internal") {
+       # ffmpeg uses its own deprecated functions.
+       "-Wno-deprecated-declarations",
+     ]
++    if (is_ios) {
++      cflags += [
++        "-Wno-error=misleading-indentation",
++        "-Wno-pointer-bool-conversion",
++        "-Wno-error=implicit-const-int-float-conversion",
++        "-Wno-error=macro-redefined",
++      ]
++    }
+ 
+     if (!(is_android && use_call_graph)) {
+       # Remove default stack frames config so we can force -fomit-frame-pointer.
+@@ -348,6 +362,11 @@ target(link_target_type, "ffmpeg_internal") {
+         "z",
+         "rt",
+       ]
++      if (is_ios) {
++        libs -= [
++          "rt",
++        ]
++      }
+     }
+     if (is_component_ffmpeg) {
+       # Export all symbols when building as component.
+diff --git a/chromium/scripts/build_ffmpeg.py b/chromium/scripts/build_ffmpeg.py
+index 75333a2c9f..2abce7b4f5 100755
+--- a/chromium/scripts/build_ffmpeg.py
++++ b/chromium/scripts/build_ffmpeg.py
+@@ -40,6 +40,7 @@ ARCH_MAP = {
+         'arm64'
+     ],
+     'mac': ['x64', 'arm64'],
++    'ios': ['x64', 'arm64'],
+     'win': ['ia32', 'x64', 'arm64'],
+ }
+ 
+@@ -148,7 +149,7 @@ def DetermineHostOsAndArch():
+ def GetDsoName(target_os, dso_name, dso_version):
+   if target_os in ('linux', 'linux-noasm', 'android'):
+     return 'lib%s.so.%s' % (dso_name, dso_version)
+-  elif target_os == 'mac':
++  elif target_os in ('mac', 'ios'):
+     return 'lib%s.%s.dylib' % (dso_name, dso_version)
+   elif target_os == 'win':
+     return '%s-%s.dll' % (dso_name, dso_version)
+@@ -472,7 +473,7 @@ def BuildFFmpeg(target_os, target_arch, host_os, host_arch, parallel_jobs,
+         r'LD=' + os.path.join(SCRIPTS_DIR, 'fake_linker.py'))])
+ 
+   if target_os in (host_os, host_os + '-noasm', 'android',
+-                   'win', 'mac') and not config_only:
++                   'win', 'mac', 'ios') and not config_only:
+     libraries = [
+         os.path.join('libavcodec', GetDsoName(target_os, 'avcodec', 58)),
+         os.path.join('libavformat', GetDsoName(target_os, 'avformat', 58)),
+@@ -537,7 +538,7 @@ def main(argv):
+   configure_args = args[2:]
+ 
+ 
+-  if target_os not in ('android', 'linux', 'linux-noasm', 'mac', 'win', 'all'):
++  if target_os not in ('android', 'linux', 'linux-noasm', 'mac', 'ios', 'win', 'all'):
+     parser.print_help()
+     return 1
+ 
+@@ -550,7 +551,7 @@ def main(argv):
+   parallel_jobs = 8
+ 
+   if target_os.split('-', 1)[0] != host_os and (host_os != 'linux' or
+-                                                host_arch != 'x64'):
++                                                host_arch != 'x64') and target_os != 'ios':
+     print('Cross compilation can only be done from a linux x64 host.')
+     return 1
+ 
+@@ -834,18 +835,23 @@ def ConfigureAndBuild(target_arch, target_os, host_os, host_arch, parallel_jobs,
+     ])
+ 
+   if 'win' not in target_os:
+-    configure_flags['Common'].extend([
+-        '--enable-pic',
+-        '--cc=clang',
+-        '--cxx=clang++',
+-        '--ld=clang',
+-    ])
++    if target_os == 'ios':
++      configure_flags['Common'].extend([
++          '--enable-pic',
++      ])
++    else:
++      configure_flags['Common'].extend([
++          '--enable-pic',
++          '--cc=clang',
++          '--cxx=clang++',
++          '--ld=clang',
++      ])
+ 
+     # Clang Linux will use the first 'ld' it finds on the path, which will
+     # typically be the system one, so explicitly configure use of Clang's
+     # ld.lld, to ensure that things like cross-compilation and LTO work.
+     # This does not work for ia32 and is always used on mac.
+-    if target_arch != 'ia32' and target_os != 'mac':
++    if target_arch != 'ia32' and target_os != 'mac' and target_os != 'ios':
+       configure_flags['Common'].append('--extra-ldflags=-fuse-ld=lld')
+ 
+   # Should be run on Mac, unless we're cross-compiling on Linux.
+@@ -886,6 +892,40 @@ def ConfigureAndBuild(target_arch, target_os, host_os, host_arch, parallel_jobs,
+                                                                target_os),
+           file=sys.stderr)
+ 
++  if target_os == 'ios':
++    if host_os != 'mac':
++      print(
++          'Script should be run on a Mac host.\n',
++          file=sys.stderr)
++      return 1
++
++    configure_flags['Common'].extend([
++        '--enable-cross-compile',
++        '--target-os=darwin',
++    ])
++
++    if target_arch == 'x64':
++      configure_flags['Common'].extend([
++          '--arch=x86_64',
++          '--cc=xcrun -sdk iphonesimulator clang',
++          '--as=gas-preprocessor.pl -- xcrun -sdk iphonesimulator clang',
++          '--extra-cflags=-arch x86_64 -mios-simulator-version-min=10.0',
++          '--extra-ldflags=-arch x86_64 -mios-simulator-version-min=10.0',
++      ])
++    elif target_arch == 'arm64':
++      configure_flags['Common'].extend([
++          '--arch=arm64',
++          '--cc=xcrun -sdk iphoneos clang',
++          '--as=gas-preprocessor.pl -arch aarch64 -- xcrun -sdk iphoneos clang',
++          '--extra-cflags=-arch arm64 -mios-version-min=10.0 -fembed-bitcode',
++          '--extra-ldflags=-arch arm64 -mios-version-min=10.0 -fembed-bitcode',
++      ])
++    else:
++      print(
++          'Error: Unknown target arch %r for target OS %r!' % (target_arch,
++                                                               target_os),
++          file=sys.stderr)
++
+   # Should be run on Windows.
+   if target_os == 'win':
+     configure_flags['Common'].extend([
+diff --git a/chromium/scripts/copy_config.sh b/chromium/scripts/copy_config.sh
+index 0e5159d6f4..a7609b0cdf 100755
+--- a/chromium/scripts/copy_config.sh
++++ b/chromium/scripts/copy_config.sh
+@@ -5,7 +5,7 @@
+ # found in the LICENSE file.
+ 
+ # Use this to copy all config files into the tree.
+-for os in android linux linux-noasm mac win; do
++for os in android linux linux-noasm mac ios win; do
+   for target in Chromium Chrome ChromeOS; do
+     # Copy config files for various architectures:
+     #   - ia32/x64 have config.asm, config.h
+diff --git a/chromium/scripts/generate_gn.py b/chromium/scripts/generate_gn.py
+index 0f606dfaef..8a1c065c52 100755
+--- a/chromium/scripts/generate_gn.py
++++ b/chromium/scripts/generate_gn.py
+@@ -81,7 +81,7 @@ SUPPORT_MATRIX = {
+     Attr.TARGET:
+         set(['Chromium', 'Chrome', 'ChromeOS']),
+     Attr.PLATFORM:
+-        set(['android', 'linux', 'win', 'mac'])
++        set(['android', 'linux', 'win', 'mac', 'ios'])
+ }
+ 
+ 
+diff --git a/configure b/configure
+index 985a5a8ffc..3dbf73d009 100755
+--- a/configure
++++ b/configure
+@@ -2635,7 +2635,7 @@ faandct_select="fdctdsp"
+ faanidct_deps="faan"
+ faanidct_select="idctdsp"
+ h264dsp_select="startcode"
+-hevcparse_select="golomb"
++hevcparse_select="atsc_a53 golomb"
+ frame_thread_encoder_deps="encoders threads"
+ intrax8_select="blockdsp idctdsp"
+ mdct_select="fft"
+@@ -3145,7 +3145,7 @@ av1_qsv_decoder_select="qsvdec"
+ # parsers
+ aac_parser_select="adts_header"
+ av1_parser_select="cbs_av1"
+-h264_parser_select="golomb h264dsp h264parse"
++h264_parser_select="atsc_a53 golomb h264dsp h264parse"
+ hevc_parser_select="hevcparse"
+ mpegaudio_parser_select="mpegaudioheader"
+ mpegvideo_parser_select="mpegvideo"
+-- 
+2.27.0
+

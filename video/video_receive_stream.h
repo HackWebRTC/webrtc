@@ -134,6 +134,10 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                                          bool generate_key_frame) override;
   void GenerateKeyFrame() override;
 
+#ifndef DISABLE_RECORDER
+  void InjectRecorder(Recorder* recorder) override;
+#endif
+
  private:
   int64_t GetWaitMs() const;
   void StartNextDecode() RTC_RUN_ON(decode_queue_);
@@ -227,6 +231,11 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
       encoded_frame_buffer_function_ RTC_GUARDED_BY(decode_queue_);
   // Set to true while we're requesting keyframes but not yet received one.
   bool keyframe_generation_requested_ RTC_GUARDED_BY(decode_queue_) = false;
+
+#ifndef DISABLE_RECORDER
+  mutable webrtc::Mutex recorder_mutex_;
+  Recorder* recorder_ RTC_GUARDED_BY(recorder_mutex_);
+#endif
 
   // Defined last so they are destroyed before all other members.
   rtc::TaskQueue decode_queue_;

@@ -281,6 +281,12 @@ std::vector<RtpSource> AudioReceiveStream::GetSources() const {
   return source_tracker_.GetSources();
 }
 
+#ifndef DISABLE_RECORDER
+void AudioReceiveStream::InjectRecorder(Recorder* recorder) {
+  channel_receive_->InjectRecorder(recorder);
+}
+#endif
+
 AudioMixer::Source::AudioFrameInfo AudioReceiveStream::GetAudioFrameWithInfo(
     int sample_rate_hz,
     AudioFrame* audio_frame) {

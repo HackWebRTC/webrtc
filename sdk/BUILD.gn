@@ -1182,6 +1182,7 @@ if (is_ios || is_mac) {
         output_name = "WebRTC"
 
         common_objc_headers = [
+          "objc/avconf/CFHijackCapturerDelegate.h",
           "objc/base/RTCCodecSpecificInfo.h",
           "objc/base/RTCEncodedImage.h",
           "objc/base/RTCI420Buffer.h",
@@ -1289,6 +1290,7 @@ if (is_ios || is_mac) {
 
         deps = [
           ":audio_objc",
+          ":avconf_objc",
           ":base_objc",
           ":default_codec_factory_objc",
           ":native_api",
@@ -1317,6 +1319,12 @@ if (is_ios || is_mac) {
           "CoreMedia.framework",
           "GLKit.framework",
         ]
+
+        if (rtc_use_recorder) {
+          deps += [
+            "//third_party/ffmpeg",
+          ]
+        }
 
         configs += [
           "..:common_objc",
@@ -1379,6 +1387,7 @@ if (is_ios || is_mac) {
           "objc/api/video_codec/RTCVideoEncoderVP9.h",
           "objc/api/video_frame_buffer/RTCNativeI420Buffer.h",
           "objc/api/video_frame_buffer/RTCNativeMutableI420Buffer.h",
+          "objc/avconf/CFHijackCapturerDelegate.h",
           "objc/base/RTCCodecSpecificInfo.h",
           "objc/base/RTCEncodedImage.h",
           "objc/base/RTCI420Buffer.h",
@@ -1662,6 +1671,22 @@ if (is_ios || is_mac) {
         "CoreVideo.framework",
         "VideoToolbox.framework",
       ]
+    }
+
+    rtc_library("avconf_objc") {
+      sources = [
+        "objc/avconf/CFHijackCapturerDelegate.h",
+        "objc/avconf/CFHijackCapturerDelegate.mm",
+      ]
+
+      deps = [
+        ":base_objc",
+      ]
+
+      configs += [
+        "..:common_objc",
+      ]
+      public_configs = [ ":common_config_objc" ]
     }
   }
 }

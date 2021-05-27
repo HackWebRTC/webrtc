@@ -33,6 +33,9 @@
 #include "call/rtp_config.h"
 #include "common_video/frame_counts.h"
 #include "common_video/include/quality_limitation_reason.h"
+#ifndef DISABLE_RECORDER
+#include "modules/recording/recorder.h"
+#endif
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/include/rtcp_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -237,6 +240,10 @@ class VideoSendStream {
   virtual void ReconfigureVideoEncoder(VideoEncoderConfig config) = 0;
 
   virtual Stats GetStats() = 0;
+
+#ifndef DISABLE_RECORDER
+  virtual void InjectRecorder(Recorder* recorder) = 0;
+#endif
 
  protected:
   virtual ~VideoSendStream() {}

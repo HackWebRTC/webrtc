@@ -293,6 +293,10 @@ rtc_library("call") {
     "adaptation:resource_adaptation",
   ]
   absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
+
+  if (rtc_use_recorder) {
+    deps += [ "../modules/recording:recording" ]
+  }
 }
 
 rtc_library("video_stream_api") {

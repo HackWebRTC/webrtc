@@ -1,0 +1,34 @@
+From 0cbaeb1c53cb15870591995e988256b8914a8597 Mon Sep 17 00:00:00 2001
+From: Piasy <xz4215@gmail.com>
+Date: Mon, 31 May 2021 08:23:32 +0800
+Subject: [PATCH] Fix avc/hevc parser build
+
+---
+ configure | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/configure b/configure
+index 985a5a8ffc..3dbf73d009 100755
+--- a/configure
++++ b/configure
+@@ -2635,7 +2635,7 @@ faandct_select="fdctdsp"
+ faanidct_deps="faan"
+ faanidct_select="idctdsp"
+ h264dsp_select="startcode"
+-hevcparse_select="golomb"
++hevcparse_select="atsc_a53 golomb"
+ frame_thread_encoder_deps="encoders threads"
+ intrax8_select="blockdsp idctdsp"
+ mdct_select="fft"
+@@ -3145,7 +3145,7 @@ av1_qsv_decoder_select="qsvdec"
+ # parsers
+ aac_parser_select="adts_header"
+ av1_parser_select="cbs_av1"
+-h264_parser_select="golomb h264dsp h264parse"
++h264_parser_select="atsc_a53 golomb h264dsp h264parse"
+ hevc_parser_select="hevcparse"
+ mpegaudio_parser_select="mpegaudioheader"
+ mpegvideo_parser_select="mpegvideo"
+-- 
+2.27.0
+
