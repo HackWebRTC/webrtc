@@ -78,6 +78,7 @@ enum GetWindowListFlags {
   kNone = 0x00,
   kIgnoreUntitled = 1 << 0,
   kIgnoreUnresponsive = 1 << 1,
+  kIgnoreCurrentProcessWindows = 1 << 2,
 };
 
 // Retrieves the list of top-level windows on the screen.
@@ -85,7 +86,8 @@ enum GetWindowListFlags {
 // - Those that are invisible or minimized.
 // - Program Manager & Start menu.
 // - [with kIgnoreUntitled] windows with no title.
-// - [with kIgnoreUnresponsive] windows that unresponsive.
+// - [with kIgnoreUnresponsive] windows that are unresponsive.
+// - [with kIgnoreCurrentProcessWindows] windows owned by the current process.
 // - Any windows with extended styles that match |ex_style_filters|.
 // Returns false if native APIs failed.
 bool GetWindowList(int flags,
@@ -115,6 +117,7 @@ class WindowCaptureHelperWin {
   // extended window styles (e.g. WS_EX_TOOLWINDOW) and prevent windows that
   // match from being included in |results|.
   bool EnumerateCapturableWindows(DesktopCapturer::SourceList* results,
+                                  bool enumerate_current_process_windows,
                                   LONG ex_style_filters = 0);
 
  private:

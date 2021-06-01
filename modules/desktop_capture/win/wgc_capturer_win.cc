@@ -57,7 +57,8 @@ std::unique_ptr<DesktopCapturer> WgcCapturerWin::CreateRawWindowCapturer(
     const DesktopCaptureOptions& options) {
   return std::make_unique<WgcCapturerWin>(
       std::make_unique<WgcWindowSourceFactory>(),
-      std::make_unique<WindowEnumerator>());
+      std::make_unique<WindowEnumerator>(
+          options.enumerate_current_process_windows()));
 }
 
 // static

@@ -38,7 +38,8 @@ class SourceEnumerator {
 
 class WindowEnumerator final : public SourceEnumerator {
  public:
-  WindowEnumerator() = default;
+  explicit WindowEnumerator(bool enumerate_current_process_windows)
+      : enumerate_current_process_windows_(enumerate_current_process_windows) {}
 
   WindowEnumerator(const WindowEnumerator&) = delete;
   WindowEnumerator& operator=(const WindowEnumerator&) = delete;
@@ -48,12 +49,13 @@ class WindowEnumerator final : public SourceEnumerator {
   bool FindAllSources(DesktopCapturer::SourceList* sources) override {
     // WGC fails to capture windows with the WS_EX_TOOLWINDOW style, so we
     // provide it as a filter to ensure windows with the style are not returned.
-    return window_capture_helper_.EnumerateCapturableWindows(sources,
-                                                             WS_EX_TOOLWINDOW);
+    return window_capture_helper_.EnumerateCapturableWindows(
+        sources, enumerate_current_process_windows_, WS_EX_TOOLWINDOW);
   }
 
  private:
   WindowCaptureHelperWin window_capture_helper_;
+  bool enumerate_current_process_windows_;
 };
 
 class ScreenEnumerator final : public SourceEnumerator {
