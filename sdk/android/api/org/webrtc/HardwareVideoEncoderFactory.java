@@ -94,7 +94,7 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
       return null;
     }
 
-    VideoCodecMimeType type = VideoCodecMimeType.valueOf(input.name);
+    VideoCodecMimeType type = VideoCodecMimeType.fromSdpCodecName(input.getName());
     MediaCodecInfo info = findCodecForType(type);
 
     if (info == null) {
@@ -142,7 +142,7 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
              VideoCodecMimeType.VP9, VideoCodecMimeType.H264, VideoCodecMimeType.AV1}) {
       MediaCodecInfo codec = findCodecForType(type);
       if (codec != null) {
-        String name = type.name();
+        String name = type.toSdpCodecName();
         // TODO(sakal): Always add H264 HP once WebRTC correctly removes codecs that are not
         // supported by the decoder.
         if (type == VideoCodecMimeType.H264 && isH264HighProfileSupported(codec)) {
