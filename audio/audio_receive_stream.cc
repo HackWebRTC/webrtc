@@ -84,8 +84,8 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
       config.jitter_buffer_max_packets, config.jitter_buffer_fast_accelerate,
       config.jitter_buffer_min_delay_ms,
       config.jitter_buffer_enable_rtx_handling, config.decoder_factory,
-      config.codec_pair_id, std::move(config.frame_decryptor),
-      config.crypto_options, std::move(config.frame_transformer));
+      config.codec_pair_id, config.frame_decryptor, config.crypto_options,
+      std::move(config.frame_transformer));
 }
 }  // namespace
 
@@ -143,10 +143,8 @@ AudioReceiveStream::AudioReceiveStream(
   channel_receive_->SetNACKStatus(config.rtp.nack.rtp_history_ms != 0,
                                   config.rtp.nack.rtp_history_ms / 20);
   channel_receive_->SetReceiveCodecs(config.decoder_map);
-  // `frame_transformer` and `frame_decryptor` have been given to
-  // `channel_receive_` already.
-  RTC_DCHECK(!config.frame_transformer);
-  RTC_DCHECK(!config.frame_decryptor);
+  channel_receive_->SetDepacketizerToDecoderFrameTransformer(
+      config.frame_transformer);
 }
 
 AudioReceiveStream::~AudioReceiveStream() {
@@ -170,28 +168,35 @@ void AudioReceiveStream::UnregisterFromTransport() {
   rtp_stream_receiver_.reset();
 }
 
-void AudioReceiveStream::ReconfigureForTesting(
+void AudioReceiveStream::Reconfigure(
     const webrtc::AudioReceiveStream::Config& config) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-
-  // SSRC can't be changed mid-stream.
-  RTC_DCHECK_EQ(config_.rtp.remote_ssrc, config.rtp.remote_ssrc);
-  RTC_DCHECK_EQ(config_.rtp.local_ssrc, config.rtp.local_ssrc);
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
 
   // Configuration parameters which cannot be changed.
-  RTC_DCHECK_EQ(config_.rtcp_send_transport, config.rtcp_send_transport);
+  RTC_DCHECK(config_.rtp.remote_ssrc == config.rtp.remote_ssrc);
+  RTC_DCHECK(config_.rtcp_send_transport == config.rtcp_send_transport);
   // Decoder factory cannot be changed because it is configured at
   // voe::Channel construction time.
-  RTC_DCHECK_EQ(config_.decoder_factory, config.decoder_factory);
+  RTC_DCHECK(config_.decoder_factory == config.decoder_factory);
+
+  // SSRC can't be changed mid-stream.
+  RTC_DCHECK_EQ(config_.rtp.local_ssrc, config.rtp.local_ssrc);
+  RTC_DCHECK_EQ(config_.rtp.remote_ssrc, config.rtp.remote_ssrc);
 
   // TODO(solenberg): Config NACK history window (which is a packet count),
   // using the actual packet size for the configured codec.
-  RTC_DCHECK_EQ(config_.rtp.nack.rtp_history_ms, config.rtp.nack.rtp_history_ms)
-      << "Use SetUseTransportCcAndNackHistory";
+  if (config_.rtp.nack.rtp_history_ms != config.rtp.nack.rtp_history_ms) {
+    channel_receive_->SetNACKStatus(config.rtp.nack.rtp_history_ms != 0,
+                                    config.rtp.nack.rtp_history_ms / 20);
+  }
+  if (config_.decoder_map != config.decoder_map) {
+    channel_receive_->SetReceiveCodecs(config.decoder_map);
+  }
 
-  RTC_DCHECK(config_.decoder_map == config.decoder_map) << "Use SetDecoderMap";
-  RTC_DCHECK_EQ(config_.frame_transformer, config.frame_transformer)
-      << "Use SetDepacketizerToDecoderFrameTransformer";
+  if (config_.frame_transformer != config.frame_transformer) {
+    channel_receive_->SetDepacketizerToDecoderFrameTransformer(
+        config.frame_transformer);
+  }
 
   config_ = config;
 }
@@ -219,33 +224,6 @@ void AudioReceiveStream::Stop() {
 bool AudioReceiveStream::IsRunning() const {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   return playing_;
-}
-
-void AudioReceiveStream::SetDepacketizerToDecoderFrameTransformer(
-    rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  channel_receive_->SetDepacketizerToDecoderFrameTransformer(
-      std::move(frame_transformer));
-}
-
-void AudioReceiveStream::SetDecoderMap(
-    std::map<int, SdpAudioFormat> decoder_map) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  config_.decoder_map = std::move(decoder_map);
-  channel_receive_->SetReceiveCodecs(config_.decoder_map);
-}
-
-void AudioReceiveStream::SetUseTransportCcAndNackHistory(bool use_transport_cc,
-                                                         int history_ms) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  RTC_DCHECK_GE(history_ms, 0);
-  config_.rtp.transport_cc = use_transport_cc;
-  if (config_.rtp.nack.rtp_history_ms != history_ms) {
-    config_.rtp.nack.rtp_history_ms = history_ms;
-    // TODO(solenberg): Config NACK history window (which is a packet count),
-    // using the actual packet size for the configured codec.
-    channel_receive_->SetNACKStatus(history_ms != 0, history_ms / 20);
-  }
 }
 
 webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats(
