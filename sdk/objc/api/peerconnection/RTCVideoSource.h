@@ -13,6 +13,7 @@
 #import "RTCMacros.h"
 #import "RTCMediaSource.h"
 #import "RTCVideoCapturer.h"
+#import "CFVideoProcessor.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -31,6 +32,8 @@ RTC_OBJC_EXPORT
  * matter if e.g. 1280x720 or 720x1280 is requested.
  */
 - (void)adaptOutputFormatToWidth:(int)width height:(int)height fps:(int)fps;
+
+- (void)setVideoProcessor:(id<CFVideoProcessor>)processor;
 
 @end
 

@@ -18,7 +18,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface RTC_OBJC_TYPE (RTCVideoSource)
-()
+() <CFVideoProcessorDelegate>
 
     /**
      * The VideoTrackSourceInterface object passed to this RTCVideoSource during
