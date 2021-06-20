@@ -1,12 +1,46 @@
-From 0cbaeb1c53cb15870591995e988256b8914a8597 Mon Sep 17 00:00:00 2001
+From 3d62dd0c664ce0bdcd87b9e019d3a69b4a1752f9 Mon Sep 17 00:00:00 2001
 From: Piasy <xz4215@gmail.com>
-Date: Mon, 31 May 2021 08:23:32 +0800
-Subject: [PATCH] Fix avc/hevc parser build
+Date: Sun, 20 Jun 2021 22:47:41 +0800
+Subject: [PATCH] Fix avc/hevc parser + swresample build
 
 ---
- configure | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ chromium/scripts/build_ffmpeg.py | 1 +
+ chromium/scripts/generate_gn.py  | 2 +-
+ configure                        | 4 ++--
+ 3 files changed, 4 insertions(+), 3 deletions(-)
 
+diff --git a/chromium/scripts/build_ffmpeg.py b/chromium/scripts/build_ffmpeg.py
+index 75333a2c9f..dc7a3520cf 100755
+--- a/chromium/scripts/build_ffmpeg.py
++++ b/chromium/scripts/build_ffmpeg.py
+@@ -477,6 +477,7 @@ def BuildFFmpeg(target_os, target_arch, host_os, host_arch, parallel_jobs,
+         os.path.join('libavcodec', GetDsoName(target_os, 'avcodec', 58)),
+         os.path.join('libavformat', GetDsoName(target_os, 'avformat', 58)),
+         os.path.join('libavutil', GetDsoName(target_os, 'avutil', 56)),
++        os.path.join('libswresample', GetDsoName(target_os, 'swresample', 3)),
+     ]
+     PrintAndCheckCall(
+         ['make', '-j%d' % parallel_jobs] + libraries, cwd=config_dir)
+diff --git a/chromium/scripts/generate_gn.py b/chromium/scripts/generate_gn.py
+index 0f606dfaef..300ccd5e6f 100755
+--- a/chromium/scripts/generate_gn.py
++++ b/chromium/scripts/generate_gn.py
+@@ -121,7 +121,6 @@ def CleanObjectFiles(object_files):
+       'libavcodec/x86/dnxhd_mmx.o',
+       'libavformat/sdp.o',
+       'libavutil/adler32.o',
+-      'libavutil/audio_fifo.o',
+       'libavutil/blowfish.o',
+       'libavutil/cast5.o',
+       'libavutil/des.o',
+@@ -660,6 +659,7 @@ IGNORED_INCLUDE_FILES = [
+ LICENSE_WHITELIST = [
+     'BSD (3 clause) LGPL (v2.1 or later)',
+     'BSL (v1) LGPL (v2.1 or later)',
++    'BSL LGPL (v2.1 or later) GENERATED FILE',
+     'ISC GENERATED FILE',
+     'LGPL (v2.1 or later)',
+     'LGPL (v2.1 or later) GENERATED FILE',
 diff --git a/configure b/configure
 index 985a5a8ffc..3dbf73d009 100755
 --- a/configure
@@ -30,5 +64,5 @@ index 985a5a8ffc..3dbf73d009 100755
  mpegaudio_parser_select="mpegaudioheader"
  mpegvideo_parser_select="mpegvideo"
 -- 
-2.27.0
+2.31.0
 

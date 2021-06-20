@@ -1,15 +1,15 @@
-From 789b54582de1ac2e339d0e1a24a6f5be1b3924f5 Mon Sep 17 00:00:00 2001
+From e70771600ba51662f96174a0966a7e1ce3a76aac Mon Sep 17 00:00:00 2001
 From: Piasy <xz4215@gmail.com>
-Date: Thu, 27 May 2021 23:43:31 +0800
+Date: Sun, 20 Jun 2021 22:39:58 +0800
 Subject: [PATCH] Support build on iOS
 
 ---
  BUILD.gn                         | 19 ++++++++++
- chromium/scripts/build_ffmpeg.py | 62 ++++++++++++++++++++++++++------
+ chromium/scripts/build_ffmpeg.py | 63 ++++++++++++++++++++++++++------
  chromium/scripts/copy_config.sh  |  2 +-
- chromium/scripts/generate_gn.py  |  2 +-
- configure                        |  4 +--
- 5 files changed, 74 insertions(+), 15 deletions(-)
+ chromium/scripts/generate_gn.py  |  4 +-
+ configure                        |  4 +-
+ 5 files changed, 76 insertions(+), 16 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
 index f7f34ea414..2e9bb892bd 100755
@@ -56,7 +56,7 @@ index f7f34ea414..2e9bb892bd 100755
      if (is_component_ffmpeg) {
        # Export all symbols when building as component.
 diff --git a/chromium/scripts/build_ffmpeg.py b/chromium/scripts/build_ffmpeg.py
-index 75333a2c9f..2abce7b4f5 100755
+index 75333a2c9f..42a80e6840 100755
 --- a/chromium/scripts/build_ffmpeg.py
 +++ b/chromium/scripts/build_ffmpeg.py
 @@ -40,6 +40,7 @@ ARCH_MAP = {
@@ -76,7 +76,7 @@ index 75333a2c9f..2abce7b4f5 100755
      return 'lib%s.%s.dylib' % (dso_name, dso_version)
    elif target_os == 'win':
      return '%s-%s.dll' % (dso_name, dso_version)
-@@ -472,7 +473,7 @@ def BuildFFmpeg(target_os, target_arch, host_os, host_arch, parallel_jobs,
+@@ -472,11 +473,12 @@ def BuildFFmpeg(target_os, target_arch, host_os, host_arch, parallel_jobs,
          r'LD=' + os.path.join(SCRIPTS_DIR, 'fake_linker.py'))])
  
    if target_os in (host_os, host_os + '-noasm', 'android',
@@ -85,7 +85,12 @@ index 75333a2c9f..2abce7b4f5 100755
      libraries = [
          os.path.join('libavcodec', GetDsoName(target_os, 'avcodec', 58)),
          os.path.join('libavformat', GetDsoName(target_os, 'avformat', 58)),
-@@ -537,7 +538,7 @@ def main(argv):
+         os.path.join('libavutil', GetDsoName(target_os, 'avutil', 56)),
++        os.path.join('libswresample', GetDsoName(target_os, 'swresample', 3)),
+     ]
+     PrintAndCheckCall(
+         ['make', '-j%d' % parallel_jobs] + libraries, cwd=config_dir)
+@@ -537,7 +539,7 @@ def main(argv):
    configure_args = args[2:]
  
  
@@ -94,7 +99,7 @@ index 75333a2c9f..2abce7b4f5 100755
      parser.print_help()
      return 1
  
-@@ -550,7 +551,7 @@ def main(argv):
+@@ -550,7 +552,7 @@ def main(argv):
    parallel_jobs = 8
  
    if target_os.split('-', 1)[0] != host_os and (host_os != 'linux' or
@@ -103,7 +108,7 @@ index 75333a2c9f..2abce7b4f5 100755
      print('Cross compilation can only be done from a linux x64 host.')
      return 1
  
-@@ -834,18 +835,23 @@ def ConfigureAndBuild(target_arch, target_os, host_os, host_arch, parallel_jobs,
+@@ -834,18 +836,23 @@ def ConfigureAndBuild(target_arch, target_os, host_os, host_arch, parallel_jobs,
      ])
  
    if 'win' not in target_os:
@@ -134,7 +139,7 @@ index 75333a2c9f..2abce7b4f5 100755
        configure_flags['Common'].append('--extra-ldflags=-fuse-ld=lld')
  
    # Should be run on Mac, unless we're cross-compiling on Linux.
-@@ -886,6 +892,40 @@ def ConfigureAndBuild(target_arch, target_os, host_os, host_arch, parallel_jobs,
+@@ -886,6 +893,40 @@ def ConfigureAndBuild(target_arch, target_os, host_os, host_arch, parallel_jobs,
                                                                 target_os),
            file=sys.stderr)
  
@@ -189,7 +194,7 @@ index 0e5159d6f4..a7609b0cdf 100755
      # Copy config files for various architectures:
      #   - ia32/x64 have config.asm, config.h
 diff --git a/chromium/scripts/generate_gn.py b/chromium/scripts/generate_gn.py
-index 0f606dfaef..8a1c065c52 100755
+index 0f606dfaef..0750c2e742 100755
 --- a/chromium/scripts/generate_gn.py
 +++ b/chromium/scripts/generate_gn.py
 @@ -81,7 +81,7 @@ SUPPORT_MATRIX = {
@@ -201,6 +206,22 @@ index 0f606dfaef..8a1c065c52 100755
  }
  
  
+@@ -121,7 +121,6 @@ def CleanObjectFiles(object_files):
+       'libavcodec/x86/dnxhd_mmx.o',
+       'libavformat/sdp.o',
+       'libavutil/adler32.o',
+-      'libavutil/audio_fifo.o',
+       'libavutil/blowfish.o',
+       'libavutil/cast5.o',
+       'libavutil/des.o',
+@@ -660,6 +659,7 @@ IGNORED_INCLUDE_FILES = [
+ LICENSE_WHITELIST = [
+     'BSD (3 clause) LGPL (v2.1 or later)',
+     'BSL (v1) LGPL (v2.1 or later)',
++    'BSL LGPL (v2.1 or later) GENERATED FILE',
+     'ISC GENERATED FILE',
+     'LGPL (v2.1 or later)',
+     'LGPL (v2.1 or later) GENERATED FILE',
 diff --git a/configure b/configure
 index 985a5a8ffc..3dbf73d009 100755
 --- a/configure
@@ -224,5 +245,5 @@ index 985a5a8ffc..3dbf73d009 100755
  mpegaudio_parser_select="mpegaudioheader"
  mpegvideo_parser_select="mpegvideo"
 -- 
-2.27.0
+2.31.0
 
