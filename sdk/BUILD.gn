@@ -57,6 +57,7 @@ if (is_ios || is_mac) {
       # This is needed so that framework headers can include base headers
       # without pathname (so it works from within the framework module).
       "objc/base",
+      "objc/avconf",
     ]
     cflags = [
       "-Wimplicit-retain-self",
@@ -1361,6 +1362,7 @@ if (is_ios || is_mac) {
           "objc/api/video_frame_buffer/RTCNativeI420Buffer.h",
           "objc/api/video_frame_buffer/RTCNativeMutableI420Buffer.h",
           "objc/avconf/CFRPCapturer.h",
+          "objc/avconf/CFVideoProcessor.h",
         ]
 
         if (!build_with_chromium) {
@@ -1777,6 +1779,7 @@ if (is_ios || is_mac) {
       sources = [
         "objc/avconf/CFRPCapturer.h",
         "objc/avconf/CFRPCapturer.m",
+        "objc/avconf/CFVideoProcessor.h",
       ]
 
       deps = [
