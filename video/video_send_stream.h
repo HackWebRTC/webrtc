@@ -37,7 +37,6 @@ class VideoSendStreamPeer;
 
 class CallStats;
 class IvfFileWriter;
-class ProcessThread;
 class RateLimiter;
 class RtpRtcp;
 class RtpTransportControllerSendInterface;
@@ -58,7 +57,6 @@ class VideoSendStream : public webrtc::VideoSendStream {
   VideoSendStream(
       Clock* clock,
       int num_cpu_cores,
-      ProcessThread* module_process_thread,
       TaskQueueFactory* task_queue_factory,
       RtcpRttStats* call_stats,
       RtpTransportControllerSendInterface* transport,

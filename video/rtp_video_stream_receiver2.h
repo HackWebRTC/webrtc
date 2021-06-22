@@ -54,7 +54,6 @@ namespace webrtc {
 
 class NackModule2;
 class PacketRouter;
-class ProcessThread;
 class ReceiveStatistics;
 class RtcpRttStats;
 class RtpPacketReceived;
@@ -90,7 +89,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
       ReceiveStatistics* rtp_receive_statistics,
       RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
       RtcpCnameCallback* rtcp_cname_callback,
-      ProcessThread* process_thread,
       NackSender* nack_sender,
       // The KeyFrameRequestSender is optional; if not provided, key frame
       // requests are sent via the internal RtpRtcp module.
@@ -287,7 +285,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   // Ownership of this object lies with VideoReceiveStream, which owns |this|.
   const VideoReceiveStream::Config& config_;
   PacketRouter* const packet_router_;
-  ProcessThread* const process_thread_;
 
   RemoteNtpTimeEstimator ntp_estimator_;
 
