@@ -399,13 +399,14 @@ class RTC_EXPORT RTCReceivedRtpStreamStats : public RTCRTPStreamStats {
 
   // TODO(hbos) The following fields need to be added and migrated
   // both from RTCInboundRtpStreamStats and RTCRemoteInboundRtpStreamStats:
-  // packetsReceived, packetsDiscarded, packetsRepaired, burstPacketsLost,
+  // packetsReceived, packetsRepaired, burstPacketsLost,
   // burstPacketDiscarded, burstLossCount, burstDiscardCount, burstLossRate,
   // burstDiscardRate, gapLossRate, gapDiscardRate, framesDropped,
   // partialFramesLost, fullFramesLost
   // crbug.com/webrtc/12532
   RTCStatsMember<double> jitter;
   RTCStatsMember<int32_t> packets_lost;  // Signed per RFC 3550
+  RTCStatsMember<uint64_t> packets_discarded;
 
  protected:
   RTCReceivedRtpStreamStats(const std::string&& id, int64_t timestamp_us);
@@ -462,8 +463,6 @@ class RTC_EXPORT RTCInboundRTPStreamStats final
   RTCStatsMember<int32_t> frames_received;
   // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7065
   RTCStatsMember<double> round_trip_time;
-  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7065
-  RTCStatsMember<uint32_t> packets_discarded;
   // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7065
   RTCStatsMember<uint32_t> packets_repaired;
   // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7065
@@ -569,7 +568,7 @@ class RTC_EXPORT RTCRemoteInboundRtpStreamStats final
   ~RTCRemoteInboundRtpStreamStats() override;
 
   // TODO(hbos): The following RTCReceivedRtpStreamStats metrics should also be
-  // implemented: packetsReceived, packetsDiscarded, packetsRepaired,
+  // implemented: packetsReceived, packetsRepaired,
   // burstPacketsLost, burstPacketsDiscarded, burstLossCount, burstDiscardCount,
   // burstLossRate, burstDiscardRate, gapLossRate and gapDiscardRate.
   // RTCRemoteInboundRtpStreamStats
