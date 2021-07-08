@@ -77,7 +77,7 @@ MouseCursorMonitorWin::MouseCursorMonitorWin(ScreenId screen)
       callback_(NULL),
       mode_(SHAPE_AND_POSITION),
       desktop_dc_(NULL) {
-  assert(screen >= kFullDesktopScreenId);
+  RTC_DCHECK_GE(screen, kFullDesktopScreenId);
   memset(&last_cursor_, 0, sizeof(CURSORINFO));
 }
 
@@ -87,8 +87,8 @@ MouseCursorMonitorWin::~MouseCursorMonitorWin() {
 }
 
 void MouseCursorMonitorWin::Init(Callback* callback, Mode mode) {
-  assert(!callback_);
-  assert(callback);
+  RTC_DCHECK(!callback_);
+  RTC_DCHECK(callback);
 
   callback_ = callback;
   mode_ = mode;
@@ -97,7 +97,7 @@ void MouseCursorMonitorWin::Init(Callback* callback, Mode mode) {
 }
 
 void MouseCursorMonitorWin::Capture() {
-  assert(callback_);
+  RTC_DCHECK(callback_);
 
   CURSORINFO cursor_info;
   cursor_info.cbSize = sizeof(CURSORINFO);
@@ -158,7 +158,7 @@ void MouseCursorMonitorWin::Capture() {
       position = position.subtract(cropped_rect.top_left());
     }
   } else {
-    assert(screen_ != kInvalidScreenId);
+    RTC_DCHECK_NE(screen_, kInvalidScreenId);
     DesktopRect rect = GetScreenRect();
     if (inside)
       inside = rect.Contains(position);
@@ -169,7 +169,7 @@ void MouseCursorMonitorWin::Capture() {
 }
 
 DesktopRect MouseCursorMonitorWin::GetScreenRect() {
-  assert(screen_ != kInvalidScreenId);
+  RTC_DCHECK_NE(screen_, kInvalidScreenId);
   if (screen_ == kFullDesktopScreenId) {
     return DesktopRect::MakeXYWH(GetSystemMetrics(SM_XVIRTUALSCREEN),
                                  GetSystemMetrics(SM_YVIRTUALSCREEN),

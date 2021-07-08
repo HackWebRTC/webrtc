@@ -380,7 +380,7 @@ int32_t DeviceInfoDS::CreateCapabilityMap(const char* deviceUniqueIdUTF8)
         supportFORMAT_VideoInfo2 = true;
         VIDEOINFOHEADER2* h =
             reinterpret_cast<VIDEOINFOHEADER2*>(pmt->pbFormat);
-        assert(h);
+        RTC_DCHECK(h);
         foundInterlacedFormat |=
             h->dwInterlaceFlags &
             (AMINTERLACE_IsInterlaced | AMINTERLACE_DisplayModeBobOnly);
@@ -418,7 +418,7 @@ int32_t DeviceInfoDS::CreateCapabilityMap(const char* deviceUniqueIdUTF8)
 
       if (pmt->formattype == FORMAT_VideoInfo) {
         VIDEOINFOHEADER* h = reinterpret_cast<VIDEOINFOHEADER*>(pmt->pbFormat);
-        assert(h);
+        RTC_DCHECK(h);
         capability.directShowCapabilityIndex = tmp;
         capability.width = h->bmiHeader.biWidth;
         capability.height = h->bmiHeader.biHeight;
@@ -427,7 +427,7 @@ int32_t DeviceInfoDS::CreateCapabilityMap(const char* deviceUniqueIdUTF8)
       if (pmt->formattype == FORMAT_VideoInfo2) {
         VIDEOINFOHEADER2* h =
             reinterpret_cast<VIDEOINFOHEADER2*>(pmt->pbFormat);
-        assert(h);
+        RTC_DCHECK(h);
         capability.directShowCapabilityIndex = tmp;
         capability.width = h->bmiHeader.biWidth;
         capability.height = h->bmiHeader.biHeight;
