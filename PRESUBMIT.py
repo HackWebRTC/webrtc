@@ -922,7 +922,7 @@ def CommonChecks(input_api, output_api):
     python_file_filter = lambda f: (f.LocalPath().endswith('.py') and
                                     source_file_filter(f))
     python_changed_files = [f.LocalPath() for f in input_api.AffectedFiles(
-        file_filter=python_file_filter)]
+        include_deletes=False, file_filter=python_file_filter)]
 
     results.extend(
         input_api.canned_checks.RunPylint(
