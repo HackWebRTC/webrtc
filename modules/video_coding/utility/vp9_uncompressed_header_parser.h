@@ -13,13 +13,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-
-#include <array>
-#include <bitset>
-#include <string>
-
 #include "absl/types/optional.h"
-#include "modules/video_coding/utility/vp9_constants.h"
 
 namespace webrtc {
 
@@ -69,86 +63,27 @@ enum class YuvSubsampling {
   k420,
 };
 
-enum ReferenceFrame : int {
-  kNone = -1,
-  kIntra = 0,
-  kLast = 1,
-  kGolden = 2,
-  kAltref = 3,
-};
-
-enum class InterpolationFilter : uint8_t {
-  kEightTap = 0,
-  kEightTapSmooth = 1,
-  kEightTapSharp = 2,
-  kBilinear = 3,
-  kSwitchable = 4
-};
-
-struct UncompressedHeader {
-  int profile = 0;  // Profiles 0-3 are valid.
+struct FrameInfo {
+  int profile = 0;  // Profile 0-3 are valid.
   absl::optional<uint8_t> show_existing_frame;
   bool is_keyframe = false;
   bool show_frame = false;
   bool error_resilient = false;
   BitDept bit_detph = BitDept::k8Bit;
-  absl::optional<ColorSpace> color_space;
-  absl::optional<ColorRange> color_range;
-  absl::optional<YuvSubsampling> sub_sampling;
+  ColorSpace color_space = ColorSpace::CS_UNKNOWN;
+  ColorRange color_range;
+  YuvSubsampling sub_sampling;
   int frame_width = 0;
   int frame_height = 0;
   int render_width = 0;
   int render_height = 0;
-  // Width/height of the tiles used (in units of 8x8 blocks).
-  size_t tile_cols_log2 = 0;  // tile_cols = 1 << tile_cols_log2
-  size_t tile_rows_log2 = 0;  // tile_rows = 1 << tile_rows_log2
-  struct BitstreamPosition {
-    size_t byte_offset = 0;
-    size_t bit_offset = 0;
-  };
-  absl::optional<BitstreamPosition> render_size_position;
-  InterpolationFilter interpolation_filter = InterpolationFilter::kEightTap;
-  bool allow_high_precision_mv = false;
   int base_qp = 0;
-  bool is_lossless = false;
-  uint8_t frame_context_idx = 0;
-
-  bool segmentation_enabled = false;
-  absl::optional<std::array<uint8_t, 7>> segmentation_tree_probs;
-  absl::optional<std::array<uint8_t, 3>> segmentation_pred_prob;
-  bool segmentation_is_delta = false;
-  absl::optional<int> segmentation_features[kMaxSegments][kSegLvlMax];
-
-  // Which of the 8 reference buffers may be used as references for this frame.
-  // -1 indicates not used (e.g. {-1, -1, -1} for intra-only frames).
-  std::array<int, kRefsPerFrame> reference_buffers = {-1, -1, -1};
-  // Sign bias corresponding to reference buffers, where the index is a
-  // ReferenceFrame.
-  // false/0 indidate backwards reference, true/1 indicate forwards reference).
-  std::array<bool, kMaxRefFrames> reference_buffers_sign_bias = {false, false,
-                                                                 false, false};
-
-  // Indicates which reference buffer [0,7] to infer the frame size from.
-  absl::optional<int> infer_size_from_reference;
-  // Which of the 8 reference buffers are updated by this frame.
-  std::bitset<kNumRefFrames> updated_buffers = 0;
-
-  // Header sizes, in bytes.
-  uint32_t uncompressed_header_size = 0;
-  uint32_t compressed_header_size = 0;
-
-  bool is_intra_only() const {
-    return reference_buffers[0] == -1 && reference_buffers[1] == -1 &&
-           reference_buffers[2] == -1;
-  }
-
-  std::string ToString() const;
 };
 
-// Parses the uncompressed header and populates (most) values in a
-// UncompressedHeader struct. Returns nullopt on failure.
-absl::optional<UncompressedHeader> ParseUncompressedHeader(const uint8_t* buf,
-                                                           size_t length);
+// Parses frame information for a VP9 key-frame or all-intra frame from a
+// bitstream. Returns nullopt on failure or if not a key-frame.
+absl::optional<FrameInfo> ParseIntraFrameInfo(const uint8_t* buf,
+                                              size_t length);
 
 }  // namespace vp9
 

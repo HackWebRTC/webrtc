@@ -206,8 +206,8 @@ int LibvpxVp9Decoder::Decode(const EncodedImage& input_image,
   }
 
   if (input_image._frameType == VideoFrameType::kVideoFrameKey) {
-    absl::optional<vp9::UncompressedHeader> frame_info =
-        vp9::ParseUncompressedHeader(input_image.data(), input_image.size());
+    absl::optional<vp9::FrameInfo> frame_info =
+        vp9::ParseIntraFrameInfo(input_image.data(), input_image.size());
     if (frame_info) {
       if (frame_info->frame_width != current_codec_.width ||
           frame_info->frame_height != current_codec_.height) {
