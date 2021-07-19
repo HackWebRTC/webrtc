@@ -196,8 +196,6 @@ rtc_library("rtp_test_utils") {
     "rtp_file_reader.h",
     "rtp_file_writer.cc",
     "rtp_file_writer.h",
-    "rtp_header_parser.cc",
-    "rtp_header_parser.h",
   ]
 
   deps = [
@@ -212,7 +210,6 @@ rtc_library("rtp_test_utils") {
     "../rtc_base/synchronization:mutex",
     "../rtc_base/system:arch",
   ]
-  absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
 }
 
 rtc_library("field_trial") {
