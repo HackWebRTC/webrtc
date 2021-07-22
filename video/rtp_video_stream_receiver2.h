@@ -39,7 +39,7 @@
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer.h"
 #include "modules/video_coding/h264_sps_pps_tracker.h"
 #include "modules/video_coding/loss_notification_controller.h"
-#include "modules/video_coding/nack_module2.h"
+#include "modules/video_coding/nack_requester.h"
 #include "modules/video_coding/packet_buffer.h"
 #include "modules/video_coding/rtp_frame_reference_finder.h"
 #include "modules/video_coding/unique_timestamp_counter.h"
@@ -53,7 +53,7 @@
 
 namespace webrtc {
 
-class NackModule2;
+class NackRequester;
 class PacketRouter;
 class ReceiveStatistics;
 class RtcpRttStats;
@@ -316,7 +316,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   KeyFrameRequestSender* const keyframe_request_sender_;
 
   RtcpFeedbackBuffer rtcp_feedback_buffer_;
-  const std::unique_ptr<NackModule2> nack_module_;
+  const std::unique_ptr<NackRequester> nack_module_;
   std::unique_ptr<LossNotificationController> loss_notification_controller_;
 
   video_coding::PacketBuffer packet_buffer_
