@@ -1042,6 +1042,8 @@ def CommonChecks(input_api, output_api):
     results.extend(
         CheckAbslMemoryInclude(input_api, output_api, non_third_party_sources))
     results.extend(
+        CheckAssertUsage(input_api, output_api, non_third_party_sources))
+    results.extend(
         CheckBannedAbslMakeUnique(input_api, output_api,
                                   non_third_party_sources))
     results.extend(
@@ -1154,6 +1156,28 @@ def CheckObjcApiSymbols(input_api, output_api, source_file_filter):
                 'RTC_OBJC_EXPORT @protocol RTC_OBJC_TYPE(RtcFoo)\n\n' +
                 'RTC_OBJC_EXPORT @interface RTC_OBJC_TYPE(RtcFoo)\n\n' +
                 'Please fix the following files:', files)
+        ]
+    return []
+
+
+def CheckAssertUsage(input_api, output_api, source_file_filter):
+    pattern = input_api.re.compile(r'\bassert\(')
+    file_filter = lambda f: (f.LocalPath().endswith(('.cc', '.h', '.m', '.mm'))
+                             and source_file_filter(f))
+
+    files = []
+    for f in input_api.AffectedFiles(include_deletes=False,
+                                     file_filter=file_filter):
+        for _, line in f.ChangedContents():
+            if pattern.search(line):
+                files.append(f.LocalPath())
+                break
+
+    if len(files):
+        return [
+            output_api.PresubmitError(
+                'Usage of assert() has been detected in the following files, '
+                'please use RTC_DCHECK() instead.\n Files:', files)
         ]
     return []
 
