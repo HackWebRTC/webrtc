@@ -133,7 +133,7 @@ public class PeerConnectionFactory {
   public static class Options {
     // Keep in sync with webrtc/rtc_base/network.h!
     //
-    // These bit fields are defined for |networkIgnoreMask| below.
+    // These bit fields are defined for `networkIgnoreMask` below.
     static final int ADAPTER_TYPE_UNKNOWN = 0;
     static final int ADAPTER_TYPE_ETHERNET = 1 << 0;
     static final int ADAPTER_TYPE_WIFI = 1 << 1;

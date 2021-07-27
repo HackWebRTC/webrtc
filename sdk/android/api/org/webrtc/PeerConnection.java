@@ -169,9 +169,9 @@ public class PeerConnection {
     public final String password;
     public final TlsCertPolicy tlsCertPolicy;
 
-    // If the URIs in |urls| only contain IP addresses, this field can be used
+    // If the URIs in `urls` only contain IP addresses, this field can be used
     // to indicate the hostname, which may be necessary for TLS (using the SNI
-    // extension). If |urls| itself contains the hostname, this isn't
+    // extension). If `urls` itself contains the hostname, this isn't
     // necessary.
     public final String hostname;
 
@@ -1106,7 +1106,7 @@ public class PeerConnection {
    * transceiver will cause future calls to CreateOffer to add a media description
    * for the corresponding transceiver.
    *
-   * <p>The initial value of |mid| in the returned transceiver is null. Setting a
+   * <p>The initial value of `mid` in the returned transceiver is null. Setting a
    * new session description may change it to a non-null value.
    *
    * <p>https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnection-addtransceiver

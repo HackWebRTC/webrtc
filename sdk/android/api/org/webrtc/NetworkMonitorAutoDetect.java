@@ -172,7 +172,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver implements Netwo
     }
 
     /**
-     * Returns connection type and status information about |network|.
+     * Returns connection type and status information about `network`.
      * Only callable on Lollipop and newer releases.
      */
     @SuppressLint("NewApi")
@@ -186,9 +186,9 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver implements Netwo
         return new NetworkState(false, -1, -1, -1, -1);
       }
       // The general logic of handling a VPN in this method is as follows. getNetworkInfo will
-      // return the info of the network with the same id as in |network| when it is registered via
-      // ConnectivityManager.registerNetworkAgent in Android. |networkInfo| may or may not indicate
-      // the type TYPE_VPN if |network| is a VPN. To reliably detect the VPN interface, we need to
+      // return the info of the network with the same id as in `network` when it is registered via
+      // ConnectivityManager.registerNetworkAgent in Android. `networkInfo` may or may not indicate
+      // the type TYPE_VPN if `network` is a VPN. To reliably detect the VPN interface, we need to
       // query the network capability as below in the case when networkInfo.getType() is not
       // TYPE_VPN. On the other hand when networkInfo.getType() is TYPE_VPN, the only solution so
       // far to obtain the underlying network information is to query the active network interface.
@@ -198,7 +198,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver implements Netwo
       // getActiveNetworkInfo may thus give the wrong interface information, and one should note
       // that getActiveNetworkInfo would return the default network interface if the VPN does not
       // specify its underlying networks in the implementation. Therefore, we need further compare
-      // |network| to the active network. If they are not the same network, we will have to fall
+      // `network` to the active network. If they are not the same network, we will have to fall
       // back to report an unknown network.
 
       if (networkInfo.getType() != ConnectivityManager.TYPE_VPN) {
@@ -209,15 +209,15 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver implements Netwo
             || !networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
           return getNetworkState(networkInfo);
         }
-        // When |network| is in fact a VPN after querying its capability but |networkInfo| is not of
-        // type TYPE_VPN, |networkInfo| contains the info for the underlying network, and we return
+        // When `network` is in fact a VPN after querying its capability but `networkInfo` is not of
+        // type TYPE_VPN, `networkInfo` contains the info for the underlying network, and we return
         // a NetworkState constructed from it.
         return new NetworkState(networkInfo.isConnected(), ConnectivityManager.TYPE_VPN, -1,
             networkInfo.getType(), networkInfo.getSubtype());
       }
 
-      // When |networkInfo| is of type TYPE_VPN, which implies |network| is a VPN, we return the
-      // NetworkState of the active network via getActiveNetworkInfo(), if |network| is the active
+      // When `networkInfo` is of type TYPE_VPN, which implies `network` is a VPN, we return the
+      // NetworkState of the active network via getActiveNetworkInfo(), if `network` is the active
       // network that supports the VPN. Otherwise, NetworkState of an unknown network with type -1
       // will be returned.
       //
