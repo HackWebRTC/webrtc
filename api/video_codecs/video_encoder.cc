@@ -187,6 +187,9 @@ std::string VideoEncoder::EncoderInfo::ToString() const {
     oss << VideoFrameBufferTypeToString(preferred_pixel_formats.at(i));
   }
   oss << "]";
+  if (is_qp_trusted.has_value()) {
+    oss << ", is_qp_trusted = " << is_qp_trusted.value();
+  }
   oss << "}";
   return oss.str();
 }
