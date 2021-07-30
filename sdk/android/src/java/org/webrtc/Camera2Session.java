@@ -311,6 +311,12 @@ class Camera2Session implements CameraSession {
         == CameraMetadata.LENS_FACING_FRONT;
 
     findCaptureFormat();
+
+    if (captureFormat == null) {
+      // findCaptureFormat reports an error already.
+      return;
+    }
+
     openCamera();
   }
 
