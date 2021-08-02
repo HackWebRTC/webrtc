@@ -11,11 +11,6 @@ import("//build/config/ui.gni")
 import("//tools/generate_stubs/rules.gni")
 import("../../webrtc.gni")
 
-if (rtc_use_pipewire) {
-  assert(rtc_pipewire_version == "0.2" || rtc_pipewire_version == "0.3",
-         "Unsupported PipeWire version")
-}
-
 use_desktop_capture_differ_sse2 = current_cpu == "x86" || current_cpu == "x64"
 
 config("x11_config") {
@@ -223,19 +218,10 @@ if (is_linux || is_chromeos) {
       ]
     }
 
-    if (rtc_pipewire_version == "0.3") {
-      pkg_config("pipewire") {
-        packages = [ "libpipewire-0.3" ]
-        if (!rtc_link_pipewire) {
-          ignore_libs = true
-        }
-      }
-    } else {
-      pkg_config("pipewire") {
-        packages = [ "libpipewire-0.2" ]
-        if (!rtc_link_pipewire) {
-          ignore_libs = true
-        }
+    pkg_config("pipewire") {
+      packages = [ "libpipewire-0.3" ]
+      if (!rtc_link_pipewire) {
+        ignore_libs = true
       }
     }
 
@@ -253,11 +239,7 @@ if (is_linux || is_chromeos) {
         logging_include = "rtc_base/logging.h"
         output_name = "linux/pipewire_stubs"
         path_from_source = "modules/desktop_capture/linux"
-        if (rtc_pipewire_version == "0.3") {
-          sigs = [ "linux/pipewire03.sigs" ]
-        } else {
-          sigs = [ "linux/pipewire02.sigs" ]
-        }
+        sigs = [ "linux/pipewire03.sigs" ]
       }
     }
 

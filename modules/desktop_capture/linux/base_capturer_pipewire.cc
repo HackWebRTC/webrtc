@@ -14,10 +14,6 @@
 #include <glib-object.h>
 #include <spa/param/format-utils.h>
 #include <spa/param/props.h>
-#if !PW_CHECK_VERSION(0, 3, 0)
-#include <spa/param/video/raw-utils.h>
-#include <spa/support/type-map.h>
-#endif
 
 #include <sys/ioctl.h>
 #include <sys/mman.h>
@@ -34,13 +30,8 @@
 
 #if defined(WEBRTC_DLOPEN_PIPEWIRE)
 #include "modules/desktop_capture/linux/pipewire_stubs.h"
-
 using modules_desktop_capture_linux::InitializeStubs;
-#if PW_CHECK_VERSION(0, 3, 0)
 using modules_desktop_capture_linux::kModulePipewire03;
-#else
-using modules_desktop_capture_linux::kModulePipewire02;
-#endif
 using modules_desktop_capture_linux::StubPathMap;
 #endif  // defined(WEBRTC_DLOPEN_PIPEWIRE)
 
@@ -57,11 +48,7 @@ const char kScreenCastInterfaceName[] = "org.freedesktop.portal.ScreenCast";
 const int kBytesPerPixel = 4;
 
 #if defined(WEBRTC_DLOPEN_PIPEWIRE)
-#if PW_CHECK_VERSION(0, 3, 0)
 const char kPipeWireLib[] = "libpipewire-0.3.so.0";
-#else
-const char kPipeWireLib[] = "libpipewire-0.2.so.1";
-#endif
 #endif
 
 // static
@@ -195,7 +182,6 @@ Scoped<GUnixFDList>::~Scoped() {
   }
 }
 
-#if PW_CHECK_VERSION(0, 3, 0)
 void BaseCapturerPipeWire::OnCoreError(void* data,
                                        uint32_t id,
                                        int seq,
@@ -206,32 +192,6 @@ void BaseCapturerPipeWire::OnCoreError(void* data,
 
   RTC_LOG(LS_ERROR) << "PipeWire remote error: " << message;
 }
-#else
-// static
-void BaseCapturerPipeWire::OnStateChanged(void* data,
-                                          pw_remote_state old_state,
-                                          pw_remote_state state,
-                                          const char* error_message) {
-  BaseCapturerPipeWire* that = static_cast<BaseCapturerPipeWire*>(data);
-  RTC_DCHECK(that);
-
-  switch (state) {
-    case PW_REMOTE_STATE_ERROR:
-      RTC_LOG(LS_ERROR) << "PipeWire remote state error: " << error_message;
-      break;
-    case PW_REMOTE_STATE_CONNECTED:
-      RTC_LOG(LS_INFO) << "PipeWire remote state: connected.";
-      that->pw_stream_ = that->CreateReceivingStream();
-      break;
-    case PW_REMOTE_STATE_CONNECTING:
-      RTC_LOG(LS_INFO) << "PipeWire remote state: connecting.";
-      break;
-    case PW_REMOTE_STATE_UNCONNECTED:
-      RTC_LOG(LS_INFO) << "PipeWire remote state: unconnected.";
-      break;
-  }
-}
-#endif
 
 // static
 void BaseCapturerPipeWire::OnStreamStateChanged(void* data,
@@ -241,7 +201,6 @@ void BaseCapturerPipeWire::OnStreamStateChanged(void* data,
   BaseCapturerPipeWire* that = static_cast<BaseCapturerPipeWire*>(data);
   RTC_DCHECK(that);
 
-#if PW_CHECK_VERSION(0, 3, 0)
   switch (state) {
     case PW_STREAM_STATE_ERROR:
       RTC_LOG(LS_ERROR) << "PipeWire stream state error: " << error_message;
@@ -252,63 +211,25 @@ void BaseCapturerPipeWire::OnStreamStateChanged(void* data,
     case PW_STREAM_STATE_CONNECTING:
       break;
   }
-#else
-  switch (state) {
-    case PW_STREAM_STATE_ERROR:
-      RTC_LOG(LS_ERROR) << "PipeWire stream state error: " << error_message;
-      break;
-    case PW_STREAM_STATE_CONFIGURE:
-      pw_stream_set_active(that->pw_stream_, true);
-      break;
-    case PW_STREAM_STATE_UNCONNECTED:
-    case PW_STREAM_STATE_CONNECTING:
-    case PW_STREAM_STATE_READY:
-    case PW_STREAM_STATE_PAUSED:
-    case PW_STREAM_STATE_STREAMING:
-      break;
-  }
-#endif
 }
 
 // static
-#if PW_CHECK_VERSION(0, 3, 0)
 void BaseCapturerPipeWire::OnStreamParamChanged(void* data,
                                                 uint32_t id,
                                                 const struct spa_pod* format) {
-#else
-void BaseCapturerPipeWire::OnStreamFormatChanged(void* data,
-                                                 const struct spa_pod* format) {
-#endif
   BaseCapturerPipeWire* that = static_cast<BaseCapturerPipeWire*>(data);
   RTC_DCHECK(that);
 
   RTC_LOG(LS_INFO) << "PipeWire stream format changed.";
 
-#if PW_CHECK_VERSION(0, 3, 0)
   if (!format || id != SPA_PARAM_Format) {
-#else
-  if (!format) {
-    pw_stream_finish_format(that->pw_stream_, /*res=*/0, /*params=*/nullptr,
-                            /*n_params=*/0);
-#endif
     return;
   }
 
-#if PW_CHECK_VERSION(0, 3, 0)
   spa_format_video_raw_parse(format, &that->spa_video_format_);
-#else
-  that->spa_video_format_ = new spa_video_info_raw();
-  spa_format_video_raw_parse(format, that->spa_video_format_,
-                             &that->pw_type_->format_video);
-#endif
 
-#if PW_CHECK_VERSION(0, 3, 0)
   auto width = that->spa_video_format_.size.width;
   auto height = that->spa_video_format_.size.height;
-#else
-  auto width = that->spa_video_format_->size.width;
-  auto height = that->spa_video_format_->size.height;
-#endif
   auto stride = SPA_ROUND_UP_N(width * kBytesPerPixel, 4);
   auto size = height * stride;
 
@@ -319,7 +240,6 @@ void BaseCapturerPipeWire::OnStreamFormatChanged(void* data,
 
   // Setup buffers and meta header for new format.
   const struct spa_pod* params[3];
-#if PW_CHECK_VERSION(0, 3, 0)
   params[0] = reinterpret_cast<spa_pod*>(spa_pod_builder_add_object(
       &builder, SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
       SPA_PARAM_BUFFERS_size, SPA_POD_Int(size), SPA_PARAM_BUFFERS_stride,
@@ -334,47 +254,6 @@ void BaseCapturerPipeWire::OnStreamFormatChanged(void* data,
       SPA_POD_Id(SPA_META_VideoCrop), SPA_PARAM_META_size,
       SPA_POD_Int(sizeof(struct spa_meta_region))));
   pw_stream_update_params(that->pw_stream_, params, 3);
-#else
-  params[0] = reinterpret_cast<spa_pod*>(spa_pod_builder_object(
-      &builder,
-      // id to enumerate buffer requirements
-      that->pw_core_type_->param.idBuffers,
-      that->pw_core_type_->param_buffers.Buffers,
-      // Size: specified as integer (i) and set to specified size
-      ":", that->pw_core_type_->param_buffers.size, "i", size,
-      // Stride: specified as integer (i) and set to specified stride
-      ":", that->pw_core_type_->param_buffers.stride, "i", stride,
-      // Buffers: specifies how many buffers we want to deal with, set as
-      // integer (i) where preferred number is 8, then allowed number is defined
-      // as range (r) from min and max values and it is undecided (u) to allow
-      // negotiation
-      ":", that->pw_core_type_->param_buffers.buffers, "iru", 8,
-      SPA_POD_PROP_MIN_MAX(1, 32),
-      // Align: memory alignment of the buffer, set as integer (i) to specified
-      // value
-      ":", that->pw_core_type_->param_buffers.align, "i", 16));
-  params[1] = reinterpret_cast<spa_pod*>(spa_pod_builder_object(
-      &builder,
-      // id to enumerate supported metadata
-      that->pw_core_type_->param.idMeta, that->pw_core_type_->param_meta.Meta,
-      // Type: specified as id or enum (I)
-      ":", that->pw_core_type_->param_meta.type, "I",
-      that->pw_core_type_->meta.Header,
-      // Size: size of the metadata, specified as integer (i)
-      ":", that->pw_core_type_->param_meta.size, "i",
-      sizeof(struct spa_meta_header)));
-  params[2] = reinterpret_cast<spa_pod*>(spa_pod_builder_object(
-      &builder,
-      // id to enumerate supported metadata
-      that->pw_core_type_->param.idMeta, that->pw_core_type_->param_meta.Meta,
-      // Type: specified as id or enum (I)
-      ":", that->pw_core_type_->param_meta.type, "I",
-      that->pw_core_type_->meta.VideoCrop,
-      // Size: size of the metadata, specified as integer (i)
-      ":", that->pw_core_type_->param_meta.size, "i",
-      sizeof(struct spa_meta_video_crop)));
-  pw_stream_finish_format(that->pw_stream_, /*res=*/0, params, /*n_params=*/3);
-#endif
 }
 
 // static
@@ -412,27 +291,10 @@ BaseCapturerPipeWire::~BaseCapturerPipeWire() {
     pw_thread_loop_stop(pw_main_loop_);
   }
 
-#if !PW_CHECK_VERSION(0, 3, 0)
-  if (pw_type_) {
-    delete pw_type_;
-  }
-
-  if (spa_video_format_) {
-    delete spa_video_format_;
-  }
-#endif
-
   if (pw_stream_) {
     pw_stream_destroy(pw_stream_);
   }
 
-#if !PW_CHECK_VERSION(0, 3, 0)
-  if (pw_remote_) {
-    pw_remote_destroy(pw_remote_);
-  }
-#endif
-
-#if PW_CHECK_VERSION(0, 3, 0)
   if (pw_core_) {
     pw_core_disconnect(pw_core_);
   }
@@ -440,21 +302,10 @@ BaseCapturerPipeWire::~BaseCapturerPipeWire() {
   if (pw_context_) {
     pw_context_destroy(pw_context_);
   }
-#else
-  if (pw_core_) {
-    pw_core_destroy(pw_core_);
-  }
-#endif
 
   if (pw_main_loop_) {
     pw_thread_loop_destroy(pw_main_loop_);
   }
-
-#if !PW_CHECK_VERSION(0, 3, 0)
-  if (pw_loop_) {
-    pw_loop_destroy(pw_loop_);
-  }
-#endif
 
   if (start_request_signal_id_) {
     g_dbus_connection_signal_unsubscribe(connection_, start_request_signal_id_);
@@ -513,11 +364,7 @@ void BaseCapturerPipeWire::InitPipeWire() {
   StubPathMap paths;
 
   // Check if the PipeWire library is available.
-#if PW_CHECK_VERSION(0, 3, 0)
   paths[kModulePipewire03].push_back(kPipeWireLib);
-#else
-  paths[kModulePipewire02].push_back(kPipeWireLib);
-#endif
   if (!InitializeStubs(paths)) {
     RTC_LOG(LS_ERROR) << "Failed to load the PipeWire library and symbols.";
     portal_init_failed_ = true;
@@ -527,7 +374,6 @@ void BaseCapturerPipeWire::InitPipeWire() {
 
   pw_init(/*argc=*/nullptr, /*argc=*/nullptr);
 
-#if PW_CHECK_VERSION(0, 3, 0)
   pw_main_loop_ = pw_thread_loop_new("pipewire-main-loop", nullptr);
 
   pw_thread_loop_lock(pw_main_loop_);
@@ -544,21 +390,8 @@ void BaseCapturerPipeWire::InitPipeWire() {
     RTC_LOG(LS_ERROR) << "Failed to connect PipeWire context";
     return;
   }
-#else
-  pw_loop_ = pw_loop_new(/*properties=*/nullptr);
-  pw_main_loop_ = pw_thread_loop_new(pw_loop_, "pipewire-main-loop");
-
-  pw_thread_loop_lock(pw_main_loop_);
-
-  pw_core_ = pw_core_new(pw_loop_, /*properties=*/nullptr);
-  pw_core_type_ = pw_core_get_type(pw_core_);
-  pw_remote_ = pw_remote_new(pw_core_, nullptr, /*user_data_size=*/0);
-
-  InitPipeWireTypes();
-#endif
 
   // Initialize event handlers, remote end and stream-related.
-#if PW_CHECK_VERSION(0, 3, 0)
   pw_core_events_.version = PW_VERSION_CORE_EVENTS;
   pw_core_events_.error = &OnCoreError;
 
@@ -566,17 +399,7 @@ void BaseCapturerPipeWire::InitPipeWire() {
   pw_stream_events_.state_changed = &OnStreamStateChanged;
   pw_stream_events_.param_changed = &OnStreamParamChanged;
   pw_stream_events_.process = &OnStreamProcess;
-#else
-  pw_remote_events_.version = PW_VERSION_REMOTE_EVENTS;
-  pw_remote_events_.state_changed = &OnStateChanged;
 
-  pw_stream_events_.version = PW_VERSION_STREAM_EVENTS;
-  pw_stream_events_.state_changed = &OnStreamStateChanged;
-  pw_stream_events_.format_changed = &OnStreamFormatChanged;
-  pw_stream_events_.process = &OnStreamProcess;
-#endif
-
-#if PW_CHECK_VERSION(0, 3, 0)
   pw_core_add_listener(pw_core_, &spa_core_listener_, &pw_core_events_, this);
 
   pw_stream_ = CreateReceivingStream();
@@ -584,11 +407,6 @@ void BaseCapturerPipeWire::InitPipeWire() {
     RTC_LOG(LS_ERROR) << "Failed to create PipeWire stream";
     return;
   }
-#else
-  pw_remote_add_listener(pw_remote_, &spa_remote_listener_, &pw_remote_events_,
-                         this);
-  pw_remote_connect_fd(pw_remote_, pw_fd_);
-#endif
 
   if (pw_thread_loop_start(pw_main_loop_) < 0) {
     RTC_LOG(LS_ERROR) << "Failed to start main PipeWire loop";
@@ -600,41 +418,18 @@ void BaseCapturerPipeWire::InitPipeWire() {
   RTC_LOG(LS_INFO) << "PipeWire remote opened.";
 }
 
-#if !PW_CHECK_VERSION(0, 3, 0)
-void BaseCapturerPipeWire::InitPipeWireTypes() {
-  spa_type_map* map = pw_core_type_->map;
-  pw_type_ = new PipeWireType();
-
-  spa_type_media_type_map(map, &pw_type_->media_type);
-  spa_type_media_subtype_map(map, &pw_type_->media_subtype);
-  spa_type_format_video_map(map, &pw_type_->format_video);
-  spa_type_video_format_map(map, &pw_type_->video_format);
-}
-#endif
-
 pw_stream* BaseCapturerPipeWire::CreateReceivingStream() {
-#if !PW_CHECK_VERSION(0, 3, 0)
-  if (pw_remote_get_state(pw_remote_, nullptr) != PW_REMOTE_STATE_CONNECTED) {
-    RTC_LOG(LS_ERROR) << "Cannot create pipewire stream";
-    return nullptr;
-  }
-#endif
   spa_rectangle pwMinScreenBounds = spa_rectangle{1, 1};
   spa_rectangle pwMaxScreenBounds = spa_rectangle{UINT32_MAX, UINT32_MAX};
 
   pw_properties* reuseProps =
       pw_properties_new_string("pipewire.client.reuse=1");
-#if PW_CHECK_VERSION(0, 3, 0)
   auto stream = pw_stream_new(pw_core_, "webrtc-consume-stream", reuseProps);
-#else
-  auto stream = pw_stream_new(pw_remote_, "webrtc-consume-stream", reuseProps);
-#endif
 
   uint8_t buffer[1024] = {};
   const spa_pod* params[1];
   spa_pod_builder builder = spa_pod_builder{buffer, sizeof(buffer)};
 
-#if PW_CHECK_VERSION(0, 3, 0)
   params[0] = reinterpret_cast<spa_pod*>(spa_pod_builder_add_object(
       &builder, SPA_TYPE_OBJECT_Format, SPA_PARAM_EnumFormat,
       SPA_FORMAT_mediaType, SPA_POD_Id(SPA_MEDIA_TYPE_video),
@@ -647,38 +442,11 @@ pw_stream* BaseCapturerPipeWire::CreateReceivingStream() {
       SPA_POD_CHOICE_RANGE_Rectangle(&pwMinScreenBounds, &pwMinScreenBounds,
                                      &pwMaxScreenBounds),
       0));
-#else
-  params[0] = reinterpret_cast<spa_pod*>(spa_pod_builder_object(
-      &builder,
-      // id to enumerate formats
-      pw_core_type_->param.idEnumFormat, pw_core_type_->spa_format, "I",
-      pw_type_->media_type.video, "I", pw_type_->media_subtype.raw,
-      // Video format: specified as id or enum (I), preferred format is BGRx,
-      // then allowed formats are enumerated (e) and the format is undecided (u)
-      // to allow negotiation
-      ":", pw_type_->format_video.format, "Ieu", pw_type_->video_format.BGRx,
-      SPA_POD_PROP_ENUM(
-          4, pw_type_->video_format.RGBx, pw_type_->video_format.BGRx,
-          pw_type_->video_format.RGBA, pw_type_->video_format.BGRA),
-      // Video size: specified as rectangle (R), preferred size is specified as
-      // first parameter, then allowed size is defined as range (r) from min and
-      // max values and the format is undecided (u) to allow negotiation
-      ":", pw_type_->format_video.size, "Rru", &pwMinScreenBounds,
-      SPA_POD_PROP_MIN_MAX(&pwMinScreenBounds, &pwMaxScreenBounds)));
-#endif
 
   pw_stream_add_listener(stream, &spa_stream_listener_, &pw_stream_events_,
                          this);
-#if PW_CHECK_VERSION(0, 3, 0)
   if (pw_stream_connect(stream, PW_DIRECTION_INPUT, pw_stream_node_id_,
                         PW_STREAM_FLAG_AUTOCONNECT, params, 1) != 0) {
-#else
-  pw_stream_flags flags = static_cast<pw_stream_flags>(
-      PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_INACTIVE);
-  if (pw_stream_connect(stream, PW_DIRECTION_INPUT, /*port_path=*/nullptr,
-                        flags, params,
-                        /*n_params=*/1) != 0) {
-#endif
     RTC_LOG(LS_ERROR) << "Could not connect receiving stream.";
     portal_init_failed_ = true;
     return nullptr;
@@ -697,24 +465,15 @@ void BaseCapturerPipeWire::HandleBuffer(pw_buffer* buffer) {
     return;
   }
 
-#if PW_CHECK_VERSION(0, 3, 0)
   if (spaBuffer->datas[0].type == SPA_DATA_MemFd ||
       spaBuffer->datas[0].type == SPA_DATA_DmaBuf) {
-#else
-  if (spaBuffer->datas[0].type == pw_core_type_->data.MemFd ||
-      spaBuffer->datas[0].type == pw_core_type_->data.DmaBuf) {
-#endif
     map.initialize(
         static_cast<uint8_t*>(
             mmap(nullptr,
                  spaBuffer->datas[0].maxsize + spaBuffer->datas[0].mapoffset,
                  PROT_READ, MAP_PRIVATE, spaBuffer->datas[0].fd, 0)),
         spaBuffer->datas[0].maxsize + spaBuffer->datas[0].mapoffset,
-#if PW_CHECK_VERSION(0, 3, 0)
         spaBuffer->datas[0].type == SPA_DATA_DmaBuf,
-#else
-        spaBuffer->datas[0].type == pw_core_type_->data.DmaBuf,
-#endif
         spaBuffer->datas[0].fd);
 
     if (!map) {
@@ -723,20 +482,12 @@ void BaseCapturerPipeWire::HandleBuffer(pw_buffer* buffer) {
       return;
     }
 
-#if PW_CHECK_VERSION(0, 3, 0)
     if (spaBuffer->datas[0].type == SPA_DATA_DmaBuf) {
-#else
-    if (spaBuffer->datas[0].type == pw_core_type_->data.DmaBuf) {
-#endif
       SyncDmaBuf(spaBuffer->datas[0].fd, DMA_BUF_SYNC_START);
     }
 
     src = SPA_MEMBER(map.get(), spaBuffer->datas[0].mapoffset, uint8_t);
-#if PW_CHECK_VERSION(0, 3, 0)
   } else if (spaBuffer->datas[0].type == SPA_DATA_MemPtr) {
-#else
-  } else if (spaBuffer->datas[0].type == pw_core_type_->data.MemPtr) {
-#endif
     src = static_cast<uint8_t*>(spaBuffer->datas[0].data);
   }
 
@@ -744,28 +495,17 @@ void BaseCapturerPipeWire::HandleBuffer(pw_buffer* buffer) {
     return;
   }
 
-#if PW_CHECK_VERSION(0, 3, 0)
   struct spa_meta_region* video_metadata =
       static_cast<struct spa_meta_region*>(spa_buffer_find_meta_data(
           spaBuffer, SPA_META_VideoCrop, sizeof(*video_metadata)));
-#else
-  struct spa_meta_video_crop* video_metadata =
-      static_cast<struct spa_meta_video_crop*>(
-          spa_buffer_find_meta(spaBuffer, pw_core_type_->meta.VideoCrop));
-#endif
 
   // Video size from metadata is bigger than an actual video stream size.
   // The metadata are wrong or we should up-scale the video...in both cases
   // just quit now.
-#if PW_CHECK_VERSION(0, 3, 0)
   if (video_metadata && (video_metadata->region.size.width >
                              static_cast<uint32_t>(desktop_size_.width()) ||
                          video_metadata->region.size.height >
                              static_cast<uint32_t>(desktop_size_.height()))) {
-#else
-  if (video_metadata && (video_metadata->width > desktop_size_.width() ||
-                         video_metadata->height > desktop_size_.height())) {
-#endif
     RTC_LOG(LS_ERROR) << "Stream metadata sizes are wrong!";
     return;
   }
@@ -774,12 +514,8 @@ void BaseCapturerPipeWire::HandleBuffer(pw_buffer* buffer) {
   // video stream size, so we need to adjust it.
   bool video_metadata_use = false;
 
-#if PW_CHECK_VERSION(0, 3, 0)
   const struct spa_rectangle* video_metadata_size =
       video_metadata ? &video_metadata->region.size : nullptr;
-#else
-  const struct spa_meta_video_crop* video_metadata_size = video_metadata;
-#endif
 
   if (video_metadata_size && video_metadata_size->width != 0 &&
       video_metadata_size->height != 0 &&
@@ -816,7 +552,6 @@ void BaseCapturerPipeWire::HandleBuffer(pw_buffer* buffer) {
   }
 
   // Adjust source content based on metadata video position
-#if PW_CHECK_VERSION(0, 3, 0)
   if (video_metadata_use &&
       (video_metadata->region.position.y + video_size_.height() <=
        desktop_size_.height())) {
@@ -828,18 +563,6 @@ void BaseCapturerPipeWire::HandleBuffer(pw_buffer* buffer) {
                desktop_size_.width())
           ? video_metadata->region.position.x * kBytesPerPixel
           : 0;
-#else
-  if (video_metadata_use &&
-      (video_metadata->y + video_size_.height() <= desktop_size_.height())) {
-    src += src_stride * video_metadata->y;
-  }
-
-  const int x_offset =
-      video_metadata_use &&
-              (video_metadata->x + video_size_.width() <= desktop_size_.width())
-          ? video_metadata->x * kBytesPerPixel
-          : 0;
-#endif
 
   uint8_t* dst = current_frame_.get();
   for (int i = 0; i < video_size_.height(); ++i) {
@@ -848,13 +571,8 @@ void BaseCapturerPipeWire::HandleBuffer(pw_buffer* buffer) {
     std::memcpy(dst, src, dst_stride);
     // If both sides decided to go with the RGBx format we need to convert it to
     // BGRx to match color format expected by WebRTC.
-#if PW_CHECK_VERSION(0, 3, 0)
     if (spa_video_format_.format == SPA_VIDEO_FORMAT_RGBx ||
         spa_video_format_.format == SPA_VIDEO_FORMAT_RGBA) {
-#else
-    if (spa_video_format_->format == pw_type_->video_format.RGBx ||
-        spa_video_format_->format == pw_type_->video_format.RGBA) {
-#endif
       ConvertRGBxToBGRx(dst, dst_stride);
     }
     src += src_stride - x_offset;
