@@ -110,7 +110,7 @@ SOURCES_RE = re.compile(r'sources \+?= \[(?P<sources>.*?)\]',
 DEPS_RE = re.compile(r'\bdeps \+?= \[(?P<deps>.*?)\]',
                      re.MULTILINE | re.DOTALL)
 
-# FILE_PATH_RE matchies a file path.
+# FILE_PATH_RE matches a file path.
 FILE_PATH_RE = re.compile(r'"(?P<file_path>(\w|\/)+)(?P<extension>\.\w+)"')
 
 
