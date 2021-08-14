@@ -12,7 +12,7 @@ package org.webrtc;
 
 import android.content.Context;
 import android.os.Process;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import java.util.List;
 import org.webrtc.Logging.Severity;
 import org.webrtc.PeerConnection;
