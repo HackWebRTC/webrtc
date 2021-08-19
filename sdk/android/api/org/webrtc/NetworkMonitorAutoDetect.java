@@ -565,6 +565,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver implements Netwo
   private ConnectivityManagerDelegate connectivityManagerDelegate;
   private WifiManagerDelegate wifiManagerDelegate;
   private WifiDirectManagerDelegate wifiDirectManagerDelegate;
+  private static boolean includeWifiDirect;
 
   private boolean isRegistered;
   private NetworkChangeDetector.ConnectionType connectionType;
@@ -583,7 +584,8 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver implements Netwo
     wifiSSID = getWifiSSID(networkState);
     intentFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
 
-    if (PeerConnectionFactory.fieldTrialsFindFullName("IncludeWifiDirect").equals("Enabled")) {
+    if (PeerConnectionFactory.fieldTrialsFindFullName("IncludeWifiDirect").equals("Enabled")
+        || includeWifiDirect) {
       wifiDirectManagerDelegate = new WifiDirectManagerDelegate(observer, context);
     }
 
@@ -605,6 +607,11 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver implements Netwo
       mobileNetworkCallback = null;
       allNetworkCallback = null;
     }
+  }
+
+  /** Enables WifiDirectManager. */
+  public static void setIncludeWifiDirect(boolean enable) {
+    includeWifiDirect = enable;
   }
 
   @Override
