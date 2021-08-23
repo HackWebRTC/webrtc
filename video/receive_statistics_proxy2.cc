@@ -98,10 +98,9 @@ bool IsCurrentTaskQueueOrThread(TaskQueueBase* task_queue) {
 
 }  // namespace
 
-ReceiveStatisticsProxy::ReceiveStatisticsProxy(
-    const VideoReceiveStream::Config* config,
-    Clock* clock,
-    TaskQueueBase* worker_thread)
+ReceiveStatisticsProxy::ReceiveStatisticsProxy(uint32_t remote_ssrc,
+                                               Clock* clock,
+                                               TaskQueueBase* worker_thread)
     : clock_(clock),
       start_ms_(clock->TimeInMilliseconds()),
       enable_decode_time_histograms_(
@@ -121,7 +120,7 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
                           kNumMeasurementsVariance),
       num_bad_states_(0),
       num_certain_states_(0),
-      remote_ssrc_(config->rtp.remote_ssrc),
+      remote_ssrc_(remote_ssrc),
       // 1000ms window, scale 1000 for ms to s.
       decode_fps_estimator_(1000, 1000),
       renders_fps_estimator_(1000, 1000),
@@ -139,7 +138,7 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
   RTC_DCHECK(worker_thread);
   decode_queue_.Detach();
   incoming_render_queue_.Detach();
-  stats_.ssrc = config->rtp.remote_ssrc;
+  stats_.ssrc = remote_ssrc_;
 }
 
 ReceiveStatisticsProxy::~ReceiveStatisticsProxy() {
