@@ -97,6 +97,7 @@ class ChannelReceive : public ChannelReceiveInterface,
       bool jitter_buffer_fast_playout,
       int jitter_buffer_min_delay_ms,
       bool jitter_buffer_enable_rtx_handling,
+      bool enable_non_sender_rtt,
       rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
       absl::optional<AudioCodecPairId> codec_pair_id,
       rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
@@ -158,6 +159,7 @@ class ChannelReceive : public ChannelReceiveInterface,
 
   CallReceiveStatistics GetRTCPStatistics() const override;
   void SetNACKStatus(bool enable, int maxNumberOfPackets) override;
+  void SetNonSenderRttMeasurement(bool enabled) override;
 
   AudioMixer::Source::AudioFrameInfo GetAudioFrameWithInfo(
       int sample_rate_hz,
@@ -524,6 +526,7 @@ ChannelReceive::ChannelReceive(
     bool jitter_buffer_fast_playout,
     int jitter_buffer_min_delay_ms,
     bool jitter_buffer_enable_rtx_handling,
+    bool enable_non_sender_rtt,
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
     absl::optional<AudioCodecPairId> codec_pair_id,
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
@@ -573,6 +576,7 @@ ChannelReceive::ChannelReceive(
   configuration.event_log = event_log_;
   configuration.local_media_ssrc = local_ssrc;
   configuration.rtcp_packet_type_counter_observer = this;
+  configuration.non_sender_rtt_measurement = enable_non_sender_rtt;
 
   if (frame_transformer)
     InitFrameTransformerDelegate(std::move(frame_transformer));
@@ -856,6 +860,15 @@ CallReceiveStatistics ChannelReceive::GetRTCPStatistics() const {
     stats.sender_reports_reports_count = rtcp_sr_stats->reports_count;
   }
 
+  absl::optional<RtpRtcpInterface::NonSenderRttStats> non_sender_rtt_stats =
+      rtp_rtcp_->GetNonSenderRttStats();
+  if (non_sender_rtt_stats.has_value()) {
+    stats.round_trip_time = non_sender_rtt_stats->round_trip_time;
+    stats.round_trip_time_measurements =
+        non_sender_rtt_stats->round_trip_time_measurements;
+    stats.total_round_trip_time = non_sender_rtt_stats->total_round_trip_time;
+  }
+
   return stats;
 }
 
@@ -870,6 +883,11 @@ void ChannelReceive::SetNACKStatus(bool enable, int max_packets) {
         kDefaultMaxReorderingThreshold);
     acm_receiver_.DisableNack();
   }
+}
+
+void ChannelReceive::SetNonSenderRttMeasurement(bool enabled) {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  rtp_rtcp_->SetNonSenderRttMeasurement(enabled);
 }
 
 // Called when we are missing one or more packets.
@@ -1110,6 +1128,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
     bool jitter_buffer_fast_playout,
     int jitter_buffer_min_delay_ms,
     bool jitter_buffer_enable_rtx_handling,
+    bool enable_non_sender_rtt,
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
     absl::optional<AudioCodecPairId> codec_pair_id,
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
@@ -1119,8 +1138,9 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
       clock, neteq_factory, audio_device_module, rtcp_send_transport,
       rtc_event_log, local_ssrc, remote_ssrc, jitter_buffer_max_packets,
       jitter_buffer_fast_playout, jitter_buffer_min_delay_ms,
-      jitter_buffer_enable_rtx_handling, decoder_factory, codec_pair_id,
-      std::move(frame_decryptor), crypto_options, std::move(frame_transformer));
+      jitter_buffer_enable_rtx_handling, enable_non_sender_rtt, decoder_factory,
+      codec_pair_id, std::move(frame_decryptor), crypto_options,
+      std::move(frame_transformer));
 }
 
 }  // namespace voe
