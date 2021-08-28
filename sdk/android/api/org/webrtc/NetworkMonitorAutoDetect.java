@@ -584,8 +584,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver implements Netwo
     wifiSSID = getWifiSSID(networkState);
     intentFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
 
-    if (PeerConnectionFactory.fieldTrialsFindFullName("IncludeWifiDirect").equals("Enabled")
-        || includeWifiDirect) {
+    if (includeWifiDirect) {
       wifiDirectManagerDelegate = new WifiDirectManagerDelegate(observer, context);
     }
 
