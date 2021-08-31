@@ -19,6 +19,7 @@
 #include "absl/types/optional.h"
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capturer.h"
+#include "modules/desktop_capture/linux/egl_dmabuf.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/synchronization/mutex.h"
 
@@ -88,6 +89,7 @@ class BaseCapturerPipeWire : public DesktopCapturer {
   guint sources_request_signal_id_ = 0;
   guint start_request_signal_id_ = 0;
 
+  int64_t modifier_;
   DesktopSize video_size_;
   DesktopSize desktop_size_ = {};
   DesktopCaptureOptions options_ = {};
@@ -98,6 +100,9 @@ class BaseCapturerPipeWire : public DesktopCapturer {
 
   bool portal_init_failed_ = false;
 
+  std::unique_ptr<EglDmaBuf> egl_dmabuf_;
+
+  void InitEGL();
   void InitPortal();
   void InitPipeWire();
   void InitPipeWireTypes();
