@@ -14,13 +14,12 @@
 #include <glib-object.h>
 #include <spa/param/format-utils.h>
 #include <spa/param/props.h>
+
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/syscall.h>
-#include <unistd.h>
 
 #include <memory>
-#include <string>
 #include <utility>
 
 #include "absl/memory/memory.h"
@@ -52,102 +51,65 @@ const int kBytesPerPixel = 4;
 const char kPipeWireLib[] = "libpipewire-0.3.so.0";
 #endif
 
-#if !PW_CHECK_VERSION(0, 3, 29)
-#define SPA_POD_PROP_FLAG_MANDATORY (1u << 3)
-#endif
-#if !PW_CHECK_VERSION(0, 3, 33)
-#define SPA_POD_PROP_FLAG_DONT_FIXATE (1u << 4)
-#endif
-
-struct pw_version {
-  int major = 0;
-  int minor = 0;
-  int micro = 0;
+// static
+struct dma_buf_sync {
+  uint64_t flags;
 };
+#define DMA_BUF_SYNC_READ (1 << 0)
+#define DMA_BUF_SYNC_START (0 << 2)
+#define DMA_BUF_SYNC_END (1 << 2)
+#define DMA_BUF_BASE 'b'
+#define DMA_BUF_IOCTL_SYNC _IOW(DMA_BUF_BASE, 0, struct dma_buf_sync)
 
-pw_version ParsePipeWireVersion(const char* version) {
-  pw_version pw_version;
-  sscanf(version, "%d.%d.%d", &pw_version.major, &pw_version.minor,
-         &pw_version.micro);
-  return pw_version;
-}
+static void SyncDmaBuf(int fd, uint64_t start_or_end) {
+  struct dma_buf_sync sync = {0};
 
-spa_pod* BuildFormat(spa_pod_builder* builder,
-                     uint32_t format,
-                     const std::vector<uint64_t>& modifiers) {
-  bool first = true;
-  spa_pod_frame frames[2];
-  spa_rectangle pw_min_screen_bounds = spa_rectangle{1, 1};
-  spa_rectangle pw_max_screen_bounds = spa_rectangle{UINT32_MAX, UINT32_MAX};
+  sync.flags = start_or_end | DMA_BUF_SYNC_READ;
 
-  spa_pod_builder_push_object(builder, &frames[0], SPA_TYPE_OBJECT_Format,
-                              SPA_PARAM_EnumFormat);
-  spa_pod_builder_add(builder, SPA_FORMAT_mediaType,
-                      SPA_POD_Id(SPA_MEDIA_TYPE_video), 0);
-  spa_pod_builder_add(builder, SPA_FORMAT_mediaSubtype,
-                      SPA_POD_Id(SPA_MEDIA_SUBTYPE_raw), 0);
-  spa_pod_builder_add(builder, SPA_FORMAT_VIDEO_format, SPA_POD_Id(format), 0);
-
-  if (modifiers.size()) {
-    pw_version pw_version = ParsePipeWireVersion(pw_get_library_version());
-
-    // SPA_POD_PROP_FLAG_DONT_FIXATE can be used with PipeWire >= 0.3.33
-    if (pw_version.major >= 0 && pw_version.minor >= 3 &&
-        pw_version.micro >= 33) {
-      spa_pod_builder_prop(
-          builder, SPA_FORMAT_VIDEO_modifier,
-          SPA_POD_PROP_FLAG_MANDATORY | SPA_POD_PROP_FLAG_DONT_FIXATE);
+  while (true) {
+    int ret;
+    ret = ioctl(fd, DMA_BUF_IOCTL_SYNC, &sync);
+    if (ret == -1 && errno == EINTR) {
+      continue;
+    } else if (ret == -1) {
+      RTC_LOG(LS_ERROR) << "Failed to synchronize DMA buffer: "
+                        << g_strerror(errno);
+      break;
     } else {
-      spa_pod_builder_prop(builder, SPA_FORMAT_VIDEO_modifier,
-                           SPA_POD_PROP_FLAG_MANDATORY);
+      break;
     }
-    spa_pod_builder_push_choice(builder, &frames[1], SPA_CHOICE_Enum, 0);
-    // modifiers from the array
-    for (int64_t val : modifiers) {
-      spa_pod_builder_long(builder, val);
-      // Add the first modifier twice as the very first value is the default
-      // option
-      if (first) {
-        spa_pod_builder_long(builder, val);
-        first = false;
-      }
-    }
-    spa_pod_builder_pop(builder, &frames[1]);
   }
-
-  spa_pod_builder_add(
-      builder, SPA_FORMAT_VIDEO_size,
-      SPA_POD_CHOICE_RANGE_Rectangle(
-          &pw_min_screen_bounds, &pw_min_screen_bounds, &pw_max_screen_bounds),
-      0);
-
-  return static_cast<spa_pod*>(spa_pod_builder_pop(builder, &frames[0]));
 }
 
 class ScopedBuf {
  public:
   ScopedBuf() {}
-  ScopedBuf(unsigned char* map, int map_size, int fd)
-      : map_(map), map_size_(map_size), fd_(fd) {}
+  ScopedBuf(unsigned char* map, int map_size, bool is_dma_buf, int fd)
+      : map_(map), map_size_(map_size), is_dma_buf_(is_dma_buf), fd_(fd) {}
   ~ScopedBuf() {
     if (map_ != MAP_FAILED) {
+      if (is_dma_buf_) {
+        SyncDmaBuf(fd_, DMA_BUF_SYNC_END);
+      }
       munmap(map_, map_size_);
     }
   }
 
   operator bool() { return map_ != MAP_FAILED; }
 
-  void initialize(unsigned char* map, int map_size, int fd) {
+  void initialize(unsigned char* map, int map_size, bool is_dma_buf, int fd) {
     map_ = map;
     map_size_ = map_size;
+    is_dma_buf_ = is_dma_buf;
     fd_ = fd;
   }
 
   unsigned char* get() { return map_; }
 
  protected:
-  unsigned char* map_ = static_cast<unsigned char*>(MAP_FAILED);
+  unsigned char* map_ = nullptr;
   int map_size_;
+  bool is_dma_buf_;
   int fd_;
 };
 
@@ -272,26 +234,17 @@ void BaseCapturerPipeWire::OnStreamParamChanged(void* data,
   auto size = height * stride;
 
   that->desktop_size_ = DesktopSize(width, height);
-#if PW_CHECK_VERSION(0, 3, 0)
-  that->modifier_ = that->spa_video_format_.modifier;
-#endif
 
   uint8_t buffer[1024] = {};
   auto builder = spa_pod_builder{buffer, sizeof(buffer)};
 
   // Setup buffers and meta header for new format.
   const struct spa_pod* params[3];
-  const int buffer_types =
-      spa_pod_find_prop(format, nullptr, SPA_FORMAT_VIDEO_modifier)
-          ? (1 << SPA_DATA_DmaBuf) | (1 << SPA_DATA_MemFd) |
-                (1 << SPA_DATA_MemPtr)
-          : (1 << SPA_DATA_MemFd) | (1 << SPA_DATA_MemPtr);
   params[0] = reinterpret_cast<spa_pod*>(spa_pod_builder_add_object(
       &builder, SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
       SPA_PARAM_BUFFERS_size, SPA_POD_Int(size), SPA_PARAM_BUFFERS_stride,
       SPA_POD_Int(stride), SPA_PARAM_BUFFERS_buffers,
-      SPA_POD_CHOICE_RANGE_Int(8, 1, 32), SPA_PARAM_BUFFERS_dataType,
-      SPA_POD_CHOICE_FLAGS_Int(buffer_types)));
+      SPA_POD_CHOICE_RANGE_Int(8, 1, 32)));
   params[1] = reinterpret_cast<spa_pod*>(spa_pod_builder_add_object(
       &builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta, SPA_PARAM_META_type,
       SPA_POD_Id(SPA_META_Header), SPA_PARAM_META_size,
@@ -397,12 +350,6 @@ BaseCapturerPipeWire::~BaseCapturerPipeWire() {
   }
 }
 
-#if PW_CHECK_VERSION(0, 3, 0)
-void BaseCapturerPipeWire::InitEGL() {
-  egl_dmabuf_ = std::make_unique<EglDmaBuf>();
-}
-#endif
-
 void BaseCapturerPipeWire::InitPortal() {
   cancellable_ = g_cancellable_new();
   g_dbus_proxy_new_for_bus(
@@ -472,39 +419,34 @@ void BaseCapturerPipeWire::InitPipeWire() {
 }
 
 pw_stream* BaseCapturerPipeWire::CreateReceivingStream() {
+  spa_rectangle pwMinScreenBounds = spa_rectangle{1, 1};
+  spa_rectangle pwMaxScreenBounds = spa_rectangle{UINT32_MAX, UINT32_MAX};
+
   pw_properties* reuseProps =
       pw_properties_new_string("pipewire.client.reuse=1");
   auto stream = pw_stream_new(pw_core_, "webrtc-consume-stream", reuseProps);
 
-  spa_pod_builder builder;
-  uint8_t buffer[2048] = {};
-  std::vector<uint64_t> modifiers;
+  uint8_t buffer[1024] = {};
+  const spa_pod* params[1];
+  spa_pod_builder builder = spa_pod_builder{buffer, sizeof(buffer)};
 
-  builder = spa_pod_builder{buffer, sizeof(buffer)};
-
-  std::vector<const spa_pod*> params;
-  for (uint32_t format : {SPA_VIDEO_FORMAT_BGRA, SPA_VIDEO_FORMAT_RGBA,
-                          SPA_VIDEO_FORMAT_BGRx, SPA_VIDEO_FORMAT_RGBx}) {
-    pw_version pw_version = ParsePipeWireVersion(pw_get_library_version());
-
-    // Modifiers can be used with PipeWire >= 0.3.29
-    if (pw_version.major >= 0 && pw_version.minor >= 3 &&
-        pw_version.micro >= 29) {
-      modifiers = egl_dmabuf_->QueryDmaBufModifiers(format);
-
-      if (!modifiers.empty()) {
-        params.push_back(BuildFormat(&builder, format, modifiers));
-      }
-    }
-
-    params.push_back(BuildFormat(&builder, format, /*modifiers=*/{}));
-  }
+  params[0] = reinterpret_cast<spa_pod*>(spa_pod_builder_add_object(
+      &builder, SPA_TYPE_OBJECT_Format, SPA_PARAM_EnumFormat,
+      SPA_FORMAT_mediaType, SPA_POD_Id(SPA_MEDIA_TYPE_video),
+      SPA_FORMAT_mediaSubtype, SPA_POD_Id(SPA_MEDIA_SUBTYPE_raw),
+      SPA_FORMAT_VIDEO_format,
+      SPA_POD_CHOICE_ENUM_Id(5, SPA_VIDEO_FORMAT_BGRx, SPA_VIDEO_FORMAT_RGBx,
+                             SPA_VIDEO_FORMAT_RGBA, SPA_VIDEO_FORMAT_BGRx,
+                             SPA_VIDEO_FORMAT_BGRA),
+      SPA_FORMAT_VIDEO_size,
+      SPA_POD_CHOICE_RANGE_Rectangle(&pwMinScreenBounds, &pwMinScreenBounds,
+                                     &pwMaxScreenBounds),
+      0));
 
   pw_stream_add_listener(stream, &spa_stream_listener_, &pw_stream_events_,
                          this);
   if (pw_stream_connect(stream, PW_DIRECTION_INPUT, pw_stream_node_id_,
-                        PW_STREAM_FLAG_AUTOCONNECT, params.data(),
-                        params.size()) != 0) {
+                        PW_STREAM_FLAG_AUTOCONNECT, params, 1) != 0) {
     RTC_LOG(LS_ERROR) << "Could not connect receiving stream.";
     portal_init_failed_ = true;
     return nullptr;
@@ -514,26 +456,25 @@ pw_stream* BaseCapturerPipeWire::CreateReceivingStream() {
 }
 
 void BaseCapturerPipeWire::HandleBuffer(pw_buffer* buffer) {
-  spa_buffer* spa_buffer = buffer->buffer;
+  spa_buffer* spaBuffer = buffer->buffer;
   ScopedBuf map;
-  std::unique_ptr<uint8_t[]> src_unique_ptr;
   uint8_t* src = nullptr;
 
-  if (spa_buffer->datas[0].chunk->size == 0) {
+  if (spaBuffer->datas[0].chunk->size == 0) {
     RTC_LOG(LS_ERROR) << "Failed to get video stream: Zero size.";
     return;
   }
 
-  std::function<void()> cleanup;
-  const int32_t src_stride = spa_buffer->datas[0].chunk->stride;
-  if (spa_buffer->datas[0].type == SPA_DATA_MemFd) {
+  if (spaBuffer->datas[0].type == SPA_DATA_MemFd ||
+      spaBuffer->datas[0].type == SPA_DATA_DmaBuf) {
     map.initialize(
         static_cast<uint8_t*>(
             mmap(nullptr,
-                 spa_buffer->datas[0].maxsize + spa_buffer->datas[0].mapoffset,
-                 PROT_READ, MAP_PRIVATE, spa_buffer->datas[0].fd, 0)),
-        spa_buffer->datas[0].maxsize + spa_buffer->datas[0].mapoffset,
-        spa_buffer->datas[0].fd);
+                 spaBuffer->datas[0].maxsize + spaBuffer->datas[0].mapoffset,
+                 PROT_READ, MAP_PRIVATE, spaBuffer->datas[0].fd, 0)),
+        spaBuffer->datas[0].maxsize + spaBuffer->datas[0].mapoffset,
+        spaBuffer->datas[0].type == SPA_DATA_DmaBuf,
+        spaBuffer->datas[0].fd);
 
     if (!map) {
       RTC_LOG(LS_ERROR) << "Failed to mmap the memory: "
@@ -541,25 +482,13 @@ void BaseCapturerPipeWire::HandleBuffer(pw_buffer* buffer) {
       return;
     }
 
-    src = SPA_MEMBER(map.get(), spa_buffer->datas[0].mapoffset, uint8_t);
-  } else if (spa_buffer->datas[0].type == SPA_DATA_DmaBuf) {
-    const uint n_planes = spa_buffer->n_datas;
-    int fds[n_planes];
-    uint32_t offsets[n_planes];
-    uint32_t strides[n_planes];
-
-    for (uint i = 0; i < n_planes; i++) {
-      fds[i] = spa_buffer->datas[i].fd;
-      offsets[i] = spa_buffer->datas[i].chunk->offset;
-      strides[i] = spa_buffer->datas[i].chunk->stride;
+    if (spaBuffer->datas[0].type == SPA_DATA_DmaBuf) {
+      SyncDmaBuf(spaBuffer->datas[0].fd, DMA_BUF_SYNC_START);
     }
 
-    src_unique_ptr = egl_dmabuf_->ImageFromDmaBuf(
-        desktop_size_, spa_video_format_.format, n_planes, fds, strides,
-        offsets, modifier_);
-    src = src_unique_ptr.get();
-  } else if (spa_buffer->datas[0].type == SPA_DATA_MemPtr) {
-    src = static_cast<uint8_t*>(spa_buffer->datas[0].data);
+    src = SPA_MEMBER(map.get(), spaBuffer->datas[0].mapoffset, uint8_t);
+  } else if (spaBuffer->datas[0].type == SPA_DATA_MemPtr) {
+    src = static_cast<uint8_t*>(spaBuffer->datas[0].data);
   }
 
   if (!src) {
@@ -568,7 +497,7 @@ void BaseCapturerPipeWire::HandleBuffer(pw_buffer* buffer) {
 
   struct spa_meta_region* video_metadata =
       static_cast<struct spa_meta_region*>(spa_buffer_find_meta_data(
-          spa_buffer, SPA_META_VideoCrop, sizeof(*video_metadata)));
+          spaBuffer, SPA_META_VideoCrop, sizeof(*video_metadata)));
 
   // Video size from metadata is bigger than an actual video stream size.
   // The metadata are wrong or we should up-scale the video...in both cases
@@ -584,6 +513,7 @@ void BaseCapturerPipeWire::HandleBuffer(pw_buffer* buffer) {
   // Use video metadata when video size from metadata is set and smaller than
   // video stream size, so we need to adjust it.
   bool video_metadata_use = false;
+
   const struct spa_rectangle* video_metadata_size =
       video_metadata ? &video_metadata->region.size : nullptr;
 
@@ -610,6 +540,7 @@ void BaseCapturerPipeWire::HandleBuffer(pw_buffer* buffer) {
   }
 
   const int32_t dst_stride = video_size_.width() * kBytesPerPixel;
+  const int32_t src_stride = spaBuffer->datas[0].chunk->stride;
 
   if (src_stride != (desktop_size_.width() * kBytesPerPixel)) {
     RTC_LOG(LS_ERROR) << "Got buffer with stride different from screen stride: "
@@ -1070,9 +1001,6 @@ void BaseCapturerPipeWire::OnOpenPipeWireRemoteRequested(
     return;
   }
 
-#if PW_CHECK_VERSION(0, 3, 0)
-  that->InitEGL();
-#endif
   that->InitPipeWire();
 }
 

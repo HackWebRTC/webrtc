@@ -225,19 +225,6 @@ if (is_linux || is_chromeos) {
       }
     }
 
-    pkg_config("gbm") {
-      packages = [ "gbm" ]
-    }
-    pkg_config("egl") {
-      packages = [ "egl" ]
-    }
-    pkg_config("epoxy") {
-      packages = [ "epoxy" ]
-    }
-    pkg_config("libdrm") {
-      packages = [ "libdrm" ]
-    }
-
     if (!rtc_link_pipewire) {
       # When libpipewire is not directly linked, use stubs to allow for dlopening of
       # the binary.
@@ -555,18 +542,12 @@ rtc_library("desktop_capture_generic") {
     sources += [
       "linux/base_capturer_pipewire.cc",
       "linux/base_capturer_pipewire.h",
-      "linux/egl_dmabuf.cc",
-      "linux/egl_dmabuf.h",
     ]
 
     configs += [
       ":pipewire_config",
       ":gio",
       ":pipewire",
-      ":gbm",
-      ":egl",
-      ":epoxy",
-      ":libdrm",
     ]
 
     if (!rtc_link_pipewire) {

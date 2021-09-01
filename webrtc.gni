@@ -130,8 +130,7 @@ declare_args() {
   # By default it's only enabled on desktop Linux (excludes ChromeOS) and
   # only when using the sysroot as PipeWire is not available in older and
   # supported Ubuntu and Debian distributions.
-  # TODO: remove !is_msan (https://bugs.chromium.org/p/webrtc/issues/detail?id=13137)
-  rtc_use_pipewire = is_linux && use_sysroot && !is_msan
+  rtc_use_pipewire = is_linux && use_sysroot
 
   # Set this to link PipeWire directly instead of using the dlopen.
   rtc_link_pipewire = false
