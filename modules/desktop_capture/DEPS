@@ -13,9 +13,6 @@ specific_include_rules = {
   "desktop_frame_provider\.h": [
     "+sdk/objc",
   ],
-  "egl_dmabuf\.cc": [
-    "+absl/strings/str_split.h",
-  ],
   "screen_capturer_mac\.mm": [
     "+sdk/objc",
   ],

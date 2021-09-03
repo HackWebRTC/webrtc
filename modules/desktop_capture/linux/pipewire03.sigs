@@ -16,7 +16,6 @@ pw_loop * pw_loop_new(const spa_dict *props);
 
 // pipewire.h
 void pw_init(int *argc, char **argv[]);
-const char* pw_get_library_version();
 
 // properties.h
 pw_properties * pw_properties_new_string(const char *args);
