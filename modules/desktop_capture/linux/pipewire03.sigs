@@ -44,3 +44,4 @@ pw_loop * pw_thread_loop_get_loop(pw_thread_loop *loop);
 void pw_context_destroy(pw_context *context);
 pw_context *pw_context_new(pw_loop *main_loop, pw_properties *props, size_t user_data_size);
 pw_core * pw_context_connect(pw_context *context, pw_properties *properties, size_t user_data_size);
+pw_core * pw_context_connect_fd(pw_context *context, int fd, pw_properties *properties, size_t user_data_size);

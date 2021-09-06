@@ -348,6 +348,10 @@ BaseCapturerPipeWire::~BaseCapturerPipeWire() {
     g_object_unref(proxy_);
     proxy_ = nullptr;
   }
+
+  if (pw_fd_ != -1) {
+    close(pw_fd_);
+  }
 }
 
 void BaseCapturerPipeWire::InitPortal() {
@@ -385,7 +389,7 @@ void BaseCapturerPipeWire::InitPipeWire() {
     return;
   }
 
-  pw_core_ = pw_context_connect(pw_context_, nullptr, 0);
+  pw_core_ = pw_context_connect_fd(pw_context_, pw_fd_, nullptr, 0);
   if (!pw_core_) {
     RTC_LOG(LS_ERROR) << "Failed to connect PipeWire context";
     return;
