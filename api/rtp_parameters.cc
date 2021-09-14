@@ -131,6 +131,7 @@ constexpr char RtpExtension::kMidUri[];
 constexpr char RtpExtension::kRidUri[];
 constexpr char RtpExtension::kRepairedRidUri[];
 constexpr char RtpExtension::kVideoFrameTrackingIdUri[];
+constexpr char RtpExtension::kCsrcAudioLevelsUri[];
 
 constexpr int RtpExtension::kMinId;
 constexpr int RtpExtension::kMaxId;
