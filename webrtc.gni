@@ -8,9 +8,9 @@
 import("//build/config/arm.gni")
 import("//build/config/features.gni")
 import("//build/config/mips.gni")
+import("//build/config/ozone.gni")
 import("//build/config/sanitizers/sanitizers.gni")
 import("//build/config/sysroot.gni")
-import("//build/config/ui.gni")
 import("//build_overrides/build.gni")
 
 if (!build_with_chromium && is_component_build) {
@@ -124,7 +124,7 @@ declare_args() {
   rtc_build_tools = true
 
   # Set this to false to skip building code that requires X11.
-  rtc_use_x11 = use_x11
+  rtc_use_x11 = ozone_platform_x11
 
   # Set this to use PipeWire on the Wayland display server.
   # By default it's only enabled on desktop Linux (excludes ChromeOS) and
