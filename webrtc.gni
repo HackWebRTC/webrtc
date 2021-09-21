@@ -132,7 +132,7 @@ declare_args() {
   # supported Ubuntu and Debian distributions.
   rtc_use_pipewire = is_linux && use_sysroot
 
-  # Set this to link PipeWire directly instead of using the dlopen.
+  # Set this to link PipeWire and required libraries directly instead of using the dlopen.
   rtc_link_pipewire = false
 
   # Enable to use the Mozilla internal settings.
