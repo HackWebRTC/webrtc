@@ -982,7 +982,7 @@ TEST_F(PreferTemporalLayersFallbackTest, PrimesEncoderOnSwitch) {
   wrapper_->RegisterEncodeCompleteCallback(&callback1);
 
   EXPECT_CALL(*hw_, SetFecControllerOverride(&fec_controller_override1));
-  EXPECT_CALL(*sw_, SetFecControllerOverride).Times(0);
+  EXPECT_CALL(*sw_, SetFecControllerOverride).Times(1);
   wrapper_->SetFecControllerOverride(&fec_controller_override1);
 
   EXPECT_CALL(*hw_, SetRates(rate_params1));
@@ -1007,7 +1007,7 @@ TEST_F(PreferTemporalLayersFallbackTest, PrimesEncoderOnSwitch) {
   EXPECT_CALL(*sw_, RegisterEncodeCompleteCallback(&callback1));
   EXPECT_CALL(*hw_, RegisterEncodeCompleteCallback).Times(0);
 
-  EXPECT_CALL(*sw_, SetFecControllerOverride(&fec_controller_override1));
+  EXPECT_CALL(*sw_, SetFecControllerOverride).Times(0);
   EXPECT_CALL(*hw_, SetFecControllerOverride).Times(0);
 
   // Rate control parameters are cleared on InitEncode.
@@ -1041,7 +1041,7 @@ TEST_F(PreferTemporalLayersFallbackTest, PrimesEncoderOnSwitch) {
   wrapper_->RegisterEncodeCompleteCallback(&callback2);
 
   EXPECT_CALL(*sw_, SetFecControllerOverride(&fec_controller_override2));
-  EXPECT_CALL(*hw_, SetFecControllerOverride).Times(0);
+  EXPECT_CALL(*hw_, SetFecControllerOverride).Times(1);
   wrapper_->SetFecControllerOverride(&fec_controller_override2);
 
   EXPECT_CALL(*sw_, SetRates(rate_params2));
@@ -1066,7 +1066,7 @@ TEST_F(PreferTemporalLayersFallbackTest, PrimesEncoderOnSwitch) {
   EXPECT_CALL(*hw_, RegisterEncodeCompleteCallback(&callback2));
   EXPECT_CALL(*sw_, RegisterEncodeCompleteCallback).Times(0);
 
-  EXPECT_CALL(*hw_, SetFecControllerOverride(&fec_controller_override2));
+  EXPECT_CALL(*hw_, SetFecControllerOverride).Times(0);
   EXPECT_CALL(*sw_, SetFecControllerOverride).Times(0);
 
   // Rate control parameters are cleared on InitEncode.
