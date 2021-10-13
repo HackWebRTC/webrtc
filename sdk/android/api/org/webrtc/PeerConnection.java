@@ -527,7 +527,6 @@ public class PeerConnection {
     public boolean suspendBelowMinBitrate;
     @Nullable public Integer screencastMinBitrate;
     @Nullable public Boolean combinedAudioVideoBwe;
-    @Nullable public Boolean enableDtlsSrtp;
     // Use "Unknown" to represent no preference of adapter types, not the
     // preference of adapters of unknown types.
     public AdapterType networkPreference;
@@ -608,7 +607,6 @@ public class PeerConnection {
       suspendBelowMinBitrate = false;
       screencastMinBitrate = null;
       combinedAudioVideoBwe = null;
-      enableDtlsSrtp = null;
       networkPreference = AdapterType.UNKNOWN;
       sdpSemantics = SdpSemantics.PLAN_B;
       activeResetSrtpParams = false;
@@ -798,12 +796,6 @@ public class PeerConnection {
     @CalledByNative("RTCConfiguration")
     Boolean getCombinedAudioVideoBwe() {
       return combinedAudioVideoBwe;
-    }
-
-    @Nullable
-    @CalledByNative("RTCConfiguration")
-    Boolean getEnableDtlsSrtp() {
-      return enableDtlsSrtp;
     }
 
     @CalledByNative("RTCConfiguration")
