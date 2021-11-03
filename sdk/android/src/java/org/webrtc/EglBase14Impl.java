@@ -18,6 +18,7 @@ import android.opengl.EGLContext;
 import android.opengl.EGLDisplay;
 import android.opengl.EGLExt;
 import android.opengl.EGLSurface;
+import android.opengl.GLException;
 import android.os.Build;
 import android.view.Surface;
 import androidx.annotation.Nullable;
@@ -102,7 +103,7 @@ class EglBase14Impl implements EglBase14 {
     int[] surfaceAttribs = {EGL14.EGL_NONE};
     eglSurface = EGL14.eglCreateWindowSurface(eglDisplay, eglConfig, surface, surfaceAttribs, 0);
     if (eglSurface == EGL14.EGL_NO_SURFACE) {
-      throw new RuntimeException(
+      throw new GLException(EGL14.eglGetError(),
           "Failed to create window surface: 0x" + Integer.toHexString(EGL14.eglGetError()));
     }
   }
@@ -121,8 +122,9 @@ class EglBase14Impl implements EglBase14 {
     int[] surfaceAttribs = {EGL14.EGL_WIDTH, width, EGL14.EGL_HEIGHT, height, EGL14.EGL_NONE};
     eglSurface = EGL14.eglCreatePbufferSurface(eglDisplay, eglConfig, surfaceAttribs, 0);
     if (eglSurface == EGL14.EGL_NO_SURFACE) {
-      throw new RuntimeException("Failed to create pixel buffer surface with size " + width + "x"
-          + height + ": 0x" + Integer.toHexString(EGL14.eglGetError()));
+      throw new GLException(EGL14.eglGetError(),
+          "Failed to create pixel buffer surface with size " + width + "x" + height + ": 0x"
+              + Integer.toHexString(EGL14.eglGetError()));
     }
   }
 
@@ -188,7 +190,7 @@ class EglBase14Impl implements EglBase14 {
     }
     synchronized (EglBase.lock) {
       if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
-        throw new RuntimeException(
+        throw new GLException(EGL14.eglGetError(),
             "eglMakeCurrent failed: 0x" + Integer.toHexString(EGL14.eglGetError()));
       }
     }
@@ -200,7 +202,7 @@ class EglBase14Impl implements EglBase14 {
     synchronized (EglBase.lock) {
       if (!EGL14.eglMakeCurrent(
               eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT)) {
-        throw new RuntimeException(
+        throw new GLException(EGL14.eglGetError(),
             "eglDetachCurrent failed: 0x" + Integer.toHexString(EGL14.eglGetError()));
       }
     }
@@ -235,12 +237,12 @@ class EglBase14Impl implements EglBase14 {
   private static EGLDisplay getEglDisplay() {
     EGLDisplay eglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
     if (eglDisplay == EGL14.EGL_NO_DISPLAY) {
-      throw new RuntimeException(
+      throw new GLException(EGL14.eglGetError(),
           "Unable to get EGL14 display: 0x" + Integer.toHexString(EGL14.eglGetError()));
     }
     int[] version = new int[2];
     if (!EGL14.eglInitialize(eglDisplay, version, 0, version, 1)) {
-      throw new RuntimeException(
+      throw new GLException(EGL14.eglGetError(),
           "Unable to initialize EGL14: 0x" + Integer.toHexString(EGL14.eglGetError()));
     }
     return eglDisplay;
@@ -252,7 +254,7 @@ class EglBase14Impl implements EglBase14 {
     int[] numConfigs = new int[1];
     if (!EGL14.eglChooseConfig(
             eglDisplay, configAttributes, 0, configs, 0, configs.length, numConfigs, 0)) {
-      throw new RuntimeException(
+      throw new GLException(EGL14.eglGetError(),
           "eglChooseConfig failed: 0x" + Integer.toHexString(EGL14.eglGetError()));
     }
     if (numConfigs[0] <= 0) {
@@ -278,7 +280,7 @@ class EglBase14Impl implements EglBase14 {
       eglContext = EGL14.eglCreateContext(eglDisplay, eglConfig, rootContext, contextAttributes, 0);
     }
     if (eglContext == EGL14.EGL_NO_CONTEXT) {
-      throw new RuntimeException(
+      throw new GLException(EGL14.eglGetError(),
           "Failed to create EGL context: 0x" + Integer.toHexString(EGL14.eglGetError()));
     }
     return eglContext;
