@@ -57,4 +57,7 @@ default_args = {
   enable_libaom = true
 
   gtest_enable_absl_printers = true
+
+  # Differently from Chromium, WebRTC still support SDK 21.
+  default_min_sdk_version = 21
 }
