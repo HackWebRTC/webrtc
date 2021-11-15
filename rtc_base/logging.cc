@@ -481,7 +481,7 @@ void Log(const LogArgType* fmt, ...) {
     }
 #endif
     default: {
-      RTC_NOTREACHED();
+      RTC_DCHECK_NOTREACHED();
       va_end(args);
       return;
     }
@@ -535,7 +535,7 @@ void Log(const LogArgType* fmt, ...) {
             reinterpret_cast<uintptr_t>(va_arg(args, const void*)));
         break;
       default:
-        RTC_NOTREACHED();
+        RTC_DCHECK_NOTREACHED();
         va_end(args);
         return;
     }

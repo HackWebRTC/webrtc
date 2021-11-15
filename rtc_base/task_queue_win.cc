@@ -335,7 +335,7 @@ bool TaskQueueWin::ProcessQueuedMessages() {
           break;
         }
         default:
-          RTC_NOTREACHED();
+          RTC_DCHECK_NOTREACHED();
           break;
       }
     } else {

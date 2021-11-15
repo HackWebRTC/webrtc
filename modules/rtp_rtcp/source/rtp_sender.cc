@@ -125,7 +125,7 @@ bool IsNonVolatile(RTPExtensionType type) {
       return false;
     case kRtpExtensionNone:
     case kRtpExtensionNumberOfExtensions:
-      RTC_NOTREACHED();
+      RTC_DCHECK_NOTREACHED();
       return false;
   }
   RTC_CHECK_NOTREACHED();
