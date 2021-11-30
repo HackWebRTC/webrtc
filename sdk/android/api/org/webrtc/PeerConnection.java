@@ -118,6 +118,9 @@ public class PeerConnection {
     /** Triggered when a new ICE candidate has been found. */
     @CalledByNative("Observer") void onIceCandidate(IceCandidate candidate);
 
+    /** Triggered when gathering of an ICE candidate failed. */
+    default @CalledByNative("Observer") void onIceCandidateError(IceCandidateErrorEvent event) {}
+
     /** Triggered when some ICE candidates have been removed. */
     @CalledByNative("Observer") void onIceCandidatesRemoved(IceCandidate[] candidates);
 
