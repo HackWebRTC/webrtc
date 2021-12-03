@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/desktop_capture/linux/wayland/base_capturer_pipewire.h"
+#include "modules/desktop_capture/linux/base_capturer_pipewire.h"
 
 #include <gio/gunixfdlist.h>
 #include <glib-object.h>
@@ -19,9 +19,9 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
+#include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "absl/memory/memory.h"
 #include "modules/desktop_capture/desktop_capture_options.h"
@@ -31,7 +31,7 @@
 #include "rtc_base/string_encode.h"
 
 #if defined(WEBRTC_DLOPEN_PIPEWIRE)
-#include "modules/desktop_capture/linux/wayland/pipewire_stubs.h"
+#include "modules/desktop_capture/linux/pipewire_stubs.h"
 using modules_desktop_capture_linux::InitializeStubs;
 using modules_desktop_capture_linux::kModuleDrm;
 using modules_desktop_capture_linux::kModulePipewire;
@@ -420,8 +420,8 @@ void BaseCapturerPipeWire::InitPortal() {
   g_dbus_proxy_new_for_bus(
       G_BUS_TYPE_SESSION, G_DBUS_PROXY_FLAGS_NONE, /*info=*/nullptr,
       kDesktopBusName, kDesktopObjectPath, kScreenCastInterfaceName,
-      cancellable_, reinterpret_cast<GAsyncReadyCallback>(OnProxyRequested),
-      this);
+      cancellable_,
+      reinterpret_cast<GAsyncReadyCallback>(OnProxyRequested), this);
 }
 
 void BaseCapturerPipeWire::Init() {
@@ -569,8 +569,9 @@ void BaseCapturerPipeWire::HandleBuffer(pw_buffer* buffer) {
       plane_datas.push_back(data);
     }
 
-    src_unique_ptr = egl_dmabuf_->ImageFromDmaBuf(
-        desktop_size_, spa_video_format_.format, plane_datas, modifier_);
+    src_unique_ptr =
+        egl_dmabuf_->ImageFromDmaBuf(desktop_size_, spa_video_format_.format,
+                                     plane_datas, modifier_);
     src = src_unique_ptr.get();
   } else if (spa_buffer->datas[0].type == SPA_DATA_MemPtr) {
     src = static_cast<uint8_t*>(spa_buffer->datas[0].data);
@@ -727,14 +728,14 @@ void BaseCapturerPipeWire::SessionRequest() {
       portal_handle_, OnSessionRequestResponseSignal);
 
   RTC_LOG(LS_INFO) << "Screen cast session requested.";
-  g_dbus_proxy_call(proxy_, "CreateSession", g_variant_new("(a{sv})", &builder),
-                    G_DBUS_CALL_FLAGS_NONE, /*timeout=*/-1, cancellable_,
-                    reinterpret_cast<GAsyncReadyCallback>(OnSessionRequested),
-                    this);
+  g_dbus_proxy_call(
+      proxy_, "CreateSession", g_variant_new("(a{sv})", &builder),
+      G_DBUS_CALL_FLAGS_NONE, /*timeout=*/-1, cancellable_,
+      reinterpret_cast<GAsyncReadyCallback>(OnSessionRequested), this);
 }
 
 // static
-void BaseCapturerPipeWire::OnSessionRequested(GDBusProxy* proxy,
+void BaseCapturerPipeWire::OnSessionRequested(GDBusProxy *proxy,
                                               GAsyncResult* result,
                                               gpointer user_data) {
   BaseCapturerPipeWire* that = static_cast<BaseCapturerPipeWire*>(user_data);
@@ -840,15 +841,15 @@ void BaseCapturerPipeWire::SourcesRequest() {
       sources_handle_, OnSourcesRequestResponseSignal);
 
   RTC_LOG(LS_INFO) << "Requesting sources from the screen cast session.";
-  g_dbus_proxy_call(proxy_, "SelectSources",
-                    g_variant_new("(oa{sv})", session_handle_, &builder),
-                    G_DBUS_CALL_FLAGS_NONE, /*timeout=*/-1, cancellable_,
-                    reinterpret_cast<GAsyncReadyCallback>(OnSourcesRequested),
-                    this);
+  g_dbus_proxy_call(
+      proxy_, "SelectSources",
+      g_variant_new("(oa{sv})", session_handle_, &builder),
+      G_DBUS_CALL_FLAGS_NONE, /*timeout=*/-1, cancellable_,
+      reinterpret_cast<GAsyncReadyCallback>(OnSourcesRequested), this);
 }
 
 // static
-void BaseCapturerPipeWire::OnSourcesRequested(GDBusProxy* proxy,
+void BaseCapturerPipeWire::OnSourcesRequested(GDBusProxy *proxy,
                                               GAsyncResult* result,
                                               gpointer user_data) {
   BaseCapturerPipeWire* that = static_cast<BaseCapturerPipeWire*>(user_data);
@@ -934,7 +935,7 @@ void BaseCapturerPipeWire::StartRequest() {
 }
 
 // static
-void BaseCapturerPipeWire::OnStartRequested(GDBusProxy* proxy,
+void BaseCapturerPipeWire::OnStartRequested(GDBusProxy *proxy,
                                             GAsyncResult* result,
                                             gpointer user_data) {
   BaseCapturerPipeWire* that = static_cast<BaseCapturerPipeWire*>(user_data);
@@ -1033,15 +1034,17 @@ void BaseCapturerPipeWire::OpenPipeWireRemote() {
   g_dbus_proxy_call_with_unix_fd_list(
       proxy_, "OpenPipeWireRemote",
       g_variant_new("(oa{sv})", session_handle_, &builder),
-      G_DBUS_CALL_FLAGS_NONE, /*timeout=*/-1, /*fd_list=*/nullptr, cancellable_,
+      G_DBUS_CALL_FLAGS_NONE, /*timeout=*/-1, /*fd_list=*/nullptr,
+      cancellable_,
       reinterpret_cast<GAsyncReadyCallback>(OnOpenPipeWireRemoteRequested),
       this);
 }
 
 // static
-void BaseCapturerPipeWire::OnOpenPipeWireRemoteRequested(GDBusProxy* proxy,
-                                                         GAsyncResult* result,
-                                                         gpointer user_data) {
+void BaseCapturerPipeWire::OnOpenPipeWireRemoteRequested(
+    GDBusProxy *proxy,
+    GAsyncResult* result,
+    gpointer user_data) {
   BaseCapturerPipeWire* that = static_cast<BaseCapturerPipeWire*>(user_data);
   RTC_DCHECK(that);
 
