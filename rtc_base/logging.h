@@ -54,7 +54,6 @@
 #include "absl/base/attributes.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/system/inline.h"
 
@@ -443,6 +442,9 @@ class LogMessage {
              const std::string& tag);
   ~LogMessage();
 
+  LogMessage(const LogMessage&) = delete;
+  LogMessage& operator=(const LogMessage&) = delete;
+
   void AddTag(const char* tag);
   rtc::StringBuilder& stream();
   // Returns the time at which this function was called for the first time.
@@ -602,8 +604,6 @@ class LogMessage {
 
   // The stringbuilder that buffers the formatted message before output
   rtc::StringBuilder print_stream_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(LogMessage);
 };
 
 //////////////////////////////////////////////////////////////////////
