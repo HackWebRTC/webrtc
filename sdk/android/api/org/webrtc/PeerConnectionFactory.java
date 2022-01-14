@@ -404,6 +404,7 @@ public class PeerConnectionFactory {
   public PeerConnection createPeerConnection(List<PeerConnection.IceServer> iceServers,
       MediaConstraints constraints, PeerConnection.Observer observer) {
     PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServers);
+    rtcConfig.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
     return createPeerConnection(rtcConfig, constraints, observer);
   }
 
@@ -411,6 +412,7 @@ public class PeerConnectionFactory {
   public PeerConnection createPeerConnection(
       List<PeerConnection.IceServer> iceServers, PeerConnection.Observer observer) {
     PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServers);
+    rtcConfig.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
     return createPeerConnection(rtcConfig, observer);
   }
 
