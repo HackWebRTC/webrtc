@@ -432,43 +432,28 @@ public class PeerConnection {
   /**
    * Java version of webrtc::SdpSemantics.
    *
-   * Configure the SDP semantics used by this PeerConnection. That the WebRTC
-   * 1.0 specification requires UNIFIED_PLAN semantics and the RtpTransceiver
-   * API is only available with UNIFIED_PLAN semantics. PLAN_B is being
-   * deprecated and will be removed at a future date.
+   * Configure the SDP semantics used by this PeerConnection. By default, this
+   * is UNIFIED_PLAN which is compliant to the WebRTC 1.0 specification. It is
+   * possible to overrwite this to the deprecated PLAN_B SDP format, but note
+   * that PLAN_B will be deleted at some future date, see
+   * https://crbug.com/webrtc/13528.
    *
-   * <p>PLAN_B will cause PeerConnection to create offers and answers with at
-   * most one audio and one video m= section with multiple RtpSenders and
-   * RtpReceivers specified as multiple a=ssrc lines within the section. This
-   * will also cause PeerConnection to ignore all but the first m= section of
-   * the same media type.
-   *
-   * <p>UNIFIED_PLAN will cause PeerConnection to create offers and answers with
+   * UNIFIED_PLAN will cause PeerConnection to create offers and answers with
    * multiple m= sections where each m= section maps to one RtpSender and one
    * RtpReceiver (an RtpTransceiver), either both audio or both video. This
    * will also cause PeerConnection to ignore all but the first a=ssrc lines
    * that form a Plan B stream.
    *
-   * <p>For users who have to interwork with legacy WebRTC implementations, it
-   * is possible to specify PLAN_B until the code is finally removed
-   * (https://crbug.com/webrtc/13528).
-   *
-   * <p>The default SdpSemantics value is about to change to UNIFIED_PLAN.
-   * During a short transition period, NOT_SPECIFIED is used to ensure clients
-   * that don't set SdpSemantics are aware of the change by CHECK-crashing.
-   * TODO(https://crbug.com/webrtc/11121): When the default has changed to
-   * UNIFIED_PLAN, delete NOT_SPECIFIED.
+   * PLAN_B will cause PeerConnection to create offers and answers with at most
+   * one audio and one video m= section with multiple RtpSenders and
+   * RtpReceivers specified as multiple a=ssrc lines within the section. This
+   * will also cause PeerConnection to ignore all but the first m= section of
+   * the same media type.
    */
   public enum SdpSemantics {
     // TODO(https://crbug.com/webrtc/13528): Remove support for PLAN_B.
     @Deprecated PLAN_B,
-    UNIFIED_PLAN,
-    // The default SdpSemantics value is about to change to UNIFIED_PLAN. During
-    // a short transition period, NOT_SPECIFIED is used to ensure clients that
-    // don't set SdpSemantics are aware of the change by CHECK-crashing.
-    // TODO(https://crbug.com/webrtc/11121): When the default has changed to
-    // kUnifiedPlan, delete kNotSpecified.
-    NOT_SPECIFIED
+    UNIFIED_PLAN
   }
 
   /** Java version of PeerConnectionInterface.RTCConfiguration */
@@ -626,7 +611,7 @@ public class PeerConnection {
       screencastMinBitrate = null;
       combinedAudioVideoBwe = null;
       networkPreference = AdapterType.UNKNOWN;
-      sdpSemantics = SdpSemantics.NOT_SPECIFIED;
+      sdpSemantics = SdpSemantics.UNIFIED_PLAN;
       activeResetSrtpParams = false;
       cryptoOptions = null;
       turnLoggingId = null;
