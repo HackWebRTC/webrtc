@@ -34,7 +34,6 @@
 #include "api/task_queue/task_queue_base.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/event.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -122,6 +121,9 @@ class MultimediaTimer {
     ::CloseHandle(event_);
   }
 
+  MultimediaTimer(const MultimediaTimer&) = delete;
+  MultimediaTimer& operator=(const MultimediaTimer&) = delete;
+
   bool StartOneShotTimer(UINT delay_ms) {
     RTC_DCHECK_EQ(0, timer_id_);
     RTC_DCHECK(event_ != nullptr);
@@ -148,8 +150,6 @@ class MultimediaTimer {
  private:
   HANDLE event_ = nullptr;
   MMRESULT timer_id_ = 0;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(MultimediaTimer);
 };
 
 class TaskQueueWin : public TaskQueueBase {

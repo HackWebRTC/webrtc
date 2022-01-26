@@ -13,8 +13,6 @@
 
 #include <X11/Xlib.h>
 
-#include "rtc_base/constructor_magic.h"
-
 namespace webrtc {
 
 // Helper class that registers X Window error handler. Caller can use
@@ -24,14 +22,15 @@ class XErrorTrap {
   explicit XErrorTrap(Display* display);
   ~XErrorTrap();
 
+  XErrorTrap(const XErrorTrap&) = delete;
+  XErrorTrap& operator=(const XErrorTrap&) = delete;
+
   // Returns last error and removes unregisters the error handler.
   int GetLastErrorAndDisable();
 
  private:
   XErrorHandler original_error_handler_;
   bool enabled_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(XErrorTrap);
 };
 
 }  // namespace webrtc
