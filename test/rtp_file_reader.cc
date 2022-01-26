@@ -18,6 +18,7 @@
 
 #include "modules/rtp_rtcp/source/rtp_util.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/system/arch.h"
@@ -117,9 +118,6 @@ class RtpDumpReader : public RtpFileReaderImpl {
     }
   }
 
-  RtpDumpReader(const RtpDumpReader&) = delete;
-  RtpDumpReader& operator=(const RtpDumpReader&) = delete;
-
   bool Init(FILE* file, const std::set<uint32_t>& ssrc_filter) override {
     file_ = file;
 
@@ -189,6 +187,8 @@ class RtpDumpReader : public RtpFileReaderImpl {
 
  private:
   FILE* file_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(RtpDumpReader);
 };
 
 enum {
@@ -252,9 +252,6 @@ class PcapReader : public RtpFileReaderImpl {
       file_ = nullptr;
     }
   }
-
-  PcapReader(const PcapReader&) = delete;
-  PcapReader& operator=(const PcapReader&) = delete;
 
   bool Init(FILE* file, const std::set<uint32_t>& ssrc_filter) override {
     return Initialize(file, ssrc_filter) == kResultSuccess;
@@ -622,6 +619,8 @@ class PcapReader : public RtpFileReaderImpl {
   SsrcMap packets_by_ssrc_;
   std::vector<RtpPacketMarker> packets_;
   PacketIterator next_packet_it_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(PcapReader);
 };
 
 RtpFileReaderImpl* CreateReaderForFormat(RtpFileReader::FileFormat format) {

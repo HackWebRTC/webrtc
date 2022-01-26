@@ -15,6 +15,7 @@
 
 #include <memory>
 
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -25,9 +26,6 @@ class RTC_EXPORT ScopedThreadDesktop {
  public:
   ScopedThreadDesktop();
   ~ScopedThreadDesktop();
-
-  ScopedThreadDesktop(const ScopedThreadDesktop&) = delete;
-  ScopedThreadDesktop& operator=(const ScopedThreadDesktop&) = delete;
 
   // Returns true if `desktop` has the same desktop name as the currently
   // assigned desktop (if assigned) or as the initial desktop (if not assigned).
@@ -48,6 +46,8 @@ class RTC_EXPORT ScopedThreadDesktop {
 
   // The desktop handle assigned to the calling thread at creation.
   std::unique_ptr<Desktop> initial_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(ScopedThreadDesktop);
 };
 
 }  // namespace webrtc

@@ -17,6 +17,7 @@
 
 #include "api/ref_counted_base.h"
 #include "api/scoped_refptr.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/system/rtc_export.h"
 
 // Including Xlib.h will involve evil defines (Bool, Status, True, False), which
@@ -64,9 +65,6 @@ class RTC_EXPORT SharedXDisplay
 
   ~SharedXDisplay();
 
-  SharedXDisplay(const SharedXDisplay&) = delete;
-  SharedXDisplay& operator=(const SharedXDisplay&) = delete;
-
  protected:
   // Takes ownership of `display`.
   explicit SharedXDisplay(Display* display);
@@ -77,6 +75,8 @@ class RTC_EXPORT SharedXDisplay
   Display* display_;
 
   EventHandlersMap event_handlers_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(SharedXDisplay);
 };
 
 }  // namespace webrtc

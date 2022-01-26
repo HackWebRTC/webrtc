@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "api/test/time_controller.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/task_utils/repeating_task.h"
@@ -46,12 +47,8 @@ class Scenario {
   Scenario(std::string file_name, bool real_time);
   Scenario(std::unique_ptr<LogWriterFactoryInterface> log_writer_manager,
            bool real_time);
-
+  RTC_DISALLOW_COPY_AND_ASSIGN(Scenario);
   ~Scenario();
-
-  Scenario(const Scenario&) = delete;
-  Scenario& operator=(const Scenario&) = delete;
-
   NetworkEmulationManagerImpl* net() { return &network_manager_; }
 
   EmulatedNetworkNode* CreateSimulationNode(NetworkSimulationConfig config);

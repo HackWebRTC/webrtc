@@ -58,9 +58,6 @@ class SimulatedPacketTransport final : public rtc::PacketTransportInternal {
     SignalWritableState(this);
   }
 
-  SimulatedPacketTransport(const SimulatedPacketTransport&) = delete;
-  SimulatedPacketTransport& operator=(const SimulatedPacketTransport&) = delete;
-
   const std::string& transport_name() const override { return transport_name_; }
 
   bool writable() const override { return destination_ != nullptr; }
@@ -132,6 +129,7 @@ class SimulatedPacketTransport final : public rtc::PacketTransportInternal {
   std::atomic<SimulatedPacketTransport*> destination_ ATOMIC_VAR_INIT(nullptr);
   webrtc::Random random_;
   webrtc::ScopedTaskSafety task_safety_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(SimulatedPacketTransport);
 };
 
 /**
@@ -157,9 +155,6 @@ class SctpDataSender final {
     RTC_DCHECK(thread_);
     RTC_DCHECK(transport_);
   }
-
-  SctpDataSender(const SctpDataSender&) = delete;
-  SctpDataSender& operator=(const SctpDataSender&) = delete;
 
   void Start() {
     thread_->PostTask(ToQueuedTask(task_safety_.flag(), [this] {
@@ -241,6 +236,7 @@ class SctpDataSender final {
   std::atomic<uint64_t> num_bytes_sent_ ATOMIC_VAR_INIT(0);
   absl::optional<std::string> last_error_;
   webrtc::ScopedTaskSafetyDetached task_safety_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(SctpDataSender);
 };
 
 /**
@@ -254,9 +250,6 @@ class SctpDataReceiver final : public sigslot::has_slots<> {
                             uint64_t target_messages_count)
       : receiver_id_(receiver_id),
         target_messages_count_(target_messages_count) {}
-
-  SctpDataReceiver(const SctpDataReceiver&) = delete;
-  SctpDataReceiver& operator=(const SctpDataReceiver&) = delete;
 
   void OnDataReceived(const cricket::ReceiveDataParams& params,
                       const rtc::CopyOnWriteBuffer& data) {
@@ -285,6 +278,7 @@ class SctpDataReceiver final : public sigslot::has_slots<> {
   rtc::Event received_target_messages_count_{true, false};
   const uint32_t receiver_id_;
   const uint64_t target_messages_count_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(SctpDataReceiver);
 };
 
 /**
@@ -303,9 +297,6 @@ class ThreadPool final {
     }
   }
 
-  ThreadPool(const ThreadPool&) = delete;
-  ThreadPool& operator=(const ThreadPool&) = delete;
-
   rtc::Thread* GetRandomThread() {
     return threads_[random_.Rand(0U, threads_.size() - 1)].get();
   }
@@ -313,6 +304,7 @@ class ThreadPool final {
  private:
   webrtc::Random random_;
   std::vector<std::unique_ptr<rtc::Thread>> threads_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(ThreadPool);
 };
 
 /**
@@ -367,9 +359,6 @@ class SctpPingPong final {
       packet_transport2_.reset();
     });
   }
-
-  SctpPingPong(const SctpPingPong&) = delete;
-  SctpPingPong& operator=(const SctpPingPong&) = delete;
 
   bool Start() {
     CreateTwoConnectedSctpTransportsWithAllStreams();
@@ -588,6 +577,7 @@ class SctpPingPong final {
   const uint8_t packet_loss_percents_;
   const uint16_t avg_send_delay_millis_;
   const webrtc::SendDataParams send_params_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(SctpPingPong);
 };
 
 /**

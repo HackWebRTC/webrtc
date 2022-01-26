@@ -112,6 +112,14 @@ specific_include_rules = {
     "+rtc_base/ref_count.h",
   ],
 
+  "jsep_ice_candidate\.h": [
+    "+rtc_base/constructor_magic.h",
+  ],
+
+  "jsep_session_description\.h": [
+    "+rtc_base/constructor_magic.h",
+  ],
+
   "media_stream_interface\.h": [
     "+modules/audio_processing/include/audio_processing_statistics.h",
     "+rtc_base/ref_count.h",
@@ -148,6 +156,7 @@ specific_include_rules = {
   ],
 
   "ref_counted_base\.h": [
+    "+rtc_base/constructor_magic.h",
     "+rtc_base/ref_count.h",
     "+rtc_base/ref_counter.h",
   ],
@@ -186,6 +195,7 @@ specific_include_rules = {
   ],
 
   "stats_types\.h": [
+    "+rtc_base/constructor_magic.h",
     "+rtc_base/ref_count.h",
     "+rtc_base/thread_checker.h",
   ],
@@ -194,12 +204,17 @@ specific_include_rules = {
     "+rtc_base/ref_count.h",
   ],
 
+  "audio_frame\.h": [
+    "+rtc_base/constructor_magic.h",
+  ],
+
   "audio_mixer\.h": [
     "+rtc_base/ref_count.h",
   ],
 
   "audio_decoder\.h": [
     "+rtc_base/buffer.h",
+    "+rtc_base/constructor_magic.h",
   ],
 
   "audio_decoder_factory\.h": [

@@ -16,6 +16,7 @@
 #include <memory>
 
 #include "modules/desktop_capture/desktop_frame.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 
@@ -24,9 +25,6 @@ namespace webrtc {
 class DesktopFrameWin : public DesktopFrame {
  public:
   ~DesktopFrameWin() override;
-
-  DesktopFrameWin(const DesktopFrameWin&) = delete;
-  DesktopFrameWin& operator=(const DesktopFrameWin&) = delete;
 
   static std::unique_ptr<DesktopFrameWin>
   Create(DesktopSize size, SharedMemoryFactory* shared_memory_factory, HDC hdc);
@@ -42,6 +40,8 @@ class DesktopFrameWin : public DesktopFrame {
 
   HBITMAP bitmap_;
   std::unique_ptr<SharedMemory> owned_shared_memory_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(DesktopFrameWin);
 };
 
 }  // namespace webrtc

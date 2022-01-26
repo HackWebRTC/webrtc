@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "modules/desktop_capture/desktop_geometry.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 
@@ -32,9 +33,6 @@ class XServerPixelBuffer {
  public:
   XServerPixelBuffer();
   ~XServerPixelBuffer();
-
-  XServerPixelBuffer(const XServerPixelBuffer&) = delete;
-  XServerPixelBuffer& operator=(const XServerPixelBuffer&) = delete;
 
   void Release();
 
@@ -82,6 +80,8 @@ class XServerPixelBuffer {
   GC shm_gc_ = nullptr;
   bool xshm_get_image_succeeded_ = false;
   std::vector<uint8_t> icc_profile_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(XServerPixelBuffer);
 };
 
 }  // namespace webrtc

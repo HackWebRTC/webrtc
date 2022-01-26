@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "rtc_base/constructor_magic.h"
 #include "test/scenario/call_client.h"
 #include "test/scenario/column_printer.h"
 #include "test/scenario/network_node.h"
@@ -25,11 +26,8 @@ namespace test {
 // stream if neccessary.
 class SendAudioStream {
  public:
+  RTC_DISALLOW_COPY_AND_ASSIGN(SendAudioStream);
   ~SendAudioStream();
-
-  SendAudioStream(const SendAudioStream&) = delete;
-  SendAudioStream& operator=(const SendAudioStream&) = delete;
-
   void Start();
   void Stop();
   void SetMuted(bool mute);
@@ -52,11 +50,8 @@ class SendAudioStream {
 // ReceiveAudioStream represents an audio receiver. It can't be used directly.
 class ReceiveAudioStream {
  public:
+  RTC_DISALLOW_COPY_AND_ASSIGN(ReceiveAudioStream);
   ~ReceiveAudioStream();
-
-  ReceiveAudioStream(const ReceiveAudioStream&) = delete;
-  ReceiveAudioStream& operator=(const ReceiveAudioStream&) = delete;
-
   void Start();
   void Stop();
   AudioReceiveStream::Stats GetStats() const;
@@ -79,11 +74,8 @@ class ReceiveAudioStream {
 // the Scenario class.
 class AudioStreamPair {
  public:
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioStreamPair);
   ~AudioStreamPair();
-
-  AudioStreamPair(const AudioStreamPair&) = delete;
-  AudioStreamPair& operator=(const AudioStreamPair&) = delete;
-
   SendAudioStream* send() { return &send_stream_; }
   ReceiveAudioStream* receive() { return &receive_stream_; }
 

@@ -15,6 +15,7 @@
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/linux/wayland/screencast_portal.h"
 #include "modules/desktop_capture/linux/wayland/shared_screencast_stream.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 
@@ -23,9 +24,6 @@ class BaseCapturerPipeWire : public DesktopCapturer,
  public:
   BaseCapturerPipeWire(const DesktopCaptureOptions& options);
   ~BaseCapturerPipeWire() override;
-
-  BaseCapturerPipeWire(const BaseCapturerPipeWire&) = delete;
-  BaseCapturerPipeWire& operator=(const BaseCapturerPipeWire&) = delete;
 
   // DesktopCapturer interface.
   void Start(Callback* delegate) override;
@@ -44,6 +42,8 @@ class BaseCapturerPipeWire : public DesktopCapturer,
   Callback* callback_ = nullptr;
   bool capturer_failed_ = false;
   std::unique_ptr<ScreenCastPortal> screencast_portal_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(BaseCapturerPipeWire);
 };
 
 }  // namespace webrtc

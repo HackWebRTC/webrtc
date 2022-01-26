@@ -16,6 +16,7 @@
 
 #include "api/sequence_checker.h"
 #include "api/task_queue/task_queue_factory.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/ignore_wundef.h"
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/task_queue.h"
@@ -39,9 +40,6 @@ class PacketSender {
                const std::string& config_file_path);
   ~PacketSender();
 
-  PacketSender(const PacketSender&) = delete;
-  PacketSender& operator=(const PacketSender&) = delete;
-
   void StartSending();
   void StopSending();
   bool IsSending() const;
@@ -61,6 +59,8 @@ class PacketSender {
   TestController* const test_controller_;
   std::unique_ptr<TaskQueueFactory> task_queue_factory_;
   rtc::TaskQueue worker_queue_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(PacketSender);
 };
 
 }  // namespace webrtc

@@ -22,6 +22,7 @@
 #include "api/sequence_checker.h"
 #include "p2p/base/basic_packet_socket_factory.h"
 #include "rtc_base/async_packet_socket.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/ignore_wundef.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/synchronization/mutex.h"
@@ -49,9 +50,6 @@ class TestController : public sigslot::has_slots<> {
                  int max_port,
                  const std::string& config_file_path,
                  const std::string& log_file_path);
-
-  TestController(const TestController&) = delete;
-  TestController& operator=(const TestController&) = delete;
 
   void Run();
 
@@ -82,6 +80,8 @@ class TestController : public sigslot::has_slots<> {
   std::unique_ptr<rtc::AsyncPacketSocket> udp_socket_;
   rtc::SocketAddress remote_address_;
   std::unique_ptr<PacketSender> packet_sender_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(TestController);
 };
 
 }  // namespace webrtc
