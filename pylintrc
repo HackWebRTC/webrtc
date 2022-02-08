@@ -28,6 +28,7 @@ disable=
   exec-used,
   fixme,
   import-error,
+  import-outside-toplevel,
   missing-docstring,
   no-init,
   no-member,
