@@ -490,6 +490,7 @@ if (rtc_enable_protobuf) {
         "../system_wrappers",
         "../test:fileutils",
         "../test:test_support",
+        "../test/logging:log_writer",
         "//testing/gtest",
       ]
       absl_deps = [
