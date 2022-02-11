@@ -1231,9 +1231,8 @@ def CheckOrphanHeaders(input_api, output_api, source_file_filter):
   # eval-ed and thus doesn't have __file__.
   error_msg = """{} should be listed in {}."""
   results = []
-  exempt_paths = [
-      os.path.join('tools_webrtc', 'ios', 'SDK'),
-  ]
+  exempt_paths = [re.escape(os.path.join('tools_webrtc', 'ios', 'SDK'))]
+
   with _AddToPath(
       input_api.os_path.join(input_api.PresubmitLocalPath(), 'tools_webrtc',
                              'presubmit_checks_lib')):
