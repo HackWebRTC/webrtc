@@ -228,10 +228,6 @@ if (is_linux || is_chromeos) {
     pkg_config("egl") {
       packages = [ "egl" ]
     }
-    pkg_config("epoxy") {
-      packages = [ "epoxy" ]
-      ignore_libs = true
-    }
     pkg_config("libdrm") {
       packages = [ "libdrm" ]
       if (!rtc_link_pipewire) {
@@ -578,7 +574,6 @@ rtc_library("desktop_capture_generic") {
       ":pipewire",
       ":gbm",
       ":egl",
-      ":epoxy",
       ":libdrm",
     ]
 
