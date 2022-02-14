@@ -140,7 +140,7 @@ static constexpr size_t kZeroPlayoutDelayDefaultMaxDecodeQueueSize = 8;
 
 // Encapsulates use of the new frame buffer for use in VideoReceiveStream. This
 // behaves the same as the FrameBuffer2Proxy but uses frame_buffer3 instead.
-// Responsiblities from frame_buffer2, like stats, jitter and frame timing
+// Responsibilities from frame_buffer2, like stats, jitter and frame timing
 // accounting are moved into this pro
 class FrameBuffer3Proxy : public FrameBufferProxy {
  public:
@@ -322,6 +322,8 @@ class FrameBuffer3Proxy : public FrameBufferProxy {
 
     std::unique_ptr<EncodedFrame> frame =
         CombineAndDeleteFrames(std::move(frames));
+
+    timing_->SetLastDecodeScheduledTimestamp(now_ms);
 
     decoder_ready_for_new_frame_ = false;
     // VideoReceiveStream2 wants frames on the decoder thread.
