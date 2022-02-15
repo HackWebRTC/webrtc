@@ -829,6 +829,12 @@ def RunPythonTests(input_api, output_api):
   ]
 
   tests = []
+  skipped_tests = [
+      # This test should be run manually after webrtc_dashboard_upload target
+      # has been built.
+      r'catapult_uploader_test\.py$'
+  ]
+
   for directory in test_directories:
     tests.extend(
         input_api.canned_checks.GetUnitTestsInDirectory(
@@ -836,6 +842,7 @@ def RunPythonTests(input_api, output_api):
             output_api,
             directory,
             files_to_check=[r'.+_test\.py$'],
+            files_to_skip=skipped_tests,
             run_on_python2=False))
   return input_api.RunTests(tests, parallel=True)
 
