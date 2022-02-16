@@ -27,6 +27,11 @@ import java.util.List;
 public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
   private static final String TAG = "HardwareVideoEncoderFactory";
 
+  // We don't need periodic keyframes. But some HW encoders, Exynos in particular, fails to
+  // initialize with value -1 which should disable periodic keyframes according to the spec. Set it
+  // to 1 hour.
+  private static final int PERIODIC_KEY_FRAME_INTERVAL_S = 3600;
+
   // Forced key frame interval - used to reduce color distortions on Qualcomm platforms.
   private static final int QCOM_VP8_KEY_FRAME_INTERVAL_ANDROID_L_MS = 15000;
   private static final int QCOM_VP8_KEY_FRAME_INTERVAL_ANDROID_M_MS = 20000;
@@ -123,7 +128,7 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
     }
 
     return new HardwareVideoEncoder(new MediaCodecWrapperFactoryImpl(), codecName, type,
-        surfaceColorFormat, yuvColorFormat, input.params, getKeyFrameIntervalSec(type),
+        surfaceColorFormat, yuvColorFormat, input.params, PERIODIC_KEY_FRAME_INTERVAL_S,
         getForcedKeyFrameIntervalMs(type, codecName), createBitrateAdjuster(type, codecName),
         sharedContext);
   }
@@ -248,18 +253,6 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
       return true;
     }
     return codecAllowedPredicate.test(info);
-  }
-
-  private int getKeyFrameIntervalSec(VideoCodecMimeType type) {
-    switch (type) {
-      case VP8: // Fallthrough intended.
-      case VP9:
-      case AV1:
-        return 100;
-      case H264:
-        return 20;
-    }
-    throw new IllegalArgumentException("Unsupported VideoCodecMimeType " + type);
   }
 
   private int getForcedKeyFrameIntervalMs(VideoCodecMimeType type, String codecName) {
