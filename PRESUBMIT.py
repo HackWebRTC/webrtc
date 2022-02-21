@@ -819,21 +819,22 @@ def RunPythonTests(input_api, output_api):
   def Join(*args):
     return input_api.os_path.join(input_api.PresubmitLocalPath(), *args)
 
+  excluded_files = [
+      # This test should be run manually after webrtc_dashboard_upload target
+      # has been built.
+      'catapult_uploader_test.py'
+  ]
+
   test_directories = [
       input_api.PresubmitLocalPath(),
       Join('rtc_tools', 'py_event_log_analyzer'),
       Join('audio', 'test', 'unittests'),
   ] + [
       root for root, _, files in os.walk(Join('tools_webrtc')) if any(
-          f.endswith('_test.py') for f in files)
+          f.endswith('_test.py') and f not in excluded_files for f in files)
   ]
 
   tests = []
-  skipped_tests = [
-      # This test should be run manually after webrtc_dashboard_upload target
-      # has been built.
-      r'catapult_uploader_test\.py$'
-  ]
 
   for directory in test_directories:
     tests.extend(
@@ -842,7 +843,6 @@ def RunPythonTests(input_api, output_api):
             output_api,
             directory,
             files_to_check=[r'.+_test\.py$'],
-            files_to_skip=skipped_tests,
             run_on_python2=False))
   return input_api.RunTests(tests, parallel=True)
 
