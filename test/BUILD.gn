@@ -110,6 +110,7 @@ rtc_library("video_test_common") {
   deps = [
     ":fileutils",
     ":frame_utils",
+    ":scoped_key_value_config",
     "../api:array_view",
     "../api:create_frame_generator",
     "../api:frame_generator_api",
@@ -178,6 +179,7 @@ if (!build_with_chromium) {
         "vcm_capturer.h",
       ]
       deps += [
+        ":scoped_key_value_config",
         "../api:scoped_refptr",
         "../modules/video_capture:video_capture_module",
         "../rtc_base:checks",
@@ -524,6 +526,7 @@ if (rtc_include_tests && !build_with_chromium) {
       ":perf_test",
       ":rtc_expect_death",
       ":rtp_test_utils",
+      ":scoped_key_value_config",
       ":test_common",
       ":test_main",
       ":test_support",
