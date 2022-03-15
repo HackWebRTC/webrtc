@@ -1396,6 +1396,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base/synchronization:mutex",
       "../../test:fileutils",
+      "../../test:scoped_key_value_config",
       "../../test:test_support",
     ]
     absl_deps = [
