@@ -820,9 +820,10 @@ def RunPythonTests(input_api, output_api):
     return input_api.os_path.join(input_api.PresubmitLocalPath(), *args)
 
   excluded_files = [
-      # This test should be run manually after webrtc_dashboard_upload target
+      # These tests should be run manually after webrtc_dashboard_upload target
       # has been built.
-      'catapult_uploader_test.py'
+      'catapult_uploader_test.py',
+      'process_perf_results_test.py',
   ]
 
   test_directories = [
