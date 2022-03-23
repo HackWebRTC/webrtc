@@ -332,6 +332,7 @@ rtc_library("desktop_capture_generic") {
     "cropping_window_capturer.h",
     "desktop_and_cursor_composer.cc",
     "desktop_and_cursor_composer.h",
+    "desktop_capture_metadata.h",
     "desktop_capture_metrics_helper.cc",
     "desktop_capture_metrics_helper.h",
     "desktop_capture_options.cc",
@@ -570,6 +571,7 @@ rtc_library("desktop_capture_generic") {
       "linux/wayland/mouse_cursor_monitor_pipewire.h",
       "linux/wayland/scoped_glib.cc",
       "linux/wayland/scoped_glib.h",
+      "linux/wayland/screen_capture_portal_interface.h",
       "linux/wayland/screencast_portal.cc",
       "linux/wayland/screencast_portal.h",
       "linux/wayland/screencast_stream_utils.cc",
@@ -578,6 +580,7 @@ rtc_library("desktop_capture_generic") {
       "linux/wayland/shared_screencast_stream.h",
       "linux/wayland/xdg_desktop_portal_utils.cc",
       "linux/wayland/xdg_desktop_portal_utils.h",
+      "linux/wayland/xdg_session_details.h",
     ]
 
     configs += [
