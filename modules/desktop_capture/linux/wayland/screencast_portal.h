@@ -15,13 +15,11 @@
 
 #include <string>
 
-#include "modules/desktop_capture/linux/wayland/screen_capture_portal_interface.h"
 #include "modules/desktop_capture/linux/wayland/xdg_desktop_portal_utils.h"
-#include "modules/desktop_capture/linux/wayland/xdg_session_details.h"
 
 namespace webrtc {
 
-class ScreenCastPortal : public xdg_portal::ScreenCapturePortalInterface {
+class ScreenCastPortal {
  public:
   using ProxyRequestResponseHandler = void (*)(GObject* object,
                                                GAsyncResult* result,
@@ -88,8 +86,7 @@ class ScreenCastPortal : public xdg_portal::ScreenCapturePortalInterface {
   // The observer will return whether the communication with xdg-desktop-portal
   // was successful and only then you will be able to get all the required
   // information in order to continue working with PipeWire.
-  void Start() override;
-  xdg_portal::SessionDetails GetSessionDetails() override;
+  void Start();
 
   // Method to notify the reason for failure of a portal request.
   void PortalFailed(xdg_portal::RequestResponse result);

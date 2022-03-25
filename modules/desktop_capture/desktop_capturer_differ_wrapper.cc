@@ -186,12 +186,6 @@ bool DesktopCapturerDifferWrapper::IsOccluded(const DesktopVector& pos) {
   return base_capturer_->IsOccluded(pos);
 }
 
-#if defined(WEBRTC_USE_PIPEWIRE)
-DesktopCaptureMetadata DesktopCapturerDifferWrapper::GetMetadata() {
-  return base_capturer_->GetMetadata();
-}
-#endif  // defined(WEBRTC_USE_PIPEWIRE)
-
 void DesktopCapturerDifferWrapper::OnCaptureResult(
     Result result,
     std::unique_ptr<DesktopFrame> input_frame) {

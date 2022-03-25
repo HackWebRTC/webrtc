@@ -112,10 +112,6 @@ void ScreenCastPortal::Start() {
                       cancellable_, this);
 }
 
-xdg_portal::SessionDetails ScreenCastPortal::GetSessionDetails() {
-  return {};  // No-op
-}
-
 void ScreenCastPortal::PortalFailed(RequestResponse result) {
   notifier_->OnScreenCastRequestResult(result, pw_stream_node_id_, pw_fd_);
 }

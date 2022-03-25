@@ -21,22 +21,14 @@ namespace webrtc {
 namespace {
 
 using xdg_portal::RequestResponse;
-using xdg_portal::ScreenCapturePortalInterface;
-using xdg_portal::SessionDetails;
 
 }  // namespace
 
 BaseCapturerPipeWire::BaseCapturerPipeWire(const DesktopCaptureOptions& options)
-    : BaseCapturerPipeWire(
-          options,
-          std::make_unique<ScreenCastPortal>(
-              ScreenCastPortal::CaptureSourceType::kAnyScreenContent,
-              this)) {}
-
-BaseCapturerPipeWire::BaseCapturerPipeWire(
-    const DesktopCaptureOptions& options,
-    std::unique_ptr<ScreenCapturePortalInterface> portal)
-    : options_(options), portal_(std::move(portal)) {}
+    : options_(options) {
+  screencast_portal_ = std::make_unique<ScreenCastPortal>(
+      ScreenCastPortal::CaptureSourceType::kAnyScreenContent, this);
+}
 
 BaseCapturerPipeWire::~BaseCapturerPipeWire() {}
 
@@ -64,7 +56,7 @@ void BaseCapturerPipeWire::Start(Callback* callback) {
 
   callback_ = callback;
 
-  portal_->Start();
+  screencast_portal_->Start();
 }
 
 void BaseCapturerPipeWire::CaptureFrame() {
@@ -103,10 +95,6 @@ bool BaseCapturerPipeWire::GetSourceList(SourceList* sources) {
 bool BaseCapturerPipeWire::SelectSource(SourceId id) {
   // Screen selection is handled by the xdg-desktop-portal.
   return true;
-}
-
-SessionDetails BaseCapturerPipeWire::GetSessionDetails() {
-  return portal_->GetSessionDetails();
 }
 
 }  // namespace webrtc
