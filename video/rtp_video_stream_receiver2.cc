@@ -108,14 +108,15 @@ std::unique_ptr<NackRequester> MaybeConstructNackModule(
     const VideoReceiveStream::Config& config,
     Clock* clock,
     NackSender* nack_sender,
-    KeyFrameRequestSender* keyframe_request_sender) {
+    KeyFrameRequestSender* keyframe_request_sender,
+    const WebRtcKeyValueConfig& field_trials) {
   if (config.rtp.nack.rtp_history_ms == 0)
     return nullptr;
 
   // TODO(bugs.webrtc.org/12420): pass rtp_history_ms to the nack module.
   return std::make_unique<NackRequester>(current_queue, nack_periodic_processor,
                                          clock, nack_sender,
-                                         keyframe_request_sender);
+                                         keyframe_request_sender, field_trials);
 }
 
 static const int kPacketLogIntervalMs = 10000;
@@ -252,7 +253,8 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
                                             config_,
                                             clock_,
                                             &rtcp_feedback_buffer_,
-                                            &rtcp_feedback_buffer_)),
+                                            &rtcp_feedback_buffer_,
+                                            field_trials_)),
       packet_buffer_(kPacketBufferStartSize,
                      PacketBufferMaxSize(field_trials_)),
       reference_finder_(std::make_unique<RtpFrameReferenceFinder>()),
