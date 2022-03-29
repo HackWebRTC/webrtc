@@ -193,9 +193,9 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver implements Netwo
     }
 
     private static boolean checkFieldTrial(String fieldTrials, String key, boolean defaultValue) {
-      if (fieldTrials.contains(key + "/Enabled")) {
+      if (fieldTrials.contains(key + ":true")) {
         return true;
-      } else if (fieldTrials.contains(key + "/Disabled")) {
+      } else if (fieldTrials.contains(key + ":false")) {
         return false;
       }
       return defaultValue;
