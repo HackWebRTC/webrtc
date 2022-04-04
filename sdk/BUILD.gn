@@ -124,6 +124,7 @@ if (is_ios || is_mac) {
     deps = [
       "../rtc_base",
       "../rtc_base:checks",
+      "../rtc_base:logging",
     ]
     configs += [
       "..:common_objc",
@@ -232,6 +233,7 @@ if (is_ios || is_mac) {
           "../modules/audio_device:audio_device_api",
           "../modules/audio_device:audio_device_generic",
           "../rtc_base:checks",
+          "../rtc_base:logging",
           "../rtc_base:rtc_base_approved",
           "../system_wrappers",
         ]
@@ -275,6 +277,7 @@ if (is_ios || is_mac) {
           "../rtc_base",
           "../rtc_base:atomicops",
           "../rtc_base:checks",
+          "../rtc_base:logging",
           "../rtc_base:threading",
           "../system_wrappers:field_trial",
           "../system_wrappers:metrics",
@@ -429,6 +432,7 @@ if (is_ios || is_mac) {
       ]
       deps = [
         ":base_objc",
+        "../rtc_base:logging",
         "//api/video:video_frame",
         "//api/video:video_rtp_headers",
         "//common_video",
@@ -494,6 +498,7 @@ if (is_ios || is_mac) {
         "../media:rtc_media_base",
         "../rtc_base",
         "../rtc_base:checks",
+        "../rtc_base:logging",
       ]
       absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
 
@@ -1023,6 +1028,7 @@ if (is_ios || is_mac) {
         "../pc:peerconnection",
         "../rtc_base",
         "../rtc_base:checks",
+        "../rtc_base:logging",
         "../rtc_base:network_constants",
         "../system_wrappers:field_trial",
         "../system_wrappers:metrics",
@@ -1565,6 +1571,7 @@ if (is_ios || is_mac) {
         "../api/video_codecs:video_codecs_api",
         "../common_video",
         "../rtc_base",
+        "../rtc_base:logging",
         "../rtc_base:threading",
       ]
       if (is_ios) {
@@ -1588,6 +1595,7 @@ if (is_ios || is_mac) {
           "../api:field_trials_view",
           "../api:sequence_checker",
           "../rtc_base",
+          "../rtc_base:logging",
           "../rtc_base:threading",
           "../rtc_base/task_utils:pending_task_safety_flag",
           "../rtc_base/task_utils:to_queued_task",
@@ -1634,6 +1642,7 @@ if (is_ios || is_mac) {
         "../modules/video_coding:video_codec_interface",
         "../rtc_base",
         "../rtc_base:checks",
+        "../rtc_base:logging",
       ]
     }
 
@@ -1652,6 +1661,7 @@ if (is_ios || is_mac) {
         "../common_video",
         "../modules/video_coding:webrtc_h264",
         "../rtc_base:checks",
+        "../rtc_base:logging",
         "../rtc_base:rtc_base_approved",
       ]
     }
@@ -1690,6 +1700,7 @@ if (is_ios || is_mac) {
         "../common_video",
         "../modules/video_coding:video_codec_interface",
         "../rtc_base:checks",
+        "../rtc_base:logging",
         "../rtc_base:rtc_base_approved",
         "//third_party/libyuv",
       ]
