@@ -282,6 +282,7 @@ if (is_ios || is_mac) {
           "../rtc_base:macromagic",
           "../rtc_base:refcount",
           "../rtc_base:threading",
+          "../rtc_base:timeutils",
           "../system_wrappers:field_trial",
           "../system_wrappers:metrics",
         ]
@@ -1038,6 +1039,7 @@ if (is_ios || is_mac) {
         "../rtc_base:logging",
         "../rtc_base:network_constants",
         "../rtc_base:safe_conversions",
+        "../rtc_base:timeutils",
         "../stats:rtc_stats",
         "../system_wrappers:field_trial",
         "../system_wrappers:metrics",
@@ -1657,6 +1659,7 @@ if (is_ios || is_mac) {
         "../rtc_base",
         "../rtc_base:checks",
         "../rtc_base:logging",
+        "../rtc_base:timeutils",
       ]
     }
 
@@ -1716,6 +1719,7 @@ if (is_ios || is_mac) {
         "../rtc_base:checks",
         "../rtc_base:logging",
         "../rtc_base:rtc_base_approved",
+        "../rtc_base:timeutils",
         "//third_party/libyuv",
       ]
 
