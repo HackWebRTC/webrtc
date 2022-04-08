@@ -13,5 +13,6 @@ package org.webrtc;
 import android.content.Context;
 
 public interface NetworkChangeDetectorFactory {
-  public NetworkChangeDetector create(NetworkChangeDetector.Observer observer, Context context);
+  public NetworkChangeDetector create(
+      NetworkChangeDetector.Observer observer, Context context, String fieldTrialsString);
 }

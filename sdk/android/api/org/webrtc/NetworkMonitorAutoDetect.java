@@ -176,26 +176,29 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver implements Netwo
     private final boolean requestVPN;
     private final boolean includeOtherUidNetworks;
 
-    ConnectivityManagerDelegate(Context context, Set<Network> availableNetworks) {
+    ConnectivityManagerDelegate(
+        Context context, Set<Network> availableNetworks, String fieldTrialsString) {
       this((ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE),
-          availableNetworks,
-          PeerConnectionFactory.fieldTrialsFindFullName("WebRTC-NetworkMonitorAutoDetect"));
+          availableNetworks, fieldTrialsString);
     }
 
     @VisibleForTesting
     ConnectivityManagerDelegate(ConnectivityManager connectivityManager,
-        Set<Network> availableNetworks, String fieldTrials) {
+        Set<Network> availableNetworks, String fieldTrialsString) {
       this.connectivityManager = connectivityManager;
       this.availableNetworks = availableNetworks;
-      this.getAllNetworksFromCache = checkFieldTrial(fieldTrials, "getAllNetworksFromCache", false);
-      this.requestVPN = checkFieldTrial(fieldTrials, "requestVPN", false);
-      this.includeOtherUidNetworks = checkFieldTrial(fieldTrials, "includeOtherUidNetworks", false);
+      this.getAllNetworksFromCache =
+          checkFieldTrial(fieldTrialsString, "getAllNetworksFromCache", false);
+      this.requestVPN = checkFieldTrial(fieldTrialsString, "requestVPN", false);
+      this.includeOtherUidNetworks =
+          checkFieldTrial(fieldTrialsString, "includeOtherUidNetworks", false);
     }
 
-    private static boolean checkFieldTrial(String fieldTrials, String key, boolean defaultValue) {
-      if (fieldTrials.contains(key + ":true")) {
+    private static boolean checkFieldTrial(
+        String fieldTrialsString, String key, boolean defaultValue) {
+      if (fieldTrialsString.contains(key + ":true")) {
         return true;
-      } else if (fieldTrials.contains(key + ":false")) {
+      } else if (fieldTrialsString.contains(key + ":false")) {
         return false;
       }
       return defaultValue;
@@ -635,10 +638,12 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver implements Netwo
 
   /** Constructs a NetworkMonitorAutoDetect. Should only be called on UI thread. */
   @SuppressLint("NewApi")
-  public NetworkMonitorAutoDetect(NetworkChangeDetector.Observer observer, Context context) {
+  public NetworkMonitorAutoDetect(
+      NetworkChangeDetector.Observer observer, Context context, String fieldTrialsString) {
     this.observer = observer;
     this.context = context;
-    connectivityManagerDelegate = new ConnectivityManagerDelegate(context, availableNetworks);
+    connectivityManagerDelegate =
+        new ConnectivityManagerDelegate(context, availableNetworks, fieldTrialsString);
     wifiManagerDelegate = new WifiManagerDelegate(context);
 
     final NetworkState networkState = connectivityManagerDelegate.getNetworkState();
