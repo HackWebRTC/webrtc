@@ -1244,7 +1244,7 @@ if (is_ios || is_mac) {
     }
 
     if (is_ios) {
-      ios_framework_bundle_with_umbrella_header("framework_objc") {
+      apple_framework_bundle_with_umbrella_header("framework_objc") {
         info_plist = "objc/Info.plist"
         output_name = "WebRTC"
 
@@ -1381,7 +1381,7 @@ if (is_ios || is_mac) {
           "CoreMedia.framework",
         ]
 
-        configs += [
+        configs = [
           "..:common_objc",
           ":used_from_extension",
         ]
@@ -1397,7 +1397,7 @@ if (is_ios || is_mac) {
     }
 
     if (is_mac) {
-      mac_framework_bundle_with_umbrella_header("mac_framework_objc") {
+      apple_framework_bundle_with_umbrella_header("mac_framework_objc") {
         info_plist = "objc/Info.plist"
         output_name = "WebRTC"
 
