@@ -188,7 +188,7 @@ LogMessage::LogMessage(const char* file,
 LogMessage::LogMessage(const char* file,
                        int line,
                        LoggingSeverity sev,
-                       const std::string& tag)
+                       absl::string_view tag)
     : LogMessage(file, line, sev) {
   print_stream_ << tag << ": ";
 }
@@ -296,7 +296,7 @@ void LogMessage::RemoveLogToStream(LogSink* stream) {
   UpdateMinLogSeverity();
 }
 
-void LogMessage::ConfigureLogging(const char* params) {
+void LogMessage::ConfigureLogging(absl::string_view params) {
   LoggingSeverity current_level = LS_VERBOSE;
   LoggingSeverity debug_level = GetLogToDebug();
 
@@ -355,13 +355,14 @@ void LogMessage::UpdateMinLogSeverity()
 }
 
 #if defined(WEBRTC_ANDROID)
-void LogMessage::OutputToDebug(const std::string& str,
+void LogMessage::OutputToDebug(absl::string_view str,
                                LoggingSeverity severity,
                                const char* tag) {
 #else
-void LogMessage::OutputToDebug(const std::string& str,
+void LogMessage::OutputToDebug(absl::string_view str,
                                LoggingSeverity severity) {
 #endif
+  std::string str_str = std::string(str);
   bool log_to_stderr = log_to_stderr_;
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) && defined(NDEBUG)
   // On the Mac, all stderr output goes to the Console log and causes clutter.
@@ -386,7 +387,7 @@ void LogMessage::OutputToDebug(const std::string& str,
 #if defined(WEBRTC_WIN)
   // Always log to the debugger.
   // Perhaps stderr should be controlled by a preference, as on Mac?
-  OutputDebugStringA(str.c_str());
+  OutputDebugStringA(str_str.c_str());
   if (log_to_stderr) {
     // This handles dynamically allocated consoles, too.
     if (HANDLE error_handle = ::GetStdHandle(STD_ERROR_HANDLE)) {
@@ -426,14 +427,14 @@ void LogMessage::OutputToDebug(const std::string& str,
   int idx = 0;
   const int max_lines = size / kMaxLogLineSize + 1;
   if (max_lines == 1) {
-    __android_log_print(prio, tag, "%.*s", size, str.c_str());
+    __android_log_print(prio, tag, "%.*s", size, str_str.c_str());
   } else {
     while (size > 0) {
       const int len = std::min(size, kMaxLogLineSize);
       // Use the size of the string in the format (str may have \0 in the
       // middle).
       __android_log_print(prio, tag, "[%d/%d] %.*s", line + 1, max_lines, len,
-                          str.c_str() + idx);
+                          str_str.c_str() + idx);
       idx += len;
       size -= len;
       ++line;
@@ -441,7 +442,7 @@ void LogMessage::OutputToDebug(const std::string& str,
   }
 #endif  // WEBRTC_ANDROID
   if (log_to_stderr) {
-    fprintf(stderr, "%s", str.c_str());
+    fprintf(stderr, "%s", str_str.c_str());
     fflush(stderr);
   }
 }
