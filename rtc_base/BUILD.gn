@@ -83,6 +83,7 @@ rtc_library("rtc_base_approved") {
   deps = [
     ":atomicops",
     ":checks",
+    ":location",
     ":logging",
     ":macromagic",
     ":one_time_event",
@@ -125,8 +126,7 @@ rtc_library("rtc_base_approved") {
     "copy_on_write_buffer.h",
     "event_tracer.cc",
     "event_tracer.h",
-    "location.cc",
-    "location.h",
+    "location.h",  # Transitional, use :location
     "numerics/histogram_percentile_counter.cc",
     "numerics/histogram_percentile_counter.h",
     "numerics/mod_ops.h",
@@ -200,6 +200,15 @@ rtc_source_set("macromagic") {
     "thread_annotations.h",
   ]
   deps = [ "system:arch" ]
+}
+
+rtc_library("location") {
+  visibility = [ "*" ]
+  sources = [
+    "location.cc",
+    "location.h",
+  ]
+  deps = [ "system:rtc_export" ]
 }
 
 rtc_library("random") {
@@ -819,6 +828,7 @@ rtc_library("threading") {
     ":checks",
     ":criticalsection",
     ":ip_address",
+    ":location",
     ":logging",
     ":macromagic",
     ":network_constants",
@@ -950,6 +960,7 @@ rtc_library("rtc_base") {
     ":callback_list",
     ":checks",
     ":ip_address",
+    ":location",
     ":logging",
     ":macromagic",
     ":network_constants",
@@ -1248,6 +1259,7 @@ rtc_library("rtc_base_tests_utils") {
     ":async_socket",
     ":checks",
     ":ip_address",
+    ":location",
     ":logging",
     ":macromagic",
     ":rtc_base",
@@ -1284,6 +1296,7 @@ rtc_library("task_queue_for_test") {
   ]
   deps = [
     ":checks",
+    ":location",
     ":macromagic",
     ":rtc_base_approved",
     ":rtc_event",
@@ -1350,6 +1363,7 @@ if (rtc_include_tests) {
         ":checks",
         ":gunit_helpers",
         ":ip_address",
+        ":location",
         ":logging",
         ":macromagic",
         ":net_helpers",
@@ -1434,6 +1448,7 @@ if (rtc_include_tests) {
         ":divide_round",
         ":gunit_helpers",
         ":ip_address",
+        ":location",
         ":logging",
         ":macromagic",
         ":null_socket_server",
