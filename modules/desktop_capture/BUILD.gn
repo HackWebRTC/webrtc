@@ -71,7 +71,6 @@ if (rtc_include_tests) {
         ":primitives",
         ":screen_drawer",
         "../../rtc_base",
-        "../../rtc_base:rtc_base_approved",
         "../../rtc_base/third_party/base64",
         "../../system_wrappers",
         "../../test:test_support",
@@ -132,7 +131,6 @@ if (rtc_include_tests) {
       # TODO(bugs.webrtc.org/9987): Remove this dep on rtc_base:rtc_base once
       # rtc_base:threading is fully defined.
       "../../rtc_base:rtc_base",
-      "../../rtc_base:rtc_base_approved",
       "../../rtc_base:threading",
       "../../system_wrappers",
       "../../test:test_support",
@@ -187,7 +185,6 @@ if (rtc_include_tests) {
       "../../api:scoped_refptr",
       "../../rtc_base:checks",
       "../../rtc_base:logging",
-      "../../rtc_base:rtc_base_approved",
       "../../system_wrappers",
     ]
 
@@ -211,7 +208,6 @@ if (rtc_include_tests) {
 
     deps = [
       ":primitives",
-      "../../rtc_base:rtc_base_approved",
       "../../test:test_support",
     ]
   }
@@ -324,7 +320,6 @@ if (is_mac) {
       "../../rtc_base",
       "../../rtc_base:checks",
       "../../rtc_base:logging",
-      "../../rtc_base:rtc_base_approved",
       "../../rtc_base:timeutils",
       "../../rtc_base/system:rtc_export",
       "../../sdk:helpers_objc",
@@ -564,7 +559,6 @@ rtc_library("desktop_capture_generic") {
       "dxgi.lib",
     ]
     deps += [
-      "../../rtc_base:rtc_base_approved",
       "../../rtc_base:win32",
     ]
   }
