@@ -587,9 +587,7 @@ rtc_library("desktop_capture_generic") {
     deps += [ "../../rtc_base:sanitizer" ]
   }
 
-  if (build_with_mozilla) {
-    deps += [ "../../rtc_base:rtc_base_approved" ]
-  } else {
+  if (!build_with_mozilla) {
     deps += [ "//third_party/libyuv" ]
   }
 
