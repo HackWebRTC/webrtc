@@ -247,8 +247,8 @@ void DegradedCall::DestroyVideoReceiveStream(
 }
 
 FlexfecReceiveStream* DegradedCall::CreateFlexfecReceiveStream(
-    const FlexfecReceiveStream::Config& config) {
-  return call_->CreateFlexfecReceiveStream(config);
+    const FlexfecReceiveStream::Config config) {
+  return call_->CreateFlexfecReceiveStream(std::move(config));
 }
 
 void DegradedCall::DestroyFlexfecReceiveStream(
