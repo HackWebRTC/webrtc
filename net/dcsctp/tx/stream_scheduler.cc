@@ -114,7 +114,7 @@ StreamScheduler::VirtualTime StreamScheduler::Stream::GetNextFinishTime()
 absl::optional<SendQueue::DataToSend> StreamScheduler::Stream::Produce(
     TimeMs now,
     size_t max_size) {
-  absl::optional<SendQueue::DataToSend> data = callback_.Produce(now, max_size);
+  absl::optional<SendQueue::DataToSend> data = producer_.Produce(now, max_size);
 
   if (data.has_value()) {
     VirtualTime new_current = GetNextFinishTime();
