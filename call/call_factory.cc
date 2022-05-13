@@ -163,8 +163,7 @@ Call* CallFactory::CreateCall(const Call::Config& config) {
             SharedModuleThread::Create(
                 ProcessThread::Create("ModuleProcessThread"), nullptr),
             config.rtp_transport_controller_send_factory->Create(
-                transportConfig, Clock::GetRealTimeClock(),
-                ProcessThread::Create("PacerThread")))),
+                transportConfig, Clock::GetRealTimeClock()))),
         send_degradation_configs, receive_degradation_configs);
   }
 
@@ -178,8 +177,7 @@ Call* CallFactory::CreateCall(const Call::Config& config) {
 
   return Call::Create(config, Clock::GetRealTimeClock(), module_thread_,
                       config.rtp_transport_controller_send_factory->Create(
-                          transportConfig, Clock::GetRealTimeClock(),
-                          ProcessThread::Create("PacerThread")));
+                          transportConfig, Clock::GetRealTimeClock()));
 }
 
 std::unique_ptr<CallFactoryInterface> CreateCallFactory() {
