@@ -162,27 +162,6 @@ rtc_library("frame_helpers") {
   absl_deps = [ "//third_party/abseil-cpp/absl/container:inlined_vector" ]
 }
 
-rtc_library("timing") {
-  sources = [
-    "timing.cc",
-    "timing.h",
-  ]
-  deps = [
-    "../../api:field_trials_view",
-    "../../api/units:time_delta",
-    "../../api/video:video_rtp_headers",
-    "../../rtc_base:logging",
-    "../../rtc_base:macromagic",
-    "../../rtc_base:rtc_numerics",
-    "../../rtc_base/experiments:field_trial_parser",
-    "../../rtc_base/synchronization:mutex",
-    "../../rtc_base/time:timestamp_extrapolator",
-    "../../system_wrappers",
-    "timing:codec_timer",
-  ]
-  absl_deps = [ "//third_party/abseil-cpp/absl/types:optional" ]
-}
-
 rtc_library("video_coding") {
   visibility = [ "*" ]
   sources = [
@@ -230,7 +209,6 @@ rtc_library("video_coding") {
     ":codec_globals_headers",
     ":encoded_frame",
     ":frame_helpers",
-    ":timing",
     ":video_codec_interface",
     ":video_coding_utility",
     ":webrtc_vp8_scalability",
@@ -299,6 +277,7 @@ rtc_library("video_coding") {
     "timing:inter_frame_delay",
     "timing:jitter_estimator",
     "timing:rtt_filter",
+    "timing:timing_module",
   ]
   absl_deps = [
     "//third_party/abseil-cpp/absl/base:core_headers",
@@ -355,7 +334,6 @@ rtc_library("video_coding_legacy") {
   deps = [
     ":codec_globals_headers",
     ":encoded_frame",
-    ":timing",
     ":video_codec_interface",
     ":video_coding",
     "..:module_api",
@@ -389,6 +367,7 @@ rtc_library("video_coding_legacy") {
     "../utility",
     "timing:inter_frame_delay",
     "timing:jitter_estimator",
+    "timing:timing_module",
   ]
   absl_deps = [
     "//third_party/abseil-cpp/absl/memory",
@@ -1123,7 +1102,6 @@ if (rtc_include_tests) {
       "test/stream_generator.cc",
       "test/stream_generator.h",
       "timestamp_map_unittest.cc",
-      "timing_unittest.cc",
       "utility/bandwidth_quality_scaler_unittest.cc",
       "utility/decoded_frames_history_unittest.cc",
       "utility/frame_dropper_unittest.cc",
@@ -1153,7 +1131,6 @@ if (rtc_include_tests) {
       ":nack_requester",
       ":packet_buffer",
       ":simulcast_test_fixture_impl",
-      ":timing",
       ":video_codec_interface",
       ":video_codecs_test_framework",
       ":video_coding",
@@ -1236,6 +1213,7 @@ if (rtc_include_tests) {
       "svc:scalability_structure_tests",
       "svc:svc_rate_allocator_tests",
       "timing:jitter_estimator",
+      "timing:timing_module",
     ]
     absl_deps = [
       "//third_party/abseil-cpp/absl/memory",
