@@ -138,11 +138,10 @@ public class NetworkMonitor {
     startMonitoring(
         applicationContext != null ? applicationContext : ContextUtils.getApplicationContext(),
         fieldTrialsString);
-
+    // The native observers expect a network list update after they call startMonitoring.
     synchronized (nativeNetworkObservers) {
       nativeNetworkObservers.add(nativeObserver);
     }
-    // The native observer expects a network list update after startMonitoring.
     updateObserverActiveNetworkList(nativeObserver);
     // currentConnectionType was updated in startMonitoring().
     // Need to notify the native observers here.
@@ -272,7 +271,7 @@ public class NetworkMonitor {
       networkInfoList =
           (networkChangeDetector == null) ? null : networkChangeDetector.getActiveNetworkList();
     }
-    if (networkInfoList == null) {
+    if (networkInfoList == null || networkInfoList.size() == 0) {
       return;
     }
 
