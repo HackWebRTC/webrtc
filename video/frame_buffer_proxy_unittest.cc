@@ -752,8 +752,7 @@ TEST_P(FrameBufferProxyTest, NextFrameWithOldTimestamp) {
 INSTANTIATE_TEST_SUITE_P(
     FrameBufferProxy,
     FrameBufferProxyTest,
-    ::testing::Values("WebRTC-FrameBuffer3/arm:FrameBuffer2/",
-                      "WebRTC-FrameBuffer3/arm:FrameBuffer3/",
+    ::testing::Values("WebRTC-FrameBuffer3/arm:FrameBuffer3/",
                       "WebRTC-FrameBuffer3/arm:SyncDecoding/"));
 
 class LowLatencyFrameBufferProxyTest : public ::testing::Test,
@@ -834,8 +833,6 @@ INSTANTIATE_TEST_SUITE_P(
     FrameBufferProxy,
     LowLatencyFrameBufferProxyTest,
     ::testing::Values(
-        "WebRTC-FrameBuffer3/arm:FrameBuffer2/"
-        "WebRTC-ZeroPlayoutDelay/min_pacing:16ms,max_decode_queue_size:5/",
         "WebRTC-FrameBuffer3/arm:FrameBuffer3/"
         "WebRTC-ZeroPlayoutDelay/min_pacing:16ms,max_decode_queue_size:5/",
         "WebRTC-FrameBuffer3/arm:SyncDecoding/"
