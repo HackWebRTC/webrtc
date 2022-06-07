@@ -13,7 +13,6 @@
 #include <string.h>
 
 #include <cmath>
-#include <cstring>
 #include <memory>
 #include <utility>
 
@@ -23,15 +22,6 @@
 #include "third_party/libyuv/include/libyuv/planar_functions.h"
 
 namespace webrtc {
-
-namespace {
-
-// Calculate the size of the data buffer size used to store a BasicDesktopFrame.
-int CalculateDataSizeFor(const DesktopSize& size) {
-  return DesktopFrame::kBytesPerPixel * size.width() * size.height();
-}
-
-}  // namespace
 
 DesktopFrame::DesktopFrame(DesktopSize size,
                            int stride,
@@ -157,7 +147,7 @@ void DesktopFrame::MoveFrameInfoFrom(DesktopFrame* other) {
 BasicDesktopFrame::BasicDesktopFrame(DesktopSize size)
     : DesktopFrame(size,
                    kBytesPerPixel * size.width(),
-                   new uint8_t[CalculateDataSizeFor(size)](),
+                   new uint8_t[kBytesPerPixel * size.width() * size.height()](),
                    nullptr) {}
 
 BasicDesktopFrame::~BasicDesktopFrame() {
@@ -167,9 +157,9 @@ BasicDesktopFrame::~BasicDesktopFrame() {
 // static
 DesktopFrame* BasicDesktopFrame::CopyOf(const DesktopFrame& frame) {
   DesktopFrame* result = new BasicDesktopFrame(frame.size());
-  // TODO(b/234824290): Using memcpy until libyuv::CopyPlane() is fixed to no
-  // longer introduce memory corruption on platforms that support AVX.
-  memcpy(result->data(), frame.data(), CalculateDataSizeFor(result->size()));
+  libyuv::CopyPlane(frame.data(), frame.stride(), result->data(),
+                    result->stride(), frame.size().width() * kBytesPerPixel,
+                    frame.size().height());
   result->CopyFrameInfoFrom(frame);
   return result;
 }
