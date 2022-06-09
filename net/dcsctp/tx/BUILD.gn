@@ -14,7 +14,6 @@ rtc_source_set("send_queue") {
     "../common:internal_types",
     "../packet:chunk",
     "../packet:data",
-    "../public:socket",
     "../public:types",
   ]
   sources = [ "send_queue.h" ]
@@ -24,12 +23,9 @@ rtc_source_set("send_queue") {
 rtc_library("rr_send_queue") {
   deps = [
     ":send_queue",
-    ":stream_scheduler",
     "../../../api:array_view",
     "../../../rtc_base:checks",
     "../../../rtc_base:logging",
-    "../../../rtc_base/containers:flat_map",
-    "../common:str_join",
     "../packet:data",
     "../public:socket",
     "../public:types",
@@ -184,7 +180,6 @@ if (rtc_include_tests) {
       "../common:sequence_numbers",
       "../packet:chunk",
       "../packet:data",
-      "../packet:sctp_packet",
       "../public:socket",
       "../public:types",
       "../testing:data_generator",
