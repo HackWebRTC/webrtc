@@ -24,7 +24,7 @@
 #include "sdk/android/generated_native_unittests_jni/PeerConnectionFactoryInitializationHelper_jni.h"
 #include "sdk/android/native_api/audio_device_module/audio_device_android.h"
 #include "sdk/android/native_api/jni/jvm.h"
-#include "sdk/android/native_unittests/application_context_provider.h"
+#include "sdk/android/native_api/jni/application_context_provider.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "test/gtest.h"
 
@@ -57,7 +57,7 @@ rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> CreateTestPCF(
   cricket::MediaEngineDependencies media_deps;
   media_deps.task_queue_factory = pcf_deps.task_queue_factory.get();
   media_deps.adm =
-      CreateJavaAudioDeviceModule(jni, GetAppContextForTest(jni).obj());
+      CreateJavaAudioDeviceModule(jni, GetAppContext(jni).obj());
   media_deps.video_encoder_factory =
       std::make_unique<webrtc::InternalEncoderFactory>();
   media_deps.video_decoder_factory =
