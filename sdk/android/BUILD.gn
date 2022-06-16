@@ -117,7 +117,6 @@ if (is_android) {
       ":base_jni",
       ":builtin_audio_codecs_jni",
       ":default_video_codec_factory_jni",
-      ":field_trial_jni",
       ":java_audio_device_module_jni",
       ":peerconnection_jni",
       ":video_jni",
@@ -270,6 +269,7 @@ if (is_android) {
       "api/org/webrtc/MediaSource.java",
       "api/org/webrtc/MediaStream.java",
       "api/org/webrtc/MediaStreamTrack.java",
+      "api/org/webrtc/NativeLibraryLoader.java",
       "api/org/webrtc/NativePeerConnectionFactory.java",
       "api/org/webrtc/NetEqFactoryFactory.java",
       "api/org/webrtc/NetworkChangeDetector.java",
@@ -302,6 +302,7 @@ if (is_android) {
       "api/org/webrtc/VideoTrack.java",
       "src/java/org/webrtc/NativeAndroidVideoTrackSource.java",
       "src/java/org/webrtc/NativeCapturerObserver.java",
+      "src/java/org/webrtc/NativeLibrary.java",
     ]
 
     deps = [
@@ -309,12 +310,10 @@ if (is_android) {
       ":base_java",
       ":builtin_audio_codecs_java",
       ":default_video_codec_factory_java",
-      ":field_trial_java",
 
       #TODO(bugs.webrtc.org/7452): Make injection mandatory and remove this dep.
       ":java_audio_device_module_java",
       ":logging_java",
-      ":native_library_java",
       ":swcodecs_java",
       ":video_api_java",
       ":video_java",
@@ -326,24 +325,6 @@ if (is_android) {
       "//api:priority_enums",
       "//rtc_base:network_monitor_enums",
     ]
-  }
-
-  rtc_android_library("native_library_java") {
-    sources = [
-      "api/org/webrtc/NativeLibraryLoader.java",
-      "src/java/org/webrtc/NativeLibrary.java",
-    ]
-
-    deps = [
-      ":logging_java",
-      "//rtc_base:base_java",
-    ]
-  }
-
-  rtc_android_library("field_trial_java") {
-    sources = [ "api/org/webrtc/FieldTrial.java" ]
-
-    deps = [ ":native_library_java" ]
   }
 
   # Modules, in alphabetical order.
@@ -830,16 +811,6 @@ if (current_os == "linux" || is_android) {
     absl_deps = [
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
-    ]
-  }
-
-  rtc_library("field_trial_jni") {
-    visibility = [ "*" ]
-    sources = [ "src/jni/field_trial.cc" ]
-    deps = [
-      ":base_jni",
-      ":generated_field_trial_jni",
-      "../../system_wrappers:field_trial",
     ]
   }
 
@@ -1449,12 +1420,6 @@ if (current_os == "linux" || is_android) {
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
 
-  generate_jni("generated_field_trial_jni") {
-    sources = [ "api/org/webrtc/FieldTrial.java" ]
-    namespace = "webrtc::jni"
-    jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
-  }
-
   generate_jni("generated_java_audio_jni") {
     sources = [ "api/org/webrtc/audio/JavaAudioDeviceModule.java" ]
     namespace = "webrtc::jni"
@@ -1560,7 +1525,6 @@ if (is_android) {
         ":hwcodecs_java",
         ":libjingle_peerconnection_java",
         ":libjingle_peerconnection_metrics_default_java",
-        ":native_library_java",
         ":peerconnection_java",
         ":surfaceviewrenderer_java",
         ":swcodecs_java",
@@ -1669,6 +1633,7 @@ if (is_android) {
       ":native_test_jni_onload",
       ":opensles_audio_device_module",
       ":video_jni",
+      "../../api:field_trials_view",
       "../../api:scoped_refptr",
       "../../api/rtc_event_log:rtc_event_log_factory",
       "../../api/task_queue:default_task_queue_factory",
@@ -1723,7 +1688,6 @@ if (is_android) {
     deps = [
       ":base_java",
       ":java_audio_device_module_java",
-      ":native_library_java",
       ":peerconnection_java",
       ":video_api_java",
       ":video_java",
