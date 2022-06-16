@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2018 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,13 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package org.webrtc;
+namespace webrtc {
+namespace audiodevicemodule {
 
-import android.content.Context;
+void EnsureInitialized();
 
-public class ApplicationContextProvider {
-  @CalledByNative
-  public static Context getApplicationContext() {
-    return ContextUtils.getApplicationContext();
-  }
-}
+}  // namespace audiodevicemodule
+}  // namespace webrtc
