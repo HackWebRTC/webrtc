@@ -27,43 +27,12 @@
 #include "call/rtp_transport_controller_send_interface.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
-#include "modules/utility/include/process_thread.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/network_route.h"
 #include "rtc_base/ref_count.h"
 
 namespace webrtc {
-
-// A restricted way to share the module process thread across multiple instances
-// of Call that are constructed on the same worker thread (which is what the
-// peer connection factory guarantees).
-// SharedModuleThread supports a callback that is issued when only one reference
-// remains, which is used to indicate to the original owner that the thread may
-// be discarded.
-class SharedModuleThread final {
- public:
-  // Allows injection of an externally created process thread.
-  static rtc::scoped_refptr<SharedModuleThread> Create(
-      std::unique_ptr<ProcessThread> process_thread,
-      std::function<void()> on_one_ref_remaining);
-
-  void EnsureStarted();
-
-  ProcessThread* process_thread();
-
- private:
-  friend class rtc::scoped_refptr<SharedModuleThread>;
-  SharedModuleThread(std::unique_ptr<ProcessThread> process_thread,
-                     std::function<void()> on_one_ref_remaining);
-  ~SharedModuleThread();
-
-  void AddRef() const;
-  rtc::RefCountReleaseStatus Release() const;
-
-  class Impl;
-  mutable std::unique_ptr<Impl> impl_;
-};
 
 // A Call represents a two-way connection carrying zero or more outgoing
 // and incoming media streams, transported over one or more RTP transports.
@@ -92,11 +61,6 @@ class Call {
   static Call* Create(const Call::Config& config);
   static Call* Create(const Call::Config& config,
                       Clock* clock,
-                      rtc::scoped_refptr<SharedModuleThread> call_thread,
-                      std::unique_ptr<ProcessThread> pacer_thread);
-  static Call* Create(const Call::Config& config,
-                      Clock* clock,
-                      rtc::scoped_refptr<SharedModuleThread> call_thread,
                       std::unique_ptr<RtpTransportControllerSendInterface>
                           transportControllerSend);
 
