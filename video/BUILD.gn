@@ -280,7 +280,6 @@ rtc_library("frame_buffer_proxy") {
     "../rtc_base:logging",
     "../rtc_base:macromagic",
     "../rtc_base:rtc_task_queue",
-    "../rtc_base/experiments:rtt_mult_experiment",
     "../system_wrappers",
     "../system_wrappers:field_trial",
   ]
