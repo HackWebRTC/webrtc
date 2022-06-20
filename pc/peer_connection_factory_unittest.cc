@@ -20,7 +20,6 @@
 #include "api/data_channel_interface.h"
 #include "api/jsep.h"
 #include "api/media_stream_interface.h"
-#include "api/test/mock_packet_socket_factory.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "media/base/fake_frame_source.h"
@@ -32,8 +31,6 @@
 #include "p2p/base/port_interface.h"
 #include "pc/test/fake_audio_capture_module.h"
 #include "pc/test/fake_video_track_source.h"
-#include "pc/test/mock_peer_connection_observers.h"
-#include "rtc_base/gunit.h"
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/time_utils.h"
@@ -53,10 +50,6 @@ using webrtc::PeerConnectionInterface;
 using webrtc::PeerConnectionObserver;
 using webrtc::VideoTrackInterface;
 using webrtc::VideoTrackSourceInterface;
-
-using ::testing::_;
-using ::testing::InvokeWithoutArgs;
-using ::testing::Return;
 
 namespace {
 
@@ -498,39 +491,4 @@ TEST_F(PeerConnectionFactoryTest, LocalRendering) {
   source->InjectFrame(frame_source.GetFrame());
   EXPECT_EQ(3, local_renderer.num_rendered_frames());
   EXPECT_FALSE(local_renderer.black_frame());
-}
-
-#ifdef WEBRTC_ANDROID
-// TODO(bugs.webrtc.org/14204): Enable on android. Fails on Nexus 5X android
-// test bot, logging "Machine has no networks; no ports will be allocated"
-#define MAYBE_UsesPacketSocketFactory DISABLED_UsesPacketSocketFactory
-#else
-#define MAYBE_UsesPacketSocketFactory UsesPacketSocketFactory
-#endif
-TEST(PeerConnectionFactoryDependenciesTest, MAYBE_UsesPacketSocketFactory) {
-  constexpr int64_t kWaitTimeoutMs = 10000;
-  auto mock_socket_factory = std::make_unique<rtc::MockPacketSocketFactory>();
-
-  rtc::Event called;
-  EXPECT_CALL(*mock_socket_factory, CreateUdpSocket(_, _, _))
-      .WillOnce(InvokeWithoutArgs([&] {
-        called.Set();
-        return nullptr;
-      }))
-      .WillRepeatedly(Return(nullptr));
-
-  webrtc::PeerConnectionFactoryDependencies pcf_dependencies;
-  pcf_dependencies.packet_socket_factory = std::move(mock_socket_factory);
-
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pcf =
-      CreateModularPeerConnectionFactory(std::move(pcf_dependencies));
-
-  PeerConnectionInterface::RTCConfiguration config;
-  config.ice_candidate_pool_size = 2;
-  NullPeerConnectionObserver observer;
-  auto pc = pcf->CreatePeerConnectionOrError(
-      config, webrtc::PeerConnectionDependencies(&observer));
-  ASSERT_TRUE(pc.ok());
-
-  called.Wait(kWaitTimeoutMs);
 }
