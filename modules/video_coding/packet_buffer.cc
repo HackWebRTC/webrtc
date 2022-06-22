@@ -107,6 +107,10 @@ PacketBuffer::InsertResult PacketBuffer::InsertPacket(
 
   UpdateMissingPackets(seq_num);
 
+  received_padding_.erase(
+      received_padding_.begin(),
+      received_padding_.lower_bound(seq_num - (buffer_.size() / 4)));
+
   result.packets = FindFrames(seq_num);
   return result;
 }
@@ -140,11 +144,11 @@ void PacketBuffer::ClearTo(uint16_t seq_num) {
   first_seq_num_ = seq_num;
 
   is_cleared_to_first_seq_num_ = true;
-  auto clear_to_it = missing_packets_.upper_bound(seq_num);
-  if (clear_to_it != missing_packets_.begin()) {
-    --clear_to_it;
-    missing_packets_.erase(missing_packets_.begin(), clear_to_it);
-  }
+  missing_packets_.erase(missing_packets_.begin(),
+                         missing_packets_.lower_bound(seq_num));
+
+  received_padding_.erase(received_padding_.begin(),
+                          received_padding_.lower_bound(seq_num));
 }
 
 void PacketBuffer::Clear() {
@@ -154,6 +158,7 @@ void PacketBuffer::Clear() {
 PacketBuffer::InsertResult PacketBuffer::InsertPadding(uint16_t seq_num) {
   PacketBuffer::InsertResult result;
   UpdateMissingPackets(seq_num);
+  received_padding_.insert(seq_num);
   result.packets = FindFrames(static_cast<uint16_t>(seq_num + 1));
   return result;
 }
@@ -171,6 +176,7 @@ void PacketBuffer::ClearInternal() {
   is_cleared_to_first_seq_num_ = false;
   newest_inserted_seq_num_.reset();
   missing_packets_.clear();
+  received_padding_.clear();
 }
 
 bool PacketBuffer::ExpandBufferSize() {
@@ -219,7 +225,18 @@ bool PacketBuffer::PotentialNewFrame(uint16_t seq_num) const {
 std::vector<std::unique_ptr<PacketBuffer::Packet>> PacketBuffer::FindFrames(
     uint16_t seq_num) {
   std::vector<std::unique_ptr<PacketBuffer::Packet>> found_frames;
-  for (size_t i = 0; i < buffer_.size() && PotentialNewFrame(seq_num); ++i) {
+  auto start = seq_num;
+
+  for (size_t i = 0; i < buffer_.size(); ++i) {
+    if (received_padding_.find(seq_num) != received_padding_.end()) {
+      seq_num += 1;
+      continue;
+    }
+
+    if (!PotentialNewFrame(seq_num)) {
+      break;
+    }
+
     size_t index = seq_num % buffer_.size();
     buffer_[index]->continuous = true;
 
@@ -359,6 +376,8 @@ std::vector<std::unique_ptr<PacketBuffer::Packet>> PacketBuffer::FindFrames(
 
         missing_packets_.erase(missing_packets_.begin(),
                                missing_packets_.upper_bound(seq_num));
+        received_padding_.erase(received_padding_.lower_bound(start),
+                                received_padding_.upper_bound(seq_num));
       }
     }
     ++seq_num;
