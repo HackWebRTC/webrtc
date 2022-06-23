@@ -6,4 +6,11 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-{}
+{
+  'video_capture_tests': {
+    'remove_from': [
+      # TODO(bugs.webrtc.org/14220): Re-enable.
+      'linux_rel',
+    ]
+  },
+}
