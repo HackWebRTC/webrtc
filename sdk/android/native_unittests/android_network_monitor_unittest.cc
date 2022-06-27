@@ -13,7 +13,7 @@
 #include "rtc_base/ip_address.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
-#include "sdk/android/native_unittests/application_context_provider.h"
+#include "sdk/android/native_api/jni/application_context_provider.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "test/gtest.h"
 #include "test/scoped_key_value_config.h"
@@ -47,7 +47,7 @@ class AndroidNetworkMonitorTest : public ::testing::Test {
  public:
   AndroidNetworkMonitorTest() {
     JNIEnv* env = AttachCurrentThreadIfNeeded();
-    ScopedJavaLocalRef<jobject> context = test::GetAppContextForTest(env);
+    ScopedJavaLocalRef<jobject> context = GetAppContext(env);
     network_monitor_ = std::make_unique<jni::AndroidNetworkMonitor>(
         env, context, field_trials_);
   }

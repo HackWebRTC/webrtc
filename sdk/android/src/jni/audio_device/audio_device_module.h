@@ -86,6 +86,10 @@ void GetAudioParameters(JNIEnv* env,
                         AudioParameters* input_parameters,
                         AudioParameters* output_parameters);
 
+bool IsLowLatencyInputSupported(JNIEnv* env, const JavaRef<jobject>& j_context);
+
+bool IsLowLatencyOutputSupported(JNIEnv* env, const JavaRef<jobject>& j_context);
+
 // Glue together an audio input and audio output to get an AudioDeviceModule.
 rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModuleFromInputAndOutput(
     AudioDeviceModule::AudioLayer audio_layer,
