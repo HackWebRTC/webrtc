@@ -633,14 +633,6 @@ void GetAudioParameters(JNIEnv* env,
   RTC_CHECK(output_parameters->is_valid());
 }
 
-bool IsLowLatencyInputSupported(JNIEnv* env, const JavaRef<jobject>& j_context) {
-  return Java_WebRtcAudioManager_isLowLatencyInputSupported(env, j_context);
-}
-
-bool IsLowLatencyOutputSupported(JNIEnv* env, const JavaRef<jobject>& j_context) {
-  return Java_WebRtcAudioManager_isLowLatencyOutputSupported(env, j_context);
-}
-
 rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModuleFromInputAndOutput(
     AudioDeviceModule::AudioLayer audio_layer,
     bool is_stereo_playout_supported,
