@@ -79,7 +79,8 @@ class RemoteEstimatorProxyTest : public ::testing::Test {
  public:
   RemoteEstimatorProxyTest()
       : clock_(0),
-        proxy_(feedback_sender_.AsStdFunction(),
+        proxy_(&clock_,
+               feedback_sender_.AsStdFunction(),
                &field_trial_config_,
                &network_state_estimator_) {}
 
@@ -97,7 +98,7 @@ class RemoteEstimatorProxyTest : public ::testing::Test {
 
   void Process() {
     clock_.AdvanceTime(kDefaultSendInterval);
-    proxy_.Process(clock_.CurrentTime());
+    proxy_.Process();
   }
 
   FieldTrialBasedConfig field_trial_config_;
@@ -424,32 +425,41 @@ TEST_F(RemoteEstimatorProxyTest, RemovesTimestampsOutOfScope) {
   Process();
 }
 
+TEST_F(RemoteEstimatorProxyTest, TimeUntilNextProcessIsZeroBeforeFirstProcess) {
+  EXPECT_EQ(0, proxy_.TimeUntilNextProcess());
+}
+
 TEST_F(RemoteEstimatorProxyTest, TimeUntilNextProcessIsDefaultOnUnkownBitrate) {
-  EXPECT_EQ(proxy_.Process(clock_.CurrentTime()), kDefaultSendInterval);
+  Process();
+  EXPECT_EQ(proxy_.TimeUntilNextProcess(), kDefaultSendInterval.ms());
 }
 
 TEST_F(RemoteEstimatorProxyTest, TimeUntilNextProcessIsMinIntervalOn300kbps) {
+  Process();
   proxy_.OnBitrateChanged(300'000);
-  EXPECT_EQ(proxy_.Process(clock_.CurrentTime()), kMinSendInterval);
+  EXPECT_EQ(proxy_.TimeUntilNextProcess(), kMinSendInterval.ms());
 }
 
 TEST_F(RemoteEstimatorProxyTest, TimeUntilNextProcessIsMaxIntervalOn0kbps) {
+  Process();
   // TimeUntilNextProcess should be limited by `kMaxSendIntervalMs` when
   // bitrate is small. We choose 0 bps as a special case, which also tests
   // erroneous behaviors like division-by-zero.
   proxy_.OnBitrateChanged(0);
-  EXPECT_EQ(proxy_.Process(clock_.CurrentTime()), kMaxSendInterval);
+  EXPECT_EQ(proxy_.TimeUntilNextProcess(), kMaxSendInterval.ms());
 }
 
 TEST_F(RemoteEstimatorProxyTest, TimeUntilNextProcessIsMaxIntervalOn20kbps) {
+  Process();
   proxy_.OnBitrateChanged(20'000);
-  EXPECT_EQ(proxy_.Process(clock_.CurrentTime()), kMaxSendInterval);
+  EXPECT_EQ(proxy_.TimeUntilNextProcess(), kMaxSendInterval.ms());
 }
 
 TEST_F(RemoteEstimatorProxyTest, TwccReportsUse5PercentOfAvailableBandwidth) {
-  proxy_.OnBitrateChanged(80'000);
+  Process();
+  proxy_.OnBitrateChanged(80000);
   // 80kbps * 0.05 = TwccReportSize(68B * 8b/B) * 1000ms / SendInterval(136ms)
-  EXPECT_EQ(proxy_.Process(clock_.CurrentTime()), TimeDelta::Millis(136));
+  EXPECT_EQ(136, proxy_.TimeUntilNextProcess());
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -457,9 +467,9 @@ TEST_F(RemoteEstimatorProxyTest, TwccReportsUse5PercentOfAvailableBandwidth) {
 // by the sender.
 //////////////////////////////////////////////////////////////////////////////
 typedef RemoteEstimatorProxyTest RemoteEstimatorProxyOnRequestTest;
-TEST_F(RemoteEstimatorProxyOnRequestTest, DisablesPeriodicProcess) {
+TEST_F(RemoteEstimatorProxyOnRequestTest, TimeUntilNextProcessIsHigh) {
   proxy_.SetSendPeriodicFeedback(false);
-  EXPECT_EQ(proxy_.Process(clock_.CurrentTime()), TimeDelta::PlusInfinity());
+  EXPECT_GE(proxy_.TimeUntilNextProcess(), 60 * 60 * 1000);
 }
 
 TEST_F(RemoteEstimatorProxyOnRequestTest, ProcessDoesNotSendFeedback) {
