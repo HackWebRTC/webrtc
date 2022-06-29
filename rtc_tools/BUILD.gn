@@ -357,7 +357,6 @@ if (!build_with_chromium) {
     }
 
     rtc_library("event_log_visualizer_utils") {
-      testonly = true
       visibility = [ "*" ]
       sources = [
         "rtc_event_log_visualizer/alerts.cc",
