@@ -82,6 +82,11 @@ if (rtc_include_tests) {
         "screen_drawer_unittest.cc",
         "window_finder_unittest.cc",
       ]
+
+      if ((is_linux || is_chromeos) && rtc_use_pipewire) {
+        configs += [ ":gio" ]
+      }
+
       public_configs = [ ":x11_config" ]
 
       if (is_win) {
@@ -111,6 +116,11 @@ if (rtc_include_tests) {
       "test_utils.h",
       "test_utils_unittest.cc",
     ]
+
+    if ((is_linux || is_chromeos) && rtc_use_pipewire) {
+      configs += [ ":gio" ]
+    }
+
     deps = [
       ":desktop_capture",
       ":desktop_capture_mock",
@@ -215,6 +225,10 @@ if (rtc_include_tests) {
       "mock_desktop_capturer_callback.h",
     ]
 
+    if ((is_linux || is_chromeos) && rtc_use_pipewire) {
+      configs += [ ":gio" ]
+    }
+
     deps = [
       ":desktop_capture",
       ":primitives",
@@ -275,6 +289,10 @@ if (is_linux || is_chromeos) {
           "linux/wayland/pipewire.sigs",
           "linux/wayland/drm.sigs",
         ]
+        if (!build_with_chromium) {
+          macro_include = "rtc_base/system/no_cfi_icall.h"
+          macro_deps = [ "../../rtc_base/system:no_cfi_icall" ]
+        }
       }
     }
 
