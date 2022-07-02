@@ -10,7 +10,6 @@
 
 #include "modules/desktop_capture/win/wgc_capturer_win.h"
 
-#include <DispatcherQueue.h>
 #include <windows.foundation.metadata.h>
 #include <windows.graphics.capture.h>
 
@@ -46,8 +45,7 @@ enum class WgcCapturerResult {
   kSessionStartFailure = 4,
   kGetFrameFailure = 5,
   kFrameDropped = 6,
-  kCreateDispatcherQueueFailure = 7,
-  kMaxValue = kCreateDispatcherQueueFailure
+  kMaxValue = kFrameDropped
 };
 
 void RecordWgcCapturerResult(WgcCapturerResult error) {
@@ -59,34 +57,20 @@ void RecordWgcCapturerResult(WgcCapturerResult error) {
 }  // namespace
 
 bool IsWgcSupported(CaptureType capture_type) {
-  if (!HasActiveDisplay()) {
-    // There is a bug in `CreateForMonitor` that causes a crash if there are no
-    // active displays. The crash was fixed in Win11, but we are still unable
-    // to capture screens without an active display.
-    if (capture_type == CaptureType::kScreen)
+  if (capture_type == CaptureType::kScreen) {
+    // A bug in the WGC API `CreateForMonitor` was fixed in 20H1.
+    if (rtc::rtc_win::GetVersion() < rtc::rtc_win::Version::VERSION_WIN10_20H1)
       return false;
 
-    // There is a bug in the DWM (Desktop Window Manager) that prevents it from
-    // providing image data if there are no displays attached. This was fixed in
-    // Windows 11.
-    if (rtc::rtc_win::GetVersion() < rtc::rtc_win::Version::VERSION_WIN11)
+    // There is another bug in `CreateForMonitor` that causes a crash if there
+    // are no active displays.
+    if (!HasActiveDisplay())
       return false;
-  }
-
-  // A bug in the WGC API `CreateForMonitor` prevents capturing the entire
-  // virtual screen (all monitors simultaneously), this was fixed in 20H1. Since
-  // we can't assert that we won't be asked to capture the entire virtual
-  // screen, we report unsupported so we can fallback to another capturer.
-  if (capture_type == CaptureType::kScreen &&
-      rtc::rtc_win::GetVersion() < rtc::rtc_win::Version::VERSION_WIN10_20H1) {
-    return false;
   }
 
   if (!ResolveCoreWinRTDelayload())
     return false;
 
-  // We need to check if the WGC APIs are presesnt on the system. Certain SKUs
-  // of Windows ship without these APIs.
   ComPtr<ABI::Windows::Foundation::Metadata::IApiInformationStatics>
       api_info_statics;
   HRESULT hr = GetActivationFactory<
@@ -120,7 +104,6 @@ bool IsWgcSupported(CaptureType capture_type) {
   if (FAILED(hr) || !is_type_present)
     return false;
 
-  // If the APIs are present, we need to check that they are supported.
   ComPtr<WGC::IGraphicsCaptureSessionStatics> capture_session_statics;
   hr = GetActivationFactory<
       WGC::IGraphicsCaptureSessionStatics,
@@ -241,32 +224,9 @@ void WgcCapturerWin::CaptureFrame() {
     return;
   }
 
-  HRESULT hr;
-  if (!dispatcher_queue_created_) {
-    // Set the apartment type to NONE because this thread should already be COM
-    // initialized.
-    DispatcherQueueOptions options{
-        sizeof(DispatcherQueueOptions),
-        DISPATCHERQUEUE_THREAD_TYPE::DQTYPE_THREAD_CURRENT,
-        DISPATCHERQUEUE_THREAD_APARTMENTTYPE::DQTAT_COM_NONE};
-    ComPtr<ABI::Windows::System::IDispatcherQueueController> queue_controller;
-    hr = CreateDispatcherQueueController(options, &queue_controller);
-
-    // If there is already a DispatcherQueue on this thread, that is fine. Its
-    // lifetime is tied to the thread's, and as long as the thread has one, even
-    // if we didn't create it, the capture session's events will be delivered on
-    // this thread.
-    if (FAILED(hr) && hr != RPC_E_WRONG_THREAD) {
-      RecordWgcCapturerResult(WgcCapturerResult::kCreateDispatcherQueueFailure);
-      callback_->OnCaptureResult(DesktopCapturer::Result::ERROR_PERMANENT,
-                                 /*frame=*/nullptr);
-    } else {
-      dispatcher_queue_created_ = true;
-    }
-  }
-
   int64_t capture_start_time_nanos = rtc::TimeNanos();
 
+  HRESULT hr;
   WgcCaptureSession* capture_session = nullptr;
   std::map<SourceId, WgcCaptureSession>::iterator session_iter =
       ongoing_captures_.find(capture_source_->GetSourceId());
