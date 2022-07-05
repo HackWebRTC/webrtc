@@ -64,6 +64,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
                                 public RecoveredPacketReceiver,
                                 public RtpPacketSinkInterface,
                                 public KeyFrameRequestSender,
+                                public NackSender,
                                 public OnDecryptedFrameCallback,
                                 public OnDecryptionStatusChangeCallback,
                                 public RtpVideoFrameReceiver {
@@ -90,7 +91,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
       RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
       RtcpCnameCallback* rtcp_cname_callback,
       NackPeriodicProcessor* nack_periodic_processor,
-      NackSender* nack_sender,
       // The KeyFrameRequestSender is optional; if not provided, key frame
       // requests are sent via the internal RtpRtcp module.
       OnCompleteFrameCallback* complete_frame_callback,
@@ -138,6 +138,10 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   // Send an RTCP keyframe request.
   void RequestKeyFrame() override;
 
+  // Implements NackSender.
+  void SendNack(const std::vector<uint16_t>& sequence_numbers,
+                bool buffering_allowed) override;
+
   // Implements LossNotificationSender.
   void SendLossNotification(uint16_t last_decoded_seq_num,
                             uint16_t last_received_seq_num,
@@ -151,12 +155,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   // Updated by OnDecryptionStatusChangeCallback. Note this refers to Frame
   // Decryption not SRTP.
   bool IsDecryptable() const;
-
-  // Request packet retransmits via NACK. Called via
-  // VideoReceiveStream2::SendNack, which gets called when
-  // RtpVideoStreamReceiver2::RtcpFeedbackBuffer's SendNack and
-  // SendBufferedRtcpFeedback methods (see `rtcp_feedback_buffer_` below).
-  void RequestPacketRetransmit(const std::vector<uint16_t>& sequence_numbers);
 
   // Implements OnDecryptedFrameCallback.
   void OnDecryptedFrame(std::unique_ptr<RtpFrameObject> frame) override;

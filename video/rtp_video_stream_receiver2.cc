@@ -213,7 +213,6 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
     RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
     RtcpCnameCallback* rtcp_cname_callback,
     NackPeriodicProcessor* nack_periodic_processor,
-    NackSender* nack_sender,
     OnCompleteFrameCallback* complete_frame_callback,
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
     rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
@@ -245,7 +244,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
       keyframe_request_method_(config_.rtp.keyframe_method),
       // TODO(bugs.webrtc.org/10336): Let `rtcp_feedback_buffer_` communicate
       // directly with `rtp_rtcp_`.
-      rtcp_feedback_buffer_(this, nack_sender, this),
+      rtcp_feedback_buffer_(this, this, this),
       nack_module_(MaybeConstructNackModule(current_queue,
                                             nack_periodic_processor,
                                             config_,
@@ -689,6 +688,12 @@ void RtpVideoStreamReceiver2::RequestKeyFrame() {
   }
 }
 
+void RtpVideoStreamReceiver2::SendNack(
+    const std::vector<uint16_t>& sequence_numbers,
+    bool /*buffering_allowed*/) {
+  rtp_rtcp_->SendNack(sequence_numbers);
+}
+
 void RtpVideoStreamReceiver2::SendLossNotification(
     uint16_t last_decoded_seq_num,
     uint16_t last_received_seq_num,
@@ -705,12 +710,6 @@ bool RtpVideoStreamReceiver2::IsUlpfecEnabled() const {
 
 bool RtpVideoStreamReceiver2::IsRetransmissionsEnabled() const {
   return config_.rtp.nack.rtp_history_ms > 0;
-}
-
-void RtpVideoStreamReceiver2::RequestPacketRetransmit(
-    const std::vector<uint16_t>& sequence_numbers) {
-  RTC_DCHECK_RUN_ON(&worker_task_checker_);
-  rtp_rtcp_->SendNack(sequence_numbers);
 }
 
 bool RtpVideoStreamReceiver2::IsDecryptable() const {
