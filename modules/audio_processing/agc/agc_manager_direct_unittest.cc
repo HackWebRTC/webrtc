@@ -838,19 +838,6 @@ TEST_F(AgcManagerDirectTest, ClippingDoesNotPullLowVolumeBackUp) {
   EXPECT_EQ(initial_volume, manager_.stream_analog_level());
 }
 
-#if defined(WEBRTC_MAC)
-// TODO(crbug.com/1275566): Fix AGC, remove test below.
-TEST_F(AgcManagerDirectTest, BumpsToMinLevelOnZeroMicVolume) {
-  FirstProcess();
-
-  EXPECT_CALL(*agc_, GetRmsErrorDb(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(30), Return(true)));
-  manager_.set_stream_analog_level(0);
-  CallProcess(10);
-  EXPECT_EQ(20, manager_.stream_analog_level());
-}
-#else
-// TODO(crbug.com/1275566): Fix AGC, reenable test below on Mac.
 TEST_F(AgcManagerDirectTest, TakesNoActionOnZeroMicVolume) {
   FirstProcess();
 
@@ -860,7 +847,6 @@ TEST_F(AgcManagerDirectTest, TakesNoActionOnZeroMicVolume) {
   CallProcess(10);
   EXPECT_EQ(0, manager_.stream_analog_level());
 }
-#endif
 
 TEST_F(AgcManagerDirectTest, ClippingDetectionLowersVolume) {
   SetVolumeAndProcess(255);
