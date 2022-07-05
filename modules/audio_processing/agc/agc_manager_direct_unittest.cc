@@ -35,7 +35,6 @@ constexpr int kSamplesPerChannel = kSampleRateHz / 100;
 constexpr int kInitialVolume = 128;
 constexpr int kClippedMin = 165;  // Arbitrary, but different from the default.
 constexpr float kAboveClippedThreshold = 0.2f;
-constexpr int kMinMicLevel = 12;
 constexpr int kClippedLevelStep = 15;
 constexpr float kClippedRatioThreshold = 0.1f;
 constexpr int kClippedWaitFrames = 300;
@@ -128,18 +127,6 @@ void CallPreProcessAudioBuffer(int num_calls,
   }
 }
 
-std::string GetAgcMinMicLevelExperimentFieldTrial(
-    int enabled_value,
-    const std::string& suffix = "") {
-  RTC_DCHECK_GE(enabled_value, 0);
-  RTC_DCHECK_LE(enabled_value, 255);
-  char field_trial_buffer[64];
-  rtc::SimpleStringBuilder builder(field_trial_buffer);
-  builder << "WebRTC-Audio-AgcMinMicLevelExperiment/Enabled-" << enabled_value
-          << suffix << "/";
-  return builder.str();
-}
-
 // (Over)writes `samples_value` for the samples in `audio_buffer`.
 // When `clipped_ratio`, a value in [0, 1], is greater than 0, the corresponding
 // fraction of the frame is set to a full scale value to simulate clipping.
@@ -161,15 +148,6 @@ void WriteAudioBufferSamples(float samples_value,
     for (; i < num_samples; ++i) {
       audio_buffer.channels()[ch][i] = samples_value;
     }
-  }
-}
-
-void CallPreProcessAndProcess(int num_calls,
-                              const AudioBuffer& audio_buffer,
-                              AgcManagerDirect& manager) {
-  for (int n = 0; n < num_calls; ++n) {
-    manager.AnalyzePreProcess(&audio_buffer);
-    manager.Process(&audio_buffer);
   }
 }
 
@@ -391,13 +369,21 @@ TEST_F(AgcManagerDirectTest, MicVolumeIsLimited) {
   EXPECT_CALL(*agc_, GetRmsErrorDb(_))
       .WillOnce(DoAll(SetArgPointee<0>(-40), Return(true)));
   CallProcess(1);
+#if defined(WEBRTC_MAC)
+  EXPECT_EQ(20, manager_.stream_analog_level());
+#else
   EXPECT_EQ(18, manager_.stream_analog_level());
+#endif
 
   // Won't go lower than the minimum.
   EXPECT_CALL(*agc_, GetRmsErrorDb(_))
       .WillOnce(DoAll(SetArgPointee<0>(-40), Return(true)));
   CallProcess(1);
+#if defined(WEBRTC_MAC)
+  EXPECT_EQ(20, manager_.stream_analog_level());
+#else
   EXPECT_EQ(12, manager_.stream_analog_level());
+#endif
 }
 
 TEST_F(AgcManagerDirectTest, CompressorStepsTowardsTarget) {
@@ -549,7 +535,11 @@ TEST_F(AgcManagerDirectTest, UnmutingRaisesTooLowVolume) {
   ExpectCheckVolumeAndReset(11);
   EXPECT_CALL(*agc_, GetRmsErrorDb(_)).WillOnce(Return(false));
   CallProcess(1);
+#if defined(WEBRTC_MAC)
+  EXPECT_EQ(20, manager_.stream_analog_level());
+#else
   EXPECT_EQ(12, manager_.stream_analog_level());
+#endif
 }
 
 TEST_F(AgcManagerDirectTest, ManualLevelChangeResultsInNoSetMicCall) {
@@ -624,23 +614,39 @@ TEST_F(AgcManagerDirectTest, RecoveryAfterManualLevelChangeBelowMin) {
   manager_.set_stream_analog_level(1);
   EXPECT_CALL(*agc_, Reset()).Times(AtLeast(1));
   CallProcess(1);
+#if defined(WEBRTC_MAC)
+  EXPECT_EQ(20, manager_.stream_analog_level());
+#else
   EXPECT_EQ(1, manager_.stream_analog_level());
+#endif
 
   // Continues working as usual afterwards.
   EXPECT_CALL(*agc_, GetRmsErrorDb(_))
       .WillOnce(DoAll(SetArgPointee<0>(11), Return(true)));
   CallProcess(1);
+#if defined(WEBRTC_MAC)
+  EXPECT_EQ(20, manager_.stream_analog_level());
+#else
   EXPECT_EQ(2, manager_.stream_analog_level());
+#endif
 
   EXPECT_CALL(*agc_, GetRmsErrorDb(_))
       .WillOnce(DoAll(SetArgPointee<0>(30), Return(true)));
   CallProcess(1);
+#if defined(WEBRTC_MAC)
+  EXPECT_EQ(20, manager_.stream_analog_level());
+#else
   EXPECT_EQ(11, manager_.stream_analog_level());
+#endif
 
   EXPECT_CALL(*agc_, GetRmsErrorDb(_))
       .WillOnce(DoAll(SetArgPointee<0>(20), Return(true)));
   CallProcess(1);
+#if defined(WEBRTC_MAC)
+  EXPECT_EQ(20, manager_.stream_analog_level());
+#else
   EXPECT_EQ(18, manager_.stream_analog_level());
+#endif
 }
 
 TEST_F(AgcManagerDirectTest, NoClippingHasNoImpact) {
@@ -832,6 +838,19 @@ TEST_F(AgcManagerDirectTest, ClippingDoesNotPullLowVolumeBackUp) {
   EXPECT_EQ(initial_volume, manager_.stream_analog_level());
 }
 
+#if defined(WEBRTC_MAC)
+// TODO(crbug.com/1275566): Fix AGC, remove test below.
+TEST_F(AgcManagerDirectTest, BumpsToMinLevelOnZeroMicVolume) {
+  FirstProcess();
+
+  EXPECT_CALL(*agc_, GetRmsErrorDb(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(30), Return(true)));
+  manager_.set_stream_analog_level(0);
+  CallProcess(10);
+  EXPECT_EQ(20, manager_.stream_analog_level());
+}
+#else
+// TODO(crbug.com/1275566): Fix AGC, reenable test below on Mac.
 TEST_F(AgcManagerDirectTest, TakesNoActionOnZeroMicVolume) {
   FirstProcess();
 
@@ -841,6 +860,7 @@ TEST_F(AgcManagerDirectTest, TakesNoActionOnZeroMicVolume) {
   CallProcess(10);
   EXPECT_EQ(0, manager_.stream_analog_level());
 }
+#endif
 
 TEST_F(AgcManagerDirectTest, ClippingDetectionLowersVolume) {
   SetVolumeAndProcess(255);
@@ -874,175 +894,6 @@ TEST(AgcManagerDirectStandaloneTest, DisableDigitalDisablesDigital) {
                              kClippedRatioThreshold, kClippedWaitFrames);
   manager->Initialize();
   manager->SetupDigitalGainControl(&gctrl);
-}
-
-TEST(AgcManagerDirectStandaloneTest, AgcMinMicLevelExperiment) {
-  std::unique_ptr<AgcManagerDirect> manager =
-      CreateAgcManagerDirect(kInitialVolume, kClippedLevelStep,
-                             kClippedRatioThreshold, kClippedWaitFrames);
-  EXPECT_EQ(manager->channel_agcs_[0]->min_mic_level(), kMinMicLevel);
-  EXPECT_EQ(manager->channel_agcs_[0]->startup_min_level(), kInitialVolume);
-}
-
-TEST(AgcManagerDirectStandaloneTest, AgcMinMicLevelExperimentDisabled) {
-  for (const std::string& field_trial_suffix : {"", "_20220210"}) {
-    test::ScopedFieldTrials field_trial(
-        "WebRTC-Audio-AgcMinMicLevelExperiment/Disabled" + field_trial_suffix +
-        "/");
-    std::unique_ptr<AgcManagerDirect> manager =
-        CreateAgcManagerDirect(kInitialVolume, kClippedLevelStep,
-                               kClippedRatioThreshold, kClippedWaitFrames);
-    EXPECT_EQ(manager->channel_agcs_[0]->min_mic_level(), kMinMicLevel);
-    EXPECT_EQ(manager->channel_agcs_[0]->startup_min_level(), kInitialVolume);
-  }
-}
-
-// Checks that a field-trial parameter outside of the valid range [0,255] is
-// ignored.
-TEST(AgcManagerDirectStandaloneTest, AgcMinMicLevelExperimentOutOfRangeAbove) {
-  test::ScopedFieldTrials field_trial(
-      "WebRTC-Audio-AgcMinMicLevelExperiment/Enabled-256/");
-  std::unique_ptr<AgcManagerDirect> manager =
-      CreateAgcManagerDirect(kInitialVolume, kClippedLevelStep,
-                             kClippedRatioThreshold, kClippedWaitFrames);
-  EXPECT_EQ(manager->channel_agcs_[0]->min_mic_level(), kMinMicLevel);
-  EXPECT_EQ(manager->channel_agcs_[0]->startup_min_level(), kInitialVolume);
-}
-
-// Checks that a field-trial parameter outside of the valid range [0,255] is
-// ignored.
-TEST(AgcManagerDirectStandaloneTest, AgcMinMicLevelExperimentOutOfRangeBelow) {
-  test::ScopedFieldTrials field_trial(
-      "WebRTC-Audio-AgcMinMicLevelExperiment/Enabled--1/");
-  std::unique_ptr<AgcManagerDirect> manager =
-      CreateAgcManagerDirect(kInitialVolume, kClippedLevelStep,
-                             kClippedRatioThreshold, kClippedWaitFrames);
-  EXPECT_EQ(manager->channel_agcs_[0]->min_mic_level(), kMinMicLevel);
-  EXPECT_EQ(manager->channel_agcs_[0]->startup_min_level(), kInitialVolume);
-}
-
-// Verifies that a valid experiment changes the minimum microphone level. The
-// start volume is larger than the min level and should therefore not be
-// changed.
-TEST(AgcManagerDirectStandaloneTest, AgcMinMicLevelExperimentEnabled50) {
-  constexpr int kMinMicLevelOverride = 50;
-  for (const std::string& field_trial_suffix : {"", "_20220210"}) {
-    SCOPED_TRACE(field_trial_suffix);
-    test::ScopedFieldTrials field_trial(GetAgcMinMicLevelExperimentFieldTrial(
-        kMinMicLevelOverride, field_trial_suffix));
-    std::unique_ptr<AgcManagerDirect> manager =
-        CreateAgcManagerDirect(kInitialVolume, kClippedLevelStep,
-                               kClippedRatioThreshold, kClippedWaitFrames);
-    EXPECT_EQ(manager->channel_agcs_[0]->min_mic_level(), kMinMicLevelOverride);
-    EXPECT_EQ(manager->channel_agcs_[0]->startup_min_level(), kInitialVolume);
-  }
-}
-
-// Checks that, when the "WebRTC-Audio-AgcMinMicLevelExperiment" field trial is
-// specified with a valid value, the mic level never gets lowered beyond the
-// override value in the presence of clipping.
-TEST(AgcManagerDirectStandaloneTest,
-     AgcMinMicLevelExperimentCheckMinLevelWithClipping) {
-  constexpr int kMinMicLevelOverride = 250;
-
-  // Create and initialize two AGCs by specifying and leaving unspecified the
-  // relevant field trial.
-  const auto factory = []() {
-    std::unique_ptr<AgcManagerDirect> manager =
-        CreateAgcManagerDirect(kInitialVolume, kClippedLevelStep,
-                               kClippedRatioThreshold, kClippedWaitFrames);
-    manager->Initialize();
-    manager->set_stream_analog_level(kInitialVolume);
-    return manager;
-  };
-  std::unique_ptr<AgcManagerDirect> manager = factory();
-  std::unique_ptr<AgcManagerDirect> manager_with_override;
-  {
-    test::ScopedFieldTrials field_trial(
-        GetAgcMinMicLevelExperimentFieldTrial(kMinMicLevelOverride));
-    manager_with_override = factory();
-  }
-
-  // Create a test input signal which containts 80% of clipped samples.
-  AudioBuffer audio_buffer(kSampleRateHz, 1, kSampleRateHz, 1, kSampleRateHz,
-                           1);
-  WriteAudioBufferSamples(/*samples_value=*/4000.0f, /*clipped_ratio=*/0.8f,
-                          audio_buffer);
-
-  // Simulate 4 seconds of clipping; it is expected to trigger a downward
-  // adjustment of the analog gain.
-  CallPreProcessAndProcess(/*num_calls=*/400, audio_buffer, *manager);
-  CallPreProcessAndProcess(/*num_calls=*/400, audio_buffer,
-                           *manager_with_override);
-
-  // Make sure that an adaptation occurred.
-  ASSERT_GT(manager->stream_analog_level(), 0);
-
-  // Check that the test signal triggers a larger downward adaptation for
-  // `manager`, which is allowed to reach a lower gain.
-  EXPECT_GT(manager_with_override->stream_analog_level(),
-            manager->stream_analog_level());
-  // Check that the gain selected by `manager_with_override` equals the minimum
-  // value overridden via field trial.
-  EXPECT_EQ(manager_with_override->stream_analog_level(), kMinMicLevelOverride);
-}
-
-// Checks that, when the "WebRTC-Audio-AgcMinMicLevelExperiment" field trial is
-// specified with a value lower than the `clipped_level_min`, the behavior of
-// the analog gain controller is the same as that obtained when the field trial
-// is not specified.
-TEST(AgcManagerDirectStandaloneTest,
-     AgcMinMicLevelExperimentCompareMicLevelWithClipping) {
-  // Create and initialize two AGCs by specifying and leaving unspecified the
-  // relevant field trial.
-  const auto factory = []() {
-    // Use a large clipped level step to more quickly decrease the analog gain
-    // with clipping.
-    auto controller = std::make_unique<AgcManagerDirect>(
-        /*num_capture_channels=*/1, kInitialVolume,
-        kDefaultAnalogConfig.clipped_level_min,
-        /*disable_digital_adaptive=*/true, /*clipped_level_step=*/64,
-        kClippedRatioThreshold, kClippedWaitFrames,
-        kDefaultAnalogConfig.clipping_predictor);
-    controller->Initialize();
-    controller->set_stream_analog_level(kInitialVolume);
-    return controller;
-  };
-  std::unique_ptr<AgcManagerDirect> manager = factory();
-  std::unique_ptr<AgcManagerDirect> manager_with_override;
-  {
-    constexpr int kMinMicLevelOverride = 20;
-    static_assert(
-        kDefaultAnalogConfig.clipped_level_min >= kMinMicLevelOverride,
-        "Use a lower override value.");
-    test::ScopedFieldTrials field_trial(
-        GetAgcMinMicLevelExperimentFieldTrial(kMinMicLevelOverride));
-    manager_with_override = factory();
-  }
-
-  // Create a test input signal which containts 80% of clipped samples.
-  AudioBuffer audio_buffer(kSampleRateHz, 1, kSampleRateHz, 1, kSampleRateHz,
-                           1);
-  WriteAudioBufferSamples(/*samples_value=*/4000.0f, /*clipped_ratio=*/0.8f,
-                          audio_buffer);
-
-  // Simulate 4 seconds of clipping; it is expected to trigger a downward
-  // adjustment of the analog gain.
-  CallPreProcessAndProcess(/*num_calls=*/400, audio_buffer, *manager);
-  CallPreProcessAndProcess(/*num_calls=*/400, audio_buffer,
-                           *manager_with_override);
-
-  // Make sure that an adaptation occurred.
-  ASSERT_GT(manager->stream_analog_level(), 0);
-
-  // Check that the selected analog gain is the same for both controllers and
-  // that it equals the minimum level reached when clipping is handled. That is
-  // expected because the minimum microphone level override is less than the
-  // minimum level used when clipping is detected.
-  EXPECT_EQ(manager->stream_analog_level(),
-            manager_with_override->stream_analog_level());
-  EXPECT_EQ(manager_with_override->stream_analog_level(),
-            kDefaultAnalogConfig.clipped_level_min);
 }
 
 // TODO(bugs.webrtc.org/12774): Test the bahavior of `clipped_level_step`.
