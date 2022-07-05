@@ -214,7 +214,6 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
     RtcpCnameCallback* rtcp_cname_callback,
     NackPeriodicProcessor* nack_periodic_processor,
     NackSender* nack_sender,
-    KeyFrameRequestSender* keyframe_request_sender,
     OnCompleteFrameCallback* complete_frame_callback,
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
     rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
@@ -243,7 +242,6 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
           config_.rtp.rtcp_xr.receiver_reference_time_report,
           config_.rtp.local_ssrc)),
       complete_frame_callback_(complete_frame_callback),
-      keyframe_request_sender_(keyframe_request_sender),
       keyframe_request_method_(config_.rtp.keyframe_method),
       // TODO(bugs.webrtc.org/10336): Let `rtcp_feedback_buffer_` communicate
       // directly with `rtp_rtcp_`.
@@ -684,9 +682,7 @@ void RtpVideoStreamReceiver2::RequestKeyFrame() {
   // TODO(bugs.webrtc.org/10336): Allow the sender to ignore key frame requests
   // issued by anything other than the LossNotificationController if it (the
   // sender) is relying on LNTF alone.
-  if (keyframe_request_sender_) {
-    keyframe_request_sender_->RequestKeyFrame();
-  } else if (keyframe_request_method_ == KeyFrameReqMethod::kPliRtcp) {
+  if (keyframe_request_method_ == KeyFrameReqMethod::kPliRtcp) {
     rtp_rtcp_->SendPictureLossIndication();
   } else if (keyframe_request_method_ == KeyFrameReqMethod::kFirRtcp) {
     rtp_rtcp_->SendFullIntraRequest();
