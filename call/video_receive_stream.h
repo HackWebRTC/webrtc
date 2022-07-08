@@ -105,11 +105,11 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     uint32_t frames_dropped = 0;
     uint32_t frames_decoded = 0;
     // https://w3c.github.io/webrtc-stats/#dom-rtcinboundrtpstreamstats-totaldecodetime
-    webrtc::TimeDelta total_decode_time = webrtc::TimeDelta::Millis(0);
+    TimeDelta total_decode_time = TimeDelta::Zero();
     // https://w3c.github.io/webrtc-stats/#dom-rtcinboundrtpstreamstats-totalprocessingdelay
-    webrtc::TimeDelta total_processing_delay = webrtc::TimeDelta::Millis(0);
+    TimeDelta total_processing_delay = TimeDelta::Zero();
     // TODO(bugs.webrtc.org/13986): standardize
-    webrtc::TimeDelta total_assembly_time = webrtc::TimeDelta::Millis(0);
+    TimeDelta total_assembly_time = TimeDelta::Zero();
     uint32_t frames_assembled_from_multiple_packets = 0;
     // Total inter frame delay in seconds.
     // https://w3c.github.io/webrtc-stats/#dom-rtcinboundrtpstreamstats-totalinterframedelay
