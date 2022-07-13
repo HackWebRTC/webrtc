@@ -62,23 +62,12 @@ bool UseMaxAnalogChannelLevel() {
   return field_trial::IsEnabled("WebRTC-UseMaxAnalogAgcChannelLevel");
 }
 
-// Minimum mic level override.
-// `kMinMicLevelOverride`: if specified, the override replaces `kMinMicLevel`
-// and it is applied even when clipping is detected.
-// `EnforceMinMicLevelOverrideOnZeroLevel()`: returns true if the analog
-// controller must enforce the minimum mic level override even when the mic
-// level has manually been set to zero.
+// Minimum mic level override. If specified, the override replaces
+// `kMinMicLevel` and it is applied even when clipping is detected.
 #if defined(WEBRTC_MAC)
 constexpr absl::optional<int> kMinMicLevelOverride = 20;
-bool EnforceMinMicLevelOverrideOnZeroLevel() {
-  return field_trial::IsEnabled(
-      "WebRTC-Audio-AgcAnalogFixZeroMicLevelBugKillSwitch");
-}
 #else
 constexpr absl::optional<int> kMinMicLevelOverride = absl::nullopt;
-constexpr bool EnforceMinMicLevelOverrideOnZeroLevel() {
-  return false;
-}
 #endif
 
 int ClampLevel(int mic_level, int min_mic_level) {
@@ -466,8 +455,6 @@ AgcManagerDirect::AgcManagerDirect(
     int clipped_wait_frames,
     const ClippingPredictorConfig& clipping_config)
     : min_mic_level_override_(kMinMicLevelOverride),
-      enforce_min_mic_level_override_on_zero_level_(
-          EnforceMinMicLevelOverrideOnZeroLevel()),
       data_dumper_(new ApmDataDumper(instance_counter_.fetch_add(1) + 1)),
       use_min_channel_level_(!UseMaxAnalogChannelLevel()),
       num_capture_channels_(num_capture_channels),
@@ -719,10 +706,9 @@ void AgcManagerDirect::AggregateChannelLevels() {
       }
     }
   }
-
-  if (min_mic_level_override_.has_value() &&
-      (enforce_min_mic_level_override_on_zero_level_ ||
-       stream_analog_level_ > 0)) {
+  // TODO(crbug.com/1275566): Do not enforce minimum if the user has manually
+  // set the mic level to zero.
+  if (min_mic_level_override_.has_value()) {
     stream_analog_level_ =
         std::max(stream_analog_level_, *min_mic_level_override_);
   }
