@@ -140,15 +140,9 @@ void RemoteEstimatorProxy::IncomingPacket(Packet packet) {
   if (network_state_estimator_ && packet.absolute_send_time_24bits) {
     PacketResult packet_result;
     packet_result.receive_time = packet.arrival_time;
-    TimeDelta delta = GetAbsoluteSendTimeDelta(
+    abs_send_timestamp_ += GetAbsoluteSendTimeDelta(
         *packet.absolute_send_time_24bits, previous_abs_send_time_);
-    // `GetAbsoluteSendTimeDelta` returns zero when packet arrived out of order.
-    // Don't adjust previous_abs_send_time, otherwise abs_send_timestamp_ would
-    // accumulate error.
-    if (delta > TimeDelta::Zero()) {
-      abs_send_timestamp_ += delta;
-      previous_abs_send_time_ = *packet.absolute_send_time_24bits;
-    }
+    previous_abs_send_time_ = *packet.absolute_send_time_24bits;
     packet_result.sent_packet.send_time = abs_send_timestamp_;
     packet_result.sent_packet.size = packet.size + packet_overhead_;
     packet_result.sent_packet.sequence_number = seq;
