@@ -38,7 +38,8 @@ public class RtpTransceiver {
     SEND_RECV(0),
     SEND_ONLY(1),
     RECV_ONLY(2),
-    INACTIVE(3);
+    INACTIVE(3),
+    STOPPED(4);
 
     private final int nativeIndex;
 
