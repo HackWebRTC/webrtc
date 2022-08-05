@@ -56,6 +56,8 @@ namespace {
 constexpr int kPacketBufferStartSize = 512;
 constexpr int kPacketBufferMaxSize = 2048;
 
+constexpr int kMaxPacketAgeToNack = 450;
+
 int PacketBufferMaxSize(const FieldTrialsView& field_trials) {
   // The group here must be a positive power of 2, in which case that is used as
   // size. All other values shall result in the default value being used.
@@ -105,12 +107,12 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
 std::unique_ptr<NackRequester> MaybeConstructNackModule(
     TaskQueueBase* current_queue,
     NackPeriodicProcessor* nack_periodic_processor,
-    const VideoReceiveStreamInterface::Config& config,
+    const NackConfig& nack,
     Clock* clock,
     NackSender* nack_sender,
     KeyFrameRequestSender* keyframe_request_sender,
     const FieldTrialsView& field_trials) {
-  if (config.rtp.nack.rtp_history_ms == 0)
+  if (nack.rtp_history_ms == 0)
     return nullptr;
 
   // TODO(bugs.webrtc.org/12420): pass rtp_history_ms to the nack module.
@@ -223,6 +225,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
     rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
     const FieldTrialsView& field_trials)
     : field_trials_(field_trials),
+      worker_queue_(current_queue),
       clock_(clock),
       config_(*config),
       packet_router_(packet_router),
@@ -246,6 +249,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
           rtcp_cname_callback,
           config_.rtp.rtcp_xr.receiver_reference_time_report,
           config_.rtp.local_ssrc)),
+      nack_periodic_processor_(nack_periodic_processor),
       complete_frame_callback_(complete_frame_callback),
       keyframe_request_method_(config_.rtp.keyframe_method),
       // TODO(bugs.webrtc.org/10336): Let `rtcp_feedback_buffer_` communicate
@@ -253,7 +257,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
       rtcp_feedback_buffer_(this, this, this),
       nack_module_(MaybeConstructNackModule(current_queue,
                                             nack_periodic_processor,
-                                            config_,
+                                            config_.rtp.nack,
                                             clock_,
                                             &rtcp_feedback_buffer_,
                                             &rtcp_feedback_buffer_,
@@ -280,7 +284,6 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
   rtp_rtcp_->SetRemoteSSRC(config_.rtp.remote_ssrc);
 
   if (config_.rtp.nack.rtp_history_ms > 0) {
-    static constexpr int kMaxPacketAgeToNack = 450;
     rtp_receive_statistics_->SetMaxReorderingThreshold(config_.rtp.remote_ssrc,
                                                        kMaxPacketAgeToNack);
   }
@@ -704,10 +707,6 @@ bool RtpVideoStreamReceiver2::IsUlpfecEnabled() const {
   return config_.rtp.ulpfec_payload_type != -1;
 }
 
-bool RtpVideoStreamReceiver2::IsRetransmissionsEnabled() const {
-  return config_.rtp.nack.rtp_history_ms > 0;
-}
-
 bool RtpVideoStreamReceiver2::IsDecryptable() const {
   RTC_DCHECK_RUN_ON(&worker_task_checker_);
   return frames_decryptable_;
@@ -919,7 +918,7 @@ const RtpHeaderExtensionMap& RtpVideoStreamReceiver2::GetRtpExtensions() const {
 }
 
 void RtpVideoStreamReceiver2::UpdateRtt(int64_t max_rtt_ms) {
-  RTC_DCHECK_RUN_ON(&worker_task_checker_);
+  RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
   if (nack_module_)
     nack_module_->UpdateRtt(max_rtt_ms);
 }
@@ -952,6 +951,21 @@ void RtpVideoStreamReceiver2::SetLossNotificationEnabled(bool enabled) {
   }
 }
 
+void RtpVideoStreamReceiver2::SetNackHistory(TimeDelta history) {
+  RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
+  if (history.ms() == 0) {
+    nack_module_.reset();
+  } else if (!nack_module_) {
+    nack_module_ = std::make_unique<NackRequester>(
+        worker_queue_, nack_periodic_processor_, clock_, &rtcp_feedback_buffer_,
+        &rtcp_feedback_buffer_, field_trials_);
+  }
+
+  rtp_receive_statistics_->SetMaxReorderingThreshold(
+      config_.rtp.remote_ssrc,
+      history.ms() > 0 ? kMaxPacketAgeToNack : kDefaultMaxReorderingThreshold);
+}
+
 absl::optional<int64_t> RtpVideoStreamReceiver2::LastReceivedPacketMs() const {
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
   if (last_received_rtp_system_time_) {
@@ -978,7 +992,7 @@ void RtpVideoStreamReceiver2::ManageFrame(
 
 void RtpVideoStreamReceiver2::ReceivePacket(const RtpPacketReceived& packet) {
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
-  RTC_DCHECK_RUN_ON(&worker_task_checker_);
+
   if (packet.payload_size() == 0) {
     // Padding or keep-alive packet.
     // TODO(nisse): Could drop empty packets earlier, but need to figure out how
