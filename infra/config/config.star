@@ -841,10 +841,8 @@ lkgr_config = {
                 "WebRTC Chromium FYI Win Builder (dbg)",
                 "WebRTC Chromium FYI Win Builder",
                 "WebRTC Chromium FYI Win10 Tester",
-                # TODO(crbug.com/1351690): Re-enable when the following
-                # bots have been upgraded to macOS 12
-                # "WebRTC Chromium FYI ios-device",
-                # "WebRTC Chromium FYI ios-simulator",
+                "WebRTC Chromium FYI ios-device",
+                "WebRTC Chromium FYI ios-simulator",
             ],
         },
     },
