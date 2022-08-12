@@ -349,7 +349,8 @@ void VideoReceiveStream2::Start() {
   }
 
   const bool protected_by_fec =
-      config_.rtp.protected_by_flexfec || config_.rtp.ulpfec_payload_type != -1;
+      config_.rtp.protected_by_flexfec ||
+      rtp_video_stream_receiver_.ulpfec_payload_type() != -1;
 
   if (config_.rtp.nack.rtp_history_ms > 0 && protected_by_fec) {
     frame_buffer_->SetProtectionMode(kProtectionNackFEC);
@@ -530,7 +531,8 @@ void VideoReceiveStream2::SetNackHistory(TimeDelta history) {
   const_cast<int&>(config_.rtp.nack.rtp_history_ms) = history.ms();
 
   const bool protected_by_fec =
-      config_.rtp.protected_by_flexfec || config_.rtp.ulpfec_payload_type != -1;
+      config_.rtp.protected_by_flexfec ||
+      rtp_video_stream_receiver_.ulpfec_payload_type() != -1;
 
   frame_buffer_->SetProtectionMode(history.ms() > 0 && protected_by_fec
                                        ? kProtectionNackFEC
@@ -547,6 +549,11 @@ void VideoReceiveStream2::SetNackHistory(TimeDelta history) {
   });
 
   frame_buffer_->SetMaxWaits(max_wait_for_keyframe, max_wait_for_frame);
+}
+
+void VideoReceiveStream2::SetUlpfecPayloadType(int payload_type) {
+  RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
+  rtp_video_stream_receiver_.set_ulpfec_payload_type(payload_type);
 }
 
 void VideoReceiveStream2::CreateAndRegisterExternalDecoder(
