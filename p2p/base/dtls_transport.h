@@ -133,12 +133,12 @@ class DtlsTransport : public DtlsTransportInternal {
       const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) override;
   rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const override;
 
-  // SetRemoteFingerprint must be called after SetLocalCertificate, and any
-  // other methods like SetDtlsRole. It's what triggers the actual DTLS setup.
-  // TODO(deadbeef): Rename to "Start" like in ORTC?
-  bool SetRemoteFingerprint(absl::string_view digest_alg,
-                            const uint8_t* digest,
-                            size_t digest_len) override;
+  // SetRemoteParameters must be called after SetLocalCertificate.
+  webrtc::RTCError SetRemoteParameters(
+      absl::string_view digest_alg,
+      const uint8_t* digest,
+      size_t digest_len,
+      absl::optional<rtc::SSLRole> role) override;
 
   // Called to send a packet (via DTLS, if turned on).
   int SendPacket(const char* data,
@@ -225,6 +225,13 @@ class DtlsTransport : public DtlsTransportInternal {
   void set_writable(bool writable);
   // Sets the DTLS state, signaling if necessary.
   void set_dtls_state(webrtc::DtlsTransportState state);
+
+  // SetRemoteFingerprint must be called after SetLocalCertificate, and any
+  // other methods like SetDtlsRole. It's what triggers the actual DTLS setup.
+  // TODO(deadbeef): Rename to "Start" like in ORTC?
+  bool SetRemoteFingerprint(absl::string_view digest_alg,
+                            const uint8_t* digest,
+                            size_t digest_len);
 
   webrtc::SequenceChecker thread_checker_;
 

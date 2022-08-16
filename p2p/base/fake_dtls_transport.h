@@ -141,12 +141,15 @@ class FakeDtlsTransport : public DtlsTransportInternal {
   const rtc::SSLFingerprint& dtls_fingerprint() const {
     return dtls_fingerprint_;
   }
-  bool SetRemoteFingerprint(absl::string_view alg,
-                            const uint8_t* digest,
-                            size_t digest_len) override {
-    dtls_fingerprint_ =
-        rtc::SSLFingerprint(alg, rtc::MakeArrayView(digest, digest_len));
-    return true;
+  webrtc::RTCError SetRemoteParameters(absl::string_view alg,
+                                       const uint8_t* digest,
+                                       size_t digest_len,
+                                       absl::optional<rtc::SSLRole> role) {
+    if (role) {
+      SetDtlsRole(*role);
+    }
+    SetRemoteFingerprint(alg, digest, digest_len);
+    return webrtc::RTCError::OK();
   }
   bool SetDtlsRole(rtc::SSLRole role) override {
     dtls_role_ = std::move(role);
@@ -281,6 +284,14 @@ class FakeDtlsTransport : public DtlsTransportInternal {
 
   void OnNetworkRouteChanged(absl::optional<rtc::NetworkRoute> network_route) {
     SignalNetworkRouteChanged(network_route);
+  }
+
+  bool SetRemoteFingerprint(absl::string_view alg,
+                            const uint8_t* digest,
+                            size_t digest_len) {
+    dtls_fingerprint_ =
+        rtc::SSLFingerprint(alg, rtc::MakeArrayView(digest, digest_len));
+    return true;
   }
 
   FakeIceTransport* ice_transport_;
