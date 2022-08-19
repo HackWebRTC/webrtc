@@ -614,33 +614,6 @@ TEST(PCGenericDescriptorTest,
   fixture->Run(RunParams(TimeDelta::Seconds(kTestDurationSec)));
 }
 
-TEST(PCFullStackTest, Pc_Foreman_Cif_Delay_50_0_Plr_5_H264_Sps_Pps_Idr) {
-  test::ScopedFieldTrials override_field_trials(
-      AppendFieldTrials("WebRTC-SpsPpsIdrIsH264Keyframe/Enabled/"));
-
-  std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
-      CreateNetworkEmulationManager();
-  BuiltInNetworkBehaviorConfig config;
-  config.loss_percent = 5;
-  config.queue_delay_ms = 50;
-  auto fixture = CreateTestFixture(
-      "pc_foreman_cif_delay_50_0_plr_5_H264_sps_pps_idr",
-      *network_emulation_manager->time_controller(),
-      CreateTwoNetworkLinks(network_emulation_manager.get(), config),
-      [](PeerConfigurer* alice) {
-        VideoConfig video(352, 288, 30);
-        video.stream_label = "alice-video";
-        auto frame_generator = CreateFromYuvFileFrameGenerator(
-            video, ClipNameToClipPath("foreman_cif"));
-        alice->AddVideoConfig(std::move(video), std::move(frame_generator));
-        alice->SetVideoCodecs({VideoCodecConfig(cricket::kH264CodecName)});
-      },
-      [](PeerConfigurer* bob) {
-        bob->SetVideoCodecs({VideoCodecConfig(cricket::kH264CodecName)});
-      });
-  fixture->Run(RunParams(TimeDelta::Seconds(kTestDurationSec)));
-}
-
 TEST(PCFullStackTest, Pc_Foreman_Cif_Delay_50_0_Plr_5_H264_Flexfec) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
