@@ -425,6 +425,25 @@ TEST(GenericDescriptorTest,
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
+TEST(FullStackTest, Foreman_Cif_Delay_50_0_Plr_5_H264_Sps_Pps_Idr) {
+  test::ScopedFieldTrials override_field_trials(
+      AppendFieldTrials("WebRTC-SpsPpsIdrIsH264Keyframe/Enabled/"));
+  auto fixture = CreateVideoQualityTestFixture();
+
+  ParamsWithLogging foreman_cif;
+  foreman_cif.call.send_side_bwe = true;
+  foreman_cif.video[0] = {
+      true,   352,    288,     30,
+      30000,  500000, 2000000, false,
+      "H264", 1,      0,       0,
+      false,  false,  true,    ClipNameToClipPath("foreman_cif")};
+  foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_H264_sps_pps_idr", 0.0,
+                          0.0, kFullStackTestDurationSecs};
+  foreman_cif.config->loss_percent = 5;
+  foreman_cif.config->queue_delay_ms = 50;
+  fixture->RunWithAnalyzer(foreman_cif);
+}
+
 // Verify that this is worth the bot time, before enabling.
 TEST(FullStackTest, Foreman_Cif_Delay_50_0_Plr_5_H264_Flexfec) {
   auto fixture = CreateVideoQualityTestFixture();

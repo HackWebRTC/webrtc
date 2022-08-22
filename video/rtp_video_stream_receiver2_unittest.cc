@@ -501,7 +501,18 @@ TEST_F(RtpVideoStreamReceiver2Test, GenericKeyFrameBitstreamError) {
                                                     video_header);
 }
 
-TEST_F(RtpVideoStreamReceiver2Test, InBandSpsPps) {
+class RtpVideoStreamReceiver2TestH264
+    : public RtpVideoStreamReceiver2Test,
+      public ::testing::WithParamInterface<std::string> {
+ protected:
+  RtpVideoStreamReceiver2TestH264() : RtpVideoStreamReceiver2Test(GetParam()) {}
+};
+
+INSTANTIATE_TEST_SUITE_P(SpsPpsIdrIsKeyframe,
+                         RtpVideoStreamReceiver2TestH264,
+                         Values("", "WebRTC-SpsPpsIdrIsH264Keyframe/Enabled/"));
+
+TEST_P(RtpVideoStreamReceiver2TestH264, InBandSpsPps) {
   rtc::CopyOnWriteBuffer sps_data;
   RtpPacketReceived rtp_packet;
   RTPVideoHeader sps_video_header = GetDefaultH264VideoHeader();
@@ -548,7 +559,7 @@ TEST_F(RtpVideoStreamReceiver2Test, InBandSpsPps) {
                                                     idr_video_header);
 }
 
-TEST_F(RtpVideoStreamReceiver2Test, OutOfBandFmtpSpsPps) {
+TEST_P(RtpVideoStreamReceiver2TestH264, OutOfBandFmtpSpsPps) {
   constexpr int kPayloadType = 99;
   std::map<std::string, std::string> codec_params;
   // Example parameter sets from https://tools.ietf.org/html/rfc3984#section-8.2
@@ -589,10 +600,13 @@ TEST_F(RtpVideoStreamReceiver2Test, OutOfBandFmtpSpsPps) {
                                                     video_header);
 }
 
-TEST_F(RtpVideoStreamReceiver2Test, ForceSpsPpsIdrIsKeyframe) {
+TEST_P(RtpVideoStreamReceiver2TestH264, ForceSpsPpsIdrIsKeyframe) {
   constexpr int kPayloadType = 99;
   std::map<std::string, std::string> codec_params;
-  codec_params.insert({cricket::kH264FmtpSpsPpsIdrInKeyframe, ""});
+  if (GetParam() ==
+      "") {  // Forcing can be done either with field trial or codec_params.
+    codec_params.insert({cricket::kH264FmtpSpsPpsIdrInKeyframe, ""});
+  }
   rtp_video_stream_receiver_->AddReceiveCodec(kPayloadType, kVideoCodecH264,
                                               codec_params,
                                               /*raw_payload=*/false);
