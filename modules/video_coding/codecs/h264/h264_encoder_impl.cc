@@ -53,17 +53,20 @@ enum H264EncoderImplEvent {
 };
 
 int NumberOfThreads(int width, int height, int number_of_cores) {
+  // TODO(hbos): In Chromium, multiple threads do not work with sandbox on Mac,
+  // see crbug.com/583348. Until further investigated, only use one thread.
+  //  if (width * height >= 1920 * 1080 && number_of_cores > 8) {
+  //    return 8;  // 8 threads for 1080p on high perf machines.
+  //  } else if (width * height > 1280 * 960 && number_of_cores >= 6) {
+  //    return 3;  // 3 threads for 1080p.
+  //  } else if (width * height > 640 * 480 && number_of_cores >= 3) {
+  //    return 2;  // 2 threads for qHD/HD.
+  //  } else {
+  //    return 1;  // 1 thread for VGA or less.
+  //  }
   // TODO(sprang): Also check sSliceArgument.uiSliceNum om GetEncoderPrams(),
   //               before enabling multithreading here.
-  if (width * height >= 1920 * 1080 && number_of_cores > 8) {
-    return 8;  // 8 threads for 1080p on high perf machines.
-  } else if (width * height > 1280 * 960 && number_of_cores >= 6) {
-    return 3;  // 3 threads for 1080p.
-  } else if (width * height > 640 * 480 && number_of_cores >= 3) {
-    return 2;  // 2 threads for qHD/HD.
-  } else {
-    return 1;  // 1 thread for VGA or less.
-  }
+  return 1;
 }
 
 VideoFrameType ConvertToVideoFrameType(EVideoFrameType type) {
