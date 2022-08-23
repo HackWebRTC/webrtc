@@ -25,13 +25,6 @@ RTC_OBJC_EXPORT
     @property(nonatomic, readonly) int width;
 @property(nonatomic, readonly) int height;
 
-- (id<RTC_OBJC_TYPE(RTCVideoFrameBuffer)>)cropAndScaleWith:(int)offsetX
-                                                   offsetY:(int)offsetY
-                                                 cropWidth:(int)cropWidth
-                                                cropHeight:(int)cropHeight
-                                                scaleWidth:(int)scaleWidth
-                                               scaleHeight:(int)scaleHeight;
-
 - (id<RTC_OBJC_TYPE(RTCI420Buffer)>)toI420;
 
 @end
