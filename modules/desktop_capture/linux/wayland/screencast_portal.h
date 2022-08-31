@@ -112,7 +112,7 @@ class ScreenCastPortal : public xdg_portal::ScreenCapturePortalInterface {
 
   // Sends a create session request to the portal.
   void RequestSession(GDBusProxy* proxy) override;
-  void Cleanup() override;
+  void Cleanup();
 
   // Set of methods leveraged by remote desktop portal to setup a common session
   // with screen cast portal.

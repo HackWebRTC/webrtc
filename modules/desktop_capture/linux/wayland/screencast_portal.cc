@@ -66,11 +66,9 @@ void ScreenCastPortal::Cleanup() {
   session_handle_ = "";
   cancellable_ = nullptr;
   proxy_ = nullptr;
-  restore_token_ = "";
 
   if (pw_fd_ != -1) {
     close(pw_fd_);
-    pw_fd_ = -1;
   }
 }
 

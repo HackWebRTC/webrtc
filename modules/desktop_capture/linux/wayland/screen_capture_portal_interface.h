@@ -42,9 +42,6 @@ class ScreenCapturePortalInterface {
   virtual xdg_portal::SessionDetails GetSessionDetails() { return {}; }
   // Starts the portal setup.
   virtual void Start() {}
-
-  virtual void Cleanup() {}
-
   // Notifies observers about the success/fail state of the portal
   // request/response.
   virtual void OnPortalDone(xdg_portal::RequestResponse result) {}
