@@ -23,7 +23,6 @@
 #include "api/media_types.h"
 #include "api/priority.h"
 #include "api/rtp_transceiver_direction.h"
-#include "api/video/resolution.h"
 #include "api/video_codecs/scalability_mode.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -503,24 +502,6 @@ struct RTC_EXPORT RtpEncodingParameters {
   // https://w3c.github.io/webrtc-svc/#rtcrtpencodingparameters
   absl::optional<std::string> scalability_mode;
 
-  // Requested encode resolution.
-  //
-  // This field provides an alternative to `scale_resolution_down_by`
-  // that is not dependent on the video source.
-  //
-  // When setting requested_resolution it is not necessary to adapt the
-  // video source using OnOutputFormatRequest, since the VideoStreamEncoder
-  // will apply downscaling if necessary. requested_resolution will also be
-  // propagated to the video source, this allows downscaling earlier in the
-  // pipeline which can be beneficial if the source is consumed by multiple
-  // encoders, but is not strictly necessary.
-  //
-  // The `requested_resolution` is subject to resource adaptation.
-  //
-  // It is an error to set both `requested_resolution` and
-  // `scale_resolution_down_by`.
-  absl::optional<Resolution> requested_resolution;
-
   // For an RtpSender, set to true to cause this encoding to be encoded and
   // sent, and false for it not to be encoded and sent. This allows control
   // across multiple encodings of a sender for turning simulcast layers on and
@@ -546,8 +527,7 @@ struct RTC_EXPORT RtpEncodingParameters {
            num_temporal_layers == o.num_temporal_layers &&
            scale_resolution_down_by == o.scale_resolution_down_by &&
            active == o.active && rid == o.rid &&
-           adaptive_ptime == o.adaptive_ptime &&
-           requested_resolution == o.requested_resolution;
+           adaptive_ptime == o.adaptive_ptime;
   }
   bool operator!=(const RtpEncodingParameters& o) const {
     return !(*this == o);

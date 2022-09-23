@@ -2350,9 +2350,7 @@ webrtc::RTCError WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
         (new_parameters.encodings[i].scale_resolution_down_by !=
          rtp_parameters_.encodings[i].scale_resolution_down_by) ||
         (new_parameters.encodings[i].num_temporal_layers !=
-         rtp_parameters_.encodings[i].num_temporal_layers) ||
-        (new_parameters.encodings[i].requested_resolution !=
-         rtp_parameters_.encodings[i].requested_resolution)) {
+         rtp_parameters_.encodings[i].num_temporal_layers)) {
       new_param = true;
       break;
     }
@@ -2564,8 +2562,6 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
       encoder_config.simulcast_layers[i].num_temporal_layers =
           *rtp_parameters_.encodings[i].num_temporal_layers;
     }
-    encoder_config.simulcast_layers[i].requested_resolution =
-        rtp_parameters_.encodings[i].requested_resolution;
   }
 
   encoder_config.legacy_conference_mode = parameters_.conference_mode;
@@ -3709,7 +3705,6 @@ EncoderStreamFactory::CreateDefaultVideoStreams(
   layer.width = width;
   layer.height = height;
   layer.max_framerate = max_framerate;
-  layer.active = encoder_config.simulcast_layers[0].active;
 
   if (encoder_config.simulcast_layers[0].scale_resolution_down_by > 1.) {
     layer.width = ScaleDownResolution(
