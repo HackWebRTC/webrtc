@@ -73,9 +73,6 @@
     'video_coding': {
       'filepath': 'modules/video_coding/.*',
     },
-    'video_processing': {
-      'filepath': 'modules/video_processing/.*',
-    },
     'bitrate_controller': {
       'filepath': 'modules/bitrate_controller/.*'
     },
@@ -161,9 +158,6 @@
                      'stefan@webrtc.org',
                      'video-team@agora.io',
                      'zhengzhonghou@agora.io'],
-    'video_processing': ['stefan@webrtc.org',
-                         'video-team@agora.io',
-                         'zhengzhonghou@agora.io'],
     'bitrate_controller': ['mflodman@webrtc.org',
                            'stefan@webrtc.org',
                            'zhuangzesen@agora.io'],
