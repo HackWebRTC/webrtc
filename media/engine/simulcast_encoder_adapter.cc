@@ -928,7 +928,12 @@ VideoEncoder::EncoderInfo SimulcastEncoderAdapter::GetEncoderInfo() const {
     encoder_info.requested_resolution_alignment = cricket::LeastCommonMultiple(
         encoder_info.requested_resolution_alignment,
         encoder_impl_info.requested_resolution_alignment);
-    if (encoder_impl_info.apply_alignment_to_all_simulcast_layers) {
+    // request alignment on all layers if any of the encoders may need it, or
+    // if any non-top layer encoder requests a non-trivial alignment.
+    if (encoder_impl_info.apply_alignment_to_all_simulcast_layers ||
+        (encoder_impl_info.requested_resolution_alignment > 1 &&
+         (codec_.simulcastStream[i].height < codec_.height ||
+          codec_.simulcastStream[i].width < codec_.width))) {
       encoder_info.apply_alignment_to_all_simulcast_layers = true;
     }
   }
