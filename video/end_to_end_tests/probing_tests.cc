@@ -11,11 +11,7 @@
 #include <memory>
 
 #include "api/task_queue/task_queue_base.h"
-#include "api/test/simulated_network.h"
-#include "call/fake_network_pipe.h"
-#include "call/simulated_network.h"
-#include "rtc_base/task_queue_for_test.h"
-#include "test/call_test.h"
+
 #include "test/field_trial.h"
 #include "test/gtest.h"
 
