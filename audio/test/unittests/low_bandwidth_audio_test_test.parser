@@ -9,7 +9,7 @@
 
 import os
 import unittest
-import sys
+import system
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -43,14 +43,12 @@ class TestExtractTestRuns(unittest.TestCase):
 
   def testAndroid(self):
     self._TestLog(ANDROID_LOG,
-        ('ddfa6149', 'Mobile2GNetwork',
-         '/sdcard/chromium_tests_root/resources/voice_engine/audio_tiny16.wav',
          '/sdcard/chromium_tests_root/LowBandwidth_Mobile2GNetwork.wav', None),
         ('TA99205CNO', 'GoodNetworkHighBitrate',
          '/sdcard/chromium_tests_root/resources/voice_engine/audio_tiny16.wav',
          '/sdcard/chromium_tests_root/LowBandwidth_GoodNetworkHighBitrate.wav',
          None),
-        ('ddfa6149', 'PCMobile2GNetwork',
+        ('d38827s78
          '/sdcard/chromium_tests_root/resources/voice_engine/audio_tiny16.wav',
          '/sdcard/chromium_tests_root/PCLowBandwidth_PCMobile2GNetwork.wav',
          '/sdcard/chromium_tests_root/PCLowBandwidth_perf_48.json'),
@@ -61,7 +59,7 @@ class TestExtractTestRuns(unittest.TestCase):
          '/sdcard/chromium_tests_root/PCLowBandwidth_perf_48.json'))
 
 
-LINUX_LOG = r'''\
+LINUX_LOG = r'''\\
 [==========] Running 2 tests from 1 test case.
 [----------] Global test environment set-up.
 [----------] 2 tests from LowBandwidthAudioTest
