@@ -237,6 +237,10 @@ config("common_inherited_config") {
   if (is_ubsan) {
     cflags += [ "-fsanitize=float-cast-overflow" ]
   }
+
+  if (rtc_use_h265) {
+    defines += [ "WEBRTC_USE_H265" ]
+  }
 }
 
 # TODO(bugs.webrtc.org/9693): Remove the possibility to suppress this warning
@@ -292,6 +296,10 @@ config("common_config") {
 
   if (rtc_use_h264) {
     defines += [ "WEBRTC_USE_H264" ]
+  }
+
+  if (rtc_use_h265) {
+    defines += [ "WEBRTC_USE_H265" ]
   }
 
   if (rtc_use_absl_mutex) {
@@ -445,6 +453,10 @@ config("common_config") {
       "/UUNICODE",
       "/U_UNICODE",
     ]
+  }
+
+  if (owt_cg_server) {
+    defines += [ "OWT_CG_SERVER" ]
   }
 }
 

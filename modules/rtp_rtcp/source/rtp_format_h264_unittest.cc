@@ -130,6 +130,7 @@ TEST_P(RtpPacketizerH264ModeTest, SingleNalu) {
   const uint8_t frame[] = {0, 0, 1, kIdr, 0xFF};
 
   RtpPacketizerH264 packetizer(frame, kNoLimits, GetParam());
+                               NoFragmentation(frame), true);
   std::vector<RtpPacketToSend> packets = FetchAllPackets(&packetizer);
 
   ASSERT_THAT(packets, SizeIs(1));

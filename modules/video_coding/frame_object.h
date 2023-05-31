@@ -46,9 +46,16 @@ class RtpFrameObject : public EncodedFrame {
   int64_t RenderTime() const override;
   bool delayed_by_retransmission() const override;
   const RTPVideoHeader& GetRtpVideoHeader() const;
-
   uint8_t* mutable_data() { return image_buffer_->data(); }
-
+#if defined(WEBRTC_WIN)
+  void SetBWETiming(double start_duration,
+      double last_duration,
+      int32_t packets_lost) {
+    bwe_stats_.start_duration_ = start_duration;
+    bwe_stats_.last_duration_ = last_duration;
+    bwe_stats_.packets_lost_ = packets_lost;
+  }
+#endif
  private:
   // Reference for mutable access.
   rtc::scoped_refptr<EncodedImageBuffer> image_buffer_;

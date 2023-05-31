@@ -67,7 +67,7 @@ class GoogCcNetworkController : public NetworkControllerInterface {
       TargetRateConstraints msg) override;
   NetworkControlUpdate OnTransportLossReport(TransportLossReport msg) override;
   NetworkControlUpdate OnTransportPacketsFeedback(
-      TransportPacketsFeedback msg) override;
+      TransportPacketsFeedback msg, int64_t current_offset_ms) override;
   NetworkControlUpdate OnNetworkStateEstimate(
       NetworkStateEstimate msg) override;
 
@@ -143,6 +143,9 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   bool previously_in_alr_ = false;
 
   absl::optional<DataSize> current_data_window_;
+  FieldTrialParameter<int> external_start_bitrate_kbps_;
+  FieldTrialParameter<int> external_min_bitrate_kbps_;
+  FieldTrialParameter<int> external_max_bitrate_kbps_;
 };
 
 }  // namespace webrtc

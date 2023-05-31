@@ -6,6 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import("//third_party/ffmpeg/ffmpeg_options.gni")
 import("//third_party/libaom/options.gni")
 import("../../webrtc.gni")
 
@@ -212,6 +213,8 @@ rtc_library("video_coding") {
     "h264_sprop_parameter_sets.h",
     "h264_sps_pps_tracker.cc",
     "h264_sps_pps_tracker.h",
+    "h265_vps_sps_pps_tracker.cc",
+    "h265_vps_sps_pps_tracker.h",
     "include/video_codec_initializer.h",
     "internal_defines.h",
     "loss_notification_controller.cc",
@@ -497,16 +500,23 @@ rtc_library("webrtc_h264") {
   visibility = [ "*" ]
   sources = [
     "codecs/h264/h264.cc",
-    "codecs/h264/h264_color_space.cc",
-    "codecs/h264/h264_color_space.h",
-    "codecs/h264/h264_decoder_impl.cc",
-    "codecs/h264/h264_decoder_impl.h",
     "codecs/h264/h264_encoder_impl.cc",
     "codecs/h264/h264_encoder_impl.h",
     "codecs/h264/include/h264.h",
   ]
 
+  if (owt_ffmpeg_root != "") {
+    sources += [
+      "codecs/h264/h264_color_space.cc",
+      "codecs/h264/h264_color_space.h",
+      "codecs/h264/h264_decoder_impl.cc",
+      "codecs/h264/h264_decoder_impl.h",
+    ]
+  }
+
   defines = []
+  include_dirs = []
+
   deps = [
     ":video_codec_interface",
     ":video_coding_utility",
@@ -536,13 +546,16 @@ rtc_library("webrtc_h264") {
   ]
 
   if (rtc_use_h264) {
-    deps += [
-      "//third_party/ffmpeg",
-      "//third_party/openh264:encoder",
-    ]
+    deps += [ "//third_party/openh264:encoder" ]
+
     if (!build_with_mozilla) {
       deps += [ "../../media:rtc_media_base" ]
     }
+  }
+
+  if (owt_ffmpeg_root != "") {
+    defines += [ "OWT_USE_FFMPEG" ]
+    include_dirs += [ owt_ffmpeg_root + "/include" ]
   }
 }
 

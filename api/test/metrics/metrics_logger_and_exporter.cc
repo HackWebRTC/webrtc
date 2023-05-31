@@ -61,9 +61,11 @@ void MetricsLoggerAndExporter::LogSingleValueMetric(
       .improvement_direction = improvement_direction,
       .test_case = std::string(test_case_name),
       .metric_metadata = std::move(metadata),
+#ifndef _MSC_VER
       .time_series =
           Metric::TimeSeries{.samples = std::vector{Metric::TimeSeries::Sample{
                                  .timestamp = Now(), .value = value}}},
+#endif
       .stats = Metric::Stats{
           .mean = value, .stddev = absl::nullopt, .min = value, .max = value}});
 }

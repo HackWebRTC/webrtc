@@ -43,11 +43,10 @@ EchoPathDelayEstimator::EchoPathDelayEstimator(
               : config.render_levels.poor_excitation_render_limit,
           config.delay.delay_estimate_smoothing,
           config.delay.delay_estimate_smoothing_delay_found,
-          config.delay.delay_candidate_detection_threshold,
-          config.delay.detect_pre_echo),
+          config.delay.delay_candidate_detection_threshold),
       matched_filter_lag_aggregator_(data_dumper_,
                                      matched_filter_.GetMaxFilterLag(),
-                                     config.delay) {
+                                     config.delay.delay_selection_thresholds) {
   RTC_DCHECK(data_dumper);
   RTC_DCHECK(down_sampling_factor_ > 0);
 }
@@ -76,14 +75,13 @@ absl::optional<DelayEstimate> EchoPathDelayEstimator::EstimateDelay(
 
   absl::optional<DelayEstimate> aggregated_matched_filter_lag =
       matched_filter_lag_aggregator_.Aggregate(
-          matched_filter_.GetBestLagEstimate());
+          matched_filter_.GetLagEstimates());
 
   // Run clockdrift detection.
   if (aggregated_matched_filter_lag &&
       (*aggregated_matched_filter_lag).quality ==
           DelayEstimate::Quality::kRefined)
-    clockdrift_detector_.Update(
-        matched_filter_lag_aggregator_.GetDelayAtHighestPeak());
+    clockdrift_detector_.Update((*aggregated_matched_filter_lag).delay);
 
   // TODO(peah): Move this logging outside of this class once EchoCanceller3
   // development is done.

@@ -105,6 +105,8 @@ int ConvertVideoType(VideoType video_type) {
       return libyuv::FOURCC_ARGB;
     case VideoType::kBGRA:
       return libyuv::FOURCC_BGRA;
+    case VideoType::kNV12:
+      return libyuv::FOURCC_NV12;
   }
   RTC_DCHECK_NOTREACHED();
   return libyuv::FOURCC_ANY;

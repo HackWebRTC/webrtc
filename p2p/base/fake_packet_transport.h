@@ -54,6 +54,11 @@ class FakePacketTransport : public PacketTransportInternal {
 
   // Fake PacketTransportInternal implementation.
   const std::string& transport_name() const override { return transport_name_; }
+  // Always return audio to minimize changes to upstream. No case tests this
+  // property.
+  cricket::MediaType media_type() const override {
+    return cricket::MediaType::MEDIA_TYPE_AUDIO;
+  }
   bool writable() const override { return writable_; }
   bool receiving() const override { return receiving_; }
   int SendPacket(const char* data,

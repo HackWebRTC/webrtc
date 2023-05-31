@@ -592,6 +592,15 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams(size_t i) const {
   } else {
     RTC_DCHECK_NOTREACHED();
   }
+  
+  // Reuse SPS id if possible. This helps to avoid reset of chromium HW decoder
+  // on each key-frame.
+  // Note that WebRTC resets encoder on resolution change which makes all
+  // EParameterSetStrategy modes except INCREASING_ID (default) essentially
+  // equivalent to CONSTANT_ID.
+  //https://bugs.chromium.org/p/chromium/issues/detail?id=1111273
+  encoder_params.eSpsPpsIdStrategy = SPS_LISTING;  
+  
   encoder_params.iPicWidth = configurations_[i].width;
   encoder_params.iPicHeight = configurations_[i].height;
   encoder_params.iTargetBitrate = configurations_[i].target_bps;

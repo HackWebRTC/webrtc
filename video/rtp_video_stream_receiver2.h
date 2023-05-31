@@ -38,11 +38,15 @@
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "modules/rtp_rtcp/source/video_rtp_depacketizer.h"
 #include "modules/video_coding/h264_sps_pps_tracker.h"
+#include "modules/video_coding/h265_vps_sps_pps_tracker.h"
 #include "modules/video_coding/loss_notification_controller.h"
 #include "modules/video_coding/nack_requester.h"
 #include "modules/video_coding/packet_buffer.h"
 #include "modules/video_coding/rtp_frame_reference_finder.h"
 #include "rtc_base/experiments/field_trial_parser.h"
+#if defined(WEBRTC_WIN)
+#include "rtc_base/ptp_clock_sync.h"
+#endif
 #include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
@@ -316,6 +320,9 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   const FieldTrialsView& field_trials_;
   TaskQueueBase* const worker_queue_;
   Clock* const clock_;
+#if defined(WEBRTC_WIN)
+  PTPClockSync clock_sync_;
+#endif
   // Ownership of this object lies with VideoReceiveStreamInterface, which owns
   // `this`.
   const VideoReceiveStreamInterface::Config& config_;
@@ -388,6 +395,8 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   std::map<int64_t, uint16_t> last_seq_num_for_pic_id_
       RTC_GUARDED_BY(packet_sequence_checker_);
   video_coding::H264SpsPpsTracker tracker_
+      RTC_GUARDED_BY(packet_sequence_checker_);
+  video_coding::H265VpsSpsPpsTracker h265_tracker_
       RTC_GUARDED_BY(packet_sequence_checker_);
 
   // Maps payload id to the depacketizer.

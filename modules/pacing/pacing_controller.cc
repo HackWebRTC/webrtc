@@ -28,6 +28,7 @@ namespace webrtc {
 namespace {
 // Time limit in milliseconds between packet bursts.
 constexpr TimeDelta kDefaultMinPacketLimit = TimeDelta::Millis(5);
+constexpr TimeDelta kDefaultMinPacketLimitLowLatency = TimeDelta::Millis(1);
 constexpr TimeDelta kCongestedPacketInterval = TimeDelta::Millis(500);
 // TODO(sprang): Consider dropping this limit.
 // The maximum debt level, in terms of time, capped when sending packets.
@@ -87,7 +88,8 @@ PacingController::PacingController(Clock* clock,
       congested_(false),
       queue_time_limit_(kMaxExpectedQueueLength),
       account_for_audio_(false),
-      include_overhead_(false) {
+      include_overhead_(false),
+      low_latency_mode_(IsEnabled(field_trials, "OWT-LowLatencyMode")) {
   if (!drain_large_queues_) {
     RTC_LOG(LS_WARNING) << "Pacer queues will not be drained,"
                            "pushback experiment must be enabled.";
@@ -96,6 +98,9 @@ PacingController::PacingController(Clock* clock,
   ParseFieldTrial({&min_packet_limit_ms},
                   field_trials_.Lookup("WebRTC-Pacer-MinPacketLimitMs"));
   min_packet_limit_ = TimeDelta::Millis(min_packet_limit_ms.Get());
+  if (low_latency_mode_) {
+    min_packet_limit_ = kDefaultMinPacketLimitLowLatency;
+  }
   UpdateBudgetWithElapsedTime(min_packet_limit_);
 }
 
@@ -314,6 +319,10 @@ Timestamp PacingController::NextSendTime() const {
     }
   }
 
+  if (low_latency_mode_) {
+    return last_process_time_ + min_packet_limit_;
+  }
+
   // If queue contains a packet which should not be paced, its target send time
   // is the time at which it was enqueued.
   Timestamp unpaced_send_time = NextUnpacedSendTime();
@@ -366,6 +375,7 @@ void PacingController::ProcessPackets() {
   const Timestamp now = CurrentTime();
   Timestamp target_send_time = now;
 
+  // Disable padding for realtime mode
   if (ShouldSendKeepalive(now)) {
     DataSize keepalive_data_sent = DataSize::Zero();
     // We can not send padding unless a normal packet has first been sent. If
@@ -435,10 +445,11 @@ void PacingController::ProcessPackets() {
         GetPendingPacket(pacing_info, target_send_time, now);
     if (rtp_packet == nullptr) {
       // No packet available to send, check if we should send padding.
-      DataSize padding_to_add = PaddingToAdd(recommended_probe_size, data_sent);
-      if (padding_to_add > DataSize::Zero()) {
-        std::vector<std::unique_ptr<RtpPacketToSend>> padding_packets =
-            packet_sender_->GeneratePadding(padding_to_add);
+        DataSize padding_to_add =
+            PaddingToAdd(recommended_probe_size, data_sent);
+        if (padding_to_add > DataSize::Zero()) {
+          std::vector<std::unique_ptr<RtpPacketToSend>> padding_packets =
+              packet_sender_->GeneratePadding(padding_to_add);
         if (!padding_packets.empty()) {
           padding_packets_generated += padding_packets.size();
           for (auto& packet : padding_packets) {
@@ -490,7 +501,7 @@ void PacingController::ProcessPackets() {
       target_send_time = NextSendTime();
       if (target_send_time > now) {
         // Exit loop if not probing.
-        if (!is_probing) {
+        if (!is_probing && !low_latency_mode_) {
           break;
         }
         target_send_time = now;
@@ -582,7 +593,7 @@ std::unique_ptr<RtpPacketToSend> PacingController::GetPendingPacket(
 
   // First, check if there is any reason _not_ to send the next queued packet.
   // Unpaced packets and probes are exempted from send checks.
-  if (NextUnpacedSendTime().IsInfinite() && !is_probe) {
+  if (NextUnpacedSendTime().IsInfinite() && !is_probe && !low_latency_mode_) {
     if (congested_) {
       // Don't send anything if congested.
       return nullptr;

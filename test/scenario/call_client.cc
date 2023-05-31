@@ -134,8 +134,8 @@ NetworkControlUpdate NetworkControleUpdateCache::OnTransportLossReport(
   return Update(controller_->OnTransportLossReport(msg));
 }
 NetworkControlUpdate NetworkControleUpdateCache::OnTransportPacketsFeedback(
-    TransportPacketsFeedback msg) {
-  return Update(controller_->OnTransportPacketsFeedback(msg));
+    TransportPacketsFeedback msg, int64_t current_time_ms) {
+  return Update(controller_->OnTransportPacketsFeedback(msg, current_time_ms));
 }
 NetworkControlUpdate NetworkControleUpdateCache::OnNetworkStateEstimate(
     NetworkStateEstimate msg) {

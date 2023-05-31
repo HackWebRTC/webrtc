@@ -232,6 +232,7 @@ class PacingController {
   TimeDelta queue_time_limit_;
   bool account_for_audio_;
   bool include_overhead_;
+  bool low_latency_mode_;
 };
 }  // namespace webrtc
 

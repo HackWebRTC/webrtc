@@ -19,6 +19,15 @@ if (!rtc_build_ssl) {
     assert(rtc_ssl_root != "",
            "You must specify rtc_ssl_root when rtc_build_ssl==0.")
     include_dirs = [ rtc_ssl_root ]
+
+    # WebRTC.Framework on iOS is a shared library. It checks symbol during building.
+    if (is_ios) {
+      libs = [
+        "crypto",
+        "ssl",
+      ]
+      lib_dirs = [ rtc_ssl_root + "/../lib" ]
+    }
   }
 }
 
@@ -795,6 +804,7 @@ config("rtc_json_suppressions") {
 rtc_library("rtc_json") {
   public_configs = [ ":rtc_json_suppressions" ]
   poisonous = [ "rtc_json" ]
+  visibility = [ "*", "//talk/owt::owt_deps" ]
   defines = []
   sources = [
     "strings/json.cc",
@@ -1233,6 +1243,10 @@ rtc_library("rtc_base") {
     deps += [ "//third_party/boringssl" ]
   } else {
     configs += [ ":external_ssl_library" ]
+  }
+
+  if (owt_use_openssl) {
+    configs += [ "//build_overrides/ssl:external_openssl" ]
   }
 
   if (is_android) {

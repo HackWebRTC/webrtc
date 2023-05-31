@@ -39,6 +39,7 @@
 #include "modules/video_coding/frame_object.h"
 #include "modules/video_coding/h264_sprop_parameter_sets.h"
 #include "modules/video_coding/h264_sps_pps_tracker.h"
+#include "modules/video_coding/h265_vps_sps_pps_tracker.h"
 #include "modules/video_coding/nack_requester.h"
 #include "modules/video_coding/packet_buffer.h"
 #include "rtc_base/checks.h"
@@ -623,8 +624,11 @@ void RtpVideoStreamReceiver2::OnReceivedPayloadData(
       RTC_LOG(LS_INFO)
           << "LossNotificationController does not support reordering.";
     } else if (generic_descriptor_state == kNoGenericDescriptor) {
+#if 0
+	  // Johny(TODO): check cause of no generic descriptor.
       RTC_LOG(LS_WARNING) << "LossNotificationController requires generic "
                              "frame descriptor, but it is missing.";
+#endif
     } else {
       if (video_header.is_first_packet_in_frame) {
         RTC_DCHECK(video_header.generic);
@@ -684,7 +688,31 @@ void RtpVideoStreamReceiver2::OnReceivedPayloadData(
         packet->video_payload = std::move(fixed.bitstream);
         break;
     }
+  } else if (packet->codec() == kVideoCodecH265) {
+    // Only when we start to receive packets will we know what payload type
+    // that will be used. When we know the payload type insert the correct
+    // sps/pps into the tracker.
+    if (packet->payload_type != last_payload_type_) {
+      last_payload_type_ = packet->payload_type;
+      InsertSpsPpsIntoTracker(packet->payload_type);
+    }
 
+    video_coding::H265VpsSpsPpsTracker::FixedBitstream fixed =
+        h265_tracker_.CopyAndFixBitstream(
+            rtc::MakeArrayView(codec_payload.cdata(), codec_payload.size()),
+            &packet->video_header);
+
+    switch (fixed.action) {
+      case video_coding::H265VpsSpsPpsTracker::kRequestKeyframe:
+        rtcp_feedback_buffer_.RequestKeyFrame();
+        rtcp_feedback_buffer_.SendBufferedRtcpFeedback();
+        ABSL_FALLTHROUGH_INTENDED;
+      case video_coding::H265VpsSpsPpsTracker::kDrop:
+        return;
+      case video_coding::H265VpsSpsPpsTracker::kInsert:
+        packet->video_payload = std::move(fixed.bitstream);
+        break;
+    }
   } else {
     packet->video_payload = std::move(codec_payload);
   }
@@ -783,6 +811,11 @@ void RtpVideoStreamReceiver2::OnInsertedPacket(
   std::vector<rtc::ArrayView<const uint8_t>> payloads;
   RtpPacketInfos::vector_type packet_infos;
 
+  // Add timing information required by sender-side BWE.
+#if defined(WEBRTC_WIN)
+  int64_t max_tc = 0, min_tc = 0;
+  double start_duration = 0, last_duration = 0;
+#endif
   bool frame_boundary = true;
   for (auto& packet : result.packets) {
     // PacketBuffer promisses frame boundaries are correctly set on each
@@ -797,16 +830,28 @@ void RtpVideoStreamReceiver2::OnInsertedPacket(
       max_nack_count = packet->times_nacked;
       min_recv_time = packet_info.receive_time().ms();
       max_recv_time = packet_info.receive_time().ms();
+#if defined(WEBRTC_WIN)
+      max_tc = min_tc = packet->time_ticks;
+#endif
     } else {
       max_nack_count = std::max(max_nack_count, packet->times_nacked);
       min_recv_time = std::min(min_recv_time, packet_info.receive_time().ms());
       max_recv_time = std::max(max_recv_time, packet_info.receive_time().ms());
+#if defined(WEBRTC_WIN)
+      max_tc = std::max(max_tc, packet->time_ticks);
+      min_tc = std::min(min_tc, packet->time_ticks);
+#endif
     }
     payloads.emplace_back(packet->video_payload);
     packet_infos.push_back(packet_info);
 
     frame_boundary = packet->is_last_packet_in_frame();
     if (packet->is_last_packet_in_frame()) {
+#if defined(WEBRTC_WIN)
+      clock_sync_.Sync(packet->timestamp, min_tc);
+      start_duration = clock_sync_.GetDuration(packet->timestamp, min_tc);
+      last_duration = clock_sync_.GetDuration(packet->timestamp, max_tc);
+#endif
       auto depacketizer_it = payload_type_map_.find(first_packet->payload_type);
       RTC_CHECK(depacketizer_it != payload_type_map_.end());
 
@@ -818,24 +863,35 @@ void RtpVideoStreamReceiver2::OnInsertedPacket(
       }
 
       const video_coding::PacketBuffer::Packet& last_packet = *packet;
-      OnAssembledFrame(std::make_unique<RtpFrameObject>(
-          first_packet->seq_num,                             //
-          last_packet.seq_num,                               //
-          last_packet.marker_bit,                            //
-          max_nack_count,                                    //
-          min_recv_time,                                     //
-          max_recv_time,                                     //
-          first_packet->timestamp,                           //
+      std::unique_ptr<RtpFrameObject> frame =
+          std::make_unique<RtpFrameObject>(
+          first_packet->seq_num,                    //
+          last_packet.seq_num,                      //
+          last_packet.marker_bit,                   //
+          max_nack_count,                           //
+          min_recv_time,                            //
+          max_recv_time,                            //
+          first_packet->timestamp,                  //
           ntp_estimator_.Estimate(first_packet->timestamp),  //
-          last_packet.video_header.video_timing,             //
-          first_packet->payload_type,                        //
-          first_packet->codec(),                             //
-          last_packet.video_header.rotation,                 //
-          last_packet.video_header.content_type,             //
-          first_packet->video_header,                        //
-          last_packet.video_header.color_space,              //
-          RtpPacketInfos(std::move(packet_infos)),           //
-          std::move(bitstream)));
+          last_packet.video_header.video_timing,    //
+          first_packet->payload_type,               //
+          first_packet->codec(),                    //
+          last_packet.video_header.rotation,        //
+          last_packet.video_header.content_type,    //
+          first_packet->video_header,               //
+          last_packet.video_header.color_space,     //
+          RtpPacketInfos(std::move(packet_infos)),  //
+              std::move(bitstream));
+#if defined(WEBRTC_WIN)
+      StreamStatistician* ss =
+          rtp_receive_statistics_->GetStatistician(config_.rtp.remote_ssrc);
+      int32_t packets_lost = 0;
+      if (ss != nullptr) {
+        packets_lost = ss->GetStats().packets_lost;
+        frame->SetBWETiming(start_duration, last_duration, packets_lost);
+      }
+#endif
+      OnAssembledFrame(std::move(frame));
       payloads.clear();
       packet_infos.clear();
     }

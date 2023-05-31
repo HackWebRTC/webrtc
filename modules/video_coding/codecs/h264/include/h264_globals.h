@@ -78,6 +78,17 @@ struct RTPVideoHeaderH264 {
   // The packetization mode of this transport. Packetization mode
   // determines which packetization types are allowed when packetizing.
   H264PacketizationMode packetization_mode;
+  // Running cuter for every frame to determin frame decodable
+  // depending along with Temporal ID (obtained from RTP header extn).
+  // '0' if PictureID does not exist.
+  uint16_t picture_id;
+  // For support slice-based transmission, mark end of a frame so that
+  // the H.264 packetizer will not set marker bit for the last fragment of
+  // current outgoing data if it does not contain last fragment of the frame;
+  // and will treat the first fragment of the frame as continuous playload, so
+  // that it will not create FU header or STAP-A header on first fragment if
+  // contains last fragment of the frame.
+  bool has_last_fragement;
 };
 
 }  // namespace webrtc

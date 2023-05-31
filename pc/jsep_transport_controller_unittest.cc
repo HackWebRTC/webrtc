@@ -61,6 +61,7 @@ class FakeIceTransportFactory : public webrtc::IceTransportFactory {
   ~FakeIceTransportFactory() override = default;
   rtc::scoped_refptr<IceTransportInterface> CreateIceTransport(
       const std::string& transport_name,
+      cricket::MediaType media_type,
       int component,
       IceTransportInit init) override {
     return rtc::make_ref_counted<cricket::FakeIceTransportWrapper>(

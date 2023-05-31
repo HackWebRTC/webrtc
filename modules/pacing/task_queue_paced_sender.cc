@@ -21,6 +21,7 @@
 #include "rtc_base/experiments/field_trial_units.h"
 #include "rtc_base/system/unused.h"
 #include "rtc_base/trace_event.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
@@ -73,6 +74,7 @@ TaskQueuePacedSender::TaskQueuePacedSender(
       is_shutdown_(false),
       packet_size_(/*alpha=*/0.95),
       include_overhead_(false),
+      low_latency_mode_(field_trial::IsEnabled("OWT-LowLatencyMode")),
       task_queue_(field_trials, "TaskQueuePacedSender", task_queue_factory) {
   RTC_DCHECK_GE(max_hold_back_window_, PacingController::kMinSleepTime);
   // There are multiple field trials that can affect burst. If multiple bursts
@@ -87,6 +89,9 @@ TaskQueuePacedSender::TaskQueuePacedSender(
   }
   if (burst.has_value()) {
     pacing_controller_.SetSendBurstInterval(burst.value());
+  }
+  if (low_latency_mode_) {
+    pacing_controller_.SetProbingEnabled(false);
   }
 }
 
@@ -110,6 +115,9 @@ void TaskQueuePacedSender::EnsureStarted() {
 
 void TaskQueuePacedSender::CreateProbeClusters(
     std::vector<ProbeClusterConfig> probe_cluster_configs) {
+  if (IsLowLatencyMode()) {
+    return;
+  }
   task_queue_.RunOrPost(
       [this, probe_cluster_configs = std::move(probe_cluster_configs)]() {
         RTC_DCHECK_RUN_ON(&task_queue_);
@@ -119,6 +127,9 @@ void TaskQueuePacedSender::CreateProbeClusters(
 }
 
 void TaskQueuePacedSender::Pause() {
+  if (IsLowLatencyMode()) {
+    return;
+  }
   task_queue_.RunOrPost([this]() {
     RTC_DCHECK_RUN_ON(&task_queue_);
     pacing_controller_.Pause();
@@ -126,6 +137,9 @@ void TaskQueuePacedSender::Pause() {
 }
 
 void TaskQueuePacedSender::Resume() {
+  if (IsLowLatencyMode()) {
+    return;
+  }
   task_queue_.RunOrPost([this]() {
     RTC_DCHECK_RUN_ON(&task_queue_);
     pacing_controller_.Resume();
@@ -353,6 +367,10 @@ void TaskQueuePacedSender::UpdateStats() {
 TaskQueuePacedSender::Stats TaskQueuePacedSender::GetStats() const {
   MutexLock lock(&stats_mutex_);
   return current_stats_;
+}
+
+bool TaskQueuePacedSender::IsLowLatencyMode() const {
+  return low_latency_mode_;
 }
 
 }  // namespace webrtc

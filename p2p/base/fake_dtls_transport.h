@@ -137,6 +137,11 @@ class FakeDtlsTransport : public DtlsTransportInternal {
   // Fake DtlsTransportInternal implementation.
   webrtc::DtlsTransportState dtls_state() const override { return dtls_state_; }
   const std::string& transport_name() const override { return transport_name_; }
+  // Always return audio to minimize changes to upstream. No case tests this
+  // property.
+  cricket::MediaType media_type() const override {
+    return cricket::MediaType::MEDIA_TYPE_AUDIO;
+  }
   int component() const override { return component_; }
   const rtc::SSLFingerprint& dtls_fingerprint() const {
     return dtls_fingerprint_;

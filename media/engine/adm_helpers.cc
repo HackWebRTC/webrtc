@@ -58,6 +58,7 @@ void Init(AudioDeviceModule* adm) {
     }
   }
 
+#if defined(WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)
   // Recording device.
   {
     if (adm->SetRecordingDevice(AUDIO_DEVICE_ID) != 0) {
@@ -77,6 +78,7 @@ void Init(AudioDeviceModule* adm) {
       RTC_LOG(LS_ERROR) << "Failed to set stereo recording mode.";
     }
   }
+#endif
 }
 }  // namespace adm_helpers
 }  // namespace webrtc

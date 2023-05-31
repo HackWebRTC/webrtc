@@ -202,6 +202,7 @@ class SendSideBandwidthEstimation {
   LossBasedBandwidthEstimation loss_based_bandwidth_estimator_v1_;
   LossBasedBweV2 loss_based_bandwidth_estimator_v2_;
   FieldTrialFlag disable_receiver_limit_caps_only_;
+  bool is_low_latency_mode_;
 };
 }  // namespace webrtc
 #endif  // MODULES_CONGESTION_CONTROLLER_GOOG_CC_SEND_SIDE_BANDWIDTH_ESTIMATION_H_

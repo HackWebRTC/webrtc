@@ -615,7 +615,8 @@ void BasicPortAllocatorSession::GetCandidatesFromPort(
 }
 
 bool BasicPortAllocator::MdnsObfuscationEnabled() const {
-  return network_manager()->GetMdnsResponder() != nullptr;
+  // Jianlin: disable Mdns support. TODO: negotiate at SDK level with UaInfo exchange.
+  return false;
 }
 
 bool BasicPortAllocatorSession::CandidatesAllocationDone() const {

@@ -180,9 +180,15 @@ CoreAudioBase::CoreAudioBase(Direction direction,
   // invalidated or the stream format has changed.
   restart_event_.Set(CreateEvent(nullptr, false, false, nullptr));
   RTC_DCHECK(restart_event_.IsValid());
+
+  enumerator_ = core_audio_utility::CreateDeviceEnumerator();
+  enumerator_->RegisterEndpointNotificationCallback(this);
+  RTC_LOG(LS_INFO) << __FUNCTION__
+                    << ":Registered endpoint notification callback.";
 }
 
 CoreAudioBase::~CoreAudioBase() {
+  enumerator_->UnregisterEndpointNotificationCallback(this);
   RTC_DLOG(LS_INFO) << __FUNCTION__;
   RTC_DCHECK_EQ(ref_count_, 1);
 }
@@ -863,6 +869,18 @@ HRESULT CoreAudioBase::OnChannelVolumeChanged(DWORD channel_count,
 // IAudioSessionEvents::OnGroupingParamChanged
 HRESULT CoreAudioBase::OnGroupingParamChanged(LPCGUID new_grouping_param,
                                               LPCGUID event_context) {
+  return S_OK;
+}
+
+// IMMNotificationClient::OnDefaultDeviceChanged
+HRESULT __stdcall CoreAudioBase::OnDefaultDeviceChanged(EDataFlow flow,
+                                         ERole role,
+                                         LPCWSTR pwstrDefaultDeviceId) {
+  // We only handle the output device.
+  RTC_LOG(LS_ERROR) << "OnDefaultDeviceChanged invoked.";
+  if (flow != eRender || role != eCommunications)
+    return S_OK;
+  Restart();
   return S_OK;
 }
 

@@ -63,6 +63,9 @@ class PacketBuffer {
 
     rtc::CopyOnWriteBuffer video_payload;
     RTPVideoHeader video_header;
+#if defined(WEBRTC_WIN)
+    int64_t time_ticks;
+#endif
   };
   struct InsertResult {
     std::vector<std::unique_ptr<Packet>> packets;

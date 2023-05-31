@@ -607,12 +607,19 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
       sender_video.SetVideoStructure(nullptr);
     }
   }
-
+  RTPVideoHeader rtp_video_header = params_[stream_index].GetRtpVideoHeader(
+      encoded_image, codec_specific_info, shared_frame_id_);
+  if (codec_specific_info->codecType == kVideoCodecH264 &&
+      codec_specific_info->codecSpecific.H264.last_fragment_in_frame)
+    absl::get<RTPVideoHeaderH264>(rtp_video_header.video_type_header)
+        .has_last_fragement = true;
+  else if (codec_specific_info->codecType == kVideoCodecH265 &&
+           codec_specific_info->codecSpecific.H265.last_fragment_in_frame)
+    absl::get<RTPVideoHeaderH265>(rtp_video_header.video_type_header)
+        .has_last_fragement = true;
   bool send_result = rtp_streams_[stream_index].sender_video->SendEncodedImage(
       rtp_config_.payload_type, codec_type_, rtp_timestamp, encoded_image,
-      params_[stream_index].GetRtpVideoHeader(
-          encoded_image, codec_specific_info, shared_frame_id_),
-      expected_retransmission_time_ms);
+      rtp_video_header, expected_retransmission_time_ms);
   if (frame_count_observer_) {
     FrameCounts& counts = frame_counts_[stream_index];
     if (encoded_image._frameType == VideoFrameType::kVideoFrameKey) {

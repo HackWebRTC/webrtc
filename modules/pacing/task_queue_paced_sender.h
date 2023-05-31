@@ -129,6 +129,8 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   void UpdateStats() RTC_RUN_ON(task_queue_);
   Stats GetStats() const;
 
+  bool IsLowLatencyMode() const;
+
   Clock* const clock_;
   struct BurstyPacerFlags {
     // Parses `kBurstyPacerFieldTrial`. Example:
@@ -190,6 +192,8 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   // thread.
   mutable Mutex stats_mutex_;
   Stats current_stats_ RTC_GUARDED_BY(stats_mutex_);
+
+  const bool low_latency_mode_;
 
   ScopedTaskSafety safety_;
   MaybeWorkerThread task_queue_;

@@ -34,6 +34,7 @@ class BuiltinVideoBitrateAllocatorFactory
       case kVideoCodecAV1:
       case kVideoCodecVP9:
         return std::make_unique<SvcRateAllocator>(codec);
+      // TODO: add an allocator here for H.265
       default:
         return std::make_unique<SimulcastRateAllocator>(codec);
     }

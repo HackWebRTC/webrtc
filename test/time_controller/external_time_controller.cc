@@ -33,6 +33,7 @@ class ExternalTimeController::TaskQueueWrapper : public TaskQueueBase {
                    std::unique_ptr<TaskQueueBase, TaskQueueDeleter> base)
       : parent_(parent), base_(std::move(base)) {}
 
+  // TODO: Recovery StartWithHighPriority.
   void PostTask(absl::AnyInvocable<void() &&> task) override {
     parent_->UpdateTime();
     base_->PostTask(TaskWrapper(std::move(task)));

@@ -93,7 +93,7 @@ class NetworkControllerInterface {
       TransportLossReport) = 0;
   // Called with per packet feedback regarding receive time.
   ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnTransportPacketsFeedback(
-      TransportPacketsFeedback) = 0;
+      TransportPacketsFeedback, int64_t) = 0;
   // Called with network state estimate updates.
   ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnNetworkStateEstimate(
       NetworkStateEstimate) = 0;

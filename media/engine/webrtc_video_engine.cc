@@ -40,6 +40,7 @@
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace cricket {
 
@@ -89,8 +90,12 @@ void AddDefaultFeedbackParams(VideoCodec* codec,
   codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamCcm, kRtcpFbCcmParamFir));
   codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamNack, kParamValueEmpty));
   codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamNack, kRtcpFbNackParamPli));
-  if (codec->name == kVp8CodecName &&
-      IsEnabled(trials, "WebRTC-RtcpLossNotification")) {
+  codec->AddFeedbackParam(
+      FeedbackParam(kRtcpFbParamNack, kRtcpFbNackParamRpsi));
+  if ((codec->name == kVp8CodecName || codec->name == kH264CodecName ||
+       codec->name == kH265CodecName) &&
+      (webrtc::field_trial::IsEnabled("WebRTC-RtcpLossNotification") ||
+       (webrtc::field_trial::IsEnabled("OWT-LowLatencyMode")))) {
     codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamLntf, kParamValueEmpty));
   }
 }
@@ -620,7 +625,8 @@ WebRtcVideoEngine::GetRtpHeaderExtensions() const {
         webrtc::RtpExtension::kVideoContentTypeUri,
         webrtc::RtpExtension::kVideoTimingUri,
         webrtc::RtpExtension::kColorSpaceUri, webrtc::RtpExtension::kMidUri,
-        webrtc::RtpExtension::kRidUri, webrtc::RtpExtension::kRepairedRidUri}) {
+        webrtc::RtpExtension::kRidUri, webrtc::RtpExtension::kRepairedRidUri,
+        webrtc::RtpExtension::kPictureIdUri}) {
     result.emplace_back(uri, id++, webrtc::RtpTransceiverDirection::kSendRecv);
   }
   result.emplace_back(webrtc::RtpExtension::kGenericFrameDescriptorUri00, id++,
@@ -1843,6 +1849,7 @@ void WebRtcVideoChannel::OnNetworkRouteChanged(
 }
 
 void WebRtcVideoChannel::SetInterface(NetworkInterface* iface) {
+  // TODO: Update buffer size when low latency mode is enabled.
   RTC_DCHECK_RUN_ON(&network_thread_checker_);
   MediaChannel::SetInterface(iface);
   // Set the RTP recv/send buffer to a bigger size.
@@ -2032,8 +2039,18 @@ WebRtcVideoChannel::WebRtcVideoSendStream::WebRtcVideoSendStream(
   // Maximum packet size may come in RtpConfig from external transport, for
   // example from QuicTransportInterface implementation, so do not exceed
   // given max_packet_size.
-  parameters_.config.rtp.max_packet_size =
-      std::min<size_t>(parameters_.config.rtp.max_packet_size, kVideoMtu);
+  std::string experiment_string =
+      webrtc::field_trial::FindFullName("OWT-LinkMTU");
+  if (!experiment_string.empty()) {
+    double link_mtu = ::strtod(experiment_string.c_str(), nullptr);
+    if (link_mtu > 0) {
+      parameters_.config.rtp.max_packet_size = link_mtu;
+    } else {
+      parameters_.config.rtp.max_packet_size = kVideoMtu;
+    }
+  } else {
+    parameters_.config.rtp.max_packet_size = kVideoMtu;
+  }
   parameters_.conference_mode = send_params.conference_mode;
 
   sp.GetPrimarySsrcs(&parameters_.config.rtp.ssrcs);

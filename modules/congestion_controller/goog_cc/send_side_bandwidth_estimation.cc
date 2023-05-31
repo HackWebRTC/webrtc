@@ -247,6 +247,7 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation(
   if (LossBasedBandwidthEstimatorV2Enabled()) {
     loss_based_bandwidth_estimator_v2_.SetMinBitrate(min_bitrate_configured_);
   }
+  is_low_latency_mode_ = field_trial::IsEnabled("OWT-LowLatencyMode");
 }
 
 SendSideBandwidthEstimation::~SendSideBandwidthEstimation() {}
@@ -458,6 +459,9 @@ void SendSideBandwidthEstimation::UpdateRtt(TimeDelta rtt, Timestamp at_time) {
 
 void SendSideBandwidthEstimation::UpdateEstimate(Timestamp at_time) {
   if (rtt_backoff_.CorrectedRtt(at_time) > rtt_backoff_.rtt_limit_) {
+    // If last decrease happens before 1 second, and current target is larger
+    // than 5kbps, and we decided an RTT backoff is neccessary, we drop current
+    // target by 0.8 and use that as estimation result.
     if (at_time - time_last_decrease_ >= rtt_backoff_.drop_interval_ &&
         current_target_ > rtt_backoff_.bandwidth_floor_) {
       time_last_decrease_ = at_time;

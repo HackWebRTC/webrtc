@@ -19,6 +19,7 @@
 #include "absl/types/variant.h"
 #include "api/video/video_timing.h"
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
+#include "modules/video_coding/codecs/h265/include/h265_globals.h"
 #include "modules/video_coding/codecs/interface/common_constants.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_globals.h"
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
@@ -96,8 +97,18 @@ void PopulateRtpWithCodecSpecifics(const CodecSpecificInfo& info,
       h264_header.packetization_mode =
           info.codecSpecific.H264.packetization_mode;
       rtp->simulcastIdx = spatial_index.value_or(0);
+      h264_header.picture_id = info.codecSpecific.H264.picture_id;
       return;
     }
+#ifdef WEBRTC_USE_H265
+    case kVideoCodecH265: {
+      auto& h265_header = rtp->video_type_header.emplace<RTPVideoHeaderH265>();
+      h265_header.packetization_mode =
+          info.codecSpecific.H265.packetization_mode;
+      h265_header.picture_id = info.codecSpecific.H265.picture_id;
+    }
+    return;
+#endif
     case kVideoCodecMultiplex:
     case kVideoCodecGeneric:
       rtp->codec = kVideoCodecGeneric;
@@ -306,6 +317,8 @@ void RtpPayloadParams::SetGeneric(const CodecSpecificInfo* codec_specific_info,
                                   RTPVideoHeader* rtp_video_header) {
   if (codec_specific_info && codec_specific_info->generic_frame_info &&
       !codec_specific_info->generic_frame_info->encoder_buffers.empty()) {
+    // If generic frame info is provided for other codecs, use generic frame
+    // info.
     if (is_keyframe) {
       // Key frame resets all chains it is in.
       chains_calculator_.Reset(
@@ -338,6 +351,12 @@ void RtpPayloadParams::SetGeneric(const CodecSpecificInfo* codec_specific_info,
     case VideoCodecType::kVideoCodecH264:
       if (codec_specific_info) {
         H264ToGeneric(codec_specific_info->codecSpecific.H264, frame_id,
+                      is_keyframe, rtp_video_header);
+      }
+      return;
+    case VideoCodecType::kVideoCodecH265:
+      if (codec_specific_info) {
+        H265ToGeneric(codec_specific_info->codecSpecific.H265, frame_id,
                       is_keyframe, rtp_video_header);
       }
       return;
@@ -404,6 +423,7 @@ absl::optional<FrameDependencyStructure> RtpPayloadParams::GenericStructure(
     }
     case VideoCodecType::kVideoCodecAV1:
     case VideoCodecType::kVideoCodecH264:
+    case VideoCodecType::kVideoCodecH265:
     case VideoCodecType::kVideoCodecMultiplex:
       return absl::nullopt;
   }
@@ -484,6 +504,26 @@ void RtpPayloadParams::H264ToGeneric(const CodecSpecificInfoH264& h264_info,
   }
 
   last_shared_frame_id_[/*spatial_index*/ 0][temporal_index] = shared_frame_id;
+}
+
+void RtpPayloadParams::H265ToGeneric(const CodecSpecificInfoH265& h265_info,
+                                     int64_t shared_frame_id,
+                                     bool is_keyframe,
+                                     RTPVideoHeader* rtp_video_header) {
+  if (h265_info.picture_id <= 0) {
+    // picture_id is only used by cloud gaming.
+    return;
+  }
+  RTPVideoHeader::GenericDescriptorInfo& generic =
+      rtp_video_header->generic.emplace();
+  generic.frame_id = h265_info.picture_id;
+  generic.spatial_index = 0;   // Not enabled at present.
+  generic.temporal_index = 0;  // Not enabled at present.
+  for (int dep_idx = 0; dep_idx < 5; dep_idx++) {
+    if (h265_info.dependencies[dep_idx] <= 0)
+      break;
+    generic.dependencies[dep_idx] = h265_info.dependencies[dep_idx];
+  }
 }
 
 void RtpPayloadParams::Vp8ToGeneric(const CodecSpecificInfoVP8& vp8_info,

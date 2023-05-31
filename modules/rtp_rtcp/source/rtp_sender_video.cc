@@ -448,6 +448,15 @@ void RTPSenderVideo::AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
       packet->SetExtension<RtpGenericFrameDescriptorExtension00>(
           generic_descriptor);
     }
+    if (video_header.codec == kVideoCodecH264 && last_packet) {
+      packet->SetExtension<PictureId>(
+          absl::get<RTPVideoHeaderH264>(video_header.video_type_header)
+              .picture_id);
+    } else if (video_header.codec == kVideoCodecH265 && last_packet) {
+      packet->SetExtension<PictureId>(
+          absl::get<RTPVideoHeaderH265>(video_header.video_type_header)
+              .picture_id);
+    }
   }
 
   if (packet->IsRegistered<RtpVideoLayersAllocationExtension>() &&
@@ -489,11 +498,23 @@ bool RTPSenderVideo::SendVideo(
   }
 
   int32_t retransmission_settings = retransmission_settings_;
+  bool frame_completed = true;
   if (codec_type == VideoCodecType::kVideoCodecH264) {
     // Backward compatibility for older receivers without temporal layer logic.
     retransmission_settings = kRetransmitBaseLayer | kRetransmitHigherLayers;
+    if (!absl::get<RTPVideoHeaderH264>(video_header.video_type_header)
+             .has_last_fragement) {
+      frame_completed = false;
+    }
   }
-
+#ifdef WEBRTC_USE_H265
+  else if (codec_type == VideoCodecType::kVideoCodecH265) {
+    if (!absl::get<RTPVideoHeaderH265>(video_header.video_type_header)
+             .has_last_fragement) {
+      frame_completed = false;
+    }
+  }
+#endif
   MaybeUpdateCurrentPlayoutDelay(video_header);
   if (video_header.frame_type == VideoFrameType::kVideoFrameKey) {
     if (!IsNoopDelay(current_playout_delay_)) {
@@ -555,10 +576,11 @@ bool RTPSenderVideo::SendVideo(
   auto first_packet = std::make_unique<RtpPacketToSend>(*single_packet);
   auto middle_packet = std::make_unique<RtpPacketToSend>(*single_packet);
   auto last_packet = std::make_unique<RtpPacketToSend>(*single_packet);
-  // Simplest way to estimate how much extensions would occupy is to set them.
+  if (frame_completed) {// Jianlin: Not adding extension if frame not completed yet.
+    // Simplest way to estimate how much extensions would occupy is to set them.
   AddRtpHeaderExtensions(video_header,
-                         /*first_packet=*/true, /*last_packet=*/true,
-                         single_packet.get());
+                           /*first_packet=*/true, /*last_packet=*/true,
+                           single_packet.get());
   if (video_structure_ != nullptr &&
       single_packet->IsRegistered<RtpDependencyDescriptorExtension>() &&
       !single_packet->HasExtension<RtpDependencyDescriptorExtension>()) {
@@ -572,14 +594,15 @@ bool RTPSenderVideo::SendVideo(
   }
 
   AddRtpHeaderExtensions(video_header,
-                         /*first_packet=*/true, /*last_packet=*/false,
-                         first_packet.get());
+                           /*first_packet=*/true, /*last_packet=*/false,
+                           first_packet.get());
   AddRtpHeaderExtensions(video_header,
-                         /*first_packet=*/false, /*last_packet=*/false,
-                         middle_packet.get());
+                           /*first_packet=*/false, /*last_packet=*/false,
+                           middle_packet.get());
   AddRtpHeaderExtensions(video_header,
-                         /*first_packet=*/false, /*last_packet=*/true,
-                         last_packet.get());
+                           /*first_packet=*/false, /*last_packet=*/true,
+                           last_packet.get());
+  }
 
   RTC_DCHECK_GT(packet_capacity, single_packet->headers_size());
   RTC_DCHECK_GT(packet_capacity, first_packet->headers_size());
@@ -641,7 +664,7 @@ bool RTPSenderVideo::SendVideo(
   }
 
   std::unique_ptr<RtpPacketizer> packetizer =
-      RtpPacketizer::Create(codec_type, payload, limits, video_header);
+      RtpPacketizer::Create(codec_type, payload, limits, video_header, frame_completed);
 
   // TODO(bugs.webrtc.org/10714): retransmission_settings_ should generally be
   // replaced by expected_retransmission_time_ms.has_value(). For now, though,
@@ -815,6 +838,7 @@ uint8_t RTPSenderVideo::GetTemporalId(const RTPVideoHeader& header) {
     uint8_t operator()(const RTPVideoHeaderLegacyGeneric&) {
       return kNoTemporalIdx;
     }
+    uint8_t operator()(const RTPVideoHeaderH265&) { return kNoTemporalIdx; }
     uint8_t operator()(const absl::monostate&) { return kNoTemporalIdx; }
   };
   return absl::visit(TemporalIdGetter(), header.video_type_header);

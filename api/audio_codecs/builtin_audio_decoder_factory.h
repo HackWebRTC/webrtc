@@ -21,7 +21,8 @@ namespace webrtc {
 // only need a subset of the codecs, consider using
 // CreateAudioDecoderFactory<...codecs listed here...>() or
 // CreateOpusAudioDecoderFactory() instead.
-rtc::scoped_refptr<AudioDecoderFactory> CreateBuiltinAudioDecoderFactory();
+RTC_EXPORT rtc::scoped_refptr<AudioDecoderFactory>
+CreateBuiltinAudioDecoderFactory();
 
 }  // namespace webrtc
 

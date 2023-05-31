@@ -73,6 +73,10 @@ class RtpPayloadParams final {
                      int64_t shared_frame_id,
                      bool is_keyframe,
                      RTPVideoHeader* rtp_video_header);
+  void H265ToGeneric(const CodecSpecificInfoH265& h265_info,
+                     int64_t shared_frame_id,
+                     bool is_keyframe,
+                     RTPVideoHeader* rtp_video_header);
 
   void GenericToGeneric(int64_t shared_frame_id,
                         bool is_keyframe,

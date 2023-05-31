@@ -218,6 +218,13 @@
   }
   return self;
 }
+- (instancetype)initWithNativePeerConnectionFactory:
+    (rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>)factory {
+  if (self = [self initNative]) {
+    _nativeFactory = factory;
+  }
+  return self;
+}
 
 - (RTC_OBJC_TYPE(RTCAudioSource) *)audioSourceWithConstraints:
     (nullable RTC_OBJC_TYPE(RTCMediaConstraints) *)constraints {
