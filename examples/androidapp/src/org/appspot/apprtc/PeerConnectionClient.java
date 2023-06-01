@@ -96,6 +96,7 @@ public class PeerConnectionClient {
   private static final String VIDEO_CODEC_H264 = "H264";
   private static final String VIDEO_CODEC_H264_BASELINE = "H264 Baseline";
   private static final String VIDEO_CODEC_H264_HIGH = "H264 High";
+  private static final String VIDEO_CODEC_H265 = "H265";
   private static final String VIDEO_CODEC_AV1 = "AV1";
   private static final String AUDIO_CODEC_OPUS = "opus";
   private static final String AUDIO_CODEC_ISAC = "ISAC";
@@ -991,6 +992,8 @@ public class PeerConnectionClient {
       case VIDEO_CODEC_H264_HIGH:
       case VIDEO_CODEC_H264_BASELINE:
         return VIDEO_CODEC_H264;
+      case VIDEO_CODEC_H265:
+        return VIDEO_CODEC_H265;
       default:
         return VIDEO_CODEC_VP8;
     }
