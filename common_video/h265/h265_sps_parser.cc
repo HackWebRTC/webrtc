@@ -73,7 +73,7 @@ bool H265SpsParser::ParseScalingListData(BitstreamReader& reader) {
       }
     }
   }
-  return true;
+  return reader.Ok();
 }
 
 absl::optional<H265SpsParser::ShortTermRefPicSet>
@@ -153,6 +153,10 @@ H265SpsParser::ParseShortTermRefPicSet(
       // used_by_curr_pic_s1_flag: u(1)
       ref_pic_set.used_by_curr_pic_s1_flag[i] = reader.Read<bool>();
     }
+  }
+
+  if (!reader.Ok()) {
+    return absl::nullopt;
   }
 
   return OptionalShortTermRefPicSet(ref_pic_set);
@@ -367,6 +371,10 @@ absl::optional<H265SpsParser::SpsState> H265SpsParser::ParseSpsInternal(
 
   // sps_temporal_mvp_enabled_flag: u(1)
   sps.sps_temporal_mvp_enabled_flag = reader.Read<bool>();
+
+  if (!reader.Ok()) {
+    return absl::nullopt;
+  }
 
   // Far enough! We don't use the rest of the SPS.
 

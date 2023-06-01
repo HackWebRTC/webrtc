@@ -280,6 +280,9 @@ H265BitstreamParser::Result H265BitstreamParser::ParseNonParameterSetNalu(
 
   // slice_qp_delta: se(v)
   int32_t last_slice_qp_delta = slice_reader.ReadSignedExponentialGolomb();
+  if (!slice_reader.Ok()) {
+    return kInvalidStream;
+  }
   if (abs(last_slice_qp_delta) > kMaxAbsQpDeltaValue) {
     // Something has gone wrong, and the parsed value is invalid.
     RTC_LOG(LS_WARNING) << "Parsed QP value out of range.";
