@@ -257,15 +257,6 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
            || vcp.isExtraHardwareSupported(name, "video/hevc", vcp.parseWithTag(vcp.loadWithDom(extraMediaCodecFile), "Decoders"));
   }
 
-  private boolean isHardwareSupportedInCurrentSdkH265(MediaCodecInfo info) {
-    String name = info.getName();
-    // QCOM H265 encoder is supported in KITKAT or later.
-    return (name.startsWith(QCOM_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-           // Exynos H265 encoder is supported in LOLLIPOP or later.
-           || (name.startsWith(EXYNOS_PREFIX)
-               && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
-  }
-
   private boolean isMediaCodecAllowed(MediaCodecInfo info) {
     if (codecAllowedPredicate == null) {
       return true;
