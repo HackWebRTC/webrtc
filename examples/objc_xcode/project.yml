@@ -11,9 +11,9 @@ targets:
           - ios/broadcast_extension
           - mac
           - tests
-    dependencies:
-      - framework: ../../out/xcode_ios_arm64/WebRTC.framework
-        embed: true
+    # dependencies:
+    #   - framework: ../../out/xcode_ios_arm64/WebRTC.framework
+    #     embed: true
     settings:
       LIBRARY_SEARCH_PATHS: "$(inherited)"
       OTHER_LDFLAGS: "$(inherited)"

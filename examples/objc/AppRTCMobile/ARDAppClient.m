@@ -235,6 +235,10 @@ static int const kKbpsMultiplier = 1000;
       [[RTC_OBJC_TYPE(RTCPeerConnectionFactory) alloc] initWithEncoderFactory:encoderFactory
                                                                decoderFactory:decoderFactory];
 
+  RTCPeerConnectionFactoryOptions* options = [[RTCPeerConnectionFactoryOptions alloc] init];
+  options.disableEncryption = YES;
+  [_factory setOptions:options];
+
 #if defined(WEBRTC_IOS)
   if (kARDAppClientEnableTracing) {
     NSString *filePath = [self documentsFilePathForFileName:@"webrtc-trace.txt"];
