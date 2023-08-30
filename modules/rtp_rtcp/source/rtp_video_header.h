@@ -76,8 +76,6 @@ struct RTPVideoHeader {
   bool is_last_frame_in_picture = true;
   uint8_t simulcastIdx = 0;
   VideoCodecType codec = VideoCodecType::kVideoCodecGeneric;
-  // TODO: should be removed as it is in codec specific header.
-  uint16_t picture_id;
 
   VideoPlayoutDelay playout_delay;
   VideoSendTiming video_timing;

@@ -50,7 +50,6 @@
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/metrics.h"
-#include "system_wrappers/include/field_trial.h"
 #include "video/adaptation/video_stream_encoder_resource_manager.h"
 #include "video/alignment_adjuster.h"
 #include "video/config/encoder_stream_factory.h"
@@ -1452,10 +1451,7 @@ void VideoStreamEncoder::OnFrame(Timestamp post_time,
     incoming_frame.set_timestamp_us(post_time.us());
 
   // Capture time may come from clock with an offset and drift from clock_.
-  // Jianlin: in case of slice-based encoding, the capturer will not set the
-  // ntp_time_ms and render_tim_ms.
   int64_t capture_ntp_time_ms;
-  // TODO: Check latency mode.
   if (video_frame.ntp_time_ms() > 0) {
     capture_ntp_time_ms = video_frame.ntp_time_ms();
   } else if (video_frame.render_time_ms() != 0) {
@@ -1471,12 +1467,7 @@ void VideoStreamEncoder::OnFrame(Timestamp post_time,
       kMsToRtpTimestamp * static_cast<uint32_t>(incoming_frame.ntp_time_ms()));
 
   if (incoming_frame.ntp_time_ms() <= last_captured_timestamp_) {
-    // TODO: Check latency mode.
     // We don't allow the same capture time for two frames, drop this one.
-    // Jianlin(implementation deviation: For push-mode, dropping frame due
-    // to same timestamp is not allowed.
-    // So make sure dropping is enabled for pull mode while disabled for
-    // push mode.
     RTC_LOG(LS_WARNING) << "Same/old NTP timestamp ("
                         << incoming_frame.ntp_time_ms()
                         << " <= " << last_captured_timestamp_
@@ -1504,8 +1495,7 @@ void VideoStreamEncoder::OnFrame(Timestamp post_time,
   bool cwnd_frame_drop =
       cwnd_frame_drop_interval_ &&
       (cwnd_frame_counter_++ % cwnd_frame_drop_interval_.value() == 0);
-  if (webrtc::field_trial::IsEnabled("OWT-LowLatencyMode") ||
-      (frames_scheduled_for_processing == 1 && !cwnd_frame_drop)) {
+  if (frames_scheduled_for_processing == 1 && !cwnd_frame_drop) {
     MaybeEncodeVideoFrame(incoming_frame, post_time.us());
   } else {
     if (cwnd_frame_drop) {
@@ -1549,9 +1539,6 @@ bool VideoStreamEncoder::EncoderPaused() const {
   // pacer queue has grown too large in buffered mode.
   // If the pacer queue has grown too large or the network is down,
   // `last_encoder_rate_settings_->encoder_target` will be 0.
-  // For low latency mode we always disable encoder pausing.
-  if (field_trial::IsEnabled("OWT-LowLatencyMode"))
-    return false;
   return !last_encoder_rate_settings_ ||
          last_encoder_rate_settings_->encoder_target == DataRate::Zero();
 }
@@ -1818,9 +1805,7 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
       !force_disable_frame_dropper_ &&
       !encoder_info_.has_trusted_rate_controller;
   frame_dropper_.Enable(frame_dropping_enabled);
-  // For low latency mode we don't drop frame
-  if (frame_dropping_enabled && frame_dropper_.DropFrame() &&
-      !field_trial::IsEnabled("OWT-LowLatencyMode")) {
+  if (frame_dropping_enabled && frame_dropper_.DropFrame()) {
     RTC_LOG(LS_VERBOSE)
         << "Drop Frame: "
            "target bitrate "
@@ -2304,8 +2289,7 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
 
 bool VideoStreamEncoder::DropDueToSize(uint32_t pixel_count) const {
   if (!encoder_ || !stream_resource_manager_.DropInitialFrames() ||
-      !encoder_target_bitrate_bps_.has_value() ||
-      field_trial::IsEnabled("OWT-LowLatencyMode")) {
+      !encoder_target_bitrate_bps_.has_value()) {
     return false;
   }
 

@@ -600,8 +600,7 @@ WebRtcVoiceEngine::GetRtpHeaderExtensions() const {
   for (const auto& uri : {webrtc::RtpExtension::kAudioLevelUri,
                           webrtc::RtpExtension::kAbsSendTimeUri,
                           webrtc::RtpExtension::kTransportSequenceNumberUri,
-        webrtc::RtpExtension::kRepairedRidUri,
-        webrtc::RtpExtension::kPictureIdUri}) {
+        webrtc::RtpExtension::kRepairedRidUri}) {
     result.emplace_back(uri, id++, webrtc::RtpTransceiverDirection::kSendRecv);
   }
   return result;

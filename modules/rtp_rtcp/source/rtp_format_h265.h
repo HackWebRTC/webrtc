@@ -30,8 +30,7 @@ class RtpPacketizerH265 : public RtpPacketizer {
   // The payload_data must be exactly one encoded H.265 frame.
   RtpPacketizerH265(rtc::ArrayView<const uint8_t> payload,
                     PayloadSizeLimits limits,
-                    H265PacketizationMode packetization_mode,
-                    bool end_of_frame = true);
+                    H265PacketizationMode packetization_mode);
 
   ~RtpPacketizerH265() override;
 
@@ -103,7 +102,6 @@ class RtpPacketizerH265 : public RtpPacketizer {
 
   const PayloadSizeLimits limits_;
   size_t num_packets_left_;
-  bool end_of_frame_ = true;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_H265_H_

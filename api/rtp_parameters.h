@@ -390,10 +390,6 @@ struct RTC_EXPORT RtpExtension {
   static constexpr char kCsrcAudioLevelsUri[] =
       "urn:ietf:params:rtp-hdrext:csrc-audio-level";
 
-  // Picture ID for temporal scalability support
-  static constexpr char kPictureIdUri[] = "urn:intel:picture-id";
-  static constexpr int kPictureIdDefaultId = 12;
-
   // Inclusive min and max IDs for two-byte header extensions and one-byte
   // header extensions, per RFC8285 Section 4.2-4.3.
   static constexpr int kMinId = 1;

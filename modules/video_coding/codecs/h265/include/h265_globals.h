@@ -51,17 +51,6 @@ struct RTPVideoHeaderH265 {
   size_t nalus_length;
   // The packetization type of this buffer - single, aggregated or fragmented.
   H265PacketizationMode packetization_mode;
-  // Running cuter for every frame to determin frame decodable
-  // depending along with Temporal ID (obtained from RTP header extn).
-  // '0' if PictureID does not exist.
-  uint16_t picture_id;
-  // For support slice-based transmission, mark end of a frame so that
-  // the H.265 packetizer will not set marker bit for the last fragment of
-  // current outgoing data if it does not contain last fragment of the frame;
-  // and will treat the first fragment of the frame as continuous playload, so
-  // that it will not create FU header or STAP-A header on first fragment if
-  // contains last fragment of the frame.
-  bool has_last_fragement;
 };
 
 }  // namespace webrtc
