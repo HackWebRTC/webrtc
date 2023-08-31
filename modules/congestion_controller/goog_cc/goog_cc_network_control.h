@@ -67,7 +67,7 @@ class GoogCcNetworkController : public NetworkControllerInterface {
       TargetRateConstraints msg) override;
   NetworkControlUpdate OnTransportLossReport(TransportLossReport msg) override;
   NetworkControlUpdate OnTransportPacketsFeedback(
-      TransportPacketsFeedback msg, int64_t current_offset_ms) override;
+      TransportPacketsFeedback msg) override;
   NetworkControlUpdate OnNetworkStateEstimate(
       NetworkStateEstimate msg) override;
 

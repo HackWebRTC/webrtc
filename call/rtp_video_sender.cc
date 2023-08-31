@@ -607,11 +607,11 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
       sender_video.SetVideoStructure(nullptr);
     }
   }
-  RTPVideoHeader rtp_video_header = params_[stream_index].GetRtpVideoHeader(
-      encoded_image, codec_specific_info, shared_frame_id_);
   bool send_result = rtp_streams_[stream_index].sender_video->SendEncodedImage(
       rtp_config_.payload_type, codec_type_, rtp_timestamp, encoded_image,
-      rtp_video_header, expected_retransmission_time_ms);
+      params_[stream_index].GetRtpVideoHeader(
+          encoded_image, codec_specific_info, shared_frame_id_),
+      expected_retransmission_time_ms);
   if (frame_count_observer_) {
     FrameCounts& counts = frame_counts_[stream_index];
     if (encoded_image._frameType == VideoFrameType::kVideoFrameKey) {

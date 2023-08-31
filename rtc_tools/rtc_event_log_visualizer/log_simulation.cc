@@ -112,7 +112,7 @@ void LogBasedNetworkControllerSimulation::OnFeedback(
   auto msg = transport_feedback_.ProcessTransportFeedback(
       feedback.transport_feedback, feedback_time);
   if (msg)
-    HandleStateUpdate(controller_->OnTransportPacketsFeedback(*msg, 0));
+    HandleStateUpdate(controller_->OnTransportPacketsFeedback(*msg));
 }
 
 void LogBasedNetworkControllerSimulation::OnReceiverReport(

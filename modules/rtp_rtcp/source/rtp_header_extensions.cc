@@ -366,22 +366,6 @@ bool TransportSequenceNumberV2::Write(
   return true;
 }
 
-constexpr RTPExtensionType PictureId::kId;
-constexpr uint8_t PictureId::kValueSizeBytes;
-constexpr const char PictureId::kUri[];
-
-bool PictureId::Parse(rtc::ArrayView<const uint8_t> data, uint16_t* value) {
-  if (data.size() != 2)
-    return false;
-  *value = ByteReader<uint16_t>::ReadBigEndian(data.data());
-  return true;
-}
-
-bool PictureId::Write(rtc::ArrayView<uint8_t> data, uint16_t value) {
-  ByteWriter<uint16_t>::WriteBigEndian(data.data(), value);
-  return true;
-}
-
 // Coordination of Video Orientation in RTP streams.
 //
 // Coordination of Video Orientation consists in signaling of the current

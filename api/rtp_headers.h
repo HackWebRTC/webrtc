@@ -144,9 +144,6 @@ struct RTPHeaderExtension {
   std::string mid;
 
   absl::optional<ColorSpace> color_space;
-
-  // Required for Temporal scalability support
-  uint16_t picture_id;
 };
 
 enum { kRtpCsrcSize = 15 };  // RFC 3550 page 13

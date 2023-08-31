@@ -92,13 +92,6 @@ int CalculateBitrate(int max_playback_rate_hz,
   const int default_bitrate =
       CalculateDefaultBitrate(max_playback_rate_hz, num_channels);
 
-  // For lown latency mode we fix the audio bitrate.
-  if (field_trial::IsEnabled("OWT-LowLatencyMode")) {
-    if (default_bitrate != -1)
-      return 256000;
-    return default_bitrate;
-  }
-
   if (bitrate_param) {
     const auto bitrate = rtc::StringToNumber<int>(*bitrate_param);
     if (bitrate) {

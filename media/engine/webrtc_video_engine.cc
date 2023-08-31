@@ -1848,7 +1848,6 @@ void WebRtcVideoChannel::OnNetworkRouteChanged(
 }
 
 void WebRtcVideoChannel::SetInterface(NetworkInterface* iface) {
-  // TODO: Update buffer size when low latency mode is enabled.
   RTC_DCHECK_RUN_ON(&network_thread_checker_);
   MediaChannel::SetInterface(iface);
   // Set the RTP recv/send buffer to a bigger size.
@@ -2038,18 +2037,8 @@ WebRtcVideoChannel::WebRtcVideoSendStream::WebRtcVideoSendStream(
   // Maximum packet size may come in RtpConfig from external transport, for
   // example from QuicTransportInterface implementation, so do not exceed
   // given max_packet_size.
-  std::string experiment_string =
-      webrtc::field_trial::FindFullName("OWT-LinkMTU");
-  if (!experiment_string.empty()) {
-    double link_mtu = ::strtod(experiment_string.c_str(), nullptr);
-    if (link_mtu > 0) {
-      parameters_.config.rtp.max_packet_size = link_mtu;
-    } else {
-      parameters_.config.rtp.max_packet_size = kVideoMtu;
-    }
-  } else {
-    parameters_.config.rtp.max_packet_size = kVideoMtu;
-  }
+  parameters_.config.rtp.max_packet_size =
+      std::min<size_t>(parameters_.config.rtp.max_packet_size, kVideoMtu);
   parameters_.conference_mode = send_params.conference_mode;
 
   sp.GetPrimarySsrcs(&parameters_.config.rtp.ssrcs);

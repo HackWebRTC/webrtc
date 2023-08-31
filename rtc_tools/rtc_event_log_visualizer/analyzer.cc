@@ -1334,7 +1334,7 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
           rtcp_iterator->transport_feedback,
           Timestamp::Millis(clock.TimeInMilliseconds()));
       if (feedback_msg) {
-        observer.Update(goog_cc->OnTransportPacketsFeedback(*feedback_msg), 0);
+        observer.Update(goog_cc->OnTransportPacketsFeedback(*feedback_msg));
         std::vector<PacketResult> feedback =
             feedback_msg->SortedByReceiveTime();
         if (!feedback.empty()) {
