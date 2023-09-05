@@ -14,6 +14,19 @@
 namespace webrtc {
 
 // GENERATED_JAVA_ENUM_PACKAGE: org.webrtc
+#ifndef DISABLE_H265
+enum VideoCodecType {
+  // Java_cpp_enum.py does not allow ifdef in enum class,
+  // so we have to create two version of VideoCodecType here 
+  kVideoCodecGeneric = 0,
+  kVideoCodecVP8,
+  kVideoCodecVP9,
+  kVideoCodecAV1,
+  kVideoCodecH264,
+  kVideoCodecH265,
+  kVideoCodecMultiplex,
+};
+#else
 enum VideoCodecType {
   // There are various memset(..., 0, ...) calls in the code that rely on
   // kVideoCodecGeneric being zero.
@@ -24,6 +37,7 @@ enum VideoCodecType {
   kVideoCodecH264,
   kVideoCodecMultiplex,
 };
+#endif
 
 }  // namespace webrtc
 

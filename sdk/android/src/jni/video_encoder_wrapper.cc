@@ -13,6 +13,9 @@
 #include <utility>
 
 #include "common_video/h264/h264_common.h"
+#ifndef DISABLE_H265
+#include "common_video/h265/h265_common.h"
+#endif
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/utility/vp8_header_parser.h"
@@ -312,6 +315,11 @@ int VideoEncoderWrapper::ParseQp(rtc::ArrayView<const uint8_t> buffer) {
       h264_bitstream_parser_.ParseBitstream(buffer.data(), buffer.size());
       success = h264_bitstream_parser_.GetLastSliceQp(&qp);
       break;
+#ifndef DISABLE_H265
+    case kVideoCodecH265:
+      success = h265_bitstream_parser_.GetLastSliceQp(&qp);
+      break;
+#endif
     default:  // Default is to not provide QP.
       success = false;
       break;
