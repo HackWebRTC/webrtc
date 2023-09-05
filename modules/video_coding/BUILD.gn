@@ -235,6 +235,13 @@ rtc_library("video_coding") {
     "video_receiver2.h",
   ]
 
+  if (rtc_use_h265) {
+    sources += [
+      "h265_vps_sps_pps_tracker.cc",
+      "h265_vps_sps_pps_tracker.h",
+    ]
+  }
+
   deps = [
     ":codec_globals_headers",
     ":encoded_frame",

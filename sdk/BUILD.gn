@@ -705,6 +705,10 @@ if (is_ios || is_mac) {
         "objc/components/video_codec/RTCCodecSpecificInfoH264.mm",
         "objc/components/video_codec/RTCH264ProfileLevelId.h",
         "objc/components/video_codec/RTCH264ProfileLevelId.mm",
+        "objc/components/video_codec/RTCCodecSpecificInfoH265.h",
+        "objc/components/video_codec/RTCCodecSpecificInfoH265.mm",
+        "objc/components/video_codec/RTCH265ProfileLevelId.h",
+        "objc/components/video_codec/RTCH265ProfileLevelId.mm",
       ]
       if (is_ios) {
         sources += [
@@ -1302,6 +1306,11 @@ if (is_ios || is_mac) {
           "objc/components/video_codec/RTCVideoDecoderH264.h",
           "objc/components/video_codec/RTCVideoEncoderFactoryH264.h",
           "objc/components/video_codec/RTCVideoEncoderH264.h",
+          "objc/components/video_codec/RTCH265ProfileLevelId.h",
+          "objc/components/video_codec/RTCVideoDecoderFactoryH265.h",
+          "objc/components/video_codec/RTCVideoDecoderH265.h",
+          "objc/components/video_codec/RTCVideoEncoderFactoryH265.h",
+          "objc/components/video_codec/RTCVideoEncoderH265.h",
           "objc/components/video_frame_buffer/RTCCVPixelBuffer.h",
           "objc/helpers/RTCCameraPreviewView.h",
           "objc/helpers/RTCDispatcher.h",
@@ -1495,6 +1504,11 @@ if (is_ios || is_mac) {
           "objc/components/video_codec/RTCVideoDecoderH264.h",
           "objc/components/video_codec/RTCVideoEncoderFactoryH264.h",
           "objc/components/video_codec/RTCVideoEncoderH264.h",
+          "objc/components/video_codec/RTCH265ProfileLevelId.h",
+          "objc/components/video_codec/RTCVideoDecoderFactoryH265.h",
+          "objc/components/video_codec/RTCVideoDecoderH265.h",
+          "objc/components/video_codec/RTCVideoEncoderFactoryH265.h",
+          "objc/components/video_codec/RTCVideoEncoderH265.h",
           "objc/components/video_frame_buffer/RTCCVPixelBuffer.h",
           "objc/helpers/RTCDispatcher.h",
         ]
@@ -1713,6 +1727,14 @@ if (is_ios || is_mac) {
         "objc/components/video_codec/RTCVideoEncoderFactoryH264.m",
         "objc/components/video_codec/RTCVideoEncoderH264.h",
         "objc/components/video_codec/RTCVideoEncoderH264.mm",
+        "objc/components/video_codec/RTCVideoDecoderFactoryH265.h",
+        "objc/components/video_codec/RTCVideoDecoderFactoryH265.m",
+        "objc/components/video_codec/RTCVideoDecoderH265.h",
+        "objc/components/video_codec/RTCVideoDecoderH265.mm",
+        "objc/components/video_codec/RTCVideoEncoderFactoryH265.h",
+        "objc/components/video_codec/RTCVideoEncoderFactoryH265.m",
+        "objc/components/video_codec/RTCVideoEncoderH265.h",
+        "objc/components/video_codec/RTCVideoEncoderH265.mm",
       ]
 
       configs += [

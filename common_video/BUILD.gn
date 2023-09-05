@@ -37,6 +37,21 @@ rtc_library("common_video") {
     "video_frame_buffer_pool.cc",
   ]
 
+  if (rtc_use_h265) {
+    sources += [
+      "h265/h265_bitstream_parser.cc",
+      "h265/h265_bitstream_parser.h",
+      "h265/h265_common.cc",
+      "h265/h265_common.h",
+      "h265/h265_pps_parser.cc",
+      "h265/h265_pps_parser.h",
+      "h265/h265_sps_parser.cc",
+      "h265/h265_sps_parser.h",
+      "h265/h265_vps_parser.cc",
+      "h265/h265_vps_parser.h",
+    ]
+  }
+
   deps = [
     "../api:array_view",
     "../api:make_ref_counted",
