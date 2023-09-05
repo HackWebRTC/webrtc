@@ -313,6 +313,7 @@ class JsepTransportController : public sigslot::has_slots<> {
       cricket::IceTransportInternal* ice);
   rtc::scoped_refptr<webrtc::IceTransportInterface> CreateIceTransport(
       const std::string& transport_name,
+      cricket::MediaType media_type,
       bool rtcp);
 
   std::unique_ptr<webrtc::RtpTransport> CreateUnencryptedRtpTransport(

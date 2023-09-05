@@ -41,6 +41,7 @@
 #include "p2p/base/port_allocator.h"
 #include "p2p/base/port_interface.h"
 #include "p2p/base/regathering_controller.h"
+#include "pc/session_description.h"
 #include "rtc_base/async_invoker.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/constructor_magic.h"
@@ -85,10 +86,12 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   // For testing only.
   // TODO(zstein): Remove once AsyncResolverFactory is required.
   P2PTransportChannel(const std::string& transport_name,
+                      cricket::MediaType media_type,
                       int component,
                       PortAllocator* allocator);
   P2PTransportChannel(
       const std::string& transport_name,
+      cricket::MediaType media_type,
       int component,
       PortAllocator* allocator,
       webrtc::AsyncResolverFactory* async_resolver_factory,
@@ -101,6 +104,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   webrtc::IceTransportState GetIceTransportState() const override;
 
   const std::string& transport_name() const override;
+  cricket::MediaType media_type() const override;
   int component() const override;
   bool writable() const override;
   bool receiving() const override;
@@ -362,6 +366,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
                                              Connection* old_connection);
 
   std::string transport_name_ RTC_GUARDED_BY(network_thread_);
+  cricket::MediaType media_type_ RTC_GUARDED_BY(network_thread_);
   int component_ RTC_GUARDED_BY(network_thread_);
   PortAllocator* allocator_ RTC_GUARDED_BY(network_thread_);
   webrtc::AsyncResolverFactory* async_resolver_factory_

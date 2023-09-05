@@ -62,6 +62,7 @@ int GetCpuSpeed(int width, int height, int number_of_cores) {
     return 7;
 }
 
+
 class LibaomAv1Encoder final : public VideoEncoder {
  public:
   explicit LibaomAv1Encoder(
@@ -102,6 +103,9 @@ class LibaomAv1Encoder final : public VideoEncoder {
   aom_codec_ctx_t ctx_;
   aom_codec_enc_cfg_t cfg_;
   EncodedImageCallback* encoded_image_callback_;
+  // jianlin: HW AV1 decoder seems not handling decoding without key frame
+  // correctly. This is a workaround to force key frame.
+  int aom_frame_count = 0;
 };
 
 int32_t VerifyCodecSettings(const VideoCodec& codec_settings) {
@@ -428,6 +432,7 @@ int32_t LibaomAv1Encoder::Encode(
   bool keyframe_required =
       frame_types != nullptr &&
       absl::c_linear_search(*frame_types, VideoFrameType::kVideoFrameKey);
+  keyframe_required |= (aom_frame_count++ % 60 == 0)? true : false;
 
   std::vector<ScalableVideoController::LayerFrameConfig> layer_frames =
       svc_controller_->NextFrameConfig(keyframe_required);

@@ -39,7 +39,7 @@ namespace webrtc_win {
 // a separate thread owned and controlled by the manager.
 // TODO(henrika): investigate if CoreAudioBase should implement
 // IMMNotificationClient as well (might improve support for device changes).
-class CoreAudioBase : public IAudioSessionEvents {
+class CoreAudioBase : public IAudioSessionEvents, public IMMNotificationClient {
  public:
   enum class Direction {
     kInput,
@@ -160,6 +160,7 @@ class CoreAudioBase : public IAudioSessionEvents {
   std::atomic<bool> is_restarting_;
   std::unique_ptr<rtc::PlatformThread> audio_thread_;
   Microsoft::WRL::ComPtr<IAudioSessionControl> audio_session_control_;
+  Microsoft::WRL::ComPtr<IMMDeviceEnumerator> enumerator_;
 
   void StopThread();
   AudioSessionState GetAudioSessionState() const;
@@ -194,6 +195,31 @@ class CoreAudioBase : public IAudioSessionEvents {
                                            LPCGUID event_context) override;
   HRESULT __stdcall OnGroupingParamChanged(LPCGUID new_grouping_param,
                                            LPCGUID event_context) override;
+
+  // IMMNotificationClient implementation. At present we
+  // only handle OnDefaultDeviceChanged event.
+  HRESULT __stdcall OnDeviceStateChanged(LPCWSTR pwstrDeviceId,
+                                         DWORD dwNewState) override {
+    return S_OK;
+  }
+
+  HRESULT __stdcall OnDeviceAdded(LPCWSTR pwstrDeviceId) override {
+    return S_OK;
+  }
+
+  HRESULT __stdcall OnDeviceRemoved(LPCWSTR pwstrDeviceId) override {
+    return S_OK;
+  }
+
+  HRESULT __stdcall OnDefaultDeviceChanged(
+      EDataFlow flow,
+      ERole role,
+      LPCWSTR pwstrDefaultDeviceId) override;
+
+  HRESULT __stdcall OnPropertyValueChanged(LPCWSTR pwstrDeviceId,
+                                           const PROPERTYKEY key) override {
+    return S_OK;
+  }
 };
 
 }  // namespace webrtc_win

@@ -203,6 +203,7 @@ void VideoCodecTestFixtureImpl::Config::SetCodecSettings(
       codec_settings.VP9()->denoisingOn = denoising_on;
       codec_settings.VP9()->frameDroppingOn = frame_dropper_on;
       codec_settings.VP9()->keyFrameInterval = kBaseKeyFrameInterval;
+      codec_settings.VP9()->keyFrameInterval = 60;
       codec_settings.VP9()->automaticResizeOn = spatial_resize_on;
       codec_settings.VP9()->numberOfSpatialLayers =
           static_cast<uint8_t>(num_spatial_layers);

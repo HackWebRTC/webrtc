@@ -1298,6 +1298,7 @@ if (is_ios || is_mac) {
           ":videocapture_objc",
           ":videocodec_objc",
           ":videotoolbox_objc",
+          "../api:create_peerconnection_factory",
           "../rtc_base:rtc_base_approved",
         ]
         if (rtc_use_metal_rendering) {

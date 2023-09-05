@@ -46,12 +46,18 @@ const float MIN_CORE_MICROPHONE_VOLUME = 0.0f;
 const uint16_t CORE_SPEAKER_VOLUME_STEP_SIZE = 1;
 const uint16_t CORE_MICROPHONE_VOLUME_STEP_SIZE = 1;
 
-class AudioDeviceWindowsCore : public AudioDeviceGeneric {
+class AudioDeviceWindowsCore : public AudioDeviceGeneric,
+                               public IMMNotificationClient {
  public:
   AudioDeviceWindowsCore();
   ~AudioDeviceWindowsCore();
 
   static bool CoreAudioIsSupported();
+
+  // IUnknown (required by IMMNotificationClient).
+  ULONG __stdcall AddRef() override;
+  ULONG __stdcall Release() override;
+  HRESULT __stdcall QueryInterface(REFIID iid, void** object) override;
 
   // Retrieve the currently utilized audio layer
   virtual int32_t ActiveAudioLayer(
@@ -247,6 +253,7 @@ class AudioDeviceWindowsCore : public AudioDeviceGeneric {
   HANDLE _hPlayThread;
   HANDLE _hRenderStartedEvent;
   HANDLE _hShutdownRenderEvent;
+  HANDLE _hDeviceRestartEvent;
 
   HANDLE _hCaptureSamplesReadyEvent;
   HANDLE _hRecThread;
@@ -277,6 +284,30 @@ class AudioDeviceWindowsCore : public AudioDeviceGeneric {
   double _perfCounterFactor;
 
  private:
+  // IMMNotificationClient implementation. At present we
+  // only handle OnDefaultDeviceChanged event.
+  HRESULT __stdcall OnDeviceStateChanged(LPCWSTR pwstrDeviceId,
+                                         DWORD dwNewState) override {
+    return S_OK;
+  }
+
+  HRESULT __stdcall OnDeviceAdded(LPCWSTR pwstrDeviceId) override {
+    return S_OK;
+  }
+
+  HRESULT __stdcall OnDeviceRemoved(LPCWSTR pwstrDeviceId) override {
+    return S_OK;
+  }
+
+  HRESULT __stdcall OnDefaultDeviceChanged(
+      EDataFlow flow,
+      ERole role,
+      LPCWSTR pwstrDefaultDeviceId) override;
+
+  HRESULT __stdcall OnPropertyValueChanged(LPCWSTR pwstrDeviceId,
+                                           const PROPERTYKEY key) override {
+    return S_OK;
+  }
   bool _initialized;
   bool _recording;
   bool _playing;
@@ -291,6 +322,7 @@ class AudioDeviceWindowsCore : public AudioDeviceGeneric {
   AudioDeviceModule::WindowsDeviceType _outputDevice;
   uint16_t _inputDeviceIndex;
   uint16_t _outputDeviceIndex;
+  LONG ref_count_ = 1;
 };
 
 #endif  // #if (_MSC_VER >= 1400)

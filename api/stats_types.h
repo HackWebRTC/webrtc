@@ -108,6 +108,7 @@ class RTC_EXPORT StatsReport {
     kStatsValueNameConcealmentEvents,
     kStatsValueNameDataChannelId,
     kStatsValueNameFramesDecoded,
+    kStatsValueNameFramesRendered,
     kStatsValueNameFramesEncoded,
     kStatsValueNameJitterBufferDelay,
     kStatsValueNameMediaType,

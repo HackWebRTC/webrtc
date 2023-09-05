@@ -136,6 +136,7 @@ DtlsTransport::DtlsTransport(IceTransportInternal* ice_transport,
                              const webrtc::CryptoOptions& crypto_options,
                              webrtc::RtcEventLog* event_log)
     : transport_name_(ice_transport->transport_name()),
+      media_type_(ice_transport->media_type()),
       component_(ice_transport->component()),
       ice_transport_(ice_transport),
       downward_(NULL),
@@ -159,6 +160,10 @@ DtlsTransportState DtlsTransport::dtls_state() const {
 
 const std::string& DtlsTransport::transport_name() const {
   return transport_name_;
+}
+
+cricket::MediaType DtlsTransport::media_type() const {
+  return media_type_;
 }
 
 int DtlsTransport::component() const {

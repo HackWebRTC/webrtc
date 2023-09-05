@@ -55,6 +55,7 @@ class MockIceTransport : public IceTransportInternal {
   }
 
   const std::string& transport_name() const override { return transport_name_; }
+  cricket::MediaType media_type() const override { return cricket::MEDIA_TYPE_VIDEO; }
   int component() const override { return 0; }
   void SetIceRole(IceRole role) override {}
   void SetIceTiebreaker(uint64_t tiebreaker) override {}

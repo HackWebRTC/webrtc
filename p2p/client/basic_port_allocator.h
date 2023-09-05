@@ -63,6 +63,7 @@ class RTC_EXPORT BasicPortAllocator : public PortAllocator {
 
   PortAllocatorSession* CreateSessionInternal(
       const std::string& content_name,
+      cricket::MediaType media_type,
       int component,
       const std::string& ice_ufrag,
       const std::string& ice_pwd) override;
@@ -112,6 +113,7 @@ class RTC_EXPORT BasicPortAllocatorSession
  public:
   BasicPortAllocatorSession(BasicPortAllocator* allocator,
                             const std::string& content_name,
+                            cricket::MediaType media_type,
                             int component,
                             const std::string& ice_ufrag,
                             const std::string& ice_pwd);

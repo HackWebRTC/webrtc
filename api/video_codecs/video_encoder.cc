@@ -39,7 +39,7 @@ VideoCodecVP9 VideoEncoder::GetDefaultVp9Settings() {
   vp9_settings.numberOfTemporalLayers = 1;
   vp9_settings.denoisingOn = true;
   vp9_settings.frameDroppingOn = true;
-  vp9_settings.keyFrameInterval = 3000;
+  vp9_settings.keyFrameInterval = 60;
   vp9_settings.adaptiveQpMode = true;
   vp9_settings.automaticResizeOn = true;
   vp9_settings.numberOfSpatialLayers = 1;

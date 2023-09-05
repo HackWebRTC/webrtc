@@ -173,6 +173,7 @@ static const char kAttributePacketization[] = "packetization";
 // Experimental flags
 static const char kAttributeXGoogleFlag[] = "x-google-flag";
 static const char kValueConference[] = "conference";
+static const char kAttributeQuality[] = "quality";
 
 static const char kAttributeRtcpRemoteEstimate[] = "remote-net-estimate";
 
@@ -220,7 +221,8 @@ static const char kMediaTypeVideo[] = "video";
 static const char kMediaTypeAudio[] = "audio";
 static const char kMediaTypeData[] = "application";
 static const char kMediaPortRejected[] = "0";
-// draft-ietf-mmusic-trickle-ice-01
+static const char kMediaAttributeQualityHigh[] = "10";
+    // draft-ietf-mmusic-trickle-ice-01
 // When no candidates have been gathered, set the connection
 // address to IP6 ::.
 // TODO(perkj): FF can not parse IP6 ::. See http://crbug/430333
@@ -3112,6 +3114,15 @@ bool ParseContent(const std::string& message,
     } else if (HasAttribute(line, kAttributeIceOption)) {
       if (!ParseIceOptions(line, &transport->transport_options, error)) {
         return false;
+      }
+    } else if (HasAttribute(line, kAttributeQuality)) {
+      // RFC 4655: a=quality:xx
+      std::string quality("");
+      if (!GetValue(line, kAttributeQuality, &quality, error)) {
+        return false;
+      }
+      if (quality == kMediaAttributeQualityHigh) {
+        media_desc->set_quality(10);
       }
     } else if (HasAttribute(line, kAttributeFmtp)) {
       if (!ParseFmtpAttributes(line, media_type, media_desc, error)) {

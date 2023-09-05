@@ -1794,13 +1794,13 @@ void WebRtcVideoChannel::SetInterface(NetworkInterface* iface) {
   // result in the default value being used.
   const std::string group_name_recv_buf_size =
       call_->trials().Lookup("WebRTC-IncreasedReceivebuffers");
-  int recv_buffer_size = kVideoRtpRecvBufferSize;
+  int recv_buffer_size = kVideoRtpBufferSizeIncreased;
   if (!group_name_recv_buf_size.empty() &&
       (sscanf(group_name_recv_buf_size.c_str(), "%d", &recv_buffer_size) != 1 ||
        recv_buffer_size <= 0)) {
     RTC_LOG(LS_WARNING) << "Invalid receive buffer size: "
                         << group_name_recv_buf_size;
-    recv_buffer_size = kVideoRtpRecvBufferSize;
+    recv_buffer_size = kVideoRtpBufferSizeIncreased;
   }
 
   MediaChannel::SetOption(NetworkInterface::ST_RTP, rtc::Socket::OPT_RCVBUF,
@@ -1812,17 +1812,17 @@ void WebRtcVideoChannel::SetInterface(NetworkInterface* iface) {
   // ideal value should be.
   const std::string group_name_send_buf_size =
       call_->trials().Lookup("WebRTC-SendBufferSizeBytes");
-  int send_buffer_size = kVideoRtpSendBufferSize;
+  int send_buffer_size = kVideoRtpBufferSizeIncreased;
   if (!group_name_send_buf_size.empty() &&
       (sscanf(group_name_send_buf_size.c_str(), "%d", &send_buffer_size) != 1 ||
        send_buffer_size <= 0)) {
     RTC_LOG(LS_WARNING) << "Invalid send buffer size: "
                         << group_name_send_buf_size;
-    send_buffer_size = kVideoRtpSendBufferSize;
+    send_buffer_size = kVideoRtpBufferSizeIncreased;
   }
 
   MediaChannel::SetOption(NetworkInterface::ST_RTP, rtc::Socket::OPT_SNDBUF,
-                          send_buffer_size);
+                          kVideoRtpBufferSizeIncreased);
 }
 
 void WebRtcVideoChannel::SetFrameDecryptor(

@@ -352,6 +352,7 @@ void SetInboundRTPStreamStatsFromVideoReceiverInfo(
   inbound_video->frames_received = video_receiver_info.frames_received;
   inbound_video->frames_decoded = video_receiver_info.frames_decoded;
   inbound_video->frames_dropped = video_receiver_info.frames_dropped;
+  inbound_video->frames_rendered = video_receiver_info.frames_rendered;
   inbound_video->key_frames_decoded = video_receiver_info.key_frames_decoded;
   if (video_receiver_info.frame_width > 0) {
     inbound_video->frame_width =

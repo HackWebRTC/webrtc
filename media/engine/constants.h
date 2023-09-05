@@ -16,6 +16,7 @@ namespace cricket {
 extern const int kVideoMtu;
 extern const int kVideoRtpSendBufferSize;
 extern const int kVideoRtpRecvBufferSize;
+extern const int kVideoRtpBufferSizeIncreased;
 
 }  // namespace cricket
 
