@@ -7,16 +7,13 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+/* This file is borrowed from sdk/objc/components/video_codec/RTCCodecSpecificInfoH264.h. */
 
 #import <Foundation/Foundation.h>
 
-#import "RTCVideoDecoder.h"
-#import "sdk/objc/base/RTCMacros.h"
-#import "RTCVideoCodecInfo.h"
+#import "RTCCodecSpecificInfo.h"
+#import "RTCMacros.h"
 
 RTC_OBJC_EXPORT
-@interface RTC_OBJC_TYPE (RTCVideoDecoderH264) : NSObject <RTC_OBJC_TYPE(RTCVideoDecoder)>
-
-- (instancetype)initWithCodecInfo:(RTC_OBJC_TYPE(RTCVideoCodecInfo) *)codecInfo;
-
+@interface RTCCodecSpecificInfoH265 : NSObject <RTCCodecSpecificInfo>
 @end

@@ -53,7 +53,7 @@ class ObjCVideoDecoder : public VideoDecoder {
   }
 
   int32_t RegisterDecodeCompleteCallback(DecodedImageCallback *callback) override {
-    [decoder_ setCallback:^(RTC_OBJC_TYPE(RTCVideoFrame) * frame) {
+    [decoder_ setCallback:^(RTC_OBJC_TYPE(RTCVideoFrame) * frame, int32_t qp) {
       const auto buffer = rtc::make_ref_counted<ObjCFrameBuffer>(frame.buffer);
       VideoFrame videoFrame = VideoFrame::Builder()
                                   .set_video_frame_buffer(buffer)
@@ -61,7 +61,8 @@ class ObjCVideoDecoder : public VideoDecoder {
                                   .set_timestamp_ms(0)
                                   .set_rotation((VideoRotation)frame.rotation)
                                   .build();
-      callback->Decoded(videoFrame);
+      callback->Decoded(videoFrame, std::nullopt,
+                        qp >= 0 ? std::optional<uint8_t>((uint8_t) qp) : std::nullopt);
     }];
 
     return WEBRTC_VIDEO_CODEC_OK;

@@ -7,16 +7,19 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+/* This file is borrowed from sdk/objc/components/video_codec/RTCCodecSpecificInfoH264+Private.h */
 
-#import <Foundation/Foundation.h>
+#import "RTCCodecSpecificInfoH265.h"
 
-#import "RTCVideoDecoder.h"
-#import "sdk/objc/base/RTCMacros.h"
-#import "RTCVideoCodecInfo.h"
+#include "modules/video_coding/include/video_codec_interface.h"
 
-RTC_OBJC_EXPORT
-@interface RTC_OBJC_TYPE (RTCVideoDecoderH264) : NSObject <RTC_OBJC_TYPE(RTCVideoDecoder)>
+NS_ASSUME_NONNULL_BEGIN
 
-- (instancetype)initWithCodecInfo:(RTC_OBJC_TYPE(RTCVideoCodecInfo) *)codecInfo;
+/* Interfaces for converting to/from internal C++ formats. */
+@interface RTCCodecSpecificInfoH265 ()
+
+- (webrtc::CodecSpecificInfo)nativeCodecSpecificInfo;
 
 @end
+
+NS_ASSUME_NONNULL_END

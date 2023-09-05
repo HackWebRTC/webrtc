@@ -10,13 +10,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "RTCVideoDecoder.h"
-#import "sdk/objc/base/RTCMacros.h"
-#import "RTCVideoCodecInfo.h"
+#import "RTCMacros.h"
 
-RTC_OBJC_EXPORT
-@interface RTC_OBJC_TYPE (RTCVideoDecoderH264) : NSObject <RTC_OBJC_TYPE(RTCVideoDecoder)>
-
-- (instancetype)initWithCodecInfo:(RTC_OBJC_TYPE(RTCVideoCodecInfo) *)codecInfo;
-
-@end
+RTC_OBJC_EXPORT extern NSString *const kRTCVideoCodecH265Name;
+RTC_OBJC_EXPORT extern NSString *const kRTCLevel31Main;

@@ -31,6 +31,8 @@ class MediaCodecUtils {
   static final String QCOM_PREFIX = "OMX.qcom.";
   static final String[] SOFTWARE_IMPLEMENTATION_PREFIXES = {
       "OMX.google.", "OMX.SEC.", "c2.android"};
+  static final String HISI_PREFIX = "OMX.hisi.";
+  static final String IMG_PREFIX = "OMX.IMG.";
 
   // NV12 color format supported by QCOM codec, but not declared in MediaCodec -
   // see /hardware/qcom/media/mm-core/inc/OMX_QCOMExtns.h

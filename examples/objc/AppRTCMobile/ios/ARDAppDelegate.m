@@ -29,7 +29,9 @@
 
 - (BOOL)application:(UIApplication *)application
     didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-  NSDictionary *fieldTrials = @{};
+  NSDictionary *fieldTrials = @{
+      @"WebRTC-Video-H26xPacketBuffer": @"Enabled"
+  };
   RTCInitFieldTrialDictionary(fieldTrials);
   RTCInitializeSSL();
   RTCSetupInternalTracer();
