@@ -40,8 +40,8 @@
 
 - (void)setStats:(RTC_OBJC_TYPE(RTCStatisticsReport) *)stats {
   _statsBuilder.stats = stats;
-  _statsLabel.text = _statsBuilder.statsString;
-  NSLog(@"%@", _statsLabel.text);
+  //_statsLabel.text = _statsBuilder.statsString;
+  NSLog(@"XXPXX  %@", _statsBuilder.statsString);
 }
 
 - (void)layoutSubviews {

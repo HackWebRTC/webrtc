@@ -235,6 +235,10 @@ static int const kKbpsMultiplier = 1000;
       [[RTC_OBJC_TYPE(RTCPeerConnectionFactory) alloc] initWithEncoderFactory:encoderFactory
                                                                decoderFactory:decoderFactory];
 
+  RTCPeerConnectionFactoryOptions* options = [[RTCPeerConnectionFactoryOptions alloc] init];
+  options.disableEncryption = isLoopback;
+  [_factory setOptions:options];
+
 #if defined(WEBRTC_IOS)
   if (kARDAppClientEnableTracing) {
     NSString *filePath = [self documentsFilePathForFileName:@"webrtc-trace.txt"];
@@ -833,11 +837,9 @@ static int const kKbpsMultiplier = 1000;
   if (_defaultPeerConnectionConstraints) {
     return _defaultPeerConnectionConstraints;
   }
-  NSString *value = _isLoopback ? @"false" : @"true";
-  NSDictionary *optionalConstraints = @{ @"DtlsSrtpKeyAgreement" : value };
   RTC_OBJC_TYPE(RTCMediaConstraints) *constraints =
       [[RTC_OBJC_TYPE(RTCMediaConstraints) alloc] initWithMandatoryConstraints:nil
-                                                           optionalConstraints:optionalConstraints];
+                                                           optionalConstraints:nil];
   return constraints;
 }
 

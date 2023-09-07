@@ -901,6 +901,9 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       @Override
       public void run() {
         logAndToast("ICE connected, delay=" + delta + "ms");
+        if (peerConnectionParameters.loopback) {
+          onConnected();
+        }
       }
     });
   }
