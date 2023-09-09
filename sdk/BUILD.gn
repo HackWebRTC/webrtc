@@ -1360,6 +1360,7 @@ if (is_ios || is_mac) {
           "objc/api/video_codec/RTCVideoEncoderAV1.h",
           "objc/api/video_frame_buffer/RTCNativeI420Buffer.h",
           "objc/api/video_frame_buffer/RTCNativeMutableI420Buffer.h",
+          "objc/avconf/CFRPCapturer.h",
         ]
 
         if (!build_with_chromium) {
@@ -1389,6 +1390,7 @@ if (is_ios || is_mac) {
           ":videocapture_objc",
           ":videocodec_objc",
           ":videotoolbox_objc",
+          ":avconf_objc",
         ]
         if (rtc_ios_macos_use_opengl_rendering) {
           deps += [ ":opengl_ui_objc" ]
@@ -1769,6 +1771,26 @@ if (is_ios || is_mac) {
         "CoreVideo.framework",
         "VideoToolbox.framework",
       ]
+    }
+
+    rtc_library("avconf_objc") {
+      sources = [
+        "objc/avconf/CFRPCapturer.h",
+        "objc/avconf/CFRPCapturer.m",
+      ]
+
+      deps = [
+        ":base_objc",
+      ]
+
+      frameworks = [
+        "ReplayKit.framework",
+      ]
+
+      configs += [
+        "..:common_objc",
+      ]
+      public_configs = [ ":common_config_objc" ]
     }
   }
 }
