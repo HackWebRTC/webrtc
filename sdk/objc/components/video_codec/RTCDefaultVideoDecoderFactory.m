@@ -73,7 +73,7 @@
 
 - (id<RTC_OBJC_TYPE(RTCVideoDecoder)>)createDecoder:(RTC_OBJC_TYPE(RTCVideoCodecInfo) *)info {
   if ([info.name isEqualToString:kRTCVideoCodecH264Name]) {
-    return [[RTC_OBJC_TYPE(RTCVideoDecoderH264) alloc] init];
+    return [[RTC_OBJC_TYPE(RTCVideoDecoderH264) alloc] initWithCodecInfo:info];
   } else if ([info.name isEqualToString:kRTCVideoCodecVp8Name]) {
     return [RTC_OBJC_TYPE(RTCVideoDecoderVP8) vp8Decoder];
   } else if ([info.name isEqualToString:kRTCVideoCodecVp9Name] &&
@@ -84,7 +84,7 @@
 #if !defined(DISABLE_H265)
   if (@available(iOS 11, *)) {
     if ([info.name isEqualToString:kRTCVideoCodecH265Name]) {
-      return [[RTCVideoDecoderH265 alloc] init];
+      return [[RTC_OBJC_TYPE(RTCVideoDecoderH265) alloc] initWithCodecInfo:info];
     }
   }
 #endif

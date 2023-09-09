@@ -87,7 +87,7 @@
 #if !defined(DISABLE_H265)
   if (@available(iOS 11, *)) {
     if ([info.name isEqualToString:kRTCVideoCodecH265Name]) {
-      return [[RTCVideoEncoderH265 alloc] initWithCodecInfo:info];
+      return [[RTC_OBJC_TYPE(RTCVideoEncoderH265) alloc] initWithCodecInfo:info];
     }
   }
 #endif

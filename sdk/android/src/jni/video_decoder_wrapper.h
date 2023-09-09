@@ -19,6 +19,9 @@
 #include "api/sequence_checker.h"
 #include "api/video_codecs/video_decoder.h"
 #include "common_video/h264/h264_bitstream_parser.h"
+#ifndef DISABLE_H265
+#include "common_video/h265/h265_bitstream_parser.h"
+#endif
 #include "rtc_base/race_checker.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "sdk/android/src/jni/jni_helpers.h"
@@ -94,6 +97,10 @@ class VideoDecoderWrapper : public VideoDecoder {
   bool initialized_ RTC_GUARDED_BY(decoder_thread_checker_);
   H264BitstreamParser h264_bitstream_parser_
       RTC_GUARDED_BY(decoder_thread_checker_);
+#ifndef DISABLE_H265
+  H265BitstreamParser h265_bitstream_parser_
+      RTC_GUARDED_BY(decoder_thread_checker_);
+#endif
 
   DecodedImageCallback* callback_ RTC_GUARDED_BY(callback_race_checker_);
 

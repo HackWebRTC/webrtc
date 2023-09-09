@@ -355,7 +355,9 @@ int VideoEncoderWrapper::ParseQp(rtc::ArrayView<const uint8_t> buffer) {
       break;
 #ifndef DISABLE_H265
     case kVideoCodecH265:
-      success = h265_bitstream_parser_.GetLastSliceQp(&qp);
+      h265_bitstream_parser_.ParseBitstream(buffer);
+      qp = h265_bitstream_parser_.GetLastSliceQp().value_or(-1);
+      success = (qp >= 0);
       break;
 #endif
     default:  // Default is to not provide QP.

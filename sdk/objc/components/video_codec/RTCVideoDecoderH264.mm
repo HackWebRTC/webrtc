@@ -13,16 +13,23 @@
 
 #import <VideoToolbox/VideoToolbox.h>
 
+#import "api/peerconnection/RTCEncodedImage+Private.h"
 #import "base/RTCVideoFrame.h"
 #import "base/RTCVideoFrameBuffer.h"
 #import "components/video_frame_buffer/RTCCVPixelBuffer.h"
 #import "helpers.h"
 #import "helpers/scoped_cftyperef.h"
 
+#import "RTCH264ProfileLevelId.h"
+
 #if defined(WEBRTC_IOS)
 #import "helpers/UIDevice+RTCDevice.h"
 #endif
 
+#include "common_video/h264/h264_bitstream_parser.h"
+#if !defined(DISABLE_H265)
+#include "common_video/h265/h265_bitstream_parser.h"
+#endif
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -32,9 +39,10 @@
 // Struct that we pass to the decoder per frame to decode. We receive it again
 // in the decoder callback.
 struct RTCFrameDecodeParams {
-  RTCFrameDecodeParams(RTCVideoDecoderCallback cb, int64_t ts) : callback(cb), timestamp(ts) {}
+  RTCFrameDecodeParams(RTCVideoDecoderCallback cb, int64_t ts, int32_t qp) : callback(cb), timestamp(ts), qp(qp) {}
   RTCVideoDecoderCallback callback;
   int64_t timestamp;
+  int32_t qp;
 };
 
 @interface RTC_OBJC_TYPE (RTCVideoDecoderH264)
@@ -67,7 +75,7 @@ void decompressionOutputCallback(void *decoderRef,
             rotation:RTCVideoRotation_0
          timeStampNs:CMTimeGetSeconds(timestamp) * rtc::kNumNanosecsPerSec];
   decodedFrame.timeStamp = decodeParams->timestamp;
-  decodeParams->callback(decodedFrame);
+  decodeParams->callback(decodedFrame, decodeParams->qp);
 }
 
 // Decoder.
@@ -77,12 +85,19 @@ void decompressionOutputCallback(void *decoderRef,
   VTDecompressionSessionRef _decompressionSession;
   RTCVideoDecoderCallback _callback;
   OSStatus _error;
+  webrtc::H264BitstreamParser _h264BitstreamParser;
+  RTC_OBJC_TYPE(RTCVideoCodecInfo) *_codecInfo;
+
+#if !defined(DISABLE_H265)
+  webrtc::H265BitstreamParser _h265BitstreamParser;
+#endif
 }
 
-- (instancetype)init {
+- (instancetype)initWithCodecInfo:(RTC_OBJC_TYPE(RTCVideoCodecInfo) *)codecInfo {
   self = [super init];
   if (self) {
     _memoryPool = CMMemoryPoolCreate(nil);
+    _codecInfo = codecInfo;
   }
   return self;
 }
@@ -110,9 +125,20 @@ void decompressionOutputCallback(void *decoderRef,
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
+#if !defined(DISABLE_H265)
+  rtc::ScopedCFTypeRef<CMVideoFormatDescriptionRef> inputFormat(nullptr);
+  if ([_codecInfo.name isEqualToString:kRTCVideoCodecH264Name]) {
+    inputFormat = rtc::ScopedCF(webrtc::CreateVideoFormatDescription((uint8_t *)inputImage.buffer.bytes,
+                                                                     inputImage.buffer.length));
+  } else if (@available(iOS 11, *)) {
+    inputFormat = rtc::ScopedCF(webrtc::CreateH265VideoFormatDescription((uint8_t*)inputImage.buffer.bytes,
+                                                                         inputImage.buffer.length));
+  }
+#else
   rtc::ScopedCFTypeRef<CMVideoFormatDescriptionRef> inputFormat =
       rtc::ScopedCF(webrtc::CreateVideoFormatDescription((uint8_t *)inputImage.buffer.bytes,
                                                          inputImage.buffer.length));
+#endif
   if (inputFormat) {
     // Check if the video format has changed, and reinitialize decoder if
     // needed.
@@ -134,6 +160,26 @@ void decompressionOutputCallback(void *decoderRef,
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   CMSampleBufferRef sampleBuffer = nullptr;
+#if !defined(DISABLE_H265)
+  if ([_codecInfo.name isEqualToString:kRTCVideoCodecH264Name]) {
+    if (!webrtc::H264AnnexBBufferToCMSampleBuffer((uint8_t *)inputImage.buffer.bytes,
+                                                  inputImage.buffer.length,
+                                                  _videoFormat,
+                                                  &sampleBuffer,
+                                                  _memoryPool)) {
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
+  } else if (@available(iOS 11, *)) {
+    if (!webrtc::H265AnnexBBufferToCMSampleBuffer((uint8_t*)inputImage.buffer.bytes,
+                                                  inputImage.buffer.length,
+                                                  _videoFormat,
+                                                  &sampleBuffer)) {
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
+  } else {
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
+#else
   if (!webrtc::H264AnnexBBufferToCMSampleBuffer((uint8_t *)inputImage.buffer.bytes,
                                                 inputImage.buffer.length,
                                                 _videoFormat,
@@ -141,10 +187,27 @@ void decompressionOutputCallback(void *decoderRef,
                                                 _memoryPool)) {
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
+#endif
   RTC_DCHECK(sampleBuffer);
   VTDecodeFrameFlags decodeFlags = kVTDecodeFrame_EnableAsynchronousDecompression;
   std::unique_ptr<RTCFrameDecodeParams> frameDecodeParams;
-  frameDecodeParams.reset(new RTCFrameDecodeParams(_callback, inputImage.timeStamp));
+
+  int qp = -1;
+#if !defined(DISABLE_H265)
+  if ([_codecInfo.name isEqualToString:kRTCVideoCodecH264Name]) {
+    _h264BitstreamParser.ParseBitstream([inputImage nativeEncodedImage]);
+    qp = _h264BitstreamParser.GetLastSliceQp().value_or(-1);
+  } else {
+    _h265BitstreamParser.ParseBitstream([inputImage nativeEncodedImage]);
+    qp = _h265BitstreamParser.GetLastSliceQp().value_or(-1);
+  }
+#else
+    _h264BitstreamParser.ParseBitstream([inputImage nativeEncodedImage]);
+    qp = _h264BitstreamParser.GetLastSliceQp().value_or(-1);
+#endif
+
+  frameDecodeParams.reset(new RTCFrameDecodeParams(_callback, inputImage.timeStamp, qp));
+
   OSStatus status = VTDecompressionSessionDecodeFrame(
       _decompressionSession, sampleBuffer, decodeFlags, frameDecodeParams.release(), nullptr);
 #if defined(WEBRTC_IOS)
@@ -154,7 +217,7 @@ void decompressionOutputCallback(void *decoderRef,
       [self resetDecompressionSession] == WEBRTC_VIDEO_CODEC_OK) {
     RTC_LOG(LS_INFO) << "Failed to decode frame with code: " << status
                      << " retrying decode after decompression session reset";
-    frameDecodeParams.reset(new RTCFrameDecodeParams(_callback, inputImage.timeStamp));
+    frameDecodeParams.reset(new RTCFrameDecodeParams(_callback, inputImage.timeStamp, qp));
     status = VTDecompressionSessionDecodeFrame(
         _decompressionSession, sampleBuffer, decodeFlags, frameDecodeParams.release(), nullptr);
   }
