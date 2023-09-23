@@ -30,6 +30,9 @@ group("modules") {
   if (rtc_use_recorder) {
     deps += [ "recording" ]
   }
+  if (rtc_use_bt_mixer) {
+    deps += [ "backing_track" ]
+  }
 }
 
 rtc_source_set("module_api_public") {

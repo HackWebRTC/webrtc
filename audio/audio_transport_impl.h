@@ -23,12 +23,18 @@
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 
+//#define AVCONF_DUMP_RECORD_AUDIO 1
+
 namespace webrtc {
 
 class AudioSender;
 
 class AudioTransportImpl : public AudioTransport {
  public:
+  typedef void (*PreDeliverRecordedDataCallback)(
+      void* opaque, void* audioSamples, const size_t nSamples,
+      const size_t nBytesPerSample, const size_t nChannels,
+      const uint32_t samplesPerSec);
   AudioTransportImpl(
       AudioMixer* mixer,
       AudioProcessing* audio_processing,
@@ -86,6 +92,15 @@ class AudioTransportImpl : public AudioTransport {
                           size_t send_num_channels);
   void SetStereoChannelSwapping(bool enable);
 
+  void AddPlaybackSource(AudioMixer::Source* source);
+  void RemovePlaybackSource(AudioMixer::Source* source);
+
+  void SetPreDeliverRecordedDataCallback(
+      PreDeliverRecordedDataCallback callback, void* opaque) {
+      pre_deliver_callback_ = callback;
+      pre_deliver_callback_opaque_ = opaque;
+  }
+
  private:
   void SendProcessedData(std::unique_ptr<AudioFrame> audio_frame);
 
@@ -110,6 +125,15 @@ class AudioTransportImpl : public AudioTransport {
   AudioFrame mixed_frame_;
   // Converts mixed audio to the audio device output rate.
   PushResampler<int16_t> render_resampler_;
+
+  PreDeliverRecordedDataCallback pre_deliver_callback_;
+  void* pre_deliver_callback_opaque_;
+
+#if defined(AVCONF_DUMP_RECORD_AUDIO)
+  FILE* dump_cap_;
+  FILE* dump_proc_;
+  FILE* dump_mixed_;
+#endif
 };
 }  // namespace webrtc
 

@@ -16,6 +16,7 @@ import android.os.ParcelFileDescriptor;
 import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.Nullable;
+import com.piasy.avconf.AudioMixer;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -1231,11 +1232,12 @@ public class PeerConnectionClient {
   }
 
   private boolean recording = false;
+  private AudioMixer mixer;
 
   public void switchCamera() {
     if (false) {
       executor.execute(this ::switchCameraInternal);
-    } else if (true) {
+    } else if (false) {
       executor.execute(() -> {
         if (peerConnection == null) {
           return;
@@ -1248,6 +1250,35 @@ public class PeerConnectionClient {
           peerConnection.stopRecorder(RtpTransceiver.RtpTransceiverDirection.SEND_ONLY.ordinal());
         }
       });
+    } else if (true) {
+      if (mixer != null) {
+        mixer.stopMixer();
+        mixer = null;
+      } else {
+        // adb push examples/objc/AppRTCMobile/ios/resources/mozart.mp3 /sdcard/
+        mixer = new AudioMixer("/sdcard/mozart.mp3", 48000, 1, 10_000, false, 20,
+            new AudioMixer.MixerCallback() {
+              @Override
+              public void onMixerSsrcFinished(final int ssrc) {
+                Logging.d(TAG, "onMixerSsrcFinished " + ssrc);
+                executor.execute(() -> {
+                  mixer.stopMixer();
+                  mixer = null;
+                });
+              }
+
+              @Override
+              public void onMixerSsrcError(final int ssrc, final int code) {
+                Logging.d(TAG, "onMixerSsrcError " + ssrc + " " + code);
+                executor.execute(() -> {
+                  mixer.stopMixer();
+                  mixer = null;
+                });
+              }
+            });
+        mixer.startMixer();
+        mixer.toggleMusicStreaming(true);
+      }
     }
   }
 

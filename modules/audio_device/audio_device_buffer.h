@@ -81,6 +81,8 @@ class AudioDeviceBuffer {
   explicit AudioDeviceBuffer(TaskQueueFactory* task_queue_factory);
   virtual ~AudioDeviceBuffer();
 
+  static AudioDeviceBuffer* Instance();
+
   int32_t RegisterAudioCallback(AudioTransport* audio_callback);
 
   void StartPlayout();
@@ -113,6 +115,14 @@ class AudioDeviceBuffer {
   virtual int32_t GetPlayoutData(void* audio_buffer);
 
   int32_t SetTypingStatus(bool typing_status);
+
+  TaskQueueFactory* task_queue_factory() {
+    return task_queue_factory_;
+  }
+
+  AudioTransport* audio_transport() {
+    return audio_transport_cb_;
+  }
 
  private:
   // Starts/stops periodic logging of audio stats.
@@ -154,6 +164,7 @@ class AudioDeviceBuffer {
   // worker thread but it does not necessarily have to be the same thread for
   // each task.
   rtc::TaskQueue task_queue_;
+  TaskQueueFactory* task_queue_factory_;
 
   // Raw pointer to AudioTransport instance. Supplied to RegisterAudioCallback()
   // and it must outlive this object. It is not possible to change this member

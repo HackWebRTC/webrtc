@@ -40,8 +40,10 @@ if (is_win || is_ios || is_android) {
 
 if (is_ios || is_android) {
   rtc_use_recorder = true
+  rtc_use_bt_mixer = true
 } else {
   rtc_use_recorder = false
+  rtc_use_bt_mixer = false
 }
 
 # Use bundled hermetic Xcode installation maintainted by Chromium,

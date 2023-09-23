@@ -13,6 +13,9 @@
 #include <algorithm>
 #include <memory>
 #include <utility>
+#include <chrono>
+#include <inttypes.h>
+#include <sys/stat.h>
 
 #include "audio/remix_resample.h"
 #include "audio/utility/audio_frame_operations.h"
@@ -99,11 +102,42 @@ AudioTransportImpl::AudioTransportImpl(
                       this->SendProcessedData(std::move(frame));
                     })
               : nullptr),
-      mixer_(mixer) {
+      mixer_(mixer),
+      pre_deliver_callback_(nullptr),
+      pre_deliver_callback_opaque_(nullptr) {
   RTC_DCHECK(mixer);
+
+#if defined(AVCONF_DUMP_RECORD_AUDIO)
+  mkdir("/sdcard/avconf/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+  int64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now().time_since_epoch())
+                    .count();
+  char dump_name[1024];
+  snprintf(dump_name, 1023, "/sdcard/avconf/cap_%" PRId64 ".pcm", now);
+  dump_cap_ = fopen(dump_name, "wb");
+  snprintf(dump_name, 1023, "/sdcard/avconf/proc_%" PRId64 ".pcm", now);
+  dump_proc_ = fopen(dump_name, "wb");
+  snprintf(dump_name, 1023, "/sdcard/avconf/mixed_%" PRId64 ".pcm", now);
+  dump_mixed_ = fopen(dump_name, "wb");
+#endif
 }
 
-AudioTransportImpl::~AudioTransportImpl() {}
+AudioTransportImpl::~AudioTransportImpl() {
+#if defined(AVCONF_DUMP_RECORD_AUDIO)
+  if (dump_cap_) {
+    fclose(dump_cap_);
+    dump_cap_ = nullptr;
+  }
+  if (dump_proc_) {
+    fclose(dump_proc_);
+    dump_proc_ = nullptr;
+  }
+  if (dump_mixed_) {
+    fclose(dump_mixed_);
+    dump_mixed_ = nullptr;
+  }
+#endif
+}
 
 int32_t AudioTransportImpl::RecordedDataIsAvailable(
     const void* audio_data,
@@ -157,6 +191,14 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
     swap_stereo_channels = swap_stereo_channels_;
   }
 
+#if defined(AVCONF_DUMP_RECORD_AUDIO)
+  if (dump_cap_) {
+      fwrite(audio_data, 1,
+             number_of_channels * number_of_frames * bytes_per_sample,
+             dump_cap_);
+  }
+#endif
+
   std::unique_ptr<AudioFrame> audio_frame(new AudioFrame());
   InitializeCaptureFrame(sample_rate, send_sample_rate_hz, number_of_channels,
                          send_num_channels, audio_frame.get());
@@ -168,6 +210,32 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
                       audio_frame.get());
   audio_frame->set_absolute_capture_timestamp_ms(estimated_capture_time_ns /
                                                  1000000);
+
+#if defined(AVCONF_DUMP_RECORD_AUDIO)
+  if (dump_proc_) {
+      fwrite(audio_frame->data(), 1,
+             audio_frame->num_channels() * audio_frame->samples_per_channel() *
+                 bytes_per_sample,
+             dump_proc_);
+  }
+#endif
+
+  if (pre_deliver_callback_) {
+      pre_deliver_callback_(pre_deliver_callback_opaque_,
+                            audio_frame->mutable_data(),
+                            audio_frame->samples_per_channel(),
+                            bytes_per_sample, audio_frame->num_channels(),
+                            audio_frame->sample_rate_hz());
+  }
+
+#if defined(AVCONF_DUMP_RECORD_AUDIO)
+  if (dump_mixed_) {
+      fwrite(audio_frame->data(), 1,
+             audio_frame->num_channels() * audio_frame->samples_per_channel() *
+                 bytes_per_sample,
+             dump_mixed_);
+  }
+#endif
 
   RTC_DCHECK_GT(audio_frame->samples_per_channel_, 0);
   if (async_audio_processing_)
@@ -279,4 +347,12 @@ void AudioTransportImpl::SetStereoChannelSwapping(bool enable) {
   swap_stereo_channels_ = enable;
 }
 
+void AudioTransportImpl::AddPlaybackSource(AudioMixer::Source* source) {
+  mixer_->AddSource(source);
+}
+
+void AudioTransportImpl::RemovePlaybackSource(AudioMixer::Source* source) {
+  mixer_->RemoveSource(source);
+  delete source;
+}
 }  // namespace webrtc
