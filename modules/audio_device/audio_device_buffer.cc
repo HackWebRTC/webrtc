@@ -25,6 +25,8 @@
 
 namespace webrtc {
 
+static AudioDeviceBuffer* gInstance = nullptr;
+
 static const char kTimerQueueName[] = "AudioDeviceBufferTimer";
 
 // Time between two sucessive calls to LogStats().
@@ -41,11 +43,16 @@ static const size_t kMinValidCallTimeTimeInMilliseconds =
 static const double k2Pi = 6.28318530717959;
 #endif
 
+AudioDeviceBuffer* AudioDeviceBuffer::Instance() {
+  return gInstance;
+}
+
 AudioDeviceBuffer::AudioDeviceBuffer(TaskQueueFactory* task_queue_factory,
                                      bool create_detached)
     : task_queue_(task_queue_factory->CreateTaskQueue(
           kTimerQueueName,
           TaskQueueFactory::Priority::NORMAL)),
+      task_queue_factory_(task_queue_factory),
       audio_transport_cb_(nullptr),
       rec_sample_rate_(0),
       play_sample_rate_(0),
@@ -71,6 +78,8 @@ AudioDeviceBuffer::AudioDeviceBuffer(TaskQueueFactory* task_queue_factory,
   if (create_detached) {
     main_thread_checker_.Detach();
   }
+
+  gInstance = this;
 }
 
 AudioDeviceBuffer::~AudioDeviceBuffer() {
@@ -89,6 +98,7 @@ AudioDeviceBuffer::~AudioDeviceBuffer() {
   // it doesn't expect member would be used after its destruction has started.
   task_queue_.get_deleter()(task_queue_.get());
   task_queue_.release();
+  gInstance = nullptr;
 }
 
 int32_t AudioDeviceBuffer::RegisterAudioCallback(

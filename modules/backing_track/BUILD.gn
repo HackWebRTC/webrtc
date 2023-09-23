@@ -1,0 +1,48 @@
+# Copyright (c) 2014 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
+
+import("../../webrtc.gni")
+
+if (is_android) {
+  import("//build/config/android/config.gni")
+  import("//build/config/android/rules.gni")
+}
+
+rtc_source_set("backing_track") {
+  visibility = [ "*" ]
+  sources = [
+    "audio_file_decoder.h",
+    "audio_file_decoder.cc",
+    "audio_mixer_global.h",
+    "audio_resampler.h",
+    "audio_resampler.cc",
+    "audio_source_compressed.h",
+    "audio_source_compressed.cc",
+    "audio_source_pcm.h",
+    "audio_source_pcm.cc",
+    "audio_source.h",
+    "audio_source.cc",
+    "avx_helper.h",
+    "bt_audio_mixer.h",
+    "bt_audio_mixer.cc",
+    "mixer_config.h",
+    "mixer_source.h",
+    "mixer_source.cc",
+    "pcm_channel.h",
+    "pcm_channel.cc",
+  ]
+  deps = [
+    "../../rtc_base:checks",
+    "../audio_device:audio_device_buffer",
+    "../audio_mixer:audio_mixer_impl",
+  ]
+
+  public_configs = [
+    "//third_party/ffmpeg:ffmpeg_dependent_config",
+  ]
+}

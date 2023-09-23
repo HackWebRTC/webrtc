@@ -966,6 +966,11 @@ if (current_os == "linux" || is_android) {
       "native_api/jni/jvm.cc",
       "src/jni/jni_generator_helper.h",
     ]
+    if (rtc_use_bt_mixer) {
+      sources += [
+        "src/jni/audio_mixer_jni.cc",
+      ]
+    }
 
     public = [
       "native_api/jni/application_context_provider.h",
@@ -985,6 +990,12 @@ if (current_os == "linux" || is_android) {
       "../../rtc_base:checks",
       "//third_party/jni_zero",
     ]
+
+    if (rtc_use_bt_mixer) {
+      deps += [
+        "//modules/backing_track:backing_track",
+      ]
+    }
   }
 
   rtc_library("native_api_base") {

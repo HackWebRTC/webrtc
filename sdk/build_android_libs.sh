@@ -31,7 +31,8 @@ python ffmpeg-webrtc-build-scripts/build_ffmpeg.py android arm-neon --branding C
     --disable-parsers --enable-parser=mpegaudio --enable-parser=h264 --enable-parser=hevc \
     --disable-demuxers --enable-demuxer=mov --enable-demuxer=mp3 --enable-demuxer=mpegts \
     --disable-decoders --enable-decoder=mp3 --enable-decoder=aac \
-    --disable-muxers --enable-muxer=matroska
+    --disable-muxers --enable-muxer=matroska \
+    --enable-swresample
 
 python ffmpeg-webrtc-build-scripts/build_ffmpeg.py android ia32 --branding Chrome -- \
     --disable-asm \
@@ -40,7 +41,8 @@ python ffmpeg-webrtc-build-scripts/build_ffmpeg.py android ia32 --branding Chrom
     --disable-parsers --enable-parser=mpegaudio --enable-parser=h264 --enable-parser=hevc \
     --disable-demuxers --enable-demuxer=mov --enable-demuxer=mp3 --enable-demuxer=mpegts \
     --disable-decoders --enable-decoder=mp3 --enable-decoder=aac \
-    --disable-muxers --enable-muxer=matroska
+    --disable-muxers --enable-muxer=matroska \
+    --enable-swresample
 
 python ffmpeg-webrtc-build-scripts/build_ffmpeg.py android arm64 --branding Chrome -- \
     --disable-asm \
@@ -49,7 +51,8 @@ python ffmpeg-webrtc-build-scripts/build_ffmpeg.py android arm64 --branding Chro
     --disable-parsers --enable-parser=mpegaudio --enable-parser=h264 --enable-parser=hevc \
     --disable-demuxers --enable-demuxer=mov --enable-demuxer=mp3 --enable-demuxer=mpegts \
     --disable-decoders --enable-decoder=mp3 --enable-decoder=aac \
-    --disable-muxers --enable-muxer=matroska
+    --disable-muxers --enable-muxer=matroska \
+    --enable-swresample
 
 python ffmpeg-webrtc-build-scripts/build_ffmpeg.py android x64 --branding Chrome -- \
     --disable-asm \
@@ -58,7 +61,8 @@ python ffmpeg-webrtc-build-scripts/build_ffmpeg.py android x64 --branding Chrome
     --disable-parsers --enable-parser=mpegaudio --enable-parser=h264 --enable-parser=hevc \
     --disable-demuxers --enable-demuxer=mov --enable-demuxer=mp3 --enable-demuxer=mpegts \
     --disable-decoders --enable-decoder=mp3 --enable-decoder=aac \
-    --disable-muxers --enable-muxer=matroska
+    --disable-muxers --enable-muxer=matroska \
+    --enable-swresample
 
 ./chromium/scripts/copy_config.sh
 python ffmpeg-webrtc-build-scripts/generate_gn.py
