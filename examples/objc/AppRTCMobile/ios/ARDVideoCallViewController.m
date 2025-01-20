@@ -28,7 +28,8 @@
 
 @interface ARDVideoCallViewController () <ARDAppClientDelegate,
                                           ARDVideoCallViewDelegate,
-                                          RTC_OBJC_TYPE (RTCAudioSessionDelegate)>
+                                          RTC_OBJC_TYPE (RTCAudioSessionDelegate),
+                                          CFAudioMixerDelegate>
 @property(nonatomic, strong) RTC_OBJC_TYPE(RTCVideoTrack) * remoteVideoTrack;
 @property(nonatomic, readonly) ARDVideoCallView *videoCallView;
 @property(nonatomic, assign) AVAudioSessionPortOverride portOverride;
@@ -39,6 +40,8 @@
   RTC_OBJC_TYPE(RTCVideoTrack) * _remoteVideoTrack;
   ARDCaptureController *_captureController;
   ARDFileCaptureController *_fileCaptureController NS_AVAILABLE_IOS(10);
+
+  CFAudioMixer* _mixer;
 }
 
 @synthesize videoCallView = _videoCallView;
@@ -150,15 +153,91 @@
   [self showAlertWithMessage:message];
 }
 
+#pragma mark - CFAudioMixerDelegate
+
+- (void)onSsrcFinished:(int32_t)ssrc {
+    RTCLog(@"onSsrcFinished: %d", ssrc);
+    __weak ARDVideoCallViewController* weakSelf = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+      ARDVideoCallViewController* strongSelf = weakSelf;
+      if (strongSelf) {
+        [strongSelf->_mixer stopMixer];
+        strongSelf->_mixer = nil;
+      }
+    });
+}
+
+- (void)onSsrcError:(int32_t)ssrc code:(int32_t)code {
+    RTCLog(@"onSsrcError: %d %d", ssrc, code);
+    __weak ARDVideoCallViewController* weakSelf = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+      ARDVideoCallViewController* strongSelf = weakSelf;
+      if (strongSelf) {
+        [strongSelf->_mixer stopMixer];
+        strongSelf->_mixer = nil;
+      }
+    });
+}
+
 #pragma mark - ARDVideoCallViewDelegate
 
 - (void)videoCallViewDidHangup:(ARDVideoCallView *)view {
   [self hangup];
 }
 
+- (nullable NSString*)pathForFileName:(NSString*)fileName {
+    NSArray* nameComponents = [fileName componentsSeparatedByString:@"."];
+    if (nameComponents.count != 2) {
+        return nil;
+    }
+
+    NSString* path = [[NSBundle mainBundle] pathForResource:nameComponents[0]
+                                                     ofType:nameComponents[1]];
+    return path;
+}
+
+- (nullable NSString*)pathUnderDocuments:(NSString*)fileName {
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(
+        NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentsDirPath = paths.firstObject;
+    NSString *filePath =
+        [documentsDirPath stringByAppendingPathComponent:fileName];
+    return filePath;
+}
+
 - (void)videoCallView:(ARDVideoCallView *)view
     shouldSwitchCameraWithCompletion:(void (^)(NSError *))completion {
-  [_captureController switchCamera:completion];
+#if 0
+    [_captureController switchCamera:completion];
+#elif 0
+    static bool recorded = false;
+    recorded = !recorded;
+    if (recorded) {
+        [[_client pc] startRecorder:RTCRtpTransceiverDirectionSendOnly
+                               path:[self pathUnderDocuments:@"send.mkv"];
+    } else {
+        [[_client pc] stopRecorder:RTCRtpTransceiverDirectionSendOnly];
+    }
+    completion(nil);
+#elif 1
+    if (!_mixer) {
+        _mixer = [[CFAudioMixer alloc]
+            initWithBackingTrack:[self pathForFileName:@"mozart.mp3"]
+               captureSampleRate:48000
+               captureChannelNum:1
+                 frameDurationUs:10000
+              enableMusicSyncFix:false
+            waitingMixDelayFrame:5
+                        delegate:self];
+        [_mixer startMixer];
+        [_mixer toggleMusicStreaming:true];
+
+    } else {
+        [_mixer stopMixer];
+        _mixer = nil;
+    }
+    completion(nil);
+#endif
 }
 
 - (void)videoCallView:(ARDVideoCallView *)view
@@ -201,7 +280,7 @@
 #pragma mark - Private
 
 - (void)setRemoteVideoTrack:(RTC_OBJC_TYPE(RTCVideoTrack) *)remoteVideoTrack {
-  if (_remoteVideoTrack == remoteVideoTrack) {
+  if (_remoteVideoTrack == remoteVideoTrack || !_videoCallView.remoteVideoView) {
     return;
   }
   [_remoteVideoTrack removeRenderer:_videoCallView.remoteVideoView];
