@@ -16,58 +16,60 @@ PREBUILT_PATH=$1
 
 export PATH=$(pwd)/third_party/llvm-build/Release+Asserts/bin:$PATH
 
-pushd third_party/ffmpeg
+if [ "$1" != "--skip-build-ffmpeg" ]; then
+  pushd third_party/ffmpeg
 
-git reset --hard
-git apply ../../sdk/ffmpeg_build.diff
-if [ ! -d 'ffmpeg-webrtc-build-scripts' ]; then
-  git clone https://github.com/HackWebRTC/ffmpeg-webrtc-build-scripts.git
+  git reset --hard
+  git apply ../../sdk/ffmpeg_build.diff
+  if [ ! -d 'ffmpeg-webrtc-build-scripts' ]; then
+    git clone https://github.com/HackWebRTC/ffmpeg-webrtc-build-scripts.git
+  fi
+
+  python ffmpeg-webrtc-build-scripts/build_ffmpeg.py android arm-neon --branding Chrome -- \
+      --disable-asm \
+      --disable-encoders --disable-hwaccels --disable-bsfs --disable-devices --disable-filters \
+      --disable-protocols --enable-protocol=file \
+      --disable-parsers --enable-parser=mpegaudio --enable-parser=h264 --enable-parser=hevc \
+      --disable-demuxers --enable-demuxer=mov --enable-demuxer=mp3 --enable-demuxer=mpegts \
+      --disable-decoders --enable-decoder=mp3 --enable-decoder=aac \
+      --disable-muxers --enable-muxer=matroska \
+      --enable-swresample
+
+  python ffmpeg-webrtc-build-scripts/build_ffmpeg.py android ia32 --branding Chrome -- \
+      --disable-asm \
+      --disable-encoders --disable-hwaccels --disable-bsfs --disable-devices --disable-filters \
+      --disable-protocols --enable-protocol=file \
+      --disable-parsers --enable-parser=mpegaudio --enable-parser=h264 --enable-parser=hevc \
+      --disable-demuxers --enable-demuxer=mov --enable-demuxer=mp3 --enable-demuxer=mpegts \
+      --disable-decoders --enable-decoder=mp3 --enable-decoder=aac \
+      --disable-muxers --enable-muxer=matroska \
+      --enable-swresample
+
+  python ffmpeg-webrtc-build-scripts/build_ffmpeg.py android arm64 --branding Chrome -- \
+      --disable-asm \
+      --disable-encoders --disable-hwaccels --disable-bsfs --disable-devices --disable-filters \
+      --disable-protocols --enable-protocol=file \
+      --disable-parsers --enable-parser=mpegaudio --enable-parser=h264 --enable-parser=hevc \
+      --disable-demuxers --enable-demuxer=mov --enable-demuxer=mp3 --enable-demuxer=mpegts \
+      --disable-decoders --enable-decoder=mp3 --enable-decoder=aac \
+      --disable-muxers --enable-muxer=matroska \
+      --enable-swresample
+
+  python ffmpeg-webrtc-build-scripts/build_ffmpeg.py android x64 --branding Chrome -- \
+      --disable-asm \
+      --disable-encoders --disable-hwaccels --disable-bsfs --disable-devices --disable-filters \
+      --disable-protocols --enable-protocol=file \
+      --disable-parsers --enable-parser=mpegaudio --enable-parser=h264 --enable-parser=hevc \
+      --disable-demuxers --enable-demuxer=mov --enable-demuxer=mp3 --enable-demuxer=mpegts \
+      --disable-decoders --enable-decoder=mp3 --enable-decoder=aac \
+      --disable-muxers --enable-muxer=matroska \
+      --enable-swresample
+
+  ./chromium/scripts/copy_config.sh
+  python ffmpeg-webrtc-build-scripts/generate_gn.py
+
+  popd
 fi
-
-python ffmpeg-webrtc-build-scripts/build_ffmpeg.py android arm-neon --branding Chrome -- \
-    --disable-asm \
-    --disable-encoders --disable-hwaccels --disable-bsfs --disable-devices --disable-filters \
-    --disable-protocols --enable-protocol=file \
-    --disable-parsers --enable-parser=mpegaudio --enable-parser=h264 --enable-parser=hevc \
-    --disable-demuxers --enable-demuxer=mov --enable-demuxer=mp3 --enable-demuxer=mpegts \
-    --disable-decoders --enable-decoder=mp3 --enable-decoder=aac \
-    --disable-muxers --enable-muxer=matroska \
-    --enable-swresample
-
-python ffmpeg-webrtc-build-scripts/build_ffmpeg.py android ia32 --branding Chrome -- \
-    --disable-asm \
-    --disable-encoders --disable-hwaccels --disable-bsfs --disable-devices --disable-filters \
-    --disable-protocols --enable-protocol=file \
-    --disable-parsers --enable-parser=mpegaudio --enable-parser=h264 --enable-parser=hevc \
-    --disable-demuxers --enable-demuxer=mov --enable-demuxer=mp3 --enable-demuxer=mpegts \
-    --disable-decoders --enable-decoder=mp3 --enable-decoder=aac \
-    --disable-muxers --enable-muxer=matroska \
-    --enable-swresample
-
-python ffmpeg-webrtc-build-scripts/build_ffmpeg.py android arm64 --branding Chrome -- \
-    --disable-asm \
-    --disable-encoders --disable-hwaccels --disable-bsfs --disable-devices --disable-filters \
-    --disable-protocols --enable-protocol=file \
-    --disable-parsers --enable-parser=mpegaudio --enable-parser=h264 --enable-parser=hevc \
-    --disable-demuxers --enable-demuxer=mov --enable-demuxer=mp3 --enable-demuxer=mpegts \
-    --disable-decoders --enable-decoder=mp3 --enable-decoder=aac \
-    --disable-muxers --enable-muxer=matroska \
-    --enable-swresample
-
-python ffmpeg-webrtc-build-scripts/build_ffmpeg.py android x64 --branding Chrome -- \
-    --disable-asm \
-    --disable-encoders --disable-hwaccels --disable-bsfs --disable-devices --disable-filters \
-    --disable-protocols --enable-protocol=file \
-    --disable-parsers --enable-parser=mpegaudio --enable-parser=h264 --enable-parser=hevc \
-    --disable-demuxers --enable-demuxer=mov --enable-demuxer=mp3 --enable-demuxer=mpegts \
-    --disable-decoders --enable-decoder=mp3 --enable-decoder=aac \
-    --disable-muxers --enable-muxer=matroska \
-    --enable-swresample
-
-./chromium/scripts/copy_config.sh
-python ffmpeg-webrtc-build-scripts/generate_gn.py
-
-popd
 
 gn gen out/android_release_arm --args='target_os="android" target_cpu="arm" proprietary_codecs=true ffmpeg_branding="Chrome" is_debug=false is_component_build=false rtc_include_tests=false enable_rust=true enable_rust_cxx=true'
 ninja -C out/android_release_arm libjingle_peerconnection_so

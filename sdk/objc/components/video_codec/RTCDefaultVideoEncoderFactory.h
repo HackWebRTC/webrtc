@@ -24,6 +24,9 @@ RTC_OBJC_EXPORT
 
 @property(nonatomic, retain) RTC_OBJC_TYPE(RTCVideoCodecInfo) *preferredCodec;
 
+- (instancetype)init;
+- (instancetype)initWithTransitMode:(bool)transitMode;
+
 + (NSArray<RTC_OBJC_TYPE(RTCVideoCodecInfo) *> *)supportedCodecs;
 
 @end

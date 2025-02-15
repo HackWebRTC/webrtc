@@ -30,4 +30,16 @@ public class Camera1Capturer extends CameraCapturer {
     Camera1Session.create(createSessionCallback, events, captureToTexture, applicationContext,
         surfaceTextureHelper, cameraName, width, height, framerate);
   }
+
+  public void toggleTorch(boolean torchOn) {
+    if (currentSession != null) {
+      cameraThreadHandler.post(() -> ((Camera1Session) currentSession).toggleTorch(torchOn));
+    }
+  }
+
+  public void triggerAutoFocus() {
+    if (currentSession != null) {
+      cameraThreadHandler.post(() -> ((Camera1Session) currentSession).triggerAutoFocus());
+    }
+  }
 }

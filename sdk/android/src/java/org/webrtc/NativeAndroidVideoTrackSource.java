@@ -56,7 +56,7 @@ class NativeAndroidVideoTrackSource {
    */
   public void onFrameCaptured(VideoFrame frame) {
     nativeOnFrameCaptured(nativeAndroidVideoTrackSource, frame.getRotation(),
-        frame.getTimestampNs(), frame.getBuffer());
+        frame.getTimestampNs(), frame.getDummy(), frame.getBuffer());
   }
 
   /**
@@ -95,5 +95,6 @@ class NativeAndroidVideoTrackSource {
   private static native VideoProcessor.FrameAdaptationParameters nativeAdaptFrame(
       long nativeAndroidVideoTrackSource, int width, int height, int rotation, long timestampNs);
   private static native void nativeOnFrameCaptured(
-      long nativeAndroidVideoTrackSource, int rotation, long timestampNs, VideoFrame.Buffer buffer);
+      long nativeAndroidVideoTrackSource, int rotation, long timestampNs, boolean dummy,
+      VideoFrame.Buffer buffer);
 }

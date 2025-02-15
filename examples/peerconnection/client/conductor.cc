@@ -142,6 +142,12 @@ class CapturerTrackSource : public webrtc::VideoTrackSource {
 
 Conductor::Conductor(PeerConnectionClient* client, MainWindow* main_wnd)
     : peer_id_(-1), loopback_(false), client_(client), main_wnd_(main_wnd) {
+#if defined(WEBRTC_WIN)
+  AllocConsole();
+  freopen("conout$", "w", stdout);
+  freopen("conout$", "w", stderr);
+#endif  // WEBRTC_WIN
+
   client_->RegisterObserver(this);
   main_wnd->RegisterObserver(this);
 }
@@ -315,6 +321,9 @@ void Conductor::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
 void Conductor::OnSignedIn() {
   RTC_LOG(LS_INFO) << __FUNCTION__;
   main_wnd_->SwitchToPeerList(client_->peers());
+
+  InitializePeerConnection();
+  ReinitializePeerConnectionForLoopback();
 }
 
 void Conductor::OnDisconnected() {

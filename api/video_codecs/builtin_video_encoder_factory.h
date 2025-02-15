@@ -22,6 +22,8 @@ namespace webrtc {
 // The factory has simulcast support for VP8.
 RTC_EXPORT std::unique_ptr<VideoEncoderFactory>
 CreateBuiltinVideoEncoderFactory();
+RTC_EXPORT std::unique_ptr<VideoEncoderFactory>
+CreateBuiltinVideoEncoderFactory(bool transit_mode);
 
 }  // namespace webrtc
 

@@ -33,6 +33,9 @@ group("modules") {
   if (rtc_use_bt_mixer) {
     deps += [ "backing_track" ]
   }
+  if (rtc_use_transit_media) {
+    deps += [ "transit_media" ]
+  }
 }
 
 rtc_source_set("module_api_public") {

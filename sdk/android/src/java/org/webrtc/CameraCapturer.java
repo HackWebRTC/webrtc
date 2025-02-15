@@ -18,7 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @SuppressWarnings("deprecation")
-abstract class CameraCapturer implements CameraVideoCapturer {
+public abstract class CameraCapturer implements CameraVideoCapturer {
   enum SwitchState {
     IDLE, // No switch requested.
     PENDING, // Waiting for previous capture session to open.
@@ -178,14 +178,14 @@ abstract class CameraCapturer implements CameraVideoCapturer {
 
   // Initialized on initialize
   // -------------------------
-  private Handler cameraThreadHandler;
+  protected Handler cameraThreadHandler;
   private Context applicationContext;
   private org.webrtc.CapturerObserver capturerObserver;
   private SurfaceTextureHelper surfaceHelper;
 
   private final Object stateLock = new Object();
   private boolean sessionOpening; /* guarded by stateLock */
-  @Nullable private CameraSession currentSession; /* guarded by stateLock */
+  @Nullable protected CameraSession currentSession; /* guarded by stateLock */
   private String cameraName; /* guarded by stateLock */
   private String pendingCameraName; /* guarded by stateLock */
   private int width; /* guarded by stateLock */
@@ -239,6 +239,12 @@ abstract class CameraCapturer implements CameraVideoCapturer {
     this.capturerObserver = capturerObserver;
     this.surfaceHelper = surfaceTextureHelper;
     this.cameraThreadHandler = surfaceTextureHelper.getHandler();
+  }
+
+  public void setCapturerObserver(CapturerObserver capturerObserver) {
+    synchronized (stateLock) {
+      this.capturerObserver = capturerObserver;
+    }
   }
 
   @Override
@@ -356,6 +362,16 @@ abstract class CameraCapturer implements CameraVideoCapturer {
         switchCameraInternal(switchEventsHandler, cameraName);
       }
     });
+  }
+
+  @Override
+  public boolean isCurrentFrontFacing() {
+    return cameraEnumerator.isFrontFacing(cameraName);
+  }
+
+  @Override
+  public boolean isCurrentBackFacing() {
+    return cameraEnumerator.isBackFacing(cameraName);
   }
 
   @Override

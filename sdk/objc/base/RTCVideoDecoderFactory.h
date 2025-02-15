@@ -27,6 +27,8 @@ RTC_OBJC_EXPORT
 - (NSArray<RTC_OBJC_TYPE(RTCVideoCodecInfo) *> *)
     supportedCodecs;  // TODO(andersc): "supportedFormats" instead?
 
+- (bool) transitMode;
+
 @end
 
 NS_ASSUME_NONNULL_END

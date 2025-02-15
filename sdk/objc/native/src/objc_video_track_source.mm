@@ -10,6 +10,9 @@
 
 #include "sdk/objc/native/src/objc_video_track_source.h"
 
+#ifndef DISABLE_TRANSIT_MEDIA
+#import "avconf/CFTransitBuffer.h"
+#endif
 #import "base/RTCVideoFrame.h"
 #import "base/RTCVideoFrameBuffer.h"
 #import "components/video_frame_buffer/RTCCVPixelBuffer.h"
@@ -89,7 +92,14 @@ void ObjCVideoTrackSource::OnCapturedFrame(RTC_OBJC_TYPE(RTCVideoFrame) * frame)
   }
 
   rtc::scoped_refptr<VideoFrameBuffer> buffer;
-  if (adapted_width == frame.width && adapted_height == frame.height) {
+#ifndef DISABLE_TRANSIT_MEDIA
+  if ([frame.buffer isKindOfClass:[CFTransitBuffer class]]) {
+    CFTransitBuffer *transitBuffer = (CFTransitBuffer *)frame.buffer;
+    buffer = [transitBuffer buffer];
+  } else
+#endif
+  if ((adapted_width == frame.width && adapted_height == frame.height) ||
+      frame.dummy) {
     // No adaption - optimized path.
     buffer = rtc::make_ref_counted<ObjCFrameBuffer>(frame.buffer);
   } else if ([frame.buffer isKindOfClass:[RTC_OBJC_TYPE(RTCCVPixelBuffer) class]]) {
@@ -116,7 +126,7 @@ void ObjCVideoTrackSource::OnCapturedFrame(RTC_OBJC_TYPE(RTCVideoFrame) * frame)
   // Applying rotation is only supported for legacy reasons and performance is
   // not critical here.
   VideoRotation rotation = static_cast<VideoRotation>(frame.rotation);
-  if (apply_rotation() && rotation != kVideoRotation_0) {
+  if (apply_rotation() && rotation != kVideoRotation_0 && !frame.dummy && !frame.transit) {
     buffer = I420Buffer::Rotate(*buffer->ToI420(), rotation);
     rotation = kVideoRotation_0;
   }
@@ -124,6 +134,8 @@ void ObjCVideoTrackSource::OnCapturedFrame(RTC_OBJC_TYPE(RTCVideoFrame) * frame)
   OnFrame(VideoFrame::Builder()
               .set_video_frame_buffer(buffer)
               .set_rotation(rotation)
+              .set_dummy(frame.dummy)
+              .set_transit(frame.transit)
               .set_timestamp_us(translated_timestamp_us)
               .build());
 }

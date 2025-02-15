@@ -6,10 +6,17 @@ android {
     namespace "org.webrtc"
     compileSdk rootProject.ext.androidCompileSdkVersion
 
+    ndkVersion '21.3.6528147'
+
+    buildFeatures {
+        buildConfig true
+    }
     defaultConfig {
         minSdk rootProject.ext.minSdkVersion
         versionCode rootProject.ext.releaseVersionCode
         versionName rootProject.ext.releaseVersionName
+
+        buildConfigField "String", "VERSION_NAME", "\"${rootProject.ext.releaseVersionName}\""
 
         sourceSets.main.java.srcDirs = [
                 "$rootProject.rootDir/webrtc/src/main/java",

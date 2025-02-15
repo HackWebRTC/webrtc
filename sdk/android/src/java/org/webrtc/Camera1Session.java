@@ -200,6 +200,24 @@ class Camera1Session implements CameraSession {
     }
   }
 
+  public void toggleTorch(boolean torchOn) {
+    if (state == SessionState.RUNNING
+        && info.facing == android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK) {
+      android.hardware.Camera.Parameters parameters = camera.getParameters();
+      parameters.setFlashMode(torchOn ? android.hardware.Camera.Parameters.FLASH_MODE_TORCH
+              : android.hardware.Camera.Parameters.FLASH_MODE_OFF);
+      camera.setParameters(parameters);
+    }
+  }
+
+  public void triggerAutoFocus() {
+    if (state == SessionState.RUNNING) {
+      Logging.d(TAG, "autoFocus start");
+      camera.autoFocus(
+              (success, camera) -> Logging.d(TAG, "autoFocus onAutoFocus success " + success));
+    }
+  }
+
   private void startCapturing() {
     Logging.d(TAG, "Start capturing");
     checkIsOnCameraThread();

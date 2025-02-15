@@ -39,6 +39,9 @@ RTC_OBJC_EXPORT
 /** Timestamp in nanoseconds. */
 @property(nonatomic, readonly) int64_t timeStampNs;
 
+@property(nonatomic, readonly) bool dummy;
+@property(nonatomic, readonly) bool transit;
+
 /** Timestamp 90 kHz. */
 @property(nonatomic, assign) int32_t timeStamp;
 
@@ -52,6 +55,12 @@ RTC_OBJC_EXPORT
 - (instancetype)initWithBuffer:(id<RTC_OBJC_TYPE(RTCVideoFrameBuffer)>)frameBuffer
                       rotation:(RTCVideoRotation)rotation
                    timeStampNs:(int64_t)timeStampNs;
+
+- (instancetype)initWithBuffer:(id<RTCVideoFrameBuffer>)frameBuffer
+                      rotation:(RTCVideoRotation)rotation
+                   timeStampNs:(int64_t)timeStampNs
+                         dummy:(bool)dummy
+                       transit:(bool)transit;
 
 /** Return a frame that is guaranteed to be I420, i.e. it is possible to access
  *  the YUV data on it.

@@ -38,9 +38,11 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
       DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC | DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION;
   // DPI for VirtualDisplay, does not seem to matter for us.
   private static final int VIRTUAL_DISPLAY_DPI = 400;
+  private static final String TAG = "ScreenCaptureAndroid";
 
-  private final Intent mediaProjectionPermissionResultData;
+  private Intent mediaProjectionPermissionResultData;
   private final MediaProjection.Callback mediaProjectionCallback;
+  private final RateLimiter fpsLimiter = new RateLimiter(1000 / 20);
 
   private int width;
   private int height;
@@ -51,6 +53,29 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   @Nullable private MediaProjection mediaProjection;
   private boolean isDisposed;
   @Nullable private MediaProjectionManager mediaProjectionManager;
+
+  private long lastLogStatisticsTime;
+  private int receivedFrameCount;
+  private int compensateFrameCount;
+  private int droppedFrameCount;
+
+  private long feedOldFrameInterval;
+  private long lastCapturedFrameTime;
+  private final Runnable feedOldFrame = new Runnable() {
+    @Override
+    public void run() {
+      long now = System.currentTimeMillis();
+      long noFrameDuration = now - lastCapturedFrameTime;
+      if (noFrameDuration > feedOldFrameInterval && lastCapturedFrameTime > 0) {
+        surfaceTextureHelper.reuseLastFrame();
+        lastCapturedFrameTime = now;
+        compensateFrameCount++;
+        logStatistics();
+      }
+
+      surfaceTextureHelper.getHandler().postDelayed(this, feedOldFrameInterval >> 1);
+    }
+  };
 
   /**
    * Constructs a new Screen Capturer.
@@ -63,14 +88,18 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   **/
   public ScreenCapturerAndroid(Intent mediaProjectionPermissionResultData,
       MediaProjection.Callback mediaProjectionCallback) {
+    Logging.d(TAG, "new ScreenCapturerAndroid " + mediaProjectionPermissionResultData + " " + mediaProjectionCallback);
     this.mediaProjectionPermissionResultData = mediaProjectionPermissionResultData;
     this.mediaProjectionCallback = mediaProjectionCallback;
   }
 
-  private void checkNotDisposed() {
+  private boolean checkNotDisposed() {
     if (isDisposed) {
-      throw new RuntimeException("capturer is disposed.");
+      Logging.e(TAG, "capturer is disposed.");
+      return true;
     }
+
+    return false;
   }
 
   @Nullable
@@ -83,7 +112,11 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void initialize(final SurfaceTextureHelper surfaceTextureHelper,
       final Context applicationContext, final CapturerObserver capturerObserver) {
-    checkNotDisposed();
+    Logging.d(TAG, "initialize " + surfaceTextureHelper + ", " + applicationContext + ", " + capturerObserver);
+
+    if (checkNotDisposed()) {
+      return;
+    }
 
     if (capturerObserver == null) {
       throw new RuntimeException("capturerObserver not set.");
@@ -99,15 +132,30 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
         Context.MEDIA_PROJECTION_SERVICE);
   }
 
+  public synchronized void setMediaProjectionPermissionResultData(Intent mediaProjectionPermissionResultData) {
+    Logging.d(TAG, "setMediaProjectionPermissionResultData " + mediaProjectionPermissionResultData);
+    this.mediaProjectionPermissionResultData = mediaProjectionPermissionResultData;
+  }
+
   @Override
   // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
   @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void startCapture(
-      final int width, final int height, final int ignoredFramerate) {
-    checkNotDisposed();
+      final int width, final int height, final int frameRate) {
+    Logging.d(TAG, "startCapture " + width + "x" + height + "@" + frameRate + " " + mediaProjectionPermissionResultData);
+
+    if (checkNotDisposed()) {
+      return;
+    }
+    if (mediaProjectionPermissionResultData == null) {
+      Logging.e(TAG, "startCapture mediaProjectionPermissionResultData is null");
+      return;
+    }
 
     this.width = width;
     this.height = height;
+    feedOldFrameInterval = 1000 / frameRate;
+    fpsLimiter.updateInterval(1000 / frameRate);
 
     mediaProjection = mediaProjectionManager.getMediaProjection(
         Activity.RESULT_OK, mediaProjectionPermissionResultData);
@@ -118,13 +166,21 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
     updateVirtualDisplay();
     capturerObserver.onCapturerStarted(true);
     surfaceTextureHelper.startListening(ScreenCapturerAndroid.this);
+    surfaceTextureHelper.getHandler().postDelayed(feedOldFrame, feedOldFrameInterval >> 1);
+
+    Logging.d(TAG, "startCapture finish, " + mediaProjection + ", " + virtualDisplay);
   }
 
   @Override
   // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
   @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void stopCapture() {
-    checkNotDisposed();
+    Logging.d(TAG, "stopCapture");
+
+    if (checkNotDisposed()) {
+      return;
+    }
+    surfaceTextureHelper.getHandler().removeCallbacks(feedOldFrame);
     ThreadUtils.invokeAtFrontUninterruptibly(surfaceTextureHelper.getHandler(), new Runnable() {
       @Override
       public void run() {
@@ -132,17 +188,21 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
         capturerObserver.onCapturerStopped();
 
         if (virtualDisplay != null) {
+          Logging.d(TAG, "stop virtualDisplay");
           virtualDisplay.release();
           virtualDisplay = null;
         }
 
         if (mediaProjection != null) {
+          Logging.d(TAG, "stop mediaProjection");
           // Unregister the callback before stopping, otherwise the callback recursively
           // calls this method.
           mediaProjection.unregisterCallback(mediaProjectionCallback);
           mediaProjection.stop();
           mediaProjection = null;
         }
+
+        Logging.d(TAG, "stopCapture finish");
       }
     });
   }
@@ -167,7 +227,9 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void changeCaptureFormat(
       final int width, final int height, final int ignoredFramerate) {
-    checkNotDisposed();
+    if (checkNotDisposed()) {
+      return;
+    }
 
     this.width = width;
     this.height = height;
@@ -208,8 +270,16 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   // This is called on the internal looper thread of {@Code SurfaceTextureHelper}.
   @Override
   public void onFrame(VideoFrame frame) {
+    lastCapturedFrameTime = System.currentTimeMillis();
     numCapturedFrames++;
-    capturerObserver.onFrameCaptured(frame);
+    if (!fpsLimiter.check(lastCapturedFrameTime)) {
+      droppedFrameCount++;
+      return;
+    }
+    capturerObserver.onFrameCaptured(new VideoFrame(frame.getBuffer(), frame.getRotation(),
+        lastCapturedFrameTime * 1_000_000));
+    receivedFrameCount++;
+    logStatistics();
   }
 
   @Override
@@ -219,5 +289,24 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
 
   public long getNumCapturedFrames() {
     return numCapturedFrames;
+  }
+
+  private void logStatistics() {
+    long ts = System.currentTimeMillis();
+    if (ts - lastLogStatisticsTime > 5000) {
+      if (lastLogStatisticsTime != 0) {
+        float duration = (ts - lastLogStatisticsTime) / (float) 1000;
+        Logging.d(TAG, "screen capture input statistics in " + duration
+                     + "s, receive frame rate " + (receivedFrameCount / duration)
+                     + ", compensate frame rate " + (compensateFrameCount / duration)
+                     + ", drop frame rate " + (droppedFrameCount / duration));
+      } else {
+        Logging.d(TAG, "screen capture input statistics start");
+      }
+      receivedFrameCount = 0;
+      compensateFrameCount = 0;
+      droppedFrameCount = 0;
+      lastLogStatisticsTime = ts;
+    }
   }
 }

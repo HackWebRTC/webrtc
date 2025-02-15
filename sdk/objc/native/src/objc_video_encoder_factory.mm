@@ -31,6 +31,9 @@
 #include "api/video/video_frame.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder.h"
+#ifndef DISABLE_TRANSIT_MEDIA
+#include "modules/transit_media/transit_video_encoder.h"
+#endif
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/logging.h"
@@ -215,6 +218,11 @@ VideoEncoderFactory::CodecSupport ObjCVideoEncoderFactory::QueryCodecSupport(
 
 std::unique_ptr<VideoEncoder> ObjCVideoEncoderFactory::Create(const Environment &env,
                                                               const SdpVideoFormat &format) {
+#ifndef DISABLE_TRANSIT_MEDIA
+  if ([encoder_factory_ transitMode]) {
+    return std::unique_ptr<TransitVideoEncoder>(new TransitVideoEncoder());
+  }
+#endif
   RTC_OBJC_TYPE(RTCVideoCodecInfo) *info =
       [[RTC_OBJC_TYPE(RTCVideoCodecInfo) alloc] initWithNativeSdpVideoFormat:format];
   id<RTC_OBJC_TYPE(RTCVideoEncoder)> encoder = [encoder_factory_ createEncoder:info];

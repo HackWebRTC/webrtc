@@ -3,7 +3,7 @@ targets:
   AppRTCMobile:
     type: application
     platform: iOS
-    deploymentTarget: "12.0"
+    deploymentTarget: "14.0"
     sources:
       - path: AppRTCMobile
       - path: ../objc/AppRTCMobile

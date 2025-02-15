@@ -1,0 +1,48 @@
+# Copyright (c) 2014 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
+
+import("../../webrtc.gni")
+
+group("transit_media") {
+  deps = [
+    ":transit_video",
+  ]
+}
+
+config("transit_media_include_config") {
+  include_dirs = [
+    "//sdk/libs/ffmpeg/include",
+  ]
+}
+
+rtc_source_set("transit_video") {
+  visibility = [ "*" ]
+  sources = [
+    "audio_device_module.cc",
+    "audio_device_module.h",
+    "exposed_h264_bitstream_parser.cc",
+    "exposed_h264_bitstream_parser.h",
+    "file_capturer.cc",
+    "file_capturer.h",
+    "mute_audio_device_module.cc",
+    "mute_audio_device_module.h",
+    "mute_audio_device.cc",
+    "mute_audio_device.h",
+    "transit_video_decoder.cc",
+    "transit_video_decoder.h",
+    "transit_video_encoder.cc",
+    "transit_video_encoder.h",
+    "transit_video_frame_buffer.h",
+  ]
+  deps = [
+  ]
+
+  public_configs = [
+    ":transit_media_include_config"
+  ]
+}

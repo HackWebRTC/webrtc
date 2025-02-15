@@ -21,6 +21,10 @@
 #include "api/video_codecs/video_encoder_factory.h"
 #include "media/engine/internal_encoder_factory.h"
 #include "media/engine/simulcast_encoder_adapter.h"
+#if !defined(DISABLE_TRANSIT_MEDIA)
+#include "modules/transit_media/transit_video_encoder.h"
+#endif
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 
@@ -30,10 +34,18 @@ namespace {
 class BuiltinVideoEncoderFactory : public VideoEncoderFactory {
  public:
   BuiltinVideoEncoderFactory()
-      : internal_encoder_factory_(new InternalEncoderFactory()) {}
+      : BuiltinVideoEncoderFactory(false) {}
+  BuiltinVideoEncoderFactory(bool transit_mode)
+      : internal_encoder_factory_(new InternalEncoderFactory()), transit_mode_(transit_mode) {}
 
   std::unique_ptr<VideoEncoder> Create(const Environment& env,
                                        const SdpVideoFormat& format) override {
+    RTC_LOG(LS_VERBOSE) << "transit mode " << transit_mode_;
+#if !defined(DISABLE_TRANSIT_MEDIA)
+    if (transit_mode_) {
+      return std::unique_ptr<TransitVideoEncoder>(new TransitVideoEncoder());
+    }
+#endif
     // Try creating an InternalEncoderFactory-backed SimulcastEncoderAdapter.
     // The adapter has a passthrough mode for the case that simulcast is not
     // used, so all responsibility can be delegated to it.
@@ -61,12 +73,17 @@ class BuiltinVideoEncoderFactory : public VideoEncoderFactory {
 
  private:
   const std::unique_ptr<VideoEncoderFactory> internal_encoder_factory_;
+  bool transit_mode_;
 };
 
 }  // namespace
 
 std::unique_ptr<VideoEncoderFactory> CreateBuiltinVideoEncoderFactory() {
   return std::make_unique<BuiltinVideoEncoderFactory>();
+}
+
+std::unique_ptr<VideoEncoderFactory> CreateBuiltinVideoEncoderFactory(bool transit_mode) {
+  return std::make_unique<BuiltinVideoEncoderFactory>(transit_mode);
 }
 
 }  // namespace webrtc

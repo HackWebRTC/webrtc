@@ -17,11 +17,31 @@
 NS_ASSUME_NONNULL_BEGIN
 
 RTC_OBJC_EXPORT
+@protocol CFYuvFrameCallbackInternal <NSObject>
+
+- (void)onYuvFrameWidth:(int)width height:(int)height buffer:(int8_t*)buffer length:(int)length;
+
+@end
+
+RTC_OBJC_EXPORT
+@protocol CFJpegFrameCallbackInternal <NSObject>
+
+- (void)onJpegFrame:(NSString*)path;
+
+@end
+
+RTC_OBJC_EXPORT
 @interface CFHijackCapturerDelegate : NSObject<RTCVideoCapturerDelegate>
 
 - (instancetype)initWithRealDelegate:(id<RTCVideoCapturerDelegate>)delegate;
 
 - (void)toggleMute:(bool)muted;
+
+- (void)togglePause:(bool)pause;
+
+- (void)setYuvFrameCallback:(int64_t)intervalMs callback:(nullable id<CFYuvFrameCallbackInternal>)callback;
+
+- (void)toggleSendLastFrame:(nullable NSString*)path callback:(nullable id<CFJpegFrameCallbackInternal>)callback;
 
 - (void)dispose;
 

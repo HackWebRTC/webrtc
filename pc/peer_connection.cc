@@ -2323,6 +2323,13 @@ int32_t PeerConnection::StopRecorder(int32_t dir) {
   return call_->StopRecorder(dir);
 }
 
+void PeerConnection::SendVideoKeyFrame() {
+  worker_thread()->PostTask(SafeTask(worker_thread_safety_, [this]() {
+    RTC_DCHECK_RUN_ON(worker_thread());
+    call_->SendVideoKeyFrame();
+  }));
+}
+
 bool PeerConnection::GetTransportDescription(
     const SessionDescription* description,
     const std::string& content_name,

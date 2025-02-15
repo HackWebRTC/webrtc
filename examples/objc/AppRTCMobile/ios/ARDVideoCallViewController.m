@@ -42,6 +42,9 @@
   ARDFileCaptureController *_fileCaptureController NS_AVAILABLE_IOS(10);
 
   CFAudioMixer* _mixer;
+#if TEST_TRANSIT_MODE
+  CFFileVideoCapturer * _cfFileCapturer;
+#endif
 }
 
 @synthesize videoCallView = _videoCallView;
@@ -114,6 +117,14 @@
   _captureController =
       [[ARDCaptureController alloc] initWithCapturer:localCapturer settings:settingsModel];
   [_captureController startCapture];
+}
+
+- (void)appClient:(ARDAppClient *)client
+    didCreateCFFileCapturer:(CFFileVideoCapturer *)fileCapturer {
+#if TEST_TRANSIT_MODE
+    _cfFileCapturer = fileCapturer;
+    [_cfFileCapturer startCapture];
+#endif
 }
 
 - (void)appClient:(ARDAppClient *)client
@@ -291,6 +302,9 @@
 }
 
 - (void)hangup {
+#if TEST_TRANSIT_MODE
+  [_cfFileCapturer stopCapture];
+#endif
   self.remoteVideoTrack = nil;
   _videoCallView.localVideoView.captureSession = nil;
   [_captureController stopCapture];

@@ -15,11 +15,14 @@ import static org.webrtc.MediaCodecUtils.INTEL_PREFIX;
 import static org.webrtc.MediaCodecUtils.QCOM_PREFIX;
 import static org.webrtc.MediaCodecUtils.HISI_PREFIX;
 import static org.webrtc.MediaCodecUtils.IMG_PREFIX;
+import static org.webrtc.MediaCodecUtils.SOFTWARE_IMPLEMENTATION_PREFIXES;
 
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
+import android.media.MediaFormat;
 import android.os.Build;
 import androidx.annotation.Nullable;
+import android.text.TextUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -89,11 +92,27 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
     this.enableIntelVp8Encoder = enableIntelVp8Encoder;
     this.enableH264HighProfile = enableH264HighProfile;
     this.codecAllowedPredicate = codecAllowedPredicate;
+
+    logAllCodecs();
   }
 
   @Deprecated
   public HardwareVideoEncoderFactory(boolean enableIntelVp8Encoder, boolean enableH264HighProfile) {
     this(null, enableIntelVp8Encoder, enableH264HighProfile);
+  }
+
+  public static boolean supportH265() {
+    HardwareVideoEncoderFactory factory = new HardwareVideoEncoderFactory(null, false, false);
+    VideoCodecInfo[] codecs = factory.getSupportedCodecs();
+    if (codecs == null) {
+      return false;
+    }
+    for (VideoCodecInfo codec : codecs) {
+      if (TextUtils.equals(codec.name, VideoCodecMimeType.H265.name())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Nullable
@@ -216,52 +235,29 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
   }
 
   private boolean isHardwareSupportedInCurrentSdkVp8(MediaCodecInfo info) {
-    String name = info.getName();
-    // QCOM Vp8 encoder is always supported.
-    return name.startsWith(QCOM_PREFIX)
-        // Hisi VP8 encoder seems to be supported. Needs more testing.
-        || (name.startsWith(HISI_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-        || (name.startsWith(IMG_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-        // Exynos VP8 encoder is supported in M or later.
-        || (name.startsWith(EXYNOS_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-        // Intel Vp8 encoder is always supported, with the intel encoder enabled.
-        || (name.startsWith(INTEL_PREFIX) && enableIntelVp8Encoder)
-        || vcp.isExtraHardwareSupported(name, "video/x-vnd.on2.vp8", vcp.parseWithTag(vcp.loadWithDom(extraMediaCodecFile), "Decoders"));
+    return isHardwareEncoder(info);
   }
 
   private boolean isHardwareSupportedInCurrentSdkVp9(MediaCodecInfo info) {
-    String name = info.getName();
-    return (name.startsWith(QCOM_PREFIX) || name.startsWith(EXYNOS_PREFIX) || name.startsWith(HISI_PREFIX)
-        || name.startsWith(IMG_PREFIX)
-        || vcp.isExtraHardwareSupported(name, "video/x-vnd.on2.vp9", vcp.parseWithTag(vcp.loadWithDom(extraMediaCodecFile), "Decoders")))
-        // Both QCOM and Exynos VP9 encoders are supported in N or later.
-        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N;
+    return isHardwareEncoder(info);
   }
 
   private boolean isHardwareSupportedInCurrentSdkH264(MediaCodecInfo info) {
-    // First, H264 hardware might perform poorly on this model.
-    if (H264_HW_EXCEPTION_MODELS.contains(Build.MODEL)) {
-      return false;
-    }
-    String name = info.getName();
-    // QCOM and Exynos H264 encoders are always supported.
-    return name.startsWith(QCOM_PREFIX) || name.startsWith(EXYNOS_PREFIX)
-        || (name.startsWith(HISI_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-        || (name.startsWith(IMG_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-        || vcp.isExtraHardwareSupported(name, "video/avc", vcp.parseWithTag(vcp.loadWithDom(extraMediaCodecFile), "Decoders"));
+    return isHardwareEncoder(info);
   }
 
   private boolean isHardwareSupportedInCurrentSdkH265(MediaCodecInfo info) {
-    String name = info.getName();
-    // QCOM H265 encoder is supported in KITKAT or later.
-    return (name.startsWith(QCOM_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-           // Exynos H265 encoder is supported in LOLLIPOP or later.
-           || (name.startsWith(EXYNOS_PREFIX)
-               && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-           // Hisi VP8 encoder seems to be supported. Needs more testing.
-           || (name.startsWith(HISI_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-           || (name.startsWith(IMG_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-           || vcp.isExtraHardwareSupported(name, "video/hevc", vcp.parseWithTag(vcp.loadWithDom(extraMediaCodecFile), "Decoders"));
+    return isHardwareEncoder(info);
+  }
+
+  private boolean isHardwareEncoder(MediaCodecInfo info) {
+    // just exclude software implementation encoder
+    for (String swImplPrefix : SOFTWARE_IMPLEMENTATION_PREFIXES) {
+      if (info.getName().startsWith(swImplPrefix)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private boolean isMediaCodecAllowed(MediaCodecInfo info) {
@@ -300,7 +296,33 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
   }
 
   private boolean isH264HighProfileSupported(MediaCodecInfo info) {
-    return enableH264HighProfile && Build.VERSION.SDK_INT > Build.VERSION_CODES.M
-        && info.getName().startsWith(EXYNOS_PREFIX);
+    // just exclude software implementation encoder
+    if (!enableH264HighProfile || Build.VERSION.SDK_INT <= Build.VERSION_CODES.M) {
+      return false;
+    }
+    for (String swImplPrefix : SOFTWARE_IMPLEMENTATION_PREFIXES) {
+      if (info.getName().startsWith(swImplPrefix)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private void logAllCodecs() {
+    MediaFormat mediaFormat = MediaFormat.createVideoFormat("dummy", 640, 480);
+    mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, 800 * 1000);
+    mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, 25);
+    mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 20);
+
+    mediaFormat.setInteger("bitrate-mode", 1);
+    mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT,
+            MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420PackedSemiPlanar);
+
+    int numCodecs = MediaCodecList.getCodecCount();
+    for (int i = 0; i < numCodecs; i++) {
+      MediaCodecInfo codecInfo = MediaCodecList.getCodecInfoAt(i);
+      Logging.d(TAG, "available codec: " + codecInfo.getName() + " "
+                     + Arrays.toString(codecInfo.getSupportedTypes()));
+    }
   }
 }

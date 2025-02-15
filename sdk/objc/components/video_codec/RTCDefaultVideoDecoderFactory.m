@@ -25,7 +25,25 @@
 #import "RTCVideoDecoderH265.h"
 #endif
 
-@implementation RTC_OBJC_TYPE (RTCDefaultVideoDecoderFactory)
+@implementation RTC_OBJC_TYPE (RTCDefaultVideoDecoderFactory) {
+    bool _transitMode;
+}
+
+- (instancetype)init {
+    return [self initWithTransitMode:false];
+}
+
+- (instancetype)initWithTransitMode:(bool)transitMode {
+    self = [super init];
+    if (self) {
+        _transitMode = transitMode;
+    }
+    return self;
+}
+
+- (bool) transitMode {
+    return _transitMode;
+}
 
 - (NSArray<RTC_OBJC_TYPE(RTCVideoCodecInfo) *> *)supportedCodecs {
   NSDictionary<NSString *, NSString *> *constrainedHighParams = @{

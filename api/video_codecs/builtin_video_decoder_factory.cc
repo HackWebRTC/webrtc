@@ -21,4 +21,8 @@ std::unique_ptr<VideoDecoderFactory> CreateBuiltinVideoDecoderFactory() {
   return std::make_unique<InternalDecoderFactory>();
 }
 
+std::unique_ptr<VideoDecoderFactory> CreateBuiltinVideoDecoderFactory(bool transit_mode) {
+  return std::make_unique<InternalDecoderFactory>(transit_mode);
+}
+
 }  // namespace webrtc

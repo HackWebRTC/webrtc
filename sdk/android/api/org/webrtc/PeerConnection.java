@@ -1224,6 +1224,10 @@ public class PeerConnection {
     return nativeStopRecorder(dir);
   }
 
+  public void sendVideoKeyFrame() {
+    nativeSendVideoKeyFrame();
+  }
+
   // TODO(fischman): add support for DTMF-related methods once that API
   // stabilizes.
   public SignalingState signalingState() {
@@ -1345,4 +1349,5 @@ public class PeerConnection {
   private native void nativeStopRtcEventLog();
   private native int nativeStartRecorder(int dir, String path);
   private native int nativeStopRecorder(int dir);
+  private native void nativeSendVideoKeyFrame();
 }

@@ -21,6 +21,8 @@ namespace webrtc {
 // Creates a new factory that can create the built-in types of video decoders.
 RTC_EXPORT std::unique_ptr<VideoDecoderFactory>
 CreateBuiltinVideoDecoderFactory();
+RTC_EXPORT std::unique_ptr<VideoDecoderFactory>
+CreateBuiltinVideoDecoderFactory(bool transit_mode);
 
 }  // namespace webrtc
 

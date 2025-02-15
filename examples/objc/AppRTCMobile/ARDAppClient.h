@@ -17,6 +17,8 @@
 #import "sdk/objc/api/peerconnection/RTCVideoTrack.h"
 #endif
 
+#define TEST_TRANSIT_MODE 0
+
 typedef NS_ENUM(NSInteger, ARDAppClientState) {
   // Disconnected from servers.
   kARDAppClientStateDisconnected,
@@ -32,6 +34,7 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 @class RTC_OBJC_TYPE(RTCMediaConstraints);
 @class RTC_OBJC_TYPE(RTCCameraVideoCapturer);
 @class RTC_OBJC_TYPE(RTCFileVideoCapturer);
+@class CFFileVideoCapturer;
 
 // The delegate is informed of pertinent events and will be called on the
 // main queue.
@@ -57,6 +60,9 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 @optional
 - (void)appClient:(ARDAppClient *)client
     didCreateLocalFileCapturer:(RTC_OBJC_TYPE(RTCFileVideoCapturer) *)fileCapturer;
+
+- (void)appClient:(ARDAppClient *)client
+    didCreateCFFileCapturer:(CFFileVideoCapturer *)fileCapturer;
 
 - (void)appClient:(ARDAppClient *)client
     didCreateLocalExternalSampleCapturer:(ARDExternalSampleCapturer *)externalSampleCapturer;

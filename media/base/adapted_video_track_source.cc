@@ -49,7 +49,8 @@ void AdaptedVideoTrackSource::OnFrame(const webrtc::VideoFrame& frame) {
      synchronization for us in this case, by not passing the frame on
      to sinks which don't want it. */
   if (apply_rotation() && frame.rotation() != webrtc::kVideoRotation_0 &&
-      buffer->type() == webrtc::VideoFrameBuffer::Type::kI420) {
+      buffer->type() == webrtc::VideoFrameBuffer::Type::kI420 &&
+      !frame.dummy() && !frame.transit()) {
     /* Apply pending rotation. */
     webrtc::VideoFrame rotated_frame(frame);
     rotated_frame.set_video_frame_buffer(

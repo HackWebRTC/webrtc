@@ -16,6 +16,8 @@
 @implementation RTC_OBJC_TYPE (RTCVideoFrame) {
   RTCVideoRotation _rotation;
   int64_t _timeStampNs;
+  bool _dummy;
+  bool _transit;
 }
 
 @synthesize buffer = _buffer;
@@ -37,6 +39,14 @@
   return _timeStampNs;
 }
 
+- (bool)dummy {
+  return _dummy;
+}
+
+- (bool)transit {
+  return _transit;
+}
+
 - (RTC_OBJC_TYPE(RTCVideoFrame) *)newI420VideoFrame {
   return [[RTC_OBJC_TYPE(RTCVideoFrame) alloc] initWithBuffer:[_buffer toI420]
                                                      rotation:_rotation
@@ -51,8 +61,26 @@
     _buffer = buffer;
     _rotation = rotation;
     _timeStampNs = timeStampNs;
+    _dummy = false;
+    _transit = false;
   }
   return self;
+}
+
+- (instancetype)initWithBuffer:(id<RTCVideoFrameBuffer>)buffer
+                      rotation:(RTCVideoRotation)rotation
+                   timeStampNs:(int64_t)timeStampNs
+                         dummy:(bool)dummy
+                       transit:(bool)transit {
+    if ((self = [super init])) {
+      _buffer = buffer;
+      _rotation = rotation;
+      _timeStampNs = timeStampNs;
+      _dummy = dummy;
+      _transit = transit;
+    }
+
+    return self;
 }
 
 @end

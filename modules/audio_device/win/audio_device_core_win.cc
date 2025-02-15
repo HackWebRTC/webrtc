@@ -3368,7 +3368,9 @@ int32_t AudioDeviceWindowsCore::EnableBuiltInAEC(bool enable) {
     return -1;
   }
 
-  _builtInAecEnabled = enable;
+  // enable built-in AEC would cause failure when only start recording.
+  // ref: https://groups.google.com/d/msg/discuss-webrtc/G0UhzIF6-Jg/Q3N01Z3sDQAJ
+  _builtInAecEnabled = false;
   return 0;
 }
 

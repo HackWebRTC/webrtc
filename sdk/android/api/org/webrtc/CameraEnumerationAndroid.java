@@ -188,6 +188,8 @@ public class CameraEnumerationAndroid {
 
   public static Size getClosestSupportedSize(
       List<Size> supportedSizes, final int requestedWidth, final int requestedHeight) {
+    Logging.d(TAG, "getClosestSupportedSize " + supportedSizes);
+
     return Collections.min(supportedSizes, new ClosestComparator<Size>() {
       @Override
       int diff(Size size) {

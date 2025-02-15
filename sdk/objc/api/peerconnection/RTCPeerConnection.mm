@@ -669,6 +669,10 @@ void PeerConnectionDelegateAdapter::OnRemoveTrack(
   return _peerConnection->StopRecorder(dir);
 }
 
+- (void)sendVideoKeyFrame {
+  _peerConnection->SendVideoKeyFrame();
+}
+
 - (RTC_OBJC_TYPE(RTCRtpSender) *)senderWithKind:(NSString *)kind streamId:(NSString *)streamId {
   std::string nativeKind = [NSString stdStringForString:kind];
   std::string nativeStreamId = [NSString stdStringForString:streamId];

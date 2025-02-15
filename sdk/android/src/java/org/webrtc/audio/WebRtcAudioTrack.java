@@ -20,6 +20,7 @@ import android.os.Build;
 import android.os.Process;
 import androidx.annotation.Nullable;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import org.webrtc.CalledByNative;
 import org.webrtc.Logging;
 import org.webrtc.ThreadUtils;
@@ -76,6 +77,7 @@ class WebRtcAudioTrack {
 
   private final @Nullable AudioTrackErrorCallback errorCallback;
   private final @Nullable AudioTrackStateCallback stateCallback;
+  private final @Nullable JavaAudioDeviceModule.SamplesReadyCallback audioSamplesReadyCallback;
 
   /**
    * Audio thread which keeps calling AudioTrack.write() to stream audio.
@@ -119,6 +121,16 @@ class WebRtcAudioTrack {
           byteBuffer.put(emptyBytes);
           byteBuffer.position(0);
         }
+
+        if (audioSamplesReadyCallback != null) {
+          // Copy the entire byte buffer array. The start of the byteBuffer is not necessarily
+          // at index 0.
+          byte[] data = Arrays.copyOfRange(byteBuffer.array(), byteBuffer.arrayOffset(),
+              byteBuffer.capacity() + byteBuffer.arrayOffset());
+          audioSamplesReadyCallback.onWebRtcAudioRecordSamplesReady(
+              new JavaAudioDeviceModule.AudioSamples(audioTrack.getAudioFormat(),
+                  audioTrack.getChannelCount(), audioTrack.getSampleRate(), data));
+        }
         int bytesWritten = audioTrack.write(byteBuffer, sizeInBytes, AudioTrack.WRITE_BLOCKING);
         if (bytesWritten != sizeInBytes) {
           Logging.e(TAG, "AudioTrack.write played invalid number of bytes: " + bytesWritten);
@@ -161,6 +173,14 @@ class WebRtcAudioTrack {
       @Nullable AudioAttributes audioAttributes, @Nullable AudioTrackErrorCallback errorCallback,
       @Nullable AudioTrackStateCallback stateCallback, boolean useLowLatency,
       boolean enableVolumeLogger) {
+    this(context, audioManager, audioAttributes, errorCallback, stateCallback, useLowLatency, enableVolumeLogger, null);
+  }
+
+  WebRtcAudioTrack(Context context, AudioManager audioManager,
+      @Nullable AudioAttributes audioAttributes, @Nullable AudioTrackErrorCallback errorCallback,
+      @Nullable AudioTrackStateCallback stateCallback, boolean useLowLatency,
+      boolean enableVolumeLogger,
+      @Nullable JavaAudioDeviceModule.SamplesReadyCallback audioSamplesReadyCallback) {
     threadChecker.detachThread();
     this.context = context;
     this.audioManager = audioManager;
@@ -169,6 +189,7 @@ class WebRtcAudioTrack {
     this.stateCallback = stateCallback;
     this.volumeLogger = enableVolumeLogger ? new VolumeLogger(audioManager) : null;
     this.useLowLatency = useLowLatency;
+    this.audioSamplesReadyCallback = audioSamplesReadyCallback;
     Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
   }
 

@@ -1,0 +1,135 @@
+# Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
+
+import("../../webrtc.gni")
+
+group("desktop") {
+  if (is_win) {
+    public_deps = [
+      ":win_pc_client",
+    ]
+  }
+  if (is_linux) {
+    public_deps = [
+      ":linux_pc_client",
+    ]
+  }
+}
+
+pc_client_common_sources = [
+    "legacy/owned_factory_and_threads.h",
+    "legacy/owned_factory_and_threads.cc",
+    "avcf_video_capturer.cc",
+    "avcf_video_capturer.h",
+    "bridge_peer_connection_client_callback.cc",
+    "bridge_peer_connection_client_callback.h",
+    "camera_capturer_track_source.cc",
+    "camera_capturer_track_source.h",
+    "desktop_capturer_track_source.cc",
+    "desktop_capturer_track_source.h",
+    "desktop_video_capturer.cc",
+    "desktop_video_capturer.h",
+    "lib_pc_client.cc",
+    "lib_pc_client.h",
+    "peer_connection_client_callback.cc",
+    "peer_connection_client_callback.h",
+    "peer_connection_client.cc",
+    "peer_connection_client.h",
+    "vcm_capturer.cc",
+    "vcm_capturer.h",
+]
+pc_client_common_deps = [
+    "//api:libjingle_peerconnection_api",
+    "//api:create_peerconnection_factory",
+    "//api/video:video_frame_i420",
+    "//rtc_base:checks",
+    "//rtc_base:stringutils",
+    "//rtc_base/third_party/sigslot",
+
+    "//media:rtc_media_base",
+
+    "//api/audio_codecs:builtin_audio_decoder_factory",
+    "//api/audio_codecs:builtin_audio_encoder_factory",
+    "//api/video:video_frame",
+    "//api/video_codecs:builtin_video_decoder_factory",
+    "//api/video_codecs:builtin_video_encoder_factory",
+    "//media:rtc_audio_video",
+    "//modules/audio_device:audio_device",
+    "//modules/audio_processing:audio_processing",
+    "//modules/desktop_capture:desktop_capture",
+    "//modules/video_capture:video_capture_module",
+    "//pc:libjingle_peerconnection",
+    "//rtc_base:rtc_base",
+    "//rtc_base:rtc_base_approved",
+    "//rtc_base:logging",
+    "//third_party/ffmpeg",
+    "//third_party/jsoncpp",
+    "//third_party/libyuv",
+]
+
+if (is_win) {
+  rtc_shared_library("win_pc_client") {
+    visibility = [ "*" ]
+
+    defines = [
+      "PC_CLIENT_SELF_DLL"
+    ]
+
+    sources = pc_client_common_sources
+    sources += [
+      "win32_video_composer.cc",
+      "win32_video_composer.h",
+      "win32_video_renderer.cc",
+      "win32_video_renderer.h",
+    ]
+
+    cflags = [
+      "-Wno-ignored-attributes",
+    ]
+
+    allow_poison = [
+      "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
+      "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
+      "default_task_queue",
+    ]
+
+    deps = pc_client_common_deps
+  }
+}
+
+if (is_linux) {
+  rtc_shared_library("linux_pc_client") {
+    visibility = [ "*" ]
+
+    sources = pc_client_common_sources
+
+    cflags = [
+      "-Wno-ignored-attributes",
+    ]
+
+    allow_poison = [
+      "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
+      "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
+      "default_task_queue",
+    ]
+
+    deps = pc_client_common_deps
+
+    if (rtc_use_transit_media) {
+      sources += [
+        "file_capturer_track_source.cc",
+        "file_capturer_track_source.h",
+        "file_video_capturer.cc",
+        "file_video_capturer.h"
+      ]
+      deps += [
+        "//modules/transit_media:transit_video",
+      ]
+    }
+  }
+}

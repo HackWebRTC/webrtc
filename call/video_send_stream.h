@@ -257,6 +257,7 @@ class VideoSendStream {
 #ifndef DISABLE_RECORDER
   virtual void InjectRecorder(Recorder* recorder) = 0;
 #endif
+  virtual void SendKeyFrame() = 0;
 
  protected:
   virtual ~VideoSendStream() {}

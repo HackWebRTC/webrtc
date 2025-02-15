@@ -13,10 +13,14 @@
 #import "RTCH265ProfileLevelId.h"
 #import "RTCVideoEncoderH265.h"
 
-@implementation RTCVideoEncoderFactoryH265
+@implementation RTC_OBJC_TYPE (RTCVideoEncoderFactoryH265)
 
-- (NSArray<RTCVideoCodecInfo*>*)supportedCodecs {
-  NSMutableArray<RTCVideoCodecInfo*>* codecs = [NSMutableArray array];
+- (bool) transitMode {
+    return false;
+}
+
+- (NSArray<RTC_OBJC_TYPE(RTCVideoCodecInfo)*>*)supportedCodecs {
+  NSMutableArray<RTC_OBJC_TYPE(RTCVideoCodecInfo)*>* codecs = [NSMutableArray array];
   NSString* codecName = kRTCVideoCodecH265Name;
 
   NSDictionary<NSString*, NSString*>* mainParams = @{
@@ -24,15 +28,15 @@
     @"level-asymmetry-allowed" : @"1",
     @"packetization-mode" : @"1",
   };
-  RTCVideoCodecInfo* constrainedBaselineInfo =
-      [[RTCVideoCodecInfo alloc] initWithName:codecName parameters:mainParams];
+  RTC_OBJC_TYPE(RTCVideoCodecInfo)* constrainedBaselineInfo =
+      [[RTC_OBJC_TYPE(RTCVideoCodecInfo) alloc] initWithName:codecName parameters:mainParams];
   [codecs addObject:constrainedBaselineInfo];
 
   return [codecs copy];
 }
 
-- (id<RTCVideoEncoder>)createEncoder:(RTCVideoCodecInfo*)info {
-  return [[RTCVideoEncoderH265 alloc] initWithCodecInfo:info];
+- (id<RTC_OBJC_TYPE(RTCVideoEncoder)>)createEncoder:(RTC_OBJC_TYPE(RTCVideoCodecInfo)*)info {
+  return [[RTC_OBJC_TYPE(RTCVideoEncoderH265) alloc] initWithCodecInfo:info];
 }
 
 @end

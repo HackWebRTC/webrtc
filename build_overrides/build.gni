@@ -44,6 +44,11 @@ if (is_ios || is_android) {
   rtc_use_recorder = false
   rtc_use_bt_mixer = false
 }
+if (is_linux) {
+  rtc_use_transit_media = true
+} else {
+  rtc_use_transit_media = false
+}
 
 # Use bundled hermetic Xcode installation maintainted by Chromium,
 # except for local iOS builds where it's unsupported.

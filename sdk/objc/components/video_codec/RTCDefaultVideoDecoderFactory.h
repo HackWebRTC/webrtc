@@ -21,6 +21,10 @@ NS_ASSUME_NONNULL_BEGIN
  */
 RTC_OBJC_EXPORT
 @interface RTC_OBJC_TYPE (RTCDefaultVideoDecoderFactory) : NSObject <RTC_OBJC_TYPE(RTCVideoDecoderFactory)>
+
+- (instancetype)init;
+- (instancetype)initWithTransitMode:(bool)transitMode;
+
 @end
 
 NS_ASSUME_NONNULL_END

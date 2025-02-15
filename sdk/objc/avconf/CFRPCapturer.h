@@ -36,7 +36,10 @@ RTC_OBJC_EXPORT
 @interface CFRPCapturer : RTCVideoCapturer
 
 - (instancetype)initWithDelegate:(id<RTCVideoCapturerDelegate>)delegate
-                 andErrorHandler:(void (^)(NSString*))handler;
+                 andErrorHandler:(void (^)(NSString*))handler
+                andDesiredHeight:(int32_t)desiredHeight
+                  andIsLandscape:(bool)isLandscape
+                          andFps:(int32_t)fps;
 
 - (void)startCapture;
 

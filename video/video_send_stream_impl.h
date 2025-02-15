@@ -118,6 +118,7 @@ class VideoSendStreamImpl : public webrtc::VideoSendStream,
 #ifndef DISABLE_RECORDER
   void InjectRecorder(Recorder* recorder) override;
 #endif
+  void SendKeyFrame() override;
 
   // TODO(holmer): Move these to RtpTransportControllerSend.
   std::map<uint32_t, RtpState> GetRtpStates() const;

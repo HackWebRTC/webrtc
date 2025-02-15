@@ -13,15 +13,19 @@
 #import "RTCH265ProfileLevelId.h"
 #import "RTCVideoDecoderH265.h"
 
-@implementation RTCVideoDecoderFactoryH265
+@implementation RTC_OBJC_TYPE (RTCVideoDecoderFactoryH265)
 
-- (id<RTCVideoDecoder>)createDecoder:(RTCVideoCodecInfo*)info {
-  return [[RTCVideoDecoderH265 alloc] init];
+- (bool) transitMode {
+    return false;
 }
 
-- (NSArray<RTCVideoCodecInfo*>*)supportedCodecs {
+- (id<RTC_OBJC_TYPE(RTCVideoDecoder)>)createDecoder:(RTC_OBJC_TYPE(RTCVideoCodecInfo)*)info {
+  return [[RTC_OBJC_TYPE(RTCVideoDecoderH265) alloc] init];
+}
+
+- (NSArray<RTC_OBJC_TYPE(RTCVideoCodecInfo)*>*)supportedCodecs {
   NSString* codecName = kRTCVideoCodecH265Name;
-  return @[ [[RTCVideoCodecInfo alloc] initWithName:codecName parameters:nil] ];
+  return @[ [[RTC_OBJC_TYPE(RTCVideoCodecInfo) alloc] initWithName:codecName parameters:nil] ];
 }
 
 @end

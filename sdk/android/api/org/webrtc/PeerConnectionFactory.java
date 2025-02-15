@@ -162,6 +162,15 @@ public class PeerConnectionFactory {
     boolean getDisableNetworkMonitor() {
       return disableNetworkMonitor;
     }
+
+    @Override
+    public String toString() {
+      return "Options{" +
+             "networkIgnoreMask=" + networkIgnoreMask +
+             ", disableEncryption=" + disableEncryption +
+             ", disableNetworkMonitor=" + disableNetworkMonitor +
+             '}';
+    }
   }
 
   public static class Builder {
@@ -296,6 +305,7 @@ public class PeerConnectionFactory {
     ContextUtils.initialize(options.applicationContext);
     NativeLibrary.initialize(options.nativeLibraryLoader, options.nativeLibraryName);
     nativeInitializeAndroidGlobals();
+    Logging.d(TAG, "nativeInitializeFieldTrials " + options.fieldTrials);
     nativeInitializeFieldTrials(options.fieldTrials);
     if (options.enableInternalTracer && !internalTracerInitialized) {
       initializeInternalTracer();

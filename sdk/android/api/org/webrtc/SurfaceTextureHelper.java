@@ -297,6 +297,11 @@ public class SurfaceTextureHelper {
     });
   }
 
+  public void reuseLastFrame() {
+    hasPendingTexture = true;
+    tryDeliverTextureFrame();
+  }
+
   public boolean isTextureInUse() {
     return isTextureInUse;
   }

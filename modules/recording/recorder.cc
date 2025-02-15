@@ -12,6 +12,7 @@ extern "C" {
 #include "common_video/h265/h265_common.h"
 #endif
 #include "rtc_base/logging.h"
+#include "system_wrappers/include/sleep.h"
 
 namespace webrtc {
 
@@ -27,9 +28,12 @@ Recorder::Frame::Frame(const uint8_t* payload, uint32_t length) {
     this->duration = 0;
     this->is_video = false;
     this->is_key_frame = false;
+    // RTC_LOG(LS_ERROR) << "Frame new " << (void*)this << " payload " << (void*) this->payload
+    //                     << ", length " << length;
 }
 
 Recorder::Frame::~Frame() {
+    // RTC_LOG(LS_ERROR) << "Frame delete " << (void*)this << " payload " << (void*) payload;
     delete[] payload;
 }
 
@@ -46,6 +50,7 @@ Recorder::Recorder(TaskQueueFactory* task_queue_factory)
       video_stream_(nullptr),
       record_queue_(task_queue_factory->CreateTaskQueue(
           "recorder", TaskQueueFactory::Priority::NORMAL)),
+      flying_tasks_(0),
       timestamp_offset_(0),
       added_audio_frames_(0),
       added_video_frames_(0),
@@ -115,9 +120,13 @@ void Recorder::AddVideoFrame(const EncodedImage* frame,
         video_key_frame_ = last_video_frame_;
     }
 
-    frames_.push(last_video_frame_);
-    last_video_frame_ = media_frame;
+    {
+        MutexLock lock(&mutex_);
+        frames_.push(last_video_frame_);
+        last_video_frame_ = media_frame;
+    }
 
+    flying_tasks_.fetch_add(1);
     record_queue_->PostTask([this]() { drainFrames(); });
 }
 
@@ -153,9 +162,13 @@ void Recorder::AddAudioFrame(int32_t sample_rate, int32_t channel_num,
         media_frame->timestamp = last_audio_frame_->timestamp + 1;
     }
 
-    frames_.push(last_audio_frame_);
-    last_audio_frame_ = media_frame;
+    {
+        MutexLock lock(&mutex_);
+        frames_.push(last_audio_frame_);
+        last_audio_frame_ = media_frame;
+    }
 
+    flying_tasks_.fetch_add(1);
     record_queue_->PostTask([this]() { drainFrames(); });
 }
 
@@ -164,6 +177,11 @@ void Recorder::Stop() {
         << " context " << static_cast<void*>(context_)
         << " audio_stream " << static_cast<void*>(audio_stream_)
         << " video_stream " << static_cast<void*>(video_stream_);
+    int wait_times = 0;
+    while (flying_tasks_.load() != 0 && wait_times < 20) {
+        webrtc::SleepMs(50);
+        wait_times++;
+    }
     if (context_) {
         if (audio_stream_ && video_stream_) {
             av_write_trailer(context_);
@@ -370,16 +388,28 @@ void Recorder::drainFrames() {
     openStreams();
 
     if (!audio_stream_ || !video_stream_) {
+        flying_tasks_.fetch_sub(1);
         return;
     }
 
-    while (!frames_.empty()) {
+    bool has_frame = false;
+    {
+        MutexLock lock(&mutex_);
+        has_frame = !frames_.empty();
+    }
+    while (has_frame) {
         if (++drained_frames_ % 1000 == 1) {
             RTC_LOG(LS_INFO) << "Recorder::drainFrames " << drained_frames_
-                             << " times";
+                             << " times, flying_tasks " << flying_tasks_.load();
         }
-        std::shared_ptr<Frame> frame = frames_.front();
-        frames_.pop();
+
+        std::shared_ptr<Frame> frame;
+        {
+            MutexLock lock(&mutex_);
+            frame = frames_.front();
+            frames_.pop();
+            has_frame = !frames_.empty();
+        }
 
         AVStream* stream = frame->is_video ? video_stream_ : audio_stream_;
 
@@ -397,6 +427,13 @@ void Recorder::drainFrames() {
             pkt->flags |= AV_PKT_FLAG_KEY;
         }
 
+        // RTC_LOG(LS_ERROR) << "Recorder::drainFrames " << (void*) frame.get()
+        //                  << " data " << (void*) pkt.data
+        //                  << ", size " << pkt.size << ", dts " << pkt.dts
+        //                  << ", duration " << pkt.duration
+        //                  << ", pkt.stream_index " << pkt.stream_index
+        //                  << ", flags " << pkt.flags
+        //                  << ", flying_tasks " << flying_tasks_.load();
         int res = av_interleaved_write_frame(context_, pkt);
         if (res < 0) {
             RTC_LOG(LS_ERROR) << "Recorder::drainFrames error, "
@@ -405,5 +442,7 @@ void Recorder::drainFrames() {
         }
         av_packet_free(&pkt);
     }
+    flying_tasks_.fetch_sub(1);
 }
+
 }

@@ -231,14 +231,19 @@ static int const kKbpsMultiplier = 1000;
 
   RTC_OBJC_TYPE(RTCDefaultVideoDecoderFactory) *decoderFactory =
       [[RTC_OBJC_TYPE(RTCDefaultVideoDecoderFactory) alloc] init];
+#if TEST_TRANSIT_MODE
+  RTC_OBJC_TYPE(RTCDefaultVideoEncoderFactory) *encoderFactory =
+      [[RTC_OBJC_TYPE(RTCDefaultVideoEncoderFactory) alloc] initWithTransitMode:true];
+#else
   RTC_OBJC_TYPE(RTCDefaultVideoEncoderFactory) *encoderFactory =
       [[RTC_OBJC_TYPE(RTCDefaultVideoEncoderFactory) alloc] init];
+#endif
   encoderFactory.preferredCodec = [settings currentVideoCodecSettingFromStore];
   _factory =
       [[RTC_OBJC_TYPE(RTCPeerConnectionFactory) alloc] initWithEncoderFactory:encoderFactory
                                                                decoderFactory:decoderFactory];
 
-  RTCPeerConnectionFactoryOptions* options = [[RTCPeerConnectionFactoryOptions alloc] init];
+  RTC_OBJC_TYPE(RTCPeerConnectionFactoryOptions)* options = [[RTC_OBJC_TYPE(RTCPeerConnectionFactoryOptions) alloc] init];
   options.disableEncryption = isLoopback;
   [_factory setOptions:options];
 
@@ -765,6 +770,12 @@ static int const kKbpsMultiplier = 1000;
   RTC_OBJC_TYPE(RTCVideoSource) *source = [_factory videoSource];
 
 #if !TARGET_IPHONE_SIMULATOR
+#if TEST_TRANSIT_MODE
+  NSString *path =
+      [[NSBundle mainBundle] pathForResource:@"5" ofType:@"ts"];
+    CFFileVideoCapturer* capturer = [[CFFileVideoCapturer alloc] initWithDelegate:source path:path dumpPath:[self documentsFilePathForFileName:@"dump.h264"] width:1920 height:1080];
+    [_delegate appClient:self didCreateCFFileCapturer:capturer];
+#else
   if (self.isBroadcast) {
     ARDExternalSampleCapturer *capturer =
         [[ARDExternalSampleCapturer alloc] initWithDelegate:source];
@@ -774,6 +785,7 @@ static int const kKbpsMultiplier = 1000;
         [[RTC_OBJC_TYPE(RTCCameraVideoCapturer) alloc] initWithDelegate:source];
     [_delegate appClient:self didCreateLocalCapturer:capturer];
   }
+#endif
 #else
 #if defined(__IPHONE_11_0) && (__IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_11_0)
   if (@available(iOS 10, *)) {

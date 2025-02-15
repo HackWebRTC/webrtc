@@ -88,6 +88,7 @@ class Call {
 
   virtual int32_t StartRecorder(int32_t dir, std::string path) = 0;
   virtual int32_t StopRecorder(int32_t dir) = 0;
+  virtual void SendVideoKeyFrame() = 0;
 
   // In order for a created VideoReceiveStreamInterface to be aware that it is
   // protected by a FlexfecReceiveStream, the latter should be created before

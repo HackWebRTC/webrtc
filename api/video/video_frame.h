@@ -118,6 +118,8 @@ class RTC_EXPORT VideoFrame {
     Builder& set_timestamp_rtp(uint32_t timestamp_rtp);
     Builder& set_ntp_time_ms(int64_t ntp_time_ms);
     Builder& set_rotation(VideoRotation rotation);
+    Builder& set_dummy(bool dummy);
+    Builder& set_transit(bool transit);
     Builder& set_color_space(const std::optional<ColorSpace>& color_space);
     Builder& set_color_space(const ColorSpace* color_space);
     Builder& set_id(uint16_t id);
@@ -133,6 +135,8 @@ class RTC_EXPORT VideoFrame {
     uint32_t timestamp_rtp_ = 0;
     int64_t ntp_time_ms_ = 0;
     VideoRotation rotation_ = kVideoRotation_0;
+    bool dummy_ = false;
+    bool transit_ = false;
     std::optional<ColorSpace> color_space_;
     RenderParameters render_parameters_;
     std::optional<UpdateRect> update_rect_;
@@ -224,6 +228,9 @@ class RTC_EXPORT VideoFrame {
   VideoRotation rotation() const { return rotation_; }
   void set_rotation(VideoRotation rotation) { rotation_ = rotation; }
 
+  bool dummy() const { return dummy_; }
+  bool transit() const { return transit_; }
+
   // Get color space when available.
   const std::optional<ColorSpace>& color_space() const { return color_space_; }
   void set_color_space(const std::optional<ColorSpace>& color_space) {
@@ -292,6 +299,8 @@ class RTC_EXPORT VideoFrame {
              uint32_t timestamp_rtp,
              int64_t ntp_time_ms,
              VideoRotation rotation,
+             bool dummy,
+             bool transit,
              const std::optional<ColorSpace>& color_space,
              const RenderParameters& render_parameters,
              const std::optional<UpdateRect>& update_rect,
@@ -310,6 +319,8 @@ class RTC_EXPORT VideoFrame {
   // (by the time it took to capture the frame) version of it.
   std::optional<Timestamp> reference_time_;
   VideoRotation rotation_;
+  bool dummy_;
+  bool transit_;
   std::optional<ColorSpace> color_space_;
   // Contains parameters that affect have the frame should be rendered.
   RenderParameters render_parameters_;

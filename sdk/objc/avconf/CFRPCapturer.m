@@ -32,17 +32,41 @@
 #import "base/RTCLogging.h"
 #import "components/video_frame_buffer/RTCCVPixelBuffer.h"
 
+#import "CFRateLimiter.h"
+
 #define TAG "CFRPCapturer"
 
 @implementation CFRPCapturer {
+    dispatch_queue_t _queue;
+    dispatch_source_t _timerSource;
+
+    int32_t _desiredHeight;
+    bool _isLandscape;
+    CFRateLimiter* _fpsLimiter;
+
     void (^_errorHandler)(NSString*);
+
+    int64_t _feedOldFrameInterval;
+    int64_t _lastCapturedFrameTime;
+    RTCCVPixelBuffer* _lastCapturedFrame;
+    int64_t _lastCapturedFrameTs;
 }
 
 - (instancetype)initWithDelegate:(id<RTCVideoCapturerDelegate>)delegate
-                 andErrorHandler:(void (^)(NSString*))handler {
+                 andErrorHandler:(void (^)(NSString*))handler
+                andDesiredHeight:(int32_t)desiredHeight
+                  andIsLandscape:(bool)isLandscape
+                          andFps:(int32_t)fps {
     self = [super initWithDelegate:delegate];
     if (self) {
+        _queue = dispatch_queue_create("CFRPCapturerGuarder", NULL);
+
         _errorHandler = handler;
+        _feedOldFrameInterval = 1000 / fps;
+
+        _desiredHeight = desiredHeight;
+        _isLandscape = isLandscape;
+        _fpsLimiter = [[CFRateLimiter alloc] initWithInterval:1000 / fps];
     }
     return self;
 }
@@ -54,6 +78,7 @@
         return;
     }
     RTCLogInfo(TAG " startCapture");
+    [_fpsLimiter reset];
     __weak CFRPCapturer* weakSelf = self;
     if (@available(iOS 11.0, *)) {
         // recorder.microphoneEnabled = YES;
@@ -76,9 +101,27 @@
 
                     CFRPCapturer* strongSelf = weakSelf;
                     if (strongSelf) {
+                        size_t width = CVPixelBufferGetWidth(pixelBuffer);
+                        size_t height = CVPixelBufferGetHeight(pixelBuffer);
+                        int desiredHeight;
+                        int desiredWidth;
+                        if (strongSelf->_isLandscape) {
+                            desiredHeight = strongSelf->_desiredHeight;
+                            desiredWidth = width * desiredHeight / height;
+                        } else {
+                            desiredWidth = strongSelf->_desiredHeight;
+                            desiredHeight = height * desiredWidth / width;
+                        }
+
                         RTCCVPixelBuffer* rtcPixelBuffer =
                             [[RTCCVPixelBuffer alloc]
-                                initWithPixelBuffer:pixelBuffer];
+                                initWithPixelBuffer:pixelBuffer
+                                       adaptedWidth:desiredWidth
+                                      adaptedHeight:desiredHeight
+                                          cropWidth:width
+                                         cropHeight:height
+                                              cropX:0
+                                              cropY:0];
                         int64_t timeStampNs =
                             CMTimeGetSeconds(
                                 CMSampleBufferGetPresentationTimeStamp(
@@ -88,6 +131,12 @@
                             initWithBuffer:rtcPixelBuffer
                                   rotation:RTCVideoRotation_0
                                timeStampNs:timeStampNs];
+                        @synchronized(strongSelf) {
+                            strongSelf->_lastCapturedFrame = rtcPixelBuffer;
+                            strongSelf->_lastCapturedFrameTs = timeStampNs;
+                            strongSelf->_lastCapturedFrameTime = (int64_t)(
+                                [[NSDate date] timeIntervalSince1970] * 1000);
+                        }
                         [strongSelf notifyFrame:videoFrame];
                     }
                     break;
@@ -117,6 +166,7 @@
                                    " startCapture success, but no strong self");
                         return;
                     }
+                    [strongSelf onCaptureStarted];
                 }
             }];
     } else {
@@ -139,10 +189,58 @@
     } else {
         RTCLogError(TAG " stopCapture fail: OS not support");
     }
+    if (_timerSource) {
+        dispatch_source_cancel(_timerSource);
+        _timerSource = nil;
+    }
+}
+
+- (void)onCaptureStarted {
+    _timerSource =
+        dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, _queue);
+    dispatch_source_set_timer(_timerSource, dispatch_time(DISPATCH_TIME_NOW, 0),
+                              (_feedOldFrameInterval >> 1) * NSEC_PER_MSEC,
+                              0 * NSEC_PER_SEC);
+    __weak CFRPCapturer* weakSelf = self;
+    dispatch_source_set_event_handler(_timerSource, ^{
+        CFRPCapturer* strongSelf = weakSelf;
+        if (strongSelf) {
+            [strongSelf checkFeedFrame];
+        }
+    });
+    if (@available(iOS 10.0, *)) {
+        dispatch_activate(_timerSource);
+    } else {
+        dispatch_resume(_timerSource);
+    }
+}
+
+- (void)checkFeedFrame {
+    RTCVideoFrame* videoFrame = nil;
+    @synchronized(self) {
+        int64_t now = (int64_t)([[NSDate date] timeIntervalSince1970] * 1000);
+        int64_t noFrameDuration = now - _lastCapturedFrameTime;
+        if (noFrameDuration > _feedOldFrameInterval &&
+            _lastCapturedFrameTime > 0 && _lastCapturedFrame) {
+            int64_t timestampNs =
+                _lastCapturedFrameTs + noFrameDuration * 1000000;
+            videoFrame =
+                [[RTCVideoFrame alloc] initWithBuffer:_lastCapturedFrame
+                                             rotation:RTCVideoRotation_0
+                                          timeStampNs:timestampNs];
+            _lastCapturedFrameTime = now;
+            _lastCapturedFrameTs = timestampNs;
+        }
+    }
+    if (videoFrame) {
+        [self notifyFrame:videoFrame];
+    }
 }
 
 - (void)notifyFrame:(RTCVideoFrame*)videoFrame {
-    [self.delegate capturer:self didCaptureVideoFrame:videoFrame];
+    if ([_fpsLimiter check:videoFrame.timeStampNs / 1000000]) {
+        [self.delegate capturer:self didCaptureVideoFrame:videoFrame];
+    }
 }
 
 @end

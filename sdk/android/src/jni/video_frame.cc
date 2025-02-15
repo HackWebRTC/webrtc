@@ -278,6 +278,7 @@ VideoFrame JavaToNativeFrame(JNIEnv* jni,
       Java_VideoFrame_getBuffer(jni, j_video_frame);
   int rotation = Java_VideoFrame_getRotation(jni, j_video_frame);
   int64_t timestamp_ns = Java_VideoFrame_getTimestampNs(jni, j_video_frame);
+  bool dummy = Java_VideoFrame_getDummy(jni, j_video_frame);
   rtc::scoped_refptr<VideoFrameBuffer> buffer =
       JavaToNativeFrameBuffer(jni, j_video_frame_buffer);
   return VideoFrame::Builder()
@@ -285,6 +286,7 @@ VideoFrame JavaToNativeFrame(JNIEnv* jni,
       .set_rtp_timestamp(timestamp_rtp)
       .set_timestamp_ms(timestamp_ns / rtc::kNumNanosecsPerMillisec)
       .set_rotation(static_cast<VideoRotation>(rotation))
+      .set_dummy(dummy)
       .build();
 }
 

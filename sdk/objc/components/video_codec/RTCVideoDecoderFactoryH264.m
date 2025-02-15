@@ -15,6 +15,10 @@
 
 @implementation RTC_OBJC_TYPE (RTCVideoDecoderFactoryH264)
 
+- (bool) transitMode {
+    return false;
+}
+
 - (NSArray<RTC_OBJC_TYPE(RTCVideoCodecInfo) *> *)supportedCodecs {
   NSMutableArray<RTC_OBJC_TYPE(RTCVideoCodecInfo) *> *codecs = [NSMutableArray array];
   NSString *codecName = kRTCVideoCodecH264Name;

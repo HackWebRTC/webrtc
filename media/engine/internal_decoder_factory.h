@@ -24,11 +24,15 @@ namespace webrtc {
 
 class RTC_EXPORT InternalDecoderFactory : public VideoDecoderFactory {
  public:
+  InternalDecoderFactory();
+  InternalDecoderFactory(bool transit_mode);
   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
   CodecSupport QueryCodecSupport(const SdpVideoFormat& format,
                                  bool reference_scaling) const override;
   std::unique_ptr<VideoDecoder> Create(const Environment& env,
                                        const SdpVideoFormat& format) override;
+ private:
+  bool transit_mode_;
 };
 
 }  // namespace webrtc

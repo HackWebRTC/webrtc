@@ -17,6 +17,9 @@
 #include "api/video_codecs/video_codec.h"
 #include "media/base/codec.h"
 #include "media/base/media_constants.h"
+#if !defined(DISABLE_TRANSIT_MEDIA)
+#include "modules/transit_media/transit_video_decoder.h"
+#endif
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
@@ -40,6 +43,12 @@ std::unique_ptr<VideoDecoder> CreateDav1dDecoder() {
 #endif
 
 }  // namespace
+
+InternalDecoderFactory::InternalDecoderFactory() : InternalDecoderFactory(false) {}
+
+InternalDecoderFactory::InternalDecoderFactory(bool transit_mode) : transit_mode_(transit_mode) {
+    RTC_LOG(LS_VERBOSE) << "transit mode " << transit_mode_;
+}
 
 std::vector<SdpVideoFormat> InternalDecoderFactory::GetSupportedFormats()
     const {
@@ -79,6 +88,11 @@ VideoDecoderFactory::CodecSupport InternalDecoderFactory::QueryCodecSupport(
 std::unique_ptr<VideoDecoder> InternalDecoderFactory::Create(
     const Environment& env,
     const SdpVideoFormat& format) {
+#if !defined(DISABLE_TRANSIT_MEDIA)
+  if (transit_mode_) {
+    return std::unique_ptr<TransitVideoDecoder>(new TransitVideoDecoder());
+  }
+#endif
   if (!format.IsCodecInList(GetSupportedFormats())) {
     RTC_LOG(LS_WARNING) << "Trying to create decoder for unsupported format. "
                         << format.ToString();

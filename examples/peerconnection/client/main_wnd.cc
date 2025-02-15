@@ -11,6 +11,7 @@
 #include "examples/peerconnection/client/main_wnd.h"
 
 #include <math.h>
+#include <iostream>
 
 #include "api/video/i420_buffer.h"
 #include "examples/peerconnection/client/defaults.h"
@@ -210,6 +211,7 @@ void MainWnd::MessageBox(const char* caption, const char* text, bool is_error) {
 }
 
 void MainWnd::StartLocalRenderer(webrtc::VideoTrackInterface* local_video) {
+  printf("StartLocalRenderer %p \n", (void*)local_video);
   local_renderer_.reset(new VideoRenderer(handle(), 1, 1, local_video));
 }
 
@@ -218,6 +220,7 @@ void MainWnd::StopLocalRenderer() {
 }
 
 void MainWnd::StartRemoteRenderer(webrtc::VideoTrackInterface* remote_video) {
+  printf("StartRemoteRenderer %p \n", (void*)remote_video);
   remote_renderer_.reset(new VideoRenderer(handle(), 1, 1, remote_video));
 }
 
@@ -613,6 +616,8 @@ void MainWnd::VideoRenderer::SetSize(int width, int height) {
 void MainWnd::VideoRenderer::OnFrame(const webrtc::VideoFrame& video_frame) {
   {
     AutoLock<VideoRenderer> lock(this);
+
+	//std::cerr << "onFrame " << (void*)rendered_track_ << std::endl;
 
     rtc::scoped_refptr<webrtc::I420BufferInterface> buffer(
         video_frame.video_frame_buffer()->ToI420());

@@ -4,20 +4,26 @@
 
 #pragma once
 
-#include <string>
-#include <queue>
+#include <atomic>
 #include <memory>
+#include <queue>
+#include <string>
 
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "api/video/encoded_image.h"
 #include "modules/video_coding/include/video_codec_interface.h"
+#include "rtc_base/synchronization/mutex.h"
 
 struct AVFormatContext;
 struct AVStream;
 
 namespace webrtc {
+
+// caller won't call AddXXXFrame after calling Stop,
+// but the last AddXXXFrame task maybe executed after Stop,
+// so we need track flying task number.
 class Recorder {
 public:
     Recorder(TaskQueueFactory* task_queue_factory);
@@ -74,6 +80,8 @@ private:
     AVStream* video_stream_;
 
     std::unique_ptr<TaskQueueBase, TaskQueueDeleter> record_queue_;
+    std::atomic_int flying_tasks_;
+    Mutex mutex_;
     std::queue<std::shared_ptr<Frame>> frames_;
     int64_t timestamp_offset_;
 

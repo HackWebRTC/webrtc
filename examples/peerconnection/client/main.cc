@@ -14,6 +14,9 @@
 #include <shellapi.h>  // must come after windows.h
 // clang-format on
 
+#include <Winbase.h>
+#include <DbgHelp.h>
+
 #include <string>
 #include <vector>
 
@@ -69,10 +72,36 @@ WindowsCommandLineArguments::WindowsCommandLineArguments() {
 }
 
 }  // namespace
+
+#pragma comment(lib, "DbgHelp")
+
+LONG WINAPI
+unhandled_exception_filter(struct _EXCEPTION_POINTERS* exception_point) {
+  HANDLE dump_file = CreateFile(L"pc-client.dmp", GENERIC_WRITE, 0, NULL,
+                                CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+  if (dump_file) {
+    MINIDUMP_EXCEPTION_INFORMATION dump_exception;
+
+    dump_exception.ExceptionPointers = exception_point;
+    dump_exception.ThreadId = GetCurrentThreadId();
+    dump_exception.ClientPointers = TRUE;
+
+    MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), dump_file,
+                      MiniDumpNormal, &dump_exception, NULL, NULL);
+
+    CloseHandle(dump_file);
+    dump_file = NULL;
+  }
+
+  return EXCEPTION_EXECUTE_HANDLER;
+}
+
 int PASCAL wWinMain(HINSTANCE instance,
                     HINSTANCE prev_instance,
                     wchar_t* cmd_line,
                     int cmd_show) {
+  SetUnhandledExceptionFilter(unhandled_exception_filter);
+
   rtc::WinsockInitializer winsock_init;
   rtc::PhysicalSocketServer ss;
   rtc::AutoSocketServerThread main_thread(&ss);

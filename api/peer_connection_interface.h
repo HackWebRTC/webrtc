@@ -1227,6 +1227,7 @@ class RTC_EXPORT PeerConnectionInterface : public webrtc::RefCountInterface {
 
   virtual int32_t StartRecorder(int32_t dir, std::string path) = 0;
   virtual int32_t StopRecorder(int32_t dir) = 0;
+  virtual void SendVideoKeyFrame() = 0;
 
   // Terminates all media, closes the transports, and in general releases any
   // resources used by the PeerConnection. This is an irreversible operation.

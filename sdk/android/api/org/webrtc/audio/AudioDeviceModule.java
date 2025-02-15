@@ -53,4 +53,6 @@ public interface AudioDeviceModule {
   default boolean setPreferredMicrophoneFieldDimension(float dimension) {
     return false;
   }
+
+  void toggleRecordPause(boolean pause);
 }

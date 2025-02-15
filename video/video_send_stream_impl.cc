@@ -709,6 +709,12 @@ void VideoSendStreamImpl::InjectRecorder(Recorder* recorder) {
 }
 #endif
 
+void VideoSendStreamImpl::SendKeyFrame() {
+  worker_queue_->PostTask([this] {
+    video_stream_encoder_->SendKeyFrame();
+  });
+}
+
 void VideoSendStreamImpl::StopVideoSendStream() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   bitrate_allocator_->RemoveObserver(this);

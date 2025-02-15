@@ -42,6 +42,7 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
     private AudioTrackErrorCallback audioTrackErrorCallback;
     private AudioRecordErrorCallback audioRecordErrorCallback;
     private SamplesReadyCallback samplesReadyCallback;
+    private SamplesReadyCallback trackSamplesReadyCallback;
     private AudioTrackStateCallback audioTrackStateCallback;
     private AudioRecordStateCallback audioRecordStateCallback;
     private boolean useHardwareAcousticEchoCanceler = isBuiltInAcousticEchoCancelerSupported();
@@ -137,6 +138,14 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
      */
     public Builder setSamplesReadyCallback(SamplesReadyCallback samplesReadyCallback) {
       this.samplesReadyCallback = samplesReadyCallback;
+      return this;
+    }
+
+    /**
+     * Set a callback to listen to the raw audio input from the AudioTrack.
+     */
+    public Builder setTrackSamplesReadyCallback(SamplesReadyCallback samplesReadyCallback) {
+      this.trackSamplesReadyCallback = samplesReadyCallback;
       return this;
     }
 
@@ -258,7 +267,8 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
           samplesReadyCallback, useHardwareAcousticEchoCanceler, useHardwareNoiseSuppressor);
       final WebRtcAudioTrack audioOutput =
           new WebRtcAudioTrack(context, audioManager, audioAttributes, audioTrackErrorCallback,
-              audioTrackStateCallback, useLowLatency, enableVolumeLogger);
+              audioTrackStateCallback, useLowLatency, enableVolumeLogger,
+              trackSamplesReadyCallback);
       return new JavaAudioDeviceModule(context, audioManager, audioInput, audioOutput,
           inputSampleRate, outputSampleRate, useStereoInput, useStereoOutput);
     }
@@ -434,6 +444,10 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
   public void setPreferredInputDevice(AudioDeviceInfo preferredInputDevice) {
     Logging.d(TAG, "setPreferredInputDevice: " + preferredInputDevice.getId());
     audioInput.setPreferredDevice(preferredInputDevice);
+  }
+
+  @Override public void toggleRecordPause(boolean pause) {
+    audioInput.toggleFakeMode(pause);
   }
 
   private static native long nativeCreateAudioDeviceModule(Context context,

@@ -931,6 +931,12 @@ static int JNI_PeerConnection_StopRecorder(
   return ExtractNativePC(jni, j_pc)->StopRecorder(dir);
 }
 
+static void JNI_PeerConnection_SendVideoKeyFrame(
+    JNIEnv* jni,
+    const JavaParamRef<jobject>& j_pc) {
+  ExtractNativePC(jni, j_pc)->SendVideoKeyFrame();
+}
+
 static jni_zero::ScopedJavaLocalRef<jobject> JNI_PeerConnection_SignalingState(
     JNIEnv* env,
     const jni_zero::JavaParamRef<jobject>& j_pc) {

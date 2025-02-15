@@ -59,6 +59,8 @@ RTC_OBJC_EXPORT
 - (NSArray<RTC_OBJC_TYPE(RTCVideoCodecInfo) *> *)
     supportedCodecs;  // TODO(andersc): "supportedFormats" instead?
 
+- (bool) transitMode;
+
 @optional
 - (NSArray<RTC_OBJC_TYPE(RTCVideoCodecInfo) *> *)implementations;
 - (nullable id<RTC_OBJC_TYPE(RTCVideoEncoderSelector)>)encoderSelector;

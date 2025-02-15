@@ -121,8 +121,10 @@ void AudioSourceCompressed::Seek(int64_t position_ms) {
 webrtc::AudioMixer::Source::AudioFrameInfo
 AudioSourceCompressed::GetAudioFrameWithInfo(int32_t sample_rate_hz,
                                              webrtc::AudioFrame* audio_frame) {
-    if (sample_rate_hz != sample_rate_ || finish_callback_fired_ ||
-        error_callback_fired_ || frame_duration_us_ <= 0 || sample_rate_ <= 0
+    if (finish_callback_fired_ || error_callback_fired_) {
+        return webrtc::AudioMixer::Source::AudioFrameInfo::kMuted;
+    }
+    if (sample_rate_hz != sample_rate_ || frame_duration_us_ <= 0 || sample_rate_ <= 0
         || input_channel_num_ <= 0) {
         RTC_LOG(LS_INFO)
             << "AudioSourceCompressed::GetAudioFrameWithInfo wrong state "

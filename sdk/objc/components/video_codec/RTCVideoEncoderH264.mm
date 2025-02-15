@@ -44,6 +44,7 @@
 #include "rtc_base/time_utils.h"
 #include "sdk/objc/components/video_codec/nalu_rewriter.h"
 #include "third_party/libyuv/include/libyuv/convert_from.h"
+#include "system_wrappers/include/field_trial.h"
 
 @interface RTC_OBJC_TYPE (RTCVideoEncoderH264)
 ()
@@ -356,6 +357,8 @@ NSUInteger GetMaxSampleRate(const webrtc::H264ProfileLevelId &profile_level_id) 
   webrtc::H265BitstreamParser _h265BitstreamParser;
 #endif
   std::vector<uint8_t> _frameScaleBuffer;
+  bool _debugVideo;
+  FILE* _videoDump;
 }
 
 // .5 is set as a mininum to prevent overcompensating for large temporary
@@ -374,6 +377,8 @@ NSUInteger GetMaxSampleRate(const webrtc::H264ProfileLevelId &profile_level_id) 
     _profile_level_id =
         webrtc::ParseSdpForH264ProfileLevelId([codecInfo nativeSdpVideoFormat].parameters);
     RTC_DCHECK(_profile_level_id);
+    _debugVideo = webrtc::field_trial::IsEnabled("AvConf-Video-Debug");
+    _videoDump = NULL;
     RTC_LOG(LS_INFO) << "Using profile " << CFStringToString(ExtractProfile(*_profile_level_id));
 #if defined(RTC_ENABLE_H265)
     RTC_CHECK([codecInfo.name isEqualToString:kRTCVideoCodecH264Name] || [codecInfo.name isEqualToString:kRTCVideoCodecH265Name]);
@@ -726,6 +731,16 @@ NSUInteger GetMaxSampleRate(const webrtc::H264ProfileLevelId &profile_level_id) 
 #endif
   [self configureCompressionSession];
 
+  if (_debugVideo) {
+    if (_videoDump) {
+      fclose(_videoDump);
+      _videoDump = NULL;
+    }
+    NSString *docDir = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+    NSString *path = [NSString stringWithFormat:@"%@/log/videoDump_%lld.h264", docDir, (long long)([[NSDate date] timeIntervalSince1970] * 1000.0)];
+    _videoDump = fopen(path.UTF8String, "wb");
+  }
+
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -764,6 +779,10 @@ NSUInteger GetMaxSampleRate(const webrtc::H264ProfileLevelId &profile_level_id) 
     VTCompressionSessionInvalidate(_compressionSession);
     CFRelease(_compressionSession);
     _compressionSession = nullptr;
+  }
+  if (_videoDump) {
+    fclose(_videoDump);
+    _videoDump = NULL;
   }
 }
 
@@ -898,6 +917,9 @@ NSUInteger GetMaxSampleRate(const webrtc::H264ProfileLevelId &profile_level_id) 
   frame.qp = @(_h264BitstreamParser.GetLastSliceQp().value_or(-1));
 #endif
 
+  if (_videoDump) {
+    fwrite(buffer->data(), buffer->size(), 1, _videoDump);
+  }
   BOOL res = callback(frame, codecSpecificInfo);
   if (!res) {
     RTC_LOG(LS_ERROR) << "Encode callback failed";

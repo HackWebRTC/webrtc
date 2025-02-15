@@ -67,6 +67,10 @@ public interface CameraVideoCapturer extends VideoCapturer {
    */
   void switchCamera(CameraSwitchHandler switchEventsHandler, String cameraName);
 
+  boolean isCurrentFrontFacing();
+
+  boolean isCurrentBackFacing();
+
   /**
    * MediaRecorder add/remove handler - one of these functions are invoked with the result of
    * addMediaRecorderToCamera() or removeMediaRecorderFromCamera calls.

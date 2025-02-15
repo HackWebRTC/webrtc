@@ -25,7 +25,25 @@
 #import "RTCVideoEncoderH265.h"
 #endif
 
-@implementation RTC_OBJC_TYPE (RTCDefaultVideoEncoderFactory)
+@implementation RTC_OBJC_TYPE (RTCDefaultVideoEncoderFactory) {
+    bool _transitMode;
+}
+
+- (instancetype)init {
+    return [self initWithTransitMode:false];
+}
+
+- (instancetype)initWithTransitMode:(bool)transitMode {
+    self = [super init];
+    if (self) {
+        _transitMode = transitMode;
+    }
+    return self;
+}
+
+- (bool) transitMode {
+    return _transitMode;
+}
 
 @synthesize preferredCodec;
 

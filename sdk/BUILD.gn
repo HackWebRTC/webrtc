@@ -25,6 +25,9 @@ group("sdk") {
     if (is_ios) {
       public_deps += [ ":framework_objc" ]
     }
+    if (is_win || is_linux) {
+      public_deps += [ "desktop" ]
+    }
   }
 }
 
@@ -73,6 +76,12 @@ if (is_ios || is_mac) {
     if (is_ios && rtc_apprtcmobile_broadcast_extension) {
       cflags = [ "-fapplication-extension" ]
     }
+  }
+
+  config("avconf_include_config") {
+    include_dirs = [
+      "objc/components/renderer/opengl",
+    ]
   }
 
   # TODO(bugs.webrtc.org/9627): Remove this when unused. Targets should depend on base_objc
@@ -1371,9 +1380,13 @@ if (is_ios || is_mac) {
           "objc/api/video_codec/RTCVideoEncoderAV1.h",
           "objc/api/video_frame_buffer/RTCNativeI420Buffer.h",
           "objc/api/video_frame_buffer/RTCNativeMutableI420Buffer.h",
+          "objc/avconf/CFCaptureController.h",
+          "objc/avconf/CFEAGLVideoView.h",
+          "objc/avconf/CFHijackCapturerDelegate.h",
+          "objc/avconf/CFPeerConnectionClient.h",
+          "objc/avconf/CFPeerConnectionFactoryOption.h",
           "objc/avconf/CFRPCapturer.h",
           "objc/avconf/CFVideoProcessor.h",
-          "objc/avconf/CFHijackCapturerDelegate.h",
         ]
 
         if (!build_with_chromium) {
@@ -1386,6 +1399,12 @@ if (is_ios || is_mac) {
         if (rtc_use_bt_mixer) {
           common_objc_headers += [
             "objc/avconf/CFAudioMixer.h",
+          ]
+        }
+
+        if (rtc_use_transit_media) {
+          common_objc_headers += [
+            "objc/avconf/CFFileVideoCapturer.h",
           ]
         }
 
@@ -1540,9 +1559,9 @@ if (is_ios || is_mac) {
           "objc/components/video_codec/RTCVideoEncoderH265.h",
           "objc/components/video_frame_buffer/RTCCVPixelBuffer.h",
           "objc/helpers/RTCDispatcher.h",
+          "objc/avconf/CFHijackCapturerDelegate.h",
           "objc/avconf/CFRPCapturer.h",
           "objc/avconf/CFVideoProcessor.h",
-          "objc/avconf/CFHijackCapturerDelegate.h",
         ]
         if (!build_with_chromium) {
           sources += [
@@ -1731,6 +1750,11 @@ if (is_ios || is_mac) {
         "../rtc_base:timestamp_aligner",
         "../rtc_base:timeutils",
       ]
+      if (rtc_use_transit_media) {
+        deps += [
+          "//modules/transit_media:transit_video",
+        ]
+      }
     }
 
     rtc_library("video_toolbox_cc") {
@@ -1806,16 +1830,31 @@ if (is_ios || is_mac) {
         "CoreMedia.framework",
         "CoreVideo.framework",
         "VideoToolbox.framework",
+        "CoreImage.framework",
       ]
     }
 
     rtc_library("avconf_objc") {
       sources = [
-        "objc/avconf/CFRPCapturer.h",
-        "objc/avconf/CFRPCapturer.m",
-        "objc/avconf/CFVideoProcessor.h",
+        "objc/avconf/CFCaptureController.h",
+        "objc/avconf/CFCaptureController.m",
+        "objc/avconf/CFEAGLVideoView.h",
+        "objc/avconf/CFEAGLVideoView.m",
         "objc/avconf/CFHijackCapturerDelegate.h",
         "objc/avconf/CFHijackCapturerDelegate.mm",
+        "objc/avconf/CFPeerConnectionClient.h",
+        "objc/avconf/CFPeerConnectionClient.m",
+        "objc/avconf/CFPeerConnectionFactoryOption.h",
+        "objc/avconf/CFPeerConnectionFactoryOption.m",
+        "objc/avconf/CFRateLimiter.h",
+        "objc/avconf/CFRateLimiter.m",
+        "objc/avconf/CFRPCapturer.h",
+        "objc/avconf/CFRPCapturer.m",
+        "objc/avconf/CFTimerProxy.h",
+        "objc/avconf/CFTimerProxy.m",
+        "objc/avconf/CFVideoFreezeDetector.h",
+        "objc/avconf/CFVideoFreezeDetector.m",
+        "objc/avconf/CFVideoProcessor.h",
       ]
       if (rtc_use_bt_mixer) {
         sources += [
@@ -1823,9 +1862,21 @@ if (is_ios || is_mac) {
           "objc/avconf/CFAudioMixer.mm",
         ]
       }
+      if (rtc_use_transit_media) {
+        sources += [
+          "objc/avconf/CFFileVideoCapturer.h",
+          "objc/avconf/CFFileVideoCapturer.mm",
+          "objc/avconf/CFTransitBuffer.h",
+          "objc/avconf/CFTransitBuffer.mm",
+        ]
+      }
 
       deps = [
         ":base_objc",
+        ":opengl_ui_objc",
+        ":peerconnectionfactory_base_objc",
+        ":videocapture_objc",
+        ":videoframebuffer_objc",
       ]
       if (rtc_use_bt_mixer) {
         deps += [
@@ -1839,6 +1890,7 @@ if (is_ios || is_mac) {
 
       configs += [
         "..:common_objc",
+        ":avconf_include_config"
       ]
       public_configs = [ ":common_config_objc" ]
     }

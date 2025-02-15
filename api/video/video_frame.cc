@@ -173,7 +173,7 @@ VideoFrame VideoFrame::Builder::build() {
   RTC_CHECK(video_frame_buffer_ != nullptr);
   return VideoFrame(id_, video_frame_buffer_, timestamp_us_,
                     presentation_timestamp_, reference_time_, timestamp_rtp_,
-                    ntp_time_ms_, rotation_, color_space_, render_parameters_,
+                    ntp_time_ms_, rotation_, dummy_, transit_, color_space_, render_parameters_,
                     update_rect_, packet_infos_);
 }
 
@@ -235,6 +235,16 @@ VideoFrame::Builder& VideoFrame::Builder::set_rotation(VideoRotation rotation) {
   return *this;
 }
 
+VideoFrame::Builder& VideoFrame::Builder::set_dummy(bool dummy) {
+  dummy_ = dummy;
+  return *this;
+}
+
+VideoFrame::Builder& VideoFrame::Builder::set_transit(bool transit) {
+  transit_ = transit;
+  return *this;
+}
+
 VideoFrame::Builder& VideoFrame::Builder::set_color_space(
     const std::optional<ColorSpace>& color_space) {
   color_space_ = color_space;
@@ -271,7 +281,9 @@ VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
       timestamp_rtp_(0),
       ntp_time_ms_(0),
       timestamp_us_(timestamp_us),
-      rotation_(rotation) {}
+      rotation_(rotation),
+      dummy_(false),
+      transit_(false) {}
 
 VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
                        uint32_t timestamp_rtp,
@@ -281,7 +293,9 @@ VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
       timestamp_rtp_(timestamp_rtp),
       ntp_time_ms_(0),
       timestamp_us_(render_time_ms * rtc::kNumMicrosecsPerMillisec),
-      rotation_(rotation) {
+      rotation_(rotation),
+      dummy_(false),
+      transit_(false) {
   RTC_DCHECK(buffer);
 }
 
@@ -293,6 +307,8 @@ VideoFrame::VideoFrame(uint16_t id,
                        uint32_t timestamp_rtp,
                        int64_t ntp_time_ms,
                        VideoRotation rotation,
+                       bool dummy,
+                       bool transit,
                        const std::optional<ColorSpace>& color_space,
                        const RenderParameters& render_parameters,
                        const std::optional<UpdateRect>& update_rect,
@@ -305,6 +321,8 @@ VideoFrame::VideoFrame(uint16_t id,
       presentation_timestamp_(presentation_timestamp),
       reference_time_(reference_time),
       rotation_(rotation),
+      dummy_(dummy),
+      transit_(transit),
       color_space_(color_space),
       render_parameters_(render_parameters),
       update_rect_(update_rect),

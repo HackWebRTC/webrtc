@@ -20,8 +20,8 @@ namespace webrtc {
 namespace jni {
 
 namespace {
-// MediaCodec wants resolution to be divisible by 2.
-const int kRequiredResolutionAlignment = 2;
+// MediaCodec wants resolution to be divisible by 32 (for HUAWEI devices).
+const int kRequiredResolutionAlignment = 32;
 
 VideoRotation jintToVideoRotation(jint rotation) {
   RTC_DCHECK(rotation == 0 || rotation == 90 || rotation == 180 ||
@@ -127,18 +127,20 @@ void AndroidVideoTrackSource::OnFrameCaptured(
     JNIEnv* env,
     jint j_rotation,
     jlong j_timestamp_ns,
+    jboolean j_dummy,
     const JavaRef<jobject>& j_video_frame_buffer) {
   rtc::scoped_refptr<VideoFrameBuffer> buffer =
       JavaToNativeFrameBuffer(env, j_video_frame_buffer);
   const VideoRotation rotation = jintToVideoRotation(j_rotation);
 
   // AdaptedVideoTrackSource handles applying rotation for I420 frames.
-  if (apply_rotation() && rotation != kVideoRotation_0)
+  if (apply_rotation() && rotation != kVideoRotation_0 && !j_dummy)
     buffer = buffer->ToI420();
 
   OnFrame(VideoFrame::Builder()
               .set_video_frame_buffer(buffer)
               .set_rotation(rotation)
+              .set_dummy(j_dummy)
               .set_timestamp_us(j_timestamp_ns / rtc::kNumNanosecsPerMicrosec)
               .build());
 }

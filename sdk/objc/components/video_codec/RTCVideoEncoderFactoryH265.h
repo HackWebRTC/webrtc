@@ -15,5 +15,5 @@
 
 RTC_OBJC_EXPORT
 API_AVAILABLE(ios(11.0))
-@interface RTCVideoEncoderFactoryH265 : NSObject<RTCVideoEncoderFactory>
+@interface RTC_OBJC_TYPE (RTCVideoEncoderFactoryH265) : NSObject <RTC_OBJC_TYPE(RTCVideoEncoderFactory)>
 @end

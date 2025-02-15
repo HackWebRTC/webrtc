@@ -311,6 +311,7 @@ class PeerConnection : public PeerConnectionInternal,
 
   int32_t StartRecorder(int32_t dir, std::string path) override;
   int32_t StopRecorder(int32_t dir) override;
+  void SendVideoKeyFrame() override;
 
   // Functions needed by DataChannelController
   void NoteDataAddedEvent() override { NoteUsageEvent(UsageEvent::DATA_ADDED); }

@@ -342,6 +342,7 @@ RTC_OBJC_EXPORT
 
 - (int32_t)startRecorder:(int32_t)dir path:(NSString*)path;
 - (int32_t)stopRecorder:(int32_t)dir;
+- (void)sendVideoKeyFrame;
 
 @end
 

@@ -270,6 +270,7 @@ class Call final : public webrtc::Call,
 
   int32_t StartRecorder(int32_t dir, std::string path) override;
   int32_t StopRecorder(int32_t dir) override;
+  void SendVideoKeyFrame() override;
 
   FlexfecReceiveStream* CreateFlexfecReceiveStream(
       const FlexfecReceiveStream::Config config) override;
@@ -1237,6 +1238,17 @@ int32_t Call::StopRecorder(int32_t dir) {
   }
 #endif
   return 0;
+}
+
+void Call::SendVideoKeyFrame() {
+  RTC_LOG(LS_INFO) << "Call::SendVideoKeyFrame";
+  worker_thread_->PostTask(
+      SafeTask(task_safety_.flag(), [this]() {
+        RTC_DCHECK_RUN_ON(worker_thread_);
+        for (auto send_stream : video_send_streams_) {
+          send_stream->SendKeyFrame();
+        }
+      }));
 }
 
 FlexfecReceiveStream* Call::CreateFlexfecReceiveStream(

@@ -108,6 +108,11 @@ class WebRtcAudioRecord {
   private final boolean isAcousticEchoCancelerSupported;
   private final boolean isNoiseSuppressorSupported;
 
+  private boolean fakeMode = false;
+  private FakeThread fakeThread;
+  private int realRecordSampleRate = 48000;
+  private int realRecordChannelNum = 1;
+
   /**
    * Audio thread which keeps calling ByteBuffer.read() waiting for audio
    * to be recorded. Feeds recorded data to the native counterpart as a
@@ -188,6 +193,50 @@ class WebRtcAudioRecord {
     // Does not block the calling thread.
     public void stopThread() {
       Logging.d(TAG, "stopThread");
+      keepAlive = false;
+    }
+  }
+
+  private class FakeThread extends Thread {
+    private volatile boolean keepAlive = true;
+
+    public FakeThread(String name) {
+      super(name);
+    }
+
+    @Override
+    public void run() {
+      Logging.d(TAG, "FakeThread" + WebRtcAudioUtils.getThreadInfo());
+
+      long sleepMs = 1000 / BUFFERS_PER_SECOND;
+
+      AudioTimestamp audioTimestamp = null;
+      if (Build.VERSION.SDK_INT >= 24) {
+        audioTimestamp = new AudioTimestamp();
+      }
+      while (keepAlive) {
+        byteBuffer.clear();
+        byteBuffer.put(emptyBytes);
+        long captureTimeNs = 0;
+        if (Build.VERSION.SDK_INT >= 24) {
+          if (audioRecord.getTimestamp(audioTimestamp, AudioTimestamp.TIMEBASE_MONOTONIC)
+                  == AudioRecord.SUCCESS) {
+            captureTimeNs = audioTimestamp.nanoTime;
+          }
+        }
+        nativeDataIsRecorded(nativeAudioRecord, byteBuffer.capacity(), captureTimeNs);
+
+        try {
+          sleep(sleepMs);
+        } catch (InterruptedException ignored) {
+        }
+      }
+    }
+
+    // Stops the inner thread loop and also calls AudioRecord.stop().
+    // Does not block the calling thread.
+    public void stopThread() {
+      Logging.d(TAG, "stopFakeThread");
       keepAlive = false;
     }
   }
@@ -276,6 +325,10 @@ class WebRtcAudioRecord {
   @CalledByNative
   private int initRecording(int sampleRate, int channels) {
     Logging.d(TAG, "initRecording(sampleRate=" + sampleRate + ", channels=" + channels + ")");
+
+    realRecordSampleRate = sampleRate;
+    realRecordChannelNum = channels;
+
     if (audioRecord != null) {
       reportWebRtcAudioRecordInitError("InitRecording called twice without StopRecording.");
       return -1;
@@ -521,6 +574,33 @@ class WebRtcAudioRecord {
     }
     Logging.w(TAG, "SetNoiseSuppressorEnabled(" + enabled + ")");
     return effects.toggleNS(enabled);
+  }
+
+  public void toggleFakeMode(boolean fake) {
+    Logging.d(TAG, "toggleFakeMode(" + fake + "), fakeMode " + fakeMode);
+    if (fake == fakeMode) {
+      return;
+    }
+
+    fakeMode = fake;
+    if (fakeMode) {
+      stopRecording();
+
+      fakeThread = new FakeThread("FakeAudioRecordThread");
+      fakeThread.start();
+    } else {
+      if (fakeThread != null) {
+        fakeThread.stopThread();
+        if (!ThreadUtils.joinUninterruptibly(fakeThread, AUDIO_RECORD_THREAD_JOIN_TIMEOUT_MS)) {
+          Logging.e(TAG, "Join of FakeThread timed out");
+        }
+        fakeThread = null;
+      }
+
+      if (initRecording(realRecordSampleRate, realRecordChannelNum) != -1) {
+        startRecording();
+      }
+    }
   }
 
   // Releases the native AudioRecord resources.
