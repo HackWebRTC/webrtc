@@ -16,7 +16,7 @@ PREBUILT_PATH=$1
 
 export PATH=$(pwd)/third_party/llvm-build/Release+Asserts/bin:$PATH
 
-if [ "$1" != "--skip-build-ffmpeg" ]; then
+if [ "$2" != "--skip-build-ffmpeg" ]; then
   pushd third_party/ffmpeg
 
   git reset --hard

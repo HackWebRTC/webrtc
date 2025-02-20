@@ -1380,6 +1380,7 @@ if (is_ios || is_mac) {
           "objc/api/video_codec/RTCVideoEncoderAV1.h",
           "objc/api/video_frame_buffer/RTCNativeI420Buffer.h",
           "objc/api/video_frame_buffer/RTCNativeMutableI420Buffer.h",
+          "objc/avconf/CFAudioDeviceManager.h",
           "objc/avconf/CFCaptureController.h",
           "objc/avconf/CFEAGLVideoView.h",
           "objc/avconf/CFHijackCapturerDelegate.h",
@@ -1836,6 +1837,8 @@ if (is_ios || is_mac) {
 
     rtc_library("avconf_objc") {
       sources = [
+        "objc/avconf/CFAudioDeviceManager.h",
+        "objc/avconf/CFAudioDeviceManager.m",
         "objc/avconf/CFCaptureController.h",
         "objc/avconf/CFCaptureController.m",
         "objc/avconf/CFEAGLVideoView.h",
