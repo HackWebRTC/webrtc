@@ -26,8 +26,6 @@
 
 #import "CFPeerConnectionClient.h"
 
-#import <UIKit/UIKit.h>
-
 #import "api/peerconnection/RTCConfiguration.h"
 #import "api/peerconnection/RTCIceCandidate.h"
 #import "api/peerconnection/RTCSessionDescription.h"
@@ -54,7 +52,6 @@
 #import "components/video_codec/RTCDefaultVideoDecoderFactory.h"
 #import "components/video_codec/RTCDefaultVideoEncoderFactory.h"
 
-#import "CFTimerProxy.h"
 #import "CFAudioMixer.h"
 #import "CFHijackCapturerDelegate.h"
 #import "CFPeerConnectionFactoryOption.h"

@@ -1560,8 +1560,10 @@ if (is_ios || is_mac) {
           "objc/components/video_codec/RTCVideoEncoderH265.h",
           "objc/components/video_frame_buffer/RTCCVPixelBuffer.h",
           "objc/helpers/RTCDispatcher.h",
+          "objc/avconf/CFCaptureController.h",
           "objc/avconf/CFHijackCapturerDelegate.h",
-          "objc/avconf/CFRPCapturer.h",
+          "objc/avconf/CFPeerConnectionClient.h",
+          "objc/avconf/CFPeerConnectionFactoryOption.h",
           "objc/avconf/CFVideoProcessor.h",
         ]
         if (!build_with_chromium) {
@@ -1581,6 +1583,7 @@ if (is_ios || is_mac) {
           ":videocapture_objc",
           ":videocodec_objc",
           ":videotoolbox_objc",
+          ":avconf_objc",
         ]
         if (!build_with_chromium) {
           deps += [
@@ -1837,12 +1840,8 @@ if (is_ios || is_mac) {
 
     rtc_library("avconf_objc") {
       sources = [
-        "objc/avconf/CFAudioDeviceManager.h",
-        "objc/avconf/CFAudioDeviceManager.m",
         "objc/avconf/CFCaptureController.h",
         "objc/avconf/CFCaptureController.m",
-        "objc/avconf/CFEAGLVideoView.h",
-        "objc/avconf/CFEAGLVideoView.m",
         "objc/avconf/CFHijackCapturerDelegate.h",
         "objc/avconf/CFHijackCapturerDelegate.mm",
         "objc/avconf/CFPeerConnectionClient.h",
@@ -1851,14 +1850,20 @@ if (is_ios || is_mac) {
         "objc/avconf/CFPeerConnectionFactoryOption.m",
         "objc/avconf/CFRateLimiter.h",
         "objc/avconf/CFRateLimiter.m",
-        "objc/avconf/CFRPCapturer.h",
-        "objc/avconf/CFRPCapturer.m",
-        "objc/avconf/CFTimerProxy.h",
-        "objc/avconf/CFTimerProxy.m",
         "objc/avconf/CFVideoFreezeDetector.h",
         "objc/avconf/CFVideoFreezeDetector.m",
         "objc/avconf/CFVideoProcessor.h",
       ]
+      if (is_ios) {
+        sources += [
+          "objc/avconf/CFAudioDeviceManager.h",
+          "objc/avconf/CFAudioDeviceManager.m",
+          "objc/avconf/CFEAGLVideoView.h",
+          "objc/avconf/CFEAGLVideoView.m",
+          "objc/avconf/CFRPCapturer.h",
+          "objc/avconf/CFRPCapturer.m",
+        ]
+      }
       if (rtc_use_bt_mixer) {
         sources += [
           "objc/avconf/CFAudioMixer.h",
@@ -1876,7 +1881,6 @@ if (is_ios || is_mac) {
 
       deps = [
         ":base_objc",
-        ":opengl_ui_objc",
         ":peerconnectionfactory_base_objc",
         ":videocapture_objc",
         ":videoframebuffer_objc",
@@ -1884,6 +1888,11 @@ if (is_ios || is_mac) {
       if (rtc_use_bt_mixer) {
         deps += [
           "//modules/backing_track:backing_track",
+        ]
+      }
+      if (is_ios) {
+        deps += [
+          ":opengl_ui_objc",
         ]
       }
 

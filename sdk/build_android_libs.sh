@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 py=$(python -c 'import sys; print(".".join(map(str, sys.version_info[0:1])))')
 if [[ "$py" != "3" ]]; then
   echo "Please use py3 env"
@@ -9,10 +7,20 @@ if [[ "$py" != "3" ]]; then
 fi
 
 if [ ! -d "$1" ]; then
-  echo "Please set valid target prebuilt_libs path"
+  echo "Please set valid target output path"
   exit
 fi
-PREBUILT_PATH=$1
+OUTPUT_PATH=$1
+mkdir -p $OUTPUT_PATH/prebuilt_libs/armeabi-v7a/ \
+  $OUTPUT_PATH/prebuilt_libs/arm64-v8a/ \
+  $OUTPUT_PATH/prebuilt_libs/x86/ \
+  $OUTPUT_PATH/prebuilt_libs/x86_64/ \
+  $OUTPUT_PATH/symbols/armeabi-v7a/ \
+  $OUTPUT_PATH/symbols/arm64-v8a/ \
+  $OUTPUT_PATH/symbols/x86/ \
+  $OUTPUT_PATH/symbols/x86_64/
+
+set -e
 
 export PATH=$(pwd)/third_party/llvm-build/Release+Asserts/bin:$PATH
 
@@ -73,16 +81,20 @@ fi
 
 gn gen out/android_release_arm --args='target_os="android" target_cpu="arm" proprietary_codecs=true ffmpeg_branding="Chrome" is_debug=false is_component_build=false rtc_include_tests=false enable_rust=true enable_rust_cxx=true'
 ninja -C out/android_release_arm libjingle_peerconnection_so
-cp out/android_release_arm/libjingle_peerconnection_so.so $PREBUILT_PATH/armeabi-v7a/
+cp out/android_release_arm/libjingle_peerconnection_so.so $OUTPUT_PATH/prebuilt_libs/armeabi-v7a/
+cp out/android_release_arm/lib.unstripped/libjingle_peerconnection_so.so $OUTPUT_PATH/symbols/armeabi-v7a/
 
 gn gen out/android_release_x86 --args='target_os="android" target_cpu="x86" proprietary_codecs=true ffmpeg_branding="Chrome" is_debug=false is_component_build=false rtc_include_tests=false enable_rust=true enable_rust_cxx=true'
 ninja -C out/android_release_x86 libjingle_peerconnection_so
-cp out/android_release_x86/libjingle_peerconnection_so.so $PREBUILT_PATH/x86/
+cp out/android_release_x86/libjingle_peerconnection_so.so $OUTPUT_PATH/prebuilt_libs/x86/
+cp out/android_release_x86/lib.unstripped/libjingle_peerconnection_so.so $OUTPUT_PATH/symbols/x86/
 
 gn gen out/android_release_arm64 --args='target_os="android" target_cpu="arm64" proprietary_codecs=true ffmpeg_branding="Chrome" is_debug=false is_component_build=false rtc_include_tests=false enable_rust=true enable_rust_cxx=true'
 ninja -C out/android_release_arm64 libjingle_peerconnection_so
-cp out/android_release_arm64/libjingle_peerconnection_so.so $PREBUILT_PATH/arm64-v8a/
+cp out/android_release_arm64/libjingle_peerconnection_so.so $OUTPUT_PATH/prebuilt_libs/arm64-v8a/
+cp out/android_release_arm64/lib.unstripped/libjingle_peerconnection_so.so $OUTPUT_PATH/symbols/arm64-v8a/
 
 gn gen out/android_release_x64 --args='target_os="android" target_cpu="x64" proprietary_codecs=true ffmpeg_branding="Chrome" is_debug=false is_component_build=false rtc_include_tests=false enable_rust=true enable_rust_cxx=true'
 ninja -C out/android_release_x64 libjingle_peerconnection_so
-cp out/android_release_x64/libjingle_peerconnection_so.so $PREBUILT_PATH/x86_64/
+cp out/android_release_x64/libjingle_peerconnection_so.so $OUTPUT_PATH/prebuilt_libs/x86_64/
+cp out/android_release_x64/lib.unstripped/libjingle_peerconnection_so.so $OUTPUT_PATH/symbols/x86_64/

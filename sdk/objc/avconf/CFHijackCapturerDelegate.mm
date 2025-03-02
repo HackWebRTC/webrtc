@@ -10,7 +10,9 @@
 
 #import "CFHijackCapturerDelegate.h"
 
+#if defined(WEBRTC_IOS)
 #import <UIKit/UIKit.h>
+#endif
 
 #import "base/RTCVideoFrameBuffer.h"
 #import "components/video_frame_buffer/RTCCVPixelBuffer.h"
@@ -23,6 +25,7 @@
 
 const int64_t kBlackFrameIntervalMs = 100;
 
+#if defined(WEBRTC_IOS)
 UIImage* rotate(UIImage* src, RTCVideoRotation rotation) {
     UIImageOrientation orientation = UIImageOrientationUp;
     switch (rotation) {
@@ -44,6 +47,7 @@ UIImage* rotate(UIImage* src, RTCVideoRotation rotation) {
                                       scale:1.0
                                 orientation:orientation];
 }
+#endif
 
 @interface EmptyVideoFrameBuffer : NSObject<RTCVideoFrameBuffer>
 
@@ -164,6 +168,7 @@ UIImage* rotate(UIImage* src, RTCVideoRotation rotation) {
                                       timeStampNs:translatedTimestampNs];
 
         if (_jpegFrameCallback && _jpegPath && [frame.buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
+#if defined(WEBRTC_IOS)
             RTC_LOG(LS_INFO) << TAG "callback last frame";
 
             // credit: https://stackoverflow.com/a/15726807
@@ -184,6 +189,7 @@ UIImage* rotate(UIImage* src, RTCVideoRotation rotation) {
 
             _jpegFrameCallback = nil;
             _jpegPath = nil;
+#endif
         } else if (_yuvFrameCallback && newFrame.timeStampNs - _lastYuvFrameCallbackTimestampNs >= _yuvFrameCallbackIntervalNs) {
             _lastYuvFrameCallbackTimestampNs = newFrame.timeStampNs;
             // TODO: convert and callback

@@ -29,6 +29,9 @@
 
 @implementation CFPeerConnectionFactoryOption
 
+@synthesize preferredVideoCodec = _preferredVideoCodec;
+@synthesize disableEncryption = _disableEncryption;
+
 - (NSString*)description {
     return
         [NSString stringWithFormat:
