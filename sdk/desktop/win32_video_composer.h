@@ -4,7 +4,6 @@
 
 #include "sdk/desktop/win32_video_renderer.h"
 
-#include "rtc_base/async_invoker.h"
 #include "rtc_base/thread.h"
 #if defined(WEBRTC_WIN)
 #include "rtc_base/win32.h"
@@ -37,7 +36,6 @@ class Win32VideoComposer {
   HWND wnd_;
   int frame_interval_ms_;
   std::unique_ptr<rtc::Thread> compose_thread_;
-  rtc::AsyncInvoker init_compose_invoker_;
 
   CRITICAL_SECTION renderers_lock_;
   std::vector<Win32VideoRenderer*> renderers_;

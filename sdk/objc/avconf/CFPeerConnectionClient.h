@@ -109,7 +109,7 @@ RTC_OBJC_EXPORT
                         dir:(CFPeerConnectionDir)dir
                    hasVideo:(bool)hasVideo
                    delegate:(id<CFPeerConnectionClientDelegate>)delegate
-            videoMaxBitrate:(int32_t)videoMaxBitrate
+        videoMaxBitrateKbps:(int32_t)videoMaxBitrateKbps
           videoMaxFrameRate:(int32_t)videoMaxFrameRate;
 
 - (void)createPeerConnection:(NSArray<RTCIceServer*>*)iceServers;
@@ -141,7 +141,7 @@ RTC_OBJC_EXPORT
 - (void)addRemoteTrackRenderer:(id<RTCVideoRenderer>)remoteTrackRenderer;
 - (void)removeRemoteTrackRenderer:(id<RTCVideoRenderer>)remoteTrackRenderer;
 
-- (void)setVideoMaxBitrate:(int)videoMaxBitrate;
+- (void)setVideoMaxBitrateKbps:(int)videoMaxBitrateKbps;
 
 @end
 

@@ -11,19 +11,14 @@
 #include "sdk/desktop/win32_video_renderer.h"
 #endif
 
-#define PC_CLIENT_VERSION "1.29.30987"
+#define PC_CLIENT_VERSION "1.0.43659"
 
 namespace AvConf {
 
 class PeerConnectionClient : public webrtc::PeerConnectionObserver {
  public:
-  static constexpr int DIR_INACTIVE = 0;
-  static constexpr int DIR_RECV_ONLY = 1;
-  static constexpr int DIR_SEND_ONLY = 2;
-  static constexpr int DIR_SEND_RECV = 3;
   static std::string const K_AUDIO_TRACK_ID;
   static std::string const K_VIDEO_TRACK_ID;
-  static constexpr int K_BPS_IN_KBPS = 1000;
 
   static constexpr int CAPTURER_TYPE_CAMERA = 1;
   static constexpr int CAPTURER_TYPE_SCREEN = 2;
@@ -34,11 +29,12 @@ class PeerConnectionClient : public webrtc::PeerConnectionObserver {
       int dir,
       bool has_video,
       const std::shared_ptr<PeerConnectionClientCallback>& callback,
-      int video_max_bitrate,
+      int video_max_bitrate_kbps,
       int video_max_frame_rate);
   ~PeerConnectionClient();
 
   static int CreatePeerConnectionFactory(void* hwnd,
+                                         int disable_encryption,
                                          int dummy_audio_device,
                                          int transit_video);
   static int CreateLocalTracks(webrtc::VideoTrackSource* video_source);
@@ -133,7 +129,7 @@ class PeerConnectionClient : public webrtc::PeerConnectionObserver {
 #if defined(WEBRTC_WIN)
   std::vector<Win32VideoRenderer*> remote_track_renderers_;
 #endif
-  int video_max_bitrate_;
+  int video_max_bitrate_kbps_;
   int video_max_frame_rate_;
 
   bool is_initiator_;

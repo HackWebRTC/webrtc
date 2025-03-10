@@ -61,8 +61,6 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
     public static final String K_AUDIO_TRACK_ID = "CFAMSa0";
     public static final String K_VIDEO_TRACK_ID = "CFAMSv0";
 
-    public static final int K_BPS_IN_KBPS = 1000;
-
     private static final String TAG = "PeerConnectionClient";
     private static final String VIDEO_TRACK_TYPE = "video";
 
@@ -80,7 +78,7 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
     private final int mDir;
     private final boolean mHasVideo;
     private final List<VideoSink> mRemoteTrackRenderers = new ArrayList<>();
-    private int mVideoMaxBitrate;
+    private int mVideoMaxBitrateKbps;
     private int mVideoMaxFrameRate;
 
     private final ScheduledExecutorService mExecutor;
@@ -98,25 +96,25 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
     public PeerConnectionClient(
             final String uid, final int dir, final boolean hasVideo,
             final PeerConnectionClientCallback callback,
-            final int videoMaxBitrate, final int videoMaxFrameRate
+            final int videoMaxBitrateKbps, final int videoMaxFrameRate
     ) {
         mUid = uid;
         mDir = dir;
         mHasVideo = hasVideo;
         mCallback = callback;
-        mVideoMaxBitrate = videoMaxBitrate;
+        mVideoMaxBitrateKbps = videoMaxBitrateKbps;
         mVideoMaxFrameRate = videoMaxFrameRate;
 
         mExecutor = new AndroidSafeScheduledThreadPoolExecutor(1);
     }
 
     public static synchronized int initialize(Context appContext, String fieldTrials,
-            Loggable loggable) {
+            Loggable loggable, Logging.Severity severity) {
         PeerConnectionFactory.initialize(
                 PeerConnectionFactory.InitializationOptions.builder(appContext)
                         .setFieldTrials(fieldTrials)
                         .setEnableInternalTracer(true)
-                        .setInjectableLogger(loggable, Logging.Severity.LS_INFO)
+                        .setInjectableLogger(loggable, severity)
                         .createInitializationOptions());
 
         Logging.d(TAG, "initialize success");
@@ -778,10 +776,10 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
         reportError(ERR_SET_SDP_FAIL);
     }
 
-    public void setVideoMaxBitrate(int videoMaxBitrate) {
-        logInfo("setVideoMaxBitrate " + videoMaxBitrate);
+    public void setVideoMaxBitrateKbps(int videoMaxBitrateKbps) {
+        logInfo("setVideoMaxBitrateKbps " + videoMaxBitrateKbps);
         mExecutor.execute(() -> {
-            mVideoMaxBitrate = videoMaxBitrate;
+            mVideoMaxBitrateKbps = videoMaxBitrateKbps;
             doSetVideoMaxBitrate();
         });
     }
@@ -800,13 +798,13 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
                     }
 
                     for (RtpParameters.Encoding encoding : parameters.encodings) {
-                        encoding.maxBitrateBps = mVideoMaxBitrate * K_BPS_IN_KBPS;
+                        encoding.maxBitrateBps = mVideoMaxBitrateKbps * 1000;
                         encoding.maxFramerate = mVideoMaxFrameRate;
                     }
                     if (!sender.setParameters(parameters)) {
                         logError("RtpSender.setParameters failed");
                     }
-                    logInfo("Configured max video bitrate to: " + mVideoMaxBitrate);
+                    logInfo("Configured max video bitrate to: " + mVideoMaxBitrateKbps);
                 }
             }
         }

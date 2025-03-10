@@ -43,7 +43,7 @@ void BridgePeerConnectionClientCallback::OnLocalDescription(const std::string& p
     if (!local_sdp.ToString(&sdp_string)) {
         return;
     }
-    real_callback_.on_local_description(real_callback_.opaque, peer_uid.c_str(), FromWebRTCSdpType(local_sdp.GetType()),sdp_string.c_str());
+    real_callback_.on_local_description(real_callback_.opaque, peer_uid.c_str(), FromWebRTCSdpType(local_sdp.GetType()), sdp_string.c_str());
 }
 
 void BridgePeerConnectionClientCallback::OnIceCandidate(const std::string& peer_uid, const webrtc::IceCandidateInterface& candidate) {
@@ -55,22 +55,22 @@ void BridgePeerConnectionClientCallback::OnIceCandidate(const std::string& peer_
     real_callback_.on_ice_candidate(real_callback_.opaque, peer_uid.c_str(), candidate.sdp_mid().c_str(), candidate.sdp_mline_index(), sdp_string.c_str());
 }
 
-void BridgePeerConnectionClientCallback::OnIceCandidatesRemoved(const std::string& peer_uid, const std::vector<webrtc::IceCandidateInterface*>& candidates) {}
+void BridgePeerConnectionClientCallback::OnIceCandidatesRemoved(const std::string& peer_uid, const std::vector<webrtc::IceCandidateInterface*>& candidates) {
+    // unsupported yet
+}
 
 void BridgePeerConnectionClientCallback::OnPeerConnectionstatsReady(const std::string& peer_uid, const rtc::scoped_refptr<const webrtc::RTCStatsReport>& report) {
     Json::Value report_root;
-    report_root["timestamp_us"] = report->timestamp_us();
+    report_root["timestamp_us"] = report->timestamp().us();
     Json::Value stats_map;
     for (auto it = report->begin(); it != report->end(); it++) {
         Json::Value stats_root;
         stats_root["id"] = it->id();
         stats_root["type"] = it->type();
-        stats_root["timestamp_us"] = it->timestamp_us();
+        stats_root["timestamp_us"] = it->timestamp().us();
         Json::Value stats_members(Json::objectValue);
-        for (auto member : it->Members()) {
-            if (member->is_defined()) {
-                stats_members[member->name()] = member->ValueToString();
-            }
+        for (auto& attr : it->Attributes()) {
+            stats_members[attr.name()] = attr.ToString();
         }
         stats_root["members"] = stats_members;
         stats_map[it->id()] = stats_root;

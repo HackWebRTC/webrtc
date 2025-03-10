@@ -3,12 +3,16 @@
 #include <memory>
 
 #include "rtc_base/logging.h"
+#include "rtc_base/ssl_adapter.h"
 #include "sdk/desktop/bridge_peer_connection_client_callback.h"
 #include "sdk/desktop/peer_connection_client.h"
 #include "sdk/desktop/peer_connection_client_callback.h"
 #if defined(WEBRTC_WIN)
 #include "sdk/desktop/win32_video_renderer.h"
+#include <winsock2.h>
+#pragma comment(lib, "ws2_32.lib")
 #endif
+#include "system_wrappers/include/field_trial.h"
 
 class PCClientLogSink : public rtc::LogSink {
  public:
@@ -25,7 +29,30 @@ class PCClientLogSink : public rtc::LogSink {
   PCClientLogCallback callback_;
 };
 
-void PCClientSetLogCallback(PCClientLogCallback callback) {
+const char* PCClientVersion() {
+  return PC_CLIENT_VERSION;
+}
+
+int PCClientInitialize(const char* field_trials) {
+  webrtc::field_trial::InitFieldTrialsFromString(field_trials);
+  rtc::InitializeSSL();
+#if defined(WEBRTC_WIN)
+  WSADATA wsaData;
+  int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
+  if (result != 0) {
+    RTC_LOG(LS_INFO) << "PCClientInitialize WSAStartup failed " << result;
+    return result;
+  }
+  if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2) {
+    RTC_LOG(LS_INFO) << "Winsock version not supported " << LOBYTE(wsaData.wVersion) << " " << HIBYTE(wsaData.wVersion);
+    WSACleanup();
+    return -404;
+  }
+#endif
+  return 0;
+}
+
+void PCClientSetLogCallback(PCClientLogCallback callback, int severity) {
   rtc::LogMessage::AddLogToStream(new PCClientLogSink(callback),
                                   rtc::LoggingSeverity::LS_INFO);
 }
@@ -77,10 +104,11 @@ void PCClientVideoRendererDestroy(void* renderer) {
 #endif
 
 int PCClientCreatePeerConnectionFactory(void* hwnd,
+                                        int disable_encryption,
                                         int dummy_audio_device,
                                         int transit_video) {
   return AvConf::PeerConnectionClient::CreatePeerConnectionFactory(
-      hwnd, dummy_audio_device, transit_video);
+      hwnd, disable_encryption, dummy_audio_device, transit_video);
 }
 
 int PCClientCreateLocalTracks(void* video_source) {
@@ -108,12 +136,12 @@ void* PCClientCreate(const char* peer_uid,
                      int dir,
                      int has_video,
                      struct PCClientCallback callback,
-                     int video_max_bitrate,
+                     int video_max_bitrate_kbps,
                      int video_max_frame_rate) {
   return new AvConf::PeerConnectionClient(
       peer_uid, dir, has_video,
       std::make_shared<AvConf::BridgePeerConnectionClientCallback>(callback),
-      video_max_bitrate, video_max_frame_rate);
+      video_max_bitrate_kbps, video_max_frame_rate);
 }
 
 void PCClientCreatePeerConnection(void* client) {

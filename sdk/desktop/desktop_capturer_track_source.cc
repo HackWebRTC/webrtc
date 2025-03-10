@@ -4,7 +4,7 @@ namespace AvConf {
 
 rtc::scoped_refptr<DesktopCapturerTrackSource>
 DesktopCapturerTrackSource::Create(int width, int height, int fps) {
-  return new rtc::RefCountedObject<DesktopCapturerTrackSource>(
+  return rtc::make_ref_counted<DesktopCapturerTrackSource>(
       DesktopVideoCapturer::Create(width, height, fps));
 }
 

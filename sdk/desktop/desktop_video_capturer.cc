@@ -1,9 +1,9 @@
 #include "sdk/desktop/desktop_video_capturer.h"
 
+#include "api/units/time_delta.h"
 #include "modules/desktop_capture/desktop_and_cursor_composer.h"
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capturer.h"
-#include "rtc_base/bind.h"
 #include "rtc_base/logging.h"
 #include "third_party/libyuv/include/libyuv.h"
 
@@ -72,19 +72,16 @@ bool DesktopVideoCapturer::Init(int target_fps) {
   desktop_capturer_->Start(this);
   running_ = true;
 
-  init_capture_invoker_.AsyncInvoke<void>(
-      RTC_FROM_HERE, capture_thread_.get(),
-      rtc::Bind(&DesktopVideoCapturer::capture_loop, this));
+  capture_thread_->PostTask([this]() { capture_loop(); });
 
   RTC_LOG(LS_INFO) << "DesktopVideoCapturer::Init success";
   return true;
 }
 
 void DesktopVideoCapturer::Destroy() {
-  rtc::CritScope cs(&capturer_lock_);
+  webrtc::MutexLock lock(&capturer_lock_);
   running_ = false;
   desktop_capturer_.reset();
-  init_capture_invoker_.Clear();
   capture_thread_->Quit();
 }
 
@@ -113,14 +110,11 @@ void DesktopVideoCapturer::OnCaptureResult(
 }
 
 void DesktopVideoCapturer::capture_loop() {
-  rtc::CritScope cs(&capturer_lock_);
+  webrtc::MutexLock lock(&capturer_lock_);
   if (running_) {
     desktop_capturer_->CaptureFrame();
 
-    init_capture_invoker_.AsyncInvokeDelayed<void>(
-        RTC_FROM_HERE, capture_thread_.get(),
-        rtc::Bind(&DesktopVideoCapturer::capture_loop, this),
-        frame_interval_ms_, 0);
+    capture_thread_->PostDelayedTask([this]() { capture_loop(); }, webrtc::TimeDelta::Millis(frame_interval_ms_));
   }
 }
 

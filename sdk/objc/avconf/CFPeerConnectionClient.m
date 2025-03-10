@@ -63,8 +63,6 @@ static NSString* const kCFVideoTrackKind = @"video";
 static NSString* const kCFAudioTrackId = @"CFAMSa0";
 static NSString* const kCFVideoTrackId = @"CFAMSv0";
 
-static int const kKbpsMultiplier = 1000;
-
 static RTC_OBJC_TYPE(RTCPeerConnectionFactory)* gFactory = nil;
 
 static RTC_OBJC_TYPE(RTCAudioSource)* gLocalAudioSource = nil;
@@ -93,7 +91,7 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
     RTC_OBJC_TYPE(RTCAudioTrack)* _remoteAudioTrack;
     RTC_OBJC_TYPE(RTCVideoTrack)* _remoteVideoTrack;
 
-    int32_t _videoMaxBitrate;
+    int32_t _videoMaxBitrateKbps;
     int32_t _videoMaxFrameRate;
 
     dispatch_queue_t _queue;
@@ -225,7 +223,7 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
                         dir:(CFPeerConnectionDir)dir
                    hasVideo:(bool)hasVideo
                    delegate:(id<CFPeerConnectionClientDelegate>)delegate
-            videoMaxBitrate:(int32_t)videoMaxBitrate
+        videoMaxBitrateKbps:(int32_t)videoMaxBitrateKbps
           videoMaxFrameRate:(int32_t)videoMaxFrameRate {
     self = [super init];
     if (self) {
@@ -234,7 +232,7 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
         _hasVideo = hasVideo;
         _delegate = delegate;
         _remoteTrackRenderers = [[NSMutableArray alloc] init];
-        _videoMaxBitrate = videoMaxBitrate;
+        _videoMaxBitrateKbps = videoMaxBitrateKbps;
         _videoMaxFrameRate = videoMaxFrameRate;
 
         _queue = dispatch_queue_create("AvConf-PcClient", NULL);
@@ -768,8 +766,8 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
     }
 }
 
-- (void)setVideoMaxBitrate:(int)videoMaxBitrate {
-    [self logInfo:@"setVideoMaxBitrate %d", videoMaxBitrate];
+- (void)setVideoMaxBitrateKbps:(int)videoMaxBitrateKbps {
+    [self logInfo:@"setVideoMaxBitrateKbps %d", videoMaxBitrateKbps];
 
     __weak CFPeerConnectionClient* weakSelf = self;
     dispatch_async(_queue, ^{
@@ -778,13 +776,13 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
             return;
         }
 
-        strongSelf->_videoMaxBitrate = videoMaxBitrate;
+        strongSelf->_videoMaxBitrateKbps = videoMaxBitrateKbps;
         [strongSelf doSetVideoMaxBitrate];
     });
 }
 
 - (void)doSetVideoMaxBitrate {
-    if (_videoMaxBitrate <= 0 || _videoMaxFrameRate <= 0) {
+    if (_videoMaxBitrateKbps <= 0 || _videoMaxFrameRate <= 0) {
         return;
     }
     for (RTC_OBJC_TYPE(RTCRtpSender)* sender in _peerConnection.senders) {
@@ -794,7 +792,7 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
                 for (RTC_OBJC_TYPE(RTCRtpEncodingParameters)* encoding in parametersToModify
                          .encodings) {
                     encoding.maxBitrateBps =
-                        @(_videoMaxBitrate * kKbpsMultiplier);
+                        @(_videoMaxBitrateKbps * 1000);
                     encoding.maxFramerate = @(_videoMaxFrameRate);
                 }
                 [sender setParameters:parametersToModify];

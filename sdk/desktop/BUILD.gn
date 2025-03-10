@@ -46,7 +46,6 @@ pc_client_common_sources = [
 pc_client_common_deps = [
     "//api:libjingle_peerconnection_api",
     "//api:create_peerconnection_factory",
-    "//api/video:video_frame_i420",
     "//rtc_base:checks",
     "//rtc_base:stringutils",
     "//rtc_base/third_party/sigslot",
@@ -64,8 +63,6 @@ pc_client_common_deps = [
     "//modules/desktop_capture:desktop_capture",
     "//modules/video_capture:video_capture_module",
     "//pc:libjingle_peerconnection",
-    "//rtc_base:rtc_base",
-    "//rtc_base:rtc_base_approved",
     "//rtc_base:logging",
     "//third_party/ffmpeg",
     "//third_party/jsoncpp",
@@ -94,6 +91,7 @@ if (is_win) {
 
     allow_poison = [
       "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
+      "environment_construction",
       "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
       "default_task_queue",
     ]

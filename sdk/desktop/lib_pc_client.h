@@ -42,8 +42,15 @@ struct PCClientCallback {
   void* opaque;
 };
 
+// work around for create kotlin lambda (function2) in cpp user code
+typedef void (*KmpWebRTCErrorHandler)(void*, int, const char*);
+
+PC_CLIENT_API const char* PCClientVersion();
+
+PC_CLIENT_API int PCClientInitialize(const char* field_trials);
+
 typedef void (*PCClientLogCallback)(int, const char*);
-PC_CLIENT_API void PCClientSetLogCallback(PCClientLogCallback callback);
+PC_CLIENT_API void PCClientSetLogCallback(PCClientLogCallback callback, int severity);
 
 PC_CLIENT_API void* PCClientVideoCapturerCreate(int type,
                                                 int width,
@@ -70,6 +77,7 @@ PC_CLIENT_API void PCClientVideoRendererDestroy(void* renderer);
 #endif
 
 PC_CLIENT_API int PCClientCreatePeerConnectionFactory(void* hwnd,
+                                                      int disable_encryption,
                                                       int dummy_audio_device,
                                                       int transit_video);
 PC_CLIENT_API int PCClientCreateLocalTracks(void* video_source);
@@ -83,7 +91,7 @@ PC_CLIENT_API void* PCClientCreate(const char* peer_uid,
                                    int dir,
                                    int has_video,
                                    struct PCClientCallback callback,
-                                   int video_max_bitrate,
+                                   int video_max_bitrate_kbps,
                                    int video_max_frame_rate);
 PC_CLIENT_API void PCClientCreatePeerConnection(void* client);
 PC_CLIENT_API void PCClientCreateOffer(void* client);

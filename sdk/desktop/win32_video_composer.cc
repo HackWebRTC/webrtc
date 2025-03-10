@@ -1,5 +1,5 @@
 #include "sdk/desktop/win32_video_composer.h"
-#include "rtc_base/bind.h"
+#include "api/units/time_delta.h"
 
 namespace AvConf {
 
@@ -19,9 +19,7 @@ void Win32VideoComposer::AddRenderer(Win32VideoRenderer* renderer) {
   AutoLock<Win32VideoComposer> lock(this);
   renderers_.push_back(renderer);
 
-  init_compose_invoker_.AsyncInvoke<void>(
-      RTC_FROM_HERE, compose_thread_.get(),
-      rtc::Bind(&Win32VideoComposer::composer_loop, this));
+  compose_thread_->PostTask([this]() { composer_loop(); });
 }
 
 void Win32VideoComposer::RemoveRenderer(Win32VideoRenderer* renderer) {
@@ -41,10 +39,7 @@ void Win32VideoComposer::UpdateHwnd(void* wnd) {
 
 void Win32VideoComposer::composer_loop() {
   if (compose()) {
-    init_compose_invoker_.AsyncInvokeDelayed<void>(
-        RTC_FROM_HERE, compose_thread_.get(),
-        rtc::Bind(&Win32VideoComposer::composer_loop, this), frame_interval_ms_,
-        0);
+    compose_thread_->PostDelayedTask([this]() { composer_loop(); }, webrtc::TimeDelta::Millis(frame_interval_ms_));
   }
 }
 

@@ -11,7 +11,7 @@
 #include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/transit_media/audio_device_module.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread.h"
 #include "sdk/desktop/camera_capturer_track_source.h"
 #include "sdk/desktop/desktop_capturer_track_source.h"
@@ -27,13 +27,8 @@
 
 namespace AvConf {
 
-int constexpr PeerConnectionClient::DIR_INACTIVE;
-int constexpr PeerConnectionClient::DIR_RECV_ONLY;
-int constexpr PeerConnectionClient::DIR_SEND_ONLY;
-int constexpr PeerConnectionClient::DIR_SEND_RECV;
 std::string const PeerConnectionClient::K_AUDIO_TRACK_ID = {"CFAMSa0"};
 std::string const PeerConnectionClient::K_VIDEO_TRACK_ID = {"CFAMSv0"};
-int constexpr PeerConnectionClient::K_BPS_IN_KBPS;
 int constexpr PeerConnectionClient::CAPTURER_TYPE_CAMERA;
 int constexpr PeerConnectionClient::CAPTURER_TYPE_SCREEN;
 int constexpr PeerConnectionClient::CAPTURER_TYPE_FILE;
@@ -43,7 +38,7 @@ static webrtc::legacy::OwnedFactoryAndThreads* g_factory_ = nullptr;
 static Win32VideoComposer* g_composer_ = nullptr;
 #endif
 
-static rtc::CriticalSection g_global_state_lock_;
+static webrtc::Mutex g_global_state_lock_;
 static rtc::scoped_refptr<webrtc::AudioSourceInterface> g_local_audio_source_ =
     nullptr;
 static rtc::scoped_refptr<webrtc::AudioTrackInterface> g_local_audio_track_ =
@@ -102,13 +97,13 @@ PeerConnectionClient::PeerConnectionClient(
     int dir,
     bool has_video,
     const std::shared_ptr<PeerConnectionClientCallback>& callback,
-    int video_max_bitrate,
+    int video_max_bitrate_kbps,
     int video_max_frame_rate)
     : peer_uid_(peer_uid),
       dir_(dir),
       has_video_(has_video),
       callback_(callback),
-      video_max_bitrate_(video_max_bitrate),
+      video_max_bitrate_kbps_(video_max_bitrate_kbps),
       video_max_frame_rate_(video_max_frame_rate),
       is_initiator_(false),
       peer_connection_(nullptr),
@@ -119,9 +114,10 @@ PeerConnectionClient::PeerConnectionClient(
 PeerConnectionClient::~PeerConnectionClient() {}
 
 int PeerConnectionClient::CreatePeerConnectionFactory(void* hwnd,
+                                                      int disable_encryption,
                                                       int dummy_audio_device,
                                                       int transit_video) {
-  rtc::CritScope cs(&g_global_state_lock_);
+  webrtc::MutexLock lock(&g_global_state_lock_);
   RTC_LOG(LS_INFO) << "createPeerConnectionFactory, ver " PC_CLIENT_VERSION;
   if (g_factory_) {
     RTC_LOG(LS_INFO) << "createPeerConnectionFactory: already created";
@@ -158,8 +154,10 @@ int PeerConnectionClient::CreatePeerConnectionFactory(void* hwnd,
           nullptr /* audio_mixer */, nullptr /* audio_processing */));
   g_factory_ = new webrtc::legacy::OwnedFactoryAndThreads(
       std::move(network_thread), std::move(worker_thread),
-      std::move(signaling_thread), nullptr, factory.release());
-
+      std::move(signaling_thread), nullptr, factory);
+  webrtc::PeerConnectionFactoryInterface::Options options;
+  options.disable_encryption = disable_encryption;
+  g_factory_->factory()->SetOptions(options);
 #if defined(WEBRTC_WIN)
   if (g_composer_) {
     g_composer_->UpdateHwnd(hwnd);
@@ -174,7 +172,7 @@ int PeerConnectionClient::CreatePeerConnectionFactory(void* hwnd,
 
 int PeerConnectionClient::CreateLocalTracks(
     webrtc::VideoTrackSource* video_source) {
-  rtc::CritScope cs(&g_global_state_lock_);
+  webrtc::MutexLock lock(&g_global_state_lock_);
   RTC_LOG(LS_INFO) << "createLocalTracks, source " << (void*)video_source;
   if (!g_factory_) {
     RTC_LOG(LS_ERROR) << "createLocalTracks error: no factory";
@@ -187,14 +185,14 @@ int PeerConnectionClient::CreateLocalTracks(
   // options.delay_agnostic_aec = true;
   g_local_audio_source_ = g_factory_->factory()->CreateAudioSource(options);
   g_local_audio_track_ = g_factory_->factory()->CreateAudioTrack(
-      K_AUDIO_TRACK_ID, g_local_audio_source_);
+      K_AUDIO_TRACK_ID, g_local_audio_source_.get());
 
   RTC_LOG(LS_INFO) << "createLocalTracks success";
   return 0;
 }
 
 void PeerConnectionClient::DestroyLocalTracks() {
-  rtc::CritScope cs(&g_global_state_lock_);
+  webrtc::MutexLock lock(&g_global_state_lock_);
   RTC_LOG(LS_INFO) << "destroyLocalTracks";
   // g_local_audio_source_->Release();
   g_local_audio_source_ = nullptr;
@@ -335,7 +333,7 @@ void PeerConnectionClient::DestroyVideoCapturer(void* video_capturer,
 
 #if defined(WEBRTC_WIN)
 void PeerConnectionClient::AddLocalRenderer(Win32VideoRenderer* renderer) {
-  rtc::CritScope cs(&g_global_state_lock_);
+  webrtc::MutexLock lock(&g_global_state_lock_);
   if (g_local_video_track_) {
     renderer->RenderTrack(g_local_video_track_.get());
     g_local_video_renderers_.push_back(renderer);
@@ -346,7 +344,7 @@ void PeerConnectionClient::AddLocalRenderer(Win32VideoRenderer* renderer) {
 }
 
 void PeerConnectionClient::RemoveLocalRenderer(Win32VideoRenderer* renderer) {
-  rtc::CritScope cs(&g_global_state_lock_);
+  webrtc::MutexLock lock(&g_global_state_lock_);
   auto it = std::find(g_local_video_renderers_.begin(),
                       g_local_video_renderers_.end(), renderer);
   if (it != g_local_video_renderers_.end()) {
@@ -391,7 +389,6 @@ void PeerConnectionClient::CreatePeerConnection(
 
   webrtc::PeerConnectionInterface::RTCConfiguration config;
   config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
-  config.enable_dtls_srtp = true;
   config.servers = ice_servers;
 
   peer_connection_ = g_factory_->factory()->CreatePeerConnection(
@@ -434,14 +431,14 @@ void PeerConnectionClient::CreatePeerConnection(
 }
 
 void PeerConnectionClient::setVideoMaxBitrate() {
-  if (video_max_bitrate_ <= 0 || video_max_frame_rate_ <= 0) {
+  if (video_max_bitrate_kbps_ <= 0 || video_max_frame_rate_ <= 0) {
       return;
   }
   for (auto& sender : peer_connection_->GetSenders()) {
     if (sender->media_type() == cricket::MediaType::MEDIA_TYPE_VIDEO) {
       webrtc::RtpParameters params = sender->GetParameters();
       for (auto& encoding : params.encodings) {
-        encoding.max_bitrate_bps = video_max_bitrate_ * K_BPS_IN_KBPS;
+        encoding.max_bitrate_bps = video_max_bitrate_kbps_ * 1000;
         encoding.max_framerate = video_max_frame_rate_;
       }
       sender->SetParameters(params);
@@ -558,6 +555,7 @@ void PeerConnectionClient::SetRemoteDescription(
 
 #if defined(WEBRTC_WIN)
 void PeerConnectionClient::AddRemoteRenderer(Win32VideoRenderer* renderer) {
+  RTC_LOG(LS_INFO) << "AddRemoteRenderer renderer " << renderer << " track " << remote_video_track_.get();
   remote_track_renderers_.push_back(renderer);
   if (remote_video_track_) {
     renderer->RenderTrack(reinterpret_cast<webrtc::VideoTrackInterface*>(
@@ -735,11 +733,11 @@ void PeerConnectionClient::drainCandidates() {
 }
 
 bool PeerConnectionClient::send() {
-  return dir_ == DIR_SEND_ONLY || dir_ == DIR_SEND_RECV;
+  return dir_ == (int) webrtc::RtpTransceiverDirection::kSendOnly || dir_ == (int) webrtc::RtpTransceiverDirection::kSendRecv;
 }
 
 bool PeerConnectionClient::receive() {
-  return dir_ == DIR_RECV_ONLY || dir_ == DIR_SEND_RECV;
+  return dir_ == (int) webrtc::RtpTransceiverDirection::kRecvOnly || dir_ == (int) webrtc::RtpTransceiverDirection::kSendRecv;
 }
 
 }  // namespace AvConf

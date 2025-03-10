@@ -4,8 +4,7 @@
 #include "media/base/video_common.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/desktop_frame.h"
-#include "rtc_base/async_invoker.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread.h"
 #if defined(WEBRTC_WIN)
 #include "rtc_base/win32.h"
@@ -43,8 +42,7 @@ class DesktopVideoCapturer : public AvcfVideoCapturer,
 
   int frame_interval_ms_;
   std::unique_ptr<rtc::Thread> capture_thread_;
-  rtc::AsyncInvoker init_capture_invoker_;
-  rtc::CriticalSection capturer_lock_;
+  webrtc::Mutex capturer_lock_;
 };
 
 }  // namespace AvConf

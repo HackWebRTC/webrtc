@@ -16,7 +16,7 @@ CameraCapturerTrackSource::Create(int width, int height, int fps) {
   for (int i = 0; i < num_devices; ++i) {
     capturer = absl::WrapUnique(VcmCapturer::Create(width, height, fps, i));
     if (capturer) {
-      return new rtc::RefCountedObject<CameraCapturerTrackSource>(
+      return rtc::make_ref_counted<CameraCapturerTrackSource>(
           std::move(capturer));
     }
   }
