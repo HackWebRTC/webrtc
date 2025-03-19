@@ -5,10 +5,10 @@
 namespace AvConf {
 
 rtc::scoped_refptr<FileCapturerTrackSource>
-FileCapturerTrackSource::Create(int width, int height, const char* path) {
+FileCapturerTrackSource::Create(const char* path, const char* dump_path) {
   RTC_LOG(LS_INFO) << "FileCapturerTrackSource::Create " << path;
-  return new rtc::RefCountedObject<FileCapturerTrackSource>(
-      FileVideoCapturer::Create(width, height, path));
+  return rtc::make_ref_counted<FileCapturerTrackSource>(
+      FileVideoCapturer::Create(path, dump_path));
 }
 
 void FileCapturerTrackSource::Start() {

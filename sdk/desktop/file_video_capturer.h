@@ -8,7 +8,7 @@ namespace AvConf {
 class FileVideoCapturer : public AvcfVideoCapturer,
                           public rtc::VideoSinkInterface<webrtc::VideoFrame> {
  public:
-  static FileVideoCapturer* Create(int width, int height, const char* path);
+  static FileVideoCapturer* Create(const char* path, const char* dump_path);
   ~FileVideoCapturer();
 
   void Start() override;

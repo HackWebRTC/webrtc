@@ -56,7 +56,8 @@ PC_CLIENT_API void* PCClientVideoCapturerCreate(int type,
                                                 int width,
                                                 int height,
                                                 int frame_rate,
-                                                const char* extra_param);
+                                                const char* extra_param1,
+                                                const char* extra_param2);
 PC_CLIENT_API void PCClientVideoCapturerStart(void* capturer, int type);
 PC_CLIENT_API void PCClientVideoCapturerStop(void* capturer, int type);
 PC_CLIENT_API void PCClientAdaptVideoOutputFormat(void* capturer,
@@ -113,6 +114,9 @@ PC_CLIENT_API void PCClientSetVideoSendingEnabled(void* client, int enable);
 PC_CLIENT_API void PCClientSetAudioReceivingEnabled(void* client, int enable);
 PC_CLIENT_API void PCClientSetVideoReceivingEnabled(void* client, int enable);
 PC_CLIENT_API void PCClientClose(void* client);
+
+PC_CLIENT_API int PCClientStartRecorder(void* client, int dir, const char* path);
+PC_CLIENT_API int PCClientStopRecorder(void* client, int dir);
 
 #if __cplusplus
 }

@@ -2,7 +2,6 @@
 
 #include <cmath>
 
-#include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -52,6 +51,10 @@ MuteAudioDevice::MuteAudioDevice(TaskQueueFactory* task_queue_factory)
 
 MuteAudioDevice::~MuteAudioDevice() {
   LOGI() << "~dtor";
+  // Delete and and thus stop task queue before deleting other members to avoid
+  // race with running tasks.
+  queue_.get_deleter()(queue_.get());
+  queue_.release();
   Terminate();
 }
 
@@ -70,7 +73,7 @@ AudioDeviceGeneric::InitStatus MuteAudioDevice::Init() {
   UpdateAudioDeviceBuffer();
   initialized_ = true;
 
-  queue_.PostDelayedTask([this]() { DeliverData(); }, 10);
+  queue_->PostDelayedTask([this]() { DeliverData(); }, TimeDelta::Millis(10));
 
   return InitStatus::OK;
 }
@@ -136,7 +139,10 @@ int32_t MuteAudioDevice::StartPlayout() {
 
   RTC_DCHECK(audio_is_initialized_);
   RTC_DCHECK(!playing_);
-  rtc::AtomicOps::ReleaseStore(&playing_, 1);
+  {
+    webrtc::MutexLock lock(&mutex_);
+    playing_ = true;
+  }
   return 0;
 }
 
@@ -150,7 +156,11 @@ int32_t MuteAudioDevice::StopPlayout() {
     ShutdownPlayOrRecord();
     audio_is_initialized_ = false;
   }
-  rtc::AtomicOps::ReleaseStore(&playing_, 0);
+  RTC_DCHECK(!playing_);
+  {
+    webrtc::MutexLock lock(&mutex_);
+    playing_ = false;
+  }
   return 0;
 }
 
@@ -163,7 +173,10 @@ int32_t MuteAudioDevice::StartRecording() {
 
   RTC_DCHECK(audio_is_initialized_);
   RTC_DCHECK(!recording_);
-  rtc::AtomicOps::ReleaseStore(&recording_, 1);
+  {
+    webrtc::MutexLock lock(&mutex_);
+    recording_ = true;
+  }
   return 0;
 }
 
@@ -177,7 +190,10 @@ int32_t MuteAudioDevice::StopRecording() {
     ShutdownPlayOrRecord();
     audio_is_initialized_ = false;
   }
-  rtc::AtomicOps::ReleaseStore(&recording_, 0);
+  {
+    webrtc::MutexLock lock(&mutex_);
+    recording_ = false;
+  }
   return 0;
 }
 
@@ -242,9 +258,9 @@ void MuteAudioDevice::DeliverData() {
   }
   int64_t delay_ms = next_deliver_ms_ - now_ms;
   if (delay_ms < 3) {
-    queue_.PostTask([this]() { DeliverData(); });
+    queue_->PostTask([this]() { DeliverData(); });
   } else {
-    queue_.PostDelayedTask([this]() { DeliverData(); }, delay_ms);
+    queue_->PostDelayedTask([this]() { DeliverData(); }, TimeDelta::Millis(delay_ms));
   }
 }
 
@@ -280,22 +296,18 @@ int32_t MuteAudioDevice::SpeakerVolumeIsAvailable(bool& available) {
 }
 
 int32_t MuteAudioDevice::SetSpeakerVolume(uint32_t volume) {
-  RTC_NOTREACHED() << "Not implemented";
   return -1;
 }
 
 int32_t MuteAudioDevice::SpeakerVolume(uint32_t& volume) const {
-  RTC_NOTREACHED() << "Not implemented";
   return -1;
 }
 
 int32_t MuteAudioDevice::MaxSpeakerVolume(uint32_t& maxVolume) const {
-  RTC_NOTREACHED() << "Not implemented";
   return -1;
 }
 
 int32_t MuteAudioDevice::MinSpeakerVolume(uint32_t& minVolume) const {
-  RTC_NOTREACHED() << "Not implemented";
   return -1;
 }
 
@@ -305,12 +317,10 @@ int32_t MuteAudioDevice::SpeakerMuteIsAvailable(bool& available) {
 }
 
 int32_t MuteAudioDevice::SetSpeakerMute(bool enable) {
-  RTC_NOTREACHED() << "Not implemented";
   return -1;
 }
 
 int32_t MuteAudioDevice::SpeakerMute(bool& enabled) const {
-  RTC_NOTREACHED() << "Not implemented";
   return -1;
 }
 
@@ -321,7 +331,6 @@ int32_t MuteAudioDevice::SetPlayoutDevice(uint16_t index) {
 
 int32_t MuteAudioDevice::SetPlayoutDevice(
     AudioDeviceModule::WindowsDeviceType) {
-  RTC_NOTREACHED() << "Not implemented";
   return -1;
 }
 
@@ -339,12 +348,10 @@ int32_t MuteAudioDevice::MicrophoneMuteIsAvailable(bool& available) {
 }
 
 int32_t MuteAudioDevice::SetMicrophoneMute(bool enable) {
-  RTC_NOTREACHED() << "Not implemented";
   return -1;
 }
 
 int32_t MuteAudioDevice::MicrophoneMute(bool& enabled) const {
-  RTC_NOTREACHED() << "Not implemented";
   return -1;
 }
 
@@ -384,36 +391,30 @@ int32_t MuteAudioDevice::MicrophoneVolumeIsAvailable(bool& available) {
 }
 
 int32_t MuteAudioDevice::SetMicrophoneVolume(uint32_t volume) {
-  RTC_NOTREACHED() << "Not implemented";
   return -1;
 }
 
 int32_t MuteAudioDevice::MicrophoneVolume(uint32_t& volume) const {
-  RTC_NOTREACHED() << "Not implemented";
   return -1;
 }
 
 int32_t MuteAudioDevice::MaxMicrophoneVolume(uint32_t& maxVolume) const {
-  RTC_NOTREACHED() << "Not implemented";
   return -1;
 }
 
 int32_t MuteAudioDevice::MinMicrophoneVolume(uint32_t& minVolume) const {
-  RTC_NOTREACHED() << "Not implemented";
   return -1;
 }
 
 int32_t MuteAudioDevice::PlayoutDeviceName(uint16_t index,
                                            char name[kAdmMaxDeviceNameSize],
                                            char guid[kAdmMaxGuidSize]) {
-  RTC_NOTREACHED() << "Not implemented";
   return -1;
 }
 
 int32_t MuteAudioDevice::RecordingDeviceName(uint16_t index,
                                              char name[kAdmMaxDeviceNameSize],
                                              char guid[kAdmMaxGuidSize]) {
-  RTC_NOTREACHED() << "Not implemented";
   return -1;
 }
 
@@ -424,7 +425,6 @@ int32_t MuteAudioDevice::SetRecordingDevice(uint16_t index) {
 
 int32_t MuteAudioDevice::SetRecordingDevice(
     AudioDeviceModule::WindowsDeviceType) {
-  RTC_NOTREACHED() << "Not implemented";
   return -1;
 }
 

@@ -5,13 +5,12 @@
 
 namespace AvConf {
 
-FileVideoCapturer* FileVideoCapturer::Create(int width,
-                                             int height,
-                                             const char* path) {
+FileVideoCapturer* FileVideoCapturer::Create(const char* path,
+                                             const char* dump_path) {
   std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory =
       webrtc::CreateDefaultTaskQueueFactory();
   return new FileVideoCapturer(new webrtc::FileCapturer(
-      path, "", width, height, task_queue_factory.get()));
+      path, dump_path, task_queue_factory.get()));
 }
 
 FileVideoCapturer::FileVideoCapturer(webrtc::FileCapturer* capturer)

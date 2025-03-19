@@ -44,7 +44,8 @@ class PeerConnectionClient : public webrtc::PeerConnectionObserver {
                                                        int width,
                                                        int height,
                                                        int frame_rate,
-                                                       const char* extra_param);
+                                                       const char* extra_param1,
+                                                       const char* extra_param2);
   static void StartVideoCapturer(void* video_capturer, int type);
   static void StopVideoCapturer(void* video_capturer, int type);
   static void AdaptVideoCapturerOutputFormat(void* video_capturer,
@@ -85,6 +86,9 @@ class PeerConnectionClient : public webrtc::PeerConnectionObserver {
 #endif
 
   void Close();
+
+  int StartRecorder(int dir, const char* path);
+  int StopRecorder(int dir);
 
   void OnCreateSuccess(webrtc::SessionDescriptionInterface* desc);
   void OnCreateFailure(const webrtc::RTCError& error);

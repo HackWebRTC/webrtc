@@ -53,17 +53,17 @@ int PCClientInitialize(const char* field_trials) {
 }
 
 void PCClientSetLogCallback(PCClientLogCallback callback, int severity) {
-  rtc::LogMessage::AddLogToStream(new PCClientLogSink(callback),
-                                  rtc::LoggingSeverity::LS_INFO);
+  rtc::LogMessage::AddLogToStream(new PCClientLogSink(callback), (rtc::LoggingSeverity) severity);
 }
 
 void* PCClientVideoCapturerCreate(int type,
                                   int width,
                                   int height,
                                   int frame_rate,
-                                  const char* extra_param) {
+                                  const char* extra_param1,
+                                  const char* extra_param2) {
   return AvConf::PeerConnectionClient::CreateVideoCapturer(
-      type, width, height, frame_rate, extra_param);
+      type, width, height, frame_rate, extra_param1, extra_param2);
 }
 
 void PCClientVideoCapturerStart(void* capturer, int type) {
@@ -223,3 +223,16 @@ void PCClientClose(void* client) {
   pc_client->Close();
   delete pc_client;
 }
+
+int PCClientStartRecorder(void* client, int dir, const char* path) {
+  AvConf::PeerConnectionClient* pc_client =
+      reinterpret_cast<AvConf::PeerConnectionClient*>(client);
+  return pc_client->StartRecorder(dir, path);
+}
+
+int PCClientStopRecorder(void* client, int dir) {
+  AvConf::PeerConnectionClient* pc_client =
+      reinterpret_cast<AvConf::PeerConnectionClient*>(client);
+  return pc_client->StopRecorder(dir);
+}
+

@@ -112,6 +112,7 @@ if (is_linux) {
 
     allow_poison = [
       "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
+      "environment_construction",
       "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
       "default_task_queue",
     ]

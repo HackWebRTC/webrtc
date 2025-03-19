@@ -2,10 +2,11 @@
 
 #include <memory>
 
+#include "api/task_queue/task_queue_base.h"
+#include "api/task_queue/task_queue_factory.h"
 #include "modules/audio_device/audio_device_generic.h"
 #include "rtc_base/buffer.h"
-#include "rtc_base/task_queue.h"
-#include "rtc_base/thread.h"
+#include "rtc_base/synchronization/mutex.h"
 
 namespace webrtc {
 
@@ -95,7 +96,7 @@ class MuteAudioDevice : public AudioDeviceGeneric {
 
   void DeliverData();
 
-  rtc::TaskQueue queue_;
+  std::unique_ptr<TaskQueueBase, TaskQueueDeleter> queue_;
   int64_t next_deliver_ms_;
 
   // Raw pointer handle provided to us in AttachAudioBuffer(). Owned by the
@@ -113,11 +114,11 @@ class MuteAudioDevice : public AudioDeviceGeneric {
   // will be changed dynamically to account for this behavior.
   rtc::BufferT<int16_t, true> record_buffer_;
 
-  // Set to 1 when recording is active and 0 otherwise.
-  volatile int recording_;
-
-  // Set to 1 when playout is active and 0 otherwise.
-  volatile int playing_;
+  mutable webrtc::Mutex mutex_;
+  bool recording_ RTC_GUARDED_BY(
+    mutex_);  // True when audio is being pushed from the instance.
+  bool playing_ RTC_GUARDED_BY(
+    mutex_);  // True when audio is being pulled by the instance.
 
   // Set to true after successful call to Init(), false otherwise.
   volatile bool initialized_;

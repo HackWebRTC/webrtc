@@ -98,6 +98,10 @@ void Recorder::AddVideoFrame(const EncodedImage* frame,
         width_ = frame->_encodedWidth;
         height_ = frame->_encodedHeight;
     }
+    if (!got_video_) {
+        RTC_LOG(LS_VERBOSE) << "Recorder::AddVideoFrame drop frame before key " << frame->capture_time_ms_ << " " << frame->_frameType;
+        return;
+    }
 
     std::shared_ptr<Frame> media_frame(new Frame(frame->data(), frame->size()));
     media_frame->is_video = true;
@@ -195,8 +199,13 @@ void Recorder::Stop() {
 }
 
 int Recorder::parseParamSets(int video_codec_id, const uint8_t* payload, uint32_t length) {
+    RTC_LOG(LS_INFO) << "Recorder::parseParamSets,"
+        << " video_codec_id " << video_codec_id
+        << " payload " << static_cast<const void*>(payload)
+        << " length " << length;
     if (video_codec_id == (int) AV_CODEC_ID_H264) {
         std::vector<H264::NaluIndex> nalu_indices = H264::FindNaluIndices(rtc::ArrayView<const uint8_t>(payload, length));
+        RTC_LOG(LS_INFO) << "Recorder::parseParamSets h264 nalus " << nalu_indices.size();
         bool is_param_sets = false;
         for (const H264::NaluIndex& index : nalu_indices) {
             H264::NaluType nalu_type = H264::ParseNaluType(payload[index.payload_start_offset]);

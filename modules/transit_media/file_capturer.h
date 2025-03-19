@@ -4,10 +4,10 @@
 #include <queue>
 #include <string>
 
+#include "api/task_queue/task_queue_base.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
-#include "rtc_base/task_queue.h"
 
 struct AVFormatContext;
 struct AVStream;
@@ -18,8 +18,6 @@ class FileCapturer {
  public:
   FileCapturer(const std::string& path,
                const std::string& dump_path,
-               int width,
-               int height,
                TaskQueueFactory* task_queue_factory);
   ~FileCapturer();
 
@@ -35,12 +33,10 @@ class FileCapturer {
   void Stop();
 
  private:
-  rtc::TaskQueue queue_;
+  std::unique_ptr<TaskQueueBase, TaskQueueDeleter> queue_;
 
   std::string path_;
   std::string dump_path_;
-  int width_;
-  int height_;
   volatile bool running_;
 
   rtc::VideoSinkInterface<VideoFrame>* video_callback_;

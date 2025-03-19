@@ -225,10 +225,11 @@ webrtc::VideoTrackSource* PeerConnectionClient::CreateVideoCapturer(
     int width,
     int height,
     int frame_rate,
-    const char* extra_param) {
+    const char* extra_param1,
+    const char* extra_param2) {
   RTC_LOG(LS_INFO) << "CreateVideoCapturer, type " << type << ", width "
                    << width << ", height " << height << ", fps " << frame_rate
-                   << ", extra_param " << extra_param;
+                   << ", extra_param1 " << extra_param1 << ", extra_param2 " << extra_param2;
   rtc::scoped_refptr<webrtc::VideoTrackSource> video_capturer = nullptr;
   switch (type) {
     case CAPTURER_TYPE_SCREEN:
@@ -238,7 +239,7 @@ webrtc::VideoTrackSource* PeerConnectionClient::CreateVideoCapturer(
     case CAPTURER_TYPE_FILE:
 #if !defined(DISABLE_TRANSIT_MEDIA)
       video_capturer =
-          FileCapturerTrackSource::Create(width, height, extra_param);
+          FileCapturerTrackSource::Create(extra_param1, extra_param2);
       break;
 #endif
     case CAPTURER_TYPE_CAMERA:
@@ -590,6 +591,14 @@ void PeerConnectionClient::Close() {
   }
 #endif
   peer_connection_ = nullptr;
+}
+
+int PeerConnectionClient::StartRecorder(int dir, const char* path) {
+  return peer_connection_->StartRecorder(dir, path);
+}
+
+int PeerConnectionClient::StopRecorder(int dir) {
+  return peer_connection_->StopRecorder(dir);
 }
 
 void PeerConnectionClient::OnCreateSuccess(

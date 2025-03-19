@@ -7,9 +7,8 @@ namespace AvConf {
 
 class FileCapturerTrackSource : public webrtc::VideoTrackSource {
  public:
-  static rtc::scoped_refptr<FileCapturerTrackSource> Create(int width,
-                                                            int height,
-                                                            const char* path);
+  static rtc::scoped_refptr<FileCapturerTrackSource> Create(const char* path,
+                                                            const char* dump_path);
 
   void Start();
 

@@ -8,7 +8,7 @@ namespace webrtc {
 
 class TransitVideoEncoder : public VideoEncoder {
  public:
-  TransitVideoEncoder() : callback_(nullptr), got_key_(false) {}
+  TransitVideoEncoder();
   ~TransitVideoEncoder() {}
 
   int32_t InitEncode(const VideoCodec* codec_settings,

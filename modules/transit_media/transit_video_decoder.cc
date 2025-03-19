@@ -11,35 +11,32 @@
 
 namespace webrtc {
 
-int32_t TransitVideoDecoder::InitDecode(const VideoCodec* codec_settings,
-                                        int32_t number_of_cores) {
+bool TransitVideoDecoder::Configure(const Settings& settings) {
   // TODO: open dump file
   // dump_ = fopen("path", "wb");
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
 int32_t TransitVideoDecoder::Decode(const EncodedImage& input_image,
-                                    bool missing_frames,
                                     int64_t render_time_ms) {
   if (dump_) {
     fwrite(input_image.data(), 1, input_image.size(), dump_);
   }
 
-  int qp = -1;
-  h264_bitstream_parser_.ParseBitstream(input_image.data(), input_image.size());
-  h264_bitstream_parser_.GetLastSliceQp(&qp);
+  h264_bitstream_parser_.ParseBitstream(input_image);
+  int qp = h264_bitstream_parser_.GetLastSliceQp().value_or(-1);
 
   VideoFrame black_frame =
       VideoFrame::Builder()
           .set_video_frame_buffer(GetBlackFrameBuffer(
               h264_bitstream_parser_.width(), h264_bitstream_parser_.height()))
           .set_rotation(VideoRotation::kVideoRotation_0)
-          .set_timestamp_rtp(input_image.Timestamp())
+          .set_timestamp_rtp(input_image.RtpTimestamp())
           .build();
 
   callback_->Decoded(
-      black_frame, absl::nullopt,
-      qp >= 0 ? absl::optional<uint8_t>((uint8_t)qp) : absl::nullopt);
+      black_frame, std::nullopt,
+      qp >= 0 ? std::optional<uint8_t>((uint8_t)qp) : std::nullopt);
 
   return WEBRTC_VIDEO_CODEC_OK;
 }

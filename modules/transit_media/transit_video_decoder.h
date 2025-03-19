@@ -15,11 +15,9 @@ class TransitVideoDecoder : public VideoDecoder {
  public:
   TransitVideoDecoder() : dump_(nullptr), callback_(nullptr) {}
 
-  int32_t InitDecode(const VideoCodec* codec_settings,
-                     int32_t number_of_cores) override;
+  bool Configure(const Settings& settings) override;
 
   int32_t Decode(const EncodedImage& input_image,
-                 bool missing_frames,
                  int64_t render_time_ms = -1) override;
 
   int32_t RegisterDecodeCompleteCallback(
