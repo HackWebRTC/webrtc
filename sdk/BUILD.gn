@@ -1387,6 +1387,7 @@ if (is_ios || is_mac) {
           "objc/avconf/CFPeerConnectionClient.h",
           "objc/avconf/CFPeerConnectionFactoryOption.h",
           "objc/avconf/CFRPCapturer.h",
+          "objc/avconf/CFUtils.h",
           "objc/avconf/CFVideoProcessor.h",
         ]
 
@@ -1564,6 +1565,7 @@ if (is_ios || is_mac) {
           "objc/avconf/CFHijackCapturerDelegate.h",
           "objc/avconf/CFPeerConnectionClient.h",
           "objc/avconf/CFPeerConnectionFactoryOption.h",
+          "objc/avconf/CFUtils.h",
           "objc/avconf/CFVideoProcessor.h",
         ]
         if (!build_with_chromium) {
@@ -1842,6 +1844,8 @@ if (is_ios || is_mac) {
       sources = [
         "objc/avconf/CFCaptureController.h",
         "objc/avconf/CFCaptureController.m",
+        "objc/avconf/CFDefaultPeerConnectionObserver.h",
+        "objc/avconf/CFDefaultPeerConnectionObserver.m",
         "objc/avconf/CFHijackCapturerDelegate.h",
         "objc/avconf/CFHijackCapturerDelegate.mm",
         "objc/avconf/CFPeerConnectionClient.h",
@@ -1850,6 +1854,8 @@ if (is_ios || is_mac) {
         "objc/avconf/CFPeerConnectionFactoryOption.m",
         "objc/avconf/CFRateLimiter.h",
         "objc/avconf/CFRateLimiter.m",
+        "objc/avconf/CFUtils.h",
+        "objc/avconf/CFUtils.mm",
         "objc/avconf/CFVideoFreezeDetector.h",
         "objc/avconf/CFVideoFreezeDetector.m",
         "objc/avconf/CFVideoProcessor.h",

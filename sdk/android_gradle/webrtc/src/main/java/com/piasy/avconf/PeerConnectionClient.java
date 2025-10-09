@@ -1,13 +1,16 @@
 package com.piasy.avconf;
 
 import android.content.Context;
+import android.text.TextUtils;
 import com.piasy.avconf.utils.AndroidSafeScheduledThreadPoolExecutor;
 import com.piasy.avconf.utils.AudioDeviceModuleError;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import com.piasy.avconf.utils.Consumer;
+import com.piasy.avconf.utils.DefaultPeerConnectionObserver;
+import com.piasy.avconf.utils.DefaultSdpObserver;
+
+import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
+
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
 import org.webrtc.DataChannel;
@@ -38,13 +41,14 @@ import org.webrtc.VideoTrack;
 import org.webrtc.audio.AudioDeviceModule;
 import org.webrtc.audio.JavaAudioDeviceModule;
 
-import static com.piasy.avconf.PeerConnectionClientCallback.ERR_CREATE_MULTIPLE_SDP;
 import static com.piasy.avconf.PeerConnectionClientCallback.ERR_CREATE_PC_FAIL;
 import static com.piasy.avconf.PeerConnectionClientCallback.ERR_CREATE_SDP_FAIL;
 import static com.piasy.avconf.PeerConnectionClientCallback.ERR_ICE_FAIL;
 import static com.piasy.avconf.PeerConnectionClientCallback.ERR_NO_FACTORY;
 import static com.piasy.avconf.PeerConnectionClientCallback.ERR_NO_SENDING_TRACK;
 import static com.piasy.avconf.PeerConnectionClientCallback.ERR_SET_SDP_FAIL;
+import static org.webrtc.MediaStreamTrack.AUDIO_TRACK_KIND;
+import static org.webrtc.MediaStreamTrack.VIDEO_TRACK_KIND;
 
 import javax.annotation.Nullable;
 
@@ -77,7 +81,6 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
     private final String mUid;
     private final int mDir;
     private final boolean mHasVideo;
-    private final List<VideoSink> mRemoteTrackRenderers = new ArrayList<>();
     private int mVideoMaxBitrateKbps;
     private int mVideoMaxFrameRate;
 
@@ -86,12 +89,14 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
 
     private PeerConnection mPeerConnection;
     private boolean mErrorHappened;
-    private boolean mIsInitiator;
+    private boolean mIsInitiator = false;
+    private boolean mIsSettingLocalSdp = false;
     private List<org.webrtc.IceCandidate> queuedRemoteCandidates;
-    private org.webrtc.SessionDescription localSdp;
 
-    private AudioTrack mRemoteAudioTrack;
-    private VideoTrack mRemoteVideoTrack;
+    private final Map<String, AudioTrack> mRemoteAudioTracks = new HashMap<>(1);
+    private final Map<String, VideoTrack> mRemoteVideoTracks = new HashMap<>(1);
+    private final Map<String, List<VideoSink>> mRemoteTrackRenderers = new HashMap<>(1);
+    private final String mNullTidKey = String.valueOf(mRemoteTrackRenderers.hashCode());
 
     public PeerConnectionClient(
             final String uid, final int dir, final boolean hasVideo,
@@ -108,8 +113,8 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
         mExecutor = new AndroidSafeScheduledThreadPoolExecutor(1);
     }
 
-    public static synchronized int initialize(Context appContext, String fieldTrials,
-            Loggable loggable, Logging.Severity severity) {
+    public static synchronized int initialize(final Context appContext, final String fieldTrials,
+                                              final Loggable loggable, final Logging.Severity severity) {
         PeerConnectionFactory.initialize(
                 PeerConnectionFactory.InitializationOptions.builder(appContext)
                         .setFieldTrials(fieldTrials)
@@ -122,19 +127,19 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
         return 0;
     }
 
-    public static boolean send(int dir) {
+    public static boolean send(final int dir) {
         return dir == DIR_SEND_ONLY || dir == DIR_SEND_RECV;
     }
 
-    public static boolean receive(int dir) {
+    public static boolean receive(final int dir) {
         return dir == DIR_RECV_ONLY || dir == DIR_SEND_RECV;
     }
 
     public static synchronized int createPeerConnectionFactory(
-            Context appContext, EglBase rootEglBase, PeerConnectionFactory.Options options,
-            @Nullable JavaAudioDeviceModule.SamplesReadyCallback recordSamplesReadyCallback,
-            @Nullable JavaAudioDeviceModule.SamplesReadyCallback trackSamplesReadyCallback,
-            boolean enableH264HighProfile) {
+            final Context appContext, final EglBase rootEglBase, final PeerConnectionFactory.Options options,
+            @Nullable final JavaAudioDeviceModule.SamplesReadyCallback recordSamplesReadyCallback,
+            @Nullable final JavaAudioDeviceModule.SamplesReadyCallback trackSamplesReadyCallback,
+            final boolean enableH264HighProfile) {
         Logging.d(TAG, "createPeerConnectionFactory, ver " + org.webrtc.BuildConfig.VERSION_NAME
                 + ", options " + options + ", enableH264HighProfile " + enableH264HighProfile);
 
@@ -166,8 +171,36 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
         return 0;
     }
 
-    public static synchronized int createLocalTracks(Context appContext, EglBase rootEglBase,
-            VideoCapturer capturer) {
+    public static synchronized void getOfferForRtpCapabilities(final Consumer<String> consumer) {
+        if (sPeerConnectionFactory == null) {
+            Logging.e(TAG, "getOfferForRtpCapabilities error: no factory");
+            consumer.accept("");
+            return;
+        }
+        PeerConnection pc = sPeerConnectionFactory.createPeerConnection(
+                Collections.emptyList(), new DefaultPeerConnectionObserver());
+        if (pc != null) {
+            pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO);
+            pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO);
+            pc.createOffer(new DefaultSdpObserver() {
+                @Override
+                public void onCreateSuccess(SessionDescription sdp) {
+                    consumer.accept(sdp.description);
+                }
+
+                @Override
+                public void onCreateFailure(String error) {
+                    consumer.accept("");
+                }
+            }, new MediaConstraints());
+        } else {
+            Logging.e(TAG, "getOfferForRtpCapabilities error: fail to create pc");
+            consumer.accept("");
+        }
+    }
+
+    public static synchronized int createLocalTracks(final Context appContext, final EglBase rootEglBase,
+                                                     final VideoCapturer capturer) {
         Logging.d(TAG, "createLocalTracks");
 
         if (sPeerConnectionFactory == null) {
@@ -196,7 +229,7 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
         return 0;
     }
 
-    public static synchronized void adaptVideoOutputFormat(int width, int height, int fps) {
+    public static synchronized void adaptVideoOutputFormat(final int width, final int height, final int fps) {
         if (sLocalVideoSource != null) {
             sLocalVideoSource.adaptOutputFormat(width, height, fps);
         }
@@ -206,14 +239,14 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
         return sHijackCaptureObserver;
     }
 
-    public static synchronized void addLocalTrackRenderer(VideoSink localTrackRenderer) {
+    public static synchronized void addLocalTrackRenderer(final VideoSink localTrackRenderer) {
         Logging.d(TAG, "addLocalTrackRenderer " + localTrackRenderer);
         if (sLocalVideoTrack != null) {
             sLocalVideoTrack.addSink(localTrackRenderer);
         }
     }
 
-    public static synchronized void removeLocalTrackRenderer(VideoSink localTrackRenderer) {
+    public static synchronized void removeLocalTrackRenderer(final VideoSink localTrackRenderer) {
         Logging.d(TAG, "removeLocalTrackRenderer " + localTrackRenderer);
         if (sLocalVideoTrack != null) {
             sLocalVideoTrack.removeSink(localTrackRenderer);
@@ -256,16 +289,16 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
         return 0;
     }
 
-    public static synchronized void toggleAudioRecordPause(boolean pause) {
+    public static synchronized void toggleAudioRecordPause(final boolean pause) {
         Logging.d(TAG, "toggleAudioRecordPause(" + pause + ")");
         if (sAdm != null) {
             sAdm.toggleRecordPause(pause);
         }
     }
 
-    private static AudioDeviceModule createJavaAudioDevice(Context appContext,
-        JavaAudioDeviceModule.SamplesReadyCallback recordSamplesReadyCallback,
-        JavaAudioDeviceModule.SamplesReadyCallback trackSamplesReadyCallback) {
+    private static AudioDeviceModule createJavaAudioDevice(final Context appContext,
+        final JavaAudioDeviceModule.SamplesReadyCallback recordSamplesReadyCallback,
+        final JavaAudioDeviceModule.SamplesReadyCallback trackSamplesReadyCallback) {
         JavaAudioDeviceModule.AudioRecordErrorCallback
                 audioRecordErrorCallback = new JavaAudioDeviceModule.AudioRecordErrorCallback() {
             @Override
@@ -321,7 +354,7 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
                 .createAudioDeviceModule();
     }
 
-    public void createPeerConnection(List<PeerConnection.IceServer> iceServers) {
+    public void createPeerConnection(final List<PeerConnection.IceServer> iceServers) {
         logInfo("createPeerConnection " + iceServers);
         PeerConnectionFactory factory = sPeerConnectionFactory;
         AudioTrack localAudioTrack = sLocalAudioTrack;
@@ -359,16 +392,7 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
                 return;
             }
 
-            // use addTransceiver API on answer end seems only get recvonly answer,
-            // so let's stay at addTrack API for now.
             if (send()) {
-                mPeerConnection.addTrack(localAudioTrack, Collections.singletonList(mUid));
-                if (localVideoTrack != null) {
-                    mPeerConnection.addTrack(localVideoTrack, Collections.singletonList(mUid));
-                }
-            }
-
-            /*if (send()) {
                 RtpTransceiver.RtpTransceiverInit transceiverInit
                         = new RtpTransceiver.RtpTransceiverInit(
                         receive() ? RtpTransceiver.RtpTransceiverDirection.SEND_RECV
@@ -389,11 +413,7 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
                     mPeerConnection.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO,
                             transceiverInit);
                 }
-            }*/
-
-            // don't get remote tracks here after migrate to addTransceiver API,
-            // because these tracks are not receiving tracks!
-            //getRemoteTracks();
+            }
 
             logInfo("createPeerConnection success");
         });
@@ -427,22 +447,48 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
         });
     }
 
-    public void setAudioReceivingEnabled(final boolean enable) {
-        logInfo("setAudioReceivingEnabled " + enable);
+    /**
+     * Null trackId means for all tracks.
+     */
+    public void setAudioReceivingEnabled(@Nullable final String trackId, final boolean enable) {
+        logInfo("setAudioReceivingEnabled " + trackId + " " + enable);
         mExecutor.execute(() -> {
-            if (mRemoteAudioTrack != null) {
-                mRemoteAudioTrack.setEnabled(enable);
+            if (trackId == null) {
+                for (AudioTrack track : mRemoteAudioTracks.values()) {
+                    track.setEnabled(enable);
+                }
                 logInfo("setAudioReceivingEnabled " + enable + " success");
+            } else {
+                AudioTrack track = mRemoteAudioTracks.get(trackId);
+                if (track != null) {
+                    track.setEnabled(enable);
+                    logInfo("setAudioReceivingEnabled " + trackId + " " + enable + " success");
+                } else {
+                    logError("setAudioReceivingEnabled " + trackId + " " + enable + " no track");
+                }
             }
         });
     }
 
-    public void setVideoReceivingEnabled(final boolean enable) {
-        logInfo("setVideoReceivingEnabled " + enable);
+    /**
+     * Null trackId means for all tracks.
+     */
+    public void setVideoReceivingEnabled(@Nullable final String trackId, final boolean enable) {
+        logInfo("setVideoReceivingEnabled " + trackId + " " + enable);
         mExecutor.execute(() -> {
-            if (mRemoteVideoTrack != null) {
-                mRemoteVideoTrack.setEnabled(enable);
+            if (trackId == null) {
+                for (VideoTrack track : mRemoteVideoTracks.values()) {
+                    track.setEnabled(enable);
+                }
                 logInfo("setVideoReceivingEnabled " + enable + " success");
+            } else {
+                VideoTrack track = mRemoteVideoTracks.get(trackId);
+                if (track != null) {
+                    track.setEnabled(enable);
+                    logInfo("setVideoReceivingEnabled " + trackId + " " + enable + " success");
+                } else {
+                    logError("setVideoReceivingEnabled " + trackId + " " + enable + " no track");
+                }
             }
         });
     }
@@ -453,7 +499,7 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
             if (mPeerConnection != null && !mErrorHappened) {
                 mIsInitiator = true;
                 mPeerConnection.createOffer(this, defaultSdpConstraints());
-                logInfo("createOffer success");
+                logInfo("createOffer finish");
             }
         });
     }
@@ -464,22 +510,13 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
             if (mPeerConnection != null && !mErrorHappened) {
                 mIsInitiator = false;
                 mPeerConnection.createAnswer(this, defaultSdpConstraints());
-                logInfo("createAnswer success");
+                logInfo("createAnswer finish");
             }
         });
     }
 
     private MediaConstraints defaultSdpConstraints() {
-        MediaConstraints sdpMediaConstraints = new MediaConstraints();
-        if (receive()) {
-            // use addTransceiver API on answer end seems only get recvonly answer,
-            // so let's stay at addTrack API for now (which needs OfferToReceiveAudio).
-            sdpMediaConstraints.mandatory.add(
-                    new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
-            sdpMediaConstraints.mandatory.add(
-                    new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
-        }
-        return sdpMediaConstraints;
+        return new MediaConstraints();
     }
 
     public void addIceCandidate(final IceCandidate candidate) {
@@ -522,8 +559,7 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
             }
             // already refined by AvConf
             mPeerConnection.setRemoteDescription(this, sdp);
-            getRemoteTracks();
-            logInfo("setRemoteDescription success");
+            logInfo("setRemoteDescription finish");
         });
     }
 
@@ -535,7 +571,7 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
         return receive(mDir);
     }
 
-    public int startRecorder(int dir, String path) {
+    public int startRecorder(final int dir, final String path) {
         PeerConnection peerConnection = mPeerConnection;
         if (peerConnection != null) {
             return peerConnection.startRecorder(dir, path);
@@ -543,7 +579,7 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
         return -100;
     }
 
-    public int stopRecorder(int dir) {
+    public int stopRecorder(final int dir) {
         PeerConnection peerConnection = mPeerConnection;
         if (peerConnection != null) {
             return peerConnection.stopRecorder(dir);
@@ -570,50 +606,70 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
         });
     }
 
-    public void addRemoteTrackRenderer(VideoSink remoteTrackRenderer) {
-        logInfo("addRemoteTrackRenderer " + remoteTrackRenderer);
+    /**
+     * Null trackId means for all tracks.
+     */
+    public void addRemoteTrackRenderer(@Nullable final String trackId, final VideoSink remoteTrackRenderer) {
+        logInfo("addRemoteTrackRenderer " + trackId + " " + remoteTrackRenderer);
         mExecutor.execute(() -> {
-            if (mRemoteVideoTrack != null) {
-                mRemoteVideoTrack.addSink(remoteTrackRenderer);
+            if (trackId == null) {
+                if (mRemoteVideoTracks.isEmpty()) {
+                    addRendererForLaterUsage(mNullTidKey, remoteTrackRenderer);
+                } else {
+                    for (VideoTrack track : mRemoteVideoTracks.values()) {
+                        track.addSink(remoteTrackRenderer);
+                    }
+                }
             } else {
-                mRemoteTrackRenderers.add(remoteTrackRenderer);
+                VideoTrack track = mRemoteVideoTracks.get(trackId);
+                if (track != null) {
+                    track.addSink(remoteTrackRenderer);
+                } else {
+                    addRendererForLaterUsage(trackId, remoteTrackRenderer);
+                }
             }
         });
     }
 
-    public void removeRemoteTrackRenderer(VideoSink remoteTrackRenderer) {
-        logInfo("removeRemoteTrackRenderer " + remoteTrackRenderer);
-        mExecutor.execute(() -> {
-            if (mRemoteVideoTrack != null) {
-                mRemoteVideoTrack.removeSink(remoteTrackRenderer);
-            } else {
-                mRemoteTrackRenderers.remove(remoteTrackRenderer);
-            }
-        });
+    private void addRendererForLaterUsage(final String trackId, final VideoSink renderer) {
+        if (mRemoteTrackRenderers.containsKey(trackId)) {
+            mRemoteTrackRenderers.get(trackId).add(renderer);
+        } else {
+            List<VideoSink> renderers = new ArrayList<>();
+            renderers.add(renderer);
+            mRemoteTrackRenderers.put(trackId, renderers);
+        }
     }
 
-    private void getRemoteTracks() {
-        if (mPeerConnection == null || !receive()
-                || mRemoteAudioTrack != null && mRemoteVideoTrack != null) {
-            return;
+    private void removeLaterRenderer(final String trackId, final VideoSink renderer) {
+        if (mRemoteTrackRenderers.containsKey(trackId)) {
+            mRemoteTrackRenderers.get(trackId).remove(renderer);
         }
+    }
 
-        for (RtpTransceiver transceiver : mPeerConnection.getTransceivers()) {
-            MediaStreamTrack track = transceiver.getReceiver().track();
-            if (track instanceof VideoTrack) {
-                mRemoteVideoTrack = (VideoTrack) track;
-            } else if (track instanceof AudioTrack) {
-                mRemoteAudioTrack = (AudioTrack) track;
+    /**
+     * Null trackId means for all tracks.
+     */
+    public void removeRemoteTrackRenderer(@Nullable final String trackId, final VideoSink remoteTrackRenderer) {
+        logInfo("removeRemoteTrackRenderer " + trackId + " " + remoteTrackRenderer);
+        mExecutor.execute(() -> {
+            if (trackId == null) {
+                if (mRemoteVideoTracks.isEmpty()) {
+                    removeLaterRenderer(mNullTidKey, remoteTrackRenderer);
+                } else {
+                    for (VideoTrack track : mRemoteVideoTracks.values()) {
+                        track.removeSink(remoteTrackRenderer);
+                    }
+                }
+            } else {
+                VideoTrack track = mRemoteVideoTracks.get(trackId);
+                if (track != null) {
+                    track.removeSink(remoteTrackRenderer);
+                } else {
+                    removeLaterRenderer(trackId, remoteTrackRenderer);
+                }
             }
-        }
-
-        if (mRemoteVideoTrack != null) {
-            logInfo("addRemoteTrackRenderer at getRemoteTracks: " + mRemoteTrackRenderers);
-            for (VideoSink remoteTrackRenderer : mRemoteTrackRenderers) {
-                mRemoteVideoTrack.addSink(remoteTrackRenderer);
-            }
-            mRemoteTrackRenderers.clear();
-        }
+        });
     }
 
     private void drainCandidates() {
@@ -626,7 +682,7 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
         }
     }
 
-    private void reportError(int code) {
+    private void reportError(final int code) {
         mCallback.onError(mUid, code);
         mErrorHappened = true;
     }
@@ -699,26 +755,58 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
 
     @Override
     public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
-        logInfo("onAddTrack " + receiver + ", " + Arrays.toString(mediaStreams));
+        logInfo("onAddTrack " + receiver + ", " + receiver.id() + ", " + receiver.track()
+                + ", " + receiver.track().id() + ", " + Arrays.toString(mediaStreams));
+        mExecutor.execute(() -> {
+            String trackId = receiver.track().id();
+            String kind = receiver.track().kind();
+            if (TextUtils.equals(kind, AUDIO_TRACK_KIND)) {
+                mRemoteAudioTracks.put(trackId, (AudioTrack) receiver.track());
+            } else if (TextUtils.equals(kind, VIDEO_TRACK_KIND)) {
+                VideoTrack track = (VideoTrack) receiver.track();
+                mRemoteVideoTracks.put(trackId, track);
+
+                if (mRemoteTrackRenderers.containsKey(mNullTidKey)) {
+                    for (VideoSink renderer : mRemoteTrackRenderers.get(mNullTidKey)) {
+                        track.addSink(renderer);
+                    }
+                    mRemoteTrackRenderers.clear();
+                } else {
+                    List<VideoSink> renderers = mRemoteTrackRenderers.remove(trackId);
+                    if (renderers != null && !renderers.isEmpty()) {
+                        for (VideoSink renderer : renderers) {
+                            track.addSink(renderer);
+                        }
+                    }
+                }
+            }
+        });
     }
 
     @Override
-    public void onTrack(final RtpTransceiver transceiver) {
-        logInfo("onTrack " + transceiver);
+    public void onRemoveTrack(RtpReceiver receiver) {
+        logInfo("onRemoveTrack " + receiver + ", " + receiver.id() + ", " + receiver.track()
+                + ", " + receiver.track().id());
+        mExecutor.execute(() -> {
+            String trackId = receiver.track().id();
+            String kind = receiver.track().kind();
+            if (TextUtils.equals(kind, AUDIO_TRACK_KIND)) {
+                mRemoteAudioTracks.remove(trackId);
+            } else if (TextUtils.equals(kind, VIDEO_TRACK_KIND)) {
+                mRemoteVideoTracks.remove(trackId);
+            }
+        });
     }
 
     @Override
-    public void onCreateSuccess(final org.webrtc.SessionDescription sdp) {
+    public void onCreateSuccess(final SessionDescription sdp) {
         logInfo("onCreateSuccess\n" + sdp.description);
-        if (localSdp != null) {
-            reportError(ERR_CREATE_MULTIPLE_SDP);
-            return;
-        }
-        localSdp = new org.webrtc.SessionDescription(sdp.type,
+        SessionDescription localSdp = new SessionDescription(sdp.type,
                 mCallback.onPreferCodecs(mUid, sdp.description));
         mExecutor.execute(() -> {
             if (mPeerConnection != null && !mErrorHappened) {
                 logInfo("refined sdp\n" + localSdp.description);
+                mIsSettingLocalSdp = true;
                 mPeerConnection.setLocalDescription(this, localSdp);
             }
         });
@@ -731,35 +819,24 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
             if (mPeerConnection == null || mErrorHappened) {
                 return;
             }
-            if (mIsInitiator) {
-                // For offering peer connection we first create offer and set
-                // local SDP, then after receiving answer set remote SDP.
-                if (mPeerConnection.getRemoteDescription() == null) {
-                    // We've just set our local SDP so time to send it.
-                    logInfo("Local SDP set successfully");
-                    mCallback.onLocalDescription(mUid, localSdp);
-                    doSetVideoMaxBitrate();
-                } else {
-                    // We've just set remote description, so drain remote
-                    // and send local ICE candidates.
-                    logInfo("Remote SDP set successfully");
-                    drainCandidates();
-                }
+            if (mIsSettingLocalSdp) {
+                mIsSettingLocalSdp = false;
+                logInfo("Local SDP set successfully");
+                mCallback.onLocalDescription(mUid, mPeerConnection.getLocalDescription());
+                doSetVideoMaxBitrate();
             } else {
-                // For answering peer connection we set remote SDP and then
-                // create answer and set local SDP.
-                if (mPeerConnection.getLocalDescription() != null) {
-                    // We've just set our local SDP so time to send it, drain
-                    // remote and send local ICE candidates.
-                    logInfo("Local SDP set successfully");
-                    mCallback.onLocalDescription(mUid, localSdp);
-                    doSetVideoMaxBitrate();
-                    drainCandidates();
-                } else {
-                    // We've just set remote SDP - do nothing for now -
-                    // answer will be created soon.
-                    logInfo("Remote SDP set successfully");
-                }
+                logInfo("Remote SDP set successfully");
+                mCallback.onSetRemoteSdpResult(mUid, true);
+            }
+
+            // For offering peer connection we first create offer and set
+            // local SDP, then after receiving answer set remote SDP.
+            // After setting answer (remote description), we need to drain remote candidates.
+            // For answering peer connection we set remote SDP and then
+            // create answer and set local SDP.
+            // After setting answer (local description), we need to drain remote candidates.
+            if ((mIsInitiator && !mIsSettingLocalSdp) || (!mIsInitiator && mIsSettingLocalSdp)) {
+                drainCandidates();
             }
         });
     }
@@ -773,10 +850,14 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
     @Override
     public void onSetFailure(final String error) {
         logError("onSetFailure " + error);
+        if (!mIsSettingLocalSdp) {
+            mCallback.onSetRemoteSdpResult(mUid, false);
+        }
+        mIsSettingLocalSdp = false;
         reportError(ERR_SET_SDP_FAIL);
     }
 
-    public void setVideoMaxBitrateKbps(int videoMaxBitrateKbps) {
+    public void setVideoMaxBitrateKbps(final int videoMaxBitrateKbps) {
         logInfo("setVideoMaxBitrateKbps " + videoMaxBitrateKbps);
         mExecutor.execute(() -> {
             mVideoMaxBitrateKbps = videoMaxBitrateKbps;
@@ -792,7 +873,7 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
                     logInfo("Found video sender");
 
                     RtpParameters parameters = sender.getParameters();
-                    if (parameters.encodings.size() == 0) {
+                    if (parameters.encodings.isEmpty()) {
                         Logging.w(TAG, "RtpParameters are not ready");
                         return;
                     }
@@ -810,11 +891,11 @@ public class PeerConnectionClient implements PeerConnection.Observer, SdpObserve
         }
     }
 
-    private void logInfo(String content) {
-        Logging.d(TAG + "@" + hashCode(), content);
+    private void logInfo(final String content) {
+        Logging.d(TAG, "@" + hashCode() + " " + content);
     }
 
-    private void logError(String content) {
-        Logging.e(TAG + "@" + hashCode(), content);
+    private void logError(final String content) {
+        Logging.e(TAG, "@" + hashCode() + " " + content);
     }
 }

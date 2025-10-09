@@ -65,15 +65,17 @@ RTC_OBJC_EXPORT
 - (NSString*)onPreferCodecs:(NSString*)peerUid sdp:(NSString*)sdp;
 
 - (void)onLocalDescription:(NSString*)peerUid
-                  localSdp:(RTCSessionDescription*)localSdp;
+                  localSdp:(RTC_OBJC_TYPE(RTCSessionDescription)*)localSdp;
 
-- (void)onIceCandidate:(NSString*)peerUid candidate:(RTCIceCandidate*)candidate;
+- (void)onSetRemoteSdpResult:(NSString*)peerUid success:(bool)success;
+
+- (void)onIceCandidate:(NSString*)peerUid candidate:(RTC_OBJC_TYPE(RTCIceCandidate)*)candidate;
 
 - (void)onIceCandidatesRemoved:(NSString*)peerUid
-                    candidates:(NSArray<RTCIceCandidate*>*)candidates;
+                    candidates:(NSArray<RTC_OBJC_TYPE(RTCIceCandidate)*>*)candidates;
 
 - (void)onPeerConnectionStatsReady:(NSString*)peerUid
-                            report:(RTCStatisticsReport*)report;
+                            report:(RTC_OBJC_TYPE(RTCStatisticsReport)*)report;
 
 - (void)onIceConnected:(NSString*)peerUid;
 
@@ -94,13 +96,15 @@ RTC_OBJC_EXPORT
 + (int32_t)createPeerConnectionFactory:
     (CFPeerConnectionFactoryOption*)factoryOption;
 
++ (void)getOfferForRtpCapabilities:(void (^)(NSString*))block;
+
 + (int32_t)createLocalTracks:(bool)hasVideo isScreencast:(bool)isScreencast;
 + (CFHijackCapturerDelegate*)getHijackCapturerDelegate;
 
 + (void)adaptVideoOutputFormat:(int)width height:(int)height fps:(int)fps;
 
-+ (void)addLocalTrackRenderer:(id<RTCVideoRenderer>)localTrackRenderer;
-+ (void)removeLocalTrackRenderer:(id<RTCVideoRenderer>)localTrackRenderer;
++ (void)addLocalTrackRenderer:(id<RTC_OBJC_TYPE(RTCVideoRenderer)>)localTrackRenderer;
++ (void)removeLocalTrackRenderer:(id<RTC_OBJC_TYPE(RTCVideoRenderer)>)localTrackRenderer;
 
 + (int32_t)destroyPeerConnectionFactory;
 
@@ -112,22 +116,22 @@ RTC_OBJC_EXPORT
         videoMaxBitrateKbps:(int32_t)videoMaxBitrateKbps
           videoMaxFrameRate:(int32_t)videoMaxFrameRate;
 
-- (void)createPeerConnection:(NSArray<RTCIceServer*>*)iceServers;
+- (void)createPeerConnection:(NSArray<RTC_OBJC_TYPE(RTCIceServer)*>*)iceServers;
 
 - (void)getStats;
 
 - (void)setAudioSendingEnabled:(bool)enable;
 - (void)setVideoSendingEnabled:(bool)enable;
-- (void)setAudioReceivingEnabled:(bool)enable;
-- (void)setVideoReceivingEnabled:(bool)enable;
+- (void)setAudioReceivingEnabled:(nullable NSString*)trackId enable:(bool)enable;
+- (void)setVideoReceivingEnabled:(nullable NSString*)trackId enable:(bool)enable;
 
 - (void)createOffer;
 - (void)createAnswer;
 
-- (void)addIceCandidate:(RTCIceCandidate*)candidate;
-- (void)removeIceCandidates:(NSArray<RTCIceCandidate*>*)candidates;
+- (void)addIceCandidate:(RTC_OBJC_TYPE(RTCIceCandidate)*)candidate;
+- (void)removeIceCandidates:(NSArray<RTC_OBJC_TYPE(RTCIceCandidate)*>*)candidates;
 
-- (void)setRemoteDescription:(RTCSessionDescription*)sdp;
+- (void)setRemoteDescription:(RTC_OBJC_TYPE(RTCSessionDescription)*)sdp;
 
 - (bool)send;
 - (bool)receive;
@@ -138,8 +142,8 @@ RTC_OBJC_EXPORT
 
 - (void)close;
 
-- (void)addRemoteTrackRenderer:(id<RTCVideoRenderer>)remoteTrackRenderer;
-- (void)removeRemoteTrackRenderer:(id<RTCVideoRenderer>)remoteTrackRenderer;
+- (void)addRemoteTrackRenderer:(nullable NSString*)trackId renderer:(id<RTC_OBJC_TYPE(RTCVideoRenderer)>)renderer;
+- (void)removeRemoteTrackRenderer:(nullable NSString*)trackId renderer:(id<RTC_OBJC_TYPE(RTCVideoRenderer)>)renderer;
 
 - (void)setVideoMaxBitrateKbps:(int)videoMaxBitrateKbps;
 

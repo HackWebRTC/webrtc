@@ -788,6 +788,7 @@ if (current_os == "linux" || is_android) {
       "src/jni/pc/stats_observer.h",
       "src/jni/pc/turn_customizer.cc",
       "src/jni/pc/turn_customizer.h",
+      "src/jni/pc/video_codec_utils.cc",
     ]
 
     deps = [
@@ -1473,6 +1474,7 @@ if (current_os == "linux" || is_android) {
       "api/org/webrtc/StatsObserver.java",
       "api/org/webrtc/StatsReport.java",
       "api/org/webrtc/TurnCustomizer.java",
+      "../android_gradle/webrtc/src/main/java/com/piasy/avconf/utils/VideoCodecUtils.java",
     ]
     namespace = "webrtc::jni"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"

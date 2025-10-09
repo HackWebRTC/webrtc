@@ -53,12 +53,11 @@
 #import "components/video_codec/RTCDefaultVideoEncoderFactory.h"
 
 #import "CFAudioMixer.h"
+#import "CFDefaultPeerConnectionObserver.h"
 #import "CFHijackCapturerDelegate.h"
 #import "CFPeerConnectionFactoryOption.h"
 
 #define TAG "CFPeerConnectionClient"
-
-static NSString* const kCFVideoTrackKind = @"video";
 
 static NSString* const kCFAudioTrackId = @"CFAMSa0";
 static NSString* const kCFVideoTrackId = @"CFAMSv0";
@@ -82,14 +81,14 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
     id<CFPeerConnectionClientDelegate> _delegate;
 
     RTC_OBJC_TYPE(RTCPeerConnection)* _peerConnection;
-    NSMutableArray<id<RTC_OBJC_TYPE(RTCVideoRenderer)>>* _remoteTrackRenderers;
-    bool _remoteRendererAdded;
 
     bool _isInitiator;
     NSMutableArray* _queuedRemoteCandidates;
 
-    RTC_OBJC_TYPE(RTCAudioTrack)* _remoteAudioTrack;
-    RTC_OBJC_TYPE(RTCVideoTrack)* _remoteVideoTrack;
+    NSMutableDictionary<NSString*, RTC_OBJC_TYPE(RTCAudioTrack)*>* _remoteAudioTracks;
+    NSMutableDictionary<NSString*, RTC_OBJC_TYPE(RTCVideoTrack)*>* _remoteVideoTracks;
+    NSMutableDictionary<NSString*, NSMutableArray<id<RTC_OBJC_TYPE(RTCVideoRenderer)>>*>* _remoteTrackRenderers;
+    NSString* _nullTidKey;
 
     int32_t _videoMaxBitrateKbps;
     int32_t _videoMaxFrameRate;
@@ -154,6 +153,53 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
     return 0;
 }
 
++ (RTC_OBJC_TYPE(RTCMediaConstraints)*)defaultSdpConstraints {
+    RTC_OBJC_TYPE(RTCMediaConstraints)* constraints =
+        [[RTC_OBJC_TYPE(RTCMediaConstraints) alloc]
+            initWithMandatoryConstraints:@{}
+                     optionalConstraints:nil];
+    return constraints;
+}
+
++ (RTC_OBJC_TYPE(RTCConfiguration)*)defaultRTCConfiguration {
+    RTC_OBJC_TYPE(RTCConfiguration)* config =
+        [[RTC_OBJC_TYPE(RTCConfiguration) alloc] init];
+    config.tcpCandidatePolicy = RTCTcpCandidatePolicyDisabled;
+    config.bundlePolicy = RTCBundlePolicyMaxBundle;
+    config.rtcpMuxPolicy = RTCRtcpMuxPolicyRequire;
+    config.continualGatheringPolicy = RTCContinualGatheringPolicyGatherContinually;
+    config.keyType = RTCEncryptionKeyTypeECDSA;
+    config.sdpSemantics = RTCSdpSemanticsUnifiedPlan;
+    return config;
+}
+
++ (void)getOfferForRtpCapabilities:(void (^)(NSString*))block {
+    if (!gFactory) {
+        RTCLogError(TAG " getOfferForRtpCapabilities error: no factory");
+        block(@"");
+        return;
+    }
+    RTC_OBJC_TYPE(RTCMediaConstraints)* sdpConstraints = [CFPeerConnectionClient defaultSdpConstraints];
+    RTC_OBJC_TYPE(RTCConfiguration)* config = [CFPeerConnectionClient defaultRTCConfiguration];
+    CFDefaultPeerConnectionObserver* observer = [[CFDefaultPeerConnectionObserver alloc] init];
+    RTC_OBJC_TYPE(RTCPeerConnection)* pc = [gFactory
+                peerConnectionWithConfiguration:config
+                                    constraints:sdpConstraints
+                                       delegate:observer];
+    
+    [pc addTransceiverOfType:RTCRtpMediaTypeAudio];
+    [pc addTransceiverOfType:RTCRtpMediaTypeVideo];
+    [pc offerForConstraints:sdpConstraints
+          completionHandler:^(RTC_OBJC_TYPE(RTCSessionDescription)* sdp, NSError* error) {
+                if (sdp && !error) {
+                    block(sdp.sdp);
+                } else {
+                    RTCLogError(TAG " getOfferForRtpCapabilities error: createOffer error %@", error.localizedDescription);
+                    block(@"");
+                }
+            }];
+}
+
 + (int32_t)createLocalTracks:(bool)hasVideo isScreencast:(bool)isScreencast {
     RTCLogInfo(TAG " createLocalTracks");
 
@@ -169,10 +215,9 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
         gLocalVideoTrack = [gFactory videoTrackWithSource:gLocalVideoSource
                                                   trackId:kCFVideoTrackId];
     }
-    NSDictionary* mandatoryConstraints = @{};
     RTC_OBJC_TYPE(RTCMediaConstraints)* constraints =
         [[RTC_OBJC_TYPE(RTCMediaConstraints) alloc]
-            initWithMandatoryConstraints:mandatoryConstraints
+            initWithMandatoryConstraints:@{}
                      optionalConstraints:nil];
 
     gLocalAudioSource = [gFactory audioSourceWithConstraints:constraints];
@@ -231,13 +276,16 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
         _dir = dir;
         _hasVideo = hasVideo;
         _delegate = delegate;
-        _remoteTrackRenderers = [[NSMutableArray alloc] init];
         _videoMaxBitrateKbps = videoMaxBitrateKbps;
         _videoMaxFrameRate = videoMaxFrameRate;
 
+        _remoteAudioTracks = [[NSMutableDictionary alloc] init];
+        _remoteVideoTracks = [[NSMutableDictionary alloc] init];
+        _remoteTrackRenderers = [[NSMutableDictionary alloc] init];
+        _nullTidKey = [NSString stringWithFormat:@"%p", _remoteTrackRenderers];
+
         _queue = dispatch_queue_create("AvConf-PcClient", NULL);
-        _sdpConstraints =
-            [self defaultSdpConstraints:[CFPeerConnectionClient receive:dir]];
+        _sdpConstraints = [CFPeerConnectionClient defaultSdpConstraints];
     }
     return self;
 }
@@ -269,32 +317,14 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
 
         strongSelf->_queuedRemoteCandidates = [[NSMutableArray alloc] init];
 
-        RTC_OBJC_TYPE(RTCConfiguration)* config =
-            [[RTC_OBJC_TYPE(RTCConfiguration) alloc] init];
+        RTC_OBJC_TYPE(RTCConfiguration)* config = [CFPeerConnectionClient defaultRTCConfiguration];
         config.iceServers = iceServers;
-        config.tcpCandidatePolicy = RTCTcpCandidatePolicyDisabled;
-        config.bundlePolicy = RTCBundlePolicyMaxBundle;
-        config.rtcpMuxPolicy = RTCRtcpMuxPolicyRequire;
-        config.continualGatheringPolicy = RTCContinualGatheringPolicyGatherContinually;
-        config.keyType = RTCEncryptionKeyTypeECDSA;
-        config.sdpSemantics = RTCSdpSemanticsUnifiedPlan;
         strongSelf->_peerConnection = [factory
             peerConnectionWithConfiguration:config
-                                constraints:[strongSelf defaultMediaAudioConstraints]
+                                constraints:strongSelf->_sdpConstraints
                                    delegate:strongSelf];
 
-        // use addTransceiver API on answer end seems only get recvonly answer,
-        // so let's stay at addTrack API for now.
         if ([strongSelf send]) {
-            [strongSelf->_peerConnection addTrack:audioTrack
-                                        streamIds:@[ strongSelf->_uid ]];
-            if (videoTrack) {
-                [strongSelf->_peerConnection addTrack:videoTrack
-                                            streamIds:@[ strongSelf->_uid ]];
-            }
-        }
-
-        /*if ([strongSelf send]) {
             RTCRtpTransceiverInit* transceiverInit =
                 [[RTCRtpTransceiverInit alloc] init];
             transceiverInit.direction =
@@ -309,7 +339,7 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
                     addTransceiverWithTrack:videoTrack
                                        init:transceiverInit];
             }
-        } else {
+        } else if ([strongSelf receive]) {
             RTCRtpTransceiverInit* transceiverInit =
                 [[RTCRtpTransceiverInit alloc] init];
             transceiverInit.direction = RTCRtpTransceiverDirectionRecvOnly;
@@ -322,13 +352,7 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
                     addTransceiverOfType:RTCRtpMediaTypeVideo
                                     init:transceiverInit];
             }
-        }*/
-
-        // don't get remote tracks here after migrate to addTransceiver API,
-        // because these tracks are not receiving tracks!
-        // if ([strongSelf receive]) {
-        //    [strongSelf getRemoteTracks];
-        //}
+        }
 
         [self logInfo:@"createPeerConnection success"];
     });
@@ -386,8 +410,11 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
     });
 }
 
-- (void)setAudioReceivingEnabled:(bool)enable {
-    [self logInfo:@"setAudioReceivingEnabled %d", enable];
+/**
+* nil trackId means for all tracks.
+*/
+- (void)setAudioReceivingEnabled:(NSString*)trackId enable:(bool)enable {
+    [self logInfo:@"setAudioReceivingEnabled %@ %d", trackId, enable];
     __block bool enabled = enable;
     __weak CFPeerConnectionClient* weakSelf = self;
     dispatch_async(_queue, ^{
@@ -396,15 +423,28 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
             return;
         }
 
-        if (strongSelf->_remoteAudioTrack != nil) {
-            [strongSelf->_remoteAudioTrack setIsEnabled:enabled ? YES : NO];
+        if (trackId) {
+            RTC_OBJC_TYPE(RTCAudioTrack)* track = strongSelf->_remoteAudioTracks[trackId];
+            if (track) {
+                [track setIsEnabled:enabled ? YES : NO];
+                [self logInfo:@"setAudioReceivingEnabled %@ %d success", trackId, enabled];
+            } else {
+                [self logError:@"setAudioReceivingEnabled %@ %d no track", trackId, enabled];
+            }
+        } else {
+            for (RTC_OBJC_TYPE(RTCAudioTrack)* track in strongSelf->_remoteAudioTracks.allValues) {
+                [track setIsEnabled:enabled ? YES : NO];
+            }
+            [self logInfo:@"setAudioReceivingEnabled %d success", enabled];
         }
-        [self logInfo:@"setAudioReceivingEnabled %d success", enabled];
     });
 }
 
-- (void)setVideoReceivingEnabled:(bool)enable {
-    [self logInfo:@"setVideoReceivingEnabled %d", enable];
+/**
+* nil trackId means for all tracks.
+*/
+- (void)setVideoReceivingEnabled:(NSString*)trackId enable:(bool)enable {
+    [self logInfo:@"setVideoReceivingEnabled %@ %d", trackId, enable];
     __block bool enabled = enable;
     __weak CFPeerConnectionClient* weakSelf = self;
     dispatch_async(_queue, ^{
@@ -413,10 +453,20 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
             return;
         }
 
-        if (strongSelf->_remoteVideoTrack != nil) {
-            [strongSelf->_remoteVideoTrack setIsEnabled:enabled ? YES : NO];
+        if (trackId) {
+            RTC_OBJC_TYPE(RTCVideoTrack)* track = strongSelf->_remoteVideoTracks[trackId];
+            if (track) {
+                [track setIsEnabled:enabled ? YES : NO];
+                [self logInfo:@"setVideoReceivingEnabled %@ %d success", trackId, enabled];
+            } else {
+                [self logError:@"setVideoReceivingEnabled %@ %d no track", trackId, enabled];
+            }
+        } else {
+            for (RTC_OBJC_TYPE(RTCVideoTrack)* track in strongSelf->_remoteVideoTracks.allValues) {
+                [track setIsEnabled:enabled ? YES : NO];
+            }
+            [self logInfo:@"setVideoReceivingEnabled %d success", enabled];
         }
-        [self logInfo:@"setVideoReceivingEnabled %d success", enabled];
     });
 }
 
@@ -438,7 +488,7 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
                       return;
                   }
 
-                  [strongSelf2 createLocalSdpSuccess:sdp error:error];
+                  [strongSelf2 createLocalSdpResult:sdp error:error];
               }];
         [self logInfo:@"createOffer success"];
     });
@@ -462,7 +512,7 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
                        return;
                    }
 
-                   [strongSelf2 createLocalSdpSuccess:sdp error:error];
+                   [strongSelf2 createLocalSdpResult:sdp error:error];
                }];
 
         [self logInfo:@"createAnswer success"];
@@ -521,6 +571,9 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
                        return;
                    }
 
+                   [strongSelf2->_delegate onSetRemoteSdpResult:strongSelf2->_uid
+                                                        success:error == nil];
+
                    if (error != nil) {
                        [strongSelf2->_delegate onError:strongSelf2->_uid
                                                   code:ERR_SET_SDP_FAIL];
@@ -531,7 +584,6 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
                        [strongSelf2 drainCandidates];
                    }
                }];
-        [strongSelf1 getRemoteTracks];
 
         [self logInfo:@"setRemoteDescription success"];
     });
@@ -582,8 +634,8 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
     });
 }
 
-- (void)addRemoteTrackRenderer:(id<RTC_OBJC_TYPE(RTCVideoRenderer)>)remoteTrackRenderer {
-    [self logInfo:@"addRemoteTrackRenderer %@", remoteTrackRenderer];
+- (void)addRemoteTrackRenderer:(nullable NSString*)trackId renderer:(id<RTC_OBJC_TYPE(RTCVideoRenderer)>)renderer {
+    [self logInfo:@"addRemoteTrackRenderer %@ %@", trackId, renderer];
     __weak CFPeerConnectionClient* weakSelf = self;
     dispatch_async(_queue, ^{
         CFPeerConnectionClient* strongSelf = weakSelf;
@@ -591,16 +643,43 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
             return;
         }
 
-        if (strongSelf->_remoteVideoTrack != nil) {
-            [strongSelf->_remoteVideoTrack addRenderer:remoteTrackRenderer];
+        if (trackId) {
+            RTC_OBJC_TYPE(RTCVideoTrack)* track = strongSelf->_remoteVideoTracks[trackId];
+            if (track) {
+                [track addRenderer:renderer];
+            } else {
+                [strongSelf addRendererForLaterUsage:trackId renderer:renderer];
+            }
         } else {
-            [strongSelf->_remoteTrackRenderers addObject:remoteTrackRenderer];
+            if (strongSelf->_remoteVideoTracks.count == 0) {
+                [strongSelf addRendererForLaterUsage:strongSelf->_nullTidKey renderer:renderer];
+            } else {
+                for (RTC_OBJC_TYPE(RTCVideoTrack)* track in strongSelf->_remoteVideoTracks.allValues) {
+                    [track addRenderer:renderer];
+                }
+            }
         }
     });
 }
 
-- (void)removeRemoteTrackRenderer:(id<RTC_OBJC_TYPE(RTCVideoRenderer)>)remoteTrackRenderer {
-    [self logInfo:@"removeRemoteTrackRenderer %@", remoteTrackRenderer];
+- (void)addRendererForLaterUsage:(NSString*)trackId renderer:(id<RTC_OBJC_TYPE(RTCVideoRenderer)>)renderer {
+    if (_remoteTrackRenderers[trackId]) {
+        [_remoteTrackRenderers[trackId] addObject:renderer];
+    } else {
+        NSMutableArray<id<RTC_OBJC_TYPE(RTCVideoRenderer)>>* renderers = [[NSMutableArray alloc] init];
+        [renderers addObject:renderer];
+        _remoteTrackRenderers[trackId] = renderers;
+    }
+}
+
+- (void)removeLaterRenderer:(NSString*)trackId renderer:(id<RTC_OBJC_TYPE(RTCVideoRenderer)>)renderer {
+    if (_remoteTrackRenderers[trackId]) {
+        [_remoteTrackRenderers[trackId] removeObject:renderer];
+    }
+}
+
+- (void)removeRemoteTrackRenderer:(nullable NSString*)trackId renderer:(id<RTC_OBJC_TYPE(RTCVideoRenderer)>)renderer {
+    [self logInfo:@"removeRemoteTrackRenderer %@ %@", trackId, renderer];
     __weak CFPeerConnectionClient* weakSelf = self;
     dispatch_async(_queue, ^{
         CFPeerConnectionClient* strongSelf = weakSelf;
@@ -608,11 +687,21 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
             return;
         }
 
-        if (strongSelf->_remoteVideoTrack != nil) {
-            [strongSelf->_remoteVideoTrack removeRenderer:remoteTrackRenderer];
+        if (trackId) {
+            RTC_OBJC_TYPE(RTCVideoTrack)* track = strongSelf->_remoteVideoTracks[trackId];
+            if (track) {
+                [track removeRenderer:renderer];
+            } else {
+                [strongSelf removeLaterRenderer:trackId renderer:renderer];
+            }
         } else {
-            [strongSelf->_remoteTrackRenderers
-                removeObject:remoteTrackRenderer];
+            if (strongSelf->_remoteVideoTracks.count == 0) {
+                [strongSelf removeLaterRenderer:strongSelf->_nullTidKey renderer:renderer];
+            } else {
+                for (RTC_OBJC_TYPE(RTCVideoTrack)* track in strongSelf->_remoteVideoTracks.allValues) {
+                    [track removeRenderer:renderer];
+                }
+            }
         }
     });
 }
@@ -665,60 +754,70 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
     didOpenDataChannel:(RTC_OBJC_TYPE(RTCDataChannel)*)dataChannel {
 }
 
+/** Called when a receiver and its track are created. */
+- (void)peerConnection:(RTC_OBJC_TYPE(RTCPeerConnection)*)peerConnection
+        didAddReceiver:(RTC_OBJC_TYPE(RTCRtpReceiver)*)rtpReceiver
+               streams:(NSArray<RTC_OBJC_TYPE(RTCMediaStream)*>*)mediaStreams {
+    [self logInfo:@"didAddReceiver %@ %@ %@ %@", rtpReceiver, rtpReceiver.receiverId,
+                rtpReceiver.track, rtpReceiver.track.trackId];
+    __weak CFPeerConnectionClient* weakSelf = self;
+    dispatch_async(_queue, ^{
+        CFPeerConnectionClient* strongSelf = weakSelf;
+        if (strongSelf == nil) {
+            return;
+        }
+
+        NSString* trackId = rtpReceiver.track.trackId;
+        NSString* kind = rtpReceiver.track.kind;
+        if ([kRTCMediaStreamTrackKindAudio isEqualToString:kind]) {
+            strongSelf->_remoteAudioTracks[trackId] = (RTC_OBJC_TYPE(RTCAudioTrack)*) rtpReceiver.track;
+        } else if ([kRTCMediaStreamTrackKindVideo isEqualToString:kind]) {
+            RTC_OBJC_TYPE(RTCVideoTrack)* track = (RTC_OBJC_TYPE(RTCVideoTrack)*) rtpReceiver.track;
+            strongSelf->_remoteVideoTracks[trackId] = track;
+            if (strongSelf->_remoteTrackRenderers[strongSelf->_nullTidKey]) {
+                for (id<RTC_OBJC_TYPE(RTCVideoRenderer)> renderer in strongSelf->_remoteTrackRenderers[strongSelf->_nullTidKey]) {
+                    [track addRenderer:renderer];
+                }
+                [strongSelf->_remoteTrackRenderers removeAllObjects];
+            } else {
+                NSMutableArray<id<RTC_OBJC_TYPE(RTCVideoRenderer)>>* renderers = strongSelf->_remoteTrackRenderers[trackId];
+                if (renderers) {
+                    for (id<RTC_OBJC_TYPE(RTCVideoRenderer)> renderer in renderers) {
+                        [track addRenderer:renderer];
+                    }
+                    [strongSelf->_remoteTrackRenderers removeObjectForKey:trackId];
+                }
+            }
+        }
+    });
+}
+
+/** Called when the receiver and its track are removed. */
+- (void)peerConnection:(RTC_OBJC_TYPE(RTCPeerConnection)*)peerConnection
+     didRemoveReceiver:(RTC_OBJC_TYPE(RTCRtpReceiver)*)rtpReceiver {
+    [self logInfo:@"didRemoveReceiver %@ %@ %@ %@", rtpReceiver, rtpReceiver.receiverId,
+                rtpReceiver.track, rtpReceiver.track.trackId];
+    __weak CFPeerConnectionClient* weakSelf = self;
+    dispatch_async(_queue, ^{
+        CFPeerConnectionClient* strongSelf = weakSelf;
+        if (strongSelf == nil) {
+            return;
+        }
+
+        NSString* trackId = rtpReceiver.track.trackId;
+        NSString* kind = rtpReceiver.track.kind;
+        if ([kRTCMediaStreamTrackKindAudio isEqualToString:kind]) {
+            [strongSelf->_remoteAudioTracks removeObjectForKey:trackId];
+        } else if ([kRTCMediaStreamTrackKindVideo isEqualToString:kind]) {
+            [strongSelf->_remoteVideoTracks removeObjectForKey:trackId];
+        }
+    });
+}
+
 #pragma mark - Private
 
-- (void)getRemoteTracks {
-    if (_peerConnection == nil || ![self receive] || _remoteAudioTrack != nil ||
-        _remoteVideoTrack != nil) {
-        return;
-    }
-    for (RTC_OBJC_TYPE(RTCRtpTransceiver)* transceiver in _peerConnection.transceivers) {
-        RTC_OBJC_TYPE(RTCMediaStreamTrack)* track = transceiver.receiver.track;
-        if (transceiver.mediaType == RTCRtpMediaTypeAudio && track != nil) {
-            _remoteAudioTrack = (RTC_OBJC_TYPE(RTCAudioTrack)*)track;
-        } else if (transceiver.mediaType == RTCRtpMediaTypeVideo &&
-                   track != nil) {
-            _remoteVideoTrack = (RTC_OBJC_TYPE(RTCVideoTrack)*)track;
-        }
-    }
-    if (_remoteVideoTrack != nil) {
-        [self logInfo:@"addRemoteTrackRenderer at getRemoteTracks %@",
-                      _remoteTrackRenderers];
-        for (id<RTC_OBJC_TYPE(RTCVideoRenderer)> renderer in _remoteTrackRenderers) {
-            [_remoteVideoTrack addRenderer:renderer];
-        }
-        [_remoteTrackRenderers removeAllObjects];
-    }
-}
-
-- (RTC_OBJC_TYPE(RTCMediaConstraints)*)defaultMediaAudioConstraints {
-    NSDictionary* mandatoryConstraints = @{};
-    RTC_OBJC_TYPE(RTCMediaConstraints)* constraints =
-        [[RTC_OBJC_TYPE(RTCMediaConstraints) alloc]
-            initWithMandatoryConstraints:mandatoryConstraints
-                     optionalConstraints:nil];
-    return constraints;
-}
-
-- (RTC_OBJC_TYPE(RTCMediaConstraints)*)defaultSdpConstraints:(bool)receive {
-    NSDictionary* mandatoryConstraints = nil;
-    if (receive) {
-        // use addTransceiver API on answer end seems only get recvonly answer,
-        // so let's stay at addTrack API for now (which needs OfferToReceiveAudio).
-        mandatoryConstraints = @{
-            @"OfferToReceiveAudio" : @"true",
-            @"OfferToReceiveVideo" : @"true"
-        };
-    }
-    RTC_OBJC_TYPE(RTCMediaConstraints)* constraints =
-        [[RTC_OBJC_TYPE(RTCMediaConstraints) alloc]
-            initWithMandatoryConstraints:mandatoryConstraints
-                     optionalConstraints:nil];
-    return constraints;
-}
-
-- (void)createLocalSdpSuccess:(RTC_OBJC_TYPE(RTCSessionDescription)*)sdp
-                        error:(NSError*)error {
+- (void)createLocalSdpResult:(RTC_OBJC_TYPE(RTCSessionDescription)*)sdp
+                       error:(NSError*)error {
     if (error != nil) {
         [_delegate onError:_uid code:ERR_CREATE_SDP_FAIL];
         return;
@@ -748,12 +847,12 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
                   return;
               }
 
-              [strongSelf2 setLocalSdpSuccess:localSdp error:error];
+              [strongSelf2 setLocalSdpResult:localSdp error:error];
           }];
     });
 }
 
-- (void)setLocalSdpSuccess:(RTC_OBJC_TYPE(RTCSessionDescription)*)sdp error:(NSError*)error {
+- (void)setLocalSdpResult:(RTC_OBJC_TYPE(RTCSessionDescription)*)sdp error:(NSError*)error {
     if (error != nil) {
         [_delegate onError:_uid code:ERR_SET_SDP_FAIL];
         return;
@@ -787,7 +886,7 @@ static RTC_OBJC_TYPE(RTCVideoTrack)* gLocalVideoTrack = nil;
     }
     for (RTC_OBJC_TYPE(RTCRtpSender)* sender in _peerConnection.senders) {
         if (sender.track != nil) {
-            if ([sender.track.kind isEqualToString:kCFVideoTrackKind]) {
+            if ([kRTCMediaStreamTrackKindVideo isEqualToString:sender.track.kind]) {
                 RTC_OBJC_TYPE(RTCRtpParameters)* parametersToModify = sender.parameters;
                 for (RTC_OBJC_TYPE(RTCRtpEncodingParameters)* encoding in parametersToModify
                          .encodings) {

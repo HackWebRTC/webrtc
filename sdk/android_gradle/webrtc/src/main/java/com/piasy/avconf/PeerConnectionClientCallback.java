@@ -24,6 +24,8 @@ public interface PeerConnectionClientCallback {
 
     void onLocalDescription(String peerUid, SessionDescription localSdp);
 
+    void onSetRemoteSdpResult(String peerUid, boolean success);
+
     void onIceCandidate(String peerUid, IceCandidate candidate);
 
     void onIceCandidatesRemoved(String peerUid, List<IceCandidate> candidates);
