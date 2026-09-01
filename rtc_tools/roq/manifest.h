@@ -20,19 +20,42 @@ namespace webrtc::roq {
 
 struct PacketMetadata {
   std::string kind;
+  std::string role;
   std::optional<uint32_t> payload_type;
   std::optional<uint32_t> ssrc;
+};
+
+struct ManifestMedia {
+  std::string codec;
+  uint32_t payload_type = 0;
+  uint32_t flow_id = 0;
+  uint32_t client_ssrc = 0;
+  uint32_t server_ssrc = 0;
+};
+
+struct SessionManifest {
+  uint32_t generation = 0;
+  std::string alpn;
+  std::string config_hash;
+  ManifestMedia audio;
+  ManifestMedia video;
+  uint32_t rtcp_flow_id = 0;
 };
 
 struct ManifestMappingResult {
   uint64_t flow_id = 0;
   uint64_t generation = 0;
+  uint32_t sender_ssrc = 0;
   std::string config_hash;
   std::string error;
 };
 
 ManifestMappingResult LoadAndMapManifest(const std::string& path,
                                          const PacketMetadata& packet);
+
+bool LoadSessionManifest(const std::string& path,
+                         SessionManifest* manifest,
+                         std::string* error);
 
 }  // namespace webrtc::roq
 

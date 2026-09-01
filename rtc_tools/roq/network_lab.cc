@@ -23,6 +23,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <iostream>
 #include <limits>
 #include <queue>
 #include <string>
@@ -480,6 +481,7 @@ UdpSelfTestResult RunUdpRelay(const std::string& listen_address,
   if (client_side.value < 0 || server_side.value < 0) {
     return result;
   }
+  std::cout << "{\"schema_version\":1,\"event\":\"ready\"}\n" << std::flush;
 
   ImpairmentDirection outbound(1, "client_to_server", &event_log, &result);
   ImpairmentDirection inbound(1 ^ 0x9e3779b97f4a7c15ULL, "server_to_client",
