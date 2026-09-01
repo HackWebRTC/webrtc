@@ -6,6 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 import("../webrtc.gni")
+import("roq/roq.gni")
 if (rtc_enable_protobuf) {
   import("//third_party/protobuf/proto_library.gni")
 }
@@ -15,6 +16,9 @@ group("rtc_tools") {
   testonly = true
 
   deps = [ ":video_file_reader" ]
+  if (is_mac && target_cpu == "arm64" && roq_repo_root != "") {
+    deps += [ "roq:roq_test_peer" ]
+  }
   if (!build_with_chromium) {
     deps += [
       ":frame_analyzer",

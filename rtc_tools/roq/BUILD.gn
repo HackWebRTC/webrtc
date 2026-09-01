@@ -1,0 +1,67 @@
+# Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS. All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
+
+import("../../webrtc.gni")
+import("roq.gni")
+
+assert(roq_repo_root != "",
+       "roq_repo_root must point to the parent artc checkout")
+
+copy("roq_test_certificates") {
+  sources = [
+    "cert.crt",
+    "cert.key",
+  ]
+  outputs = [ "$root_out_dir/{{source_file_part}}" ]
+}
+
+rtc_library("roq_media_source") {
+  testonly = true
+  sources = [
+    "media_source.cc",
+    "media_source.h",
+  ]
+  deps = [ "//third_party/ffmpeg" ]
+
+  # FFmpeg's C API exposes frame data as pointer arrays. Keep the unsafe-buffer
+  # exception local to the adapter that consumes that C API.
+  cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
+}
+
+rtc_executable("roq_test_peer") {
+  testonly = true
+  sources = [
+    "capability.cc",
+    "capability.h",
+    "main.cc",
+    "manifest.cc",
+    "manifest.h",
+    "network_lab.cc",
+    "network_lab.h",
+  ]
+  include_dirs = [ "$roq_repo_root/quiche/quiche/include" ]
+  deps = [
+    ":roq_test_certificates",
+    ":roq_media_source",
+    "../../api:scoped_refptr",
+    "../../api/environment",
+    "../../api/environment:environment_factory",
+    "../../api/video:video_bitrate_allocation",
+    "../../api/video:video_frame",
+    "../../api/video:video_frame_type",
+    "../../api/video_codecs:video_codecs_api",
+    "../../modules/video_coding:codec_globals_headers",
+    "../../modules/video_coding:video_codec_interface",
+    "../../modules/video_coding:webrtc_h264",
+    "../../rtc_base:rtc_json",
+    "//third_party/boringssl:boringssl",
+    "//third_party/ffmpeg",
+    "//third_party/jsoncpp",
+  ]
+  libs = [ "$roq_repo_root/out/quiche/release/libquiche.a" ]
+}

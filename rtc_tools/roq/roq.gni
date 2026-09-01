@@ -1,0 +1,10 @@
+# Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the PATENTS file in the same directory as this file.
+
+declare_args() {
+  roq_repo_root = ""
+}
