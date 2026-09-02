@@ -446,6 +446,9 @@ NetworkLinkRtcpObserver* RtpTransportControllerSend::GetRtcpObserver() {
 int64_t RtpTransportControllerSend::GetPacerQueuingDelayMs() const {
   return pacer_.OldestPacketWaitTime().ms();
 }
+std::optional<PacerConfig> RtpTransportControllerSend::GetPacerConfig() const {
+  return pacer_.GetConfig();
+}
 std::optional<Timestamp> RtpTransportControllerSend::GetFirstPacketTime()
     const {
   return pacer_.FirstSentPacketTime();

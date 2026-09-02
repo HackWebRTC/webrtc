@@ -18,7 +18,7 @@
 #include "api/audio/audio_mixer.h"
 #include "api/audio_codecs/audio_format.h"
 #include "api/environment/environment.h"
-#include "api/roq/fixed_rate_network_controller.h"
+#include "api/roq/quic_network_controller.h"
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video/video_bitrate_allocator_factory.h"
@@ -220,7 +220,7 @@ class RoqMediaSessionImpl final : public RoqMediaSession {
 
  private:
   void Setup(std::string* error) {
-    if (!config_.audio_device_module ||
+    if (!config_.audio_device_module || !config_.network_stats_provider ||
         ((config_.send_audio || config_.receive_audio) &&
          !config_.audio_transport) ||
         ((config_.send_video || config_.receive_video) &&
@@ -247,16 +247,12 @@ class RoqMediaSessionImpl final : public RoqMediaSession {
     CallConfig call_config =
         CallConfig::CreateWithJoinedWorkerAndNetworkQueue(env_, worker_.get());
     call_config.audio_state = audio_state_;
-    call_config.bitrate_config.min_bitrate_bps =
-        config_.audio_bitrate_bps + config_.video_bitrate_bps;
-    call_config.bitrate_config.start_bitrate_bps =
-        config_.audio_bitrate_bps + config_.video_bitrate_bps;
-    call_config.bitrate_config.max_bitrate_bps =
-        config_.audio_bitrate_bps + config_.video_bitrate_bps;
+    call_config.bitrate_config.min_bitrate_bps = 256'000;
+    call_config.bitrate_config.start_bitrate_bps = 1'000'000;
+    call_config.bitrate_config.max_bitrate_bps = 4'128'000;
     call_config.per_call_network_controller_factory =
-        std::make_unique<FixedRateNetworkControllerFactory>(
-            DataRate::BitsPerSec(config_.audio_bitrate_bps +
-                                 config_.video_bitrate_bps));
+        std::make_unique<QuicNetworkControllerFactory>(
+            config_.network_stats_provider, config_.network_control_observer);
     call_ = Call::Create(std::move(call_config));
     if (config_.send_audio)
       audio_state_->SetRecording(false);
@@ -268,11 +264,14 @@ class RoqMediaSessionImpl final : public RoqMediaSession {
       send.rtp.ssrc = config_.local_audio_ssrc;
       send.rtp.c_name = "roq-media";
       send.rtcp_report_interval_ms = 500;
+      CodecParameterMap opus_parameters = {{"stereo", "1"}};
+      opus_parameters["useinbandfec"] = "1";
       send.send_codec_spec = AudioSendStream::Config::SendCodecSpec(
-          config_.audio_payload_type, {"opus", 48000, 2, {{"stereo", "1"}}});
+          config_.audio_payload_type, {"opus", 48000, 2, opus_parameters});
       send.send_codec_spec->target_bitrate_bps = config_.audio_bitrate_bps;
       send.min_bitrate_bps = config_.audio_bitrate_bps;
       send.max_bitrate_bps = config_.audio_bitrate_bps;
+      send.include_in_congestion_control_allocation = true;
       send.encoder_factory = config_.audio_encoder_factory;
       audio_send_stream_ = call_->CreateAudioSendStream(send);
     }
@@ -282,8 +281,10 @@ class RoqMediaSessionImpl final : public RoqMediaSession {
       receive.rtp.remote_ssrc = config_.remote_audio_ssrc;
       receive.sync_group = config_.sync_group;
       receive.decoder_factory = config_.audio_decoder_factory;
+      CodecParameterMap opus_parameters = {{"stereo", "1"}};
+      opus_parameters["useinbandfec"] = "1";
       receive.decoder_map = {
-          {config_.audio_payload_type, {"opus", 48000, 2, {{"stereo", "1"}}}}};
+          {config_.audio_payload_type, {"opus", 48000, 2, opus_parameters}}};
       audio_receive_stream_ =
           call_->CreateAudioReceiveStream(std::move(receive));
       if (config_.audio_sink)
@@ -295,6 +296,9 @@ class RoqMediaSessionImpl final : public RoqMediaSession {
       send.rtp.ssrcs = {config_.local_video_ssrc};
       send.rtp.payload_name = "H264";
       send.rtp.payload_type = config_.video_payload_type;
+      send.rtp.nack.rtp_history_ms = 1000;
+      send.rtp.rtx.payload_type = config_.video_rtx_payload_type;
+      send.rtp.rtx.ssrcs = {config_.local_video_rtx_ssrc};
       send.rtp.max_packet_size = config_.max_rtp_packet_size;
       send.rtcp_report_interval_ms = 500;
       send.encoder_settings.encoder_factory = config_.video_encoder_factory;
@@ -305,12 +309,12 @@ class RoqMediaSessionImpl final : public RoqMediaSession {
       encoder.video_format = h264;
       encoder.number_of_streams = 1;
       encoder.max_bitrate_bps = config_.video_bitrate_bps;
-      encoder.frame_drop_enabled = false;
+      encoder.frame_drop_enabled = true;
       encoder.simulcast_layers.resize(1);
       auto& layer = encoder.simulcast_layers[0];
       layer.active = true;
-      layer.min_bitrate_bps = config_.video_bitrate_bps;
-      layer.target_bitrate_bps = config_.video_bitrate_bps;
+      layer.min_bitrate_bps = 128'000;
+      layer.target_bitrate_bps = 872'000;
       layer.max_bitrate_bps = config_.video_bitrate_bps;
       layer.max_framerate = 60;
       layer.scale_resolution_down_by = 1.0;
@@ -325,6 +329,10 @@ class RoqMediaSessionImpl final : public RoqMediaSession {
       VideoReceiveStreamInterface::Config receive(
           config_.video_transport, config_.video_decoder_factory);
       receive.rtp.remote_ssrc = config_.remote_video_ssrc;
+      receive.rtp.nack.rtp_history_ms = 1000;
+      receive.rtp.rtx_ssrc = config_.remote_video_rtx_ssrc;
+      receive.rtp.rtx_associated_payload_types[config_.video_rtx_payload_type] =
+          config_.video_payload_type;
       receive.rtp.rtcp_mode = RtcpMode::kCompound;
       receive.rtp.keyframe_method =
           config_.keyframe_request_method == RoqKeyFrameRequestMethod::kPli
@@ -382,11 +390,21 @@ class RoqMediaSessionImpl final : public RoqMediaSession {
 
   RoqMediaSessionStats SnapshotStats() {
     RoqMediaSessionStats snapshot;
+    if (call_) {
+      snapshot.call_target_rate_bps = call_->GetStats().send_bandwidth_bps;
+      const std::optional<PacerConfig> pacer_config =
+          call_->GetTransportControllerSend()->GetPacerConfig();
+      if (pacer_config) {
+        snapshot.pacer_rate_bps = pacer_config->data_rate().bps();
+        snapshot.padding_rate_bps = pacer_config->pad_rate().bps();
+      }
+    }
     if (audio_send_stream_) {
       const auto audio = audio_send_stream_->GetStats();
       snapshot.sent_audio_packets = audio.packets_sent;
       snapshot.audio_target_bitrate_bps =
           static_cast<int>(audio.target_bitrate_bps);
+      snapshot.opus_inband_fec = true;
     }
     if (video_send_stream_) {
       const auto video = video_send_stream_->GetStats();
@@ -401,11 +419,21 @@ class RoqMediaSessionImpl final : public RoqMediaSession {
           video.frames_dropped_by_rate_limiter +
           video.frames_dropped_by_congestion_window +
           video.frames_dropped_by_encoder;
+      for (const auto& [ssrc, stream] : video.substreams) {
+        snapshot.nack_received += stream.rtcp_packet_type_counts.nack_packets;
+        snapshot.retransmitted_packets_sent +=
+            stream.rtp_stats.retransmitted.packets;
+        snapshot.retransmitted_bytes_sent +=
+            stream.rtp_stats.retransmitted.TotalBytes();
+      }
     }
     if (audio_receive_stream_) {
       const auto audio = audio_receive_stream_->GetStats();
       snapshot.received_audio_packets = audio.packets_received;
       snapshot.received_audio_samples = audio.total_samples_received;
+      snapshot.audio_fec_packets_received = audio.fec_packets_received;
+      snapshot.audio_fec_packets_discarded = audio.fec_packets_discarded;
+      snapshot.audio_secondary_decoded_rate = audio.secondary_decoded_rate;
       snapshot.audio_decoding_normal = audio.decoding_normal;
     }
     if (video_receive_stream_) {
@@ -415,6 +443,7 @@ class RoqMediaSessionImpl final : public RoqMediaSession {
       snapshot.key_frames_decoded = video.key_frames_decoded;
       snapshot.pli_sent = video.rtcp_packet_type_counts.pli_packets;
       snapshot.fir_sent = video.rtcp_packet_type_counts.fir_packets;
+      snapshot.nack_sent = video.rtcp_packet_type_counts.nack_packets;
     }
     return snapshot;
   }

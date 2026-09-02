@@ -12,18 +12,34 @@
 
 #include "api/call/transport.h"
 #include "api/roq/roq_session.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc::roq {
+
+struct RoqPacketTransportConfig {
+  RoqSession* session = nullptr;
+  RoqMediaType media_type = RoqMediaType::kVideo;
+  uint64_t rtp_flow_id = 0;
+  uint64_t rtcp_flow_id = 0;
+  uint8_t primary_payload_type = 0;
+  uint32_t primary_ssrc = 0;
+  uint8_t rtx_payload_type = 0;
+  uint32_t rtx_ssrc = 0;
+  Clock* clock = nullptr;
+  TimeDelta critical_rtcp_deadline = TimeDelta::Millis(50);
+  TimeDelta audio_deadline = TimeDelta::Millis(60);
+  TimeDelta video_delta_deadline = TimeDelta::Millis(100);
+  TimeDelta video_key_deadline = TimeDelta::Millis(150);
+  TimeDelta periodic_rtcp_deadline = TimeDelta::Millis(250);
+};
 
 class RoqPacketTransport final : public Transport {
  public:
   using PacketAcceptedCallback = std::function<
       void(uint64_t, std::span<const uint8_t>, const PacketOptions&)>;
 
-  RoqPacketTransport(RoqSession* session,
-                     uint64_t rtp_flow_id,
-                     uint64_t rtcp_flow_id,
-                     PacketAcceptedCallback packet_accepted = {});
+  explicit RoqPacketTransport(RoqPacketTransportConfig config,
+                              PacketAcceptedCallback packet_accepted = {});
 
   bool SendRtp(std::span<const uint8_t> packet,
                const PacketOptions& options) override;
@@ -35,10 +51,8 @@ class RoqPacketTransport final : public Transport {
             std::span<const uint8_t> packet,
             const PacketOptions& options);
 
-  RoqSession* const session_;
-  const uint64_t rtp_flow_id_;
-  const uint64_t rtcp_flow_id_;
   PacketAcceptedCallback packet_accepted_;
+  const RoqPacketTransportConfig config_;
 };
 
 }  // namespace webrtc::roq

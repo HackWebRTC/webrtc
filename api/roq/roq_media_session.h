@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <span>
 #include <string>
@@ -17,6 +18,8 @@
 #include "api/call/audio_sink.h"
 #include "api/call/transport.h"
 #include "api/environment/environment.h"
+#include "api/roq/quic_network_controller.h"
+#include "api/roq/roq_session.h"
 #include "api/scoped_refptr.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_frame_buffer.h"
@@ -35,10 +38,13 @@ struct RoqMediaSessionConfig {
   bool receive_video = false;
   uint32_t local_audio_ssrc = 0;
   uint32_t local_video_ssrc = 0;
+  uint32_t local_video_rtx_ssrc = 0;
   uint32_t remote_audio_ssrc = 0;
   uint32_t remote_video_ssrc = 0;
+  uint32_t remote_video_rtx_ssrc = 0;
   int audio_payload_type = 111;
   int video_payload_type = 96;
+  int video_rtx_payload_type = 97;
   int audio_bitrate_bps = 128000;
   int video_bitrate_bps = 4000000;
   size_t max_rtp_packet_size = 1200;
@@ -54,6 +60,8 @@ struct RoqMediaSessionConfig {
   VideoDecoderFactory* video_decoder_factory = nullptr;
   AudioSinkInterface* audio_sink = nullptr;
   VideoSinkInterface<VideoFrame>* video_sink = nullptr;
+  std::function<RoqSessionStats()> network_stats_provider;
+  QuicNetworkControllerFactory::UpdateObserver network_control_observer;
 };
 
 struct RoqMediaSessionStats {
@@ -62,6 +70,9 @@ struct RoqMediaSessionStats {
   int audio_target_bitrate_bps = 0;
   int video_target_bitrate_bps = 0;
   int video_media_bitrate_bps = 0;
+  int call_target_rate_bps = 0;
+  int pacer_rate_bps = 0;
+  int padding_rate_bps = 0;
   uint32_t video_frames_encoded = 0;
   uint32_t video_frames_dropped = 0;
   uint32_t decoded_video_frames = 0;
@@ -69,9 +80,17 @@ struct RoqMediaSessionStats {
   uint32_t key_frames_decoded = 0;
   uint32_t received_audio_packets = 0;
   uint64_t received_audio_samples = 0;
+  uint64_t audio_fec_packets_received = 0;
+  uint64_t audio_fec_packets_discarded = 0;
+  float audio_secondary_decoded_rate = 0.0f;
   int audio_decoding_normal = 0;
   uint32_t pli_sent = 0;
   uint32_t fir_sent = 0;
+  uint32_t nack_sent = 0;
+  uint32_t nack_received = 0;
+  uint64_t retransmitted_packets_sent = 0;
+  uint64_t retransmitted_bytes_sent = 0;
+  bool opus_inband_fec = false;
 };
 
 class RoqMediaSession {

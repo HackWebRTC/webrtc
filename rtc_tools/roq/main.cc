@@ -176,6 +176,10 @@ int main(int argc, char* argv[]) {
           UIntOption(args, "--shrink-datagram-after-ms");
       const std::optional<uint32_t> shrink_datagram_to =
           UIntOption(args, "--shrink-datagram-to");
+      const std::optional<uint32_t> drop_video_packet_after =
+          UIntOption(args, "--drop-video-packet-after");
+      const std::optional<uint32_t> drop_audio_every =
+          UIntOption(args, "--drop-audio-every");
       if (!address || !manifest || !event_log || !run_id ||
           (command == "client" && !input) ||
           (command == "client" && *scenario == "media-receive") ||
@@ -213,6 +217,10 @@ int main(int argc, char* argv[]) {
           .shrink_datagram_to = shrink_datagram_to.value_or(0),
           .probe_datagram_boundary =
               HasOption(args, "--probe-datagram-boundary"),
+          .drop_video_packet_after = drop_video_packet_after.value_or(0),
+          .drop_audio_every = drop_audio_every.value_or(0),
+          .capacity_load_bps = static_cast<uint64_t>(
+              UIntOption(args, "--capacity-load-bps").value_or(0)),
       };
       const webrtc::roq::MediaPeerResult result =
           command == "client" && *scenario == "media-loopback" &&
@@ -257,7 +265,18 @@ int main(int argc, char* argv[]) {
           << ',' << "\"queue_full_drops\":" << result.queue_full_drops << ','
           << "\"oversize_drops\":" << result.oversize_drops << ','
           << "\"pmtu_purge_drops\":" << result.pmtu_purge_drops << ','
+          << "\"expired_drops\":" << result.expired_drops << ','
+          << "\"invalid_drops\":" << result.invalid_drops << ','
+          << "\"quiche_slot_expired_drops\":"
+          << result.quiche_slot_expired_drops << ','
           << "\"peak_queue_size\":" << result.peak_queue_size << ','
+          << "\"max_queue_delay_us\":" << result.max_queue_delay_us << ','
+          << "\"dropped_background\":" << result.dropped_background << ','
+          << "\"dropped_periodic_rtcp\":" << result.dropped_periodic_rtcp << ','
+          << "\"dropped_video_delta\":" << result.dropped_video_delta << ','
+          << "\"dropped_video_key\":" << result.dropped_video_key << ','
+          << "\"dropped_audio\":" << result.dropped_audio << ','
+          << "\"dropped_critical_rtcp\":" << result.dropped_critical_rtcp << ','
           << "\"max_datagram_payload\":" << result.max_datagram_payload << ','
           << "\"loops_started\":" << result.loops_started << ','
           << "\"idr_access_units\":" << result.idr_access_units << ','
@@ -281,7 +300,25 @@ int main(int argc, char* argv[]) {
           << "\"max_bandwidth_bytes_per_second\":"
           << result.max_bandwidth_bytes_per_second << ','
           << "\"pmtu_bytes\":" << result.pmtu_bytes << ','
-          << "\"dgram_lost\":" << result.dgram_lost << "}\n";
+          << "\"dgram_lost\":" << result.dgram_lost << ','
+          << "\"sent_rtx_packets\":" << result.sent_rtx_packets << ','
+          << "\"received_rtx_packets\":" << result.received_rtx_packets << ','
+          << "\"nack_packets\":" << result.nack_packets << ','
+          << "\"retransmitted_packets_sent\":"
+          << result.retransmitted_packets_sent << ','
+          << "\"retransmitted_bytes_sent\":" << result.retransmitted_bytes_sent
+          << ',' << "\"opus_inband_fec\":"
+          << (result.opus_inband_fec ? "true" : "false") << ','
+          << "\"injected_video_packet_drops\":"
+          << result.injected_video_packet_drops << ','
+          << "\"injected_audio_packet_drops\":"
+          << result.injected_audio_packet_drops << ','
+          << "\"audio_fec_packets_received\":"
+          << result.audio_fec_packets_received << ','
+          << "\"audio_fec_packets_discarded\":"
+          << result.audio_fec_packets_discarded << ','
+          << "\"audio_secondary_decoded_rate\":"
+          << result.audio_secondary_decoded_rate << "}\n";
       return 0;
     }
     if (!scenario || *scenario != "synthetic-roq" || !address || !manifest ||
@@ -467,8 +504,9 @@ int main(int argc, char* argv[]) {
         OptionValue(args, "--run-id");
     const std::optional<std::string_view> event_log =
         OptionValue(args, "--event-log");
-    if (!profile || *profile != "m0" || !run_id || !event_log) {
-      std::cerr << "udp-relay requires --profile m0 --run-id <id> "
+    if (!profile || (*profile != "m0" && *profile != "m3") || !run_id ||
+        !event_log) {
+      std::cerr << "udp-relay requires --profile <m0|m3> --run-id <id> "
                    "--event-log <path>\n";
       return 2;
     }
@@ -489,7 +527,7 @@ int main(int argc, char* argv[]) {
       }
       result = webrtc::roq::RunUdpRelay(
           std::string(*listen), std::string(*forward), *duration,
-          std::string(*run_id), std::string(*event_log));
+          std::string(*profile), std::string(*run_id), std::string(*event_log));
     }
     if (!result.error.empty()) {
       std::cerr << result.error << '\n';
@@ -500,10 +538,15 @@ int main(int argc, char* argv[]) {
               << ",\"received\":" << result.received
               << ",\"injected_loss\":" << result.injected_loss
               << ",\"injected_reorder\":" << result.injected_reorder
-              << ",\"forwarded\":" << result.forwarded
-              << ",\"bandwidth_bps\":10000000,"
-              << "\"base_one_way_delay_ms\":50,\"loss_percent\":1,"
-              << "\"jitter_ms\":10,\"reorder_percent\":1,"
+              << ",\"forwarded\":" << result.forwarded << ",\"profile\":\""
+              << *profile
+              << "\",\"bandwidth_bps\":" << (*profile == "m3" ? 0 : 10'000'000)
+              << ",\"bandwidth_steps_bps\":"
+              << (*profile == "m3" ? "[10000000,800000,6000000]" : "[]") << ','
+              << "\"base_one_way_delay_ms\":50,\"loss_percent\":"
+              << (*profile == "m3" ? 0 : 1) << ','
+              << "\"jitter_ms\":" << (*profile == "m3" ? 0 : 10)
+              << ",\"reorder_percent\":" << (*profile == "m3" ? 0 : 1) << ','
               << "\"queue_limit_ms\":200,\"average_rtt_ms\":"
               << result.average_rtt_ms
               << ",\"min_rtt_ms\":" << result.min_rtt_ms

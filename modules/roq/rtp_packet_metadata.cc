@@ -27,40 +27,52 @@ void RecordNaluType(uint8_t nalu_type, RtpPacketMetadata* metadata) {
   metadata->contains_pps |= nalu_type == 8;
 }
 
-}  // namespace
-
-bool ParseH264RtpPacketMetadata(std::span<const uint8_t> packet,
-                                RtpPacketMetadata* metadata) {
-  if (!metadata || packet.size() < 13 || (packet[0] >> 6) != 2)
+bool ParseRtpHeader(std::span<const uint8_t> packet,
+                    RtpPacketMetadata* metadata,
+                    size_t* payload_offset,
+                    size_t* payload_end) {
+  if (!metadata || !payload_offset || !payload_end || packet.size() < 12 ||
+      (packet[0] >> 6) != 2) {
     return false;
-  size_t payload_offset = 12 + static_cast<size_t>(packet[0] & 0x0f) * 4;
-  if (payload_offset >= packet.size())
+  }
+  *payload_offset = 12 + static_cast<size_t>(packet[0] & 0x0f) * 4;
+  if (*payload_offset > packet.size())
     return false;
   if ((packet[0] & 0x10) != 0) {
-    if (payload_offset + 4 > packet.size())
+    if (*payload_offset + 4 > packet.size())
       return false;
     const size_t extension_size =
-        4 + static_cast<size_t>(ReadU16(packet, payload_offset + 2)) * 4;
-    if (payload_offset + extension_size >= packet.size())
+        4 + static_cast<size_t>(ReadU16(packet, *payload_offset + 2)) * 4;
+    if (*payload_offset + extension_size > packet.size())
       return false;
-    payload_offset += extension_size;
+    *payload_offset += extension_size;
   }
-  size_t payload_end = packet.size();
+  *payload_end = packet.size();
   if ((packet[0] & 0x20) != 0) {
     const size_t padding = packet.back();
-    if (padding == 0 || padding > payload_end - payload_offset)
+    if (padding == 0 || padding > *payload_end - *payload_offset)
       return false;
-    payload_end -= padding;
+    *payload_end -= padding;
   }
-  if (payload_offset >= payload_end)
-    return false;
-
   *metadata = {};
   metadata->marker = (packet[1] & 0x80) != 0;
   metadata->payload_type = packet[1] & 0x7f;
   metadata->sequence_number = ReadU16(packet, 2);
   metadata->timestamp = ReadU32(packet, 4);
   metadata->ssrc = ReadU32(packet, 8);
+  return true;
+}
+
+}  // namespace
+
+bool ParseH264RtpPacketMetadata(std::span<const uint8_t> packet,
+                                RtpPacketMetadata* metadata) {
+  size_t payload_offset = 0;
+  size_t payload_end = 0;
+  if (!ParseRtpHeader(packet, metadata, &payload_offset, &payload_end) ||
+      payload_offset >= payload_end) {
+    return false;
+  }
 
   const uint8_t type = packet[payload_offset] & 0x1f;
   if (type >= 1 && type <= 23) {
@@ -86,6 +98,46 @@ bool ParseH264RtpPacketMetadata(std::span<const uint8_t> packet,
       return false;
     RecordNaluType(packet[payload_offset + 1] & 0x1f, metadata);
     return true;
+  }
+  return true;
+}
+
+bool ParseRtpPacketMetadata(std::span<const uint8_t> packet,
+                            RtpPacketMetadata* metadata) {
+  size_t payload_offset = 0;
+  size_t payload_end = 0;
+  return ParseRtpHeader(packet, metadata, &payload_offset, &payload_end) &&
+         payload_offset < payload_end;
+}
+
+bool ParseRtxOriginalSequenceNumber(std::span<const uint8_t> packet,
+                                    uint16_t* sequence_number) {
+  RtpPacketMetadata metadata;
+  size_t payload_offset = 0;
+  size_t payload_end = 0;
+  if (!sequence_number ||
+      !ParseRtpHeader(packet, &metadata, &payload_offset, &payload_end) ||
+      payload_end - payload_offset < 2) {
+    return false;
+  }
+  *sequence_number = ReadU16(packet, payload_offset);
+  return true;
+}
+
+bool ClassifyRtcpPacket(std::span<const uint8_t> packet, bool* critical) {
+  if (!critical || packet.empty())
+    return false;
+  *critical = false;
+  while (!packet.empty()) {
+    if (packet.size() < 4 || (packet[0] >> 6) != 2)
+      return false;
+    const size_t block_size = (static_cast<size_t>(ReadU16(packet, 2)) + 1) * 4;
+    if (block_size > packet.size())
+      return false;
+    const uint8_t packet_type = packet[1];
+    if (packet_type != 200 && packet_type != 201 && packet_type != 202)
+      *critical = true;
+    packet = packet.subspan(block_size);
   }
   return true;
 }

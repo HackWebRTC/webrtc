@@ -778,6 +778,32 @@ TEST(TaskQueuePacedSenderTest, Stats) {
   EXPECT_TRUE(pacer.ExpectedQueueTime().IsZero());
 }
 
+TEST(TaskQueuePacedSenderTest, ReportsLastAppliedPacerConfig) {
+  static constexpr Timestamp kStartTime = Timestamp::Millis(1234);
+  static constexpr DataRate kInitialRate = DataRate::KilobitsPerSec(500);
+  static constexpr DataRate kUpdatedRate = DataRate::KilobitsPerSec(900);
+  static constexpr DataRate kPaddingRate = DataRate::KilobitsPerSec(40);
+  GlobalSimulatedTimeController time_controller(kStartTime);
+  NiceMock<MockPacketRouter> packet_router;
+  FieldTrials trials = CreateTestFieldTrials();
+  TaskQueuePacedSender pacer(
+      time_controller.GetClock(), &packet_router, trials,
+      PacingController::kMinSleepTime, TaskQueuePacedSender::kNoPacketHoldback,
+      time_controller.GetMainThread(),
+      PacerConfig::Create(kStartTime, kInitialRate, DataRate::Zero()));
+
+  ASSERT_TRUE(pacer.GetConfig().has_value());
+  EXPECT_EQ(pacer.GetConfig()->data_rate(), kInitialRate);
+  EXPECT_EQ(pacer.GetConfig()->pad_rate(), DataRate::Zero());
+
+  pacer.SetConfig(PacerConfig::Create(kStartTime + TimeDelta::Millis(100),
+                                      kUpdatedRate, kPaddingRate));
+
+  ASSERT_TRUE(pacer.GetConfig().has_value());
+  EXPECT_EQ(pacer.GetConfig()->data_rate(), kUpdatedRate);
+  EXPECT_EQ(pacer.GetConfig()->pad_rate(), kPaddingRate);
+}
+
 TEST(TaskQueuePacedSenderTest,
      ChangePacingRateInSentPacketCallstackDoesNotSendNextPacketInSameStack) {
   FieldTrials trials = CreateTestFieldTrials();

@@ -32,6 +32,9 @@ struct MediaPeerOptions {
   int shrink_datagram_after_ms = 0;
   size_t shrink_datagram_to = 0;
   bool probe_datagram_boundary = false;
+  size_t drop_video_packet_after = 0;
+  size_t drop_audio_every = 0;
+  uint64_t capacity_load_bps = 0;
 };
 
 struct MediaPeerResult {
@@ -57,7 +60,17 @@ struct MediaPeerResult {
   size_t queue_full_drops = 0;
   size_t oversize_drops = 0;
   size_t pmtu_purge_drops = 0;
+  size_t expired_drops = 0;
+  size_t invalid_drops = 0;
+  size_t quiche_slot_expired_drops = 0;
   size_t peak_queue_size = 0;
+  int64_t max_queue_delay_us = 0;
+  size_t dropped_background = 0;
+  size_t dropped_periodic_rtcp = 0;
+  size_t dropped_video_delta = 0;
+  size_t dropped_video_key = 0;
+  size_t dropped_audio = 0;
+  size_t dropped_critical_rtcp = 0;
   size_t max_datagram_payload = 0;
   size_t loops_started = 0;
   size_t idr_access_units = 0;
@@ -77,6 +90,17 @@ struct MediaPeerResult {
   uint64_t max_bandwidth_bytes_per_second = 0;
   size_t pmtu_bytes = 0;
   size_t dgram_lost = 0;
+  size_t sent_rtx_packets = 0;
+  size_t received_rtx_packets = 0;
+  size_t nack_packets = 0;
+  uint64_t retransmitted_packets_sent = 0;
+  uint64_t retransmitted_bytes_sent = 0;
+  bool opus_inband_fec = false;
+  size_t injected_video_packet_drops = 0;
+  size_t injected_audio_packet_drops = 0;
+  uint64_t audio_fec_packets_received = 0;
+  uint64_t audio_fec_packets_discarded = 0;
+  float audio_secondary_decoded_rate = 0.0f;
   std::string error;
 };
 

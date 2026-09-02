@@ -138,6 +138,7 @@ class RtpTransportControllerSendInterface {
   virtual void OnNetworkAvailability(bool network_available) = 0;
   virtual NetworkLinkRtcpObserver* GetRtcpObserver() = 0;
   virtual int64_t GetPacerQueuingDelayMs() const = 0;
+  virtual std::optional<PacerConfig> GetPacerConfig() const = 0;
   virtual std::optional<Timestamp> GetFirstPacketTime() const = 0;
   virtual void EnablePeriodicAlrProbing(bool enable) = 0;
 

@@ -23,6 +23,11 @@ struct RtpPacketMetadata {
 
 bool ParseH264RtpPacketMetadata(std::span<const uint8_t> packet,
                                 RtpPacketMetadata* metadata);
+bool ParseRtpPacketMetadata(std::span<const uint8_t> packet,
+                            RtpPacketMetadata* metadata);
+bool ParseRtxOriginalSequenceNumber(std::span<const uint8_t> packet,
+                                    uint16_t* sequence_number);
+bool ClassifyRtcpPacket(std::span<const uint8_t> packet, bool* critical);
 
 }  // namespace webrtc::roq
 

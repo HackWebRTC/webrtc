@@ -75,6 +75,7 @@ TaskQueuePacedSender::TaskQueuePacedSender(
       task_queue_(task_queue) {
   RTC_DCHECK(task_queue_);
   RTC_DCHECK_GE(max_hold_back_window_, PacingController::kMinSleepTime);
+  current_stats_.pacer_config = pacing_config.initial_pacer_config;
 }
 
 TaskQueuePacedSender::~TaskQueuePacedSender() {
@@ -126,7 +127,12 @@ void TaskQueuePacedSender::SetCongested(bool congested) {
 void TaskQueuePacedSender::SetConfig(const PacerConfig& pacer_config) {
   RTC_DCHECK_RUN_ON(task_queue_);
   pacing_controller_.SetPacerConfig(pacer_config);
+  current_stats_.pacer_config = pacer_config;
   PostMaybeProcessPackets();
+}
+
+std::optional<PacerConfig> TaskQueuePacedSender::GetConfig() const {
+  return GetStats().pacer_config;
 }
 
 void TaskQueuePacedSender::EnqueuePackets(
@@ -320,6 +326,7 @@ void TaskQueuePacedSender::UpdateStats() {
   new_stats.oldest_packet_enqueue_time =
       pacing_controller_.OldestPacketEnqueueTime();
   new_stats.queue_size = pacing_controller_.QueueSizeData();
+  new_stats.pacer_config = current_stats_.pacer_config;
   OnStatsUpdated(new_stats);
 }
 

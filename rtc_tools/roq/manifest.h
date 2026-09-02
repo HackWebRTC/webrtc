@@ -33,12 +33,20 @@ struct ManifestMedia {
   uint32_t server_ssrc = 0;
 };
 
+struct ManifestRtx {
+  uint32_t payload_type = 0;
+  uint32_t client_ssrc = 0;
+  uint32_t server_ssrc = 0;
+};
+
 struct SessionManifest {
   uint32_t generation = 0;
   std::string alpn;
   std::string config_hash;
   ManifestMedia audio;
   ManifestMedia video;
+  ManifestRtx video_rtx;
+  bool opus_inband_fec = false;
   uint32_t rtcp_flow_id = 0;
 };
 

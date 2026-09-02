@@ -53,5 +53,77 @@ TEST(RtpPacketMetadataTest, RejectsTruncatedStapA) {
   EXPECT_FALSE(ParseH264RtpPacketMetadata(packet, &metadata));
 }
 
+TEST(RtpPacketMetadataTest, ParsesGenericAudioRtpHeader) {
+  constexpr std::array<uint8_t, 13> packet = {0x80, 0xef, 0xff, 0xff, 0x00,
+                                              0x00, 0x01, 0xe0, 0x00, 0xa9,
+                                              0x8a, 0xc7, 0xaa};
+  RtpPacketMetadata metadata;
+  ASSERT_TRUE(ParseRtpPacketMetadata(packet, &metadata));
+  EXPECT_EQ(metadata.payload_type, 111);
+  EXPECT_EQ(metadata.sequence_number, 65535);
+  EXPECT_EQ(metadata.timestamp, 480u);
+  EXPECT_EQ(metadata.ssrc, 11111111u);
+  EXPECT_TRUE(metadata.marker);
+}
+
+TEST(RtpPacketMetadataTest, ParsesRtxOriginalSequenceNumber) {
+  constexpr std::array<uint8_t, 15> packet = {0x80, 0x61, 0x00, 0x2a, 0x00,
+                                              0x01, 0x5f, 0x90, 0x01, 0x53,
+                                              0x15, 0x90, 0xff, 0xff, 0xaa};
+  uint16_t sequence_number = 0;
+  ASSERT_TRUE(ParseRtxOriginalSequenceNumber(packet, &sequence_number));
+  EXPECT_EQ(sequence_number, 65535);
+}
+
+TEST(RtpPacketMetadataTest, RejectsMalformedRtpAndRtx) {
+  RtpPacketMetadata metadata;
+  uint16_t sequence_number = 0;
+  constexpr std::array<uint8_t, 2> malformed = {0x40, 0x60};
+  EXPECT_FALSE(ParseRtpPacketMetadata(malformed, &metadata));
+  constexpr std::array<uint8_t, 13> no_osn = {0x80, 0x61, 0x00, 0x2a, 0x00,
+                                              0x01, 0x5f, 0x90, 0x01, 0x53,
+                                              0x15, 0x90, 0xaa};
+  EXPECT_FALSE(ParseRtxOriginalSequenceNumber(no_osn, &sequence_number));
+}
+
+TEST(RtpPacketMetadataTest, ClassifiesPureReportsAsPeriodicRtcp) {
+  constexpr std::array<uint8_t, 16> compound = {
+      0x80, 200, 0x00, 0x01, 0, 0, 0, 1, 0x80, 201, 0x00, 0x01, 0, 0, 0, 2};
+  bool critical = true;
+  ASSERT_TRUE(ClassifyRtcpPacket(compound, &critical));
+  EXPECT_FALSE(critical);
+}
+
+TEST(RtpPacketMetadataTest, ClassifiesReportsWithSdesAsPeriodicRtcp) {
+  constexpr std::array<uint8_t, 20> compound = {
+      0x80, 200,  0x00, 0x01, 0, 0, 0, 1, 0x81, 202,
+      0x00, 0x02, 0,    0,    0, 1, 0, 0, 0,    0};
+  bool critical = true;
+  ASSERT_TRUE(ClassifyRtcpPacket(compound, &critical));
+  EXPECT_FALSE(critical);
+}
+
+TEST(RtpPacketMetadataTest, PromotesCompoundRtcpContainingFeedback) {
+  constexpr std::array<uint8_t, 20> compound = {
+      0x80, 201,  0x00, 0x01, 0, 0, 0, 2, 0x81, 206,
+      0x00, 0x02, 0,    0,    0, 1, 0, 0, 0,    2};
+  bool critical = false;
+  ASSERT_TRUE(ClassifyRtcpPacket(compound, &critical));
+  EXPECT_TRUE(critical);
+}
+
+TEST(RtpPacketMetadataTest, TreatsUnknownValidRtcpAsCritical) {
+  constexpr std::array<uint8_t, 4> packet = {0x80, 204, 0x00, 0x00};
+  bool critical = false;
+  ASSERT_TRUE(ClassifyRtcpPacket(packet, &critical));
+  EXPECT_TRUE(critical);
+}
+
+TEST(RtpPacketMetadataTest, RejectsMalformedCompoundRtcp) {
+  constexpr std::array<uint8_t, 8> packet = {0x80, 200, 0x00, 0x02, 0, 0, 0, 1};
+  bool critical = false;
+  EXPECT_FALSE(ClassifyRtcpPacket(packet, &critical));
+}
+
 }  // namespace
 }  // namespace webrtc::roq

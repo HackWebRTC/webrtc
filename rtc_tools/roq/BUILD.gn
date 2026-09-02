@@ -6,8 +6,8 @@
 # in the file PATENTS. All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-import("../../webrtc.gni")
 import("../../roq.gni")
+import("../../webrtc.gni")
 
 assert(roq_repo_root != "",
        "roq_repo_root must point to the parent artc checkout")
@@ -35,6 +35,7 @@ rtc_library("roq_media_source") {
 
 rtc_executable("roq_test_peer") {
   testonly = true
+
   # lld's parallel archive reader intermittently reports a phantom auto-link
   # search path during a same-invocation relink. Keep strict auto-link checking
   # enabled, but serialize archive reads for this target.
@@ -43,11 +44,11 @@ rtc_executable("roq_test_peer") {
     "capability.cc",
     "capability.h",
     "main.cc",
+    "manifest.cc",
+    "manifest.h",
     "media_peer.cc",
     "media_peer.h",
     "media_peer_mac.mm",
-    "manifest.cc",
-    "manifest.h",
     "network_lab.cc",
     "network_lab.h",
     "quiche_abi.cc",
@@ -57,56 +58,56 @@ rtc_executable("roq_test_peer") {
   ]
   include_dirs = [ "$roq_repo_root/quiche/quiche/include" ]
   deps = [
-    ":roq_test_certificates",
     ":roq_media_source",
-    "../../api/roq:roq_api",
-    "../../api:scoped_refptr",
+    ":roq_test_certificates",
     "../../api:call_api",
-    "../../api/audio:audio_frame_api",
+    "../../api:scoped_refptr",
+    "../../api:transport_api",
     "../../api/audio:audio_device",
-    "../../api/audio:create_audio_device_module",
+    "../../api/audio:audio_frame_api",
     "../../api/audio:audio_mixer_api",
+    "../../api/audio:create_audio_device_module",
     "../../api/audio_codecs:audio_codecs_api",
     "../../api/audio_codecs:builtin_audio_decoder_factory",
     "../../api/audio_codecs:builtin_audio_encoder_factory",
-    "../../api:transport_api",
     "../../api/environment",
     "../../api/environment:environment_factory",
+    "../../api/roq:roq_api",
+    "../../api/task_queue",
     "../../api/task_queue:pending_task_safety_flag",
-    "../../api/task_queue:task_queue",
     "../../api/test/video:function_video_factory",
-    "../../api/units:timestamp",
     "../../api/units:time_delta",
+    "../../api/units:timestamp",
     "../../api/video:builtin_video_bitrate_allocator_factory",
-    "../../api/video:video_bitrate_allocator_factory",
     "../../api/video:video_bitrate_allocation",
+    "../../api/video:video_bitrate_allocator_factory",
     "../../api/video:video_frame",
     "../../api/video:video_frame_type",
-    "../../api/video_codecs:video_codecs_api",
     "../../api/video_codecs:builtin_video_decoder_factory",
     "../../api/video_codecs:builtin_video_encoder_factory",
-    "../../audio:audio",
-    "../../call:call",
+    "../../api/video_codecs:video_codecs_api",
+    "../../audio",
+    "../../call",
     "../../call:call_interfaces",
     "../../call:video_receive_stream_api",
     "../../call:video_send_stream_api",
     "../../modules/audio_device:test_audio_device_module",
     "../../modules/audio_mixer:audio_mixer_impl",
+    "../../modules/roq:roq_core",
     "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../modules/video_coding:codec_globals_headers",
     "../../modules/video_coding:video_codec_interface",
     "../../modules/video_coding:webrtc_h264",
-    "../../modules/roq:roq_core",
-    "../../rtc_base:rtc_json",
     "../../rtc_base:copy_on_write_buffer",
-    "../../rtc_base/network:sent_packet",
+    "../../rtc_base:rtc_json",
     "../../rtc_base:task_queue_for_test",
     "../../rtc_base:threading",
+    "../../rtc_base/network:sent_packet",
     "../../test:encoder_settings",
     "../../test:test_renderer",
     "../../test:video_test_common",
     "../../video/config:encoder_config",
-    "//third_party/boringssl:boringssl",
+    "//third_party/boringssl",
     "//third_party/ffmpeg",
     "//third_party/jsoncpp",
   ]
@@ -119,8 +120,14 @@ if (rtc_include_tests) {
     deps = [ "../../modules/roq:roq_sdk_unittests" ]
   }
 
+  group("m3_unittests") {
+    testonly = true
+    deps = [ "../../modules/roq:m3_unittests" ]
+  }
+
   rtc_test("roq_unittests") {
     testonly = true
+
     # Match roq_test_peer's lld workaround above.
     ldflags = [ "-Wl,--read-workers=1" ]
     sources = [

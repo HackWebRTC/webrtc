@@ -96,6 +96,10 @@ class MockRtpTransportControllerSend
   MOCK_METHOD(void, OnNetworkAvailability, (bool), (override));
   MOCK_METHOD(NetworkLinkRtcpObserver*, GetRtcpObserver, (), (override));
   MOCK_METHOD(int64_t, GetPacerQueuingDelayMs, (), (const, override));
+  MOCK_METHOD(std::optional<PacerConfig>,
+              GetPacerConfig,
+              (),
+              (const, override));
   MOCK_METHOD(std::optional<Timestamp>,
               GetFirstPacketTime,
               (),

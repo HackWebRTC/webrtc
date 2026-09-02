@@ -5,18 +5,19 @@ import("../../webrtc.gni")
 rtc_source_set("roq_api") {
   visibility = [ "*" ]
   sources = [
-    "fixed_rate_network_controller.h",
-    "roq_session.h",
+    "quic_network_controller.h",
     "roq_media_session.h",
+    "roq_session.h",
     "roq_transport.h",
   ]
   deps = [
-    "../:transport_api",
-    "../:scoped_refptr",
-    "../audio:audio_frame_api",
-    "../audio:audio_device",
-    "../audio_codecs:audio_codecs_api",
     "..:call_api",
+    "../:scoped_refptr",
+    "../:transport_api",
+    "../../system_wrappers",
+    "../audio:audio_device",
+    "../audio:audio_frame_api",
+    "../audio_codecs:audio_codecs_api",
     "../environment",
     "../transport:network_control",
     "../units:data_rate",

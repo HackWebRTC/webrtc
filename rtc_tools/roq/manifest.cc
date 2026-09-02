@@ -105,7 +105,7 @@ bool LoadSessionManifest(const std::string& path,
 
   uint32_t schema_version = 0;
   if (!GetRequiredUInt(root, "schema_version", &schema_version) ||
-      schema_version != 2) {
+      schema_version != 3) {
     *error = "unsupported schema_version";
     return false;
   }
@@ -137,6 +137,9 @@ bool LoadSessionManifest(const std::string& path,
   uint32_t rtcp_flow_id = 0;
   std::string video_profile;
   uint32_t packetization_mode = 0;
+  uint32_t rtx_payload_type = 0;
+  uint32_t client_rtx_ssrc = 0;
+  uint32_t server_rtx_ssrc = 0;
   if (!ParseStream(root, "audio", "opus", &audio_payload_type, &audio_ssrc,
                    &server_audio_ssrc, &audio_flow_id) ||
       !ParseStream(root, "video", "H264", &video_payload_type, &video_ssrc,
@@ -154,6 +157,21 @@ bool LoadSessionManifest(const std::string& path,
                        &packetization_mode) ||
       packetization_mode != 1) {
     *error = "unsupported H264 contract";
+    return false;
+  }
+  const Json::Value& rtx = root["video"]["rtx"];
+  const Json::Value& rtx_senders = rtx["senders"];
+  if (!root["audio"]["inband_fec"].isBool() ||
+      !root["audio"]["inband_fec"].asBool() || !rtx.isObject() ||
+      !GetRequiredUInt(rtx, "payload_type", &rtx_payload_type) ||
+      rtx_payload_type == video_payload_type || rtx_payload_type > 127 ||
+      !rtx_senders.isObject() || !rtx_senders["client"].isObject() ||
+      !rtx_senders["server"].isObject() ||
+      !GetRequiredUInt(rtx_senders["client"], "ssrc", &client_rtx_ssrc) ||
+      !GetRequiredUInt(rtx_senders["server"], "ssrc", &server_rtx_ssrc) ||
+      client_rtx_ssrc == server_rtx_ssrc || client_rtx_ssrc == video_ssrc ||
+      server_rtx_ssrc == server_video_ssrc) {
+    *error = "invalid recovery contract";
     return false;
   }
   if (audio_flow_id == video_flow_id || audio_flow_id == rtcp_flow_id ||
@@ -175,6 +193,10 @@ bool LoadSessionManifest(const std::string& path,
                      .flow_id = video_flow_id,
                      .client_ssrc = video_ssrc,
                      .server_ssrc = server_video_ssrc};
+  manifest->video_rtx = {.payload_type = rtx_payload_type,
+                         .client_ssrc = client_rtx_ssrc,
+                         .server_ssrc = server_rtx_ssrc};
+  manifest->opus_inband_fec = true;
   manifest->rtcp_flow_id = rtcp_flow_id;
   return true;
 }
@@ -208,6 +230,15 @@ ManifestMappingResult LoadAndMapManifest(const std::string& path,
     if (packet.payload_type != manifest.video.payload_type ||
         packet.ssrc != result.sender_ssrc) {
       result.error = "video RTP metadata does not match manifest";
+      return result;
+    }
+    result.flow_id = manifest.video.flow_id;
+  } else if (packet.kind == "video-rtx") {
+    result.sender_ssrc = is_client ? manifest.video_rtx.client_ssrc
+                                   : manifest.video_rtx.server_ssrc;
+    if (packet.payload_type != manifest.video_rtx.payload_type ||
+        packet.ssrc != result.sender_ssrc) {
+      result.error = "video RTX metadata does not match manifest";
       return result;
     }
     result.flow_id = manifest.video.flow_id;

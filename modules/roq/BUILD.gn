@@ -1,7 +1,7 @@
 # Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
 
-import("../../webrtc.gni")
 import("../../roq.gni")
+import("../../webrtc.gni")
 
 assert(roq_repo_root != "",
        "roq_repo_root must point to the parent artc checkout")
@@ -11,31 +11,37 @@ rtc_library("roq_core") {
   sources = [
     "bounded_datagram_queue.cc",
     "bounded_datagram_queue.h",
-    "fixed_rate_network_controller.cc",
-    "roq_session.cc",
+    "quic_bandwidth_policy.cc",
+    "quic_bandwidth_policy.h",
+    "quic_network_controller.cc",
     "roq_media_session.cc",
-    "rtp_packet_metadata.cc",
-    "rtp_packet_metadata.h",
+    "roq_session.cc",
     "roq_transport.cc",
     "roq_wire.cc",
     "roq_wire.h",
+    "rtp_packet_metadata.cc",
+    "rtp_packet_metadata.h",
   ]
   include_dirs = [ "$roq_repo_root/quiche/quiche/include" ]
   deps = [
-    "../../api/roq:roq_api",
     "../../api:call_api",
     "../../api:scoped_refptr",
     "../../api/audio:audio_frame_api",
     "../../api/audio:audio_mixer_api",
     "../../api/audio_codecs:audio_codecs_api",
     "../../api/environment",
+    "../../api/roq:roq_api",
     "../../api/task_queue:pending_task_safety_flag",
+    "../../api/transport:network_control",
+    "../../api/units:data_rate",
+    "../../api/units:time_delta",
+    "../../api/units:timestamp",
     "../../api/video:builtin_video_bitrate_allocator_factory",
     "../../api/video:video_bitrate_allocator_factory",
     "../../api/video:video_frame",
     "../../api/video_codecs:video_codecs_api",
-    "../../audio:audio",
-    "../../call:call",
+    "../../audio",
+    "../../call",
     "../../call:call_interfaces",
     "../../call:rtp_interfaces",
     "../../call:video_receive_stream_api",
@@ -44,40 +50,44 @@ rtc_library("roq_core") {
     "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../modules/video_coding:codec_globals_headers",
     "../../rtc_base:copy_on_write_buffer",
+    "../../rtc_base:logging",
     "../../rtc_base:network_route",
+    "../../rtc_base:threading",
     "../../rtc_base/network:sent_packet",
     "../../rtc_base/synchronization:mutex",
-    "../../rtc_base:threading",
     "../../video/config:encoder_config",
-    "../../api/transport:network_control",
-    "../../api/units:data_rate",
-    "../../api/units:time_delta",
-    "../../api/units:timestamp",
-    "../../rtc_base:logging",
-    "//third_party/boringssl:boringssl",
+    "//third_party/boringssl",
   ]
   libs = [ "$roq_repo_root/out/quiche/release/libquiche.a" ]
 }
 
 if (rtc_include_tests) {
+  group("m3_unittests") {
+    testonly = true
+    deps = [ "//modules/roq:roq_sdk_unittests" ]
+  }
+
   rtc_test("roq_sdk_unittests") {
     testonly = true
     sources = [
       "bounded_datagram_queue_unittest.cc",
-      "fixed_rate_network_controller_unittest.cc",
+      "quic_bandwidth_policy_unittest.cc",
+      "quic_network_controller_unittest.cc",
+      "roq_transport_unittest.cc",
       "rtp_packet_metadata_unittest.cc",
     ]
     deps = [
       ":roq_core",
-      "../../api/roq:roq_api",
       "../../api/environment",
       "../../api/environment:environment_factory",
+      "../../api/roq:roq_api",
       "../../api/transport:network_control",
       "../../api/units:data_rate",
       "../../api/units:time_delta",
       "../../api/units:timestamp",
-      "../../test:test_support",
+      "../../system_wrappers",
       "../../test:create_test_environment",
+      "../../test:test_support",
       "//testing/gtest",
     ]
   }

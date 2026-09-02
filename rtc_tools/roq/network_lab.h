@@ -35,6 +35,7 @@ UdpSelfTestResult RunUdpRelaySelfTest(size_t packet_count,
 UdpSelfTestResult RunUdpRelay(const std::string& listen_address,
                               const std::string& forward_address,
                               double duration_seconds,
+                              const std::string& profile,
                               const std::string& run_id,
                               const std::string& event_log_path);
 
