@@ -1,0 +1,5 @@
+# Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+
+declare_args() {
+  roq_repo_root = ""
+}

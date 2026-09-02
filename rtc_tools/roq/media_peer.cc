@@ -1,0 +1,847 @@
+/*
+ *  Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+ */
+
+#include "rtc_tools/roq/media_peer.h"
+
+#include <atomic>
+#include <chrono>
+#include <csignal>
+#include <cstddef>
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <memory>
+#include <mutex>
+#include <span>
+#include <string>
+#include <thread>
+#include <utility>
+
+#include "api/audio/audio_device.h"
+#include "api/audio/create_audio_device_module.h"
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/call/audio_sink.h"
+#include "api/environment/environment.h"
+#include "api/environment/environment_factory.h"
+#include "api/roq/roq_media_session.h"
+#include "api/roq/roq_session.h"
+#include "api/roq/roq_transport.h"
+#include "api/scoped_refptr.h"
+#include "api/units/time_delta.h"
+#include "api/video/i420_buffer.h"
+#include "api/video/video_frame.h"
+#include "api/video/video_sink_interface.h"
+#include "api/video_codecs/builtin_video_decoder_factory.h"
+#include "api/video_codecs/builtin_video_encoder_factory.h"
+#include "modules/audio_device/include/test_audio_device.h"
+#include "modules/roq/rtp_packet_metadata.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
+#include "rtc_tools/roq/manifest.h"
+#include "rtc_tools/roq/media_source.h"
+#include "test/video_renderer.h"
+
+namespace webrtc::roq {
+namespace {
+
+std::atomic<bool> g_stop_requested = false;
+
+void RequestStop(int) {
+  g_stop_requested.store(true);
+}
+
+class CountingVideoSink final : public VideoSinkInterface<VideoFrame> {
+ public:
+  void OnFrame(const VideoFrame& frame) override {
+    uint32_t unset = 0;
+    first_timestamp_.compare_exchange_strong(unset, frame.rtp_timestamp());
+    last_timestamp_.store(frame.rtp_timestamp());
+    ++frames_;
+  }
+  size_t frames() const { return frames_.load(); }
+  uint32_t last_timestamp() const { return last_timestamp_.load(); }
+  uint32_t timestamp_span() const {
+    return last_timestamp_.load() - first_timestamp_.load();
+  }
+
+ private:
+  std::atomic<size_t> frames_ = 0;
+  std::atomic<uint32_t> last_timestamp_ = 0;
+  std::atomic<uint32_t> first_timestamp_ = 0;
+};
+
+class FanoutVideoSink final : public VideoSinkInterface<VideoFrame> {
+ public:
+  FanoutVideoSink(VideoSinkInterface<VideoFrame>* first,
+                  VideoSinkInterface<VideoFrame>* second)
+      : first_(first), second_(second) {}
+  void OnFrame(const VideoFrame& frame) override {
+    first_->OnFrame(frame);
+    second_->OnFrame(frame);
+  }
+
+ private:
+  VideoSinkInterface<VideoFrame>* const first_;
+  VideoSinkInterface<VideoFrame>* const second_;
+};
+
+class CountingAudioRenderer final : public TestAudioDeviceModule::Renderer {
+ public:
+  int SamplingFrequency() const override { return 48000; }
+  int NumChannels() const override { return 2; }
+  bool Render(std::span<const int16_t> data) override {
+    samples_.fetch_add(data.size() / 2);
+    return true;
+  }
+  size_t samples() const { return samples_.load(); }
+
+ private:
+  std::atomic<size_t> samples_ = 0;
+};
+
+class CountingAudioSink final : public AudioSinkInterface {
+ public:
+  void OnData(const Data& audio) override {
+    samples_.fetch_add(audio.samples_per_channel);
+    uint32_t unset = 0;
+    first_timestamp_.compare_exchange_strong(unset, audio.timestamp);
+    last_timestamp_.store(audio.timestamp);
+  }
+  size_t samples() const { return samples_.load(); }
+  uint32_t last_timestamp() const { return last_timestamp_.load(); }
+  uint32_t timestamp_span() const {
+    return last_timestamp_.load() - first_timestamp_.load();
+  }
+
+ private:
+  std::atomic<size_t> samples_ = 0;
+  std::atomic<uint32_t> last_timestamp_ = 0;
+  std::atomic<uint32_t> first_timestamp_ = 0;
+};
+
+class MediaEventLog {
+ public:
+  MediaEventLog(const std::string& path, std::string run_id, PeerRole role)
+      : output_(path),
+        run_id_(std::move(run_id)),
+        process_(role == PeerRole::kClient ? "client" : "server") {}
+
+  bool ok() const { return output_.good(); }
+
+  void Write(const char* event, const char* kind, uint64_t value = 0) {
+    const auto monotonic_us =
+        std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now().time_since_epoch())
+            .count();
+    const auto utc_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            std::chrono::system_clock::now().time_since_epoch())
+                            .count();
+    std::lock_guard lock(mutex_);
+    output_ << "{\"schema_version\":1,\"run_id\":\"" << run_id_
+            << "\",\"process\":\"" << process_ << "\",\"event\":\"" << event
+            << "\",\"kind\":\"" << kind << "\",\"sequence\":" << sequence_++
+            << ",\"value\":" << value << ",\"monotonic_us\":" << monotonic_us
+            << ",\"utc_ms\":" << utc_ms << "}\n";
+  }
+
+ private:
+  std::ofstream output_;
+  std::string run_id_;
+  std::string process_;
+  std::mutex mutex_;
+  uint64_t sequence_ = 0;
+};
+
+struct MediaState {
+  std::mutex mutex;
+  RoqSession* network = nullptr;
+  RoqMediaSession* send = nullptr;
+  RoqMediaSession* receive = nullptr;
+  const SessionManifest* manifest = nullptr;
+  bool reflect = false;
+  MediaEventLog* event_log = nullptr;
+  bool drop_first_idr = false;
+  bool first_idr_dropped = false;
+  uint32_t buffered_video_timestamp = 0;
+  bool has_buffered_video = false;
+  std::vector<std::vector<uint8_t>> buffered_video_packets;
+  bool buffered_video_is_idr = false;
+  bool buffered_video_has_sps = false;
+  bool buffered_video_has_pps = false;
+  std::chrono::steady_clock::time_point idr_drop_time;
+  std::atomic<size_t> reflected_audio = 0;
+  std::atomic<size_t> reflected_video = 0;
+  std::atomic<size_t> received_rtcp = 0;
+  std::atomic<size_t> idr_access_units = 0;
+  std::atomic<size_t> dropped_idr_access_units = 0;
+  std::atomic<size_t> recovery_idr_access_units = 0;
+  std::atomic<size_t> pli_packets = 0;
+  std::atomic<size_t> fir_packets = 0;
+  std::atomic<size_t> sender_reports = 0;
+  std::atomic<size_t> receiver_reports = 0;
+  std::atomic<int64_t> idr_recovery_ms = -1;
+  std::atomic<bool> video_origin_set = false;
+  std::atomic<bool> audio_origin_set = false;
+  std::atomic<bool> audio_last_set = false;
+  std::atomic<uint32_t> video_timestamp_origin = 0;
+  std::atomic<uint32_t> audio_timestamp_origin = 0;
+  std::atomic<uint32_t> audio_last_timestamp = 0;
+  std::atomic<size_t> sent_video_rtp_packets = 0;
+  std::atomic<size_t> sent_video_rtp_bytes = 0;
+  std::atomic<size_t> sent_audio_rtp_bytes = 0;
+};
+
+uint32_t RtpTimestamp(std::span<const uint8_t> packet) {
+  if (packet.size() < 8)
+    return 0;
+  return (static_cast<uint32_t>(packet[4]) << 24) |
+         (static_cast<uint32_t>(packet[5]) << 16) |
+         (static_cast<uint32_t>(packet[6]) << 8) | packet[7];
+}
+
+void RecordTimestampOrigin(std::atomic<bool>* is_set,
+                           std::atomic<uint32_t>* timestamp,
+                           std::span<const uint8_t> packet) {
+  bool expected = false;
+  if (is_set->compare_exchange_strong(expected, true))
+    timestamp->store(RtpTimestamp(packet));
+}
+
+void CountFeedback(std::span<const uint8_t> packet, MediaState* state) {
+  while (!packet.empty()) {
+    rtcp::CommonHeader header;
+    if (!header.Parse(packet.data(), packet.size()))
+      return;
+    if (header.type() == 206 && header.fmt() == 1)
+      ++state->pli_packets;
+    if (header.type() == 206 && header.fmt() == 4)
+      ++state->fir_packets;
+    if (header.type() == 200)
+      ++state->sender_reports;
+    if (header.type() == 201)
+      ++state->receiver_reports;
+    if (header.packet_size() > packet.size())
+      return;
+    packet = packet.subspan(header.packet_size());
+  }
+}
+
+struct RtcpRouting {
+  bool to_sender = false;
+  bool to_receiver = false;
+};
+
+RtcpRouting ClassifyRtcp(std::span<const uint8_t> packet) {
+  RtcpRouting routing;
+  while (!packet.empty()) {
+    rtcp::CommonHeader header;
+    if (!header.Parse(packet.data(), packet.size()))
+      break;
+    if (header.type() == 200)
+      routing.to_receiver = true;
+    if (header.type() == 201 || header.type() == 205 || header.type() == 206)
+      routing.to_sender = true;
+    if (header.packet_size() > packet.size())
+      break;
+    packet = packet.subspan(header.packet_size());
+  }
+  return routing;
+}
+
+void FlushReflectedVideo(MediaState* state) {
+  if (!state->network || state->buffered_video_packets.empty())
+    return;
+  if (state->buffered_video_is_idr) {
+    ++state->idr_access_units;
+    if (!state->first_idr_dropped && state->drop_first_idr) {
+      state->first_idr_dropped = true;
+      state->idr_drop_time = std::chrono::steady_clock::now();
+      ++state->dropped_idr_access_units;
+      state->buffered_video_packets.clear();
+      state->buffered_video_is_idr = false;
+      state->buffered_video_has_sps = false;
+      state->buffered_video_has_pps = false;
+      state->has_buffered_video = false;
+      return;
+    }
+    if (state->first_idr_dropped && state->buffered_video_has_sps &&
+        state->buffered_video_has_pps) {
+      ++state->recovery_idr_access_units;
+      int64_t unset = -1;
+      state->idr_recovery_ms.compare_exchange_strong(
+          unset, std::chrono::duration_cast<std::chrono::milliseconds>(
+                     std::chrono::steady_clock::now() - state->idr_drop_time)
+                     .count());
+    }
+  }
+  for (const std::vector<uint8_t>& packet : state->buffered_video_packets) {
+    if (state->network->Send(state->manifest->video.flow_id, packet) ==
+        RoqSendResult::kQueued) {
+      ++state->reflected_video;
+    }
+  }
+  state->buffered_video_packets.clear();
+  state->buffered_video_is_idr = false;
+  state->buffered_video_has_sps = false;
+  state->buffered_video_has_pps = false;
+  state->has_buffered_video = false;
+}
+
+scoped_refptr<AudioDeviceModule> CreateTestAudioDevice(
+    const Environment& env,
+    std::unique_ptr<TestAudioDeviceModule::Renderer> renderer) {
+  scoped_refptr<AudioDeviceModule> device =
+      TestAudioDeviceModule::Create(env, nullptr, std::move(renderer));
+  if (device && device->Init() != 0)
+    return nullptr;
+  return device;
+}
+
+scoped_refptr<AudioDeviceModule> CreatePlaybackAudioDevice(
+    const Environment& env,
+    std::string* error) {
+  scoped_refptr<AudioDeviceModule> device =
+      CreateAudioDeviceModule(env, AudioDeviceModule::kPlatformDefaultAudio);
+  if (!device || device->Init() != 0 || device->SetPlayoutDevice(0) != 0 ||
+      device->InitSpeaker() != 0) {
+    *error = "failed to initialize macOS audio playout device";
+    return nullptr;
+  }
+  bool stereo = false;
+  if (device->StereoPlayoutIsAvailable(&stereo) != 0 ||
+      device->SetStereoPlayout(stereo) != 0) {
+    *error = "failed to configure macOS audio playout";
+    return nullptr;
+  }
+  return device;
+}
+
+void RoutePacket(MediaState* state, RoqReceivedPacket received) {
+  RoqMediaSession* send = nullptr;
+  RoqMediaSession* receive = nullptr;
+  RoqSession* network = nullptr;
+  const SessionManifest* manifest = nullptr;
+  bool reflect = false;
+  {
+    std::lock_guard lock(state->mutex);
+    send = state->send;
+    receive = state->receive;
+    network = state->network;
+    manifest = state->manifest;
+    reflect = state->reflect;
+  }
+  if (!manifest)
+    return;
+  if (received.flow_id == manifest->audio.flow_id) {
+    if (received.packet.size() < 2 ||
+        (received.packet[1] & 0x7f) != manifest->audio.payload_type)
+      return;
+    RecordTimestampOrigin(&state->audio_origin_set,
+                          &state->audio_timestamp_origin, received.packet);
+    state->audio_last_timestamp.store(RtpTimestamp(received.packet));
+    state->audio_last_set.store(true);
+    if (state->event_log)
+      state->event_log->Write("datagram_received", "audio");
+    if (receive)
+      receive->DeliverRtp(true, received.packet);
+    if (reflect && network &&
+        network->Send(received.flow_id, received.packet) ==
+            RoqSendResult::kQueued)
+      ++state->reflected_audio;
+  } else if (received.flow_id == manifest->video.flow_id) {
+    if (received.packet.size() < 2 ||
+        (received.packet[1] & 0x7f) != manifest->video.payload_type)
+      return;
+    RecordTimestampOrigin(&state->video_origin_set,
+                          &state->video_timestamp_origin, received.packet);
+    if (state->event_log)
+      state->event_log->Write("datagram_received", "video");
+    if (receive)
+      receive->DeliverRtp(false, received.packet);
+    if (reflect && network) {
+      if (!state->drop_first_idr) {
+        if (network->Send(received.flow_id, received.packet) ==
+            RoqSendResult::kQueued)
+          ++state->reflected_video;
+      } else {
+        RtpPacketMetadata metadata;
+        if (!ParseH264RtpPacketMetadata(received.packet, &metadata))
+          return;
+        if (state->has_buffered_video &&
+            state->buffered_video_timestamp != metadata.timestamp) {
+          FlushReflectedVideo(state);
+        }
+        state->has_buffered_video = true;
+        state->buffered_video_timestamp = metadata.timestamp;
+        state->buffered_video_is_idr |= metadata.contains_idr;
+        state->buffered_video_has_sps |= metadata.contains_sps;
+        state->buffered_video_has_pps |= metadata.contains_pps;
+        state->buffered_video_packets.push_back(std::move(received.packet));
+        if (metadata.marker)
+          FlushReflectedVideo(state);
+      }
+    }
+  } else if (received.flow_id == manifest->rtcp_flow_id) {
+    if (state->event_log)
+      state->event_log->Write("datagram_received", "rtcp");
+    ++state->received_rtcp;
+    CountFeedback(received.packet, state);
+    const RtcpRouting routing = ClassifyRtcp(received.packet);
+    if (send && routing.to_sender)
+      send->DeliverRtcp(received.packet);
+    if (receive && routing.to_receiver)
+      receive->DeliverRtcp(received.packet);
+    if (reflect && network)
+      network->Send(received.flow_id, received.packet);
+  }
+}
+
+RoqMediaSessionConfig BaseMediaConfig(
+    const MediaPeerOptions& options,
+    const SessionManifest& manifest,
+    scoped_refptr<AudioDeviceModule> audio_device,
+    AudioSinkInterface* audio_sink,
+    VideoSinkInterface<VideoFrame>* video_sink,
+    Transport* audio_transport,
+    Transport* video_transport,
+    VideoEncoderFactory* video_encoder_factory,
+    VideoDecoderFactory* video_decoder_factory) {
+  return {
+      .local_audio_ssrc = manifest.audio.client_ssrc,
+      .local_video_ssrc = manifest.video.client_ssrc,
+      .remote_audio_ssrc = manifest.audio.client_ssrc,
+      .remote_video_ssrc = manifest.video.client_ssrc,
+      .audio_payload_type = static_cast<int>(manifest.audio.payload_type),
+      .video_payload_type = static_cast<int>(manifest.video.payload_type),
+      .audio_bitrate_bps = options.audio_bitrate_bps,
+      .video_bitrate_bps = options.video_bitrate_bps,
+      .max_rtp_packet_size = 1460,
+      .audio_transport = audio_transport,
+      .video_transport = video_transport,
+      .audio_device_module = std::move(audio_device),
+      .audio_encoder_factory = CreateBuiltinAudioEncoderFactory(),
+      .audio_decoder_factory = CreateBuiltinAudioDecoderFactory(),
+      .video_encoder_factory = video_encoder_factory,
+      .video_decoder_factory = video_decoder_factory,
+      .audio_sink = audio_sink,
+      .video_sink = video_sink,
+  };
+}
+
+}  // namespace
+
+MediaPeerResult RunMediaPeer(const MediaPeerOptions& options) {
+  MediaPeerResult result;
+  g_stop_requested.store(false);
+  std::signal(SIGINT, RequestStop);
+  std::signal(SIGTERM, RequestStop);
+  SessionManifest manifest;
+  if (!LoadSessionManifest(options.manifest_path, &manifest, &result.error))
+    return result;
+  MediaEventLog event_log(options.event_log_path, options.run_id, options.role);
+  if (!event_log.ok()) {
+    result.error = "failed to open media peer event log";
+    return result;
+  }
+  const Environment env = CreateEnvironment();
+  CountingVideoSink counting_video_sink;
+  std::unique_ptr<test::VideoRenderer> platform_video_sink;
+  std::unique_ptr<FanoutVideoSink> fanout_video_sink;
+  VideoSinkInterface<VideoFrame>* video_sink = &counting_video_sink;
+  if (options.role == PeerRole::kClient && !options.no_render) {
+    platform_video_sink.reset(test::VideoRenderer::CreatePlatformRenderer(
+        "RoQ media loopback", 960, 540));
+    if (!platform_video_sink) {
+      result.error = "failed to initialize Cocoa video renderer";
+      return result;
+    }
+    fanout_video_sink = std::make_unique<FanoutVideoSink>(
+        &counting_video_sink, platform_video_sink.get());
+    video_sink = fanout_video_sink.get();
+  }
+  CountingAudioSink audio_sink;
+  auto audio_renderer = std::make_unique<CountingAudioRenderer>();
+  scoped_refptr<AudioDeviceModule> audio_device =
+      options.role == PeerRole::kClient && !options.no_render &&
+              options.scenario == "media-loopback"
+          ? CreatePlaybackAudioDevice(env, &result.error)
+          : CreateTestAudioDevice(env, std::move(audio_renderer));
+  if (!audio_device) {
+    result.error = "failed to initialize test audio device";
+    return result;
+  }
+
+  std::unique_ptr<VideoEncoderFactory> video_encoder_factory =
+      CreateBuiltinVideoEncoderFactory();
+  std::unique_ptr<VideoDecoderFactory> video_decoder_factory =
+      CreateBuiltinVideoDecoderFactory();
+  MediaState state;
+  state.manifest = &manifest;
+  state.event_log = &event_log;
+  state.reflect =
+      options.role == PeerRole::kServer && options.scenario == "media-loopback";
+  state.drop_first_idr = options.drop_first_idr;
+  const std::filesystem::path executable =
+      std::filesystem::absolute(options.executable_path);
+  std::vector<uint64_t> allowed_flow_ids = {
+      manifest.audio.flow_id, manifest.video.flow_id, manifest.rtcp_flow_id};
+  if (options.probe_datagram_boundary)
+    allowed_flow_ids.push_back(63);
+  RoqSessionConfig network_config = {
+      .role = options.role == PeerRole::kClient ? RoqRole::kClient
+                                                : RoqRole::kServer,
+      .address = options.address,
+      .alpn = manifest.alpn,
+      .certificate_path = (executable.parent_path() / "cert.crt").string(),
+      .private_key_path = (executable.parent_path() / "cert.key").string(),
+      .verify_peer = false,
+      .allowed_flow_ids = std::move(allowed_flow_ids),
+  };
+  std::unique_ptr<RoqSession> network = RoqSession::Create(
+      std::move(network_config),
+      [&state](RoqReceivedPacket packet) {
+        RoutePacket(&state, std::move(packet));
+      },
+      [&state](size_t packet_size) {
+        RoqMediaSession* send = nullptr;
+        {
+          std::lock_guard lock(state.mutex);
+          send = state.send;
+        }
+        if (send)
+          send->UpdateMaxRtpPacketSize(packet_size);
+      });
+  {
+    std::lock_guard lock(state.mutex);
+    state.network = network.get();
+  }
+  if (!network->Start(&result.error) ||
+      !network->WaitUntilReady(TimeDelta::Seconds(3))) {
+    if (result.error.empty())
+      result.error = network->error();
+    return result;
+  }
+  auto record_outgoing = [&state, &manifest](
+                             uint64_t flow_id, std::span<const uint8_t> packet,
+                             const PacketOptions& packet_options) {
+    if (packet.size() < 2)
+      return;
+    const uint8_t payload_type = packet[1] & 0x7f;
+    bool media_rtp = false;
+    if (flow_id == manifest.audio.flow_id &&
+        payload_type == manifest.audio.payload_type) {
+      media_rtp = true;
+      RecordTimestampOrigin(&state.audio_origin_set,
+                            &state.audio_timestamp_origin, packet);
+      state.sent_audio_rtp_bytes.fetch_add(packet.size());
+    } else if (flow_id == manifest.video.flow_id &&
+               payload_type == manifest.video.payload_type) {
+      media_rtp = true;
+      RecordTimestampOrigin(&state.video_origin_set,
+                            &state.video_timestamp_origin, packet);
+      ++state.sent_video_rtp_packets;
+      state.sent_video_rtp_bytes.fetch_add(packet.size());
+    }
+    RoqMediaSession* send_session = nullptr;
+    {
+      std::lock_guard lock(state.mutex);
+      send_session = state.send;
+    }
+    if (send_session && media_rtp)
+      send_session->NotifyPacketAccepted(packet_options, packet.size());
+  };
+  RoqPacketTransport audio_transport(network.get(), manifest.audio.flow_id,
+                                     manifest.rtcp_flow_id, record_outgoing);
+  RoqPacketTransport video_transport(network.get(), manifest.video.flow_id,
+                                     manifest.rtcp_flow_id, record_outgoing);
+  std::unique_ptr<RoqMediaSession> receive;
+  if (options.role == PeerRole::kServer ||
+      options.scenario == "media-loopback") {
+    RoqMediaSessionConfig receive_config = BaseMediaConfig(
+        options, manifest, audio_device, &audio_sink, video_sink,
+        &audio_transport, &video_transport, video_encoder_factory.get(),
+        video_decoder_factory.get());
+    receive_config.receive_audio = true;
+    receive_config.receive_video = true;
+    receive_config.keyframe_request_method =
+        options.keyframe_request == "fir" ? RoqKeyFrameRequestMethod::kFir
+                                          : RoqKeyFrameRequestMethod::kPli;
+    receive =
+        RoqMediaSession::Create(std::move(receive_config), env, &result.error);
+    if (!receive || !receive->Start(&result.error))
+      return result;
+    {
+      std::lock_guard lock(state.mutex);
+      state.receive = receive.get();
+    }
+  }
+  if (options.role == PeerRole::kServer) {
+    std::cout << "{\"schema_version\":1,\"event\":\"ready\"}\n" << std::flush;
+  }
+
+  std::unique_ptr<RoqMediaSession> send;
+  scoped_refptr<AudioDeviceModule> send_audio_device;
+  std::atomic<bool> reporter_stop = false;
+  std::atomic<bool> media_complete = false;
+  std::atomic<size_t> loop_counter = 0;
+  std::thread reporter;
+  std::chrono::steady_clock::time_point media_run_start;
+  if (options.role == PeerRole::kClient) {
+    send_audio_device = CreateTestAudioDevice(env, nullptr);
+    RoqMediaSessionConfig send_config = BaseMediaConfig(
+        options, manifest, send_audio_device, nullptr, nullptr,
+        &audio_transport, &video_transport, video_encoder_factory.get(),
+        video_decoder_factory.get());
+    send_config.send_audio = true;
+    send_config.send_video = true;
+    send = RoqMediaSession::Create(std::move(send_config), env, &result.error);
+    if (!send || !send->Start(&result.error))
+      return result;
+    {
+      std::lock_guard lock(state.mutex);
+      state.send = send.get();
+    }
+  }
+
+  bool established = false;
+  if (options.role == PeerRole::kServer) {
+    while (!g_stop_requested.load() && network->error().empty()) {
+      if (network->WaitUntilEstablished(TimeDelta::Millis(100))) {
+        established = true;
+        break;
+      }
+    }
+  } else {
+    established = network->WaitUntilEstablished(TimeDelta::Seconds(10));
+  }
+  if (!established) {
+    const RoqSessionStats failed = network->stats();
+    result.error =
+        network->error().empty()
+            ? "QUIC handshake timed out: sent_udp=" +
+                  std::to_string(failed.sent_udp_packets) +
+                  " received_udp=" + std::to_string(failed.received_udp_packets)
+            : network->error();
+    return result;
+  }
+  event_log.Write("session_established", "quic");
+  const size_t negotiated_datagram_payload =
+      network->stats().max_datagram_payload;
+  if (send && negotiated_datagram_payload > 1) {
+    send->UpdateMaxRtpPacketSize(negotiated_datagram_payload - 1);
+  }
+  if (options.role == PeerRole::kClient && options.probe_datagram_boundary &&
+      negotiated_datagram_payload > 13) {
+    std::vector<uint8_t> boundary_packet(negotiated_datagram_payload - 1, 0);
+    boundary_packet[0] = 0x80;
+    boundary_packet[1] = 127;
+    boundary_packet[8] = 0x01;
+    boundary_packet[9] = 0x53;
+    boundary_packet[10] = 0x15;
+    boundary_packet[11] = 0x8e;
+    result.boundary_packet_accepted =
+        network->Send(63, boundary_packet) == RoqSendResult::kQueued;
+    boundary_packet.push_back(0);
+    result.oversize_packet_rejected =
+        network->Send(63, boundary_packet) == RoqSendResult::kOversize;
+    event_log.Write("datagram_boundary_probe", "accepted",
+                    result.boundary_packet_accepted);
+    event_log.Write("datagram_boundary_probe", "oversize_rejected",
+                    result.oversize_packet_rejected);
+  }
+
+  if (options.role == PeerRole::kClient) {
+    media_run_start = std::chrono::steady_clock::now();
+    if (!options.no_render) {
+      reporter = std::thread([&] {
+        while (!reporter_stop.load()) {
+          std::this_thread::sleep_for(std::chrono::seconds(1));
+          if (reporter_stop.load())
+            break;
+          const RoqMediaSessionStats sent_stats = send->stats();
+          const RoqMediaSessionStats received_stats =
+              receive ? receive->stats() : RoqMediaSessionStats{};
+          const RoqSessionStats transport_stats = network->stats();
+          std::cerr << "roq loop=" << loop_counter.load()
+                    << " encoded_video=" << sent_stats.video_frames_encoded
+                    << " decoded_video=" << received_stats.decoded_video_frames
+                    << " audio_samples="
+                    << received_stats.received_audio_samples
+                    << " rtt_ms=" << transport_stats.rtt_ns / 1000000.0
+                    << " drops="
+                    << transport_stats.queue_full_drops +
+                           transport_stats.oversize_drops
+                    << '\n';
+        }
+      });
+    }
+    std::thread keyframe_requester;
+    if (receive && options.request_keyframe_after_ms > 0) {
+      keyframe_requester = std::thread([&] {
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(options.request_keyframe_after_ms));
+        do {
+          if (media_complete.load())
+            break;
+          receive->RequestReceiverKeyFrame();
+          event_log.Write("keyframe_requested",
+                          options.keyframe_request.c_str());
+          if (options.request_keyframe_interval_ms <= 0)
+            break;
+          std::this_thread::sleep_for(
+              std::chrono::milliseconds(options.request_keyframe_interval_ms));
+        } while (!media_complete.load());
+      });
+    }
+    std::thread mtu_shrinker;
+    if (options.shrink_datagram_after_ms > 0 &&
+        options.shrink_datagram_to > 1) {
+      mtu_shrinker = std::thread([&] {
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(options.shrink_datagram_after_ms));
+        network->SetApplicationDatagramPayloadLimit(options.shrink_datagram_to);
+        event_log.Write("datagram_limit_changed", "pmtu",
+                        options.shrink_datagram_to);
+      });
+    }
+    MediaSourceCallbacks callbacks;
+    callbacks.on_loop_started = [&](size_t) {
+      ++result.loops_started;
+      loop_counter.store(result.loops_started);
+      event_log.Write("loop_started", "media", result.loops_started);
+      send->GenerateSenderKeyFrame();
+    };
+    callbacks.on_video_frame = [&](const MediaVideoFrame& frame) {
+      send->SendVideoFrame(
+          I420Buffer::Copy(frame.width, frame.height, frame.data_y,
+                           frame.stride_y, frame.data_u, frame.stride_u,
+                           frame.data_v, frame.stride_v),
+          frame.pts_us);
+      ++result.sent_video_frames;
+    };
+    callbacks.on_audio_block = [&](std::span<const int16_t> samples,
+                                   int64_t pts_us) {
+      send->SendAudioBlock(samples, static_cast<uint32_t>(pts_us * 48 / 1000));
+    };
+    callbacks.should_stop = [&] {
+      return g_stop_requested.load() || !network->error().empty() ||
+             network->stats().clean_shutdown;
+    };
+    const MediaSourceResult source = StreamMediaSource(
+        options.input_path, options.duration_seconds,
+        /*loop_at_eof=*/true, MediaClockMode::kRealtime, callbacks,
+        options.run_id, options.event_log_path + ".source");
+    const double media_elapsed_seconds =
+        std::max(0.001, std::chrono::duration<double>(
+                            std::chrono::steady_clock::now() - media_run_start)
+                            .count());
+    media_complete.store(true);
+    if (keyframe_requester.joinable())
+      keyframe_requester.join();
+    if (mtu_shrinker.joinable())
+      mtu_shrinker.join();
+    if (!source.error.empty()) {
+      reporter_stop.store(true);
+      if (reporter.joinable())
+        reporter.join();
+      result.error = source.error;
+      return result;
+    }
+    const RoqMediaSessionStats active_send_stats = send->stats();
+    const auto drain_deadline =
+        std::chrono::steady_clock::now() + std::chrono::seconds(2);
+    while (std::chrono::steady_clock::now() < drain_deadline)
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    const RoqMediaSessionStats send_stats = send->stats();
+    result.sent_audio_packets = send_stats.sent_audio_packets;
+    result.audio_target_bitrate_bps = send_stats.audio_target_bitrate_bps;
+    result.video_target_bitrate_bps = send_stats.video_target_bitrate_bps;
+    result.video_media_bitrate_bps = send_stats.video_media_bitrate_bps;
+    result.video_frames_encoded = send_stats.video_frames_encoded;
+    result.video_frames_dropped = send_stats.video_frames_dropped;
+    result.sent_video_rtp_packets = state.sent_video_rtp_packets.load();
+    result.sent_video_rtp_bytes = state.sent_video_rtp_bytes.load();
+    result.sent_audio_rtp_bytes = state.sent_audio_rtp_bytes.load();
+    result.video_media_bitrate_bps =
+        std::max({result.video_media_bitrate_bps,
+                  active_send_stats.video_media_bitrate_bps,
+                  static_cast<int>(result.sent_video_rtp_bytes * 8 /
+                                   media_elapsed_seconds)});
+    reporter_stop.store(true);
+    if (reporter.joinable())
+      reporter.join();
+    network->Close();
+  }
+  while (!network->WaitUntilClosed(TimeDelta::Millis(100))) {
+    if (g_stop_requested.load()) {
+      network->Close();
+      if (!network->WaitUntilClosed(TimeDelta::Seconds(2)))
+        break;
+    }
+  }
+  const RoqMediaSessionStats receive_stats =
+      receive ? receive->stats() : RoqMediaSessionStats{};
+  result.received_audio_packets = receive_stats.received_audio_packets;
+  result.decoded_video_frames = receive_stats.decoded_video_frames;
+  result.audio_decoding_normal = receive_stats.audio_decoding_normal;
+  result.decoded_audio_samples_per_channel =
+      receive_stats.received_audio_samples;
+  if (counting_video_sink.frames() > 0 && state.video_origin_set.load()) {
+    result.decoded_video_timestamp_span = counting_video_sink.last_timestamp() -
+                                          state.video_timestamp_origin.load();
+  }
+  if (receive_stats.received_audio_packets > 0 &&
+      state.audio_origin_set.load() && state.audio_last_set.load()) {
+    result.decoded_audio_timestamp_span =
+        state.audio_last_timestamp.load() - state.audio_timestamp_origin.load();
+  }
+  result.reflected_audio_packets = state.reflected_audio.load();
+  result.reflected_video_packets = state.reflected_video.load();
+  result.received_rtcp_packets = state.received_rtcp.load();
+  result.idr_access_units = state.idr_access_units.load();
+  result.dropped_idr_access_units = state.dropped_idr_access_units.load();
+  result.recovery_idr_access_units = state.recovery_idr_access_units.load();
+  result.pli_packets = state.pli_packets.load();
+  result.fir_packets = state.fir_packets.load();
+  result.sender_reports = state.sender_reports.load();
+  result.receiver_reports = state.receiver_reports.load();
+  result.idr_recovery_ms = state.idr_recovery_ms.load();
+  {
+    std::lock_guard lock(state.mutex);
+    state.send = nullptr;
+    state.receive = nullptr;
+  }
+  if (send)
+    send->Stop();
+  if (receive)
+    receive->Stop();
+  if (send_audio_device)
+    send_audio_device->Terminate();
+  audio_device->Terminate();
+  const RoqSessionStats network_stats = network->stats();
+  result.queue_full_drops = network_stats.queue_full_drops;
+  result.oversize_drops = network_stats.oversize_drops;
+  result.pmtu_purge_drops = network_stats.pmtu_purge_drops;
+  result.peak_queue_size = network_stats.peak_queue_size;
+  result.max_datagram_payload = network_stats.max_datagram_payload;
+  result.clean_shutdown = network_stats.clean_shutdown && result.error.empty();
+  result.rtt_ns = network_stats.rtt_ns;
+  result.max_rtt_ns = network_stats.max_rtt_ns;
+  result.delivery_rate_bytes_per_second =
+      network_stats.delivery_rate_bytes_per_second;
+  result.max_bandwidth_bytes_per_second =
+      network_stats.max_bandwidth_bytes_per_second;
+  result.pmtu_bytes = network_stats.pmtu_bytes;
+  result.dgram_lost = network_stats.dgram_lost;
+  event_log.Write("session_summary", "decoded_video_frames",
+                  result.decoded_video_frames);
+  return result;
+}
+
+void RequestMediaPeerStop() {
+  g_stop_requested.store(true);
+}
+
+}  // namespace webrtc::roq

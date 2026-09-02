@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_tools/roq/roq_wire.h"
+#include "modules/roq/roq_wire.h"
 
 #include <array>
 #include <cstdint>

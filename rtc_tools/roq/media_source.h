@@ -12,6 +12,9 @@
 #define RTC_TOOLS_ROQ_MEDIA_SOURCE_H_
 
 #include <cstdint>
+#include <functional>
+#include <optional>
+#include <span>
 #include <string>
 
 namespace webrtc::roq {
@@ -38,11 +41,38 @@ struct MediaSourceResult {
   std::string error;
 };
 
+struct MediaVideoFrame {
+  int width = 0;
+  int height = 0;
+  const uint8_t* data_y = nullptr;
+  const uint8_t* data_u = nullptr;
+  const uint8_t* data_v = nullptr;
+  int stride_y = 0;
+  int stride_u = 0;
+  int stride_v = 0;
+  int64_t pts_us = 0;
+};
+
+struct MediaSourceCallbacks {
+  std::function<void(const MediaVideoFrame&)> on_video_frame;
+  std::function<void(std::span<const int16_t>, int64_t)> on_audio_block;
+  std::function<void(size_t)> on_loop_started;
+  std::function<bool()> should_stop;
+};
+
 MediaSourceResult RunMediaSource(const std::string& input_path,
                                  double duration_seconds,
                                  MediaClockMode clock_mode,
                                  const std::string& run_id = "",
                                  const std::string& event_log_path = "");
+
+MediaSourceResult StreamMediaSource(const std::string& input_path,
+                                    std::optional<double> duration_seconds,
+                                    bool loop_at_eof,
+                                    MediaClockMode clock_mode,
+                                    const MediaSourceCallbacks& callbacks,
+                                    const std::string& run_id = "",
+                                    const std::string& event_log_path = "");
 
 std::string HexHash(uint64_t value);
 

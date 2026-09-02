@@ -35,11 +35,11 @@
 #include <utility>
 #include <vector>
 
+#include "modules/roq/roq_wire.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "modules/rtp_rtcp/source/rtp_packet.h"
 #include "quiche.h"
 #include "rtc_tools/roq/manifest.h"
-#include "rtc_tools/roq/roq_wire.h"
 
 namespace webrtc::roq {
 namespace {

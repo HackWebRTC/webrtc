@@ -7,7 +7,7 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import("../../webrtc.gni")
-import("roq.gni")
+import("../../roq.gni")
 
 assert(roq_repo_root != "",
        "roq_repo_root must point to the parent artc checkout")
@@ -33,14 +33,6 @@ rtc_library("roq_media_source") {
   cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
 }
 
-rtc_library("roq_wire") {
-  testonly = true
-  sources = [
-    "roq_wire.cc",
-    "roq_wire.h",
-  ]
-}
-
 rtc_executable("roq_test_peer") {
   testonly = true
   # lld's parallel archive reader intermittently reports a phantom auto-link
@@ -50,9 +42,10 @@ rtc_executable("roq_test_peer") {
   sources = [
     "capability.cc",
     "capability.h",
-    "call_loopback.cc",
-    "call_loopback.h",
     "main.cc",
+    "media_peer.cc",
+    "media_peer.h",
+    "media_peer_mac.mm",
     "manifest.cc",
     "manifest.h",
     "network_lab.cc",
@@ -66,10 +59,12 @@ rtc_executable("roq_test_peer") {
   deps = [
     ":roq_test_certificates",
     ":roq_media_source",
-    ":roq_wire",
+    "../../api/roq:roq_api",
     "../../api:scoped_refptr",
     "../../api:call_api",
     "../../api/audio:audio_frame_api",
+    "../../api/audio:audio_device",
+    "../../api/audio:create_audio_device_module",
     "../../api/audio:audio_mixer_api",
     "../../api/audio_codecs:audio_codecs_api",
     "../../api/audio_codecs:builtin_audio_decoder_factory",
@@ -81,12 +76,15 @@ rtc_executable("roq_test_peer") {
     "../../api/task_queue:task_queue",
     "../../api/test/video:function_video_factory",
     "../../api/units:timestamp",
+    "../../api/units:time_delta",
     "../../api/video:builtin_video_bitrate_allocator_factory",
     "../../api/video:video_bitrate_allocator_factory",
     "../../api/video:video_bitrate_allocation",
     "../../api/video:video_frame",
     "../../api/video:video_frame_type",
     "../../api/video_codecs:video_codecs_api",
+    "../../api/video_codecs:builtin_video_decoder_factory",
+    "../../api/video_codecs:builtin_video_encoder_factory",
     "../../audio:audio",
     "../../call:call",
     "../../call:call_interfaces",
@@ -98,12 +96,14 @@ rtc_executable("roq_test_peer") {
     "../../modules/video_coding:codec_globals_headers",
     "../../modules/video_coding:video_codec_interface",
     "../../modules/video_coding:webrtc_h264",
+    "../../modules/roq:roq_core",
     "../../rtc_base:rtc_json",
     "../../rtc_base:copy_on_write_buffer",
     "../../rtc_base/network:sent_packet",
     "../../rtc_base:task_queue_for_test",
     "../../rtc_base:threading",
     "../../test:encoder_settings",
+    "../../test:test_renderer",
     "../../test:video_test_common",
     "../../video/config:encoder_config",
     "//third_party/boringssl:boringssl",
@@ -114,6 +114,11 @@ rtc_executable("roq_test_peer") {
 }
 
 if (rtc_include_tests) {
+  group("m2_unittests") {
+    testonly = true
+    deps = [ "../../modules/roq:roq_sdk_unittests" ]
+  }
+
   rtc_test("roq_unittests") {
     testonly = true
     # Match roq_test_peer's lld workaround above.
@@ -124,7 +129,7 @@ if (rtc_include_tests) {
     ]
     include_dirs = [ "$roq_repo_root/quiche/quiche/include" ]
     deps = [
-      ":roq_wire",
+      "../../modules/roq:roq_core",
       "../../test:test_support",
       "//testing/gtest",
     ]

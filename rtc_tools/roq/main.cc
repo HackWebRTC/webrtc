@@ -16,9 +16,9 @@
 #include <string>
 #include <string_view>
 
-#include "rtc_tools/roq/call_loopback.h"
 #include "rtc_tools/roq/capability.h"
 #include "rtc_tools/roq/manifest.h"
+#include "rtc_tools/roq/media_peer.h"
 #include "rtc_tools/roq/media_source.h"
 #include "rtc_tools/roq/network_lab.h"
 #include "rtc_tools/roq/quiche_abi.h"
@@ -30,7 +30,6 @@ void PrintUsage(std::ostream& output) {
   output << "Usage: roq_test_peer <command> [options]\n"
             "Commands:\n"
             "  capability\n"
-            "  call-loopback\n"
             "  quiche-abi\n"
             "  client\n"
             "  server\n"
@@ -148,38 +147,6 @@ int main(int argc, char* argv[]) {
               << "}\n";
     return 0;
   }
-  if (command == "call-loopback") {
-    const std::optional<double> duration = DoubleOption(args, "--duration");
-    if (!duration || *duration < 3) {
-      std::cerr << "call-loopback requires --duration >= 3 seconds\n";
-      return 2;
-    }
-    const webrtc::roq::CallLoopbackResult result =
-        webrtc::roq::RunCallLoopback(*duration);
-    if (!result.error.empty()) {
-      std::cerr << result.error << '\n';
-      return 1;
-    }
-    std::cout << "{\"schema_version\":1,"
-              << "\"event\":\"call_loopback_summary\","
-              << "\"video_codec\":\"H264\","
-              << "\"audio_codec\":\"opus\","
-              << "\"video_width\":640,\"video_height\":360,"
-              << "\"video_fps\":30,\"audio_sample_rate_hz\":48000,"
-              << "\"audio_channels\":2,\"sent_video_rtp\":"
-              << result.sent_video_rtp
-              << ",\"sent_audio_rtp\":" << result.sent_audio_rtp
-              << ",\"received_audio_rtp\":" << result.received_audio_rtp
-              << ",\"audio_decoding_normal\":" << result.audio_decoding_normal
-              << ",\"forward_rtcp\":" << result.forward_rtcp
-              << ",\"reverse_rtcp\":" << result.reverse_rtcp
-              << ",\"decoded_video_frames\":" << result.decoded_video_frames
-              << ",\"decoded_audio_samples_per_channel\":"
-              << result.decoded_audio_samples_per_channel
-              << ",\"clean_shutdown\":"
-              << (result.clean_shutdown ? "true" : "false") << "}\n";
-    return 0;
-  }
   if (command == "client" || command == "server") {
     const std::optional<std::string_view> scenario =
         OptionValue(args, "--scenario");
@@ -194,6 +161,129 @@ int main(int argc, char* argv[]) {
         OptionValue(args, "--run-id");
     const std::optional<std::string_view> inject_error =
         OptionValue(args, "--inject-error");
+    if (scenario &&
+        (*scenario == "media-loopback" || *scenario == "media-send" ||
+         *scenario == "media-receive")) {
+      const std::optional<std::string_view> input =
+          OptionValue(args, "--input");
+      const std::optional<std::string_view> keyframe_request =
+          OptionValue(args, "--keyframe-request");
+      const std::optional<uint32_t> request_keyframe_after_ms =
+          UIntOption(args, "--request-keyframe-after-ms");
+      const std::optional<uint32_t> request_keyframe_interval_ms =
+          UIntOption(args, "--request-keyframe-interval-ms");
+      const std::optional<uint32_t> shrink_datagram_after_ms =
+          UIntOption(args, "--shrink-datagram-after-ms");
+      const std::optional<uint32_t> shrink_datagram_to =
+          UIntOption(args, "--shrink-datagram-to");
+      if (!address || !manifest || !event_log || !run_id ||
+          (command == "client" && !input) ||
+          (command == "client" && *scenario == "media-receive") ||
+          (command == "server" && *scenario == "media-send") ||
+          (duration && *duration <= 0)) {
+        std::cerr << command << " media-loopback requires --"
+                  << (command == "client" ? "connect" : "listen")
+                  << " HOST:PORT --manifest <path> --event-log <path> "
+                     "--run-id <id>"
+                  << (command == "client" ? " --input <path>" : "")
+                  << " [--duration <seconds>] [--no-render]\n";
+        return 2;
+      }
+      const webrtc::roq::MediaPeerOptions media_options = {
+          .role = command == "client" ? webrtc::roq::PeerRole::kClient
+                                      : webrtc::roq::PeerRole::kServer,
+          .scenario = std::string(*scenario),
+          .address = std::string(*address),
+          .manifest_path = std::string(*manifest),
+          .executable_path = args[0],
+          .input_path = input ? std::string(*input) : "",
+          .event_log_path = std::string(*event_log),
+          .run_id = std::string(*run_id),
+          .duration_seconds = duration,
+          .no_render = HasOption(args, "--no-render"),
+          .drop_first_idr = HasOption(args, "--drop-first-idr"),
+          .keyframe_request =
+              keyframe_request ? std::string(*keyframe_request) : "pli",
+          .request_keyframe_after_ms =
+              static_cast<int>(request_keyframe_after_ms.value_or(0)),
+          .request_keyframe_interval_ms =
+              static_cast<int>(request_keyframe_interval_ms.value_or(0)),
+          .shrink_datagram_after_ms =
+              static_cast<int>(shrink_datagram_after_ms.value_or(0)),
+          .shrink_datagram_to = shrink_datagram_to.value_or(0),
+          .probe_datagram_boundary =
+              HasOption(args, "--probe-datagram-boundary"),
+      };
+      const webrtc::roq::MediaPeerResult result =
+          command == "client" && *scenario == "media-loopback" &&
+                  !media_options.no_render
+              ? webrtc::roq::RunMediaPeerWithPlatformEventLoop(media_options)
+              : webrtc::roq::RunMediaPeer(media_options);
+      if (!result.error.empty()) {
+        std::cerr << result.error << '\n';
+        return 1;
+      }
+      std::cout
+          << "{\"schema_version\":1,"
+          << "\"event\":\"media_peer_summary\","
+          << "\"scenario\":\"" << *scenario << "\","
+          << "\"sent_audio_packets\":" << result.sent_audio_packets << ','
+          << "\"sent_video_frames\":" << result.sent_video_frames << ','
+          << "\"sent_video_rtp_packets\":" << result.sent_video_rtp_packets
+          << ',' << "\"sent_video_rtp_bytes\":" << result.sent_video_rtp_bytes
+          << ',' << "\"sent_audio_rtp_bytes\":" << result.sent_audio_rtp_bytes
+          << ','
+          << "\"audio_target_bitrate_bps\":" << result.audio_target_bitrate_bps
+          << ','
+          << "\"video_target_bitrate_bps\":" << result.video_target_bitrate_bps
+          << ','
+          << "\"video_media_bitrate_bps\":" << result.video_media_bitrate_bps
+          << ',' << "\"video_frames_encoded\":" << result.video_frames_encoded
+          << ',' << "\"video_frames_dropped\":" << result.video_frames_dropped
+          << ','
+          << "\"received_audio_packets\":" << result.received_audio_packets
+          << ',' << "\"decoded_video_frames\":" << result.decoded_video_frames
+          << ',' << "\"decoded_audio_samples_per_channel\":"
+          << result.decoded_audio_samples_per_channel << ','
+          << "\"decoded_video_timestamp_span\":"
+          << result.decoded_video_timestamp_span << ','
+          << "\"decoded_audio_timestamp_span\":"
+          << result.decoded_audio_timestamp_span << ','
+          << "\"audio_decoding_normal\":" << result.audio_decoding_normal << ','
+          << "\"reflected_audio_packets\":" << result.reflected_audio_packets
+          << ','
+          << "\"reflected_video_packets\":" << result.reflected_video_packets
+          << ',' << "\"received_rtcp_packets\":" << result.received_rtcp_packets
+          << ',' << "\"queue_full_drops\":" << result.queue_full_drops << ','
+          << "\"oversize_drops\":" << result.oversize_drops << ','
+          << "\"pmtu_purge_drops\":" << result.pmtu_purge_drops << ','
+          << "\"peak_queue_size\":" << result.peak_queue_size << ','
+          << "\"max_datagram_payload\":" << result.max_datagram_payload << ','
+          << "\"loops_started\":" << result.loops_started << ','
+          << "\"idr_access_units\":" << result.idr_access_units << ','
+          << "\"dropped_idr_access_units\":" << result.dropped_idr_access_units
+          << ',' << "\"recovery_idr_access_units\":"
+          << result.recovery_idr_access_units << ','
+          << "\"pli_packets\":" << result.pli_packets << ','
+          << "\"fir_packets\":" << result.fir_packets << ','
+          << "\"sender_reports\":" << result.sender_reports << ','
+          << "\"receiver_reports\":" << result.receiver_reports << ','
+          << "\"idr_recovery_ms\":" << result.idr_recovery_ms << ','
+          << "\"boundary_packet_accepted\":"
+          << (result.boundary_packet_accepted ? "true" : "false") << ','
+          << "\"oversize_packet_rejected\":"
+          << (result.oversize_packet_rejected ? "true" : "false") << ','
+          << "\"clean_shutdown\":" << (result.clean_shutdown ? "true" : "false")
+          << ',' << "\"rtt_ns\":" << result.rtt_ns << ','
+          << "\"max_rtt_ns\":" << result.max_rtt_ns << ','
+          << "\"delivery_rate_bytes_per_second\":"
+          << result.delivery_rate_bytes_per_second << ','
+          << "\"max_bandwidth_bytes_per_second\":"
+          << result.max_bandwidth_bytes_per_second << ','
+          << "\"pmtu_bytes\":" << result.pmtu_bytes << ','
+          << "\"dgram_lost\":" << result.dgram_lost << "}\n";
+      return 0;
+    }
     if (!scenario || *scenario != "synthetic-roq" || !address || !manifest ||
         !duration || *duration <= 0 || !event_log || !run_id) {
       std::cerr << command << " requires --scenario synthetic-roq --"

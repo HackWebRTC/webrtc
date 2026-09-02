@@ -20,9 +20,12 @@
 #include <iomanip>
 #include <limits>
 #include <memory>
+#include <optional>
+#include <span>
 #include <sstream>
 #include <string>
 #include <thread>
+#include <vector>
 
 extern "C" {
 #include "libavcodec/avcodec.h"
@@ -179,14 +182,17 @@ bool ConsumeVideoFrame(const AVFrame* frame,
                        int64_t duration_us,
                        MediaClockMode clock_mode,
                        std::chrono::steady_clock::time_point start,
+                       int64_t timeline_offset_us,
                        MediaSourceResult* result,
-                       TimelineLog* timeline) {
+                       TimelineLog* timeline,
+                       const MediaSourceCallbacks* callbacks) {
   const int64_t pts = FramePts(frame);
   if (pts == AV_NOPTS_VALUE) {
     result->error = "video frame is missing PTS";
     return false;
   }
-  const int64_t pts_us = av_rescale_q(pts, time_base, AVRational{1, 1000000});
+  const int64_t pts_us =
+      timeline_offset_us + av_rescale_q(pts, time_base, AVRational{1, 1000000});
   if (pts_us >= duration_us) {
     return true;
   }
@@ -213,6 +219,19 @@ bool ConsumeVideoFrame(const AVFrame* frame,
                 static_cast<size_t>(widths[plane]));
     }
   }
+  if (callbacks && callbacks->on_video_frame) {
+    callbacks->on_video_frame({
+        .width = frame->width,
+        .height = frame->height,
+        .data_y = frame->data[0],
+        .data_u = frame->data[1],
+        .data_v = frame->data[2],
+        .stride_y = frame->linesize[0],
+        .stride_u = frame->linesize[1],
+        .stride_v = frame->linesize[2],
+        .pts_us = pts_us,
+    });
+  }
   return true;
 }
 
@@ -221,8 +240,12 @@ bool ConsumeAudioFrame(const AVFrame* frame,
                        int64_t duration_us,
                        MediaClockMode clock_mode,
                        std::chrono::steady_clock::time_point start,
+                       int64_t timeline_offset_us,
                        MediaSourceResult* result,
-                       TimelineLog* timeline) {
+                       TimelineLog* timeline,
+                       const MediaSourceCallbacks* callbacks,
+                       std::vector<int16_t>* audio_block,
+                       int64_t* loop_audio_blocks) {
   if (frame->format != AV_SAMPLE_FMT_FLTP || frame->sample_rate != 48000 ||
       frame->ch_layout.nb_channels != 2) {
     result->error = "audio decoder must produce stereo 48 kHz fltp";
@@ -234,9 +257,12 @@ bool ConsumeAudioFrame(const AVFrame* frame,
     return false;
   }
   const int64_t frame_start =
+      timeline_offset_us * frame->sample_rate / 1000000 +
       av_rescale_q(pts, time_base, AVRational{1, frame->sample_rate});
   const int64_t duration_samples =
-      static_cast<int64_t>(std::llround(duration_us * 0.048));
+      duration_us == std::numeric_limits<int64_t>::max()
+          ? std::numeric_limits<int64_t>::max()
+          : static_cast<int64_t>(std::llround(duration_us * 0.048));
   if (frame_start >= duration_samples) {
     return true;
   }
@@ -257,12 +283,19 @@ bool ConsumeAudioFrame(const AVFrame* frame,
       HashBytes(&result->audio_hash,
                 reinterpret_cast<const uint8_t*>(&converted),
                 sizeof(converted));
+      audio_block->push_back(converted);
     }
     ++result->audio_block_fill;
     if (result->audio_block_fill == 480) {
-      const int64_t block_pts_us = result->audio_blocks * 10000;
+      const int64_t block_pts_us =
+          timeline_offset_us + *loop_audio_blocks * 10000;
       timeline->Write("audio_block", block_pts_us);
+      if (callbacks && callbacks->on_audio_block) {
+        callbacks->on_audio_block(*audio_block, block_pts_us);
+      }
+      audio_block->clear();
       ++result->audio_blocks;
+      ++*loop_audio_blocks;
       result->audio_block_fill = 0;
     }
   }
@@ -276,9 +309,13 @@ bool DrainDecoder(AVCodecContext* decoder,
                   int64_t duration_us,
                   MediaClockMode clock_mode,
                   std::chrono::steady_clock::time_point start,
+                  int64_t timeline_offset_us,
                   AVFrame* frame,
                   MediaSourceResult* result,
-                  TimelineLog* timeline) {
+                  TimelineLog* timeline,
+                  const MediaSourceCallbacks* callbacks,
+                  std::vector<int16_t>* audio_block,
+                  int64_t* loop_audio_blocks) {
   while (true) {
     const int status = avcodec_receive_frame(decoder, frame);
     if (status == AVERROR(EAGAIN) || status == AVERROR_EOF) {
@@ -290,9 +327,12 @@ bool DrainDecoder(AVCodecContext* decoder,
     }
     const bool ok =
         is_video ? ConsumeVideoFrame(frame, stream->time_base, duration_us,
-                                     clock_mode, start, result, timeline)
+                                     clock_mode, start, timeline_offset_us,
+                                     result, timeline, callbacks)
                  : ConsumeAudioFrame(frame, stream->time_base, duration_us,
-                                     clock_mode, start, result, timeline);
+                                     clock_mode, start, timeline_offset_us,
+                                     result, timeline, callbacks, audio_block,
+                                     loop_audio_blocks);
     av_frame_unref(frame);
     if (!ok) {
       return false;
@@ -300,68 +340,59 @@ bool DrainDecoder(AVCodecContext* decoder,
   }
 }
 
-}  // namespace
-
-MediaSourceResult RunMediaSource(const std::string& input_path,
-                                 double duration_seconds,
-                                 MediaClockMode clock_mode,
-                                 const std::string& run_id,
-                                 const std::string& event_log_path) {
-  MediaSourceResult result;
-  result.video_hash = kFnvOffsetBasis;
-  result.audio_hash = kFnvOffsetBasis;
-  result.video_pts_hash = kFnvOffsetBasis;
-  result.audio_pts_hash = kFnvOffsetBasis;
-  TimelineLog timeline(event_log_path, run_id);
-  if (!timeline.ok()) {
-    result.error = "failed to open media event log";
-    return result;
-  }
-  if (duration_seconds <= 0 ||
-      duration_seconds >
-          static_cast<double>(std::numeric_limits<int64_t>::max()) / 1000000) {
-    result.error = "duration must be positive";
-    return result;
-  }
-  const int64_t duration_us =
-      static_cast<int64_t>(std::llround(duration_seconds * 1000000.0));
-
+bool DecodePass(const std::string& input_path,
+                int64_t duration_us,
+                int64_t timeline_offset_us,
+                MediaClockMode clock_mode,
+                std::chrono::steady_clock::time_point start,
+                const MediaSourceCallbacks* callbacks,
+                MediaSourceResult* result,
+                TimelineLog* timeline,
+                int64_t* input_duration_us) {
   AVFormatContext* raw_format = nullptr;
   int status =
       avformat_open_input(&raw_format, input_path.c_str(), nullptr, nullptr);
   FormatContextPtr format(raw_format);
   if (status < 0) {
-    result.error = "failed to open input: " + AvError(status);
-    return result;
+    result->error = "failed to open input: " + AvError(status);
+    return false;
   }
   status = avformat_find_stream_info(format.get(), nullptr);
   if (status < 0) {
-    result.error = "failed to read stream information: " + AvError(status);
-    return result;
+    result->error = "failed to read stream information: " + AvError(status);
+    return false;
   }
+  *input_duration_us = format->duration;
 
   int video_stream_index = -1;
   int audio_stream_index = -1;
   CodecContextPtr video_decoder = OpenDecoder(
-      format.get(), AVMEDIA_TYPE_VIDEO, &video_stream_index, &result.error);
+      format.get(), AVMEDIA_TYPE_VIDEO, &video_stream_index, &result->error);
   if (!video_decoder) {
-    return result;
+    return false;
   }
   CodecContextPtr audio_decoder = OpenDecoder(
-      format.get(), AVMEDIA_TYPE_AUDIO, &audio_stream_index, &result.error);
+      format.get(), AVMEDIA_TYPE_AUDIO, &audio_stream_index, &result->error);
   if (!audio_decoder) {
-    return result;
+    return false;
   }
 
   FramePtr frame(av_frame_alloc());
   PacketPtr packet(av_packet_alloc());
   if (!frame || !packet) {
-    result.error = "failed to allocate FFmpeg frame or packet";
-    return result;
+    result->error = "failed to allocate FFmpeg frame or packet";
+    return false;
   }
 
-  const auto start = std::chrono::steady_clock::now();
+  std::vector<int16_t> audio_block;
+  audio_block.reserve(960);
+  int64_t loop_audio_blocks = 0;
+  bool stopped = false;
   while ((status = av_read_frame(format.get(), packet.get())) >= 0) {
+    if (callbacks && callbacks->should_stop && callbacks->should_stop()) {
+      stopped = true;
+      break;
+    }
     AVCodecContext* decoder = nullptr;
     AVStream* stream = nullptr;
     bool is_video = false;
@@ -376,33 +407,119 @@ MediaSourceResult RunMediaSource(const std::string& input_path,
     if (decoder != nullptr) {
       status = avcodec_send_packet(decoder, packet.get());
       if (status < 0) {
-        result.error = "failed to submit packet: " + AvError(status);
-        return result;
+        result->error = "failed to submit packet: " + AvError(status);
+        return false;
       }
       if (!DrainDecoder(decoder, stream, is_video, duration_us, clock_mode,
-                        start, frame.get(), &result, &timeline)) {
-        return result;
+                        start, timeline_offset_us, frame.get(), result,
+                        timeline, callbacks, &audio_block,
+                        &loop_audio_blocks)) {
+        return false;
       }
     }
-    if (result.video_frames > 0 &&
-        result.audio_samples_per_channel >= duration_us * 48 / 1000 &&
+    if (result->video_frames > 0 &&
+        result->audio_samples_per_channel >= duration_us / 1000 * 48 &&
         packet->stream_index == video_stream_index &&
         packet->pts != AV_NOPTS_VALUE &&
-        av_rescale_q(packet->pts,
-                     format->streams[video_stream_index]->time_base,
-                     AVRational{1, 1000000}) >= duration_us) {
+        timeline_offset_us +
+                av_rescale_q(packet->pts,
+                             format->streams[video_stream_index]->time_base,
+                             AVRational{1, 1000000}) >=
+            duration_us) {
       av_packet_unref(packet.get());
       break;
     }
     av_packet_unref(packet.get());
   }
+  if (!stopped && status == AVERROR_EOF) {
+    if (avcodec_send_packet(video_decoder.get(), nullptr) < 0 ||
+        !DrainDecoder(video_decoder.get(), format->streams[video_stream_index],
+                      true, duration_us, clock_mode, start, timeline_offset_us,
+                      frame.get(), result, timeline, callbacks, &audio_block,
+                      &loop_audio_blocks) ||
+        avcodec_send_packet(audio_decoder.get(), nullptr) < 0 ||
+        !DrainDecoder(audio_decoder.get(), format->streams[audio_stream_index],
+                      false, duration_us, clock_mode, start, timeline_offset_us,
+                      frame.get(), result, timeline, callbacks, &audio_block,
+                      &loop_audio_blocks)) {
+      if (result->error.empty())
+        result->error = "failed to drain decoder";
+      return false;
+    }
+  }
+  // Deliberately discard a sub-10 ms tail at each EOF. Carrying those samples
+  // into the next loop would shift the new file cycle's audio against its
+  // video PTS and undermine this fixture's A/V synchronization signal.
+  result->audio_block_fill = 0;
+  return true;
+}
+
+}  // namespace
+
+MediaSourceResult StreamMediaSource(const std::string& input_path,
+                                    std::optional<double> duration_seconds,
+                                    bool loop_at_eof,
+                                    MediaClockMode clock_mode,
+                                    const MediaSourceCallbacks& callbacks,
+                                    const std::string& run_id,
+                                    const std::string& event_log_path) {
+  MediaSourceResult result;
+  result.video_hash = kFnvOffsetBasis;
+  result.audio_hash = kFnvOffsetBasis;
+  result.video_pts_hash = kFnvOffsetBasis;
+  result.audio_pts_hash = kFnvOffsetBasis;
+  TimelineLog timeline(event_log_path, run_id);
+  if (!timeline.ok()) {
+    result.error = "failed to open media event log";
+    return result;
+  }
+  if (duration_seconds &&
+      (*duration_seconds <= 0 ||
+       *duration_seconds >
+           static_cast<double>(std::numeric_limits<int64_t>::max()) /
+               1000000)) {
+    result.error = "duration must be positive";
+    return result;
+  }
+  const int64_t duration_us =
+      duration_seconds
+          ? static_cast<int64_t>(std::llround(*duration_seconds * 1000000.0))
+          : std::numeric_limits<int64_t>::max();
+  const auto start = std::chrono::steady_clock::now();
+  int64_t timeline_offset_us = 0;
+  size_t loop_index = 0;
+  do {
+    if (callbacks.should_stop && callbacks.should_stop())
+      break;
+    if (callbacks.on_loop_started)
+      callbacks.on_loop_started(loop_index);
+    int64_t input_duration_us = 0;
+    if (!DecodePass(input_path, duration_us, timeline_offset_us, clock_mode,
+                    start, &callbacks, &result, &timeline,
+                    &input_duration_us)) {
+      return result;
+    }
+    if (!loop_at_eof || timeline_offset_us + input_duration_us >= duration_us)
+      break;
+    timeline_offset_us += input_duration_us;
+    ++loop_index;
+  } while (true);
 
   if (result.video_frames == 0 || result.audio_samples_per_channel == 0) {
     result.error = "input did not produce both audio and video";
   }
-  result.audio_sample_rate_hz = audio_decoder->sample_rate;
-  result.audio_channels = audio_decoder->ch_layout.nb_channels;
+  result.audio_sample_rate_hz = 48000;
+  result.audio_channels = 2;
   return result;
+}
+
+MediaSourceResult RunMediaSource(const std::string& input_path,
+                                 double duration_seconds,
+                                 MediaClockMode clock_mode,
+                                 const std::string& run_id,
+                                 const std::string& event_log_path) {
+  return StreamMediaSource(input_path, duration_seconds, false, clock_mode, {},
+                           run_id, event_log_path);
 }
 
 std::string HexHash(uint64_t value) {

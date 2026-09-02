@@ -1,0 +1,663 @@
+/*
+ *  Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+ */
+
+#include "api/roq/roq_session.h"
+
+#include <arpa/inet.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#include <algorithm>
+#include <array>
+#include <chrono>
+#include <condition_variable>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <limits>
+#include <memory>
+#include <mutex>
+#include <optional>
+#include <span>
+#include <string>
+#include <thread>
+#include <utility>
+#include <vector>
+
+#include "modules/roq/bounded_datagram_queue.h"
+#include "modules/roq/roq_wire.h"
+#include "quiche.h"
+
+namespace webrtc::roq {
+namespace {
+
+using SteadyClock = std::chrono::steady_clock;
+constexpr size_t kConnectionIdLength = 16;
+constexpr size_t kPacketBufferSize = 65535;
+constexpr uint64_t kNoTimeout = std::numeric_limits<uint64_t>::max();
+
+struct ConfigDeleter {
+  void operator()(quiche_config* config) const { quiche_config_free(config); }
+};
+struct ConnectionDeleter {
+  void operator()(quiche_conn* connection) const {
+    quiche_conn_free(connection);
+  }
+};
+using ConfigPtr = std::unique_ptr<quiche_config, ConfigDeleter>;
+using ConnectionPtr = std::unique_ptr<quiche_conn, ConnectionDeleter>;
+
+class Socket {
+ public:
+  explicit Socket(int value = -1) : value_(value) {}
+  ~Socket() {
+    if (value_ >= 0)
+      close(value_);
+  }
+  Socket(const Socket&) = delete;
+  Socket& operator=(const Socket&) = delete;
+  Socket(Socket&& other) noexcept : value_(std::exchange(other.value_, -1)) {}
+  Socket& operator=(Socket&& other) noexcept {
+    if (this != &other) {
+      if (value_ >= 0)
+        close(value_);
+      value_ = std::exchange(other.value_, -1);
+    }
+    return *this;
+  }
+  int get() const { return value_; }
+
+ private:
+  int value_;
+};
+
+struct PendingUdpPacket {
+  std::vector<uint8_t> bytes;
+  sockaddr_storage destination = {};
+  socklen_t destination_length = 0;
+  SteadyClock::time_point send_at;
+};
+
+bool ParseAddress(const std::string& value,
+                  sockaddr_in* address,
+                  std::string* error) {
+  const size_t separator = value.rfind(':');
+  if (separator == std::string::npos) {
+    *error = "UDP address must be HOST:PORT";
+    return false;
+  }
+  const std::string host = value.substr(0, separator);
+  const std::string port_text = value.substr(separator + 1);
+  char* end = nullptr;
+  errno = 0;
+  const unsigned long port = std::strtoul(port_text.c_str(), &end, 10);
+  if (errno != 0 || end == port_text.c_str() || *end != '\0' || port == 0 ||
+      port > 65535) {
+    *error = "invalid UDP port";
+    return false;
+  }
+  *address = {};
+  address->sin_family = AF_INET;
+  address->sin_port = htons(static_cast<uint16_t>(port));
+  if (inet_pton(AF_INET, host.c_str(), &address->sin_addr) != 1) {
+    *error = "invalid IPv4 address";
+    return false;
+  }
+  return true;
+}
+
+Socket OpenSocket(const sockaddr_in& bind_address,
+                  sockaddr_in* local_address,
+                  std::string* error) {
+  Socket socket_fd(socket(AF_INET, SOCK_DGRAM, 0));
+  if (socket_fd.get() < 0 ||
+      bind(socket_fd.get(), reinterpret_cast<const sockaddr*>(&bind_address),
+           sizeof(bind_address)) != 0 ||
+      fcntl(socket_fd.get(), F_SETFL, O_NONBLOCK) != 0) {
+    *error = "failed to open nonblocking UDP socket";
+    return Socket();
+  }
+  socklen_t length = sizeof(*local_address);
+  if (getsockname(socket_fd.get(), reinterpret_cast<sockaddr*>(local_address),
+                  &length) != 0) {
+    *error = "failed to read local UDP address";
+    return Socket();
+  }
+  return socket_fd;
+}
+
+class RoqSessionImpl final : public RoqSession {
+ public:
+  RoqSessionImpl(RoqSessionConfig config,
+                 ReceiveCallback receive_callback,
+                 DatagramSizeCallback datagram_size_callback)
+      : config_(std::move(config)),
+        receive_callback_(std::move(receive_callback)),
+        datagram_size_callback_(std::move(datagram_size_callback)),
+        outgoing_(config_.outgoing_queue_capacity,
+                  config_.maximum_udp_payload) {}
+
+  ~RoqSessionImpl() override {
+    Close(0, "complete");
+    if (thread_.joinable())
+      thread_.join();
+  }
+
+  bool Start(std::string* error) override {
+    std::lock_guard lock(mutex_);
+    if (thread_.joinable()) {
+      *error = "RoQ session is already started";
+      return false;
+    }
+    if (config_.allowed_flow_ids.empty()) {
+      *error = "at least one RoQ flow ID is required";
+      return false;
+    }
+    thread_ = std::thread([this] { Run(); });
+    return true;
+  }
+
+  bool WaitUntilReady(TimeDelta timeout) override {
+    std::unique_lock lock(mutex_);
+    return condition_.wait_for(lock, std::chrono::microseconds(timeout.us()),
+                               [this] { return ready_ || !error_.empty(); }) &&
+           ready_;
+  }
+
+  bool WaitUntilEstablished(TimeDelta timeout) override {
+    std::unique_lock lock(mutex_);
+    return condition_.wait_for(
+               lock, std::chrono::microseconds(timeout.us()),
+               [this] { return stats_.established || !error_.empty(); }) &&
+           stats_.established;
+  }
+
+  RoqSendResult Send(uint64_t flow_id,
+                     std::span<const uint8_t> packet) override {
+    std::lock_guard lock(mutex_);
+    if (close_requested_ || closed_)
+      return RoqSendResult::kClosed;
+    if (std::find(config_.allowed_flow_ids.begin(),
+                  config_.allowed_flow_ids.end(),
+                  flow_id) == config_.allowed_flow_ids.end()) {
+      return RoqSendResult::kClosed;
+    }
+    const std::vector<uint8_t> encoded = EncodeRoqDatagram(flow_id, packet);
+    const DatagramEnqueueResult result = outgoing_.Enqueue(encoded);
+    CopyQueueStatsLocked();
+    switch (result) {
+      case DatagramEnqueueResult::kQueued:
+        return RoqSendResult::kQueued;
+      case DatagramEnqueueResult::kQueueFull:
+        return RoqSendResult::kQueueFull;
+      case DatagramEnqueueResult::kOversize:
+        return RoqSendResult::kOversize;
+    }
+  }
+
+  void SetApplicationDatagramPayloadLimit(size_t bytes) override {
+    DatagramSizeCallback callback;
+    size_t packet_limit = 0;
+    {
+      std::lock_guard lock(mutex_);
+      application_datagram_limit_ = bytes;
+      const size_t effective =
+          stats_.max_datagram_payload == 0
+              ? bytes
+              : std::min(bytes, stats_.max_datagram_payload);
+      outgoing_.SetMaxDatagramSize(effective);
+      CopyQueueStatsLocked();
+      callback = datagram_size_callback_;
+      packet_limit = effective > 0 ? effective - 1 : 0;
+    }
+    if (callback && packet_limit > 0)
+      callback(packet_limit);
+  }
+
+  void Close(uint64_t application_error, std::string reason) override {
+    std::lock_guard lock(mutex_);
+    close_requested_ = true;
+    close_code_ = application_error;
+    close_reason_ = std::move(reason);
+  }
+
+  bool WaitUntilClosed(TimeDelta timeout) override {
+    std::unique_lock lock(mutex_);
+    return condition_.wait_for(lock, std::chrono::microseconds(timeout.us()),
+                               [this] { return closed_; });
+  }
+
+  RoqSessionStats stats() const override {
+    std::lock_guard lock(mutex_);
+    return stats_;
+  }
+
+  std::string error() const override {
+    std::lock_guard lock(mutex_);
+    return error_;
+  }
+
+ private:
+  void Fail(std::string error) {
+    std::lock_guard lock(mutex_);
+    if (error_.empty())
+      error_ = std::move(error);
+    closed_ = true;
+    condition_.notify_all();
+  }
+
+  ConfigPtr CreateConfig(std::string* error) {
+    ConfigPtr config(quiche_config_new(QUICHE_PROTOCOL_VERSION));
+    std::vector<uint8_t> alpn_wire;
+    if (config_.alpn.size() > 255) {
+      *error = "ALPN is too long";
+      return nullptr;
+    }
+    alpn_wire.push_back(static_cast<uint8_t>(config_.alpn.size()));
+    alpn_wire.insert(alpn_wire.end(), config_.alpn.begin(), config_.alpn.end());
+    if (!config ||
+        quiche_config_set_application_protos(config.get(), alpn_wire.data(),
+                                             alpn_wire.size()) != 0 ||
+        quiche_config_set_cc_algorithm_name(config.get(), "bbr2_gcongestion") !=
+            0) {
+      *error = "failed to configure quiche";
+      return nullptr;
+    }
+    quiche_config_set_max_idle_timeout(config.get(), 5000);
+    quiche_config_set_max_recv_udp_payload_size(config.get(),
+                                                config_.maximum_udp_payload);
+    quiche_config_set_max_send_udp_payload_size(config.get(),
+                                                config_.maximum_udp_payload);
+    quiche_config_set_initial_max_data(config.get(), 1000000);
+    quiche_config_set_initial_max_stream_data_bidi_local(config.get(), 10000);
+    quiche_config_set_initial_max_stream_data_bidi_remote(config.get(), 10000);
+    quiche_config_set_initial_max_streams_bidi(config.get(), 4);
+    quiche_config_enable_dgram(config.get(), true, 1024, 1);
+    if (config_.role == RoqRole::kClient) {
+      quiche_config_verify_peer(config.get(), config_.verify_peer);
+      if ((!config_.trusted_ca_file.empty() &&
+           quiche_config_load_verify_locations_from_file(
+               config.get(), config_.trusted_ca_file.c_str()) != 0) ||
+          (!config_.trusted_ca_directory.empty() &&
+           quiche_config_load_verify_locations_from_directory(
+               config.get(), config_.trusted_ca_directory.c_str()) != 0)) {
+        *error = "failed to load trusted CA locations";
+        return nullptr;
+      }
+    } else if (config_.certificate_path.empty() ||
+               config_.private_key_path.empty() ||
+               quiche_config_load_cert_chain_from_pem_file(
+                   config.get(), config_.certificate_path.c_str()) != 0 ||
+               quiche_config_load_priv_key_from_pem_file(
+                   config.get(), config_.private_key_path.c_str()) != 0) {
+      *error = "failed to load server certificate";
+      return nullptr;
+    }
+    return config;
+  }
+
+  void CopyQueueStatsLocked() {
+    stats_.queue_full_drops = outgoing_.queue_full_drops();
+    stats_.oversize_drops = outgoing_.oversize_drops() + quiche_oversize_drops_;
+    stats_.pmtu_purge_drops = outgoing_.pmtu_purge_drops();
+    stats_.peak_queue_size = outgoing_.peak_size();
+  }
+
+  bool IsFlowAllowed(uint64_t flow_id) const {
+    return std::find(config_.allowed_flow_ids.begin(),
+                     config_.allowed_flow_ids.end(),
+                     flow_id) != config_.allowed_flow_ids.end();
+  }
+
+  void UpdateDatagramLimit(quiche_conn* connection) {
+    const ssize_t writable = quiche_conn_dgram_max_writable_len(connection);
+    if (writable <= 1)
+      return;
+    DatagramSizeCallback callback;
+    size_t packet_limit = 0;
+    {
+      std::lock_guard lock(mutex_);
+      const size_t effective = application_datagram_limit_
+                                   ? std::min(static_cast<size_t>(writable),
+                                              *application_datagram_limit_)
+                                   : static_cast<size_t>(writable);
+      if (stats_.max_datagram_payload == effective)
+        return;
+      stats_.max_datagram_payload = effective;
+      outgoing_.SetMaxDatagramSize(effective);
+      CopyQueueStatsLocked();
+      callback = datagram_size_callback_;
+      packet_limit = effective - 1;
+    }
+    if (callback)
+      callback(packet_limit);
+  }
+
+  bool DrainReceived(quiche_conn* connection) {
+    std::vector<uint8_t> buffer;
+    while (true) {
+      const ssize_t length = quiche_conn_dgram_recv_front_len(connection);
+      if (length == QUICHE_ERR_DONE)
+        return true;
+      if (length < 0)
+        return false;
+      buffer.resize(static_cast<size_t>(length));
+      const ssize_t read =
+          quiche_conn_dgram_recv(connection, buffer.data(), buffer.size());
+      if (read < 0)
+        return false;
+      RoqDatagram decoded;
+      std::string error;
+      if (!DecodeRoqDatagram(std::span<const uint8_t>(
+                                 buffer.data(), static_cast<size_t>(read)),
+                             &decoded, &error)) {
+        quiche_conn_close(
+            connection, true, static_cast<uint64_t>(RoqError::kPacketError),
+            reinterpret_cast<const uint8_t*>(error.data()), error.size());
+        return true;
+      }
+      if (!IsFlowAllowed(decoded.flow_id)) {
+        constexpr std::string_view reason = "unknown RoQ flow ID";
+        quiche_conn_close(
+            connection, true, static_cast<uint64_t>(RoqError::kUnknownFlowId),
+            reinterpret_cast<const uint8_t*>(reason.data()), reason.size());
+        return true;
+      }
+      ReceiveCallback callback;
+      {
+        std::lock_guard lock(mutex_);
+        ++stats_.received_datagrams;
+        callback = receive_callback_;
+      }
+      if (callback) {
+        callback({decoded.flow_id, std::vector<uint8_t>(decoded.packet.begin(),
+                                                        decoded.packet.end())});
+      }
+    }
+  }
+
+  void Run() {
+    std::string setup_error;
+    sockaddr_in configured_address = {};
+    if (!ParseAddress(config_.address, &configured_address, &setup_error)) {
+      Fail(std::move(setup_error));
+      return;
+    }
+    sockaddr_in bind_address = configured_address;
+    if (config_.role == RoqRole::kClient)
+      bind_address.sin_port = 0;
+    sockaddr_in local_address = {};
+    Socket socket_fd = OpenSocket(bind_address, &local_address, &setup_error);
+    if (socket_fd.get() < 0) {
+      Fail(std::move(setup_error));
+      return;
+    }
+    ConfigPtr quiche_config = CreateConfig(&setup_error);
+    if (!quiche_config) {
+      Fail(std::move(setup_error));
+      return;
+    }
+    ConnectionPtr connection;
+    if (config_.role == RoqRole::kClient) {
+      std::array<uint8_t, kConnectionIdLength> scid = {};
+      for (size_t index = 0; index < scid.size(); ++index)
+        scid[index] = static_cast<uint8_t>(0x40 + index);
+      connection.reset(
+          quiche_connect(config_.server_name.c_str(), scid.data(), scid.size(),
+                         reinterpret_cast<const sockaddr*>(&local_address),
+                         sizeof(local_address),
+                         reinterpret_cast<const sockaddr*>(&configured_address),
+                         sizeof(configured_address), quiche_config.get()));
+      if (!connection) {
+        Fail("failed to create client QUIC connection");
+        return;
+      }
+    }
+    {
+      std::lock_guard lock(mutex_);
+      ready_ = true;
+      condition_.notify_all();
+    }
+
+    std::optional<PendingUdpPacket> pending_udp;
+    bool local_close_sent = false;
+    bool close_drained = false;
+    std::array<uint8_t, kPacketBufferSize> packet = {};
+    while (true) {
+      while (true) {
+        sockaddr_storage peer_address = {};
+        socklen_t peer_length = sizeof(peer_address);
+        const ssize_t received =
+            recvfrom(socket_fd.get(), packet.data(), packet.size(), 0,
+                     reinterpret_cast<sockaddr*>(&peer_address), &peer_length);
+        if (received < 0) {
+          if (errno != EAGAIN && errno != EWOULDBLOCK) {
+            Fail("UDP receive failed");
+            return;
+          }
+          break;
+        }
+        {
+          std::lock_guard lock(mutex_);
+          ++stats_.received_udp_packets;
+        }
+        if (!connection) {
+          uint32_t version = 0;
+          uint8_t type = 0;
+          std::array<uint8_t, QUICHE_MAX_CONN_ID_LEN> scid = {};
+          size_t scid_length = scid.size();
+          std::array<uint8_t, QUICHE_MAX_CONN_ID_LEN> dcid = {};
+          size_t dcid_length = dcid.size();
+          std::array<uint8_t, 256> token = {};
+          size_t token_length = token.size();
+          if (quiche_header_info(packet.data(), static_cast<size_t>(received),
+                                 kConnectionIdLength, &version, &type,
+                                 scid.data(), &scid_length, dcid.data(),
+                                 &dcid_length, token.data(),
+                                 &token_length) != 0 ||
+              !quiche_version_is_supported(version)) {
+            continue;
+          }
+          connection.reset(quiche_accept(
+              dcid.data(), dcid_length, nullptr, 0,
+              reinterpret_cast<const sockaddr*>(&local_address),
+              sizeof(local_address), reinterpret_cast<sockaddr*>(&peer_address),
+              peer_length, quiche_config.get()));
+          if (!connection) {
+            Fail("failed to accept server QUIC connection");
+            return;
+          }
+        }
+        quiche_recv_info receive_info = {
+            .from = reinterpret_cast<sockaddr*>(&peer_address),
+            .from_len = peer_length,
+            .to = reinterpret_cast<sockaddr*>(&local_address),
+            .to_len = sizeof(local_address),
+        };
+        const ssize_t processed =
+            quiche_conn_recv(connection.get(), packet.data(),
+                             static_cast<size_t>(received), &receive_info);
+        if (processed < 0 && processed != QUICHE_ERR_DONE) {
+          Fail("quiche receive failed: " + std::to_string(processed));
+          return;
+        }
+        if (!DrainReceived(connection.get())) {
+          Fail("failed to receive RoQ DATAGRAM");
+          return;
+        }
+      }
+
+      const auto now = SteadyClock::now();
+      if (connection && quiche_conn_is_established(connection.get())) {
+        bool first_established = false;
+        {
+          std::lock_guard lock(mutex_);
+          if (!stats_.established) {
+            stats_.established = true;
+            first_established = true;
+            condition_.notify_all();
+          }
+        }
+        if (first_established)
+          UpdateDatagramLimit(connection.get());
+        UpdateDatagramLimit(connection.get());
+      }
+
+      if (connection && quiche_conn_is_established(connection.get())) {
+        std::vector<uint8_t> outgoing;
+        {
+          std::lock_guard lock(mutex_);
+          const QueuedDatagram* front = outgoing_.front();
+          if (quiche_conn_dgram_send_queue_len(connection.get()) == 0 && front)
+            outgoing = front->bytes;
+        }
+        if (!outgoing.empty()) {
+          const ssize_t queued = quiche_conn_dgram_send(
+              connection.get(), outgoing.data(), outgoing.size());
+          std::lock_guard lock(mutex_);
+          if (queued == static_cast<ssize_t>(outgoing.size())) {
+            outgoing_.Pop();
+            ++stats_.sent_datagrams;
+          } else if (queued == QUICHE_ERR_BUFFER_TOO_SHORT) {
+            outgoing_.Pop();
+            ++quiche_oversize_drops_;
+            CopyQueueStatsLocked();
+          } else if (queued != QUICHE_ERR_DONE) {
+            error_ = "failed to queue RoQ DATAGRAM: " + std::to_string(queued);
+            close_requested_ = true;
+            close_code_ = static_cast<uint64_t>(RoqError::kInternalError);
+            close_reason_ = error_;
+          }
+        }
+      }
+
+      bool request_close = false;
+      uint64_t close_code = 0;
+      std::string close_reason;
+      {
+        std::lock_guard lock(mutex_);
+        request_close = close_requested_;
+        close_code = close_code_;
+        close_reason = close_reason_;
+      }
+      if (!connection && request_close)
+        break;
+      if (connection && request_close && !local_close_sent) {
+        quiche_conn_close(connection.get(), true, close_code,
+                          reinterpret_cast<const uint8_t*>(close_reason.data()),
+                          close_reason.size());
+        local_close_sent = true;
+      }
+
+      if (connection) {
+        const uint64_t timeout = quiche_conn_timeout_as_nanos(connection.get());
+        if (timeout != kNoTimeout && timeout == 0)
+          quiche_conn_on_timeout(connection.get());
+      }
+      if (pending_udp && now >= pending_udp->send_at) {
+        const ssize_t sent =
+            sendto(socket_fd.get(), pending_udp->bytes.data(),
+                   pending_udp->bytes.size(), 0,
+                   reinterpret_cast<const sockaddr*>(&pending_udp->destination),
+                   pending_udp->destination_length);
+        if (sent != static_cast<ssize_t>(pending_udp->bytes.size())) {
+          Fail("UDP send failed");
+          return;
+        }
+        {
+          std::lock_guard lock(mutex_);
+          ++stats_.sent_udp_packets;
+        }
+        pending_udp.reset();
+      }
+      if (connection && !pending_udp) {
+        quiche_send_info send_info = {};
+        const ssize_t written =
+            quiche_conn_send(connection.get(), packet.data(),
+                             config_.maximum_udp_payload, &send_info);
+        if (written >= 0) {
+          PendingUdpPacket pending;
+          pending.bytes.assign(packet.begin(),
+                               packet.begin() + static_cast<size_t>(written));
+          pending.destination = send_info.to;
+          pending.destination_length = send_info.to_len;
+          pending.send_at =
+              now + std::chrono::nanoseconds(send_info.pacing_delay_nanos);
+          {
+            std::lock_guard lock(mutex_);
+            stats_.max_pacing_delay_ns = std::max(stats_.max_pacing_delay_ns,
+                                                  send_info.pacing_delay_nanos);
+          }
+          pending_udp = std::move(pending);
+        } else if (written != QUICHE_ERR_DONE) {
+          Fail("quiche send failed: " + std::to_string(written));
+          return;
+        } else if (local_close_sent) {
+          close_drained = true;
+        }
+      }
+
+      if (connection && quiche_conn_is_closed(connection.get()) &&
+          !pending_udp) {
+        break;
+      }
+      if (local_close_sent && close_drained && !pending_udp)
+        break;
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    if (connection) {
+      quiche_path_stats path = {};
+      if (quiche_conn_path_stats(connection.get(), 0, &path) == 0) {
+        std::lock_guard lock(mutex_);
+        stats_.rtt_ns = path.rtt;
+        stats_.max_rtt_ns = path.max_rtt;
+        stats_.delivery_rate_bytes_per_second = path.delivery_rate;
+        stats_.max_bandwidth_bytes_per_second = path.max_bandwidth;
+        stats_.pmtu_bytes = path.pmtu;
+        stats_.dgram_lost = path.dgram_lost;
+      }
+    }
+    {
+      std::lock_guard lock(mutex_);
+      CopyQueueStatsLocked();
+      stats_.clean_shutdown = error_.empty();
+      closed_ = true;
+      condition_.notify_all();
+    }
+  }
+
+  const RoqSessionConfig config_;
+  const ReceiveCallback receive_callback_;
+  const DatagramSizeCallback datagram_size_callback_;
+  mutable std::mutex mutex_;
+  std::condition_variable condition_;
+  BoundedDatagramQueue outgoing_;
+  std::thread thread_;
+  bool ready_ = false;
+  bool close_requested_ = false;
+  bool closed_ = false;
+  uint64_t close_code_ = 0;
+  std::string close_reason_ = "complete";
+  std::optional<size_t> application_datagram_limit_;
+  size_t quiche_oversize_drops_ = 0;
+  RoqSessionStats stats_;
+  std::string error_;
+};
+
+}  // namespace
+
+std::unique_ptr<RoqSession> RoqSession::Create(
+    RoqSessionConfig config,
+    ReceiveCallback receive_callback,
+    DatagramSizeCallback datagram_size_callback) {
+  return std::make_unique<RoqSessionImpl>(std::move(config),
+                                          std::move(receive_callback),
+                                          std::move(datagram_size_callback));
+}
+
+}  // namespace webrtc::roq
