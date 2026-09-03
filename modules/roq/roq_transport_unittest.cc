@@ -23,12 +23,14 @@ namespace {
 
 class FakeRoqSession final : public RoqSession {
  public:
+  bool SendReplaySafeMessage(std::span<const uint8_t>) override {
+    return false;
+  }
+  void BeginReceiveFlowUpdate() override {}
+  void UpdateReceiveFlowIds(std::vector<uint64_t>) override {}
   bool Start(std::string*) override { return true; }
   bool WaitUntilReady(TimeDelta) override { return true; }
   bool WaitUntilEstablished(TimeDelta) override { return true; }
-  RoqSendResult Send(uint64_t, std::span<const uint8_t>) override {
-    return RoqSendResult::kClosed;
-  }
   RoqSendResult SendMedia(uint64_t flow_id,
                           std::span<const uint8_t> packet,
                           RoqDatagramMetadata metadata,
@@ -40,7 +42,7 @@ class FakeRoqSession final : public RoqSession {
     return RoqSendResult::kQueued;
   }
   void RecordInvalidDatagram() override { ++invalid_datagrams_; }
-  void SetApplicationDatagramPayloadLimit(size_t) override {}
+  void UpdatePeerDatagramPayloadLimit(size_t) override {}
   void Close(uint64_t, std::string) override {}
   bool WaitUntilClosed(TimeDelta) override { return true; }
   RoqSessionStats stats() const override { return {}; }

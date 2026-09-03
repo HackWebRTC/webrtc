@@ -53,8 +53,12 @@ rtc_executable("roq_test_peer") {
     "network_lab.h",
     "quiche_abi.cc",
     "quiche_abi.h",
+    "resumption_peer.cc",
+    "resumption_peer.h",
     "roq_peer.cc",
     "roq_peer.h",
+    "test_roq_server.cc",
+    "test_roq_server.h",
   ]
   include_dirs = [ "$roq_repo_root/quiche/quiche/include" ]
   deps = [
@@ -99,10 +103,12 @@ rtc_executable("roq_test_peer") {
     "../../modules/video_coding:video_codec_interface",
     "../../modules/video_coding:webrtc_h264",
     "../../rtc_base:copy_on_write_buffer",
+    "../../rtc_base:crypto_random",
     "../../rtc_base:rtc_json",
     "../../rtc_base:task_queue_for_test",
     "../../rtc_base:threading",
     "../../rtc_base/network:sent_packet",
+    "../../system_wrappers",
     "../../test:encoder_settings",
     "../../test:test_renderer",
     "../../test:video_test_common",
@@ -123,6 +129,11 @@ if (rtc_include_tests) {
   group("m3_unittests") {
     testonly = true
     deps = [ "../../modules/roq:m3_unittests" ]
+  }
+
+  group("m4_unittests") {
+    testonly = true
+    deps = [ "../../modules/roq:roq_sdk_unittests" ]
   }
 
   rtc_test("roq_unittests") {

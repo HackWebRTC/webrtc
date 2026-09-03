@@ -22,6 +22,7 @@
 #include "rtc_tools/roq/media_source.h"
 #include "rtc_tools/roq/network_lab.h"
 #include "rtc_tools/roq/quiche_abi.h"
+#include "rtc_tools/roq/resumption_peer.h"
 #include "rtc_tools/roq/roq_peer.h"
 
 namespace {
@@ -31,6 +32,8 @@ void PrintUsage(std::ostream& output) {
             "Commands:\n"
             "  capability\n"
             "  quiche-abi\n"
+            "  resumption-client\n"
+            "  resumption-server\n"
             "  client\n"
             "  server\n"
             "  media-source\n"
@@ -147,6 +150,61 @@ int main(int argc, char* argv[]) {
               << "}\n";
     return 0;
   }
+  if (command == "resumption-client" || command == "resumption-server") {
+    const bool client = command == "resumption-client";
+    const std::optional<std::string_view> address =
+        OptionValue(args, client ? "--connect" : "--listen");
+    const std::optional<std::string_view> cache_directory =
+        OptionValue(args, "--cache-dir");
+    if (!address || (client && !cache_directory)) {
+      std::cerr << command << " requires --" << (client ? "connect" : "listen")
+                << " HOST:PORT" << (client ? " --cache-dir <path>" : "")
+                << '\n';
+      return 2;
+    }
+    const webrtc::roq::ResumptionPeerResult result =
+        webrtc::roq::RunResumptionPeer(
+            {.role = client ? webrtc::roq::PeerRole::kClient
+                            : webrtc::roq::PeerRole::kServer,
+             .address = std::string(*address),
+             .executable_path = args[0],
+             .cache_directory =
+                 cache_directory ? std::string(*cache_directory) : "",
+             .context_byte = static_cast<uint8_t>(
+                 UIntOption(args, "--context-byte").value_or(1)),
+             .cache_max_age_ms =
+                 static_cast<int64_t>(UIntOption(args, "--cache-max-age-ms")
+                                          .value_or(24 * 60 * 60 * 1000))});
+    if (!result.error.empty()) {
+      std::cerr << result.error << '\n';
+      return 1;
+    }
+    std::cout
+        << "{\"schema_version\":1,"
+        << "\"event\":\"resumption_summary\","
+        << "\"established\":" << (result.established ? "true" : "false") << ','
+        << "\"cache_hit\":" << (result.cache_hit ? "true" : "false") << ','
+        << "\"cache_saved\":" << (result.cache_saved ? "true" : "false") << ','
+        << "\"cache_expired\":" << (result.cache_expired ? "true" : "false")
+        << ','
+        << "\"cache_invalid\":" << (result.cache_invalid ? "true" : "false")
+        << ',' << "\"resumed\":" << (result.resumed ? "true" : "false") << ','
+        << "\"early_attempted\":" << (result.early_attempted ? "true" : "false")
+        << ','
+        << "\"early_accepted\":" << (result.early_accepted ? "true" : "false")
+        << ',' << "\"fallback\":" << (result.fallback ? "true" : "false") << ','
+        << "\"early_reason\":" << result.early_reason << ','
+        << "\"reliable_messages_sent\":" << result.reliable_messages_sent << ','
+        << "\"reliable_messages_received\":"
+        << result.reliable_messages_received << ','
+        << "\"early_reliable_messages_received\":"
+        << result.early_reliable_messages_received << ','
+        << "\"address_tokens_received\":" << result.address_tokens_received
+        << ',' << "\"address_tokens_sent\":" << result.address_tokens_sent
+        << ',' << "\"peer_address_validated\":"
+        << (result.peer_address_validated ? "true" : "false") << "}\n";
+    return 0;
+  }
   if (command == "client" || command == "server") {
     const std::optional<std::string_view> scenario =
         OptionValue(args, "--scenario");
@@ -163,7 +221,7 @@ int main(int argc, char* argv[]) {
         OptionValue(args, "--inject-error");
     if (scenario &&
         (*scenario == "media-loopback" || *scenario == "media-send" ||
-         *scenario == "media-receive")) {
+         *scenario == "media-receive" || *scenario == "early-media")) {
       const std::optional<std::string_view> input =
           OptionValue(args, "--input");
       const std::optional<std::string_view> keyframe_request =
@@ -180,8 +238,11 @@ int main(int argc, char* argv[]) {
           UIntOption(args, "--drop-video-packet-after");
       const std::optional<uint32_t> drop_audio_every =
           UIntOption(args, "--drop-audio-every");
+      const std::optional<std::string_view> cache_directory =
+          OptionValue(args, "--cache-dir");
       if (!address || !manifest || !event_log || !run_id ||
-          (command == "client" && !input) ||
+          ((command == "client" || *scenario == "early-media") && !input) ||
+          (*scenario == "early-media" && !cache_directory) ||
           (command == "client" && *scenario == "media-receive") ||
           (command == "server" && *scenario == "media-send") ||
           (duration && *duration <= 0)) {
@@ -203,6 +264,13 @@ int main(int argc, char* argv[]) {
           .input_path = input ? std::string(*input) : "",
           .event_log_path = std::string(*event_log),
           .run_id = std::string(*run_id),
+          .cache_directory =
+              cache_directory ? std::string(*cache_directory) : "",
+          .context_byte = static_cast<uint8_t>(
+              UIntOption(args, "--context-byte").value_or(1)),
+          .replay_first_provisional =
+              HasOption(args, "--replay-first-provisional"),
+          .drop_all_provisional = HasOption(args, "--drop-all-provisional"),
           .duration_seconds = duration,
           .no_render = HasOption(args, "--no-render"),
           .drop_first_idr = HasOption(args, "--drop-first-idr"),
@@ -271,7 +339,6 @@ int main(int argc, char* argv[]) {
           << result.quiche_slot_expired_drops << ','
           << "\"peak_queue_size\":" << result.peak_queue_size << ','
           << "\"max_queue_delay_us\":" << result.max_queue_delay_us << ','
-          << "\"dropped_background\":" << result.dropped_background << ','
           << "\"dropped_periodic_rtcp\":" << result.dropped_periodic_rtcp << ','
           << "\"dropped_video_delta\":" << result.dropped_video_delta << ','
           << "\"dropped_video_key\":" << result.dropped_video_key << ','
@@ -292,6 +359,10 @@ int main(int argc, char* argv[]) {
           << (result.boundary_packet_accepted ? "true" : "false") << ','
           << "\"oversize_packet_rejected\":"
           << (result.oversize_packet_rejected ? "true" : "false") << ','
+          << "\"early_boundary_packet_accepted\":"
+          << (result.early_boundary_packet_accepted ? "true" : "false") << ','
+          << "\"early_oversize_packet_rejected\":"
+          << (result.early_oversize_packet_rejected ? "true" : "false") << ','
           << "\"clean_shutdown\":" << (result.clean_shutdown ? "true" : "false")
           << ',' << "\"rtt_ns\":" << result.rtt_ns << ','
           << "\"max_rtt_ns\":" << result.max_rtt_ns << ','
@@ -301,6 +372,9 @@ int main(int argc, char* argv[]) {
           << result.max_bandwidth_bytes_per_second << ','
           << "\"pmtu_bytes\":" << result.pmtu_bytes << ','
           << "\"dgram_lost\":" << result.dgram_lost << ','
+          << "\"sent_udp_packets\":" << result.sent_udp_packets << ','
+          << "\"received_udp_packets\":" << result.received_udp_packets << ','
+          << "\"max_pacing_delay_ns\":" << result.max_pacing_delay_ns << ','
           << "\"sent_rtx_packets\":" << result.sent_rtx_packets << ','
           << "\"received_rtx_packets\":" << result.received_rtx_packets << ','
           << "\"nack_packets\":" << result.nack_packets << ','
@@ -318,7 +392,43 @@ int main(int argc, char* argv[]) {
           << "\"audio_fec_packets_discarded\":"
           << result.audio_fec_packets_discarded << ','
           << "\"audio_secondary_decoded_rate\":"
-          << result.audio_secondary_decoded_rate << "}\n";
+          << result.audio_secondary_decoded_rate << ','
+          << "\"resumption_cache_hit\":"
+          << (result.resumption_cache_hit ? "true" : "false") << ','
+          << "\"session_resumed\":"
+          << (result.session_resumed ? "true" : "false") << ','
+          << "\"early_data_attempted\":"
+          << (result.early_data_attempted ? "true" : "false") << ','
+          << "\"early_data_accepted\":"
+          << (result.early_data_accepted ? "true" : "false") << ','
+          << "\"early_data_fallback\":"
+          << (result.early_data_fallback ? "true" : "false") << ','
+          << "\"early_data_reason\":" << result.early_data_reason << ','
+          << "\"zero_rtt_packets_received\":"
+          << result.zero_rtt_packets_received << ','
+          << "\"provisional_datagrams_received\":"
+          << result.provisional_datagrams_received << ','
+          << "\"provisional_datagrams_committed\":"
+          << result.provisional_datagrams_committed << ','
+          << "\"provisional_datagrams_dropped\":"
+          << result.provisional_datagrams_dropped << ','
+          << "\"provisional_datagrams_deduplicated\":"
+          << result.provisional_datagrams_deduplicated << ','
+          << "\"early_datagrams_received\":" << result.early_datagrams_received
+          << ',' << "\"early_datagrams_sent\":" << result.early_datagrams_sent
+          << ',' << "\"early_reliable_messages_received\":"
+          << result.early_reliable_messages_received << ','
+          << "\"peer_address_validated\":"
+          << (result.peer_address_validated ? "true" : "false") << ','
+          << "\"unknown_flow_buffered\":" << result.unknown_flow_buffered << ','
+          << "\"unknown_flow_released\":" << result.unknown_flow_released << ','
+          << "\"unknown_flow_dropped\":" << result.unknown_flow_dropped << ','
+          << "\"early_rejection_queue_drops\":"
+          << result.early_rejection_queue_drops << ','
+          << "\"early_data_recovery_keyframes\":"
+          << result.early_data_recovery_keyframes << ','
+          << "\"first_decoded_frame_monotonic_us\":"
+          << result.first_decoded_frame_monotonic_us << "}\n";
       return 0;
     }
     if (!scenario || *scenario != "synthetic-roq" || !address || !manifest ||

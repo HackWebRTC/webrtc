@@ -21,6 +21,10 @@ struct MediaPeerOptions {
   std::string input_path;
   std::string event_log_path;
   std::string run_id;
+  std::string cache_directory;
+  uint8_t context_byte = 1;
+  bool replay_first_provisional = false;
+  bool drop_all_provisional = false;
   std::optional<double> duration_seconds;
   int audio_bitrate_bps = 128000;
   int video_bitrate_bps = 4000000;
@@ -65,7 +69,6 @@ struct MediaPeerResult {
   size_t quiche_slot_expired_drops = 0;
   size_t peak_queue_size = 0;
   int64_t max_queue_delay_us = 0;
-  size_t dropped_background = 0;
   size_t dropped_periodic_rtcp = 0;
   size_t dropped_video_delta = 0;
   size_t dropped_video_key = 0;
@@ -83,6 +86,8 @@ struct MediaPeerResult {
   int64_t idr_recovery_ms = -1;
   bool boundary_packet_accepted = false;
   bool oversize_packet_rejected = false;
+  bool early_boundary_packet_accepted = false;
+  bool early_oversize_packet_rejected = false;
   bool clean_shutdown = false;
   uint64_t rtt_ns = 0;
   uint64_t max_rtt_ns = 0;
@@ -90,6 +95,9 @@ struct MediaPeerResult {
   uint64_t max_bandwidth_bytes_per_second = 0;
   size_t pmtu_bytes = 0;
   size_t dgram_lost = 0;
+  size_t sent_udp_packets = 0;
+  size_t received_udp_packets = 0;
+  uint64_t max_pacing_delay_ns = 0;
   size_t sent_rtx_packets = 0;
   size_t received_rtx_packets = 0;
   size_t nack_packets = 0;
@@ -101,6 +109,27 @@ struct MediaPeerResult {
   uint64_t audio_fec_packets_received = 0;
   uint64_t audio_fec_packets_discarded = 0;
   float audio_secondary_decoded_rate = 0.0f;
+  bool resumption_cache_hit = false;
+  bool session_resumed = false;
+  bool early_data_attempted = false;
+  bool early_data_accepted = false;
+  bool early_data_fallback = false;
+  uint32_t early_data_reason = 0;
+  size_t zero_rtt_packets_received = 0;
+  size_t provisional_datagrams_received = 0;
+  size_t provisional_datagrams_committed = 0;
+  size_t provisional_datagrams_dropped = 0;
+  size_t provisional_datagrams_deduplicated = 0;
+  size_t early_datagrams_received = 0;
+  size_t early_datagrams_sent = 0;
+  size_t early_reliable_messages_received = 0;
+  bool peer_address_validated = false;
+  size_t unknown_flow_buffered = 0;
+  size_t unknown_flow_released = 0;
+  size_t unknown_flow_dropped = 0;
+  size_t early_rejection_queue_drops = 0;
+  uint32_t early_data_recovery_keyframes = 0;
+  int64_t first_decoded_frame_monotonic_us = -1;
   std::string error;
 };
 

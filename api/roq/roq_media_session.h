@@ -91,6 +91,7 @@ struct RoqMediaSessionStats {
   uint64_t retransmitted_packets_sent = 0;
   uint64_t retransmitted_bytes_sent = 0;
   bool opus_inband_fec = false;
+  uint32_t early_data_recovery_keyframes = 0;
 };
 
 class RoqMediaSession {

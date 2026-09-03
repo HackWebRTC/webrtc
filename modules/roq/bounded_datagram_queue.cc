@@ -14,28 +14,6 @@ BoundedDatagramQueue::BoundedDatagramQueue(size_t capacity,
                                            size_t max_datagram_size)
     : capacity_(capacity), max_datagram_size_(max_datagram_size) {}
 
-DatagramEnqueueResult BoundedDatagramQueue::Enqueue(
-    std::span<const uint8_t> bytes) {
-  return EnqueueLegacy(bytes, Timestamp::Zero());
-}
-
-DatagramEnqueueResult BoundedDatagramQueue::EnqueueLegacy(
-    std::span<const uint8_t> bytes,
-    Timestamp now) {
-  if (bytes.size() > max_datagram_size_) {
-    ++oversize_drops_;
-    return DatagramEnqueueResult::kOversize;
-  }
-  if (queue_.size() >= capacity_) {
-    ++queue_full_drops_;
-    return DatagramEnqueueResult::kQueueFull;
-  }
-  queue_.push_back({.bytes = std::vector<uint8_t>(bytes.begin(), bytes.end()),
-                    .enqueue_time = now});
-  peak_size_ = std::max(peak_size_, queue_.size());
-  return DatagramEnqueueResult::kQueued;
-}
-
 DatagramEnqueueResult BoundedDatagramQueue::Enqueue(QueuedDatagram datagram,
                                                     Timestamp now) {
   if (datagram.bytes.size() > max_datagram_size_) {

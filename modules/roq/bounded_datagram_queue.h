@@ -10,9 +10,7 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
-#include <initializer_list>
 #include <optional>
-#include <span>
 #include <vector>
 
 #include "api/roq/roq_session.h"
@@ -43,13 +41,7 @@ class BoundedDatagramQueue {
  public:
   BoundedDatagramQueue(size_t capacity, size_t max_datagram_size);
 
-  DatagramEnqueueResult Enqueue(std::span<const uint8_t> bytes);
-  DatagramEnqueueResult EnqueueLegacy(std::span<const uint8_t> bytes,
-                                      Timestamp now);
   DatagramEnqueueResult Enqueue(QueuedDatagram datagram, Timestamp now);
-  DatagramEnqueueResult Enqueue(std::initializer_list<uint8_t> bytes) {
-    return Enqueue(std::span<const uint8_t>(bytes.begin(), bytes.size()));
-  }
   std::optional<QueuedDatagram> Pop();
   std::optional<QueuedDatagram> Pop(Timestamp now);
   void RecordSubmitted(const QueuedDatagram& datagram);
@@ -105,7 +97,7 @@ class BoundedDatagramQueue {
   size_t expired_drops_ = 0;
   size_t invalid_drops_ = 0;
   TimeDelta max_queue_delay_ = TimeDelta::Zero();
-  std::array<size_t, 6> dropped_by_priority_ = {};
+  std::array<size_t, 5> dropped_by_priority_ = {};
 };
 
 }  // namespace webrtc::roq

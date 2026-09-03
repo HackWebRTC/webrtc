@@ -252,7 +252,18 @@ class RoqMediaSessionImpl final : public RoqMediaSession {
     call_config.bitrate_config.max_bitrate_bps = 4'128'000;
     call_config.per_call_network_controller_factory =
         std::make_unique<QuicNetworkControllerFactory>(
-            config_.network_stats_provider, config_.network_control_observer);
+            config_.network_stats_provider,
+            [this](const QuicNetworkControlState& state) {
+              if (config_.network_control_observer)
+                config_.network_control_observer(state);
+              const RoqSessionStats network = config_.network_stats_provider();
+              if (network.early_data_fallback &&
+                  !early_data_recovery_requested_ && video_send_stream_) {
+                early_data_recovery_requested_ = true;
+                ++early_data_recovery_keyframes_;
+                video_send_stream_->GenerateKeyFrame({});
+              }
+            });
     call_ = Call::Create(std::move(call_config));
     if (config_.send_audio)
       audio_state_->SetRecording(false);
@@ -445,6 +456,7 @@ class RoqMediaSessionImpl final : public RoqMediaSession {
       snapshot.fir_sent = video.rtcp_packet_type_counts.fir_packets;
       snapshot.nack_sent = video.rtcp_packet_type_counts.nack_packets;
     }
+    snapshot.early_data_recovery_keyframes = early_data_recovery_keyframes_;
     return snapshot;
   }
 
@@ -464,6 +476,8 @@ class RoqMediaSessionImpl final : public RoqMediaSession {
   bool started_ = false;
   RoqMediaSessionStats final_stats_;
   std::optional<int64_t> video_timestamp_base_us_;
+  bool early_data_recovery_requested_ = false;
+  uint32_t early_data_recovery_keyframes_ = 0;
 };
 
 }  // namespace

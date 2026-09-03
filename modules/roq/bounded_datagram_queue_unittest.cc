@@ -29,19 +29,6 @@ QueuedDatagram Datagram(
           .frame_id = frame_id};
 }
 
-TEST(BoundedDatagramQueueTest, LegacyQueueRejectsNewestPacketWhenFull) {
-  BoundedDatagramQueue queue(/*capacity=*/2, /*max_datagram_size=*/8);
-
-  EXPECT_EQ(queue.Enqueue({1, 2}), DatagramEnqueueResult::kQueued);
-  EXPECT_EQ(queue.Enqueue({3, 4, 5}), DatagramEnqueueResult::kQueued);
-  EXPECT_EQ(queue.Enqueue({6}), DatagramEnqueueResult::kQueueFull);
-  std::optional<QueuedDatagram> first = queue.Pop();
-  ASSERT_TRUE(first.has_value());
-  EXPECT_EQ(first->bytes, (std::vector<uint8_t>{1, 2}));
-  EXPECT_EQ(queue.queue_full_drops(), 1u);
-  EXPECT_EQ(queue.peak_size(), 2u);
-}
-
 TEST(BoundedDatagramQueueTest, KeepsNewestPacketWhenCapacityIsFull) {
   BoundedDatagramQueue queue(/*capacity=*/2, /*max_datagram_size=*/8);
   constexpr Timestamp now = Timestamp::Millis(100);
@@ -349,8 +336,15 @@ TEST(BoundedDatagramQueueTest, CountsExpiredRtxAsExpiredInsteadOfOrphan) {
 
 TEST(BoundedDatagramQueueTest, ClearDropsAllPendingMedia) {
   BoundedDatagramQueue queue(/*capacity=*/3, /*max_datagram_size=*/8);
-  EXPECT_EQ(queue.Enqueue({1}), DatagramEnqueueResult::kQueued);
-  EXPECT_EQ(queue.Enqueue({2}), DatagramEnqueueResult::kQueued);
+  constexpr Timestamp now = Timestamp::Millis(100);
+  EXPECT_EQ(queue.Enqueue(Datagram(1, DatagramPriority::kVideoDelta, now,
+                                   TimeDelta::Seconds(1)),
+                          now),
+            DatagramEnqueueResult::kQueued);
+  EXPECT_EQ(queue.Enqueue(Datagram(2, DatagramPriority::kVideoDelta, now,
+                                   TimeDelta::Seconds(1)),
+                          now),
+            DatagramEnqueueResult::kQueued);
 
   EXPECT_EQ(queue.Clear(), 2u);
   EXPECT_EQ(queue.size(), 0u);
@@ -358,9 +352,18 @@ TEST(BoundedDatagramQueueTest, ClearDropsAllPendingMedia) {
 
 TEST(BoundedDatagramQueueTest, RejectsOversizeWithoutBlockingFollowingPacket) {
   BoundedDatagramQueue queue(/*capacity=*/2, /*max_datagram_size=*/4);
+  constexpr Timestamp now = Timestamp::Millis(100);
 
-  EXPECT_EQ(queue.Enqueue({1, 2, 3, 4, 5}), DatagramEnqueueResult::kOversize);
-  EXPECT_EQ(queue.Enqueue({9, 8, 7}), DatagramEnqueueResult::kQueued);
+  QueuedDatagram oversize =
+      Datagram(1, DatagramPriority::kVideoDelta, now, TimeDelta::Seconds(1));
+  oversize.bytes = {1, 2, 3, 4, 5};
+  QueuedDatagram valid =
+      Datagram(9, DatagramPriority::kVideoDelta, now, TimeDelta::Seconds(1));
+  valid.bytes = {9, 8, 7};
+  EXPECT_EQ(queue.Enqueue(std::move(oversize), now),
+            DatagramEnqueueResult::kOversize);
+  EXPECT_EQ(queue.Enqueue(std::move(valid), now),
+            DatagramEnqueueResult::kQueued);
   ASSERT_TRUE(queue.Pop().has_value());
   EXPECT_EQ(queue.Pop(), std::nullopt);
   EXPECT_EQ(queue.oversize_drops(), 1u);
@@ -368,9 +371,22 @@ TEST(BoundedDatagramQueueTest, RejectsOversizeWithoutBlockingFollowingPacket) {
 
 TEST(BoundedDatagramQueueTest, PmtuShrinkPurgesQueuedOversizePackets) {
   BoundedDatagramQueue queue(/*capacity=*/4, /*max_datagram_size=*/8);
-  EXPECT_EQ(queue.Enqueue({1, 2, 3}), DatagramEnqueueResult::kQueued);
-  EXPECT_EQ(queue.Enqueue({4, 5, 6, 7, 8}), DatagramEnqueueResult::kQueued);
-  EXPECT_EQ(queue.Enqueue({9, 10, 11, 12}), DatagramEnqueueResult::kQueued);
+  constexpr Timestamp now = Timestamp::Millis(100);
+  QueuedDatagram first =
+      Datagram(1, DatagramPriority::kVideoDelta, now, TimeDelta::Seconds(1));
+  first.bytes = {1, 2, 3};
+  QueuedDatagram second =
+      Datagram(4, DatagramPriority::kVideoDelta, now, TimeDelta::Seconds(1));
+  second.bytes = {4, 5, 6, 7, 8};
+  QueuedDatagram third =
+      Datagram(9, DatagramPriority::kVideoDelta, now, TimeDelta::Seconds(1));
+  third.bytes = {9, 10, 11, 12};
+  EXPECT_EQ(queue.Enqueue(std::move(first), now),
+            DatagramEnqueueResult::kQueued);
+  EXPECT_EQ(queue.Enqueue(std::move(second), now),
+            DatagramEnqueueResult::kQueued);
+  EXPECT_EQ(queue.Enqueue(std::move(third), now),
+            DatagramEnqueueResult::kQueued);
 
   EXPECT_EQ(queue.SetMaxDatagramSize(4), 1u);
   ASSERT_TRUE(queue.Pop().has_value());

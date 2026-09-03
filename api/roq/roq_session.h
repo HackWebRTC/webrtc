@@ -5,6 +5,7 @@
 #ifndef API_ROQ_ROQ_SESSION_H_
 #define API_ROQ_ROQ_SESSION_H_
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -20,11 +21,9 @@
 
 namespace webrtc::roq {
 
-enum class RoqRole { kClient, kServer };
 enum class RoqSendResult { kQueued, kQueueFull, kOversize, kInvalid, kClosed };
 enum class RoqMediaType { kAudio, kVideo, kRtcp };
 enum class RoqDatagramPriority {
-  kBackground,
   kPeriodicRtcp,
   kVideoDelta,
   kVideoKey,
@@ -57,19 +56,20 @@ struct RoqDatagramMetadata {
 };
 
 struct RoqSessionConfig {
-  RoqRole role = RoqRole::kClient;
   std::string address;
   std::string server_name = "quic.tech";
   std::string alpn = "roq-14";
-  std::string certificate_path;
-  std::string private_key_path;
   std::string trusted_ca_file;
   std::string trusted_ca_directory;
-  bool verify_peer = true;
+  std::string resumption_cache_directory;
+  std::array<uint8_t, 32> resumption_context = {};
+  TimeDelta resumption_cache_max_age = TimeDelta::Seconds(24 * 60 * 60);
+  std::function<Timestamp()> resumption_clock;
   size_t maximum_udp_payload = 1350;
   size_t outgoing_queue_capacity = 512;
   Clock* clock = Clock::GetRealTimeClock();
   std::vector<uint64_t> allowed_flow_ids;
+  std::vector<uint64_t> receive_flow_ids;
 };
 
 struct RoqReceivedPacket {
@@ -80,6 +80,26 @@ struct RoqReceivedPacket {
 struct RoqSessionStats {
   bool established = false;
   bool clean_shutdown = false;
+  std::vector<uint8_t> source_connection_id;
+  bool resumption_cache_hit = false;
+  bool resumption_cache_expired = false;
+  bool resumption_cache_invalid = false;
+  bool resumption_cache_saved = false;
+  bool session_resumed = false;
+  bool early_data_attempted = false;
+  bool early_data_accepted = false;
+  bool early_data_fallback = false;
+  uint32_t early_data_reason = 0;
+  size_t reliable_messages_sent = 0;
+  size_t reliable_messages_received = 0;
+  size_t early_reliable_messages_received = 0;
+  size_t address_tokens_received = 0;
+  size_t early_datagrams_received = 0;
+  size_t early_datagrams_sent = 0;
+  size_t early_rejection_queue_drops = 0;
+  size_t unknown_flow_buffered = 0;
+  size_t unknown_flow_released = 0;
+  size_t unknown_flow_dropped = 0;
   size_t sent_datagrams = 0;
   size_t received_datagrams = 0;
   size_t sent_udp_packets = 0;
@@ -92,7 +112,6 @@ struct RoqSessionStats {
   size_t quiche_slot_expired_drops = 0;
   size_t peak_queue_size = 0;
   int64_t max_queue_delay_us = 0;
-  size_t dropped_background = 0;
   size_t dropped_periodic_rtcp = 0;
   size_t dropped_video_delta = 0;
   size_t dropped_video_key = 0;
@@ -114,24 +133,27 @@ class RoqSession {
  public:
   using ReceiveCallback = std::function<void(RoqReceivedPacket)>;
   using DatagramSizeCallback = std::function<void(size_t)>;
+  using ReliableMessageCallback = std::function<void(std::vector<uint8_t>)>;
 
   static std::unique_ptr<RoqSession> Create(
       RoqSessionConfig config,
       ReceiveCallback receive_callback,
-      DatagramSizeCallback datagram_size_callback = {});
+      DatagramSizeCallback datagram_size_callback = {},
+      ReliableMessageCallback reliable_message_callback = {});
 
   virtual ~RoqSession() = default;
   virtual bool Start(std::string* error) = 0;
   virtual bool WaitUntilReady(TimeDelta timeout) = 0;
   virtual bool WaitUntilEstablished(TimeDelta timeout) = 0;
-  virtual RoqSendResult Send(uint64_t flow_id,
-                             std::span<const uint8_t> packet) = 0;
+  virtual bool SendReplaySafeMessage(std::span<const uint8_t> message) = 0;
+  virtual void BeginReceiveFlowUpdate() = 0;
+  virtual void UpdateReceiveFlowIds(std::vector<uint64_t> flow_ids) = 0;
   virtual RoqSendResult SendMedia(uint64_t flow_id,
                                   std::span<const uint8_t> packet,
                                   RoqDatagramMetadata metadata,
                                   std::function<void()> on_submitted) = 0;
   virtual void RecordInvalidDatagram() = 0;
-  virtual void SetApplicationDatagramPayloadLimit(size_t bytes) = 0;
+  virtual void UpdatePeerDatagramPayloadLimit(size_t bytes) = 0;
   virtual void Close(uint64_t application_error = 0,
                      std::string reason = "complete") = 0;
   virtual bool WaitUntilClosed(TimeDelta timeout) = 0;

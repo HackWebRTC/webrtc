@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <netdb.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -18,6 +19,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <deque>
 #include <limits>
 #include <memory>
 #include <mutex>
@@ -29,8 +31,14 @@
 #include <vector>
 
 #include "modules/roq/bounded_datagram_queue.h"
+#include "modules/roq/receive_flow_registry.h"
+#include "modules/roq/reliable_message_framer.h"
+#include "modules/roq/resumption_cache.h"
 #include "modules/roq/roq_wire.h"
 #include "quiche.h"
+#include "rtc_base/crypto_random.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/time_utils.h"
 
 namespace webrtc::roq {
 namespace {
@@ -38,6 +46,8 @@ namespace {
 using SteadyClock = std::chrono::steady_clock;
 constexpr size_t kConnectionIdLength = 16;
 constexpr size_t kPacketBufferSize = 65535;
+constexpr uint64_t kControlStreamId = 0;
+constexpr size_t kEarlyDatagramPayloadLimit = 1000;
 constexpr uint64_t kNoTimeout = std::numeric_limits<uint64_t>::max();
 
 struct ConfigDeleter {
@@ -86,48 +96,96 @@ struct PendingUdpPacket {
   SteadyClock::time_point send_at;
 };
 
-bool ParseAddress(const std::string& value,
-                  sockaddr_in* address,
-                  std::string* error) {
+struct ResolvedAddress {
+  sockaddr_storage value = {};
+  socklen_t length = 0;
+};
+
+bool SplitHostPort(const std::string& value,
+                   std::string* host,
+                   std::string* port,
+                   std::string* error) {
+  if (!value.empty() && value.front() == '[') {
+    const size_t closing = value.find(']');
+    if (closing == std::string::npos || closing + 1 >= value.size() ||
+        value[closing + 1] != ':') {
+      *error = "IPv6 UDP address must be [HOST]:PORT";
+      return false;
+    }
+    *host = value.substr(1, closing - 1);
+    *port = value.substr(closing + 2);
+    return !host->empty() && !port->empty();
+  }
   const size_t separator = value.rfind(':');
-  if (separator == std::string::npos) {
+  if (separator == std::string::npos || value.find(':') != separator) {
     *error = "UDP address must be HOST:PORT";
     return false;
   }
-  const std::string host = value.substr(0, separator);
-  const std::string port_text = value.substr(separator + 1);
-  char* end = nullptr;
-  errno = 0;
-  const unsigned long port = std::strtoul(port_text.c_str(), &end, 10);
-  if (errno != 0 || end == port_text.c_str() || *end != '\0' || port == 0 ||
-      port > 65535) {
-    *error = "invalid UDP port";
+  *host = value.substr(0, separator);
+  *port = value.substr(separator + 1);
+  return !host->empty() && !port->empty();
+}
+
+bool ResolveAddress(const std::string& value,
+                    ResolvedAddress* address,
+                    std::string* error) {
+  std::string host;
+  std::string port;
+  if (!SplitHostPort(value, &host, &port, error))
+    return false;
+  addrinfo hints = {};
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_DGRAM;
+  hints.ai_protocol = IPPROTO_UDP;
+  addrinfo* resolved = nullptr;
+  const int result = getaddrinfo(host.c_str(), port.c_str(), &hints, &resolved);
+  if (result != 0 || !resolved) {
+    *error =
+        "failed to resolve UDP address: " + std::string(gai_strerror(result));
     return false;
   }
-  *address = {};
-  address->sin_family = AF_INET;
-  address->sin_port = htons(static_cast<uint16_t>(port));
-  if (inet_pton(AF_INET, host.c_str(), &address->sin_addr) != 1) {
-    *error = "invalid IPv4 address";
+  std::unique_ptr<addrinfo, decltype(&freeaddrinfo)> guard(resolved,
+                                                           freeaddrinfo);
+  if (resolved->ai_addrlen > sizeof(address->value)) {
+    *error = "resolved UDP address is too large";
     return false;
   }
+  std::memcpy(&address->value, resolved->ai_addr, resolved->ai_addrlen);
+  address->length = static_cast<socklen_t>(resolved->ai_addrlen);
   return true;
 }
 
-Socket OpenSocket(const sockaddr_in& bind_address,
-                  sockaddr_in* local_address,
+ResolvedAddress WildcardAddress(const ResolvedAddress& remote) {
+  ResolvedAddress local = remote;
+  if (local.value.ss_family == AF_INET) {
+    auto* address = reinterpret_cast<sockaddr_in*>(&local.value);
+    address->sin_addr.s_addr = htonl(INADDR_ANY);
+    address->sin_port = 0;
+  } else {
+    auto* address = reinterpret_cast<sockaddr_in6*>(&local.value);
+    address->sin6_addr = in6addr_any;
+    address->sin6_port = 0;
+    address->sin6_scope_id = 0;
+  }
+  return local;
+}
+
+Socket OpenSocket(const ResolvedAddress& bind_address,
+                  ResolvedAddress* local_address,
                   std::string* error) {
-  Socket socket_fd(socket(AF_INET, SOCK_DGRAM, 0));
+  Socket socket_fd(socket(bind_address.value.ss_family, SOCK_DGRAM, 0));
   if (socket_fd.get() < 0 ||
-      bind(socket_fd.get(), reinterpret_cast<const sockaddr*>(&bind_address),
-           sizeof(bind_address)) != 0 ||
+      bind(socket_fd.get(),
+           reinterpret_cast<const sockaddr*>(&bind_address.value),
+           bind_address.length) != 0 ||
       fcntl(socket_fd.get(), F_SETFL, O_NONBLOCK) != 0) {
     *error = "failed to open nonblocking UDP socket";
     return Socket();
   }
-  socklen_t length = sizeof(*local_address);
-  if (getsockname(socket_fd.get(), reinterpret_cast<sockaddr*>(local_address),
-                  &length) != 0) {
+  local_address->length = sizeof(local_address->value);
+  if (getsockname(socket_fd.get(),
+                  reinterpret_cast<sockaddr*>(&local_address->value),
+                  &local_address->length) != 0) {
     *error = "failed to read local UDP address";
     return Socket();
   }
@@ -138,12 +196,16 @@ class RoqSessionImpl final : public RoqSession {
  public:
   RoqSessionImpl(RoqSessionConfig config,
                  ReceiveCallback receive_callback,
-                 DatagramSizeCallback datagram_size_callback)
+                 DatagramSizeCallback datagram_size_callback,
+                 ReliableMessageCallback reliable_message_callback)
       : config_(std::move(config)),
         receive_callback_(std::move(receive_callback)),
         datagram_size_callback_(std::move(datagram_size_callback)),
-        outgoing_(config_.outgoing_queue_capacity,
-                  config_.maximum_udp_payload) {}
+        reliable_message_callback_(std::move(reliable_message_callback)),
+        outgoing_(config_.outgoing_queue_capacity, config_.maximum_udp_payload),
+        receive_flows_(config_.receive_flow_ids.empty()
+                           ? config_.allowed_flow_ids
+                           : config_.receive_flow_ids) {}
 
   ~RoqSessionImpl() override {
     Close(0, "complete");
@@ -180,27 +242,34 @@ class RoqSessionImpl final : public RoqSession {
            stats_.established;
   }
 
-  RoqSendResult Send(uint64_t flow_id,
-                     std::span<const uint8_t> packet) override {
+  bool SendReplaySafeMessage(std::span<const uint8_t> message) override {
+    std::vector<uint8_t> framed = FrameReliableMessage(message);
+    if (framed.empty())
+      return false;
     std::lock_guard lock(mutex_);
-    if (close_requested_ || closed_ ||
-        std::find(config_.allowed_flow_ids.begin(),
-                  config_.allowed_flow_ids.end(),
-                  flow_id) == config_.allowed_flow_ids.end()) {
-      return RoqSendResult::kClosed;
+    if (close_requested_ || closed_)
+      return false;
+    reliable_messages_.push_back(std::move(framed));
+    return true;
+  }
+
+  void BeginReceiveFlowUpdate() override {
+    std::lock_guard lock(mutex_);
+    receive_flows_.BeginUpdate(config_.clock->CurrentTime());
+  }
+
+  void UpdateReceiveFlowIds(std::vector<uint64_t> flow_ids) override {
+    std::vector<RoqReceivedPacket> released;
+    ReceiveCallback callback;
+    {
+      std::lock_guard lock(mutex_);
+      released = receive_flows_.Update(std::move(flow_ids));
+      CopyFlowStatsLocked();
+      callback = receive_callback_;
     }
-    const DatagramEnqueueResult result = outgoing_.EnqueueLegacy(
-        EncodeRoqDatagram(flow_id, packet), config_.clock->CurrentTime());
-    CopyQueueStatsLocked();
-    switch (result) {
-      case DatagramEnqueueResult::kQueued:
-        return RoqSendResult::kQueued;
-      case DatagramEnqueueResult::kQueueFull:
-        return RoqSendResult::kQueueFull;
-      case DatagramEnqueueResult::kOversize:
-        return RoqSendResult::kOversize;
-      case DatagramEnqueueResult::kInvalid:
-        return RoqSendResult::kInvalid;
+    if (callback) {
+      for (RoqReceivedPacket& packet : released)
+        callback(std::move(packet));
     }
   }
 
@@ -256,7 +325,7 @@ class RoqSessionImpl final : public RoqSession {
     CopyQueueStatsLocked();
   }
 
-  void SetApplicationDatagramPayloadLimit(size_t bytes) override {
+  void UpdatePeerDatagramPayloadLimit(size_t bytes) override {
     DatagramSizeCallback callback;
     size_t packet_limit = 0;
     {
@@ -337,25 +406,16 @@ class RoqSessionImpl final : public RoqSession {
     quiche_config_set_initial_max_stream_data_bidi_local(config.get(), 10000);
     quiche_config_set_initial_max_stream_data_bidi_remote(config.get(), 10000);
     quiche_config_set_initial_max_streams_bidi(config.get(), 4);
+    quiche_config_enable_early_data(config.get());
     quiche_config_enable_dgram(config.get(), true, 1024, 1);
-    if (config_.role == RoqRole::kClient) {
-      quiche_config_verify_peer(config.get(), config_.verify_peer);
-      if ((!config_.trusted_ca_file.empty() &&
-           quiche_config_load_verify_locations_from_file(
-               config.get(), config_.trusted_ca_file.c_str()) != 0) ||
-          (!config_.trusted_ca_directory.empty() &&
-           quiche_config_load_verify_locations_from_directory(
-               config.get(), config_.trusted_ca_directory.c_str()) != 0)) {
-        *error = "failed to load trusted CA locations";
-        return nullptr;
-      }
-    } else if (config_.certificate_path.empty() ||
-               config_.private_key_path.empty() ||
-               quiche_config_load_cert_chain_from_pem_file(
-                   config.get(), config_.certificate_path.c_str()) != 0 ||
-               quiche_config_load_priv_key_from_pem_file(
-                   config.get(), config_.private_key_path.c_str()) != 0) {
-      *error = "failed to load server certificate";
+    quiche_config_verify_peer(config.get(), true);
+    if ((!config_.trusted_ca_file.empty() &&
+         quiche_config_load_verify_locations_from_file(
+             config.get(), config_.trusted_ca_file.c_str()) != 0) ||
+        (!config_.trusted_ca_directory.empty() &&
+         quiche_config_load_verify_locations_from_directory(
+             config.get(), config_.trusted_ca_directory.c_str()) != 0)) {
+      *error = "failed to load trusted CA locations";
       return nullptr;
     }
     return config;
@@ -370,8 +430,6 @@ class RoqSessionImpl final : public RoqSession {
     stats_.invalid_drops = outgoing_.invalid_drops();
     stats_.peak_queue_size = outgoing_.peak_size();
     stats_.max_queue_delay_us = outgoing_.max_queue_delay().us();
-    stats_.dropped_background =
-        outgoing_.dropped_by_priority(DatagramPriority::kBackground);
     stats_.dropped_periodic_rtcp =
         outgoing_.dropped_by_priority(DatagramPriority::kPeriodicRtcp);
     stats_.dropped_video_delta =
@@ -382,6 +440,12 @@ class RoqSessionImpl final : public RoqSession {
         outgoing_.dropped_by_priority(DatagramPriority::kAudio);
     stats_.dropped_critical_rtcp =
         outgoing_.dropped_by_priority(DatagramPriority::kRtcp);
+  }
+
+  void CopyFlowStatsLocked() {
+    stats_.unknown_flow_buffered = receive_flows_.buffered();
+    stats_.unknown_flow_released = receive_flows_.released();
+    stats_.unknown_flow_dropped = receive_flows_.dropped();
   }
 
   void UpdatePathStats(quiche_conn* connection) {
@@ -399,12 +463,6 @@ class RoqSessionImpl final : public RoqSession {
     stats_.startup_exit_cwnd = path.startup_exit_cwnd;
     stats_.pmtu_bytes = path.pmtu;
     stats_.dgram_lost = path.dgram_lost;
-  }
-
-  bool IsFlowAllowed(uint64_t flow_id) const {
-    return std::find(config_.allowed_flow_ids.begin(),
-                     config_.allowed_flow_ids.end(),
-                     flow_id) != config_.allowed_flow_ids.end();
   }
 
   void UpdateDatagramLimit(quiche_conn* connection) {
@@ -456,37 +514,103 @@ class RoqSessionImpl final : public RoqSession {
             reinterpret_cast<const uint8_t*>(error.data()), error.size());
         return true;
       }
-      if (!IsFlowAllowed(decoded.flow_id)) {
+      RoqReceivedPacket received = {
+          decoded.flow_id,
+          std::vector<uint8_t>(decoded.packet.begin(), decoded.packet.end())};
+      ReceiveFlowRoute route;
+      {
+        std::lock_guard lock(mutex_);
+        route = receive_flows_.Route(received, config_.clock->CurrentTime());
+        CopyFlowStatsLocked();
+      }
+      if (route == ReceiveFlowRoute::kClose) {
         constexpr std::string_view reason = "unknown RoQ flow ID";
         quiche_conn_close(
             connection, true, static_cast<uint64_t>(RoqError::kUnknownFlowId),
             reinterpret_cast<const uint8_t*>(reason.data()), reason.size());
         return true;
       }
+      if (route == ReceiveFlowRoute::kBuffered)
+        continue;
       ReceiveCallback callback;
       {
         std::lock_guard lock(mutex_);
         ++stats_.received_datagrams;
+        if (!stats_.established)
+          ++stats_.early_datagrams_received;
         callback = receive_callback_;
       }
       if (callback) {
-        callback({decoded.flow_id, std::vector<uint8_t>(decoded.packet.begin(),
-                                                        decoded.packet.end())});
+        callback(std::move(received));
       }
     }
   }
 
+  bool DrainReliableMessages(quiche_conn* connection) {
+    std::array<uint8_t, 4096> buffer = {};
+    while (quiche_conn_stream_readable(connection, kControlStreamId)) {
+      bool fin = false;
+      uint64_t error_code = 0;
+      const ssize_t read =
+          quiche_conn_stream_recv(connection, kControlStreamId, buffer.data(),
+                                  buffer.size(), &fin, &error_code);
+      if (read == QUICHE_ERR_DONE)
+        break;
+      if (read < 0 || !reliable_decoder_.Push(
+                          std::span<const uint8_t>(buffer.data(), read))) {
+        return false;
+      }
+      for (std::vector<uint8_t>& message : reliable_decoder_.TakeMessages()) {
+        ReliableMessageCallback callback;
+        {
+          std::lock_guard lock(mutex_);
+          ++stats_.reliable_messages_received;
+          if (!quiche_conn_is_established(connection))
+            ++stats_.early_reliable_messages_received;
+          callback = reliable_message_callback_;
+        }
+        if (callback)
+          callback(std::move(message));
+      }
+    }
+    return true;
+  }
+
+  bool SendReliableMessages(quiche_conn* connection) {
+    std::lock_guard lock(mutex_);
+    if (reliable_messages_.empty())
+      return true;
+    std::vector<uint8_t>& message = reliable_messages_.front();
+    const std::span<const uint8_t> remaining(message);
+    uint64_t error_code = 0;
+    const ssize_t written = quiche_conn_stream_send(
+        connection, kControlStreamId,
+        remaining.subspan(reliable_message_offset_).data(),
+        remaining.size() - reliable_message_offset_, false, &error_code);
+    if (written == QUICHE_ERR_DONE)
+      return true;
+    if (written < 0)
+      return false;
+    reliable_message_offset_ += static_cast<size_t>(written);
+    if (quiche_conn_is_in_early_data(connection))
+      stats_.early_data_attempted = true;
+    if (reliable_message_offset_ == message.size()) {
+      reliable_messages_.pop_front();
+      reliable_message_offset_ = 0;
+      ++stats_.reliable_messages_sent;
+    }
+    return true;
+  }
+
   void Run() {
     std::string setup_error;
-    sockaddr_in configured_address = {};
-    if (!ParseAddress(config_.address, &configured_address, &setup_error)) {
+    ResolvedAddress configured_address;
+    if (!ResolveAddress(config_.address, &configured_address, &setup_error)) {
       Fail(std::move(setup_error));
       return;
     }
-    sockaddr_in bind_address = configured_address;
-    if (config_.role == RoqRole::kClient)
-      bind_address.sin_port = 0;
-    sockaddr_in local_address = {};
+    const ResolvedAddress bind_address = WildcardAddress(configured_address);
+    ResolvedAddress local_address;
     Socket socket_fd = OpenSocket(bind_address, &local_address, &setup_error);
     if (socket_fd.get() < 0) {
       Fail(std::move(setup_error));
@@ -497,22 +621,80 @@ class RoqSessionImpl final : public RoqSession {
       Fail(std::move(setup_error));
       return;
     }
-    ConnectionPtr connection;
-    if (config_.role == RoqRole::kClient) {
-      std::array<uint8_t, kConnectionIdLength> scid = {};
-      for (size_t index = 0; index < scid.size(); ++index)
-        scid[index] = static_cast<uint8_t>(0x40 + index);
-      connection.reset(
-          quiche_connect(config_.server_name.c_str(), scid.data(), scid.size(),
-                         reinterpret_cast<const sockaddr*>(&local_address),
-                         sizeof(local_address),
-                         reinterpret_cast<const sockaddr*>(&configured_address),
-                         sizeof(configured_address), quiche_config.get()));
-      if (!connection) {
-        Fail("failed to create client QUIC connection");
+    std::string random_connection_id;
+    if (!CreateRandomData(kConnectionIdLength, &random_connection_id)) {
+      Fail("failed to generate client connection ID");
+      return;
+    }
+    const std::span<const uint8_t> scid(
+        reinterpret_cast<const uint8_t*>(random_connection_id.data()),
+        random_connection_id.size());
+    {
+      std::lock_guard lock(mutex_);
+      stats_.source_connection_id.assign(scid.begin(), scid.end());
+    }
+    ConnectionPtr connection(quiche_connect(
+        config_.server_name.c_str(), scid.data(), scid.size(),
+        reinterpret_cast<const sockaddr*>(&local_address.value),
+        local_address.length,
+        reinterpret_cast<const sockaddr*>(&configured_address.value),
+        configured_address.length, quiche_config.get()));
+    if (!connection) {
+      Fail("failed to create client QUIC connection");
+      return;
+    }
+    const ResumptionCacheKey cache_key = {
+        .endpoint = config_.address,
+        .server_name = config_.server_name,
+        .alpn = config_.alpn,
+        .context = config_.resumption_context,
+    };
+    std::unique_ptr<ResumptionCache> cache;
+    std::vector<uint8_t> cached_address_token;
+    if (!config_.resumption_cache_directory.empty()) {
+      cache = std::make_unique<ResumptionCache>(
+          config_.resumption_cache_directory, config_.resumption_cache_max_age);
+      std::string cache_error;
+      ResumptionCacheLoadStatus cache_status;
+      const Timestamp cache_now = config_.resumption_clock
+                                      ? config_.resumption_clock()
+                                      : Timestamp::Micros(TimeUTCMicros());
+      const std::optional<ResumptionState> cached =
+          cache->Load(cache_key, cache_now, &cache_error, &cache_status);
+      {
+        std::lock_guard lock(mutex_);
+        stats_.resumption_cache_hit = cached.has_value();
+        stats_.resumption_cache_expired =
+            cache_status == ResumptionCacheLoadStatus::kExpired;
+        stats_.resumption_cache_invalid =
+            cache_status == ResumptionCacheLoadStatus::kInvalid;
+      }
+      if (!cache_error.empty())
+        RTC_LOG(LS_WARNING) << cache_error;
+      if (quiche_conn_set_application_early_data_context(
+              connection.get(), config_.resumption_context.data(),
+              config_.resumption_context.size()) != 0) {
+        Fail("failed to configure QUIC resumption context");
         return;
       }
+      if (cached && !cached->session.empty()) {
+        if (quiche_conn_set_session(connection.get(), cached->session.data(),
+                                    cached->session.size()) != 0) {
+          Fail("failed to restore cached QUIC session");
+          return;
+        }
+        if (!cached->address_token.empty() &&
+            quiche_conn_set_token(connection.get(),
+                                  cached->address_token.data(),
+                                  cached->address_token.size()) != 0) {
+          Fail("failed to restore cached address token");
+          return;
+        }
+        cached_address_token = cached->address_token;
+        outgoing_.SetMaxDatagramSize(kEarlyDatagramPayloadLimit);
+      }
     }
+    receive_flows_.BeginUpdate(config_.clock->CurrentTime());
     {
       std::lock_guard lock(mutex_);
       ready_ = true;
@@ -541,38 +723,11 @@ class RoqSessionImpl final : public RoqSession {
           std::lock_guard lock(mutex_);
           ++stats_.received_udp_packets;
         }
-        if (!connection) {
-          uint32_t version = 0;
-          uint8_t type = 0;
-          std::array<uint8_t, QUICHE_MAX_CONN_ID_LEN> scid = {};
-          size_t scid_length = scid.size();
-          std::array<uint8_t, QUICHE_MAX_CONN_ID_LEN> dcid = {};
-          size_t dcid_length = dcid.size();
-          std::array<uint8_t, 256> token = {};
-          size_t token_length = token.size();
-          if (quiche_header_info(packet.data(), static_cast<size_t>(received),
-                                 kConnectionIdLength, &version, &type,
-                                 scid.data(), &scid_length, dcid.data(),
-                                 &dcid_length, token.data(),
-                                 &token_length) != 0 ||
-              !quiche_version_is_supported(version)) {
-            continue;
-          }
-          connection.reset(quiche_accept(
-              dcid.data(), dcid_length, nullptr, 0,
-              reinterpret_cast<const sockaddr*>(&local_address),
-              sizeof(local_address), reinterpret_cast<sockaddr*>(&peer_address),
-              peer_length, quiche_config.get()));
-          if (!connection) {
-            Fail("failed to accept server QUIC connection");
-            return;
-          }
-        }
         quiche_recv_info receive_info = {
             .from = reinterpret_cast<sockaddr*>(&peer_address),
             .from_len = peer_length,
-            .to = reinterpret_cast<sockaddr*>(&local_address),
-            .to_len = sizeof(local_address),
+            .to = reinterpret_cast<sockaddr*>(&local_address.value),
+            .to_len = local_address.length,
         };
         const ssize_t processed =
             quiche_conn_recv(connection.get(), packet.data(),
@@ -581,19 +736,40 @@ class RoqSessionImpl final : public RoqSession {
           Fail("quiche receive failed: " + std::to_string(processed));
           return;
         }
-        if (!DrainReceived(connection.get())) {
-          Fail("failed to receive RoQ DATAGRAM");
+        if (!DrainReceived(connection.get()) ||
+            !DrainReliableMessages(connection.get())) {
+          Fail("failed to receive RoQ data");
           return;
         }
       }
 
       const auto now = SteadyClock::now();
+      if ((quiche_conn_is_established(connection.get()) ||
+           quiche_conn_is_in_early_data(connection.get())) &&
+          !SendReliableMessages(connection.get())) {
+        Fail("failed to queue reliable message");
+        return;
+      }
       if (connection && quiche_conn_is_established(connection.get())) {
         bool first_established = false;
         {
           std::lock_guard lock(mutex_);
           if (!stats_.established) {
             stats_.established = true;
+            stats_.session_resumed = quiche_conn_is_resumed(connection.get());
+            stats_.early_data_reason =
+                quiche_conn_early_data_reason(connection.get());
+            stats_.early_data_accepted =
+                stats_.early_data_attempted &&
+                stats_.early_data_reason == QUICHE_EARLY_DATA_ACCEPTED;
+            stats_.early_data_fallback =
+                stats_.early_data_attempted && !stats_.early_data_accepted;
+            if (stats_.early_data_fallback) {
+              stats_.early_rejection_queue_drops +=
+                  outgoing_.Clear() + stats_.early_datagrams_sent;
+              quiche_conn_dgram_purge_outgoing(connection.get(), PurgeDatagram);
+              CopyQueueStatsLocked();
+            }
             first_established = true;
             condition_.notify_all();
           }
@@ -602,9 +778,59 @@ class RoqSessionImpl final : public RoqSession {
           UpdateDatagramLimit(connection.get());
         UpdateDatagramLimit(connection.get());
         UpdatePathStats(connection.get());
+        if (cache) {
+          std::array<uint8_t, 1024> token = {};
+          while (true) {
+            const ssize_t token_length = quiche_conn_recv_new_token(
+                connection.get(), token.data(), token.size());
+            if (token_length == QUICHE_ERR_DONE)
+              break;
+            if (token_length < 0) {
+              Fail("failed to receive address validation token");
+              return;
+            }
+            cached_address_token.assign(token.begin(),
+                                        token.begin() + token_length);
+            cache_dirty_ = true;
+            {
+              std::lock_guard lock(mutex_);
+              ++stats_.address_tokens_received;
+            }
+          }
+          const uint8_t* session_data = nullptr;
+          size_t session_length = 0;
+          quiche_conn_session(connection.get(), &session_data, &session_length);
+          if (session_data && session_length > 0 &&
+              !stats().early_data_fallback &&
+              (!session_cached_ || cache_dirty_)) {
+            std::string cache_error;
+            const Timestamp cache_now =
+                config_.resumption_clock ? config_.resumption_clock()
+                                         : Timestamp::Micros(TimeUTCMicros());
+            if (!cache->Save(cache_key,
+                             {.created_at = cache_now,
+                              .session =
+                                  [&] {
+                                    const std::span<const uint8_t> session(
+                                        session_data, session_length);
+                                    return std::vector<uint8_t>(session.begin(),
+                                                                session.end());
+                                  }(),
+                              .address_token = cached_address_token},
+                             &cache_error)) {
+              RTC_LOG(LS_WARNING) << cache_error;
+            } else {
+              session_cached_ = true;
+              cache_dirty_ = false;
+              std::lock_guard lock(mutex_);
+              stats_.resumption_cache_saved = true;
+            }
+          }
+        }
       }
 
-      if (connection && quiche_conn_is_established(connection.get())) {
+      if (connection && (quiche_conn_is_established(connection.get()) ||
+                         quiche_conn_is_in_early_data(connection.get()))) {
         std::optional<QueuedDatagram> outgoing;
         {
           std::lock_guard lock(mutex_);
@@ -620,6 +846,10 @@ class RoqSessionImpl final : public RoqSession {
               std::lock_guard lock(mutex_);
               outgoing_.RecordSubmitted(*outgoing);
               ++stats_.sent_datagrams;
+              if (!stats_.established) {
+                ++stats_.early_datagrams_sent;
+                stats_.early_data_attempted = true;
+              }
               quiche_slot_deadline_ = outgoing->deadline;
               quiche_slot_size_ = outgoing->bytes.size();
               quiche_slot_frame_id_ = outgoing->frame_id;
@@ -766,9 +996,14 @@ class RoqSessionImpl final : public RoqSession {
   const RoqSessionConfig config_;
   const ReceiveCallback receive_callback_;
   const DatagramSizeCallback datagram_size_callback_;
+  const ReliableMessageCallback reliable_message_callback_;
   mutable std::mutex mutex_;
   std::condition_variable condition_;
   BoundedDatagramQueue outgoing_;
+  ReceiveFlowRegistry receive_flows_;
+  std::deque<std::vector<uint8_t>> reliable_messages_;
+  size_t reliable_message_offset_ = 0;
+  ReliableMessageDecoder reliable_decoder_;
   std::thread thread_;
   bool ready_ = false;
   bool close_requested_ = false;
@@ -782,6 +1017,8 @@ class RoqSessionImpl final : public RoqSession {
   bool purge_quiche_slot_for_pmtu_ = false;
   size_t quiche_pmtu_purge_drops_ = 0;
   size_t quiche_oversize_drops_ = 0;
+  bool session_cached_ = false;
+  bool cache_dirty_ = false;
   RoqSessionStats stats_;
   std::string error_;
 };
@@ -791,10 +1028,11 @@ class RoqSessionImpl final : public RoqSession {
 std::unique_ptr<RoqSession> RoqSession::Create(
     RoqSessionConfig config,
     ReceiveCallback receive_callback,
-    DatagramSizeCallback datagram_size_callback) {
-  return std::make_unique<RoqSessionImpl>(std::move(config),
-                                          std::move(receive_callback),
-                                          std::move(datagram_size_callback));
+    DatagramSizeCallback datagram_size_callback,
+    ReliableMessageCallback reliable_message_callback) {
+  return std::make_unique<RoqSessionImpl>(
+      std::move(config), std::move(receive_callback),
+      std::move(datagram_size_callback), std::move(reliable_message_callback));
 }
 
 }  // namespace webrtc::roq
