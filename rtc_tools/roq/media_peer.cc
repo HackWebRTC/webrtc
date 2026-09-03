@@ -6,12 +6,14 @@
 
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <csignal>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <mutex>
 #include <span>
@@ -27,6 +29,7 @@
 #include "api/call/audio_sink.h"
 #include "api/environment/environment.h"
 #include "api/environment/environment_factory.h"
+#include "api/file_capturer/file_media_capturer.h"
 #include "api/roq/roq_media_session.h"
 #include "api/roq/roq_session.h"
 #include "api/roq/roq_transport.h"
@@ -41,7 +44,6 @@
 #include "modules/roq/rtp_packet_metadata.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "rtc_tools/roq/manifest.h"
-#include "rtc_tools/roq/media_source.h"
 #include "rtc_tools/roq/test_roq_server.h"
 #include "test/video_renderer.h"
 
@@ -274,6 +276,141 @@ class MediaEventLog {
   std::string process_;
   std::mutex mutex_;
   uint64_t sequence_ = 0;
+};
+
+class PrewarmFileCapturerObserver final : public FileMediaCapturerObserver {
+ public:
+  void set_capturer(FileMediaCapturer* capturer) { capturer_ = capturer; }
+
+  void OnVideoFrame(VideoFrame frame) override {
+    if (!frame_) {
+      frame_ = frame.video_frame_buffer()->ToI420();
+      capturer_->Stop();
+    }
+  }
+  void OnAudioBlock(FileMediaAudioBlock) override {}
+  void OnLoopBoundary(FileMediaLoopBoundary) override {}
+  void OnTerminal(FileMediaTerminal terminal) override {
+    {
+      std::lock_guard lock(mutex_);
+      if (terminal.reason == FileMediaTerminalReason::kError)
+        error_ = terminal.error.message;
+      terminal_ = true;
+    }
+    condition_.notify_all();
+  }
+
+  bool Wait() {
+    std::unique_lock lock(mutex_);
+    return condition_.wait_for(lock, std::chrono::seconds(3),
+                               [this] { return terminal_; });
+  }
+  scoped_refptr<I420BufferInterface> frame() const { return frame_; }
+  const std::string& error() const { return error_; }
+
+ private:
+  FileMediaCapturer* capturer_ = nullptr;
+  scoped_refptr<I420BufferInterface> frame_;
+  std::mutex mutex_;
+  std::condition_variable condition_;
+  bool terminal_ = false;
+  std::string error_;
+};
+
+class SendingFileCapturerObserver final : public FileMediaCapturerObserver {
+ public:
+  SendingFileCapturerObserver(RoqMediaSession* send,
+                              MediaPeerResult* result,
+                              MediaEventLog* event_log,
+                              std::atomic<size_t>* loop_counter,
+                              std::optional<double> duration_seconds,
+                              RoqSession* network)
+      : send_(send),
+        result_(result),
+        event_log_(event_log),
+        loop_counter_(loop_counter),
+        duration_us_(duration_seconds
+                         ? static_cast<int64_t>(*duration_seconds * 1000000.0)
+                         : std::numeric_limits<int64_t>::max()),
+        network_(network) {}
+
+  void set_capturer(FileMediaCapturer* capturer) { capturer_ = capturer; }
+
+  void OnVideoFrame(VideoFrame frame) override {
+    if (ShouldStop(frame.timestamp_us()))
+      return;
+    scoped_refptr<I420BufferInterface> buffer =
+        frame.video_frame_buffer()->ToI420();
+    if (!buffer) {
+      error_ = "file capturer emitted non-I420 video";
+      capturer_->Stop();
+      return;
+    }
+    send_->SendVideoFrame(std::move(buffer), frame.timestamp_us());
+    ++result_->sent_video_frames;
+  }
+
+  void OnAudioBlock(FileMediaAudioBlock block) override {
+    if (ShouldStop(block.timestamp_us))
+      return;
+    send_->SendAudioBlock(
+        block.samples, static_cast<uint32_t>(block.timestamp_us * 48 / 1000));
+  }
+
+  void OnLoopBoundary(FileMediaLoopBoundary boundary) override {
+    result_->loops_started = boundary.cycle_index + 1;
+    loop_counter_->store(result_->loops_started);
+    event_log_->Write("loop_started", "media", result_->loops_started);
+    send_->GenerateSenderKeyFrame();
+  }
+
+  void OnTerminal(FileMediaTerminal terminal) override {
+    {
+      std::lock_guard lock(mutex_);
+      if (terminal.reason == FileMediaTerminalReason::kError && error_.empty())
+        error_ = terminal.error.message;
+      terminal_ = true;
+    }
+    condition_.notify_all();
+  }
+
+  void Wait() {
+    std::unique_lock lock(mutex_);
+    while (!terminal_) {
+      condition_.wait_for(lock, std::chrono::milliseconds(20));
+      if (!terminal_ &&
+          (g_stop_requested.load() || !network_->error().empty() ||
+           network_->stats().clean_shutdown)) {
+        lock.unlock();
+        capturer_->Stop();
+        lock.lock();
+      }
+    }
+  }
+
+  const std::string& error() const { return error_; }
+
+ private:
+  bool ShouldStop(int64_t timestamp_us) {
+    if (timestamp_us < duration_us_ && !g_stop_requested.load() &&
+        network_->error().empty() && !network_->stats().clean_shutdown) {
+      return false;
+    }
+    capturer_->Stop();
+    return true;
+  }
+
+  RoqMediaSession* const send_;
+  MediaPeerResult* const result_;
+  MediaEventLog* const event_log_;
+  std::atomic<size_t>* const loop_counter_;
+  const int64_t duration_us_;
+  RoqSession* const network_;
+  FileMediaCapturer* capturer_ = nullptr;
+  mutable std::mutex mutex_;
+  std::condition_variable condition_;
+  bool terminal_ = false;
+  std::string error_;
 };
 
 struct MediaState {
@@ -650,20 +787,25 @@ MediaPeerResult RunMediaPeer(const MediaPeerOptions& options) {
   const Environment env = CreateEnvironment();
   scoped_refptr<I420BufferInterface> prewarmed_video_frame;
   if (options.scenario == "early-media") {
-    MediaSourceCallbacks prewarm;
-    prewarm.on_video_frame = [&](const MediaVideoFrame& frame) {
-      if (!prewarmed_video_frame) {
-        prewarmed_video_frame = I420Buffer::Copy(
-            frame.width, frame.height, frame.data_y, frame.stride_y,
-            frame.data_u, frame.stride_u, frame.data_v, frame.stride_v);
-      }
-    };
-    prewarm.should_stop = [&] { return prewarmed_video_frame != nullptr; };
-    StreamMediaSource(options.input_path, 1.0, /*loop_at_eof=*/false,
-                      MediaClockMode::kVirtual, prewarm, options.run_id,
-                      options.event_log_path + ".prewarm");
+    PrewarmFileCapturerObserver prewarm;
+    FileMediaCapturerCreateResult created = CreateFileMediaCapturer(
+        {.input_path = options.input_path, .eof_mode = FileMediaEofMode::kStop},
+        &prewarm);
+    if (!created.ok()) {
+      result.error = created.error.message;
+      return result;
+    }
+    prewarm.set_capturer(created.capturer.get());
+    FileMediaError start = created.capturer->Start();
+    if (!start.ok() || !prewarm.Wait()) {
+      result.error =
+          start.ok() ? "file capturer prewarm timed out" : start.message;
+      return result;
+    }
+    prewarmed_video_frame = prewarm.frame();
     if (!prewarmed_video_frame) {
-      result.error = "failed to prewarm video frame";
+      result.error = prewarm.error().empty() ? "failed to prewarm video frame"
+                                             : prewarm.error();
       return result;
     }
   }
@@ -932,35 +1074,6 @@ MediaPeerResult RunMediaPeer(const MediaPeerOptions& options) {
       state.send = send.get();
     }
   }
-  auto stream_client_media = [&] {
-    MediaSourceCallbacks callbacks;
-    callbacks.on_loop_started = [&](size_t) {
-      ++result.loops_started;
-      loop_counter.store(result.loops_started);
-      event_log.Write("loop_started", "media", result.loops_started);
-      send->GenerateSenderKeyFrame();
-    };
-    callbacks.on_video_frame = [&](const MediaVideoFrame& frame) {
-      send->SendVideoFrame(
-          I420Buffer::Copy(frame.width, frame.height, frame.data_y,
-                           frame.stride_y, frame.data_u, frame.stride_u,
-                           frame.data_v, frame.stride_v),
-          frame.pts_us);
-      ++result.sent_video_frames;
-    };
-    callbacks.on_audio_block = [&](std::span<const int16_t> samples,
-                                   int64_t pts_us) {
-      send->SendAudioBlock(samples, static_cast<uint32_t>(pts_us * 48 / 1000));
-    };
-    callbacks.should_stop = [&] {
-      return g_stop_requested.load() || !network->error().empty() ||
-             network->stats().clean_shutdown;
-    };
-    return StreamMediaSource(options.input_path, options.duration_seconds,
-                             /*loop_at_eof=*/true, MediaClockMode::kRealtime,
-                             callbacks, options.run_id,
-                             options.event_log_path + ".source");
-  };
   if (options.scenario == "early-media") {
     send->GenerateSenderKeyFrame();
     send->SendVideoFrame(prewarmed_video_frame, 0);
@@ -1154,8 +1267,27 @@ MediaPeerResult RunMediaPeer(const MediaPeerOptions& options) {
                         options.shrink_datagram_to);
       });
     }
-    MediaSourceResult source;
-    source = stream_client_media();
+    SendingFileCapturerObserver source(send.get(), &result, &event_log,
+                                       &loop_counter, options.duration_seconds,
+                                       network.get());
+    FileMediaCapturerCreateResult created = CreateFileMediaCapturer(
+        {.input_path = options.input_path, .eof_mode = FileMediaEofMode::kLoop},
+        &source);
+    if (!created.ok()) {
+      result.error = created.error.message;
+      return result;
+    }
+    source.set_capturer(created.capturer.get());
+    FileMediaError source_start = created.capturer->Start();
+    if (!source_start.ok()) {
+      result.error = source_start.message;
+      return result;
+    }
+    result.loops_started = 1;
+    loop_counter.store(1);
+    event_log.Write("loop_started", "media", 1);
+    send->GenerateSenderKeyFrame();
+    source.Wait();
     const double media_elapsed_seconds =
         std::max(0.001, std::chrono::duration<double>(
                             std::chrono::steady_clock::now() - media_run_start)
@@ -1165,11 +1297,11 @@ MediaPeerResult RunMediaPeer(const MediaPeerOptions& options) {
       capacity_loader.join();
     if (mtu_shrinker.joinable())
       mtu_shrinker.join();
-    if (!source.error.empty()) {
+    if (!source.error().empty()) {
       reporter_stop.store(true);
       if (reporter.joinable())
         reporter.join();
-      result.error = source.error;
+      result.error = source.error();
       return result;
     }
     const RoqMediaSessionStats active_send_stats = send->stats();

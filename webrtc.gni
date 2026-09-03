@@ -47,6 +47,8 @@ if (build_with_chromium) {
   import("//media/media_options.gni")
 }
 
+import("//file_capturer.gni")
+
 # This declare_args is separated from the next one because args declared
 # in this one, can be read from the next one (args defined in the same
 # declare_args cannot be referenced in that scope).

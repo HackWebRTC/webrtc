@@ -20,19 +20,6 @@ copy("roq_test_certificates") {
   outputs = [ "$root_out_dir/{{source_file_part}}" ]
 }
 
-rtc_library("roq_media_source") {
-  testonly = true
-  sources = [
-    "media_source.cc",
-    "media_source.h",
-  ]
-  deps = [ "//third_party/ffmpeg" ]
-
-  # FFmpeg's C API exposes frame data as pointer arrays. Keep the unsafe-buffer
-  # exception local to the adapter that consumes that C API.
-  cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
-}
-
 rtc_library("livekit_roq_proto") {
   sources = [ "$roq_repo_root/src/generated/livekit_roq.pb.cc" ]
   include_dirs = [ "$roq_repo_root/src/generated" ]
@@ -40,93 +27,99 @@ rtc_library("livekit_roq_proto") {
   cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
 }
 
-rtc_executable("roq_test_peer") {
-  testonly = true
+if (rtc_enable_file_capturer) {
+  rtc_executable("roq_test_peer") {
+    testonly = true
 
-  # lld's parallel archive reader intermittently reports a phantom auto-link
-  # search path during a same-invocation relink. Keep strict auto-link checking
-  # enabled, but serialize archive reads for this target.
-  if (use_lld) {
-    ldflags = [ "-Wl,--read-workers=1" ]
+    # lld's parallel archive reader intermittently reports a phantom auto-link
+    # search path during a same-invocation relink. Keep strict auto-link
+    # checking enabled, but serialize archive reads for this target.
+    if (use_lld) {
+      ldflags = [ "-Wl,--read-workers=1" ]
+    }
+    sources = [
+      "capability.cc",
+      "capability.h",
+      "file_capturer_probe.cc",
+      "file_capturer_probe.h",
+      "main.cc",
+      "manifest.cc",
+      "manifest.h",
+      "media_peer.cc",
+      "media_peer.h",
+      "media_peer_mac.mm",
+      "network_lab.cc",
+      "network_lab.h",
+      "quiche_abi.cc",
+      "quiche_abi.h",
+      "resumption_peer.cc",
+      "resumption_peer.h",
+      "roq_peer.cc",
+      "roq_peer.h",
+      "test_roq_server.cc",
+      "test_roq_server.h",
+    ]
+    include_dirs = [ "$roq_repo_root/quiche/quiche/include" ]
+    deps = [
+      ":roq_test_certificates",
+      "../../api:call_api",
+      "../../api:scoped_refptr",
+      "../../api:transport_api",
+      "../../api/audio:audio_device",
+      "../../api/audio:audio_frame_api",
+      "../../api/audio:audio_mixer_api",
+      "../../api/audio:create_audio_device_module",
+      "../../api/audio_codecs:audio_codecs_api",
+      "../../api/audio_codecs:builtin_audio_decoder_factory",
+      "../../api/audio_codecs:builtin_audio_encoder_factory",
+      "../../api/environment",
+      "../../api/environment:environment_factory",
+      "../../api/file_capturer:file_capturer_api",
+      "../../api/roq:roq_api",
+      "../../api/task_queue",
+      "../../api/task_queue:pending_task_safety_flag",
+      "../../api/test/video:function_video_factory",
+      "../../api/units:time_delta",
+      "../../api/units:timestamp",
+      "../../api/video:builtin_video_bitrate_allocator_factory",
+      "../../api/video:video_bitrate_allocation",
+      "../../api/video:video_bitrate_allocator_factory",
+      "../../api/video:video_frame",
+      "../../api/video:video_frame_type",
+      "../../api/video_codecs:builtin_video_decoder_factory",
+      "../../api/video_codecs:builtin_video_encoder_factory",
+      "../../api/video_codecs:video_codecs_api",
+      "../../audio",
+      "../../call",
+      "../../call:call_interfaces",
+      "../../call:video_receive_stream_api",
+      "../../call:video_send_stream_api",
+      "../../modules/audio_device:test_audio_device_module",
+      "../../modules/audio_mixer:audio_mixer_impl",
+      "../../modules/file_capturer:file_media_capturer",
+      "../../modules/roq:roq_core",
+      "../../modules/rtp_rtcp:rtp_rtcp_format",
+      "../../modules/video_coding:codec_globals_headers",
+      "../../modules/video_coding:video_codec_interface",
+      "../../modules/video_coding:webrtc_h264",
+      "../../rtc_base:copy_on_write_buffer",
+      "../../rtc_base:crypto_random",
+      "../../rtc_base:rtc_json",
+      "../../rtc_base:task_queue_for_test",
+      "../../rtc_base:threading",
+      "../../rtc_base/network:sent_packet",
+      "../../system_wrappers",
+      "../../test:encoder_settings",
+      "../../test:test_renderer",
+      "../../test:video_test_common",
+      "../../video/config:encoder_config",
+      "//third_party/boringssl",
+      "//third_party/ffmpeg",
+      "//third_party/jsoncpp",
+    ]
+    libs = [ "$roq_repo_root/out/quiche/release/libquiche.a" ]
+    cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
   }
-  sources = [
-    "capability.cc",
-    "capability.h",
-    "main.cc",
-    "manifest.cc",
-    "manifest.h",
-    "media_peer.cc",
-    "media_peer.h",
-    "media_peer_mac.mm",
-    "network_lab.cc",
-    "network_lab.h",
-    "quiche_abi.cc",
-    "quiche_abi.h",
-    "resumption_peer.cc",
-    "resumption_peer.h",
-    "roq_peer.cc",
-    "roq_peer.h",
-    "test_roq_server.cc",
-    "test_roq_server.h",
-  ]
-  include_dirs = [ "$roq_repo_root/quiche/quiche/include" ]
-  deps = [
-    ":roq_media_source",
-    ":roq_test_certificates",
-    "../../api:call_api",
-    "../../api:scoped_refptr",
-    "../../api:transport_api",
-    "../../api/audio:audio_device",
-    "../../api/audio:audio_frame_api",
-    "../../api/audio:audio_mixer_api",
-    "../../api/audio:create_audio_device_module",
-    "../../api/audio_codecs:audio_codecs_api",
-    "../../api/audio_codecs:builtin_audio_decoder_factory",
-    "../../api/audio_codecs:builtin_audio_encoder_factory",
-    "../../api/environment",
-    "../../api/environment:environment_factory",
-    "../../api/roq:roq_api",
-    "../../api/task_queue",
-    "../../api/task_queue:pending_task_safety_flag",
-    "../../api/test/video:function_video_factory",
-    "../../api/units:time_delta",
-    "../../api/units:timestamp",
-    "../../api/video:builtin_video_bitrate_allocator_factory",
-    "../../api/video:video_bitrate_allocation",
-    "../../api/video:video_bitrate_allocator_factory",
-    "../../api/video:video_frame",
-    "../../api/video:video_frame_type",
-    "../../api/video_codecs:builtin_video_decoder_factory",
-    "../../api/video_codecs:builtin_video_encoder_factory",
-    "../../api/video_codecs:video_codecs_api",
-    "../../audio",
-    "../../call",
-    "../../call:call_interfaces",
-    "../../call:video_receive_stream_api",
-    "../../call:video_send_stream_api",
-    "../../modules/audio_device:test_audio_device_module",
-    "../../modules/audio_mixer:audio_mixer_impl",
-    "../../modules/roq:roq_core",
-    "../../modules/rtp_rtcp:rtp_rtcp_format",
-    "../../modules/video_coding:codec_globals_headers",
-    "../../modules/video_coding:video_codec_interface",
-    "../../modules/video_coding:webrtc_h264",
-    "../../rtc_base:copy_on_write_buffer",
-    "../../rtc_base:crypto_random",
-    "../../rtc_base:rtc_json",
-    "../../rtc_base:task_queue_for_test",
-    "../../rtc_base:threading",
-    "../../rtc_base/network:sent_packet",
-    "../../system_wrappers",
-    "../../test:encoder_settings",
-    "../../test:test_renderer",
-    "../../test:video_test_common",
-    "../../video/config:encoder_config",
-    "//third_party/boringssl",
-    "//third_party/ffmpeg",
-    "//third_party/jsoncpp",
-  ]
-  libs = [ "$roq_repo_root/out/quiche/release/libquiche.a" ]
 }
 
 rtc_shared_library("livekit_roq_client") {
@@ -153,8 +146,8 @@ rtc_shared_library("livekit_roq_client") {
     "../../api/roq:roq_api",
     "../../api/units:time_delta",
     "../../api/units:timestamp",
-    "../../modules/roq:roq_core",
     "../../api/video_codecs:builtin_video_decoder_factory",
+    "../../modules/roq:roq_core",
     "../../system_wrappers",
     "//third_party/protobuf:protobuf_lite",
   ]
@@ -175,8 +168,8 @@ if (rtc_include_tests) {
     deps = [
       ":livekit_roq_proto",
       "../../test:test_support",
-      "//third_party/protobuf:protobuf_lite",
       "//testing/gtest",
+      "//third_party/protobuf:protobuf_lite",
     ]
     cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
   }
@@ -206,19 +199,24 @@ if (rtc_include_tests) {
       "../../api/roq:roq_api",
       "../../api/units:time_delta",
       "../../api/units:timestamp",
-      "../../modules/roq:roq_core",
       "../../api/video_codecs:builtin_video_decoder_factory",
+      "../../modules/roq:roq_core",
       "../../system_wrappers",
       "../../test:test_support",
-      "//third_party/protobuf:protobuf_lite",
       "//testing/gtest",
+      "//third_party/protobuf:protobuf_lite",
     ]
     cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
   }
 
-  group("m2_unittests") {
-    testonly = true
-    deps = [ "../../modules/roq:roq_sdk_unittests" ]
+  if (rtc_enable_file_capturer) {
+    group("m2_unittests") {
+      testonly = true
+      deps = [
+        "../../modules/file_capturer:file_media_capturer_unittests",
+        "../../modules/roq:roq_sdk_unittests",
+      ]
+    }
   }
 
   group("m3_unittests") {

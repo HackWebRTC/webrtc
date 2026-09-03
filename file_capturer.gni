@@ -1,0 +1,12 @@
+# Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+
+declare_args() {
+  # Enables the public MP4/H.264/AAC file media capturer and the additional
+  # vendored FFmpeg capabilities used by its macOS arm64 backend.
+  rtc_enable_file_capturer = false
+}
+
+if (rtc_enable_file_capturer) {
+  assert(is_mac && target_cpu == "arm64",
+         "rtc_enable_file_capturer currently supports macOS arm64 only")
+}

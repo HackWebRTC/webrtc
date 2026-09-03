@@ -1,0 +1,38 @@
+# Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+
+import("../../roq.gni")
+import("../../webrtc.gni")
+
+if (rtc_enable_file_capturer) {
+  rtc_library("file_media_capturer") {
+    visibility = [ "*" ]
+    sources = [
+      "ffmpeg_file_media_capturer.cc",
+      "file_media_capturer_internal.h",
+    ]
+    deps = [
+      "../../api:make_ref_counted",
+      "../../api/file_capturer:file_capturer_api",
+      "../../api/video:video_frame",
+      "//third_party/ffmpeg",
+    ]
+    cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
+  }
+}
+
+if (rtc_enable_file_capturer && rtc_include_tests) {
+  rtc_test("file_media_capturer_unittests") {
+    testonly = true
+    sources = [ "file_media_capturer_unittest.cc" ]
+    file_capturer_testdata_dir = rebase_path("testdata")
+    defines = [
+      "FILE_CAPTURER_TESTDATA_DIR=\"$file_capturer_testdata_dir\"",
+    ]
+    deps = [
+      ":file_media_capturer",
+      "../../api/file_capturer:file_capturer_api",
+      "//test:test_support",
+      "//testing/gtest",
+    ]
+  }
+}

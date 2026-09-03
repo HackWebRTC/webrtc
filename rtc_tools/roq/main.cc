@@ -17,9 +17,9 @@
 #include <string_view>
 
 #include "rtc_tools/roq/capability.h"
+#include "rtc_tools/roq/file_capturer_probe.h"
 #include "rtc_tools/roq/manifest.h"
 #include "rtc_tools/roq/media_peer.h"
-#include "rtc_tools/roq/media_source.h"
 #include "rtc_tools/roq/network_lab.h"
 #include "rtc_tools/roq/quiche_abi.h"
 #include "rtc_tools/roq/resumption_peer.h"
@@ -502,15 +502,13 @@ int main(int argc, char* argv[]) {
     const std::optional<std::string_view> input = OptionValue(args, "--input");
     const std::optional<std::string_view> duration =
         OptionValue(args, "--duration");
-    const std::optional<std::string_view> clock = OptionValue(args, "--clock");
     const std::optional<std::string_view> run_id =
         OptionValue(args, "--run-id");
     const std::optional<std::string_view> event_log =
         OptionValue(args, "--event-log");
-    if (!input || !duration || !clock ||
-        (*clock != "virtual" && *clock != "realtime")) {
+    if (!input || !duration) {
       std::cerr << "media-source requires --input <path> --duration <seconds> "
-                   "--clock <virtual|realtime>\n";
+                   "[--run-id <id>] [--event-log <path>]\n";
       return 2;
     }
     const std::optional<double> duration_seconds =
@@ -519,12 +517,11 @@ int main(int argc, char* argv[]) {
       std::cerr << "invalid --duration\n";
       return 2;
     }
-    const webrtc::roq::MediaSourceResult result = webrtc::roq::RunMediaSource(
-        std::string(*input), *duration_seconds,
-        *clock == "virtual" ? webrtc::roq::MediaClockMode::kVirtual
-                            : webrtc::roq::MediaClockMode::kRealtime,
-        run_id ? std::string(*run_id) : "",
-        event_log ? std::string(*event_log) : "");
+    const webrtc::roq::FileCapturerProbeResult result =
+        webrtc::roq::RunFileCapturerProbe(
+            std::string(*input), *duration_seconds,
+            run_id ? std::string(*run_id) : "",
+            event_log ? std::string(*event_log) : "");
     if (!result.error.empty()) {
       std::cerr << result.error << '\n';
       return 1;
