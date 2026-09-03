@@ -33,13 +33,22 @@ rtc_library("roq_media_source") {
   cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
 }
 
+rtc_library("livekit_roq_proto") {
+  sources = [ "$roq_repo_root/src/generated/livekit_roq.pb.cc" ]
+  include_dirs = [ "$roq_repo_root/src/generated" ]
+  deps = [ "//third_party/protobuf:protobuf_lite" ]
+  cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
+}
+
 rtc_executable("roq_test_peer") {
   testonly = true
 
   # lld's parallel archive reader intermittently reports a phantom auto-link
   # search path during a same-invocation relink. Keep strict auto-link checking
   # enabled, but serialize archive reads for this target.
-  ldflags = [ "-Wl,--read-workers=1" ]
+  if (use_lld) {
+    ldflags = [ "-Wl,--read-workers=1" ]
+  }
   sources = [
     "capability.cc",
     "capability.h",
@@ -120,7 +129,64 @@ rtc_executable("roq_test_peer") {
   libs = [ "$roq_repo_root/out/quiche/release/libquiche.a" ]
 }
 
+rtc_shared_library("livekit_roq_client") {
+  output_name = "livekit_roq_client"
+  ldflags = [ "-Wl,-install_name,@rpath/liblivekit_roq_client.dylib" ]
+  if (use_lld) {
+    ldflags += [ "-Wl,--read-workers=1" ]
+  }
+  sources = [
+    "$roq_repo_root/src/native/livekit_roq/client_c_api.cc",
+    "$roq_repo_root/src/native/livekit_roq/client_protocol.cc",
+    "$roq_repo_root/src/native/livekit_roq/client_session.cc",
+  ]
+  include_dirs = [
+    "$roq_repo_root/src",
+    "$roq_repo_root/src/generated",
+  ]
+  deps = [
+    ":livekit_roq_proto",
+    "../../api/roq:roq_api",
+    "../../api/units:time_delta",
+    "../../api/units:timestamp",
+    "../../modules/roq:roq_core",
+    "../../system_wrappers",
+    "//third_party/protobuf:protobuf_lite",
+  ]
+  cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
+}
+
 if (rtc_include_tests) {
+  rtc_test("livekit_roq_client_unittests") {
+    testonly = true
+    if (use_lld) {
+      ldflags = [ "-Wl,--read-workers=1" ]
+    }
+    sources = [
+      "$roq_repo_root/src/native/livekit_roq/client_c_api.cc",
+      "$roq_repo_root/src/native/livekit_roq/client_c_api_test.cc",
+      "$roq_repo_root/src/native/livekit_roq/client_protocol.cc",
+      "$roq_repo_root/src/native/livekit_roq/client_protocol_test.cc",
+      "$roq_repo_root/src/native/livekit_roq/client_session.cc",
+    ]
+    include_dirs = [
+      "$roq_repo_root/src",
+      "$roq_repo_root/src/generated",
+    ]
+    deps = [
+      ":livekit_roq_proto",
+      "../../api/roq:roq_api",
+      "../../api/units:time_delta",
+      "../../api/units:timestamp",
+      "../../modules/roq:roq_core",
+      "../../system_wrappers",
+      "../../test:test_support",
+      "//third_party/protobuf:protobuf_lite",
+      "//testing/gtest",
+    ]
+    cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
+  }
+
   group("m2_unittests") {
     testonly = true
     deps = [ "../../modules/roq:roq_sdk_unittests" ]
@@ -140,7 +206,9 @@ if (rtc_include_tests) {
     testonly = true
 
     # Match roq_test_peer's lld workaround above.
-    ldflags = [ "-Wl,--read-workers=1" ]
+    if (use_lld) {
+      ldflags = [ "-Wl,--read-workers=1" ]
+    }
     sources = [
       "quiche_abi_unittest.cc",
       "roq_wire_unittest.cc",
