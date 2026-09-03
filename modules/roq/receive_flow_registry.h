@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <map>
 #include <vector>
 
 #include "api/roq/roq_session.h"
@@ -16,7 +17,13 @@
 
 namespace webrtc::roq {
 
-enum class ReceiveFlowRoute { kDeliver, kBuffered, kClose };
+enum class ReceiveFlowPolicy { kDeliver, kDiscard };
+enum class ReceiveFlowRoute { kDeliver, kBuffered, kDiscard, kClose };
+
+struct ReceiveFlowConfig {
+  uint64_t flow_id = 0;
+  ReceiveFlowPolicy policy = ReceiveFlowPolicy::kDeliver;
+};
 
 class ReceiveFlowRegistry {
  public:
@@ -25,6 +32,8 @@ class ReceiveFlowRegistry {
   void BeginUpdate(Timestamp now);
   ReceiveFlowRoute Route(const RoqReceivedPacket& packet, Timestamp now);
   std::vector<RoqReceivedPacket> Update(std::vector<uint64_t> flow_ids);
+  std::vector<RoqReceivedPacket> Update(
+      std::vector<ReceiveFlowConfig> flow_configs);
 
   size_t buffered() const { return buffered_count_; }
   size_t released() const { return released_count_; }
@@ -38,12 +47,19 @@ class ReceiveFlowRegistry {
 
   bool IsKnown(uint64_t flow_id) const;
   void DropOldest();
+  void DropOldestForFlow(uint64_t flow_id);
+  ReceiveFlowRoute RecordUnknown(const RoqReceivedPacket& packet,
+                                 Timestamp now);
 
   static constexpr size_t kMaximumPackets = 32;
+  static constexpr size_t kMaximumPacketsPerFlow = 24;
   static constexpr size_t kMaximumBytes = 64 * 1024;
   static constexpr TimeDelta kGraceDuration = TimeDelta::Millis(100);
+  static constexpr size_t kUnknownMaximumPackets = 32;
+  static constexpr size_t kUnknownMaximumBytes = 64 * 1024;
+  static constexpr TimeDelta kUnknownWindow = TimeDelta::Seconds(1);
 
-  std::vector<uint64_t> flow_ids_;
+  std::map<uint64_t, ReceiveFlowPolicy> flows_;
   std::deque<BufferedPacket> pending_;
   size_t pending_bytes_ = 0;
   size_t buffered_count_ = 0;
@@ -51,6 +67,9 @@ class ReceiveFlowRegistry {
   size_t dropped_count_ = 0;
   bool update_active_ = false;
   Timestamp update_deadline_ = Timestamp::MinusInfinity();
+  Timestamp unknown_window_start_ = Timestamp::MinusInfinity();
+  size_t unknown_packets_ = 0;
+  size_t unknown_bytes_ = 0;
 };
 
 }  // namespace webrtc::roq

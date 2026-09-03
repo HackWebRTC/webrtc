@@ -137,6 +137,7 @@ rtc_shared_library("livekit_roq_client") {
   }
   sources = [
     "$roq_repo_root/src/native/livekit_roq/client_c_api.cc",
+    "$roq_repo_root/src/native/livekit_roq/client_media.cc",
     "$roq_repo_root/src/native/livekit_roq/client_protocol.cc",
     "$roq_repo_root/src/native/livekit_roq/client_session.cc",
   ]
@@ -146,10 +147,14 @@ rtc_shared_library("livekit_roq_client") {
   ]
   deps = [
     ":livekit_roq_proto",
+    "../../api/audio:create_audio_device_module",
+    "../../api/audio_codecs:builtin_audio_decoder_factory",
+    "../../api/environment:environment_factory",
     "../../api/roq:roq_api",
     "../../api/units:time_delta",
     "../../api/units:timestamp",
     "../../modules/roq:roq_core",
+    "../../api/video_codecs:builtin_video_decoder_factory",
     "../../system_wrappers",
     "//third_party/protobuf:protobuf_lite",
   ]
@@ -157,6 +162,25 @@ rtc_shared_library("livekit_roq_client") {
 }
 
 if (rtc_include_tests) {
+  rtc_test("livekit_roq_protocol_unittests") {
+    testonly = true
+    sources = [
+      "$roq_repo_root/src/native/livekit_roq/client_protocol.cc",
+      "$roq_repo_root/src/native/livekit_roq/client_protocol_test.cc",
+    ]
+    include_dirs = [
+      "$roq_repo_root/src",
+      "$roq_repo_root/src/generated",
+    ]
+    deps = [
+      ":livekit_roq_proto",
+      "../../test:test_support",
+      "//third_party/protobuf:protobuf_lite",
+      "//testing/gtest",
+    ]
+    cflags_cc = [ "-Wno-unsafe-buffer-usage" ]
+  }
+
   rtc_test("livekit_roq_client_unittests") {
     testonly = true
     if (use_lld) {
@@ -165,6 +189,7 @@ if (rtc_include_tests) {
     sources = [
       "$roq_repo_root/src/native/livekit_roq/client_c_api.cc",
       "$roq_repo_root/src/native/livekit_roq/client_c_api_test.cc",
+      "$roq_repo_root/src/native/livekit_roq/client_media.cc",
       "$roq_repo_root/src/native/livekit_roq/client_protocol.cc",
       "$roq_repo_root/src/native/livekit_roq/client_protocol_test.cc",
       "$roq_repo_root/src/native/livekit_roq/client_session.cc",
@@ -175,10 +200,14 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":livekit_roq_proto",
+      "../../api/audio:create_audio_device_module",
+      "../../api/audio_codecs:builtin_audio_decoder_factory",
+      "../../api/environment:environment_factory",
       "../../api/roq:roq_api",
       "../../api/units:time_delta",
       "../../api/units:timestamp",
       "../../modules/roq:roq_core",
+      "../../api/video_codecs:builtin_video_decoder_factory",
       "../../system_wrappers",
       "../../test:test_support",
       "//third_party/protobuf:protobuf_lite",

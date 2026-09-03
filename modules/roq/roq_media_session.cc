@@ -243,6 +243,8 @@ class RoqMediaSessionImpl final : public RoqMediaSession {
     audio_state_ = AudioState::Create(audio_state_config);
     config_.audio_device_module->RegisterAudioCallback(
         audio_state_->audio_transport());
+    if (!config_.send_audio)
+      audio_state_->SetPlayout(false);
 
     CallConfig call_config =
         CallConfig::CreateWithJoinedWorkerAndNetworkQueue(env_, worker_.get());

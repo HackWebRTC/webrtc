@@ -30,6 +30,13 @@ enum class RoqDatagramPriority {
   kAudio,
   kRtcp,
 };
+enum class RoqReceiveFlowPolicy { kDeliver, kDiscard };
+
+struct RoqFlowConfig {
+  uint64_t flow_id = 0;
+  RoqReceiveFlowPolicy receive_policy = RoqReceiveFlowPolicy::kDeliver;
+  bool allow_send = false;
+};
 
 struct RoqFrameId {
   uint32_t ssrc = 0;
@@ -66,6 +73,7 @@ struct RoqSessionConfig {
   TimeDelta resumption_cache_max_age = TimeDelta::Seconds(24 * 60 * 60);
   std::function<Timestamp()> resumption_clock;
   size_t maximum_udp_payload = 1350;
+  uint64_t max_idle_timeout_ms = 5000;
   size_t outgoing_queue_capacity = 512;
   Clock* clock = Clock::GetRealTimeClock();
   std::vector<uint64_t> allowed_flow_ids;
@@ -148,6 +156,16 @@ class RoqSession {
   virtual bool SendReplaySafeMessage(std::span<const uint8_t> message) = 0;
   virtual void BeginReceiveFlowUpdate() = 0;
   virtual void UpdateReceiveFlowIds(std::vector<uint64_t> flow_ids) = 0;
+  virtual void BeginFlowUpdate() { BeginReceiveFlowUpdate(); }
+  virtual void CommitFlowUpdate(std::vector<RoqFlowConfig> flows) {
+    std::vector<uint64_t> receive_flow_ids;
+    receive_flow_ids.reserve(flows.size());
+    for (const RoqFlowConfig& flow : flows) {
+      if (flow.receive_policy == RoqReceiveFlowPolicy::kDeliver)
+        receive_flow_ids.push_back(flow.flow_id);
+    }
+    UpdateReceiveFlowIds(std::move(receive_flow_ids));
+  }
   virtual RoqSendResult SendMedia(uint64_t flow_id,
                                   std::span<const uint8_t> packet,
                                   RoqDatagramMetadata metadata,

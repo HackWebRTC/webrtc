@@ -13,7 +13,10 @@
 namespace webrtc::roq {
 
 ReceiveFlowRegistry::ReceiveFlowRegistry(std::vector<uint64_t> flow_ids)
-    : flow_ids_(std::move(flow_ids)) {}
+    {
+  for (uint64_t flow_id : flow_ids)
+    flows_[flow_id] = ReceiveFlowPolicy::kDeliver;
+}
 
 void ReceiveFlowRegistry::BeginUpdate(Timestamp now) {
   dropped_count_ += pending_.size();
@@ -25,18 +28,30 @@ void ReceiveFlowRegistry::BeginUpdate(Timestamp now) {
 
 ReceiveFlowRoute ReceiveFlowRegistry::Route(const RoqReceivedPacket& packet,
                                             Timestamp now) {
-  if (IsKnown(packet.flow_id))
-    return ReceiveFlowRoute::kDeliver;
+  if (auto flow = flows_.find(packet.flow_id); flow != flows_.end()) {
+    if (flow->second == ReceiveFlowPolicy::kDeliver)
+      return ReceiveFlowRoute::kDeliver;
+    ++dropped_count_;
+    return ReceiveFlowRoute::kDiscard;
+  }
   if (!update_active_ || now > update_deadline_) {
     dropped_count_ += pending_.size() + 1;
     pending_.clear();
     pending_bytes_ = 0;
     update_active_ = false;
-    return ReceiveFlowRoute::kClose;
+    return RecordUnknown(packet, now);
   }
   if (packet.packet.size() > kMaximumBytes) {
     ++dropped_count_;
     return ReceiveFlowRoute::kBuffered;
+  }
+  size_t packets_for_flow = std::count_if(
+      pending_.begin(), pending_.end(), [&](const BufferedPacket& buffered) {
+        return buffered.packet.flow_id == packet.flow_id;
+      });
+  while (packets_for_flow >= kMaximumPacketsPerFlow) {
+    DropOldestForFlow(packet.flow_id);
+    --packets_for_flow;
   }
   while (!pending_.empty() &&
          (pending_.size() >= kMaximumPackets ||
@@ -51,11 +66,23 @@ ReceiveFlowRoute ReceiveFlowRegistry::Route(const RoqReceivedPacket& packet,
 
 std::vector<RoqReceivedPacket> ReceiveFlowRegistry::Update(
     std::vector<uint64_t> flow_ids) {
-  flow_ids_ = std::move(flow_ids);
+  std::vector<ReceiveFlowConfig> configs;
+  configs.reserve(flow_ids.size());
+  for (uint64_t flow_id : flow_ids)
+    configs.push_back({flow_id, ReceiveFlowPolicy::kDeliver});
+  return Update(std::move(configs));
+}
+
+std::vector<RoqReceivedPacket> ReceiveFlowRegistry::Update(
+    std::vector<ReceiveFlowConfig> flow_configs) {
+  flows_.clear();
+  for (const ReceiveFlowConfig& config : flow_configs)
+    flows_[config.flow_id] = config.policy;
   update_active_ = false;
   std::vector<RoqReceivedPacket> released;
   for (BufferedPacket& buffered : pending_) {
-    if (IsKnown(buffered.packet.flow_id)) {
+    auto flow = flows_.find(buffered.packet.flow_id);
+    if (flow != flows_.end() && flow->second == ReceiveFlowPolicy::kDeliver) {
       released.push_back(std::move(buffered.packet));
       ++released_count_;
     } else {
@@ -68,14 +95,42 @@ std::vector<RoqReceivedPacket> ReceiveFlowRegistry::Update(
 }
 
 bool ReceiveFlowRegistry::IsKnown(uint64_t flow_id) const {
-  return std::find(flow_ids_.begin(), flow_ids_.end(), flow_id) !=
-         flow_ids_.end();
+  return flows_.contains(flow_id);
 }
 
 void ReceiveFlowRegistry::DropOldest() {
   pending_bytes_ -= pending_.front().bytes;
   pending_.pop_front();
   ++dropped_count_;
+}
+
+void ReceiveFlowRegistry::DropOldestForFlow(uint64_t flow_id) {
+  auto oldest = std::find_if(
+      pending_.begin(), pending_.end(), [&](const BufferedPacket& buffered) {
+        return buffered.packet.flow_id == flow_id;
+      });
+  if (oldest == pending_.end())
+    return;
+  pending_bytes_ -= oldest->bytes;
+  pending_.erase(oldest);
+  ++dropped_count_;
+}
+
+ReceiveFlowRoute ReceiveFlowRegistry::RecordUnknown(
+    const RoqReceivedPacket& packet,
+    Timestamp now) {
+  if (unknown_window_start_.IsInfinite() ||
+      now - unknown_window_start_ >= kUnknownWindow) {
+    unknown_window_start_ = now;
+    unknown_packets_ = 0;
+    unknown_bytes_ = 0;
+  }
+  ++unknown_packets_;
+  unknown_bytes_ += packet.packet.size();
+  return unknown_packets_ >= kUnknownMaximumPackets ||
+                 unknown_bytes_ >= kUnknownMaximumBytes
+             ? ReceiveFlowRoute::kClose
+             : ReceiveFlowRoute::kDiscard;
 }
 
 }  // namespace webrtc::roq

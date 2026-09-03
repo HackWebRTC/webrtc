@@ -205,7 +205,8 @@ class RoqSessionImpl final : public RoqSession {
         outgoing_(config_.outgoing_queue_capacity, config_.maximum_udp_payload),
         receive_flows_(config_.receive_flow_ids.empty()
                            ? config_.allowed_flow_ids
-                           : config_.receive_flow_ids) {}
+                           : config_.receive_flow_ids),
+        send_flow_ids_(config_.allowed_flow_ids) {}
 
   ~RoqSessionImpl() override {
     Close(0, "complete");
@@ -273,6 +274,36 @@ class RoqSessionImpl final : public RoqSession {
     }
   }
 
+  void BeginFlowUpdate() override { BeginReceiveFlowUpdate(); }
+
+  void CommitFlowUpdate(std::vector<RoqFlowConfig> flows) override {
+    std::vector<ReceiveFlowConfig> receive_flows;
+    std::vector<uint64_t> send_flows;
+    receive_flows.reserve(flows.size());
+    for (const RoqFlowConfig& flow : flows) {
+      receive_flows.push_back(
+          {flow.flow_id,
+           flow.receive_policy == RoqReceiveFlowPolicy::kDeliver
+               ? ReceiveFlowPolicy::kDeliver
+               : ReceiveFlowPolicy::kDiscard});
+      if (flow.allow_send)
+        send_flows.push_back(flow.flow_id);
+    }
+    std::vector<RoqReceivedPacket> released;
+    ReceiveCallback callback;
+    {
+      std::lock_guard lock(mutex_);
+      released = receive_flows_.Update(std::move(receive_flows));
+      send_flow_ids_ = std::move(send_flows);
+      CopyFlowStatsLocked();
+      callback = receive_callback_;
+    }
+    if (callback) {
+      for (RoqReceivedPacket& packet : released)
+        callback(std::move(packet));
+    }
+  }
+
   RoqSendResult SendMedia(uint64_t flow_id,
                           std::span<const uint8_t> packet,
                           RoqDatagramMetadata metadata,
@@ -280,9 +311,8 @@ class RoqSessionImpl final : public RoqSession {
     std::lock_guard lock(mutex_);
     if (close_requested_ || closed_)
       return RoqSendResult::kClosed;
-    if (std::find(config_.allowed_flow_ids.begin(),
-                  config_.allowed_flow_ids.end(),
-                  flow_id) == config_.allowed_flow_ids.end()) {
+    if (std::find(send_flow_ids_.begin(), send_flow_ids_.end(), flow_id) ==
+        send_flow_ids_.end()) {
       return RoqSendResult::kClosed;
     }
     QueuedDatagram datagram = {
@@ -397,7 +427,8 @@ class RoqSessionImpl final : public RoqSession {
       *error = "failed to configure quiche";
       return nullptr;
     }
-    quiche_config_set_max_idle_timeout(config.get(), 5000);
+    quiche_config_set_max_idle_timeout(config.get(),
+                                       config_.max_idle_timeout_ms);
     quiche_config_set_max_recv_udp_payload_size(config.get(),
                                                 config_.maximum_udp_payload);
     quiche_config_set_max_send_udp_payload_size(config.get(),
@@ -578,23 +609,23 @@ class RoqSessionImpl final : public RoqSession {
 
   bool SendReliableMessages(quiche_conn* connection) {
     std::lock_guard lock(mutex_);
-    if (reliable_messages_.empty())
-      return true;
-    std::vector<uint8_t>& message = reliable_messages_.front();
-    const std::span<const uint8_t> remaining(message);
-    uint64_t error_code = 0;
-    const ssize_t written = quiche_conn_stream_send(
-        connection, kControlStreamId,
-        remaining.subspan(reliable_message_offset_).data(),
-        remaining.size() - reliable_message_offset_, false, &error_code);
-    if (written == QUICHE_ERR_DONE)
-      return true;
-    if (written < 0)
-      return false;
-    reliable_message_offset_ += static_cast<size_t>(written);
-    if (quiche_conn_is_in_early_data(connection))
-      stats_.early_data_attempted = true;
-    if (reliable_message_offset_ == message.size()) {
+    while (!reliable_messages_.empty()) {
+      std::vector<uint8_t>& message = reliable_messages_.front();
+      const std::span<const uint8_t> remaining(message);
+      uint64_t error_code = 0;
+      const ssize_t written = quiche_conn_stream_send(
+          connection, kControlStreamId,
+          remaining.subspan(reliable_message_offset_).data(),
+          remaining.size() - reliable_message_offset_, false, &error_code);
+      if (written == QUICHE_ERR_DONE)
+        return true;
+      if (written < 0)
+        return false;
+      reliable_message_offset_ += static_cast<size_t>(written);
+      if (quiche_conn_is_in_early_data(connection))
+        stats_.early_data_attempted = true;
+      if (reliable_message_offset_ != message.size())
+        return true;
       reliable_messages_.pop_front();
       reliable_message_offset_ = 0;
       ++stats_.reliable_messages_sent;
@@ -1001,6 +1032,7 @@ class RoqSessionImpl final : public RoqSession {
   std::condition_variable condition_;
   BoundedDatagramQueue outgoing_;
   ReceiveFlowRegistry receive_flows_;
+  std::vector<uint64_t> send_flow_ids_;
   std::deque<std::vector<uint8_t>> reliable_messages_;
   size_t reliable_message_offset_ = 0;
   ReliableMessageDecoder reliable_decoder_;
